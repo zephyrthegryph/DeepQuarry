@@ -59,29 +59,39 @@
 		if(pda().cartridge)
 			data["charges"] = pda().cartridge.charges ? pda().cartridge.charges : 0
 
-/datum/data/pda/app/messenger/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/data/pda/app/messenger/proc/ui_gate(datum/act/op/A)
 	unnotify()
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/messenger, "Toggle Messenger", ui_act_toggle_messenger)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_messenger)
-	. = TRUE
+CAPABILITIES(/datum/data/pda/app/messenger)
+	extend(TAG_TOPIC, needs(req_topic_ok()))
+	op("Toggle Messenger", ui_act(), then(PROC_REF(ui_act_toggle_messenger)))
+	op("Toggle Ringer", ui_act(), then(PROC_REF(ui_act_toggle_ringer)))
+	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+	op("Clear", ui_act("Clear", arg("option", schema_text(4096))), then(PROC_REF(ui_act_clear)))
+	op("Message", ui_act("Message", arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_message)))
+	op("Select Conversation", ui_act("Select Conversation", arg("target")), then(PROC_REF(ui_act_select_conversation)))
+	op("Messenger Plugin", ui_act("Messenger Plugin", arg("plugin", schema_ref(/datum/data/pda/messenger_plugin)), arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_messenger_plugin)))
+	op("choice_Message", topic("choice=Message", arg("target", schema_ref(/obj/item/pda), optional = TRUE)), then(PROC_REF(topic_message)))
+
+/datum/data/pda/app/messenger/proc/ui_act_toggle_messenger(datum/act/op/A)
+	unnotify()
 	toff = !toff
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/messenger, "Toggle Ringer", ui_act_toggle_ringer)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_ringer)
-	. = TRUE
+/datum/data/pda/app/messenger/proc/ui_act_toggle_ringer(datum/act/op/A)
+	unnotify()
 	notify_silent = !notify_silent
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/messenger, "Clear", ui_act_clear, UI_ARG_TEXT("option"))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
+/datum/data/pda/app/messenger/proc/ui_act_clear(datum/act/op/A, option)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	if(params["option"] == "All")
+	if(option == "All")
 		LAZYCLEARLIST(tnote)
 		LAZYCLEARLIST(conversations)
-	if(params["option"] == "Convo")
+	if(option == "Convo")
 		var/new_tnote[0]
 		for(var/i in tnote)
 			if(i["target"] != active_conversation)
@@ -91,51 +101,58 @@ UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
 
 	active_conversation = null
 
-UI_ACT(/datum/data/pda/app/messenger, "Message", ui_act_message, UI_ARG_REF("target", null, /obj/item/pda))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_message)
+/datum/data/pda/app/messenger/proc/ui_act_message(datum/act/op/A, target)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(target))
+		return FALSE
 	. = TRUE
-	var/obj/item/pda/P = params["target"]
-	create_message(ui.user, P)
-	if(params["target"] in conversations)            // Need to make sure the message went through, if not welp.
-		active_conversation = params["target"]
+	var/obj/item/pda/P = target
+	create_message(user, P)
+	if(target in conversations)            // Need to make sure the message went through, if not welp.
+		active_conversation = target
 
-UI_ACT(/datum/data/pda/app/messenger, "Select Conversation", ui_act_select_conversation, UI_ARG_VALUE("target"))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_select_conversation)
+/datum/data/pda/app/messenger/proc/ui_act_select_conversation(datum/act/op/A, target)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	var/P = params["target"]
+	var/P = target
 	for(var/n in conversations)
 		if(P == n)
 			active_conversation = P
 
-UI_ACT(/datum/data/pda/app/messenger, "Messenger Plugin", ui_act_messenger_plugin, UI_ARG_REF("plugin", null, /datum/data/pda/messenger_plugin), UI_ARG_REF("target", null, /obj/item/pda))
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_messenger_plugin)
+/datum/data/pda/app/messenger/proc/ui_act_messenger_plugin(datum/act/op/A, plugin_arg, target)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	if(!params["target"] || !params["plugin"])
+	if(!target || !plugin_arg)
 		return
 
-	var/obj/item/pda/P = params["target"]
+	var/obj/item/pda/P = target
 	if(!P)
-		to_chat(ui.user, "PDA not found.")
+		to_chat(user, "PDA not found.")
 
-	var/datum/data/pda/messenger_plugin/plugin = params["plugin"]
+	var/datum/data/pda/messenger_plugin/plugin = plugin_arg
 	if(plugin && (plugin in pda().cartridge.messenger_plugins))
 		rel_set(plugin, nameof(/datum/data/pda/messenger_plugin::messenger), src)
-		plugin.user_act(ui.user, P)
+		plugin.user_act(user, P)
 
-UI_ACT(/datum/data/pda/app/messenger, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_back)
-	. = TRUE
+/datum/data/pda/app/messenger/proc/ui_act_back(datum/act/op/A)
+	unnotify()
 	active_conversation = null
+	return OP_OK
 
 // Specifically here for the chat message.
-TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_message), TOPIC_REF("target", /obj/item/pda))
 
-/datum/data/pda/app/messenger/topic_allowed(mob/user, list/href_list)
-	return pda()?.can_use(user)
+/datum/data/pda/app/messenger/op_topic_actor_ok(mob/actor)
+	return pda()?.can_use(actor)
 
-/datum/data/pda/app/messenger/proc/topic_message(mob/user, list/args)
+/datum/data/pda/app/messenger/proc/topic_message(datum/act/op/A, href_target)
+	var/mob/user = A.actor
 	unnotify()
-	var/obj/item/pda/P = args["target"]
+	var/obj/item/pda/P = href_target
 	create_message(user, P)
 	var/target_ref = "\ref[P]"
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.
@@ -144,28 +161,49 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 
 
 /datum/data/pda/app/messenger/proc/create_message(mob/living/U, obj/item/pda/P)
-	var/t = rerun_ask(U, "k127", PROC_REF(create_message), args, /datum/om/prompt/text, message = "Please enter message", title = name)
-	if(isnull(t))
-		return
-	if(!t)
-		return
-	t = readd_quotes(t)
-	if(!t || !istype(P))
-		return
-	if(!in_range(pda(), U) && pda().loc != U)
-		return
+	open_request(src, /datum/prompt/text/pda_message, PROC_REF(message_entered), answerer = U, subject = P, target_expected = !isnull(P), title = name)
 
-	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
+/datum/prompt/text/pda_message
+	question = "Please enter message"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/target_expected = FALSE
 
-	if(!PM || PM.toff || toff)
+/datum/prompt/text/pda_message/recheck_extra()
+	var/datum/data/pda/app/messenger/program = owner
+	if(!istype(program) || QDELETED(program) || !answerer || QDELETED(answerer))
+		return "gone"
+	if(target_expected && (!subject || QDELETED(subject)))
+		return "gone"
+	// These are answer-time guards: the old entry opened before checking them.
+	if(isnull(value))
 		return
+	if(!value || !readd_quotes(value) || !istype(subject, /obj/item/pda))
+		return "not sent"
+	var/obj/item/pda/sender = program.pda()
+	if(!sender || QDELETED(sender))
+		return "no sender"
+	if(!in_range(sender, answerer) && sender.loc != answerer)
+		return "not sent"
+	var/obj/item/pda/target = subject
+	var/datum/data/pda/app/messenger/recipient = target.find_program(/datum/data/pda/app/messenger)
+	if(!recipient || recipient.toff || program.toff)
+		return "not sent"
+	if(!COOLDOWN_FINISHED(program, text_cooldown))
+		return "not sent"
+	if(!sender.can_use(answerer))
+		return "not sent"
 
-	if(!COOLDOWN_FINISHED(src, text_cooldown))
+/datum/data/pda/app/messenger/proc/message_entered(datum/act/request/A)
+	if(isnull(A.request.value) || A.request.last_error == "gone")
 		return
+	SStgui.update_uis(src)
+	if(A.answer)
+		var/obj/item/pda/P = A.request.subject
+		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
+		send_message_answered(A.request.answerer, P, PM, readd_quotes(A.answer.value))
 
-	if(!pda().can_use(U))
-		return
-
+/datum/data/pda/app/messenger/proc/send_message_answered(mob/living/U, obj/item/pda/P, datum/data/pda/app/messenger/PM, t)
 	COOLDOWN_START(src, text_cooldown, 0.5 SECONDS)
 	// check if telecomms I/O route 1459 is stable
 	//var/telecomms_intact = telecomms_process(P.owner, owner, t)
@@ -206,32 +244,6 @@ TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_mes
 	else
 		to_chat(U, span_notice("ERROR: Messaging server is not responding.\n\n\
 			However, your message has been saved: ") + t)
-
-/datum/data/pda/app/messenger/proc/available_pdas()
-	var/list/names = list()
-	var/list/plist = list()
-	var/list/namecounts = list()
-
-	if(toff)
-		to_chat(usr, "Turn on your receiver in order to send messages.")
-		return
-
-	for(var/obj/item/pda/P as anything in REGISTRY_MEMBERS(REGISTRY_PDAS))
-		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
-
-		if(!P.owner || !PM || PM.hidden || P == pda() || PM.toff)
-			continue
-
-		var/name = P.owner
-		if(name in names)
-			namecounts[name]++
-			name = text("[name] ([namecounts[name]])")
-		else
-			names.Add(name)
-			namecounts[name] = 1
-
-		plist[text("[name]")] = P
-	return plist
 
 /datum/data/pda/app/messenger/proc/can_receive()
 	return pda().owner && !toff && !hidden

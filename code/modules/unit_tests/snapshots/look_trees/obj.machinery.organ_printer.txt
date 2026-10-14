@@ -1,0 +1,13 @@
+/obj/machinery/organ_printer icon: icons/obj/surgery.dmi
+/obj/machinery/organ_printer state: bioprinter
+/obj/machinery/organ_printer dir: 2
+/obj/machinery/organ_printer overlay: icons/obj/surgery.dmi:bioprinter:8:#000000
+/obj/machinery/organ_printer/flesh icon: icons/obj/surgery.dmi
+/obj/machinery/organ_printer/flesh state: bioprinter
+/obj/machinery/organ_printer/flesh dir: 2
+/obj/machinery/organ_printer/flesh overlay: icons/obj/surgery.dmi:bioprinter:8:#000000
+/obj/machinery/organ_printer/flesh/full icon: icons/obj/surgery.dmi
+/obj/machinery/organ_printer/flesh/full state: bioprinter
+/obj/machinery/organ_printer/flesh/full dir: 2
+/obj/machinery/organ_printer/flesh/full overlay: icons/obj/surgery.dmi:bioprinter:8:#000000
+

@@ -1,0 +1,2 @@
+/obj/tgs
+	qdel(src)

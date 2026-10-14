@@ -1,0 +1,46 @@
+human|none menu: Authorize (refused: needs a card)
+human|none menu: Climb
+human|none click: nothing
+@obj.machinery.computer robot|none
++0 menu: Authorize (refused: needs a card)
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
++0 menu: Authorize (refused: needs a card)
+human|/obj/item/tool/screwdriver menu: Authorize (refused: needs a card)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use item
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
++0 menu: Authorize
+@obj.machinery.computer human|/obj/item
+-menu: Use
++0 menu: Authorize (refused: needs a card)
+@obj human|/obj/item/gripper
+@obj.machinery human|/obj/item/card/emag
+-menu: Use
+-click: Click: Use
++0 menu: Authorize
++3 click: Click: Use item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shuttle_authorize, shuttle_emag_launch, silicon_hand, use_gripper, use_item

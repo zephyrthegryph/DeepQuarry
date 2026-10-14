@@ -10,12 +10,12 @@
 		// needs to be recreated
 		clear_fullscreen(category, FALSE)
 		screen = new type()
-		own_put(src, nameof(screens), category, screen)
+		rel_add(src, nameof(screens), screen, category)
 	else if ((!severity || severity == screen.severity) && (!client || screen.screen_loc != "CENTER-7,CENTER-7" || screen.view == client.view))
 		// doesn't need to be updated
 		return screen
 
-	screen.icon_state = "[initial(screen.icon_state)][severity]"
+	screen.set_icon_state("[initial(screen.icon_state)][severity]")
 	screen.severity = severity
 	if (client && screen.should_show_to(src))
 		screen.update_for_view(client.view)
@@ -32,11 +32,11 @@
 
 	if(animated)
 		animate(screen, alpha = 0, time = animated)
-		om_after(src, animated, PROC_REF(remove_faded_fullscreen), screen)
+		after(src, animated, PROC_REF(remove_faded_fullscreen), with = list(screen))
 	else
 		if(client)
 			client.screen -= screen
-		qdel(screen)
+		spent(screen)
 
 /mob/proc/clear_fullscreens()
 	for(var/category in screens)
@@ -166,4 +166,4 @@
 /mob/proc/remove_faded_fullscreen(atom/movable/screen/fullscreen/screen)
 	if(client)
 		client.screen -= screen
-	qdel(screen)
+	lapsed(screen)

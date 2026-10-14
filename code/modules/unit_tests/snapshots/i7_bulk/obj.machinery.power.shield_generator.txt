@@ -1,0 +1,86 @@
+human|none menu: Ui open
+human|none menu: Use
+human|none click: Click: Ui open
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Ui open
++3 click: Click: Ui open
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Ui open
++2 click: Click: Ui open
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
+-click: Click: Open maintenance panel
++0 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
++4 menu: Use
++5 menu: Use screwdriver
++6 click: Click: Ui open
+@obj.machinery.power human|/obj/item/tool/crowbar
+-click: Click: Deconstruct
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
++4 menu: Use
++5 menu: Use crowbar
++6 click: Click: Ui open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Ui open
+@obj.machinery.power human|/obj/item/stack/cable_coil
+-click: Click: Lay cable
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Ui open
++5 menu: Use
++6 click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
+@obj human|/obj/item/storage/part_replacer
+-click: Click: Replace parts
++0 menu: Empty contents
++1 menu: Move To Top
++3 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Ui open
++6 menu: Use
++7 click: Click: Ui open
+wires: AI Control, Contraband, Primary Power, Shield Controls
+keys: begin_shutdown, cable_place, drag_buckle, emergency_shutdown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, robot_remote_blocked, set_input_cap, set_range, silicon_hand, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open, use, use_crowbar, use_multitool, use_screwdriver, use_wirecutter

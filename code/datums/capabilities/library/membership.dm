@@ -2,9 +2,7 @@
 // Replaces DECLARE_REGISTRY (code/__defines/lifecycle_decl.dm) and REGISTRY_MEMBERSHIP for a type that is always
 // a member; both stay until the codemod has moved their sites.
 //
-//	/obj/item/taperecorder/capabilities()
-//		. = ..()
-//		. += membership(joins = REGISTRY_LISTENING_OBJECTS)
+//	CAPABILITY(/obj/item/taperecorder, membership(joins = REGISTRY_LISTENING_OBJECTS))
 //
 // `joins` is one id or a list; each entry is either
 //   - a registry id (REGISTRY_*, code/__defines/registries.dm): the holder is in that registry while materialized
@@ -35,6 +33,14 @@
 /proc/cap_registries_of(atom/A)
 	for(var/datum/capability/membership/C in caps_of(A))
 		for(var/id in C.registries)
+			LAZYOR(., id)
+	// membership(joins =) in a CAPABILITIES block: the compiled table keeps it among its type-level capabilities.
+	var/datum/type_table/T = table_of(A)
+	for(var/key in T.caps)
+		var/datum/capability/membership/declared = T.caps[key]
+		if(!istype(declared))
+			continue
+		for(var/id in declared.registries)
 			LAZYOR(., id)
 
 /// Registry membership declared by capabilities (membership(joins =)) is the type's too: type_registries()

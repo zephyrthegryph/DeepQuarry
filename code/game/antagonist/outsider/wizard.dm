@@ -48,26 +48,26 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 		var/datum/objective/assassinate/kill_objective = new
 		rel_set(kill_objective, nameof(kill_objective.owner), wizard)
 		kill_objective.find_target()
-		own_add(wizard, nameof(wizard.objectives), kill_objective)
+		rel_add(wizard, nameof(wizard.objectives), kill_objective)
 	if(steal)
 		var/datum/objective/steal/steal_objective = new
 		rel_set(steal_objective, nameof(steal_objective.owner), wizard)
 		steal_objective.find_target()
-		own_add(wizard, nameof(wizard.objectives), steal_objective)
+		rel_add(wizard, nameof(wizard.objectives), steal_objective)
 	if(escape)
 		var/datum/objective/survive/survive_objective = new
 		rel_set(survive_objective, nameof(survive_objective.owner), wizard)
-		own_add(wizard, nameof(wizard.objectives), survive_objective)
+		rel_add(wizard, nameof(wizard.objectives), survive_objective)
 	if(hijack)
 		var/datum/objective/hijack/hijack_objective = new
 		rel_set(hijack_objective, nameof(hijack_objective.owner), wizard)
-		own_add(wizard, nameof(wizard.objectives), hijack_objective)
+		rel_add(wizard, nameof(wizard.objectives), hijack_objective)
 	return
 
 /datum/antagonist/wizard/update_antag_mob(datum/mind/wizard)
 	..()
 	wizard.store_memory(span_bold("Remember:") + " do not forget to prepare your spells.")
-	wizard.current.real_name = "[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]"
+	wizard.current.set_real_name("[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]")
 	wizard.current.name = wizard.current.real_name
 
 /datum/antagonist/wizard/equip(mob/living/carbon/human/wizard_mob)
@@ -80,11 +80,11 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(wizard_mob), SLOT_ID_SHOES)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/clothing/suit/wizrobe(wizard_mob), SLOT_ID_SUIT)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/clothing/head/wizard(wizard_mob), SLOT_ID_HEAD)
-	if(wizard_mob.backbag == 2) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack(wizard_mob), SLOT_ID_BACK)
-	if(wizard_mob.backbag == 3) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel/norm(wizard_mob), SLOT_ID_BACK)
-	if(wizard_mob.backbag == 4) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel(wizard_mob), SLOT_ID_BACK)
-	if(wizard_mob.backbag == 5) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/messenger(wizard_mob), SLOT_ID_BACK)
-	if(wizard_mob.backbag == 6) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/sport(wizard_mob), SLOT_ID_BACK)
+	if(wizard_mob.bio.backbag == 2) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack(wizard_mob), SLOT_ID_BACK)
+	if(wizard_mob.bio.backbag == 3) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel/norm(wizard_mob), SLOT_ID_BACK)
+	if(wizard_mob.bio.backbag == 4) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel(wizard_mob), SLOT_ID_BACK)
+	if(wizard_mob.bio.backbag == 5) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/messenger(wizard_mob), SLOT_ID_BACK)
+	if(wizard_mob.bio.backbag == 6) wizard_mob.equip_to_slot_or_del(new /obj/item/storage/backpack/sport(wizard_mob), SLOT_ID_BACK)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/storage/box(wizard_mob), SLOT_ID_IN_BACKPACK)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/teleportation_scroll(wizard_mob), SLOT_ID_POCKET_R)
 	wizard_mob.equip_to_slot_or_del(new /obj/item/spellbook(wizard_mob), SLOT_ID_HAND_R)

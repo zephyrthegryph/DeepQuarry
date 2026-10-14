@@ -15,14 +15,10 @@
 	throw_range = 8
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 // 14
 	var/list/icon_variety
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-/obj/item/storage/firstaid/Initialize(mapload)
-	. = ..()
-	if(icon_variety)
-		icon_state = pick(icon_variety) // ALLOW(decl): random pick
-		icon_variety = null
+/// Rolled before init (rolls()): a kit with several looks picks one.
+/obj/item/storage/firstaid/proc/roll_icon_state(datum/roller/R)
+	return R.choose(icon_variety)
 
 /obj/item/storage/firstaid/fire
 	name = "fire first aid kit"
@@ -64,23 +60,24 @@
 	icon_state = "surgerykit"
 	item_state = "firstaid-surgery"
 
-TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/surgical/bone_clamp, \
-		/obj/item/surgical/bonesetter, \
-		/obj/item/surgical/cautery, \
-		/obj/item/surgical/circular_saw, \
-		/obj/item/surgical/hemostat, \
-		/obj/item/surgical/retractor, \
-		/obj/item/surgical/scalpel, \
-		/obj/item/surgical/surgicaldrill, \
-		/obj/item/surgical/bonegel, \
-		/obj/item/surgical/FixOVein, \
-		/obj/item/stack/medical/advanced/bruise_pack, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/healthanalyzer, \
-		/obj/item/autopsy_scanner, \
-		/obj/item/surgical/bioregen \
-		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/firstaid/surgery)
+	configure(storage(accepts = list(
+		/obj/item/surgical/bone_clamp,
+		/obj/item/surgical/bonesetter,
+		/obj/item/surgical/cautery,
+		/obj/item/surgical/circular_saw,
+		/obj/item/surgical/hemostat,
+		/obj/item/surgical/retractor,
+		/obj/item/surgical/scalpel,
+		/obj/item/surgical/surgicaldrill,
+		/obj/item/surgical/bonegel,
+		/obj/item/surgical/FixOVein,
+		/obj/item/stack/medical/advanced/bruise_pack,
+		/obj/item/stack/nanopaste,
+		/obj/item/healthanalyzer,
+		/obj/item/autopsy_scanner,
+		/obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
@@ -102,8 +99,6 @@ TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
 	desc = "It's an airtight container for storing medication."
 	icon_state = "pill_canister"
 	icon = 'icons/obj/chemical.dmi'
-	drop_sound = SFX_ITEMS_DROP_PILLBOTTLE
-	pickup_sound = SFX_ITEMS_PICKUP_PILLBOTTLE
 	item_state_slots = list(slot_r_hand_str = "contsolid", slot_l_hand_str = "contsolid")
 	w_class = ITEMSIZE_SMALL
 	allow_quick_gather = 1
@@ -118,44 +113,47 @@ TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
 	var/base_name = " "
 	var/base_desc = " "
 
-TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
+/// The name and description its labels build on (derives(), at init): what it was made or mapped with.
+/obj/item/storage/pill_bottle/proc/name_at_start()
+	return name
 
-/obj/item/storage/pill_bottle/Initialize(mapload)
+/obj/item/storage/pill_bottle/proc/desc_at_start()
+	return desc
+
+
+/// The coloured wrapper (a chem master recolours it).
+/obj/item/storage/pill_bottle/draw(datum/look/look)
 	. = ..()
-	base_name = name
-	base_desc = desc
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pill_bottle/appearance_overlays()
-	. = list()
 	if(wrapper_color)
-		var/image/I = image(icon, "pillbottle_wrap")
-		I.color = wrapper_color
-		. += I
+		look.overlay(look_appearance(icon, "pillbottle_wrap", color = wrapper_color))
 
-EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_REF(interaction_label)))
+CAPABILITIES(/obj/item/storage/pill_bottle)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PILLBOTTLE, pickup = SFX_ITEMS_PICKUP_PILLBOTTLE))
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/pill,
+		/obj/item/dice,
+		/obj/item/paper), max_size = ITEMSIZE_TINY))
+	
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+	derives(nameof(base_name), PROC_REF(name_at_start))
+	derives(nameof(base_desc), PROC_REF(desc_at_start))
 
-/// Old attackby: a pen labels the bottle; anything else goes on to the storage's insertion.
-/obj/item/storage/pill_bottle/proc/interaction_label(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W, /obj/item/pen) && !istype(W, /obj/item/flashlight/pen))
-		return FALSE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Label", message = "Enter a label for [name]", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/storage/pill_bottle/proc/label_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_label = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).
+/obj/item/storage/pill_bottle/proc/label_applied(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/user = A.actor
+	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN)
 	if(length(tmp_label) > 50)
 		to_chat(user, span_notice("The label can be at most 50 characters long."))
-	else if(length(tmp_label) > 10)
+		return OP_REFUSED
+	if(length(tmp_label) > 10)
 		to_chat(user, span_notice("You set the label."))
-		label_text = tmp_label
-		update_name_label()
 	else
 		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-		label_text = tmp_label
-		update_name_label()
+	label_text = tmp_label
+	update_name_label()
+	return OP_OK
 
 /obj/item/storage/pill_bottle/proc/update_name_label()
 	if(!label_text)
@@ -460,6 +458,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	icon_state = "pouch_small"
 
+CAPABILITIES(/obj/item/storage/mrebag/pill)
+	configure(storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY))
+
 /*
 /obj/item/storage/mrebag/pill/sleevingcure
 	name = "vacuum-sealed pill (" + REAGENT_SLEEVINGCURE + ")"
@@ -467,7 +468,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
 */
 
-TYPE_TABLE(/obj/item/storage/mrebag/pill, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/pill_bottle/paracetamol
 	name = "pill bottle (" + REAGENT_PARACETAMOL + ")"
@@ -598,42 +598,48 @@ TYPE_TABLE(/obj/item/storage/mrebag/pill, hold_spec, list(HOLD_ONLY(list(/obj/it
 
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/neotane, null, list(REAGENT_ID_NEOTANE = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/neotane)
+	configure(reagents(add = list(REAGENT_ID_NEOTANE = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/burncard
 	name = REAGENT_BURNCARD + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/burncard, null, list(REAGENT_ID_BURNCARD = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/burncard)
+	configure(reagents(add = list(REAGENT_ID_BURNCARD = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/flamecure
 	name = REAGENT_FLAMECURE + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/flamecure, null, list(REAGENT_ID_FLAMECURE = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/flamecure)
+	configure(reagents(add = list(REAGENT_ID_FLAMECURE = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/juggernog
 	name = REAGENT_JUGGERNOG + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/juggernog, null, list(REAGENT_ID_JUGGERNOG = 5))
+CAPABILITIES(/obj/item/reagent_containers/pill/juggernog)
+	configure(reagents(add = list(REAGENT_ID_JUGGERNOG = 5), tint = TRUE))
 
 /obj/item/reagent_containers/pill/curea
 	name = REAGENT_CUREA + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/curea, null, list(REAGENT_ID_CUREA = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/curea)
+	configure(reagents(add = list(REAGENT_ID_CUREA = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/souldew
 	name = REAGENT_SOULDEW + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/souldew, null, list(REAGENT_ID_SOULDEW = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/souldew)
+	configure(reagents(add = list(REAGENT_ID_SOULDEW = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/purifyingagent
 	name = REAGENT_PURIFYINGAGENT + " (10u)"
@@ -641,25 +647,29 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/souldew, null, list(RE
 	desc = "An expirmental pill."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/purifyingagent, null, list(REAGENT_ID_PURIFYINGAGENT = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/purifyingagent)
+	configure(reagents(add = list(REAGENT_ID_PURIFYINGAGENT = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/paroxetine
 	name = REAGENT_PAROXETINE + " (10u)"
 	desc = "A pill to help treat severe depression."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/paroxetine, null, list(REAGENT_ID_PAROXETINE = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/paroxetine)
+	configure(reagents(add = list(REAGENT_ID_PAROXETINE = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/adranol
 	name = REAGENT_ADRANOL + " (10u)"
 	desc = "A pill to help treat jitters, confusion, and blurred vision."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/adranol, null, list(REAGENT_ID_ADRANOL = 10))
+CAPABILITIES(/obj/item/reagent_containers/pill/adranol)
+	configure(reagents(add = list(REAGENT_ID_ADRANOL = 10), tint = TRUE))
 
 /obj/item/reagent_containers/pill/aphrodisiac
 	name = REAGENT_APHRODISIAC + " (20u)"
 	desc = "Just one couldn't hurt, right?"
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/aphrodisiac, null, list(REAGENT_ID_APHRODISIAC = 20))
+CAPABILITIES(/obj/item/reagent_containers/pill/aphrodisiac)
+	configure(reagents(add = list(REAGENT_ID_APHRODISIAC = 20), tint = TRUE))

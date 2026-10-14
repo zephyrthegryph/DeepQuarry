@@ -51,8 +51,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	icon_state = "cart"
 	item_state = "electronic"
 	w_class = ITEMSIZE_TINY
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 	var/obj/item/radio/integrated/radio = null
 
@@ -61,6 +59,10 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/stored_data = list() // ALLOW(instance_list): d: cartridge program data
 	var/list/programs
 	var/list/messenger_plugins
+
+CAPABILITIES(/obj/item/cartridge)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)
@@ -144,7 +146,8 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	desc = "A data cartridge with an integrated radio signaler module."
 	programs = list(new/datum/data/pda/app/signaller)
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/signal, "radio", /obj/item/radio/integrated/signal)
+CAPABILITIES(/obj/item/cartridge/signal)
+	owns_one(nameof(radio), starts = /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/signal/science
 	name = "\improper Signal Ace 2 cartridge"
@@ -228,7 +231,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/signal, "radio", /obj/item/radio/integ
 
 		new/datum/data/pda/app/status_display)
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrated/signal)
+CAPABILITIES(/obj/item/cartridge/rd)
+	owns_one(nameof(radio), starts = /obj/item/radio/integrated/signal)
 
 /obj/item/cartridge/captain
 	name = "\improper Value-PAK cartridge"
@@ -261,15 +265,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrate
 	programs = list(new/datum/data/pda/utility/toggle_door)
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/detonate)
 
-/obj/item/cartridge/syndicate/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/cartridge/syndicate)
+	after_init(0, then(PROC_REF(set_remote_door)))
+
+/obj/item/cartridge/syndicate/proc/set_remote_door(datum/act/timer/A)
 	var/datum/data/pda/utility/toggle_door/D = LAZYACCESS(programs, 1)
 	if(istype(D))
 		D.remote_door_id = initial_remote_door_id
 
 /obj/item/cartridge/proc/post_status(command, data1, data2)
 
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
 	if(!frequency) return
 
 	var/datum/signal/status_signal = new
@@ -299,7 +305,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrate
 	messenger_plugins = list(new/datum/data/pda/messenger_plugin/virus/frame)
 
 /obj/item/cartridge
-	slot_flags = SLOT_EARS
 
 /obj/item/cartridge/explorer
 	name = "\improper Explorator cartridge"
@@ -326,43 +331,42 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrate
 	var/slots = 1
 	var/obj/item/storage/internal/hold
 
-DECLARE_DEFAULT_CHILD(/obj/item/cartridge/storage, "hold", /obj/item/storage/internal)
+CAPABILITIES(/obj/item/cartridge/storage)
+	after_init(0, then(PROC_REF(size_hold)))
+	owns_one(nameof(hold), starts = /obj/item/storage/internal)
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), then(PROC_REF(interaction_store)))
+	op("hand", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 
-/obj/item/cartridge/storage/Initialize(mapload)
-	. = ..()
+/obj/item/cartridge/storage/proc/size_hold(datum/act/timer/A)
 	hold.max_storage_space = slots * 2
 
 
-DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
-	INTERACT_ITEM("Store", PROC_REF(interaction_store)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
 /// Old attack_hand.
-/obj/item/cartridge/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
-		return FALSE
-	return TRUE
+/obj/item/cartridge/storage/proc/interaction_hand(datum/act/op/A)
+	if (hold.handle_attack_hand(A.actor))	//otherwise interact as a regular storage item
+		return OP_DECLINE
+	return OP_OK
 
 
 /// Old attackby: put the item in the cartridge's storage.
-/obj/item/cartridge/storage/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
-	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
+/obj/item/cartridge/storage/proc/interaction_store(datum/act/op/A)
+	return hold.attackby(A.held, A.actor) ? OP_OK : OP_PASS
 
 /obj/item/cartridge/storage/MouseDrop(obj/over_object)
 	if (hold.handle_mousedrop(usr, over_object))
 		..(over_object)
 
 /// Old attack_self.
-/obj/item/cartridge/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cartridge/storage/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in contents_of(hold))
 		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/cartridge/storage/deluxe
 	name = "\improper BLU-PAK DELUXE cartridge"

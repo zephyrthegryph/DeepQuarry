@@ -27,10 +27,7 @@ use crate::mailbox::Latest;
 pub mod reason {
     /// A condition watch (Threshold, Band, Difference, ThresholdSet, All).
     pub const CONDITION: u32 = 1 << 20;
-    /// A timer fired.
-    pub const TIMER: u32 = 1 << 21;
-    /// A DM-owned key was published.
-    pub const KEY: u32 = 1 << 22;
+    // Bits 21 and 22 were the timer and DM-owned key classes: DM has neither in Rust any more.
     /// A rate model crossed a level.
     pub const RATE: u32 = 1 << 23;
     /// Every bit a reason may use.

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Tables, railings, cliffs, fences and 70 machines and structures now climb through the library climb() capability; the old climbable behaviour is gone"
+  - bugfix: "A climber standing on a flipped table now climbs out the side it faces, and everyone shaken off a structure falls, not only the first"

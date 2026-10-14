@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a helmet but it already has one")
 		else
 			magboots = new magboots_type(voidsuit)
-			own_set(voidsuit, nameof(voidsuit.boots), magboots)
+			rel_set(voidsuit, nameof(voidsuit.boots), magboots)
 
 	if(refit)
 		voidsuit.refit_for_species(user.species?.get_bodytype()) // does helmet and boots if they're attached
@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a suit cooler but it already has one")
 			else
 				var/obj/item/life_support = new /obj/item/suit_cooling_unit(voidsuit)
-				own_set(voidsuit, nameof(voidsuit.cooler), life_support)
+				rel_set(voidsuit, nameof(voidsuit.cooler), life_support)
 		else if(user.species?.breath_type)
 			if(voidsuit.tank)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a tank but it already has one")
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 				if(tankpath)
 					var/obj/item/life_support = new tankpath(voidsuit)
-					own_set(voidsuit, nameof(voidsuit.tank), life_support)
+					rel_set(voidsuit, nameof(voidsuit.tank), life_support)
 				else
 					voidsuit.audible_message("Dispenser warning: Unable to locate suitable airtank for user.")
 
@@ -153,13 +153,20 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/list/dispenses = list(/datum/gear_disp/trash) // put your gear datums here!
 	var/datum/gear_disp/one_setting
 	var/dispenser_flags = GD_NOGREED|GD_UNLIMITED
-	var/unique_dispense_list = list()
+	var/list/unique_dispense_list
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
-/obj/machinery/gear_dispenser/custom/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_warning("Your moral standards prevent you from emagging this machine!"))
-	return EMAG_DECLINED // Letting people emag this one would be bad times
+
+CAPABILITIES(/obj/machinery/gear_dispenser)
+	op("vv_admin_add", topic_in(VV_TOPIC, "admin_add"), needs(req_rights(R_DEBUG|R_FUN)), asks(/datum/prompt/text, fields = list("title" = "Admin-load Dispenser", "question" = "Paste new gear pack JSON below. See example/code comments.", "default" = computed(PROC_REF(gear_pack_example)), "multiline" = TRUE, "timeout" = 0)), then(PROC_REF(vv_topic_admin_add)))
+	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
+	owns_one(nameof(one_setting), /datum/gear_disp, starts = nameof(one_setting), starts_args = NO_LOC)
+	emag(then(PROC_REF(on_emag)))
+
+/obj/machinery/gear_dispenser/custom/on_emag(datum/act/op/A)
+	to_chat(A.actor, span_warning("Your moral standards prevent you from emagging this machine!"))
+	return OP_DECLINE // Letting people emag this one would be bad times
 
 /obj/machinery/gear_dispenser/Initialize(mapload)
 	. = ..()
@@ -169,58 +176,26 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	for(var/gear in dispenses)
 		var/datum/gear_disp/S = new gear
 		real_gear_list[S.name] = S
-	if(one_setting)
-		own_set(src, nameof(one_setting), new one_setting)
 	dispenses = real_gear_list
 
-/obj/machinery/gear_dispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/gear_dispenser_use,
-	)
-	..()
 
-/// The old attack_hand: never called ..(), picked and dispensed gear.
-/datum/interaction/machine_hand/ungated/gear_dispenser_use
-	id = "gear_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/gear_dispenser/proc/interaction_use
 
-/obj/machinery/gear_dispenser/proc/interaction_use(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(!can_use(user))
-		return TRUE
-	dispenser_flags |= GD_BUSY
-	if(!(dispenser_flags & GD_ONEITEM))
-		var/list/gear_list = get_gear_list(user)
-
-		if(!LAZYLEN(gear_list))
-			to_chat(user, span_warning("\The [src] doesn't have anything to dispense for you!"))
-			dispenser_flags &= ~GD_BUSY
-			return TRUE
-
-		om_ask(user, /datum/om/prompt/choice/gear_dispense, PROC_REF(gear_chosen), choices = gear_list)
-	else
-		dispense(one_setting,user)
-	return TRUE
+/obj/machinery/gear_dispenser/proc/interaction_use(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(dispenser_flags & GD_ONEITEM)
+		if(can_use(user))
+			set_dispenser_flags(dispenser_flags | GD_BUSY)
+			dispense(one_setting, user)
+	else if(A.answer)
+		var/datum/prompt/choice/gear_dispenser/R = A.answer
+		set_dispenser_flags(dispenser_flags | GD_BUSY)
+		dispense(R.choices[R.value], user)
+	return OP_OK
 
 /// The dispenser is busy while the list is open; a cancel or a failed re-check frees it.
-/datum/om/prompt/choice/gear_dispense
-	title = "Equipment Dispenser"
-	message = "Select equipment to dispense."
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/choice/gear_dispense/cancelled()
-	var/obj/machinery/gear_dispenser/D = subject
-	D?.dispense_cancelled()
-
-/datum/om/prompt/choice/gear_dispense/refused(reason)
-	var/obj/machinery/gear_dispenser/D = subject
-	D?.dispense_cancelled()
-
 /obj/machinery/gear_dispenser/proc/dispense_cancelled()
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
-/obj/machinery/gear_dispenser/proc/gear_chosen(datum/om/prompt/choice/gear_dispense/ask)
-	dispense(ask.choices[ask.choice], ask.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -236,7 +211,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if((dispenser_flags & GD_ONEITEM) && !(dispenser_flags & GD_UNLIMITED) && !one_setting.amount)
 		to_chat(user,span_warning("There's nothing in here!"))
 		return 0
-	if (!emagged)
+	if (!emagged())
 		if ((dispenser_flags & GD_NOGREED) && (user.ckey in used_by))
 			to_chat(user,span_warning("You've already picked up your gear!"))
 			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
@@ -258,7 +233,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		return 0
 
 /obj/machinery/gear_dispenser/proc/get_gear_list(mob/living/carbon/human/user)
-	if(emagged)
+	if(emagged())
 		return dispenses
 
 	var/list/choices = list()
@@ -271,28 +246,28 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /obj/machinery/gear_dispenser/proc/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
-	if((dispenser_flags & GD_NOGREED) && !emagged)
+	if((dispenser_flags & GD_NOGREED) && !emagged())
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
-	if((dispenser_flags & GD_UNIQUE) && !emagged)
-		unique_dispense_list |= user.ckey
+	if((dispenser_flags & GD_UNIQUE) && !emagged())
+		LAZYOR(unique_dispense_list, user.ckey)
 
 	animate_dispensing()
-	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet), keeps_dead = TRUE)
 
 /// The dispensing animation is over: hand the gear out.
 /obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 	var/turf/T = get_turf(src)
 	if(!(S && T)) // in case we got destroyed while we slept
 		return 1
 
 	S.spawn_gear(T, user)
 
-	if(emagged)
+	if(emagged())
 		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
@@ -303,18 +278,17 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /obj/machinery/gear_dispenser/proc/animate_dispensing()
 	flick("[icon_state]-scan",src)
 	visible_message("\The [src] scans its user.", runemessage = "hums")
-	om_after(src, 3 SECONDS, PROC_REF(animate_dispensing_flick))
+	after(src, 3 SECONDS, PROC_REF(animate_dispensing_flick))
 
 /obj/machinery/gear_dispenser/proc/animate_dispensing_flick()
 	flick("[icon_state]-dispense",src)
-	dispenser_flags |= GD_BUSY
+	set_dispenser_flags(dispenser_flags | GD_BUSY)
 
-DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null, null)
-/obj/machinery/gear_dispenser/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/gear_dispenser/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
-	act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
+	act_message(A.actor, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \
 		blind = span_warning("You temporarily short the safety mechanisms."))
-	return 1
+	return OP_OK
 
 // Just a different sprite
 /obj/machinery/gear_dispenser/suit
@@ -338,42 +312,32 @@ DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null, null)
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(door), add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
-	icon_state = "suit_storage"
-	if(special_frame)
-		add_overlay(special_frame)
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/gear_dispenser/suit_fancy/appearance_overlays()
-	. = list()
+/obj/machinery/gear_dispenser/suit_fancy/draw(datum/look/look)
+	..()
+	look.state("suit_storage") // the map sprite is suit_storage_map
 
 	if(special_frame)
-		. += special_frame
+		look.overlay(special_frame)
 
 	if(needs_power && !operable())
-		. += "nopower"
+		look.overlay("nopower")
 	else
-		. += "light1"
+		look.overlay("light1")
 
 	if(held_gear_disp())
-		. += "fullsuit"
+		look.overlay("fullsuit")
 		if(operable())
-			. += "light2"
+			look.overlay("light2")
 
-/obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take,
-	)
-	..()
+CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
+	op("take", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Take"), then(PROC_REF(interaction_take)))
+	ref_one(nameof(door), /obj/effect/overlay/vis)
+	ref_one(nameof(held_gear_disp), /datum/gear_disp)
 
-/// The old attack_hand: took the held gear if any, else fell through to ..() (the base gear_dispenser use).
-/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take
-	id = "gear_dispenser_suit_fancy_take"
-	name = "Take"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take
-
-/obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if(held_gear_disp())
 		var/turf/T = get_turf(user)
 		var/list/spawned = held_gear_disp().spawn_gear(T, user)
@@ -383,44 +347,44 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 		rel_clear(src, nameof(held_gear_disp))
 		animate_close()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
-	if((dispenser_flags & GD_NOGREED) && !emagged)
+	if((dispenser_flags & GD_NOGREED) && !emagged())
 		GLOB.gear_distributed_to["[type]"] |= user.ckey
-	if((dispenser_flags & GD_UNIQUE) && !emagged)
-		unique_dispense_list |= user.ckey
+	if((dispenser_flags & GD_UNIQUE) && !emagged())
+		LAZYOR(unique_dispense_list, user.ckey)
 
 	rel_set(src, nameof(held_gear_disp), S)
 
 	animate_dispensing()
-	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet), keeps_dead = TRUE)
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
-	if(emagged)
+	if(emagged())
 		set_emagged(FALSE)
-	if(greet && user && !user.stat) // in case we got destroyed while we slept
+	if(greet && S && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_anim_time = 60.5
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing()
 	add_overlay("working")
-	om_after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
+	after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing_flick()
 	add_overlay("fullsuit")
 	door.icon_state = "open"
 	flick("anim_open", door)
-	om_after(src, 10.5, PROC_REF(animate_dispensing_lit))
+	after(src, 1.05 SECONDS, PROC_REF(animate_dispensing_lit))
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/animate_dispensing_lit()
 	add_overlay("light2")
@@ -688,40 +652,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 	VV_DROPDOWN_OPTION("", "---")
 	VV_DROPDOWN_OPTION("admin_add", "Add New Gear")
 
-VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_admin_add))
 
-/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(mob/user, list/args)
-	admin_add()
-	user.client?.debug_variables(src)
-	return TRUE
+/obj/machinery/gear_dispenser/proc/vv_topic_admin_add(datum/act/op/A)
+	gear_pack_load(A.actor, A.answer?.value)
+	A.actor.client?.debug_variables(src)
+	return OP_OK
 
-/obj/machinery/gear_dispenser/proc/admin_add()
-	if(!check_rights(R_DEBUG|R_FUN))
+/obj/machinery/gear_dispenser/proc/gear_pack_load(mob/user, input)
+	if(isnull(input))
 		return
-
-	var/example = @{"[
-	{
-		"menuoption": "Cool suit one",
-		"gearlist": ["/obj/item/clothing/suit/space", "/obj/item/clothing/head/helmet/space"],
-		"req_one_access": [5,63]
-	},
-	{
-		"menuoption": "Selection two",
-		"gearlist": ["/obj/random/trash"]
-	}
-]"}
-
-	/**
-	 * Needs to be valid json with keys of:
-	 * "menuoption" = string for the name
-	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
-	 * "req_one_access" = array of numbers (accesses)
-	 */
-	om_ask(usr, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
-
-/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/input = ask.text
 
 	var/list/parsed = json_decode(input)
 
@@ -900,10 +839,20 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 		)
 	var/chance_to_delete = 0
 
-/obj/machinery/gear_dispenser/adventure_box/Initialize(mapload)
-	. = ..()
-	if(prob(chance_to_delete))
-		return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/machinery/gear_dispenser/adventure_box)
+	rolls(nameof(discarded), PROC_REF(roll_discarded))
+	after_init(0, then(PROC_REF(discard_rolled)))
+
+/// Rolled at creation: this box is not placed after all (chance_to_delete percent).
+/obj/machinery/gear_dispenser/adventure_box/var/discarded = FALSE
+
+/// Rolled before init (rolls()): whether this box is one of those removed.
+/obj/machinery/gear_dispenser/adventure_box/proc/roll_discarded(datum/roller/R)
+	return R.chance(chance_to_delete)
+
+/obj/machinery/gear_dispenser/adventure_box/proc/discard_rolled(datum/act/A)
+	if(discarded)
+		spent(src)
 
 /datum/gear_disp/adventure_box/medical
 	name = "Medkit"
@@ -972,6 +921,42 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 		/datum/gear_disp/adventure_box/weapon
 		)
 
+/obj/machinery/gear_dispenser/proc/gear_has_selection(datum/act/op/A)
+	return !(dispenser_flags & GD_ONEITEM)
+
+/// The prompt owns the dispenser's temporary busy state; every end path dismisses it.
+/datum/prompt/choice/gear_dispenser
+	var/selection_ready = FALSE
+	var/obj/machinery/gear_dispenser/dispenser
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/choice/gear_dispenser)
+	ref_one(nameof(dispenser), /obj/machinery/gear_dispenser)
+
+/datum/prompt/choice/gear_dispenser/prepare(datum/act/A)
+	..()
+	var/obj/machinery/gear_dispenser/D = A?.holder
+	if(!istype(D) || !D.can_use(answerer))
+		return
+	rel_set(src, nameof(dispenser), D)
+	choices = D.get_gear_list(answerer)
+	if(!length(choices))
+		to_chat(answerer, span_warning("\The [D] doesn't have anything to dispense for you!"))
+		return
+	D.set_dispenser_flags(D.dispenser_flags | GD_BUSY)
+	selection_ready = TRUE
+
+/datum/prompt/choice/gear_dispenser/recheck_extra()
+	if(!selection_ready)
+		return "no equipment selection is available"
+	return null
+
+/datum/prompt/choice/gear_dispenser/dismiss()
+	var/obj/machinery/gear_dispenser/D = dispenser
+	if(selection_ready && istype(D))
+		D.dispense_cancelled()
+	..()
+
 #undef GD_BUSY
 #undef GD_ONEITEM
 #undef GD_NOGREED
@@ -982,3 +967,16 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 /// held gear disp (a relation view: it reads null once the target is deleted).
 /obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp
 	return held_gear_disp
+
+/obj/machinery/gear_dispenser/proc/gear_pack_example(datum/act/op/A)
+	return @{"[
+	{
+		"menuoption": "Cool suit one",
+		"gearlist": ["/obj/item/clothing/suit/space", "/obj/item/clothing/head/helmet/space"],
+		"req_one_access": [5,63]
+	},
+	{
+		"menuoption": "Selection two",
+		"gearlist": ["/obj/random/trash"]
+	}
+]"}

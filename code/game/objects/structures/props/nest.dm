@@ -20,43 +20,36 @@
 	var/tally = 0				//The counter referenced against total_creature_max, or just to see how many mobs it has spawned.
 	var/total_creature_max	//If set, it can spawn this many creatures, total, ever.
 
+/obj/structure/prop/nest/proximity_tracked = TRUE
+
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
-	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
-		var/delayshift_clamp = spawn_delay / 10
-		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
-		spawn_delay += delayshift
 
-DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
+/// Rolled before init (rolls()): not the biggest shift in spawn time, up to a tenth either way.
+/obj/structure/prop/nest/proc/roll_spawn_delay(datum/roller/R)
+	var/shift = spawn_delay / 10
+	return spawn_delay + R.number(-shift, shift)
 
-// The original attack_hand called ..() (prop's message) unconditionally, then always
-// continued below, so interaction_disturb() shows the message itself instead of also
-// offering prop_hand (which would tie with it and open the Menu).
-/obj/structure/prop/nest/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/nest_disturb,
-	)
-	..()
-	into -= /datum/interaction/entry_hand/prop_hand
+CAPABILITIES(/obj/structure/prop/nest)
+	rolls(nameof(spawn_delay), PROC_REF(roll_spawn_delay), when = nameof(randomize_spawning))
+	every(2 SECONDS, then(PROC_REF(nest_step)), when = STAT_RELEVANCE)
+	without("message")   // the disturbance shows the message itself
+	op("disturb", hand(), label("Use"), then(PROC_REF(interaction_disturb)))
 
+// The original attack_hand called ..() (prop's message) unconditionally, then always continued below, so interaction_disturb() shows the message
+// itself and the nest drops the prop's own message op.
 /// Old attack_hand: disturbing the nest may spawn a creature.
-/datum/interaction/entry_hand/nest_disturb
-	id = "nest_disturb"
-	name = "Use"
-	effect = /obj/structure/prop/nest/proc/interaction_disturb
-
-/obj/structure/prop/nest/proc/interaction_disturb(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/prop/nest/proc/interaction_disturb(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(interaction_message)
 		to_chat(user, interaction_message)
 	if(user && prob(disturbance_spawn_chance))
 		spawn_creature(get_turf(src))
-	return TRUE
+	return OP_OK
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/prop/nest/periodic_step()
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/structure/prop/nest/proc/nest_step(datum/act/timer/A)
 	update_creatures()
 	if(COOLDOWN_FINISHED(src, spawn_cooldown))
 		spawn_creature(get_turf(src))

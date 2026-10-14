@@ -11,7 +11,7 @@
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
-		own_set(nif(), nameof(/mob/living/voice::comm), new /obj/item/communicator/commlink(nif(),src))
+		rel_set(nif(), nameof(/mob/living/voice::comm), new /obj/item/communicator/commlink(nif(),src))
 		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
 			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
 
@@ -24,14 +24,15 @@
 	if((. = ..()))
 		nif().comm.initialize_exonet(nif().human)
 		nif().comm.tgui_interact(nif().human, custom_state = GLOB.tgui_commlink_state)
-		om_after(src, 0, PROC_REF(deactivate))
+		after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/commlink/stat_text()
 	return "Show Commlink"
 
-TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
+CAPABILITIES(/datum/nifsoft/commlink)
+	op("open", topic("open"), then(PROC_REF(topic_open)))
 
-/datum/nifsoft/commlink/proc/topic_open(mob/user, list/args)
+/datum/nifsoft/commlink/proc/topic_open(datum/act/op/A)
 	activate()
 	return TRUE
 
@@ -42,16 +43,15 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 	var/obj/item/nif/nif
 	var/tmp/datum/nifsoft/commlink/nifsoft
 
-/obj/item/communicator/commlink/Initialize(mapload, soft)
-	. = ..()
+CAPABILITIES(/obj/item/communicator/commlink)
+	param(nameof(nifsoft), pos = 1, apply = PROC_REF(join_nif))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The commlink belongs to the NIF it is made in.
+/obj/item/communicator/commlink/proc/join_nif(soft)
 	rel_set(src, nameof(nif), loc)
-	rel_set(src, nameof(nifsoft), soft)
 
 // The NIF creates and owns its commlink (in its contents, deleted with it); the commlink's `nif`
 // is a plain back relation.
-/obj/item/nif/ownership()
-	. = ..()
-	. += owns(nameof(comm), policy = OWN_DELETE)
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name
@@ -105,7 +105,7 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 	if(!who)
 		return
 
-	LAZYOR(voice_requests, candidate)
+	rel_add(src, nameof(voice_requests), candidate)
 
 	if(ringer && nif.human)
 		nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>)")

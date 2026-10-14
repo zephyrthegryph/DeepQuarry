@@ -3,9 +3,9 @@
 	return get_gas_mixture_default_scan_data(location?.return_air())
 
 // Proc - compile_news()
-// Parameters - none
+// Parameters - user: the newsfeed viewer receiving attached images
 // Description - Returns the list of newsfeeds, compiled for template processing
-/obj/item/communicator/proc/compile_news()
+/obj/item/communicator/proc/compile_news(mob/user)
 	var/list/feeds = list()
 	for(var/datum/feed_channel/channel in GLOB.news_network.network_channels)
 		var/list/messages = list()
@@ -14,7 +14,7 @@
 			for(var/datum/feed_message/FM in channel.messages)
 				index++
 				if(FM.img)
-					usr << browse_rsc(FM.img, "pda_news_tmp_photo_[feeds["channel"]]_[index].png")
+					user << browse_rsc(FM.img, "pda_news_tmp_photo_[feeds["channel"]]_[index].png")
 				// News stories are HTML-stripped but require newline replacement to be properly displayed in NanoUI
 				var/body = replacetext(FM.body, "\n", "<br>")
 				messages[++messages.len] = list(
@@ -313,7 +313,7 @@
 
 	for(var/obj/item/gps/G in internal_devices)
 		var/gpsdata[0]
-		if(G.tracking && !EXPIRY_ACTIVE(G, emp_until, CLOCK_WORLD))
+		if(G.tracking && !emp_disabled(G))
 			cumulative.set_tracking(TRUE) // Turn it on
 			if(G.long_range)
 				cumulative.long_range = TRUE // It can detect long-range
@@ -377,7 +377,7 @@
 
 	extgps = gps_list // Compiled by the GPS
 
-	qdel(cumulative) // Don't want spare GPS units building up in the contents
+	spent(cumulative) // Don't want spare GPS units building up in the contents
 
 	return list(
 			intgps,
@@ -390,7 +390,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 55
 /obj/item/commcard/proc/get_supply_shuttle_status()
 	var/list/shuttle_status = list()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 
 	if(shuttle)
 		if(shuttle.has_arrive_time())
@@ -451,7 +451,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 130
 /obj/item/commcard/proc/get_supply_orders()
 	var/orders[0]
-	for(var/datum/supply_order/S in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/S in supply_order_history())
 		orders[++orders.len] = list(
 				"ref" = "\ref[S]",
 				"status" = S.status,
@@ -474,7 +474,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_receipts()
 	var/receipts[0]
-	for(var/datum/exported_crate/E in GLOB.supply_service.exported_crates)
+	for(var/datum/exported_crate/E in supply_exported_crates())
 		receipts[++receipts.len] = list(
 				"ref" = "\ref[E]",
 				"contents" = E.contents,
@@ -492,8 +492,8 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_pack_list()
 	var/supply_packs[0]
-	for(var/pack_name in GLOB.supply_service.supply_pack)
-		var/datum/supply_pack/P = GLOB.supply_service.supply_pack[pack_name]
+	for(var/pack_name in supply_supply_pack())
+		var/datum/supply_pack/P = supply_supply_pack()[pack_name]
 		if(P.group == internal_data["supply_category"])
 			var/list/pack = list(
 					"name" = P.name,
@@ -518,7 +518,7 @@
 	return list(
 			"shuttle_auth" = (internal_data["supply_controls"] & SUP_SEND_SHUTTLE),
 			"order_auth" = (internal_data["supply_controls"] & SUP_ACCEPT_ORDERS),
-			"supply_points" = GLOB.supply_service.budget_balance(),
+			"supply_points" = SSsupply.budget_balance(),
 			"supply_categories" = GLOB.all_supply_groups
 		)
 

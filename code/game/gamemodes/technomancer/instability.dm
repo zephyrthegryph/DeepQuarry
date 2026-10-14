@@ -30,51 +30,52 @@
 // Description: Sets the HUD icon to the correct state.
 /mob/living/carbon/human/proc/instability_update_hud()
 	if(client && hud_used)
+		if(!hud_used.wiz_instability_display)
+			if(!instability)
+				return // no meter until there is something to show
+			instability_hud_make()
 		switch(instability)
 			if(0 to 10)
-				wiz_instability_display.icon_state = "instability-1"
+				hud_used?.wiz_instability_display?.icon_state = "instability-1"
 			if(10 to 30)
-				wiz_instability_display.icon_state = "instability0"
+				hud_used?.wiz_instability_display?.icon_state = "instability0"
 			if(30 to 50)
-				wiz_instability_display.icon_state = "instability1"
+				hud_used?.wiz_instability_display?.icon_state = "instability1"
 			if(50 to 100)
-				wiz_instability_display.icon_state = "instability2"
+				hud_used?.wiz_instability_display?.icon_state = "instability2"
 			if(100 to 200)
-				wiz_instability_display.icon_state = "instability3"
+				hud_used?.wiz_instability_display?.icon_state = "instability3"
+
+/// The instability meter on the HUD, made the first time this mob has instability (the human HUD does not start with one).
+/mob/living/carbon/human/proc/instability_hud_make()
+	var/atom/movable/screen/wizard/instability/meter = new()
+	meter.screen_loc = ui_wiz_instability_display
+	rel_set(hud_used, nameof(/datum/hud::wiz_instability_display), meter)
+	client?.screen |= meter
 
 // Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.
-/datum/om/stage/life/instability
-	reads = list("instability")
-	order = LIFE_PHASE_INPUT + 30
-	name = "instability"
-	life_sets = LIFE_SET_LIVING | LIFE_SET_ROBOT
-	woken_by = "adjust_instability()"
-
 /// Continuous while there is instability to decay.
-/datum/om/stage/life/instability/idle(mob/living/self)
-	return !self.instability
+/mob/living/proc/life_instability_due()
+	return src.instability
 
-/datum/om/stage/life/instability/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.set_instability(between(0, round(self.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200))
-	self.last_instability = self.instability
+/mob/living/proc/life_instability(datum/seq_frame/life/F)
+	src.set_instability(between(0, round(src.instability, TECHNOMANCER_INSTABILITY_PRECISION), 200))
+	src.last_instability = src.instability
 
 	//This should cushon against really bad luck.
-	if(self.instability && ELAPSED(self, last_instability_event, CLOCK_WORLD) > 5 SECONDS && prob(50))
-		self.instability_effects()
+	if(src.instability && ELAPSED(src, last_instability_event, CLOCK_WORLD) > 5 SECONDS && prob(50))
+		src.instability_effects()
 
-	var/instability_decayed = abs( round(self.instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - self.instability )
+	var/instability_decayed = abs( round(src.instability * TECHNOMANCER_INSTABILITY_DECAY, TECHNOMANCER_INSTABILITY_PRECISION) - src.instability )
 	instability_decayed = max(instability_decayed, TECHNOMANCER_INSTABILITY_MIN_DECAY)
 
-	self.adjust_instability(-instability_decayed)
-	self.radiate_instability(instability_decayed)
+	src.adjust_instability(-instability_decayed)
+	src.radiate_instability(instability_decayed)
 
-/datum/om/stage/life/instability/carbon/human
-	of = /mob/living/carbon/human
-
-/datum/om/stage/life/instability/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
+/mob/living/carbon/human/life_instability(datum/seq_frame/life/F)
 	..()
-	self.instability_update_hud()
+	src.instability_update_hud()
 
 /*
 [16:18:08] <PsiOmegaDelta> Sparks
@@ -93,11 +94,11 @@
 	EXPIRY_STAMP(src, last_instability_event, CLOCK_WORLD)
 	var/image/instability_flash = image('icons/obj/spells.dmi',"instability")
 	add_overlay(instability_flash)
-	om_after(src, 4, PROC_REF(instability_flash_clear), instability_flash)
+	after(src, 0.4 SECONDS, PROC_REF(instability_flash_clear), with = list(instability_flash))
 
 /mob/living/proc/instability_flash_clear(image/instability_flash)
 	cut_overlay(instability_flash)
-	qdel(instability_flash)
+	lapsed(instability_flash)
 
 /mob/living/silicon/instability_effects()
 	if(instability)
@@ -237,8 +238,8 @@
 					if(1)
 						act_message(src, null, MSG_SELF(span_danger("You suddenly feel very light-headed, and faint!")), \
 							MSG_OTHERS(span_warning("%U% suddenly collapses!")))
-						status_at_least(EFFECT_PARALYZED, instability * 0.1)
-						status_at_least(EFFECT_SLEEPING, instability * 0.1)
+						status_at_least(STAT_PARALYZED, instability * 0.1)
+						status_at_least(STAT_SLEEPING, instability * 0.1)
 					if(2)
 						if(can_feel_pain())
 							apply_effect(instability, AGONY)

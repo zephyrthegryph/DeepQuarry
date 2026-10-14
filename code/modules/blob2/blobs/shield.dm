@@ -11,18 +11,13 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/shield, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/blob/shield/appearance_overlays()
-	. = list()
-	. += ..()
-	if(get_integrity() <= 75)
-		icon_state = "blob_shield_damaged"
-		desc = "A wall of twitching tendrils."
+/obj/structure/blob/shield/look_parts(datum/look/look)
+	..()
+	var/desc_shown
+	if(get_integrity_damage() >= max_integrity - 75)
+		look.state("blob_shield_damaged")
+		desc_shown = "A wall of twitching tendrils."
 	else
-		icon_state = initial(icon_state)
-		desc = initial(desc)
-
-	if(overmind)
-		name = "[base_name] [overmind.blob_type.name]"
-	else
-		name = "inert [base_name] blob"
+		look.state(initial(icon_state))
+		desc_shown = initial(desc)
+	look.identity(name = look_title ? "[base_name] [look_title]" : "inert [base_name] blob", desc = desc_shown)

@@ -47,9 +47,9 @@
 	var/now = world.time
 	var/elapsed_seconds = material_last_exposure ? clamp((now - material_last_exposure) / 10, 0, 30) : 0
 	material_last_exposure = now
-	material_service?.schedule(0)
+	material_service_of(src)?.schedule(0)
 	var/active = FALSE
-	material_liner_integrity = material_environment_liner_integrity
+	material_liner_integrity = material_assembly_view(src).liner_integrity
 	if(QDELETED(src))
 		return FALSE
 	var/datum/material/material = material_for_role(MATERIAL_ROLE_LINER) || engineered_material()
@@ -102,16 +102,21 @@
 	if(node2)
 		node2.update_underlays()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/simple/appearance_overlays()
-	. = list()
-	alpha = 255
+/obj/machinery/atmospherics/pipe/simple/draw(datum/look/look)
+	..()
+	look.set_alpha(255)
+	draw_pipe(look)
 
-
+/// Its pipe sprite: intact, or exposed at the ends with no neighbour (a universal adapter draws its own).
+/obj/machinery/atmospherics/pipe/simple/proc/draw_pipe(datum/look/look)
 	if(node1 && node2)
-		. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]intact[icon_connect_type]")
+		look.overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]intact[icon_connect_type]"))
 	else
-		. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]exposed[node1?1:0][node2?1:0][icon_connect_type]")
+		look.overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "[pipe_icon]exposed[node1?1:0][node2?1:0][icon_connect_type]"))
+
+/obj/machinery/atmospherics/pipe/simple/derived()
+	. = ..()
+	. += drawn_from(nameof(pipe_color), nameof(icon_connect_type))
 
 /obj/machinery/atmospherics/pipe/simple/update_underlays()
 	return
@@ -138,12 +143,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/
 			break
 
 	if(!node1 && !node2)
-		qdel(src)
+		spent(src)
 		return
 
 	var/turf/T = loc
 	if(level == 1 && !T.is_plating()) hide(1)
-	update_icon()
 	handle_leaking()
 
 /obj/machinery/atmospherics/pipe/simple/disconnect(obj/machinery/atmospherics/reference)
@@ -157,7 +161,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node2))
 
-	update_icon()
 	handle_leaking()
 
 	return null

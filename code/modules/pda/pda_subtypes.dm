@@ -43,8 +43,11 @@
 	default_cartridge = /obj/item/cartridge/mime
 	icon_state = "pda-mime"
 
-/obj/item/pda/mime/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/pda/mime)
+	after_init(0, then(PROC_REF(silence_messenger)))
+
+/// Mimes keep their messenger silent.
+/obj/item/pda/proc/silence_messenger(datum/act/timer/A)
 	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
 	if(M)
 		M.notify_silent = TRUE
@@ -126,11 +129,8 @@
 	desc = "A portable microcomputer by Thinktronic Systems, LTD. This is model is a WGW-11 series e-reader."
 	model_name = "Thinktronic 5290 WGW-11 Series E-reader and Personal Data Assistant"
 
-/obj/item/pda/librarian/Initialize(mapload)
-	. = ..()
-	var/datum/data/pda/app/M = find_program(/datum/data/pda/app/messenger)
-	if(M)
-		M.notify_silent = TRUE //Quiet in the library!
+CAPABILITIES(/obj/item/pda/librarian)
+	after_init(0, then(PROC_REF(silence_messenger))) // Quiet in the library!
 
 /obj/item/pda/clear
 	icon_state = "pda-transp"
@@ -169,47 +169,47 @@
 	)
 	var/list/cartridges_to_send_to
 
-/obj/item/pda/multicaster/command/Initialize(mapload)
-	. = ..()
-	owner = "Command Department"
+/obj/item/pda/multicaster/command/on_materialize()
+	set_owner("Command Department")
 	name = "Command Department (Relay)"
 	cartridges_to_send_to = GLOB.command_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/security/Initialize(mapload)
-	. = ..()
-	owner = "Security Department"
+/obj/item/pda/multicaster/security/on_materialize()
+	set_owner("Security Department")
 	name = "Security Department (Relay)"
 	cartridges_to_send_to = GLOB.security_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/engineering/Initialize(mapload)
-	. = ..()
-	owner = "Engineering Department"
+/obj/item/pda/multicaster/engineering/on_materialize()
+	set_owner("Engineering Department")
 	name = "Engineering Department (Relay)"
 	cartridges_to_send_to = GLOB.engineering_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/medical/Initialize(mapload)
-	. = ..()
-	owner = "Medical Department"
+/obj/item/pda/multicaster/medical/on_materialize()
+	set_owner("Medical Department")
 	name = "Medical Department (Relay)"
 	cartridges_to_send_to = GLOB.medical_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/research/Initialize(mapload)
-	. = ..()
-	owner = "Research Department"
+/obj/item/pda/multicaster/research/on_materialize()
+	set_owner("Research Department")
 	name = "Research Department (Relay)"
 	cartridges_to_send_to = GLOB.research_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/cargo/Initialize(mapload)
-	. = ..()
-	owner = "Cargo Department"
+/obj/item/pda/multicaster/cargo/on_materialize()
+	set_owner("Cargo Department")
 	name = "Cargo Department (Relay)"
 	cartridges_to_send_to = GLOB.cargo_cartridges
+	return ..()
 
-/obj/item/pda/multicaster/civilian/Initialize(mapload)
-	. = ..()
-	owner = "Civilian Services Department"
+/obj/item/pda/multicaster/civilian/on_materialize()
+	set_owner("Civilian Services Department")
 	name = "Civilian Services Department (Relay)"
 	cartridges_to_send_to = GLOB.civilian_cartridges
+	return ..()
 
 /obj/item/pda/clown/Crossed(atom/movable/AM) //Clown PDA is slippery.
 	if(AM.is_incorporeal())
@@ -228,17 +228,3 @@
 	icon = 'icons/obj/pda.dmi'
 	icon_state = "pdabox"
 
-/obj/item/storage/box/PDAs/Initialize(mapload)
-	. = ..()
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/cartridge/head(src)
-
-	var/newcart = pick(	/obj/item/cartridge/engineering,
-						/obj/item/cartridge/security,
-						/obj/item/cartridge/medical,
-						/obj/item/cartridge/signal/science,
-						/obj/item/cartridge/quartermaster)
-	new newcart(src)

@@ -8,7 +8,7 @@
 		return
 
 	if(!adult_form)
-		om_grant(src, GRANT_VERB_HIDE, /mob/living/carbon/alien/verb/evolve, src) // nothing to evolve into
+		grant(src, granted_verb(/mob/living/carbon/alien/verb/evolve, hidden = TRUE), src) // nothing to evolve into
 		return
 
 	if(get_equipped_item(SLOT_ID_HANDCUFFED) || get_equipped_item(SLOT_ID_LEGCUFFED))
@@ -44,7 +44,7 @@
 			var/fallback = "[src.adult_name] ([instance_num])"
 			adult.fully_replace_character_name(name, fallback)
 			// The answer runs on the adult (src is deleted below), so the receiver is passed explicitly.
-			om_ask(adult, /datum/om/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen), receiver = adult, title = "Adult Name", message = "You have become an adult. Choose a name for yourself.", max_length = MAX_NAME_LEN)
+			open_request(adult, /datum/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen), answerer = adult, title = "Adult Name", question = "You have become an adult. Choose a name for yourself.", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
 	for (var/obj/item/W in contents_of(src))
 		src.drop_from_inventory(W)
@@ -52,7 +52,7 @@
 	for(var/datum/language/L in languages)
 		adult.add_language(L.name)
 
-	qdel(src)
+	replaced_by(src, adult)
 
 /mob/living/carbon/alien/proc/update_progression()
 	if(amount_grown < max_grown)
@@ -62,9 +62,12 @@
 /mob/living/carbon/alien/proc/confirm_evolution()
 	return
 
-/mob/living/carbon/human/proc/adult_name_chosen(datum/om/prompt/text/ask)
-	if(ask.text)
-		fully_replace_character_name(real_name, ask.text)
+/mob/living/carbon/human/proc/adult_name_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = A.answer.value
+	if(new_name)
+		fully_replace_character_name(real_name, new_name)
 
 /mob/living/carbon/alien/proc/show_evolution_blurb()
 	return

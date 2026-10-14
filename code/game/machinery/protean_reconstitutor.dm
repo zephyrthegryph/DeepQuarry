@@ -7,10 +7,7 @@
 	var/state_base = "recon"
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 1000
 	var/processing_revive = FALSE
 	clicksound = SFX_MACHINES_BUTTONBEEP	//standard initialization sound
 	var/dingsound = SFX_MACHINES_KITCHEN_MICROWAVE_MICROWAVE_END	//sound to play when the process is complete
@@ -49,8 +46,9 @@
 	gen[circuit] = 1
 	return gen
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with before the parent init reads them
 /obj/machinery/protean_reconstitutor/Initialize(mapload)
-	own_take_all(src, nameof(component_parts))
+	rel_take_all(src, nameof(component_parts))
 	RefreshParts()
 	. = ..()
 
@@ -78,7 +76,9 @@
 /obj/machinery/protean_reconstitutor/proc/appearance_suffix()
 	if(appearance_live())
 		return ""
-	return has_stat(BROKEN) ? "-broken" : "-nopower"
+	return broken_now() ? "-broken" : "-nopower"
+
+TRACKED(/obj/machinery/protean_reconstitutor, processing_revive)
 
 /obj/machinery/protean_reconstitutor/proc/appearance_brain()
 	return (appearance_live() && protean_brain) ? 1 : 0
@@ -92,11 +92,18 @@
 /obj/machinery/protean_reconstitutor/proc/appearance_tank_full()
 	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/protean_reconstitutor, "{state_base}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_brain", list("1" = list(APPEARANCE_OVERLAYS = list("recon-brain"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_orchestrator", list("1" = list(APPEARANCE_OVERLAYS = list("recon-orchestrator"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_refactory", list("1" = list(APPEARANCE_OVERLAYS = list("recon-refactory"))))
-DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full", list("1" = list(APPEARANCE_OVERLAYS = list("recon-tank_full"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/protean_reconstitutor/draw(datum/look/look)
+	..()
+	look.state("[state_base][appearance_suffix()]")
+	if(appearance_brain() == 1)
+		look.overlay("recon-brain")
+	if(appearance_orchestrator() == 1)
+		look.overlay("recon-orchestrator")
+	if(appearance_refactory() == 1)
+		look.overlay("recon-refactory")
+	if(appearance_tank_full() == 1)
+		look.overlay("recon-tank_full")
 
 /obj/machinery/protean_reconstitutor/examine()
 	. = ..()
@@ -110,124 +117,120 @@ DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full",
 			. += span_warning("The positronic brain appears to be inactive!")
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
-EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
-	INTERACT_ITEM(null, PROC_REF(reconstitutor_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(reconstitutor_interaction_hand), REQ_BECAUSE(REQ_FIELD_NOT("processing_revive"), "reconstitution cycle currently in progress, please wait")), \
-)
+CAPABILITIES(/obj/machinery/protean_reconstitutor)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 1000))
+	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove component"),
+		needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy)), req(PROC_REF(has_components))),
+		asks(/datum/prompt/choice, fields = list("title" = "Remove Component", "question" = "What component would you like to remove?", "choices" = computed(PROC_REF(component_choices)), "timeout" = 0)),
+		then(PROC_REF(component_chosen)))
+	op("reconstitutor_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/processing_revive))), then(PROC_REF(reconstitutor_interaction_hand)))
+	extend("machine_panel", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+	extend("machine_panel_close", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+	extend("machine_deconstruct", needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/busy))))
+
+MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle currently in progress, please wait")
 
 /// Old attackby; a slotted part still went on to ..(), so it falls through.
-/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if(processing_revive)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		playsound(src, buzzsound, 100, 1, -1)
-		return TRUE
+		return OP_OK
 
 	if(default_part_replacement(user, W))
-		return TRUE
+		return OP_OK
 
 	if(istype(W,/obj/item/mmi/digital/posibrain/nano))
 		var/obj/item/mmi/digital/posibrain/nano/NB = W
 		if(!NB.get_occupant()?.client)
 			to_chat(user,span_warning("You cannot use an inactive positronic brain for this process."))
-			return TRUE
+			return OP_OK
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
-		own_set(src, nameof(src.protean_brain), NB, user = user)
+		move_into(src, nameof(src.protean_brain), NB, user)
 
 	if(istype(W,/obj/item/organ/internal/nano/orchestrator))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
-		own_set(src, nameof(src.protean_orchestrator), W, user = user)
+		move_into(src, nameof(src.protean_orchestrator), W, user)
 
 	if(istype(W,/obj/item/organ/internal/nano/refactory))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
-		own_set(src, nameof(src.protean_refactory), W, user = user)
+		move_into(src, nameof(src.protean_refactory), W, user)
 
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 		if(nanomass_reserve >= nanotank_max)
 			to_chat(user,span_notice("The tank is full!"))
-			return TRUE
-		nanomass_reserve += NP.amount * max(1,NP.mech_repair / paste_inefficiency)
-		if(nanomass_reserve > nanotank_max)
-			nanomass_reserve = nanotank_max
-		to_chat(user,span_notice("You fill \the [src] with paste from \the [NP]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-		consume(NP, user)
-	update_icon()
-	return FALSE
+			return OP_OK
+		var/paste_gain = NP.amount * max(1,NP.mech_repair / paste_inefficiency)
+		var/paste_label = "\the [NP]"
+		if(!consume(NP, user))
+			return OP_OK
+		set_nanomass_reserve(min(nanotank_max, nanomass_reserve + paste_gain))
+		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
+	return OP_DECLINE
 
-/obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	if(!protean_brain && !protean_orchestrator && !protean_refactory)
-		to_chat(user, "\The [src] does not have any protean components you can retrieve.")
-		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/choice/protean_component, PROC_REF(component_chosen), choices = list(protean_brain, protean_orchestrator, protean_refactory), tool = tool)
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(protean_reconstitutor/busy, "%T% is busy. Please wait for completion of previous operation.")
+MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean components you can retrieve.")
 
-/datum/om/prompt/choice/protean_component
-	title = "Remove Component"
-	message = "What component would you like to remove?"
-	requires = PROMPT_ADJACENT
-	var/obj/item/tool
+/// Requirement of the wrench: a component to take out.
+/obj/machinery/protean_reconstitutor/proc/has_components(datum/act/op/A)
+	return (protean_brain || protean_orchestrator || protean_refactory) ? null : MSG(protean_reconstitutor/no_components)
 
-/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/om/prompt/choice/protean_component/ask)
-	var/mob/user = ask.answerer
-	var/atom/movable/choice = ask.choice
-	var/obj/item/tool = ask.tool
-	if(processing_revive || choice.loc != src)
-		return
+/// The components the wrench's question offers.
+/obj/machinery/protean_reconstitutor/proc/component_choices(datum/act/A)
+	. = list()
+	for(var/atom/movable/part in list(protean_brain, protean_orchestrator, protean_refactory))
+		. += part
+
+/// The wrench's answer: that component comes out.
+/obj/machinery/protean_reconstitutor/proc/component_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/choice = A.answer?.value
+	var/obj/item/tool = A.held
+	if(!istype(choice) || processing_revive || choice.loc != src)
+		return OP_OK
 	to_chat(user, "You fish \the [choice] out of \the [src].")
 	choice.forceMove(get_turf(src))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	if(choice == protean_brain)
-		own_take(src, nameof(protean_brain))
+		rel_take(src, nameof(protean_brain))
 	else if(choice == protean_refactory)
-		own_take(src, nameof(protean_refactory))
+		rel_take(src, nameof(protean_refactory))
 	else if(choice == protean_orchestrator)
-		own_take(src, nameof(protean_orchestrator))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/protean_reconstitutor/screwdriver_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
-
-/obj/machinery/protean_reconstitutor/crowbar_act(mob/user, obj/item/tool)
-	if(processing_revive)
-		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		rel_take(src, nameof(protean_orchestrator))
+	return OP_OK
 
 /// Refactory materials cached across the revive (it wipes them), or null.
 /obj/machinery/protean_reconstitutor/var/tmp/list/materials_cache
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!protean_brain || !protean_orchestrator || !protean_refactory || (nanomass_reserve < nanomass_required))
 		//no brain, no orchestrator, and/or not enough goo
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
-		update_icon()
-		return TRUE
+		return OP_OK
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
-		return TRUE
+		return OP_OK
 	else if(!processing_revive && protean_brain && protean_orchestrator && protean_refactory && (nanomass_reserve >= nanomass_required))
 		//we're good, let's get recombobulating!
 		act_message(user, src, others = span_notice("%U% initializes %T%. It chirps, \"Please stand by, synchronizing components... estimated time to completion: five minutes.\""))
-		processing_revive = TRUE
+		set_processing_revive(TRUE)
 		power_change()
 		if(prob(2))
 			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
 			playsound(src, clicksound, 50, 1)
-		nanomass_reserve -= nanomass_required
+		set_nanomass_reserve(nanomass_reserve - nanomass_required)
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
-		om_after(src, base_cook_time, PROC_REF(reconstitute_begin))
-	update_icon()
-	return TRUE
+		after(src, base_cook_time, PROC_REF(reconstitute_begin))
+	return OP_OK
 
 /// Reconstitution step 1: the body is grown after the base cook time.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_begin()
@@ -239,7 +242,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
 	P.forceMove(src)
 	P.name = "Unfinished Protean"
-	P.real_name = "Unfinished Protean"
+	P.set_real_name("Unfinished Protean")
 	var/list/organs = list()
 	for(var/obj/item/organ/present as anything in INTERNAL_ORGANS(P))
 		organs += present.organ_tag
@@ -247,25 +250,25 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	if(!length(organs))
 		reconstitute_organs_done(P)
 		return
-	om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, 1)
+	after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, 1), keeps_dead = TRUE)
 
 /// Reconstitution step 2: one organ per per_organ_delay.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organ(mob/living/carbon/human/protean/P, list/organs, index)
 	if(QDELETED(P))
-		processing_revive = FALSE
+		set_processing_revive(FALSE)
 		return
 	var/organ = organs[index]
 	var/obj/item/O = P.organ_in(organ)
 	if(istype(O,/obj/item/organ/internal/nano/refactory))
 		src.visible_message(span_notice("\The [src] chirps, \"Initializing refactory...\""))
 		// Deleting the blank detaches it; the salvaged one takes its slot.
-		qdel(O)
+		replaced_by(O)
 		protean_refactory.replaced(P)
 		//cache our mats otherwise they get wiped by the revive
 		materials_cache = protean_refactory.materials.Copy()
 	if(istype(O,/obj/item/organ/internal/nano/orchestrator))
 		src.visible_message(span_notice("\The [src] chirps, \"Linking nanoswarm to orchestrator...\""))
-		qdel(O)
+		replaced_by(O)
 		protean_orchestrator.replaced(P)
 	if(istype(O,/obj/item/organ/internal/mmi_holder/posibrain/nano))
 		src.visible_message(span_notice("\The [src] chirps, \"Synchronizing positronic neural architecture...\""))
@@ -296,7 +299,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		if(P.mind)
 			P.mind.loaded_from_ckey = picked_ckey
 			P.mind.loaded_from_slot = picked_slot
-			var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(P.mind.special_role)
+			var/datum/antagonist/antag_data = SSantag.get_antag_data(P.mind.special_role)
 			if(antag_data)
 				antag_data.add_antagonist(P.mind)
 				antag_data.place_mob(P)
@@ -317,20 +320,20 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			if(def_lang)
 				P.default_language = def_lang
 
-		OM_EMIT(P, /datum/om/event/human_dna_finalized)
+		PUBLISH_LEGACY(P, /datum/notice/human_dna_finalized)
 
 		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")
 	if(index < length(organs))
-		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
+		after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, index + 1), keeps_dead = TRUE)
 		return
 	reconstitute_organs_done(P)
 
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organs_done(mob/living/carbon/human/protean/P)
-	own_take(src, nameof(protean_refactory))
-	own_take(src, nameof(protean_brain))
-	own_take(src, nameof(protean_orchestrator))
-	om_after(src, finalize_time, PROC_REF(reconstitute_finish), P)
+	rel_take(src, nameof(protean_refactory))
+	rel_take(src, nameof(protean_brain))
+	rel_take(src, nameof(protean_orchestrator))
+	after(src, finalize_time, PROC_REF(reconstitute_finish), with = list(P))
 
 /// Reconstitution step 3: revive and release the finished protean.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_finish(mob/living/carbon/human/protean/P)
@@ -353,9 +356,8 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	to_chat(P,span_notice("You feel your sense of self expanding, spreading out to inhabit your new \'body\'. You feel... <i><b>ALIVE!</b></i>"))
 	playsound(src, dingsound, 100, 1, -1)	//soup's on!
 	P.forceMove(src.loc)
-	processing_revive = FALSE
+	set_processing_revive(FALSE)
 	log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
-	update_icon()
 
 /// Stop a cycle cleanly: salvaged components go back into the tank, the
 /// unfinished body is dissolved, the nanites are refunded and the machine is
@@ -373,10 +375,9 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			holder.slot_remove(O, src, null, LEDGER_MOVE_FORCED)
 		if(protean_brain && protean_brain.loc != src)
 			protean_brain.forceMove(src)
-		qdel(P)
-	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
-	processing_revive = FALSE
-	update_icon()
+		spent(P)
+	set_nanomass_reserve(min(nanotank_max, nanomass_reserve + nanomass_required))
+	set_processing_revive(FALSE)
 
 /obj/machinery/protean_reconstitutor/ownership()
 	. = ..()

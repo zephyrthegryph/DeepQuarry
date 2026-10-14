@@ -2,7 +2,6 @@
 	name = "pinpointer"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pinoff"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	throw_speed = 4
@@ -15,16 +14,22 @@
 	var/nuclear = FALSE
 	var/shuttle = FALSE
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/pinpointer, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
+/obj/item/pinpointer/var/active = FALSE
+TRACKED(/obj/item/pinpointer, active)
+CAPABILITIES(/obj/item/pinpointer)
+	ref_one(nameof(the_disk))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(pinpointer_toggle_op)))
 
-DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
+/obj/item/pinpointer/proc/pinpointer_toggle_op(datum/act/op/A)
+	pinpointer_toggle(A.actor)
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/pinpointer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The toggle itself; the nuke op and shuttle pinpointers override it and run this body first.
+/obj/item/pinpointer/proc/pinpointer_toggle(mob/user)
 	if(nuclear || shuttle)
 		return
 	if(!active)
@@ -32,27 +37,27 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
-/obj/item/pinpointer/periodic_step()
+/obj/item/pinpointer/proc/pinpointer_step(datum/act/timer/A)
 	if(!the_disk())
 		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	set_dir(get_dir(src,the_disk()))
 
 	switch(get_dist(src,the_disk()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/examine(mob/user)
 	. = ..()
@@ -66,9 +71,10 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	desc = "A larger version of the normal pinpointer, this unit features a helpful quantum entanglement detection system to locate various objects that do not broadcast a locator signal."
 	var/mode = 0  // Mode 0 locates disk, mode 1 locates coordinates.
 	var/turf/location
-	var/obj/target
+	/// What it points at: an item (a stolen-item signature) or a person (a DNA match), not only an object.
+	var/atom/target
 
-/obj/item/pinpointer/advpinpointer/periodic_step()
+/obj/item/pinpointer/advpinpointer/pinpointer_step(datum/act/timer/A)
 	if(mode == 0)
 		..()
 	if(mode == 1)
@@ -78,73 +84,78 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 /obj/item/pinpointer/advpinpointer/proc/worklocation()
 	if(!get_location())
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 		return
 
 	set_dir(get_dir(src,get_location()))
 
 	switch(get_dist(src,get_location()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/advpinpointer/proc/workobj()
 	if(!target_ref())
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 		return
 
 	set_dir(get_dir(src,target_ref()))
 
 	switch(get_dist(src,target_ref()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
-/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	set_active(FALSE)
-	icon_state = "pinoff"
+	set_icon_state("pinoff")
 	rel_clear(src, nameof(target))
 	rel_clear(src, nameof(location))
 
-	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_mode_chosen), answerer = user, title = "Pinpointer Mode Select", question = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
-/// A pinpointer coordinate (x, then y: `location_x` carries the first). Re-checked: it's in view.
-/datum/om/prompt/number/pinpointer_location
-	title = "Location?"
-	requires = list(CHECK(/datum/om/check/can_see, 1))
-	var/location_x
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	switch(ask.choice)
+	switch(ask.value)
 		if("Location")
 			mode = 1
-			om_ask(user, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_x_chosen), message = "Please input the x coordinate to search for.")
+			open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_x_chosen), answerer = user, question = "Please input the x coordinate to search for.")
 		if("Disk Recovery")
 			mode = 0
 			attack_self(user)
 		if("Other Signature")
 			mode = 2
-			om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_signature_chosen), title = "Signature Mode Select", message = "Search for item signature or DNA fragment?", choices = list("Item", "DNA"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_signature_chosen), answerer = user, title = "Signature Mode Select", question = "Search for item signature or DNA fragment?", choices = list("Item", "DNA"), buttons = TRUE)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_x_chosen(datum/om/prompt/number/pinpointer_location/ask)
-	om_ask(ask.answerer, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_chosen), message = "Please input the y coordinate to search for.", location_x = ask.number)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_x_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
+	open_request(src, /datum/prompt/number/pinpointer_coordinate, PROC_REF(pinpointer_location_chosen), answerer = ask.answerer, question = "Please input the y coordinate to search for.", location_x = ask.value)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/om/prompt/number/pinpointer_location/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/pinpointer_coordinate/ask = context.answer
 	var/mob/user = ask.answerer
 	var/locationx = ask.location_x
-	var/locationy = ask.number
+	var/locationy = ask.value
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
@@ -152,31 +163,39 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/static/datum/objective/steal/itemlist
-	switch(ask.choice)
+	switch(ask.value)
 		if("Item")
 			if(!itemlist)
 				itemlist = new
-			om_ask(ask.answerer, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_item_chosen), title = "Item Mode Select", message = "Select item to search for.", choices = itemlist.possible_items)
+			open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_item_chosen), answerer = ask.answerer, title = "Item Mode Select", question = "Select item to search for.", choices = itemlist.possible_items?.Copy())
 		if("DNA")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(pinpointer_dna_entered), title = "Please Enter String.", message = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/text, PROC_REF(pinpointer_dna_entered), answerer = ask.answerer, title = "Please Enter String.", question = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/om/prompt/choice/carried_item/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/pinpointer_carried/ask = context.answer
 	var/mob/user = ask.answerer
-	var/targetitem = ask.choice
+	var/targetitem = ask.value
 	var/datum/objective/steal/itemlist = new
 	rel_set(src, nameof(target), locate(itemlist.possible_items[targetitem]))
-	qdel(itemlist)
+	spent(itemlist)
 	if(!target_ref())
 		to_chat(user, "Failed to locate [targetitem]!")
 		return
 	to_chat(user, "You set the pinpointer to locate [targetitem]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/DNAstring = ask.text
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/DNAstring = A.answer.value
 	if(!DNAstring)
 		return
 	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -195,12 +214,12 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/obj/machinery/computer/shuttle_control/multi/syndicate/home
 
-// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
-DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
+CAPABILITIES(/obj/item/pinpointer/nukeop)
+	ref_one(nameof(home))
 
-/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
-/obj/item/pinpointer/nukeop/proc/nukeop_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
+/// The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/nukeop/pinpointer_toggle(mob/user)
+	..()
 	if(!active)
 		set_active(TRUE)
 		if(!mode)
@@ -211,10 +230,10 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/nukeop/periodic_step()
+/obj/item/pinpointer/nukeop/pinpointer_step(datum/act/timer/A)
 	switch(mode)
 		if(0)
 			workdisk()
@@ -231,20 +250,20 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 	if(!the_disk())
 		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	set_dir(get_dir(src, the_disk()))
 
 	switch(get_dist(src, the_disk()))
 		if(0)
-			icon_state = "pinondirect"
+			set_icon_state("pinondirect")
 		if(1 to 8)
-			icon_state = "pinonclose"
+			set_icon_state("pinonclose")
 		if(9 to 16)
-			icon_state = "pinonmedium"
+			set_icon_state("pinonmedium")
 		if(16 to INFINITY)
-			icon_state = "pinonfar"
+			set_icon_state("pinonfar")
 
 /obj/item/pinpointer/nukeop/proc/worklocation()
 	if(!GLOB.bomb_set)
@@ -256,45 +275,45 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 	if(!home())
 		rel_set(src, nameof(home), locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
 		if(!home())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	if(loc.z != home().z)	//If you are on a different z-level from the shuttle
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 
 	else
 		set_dir(get_dir(src, home()))
 
 		switch(get_dist(src, home()))
 			if(0)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(1 to 8)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(9 to 16)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(16 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
 	var/shuttle_comp_id = null
 	var/obj/machinery/computer/shuttle_control/our_shuttle
 
-// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
-DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
+CAPABILITIES(/obj/item/pinpointer/shuttle)
+	ref_one(nameof(our_shuttle))
 
-/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
-/obj/item/pinpointer/shuttle/proc/shuttle_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
+/// The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/shuttle/pinpointer_toggle(mob/user)
+	..()
 	if(!active)
 		set_active(TRUE)
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
 		set_active(FALSE)
-		icon_state = "pinoff"
+		set_icon_state("pinoff")
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/shuttle/periodic_step()
+/obj/item/pinpointer/shuttle/pinpointer_step(datum/act/timer/A)
 	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.
@@ -302,24 +321,24 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 				break
 
 		if(!our_shuttle())
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			return
 
 	if(loc.z != our_shuttle().z)	//If you are on a different z-level from the shuttle
-		icon_state = "pinonnull"
+		set_icon_state("pinonnull")
 
 	else
 		set_dir(get_dir(src, our_shuttle()))
 
 		switch(get_dist(src, our_shuttle()))
 			if(0)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(1 to 8)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(9 to 16)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(16 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 
 /obj/item/pinpointer/shuttle/merc
 	shuttle_comp_id = "Mercenary"
@@ -336,7 +355,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	return location
 
 /// Target (a relation view).
-/obj/item/pinpointer/advpinpointer/proc/target_ref() as /obj
+/obj/item/pinpointer/advpinpointer/proc/target_ref() as /atom
 	return target
 
 /// Home (a relation view).
@@ -348,6 +367,34 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	return our_shuttle
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/pinpointer/advpinpointer, \
-	INTERACT_VERB("Toggle Pinpointer Mode", PROC_REF(advpinpointer_toggle_mode_effect)), \
-)
+CAPABILITIES(/obj/item/pinpointer/advpinpointer)
+	ref_one(nameof(target))
+	op("advpinpointer_toggle_mode_effect", menu(), label("Toggle Pinpointer Mode"), then(PROC_REF(advpinpointer_toggle_mode_effect)))
+
+/datum/prompt/choice/pinpointer_carried
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/pinpointer_carried/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/number/pinpointer_coordinate
+	title = "Location?"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/location_x
+
+/datum/prompt/number/pinpointer_coordinate/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/pinpointer_coordinate/recheck_extra()
+	var/mob/user = answerer
+	var/obj/item/pinpointer/advpinpointer/device = owner
+	if(!istype(user) || QDELETED(user) || !istype(device) || QDELETED(device))
+		return "gone"
+	return can_see(user, device, 1) ? null : "can't see it"

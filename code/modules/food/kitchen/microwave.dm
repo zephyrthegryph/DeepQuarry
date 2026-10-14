@@ -1,3 +1,6 @@
+/// Returned by cook_loop() when the loop is over.
+#define MICROWAVE_LOOP_STOP "__loop_stop"
+
 #define MICROWAVE_FLAGS (OPENCONTAINER | NOREACT)
 #define MICROWAVE_NORMAL 0
 #define MICROWAVE_MUCK 1
@@ -19,8 +22,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 2000
 	clicksound = SFX_BUTTON
 	clickvol = 30
 	flags = MICROWAVE_FLAGS
@@ -43,6 +44,27 @@
 
 	var/visible_action = "turns on"
 	var/audible_action = null
+
+MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
+
+CAPABILITIES(/obj/machinery/microwave)
+	default_parts()
+	configure(uses_power(idle = 5, active = 2000))
+	reagents(100)
+	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
+	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
+	interface("Microwave")
+	without("ui_open")
+	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
+	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), when(cond_not(nameof(panel_open))), begins(PROC_REF(secure_begins)), wait(PROC_REF(secure_time)), on_interrupt(PROC_REF(secure_interrupted)), then(PROC_REF(secure_done)))
+	op("clean", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Clean"), when(req(PROC_REF(can_clean))), begins(MSG(microwave/clean_begins)), wait(2 SECONDS), then(PROC_REF(clean_done)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), label("Fix"), when(PROC_REF(kinda_broken)), starts(PROC_REF(repair_started)), begins(PROC_REF(repair_begins)), wait(2 SECONDS), then(PROC_REF(fully_repaired)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), label("Fix"), when(PROC_REF(really_broken)), starts(PROC_REF(repair_started)), begins(PROC_REF(repair_begins)), wait(2 SECONDS), then(PROC_REF(partly_repaired)))
+	op("microwave_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(microwave_interaction_item)))
+	op("microwave_interaction_eject_pai", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Eject pAI"), then(PROC_REF(microwave_interaction_eject_pai)))
+	op("microwave_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(microwave_interaction_hand)))
+	op("microwave_verb_eject", menu(), label("Eject content"), needs(req_adjacent(), req_capable()), begins(MSG(microwave/ejecting)), wait(1 SECOND), then(PROC_REF(eject_done)))
 
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
@@ -76,18 +98,7 @@
 	item_capacity = (advanced_microwave ? 40 : 10) * mbrating
 	reagents.maximum_volume = (advanced_microwave ? 200 : 40) * mbrating
 	efficiency = mlrating
-	active_power_usage = max(100, 2000 / caprating)
-
-/obj/machinery/microwave/Initialize(mapload)
-	. = ..()
-
-	create_reagents(100)
-	rel_set(reagents, nameof(reagents.my_atom), src)
-
-	default_apply_parts()
-
-	own_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
-	update_icon()
+	set_active_power_usage(max(100, 2000 / caprating))
 
 
 // its contents are disposed and a pAI inside is ejected.
@@ -109,55 +120,56 @@
 		return "bloody"
 	return "clean"
 
-APPEARANCE_TEMPLATE(/obj/machinery/microwave, "mw{operating?1:}")
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_condition", list(
-	"b" = list(APPEARANCE_ICON_STATE = "mwb"),
-	"bloody" = list(APPEARANCE_ICON_STATE = "mwbloody0"),
-))
-DECLARE_APPEARANCE(/obj/machinery/microwave, "appearance_mw_bloody_operating", list(
-	"1" = list(APPEARANCE_ICON_STATE = "mwbloody1"),
-))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/microwave/draw(datum/look/look)
+	..()
+	look.state("mw[operating ? "1" : ""]")
+	switch("[appearance_mw_condition()]")
+		if("b")
+			look.state("mwb")
+		if("bloody")
+			look.state("mwbloody0")
+	if(appearance_mw_bloody_operating() == 1)
+		look.state("mwbloody1")
+
 // The cooking pot keeps its own procedural icon override (fantasy_items.dm) that never calls the parent.
-APPEARANCE_NONE(/obj/machinery/microwave/cookingpot)
 
 /// Appearance reader: bloody (not broken) and running.
 /obj/machinery/microwave/proc/appearance_mw_bloody_operating()
 	return !broken && dirty >= MAX_MICROWAVE_DIRTINESS && operating ? 1 : 0
 
+TRACKED(/obj/machinery/microwave, operating)
+TRACKED(/obj/machinery/microwave, dirty)
+TRACKED(/obj/machinery/microwave, broken)
+
 /obj/machinery/microwave/proc/post_state_change()
 	update_static_data_for_all_viewers()
-	update_icon()
 	SStgui.update_uis(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/microwave, \
-	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Eject pAI", PROC_REF(microwave_interaction_eject_pai)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
-	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
-)
-
 /// Old attackby.
-/obj/machinery/microwave/proc/microwave_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(handle_broken(O, user)) return TRUE
-	if(handle_dirty(O, user)) return TRUE
-	if(default_part_replacement(user, O)) return TRUE
-	if(try_insert_item(O, user)) return TRUE
-	if(try_insert_reagent(O, user)) return INTERACTION_HANDLED_PASS // the container's afterattack pours
+/obj/machinery/microwave/proc/microwave_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(handle_broken(O, user)) return OP_OK
+	if(handle_dirty(O, user)) return OP_OK
+	if(default_part_replacement(user, O)) return OP_OK
+	if(try_insert_item(O, user)) return OP_OK
+	if(try_insert_reagent(O, user)) return OP_PASS // the container's afterattack pours
 	if(istype(O,/obj/item/grab))
 		var/obj/item/grab/G = O
 		to_chat(user, span_warning("Unfortunately, the laws of physics prevent you from inserting \the [G?.grab_target()] into \the [src]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/paicard))
 		if(!paicard)
 			insertpai(user, O)
-			return TRUE
+			return OP_OK
 		to_chat(user, span_warning("There is already a pAI inserted, and you don't feel like cooking \the [O]."))
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/gripper)) //Grippers count as 'attacking' before the thing they're holding. Don't send a message.
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_warning("You have no idea what you can cook with \the [O]."))
 	post_state_change()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/microwave/proc/handle_broken(obj/item/O, mob/user)
 	if(src.broken <= NOT_BROKEN)
@@ -166,16 +178,33 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	to_chat(user, span_warning("It's broken!"))
 	return TRUE
 
-/obj/machinery/microwave/proc/do_repair_step(mob/user, obj/item/tool, full_repair = FALSE)
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start to fix part of \the [src].", start_others = "\The [user] starts to fix part of \the [src].", receiver = src, on_done = PROC_REF(do_repair_step_tool_done), done_args = list(user, full_repair))
-	return TRUE
+/// The screwdriver fixes a really broken microwave halfway, the wrench a half-broken one fully.
+/obj/machinery/microwave/proc/really_broken(datum/act/op/A)
+	return read_once(broken) == REALLY_BROKEN
+
+/obj/machinery/microwave/proc/kinda_broken(datum/act/op/A)
+	return read_once(broken) == KINDA_BROKEN
+
+/obj/machinery/microwave/proc/repair_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/microwave/proc/repair_begins(datum/act/op/A)
+	return msg_text("You start to fix part of \the [src].", "\The [A.actor] starts to fix part of \the [src].")
+
+/obj/machinery/microwave/proc/partly_repaired(datum/act/op/A)
+	do_repair_step_tool_done(A.actor, FALSE)
+	return OP_OK
+
+/obj/machinery/microwave/proc/fully_repaired(datum/act/op/A)
+	do_repair_step_tool_done(A.actor, TRUE)
+	return OP_OK
 
 /obj/machinery/microwave/proc/do_repair_step_tool_done(mob/user, full_repair)
 
 	act_message(user, src, MSG_SELF(span_notice(full_repair ? "You have fixed %T%." : "You have fixed part of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + (full_repair ? " fixes %T%." : " fixes part of %T%."))))
 
-	broken = full_repair ? NOT_BROKEN : KINDA_BROKEN
+	set_broken(full_repair ? NOT_BROKEN : KINDA_BROKEN)
 	flags |= MICROWAVE_FLAGS
 
 	post_state_change()
@@ -189,17 +218,21 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		to_chat(user, span_warning("It's dirty!"))
 		return TRUE
 
-	act_message(user, src, MSG_SELF(span_notice("You start to clean %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to clean %T%.")))
-
-	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(clean_done), list(user))
 	return TRUE
 
-/obj/machinery/microwave/proc/clean_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
+MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_infoplain(span_bold("%U%") + " starts to clean %T%."))
 
-	dirty = 0
+/// Requirement: a full dirty, unbroken microwave and a cleaner in hand (anything else falls through to handle_dirty()'s refusal).
+/obj/machinery/microwave/proc/can_clean(datum/act/op/A)
+	return (dirty >= MAX_MICROWAVE_DIRTINESS && broken <= NOT_BROKEN && is_type_in_list(A.held, list(/obj/item/soap, /obj/item/reagent_containers/spray/cleaner, /obj/item/reagent_containers/glass/rag))) ? null : /datum/msg/req_failed
+
+/obj/machinery/microwave/proc/clean_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You have cleaned %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has cleaned %T%.")))
+
+	set_dirty(0)
 	flags |= MICROWAVE_FLAGS
 	post_state_change()
+	return OP_OK
 
 /obj/machinery/microwave/proc/try_insert_item(obj/item/O, mob/user)
 	if(is_type_in_list(O, GLOB.acceptable_items))
@@ -212,7 +245,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 			St.forceMove(src)
 			act_message(user, src, MSG_SELF(span_notice("You add one [O] to %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " has added one [O] to %T%.")))
 			return TRUE
-		user.drop_from_inventory(O, src)
+		if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
+			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has added %I% to %T%.")), item = O)
 		return TRUE
 	if(istype(O, /obj/item/storage/bag/plants)) // There might be a better way about making plant bags dump their contents into a microwave, but it works.
@@ -247,39 +281,26 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 				to_chat(user, span_warning("\The [O] contains components unsuitable for cooking."))
 				return TRUE
 		// gotta let afterattack resolve
-		om_after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
+		after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
 		return TRUE
 	return FALSE
 
-/obj/machinery/microwave/screwdriver_act(mob/user, obj/item/tool)
-	if(broken == REALLY_BROKEN)
-		do_repair_step(user, tool, FALSE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+/// How long securing or unsecuring takes: two seconds, shorter with a faster crowbar.
+/obj/machinery/microwave/proc/secure_time(datum/act/op/A)
+	var/obj/item/tool = A.held
+	return (2 SECONDS) / tooling_of(tool).speed
 
-/obj/machinery/microwave/wrench_act(mob/user, obj/item/tool)
-	if(broken == KINDA_BROKEN)
-		do_repair_step(user, tool, TRUE)
-		return ITEM_INTERACT_SUCCESS
-	return ..()
+/obj/machinery/microwave/proc/secure_begins(datum/act/op/A)
+	return msg_text(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%."), span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%."))
 
-/obj/machinery/microwave/crowbar_act(mob/user, obj/item/tool)
-	if(panel_open)
-		return ..()
-	act_message(user, src, MSG_SELF(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%.")))
-	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/microwave/proc/secure_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You decide not to do that."))
 
-/datum/om/task/timed/microwave_secure
-	complete_proc = /obj/machinery/microwave/proc/secure_done
-	fail_message = span_notice("You decide not to do that.")
-
-/obj/machinery/microwave/proc/secure_done(datum/om/task/timed/microwave_secure/task)
-	var/mob/user = task.actor
-	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
+/obj/machinery/microwave/proc/secure_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You [anchored ? "unsecure" : "secure"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "unsecures" : "secures"] %T%.")))
 	set_anchored(!anchored)
+	return OP_OK
 
 /obj/machinery/microwave/tgui_status(mob/user)
 	if(user == paicard?.pai)
@@ -287,21 +308,22 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	. = ..()
 
 /// Old attack_hand with Grab held: pull the pAI out. Without one, the ordinary touch.
-/obj/machinery/microwave/proc/microwave_interaction_eject_pai(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_eject_pai(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!paicard)
-		return FALSE
+		return OP_DECLINE
 	ejectpai(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand.
-/obj/machinery/microwave/proc/microwave_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/microwave/proc/microwave_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /*******************
 *   Microwave Menu
 ********************/
-DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 /obj/machinery/microwave/ui_assets(mob/user)
 	return list(
@@ -318,9 +340,17 @@ DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 	return data
 
-UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_obj_machinery_microwave{dirty:bool,items:list,reagents:list}")
+/obj/machinery/microwave/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["broken"] = broken
+	data["operating"] = operating
+	var/list/merged_1 = ui_data_obj_machinery_microwave(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/microwave's window data (declared on its UI_DATA row).
+/// /obj/machinery/microwave's window data.
 /obj/machinery/microwave/proc/ui_data_obj_machinery_microwave(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -368,21 +398,22 @@ UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_
 
 	return data
 
-/obj/machinery/microwave/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/microwave/proc/ui_gate(datum/act/op/A)
 	if(operating)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/microwave, "cook", ui_act_cook)
-UI_ACT_PROC(/obj/machinery/microwave, ui_act_cook)
+/obj/machinery/microwave/proc/ui_act_cook(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	cook()
 	return TRUE
 
-UI_ACT(/obj/machinery/microwave, "dispose", ui_act_dispose)
-UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
-	dispose()
+/obj/machinery/microwave/proc/ui_act_dispose(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	dispose(user = user)
 	return TRUE
 
 /***********************************
@@ -406,8 +437,16 @@ UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
 	start()
 
 /// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
-OM_FIELD(/obj/machinery/microwave, loop_running, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
+/obj/machinery/microwave/var/loop_running = FALSE
+TRACKED(/obj/machinery/microwave, loop_running)
+
+/// The cook loop's cadence.
+/obj/machinery/microwave/proc/loop_delay(datum/act/A)
+	return loop_wait
+
+/// One scheduled cook-loop cycle.
+/obj/machinery/microwave/proc/cook_loop_step(datum/act/timer/A)
+	cook_loop()
 
 /obj/machinery/microwave/proc/start()
 	wzhzhzh()
@@ -420,7 +459,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 /obj/machinery/microwave/proc/muck()
 	wzhzhzh()
 	play_sfx(src, SFX_EFFECTS_SPLAT) // Play a splat sound
-	src.dirty = MAX_MICROWAVE_DIRTINESS // Make it dirty so it can't be used util cleaned
+	set_dirty(MAX_MICROWAVE_DIRTINESS) // Make it dirty so it can't be used util cleaned
 	post_state_change()
 	begin_cook_loop(MICROWAVE_MUCK, 4)
 
@@ -429,15 +468,15 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	loop_type = type
 	loop_cycles = cycles
 	loop_wait = max(12 - 2 * efficiency, 2)
-	if(cook_loop() != REPEAT_STOP)
+	if(cook_loop() != MICROWAVE_LOOP_STOP)
 		set_loop_running(TRUE)
 
-/// One cook-loop cycle (DECLARE_REPEAT while loop_running).
+/// One cook-loop cycle (every() while loop_running).
 /obj/machinery/microwave/proc/cook_loop()
-	if((has_stat(BROKEN)) && loop_type == MICROWAVE_PRE)
+	if((broken_now()) && loop_type == MICROWAVE_PRE)
 		set_loop_running(FALSE)
 		broke()
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	if(loop_cycles <= 0 || !length(cookingContents()))
 		switch(loop_type)
@@ -451,13 +490,13 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 			if(MICROWAVE_PRE)
 				begin_cook_loop(MICROWAVE_NORMAL, 10)
 				return
-		return REPEAT_STOP
+		return MICROWAVE_LOOP_STOP
 
 	loop_cycles--
 
 /obj/machinery/microwave/power_change()
 	. = ..()
-	if((has_stat(NOPOWER)) && operating)
+	if((power_lost()) && operating)
 		broke()
 		dispose(FALSE)
 
@@ -465,7 +504,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	var/datum/recipe/recipe = select_recipe(GLOB.available_recipes[appliancetype], src)
 	if(!recipe)
 		if(length(cookingContents()) >= 1)
-			dirty += 1
+			set_dirty(dirty + 1)
 			var/obj/item/cooked = fail()
 			cooked.forceMove(loc)
 			if(prob(max(10,dirty*5)))
@@ -513,7 +552,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
 	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
-	operating = TRUE
+	set_operating(TRUE)
 	set_use_power(USE_POWER_ACTIVE)
 	post_state_change()
 	soundloop.start()
@@ -529,7 +568,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 /obj/machinery/microwave/proc/stop(success = TRUE)
 	if(success)
 		play_sfx(src.loc, SFX_MACHINES_DING)
-	operating = FALSE // Turn it off again aferwards
+	set_operating(FALSE) // Turn it off again aferwards
 	if(broken)
 		set_use_power(USE_POWER_OFF)
 	else
@@ -537,14 +576,14 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	post_state_change()
 	soundloop.stop()
 
-/obj/machinery/microwave/proc/dispose(message = TRUE)
+/obj/machinery/microwave/proc/dispose(message = TRUE, mob/user)
 	for (var/atom/movable/A in cookingContents())
 		A.forceMove(loc)
 	if (src.reagents.total_volume)
-		src.dirty++
+		set_dirty(dirty + 1)
 	src.reagents.clear_reagents()
 	if(message)
-		to_chat(usr, span_notice("You dispose of \the [src]'s contents."))
+		to_chat(user, span_notice("You dispose of \the [src]'s contents."))
 	SStgui.update_uis(src)
 
 /obj/machinery/microwave/proc/muck_finish()
@@ -555,7 +594,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	if(spark)
 		fx_sparks(src, 2)
 	src.visible_message(span_warning("\The [src] breaks!")) //Let them know they're stupid
-	src.broken = REALLY_BROKEN // Make it broken so it can't be used util fixed
+	set_broken(REALLY_BROKEN) // Make it broken so it can't be used util fixed
 	src.flags &= ~MICROWAVE_FLAGS //So you can't add condiments
 	src.ejectpai() // If it broke, time to yeet the PAI.
 
@@ -571,29 +610,22 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 		if(istype(O, /obj/item/holder))
 			var/obj/item/holder/H = O
 			if(H.held_mob)
-				qdel(H.held_mob)
+				spent(H.held_mob)
 		consume(O)
 	src.reagents.clear_reagents()
 	ffuu.reagents.add_reagent(REAGENT_ID_CARBON, amount)
 	ffuu.reagents.add_reagent(REAGENT_ID_TOXIN, amount/10)
 	return ffuu
 
-/// Old Eject content verb.
-/obj/machinery/microwave/proc/microwave_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, src, MSG_SELF(span_notice("You try to open %T% and remove its contents.")), \
-		MSG_OTHERS(span_notice("%U% tries to open %T% and remove its contents.")))
-
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(eject_done), list(user))
-	return TRUE
-
-/obj/machinery/microwave/proc/eject_done(mob/user)
+/obj/machinery/microwave/proc/eject_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(operating)
 		to_chat(user, span_warning("You can't do that, [src] door is locked!"))
 		return
 
 	act_message(user, src, MSG_SELF(span_notice("You have opened %T% and taken out [english_list(cookingContents())].")), \
 		MSG_OTHERS(span_notice("%U% opened %T% and has taken out [english_list(cookingContents())].")))
-	dispose()
+	dispose(user = user)
 
 /obj/machinery/microwave/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	if(!mover)
@@ -621,9 +653,9 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	for(var/obj/item/holder/H in contents_of(container))
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
-			qdel(H.held_mob)
+			destroyed(H.held_mob, src, BURN)
 			rel_clear(H, nameof(H.held_mob))
-			qdel(H)
+			spent(H)
 
 	. = ..()
 

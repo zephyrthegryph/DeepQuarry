@@ -11,24 +11,24 @@
 		var/obj/item/I = A
 		I.inhabit_item(src, object_name, src, allow_emotes)
 		var/mob/living/possessed_voice = I.possessed_voice
-		I.trash_eatable = devourable
-		I.unacidable = !digestable
+		I.trash_eatable = vore_prefs.devourable
+		I.unacidable = !vore_prefs.digestable
 		forceMove(possessed_voice)
 
 /mob/living/proc/mob_belly_transfer(mob/living/M)
 	for(var/obj/belly/B as anything in M.vore_organs)
 		B.forceMove(src)
 		rel_set(B, nameof(B.owner), src)
-		own_transfer(M, nameof(M.vore_organs), src, nameof(vore_organs), B)
+		rel_move(M, nameof(M.vore_organs), src, nameof(vore_organs), B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
 	own_clear(new_mob, nameof(new_mob.vore_organs), OWN_DELETE)
 	new_mob.name = src.name
-	new_mob.real_name = src.real_name
+	new_mob.set_real_name(src.real_name)
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)
-	rel_set(new_mob, nameof(new_mob.vore_selected), src.vore_selected)
+	set_vore_selected(new_mob, vore_selected_of(src))
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
@@ -44,7 +44,7 @@
 			N.identifying_gender = src.gender
 
 	new_mob.mob_belly_transfer(src)
-	new_mob.set_nutrition(src.nutrition)
+	new_mob.set_nutrition(nutrition_of(src))
 
 	src.soulgem?.transfer_self(new_mob)
 
@@ -91,18 +91,18 @@
 		return
 	new /obj/effect/effect/teleport_greyscale(src.loc)
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps
-	// when the mob's stat changes via its /datum/om/event/mob_statchange handler.
+	// when the mob's stat changes via its /datum/definition_event/mob_statchange handler.
 	return_player_to_tf_holder("reverted mob transform")
 	set_tf_mob_holder(null)
 	var/turf/get_dat_turf = get_turf(src)
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
-	if(!tf_form_mind)
-		rel_set(ourmob, nameof(ourmob.vore_selected), vore_selected)
-		rel_clear(src, nameof(vore_selected))
+	if(!tf_form_mind_of(src))
+		set_vore_selected(ourmob, vore_selected_of(src))
+		set_vore_selected(src, null)
 		ourmob.mob_belly_transfer(src)
 
-	om_run_frame_now(ourmob, /datum/om/pipeline/life)
+	seq_run_frame_now(ourmob, /datum/sequence/life)
 
 	if(ishuman(src))
 		for(var/obj/item/W in contents_of(src))
@@ -110,35 +110,29 @@
 				continue
 			src.drop_from_inventory(W)
 
-	if(tf_form == ourmob)
-		if(tf_form_mind)
-			transfer_mind(tf_form_mind, src, "returned to shapeshift form [src]", tf_form_holds_key)
-			rel_clear(src, nameof(tf_form_mind))
-		rel_set(ourmob, nameof(ourmob.tf_form), src)
+	if(tf_form_of(src) == ourmob)
+		if(tf_form_mind_of(src))
+			transfer_mind(tf_form_mind_of(src), src, "returned to shapeshift form [src]", tf_form_holds_key)
+			set_tf_form_mind(src, null)
+		set_tf_form(ourmob, src)
 		src.forceMove(ourmob)
 	else
-		qdel(src)
-
-/datum/om/stage/life/tf_holder
-	reads = list("tf_mob_holder")
-	order = LIFE_PHASE_OUTPUT + 40
-	name = "tf holder"
-	run_if = LIFE_RUN_IF_PLACED
+		replaced_by(src)
 
 /// Continuous only for a transformed mob holding its original body.
-/datum/om/stage/life/tf_holder/idle(mob/living/self)
-	return !self.tf_mob_holder
+/mob/living/proc/life_tf_holder_due()
+	return src.tf_mob_holder
 
 /// Links life and death between a transformed mob and the body it holds.
-/datum/om/stage/life/tf_holder/perform(mob/living/self, datum/om/frame/life/ctx)
-	if(!self.tf_mob_holder)
+/mob/living/proc/life_tf_holder(datum/seq_frame/life/F)
+	if(!src.tf_mob_holder)
 		return
-	if(self.tf_mob_holder.loc != self) return // Prevent bodyswapped creatures having their life linked
-	if(self.stat != self.tf_mob_holder.stat)
-		if(self.stat == DEAD)
-			self.tf_mob_holder.death(FALSE, null)
-		if(self.tf_mob_holder.stat == DEAD)
-			self.death()
+	if(src.tf_mob_holder.loc != src) return // Prevent bodyswapped creatures having their life linked
+	if(src.stat != src.tf_mob_holder.stat)
+		if(src.stat == DEAD)
+			src.tf_mob_holder.death(FALSE, null)
+		if(src.tf_mob_holder.stat == DEAD)
+			src.death()
 
 /mob/living/proc/copy_vore_prefs_to_mob(mob/living/new_mob)
 	//For primarily copying vore preference settings from a carbon mob to a simplemob
@@ -148,14 +142,19 @@
 	new_mob.appendage_color = appendage_color
 	new_mob.appendage_alt_setting = appendage_alt_setting
 
-	VORE_PREF_TRANSFER(new_mob, src)
+	record_copy(new_mob.vore_prefs, vore_prefs)
+	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)
+	rel_set(new_mob, nameof(spont_belly_left), spont_belly_left)
+	rel_set(new_mob, nameof(spont_belly_front), spont_belly_front)
+	rel_set(new_mob, nameof(spont_belly_right), spont_belly_right)
+	new_mob.autotransferable = autotransferable
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.
 // Just handles mob TF right now, but maybe we'll want to do something similar for items in the future.
 /mob/living/proc/transform_into_mob(mob/living/new_form, pref_override = FALSE, revert = FALSE, shapeshifting = FALSE)
 	if(!src.mind)
 		return
-	if(!src.allow_spontaneous_tf && !pref_override)
+	if(!src.vore_prefs.allow_spontaneous_tf && !pref_override)
 		return
 	if(src.tf_mob_holder) //If we're already transformed
 		if(revert)
@@ -169,14 +168,14 @@
 		if(!ispath(new_form, /mob/living) && !ismob(new_form))
 			return
 		var/mob/living/new_mob
-		if(shapeshifting && src.tf_form)
-			new_mob = src.tf_form
-			om_grant(new_mob, GRANT_VERB, /mob/living/proc/shapeshift_form, new_mob)
-			rel_set(new_mob, nameof(new_mob.tf_form), src)
+		if(shapeshifting && tf_form_of(src))
+			new_mob = tf_form_of(src)
+			grant(new_mob, granted_verb(/mob/living/proc/shapeshift_form), new_mob)
+			set_tf_form(new_mob, src)
 			new_mob.forceMove(src.loc)
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
-				rel_set(new_mob, nameof(new_mob.tf_form_mind), new_mob.mind)
+				set_tf_form_mind(new_mob, new_mob.mind)
 				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
 		else
 			if(isliving(new_form))
@@ -196,7 +195,7 @@
 
 			// The player wears the new form: the mind moves, the character's
 			// identity is shared (not bound) so the form keeps its own body.
-			var/datum/mind/form_mind = new_mob.tf_form_mind
+			var/datum/mind/form_mind = tf_form_mind_of(new_mob)
 			move_player(src, new_mob, "transformed into [new_mob]", share = TRUE)
 			if(form_mind)
 				transfer_mind(form_mind, src, "displaced from shapeshift form [new_mob] into [src]", new_mob.tf_form_holds_key)
@@ -224,11 +223,11 @@
 	set name = "Shapeshift Form"
 	set category = VERB_CAT_ABILITIES_SHAPESHIFT
 	set desc = "Shape shift between set mob forms. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"
-	if(!istype(tf_form))
+	if(!istype(tf_form_of(src), /mob/living))
 		to_chat(src, span_notice("No shapeshift form set. (Requires a spawned mob to be varedited into the user's tf_form var as mob reference.)"))
 		return
 	else
-		transform_into_mob(tf_form, TRUE, TRUE, TRUE)
+		transform_into_mob(tf_form_of(src), TRUE, TRUE, TRUE)
 
 /mob/living/set_dir(new_dir)
 	. = ..()

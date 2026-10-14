@@ -1,0 +1,5 @@
+/obj/item/nailpolish_remover icon: icons/obj/nailpolish_vr.dmi
+/obj/item/nailpolish_remover state: nailpolishremover
+/obj/item/nailpolish_remover dir: 2
+/obj/item/nailpolish_remover overlay: icons/obj/nailpolish_vr.dmi:nailpolishremover:8:#000000
+

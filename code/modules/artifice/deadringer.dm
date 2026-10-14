@@ -4,19 +4,22 @@
 	icon = 'icons/obj/deadringer.dmi'
 	icon_state = "deadringer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
 	var/tmp/mob/living/carbon/human/corpse
 	var/tmp/mob/living/carbon/human/watchowner
 
 /// Armed: watching the holder for injury.
-OM_FIELD(/obj/item/deadringer, activated, FALSE, CHANGE_EXPLICIT)
+/obj/item/deadringer/var/activated = FALSE
+TRACKED(/obj/item/deadringer, activated)
 /// Cooldown steps left after triggering.
-OM_FIELD(/obj/item/deadringer, timer, 0, CHANGE_EXPLICIT)
-/// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
-OM_DERIVE_FIELD(/obj/item/deadringer, ringer_busy, list("activated", "timer"))
-DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
+/obj/item/deadringer/var/timer = 0
+TRACKED(/obj/item/deadringer, timer)
+/// Armed or cooling down: periodic_step() runs (its every()).
+CAPABILITIES(/obj/item/deadringer)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))
+	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/deadringer/proc/ringer_busy()
 	return activated || timer
@@ -34,8 +37,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
 		reveal()
 		rel_clear(src, nameof(watchowner))
 
-DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/deadringer/proc/can_use_ringer)))
-
 /// Requirement: TRUE, or why the ringer can't be used.
 /obj/item/deadringer/proc/can_use_ringer(mob/user, atom/target, obj/item/held)
 	if(!ishuman(loc))
@@ -43,7 +44,13 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	return TRUE
 
 /// Old attack_self.
-/obj/item/deadringer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+
+/obj/item/deadringer/proc/interaction_self(datum/act/op/A)
+	var/refusal = can_use_ringer(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/living/H = src.loc
 	if(!activated)
 		if(timer == 0)
@@ -80,89 +87,87 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		return
 	rel_set(src, nameof(corpse), new /mob/living/carbon/human(H.loc))
-	QDEL_SWAP(corpse().dna,H.dna.Clone())
+	own_clear(corpse(), nameof(/mob::dna), OWN_DELETE)
+	rel_set(corpse(), nameof(/mob::dna), H.dna.Clone())
 	var/obj/item/clothing/temp = null
 	if(H.get_equipped_item(SLOT_ID_UNIFORM))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/under/chameleon/changeling(corpse()), SLOT_ID_UNIFORM)
 		temp = corpse().get_equipped_item(SLOT_ID_UNIFORM)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_UNIFORM)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_SUIT))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/suit/chameleon/changeling(corpse()), SLOT_ID_SUIT)
 		temp = corpse().get_equipped_item(SLOT_ID_SUIT)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_SUIT)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_SHOES))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/shoes/chameleon/changeling(corpse()), SLOT_ID_SHOES)
 		temp = corpse().get_equipped_item(SLOT_ID_SHOES)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_SHOES)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_GLOVES))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/gloves/chameleon/changeling(corpse()), SLOT_ID_GLOVES)
 		temp = corpse().get_equipped_item(SLOT_ID_GLOVES)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_GLOVES)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_EAR_L))
 		temp = H.get_equipped_item(SLOT_ID_EAR_L)
 		corpse().equip_to_slot_or_del(new temp.type(corpse()), SLOT_ID_EAR_L)
 		temp = corpse().get_equipped_item(SLOT_ID_EAR_L)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_EYES))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/glasses/chameleon/changeling(corpse()), SLOT_ID_EYES)
 		temp = corpse().get_equipped_item(SLOT_ID_EYES)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_EYES)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_MASK))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/mask/chameleon/changeling(corpse()), SLOT_ID_MASK)
 		temp = corpse().get_equipped_item(SLOT_ID_MASK)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_MASK)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_HEAD))
 		corpse().equip_to_slot_or_del(new /obj/item/clothing/head/chameleon/changeling(corpse()), SLOT_ID_HEAD)
 		temp = corpse().get_equipped_item(SLOT_ID_HEAD)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_HEAD)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_BELT))
 		corpse().equip_to_slot_or_del(new /obj/item/storage/belt/chameleon/changeling(corpse()), SLOT_ID_BELT)
 		temp = corpse().get_equipped_item(SLOT_ID_BELT)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_BELT)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	if(H.get_equipped_item(SLOT_ID_BACK))
 		corpse().equip_to_slot_or_del(new /obj/item/storage/backpack/chameleon/changeling(corpse()), SLOT_ID_BACK)
 		temp = corpse().get_equipped_item(SLOT_ID_BACK)
 		var/obj/item/clothing/c_type = H.get_equipped_item(SLOT_ID_BACK)
 		temp.disguise(c_type.type)
-		temp.canremove = FALSE
+		temp.set_canremove(FALSE)
 	corpse().identifying_gender = H.identifying_gender
-	corpse().flavor_texts = H.flavor_texts?.Copy()
-	corpse().real_name = H.real_name
+	corpse().bio.flavor_texts = H.bio.flavor_texts?.Copy()
+	corpse().set_real_name(H.real_name)
 	corpse().name = H.name
 	corpse().emote("deathgasp") //Done after the name is set.
 	corpse().death(1) //Kills the new mob
 	corpse().set_species(corpse().dna.species)
-	corpse().change_hair(H.h_style)
-	corpse().change_facial_hair(H.f_style)
-	corpse().change_hair_color(H.r_hair, H.g_hair, H.b_hair)
-	corpse().change_facial_hair_color(H.r_facial, H.g_facial, H.b_facial)
-	corpse().change_skin_color(H.r_skin, H.g_skin, H.b_skin)
+	record_copy(corpse().looks, H.looks) // the fake body looks like its wearer
+	corpse().force_update_limbs()
+	changed(src)
 	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()
-	corpse().regenerate_icons()
 	var/list/corpse_organs = corpse().internal_organ_list()
 	QDEL_LIST(corpse_organs)
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.
-/obj/item/deadringer/periodic_step()
+/obj/item/deadringer/proc/deadringer_step(datum/act/timer/A)
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
@@ -176,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 					to_chat(watchowner(), span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
 				else
 					to_chat(watchowner(), span_blue("You fade into nothingness, leaving behind a fake body!"))
-				icon_state = "deadringer_cd"
+				set_icon_state("deadringer_cd")
 				set_timer(5)
 				return
 	if(timer > 0)
@@ -186,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 		if(corpse())
 			replace_with(corpse(), /obj/effect/effect/smoke/chem)
 	if(timer == 0)
-		icon_state = "deadringer"
+		set_icon_state("deadringer")
 	return
 
 /// the watchowner this refers to (a relation view: null once it is deleted).

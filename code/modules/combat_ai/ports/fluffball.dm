@@ -105,6 +105,6 @@ TYPE_TABLE(/mob/living/simple_mob/vore/fluffball, get_ai_behaviors, list( \
 			F.PounceTarget(prey)
 			return DQ_BEHAVIOR_CONTINUE
 	// Otherwise keep running.
-	step_away(F, prey, flee_distance)
+	brain.act_step_away(prey, flee_distance)
 	F.face_atom(prey)
 	return DQ_BEHAVIOR_CONTINUE

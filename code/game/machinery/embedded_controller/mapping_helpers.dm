@@ -22,8 +22,8 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	var/command
 
 // Resolved at map time; the setup waits for the load so the device and controller exist.
-MAP_RESOLVER(/obj/effect/map_helper/airlock, GLOBAL_PROC_REF(resolve_airlock_helper))
-MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my_device_type;tag_addon")
+CAPABILITIES(/obj/effect/map_helper/airlock)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_airlock_helper), vars = list("command", "my_controller_type", "my_device_type", "tag_addon")))
 
 /proc/resolve_airlock_helper(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(airlock_helper_setup), get_turf(loc), path, varedits)
@@ -69,24 +69,24 @@ MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my
 /proc/airlock_helper_configure(device, obj/machinery/embedded_controller/radio/controller, tag_addon, command)
 	if(istype(device, /obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/my_airlock = device
-		my_airlock.lock()
+		set_bolted(my_airlock, TRUE)
 		keyed_set_id(my_airlock, nameof(my_airlock.id_tag), controller.id_tag + tag_addon) // airlocks are keyed targets by id_tag
 		my_airlock.frequency = controller.frequency
 		my_airlock.set_frequency(controller.frequency)
-		my_airlock.req_access = controller.req_access
-		my_airlock.req_one_access = controller.req_one_access
+		my_airlock.set_req_access(controller.req_access)
+		my_airlock.set_req_one_access(controller.req_one_access)
 	else if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/my_pump = device
-		my_pump.frequency = controller.frequency //Unlike doors, these set up their radios in atmos init, so they won't have gone before us.
-		my_pump.id_tag = controller.id_tag + tag_addon
+		my_pump.set_frequency(controller.frequency) // the setters re-tune it and re-key it in its area
+		my_pump.set_id_tag(controller.id_tag + tag_addon)
 	else if(istype(device, /obj/machinery/airlock_sensor))
 		var/obj/machinery/airlock_sensor/my_sensor = device
 		my_sensor.id_tag = controller.id_tag + tag_addon
 		my_sensor.master_tag = controller.id_tag
 		my_sensor.frequency = controller.frequency
 		my_sensor.set_frequency(controller.frequency)
-		my_sensor.req_access = controller.req_access
-		my_sensor.req_one_access = controller.req_one_access
+		my_sensor.set_req_access(controller.req_access)
+		my_sensor.set_req_one_access(controller.req_one_access)
 		if(command)
 			my_sensor.command = command
 	else if(istype(device, /obj/machinery/access_button))
@@ -94,8 +94,8 @@ MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my
 		my_button.master_tag = controller.id_tag
 		my_button.frequency = controller.frequency
 		my_button.set_frequency(controller.frequency)
-		my_button.req_access = controller.req_access
-		my_button.req_one_access = controller.req_one_access
+		my_button.set_req_access(controller.req_access)
+		my_button.set_req_one_access(controller.req_one_access)
 		if(command)
 			my_button.command = command
 

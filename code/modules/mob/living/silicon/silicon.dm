@@ -30,20 +30,56 @@
 	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
 
 	var/hudmode = null
-	fire_stack_decay_rate = -0.55
 	var/idcard_type = /obj/item/card/id/synthetic
+	// footsteps (footstep() in its CAPABILITIES)
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
 
-/mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
-	if(silicon_subsystems)
-		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
-	. = ..()
-	if(!is_decoy)
-		init_id(idcard_type)
-		add_language(LANGUAGE_GALCOM)
-		apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-		init_subsystems()
+/mob/living/silicon/fire_stack_decay_rate()
+	return -0.55
 
-		enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6)
+CAPABILITIES(/mob/living/silicon)
+	ref_one(nameof(common_radio), /obj/item/radio)
+	immune_to(STAT_DIZZY)
+	immune_to(STAT_JITTERY)
+	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)
+	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/alarm_monitor/all/robot))
+	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/atmos_control/robot))
+	owns_one(nameof(crew_manifest), /datum/tgui_module/crew_manifest/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/crew_manifest/robot))
+	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/crew_monitor/robot))
+	owns_one(nameof(idcard), /obj/item/card/id, starts = PROC_REF(start_idcard))
+	owns_one(nameof(law_manager), /datum/tgui_module/law_manager/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/law_manager/robot))
+	owns_one(nameof(laws), /datum/ai_laws)
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/power_monitor/robot))
+	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot, starts = when(cond_not(nameof(decoy)), /datum/tgui_module/rcon/robot))
+	owns_many(nameof(queued_alarms), starts = PROC_REF(start_alarm_queues))
+	// a silicon that is not a decoy speaks galactic common; its subsystems and ID are above
+	knows(LANGUAGE_GALCOM, when = cond_not(nameof(decoy)), default = TRUE)
+	per_type(nameof(silicon_subsystems), TYPE_PROC_REF(/datum, per_type_own))
+	footstep()
+	param(nameof(decoy), pos = 1)
+
+/// A decoy silicon (its constructor param): no ID, language or subsystems.
+/mob/living/silicon/var/decoy = FALSE
+
+/// Its ID card (owns_one(starts =)): the one it already has (a robot's module issues one before its parents' init), else its type's,
+/// filled in with its name; a decoy has none.
+/mob/living/silicon/proc/start_idcard(current, mapload)
+	if(current || decoy || !idcard_type)
+		return current
+	var/obj/item/card/id/card = new idcard_type(src)
+	set_id_info(card)
+	return card
+
+/// It listens to every alarm handler, one queue each, in handler order (owns_many(starts =)); a decoy or a silent type does not.
+/mob/living/silicon/proc/start_alarm_queues(current, mapload)
+	. = list()
+	if(decoy || !register_alarms)
+		return
+	for(var/datum/alarm_handler/AH in all_alarm_handlers())
+		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
+		.["[AH.type]"] = new /datum/silicon_alarm_queue(AH.category)	// Makes sure alarms remain listed in consistent order
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
@@ -62,11 +98,11 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 	if(idcard)
 		return
-	own_set(src, nameof(idcard), new idcard_type(src))
+	rel_set(src, nameof(idcard), new idcard_type(src))
 	set_id_info(idcard)
 
 /mob/living/silicon/proc/SetName(pickedName as text)
-	real_name = pickedName
+	set_real_name(pickedName)
 	name = real_name
 
 /mob/living/silicon/proc/show_laws()
@@ -78,7 +114,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /// An EMP is an electrical injury that brings a power fault with it. Blocking
 /// components are asked before anything is pulsed, and the parent runs once.
 /mob/living/silicon/emp_act(severity, recursive)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return EMP_PROTECT_SELF
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
@@ -88,7 +124,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	var/band = round(severity)
 	if(band >= 1 && band <= length(surge_by_severity))
 		injure(INJURY_ELECTRIC, surge_by_severity[band], emp_injury_zone(), null, 0, /datum/affliction/synthetic/power_fault)
-		status_at_least(EFFECT_CONFUSED, confusion_by_severity[band])
+		status_at_least(STAT_CONFUSED, confusion_by_severity[band])
 	flash_eyes(affect_silicon = 1)
 	to_chat(src, span_bolddanger("*BZZZT*"))
 	to_chat(src, span_danger("Warning: Electromagnetic pulse detected."))
@@ -110,7 +146,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 			MSG_OTHERS(span_warning("%U% was shocked by %T%!")), \
 			MSG_BLIND(span_warning("You hear an electrical crack.")))
 		if(prob(20))
-			status_at_least(EFFECT_STUNNED, 2)
+			status_at_least(STAT_STUNNED, 2)
 		return
 
 /mob/living/silicon/IsAdvancedToolUser()
@@ -149,8 +185,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 // this function displays the shuttles ETA in the status panel if the shuttle has been called
 /mob/living/silicon/proc/show_emergency_shuttle_eta()
-	if(GLOB.emergency_shuttle_service)
-		var/eta_status = GLOB.emergency_shuttle_service.get_status_panel_eta()
+	if(SSemergency_shuttle)
+		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
 		if(eta_status)
 			. = "[eta_status]"
 
@@ -190,6 +226,10 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		speech_synthesizer_langs += added_language
 		return 1
 
+/// knows(LANGUAGE_X, speaks = FALSE) learns a language the speech synthesizer leaves out.
+/mob/living/silicon/lifeform_learn(language, speaks = TRUE)
+	return add_language(language, speaks)
+
 /mob/living/silicon/remove_language(rem_language)
 	var/datum/language/removed_language = GLOB.all_languages[rem_language]
 	if(!removed_language)
@@ -217,29 +257,29 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 /mob/living/silicon/proc/toggle_sensor_mode() // to make borgs use omni starts here - Tank, clueless bird
 	if(sensor_type)
-		if(plane_holder)
+		if(hud_used?.plane_holder)
 			//Enable the planes, its basically just AR-Bs
-			plane_holder.set_vis(VIS_CH_ID,TRUE)
-			plane_holder.set_vis(VIS_CH_WANTED,TRUE)
-			plane_holder.set_vis(VIS_CH_IMPLOYAL,TRUE) //antag related so prob not useful but leaving them in
-			plane_holder.set_vis(VIS_CH_IMPTRACK,TRUE)
-			plane_holder.set_vis(VIS_CH_IMPCHEM,TRUE)
-			plane_holder.set_vis(VIS_CH_STATUS_R,TRUE)
-			plane_holder.set_vis(VIS_CH_HEALTH_VR,TRUE)
-			plane_holder.set_vis(VIS_CH_BACKUP,TRUE) //backup stuff from silicon_vr is here now
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,TRUE) //antag related so prob not useful but leaving them in
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,TRUE) //backup stuff from silicon_vr is here now
 			return TRUE
 
 	else
-		if(plane_holder)
+		if(hud_used?.plane_holder)
 			//Disable the planes
-			plane_holder.set_vis(VIS_CH_ID,FALSE)
-			plane_holder.set_vis(VIS_CH_WANTED,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPLOYAL,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPTRACK,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPCHEM,FALSE)
-			plane_holder.set_vis(VIS_CH_STATUS_R,FALSE)
-			plane_holder.set_vis(VIS_CH_HEALTH_VR,FALSE)
-			plane_holder.set_vis(VIS_CH_BACKUP,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
 			return FALSE
 
 //hudmode = sensor_type //This is checked in examine.dm on humans, so they can see medical/security records depending on mode
@@ -252,22 +292,25 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	set category = VERB_CAT_IC_SETTINGS
 
 	// A cancel answers "": the pose is cleared.
-	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_pose_entered), title = "Pose", message = "This is [src]. It is...", cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_pose_entered), answerer = src, title = "Pose", question = "This is [src]. It is...", timeout = 0)
 
-/mob/living/silicon/proc/silicon_pose_entered(datum/om/prompt/text/ask)
-	pose = ask.text ? strip_html_simple(ask.text) : null
+/mob/living/silicon/proc/silicon_pose_entered(datum/act/request/A)
+	var/text = A.answer ? A.answer.value : ""
+	pose = text ? strip_html_simple(text) : null
 
 /mob/living/silicon/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
 	set category = VERB_CAT_IC_SETTINGS
 
-	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_flavor_entered), title = "Flavour text", message = "Please enter your new flavour text.", default = flavor_text, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
 
-/mob/living/silicon/proc/silicon_flavor_entered(datum/om/prompt/text/ask)
-	var/new_flavortext = strip_html_simple(ask.text)
+/mob/living/silicon/proc/silicon_flavor_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_flavortext = strip_html_simple(A.answer.value)
 	if(new_flavortext)
-		flavor_text = new_flavortext
+		bio.flavor_text = new_flavortext
 
 /mob/living/silicon/binarycheck()
 	return 1
@@ -369,10 +412,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	..()
 	src.category = category
 
-/datum/silicon_alarm_queue/relations()
-	. = ..()
-	. += rel_many(nameof(raised))
-	. += rel_many(nameof(cleared))
+CAPABILITIES(/datum/silicon_alarm_queue)
+	ref_many(nameof(raised))
+	ref_many(nameof(cleared))
 
 /mob/living/silicon/proc/raised_alarm(datum/alarm/A)
 	to_chat(src, span_filter_warning("[A.alarm_name()]!"))
@@ -413,13 +455,13 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	SSjob.free_role(job)
 
 	if(mind.objectives.len)
-		qdel(mind.objectives)
+		own_clear(mind, nameof(/datum/mind::objectives), OWN_DELETE)
 		mind.special_role = null
 
-	GLOB.antag_service.clear_antag_roles(mind)
+	SSantag.clear_antag_roles(mind)
 
 	ghostize(0)
-	qdel(src)
+	spent(src)
 
 /mob/living/silicon/has_vision()
 	return 0 //NOT REAL EYES

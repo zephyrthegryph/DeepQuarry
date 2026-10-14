@@ -7,21 +7,10 @@ GLOBAL_LIST_INIT(dq_variants_under_cohesion, list(
 	"hazard" = list("name" = "hazard cohesion suit", "icon_state" = "cohesionsuit_hazard", "desc" = "An orange cohesion suit with yellow hazard stripes intended to assist Prometheans in maintaining their form and prevent direct skin exposure."),
 ))
 
-/obj/item/clothing/under/cohesion/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/cohesion)
+	configure(item_protection(permeability = 0))
+	variants(nameof(variant), PROC_REF(variant_table))
 
-/obj/item/clothing/under/cohesion/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_under_cohesion[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/under/cohesion/proc/variant_table()
+	return GLOB.dq_variants_under_cohesion

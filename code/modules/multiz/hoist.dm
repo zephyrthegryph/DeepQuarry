@@ -10,10 +10,12 @@
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_case"
 
-DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/hoist_kit)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/hoist_kit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/hoist_kit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	new /obj/structure/hoist (get_turf(user), user.dir)
 	act_message(user, null, MSG_SELF(span_notice("You deploy the hoist kit!")), \
 		MSG_OTHERS(span_warning("%U% deploys the hoist kit!")), \
@@ -31,11 +33,6 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach), REQ_TARGET_STATE(/obj/effect/hoist_hook/proc/can_attach)), \
-)
-
 /// Requirement: TRUE, or why the dragged thing can't be clamped on.
 /obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
 	if(!istype(held) || !held.simulated || held.anchored)
@@ -45,15 +42,22 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	return TRUE
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
-/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)
+/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
+	var/refusal = can_attach(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	if (use_check(user, 0))
-		return TRUE
+		return OP_OK
 
 	source_hoist().attach_hoistee(AM)
 	act_message(user, AM, MSG_SELF(span_danger("You attach %T% to \the [src].")), \
 		MSG_OTHERS(span_danger("%U% attaches %T% to \the [src].")), \
 		MSG_BLIND(span_danger("You hear something clamp into place.")))
-	return TRUE
+	return OP_OK
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
@@ -64,19 +68,29 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	AM.set_anchored(TRUE) // why isn't this being set by buckle_mob for silicons?
 	source_hook.layer = AM.layer + 0.1
 
-/obj/effect/hoist_hook/MouseDrop(atom/dest)
-	..()
-	if(!Adjacent(usr) || !dest.Adjacent(usr)) return // carried over from the default proc
+CAPABILITIES(/obj/effect/hoist_hook)
+	drag_onto(PROC_REF(drop_input))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
+	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
 
-	if (!(ishuman(usr) || issilicon(usr)))
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
+	detach_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
+
+/obj/effect/hoist_hook/proc/detach_with_actor(mob/user, atom/dest)
+	if(!Adjacent(user) || !dest.Adjacent(user)) return // carried over from the default proc
+
+	if (!(ishuman(user) || issilicon(user)))
 		return
 
-	if (usr.incapacitated())
-		to_chat(usr, span_notice("You can't do that while incapacitated."))
+	if (user.incapacitated())
+		to_chat(user, span_notice("You can't do that while incapacitated."))
 		return
 
-	if (!usr.IsAdvancedToolUser())
-		to_chat(usr, span_notice("You stare cluelessly at \the [src]."))
+	if (!user.IsAdvancedToolUser())
+		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
 		return
 
 	if (!source_hoist().hoistee())
@@ -90,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 	var/turf/desturf = dest
 	source_hoist().hoistee().forceMove(desturf)
-	act_message(usr, null, MSG_SELF(span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp.")), \
+	act_message(user, null, MSG_SELF(span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp.")), \
 		MSG_OTHERS(span_danger("%U% detaches \the [source_hoist().hoistee()] from the hoist clamp.")), \
 		MSG_BLIND(span_danger("You hear something unclamp.")))
 	source_hoist().release_hoistee()
@@ -115,13 +129,19 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 
-/obj/structure/hoist/Initialize(mapload, ndir)
-	. = ..()
-	dir = ndir
-	var/turf/newloc = get_step(src, dir)
-	own_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
-	rel_set(source_hook, nameof(source_hook.source_hoist), src)
+CAPABILITIES(/obj/structure/hoist)
+	silicon_hand(robots = TRUE)
+	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
+	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
+	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), begins(PROC_REF(hoist_begins)), wait(PROC_REF(hoist_time)), then(PROC_REF(interaction_hand)))
+	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
 
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
+/obj/structure/hoist/proc/hang_hook(ndir)
+	var/turf/newloc = get_step(src, dir)
+	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
+	rel_set(source_hook, nameof(source_hook.source_hoist), src)
 
 // whatever hangs from the hoist is released.
 /obj/structure/hoist/on_destroy(force)
@@ -151,29 +171,21 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
 	if(hoistee())
 		release_hoistee()
-	own_clear(src, nameof(source_hook), OWN_DELETE)
-
-DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
-DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))
+	rel_clear(src, nameof(source_hook))
 
 /// A hoist that survives a heavy blast is broken by it.
-/obj/structure/hoist/proc/hoist_blast_break(datum/damage_packet/packet)
+/obj/structure/hoist/proc/hoist_blast_break(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 2 && !broken)
 		break_hoist()
 
 /// A hit on the hook wrenches the hoist; it breaks more often the closer the blast (the hook itself takes nothing).
-/obj/effect/hoist_hook/proc/hook_blast_break(datum/damage_packet/packet)
+/obj/effect/hoist_hook/proc/hook_blast_break(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob(100 / packet.severity))
 		source_hoist().break_hoist()
-	return DAMAGE_REACTION_BLOCK
-
-/obj/structure/hoist
-	silicon_use = ROBOT_USE_HAND
-
-DECLARE_INTERACTIONS(/obj/structure/hoist, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_work_hoist)), \
-	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_collapse)), \
-)
+	return OP_OK
 
 /// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
 /obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)
@@ -198,48 +210,65 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if (!(ishuman(user) || issilicon(user)))
-		return TRUE
+
+/// The hoisted thing's size: how heavy the lift is.
+/obj/structure/hoist/proc/hoistee_size()
+	if(ismob(hoistee()))
+		var/mob/M = hoistee()
+		return M.mob_size
+	if(isobj(hoistee()))
+		var/obj/O = hoistee()
+		return O.w_class
+	return 0
+
+/// How long the lift takes: a second per four sizes of the hoisted thing; a refusal, a switch of direction and an empty clamp are answered at once.
+/obj/structure/hoist/proc/hoist_time(datum/act/op/A)
+	if(can_work_hoist(A.actor, src, A.held) != TRUE || !can_move_dir(movedir) || !hoistee())
+		return 0
+	return (1 SECONDS) * hoistee_size() / 4
+
+/obj/structure/hoist/proc/hoist_begins(datum/act/op/A)
+	var/movtext = movedir == UP ? "raise" : "lower"
+	return msg_text(span_notice("You begin to [movtext] \the [hoistee()]!"), span_notice("%U% begins to [movtext] \the [hoistee()]!"), span_notice("You hear the sound of a crank."))
+
+/obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_work_hoist(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/living/user = A.actor
 
 	var/can = can_move_dir(movedir)
 	var/movtext = movedir == UP ? "raise" : "lower"
 	if (!can) // If you can't...
 		movedir = movedir == UP ? DOWN : UP // switch directions!
 		to_chat(user, span_notice("You switch the direction of the pulley."))
-		return TRUE
+		return OP_OK
 
 	if (!hoistee())
 		act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] the clamp.")), \
 			MSG_OTHERS(span_notice("%U% begins to [movtext] the clamp.")), \
 			MSG_BLIND(span_notice("You hear the sound of a crank.")))
 		move_dir(movedir, 0)
-		return TRUE
+		return OP_OK
 
 	check_consistency()
-
-	var/size
-	if (ismob(hoistee()))
-		var/mob/M = hoistee()
-		size = M.mob_size
-	else if (isobj(hoistee()))
-		var/obj/O = hoistee()
-		size = O.w_class
-
-	act_message(user, null, MSG_SELF(span_notice("You begin to [movtext] \the [hoistee()]!")), \
-		MSG_OTHERS(span_notice("%U% begins to [movtext] \the [hoistee()]!")), \
-		MSG_BLIND(span_notice("You hear the sound of a crank.")))
-	om_task_timed(user, (1 SECONDS) * size / 4, src, src, PROC_REF(move_dir), list(movedir, 1))
-	return TRUE
+	move_dir(movedir, 1)
+	return OP_OK
 
 /obj/structure/hoist/proc/collapse_kit()
 	replace_with(src, /obj/item/hoist_kit)
 
 /// Old Collapse Hoist verb.
-/obj/structure/hoist/proc/hoist_verb_collapse(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!(ishuman(user) || issilicon(user)))
-		return
 
+/obj/structure/hoist/proc/hoist_verb_collapse(datum/act/op/A)
+	var/refusal = can_collapse(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
 	if (isobserver(user) || user.incapacitated())
 		return
 	collapse_kit()

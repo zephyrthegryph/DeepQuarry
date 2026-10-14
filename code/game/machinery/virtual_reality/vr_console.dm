@@ -15,7 +15,6 @@
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.
 	var/mob/living/carbon/human/avatar
-	var/datum/mind/vr_mind
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
 
 	var/eject_dead = TRUE
@@ -30,34 +29,35 @@
 	var/perfect_replica = TRUE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 15
-	active_power_usage = 200
-	light_color = "#FF0000"
+
+CAPABILITIES(/obj/machinery/vr_sleeper)
+	configure(light_glow(color = "#FF0000"))
+	configure(uses_power(idle = 15, active = 200))
+	default_parts()
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
+	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(vr_sleeper_emp))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("vr_sleeper_scan", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_scan)))
+	op("vr_sleeper_enter", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), when(req(PROC_REF(drag_meant))), needs(req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(interaction_enter)))
+	op("vr_sleeper_eject", menu(), label("Eject VR Capsule"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("vr_sleeper_climb_in", menu(), label("Enter VR Capsule"), needs(req_adjacent(), req_capable(), req(PROC_REF(vr_entry_reason))), starts(PROC_REF(vr_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_climb_in)))
+	ref_one(nameof(avatar), /mob/living/carbon/human)
 
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/vr_pod
+/datum/relation_definition/slot/occupant/vr_pod
 	holder = /obj/machinery/vr_sleeper
 	slot_id = OCCUPANT_SLOT_VR_POD
 	name = "VR pod"
 
-/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
-/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
-OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
+/// The pod holds someone (the occupant slot's link/unlink publishes the slot key on the pod).
 /obj/machinery/vr_sleeper/proc/vr_occupied()
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 
 /// Watches its occupant (death, power loss) while it has one.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied")
-
-/obj/machinery/vr_sleeper/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	own_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
-	update_icon()
-
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
@@ -66,7 +66,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 	..()
 
 /// Watches its occupant (death, power loss) while it has one (the declaration above).
-/obj/machinery/vr_sleeper/machine_step()
+/obj/machinery/vr_sleeper/proc/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable())
 		if(occupant)
@@ -77,7 +77,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		occupant.exit_vr(FALSE)
 
-APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/vr_sleeper/draw(datum/look/look)
+	..()
+	look.state("[base_state][appearance_occupied()]")
 
 /// 1 while the pod holds an occupant, else 0.
 /obj/machinery/vr_sleeper/proc/appearance_occupied()
@@ -89,65 +92,64 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(occupant)
 		. += span_notice("[occupant] is inside.")
 
-
-/obj/machinery/vr_sleeper/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/vr_sleeper_scan,
-		/datum/interaction/machine_drag/vr_sleeper_enter,
-		/datum/interaction/machine_verb/vr_sleeper_eject,
-		/datum/interaction/machine_verb/vr_sleeper_climb_in,
-	)
-	..()
-
-/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
-/datum/interaction/machine_item/vr_sleeper_scan
-	id = "vr_sleeper_scan"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/vr_sleeper/proc/interaction_scan
-
-/obj/machinery/vr_sleeper/proc/interaction_scan(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
 	if(occupant && (istype(I, /obj/item/healthanalyzer) || istype(I, /obj/item/robotanalyzer)))
 		I.attack(occupant, user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/vr_sleeper/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/vr_sleeper/proc/crowbar_used(datum/act/op/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(occupant && avatar())
 		avatar().exit_vr()
 		rel_clear(src, nameof(avatar))
 		perform_exit()
-	return ..()
-
-/datum/interaction/machine_drag/vr_sleeper_enter
-	id = "vr_sleeper_enter"
-	name = "Insert"
-	held_type = /mob
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/vr_sleeper/proc/drag_meant, null))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_enter
+	return OP_DECLINE
 
 /// The old MouseDrop_T guard for the dragged mob.
-/obj/machinery/vr_sleeper/proc/drag_meant(mob/actor, atom/target, mob/dropping)
-	return isliving(dropping)
+/obj/machinery/vr_sleeper/proc/drag_meant(datum/act/op/A)
+	if(isliving(A.held))
+		return null
+	return /datum/msg/req_failed
 
-/obj/machinery/vr_sleeper/proc/interaction_enter(mob/user, atom/movable/dropping, datum/interaction/interaction)
-	var/mob/target = dropping
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !isliving(target))
-		return TRUE
-	go_in(target, user)
-	return TRUE
+/obj/machinery/vr_sleeper/proc/interaction_enter(datum/act/op/A)
+	go_in_timed_done(A.held, A.actor)
+	return OP_OK
 
-DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
+/obj/machinery/vr_sleeper/proc/vr_entry_target(datum/act/op/A)
+	return A.key == "vr_sleeper_enter" ? A.held : A.actor
+
+/obj/machinery/vr_sleeper/proc/vr_entry_reason(datum/act/op/A)
+	var/mob/M = vr_entry_target(A)
+	if(A.key == "vr_sleeper_enter" && !read_once(!A.actor.stat && !A.actor.lying && Adjacent(A.actor) && M.Adjacent(A.actor) && isliving(M)))
+		return "You cannot put them into the capsule from here."
+	if(!operable())
+		return "The capsule is not operational."
+	if(!ishuman(M))
+		return "\The [src] rejects [M] with a sharp beep."
+	if(slot_item(OCCUPANT_SLOT_VR_POD))
+		return "\The [src] is already occupied."
+	return null
+
+/obj/machinery/vr_sleeper/proc/vr_entry_started(datum/act/op/A)
+	var/mob/M = vr_entry_target(A)
+	if(M == A.actor)
+		act_message(A.actor, src, others = "%U% starts climbing into %T%.")
+	else
+		act_message(A.actor, M, others = "%U% starts putting %T% into \the [src].")
+
 /// An EMP throws the occupant out of VR, maybe frying their brain on the way.
-/obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/damage_packet/packet)
+/obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	var/severity = packet.severity
 
 	if(occupant)
@@ -160,15 +162,10 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 			smoke.set_up(severity, 0, src)
 			smoke.start("#202020")
 		perform_exit()
+	return HOOK_DECLINE
 
-/datum/interaction/machine_verb/vr_sleeper_eject
-	id = "vr_sleeper_eject"
-	name = "Eject VR Capsule"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_eject
-
-/obj/machinery/vr_sleeper/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!operable() || occupant && occupant.stat == DEAD)
 		perform_exit()
@@ -177,15 +174,9 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	add_fingerprint(user)
 	return TRUE
 
-/datum/interaction/machine_verb/vr_sleeper_climb_in
-	id = "vr_sleeper_climb_in"
-	name = "Enter VR Capsule"
-	category = INTERACTION_CAT_INSERT
-	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/vr_sleeper/proc/interaction_climb_in
-
-/obj/machinery/vr_sleeper/proc/interaction_climb_in(mob/user, obj/item/held, datum/interaction/interaction)
-	go_in(user, user)
+/obj/machinery/vr_sleeper/proc/interaction_climb_in(datum/act/op/A)
+	var/mob/user = A.actor
+	go_in_timed_done(user, user)
 	add_fingerprint(user)
 	return TRUE
 
@@ -195,37 +186,14 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		return 0 //maybe they should be able to get out with cuffs, but whatever
 	perform_exit()
 
-/obj/machinery/vr_sleeper/proc/go_in(mob/M, mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(!M)
-		return
-	if(!operable())
-		return
-	if(!ishuman(M))
-		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
-		return
-	if(occupant)
-		to_chat(user, span_warning("\The [src] is already occupied."))
-		return
-
-	if(M == user)
-		act_message(user, src, others = "%U% starts climbing into %T%.")
-	else
-		act_message(user, M, others = "%U% starts putting %T% into \the [src].")
-
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
-	return
-
 /obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
+	if(!move_into(src, OCCUPANT_SLOT_VR_POD, M))
 		return
-
-	update_icon()
 
 	if(M.has_brain_worms())
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
@@ -240,19 +208,23 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		return
 
 	if(avatar())
-		om_ask(avatar(), /datum/om/prompt/confirm/leave_vr, PROC_REF(perform_exit))
+		ask_leave_vr(PROC_REF(perform_exit_confirmed))
 		return
 
 	perform_exit()
 
-/// The avatar is asked to leave. Re-checked on the answer: they are still this pod's avatar.
-/datum/om/prompt/confirm/leave_vr
-	title = "Leave VR?"
-	message = "Someone wants to remove you from virtual reality. Do you want to leave?"
+/// The avatar is asked to leave; `handler` runs on a yes.
+/obj/machinery/vr_sleeper/proc/ask_leave_vr(handler)
+	open_request(src, /datum/prompt/yes_no, handler, valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Leave VR?", question = "Someone wants to remove you from virtual reality. Do you want to leave?", timeout = 0)
 
-/datum/om/prompt/confirm/leave_vr/valid()
-	var/obj/machinery/vr_sleeper/pod = subject
-	return pod.avatar() == answerer ? null : "not the avatar"
+/// Re-checked on the answer: they are still this pod's avatar.
+/obj/machinery/vr_sleeper/proc/asked_is_avatar(datum/request/R)
+	return avatar() == R.answerer
+
+/obj/machinery/vr_sleeper/proc/perform_exit_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	perform_exit()
 
 //The actual bulk of the exit code.
 /obj/machinery/vr_sleeper/proc/perform_exit()
@@ -294,13 +266,15 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	rel_set(src, nameof(avatar), occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar())
-		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(vr_reuse_answered), message = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", title = "New avatar", answer_on_no = TRUE, requires = list(/datum/om/check/inside_target))
+		open_request(src, /datum/prompt/yes_no, PROC_REF(vr_reuse_answered), answerer = occupant, title = "New avatar", question = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", ask_flags = ASK_INSIDE, timeout = 0)
 		return
 	vr_choose_avatar(occupant)
 
-/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/occupant = ask.answerer
-	if(ask.yes && avatar())
+/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/occupant = A.request.answerer
+	if(A.answer.value && avatar())
 		vr_reenter(occupant)
 		return
 	// Delink the mob
@@ -313,31 +287,39 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	var/list/vr_landmarks = list()
 	for(var/obj/effect/landmark/virtual_reality/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		vr_landmarks += sloc.name
-	om_flow_start(/datum/om/flow/vr_choose_avatar, occupant, src, landmarks = vr_landmarks)
+	open_request(src, /datum/prompt/choice, PROC_REF(location_chosen), valid = PROC_REF(occupant_inside), answerer = occupant, title = "Spawn location", question = "Please select a location to spawn your avatar at:", choices = vr_landmarks, timeout = 0)
 
-/// Spawn location, then "as a creature?", then which creature. The occupant stays in the pod throughout.
-/datum/om/flow/vr_choose_avatar
-	requires = list(/datum/om/check/inside_target)
-	var/list/landmarks
+/// Re-checked on every answer of the avatar choice: the asked is still the one inside the pod.
+/obj/machinery/vr_sleeper/proc/occupant_inside(datum/request/R)
+	return slot_item(OCCUPANT_SLOT_VR_POD) == R.answerer
+
+/// Which creature to be: the spawn location is kept on the question.
+/datum/prompt/yes_no/vr_avatar_mob
 	var/location
 
-/datum/om/flow/vr_choose_avatar/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(location_chosen), choices = landmarks, title = "Spawn location", message = "Please select a location to spawn your avatar at:")
+/datum/prompt/choice/vr_avatar_creature
+	var/location
 
-/datum/om/flow/vr_choose_avatar/proc/location_chosen(datum/om/prompt/choice/ask)
-	location = ask.choice
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(as_mob_answered), title = "Join as a mob?", message = "Would you like to play as a different creature?", answer_on_no = TRUE)
-
-/datum/om/flow/vr_choose_avatar/proc/as_mob_answered(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(creature_chosen), choices = GLOB.vr_mob_tf_options, title = "Mob list", message = "Please select a creature:")
+/// Spawn location, then "as a creature?", then which creature. The occupant stays in the pod throughout.
+/obj/machinery/vr_sleeper/proc/location_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/obj/machinery/vr_sleeper/pod = target
-	pod.vr_avatar_chosen(actor, location, null)
+	open_request(src, /datum/prompt/yes_no/vr_avatar_mob, PROC_REF(as_mob_answered), valid = PROC_REF(occupant_inside), answerer = A.request.answerer, title = "Join as a mob?", question = "Would you like to play as a different creature?", location = A.answer.value, timeout = 0)
 
-/datum/om/flow/vr_choose_avatar/proc/creature_chosen(datum/om/prompt/choice/ask)
-	var/obj/machinery/vr_sleeper/pod = target
-	pod.vr_avatar_chosen(actor, location, GLOB.vr_mob_tf_options[ask.choice])
+/obj/machinery/vr_sleeper/proc/as_mob_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/vr_avatar_mob/R = A.request
+	if(A.answer.value)
+		open_request(src, /datum/prompt/choice/vr_avatar_creature, PROC_REF(creature_chosen), valid = PROC_REF(occupant_inside), answerer = R.answerer, title = "Mob list", question = "Please select a creature:", choices = GLOB.vr_mob_tf_options, location = R.location, timeout = 0)
+		return
+	vr_avatar_chosen(R.answerer, R.location, null)
+
+/obj/machinery/vr_sleeper/proc/creature_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/vr_avatar_creature/R = A.request
+	vr_avatar_chosen(R.answerer, R.location, GLOB.vr_mob_tf_options[A.answer.value])
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, S, tf)
 	if(avatar())
@@ -360,9 +342,9 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	occupant.enter_vr(avatar())
 	if(spawn_with_clothing)
 		SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
-	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar())
-	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/vr_transform_into_mob, avatar())
-	om_grant(avatar(), GRANT_VERB, /mob/living/proc/set_size, avatar())
+	grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar())
+	grant(avatar(), granted_verb(/mob/living/carbon/human/proc/vr_transform_into_mob), avatar())
+	grant(avatar(), granted_verb(/mob/living/proc/set_size), avatar())
 	avatar().set_virtual_reality_mob(TRUE)
 
 	//This handles all the 'We make it look like ourself' code.
@@ -376,33 +358,24 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		avatar().sync_organ_dna()
 		avatar().initialize_vessel()
 
-	OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
 
 	if(tf)
 		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
 		if(isliving(new_form)) // Make sure the mob spawned properly.
-			om_grant(new_form, GRANT_VERB, /mob/living/proc/vr_revert_mob_tf, new_form)
+			grant(new_form, granted_verb(/mob/living/proc/vr_revert_mob_tf), new_form)
 			new_form.set_virtual_reality_mob(TRUE)
 
-	om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar()) //ahealing removes the prommie verbs and the VR verbs, giving it back
-	avatar().status_at_least(EFFECT_SLEEPING, 1)
+	grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar()) //ahealing removes the prommie verbs and the VR verbs, giving it back
+	avatar().status_at_least(STAT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.
-	om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(vr_avatar_named), message = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?")
+	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_named), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 
-/// Naming a pod's avatar. Re-checked on the answer: the answerer is still the pod's avatar.
-/datum/om/prompt/text/vr_avatar_name
-	title = "Name change"
-	max_length = MAX_NAME_LEN
-
-/datum/om/prompt/text/vr_avatar_name/valid()
-	var/obj/machinery/vr_sleeper/pod = subject
-	return (istype(pod) && pod.avatar() == answerer) ? null : "not the avatar"
-
-/obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/om/prompt/text/vr_avatar_name/ask)
-	if(ask.text)
-		avatar().real_name = ask.text
-		avatar().name = ask.text
+/obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/act/request/A)
+	if(A.answer && A.answer.value)
+		avatar().set_real_name(A.answer.value)
+		avatar().name = A.answer.value
 
 /obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)
 	// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.
@@ -412,11 +385,6 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 			M.revert_mob_tf()
 	occupant.enter_vr(avatar())
 
-
 /// avatar (a relation view: it reads null once the target is deleted).
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human
 	return avatar
-
-/// vr mind (a relation view: it reads null once the target is deleted).
-/obj/machinery/vr_sleeper/proc/vr_mind() as /datum/mind
-	return vr_mind

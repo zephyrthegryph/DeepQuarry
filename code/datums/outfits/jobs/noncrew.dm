@@ -19,7 +19,7 @@
 	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_POCKET_R)
 	if(istype(wallet))
 		wallet.owner_name = H.real_name
-		wallet.worth = 1000
+		wallet.set_worth(1000)
 
 /datum/decl/hierarchy/outfit/noncrew/spacefarer
 	name = OUTFIT_JOB_NAME("Spacefarer")
@@ -48,4 +48,4 @@
 	var/obj/item/spacecash/ewallet/wallet = H.get_equipped_item(SLOT_ID_POCKET_R)
 	if(istype(wallet))
 		wallet.owner_name = H.real_name
-		wallet.worth = 1000
+		wallet.set_worth(1000)

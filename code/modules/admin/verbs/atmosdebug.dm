@@ -4,10 +4,21 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 
 	feedback_add_details("admin_verb","CP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "WARNING: This command should not be run on a live server. Do you want to continue?", title = "Check Piping", choices = list("No", "Yes"))
-	if(isnull(_answer_a1))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(_answer_a1 != "Yes")
+	open_request(src, /datum/prompt/choice/admin_atmos_scan, PROC_REF(scan_confirmed), answerer = answerer)
+
+/datum/admin_verb/atmosscan/proc/scan_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	scan_selected(context)
+
+/datum/admin_verb/atmosscan/proc/scan_selected(datum/act/request/context)
+	set background = 1
+	var/client/user = context.request.answerer.client
+	feedback_add_details("admin_verb","CP")
+	if(context.request.value != "Yes")
 		return
 
 	to_chat(user, span_debug_info("Checking for disconnected pipes..."))
@@ -44,6 +55,16 @@ ADMIN_VERB_VISIBILITY(powerdebug, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(powerdebug, R_DEBUG, "Check Power", "Checks all powernets (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
 	feedback_add_details("admin_verb","CPOW") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	for(var/id in GLOB.machine_service.power_grids)
+	for(var/id in machines_power_grids())
 		if(!length(power_grid_nodes(id)))
 			to_chat(user, span_filter_adminlog("Power region [id] has no machines ([power_avail(id)] W available)."))
+
+/datum/prompt/choice/admin_atmos_scan
+	rights = R_DEBUG
+	timeout = 0
+	question = "WARNING: This command should not be run on a live server. Do you want to continue?"
+	title = "Check Piping"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	recheck_on_open = TRUE
+

@@ -53,8 +53,8 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
 	var/obj/item/card/id/id = create_id("Asset Protection", player)
 	if(id)
-		id.access |= SSaccess.get_all_station_access()
-		id.icon_state = "centcom"
+		id.include_access(SSaccess.get_all_station_access())
+		id.set_icon_state("centcom")
 	create_radio(DTH_FREQ, player)
 
 /datum/antagonist/deathsquad/update_antag_mob(datum/mind/player)
@@ -71,12 +71,12 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
 	player.name = "[syndicate_commando_rank] [syndicate_commando_name]"
 	player.current.name = player.name
-	player.current.real_name = player.current.name
+	player.current.set_real_name(player.current.name)
 
 	var/mob/living/carbon/human/H = player.current
 	if(istype(H))
 		H.gender = pick(MALE, FEMALE)
-		H.age = rand(25,45)
+		H.bio.age = rand(25,45)
 		H.dna.ready_dna(H)
 
 	return

@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/silenced icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/silenced state: silenced_pistol
+/obj/item/gun/projectile/silenced dir: 2
+/obj/item/gun/projectile/silenced overlay: icons/obj/gun.dmi:silenced_pistol:8:#000000
+/obj/item/gun/projectile/silenced/empty icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/silenced/empty state: silenced_pistol-e
+/obj/item/gun/projectile/silenced/empty dir: 2
+/obj/item/gun/projectile/silenced/empty overlay: icons/obj/gun.dmi:silenced_pistol-e:8:#000000
+

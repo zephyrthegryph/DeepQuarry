@@ -1,6 +1,5 @@
 /datum/tgui_module/alarm_monitor
 	name = "Alarm monitor"
-	tgui_id = "StationAlertConsole"
 	var/list_cameras = 0						// Whether or not to list camera references. A future goal would be to merge this with the enginering/security camera console. Currently really only for AI-use.
 
 /// The particular list of alarm handlers this alarm monitor should present to the user. The handlers
@@ -14,10 +13,12 @@
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/all/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/all/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 /datum/tgui_module/alarm_monitor/all/robot
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/all/robot)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_self_state))
 
 /datum/tgui_module/alarm_monitor/engineering
 /datum/tgui_module/alarm_monitor/engineering/alarm_handlers()
@@ -25,11 +26,13 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/robot, GLOB.tgui_self_stat
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/engineering/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/engineering/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for nif_state
 /datum/tgui_module/alarm_monitor/engineering/nif
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/nif, GLOB.tgui_nif_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/engineering/nif)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_nif_state))
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/engineering/ntos
@@ -41,7 +44,8 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/nif, GLOB.tgui_nif
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/security/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/security/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/security/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/security/ntos
@@ -88,50 +92,41 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/security/glasses, GLOB.tgui_gl
 
 	return all_alarms
 
-/datum/tgui_module/alarm_monitor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!isAI(ui.user))
-		return FALSE
-	return TRUE
+CAPABILITIES(/datum/tgui_module/alarm_monitor)
+	interface("StationAlertConsole")
+	op("switchTo", ui_act("switchTo", arg("camera", schema_ref(/obj/machinery/camera))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_switchto)))
 
-UI_ACT(/datum/tgui_module/alarm_monitor, "switchTo", ui_act_switchto, UI_ARG_REF("camera", "proc:ui_source_registry_members_registry_cameras", /obj/machinery/camera))
-UI_ACT_PROC(/datum/tgui_module/alarm_monitor, ui_act_switchto)
-	var/obj/machinery/camera/C = params["camera"]
+/datum/tgui_module/alarm_monitor/proc/ui_act_switchto(datum/act/op/A, camera)
+	var/mob/user = A.actor
+	var/obj/machinery/camera/C = camera
 	if(!C)
 		return
 
-	ui.user.switch_to_camera(C)
+	user.switch_to_camera(C)
 	return 1
 
-/// The list the UI_ARG_REF rows resolve refs in.
-/datum/tgui_module/alarm_monitor/proc/ui_source_registry_members_registry_cameras()
-	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
-
-UI_DATA_REPLACE(/datum/tgui_module/alarm_monitor, "merge:ui_data_datum_tgui_module_alarm_monitor{categories:list}")
-
-/// The computed part of /datum/tgui_module/alarm_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/alarm_monitor/proc/ui_data_datum_tgui_module_alarm_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/alarm_monitor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/categories[0]
 	var/z = get_z(tgui_host())
 	for(var/datum/alarm_handler/AH in alarm_handlers())
 		categories[++categories.len] = list("category" = AH.category, "alarms" = list())
-		for(var/datum/alarm/A in AH.visible_alarms(z))
+		for(var/datum/alarm/A2 in AH.visible_alarms(z))
 			var/cameras[0]
 			var/lost_sources[0]
 
-			if(isAI(user))
-				for(var/obj/machinery/camera/C in A.cameras())
+			if(istype(user, /mob/living/silicon/ai))
+				for(var/obj/machinery/camera/C in A2.cameras())
 					cameras[++cameras.len] = C.tgui_structure()
-			for(var/datum/alarm_source/AS in A.sources)
+			for(var/datum/alarm_source/AS in A2.sources)
 				if(!AS.source)
 					lost_sources[++lost_sources.len] = AS.source_name
 
 			categories[categories.len]["alarms"] += list(list(
-					"name" = "[A.alarm_name()]" + "[A.max_severity() > 1 ? "(MAJOR)" : ""]",
-					"origin_lost" = A.origin() == null,
+					"name" = "[A2.alarm_name()]" + "[A2.max_severity() > 1 ? "(MAJOR)" : ""]",
+					"origin_lost" = A2.origin() == null,
 					"has_cameras" = cameras.len,
 					"cameras" = cameras,
 					"lost_sources" = lost_sources.len ? sanitize(english_list(lost_sources, nothing_text = "", and_text = ", ")) : ""))

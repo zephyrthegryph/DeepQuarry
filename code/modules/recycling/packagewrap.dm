@@ -5,7 +5,9 @@
 	icon_state = "deliveryPaper"
 	w_class = ITEMSIZE_NORMAL
 	var/amount = 25.0
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
+
+CAPABILITIES(/obj/item/packageWrap)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 
 /obj/item/packageWrap/afterattack(obj/target, mob/user, proximity)
 	if(!proximity) return
@@ -29,23 +31,23 @@
 			to_chat(user, span_warning("You need more paper."))
 			return
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(get_turf(O.loc))	//Aaannd wrap it up!
-		if(!own_set(P, nameof(P.wrapped), O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
-			qdel(P)
+		if(!move_into(P, nameof(P.wrapped), O, user)) // out of a hand or bag: its HUD clears
+			consumed(P, src)
 			return
-		P.w_class = O.w_class
+		P.set_w_class(O.w_class)
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))
-			P.icon_state = "deliverycrate[i]"
+			P.set_icon_state("deliverycrate[i]")
 			switch(i)
 				if(1) P.name = "tiny parcel"
 				if(3) P.name = "normal-sized parcel"
 				if(4) P.name = "large parcel"
 				if(5) P.name = "huge parcel"
 		if(i < 1)
-			P.icon_state = "deliverycrate1"
+			P.set_icon_state("deliverycrate1")
 			P.name = "tiny parcel"
 		if(i > 5)
-			P.icon_state = "deliverycrate5"
+			P.set_icon_state("deliverycrate5")
 			P.name = "huge parcel"
 		P.add_fingerprint(user)
 		O.add_fingerprint(user)
@@ -65,7 +67,7 @@
 		if(O.opened)
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
-		P.icon_state = "deliverycrate"
+		P.set_icon_state("deliverycrate")
 		rel_set(P, nameof(P.wrapped), O)
 		O.forceMove(P)
 		src.amount -= 3
@@ -84,7 +86,7 @@
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		rel_set(P, nameof(P.wrapped), O)
-		O.sealed = 1
+		set_welded(O, TRUE)
 		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
@@ -109,12 +111,19 @@
 	name = "packaging dispenser"
 	desc = "Wraps various items so they can be tagged and shipped through disposals. Refills over time."
 	var/recharge_ticker = 0
+	/// TRUE while the dispenser is short (wrap_used() sets it): the slow step refills it; full, it parks.
+	var/tmp/refilling = FALSE
+TRACKED(/obj/item/packageWrap/borg, refilling)
 
-/// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.
-/obj/item/packageWrap/borg/periodic_step()
+CAPABILITIES(/obj/item/packageWrap/borg)
+	every(2 SECONDS, then(PROC_REF(refill_step)), when = nameof(refilling))
+
+/// Refills one sheet per 12 s while short.
+/obj/item/packageWrap/borg/proc/refill_step(datum/act/A)
 	if(amount >= initial(amount))
 		recharge_ticker = 0
-		return PROCESS_KILL
+		set_refilling(FALSE)
+		return
 	if(recharge_ticker < 5)
 		recharge_ticker ++
 		return
@@ -128,4 +137,4 @@
 	return
 
 /obj/item/packageWrap/borg/wrap_used()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_refilling(TRUE)

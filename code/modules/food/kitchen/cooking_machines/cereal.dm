@@ -14,25 +14,19 @@
 		"Cereal" = /obj/item/reagent_containers/food/snacks/variable/cereal
 	)
 
-/obj/machinery/appliance/mixer/cereal/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
+	owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker, starts = /datum/looping_sound/cerealmaker)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
-	own_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/cereal/appearance_overlays()
-	. = list()
-	. += ..()
-
-	if(!has_stat(MACHINE_STAT_ANY))
-		icon_state = on_icon
-		if(cerealmaker_loop)
-			cerealmaker_loop.start(src)
+/// The cereal maker hums while it is on, beside the mixer's own sound.
+/obj/machinery/appliance/mixer/cereal/loop_sync(datum/act/A)
+	..()
+	if(!has_condition())
+		cerealmaker_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(cerealmaker_loop)
-			cerealmaker_loop.stop(src)
+		cerealmaker_loop?.stop(src)
 
 /obj/machinery/appliance/mixer/cereal/combination_cook(datum/cooking_item/CI)
 
@@ -63,4 +57,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/at
 	for (var/i in images)
 		result.overlays += images[i]
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/mixer/cereal, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

@@ -9,7 +9,7 @@
 
 		gas_info[META_GAS_MOLES_VISIBLE] = initial(gas.moles_visible)
 		if(initial(gas.moles_visible) != null)
-			gas_info[META_GAS_OVERLAY] = generate_gas_overlays(0, SSmapping.max_plane_offset, gas)
+			gas_info[META_GAS_OVERLAY] = generate_gas_overlays(0, mapping_max_plane_offset(), gas)
 
 		gas_info[META_GAS_FUSION_POWER] = initial(gas.fusion_power)
 		gas_info[META_GAS_DANGER] = initial(gas.dangerous)
@@ -29,7 +29,9 @@
 		var/fill = list()
 		to_return += list(fill)
 		for(var/j in 1 to TOTAL_VISIBLE_STATES)
-			var/obj/effect/overlay/gas/gas = new (initial(gas_type.gas_overlay), log(4, (j+0.4*TOTAL_VISIBLE_STATES) / (0.35*TOTAL_VISIBLE_STATES)) * 255, i, tint)
+			var/obj/effect/overlay/gas/gas = new (null, i)
+			gas.set_icon_state(initial(gas_type.gas_overlay))
+			gas.alpha = log(4, (j+0.4*TOTAL_VISIBLE_STATES) / (0.35*TOTAL_VISIBLE_STATES)) * 255
 			fill += gas
 	return to_return
 
@@ -377,12 +379,10 @@ GLOBAL_LIST_INIT(gas_path_by_idx, build_gas_path_table())
 	// Can't use the traditional loc because we are stored in nullspace, and we can't set plane before init because of the helping that SET_PLANE_EXPLICIT does IN init
 	var/plane_offset = 0
 
-/obj/effect/overlay/gas/New(state, alph, offset, tint)
-	. = ..()
-	icon_state = state
-	alpha = alph
-	plane_offset = offset
+CAPABILITIES(/obj/effect/overlay/gas)
+	param(nameof(plane_offset), pos = 1)
 
+// ALLOW(init/INSTANCE_STATE): a gas overlay sits on its plane, offset for its z-level
 /obj/effect/overlay/gas/Initialize(mapload)
 	. = ..()
 	SET_PLANE_W_SCALAR(src, initial(plane), plane_offset)

@@ -8,35 +8,38 @@
 	var/list/genes
 	var/genesource = "unknown"
 
-/obj/item/disk/botany/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5,5)
-	pixel_y = rand(-5,5)
+CAPABILITIES(/obj/item/disk/botany)
+	owns_many(nameof(genes))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "wipe", when = PROC_REF(has_genes)), then(PROC_REF(interaction_self)))
 
-DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// A disk with gene data asks before it is wiped.
+/obj/item/disk/botany/proc/has_genes(datum/act/op/A)
+	return LAZYLEN(genes) > 0
 
 /// Old attack_self.
-/obj/item/disk/botany/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/disk/botany/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(LAZYLEN(genes))
-		var/choice = rerun_ask(user, "k21", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe the disk?", title = "Xenobotany Data", choices = list("No", "Yes"))
+		var/choice = A.step_value("wipe")
 		if(isnull(choice))
-			return TRUE
+			return OP_OK
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
 			desc = initial(name)
-			own_clear(src, nameof(genes), OWN_DELETE)
+			rel_clear(src, nameof(genes))
 			genesource = "unknown"
-	return TRUE
+	return OP_OK
 
 /obj/item/storage/box/botanydisk
 	name = "flora disk box"
 	desc = "A box of flora data disks, apparently."
 
-/obj/item/storage/box/botanydisk/Initialize(mapload)
-	. = ..()
-	for(var/i = 0;i<7;i++)
-		new /obj/item/disk/botany(src)
+/obj/item/storage/box/botanydisk
+	starts_with = list(
+		/obj/item/disk/botany = 7,
+	)
 
 /obj/machinery/botany
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -57,37 +60,36 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/failed_task = 0
 	var/disk_needs_genes = 0
 
-/obj/machinery/botany/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /* Currently part upgrades do nothing
 /obj/machinery/botany/RefreshParts()
 	..()
 */
 
-/obj/machinery/botany/ownership()
-	. = ..()
-	. += owns(nameof(seed), policy = OWN_SPILL)
-	. += owns(nameof(loaded_disk), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/botany)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	owns_one(nameof(seed), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)
+	op("eject_packet", ui_act("eject_packet"), then(PROC_REF(ui_act_eject_packet)))
+	op("eject_disk", ui_act("eject_disk"), then(PROC_REF(ui_act_eject_disk)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("load_seed", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Load seed"), needs(req(PROC_REF(botany_no_seed_holds))), then(PROC_REF(interaction_load_seed)))
+	op("part_replacement_impl", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(botany_not_active_holds))), then(PROC_REF(interaction_part_replacement_impl)))
+	op("load_disk", item(/obj/item/disk/botany), priority(OP_PRIORITY_DEFAULT - 1), label("Load disk"), needs(req(PROC_REF(botany_disk_slot_holds))), then(PROC_REF(interaction_load_disk)))
+	default_parts()
 
-/obj/machinery/botany/machine_step()
+/obj/machinery/botany/proc/work_step(datum/act/timer/A)
 
-	..()
 	if(!active) return
 
 	if(COOLDOWN_FINISHED(src, action_cooldown))
 		finished_task()
 
-/// Old attack_hand (never called ..()): open the interface.
-/datum/interaction/machine_hand/ungated/botany_open_ui
-	id = "botany_open_ui"
-	name = "Use"
-	effect = /obj/machinery/botany/proc/interaction_open_ui_impl
-
-/obj/machinery/botany/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/machinery/botany/proc/interaction_open_ui_impl(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/botany/proc/finished_task()
 	set_active(0)
@@ -102,92 +104,75 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 		if(loaded_disk)
 			loaded_disk.forceMove(get_turf(src))
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
-			own_take(src, nameof(loaded_disk))
+			rel_take(src, nameof(loaded_disk))
 
-/obj/machinery/botany/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/botany_open_ui,
-		/datum/interaction/machine_item/botany_load_seed,
-		/datum/interaction/machine_item/botany_part_replacement,
-		/datum/interaction/machine_item/botany_load_disk,
-	)
-	..()
+/// Requirement: no seed is loaded.
+/obj/machinery/botany/proc/botany_no_seed_holds(datum/act/op/A)
+	return (!seed) ? null : "there is already a seed loaded"
 
-/// Old attackby: load a seed packet.
-/datum/interaction/machine_item/botany_load_seed
-	id = "botany_load_seed"
-	name = "Load seed"
-	held_type = /obj/item/seeds
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded"))
-	effect = /obj/machinery/botany/proc/interaction_load_seed
 
-/obj/machinery/botany/proc/botany_no_seed_loaded(mob/actor, atom/target, obj/item/held)
-	return !seed
-
-/obj/machinery/botany/proc/interaction_load_seed(mob/user, obj/item/W, datum/interaction/interaction)
+/// Why botany_no_seed_holds refuses.
+/obj/machinery/botany/proc/interaction_load_seed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/seeds/S = W
 	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
-		if(!own_set(src, nameof(src.seed), W, user = user))
-			return TRUE
+		if(!move_into(src, nameof(src.seed), W, user))
+			return OP_OK
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
-	return TRUE
+	return OP_OK
 
-/// Old attackby: `if(!active) if(default_part_replacement(user, W)) return`.
-/datum/interaction/machine_item/botany_part_replacement
-	id = "botany_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))
-	effect = /obj/machinery/botany/proc/interaction_part_replacement_impl
+/// Requirement (offered only while true): the machine is not working.
+/obj/machinery/botany/proc/botany_not_active_holds(datum/act/op/A)
+	return (!active) ? null : /datum/msg/req_failed
 
-/obj/machinery/botany/proc/botany_not_active(mob/actor, atom/target, obj/item/held)
-	return !active
+/obj/machinery/botany/proc/interaction_part_replacement_impl(datum/act/op/A)
+	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
-/obj/machinery/botany/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/// Old attackby: load a botany data disk.
-/datum/interaction/machine_item/botany_load_disk
-	id = "botany_load_disk"
-	name = "Load disk"
-	held_type = /obj/item/disk/botany
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null))
-	effect = /obj/machinery/botany/proc/interaction_load_disk
-
-/obj/machinery/botany/proc/botany_disk_slot_reason(mob/actor, atom/target, obj/item/held)
+/// The reason the disk cannot go in the slot, or null.
+/obj/machinery/botany/proc/botany_disk_slot_reason(obj/item/disk/botany/B)
 	if(loaded_disk)
 		return "there is already a data disk loaded"
-	var/obj/item/disk/botany/B = held
-	if(B.genes && B.genes.len)
+	if(length(B.genes))
 		if(!disk_needs_genes)
 			return "that disk already has gene data loaded"
 	else
 		if(disk_needs_genes)
 			return "that disk does not have any gene data loaded"
-	return TRUE
+	return null
 
-/obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.loaded_disk), W, user = user))
-		return TRUE
+/// Requirement: the held disk fits the slot.
+/obj/machinery/botany/proc/botany_disk_slot_holds(datum/act/op/A)
+	var/obj/item/disk/botany/B = A.held
+	return botany_disk_slot_reason(B)
+
+
+/// Why botany_disk_slot_holds refuses.
+/obj/machinery/botany/proc/interaction_load_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!move_into(src, nameof(src.loaded_disk), W, user))
+		return OP_OK
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/botany/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/botany/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/botany/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 100, TRUE)
+/obj/machinery/botany/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/botany/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/botany/proc/crowbar_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 // Allows for a trait to be extracted from a seed packet, destroying that seed.
 /obj/machinery/botany/extractor
@@ -198,15 +183,20 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
-DECLARE_UI(/obj/machinery/botany/extractor, "BotanyIsolator")
+/obj/machinery/botany/extractor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["degradation"] = degradation
+	var/list/merged_1 = ui_data_obj_machinery_botany_extractor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_machinery_botany_extractor{geneMasks:list,activity:num,disk:num,loaded:unknown,hasGenetics:num,sourceName:unknown}")
-
-/// The computed part of /obj/machinery/botany/extractor's window data (declared on its UI_DATA row).
+/// /obj/machinery/botany/extractor's window data.
 /obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	var/list/geneMasks = GLOB.plant_service.gene_masked_list
+	var/list/geneMasks = SSplants.gene_masked_list
 	data["geneMasks"] = geneMasks
 
 	data["activity"] = active
@@ -232,38 +222,40 @@ UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_m
 
 	return data
 
-/obj/machinery/botany/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/obj/machinery/botany/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/botany, "eject_packet", ui_act_eject_packet)
-UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
+/obj/machinery/botany/proc/ui_act_eject_packet(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!seed)
 		return
 	seed.forceMove(get_turf(src))
 
-	if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
-		GLOB.plant_service.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
+	if(seed.seed().name == "new line" || isnull(SSplants.seeds[seed.seed().name]))
+		SSplants.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
 
 	seed.update_seed()
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-	own_take(src, nameof(/datum/generated_station_spec::seed))
+	rel_take(src, nameof(seed))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany, "eject_disk", ui_act_eject_disk)
-UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_disk)
+/obj/machinery/botany/proc/ui_act_eject_disk(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!loaded_disk)
 		return
 	loaded_disk.forceMove(get_turf(src))
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
-	own_take(src, nameof(/obj/machinery/botany::loaded_disk))
+	rel_take(src, nameof(/obj/machinery/botany::loaded_disk))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "scan_genome", ui_act_scan_genome)
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
+/obj/machinery/botany/extractor/proc/ui_act_scan_genome(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!seed)
 		return
 
@@ -275,28 +267,29 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
 		degradation = 0
 
 	consume(seed)
-	own_take(src, nameof(/datum/generated_station_spec::seed))
+	rel_take(src, nameof(seed))
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "get_gene", ui_act_get_gene, UI_ARG_TEXT("get_gene"))
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
+/obj/machinery/botany/extractor/proc/ui_act_get_gene(datum/act/op/A, get_gene)
+	if(!ui_gate(A))
+		return FALSE
 	if(!genetics() || !loaded_disk)
 		return
 
 	COOLDOWN_START(src, action_cooldown, action_time)
 	set_active(1)
 
-	var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
+	var/datum/plantgene/P = genetics().get_gene(get_gene)
 	if(!P)
 		return
-	own_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
+	rel_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
 
 	loaded_disk.genesource = "[genetics().display_name]"
 	if(!genetics().roundstart)
 		loaded_disk.genesource += " (variety #[genetics().uid])"
 
-	loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
-	loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
+	loaded_disk.name += " ([SSplants.gene_tag_masks[get_gene]], #[genetics().uid])"
+	loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[get_gene]], sampled from [genetics().display_name]\'."
 	eject_disk = 1
 
 	degradation += rand(20,60)
@@ -306,8 +299,9 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 		degradation = 0
 	return TRUE
 
-UI_ACT(/obj/machinery/botany/extractor, "clear_buffer", ui_act_clear_buffer)
-UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
+/obj/machinery/botany/extractor/proc/ui_act_clear_buffer(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!genetics())
 		return
 	proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
@@ -322,12 +316,13 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
 	disk_needs_genes = 1
 	circuit = /obj/item/circuitboard/botany_editor
 
-DECLARE_UI(/obj/machinery/botany/editor, "BotanyEditor")
+CAPABILITIES(/obj/machinery/botany/editor)
+	interface("BotanyEditor")
+	without("ui_open")
+	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
-UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor{activity:num,degradation:num,disk:num,sourceName:unknown,locus:unknown,loaded:unknown}")
-
-/// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
-/obj/machinery/botany/editor/proc/ui_data_obj_machinery_botany_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/botany/editor's window data.
+/obj/machinery/botany/editor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["activity"] = active
@@ -344,7 +339,7 @@ UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor
 
 		for(var/datum/plantgene/P in loaded_disk.genes)
 			if(data["locus"] != "") data["locus"] += ", "
-			data["locus"] += "[GLOB.plant_service.gene_tag_masks[P.genetype]]"
+			data["locus"] += "[SSplants.gene_tag_masks[P.genetype]]"
 
 	else
 		data["disk"] = 0
@@ -358,15 +353,16 @@ UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor
 
 	return data
 
-UI_ACT(/obj/machinery/botany/editor, "apply_gene", ui_act_apply_gene)
-UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
+/obj/machinery/botany/editor/proc/ui_act_apply_gene(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!loaded_disk || !seed)
 		return
 
 	COOLDOWN_START(src, action_cooldown, action_time)
 	set_active(1)
 
-	if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
+	if(!isnull(SSplants.seeds[seed.seed().name]))
 		var/datum/seed/modified_seed = seed.seed().diverge(1)
 		if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
 			set_active(FALSE)
@@ -384,7 +380,7 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 		seed.modified += rand(5,10)
 	return TRUE
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/botany/step_start_condition()
 	return active
 
@@ -392,6 +388,10 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
 
-/obj/machinery/botany/extractor/ownership()
-	. = ..()
-	. += proto(nameof(genetics_static))
+CAPABILITIES(/obj/machinery/botany/extractor)
+	owns_one(nameof(genetics_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	interface("BotanyIsolator")
+	without("ui_open")
+	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
+	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))
+	op("clear_buffer", ui_act("clear_buffer"), then(PROC_REF(ui_act_clear_buffer)))

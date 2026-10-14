@@ -17,47 +17,47 @@
 			soft_si = TRUE
 		if(istype(soft,/datum/pai_software/deathalarm))
 			soft_da = TRUE
-	for(var/atom/movable/screen/pai/button in hud_used.other)
+	for(var/atom/movable/screen/pai/button in hud_used?.other) // a pAI nobody plays has no hud
 		if(button.name == "medical records")
 			if(soft_mr)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "security records")
 			if(soft_sr)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "door jack")
 			if(soft_dj)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "atmosphere sensor")
 			if(soft_as)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "remote signaler")
 			if(soft_si)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "universal translator")
 			if(soft_ut && translator_on)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "ar hud")
 			if(soft_ar && paiHUD)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 		if(button.name == "death alarm")
 			if(soft_da && paiDA)
-				button.icon_state = "[button.base_state]"
+				button.set_icon_state("[button.base_state]")
 			else
-				button.icon_state = "[button.base_state]_o"
+				button.set_icon_state("[button.base_state]_o")
 
 /mob/living/silicon/pai/verb/wipe_software()
 	set name = "Enter Storage"
@@ -65,9 +65,11 @@
 	set desc = "Upload your personality to the cloud and wipe your software from the card. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
 	// Make sure people don't kill themselves accidentally
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(wipe_software_confirmed), title = "Wipe Software", message = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", no_first = TRUE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(wipe_software_confirmed), answerer = src, title = "Wipe Software", question = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", timeout = 0)
 
-/mob/living/silicon/pai/proc/wipe_software_confirmed(datum/om/prompt/confirm/ask)
+/mob/living/silicon/pai/proc/wipe_software_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
 	close_up()
 	act_message(src, null, others = span_filter_notice(span_bold("%U%") + " fades away from the screen, the pAI device goes silent."))
 	card.removePersonality()
@@ -94,30 +96,25 @@
 			if(!(ram >= our_soft.ram_cost))
 				to_chat(src, span_warning("Insufficient RAM for download. (Cost [our_soft.ram_cost] : [ram] Remaining)"))
 				return
-			om_ask(src, /datum/om/prompt/confirm/pai_download, PROC_REF(download_software_confirmed), software_key = thing)
+			open_request(src, /datum/prompt/yes_no/pai_download, PROC_REF(download_software_confirmed), answerer = src, valid = PROC_REF(download_software_askable), title = "Download [our_soft.name]", question = "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [ram] remaining.", software_key = thing, timeout = 0)
 			return
 
-/// Downloading a software. Re-checked on the answer: it exists, isn't installed, and there's RAM for it.
-/datum/om/prompt/confirm/pai_download
+/// Downloading a software.
+/datum/prompt/yes_no/pai_download
 	/// The GLOB.pai_software_by_key key.
 	var/software_key
 
-/datum/om/prompt/confirm/pai_download/prepare()
-	var/mob/living/silicon/pai/P = answerer
-	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[software_key]
-	title = "Download [our_soft.name]"
-	message = "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [P.ram] remaining."
-	return TRUE
+/// Re-checked on the answer: it exists, isn't installed, and there's RAM for it.
+/mob/living/silicon/pai/proc/download_software_askable(datum/request/R)
+	var/datum/prompt/yes_no/pai_download/download = R
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[download.software_key]
+	return our_soft && ram >= our_soft.ram_cost && !software[our_soft.id]
 
-/datum/om/prompt/confirm/pai_download/valid()
-	var/mob/living/silicon/pai/P = answerer
-	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[software_key]
-	if(!our_soft || P.ram < our_soft.ram_cost || P.software[our_soft.id])
-		return "can't download"
-	return null
-
-/mob/living/silicon/pai/proc/download_software_confirmed(datum/om/prompt/confirm/pai_download/ask)
-	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[ask.software_key]
+/mob/living/silicon/pai/proc/download_software_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/datum/prompt/yes_no/pai_download/download = A.request
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[download.software_key]
 	ram -= our_soft.ram_cost
 	software[our_soft.id] = TRUE
 	to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))

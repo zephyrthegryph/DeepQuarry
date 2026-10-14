@@ -12,64 +12,82 @@
 	var/tmp/datum/artifact_find/artifact_find_static
 	COOLDOWN_DECLARE(dig_cooldown)
 
-/obj/structure/boulder/Initialize(mapload)
-	. = ..()
-	icon_state = "boulder[rand(1,4)]"
-	excavation_level = rand(5, 50)
+CAPABILITIES(/obj/structure/boulder)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(excavation_level), range_of(5, 50))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("measure_tape", item(/obj/item/measuring_tape), label("Measure"), begins(MSG(boulder/tape_begins)), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
+	op("measure_multi", item(/obj/item/xenoarch_multi_tool), label("Measure"), begins(MSG(boulder/multi_begins)), wait(PROC_REF(multi_time)), then(PROC_REF(multi_done)))
+	op("dig", item(/obj/item/pickaxe), label("Dig"), begins(PROC_REF(dig_begins)), starts(PROC_REF(dig_started)), wait(PROC_REF(dig_time)), then(PROC_REF(dig_done)))
 
-DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+MSG_DEF(boulder/tape_begins, span_notice("You extend %I% towards %T%."), span_bold("%U%") + " extends %I% towards %T%.")
+MSG_DEF(boulder/multi_begins, span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!"), span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")
+
+/// Silent: a second dig click while the first is under way ends with nothing said (it keeps clicks from piling up messages).
+MSG_DEF(boulder/dig_pending, null, null)
+
+/// A multi-tool in scanning mode reads the depth at once; extended over the boulder it takes a moment.
+/obj/structure/boulder/proc/multi_time(datum/act/op/A)
+	var/obj/item/xenoarch_multi_tool/C = A.held
+	return C.mode ? 0 : 1.5 SECONDS
+
+/obj/structure/boulder/proc/multi_done(datum/act/op/A)
+	var/obj/item/xenoarch_multi_tool/C = A.held
+	if(C.mode) //Mode means scanning.
+		C.depth_scanner.scan_atom(A.actor, src)
+		return OP_OK
+	return measure_done(A)
+
+/obj/structure/boulder/proc/dig_begins(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return msg_text(span_warning("You start [P.drill_verb] [src]."))
+
+/// The start refuses while the previous dig has not run its course. It is not a requirement: those are asked again when the wait ends, and the cooldown
+/// this start begins would refuse the dig it belongs to.
+/obj/structure/boulder/proc/dig_started(datum/act/op/A)
+	if(!COOLDOWN_FINISHED(src, dig_cooldown))
+		return /datum/msg/boulder/dig_pending
+	var/obj/item/pickaxe/P = A.held
+	COOLDOWN_START(src, dig_cooldown, P.digspeed)
+
+/obj/structure/boulder/proc/dig_time(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return P.digspeed
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/boulder/proc/roll_icon_state(datum/roller/R)
+	return "boulder[R.number(1, 4)]"
 
 /// Old attackby.
-/obj/structure/boulder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/boulder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/core_sampler))
 		if(!geological_data() || !artifact_find())
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.geological_data().artifact_distance = rand(-100,100) / 100
 		src.geological_data().artifact_id = artifact_find().artifact_id
 
 		var/obj/item/core_sampler/C = I
 		C.sample_item(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/depth_scanner))
 		var/obj/item/depth_scanner/C = I
 		C.scan_atom(user, src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	if(istype(I, /obj/item/xenoarch_multi_tool))
-		var/obj/item/xenoarch_multi_tool/C = I
-		if(C.mode) //Mode means scanning.
-			C.depth_scanner.scan_atom(user, src)
-			return INTERACTION_HANDLED_PASS
-		else
-			act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
-				MSG_OTHERS(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!"), \
-				item = C)
-			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-	if(istype(I, /obj/item/measuring_tape))
-		var/obj/item/measuring_tape/P = I
-		act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), MSG_OTHERS(span_bold("%U%") + " extends %I% towards %T%."), item = P)
-		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-		return INTERACTION_HANDLED_PASS
+/obj/structure/boulder/proc/measure_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
+	return OP_OK
 
-	if(istype(I, /obj/item/pickaxe))
-		var/obj/item/pickaxe/P = I
-
-		if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
-			return INTERACTION_HANDLED_PASS
-		COOLDOWN_START(src, dig_cooldown, P.digspeed)
-
-		to_chat(user, span_warning("You start [P.drill_verb] [src]."))
-		om_task_timed(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
-
-/obj/structure/boulder/proc/measure_done(mob/user)
-	to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
-
-/obj/structure/boulder/proc/dig_done(mob/user, obj/item/pickaxe/P)
+/obj/structure/boulder/proc/dig_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pickaxe/P = A.held
+	if(loc?.release_refusal(src, user))
+		return OP_OK
 	to_chat(user, span_notice("You finish [P.drill_verb] [src]."))
 	excavation_level += P.excavation_amount
 
@@ -82,12 +100,13 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 				var/obj/machinery/artifact/X = O
 				if(X.artifact_master)
 					X.artifact_master.artifact_id = artifact_find().artifact_id
-			O.anchored = FALSE	// Anchored finds are lame.
+			O.set_anchored(FALSE)	// Anchored finds are lame.
 			src.visible_message(span_warning("\The [src] suddenly crumbles away."))
 		else
 			act_message(user, src, MSG_SELF(span_notice("%T% has been whittled away under your careful excavation, but there was nothing of interest inside.")), \
 				MSG_OTHERS(span_warning("%T% suddenly crumbles away.")))
-		qdel(src)
+		consume(src, user)
+	return OP_OK
 
 /obj/structure/boulder/Bumped(AM)
 	. = ..()

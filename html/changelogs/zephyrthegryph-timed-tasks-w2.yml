@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Structure, turf, mine and flora timed actions are ops with a wait"

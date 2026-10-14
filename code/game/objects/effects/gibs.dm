@@ -17,10 +17,9 @@
 			var/obj/effect/decal/cleanable/blood/gibs/gib = new gib_type(location)
 			// Apply human species colouration to masks.
 			if(fleshcolor)
-				gib.fleshcolor = fleshcolor
+				gib.set_fleshcolor(fleshcolor)
 			if(bloodcolor)
-				gib.basecolor = bloodcolor
-			gib.update_icon()
+				gib.set_basecolor(bloodcolor)
 			gib.init_forensic_data()
 			gib.add_blooddna(MobDNA, null)
 			if(isturf(location) && length(directions))
@@ -67,8 +66,8 @@ GLOBAL_LIST_INIT(gib_pattern_robot, list( \
 	icon = 'icons/effects/map_effects.dmi'
 	icon_state = "gibspawn"
 
-MAP_RESOLVER(/obj/effect/gibspawner, GLOBAL_PROC_REF(resolve_gibspawner))
-MAP_RESOLVER_VARS(/obj/effect/gibspawner, "bloodcolor;fleshcolor")
+CAPABILITIES(/obj/effect/gibspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_gibspawner), vars = list("bloodcolor", "fleshcolor"))
 
 /proc/resolve_gibspawner(atom/loc, path, list/varedits)
 	var/obj/effect/gibspawner/P = path

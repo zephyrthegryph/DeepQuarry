@@ -34,10 +34,13 @@
 	/// Any partial packets that we have received from TGUI, waiting to be sent
 	var/partial_packets
 
+CAPABILITIES(/datum/tgui_say)
+	owns_one(nameof(window), /datum/tgui_window)
+
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
 	rel_set(src, nameof(client), client)
-	own_set(src, nameof(window), new /datum/tgui_window(client, id))
+	rel_set(src, nameof(window), new /datum/tgui_window(client, id))
 	winset(client, SKIN_TGUI_SAY, "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE
@@ -48,7 +51,7 @@
  */
 /datum/tgui_say/proc/initialize()
 	// Deferred until after the client constructor: a timer, the constructor never waits.
-	om_after(src, 3 SECONDS, PROC_REF(initialize_window))
+	after(src, 3 SECONDS, PROC_REF(initialize_window))
 
 /datum/tgui_say/proc/initialize_window()
 	window.initialize(
@@ -135,7 +138,7 @@
 	if(type == "entry" || type == "force")
 		var/id = href_list["packetId"]
 		if(!isnull(id))
-			payload = handle_packets(id, href_list["totalPackets"], href_list["packet"])
+			payload = handle_packets(id, href_list["totalPackets"], href_list["packet"], client()?.mob)
 			if(!payload)
 				return FALSE
 		handle_entry(type, payload)

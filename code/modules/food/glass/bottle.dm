@@ -11,57 +11,21 @@
 	max_transfer_amount = 60
 	flags = NONE
 	volume = 60
-	drop_sound = SFX_ITEMS_DROP_BOTTLE
-	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
-/obj/item/reagent_containers/glass/bottle/on_reagent_change()
-	update_icon()
+// A bottle is stoppered at first.
+CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE, pickup = SFX_ITEMS_PICKUP_BOTTLE))
+	configure(reagent_container(starts_open = FALSE))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = cond_not(nameof(icon_state)))
 
-/obj/item/reagent_containers/glass/bottle/pickup(mob/user)
-	..()
-	update_icon()
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/glass/bottle/proc/roll_icon_state(datum/roller/R)
+	return "bottle-[R.number(1, 4)]"
 
-/obj/item/reagent_containers/glass/bottle/dropped(mob/user, equipping, slot)
-	..()
-	update_icon()
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(bottle_pick_up)))
-
-/// Picking the bottle up refreshes its look.
-/obj/item/reagent_containers/glass/bottle/proc/bottle_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
-	update_icon()
-
-/obj/item/reagent_containers/glass/bottle/Initialize(mapload)
+/// The filling in the colour of what it holds, the stopper while it is on, and a label.
+/obj/item/reagent_containers/glass/bottle/draw(datum/look/look)
 	. = ..()
-	if(!icon_state)
-		icon_state = "bottle-[rand(1,4)]"
-
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/glass/bottle/appearance_overlays()
-	. = list()
-
-	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
-
-		var/percent = round((reagents.total_volume / volume) * 100)
-		switch(percent)
-			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
-			if(20 to 40) 	filling.icon_state = "[icon_state]-20"
-			if(40 to 60)	filling.icon_state = "[icon_state]-40"
-			if(60 to 80)	filling.icon_state = "[icon_state]-60"
-			if(80 to 100)	filling.icon_state = "[icon_state]-80"
-			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
-
-		filling.color = reagents.get_color()
-		. += filling
-
-	if (!is_open_container())
-		. += "lid_[icon_state]"
-
-	if (label_text)
-		. += "label_[icon_state]"
+	draw_glass(look, icon_state, TRUE, TRUE)
 
 /obj/item/reagent_containers/glass/bottle/inaprovaline
 	name = "inaprovaline bottle"
@@ -372,7 +336,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/bottle, TYPE_PROC_REF
 	name = "glucose container"
 	desc = "A container of glucose. Used to treat bloodloss through a hardsuit in unconscious patients."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose, null, list(REAGENT_ID_GLUCOSE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose)
+	configure(reagents(add = list(REAGENT_ID_GLUCOSE = 100)))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose/Initialize(mapload)
 	. = ..()

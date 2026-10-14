@@ -15,30 +15,33 @@
 	use_sound = SFX_ITEMS_DROP_FLESH
 	var/egg_name = null
 
-TYPE_TABLE(/obj/item/storage/vore_egg, hold_spec, list(HOLD_MAX_SIZE(0)))
 
-/obj/item/storage/vore_egg/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
+CAPABILITIES(/obj/item/storage/vore_egg)
+	configure(storage(max_size = 0))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	// Whoever is inside pushes out for five seconds (hatch() starts it).
+	op("hatch", ai(), wait(5 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(hatch_timed_done)))
 
 /obj/item/storage/vore_egg/open(mob/user as mob)
 	if(isobserver(user))
 		return
-	icon_state = "[initial(icon_state)]_open"
+	set_icon_state("[initial(icon_state)]_open")
 	..()
 
 /obj/item/storage/vore_egg/proc/hatch(mob/living/user as mob)
 	visible_message(span_danger("\The [src] begins to shake as something pushes out from within!"))
 	animate_shake()
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(hatch_timed_done), done_args = list(user))
+	perform_op(user, src, "hatch", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/obj/item/storage/vore_egg/proc/hatch_timed_done(mob/living/user)
+/obj/item/storage/vore_egg/proc/hatch_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(use_sound)
 		playsound(src, src.use_sound, 50, 0, -5)
 	animate_shake()
 	drop_contents()
 	if(user.transforming) //this is actually godawful and transforming should never be used as it skips life ticks
-		user.transforming = FALSE //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
+		user.set_transforming(FALSE) //but if something does still use transforming (Bad, please do not.), we want it to be removed from them.
+	return OP_OK
 
 /obj/item/storage/vore_egg/unathi
 	name = "unathi egg"

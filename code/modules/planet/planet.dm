@@ -30,11 +30,22 @@
 	var/moon_name = null // Purely for flavor. Null means no moon exists.
 	var/moon_phase = null // Set if above is defined.
 
+/// The planet's clock, weather and sun run (the planet service sets it when it makes the planet).
+/datum/planet/var/clock_running = FALSE
+TRACKED(/datum/planet, clock_running)
+CAPABILITIES(/datum/planet)
+	every(2 SECONDS, then(PROC_REF(planet_step)), when = nameof(clock_running))
+	ref_many(nameof(planet_floors))
+	ref_many(nameof(planet_walls))
+	owns_one(nameof(current_time), /datum/time)
+	owns_one(nameof(sun_holder), /datum/sun_holder)
+	owns_one(nameof(weather_holder), /datum/weather_holder)
+
 /datum/planet/New()
 	..()
-	own_set(src, nameof(weather_holder), new /datum/weather_holder(src))
-	own_set(src, nameof(sun_holder), new /datum/sun_holder(src))
-	own_set(src, nameof(current_time), current_time.make_random_time())
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder(src))
+	rel_set(src, nameof(sun_holder), new /datum/sun_holder(src))
+	rel_set(src, nameof(current_time), current_time.make_random_time())
 	if(moon_name)
 		moon_phase = pick(list(
 			MOON_PHASE_NEW_MOON,
@@ -48,24 +59,23 @@
 			))
 	update_sun()
 
-/// Every 2 s on the slow lane (the planet service starts every planet): the planet's clock, weather and
+/// every(), 2 s while clock_running (the planet service starts every planet): the planet's clock, weather and
 /// sun. Lighting and wall temperature changes queue on the planet service, which applies them in batches.
-/datum/planet/periodic_step(delta)
+/datum/planet/proc/planet_step(datum/act/timer/A)
 	if(current_time)
-		var/difference = last_step ? world.time - last_step : delta
-		own_set(src, nameof(current_time), current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
+		var/difference = last_step ? world.time - last_step : A.dt
+		rel_set(src, nameof(current_time), current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
 	EXPIRY_STAMP(src, last_step, CLOCK_WORLD)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
 	if(COOLDOWN_FINISHED(src, next_sun_process))
 		update_sun()
 	if(needs_work & PLANET_PROCESS_SUN)
 		needs_work &= ~PLANET_PROCESS_SUN
-		GLOB.planet_service.needs_sun_update |= src
+		SSplanets.needs_sun_update |= src
 	if(needs_work & PLANET_PROCESS_TEMP)
 		needs_work &= ~PLANET_PROCESS_TEMP
-		GLOB.planet_service.needs_temp_update |= src
-	if(GLOB.planet_service.has_work())
-		GLOB.planet_service.demand()
+		SSplanets.needs_temp_update |= src
+	SSplanets.wake_updates()
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()
@@ -86,8 +96,4 @@
 
 // Turfs are never deleted.
 
-// The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
-/datum/planet/relations()
-	. = ..()
-	. += rel_many(nameof(planet_floors))
-	. += rel_many(nameof(planet_walls))
+// The planet's turfs are relation lists: a released z-level (relation_drop_z) clears them.

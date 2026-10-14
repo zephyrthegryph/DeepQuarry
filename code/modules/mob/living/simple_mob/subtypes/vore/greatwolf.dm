@@ -53,7 +53,6 @@
 	vore_default_mode = DM_HEAL
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
-	can_be_drop_prey = FALSE
 	species_sounds = "Canine"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
@@ -90,22 +89,23 @@
 	The great wolves have been hunted to near extinction by poachers due to its extremely valuable hide. They are very rare, as one would expect, and generally cautious around people."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/pick_color)
-
 /mob/living/simple_mob/vore/greatwolf/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1.5 // 1.5 Downstream
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
-	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(greatwolf_interaction_feed), "Feed"), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/greatwolf)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
+	op("greatwolf_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(greatwolf_interaction_feed)))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 
 /// Old attackby: trade food for people!
-/mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/greatwolf/proc/greatwolf_interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	consume(O, user)
 	play_sfx(src, SFX_VORE_GULP, volume = rand(10,50))
 	if(!(ai_brain != null))//No autobarf on player control.
@@ -120,7 +120,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
 
 /mob/living/simple_mob/vore/greatwolf/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The moment the wolf gets its jaws around you, it scoops you right up off of the ground, and greedily scarfs you down with a few swift gulps. Your small frame alone is hardly enough to make him look somewhat plump as you slop wetly into that dark, hot chamber, although the dense squish is rather comfortable. The thick, humid air is tinged with the smell of digested meat, and the surrounding flesh wastes no time in clenching and massaging down over its newfound fodder."
 	B.vore_sound = "Tauric Swallow"

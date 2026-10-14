@@ -1,0 +1,25 @@
+/obj/machinery/clonepod icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod state: pod_0
+/obj/machinery/clonepod dir: 2
+/obj/machinery/clonepod overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+/obj/machinery/clonepod/full icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod/full state: pod_0
+/obj/machinery/clonepod/full dir: 2
+/obj/machinery/clonepod/full overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+/obj/machinery/clonepod/transhuman icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod/transhuman state: pod_0
+/obj/machinery/clonepod/transhuman dir: 2
+/obj/machinery/clonepod/transhuman overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+/obj/machinery/clonepod/transhuman/full icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod/transhuman/full state: pod_0
+/obj/machinery/clonepod/transhuman/full dir: 2
+/obj/machinery/clonepod/transhuman/full overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+/obj/machinery/clonepod/transhuman/full/abductor icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod/transhuman/full/abductor state: pod_0
+/obj/machinery/clonepod/transhuman/full/abductor dir: 2
+/obj/machinery/clonepod/transhuman/full/abductor overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+/obj/machinery/clonepod/dq_cleanup_probe icon: icons/obj/cloning.dmi
+/obj/machinery/clonepod/dq_cleanup_probe state: pod_0
+/obj/machinery/clonepod/dq_cleanup_probe dir: 2
+/obj/machinery/clonepod/dq_cleanup_probe overlay: icons/obj/cloning.dmi:pod_0:8:#000000
+

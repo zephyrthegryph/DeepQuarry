@@ -12,12 +12,15 @@
 
 	var/mob/my_mob	// The mob that possesses this hud object.
 
+CAPABILITIES(/atom/movable/screen/movable/ability_master)
+	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
+
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is created inside and draws that mob's abilities
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
 		rel_set(src, nameof(my_mob), loc)
 		update_abilities(0, loc)
-		overlays.Add(closed_state)
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
@@ -41,16 +44,11 @@
 		for(var/atom/movable/screen/ability/O in ability_objects)
 			if(my_mob() && my_mob().client)
 				my_mob().client.screen -= O
-		showing = 0
-		overlays.len = 0
-		overlays.Add(closed_state)
+		set_showing(0)
 	else if(forced_state != 1) // We're opening it, show the icons. OR, if forced_state == 2, we're forcing it to open it.
 		open_ability_master()
 		update_abilities(1)
-		showing = 1
-		overlays.len = 0
-		overlays.Add(open_state)
-	update_icon()
+		set_showing(1)
 
 /atom/movable/screen/movable/ability_master/proc/open_ability_master()
 	var/list/screen_loc_xy = splittext(screen_loc,",")
@@ -75,24 +73,21 @@
 			my_mob().client.screen |= src
 
 /atom/movable/screen/movable/ability_master/proc/update_abilities(forced = 0, mob/user)
-	update_icon()
 	if(user && user.client)
 		if(!(src in user.client.screen))
 			user.client.screen += src
 	var/i = 1
 	for(var/atom/movable/screen/ability/ability in ability_objects)
-		ability.update_icon()
 		ability.index = i
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/movable/ability_master/appearance_overlays()
-	. = list()
-	if(length(ability_objects))
-		invisibility = INVISIBILITY_NONE
-	else
-		invisibility = INVISIBILITY_ABSTRACT
+
+/// The master shows the open or closed button, and is hidden while it holds no abilities.
+/atom/movable/screen/movable/ability_master/draw(datum/look/look)
+	..()
+	look.overlay(showing ? open_state : closed_state)
+	look.set_invisibility(length(ability_objects) ? INVISIBILITY_NONE : INVISIBILITY_ABSTRACT)
 
 /atom/movable/screen/movable/ability_master/proc/add_ability(name_given)
 	if(!name_given) return
@@ -103,20 +98,18 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 
 
 	new_button.name = name_given
-	new_button.ability_icon_state = name_given
-	new_button.update_icon()
-	own_add(src, nameof(ability_objects), new_button)
+	new_button.set_ability_icon_state(name_given)
+	rel_add(src, nameof(ability_objects), new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	own_remove(src, nameof(ability_objects), ability)
+	rel_remove(src, nameof(ability_objects), ability)
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)
-	update_icon()
 
 /atom/movable/screen/movable/ability_master/proc/remove_all_abilities()
 	for(var/atom/movable/screen/ability/A in ability_objects)
@@ -145,8 +138,6 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 	if(ability_master)
 		ability_master.toggle_open(2) //Force it to open on login.
 
-DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/ability_master)
-
 ///////////ACTUAL ABILITIES////////////
 //This is what you click to do things//
 ///////////////////////////////////////
@@ -161,30 +152,22 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	var/atom/movable/screen/movable/ability_master/ability_master
 
 
-// an ability leaves its master's list (the master owns the list; the ability can go first).
-/atom/movable/screen/ability/on_destroy(force)
-	var/atom/movable/screen/movable/ability_master/master = master_of()
-	if(master) // we leave its list in phase 2
-		if(!length(master.ability_objects - src))
-			master.update_icon()
+TRACKED(/atom/movable/screen/ability, background_base_state)
+
+/atom/movable/screen/ability/draw(datum/look/look)
 	..()
-
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/ability/appearance_overlays()
-	. = list()
+	look.state("[background_base_state]_spell_base")
+	look.overlay(ability_icon_state)
 
 
+CAPABILITIES(/atom/movable/screen/ability)
+	click_on(PROC_REF(click_input))
 
-	icon_state = "[background_base_state]_spell_base"
-
-	. += ability_icon_state
-
-
-/atom/movable/screen/ability/Click()
-	if(!usr)
-		return
-
-	activate()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/ability/proc/click_input(datum/act/input/A)
+	if(A.actor)
+		activate_with_actor(A.actor)
+	return TRUE
 
 /atom/movable/screen/ability/MouseDrop(atom/A)
 	if(!A || A == src)
@@ -199,6 +182,10 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 /atom/movable/screen/ability/proc/activate()
 	to_chat(world, "[src] had activate() called.")
 	return
+
+/// Generic abilities keep their existing activation; actor-aware subtypes thread their caller explicitly.
+/atom/movable/screen/ability/proc/activate_with_actor(mob/user)
+	return activate()
 
 // This checks if the ability can be used.
 /atom/movable/screen/ability/proc/can_activate()
@@ -217,7 +204,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	if(slot > length(mob.ability_master.ability_objects) || slot <= 0)
 		return // Out of bounds.
 	var/atom/movable/screen/ability/A = LAZYACCESS(mob.ability_master.ability_objects, slot)
-	A.activate()
+	A.activate_with_actor(mob)
 
 //////////Verb Abilities//////////
 //Buttons to trigger verbs/procs//
@@ -226,10 +213,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 /atom/movable/screen/ability/verb_based
 	var/verb_to_call = null
 	var/object_used = null
-	var/arguments_to_use = list()
+	var/arguments_to_use
 
 /atom/movable/screen/ability/verb_based/activate()
 	if(object_used && verb_to_call)
+		LAZYINITLIST(arguments_to_use)
 		call(object_used,verb_to_call)(arguments_to_use)
 
 /atom/movable/screen/movable/ability_master/proc/add_verb_ability(object_given, verb_given, name_given, ability_icon_given, arguments)
@@ -243,11 +231,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -267,11 +255,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -291,6 +279,13 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	icon_state = "wiz_spell_base"
 	background_base_state = "wiz"
 
+/atom/movable/screen/ability/obj_based/technomancer/activate_with_actor(mob/user)
+	var/obj/target = object()
+	if(istype(target, /obj/spellbutton) && target.type == /obj/spellbutton)
+		var/obj/spellbutton/button = target
+		return button.create_spell_with_actor(user)
+	return ..()
+
 /atom/movable/screen/movable/ability_master/proc/add_technomancer_ability(obj/object_given, ability_icon_given)
 	if(!object_given)
 		message_admins("ERROR: add_technomancer_ability() was not given an object in its arguments.")
@@ -299,9 +294,9 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	var/atom/movable/screen/ability/obj_based/technomancer/A = new /atom/movable/screen/ability/obj_based/technomancer()
 	rel_set(A, nameof(A.ability_master), src)
 	rel_set(A, nameof(A.object), object_given)
-	A.ability_icon_state = ability_icon_given
+	A.set_ability_icon_state(ability_icon_given)
 	A.name = object_given.name
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 

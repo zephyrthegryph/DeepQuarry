@@ -38,7 +38,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, nameof(ninja.objectives), ninja_objective)
+					rel_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 				objective_list -= 1 // No more than one kill objective
@@ -46,13 +46,13 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 				var/datum/objective/steal/ninja_objective = new
 				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
-				own_add(ninja, nameof(ninja.objectives), ninja_objective)
+				rel_add(ninja, nameof(ninja.objectives), ninja_objective)
 			if(3)//Protect
 				var/datum/objective/protect/ninja_objective = new
 				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, nameof(ninja.objectives), ninja_objective)
+					rel_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 					objective_list -= 3
@@ -61,18 +61,18 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
 				rel_set(ninja_objective, nameof(ninja_objective.target), ninja_objective.find_target())
 				if(ninja_objective.target != "Free Objective")
-					own_add(ninja, nameof(ninja.objectives), ninja_objective)
+					rel_add(ninja, nameof(ninja.objectives), ninja_objective)
 				else
 					i++
 					objective_list -= 4
 
 	var/datum/objective/ninja_highlander/ninja_obj = new
 	rel_set(ninja_obj, nameof(ninja_obj.owner), ninja)
-	own_add(ninja, nameof(ninja.objectives), ninja_obj)
+	rel_add(ninja, nameof(ninja.objectives), ninja_obj)
 
 	var/datum/objective/survive/ninja_objective = new
 	rel_set(ninja_objective, nameof(ninja_objective.owner), ninja)
-	own_add(ninja, nameof(ninja.objectives), ninja_objective)
+	rel_add(ninja, nameof(ninja.objectives), ninja_objective)
 
 /datum/antagonist/ninja/greet(datum/mind/player)
 
@@ -88,7 +88,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 	var/ninja_name = pick(GLOB.ninja_names)
 	var/mob/living/carbon/human/H = player.current
 	if(istype(H))
-		H.real_name = "[ninja_title] [ninja_name]"
+		H.set_real_name("[ninja_title] [ninja_name]")
 		H.name = H.real_name
 	player.name = H.name
 
@@ -116,7 +116,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		if(rig.air_supply)
 			rel_set(player, nameof(player.internal), rig.air_supply)
 
-	om_after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
+	after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
 
 /datum/antagonist/ninja/proc/generate_ninja_directive(side)
 	var/directive = "[side=="face"?"[using_map.company_name]":"A criminal syndicate"] is your employer. "//Let them know which side they're on.
@@ -164,6 +164,6 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 
 /mob/living/carbon/human/proc/ninja_internals_check()
 	if(internal)
-		internals.icon_state = "internal1"
+		hud_used?.internals?.icon_state = "internal1"
 	else
 		to_chat(src, span_danger("You forgot to turn on your internals! Quickly, toggle the valve!"))

@@ -45,16 +45,16 @@ TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon, get_ai_target_selectors, list(
 	var/mob/living/simple_mob/vore/bigdragon/D = brain.holder
 	if(!D || D.nospecial || !D.specialtoggle)
 		return null
-	if(!brain.primary_threat || !brain.model)
+	if(!brain.primary_target())
 		return null
 	var/yeet_threshold = 2
 	var/tally = 0
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(get_dist(D, M) <= 2)
 			tally++
 	if(tally < yeet_threshold)
 		return null
-	return DQAI_RESULT(80, brain.primary_threat)
+	return DQAI_RESULT(80, brain.primary_target())
 
 /datum/ai_behavior/dragon_tail_sweep/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/vore/bigdragon/D = brain.holder
@@ -90,7 +90,7 @@ TYPE_TABLE(/datum/ai_behavior/dragon_tail_sweep, get_player_verb_info, list( \
 	var/mob/living/simple_mob/vore/bigdragon/D = brain.holder
 	if(!D || D.nospecial || !D.specialtoggle)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/dist = get_dist(D, threat)
@@ -137,7 +137,7 @@ TYPE_TABLE(/datum/ai_behavior/dragon_charge, get_player_verb_info, list( \
 	var/mob/living/simple_mob/vore/bigdragon/D = brain.holder
 	if(!D || D.norange || !D.flametoggle)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/dist = get_dist(D, threat)

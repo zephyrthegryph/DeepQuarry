@@ -5,7 +5,7 @@
 // `mob.breathes()` is the yes/no question. Emotes, vitals, smoke, the physiology and the
 // breathing life stage all ask these instead of reading does_not_breathe / O_LUNGS themselves.
 //
-// The profile also owns HOW a breath is taken: lungs (the breathing stage's lung_breath()) or
+// The profile also owns HOW a breath is taken: lungs (the breathing step's life_breathing_lung_breath()) or
 // the skin (alraunes: CO2 in, oxygen out, no masks), which used to be a 200-line copy of the
 // breath code in the species' environment_effects().
 
@@ -18,14 +18,15 @@
 		instances[profile_type] = P
 	return P
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/breath_profile)
 /datum/breath_profile
 	var/name = "lungs"
 	/// Breathes through lungs. FALSE: through the skin (no lung organ; masks don't filter).
 	var/uses_lungs = TRUE
 
-/// Take one breath for `self`, driven by the breathing life stage `stage`.
-/datum/breath_profile/proc/take_breath(mob/living/carbon/self, datum/om/stage/life/breathing/carbon/stage)
-	stage.lung_breath(self)
+/// Take one breath for `self`, driven by its breathing Life step.
+/datum/breath_profile/proc/take_breath(mob/living/carbon/self)
+	self.life_breathing_lung_breath()
 
 // --- Asking --------------------------------------------------------------------------------
 
@@ -70,19 +71,23 @@
 
 /// Poison gas (the species' poison_type) in the breath: toxin in the blood and an alert.
 /mob/living/carbon/human/proc/breathe_poison(datum/gas_mixture/breath, poison_type, breath_moles, breath_pressure)
-	var/safe_toxins_min = 0.05
-	var/safe_toxins_max = 0.2
+	var/safe_toxins_min = BREATH_TOXINS_MIN
+	var/safe_toxins_max = BREATH_TOXINS_MAX
 	var/poison = LINDA_GAS_AMT(breath, poison_type)
 	var/toxins_pp = (poison / breath_moles) * breath_pressure
 	if(toxins_pp > safe_toxins_min)
+		set_breath_hazard(TRUE)
 		var/phoron_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
-		if(phoron_pp > 0.05 && prob(3))
+		if(phoron_pp > BREATH_TOXINS_MIN && prob(3))
 			to_chat(src, span_warning("Something burns as you breathe."))
 	if(toxins_pp > safe_toxins_max)
+		// The gas burns the airway and blood at once, scaled with its partial pressure; a little lingers as toxin.
+		var/burn = clamp(toxins_pp * BREATH_POISON_INJURY_PER_KPA, BREATH_POISON_INJURY_MIN, BREATH_POISON_INJURY_MAX)
+		injure(INJURY_TOXIN, burn, source = src, flags = INJURE_CONTINUOUS)
 		var/ratio = (poison / safe_toxins_max) * 10
 		if(reagents)
 			reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
-			breath.adjust_gas(poison_type, -poison / 6, update = 0) //update after
+		breath.adjust_gas(poison_type, -poison / 6, update = 0) //update after
 		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
 		clear_alert("tox_in_air")
@@ -92,19 +97,21 @@
 	var/n2o = LINDA_GAS_AMT(breath, GAS_N2O)
 	if(!n2o)
 		return
-	var/SA_para_min = 1
-	var/SA_sleep_min = 5
+	var/SA_para_min = BREATH_N2O_PARALYSE
+	var/SA_sleep_min = BREATH_N2O_SLEEP
 	var/SA_pp = (n2o / breath_moles) * breath_pressure
+	if(SA_pp > BREATH_N2O_GIGGLE)
+		set_breath_hazard(TRUE)
 	// Enough to make us paralysed for a bit
 	if(SA_pp > SA_para_min)
 		// 3 gives them one second to wake up and run away a bit!
-		status_at_least(EFFECT_PARALYZED, 3)
-		status_at_least(EFFECT_SLEEPING, 1)
+		status_at_least(STAT_PARALYZED, 3)
+		status_at_least(STAT_SLEEPING, 1)
 		// Enough to make us sleep as well
 		if(SA_pp > SA_sleep_min)
-			status_at_least(EFFECT_SLEEPING, 5)
+			status_at_least(STAT_SLEEPING, 5)
 	// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
-	else if(SA_pp > 0.15)
+	else if(SA_pp > BREATH_N2O_GIGGLE)
 		if(prob(20))
 			emote(pick("giggle", "laugh"))
 	breath.adjust_gas(GAS_N2O, -n2o / 6, update = 0) //update after
@@ -116,7 +123,7 @@
 	var/obj/item/helmet = get_equipped_item(SLOT_ID_HEAD)
 	if(!suit || !helmet || !species)
 		return FALSE
-	return suit.min_pressure_protection < species.hazard_low_pressure && helmet.min_pressure_protection < species.hazard_low_pressure
+	return protection_of(suit).min_pressure < species.hazard_low_pressure && protection_of(helmet).min_pressure < species.hazard_low_pressure
 
 // --- Skin breathing (alraunes) ------------------------------------------------------------
 
@@ -133,16 +140,16 @@
 	/// The gas the skin takes in.
 	var/intake_gas = GAS_CO2
 
-/datum/breath_profile/skin/take_breath(mob/living/carbon/self, datum/om/stage/life/breathing/carbon/stage)
+/datum/breath_profile/skin/take_breath(mob/living/carbon/self)
 	var/mob/living/carbon/human/H = self
 	if(!istype(H) || !H.species)
 		return
-	var/datum/gas_mixture/breath = skin_breath_source(H, stage)
+	var/datum/gas_mixture/breath = skin_breath_source(H)
 	skin_exchange(H, breath)
-	stage.exhale(H, breath)
+	H.life_breathing_exhale(breath)
 
 /// Where the skin's air comes from: internals under a sealed suit or in thin air, else the room.
-/datum/breath_profile/skin/proc/skin_breath_source(mob/living/carbon/human/H, datum/om/stage/life/breathing/carbon/stage)
+/datum/breath_profile/skin/proc/skin_breath_source(mob/living/carbon/human/H)
 	var/datum/gas_mixture/breath
 	if(H.is_fully_sealed())
 		breath = H.get_breath_from_internal()
@@ -156,7 +163,7 @@
 		var/datum/gas_mixture/room = H.loc.return_air_for_internal_lifeform(H)
 		if(room)
 			breath = room.remove_volume(BREATH_VOLUME)
-			stage.inhale_smoke(H, room)
+			H.life_breathing_inhale_smoke(room)
 	return breath
 
 /// Gas exchange through the skin. Reports breath quality to the physiology and the CO2 share
@@ -170,9 +177,10 @@
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 		return
 	H.clear_alert("pressure")
+	H.set_breath_hazard(FALSE)
 
 	var/datum/species/S = H.species
-	var/safe_exhaled_max = 10
+	var/safe_exhaled_max = BREATH_EXHALED_MAX
 	var/min_pressure = S.minimum_breath_pressure
 	var/breath_pressure = (breath_total * R_IDEAL_GAS_EQUATION * breath.return_temperature()) / BREATH_VOLUME
 	var/inhaling = LINDA_GAS_AMT(breath, intake_gas)
@@ -194,7 +202,7 @@
 
 	var/used = inhaling / 6
 	breath.adjust_gas(intake_gas, -used, update = 0) //update afterwards
-	breath.adjust_gas_temp(S.exhale_type, used, H.bodytemperature, update = 0) //update afterwards
+	breath.adjust_gas_temp(S.exhale_type, used, H.body_temperature(), update = 0) //update afterwards
 
 	// Plenty of CO2 would be too much exhaled gas for a human; plants like it, and the alert tells them it's there.
 	if(inhale_pp > safe_exhaled_max * 0.7)
@@ -237,7 +245,7 @@
 				H.injure(INJURY_FROSTBITE, COLD_GAS_DAMAGE_LEVEL_3, bodypart)
 
 		// Air on the skin also heats or cools the body a bit.
-		var/temp_adj = breath_temperature - H.bodytemperature
+		var/temp_adj = breath_temperature - H.body_temperature()
 		if(temp_adj < 0)
 			temp_adj /= (BODYTEMP_COLD_DIVISOR * 5)	//don't raise temperature as much as if we were directly exposed
 		else

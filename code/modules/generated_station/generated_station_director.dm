@@ -59,15 +59,20 @@
 	var/next_order_id = 1
 	var/tmp/datum/generated_station_defense_runtime/defense_runtime
 
+CAPABILITIES(/datum/generated_station_director)
+	owns_many(nameof(orders))
+	owns_many(nameof(reports))
+	owns_many(nameof(squads))
+
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
 	rel_set(src, nameof(simulation), new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
-	own_take_all(src, nameof(reports))
+	rel_take_all(src, nameof(reports))
 	local_knowledge = list()
-	own_take_all(src, nameof(squads))
-	own_take_all(src, nameof(orders))
+	rel_take_all(src, nameof(squads))
+	rel_take_all(src, nameof(orders))
 	dirty_departments = list()
 	for(var/department_id in simulation()?.departments)
 		department_connected[department_id] = TRUE
@@ -141,13 +146,13 @@
 	report.confidence = clamp(confidence, 0, 100)
 	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
-	own_put(src, nameof(reports), report.id, report)
+	rel_add(src, nameof(reports), report, report.id)
 	source_knowledge[report.id] = report
 	process_dirty()
 	if(strategic_online && department_connected[source_department_id])
 		propagate_report(report)
 	if(report.expires_at)
-		om_after(src, lifetime, PROC_REF(expire_report), report.id, report.expires_at)
+		after(src, lifetime, PROC_REF(expire_report), with = list(report.id, report.expires_at))
 	return report
 
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)
@@ -172,7 +177,7 @@
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
 	own_take_member(src, nameof(reports), report_id)
-	qdel(report)
+	spent(report)
 
 /datum/generated_station_director/proc/department_knows(department_id, report_id)
 	var/list/knowledge = local_knowledge[department_id]
@@ -204,7 +209,7 @@
 	var/datum/generated_station_squad/squad = new
 	squad.id = "squad-[next_squad_id++]"
 	squad.department_id = department_id
-	own_put(src, nameof(squads), squad.id, squad)
+	rel_add(src, nameof(squads), squad, squad.id)
 	return squad
 
 /datum/generated_station_director/proc/issue_order(squad_id, report_id, kind, global_coordination = FALSE)
@@ -225,7 +230,7 @@
 	order.global_coordination = global_coordination
 	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
-	own_put(src, nameof(orders), order.id, order)
+	rel_add(src, nameof(orders), order, order.id)
 	squad.active_order_id = order.id
 	defense_runtime()?.apply_order(order)
 	return order
@@ -239,7 +244,7 @@
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
 	own_take_member(src, nameof(orders), order.id)
-	qdel(order)
+	spent(order)
 	return TRUE
 
 /// Accessor for the simulation var.

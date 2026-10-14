@@ -22,13 +22,16 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	var/atom/movable/tracked // The thing to point towards (a relation view).
 
 /// If set, points towards tracked (every half second).
-OM_FIELD(/obj/item/spell/track, tracking, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
+/obj/item/spell/track/var/tracking = FALSE
+TRACKED(/obj/item/spell/track, tracking)
+CAPABILITIES(/obj/item/spell/track)
+	ref_one(nameof(tracked))
+	every(0.5 SECONDS, then(PROC_REF(track)), when = nameof(tracking))
 
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
 		set_tracking(FALSE)
-		icon_state = "track"
+		set_icon_state("track")
 		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
 		rel_clear(src, nameof(tracked))
 		return
@@ -44,35 +47,49 @@ DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
 		if(L == user)
 			continue
 		mob_choices += L
-	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(track_target_chosen), title = "Tracking", message = "Decide what or who to track.", choices = (object_choices + mob_choices))
+	open_request(src, /datum/prompt/choice/technomancer_track_target, PROC_REF(track_target_chosen), answerer = user, title = "Tracking", question = "Decide what or who to track.", choices = (object_choices + mob_choices))
 
-/obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
-	if(ask.choice)
-		rel_set(src, nameof(tracked), ask.choice)
+/obj/item/spell/track/proc/track_target_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	if(context.answer.value)
+		rel_set(src, nameof(tracked), context.answer.value)
 		set_tracking(TRUE)
 		track()
 
-/// DECLARE_REPEAT while tracking: point towards the tracked thing.
-/obj/item/spell/track/proc/track()
+/// every() while tracking: point towards the tracked thing.
+/obj/item/spell/track/proc/track(datum/act/timer/A)
 	if(!tracked())
-		icon_state = "track_unknown"
+		set_icon_state("track_unknown")
 
 	if(tracked().z != owner_ref().z)
-		icon_state = "track_unknown"
+		set_icon_state("track_unknown")
 
 	else
 		set_dir(get_dir(src,get_turf(tracked())))
 
 		switch(get_dist(src,get_turf(tracked())))
 			if(0)
-				icon_state = "track_direct"
+				set_icon_state("track_direct")
 			if(1 to 8)
-				icon_state = "track_close"
+				set_icon_state("track_close")
 			if(9 to 16)
-				icon_state = "track_medium"
+				set_icon_state("track_medium")
 			if(16 to INFINITY)
-				icon_state = "track_far"
+				set_icon_state("track_far")
 
 /// Tracked (a relation view).
 /obj/item/spell/track/proc/tracked() as /atom/movable
 	return tracked
+
+/datum/prompt/choice/technomancer_track_target
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/prompt/choice/technomancer_track_target/recheck_extra()
+	if(isnull(value))
+		return null
+	var/atom/movable/selected = value
+	if(!istype(selected) || QDELETED(selected))
+		return "gone"

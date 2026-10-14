@@ -5,6 +5,9 @@
 	var/use_map_edge_with_landmarks = TRUE // Use both landmarks and spawning from the "edge" of the map. Otherise uses landmarks over map edge.
 	var/landmark_name = "carpspawn" // Which landmark to use for spawning.
 
+CAPABILITIES(/datum/event2/event/mob_spawning)
+	ref_many(nameof(spawned_mobs))
+
 // Spawns a specific mob from the "edge" of the map, and makes them go towards the station.
 // Can also use landmarks, if desired.
 /datum/event2/event/mob_spawning/proc/spawn_mobs_in_space(mob_type, number_of_groups, min_size_of_group, max_size_of_group, dir)
@@ -80,7 +83,7 @@
 
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_mob_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_mob_destruction)))
 	rel_add(src, nameof(spawned_mobs), M)
 	return M
 
@@ -92,8 +95,9 @@
 			. += 1
 
 // If simple_mob is bomphed, remove it from the list.
-/datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	var/mob/M = source
 	rel_remove(src, nameof(spawned_mobs), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)

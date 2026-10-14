@@ -1,8 +1,3 @@
-// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 /obj/item/integrated_circuit/input
 	var/can_be_asked_input = 0
 	category_text = "Input"
@@ -88,10 +83,37 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 4
 
+/datum/prompt/number/circuit_numberpad
+	var/original_client_ckey
+
+/datum/prompt/number/circuit_numberpad/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
 /obj/item/integrated_circuit/input/numberpad/ask_for_input(mob/user)
-	var/new_input = rerun_ask(user, "k92", PROC_REF(ask_for_input), args, /datum/om/prompt/number, message = "Enter a number, please.", title = "Number pad", default = get_pin_data(IC_OUTPUT, 1))
-	if(isnull(new_input))
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return
+	open_request(src, /datum/prompt/number/circuit_numberpad, PROC_REF(input_entered), answerer = user, original_client_ckey = original_client_ckey, question = "Enter a number, please.", title = "Number pad", default = get_pin_data(IC_OUTPUT, 1), timeout = 0, min_value = 0, max_value = INFINITY, step = 1)
+
+/obj/item/integrated_circuit/input/numberpad/proc/input_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_input(A)
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/numberpad/proc/apply_input(datum/act/request/A)
+	var/datum/prompt/number/circuit_numberpad/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	if(!user)
+		return
+	var/new_input = A.answer.value
 	if(isnum(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()
@@ -109,11 +131,31 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 4
 
+/datum/prompt/text/circuit_textpad
+	var/original_client_ckey
+
 /obj/item/integrated_circuit/input/textpad/ask_for_input(mob/user)
-	var/_answer_k111 = rerun_ask(user, "k111", PROC_REF(ask_for_input), args, /datum/om/prompt/text, message = "Enter some words, please.", title = "Text pad", default = get_pin_data(IC_OUTPUT, 1), max_length = MAX_KEYPAD_INPUT_LEN, encode = FALSE)
-	if(isnull(_answer_k111))
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return
-	var/new_input = sanitizeSafe(_answer_k111, MAX_KEYPAD_INPUT_LEN, 0, 0)
+	open_request(src, /datum/prompt/text/circuit_textpad, PROC_REF(input_entered), answerer = user, original_client_ckey = original_client_ckey, question = "Enter some words, please.", title = "Text pad", default = get_pin_data(IC_OUTPUT, 1), timeout = 0, max_len = MAX_KEYPAD_INPUT_LEN, name_text = FALSE, encode = FALSE, multiline = FALSE)
+
+/obj/item/integrated_circuit/input/textpad/proc/input_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_input(A)
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/input/textpad/proc/apply_input(datum/act/request/A)
+	var/datum/prompt/text/circuit_textpad/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	if(!user)
+		return
+	var/new_input = sanitizeSafe(A.answer.value, MAX_KEYPAD_INPUT_LEN, 0, 0)
 	if(istext(new_input) && CanInteract(user, GLOB.tgui_physical_state))
 		set_pin_data(IC_OUTPUT, 1, new_input)
 		push_data()
@@ -132,10 +174,12 @@
 	power_draw_per_use = 4
 
 /obj/item/integrated_circuit/input/colorpad/ask_for_input(mob/user)
-	om_ask(user, /datum/om/prompt/color/circuit, PROC_REF(color_entered), title = "Color pad", message = "Enter a color, please.", default = get_pin_data(IC_OUTPUT, 1))
+	open_request(src, /datum/prompt/color/circuit, PROC_REF(color_entered), answerer = user, title = "Color pad", question = "Enter a color, please.", default = get_pin_data(IC_OUTPUT, 1))
 
-/obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/om/prompt/color/circuit/ask)
-	set_pin_data(IC_OUTPUT, 1, ask.picked_color)
+/obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	set_pin_data(IC_OUTPUT, 1, A.answer.value)
 	push_data()
 	activate_pin(1)
 
@@ -215,7 +259,7 @@
 	set_pin_data(IC_OUTPUT, 5, D?.respiratory_rate)
 	set_pin_data(IC_OUTPUT, 6, D?.temperature)
 	set_pin_data(IC_OUTPUT, 7, LAZYLEN(D?.findings))
-	qdel(D)
+	spent(D, H)
 
 /obj/item/integrated_circuit/input/examiner
 	name = "examiner"
@@ -437,11 +481,13 @@
 	var/code = 30
 	var/datum/radio_frequency/radio_connection
 
+CAPABILITIES(/obj/item/integrated_circuit/input/signaler)
+	after_init(4 SECONDS, then(PROC_REF(retune_after_init)))
+
 /obj/item/integrated_circuit/input/signaler/Initialize(mapload)
 	. = ..()
 	set_pin_data(IC_INPUT, 1, frequency)
 	set_pin_data(IC_INPUT, 2, code)
-	om_after(src, 40, PROC_REF(set_frequency), frequency)
 
 /obj/item/integrated_circuit/input/signaler/on_data_written()
 	var/new_freq = get_pin_data(IC_INPUT, 1)
@@ -462,14 +508,18 @@
 	radio_connection.post_signal(src, signal)
 	activate_pin(2)
 
+/// Four seconds after init (after_init()): tunes to the frequency it was made with.
+/obj/item/integrated_circuit/input/signaler/proc/retune_after_init(datum/act/A)
+	set_frequency(frequency)
+
 /obj/item/integrated_circuit/input/signaler/proc/set_frequency(new_frequency)
 	if(!frequency)
 		return
-	if(!GLOB.radio_service)
+	if(!SSradio)
 		return
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/integrated_circuit/input/signaler/receive_signal(datum/signal/signal)
 	var/new_code = get_pin_data(IC_INPUT, 2)
@@ -488,7 +538,7 @@
 
 	if(loc)
 		for(var/mob/O in hearers(1, get_turf(src)))
-			O.show_message("[icon2html(src, usr.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
+			O.show_message("[icon2html(src, O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 
 /obj/item/integrated_circuit/input/EPv2
 	name = "\improper EPv2 circuit"
@@ -522,7 +572,8 @@
 		return can_telecomm(src,node)
 	return 0
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/EPv2, "exonet", /datum/exonet_protocol)
+CAPABILITIES(/obj/item/integrated_circuit/input/EPv2)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/input/EPv2/Initialize(mapload)
 	. = ..()
@@ -651,7 +702,6 @@ DECLARE_REGISTRY(/obj/item/integrated_circuit/input/microphone, REGISTRY_LISTENI
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 30
 
-	var/list/my_langs
 	var/static/list/readable_langs = list(
 		LANGUAGE_GALCOM,
 		LANGUAGE_SOL_COMMON,
@@ -660,12 +710,6 @@ DECLARE_REGISTRY(/obj/item/integrated_circuit/input/microphone, REGISTRY_LISTENI
 		LANGUAGE_TERMINUS,
 		LANGUAGE_SIGN
 		)
-
-/obj/item/integrated_circuit/input/microphone/sign/Initialize(mapload)
-	. = ..()
-	for(var/lang in readable_langs)
-		var/datum/language/newlang = GLOB.all_languages[lang]
-		LAZYOR(my_langs, newlang)
 
 /obj/item/integrated_circuit/input/microphone/sign/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces)

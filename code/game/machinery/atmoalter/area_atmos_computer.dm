@@ -4,7 +4,6 @@
 	desc = "A computer used to control the stationary scrubbers and pumps in the area."
 	icon_keyboard = "atmos_key"
 	icon_screen = "area_atmos"
-	light_color = "#e6ffff"
 	circuit = /obj/item/circuitboard/area_atmos
 
 	/// Scrubbers found by the last scan (a relation view: dead ones leave by themselves).
@@ -16,9 +15,14 @@
 	//Simple variable to prevent me from doing attack_hand in both this and the child computer
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
-/obj/machinery/computer/area_atmos/relations()
-	. = ..()
-	. += rel_many(nameof(connectedscrubbers))
+CAPABILITIES(/obj/machinery/computer/area_atmos)
+	configure(light_glow(color = "#e6ffff"))
+	op("allon", ui_act("allon"), then(PROC_REF(ui_act_allon)))
+	op("alloff", ui_act("alloff"), then(PROC_REF(ui_act_alloff)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	ref_many(nameof(connectedscrubbers))
+	interface("AreaScrubberControl")
+	op("toggle", ui_act("toggle", arg("id", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
 
 /// The connected scrubber with this id, or null.
 /obj/machinery/computer/area_atmos/proc/scrubber_by_id(scrub_id)
@@ -31,18 +35,7 @@
 	. = ..()
 	scanscrubbers()
 
-/obj/machinery/computer/area_atmos/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/computer/area_atmos, "AreaScrubberControl")
-
-UI_DATA_REPLACE(/obj/machinery/computer/area_atmos, "merge:ui_data_obj_machinery_computer_area_atmos{}")
-
-/// The computed part of /obj/machinery/computer/area_atmos's window data (declared on its UI_DATA row).
-/obj/machinery/computer/area_atmos/proc/ui_data_obj_machinery_computer_area_atmos(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/area_atmos/ui_data(datum/act/eval/A)
 	var/list/working = list()
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as anything in connectedscrubbers)
 		if(!validscrubber(scrubber))
@@ -60,35 +53,26 @@ UI_DATA_REPLACE(/obj/machinery/computer/area_atmos, "merge:ui_data_obj_machinery
 
 	return list("scrubbers" = working)
 
-UI_ACT(/obj/machinery/computer/area_atmos, "toggle", ui_act_toggle, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_toggle)
-	var/scrub_id = params["id"]
+/obj/machinery/computer/area_atmos/proc/ui_act_toggle(datum/act/op/A, id)
+	var/scrub_id = id
 	var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
 	if(!validscrubber(S))
 		rel_remove(src, nameof(/obj/machinery/computer/area_atmos::connectedscrubbers), S)
-		return TRUE
+		return OP_OK
 	S.set_on(!S.on)
-	MACHINE_WAKE(S)
-	. = TRUE
-	add_fingerprint(ui.user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/area_atmos, "allon", ui_act_allon)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_allon)
+/obj/machinery/computer/area_atmos/proc/ui_act_allon(datum/act/op/A)
 	toggle_all(TRUE)
-	. = TRUE
-	add_fingerprint(ui.user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/area_atmos, "alloff", ui_act_alloff)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_alloff)
+/obj/machinery/computer/area_atmos/proc/ui_act_alloff(datum/act/op/A)
 	toggle_all(FALSE)
-	. = TRUE
-	add_fingerprint(ui.user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/area_atmos, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
-	scanscrubbers_user(ui.user)
-	. = TRUE
-	add_fingerprint(ui.user)
+/obj/machinery/computer/area_atmos/proc/ui_act_scan(datum/act/op/A)
+	scanscrubbers_user(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)
@@ -96,8 +80,6 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
 			rel_remove(src, nameof(connectedscrubbers), S)
 			continue
 		S.set_on(on)
-		MACHINE_WAKE(S)
-		CHECK_TICK
 
 /obj/machinery/computer/area_atmos/proc/validscrubber(obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as obj)
 	if(!isobj(scrubber) || get_dist(scrubber.loc, src.loc) > src.range || scrubber.loc.z != src.loc.z)

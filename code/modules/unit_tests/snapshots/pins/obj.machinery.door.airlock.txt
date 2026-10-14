@@ -1,0 +1,85 @@
+@obj.machinery.door human|none
++0 menu: Hammer on the door
++1 menu: Hold the door open
++3 menu: Ring the bell
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Open controls
+robot|none menu: Open or close
+robot|none menu: Toggle bolts
+robot|none menu: Toggle electrification
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none menu: Open or close
+ai|none menu: Toggle bolts
+ai|none menu: Toggle electrification
+ai|none menu: Toggle the bolt lights
+ai|none click: Click: Open controls
+@obj ghost|none
+@obj.machinery.door human|/obj/item/tool/screwdriver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
++0 menu: Hammer on the door
++1 menu: Hold the door open
++3 menu: Ring the bell
+@obj.machinery.door human|/obj/item/tool/crowbar
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.door human|/obj/item/tool/wrench
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
++0 menu: Hammer on the door
++1 menu: Hold the door open
++3 menu: Ring the bell
+human|/obj/item/tool/wirecutters menu: Hammer on the door
+human|/obj/item/tool/wirecutters menu: Hold the door open
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Ring the bell
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/multitool menu: Hammer on the door
+human|/obj/item/multitool menu: Hold the door open
+human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Ring the bell
+human|/obj/item/multitool click: Click: Pulse wires
+@obj.machinery.door human|/obj/item/weldingtool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Hammer on the door
+human|/obj/item/stack/cable_coil menu: Hold the door open
+human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil menu: Ring the bell
+human|/obj/item/stack/cable_coil click: Click: Open
+@obj.machinery.door human|/obj/item/stack/material/steel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
++0 menu: Hammer on the door
++1 menu: Hold the door open
++3 menu: Ring the bell
+human|/obj/item/card/id menu: Hammer on the door
+human|/obj/item/card/id menu: Hold the door open
+human|/obj/item/card/id menu: Open
+human|/obj/item/card/id menu: Ring the bell
+human|/obj/item/card/id click: Click: Open
+@obj.machinery.door human|/obj/item
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
++0 menu: Hammer on the door
++1 menu: Hold the door open
++3 menu: Ring the bell
+@obj.machinery.door human|/obj/item/card/emag
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.door human|/obj/item/stack/material/plasteel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/taperoll
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/assembly/signaler
+-menu: Move To Top
+-menu: Threaten to push the button! (refused: You can't do that.)
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/pai_cable
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+wires: AI Control, Bolt Lights, Door Bolts, Door State, Door Timing, Electrification, ID Scan, Primary Backup Power, Primary Power, Safety, Secondary Backup Power, Secondary Power
+keys: bolt_toggle, break_in, deice, deice_tool, disrupt_backup, disrupt_main, doorbell, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, emergency_toggle, hammer, hold_open, idscan_toggle, light_toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_close, pai_cable, panel.open, pry, pry_weapon, reinforce, remote_lights, remote_shock, remove_electronics, repair, robot_remote_blocked, safe_toggle, shock_perm, shock_restore, shock_temp, signaler, speed_toggle, strike, tape, tear, ui_open, unreinforce, weld_plasteel, weld_shut.toggle, wires.cut, wires.pulse, wires_window

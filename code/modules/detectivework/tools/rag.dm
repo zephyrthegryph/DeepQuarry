@@ -2,7 +2,6 @@
 	var/bloody_hands = 0
 	var/track_blood = 0
 	var/list/feet_blood_DNA
-	var/track_blood_type
 	var/feet_blood_color
 
 /obj/item/clothing/gloves
@@ -21,55 +20,74 @@
 	max_transfer_amount = 5
 	volume = 10
 	flags = OPENCONTAINER | NOBLUDGEON
-	container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_NONE
 	unacidable = FALSE
-	drop_sound = SFX_ITEMS_DROP_CLOTH
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
-	special_handling = TRUE
 
-OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "rag_lit")
+/obj/item/reagent_containers/glass/rag/var/rag_lit = FALSE
 
-/obj/item/reagent_containers/glass/rag/Initialize(mapload)
+// A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
+// things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
+// below). It keeps the glass handling: a label, a dip, a hot thing over blood.
+CAPABILITIES(/obj/item/reagent_containers/glass/rag)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	without(CAP_GLASS_CONTAINER)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	after_init(0, then(PROC_REF(name_refreshed)))
+	wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit))
+	extend("wiper.soak", then(PROC_REF(name_refreshed)))
+	extend("wiper.wring_into", then(PROC_REF(name_refreshed)))
+	op("stamp_out", in_hand(), when(nameof(rag_lit)), label("Stamp it out"), then(PROC_REF(stamped_out)))
+	op("wring_out", in_hand(), when(cond_not(nameof(rag_lit))), label("Wring it out"),
+		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out)))
+	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
+	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
+	every(2 SECONDS, then(PROC_REF(rag_step)), when = nameof(rag_lit))
+
+MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
+
+/// What the rag is called follows what it holds and whether it burns.
+/obj/item/reagent_containers/glass/rag/proc/name_refreshed(datum/act/A)
+	update_name()
+	return OP_OK
+
+/// What a person reads when they look from two tiles: what is in it (a glass container says it through its capability; a rag is not one).
+/obj/item/reagent_containers/glass/rag/examine(mob/user)
 	. = ..()
+	if(get_dist(user, src) <= 2)
+		if(reagents && reagents.reagent_list.len)
+			. += span_notice("It contains [reagents.total_volume] units of liquid.")
+		else
+			. += span_notice("It is empty.")
+
+/// Used in hand while it burns: it is stamped out.
+/obj/item/reagent_containers/glass/rag/proc/stamped_out(datum/act/op/A)
+	var/mob/user = A.actor
+	act_message(user, src, MSG_SELF(span_warning("You stamp out %T%.")), MSG_OTHERS(span_warning("%U% stamps out %T%.")))
+	user.unEquip(src)
+	extinguish()
+	return OP_OK
+
+/// A lit flame held to it: it catches if it is soaked in something that burns.
+/obj/item/reagent_containers/glass/rag/proc/lit_by_flame(datum/act/op/A)
+	light_with(A.held, A.actor)
+	return OP_OK
+
+/// A flame held to it (by a hand, or by the bottle it is stuffed in).
+/obj/item/reagent_containers/glass/rag/proc/light_with(obj/item/flame/F, mob/user)
+	if(!rag_lit && F.lit)
+		ignite()
+		if(rag_lit)
+			act_message(user, src, others = span_warning("%U% lights %T% with [F]."))
+		else
+			to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
 	update_name()
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
-	INTERACT_SELF(null, PROC_REF(rag_self)), \
-	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(rag_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Dip into it", PROC_REF(rag_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Dip into it", PROC_REF(rag_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Dip into it", PROC_REF(rag_item)), \
-)
-
-/// Old attack_self.
-/obj/item/reagent_containers/glass/rag/proc/rag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(rag_lit)
-		act_message(user, src, MSG_SELF(span_warning("You stamp out %T%.")), MSG_OTHERS(span_warning("%U% stamps out %T%.")))
-		user.unEquip(src)
-		extinguish()
-	else
-		remove_contents(user)
-	return TRUE
-
-/// Old attackby: its own lighting, then the glass handling (the old ..()), then the name update.
-/obj/item/reagent_containers/glass/rag/proc/rag_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!rag_lit && istype(W, /obj/item/flame))
-		var/obj/item/flame/F = W
-		if(F.lit)
-			src.ignite()
-			if(rag_lit)
-				act_message(user, src, others = span_warning("%U% lights %T% with [W]."))
-			else
-				to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
-
-	. = glass_item(user, W, interaction)
-	update_name()
-	// The glass handling already ran here; don't let its candidate run it again.
-	if(!.)
-		return INTERACTION_HANDLED_PASS
+	return
 
 /obj/item/reagent_containers/glass/rag/proc/update_name()
 	if(rag_lit)
@@ -79,111 +97,75 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	else
 		name = "dry [initial(name)]"
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/atom, appearance_overlays), list("rag_lit"))
-/obj/item/reagent_containers/glass/rag/appearance_overlays()
-	. = list()
-	if(rag_lit)
-		icon_state = "raglit"
-	else
-		icon_state = "rag"
+/// The look: the rag, lit or not.
+/obj/item/reagent_containers/glass/rag/draw(datum/look/look)
+	..()
+	look.state(rag_lit ? "raglit" : "rag")
 
-	var/obj/item/reagent_containers/food/drinks/bottle/B = loc
-	if(istype(B))
-		B.update_icon()
+/// How long it takes to wring it out over the floor: five deciseconds a unit.
+/obj/item/reagent_containers/glass/rag/proc/wring_floor_time(datum/act/A)
+	return reagents.total_volume * 5
 
-/obj/item/reagent_containers/glass/rag/proc/remove_contents(mob/user, atom/trans_dest = null)
-	if(!trans_dest && !user.loc)
-		return
-
-	if(reagents.total_volume)
-		var/target_text = trans_dest? "\the [trans_dest]" : "\the [user.loc]"
-		act_message(user, src, MSG_SELF(span_notice("You begin to wring out %T% over [target_text].")), \
-			MSG_OTHERS(span_danger("%U% begins to wring out %T% over [target_text].")))
-
-		//50 for a fully soaked rag
-		om_task_start(/datum/om/task/timed/rag_wring, user, src, duration = reagents.total_volume*5, trans_dest = trans_dest, target_text = target_text)
-
-/datum/om/task/timed/rag_wring
-	complete_proc = /obj/item/reagent_containers/glass/rag/proc/wring_done
-	var/atom/trans_dest
-	var/target_text
-
-/obj/item/reagent_containers/glass/rag/proc/wring_done(datum/om/task/timed/rag_wring/task)
-	var/mob/user = task.actor
-	var/atom/trans_dest = task.trans_dest
-	var/target_text = task.target_text
-	if(trans_dest)
-		reagents.trans_to(trans_dest, reagents.total_volume)
-	else
-		reagents.splash(user.loc, reagents.total_volume)
-	act_message(user, src, MSG_SELF(span_notice("You finish to wringing out %T%.")), MSG_OTHERS(span_danger("%U% wrings out %T% over [target_text].")))
+/// Wrung out over the floor under the one wringing.
+/obj/item/reagent_containers/glass/rag/proc/wrung_out(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.loc || !reagents.total_volume)
+		return OP_REFUSED
+	reagents.splash(user.loc, reagents.total_volume)
+	act_message(user, src, MSG_SELF(span_notice("You finish to wringing out %T%.")), MSG_OTHERS(span_danger("%U% wrings out %T% over \the [user.loc].")))
 	update_name()
+	return OP_OK
 
-/obj/item/reagent_containers/glass/rag/proc/wipe_down(atom/A, mob/user)
+/// Used on a person: it will wipe them (a wait) unless it burns or the mouth is aimed at.
+/obj/item/reagent_containers/glass/rag/proc/rub_wipes(mob/user)
+	return !rag_lit && hud_of(user)?.zone_sel?.selecting != O_MOUTH && !!reagents.total_volume
+
+/obj/item/reagent_containers/glass/rag/proc/rub_wait(datum/act/A)
+	var/datum/act/op/O = A
+	return rub_wipes(O.actor) ? 3 SECONDS : 0
+
+/// The one who begins to wipe somebody is seen to.
+/obj/item/reagent_containers/glass/rag/proc/rub_begins(datum/act/A)
+	var/datum/act/op/O = A
+	if(rub_wipes(O.actor))
+		act_message(O.actor, O.target, others = "%U% starts to wipe %T% with [src].")
+		update_name()
+	return null
+
+/// Used on a person: it sets them alight if it burns, smothers them if the mouth is aimed at, else wipes them.
+/obj/item/reagent_containers/glass/rag/proc/rubbed(datum/act/op/A)
+	var/mob/living/target = A.target
+	var/mob/living/user = A.actor
+	if(rag_lit) //Check if rag is on fire, if so igniting them and stopping.
+		act_message(user, target, others = span_danger("%U% hits %T% with [src]!"))
+		user.do_attack_animation(src)
+		target.ignite_mob()
+		return OP_OK
+	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
+		if(!ishuman(target)) //Added this since player species process reagents in majority of cases.
+			to_chat(user, span_warning("You can't smother this creature."))
+			return OP_REFUSED
+		var/mob/living/carbon/human/H = target
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) //Check human head coverage.
+			to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
+			return OP_REFUSED
+		if(!reagents.total_volume)
+			to_chat(user, span_warning("You can't smother this creature."))
+			return OP_REFUSED
+		user.do_attack_animation(src)
+		act_message(user, target, MSG_SELF(span_warning("You smother %T% with [src]!")), \
+			MSG_OTHERS(span_danger("%U% smothers %T% with [src]!")), \
+			MSG_BLIND("You hear some struggling and muffled cries of surprise"))
+		//it's inhaled, so... maybe CHEM_BLOOD doesn't make a whole lot of sense but it's the best we can do for now
+		reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
+		update_name()
+		return OP_OK
 	if(!reagents.total_volume)
 		to_chat(user, span_warning("The [initial(name)] is dry!"))
-	else
-		act_message(user, A, others = "%U% starts to wipe %T% with [src].")
-		update_name()
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(wipe_done), list(user, A))
-
-/obj/item/reagent_containers/glass/rag/proc/wipe_done(mob/user, atom/A)
-	act_message(user, A, others = "%U% finishes wiping %T%!")
-	A.on_rag_wipe(src)
-
-/obj/item/reagent_containers/glass/rag/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
-	if(isliving(target)) //Leaving this as isliving.
-		var/mob/living/M = target
-		if(rag_lit) //Check if rag is on fire, if so igniting them and stopping.
-			act_message(user, target, others = span_danger("%U% hits %T% with [src]!"))
-			user.do_attack_animation(src)
-			M.ignite_mob()
-		else if(user.zone_sel.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
-			if(ishuman(target)) //Added this since player species process reagents in majority of cases.
-				var/mob/living/carbon/human/H = target
-				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) //Check human head coverage.
-					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
-					return ITEM_INTERACT_FAILURE
-				else if(reagents.total_volume) //Final check. If the rag is not on fire and their face is uncovered, smother target.
-					user.do_attack_animation(src)
-					act_message(user, target, MSG_SELF(span_warning("You smother %T% with [src]!")), \
-						MSG_OTHERS(span_danger("%U% smothers %T% with [src]!")), \
-						MSG_BLIND("You hear some struggling and muffled cries of surprise"))
-					//it's inhaled, so... maybe CHEM_BLOOD doesn't make a whole lot of sense but it's the best we can do for now
-					reagents.trans_to_mob(target, amount_per_transfer_from_this, CHEM_BLOOD)
-					update_name()
-				else
-					to_chat(user, span_warning("You can't smother this creature."))
-					return ITEM_INTERACT_FAILURE
-			else
-				to_chat(user, span_warning("You can't smother this creature."))
-				return ITEM_INTERACT_FAILURE
-		else
-			wipe_down(target, user)
-	else
-		wipe_down(target, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/reagent_containers/glass/rag/afterattack(atom/A as obj|turf|area, mob/user as mob, proximity)
-	if(!proximity)
-		return
-
-	if(istype(A, /obj/structure/reagent_dispensers) || istype(A, /obj/item/reagent_containers/glass/bucket) || istype(A, /obj/structure/mopbucket)) // "Allows rags to be used on buckets and mopbuckets"
-		if(!reagents.get_free_space())
-			to_chat(user, span_warning("\The [src] is already soaked."))
-			return
-
-		if(A.reagents && A.reagents.trans_to_obj(src, reagents.maximum_volume))
-			act_message(user, src, MSG_SELF(span_notice("You soak %T% using [A].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " soaks %T% using [A].")))
-			update_name()
-		return
-
-	if(!rag_lit && istype(A) && (src in user))
-		if(A.is_open_container() && !(A in user))
-			remove_contents(user, A)
-		else if(!ismob(A)) //mobs are handled in attack() - this prevents us from wiping down people while smothering them.
-			wipe_down(A, user)
-		return
+		return OP_REFUSED
+	act_message(user, target, others = "%U% finishes wiping %T%!")
+	target.on_rag_wipe(src)
+	return OP_OK
 
 /// Heat behaviour rule: a soaked rag lights at 50 C.
 /obj/item/reagent_containers/glass/rag/proc/rule_ignite_rag(datum/rule/rule)
@@ -194,7 +176,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
 	new /obj/effect/decal/cleanable/ash(T)
-	qdel(src)
+	destroyed(src, null, BURN)
 
 //rag must have a minimum of 2 units welder fuel or ehtanol based reagents and at least 80% of the reagents must so.
 /obj/item/reagent_containers/glass/rag/proc/can_ignite()
@@ -220,16 +202,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 		var/datum/effect/effect/system/reagents_explosion/e = new()
 		e.set_up(round(reagents.get_reagent_amount(REAGENT_ID_PHORON) / 2.5, 1), get_turf(src), 0, 0)
 		e.start()
-		qdel(src)
+		destroyed(src, null, "explosion")
 		return
 
-	set_light(2, null, "#E38F46")
+	set_glow(src, GLOW(2, null, "#E38F46"))
 	set_rag_lit(TRUE)
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_rag_lit(FALSE)
 
 	//rags sitting around with 1 second of burn time left is dumb.
@@ -239,7 +221,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 		replace_with(src, /obj/effect/decal/cleanable/ash)
 	update_name()
 
-/obj/item/reagent_containers/glass/rag/periodic_step()
+/obj/item/reagent_containers/glass/rag/proc/rag_step(datum/act/timer/A)
 	if(!can_ignite())
 		visible_message(span_warning("\The [src] burns out."))
 		extinguish()
@@ -255,7 +237,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/rag, TYPE_PROC_REF(/a
 
 	if(burn_time <= 0)
 		new /obj/effect/decal/cleanable/ash(location)
-		qdel(src)
+		destroyed(src, null, BURN)
 		return
 
 	reagents.remove_reagent(REAGENT_ID_FUEL, reagents.maximum_volume/25)

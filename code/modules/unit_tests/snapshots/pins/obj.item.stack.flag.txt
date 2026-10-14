@@ -1,0 +1,45 @@
+@obj.item.stack human|none
++0 menu: Knock down
+@obj.item.stack robot|none
++1 menu: Knock down
+@obj ai|none
+@obj.item ghost|none
+@obj.item.stack human|/obj/item/tool/screwdriver
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/tool/crowbar
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/tool/wrench
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/tool/wirecutters
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/multitool
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/weldingtool
++0 menu: Knock down
+@obj.item.stack human|/obj/item/stack/cable_coil
++1 menu: Knock down
++5 menu: Use
+@obj.item.stack human|/obj/item/stack/material/steel
++1 menu: Knock down
++5 menu: Use
+@obj.item.stack human|/obj/item/card/id
++0 menu: Knock down
++4 menu: Use
+@obj.item.stack human|/obj/item/kit
++1 menu: Knock down
++5 menu: Use
+@obj.item.stack human|/obj/item/storage
++1 menu: Knock down
++5 menu: Use
+@obj human|/obj/item/gripper
+@obj human|/obj/item/stack
++1 menu: Knock down
++5 menu: Use
+@obj.item.stack human|/obj/item
++0 menu: Knock down
+keys: build, collect_item, combine, consolidate, drag_buckle, flag_hand, flag_interaction_item, flag_self, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable

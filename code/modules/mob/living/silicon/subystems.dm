@@ -31,21 +31,7 @@
 	silicon_subsystems = list(/mob/living/silicon/proc/subsystem_law_manager)
 	idcard_type = /obj/item/card/id/syndicate
 
-/mob/living/silicon/proc/init_subsystems()
-	own_set(src, nameof(alarm_monitor), new /datum/tgui_module/alarm_monitor/all/robot(src))
-	own_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control/robot(src))
-	own_set(src, nameof(crew_manifest), new /datum/tgui_module/crew_manifest/robot(src))
-	own_set(src, nameof(crew_monitor), new /datum/tgui_module/crew_monitor/robot(src))
-	own_set(src, nameof(law_manager), new /datum/tgui_module/law_manager/robot(src))
-	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor/robot(src))
-	own_set(src, nameof(rcon), new /datum/tgui_module/rcon/robot(src))
-
-	if(!register_alarms)
-		return
-
-	for(var/datum/alarm_handler/AH in all_alarm_handlers())
-		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
-		own_put(src, nameof(queued_alarms), "[AH.type]", new /datum/silicon_alarm_queue(AH.category))	// Makes sure alarms remain listed in consistent order
+// A silicon's subsystems are declared (owns_one(starts =) in its CAPABILITIES, silicon.dm): a decoy has none.
 
 /********************
 *	Alarm Monitor	*
@@ -55,6 +41,10 @@
 	set category = VERB_CAT_ABILITIES_SILICON
 
 	alarm_monitor.tgui_interact(src)
+
+/// The "show alerts" link of a silicon's own chat (the op is declared on /mob, code/modules/mob/mob_defines.dm).
+/mob/living/silicon/proc/topic_showalerts(datum/act/op/A)
+	subsystem_alarm_monitor()
 
 /********************
 *	Atmos Control	*
@@ -113,7 +103,4 @@
 /mob/living/silicon/robot
 	var/datum/tgui_module/robot_ui_decals/decal_control
 
-/mob/living/silicon/robot/init_subsystems()
-	..()
-	own_set(src, nameof(decal_control), new /datum/tgui_module/robot_ui_decals(src))
 

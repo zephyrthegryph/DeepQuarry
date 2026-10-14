@@ -14,7 +14,6 @@
 	desc = "A tiny plaque of plastic. Does card things."
 	icon = 'icons/obj/card_new.dmi'
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/associated_account_number = 0
 
 	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
@@ -22,35 +21,43 @@
 	var/list/sprite_stack
 
 	var/list/files
-	drop_sound = SFX_ITEMS_DROP_CARD
-	pickup_sound = SFX_ITEMS_PICKUP_CARD
+
+CAPABILITIES(/obj/item/card)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
 
 /obj/item/card/Initialize(mapload)
 	. = ..()
 	reset_icon()
 
+/// The sprite stack is tracked: the card redraws when it is set (the setter compares the list, so a new list is a new look).
+TRACKED(/obj/item/card, sprite_stack)
+
 /obj/item/card/proc/reset_icon()
-	sprite_stack = initial_sprite_stack
-	update_icon()
+	set_sprite_stack(initial_sprite_stack)
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/card/appearance_overlays()
-	. = list()
-	icon = base_icon
+/obj/item/card/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/card/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	look.set_icon(base_icon)
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon_state = initial(icon_state)
-		return .
+		drawn_state = look.state(initial(icon_state))
+		return
 	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
-			iconstate = icon_state
+			iconstate = drawn_state
 		if(first)
-			icon_state = iconstate
+			drawn_state = look.state(iconstate)
 			first = FALSE
 		else
-			. += image(base_icon, iconstate)
+			look.overlay(image(base_icon, iconstate))
 
 /obj/item/card/data
 	name = "data card"
@@ -60,14 +67,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	var/data = "null"
 	var/special = null
 	item_state = "card-id"
-	drop_sound = SFX_ITEMS_DROP_DISK
-	pickup_sound = SFX_ITEMS_PICKUP_DISK
 
-/obj/item/card/data/proc/data_label_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/data/proc/data_label_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/t = A.step_value("data_card_label")
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "data_card_label", PROC_REF(data_label_effect), args, /datum/om/prompt/text, message = "Enter a label for the card.", title = "Label Card", max_length = MAX_NAME_LEN)
-	if(isnull(t))
-		return
 	if(get(src, /mob) != user)
 		return
 	if (t)
@@ -102,14 +106,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	item_state = "card-id"
 	var/uses = 10
 
-/// The card acts before the target's own attackby: the target's declared Emag interaction
-/// (code/datums/sys/emag.dm) runs, or the card is an ordinary item when it declares none.
-/obj/item/card/emag/resolve_attackby(atom/A, mob/user, attack_modifier, click_parameters)
-	var/datum/interaction/emag = emag_interaction_for(A)
-	if(!emag || isnull(emag.attempt(user, A, src)))
-		return ..(A, user, click_parameters)
-	return 1
-
 /// Whether the card can still emag anything.
 /obj/item/card/emag/proc/can_emag(mob/user)
 	return uses > 0
@@ -134,31 +130,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/card, TYPE_PROC_REF(/atom, appearance_overlays
 	junk.add_fingerprint(user)
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/card/emag)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/card/emag/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/card/emag/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/stack/telecrystal))
 		var/obj/item/stack/telecrystal/T = O
 		if(T.get_amount() < 1)
 			to_chat(user, span_notice("You are not adding enough telecrystals to fuel \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
 		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
 		consume(O, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/card/emag/borg
 	uses = 12
 	var/burnt_out = FALSE
-
-/obj/item/card/emag/borg/afterattack(atom/A, mob/user, proximity, click_parameters)
-	if(!proximity || burnt_out) return
-	var/datum/interaction/emag = emag_interaction_for(A)
-	if(!emag || isnull(emag.attempt(user, A, src)))
-		return ..(A, user, proximity, click_parameters)
-	return 1
 
 /obj/item/card/emag/borg/can_emag(mob/user)
 	return !burnt_out && ..()
@@ -175,121 +167,139 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 	description_fluff = "This permit was not issued by any branch of NanoTrasen, and as such it is not formally recognized at any NanoTrasen-operated installations. The bearer is not - under any circumstances - entitled to ownership of any items or allowed to perform any acts that would normally be restricted or illegal for their current position, regardless of what they or this permit may claim."
 	icon = 'icons/obj/card_fluff.dmi'
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 
 	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/base_icon = 'icons/obj/card_fluff.dmi'
-	var/list/sprite_stack = list("") // ALLOW(instance_list): d: edited in place per instance (22 writers)
+	var/list/sprite_stack = list("") // ALLOW(instance_list): each decorative card starts with its own mutable appearance stack
 
-	drop_sound = SFX_ITEMS_DROP_CARD
-	pickup_sound = SFX_ITEMS_PICKUP_CARD
+
+TRACKED(/obj/item/card_fluff, sprite_stack)
 
 /obj/item/card_fluff/proc/reset_icon()
-	sprite_stack = list("")
-	update_icon()
+	set_sprite_stack(list(""))
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
 /// blended /icon per card; the layers draw the same without generating an icon).
-DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/card_fluff/appearance_overlays()
-	. = list()
-	icon = base_icon
+/obj/item/card_fluff/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	look.set_icon(base_icon)
 	if(!sprite_stack || !istype(sprite_stack) || sprite_stack == list(""))
-		icon_state = initial(icon_state)
-		return .
+		drawn_state = look.state(initial(icon_state))
+		return
 	var/first = TRUE
 	for(var/iconstate in sprite_stack)
 		if(!iconstate)
-			iconstate = icon_state
+			iconstate = drawn_state
 		if(first)
-			icon_state = iconstate
+			drawn_state = look.state(iconstate)
 			first = FALSE
 		else
-			. += image(base_icon, iconstate)
+			look.overlay(image(base_icon, iconstate))
 
-DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/card_fluff)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
+	op("customize", in_hand(), label("Customize card"), needs(carried(), req_capable()),
+		asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)),
+		asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)),
+		asks(/datum/prompt/choice, keeps = 0, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)),
+		then(PROC_REF(customize_chosen)))
 
-/// Old attack_self.
-/obj/item/card_fluff/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(customize_chosen), title = "Customize Card", message = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	return TRUE
+/obj/item/card_fluff/proc/customizing_band(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	return R?.value == "Band"
 
-/obj/item/card_fluff/proc/customize_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/card_fluff/proc/customizing_stamp(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	return R?.value == "Stamp"
+
+/obj/item/card_fluff/proc/customize_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	switch(R.value)
 		if("Band")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(band_chosen), title = "Band colour", message = "Select colour", choices = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			band_chosen(A)
 		if("Stamp")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(stamp_chosen), title = "Stamp image", message = "Select image", choices = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			stamp_chosen(A)
 		if("Reset")
 			reset_icon()
+	return OP_OK
 
-/obj/item/card_fluff/proc/band_chosen(datum/om/prompt/choice/ask)
-	var/bandchoice = ask.choice
+/obj/item/card_fluff/proc/band_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("band")
+	var/bandchoice = R.value
+	var/list/changed_stack = sprite_stack.Copy()
 	if(bandchoice == "red")
-		sprite_stack.Add("bar-red")
+		changed_stack.Add("bar-red")
 	else if(bandchoice == "orange")
-		sprite_stack.Add("bar-orange")
+		changed_stack.Add("bar-orange")
 	else if(bandchoice == "green")
-		sprite_stack.Add("bar-green")
+		changed_stack.Add("bar-green")
 	else if(bandchoice == "dark green")
-		sprite_stack.Add("bar-darkgreen")
+		changed_stack.Add("bar-darkgreen")
 	else if(bandchoice == "medical blue")
-		sprite_stack.Add("bar-medblue")
+		changed_stack.Add("bar-medblue")
 	else if(bandchoice == "dark blue")
-		sprite_stack.Add("bar-blue")
+		changed_stack.Add("bar-blue")
 	else if(bandchoice == "purple")
-		sprite_stack.Add("bar-purple")
+		changed_stack.Add("bar-purple")
 	else if(bandchoice == "tan")
-		sprite_stack.Add("bar-tan")
+		changed_stack.Add("bar-tan")
 	else if(bandchoice == "pink")
-		sprite_stack.Add("bar-pink")
+		changed_stack.Add("bar-pink")
 	else if(bandchoice == "gold")
-		sprite_stack.Add("bar-gold")
+		changed_stack.Add("bar-gold")
 	else if(bandchoice == "white")
-		sprite_stack.Add("bar-white")
+		changed_stack.Add("bar-white")
 	else if(bandchoice == "black")
-		sprite_stack.Add("bar-black")
+		changed_stack.Add("bar-black")
 
-	update_icon()
+	set_sprite_stack(changed_stack)
 
-/obj/item/card_fluff/proc/stamp_chosen(datum/om/prompt/choice/ask)
-	var/stampchoice = ask.choice
+/obj/item/card_fluff/proc/stamp_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("stamp")
+	var/stampchoice = R.value
+	var/list/changed_stack = sprite_stack.Copy()
 	if(stampchoice == "ship")
-		sprite_stack.Add("stamp-starship")
+		changed_stack.Add("stamp-starship")
 	else if(stampchoice == "cross")
-		sprite_stack.Add("stamp-cross")
+		changed_stack.Add("stamp-cross")
 	else if(stampchoice == "big ears")
-		sprite_stack.Add("stamp-bigears")	//get 'em outta the caption, wiseguy!!
+		changed_stack.Add("stamp-bigears")	//get 'em outta the caption, wiseguy!!
 	else if(stampchoice == "shield")
-		sprite_stack.Add("stamp-shield")
+		changed_stack.Add("stamp-shield")
 	else if(stampchoice == "circle-cross")
-		sprite_stack.Add("stamp-circlecross")
+		changed_stack.Add("stamp-circlecross")
 	else if(stampchoice == "target")
-		sprite_stack.Add("stamp-target")
+		changed_stack.Add("stamp-target")
 	else if(stampchoice == "smile")
-		sprite_stack.Add("stamp-smile")
+		changed_stack.Add("stamp-smile")
 	else if(stampchoice == "frown")
-		sprite_stack.Add("stamp-frown")
+		changed_stack.Add("stamp-frown")
 	else if(stampchoice == "peace")
-		sprite_stack.Add("stamp-peace")
+		changed_stack.Add("stamp-peace")
 	else if(stampchoice == "exclamation")
-		sprite_stack.Add("stamp-exclaim")
+		changed_stack.Add("stamp-exclaim")
 
-	update_icon()
+	set_sprite_stack(changed_stack)
 
 /obj/item/card/id/synthetic/borg
 	var/mob/living/silicon/robot/robot_owner
 	var/last_robot_loc
 
+CAPABILITIES(/obj/item/card/id/synthetic/borg)
+	ref_one(nameof(robot_owner), /mob/living/silicon/robot)
+
 /obj/item/card/id/synthetic/borg/Initialize(mapload)
 	. = ..()
 	if(isrobot(loc))
 		rel_set(src, nameof(robot_owner), loc)
-		registered_name = robot_owner().braintype
-		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+		set_registered_name(robot_owner().braintype)
+		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/card/id/synthetic/borg/proc/check_loc(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == robot_owner() || old_loc == robot_owner().module)
 		last_robot_loc = old_loc
@@ -309,15 +319,14 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/card/emag/used
 	uses = 1
 
-/obj/item/card/emag/used/Initialize(mapload)
-	. = ..()
-	uses = rand(1, 5)
+CAPABILITIES(/obj/item/card/emag/used)
+	rolls(nameof(uses), range_of(1, 5))
 
 /// Relation view: robot owner (reads null once it is gone).
 /obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot
 	return robot_owner
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/card/data, \
-	INTERACT_VERB("Label Card", PROC_REF(data_label_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/card/data)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
+	op("data_label_effect", menu(), label("Label Card"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter a label for the card.", "title" = "Label Card", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "data_card_label"), then(PROC_REF(data_label_effect)))

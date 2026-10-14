@@ -63,7 +63,7 @@
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
-		GLOB.transcore_service.add_backup(src, database_key = database_key)
+		SStranscore.add_backup(src, database_key = database_key)
 
 /// The character this record restores: name, flavour text, languages, OOC
 /// notes and persistent traits all come from the mind's identity (by
@@ -97,6 +97,9 @@
 	var/weight
 	var/aflags
 	var/breath_type = GAS_O2
+
+CAPABILITIES(/datum/transhuman/body_record)
+	owns_one(nameof(mydna), /datum/dna2/record)
 
 /datum/transhuman/body_record/New(copyfrom, add_to_db = 0, ckeylock = 0)
 	..()
@@ -146,8 +149,9 @@
 	M.dna.check_integrity()
 
 	//The DNA2 stuff
-	own_set(src, nameof(mydna), new /datum/dna2/record ())
-	QDEL_SWAP(mydna.dna, M.dna.Clone())
+	rel_set(src, nameof(mydna), new /datum/dna2/record ())
+	own_clear(mydna, nameof(mydna.dna), OWN_DELETE)
+	rel_set(mydna, nameof(mydna.dna), M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
 	mydna.name = M.dna.real_name
@@ -199,7 +203,7 @@
 		organ_data[org] = I.robotic
 
 	if(add_to_db)
-		GLOB.transcore_service.add_body(src, database_key = database_key)
+		SStranscore.add_body(src, database_key = database_key)
 
 /**
  * Make a deep copy of this record so it can be saved on a disk without modifications
@@ -215,7 +219,7 @@
 			if(BLACKLISTED_COPY_VARS)
 				continue
 			if("mydna")
-				own_set(src, nameof(mydna), orig.mydna.copy())
+				rel_set(src, nameof(mydna), orig.mydna.copy())
 				continue
 			if("mind_ref")
 				rel_set(src, nameof(mind_ref), orig.mind_ref) // a relation view: never a raw copy
@@ -250,7 +254,7 @@
 	var/mob/living/carbon/human/H = new /mob/living/carbon/human(location, mydna.dna.species)
 	if(!mydna.dna.real_name)
 		mydna.dna.real_name = backup_name
-	H.real_name = mydna.dna.real_name
+	H.set_real_name(mydna.dna.real_name)
 	H.name = H.real_name
 	H.suiciding = 0
 	H.losebreath = 0
@@ -317,15 +321,15 @@
 
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
-		own_set(mydna, nameof(mydna.dna), new /datum/dna())
-	QDEL_SWAP(H.dna, mydna.dna.Clone())
+		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
+	own_clear(H, nameof(H.dna), OWN_DELETE)
+	rel_set(H, nameof(H.dna), mydna.dna.Clone())
 	H.original_player = ckey
 
 	//Update appearance, remake icons
 	H.UpdateAppearance()
 	H.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 	H.sync_organ_dna()
-	H.regenerate_icons()
 	H.initialize_vessel()
 
 /datum/transhuman/body_record/proc/internal_producebody_misc(mob/living/carbon/human/H)
@@ -362,7 +366,7 @@
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == H.identity())
 				host.release_mind(H, "regrown body reclaimed its brain")
-				qdel(CH)
+				spent(CH, H)
 				break
 
 	// Traitgenes Disable all traits currently active, before species.produceCopy() applies them during updatednastate(). Relevant here as genetraits may not match prior dna!
@@ -381,8 +385,8 @@
 	if(from_save_slot)
 		H.client.prefs.vanity_copy_to(H,FALSE,TRUE,TRUE,FALSE,TRUE)
 		for(var/category in H.all_underwear) // No undies
-			H.hide_underwear[category] = TRUE
-		H.update_underwear()
+			H.set_hide_underwear_at(category, TRUE)
+		H.underwear_edited()
 
 	return H
 

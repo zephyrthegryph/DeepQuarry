@@ -6,11 +6,14 @@
 	range = 0
 	equip_type = EQUIP_SPECIAL
 
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/cloak, PERIODIC_SLOW, "cloaking")
+/obj/item/mecha_parts/mecha_equipment/cloak/var/cloaking = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking)
 
-/obj/item/mecha_parts/mecha_equipment/cloak/periodic_step()
-	..()
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = nameof(cloaking))
+	op("toggle_cloak", topic("toggle_cloak"), then(PROC_REF(topic_toggle_cloak)))
+
+/obj/item/mecha_parts/mecha_equipment/cloak/proc/cloak_step(datum/act/timer/A)
 	//Removed from chassis or ran out of power
 	if(!chassis || !chassis.use_power(energy_drain))
 		stop_cloak()
@@ -26,9 +29,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/cloak, PERIODIC_SLO
 		return
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_cloak=1'>[equip_ready ? "A" : "Dea"]ctivate</a>"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/cloak, "toggle_cloak", PROC_REF(topic_toggle_cloak))
 
-/obj/item/mecha_parts/mecha_equipment/cloak/proc/topic_toggle_cloak(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/cloak/proc/topic_toggle_cloak(datum/act/op/A)
 	if(equip_ready)
 		start_cloak()
 	else

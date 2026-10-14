@@ -4,16 +4,17 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "nose"
 	desc = "The BOOP module, a simple reagent and atmosphere scanner."
-	force = 0
-	throwforce = 0
-	attack_verb = list("nuzzled", "nosed", "booped")
 	w_class = ITEMSIZE_TINY
 	flags = NOBLUDGEON //No more attack messages
 
-DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/boop_module)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0, attack_verbs = list("nuzzled", "nosed", "booped")))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/boop_module/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/boop_module/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!( istype(user.loc, /turf) ))
 		return TRUE
 
@@ -72,8 +73,10 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 	icon_state = "defibpaddles0"
 	desc = "Zappy paws. For fixing cardiac arrest."
 	combat = 1
-	attack_verb = list("batted", "pawed", "bopped", "whapped")
 	chargecost = 500
+
+CAPABILITIES(/obj/item/shockpaddles/robot/hound)
+	configure(item_combat(attack_verbs = list("batted", "pawed", "bopped", "whapped")))
 
 /obj/item/shockpaddles/robot/hound/jumper
 	name = "jumper paws"
@@ -84,6 +87,9 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
 	var/datum/matter_synth/water = null
+
+CAPABILITIES(/obj/item/reagent_containers/borghypo/hound)
+	ref_one(nameof(water), /datum/matter_synth)
 
 // More chems for Medihound
 TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound, borghypo_reagent_ids, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL))
@@ -106,15 +112,35 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/hound/trauma, borghypo_reagent_
 	desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "synthtongue"
-	hitsound = SFX_EFFECTS_ATTACKBLOB
 	var/emagged = 0
 	var/datum/matter_synth/water = null // readds water
 	flags = NOBLUDGEON //No more attack messages
 
-DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interaction_self)))
+MSG_DEF(tongue/drink, span_notice("You begin to lap up water from %T%."), span_filter_notice("%U% begins to lap up water from %T%."))
+MSG_DEF_SELF(tongue/full, span_notice("You refrain from lapping water from %T% with your reserves filled."))
+MSG_DEF_SELF(tongue/dry, span_notice("Your mouth feels dry. You should drink up some water ."))
+MSG_DEF(tongue/lick_up, span_notice("You begin to lick off %T%..."), span_filter_notice("%U% begins to lick off %T%."))
+MSG_DEF(tongue/nibble, span_notice("You begin to nibble away at %T%..."), span_filter_notice("%U% nibbles away at %T%."))
+MSG_DEF(tongue/cram, span_notice("You begin cramming %T% down your throat..."), span_filter_notice("%U% begins cramming %T% down its throat."))
+MSG_DEF(tongue/lick_clean, span_notice("You begin to lick %T% clean..."), span_filter_notice("%U% begins to lick %T% clean..."))
+
+CAPABILITIES(/obj/item/robot_tongue)
+	ref_one(nameof(water), /datum/matter_synth)
+	configure(item_sounds(hit = SFX_EFFECTS_ATTACKBLOB))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	// a lick of anything but a person is five seconds of standing still; a person's face is instant (afterattack)
+	op("tongue_drink_sink", at_target(/obj/structure/sink), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_thirsty), silent = TRUE)), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
+	op("tongue_drink_toilet", at_target(/obj/structure/toilet), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_thirsty), because = MSG(tongue/full))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/drink)), wait(5 SECONDS), then(PROC_REF(tongue_drank)))
+	op("tongue_lick_up", at_target(/obj/effect/decal/cleanable), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_up)), wait(5 SECONDS), then(PROC_REF(tongue_licked_up)))
+	op("tongue_eat_trash", at_target(/obj/item/trash), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_trash)))
+	op("tongue_eat_food", at_target(/obj/item/reagent_containers/food), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/nibble)), wait(5 SECONDS), then(PROC_REF(tongue_ate_food)))
+	op("tongue_eat_cell", at_target(/obj/item/cell), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/cram)), wait(5 SECONDS), then(PROC_REF(tongue_ate_cell)))
+	op("tongue_clean_item", at_target(/obj/item), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_item)))
+	op("tongue_clean_other", at_target(), priority(OP_PRIORITY_DEFAULT), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(not_a_person)), needs(req(PROC_REF(tongue_wet))), starts(PROC_REF(tongue_started)), begins(MSG(tongue/lick_clean)), wait(5 SECONDS), then(PROC_REF(tongue_cleaned_other)))
 
 /// Old attack_self.
-/obj/item/robot_tongue/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/robot_tongue/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
@@ -122,137 +148,129 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 			name = "hacked tongue of doom"
 			desc = "Your tongue has been upgraded successfully. Congratulations."
 			icon = 'icons/mob/dogborg_vr.dmi'
-			icon_state = "syndietongue"
+			set_icon_state("syndietongue")
 		else
 			name = "synthetic tongue"
 			desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 			icon = 'icons/mob/dogborg_vr.dmi'
-			icon_state = "synthtongue"
-		update_icon()
+			set_icon_state("synthtongue")
 	return TRUE
-
-/obj/item/robot_tongue/proc/tongue_eat_trash(atom/target, mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), \
-		MSG_OTHERS(span_filter_notice("%U% finishes eating \the [target.name].")))
-	to_chat(user, span_notice("You finish off \the [target.name]."))
-	qdel(target)
-	var/mob/living/silicon/robot/R = user
-	R.add_power(ROBOT_CELL_JOULES(250), src)
-	water.use_charge(5)
-
-/obj/item/robot_tongue/proc/tongue_eat_food(atom/target, mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), MSG_OTHERS("%U% finishes eating \the [target.name]."))
-	user << span_notice("You finish off \the [target.name].")
-	qdel(target)
-	var/mob/living/silicon/robot/R = user
-	R.add_power(ROBOT_CELL_JOULES(250), src)
-
-/obj/item/robot_tongue/proc/tongue_eat_cell(atom/target, mob/user)
-	act_message(user, null, MSG_SELF(span_notice("You finish swallowing \the [target.name].")), \
-		MSG_OTHERS(span_filter_notice("%U% finishes gulping down \the [target.name].")))
-	to_chat(user, span_notice("You finish off \the [target.name], and gain some charge!"))
-	var/mob/living/silicon/robot/R = user
-	var/obj/item/cell/C = target
-	R.add_power(ROBOT_CELL_JOULES(C.charge / 3), src)
-	water.use_charge(5)
-	qdel(target)
 
 /obj/item/robot_tongue/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)
 		return
+	// everything but a person is a tongue_* op (its CAPABILITIES block)
+	if(!ishuman(target))
+		return
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(om_busy(src)) // a lick in progress claims the tongue
-		to_chat(user, span_warning("You are already licking something else."))
-		return
 	if(user.client && (target in user.client.screen))
 		to_chat(user, span_warning("You need to take \the [target.name] off before cleaning it!"))
-	if(istype(target, /obj/structure/sink) || istype(target, /obj/structure/toilet)) //Dog vibes.
-		if (water.energy == water.max_energy && istype(target, /obj/structure/sink)) return
-		if (water.energy == water.max_energy && istype(target, /obj/structure/toilet))
-			to_chat(user, span_notice("You refrain from lapping water from the [target.name] with your reserves filled."))
-			return
-		act_message(user, null, MSG_SELF(span_notice("You begin to lap up water from [target.name].")), \
-			MSG_OTHERS(span_filter_notice("%U% begins to lap up water from [target.name].")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done), done_args = list(), busy = src)
-	else if(water.energy < 5)
+	if(water.energy < 5)
 		to_chat(user, span_notice("Your mouth feels dry. You should drink up some water ."))
 		return
-	else if(istype(target,/obj/effect/decal/cleanable))
-		act_message(user, null, MSG_SELF(span_notice("You begin to lick off \the [target.name]...")), \
-			MSG_OTHERS(span_filter_notice("%U% begins to lick off \the [target.name].")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done2), done_args = list(target, user), busy = src)
-	else if(istype(target,/obj/item))
-		if(istype(target,/obj/item/trash))
-			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
-				MSG_OTHERS(span_filter_notice("%U% nibbles away at \the [target.name].")))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_trash), done_args = list(target, user), busy = src)
+	if(src.emagged)
+		var/mob/living/silicon/robot/R = user
+		var/mob/living/L = target
+		if(!R.draw_power(ROBOT_CELL_JOULES(666), src, ROBOT_CELL_JOULES(100)))
+			to_chat(user, span_warning("Warning, low power detected. Aborting action."))
 			return
-		if(istype(target,/obj/item/reagent_containers/food))
-			act_message(user, null, MSG_SELF(span_notice("You begin to nibble away at \the [target.name]...")), \
-				MSG_OTHERS("%U% nibbles away at \the [target.name]."))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_food), done_args = list(target, user), busy = src)
-			return
-		if(istype(target,/obj/item/cell))
-			act_message(user, null, MSG_SELF(span_notice("You begin cramming \the [target.name] down your throat...")), \
-				MSG_OTHERS(span_filter_notice("%U% begins cramming \the [target.name] down its throat.")))
-			om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(tongue_eat_cell), done_args = list(target, user), busy = src)
-			return
-		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
-			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done3), done_args = list(target, user), busy = src)
-		return
-	else if(ishuman(target))
-		if(src.emagged)
-			var/mob/living/silicon/robot/R = user
-			var/mob/living/L = target
-			if(!R.draw_power(ROBOT_CELL_JOULES(666), src, ROBOT_CELL_JOULES(100)))
-				to_chat(user, span_warning("Warning, low power detected. Aborting action."))
-				return
-			L.status_at_least(EFFECT_STUNNED, 1)
-			L.status_at_least(EFFECT_WEAKENED, 1)
-			L.apply_effect(STUTTER, 1)
-			act_message(L, user, MSG_SELF(span_userdanger("%T% has shocked you with its tongue! You can feel the betrayal.")), \
-				MSG_OTHERS(span_danger("%T% has shocked %U% with its tongue!")))
-			play_sfx(src, SFX_WEAPONS_EGLOVES)
-		else
-			act_message(user, target, MSG_SELF(span_notice("You affectionately lick all over %T%'s face!")), \
-				MSG_OTHERS(span_notice("%U% affectionately licks all over %T%'s face!")))
-			play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
-			water.use_charge(5)
-			var/mob/living/carbon/human/H = target
-			if(H.species.lightweight == 1)
-				H.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_STUNNED, 1)
+		L.status_at_least(STAT_WEAKENED, 1)
+		L.apply_effect(STUTTER, 1)
+		act_message(L, user, MSG_SELF(span_userdanger("%T% has shocked you with its tongue! You can feel the betrayal.")), \
+			MSG_OTHERS(span_danger("%T% has shocked %U% with its tongue!")))
+		play_sfx(src, SFX_WEAPONS_EGLOVES)
 	else
-		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
-			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
-		om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_robot_tongue_done4), done_args = list(target, user), busy = src)
-		return
+		act_message(user, target, MSG_SELF(span_notice("You affectionately lick all over %T%'s face!")), \
+			MSG_OTHERS(span_notice("%U% affectionately licks all over %T%'s face!")))
+		play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
+		water.use_charge(5)
+		var/mob/living/carbon/human/H = target
+		if(H.species.lightweight == 1)
+			H.status_at_least(STAT_WEAKENED, 3)
 
-/obj/item/robot_tongue/proc/afterattack_robot_tongue_done()
+/// The tongue has enough water for a lick of anything but a sink (a person's face, a mess, a meal).
+/obj/item/robot_tongue/proc/tongue_wet(datum/act/op/A)
+	return (read_once(water.energy >= 5)) ? null : MSG(tongue/dry)
+
+/// A sink is lapped from while the reserve has room.
+/obj/item/robot_tongue/proc/tongue_thirsty(datum/act/op/A)
+	return (read_once(water.energy < water.max_energy)) ? null : MSG(tongue/full)
+
+/obj/item/robot_tongue/proc/tongue_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+
+/obj/item/robot_tongue/proc/tongue_drank(datum/act/op/A)
 	water.add_charge(250)
-	to_chat(src, span_filter_notice("You refill some of your water reserves."))
-/obj/item/robot_tongue/proc/afterattack_robot_tongue_done2(atom/target, mob/user)
-	to_chat(user, span_notice("You finish licking off \the [target.name]."))
+	to_chat(A.actor, span_filter_notice("You refill some of your water reserves."))
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_licked_up(datum/act/op/A)
+	var/atom/target = A.target
+	to_chat(A.actor, span_notice("You finish licking off \the [target.name]."))
 	water.use_charge(5)
-	qdel(target)
-	var/mob/living/silicon/robot/R = user
+	consumed(target, src)
+	var/mob/living/silicon/robot/R = A.actor
 	R.add_power(ROBOT_CELL_JOULES(50), src)
-/obj/item/robot_tongue/proc/afterattack_robot_tongue_done3(atom/target, mob/user)
-	to_chat(user, span_notice("You clean \the [target.name]."))
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_ate_trash(datum/act/op/A)
+	var/atom/target = A.target
+	var/mob/living/silicon/robot/R = A.actor
+	act_message(R, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), \
+		MSG_OTHERS(span_filter_notice("%U% finishes eating \the [target.name].")))
+	to_chat(R, span_notice("You finish off \the [target.name]."))
+	consumed(target, R)
+	R.add_power(ROBOT_CELL_JOULES(250), src)
+	water.use_charge(5)
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_ate_food(datum/act/op/A)
+	var/atom/target = A.target
+	var/mob/living/silicon/robot/R = A.actor
+	act_message(R, null, MSG_SELF(span_notice("You finish eating \the [target.name].")), MSG_OTHERS("%U% finishes eating \the [target.name]."))
+	to_chat(R, span_notice("You finish off \the [target.name]."))
+	consumed(target, R)
+	R.add_power(ROBOT_CELL_JOULES(250), src)
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_ate_cell(datum/act/op/A)
+	var/obj/item/cell/C = A.target
+	var/mob/living/silicon/robot/R = A.actor
+	act_message(R, null, MSG_SELF(span_notice("You finish swallowing \the [C.name].")), \
+		MSG_OTHERS(span_filter_notice("%U% finishes gulping down \the [C.name].")))
+	to_chat(R, span_notice("You finish off \the [C.name], and gain some charge!"))
+	R.add_power(ROBOT_CELL_JOULES(C.charge / 3), src)
+	water.use_charge(5)
+	consumed(C, R)
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_cleaned_item(datum/act/op/A)
+	var/atom/target = A.target
+	to_chat(A.actor, span_notice("You clean \the [target.name]."))
 	water.use_charge(5)
 	var/obj/effect/decal/cleanable/C = locate_in_list(target, /obj/effect/decal/cleanable)
-	qdel(C)
+	consumed(C, src)
 	target.wash(CLEAN_WASH)
-/obj/item/robot_tongue/proc/afterattack_robot_tongue_done4(atom/target, mob/user)
-	to_chat(user, span_notice("You clean \the [target.name]."))
+	return OP_OK
+
+/obj/item/robot_tongue/proc/tongue_cleaned_other(datum/act/op/A)
+	var/atom/target = A.target
+	to_chat(A.actor, span_notice("You clean \the [target.name]."))
 	var/obj/effect/decal/cleanable/C = locate_in_list(target, /obj/effect/decal/cleanable)
-	qdel(C)
+	consumed(C, src)
 	target.wash(CLEAN_WASH)
 	water.use_charge(5)
 	if(istype(target, /turf/simulated))
 		var/turf/simulated/T = target
 		T.dirt = 0
+	return OP_OK
+
+/// Anything the tongue can clean that is not a person: the lowest tier, behind the sink, the messes, the meals and the loose items.
+/obj/item/robot_tongue/proc/not_a_person(datum/act/op/A)
+	return !ishuman(A.target)
 
 /obj/item/pupscrubber
 	name = "floor scrubber"
@@ -262,19 +280,21 @@ DECLARE_INTERACTIONS(/obj/item/robot_tongue, INTERACT_USE(null, PROC_REF(interac
 	var/enabled = FALSE
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pupscrubber)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/pupscrubber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pupscrubber/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	if(!enabled)
 		R.scrubbing = TRUE
 		enabled = TRUE
-		icon_state = "scrub1"
+		set_icon_state("scrub1")
 	else
 		R.scrubbing = FALSE
 		enabled = FALSE
-		icon_state = "scrub0"
+		set_icon_state("scrub0")
 	return TRUE
 
 /obj/item/lightreplacer/dogborg
@@ -282,48 +302,45 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 	desc = "A device to automatically replace lights. This version is capable to produce a few replacements using your internal matter reserves."
 	max_uses = 16
 	uses = 10
-	var/cooldown = 0
 	var/datum/matter_synth/glass = null
 	special_handling = TRUE
 
-/// Old attack_self (the light replacer's self-use chain: /obj/item/lightreplacer/proc/interaction_self()).
-/obj/item/lightreplacer/dogborg/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)//Recharger refill is so last season. Now we recycle without magic!
-	. = ..()
-	if(.)
-		return TRUE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(dogborg_choice_made), title = "Selection List", message = "Do you wish to check the reserves or change the color?", choices = list("Reserves", "Color"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/// Using it in the hand asks what to do: check the reserves (and fabricate a light from them), or change the colour of the lights it makes.
+CAPABILITIES(/obj/item/lightreplacer/dogborg)
+	ref_one(nameof(glass), /datum/matter_synth)
+	op("choose", in_hand(), label("Reserves or colour"), priority(above("colour")),
+		asks(/datum/prompt/choice, fields = list("question" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "buttons" = TRUE)),
+		then(PROC_REF(dogborg_chosen)))
+	op("pick_colour", ai(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
+	op("fabricate", ai(), needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), wait(5 SECONDS), then(PROC_REF(fabricated)))
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_color_chosen(datum/om/prompt/color/ask)
-	selected_color = ask.picked_color
-	to_chat(ask.answerer, span_filter_notice("The light color has been changed."))
+/obj/item/lightreplacer/dogborg/proc/has_reserves()
+	return glass && glass.energy >= 125
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_choice_made(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	if(ask.choice == "Color")
-		om_ask(user, /datum/om/prompt/color, PROC_REF(dogborg_color_chosen), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-		return
-	else
-		if(uses >= max_uses)
-			to_chat(user, span_warning("[src.name] is full."))
-			return
-		if(uses < max_uses && cooldown == 0)
-			if(glass.energy < 125)
-				to_chat(user, span_warning("Insufficient material reserves."))
-				return
-			to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
-			cooldown = 1
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_dogborg_done), done_args = list(), on_fail = PROC_REF(attack_self_dogborg_failed), fail_args = list())
-		else
-			to_chat(user, span_filter_notice("It has [uses] lights remaining."))
-			return
+/// "Color" opens the picker (the replacer's colour step), "Reserves" gives (the count, then a light fabricated from the matter reserves while the borg stands still).
+/obj/item/lightreplacer/dogborg/proc/dogborg_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/choice/picked = A.answer
+	if(picked?.value == "Color")
+		perform_op(user, src, "pick_colour", null, ORIGIN_AI, AUTH_AI)
+		return OP_OK
+	if(uses >= max_uses)
+		to_chat(user, span_warning("[src.name] is full."))
+		return OP_OK
+	if(!has_reserves())
+		to_chat(user, span_warning("Insufficient material reserves."))
+		return OP_OK
+	to_chat(user, span_filter_notice("It has [uses] lights remaining. Attempting to fabricate a replacement. Please stand still."))
+	perform_op(user, src, "fabricate", null, ORIGIN_AI, AUTH_AI)
+	return OP_OK
 
-/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_done()
+/obj/item/lightreplacer/dogborg/proc/fabricated(datum/act/op/A)
+	if(!has_reserves())
+		to_chat(A.actor, span_warning("Insufficient material reserves."))
+		return OP_REFUSED
 	glass.use_charge(125)
 	add_uses(1)
-	cooldown = 0
-
-/obj/item/lightreplacer/dogborg/proc/attack_self_dogborg_failed()
-	cooldown = 0
+	return OP_OK
 
 /obj/item/dogborg/stasis_clamp
 	name = "stasis clamp"
@@ -350,21 +367,23 @@ DECLARE_INTERACTIONS(/obj/item/pupscrubber, INTERACT_USE(null, PROC_REF(interact
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "pounce"
 	desc = "Leap at your target to momentarily stun them."
-	force = 0
-	throwforce = 0
 	var/bluespace = FALSE
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/dogborg/pounce)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/dogborg/pounce/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/dogborg/pounce/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = user
 	R.leap(bluespace)
 	return TRUE
 
 /mob/living/silicon/robot/proc/leap(bluespace = FALSE)
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_filter_notice("Your leap actuators are still recharging."))
 		return
 
@@ -384,18 +403,20 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 			choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice/robot_leap, PROC_REF(leap_target_chosen), choices = choices, bluespace = bluespace)
+	open_request(src, /datum/prompt/choice/robot_leap, PROC_REF(leap_target_chosen), answerer = src, ask_flags = ASK_CONSCIOUS, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, bluespace = bluespace, timeout = 0)
 
 /// A borg's leap target. `bluespace`: the longer, costlier bluespace leap.
-/datum/om/prompt/choice/robot_leap
-	title = "Target Choice"
-	message = "Who do you wish to leap at?"
-	ask_flags = ASK_CONSCIOUS
+/datum/prompt/choice/robot_leap
 	var/bluespace = FALSE
 
-/mob/living/silicon/robot/proc/leap_target_chosen(datum/om/prompt/choice/robot_leap/ask)
-	var/mob/living/T = ask.choice
-	var/bluespace = ask.bluespace
+/mob/living/silicon/robot/proc/leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/robot_leap/leap_question = A.request
+	var/mob/living/T = A.answer.value
+	if(QDELETED(T))
+		return
+	var/bluespace = leap_question.bluespace
 	var/power_cost = bluespace ? 1000 : 750
 	var/minimum_power = bluespace ? 2500 : 1000
 	var/leap_distance = bluespace ? 5 : 3
@@ -412,15 +433,15 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 		to_chat(src, span_warning("Warning, low power detected. Aborting action."))
 		return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(src.incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10)
-	status_flags |= LEAPING
+	cooldown_start(src, last_special, 1 SECOND)
+	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
@@ -436,21 +457,21 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		om_after(src, 5, PROC_REF(leap_land), T)
+		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 		return
 	leap_land(T)
 
 /mob/living/silicon/robot/proc/leap_land(mob/living/T)
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!src.Adjacent(T))
+	if(!T || !src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.status_at_least(EFFECT_STUNNED, 3) // Crawling made this useless. Changing to stun instead.
+			H.status_at_least(STAT_STUNNED, 3) // Crawling made this useless. Changing to stun instead.
 			H.drop_both_hands() //Stuns no longer drop items, so were forcing it >:3
 			return
 
@@ -464,13 +485,17 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	var/mob/living/silicon/robot/R
 	var/last_robot_loc
 
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/borg)
+	ref_one(nameof(R), /atom) // Initialize() binds loc.loc: the robot when a module builds it, any place when something else does
+
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(R), loc.loc)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc
@@ -488,26 +513,21 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/mining_scanner/robot/proc/upgrade(mob/user)
 	desc = "An advanced device used to locate ore deep underground."
-	scan_time = 0.5 SECONDS
-	exact = TRUE
+	set_scan_time(0.5 SECONDS)
+	set_exact(TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/item/mining_scanner/robot)
+	op("set_range", hand(), gesture(GESTURE_ALT), label("Set Scanner Range"), when(nameof(exact)), needs(carried()),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
-/// Old click_alt.
-/obj/item/mining_scanner/robot/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	change_size(user)
-	return TRUE
+/obj/item/mining_scanner/robot/proc/range_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	// Unlike the advanced handheld, the integrated scanner accepts zero.
+	set_range(picked.value)
+	to_chat(A.actor, span_notice("Scanner will now look up to [range] tile(s) away."))
+	return OP_OK
 
-/obj/item/mining_scanner/robot/proc/change_size(mob/user)
-	if(!exact)
-		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(range_chosen), title = "Pick a range to scan. ", message = "Scanner Range", choices = list(0,1,2,3,4,5,6,7), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/mining_scanner/robot/proc/range_chosen(datum/om/prompt/choice/ask)
-	range = ask.choice
-	to_chat(ask.answerer, span_notice("Scanner will now look up to [range] tile(s) away."))
-
-//CHOMPEnable Start
 /obj/item/robot_tongue/examine(user)
 	. = ..()
 	if(Adjacent(user))
@@ -515,6 +535,6 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 			. += span_notice("[src] is wet. Just like it should be.")
 		if(water.energy < 5)
 			. += span_notice("[src] is dry.")
-// CHOMPEnable End
+
 
 // Matter synths belong to the robot module (the owned "synths" list); tools draw on them.

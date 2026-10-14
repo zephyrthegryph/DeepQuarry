@@ -44,8 +44,8 @@
 
 	// Get all material sheet printing recipies in the autolathe
 	var/list/sheet_print_designs = list()
-	for(var/id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[id]
+	for(var/id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[id]
 		if(!(design.build_type & AUTOLATHE))
 			continue
 		if(!(design.build_path in subtypesof(/obj/item/stack/material)))

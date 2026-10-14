@@ -13,6 +13,7 @@
 
 /datum/unit_test/om/tgui_update_uis_coalesces
 /datum/unit_test/om/tgui_update_uis_coalesces/run_om(list/made)
+	test_driver_begin()
 	var/datum/om_test_entity/host = entity(made)
 	var/mob/user = new /mob
 	var/datum/tgui/dq_test_probe/ui = new(user, host, "Probe")
@@ -21,18 +22,20 @@
 	SStgui.update_uis(host)
 	SStgui.update_uis(host)
 	TEST_ASSERT_EQUAL(ui.probe_pushes, 0, "update_uis() does not push inline")
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(ui.probe_pushes, 1, "three update_uis() calls make one push")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(ui.probe_pushes, 1, "three update_uis() calls make one push in the next presentation phase")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(ui.probe_pushes, 1, "nothing is pushed again while nothing asked")
 	SStgui.update_uis(host)
-	scheduler_advance(0.1)
-	TEST_ASSERT_EQUAL(ui.probe_pushes, 1, "a second burst inside the throttle window waits")
-	scheduler_advance(0.3)
-	TEST_ASSERT_EQUAL(ui.probe_pushes, 2, "and is pushed once the window passes")
+	SStgui.update_uis(host)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(ui.probe_pushes, 2, "a second burst is again one push")
 	SStgui.update_uis(host, ui)
 	TEST_ASSERT_EQUAL(ui.probe_pushes, 3, "the acting UI is pushed inline")
 	SStgui.on_close(ui)
 	qdel(ui)
 	qdel(user)
+	test_driver_end()
 
 /datum/unit_test/om/tgui_data_push_uses_slim_config
 /datum/unit_test/om/tgui_data_push_uses_slim_config/run_om(list/made)

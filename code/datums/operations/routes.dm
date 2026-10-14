@@ -2,7 +2,7 @@
 //
 // A route is how an operation reaches its target: physically (hands on it), through its interface,
 // through a UI window, a verb, speech, a mind link or a granted authority (an admin, a console).
-// An op says which it accepts (cap_op(via =)); the context says which this attempt used.
+// A context says which route an attempt used.
 //
 // A compartment is a named bay of a holder with a boundary. compartment(BAY_INTERIOR, door = CAP_KEY,
 // route_gate = req_set(CAP_PANEL_OPEN)) declares it; ops (`at =`) and slots (`at =`) name the bay they work
@@ -48,7 +48,7 @@
 			why_door = req_access().test(ctx)
 		else if(isnum(door))
 			var/atom/A = ctx.target
-			if(!istype(A) || (A.cap_state & door) != door)
+			if(!istype(A) || (capability_bits(A) & door) != door)
 				why_door = /datum/msg/req_sealed
 		else if(istype(door, /datum/req))
 			var/datum/req/R = door
@@ -73,7 +73,7 @@
 
 /// Declares bay `bay` of the holder. door / route_gate / blocked_routes decide what passes(); heat, damage,
 /// radiation and gas (TRUE/FALSE) what transmission() answers.
-/proc/compartment(bay, door, datum/req/route_gate, blocked_routes = NONE, heat = 1, damage = 1, radiation = 1, gas = TRUE)
+/proc/legacy_compartment(bay, door, datum/req/route_gate, blocked_routes = NONE, heat = 1, damage = 1, radiation = 1, gas = TRUE)
 	var/datum/capability/compartment/C = new
 	C.bay = bay
 	C.door = door
@@ -97,7 +97,7 @@
 
 /// The share of `effect` a slot of `holder` that sits in a bay lets through that bay's boundary.
 /// 1 for a slot with no bay, or a bay the holder never declared (transmission fails open; ops fail closed).
-/proc/dq_bay_share(atom/holder, datum/om/relation/slot/def, effect)
+/proc/dq_bay_share(atom/holder, datum/relation_definition/slot/def, effect)
 	if(!def.at)
 		return 1
 	var/datum/capability/compartment/C = compartment_of(holder, def.at)

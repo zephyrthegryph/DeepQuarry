@@ -37,6 +37,9 @@
 
 	var/base = 0		//starting sector, counts as station_levels
 	var/in_space = 1	//can be accessed via lucky EVA
+	/// The player and sealed levels registering this sector added (the ones it takes back when it unregisters).
+	var/list/added_player_levels
+	var/list/added_sealed_levels
 
 	var/hide_from_reports = FALSE
 
@@ -51,6 +54,9 @@
 
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
+CAPABILITIES(/obj/effect/overmap/visitable)
+	rolls(nameof(docking_codes), PROC_REF(roll_docking_codes))
+
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 /obj/effect/overmap/visitable/Initialize(mapload)
@@ -61,12 +67,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	find_z_levels() // This populates map_z and assigns z levels to the ship.
 	register_z_levels() // This makes external calls to update global z level information.
 
-	// Celestial and docking positions live in GLOB.flight_service. The object is
+	// Celestial and docking positions live in SSflight. The object is
 	// only an identity/z-ownership anchor and does not occupy a navigation grid.
 	moveToNullspace()
 
-	if(!docking_codes)
-		docking_codes = "[ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))]"
 
 	#ifdef TESTING
 	testing("Located sector \"[name]\" at [start_x],[start_y], containing Z [english_list(map_z)]")
@@ -107,7 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	if(setToHidden && known) //
 		name = unknown_name
 		icon = 'icons/obj/overmap.dmi'
-		icon_state = unknown_state
+		set_icon_state(unknown_state)
 		color = null
 		desc = "Scan this to find out more information."
 		known = FALSE
@@ -147,16 +151,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	for(var/zlevel in map_z)
 		GLOB.map_sectors["[zlevel]"] = src
 
+	// Only the levels this sector made player or sealed are taken back at unregister: a level the map (or another sector) already had stays.
+	added_player_levels = map_z - using_map.player_levels
 	using_map.player_levels |= map_z
 	if(!in_space)
+		added_sealed_levels = map_z - using_map.sealed_levels
 		using_map.sealed_levels |= map_z
 
 /obj/effect/overmap/visitable/proc/unregister_z_levels()
-	GLOB.map_sectors -= map_z
+	// map_sectors is keyed by the level as text ("[zlevel]"): removing the numbers of map_z left a dead sector there, which a later get_overmap_sector() handed out (a
+	// dying stardog ship linked by the next test's nav console, J9).
+	for(var/zlevel in map_z)
+		if(GLOB.map_sectors["[zlevel]"] == src)
+			GLOB.map_sectors -= "[zlevel]"
 
-	using_map.player_levels -= map_z
-	if(!in_space)
-		using_map.sealed_levels -= map_z
+	using_map.player_levels -= added_player_levels
+	using_map.sealed_levels -= added_sealed_levels
+	added_player_levels = null
+	added_sealed_levels = null
 
 /obj/effect/overmap/visitable/get_scan_data()
 	if(!known)
@@ -166,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		desc = (real_desc ? real_desc : initial(desc))
 		if(real_icon)  //Only true if GMs/Admins want a non-standard icon from outside 'icons/obj/overmap.dmi'
 			icon = real_icon
-		icon_state = (real_icon_state ? real_icon_state : initial(icon_state))
+		set_icon_state((real_icon_state ? real_icon_state : initial(icon_state)))
 	return ..()
 
 /obj/effect/overmap/visitable/proc/get_space_zlevels()
@@ -178,7 +190,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 //Helper for init.
 /obj/effect/overmap/visitable/proc/check_ownership(obj/object)
 	var/area/A = get_area(object)
-	if(A in SSshuttles.shuttle_areas)
+	if(A in shuttles_shuttle_areas())
 		return 0
 	if(is_type_in_list(A, unowned_areas))
 		return 0
@@ -262,7 +274,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	I.appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR
 	add_overlay(I)
 
-	om_after(src, 5 MINUTES, PROC_REF(distress_update))
+	after(src, 5 MINUTES, PROC_REF(distress_update))
 	return TRUE
 
 /obj/effect/overmap/visitable/proc/get_distress_info()
@@ -297,3 +309,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 	testing("Overmap build complete.")
 	return 1
+
+/// A sector the map gave no docking codes gets four random capital letters.
+/obj/effect/overmap/visitable/proc/roll_docking_codes(datum/roller/R)
+	return "[ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))]"

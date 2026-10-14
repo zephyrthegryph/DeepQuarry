@@ -23,26 +23,24 @@
 // Relation view: is the snake hunting a specific atom? (Will always try to meander toward this target.)
 	var/atom/hunting
 
-/obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
-	. = ..()
-	if(hunt_target)
-		rel_set(src, nameof(hunting), hunt_target)
-
-	if(Creator)
-		rel_set(src, nameof(creator), Creator)
+CAPABILITIES(/obj/effect/temporary_effect/pulse/snake)
+	ref_one(nameof(creator))
+	ref_one(nameof(hunting))
+	param(nameof(hunting), pos = 1)
+	param(nameof(creator), pos = 2)
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
 	snake_pulse_wait()
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse_wait()
 	if(pulses_remaining <= 0)
-		qdel(src)
+		consume(src)
 		return
-	om_after(src, pulse_delay, PROC_REF(snake_pulse))
+	after(src, pulse_delay, PROC_REF(snake_pulse))
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
 	if(!on_pulse())
-		qdel(src)
+		consume(src)
 		return
 	pulses_remaining--
 	snake_pulse_wait()
@@ -86,7 +84,7 @@
 	if(Target)
 		LAZYINITLIST(iterated_turfs); iterated_turfs.Insert(1, Target)
 		on_leave_turf(get_turf(src))
-		dir = get_dir(src, Target)
+		set_dir(get_dir(src, Target))
 		forceMove(Target)
 		on_enter_turf(Target)
 		return TRUE
@@ -107,7 +105,7 @@
 	if(T)
 		T.color = "#00ff00"
 
-		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
+		after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), with = list(initial(T.color)))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
 	rel_set(src, nameof(hunting), locate_in_list(range(7, src), /mob/living))

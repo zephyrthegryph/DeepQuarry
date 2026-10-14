@@ -13,12 +13,11 @@
 	TEST_ASSERT_NULL(H.logging, "a fresh human owns no logging list")
 	TEST_ASSERT_NULL(H.active_genes, "a fresh human owns no active_genes list")
 	TEST_ASSERT_NULL(H.body_effect_origins, "a fresh human owns no body effect lists")
-	TEST_ASSERT_NULL(H.temp_language_sources, "a fresh human owns no temp_language_sources list")
 	TEST_ASSERT_NULL(H.temp_languages, "a fresh human owns no temp_languages list")
-	TEST_ASSERT_NULL(H.custom_heat, "a fresh human owns no custom_heat list")
-	TEST_ASSERT_NULL(H.custom_cold, "a fresh human owns no custom_cold list")
+	TEST_ASSERT_NULL(sparse_get(H, custom_heat), "a fresh human owns no custom_heat list")
+	TEST_ASSERT_NULL(sparse_get(H, custom_cold), "a fresh human owns no custom_cold list")
 	TEST_ASSERT_NULL(H.all_underwear, "a fresh human owns no all_underwear list")
-	TEST_ASSERT_NULL(H.flavor_texts, "a fresh human owns no flavor_texts list")
+	TEST_ASSERT_NULL(H.bio.flavor_texts, "a fresh human owns no flavor_texts list")
 	TEST_ASSERT_NULL(H.trait_injection_reagents, "a fresh human owns no trait_injection_reagents list")
 
 /datum/unit_test/dq_mob_memlist_simple_mob_lazy_lists_null

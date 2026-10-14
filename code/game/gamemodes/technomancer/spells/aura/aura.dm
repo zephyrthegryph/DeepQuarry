@@ -6,11 +6,18 @@
 	aspect = null
 	var/glow_color = "#FFFFFF"
 
-DECLARE_PERIODIC(/obj/item/spell/aura, PERIODIC_SLOW)
+TRACKED(/obj/item/spell/aura, glow_color)
+
+CAPABILITIES(/obj/item/spell/aura)
+	every(2 SECONDS, then(PROC_REF(aura_step)))
+	look_glow(PROC_REF(aura_glow))
+
+/// The aura's light: wide and bright with the caster's spell power, in the aura's colour.
+/obj/item/spell/aura/proc/aura_glow(datum/act/A)
+	return GLOW(read_once(calculate_spell_power(7)), read_once(calculate_spell_power(4)), glow_color)
 
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()
-	set_light(calculate_spell_power(7), calculate_spell_power(4), l_color = glow_color)
 	log_and_message_admins("has started casting [src].")
 
 // admins are told the maintained spell stopped.
@@ -18,5 +25,5 @@ DECLARE_PERIODIC(/obj/item/spell/aura, PERIODIC_SLOW)
 	log_and_message_admins("has stopped maintaining [src].")
 	..()
 
-/obj/item/spell/aura/periodic_step()
+/obj/item/spell/aura/proc/aura_step(datum/act/timer/A)
 	return

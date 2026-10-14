@@ -7,9 +7,9 @@
 	var/shockdamage = 20
 	var/emp_zap = FLUX_EMP
 
-/obj/effect/anomaly/flux/Initialize(mapload, new_lifespan, drops_core, emp_zap = FLUX_EMP)
+// ALLOW(init/INSTANCE_STATE): a flux anomaly wobbles
+/obj/effect/anomaly/flux/Initialize(mapload)
 	. = ..()
-	src.emp_zap = emp_zap
 	apply_wibbly_filters(src)
 
 /obj/effect/anomaly/flux/anomalyEffect()
@@ -29,18 +29,23 @@
 /obj/effect/anomaly/flux/Bump(atom/A)
 	mobShock(A)
 
-/obj/effect/anomaly/flux/Bumped(atom/movable/AM)
+CAPABILITIES(/obj/effect/anomaly/flux)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	param(nameof(emp_zap), pos = 3)
+	op("flux_shock", hand(), ungated(), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
+	op("flux_shock_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Interaction flux shock"), then(PROC_REF(interaction_flux_shock)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/anomaly/flux/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	mobShock(AM)
 
-EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_flux_shock)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_flux_shock)), \
-)
-
 /// Old attack_hand and attackby: touching the flux anomaly, bare or with an item, shocks you; the touch carries on.
-/obj/effect/anomaly/flux/proc/interaction_flux_shock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/anomaly/flux/proc/interaction_flux_shock(datum/act/op/A)
+	var/mob/user = A.actor
 	mobShock(user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/effect/anomaly/flux/proc/mobShock(mob/living/M)
 	if(canshock && istype(M) && !M.is_incorporeal())
@@ -71,11 +76,11 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \
 			tesla_zap(src, 2, 1000, FALSE, FALSE, current_jumps = 1) //Can't chain jumps.
 		if(34 to 65)
 			tesla_zap(src, 3, 1000, FALSE, FALSE, current_jumps = 1)
-			om_after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), src, 3, 1500, FALSE, FALSE)
+			after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 3, 1500, FALSE, FALSE))
 		else
 			tesla_zap(src, 4, 1000, FALSE, TRUE, current_jumps = 1)
-			om_after(src, 3 SECONDS, PROC_REF(highSevPulse))
+			after(src, 3 SECONDS, PROC_REF(highSevPulse))
 
 /obj/effect/anomaly/flux/proc/highSevPulse(power, explosive, current_jumps)
 	tesla_zap(src, 4, 1250, FALSE, FALSE, current_jumps = 1)
-	om_after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), src, 4, 1500, FALSE, FALSE)
+	after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 4, 1500, FALSE, FALSE))

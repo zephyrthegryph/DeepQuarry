@@ -1,0 +1,30 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench click: Click: Unsecure
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+human|/obj/item/reagent_containers/food/snacks/grown menu: Extract seeds
+human|/obj/item/reagent_containers/food/snacks/grown click: Click: Extract seeds
+@obj human|/obj/item/grown
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/stack/tile/grass
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/fossil/plant
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/storage/part_replacer
+keys: drag_buckle, extract_grass, extract_grown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, pulverize_fossil, robot_remote_blocked, silicon_hand

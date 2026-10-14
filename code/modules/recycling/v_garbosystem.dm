@@ -8,30 +8,20 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	anchored = TRUE
-	idle_power_usage = 5
-	active_power_usage = 100
 	var/tmp/obj/machinery/recycling/crusher/crusher	//Connects to regular crusher
 	var/tmp/obj/machinery/button/garbosystem/button
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
-DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
-OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/v_garbosystem/var/operating = FALSE
+TRACKED(/obj/machinery/v_garbosystem, operating)
 /// Grinds what sits on it every frame while operating and operable.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list("operating", "operable"))
-
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()
-	add_hose_connector(/datum/hose_connector/output)
 	for(var/dir in GLOB.cardinal)
 		rel_set(src, nameof(crusher), locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
 		if(src.crusher())
 			crusher().hand_fed = FALSE
-			break
-	for(var/dir in GLOB.cardinal)
-		rel_set(src, nameof(button), locate(/obj/machinery/button/garbosystem, get_step(src, dir)))
-		if(src.button())
-			rel_set(button(), nameof(/obj/machinery/button/garbosystem::grinder), src)
 			break
 	return
 
@@ -41,24 +31,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list(
 	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
 		. += span_warning("There are items in the filter's trap!")
 
-/obj/machinery/v_garbosystem/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/v_garbosystem_toggle,
-		/datum/interaction/machine_item/v_garbosystem_crowbar_open,
-	)
-	..()
-
 /// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/v_garbosystem_toggle
-	id = "v_garbosystem_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/v_garbosystem/proc/interaction_toggle
-
-/obj/machinery/v_garbosystem/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/v_garbosystem/proc/interaction_toggle(datum/act/op/A)
 	set_operating(!operating)
 	update()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/v_garbosystem/power_change()
 	if((. = ..()))
@@ -67,47 +44,51 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list(
 /obj/machinery/v_garbosystem/proc/update()
 	if(!operable())
 		set_operating(FALSE)
-		icon_state = "cronchy_off"
+		set_icon_state("cronchy_off")
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operating)
-		icon_state = "cronchy_off"
+		set_icon_state("cronchy_off")
 		set_use_power(USE_POWER_OFF)
 		return
-	icon_state = "cronchy_active"
+	set_icon_state("cronchy_active")
 	set_use_power(USE_POWER_ACTIVE)
 
-/obj/machinery/v_garbosystem/machine_step()
-	if(!crusher() || crusher().stat & (NOPOWER|BROKEN))
-		icon_state = "cronchy_off"
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/v_garbosystem)
+	finds(nameof(button), /obj/machinery/button/garbosystem, back = nameof(/obj/machinery/button/garbosystem::grinder))
+	configure(uses_power(idle = 5, active = 100))
+	hose_sockets(list(/datum/hose_connector/output))
+	reagents(CARGOTANKER_VOLUME * 2)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("v_garbosystem_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("v_garbosystem_crowbar_open", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), label("Open filter hatch"), wait(0), then(PROC_REF(interaction_crowbar_open)))
+
+/obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
+	if(!crusher() || (crusher().power_lost() || crusher().broken_now()))
+		set_icon_state("cronchy_off")
 		return PROCESS_KILL
-	icon_state = "cronchy_active"
+	set_icon_state("cronchy_active")
 
 	affecting = loc.contents - src
-	om_after(src, 1, PROC_REF(grind_affecting))
+	after(src, 0.1 SECONDS, PROC_REF(grind_affecting))
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
-/obj/machinery/v_garbosystem/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(!emagged)
+/obj/machinery/v_garbosystem/proc/on_emag(datum/act/op/A)
+	set_emagged(!emagged())
 	update()
+	return OP_OK
 
-/datum/interaction/machine_item/v_garbosystem_crowbar_open
-	id = "v_garbosystem_crowbar_open"
-	name = "Open filter hatch"
-	category = INTERACTION_CAT_OPEN
-	tool = TOOL_CROWBAR
-	tool_volume = 0
-	effect = /obj/machinery/v_garbosystem/proc/interaction_crowbar_open
-
-/obj/machinery/v_garbosystem/proc/interaction_crowbar_open(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/v_garbosystem/proc/interaction_crowbar_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operating)
 		to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/A in contents) // ALLOW(latent): materialized above
-			A.forceMove(loc)
+		for(var/atom/movable/item in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+			item.forceMove(loc)
 	else
 		to_chat(user, span_warning("Unable to empty filter while the machine is running."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/v_garbosystem/proc/transfer_reagent_to_tank(datum/reagents/reg,multiplier)
 	var/volume_magic = reg.total_volume * multiplier
@@ -139,19 +120,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 	icon_state = "doorbell-standby"
 	var/tmp/obj/machinery/v_garbosystem/grinder
 
-/obj/machinery/button/garbosystem/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/garbosystem_button_press,
-	)
-	..()
+CAPABILITIES(/obj/machinery/button/garbosystem)
+	op("press_impl", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Press"), then(PROC_REF(interaction_press_impl)))
 
-/// Old attack_hand: never called ..(); delegates to the grinder's own attack_hand entry.
-/datum/interaction/machine_hand/ungated/garbosystem_button_press
-	id = "garbosystem_button_press"
-	name = "Press"
-	effect = /obj/machinery/button/garbosystem/proc/interaction_press_impl
-
-/obj/machinery/button/garbosystem/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/garbosystem/proc/interaction_press_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(grinder())
 		grinder().attack_hand(user)
 	return TRUE
@@ -162,12 +135,12 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 		if(!isobj(A) && !isliving(A))
 			continue
 		if(istype(A, /obj/effect/decal/cleanable) || istype(A, /mob/living/voice))
-			qdel(A)
+			destroyed(A, src, BRUTE)
 		if(!A.anchored)
 			if(A.loc == src.loc)
 				if(isliving(A))
 					var/mob/living/L = A
-					if(!emagged && ishuman(L) && L.mind)
+					if(!emagged() && ishuman(L) && L.mind)
 						play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
 						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")
@@ -181,7 +154,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 								var/obj/item/meat = new L.meat_type(src)
 								if(meat.reagents) // Reagents are set on init, might be randomized per meat chunk too so it needs to be done on a per case basis
 									transfer_reagent_to_tank(meat.reagents,1)
-								qdel(meat)
+								consumed(meat, src)
 								L.meat_amount--
 						L.gib()
 						items_taken++
@@ -202,11 +175,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 					C.forceMove(loc)
 				if(isitem(A))
 					A.SpinAnimation(5,3)
-					om_after(src, 15, PROC_REF(crunch_item), A)
+					after(src, 1.5 SECONDS, PROC_REF(crunch_item), with = list(A))
 					items_taken++
 				else
 					A.SpinAnimation(5,3)
-					om_after(src, 15, PROC_REF(crunch_thing), A)
+					after(src, 1.5 SECONDS, PROC_REF(crunch_thing), with = list(A))
 					items_taken++
 		if(items_taken >= voracity)
 			break
@@ -217,7 +190,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 
 /obj/machinery/v_garbosystem/proc/crunch_item(atom/movable/A)
-	if(A.loc == loc)
+	if(A && A.loc == loc)
 		if(A.reagents)
 			transfer_reagent_to_tank(A.reagents,1)
 		if(istype(A,/obj/item/ore))
@@ -233,7 +206,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 			transfer_reagent_to_tank(A.reagents,1)
 		if(istype(A, /obj/structure/closet))
 			new /obj/item/stack/material/steel(loc, 2)
-		qdel(A)
+		destroyed(A, src, BRUTE)
 
 /// Connects to regular crusher (a relation view: it reads null once the target is deleted).
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher

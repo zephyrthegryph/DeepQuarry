@@ -2,13 +2,10 @@
 /obj/structure/cable/generated_station
 	icon_state = "0-1"
 
-/obj/structure/cable/generated_station/Initialize(mapload, generated_icon_state)
-	if(generated_icon_state)
-		icon_state = generated_icon_state
-	return ..()
+CAPABILITIES(/obj/structure/cable/generated_station)
+	param(nameof(icon_state), pos = 1)
 
 /obj/machinery/power/smes/generated_station
-	should_be_mapped = TRUE
 	circuit = null
 	initial_charge = 5e6
 	output_attempt = TRUE
@@ -21,10 +18,15 @@
 	anchored = TRUE
 	var/generation_rate = 350000
 
-/obj/machinery/power/generator/generated_station/machine_step()
-	if(has_stat(BROKEN))
-		return
-	add_avail(generation_rate)
+/// A compact station turbine has no circulators or loops: it supplies its rate steadily while it is not broken.
+/obj/machinery/power/generator/generated_station/reconsider(datum/act/A)
+	gas_watch_many_clear(src, nameof(loop_watches))
+	set_generating(FALSE)
+	set_power_supply(broken_now() ? 0 : generation_rate)
+
+/// Breaking or mending it changes what it supplies.
+CAPABILITIES(/obj/machinery/power/generator/generated_station)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 
 /obj/machinery/atmospherics/pipe/tank/air/full/generated_station
 	dir = EAST
@@ -32,68 +34,48 @@
 	connect_types = CONNECT_TYPE_SUPPLY
 	piping_layer = PIPING_LAYER_SUPPLY
 
-/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/air/full/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/pipe/tank/generated_station_scrub
 	dir = WEST
 	connect_types = CONNECT_TYPE_SCRUBBER
 	piping_layer = PIPING_LAYER_SCRUBBER
 
-/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/generated_station_scrub)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
-/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/unary/vent_pump/on/generated_station
 	dir = WEST
 	piping_layer = PIPING_LAYER_SUPPLY
 
-/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/on/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station
 	dir = EAST
 	piping_layer = PIPING_LAYER_SCRUBBER
 
-/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/Initialize(mapload, generated_dir)
-	if(generated_dir)
-		dir = generated_dir
-	return ..()
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /datum/generated_station_utility_topology
 	var/station_id
@@ -107,6 +89,10 @@
 	var/list/scrub_tanks
 	var/list/alarms
 
+CAPABILITIES(/datum/generated_station_utility_topology)
+	owns_many(nameof(atmos_objects))
+	owns_many(nameof(power_objects))
+
 /datum/generated_station_utility_topology/New()
 	..()
 
@@ -114,13 +100,13 @@
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		if(!QDELETED(generator) && !generator.has_stat(BROKEN) && generator.power_region)
+		if(!QDELETED(generator) && !generator.broken_now() && generator.power_region)
 			has_source = TRUE
 			break
 	for(var/obj/machinery/power/smes/SMES in power_objects)
 		if(has_source)
 			break
-		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.stored_charge() <= 0)
+		if(QDELETED(SMES) || (SMES.broken_now()) || SMES.stored_charge() <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
 			if(terminal.power_region)
@@ -131,13 +117,13 @@
 	if(!has_source)
 		return FALSE
 	for(var/obj/machinery/power/apc/APC in apcs)
-		if(!QDELETED(APC) && !APC.has_stat(BROKEN) && APC.cell && APC.terminal?.power_region)
+		if(!QDELETED(APC) && !APC.broken_now() && APC.cell && APC.terminal?.power_region)
 			return TRUE
 	return FALSE
 
 /datum/generated_station_utility_topology/proc/atmosphere_available()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in supply_vents)
-		if(!QDELETED(vent) && !vent.has_stat(BROKEN) && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
+		if(!QDELETED(vent) && !vent.broken_now() && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
 			return TRUE
 	return FALSE
 
@@ -207,8 +193,8 @@
 	return jointext(parts, "; ")
 
 /proc/generated_station_utility_topology(station_id)
-	for(var/key in GLOB.expedition_service?.sites)
-		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]
+	for(var/key in SSexpedition?.sites)
+		var/datum/expedition_site/site = expedition_sites()[key]
 		if(site.station_spec?.id == station_id)
 			return site.station_utilities
 	return null
@@ -217,6 +203,9 @@
 	var/tmp/datum/generated_station_spec/spec
 	var/tmp/datum/generated_station_materialization/materialization
 	var/datum/generated_station_utility_topology/result
+
+CAPABILITIES(/datum/generated_station_utility_builder)
+	owns_one(nameof(result), /datum/generated_station_utility_topology)
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
 /datum/generated_station_materializer/proc/plan_generated_station_utilities()
@@ -447,7 +436,7 @@
 		return null
 	rel_set(src, nameof(spec), new_spec)
 	rel_set(src, nameof(materialization), new_materialization)
-	own_set(src, nameof(result), new /datum/generated_station_utility_topology)
+	rel_set(src, nameof(result), new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
@@ -472,7 +461,7 @@
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		// APC construction faces into its supporting wall, unlike generic wall frames.
 		APC.set_dir(apc_wall_direction)
-		own_add(result, nameof(result.power_objects), APC)
+		rel_add(result, nameof(result.power_objects), APC)
 		rel_add(result, nameof(result.apcs), APC)
 		rel_set(A, nameof(A.apc), APC)
 		var/turf/apc_terminal_turf = get_turf(APC.terminal)
@@ -488,7 +477,7 @@
 		var/turf/supply_device = supply_pair["device"]
 		var/turf/supply_connector = supply_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/vent = new(supply_device, get_dir(supply_device, supply_connector))
-		own_add(result, nameof(result.atmos_objects), vent)
+		rel_add(result, nameof(result.atmos_objects), vent)
 		rel_add(result, nameof(result.supply_vents), vent)
 		path_targets += supply_connector
 		add_external_connection(supply_connections, supply_connector, get_dir(supply_connector, supply_device))
@@ -496,7 +485,7 @@
 		var/turf/scrub_device = scrub_pair["device"]
 		var/turf/scrub_connector = scrub_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/scrubber = new(scrub_device, get_dir(scrub_device, scrub_connector))
-		own_add(result, nameof(result.atmos_objects), scrubber)
+		rel_add(result, nameof(result.atmos_objects), scrubber)
 		rel_add(result, nameof(result.scrubbers), scrubber)
 		path_targets += scrub_connector
 		add_external_connection(scrub_connections, scrub_connector, get_dir(scrub_connector, scrub_device))
@@ -510,7 +499,7 @@
 		var/obj/machinery/alarm/alarm = new(alarm_turf)
 		alarm.set_dir(turn(alarm_wall_direction, 180))
 		alarm.offset_airalarm()
-		own_add(result, nameof(result.atmos_objects), alarm)
+		rel_add(result, nameof(result.atmos_objects), alarm)
 		rel_add(result, nameof(result.alarms), alarm)
 
 	if(!engineering_area)
@@ -523,14 +512,14 @@
 	var/turf/smes_terminal_turf = source_pair["connector"]
 	var/obj/machinery/power/terminal/smes_terminal = new(smes_terminal_turf)
 	smes_terminal.set_dir(get_dir(smes_terminal, smes_turf))
-	own_add(result, nameof(result.power_objects), smes_terminal)
+	rel_add(result, nameof(result.power_objects), smes_terminal)
 	var/obj/machinery/power/smes/generated_station/SMES = new(smes_turf)
-	own_add(result, nameof(result.power_objects), SMES)
+	rel_add(result, nameof(result.power_objects), SMES)
 	path_targets += smes_terminal_turf
 	power_targets += smes_terminal_turf
 	var/turf/generator_turf = generator_pair["device"]
 	var/obj/machinery/power/generator/generated_station/generator = new(generator_turf)
-	own_add(result, nameof(result.power_objects), generator)
+	rel_add(result, nameof(result.power_objects), generator)
 	path_targets += generator_turf
 	power_targets += generator_turf
 
@@ -541,14 +530,14 @@
 	var/turf/supply_tank_turf = supply_source_pair["device"]
 	var/turf/supply_tank_connector = supply_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/supply_tank = new(supply_tank_turf, get_dir(supply_tank_turf, supply_tank_connector))
-	own_add(result, nameof(result.atmos_objects), supply_tank)
+	rel_add(result, nameof(result.atmos_objects), supply_tank)
 	rel_add(result, nameof(result.supply_tanks), supply_tank)
 	path_targets += supply_tank_connector
 	add_external_connection(supply_connections, supply_tank_connector, get_dir(supply_tank_connector, supply_tank_turf))
 	var/turf/scrub_tank_turf = scrub_source_pair["device"]
 	var/turf/scrub_tank_connector = scrub_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/scrub_tank = new(scrub_tank_turf, get_dir(scrub_tank_turf, scrub_tank_connector))
-	own_add(result, nameof(result.atmos_objects), scrub_tank)
+	rel_add(result, nameof(result.atmos_objects), scrub_tank)
 	rel_add(result, nameof(result.scrub_tanks), scrub_tank)
 	path_targets += scrub_tank_connector
 	add_external_connection(scrub_connections, scrub_tank_connector, get_dir(scrub_tank_connector, scrub_tank_turf))
@@ -656,7 +645,7 @@
 			if(WEST)
 				light.pixel_x = -26
 				light.pixel_y = (T.y % 2) ? 8 : -8
-		own_add(result, nameof(result.power_objects), light)
+		rel_add(result, nameof(result.power_objects), light)
 
 /// Publishes power and lighting only after the power and atmosphere graphs exist.
 /datum/generated_station_utility_builder/proc/publish_utility_state()
@@ -667,7 +656,7 @@
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
-	own_clear(src, nameof(result), OWN_DELETE)
+	rel_clear(src, nameof(result))
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)
@@ -703,10 +692,10 @@
 			continue
 		if(length(directions) <= 2)
 			var/cable_state = length(directions) == 1 ? "0-[directions[1]]" : "[min(directions[1], directions[2])]-[max(directions[1], directions[2])]"
-			own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, cable_state))
+			rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = cable_state))
 		else
 			for(var/direction in directions)
-				own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, "0-[direction]"))
+				rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = "0-[direction]"))
 
 /// Gives every terminal/source an explicit center tap even when the routed cable bends on its tile.
 /datum/generated_station_utility_builder/proc/ensure_global_power_connections(list/path, list/targets)
@@ -721,7 +710,7 @@
 				found = TRUE
 				break
 		if(!found)
-			own_add(result, nameof(result.power_objects), new /obj/structure/cable/generated_station(T, required_state))
+			rel_add(result, nameof(result.power_objects), make(/obj/structure/cable/generated_station, at = T, icon_state = required_state))
 
 /datum/generated_station_utility_builder/proc/spanning_path_directions(list/path)
 	var/list/tree_directions = list()
@@ -754,17 +743,17 @@
 		var/obj/machinery/atmospherics/pipe/pipe
 		switch(length(directions))
 			if(1)
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station(T, directions[1]) : new /obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station(T, directions[1])
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station, at = T, dir = directions[1]) : make(/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station, at = T, dir = directions[1])
 			if(2)
 				var/generated_dir = simple_pipe_direction(directions[1], directions[2])
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station(T, generated_dir) : new /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station(T, generated_dir)
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station, at = T, dir = generated_dir) : make(/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station, at = T, dir = generated_dir)
 			if(3)
 				var/missing_direction = (NORTH|SOUTH|EAST|WEST) & ~direction_mask
-				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station(T, missing_direction) : new /obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station(T, missing_direction)
+				pipe = supply ? make(/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station, at = T, dir = missing_direction) : make(/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station, at = T, dir = missing_direction)
 			if(4)
 				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply(T) : new /obj/machinery/atmospherics/pipe/manifold4w/hidden/scrubbers(T)
 		if(pipe)
-			own_add(result, nameof(result.atmos_objects), pipe)
+			rel_add(result, nameof(result.atmos_objects), pipe)
 
 /datum/generated_station_utility_builder/proc/initialize_global_atmos()
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
@@ -782,10 +771,10 @@
 			continue
 		var/datum/gas_mixture/network_air = network.air
 		if(!network_air.total_moles())
-			network_air.set_temperature(T20C)
+			heat_set(network_air, T20C)
 			var/supply_moles = MOLES_CELLSTANDARD * (network_air.return_volume() / CELL_VOLUME) * 50
 			network_air.adjust_multi(GAS_O2, supply_moles * O2STANDARD, GAS_N2, supply_moles * N2STANDARD)
-		network.mark_dirty()
+		gas_touched(network_air)
 		network.reconcile()
 
 /datum/expedition_site
@@ -795,13 +784,9 @@
 	if(!station_spec || !station_materialization || station_utilities)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
-	own_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
-	qdel(builder)
+	rel_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
+	spent(builder)
 	return !!station_utilities
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/generator/generated_station/step_start_condition()
-	return !has_stat(BROKEN)
 
 
 

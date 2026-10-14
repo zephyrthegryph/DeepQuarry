@@ -12,13 +12,13 @@
 		if(istype(src, /obj/item/pda))
 			var/obj/item/pda/P = src
 			if(P.id)
-				own_take(P, nameof(P.id))
+				rel_take(P, nameof(P.id))
 
 		for(var/mob/living/voice/V in possessed_voice) // Delete voices.
 			V.ghostize(0) // Prevent Reenter Corpse sending observers to the shadow realm
 			V.set_stat(DEAD) // Helps with autosleeving
 			if(V.mind) V.mind.vore_death = 1 // Digested item TFs get vore_death timer
-			qdel(V)
+			dissolved(V)
 		for(var/mob/living/M in contents)//Drop mobs from objects(shoes) before deletion
 			M.forceMove(item_storage)
 		for(var/obj/item/O in contents)
@@ -26,11 +26,11 @@
 				for(var/obj/item/SO in O)
 					if(item_storage)
 						SO.forceMove(item_storage)
-					qdel(O)
+					dissolved(O)
 			else if(item_storage)
 				O.forceMove(item_storage)
 		GLOB.items_digested_roundstat++
-		qdel(src)
+		dissolved(src)
 		return w_class
 
 	var/g_damage = 1
@@ -76,13 +76,13 @@
 				cleanname = "[d_stage_name] [oldname]"
 				wash(CLEAN_ALL)
 				if(istype(B))
-					gurgled_color = B.contamination_color //Apply the correct color setting so uncontaminable things can still have the right overlay.
+					set_gurgled_color(B.contamination_color) //Apply the correct color setting so uncontaminable things can still have the right overlay.
 					gurgle_contaminate(B, B.contamination_flavor, B.contamination_color)
 	if(digest_stage <= 0)
 		if(istype(src, /obj/item/pda))
 			var/obj/item/pda/P = src
 			if(P.id)
-				own_take(P, nameof(P.id))
+				rel_take(P, nameof(P.id))
 		for(var/mob/living/M in contents)//Drop mobs from objects(shoes) before deletion
 			if(item_storage)
 				M.forceMove(item_storage)
@@ -93,7 +93,7 @@
 				for(var/obj/item/SO in O)
 					if(item_storage)
 						SO.forceMove(item_storage)
-					qdel(O)
+					dissolved(O)
 			else if(item_storage)
 				O.forceMove(item_storage)
 			else
@@ -119,16 +119,16 @@
 				V.ghostize(0) //Prevent Reenter Corpse sending observers to the shadow realm
 				V.set_stat(DEAD) //Helps with autosleeving
 				if(V.mind) V.mind.vore_death = 1 //Digested item TFs get vore_death timer
-				qdel(V) //Destroy the voice.
+				dissolved(V) //Destroy the voice.
 		if(istype(B) && recycled)
 			g_damage = w_class / 2
 			if(B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
-			qdel(src)
+			dissolved(src)
 		else if(istype(src,/obj/item/stack))
 			var/obj/item/stack/S = src
 			if(S.get_amount() <= 1)
-				qdel(src)
+				dissolved(src)
 			else
 				S.use(1)
 				digest_stage = w_class
@@ -148,7 +148,7 @@
 						new goodmeal.trash(src)
 			if(istype(B) && B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
-			qdel(src)
+			dissolved(src)
 	if(g_damage > w_class)
 		return w_class
 	return g_damage
@@ -183,11 +183,10 @@
 	desc = "A partially digested card that has seen better days. The damage appears to be only cosmetic."
 	if(!sprite_stack || !istype(sprite_stack) || !(sprite_stack.len))
 		icon = 'icons/obj/card.dmi'
-		icon_state = "[initial(icon_state)]_digested"
+		set_icon_state("[initial(icon_state)]_digested")
 	else
 		if(!sprite_stack.Find("digested"))
-			sprite_stack += "digested"
-	update_icon()
+			set_sprite_stack(sprite_stack + "digested") // a new list: the card's own stack is never the shared initial one
 	return FALSE
 
 /obj/item/holder/digest_act(atom/movable/item_storage = null)
@@ -234,7 +233,7 @@
 		else if(isliving(B.owner))
 			B.owner.adjust_nutrition(stored_nutrition * (B.nutrition_percent / 100))
 			stored_nutrition = 0
-			qdel(src)
+			dissolved(src)
 			return w_class
 	. = ..()
 

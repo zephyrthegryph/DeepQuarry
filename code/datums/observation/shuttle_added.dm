@@ -14,4 +14,4 @@
 /datum/system/shuttles/initialize_shuttle()
 	. = ..()
 	if(.)
-		OM_EMIT(SSshuttles, /datum/om/event/observer_shuttle_added, .)
+		PUBLISH_LEGACY(SSshuttles, /datum/notice/observer_shuttle_added, .)

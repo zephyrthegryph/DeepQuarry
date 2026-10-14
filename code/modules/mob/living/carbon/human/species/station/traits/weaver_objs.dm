@@ -7,42 +7,48 @@
 	anchored = TRUE
 	density = FALSE
 
-DAMAGE_REACTION(/obj/effect/weaversilk, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/effect/weaversilk)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+	op("hit_weaversilk", item(/obj/item), label("Interaction hit weaversilk"), then(PROC_REF(interaction_hit_weaversilk)))
+	op("tear_weaversilk", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_weaversilk)))
 
-EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_weaversilk)), \
-	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_weaversilk)), \
-)
+/// Any blast destroys the silk outright.
+/obj/effect/weaversilk/proc/blasted_away(datum/act/A)
+	spent(src)
+	return TRUE
 
 /// Old attackby: any real hit tears the silk (afterattack still follows, as before).
-/obj/effect/weaversilk/proc/interaction_hit_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/weaversilk/proc/interaction_hit_weaversilk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
-	if(W.force)
-		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
-		qdel(src)
-	return INTERACTION_HANDLED_PASS
+	if(combat_of(W).force)
+		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with %I% by %U%."), item = W)
+		consume(src, user)
+	return OP_PASS
 
 /obj/effect/weaversilk/bullet_act(obj/item/projectile/Proj)
 	..()
 	if(Proj.get_structure_damage())
-		qdel(src)
+		consume(src)
 
 /// Heat behaviour rule: silk burns away and feeds the fire.
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
 	var/turf/T = get_turf(src)
 	T?.feed_lingering_fire(0.1)
-	qdel(src)
+	destroyed(src, null, BURN)
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
 	if(damage)
-		qdel(src)
+		consume(src, user)
 
 /// Old attack_hand on harm intent: tear the silk down by hand.
-/obj/effect/weaversilk/proc/interaction_tear_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/weaversilk/proc/interaction_tear_weaversilk(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user,span_warning("You easily tear down [name]."))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/weaversilk/floor
@@ -50,9 +56,12 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	plane = DIRTY_PLANE
 	layer = DIRTY_LAYER
 
-/obj/effect/weaversilk/floor/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_icon_states) // ALLOW(decl): random pick
+CAPABILITIES(/obj/effect/weaversilk/floor)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/weaversilk/floor/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icon_states)
 
 /obj/effect/weaversilk/wall
 	name = "weaversilk web wall"
@@ -61,9 +70,12 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	var/possible_icon_states = list("wallweb1", "wallweb2", "wallweb3")
 	density = TRUE
 
-/obj/effect/weaversilk/wall/Initialize(mapload)
-	. = ..()
-	icon_state = pick(possible_icon_states) // ALLOW(decl): random pick
+CAPABILITIES(/obj/effect/weaversilk/wall)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/weaversilk/wall/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icon_states)
 
 /obj/effect/weaversilk/wall/CanPass(atom/movable/mover, turf/target)
 	var/mob/living/L = mover
@@ -78,25 +90,28 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 	icon_state = "nest"
 	base_icon = "nest"
 
-APPEARANCE_NONE(/obj/structure/bed/double/weaversilk_nest)
+/// Draws none of what the types above draw.
+/obj/structure/bed/double/weaversilk_nest/look_parts(datum/look/look)
+	return
 
-EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
-	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_down)), \
-	INTERACT_ITEM(null, PROC_REF(weaversilk_nest_interaction_item)), \
-)
+CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
+	op("tear_down", hand(), stance(I_HURT), label("Tear down"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(interaction_tear_down)))
+	op("weaversilk_nest_interaction_item", item(/obj/item), label("Use"), then(PROC_REF(weaversilk_nest_interaction_item)))
 
 /// Old attackby.
-/obj/structure/bed/double/weaversilk_nest/proc/weaversilk_nest_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/bed/double/weaversilk_nest/proc/weaversilk_nest_interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_WRENCH) || istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attack_hand's harm branch: tear the empty nest down (combat mode only).
-/obj/structure/bed/double/weaversilk_nest/proc/interaction_tear_down(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/double/weaversilk_nest/proc/interaction_tear_down(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs())
-		return FALSE
+		return OP_DECLINE
 	to_chat(user,span_warning("You easily tear down [name]."))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/weaversilk/trap
@@ -119,16 +134,14 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 				MSG_BLIND(span_infoplain(span_bold("You hear a squishy noise!"))))
 			set_dir(L.dir)
 			buckle_mob(L)
-			L.status_at_least(EFFECT_STUNNED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
 			to_chat(L, span_danger("The sticky fibers of \the [src] ensnare, trapping you in place!"))
 			trap_active = FALSE
 			desc += " Actually, it looks like it's been all spent."
 	..()
 
-
-EXTEND_INTERACTIONS(/obj/effect/weaversilk/trap, \
-	INTERACT_DRAG(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/effect/weaversilk/trap)
+	op("swallow", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 // Items
 
@@ -140,10 +153,11 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk/trap, \
 	name = "weaversilk bindings"
 	desc = "A webbed cocoon that completely restrains the wearer."
 	icon_state = "web_bindings"
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL
 	// Teshari sprite, this was originally aof the old web bindings
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/vore/custom_onmob_yw.dmi'
 		)
 	// end
+
+CAPABILITIES(/obj/item/clothing/suit/weaversilk_bindings)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL))

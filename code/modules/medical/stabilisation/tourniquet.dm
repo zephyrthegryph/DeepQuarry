@@ -12,25 +12,12 @@
 // dies (tissue_necrosis, which only surgery removes). Once flow returns the
 // ischemia recedes. Every step is logged under "TOURNIQUET:".
 
-/// Time to cinch a tourniquet on someone.
-#define TOURNIQUET_APPLY_TIME (3 SECONDS)
-/// Time to loosen one.
-#define TOURNIQUET_REMOVE_TIME (2 SECONDS)
-/// Ischemia progression while the limb has no flow: about fifteen minutes to necrosis.
-#define LIMB_ISCHEMIA_OCCLUDED_RATE 0.5
-/// Ischemia progression once flow returns (negative: it recedes).
-#define LIMB_ISCHEMIA_REPERFUSED_RATE -3
-/// Severity at which the starved tissue dies.
-#define LIMB_ISCHEMIA_NECROSIS_SEVERITY 60
-
 /obj/item/tourniquet
 	name = "combat tourniquet"
 	desc = "A windlass strap that cinches around an arm or leg to stop all blood flow below it. It stops a limb bleed dead, but the limb starts to die if it stays on too long."
 	icon = 'icons/obj/stacks.dmi'
 	icon_state = "tape-splint"
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_HAT
-	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	/// world.time it was cinched on, or null while loose.
 	EXPIRY_DECLARE(applied_at)
 	/// Limbs a tourniquet can go on.
@@ -40,46 +27,60 @@
 	. = ..()
 	. += span_notice("It goes on an arm or a leg and stops every bleed below it. Loosen it (right-click the patient) as soon as the bleeding is controlled.")
 
-/obj/item/tourniquet/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M))
-		balloon_alert(user, "\the [src] won't fit [M]!")
-		return ITEM_INTERACT_FAILURE
-	if(!user.IsAdvancedToolUser())
-		balloon_alert(user, "you don't have the dexterity to do this!")
-		return ITEM_INTERACT_FAILURE
-	var/mob/living/carbon/human/H = M
-	var/zone = user.zone_sel?.selecting
-	var/obj/item/organ/external/E = H.get_organ(zone)
+// A tourniquet goes on the limb the user is aiming at. Every refusal is a balloon over the user, as before; the limb is the one aimed at when the cinch
+// begins, and the wait ends if the user moves, loses the tourniquet or lets the patient go.
+CAPABILITIES(/obj/item/tourniquet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	op("cinch", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Cinch"),
+		needs(req(PROC_REF(target_is_human), because = MSG(tourniquet/wont_fit)), req(PROC_REF(user_is_dexterous), because = MSG(tourniquet/clumsy))),
+		starts(PROC_REF(cinch_started)), wait(TOURNIQUET_APPLY_TIME), on_interrupt(PROC_REF(cinch_failed)), then(PROC_REF(cinch_done)))
+
+MSG_BALLOON(tourniquet/wont_fit, "it won't fit them!")
+MSG_BALLOON(tourniquet/clumsy, "you don't have the dexterity to do this!")
+MSG_BALLOON(tourniquet/wrong_limb, "a tourniquet goes on an arm or a leg!")
+MSG_BALLOON(tourniquet/no_flow, "there's no blood flow to stop in that!")
+MSG_BALLOON(tourniquet/limb_taken, "that limb already has a tourniquet!")
+
+/obj/item/tourniquet/proc/target_is_human(datum/act/op/A)
+	return ishuman(A.target) ? null : MSG(tourniquet/wont_fit)
+
+/obj/item/tourniquet/proc/user_is_dexterous(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return user.IsAdvancedToolUser() ? null : MSG(tourniquet/clumsy)
+
+/// The limb being cinched: the one the user was aiming at when the cinch began, else the one they aim at now.
+/obj/item/tourniquet/proc/cinch_limb(datum/act/op/A)
+	var/obj/item/organ/external/E = A.arg("limb")
+	if(E)
+		return E
+	var/mob/living/carbon/human/H = A.target
+	var/mob/living/user = A.actor
+	return istype(H) ? H.get_organ(hud_of(user)?.zone_sel?.selecting) : null
+
+/// The cinch begins: the limb aimed at must take a tourniquet (a balloon says why not), it is fixed now, and everyone around sees it.
+/obj/item/tourniquet/proc/cinch_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = cinch_limb(A)
 	if(!E || !(E.organ_tag in applicable_zones))
-		balloon_alert(user, "a tourniquet goes on an arm or a leg!")
-		return ITEM_INTERACT_FAILURE
+		return MSG(tourniquet/wrong_limb)
 	if(E.is_robotic())
-		balloon_alert(user, "there's no blood flow to stop in \the [E.name]!")
-		return ITEM_INTERACT_FAILURE
+		return MSG(tourniquet/no_flow)
 	if(E.tourniquet)
-		balloon_alert(user, "\the [E.name] already has a tourniquet!")
-		return ITEM_INTERACT_FAILURE
+		return MSG(tourniquet/limb_taken)
+	LAZYSET(A.args, "limb", E)
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, duration = TOURNIQUET_APPLY_TIME, E = E)
-	return ITEM_INTERACT_SUCCESS
 
-/obj/item/tourniquet/proc/cinch_failed(datum/om/task/timed/tourniquet_cinch/task)
-	var/mob/living/user = task.actor
-	balloon_alert(user, "hold still to cinch the tourniquet!")
+/obj/item/tourniquet/proc/cinch_failed(datum/act/op/A)
+	balloon_alert(A.actor, "hold still to cinch the tourniquet!")
 
-/datum/om/task/timed/tourniquet_cinch
-	complete_proc = /obj/item/tourniquet/proc/cinch_done
-	cancel_proc = /obj/item/tourniquet/proc/cinch_failed
-	var/obj/item/organ/external/E
-
-/obj/item/tourniquet/proc/cinch_done(datum/om/task/timed/tourniquet_cinch/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.target
-	var/obj/item/organ/external/E = task.E
+/obj/item/tourniquet/proc/cinch_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = A.arg("limb")
 	// Re-validate after the delay.
 	if(loc != user || E.owner != H || E.tourniquet || !user.Adjacent(H))
-		return
-	user.drop_from_inventory(src)
+		return OP_DECLINE
 	if(!E.apply_tourniquet(src, user))
 		user.put_in_hands(src)
 		return
@@ -93,9 +94,6 @@
 	var/obj/item/tourniquet/tourniquet
 
 // Owned: a cinched tourniquet sits in the limb and is deleted with it.
-/obj/item/organ/external/ownership()
-	. = ..()
-	. += owns(nameof(tourniquet), policy = OWN_DELETE)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).
@@ -107,7 +105,7 @@
 /// Clear a tourniquet that is no longer physically on this limb, restoring flow.
 /obj/item/organ/external/proc/release_lost_tourniquet()
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, nameof(tourniquet))
+	rel_take(src, nameof(tourniquet))
 	if(T)
 		T.applied_at = null
 	log_game("TOURNIQUET: [T] left [key_name(owner)]'s [name] without being loosened; flow restored.")
@@ -133,8 +131,8 @@
 /obj/item/organ/external/proc/apply_tourniquet(obj/item/tourniquet/T, mob/user)
 	if(tourniquet || !istype(T))
 		return FALSE
-	T.forceMove(src)
-	own_move(T, src, nameof(tourniquet)) // from whatever holds it now (a kit, a scenario, a hand)
+	if(!move_into(src, nameof(tourniquet), T, user))
+		return FALSE
 	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()
 	update_damages()
@@ -164,7 +162,7 @@
 	if(!tourniquet)
 		return null
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, nameof(tourniquet))
+	rel_take(src, nameof(tourniquet))
 	var/minutes = T.applied_at ? round((world.time - T.applied_at) / (1 MINUTES), 0.1) : 0
 	T.applied_at = null
 	if(T.loc == src)
@@ -191,20 +189,65 @@
 	if(!length(cinched))
 		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
 		return
-	var/_answer_k142 = rerun_ask(user, "k142", VERB_REF(loosen_tourniquet), args, /datum/om/prompt/choice, message = "Loosen which tourniquet?", title = "Tourniquet", choices = cinched)
-	if(isnull(_answer_k142))
+	open_request(src, /datum/prompt/choice/loosen_tourniquet, PROC_REF(loosen_tourniquet_chosen), answerer = user, choices = cinched)
+
+/datum/prompt/choice/loosen_tourniquet
+	question = "Loosen which tourniquet?"
+	title = "Tourniquet"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/loosen_tourniquet/recheck_extra()
+	. = ..()
+	if(.)
 		return
+	var/mob/living/user = answerer
+	var/mob/living/carbon/human/patient = owner
+	if(!istype(user) || user.incapacitated() || !user.Adjacent(patient))
+		return "cannot reach the tourniquet"
+	if(!isnull(value))
+		var/list/cinched = list()
+		for(var/obj/item/organ/external/limb as anything in patient.organs)
+			if(limb.tourniquet)
+				cinched[limb.name] = limb
+		if(length(cinched) > 1 && !(value in cinched))
+			return "the selected tourniquet is no longer there"
+	return null
+
+/mob/living/carbon/human/proc/loosen_tourniquet_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(!isnull(A.request.value) && !QDELETED(A.request.answerer))
+			SStgui.update_uis(src)
+		return
+	apply_tourniquet_choice(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/apply_tourniquet_choice(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/list/cinched = list()
+	for(var/obj/item/organ/external/limb as anything in organs)
+		if(limb.tourniquet)
+			cinched[limb.name] = limb
+	if(!length(cinched))
+		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
+		return
+	var/_answer_k142 = A.request.value
 	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142
 	if(!choice)
 		return
 	var/obj/item/organ/external/E = cinched[choice]
-	act_message(user, src, MSG_SELF(span_notice("You start loosening the tourniquet on the [E.name].")), \
-		MSG_OTHERS(span_notice("%U% starts loosening the tourniquet on [src == user ? "their" : "%T%'s"] [E.name].")))
-	om_task_timed(user, TOURNIQUET_REMOVE_TIME, src, src, PROC_REF(loosen_tourniquet_done), list(user, E))
+	perform_op(user, src, "loosen_tourniquet", null, ORIGIN_SYSTEM, with = list("limb" = E))
 
-/mob/living/carbon/human/proc/loosen_tourniquet_done(mob/living/user, obj/item/organ/external/E)
-	// Re-validate after the delay.
-	if(E.owner != src || !E.tourniquet || user.incapacitated() || !user.Adjacent(src))
+/// The line said when the loosening starts.
+/mob/living/carbon/human/proc/loosen_tourniquet_begins(datum/act/op/A)
+	var/obj/item/organ/external/E = A.arg("limb")
+	return msg_text(span_notice("You start loosening the tourniquet on the [E.name]."), span_notice("%U% starts loosening the tourniquet on [src == A.actor ? "their" : "%T%'s"] [E.name]."))
+
+/// Re-validate after the delay (the limb is still there and still tied).
+/mob/living/carbon/human/proc/loosen_tourniquet_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/E = A.arg("limb")
+	if(QDELETED(E) || E.owner != src || !E.tourniquet)
 		return
 	var/obj/item/tourniquet/T = E.remove_tourniquet(user)
 	if(T)
@@ -258,8 +301,3 @@
 		log_game("TOURNIQUET: [key_name(owner)] [location] went necrotic after prolonged ischemia (severity [round(severity, 0.1)]).")
 		to_chat(owner, span_danger("Your [E ? E.name : "limb"] has gone cold and dead."))
 
-#undef TOURNIQUET_APPLY_TIME
-#undef TOURNIQUET_REMOVE_TIME
-#undef LIMB_ISCHEMIA_OCCLUDED_RATE
-#undef LIMB_ISCHEMIA_REPERFUSED_RATE
-#undef LIMB_ISCHEMIA_NECROSIS_SEVERITY

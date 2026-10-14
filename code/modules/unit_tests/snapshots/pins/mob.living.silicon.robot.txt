@@ -1,0 +1,56 @@
+@mob human|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++7 menu: Tap
++8 click: Click: Pet
+@mob robot|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++7 menu: Tap
++8 click: Click: Pet
+@mob ai|none
+@mob.living.silicon ghost|none
+@mob.living human|/obj/item/tool/screwdriver
+-menu: Nutrition heal
+-click: Click: Use on
++6 click: Click: Work the panel
+@mob.living human|/obj/item/tool/crowbar
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Pry the cover or a part
++7 click: Click: Pry the cover or a part
+@mob.living human|/obj/item/tool/wrench
+-menu: Nutrition heal
+-click: Click: Use on
++6 click: Click: Remove the restraining bolt
+@mob.living human|/obj/item/tool/wirecutters
+-menu: Nutrition heal
+-click: Click: Use on
++6 menu: Work the wiring (refused: You can't reach the wiring.)
++7 click: Click: Work the wiring
+@mob.living human|/obj/item/multitool
+-menu: Nutrition heal
+-click: Click: Use on
++6 menu: Work the wiring (refused: You can't reach the wiring.)
++7 click: Click: Work the wiring
+@mob.living human|/obj/item/weldingtool
+-menu: Nutrition heal
+-click: Click: Use on
++6 menu: Weld the dents (refused: Nothing to fix here.)
++7 click: Click: Weld the dents
+@mob human|/obj/item/stack/cable_coil
+@mob human|/obj/item/stack/material/steel
+@mob human|/obj/item/card/id
+@mob human|/obj/item
+human|/obj/item/card/emag menu: Disarm
+human|/obj/item/card/emag menu: Grab
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Hold with
+human|/obj/item/card/emag menu: Shove with
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use on
+human|/obj/item/card/emag click: Click: Use
+wires: AI Control, Camera, Law Check, Lockdown
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, break_bolt, butcher, climb_down, climb_wall, deploy_shell, dominate_predator, dominate_prey, drag_buckle, drop_hat, eat_minerals, egg_laying, emag.subvert, emag.use, extract_mmi, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, robot_bolt_wrench, robot_hold, robot_item, robot_pet, robot_pry, robot_punch, robot_screwdriver, robot_tap, robot_utility.customize_appearance, robot_utility.nom, robot_utility.purge_nutrition, robot_utility.spark_plug, robot_utility.toggle_decals, robot_utility.toggle_glowy_stomach, robot_utility.toggle_grabbability, robot_utility.toggle_lights, robot_weld_repair, robot_wires, shred_limb, spin, succubus_bite, take_power_part, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

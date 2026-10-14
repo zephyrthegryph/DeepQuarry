@@ -33,7 +33,6 @@
 	var/slime_max = 35 //With a slug which moves once every 10 seconds and a 5 minute delete timer, this should never exceed 30.
 	var/mob/living/last_prey = null
 
-	can_be_drop_prey = FALSE
 
 	vore_bump_chance = 100 //Always attempt a bump nom if possible...
 	vore_bump_emote = "knocks over and begins slowly engulfing"
@@ -45,9 +44,13 @@
 	swallowTime = 100 //10 seconds. Easy to crawl away from when knocked over.
 	vore_default_mode = DM_DIGEST
 
+CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	ref_one(nameof(last_prey), /mob/living)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 /mob/living/simple_mob/vore/slug/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.desc	= "Somehow you remained still just long enough for the slug to wrap its radula around your body and gradually draw you into its pharynx. The slug moves with agonizing slowness and devours prey at a snail's pace; inch by inch you're crammed down its gullet and squishes and squeezed into the slug's gizzard. Thick walls bear down, covered with shallow, toothy ridges. The slimy moss in here suggests you're not the slug's diet but the gizzard seems intent on churning and scraping over you regardless..."
 	B.digest_burn = 0.1
 	B.digest_brute = 0.2
@@ -132,24 +135,18 @@
 	can_buckle = 1
 	buckle_lying = TRUE
 
-	var/persist_time = 5 MINUTES //How long until we cease existing.
+	lifecycle_lifetime = 5 MINUTES //How long until we cease existing.
 	var/mob/living/simple_mob/vore/slug/owner_slug = null
-	var/turf/my_turf = null //The turf we spawn on.
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
-/obj/effect/slug_glue/Initialize(mapload)
-	. = ..()
-	if(!persist_time)
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(my_turf), get_turf(src))
-	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
-		return INITIALIZE_HINT_QDEL
-	expire(persist_time)
+/// Aside from not making sense in water, keeping it out prevents drowning (keeps_if()).
+/obj/effect/slug_glue/proc/not_in_water()
+	return !istype(get_turf(src), /turf/simulated/floor/water)
 /*	for(var/obj/effect/slug_glue/G in my_turf.contents)
 		if(G == src)
 			continue
 		else
-			qdel(G) //Prevent glue layering
+			spent(G) //Prevent glue layering
 */ //Not including this due to performance concerns but keeping as comments for reference.
 
 // its slug may lay more glue.
@@ -164,7 +161,7 @@
 		return ..()
 	else if(istype(AM, /mob/living))
 		if(prob(50))
-			to_chat(AM, span_warning("You stick to \the [my_turf]!"))
+			to_chat(AM, span_warning("You stick to \the [get_turf(src)]!"))
 			return FALSE
 	return ..()
 
@@ -176,7 +173,7 @@
 		var/mob/living/L = AM
 		if(istype(L, /mob/living/simple_mob/vore/slug))
 			return
-		L.status_at_least(EFFECT_WEAKENED, 10)
+		L.status_at_least(STAT_WEAKENED, 10)
 		play_sfx(src, SFX_RAKSHASA_DECAY3)
 		alert_slug(L)
 
@@ -188,8 +185,8 @@
 				return
 			buckle_mob(L)
 			L.stop_pulling()
-			L.status_at_least(EFFECT_WEAKENED, 2)
-			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [my_turf]!"))
+			L.status_at_least(STAT_WEAKENED, 2)
+			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [get_turf(src)]!"))
 			play_sfx(src, SFX_RAKSHASA_DECAY3)
 			alert_slug(L)
 
@@ -209,6 +206,15 @@
 	if(my_slug.ai_brain?.primary_threat == victim)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
+CAPABILITIES(/obj/effect/slug_glue)
+	ref_one(nameof(owner_slug), /mob/living/simple_mob/vore/slug)
+	keeps_if(PROC_REF(not_in_water))
+	// Struggling out of the glue (user_unbuckle_mob()): whoever tugs stays next to it for as long as the size of the stuck one says, stunned or not.
+	op("struggle_free", ai(), takes("buckled", "time"), wait(PROC_REF(struggle_time), keeps = HELD | ADJACENT | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_slug_glue_done)))
+
+/obj/effect/slug_glue/proc/struggle_time(datum/act/op/A)
+	return A.arg("time")
+
 /obj/effect/slug_glue/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	to_chat(user, "You tug and strain against the sticky substance...")
@@ -222,10 +228,12 @@
 			escape_time = 0.5 * base_escape_time
 		else
 			escape_time = base_escape_time //Admeme size scale
-	om_task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_slug_glue_done), done_args = list(buckled_mob, user))
+	perform_op(user, src, "struggle_free", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("buckled" = buckled_mob, "time" = escape_time))
 
-/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(mob/living/buckled_mob, mob/user)
-	if(!has_buckled_mobs())
+/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(datum/act/op/A)
+	var/mob/living/buckled_mob = A.arg("buckled")
+	var/mob/user = A.actor
+	if(!has_buckled_mobs() || QDELETED(buckled_mob))
 		return
 	to_chat(user, "You tug free of the tacky, rubbery strands!")
 	unbuckle_mob(buckled_mob)
@@ -234,7 +242,7 @@
 /obj/effect/slug_glue/wash(clean_types) // Needs proper scrubbing
 	. = ..()
 	if (. || (clean_types & CLEAN_SCRUB))
-		qdel(src)
-		return TRUE
+		if(consume(src))
+			return TRUE
 	return .
 

@@ -81,19 +81,22 @@
 	loot_list = list(/obj/item/melee/energy/sword = 100)
 
 // They're good with the swords? I dunno. I like the idea they can deflect.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTERACT_ITEM(null, PROC_REF(voxboarder_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
+	op("voxboarder_item", item(/obj/item), then(PROC_REF(voxboarder_interaction_item)))
 
 /// Old attackby: sword block.
-/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/proc/voxboarder_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
-	if(O.force)
+/mob/living/simple_mob/humanoid/merc/voxpirate/boarder/proc/voxboarder_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
+	if(combat_of(O).force)
 		if(prob(20))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its sword!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
@@ -186,7 +189,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder, INTE
 	corpse = /obj/effect/landmark/mobcorpse/vox/suppressor
 	loot_list = list(/obj/item/gun/energy/sonic = 100)
 
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	needs_reload = TRUE
 	reload_max = 30 //Gotta lay down that fire, son.
 

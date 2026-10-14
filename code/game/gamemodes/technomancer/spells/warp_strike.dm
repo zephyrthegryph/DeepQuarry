@@ -12,8 +12,6 @@
 	icon_state = "warp_strike"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_TELE
-/obj/item/spell/warp_strike/Initialize(mapload)
-	. = ..()
 
 /obj/item/spell/warp_strike/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)
@@ -46,7 +44,7 @@
 		//Teleporting time.
 		user.forceMove(tele_target)
 		var/new_dir = get_dir(user, chosen_target)
-		user.dir = new_dir
+		user.set_dir(new_dir)
 		fx_sparks(src, 5, FALSE)
 		adjust_instability(12)
 

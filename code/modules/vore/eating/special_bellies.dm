@@ -16,7 +16,7 @@
 	if(teleport_delay <= 0) //just try to teleport immediately.
 		try_tele(thing)
 		return
-	om_after(src, teleport_delay, PROC_REF(try_tele), thing)
+	after(src, teleport_delay, PROC_REF(try_tele), with = list(thing))
 
 /obj/belly/special/teleporter/periodic_step(wait)
 	if(istype(target(), /atom/movable))
@@ -26,7 +26,7 @@
 	. = ..()
 
 /obj/belly/special/teleporter/proc/try_tele(atom/movable/thing)
-	if(!istype(target(), /atom/movable))
+	if(!thing || !istype(target(), /atom/movable))
 		return
 	if(isturf(target())) // if it's a turf, we dont need to do anything else, just teleport to it
 		thing.forceMove(target())

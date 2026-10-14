@@ -148,3 +148,7 @@
 /// Accessor for the node var.
 /datum/event2/event/pda_spam/proc/node() as /obj/machinery/exonet_node
 	return node
+
+CAPABILITIES(/datum/event2/event/pda_spam)
+	ref_one(nameof(MS))
+	ref_one(nameof(node))

@@ -45,8 +45,7 @@
 		)
 	return list("all_languages" = all_languages)
 
-UI_ACT(/datum/preference_editor/language, "add_language", ui_act_add_language, UI_ARG_VALUE("language"))
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_add_language)
+/datum/preference_editor/language/proc/ui_act_add_language(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/lang = params["language"]
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
 	if(lang in alt)
@@ -55,15 +54,13 @@ UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_add_language)
 	preferences.update_preference_by_type(/datum/preference/alternate_languages, alt)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/language, "remove_language", ui_act_remove_language, UI_ARG_VALUE("language"))
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_remove_language)
+/datum/preference_editor/language/proc/ui_act_remove_language(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/alt = preferences.read_preference(/datum/preference/alternate_languages) || list()
 	alt -= params["language"]
 	preferences.update_preference_by_type(/datum/preference/alternate_languages, alt)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/language, "set_prefix", ui_act_set_prefix, UI_ARG_NUM("index"))
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_set_prefix)
+/datum/preference_editor/language/proc/ui_act_set_prefix(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// prompt the user for the prefix character. The TGUI side only sends
 	// the slot index; we ask for the character here so the user can actually type it.
 	var/list/prefixes = preferences.read_preference(/datum/preference/language_prefixes) || list()
@@ -72,7 +69,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_set_prefix)
 		return PREF_UPDATE_REJECTED
 	var/current = prefixes.len >= idx ? prefixes[idx] : ""
 	// The answer re-runs this action.
-	var/typed = rerun_ask(user, "prefix", PROC_REF(handle_action), args, /datum/om/prompt/text, message = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_length = 1)
+	var/typed = rerun_ask(user, "prefix", PROC_REF(handle_action), args, /datum/prompt/text, question = "Prefix character for slot [idx] (single character)", title = "Language Prefix", default = current, max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
 	if(!typed)
 		return PREF_UPDATE_UNCHANGED
 	if(!user?.client?.prefs || user.client.prefs != preferences)
@@ -85,18 +82,16 @@ UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_set_prefix)
 	SStgui.update_uis(preferences)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/language, "reset_prefixes", ui_act_reset_prefixes)
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_reset_prefixes)
+/datum/preference_editor/language/proc/ui_act_reset_prefixes(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/defaults = CONFIG_GET(str_list/language_prefixes)
 	preferences.update_preference_by_type(/datum/preference/language_prefixes, defaults.Copy())
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/language, "set_custom_key", ui_act_set_custom_key, UI_ARG_TEXT("language"))
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_set_custom_key)
+/datum/preference_editor/language/proc/ui_act_set_custom_key(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// prompt for the key. Replaces any prior binding for that key.
 	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 	var/lang = params["language"]
-	var/typed = rerun_ask(user, "key", PROC_REF(handle_action), args, /datum/om/prompt/text, message = "Bind language '[lang]' to which single character?", title = "Language Key", max_length = 1)
+	var/typed = rerun_ask(user, "key", PROC_REF(handle_action), args, /datum/prompt/text, question = "Bind language '[lang]' to which single character?", title = "Language Key", max_len = 1, name_text = ((1) <= MAX_NAME_LEN))
 	if(!typed)
 		return PREF_UPDATE_UNCHANGED
 	if(!user?.client?.prefs || user.client.prefs != preferences)
@@ -112,11 +107,52 @@ UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_set_custom_key)
 	SStgui.update_uis(preferences)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/language, "clear_custom_key", ui_act_clear_custom_key, UI_ARG_VALUE("language"))
-UI_ACT_PREF_PROC(/datum/preference_editor/language, ui_act_clear_custom_key)
+/datum/preference_editor/language/proc/ui_act_clear_custom_key(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/keys = preferences.read_preference(/datum/preference/language_custom_keys) || list()
 	for(var/k in keys)
 		if(keys[k] == params["language"])
 			keys -= k
 	preferences.update_preference_by_type(/datum/preference/language_custom_keys, keys)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/language's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/language/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("add_language")
+			typed = payload_args(src, params, list("language" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_add_language(user, typed, preferences, null, action)
+		if("remove_language")
+			typed = payload_args(src, params, list("language" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_remove_language(user, typed, preferences, null, action)
+		if("set_prefix")
+			typed = payload_args(src, params, list("index" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_prefix(user, typed, preferences, null, action)
+		if("reset_prefixes")
+			typed = payload_args(src, params, list())
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_reset_prefixes(user, typed, preferences, null, action)
+		if("set_custom_key")
+			typed = payload_args(src, params, list("language" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_custom_key(user, typed, preferences, null, action)
+		if("clear_custom_key")
+			typed = payload_args(src, params, list("language" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_clear_custom_key(user, typed, preferences, null, action)
+	return ..()

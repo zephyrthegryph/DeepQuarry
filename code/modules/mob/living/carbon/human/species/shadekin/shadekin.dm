@@ -104,10 +104,10 @@
 
 /datum/species/shadekin/handle_death(mob/living/carbon/human/H)
 	var/special_handling = TRUE // varswitch for downstream // Enable.
-	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
+	H.ability_clear_dark_maws(null) //clear dark maws on death or similar
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!special_handling || (SK && SK.no_retreat))
-		om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
+		after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
 	else
 		if(!SK)
 			return
@@ -122,15 +122,15 @@
 
 		act_message(H, null, others = "<b>%U%</b> phases to somewhere far away!")
 		var/obj/effect/temp_visual/shadekin/phase_out/phaseanimout = new /obj/effect/temp_visual/shadekin/phase_out(H.loc)
-		phaseanimout.dir = H.dir
+		phaseanimout.set_dir(H.dir)
 		SK.respite_activating = TRUE
 
 		H.drop_l_hand()
 		H.drop_r_hand()
 
 		SK.shadekin_set_energy(0)
-		SK.in_dark_respite = TRUE
-		H.invisibility = INVISIBILITY_SHADEKIN
+		SK.set_in_dark_respite(TRUE)
+		H.set_invisibility(INVISIBILITY_SHADEKIN)
 
 		// Dark respite mends three quarters of every injury.
 		H.mend(TREAT_BURN_CARE, H.injury_load(INJURY_CATEGORY_THERMAL) * 0.75)
@@ -150,7 +150,7 @@
 			if(I.organ_tag == O_LUNGS)
 				H.SetLosebreath(0)
 		H.set_nutrition(0)
-		H.invisibility = INVISIBILITY_SHADEKIN
+		H.set_invisibility(INVISIBILITY_SHADEKIN)
 		BITRESET(H.hud_updateflag, HEALTH_HUD)
 		BITRESET(H.hud_updateflag, STATUS_HUD)
 		BITRESET(H.hud_updateflag, LIFE_HUD)
@@ -165,10 +165,10 @@
 				H.phase_in(get_turf(H), SK)
 			else
 				var/obj/effect/temp_visual/shadekin/phase_in/phaseanim = new /obj/effect/temp_visual/shadekin/phase_in(H.loc)
-				phaseanim.dir = H.dir
-			H.invisibility = initial(H.invisibility)
+				phaseanim.set_dir(H.dir)
+			H.set_invisibility(initial(H.invisibility))
 			SK.respite_activating = FALSE
-			belly.owner.handle_belly_update()
+			PUBLISH(belly.owner, belly_change)
 			H.clear_fullscreen("belly")
 			H.belly_overlay_tgui?.hide() // hide TGUI belly overlay
 			if(H.hud_used)
@@ -179,13 +179,13 @@
 			H.muffled = FALSE
 			H.forced_psay = FALSE
 
-			om_after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
+			after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 		else
 			H.apply_body_effect(/datum/body_effect/dark_respite, 25 MINUTES)
 
-			om_after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
+			after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
 
-			om_after(H, 15 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
+			after(H, 15 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 
 		return TRUE
 
@@ -195,17 +195,17 @@
 	if(!SK)
 		return
 	SK.respite_activating = FALSE
-	SK.in_dark_respite = TRUE
+	SK.set_in_dark_respite(TRUE)
 
 	forceMove(pick(GLOB.latejoin_thedark))
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	SK.respite_activating = FALSE
 
 /mob/living/proc/can_leave_dark()
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return
-	SK.in_dark_respite = FALSE
+	SK.set_in_dark_respite(FALSE)
 	to_chat(src, span_notice("You feel like you can leave the Dark again"))
 
 /datum/species/shadekin/get_bodytype()
@@ -238,7 +238,7 @@
 			eye_health = 125
 
 	if(H.species.total_health != eye_health)
-		var/datum/species/private_species = proto_private(H, nameof(H.species))
+		var/datum/species/private_species = rel_private(H, nameof(H.species))
 		private_species.total_health = eye_health
 	H.endurance = eye_health
 
@@ -252,4 +252,4 @@
 /mob/living/carbon/human/proc/species_death_vanish()
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
-	qdel(src)
+	dissolved(src)

@@ -1,0 +1,41 @@
+@obj.machinery.button.remote.airlock human|none
+@obj.machinery.button.remote.airlock robot|none
+@obj.machinery.button.remote ai|none
+@obj.machinery.button.remote ghost|none
+@obj.machinery.button.remote.airlock human|/obj/item/tool/screwdriver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/tool/crowbar
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/tool/wrench
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/tool/wirecutters
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/multitool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/weldingtool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/stack/cable_coil
+-menu: Make Cable Restraints (refused: You can't do that.)
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/stack/material/steel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item/card/id
+-menu: Move To Top
+-menu: Read ID Card (refused: You can't do that.)
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button.remote.airlock human|/obj/item
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/card/emag
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use (refused: It has no lock to subvert.)
+keys: button_press, button_press_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pod_use, press_item, press_silicon, robot_remote_blocked, silicon_hand, silicon_pressed

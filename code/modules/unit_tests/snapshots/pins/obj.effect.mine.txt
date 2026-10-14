@@ -1,0 +1,20 @@
+@obj.effect human|none
+@obj.effect robot|none
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+@obj.effect human|/obj/item/tool/crowbar
+@obj.effect human|/obj/item/tool/wrench
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
+@obj.effect human|/obj/item/weldingtool
+@obj.effect human|/obj/item/stack/cable_coil
+@obj.effect human|/obj/item/stack/material/steel
+@obj.effect human|/obj/item/card/id
+@obj human|/obj/item/mop_deploy
+@obj human|/obj/item/soap
+wires: Bad Disarm, Disarm, Explode, Explode Delay
+keys: drag_buckle, pass_insert, pass_insert_2, use_multitool, use_screwdriver, use_wirecutter

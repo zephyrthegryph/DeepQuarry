@@ -37,7 +37,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
-	base_attack_cooldown = 1 SECOND
 	attacktext = list("nipped", "bit", "cut", "clawed")
 	meat_amount = 3
 
@@ -48,7 +47,6 @@
 	var/obj/item/clothing/head/hat = null // The hat the Sakimm may be wearing.
 	var/static/list/friend_loot_list = list(/obj/item/coin)	// What will make this animal non-hostile if held?
 	var/randomize_size = TRUE
-	can_be_drop_prey = TRUE
 	species_sounds = "Raccoon"
 	pain_emote_1p = list("chitter")
 	pain_emote_3p = list("chitters")
@@ -63,9 +61,8 @@
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
-		update_icon()
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
 			return
@@ -94,10 +91,9 @@
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
 				var/obj/item/clothing/head/new_hat = get_active_hand()
-				if(!own_set(src, nameof(src.hat), new_hat, user = user, slot = SLOT_ID_BODY)) // out of the paw, onto the head
+				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
 					return
 				to_chat(user, span_notice("You put on the hat."))
-				update_icon()
 			return
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
@@ -119,30 +115,19 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-/mob/living/simple_mob/animal/sif/sakimm/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(attack_cooldown = 1 SECOND))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(icon_scale_x), range_of(0.8, 1.1, 0.1), when = nameof(randomize_size))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)), when = nameof(randomize_size))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()
-	. = list()
-	. += ..()
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -15 // Sakimm are tiny!
-		I.appearance_flags = RESET_COLOR
-		. += I
-
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/hide)
-
-/mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
-	. = ..()
-
-
-	if(randomize_size)
-		adjust_scale(rand(8, 11) / 10)
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/sif/sakimm/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Sakimm are tiny!
 
 /mob/living/simple_mob/animal/sif/sakimm/IIsAlly(mob/living/L)
 	. = ..()

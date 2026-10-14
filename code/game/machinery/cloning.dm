@@ -60,15 +60,7 @@
 	var/speed_coeff
 	var/efficiency
 
-/obj/machinery/clonepod/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	update_icon()
-
 // its containers drop out and the growing clone is ejected.
-/obj/machinery/clonepod/ownership()
-	. = ..()
-	. += owns(nameof(containers), policy = OWN_SPILL)
 
 /obj/machinery/clonepod/relations()
 	. = ..()
@@ -88,24 +80,21 @@
 /// resleever, this machine already tracked its occupant through an OM handle
 /// (set_occupant()/get_occupant()) rather than a bare var, so on_link() below
 /// is what keeps it current instead.
-/datum/om/relation/slot/occupant/clonepod
+/datum/relation_definition/slot/occupant/clonepod
 	holder = /obj/machinery/clonepod
 	slot_id = OCCUPANT_SLOT_CLONEPOD
 	name = "cloning pod"
 
-/datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+	..()
 	target.set_occupant(source)
 
-/datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
+/datum/relation_definition/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/relation_edge/edge)
+	..()
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 
-/// The occupant slot view is a field: rel_set/rel_clear (and the framework clearing it) raise CHANGE_MACHINE_OCCUPANT.
-OM_FIELD_VIEW_OF(/obj/machinery/clonepod, occupant_mob, CHANGE_MACHINE_OCCUPANT)
-OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, list("occupant_mob"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occupied")
-
-/// Derived field: the pod holds a clone (writing occupant_mob raises CHANGE_MACHINE_OCCUPANT).
+/// The pod holds a clone (occupant_mob is a relation view: rel_set/rel_clear publish it).
 /obj/machinery/clonepod/proc/clonepod_occupied()
 	return occupant_mob ? TRUE : FALSE
 
@@ -121,17 +110,30 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return occupant_mob
 
-EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(clonepod_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(clonepod_interaction_item)), \
-	INTERACT_VERB("Eject Cloner", PROC_REF(clonepod_eject)), \
-	INTERACT_VERB("Eject Beakers", PROC_REF(clonepod_empty_beakers)), \
-)
+CAPABILITIES(/obj/machinery/clonepod)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(clonepod_occupied), wakes_on = list(nameof(occupant_mob)))
+	blast_contents()
+	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(growing_record), /datum/transhuman/body_record)
+	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_space))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
+	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))
+	op("clonepod_empty_beakers", menu(), label("Eject Beakers"), then(PROC_REF(clonepod_empty_beakers)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(clonepod_emp))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	default_parts()
+	ref_one(nameof(occupant_mob), /mob/living)
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/clonepod/proc/clonepod_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/occupant = get_occupant()
-	if((isnull(occupant)) || (has_stat(NOPOWER)))
+	if((isnull(occupant)) || (power_lost()))
 		return TRUE
 	if(occupant.stat != DEAD)
 		to_chat(user, "Current clone cycle is [round(get_completion())]% complete.")
@@ -168,28 +170,27 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	set_locked(1)
 
 	eject_wait = 1
-	om_after(src, 30, PROC_REF(clear_eject_wait), BR, clonemind)
+	after(src, 3 SECONDS, PROC_REF(clear_eject_wait), with = list(BR, clonemind), keeps_dead = TRUE)
 
 /obj/machinery/clonepod/proc/clear_eject_wait(datum/transhuman/body_record/BR, datum/mind/clonemind)
 	eject_wait = 0
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR?.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
-	own_clear(src, nameof(growing_record), OWN_DELETE)
+	rel_clear(src, nameof(growing_record))
 	// An after() callback: the record (or the mind) may have been deleted during the wait and
 	// arrives as null. Without a body there is nothing to finish; the pod resets either way.
 	if(!H)
 		attempting = 0
-		update_icon()
 		return
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
 	// doesn't roll cellular-damage limb mutations.
 	H.body.afflict(/datum/affliction/genetic_damage, null, AFFLICTION_SEVERITY_TERMINAL)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 	H.set_cloned_appearance()
 
 	// Move mind to body along with key
@@ -215,16 +216,15 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	// (machine_internals) rather than its occupant slot -- move it to the
 	// right one now. set_occupant() itself now happens through the slot's
 	// own on_link() (OM relations step 3).
-	H.move_into(src, OCCUPANT_SLOT_CLONEPOD)
-	update_icon()
+	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
 	attempting = 0
 
 	return 1
 
 //Grow clones to maturity then kick them out.  FREELOADERS
-/obj/machinery/clonepod/machine_step()
+/obj/machinery/clonepod/proc/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
-	if(has_stat(NOPOWER)) //Autoeject if power is lost
+	if(power_lost()) //Autoeject if power is lost
 		if(occupant)
 			set_locked(0)
 			go_out()
@@ -238,8 +238,8 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 			return
 
 		else if(clone_growth_load(occupant) > clone_release_load())
-			occupant.status_at_least(EFFECT_PARALYZED, 4)
-			occupant.status_at_least(EFFECT_SLEEPING, 4)
+			occupant.status_at_least(STAT_PARALYZED, 4)
+			occupant.status_at_least(STAT_SLEEPING, 4)
 
 			//Slowly get that clone healed and finished.
 			occupant.mend(TREAT_GENETIC_REPAIR, (2 * heal_rate) / DQ_CLONE_GROWTH_SCALE)
@@ -250,7 +250,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 			//So clones don't die of oxyloss in a running pod.
 			if(occupant.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 30)
 				occupant.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 60)
-			occupant.status_at_least(EFFECT_SLEEPING, 30)
+			occupant.status_at_least(STAT_SLEEPING, 30)
 			//Also oxygenate ourselves because inaprovaline is so bad at preventing hypoxia!!
 			occupant.mend(TREAT_OXYGENATION, 4)
 
@@ -274,17 +274,21 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	return
 
 //Let's unlock this early I guess.  Might be too early, needs tweaking.
-/obj/machinery/clonepod/proc/load_container_done(mob/user, obj/item/W)
-	if(LAZYLEN(containers) >= container_limit)
-		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		return
-	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
-	track_biomass_container(W)
-	user.drop_item()
-	W.forceMove(src)
+MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
+
+/obj/machinery/clonepod/proc/container_space(datum/act/op/A)
+	return (read_once(LAZYLEN(containers)) < read_once(container_limit)) ? null : MSG(clonepod/container_full)
+
+/obj/machinery/clonepod/proc/load_container_done(datum/act/op/A)
+	if(!move_into(src, nameof(containers), A.held, A.actor))
+		return OP_FAILED
+	act_message(A.actor, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = A.held)
+	return OP_OK
 
 /// Old attackby.
-/obj/machinery/clonepod/proc/clonepod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
 		if(default_part_replacement(user, W))
@@ -301,56 +305,54 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		set_locked(0)
 		to_chat(user, "System unlocked.")
 		return TRUE
-	if(istype(W,/obj/item/reagent_containers/glass))
-		if(LAZYLEN(containers) >= container_limit)
-			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
-		else
-			om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
-		return TRUE
-	return FALSE
 
-/obj/machinery/clonepod/screwdriver_act(mob/user, obj/item/tool)
+	return OP_DECLINE
+
+/obj/machinery/clonepod/proc/screwdriver_used(datum/act/op/A)
 	if(get_occupant())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/clonepod/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/crowbar_used(datum/act/op/A)
 	if(get_occupant())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/clonepod/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/mob/living/occupant = get_occupant()
 	if(locked && (anchored || occupant))
 		to_chat(user, span_warning("Can not do that while [src] is in use."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		set_anchored(FALSE)
 		rel_clear(src, nameof(connected))
 	else
 		set_anchored(TRUE)
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] %T% to the floor."), \
 		MSG_OTHERS("%U% [anchored ? "secures" : "unsecures"] %T% to the floor."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/clonepod/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/clonepod/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool, /obj/item/multitool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
-	multitool.update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
-/obj/machinery/clonepod/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer forces an emergency ejection.
+/obj/machinery/clonepod/proc/on_emag(datum/act/op/A)
 	if(isnull(get_occupant()))
-		return
-	to_chat(user, "You force an emergency ejection.")
+		return OP_OK
+	to_chat(A.actor, "You force an emergency ejection.")
 	set_locked(0)
 	go_out()
-	return 1
+	return OP_OK
 
 //Put messages in the connected computer's temp var for display.
 /obj/machinery/clonepod/proc/connected_message(message)
@@ -392,7 +394,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 	return clamp(100 * (AFFLICTION_SEVERITY_TERMINAL - clone_growth_load(occupant)) / span, 0, 100)
 
 /// Old verb "Eject Cloner".
-/obj/machinery/clonepod/proc/clonepod_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	go_out()
@@ -404,9 +407,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 		return
 
 	if(mess) //Clean that mess and dump those gibs!
-		mess = 0
+		set_mess(0)
 		gibs(src.loc)
-		update_icon()
 		return
 
 	var/mob/living/occupant = get_occupant()
@@ -421,7 +423,6 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 			occupant.UpdateAppearance()
 	slot_remove(occupant, get_turf(src))
 
-	update_icon()
 	return
 
 // Returns the total amount of biomass reagent in all of the pod's stored containers
@@ -457,7 +458,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 	return 0
 
 // Empties all of the beakers from the cloning pod, used to refill it
-/obj/machinery/clonepod/proc/clonepod_empty_beakers(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/clonepod/proc/clonepod_empty_beakers(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 
@@ -481,8 +483,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 	var/mob/living/occupant = get_occupant()
 	if(occupant)
 		connected_message("Critical Error!")
-		mess = 1
-		update_icon()
+		set_mess(1)
 		occupant.ghostize()
 		occupant.expire(0.5 SECONDS)
 
@@ -491,24 +492,25 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/clonepod, PROC_REF(on_emag), null)
 		return
 	go_out()
 
-DAMAGE_REACTION(/obj/machinery/clonepod, DAMAGE_EMP, PROC_REF(clonepod_emp))
 /// An EMP may make the pod malfunction.
-/obj/machinery/clonepod/proc/clonepod_emp(datum/damage_packet/packet)
+/obj/machinery/clonepod/proc/clonepod_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!prob(100/packet.severity))
-		return
+		return HOOK_DECLINE
 	malfunction()
-
-/obj/machinery/clonepod/explosion_contents_severity(severity)
-	return severity
+	return HOOK_DECLINE
 
 /obj/machinery/clonepod/proc/appearance_state()
-	if(get_occupant() && !has_stat(NOPOWER))
+	if(get_occupant() && !power_lost())
 		return "1"
 	if(mess)
 		return "g"
 	return "0"
 
-APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/clonepod/draw(datum/look/look)
+	..()
+	look.state("pod_[appearance_state()]")
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()
@@ -518,7 +520,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	own_add(src, nameof(containers), container)
+	rel_add(src, nameof(containers), container)
 
 //Health Tracker Implant
 
@@ -545,18 +547,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
  */
 
 /obj/item/storage/box/disks
+	starts_with = list(
+		/obj/item/disk/body_record = 7,
+	)
 	name = "Diskette Box"
 	icon_state = "disk_kit"
-
-/obj/item/storage/box/disks/Initialize(mapload)
-	. = ..()
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
-	new /obj/item/disk/body_record(src)
 
 /*
  *	Manual -- A big ol' manual.

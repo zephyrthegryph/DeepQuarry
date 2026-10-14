@@ -8,26 +8,40 @@
 	var/plantname
 	var/potency = 1
 
-DECLARE_REAGENTS(/obj/item/grown, 50, null)
 
-/obj/item/grown/Initialize(mapload, planttype)
+CAPABILITIES(/obj/item/grown)
+	reagents(50, contents_from = PROC_REF(seed_contents))
+	param(nameof(planttype_at_make), pos = 1)
+
+/// The plant an inedible harvest is made from (its constructor param).
+/obj/item/grown/var/planttype_at_make
+
+// ALLOW(init/INSTANCE_STATE): an inedible harvest made from a plant takes its potency and chemicals
+/obj/item/grown/Initialize(mapload)
 	. = ..()
 
 	//Handle some post-spawn var stuff.
-	if(planttype)
-		plantname = planttype
-		var/datum/seed/S = GLOB.plant_service.seeds[plantname]
+	if(planttype_at_make)
+		plantname = planttype_at_make
+		var/datum/seed/S = SSplants.seeds[plantname]
 		if(!S || !S.chems)
 			return
 
 		potency = S.get_trait(TRAIT_POTENCY)
 
-		for(var/rid in S.chems)
-			var/list/reagent_data = S.chems[rid]
-			var/rtotal = reagent_data[1]
-			if(reagent_data.len > 1 && potency > 0)
-				rtotal += round(potency/reagent_data[2])
-			reagents.add_reagent(rid,max(1,rtotal))
+/// The plant's chemicals at its potency (reagents(contents_from =)), or null for a harvest made from no plant.
+/obj/item/grown/proc/seed_contents()
+	var/datum/seed/S = planttype_at_make ? SSplants.seeds[planttype_at_make] : null
+	if(!S || !S.chems)
+		return
+	var/plant_potency = S.get_trait(TRAIT_POTENCY)
+	. = list()
+	for(var/rid in S.chems)
+		var/list/reagent_data = S.chems[rid]
+		var/rtotal = reagent_data[1]
+		if(reagent_data.len > 1 && plant_potency > 0)
+			rtotal += round(plant_potency/reagent_data[2])
+		.[rid] = max(1, rtotal)
 
 /obj/item/corncob
 	name = "corn cob"
@@ -36,19 +50,22 @@ DECLARE_REAGENTS(/obj/item/grown, 50, null)
 	icon_state = "corncob"
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_SMALL
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/corncob, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/corncob)
+	configure(item_thrown(force = 0))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/corncob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/corncob/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/surgical/circular_saw) || istype(W, /obj/item/material/knife/machete/hatchet) || istype(W, /obj/item/material/knife))
 		to_chat(user, span_notice("You use [W] to fashion a pipe out of the corn cob!"))
 		replace_with(src, /obj/item/clothing/mask/smokable/pipe/cobpipe)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/item/bananapeel
 	name = "banana peel"
@@ -57,6 +74,8 @@ DECLARE_INTERACTIONS(/obj/item/corncob, INTERACT_ITEM(null, PROC_REF(interaction
 	icon_state = "banana_peel"
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_SMALL
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
+
+CAPABILITIES(/obj/item/bananapeel)
+	configure(item_thrown(force = 0))

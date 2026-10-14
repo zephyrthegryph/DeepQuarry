@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Fixed the roughly three-second server freeze shortly after every round start (the first power step repowered every area at once)."
+  - admin: "The admin viewer names what caused each tick overrun (including time outside the MC), shows runtime call stacks, stores proc profiles of the round start and of big lag spikes, and hides unit-test rounds by default."

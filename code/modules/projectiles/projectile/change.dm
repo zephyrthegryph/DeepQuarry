@@ -20,11 +20,11 @@
 		if(isrobot(M))
 			var/mob/living/silicon/robot/Robot = M
 			if(Robot.mmi)
-				qdel(Robot.mmi)
+				rel_clear(Robot, nameof(Robot.mmi), OWN_DELETE)
 		else
 			for(var/obj/item/W in contents_of(M))
 				if(istype(W, /obj/item/implant))	//TODO: Carn. give implants a dropped() or something
-					qdel(W)
+					spent(W, M)
 					continue
 				M.drop_from_inventory(W)
 
@@ -47,10 +47,10 @@
 			if("robot")
 				new_mob = new /mob/living/silicon/robot(M.loc)
 				new_mob.gender = M.gender
-				new_mob.invisibility = INVISIBILITY_NONE
+				new_mob.set_invisibility(INVISIBILITY_NONE)
 				new_mob.job = JOB_CYBORG
 				var/mob/living/silicon/robot/Robot = new_mob
-				own_set(Robot, nameof(Robot.mmi), new /obj/item/mmi(new_mob))
+				rel_set(Robot, nameof(Robot.mmi), new /obj/item/mmi(new_mob))
 				Robot.mmi.take_identity(M)	//Does not transfer key/client.
 			if("slime")
 				new_mob = new /mob/living/simple_mob/slime/xenobio(M.loc)
@@ -74,7 +74,7 @@
 					H.name = pick(GLOB.first_names_female|GLOB.first_names_male)
 
 				H.name += " [pick(GLOB.last_names)]"
-				H.real_name = H.name
+				H.set_real_name(H.name)
 
 				H.set_species(randomize)
 				H.universal_speak = 1
@@ -88,7 +88,7 @@
 
 			to_chat(new_mob, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))
 
-			qdel(M)
+			replaced_by(M, new_mob)
 			return
 		else
 			to_chat(M, span_warning("Your form morphs into that of \a [lowertext(randomize)]."))

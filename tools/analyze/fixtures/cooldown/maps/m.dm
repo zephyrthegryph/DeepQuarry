@@ -1,0 +1,1 @@
+if(world.time > map)

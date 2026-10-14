@@ -40,16 +40,23 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	if(viewing_overmap(user))
 		user.reset_perspective()
 	// was an admin_log_show error popup; now a tgui_alert with a single Reconnect choice.
-	var/_answer_k47 = rerun_ask(user, "k47", PROC_REF(display_reconnect_dialog), args, /datum/om/prompt/choice/alert, message = "Unable to connect to [flavor].", title = "[src]", choices = list("Reconnect", "Close"))
-	if(isnull(_answer_k47))
+	open_request(src, /datum/prompt/choice/ship_reconnect, PROC_REF(reconnect_answered), answerer = user, question = "Unable to connect to [flavor].", title = "[src]")
+
+/obj/machinery/computer/ship/proc/reconnect_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_k47 == "Reconnect")
+	var/mob/user = context.answer.answerer
+	if(viewing_overmap(user))
+		user.reset_perspective()
+	if(context.answer.value == "Reconnect")
 		if(sync_linked(user))
 			interface_interact(user)
+	if(!QDELETED(src))
+		SStgui.update_uis(src)
 
-TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 
-/obj/machinery/computer/ship/proc/topic_sync(mob/user, list/args)
+/obj/machinery/computer/ship/proc/topic_sync(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sync_linked(user))
 		interface_interact(user)
 	return TRUE
@@ -61,59 +68,49 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 	return TRUE
 
 /// Old attack_ai: open the interface if silicon control is allowed. Never fell through.
-/obj/machinery/computer/ship/proc/ship_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ai_control && issilicon(user))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
+/obj/machinery/computer/ship/proc/ship_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		interface_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: open the interface.
-/obj/machinery/computer/ship/proc/ship_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	interface_interact(user)
-	return TRUE
+/obj/machinery/computer/ship/proc/ship_ghost_view(datum/act/op/A)
+	interface_interact(A.actor)
+	return OP_OK
 
-/obj/machinery/computer/ship/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(ship_silicon_use)),
-		INTERACT_OBSERVER("View", PROC_REF(ship_ghost_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/ship_use,
-	)
-	..()
+MSG_DEF_SELF(ship/ai_denied, "Access Denied.")
+MSG_DEF_SELF(ship/access_denied, "access denied")
 
-/// Old attack_hand: access checks, then open the interface if it isn't already.
-/datum/interaction/machine_hand/ship_use
-	id = "ship_console_use"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/ship/proc/ship_access_allowed, "access denied"))
-	effect = /obj/machinery/computer/ship/proc/interaction_use
+TRACKED(/obj/machinery/computer/ship, ai_control)
 
-/// Whether `actor` is allowed to use this console: AI/silicon control, then ID access.
-/obj/machinery/computer/ship/proc/ship_access_allowed(mob/actor, atom/target, obj/item/held)
-	if(!ai_control && issilicon(actor))
-		return FALSE
-	if(!allowed(actor))
-		return FALSE
-	return TRUE
+/// Requirement (old attack_hand): ID access.
+/obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)
+	return (!!allowed(A.actor)) ? null : MSG(ship/access_denied)
 
-/obj/machinery/computer/ship/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: opens the interface if it isn't already.
+/obj/machinery/computer/ship/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		interface_interact(user)
+	return OP_OK
+
+// The buttons every ship console's window has (declared in its CAPABILITIES, code/modules/flight_operations/flight_console.dm).
+/// The guard every button of a ship console asks first (a console type overrides it).
+/obj/machinery/computer/ship/proc/ui_gate(datum/act/op/A)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship, "sync", ui_act_sync)
-UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_sync)
-	sync_linked(ui.user)
+/obj/machinery/computer/ship/proc/ui_act_sync(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	sync_linked(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/computer/ship, ui_act_close)
-	ui.user.reset_perspective()
+/obj/machinery/computer/ship/proc/ui_act_close(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/user = A.actor
+	user.reset_perspective()
 	return TRUE
 
 // Management of mob view displacement. look to shift view to the ship on the overmap; unlook to shift back.
@@ -141,15 +138,26 @@ Ships can now be hijacked!
 /obj/machinery/computer/ship
 	var/hacked = 0   // Has been emagged, no access restrictions.
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/ship, PROC_REF(on_emag), null)
-/obj/machinery/computer/ship/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/ship/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!hacked)
-		req_access = list()
-		req_one_access = list()
+		set_req_access(list())
+		set_req_one_access(list())
 		hacked = 1
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked
+
+/datum/prompt/choice/ship_reconnect
+	choices = list("Reconnect", "Close")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ship_reconnect/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null

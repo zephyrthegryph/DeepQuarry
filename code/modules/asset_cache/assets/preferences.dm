@@ -59,7 +59,7 @@
 		if(!isnull(data))
 			preference_data[middleware.key] = data
 
-		qdel(middleware)
+		spent(middleware)
 
 	for(var/preference_type in GLOB.preference_entries)
 		var/datum/preference/preference_entry = GLOB.preference_entries[preference_type]

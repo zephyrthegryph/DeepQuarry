@@ -13,14 +13,21 @@
 	var/list/datum/autopsy_data_scanner/chemtraces
 	var/target_name = null
 	var/timeofdeath = null
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/autopsy_scanner)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	owns_many(nameof(chemtraces))
+	owns_many(nameof(wdata))
+	op("print_data_effect", menu(), label("Print Data"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_print_data_holds))), then(PROC_REF(print_data_effect)))
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
 	var/list/organs_scanned	// this maps a number of scanned organs to
 										// the wounds to those organs with this data's weapon type
 	var/organ_names = ""
+
+CAPABILITIES(/datum/autopsy_data_scanner)
+	owns_many(nameof(organs_scanned))
 
 /datum/autopsy_data
 	var/weapon = null
@@ -51,7 +58,7 @@
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			own_put(src, nameof(wdata), V, D)
+			rel_add(src, nameof(wdata), D, V)
 
 		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
@@ -59,20 +66,22 @@
 			else
 				D.organ_names += ", [O.name]"
 
-		qdel(LAZYACCESS(D.organs_scanned, O.name))
-		LAZYSET(D.organs_scanned, O.name, W.copy())
+		rel_add(D, nameof(D.organs_scanned), W.copy(), O.name)
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
-			own_add(src, nameof(chemtraces), V)
+			rel_add(src, nameof(chemtraces), V)
 
 /// Requirement: only a conscious human can print the data.
-/obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
-	if(user.stat || !ishuman(user))
+/// Requirement (was REQ_* can_print_data): the legacy check answers TRUE to pass.
+/obj/item/autopsy_scanner/proc/can_print_data_holds(datum/act/op/A)
+	if(A.actor.stat || !ishuman(A.actor))
 		return "no"
-	return TRUE
+	return null
 
-/obj/item/autopsy_scanner/proc/print_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why can_print_data_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/autopsy_scanner/proc/print_data_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	var/scan_data = ""
 
 	if(timeofdeath)
@@ -142,18 +151,20 @@
 	for(var/mob/O in viewers(user))
 		O.show_message(span_notice("\The [src] rattles and prints out a sheet of paper."), 1)
 
-	om_after(src, 1 SECOND, PROC_REF(print_report), user, scan_data)
+	after(src, 1 SECOND, PROC_REF(print_report), with = list(user, scan_data))
 
 /obj/item/autopsy_scanner/proc/print_report(mob/usr_mob, scan_data)
+	if(!usr_mob)
+		return
 	var/obj/item/paper/P = new(usr_mob.loc)
 	P.name = "Autopsy Data ([target_name])"
-	P.info = "<tt>[scan_data]</tt>"
-	P.icon_state = "paper_words"
+	P.set_info("<tt>[scan_data]</tt>")
+	P.set_icon_state("paper_words")
 
-	if(istype(usr,/mob/living/carbon))
-		usr.put_in_hands(P)
+	if(istype(usr_mob, /mob/living/carbon))
+		usr_mob.put_in_hands(P)
 
-/obj/item/autopsy_scanner/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
+/obj/item/autopsy_scanner/use_on_patient(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(!istype(M))
 		return 0
 
@@ -162,14 +173,14 @@
 
 	if(target_name != M.name)
 		target_name = M.name
-		own_set(src, nameof(wdata), list())
-		own_set(src, nameof(chemtraces), list())
+		rel_clear(src, nameof(wdata))
+		rel_set(src, nameof(chemtraces), list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 
 	src.timeofdeath = M.timeofdeath
 
-	var/obj/item/organ/external/S = M.get_organ(user.zone_sel.selecting)
+	var/obj/item/organ/external/S = M.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!S)
 		to_chat(user, span_warning("You can't scan this body part."))
 		return
@@ -179,13 +190,8 @@
 	act_message(user, M, others = span_infoplain(span_bold("%U%") + " scans the wounds on %T%'s [S.name] with [src]"))
 
 	src.add_data(S)
-	OM_EMIT(src, /datum/om/event/autopsy_performed, user, M)
-	OM_EMIT_WORLD(/datum/om/event/world_autopsy_performed, user, M)
 
 	return 1
 
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/autopsy_scanner, \
-	INTERACT_VERB("Print Data", PROC_REF(print_data_effect), REQ_TARGET_STATE(/obj/item/autopsy_scanner/proc/can_print_data)), \
-)

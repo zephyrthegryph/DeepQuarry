@@ -14,45 +14,40 @@
 /obj/structure/window/maintenance_panel/apply_silicate(amount)
 	return // can't fix it like that
 
-/obj/structure/window/maintenance_panel/updateSilicate()
-	return // can't fix it like that
-
 /obj/structure/window/maintenance_panel/is_fulltile()
 	return FALSE // NEVER
 
-EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
-	INTERACT_ITEM(null, PROC_REF(maintenance_panel_interaction_item)), \
-	INTERACT_OBSERVER("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/structure/window/maintenance_panel)
+	op("maintenance_panel_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(maintenance_panel_interaction_item)))
+	op("weld_toggle", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Weld or cut"), priority(OP_PRIORITY_PART + 10), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
+	op("weld_toggle_help", tool(TOOL_WELDER), stance(I_HELP), when(cond_not(req(PROC_REF(is_damaged)))), label("Weld or cut"), priority(OP_PRIORITY_TAKE_OUT), wait(2 SECONDS), costs(RES_FUEL, 1), needs(req_welder_lit()), begins(PROC_REF(weld_begins)), starts(PROC_REF(weld_started)), then(PROC_REF(weld_toggle_done)))
+	op("swallow", observer(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	without("anchor") // a maintenance panel is welded on, never screwed down: the screwdriver does nothing to it
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attackby.
-/obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/cable_coil))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(datum/act/op/A)
+	if(istype(A.held, /obj/item/stack/cable_coil))
+		return OP_PASS
+	return OP_DECLINE
 
-/obj/structure/window/maintenance_panel/screwdriver_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING
+/// A screwdriver does nothing to a panel (and does not strike it).
+/obj/structure/window/maintenance_panel/proc/screwdriver_used(datum/act/op/A)
+	return OP_OK
 
-/obj/structure/window/maintenance_panel/welder_act(mob/user, obj/item/tool)
-	// Damaged, and weld repair is meant (it is declared for I_HELP): repair it. Otherwise weld it to or cut it off the wall.
-	var/datum/interaction/window_repair/repair = INTERACTION(/datum/interaction/window_repair)
-	if(get_integrity() < max_integrity && repair.is_meant(user, src, tool))
-		return ..()
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.remove_fuel(1, user))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
-	playsound(src, tool.usesound, 75, 1)
-	om_task_timed(user, 2 SECONDS, src, src, PROC_REF(weld_toggle_done), list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/window/maintenance_panel/proc/weld_begins(datum/act/op/A)
+	return msg_text(span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
 
-/obj/structure/window/maintenance_panel/proc/weld_toggle_done(mob/user)
+/obj/structure/window/maintenance_panel/proc/weld_started(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 75, 1)
+
+/obj/structure/window/maintenance_panel/proc/weld_toggle_done(datum/act/op/A)
 	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = 1)
-	update_nearby_icons()
 	update_verbs()
-	to_chat(user, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
+	to_chat(A.actor, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
+	return OP_OK
 
 
 // Heavier panel takes a metal-scrape sound on big hits, glass tink on small ones.

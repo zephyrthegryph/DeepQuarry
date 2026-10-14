@@ -474,8 +474,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/salvageable/console_os{
 	dir = 4
@@ -1210,7 +1209,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "FR" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "estrella_side_hatch";
 	req_access = null;
@@ -1401,7 +1400,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "Jm" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
-	cap_state = 128;
+	bolted_at_start = 1;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
@@ -1943,7 +1942,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "VT" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
-	cap_state = 128;
+	bolted_at_start = 1;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
@@ -1973,8 +1972,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/ScienceShip)
@@ -2018,7 +2016,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "Xz" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
 	req_one_access = null
@@ -2088,7 +2086,7 @@
 /area/survivalpod/superpose/ScienceShip)
 "YX" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /turf/simulated/shuttle/floor/purple,
 /area/survivalpod/superpose/ScienceShip)

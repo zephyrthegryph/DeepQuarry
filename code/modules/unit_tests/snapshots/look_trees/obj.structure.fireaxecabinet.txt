@@ -1,0 +1,9 @@
+/obj/structure/fireaxecabinet icon: icons/obj/closet.dmi
+/obj/structure/fireaxecabinet state: fireaxe1000
+/obj/structure/fireaxecabinet dir: 2
+/obj/structure/fireaxecabinet overlay: icons/obj/closet.dmi:fireaxe1000:8:#000000
+/obj/structure/fireaxecabinet/empty icon: icons/obj/closet.dmi
+/obj/structure/fireaxecabinet/empty state: fireaxe0000
+/obj/structure/fireaxecabinet/empty dir: 2
+/obj/structure/fireaxecabinet/empty overlay: icons/obj/closet.dmi:fireaxe0000:8:#000000
+

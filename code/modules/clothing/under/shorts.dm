@@ -4,7 +4,9 @@
 	desc = "95% Polyester, 5% Spandex!"
 	icon_state = "redshorts" // Hackyfix for icon states until someone wants to come do a recolor later.
 	gender = PLURAL
-	body_parts_covered = LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/shorts)
+	configure(item_worn(covers = LOWER_TORSO))
 
 /obj/item/clothing/under/shorts/red
 	name = "red athletic shorts"
@@ -102,8 +104,10 @@
 	name = "short black skirt"
 	desc = "A skirt that is a shiny black."
 	icon_state = "skirt_short_black"
-	body_parts_covered = LOWER_TORSO
 	rolled_sleeves = -1
+
+CAPABILITIES(/obj/item/clothing/under/skirt)
+	configure(item_worn(covers = LOWER_TORSO))
 
 /obj/item/clothing/under/skirt/khaki
 	name = "khaki skirt"
@@ -145,7 +149,9 @@
 	name = "black skirt"
 	desc = "A black skirt, very fancy!"
 	icon_state = "blackskirt"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/skirt/outfit)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/skirt/outfit/plaid_blue
 	name = "blue plaid skirt"
@@ -205,8 +211,10 @@
 /obj/item/clothing/under/rank/scientist/skirt
 	name = "scientist's jumpskirt"
 	icon_state = "sciencef"
-	permeability_coefficient = 0.50
 	armor_spec = "bomb=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/scientist/skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/medical/skirt
 	name = "medical doctor's jumpskirt"
@@ -234,7 +242,9 @@
 	desc = "Standard feminine fashion for Security Officers.  It's made of sturdier material than the standard jumpskirts."
 	icon_state = "securityf"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/security/skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/warden/skirt
 	desc = "Standard feminine fashion for a " + JOB_WARDEN + ". It is made of sturdier material than standard jumpskirts. It has the word \"" + JOB_WARDEN + "\" written on the shoulders."

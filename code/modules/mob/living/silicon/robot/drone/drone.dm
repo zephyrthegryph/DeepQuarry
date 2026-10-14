@@ -44,19 +44,12 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	integrated_light_power = 3
 	local_transmit = 1
 
-	can_pull_size = ITEMSIZE_NO_CONTAINER
-	can_pull_mobs = MOB_PULL_SMALLER
 
-	mob_bump_flag = SIMPLE_ANIMAL
-	mob_swap_flags = SIMPLE_ANIMAL
-	mob_push_flags = SIMPLE_ANIMAL
-	mob_always_swap = 1
 
 	mob_size = MOB_SMALL
 
 	//Used for self-mailing.
 	var/mail_destination = ""
-	var/obj/machinery/drone_fabricator/master_fabricator
 	var/law_type = /datum/ai_laws/drone
 	var/module_type = /obj/item/robot_module/drone
 	var/hat_x_offset = 0
@@ -68,7 +61,6 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 
 	holder_type = /obj/item/holder/drone
 
-	can_be_antagged = FALSE
 
 	var/static/list/shell_types = list("Classic" = "repairbot", "Eris" = "maintbot")
 	var/can_pick_shell = TRUE
@@ -92,9 +84,11 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	module_type = /obj/item/robot_module/drone/construction
 	hat_x_offset = 1
 	hat_y_offset = -12
-	can_pull_mobs = MOB_PULL_SAME
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-constructiondrone")
+
+CAPABILITIES(/mob/living/silicon/robot/drone/construction)
+	configure(mob_movement(pull_mobs = MOB_PULL_SAME))
 
 /mob/living/silicon/robot/drone/mining
 	icon_state = "miningdrone"
@@ -103,30 +97,17 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	module_type = /obj/item/robot_module/drone/mining
 	hat_x_offset = 1
 	hat_y_offset = -12
-	can_pull_mobs = MOB_PULL_SAME
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-miningdrone")
 
-DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/silicon/robot/drone/mining)
+	configure(mob_movement(pull_mobs = MOB_PULL_SAME))
 
-/mob/living/silicon/robot/drone/Initialize(mapload, is_decoy)
+/mob/living/silicon/robot/drone/Initialize(mapload)
 	. = ..(mapload, FALSE)
 	remove_language(LANGUAGE_ROBOT_TALK)
 	add_language(LANGUAGE_ROBOT_TALK, 0)
 	add_language(LANGUAGE_DRONE_TALK, 1)
-	serial_number = rand(0,999)
-
-	revoke_ability(ABILITY_ID_ROBOT_PICK_NAME, src)
-	grant_ability(ABILITY_ID_ROBOT_PICK_SHELL, src)
-	grant_ability(ABILITY_ID_ROBOT_SET_MAIL_TAG, src)
-
-	if(can_pick_shell)
-		var/random = pick(shell_types)
-		icon_state = shell_types[random] // ALLOW(decl): random pick
-		shell_accessories = list("[icon_state]-eyes-blue")
-
-	update_icon()
 	updatename()
 
 /mob/living/silicon/robot/drone/setup_camera()
@@ -138,13 +119,13 @@ DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
 	..()
 	additional_law_channels -= "Binary"
 	additional_law_channels["Drone"] = ":d"
-	own_set(src, nameof(laws), new law_type)
+	rel_set(src, nameof(laws), new law_type)
 
 /mob/living/silicon/robot/drone/setup_module()
 	..()
 	if(!module)
-		own_set(src, nameof(module), new module_type(src))
-	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
+		rel_set(src, nameof(module), new module_type(src))
+	bio.flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
 /mob/living/silicon/robot/drone/Login()
@@ -155,111 +136,123 @@ DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
 //Redefining some robot procs...
 /mob/living/silicon/robot/drone/SetName(pickedName as text)
 	// Would prefer to call the grandparent proc but this isn't possible, so..
-	real_name = pickedName
+	set_real_name(pickedName)
 	name = real_name
 
 /mob/living/silicon/robot/drone/updatename()
 	if(name_override)
 		return
 
-	real_name = "[initial(name)] ([serial_number])"
+	set_real_name("[initial(name)] ([serial_number])")
 	name = real_name
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/drone, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/robot/drone/appearance_overlays()
-	. = list()
-	if(islist(shell_accessories))
-		. += shell_accessories
-	. += add_hat_overlay()
+
+/// A drone's look is its shell accessories and its hat; the sprite datum sheet is not used.
+/mob/living/silicon/robot/drone/look_parts(datum/look/look)
+	look.watch(hat)
+	for(var/accessory in shell_accessories)
+		look.overlay(accessory)
+	look.overlay(hat_look())
 
 /// Drones wear hats through the shared robot hat procs, drawn at their own offsets.
-/mob/living/silicon/robot/drone/add_hat_overlay()
-	. = list()
+/mob/living/silicon/robot/drone/hat_look()
 	if(hat)
-		. += get_hat_icon(hat, hat_x_offset, hat_y_offset)
+		return get_hat_icon(hat, hat_x_offset, hat_y_offset)
 
-/mob/living/silicon/robot/drone/update_worn_icons()
-	return
-
-/mob/living/silicon/robot/drone/proc/dq_do_pick_shell(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+/// The shells on offer: the drone type's own, and the blitz shell for a drone that can.
+/mob/living/silicon/robot/drone/proc/shell_choices(datum/act/A)
 	var/list/choices = shell_types.Copy()
-
 	if(can_blitz)
 		choices["Blitz"] = "blitzshell"
+	return choices
 
+/// The picture state of the shell the first question was answered with, or null.
+/mob/living/silicon/robot/drone/proc/shell_state_answered(datum/act/op/A)
+	var/choice = A.step_value("shell")
+	return choice ? shell_choices()[choice] : null
+
+/mob/living/silicon/robot/drone/proc/shell_has_eyes(datum/act/op/A)
+	return shell_state_answered(A) in list("repairbot", "maintbot")
+
+/mob/living/silicon/robot/drone/proc/shell_has_plating(datum/act/op/A)
+	return shell_state_answered(A) == "maintbot"
+
+/// Picking a drone shell: the shell, then optional eye and plating colours. A cancel after the shell takes what was answered so far.
+/mob/living/silicon/robot/drone/proc/ability_pick_shell(datum/act/op/A)
 	// If you add more, datumize these. Having 'basically two' is not enough to make me bother though.
-	om_flow_start(/datum/om/flow/drone_shell, src, null, shells = choices)
+	shell_customize_finish(shell_state_answered(A), A.step_value("eyes"), A.step_value("plating"))
+	return OP_OK
 
-/// Picking a drone shell: the shell, then (for some shells) eye and plating colours. The colour
-/// picks are optional: a cancel leaves that accessory off.
-/datum/om/flow/drone_shell
-	name = "drone shell"
-	/// Shell name -> icon_state.
-	var/list/shells
-	var/shell_state
-	var/eyes
-	var/plating
-
-/datum/om/flow/drone_shell/valid()
-	var/mob/living/silicon/robot/drone/D = actor
-	return D.can_pick_shell ? null : "already picked"
-
-/datum/om/flow/drone_shell/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(shell_picked), title = "Customize Shell", message = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = shells)
-
-/datum/om/flow/drone_shell/proc/shell_picked(datum/om/prompt/choice/ask)
-	shell_state = shells[ask.choice]
-	if(shell_state in list("repairbot", "maintbot"))
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(eyes_picked), title = "Eye Color", message = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), cancel_answer = "")
+/mob/living/silicon/robot/drone/proc/shell_cancelled(datum/act/op/A)
+	var/shell_state = shell_state_answered(A)
+	if(!shell_state)
 		return
-	finish()
+	shell_customize_finish(shell_state, A.step_value("eyes") || "", A.step_value("plating") || "")
 
-/datum/om/flow/drone_shell/proc/eyes_picked(datum/om/prompt/choice/ask)
-	eyes = ask.choice
-	if(shell_state == "maintbot")
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(plating_picked), title = "Eye Color", message = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), cancel_answer = "")
-		return
-	finish()
-
-/datum/om/flow/drone_shell/proc/plating_picked(datum/om/prompt/choice/ask)
-	plating = ask.choice
-	finish()
-
-/datum/om/flow/drone_shell/proc/finish()
-	var/mob/living/silicon/robot/drone/D = actor
-	D.icon_state = shell_state
-	D.shell_accessories = null
+/mob/living/silicon/robot/drone/proc/shell_customize_finish(shell_state, eyes, plating)
+	set_icon_state(shell_state)
+	var/list/accessories
 	if(eyes)
-		LAZYADD(D.shell_accessories, "[shell_state]-eyes-[eyes]")
+		LAZYADD(accessories, "[shell_state]-eyes-[eyes]")
 	if(plating)
-		LAZYADD(D.shell_accessories, "[shell_state]-shell-[plating]")
-	D.can_pick_shell = FALSE
-	D.update_icon()
+		LAZYADD(accessories, "[shell_state]-shell-[plating]")
+	set_shell_accessories(accessories)
+	set_can_pick_shell(FALSE)
 
-/datum/interaction/ability/self/robot_pick_shell
-	id = ABILITY_ID_ROBOT_PICK_SHELL
-	name = "Customize appearance"
-	category = ABILITY_CAT_UTILITY
-	requires = list(REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell, "you already selected a shell or this drone type isn't customizable"))
-	effect = /mob/living/silicon/robot/drone/proc/dq_do_pick_shell
+MSG_DEF_SELF(drone_ability/shell_picked, "you already selected a shell or this drone type isn't customizable")
 
-/datum/interaction/ability/self/robot_pick_shell/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/drone)
+CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 
-/mob/living/silicon/robot/drone/proc/dq_pred_can_pick_shell(mob/living/silicon/robot/drone/actor, atom/target, obj/item/held)
-	return actor.can_pick_shell || "you already selected a shell or this drone type isn't customizable"
+/datum/capability/def/drone_shell/entries()
+	return list(
+		op("pick_shell", label("Customize appearance"), menu(button = "Customize appearance", bind = "ability_robot_pick_shell"),
+			when(req_self()), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/drone, can_pick_shell_now), because = MSG(drone_ability/shell_picked))),
+			asks(/datum/prompt/choice, fields = list("title" = "Customize Shell", "question" = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "choices" = computed(TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_choices))), step = "shell"),
+			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select eye color:", "choices" = list("blue", "red", "orange", "green", "violet")), step = "eyes", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_eyes)),
+			asks(/datum/prompt/choice, fields = list("title" = "Eye Color", "question" = "Select plating color:", "choices" = list("blue", "red", "orange", "green", "brown")), step = "plating", when = TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_has_plating)),
+			on_interrupt(TYPE_PROC_REF(/mob/living/silicon/robot/drone, shell_cancelled)),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/drone, ability_pick_shell))))
+
+/mob/living/silicon/robot/drone/proc/can_pick_shell_now(datum/act/op/A)
+	return (can_pick_shell) ? null : /datum/msg/req_failed
+
+/// A drone is never named by its player.
+/mob/living/silicon/robot/drone/may_pick_name()
+	return FALSE
 
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, /obj/item/clothing/head, PROC_REF(drone_interaction_hat), "Put on hat", REQ_FIELD_NOT("hat")))
+CAPABILITIES(/mob/living/silicon/robot/drone)
+	configure(mob_kind(can_be_antagged = FALSE))
+	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))
+	rolls(nameof(serial_number), range_of(0, 999))
+	// a drone that may pick its shell starts in a random one, its eyes to match
+	rolls(nameof(icon_state), PROC_REF(roll_shell), when = nameof(can_pick_shell))
+	rolls(nameof(shell_accessories), PROC_REF(roll_shell), from = list(nameof(icon_state)), when = nameof(can_pick_shell))
+	drone_shell()
+	drone_mail()
+	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_PART + 1), wait(0), needs(req(PROC_REF(sealed_refusal)))) // ahead of the chassis pry: a drone is sealed
 
-/// Old attackby, in help: a hat goes on the drone, before the cyborg item handling.
-/mob/living/silicon/robot/drone/proc/drone_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
+/// Its shell and the eyes that go with it (rolls()).
+/mob/living/silicon/robot/drone/proc/roll_shell(datum/roller/R, target)
+	if(target == "shell_accessories")
+		return list("[icon_state]-eyes-blue")
+	var/list/shells = shell_types
+	return shells[R.choose(shells)]
+
+/// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
+/mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)
+	if(hat)
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.unEquip(held)
 	place_on_head(held)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% on %T%."), item = held)
-	return TRUE
 
 /// Drones' wiring is always reachable.
 /mob/living/silicon/robot/drone/can_rewire()
@@ -288,9 +281,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 		request_player()
 	return TRUE
 
-/mob/living/silicon/robot/drone/crowbar_act(mob/user, obj/item/tool)
-	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
-	return ITEM_INTERACT_BLOCKING
+/// A drone's case is hermetically sealed: a crowbar never opens it.
+/mob/living/silicon/robot/drone/proc/sealed_refusal(datum/act/op/A)
+	return "\the [src] is hermetically sealed; you can't open the case"
 
 /mob/living/silicon/robot/drone/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!client || stat == DEAD)
@@ -343,7 +336,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	clear_supplied_laws(1)
 	clear_inherent_laws(1)
 	clear_ion_laws(1)
-	own_set(src, nameof(laws), new law_type)
+	rel_set(src, nameof(laws), new law_type)
 
 //Reboot procs.
 
@@ -357,26 +350,19 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
 	if(!C || jobban_isbanned(C,JOB_CYBORG))	return
-	om_ask(C, /datum/om/prompt/choice/drone_reboot, PROC_REF(question_answered))
+	open_request(src, /datum/prompt/choice, PROC_REF(question_answered), answerer = C.mob, valid = PROC_REF(question_askable), title = "Maintenance drone reboot", question = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", choices = list("Yes", "No", "Never for this round"), buttons = TRUE, timeout = 0)
 
-/// A ghost is offered a rebooting drone. Re-checked on the answer: still has a client, and
-/// the drone is still unoccupied.
-/datum/om/prompt/choice/drone_reboot
-	title = "Maintenance drone reboot"
-	message = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?"
-	buttons = TRUE
+/// A ghost is offered a rebooting drone. Re-checked on the answer: still has a client, and the drone is still unoccupied.
+/mob/living/silicon/robot/drone/proc/question_askable(datum/request/R)
+	var/mob/answerer = R.answerer
+	return answerer.client && !ckey
 
-/datum/om/prompt/choice/drone_reboot/prepare()
-	choices = list("Yes", "No", "Never for this round")
-	return TRUE
-
-/datum/om/prompt/choice/drone_reboot/valid()
-	var/mob/living/silicon/robot/drone/D = subject
-	return (!answerer.client || D.ckey) ? "taken" : null
-
-/mob/living/silicon/robot/drone/proc/question_answered(datum/om/prompt/choice/drone_reboot/ask)
-	var/client/C = ask.answerer.client
-	var/response = ask.choice
+/mob/living/silicon/robot/drone/proc/question_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/answerer = A.request.answerer
+	var/client/C = answerer.client
+	var/response = A.answer.value
 	if(response == "Yes")
 		transfer_personality(C)
 	else if (response == "Never for this round")
@@ -403,10 +389,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	to_chat(src, span_infoplain("Use " + span_bold("say ;Hello") + " to talk to other drones and " + span_bold("say Hello") + " to speak silently to your nearby fellows."))
 
 /mob/living/silicon/robot/drone/add_robot_verbs()
-	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in silicon_subsystems)
+		grant(src, granted_verb(granted_path), src)
 
 /mob/living/silicon/robot/drone/remove_robot_verbs()
-	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in silicon_subsystems)
+		revoke(src, granted_verb(granted_path), src)
 
 /mob/living/silicon/robot/drone/construction/welcome_drone()
 	to_chat(src, span_infoplain(span_bold("You are a construction drone, an autonomous engineering and fabrication system") + "."))
@@ -416,9 +404,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 
 /mob/living/silicon/robot/drone/construction/setup_module()
 	..()
-	flavor_text = "It's a bulky construction drone stamped with a Sol Central glyph."
+	bio.flavor_text = "It's a bulky construction drone stamped with a Sol Central glyph."
 
 /mob/living/silicon/robot/drone/mining/setup_module()
 	..()
-	flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
+	bio.flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
 

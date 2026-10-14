@@ -21,7 +21,7 @@
 	victim.fire_act() // Burn them.
 
 /datum/blob_type/blazing_oil/on_water(obj/structure/blob/B, amount)
-	om_after(B, 1, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), -(amount * 5))
+	after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), with = list(-(amount * 5)))
 
 /datum/blob_type/blazing_oil/on_pulse(obj/structure/blob/B)
 	var/turf/T = get_turf(B)
@@ -29,7 +29,7 @@
 		return
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(10 * 1000)
+		heat_add(env, 10 * 1000, HEAT_SOURCE_OTHER)
 
 /datum/blob_type/blazing_oil/on_chunk_tick(obj/item/blobcore_chunk/B)
 	B.reagents.add_reagent(REAGENT_ID_THERMITEV, 0.5)
@@ -39,7 +39,7 @@
 		return
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(10 * 1000)
+		heat_add(env, 10 * 1000, HEAT_SOURCE_OTHER)
 
 /datum/blob_type/blazing_oil/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	user.apply_body_effect(/datum/body_effect/exothermic, 5 MINUTES)

@@ -41,7 +41,7 @@
 
 /mob/living/simple_mob/vore/scrubble/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Despite the small size of the scrubble, it seems to have a lot of energy behind it. The critter dives atop you in a panic, its maw quickly engulfing your head as its paws flail scrabble against you, hot slobber slathering across your tightly trapped face. It takes a little repositioning to get itself in the right position, but soon the creature is gulping its way down your entire body. Somehow it manages to squeeze you completely into a gut that should rightly be far too small for anything but a mouse, bundling up your body into a tight ball as the walls around you clench in tightly to keep you nice and compact. The sounds of burbling and glorping echo through the intensely tight space as the stomach lining grinds in thick oozes against your skin, pressure so high that you can barely move a muscle."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -71,7 +71,7 @@
 /mob/living/simple_mob/vore/scrubble/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))

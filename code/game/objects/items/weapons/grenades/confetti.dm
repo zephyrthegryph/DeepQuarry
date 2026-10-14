@@ -5,7 +5,6 @@
 	icon_state = "grenade"
 	det_time = 20
 	item_state = "grenade"
-	slot_flags = SLOT_BELT
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
@@ -13,7 +12,9 @@
 	. = ..()
 	confetti_spread.attach(src)
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/confetti, "confetti_spread", /datum/effect/effect/system/confetti_spread)
+CAPABILITIES(/obj/item/grenade/confetti)
+	configure(item_worn(slots = SLOT_BELT))
+	owns_one(nameof(confetti_spread), /datum/effect/effect/system/confetti_spread, starts = /datum/effect/effect/system/confetti_spread)
 
 /obj/item/grenade/confetti/detonate() //Find a good confetti firework or pop sound effect later
 	start_effect_sprayer(confetti_spread, confetti_strength, 'sound/effects/snap.ogg')
@@ -25,7 +26,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/confetti, "confetti_spread", /datum/effe
 	icon_state = "party_ball"
 	confetti_strength = 2
 	det_time = 1
-	throwforce = 0 //Confetti cannon is only fun to shoot at people if it deals no damage.
+
+CAPABILITIES(/obj/item/grenade/confetti/party_ball)
+	configure(item_thrown(force = 0))
 
 /obj/item/grenade/confetti/party_ball/detonate() //Could condense this by making the sound a variable in the parent but I'm lazy.
 	start_effect_sprayer(confetti_spread, confetti_strength, 'sound/effects/confetti_ball.ogg')

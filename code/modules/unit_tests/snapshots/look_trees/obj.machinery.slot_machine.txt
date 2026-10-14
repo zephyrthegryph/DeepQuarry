@@ -1,0 +1,5 @@
+/obj/machinery/slot_machine icon: icons/obj/casino_ch.dmi
+/obj/machinery/slot_machine state: slotmachine
+/obj/machinery/slot_machine dir: 2
+/obj/machinery/slot_machine overlay: icons/obj/casino_ch.dmi:slotmachine:8:#000000
+

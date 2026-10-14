@@ -5,7 +5,7 @@
 		return
 	if(isliving(am))
 		var/mob/living/L = am
-		if(L.flying)
+		if(stat_value(L, STAT_FLYING))
 			return
 	var/datum/planet/planet = find_planet()
 	if(!planet)

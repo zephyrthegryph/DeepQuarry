@@ -1,0 +1,62 @@
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Name Plushie (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Item
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Item
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Use item
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Item
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Item
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Item
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Use storage
+human|/obj/item/storage click: Click: Item
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Item
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Item
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Item
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Item

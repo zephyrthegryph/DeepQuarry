@@ -123,11 +123,26 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Most recent synchronous mannequin composition cost in milliseconds.
 	var/dq_last_preview_render_ms = 0
 
+CAPABILITIES(/datum/preferences)
+	op("save", ui_act(), then(PROC_REF(ui_act_save)))
+	op("reload", ui_act(), then(PROC_REF(ui_act_reload)))
+	op("game_prefs", ui_act(), then(PROC_REF(ui_act_game_prefs)))
+	op("cycle_background", ui_act(), then(PROC_REF(ui_act_cycle_background)))
+	owns_one(nameof(savefile), /datum/json_savefile)
+	owns_many(nameof(middleware), /datum/preference_middleware)
+	interface("PreferencesMenu", title = "Preferences", state = nameof(GLOB.tgui_always_state), forwards = nameof(middleware))
+	op("load", ui_act("load"), then(PROC_REF(ui_act_load)))
+	op("resetslot", ui_act("resetslot"), asks(/datum/prompt/choice/preference_slot_reset, fields = list("question" = "This will reset the current slot. Continue?"), step = "first", when = PROC_REF(slot_reset_open)), asks(/datum/prompt/choice/preference_slot_reset, fields = list("question" = "Are you completely sure that you want to reset this character slot?"), step = "second", when = PROC_REF(slot_reset_confirmed_once)), then(PROC_REF(ui_act_resetslot)))
+	op("copy", ui_act("copy"), then(PROC_REF(ui_act_copy)))
+	op("refresh_character_preview", ui_act("refresh_character_preview"), then(PROC_REF(ui_act_refresh_character_preview)))
+	op("set_preference", ui_act("set_preference", arg("preference", schema_text(4096)), arg("value")), then(PROC_REF(ui_act_set_preference)))
+	op("set_color_preference", ui_act("set_color_preference", arg("preference", schema_text(4096))), asks(/datum/prompt/color/prefs/entry, fields = list("question" = "Select new color", "default" = computed(PROC_REF(color_pref_default)), "preferences" = computed(PROC_REF(prefs_self)), "pref_key" = computed(PROC_REF(color_pref_key))), step = "color", when = PROC_REF(color_pref_valid)), then(PROC_REF(ui_act_set_color_preference)))
+
 /datum/preferences/New(client/C)
 	rel_set(src, nameof(client), C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		own_add(src, nameof(middleware), new middleware_type(src))
+		rel_add(src, nameof(middleware), new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey
@@ -193,7 +208,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	dq_open_requested_at = REALTIMEOFDAY
 	tgui_interact(user)
 	if(!character_preview_b64)
-		om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy))
+		after(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy), key = "preferences_preview_lazy")
 
 // asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG
@@ -225,8 +240,8 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	for(var/dir_key in dirs)
 		var/dir = dirs[dir_key]
 		mannequin.set_dir(dir)
-		mannequin.update_tail_showing()
-		mannequin.ImmediateOverlayUpdate()
+		// A human draws through the refresh queue, which waits for the next frame: draw this look now so the flatten reads it, not the last one.
+		draw_now(mannequin)
 		if(!force_sync)
 			var/list/flat_result = flattener.flatten(mannequin, dir)
 			if(flat_result && !flattener.unsupported)
@@ -284,17 +299,18 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	// mutation / underwear / hair passes that aren't part of the hook.
 	character.force_update_organs()
 
-	if(icon_updates)
-		character.update_icons_body()
-		character.update_mutations()
-		character.update_underwear()
-		character.update_hair()
-
 /datum/preferences/proc/open_load_dialog(mob/user)
-	if(selecting_slots)
+	return slot_dialog_stage(user, FALSE)
+
+/datum/preferences/proc/open_copy_dialog(mob/user)
+	return slot_dialog_stage(user, TRUE)
+
+/datum/preferences/proc/slot_dialog_stage(mob/user, copying, selected = null, confirmation = null, continuing = FALSE)
+	if(!continuing && selecting_slots)
 		to_chat(user, span_warning("You already have a slot selection dialog open!"))
 		return
-	if(!savefile)
+	if(!savefile || !ismob(user) || QDELETED(user))
+		selecting_slots = FALSE
 		return
 
 	var/default
@@ -314,72 +330,43 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 			default = "[name][nickname ? " ([nickname])" : ""]"
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
-	selecting_slots = TRUE
-	var/choice = rerun_ask(user, "k375", PROC_REF(open_load_dialog), args, /datum/om/prompt/choice, message = "Select a character to load:", title = "Load Slot", choices = charlist, default = default)
-	if(isnull(choice))
+	if(isnull(selected))
+		selecting_slots = TRUE
+		var/datum/request/opened = open_request(src, /datum/prompt/choice/preferences_slot_dialog, PROC_REF(slot_dialog_answered), answerer = user, copying = copying, question = copying ? "Select a character to COPY TO:" : "Select a character to load:", title = copying ? "Copy Slot" : "Load Slot", choices = charlist, default = copying ? null : default)
+		if(!opened || !opened.is_open())
+			selecting_slots = FALSE
+		return
+	if(!selected)
+		selecting_slots = FALSE
+		return
+	var/slotnum = charlist[selected]
+	if(!slotnum)
+		selecting_slots = FALSE
+		log_world("## ERROR Player picked [selected] slot to [copying ? "copy to" : "load"], but that wasn't one we sent.")
+		return
+	if(copying && isnull(confirmation))
+		var/datum/request/opened_confirmation = open_request(src, /datum/prompt/choice/preferences_slot_confirmation, PROC_REF(slot_confirmation_answered), answerer = user, selected_label = selected, question = "Are you sure you want to override slot [slotnum], [selected]'s savedata?")
+		if(!opened_confirmation || !opened_confirmation.is_open())
+			selecting_slots = FALSE
 		return
 	selecting_slots = FALSE
-	if(!choice)
-		return
-
-	var/slotnum = charlist[choice]
-	if(!slotnum)
-		log_world("## ERROR Player picked [choice] slot to load, but that wasn't one we sent.")
-		return
-
-	load_preferences(TRUE)
-	load_character(slotnum)
-	user.client?.prefs_vr.load_vore()
-	sanitize_preferences()
-	save_preferences()
-	ShowChoices(user)
-
-/datum/preferences/proc/open_copy_dialog(mob/user)
-	if(selecting_slots)
-		to_chat(user, span_warning("You already have a slot selection dialog open!"))
-		return
-	if(!savefile)
-		return
-
-	var/list/charlist = list()
-
-	for(var/i in 1 to CONFIG_GET(number/character_slots))
-		var/list/save_data = savefile.get_entry("character[i]", list())
-		var/name = save_data["real_name"]
-		var/nickname = save_data["nickname"]
-
-		if(!name)
-			name = "[i] - \[Unused Slot\]"
-		else if(i == default_slot)
-			name = "►[i] - [name]"
-		else
-			name = "[i] - [name]"
-
-		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
-
-	selecting_slots = TRUE
-	var/choice = rerun_ask(user, "k416", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice, message = "Select a character to COPY TO:", title = "Copy Slot", choices = charlist)
-	if(isnull(choice))
-		return
-	selecting_slots = FALSE
-	if(!choice)
-		return
-
-	var/slotnum = charlist[choice]
-	if(!slotnum)
-		log_world("## ERROR Player picked [choice] slot to copy to, but that wasn't one we sent.")
-		return
-
-	var/_answer_k426 = rerun_ask(user, "k426", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to override slot [slotnum], [choice]'s savedata?", title = "Confirm Override", choices = list("No", "Yes"))
-	if(isnull(_answer_k426))
-		return
-	if(_answer_k426 == "Yes")
+	if(copying)
+		if(confirmation != "Yes")
+			return
 		overwrite_character(slotnum)
 		save_character(TRUE)
 		save_preferences()
 		load_preferences(TRUE)
 		load_character()
 		user.client?.prefs_vr.load_vore()
+		ShowChoices(user)
+
+	else
+		load_preferences(TRUE)
+		load_character(slotnum)
+		user.client?.prefs_vr.load_vore()
+		sanitize_preferences()
+		save_preferences()
 		ShowChoices(user)
 
 // vanity_copy_to rewritten to ride the same /datum/preference apply pipeline as
@@ -479,7 +466,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 									/datum/trait/neutral/micro_size_up)
 	if(character.species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
-		var/datum/species/own_species = proto_private(character, nameof(character.species))
+		var/datum/species/own_species = rel_private(character, nameof(character.species))
 		own_species.micro_size_mod = 0
 		own_species.icon_scale_x = 1
 		own_species.icon_scale_y = 1
@@ -489,7 +476,8 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 				if(!instance)
 					continue
 				for(var/key, value in instance.var_changes)
-					own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
+					if(!own_species.set_acceptance_shape_field(key, value))
+						own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
 	character.update_transform()
 
 	// Snowflake shapeshifter bodytype derivation — this is what makes vanity_copy_to
@@ -504,13 +492,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	else
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
-	var/datum/species/private_species = proto_private(character, nameof(character.species)) // PROTO: private copy
-	private_species.base_species = bodytype_selected
+	var/datum/species/private_species = rel_private(character, nameof(character.species)) // PROTO: private copy
+	private_species.set_base_species(bodytype_selected)
 	private_species.icobase = private_species.get_icobase()
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)
 	private_species.vanity_base_fit = bodytype_selected
 	if(istype(character.species, /datum/species/shapeshifter))
-		GLOB.wrapped_species_by_ref["\ref[character]"] = bodytype_selected
+		character.set_wrapped_bodytype(bodytype_selected)
 
 	// Finalize: same post-apply work the /datum/preference_apply_hook/finalize hook does.
 	for(var/obj/item/clothing/O in contents_of(character))
@@ -518,7 +506,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	if(character.dna)
 		character.dna.ResetUIFrom(character)
 	character.force_update_limbs()
-	character.regenerate_icons()
 
 	PREF_TRANSACTION_END(src)
 
@@ -545,7 +532,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		to_chat(src, "You are now catchable.")
 	if(L && istype(L))
 		L.capture_crystal = !cur
-	GLOB.character_setup_service.queue_preferences_save(prefs)
+	SScharacter_setup.queue_preferences_save(prefs)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -553,3 +540,42 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 /// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client
 	return client
+
+/datum/prompt/choice/preferences_slot_dialog
+	timeout = 0
+	recheck_on_open = TRUE
+	var/copying = FALSE
+
+/datum/prompt/choice/preferences_slot_dialog/recheck_extra()
+	var/datum/preferences/preferences = owner
+	var/mob/user = answerer
+	return !istype(preferences) || QDELETED(preferences) || !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/choice/preferences_slot_confirmation
+	title = "Confirm Override"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	var/selected_label
+
+/datum/prompt/choice/preferences_slot_confirmation/recheck_extra()
+	var/datum/preferences/preferences = owner
+	var/mob/user = answerer
+	return !istype(preferences) || QDELETED(preferences) || !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/preferences/proc/slot_dialog_answered(datum/act/request/context)
+	if(!context.answer)
+		selecting_slots = FALSE
+		return
+	var/datum/prompt/choice/preferences_slot_dialog/ask = context.answer
+	slot_dialog_stage(ask.answerer, ask.copying, ask.value, continuing = TRUE)
+	SStgui.update_uis(src)
+
+/datum/preferences/proc/slot_confirmation_answered(datum/act/request/context)
+	if(!context.answer)
+		selecting_slots = FALSE
+		return
+	var/datum/prompt/choice/preferences_slot_confirmation/ask = context.answer
+	slot_dialog_stage(ask.answerer, TRUE, ask.selected_label, ask.value, TRUE)
+	SStgui.update_uis(src)

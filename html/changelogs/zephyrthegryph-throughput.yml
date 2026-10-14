@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze gen parses the semantic model once per run and returns at once when nothing changed; analyze look-keys is 3x faster cold and replans a one-file edit in seconds"
+  - code_imp: "Machine-wide build slots (tools/dq_machine_slots.sh): DM compiles, test worlds, cargo builds and look pins are capped across worktrees, the merge worktree first"
+  - code_imp: "The analyzer is built in each worktree's own target (a shared cargo target let one worktree link another's library)"
+  - code_imp: "tools/dq_lane_ready.sh stamps a finished lane; the merge gates run the production build, the ratchets and one test world side by side and test only lanes with a stale stamp plus a smoke set"
+  - code_imp: "dq_focused_test.sh refuses to rerun an identical list on an identical tree (--rerun-failed, --force) and a detached run that exits early is marked failed"

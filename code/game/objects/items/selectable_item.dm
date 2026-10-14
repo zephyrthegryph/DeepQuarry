@@ -11,25 +11,31 @@
 TYPE_TABLE_DECLARE(/obj/item/selectable_item, selectable_item_options, list("Gift" = /obj/item/a_gift, \
 									"Health Analyzer" = /obj/item/healthanalyzer))
 
-DECLARE_INTERACTIONS(/obj/item/selectable_item, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/selectable_item)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/selectable_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(preface_confirmed), title = preface_title, message = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/obj/item/selectable_item/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/yes_no, PROC_REF(preface_confirmed), answerer = user, title = preface_title, question = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/selectable_item/proc/preface_confirmed(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(item_selected), title = selection_title, message = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(item_selected), answerer = A.request.answerer, title = selection_title, question = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/selectable_item/proc/item_selected(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[ask.choice]
+/obj/item/selectable_item/proc/item_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.value]
 	if(chosen_item)
-		user.drop_item()
+		if(!consume(src, user))
+			return
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)
 		result.add_fingerprint(user)
-		consume(src, user)
 	return
 
 

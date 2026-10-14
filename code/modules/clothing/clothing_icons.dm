@@ -15,6 +15,10 @@
 	var/image/standing = ..()
 	if(light_on && slot_name == slot_head_str)
 		var/cache_key = "[light_overlay][LAZYACCESS(sprite_sheets, body_type) ? "_[body_type]" : ""]"
+		if(standing && !GLOB.light_overlay_cache[cache_key])
+			// The species' own sheet when the helmet has one for it (it holds the lamp state), else the shared worn lamp.
+			var/lamp_icon = LAZYACCESS(sprite_sheets, body_type) || 'icons/mob/light_overlays.dmi'
+			GLOB.light_overlay_cache[cache_key] = look_cached_image("[light_overlay]-worn-[lamp_icon]", lamp_icon, light_overlay)
 		if(standing && GLOB.light_overlay_cache[cache_key])
 			standing.add_overlay(GLOB.light_overlay_cache[cache_key])
 	return standing
@@ -23,7 +27,7 @@
 /obj/item/clothing/suit/apply_blood(image/standing)
 	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		blood_sprite_state = "[blood_overlay_type]blood"
+		set_blood_sprite_state("[blood_overlay_type]blood")
 		var/image/bloodsies	= image(icon = H.species.get_blood_mask(H), icon_state = blood_sprite_state)
 		bloodsies.color		= dq_get_blood_color(src)
 		standing.add_overlay(bloodsies)
@@ -32,6 +36,6 @@
 /obj/item/clothing/shoes/apply_blood(image/standing)
 	if(forensic_data?.has_blooddna() && blood_sprite_state && ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		var/image/bloodsies	= image(icon = H.digitigrade ? 'icons/mob/human_races/masks/blood_digitigrade.dmi' : H.species.get_blood_mask(H), icon_state = blood_sprite_state)
+		var/image/bloodsies	= image(icon = H.looks.digitigrade ? 'icons/mob/human_races/masks/blood_digitigrade.dmi' : H.species.get_blood_mask(H), icon_state = blood_sprite_state)
 		bloodsies.color		= dq_get_blood_color(src)
 		standing.add_overlay(bloodsies)

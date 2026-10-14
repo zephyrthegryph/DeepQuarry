@@ -7,7 +7,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	volume = 80
 
 	var/bitesize = 1
@@ -50,16 +49,18 @@
 	/// Sound of eating.
 	var/eating_sound = SFX_ITEMS_EATFOOD
 
+	/// What it says when it is emptied into an open container held to it (a /datum/msg type), or null: it is not (an egg is cracked, a fruit torn open).
+	var/opens_into
+
 	/// Yems.
 	food_can_insert_micro = TRUE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/reagent_containers/food/snacks/Initialize(mapload)
-	. = ..()
-	if(nutriment_amt)
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT,(nutriment_amt*2),nutriment_desc)
+/// The nutriment a snack starts with: two units per point of `nutriment_amt`.
+/obj/item/reagent_containers/food/snacks/proc/nutriment_units()
+	return nutriment_amt * 2
 
 //Placeholder for effect that trigger on eating that aren't tied to reagents.
 /obj/item/reagent_containers/food/snacks/proc/On_Consume(mob/living/eater, mob/living/feeder)
@@ -90,7 +91,7 @@
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume)
@@ -99,15 +100,15 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && eater.vore_selected)
+		if(possessed_voice && possessed_voice.len && eater.vore_prefs.can_be_drop_pred && eater.vore_prefs.food_vore && vore_selected_of(eater))
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
-			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
+				consumed(V, eater)
+			if(!move_into(vore_selected_of(eater), BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
@@ -117,238 +118,13 @@
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 					own_take_member(src, nameof(possessed_voice), V)
-					qdel(V)
+					consumed(V, eater)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
 				own_take_member(src, nameof(possessed_voice), V)
-				qdel(V)
-		qdel(src)
-
-/// Old attack_self. Subtypes with special_handling do their own self-use (their candidates run first).
-/obj/item/reagent_containers/food/snacks/proc/snacks_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	if(package && !user.incapacitated())
-		unpackage(user)
-
-	if(canned && !user.incapacitated())
-		uncan(user)
-	return TRUE
-
-/obj/item/reagent_containers/food/snacks/attack(mob/living/eater, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(reagents && !reagents.total_volume)
-		balloon_alert(user, "none of \the [src] left!")
-		consume(src, user)
-		return ITEM_INTERACT_FAILURE
-
-	if(package)
-		balloon_alert(user, "the package is in the way!")
-		return ITEM_INTERACT_FAILURE
-
-	if(canned)
-		balloon_alert(user, "the can is closed!")
-		return ITEM_INTERACT_FAILURE
-
-	if(istype(eater, /mob/living/carbon))
-		//TODO: replace with standard_feed_mob() call.
-
-		if(!eater.consume_liquid_belly)
-			if(liquid_belly_check())
-				to_chat(user, span_infoplain("[user == eater ? "You can't" : "\The [eater] can't"] consume that, it contains something produced from a belly!"))
-				return ITEM_INTERACT_FAILURE
-		var/swallow_whole = FALSE
-		var/obj/belly/belly_target				// These are surprise tools that will help us later
-
-		var/fullness = eater.nutrition + (eater.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 25)
-		if(eater == user)								//If you're eating it yourself
-			if(ishuman(eater))
-				var/mob/living/carbon/human/human_eater = eater
-				if(!human_eater.check_has_mouth())
-					balloon_alert(user, "you don't have a mouth!")
-					return ITEM_INTERACT_FAILURE
-				var/obj/item/blocked = null
-				if(survivalfood)
-					blocked = human_eater.check_mouth_coverage_survival()
-				else
-					blocked = human_eater.check_mouth_coverage()
-				if(blocked)
-					balloon_alert(user, "\the [blocked] is in the way!")
-					return ITEM_INTERACT_FAILURE
-
-			user.setClickCooldown(user.get_attack_speed(src)) //puts a limit on how fast people can eat/drink things
-			// Changing a lot of the to_chat ahead
-			if (fullness <= 50)
-				to_chat(eater, span_danger("You hungrily chew out a piece of [src] and gobble it!"))
-			if (fullness > 50 && fullness <= 150)
-				to_chat(eater, span_notice("You hungrily begin to eat [src]."))
-			if (fullness > 150 && fullness <= 350)
-				to_chat(eater, span_notice("You take a bite of [src]."))
-			if (fullness > 350 && fullness <= 550)
-				to_chat(eater, span_notice("You chew a bit of [src], despite feeling rather full."))
-			if (fullness > 550 && fullness <= 650)
-				to_chat(eater, span_notice("You swallow some more of the [src], causing your belly to swell out a little."))
-			if (fullness > 650 && fullness <= 1000)
-				to_chat(eater, span_notice("You stuff yourself with the [src]. Your stomach feels very heavy."))
-			if (fullness > 1000 && fullness <= 3000)
-				to_chat(eater, span_notice("You swallow down the hunk of [src]. Surely you have to have some limits?"))
-			if (fullness > 3000 && fullness <= 5500)
-				to_chat(eater, span_danger("You force the piece of [src] down. You can feel your stomach getting firm as it reaches its limits."))
-			if (fullness > 5500 && fullness <= 6000)
-				to_chat(eater, span_danger("You glug down the bite of [src], you are reaching the very limits of what you can eat, but maybe a few more bites could be managed..."))
-			if (fullness > 6000) // There has to be a limit eventually.
-				to_chat(eater, span_danger("Nope. That's it. You literally cannot force any more of [src] to go down your throat. It's fair to say you're full."))
-				return ITEM_INTERACT_FAILURE
-
-		else if(stance == I_HURT)
-			return ..()
-
-		else
-			if(ishuman(eater))
-				var/mob/living/carbon/human/human_eater = eater
-				if(!human_eater.check_has_mouth())
-					balloon_alert(user, "\the [human_eater] doesn't have a mouth!")
-					return ITEM_INTERACT_FAILURE
-				var/obj/item/blocked = null
-				var/unconcious = FALSE
-				blocked = human_eater.check_mouth_coverage()
-				if(survivalfood)
-					blocked = human_eater.check_mouth_coverage_survival()
-					if(human_eater.stat && human_eater.check_mouth_coverage())
-						unconcious = TRUE
-						blocked = human_eater.check_mouth_coverage()
-
-				if(isliving(user))	// We definitely are, but never hurts to check
-					var/mob/living/feeder = user
-					swallow_whole = feeder.stuffing_feeder
-				if(swallow_whole)
-					var/_answer_k227 = rerun_ask(user, "k227", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = human_eater.feedable_bellies())
-					if(isnull(_answer_k227))
-						return TRUE
-					belly_target = _answer_k227
-
-				if(unconcious)
-					to_chat(user, span_warning("You can't feed [human_eater] through \the [blocked] while they are unconcious!"))
-					return ITEM_INTERACT_FAILURE
-
-				if(blocked)
-					balloon_alert(user, "\the [blocked] is in the way!")
-					return ITEM_INTERACT_FAILURE
-
-				if(swallow_whole)
-					if(!(human_eater.feeding))
-						balloon_alert(user, "you can't feed [human_eater] a whole [src] as they refuse to be fed whole things!")
-						return ITEM_INTERACT_FAILURE
-					if(!belly_target)
-						balloon_alert(user, "you can't feed [human_eater] a whole [src] as they don't appear to have a belly to fit it!")
-						return ITEM_INTERACT_FAILURE
-
-				if(swallow_whole)
-					user.balloon_alert_visible("[user] attempts to make [human_eater] consume [src] whole into their [belly_target].")
-				else
-					user.balloon_alert_visible("[user] attempts to feed [human_eater] [src].")
-
-				var/feed_duration = 3 SECONDS
-				if(swallow_whole)
-					feed_duration = 5 SECONDS
-
-				user.setClickCooldown(user.get_attack_speed(src))
-				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, duration = feed_duration, swallow_whole = swallow_whole, belly_target = belly_target)
-				return ITEM_INTERACT_SUCCESS
-
-			else
-				balloon_alert(user, "this creature does not seem to have a mouth!")
-				return ITEM_INTERACT_FAILURE
-
-		return finish_feeding(eater, user, swallow_whole, belly_target)
-	else if(isliving(eater) && user.stuffing_feeder)
-		var/swallow_whole = user.stuffing_feeder
-		var/obj/belly/belly_target
-		if(swallow_whole)
-			var/_answer_k268 = rerun_ask(user, "k268", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = eater.feedable_bellies())
-			if(isnull(_answer_k268))
-				return TRUE
-			belly_target = _answer_k268
-			if(!(eater.feeding))
-				to_chat(user, "You can't feed [eater] a whole [src] as they refuse to be fed whole things!")
-				balloon_alert(user, "they refuse to be fed whole things!")
-				return
-			if(!belly_target)
-				to_chat(user, "You can't feed [eater] a whole [src] as they don't appear to have a belly to fit it!")
-				balloon_alert(user, "they don't have a belly to fit it!")
-				return
-			act_message(user, eater, others = "%U% attempts to make %T% consume [src] whole into their [belly_target].")
-			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
-			var/feed_duration = 3 SECONDS
-			user.setClickCooldown(user.get_attack_speed(src))
-			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, duration = feed_duration, belly_target = belly_target)
-			return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/datum/om/task/timed/snacks_feed_whole
-	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_whole_done
-	var/obj/belly/belly_target
-
-/obj/item/reagent_containers/food/snacks/proc/feed_whole_done(datum/om/task/timed/snacks_feed_whole/task)
-	var/mob/living/eater = task.target
-	var/mob/living/user = task.actor
-	var/obj/belly/belly_target = task.belly_target
-	add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-	act_message(user, src, others = "%U% successfully forces %T% into [eater]'s [belly_target].")
-	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
-	user.drop_item()
-	if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
-		forceMove(get_turf(user))
-
-/datum/om/task/timed/snacks_feed_other
-	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_other_done
-	var/swallow_whole
-	var/obj/belly/belly_target
-
-/obj/item/reagent_containers/food/snacks/proc/feed_other_done(datum/om/task/timed/snacks_feed_other/task)
-	var/mob/living/carbon/human/human_eater = task.target
-	var/mob/living/user = task.actor
-	var/swallow_whole = task.swallow_whole
-	var/obj/belly/belly_target = task.belly_target
-	if(!reagents || (reagents && !reagents.total_volume))
-		return
-
-	if(swallow_whole && !belly_target)
-		return			// Just in case we lost belly mid-feed
-
-	if(swallow_whole)
-		add_attack_logs(user, human_eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-		act_message(user, src, others = "%U% successfully forces %T% into [human_eater]'s [belly_target].")
-		user.balloon_alert_visible("forces [src] into [human_eater]'s [belly_target]")
-	else
-		add_attack_logs(user, human_eater,"Fed with [src.name] containing [reagentlist(src)]", admin_notify = FALSE)
-		act_message(user, human_eater, others = "%U% feeds %T% [src].")
-		user.balloon_alert_visible("feeds [human_eater] [src].")
-	finish_feeding(human_eater, user, swallow_whole, belly_target)
-
-/// The bite (or the whole thing) goes in.
-/obj/item/reagent_containers/food/snacks/proc/finish_feeding(mob/living/eater, mob/living/user, swallow_whole, obj/belly/belly_target)
-	if(swallow_whole)
-		user.drop_item()
-		if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
-			return ITEM_INTERACT_FAILURE
-		return ITEM_INTERACT_SUCCESS
-	else if(reagents)								//Handle ingestion of the reagent.
-		playsound(eater, eating_sound, rand(10,50), 1)
-		if(reagents.total_volume)
-			var/bite_mod = 1
-			var/mob/living/carbon/human/human_eater = eater
-			if(istype(human_eater))
-				bite_mod = human_eater.species.bite_mod
-			if(reagents.total_volume > bitesize * bite_mod)
-				reagents.trans_to_mob(eater, bitesize * bite_mod, CHEM_INGEST)
-			else
-				reagents.trans_to_mob(eater, reagents.total_volume, CHEM_INGEST)
-			bitecount++
-			On_Consume(eater, user)
-		return TRUE
-	return ITEM_INTERACT_FAILURE
+				consumed(V, eater)
+		consume(src, feeder || eater)
 
 /obj/item/reagent_containers/food/snacks/examine(mob/user)
 	. = ..()
@@ -366,123 +142,167 @@
 		else
 			. += span_notice("It was bitten multiple times!")
 
-/// Old attackby. FALSE falls to the food handling where the old code called ..().
-/obj/item/reagent_containers/food/snacks/proc/snacks_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/storage))
-		return FALSE // -> food, then item/attackby()
+// A snack is eaten a bite at a time (edible()): by whoever holds it, fed to somebody else, or swallowed whole by the one who is stuffed with it. A wrapped one
+// is unwrapped and a sealed one opened by using it in hand. A loaf is sliced by an edged thing on a table or a tray, and anything small enough (and a knife
+// off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
+// is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(item_combat(force = 0))
+	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
+	edible( 
+		bite = nameof(bitesize),
+		taken = nameof(bitecount),
+		sound = nameof(eating_sound),
+		survival = nameof(survivalfood),
+		shut = list(nameof(package) = MSG(edible/wrapped), nameof(canned) = MSG(edible/sealed)))
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	op("unwrap", in_hand(), when(PROC_REF(is_wrapped)), label("Unwrap it"), then(PROC_REF(unwrapped)))
+	op("open_can", in_hand(), priority(OP_PRIORITY_NORMAL + 1), when(PROC_REF(is_sealed)), label("Open it"), then(PROC_REF(can_opened)))
+	op("scoop", item(/obj/item/material/kitchen/utensil), priority(OP_PRIORITY_PART + 1), label("Scoop up"), then(PROC_REF(scooped)), passes())
+	op("slice", item(/obj/item), priority(OP_PRIORITY_PART), when(PROC_REF(is_cut_by_held)), label("Slice it"), then(PROC_REF(sliced)))
+	op("hide", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(PROC_REF(takes_hidden_item)), label("Hide it inside"),
+		asks(/datum/prompt/yes_no, fields = list("question" = "You can't slice it here. Would you like to hide the thing inside it instead?", "title" = "No Cutting Surface!")), then(PROC_REF(hidden_inside)))
+	op("coat", at_target(), priority(OP_PRIORITY_PART), when(PROC_REF(target_has_coating)), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
+	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(PROC_REF(pours_into_target)), label("Empty it into"),
+		needs(req_reagent_room(because = MSG(reagent_container/full))), costs(RES_REAGENTS, PROC_REF(pour_amount)), consumes(), says(PROC_REF(pour_message)))
 
-	// Eating with forks
-	if(istype(W,/obj/item/material/kitchen/utensil))
-		var/obj/item/material/kitchen/utensil/utensil = W
-		utensil.load_food(user, src)
-		return INTERACTION_HANDLED_PASS
+MSG_DEF(snack/crack, "You crack %I% into %T%.", "%U% cracks %I% into %T%.")
+MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% tears %I% open, pouring it into %T%.")
 
-	if(food_can_insert_micro && istype(W, /obj/item/holder))
-		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
-
-		if(package || canned)
-			to_chat(user, span_warning("You cannot stuff anything into \the [src] without opening it first."))
-			balloon_alert(user, "open \the [src] first!")
-			return INTERACTION_HANDLED_PASS
-
-		var/obj/item/holder/holder = W
-
-
-		var/mob/living/living_mob = holder.held_mob
-
-		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, nameof(holder.held_mob))
-		consume(holder, user)
-
-		to_chat(user, "Stuffed [living_mob] into \the [src].")
-		balloon_alert(user, "stuffs [living_mob] into \the [src].")
-		to_chat(living_mob, span_warning("[user] stuffs you into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	if (is_sliceable())
-		//these are used to allow hiding edge items in food that is not on a table/tray
-		var/can_slice_here = isturf(src.loc) && ((locate_within(src.loc, /obj/structure/table)) || (locate_within(src.loc, /obj/machinery/optable)) || (locate_within(src.loc, /obj/item/tray)))
-		var/hide_item = !has_edge(W) || !can_slice_here
-
-		if (hide_item)
-			if (W.w_class >= src.w_class || is_robot_module(W) || istype(W, /obj/item/holder))
-				return INTERACTION_HANDLED_PASS
-
-			var/_answer_k397 = rerun_ask(user, "k397", PROC_REF(snacks_item), args, /datum/om/prompt/choice/alert, message = "You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?", title = "No Cutting Surface!", choices = list("Yes","No"))
-			if(isnull(_answer_k397))
-				return TRUE
-			if(_answer_k397 != "Yes")
-				to_chat(user, span_warning("You cannot slice \the [src] here! You need a table or at least a tray to do it."))
-				balloon_alert(user, "you cannot slice \the [src] here! You need a table or at least a tray to do it.")
-				return INTERACTION_HANDLED_PASS
-			else
-				to_chat(user, "Slipped \the [W] inside \the [src].")
-				balloon_alert(user, "slipped \the [W] inside \the [src].")
-				user.drop_from_inventory(W, src)
-				add_fingerprint(user)
-				return INTERACTION_HANDLED_PASS
-
-		if (has_edge(W))
-			if (!can_slice_here)
-				to_chat(user, span_warning("You cannot slice \the [src] here! You need a table or at least a tray to do it."))
-				balloon_alert(user, "you need a table or at least a tray to slice it.")
-				return INTERACTION_HANDLED_PASS
-
-			var/slices_lost = 0
-			if (W.w_class > 3)
-				act_message(user, src, MSG_SELF(span_notice("You crudely slice %T% with your [W]!")), \
-					MSG_OTHERS(span_notice("%U% crudely slices %T% with [W]!")))
-				user.balloon_alert_visible("crudely slices \the [src]", "crudely sliced \the [src]")
-				slices_lost = rand(1,min(1,round(slices_num/2)))
-			else
-				act_message(user, src, MSG_SELF(span_notice("You slice %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " slices %T%!")))
-				user.balloon_alert_visible("slices \the [src]", "sliced \the [src]!")
-			var/reagents_per_slice = reagents.total_volume/slices_num
-			for(var/i=1 to (slices_num-slices_lost))
-				var/obj/slice = new slice_path (src.loc)
-				reagents.trans_to_obj(slice, reagents_per_slice)
-				if(food_inserted_micros && food_inserted_micros.len && istype(slice, /obj/item/reagent_containers/food/snacks))
-					var/obj/item/reagent_containers/food/snacks/S = slice
-					for(var/mob/living/F in food_inserted_micros)
-						F.forceMove(S)
-						own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
-			on_slice_extra()
-
-			consume(src, user)
-			return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
-	return
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_SELF(null, PROC_REF(snacks_self)), \
-	INTERACT_ITEM(null, PROC_REF(snacks_item)), \
-)
-
-/// Old MouseDrop_T.
-/obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
-	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-
-		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
-
-		to_chat(user, span_warning("You climb into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/// A snack that is still wrapped or sealed takes nobody.
+/obj/item/reagent_containers/food/snacks/stuffing_free(datum/act/op/A)
+	if(package || canned)
+		return MSG(food/closed_to_micros)
+	return ..()
 
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
 
-// things stuffed inside drop out.
-/obj/item/reagent_containers/food/snacks/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+/// It is wrapped, and its own use in hand is not something else (a type with special_handling has a use of its own).
+/obj/item/reagent_containers/food/snacks/proc/is_wrapped(datum/act/op/A)
+	return package && !special_handling
+
+/// It is sealed in a can, and its own use in hand is not something else.
+/obj/item/reagent_containers/food/snacks/proc/is_sealed(datum/act/op/A)
+	return canned && !special_handling
+
+/obj/item/reagent_containers/food/snacks/proc/unwrapped(datum/act/op/A)
+	unpackage(A.actor)
+	return OP_OK
+
+/obj/item/reagent_containers/food/snacks/proc/can_opened(datum/act/op/A)
+	uncan(A.actor)
+	return OP_OK
+
+/// A fork or spoon scoops some of it up.
+/obj/item/reagent_containers/food/snacks/proc/scooped(datum/act/op/A)
+	var/obj/item/material/kitchen/utensil/utensil = A.held
+	utensil.load_food(A.actor, src)
+	return OP_OK
+
+/// Where a loaf may be cut: it lies on a table, an operating table or a tray.
+/obj/item/reagent_containers/food/snacks/proc/on_cutting_surface()
+	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray)))
+
+/// An edged thing is held to a loaf on a cutting surface.
+/obj/item/reagent_containers/food/snacks/proc/is_cut_by_held(datum/act/op/A)
+	var/obj/item/W = A.held
+	return is_sliceable() && !istype(W, /obj/item/storage) && has_edge(W) && on_cutting_surface()
+
+/// A thing is held to a loaf that cannot be cut now (it has no edge, or it is not on a surface): it may be hidden inside when it is smaller than the loaf
+/// and is not a robot's tool or a held person.
+/obj/item/reagent_containers/food/snacks/proc/takes_hidden_item(datum/act/op/A)
+	var/obj/item/W = A.held
+	if(!is_sliceable() || istype(W, /obj/item/storage) || istype(W, /obj/item/holder) || is_robot_module(W))
+		return FALSE
+	if(has_edge(W) && on_cutting_surface())
+		return FALSE
+	return W.w_class < w_class
+
+/// The held thing slips inside the loaf.
+/obj/item/reagent_containers/food/snacks/proc/hidden_inside(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	to_chat(user, "Slipped \the [W] inside \the [src].")
+	balloon_alert(user, "slipped \the [W] inside \the [src].")
+	user.drop_from_inventory(W, src)
+	add_fingerprint(user)
+	return OP_OK
+
+/// The loaf is cut into its slices, each with its share of what it holds; a big blade loses some.
+/obj/item/reagent_containers/food/snacks/proc/sliced(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/slices_lost = 0
+	if (W.w_class > 3)
+		act_message(user, src, MSG_SELF(span_notice("You crudely slice %T% with your [W]!")), \
+			MSG_OTHERS(span_notice("%U% crudely slices %T% with [W]!")))
+		user.balloon_alert_visible("crudely slices \the [src]", "crudely sliced \the [src]")
+		slices_lost = rand(1,min(1,round(slices_num/2)))
+	else
+		act_message(user, src, MSG_SELF(span_notice("You slice %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " slices %T%!")))
+		user.balloon_alert_visible("slices \the [src]", "sliced \the [src]!")
+	var/reagents_per_slice = reagents.total_volume/slices_num
+	for(var/i=1 to (slices_num-slices_lost))
+		var/obj/slice = new slice_path (src.loc)
+		reagents.trans_to_obj(slice, reagents_per_slice)
+		if(food_inserted_micros && food_inserted_micros.len && istype(slice, /obj/item/reagent_containers/food/snacks))
+			var/obj/item/reagent_containers/food/snacks/S = slice
+			for(var/mob/living/F in food_inserted_micros)
+				F.forceMove(S)
+				rel_move(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
+	on_slice_extra()
+	consume(src, user)
+	return OP_OK
+
+/obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
+	return
+
+/// The held thing turns this into `copies` of `product` (made inside it, so what it holds spills out where it was, as the old recipes did) and says `message`;
+/// `uses_held` takes the held thing in too.
+/obj/item/reagent_containers/food/snacks/proc/turn_into(datum/act/op/A, product, message, copies = 1, uses_held = FALSE)
+	var/mob/user = A.actor
+	for(var/i in 1 to copies)
+		new product(src)
+	to_chat(user, message)
+	if(uses_held)
+		consume(A.held, user)
+	consume(src, user)
+	return OP_OK
+
+/// The clicked thing is an open container (not a food) with a coating (batter) in it.
+/obj/item/reagent_containers/food/snacks/proc/target_has_coating(datum/act/op/A)
+	var/atom/target = A.target
+	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food))
+		return FALSE
+	for(var/datum/reagent/R as anything in target.reagents.reagent_list)
+		if(istype(R, /datum/reagent/nutriment/coating))
+			return TRUE
+	return FALSE
+
+/// The snack is dipped: the first coating in the container that can be taken is drawn onto it.
+/obj/item/reagent_containers/food/snacks/proc/dipped_in_coating(datum/act/op/A)
+	var/atom/target = A.target
+	for(var/datum/reagent/R as anything in target.reagents.reagent_list)
+		if(istype(R, /datum/reagent/nutriment/coating) && apply_coating(R, A.actor))
+			break
+	return OP_OK
+
+/// Something it says when it is emptied into an open container (an egg is cracked, a fruit torn open), or null: it is not.
+/obj/item/reagent_containers/food/snacks/proc/pour_message(datum/act/op/A)
+	return opens_into
+
+/// The snack opens into the open container it is held to (a microwave is not one: it takes the snack itself).
+/obj/item/reagent_containers/food/snacks/proc/pours_into_target(datum/act/op/A)
+	var/atom/target = A.target
+	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave)
+
+/// All of it that fits.
+/obj/item/reagent_containers/food/snacks/proc/pour_amount(datum/act/op/A)
+	return min(reagents_giveable(src), reagents_takeable(A.target))
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
-	package = FALSE
+	set_package(FALSE)
 	to_chat(user, span_notice("You unwrap [src]."))
 	balloon_alert(user, "unwrapped \the [src].")
 	playsound(user,opening_sound, 15, 1)
@@ -490,17 +310,17 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 		var/obj/item/T = new package_trash
 		user.put_in_hands(T)
 	if(package_open_state)
-		icon_state = package_open_state
+		set_icon_state(package_open_state)
 		if(package_opening_state)
 			flick(package_opening_state, src)
 
 /obj/item/reagent_containers/food/snacks/proc/uncan(mob/user)
-	canned = FALSE
+	set_canned(FALSE)
 	to_chat(user, span_notice("You unseal \the [src] with a crack of metal."))
 	balloon_alert(user, "unsealed \the [src]")
 	playsound(loc,opening_sound, rand(10,50), 1)
 	if(canned_open_state)
-		icon_state = canned_open_state
+		set_icon_state(canned_open_state)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// FOOD END
@@ -514,7 +334,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	om_after(user, 5, /proc/food_finished_emote, user, !reagents?.total_volume)
+	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -556,7 +376,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	nutriment_desc = list("apples" = 3,"salad" = 5)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/aesirsalad, null, list(REAGENT_ID_DOCTORSDELIGHT = 8, REAGENT_ID_TRICORDRAZINE = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	configure(reagents(add = list(REAGENT_ID_DOCTORSDELIGHT = 8, REAGENT_ID_TRICORDRAZINE = 8)))
 
 /obj/item/reagent_containers/food/snacks/candy/donor
 	name = "Donor Candy"
@@ -566,7 +387,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/aesirsalad, null, list
 	nutriment_desc = list("candy" = 10)
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/donor, null, list(REAGENT_ID_SUGAR = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/donor)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
 /obj/item/reagent_containers/food/snacks/candy_corn
 	name = "candy corn"
@@ -580,7 +402,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/donor, null, lis
 	nutriment_desc = list("candy corn" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy_corn, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy_corn)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/chocolatebar //not a vending item
 	name = "Chocolate Bar"
@@ -593,7 +416,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy_corn, null, list
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 5)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocolatebar, null, list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolatebar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/chocolatepiece
 	name = "chocolate piece"
@@ -630,7 +454,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocolatebar, null, li
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 5)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocolateegg, null, list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocolateegg)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/donut
 	name = "donut"
@@ -645,246 +470,236 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocolateegg, null, li
 	var/overlay_state = "donut_inbox"
 
 /obj/item/reagent_containers/food/snacks/donut/plain
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "plain donut"
 	icon_state = "donut"
 	desc = "A plain ol' donut."
-/obj/item/reagent_containers/food/snacks/donut/plain/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "plain jelly donut"
 	icon_state = "jelly"
 	desc = "At least this one has jelly!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/plain/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/pink
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "pink frosted donut"
 	icon_state = "donut_pink"
 	desc = "This one has pink frosting!"
 	overlay_state = "donut_pink_inbox"
-/obj/item/reagent_containers/food/snacks/donut/pink/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/pink/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "pink frosted jelly donut"
 	icon_state = "jelly_pink"
 	desc = "This one has pink frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/pink/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/pink/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/pink/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/purple
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "purple frosted donut"
 	icon_state = "donut_purple"
 	desc = "This one has purple frosting!"
 	overlay_state = "donut_purple_inbox"
-/obj/item/reagent_containers/food/snacks/donut/purple/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/purple/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "purple frosted jelly donut"
 	icon_state = "jelly_purple"
 	desc = "This one has purple frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/purple/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/purple/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/purple/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/green
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "green frosted donut"
 	icon_state = "donut_green"
 	desc = "This one has green frosting!"
 	overlay_state = "donut_green_inbox"
-/obj/item/reagent_containers/food/snacks/donut/green/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/green/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "green frosted jelly donut"
 	icon_state = "jelly_green"
 	desc = "This one has green frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/green/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/green/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/green/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/beige
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "beige frosted donut"
 	icon_state = "donut_beige"
 	desc = "This one has beige frosting!"
 	overlay_state = "donut_beige_inbox"
-/obj/item/reagent_containers/food/snacks/donut/beige/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/beige/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "beige frosted jelly donut"
 	icon_state = "jelly_beige"
 	desc = "This one has beige frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/beige/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/beige/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/beige/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/choc
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate frosted donut"
 	icon_state = "donut_choc"
 	desc = "This one has chocolate frosting!"
 	overlay_state = "donut_choc_inbox"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc, null, list(REAGENT_ID_CHOCOLATE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/choc)
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/choc/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/choc/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate frosted jelly donut"
 	icon_state = "jelly_choc"
 	desc = "This one has chocolate frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc/jelly, null, list(REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/choc/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/choc/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/blue
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "blue frosted donut"
 	icon_state = "donut_blue"
 	desc = "This one has blue frosting!"
 	overlay_state = "donut_blue_inbox"
-/obj/item/reagent_containers/food/snacks/donut/blue/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/blue/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "blue frosted jelly donut"
 	icon_state = "jelly_blue"
 	desc = "This one has blue frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/blue/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/blue/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/blue/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/yellow
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "yellow frosted donut"
 	icon_state = "donut_yellow"
 	desc = "This one has yellow frosting!"
 	overlay_state = "donut_yellow_inbox"
-/obj/item/reagent_containers/food/snacks/donut/yellow/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/yellow/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "yellow frosted jelly donut"
 	icon_state = "jelly_yellow"
 	desc = "This one has yellow frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/yellow/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/yellow/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/yellow/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/olive
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "olive frosted donut"
 	icon_state = "donut_olive"
 	desc = "This one has olive frosting!"
 	overlay_state = "donut_olive_inbox"
-/obj/item/reagent_containers/food/snacks/donut/olive/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/olive/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "olive frosted jelly donut"
 	icon_state = "jelly_olive"
 	desc = "This one has olive frosting and a jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/olive/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/olive/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/olive/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/homer
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "frosted donut with sprinkles"
 	icon_state = "donut_homer"
 	desc = "It's a d'ohnut!"
 	overlay_state = "donut_homer_inbox"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/homer, null, list(REAGENT_ID_SPRINKLES = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/homer)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1)))
 
-/obj/item/reagent_containers/food/snacks/donut/homer/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/homer/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "frosted jelly donut with sprinkles"
 	icon_state = "jelly_homer"
 	desc = "It's a d'ohnut with jelly filling!"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/homer/jelly, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/homer/jelly)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/homer/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/choc_sprinkles
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate sprinkles donut"
 	icon_state = "donut_choc_sprinkles"
 	desc = "Mmm, chocolate with sprinkles... approaching maximum donut."
 	overlay_state = "donut_choc_sprinkles_inbox"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_CHOCOLATE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_CHOCOLATE = 1)))
 
-/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate sprinkles jelly donut"
 	icon_state = "jelly_choc_sprinkles"
 	desc = "Pretty sure this is the most sugar you can pack into a donut."
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 1)))
 
-/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/meat
 	name = "meat donut"
 	icon_state = "donut_meat"
 	desc = "This donut has ... meat? Is it made of meat?!"
 	overlay_state = "donut_meat_inbox"
-/obj/item/reagent_containers/food/snacks/donut/meat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 3, nutriment_desc)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/meat)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3), data = list(REAGENT_ID_PROTEIN = nameof(nutriment_desc))))
 
 /obj/item/reagent_containers/food/snacks/donut/laugh
+	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "laugh donut"
 	icon_state = "donut_laugh"
 	desc = "Try not to laugh."
 	overlay_state = "donut_laugh_inbox"
-/obj/item/reagent_containers/food/snacks/donut/laugh/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/laugh/jelly
+	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "laugh jelly donut"
 	icon_state = "jelly_laugh"
 	desc = "Try not to be jelly."
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-/obj/item/reagent_containers/food/snacks/donut/laugh/jelly/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/chaos
 	name = "Chaos Donut"
@@ -895,48 +710,37 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly, nul
 	bitesize = 10
 	overlay_state = "donut_chaos_inbox"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/chaos, null, list(REAGENT_ID_SPRINKLES = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/chaos)
+	rolls(nameof(chaos_filling), pick_one(list(REAGENT_ID_NUTRIMENT, REAGENT_ID_CAPSAICIN, REAGENT_ID_FROSTOIL, REAGENT_ID_SPRINKLES, REAGENT_ID_PHORON, REAGENT_ID_COCO, REAGENT_ID_SLIMEJELLY, REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_TRICORDRAZINE)))
+	configure(reagents(contents_from = PROC_REF(chaos_filling_contents)))
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 1)))
 
-/obj/item/reagent_containers/food/snacks/donut/chaos/Initialize(mapload)
-	. = ..()
-	switch(rand(1,10))
-		if(1)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
-		if(2)
-			reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
-		if(3)
-			reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
-		if(4)
-			reagents.add_reagent(REAGENT_ID_SPRINKLES, 3)
-		if(5)
-			reagents.add_reagent(REAGENT_ID_PHORON, 3)
-		if(6)
-			reagents.add_reagent(REAGENT_ID_COCO, 3)
-		if(7)
-			reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 3)
-		if(8)
-			reagents.add_reagent(REAGENT_ID_BANANA, 3)
-		if(9)
-			reagents.add_reagent(REAGENT_ID_BERRYJUICE, 3)
-		if(10)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 3)
+/obj/item/reagent_containers/food/snacks/donut/chaos
+	/// The filling this donut rolled (rolls()): 3 units of it.
+	var/chaos_filling
+
+/obj/item/reagent_containers/food/snacks/donut/chaos/proc/chaos_filling_contents()
+	return chaos_filling ? list("[chaos_filling]" = 3) : null
 
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly/poisonberry
 	filling_color = "#ED1169"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/poisonberry, null, list(REAGENT_ID_POISONBERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/poisonberry)
+	configure(reagents(add = list(REAGENT_ID_POISONBERRYJUICE = 5)))
 
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly/slimejelly
 	name = "slime jelly donut"
 	filling_color = "#ED1169"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/slimejelly, null, list(REAGENT_ID_SLIMEJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/slimejelly)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryjelly
 	name = "cherry jelly donut"
 	filling_color = "#ED1169"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryjelly, null, list(REAGENT_ID_CHERRYJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryjelly)
+	configure(reagents(add = list(REAGENT_ID_CHERRYJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/egg
 	name = "egg"
@@ -946,17 +750,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cher
 	volume = 10
 	center_of_mass_x = 16
 	center_of_mass_y = 13
+	opens_into = /datum/msg/snack/crack
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg, null, list(REAGENT_ID_EGG = 3))
-
-/obj/item/reagent_containers/food/snacks/egg/afterattack(obj/O as obj, mob/user as mob, proximity)
-	if(istype(O,/obj/machinery/microwave))
-		return . = ..()
-	if(!(proximity && O.is_open_container()))
-		return
-	to_chat(user, "You crack \the [src] into \the [O].")
-	reagents.trans_to(O, reagents.total_volume)
-	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/egg/throw_impact(atom/hit_atom)
 	. = ..()
@@ -964,22 +759,27 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg, null, list(REAGEN
 	src.visible_message(span_red("[src.name] has been squashed."),span_red("You hear a smack."))
 	replace_with(src, /obj/effect/decal/cleanable/egg_smudge)
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/egg, INTERACT_ITEM(null, PROC_REF(egg_item)))
+// A crayon of the colours an egg takes colours it.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg)
+	every(2 SECONDS, then(PROC_REF(grow_step)), when = nameof(growing))
+	configure(reagents(add = list(REAGENT_ID_EGG = 3)))
+	op("colour", item(/obj/item/pen/crayon), priority(OP_PRIORITY_PART), label("Colour it"),
+		needs(req(PROC_REF(takes_colour))), then(PROC_REF(coloured)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/egg/proc/egg_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype( W, /obj/item/pen/crayon ))
-		var/obj/item/pen/crayon/C = W
-		var/clr = C.colourName
+MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 
-		if(!(clr in list("blue","green","mime","orange","purple","rainbow","red","yellow")))
-			to_chat(user, span_blue("The egg refuses to take on this color!"))
-			return INTERACTION_HANDLED_PASS
+/// The crayon is one of the colours an egg takes.
+/obj/item/reagent_containers/food/snacks/egg/proc/takes_colour(datum/act/op/A)
+	var/static/list/colours = list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")
+	var/obj/item/pen/crayon/C = A.held
+	return ((C.colourName in colours)) ? null : /datum/msg/snack/egg_refuses // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-		to_chat(user, span_blue("You color \the [src] [clr]"))
-		icon_state = "egg-[clr]"
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/egg/proc/coloured(datum/act/op/A)
+	var/obj/item/pen/crayon/C = A.held
+	var/clr = C.colourName
+	to_chat(A.actor, span_blue("You color \the [src] [clr]"))
+	set_icon_state("egg-[clr]")
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/egg/blue
 	icon_state = "egg-blue"
@@ -1014,7 +814,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/egg, INTERACT_ITEM(
 	center_of_mass_y = 14
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/friedegg, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedegg)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/boiledegg
 	name = "Boiled egg"
@@ -1022,7 +823,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/friedegg, null, list(R
 	icon_state = "egg"
 	filling_color = "#FFFFFF"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledegg, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledegg)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/organ
 	name = "organ"
@@ -1034,10 +836,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledegg, null, list(
 	center_of_mass_y = 16
 	bitesize = 3
 
-/obj/item/reagent_containers/food/snacks/organ/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, rand(3,5))
-	reagents.add_reagent(REAGENT_ID_TOXIN, rand(1,3))
+/obj/item/reagent_containers/food/snacks/organ
+	/// The protein and toxin units it rolled (rolls()).
+	var/organ_protein = 0
+	var/organ_toxin = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/organ)
+	rolls(nameof(organ_protein), range_of(3, 5))
+	rolls(nameof(organ_toxin), range_of(1, 3))
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = nameof(organ_protein), REAGENT_ID_TOXIN = nameof(organ_toxin))))
 
 /obj/item/reagent_containers/food/snacks/tofu
 	name = "Tofu"
@@ -1084,12 +891,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledegg, null, list(
 	var/toxin_type = REAGENT_ID_CARPOTOXIN
 	var/toxin_amount = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carpmeat, null, list(REAGENT_ID_SEAFOOD = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/carpmeat)
+	configure(reagents(contents_from = PROC_REF(toxin_contents)))
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 3)))
 
-/obj/item/reagent_containers/food/snacks/carpmeat/Initialize(mapload)
-	. = ..()
-	if(toxin_type && toxin_amount)
-		reagents.add_reagent(toxin_type, toxin_amount)
+/// Its toxin, when the type names one.
+/obj/item/reagent_containers/food/snacks/carpmeat/proc/toxin_contents()
+	return (toxin_type && toxin_amount) ? list("[toxin_type]" = toxin_amount) : null
 
 /obj/item/reagent_containers/food/snacks/carpmeat/fish
 	desc = "A fillet of fish meat."
@@ -1120,7 +928,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carpmeat, null, list(R
 	bitesize = 2
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/crab_legs, null, list(REAGENT_ID_SEAFOOD = 6, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/crab_legs)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 6, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/fishfingers
 	name = "Fish Fingers"
@@ -1131,7 +940,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/crab_legs, null, list(
 	center_of_mass_y = 13
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishfingers, null, list(REAGENT_ID_SEAFOOD = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishfingers)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4)))
 
 /obj/item/reagent_containers/food/snacks/zestfish
 	name = "Zesty Fish"
@@ -1142,7 +952,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishfingers, null, lis
 	center_of_mass_y = 13
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/zestfish, null, list(REAGENT_ID_SEAFOOD = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/zestfish)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4)))
 
 /obj/item/reagent_containers/food/snacks/mushroomslice
 	name = "mushroom slice"
@@ -1155,7 +966,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/zestfish, null, list(R
 	nutriment_desc = list("raw" = 2, PLANT_MUSHROOMS = 2)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomslice, null, list(REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomslice)
+	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/tomatomeat
 	name = "tomato slice"
@@ -1177,7 +989,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomslice, null, l
 	center_of_mass_y = 10
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearmeat, null, list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_HYPERZINE = 5))
 
 /obj/item/reagent_containers/food/snacks/xenomeat
 	name = "xenomeat"
@@ -1188,7 +999,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearmeat, null, list(R
 	center_of_mass_y = 10
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PACID = 6))
 
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat // Substitute for recipes requiring xeno meat.
 	name = "spider meat"
@@ -1199,7 +1009,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat, null, list(R
 	center_of_mass_y = 10
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, null, list(REAGENT_ID_SPIDERTOXIN = 6))
 
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/Initialize(mapload)
 	. = ..()
@@ -1214,7 +1023,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, n
 	center_of_mass_y = 16
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatball, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatball)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/sausage
 	name = "Sausage"
@@ -1225,7 +1035,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatball, null, list(R
 	center_of_mass_y = 16
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket
 	name = "\improper Donk-pocket"
@@ -1241,7 +1052,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage, null, list(RE
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/donkpocket, donkpocket_heated_reagents, list(REAGENT_ID_TRICORDRAZINE = 5))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/heat()
 	warm = 1
@@ -1253,7 +1065,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cooltime()
 	if (src.warm)
-		om_after(src, 420 SECONDS, PROC_REF(cool_down))
+		after(src, 420 SECONDS, PROC_REF(cool_down))
 	return
 
 /obj/item/reagent_containers/food/snacks/donkpocket/spicy
@@ -1316,15 +1128,22 @@ TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket, donkp
 
 TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpocket_heated_reagents, list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self), REQ_FIELD_NOT("has_been_heated", "the heating chemicals have already been spent")))
+// Its package is crushed once; twenty seconds later it is heated.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket)
+	op("crush", in_hand(), priority(OP_PRIORITY_PART), label("Crush package"), needs(req(PROC_REF(not_yet_heated))), then(PROC_REF(crushed)))
 
-/// Old attack_self.
-/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/sinpocket_self(mob/user, obj/item/held, datum/interaction/interaction)
-	has_been_heated = TRUE
+MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/not_yet_heated(datum/act/op/A)
+	return (!has_been_heated) ? null : /datum/msg/snack/heat_spent
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/crushed(datum/act/op/A)
+	var/mob/user = A.actor
+	set_has_been_heated(TRUE)
 	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
 		MSG_OTHERS(span_notice("%U% crushes %T% package.")))
-	om_after(src, 20 SECONDS, PROC_REF(self_heated), user)
-	return TRUE
+	after(src, 20 SECONDS, PROC_REF(self_heated), key = "self_heated", with = list(user))
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/brainburger
 	name = "brainburger"
@@ -1335,7 +1154,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocke
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/brainburger, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_ALKYSINE = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/brainburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_ALKYSINE = 6)))
 
 /obj/item/reagent_containers/food/snacks/ghostburger
 	name = "Ghost Burger"
@@ -1361,7 +1181,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/brainburger, null, lis
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/human/burger, null, list(REAGENT_ID_PROTEIN = 6))
 
 /obj/item/reagent_containers/food/snacks/cheeseburger
 	name = "cheeseburger"
@@ -1372,7 +1191,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/human/burger, null, li
 	nutriment_amt = 2
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2, "bun" = 2)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheeseburger, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/monkeyburger
 	name = "burger"
@@ -1385,7 +1205,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheeseburger, null, li
 	nutriment_desc = list("bun" = 2)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeyburger, null, list(REAGENT_ID_PROTEIN = 3))
 
 /obj/item/reagent_containers/food/snacks/fishburger
 	name = "Fillet -o- Carp Sandwich"
@@ -1396,7 +1215,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeyburger, null, li
 	center_of_mass_y = 10
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishburger, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/tofuburger
 	name = "Tofu Burger"
@@ -1439,7 +1259,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishburger, null, list
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenoburger, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/xenoburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/clownburger
 	name = JOB_CLOWN + " Burger"
@@ -1453,7 +1274,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenoburger, null, list
 	bitesize = 2
 
 // begin - honkwork infection
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownburger, null, list("protein" = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownburger)
+	configure(reagents(add = list("protein" = 2)))
 
 /obj/item/reagent_containers/food/snacks/clownburger/On_Consume(mob/living/user)
 	if(user && ishuman(user) && prob(3))
@@ -1483,7 +1305,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownburger, null, lis
 	center_of_mass_y = 13
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/omelette, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/omelette)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/muffin
 	name = "Muffin"
@@ -1509,7 +1332,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/omelette, null, list(R
 	nutriment_desc = list("pie" = 3, REAGENT_ID_CREAM = 2)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pie, null, list(REAGENT_ID_BANANA = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pie)
+	configure(reagents(add = list(REAGENT_ID_BANANA = 5)))
 
 /obj/item/reagent_containers/food/snacks/pie/throw_impact(atom/hit_atom)
 	. = ..()
@@ -1527,9 +1351,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pie, null, list(REAGEN
 	nutriment_desc = list("sweetness" = 2, "pie" = 3)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berryclafoutis/berry, null, list(REAGENT_ID_BERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/berry)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 5)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison, null, list(REAGENT_ID_POISONBERRYJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison)
+	configure(reagents(add = list(REAGENT_ID_POISONBERRYJUICE = 5)))
 
 /obj/item/reagent_containers/food/snacks/waffles
 	name = "waffles"
@@ -1565,7 +1391,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berryclafoutis/poison,
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/soylentgreen, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/soylentgreen)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/soylenviridians
 	name = "Soylen Virdians"
@@ -1589,7 +1416,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/soylentgreen, null, li
 	center_of_mass_y = 13
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatpie, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatpie)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/tofupie
 	name = "Tofu-pie"
@@ -1614,7 +1442,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatpie, null, list(RE
 	nutriment_desc = list("sweetness" = 3, PLANT_MUSHROOMS = 3, "pie" = 2)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanita_pie, null, list(REAGENT_ID_AMATOXIN = 3, REAGENT_ID_PSILOCYBIN = 1, REAGENT_ID_FUNGI = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
+	configure(reagents(add = list(REAGENT_ID_AMATOXIN = 3, REAGENT_ID_PSILOCYBIN = 1, REAGENT_ID_FUNGI = 2)))
 
 /obj/item/reagent_containers/food/snacks/plump_pie
 	name = "plump pie"
@@ -1627,15 +1456,19 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanita_pie, null, lis
 	nutriment_desc = list("heartiness" = 2, PLANT_MUSHROOMS = 3, "pie" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plump_pie, null, list(REAGENT_ID_FUNGI = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	rolls(nameof(name), pick_one(list("exceptional plump pie")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump pie!")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(exceptional), chance(10))
+	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
+	configure(reagents(add = list(REAGENT_ID_FUNGI = 2)))
 
-/obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
-	. = ..()
-	if(prob(10))
-		name = "exceptional plump pie"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump pie!"
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, nutriment_desc)
-		reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
+/obj/item/reagent_containers/food/snacks/plump_pie
+	/// Whether the microwave's fey mood made it exceptional (rolls()).
+	var/exceptional = FALSE
+
+/obj/item/reagent_containers/food/snacks/plump_pie/proc/exceptional_contents()
+	return exceptional ? list(REAGENT_ID_NUTRIMENT = 8, REAGENT_ID_TRICORDRAZINE = 5) : null
 
 /obj/item/reagent_containers/food/snacks/xemeatpie
 	name = "Xeno-pie"
@@ -1647,7 +1480,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plump_pie, null, list(
 	center_of_mass_y = 13
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xemeatpie, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/xemeatpie)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/wingfangchu
 	name = "Wing Fang Chu"
@@ -1659,7 +1493,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xemeatpie, null, list(
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wingfangchu, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/wingfangchu)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/human/kabob
 	name = "-kabob"
@@ -1671,7 +1506,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wingfangchu, null, lis
 	center_of_mass_y = 15
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/human/kabob, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/kabob)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/monkeykabob
 	name = "Meat-kabob"
@@ -1683,7 +1519,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/human/kabob, null, lis
 	center_of_mass_y = 15
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeykabob, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeykabob)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/tofukabob
 	name = "Tofu-kabob"
@@ -1709,7 +1546,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeykabob, null, lis
 	nutriment_desc = list("toasted bread" = 3)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubancarp)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/popcorn
 	name = "Popcorn"
@@ -1725,9 +1563,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
-/obj/item/reagent_containers/food/snacks/popcorn/Initialize(mapload)
-	. = ..()
-	unpopped = rand(1,10)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/popcorn)
+	rolls(nameof(unpopped), range_of(1, 10))
 
 /obj/item/reagent_containers/food/snacks/popcorn/On_Consume(mob/living/M)
 	if(prob(unpopped))	//lol ...what's the point?
@@ -1747,7 +1584,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(
 	nutriment_desc = list("fries" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fries, null, list(REAGENT_ID_OIL = 1.2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fries)
+	configure(reagents(add = list(REAGENT_ID_OIL = 1.2)))
 
 /obj/item/reagent_containers/food/snacks/onionrings
 	name = "onion rings"
@@ -1796,7 +1634,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fries, null, list(REAG
 	nutriment_desc = list(PLANT_CARROT = 3, "salt" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carrotfries, null, list(REAGENT_ID_IMIDAZOLINE = 3, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/carrotfries)
+	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/cheesyfries
 	name = "Cheesy Fries"
@@ -1810,7 +1649,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carrotfries, null, lis
 	nutriment_desc = list("fresh fries" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesyfries, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesyfries)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/chilicheesefries
 	name = "chili cheese fries"
@@ -1825,7 +1665,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesyfries, null, lis
 	center_of_mass_y = 11
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chilicheesefries, null, list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_CAPSAICIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chilicheesefries)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/blackpudding
 	name = "Black Pudding"
@@ -1836,7 +1677,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chilicheesefries, null
 	center_of_mass_y = 7
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blackpudding, null, list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/blackpudding)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 5)))
 
 /obj/item/reagent_containers/food/snacks/soydope
 	name = "Soy Dope"
@@ -1870,7 +1712,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blackpudding, null, li
 	center_of_mass_y = 12
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/badrecipe, null, list(REAGENT_ID_SALMONELLA = 1, REAGENT_ID_CARBON = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/badrecipe)
+	configure(reagents(add = list(REAGENT_ID_SALMONELLA = 1, REAGENT_ID_CARBON = 3)))
 
 /obj/item/reagent_containers/food/snacks/meatsteak
 	name = "Meat steak"
@@ -1882,7 +1725,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/badrecipe, null, list(
 	center_of_mass_y = 13
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatsteak, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatsteak)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/spacylibertyduff
 	name = "Spacy Liberty Duff"
@@ -1896,7 +1740,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatsteak, null, list(
 	nutriment_desc = list(PLANT_MUSHROOMS = 6)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spacylibertyduff, null, list(REAGENT_ID_PSILOCYBIN = 6, REAGENT_ID_FUNGI = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/spacylibertyduff)
+	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 6, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/amanitajelly
 	name = "Amanita Jelly"
@@ -1910,7 +1755,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spacylibertyduff, null
 	nutriment_desc = list("jelly" = 3, PLANT_MUSHROOMS = 3)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanitajelly, null, list(REAGENT_ID_AMATOXIN = 6, REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanitajelly)
+	configure(reagents(add = list(REAGENT_ID_AMATOXIN = 6, REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 2)))
 
 /obj/item/reagent_containers/food/snacks/poppypretzel
 	name = "Poppy pretzel"
@@ -1937,21 +1783,24 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanitajelly, null, li
 	var/monkey_type = "Monkey"
 	special_handling = TRUE
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeycube, null, list(REAGENT_ID_PROTEIN = 10))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERACT_SELF(null, PROC_REF(monkeycube_self)))
+// A wrapped cube is unwrapped by using it in hand.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
+	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(PROC_REF(cube_is_wrapped)), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
 
-/// Old attack_self.
-/obj/item/reagent_containers/food/snacks/monkeycube/proc/monkeycube_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(wrapped)
-		Unwrap(user)
-	return TRUE
+/obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_is_wrapped(datum/act/op/A)
+	return !!wrapped
+
+/obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_unwrapped(datum/act/op/A)
+	Unwrap(A.actor)
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Expand()
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " expands!"))
 	var/mob/living/carbon/human/H = new(get_turf(src))
 	H.set_species(monkey_type)
-	H.real_name = H.species.get_random_name()
+	H.set_real_name(H.species.get_random_name())
 	H.name = H.real_name
 	H.low_sorting_priority = TRUE
 	H.species.produceCopy(H.species.traits.Copy(),H,null,FALSE)
@@ -1962,15 +1811,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERAC
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(H)
 		H.set_tf_mob_holder(V.tf_mob_holder)
-		qdel(V)
+		spent(V)
 	replace_with(src, H)
 	return H
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Unwrap(mob/user as mob)
-	icon_state = "monkeycube"
+	set_icon_state("monkeycube")
 	desc = "Just add water!"
 	to_chat(user, "You unwrap the cube.")
-	wrapped = FALSE
+	set_wrapped(FALSE)
 	flags |= OPENCONTAINER
 	return
 
@@ -1981,8 +1830,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERAC
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.can_be_drop_pred && Pred.food_vore && Pred.vore_selected)
-		Pred.vore_selected.nom_atom(Prey)
+	if(Pred.vore_prefs.can_be_drop_pred && Pred.vore_prefs.food_vore && vore_selected_of(Pred))
+		vore_selected_of(Pred).nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()
 	if(reagents.has_reagent(REAGENT_ID_WATER))
@@ -2029,10 +1878,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERAC
 	wrapped = 1
 
 /obj/item/reagent_containers/food/snacks/monkeycube/pet/Expand()
+	var/mob/holder
+	if(ismob(loc))
+		holder = loc
+	if(loc?.release_refusal(src, holder))
+		return 0
 	src.visible_message("<b>\The [src]</b> expands!")
 	if(pet_path)
 		new pet_path(get_turf(src))
-	qdel(src)
+	consume(src, holder)
 	return 1
 
 /obj/item/reagent_containers/food/snacks/spellburger
@@ -2055,7 +1909,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERAC
 	nutriment_desc = list("buns" = 4)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bigbiteburger, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigbiteburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/enchiladas
 	name = "Enchiladas"
@@ -2069,7 +1924,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bigbiteburger, null, l
 	nutriment_desc = list("tortilla" = 3, PLANT_CORN = 3)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/enchiladas, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_CAPSAICIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/enchiladas)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_CAPSAICIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/monkeysdelight
 	name = "monkey's Delight"
@@ -2081,7 +1937,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/enchiladas, null, list
 	center_of_mass_y = 13
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeysdelight, null, list(REAGENT_ID_PROTEIN = 10, REAGENT_ID_BANANA = 5, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeysdelight)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10, REAGENT_ID_BANANA = 5, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/baguette
 	name = "Baguette"
@@ -2094,7 +1951,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeysdelight, null, 
 	nutriment_desc = list("french bread" = 6)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/baguette, null, list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/baguette)
+	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/fishandchips
 	name = "Fish and Chips"
@@ -2107,7 +1965,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/baguette, null, list(R
 	nutriment_desc = list("salt" = 1, "chips" = 3)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishandchips, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fishandchips)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/rofflewaffles
 	name = "Roffle Waffles"
@@ -2121,7 +1980,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fishandchips, null, li
 	nutriment_desc = list("waffle" = 7, "sweetness" = 1)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rofflewaffles, null, list(REAGENT_ID_PSILOCYBIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rofflewaffles)
+	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/jelliedtoast
 	name = "Jellied Toast"
@@ -2140,9 +2000,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rofflewaffles, null, l
 /obj/item/reagent_containers/food/snacks/jelliedtoast/slime
 	name = "Slime Jellied Toast"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jelliedtoast/cherry, null, list(REAGENT_ID_CHERRYJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast/cherry)
+	configure(reagents(add = list(REAGENT_ID_CHERRYJELLY = 5)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime, null, list(REAGENT_ID_SLIMEJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/honeytoast
 	name = "Honeyed Toast"
@@ -2183,9 +2045,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jelliedtoast/slime, nu
 /obj/item/reagent_containers/food/snacks/jellyburger/cherry
 	name = "Cherry Jelly Burger"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellyburger/slime, null, list(REAGENT_ID_SLIMEJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/slime)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellyburger/cherry, null, list(REAGENT_ID_CHERRYJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyburger/cherry)
+	configure(reagents(add = list(REAGENT_ID_CHERRYJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/stewedsoymeat
 	name = "Stewed Soy Meat"
@@ -2246,7 +2110,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellyburger/cherry, nu
 	nutriment_desc = list(REAGENT_ID_RICE = 2, "gauze" = 4, "fish" = 10)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/kudzudonburi, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/kudzudonburi)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/pastatomato
 	name = "Spaghetti"
@@ -2260,7 +2125,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/kudzudonburi, null, li
 	nutriment_desc = list(PLANT_TOMATO = 3, "noodles" = 3)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pastatomato, null, list(REAGENT_ID_TOMATOJUICE = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pastatomato)
+	configure(reagents(add = list(REAGENT_ID_TOMATOJUICE = 10)))
 
 /obj/item/reagent_containers/food/snacks/meatballspagetti
 	name = "Spaghetti & Meatballs"
@@ -2274,7 +2140,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pastatomato, null, lis
 	nutriment_desc = list("noodles" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballspagetti, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballspagetti)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/spesslaw
 	name = "Spesslaw"
@@ -2287,7 +2154,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballspagetti, null
 	nutriment_desc = list("noodles" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spesslaw, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/spesslaw)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/superbiteburger
 	name = "Super Bite Burger"
@@ -2300,7 +2168,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spesslaw, null, list(R
 	nutriment_desc = list("buns" = 25)
 	bitesize = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/superbiteburger, null, list(REAGENT_ID_PROTEIN = 25))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/superbiteburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25)))
 
 /obj/item/reagent_containers/food/snacks/caramelapple
 	name = "Caramel Apple"
@@ -2373,7 +2242,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/superbiteburger, null,
 	nutriment_desc = list("bread" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sandwich, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sandwich)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/clubsandwich
 	name = "Club Sandwich"
@@ -2395,7 +2265,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sandwich, null, list(R
 	nutriment_desc = list("toasted bread" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/toastedsandwich, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CARBON = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/toastedsandwich)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CARBON = 2)))
 
 /obj/item/reagent_containers/food/snacks/grilledcheese
 	name = "Grilled Cheese Sandwich"
@@ -2406,7 +2277,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/toastedsandwich, null,
 	nutriment_desc = list("toasted bread" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/grilledcheese, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/grilledcheese)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/jellysandwich
 	name = "Jelly Sandwich"
@@ -2425,15 +2297,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/grilledcheese, null, l
 /obj/item/reagent_containers/food/snacks/jellysandwich/peanutbutter
 	name = "Peanut Butter Jelly Sandwich"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellysandwich/slime, null, list(REAGENT_ID_SLIMEJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellysandwich/slime)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellysandwich/cherry, null, list(REAGENT_ID_CHERRYJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellysandwich/cherry)
+	configure(reagents(add = list(REAGENT_ID_CHERRYJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/jellysandwich/peanutbutter
 	desc = "You wish you had some peanut butter to go with this... Oh wait!"
 	icon_state = "pbandj"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellysandwich/peanutbutter, null, list(REAGENT_ID_PEANUTBUTTER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellysandwich/peanutbutter)
+	configure(reagents(add = list(REAGENT_ID_PEANUTBUTTER = 5)))
 
 // End Sandwiches //////////////////////////////////////////////
 
@@ -2443,7 +2318,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jellysandwich/peanutbu
 	icon_state = "boiledslimecore"
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledslimecore, null, list(REAGENT_ID_SLIMEJELLY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5)))
 
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit
 	name = "plump helmet biscuit"
@@ -2456,14 +2332,19 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/boiledslimecore, null,
 	nutriment_desc = list(PLANT_MUSHROOMS = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit, null, list(REAGENT_ID_FUNGI = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	rolls(nameof(name), pick_one(list("exceptional plump helmet biscuit")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(exceptional), chance(10))
+	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
+	configure(reagents(add = list(REAGENT_ID_FUNGI = 1)))
 
-/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
-	. = ..()
-	if(prob(10))
-		name = "exceptional plump helmet biscuit"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!"
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit
+	/// Whether the microwave's fey mood made it exceptional (rolls()).
+	var/exceptional = FALSE
+
+/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/proc/exceptional_contents()
+	return exceptional ? list(REAGENT_ID_NUTRIMENT = 3) : null
 
 /obj/item/reagent_containers/food/snacks/chawanmushi
 	name = "chawanmushi"
@@ -2475,7 +2356,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit, nu
 	center_of_mass_y = 10
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chawanmushi, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chawanmushi)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/tossedsalad
 	name = "tossed salad"
@@ -2501,7 +2383,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chawanmushi, null, lis
 	nutriment_desc = list("100% real salad")
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/validsalad, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/validsalad)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/appletart
 	name = "golden apple streusel tart"
@@ -2515,7 +2398,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/validsalad, null, list
 	nutriment_desc = list(PLANT_APPLE = 8)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/appletart, null, list(REAGENT_ID_GOLD = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/appletart)
+	configure(reagents(add = list(REAGENT_ID_GOLD = 5)))
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////Soups/////////////////////////////////////////////////
@@ -2532,7 +2416,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/appletart, null, list(
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballsoup, null, list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_WATER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatballsoup)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/slimesoup
 	name = "slime soup"
@@ -2542,7 +2427,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatballsoup, null, li
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slimesoup, null, list(REAGENT_ID_SLIMEJELLY = 5, REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slimesoup)
+	configure(reagents(add = list(REAGENT_ID_SLIMEJELLY = 5, REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/food/snacks/bloodsoup
 	name = "Tomato soup"
@@ -2554,7 +2440,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slimesoup, null, list(
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bloodsoup, null, list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 10, REAGENT_ID_WATER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bloodsoup)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_BLOOD = 10, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/clownstears
 	name = JOB_CLOWN + "'s Tears"
@@ -2568,7 +2455,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bloodsoup, null, list(
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownstears, null, list(REAGENT_ID_BANANA = 5, REAGENT_ID_WATER = 10, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/clownstears)
+	configure(reagents(add = list(REAGENT_ID_BANANA = 5, REAGENT_ID_WATER = 10, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/vegetablesoup
 	name = "Vegetable soup"
@@ -2582,7 +2470,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/clownstears, null, lis
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/vegetablesoup, null, list(REAGENT_ID_VEGETABLESOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/vegetablesoup)
+	configure(reagents(add = list(REAGENT_ID_VEGETABLESOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/nettlesoup
 	name = "Nettle soup"
@@ -2597,7 +2486,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/vegetablesoup, null, l
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list(REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/nettlesoup)
+	configure(reagents(add = list(REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5)))
 
 /obj/item/reagent_containers/food/snacks/mysterysoup
 	name = "Mystery soup"
@@ -2612,44 +2502,29 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-/obj/item/reagent_containers/food/snacks/mysterysoup/Initialize(mapload)
-	. = ..()
-	var/mysteryselect = pick(1,2,3,4,5,6,7,8,9,10)
-	switch(mysteryselect)
-		if(1)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
-		if(2)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
-		if(3)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_WATER, 5)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
-		if(4)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_WATER, 10)
-		if(5)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 2, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_BANANA, 10)
-		if(6)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_BLOOD, 10)
-		if(7)
-			reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 10)
-			reagents.add_reagent(REAGENT_ID_WATER, 10)
-		if(8)
-			reagents.add_reagent(REAGENT_ID_CARBON, 10)
-			reagents.add_reagent(REAGENT_ID_TOXIN, 10)
-		if(9)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 10)
-		if(10)
-			reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
-			reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 5)
-			reagents.add_reagent(REAGENT_ID_IMIDAZOLINE, 5)
+/obj/item/reagent_containers/food/snacks/mysterysoup
+	/// Which of the ten mystery recipes it rolled (rolls()).
+	var/mystery_recipe = 0
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mysterysoup)
+	rolls(nameof(mystery_recipe), range_of(1, 10))
+	configure(reagents(contents_from = PROC_REF(mystery_contents)))
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/mysterysoup, mystery_soup_recipes, list(
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 5, REAGENT_ID_TRICORDRAZINE = 5),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_WATER = 10),
+	list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_BANANA = 10),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_BLOOD = 10),
+	list(REAGENT_ID_SLIMEJELLY = 10, REAGENT_ID_WATER = 10),
+	list(REAGENT_ID_CARBON = 10, REAGENT_ID_TOXIN = 10),
+	list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_TOMATOJUICE = 10),
+	list(REAGENT_ID_NUTRIMENT = 6, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5)))
+
+/obj/item/reagent_containers/food/snacks/mysterysoup/proc/mystery_contents()
+	var/list/recipes = TYPE_TABLE_GET(src, mystery_soup_recipes)
+	return (mystery_recipe >= 1 && mystery_recipe <= length(recipes)) ? recipes[mystery_recipe] : null
 
 /obj/item/reagent_containers/food/snacks/wishsoup
 	name = "Wish Soup"
@@ -2662,13 +2537,20 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nettlesoup, null, list
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/wishsoup)
+	rolls(nameof(wished), chance(25))
+	rolls(nameof(desc), PROC_REF(roll_wish_desc), from = list(nameof(wished)))
+	configure(reagents(add = list(REAGENT_ID_WATER = 10, REAGENT_ID_NUTRIMENT = PROC_REF(wish_nutriment)), data = list(REAGENT_ID_NUTRIMENT = list("something good" = 8))))
 
-/obj/item/reagent_containers/food/snacks/wishsoup/Initialize(mapload)
-	. = ..()
-	if(prob(25))
-		src.desc = "A wish come true!"
-		reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, list("something good" = 8))
+/// Rolled before init: one wish soup in four came true.
+/obj/item/reagent_containers/food/snacks/wishsoup/var/wished = FALSE
+
+/obj/item/reagent_containers/food/snacks/wishsoup/proc/roll_wish_desc(datum/roller/R)
+	return wished ? "A wish come true!" : desc
+
+/// A wish that came true is a real soup: 8 units of nutriment (a computed reagents() amount; 0 adds nothing).
+/obj/item/reagent_containers/food/snacks/wishsoup/proc/wish_nutriment()
+	return wished ? 8 : 0
 
 /obj/item/reagent_containers/food/snacks/tomatosoup
 	name = "Tomato Soup"
@@ -2681,7 +2563,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wishsoup, null, list(R
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tomatosoup, null, list(REAGENT_ID_TOMATOSOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tomatosoup)
+	configure(reagents(add = list(REAGENT_ID_TOMATOSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/mushroomsoup
 	name = "chantrelle soup"
@@ -2694,7 +2577,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tomatosoup, null, list
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, list(REAGENT_ID_MUSHROOMSOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mushroomsoup)
+	configure(reagents(add = list(REAGENT_ID_MUSHROOMSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/beetsoup
 	name = "beet soup"
@@ -2707,11 +2591,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, li
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(REAGENT_ID_BEETSOUP = 10))
 
-/obj/item/reagent_containers/food/snacks/beetsoup/Initialize(mapload)
-	. = ..()
-	name = pick(list("borsch","bortsch","borstch","borsh","borshch","borscht"))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/beetsoup)
+	configure(reagents(add = list(REAGENT_ID_BEETSOUP = 10)))
+	rolls(nameof(name), pick_one(list("borsch","bortsch","borstch","borsh","borshch","borscht")))
 
 /obj/item/reagent_containers/food/snacks/soup/onion
 	name = "onion soup"
@@ -2724,7 +2607,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(R
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/soup/onion, null, list(REAGENT_ID_ONIONSOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/soup/onion)
+	configure(reagents(add = list(REAGENT_ID_ONIONSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/chickennoodlesoup
 	name = "chicken noodle soup"
@@ -2734,7 +2618,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/soup/onion, null, list
 	filling_color = "#ead90c"
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickennoodlesoup, null, list(REAGENT_ID_CHICKENNOODLESOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickennoodlesoup)
+	configure(reagents(add = list(REAGENT_ID_CHICKENNOODLESOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/stew
 	name = "Stew"
@@ -2745,12 +2630,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickennoodlesoup, nul
 	center_of_mass_y = 5
 	nutriment_amt = 6
 	nutriment_desc = list(PLANT_TOMATO = 2, PLANT_POTATO = 2, PLANT_CARROT = 2, PLANT_EGGPLANT = 2, PLANT_MUSHROOMS = 2)
-	drop_sound = SFX_ITEMS_DROP_SHOVEL
-	pickup_sound = SFX_ITEMS_PICKUP_SHOVEL
 	bitesize = 10
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stew, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/stew)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL, pickup = SFX_ITEMS_PICKUP_SHOVEL))
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/bearstew
 	name = "bear stew"
@@ -2765,7 +2650,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stew, null, list(REAGE
 	bitesize = 6
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearstew, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_HYPERZINE = 5, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearstew)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_HYPERZINE = 5, REAGENT_ID_TOMATOJUICE = 5, REAGENT_ID_IMIDAZOLINE = 5, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/hotchili
 	name = "Hot Chili"
@@ -2780,7 +2666,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearstew, null, list(R
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotchili)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
 /obj/item/reagent_containers/food/snacks/coldchili
 	name = "Cold Chili"
@@ -2795,7 +2682,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotchili, null, list(R
 	bitesize = 5
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/coldchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/coldchili)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_FROSTOIL = 3, REAGENT_ID_TOMATOJUICE = 2)))
 
 /obj/item/reagent_containers/food/snacks/bearchili
 	name = "bear chili"
@@ -2811,7 +2699,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/coldchili, null, list(
 	bitesize = 6
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2, REAGENT_ID_HYPERZINE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearchili)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_CAPSAICIN = 3, REAGENT_ID_TOMATOJUICE = 2, REAGENT_ID_HYPERZINE = 5)))
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////Sliceable/////////////////////////////////////////////////
@@ -2851,7 +2740,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(
 			var/reagent_amount = whole.reagents.total_volume/whole.slices_num
 			whole.reagents.trans_to_obj(src, reagent_amount)
 
-		qdel(whole)
+		spent(whole)
 
 /obj/item/reagent_containers/food/snacks/sliceable/meatbread
 	name = "meatbread loaf"
@@ -2866,7 +2755,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearchili, null, list(
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/meatbread, null, list(REAGENT_ID_PROTEIN = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/meatbread)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/meatbread
 	name = "meatbread slice"
@@ -2895,7 +2785,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/meatbread, n
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread, null, list(REAGENT_ID_PROTEIN = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/xenomeatbread
 	name = "xenomeatbread slice"
@@ -2923,7 +2814,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/xenomeatbrea
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/bananabread, null, list(REAGENT_ID_BANANA = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/bananabread)
+	configure(reagents(add = list(REAGENT_ID_BANANA = 20)))
 
 /obj/item/reagent_containers/food/snacks/slice/bananabread
 	name = "Banana-nut bread slice"
@@ -2989,7 +2881,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/bananabread,
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread, null, list(REAGENT_ID_PROTEIN = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/slice/creamcheesebread
 	name = "Cream Cheese Bread slice"
@@ -3017,7 +2910,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/creamcheeseb
 	nutriment_amt = 25
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake, null, list(REAGENT_ID_IMIDAZOLINE = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake)
+	configure(reagents(add = list(REAGENT_ID_IMIDAZOLINE = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/carrotcake
 	name = "Carrot Cake slice"
@@ -3046,7 +2940,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/carrotcake, 
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/braincake, null, list(REAGENT_ID_PROTEIN = 25, REAGENT_ID_ALKYSINE = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/braincake)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 25, REAGENT_ID_ALKYSINE = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/braincake
 	name = "Brain Cake slice"
@@ -3075,7 +2970,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/braincake, n
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake, null, list(REAGENT_ID_PROTEIN = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/slice/cheesecake
 	name = "Cheese Cake slice"
@@ -3104,7 +3000,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cheesecake, 
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/slice/peanutcake
 	name = "Peanut Cake slice"
@@ -3263,7 +3160,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/peanutcake, 
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/cheesewedge
 	name = "Cheese wedge"
@@ -3287,7 +3185,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cheesewheel,
 	nutriment_amt = 20
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake, null, list(REAGENT_ID_SPRINKLES = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/birthdaycake
 	name = "Birthday Cake slice"
@@ -3387,7 +3286,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/birthdaycake
 	w_class = ITEMSIZE_TINY
 	nutriment_amt = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cracker, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cracker)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/grilled_carp
 	name = "Njarir Merana Grill"
@@ -3397,7 +3297,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cracker, null, list(RE
 	slices_num = 6
 	trash = /obj/item/trash/snacktray
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp, null, list(REAGENT_ID_SEAFOOD = 12))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 12)))
 
 /obj/item/reagent_containers/food/snacks/grilled_carp_slice
 	name = "korlaaskak slice"
@@ -3417,7 +3318,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/grilled_carp
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/keylimepieslice
 	name = "slice of key lime pie"
@@ -3445,7 +3347,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/keylimepie, 
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/quiche, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/quiche)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/quicheslice
 	name = "slice of quiche"
@@ -3461,7 +3364,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/quiche, null
 /obj/item/reagent_containers/food/snacks/quicheslice/filled
 	nutriment_amt = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/quicheslice/filled, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/quicheslice/filled)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/brownies
 	name = "brownies"
@@ -3478,7 +3382,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/quicheslice/filled, nu
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/brownies, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/brownies)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/browniesslice
 	name = "brownie"
@@ -3494,7 +3399,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/brownies, nu
 /obj/item/reagent_containers/food/snacks/browniesslice/filled
 	nutriment_amt = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/browniesslice/filled, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/browniesslice/filled)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies
 	name = "cosmic brownies"
@@ -3511,7 +3417,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/browniesslice/filled, 
 	center_of_mass_y = 9
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies, null, list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_AMBROSIAEXTRACT = 2, REAGENT_ID_BICARIDINE = 1, REAGENT_ID_KELOTANE = 1, REAGENT_ID_TOXIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrownies)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2, REAGENT_ID_AMBROSIAEXTRACT = 2, REAGENT_ID_BICARIDINE = 1, REAGENT_ID_KELOTANE = 1, REAGENT_ID_TOXIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/cosmicbrowniesslice
 	name = "cosmic brownie"
@@ -3527,7 +3434,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/cosmicbrowni
 /obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/filled
 	nutriment_amt = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/filled, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/filled)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/lasagna
 	name = "lasagna"
@@ -3537,7 +3445,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cosmicbrowniesslice/fi
 	nutriment_amt = 5
 	nutriment_desc = list(PLANT_TOMATO = 4, "meat" = 2)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lasagna, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/lasagna)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/gigapuddi
 	name = "Astro-Pudding"
@@ -3573,7 +3482,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lasagna, null, list(RE
 	bitesize = 3
 	trash = /obj/item/trash/tray
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/buchedenoel, null, list(REAGENT_ID_SUGAR = 9, REAGENT_ID_COCO = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/buchedenoel)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 9, REAGENT_ID_COCO = 5)))
 
 /obj/item/reagent_containers/food/snacks/bucheslice
 	name = "\improper Buche de Noel slice"
@@ -3623,7 +3533,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	var/static/list/extra_product = list(/obj/item/reagent_containers/food/snacks/turkeydrumstick = 2,
 									/obj/item/trash/turkeybones = 1)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null, list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_COOKINGOIL = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
+	configure(reagents(add = list(REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_COOKINGOIL = 1)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/turkey/on_slice_extra()
 	for(var/i in extra_product)
@@ -3660,9 +3571,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/suppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FFFF00")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/suppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FFFF00"))
+
+/obj/item/reagent_containers/food/snacks/sliceable/suppermatter
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
 	name = "suppermatter shard"
@@ -3672,9 +3585,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 3
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/suppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FFFF00")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/suppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FFFF00"))
+
+/obj/item/reagent_containers/food/snacks/suppermattershard
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
 	name = "exciting suppermatter"
@@ -3688,9 +3603,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FF0000")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FF0000"))
+
+/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
 	name = "exciting suppermatter shard"
@@ -3700,9 +3617,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 4
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/excitingsuppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FF0000")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FF0000"))
+
+/obj/item/reagent_containers/food/snacks/excitingsuppermattershard
+	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
 
@@ -3720,9 +3639,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	center_of_mass_y = 11
 	nutriment_desc = list("pizza crust" = 10, PLANT_TOMATO = 10, REAGENT_ID_CHEESE = 15)
 	nutriment_amt = 35
+	// 70 nutriment + 5 protein + 6 tomato juice: the default 80 overflowed by one and logged a WARNING whenever a random MRE meal rolled this pizza.
+	volume = 81
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/slice/margherita
 	name = "Margherita slice"
@@ -3749,7 +3671,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/marghe
 	nutriment_amt = 30
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_CHEESE = 5, REAGENT_ID_TOMATOJUICE = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_CHEESE = 5, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/pineappleslice
 	name = "ham & pineapple pizza slice"
@@ -3776,7 +3699,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/pineap
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza, null, list(REAGENT_ID_PROTEIN = 34, REAGENT_ID_TOMATOJUICE = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 34, REAGENT_ID_TOMATOJUICE = 6)))
 
 /obj/item/reagent_containers/food/snacks/slice/meatpizza
 	name = "Meatpizza slice"
@@ -3803,7 +3727,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpi
 	nutriment_amt = 35
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_FUNGI = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_FUNGI = 5)))
 
 /obj/item/reagent_containers/food/snacks/slice/mushroompizza
 	name = "Mushroompizza slice"
@@ -3830,7 +3755,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushro
 	nutriment_amt = 25
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_IMIDAZOLINE = 12))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_IMIDAZOLINE = 12)))
 
 /obj/item/reagent_containers/food/snacks/slice/vegetablepizza
 	name = "Vegetable pizza slice"
@@ -3878,7 +3804,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegeta
 	nutriment_amt = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_MOLD = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_TOMATOJUICE = 6, REAGENT_ID_MOLD = 8)))
 
 /obj/item/reagent_containers/food/snacks/slice/oldpizza
 	name = "moldy pizza slice"
@@ -3901,197 +3828,174 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/open = 0 // Is the box open?
 	var/ismessy = 0 // Fancy mess on the lid
 	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/pizza // Content pizza
-	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
-	var/list/boxes = list() // If the boxes are stacked, they come here
+	/// The pizza a box starts with (a subtype or a map edit sets it); made into `pizza` at init.
+	var/pizza_type
+	var/list/boxes // If the boxes are stacked, they come here
 	var/boxtag = ""
+TRACKED(/obj/item/pizzabox, open)
 
-DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/pizzabox/appearance_overlays()
-	. = list()
+// A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
+// other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
+CAPABILITIES(/obj/item/pizzabox)
+	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza, starts = nameof(pizza_type))
+	ref_many(nameof(boxes), /obj/item/pizzabox)
+	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked))), then(PROC_REF(toggled)))
+	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
+	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
+	op("stack", item(/obj/item/pizzabox), priority(OP_PRIORITY_PART), when(PROC_REF(held_is_another)), label("Put it on top"),
+		needs(req(PROC_REF(both_shut)), req(PROC_REF(stack_has_room))), then(PROC_REF(box_stacked)))
+	op("put_pizza", item(/obj/item/reagent_containers/food/snacks/sliceable/pizza), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(is_open))), then(PROC_REF(pizza_put_in)))
+	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
 
+MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
+MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
+MSG_DEF_SELF(pizzabox/too_high, "The stack is too high!")
+MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn't work!")
+
+/// The box shows shut (a tag on the top box of a stack, its height) or open (the pizza in it, messy once it held one), and says what it holds.
+/obj/item/pizzabox/draw(datum/look/look)
+	..()
+	var/stacked = length(boxes)
+	var/obj/item/pizzabox/topbox = stacked ? boxes[stacked] : null
+	look.watch(pizza)
+	look.watch(topbox)
 
 	// Set appropriate description
-	if( open && pizza )
-		desc = "A box suited for pizzas. It appears to have a [pizza.name] inside."
-	else if( boxes.len > 0 )
-		desc = "A pile of boxes suited for pizzas. There appears to be [boxes.len + 1] boxes in the pile."
-
-		var/obj/item/pizzabox/topbox = boxes[boxes.len]
+	if(open && pizza)
+		look.identity(desc = "A box suited for pizzas. It appears to have a [pizza.name] inside.")
+	else if(stacked > 0)
+		var/stack_desc = "A pile of boxes suited for pizzas. There appears to be [stacked + 1] boxes in the pile."
 		var/toptag = topbox.boxtag
-		if( toptag != "" )
-			desc = "[desc] The box on top has a tag, it reads: '[toptag]'."
+		if(toptag != "")
+			stack_desc = "[stack_desc] The box on top has a tag, it reads: '[toptag]'."
+		look.identity(desc = stack_desc)
 	else
-		desc = "A box suited for pizzas."
-
-		if( boxtag != "" )
-			desc = "[desc] The box has a tag, it reads: '[boxtag]'."
+		var/box_desc = "A box suited for pizzas."
+		if(boxtag != "")
+			box_desc = "[box_desc] The box has a tag, it reads: '[boxtag]'."
+		look.identity(desc = box_desc)
 
 	// Icon states and overlays
-	if( open )
-		if( ismessy )
-			icon_state = "pizzabox_messy"
-		else
-			icon_state = "pizzabox_open"
+	if(open)
+		look.state(ismessy ? "pizzabox_messy" : "pizzabox_open")
+		if(pizza)
+			look.overlay(look_overlay_image(pizza.icon, pizza.icon_state, pixel_y = -3))
+		return
 
-		if( pizza )
-			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
-			pizzaimg.pixel_y = -3
-			. += pizzaimg
+	var/tagged = stacked ? topbox.boxtag != "" : boxtag != ""
+	if(tagged)
+		look.overlay(look_overlay_image('icons/obj/food.dmi', "pizzabox_tag", pixel_y = stacked * 3))
+	look.state("pizzabox[stacked + 1]")
 
-		return .
-	else
-		// Stupid code because byondcode sucks
-		var/doimgtag = 0
-		if( boxes.len > 0 )
-			var/obj/item/pizzabox/topbox = boxes[boxes.len]
-			if( topbox.boxtag != "" )
-				doimgtag = 1
-		else
-			if( boxtag != "" )
-				doimgtag = 1
+/// A stack stays shut.
+/obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
+	return (length(boxes) == 0) ? null : MSG(pizzabox/stacked)
 
-		if( doimgtag )
-			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
-			tagimg.pixel_y = boxes.len * 3
-			. += tagimg
-
-	icon_state = "pizzabox[boxes.len+1]"
-
-/// Old attack_hand: take the pizza or the top box, else the normal pickup (FALSE).
-/obj/item/pizzabox/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/pizzabox/proc/toggled(datum/act/op/A)
+	set_open(!open)
 	if( open && pizza )
-		user.put_in_hands( pizza )
+		set_ismessy(1)
+	return OP_OK
 
-		to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-		own_take(src, nameof(pizza))
-		update_icon()
-		return TRUE
+/obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
+	return (open && !isnull(pizza) && isnull(A.held)) ? null : /datum/msg/req_failed
 
-	if( boxes.len > 0 )
-		if( user.get_inactive_hand() != src )
-			return FALSE
+/obj/item/pizzabox/proc/is_open(datum/act/op/A)
+	return (!!open) ? null : /datum/msg/pizzabox/lid_shut
 
-		var/obj/item/pizzabox/box = boxes[boxes.len]
-		boxes -= box
+/obj/item/pizzabox/proc/is_shut(datum/act/op/A)
+	return (!open) ? null : /datum/msg/req_failed
 
-		user.put_in_hands( box )
-		to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-		box.update_icon()
-		update_icon()
-		return TRUE
-	return FALSE
+/obj/item/pizzabox/proc/pizza_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	user.put_in_hands( pizza )
+	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
+	rel_take(src, nameof(pizza))
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/pizzabox, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-)
+/// A stack of boxes, with the one it is in held in the other hand.
+/obj/item/pizzabox/proc/stack_in_off_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	return (length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src) ? null : /datum/msg/req_failed
 
-/// Old attack_self.
-/obj/item/pizzabox/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if( boxes.len > 0 )
-		return TRUE
+/obj/item/pizzabox/proc/box_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pizzabox/box = boxes[length(boxes)]
+	rel_remove(src, nameof(boxes), box)
+	user.put_in_hands( box )
+	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
+	return OP_OK
 
-	open = !open
+/// The held box is another one, not this one used in hand.
+/obj/item/pizzabox/proc/held_is_another(datum/act/op/A)
+	return A.held != src
 
-	if( open && pizza )
-		ismessy = 1
+/obj/item/pizzabox/proc/both_shut(datum/act/op/A)
+	var/obj/item/pizzabox/box = A.held
+	return (!box.open && !open) ? null : MSG(pizzabox/close_first)
 
-	update_icon()
-	return TRUE
+/// The boxes to add, with the ones already in the pile, are no more than five.
+/obj/item/pizzabox/proc/stack_has_room(datum/act/op/A)
+	var/obj/item/pizzabox/box = A.held
+	return ((length(boxes) + 1) + (1 + length(box.boxes)) <= 5) ? null : MSG(pizzabox/too_high)
 
-/// Old attackby.
-/obj/item/pizzabox/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if( istype(I, /obj/item/pizzabox/) )
-		var/obj/item/pizzabox/box = I
+/obj/item/pizzabox/proc/box_stacked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pizzabox/box = A.held
+	// Make a list of all boxes to be added
+	var/list/boxestoadd = list()
+	boxestoadd += box
+	for(var/obj/item/pizzabox/i in box.boxes)
+		boxestoadd += i
+	user.drop_item()
+	box.forceMove(src)
+	rel_clear(box, nameof(box.boxes)) // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
+	for(var/obj/item/pizzabox/stacked_box in boxestoadd)
+		rel_add(src, nameof(boxes), stacked_box)
+	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
+	return OP_OK
 
-		if( !box.open && !src.open )
-			// Make a list of all boxes to be added
-			var/list/boxestoadd = list()
-			boxestoadd += box
-			for(var/obj/item/pizzabox/i in box.boxes)
-				boxestoadd += i
+/obj/item/pizzabox/proc/pizza_put_in(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(!move_into(src, nameof(src.pizza), I, user))
+		return OP_REFUSED
+	to_chat(user, span_warning("You put \the [I] in \the [src]!"))
+	return OP_OK
 
-			if( (boxes.len+1) + boxestoadd.len <= 5 )
-				user.drop_item()
+/obj/item/pizzabox/proc/tag_written(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/obj/item/pizzabox/boxtotagto = src
+	if(length(boxes) > 0)
+		boxtotagto = boxes[length(boxes)]
+	boxtotagto.set_boxtag(copytext("[boxtotagto.boxtag][R?.value]", 1, 30))
+	return OP_OK
 
-				box.forceMove(src)
-				box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
-				src.boxes.Add( boxestoadd )
-
-				box.update_icon()
-				update_icon()
-
-				to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
-			else
-				to_chat(user, span_warning("The stack is too high!"))
-		else
-			to_chat(user, span_warning("Close \the [box] first!"))
-
-		return INTERACTION_HANDLED_PASS
-
-	if( istype(I, /obj/item/reagent_containers/food/snacks/sliceable/pizza/) ) // Long ass fucking object name
-
-		if( src.open )
-			if(!own_set(src, nameof(src.pizza), I, user = user))
-				return INTERACTION_HANDLED_PASS
-
-			update_icon()
-
-			to_chat(user, span_warning("You put \the [I] in \the [src]!"))
-		else
-			to_chat(user, span_warning("You try to push \the [I] through the lid but it doesn't work!"))
-		return INTERACTION_HANDLED_PASS
-
-	if( istype(I, /obj/item/pen/) )
-
-		if( src.open )
-			return INTERACTION_HANDLED_PASS
-
-		var/t = rerun_ask(user, "k4329", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter what you want to add to the tag:", title = "Write", max_length = 30)
-		if(isnull(t))
-			return TRUE
-
-		var/obj/item/pizzabox/boxtotagto = src
-		if( boxes.len > 0 )
-			boxtotagto = boxes[boxes.len]
-
-		boxtotagto.boxtag = copytext("[boxtotagto.boxtag][t]", 1, 30)
-
-		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
-/obj/item/pizzabox/margherita/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+/obj/item/pizzabox/margherita
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita
 	boxtag = "Margherita Deluxe"
-	. = ..()
 
-/obj/item/pizzabox/vegetable/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+/obj/item/pizzabox/vegetable
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza
 	boxtag = "Gourmet Vegatable"
-	. = ..()
 
-/obj/item/pizzabox/mushroom/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+/obj/item/pizzabox/mushroom
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza
 	boxtag = "Mushroom Special"
-	. = ..()
 
-/obj/item/pizzabox/meat/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+/obj/item/pizzabox/meat
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza
 	boxtag = "Meatlover's Supreme"
-	. = ..()
 
-/obj/item/pizzabox/pineapple/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+/obj/item/pizzabox/pineapple
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple
 	boxtag = "Hawaiian Sunrise"
-	. = ..()
 
-/obj/item/pizzabox/old/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+/obj/item/pizzabox/old
+	pizza_type = /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza
 	boxtag = "Deluxe Gourmet"
-	. = ..()
 
 /obj/item/reagent_containers/food/snacks/dionaroast
 	name = "roast diona"
@@ -4105,7 +4009,8 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 	nutriment_desc = list("a chorus of flavor" = 6)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dionaroast, null, list(REAGENT_ID_RADIUM = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/dionaroast)
+	configure(reagents(add = list(REAGENT_ID_RADIUM = 2)))
 
 /obj/item/reagent_containers/food/snacks/dough
 	name = "dough"
@@ -4118,18 +4023,14 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dionaroast, null, list
 	nutriment_amt = 3
 	nutriment_desc = list("uncooked dough" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dough, null, list(REAGENT_ID_PROTEIN = 1))
 
 // Dough + rolling pin = flat dough
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dough, INTERACT_ITEM(null, PROC_REF(dough_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
+	op("flatten", item(/obj/item/material/kitchen/rollingpin), priority(OP_PRIORITY_PART + 1), label("Flatten it"), then(PROC_REF(flattened)))
 
-/// Old attackby. It never called its parent, so it always answers.
-/obj/item/reagent_containers/food/snacks/dough/proc/dough_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/kitchen/rollingpin))
-		new /obj/item/reagent_containers/food/snacks/sliceable/flatdough(src)
-		to_chat(user, "You flatten the dough.")
-		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+/obj/item/reagent_containers/food/snacks/dough/proc/flattened(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/sliceable/flatdough, "You flatten the dough.")
 
 // slicable into 3xdoughslices
 /obj/item/reagent_containers/food/snacks/sliceable/flatdough
@@ -4144,7 +4045,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dough, INTERACT_ITE
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, null, list(REAGENT_ID_PROTEIN = 1))
 
 /obj/item/reagent_containers/food/snacks/doughslice
 	name = "dough slice"
@@ -4171,30 +4071,20 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, n
 	nutriment_desc = list("bun" = 4)
 
 // Burger + cheese wedge = cheeseburger
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeyburger, INTERACT_ITEM(null, PROC_REF(monkeyburger_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
+	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/monkeyburger/proc/monkeyburger_item(mob/user, obj/item/reagent_containers/food/snacks/cheesewedge/W, datum/interaction/interaction)
-	if(istype(W))// && !istype(src,/obj/item/reagent_containers/food/snacks/cheesewedge))
-		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
-		to_chat(user, "You make a cheeseburger.")
-		consume(W, user)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/monkeyburger/proc/cheese_added(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/cheeseburger, "You make a cheeseburger.", uses_held = TRUE)
 
 // Human Burger + cheese wedge = cheeseburger
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/human/burger, INTERACT_ITEM(null, PROC_REF(human_burger_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
+	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/human/burger/proc/human_burger_item(mob/user, obj/item/reagent_containers/food/snacks/cheesewedge/W, datum/interaction/interaction)
-	if(istype(W))
-		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
-		to_chat(user, "You make a cheeseburger.")
-		consume(W, user)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/human/burger/proc/cheese_added(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/cheeseburger, "You make a cheeseburger.", uses_held = TRUE)
 
 /obj/item/reagent_containers/food/snacks/bunbun
 	name = "\improper Bun Bun"
@@ -4216,7 +4106,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/human/burger, INTER
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_CHEESE = 2,"taco shell" = 2)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/taco, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/taco)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/rawcutlet
 	name = "raw cutlet"
@@ -4227,7 +4118,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/taco, null, list(REAGE
 	center_of_mass_x = 17
 	center_of_mass_y = 20
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawcutlet, null, list(REAGENT_ID_PROTEIN = 1))
 
 /obj/item/reagent_containers/food/snacks/cutlet
 	name = "cutlet"
@@ -4238,7 +4128,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawcutlet, null, list(
 	center_of_mass_x = 17
 	center_of_mass_y = 20
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cutlet, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cutlet)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/burgerpatty
 	name = "burger patty"
@@ -4249,7 +4140,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cutlet, null, list(REA
 	center_of_mass_x = 17
 	center_of_mass_y = 20
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burgerpatty, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burgerpatty)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/rawmeatball
 	name = "raw meatball"
@@ -4260,7 +4152,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burgerpatty, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 15
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawmeatball, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawmeatball)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/hotdog
 	name = "hotdog"
@@ -4270,15 +4163,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawmeatball, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 17
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotdog, null, list(REAGENT_ID_PROTEIN = 6))
-
-///obj/item/reagent_containers/food/snacks/hotdog/old (Commented out on 4/23/2021 to make room for ancient hotdog)
-//	name = "old hotdog"
-//	desc = "Covered in mold.  You're not gonna eat that, are you?"
-//
-///obj/item/reagent_containers/food/snacks/hotdog/old/Initialize(mapload)
-//	. = ..()
-//	reagents.add_reagent(REAGENT_ID_MOLD, 6)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/flatbread
 	name = "flatbread"
@@ -4324,11 +4210,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotdog, null, list(REA
 	catalogue_data = list(/datum/category_item/catalogue/flora/frostbelle)
 	filling_color = "#5dadcf"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/frostbelle, null, list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
+	configure(light_glow(range = 1.4, power = 1, color = "#5dadcf"))
+	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 
-/obj/item/reagent_containers/food/snacks/frostbelle/Initialize(mapload)
-	. = ..()
-	set_light(1, 1, "#5dadcf")
+/obj/item/reagent_containers/food/snacks/frostbelle
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
 	name = "frostbelle fritters"
@@ -4340,7 +4227,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/frostbelle, null, list
 	do_coating_prefix = 0
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bellefritter, null, list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bellefritter)
+	configure(reagents(add = list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/roastedsunflower
 	name = "roasted sunflower seeds"
@@ -4353,7 +4241,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bellefritter, null, li
 	nutriment_amt = 2
 	nutriment_desc = list("salt" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastedsunflower, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedsunflower)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/roastedpeanuts
 	name = "peanuts"
@@ -4366,7 +4255,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastedsunflower, null
 	nutriment_amt = 2
 	nutriment_desc = list("salt" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastedpeanuts, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastedpeanuts)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/liquidfood
 	name = "\improper LiquidFood Ration"
@@ -4383,7 +4273,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastedpeanuts, null, 
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidfood, null, list(REAGENT_ID_IRON = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidfood)
+	configure(reagents(add = list(REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/liquidprotein
 	name = "\improper LiquidProtein Ration"
@@ -4397,7 +4288,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidfood, null, list
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidprotein, null, list(REAGENT_ID_PROTEIN = 30, REAGENT_ID_IRON = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidprotein)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 30, REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/liquidvitamin
 	name = "\improper VitaPaste Ration"
@@ -4411,7 +4303,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidprotein, null, l
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidvitamin, null, list(REAGENT_ID_FLOUR = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_PARACETAMOL = 5, REAGENT_ID_ENZYME = 1, REAGENT_ID_IRON = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/liquidvitamin)
+	configure(reagents(add = list(REAGENT_ID_FLOUR = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_PARACETAMOL = 5, REAGENT_ID_ENZYME = 1, REAGENT_ID_IRON = 3)))
 
 /obj/item/reagent_containers/food/snacks/meatcube
 	name = "cubed meat"
@@ -4422,7 +4315,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/liquidvitamin, null, l
 	center_of_mass_y = 16
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatcube, null, list(REAGENT_ID_PROTEIN = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatcube)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 15)))
 
 /obj/item/reagent_containers/food/snacks/skrellsnacks
 	name = "\improper SkrellSnax"
@@ -4438,7 +4332,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatcube, null, list(R
 	nutriment_desc = list(PLANT_MUSHROOMS = 5, "salt" = 5)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/skrellsnacks, null, list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_FUNGI = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/skrellsnacks)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1, REAGENT_ID_FUNGI = 1)))
 
 /obj/item/reagent_containers/food/snacks/sashimi
 	name = "sashimi"
@@ -4448,7 +4343,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/skrellsnacks, null, li
 	nutriment_amt = 6
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sashimi, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sashimi)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/benedict
 	name = "eggs benedict"
@@ -4459,7 +4355,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sashimi, null, list(RE
 	nutriment_desc = list("bread" = 2, "bacon" = 2, REAGENT_ID_EGG = 2)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/benedict, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/benedict)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/beans
 	name = "baked beans"
@@ -4468,7 +4365,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/benedict, null, list(R
 	icon_state = "bakedbeans"
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beans, null, list(REAGENT_ID_BEANPROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/beans)
+	configure(reagents(add = list(REAGENT_ID_BEANPROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/cookie
 	name = "chocolate chip cookie"
@@ -4510,9 +4408,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beans, null, list(REAG
 	nutriment_desc = list("sweetness" = 2, "muffin" = 2, PLANT_BERRIES = 2)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berrymuffin/berry, null, list(REAGENT_ID_BERRYJUICE = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berrymuffin/berry)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 3)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berrymuffin/poison, null, list(REAGENT_ID_POISONBERRYJUICE = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/berrymuffin/poison)
+	configure(reagents(add = list(REAGENT_ID_POISONBERRYJUICE = 3)))
 
 /obj/item/reagent_containers/food/snacks/ghostmuffin
 	name = "booberry muffin"
@@ -4525,9 +4425,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/berrymuffin/poison, nu
 	nutriment_desc = list("spookiness" = 4, "muffin" = 1, PLANT_BERRIES = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ghostmuffin/berry, null, list(REAGENT_ID_BERRYJUICE = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostmuffin/berry)
+	configure(reagents(add = list(REAGENT_ID_BERRYJUICE = 3)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ghostmuffin/poison, null, list(REAGENT_ID_POISONBERRYJUICE = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ghostmuffin/poison)
+	configure(reagents(add = list(REAGENT_ID_POISONBERRYJUICE = 3)))
 
 /obj/item/reagent_containers/food/snacks/devilledegg
 	name = "devilled eggs"
@@ -4540,7 +4442,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ghostmuffin/poison, nu
 	nutriment_desc = list(REAGENT_ID_EGG = 4, PLANT_CHILI = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/devilledegg, null, list(REAGENT_ID_CAPSAICIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/devilledegg)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/fruitsalad
 	name = "fruit salad"
@@ -4569,7 +4472,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/devilledegg, null, lis
 	nutriment_desc = list("bittersweet" = 10, REAGENT_ID_IRON = 5)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rosesalad, null, list(REAGENT_ID_STOXIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rosesalad)
+	configure(reagents(add = list(REAGENT_ID_STOXIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/eggbowl
 	name = "egg bowl"
@@ -4581,7 +4485,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rosesalad, null, list(
 	nutriment_desc = list(REAGENT_ID_RICE = 2, REAGENT_ID_EGG = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/eggbowl, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggbowl)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/cubannachos
 	name = "cuban nachos"
@@ -4591,7 +4496,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/eggbowl, null, list(RE
 	nutriment_desc = list("salt" = 1, REAGENT_ID_CHEESE = 2, "chili peppers" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubannachos, null, list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cubannachos)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/curryrice
 	name = "curry rice"
@@ -4601,7 +4507,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubannachos, null, lis
 	nutriment_desc = list("salt" = 1, REAGENT_ID_RICE = 2, "chili peppers" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/curryrice, null, list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/curryrice)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/piginblanket
 	name = "pig in a blanket"
@@ -4611,7 +4518,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/curryrice, null, list(
 	nutriment_desc = list("meat" = 3, "pastry" = 3)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/piginblanket, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/piginblanket)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/wormsickly
 	name = "sickly worm"
@@ -4622,7 +4530,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/piginblanket, null, li
 	w_class = ITEMSIZE_TINY
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wormsickly, null, list(REAGENT_ID_FISHBAIT = 9, REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/wormsickly)
+	configure(reagents(add = list(REAGENT_ID_FISHBAIT = 9, REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/worm
 	name = "strange worm"
@@ -4633,7 +4542,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wormsickly, null, list
 	w_class = ITEMSIZE_TINY
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/worm, null, list(REAGENT_ID_FISHBAIT = 15, REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/worm)
+	configure(reagents(add = list(REAGENT_ID_FISHBAIT = 15, REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/wormdeluxe
 	name = "deluxe worm"
@@ -4644,7 +4554,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/worm, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wormdeluxe, null, list(REAGENT_ID_FISHBAIT = 30, REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/wormdeluxe)
+	configure(reagents(add = list(REAGENT_ID_FISHBAIT = 30, REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/siffruit
 	name = "pulsing fruit"
@@ -4654,17 +4565,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wormdeluxe, null, list
 	nutriment_amt = 2
 	nutriment_desc = list("tart" = 1)
 	w_class = ITEMSIZE_TINY
+	opens_into = /datum/msg/snack/tear_open
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/siffruit, null, list(REAGENT_ID_SIFSAP = 2))
-
-/obj/item/reagent_containers/food/snacks/siffruit/afterattack(obj/O as obj, mob/user as mob, proximity)
-	if(istype(O,/obj/machinery/microwave))
-		return ..()
-	if(!(proximity && O.is_open_container()))
-		return
-	to_chat(user, span_notice("You tear \the [src]'s sac open, pouring it into \the [O]."))
-	reagents.trans_to(O, reagents.total_volume)
-	consume(src, user)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/siffruit)
+	configure(reagents(add = list(REAGENT_ID_SIFSAP = 2)))
 
 /obj/item/reagent_containers/food/snacks/bagelplain
 	name = "plain bagel"
@@ -4690,7 +4594,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/siffruit, null, list(R
 	nutriment_desc = list("bread" = 4, REAGENT_ID_CHEESE = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bagelcheese, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bagelcheese)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/bagelraisin
 	name = "cinnamon raisin bagel"
@@ -4716,15 +4621,17 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bagelcheese, null, lis
 	nutriment_desc = list("life" = 1, "death" = 1, "entropy" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bageleverything, null, list(REAGENT_ID_PHORON = 5, REAGENT_ID_DEFECTIVENANITES = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageleverything)
+	configure(reagents(add = list(REAGENT_ID_PHORON = 5, REAGENT_ID_DEFECTIVENANITES = 5)))
 
 /obj/item/reagent_containers/food/snacks/bageltwo
 	name = "two bagels"
 	desc = "Noo! ...Two bagels!"
 	icon_state = "bagelplain"
 
-DECLARE_LOOT(/obj/item/reagent_containers/food/snacks/bageltwo, LOOT_TABLE(/obj/item/reagent_containers/food/snacks/bagelplain), LOOT_COUNT(2))
-MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
+	loot(table = list(/obj/item/reagent_containers/food/snacks/bagelplain), count = 2)
 
 /obj/item/reagent_containers/food/snacks/macncheese
 	name = "macaroni and cheese"
@@ -4860,7 +4767,7 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 				feeder.put_in_hands(TrashItem)
 			else if(istype(trash,/obj/item))
 				feeder.put_in_hands(trash)
-		qdel(src)
+		consume(src, feeder)
 	return
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4878,7 +4785,6 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 
 /mob/living/simple_mob/slime
 	composition_reagent = REAGENT_ID_SLIMEJELLY
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals
@@ -4893,7 +4799,8 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 	do_coating_prefix = 0
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage/battered, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BATTER = 1.7, REAGENT_ID_OIL = 1.5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sausage/battered)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BATTER = 1.7, REAGENT_ID_OIL = 1.5)))
 
 /obj/item/reagent_containers/food/snacks/jalapeno_poppers
 	name = "jalapeno popper"
@@ -4907,7 +4814,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage/battered, null
 	nutriment_desc = list("chilli pepper" = 2)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jalapeno_poppers, null, list(REAGENT_ID_BATTER = 2, REAGENT_ID_OIL = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jalapeno_poppers)
+	configure(reagents(add = list(REAGENT_ID_BATTER = 2, REAGENT_ID_OIL = 2)))
 
 /obj/item/reagent_containers/food/snacks/mouseburger
 	name = "mouse burger"
@@ -4917,7 +4825,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/jalapeno_poppers, null
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mouseburger, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mouseburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/chickenkatsu
 	name = "chicken katsu"
@@ -4930,14 +4839,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mouseburger, null, lis
 	do_coating_prefix = 0
 	bitesize = 1.5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenkatsu, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BEERBATTER = 2, REAGENT_ID_OIL = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenkatsu)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_BEERBATTER = 2, REAGENT_ID_OIL = 1)))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch, null, list(REAGENT_ID_BATTER = 6.5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch)
+	configure(reagents(add = list(REAGENT_ID_BATTER = 6.5)))
+	configure(reagents(add = list(REAGENT_ID_OIL = 4)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(coating), reagents.get_reagent(REAGENT_ID_BATTER))
-	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
 	name = "funnel cake"
@@ -4949,7 +4860,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch
 	do_coating_prefix = 0
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/funnelcake, null, list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/funnelcake)
+	configure(reagents(add = list(REAGENT_ID_BATTER = 10, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/spreads
 	name = "nutri-spread"
@@ -4970,19 +4882,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/funnelcake, null, list
 	nutriment_desc = list("butter" = 1)
 	nutriment_amt = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spreads, null, list(REAGENT_ID_TRIGLYCERIDE = 20, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/spreads)
+	configure(reagents(add = list(REAGENT_ID_TRIGLYCERIDE = 20, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/rawcutlet, INTERACT_ITEM(null, PROC_REF(rawcutlet_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawcutlet)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
+	op("slice_bacon", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Slice it into bacon"), then(PROC_REF(sliced_into_bacon)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/rawcutlet/proc/rawcutlet_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
-		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
-		to_chat(user, "You slice the cutlet into thin strips of bacon.")
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/rawcutlet/proc/sliced_into_bacon(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/rawbacon, "You slice the cutlet into thin strips of bacon.", copies = 2)
 
 /obj/item/reagent_containers/food/snacks/rawbacon
 	name = "raw bacon"
@@ -4992,7 +4900,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/rawcutlet, INTERACT
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawbacon, null, list(REAGENT_ID_PROTEIN = 0.33))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawbacon)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 0.33)))
 
 /obj/item/reagent_containers/food/snacks/bacon
 	name = "bacon"
@@ -5018,7 +4927,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawbacon, null, list(R
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon, null, list(REAGENT_ID_PROTEIN = 0.33, REAGENT_ID_TRIGLYCERIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 0.33, REAGENT_ID_TRIGLYCERIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/bacon_stick
 	name = "eggpop"
@@ -5026,7 +4936,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon, null, list(REAG
 	icon_state = "bacon_stick"
 	trash = /obj/item/trash/stick
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_stick, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_EGG = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon_stick)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_EGG = 1)))
 
 /obj/item/reagent_containers/food/snacks/chilied_eggs
 	name = "Redeemed eggs"
@@ -5034,7 +4945,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_stick, null, lis
 	icon_state = "chilied_eggs"
 	trash = /obj/item/trash/snack_bowl
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chilied_eggs, null, list(REAGENT_ID_EGG = 6, REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chilied_eggs)
+	configure(reagents(add = list(REAGENT_ID_EGG = 6, REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/bacon_and_eggs
 	name = "bacon and eggs"
@@ -5042,7 +4954,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chilied_eggs, null, li
 	icon_state = "bacon_and_eggs"
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_and_eggs, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_EGG = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon_and_eggs)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_EGG = 1)))
 
 /obj/item/reagent_containers/food/snacks/sweet_and_sour
 	name = "sweet and sour pork"
@@ -5052,7 +4965,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_and_eggs, null, 
 	nutriment_amt = 6
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sweet_and_sour, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sweet_and_sour)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/corn_dog
 	name = "corn dog"
@@ -5062,7 +4976,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sweet_and_sour, null, 
 	nutriment_desc = list("corn batter" = 4)
 	nutriment_amt = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/corn_dog, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/corn_dog)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/truffle
 	name = "chocolate truffle"
@@ -5071,16 +4986,23 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/corn_dog, null, list(R
 	nutriment_amt = 0
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/truffle, null, list(REAGENT_ID_COCO = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/truffle)
+	configure(reagents(add = list(REAGENT_ID_COCO = 6)))
 
 /obj/item/reagent_containers/food/snacks/truffle/random
 	name = "mystery chocolate truffle"
 	desc = "Rich bite-sized chocolate with a mystery filling!"
 
-/obj/item/reagent_containers/food/snacks/truffle/random/Initialize(mapload)
-	. = ..()
-	var/reagent_string = pick(list(REAGENT_ID_CREAM,REAGENT_ID_CHERRYJELLY,REAGENT_ID_MINT,REAGENT_ID_FROSTOIL,REAGENT_ID_CAPSAICIN,REAGENT_ID_CREAM,REAGENT_ID_COFFEE,REAGENT_ID_MILKSHAKE))
-	reagents.add_reagent(reagent_string, 4)
+/obj/item/reagent_containers/food/snacks/truffle/random
+	/// The filling it rolled (rolls()): 4 units.
+	var/truffle_filling
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/truffle/random)
+	rolls(nameof(truffle_filling), pick_one(list(REAGENT_ID_CREAM, REAGENT_ID_CHERRYJELLY, REAGENT_ID_MINT, REAGENT_ID_FROSTOIL, REAGENT_ID_CAPSAICIN, REAGENT_ID_CREAM, REAGENT_ID_COFFEE, REAGENT_ID_MILKSHAKE)))
+	configure(reagents(contents_from = PROC_REF(truffle_contents)))
+
+/obj/item/reagent_containers/food/snacks/truffle/random/proc/truffle_contents()
+	return truffle_filling ? list("[truffle_filling]" = 4) : null
 
 /obj/item/reagent_containers/food/snacks/bacon_flatbread
 	name = "bacon cheese flatbread"
@@ -5089,7 +5011,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/truffle, null, list(RE
 	nutriment_desc = list("flatbread" = 5)
 	nutriment_amt = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_flatbread, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bacon_flatbread)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/meat_pocket
 	name = "meat pocket"
@@ -5098,7 +5021,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bacon_flatbread, null,
 	nutriment_desc = list("flatbread" = 3)
 	nutriment_amt = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat_pocket, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat_pocket)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/fish_taco
 	name = "fish taco"
@@ -5107,7 +5031,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat_pocket, null, lis
 	nutriment_desc = list("flatbread" = 3)
 	nutriment_amt = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fish_taco, null, list(REAGENT_ID_SEAFOOD = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fish_taco)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 3)))
 
 /obj/item/reagent_containers/food/snacks/nt_muffin
 	name = "breakfast muffin"
@@ -5116,7 +5041,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fish_taco, null, list(
 	nutriment_desc = list("biscuit" = 3)
 	nutriment_amt = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nt_muffin, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/nt_muffin)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/pineapple_ring
 	name = "pineapple rings"
@@ -5125,7 +5051,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nt_muffin, null, list(
 	nutriment_desc = list("sweetness" = 2)
 	nutriment_amt = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pineapple_ring, null, list(REAGENT_ID_PINEAPPLEJUICE = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pineapple_ring)
+	configure(reagents(add = list(REAGENT_ID_PINEAPPLEJUICE = 3)))
 
 /obj/item/reagent_containers/food/snacks/burger/bacon
 	name = "bacon burger"
@@ -5138,7 +5065,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pineapple_ring, null, 
 	nutriment_amt = 3
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burger/bacon, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burger/bacon)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/blt
 	name = "BLT"
@@ -5151,7 +5079,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burger/bacon, null, li
 	nutriment_amt = 4
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blt, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/blt)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/porkbowl
 	name = "pork bowl"
@@ -5161,7 +5090,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blt, null, list(REAGEN
 	filling_color = "#FFFBDB"
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/porkbowl, null, list(REAGENT_ID_RICE = 6, REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/porkbowl)
+	configure(reagents(add = list(REAGENT_ID_RICE = 6, REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/mashedpotato
 	name = "mashed potato"
@@ -5186,7 +5116,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/porkbowl, null, list(R
 	nutriment_desc = list("baked potato" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/loadedbakedpotato, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/loadedbakedpotato)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/bangersandmash
 	name = "Bangers and Mash"
@@ -5200,7 +5131,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/loadedbakedpotato, nul
 	nutriment_desc = list("fluffy potato" = 3, "sausage" = 2)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bangersandmash, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bangersandmash)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/cheesymash
 	name = "Cheesy Mashed Potato"
@@ -5214,7 +5146,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bangersandmash, null, 
 	nutriment_desc = list("cheesy potato" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesymash, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesymash)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/croissant
 	name = "croissant"
@@ -5252,13 +5185,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesymash, null, list
 	icon_state = "nugget_lump"
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nugget, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/nugget)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
-/obj/item/reagent_containers/food/snacks/nugget/Initialize(mapload)
-	. = ..()
-	var/shape = pick("lump", "star", "lizard", "corgi")
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/nugget/proc/roll_look(datum/roller/R)
+	var/shape = R.choose(list("lump", "star", "lizard", "corgi"))
 	desc = "A chicken nugget vaguely shaped like a [shape]."
-	icon_state = "nugget_[shape]"
+	return "nugget_[shape]"
 
 /obj/item/reagent_containers/food/snacks/icecreamsandwich
 	name = "ice cream sandwich"
@@ -5270,7 +5205,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nugget, null, list(REA
 	nutriment_desc = list("ice cream" = 4)
 	nutriment_amt = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/honeybun, null, list(REAGENT_ID_HONEY = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/honeybun)
+	configure(reagents(add = list(REAGENT_ID_HONEY = 3)))
 
 /obj/item/reagent_containers/food/snacks/tortilla
 	name = "tortilla"
@@ -5366,10 +5302,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/honeybun, null, list(R
 	bitesize = 1
 	nutriment_amt = 10
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+// An empty hand takes a chip from the basket.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
+	op("take_chip", hand(), priority(OP_PRIORITY_PART), label("Take a chip"), then(PROC_REF(chip_taken)))
 
-/// Old attack_hand.
-/obj/item/reagent_containers/food/snacks/chipplate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/chipplate/proc/chip_taken(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/returningitem = new vendingobject(loc)
 	reagents.trans_to(returningitem, bitesize)
 	returningitem.bitesize = 2
@@ -5382,7 +5320,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT
 		if (loc == user)
 			user.put_in_hands(waste)
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/chipplate/MouseDrop(mob/user) //Dropping the chip onto the user
 	if(istype(user) && user == usr)
@@ -5416,45 +5354,55 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT
 	center_of_mass_y = 16
 	nutriment_amt = 20
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dip, INTERACT_ITEM(null, PROC_REF(dip_item)))
+// A chip held to a dip is dipped.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
+	op("dip_chip", item(/obj/item/reagent_containers/food/snacks/chip), priority(OP_PRIORITY_PART + 1), when(PROC_REF(is_dippable)), label("Dip it"), then(PROC_REF(chip_dipped)))
 
-/// Old attackby (ran the snack handling first; that did nothing for chips). Anything that isn't a chip falls to it (FALSE).
-/obj/item/reagent_containers/food/snacks/dip/proc/dip_item(mob/user, obj/item/reagent_containers/food/snacks/item, datum/interaction/interaction)
-	var/obj/item/reagent_containers/food/snacks/returningitem
-	if(istype(item,/obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho")
-		returningitem = new nachotrans(src)
-	else if (istype(item,/obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
-		returningitem = new chiptrans(src)
-	if(returningitem)
-		returningitem.reagents.clear_reagents() //Clear the new chip
-		var/memed = 0
-		item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
-		if(item.icon_state == "chip_half")
-			returningitem.icon_state = "[returningitem.icon_state]_half"
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
-		else if(prob(1))
-			memed = 1
-			to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
-			returningitem.icon_state = "[returningitem.icon_state]_half"
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
-		else
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
-		consume(item, user)
-		reagents.trans_to(returningitem, bitesize) //Dip to new chip
-		user.put_in_hands(returningitem)
+/// What a chip dipped here becomes, or null when it is not one that can be.
+/obj/item/reagent_containers/food/snacks/dip/proc/dipped_type(obj/item/reagent_containers/food/snacks/item)
+	if(istype(item, /obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho")
+		return nachotrans
+	if(istype(item, /obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
+		return chiptrans
+	return null
 
-		if (reagents && reagents.total_volume)
-			if(!memed)
-				to_chat(user, "You scoop up some dip with the chip.")
-		else
-			if(!memed)
-				to_chat(user, "You scoop up the remaining dip with the chip.")
-			var/obj/waste = new trash(loc)
-			if (loc == user)
-				user.put_in_hands(waste)
-			consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/dip/proc/is_dippable(datum/act/op/A)
+	return !isnull(dipped_type(A.held))
+
+/// The chip comes out dipped: what it held and some of the dip, in the hand; the dip is used up with its last scoop.
+/obj/item/reagent_containers/food/snacks/dip/proc/chip_dipped(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/item = A.held
+	var/chip_type = dipped_type(item)
+	var/obj/item/reagent_containers/food/snacks/returningitem = new chip_type(src)
+	returningitem.reagents.clear_reagents() //Clear the new chip
+	var/memed = 0
+	item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
+	if(item.icon_state == "chip_half")
+		returningitem.set_icon_state("[returningitem.icon_state]_half")
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+	else if(prob(1))
+		memed = 1
+		to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
+		returningitem.set_icon_state("[returningitem.icon_state]_half")
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+	else
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
+	consume(item, user)
+	reagents.trans_to(returningitem, bitesize) //Dip to new chip
+	user.put_in_hands(returningitem)
+
+	if (reagents && reagents.total_volume)
+		if(!memed)
+			to_chat(user, "You scoop up some dip with the chip.")
+	else
+		if(!memed)
+			to_chat(user, "You scoop up the remaining dip with the chip.")
+		var/obj/waste = new trash(loc)
+		if (loc == user)
+			user.put_in_hands(waste)
+		consume(src, user)
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/dip/salsa
 	name = "salsa dip"
@@ -5484,7 +5432,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dip, INTERACT_ITEM(
 	nutriment_desc = list("chilli peppers" = 5, "tortilla" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fuegoburrito, null, list(REAGENT_ID_CAPSAICIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fuegoburrito)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/meatburrito
 	name = "carne asada burrito"
@@ -5494,7 +5443,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fuegoburrito, null, li
 	nutriment_desc = list("tortilla" = 3, "meat" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatburrito, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatburrito)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/cheeseburrito
 	name = "Cheese burrito"
@@ -5504,7 +5454,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatburrito, null, lis
 	nutriment_desc = list("tortilla" = 3, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheeseburrito, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheeseburrito)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/eggroll
 	name = "egg roll"
@@ -5517,7 +5468,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheeseburrito, null, l
 	nutriment_desc = list(REAGENT_ID_EGG = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/eggroll, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/eggroll)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/burrito
 	name = "chilli burrito"
@@ -5529,7 +5481,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/eggroll, null, list(RE
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/burrito_spicy
 	name = "spicy burrito"
@@ -5541,7 +5494,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito, null, list(RE
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_spicy, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_spicy)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_cheese
 	name = "carne queso burrito"
@@ -5553,7 +5507,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_spicy, null, l
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_cheese, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_cheese_spicy
 	name = "spicy cheese burrito"
@@ -5565,7 +5520,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_cheese, null, 
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/burrito_vegan
 	name = "vegan burrito"
@@ -5577,7 +5533,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_cheese_spicy, 
 	nutriment_desc = list("tortilla" = 6)
 	nutriment_amt = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_vegan, null, list(REAGENT_ID_TOFU = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_vegan)
+	configure(reagents(add = list(REAGENT_ID_TOFU = 6)))
 
 /obj/item/reagent_containers/food/snacks/breakfast_wrap
 	name = "breakfast wrap"
@@ -5609,7 +5566,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_vegan, null, l
 	nutriment_desc = list("hellfire" = 6)
 	nutriment_amt = 24// 10 Chilis is a lot.
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_hell, null, list(REAGENT_ID_PROTEIN = 9, REAGENT_ID_CONDENSEDCAPSAICIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/burrito_hell)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 9, REAGENT_ID_CONDENSEDCAPSAICIN = 10)))
 
 //End Burritos///////////////////////////////////
 
@@ -5619,7 +5577,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/burrito_hell, null, li
 	icon_state = "hatchling_suprise"
 	trash = /obj/item/trash/snack_bowl
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hatchling_suprise, null, list(REAGENT_ID_EGG = 2, REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hatchling_suprise)
+	configure(reagents(add = list(REAGENT_ID_EGG = 2, REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/red_sun_special
 	name = "red sun special"
@@ -5627,7 +5586,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hatchling_suprise, nul
 	icon_state = "red_sun_special"
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/red_sun_special, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/red_sun_special)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/riztizkzi_sea
 	name = "moghesian sea delight"
@@ -5635,7 +5595,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/red_sun_special, null,
 	icon_state = "riztizkzi_sea"
 	trash = /obj/item/trash/snack_bowl
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/riztizkzi_sea, null, list(REAGENT_ID_EGG = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/riztizkzi_sea)
+	configure(reagents(add = list(REAGENT_ID_EGG = 4)))
 
 /obj/item/reagent_containers/food/snacks/father_breakfast
 	name = "breakfast of champions"
@@ -5643,7 +5604,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/riztizkzi_sea, null, l
 	icon_state = "father_breakfast"
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/father_breakfast, null, list(REAGENT_ID_EGG = 4, REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/father_breakfast)
+	configure(reagents(add = list(REAGENT_ID_EGG = 4, REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/stuffed_meatball
 	name = "stuffed meatball" //YES
@@ -5651,7 +5613,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/father_breakfast, null
 	icon_state = "stuffed_meatball"
 	trash = /obj/item/trash/small_bowl
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stuffed_meatball, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/stuffed_meatball)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/egg_pancake
 	name = "meat pancake"
@@ -5659,7 +5622,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/stuffed_meatball, null
 	icon_state = "egg_pancake"
 	trash = /obj/item/trash/plate
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg_pancake, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_EGG = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg_pancake)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_EGG = 2)))
 
 /obj/item/reagent_containers/food/snacks/redcurry
 	name = "red curry"
@@ -5674,7 +5638,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg_pancake, null, lis
 	center_of_mass_y = 8
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/redcurry, null, list(REAGENT_ID_PROTEIN = 7))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/redcurry)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 7)))
 
 /obj/item/reagent_containers/food/snacks/greencurry
 	name = "green curry"
@@ -5689,7 +5654,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/redcurry, null, list(R
 	center_of_mass_y = 8
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greencurry, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CAPSAICIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/greencurry)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/yellowcurry
 	name = "yellow curry"
@@ -5704,7 +5670,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greencurry, null, list
 	center_of_mass_y = 8
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/yellowcurry, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/yellowcurry)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/bearburger
 	name = "bearburger"
@@ -5715,7 +5682,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/yellowcurry, null, lis
 	center_of_mass_y = 11
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearburger, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bearburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/bibimbap
 	name = "bibimbap bowl"
@@ -5729,7 +5697,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearburger, null, list
 	center_of_mass_y = 9
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bibimbap, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bibimbap)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/lomein
 	name = "lo mein"
@@ -5744,7 +5713,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bibimbap, null, list(R
 	center_of_mass_y = 10
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lomein, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/lomein)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/friedrice
 	name = "fried rice"
@@ -5770,7 +5740,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lomein, null, list(REA
 	center_of_mass_y = 16
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenfillet, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenfillet)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/friedmushroom
 	name = "fried mushroom"
@@ -5783,7 +5754,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenfillet, null, l
 	center_of_mass_y = 11
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/friedmushroom, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/friedmushroom)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/pisanggoreng
 	name = "pisang goreng"
@@ -5798,7 +5770,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/friedmushroom, null, l
 	center_of_mass_y = 11
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pisanggoreng, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pisanggoreng)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/meatbun
 	name = "meat and leaf bun"
@@ -5811,7 +5784,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pisanggoreng, null, li
 	center_of_mass_y = 11
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatbun, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meatbun)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/spicedmeatbun
 	name = "char sui meat bun"
@@ -5824,7 +5798,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meatbun, null, list(RE
 	center_of_mass_y = 11
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spicedmeatbun, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/spicedmeatbun)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/custardbun
 	name = "custard bun"
@@ -5850,7 +5825,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spicedmeatbun, null, l
 	center_of_mass_y = 9
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenmomo, null, list(REAGENT_ID_PROTEIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenmomo)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/veggiemomo
 	name = "veggie momo"
@@ -5865,7 +5841,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenmomo, null, lis
 	center_of_mass_y = 9
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/veggiemomo, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/veggiemomo)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/risotto
 	name = "risotto"
@@ -5880,7 +5857,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/veggiemomo, null, list
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/risotto, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/risotto)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/risottoballs
 	name = "risotto balls"
@@ -5907,7 +5885,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/risotto, null, list(RE
 	center_of_mass_y = 14
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/poachedegg, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_BLACKPEPPER = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/poachedegg)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_BLACKPEPPER = 1)))
 
 /obj/item/reagent_containers/food/snacks/ribplate
 	name = "plate of ribs"
@@ -5921,7 +5900,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/poachedegg, null, list
 	center_of_mass_y = 13
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ribplate, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_HONEY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ribplate)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2, REAGENT_ID_BLACKPEPPER = 1, REAGENT_ID_HONEY = 5)))
 
 /obj/item/reagent_containers/food/snacks/omurice
 	name = "omelette rice"
@@ -5966,7 +5946,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ribplate, null, list(R
 	center_of_mass_y = 14
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mint, null, list(REAGENT_ID_MINT = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
+	configure(reagents(add = list(REAGENT_ID_MINT = 1)))
 
 /obj/item/reagent_containers/food/snacks/mint/admints
 	desc = "Spearmint, peppermint's non-festive cousin."
@@ -5980,16 +5961,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mint, null, list(REAGE
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "admint_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 6
 	foldable = null
 	trash = /obj/item/trash/admints
 
-TYPE_TABLE(/obj/item/storage/box/admints, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/mint/admints)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/admints)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
@@ -6005,7 +5988,8 @@ TYPE_TABLE(/obj/item/storage/box/admints, hold_spec, list(HOLD_ONLY(list(/obj/it
 	nutriment_desc = list("candy" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy, null, list(REAGENT_ID_SUGAR = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
 /obj/item/reagent_containers/food/snacks/namagashi
 	name = "\improper Ryo-kucha Namagashi"
@@ -6020,7 +6004,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy, null, list(REAG
 	nutriment_desc = list("candy" = 2, "sweetness" = 2)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/namagashi, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/namagashi)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/candy/proteinbar
 	name = "\improper SwoleMAX protein bar"
@@ -6033,7 +6018,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/namagashi, null, list(
 	nutriment_desc = list("candy" = 1, REAGENT_ID_PROTEIN = 8)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/proteinbar, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SUGAR = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/proteinbar)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SUGAR = 4)))
 
 /obj/item/reagent_containers/food/snacks/candy/gummy
 	name = "\improper AlliCo Gummies"
@@ -6046,7 +6032,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/proteinbar, null
 	nutriment_desc = list("artificial fruit flavour" = 2)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/gummy, null, list(REAGENT_ID_SUGAR = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/candy/gummy)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/cookiesnack
 	name = "Carps Ahoy! miniature cookies"
@@ -6071,7 +6058,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/candy/gummy, null, lis
 	nutriment_desc = list("apricot" = 2, REAGENT_ID_SUGAR = 2, "dates" = 2, "cranberry" = 2, PLANT_APPLE = 2)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fruitbar, null, list(REAGENT_ID_SUGAR = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruitbar)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 4)))
 
 /////////////////////////////////////////////////////////////////////////////
 //////////////////////////////Candy Bars (1-10)//////////////////////////////
@@ -6090,7 +6078,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/fruitbar, null, list(R
 	w_class = ITEMSIZE_TINY
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb01, null, list(REAGENT_ID_SUGAR = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb01)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb02
 	name = "\improper Hundred-Thousand Thaler Bar"
@@ -6105,7 +6094,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb01, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb02, null, list(REAGENT_ID_SUGAR = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb02)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb03
 	name = "\improper Aerostat Bar"
@@ -6120,7 +6110,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb02, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb03, null, list(REAGENT_ID_SUGAR = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb03)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb04
 	name = "\improper Lars' Saltlakris"
@@ -6135,7 +6126,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb03, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb04, null, list(REAGENT_ID_SUGAR = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb04)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb05
 	name = "\improper Andromeda Bar"
@@ -6150,7 +6142,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb04, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb05, null, list(REAGENT_ID_SUGAR = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb05)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 3)))
 
 /obj/item/reagent_containers/food/snacks/cb06
 	name = "\improper Mocha Crunch"
@@ -6165,7 +6158,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb05, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb06, null, list(REAGENT_ID_SUGAR = 1, REAGENT_ID_COFFEE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb06)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_COFFEE = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb07
 	name = "\improper TaroMilk Bar"
@@ -6180,7 +6174,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb06, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb07, null, list(REAGENT_ID_SUGAR = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb07)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb08
 	name = "\improper Cronk Bar"
@@ -6195,7 +6190,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb07, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb08, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb08)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/cb09
 	name = "\improper Kaju Mamma! Bar"
@@ -6210,7 +6206,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb08, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb09, null, list(REAGENT_ID_SUGAR = 1, REAGENT_ID_MILK = 1, REAGENT_ID_PEANUTOIL = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb09)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_MILK = 1, REAGENT_ID_PEANUTOIL = 1)))
 
 /obj/item/reagent_containers/food/snacks/cb10
 	name = "\improper Shantak Bar"
@@ -6225,7 +6222,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb09, null, list(REAGE
 	w_class = ITEMSIZE_TINY
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb10, null, list(REAGENT_ID_SUGAR = 1, REAGENT_ID_PROTEIN = 1, REAGENT_ID_PEANUTOIL = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cb10)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 1, REAGENT_ID_PROTEIN = 1, REAGENT_ID_PEANUTOIL = 1)))
 
 ////////////////////Misc Vend Items////////////////////////////////////////////////////////////////
 
@@ -6243,7 +6241,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cb10, null, list(REAGE
 	nutriment_desc = list("salt" = 1, "chips" = 2)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chips, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chips)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/chips/bbq
 	name = "\improper Legendary BBQ Chips"
@@ -6291,7 +6290,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chips, null, list(REAG
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sosjerky, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sosjerky)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/unajerky
 	name = "Moghes Imported Sissalik Jerky"
@@ -6303,11 +6303,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sosjerky, null, list(R
 	filling_color = "#631212"
 	center_of_mass_x = 15
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_SODA
-	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/unajerky, null, list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/unajerky)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_CAPSAICIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/tuna
 	name = "\improper Tuna Snax"
@@ -6323,7 +6323,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/unajerky, null, list(R
 	nutriment_desc = list("smoked fish" = 5)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tuna, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tuna)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/pistachios
 	name = "pistachios"
@@ -6364,7 +6365,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tuna, null, list(REAGE
 	nutriment_amt = 2
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/squid/true, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/squid/true)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/croutons
 	name = "\improper Suhariki"
@@ -6392,7 +6394,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/squid/true, null, list
 	nutriment_amt = 2
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/salo/true, null, list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/salo/true)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/driedfish
 	name = "\improper Vobla"
@@ -6407,7 +6410,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/salo/true, null, list(
 	nutriment_amt = 2
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/driedfish, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/driedfish)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/no_raisin
 	name = "4no Raisins"
@@ -6421,21 +6425,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/driedfish, null, list(
 	center_of_mass_y = 4
 	nutriment_desc = list("dried raisins" = 6)
 	nutriment_amt = 6
-
-///obj/item/reagent_containers/food/snacks/spacetwinkie (Commented out to replace with packaged version 04/14/2021)
-//	name = "Spacer Snack Cake"
-//	icon = 'icons/obj/food_snacks.dmi'
-//	icon_state = "space_twinkie"
-//	desc = "Guaranteed to survive longer than you will."
-//	description_fluff = "Despite Spacer advertisements consistently portraying their snack cakes as life-saving, tear-jerking survival food for spacers in all kinds of dramatic scenarios, the Spacer Snack Cake has been statistically proven to lower survival rates on all missions where it is present."
-//	filling_color = "#FFE591"
-//	center_of_mass_x = 15
-//	center_of_mass_y = 11
-//	bitesize = 2
-//
-///obj/item/reagent_containers/food/snacks/spacetwinkie/Initialize(mapload)
-//	. = ..()
-//	reagents.add_reagent(REAGENT_ID_SUGAR, 4)
 
 /obj/item/reagent_containers/food/snacks/cheesiehonkers
 	name = "Cheesie Honkers"
@@ -6465,7 +6454,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/driedfish, null, list(
 	nutriment_amt = 4
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/syndicake, null, list(REAGENT_ID_DOCTORSDELIGHT = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/syndicake)
+	configure(reagents(add = list(REAGENT_ID_DOCTORSDELIGHT = 5)))
 
 ////////////////////sol_vend (Mars Mart)////////////////////////////////////////////////////
 
@@ -6482,7 +6472,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/syndicake, null, list(
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/triton, null, list(REAGENT_ID_SODIUMCHLORIDE = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/triton)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 10)))
 
 /obj/item/reagent_containers/food/snacks/saturn
 	name = "\improper Saturn-Os"
@@ -6497,7 +6488,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/triton, null, list(REA
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/saturn, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/saturn)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/jupiter
 	name = "\improper Jove Gello"
@@ -6551,7 +6543,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/saturn, null, list(REA
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/venus, null, list(REAGENT_ID_CAPSAICIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/venus)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/sun_snax
 	name = "\improper Sun Snax!"
@@ -6566,7 +6559,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/venus, null, list(REAG
 	nutriment_amt = 3
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sun_snax, null, list(REAGENT_ID_CAPSAICIN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sun_snax)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 6)))
 
 /obj/item/reagent_containers/food/snacks/oort
 	name = "\improper Oort Cloud Rocks"
@@ -6581,7 +6575,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sun_snax, null, list(R
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/oort, null, list(REAGENT_ID_FROSTOIL = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/oort)
+	configure(reagents(add = list(REAGENT_ID_FROSTOIL = 5)))
 
 /obj/item/reagent_containers/food/snacks/pretzels
 	name = "\improper Value Pretzel Snack"
@@ -6610,7 +6605,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/oort, null, list(REAGE
 	nutriment_amt = 4
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hakarl, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hakarl)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 ////////////////////weeb_vend (Nippon-tan!)////////////////////////////////////////////////////
 
@@ -6651,7 +6647,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hakarl, null, list(REA
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weebonuts, null, list(REAGENT_ID_CAPSAICIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/weebonuts)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/wasabi_peas
 	name = "\improper Hadokikku Peas"
@@ -6663,7 +6660,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/weebonuts, null, list(
 	nutriment_amt = 6
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wasabi_peas, null, list(REAGENT_ID_CAPSAICIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/wasabi_peas)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/chocobanana
 	name = "\improper Choco Banana"
@@ -6675,7 +6673,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wasabi_peas, null, lis
 	nutriment_amt = 5
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, list(REAGENT_ID_SPRINKLES = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chocobanana)
+	configure(reagents(add = list(REAGENT_ID_SPRINKLES = 10)))
 
 /obj/item/reagent_containers/food/snacks/goma_dango
 	name = "\improper Goma dango"
@@ -6709,16 +6708,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, lis
 	nutriment_amt = 10
 	bitesize = 3
 	filling_color = "#336b42"
-/obj/item/reagent_containers/food/snacks/old/Initialize(mapload)
-	.=..()
-	reagents.add_reagent(pick(list(
-				REAGENT_ID_FUEL,
-				REAGENT_ID_AMATOXIN,
-				REAGENT_ID_CARPOTOXIN,
-				REAGENT_ID_ZOMBIEPOWDER,
-				REAGENT_ID_CRYPTOBIOLIN,
-				REAGENT_ID_PSILOCYBIN)), 5)
-	reagents.add_reagent(REAGENT_ID_SALMONELLA, 5)
+/obj/item/reagent_containers/food/snacks/old
+	/// What it went bad with (rolls()): 5 units, and 5 of salmonella.
+	var/old_taint
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/old)
+	rolls(nameof(old_taint), pick_one(list(REAGENT_ID_FUEL, REAGENT_ID_AMATOXIN, REAGENT_ID_CARPOTOXIN, REAGENT_ID_ZOMBIEPOWDER, REAGENT_ID_CRYPTOBIOLIN, REAGENT_ID_PSILOCYBIN)))
+	configure(reagents(contents_from = PROC_REF(old_contents)))
+
+/obj/item/reagent_containers/food/snacks/old/proc/old_contents()
+	return old_taint ? list("[old_taint]" = 5, REAGENT_ID_SALMONELLA = 5) : list(REAGENT_ID_SALMONELLA = 5)
 
 /obj/item/reagent_containers/food/snacks/old/pizza
 	name = "\improper Pizza!"
@@ -6771,7 +6770,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocobanana, null, lis
 	nutriment_desc = list("beef" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/beef, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beef)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/beans
 	name = "baked beans"
@@ -6785,7 +6785,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/beef, null, lis
 	nutriment_desc = list(REAGENT_BEANPROTEIN = 1, "tomato sauce" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/beans, null, list(REAGENT_ID_BEANPROTEIN = 5, REAGENT_ID_TOMATOJUICE = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/beans)
+	configure(reagents(add = list(REAGENT_ID_BEANPROTEIN = 5, REAGENT_ID_TOMATOJUICE = 5)))
 
 /obj/item/reagent_containers/food/snacks/canned/tomato
 	name = "tomato soup"
@@ -6798,7 +6799,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/beans, null, li
 	center_of_mass_y = 9
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/tomato, null, list(REAGENT_ID_TOMATOSOUP = 12))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/tomato)
+	configure(reagents(add = list(REAGENT_ID_TOMATOSOUP = 12)))
 
 /obj/item/reagent_containers/food/snacks/canned/spinach
 	name = "spinach"
@@ -6812,7 +6814,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/tomato, null, l
 	nutriment_desc = list("soggy" = 1, "vegetable" = 1)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/spinach, null, list(REAGENT_ID_ADRENALINE = 4, REAGENT_ID_HYPERZINE = 4, REAGENT_ID_IRON = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/spinach)
+	configure(reagents(add = list(REAGENT_ID_ADRENALINE = 4, REAGENT_ID_HYPERZINE = 4, REAGENT_ID_IRON = 4)))
 
 //////////////////////////////Advanced Canned Food//////////////////////////////
 
@@ -6828,7 +6831,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/spinach, null, 
 	nutriment_desc = list("salt" = 1)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/caviar, null, list(REAGENT_ID_SEAFOOD = 5, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 5, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/canned/caviar/true
 	name = "\improper Classic Terran Caviar"
@@ -6842,7 +6846,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/caviar, null, l
 	nutriment_desc = list("salt" = 1, "a numbing sensation" = 1)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/caviar/true, null, list(REAGENT_ID_SEAFOOD = 4, REAGENT_ID_CARPOTOXIN = 1, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/caviar/true)
+	configure(reagents(add = list(REAGENT_ID_SEAFOOD = 4, REAGENT_ID_CARPOTOXIN = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/canned/maps
 	name = "\improper MAPS"
@@ -6855,7 +6860,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/caviar/true, nu
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/maps, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_SODIUMCHLORIDE = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/maps)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_SODIUMCHLORIDE = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/appleberry
 	name = "\improper Appleberry Bits"
@@ -6869,7 +6875,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/maps, null, lis
 	nutriment_desc = list(PLANT_APPLE = 1, "sweetness" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/appleberry, null, list(REAGENT_ID_MILK = 8, REAGENT_ID_SUGAR = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/appleberry)
+	configure(reagents(add = list(REAGENT_ID_MILK = 8, REAGENT_ID_SUGAR = 5)))
 
 /obj/item/reagent_containers/food/snacks/canned/ntbeans
 	name = "baked beans"
@@ -6882,7 +6889,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/appleberry, nul
 	center_of_mass_y = 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/ntbeans, null, list(REAGENT_ID_BEANPROTEIN = 6, REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/ntbeans)
+	configure(reagents(add = list(REAGENT_ID_BEANPROTEIN = 6, REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/canned/brainzsnax
 	name = "\improper BrainzSnax"
@@ -6899,9 +6907,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/ntbeans, null, 
 	bitesize = 2
 	var/brainmeat = REAGENT_ID_BRAINPROTEIN
 
-/obj/item/reagent_containers/food/snacks/canned/brainzsnax/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(brainmeat, 10)
+/// Ten units of its brain meat.
+/obj/item/reagent_containers/food/snacks/canned/brainzsnax/proc/brain_contents()
+	return brainmeat ? list("[brainmeat]" = 10) : null
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/canned/brainzsnax)
+	configure(reagents(contents_from = PROC_REF(brain_contents)))
 
 /obj/item/reagent_containers/food/snacks/canned/brainzsnax/red
 	name = "\improper BrainzSnax RED"
@@ -6986,7 +6997,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/canned/ntbeans, null, 
 	nutriment_desc = list("sweetness" = 4, "cake" = 2)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie, null, list(REAGENT_ID_SUGAR = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 4)))
 
 /obj/item/reagent_containers/food/snacks/packaged/genration
 	name = "generic ration"
@@ -7014,7 +7026,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/spacetwinkie,
 	nutriment_desc = list("chalk" = 3, "meat" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/meatration, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/meatration)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vegration
 	name = "veggie ration"
@@ -7042,7 +7055,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/meatration, n
 	nutriment_desc = list("sweetness" = 5, "cake" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/sweetration, null, list(REAGENT_ID_SUGAR = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/sweetration)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 6)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vendburger
 	name = "packaged burger"
@@ -7053,7 +7067,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/sweetration, 
 	nutriment_amt = 3
 	nutriment_desc = list("stale burger" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburger, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendburger)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vendhotdog
 	name = "packaged hotdog"
@@ -7064,7 +7079,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburger, n
 	nutriment_amt = 3
 	nutriment_desc = list("stale hotdog" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendhotdog, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendhotdog)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/packaged/vendburrito
 	name = "packaged burrito"
@@ -7075,7 +7091,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendhotdog, n
 	nutriment_amt = 3
 	nutriment_desc = list("stale burrito" = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburrito, null, list(REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendburrito)
+	configure(reagents(add = list(REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/churro
 	name = "churro"
@@ -7087,10 +7104,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburrito, 
 	nutriment_desc = list("deep fried dough" = 2)
 	nutriment_amt = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/churro, null, list(REAGENT_ID_COOKINGOIL = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/churro)
+	configure(reagents(add = list(REAGENT_ID_COOKINGOIL = 1)))
 
-/obj/item/reagent_containers/food/snacks/churro/Initialize(mapload)
-	. = ..()
 	//Imported food from old code
 /obj/item/reagent_containers/food/snacks/sauerkraut
 	name = "Sauerkraut"
@@ -7112,7 +7128,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/churro, null, list(REA
 	nutriment_desc = list("doughy bread" = 5, "beefy" = 4, "tangy and savory vegetables" = 3)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tamales, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tamales)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/bigos
 	name = "Bigos"
@@ -7124,7 +7141,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tamales, null, list(RE
 	nutriment_desc = list("sour cabbage" = 4, "sausage" = 3, "mildly sweet vegetables" = 3)
 	bitesize = 7
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bigos, null, list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_WATER = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bigos)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4, REAGENT_ID_WATER = 3)))
 
 /obj/item/reagent_containers/food/snacks/concha
 	name = "concha"
@@ -7155,7 +7173,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bigos, null, list(REAG
 	nutriment_desc = list("crispy sweet meat" = 3, "savory sauce" = 2, "salty" = 2)
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tocino, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tocino)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/garlicbread
 	name = "Garlic bread"
@@ -7175,17 +7194,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tocino, null, list(REA
 	nutriment_desc = list("crispy sweet mushroom" = 3, "earthy" = 2, "salty" = 2)
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumpburger, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumpburger)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 	nutriment_amt = 15
 	nutriment_desc = list("tortilla" = 2, "meat" = 3, "bean" = 5, REAGENT_ID_CHEESE = 3, "Mexico" = 7)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito, null, list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_NUTRIMENT = 15))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_NUTRIMENT = 15)))
 
-/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/Initialize(mapload)
-	. = ..()
-	bitesize = 6
 
 /obj/item/reagent_containers/food/snacks/sliceable/supremoburrito
 	name = "Supremo burrito"
@@ -7198,14 +7216,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito, 
 	nutriment_amt = 50
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/supremoburrito, null, list(REAGENT_ID_PROTEIN = 50, REAGENT_ID_NUTRIMENT = 55, REAGENT_ID_CAPSAICIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/supremoburrito)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 50, REAGENT_ID_NUTRIMENT = 55, REAGENT_ID_CAPSAICIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 	name = "Big Bean Burrito"
 	desc = "The BBB. An engorged burrito filled to the brim of what makes Mexico. Beans, cheese and meat that ooze by how stuffed it is"
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "bigbeanburrito"
-	bitesize = 3
+	bitesize = 6
 	whole_path = /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/filled
@@ -7220,15 +7239,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/supremoburri
 	nutriment_desc = list(REAGENT_ID_NOTHING = 1)
 	bitesize = 1
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/steamtealeaf, INTERACT_ITEM(null, PROC_REF(steamtealeaf_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/steamtealeaf)
+	op("roll", item(/obj/item/material/kitchen/rollingpin), priority(OP_PRIORITY_PART + 1), label("Roll it"), then(PROC_REF(rolled)))
 
-/// Old attackby. It never called its parent, so it always answers.
-/obj/item/reagent_containers/food/snacks/steamtealeaf/proc/steamtealeaf_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/kitchen/rollingpin))
-		new /obj/item/reagent_containers/food/snacks/steamrolltealeaf(src)
-		to_chat(user, span_notice("You roll the steamed tea leaf."))
-		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+/obj/item/reagent_containers/food/snacks/steamtealeaf/proc/rolled(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/steamrolltealeaf, span_notice("You roll the steamed tea leaf."))
 
 /obj/item/reagent_containers/food/snacks/steamrolltealeaf
 	name = "Rolled steamed tea leaf"
@@ -7248,7 +7263,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/steamtealeaf, INTER
 	nutriment_desc = list(REAGENT_ID_NOTHING = 1)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greentealeaf, null, list(REAGENT_ID_TEALEAVESGREEN = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/greentealeaf)
+	configure(reagents(add = list(REAGENT_ID_TEALEAVESGREEN = 6)))
 
 /obj/item/reagent_containers/food/snacks/butterscotch
 	name = "Butterscotch"
@@ -7325,6 +7341,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greentealeaf, null, li
 	nutriment_desc = list("bread" = 4, "sweetness" = 6)
 	bitesize = 4
 
+// ALLOW(init/INSTANCE_STATE): a one in a hundred roll swaps it for the sequel
 /obj/item/reagent_containers/food/snacks/tastybread/Initialize(mapload)
 	. = ..()
 	if(prob(1))
@@ -7347,7 +7364,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/greentealeaf, null, li
 	center_of_mass_y= 9
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/blondies, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/blondies)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/blondiesslice
 	name = "blondie"
@@ -7364,7 +7382,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/blondies, nu
 /obj/item/reagent_containers/food/snacks/blondiesslice/filled
 	nutriment_amt = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blondiesslice/filled, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/blondiesslice/filled)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 //I guess we're not always eating PEOPLE.
 /obj/item/reagent_containers/food/snacks/sliceable/sushi
@@ -7378,7 +7397,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/blondiesslice/filled, 
 	nutriment_amt = 15
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/sushi, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/sushi)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/slice/sushi/filled
 	name = "piece of sushi"
@@ -7401,7 +7421,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/sushi, null,
 	nutriment_desc = list("meat" = 2, "vegetables" = 2, "seasoning" = 5)
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/goulash, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_WATER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/goulash)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/donerkebab
 	name = "doner kebab"
@@ -7411,7 +7432,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/goulash, null, list(RE
 	nutriment_amt = 5
 	nutriment_desc = list("vegetables" = 2, "seasoned meat" = 5)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donerkebab, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donerkebab)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/roastbeef
 	name = "roast beef"
@@ -7423,7 +7445,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donerkebab, null, list
 	nutriment_desc = list("cooked meat" = 5)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastbeef, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/roastbeef)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/reishicup
 	name = "reishi's cup"
@@ -7434,7 +7457,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/roastbeef, null, list(
 	nutriment_desc = list(REAGENT_ID_CHOCOLATE = 4, "colors" = 2)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/reishicup, null, list(REAGENT_ID_PSILOCYBIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/reishicup)
+	configure(reagents(add = list(REAGENT_ID_PSILOCYBIN = 3)))
 
 /obj/item/storage/box/wings //This is kinda like the donut box.
 	name = "wing basket"
@@ -7449,20 +7473,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/reishicup, null, list(
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/chickenwing)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/wings
 
-/obj/item/storage/box/wings/Initialize(mapload)
+
+CAPABILITIES(/obj/item/storage/box/wings)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
+
+/obj/item/storage/box/wings/draw(datum/look/look)
 	. = ..()
-	update_icon()
-	return
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/wings/appearance_overlays()
-	. = list()
-	var/i = 0
-	for(var/obj/item/reagent_containers/food/snacks/W in contents)
-		i++
-	icon_state = "[icon_base][i]"
+	look.state("[icon_base][held_count()]")
 
 /obj/item/reagent_containers/food/snacks/chickenwing
 	name = "chicken wing"
@@ -7473,7 +7492,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, TYPE_PROC_REF(/atom, appear
 	nutriment_desc = list("chicken" = 2, "unplacable flavor sauce" = 4)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenwing, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chickenwing)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/hotandsoursoup
 	name = "hot & sour soup"
@@ -7486,7 +7506,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chickenwing, null, lis
 	eating_sound = SFX_ITEMS_DRINK
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotandsoursoup, null, list(REAGENT_ID_HOTNSOURSOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotandsoursoup)
+	configure(reagents(add = list(REAGENT_ID_HOTNSOURSOUP = 10)))
 
 /obj/item/reagent_containers/food/snacks/kitsuneudon
 	name = "kitsune udon"
@@ -7509,7 +7530,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotandsoursoup, null, 
 	nutriment_desc = list("sweet and spicy sauce" = 5, "chicken" = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/generalschicken, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/generalschicken)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/bugball
 	name = "bugball"
@@ -7523,7 +7545,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/generalschicken, null,
 	nutriment_desc = list("crunchy shell bits" = 5)
 	bitesize = 7
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bugball, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CARBON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bugball)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CARBON = 5)))
 
 /obj/item/reagent_containers/food/snacks/pillbug
 	name = "pillbug"
@@ -7535,7 +7558,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bugball, null, list(RE
 	nutriment_desc = list("sparkles" = 5, "ancient inca culture" =3)
 	bitesize = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbug, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SHOCKCHEM = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pillbug)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_SHOCKCHEM = 6)))
 
 /obj/item/reagent_containers/food/snacks/pillbugempty
 	name = "pillbug shell"
@@ -7546,7 +7570,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbug, null, list(RE
 	nutriment_desc = list("crunchy shell bits" = 5)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbugempty, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CARBON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pillbugempty)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_CARBON = 5)))
 
 /obj/item/reagent_containers/food/snacks/mammi
 	name = "mämmi"
@@ -7568,18 +7593,17 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbugempty, null, li
 	nutriment_desc = list("Cheese" = 5, "eggs" = 3, "pasta" = 4, "sparkles" = 3)
 	bitesize = 7
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/makaroni, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/makaroni)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6)))
 
 /obj/item/reagent_containers/food/snacks/lobster
+	bitesize = 0.1
 	name = "raw lobster"
 	desc = "A shifty lobster. You can try eating it, but its shell is extremely tough."
 	icon = 'icons/obj/food.dmi'
 	icon_state = "lobster_raw"
 	nutriment_amt = 5
 
-/obj/item/reagent_containers/food/snacks/lobster/Initialize(mapload)
-	. = ..()
-	bitesize = 0.1
 
 /obj/item/reagent_containers/food/snacks/lobstercooked
 	name = "cooked lobster"
@@ -7591,7 +7615,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/makaroni, null, list(R
 	nutriment_desc = list(PLANT_LEMON = 2, "lobster" = 5, "salad" = 2)
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lobstercooked, null, list(REAGENT_ID_PROTEIN = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_IRON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/lobstercooked)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20, REAGENT_ID_TRICORDRAZINE = 5, REAGENT_ID_IRON = 5)))
 
 /obj/item/reagent_containers/food/snacks/cuttlefish
 	name = "raw cuttlefish"
@@ -7610,7 +7635,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/lobstercooked, null, l
 	nutriment_desc = list("cuttlefish" = 5, "rubber" = 5, "grease" = 1)
 	bitesize = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cuttlefishcooked, null, list(REAGENT_ID_PROTEIN = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cuttlefishcooked)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 10)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/monkfish
 	name = "extra large monkfish"
@@ -7632,7 +7658,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cuttlefishcooked, null
 	nutriment_amt = 5
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishfillet, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkfishfillet)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/monkfishcooked
 	name = "seasoned monkfish"
@@ -7644,9 +7671,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishfillet, null, 
 	trash = /obj/item/trash/fancyplate
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, list(REAGENT_ID_PROTEIN = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkfishcooked)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 5)))
 
 /obj/item/reagent_containers/food/snacks/sliceable/monkfishremains
+	bitesize = 0.01 //impossible to eat
 	name = "monkfish remains"
 	icon = 'icons/obj/food.dmi'
 	icon_state = "monkfish_remains"
@@ -7656,11 +7685,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, 
 	slice_path = /obj/item/clothing/head/fish
 	slices_num = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains, null, list(REAGENT_ID_CARBON = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains)
+	configure(reagents(add = list(REAGENT_ID_CARBON = 5)))
 
-/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains/Initialize(mapload)
-	. = ..()
-	bitesize = 0.01 //impossible to eat
 
 /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk
 	name = "chunk of shark meat"
@@ -7673,7 +7700,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/monkfishrema
 	slices_num = 5
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/sharkchunk, null, list(REAGENT_ID_PROTEIN = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/sharkchunk)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 20)))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/fish/sharkmeat
 	name = "slice of sharkmeat"
@@ -7684,7 +7712,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/sharkchunk, 
 	toxin_amount = null
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carpmeat/fish/sharkmeat, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/carpmeat/fish/sharkmeat)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/sharkmeatcooked
 	name = "shark steak"
@@ -7696,7 +7725,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/carpmeat/fish/sharkmea
 	nutriment_desc = list("manliness" = 1, "fish oil" = 2, "shark" = 2)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatcooked, null, list(REAGENT_ID_PROTEIN = 8))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sharkmeatcooked)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 8)))
 
 /obj/item/reagent_containers/food/snacks/sharkmeatdip
 	name = "hot shark shank"
@@ -7708,7 +7738,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatcooked, null,
 	nutriment_desc = list("salt" = 1, "fish oil" = 2, "spicy shark" = 2)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatdip, null, list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sharkmeatdip)
+	configure(reagents(add = list(REAGENT_ID_CAPSAICIN = 4, REAGENT_ID_PROTEIN = 4, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/sharkmeatcubes
 	name = "shark cubes"
@@ -7720,7 +7751,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatdip, null, li
 	nutriment_desc = list("viking spirit" = 1, "rot" = 2, "fermented sauce" = 2)
 	bitesize = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatcubes, null, list(REAGENT_ID_POTATOJUICE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sharkmeatcubes)
+	configure(reagents(add = list(REAGENT_ID_POTATOJUICE = 30)))
 
 /obj/item/reagent_containers/food/snacks/monkeycube/sobakacube
 	name = "sobaka cube"
@@ -7779,7 +7811,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sharkmeatcubes, null, 
 
 /obj/item/reagent_containers/food/snacks/cube/protein
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/protein, null, list(REAGENT_ID_MEATCOLONY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube/protein)
+	configure(reagents(add = list(REAGENT_ID_MEATCOLONY = 5)))
 
 /obj/item/reagent_containers/food/snacks/proteinslab
 	name = "Protein slab"
@@ -7790,7 +7823,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/protein, null, li
 	nutriment_amt = 5
 	nutriment_desc = list("bitter chyme" = 50)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/proteinslab, null, list(REAGENT_ID_PROTEIN = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/proteinslab)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 30)))
 
 /obj/item/reagent_containers/food/snacks/cube/nutriment
 	name = "Nutriment cube"
@@ -7798,7 +7832,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/proteinslab, null, lis
 	icon_state = "nutrimentcube"
 	food_type = "/obj/item/reagent_containers/food/snacks/nutrimentslab"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/nutriment, null, list(REAGENT_ID_PLANTCOLONY = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cube/nutriment)
+	configure(reagents(add = list(REAGENT_ID_PLANTCOLONY = 5)))
 
 /obj/item/reagent_containers/food/snacks/nutrimentslab
 	name = "Nutriment slab"
@@ -7822,8 +7857,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/nutriment, null, 
 		/obj/item/reagent_containers/food/snacks/cube/nutriment = 4
 	)
 
-TYPE_TABLE(/obj/item/storage/box/wings/tray, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/cube/protein, \
-					/obj/item/reagent_containers/food/snacks/cube/nutriment)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/wings/tray
+
+
+CAPABILITIES(/obj/item/storage/box/wings/tray)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/cube/protein,
+		/obj/item/reagent_containers/food/snacks/cube/nutriment)))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/sif //Making fish meat non-toxic!  As advised by Ascian!
 	toxin_type = null
@@ -7854,7 +7894,8 @@ TYPE_TABLE(/obj/item/storage/box/wings/tray, hold_spec, list(HOLD_ONLY(list(/obj
 	nutriment_desc = list("salt" = 1)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nachos, null, list(REAGENT_ID_NUTRIMENT = 1, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/nachos)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 1, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/cheesenachos
 	name = "cheesy nachos"
@@ -7864,7 +7905,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/nachos, null, list(REA
 	nutriment_desc = list("salt" = 2, REAGENT_ID_CHEESE = 3)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesenachos, null, list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_PROTEIN = 2, REAGENT_ID_SODIUMCHLORIDE = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/cheesenachos)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 5, REAGENT_ID_PROTEIN = 2, REAGENT_ID_SODIUMCHLORIDE = 1)))
 
 /obj/item/reagent_containers/food/snacks/milosoup
 	name = "Miso soup"
@@ -7878,7 +7920,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cheesenachos, null, li
 	bitesize = 4
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/milosoup, null, list(REAGENT_ID_WATER = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/milosoup)
+	configure(reagents(add = list(REAGENT_ID_WATER = 5)))
 
 /obj/item/reagent_containers/food/snacks/onionsoup
 	name = "Onion Soup"
@@ -7891,7 +7934,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/milosoup, null, list(R
 	bitesize = 3
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(REAGENT_ID_ONIONSOUP = 10))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/onionsoup)
+	configure(reagents(add = list(REAGENT_ID_ONIONSOUP = 10)))
 
 //Fennec foods
 /obj/item/storage/box/wings/bucket
@@ -7906,7 +7950,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(
 		/obj/item/reagent_containers/food/snacks/grub = 6
 	)
 
-TYPE_TABLE(/obj/item/storage/box/wings/bucket, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/grub)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/wings/bucket)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub)))
 
 /obj/item/reagent_containers/food/snacks/grub
 	name = "grub"
@@ -7917,7 +7963,8 @@ TYPE_TABLE(/obj/item/storage/box/wings/bucket, hold_spec, list(HOLD_ONLY(list(/o
 	nutriment_desc = list("goo" = 1, "slime" = 1)
 	bitesize = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/grub, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/grub)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/grub_pink
 	name = "pink candy grub"
@@ -7964,7 +8011,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/grub, null, list(REAGE
 	nutriment_desc = list("crispy" = 4, "exotic meat" = 1)
 	bitesize = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/scorpion_cooked, null, list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/scorpion_cooked)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 2, REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/ant
 	name = "giant honey ant"
@@ -7977,7 +8025,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/scorpion_cooked, null,
 	slices_num = 1
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ant, null, list(REAGENT_ID_HONEY = 2, REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ant)
+	configure(reagents(add = list(REAGENT_ID_HONEY = 2, REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/antball
 	name = "giant honey ball"
@@ -7988,7 +8037,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ant, null, list(REAGEN
 	nutriment_desc = list("goo" = 1)
 	bitesize = 1
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/antball, null, list(REAGENT_ID_HONEY = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/antball)
+	configure(reagents(add = list(REAGENT_ID_HONEY = 2)))
 
 /obj/item/reagent_containers/food/snacks/honey_candy
 	name = "honey candy"
@@ -8001,7 +8051,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/antball, null, list(RE
 	slices_num = 1
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/honey_candy, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/honey_candy)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/reagent_containers/food/snacks/locust
 	name = "yellow jacket locust"
@@ -8012,7 +8063,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/honey_candy, null, lis
 	nutriment_desc = list("crunchy" = 1, "goo" = 1)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust, null, list(REAGENT_ID_PROTEIN = 1))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/locust)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 1)))
 
 /obj/item/reagent_containers/food/snacks/locust_cooked
 	name = "fried locust"
@@ -8023,7 +8075,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust, null, list(REA
 	nutriment_desc = list("crunchy" = 4)
 	bitesize = 2
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust_cooked, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/locust_cooked)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/ascended
 	name = "Donk-pocket EX"
@@ -8035,7 +8088,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust_cooked, null, l
 
 TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, donkpocket_heated_reagents, list(REAGENT_ID_SUPERMATTER = 1))
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, null, list(REAGENT_ID_URANIUM = 3, REAGENT_ID_THERMITEV = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket/ascended)
+	configure(reagents(add = list(REAGENT_ID_URANIUM = 3, REAGENT_ID_THERMITEV = 3)))
 
 // Altevian Foobs
 
@@ -8073,7 +8127,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, n
 	nutriment_desc = list("essence of steak" = 6)
 	eating_sound = SFX_ITEMS_DRINK
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratliquid, null, list(REAGENT_ID_PROTEIN = 4))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratliquid)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 4)))
 
 /obj/item/reagent_containers/food/snacks/ratsteak
 	name = "altevian traditional steak"
@@ -8084,7 +8139,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratliquid, null, list(
 	nutriment_amt = 8
 	nutriment_desc = list("steak" = 5, "smoked cheese" = 2, "veggies" = 1)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(REAGENT_ID_PROTEIN = 3))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 3)))
 
 /obj/item/reagent_containers/food/snacks/ratfruitcake
 	name = "Premade Fruit Block"
@@ -8152,14 +8208,26 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 										"trans" = 3,
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
+	/// The bowl colour it rolled (when randomize_bowl_color): its package states and trash follow it.
+	var/bowl_color
 
-/obj/item/reagent_containers/food/snacks/ratpackramen/Initialize(mapload)
-	. = ..()
-	if(randomize_bowl_color)
-		var/bowl_color = pickweight(bowl_color_options)
-		package_open_state = "altevian_pack_ramen_[bowl_color]-open"
-		package_opening_state = "altevian_pack_ramen_[bowl_color]-opening"
-		trash = text2path("/obj/item/trash/ratpackramen/[bowl_color]")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratpackramen)
+	rolls(nameof(bowl_color), PROC_REF(roll_bowl_color), when = nameof(randomize_bowl_color))
+	rolls(nameof(package_open_state), PROC_REF(bowl_open_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(package_opening_state), PROC_REF(bowl_opening_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(trash), PROC_REF(bowl_trash), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/roll_bowl_color(datum/roller/R)
+	return R.weighted(bowl_color_options)
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_open_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-open"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_opening_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-opening"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_trash(datum/roller/R)
+	return text2path("/obj/item/trash/ratpackramen/[bowl_color]")
 
 /obj/item/reagent_containers/food/snacks/ratpacktaco
 	name = "Triple Taco Tuck"
@@ -8221,7 +8289,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/jaffacake, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/jaffacake)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/jaffacake
+
+
+CAPABILITIES(/obj/item/storage/box/jaffacake)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake)))
 
 /obj/item/reagent_containers/food/snacks/winegum
 	name = "wine gum"
@@ -8271,7 +8343,11 @@ TYPE_TABLE(/obj/item/storage/box/jaffacake, hold_spec, list(HOLD_ONLY(list(/obj/
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/winegum, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/winegum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/winegum
+
+
+CAPABILITIES(/obj/item/storage/box/winegum)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum)))
 
 /obj/item/reagent_containers/food/snacks/packaged/pasty
 	name = "Terran Pasty"
@@ -8282,7 +8358,8 @@ TYPE_TABLE(/obj/item/storage/box/winegum, hold_spec, list(HOLD_ONLY(list(/obj/it
 	nutriment_amt = 4
 	nutriment_desc = list("pastry" = 5, "meat" = 5, PLANT_ONION = 2, PLANT_POTATO = 3)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/pasty)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/saucer
 	name = "Sherbert Saucer"
@@ -8295,9 +8372,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5)
 	var/static/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
 
-/obj/item/reagent_containers/food/snacks/saucer/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/saucer)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/saucer/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/saucer //This is kinda like the donut box.
 	name = "Desatti Sherbert Saucers"
@@ -8312,7 +8392,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/saucer, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/saucer)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/saucer
+
+
+CAPABILITIES(/obj/item/storage/box/saucer)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer)))
 
 /obj/item/reagent_containers/food/snacks/custardcream
 	name = "Custard Cream"
@@ -8336,7 +8420,11 @@ TYPE_TABLE(/obj/item/storage/box/saucer, hold_spec, list(HOLD_ONLY(list(/obj/ite
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/custardcream, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/custardcream)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/custardcream
+
+
+CAPABILITIES(/obj/item/storage/box/custardcream)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream)))
 
 /obj/item/reagent_containers/food/snacks/bourbon
 	name = "Bourbon Biscuit"
@@ -8360,9 +8448,14 @@ TYPE_TABLE(/obj/item/storage/box/custardcream, hold_spec, list(HOLD_ONLY(list(/o
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/bourbon, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/bourbon)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/bourbon
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bourbon, null, list(REAGENT_ID_COCO = 2))
+
+CAPABILITIES(/obj/item/storage/box/bourbon)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon)))
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/bourbon)
+	configure(reagents(add = list(REAGENT_ID_COCO = 2)))
 
 /obj/item/reagent_containers/food/snacks/packaged/sausageroll
 	name = "Sausage Roll"
@@ -8373,7 +8466,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bourbon, null, list(RE
 	nutriment_amt = 3
 	nutriment_desc = list("pastry" = 5, "meat" = 5)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/sausageroll, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/sausageroll)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/packaged/scotchegg
 	name = "Scotch Egg"
@@ -8384,7 +8478,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/sausageroll, 
 	nutriment_amt = 3
 	nutriment_desc = list(REAGENT_ID_EGG = 5, "meat" = 5, "bread" = 2)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/scotchegg)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/foam_banana
 	name = "Foam Banana"
@@ -8420,7 +8515,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, nu
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/shrimpsandbananas
+
+
+CAPABILITIES(/obj/item/storage/box/shrimpsandbananas)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/foam_banana,
+		/obj/item/reagent_containers/food/snacks/foam_shrimp)))
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard
 	name = "Rhubarb and Custard Sweet"
@@ -8433,9 +8534,12 @@ TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(li
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, PLANT_ROSE = 2, "custard" = 2)
 	var/static/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
 
-/obj/item/reagent_containers/food/snacks/rhubarbcustard/Initialize(mapload)
-	. = ..()
-	icon_state = pick(color_options)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rhubarbcustard)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/snacks/rhubarbcustard/proc/roll_icon_state(datum/roller/R)
+	return R.choose(color_options)
 
 /obj/item/storage/box/rhubarbcustard //This is kinda like the donut box.
 	name = "Desatti Rhubarb and Custards"
@@ -8450,7 +8554,11 @@ TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(li
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/rhubarbcustard, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/rhubarbcustard
+
+
+CAPABILITIES(/obj/item/storage/box/rhubarbcustard)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)))
 
 /obj/item/reagent_containers/food/snacks/packaged/porkpie
 	name = "Pork Pie"
@@ -8461,7 +8569,8 @@ TYPE_TABLE(/obj/item/storage/box/rhubarbcustard, hold_spec, list(HOLD_ONLY(list(
 	nutriment_amt = 3
 	nutriment_desc = list("pastry" = 5, "meat" = 5)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/porkpie, null, list(REAGENT_ID_PROTEIN = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/porkpie)
+	configure(reagents(add = list(REAGENT_ID_PROTEIN = 2)))
 
 /obj/item/reagent_containers/food/snacks/acorn
 	name = "acorn"
@@ -8473,7 +8582,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/porkpie, null
 	bitesize = 2
 	nutriment_desc = list("earthy goodness" = 6)
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAGENT_ID_PEANUTBUTTER = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/acorn)
+	configure(reagents(add = list(REAGENT_ID_PEANUTBUTTER = 2)))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cool_down()
 	if(!src?.reagents)
@@ -8495,9 +8605,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 
-/obj/item/pizzabox/ownership()
-	. = ..()
-	. += owns(nameof(pizza), policy = OWN_CONTAINED)
 
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating

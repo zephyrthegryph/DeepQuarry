@@ -29,7 +29,6 @@
 
 //stolen from chickens
 GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
-GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 
 /datum/category_item/catalogue/fauna/teppi
 	name = "Alien Wildlife - Teppi"
@@ -88,7 +87,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	catalogue_data = list(/datum/category_item/catalogue/fauna/teppi)
 	vis_height = 64
 
-	var/affinity = list()
+	var/list/affinity
 	var/allergen_preference
 	var/allergen_unpreference
 	var/body_color
@@ -100,7 +99,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	var/item_color
 	var/marking_type
 	var/horn_type
-	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/inherit_allergen = FALSE
 	var/inherit_colors = FALSE
 	var/teppi_wool = FALSE
@@ -153,7 +151,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	vore_pounce_chance = 35
 	vore_pounce_falloff = 0
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
 
 TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types, list( \
 		/obj/item/organ/internal/brain, \
@@ -166,7 +163,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 
 /mob/living/simple_mob/vore/alienanimals/teppi/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The heat of the roiling flesh around you bakes into you immediately as you're cast into the gloom of a Teppi's primary gastric chamber. The undulations are practically smothering, clinging to you and grinding you all over as the Teppi continues about its day. The walls are heavy against you, so it's really difficult to move at all, while the heart of this creature pulses rhythmically somewhere nearby, and you can feel the throb of its pulse in the doughy squish pressing up against you. Your figure sinks a ways into the flesh as it presses in, wrapping limbs up between countless slick folds and kneading waves. It's not long before you're positively soaked in a thin layer of slime as you're rocked and squeezed and jostled in the stomach of your captor."
 	B.mode_flags = 40
@@ -362,15 +359,15 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 		affection_factor = rand(1,3)
 	if(!inherit_colors)
 		color = pickweight(possiblebody)
-		marking_color = pickweight(possiblemarking)
-		horn_color = pickweight(possiblehorns)
-		eye_color = pickweight(possibleeyes)
-		skin_color = pickweight(possibleskin)
+		set_marking_color(pickweight(possiblemarking))
+		set_horn_color(pickweight(possiblehorns))
+		set_eye_color(pickweight(possibleeyes))
+		set_skin_color(pickweight(possibleskin))
 	if(!marking_type)
-		marking_type = "[rand(0,13)]" //the babies don't have this set up by default, but they might pick it from their parents
+		set_marking_type("[rand(0,13)]") //the babies don't have this set up by default, but they might pick it from their parents
 	if(teppi_adult)
 		if(!horn_type)
-			horn_type = "[rand(0,1)]"
+			set_horn_type("[rand(0,1)]")
 	else if(teppi_mutate)
 		var/list/possiblecolorlists = list(possiblebody, possiblemarking, possiblehorns, possibleeyes, possibleskin)
 		var/pick_a = rand(0,5)
@@ -379,136 +376,134 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 			if(0)
 				color = pickweight(pick_b)
 			if(1)
-				marking_color = pickweight(pick_b)
+				set_marking_color(pickweight(pick_b))
 			if(2)
-				horn_color = pickweight(pick_b)
+				set_horn_color(pickweight(pick_b))
 			if(3)
-				eye_color = pickweight(pick_b)
+				set_eye_color(pickweight(pick_b))
 			if(4)
-				skin_color = pickweight(pick_b)
+				set_skin_color(pickweight(pick_b))
 			if(5)
 				color = pickweight(pick_b)
-				marking_color = pickweight(pick_b)
-				horn_color = pickweight(pick_b)
-				eye_color = pickweight(pick_b)
-				skin_color = pickweight(pick_b)
+				set_marking_color(pickweight(pick_b))
+				set_horn_color(pickweight(pick_b))
+				set_eye_color(pickweight(pick_b))
+				set_skin_color(pickweight(pick_b))
 		teppi_mutate = FALSE
 
-	update_icon()
 
-//This builds, caches, and recalls parts of the teppi as it needs them, and shares them across all teppi,
-//so ideally they only have to make it once as they need it since most of them will be using many of the same colored parts
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_icon()
-	var/marking_key = "marking-[marking_color]"
-	var/horn_key = "horn-[horn_color]"
-	var/eye_key = "eye-[eye_color]"
-	var/skin_key = "skin-[skin_color]"
-	var/wool_key = "wool-[marking_color]"
-
+//The parts of the teppi are layered from the lowest up: markings, collar, wool, horns, eyes, skin.
+/mob/living/simple_mob/vore/alienanimals/teppi/draw(datum/look/look)
+	..()
+	var/base_state = look.state_so_far(src)
 	var/our_state = "base"	//For helping the images know what icon state they should be grabbing
-	if(icon_state == icon_living)
+	if(base_state == icon_living)
 		our_state = "base"
-	if(icon_state == icon_rest)
+	if(base_state == icon_rest)
 		our_state = "rest"
-	if(icon_state == icon_dead)
+	if(base_state == icon_dead)
 		our_state = "dead"
-	var/life_stage = "adult"
-	if(!teppi_adult)
-		life_stage = "baby"
+	var/flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)
 	/////LOWEST LAYER/////
 	if(teppi_adult)		//Only adults get markings or wool. The marking color is a secret until they grow bigger!
-		var/combine_key = marking_key+our_state+marking_type		//Markings first, the lowest layer, down with the base color
-		var/image/marking_image = overlays_cache[combine_key]
-		if(!marking_image)
-			marking_image = image(icon,null,"marking_[our_state][marking_type]")
-			marking_image.color = marking_color
-			marking_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-			overlays_cache[combine_key] = marking_image
-		add_overlay(marking_image)
-
+		look.overlay(look_overlay_image(icon, "marking_[our_state][marking_type]", color = marking_color, appearance_flags = flags))	//Markings first, the lowest layer, down with the base color
 		if(item_type)
-			var/item_key = "[item_type]-[item_color]"
-			var/image/item_image = overlays_cache[item_key+our_state]	//Items! Like collar. Goes under everything but markings because I'll go crazy otherwise
-			if(!item_image)
-				item_image = image(icon,null,"[item_type]_[our_state]")
-				item_image.color = item_color
-				item_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-				overlays_cache[item_key+our_state] = item_image
-			add_overlay(item_image)
-
+			look.overlay(look_overlay_image(icon, "[item_type]_[our_state]", color = item_color, appearance_flags = flags))	//Items! Like collar. Goes under everything but markings because I'll go crazy otherwise
 		if(teppi_wool)
-			var/image/wool_image = overlays_cache[wool_key+our_state+life_stage]	//Wool comes next, goes over top of the markings, is the same color too
-			if(!wool_image)
-				wool_image = image(icon,null,"wool_[our_state]")
-				wool_image.color = marking_color
-				wool_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-				overlays_cache[wool_key+our_state+life_stage] = wool_image
-			add_overlay(wool_image)
-
-	var/image/horn_image = overlays_cache[horn_key+our_state+life_stage+horn_type]		//Horns MUST come after marking and wool for layering purposes.
-	if(!horn_image)
-		if(!teppi_adult)
-			horn_image = image(icon,null,"horn_[our_state]")	//Babies only have one kind of horns
-		else
-			horn_image = image(icon,null,"horn_[our_state][horn_type]")
-		horn_image.color = horn_color
-		horn_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[horn_key+our_state+life_stage+horn_type] = horn_image
-	add_overlay(horn_image)
-
-	var/image/eye_image = overlays_cache[eye_key+our_state+life_stage]			//Eyes and skin should be above markings too, but their order doesn't matter
-	if(!eye_image)																//they won't intersect with eachother or the horns, but might intersect with some markings.
-		eye_image = image(icon,null,"eye_[our_state]")							//If we ever add horns or wool fluff that might cover them, remember to move these down as appropriate.
-		eye_image.color = eye_color												//Otherwise they will just always be on top of them.
-		eye_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[eye_key+our_state+life_stage] = eye_image
-	add_overlay(eye_image)
-
-	var/image/skin_image = overlays_cache[skin_key+our_state+life_stage]
-	if(!skin_image)
-		skin_image = image(icon,null,"skin_[our_state]")
-		skin_image.color = skin_color
-		skin_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[skin_key+our_state+life_stage] = skin_image
-	add_overlay(skin_image)
+			look.overlay(look_overlay_image(icon, "wool_[our_state]", color = marking_color, appearance_flags = flags))	//Wool comes next, goes over top of the markings, is the same color too
+	//Horns MUST come after marking and wool for layering purposes. Babies only have one kind of horns.
+	look.overlay(look_overlay_image(icon, teppi_adult ? "horn_[our_state][horn_type]" : "horn_[our_state]", color = horn_color, appearance_flags = flags))
+	//Eyes and skin should be above markings too, but their order doesn't matter: they won't intersect with each other or the horns.
+	look.overlay(look_overlay_image(icon, "eye_[our_state]", color = eye_color, appearance_flags = flags))
+	look.overlay(look_overlay_image(icon, "skin_[our_state]", color = skin_color, appearance_flags = flags))
 	/////HIGHEST LAYER/////
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
-	INTERACT_ITEM_AS(I_HELP, "Tend", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Remove accessory", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Handle roughly", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Handle roughly", PROC_REF(teppi_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	ref_one(nameof(parent_one), /mob/living/simple_mob/vore/alienanimals/teppi)
+	ref_one(nameof(parent_two), /mob/living/simple_mob/vore/alienanimals/teppi)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
+	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
+	op("teppi_item_disarm", item(/obj/item), stance(I_DISARM), label("Hit"), then(PROC_REF(teppi_interaction_item_disarm)))
+	op("teppi_item_grab", item(/obj/item), stance(I_GRAB), label("Hit"), then(PROC_REF(teppi_interaction_item_grab)))
+	op("teppi_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(teppi_interaction_hand_help)))
+	op("teppi_hand_grab", hand(), ungated(), stance(I_GRAB), label("Remove accessory"), then(PROC_REF(teppi_interaction_hand_grab)))
+	op("teppi_hand_hurt", hand(), ungated(), stance(I_HURT), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_hurt)))
+	op("teppi_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_disarm)))
+	op("teppi_shear_knife", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
+	op("teppi_shear_cutter", tool(TOOL_WIRECUTTER), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
+	op("teppi_slaughter", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_PART), label("Slaughter"), when(req(PROC_REF(can_slaughter))), begins(MSG(teppi/slaughter_begins)), wait(5 SECONDS), then(PROC_REF(teppi_slaughter_done)))
+	param(nameof(parent_one), pos = 1, keep = FALSE)
+	// each is numbered; a baby crawls and hides, an adult breeds
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	verb_entry(/mob/living/proc/ventcrawl, when = cond_not(nameof(teppi_adult)))
+	verb_entry(/mob/living/proc/hide, when = cond_not(nameof(teppi_adult)))
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring, when = nameof(teppi_adult))
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring, when = nameof(teppi_adult))
+	// its allergies, colours and markings, once it has inherited what it inherits (its parents', or a baby's when it grows up)
+	setup(PROC_REF(teppi_setup))
+	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
+
+MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%."), span_attack("%U% approaches %T%'s neck with %I%."))
+
+/// The help-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_help(datum/act/op/A)
+	return teppi_interaction_item(A, I_HELP)
+
+/// The hurt-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_hurt(datum/act/op/A)
+	return teppi_interaction_item(A, I_HURT)
+
+/// The disarm-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_disarm(datum/act/op/A)
+	return teppi_interaction_item(A, I_DISARM)
+
+/// The grab-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_grab(datum/act/op/A)
+	return teppi_interaction_item(A, I_GRAB)
+
+/// The help-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_help(datum/act/op/A)
+	return teppi_interaction_hand(A, I_HELP)
+
+/// The grab-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_grab(datum/act/op/A)
+	return teppi_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_hurt(datum/act/op/A)
+	return teppi_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_disarm(datum/act/op/A)
+	return teppi_interaction_hand(A, I_DISARM)
 
 /// Old attackby: shearing, feeding, butchering, collars.
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(stat == DEAD)
-		return FALSE
+		return OP_DECLINE
 	/////GRABS AND HOLDERS/////
 	if(istype(O, /obj/item/grab))
-		return FALSE
+		return OP_DECLINE
 	if(istype(O, /obj/item/holder))
-		return FALSE
-	if(interaction.stance != I_HELP) //be gentle
+		return OP_DECLINE
+	if(stance != I_HELP) //be gentle
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
 		act_message(user, src, MSG_SELF(span_notice("You hit %T% with %I%. %T% grumbles at you.")), MSG_OTHERS(span_notice("%U% hits %T% with %I%. %T% grumbles at %U%.")), item = O)
 		play_sfx(src, SFX_WEAPONS_TAP, extrarange = -1)
-		return FALSE
-	if(teppi_wool)
-		if(teppi_shear(user, O))
-			return
+		return OP_DECLINE
 	/////FOOD/////
 	if(istype(O, /obj/item/reagent_containers/food))
 		if(resting)
 			to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 			return
-		if(nutrition >= 5000)
+		if(nutrition_of(src) >= 5000)
 			act_message(user, O, MSG_SELF(span_notice("You try to feed %T% to \the [src], but it only snoofts at it.")), MSG_OTHERS(span_notice("%U% tries to feed %T% to \the [src]. It snoofs but does not eat.")))
 			return
 		var/nutriment_amount = O.reagents?.get_reagent_amount(REAGENT_ID_NUTRIMENT) //does it have nutriment, if so how much?
@@ -550,18 +545,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			to_chat(user, span_notice("\The [src] leans in close, spreading its jaws in front of you. A hot, humid gust of breath blows over you as the weight of \the [src]'s presses you over, knocking you off of your feet as the warm gooey tough of jaws scromf over your figure, rapidly guzzling you away with the [O], leaving you to tumble down into the depths of its body..."))
 			playsound(src, SFX_BODYFALL, 75, 1)
 			teppi_pounce(user)
-		if(yum && nutrition >= 500)
+		if(yum && nutrition_of(src) >= 500)
 			to_chat(user, span_notice("\The [src] seems satisfied."))
 		return
-	/////WEAPONS/////
-	if(istype(O, /obj/item/material/knife))
-		if(client)
-			return FALSE
-		if(resting)
-			act_message(user, src, MSG_SELF(span_attack("You approach %T%'s neck with %I%.")), MSG_OTHERS(span_attack("%U% approaches %T%'s neck with %I%.")), item = O)
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
-		else
-			return FALSE
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
 		var/obj/item/clothing/accessory/collar/craftable/C = O
 		if(item_type == "collar")
@@ -570,19 +556,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		if(!C.given_name)
 			to_chat(user, span_notice("You didn't put a name on the collar. You can use it in your hand to do that!"))
 			return
-		item_type = "collar"
-		item_color = C.color
+		set_item_type("collar")
+		set_item_color(C.color)
 		name = C.given_name
-		real_name = C.given_name
-		update_icon()
+		set_real_name(C.given_name)
 		consume(C, user)
 		fully_replace_character_name(real_name,C.given_name)
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
 		return
 	/////EVERYTHING ELSE/////
-	return FALSE
+	return OP_DECLINE
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/attackby_teppi_done(mob/user)
+/// A knife on a napping teppi nobody plays.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/can_slaughter(datum/act/op/A)
+	return (stat != DEAD && !read_once(client) && resting) ? null : /datum/msg/req_failed
+
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_slaughter_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(resting)
 		death()
 		return
@@ -592,22 +582,22 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 
 //Wake up the teppi if it is resting, which they like to do sometimes.
 /// Old attack_hand: petting, collar removal, affinity.
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance == I_GRAB && item_type)
-		if(affinity[M.real_name] >= 30)
+		return OP_DECLINE
+	if(stance == I_GRAB && item_type)
+		if(LAZYACCESS(affinity, M.real_name) >= 30)
 			act_message(M, src, MSG_SELF(span_notice("You remove %T%'s [item_type].")), MSG_OTHERS(span_notice("\The [M.name] removes %T%'s [item_type].")))
-			item_type = null
-			update_icon()
+			set_item_type(null)
 			return
-	if(interaction.stance != I_HELP) //be gentle
+	if(stance != I_HELP) //be gentle
 		handle_affinity(M, -5)
 		to_chat(M, span_notice("\The [src] fusses at your rough treatment!!"))
 		if(resting)
 			lay_down()
-		return FALSE
+		return OP_DECLINE
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
@@ -622,8 +612,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 				if(prob(25))
 					act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 					play_sfx(src, SFX_VOICE_TEPPI_RUMBLE)
-				if(vore_selected)
-					vore_selected.digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
+				if(vore_selected_of(src))
+					vore_selected_of(src).digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
 			else if(prob(25))
 				act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 				play_sfx(src, SFX_VOICE_TEPPI_CUTE_RUMBLE)
@@ -643,63 +633,58 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			teppi_pounce(M)
 			wantpet = 100
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/examine()
 	. = ..()
 	if(item_type)
 		. += span_notice("They are wearing a [item_type] with [name] written on it.")
-	if(nutrition >= 1000)
+	if(nutrition_of(src) >= 1000)
 		. += span_notice("They look well fed.")
-	if(nutrition <= 500)
+	if(nutrition_of(src) <= 500)
 		. += span_notice("They look hungry.")
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/alienanimals/teppi/appearance_overlays()
-	. = list()
-	. += ..()
-	teppi_icon()
-	if(ghostjoin)
-		ghostjoin_icon()
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, eye_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, skin_color)
+TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi
-	of = /mob/living/simple_mob/vore/alienanimals/teppi
+/mob/living/simple_mob/vore/alienanimals/teppi/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi/perform(mob/living/simple_mob/vore/alienanimals/teppi/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/teppi/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive") || QDELETED(self))
+	if(!F.alive() || QDELETED(src))
 		return
-	self.wantpet += rand(0,2) * self.affection_factor
-	self.amount_grown += rand(1,5)
+	src.wantpet += rand(0,2) * src.affection_factor
+	src.amount_grown += rand(1,5)
 	var/not_hungy = FALSE
-	if(self.nutrition >= 500)
+	if(nutrition_of(src) >= 500)
 		not_hungy = TRUE
-	if(self.amount_grown >= 1000)
-		if(self.teppi_adult)
-			if(not_hungy && !self.teppi_wool)
-				self.adjust_nutrition(-rand(250,500))
-				self.teppi_wool = TRUE
-				self.breedable = TRUE
-				self.meat_amount += rand(0,2)
-				self.update_icon()
+	if(src.amount_grown >= 1000)
+		if(src.teppi_adult)
+			if(not_hungy && !src.teppi_wool)
+				src.adjust_nutrition(-rand(250,500))
+				src.set_teppi_wool(TRUE)
+				src.breedable = TRUE
+				src.meat_amount += rand(0,2)
 		else if (not_hungy)
-			var/nutrition_cost = 500 + (self.nutrition / 2)
-			self.adjust_nutrition(-nutrition_cost)
-			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
+			var/nutrition_cost = 500 + (nutrition_of(src) / 2)
+			src.adjust_nutrition(-nutrition_cost)
+			replace_with(src, /mob/living/simple_mob/vore/alienanimals/teppi, src.store_teppi_data(src))
 			return
 		else
-			act_message(self, null, null, MSG_OTHERS("%U% whines pathetically..."), runemessage = "whines")
+			act_message(src, null, null, MSG_OTHERS("%U% whines pathetically..."), runemessage = "whines")
 			if(prob(50))
-				play_sfx(self, SFX_VOICE_TEPPI_WHINE1)
+				play_sfx(src, SFX_VOICE_TEPPI_WHINE1)
 			else
-				play_sfx(self, SFX_VOICE_TEPPI_WHINE2)
-			self.amount_grown -= rand(100,250)
+				play_sfx(src, SFX_VOICE_TEPPI_WHINE2)
+			src.amount_grown -= rand(100,250)
 	if(not_hungy)
-		self.do_breeding()
-	if(!self.client && prob(0.5))
-		self.teppi_sound()
+		src.do_breeding()
+	if(!src.client && prob(0.5))
+		src.teppi_sound()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/do_breeding()
 	if(!breedable || prevent_breeding)
@@ -711,7 +696,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	if(baby_countdown > 0)
 		baby_countdown --
 		return
-	else if(GLOB.teppi_count >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners, but we can be ready in case a slot opens
+	else if(REGISTRY_COUNT(REGISTRY_TEPPIS) >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners, but we can be ready in case a slot opens
 		return
 	if(prob(1))
 		for(var/mob/living/simple_mob/vore/alienanimals/teppi/alltep in oview(1,src))
@@ -722,7 +707,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 			if(alltep)
 				new /mob/living/simple_mob/vore/alienanimals/teppi/baby(loc, src, alltep)
 				baby_countdown = 200
-				if(affinity[alltep.real_name])
+				if(LAZYACCESS(affinity, alltep.real_name))
 					return
 				handle_affinity(alltep, 30) //Mom and dad should like eachother when they do their business
 				alltep.handle_affinity(src, 30)
@@ -735,7 +720,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		return
 	playsound(src, SFX_VOICE_TEPPI, 75, 1)
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear(mob/user as mob, obj/item/tool)
+/// How long the held knife or wirecutters take to shear.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_time(datum/act/op/A)
+	var/obj/item/tool = A.held
 	var/sheartime = 3 SECONDS
 	if(istype(tool, /obj/item/material/knife))
 		var/obj/item/material/knife/K = tool
@@ -743,87 +730,77 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 			sheartime *= 2
 		if(K.dulled)
 			sheartime *= 3
-		if(!K.sharp)
+		if(!combat_of(K).sharp)
 			sheartime *= 2
-		if(K.edge)
+		if(combat_of(K).edge)
 			sheartime *= 0.5
-	else if(tool.has_tool_quality(TOOL_WIRECUTTER))
-		sheartime *= 2
 	else
-		return FALSE
-	om_task_timed(user, sheartime, target = src, receiver = src, on_done = PROC_REF(teppi_shear_teppi_done), done_args = list(user, tool))
-	return TRUE
+		sheartime *= 2
+	return sheartime
 
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_teppi_done(mob/user, obj/item/tool)
+/// The end of the shear ops.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(!teppi_wool)
+		return
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = tool)
 	amount_grown = rand(0,250)
 	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
 	F.color = marking_color
-	teppi_wool = FALSE
-	update_icon()
+	set_teppi_wool(FALSE)
 	handle_affinity(user, 5)
 	teppi_sound()
 	return TRUE
 
-//Handles both growing up from a baby and also passing parent details to new babies.
-/mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload, teppi1, teppi2)
-	GLOB.teppi_count ++
-	if(teppi1 && !teppi2)
-		inherit_from_baby(teppi1)
-	else if (teppi1 && teppi2)
-		inherit_from_parents(teppi1, teppi2)
-	. = ..()
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-		real_name = name
-	if(!teppi_adult)
-		set_nutrition(0)
-		om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-		om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
-	else
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring, src)
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring, src)
-	teppi_setup()
+/// The teppi (or the baby) a teppi is made from, and the second parent (its constructor params, dropped once inherited).
+/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_one
+/mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_two
 
-// the population cap counts it out.
-/mob/living/simple_mob/vore/alienanimals/teppi/lifecycle_dematerialize()
-	GLOB.teppi_count --
-	..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_made(second)
+	if(parent_one && !parent_two)
+		inherit_from_baby(parent_one)
+	else if(parent_one && parent_two)
+		inherit_from_parents(parent_one, parent_two)
+
+// The population cap counts the teppi in the world.
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEPPIS)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/lay_down()
 	..()
 	if(client || !teppi_adult)
 		return
-	if(vore_selected == friend_zone)
+	if(vore_selected_of(src) == friend_zone)
 		return
 	if(resting)
-		vore_selected.digestchance = 60
-		vore_selected.digest_brute = 6
-		vore_selected.digest_burn = 6
+		vore_selected_of(src).digestchance = 60
+		vore_selected_of(src).digest_brute = 6
+		vore_selected_of(src).digest_burn = 6
 	else
-		vore_selected.digestchance = 5
-		vore_selected.digest_brute = 0.05
-		vore_selected.digest_burn = 0.05
+		vore_selected_of(src).digestchance = 5
+		vore_selected_of(src).digest_brute = 0.05
+		vore_selected_of(src).digest_burn = 0.05
 
 /mob/living/simple_mob/vore/alienanimals/teppi/animal_nom(mob/living/T in living_mobs(1))
 	if(vore_active && !voremob_loaded)
 		init_vore(TRUE)
 	if(client)
 		return ..()
-	var/current_affinity = affinity[T.real_name]
+	var/current_affinity = LAZYACCESS(affinity, T.real_name)
 	ai_busy_begin()
 	T.stop_pulling()
 	if(current_affinity >= 50)
-		var/tumby = vore_selected
-		rel_set(src, nameof(vore_selected), friend_zone)
+		var/tumby = vore_selected_of(src)
+		set_vore_selected(src, friend_zone)
 		ai_busy_end()
 		..()
-		rel_set(src, nameof(vore_selected), tumby)
+		set_vore_selected(src, tumby)
 		return
 	else if(current_affinity <= -50)
-		vore_selected.digest_mode = DM_DIGEST
+		vore_selected_of(src).digest_mode = DM_DIGEST
 	else
-		vore_selected.digest_mode = DM_DRAIN
+		vore_selected_of(src).digest_mode = DM_DRAIN
 	..()
 	ai_busy_end()
 
@@ -853,13 +830,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_checks(mob/living/user, mob/living/prey, mob/living/pred)
 	if(!pred)
 		pred = user
-	var/current_affinity = affinity[prey.real_name]
+	var/current_affinity = LAZYACCESS(affinity, prey.real_name)
 	if(current_affinity >= 50)
 		return friend_zone
 	if(current_affinity <= -50)
-		vore_selected.digest_mode = DM_DIGEST
+		vore_selected_of(src).digest_mode = DM_DIGEST
 	else
-		vore_selected.digest_mode = DM_DRAIN
+		vore_selected_of(src).digest_mode = DM_DRAIN
 
 //Instead of copying this everywhere let's just make a proc
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/lets_eat(person)
@@ -869,13 +846,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		return 0
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_pounce(mob/living/carbon/human/M as mob)
-	M.status_at_least(EFFECT_WEAKENED, 5)
+	M.status_at_least(STAT_WEAKENED, 5)
 	animal_nom(M)
 	M.stop_pulling()
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/handle_affinity(mob/living/person, amount)
-	affinity[person.real_name] += amount * affection_factor
-	var/current_affinity = affinity[person.real_name]
+	LAZYADDASSOC(affinity, person.real_name, amount * affection_factor)
+	var/current_affinity = LAZYACCESS(affinity, person.real_name)
 	if(!teppi_adult)	//Don't want baby getting killed by parents in case of hostile or growing up with P in their AI
 		return
 	if(current_affinity >= 250)	//At this point the Teppi has joined your team
@@ -884,7 +861,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		//legacy ai_holder.target = person; .track_target_position; .set_stance(STANCE_FIGHT)
 		// became a single brain.give_target with urgent=TRUE which auto-aggros.
 		ai_brain?.give_target(person, TRUE)
-		affinity[person.real_name] = -100	//Don't hold a grudge though.
+		LAZYSET(affinity, person.real_name, -100)	//Don't hold a grudge though.
 
 /datum/say_list/teppi
 	speak = list("Gyooh~", "Gyuuuh!", "Gyuh?", "Gyaah...", "Iuuuuhh.", "Uoounh!", "GyoooOOOOoooh!", "Gyoh~", "Gyouh~","Gyuuuuh...", "Rrrr...", "Uuah~", "Groh!")
@@ -921,14 +898,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	vore_active = FALSE		//it's a tiny baby :O
-	devourable = FALSE
-	digestable = FALSE
 	vore_bump_chance = 0
 	vore_pounce_chance = 0
 	vis_height = 32
 	meat_amount = 2
 	loot_list = list()
 	say_list_type = /datum/say_list/teppibaby
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/init_vore(force) //shouldn't need all the vore bidness if they aren't using it as babbies. They get their tummies when they grow up.
 	return
@@ -939,9 +917,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 		"name" = teppi.name,
 		"real_name" = teppi.real_name,
 		"faction" = teppi.faction,
-		"affinity" = teppi.affinity,
+		"affinity" = teppi.affinity || list(),
 		"affection_factor" = teppi.affection_factor,
-		"nutrition" = teppi.nutrition,
+		"nutrition_of(src)" = nutrition_of(teppi),
 		"allergen_preference" = teppi.allergen_preference,
 		"allergen_unpreference" = teppi.allergen_unpreference,
 		"color" = teppi.color,
@@ -957,9 +935,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_baby(list/teppi_data)
 	inherit_colors = TRUE
 	inherit_allergen = TRUE
-	dir = teppi_data["dir"]
+	set_dir(teppi_data["dir"])
 	name = teppi_data["name"]
-	real_name = teppi_data["real_name"]
+	set_real_name(teppi_data["real_name"])
 	faction = teppi_data["faction"]
 	affinity = teppi_data["affinity"]
 	affection_factor = teppi_data["affection_factor"]
@@ -967,25 +945,24 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	allergen_preference = teppi_data["allergen_preference"]
 	allergen_unpreference = teppi_data["allergen_unpreference"]
 	color = teppi_data["color"]
-	marking_color = teppi_data["marking_color"]
-	horn_color = teppi_data["horn_color"]
-	eye_color = teppi_data["eye_color"]
-	skin_color = teppi_data["skin_color"]
-	ghostjoin = 1
+	set_marking_color(teppi_data["marking_color"])
+	set_horn_color(teppi_data["horn_color"])
+	set_eye_color(teppi_data["eye_color"])
+	set_skin_color(teppi_data["skin_color"])
+	set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, src)
-	update_icon()
 
 //This sets all the things on baby teppi when they are bred from adult teppi
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_parents(mob/living/simple_mob/vore/alienanimals/teppi/mom, mob/living/simple_mob/vore/alienanimals/teppi/dad)
 	inherit_colors = TRUE
 	faction = mom.faction
 	color = pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5)))
-	marking_color = pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5)))
-	horn_color = pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5)))
-	eye_color =  pick(list(mom.eye_color, dad.eye_color, BlendRGB(mom.eye_color, dad.eye_color, 0.5)))
-	skin_color =  pick(list(mom.skin_color, dad.skin_color, BlendRGB(mom.skin_color, dad.skin_color, 0.5)))
-	marking_type =  pick(list(mom.marking_type, dad.marking_type, null))
-	horn_type =  pick(list(mom.horn_type, dad.horn_type, null))
+	set_marking_color(pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5))))
+	set_horn_color(pick(list(mom.horn_color, dad.horn_color, BlendRGB(mom.horn_color, dad.horn_color, 0.5))))
+	set_eye_color(pick(list(mom.eye_color, dad.eye_color, BlendRGB(mom.eye_color, dad.eye_color, 0.5))))
+	set_skin_color(pick(list(mom.skin_color, dad.skin_color, BlendRGB(mom.skin_color, dad.skin_color, 0.5))))
+	set_marking_type(pick(list(mom.marking_type, dad.marking_type, null)))
+	set_horn_type(pick(list(mom.horn_type, dad.horn_type, null)))
 
 	if(mom.teppi_mutate || dad.teppi_mutate)
 		teppi_mutate = TRUE
@@ -1020,21 +997,21 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	if(baby_countdown > 0)
 		to_chat(src, span_notice("It is not time yet..."))
 		return
-	if(!breedable || nutrition < 500)
+	if(!breedable || nutrition_of(src) < 500)
 		to_chat(src, span_notice("The conditions are not right to produce offspring."))
 		return
-	if(GLOB.teppi_count >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners
+	if(REGISTRY_COUNT(REGISTRY_TEPPIS) >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners
 		to_chat(src, span_notice("I cannot produce more offspring at the moment, there are too many of us!"))
 		return
 	. = FALSE
 	for(var/mob/living/simple_mob/vore/alienanimals/teppi/alltep in oview(1,src))
-		if(!alltep.teppi_adult || alltep.nutrition < 250 || alltep.prevent_breeding || alltep.stat == DEAD)
+		if(!alltep.teppi_adult || nutrition_of(alltep) < 250 || alltep.prevent_breeding || alltep.stat == DEAD)
 			continue
 		if(alltep)
 			log_admin("[key_name_admin(src)] produced a baby teppi at [get_area(src)] - [COORD(src)]") //Won't show up in the chat, but makes a log of who's having babies where, for investigative purposes.
 			new /mob/living/simple_mob/vore/alienanimals/teppi/baby(loc, src, alltep)
 			baby_countdown = 400 //You don't have a random chance to deal with so the cooldown is twice as long.
-			if(affinity[alltep.real_name])
+			if(LAZYACCESS(affinity, alltep.real_name))
 				return
 			handle_affinity(alltep, 30) //Mom and dad should like eachother when they do their business
 			alltep.handle_affinity(src, 30)
@@ -1064,21 +1041,20 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	// Add everyone nearby to the list if they're in affinity, with key of the mob and value of the affinity
 	// . becomes list(jane = 1, tim = -3) etc
 	for(var/mob/living/M in people_nearby)
-		var/their_affinity = affinity[M.real_name]
+		var/their_affinity = LAZYACCESS(affinity, M.real_name)
 		if(their_affinity)
 			if(their_affinity >= 25 || their_affinity <= -10)
-				.[M] = affinity[M.real_name]
+				.[M] = LAZYACCESS(affinity, M.real_name)
 	// Sort the list (timsort default sort comperator is numeric ascending, so highest affinity will be last in the list)
 	sortTim(., associative = TRUE)
 
 //This a teppi with funny colors will spawn!
-/mob/living/simple_mob/vore/alienanimals/teppi/mutant/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/mutant
 	teppi_mutate = TRUE
-	. = ..()
 
 //Custom teppi colors! For funzies.
 
-/mob/living/simple_mob/vore/alienanimals/teppi/cass/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/cass
 	inherit_colors = TRUE
 	color = "#c69c85"
 	marking_color = "#eeb698"
@@ -1087,9 +1063,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#272523"
 	marking_type = "2"
 	horn_type =  "0"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass
 	inherit_colors = TRUE
 	color = "#c69c85"
 	marking_color = "#eeb698"
@@ -1098,9 +1073,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#272523"
 	marking_type = "2"
 	horn_type =  "0"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/aronai/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/aronai
 	inherit_colors = TRUE
 	color = "#404040"
 	marking_color = "#222222"
@@ -1109,9 +1083,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#e16f2d"
 	marking_type = "13"
 	horn_type = "1"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/lira/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/lira
 	inherit_colors = TRUE
 	color = "#fdfae9"
 	marking_color = "#ffffc0"
@@ -1120,4 +1093,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#f09ca9"
 	marking_type = "13"
 	horn_type = "0"
-	. = ..()
+
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/starting_nutrition() // a baby is born hungry
+	return 0

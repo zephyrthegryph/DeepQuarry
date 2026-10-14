@@ -1,0 +1,5 @@
+/obj/structure/closet/coffin icon: icons/obj/closets/coffin.dmi
+/obj/structure/closet/coffin state: closed_unlocked
+/obj/structure/closet/coffin dir: 2
+/obj/structure/closet/coffin overlay: icons/obj/closets/coffin.dmi:closed_unlocked:8:#000000
+

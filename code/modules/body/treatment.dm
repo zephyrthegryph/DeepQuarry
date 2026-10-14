@@ -110,6 +110,7 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 /// calibration), its own regeneration and refactory feedstock, plus the
 /// electrical jump-start that reboots a dormant core.
 /proc/treatment_tag_biology(tag)
+	READS_FROM()
 	switch(tag)
 		if(TREAT_PLATING_REPAIR, TREAT_WIRING_REPAIR, TREAT_CALIBRATION, TREAT_PANEL_CLOSURE)
 			return BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM
@@ -131,12 +132,12 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	// fixers…) only treats if it declares its own, different profile. DM
 	// builds list defaults per instance, so compare contents, not refs.
 	var/list/tags_by_type = list()
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		if(R)
 			tags_by_type[R.type] = R.treatment_tags
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		if(!length(R?.treatment_tags))
 			continue
 		var/parent = R.parent_type
@@ -167,7 +168,7 @@ DECLARE_SHARED_CACHE(proto_reagent_tags, GLOBAL_PROC_REF(build_proto_reagent_tag
 /proc/build_proto_reagent_tags(reagent_type)
 	var/datum/reagent/R = new reagent_type()
 	. = R.treatment_tags
-	qdel(R)
+	spent(R)
 
 /// reagent ID -> potency for every reagent that provides `tag`.
 /proc/dq_reagents_providing(tag)

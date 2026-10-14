@@ -14,16 +14,15 @@
 		GAME_TIC_TAC_TOE = /datum/board_game/four_row/tic_tac_toe
 	)
 
-DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
+CAPABILITIES(/obj/structure/casino_table/board_game)
+	owns_one(nameof(game_ui), /datum/board_game, starts = nameof(game_ui))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
-
-EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
 
 /// Old attack_hand.
-/obj/structure/casino_table/board_game/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/casino_table/board_game/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		if(!game_ui)
 			pick_game(user)
@@ -32,23 +31,24 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	return TRUE
 
 /// Old click_alt.
-/obj/structure/casino_table/board_game/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/casino_table/board_game/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	pick_game(user)
 	return TRUE
 
 /obj/structure/casino_table/board_game/proc/pick_game(mob/user)
 	if(game_ui?.game_state != GAME_SETUP)
 		return
-	var/datum/board_game/new_game = rerun_ask(user, "k42", PROC_REF(pick_game), args, /datum/om/prompt/choice, message = "Pick the game to play", title = "Choose Game", choices = possible_games)
+	var/datum/board_game/new_game = rerun_ask(user, "k42", PROC_REF(pick_game), args, /datum/prompt/choice, question = "Pick the game to play", title = "Choose Game", choices = possible_games)
 	if(isnull(new_game))
 		return
 	if(!new_game)
 		return
 	new_game = possible_games[new_game]
 	if(game_ui)
-		own_clear(src, nameof(game_ui), OWN_DELETE)
-	own_set(src, nameof(game_ui), new new_game(src))
-	icon_state = game_ui.table_icon
+		rel_clear(src, nameof(game_ui))
+	rel_set(src, nameof(game_ui), new new_game(src))
+	set_icon_state(game_ui.table_icon)
 
 /datum/board_game
 	var/name
@@ -56,7 +56,8 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
-DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
+CAPABILITIES(/datum/board_game)
+	op("invite_player", ui_act("invite_player"), asks(/datum/prompt/choice, fields = list("question" = "Invite a nearby player to the game.", "title" = "Invite Player", "choices" = computed(PROC_REF(invitable_players)), "timeout" = 0), step = "k83"), then(PROC_REF(ui_act_invite_player)))
 
 /datum/board_game/New(atom/holder)
 	. = ..()
@@ -65,20 +66,30 @@ DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
 /datum/board_game/tgui_host(mob/user)
 	return parent()
 
-UI_ACT(/datum/board_game, "invite_player", ui_act_invite_player)
-UI_ACT_PROC(/datum/board_game, ui_act_invite_player)
-	var/list/possible_mobs = ui.user.living_mobs_in_view(1, TRUE, TRUE)
-	for(var/obj/belly/our_belly in ui.user.vore_organs)
-		for(var/mob/living/prey in contents_of(our_belly))
-			if(prey.client)
-				possible_mobs += prey
-	var/mob/living/new_player = act_ask(ui.user, action, params, ui, "k83", /datum/om/prompt/choice, message = "Invite a nearby player to the game.", title = "Invite Player", choices = possible_mobs)
-	if(isnull(new_player))
-		return
-	if(!new_player)
+/datum/board_game/proc/ui_act_invite_player(datum/act/op/A)
+	var/mob/living/new_player = A.step_value("k83")
+	if(!istype(new_player))
 		return FALSE
 	tgui_interact(new_player)
 	return TRUE
+
+/// The players the inviter can see (or holds in a belly), offered by the invite question.
+/datum/board_game/proc/invitable_players(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/possible_mobs = user.living_mobs_in_view(1, TRUE, TRUE)
+	for(var/obj/belly/our_belly in user.vore_organs)
+		for(var/mob/living/prey in contents_of(our_belly))
+			if(prey.client)
+				possible_mobs += prey
+	return possible_mobs
+
+/// The game's sub-actions (a move and its data, sent inside "game_action"): each game routes its own; null for one it has not.
+/datum/board_game/proc/game_subaction(action, list/data, mob/user, extra)
+	return null
+
+/// The setup sub-actions (sent inside "setup_action"), routed the same way.
+/datum/board_game/proc/setup_subaction(action, list/data, mob/user, extra)
+	return null
 
 /// The table this game sits on (a relation view: null once it is deleted).
 /datum/board_game/proc/parent() as /atom

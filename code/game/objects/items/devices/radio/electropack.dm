@@ -9,58 +9,55 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 			)
 	item_state = "electropack"
 	frequency = AMAG_ELE_FREQ
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
-
 
 	var/code = 2
 	electric_pack = TRUE
 
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/radio/electropack/proc/can_take_off)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// Is `thing` the item on `user`'s back?
+/proc/worn_on_back_of(obj/item/thing, mob/user)
+	READS_FROM() // what is worn where is asked when the hand reaches for it
+	return thing == user.get_equipped_item(SLOT_ID_BACK)
 
-/// Requirement: the wearer can't take it off their own back.
-/obj/item/radio/electropack/proc/can_take_off(mob/living/user, atom/target, obj/item/held)
-	if(src == user.get_equipped_item(SLOT_ID_BACK))
-		return "you need help taking this off"
-	return TRUE
+/// The wearer can't take it off alone.
+/obj/item/radio/electropack/proc/interaction_hand(datum/act/op/A)
+	if(!worn_on_back_of(src, A.actor))
+		return OP_DECLINE
+	to_chat(A.actor, span_warning("You need help taking this off."))
+	return OP_OK
 
-/// Blocks self-removal through can_take_off(); otherwise falls through to the ordinary hand.
-/obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return FALSE
-
-/obj/item/radio/electropack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a helmet and the pack make a shock kit (once its panel is open).
+/obj/item/radio/electropack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/clothing/head/helmet))
 		if(!b_stat)
 			to_chat(user, span_notice("[src] is not ready to be attached!"))
-			return TRUE
-		var/obj/item/assembly/shock_kit/A = new /obj/item/assembly/shock_kit( user )
-		A.icon = 'icons/obj/assemblies.dmi'
+			return OP_OK
+		var/obj/item/assembly/shock_kit/K = new /obj/item/assembly/shock_kit( user )
+		K.icon = 'icons/obj/assemblies.dmi'
 
-		rel_set(W, nameof(W.master), A)
-		if(!own_set(A, nameof(A.part1), W, user = user))
-			return TRUE
+		set_item_master(W, K)
+		if(!move_into(K, nameof(K.part1), W, user))
+			return OP_OK
 
-		rel_set(src, nameof(src.master), A)
-		if(!own_set(A, nameof(A.part2), src, user = user))
-			return TRUE
+		set_item_master(src, K)
+		if(!move_into(K, nameof(K.part2), src, user))
+			return OP_OK
 
-		user.put_in_hands(A)
-		A.add_fingerprint(user)
-		return TRUE
-	return FALSE
+		user.put_in_hands(K)
+		K.add_fingerprint(user)
+		return OP_OK
+	return OP_DECLINE
 
 // TGUI migration. The electropack's panel had three
 // controls (power, frequency, code); they all flow through tgui_act now.
 /obj/item/radio/electropack/proc/can_use(mob/user)
 	if(!user || user.stat || user.restrained())
 		return FALSE
-	if(ishuman(user) && (!SSticker || SSticker.mode != "monkey") && user.contents.Find(src))
+	if(ishuman(user) && (!SSticker || ticker_mode() != "monkey") && user.contents.Find(src))
 		return TRUE
-	if(user.contents.Find(master))
+	if(user.contents.Find(item_master(src)))
 		return TRUE
 	if(in_range(src, user) && isturf(loc))
 		return TRUE
@@ -77,18 +74,16 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 			if(!dq_get_moved_recently(M) && M.last_move)
 				dq_set_moved_recently(M, TRUE)
 				step(M, M.last_move)
-				om_after(M, 5 SECONDS, GLOBAL_PROC_REF(dq_set_moved_recently), M, FALSE)
+				after(M, 5 SECONDS, GLOBAL_PROC_REF(dq_set_moved_recently), with = list(M, FALSE))
 		to_chat(M, span_danger("You feel a sharp shock!"))
 		fx_sparks(M, 3)
 
-		M.status_at_least(EFFECT_WEAKENED, 10)
+		M.status_at_least(STAT_WEAKENED, 10)
 
-	if(master && wires & 1)
-		master.receive_signal()
 	return
 
 // TGUI Electropack window; no more browse() panel.
-/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/electropack/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(!ishuman(user))
 		return
@@ -96,12 +91,19 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/radio/electropack, "Electropack")
+CAPABILITIES(/obj/item/radio/electropack)
+	configure(item_worn(slots = SLOT_BACK))
+	interface("Electropack")
+	without("ui_open")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("delta", num())), then(PROC_REF(ui_act_code)))
+	// strapped to the actor's own back, it can't be taken off alone (otherwise the click declines to the ordinary hand)
+	op("strapped", hand(), label("Take off"), then(PROC_REF(interaction_hand)))
+	op("shock_kit", item(/obj/item/clothing/head/helmet), label("Make a shock kit"), then(PROC_REF(interaction_item)))
 
-UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_electropack{on:num,frequency:num,freq_display:text,code:unknown}")
-
-/// The computed part of /obj/item/radio/electropack's window data (declared on its UI_DATA row).
-/obj/item/radio/electropack/proc/ui_data_obj_item_radio_electropack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/radio/electropack's window data.
+/obj/item/radio/electropack/ui_data(datum/act/eval/A)
 	return list(
 		"on" = on,
 		"frequency" = frequency,
@@ -109,30 +111,34 @@ UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_elect
 		"code" = code,
 	)
 
-/obj/item/radio/electropack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/radio/electropack/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!..())
 		return FALSE
-	if(!can_use(usr))
+	if(!can_use(user))
 		return FALSE
-	usr.set_machine(src)
+	user.set_machine(src)
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_power)
+/obj/item/radio/electropack/proc/ui_act_power(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	on = !on
-	icon_state = "electropack[on]"
+	set_icon_state("electropack[on]")
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "freq", ui_act_freq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_freq)
-	var/delta = params["delta"]
+/obj/item/radio/electropack/proc/ui_act_freq(datum/act/op/A, delta_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/delta = delta_arg
 	if(isnum(delta))
 		set_frequency(sanitize_frequency(frequency + delta))
 	return TRUE
 
-UI_ACT(/obj/item/radio/electropack, "code", ui_act_code, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/radio/electropack, ui_act_code)
-	var/delta = params["delta"]
+/obj/item/radio/electropack/proc/ui_act_code(datum/act/op/A, delta_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/delta = delta_arg
 	if(isnum(delta))
 		code = clamp(round(code + delta), 1, 100)
 	return TRUE

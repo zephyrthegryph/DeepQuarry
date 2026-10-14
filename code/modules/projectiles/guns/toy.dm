@@ -42,8 +42,6 @@
 	item_state = "shotgun"
 	max_shells = 6
 	w_class = ITEMSIZE_LARGE
-	force = 2
-	slot_flags = null
 	caliber = "foam"
 	load_method = SINGLE_CASING
 	ammo_type = /obj/item/ammo_casing/afoam_dart
@@ -52,6 +50,10 @@
 	handle_casings = null
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_combat(force = 2))
 
 /*
  * Moist Nugget
@@ -85,7 +87,10 @@
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/pistol/toy/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /*
  * N99 Pistol
@@ -183,7 +188,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "{initial(icon_state)}{
 	caliber = "foam"
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
-	slot_flags = SLOT_BELT
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg
 	allowed_magazines = list(/obj/item/ammo_magazine/mfoam_dart/smg)
 	projectile_type = /obj/item/projectile/bullet/foam_dart
@@ -196,10 +200,17 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol/toy, "{initial(icon_state)}{
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=2,    burst_accuracy=list(0,-2,-2), dispersion=null)
 	)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/toy)
+	configure(item_worn(slots = SLOT_BELT))
+
 /obj/item/gun/projectile/automatic/toy/riot
 	magazine_type = /obj/item/ammo_magazine/mfoam_dart/smg/riot
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/toy/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
+
 /*
  * Cyborg
  */
@@ -221,10 +232,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state
 	special_weapon_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cyborgtoy/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/cyborgtoy/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	cleanup = !cleanup
 	to_chat(user, "The [src] is now on [cleanup ? "cleanup" : "battle"] mode.")
 
@@ -245,7 +257,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state
 	for(var/obj/item/ammo_casing/afoam_dart/D in contents_of(T))
 		if(length(loaded) >= max_shells)
 			break
-		own_add(src, nameof(src.loaded), D, into = TRUE)
+		move_into(src, nameof(src.loaded), D)
 		moveElement(loaded, length(loaded), 1)
 		success = 1
 	if(success)

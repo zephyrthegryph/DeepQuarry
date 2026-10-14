@@ -12,15 +12,14 @@
 	if(armed)
 		. += "It looks like it's armed."
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/mousetrap/appearance_overlays()
-	. = list()
-	if(armed)
-		icon_state = "mousetraparmed"
-	else
-		icon_state = "mousetrap"
-	if(holder())
-		holder().update_icon()
+TRACKED(/obj/item/assembly/mousetrap, armed)
+
+/obj/item/assembly/mousetrap/holder_state()
+	return armed ? "mousetraparmed" : "mousetrap"
+
+/obj/item/assembly/mousetrap/draw(datum/look/look)
+	..()
+	look.state(holder_state())
 
 /obj/item/assembly/mousetrap/proc/triggered(mob/target, type = "feet")
 	if(!armed)
@@ -32,11 +31,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 			if("feet")
 				if(!H.get_equipped_item(SLOT_ID_SHOES))
 					affecting = H.get_organ(pick(BP_L_LEG, BP_R_LEG))
-					H.status_at_least(EFFECT_WEAKENED, 3)
+					H.status_at_least(STAT_WEAKENED, 3)
 			if(BP_L_HAND, BP_R_HAND)
 				if(!H.get_equipped_item(SLOT_ID_GLOVES))
 					affecting = H.get_organ(type)
-					H.status_at_least(EFFECT_STUNNED, 3)
+					H.status_at_least(STAT_STUNNED, 3)
 		if(affecting)
 			H.injure(INJURY_BLUNT, 1, affecting, src)
 	else if(ismouse(target))
@@ -45,15 +44,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 		M.splat()
 	play_sfx(target, SFX_EFFECTS_SNAP)
 	layer = MOB_LAYER - 0.2
-	armed = 0
-	update_icon()
+	set_armed(0)
 	pulse(0)
 
 /// Overrides assembly's interaction_self(): arm/disarm instead of opening the UI.
-/obj/item/assembly/mousetrap/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
+/obj/item/assembly/mousetrap/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!armed)
 		to_chat(user, span_notice("You arm [src]."))
 	else
@@ -64,30 +60,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 			triggered(user, which_hand)
 			act_message(user, src, MSG_SELF(span_warning("You accidentally trigger %T%!")), \
 				MSG_OTHERS(span_warning("%U% accidentally sets off %T%, breaking [p_their()] fingers.")))
-			return TRUE
+			return OP_OK
 
 		to_chat(user, span_notice("You disarm [src]."))
-	armed = !armed
-	update_icon()
+	set_armed(!armed)
 	play_sfx(user, SFX_WEAPONS_HANDCUFFS)
-	return TRUE
+	return OP_OK
 
-/obj/item/assembly/mousetrap/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/mousetrap_hand,
-	)
-	var/static/list/hide_spec = INTERACT_VERB("Hide", PROC_REF(mousetrap_hide_under_effect))
-	into += dq_interaction_from_spec(/obj/item/assembly/mousetrap, hide_spec)
-	..()
+CAPABILITIES(/obj/item/assembly/mousetrap)
+	extend(/datum/act/hit, instead(then(PROC_REF(mousetrap_thrown_trigger))))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hide", menu(), label("Hide"), needs(req_adjacent(), req_capable()), then(PROC_REF(mousetrap_hide_under_effect)))
 
 /// Old attack_hand: trigger it early if armed and the user fumbles; otherwise not handled
 /// (falls through the same as it always did — this override never called ..() when armed).
-/datum/interaction/entry_hand/mousetrap_hand
-	id = "mousetrap_hand"
-	name = "Use"
-	effect = /obj/item/assembly/mousetrap/proc/interaction_hand
-
-/obj/item/assembly/mousetrap/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/mousetrap/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(armed)
 		if(CLUMSY_FAIL_CHANCE(user))
 			var/which_hand = BP_L_HAND
@@ -96,8 +84,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 			triggered(user, which_hand)
 			act_message(user, src, MSG_SELF(span_warning("You accidentally trigger %T%!")), \
 				MSG_OTHERS(span_warning("%U% accidentally sets off %T%, breaking [p_their()] fingers.")))
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 /obj/item/assembly/mousetrap/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())
@@ -120,24 +108,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/mousetrap, TYPE_PROC_REF(/atom, appea
 		return 1	//end the search!
 	return 0
 
-DAMAGE_REACTION(/obj/item/assembly/mousetrap, DAMAGE_THROWN, PROC_REF(mousetrap_thrown_trigger))
-
-/// An armed trap snaps shut on whatever is thrown at it (and takes nothing else from the hit).
-/obj/item/assembly/mousetrap/proc/mousetrap_thrown_trigger(datum/damage_packet/packet)
-	if(!armed)
-		return
+/// An armed trap snaps shut on whatever is thrown at it (and takes nothing else from the hit). A thrown thing is the generic hit, so the entry is checked.
+/obj/item/assembly/mousetrap/proc/mousetrap_thrown_trigger(datum/act/hit/A)
+	var/datum/damage_packet/packet = A.packet
+	if(!armed || packet.entry != DAMAGE_ENTRY_THROWN)
+		return HOOK_DECLINE
 	visible_message(span_warning("[src] is triggered by [packet.source]."))
 	triggered(null)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/item/assembly/mousetrap/armed
 	icon_state = "mousetraparmed"
 	armed = 1
 
-/obj/item/assembly/mousetrap/proc/mousetrap_hide_under_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/assembly/mousetrap/proc/mousetrap_hide_under_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
-		return
+		return OP_DECLINE
 
 	layer = HIDING_LAYER
 	to_chat(user, span_notice("You hide [src]."))
+	return OP_OK

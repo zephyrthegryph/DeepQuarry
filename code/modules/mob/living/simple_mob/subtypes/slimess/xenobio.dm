@@ -293,12 +293,9 @@
 	water_resist = 10 //I heard putting this higher makes them heal.
 
 
-/datum/om/stage/life/special/slime/xenobio/oceanic
-	of = /mob/living/simple_mob/slime/xenobio/oceanic
-
-/datum/om/stage/life/special/slime/xenobio/oceanic/perform(mob/living/simple_mob/slime/xenobio/oceanic/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.ocean_aura()
+/mob/living/simple_mob/slime/xenobio/oceanic/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.ocean_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/oceanic/proc/ocean_aura()
@@ -390,12 +387,9 @@
 		/mob/living/simple_mob/slime/xenobio/nuclear
 		)
 
-/datum/om/stage/life/special/slime/xenobio/nuclear
-	of = /mob/living/simple_mob/slime/xenobio/nuclear
-
-/datum/om/stage/life/special/slime/xenobio/nuclear/perform(mob/living/simple_mob/slime/xenobio/nuclear/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.nuclear_aura()
+/mob/living/simple_mob/slime/xenobio/nuclear/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.nuclear_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/nuclear/proc/nuclear_aura()
@@ -431,7 +425,7 @@
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_green_pulse, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_green_pulse), with = list(holder.my_atom))
 	..()
 
 
@@ -526,12 +520,9 @@
 		)
 
 
-/datum/om/stage/life/special/slime/xenobio/nightmare
-	of = /mob/living/simple_mob/slime/xenobio/nightmare
-
-/datum/om/stage/life/special/slime/xenobio/nightmare/perform(mob/living/simple_mob/slime/xenobio/nightmare/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.nightmare_aura()
+/mob/living/simple_mob/slime/xenobio/nightmare/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.nightmare_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/nightmare/proc/nightmare_aura()
@@ -646,12 +637,9 @@
 			/mob/living/simple_mob/slime/xenobio/sound
 		)
 
-/datum/om/stage/life/special/slime/xenobio/sound
-	of = /mob/living/simple_mob/slime/xenobio/sound
-
-/datum/om/stage/life/special/slime/xenobio/sound/perform(mob/living/simple_mob/slime/xenobio/sound/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.sound_aura()
+/mob/living/simple_mob/slime/xenobio/sound/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.sound_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/sound/proc/sound_aura()

@@ -14,9 +14,11 @@
 	cast_methods = CAST_USE
 	aspect = ASPECT_UNSTABLE
 
-/obj/item/spell/instability_tap/Initialize(mapload, coreless)
-	. = ..()
-	set_light(3, 2, l_color = "#FA58F4")
+CAPABILITIES(/obj/item/spell/instability_tap)
+	configure(light_glow(range = 3, power = 2, color = "#FA58F4"))
+
+/obj/item/spell/instability_tap
+	light_on = TRUE
 
 /obj/item/spell/instability_tap/on_use_cast(mob/user)
 	var/amount = calculate_spell_power(5000)

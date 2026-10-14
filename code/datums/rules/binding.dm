@@ -6,8 +6,11 @@
 /// `owner` is its one-sided back view.
 /datum/var/tmp/datum/rule_binding/rule_binding
 
+CAPABILITIES(/datum)
+	owns_one(nameof(rule_binding), /datum/rule_binding)
 
-/proc/dq_rule_binding_of(datum/thing)
+
+/proc/dq_rule_binding_of(datum/thing) as /datum/rule_binding
 	var/datum/rule_binding/binding = thing?.rule_binding
 	return QDELETED(binding) ? null : binding
 
@@ -64,8 +67,8 @@
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	if(binding?.key_id && (key_kind in binding.table.key_kinds))
-		dq_rx_publish(key_kind, binding.key_id, 1)
+	if(binding?.key_subs && (key_kind in binding.table.key_kinds))
+		dq_rx_publish(binding, key_kind)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
@@ -132,14 +135,15 @@
 	var/fired = 0
 	/// Flat [rule index, token, rule index, token, ...] for every live subscription.
 	var/list/tokens
-	/// Per rule: hold_for rate model (RULE_HOLD_SPENT once fired this spell) and its watch token.
-	/// Both null until a hold_for rule first holds.
-	var/list/hold_models
-	var/list/hold_tokens
+	/// Per rule, for a hold_for rule: the deciseconds of holding still to go while its count is paused (null before it first holds), or RULE_HOLD_SPENT once it
+	/// fired this spell. While the condition holds the wake at the hold time is the binding's keyed kernel timer "hold:N" (N the rule index) and this stays as it was.
+	var/list/hold_left
 	/// property -> heat node handle (the owner's heat body, while it has one).
 	var/list/nodes
-	/// The id of the owner's DM-owned keys (om_world_key_id()).
-	var/key_id
+	/// DM-owned key kind (text) -> live subscriptions of this binding's rules to it, or null: dq_rx_on_key() and dq_rx_cancel() keep it.
+	var/list/key_subs
+	/// TRUE while a merged key wake is waiting for its tick.
+	var/key_wake_pending = FALSE
 	/// Every world watch made for this binding (dq_rx_*), deleted with it.
 	/// Deleted by Destroy() (dq_rx_clear()), not by the lifecycle's owned-var pass: it is a
 	/// plain list, and qdel() refuses lists.
@@ -149,7 +153,7 @@
 	..()
 	rel_set(src, nameof(owner), owner)
 	table = dq_rule_table_for(rules)
-	own_set(owner, nameof(owner.rule_binding), src)
+	rel_set(owner, nameof(owner.rule_binding), src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))
@@ -208,9 +212,9 @@
 				var/handle = trigger.provider().node_of(owner, TRUE)
 				var/above = trigger.fires_above()
 				// Watches fire at >= / <=; a strict comparison watches just past the level.
-				if(trigger.op == PRED_CMP_GT)
+				if(trigger.op == SIM_COMPARE_GT)
 					level += dq_rule_epsilon(level)
-				else if(trigger.op == PRED_CMP_LT)
+				else if(trigger.op == SIM_COMPARE_LT)
 					level -= dq_rule_epsilon(level)
 				out += dq_rx_when_threshold(src, handle, trigger.provider().channel, above, level, TRUE)
 			if(RULE_TRIGGER_BAND)
@@ -223,9 +227,7 @@
 				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
 					cancel_all(out)
 					return FALSE
-				if(!key_id)
-					key_id = dq_rx_id()
-				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
+				out += dq_rx_on_key(src, trigger.key_kind)
 	// A subscribed rule is live even when a watch came back null, as before.
 	for(var/token in out)
 		if(!tokens)
@@ -250,20 +252,30 @@
 			tokens.Cut(pos, pos + 2)
 			dq_rx_cancel(src, token)
 		UNSETEMPTY(tokens)
-	if(hold_models && !isnull(hold_models[i]) && hold_models[i] != RULE_HOLD_SPENT)
-		om_rate_remove(hold_models[i])
-		hold_models[i] = null
-		hold_tokens[i] = null
+	if(hold_left && hold_left[i] != RULE_HOLD_SPENT)
+		cancel_after(src, "hold:[i]")
+		hold_left[i] = null
 
 /datum/rule_binding/proc/check(datum/rule/rule)
-	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
+	return rule.compiled_condition.holds(owner) ? TRUE : FALSE
 
 /// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
 	if(!owner || QDELETED(owner))
-		qdel(src)
+		spent(src)
 		return FALSE
 	return TRUE
+
+/// A DM-owned key of this binding was published: one merged re-evaluation on the next tick.
+/datum/rule_binding/proc/key_published(kind)
+	if(key_wake_pending || !key_subs?["[kind]"])
+		return
+	key_wake_pending = TRUE
+	after(src, 1 TICK, TYPE_PROC_REF(/datum/rule_binding, key_wake))
+
+/datum/rule_binding/proc/key_wake()
+	key_wake_pending = FALSE
+	rule_wake(DQ_RX_REASON_KEY, null)
 
 /datum/rule_binding/rule_wake(reason, source)
 	if(!resolve())
@@ -304,39 +316,40 @@
 		else if(!now && was && (fired & bit))
 			rule.exit(owner)
 
-/// hold_for: a rate model counts seconds held; a rate watch wakes us when it
-/// reaches the hold time. It pauses while the condition doesn't hold.
+/// hold_for: the condition has to hold for hold_for deciseconds before the rule fires. The time held is counted while the condition holds and
+/// kept while it does not (it pauses): a keyed kernel timer wakes the binding when the rest of the hold time has run, and pausing keeps what is left of it.
 /datum/rule_binding/proc/update_hold(i, datum/rule/rule, now)
-	if(!hold_models)
-		hold_models = new /list(table.count)
-		hold_tokens = new /list(table.count)
-	var/model = hold_models[i]
-	if(model == RULE_HOLD_SPENT)
+	if(!hold_left)
+		hold_left = new /list(table.count)
+	var/key = "hold:[i]"
+	var/left = hold_left[i]
+	if(left == RULE_HOLD_SPENT)
 		// Fired during this spell; re-arm once the condition stops holding.
 		if(!now)
-			hold_models[i] = null
+			hold_left[i] = null
 			rule.exit(owner)
 		return
-	if(isnull(model))
-		if(!now)
-			return
-		model = om_rate_linear(0, 1, 0, null)
-		hold_models[i] = model
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
+	var/running = after_pending(src, key)
+	if(!now)
+		if(running)
+			hold_left[i] = after_left(src, key)
+			cancel_after(src, key)
 		return
-	// Within a tick of the hold time counts: the model reads at step ticks.
-	if(now && om_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
-		om_rate_remove(model)
-		hold_models[i] = RULE_HOLD_SPENT
-		hold_tokens[i] = null
-		fire(i)
+	if(running)
+		return // already counting: the timer is armed
+	if(isnull(left))
+		left = rule.hold_for
+	if(left <= 0)
+		hold_done(i)
 		return
-	om_rate_set_rate(model, now ? 1 : 0)
-	if(now)
-		// Re-arm the crossing watch from the resumed rate.
-		if(!isnull(hold_tokens[i]))
-			dq_rx_cancel(src, hold_tokens[i])
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
+	after(src, left, PROC_REF(hold_done), key = key, with = list(i))
+
+/// The hold time of rule i has run with its condition holding: it fires.
+/datum/rule_binding/proc/hold_done(i)
+	if(!resolve())
+		return
+	hold_left[i] = RULE_HOLD_SPENT
+	fire(i)
 
 /datum/rule_binding/proc/fire(i)
 	var/list/rules = table.rules
@@ -346,7 +359,7 @@
 		drop(i)
 	rule.fire(owner)
 	if(!QDELETED(src) && !live)
-		qdel(src)
+		spent(src)
 
 #undef RULE_BIT
 #undef RULE_BINDING_MAX_RULES
@@ -367,7 +380,10 @@
 				if(!state_is_saved(thing, var_name))
 					stack_trace("rule transform sets [var_name] on [thing.type], which is not saved state")
 					continue
-				thing.vars[var_name] = op[3] // ALLOW(api): rule effects of kind RULE_SET_VAR: the var is named by the rule table
+				if(var_name == OP_KEY_CAP_STATE)
+					capability_runtime(thing).bits = op[3]
+				else
+					thing.vars[var_name] = op[3] // ALLOW(api): rule effects of kind RULE_SET_VAR: the var is named by the rule table
 			if(RULE_OP_SWAP)
 				var/atom/movable/M = thing
 				var/turf/T = get_turf(thing)
@@ -376,7 +392,6 @@
 						inside.forceMove(T)
 				var/path = op[2]
 				new path(T)
-				qdel(thing)
+				replaced_by(thing)
 			if(RULE_OP_REMOVE)
-				qdel(thing)
-
+				spent(thing)

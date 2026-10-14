@@ -16,7 +16,7 @@
 	center_of_mass_x = 0
 	center_of_mass_y = 0
 	/// A shared recipe table of /datum/stack_recipe (GLOB or the registered material holds it; never owned or cleared by the stack).
-	var/tmp/list/recipes
+	var/tmp/list/datum/stack_recipe/recipes
 	var/singular_name
 	var/amount = 1
 	var/max_amount //also see stack recipes initialisation, param "max_res_amount" must be equal to this max_amount
@@ -31,14 +31,34 @@
 	var/pass_color = FALSE // Will the item pass its own color var to the created item? Dyed cloth, wood, etc.
 	var/strict_color_stacking = FALSE // Will the stack merge with other stacks that are different colors? (Dyed cloth, wood, etc)
 
-	var/custom_handling = FALSE
 	var/beacons = FALSE
 	var/sandbags = FALSE
 
-/obj/item/stack/Initialize(mapload, starting_amount)
+SETTER(/obj/item/stack, amount)
+
+CAPABILITIES(/obj/item/stack)
+	ref_many(nameof(synths), /datum/matter_synth, on_unlink = PROC_REF(synth_unlinked))
+	on_change(nameof(synths), ANY, then(PROC_REF(synth_cost_changed)))
+	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
+	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/stack_recipe))), then(PROC_REF(ui_act_make)))
+	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
+	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
+	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
+	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
+	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
+	param(nameof(amount_at_make), pos = 1)
+
+/// The amount a stack is made with (its constructor param): null for its own, negative for a full stack.
+/obj/item/stack/var/amount_at_make
+
+// ALLOW(init/INSTANCE_STATE): a stack sets its starting amount (a negative one is a full stack), its in-hand sprite and its sale
+/obj/item/stack/Initialize(mapload)
 	. = ..()
 	if(!stacktype)
 		stacktype = type
+	if(!no_variants)
+		item_state = initial(icon_state) // the in-hand sprite of a stack with variants is the plain one, whatever the pile shows
+	var/starting_amount = amount_at_make
 	if(!isnull(starting_amount)) // Could be 0
 		// Negative numbers are 'give full stack', like -1
 		if(starting_amount < 0)
@@ -48,7 +68,6 @@
 			else
 				starting_amount = 1
 		set_amount(starting_amount, TRUE)
-	update_icon()
 	make_sellable(/datum/sellable/material_stack)
 
 /obj/item/stack/get_material_composition(breakdown_flags)
@@ -56,19 +75,17 @@
 	for(var/M in .)
 		.[M] *= amount
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/appearance_overlays()
-	. = list()
-	if(no_variants)
-		icon_state = initial(icon_state)
-	else
-		if(amount <= (max_amount * (1/3)))
-			icon_state = initial(icon_state)
-		else if (amount <= (max_amount * (2/3)))
-			icon_state = "[initial(icon_state)]_2"
-		else
-			icon_state = "[initial(icon_state)]_3"
-		item_state = initial(icon_state)
+/obj/item/stack/draw(datum/look/look)
+	..()
+	look.state(look_state())
+
+/// The icon state the pile shows: by how full it is (a stack with no variants keeps its own).
+/obj/item/stack/proc/look_state()
+	if(no_variants || amount <= (max_amount * (1/3)))
+		return initial(icon_state)
+	if(amount <= (max_amount * (2/3)))
+		return "[initial(icon_state)]_2"
+	return "[initial(icon_state)]_3"
 
 /obj/item/stack/proc/get_examine_string()
 	if(!uses_charge)
@@ -82,19 +99,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack, TYPE_PROC_REF(/atom, appearance_overlay
 	if(Adjacent(user))
 		. += get_examine_string()
 
-/// Old attack_self: the stack's recipe window. Subtypes with custom_handling fall through.
-/obj/item/stack/proc/stack_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(custom_handling)
-		return FALSE
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/item/stack, "MaterialStack")
-
-UI_DATA(/obj/item/stack, "merge:ui_data_obj_item_stack{amount:unknown}")
-
-/// The computed part of /obj/item/stack's window data (declared on its UI_DATA row).
-/obj/item/stack/proc/ui_data_obj_item_stack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The stack's recipe window data.
+/obj/item/stack/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["amount"] = get_amount()
@@ -128,21 +134,19 @@ UI_DATA(/obj/item/stack, "merge:ui_data_obj_item_stack{amount:unknown}")
 		"ref" = "\ref[R]",
 	)
 
-DECLARE_UI_STATE(/obj/item/stack, GLOB.tgui_hands_state)
-
-UI_ACT(/obj/item/stack, "make", ui_act_make, UI_ARG_NUM("multiplier"), UI_ARG_REF("ref", null, /datum/stack_recipe))
-UI_ACT_PROC(/obj/item/stack, ui_act_make)
+/// The window's build button: `ref` is the recipe, `multiplier` how many batches.
+/obj/item/stack/proc/ui_act_make(datum/act/op/A, multiplier, datum/stack_recipe/ref)
+	var/mob/user = A.actor
 	if(get_amount() < 1)
-		qdel(src)
+		spent(src)
 		return
 
-	var/datum/stack_recipe/R = params["ref"]
+	var/datum/stack_recipe/R = ref
 	if(!is_valid_recipe(R, recipes)) //href exploit protection
 		return FALSE
-	var/multiplier = params["multiplier"]
 	if(!multiplier || (multiplier <= 0)) //href exploit protection
 		return
-	produce_recipe(R, multiplier, ui.user)
+	produce_recipe(R, multiplier, user)
 	return TRUE
 
 /obj/item/stack/proc/is_valid_recipe(datum/stack_recipe/R, list/recipe_list)
@@ -160,7 +164,7 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 	var/required = quantity*recipe.req_amount
 	var/produced = min(quantity*recipe.res_amount, recipe.max_res_amount)
 
-	if(om_busy(src))
+	if(op_claimed(src))
 		return
 
 	if (!can_use(required))
@@ -180,22 +184,22 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/stack_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	start_build(user, recipe, required, produced)
 
-/// Building a stack recipe (at once when it takes no time): the stack is claimed meanwhile.
-/datum/om/task/timed/stack_build
-	claims = TRUE
-	complete_proc = /obj/item/stack/proc/produce_recipe_done
-	var/datum/stack_recipe/recipe
-	var/required
-	var/produced
+/// Starts the build op: the recipe, what it costs and what it makes ride with the call.
+/obj/item/stack/proc/start_build(mob/user, datum/stack_recipe/recipe, required, produced)
+	perform_op(user, src, "build", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("recipe" = recipe, "required" = required, "produced" = produced))
+
+/obj/item/stack/proc/build_time(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	return recipe.time
 
 /// The build time is over: spend the stack and make the thing.
-/obj/item/stack/proc/produce_recipe_done(datum/om/task/timed/stack_build/task)
-	var/datum/stack_recipe/recipe = task.recipe
-	var/mob/user = task.actor
-	var/required = task.required
-	var/produced = task.produced
+/obj/item/stack/proc/produce_recipe_done(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/mob/user = A.actor
+	var/required = A.arg("required")
+	var/produced = A.arg("produced")
 	if (use(required))
 		var/atom/O
 		if(recipe.use_material)
@@ -223,14 +227,14 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		O.add_fingerprint(user)
 		if (istype(O, /obj/item/stack))
 			var/obj/item/stack/S = O
-			S.amount = produced
+			S.set_amount(produced, TRUE)
 			S.add_to_stacks(user)
 		if (isitem(O))
 			var/obj/item/P = O
 			P.persist_storable = FALSE
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
-				qdel(I)
+				spent(I)
 
 		if ((pass_color || recipe.pass_color))
 			if(!color)
@@ -239,9 +243,11 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 					if(MAT.icon_colour)
 						O.color = MAT.icon_colour
 				else
-					return
+					return OP_OK
 			else
 				O.color = color
+		return OP_OK
+	return OP_FAILED
 
 //Return 1 if an immediate subsequent call to use() would succeed.
 //Ensures that code dealing with stacks uses the same logic
@@ -257,14 +263,13 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 	if(!can_use(used))
 		return 0
 	if(!uses_charge)
-		amount -= used
+		set_amount(amount - used, TRUE)
 		if (amount <= 0)
 			// Tell container that we used up a stack
 			if(istype( loc, /obj/item/storage))
 				var/obj/item/storage/holder = loc
 				holder.remove_from_storage( src, null)
-			qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
-		update_icon()
+			spent(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
 		return 1
 	else
 		if(get_amount() < used)
@@ -282,8 +287,7 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		if(amount + extra > get_max_amount())
 			return 0
 		else
-			amount += extra
-		update_icon()
+			set_amount(amount + extra, TRUE)
 		return 1
 	else if(!synths || synths.len < uses_charge)
 		return 0
@@ -304,11 +308,14 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 	if(new_amount > max_amount && !no_limits)
 		new_amount = max_amount
 
-	amount = new_amount
+	if(amount != new_amount)
+		amount = new_amount
+		ledger_refresh_contribution()
+		tracked_changed(src, nameof(amount))
 
 	// Can set it to 0 without qdel if you really want
 	if(amount == 0 && !no_limits)
-		qdel(src)
+		spent(src)
 		return FALSE
 
 	return TRUE
@@ -412,16 +419,19 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 		if(!amount)
 			break
 
-/// Old attack_hand: touching the stack in the other hand splits it; otherwise falls through to pickup.
-/obj/item/stack/proc/stack_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Touching the stack in the other hand asks how many to split off; otherwise the touch goes on to the pickup.
+/obj/item/stack/proc/split_asked(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.get_inactive_hand() != src)
-		return FALSE
-	om_ask(user, /datum/om/prompt/number, PROC_REF(split_amount_chosen), title = "Split stacks", message = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max = amount, min = 1, round_entry = FALSE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	return TRUE
+		return OP_DECLINE
+	open_request(src, /datum/prompt/number, PROC_REF(split_amount_chosen), answerer = user, title = "Split stacks", question = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max_value = amount, min_value = 1, step = 0.01, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+	return OP_OK
 
-/obj/item/stack/proc/split_amount_chosen(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/N = ask.number
+/obj/item/stack/proc/split_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/N = A.answer.value
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
 		return
@@ -434,33 +444,29 @@ UI_ACT_PROC(/obj/item/stack, ui_act_make)
 			if (!QDELETED(src) && user.check_current_machine(src))
 				src.interact(user)
 
-DECLARE_INTERACTIONS(/obj/item/stack, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF(null, PROC_REF(stack_self)), \
-	INTERACT_HAND_UNGATED("Split", PROC_REF(stack_hand)), \
-)
+/// A cyborg's gripper gathers the stacks around it into this one.
+/obj/item/stack/proc/consolidated(datum/act/op/A)
+	var/obj/item/gripper/G = A.held
+	G.consolidate_stacks(src)
+	return OP_OK
 
-/// Old attackby.
-/obj/item/stack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/gripper))
-		var/obj/item/gripper/G = W
-		G.consolidate_stacks(src)
-		if(QDELETED(src))
-			return INTERACTION_HANDLED_PASS
+/// A stack clicked with itself in the hand is the in-hand use, not a stack held against another.
+/obj/item/stack/proc/held_is_another(datum/act/op/A)
+	return (A.held != src) ? null : /datum/msg/req_failed
 
-	else if(istype(W, /obj/item/stack))
-		var/obj/item/stack/S = W
-		src.transfer_to(S)
-		if(QDELETED(src))
-			return INTERACTION_HANDLED_PASS
+/// A stack held against this one: this one pours into it.
+/obj/item/stack/proc/combined(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/S = A.held
+	src.transfer_to(S)
+	if(QDELETED(src))
+		return OP_OK
 
-		if (S && user.check_current_machine(S))
-			S.interact(user)
-		if (src && user.check_current_machine(src))
-			src.interact(user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+	if (S && user.check_current_machine(S))
+		S.interact(user)
+	if (src && user.check_current_machine(src))
+		src.interact(user)
+	return OP_OK
 
 /obj/item/stack/proc/combine_in_loc()
 	return //STUBBED for now, as it seems to randomly delete stacks
@@ -562,10 +568,36 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 	return ..()
 
 
-/obj/item/stack/ownership()
-	. = ..()
-	. += shares(nameof(recipes))
 
-/obj/item/stack/relations()
-	. = ..()
-	. += rel_many(nameof(synths))
+/obj/item/stack/proc/set_uses_charge(value)
+	if(uses_charge == value)
+		return FALSE
+	uses_charge = value
+	ledger_refresh_contribution()
+	tracked_changed(src, nameof(uses_charge))
+	return TRUE
+SETTER(/obj/item/stack, uses_charge)
+/obj/item/stack/proc/set_charge_costs(list/value)
+	if(charge_costs == value)
+		return FALSE
+	charge_costs = value ? value.Copy() : null
+	ledger_refresh_contribution()
+	tracked_changed(src, nameof(charge_costs))
+	return TRUE
+SETTER(/obj/item/stack, charge_costs)
+/obj/item/stack/proc/amount_read_keys()
+	. = list(list(src, nameof(amount)), list(src, nameof(uses_charge)), list(src, nameof(charge_costs)), list(src, nameof(synths)))
+	for(var/datum/matter_synth/S as anything in synths)
+		. += list(list(S, nameof(S.energy)))
+
+/obj/item/stack/proc/synth_unlinked(datum/matter_synth/other)
+	ledger_refresh_contribution()
+/obj/item/stack/proc/synth_cost_changed(datum/act/A)
+	ledger_refresh_contribution()
+
+/// Model mutation keeps charged units and actual containment accounting coherent.
+/obj/item/stack/proc/add_synth(datum/matter_synth/S)
+	. = rel_add(src, nameof(synths), S)
+	if(.)
+		ledger_refresh_contribution()
+

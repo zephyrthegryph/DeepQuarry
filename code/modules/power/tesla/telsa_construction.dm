@@ -18,11 +18,15 @@
 
 // SPECIAL BOARDS BELOW
 
-/obj/item/circuitboard/tesla_coil/multitool_act(mob/user, obj/item/I)
-	var/result = rerun_ask(user, "k22", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "What do you want to reconfigure the board to?", title = "Multitool-Circuitboard interface", choices = list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector"))
-	if(isnull(result))
-		return ITEM_INTERACT_BLOCKING
-	switch(result)
+/// A multitool reconfigures the coil board into another kind of coil.
+CAPABILITIES(/obj/item/circuitboard/tesla_coil)
+	op("reconfigure", tool(TOOL_MULTITOOL), label("Reconfigure"), wait(0),
+		asks(/datum/prompt/choice, fields = list("title" = "Multitool-Circuitboard interface", "question" = "What do you want to reconfigure the board to?", "choices" = list("Standard", "Relay", "Prism", "Amplifier", "Recaster", "Collector"))),
+		then(PROC_REF(reconfigured)))
+
+/obj/item/circuitboard/tesla_coil/proc/reconfigured(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	switch(R?.value)
 		if("Standard")
 			name = T_BOARD("tesla coil")
 			build_path = /obj/machinery/power/tesla_coil
@@ -41,4 +45,4 @@
 		if("Collector")
 			name = T_BOARD("tesla collector coil")
 			build_path = /obj/machinery/power/tesla_coil/collector
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

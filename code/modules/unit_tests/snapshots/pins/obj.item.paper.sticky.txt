@@ -1,0 +1,17 @@
+@obj.item.paper human|none
+@obj.item.paper robot|none
+@obj.item.paper ai|none
+@obj.item.paper ghost|none
+@obj.item.paper human|/obj/item/tool/screwdriver
+@obj.item.paper human|/obj/item/tool/crowbar
+@obj.item.paper human|/obj/item/tool/wrench
+@obj.item.paper human|/obj/item/tool/wirecutters
+@obj.item.paper human|/obj/item/multitool
+@obj.item.paper human|/obj/item/weldingtool
+@obj.item.paper human|/obj/item/stack/cable_coil
+@obj.item.paper human|/obj/item/stack/material/steel
+@obj.item.paper human|/obj/item/card/id
+@obj.item.paper human|/obj/item/kit
+@obj.item.paper human|/obj/item/storage
+@obj.item.paper human|/obj/item
+keys: collect_item, create_area, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, paper_crumple, paper_fold_plane, paper_item, paper_read, paper_rename, paper_silicon_read, pick_up_item, toggle_digestable, wipe_lipstick, write_end, write_field

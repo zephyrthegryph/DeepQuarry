@@ -9,65 +9,66 @@
 	density = FALSE
 	anchored = TRUE
 
-DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
+CAPABILITIES(/obj/effect/bhole)
+	after_init(0.4 SECONDS, then(PROC_REF(controller)))
 
-/obj/effect/bhole/proc/controller()
+/obj/effect/bhole/proc/controller(datum/act/A)
 	if(!isturf(loc))
-		qdel(src)
+		consume(src)
 		return
 
 	if(prob(5))
 		visible_message(span_warning("\The [src] fizzles out and collapses."))
-		qdel(src)
+		consume(src)
 		return
 
 	//DESTROYING STUFF AT THE EPICENTER
 	for(var/mob/living/M in orange(1,src))
-		qdel(M)
+		spent(M)
 	for(var/obj/O in orange(1,src))
-		qdel(O)
+		spent(O)
 	var/base_turf = get_base_turf_by_area(src)
 	for(var/turf/simulated/ST in orange(1,src))
 		if(ST.type == base_turf)
 			continue
 		ST.ChangeTurf(base_turf)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_1))
+	after(src, 0.6 SECONDS, PROC_REF(pull_1))
 
 /obj/effect/bhole/proc/pull_1()
 	grav(10, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_2))
+	after(src, 0.6 SECONDS, PROC_REF(pull_2))
 
 /obj/effect/bhole/proc/pull_2()
 	grav(8, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_3))
+	after(src, 0.6 SECONDS, PROC_REF(pull_3))
 
 /obj/effect/bhole/proc/pull_3()
 	grav(9, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_4))
+	after(src, 0.6 SECONDS, PROC_REF(pull_4))
 
 /obj/effect/bhole/proc/pull_4()
 	grav(7, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_5))
+	after(src, 0.6 SECONDS, PROC_REF(pull_5))
 
 /obj/effect/bhole/proc/pull_5()
 	grav(5, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_6))
+	after(src, 0.6 SECONDS, PROC_REF(pull_6))
 
 /obj/effect/bhole/proc/pull_6()
 	grav(6, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_7))
+	after(src, 0.6 SECONDS, PROC_REF(pull_7))
 
 /obj/effect/bhole/proc/pull_7()
 	grav(4, 2, 50, 6)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_8))
+	after(src, 0.6 SECONDS, PROC_REF(pull_8))
 
 /obj/effect/bhole/proc/pull_8()
 	grav(3, 2, 50, 6)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_9))
+	after(src, 0.6 SECONDS, PROC_REF(pull_9))
 
 /obj/effect/bhole/proc/pull_9()
 	grav(2, 2, 75,25)
-	om_after(src, 0.6 SECONDS, PROC_REF(move))
+	after(src, 0.6 SECONDS, PROC_REF(move))
 
 /obj/effect/bhole/proc/move()
 	//MOVEMENT
@@ -79,7 +80,7 @@ DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 
 /obj/effect/bhole/proc/grav(r, ex_act_force, pull_chance, turf_removal_chance)
 	if(!isturf(loc))	//blackhole cannot be contained inside anything. Weird stuff might happen
-		qdel(src)
+		consume(src)
 		return
 	for(var/t = -r, t < r, t++)
 		affect_coord(x+t, y-r, ex_act_force, pull_chance, turf_removal_chance)

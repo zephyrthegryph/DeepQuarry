@@ -21,9 +21,14 @@ why aren't these accessories?
 	icon_state = "sticker_inactive"
 	name = "Bluespace Sticker"
 	desc = "A stretchable, flexible sticker that induces a quasi-stable 4th dimensional bluespace buzzword rift, enabling moderate levels of touch between the two."
-	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
 	var/tmp/mob/worn_mob
+	/// The wearer of the partner tool, kept for the look: set when either end moves, logs in or out (linked_updated()). A reference, cleared when that mob is deleted.
+	var/tmp/mob/partner_wearer
+	/// The partner wearer's name when it was last looked at (linked_updated()): the doll is named after it.
+	var/partner_name
+	/// Whether the partner is a live one (sanity_check()): the tool shows its lit state while it is.
+	var/partner_live = FALSE
 	var/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE
@@ -37,6 +42,8 @@ why aren't these accessories?
 
 	rel_set(src, nameof(linked), to_link)
 	// rel_one(back =): the partner now names us back.
+	linked_updated()
+	to_link?.linked_updated()
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -47,26 +54,27 @@ why aren't these accessories?
 
 	rel_set(src, nameof(worn_mob), mob)
 
-	om_hook(mob, /datum/om/event/mob_login, src, PROC_REF(worn_mob_logged_in))
-	om_hook(mob, /datum/om/event/mob_logout, src, PROC_REF(worn_mob_logged_out))
+	observe(mob, /datum/notice/mob_login, src, then(PROC_REF(worn_mob_logged_in)))
+	observe(mob, /datum/notice/mob_logout, src, then(PROC_REF(worn_mob_logged_out)))
 	transmit_emote(src, span_notice("\The [src] has been put on by [mob]!"))
 
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
 	if(worn_mob() == null) return
-	om_unhook(worn_mob(), list(/datum/om/event/mob_login, /datum/om/event/mob_logout), src)
+	unobserve(worn_mob(), /datum/notice/mob_login, src)
+	unobserve(worn_mob(), /datum/notice/mob_logout, src)
 	rel_clear(src, nameof(worn_mob))
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
-/obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/source, datum/om/event/mob_logout/event)
-	EVENT_HANDLER
+/obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!linked())
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
 	linked()?.linked_updated()
 
-/obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/source, datum/om/event/mob_login/event)
-	EVENT_HANDLER
+/obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	//called when the mob wearing this item logs in
 	if(!linked())
 		return
@@ -101,13 +109,9 @@ why aren't these accessories?
 	if(!m.client) //no scene partner? whoopsie!
 		return FALSE
 
-/obj/item/remote_scene_tool/Initialize(mapload)
-	. = ..()
-	om_hook(src, /datum/om/event/atom_entering, src, PROC_REF(check_loc))
-
-/obj/item/remote_scene_tool/proc/check_loc(atom/movable/mover, datum/om/event/atom_entering/event)
-	EVENT_HANDLER
-	om_after(src, 1, PROC_REF(delayed_loc_check))
+/obj/item/remote_scene_tool/proc/check_loc(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	after(src, 0.1 SECONDS, PROC_REF(delayed_loc_check))
 
 /obj/item/remote_scene_tool/proc/delayed_loc_check()
 //why is this delayed? because when moving stuff between slots, it considers it in a different spot, and calls the commsig multiple times - so the end
@@ -126,16 +130,19 @@ why aren't these accessories?
 		if(worn_mob())
 			unregister_from_mob(worn_mob()) //unregister from the mob if we aren't on it anymore
 
+/// The partner or its wearer changed (moved, logged in or out, linked): the state the look shows is written through its setters, and the draw follows.
 /obj/item/remote_scene_tool/proc/linked_updated()
-	update_icon()
+	set_partner_live(sanity_check() ? TRUE : FALSE)
+	var/obj/item/remote_scene_tool/partner = linked()
+	var/mob/wearer = partner?.getWearer()
+	if(wearer != partner_wearer)
+		rel_set(src, nameof(partner_wearer), wearer)
+	set_partner_name(wearer?.name)
 
-DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/remote_scene_tool/appearance_overlays()
-	. = list()
-	if(sanity_check())
-		icon_state = icon_root
-	else
-		icon_state = icon_root + "_inactive"
+
+/obj/item/remote_scene_tool/draw(datum/look/look)
+	..()
+	look.state(partner_live ? icon_root : "[icon_root]_inactive")
 
 // its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/on_destroy(force)
@@ -185,10 +192,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appear
 			return loc.loc
 	return null
 
-EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpart", PROC_REF(remote_scene_tool_verb_summon), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/remote_scene_tool)
+	configure(item_worn(slots = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)))
+	on_notice(/datum/notice/atom_entering, then(PROC_REF(check_loc)))
+	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
+	ref_one(nameof(worn_mob), /mob)
+	ref_one(nameof(partner_wearer), /mob)
+	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 
 /// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.
-/obj/item/remote_scene_tool/proc/remote_scene_tool_verb_summon(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/remote_scene_tool/proc/remote_scene_tool_verb_summon(datum/act/op/A)
+	var/mob/user = A.actor
 	if(can_summon || (linked() == null && can_replace))
 		if(linked() == null)
 			create_counterpart()
@@ -215,7 +229,3 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 /// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
-
-/obj/item/remote_scene_tool/relations()
-	. = ..()
-	. += rel_one(nameof(linked), back = nameof(/obj/item/remote_scene_tool::linked))

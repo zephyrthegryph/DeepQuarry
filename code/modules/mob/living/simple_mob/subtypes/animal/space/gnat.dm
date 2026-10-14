@@ -29,7 +29,6 @@
 	faction = FACTION_GNAT
 	endurance = 5
 	movement_cooldown = 0
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "baps the"
 	response_disarm = "gently pushes aside the"
@@ -37,7 +36,6 @@
 
 	melee_damage_lower = 2
 	melee_damage_upper = 3	//they do very little damage but attack fairly fast, like organic viscerators
-	base_attack_cooldown = 10 // Bitey bitey!
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("nibbled")
@@ -47,9 +45,13 @@
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/gnat
 
-	mob_bump_flag = 0
 
 	organ_names = /datum/decl/mob_organ_names/space_gnat
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/gnat)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 10))
+	configure(mob_movement(bump = 0))
 
 /datum/decl/mob_organ_names/space_gnat
 TYPE_TABLE(/datum/decl/mob_organ_names/space_gnat, mob_organ_hit_zones, list("cephalothorax", "stubby winglets", "flailing tail"))

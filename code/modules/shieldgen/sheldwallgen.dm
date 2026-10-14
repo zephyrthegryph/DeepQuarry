@@ -9,7 +9,7 @@
 		req_access = list(ACCESS_ENGINE_EQUIP)
 		active = 0
 		var/power = 0
-		state = 0
+		var/state = 0
 		var/steps = 0
 		var/last_check = 0
 		var/check_delay = 10
@@ -24,31 +24,27 @@
 		var/max_stored_power = 50000 //50 kW
 		use_power = USE_POWER_OFF	//Draws directly from power net. Does not use APC power.
 
+TRACKED(/obj/machinery/shieldwallgen, power)
+
 /// Runs while switched on, or while bolted down to charge its store (it parks once full).
-OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "anchored"))
 /obj/machinery/shieldwallgen/proc/wallgen_has_work()
 	return active || anchored
-DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_has_work")
+CAPABILITIES(/obj/machinery/shieldwallgen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(wallgen_has_work), wakes_on = list(nameof(active), nameof(anchored)))
+	climb()
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("id_swipe", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
+	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
+	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(can_toggle_holds))), then(PROC_REF(interaction_toggle)))
 
-/obj/machinery/shieldwallgen/Initialize(mapload)
-	. = ..()
-	make_climbable()
+/// Requirement (was REQ_* can_toggle): the legacy check answers TRUE to pass.
+/obj/machinery/shieldwallgen/proc/can_toggle_holds(datum/act/op/A)
+	var/answer = can_toggle(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
-/obj/machinery/shieldwallgen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shieldwallgen_id_swipe,
-		/datum/interaction/machine_item/shieldwallgen_hit,
-		/datum/interaction/machine_hand/ungated/shieldwallgen_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/shieldwallgen_toggle
-	id = "shieldwallgen_toggle"
-	name = "Toggle"
-	effect = /obj/machinery/shieldwallgen/proc/interaction_toggle
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/shieldwallgen/proc/can_toggle))
-
+/// Why can_toggle_holds refuses: the legacy check's text, else the clause's own reason.
 /// Requirement: TRUE, or why the generator can't be switched.
 /obj/machinery/shieldwallgen/proc/can_toggle(mob/user, atom/target, obj/item/held)
 	if(state != 1)
@@ -59,11 +55,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		return "the shield generator needs to be powered by wire underneath"
 	return TRUE
 
-/obj/machinery/shieldwallgen/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shieldwallgen/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(src.active >= 1)
 		set_active(0)
-		icon_state = "Shield_Gen"
+		set_icon_state("Shield_Gen")
 
 		act_message(user, null, MSG_SELF("You turn off the shield generator."), \
 			MSG_OTHERS("%U% turned the shield generator off."), \
@@ -71,16 +68,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		set_active(1)
-		icon_state = "Shield_Gen_on"
+		set_icon_state("Shield_Gen_on")
 		act_message(user, null, MSG_SELF("You turn on the shield generator."), \
 			MSG_OTHERS("%U% turned the shield generator on."), \
 			MSG_BLIND("You hear heavy droning."))
 	src.add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/shieldwallgen/proc/power()
 	if(!anchored)
-		power = 0
+		set_power(0)
 		return 0
 	var/turf/T = src.loc
 
@@ -89,7 +86,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 	if(C)	PN = C.get_power_region()		// the power region of the connected cable
 
 	if(!PN)
-		power = 0
+		set_power(0)
 		return 0
 
 	var/shieldload = between(500, max_stored_power - storedpower, power_draw)	//what we try to draw
@@ -98,13 +95,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 
 	//If we're still in the red, then there must not be enough available power to cover our load.
 	if(storedpower <= 0)
-		power = 0
+		set_power(0)
 		return 0
 
-	power = 1	// IVE GOT THE POWER!
+	set_power(1) // IVE GOT THE POWER!
 	return 1
 
-/obj/machinery/shieldwallgen/machine_step()
+/obj/machinery/shieldwallgen/proc/work_step(datum/act/timer/A)
 	if(!active && storedpower >= max_stored_power)
 		storedpower = max_stored_power
 		return PROCESS_KILL // charged: parks until switched on (or re-bolted)
@@ -121,16 +118,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		if(!src.state == 1)
 			set_active(0)
 			return
-		om_after(src, 1, PROC_REF(setup_field), 1)
-		om_after(src, 2, PROC_REF(setup_field), 2)
-		om_after(src, 3, PROC_REF(setup_field), 4)
-		om_after(src, 4, PROC_REF(setup_field), 8)
+		after(src, 0.1 SECONDS, PROC_REF(setup_field), with = list(1))
+		after(src, 0.2 SECONDS, PROC_REF(setup_field), with = list(2))
+		after(src, 0.3 SECONDS, PROC_REF(setup_field), with = list(4))
+		after(src, 0.4 SECONDS, PROC_REF(setup_field), with = list(8))
 		set_active(2)
 	if(src.active >= 1)
 		if(src.power == 0)
 			src.visible_message(span_red("The [src.name] shuts down due to lack of power!"), \
 				"You hear heavy droning fade out")
-			icon_state = "Shield_Gen"
+			set_icon_state("Shield_Gen")
 			set_active(0)
 			for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	if(!active && storedpower >= max_stored_power)
@@ -179,41 +176,33 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		var/obj/machinery/shieldwall/CF = new/obj/machinery/shieldwall(T, src, G) //(ref to this gen, ref to connected gen)
 		CF.set_dir(field_dir)
 
-/// Old attackby: never called ..(), so both branches stay in their effects.
-/datum/interaction/machine_item/shieldwallgen_id_swipe
-	id = "shieldwallgen_id_swipe"
-	name = "Swipe ID"
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	effect = /obj/machinery/shieldwallgen/proc/interaction_id_swipe
-
-/obj/machinery/shieldwallgen/proc/interaction_id_swipe(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/shieldwallgen/proc/interaction_id_swipe(datum/act/op/A)
+	var/mob/user = A.actor
 	if (src.allowed(user))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/shieldwallgen_hit
-	id = "shieldwallgen_hit"
-	name = "Hit"
-	held_type = /obj/item
-	effect = /obj/machinery/shieldwallgen/proc/interaction_hit
-
-/obj/machinery/shieldwallgen/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/shieldwallgen/proc/interaction_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	act_message(src, user, others = span_red("%U% has been hit with %I% by %T%!"), item = W)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/shieldwallgen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shieldwallgen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(active)
 		to_chat(user, "Turn off the field generator first.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_state(!state)
 	set_anchored(state)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	to_chat(user, "You [anchored ? "secure" : "undo"] the external reinforcing bolts[anchored ? " to" : " from"] the floor.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/shieldwallgen/proc/cleanup(NSEW)
 	var/obj/machinery/shieldwall/F
@@ -226,7 +215,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		T2 = T
 		if(locate_on(T, /obj/machinery/shieldwall))
 			F = (locate_on(T, /obj/machinery/shieldwall))
-			qdel(F)
+			spent(F)
 
 		if(locate_on(T, /obj/machinery/shieldwallgen))
 			G = (locate_on(T, /obj/machinery/shieldwallgen))
@@ -255,7 +244,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		anchored = TRUE
 		density = TRUE
 		unacidable = TRUE
-		light_range = 3
 		var/needs_power = 0
 		active = 1
 		var/delay = 5
@@ -266,11 +254,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
-/obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
-	. = ..()
+CAPABILITIES(/obj/machinery/shieldwall)
+	configure(light_glow(range = 3))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	param(nameof(gen_primary), pos = 1, overrides = TRUE)
+	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
+	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shieldwall_blast_drain))))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
+/obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)
 	update_nearby_tiles()
-	rel_set(src, nameof(gen_primary), A)
-	rel_set(src, nameof(gen_secondary), B)
+	var/obj/machinery/shieldwallgen/A = gen_primary
 	if(istype(A) && istype(B) && A.active && B.active)
 		needs_power = 1
 		if(prob(50))
@@ -278,28 +273,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 		else
 			B.storedpower -= generate_power_usage
 	else
-		return INITIALIZE_HINT_QDEL
+		spent(src)
 
-/obj/machinery/shieldwall/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/shieldwall_touch_block,
-	)
-	..()
-
-/// Old attack_hand did nothing at all and never called ..(); ungated so no gate side effects sneak in.
-/datum/interaction/machine_hand/ungated/shieldwall_touch_block
-	id = "shieldwall_touch_block"
-	name = "Touch"
-	effect = /atom/proc/interaction_swallow
-
-/obj/machinery/shieldwall/machine_step()
+/obj/machinery/shieldwall/proc/work_step(datum/act/timer/A)
 	if(needs_power)
 		if(isnull(gen_primary)||isnull(gen_secondary))
-			qdel(src)
+			spent(src)
 			return
 
 		if(!(gen_primary.active)||!(gen_secondary.active))
-			qdel(src)
+			spent(src)
 			return
 
 		if(prob(50))
@@ -318,15 +301,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_
 	..()
 	return
 
-DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall_blast_drain))
 
 /// The wall itself is energy; the blast drains a generator instead.
-/obj/machinery/shieldwall/proc/shieldwall_blast_drain(datum/damage_packet/packet)
+/obj/machinery/shieldwall/proc/shieldwall_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(needs_power)
 		var/obj/machinery/shieldwallgen/G = prob(50) ? gen_primary : gen_secondary
 		var/static/list/drain = list(120000, 30000, 12000)
 		G.storedpower -= drain[clamp(round(packet.severity), 1, 3)]
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/machinery/shieldwall/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -335,6 +318,8 @@ DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall
 		return prob(10)
 	return !density
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/shieldwall/step_start_condition()
 	return needs_power
+
+TRACKED(/obj/machinery/shieldwallgen, state)

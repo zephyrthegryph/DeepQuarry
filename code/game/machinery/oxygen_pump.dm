@@ -14,40 +14,53 @@
 	var/icon_state_open = "oxygen_tank_open"
 	var/icon_state_closed = "oxygen_tank"
 
-	power_channel = ENVIRON
-	idle_power_usage = 10
-	active_power_usage = 120 // No idea what the realistic amount would be.
+
+CAPABILITIES(/obj/machinery/oxygen_pump)
+	configure(uses_power(channel = ENVIRON, idle = 10, active = 120))
+	silicon_ui()
+	ref_one(nameof(breather), /mob/living/carbon)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(breather), wakes_on = list(nameof(breather)))
+	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
+	owns_one(nameof(contained), starts = nameof(mask_type))
+	interface("Tank")
+	op("oxygen_place", at_target(/mob/living/carbon/human), gesture(GESTURE_DRAG), label("Place mask"), when(PROC_REF(placement_actor)), needs(req(PROC_REF(placement_reason))), starts(PROC_REF(placement_started)), wait(2.5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(placement_finished)))
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	op("oxygen_pump_hand", hand(), ungated(), needs(req(PROC_REF(can_use_pump))), then(PROC_REF(oxygen_pump_interaction_hand)))
+	op("oxygen_pump_item", item(/obj/item), then(PROC_REF(oxygen_pump_interaction_item)))
+	op("oxygen_pump_settings", menu(), label("Show Tank Settings"), then(PROC_REF(oxygen_pump_settings)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Who wears the mask (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/oxygen_pump/var/mob/living/carbon/breather
 /// Keeps the mask and internals right while a mask is on someone.
-DECLARE_PERIODIC_WHILE(/obj/machinery/oxygen_pump, MACHINE_PIPELINE, "breather")
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "tank", "spawn_type")
-DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
-
-
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()
 	..()
 	if(breather())
 		breather().internal = null
-		if(breather().internals)
-			breather().internals.icon_state = "internal0"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal0"
 		breather().remove_from_mob(contained)
 		breather().cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
 
-/obj/machinery/oxygen_pump/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
-	var/mob/living/user = usr
-	if(!istype(user) || !istype(target) || user.is_incorporeal())
-		return ..()
+// A pump dragged onto a person carries that person as the at_target op's target.
+/obj/machinery/oxygen_pump/proc/placement_actor(datum/act/op/A)
+	return read_once(isliving(A.actor) && !A.actor.is_incorporeal())
 
-	if(CanMouseDrop(target, user))
-		if(!can_apply_to_target(target, user)) // There is no point in attempting to apply a mask if it's impossible.
-			return
-		act_message(user, target, others = "%U% begins placing \the [contained] onto %T%.")
-		om_task_timed(user, 2.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(place_mask_done), done_args = list(user, target))
+/obj/machinery/oxygen_pump/proc/placement_reason(datum/act/op/A)
+	if(!read_once(CanMouseDrop(A.target, A.actor)))
+		return "You cannot reach them to place the mask."
+	// The head, mouth and equipped clothing are sampled actual anatomy/custody.
+	var/mob/living/carbon/human/target = A.target
+	return read_once(mask_application_reason(target))
+
+/obj/machinery/oxygen_pump/proc/placement_started(datum/act/op/A)
+	act_message(A.actor, A.target, others = "%U% begins placing \the [contained] onto %T%.")
+
+/obj/machinery/oxygen_pump/proc/placement_finished(datum/act/op/A)
+	place_mask_done(A.actor, A.target)
+	return OP_OK
 
 /obj/machinery/oxygen_pump/proc/place_mask_done(mob/living/user, mob/living/carbon/human/target)
 	if(!can_apply_to_target(target, user))
@@ -57,31 +70,24 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
 	attach_mask(target)
 	src.add_fingerprint(user)
 
-EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand), REQ_TARGET_STATE(/obj/machinery/oxygen_pump/proc/can_use_pump)), \
-	INTERACT_ITEM(null, PROC_REF(oxygen_pump_interaction_item)), \
-	INTERACT_VERB("Show Tank Settings", PROC_REF(oxygen_pump_settings)), \
-)
+MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 
 /// Requirement: the mask needs a tank behind it (removing the tank in maintenance is always fine).
-/obj/machinery/oxygen_pump/proc/can_use_pump(mob/user, atom/target, obj/item/held)
-	if(user.is_incorporeal() || has_stat(MAINT))
-		return TRUE
-	if(!tank)
-		return "there is no tank in it"
-	return TRUE
+/obj/machinery/oxygen_pump/proc/can_use_pump(datum/act/op/A)
+	return (A.actor.is_incorporeal() || under_maintenance() || tank) ? null : MSG(oxygen_pump/no_tank)
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.is_incorporeal())
 		return TRUE
-	if((has_stat(MAINT)) && tank)
+	if((under_maintenance()) && tank)
 		act_message(user, src, MSG_SELF(span_notice("You remove \the [tank] from %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 		return TRUE
 	if(!tank)
 		return TRUE
@@ -92,14 +98,11 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		contained.forceMove(src)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " makes \the [contained] rapidly retract back into %T%!"))
 		breather().cozyloop.stop() // Cozy Music
-		if(breather().internals)
-			breather().internals.icon_state = "internal0"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal0"
 		rel_clear(src, nameof(breather))
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
-
-/obj/machinery/oxygen_pump
-	silicon_use = SILICON_USE_UI
 
 /obj/machinery/oxygen_pump/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))
@@ -108,77 +111,74 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		if(tank)
 			tank.forceMove(C)
 		rel_set(src, nameof(breather), C)
-		om_after(src, 1, PROC_REF(attach_mask_finish))
+		after(src, 0.1 SECONDS, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
-	if(!user)
-		user = target
-	// Check target validity
+	var/reason = mask_application_reason(target)
+	if(reason)
+		to_chat(user || target, span_warning(reason))
+		return
+	return TRUE
+
+/obj/machinery/oxygen_pump/proc/mask_application_reason(mob/living/carbon/human/target)
+	if(!istype(target))
+		return "There is nobody to wear the mask."
 	if(!target.organs_by_name[BP_HEAD])
-		to_chat(user, span_warning("\The [target] doesn't have a head."))
-		return
+		return "\The [target] doesn't have a head."
 	if(!target.check_has_mouth())
-		to_chat(user, span_warning("\The [target] doesn't have a mouth."))
-		return
+		return "\The [target] doesn't have a mouth."
 	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
-		to_chat(user, span_warning("\The [target] is already wearing a mask."))
-		return
-	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
-		to_chat(user, span_warning("Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."))
-		return
+		return "\The [target] is already wearing a mask."
+	if(target.get_equipped_item(SLOT_ID_HEAD) && (worn_of(target.get_equipped_item(SLOT_ID_HEAD)).covers & FACE))
+		return "Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."
 	if(!tank)
-		to_chat(user, span_warning("There is no tank in \the [src]."))
-		return
-	if(has_stat(MAINT))
-		to_chat(user, span_warning("Please close the maintenance hatch first."))
-		return
+		return "There is no tank in \the [src]."
+	if(under_maintenance())
+		return "Please close the maintenance hatch first."
 	if(!Adjacent(target))
-		to_chat(user, span_warning("Please stay close to \the [src]."))
-		return
-	//when there is a breather:
+		return "Please stay close to \the [src]."
 	if(breather() && target != breather())
-		to_chat(user, span_warning("\The [src] is already in use."))
-		return
-	//Checking if breather is still valid
+		return "\The [src] is already in use."
 	if(target == breather() && target.get_equipped_item(SLOT_ID_MASK) != contained)
-		to_chat(user, span_warning("\The [target] is not using the supplied [contained]."))
-		return
-	return 1
+		return "\The [target] is not using the supplied [contained]."
+	return null
 
 /// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(user.is_incorporeal())
 		return TRUE
-	if(istype(W, /obj/item/tank) && (has_stat(MAINT)))
+	if(istype(W, /obj/item/tank) && (under_maintenance()))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else
-			if(!own_set(src, nameof(src.tank), W, user = user))
+			if(!move_into(src, nameof(src.tank), W, user))
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
 				item = tank)
 			src.add_fingerprint(user)
-	if(istype(W, /obj/item/tank) && !has_stat(MACHINE_STAT_ANY))
+	if(istype(W, /obj/item/tank) && !has_condition())
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
 	return TRUE
 
-/obj/machinery/oxygen_pump/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/oxygen_pump/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.is_incorporeal())
-		return ITEM_INTERACT_BLOCKING
-	if(!stat_remove(MAINT))
-		stat_add(MAINT)
-	act_message(user, src, MSG_SELF(span_notice("You [has_stat(MAINT) ? "open" : "close"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% [has_stat(MAINT) ? "opens" : "closes"] %T%.")))
-	icon_state = (has_stat(MAINT)) ? icon_state_open : icon_state_closed
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	set_maintenance(!under_maintenance())
+	act_message(user, src, MSG_SELF(span_notice("You [under_maintenance() ? "open" : "close"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [under_maintenance() ? "opens" : "closes"] %T%.")))
+	set_icon_state((under_maintenance()) ? icon_state_open : icon_state_closed)
+	return OP_OK
 
 /obj/machinery/oxygen_pump/examine(mob/user)
 	. = ..()
@@ -188,7 +188,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		. += span_warning("It is missing a tank!")
 
 /// Runs while a mask is on someone (the declaration above).
-/obj/machinery/oxygen_pump/machine_step()
+/obj/machinery/oxygen_pump/proc/work_step(datum/act/timer/A)
 	if(!breather()) // the breather was deleted
 		return
 	if(breather())
@@ -203,14 +203,12 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
-			if(breather().internals)
-				breather().internals.icon_state = "internal0"
+			if(hud_of(breather())?.internals)
+				hud_of(breather())?.internals?.icon_state = "internal0"
 
 //Create rightclick to view tank settings
-/obj/machinery/oxygen_pump/proc/oxygen_pump_settings(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-
-DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
+/obj/machinery/oxygen_pump/proc/oxygen_pump_settings(datum/act/op/A)
+	tgui_interact(A.actor)
 
 /obj/machinery/oxygen_pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!tank)
@@ -219,10 +217,7 @@ DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
 
 	return TRUE
 
-UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{showToggle:bool,maskConnected:bool,tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num}")
-
-/// The computed part of /obj/machinery/oxygen_pump's window data (declared on its UI_DATA row).
-/obj/machinery/oxygen_pump/proc/ui_data_obj_machinery_oxygen_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/oxygen_pump/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["showToggle"] = FALSE
@@ -241,9 +236,8 @@ UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{sho
 
 	return data
 
-UI_ACT(/obj/machinery/oxygen_pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/oxygen_pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
+	var/pressure = raw_pressure
 	if(pressure == "reset")
 		pressure = TANK_DEFAULT_RELEASE_PRESSURE
 		. = TRUE
@@ -275,13 +269,13 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 		if(tank)
 			tank.forceMove(C)
 		rel_set(src, nameof(breather), C)
-		om_after(src, 1, PROC_REF(attach_mask_finish))
+		after(src, 0.1 SECONDS, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
@@ -325,13 +319,13 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 		if(tank)
 			tank.forceMove(C)
 		rel_set(src, nameof(breather), C)
-		om_after(src, 1, PROC_REF(attach_mask_finish))
+		after(src, 0.1 SECONDS, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
 	if(!breather().internal && tank)
 		breather().internal = tank
-		if(breather().internals)
-			breather().internals.icon_state = "internal1"
+		if(hud_of(breather())?.internals)
+			hud_of(breather())?.internals?.icon_state = "internal1"
 	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
@@ -339,7 +333,7 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 	name = "portable patient stabilizer"
 	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
 
-/obj/machinery/oxygen_pump/mobile/stabilizer/machine_step()
+/obj/machinery/oxygen_pump/mobile/stabilizer/work_step(datum/act/timer/A)
 	if(!breather())
 		return PROCESS_KILL
 	if(breather())
@@ -353,8 +347,8 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
-			if(breather().internals)
-				breather().internals.icon_state = "internal0"
+			if(hud_of(breather())?.internals)
+				hud_of(breather())?.internals?.icon_state = "internal0"
 
 		if(breather())	// Safety.
 			if(ishuman(breather()) && !(HAS_SYNTHETIC_BIOLOGY(breather())))

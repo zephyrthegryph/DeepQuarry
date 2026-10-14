@@ -1,7 +1,7 @@
 /obj/structure/ghost_pod/proc/reset_ghostpod()	//Makes the ghost pod usable again and re-adds it to the active ghost pod list if it is not on it.
 	registry_join(REGISTRY_GHOST_PODS, src)
-	used = FALSE
-	busy = FALSE
+	set_used(FALSE)
+	set_busy(FALSE)
 
 /obj/structure/ghost_pod/ghost_activated/maintpred
 	name = "maintenance hole"
@@ -15,7 +15,7 @@
 	spawn_active = TRUE
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/create_occupant(mob/M)
-	used = TRUE
+	set_used(TRUE)
 	registry_leave(REGISTRY_GHOST_PODS, src)
 
 	if(jobban_isbanned(M, JOB_GHOSTROLES))
@@ -48,7 +48,7 @@
 	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
 	newPred.offer_load_bellies()
-	qdel(src)
+	spent(src, M)
 
 /obj/structure/ghost_pod/ghost_activated/morphspawn
 	name = "weird goo"
@@ -85,7 +85,7 @@
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully entered \a [src] and became a Morph.")
 	newMorph.offer_load_bellies()
-	qdel(src)
+	spent(src, M)
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/redgate //For ghostpods placed in the redgate that aren't spawned via an event
 	name = "creature hole"
@@ -107,41 +107,31 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	spawn_active = TRUE
 	var/redgate_restricted = FALSE
 
-/// Requirement for the lurker spawners: not banned, and whitelisted for the loaded species.
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/can_inhabit(mob/observer/dead/user, atom/target, obj/item/held)
+/// Requirement for the lurker spawners: not banned, whitelisted for the loaded species, OOC notes set, unused.
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/can_inhabit(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot use this spawnpoint because you are banned from playing ghost roles"
-	//No whitelist
-	if(user.client && !is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)]))
-		return "you cannot use this spawnpoint to spawn as a species you are not whitelisted for"
-	return TRUE
+		return "You cannot use this spawnpoint because you are banned from playing ghost roles."
+	if(!lurker_whitelisted(user))
+		return "You cannot use this spawnpoint to spawn as a species you are not whitelisted for."
+	var/why = ghost_role_refusal(user)
+	if(why)
+		return why
+	if(used)
+		return MSG(ghost_pod/taken)
+	return null
 
-// Overrides the standard ghost pod observer use for custom messages.
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	//No OOC notes/FT
-	if(not_has_ooc_text(user))
-		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
-		return TRUE
+/// Is the ghost's loaded species one it is whitelisted for?
+/proc/lurker_whitelisted(mob/observer/dead/user)
+	READS_FROM() // the whitelist and preferences are not round state an op could watch
+	return !user.client || is_alien_whitelisted(user.client, GLOB.all_species[user.client.prefs.read_preference(/datum/preference/choiced/species)])
 
-	om_ask(user, /datum/om/prompt/confirm/lurker_spawn, PROC_REF(lurker_confirmed))
-	return TRUE
+// The lurker spawner asks with its own words.
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/inhabit_title(datum/act/A)
+	return "Stowaway Spawner"
 
-/// Re-checked: the ghost still has a client and the spawner is unused.
-/datum/om/prompt/confirm/lurker_spawn
-	title = "Stowaway Spawner"
-	message = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?"
-	requires = list(/datum/om/check/has_client)
-
-/datum/om/prompt/confirm/lurker_spawn/valid()
-	var/obj/structure/ghost_pod/pod = subject
-	return pod.used ? "already used" : null
-
-/datum/om/prompt/confirm/lurker_spawn/redgate
-	title = "Redspace Inhabitant Spawner"
-	message = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?"
-
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/proc/lurker_confirmed(datum/om/prompt/confirm/lurker_spawn/ask)
-	create_occupant(ask.answerer)
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/inhabit_question(datum/act/A)
+	return "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?"
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/create_occupant(mob/M)
 	..()
@@ -172,9 +162,8 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 			if(is_lang_whitelisted(M, chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 	if(redgate_restricted)
@@ -186,7 +175,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	to_chat(new_character, span_notice("Whoever or whatever your chosen character slot is, your role is to facilitate roleplay focused around that character; this role is not free license to attack and murder people without provocation or explicit out-of-character consent. You should probably be cautious around high-traffic and highly sensitive areas (e.g. Telecomms) as Security personnel would be well within their rights to treat you as a trespasser. That said, good luck!"))
 
 	act_message(new_character, null, others = span_warning("%U% appears to crawl out of somewhere."))
-	qdel(src)
+	spent(src, M)
 
 DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY_GHOST_PODS)
 
@@ -197,11 +186,9 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maint_lurker, REGISTRY
 	desc = "A starting location for characters who exist inside of the redgate!"
 	redgate_restricted = TRUE
 
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	//No OOC notes/FT
-	if(not_has_ooc_text(user))
-		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
-		return TRUE
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/inhabit_title(datum/act/A)
+	return "Redspace Inhabitant Spawner"
 
-	om_ask(user, /datum/om/prompt/confirm/lurker_spawn/redgate, PROC_REF(lurker_confirmed))
-	return TRUE
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/redgate/inhabit_question(datum/act/A)
+	return "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?"
+

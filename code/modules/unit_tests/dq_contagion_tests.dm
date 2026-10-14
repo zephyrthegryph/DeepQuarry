@@ -176,14 +176,14 @@
 	qdel(template)
 	var/datum/affliction/contagion/flu/D = contagion_of(source, /datum/affliction/contagion/flu)
 	TEST_ASSERT_NOTNULL(D, "the flu should have taken")
-	TEST_ASSERT_EQUAL(D.periodic_pipe, PERIODIC_SLOW, "an airborne strain should start its spread lane")
+	TEST_ASSERT(D.spread_lane_wanted(), "an airborne strain in a body wants its spread lane (the every() gate)")
 	D.permeability_mod = 10 // past every roll
 	TEST_ASSERT(D.spread() >= 1, "shedding should expose the adjacent host")
 	TEST_ASSERT(target.has_contagion(/datum/affliction/contagion/flu), "the adjacent host should catch the flu")
 
 	// A non-airborne strain has no lane.
 	D.set_spread_flags(DISEASE_SPREAD_CONTACT)
-	TEST_ASSERT_NULL(D.periodic_pipe, "a contact-only strain should park its lane")
+	TEST_ASSERT(!D.spread_lane_wanted(), "a contact-only strain's spread lane gate is closed")
 
 /// Protection on the contact route: impermeable clothing blocks, blood
 /// routes bypass it.
@@ -192,9 +192,9 @@
 /datum/unit_test/dq_contagion_protection/Run()
 	var/datum/affliction_trigger/contagion/trigger = contagion_trigger()
 	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves)
-	G.permeability_coefficient = 0
+	G.set_permeability_coefficient(0)
 	TEST_ASSERT(!trigger.clothing_passes(G), "impermeable gloves should block contact exposure")
-	G.permeability_coefficient = 2
+	G.set_permeability_coefficient(2)
 	TEST_ASSERT(trigger.clothing_passes(G), "fully permeable clothing should let exposure through")
 	TEST_ASSERT(trigger.clothing_passes(null), "no clothing is no protection")
 

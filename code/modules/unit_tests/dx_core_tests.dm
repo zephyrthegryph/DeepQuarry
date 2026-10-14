@@ -1,6 +1,6 @@
-// The DX framework core (code/datums/capabilities/): capabilities(), TRACKED, changed() and the
+// The DX framework core (code/datums/capabilities/): the capability list, TRACKED, changed() and the
 // refresh engine, the look builder, drift, periodic gating, hidden verbs, ui_<action> dispatch,
-// dispatch_call(), ask_* re-validation and forms, timed_set().
+// dispatch_call(), ask_* re-validation, timed_set().
 
 // ---------------------------------------------------------------- fixtures
 
@@ -23,23 +23,10 @@
 	C.layer_name = "[label]_layer"
 	return C
 
-/// A form field that answers without a prompt.
-/datum/form_field/dx_canned
-	var/answer
-
-/datum/form_field/dx_canned/ask(datum/dispatch_context/ctx)
-	return answer
-
-/proc/dx_canned_field(name, answer)
-	var/datum/form_field/dx_canned/F = new
-	F.name = name
-	F.answer = answer
-	return F
-
 /datum/dx_core_child
 	var/level = 0
 
-TRACKED(/datum/dx_core_child, level, CHANGE_EFFECTS)
+TRACKED(/datum/dx_core_child, level)
 
 /obj/cap_fixture
 	name = "capability fixture"
@@ -52,19 +39,17 @@ TRACKED(/datum/dx_core_child, level, CHANGE_EFFECTS)
 	var/state_changes = 0
 	var/last_bits = 0
 	var/slept_done = FALSE
-	var/list/form_answers
 
 /obj/cap_fixture/dx_core/ownership()
 	. = ..()
 	. += owns(nameof(child), policy = OWN_DELETE)
 
-TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_core, power_level)
 
-/obj/cap_fixture/dx_core/capabilities()
-	. = ..()
-	. += dx_test_cap(/datum/capability/dx_test/a, "alpha")
-	. += dx_test_cap(/datum/capability/dx_test/b, "beta")
-	. += cap_hand("Configure", PROC_REF(dx_configure), form = list(dx_canned_field("mode", "fast"), dx_canned_field("count", 3)))
+/obj/cap_fixture/dx_core/declared_capabilities(list/into)
+	..()
+	into += dx_test_cap(/datum/capability/dx_test/a, "alpha")
+	into += dx_test_cap(/datum/capability/dx_test/b, "beta")
 
 /obj/cap_fixture/dx_core/draw(datum/look/look)
 	..()
@@ -86,27 +71,26 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	set name = "DX Secret"
 	set src in view(1)
 
-/obj/cap_fixture/dx_core/proc/dx_configure(mob/user, obj/item/held, mode, count)
-	form_answers = list("mode" = mode, "count" = count)
-
 /obj/cap_fixture/dx_core/proc/dx_sleepy(mob/user)
 	sleep(1)
 	slept_done = TRUE
 	return TRUE
 
-/obj/cap_fixture/dx_core/child/capabilities()
-	. = ..()
-	. = without(., /datum/capability/dx_test/a)
-	. += dx_test_cap(/datum/capability/dx_test/c, "gamma")
+/obj/cap_fixture/dx_core/child/declared_capabilities(list/into)
+	..()
+	var/list/kept = without(into, /datum/capability/dx_test/a)
+	into.Cut()
+	into += kept
+	into += dx_test_cap(/datum/capability/dx_test/c, "gamma")
 
 /// A capability that draws the holder's child (H2: the owner is marked for that child's changes).
 /datum/capability/dx_test/draws_child
 
-/obj/cap_fixture/dx_core/drawer/capabilities()
-	. = ..()
+/obj/cap_fixture/dx_core/drawer/declared_capabilities(list/into)
+	..()
 	var/datum/capability/dx_test/draws_child/C = dx_test_cap(/datum/capability/dx_test/draws_child, "drawer")
 	C.draws_var = nameof(/obj/cap_fixture/dx_core::child)
-	. += C
+	into += C
 
 /// Inherits the child's capabilities: a third type building the same entries.
 /obj/cap_fixture/dx_core/child/grand
@@ -137,7 +121,7 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	periodic_cadence = PERIODIC_SLOW
 	var/gating = FALSE
 
-TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_periodic, gating)
 
 /obj/cap_fixture/dx_periodic/should_run()
 	return gating
@@ -167,22 +151,22 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	logged_calls++
 	return TRUE
 
-// ---------------------------------------------------------------- 1. capabilities()
+// ---------------------------------------------------------------- 1. the capability list
 
 /datum/unit_test/dx_core_capabilities_list/Run()
 	var/obj/cap_fixture/dx_core/A = allocate(/obj/cap_fixture/dx_core)
 	var/obj/cap_fixture/dx_core/B = allocate(/obj/cap_fixture/dx_core)
 	var/obj/cap_fixture/dx_core/child/C = allocate(/obj/cap_fixture/dx_core/child)
 	var/list/caps = caps_of(A)
-	TEST_ASSERT_EQUAL(length(caps), 3, "three capabilities")
+	TEST_ASSERT_EQUAL(length(caps), 2, "two capabilities")
 	TEST_ASSERT(istype(caps[1], /datum/capability/dx_test/a) && istype(caps[2], /datum/capability/dx_test/b), "declaration order kept")
 	TEST_ASSERT(caps_of(B) == caps, "caps_of is cached and shared per type")
 	TEST_ASSERT(caps_of(A) == caps, "caps_of returns the same list again")
 	var/list/child_caps = caps_of(C)
 	TEST_ASSERT_NULL(cap_of(C, /datum/capability/dx_test/a), "without() dropped the parent's entry by type")
-	TEST_ASSERT(istype(child_caps[1], /datum/capability/dx_test/b) && istype(child_caps[3], /datum/capability/dx_test/c), "without() keeps the order, . += appends")
-	TEST_ASSERT_EQUAL(jointext(A.caps_examine(null), ","), "alpha,beta", "examine follows list order")
-	TEST_ASSERT_EQUAL(jointext(C.caps_examine(null), ","), "beta,gamma", "the child's examine follows its list")
+	TEST_ASSERT(istype(child_caps[1], /datum/capability/dx_test/b) && istype(child_caps[2], /datum/capability/dx_test/c), "without() keeps the order, . += appends")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(A, null), ","), "alpha,beta", "examine follows list order")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(C, null), ","), "beta,gamma", "the child's examine follows its list")
 
 // ---------------------------------------------------------------- 2/3. TRACKED, changed(), refresh
 
@@ -192,18 +176,16 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	var/before = F.state_changes
 	TEST_ASSERT(F.set_power_level(3), "set_ returns TRUE on a change")
 	TEST_ASSERT(F.refresh_queued, "a change queues the refresh")
-	TEST_ASSERT(F.refresh_bits & CHANGE_EFFECTS, "refresh_bits carries the channel")
 	TEST_ASSERT(!F.set_power_level(3), "set_ returns FALSE with no change")
 	var/queued = 0
 	for(var/datum/D as anything in GLOB.refresh_queue)
 		if(D == F)
 			queued++
 	TEST_ASSERT_EQUAL(queued, 1, "queued once per frame")
-	changed(F, CHANGE_CONTENTS)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.state_changes - before, 1, "on_state_changed ran once for the frame")
-	TEST_ASSERT(F.last_bits & CHANGE_EFFECTS, "on_state_changed got the TRACKED channel")
-	TEST_ASSERT(F.last_bits & CHANGE_CONTENTS, "on_state_changed got the explicit channel")
+	TEST_ASSERT(F.last_bits & CHANGE_EXPLICIT, "on_state_changed got the explicit channel")
 	TEST_ASSERT_EQUAL(F.refresh_bits, 0, "bits are cleared after the refresh")
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "draw ran")
 
@@ -211,7 +193,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_changed_owner_chain/Run()
 	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core)
 	var/datum/dx_core_child/K = new
-	own_set(F, nameof(/obj/cap_fixture/dx_core::child), K)
+	rel_set(F, nameof(/obj/cap_fixture/dx_core::child), K)
 	refresh_flush()
 	TEST_ASSERT(owner_of(K) == F, "the child is owned")
 	TEST_ASSERT(K.set_level(2), "the child's setter changed it")
@@ -221,12 +203,11 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 
 	var/obj/cap_fixture/dx_core/drawer/D = allocate(/obj/cap_fixture/dx_core/drawer)
 	var/datum/dx_core_child/DK = new
-	own_set(D, nameof(/obj/cap_fixture/dx_core::child), DK)
+	rel_set(D, nameof(/obj/cap_fixture/dx_core::child), DK)
 	refresh_flush()
 	var/before = D.state_changes
 	TEST_ASSERT(DK.set_level(4), "the drawn child's setter changed it")
 	TEST_ASSERT(D.refresh_queued, "an owner whose capability draws the child is queued with it")
-	TEST_ASSERT(D.refresh_bits & CHANGE_EFFECTS, "the owner carries the child's channel")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(D.state_changes - before, 1, "the owner refreshed once")
 
@@ -237,27 +218,27 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	F.set_power_level(5)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "on", "state applied")
-	TEST_ASSERT(findtext(F.look_key, "charge2"), "gauge quantised 0.5 of 4 to step 2: [F.look_key]")
-	TEST_ASSERT(!findtext(F.look_key, "light"), "glow off while its condition is false")
-	TEST_ASSERT(!findtext(F.look_key, "alpha_layer"), "a capability overlay off while its condition is false")
+	TEST_ASSERT(findtext(F.rx?.look_key, "charge2"), "gauge quantised 0.5 of 4 to step 2: [F.rx?.look_key]")
+	TEST_ASSERT(!findtext(F.rx?.look_key, "light"), "glow off while its condition is false")
+	TEST_ASSERT(!findtext(F.rx?.look_key, "alpha_layer"), "a capability overlay off while its condition is false")
 	cap_set(F, CAP_PANEL_OPEN, TRUE)
 	F.set_power_level(8)
 	refresh_flush()
-	TEST_ASSERT(findtext(F.look_key, "light"), "glow on: [F.look_key]")
-	TEST_ASSERT(findtext(F.look_key, "alpha_layer,beta_layer"), "capability overlays in list order: [F.look_key]")
-	TEST_ASSERT(findtext(F.look_key, "charge3"), "gauge moved to step 3")
-	var/key = F.look_key
-	var/list/applied = F.look_overlays
-	changed(F)
+	TEST_ASSERT(findtext(F.rx?.look_key, "light"), "glow on: [F.rx?.look_key]")
+	TEST_ASSERT(findtext(F.rx?.look_key, "alpha_layer,beta_layer"), "capability overlays in list order: [F.rx?.look_key]")
+	TEST_ASSERT(findtext(F.rx?.look_key, "charge3"), "gauge moved to step 3")
+	var/key = F.rx?.look_key
+	var/list/applied = F.rx?.look_overlays
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(F.look_key, key, "an identical look keeps its key")
-	TEST_ASSERT(F.look_overlays == applied, "an identical look churns no overlays")
+	TEST_ASSERT_EQUAL(F.rx?.look_key, key, "an identical look keeps its key")
+	TEST_ASSERT(F.rx?.look_overlays == applied, "an identical look churns no overlays")
 
 	var/obj/cap_fixture/dx_plain/P = allocate(/obj/cap_fixture/dx_plain)
-	changed(P)
+	state_changed(P)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(P.icon_state, "keepme", "a type that draws nothing keeps its icon_state")
-	TEST_ASSERT_NULL(P.look_key, "and has no look key")
+	TEST_ASSERT_NULL(P.rx?.look_key, "and has no look key")
 	TEST_ASSERT(!type_derives(P), "type_derives: FALSE for a type with nothing derived")
 	TEST_ASSERT(!isnull(GLOB.type_derives_cache[P.type]), "type_derives is cached per type")
 	TEST_ASSERT(type_derives(F), "type_derives: TRUE for a type that draws")
@@ -269,32 +250,32 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	refresh_flush()
 	TEST_ASSERT(GLOB.refresh_sweep_list[REF(F)], "a drawn atom is tracked by the sweep")
 	TEST_ASSERT(!refresh_check_drift(F), "no drift right after a refresh")
-	F.drift_state = TRUE // deliberately unmarked
+	F.set_drift_state(TRUE) // deliberately unmarked
 	var/before = length(GLOB.refresh_drift)
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	var/found = refresh_check_drift(F)
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 	TEST_ASSERT(found, "the sweep check found the unmarked write")
 	TEST_ASSERT_EQUAL(length(GLOB.refresh_drift) - before, 1, "one REFRESH DRIFT report")
 	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "REFRESH DRIFT"), "the report names the drift")
-	TEST_ASSERT(findtext(F.look_key, "drift"), "the drift was corrected")
+	TEST_ASSERT(findtext(F.rx?.look_key, "drift"), "the drift was corrected")
 	TEST_ASSERT(!refresh_check_drift(F), "and is gone after the correction")
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	refresh_sweep_step(length(GLOB.refresh_sweep_list))
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 
 // ---------------------------------------------------------------- 6. periodic gating
 
 /datum/unit_test/dx_core_periodic_gate/Run()
 	var/obj/cap_fixture/dx_periodic/F = allocate(/obj/cap_fixture/dx_periodic)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "not running while should_run() is FALSE")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "not running while should_run() is FALSE")
 	F.set_gating(TRUE)
 	refresh_flush()
-	TEST_ASSERT(om_task_periodic_running(F), "running once should_run() is TRUE")
+	TEST_ASSERT((!isnull(F.periodic_pipe)), "running once should_run() is TRUE")
 	F.set_gating(FALSE)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "stopped once should_run() is FALSE again")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "stopped once should_run() is FALSE again")
 
 // ---------------------------------------------------------------- 7. hidden verbs
 
@@ -319,9 +300,9 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT(!H.tgui_act("set_value", list("value" = "lots"), ui), "a validator refusal is refused")
 	TEST_ASSERT_EQUAL(H.value, 42, "unchanged after a refusal")
 	var/fails = length(GLOB.dispatch_failures)
-	GLOB.dispatch_failure_expected = TRUE
+	set_global("dispatch_failure_expected", TRUE)
 	var/result = H.tgui_act("set_value", list("value" = 3, "bogus" = 1), ui)
-	GLOB.dispatch_failure_expected = FALSE
+	set_global("dispatch_failure_expected", FALSE)
 	TEST_ASSERT(!result, "an unknown argument name is refused")
 	TEST_ASSERT_EQUAL(length(GLOB.dispatch_failures) - fails, 1, "and logged")
 	H.allow = FALSE
@@ -369,7 +350,7 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 		sleep(world.tick_lag)
 	TEST_ASSERT(F.slept_done, "the handler finished")
 	TEST_ASSERT_EQUAL(GLOB.dispatch_records[length(GLOB.dispatch_records)], "sleepy|1|0", "recorded with a fingerprint for a living user")
-	TEST_ASSERT(F.refresh_queued || F.state_changes, "changed() ran after it finished")
+	TEST_ASSERT(F.refresh_queued || F.state_changes, "state_changed() ran after it finished")
 
 // ---------------------------------------------------------------- 10. ask re-validation and forms
 
@@ -384,20 +365,6 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	F.forceMove(get_turf(user))
 	qdel(F)
 	TEST_ASSERT(!ask_still_valid(ctx), "invalid once the target is deleted")
-
-/datum/unit_test/dx_core_form/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	var/obj/cap_fixture/dx_core/F = allocate(/obj/cap_fixture/dx_core, get_turf(user))
-	var/datum/interaction/capability/entry
-	for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-		if(E.name == "Configure")
-			entry = E
-	TEST_ASSERT_NOTNULL(entry, "the form entry exists")
-	var/datum/dispatch_context/ctx = new(user, F, null, entry)
-	cap_dispatch(ctx)
-	TEST_ASSERT_NOTNULL(F.form_answers, "the handler ran")
-	TEST_ASSERT_EQUAL(F.form_answers["mode"], "fast", "the choice answer arrived by name")
-	TEST_ASSERT_EQUAL(F.form_answers["count"], 3, "the number answer arrived by name")
 
 // ---------------------------------------------------------------- 11. timed_set
 
@@ -437,9 +404,9 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT_EQUAL(F.power_level, 2, "timed_cancel keeps the current value")
 
 	timed_set(F, nameof(F.power_level), 8, for_time = 1 SECONDS, clock = CLOCK_OWN)
-	TEST_ASSERT(om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "the owned slot is pending")
+	TEST_ASSERT(after_pending(F, "timed:[nameof(F.power_level)]"), "the owned slot is pending")
 	qdel(F)
-	TEST_ASSERT(!om_timer_slot_pending(F, "timed:[nameof(F.power_level)]"), "teardown drops the timer")
+	TEST_ASSERT(!after_pending(F, "timed:[nameof(F.power_level)]"), "teardown drops the timer")
 
 // ---------------------------------------------------------------- review-2 follow-ups
 
@@ -448,29 +415,29 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_look_images_and_takeback/Run()
 	var/obj/cap_fixture/dx_look/F = allocate(/obj/cap_fixture/dx_look)
 	refresh_flush()
-	var/key = F.look_key
+	var/key = F.rx?.look_key
 	TEST_ASSERT(findtext(key, "mark_a"), "an image overlay keys by its icon_state: [key]")
-	F.mark_state = "mark_b"
-	changed(F)
+	F.set_mark_state("mark_b")
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(F.look_key != key, "a different image changes the key")
-	TEST_ASSERT(findtext(F.look_key, "mark_b"), "the new image is applied: [F.look_key]")
-	var/list/applied = F.look_overlays
-	changed(F)
+	TEST_ASSERT(F.rx?.look_key != key, "a different image changes the key")
+	TEST_ASSERT(findtext(F.rx?.look_key, "mark_b"), "the new image is applied: [F.rx?.look_key]")
+	var/list/applied = F.rx?.look_overlays
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(F.look_overlays == applied, "an equal image (a fresh mutable_appearance) churns no overlays")
+	TEST_ASSERT(F.rx?.look_overlays == applied, "an equal image (a fresh mutable_appearance) churns no overlays")
 
-	F.tinted = TRUE
-	changed(F)
+	F.set_tinted(TRUE)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "set_color applied")
-	F.tinted = FALSE
-	changed(F)
+	F.set_tinted(FALSE)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.color, initial(F.color), "a colour the look stopped setting goes back to the default")
 	TEST_ASSERT_EQUAL(F.icon_state, "look_on", "state still applied")
-	F.stated = FALSE
-	changed(F)
+	F.set_stated(FALSE)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "look_default", "a state the look stopped setting goes back to the default")
 
@@ -479,16 +446,16 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 /datum/unit_test/dx_core_refresh_throw_restores/Run()
 	var/obj/cap_fixture/dx_look/F = allocate(/obj/cap_fixture/dx_look)
 	refresh_flush()
-	F.explode = TRUE
+	F.set_explode(TRUE)
 	var/caught = FALSE
 	try
 		refresh_one(F, 0)
-	catch(var/exception/e) // ALLOW(silent_catch): the test asserts that must_be(null) throws
+	catch(var/exception/e)
 		caught = !!e
 	TEST_ASSERT(caught, "the draw failure propagated")
 	TEST_ASSERT(GLOB.refresh_running != F, "refresh_running was restored after the failure")
-	F.explode = FALSE
-	changed(F) // would stack_trace REFRESH SELF-MARK with a stale refresh_running
+	F.set_explode(FALSE)
+	state_changed(F) // would stack_trace REFRESH SELF-MARK with a stale refresh_running
 	refresh_flush()
 	TEST_ASSERT(!F.refresh_queued, "the next refresh ran")
 
@@ -515,26 +482,8 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT(ask_open(ctx), "it opens again once closed")
 	ask_close(ctx)
 
-/// Every type's capability entries resolve by id to that type's own entry (the Menu runs a chosen
-/// entry by id): three types building the same hand() entry must not share or overwrite an id.
-/datum/unit_test/dx_core_entry_ids_per_type/Run()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
-	var/list/ids = list()
-	for(var/path in list(/obj/cap_fixture/dx_core, /obj/cap_fixture/dx_core/child, /obj/cap_fixture/dx_core/child/grand))
-		var/obj/cap_fixture/dx_core/F = allocate(path, get_turf(user))
-		var/datum/interaction/capability/entry
-		for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-			if(E.name == "Configure")
-				entry = E
-		TEST_ASSERT_NOTNULL(entry, "[path] has the entry")
-		ids |= entry.id
-	// Ids are unique per target, not globally: the three types share one (interned) entry and id.
-	TEST_ASSERT_EQUAL(length(ids), 1, "the inherited entry keeps one id across the subtypes")
-	for(var/path in list(/obj/cap_fixture/dx_core, /obj/cap_fixture/dx_core/child, /obj/cap_fixture/dx_core/child/grand))
-		var/obj/cap_fixture/dx_core/F = allocate(path, get_turf(user))
-		var/datum/interaction/capability/entry
-		for(var/datum/interaction/capability/E as anything in cap_interactions(F))
-			if(E.name == "Configure")
-				entry = E
-		TEST_ASSERT(run_chosen_interaction(user, F, entry.id), "the Menu ran [path]'s entry by id")
-		TEST_ASSERT_NOTNULL(F.form_answers, "[path]'s handler ran")
+/// A tgui window on `host` for a test, interactive, with no client behind it.
+/proc/ui_test_window(datum/host)
+	var/datum/tgui/ui = new(null, host, "UiTest")
+	ui.status = STATUS_INTERACTIVE
+	return ui

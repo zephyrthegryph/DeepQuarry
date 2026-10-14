@@ -34,28 +34,28 @@
 	if(holder().initial_modules && holder().initial_modules.len)
 		for(var/path in holder().initial_modules)
 			var/obj/item/rig_module/module = new path(holder())
-			own_add(holder(), nameof(/obj/item/rig::installed_modules), module)
+			rel_add(holder(), nameof(/obj/item/rig::installed_modules), module)
 			module.installed(holder())
 
 	// Spawn the six physical components
 	if(holder().cell_type)
 		var/new_cell_type_path = holder().cell_type
-		own_set(holder(), nameof(/obj/mecha::cell), new new_cell_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::cell), new new_cell_type_path(holder()))
 	if(holder().air_type)
 		var/new_air_type_path = holder().air_type
-		own_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))
 	if(holder().glove_type)
 		var/new_glove_type_path = holder().glove_type
-		own_set(holder(), nameof(/obj/item/rig::gloves), new new_glove_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::gloves), new new_glove_type_path(holder()))
 	if(holder().helm_type)
 		var/new_helm_type_path = holder().helm_type
-		own_set(holder(), nameof(/obj/item/rig::helmet), new new_helm_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::helmet), new new_helm_type_path(holder()))
 	if(holder().boot_type)
 		var/new_boot_type_path = holder().boot_type
-		own_set(holder(), nameof(/obj/item/rig::boots), new new_boot_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::boots), new new_boot_type_path(holder()))
 	if(holder().chest_type)
 		var/new_chest_type_path = holder().chest_type
-		own_set(holder(), nameof(/obj/item/rig::chest), new new_chest_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::chest), new new_chest_type_path(holder()))
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
 
 	// Apply shared stats to equippable pieces
@@ -73,16 +73,16 @@
 	for(var/obj/item/piece in get_equippable_pieces())
 		if(!istype(piece))
 			continue
-		piece.canremove = FALSE
+		piece.set_canremove(FALSE)
 		piece.name = "[holder().suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [holder().name]."
-		piece.icon_state = "[holder().suit_state]"
-		piece.min_cold_protection_temperature = holder().min_cold_protection_temperature
-		piece.max_heat_protection_temperature = holder().max_heat_protection_temperature
+		piece.set_icon_state("[holder().suit_state]")
+		piece.set_min_cold_protection_temperature(protection_of(holder()).min_cold)
+		piece.set_max_heat_protection_temperature(protection_of(holder()).max_heat)
 		// Preserve insulated gloves that already have a lower coefficient
-		if(piece.siemens_coefficient > holder().siemens_coefficient)
-			piece.siemens_coefficient = holder().siemens_coefficient
-		piece.permeability_coefficient = holder().permeability_coefficient
+		if(protection_of(piece).siemens > protection_of(holder()).siemens)
+			piece.set_siemens_coefficient(protection_of(holder()).siemens)
+		piece.set_permeability_coefficient(protection_of(holder()).permeability)
 		piece.unacidable = holder().unacidable
 		piece.set_armor(holder().get_armor())
 		piece.worn_protection_changed()
@@ -90,20 +90,22 @@
 /*
  * proc/destroy_pieces()
  *
- * Drops and qdels all six physical pieces, nulling their vars on the holder.
+ * Drops and disposes all six physical pieces through their owning slots.
  * Called from /obj/item/rig/on_destroy() with the rig itself: the holder
  * handle no longer resolves once the rig is being destroyed.
  */
 /datum/rig_component_registry/proc/destroy_pieces(obj/item/rig/R)
 	if(!R)
 		return
-	for(var/obj/item/piece in list(
-			R.gloves,
-			R.boots,
-			R.helmet,
-			R.chest,
-			R.cell,
-			R.air_supply))
+	var/list/pieces = list(
+		nameof(R.gloves) = R.gloves,
+		nameof(R.boots) = R.boots,
+		nameof(R.helmet) = R.helmet,
+		nameof(R.chest) = R.chest,
+		nameof(R.cell) = R.cell,
+		nameof(R.air_supply) = R.air_supply)
+	for(var/slot in pieces)
+		var/obj/item/piece = pieces[slot]
 		if(!istype(piece))
 			continue
 		// Orderly teardown: clear the back-ref so the piece's dropped() self-detach
@@ -114,18 +116,9 @@
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
-		qdel(piece)
+		rel_clear(R, slot)
 
-	own_take(R, nameof(R.gloves))
-	own_take(R, nameof(R.boots))
-	own_take(R, nameof(R.helmet))
-	own_take(R, nameof(R.chest))
-	own_take(R, nameof(R.cell))
-	own_take(R, nameof(R.air_supply))
-
-	for(var/obj/item/rig_module/module in R.installed_modules)
-		qdel(module)
-	// the installed_modules list itself is dropped with the rig
+	rel_clear(R, nameof(R.installed_modules))
 
 /*
  * proc/get_equippable_pieces()

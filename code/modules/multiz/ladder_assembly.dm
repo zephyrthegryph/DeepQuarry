@@ -10,91 +10,68 @@
 	var/state = 0
 	var/created_name = null
 
-DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+TRACKED(/obj/structure/ladder_assembly, state)
 
-/// Old attackby.
-/obj/structure/ladder_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen))
-		var/_answer_k15 = rerun_ask(user, "k15", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter the name for the ladder.", title = "Ladder Name", default = src.created_name, max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_k15))
-			return TRUE
-		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)
-		if(in_range(src, user))
-			created_name = t
-		return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/structure/ladder_assembly)
+	op("name_ladder", item(/obj/item/pen),
+		asks(/datum/prompt/text, fields = list("question" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = nameof(created_name), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k15"),
+		then(PROC_REF(interaction_item)))
+	// unanchored, bolted (the wrench), welded (the welder; welded at both ends the ladder is built)
+	stages(nameof(state),
+		stage_step(LADDER_CONSTRUCTION_UNANCHORED, LADDER_CONSTRUCTION_WRENCHED, tool(TOOL_WRENCH), label("Secure the reinforcing bolts"), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(bolted)), key = "bolt"),
+		stage_step(LADDER_CONSTRUCTION_WRENCHED, LADDER_CONSTRUCTION_UNANCHORED, tool(TOOL_WRENCH), label("Undo the reinforcing bolts"), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle))), wait(0), then(PROC_REF(unbolted)), key = "unbolt"),
+		stage_step(LADDER_CONSTRUCTION_WRENCHED, LADDER_CONSTRUCTION_WELDED, tool(TOOL_WELDER), label("Weld to the floor"), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_down_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_down_done)), key = "weld_down"),
+		stage_step(LADDER_CONSTRUCTION_WELDED, LADDER_CONSTRUCTION_WRENCHED, tool(TOOL_WELDER), label("Cut free from the floor"), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(weld_up_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(weld_up_done)), key = "weld_up"))
+	op("weld_unanchored", tool(TOOL_WELDER), when(req_stage(nameof(state), LADDER_CONSTRUCTION_UNANCHORED)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req(PROC_REF(bolts_refusal))), wait(0))
+	op("wrench_welded", tool(TOOL_WRENCH), when(req_stage(nameof(state), LADDER_CONSTRUCTION_WELDED)), needs(req(PROC_REF(not_on_shuttle), because = MSG(ladder_assembly/on_shuttle)), req(PROC_REF(unweld_refusal))), wait(0))
 
-	return FALSE
+MSG_DEF_SELF(ladder_assembly/on_shuttle, span_warning("%T% cannot be constructed on a shuttle."))
 
-/obj/structure/ladder_assembly/wrench_act(mob/user, obj/item/W)
-	if(istype(get_area(src), /area/shuttle))
-		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
-		return ITEM_INTERACT_BLOCKING
-	switch(state)
-		if(LADDER_CONSTRUCTION_UNANCHORED)
-			state = LADDER_CONSTRUCTION_WRENCHED
-			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
-			act_message(user, src, MSG_SELF("You secure the reinforcing bolts."), \
-				MSG_OTHERS("%U% secures %T%'s reinforcing bolts."), \
-				MSG_BLIND("You hear a ratchet"))
-			set_anchored(TRUE)
-		if(LADDER_CONSTRUCTION_WRENCHED)
-			state = LADDER_CONSTRUCTION_UNANCHORED
-			play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
-			act_message(user, src, MSG_SELF("You undo the reinforcing bolts."), \
-				MSG_OTHERS("%U% unsecures %T%'s reinforcing bolts."), \
-				MSG_BLIND("You hear a ratchet"))
-			set_anchored(FALSE)
-		if(LADDER_CONSTRUCTION_WELDED)
-			to_chat(user, span_warning("\The [src] needs to be unwelded."))
-	return ITEM_INTERACT_SUCCESS
+/// Requirement: the assembly does not stand on a shuttle.
+/obj/structure/ladder_assembly/proc/not_on_shuttle(datum/act/op/A)
+	return (read_once(!istype(get_area(src), /area/shuttle))) ? null : /datum/msg/req_failed
 
-/obj/structure/ladder_assembly/welder_act(mob/user, obj/item/W)
-	if(istype(get_area(src), /area/shuttle))
-		to_chat(user, span_warning("\The [src] cannot be constructed on a shuttle."))
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/WT = W.get_welder()
-	switch(state)
-		if(LADDER_CONSTRUCTION_UNANCHORED)
-			to_chat(user, span_warning("The reinforcing bolts need to be secured."))
-		if(LADDER_CONSTRUCTION_WRENCHED)
-			if(!WT.remove_fuel(0, user))
-				to_chat(user, span_warning("You need more welding fuel to complete this task."))
-				return ITEM_INTERACT_BLOCKING
-			play_sfx(src, SFX_ITEMS_WELDER2)
-			act_message(user, src, MSG_SELF("You start to weld %T% to the floor."), \
-				MSG_OTHERS("%U% starts to weld %T% to the floor."), \
-				MSG_BLIND("You hear welding"))
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
-		if(LADDER_CONSTRUCTION_WELDED)
-			if(!WT.remove_fuel(0, user))
-				to_chat(user, span_warning("You need more welding fuel to complete this task."))
-				return ITEM_INTERACT_BLOCKING
-			play_sfx(src, SFX_ITEMS_WELDER2)
-			act_message(user, src, MSG_SELF("You start to cut %T% free from the floor."), \
-				MSG_OTHERS("%U% starts to cut %T% free from the floor."), \
-				MSG_BLIND("You hear welding"))
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
-	return ITEM_INTERACT_SUCCESS
+/// A welder on a loose assembly: the bolts come first.
+/obj/structure/ladder_assembly/proc/bolts_refusal(datum/act/op/A)
+	return "the reinforcing bolts need to be secured"
 
-/datum/om/task/timed/ladder_assembly_weld
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/ladder_assembly/proc/weld_done
-	var/obj/item/weldingtool/WT
-	var/from_state
+/// A wrench on a welded assembly: the weld comes first.
+/obj/structure/ladder_assembly/proc/unweld_refusal(datum/act/op/A)
+	return "\the [src] needs to be unwelded"
 
-/obj/structure/ladder_assembly/proc/weld_done(datum/om/task/timed/ladder_assembly_weld/task)
-	var/mob/user = task.actor
-	var/obj/item/weldingtool/WT = task.WT
-	var/from_state = task.from_state
-	if(!WT.isOn() || state != from_state)
-		return
-	if(from_state == LADDER_CONSTRUCTION_WRENCHED)
-		state = LADDER_CONSTRUCTION_WELDED
-		to_chat(user, "You weld \the [src] to the floor.")
-		try_construct(user)
-	else
-		state = LADDER_CONSTRUCTION_WRENCHED
-		to_chat(user, "You cut \the [src] free from the floor.")
+/obj/structure/ladder_assembly/proc/bolted(datum/act/op/A)
+	play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
+	act_message(A.actor, src, MSG_SELF("You secure the reinforcing bolts."), MSG_OTHERS("%U% secures %T%'s reinforcing bolts."), MSG_BLIND("You hear a ratchet"))
+	set_anchored(TRUE)
+	return OP_OK
+
+/obj/structure/ladder_assembly/proc/unbolted(datum/act/op/A)
+	play_sfx(src, SFX_ITEMS_RATCHET, 1.5)
+	act_message(A.actor, src, MSG_SELF("You undo the reinforcing bolts."), MSG_OTHERS("%U% unsecures %T%'s reinforcing bolts."), MSG_BLIND("You hear a ratchet"))
+	set_anchored(FALSE)
+	return OP_OK
+
+/obj/structure/ladder_assembly/proc/weld_down_begins(datum/act/op/A)
+	return msg_text("You start to weld %T% to the floor.", "%U% starts to weld %T% to the floor.", "You hear welding")
+
+/obj/structure/ladder_assembly/proc/weld_up_begins(datum/act/op/A)
+	return msg_text("You start to cut %T% free from the floor.", "%U% starts to cut %T% free from the floor.", "You hear welding")
+
+/obj/structure/ladder_assembly/proc/weld_down_done(datum/act/op/A)
+	to_chat(A.actor, "You weld \the [src] to the floor.")
+	try_construct(A.actor)
+	return OP_OK
+
+/obj/structure/ladder_assembly/proc/weld_up_done(datum/act/op/A)
+	to_chat(A.actor, "You cut \the [src] free from the floor.")
+	return OP_OK
+
+/// Old attackby: a pen names the ladder (the click goes on).
+/obj/structure/ladder_assembly/proc/interaction_item(datum/act/op/A)
+	var/t = sanitizeSafe(A.step_value("k15"), MAX_NAME_LEN)
+	if(in_range(src, A.actor))
+		created_name = t
+	return OP_PASS
 
 // Try to construct this into a real stairway.
 // It must have a matching ladder assembly above and/or below, and both must be welded in place
@@ -130,24 +107,24 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 
 	if(below)
 		var/obj/structure/ladder/L = new(get_turf(below))
-		L.allowed_directions = UP
+		L.set_allowed_directions(UP)
 		if(below.created_name) L.name = below.created_name
 		L.attempt_connection()
-		qdel(below)
+		spent(below, user)
 
 	if(me)
 		var/obj/structure/ladder/L = new(get_turf(me))
-		L.allowed_directions = (below ? DOWN : 0) | (above ? UP : 0)
+		L.set_allowed_directions((below ? DOWN : 0) | (above ? UP : 0))
 		if(me.created_name) L.name = me.created_name
 		L.attempt_connection()
-		qdel(me)
+		spent(me, user)
 
 	if(above)
 		var/obj/structure/ladder/L = new(get_turf(above))
-		L.allowed_directions = DOWN
+		L.set_allowed_directions(DOWN)
 		if(above.created_name) L.name = above.created_name
 		L.attempt_connection()
-		qdel(above)
+		spent(above, user)
 
 // Make them constructable in hand
 /datum/material/steel/generate_recipes()

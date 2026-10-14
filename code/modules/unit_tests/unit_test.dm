@@ -13,10 +13,10 @@ You can use the run_loc_floor_bottom_left and run_loc_floor_top_right to get tur
 
 GLOBAL_DATUM(current_test, /datum/unit_test)
 GLOBAL_VAR_INIT(failed_any_test, FALSE)
-/// Structured exceptions for the current test, including construction and cleanup.
-GLOBAL_LIST_EMPTY(unit_test_runtime_events)
-GLOBAL_VAR_INIT(unit_test_runtime_capture, FALSE)
-GLOBAL_VAR_INIT(unit_test_runtime_events_truncated, FALSE)
+/// The E0 proofs' tally for the run (TEST_TIER_E0, doc/testing.md "The E0 proofs"): green, failed only because an engine is missing, failed otherwise.
+GLOBAL_VAR_INIT(e0_proofs_passed, 0)
+GLOBAL_VAR_INIT(e0_proofs_pending, 0)
+GLOBAL_VAR_INIT(e0_proofs_failed, 0)
 /// When unit testing, all logs sent to log_mapping are stored here and retrieved in log_mapping unit test.
 GLOBAL_LIST_EMPTY(unit_test_mapping_logs)
 /// Global assoc list of required mapping items, [item typepath] to [required item datum].
@@ -34,6 +34,8 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 /// test's New() runs, so a small pool lets us round-robin instead of forcing
 /// every test to block on the previous test's straggling cleanup.
 #define UNIT_TEST_BLOCK_POOL_SIZE 8
+/// The blocks a focused run starts with; it grows up to UNIT_TEST_BLOCK_POOL_SIZE when a test waits for one.
+#define UNIT_TEST_BLOCK_POOL_FOCUSED 2
 
 /// Area of maps/templates/unit_tests.dmm. The template must only use types
 /// that exist: the map parser silently drops unknown paths, which left every
@@ -63,6 +65,8 @@ GLOBAL_VAR_INIT(focused_tests, focused_tests())
 GLOBAL_LIST_EMPTY(unit_test_block_pool)
 /// TRUE once the pool has been built (or an attempt was made to build it).
 GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
+/// TRUE while acquire_unit_test_block() adds a block to a focused run's pool.
+GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 /// Loads UNIT_TEST_BLOCK_POOL_SIZE independent copies of the unit-test room
 /// template, each on its own z-level, and records their corner turfs. Safe to
@@ -89,58 +93,65 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	while(!SSatoms.initialized)
 		sleep(1)
 
-	for(var/i in 1 to UNIT_TEST_BLOCK_POOL_SIZE)
-		var/datum/unit_test_block/block
-		// load_new_z()'s underlying map load (parsed_map/build_coordinate)
-		// intermittently places nothing at all -- every turf on the new z
-		// comes back a bare /turf/space with empty contents, no error
-		// surfaced to us, no landmark to find. Confirmed by dumping the new
-		// z's contents when this happens; not yet root-caused (a map-loader
-		// or GLOB.cached_maps-reuse issue under this specific "allocate a
-		// brand new z, back to back, several times" pattern -- load_new_z()
-		// is also GLOB.expedition_service's z-allocation path, so this may not be
-		// unique to tests). Retry a few fresh attempts per slot rather than
-		// let one bad load silently shrink the pool.
-		for(var/attempt in 1 to 3)
-			var/datum/map_template/unit_tests/template = new
-			var/new_z = template.load_new_z()
-			if(!new_z)
-				continue
-			var/datum/unit_test_block/candidate = new
-			candidate.z = new_z
-			// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
-			// freshly loaded z can be queued rather than run synchronously
-			// inside load_new_z(), so the landmark may not be registered
-			// into that list yet. The atom instance itself is already in
-			// its turf's contents the moment load_map() places it, so
-			// locate it there directly. load_new_z() always places the
-			// template at (1,1) on its new z (centered = FALSE).
-			for(var/tx in 1 to template.width)
-				for(var/ty in 1 to template.height)
-					var/turf/T = locate(tx, ty, new_z)
-					if(!T)
-						continue
-					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						rel_set(candidate, nameof(candidate.bottom_left), T)
-					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						rel_set(candidate, nameof(candidate.top_right), T)
-			if(candidate.bottom_left && candidate.top_right)
-				block = candidate
-				break
-			log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
-
-		if(!block)
-			log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
-			continue
-
-		GLOB.unit_test_block_pool += block
-		// A block stands in for station floor: range-to-station checks (contact levels) pass on it
-		// as they did when tests ran on the map itself.
-		if(using_map)
-			using_map.contact_levels |= block.z
+	// A focused run starts with UNIT_TEST_BLOCK_POOL_FOCUSED blocks and grows on demand (acquire_unit_test_block()):
+	// each block is a new z-level, about 0.65 s to allocate, and a handful of tests rarely holds more than one.
+	var/initial_size = unit_test_is_focused_run() ? UNIT_TEST_BLOCK_POOL_FOCUSED : UNIT_TEST_BLOCK_POOL_SIZE
+	for(var/i in 1 to initial_size)
+		unit_test_block_load(i)
 
 	if(!length(GLOB.unit_test_block_pool))
 		CRASH("ensure_unit_test_block_pool: failed to load any isolated test blocks.")
+
+/// Loads one more isolated block (copy #i) into the pool; logs and adds nothing when every attempt fails.
+/proc/unit_test_block_load(i)
+	var/datum/unit_test_block/block
+	// load_new_z()'s underlying map load (parsed_map/build_coordinate)
+	// intermittently places nothing at all -- every turf on the new z
+	// comes back a bare /turf/space with empty contents, no error
+	// surfaced to us, no landmark to find. Confirmed by dumping the new
+	// z's contents when this happens; not yet root-caused (a map-loader
+	// or GLOB.cached_maps-reuse issue under this specific "allocate a
+	// brand new z, back to back, several times" pattern -- load_new_z()
+	// is also SSexpedition's z-allocation path, so this may not be
+	// unique to tests). Retry a few fresh attempts per slot rather than
+	// let one bad load silently shrink the pool.
+	for(var/attempt in 1 to 3)
+		var/datum/map_template/unit_tests/template = new
+		var/new_z = template.load_new_z()
+		if(!new_z)
+			continue
+		var/datum/unit_test_block/candidate = new
+		candidate.z = new_z
+		// Don't rely on REGISTRY_MEMBERS(REGISTRY_LANDMARKS): atom Initialize() for a
+		// freshly loaded z can be queued rather than run synchronously
+		// inside load_new_z(), so the landmark may not be registered
+		// into that list yet. The atom instance itself is already in
+		// its turf's contents the moment load_map() places it, so
+		// locate it there directly. load_new_z() always places the
+		// template at (1,1) on its new z (centered = FALSE).
+		for(var/tx in 1 to template.width)
+			for(var/ty in 1 to template.height)
+				var/turf/T = locate(tx, ty, new_z)
+				if(!T)
+					continue
+				if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
+					rel_set(candidate, nameof(candidate.bottom_left), T)
+				if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
+					rel_set(candidate, nameof(candidate.top_right), T)
+		if(candidate.bottom_left && candidate.top_right)
+			block = candidate
+			break
+		log_world("ensure_unit_test_block_pool: copy #[i] attempt [attempt] on z[new_z] loaded no content (empty space, not a map-loader error) -- retrying on a fresh z.")
+
+	if(!block)
+		log_world("ensure_unit_test_block_pool: copy #[i] failed 3 attempts, the unit test block pool will be smaller than requested.")
+		return
+
+	GLOB.unit_test_block_pool += block
+	// A block stands in for station floor: range-to-station checks (contact levels) pass on it
+	// as they did when tests ran on the map itself.
+	if(using_map)
+		using_map.contact_levels |= block.z
 
 /// Checks out a free isolated test block, waiting for one to be returned if
 /// every block is currently in use (should be rare -- see the pool size
@@ -156,6 +167,12 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			if(!block.in_use)
 				block.in_use = TRUE
 				return block
+		// Every block is out: a focused run's small pool grows instead of waiting.
+		if(length(GLOB.unit_test_block_pool) < UNIT_TEST_BLOCK_POOL_SIZE && !GLOB.unit_test_block_pool_growing)
+			GLOB.unit_test_block_pool_growing = TRUE
+			unit_test_block_load(length(GLOB.unit_test_block_pool) + 1)
+			GLOB.unit_test_block_pool_growing = FALSE
+			continue
 		waited++
 		if(waited > 600) // ~60s of real time at 1 tick/sleep(1) each
 			CRASH("acquire_unit_test_block: every isolated test block is still in use after 60s -- likely a stuck async teardown.")
@@ -180,7 +197,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	// Mirror /datum/unit_test/restore_atmos(): don't hand this block's z back
 	// out while expedition teardown (or anything else async) is still touching
 	// turfs on it.
-	while(GLOB.expedition_service && length(GLOB.expedition_service.teardown_z))
+	while(SSexpedition && length(SSexpedition.teardown_z))
 		sleep(1)
 
 	// Leak detection: by now the destroy transaction has deleted `allocated`, so anything
@@ -215,18 +232,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 			catch(var/exception/E)
 				log_world("UNIT TEST LEAK: [test ? test.type : "?"] -- qdel of leaked [AM.type] runtimed during block release: [E]")
 
-		if(istype(T, /turf/open))
-			var/turf/open/OT = T
-			if(OT.active_hotspot)
-				qdel(OT.active_hotspot)
-			if(OT.air)
-				OT.air.copy_from(dq_unit_test_block_default_air())
-				OT.air_update_turf(TRUE, FALSE)
-			OT.set_temperature(T20C)
-		else if(istype(T, /turf/simulated/wall))
-			// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
-			// et al) and never got to restore them because it errored out early.
-			T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+		unit_test_block_reset_turf(T)
 
 	if(leaked)
 		var/list/parts = list()
@@ -237,13 +243,33 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 
 	block.in_use = FALSE
 
+/// Puts one block turf back to its template state: no hotspot, the default air and temperature on an open turf, a floor where a test left a wall.
+/proc/unit_test_block_reset_turf(turf/T)
+	if(istype(T, /turf/simulated))
+		// A wet floor stays wet (its dry timer runs on kernel time, which a test may never advance): the next test's mob slips on it and drops what it holds.
+		var/turf/simulated/wet_turf = T
+		if(wet_turf.wet)
+			wet_turf.wet_floor_finish()
+	if(istype(T, /turf/open))
+		var/turf/open/OT = T
+		if(OT.active_hotspot)
+			qdel(OT.active_hotspot)
+		if(OT.air)
+			OT.air.copy_from(dq_unit_test_block_default_air())
+			OT.air_update_turf(TRUE, FALSE)
+		heat_set_solid(OT, T20C)
+	else if(istype(T, /turf/simulated/wall))
+		// A test isolated a pair of turfs with real walls (dq_atmos_test_isolate_pair
+		// et al) and never got to restore them because it errored out early.
+		T.ChangeTurf(/turf/simulated/floor/tiled/steel)
+
 /// The default air mix a block's open turfs start with -- standard station air.
 /proc/dq_unit_test_block_default_air()
 	RETURN_TYPE(/datum/gas_mixture)
 	var/static/datum/gas_mixture/default_air
 	if(!default_air)
 		default_air = new
-		default_air.set_temperature(T20C)
+		heat_set(default_air, T20C, HEAT_SOURCE_OTHER)
 		default_air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
 		default_air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
 	return default_air.copy()
@@ -266,17 +292,17 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// assumptions" flakiness pattern: a test that only passed because a shared
 /// turf happened to already be warm, or because the CI machine happened to be
 /// fast enough that round N finished within a guessed frame count). Returns
-/// TRUE the moment `om_run(condition)` is truthy, FALSE if `max_attempts` is
-/// exhausted first. `advance` may be null to just poll `condition` on a sleep.
-/proc/wait_for_condition(list/condition, list/advance, max_attempts = 60)
+/// TRUE the moment `condition` is truthy, FALSE if `max_attempts` is
+/// exhausted first. `condition` and `advance` are GLOBAL_PROC_REFs called with their `_with` lists; `advance` may be null to just poll `condition` on a sleep.
+/proc/wait_for_condition(condition, list/condition_with, advance, list/advance_with, max_attempts = 60)
 	for(var/i in 1 to max_attempts)
-		if(om_run(condition))
+		if(call(condition)(arglist(condition_with || list())))
 			return TRUE
 		if(advance)
-			om_run(advance)
+			call(advance)(arglist(advance_with || list()))
 		else
 			sleep(world.tick_lag)
-	return om_run(condition)
+	return call(condition)(arglist(condition_with || list()))
 
 /// The focused test types: the file named by the test-focus world param
 /// (`dm-test --focus=`, tools/dq_focused_test.sh) when given, otherwise every
@@ -300,11 +326,33 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 
 	return focused_tests.len > 0 ? focused_tests : null
 
+/// TRUE when boot work `need` (a BOOT_NEED_* define) may be skipped in this world: a focused run whose every selected test declared
+/// boot_needs without it. Null boot_needs means "needs everything", so one undeclared test keeps the work. The full suite never skips.
+/// Skips are logged by the caller with unit_test_boot_skipped().
+/proc/unit_test_boot_skips(need)
+	if(!unit_test_is_focused_run())
+		return FALSE
+	for(var/datum/unit_test/test_type as anything in GLOB.focused_tests)
+		var/list/declared = initial(test_type.boot_needs)
+		if(isnull(declared) || (need in declared))
+			return FALSE
+	return TRUE
+
+/// Logs, loudly, that focused-run boot work `need` was skipped and why.
+/proc/unit_test_boot_skipped(need, what)
+	var/line = "BOOT DEFERRED: [what] skipped in this focused run: every selected test declares boot_needs without \"[need]\" (full suite and gates keep it)"
+	log_world(line)
+	log_test(line)
+
 /// TRUE when this unit-test world runs only TEST_FOCUS tests
 /// (tools/dq_focused_test.sh). Focused runs skip boot and shutdown waits that
 /// only matter for the full suite; see "Focused runs" in doc/testing.md.
 /proc/unit_test_is_focused_run()
 	return !!length(GLOB.focused_tests)
+
+/// TRUE when the only focused test is the boot gate (`dq_focused_test.sh --boot`).
+/proc/unit_test_is_boot_only_run()
+	return length(GLOB.focused_tests) == 1 && (/datum/unit_test/dq_boot_gate in GLOB.focused_tests)
 
 // ---- Sharded sweeps (doc/testing.md "Sharded sweeps") ----
 
@@ -432,6 +480,12 @@ GLOBAL_VAR(dq_test_select_names)
 	/// the test-tier world param set to "all"/"exhaustive" (dm-test --tier=all),
 	/// or when named by a focused run.
 	var/tier = TEST_TIER_NORMAL
+	/// Set by an E0 proof's gate when it failed because an engine piece (E1-E6) does not exist yet: the run reports it as pending,
+	/// separately from a proof that failed for any other reason (doc/testing.md "The E0 proofs").
+	var/pending_engine = FALSE
+	/// The BOOT_NEED_* boot work this test relies on (code/__defines/_boot_needs.dm). Null = all of it (the safe default); a focused
+	/// world skips a piece of boot work only when every selected test lists boot_needs without it. list() = needs none.
+	var/list/boot_needs = null
 	/// Curated entries sweep_types() actually found (see curated_types()).
 	var/list/curated_matched
 	//internal shit
@@ -464,6 +518,14 @@ GLOBAL_VAR(dq_test_select_names)
 	/// flake involving rand()/pick() is reproducible.
 	var/tmp/seed
 
+	/// list(datum, var name, original value) per var set_var() changed; restored on destroy.
+	var/tmp/list/saved_vars
+	/// Original config values set_config() changed, each boxed in a one-element
+	/// list (so a saved null is still a saved value); restored on destroy.
+	var/tmp/list/saved_configs
+	/// Rows list(target, PROC_REF, with) defer_cleanup() queued; run last-first on destroy.
+	var/tmp/list/deferred_cleanups
+
 /// A stable, deterministic seed for a test's own name: same input, same
 /// output, forever, regardless of process or run order -- unlike rand()'s own
 /// state, which drifts with everything that ran before it.
@@ -492,6 +554,11 @@ GLOBAL_VAR(dq_test_select_names)
 		for(var/entry in curated)
 			if(!LAZYACCESS(curated_matched, "[entry]"))
 				Fail("curated entry [entry] was not in the sweep (renamed or removed? update curated_types())", __FILE__, __LINE__)
+	// End the test's world in the tick Run() returns. RunUnitTest() only notices run_finished
+	// on its next poll and then restores atmos before deleting the test, and OM work still
+	// pending on the test's entities (a mob's telegraphed strike is an after() on its clock)
+	// would otherwise fire in that gap, with nothing left to own what it makes.
+	end_test_world()
 	run_finished = TRUE
 
 /// A normal-tier representative's fixed subset of an exhaustive sweep, or null
@@ -534,13 +601,98 @@ GLOBAL_VAR(dq_test_select_names)
 	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
+	end_test_world() // already done unless Run() timed out
+	restore_test_overrides()
+	..()
+
+/// Runs the deferred cleanups, then deletes everything allocate()d; their timers and tasks die
+/// with them. Called as Run() returns and again on destroy (a no-op the second time).
+/datum/unit_test/proc/end_test_world()
+	run_deferred_cleanups()
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
-	..()
+	// A test that took the kernel clock (test_driver_begin) hands it back whatever way it ended: an early return from a failed
+	// assertion or a runtime would otherwise leave every later test running on an injected clock.
+	test_driver_end()
+
+/// Sets `target.vars[name]` for the rest of this test. The first change to each var records its
+/// original value, and on_destroy() puts it back (last change first). A failing TEST_ASSERT
+/// (which returns from Run()) or a runtime then can't leak the change into later tests.
+/// Returns `value`.
+/datum/unit_test/proc/set_var(datum/target, name, value)
+	if(!(name in target.vars))
+		CRASH("set_var: [target.type] has no var [name]")
+	var/already = FALSE
+	for(var/list/entry as anything in saved_vars)
+		if(entry[1] == target && entry[2] == name)
+			already = TRUE
+			break
+	if(!already)
+		LAZYADD(saved_vars, list(list(target, name, target.vars[name])))
+	target.vars[name] = value
+	return value
+
+/// set_var() on GLOB: sets GLOB.<name> for the rest of this test.
+/datum/unit_test/proc/set_global(name, value)
+	return set_var(GLOB, name, value)
+
+/// Sets a config entry (a /datum/config_entry path) for the rest of this test; restored like
+/// set_var(). Returns `value`.
+/datum/unit_test/proc/set_config(entry_type, value)
+	if(!LAZYACCESS(saved_configs, entry_type))
+		LAZYSET(saved_configs, entry_type, list(global.config.Get(entry_type)))
+	global.config.Set(entry_type, value)
+	return value
+
+/// Calls `target`'s `proc_ref` with `...` when the test is torn down (last queued first, before
+/// allocate()d things are deleted and set_var() changes restored, and before the block's leak check),
+/// even if a TEST_ASSERT returned from Run() early or Run() runtimed. For cleanup that isn't a
+/// qdel(): releasing a site, unregistering from a global list. A null target calls a global proc.
+/datum/unit_test/proc/defer_cleanup(datum/target, proc_ref, ...)
+	var/list/with = length(args) > 2 ? args.Copy(3) : null
+	if(target)
+		LAZYADD(deferred_cleanups, list(list(target, proc_ref, with)))
+	else
+		LAZYADD(deferred_cleanups, list(list(src, TYPE_PROC_REF(/datum/unit_test, run_global_cleanup), list(proc_ref) + with)))
+
+/// A deferred cleanup that is a global proc taking no holder: defer_cleanup(null, GLOBAL_PROC_REF(x), args...).
+/datum/unit_test/proc/run_global_cleanup(proc_ref, ...)
+	call(proc_ref)(arglist(args.Copy(2)))
+
+/datum/unit_test/proc/run_deferred_cleanups()
+	var/list/pending = deferred_cleanups
+	deferred_cleanups = null
+	for(var/i in length(pending) to 1 step -1)
+		try
+			var/list/row = pending[i]
+			holder_call(row[1], row[2], row[3])
+		catch(var/exception/e)
+			// Teardown runs after the test's result is logged: fail the run, not just the test.
+			log_world("::error::UNIT TEST CLEANUP RUNTIME: [type]: [e.name] at [e.file]:[e.line]")
+			GLOB.failed_any_test = TRUE
+
+/// Puts back everything set_var()/set_global()/set_config() changed.
+/datum/unit_test/proc/restore_test_overrides()
+	for(var/i in length(saved_vars) to 1 step -1)
+		var/list/entry = saved_vars[i]
+		var/datum/target = entry[1]
+		if(!QDELETED(target))
+			target.vars[entry[2]] = entry[3]
+	for(var/entry_type in saved_configs)
+		var/list/box = saved_configs[entry_type]
+		global.config.Set(entry_type, box[1])
+	saved_vars = null
+	saved_configs = null
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
+
+/// The reasons an E0 proof failed with, for the pending report (the "E1-E6 not implemented: ..." text).
+/datum/unit_test/proc/pending_reasons()
+	. = list()
+	for(var/list/entry in fail_reasons)
+		. += entry[1]
 
 /datum/unit_test/proc/Fail(reason = "No reason", file = "OUTDATED_TEST", line = 1)
 	succeeded = FALSE
@@ -666,7 +818,7 @@ GLOBAL_VAR(dq_test_select_names)
 	// Expedition release is deliberately asynchronous in production. Do not let
 	// the next test start while a teardown job is still changing thousands of
 	// turfs and publishing atmosphere topology.
-	while(GLOB.expedition_service && length(GLOB.expedition_service.teardown_z))
+	while(SSexpedition && length(SSexpedition.teardown_z))
 		sleep(1)
 	// DQ atmos integration tests operate on mapped turfs because the inherited
 	// per-test reservation is not implemented. Restore every turf they snapshot
@@ -728,14 +880,14 @@ GLOBAL_VAR(dq_test_select_names)
  * * passed_params: A list of parameters to pass to the click
  */
 /datum/unit_test/proc/click_wrapper(mob/living/clicker, atom/clicked_on, list/passed_params = list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK))
-	clicker.next_click = -1
-	clicker.next_move = -1
+	cooldown_set_end(clicker, next_click, -1)
+	cooldown_set_end(clicker, next_move, -1)
 	clicker.ClickOn(clicked_on, list2params(passed_params))
 
 /// Tick usage while a test ran: how many MC ticks it spanned, how many overran
 /// (usage above 100%) and the worst one. Recorded in data/unit_tests.json.
 /proc/unit_test_tick_stats(start_index)
-	var/list/usage = Master.perf_tick_usage
+	var/list/usage = Kernel.perf_tick_usage
 	if(start_index > usage.len)
 		return list("samples" = 0, "overruns" = 0, "max" = 0)
 	var/overruns = 0
@@ -758,30 +910,23 @@ GLOBAL_VAR(dq_test_select_names)
 	text2file(profile, file_name)
 	log_test("Profile for [test_path] written to [file_name]")
 
-/// One eligibility predicate for execution and runtime-issued inventories.
-/proc/dq_test_ineligibility(datum/unit_test/test_path)
-	if(ispath(test_path, /datum/unit_test/focus_only))
-		return "focus_only"
-	if(initial(test_path.abstract_type) == test_path)
-		return "abstract"
-	return null
-
-/proc/dq_test_automatic_rows()
-	return list("ownership_framework_checks")
-
 /proc/RunUnitTest(datum/unit_test/test_path, list/test_results, current_index, total_tests)
-	if(dq_test_ineligibility(test_path))
+	if(ispath(test_path, /datum/unit_test/focus_only))
 		return
 
-	var/runtimes_before = GLOB.total_runtimes
-	GLOB.unit_test_runtime_events = null
-	GLOB.unit_test_runtime_events_truncated = FALSE
-	GLOB.unit_test_runtime_capture = TRUE
+	if(initial(test_path.abstract_type) == test_path)
+		return
+
 	var/datum/unit_test/test = new test_path
 
 	GLOB.current_test = test
 	var/duration = 0
 	var/tick_start_index = 0
+	var/runtimes_before = GLOB.total_runtimes
+	var/list/sites_before = SSexpedition?.sites?.Copy()
+	var/list/globals_before = unit_test_globals_snapshot()
+	var/list/gravity_before = unit_test_gravity_snapshot()
+	var/watching_before = length(GLOB.op_watchers)
 	var/list/tick_stats
 	// Generated-station coverage is temporarily disabled while that subsystem is
 	// being redesigned. Keep the cases compiled and visible as skipped so they
@@ -796,6 +941,7 @@ GLOBAL_VAR(dq_test_select_names)
 	var/test_output_desc = "[test_path]"
 	var/message = ""
 
+	staleness_test_begin()
 	log_world("::group::([current_index]/[total_tests]) [test_path]")
 	log_test("Running [current_index]/[total_tests]: [test_path]")
 
@@ -810,7 +956,7 @@ GLOBAL_VAR(dq_test_select_names)
 			world.Profile(PROFILE_CLEAR)
 			world.Profile(PROFILE_START)
 		duration = REALTIMEOFDAY
-		tick_start_index = Master.perf_samples_total + 1
+		tick_start_index = Kernel.perf_samples_total + 1
 		INVOKE_ASYNC(test, TYPE_PROC_REF(/datum/unit_test, RunWrapped))
 		var/waited_ds = 0
 		var/limit_ds = test.timeout SECONDS
@@ -820,12 +966,13 @@ GLOBAL_VAR(dq_test_select_names)
 		if(!test.run_finished)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
+		staleness_test_end(test)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration
 		if(profiling)
 			dq_test_write_profile(test_path)
-		tick_stats = unit_test_tick_stats(Master.perf_index_of(tick_start_index))
+		tick_stats = unit_test_tick_stats(Kernel.perf_index_of(tick_start_index))
 		GLOB.current_test = null
 		GLOB.failed_any_test |= !test.succeeded
 
@@ -856,12 +1003,27 @@ GLOBAL_VAR(dq_test_select_names)
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc]")
 
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
+	if(initial(test.tier) == TEST_TIER_E0 && !skip_test)
+		// An E0 proof is reported three ways, separately from the rest of the run: green, pending an engine, or failed.
+		if(test.succeeded)
+			GLOB.e0_proofs_passed++
+		else if(test.pending_engine)
+			GLOB.e0_proofs_pending++
+			log_world("E0 PENDING [test_output_desc]: [jointext(test.pending_reasons(), "; ")]")
+		else
+			GLOB.e0_proofs_failed++
 
 	var/datum/unit_test_block/block = test.test_block
 	qdel(test)
 	// A test must delete everything it creates (allocate(), or its own qdel()s). Whatever
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
+	var/site_leak = unit_test_site_leak(sites_before, test_path)
+	unit_test_globals_guard(globals_before, test_path)
+	unit_test_gravity_guard(gravity_before, test_path)
+	unit_test_watch_guard(watching_before, test_path)
+	if(site_leak)
+		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
 		GLOB.failed_any_test = TRUE
 		if(final_status == UNIT_TEST_PASSED)
@@ -870,8 +1032,107 @@ GLOBAL_VAR(dq_test_select_names)
 		message = message ? "[message]\n\t[leak]" : "\t[leak]"
 		log_test("\t[leak]")
 
-	GLOB.unit_test_runtime_capture = FALSE
-	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "runtime_errors" = GLOB.unit_test_runtime_events || list(), "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = tick_stats)
+	test_results[test_path] = list("status" = final_status, "message" = message, "name" = test_path, "duration_ds" = duration, "runtimes" = GLOB.total_runtimes - runtimes_before, "ticks" = tick_stats)
+
+/// GLOB vars the state guard ignores: run bookkeeping and counters that move on their own.
+/proc/unit_test_globals_ignored()
+	var/static/list/ignored = list(
+		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
+		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
+		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
+	)
+	return ignored
+
+/// The scalar GLOB vars (numbers, text, paths, null) before a test: the state guard compares them after it.
+/proc/unit_test_globals_snapshot()
+	. = list()
+	var/list/ignored = unit_test_globals_ignored()
+	for(var/name in GLOB.vars)
+		if(ignored[name])
+			continue
+		var/value = GLOB.vars[name]
+		if(isnull(value) || isnum(value) || istext(value) || ispath(value))
+			.[name] = list(value)
+
+/**
+ * The state guard: a test that leaves a global flag changed poisons every later test in the run, a failure that
+ * shows only in a long focused run and never alone (dq_rule_thresholds, vent_internal_check). After each test, a
+ * scalar GLOB var that changed is logged in tests.log: "STATE LEAK" for a flag (null, 0 or 1 before and after, not
+ * a counter or a lazy-init marker), "STATE LEAK?" for text and paths; numbers that are not flags are ignored. It
+ * only flags, never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
+ * long run, grep the run's tests.log for STATE LEAK before it (tools/dq_focused_test.sh prints them on a failure). Change shared state with set_global()/set_var() (restored in teardown) and the guard stays quiet.
+ */
+/proc/unit_test_globals_guard(list/before, test_path)
+	var/list/ignored = unit_test_globals_ignored()
+	var/static/regex/counter = regex(@"(built|initialized|ready|done|loaded|roundstat|count|next|total|_id$|^id_|gen$|_gen|serial|tick|time|last|seq|index|builds|cursor|stamp)", "i")
+	for(var/name in GLOB.vars)
+		if(ignored[name])
+			continue
+		var/value = GLOB.vars[name]
+		var/list/box = before[name]
+		if(!box)
+			continue
+		var/was = box[1]
+		if(was == value)
+			continue
+		var/flag = (isnull(was) || was == 0 || was == 1) && (isnull(value) || value == 0 || value == 1)
+		if(flag && !counter.Find(name))
+			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
+		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
+			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
+
+/// What the watch index holds, as "type|key xholders": the leftover, named, when a test finds it not empty.
+/proc/unit_test_watch_index_text()
+	var/list/rows = list()
+	for(var/index in GLOB.op_watchers)
+		var/list/parts = splittext(index, "|")
+		var/datum/watched = locate(parts[1])
+		var/list/on = GLOB.op_watchers[index]
+		var/list/holders = list()
+		for(var/datum/holder as anything in on)
+			holders += "[holder.type]"
+		rows += "[watched?.type || parts[1]]|[parts[2]] x[length(on)] by [jointext(holders, ",")]"
+	return jointext(rows, "; ")
+
+/// Logs "STATE LEAK" when the test left more entries in the watch index than it found: a wait, task or every() hop watch that never ended
+/// poisons the tests that assert the index is empty (dq_p1/wait_rechecks_on_a_published_read), which then fail only in a long run.
+/proc/unit_test_watch_guard(watching_before, test_path)
+	var/now = length(GLOB.op_watchers)
+	if(now > watching_before)
+		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
+
+/// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
+/// program), and every later test's mobs then drift.
+/proc/unit_test_gravity_snapshot()
+	. = list()
+	for(var/area/A in world)
+		.[A] = A.has_gravity
+
+/// Logs "STATE LEAK" for each area whose gravity the test changed (the state guard's rule: it flags, it does not restore).
+/proc/unit_test_gravity_guard(list/before, test_path)
+	for(var/area/A as anything in before)
+		if(!QDELETED(A) && A.has_gravity != before[A])
+			log_test("STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Its mobs drift in every later test: put it back (gravitychange()) in the test.")
+
+/// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
+/// that generates one must release it, through defer_cleanup() so a failing assert can't skip
+/// it. Returns a leak message for sites still live that weren't before the test, releasing them so
+/// later tests start without them.
+/proc/unit_test_site_leak(list/sites_before, test_path)
+	var/datum/system/expedition/service = SSexpedition
+	if(!service)
+		return
+	var/list/leaked = list()
+	for(var/key in service.sites)
+		if(!(key in sites_before))
+			leaked += key
+	if(!length(leaked))
+		return
+	for(var/key in leaked)
+		var/datum/expedition_site/site = service.sites[key]
+		if(site)
+			service.release_site(site, "unit test [test_path] leaked it")
+	return "UNIT TEST LEAK: [test_path] left [length(leaked)] expedition site(s) live (z [leaked.Join(", ")]); release them with defer_cleanup()"
 
 /// Builds (and returns) a list of atoms that we shouldn't initialize in generic testing, like Create and Destroy.
 /// It is appreciated to add the reason why the atom shouldn't be initialized if you add it to this list.
@@ -995,6 +1256,41 @@ GLOBAL_VAR(dq_test_select_names)
 	returnable_list += typesof(/obj/item/dq_diag_init_refuser)
 	return returnable_list
 
+/// Why the boot was not clean (the boot gate), or null. FinishTestRun() fails the run on it.
+GLOBAL_VAR(boot_unclean)
+
+/**
+ * The boot gate (doc/rewrite/boot_gate.md): the world must boot with no runtime and no logged warning
+ * ("## WARNING", a refused MOVE_INTO) before the first test starts. Whatever the boot logged is the boot's
+ * fault, not the test's, so it is reported on its own: data/logs/<run>/boot_report.json, a loud line in
+ * tests.log, and a failed run ("Boot was not clean") however the tests did. Every focused run checks it,
+ * so whoever adds a boot runtime sees it in their next run.
+ */
+/proc/unit_test_boot_gate()
+	var/runtimes = GLOB.total_runtimes
+	var/noise = GLOB.boot_noise_count
+	var/list/report = list(
+		"runtimes" = runtimes,
+		"warnings" = noise,
+		"first_warnings" = GLOB.boot_noise_first.Copy(),
+		"runtime_log" = "[GLOB.log_directory]/runtime-errors.log",
+	)
+	rustg_file_write(json_encode(report), "[GLOB.log_directory]/boot_report.json")
+	if(!runtimes && !noise)
+		log_test("Boot gate: clean (0 runtimes, 0 warnings before the first test).")
+		return
+	GLOB.boot_unclean = "Boot was not clean: [runtimes] runtime(s) and [noise] warning(s) before the first test (data/logs/<run>/boot_report.json, runtime-errors.log)"
+	log_test("::error title=Boot gate::[GLOB.boot_unclean]")
+	for(var/line in GLOB.boot_noise_first)
+		log_test("  boot warning: [line]")
+
+/// The round-start callback that starts the suite. The suite sleeps between tests (it waits on the kernel), and a
+/// scheduler callback that sleeps is reported as "OM: SLEPT" and stalls its caller; this returns at once and the suite
+/// runs on its own.
+/proc/start_unit_tests()
+	set waitfor = FALSE
+	RunUnitTests()
+
 /proc/RunUnitTests()
 	#ifdef BENCHMARK
 	RunBenchmarks()
@@ -1008,9 +1304,6 @@ GLOBAL_VAR(dq_test_select_names)
 		qdel(map_bot)
 
 	var/list/tests_to_run = subtypesof(/datum/unit_test)
-	// Capture the complete compiled type roster before focus/shard/domain/tier
-	// selection. A filtered inventory cannot satisfy the consumer's full count.
-	var/list/pre_tier_tests = world.params[TEST_INVENTORY_FILE_PARAMETER] ? tests_to_run.Copy() : null
 	var/list/focused_tests = GLOB.focused_tests
 	if(length(focused_tests))
 		tests_to_run = focused_tests.Copy()
@@ -1049,53 +1342,34 @@ GLOBAL_VAR(dq_test_select_names)
 
 	// Tier: a plain run is the normal tier; "all" adds the exhaustive sweeps,
 	// "exhaustive" runs only those. A focused run runs exactly what it named.
-	var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
 	if(!length(focused_tests))
-		var/want_normal = tier_param != "exhaustive"
+		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
+		var/want_normal = tier_param != "exhaustive" && tier_param != "e0"
 		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
+		// The E0 proofs (TEST_TIER_E0) run only on `--tier=e0`: not in a plain run, not in `all`, so the normal suite stays green.
+		var/want_e0 = tier_param == "e0"
 		var/list/tiered = list()
 		for(var/_test_to_run in tests_to_run)
 			var/datum/unit_test/test_to_run = _test_to_run
-			if(initial(test_to_run.tier) == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal)
+			var/test_tier = initial(test_to_run.tier)
+			if(test_tier == TEST_TIER_E0 ? want_e0 : (test_tier == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal))
 				tiered += test_to_run
 		log_test("Unit-test tier '[tier_param]': [length(tiered)] of [length(tests_to_run)] test types.")
 		tests_to_run = tiered
 
 	sortTim(tests_to_run, GLOBAL_PROC_REF(cmp_unit_test_priority))
 
-	// Compile-once batch orchestration receives the exact runtime roster.
-	// Normal source selection above remains authoritative; no source scanner.
-	if(world.params[TEST_INVENTORY_FILE_PARAMETER])
-		var/list/eligible = list()
-		var/list/excluded = list()
-		var/list/tier_excluded = list()
-		// This roster holds type paths, not instantiated unit-test datums.
-		for(var/test_path in pre_tier_tests)
-			var/datum/unit_test/test_type = test_path
-			var/test_tier = initial(test_type.tier) == TEST_TIER_EXHAUSTIVE ? "exhaustive" : "normal"
-			if(tier_param != "all" && test_tier != tier_param)
-				tier_excluded += list(list("name" = "[test_path]", "tier" = test_tier))
-		for(var/test_path in tests_to_run)
-			var/reason = dq_test_ineligibility(test_path)
-			if(reason)
-				excluded += list(list("name" = "[test_path]", "reason" = reason))
-			else
-				eligible += "[test_path]"
-		var/inventory_file = world.params[TEST_INVENTORY_FILE_PARAMETER]
-		fdel(inventory_file)
-		file(inventory_file) << json_encode(list("schema" = 1, "tier" = tier_param, "eligible" = eligible, "excluded" = excluded, "automaticRows" = dq_test_automatic_rows(), "preTierCount" = length(pre_tier_tests), "tierExcluded" = tier_excluded))
-		var/result_file = world.params[TEST_RESULTS_FILE_PARAMETER] || "data/unit_tests.json"
-		fdel(result_file)
-		file(result_file) << "{}"
-		SSticker.force_ending = ADMIN_FORCE_END_ROUND
-		SSticker.declare_completion()
-		return
-
-
 	var/list/test_results = list()
 	var/total_tests = length(tests_to_run)
 	var/current_test_index = 0
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
+	if(text2num(world.params?["boot_profile"] || "0"))
+		var/boot_profile_json = world.Profile(PROFILE_REFRESH, format = "json")
+		WRITE_FILE(file("[GLOB.log_directory]/boot_profile.json"), boot_profile_json)
+		world.Profile(PROFILE_STOP)
+		log_test("Boot profile written to [GLOB.log_directory]/boot_profile.json")
+	staleness_suite_begin()
+	unit_test_boot_gate()
 
 	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
 	// definition and start the periodic owner-stamp audit before the first test. A finding is
@@ -1123,14 +1397,9 @@ GLOBAL_VAR(dq_test_select_names)
 		catch(var/exception/e)
 			GLOB.failed_any_test = TRUE
 			GLOB.current_test = null
-			GLOB.unit_test_runtime_capture = FALSE
-			if(LAZYLEN(GLOB.unit_test_runtime_events) < 256)
-				LAZYADD(GLOB.unit_test_runtime_events, list(list("name" = e.name, "file" = e.file, "line" = e.line, "description" = e.desc)))
-			else
-				GLOB.unit_test_runtime_events_truncated = TRUE
 			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [unit_path]: harness runtime: [e.name] at [e.file]:[e.line]")
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
-			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "runtime_errors" = GLOB.unit_test_runtime_events, "runtime_errors_truncated" = GLOB.unit_test_runtime_events_truncated, "ticks" = null)
+			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
 	SSticker.delay_end = FALSE
 	// Ownership framework checks after the last test: a mutated shared definition or an
 	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
@@ -1144,15 +1413,17 @@ GLOBAL_VAR(dq_test_select_names)
 		GLOB.failed_any_test = TRUE
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [line]")
 		log_test(line)
-	if(length(framework_failures) || world.params[TEST_EXACT_AUTOMATIC_ROWS_PARAMETER])
-		var/list/automatic_rows = dq_test_automatic_rows()
-		var/framework_row = automatic_rows[1]
-		test_results[framework_row] = list("status" = length(framework_failures) ? UNIT_TEST_FAILED : UNIT_TEST_PASSED, "message" = jointext(framework_failures, "\n"), "name" = framework_row, "duration_ds" = 0, "runtimes" = 0, "runtime_errors" = list(), "runtime_errors_truncated" = FALSE, "ticks" = null)
+	if(length(framework_failures))
+		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
+#ifdef REFERENCE_TRACKING
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)
 			searched += "[type] x[GLOB.dq_refsearch_type_counts[type]][GLOB.dq_refsearch_skipped[type] ? " (+[GLOB.dq_refsearch_skipped[type]] skipped)" : ""]"
 		log_test("Reference searches this run ([GLOB.dq_refsearch_spent_ds / 10]s): [jointext(searched, ", ")]")
+#endif
+	if(GLOB.e0_proofs_passed + GLOB.e0_proofs_pending + GLOB.e0_proofs_failed)
+		log_test("E0 proofs: [GLOB.e0_proofs_passed] green, [GLOB.e0_proofs_pending] pending an engine (E1-E6 not implemented), [GLOB.e0_proofs_failed] failed for another reason.")
 	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")
 
 	// A sharded run gives each world its own results file (shard-tests-file's

@@ -5,19 +5,23 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
+CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
+	owns_one(nameof(cam_background), /atom/movable/screen/background)
+	owns_one(nameof(cam_foreground), /atom/movable/screen/background)
+	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
-	own_set(src, nameof(cam_background), new /atom/movable/screen/background())
+	rel_set(src, nameof(cam_background), new /atom/movable/screen/background())
 	cam_background.del_on_map_removal = FALSE
 	cam_background.assigned_map = assigned_map
 
-	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
+	rel_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	own_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
@@ -46,7 +50,7 @@
 	cam_foreground.fill_rect(1, 1, size_x, size_y)
 
 	local_skybox.cut_overlays()
-	local_skybox.add_overlay(skybox_service().get_skybox(get_z(newturf)))
+	local_skybox.add_overlay(SSskybox.ready().get_skybox(get_z(newturf)))
 	local_skybox.scale_to_view(size_x)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - newturf.x, (world.maxy>>1) - newturf.y)
 
@@ -58,7 +62,6 @@
 
 /datum/tgui_module/camera
 	name = "Security Cameras"
-	tgui_id = "CameraConsole"
 
 	var/access_based = FALSE
 	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
@@ -75,6 +78,13 @@
 	// Stuff for moving cameras
 	var/tmp/turf/last_camera_turf
 
+CAPABILITIES(/datum/tgui_module/camera)
+	owns_one(nameof(cam_screen_tg), /atom/movable/screen/map_view_tg/camera)
+	interface("CameraConsole")
+	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
+	op("switch_camera", ui_act("switch_camera", arg("name", schema_text(4096))), then(PROC_REF(ui_act_switch_camera)))
+	op("pan", ui_act("pan", arg("dir", num())), then(PROC_REF(ui_act_pan)))
+
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()
 	if(!LAZYLEN(network_computer))
@@ -84,9 +94,8 @@
 	map_name = "camera_console_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, nameof(cam_screen_tg), new /atom/movable/screen/map_view_tg/camera)
+	rel_set(src, nameof(cam_screen_tg), new /atom/movable/screen/map_view_tg/camera)
 	cam_screen_tg.generate_view(map_name)
-
 
 /datum/tgui_module/camera/ui_prepare(mob/user, datum/tgui/ui)
 	if(!user.client)
@@ -112,10 +121,7 @@
 	// Register map objects
 	cam_screen_tg.display_to(user, ui.window())
 
-UI_DATA_REPLACE(/datum/tgui_module/camera, "merge:ui_data_datum_tgui_module_camera{activeCamera:list}")
-
-/// The computed part of /datum/tgui_module/camera's window data (declared on its UI_DATA row).
-/datum/tgui_module/camera/proc/ui_data_datum_tgui_module_camera(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/camera/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["activeCamera"] = null
 	if(active_camera())
@@ -140,31 +146,30 @@ UI_DATA_REPLACE(/datum/tgui_module/camera, "merge:ui_data_datum_tgui_module_came
 		data["allNetworks"] |= C.network
 	return data
 
-/datum/tgui_module/camera/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(action && !issilicon(ui.user))
+/// Every button clicks, unless a silicon presses it.
+/datum/tgui_module/camera/proc/ui_typed(datum/act/op/A)
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/camera, "switch_camera", ui_act_switch_camera, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/tgui_module/camera, ui_act_switch_camera)
-	var/c_tag = params["name"]
-	var/list/cameras = get_available_cameras(ui.user)
+/datum/tgui_module/camera/proc/ui_act_switch_camera(datum/act/op/A, name)
+	var/mob/user = A.actor
+	var/c_tag = name
+	var/list/cameras = get_available_cameras(user)
 	var/obj/machinery/camera/C = cameras["[ckey(c_tag)]"]
 	if(active_camera())
-		om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+		unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 	if(C)
 		rel_set(src, nameof(/datum/tgui_module/camera::active_camera), C)
 		dq_add_recursive_move(active_camera())
-		om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
+		observe(active_camera(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_active_camera_moved_event)))
 	playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 	update_active_camera_screen()
 	return TRUE
 
-UI_ACT(/datum/tgui_module/camera, "pan", ui_act_pan, UI_ARG_NUM("dir"))
-UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
-	var/dir = params["dir"]
+/datum/tgui_module/camera/proc/ui_act_pan(datum/act/op/A, dir_arg)
+	var/mob/user = A.actor
+	var/dir = dir_arg
 	var/turf/T = get_turf(active_camera())
 	for(var/i in 1 to 10)
 		T = get_step(T, dir)
@@ -172,7 +177,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 		var/obj/machinery/camera/target
 		var/best_dist = INFINITY
 
-		var/list/possible_cameras = get_available_cameras(ui.user)
+		var/list/possible_cameras = get_available_cameras(user)
 		for(var/obj/machinery/camera/C in get_area(T))
 			if(!possible_cameras["[ckey(C.c_tag)]"])
 				continue
@@ -183,20 +188,20 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 
 		if(target)
 			if(active_camera())
-				om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+				unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 			rel_set(src, nameof(/datum/tgui_module/camera::active_camera), target)
 			dq_add_recursive_move(active_camera())
-			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
+			observe(active_camera(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_active_camera_moved_event)))
 			playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
 			update_active_camera_screen()
 			. = TRUE
 
 /// Event wrapper: the watched camera (or something carrying it) moved.
-/datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	update_active_camera_screen()
 
-/datum/tgui_module/camera/proc/update_active_camera_screen()
+/datum/tgui_module/camera/proc/update_active_camera_screen(datum/act/notice/N)
 	if(!active_camera()?.can_use())
 		cam_screen_tg.show_camera_static()
 		return TRUE
@@ -284,7 +289,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 	// Turn off the console
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
-			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+			unobserve(active_camera(), /datum/notice/movable_attempted_move, src)
 		rel_clear(src, nameof(active_camera))
 		rel_clear(src, nameof(last_camera_turf))
 		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_OFF, 0.5, vary = FALSE)
@@ -310,11 +315,13 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 
 /datum/tgui_module/camera/bigscreen
 
-DECLARE_UI_STATE(/datum/tgui_module/camera/bigscreen, GLOB.tgui_physical_state_bigscreen)
+CAPABILITIES(/datum/tgui_module/camera/bigscreen)
+	interface("CameraConsole", state = nameof(GLOB.tgui_physical_state_bigscreen))
 
 /datum/tgui_module/camera/virtual
 
-DECLARE_UI_STATE(/datum/tgui_module/camera/virtual, GLOB.tgui_camera_view)
+CAPABILITIES(/datum/tgui_module/camera/virtual)
+	interface("CameraConsole", state = nameof(GLOB.tgui_camera_view))
 
 #undef DEFAULT_MAP_SIZE
 

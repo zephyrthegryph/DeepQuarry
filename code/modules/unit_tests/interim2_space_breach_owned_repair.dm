@@ -1,0 +1,66 @@
+/// Public injury and repair APIs retain partial records and dispose completed ones.
+/datum/unit_test/interim2_space_breach_owned_repair
+	parent_type = /datum/unit_test/dq_p2_reagents
+
+/datum/unit_test/interim2_space_breach_owned_repair/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = rc_actor(T)
+	var/obj/item/clothing/suit/space/emergency/suit = allocate(/obj/item/clothing/suit/space/emergency, T)
+	var/obj/item/stack/material/steel/sheet = allocate(/obj/item/stack/material/steel, T)
+	TEST_ASSERT(suit.can_breach, "The real emergency suit supports breaches")
+	TEST_ASSERT_EQUAL(sheet.get_amount(), 1, "The real repair ingredient starts with one steel sheet")
+	var/original_name = suit.name
+	suit.create_breaches(BURN, 18)
+	suit.create_breaches(BRUTE, 18)
+	TEST_ASSERT_EQUAL(length(suit.breaches), 2, "Two actual damage events create distinct burn and structural records")
+	var/datum/breach/burn = suit.breaches[1]
+	var/datum/breach/brute = suit.breaches[2]
+	own(burn)
+	own(brute)
+	TEST_ASSERT_EQUAL(burn.class, 3, "Burn damage converts to the canonical class-three breach")
+	TEST_ASSERT_EQUAL(brute.class, 3, "Structural damage converts to its independent class-three breach")
+	TEST_ASSERT_EQUAL(owner_of(burn), suit, "The original burn record is owned by its real suit")
+	TEST_ASSERT_EQUAL(burn.holder(), suit, "The original burn record links its actual holder")
+	suit.repair_breaches(BURN, 1, actor)
+	TEST_ASSERT(!QDELETED(burn) && !QDELETED(brute), "Partial repair preserves both original identities")
+	TEST_ASSERT_EQUAL(burn.class, 2, "Partial repair spends exactly one burn repair unit")
+	TEST_ASSERT_EQUAL(suit.damage, 5, "Actual damage recomputation retains the remaining five units")
+	rc_click(actor, suit, sheet)
+	TEST_ASSERT(QDELETED(sheet), "A real steel-sheet click consumes the original repair ingredient")
+	TEST_ASSERT_NULL(actor.get_active_hand(), "Actual repair clears the consumed ingredient from the hand")
+	TEST_ASSERT(QDELETED(burn), "Completing repair disposes of the exact original burn record")
+	TEST_ASSERT_NULL(owner_of(burn), "Completed repair clears the original owner stamp")
+	TEST_ASSERT_EQUAL(length(suit.breaches), 1, "Only the unrelated structural record remains")
+	TEST_ASSERT_EQUAL(suit.breaches[1], brute, "Burn repair preserves the exact unrelated structural identity")
+	TEST_ASSERT_EQUAL(brute.class, 3, "Burn repair spends no structural repair units")
+	TEST_ASSERT_EQUAL(owner_of(brute), suit, "The surviving structural record retains its original owner")
+	TEST_ASSERT_EQUAL(suit.name, "punctured [original_name]", "Remaining structural damage retains the real suit description")
+	TEST_ASSERT(consume(suit), "Actual floor suit disposal succeeds")
+	TEST_ASSERT(QDELETED(brute), "Suit teardown disposes of the exact remaining owned record")
+
+/// One repair budget must visit all original records without mutating its traversal list.
+/datum/unit_test/interim2_space_breach_owned_repair/multiple/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = rc_actor(T)
+	var/obj/item/clothing/suit/space/emergency/suit = allocate(/obj/item/clothing/suit/space/emergency, T)
+	var/original_name = suit.name
+	suit.create_breaches(BURN, 28)
+	suit.create_breaches(BURN, 18)
+	TEST_ASSERT_EQUAL(length(suit.breaches), 2, "Two real burn events create two distinct records")
+	var/datum/breach/first = suit.breaches[1]
+	var/datum/breach/second = suit.breaches[2]
+	own(first)
+	own(second)
+	TEST_ASSERT(first != second, "The actual records have distinct original identities")
+	TEST_ASSERT_EQUAL(first.class, 5, "The first actual breach reaches its maximum class")
+	TEST_ASSERT_EQUAL(second.class, 3, "The second actual breach accounts for the remaining damage")
+	TEST_ASSERT_EQUAL(suit.damage, 8, "Actual aggregate damage equals the complete repair budget")
+	suit.repair_breaches(BURN, 8, actor)
+	TEST_ASSERT(QDELETED(first) && QDELETED(second), "One actual complete repair disposes of both original records")
+	TEST_ASSERT_NULL(owner_of(first), "The completed first record loses its owner stamp")
+	TEST_ASSERT_NULL(owner_of(second), "The completed second record loses its owner stamp")
+	TEST_ASSERT_EQUAL(length(suit.breaches), 0, "Complete repair clears the real breach index")
+	TEST_ASSERT_EQUAL(suit.damage, 0, "Complete repair clears aggregate damage")
+	TEST_ASSERT_EQUAL(suit.burn_damage, 0, "Complete repair clears aggregate burn damage")
+	TEST_ASSERT_EQUAL(suit.brute_damage, 0, "Complete repair preserves zero structural damage")
+	TEST_ASSERT_EQUAL(suit.name, original_name, "Complete repair restores the canonical suit name")

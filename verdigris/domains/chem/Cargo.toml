@@ -1,0 +1,11 @@
+[package]
+name = "vg-chem"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "The chemistry domain: reaction progress (stoichiometric limit, rate, yield, completion) and metabolism uptake (dose, overdose) maths. Host-buildable: no dependencies."
+
+[dependencies]
+
+[dev-dependencies]
+proptest = "1.5"

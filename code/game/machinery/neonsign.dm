@@ -7,8 +7,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	plane = MOB_PLANE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 	anchored = TRUE
 	var/lit = 0
 	var/id = null
@@ -16,26 +14,28 @@
 	var/off_icon = "sign_off"
 	var/signlight = "#E9E4AF"
 
+CAPABILITIES(/obj/machinery/neonsign)
+	configure(uses_power(idle = 2, active = 4))
+
 /obj/machinery/neonsign/proc/toggle()
 	if(!operable())
 		return
-	lit = !lit
+	set_lit(!lit)
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/neonsign/appearance_overlays()
-	. = list()
+/obj/machinery/neonsign/draw(datum/look/look)
+	..()
 	if(!lit)
-		icon_state = off_icon
-		set_light(0)
+		look.state(off_icon)
+		look.glow(GLOW_OFF)
 	else
-		icon_state = on_icon
-		set_light(2, 0.25, signlight)
+		look.state(on_icon)
+		look.glow(2, 0.25, signlight)
 
 /obj/machinery/neonsign/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
-		lit = 0
+	if(power_lost())
+		set_lit(0)
 		set_use_power(USE_POWER_OFF)
 
 
@@ -55,17 +55,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance
 	icon = 'icons/obj/power.dmi'
 	icon_state = "crema_switch"
 
-/obj/machinery/button/neonsign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/neonsign_button_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/neonsign_button_toggle
-	id = "neonsign_button_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/button/neonsign/proc/interaction_toggle
+CAPABILITIES(/obj/machinery/button/neonsign)
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /// Neon signs sharing our id (keyed).
 /obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs
@@ -76,13 +67,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/button/neonsign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/neonsign/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	use_power(5)
 
 	set_active(!active)
-	icon_state = "light[active]"
+	set_icon_state("light[active]")
 
 	for(var/obj/machinery/neonsign/M as anything in controlled_signs)
 		M.toggle()

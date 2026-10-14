@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Stats engine (E3): STAT declares a stat with its combine rule (analyze gen stats writes the var and registration), holds, releases and overrides with sources, contributes and contributes_to, immunity and statuses over holds, vars_write, inline recompute with the settle rule (inline on the entity and single-valued edges, marked and drained under the lane budget otherwise); apc_flip_50 bench"

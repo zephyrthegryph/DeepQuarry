@@ -36,7 +36,11 @@
 
 /// Empties ore boxes and moves items from its input plate while there are any; then it sleeps
 /// until something arrives (on_input_entered()).
-/obj/machinery/mineral/unloading_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/mineral/unloading_machine)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/mineral/unloading_machine/proc/work_step(datum/act/timer/A)
 	if(!output_marker() || !input_marker() || !(locate_within(input_marker().loc, /obj/structure/ore_box)) && !(locate_within(input_marker().loc, /obj/item)))
 		return PROCESS_KILL
 	if (src.output_marker() && src.input_marker())
@@ -52,47 +56,47 @@
 
 					//Icon code here. Going from most to least common.
 					if(ore == ORE_SAND)
-						ore_chunk.icon_state = "ore_glass"
+						ore_chunk.set_icon_state("ore_glass")
 					else if(ore == ORE_CARBON)
-						ore_chunk.icon_state = "ore_coal"
+						ore_chunk.set_icon_state("ore_coal")
 					else if(ore == ORE_HEMATITE)
-						ore_chunk.icon_state = "ore_iron"
+						ore_chunk.set_icon_state("ore_iron")
 					else if(ore == ORE_PHORON)
-						ore_chunk.icon_state = "ore_phoron"
+						ore_chunk.set_icon_state("ore_phoron")
 					else if(ore == ORE_SILVER)
-						ore_chunk.icon_state = "ore_silver"
+						ore_chunk.set_icon_state("ore_silver")
 					else if(ore == ORE_GOLD)
-						ore_chunk.icon_state = "ore_gold"
+						ore_chunk.set_icon_state("ore_gold")
 					else if(ore == ORE_URANIUM)
-						ore_chunk.icon_state = "ore_uranium"
+						ore_chunk.set_icon_state("ore_uranium")
 					else if(ore == ORE_DIAMOND)
-						ore_chunk.icon_state = "ore_diamond"
+						ore_chunk.set_icon_state("ore_diamond")
 					else if(ore == ORE_PLATINUM)
-						ore_chunk.icon_state = "ore_platinum"
+						ore_chunk.set_icon_state("ore_platinum")
 					else if(ore == ORE_MARBLE)
-						ore_chunk.icon_state = "ore_marble"
+						ore_chunk.set_icon_state("ore_marble")
 					else if(ore == ORE_LEAD)
-						ore_chunk.icon_state = "ore_lead"
+						ore_chunk.set_icon_state("ore_lead")
 					else if(ore == ORE_RUTILE)
-						ore_chunk.icon_state = "ore_rutile"
+						ore_chunk.set_icon_state("ore_rutile")
 					else if(ore == ORE_QUARTZ)
-						ore_chunk.icon_state = "ore_quartz"
+						ore_chunk.set_icon_state("ore_quartz")
 					else if(ore == ORE_MHYDROGEN)
-						ore_chunk.icon_state = "ore_hydrogen"
+						ore_chunk.set_icon_state("ore_hydrogen")
 					else if(ore == ORE_VERDANTIUM)
-						ore_chunk.icon_state = "ore_verdantium"
+						ore_chunk.set_icon_state("ore_verdantium")
 					else if(ore == ORE_COPPER)
-						ore_chunk.icon_state = "ore_copper"
+						ore_chunk.set_icon_state("ore_copper")
 					else if(ore == ORE_TIN)
-						ore_chunk.icon_state = "ore_tin"
+						ore_chunk.set_icon_state("ore_tin")
 					else if(ore == ORE_VOPAL)
-						ore_chunk.icon_state = "ore_void_opal"
+						ore_chunk.set_icon_state("ore_void_opal")
 					else if(ore == ORE_BAUXITE)
-						ore_chunk.icon_state = "ore_bauxite"
+						ore_chunk.set_icon_state("ore_bauxite")
 					else if(ore == ORE_PAINITE)
-						ore_chunk.icon_state = "ore_painite"
+						ore_chunk.set_icon_state("ore_painite")
 					else
-						ore_chunk.icon_state = "boulder[rand(1,4)]"
+						ore_chunk.set_icon_state("boulder[rand(1,4)]")
 
 					i++
 					if (i>=3) //Let's make it staggered so it looks like a lot is happening.

@@ -22,7 +22,7 @@
 	TEST_ASSERT(H.can_feel_pain(), "a plain human feels pain")
 	TEST_ASSERT(!H.factor(BF_PAIN_IMMUNITY), "a plain human has no pain immunity")
 	var/old_flags = H.species.flags
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.flags |= NO_PAIN
 	H.body.invalidate(BODY_DIRTY_FACTORS)
 	var/immune = H.factor(BF_PAIN_IMMUNITY)
@@ -62,7 +62,7 @@
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(/datum/gas/carbon_dioxide, MOLES_O2STANDARD)
 	breath.adjust_gas(/datum/gas/nitrogen, MOLES_N2STANDARD)
-	breath.set_temperature(T20C)
+	heat_set(breath, T20C, HEAT_SOURCE_OTHER)
 	var/co2_before = breath.get_moles(/datum/gas/carbon_dioxide)
 	H.photosynthesis_boost = 0
 	P.skin_exchange(H, breath)
@@ -81,16 +81,16 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/trait_state/photosynth/alraune/P = H.add_trait_state(/datum/trait_state/photosynth/alraune)
 	TEST_ASSERT(istype(P), "the alraune photosynthesis state attaches")
-	H.adjust_nutrition(-H.nutrition)
+	H.adjust_nutrition(-nutrition_of(H))
 	H.adjust_nutrition(100)
 	P.feed(1, 0)
-	TEST_ASSERT_EQUAL(H.nutrition, 105, "full light feeds 5 without CO2")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 105, "full light feeds 5 without CO2")
 	P.feed(1, 1)
-	TEST_ASSERT_EQUAL(H.nutrition, 135, "full CO2 multiplies the gain by 6")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 135, "full CO2 multiplies the gain by 6")
 	H.adjust_nutrition(1000)
-	var/capped = H.nutrition
+	var/capped = nutrition_of(H)
 	P.feed(1, 0)
-	TEST_ASSERT_EQUAL(H.nutrition, capped, "no gain above the cap")
+	TEST_ASSERT_EQUAL(nutrition_of(H), capped, "no gain above the cap")
 
 	var/mob/living/carbon/human/D = allocate(/mob/living/carbon/human)
 	D.set_species(SPECIES_DIONA)
@@ -107,11 +107,11 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	H.set_stasis(/datum/body_effect/stasis/total, src)
 	var/cycle = H.breath_cycle
-	var/nutrition = H.nutrition
+	var/nutrition = nutrition_of(H)
 	for(var/i in 1 to 6)
-		om_run_frame_now(H, /datum/om/pipeline/life)
+		seq_run_frame_now(H, /datum/sequence/life)
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle, "total stasis takes no breath")
-	TEST_ASSERT_EQUAL(H.nutrition, nutrition, "total stasis metabolises nothing")
+	TEST_ASSERT_EQUAL(nutrition_of(H), nutrition, "total stasis metabolises nothing")
 	H.set_stasis(null, src)
 
 /// P2-S5: species facts replace species-name checks.
@@ -140,23 +140,19 @@
 
 /datum/unit_test/dq_k_a_radiation_dose_tier/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/stage/life/radiation/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/radiation)
-	TEST_ASSERT(istype(stage), "the human radiation stage resolves")
 	var/list/levels = GLOB.radiation_levels[H.species.rad_levels]
 	H.decay_radiation(H.radiation)
-	TEST_ASSERT_EQUAL(stage.dose_tier(H), 0, "no dose is tier 0")
+	TEST_ASSERT_EQUAL(H.life_radiation_dose_tier(), 0, "no dose is tier 0")
 	H.add_radiation(levels["danger_2"] + 1)
-	TEST_ASSERT_EQUAL(stage.dose_tier(H), 3, "past danger_2 is tier 3")
+	TEST_ASSERT_EQUAL(H.life_radiation_dose_tier(), 3, "past danger_2 is tier 3")
 	H.decay_radiation(H.radiation)
 
-/// A24: the human status stage idles for a settled conscious body and wakes for fear.
+/// A24: the human status step sleeps for a settled conscious body and wakes for fear.
 /datum/unit_test/dq_k_a_status_idle_rule
 
 /datum/unit_test/dq_k_a_status_idle_rule/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/om/stage/life/status/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/status)
-	TEST_ASSERT(istype(stage), "the human status stage resolves")
-	H.fear = 50
-	TEST_ASSERT(!stage.idle(H), "fear counting down keeps the status stage awake")
-	H.fear = 0
-	TEST_ASSERT(stage.rewake_delay(H) > 0, "a living human's status stage has a rewake for raw writes")
+	H.status_set(STAT_FEAR, 50)
+	TEST_ASSERT(H.life_status_due(), "fear counting down keeps the status step awake")
+	H.status_set(STAT_FEAR, 0)
+	TEST_ASSERT(H.life_status_rewake() > 0, "a living human's status step has a rewake for raw writes")

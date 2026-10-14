@@ -4,10 +4,7 @@
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "arrow"
 	item_state = "bolt"
-	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 
 /obj/item/arrow/energy
 	name = "hardlight arrow"
@@ -15,23 +12,23 @@
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "hardlight"
 	item_state = "bolt"
-	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0 // it fizzles!
-	catchable = FALSE // oh god
+
+CAPABILITIES(/obj/item/arrow/energy)
+	configure(item_thrown(force = 10, catchable = FALSE))
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/arrow/energy/throw_impact(atom/hit_atom)
 	. = ..()
-	qdel(src)
+	consume(src)
 
 /obj/item/arrow/energy/equipped()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		L.drop_from_inventory(src)
-	qdel(src) // noh
+	consume(src) // An equipped hardlight arrow dissipates after its compulsory drop.
 
 /obj/item/gun/launcher/crossbow/bow
 	name = "shortbow"
@@ -43,7 +40,6 @@
 	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
-	slot_flags = SLOT_BACK
 	release_force = 20
 	release_speed = 15
 	var/drawn = FALSE
@@ -57,11 +53,10 @@
 
 /obj/item/gun/launcher/crossbow/bow/proc/unload(mob/user)
 	var/obj/item/arrow/A = bolt
-	own_take(src, nameof(bolt))
-	drawn = FALSE
+	rel_take(src, nameof(bolt))
+	set_drawn(FALSE)
 	A.forceMove(get_turf(user))
 	user.put_in_hands(A)
-	update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/consume_next_projectile(mob/user)
 	if(!drawn)
@@ -70,35 +65,38 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/bow/handle_post_fire(mob/user, atom/target)
-	own_take(src, nameof(bolt))
-	drawn = FALSE
-	update_icon()
+	rel_take(src, nameof(bolt))
+	set_drawn(FALSE)
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
+	configure(item_worn(slots = SLOT_BACK))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("draw_bow", ai(), wait(2.5 SECONDS), then(PROC_REF(drawn_fully)))
 
 /// Old attack_hand.
-/obj/item/gun/launcher/crossbow/bow/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/launcher/crossbow/bow/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(loc == user && bolt && !drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You remove [bolt] from %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes [bolt] from %T%.")))
 		unload(user)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/bow/gun_operate(datum/act/op/A, callback)
+	var/mob/living/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(hardlight)
-		return FALSE
+		return OP_DECLINE
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
-		drawn = FALSE
-		update_icon()
+		set_drawn(FALSE)
 	else
 		draw_string(user)
 
@@ -113,23 +111,23 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to draw back the string of %T%.")))
-	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(drawn_fully), list(user))
-	update_icon()
+	perform_op(user, src, "draw_bow", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(mob/user)
-	drawn = TRUE
+/obj/item/gun/launcher/crossbow/bow/proc/drawn_fully(datum/act/op/A)
+	var/mob/user = A.actor
+	set_drawn(TRUE)
 	act_message(user, src, MSG_SELF(span_infoplain("You draw the string on %T% back fully!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "draws the string on %T% back fully!")))
-	update_icon()
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/crossbow/bow/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
-		if(!own_set(src, nameof(src.bolt), W, user = user))
+		if(!move_into(src, nameof(src.bolt), W, user))
 			return
 		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
-		update_icon()
 
 /obj/item/gun/launcher/crossbow/bow/appearance_draw_suffix()
 	if(drawn)
@@ -137,7 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 	if(bolt)
 		return "_loaded"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{appearance_draw_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/crossbow/bow/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_draw_suffix()]")
 
 
 
@@ -148,27 +149,29 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	desc = "An energy bow, capable of producing arrows from an internal power supply."
 	hardlight = TRUE
 
+/obj/item/gun/launcher/crossbow/bow/hardlight/ownership()
+	. = ..()
+	. += owns(nameof(bolt), policy = OWN_DELETE)
+
 /obj/item/gun/launcher/crossbow/bow/hardlight/unload(mob/user)
-	own_clear(src, nameof(bolt), OWN_DELETE)
-	update_icon()
+	rel_clear(src, nameof(bolt))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/bow/hardlight/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
-		drawn = FALSE
-		update_icon()
+		set_drawn(FALSE)
 		return
 	// Automatically knock the arrow as it forms
 	if(!bolt)
 		act_message(user, src, MSG_SELF(span_infoplain("You fabricate a new hardlight projectile with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
-		own_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
-		update_icon()
+		rel_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
 	draw_string(user)
 
 /obj/item/gun/launcher/crossbow/bow/glamour
@@ -183,5 +186,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	name = "glamour arrow"
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "garrow"
-	edge = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/arrow/standard/glamour)
+	configure(item_combat(edge = TRUE))

@@ -26,7 +26,7 @@
 
 	picked_area = pick(affected_areas)
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
-		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
+		if(airlock.electrified && !airlock.power_systems_on())
 			continue
 		rel_add(src, nameof(target_airlocks), airlock)
 
@@ -51,14 +51,14 @@
 		if(EVENT_LEVEL_MODERATE)
 			for(var/obj/machinery/door/airlock/door in target_airlocks)
 				if(prob(50))
-					door.lock()
-					door.aiControlDisabled = TRUE
+					set_bolted(door, TRUE)
+					hold(door, STAT_AICONTROLDISABLED, null, SRC_ROUND_EVENT)
 					if(prob(75))
 						door.electrify(-1)
 		if(EVENT_LEVEL_MAJOR)
 			for(var/obj/machinery/door/airlock/door in target_airlocks)
-				door.lock()
-				door.aiControlDisabled = TRUE
+				set_bolted(door, TRUE)
+				hold(door, STAT_AICONTROLDISABLED, null, SRC_ROUND_EVENT)
 				door.electrify(-1)
 
 /datum/event/hostile_runtime/tick()
@@ -75,6 +75,5 @@
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
 
-/datum/event/hostile_runtime/relations()
-	. = ..()
-	. += rel_many(nameof(target_airlocks))
+CAPABILITIES(/datum/event/hostile_runtime)
+	ref_many(nameof(target_airlocks))

@@ -166,8 +166,8 @@ export const TimeClock = (props) => {
                       icon="suitcase"
                       onClick={() =>
                         act('switch-to-onduty-rank', {
-                          'switch-to-onduty-rank': job,
-                          'switch-to-onduty-assignment': title,
+                          rank: job,
+                          assignment: title,
                         })
                       }
                     >

@@ -55,7 +55,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD")
 
 		var/datum/money_account/account = affected_account()
-		own_add(account, nameof(account.transaction_log), T)
+		rel_add(account, nameof(account.transaction_log), T)
 
 	else
 		//crew wins

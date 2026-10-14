@@ -1,0 +1,32 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+robot|none menu: Open controls
+robot|none menu: Use
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none click: Click: Open controls
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Open controls
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Open controls
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++1 menu: Open controls
++3 menu: Use wrench
++4 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Open controls
+@obj.structure human|/obj/item/multitool
++1 menu: Open controls
+@obj.structure human|/obj/item/weldingtool
++1 menu: Open controls
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Open controls
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Open controls
+@obj.structure human|/obj/item/card/id
++1 menu: Open controls
+@obj.structure human|/obj/item
++1 menu: Open controls
+keys: drag_buckle, melee_hit, oxygen, phoron, silicon_hand, store, store_harm, ui_open, use_wrench

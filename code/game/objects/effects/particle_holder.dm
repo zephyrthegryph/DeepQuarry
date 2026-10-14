@@ -14,7 +14,16 @@
 
 	var/atom/parent
 
-/obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
+CAPABILITIES(/obj/effect/abstract/particle_holder)
+	ref_one(nameof(parent))
+	param(nameof(particle_path), pos = 1)
+	param(nameof(particle_flags), pos = 2)
+
+/// The particles a holder shows (its constructor param).
+/obj/effect/abstract/particle_holder/var/particle_path = /particles/smoke
+
+// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
+/obj/effect/abstract/particle_holder/Initialize(mapload)
 	. = ..()
 	if(!loc)
 		stack_trace("particle holder was created with no loc!")
@@ -29,26 +38,27 @@
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-	src.particle_flags = particle_flags
 	particles = new particle_path()
 	// /atom doesn't have vis_contents, /turf and /atom/movable do
 	var/atom/movable/lie_about_areas = get_parent()
 	lie_about_areas.vis_contents += src
-	om_hook(get_parent(), /datum/om/event/qdeleting, src, PROC_REF(parent_deleted))
+	observe(get_parent(), /datum/notice/qdeleting, src, then(PROC_REF(parent_deleted)))
 
 	if(particle_flags & PARTICLE_ATTACH_MOB)
-		om_hook(get_parent(), /datum/om/event/moved, src, PROC_REF(on_parent_moved))
+		observe(get_parent(), /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	on_move(get_parent(), null, NORTH)
 
 
 /// Non movables don't delete contents on destroy, so we gotta do this
-/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	qdel(src)
+/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	consume(src)
 
 /// Hooked on the parent's moved event.
-/obj/effect/abstract/particle_holder/proc/on_parent_moved(atom/movable/attached, datum/om/event/moved/event)
-	EVENT_HANDLER
+/obj/effect/abstract/particle_holder/proc/on_parent_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/atom/movable/attached = A.target
+	var/datum/notice/moved/event = A
 	on_move(attached, event.old_loc, event.direction)
 
 /// called when a parent that's been hooked into this moves

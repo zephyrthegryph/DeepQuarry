@@ -15,7 +15,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	unacidable = TRUE
 	pass_flags = PASSTABLE
 	mouse_opacity = 0
-	hitsound = SFX_WEAPONS_PIERCE
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
@@ -157,8 +156,15 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/tmp/obj/item/ammo_casing/my_case
 
-	var/crawl_destroy = FALSE //chompADD: Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
+	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
+CAPABILITIES(/obj/item/projectile)
+	configure(item_sounds(hit = SFX_WEAPONS_PIERCE))
+	owns_one(nameof(trajectory), /datum/point/vector)
+	owns_many(nameof(beam_segments))
+	ref_many(nameof(permutated)) // the atoms passed through: a deleted one leaves the list
+
+// ALLOW(init/INSTANCE_STATE): binds to the casing it is made inside
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))
@@ -172,7 +178,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/on_range() //if we want there to be effects when they reach the end of their range
 	impact_sounds(loc)
 	impact_visuals(loc) // So it does a little 'burst' effect, but not actually do anything (unless overrided).
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/proc/return_predicted_turf_after_moves(moves, forced_angle)		//I say predicted because there's no telling that the projectile won't change direction/location in flight.
 	if(!trajectory && isnull(forced_angle) && isnull(Angle))
@@ -197,8 +203,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
-		own_clear(src, nameof(beam_segments), OWN_DELETE)
-		own_add(src, nameof(beam_segments), pcache) //record start.
+		rel_clear(src, nameof(beam_segments))
+		rel_add(src, nameof(beam_segments), pcache) //record start.
 		rel_set(src, nameof(beam_index), pcache)
 
 /obj/item/projectile/proc/process_hitscan()
@@ -209,7 +215,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			if(loc)
 				Bump(loc)
 			if(!QDELETED(src))
-				qdel(src)
+				consume(src)
 			return	//Kill!
 		pixel_move(1, TRUE)
 
@@ -226,7 +232,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		trajectory.increment(trajectory_multiplier)
 		var/turf/T = trajectory.return_turf()
 		if(!istype(T))
-			qdel(src)
+			consume(src)
 			return
 		if(T.z != loc.z)
 			var/old = loc
@@ -285,7 +291,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(prob(50))
 		homing_offset_y = -homing_offset_y
 
-/obj/item/projectile/periodic_step()
+/obj/item/projectile/proc/projectile_step()
 	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	if(!loc || !fired || !trajectory)
 		fired = FALSE
@@ -338,6 +344,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/fire(angle, atom/direct_target)
 	//If no angle needs to resolve it from xo/yo!
 	if(direct_target)
+		if(loc?.release_refusal(src))
+			return
 		if(bump_targets)
 			var/impact_result = direct_target.bullet_act(src, def_zone)
 			// mob/living/bullet_act() already calls on_hit() internally with the correct
@@ -348,21 +356,21 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				// Fall through to the normal launch path below instead of qdel-ing.
 				direct_target = null
 			else
-				qdel(src)
+				consume(src)
 				return
 		else
-			qdel(src)
+			consume(src)
 			return
 	if(isnum(angle))
 		setAngle(angle)
 	rel_set(src, nameof(starting), get_turf(src))
 	if(!starting)
-		qdel(src)
+		consume(src)
 		return
 	if(isnull(Angle))	//Try to resolve through offsets if there's no angle set.
 		if(isnull(xo) || isnull(yo))
 			stack_trace("WARNING: Projectile [type] deleted due to being unable to resolve a target after angle was null!")
-			qdel(src)
+			consume(src)
 			return
 		var/turf/target = locate(CLAMP(starting.x + xo, 1, world.maxx), CLAMP(starting.y + yo, 1, world.maxy), starting.z)
 		setAngle(Get_Angle(src, target))
@@ -372,14 +380,14 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
-	own_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
+	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
 	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
-	permutated = list()
+	rel_clear(src, nameof(permutated))
 	originalRange = range
 	fired = TRUE
 	if(hitscan)
 		. = process_hitscan()
-	om_task_periodic(src, PERIODIC_PROJECTILES)
+	SSprojectile_steps.kernel_join(src)
 	pixel_move(1, FALSE)	//move it now!
 
 /obj/item/projectile/Moved(atom/old_loc, direction, forced = FALSE)
@@ -401,7 +409,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	own_add(src, nameof(beam_segments), pcache)
+	rel_add(src, nameof(beam_segments), pcache)
 	rel_set(src, nameof(beam_index), pcache)
 
 //Spread is FORCED!
@@ -438,7 +446,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		setAngle(Get_Angle(src, targloc) + spread)
 	else
 		stack_trace("WARNING: Projectile [type] fired without either mouse parameters, or a target atom to aim at!")
-		qdel(src)
+		consume(src)
 
 /proc/calculate_projectile_angle_and_pixel_offsets(mob/user, params)
 	var/list/mouse_control = params2list(params)
@@ -491,9 +499,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // its casing forgets it.
 
 /obj/item/projectile/proc/cleanup_beam_segments()
-	own_clear(src, nameof(beam_segments), OWN_DELETE) // beam_index names one of these: its view clears
-	if(beam_index())
-		qdel(beam_index())
+	rel_clear(src, nameof(beam_segments)) // beam_index names one of these: its view clears
 
 /obj/item/projectile/proc/vol_by_damage()
 	if(damage || agony)
@@ -509,7 +515,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/datum/point/end_point
 	if(trajectory && beam_index())
 		end_point = trajectory.copy_to()
-		own_add(src, nameof(beam_segments), end_point) // refused while we are being destroyed (guard.dm)
+		rel_add(src, nameof(beam_segments), end_point) // refused while we are being destroyed (guard.dm)
 	generate_hitscan_tracers(null, null, impacting, end_point)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE, datum/point/end_point)
@@ -533,8 +539,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		M.Turn(original_angle)
 		thing.transform = M
 		thing.color = color
-		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
-		own_add(drawn, nameof(drawn.beam_components), thing)
+		set_glow(thing, GLOW(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color))
+		rel_add(drawn, nameof(drawn.beam_components), thing)
 	if(impacting && impact_type && duration > 0)
 		var/datum/point/p = points[length(points)]
 		var/atom/movable/thing = new impact_type
@@ -543,9 +549,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		M.Turn(Angle)
 		thing.transform = M
 		thing.color = color
-		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
-		own_add(drawn, nameof(drawn.beam_components), thing)
-	om_qdel_after(drawn, duration)
+		set_glow(thing, GLOW(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color))
+		rel_add(drawn, nameof(drawn.beam_components), thing)
+	drawn.expire(duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
 //If direct target is true it's the originally clicked target.
@@ -572,7 +578,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			// So we'll check before, just in case. Lying might gives a chance to dodge, however.
 			if(is_swarmer(L) && L.stat != DEAD && !L.lying)
 				return TRUE
-			if(crawl_destroy == TRUE) //chompADD
+			if(crawl_destroy == TRUE)
 				return TRUE
 			if(!L.density)
 				var/datum/shadekin/SK = L.get_shadekin_state()
@@ -650,13 +656,13 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(passthrough)
 		trajectory_ignore_forcemove = TRUE
 		forceMove(target_turf)
-		permutated.Add(A)
+		rel_add(src, nameof(permutated), A)
 		trajectory_ignore_forcemove = FALSE
 		return FALSE
 
 	if(A && bump_targets)
 		on_impact(A)
-	qdel(src)
+	consume(src)
 	return TRUE
 
 // Authoritative effect-application hook.  Called from within mob/living/bullet_act()
@@ -695,7 +701,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		return 0
 	if(emp_on_hit)
 		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
-		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
+		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, combat_of(src).armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)
 
@@ -786,11 +792,11 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//hit messages
 	if(silenced)
-		playsound(target_mob, hitsound, 5, 1, -1)
+		playsound(target_mob, sounds_of(src).hit, 5, 1, -1)
 		to_chat(target_mob, span_critical("You've been hit in the [impacted_organ] by \the [src]!"))
 	else
 		var/volume = vol_by_damage()
-		playsound(target_mob, hitsound, volume, 1, -1)
+		playsound(target_mob, sounds_of(src).hit, volume, 1, -1)
 		// X has fired Y is now given by the guns so you cant tell who shot you if you could not see the shooter
 		act_message(target_mob, src, MSG_SELF(span_critical("You've been hit in the [impacted_organ] by %T%!")), \
 			MSG_OTHERS(span_danger("%U% was hit in the [impacted_organ] by %T%!")))
@@ -812,7 +818,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
 	if(!get_turf(user) && !get_turf(src)) // if both the user of the projectile AND the projectile itself are in nullspace, don't fire, just remove ourselves
-		om_qdel_after(src, 1)
+		expire(0.1 SECONDS)
 		return //fire returns nothing, so neither do we need to
 
 	rel_set(src, nameof(original), target)

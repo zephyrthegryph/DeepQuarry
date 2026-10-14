@@ -3,11 +3,8 @@
 	desc = "A heavy-duty concussion hammer typically used for mining, as it can pulverize and break rocks without damaging denser ores if used correctly. If used incorrectly, there are very few things it cannot smash; this fact made it an iconic weapon for the many uprisings of Mars. It uses a manually engaged concussive-force amplifier unit in the head to multiply impact power, but its weight and the charge up time makes it difficult to use effectively. Devastating if used correctly, but requires skill. It also appears to have a sling attached, so that you can carry it on your back if you need to."
 	icon_state = "forcemaul"
 	item_state = "forcemaul"
-	slot_flags = SLOT_BACK
 
 	//stopping power/lethality
-	force = 35
-	armor_penetration = 20		//the sheer impact force bypasses quite a bit of armour
 	var/unwielded_force_divisor = 0.25
 	var/wielded = 0
 	var/force_unwielded = 8.75
@@ -26,16 +23,8 @@
 	var/excavation_amount = 200
 	var/destroy_artefacts = TRUE	//sorry, breaks stuff
 
-	can_cleave = TRUE	//SSSSMITE!
-	attackspeed = 12	//very slow!!
-	sharp = FALSE
-	edge = FALSE
-	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
-	attack_verb = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")
 	var/lightcolor = "#D3FDFD"
 	var/status = 0		//whether the thing is on or not
 	var/obj/item/cell/bcell = null
@@ -44,29 +33,27 @@
 /obj/item/melee/shock_maul/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
-		wielded = 1
+		set_wielded(1)
 		if(status)
-			force = initial(force)*charge_force_mult
-			armor_penetration *= charge_force_mult
+			set_force(combat_of_type(type).force*charge_force_mult)
+			set_armor_penetration(combat_of(src).armor_penetration * (charge_force_mult))
 		else
-			force = initial(force)
-			armor_penetration = initial(armor_penetration)
+			set_force(combat_of_type(type).force)
+			set_armor_penetration(combat_of_type(type).armor_penetration)
 		launch_force = initial(launch_force)
 		weaken_force = initial(weaken_force)
 		name = "[initial(name)] (wielded)"
-		update_icon()
 	else
-		wielded = 0
+		set_wielded(0)
 		if(status)
-			force = force_unwielded*charge_force_mult
-			armor_penetration *= charge_force_mult
+			set_force(force_unwielded*charge_force_mult)
+			set_armor_penetration(combat_of(src).armor_penetration * (charge_force_mult))
 		else
-			force = force_unwielded
-			armor_penetration = initial(armor_penetration)
+			set_force(force_unwielded)
+			set_armor_penetration(combat_of_type(type).armor_penetration)
 		launch_force = launch_force_unwielded
 		weaken_force = weaken_force_unwielded
 		name = "[initial(name)]"
-	update_icon()
 	..()
 
 /obj/item/melee/shock_maul/Initialize(mapload)
@@ -76,41 +63,45 @@
 /obj/item/melee/shock_maul/get_cell()
 	return bcell
 
-/obj/item/melee/shock_maul/MouseDrop(obj/over_object as obj)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/melee/shock_maul/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/melee/shock_maul/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell/device/weapon)
-
-/obj/item/melee/shock_maul/loaded/Initialize(mapload) //this one starts with a cell pre-installed.
+/obj/item/melee/shock_maul/loaded/ownership()
 	. = ..()
-	update_icon()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 /obj/item/melee/shock_maul/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
@@ -124,31 +115,31 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell
 /obj/item/melee/shock_maul/proc/powercheck()
 	if(bcell)
 		if(bcell.charge < hitcost)
-			status = 0
+			set_status(0)
 			update_held_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/shock_maul/appearance_overlays()
-	. = list()
+/obj/item/melee/shock_maul/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(status)
-		icon_state = "[initial(icon_state)]_active[wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)]_active[wielded]")
+		look.held_state(drawn_state)
 	else if(!bcell)
-		icon_state = "[initial(icon_state)]_nocell[wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)]_nocell[wielded]")
+		look.held_state(drawn_state)
 	else
-		icon_state = "[initial(icon_state)][wielded]"
-		item_state = icon_state
+		drawn_state = look.state("[initial(icon_state)][wielded]")
+		look.held_state(drawn_state)
 
-	if(icon_state == "[initial(icon_state)]_active[wielded]")
-		set_light(2, 1, lightcolor)
+	if(drawn_state == "[initial(icon_state)]_active[wielded]")
+		look.glow(2, 1, lightcolor)
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/shock_maul/dropped(mob/user, equipping, slot)
 	..()
 	if(status)
-		status = 0
+		set_status(0)
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
 	update_held_icon()
 
@@ -162,68 +153,99 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appeara
 			. += span_warning("The concussion maul does not have a power source installed.")
 
 /// Old attackby.
-/obj/item/melee/shock_maul/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/melee/shock_maul/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!user.IsAdvancedToolUser())
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
-				if(!own_set(src, nameof(src.bcell), W, user = user))
-					return INTERACTION_HANDLED_PASS
+				if(!move_into(src, nameof(src.bcell), W, user))
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+MSG_DEF_SELF(shock_maul/out_of_charge, span_warning("%T% is out of charge."))
+
+TRACKED(/obj/item/melee/shock_maul, status)
+TRACKED(/obj/item/melee/shock_maul, wielded)
+
+CAPABILITIES(/obj/item/melee/shock_maul)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 25))
+	configure(item_combat(force = 35, armor_penetration = 20, can_cleave = TRUE, attack_speed = 12, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), when(PROC_REF(uncharged)), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(charge_started)), wait(PROC_REF(charge_duration)), then(PROC_REF(charged)))
+	op("off", in_hand(), label("Use"), when(PROC_REF(charged_up)), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(handy_user), silent = TRUE)), then(PROC_REF(disengaged)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_hand.
-/obj/item/melee/shock_maul/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/shock_maul/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(!user.IsAdvancedToolUser())
 			return TRUE
 		else if(bcell)
-			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
-			status = 0
+			set_status(0)
 			update_held_icon()
 			return TRUE
-		return FALSE
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
-/// Old attack_self.
-/obj/item/melee/shock_maul/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!user.IsAdvancedToolUser())
-		return TRUE
-	if(!status && bcell && bcell.charge >= hitcost)
-		om_task_timed(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	else if(status)
-		status = 0
-		act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
-		update_held_icon()
-		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-		if(!bcell)
-			to_chat(user, span_warning("\The [src] does not have a power source!"))
-	else
-		to_chat(user, span_warning("\The [src] is out of charge."))
-	add_fingerprint(user)
-	return TRUE
+/// Whether the maul is off: a use charges it.
+/obj/item/melee/shock_maul/proc/uncharged(datum/act/op/A)
+	return !status
 
-/obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
-	status = 1
+/// Whether the maul is charged: a use disengages it.
+/obj/item/melee/shock_maul/proc/charged_up(datum/act/op/A)
+	return !!status
+
+/// Whoever is too clumsy to work the field gets nothing, not even a message.
+/obj/item/melee/shock_maul/proc/handy_user(datum/act/op/A)
+	var/mob/user = A.actor
+	return user?.IsAdvancedToolUser() ? null : /datum/msg/req_silent
+
+/// The charge-up begins only on a power source with enough charge; otherwise the use ends with the out-of-charge line.
+/obj/item/melee/shock_maul/proc/charge_started(datum/act/op/A)
+	if(!bcell || bcell.charge < hitcost)
+		return /datum/msg/shock_maul/out_of_charge
+	add_fingerprint(A.actor)
+	return null
+
+/obj/item/melee/shock_maul/proc/charge_duration(datum/act/A)
+	return charge_time
+
+/obj/item/melee/shock_maul/proc/charged(datum/act/op/A)
+	var/mob/user = A.actor
+	set_status(1)
 	act_message(user, src, MSG_SELF(span_warning("You charge %T%. <b>It's hammer time!</b>")), MSG_OTHERS(span_warning("%U% charges %T%!")))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
 	update_held_icon()
+	return OP_OK
+
+/obj/item/melee/shock_maul/proc/disengaged(datum/act/op/A)
+	var/mob/user = A.actor
+	set_status(0)
+	act_message(user, src, MSG_SELF(span_notice("%T% is now off.")), MSG_OTHERS(span_notice("%U% safely disengages %T%'s power field.")))
+	update_held_icon()
+	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
+	if(!bcell)
+		to_chat(user, span_warning("\The [src] does not have a power source!"))
+	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/melee/shock_maul/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return
@@ -240,18 +262,18 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 			B.dismantle()
 		else if(istype(A,/obj/structure/grille))
 			visible_message(span_warning("\The [A] crumples under the force of the impact!"))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A, /turf/simulated/wall))
 			var/turf/simulated/wall/W = A
 			if(W.density)
-				W.take_damage(force*3)	//One hit for regular walls, 3 hits for r_wall
+				W.take_damage(combat_of(src).force*3)	//One hit for regular walls, 3 hits for r_wall
 		else if(istype(A, /obj/structure/girder))
 			var/obj/structure/girder/G = A
 			G.dismantle()
 		else
 			return ..()	//Don't do anything if we don't resolve anything on our target
 		deductcharge()
-		status = 0
+		set_status(0)
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
@@ -269,21 +291,20 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		var/atom/target_zone = get_edge_target_turf(user,get_dir(user, target))
 		if(!target.anchored)	//unless they're secured in place, natch
 			target.throw_at(target_zone, launch_force, 2, user, FALSE)
-		target.status_at_least(EFFECT_WEAKENED, weaken_force)
+		target.status_at_least(STAT_WEAKENED, weaken_force)
 
 		deductcharge()
-		status = 0
+		set_status(0)
 		user.visible_message(span_warning("\The [src] discharges with a thunderous, hair-raising crackle!"))
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		update_held_icon()
 	powercheck(hitcost)
 
-DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp))
 /// An EMP kills the power field.
-/obj/item/melee/shock_maul/proc/shock_maul_emp(datum/damage_packet/packet)
+/obj/item/melee/shock_maul/proc/shock_maul_emp(datum/act/A)
 	if(!status)
 		return
-	status = FALSE
+	set_status(FALSE)
 	visible_message(span_warning("\The [src]'s power field hisses and sputters out."))
 	update_held_icon()
 

@@ -2,7 +2,7 @@
 #define GENERATED_STATION_TICK_BUDGET_FAST 80
 
 /// Resumable orchestration state for one station materialization: lane work
-/// (om_task_slices(), object_model_core.md §4.11). The materializer's phases run a
+/// (job_cursor(), code/engine/kernel/jobs.dm). The materializer's phases run a
 /// slice at a time and return a cursor when checkpoint() says the slice's budget
 /// is spent, so nothing sleeps and a partially built z-level is never exposed to
 /// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
@@ -28,9 +28,13 @@
 	var/list/phases
 	var/phase_index = 1
 	var/phase_cursor
-	/// materialize_async(): list(callback) invoked with the materialization (or null) at the end.
-	/// Invoked with the materialization when the run ends; the caller made it.
-	var/list/on_done
+	/// materialize_async(): at the end, after(then_owner, 0, then, with = then_with + the materialization (or null)) runs; the caller made it.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
+
+CAPABILITIES(/datum/generated_station_materialization_job)
+	ref_one(nameof(then_owner))
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
@@ -63,7 +67,7 @@
 		flight_plan().generation_progress = max(flight_plan().generation_progress, progress)
 	if(now)
 		return FALSE
-	if(force_yield || slice_usage >= tick_budget || om_scheduler().out_of_budget())
+	if(force_yield || slice_usage >= tick_budget || time_scheduler().out_of_budget())
 		// The phase returns its cursor and carries on in the next slice.
 		yield_count++
 		rustg_time_reset(timer_id)
@@ -75,17 +79,20 @@
 /datum/generated_station_materialization_job/proc/execute(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
 	now = TRUE
 	if(start(spec, z_level, origin_x, origin_y))
-		om_task_slices(src, PROC_REF(run_slice), 1, null, TRUE)
+		job_cursor(src, PROC_REF(run_slice), 1, null, TRUE)
 	return end_run()
 
-/// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
-/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, list/new_on_done)
+/// Materializes as lane work; then, owner and with are run with the materialization (or null) as after() does.
+/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, new_then, datum/new_then_owner, list/new_then_with)
 	now = FALSE
-	on_done = new_on_done
+	then = new_then
+	if(new_then_owner)
+		rel_set(src, nameof(then_owner), new_then_owner)
+	then_with = new_then_with
 	if(!start(spec, z_level, origin_x, origin_y))
 		finish_async()
 		return
-	om_task_slices(src, PROC_REF(run_slice), 1, PROC_REF(finish_async))
+	job_cursor(src, PROC_REF(run_slice), 1, PROC_REF(finish_async))
 
 /datum/generated_station_materialization_job/proc/start(datum/generated_station_spec/spec, z_level, origin_x, origin_y)
 	started_at = REALTIMEOFDAY
@@ -100,7 +107,7 @@
 		return FALSE
 	return TRUE
 
-/// One slice: the current phase from its cursor. The next cursor for om_task_slices(), or null
+/// One slice: the current phase from its cursor. The next cursor for job_cursor(), or null
 /// when every phase is done (or one failed).
 /datum/generated_station_materialization_job/proc/run_slice(cursor)
 	if(!now)
@@ -128,8 +135,8 @@
 		return null
 	// Hand-off: the materializer owns its result only while building it, so it lets go here
 	// (deleting the materializer afterwards must not delete the station it built). The expedition
-	// site adopts it (own_set) when it is published.
-	var/datum/generated_station_materialization/done = own_take(materializer(), nameof(/datum/crafting_recipe::result))
+	// site adopts it (rel_set) when it is published.
+	var/datum/generated_station_materialization/done = rel_take(materializer(), nameof(/datum/generated_station_materializer::result))
 	rel_set(src, nameof(materialization), done)
 	checkpoint("Station materialization complete", 62)
 	return done
@@ -137,9 +144,12 @@
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
 	materializer().record_job_telemetry(src)
-	var/list/callback = on_done
-	qdel(src)
-	om_run(callback, result)
+	var/callback = then
+	var/datum/callback_owner = then_owner
+	var/list/callback_with = then_with
+	spent(src)
+	if(callback)
+		after(callback_owner, 0, callback, with = (callback_with || list()) + list(result))
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST

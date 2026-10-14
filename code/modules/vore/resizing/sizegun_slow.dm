@@ -8,8 +8,6 @@
 	icon_state = "sizegun-old-0"
 	var/base_icon_state = "sizegun-old"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/beam_range = 4 // How many tiles away it can scan. Changing this also changes the box size.
 	/// The running beam (sizegun_step()): target, user and held-item handles, the target's starting
 	/// scale, the beam handle, the outline filter, the box segments and the user's client.
@@ -26,10 +24,12 @@
 	var/trading = 0
 
 /// Set to true when scanning, to stop multiple scans.
-OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
-/// The beam steps every 0.3 s while busy.
-DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
-APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{busy?-active:}")
+/obj/item/slow_sizegun/var/busy = FALSE
+TRACKED(/obj/item/slow_sizegun, busy)
+/// The look (the draw sweep: from its template).
+/obj/item/slow_sizegun/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]-[sizeshift_mode][busy ? "-active" : ""]")
 
 /obj/item/slow_sizegun/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || !active_hand || !istype(target) || !istype(user) || !busy)
@@ -51,13 +51,13 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 			unresizable = TRUE
 			return
 
-	if(!(target.resizable))
+	if(!(target.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
 		return TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		return TRUE
 
 	if(!(target.has_large_resize_bounds()) && (target.size_multiplier >= RESIZE_MAXIMUM) && sizeshift_mode == SIZE_GROW)
@@ -119,10 +119,10 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 			unresizable = TRUE
 			return
 
-	if(!(L.resizable))
+	if(!(L.vore_prefs.resizable))
 		unresizable = TRUE
 
-	if(trading == 1 && !(user.resizable))
+	if(trading == 1 && !(user.vore_prefs.resizable))
 		unresizable = TRUE
 
 	if(unresizable)
@@ -143,7 +143,7 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 	var/active_hand = user.get_active_hand()
 	var/previous_scale = L.size_multiplier
 
-	// The beam steps every 0.3 s while busy (DECLARE_REPEAT; S10b: was a stoplag() loop) until
+	// The beam steps every 0.3 s while busy (an every() while busy; S10b: was a stoplag() loop) until
 	// should_stop(). The target, user, hand and beam are relation views on the gun, so a deleted
 	// target or user still reaches sizegun_finish() and the effects are cleaned up.
 	rel_set(src, nameof(scan_user), user)
@@ -154,18 +154,18 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 	if(should_stop(L, user, active_hand))
 		sizegun_finish()
 
-/// One step of the beam (DECLARE_REPEAT while busy): resize, then stop if it should.
-/obj/item/slow_sizegun/proc/sizegun_step()
+/// One step of the beam (the every() while busy): resize, then stop if it should.
+/obj/item/slow_sizegun/proc/sizegun_step(datum/act/timer/A)
 	var/list/state = beam_state
 	if(!state)
 		set_busy(FALSE)
-		return REPEAT_STOP
+		return
 	var/mob/living/L = current_target
 	var/mob/living/U = scan_user
 	var/active_hand = scan_hand
 	if(!L || !U)
 		sizegun_finish()
-		return REPEAT_STOP
+		return
 	if(sizeshift_mode == SIZE_SHRINK)
 		L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
 		if(trading == 1)
@@ -176,7 +176,7 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 			U.resize((U.size_multiplier - size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
 	if(should_stop(L, U, active_hand))
 		sizegun_finish()
-		return REPEAT_STOP
+		return
 
 /// The beam ends: size-strip the target if it changed enough, then clean up the effects.
 /obj/item/slow_sizegun/proc/sizegun_finish()
@@ -200,28 +200,34 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 		var/mob/living/carbon/human/our_target = L
 		var/size_difference = previous_scale - our_target.size_multiplier
 		if((size_difference >= 0.3) || (size_difference <= -0.3))
-			if(our_target.size_strip_preference == SIZESTRIP_ITEMS)
+			if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 				our_target.drop_all_clothing(FALSE)
-			else if(our_target.size_strip_preference == SIZESTRIP_ALL)
+			else if(our_target.vore_prefs.size_strip_preference == SIZESTRIP_ALL)
 				our_target.drop_all_clothing(TRUE)
 
 	// Now clean up the effects.
 	if(scan_beam)
-		qdel(scan_beam)
+		spent(scan_beam)
 	if(L)
 		L.filters -= filter
 	if(C) // If for some reason they logged out mid-scan the box will be gone anyways.
 		delete_box(box_segments, C)
 
-EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_REF(slow_sizegun_mode_self)), 	INTERACT_ALT("Toggle size trading", PROC_REF(slow_sizegun_trading_alt)), )
+CAPABILITIES(/obj/item/slow_sizegun)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
+	op("slow_sizegun_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(slow_sizegun_mode_self)))
+	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
+	// The beam steps every 0.3 s while busy; sizegun_finish() clears busy, which ends the work.
+	every(0.3 SECONDS, then(PROC_REF(sizegun_step)), when = nameof(busy))
 
 /// Old attack_self: stop a scan in progress, or swap between growing and shrinking.
-/obj/item/slow_sizegun/proc/slow_sizegun_mode_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slow_sizegun/proc/slow_sizegun_mode_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(busy)
 		sizegun_finish()
 	else
-		sizeshift_mode = !sizeshift_mode
-		update_icon()
+		set_sizeshift_mode(!sizeshift_mode)
 		to_chat(user, span_notice("\The [src] will now [sizeshift_mode ? "grow" : "shrink"] its targets."))
 
 
@@ -292,7 +298,7 @@ EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_RE
 /obj/item/slow_sizegun/proc/delete_box(list/box_segments, client/C)
 	for(var/i in box_segments)
 		C.images -= i
-		qdel(i)
+		spent(i)
 
 /obj/item/slow_sizegun/proc/color_box(list/box_segments, new_color, new_time)
 	for(var/i in box_segments)
@@ -301,7 +307,8 @@ EXTEND_INTERACTIONS(/obj/item/slow_sizegun, 	INTERACT_USE("Switch mode", PROC_RE
 //Alt click to activate size trading
 
 /// Old click_alt: toggle size trading.
-/obj/item/slow_sizegun/proc/slow_sizegun_trading_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slow_sizegun/proc/slow_sizegun_trading_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if (trading == 0)
 		trading = 1
 		to_chat(user, span_notice("\The [src] will now trade your targets size for your own."))

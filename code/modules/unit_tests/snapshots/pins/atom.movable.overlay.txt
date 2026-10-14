@@ -1,0 +1,37 @@
+human|none menu: Pass touch
+human|none click: Click: Pass touch
+robot|none menu: Pass touch
+robot|none click: Click: Pass touch
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Pass touch
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Pass touch
+human|/obj/item/tool/crowbar menu: Pass touch
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Pass touch
+human|/obj/item/tool/wrench menu: Pass touch
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Pass touch
+human|/obj/item/tool/wirecutters menu: Pass touch
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Pass touch
+human|/obj/item/multitool menu: Pass touch
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Pass touch
+human|/obj/item/weldingtool menu: Pass touch
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Pass touch
+human|/obj/item/stack/cable_coil menu: Pass touch
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Pass touch
+human|/obj/item/stack/material/steel menu: Pass touch
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Pass touch
+human|/obj/item/card/id menu: Pass touch
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Pass touch
+human|/obj/item menu: Pass touch
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Pass touch
+keys: drag_buckle, pass_item, pass_touch

@@ -273,6 +273,12 @@ with anything in hand; a plain click reaches it only while holding a card the lo
 gesture in `GLOB.op_gesture_now`), so a click with a wrench stays the wrench's. The credential is a provider found like a hand
 (`cap_lock_credential()`): the held card, then the actor's own access (worn ID or PDA, a silicon's access). The op takes no slot provider.
 
+The providers are shared [built, B2]: `access_credential(holder, actor, held, need_all, need_one, id_types)`
+(`code/datums/capabilities/library/access.dm`) is the one search, `access_needs(holder, defaults...)` the one rule for
+what is required (the holder's own `req_access` / `req_one_access` when set, else the type default). The lock adds lock
+state on top; `cap_access(access, req_one_access, ops = ...)` is the same check as a contract on ops with no lock state
+(a console that only opens for engineers), through the requirement `req_credential()`.
+
 ## Shared requirements and routes [built]
 
 Machine contracts are shared flyweights with standard reasons, not per-type procs: `req_working()` (not broken, not under

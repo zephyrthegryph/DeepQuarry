@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Library capabilities for machines: component parts drive derived stats (cap_parts), mob occupants (cap_occupant), access-gated operations with shared credential providers (cap_access) and the panel-plus-wires bundle (service_panel)."
+  - code_imp: "Capability holder hooks moved off /atom onto their capability types, saving booted memory."
+  - qol: "The transport pod, heavy-duty cell charger, drone control console and vending machines use the new capabilities: their actions show in the menu with a reason when refused."

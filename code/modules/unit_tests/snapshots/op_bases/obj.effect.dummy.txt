@@ -1,0 +1,4 @@
+human|none menu: Disrupt
+human|none click: Click: Disrupt
+robot|none menu: Disrupt
+robot|none click: Click: Disrupt

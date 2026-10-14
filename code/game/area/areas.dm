@@ -33,11 +33,6 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/oneoff_light = 0
 	var/oneoff_environ = 0
 
-	// Continuous "static" power usage - Do not update these directly!
-	var/static_equip = 0
-	var/static_light = 0
-	var/static_environ = 0
-
 	var/music = null
 	var/has_gravity = TRUE // Don't check this var directly; use get_gravity() instead
 	var/obj/machinery/power/apc/apc = null
@@ -46,9 +41,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	/// The APC switched emergency lighting off (derived from it; the lights read it).
 	var/lights_emergency_off = FALSE
 	var/no_air = null
-//	var/list/lights				// list of all lights on this area
 	var/list/all_doors = null		//Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
-	var/list/all_arfgs = null		//Similar, but a list of all arfgs adjacent to this area
 	var/firedoors_closed = 0
 	var/arfgs_active = 0
 	var/list/ambience
@@ -69,18 +62,17 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(GLOB.areas_by_type[type] == src)
 		GLOB.areas_by_type -= type
 
+// ALLOW(init/FRAMEWORK): the area base of the init chain sets its ceiling and lighting
 /area/Initialize(mapload)
 	apply_ceiling()
 	. = ..()
 	luminosity = !(dynamic_lighting)
-	icon_state = ""
-	return INITIALIZE_HINT_LATELOAD // Areas tradiationally are initialized AFTER other atoms.
 
-/area/LateInitialize()
+/// An area's pass after the map load: its power state and spoiler cover, once its machines exist (area_after_init() is extended by the
+/// away-mission spawns and the turf initializers).
+/area/proc/area_after_init(datum/act/timer/A)
 	if(!requires_power || !apc)
-		power_light = 0
-		power_equip = 0
-		power_environ = 0
+		set_channels(FALSE, FALSE, FALSE, notify = FALSE)
 	power_change()		// all machines set to current power level, also updates lighting icon
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
@@ -143,8 +135,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if (danger_level < 1 || danger_level >= 2)
 			firedoors_update()
 
-		for (var/obj/machinery/alarm/AA in area_contents_of_type(src, /obj/machinery/alarm))
-			AA.update_icon()
+		air_alarms_refresh()
 
 		return 1
 	return 0
@@ -204,59 +195,69 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/proc/fire_alert()
 	if(!fire)
-		fire = 1	//used for firedoor checks
-		update_icon()
+		set_fire(1)	//used for firedoor checks
 		firedoors_update()
 
 /area/proc/fire_reset()
 	if (fire)
-		fire = 0	//used for firedoor checks
-		update_icon()
+		set_fire(0)	//used for firedoor checks
 		firedoors_update()
 
 /area/proc/readyalert()
 	if(!eject)
-		eject = 1
-		update_icon()
+		set_eject(1)
 	return
 
 /area/proc/readyreset()
 	if(eject)
-		eject = 0
-		update_icon()
+		set_eject(0)
 	return
 
 /area/proc/partyalert()
 	if (!( party ))
-		party = 1
-		update_icon()
+		set_party(1)
 		firedoors_update()
 	return
 
 /area/proc/partyreset()
 	if (party)
-		party = 0
-		update_icon()
+		set_party(0)
 		firedoors_update()
 	return
 
-DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/area/appearance_overlays()
-	. = list()
+/area/draw(datum/look/look)
+	..()
+	look.state("") // in game an area shows nothing (its map sprite marks it in the editor) but an alarm
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
-			icon_state = null // Let lights take care of it
+			look.state("") // Let lights take care of it
 		/*else if(atmosalm && !fire && !eject && !party)
-			icon_state = "bluenew"*/
+			look.state("bluenew")*/
 		else if(!fire && eject && !party)
-			icon_state = "red"
+			look.state("red")
 		else if(party && !fire && !eject)
-			icon_state = "party"
+			look.state("party")
 		else
-			icon_state = "blue-red"
+			look.state("blue-red")
 	else
 	//	new lighting behaviour with obj lights
-		icon_state = null
+		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
+
+
+/// The one writer of the area's channel state (is each channel energized): its APC, an event that darkens the area, the area's own setup. The
+/// vars are tracked: every machine's has_power reads them (generated deps), so a flip reaches the machines through that stat's on_change hook,
+/// and `notify` publishes the area's own observer_apc notice. Returns TRUE when a channel flipped.
+/area/proc/set_channels(equip_on, light_on, environ_on, notify = TRUE)
+	var/flipped = FALSE
+	if(set_power_equip(!!equip_on))
+		flipped = TRUE
+	if(set_power_light(!!light_on))
+		flipped = TRUE
+	if(set_power_environ(!!environ_on))
+		flipped = TRUE
+	if(flipped && notify)
+		PUBLISH_LEGACY(src, /datum/notice/observer_apc)
+	return flipped
 
 /area/proc/powered(chan)		// return true if the area has power to given channel
 
@@ -274,40 +275,42 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 
 	return 0
 
-/// Machines told about this area's channel changes (see power_subscriber).
+/// The machines standing in this area: the other end of their power_area relation. Each contributes its draw to the demand stats, and its
+/// has_power reads this area's channels.
 /area/var/list/power_machines
 
-/area/proc/power_subscribe(obj/machinery/M)
-	rel_add(src, nameof(power_machines), M)
-
-/area/proc/power_unsubscribe(obj/machinery/M)
-	rel_remove(src, nameof(power_machines), M)
-
-// Called once per area channel change (the APC's Rust power event). Lights and
-// other reactor subscribers hear the key; subscribed machines re-check their
-// power, and the base power_change() emits machinery_power_lost or
-// machinery_power_restored when it flips.
+/// Every machine in the area re-reads its power now (power_change(): it acts only on a flip). Not the path of a channel change, which reaches
+/// the machines through their has_power stat (its on_change hook); this is the area's first sync after the map load and a light switch's use
+/// (a light's own power reads the switch).
 /area/proc/power_change()
-	changed(src, CHANGE_AREA_POWER)
 	for(var/obj/machinery/M as anything in power_machines)
 		M.power_change()
-	if (fire || eject || party)
-		update_icon()
 
+/// Watts the area's machines ask of `chan` (the standing draw, the sum of their contributions) plus the one-off draws booked since the last
+/// power step. `include_static` FALSE leaves the standing draw out.
 /area/proc/usage(chan, include_static = TRUE)
 	var/used = 0
 	switch(chan)
 		if(LIGHT)
-			used += oneoff_light + (include_static * static_light)
+			used += oneoff_light + (include_static ? demand(LIGHT) : 0)
 		if(EQUIP)
-			used += oneoff_equip + (include_static * static_equip)
+			used += oneoff_equip + (include_static ? demand(EQUIP) : 0)
 		if(ENVIRON)
-			used += oneoff_environ + (include_static * static_environ)
+			used += oneoff_environ + (include_static ? demand(ENVIRON) : 0)
 		if(TOTAL)
-			used += oneoff_light + (include_static * static_light)
-			used += oneoff_equip + (include_static * static_equip)
-			used += oneoff_environ + (include_static * static_environ)
+			used += usage(LIGHT, include_static) + usage(EQUIP, include_static) + usage(ENVIRON, include_static)
 	return used
+
+/// The standing draw of the area's machines on `chan`: the area's demand stat, the sum of every machine's contribution.
+/area/proc/demand(chan)
+	switch(chan)
+		if(LIGHT)
+			return stat_value(src, STAT_DEMAND_LIGHT)
+		if(EQUIP)
+			return stat_value(src, STAT_DEMAND_EQUIP)
+		if(ENVIRON)
+			return stat_value(src, STAT_DEMAND_ENVIRON)
+	return 0
 
 // Helper for APCs; will generally be called every tick.
 /area/proc/clear_usage()
@@ -326,68 +329,14 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 			oneoff_environ += amount
 	if(amount)
 		power_loads_changed()
-		changed(src, CHANGE_AREA_POWER)
 	return amount
 
-// This is used by machines to properly update the area of power changes.
-/area/proc/power_use_change(old_amount, new_amount, chan)
-	use_power_static(new_amount - old_amount, chan) // Simultaneously subtract old_amount and add new_amount.
-
-// Not a proc you want to use directly unless you know what you are doing; see use_power_oneoff above instead.
-/area/proc/use_power_static(amount, chan)
-	switch(chan)
-		if(EQUIP)
-			static_equip += amount
-		if(LIGHT)
-			static_light += amount
-		if(ENVIRON)
-			static_environ += amount
-	if(amount)
-		power_loads_changed()
-		changed(src, CHANGE_AREA_POWER)
-
-// This recomputes the continued power usage; can be used for testing or error recovery, but is not called every tick.
-/area/proc/retally_power()
-	static_equip = 0
-	static_light = 0
-	static_environ = 0
-	for(var/obj/machinery/M in area_contents_of_type(src, /obj/machinery))
-		switch(M.power_channel)
-			if(EQUIP)
-				static_equip += M.get_power_usage()
-			if(LIGHT)
-				static_light += M.get_power_usage()
-			if(ENVIRON)
-				static_environ += M.get_power_usage()
-	power_loads_changed()
-
-//////////////////////////////////////////////////////////////////
-
-/area/vv_get_dropdown()
-	. = ..()
-	VV_DROPDOWN_OPTION("check_static_power", "Check Static Power")
-
-VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_power), TOPIC_RIGHTS(R_DEBUG))
-
-/area/proc/vv_topic_check_static_power(mob/user, list/args)
-	check_static_power(user)
-	user.client?.debug_variables(src)
-	return TRUE
-
-// Debugging proc to report if static power is correct or not.
-/area/proc/check_static_power(user)
-	set name = "Check Static Power"
-	var/actual_static_equip = static_equip
-	var/actual_static_light = static_light
-	var/actual_static_environ = static_environ
-	retally_power()
-	if(user)
-		var/list/report = list("[src] ([type]) static power tally:")
-		report += "EQUIP:   Actual: [actual_static_equip] Correct: [static_equip] Difference: [actual_static_equip - static_equip]"
-		report += "LIGHT:   Actual: [actual_static_light] Correct: [static_light] Difference: [actual_static_light - static_light]"
-		report += "ENVIRON: Actual: [actual_static_environ] Correct: [static_environ] Difference: [actual_static_environ - static_environ]"
-		to_chat(user, report.Join("\n"))
-	return (actual_static_equip == static_equip && actual_static_light == static_light && actual_static_environ == static_environ)
+/// The lights standing in the area (a copy; the fixtures are among the machines that name it as their power_area).
+/area/proc/lights_here()
+	var/list/found = list()
+	for(var/obj/machinery/light/L in power_machines)
+		found += L
+	return found
 
 //////////////////////////////////////////////////////////////////
 
@@ -462,6 +411,7 @@ VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_powe
 			thunk(M)
 		M.update_floating( M.Check_Dense_Object() )
 		M.update_gravity(get_gravity())
+		PUBLISH_CHANGE(M, MOB_KEY_GROUND)
 
 /area/proc/thunk(mob)
 	if(istype(get_turf(mob), /turf/space)) // Can't fall onto nothing.
@@ -471,7 +421,7 @@ VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_powe
 		var/mob/living/carbon/human/H = mob
 		if(H?.buckled_to())
 			return // Being buckled to something solid keeps you in place.
-		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+		if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 			return
 		if(H.is_incorporeal()) // Phaseshifted beings should not be affected by gravity
 			return
@@ -479,10 +429,10 @@ VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_powe
 			return
 
 		if(H.m_intent == I_RUN)
-			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
+			H.status_adjust(STAT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(6) // No longer weakens.
 		else
-			H.status_adjust(EFFECT_STUNNED, 1) // No longer a supermassive long stun.
+			H.status_adjust(STAT_STUNNED, 1) // No longer a supermassive long stun.
 // H.AdjustWeakened(3) // No longer weakens.
 		to_chat(mob, span_notice("The sudden appearance of gravity makes you fall to the floor!"))
 		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
@@ -584,6 +534,8 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	else
 		cut_overlay(GLOB.spoiler_obfuscation_image)
 
+TRACKED(/area, flags)
+
 /area/proc/flag_check(flag, match_all = FALSE)
 	if(match_all)
 		return (flags & flag) == flag
@@ -650,10 +602,8 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
  */
 /area/proc/setup(a_name)
 	name = a_name
-	power_equip = FALSE
-	power_light = FALSE
-	power_environ = FALSE
-	always_unpowered = FALSE
+	set_channels(FALSE, FALSE, FALSE, notify = FALSE)
+	set_always_unpowered(FALSE)
 	update_areasize()
 
 /area/proc/update_areasize()
@@ -673,43 +623,25 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /area/proc/power_check()
 	if(!requires_power || !apc)
-		power_light = 0
-		power_equip = 0
-		power_environ = 0
+		set_channels(FALSE, FALSE, FALSE, notify = FALSE)
 	power_change()		// all machines set to current power level, also updates lighting icon
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
-/// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
-/// areas are never relation targets). A dying APC leaves it.
-/area/relations()
-	. = ..()
-	. += rel_one(nameof(apc))
-
-/// What the area's lights read from its APC, derived through the apc relation: the lights read these through theirs.
-/area/derived()
-	. = ..()
-	. += derive(nameof(lights_nightshift), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_lights)), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_setting)))
-	. += derive(nameof(lights_emergency_off), rel(nameof(apc), nameof(/obj/machinery/power/apc::emergency_lights)))
-
-/// Night lighting: the night shift's ask to the APC, under the APC's UI setting.
-/area/proc/derive_lights_nightshift()
-	if(!apc)
-		return FALSE
-	switch(apc.nightshift_setting)
-		if(NIGHTSHIFT_NEVER)
-			return FALSE
-		if(NIGHTSHIFT_ALWAYS)
-			return TRUE
-	return !!apc.nightshift_lights
-
-/area/proc/derive_lights_emergency_off()
-	return !!apc?.emergency_lights
-
+/// The area's APC is the other end of the APC's `area` link (links() in the APC's CAPABILITIES): rel_set() on either end writes both, and a
+/// dying APC lets go. The APC also feeds the area's lights_nightshift and lights_emergency_off (its contributes_to entries).
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.
-/area/reactions()
-	. = ..()
-	. += on_change(list(nameof(apc)), PROC_REF(apc_changed))
+CAPABILITIES(/area)
+	after_init(0, then(PROC_REF(area_after_init)))
+	ref_one(nameof(main_air_alarm), /obj/machinery/alarm)
+	on_change(nameof(apc), ANY, then(PROC_REF(apc_changed)))
+	on_change(STAT_DEMAND_EQUIP, ANY, then(PROC_REF(demand_changed)))
+	on_change(STAT_DEMAND_LIGHT, ANY, then(PROC_REF(demand_changed)))
+	on_change(STAT_DEMAND_ENVIRON, ANY, then(PROC_REF(demand_changed)))
 
-/area/proc/apc_changed(list/keys)
+/area/proc/apc_changed(datum/act/A)
+	power_loads_changed()
+
+/// What the area's machines ask of a channel changed: its APC takes the new load at the next power step.
+/area/proc/demand_changed(datum/act/A)
 	power_loads_changed()

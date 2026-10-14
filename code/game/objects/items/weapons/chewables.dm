@@ -2,44 +2,42 @@
 	name = "chewable item master"
 	desc = "If you are seeing this, ahelp it."
 	icon = 'icons/inventory/face/item.dmi'
-	drop_sound = SFX_ITEMS_DROP_FOOD
-	body_parts_covered = 0
 
 	var/type_butt = null
 	var/chem_volume = 0
 	var/chewtime = 0
 	var/brand
-	var/wrapped = FALSE
+	var/wrapped = FALSE // a wrapped one has no slot_flags until unwrapped (each wrapped type sets slot_flags = null)
+	flags = NOREACT // so it doesn't react until you light it
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
+
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
-OM_FIELD(/obj/item/clothing/mask/chewable, chewing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/chewable, PERIODIC_SECOND, "chewing")
+/obj/item/clothing/mask/chewable/var/chewing = FALSE
+TRACKED(/obj/item/clothing/mask/chewable, chewing)
+CAPABILITIES(/obj/item/clothing/mask/chewable)
+	configure(item_worn(covers = 0))
+	setup(PROC_REF(configure_wrapped_slots))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
+	reagents(nameof(chem_volume))
+	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
+	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
-
-/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
-/obj/item/clothing/mask/chewable/proc/chewable_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using it in the hand unwraps it; the clothing's own self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/chewable/proc/unwrapped(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wrapped)
-		wrapped = FALSE
+		set_wrapped(FALSE)
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
-		slot_flags = SLOT_EARS | SLOT_MASK
-		update_icon()
-	return FALSE
+		set_slot_flags(SLOT_EARS | SLOT_MASK)
+	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/mask/chewable/appearance_overlays()
-	. = list()
+/obj/item/clothing/mask/chewable/draw(datum/look/look)
+	..()
 	if(wrapped)
-		. += "[initial(icon_state)]_wrapper"
+		look.overlay("[initial(icon_state)]_wrapper")
 
-/obj/item/clothing/mask/chewable/Initialize(mapload)
-	. = ..()
-	flags |= NOREACT // so it doesn't react until you light it
-	if(wrapped)
-		slot_flags = null
 
 /obj/item/clothing/mask/chewable/equipped(mob/living/user, slot)
 	..()
@@ -64,7 +62,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, a
 		else
 			set_chewing(FALSE)
 
-/obj/item/clothing/mask/chewable/periodic_step()
+/obj/item/clothing/mask/chewable/proc/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		spitout()
@@ -76,10 +74,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, a
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitwad
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
 	chem_volume = 50
 	chewtime = 300
 	brand = "tobacco"
+
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 
 /obj/item/clothing/mask/chewable/proc/spitout(transfer_color = 1, no_message = 0)
 	if(type_butt)
@@ -95,24 +95,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, a
 				to_chat(M, span_notice("The [name] runs out of flavor."))
 			if(M.get_equipped_item(SLOT_ID_MASK))
 				M.remove_from_mob(src) //un-equip it so the overlays can update
-				M.update_inv_wear_mask(0)
+				changed(src)
 				if(!M.equip_to_slot_if_possible(butt, SLOT_ID_MASK))
-					M.update_inv_l_hand(0)
-					M.update_inv_r_hand(1)
+					changed(src)
 					M.put_in_hands(butt)
-	qdel(src)
+	consume(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap
 	name = "chewing tobacco"
 	desc = "A chewy wad of tobacco. Cut in long strands and treated with syrup so it tastes less like an ash-tray when you stuff it into your face."
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/cheap, null, list(REAGENT_ID_NICOTINE = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/cheap)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
 
 /obj/item/clothing/mask/chewable/tobacco/fine
 	name = "deluxe chewing tobacco"
 	desc = "A chewy wad of fine tobacco. Cut in long strands and treated with syrup so it doesn't taste like an ash-tray when you stuff it into your face."
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/fine, null, list(REAGENT_ID_NICOTINE = 3))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/fine)
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 3)))
 
 /obj/item/clothing/mask/chewable/tobacco/nico
 	name = "nicotine gum"
@@ -121,7 +122,9 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/fine, null, list(REAGE
 	type_butt = /obj/item/trash/spitgum
 	wrapped = TRUE
 
-DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, list(REAGENT_ID_NICOTINE = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2), tint = TRUE))
 
 /obj/item/storage/chewables
 	name = "box of chewing wads master"
@@ -129,12 +132,14 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "cigpacket"
 	item_state = "cigpacket"
-	drop_sound = SFX_ITEMS_DROP_SHOVEL
 	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	w_class = ITEMSIZE_SMALL
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco = 6)
+
+CAPABILITIES(/obj/item/storage/chewables)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL))
 
 /obj/item/storage/chewables/Initialize(mapload)
 	. = ..()
@@ -165,45 +170,33 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 	item_state = "Epacket"
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco/nico = 6)
 	storage_slots = 6
-	drop_sound = SFX_ITEMS_DROP_BOX
 	use_sound = SFX_ITEMS_STORAGE_BOX
 	var/open = 0
 	var/open_state
 	var/closed_state
 
-/obj/item/storage/box/fancy/chewables/tobacco/nico/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/fancy/chewables/tobacco/nico)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/fancy/chewables/tobacco/nico/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
+
+/obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(contents_count(src) >= 1)
-			. += "chew_nico[contents.len]"
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (open_state || "[initial(icon_state)]0"))
+		if(held_count() >= 1)
+			look.overlay("chew_nico[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (closed_state || initial(icon_state)))
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
-	if(contents_count(src) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		update_icon()
+	set_open(TRUE)
 	..()
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
-	open = FALSE
-	if(contents_count(src) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		update_icon()
+	set_open(FALSE)
 	..()
 
 /obj/item/clothing/mask/chewable/candy
@@ -213,11 +206,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitgum
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
 	chem_volume = 50
 	chewtime = 300
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
+
+/// A wrapped candy's random fruit flavour (rolls()) and how much of it it holds; the candy takes the colour of what it holds.
+/obj/item/clothing/mask/chewable/candy/var/flavour
+/obj/item/clothing/mask/chewable/candy/var/flavour_amount = 0
+
+/// The rolled flavour (reagents(contents_from =)).
+/obj/item/clothing/mask/chewable/candy/proc/flavour_contents()
+	return flavour ? list("[flavour]" = flavour_amount) : null
+
 
 /obj/item/clothing/mask/chewable/candy/gum
 	name = "chewing gum"
@@ -225,12 +228,13 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	icon_state = "gum"
 	item_state = "gum"
 	wrapped = TRUE
+	flavour_amount = 10
 
-/obj/item/clothing/mask/chewable/candy/gum/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): random flavour
-	color = reagents.get_color()
-	update_icon()
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
+	configure(item_worn(slots = TRAIT_NONE))
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
+	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
+
 
 /obj/item/storage/box/gum
 	name = "\improper Frooty-Choos flavored gum"
@@ -239,17 +243,20 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "gum_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/gum = 5)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 5
 	foldable = null
 	trash = /obj/item/trash/gumpack
 
-TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/gum, \
-					/obj/item/trash/spitgum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/gum)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/chewable/candy/gum,
+		/obj/item/trash/spitgum)))
 
 /obj/item/clothing/mask/chewable/candy/lolli
 	name = "lollipop"
@@ -258,9 +265,10 @@ TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/c
 	icon_state = "lollipop"
 	item_state = "lollipop"
 	wrapped = TRUE
+	flavour_amount = 20
 	var/list/victims = null
 
-/obj/item/clothing/mask/chewable/candy/lolli/periodic_step()
+/obj/item/clothing/mask/chewable/candy/lolli/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		spitout(0)
@@ -289,44 +297,50 @@ TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/c
 		var/mob/living/M = loc
 		if(!isliving(M))
 			return ..()
-		if(M.can_be_drop_pred && M.food_vore && M.vore_selected)
+		if(M.vore_prefs.can_be_drop_pred && M.vore_prefs.food_vore && vore_selected_of(M))
 			for(var/mob/living/F in victims)
-				if(!F.can_be_drop_prey || !F.food_vore)
+				if(!F.vore_prefs.can_be_drop_prey || !F.vore_prefs.food_vore)
 					to_chat(F, span_warning("You manage to pull yourself free of \the [src] at the last second!"))
 					to_chat(M, span_notice("[F] barely escapes from your mouth!"))
 					F.forceMove(get_turf(src))
-				else if(!F.move_into(M.vore_selected, BELLY_SLOT_INTERIOR, M))
+				else if(!move_into(vore_selected_of(M), BELLY_SLOT_INTERIOR, F, M))
 					F.forceMove(get_turf(src))
 				own_take_member(src, nameof(victims), F)
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(null, PROC_REF(lolli_item)))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
+	configure(item_worn(slots = TRAIT_NONE))
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
+	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
+	op("stick_on", item(/obj/item/holder), passes(), then(PROC_REF(stuck_on)))
 
-/// Old attackby.
-/obj/item/clothing/mask/chewable/candy/lolli/proc/lolli_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// A small living thing in a holder can be stuck to the lollipop (unwrapped); the click goes on.
+/obj/item/clothing/mask/chewable/candy/lolli/proc/stuck_on(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/holder))
 		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
+			return OP_DECLINE
 
 		if(wrapped)
 			to_chat(user, span_warning("You cannot stick [W] to \the [src] without unwrapping it!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_OK
 
 		var/obj/item/holder/H = W
 
 		if(!victims)
-			own_set(src, nameof(victims), list())
+			rel_set(src, nameof(victims), list())
 
 		var/mob/living/M = H.held_mob
 
-		own_add(src, nameof(src.victims), M, user = user, into = TRUE) // out of the holder
+		move_into(src, nameof(src.victims), M, user) // out of the holder
 		rel_clear(H, nameof(H.held_mob))
 		consume(H, user)
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
 		to_chat(M, span_warning("[user] sticks you to \the [src]!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_OK
+	return OP_OK
 
 /obj/item/clothing/mask/chewable/candy/lolli/examine(mob/user)
 	. = ..()
@@ -334,11 +348,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 		if(victims && victims.len)
 			. += span_notice("It has [english_list(victims)] stuck on it.")
 
-/obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): random flavour
-	color = reagents.get_color()
-	update_icon()
 
 /obj/item/storage/box/pocky
 	name = "\improper Totemo yoi Pocky"
@@ -349,12 +358,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/pocky = 8)
 	use_sound = SFX_ITEMS_DROP_PAPER
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
 	max_storage_space = 8
 	foldable = null
 	trash = /obj/item/trash/pocky
 
-TYPE_TABLE(/obj/item/storage/box/pocky, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/pocky)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/pocky)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
+	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky)))
 
 /obj/item/clothing/mask/chewable/candy/pocky
 	name = "chocolate pocky"
@@ -363,9 +374,10 @@ TYPE_TABLE(/obj/item/storage/box/pocky, hold_spec, list(HOLD_ONLY(list(/obj/item
 	item_state = "pocky"
 	type_butt = null
 
-DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGENT_ID_CHOCOLATE = 5))
+CAPABILITIES(/obj/item/clothing/mask/chewable/candy/pocky)
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATE = 5)))
 
-/obj/item/clothing/mask/chewable/candy/pocky/periodic_step()
+/obj/item/clothing/mask/chewable/candy/pocky/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		if(ismob(loc))
@@ -374,4 +386,8 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGEN
 
 /obj/item/clothing/mask/chewable/candy/lolli/ownership()
 	. = ..()
-	. += owns(nameof(victims), policy = OWN_SPILL)
+	. += owns(nameof(victims), policy = OWN_SPILL, is_list = TRUE)
+
+/obj/item/clothing/mask/chewable/proc/configure_wrapped_slots()
+	if(wrapped)
+		set_slot_flags(null)

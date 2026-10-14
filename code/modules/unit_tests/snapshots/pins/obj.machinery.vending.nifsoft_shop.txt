@@ -1,0 +1,76 @@
+human|none menu: Check vending logs (refused: You do not have the required access to view the vending logs for this machine.)
+human|none menu: Open controls
+human|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Check vending logs
++2 menu: Open controls
++3 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++4 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++5 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls (refused: You can't do that that way.)
++2 click: Click: Open controls
+@obj ghost|none
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver click: Click: Open
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/multitool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/multitool click: Click: Pulse wires
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Open with item
+@obj.machinery human|/obj/item
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.machinery human|/obj/item/card/emag
+-menu: Climb
+-menu: Use cryptographic sequencer
++0 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++1 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj human|/obj/item/coin
+@obj human|/obj/item/fake_coin
+@obj human|/obj/item/refill_cartridge
+wires: Contraband, Electrification, ID Scan, Item Throw
+keys: anchor.toggle, check_logs, drag_buckle, emag.subvert, emag.use, insert_coin, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_with_item, panel.open, refill, reject_fake_coin, remove_coin, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, stock, toggle_voice, ui_open, vend, wires.cut, wires.pulse

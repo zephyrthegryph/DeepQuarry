@@ -33,9 +33,9 @@
 
 /// Straps a shield generator with `cell` (costing 1 charge per point absorbed) to `H`'s back and
 /// raises shield `effect_type`. Returns the generator.
-/datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/cell)
+/datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/device/cell)
 	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator)
-	own_set(G, nameof(G.bcell), cell)
+	rel_set(G, nameof(G.bcell), cell)
 	G.damage_cost = 1
 	TEST_ASSERT(H.equip_to_slot_if_possible(G, SLOT_ID_BACK, disable_warning = TRUE), "the shield generator should equip")
 	TEST_ASSERT(H.apply_body_effect(effect_type), "the shield should come up")
@@ -255,9 +255,9 @@
 	var/blunt = H.injure(INJURY_BLUNT, 4, BP_TORSO, flags = INJURE_SILENT)
 	TEST_ASSERT(dq_near(blunt, base_blunt * 0.5), "physical injury should read BF_INCOMING_PHYSICAL ([base_blunt] -> [blunt])")
 
-	H.status_set(EFFECT_STUNNED, 0)
-	H.status_at_least(EFFECT_STUNNED, 10)
-	TEST_ASSERT_EQUAL(H.status_units(EFFECT_STUNNED), 5, "stuns should read BF_DISABLE_DURATION")
+	H.status_set(STAT_STUNNED, 0)
+	H.status_at_least(STAT_STUNNED, 10)
+	TEST_ASSERT_EQUAL(H.status_units(STAT_STUNNED), 5, "stuns should read BF_DISABLE_DURATION")
 
 	// Simple mobs read the same factors for ranged combat.
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)
@@ -304,16 +304,16 @@
 	TEST_ASSERT(H.get_equipped_item(SLOT_ID_HAND_L) != W, "a blocked left hand should drop what it holds")
 
 
-/// Energy shields keep their charge-dependent resistance (injure() stage 2, /datum/om/event/living_shield_injury).
+/// Energy shields keep their charge-dependent resistance (injure() stage 2, /datum/definition_event/living_shield_injury).
 /datum/unit_test/dq_body_factor_energy_shield
 
 /datum/unit_test/dq_body_factor_energy_shield/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/cell/C = allocate(/obj/item/cell/high)
+	var/obj/item/cell/C = allocate(/obj/item/cell/device/weapon) // the generator takes device cells only
 	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn, C)
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT), 0, "a fully charged brute shield should absorb everything")
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
-	C.charge = 0
+	C.set_charge(0)
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT) > 0, "an empty shield should let the hit through")
 	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), 2), "the shield's conductivity is an ordinary factor")
 
@@ -327,7 +327,7 @@
 	TEST_ASSERT_EQUAL(lines[1], "Airway: -80% at full severity", "multipliers print as a percent change")
 	TEST_ASSERT_EQUAL(lines[2], "Heart rate: +15 bpm at full severity", "additive factors print with their unit")
 	// Every authored reagent and affliction table only names real factors.
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		for(var/factor_id in R.factors)
 			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT, "[R.type] has an invalid factor id [factor_id]")

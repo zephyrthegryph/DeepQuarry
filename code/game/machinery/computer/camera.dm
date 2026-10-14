@@ -6,7 +6,6 @@
 
 	icon_keyboard = "security_key"
 	icon_screen = "cameras"
-	light_color = "#a91515"
 	circuit = /obj/item/circuitboard/security
 
 	var/mapping = 0//For the overview file, interesting bit of code.
@@ -15,49 +14,40 @@
 	var/datum/tgui_module/camera/camera
 	var/camera_datum_type = /datum/tgui_module/camera
 
-/obj/machinery/computer/security/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/computer/security)
+	configure(light_glow(color = "#a91515"))
+	owns_one(nameof(camera), /datum/tgui_module/camera, starts = PROC_REF(make_camera))
+	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
+	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("security_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(security_robot_use)))
+
+/// The starting camera view (owns_one(starts =)): built for the networks the map gave it, else the default ones.
+/obj/machinery/computer/security/proc/make_camera(current)
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	own_set(src, nameof(camera), new camera_datum_type(src, network))
+	return new camera_datum_type(src, network)
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()
 
-
 /obj/machinery/computer/security/ui_redirect(mob/user)
 	return camera
 
-DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
-
-/obj/machinery/computer/security/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/security_open_ui,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Use", PROC_REF(security_robot_use)))
-	..()
-
-/// The old attack_hand: never called ..(), so it stays ungated.
-/datum/interaction/machine_hand/ungated/security_open_ui
-	id = "security_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/security/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/security/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/security/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_robot: a cyborg that isn't an AI shell uses it by hand; a shell interfaces as the AI.
-/obj/machinery/computer/security/proc/security_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		var/mob/living/silicon/robot/R = user
-		if(!R.shell)
-			attack_hand(user)
-			return TRUE
-	return FALSE
+/obj/machinery/computer/security/proc/security_robot_use(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.actor // the op's when() admits cyborgs only
+	if(R.shell)
+		return OP_DECLINE
+	attack_hand(R)
+	return OP_OK
 
 /obj/machinery/computer/security/proc/set_network(list/new_network)
 	network = new_network
@@ -87,7 +77,6 @@ DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
 	icon = 'icons/obj/entertainment_monitor.dmi'
 	icon_state = "screen"
 	icon_screen = null
-	light_color = "#FFEEDB"
 	light_range_on = 2
 	network = list(NETWORK_THUNDER)
 	circuit = /obj/item/circuitboard/security/telescreen/entertainment
@@ -101,13 +90,16 @@ DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment, "radio", /obj/item/radio)
+CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
+	configure(light_glow(color = "#FFEEDB"))
+	owns_one(nameof(radio), starts = /obj/item/radio)
+	click_on(PROC_REF(click_input))
+	ref_one(nameof(pinboard), /obj/effect/overlay/vis)
+	ref_one(nameof(showing), /atom)
 
 /obj/machinery/computer/security/telescreen/entertainment/Initialize(mapload)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
-
-	add_overlay(MAT_GLASS)
 
 	rel_set(src, nameof(pinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	pinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
@@ -130,7 +122,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 	radio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
-
 // stops showing its feed.
 /obj/machinery/computer/security/telescreen/entertainment/on_destroy(force)
 	if(showing)
@@ -145,27 +136,31 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 	else if(operable())
 		radio?.on = TRUE
 
-/obj/machinery/computer/security/telescreen/entertainment/Click(location, control, params)
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/machinery/computer/security/telescreen/entertainment/proc/click_input(datum/act/input/A)
+	if(!handle_click_with_actor(A.actor, A.params))
+		return INPUT_FALLTHROUGH
+
+/obj/machinery/computer/security/telescreen/entertainment/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
+		if(isliving(user) && Adjacent(user) && !user.incapacitated())
 			toggle()
-			act_message(usr, src, MSG_SELF(span_info("You toggle %T% [enabled ? "on" : "off"].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " toggles %T% [enabled ? "on" : "off"].")), runemessage = "click")
+			act_message(user, src, MSG_SELF(span_info("You toggle %T% [enabled ? "on" : "off"].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " toggles %T% [enabled ? "on" : "off"].")), runemessage = "click")
 	// start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
-			return
+			return TRUE
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		attack_hand(usr)
-		return
-	..()
+		attack_hand(user)
+		return TRUE
+	return FALSE
 	// end
 
-APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 /obj/machinery/computer/security/telescreen/entertainment/proc/show_thing(atom/thing)
 	if(!enabled)
 		return
 	if(showing)
 		stop_showing()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 	rel_set(src, nameof(showing), thing)
 	if(pinboard)
@@ -183,7 +178,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 
 /obj/machinery/computer/security/telescreen/entertainment/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		radio?.on = FALSE
 		stop_showing()
 	else if(enabled)
@@ -196,8 +191,10 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_keyboard = null
 	icon_screen = "detective_tv"
 	circuit = /obj/item/circuitboard/security/tv
-	light_color = "#3848B3"
 	light_power_on = 0.5
+
+CAPABILITIES(/obj/machinery/computer/security/wooden_tv)
+	configure(light_glow(color = "#3848B3"))
 
 /obj/machinery/computer/security/mining
 	name = "outpost camera monitor"
@@ -206,7 +203,9 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_screen = "mining"
 	network = list(NETWORK_MINE)
 	circuit = /obj/item/circuitboard/security/mining
-	light_color = "#F9BBFC"
+
+CAPABILITIES(/obj/machinery/computer/security/mining)
+	configure(light_glow(color = "#F9BBFC"))
 
 /obj/machinery/computer/security/engineering
 	name = "engineering camera monitor"
@@ -214,7 +213,9 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_keyboard = "power_key"
 	icon_screen = "engie_cams"
 	circuit = /obj/item/circuitboard/security/engineering
-	light_color = "#FAC54B"
+
+CAPABILITIES(/obj/machinery/computer/security/engineering)
+	configure(light_glow(color = "#FAC54B"))
 
 /obj/machinery/computer/security/engineering/get_default_networks()
 	. = GLOB.engineering_networks.Copy()
@@ -261,4 +262,10 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_screen = "mining"
 	network = list(NETWORK_XENOBIO)
 	circuit = /obj/item/circuitboard/security/xenobio
-	light_color = "#F9BBFC"
+
+CAPABILITIES(/obj/machinery/computer/security/xenobio)
+	configure(light_glow(color = "#F9BBFC"))
+
+/obj/machinery/computer/security/telescreen/entertainment/draw(datum/look/look)
+	..()
+	look.overlay(MAT_GLASS)

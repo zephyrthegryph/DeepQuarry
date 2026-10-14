@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		- If so, is there any protection against somebody spam-clicking a link?
 	If you have any  questions about this stuff feel free to ask. ~Carn
 	*/
-// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the TOPIC_ACTION dispatcher.
+// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the link goes to the input inbox (a datum's link is an op, code/engine/parts/inputs.dm).
 /client/Topic(href, href_list, hsrc)
 	// asset_cache: the ack needs no mob, so it is handled before the usr gate (a body swap
 	// between the send and the ack must not drop it)
@@ -52,6 +52,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
+	var/mob/user = mob
 
 	#if defined(TOPIC_DEBUGGING)
 	to_world("[src]'s Topic: [href] destined for [hsrc].")
@@ -81,7 +82,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 					topiclimiter[ADMINSWARNED_AT] = minute
 					msg += " Administrators have been informed."
 					log_game("[key_name(src)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
-					message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
+					message_admins("[ADMIN_LOOKUPFLW(user)] [ADMIN_KICK(user)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
 				to_chat(src, span_danger("[msg]"))
 				return
 
@@ -105,19 +106,19 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return
 
 	// Tgui Topic middleware
-	if(tgui_Topic(href_list))
+	if(tgui_Topic(href_list, mob))
 		return
 
 	//Logs all hrefs
-	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
+	log_href("[src] (usr:[user]\[[COORD(user)]\]) : [hsrc ? "[hsrc] " : ""][href]")
 
 	//byond bug ID:2256651
 	if (asset_cache_job && session && (asset_cache_job in session.completed_asset_jobs))
 		to_chat(src, span_danger("An error has been detected in how your client is receiving resources. Attempting to correct.... (If you keep seeing these messages you might want to close byond and reconnect)"))
 		src << browse("...", "window=asset_cache_browser")
 		return
-	// The client's own href actions (TOPIC_ACTION rows on /client, below).
-	if(!hsrc && topic_dispatch(src, usr, href_list))
+	// The client's own href actions: ops of its session (code/modules/client/client_session.dm).
+	if(!hsrc && session && op_topic_href(user, session, href_list))
 		return
 
 	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
@@ -131,22 +132,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if(QDELETED(real_src))
 			return
 
-	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So we have to queue it if the server is
-	//overloaded
-	if(hsrc && hsrc != holder && DEFAULT_TRY_QUEUE_VERB(VERB_CALLBACK(src, PROC_REF(_Topic), hsrc, href, href_list)))
+	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So it goes through the input
+	//inbox, which resolves it on the spot while the tick has room and queues it for phase K if the server is overloaded
+	if(hsrc && hsrc != holder)
+		input_submit(new /datum/input_event/topic(user, hsrc, href, href_list))
 		return
 	..() //redirect to hsrc.Topic()
 
 // ---------------------------------------------------------------- the client's href actions
-
-//Admin PM
-TOPIC_ACTION(/client, "priv_msg", PROC_REF(topic_priv_msg), TOPIC_TEXT("priv_msg", 64))
-TOPIC_ACTION(/client, "mentorhelp_msg", PROC_REF(topic_mentorhelp_msg), TOPIC_TEXT("mentorhelp_msg", 64))
-TOPIC_ACTION(/client, "discord_reg", PROC_REF(topic_discord_reg), TOPIC_TEXT("discord_reg", 128))
-TOPIC_ACTION(/client, "reload_statbrowser", PROC_REF(topic_reload_statbrowser))
-TOPIC_ACTION(/client, "asset_cache_preload_data", PROC_REF(topic_asset_cache_preload_data), TOPIC_TEXT("asset_cache_preload_data"))
-TOPIC_ACTION(/client, "commandbar_typing", PROC_REF(topic_commandbar_typing), TOPIC_TEXT("verb", 64), TOPIC_NUM("argument_length"))
-TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("link", 1024))
+// Their ops are on the session (code/modules/client/client_session.dm); these are what each one does for the client.
 
 /// A client passed in an href as a client ref, a mob ref (older links) or a ckey.
 /client/proc/topic_client_or_ckey(raw)
@@ -156,20 +150,19 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		C = M?.client
 	return C
 
-/client/proc/topic_priv_msg(mob/user, list/args)
-	var/passed_key = args["priv_msg"]
+/client/proc/topic_priv_msg(mob/user, passed_key)
 	var/C = topic_client_or_ckey(passed_key)
 	if(!C && istext(passed_key))
 		C = passed_key
 	cmd_admin_pm(C, null)
 	return TRUE
 
-/client/proc/topic_mentorhelp_msg(mob/user, list/args)
-	cmd_mentor_pm(topic_client_or_ckey(args["mentorhelp_msg"]), null)
+/client/proc/topic_mentorhelp_msg(mob/user, target_key)
+	cmd_mentor_pm(topic_client_or_ckey(target_key), null)
 	return TRUE
 
-/client/proc/topic_discord_reg(mob/user, list/args)
-	var/their_id = html_decode(args["discord_reg"])
+/client/proc/topic_discord_reg(mob/user, registration_id)
+	var/their_id = html_decode(registration_id)
 	var/sane = FALSE
 	for(var/list/L as anything in GLOB.pending_discord_registrations)
 		if(!islist(L))
@@ -188,24 +181,24 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
 		return TRUE
 
-	// om_io: the player hears back when the database answers.
-	om_io(null, /datum/om/io/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
+	// io_job: the player hears back when the database answers.
+	io_job(null, /datum/io_backend/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
 	return TRUE
 
-/client/proc/topic_reload_statbrowser(mob/user, list/args)
+/client/proc/topic_reload_statbrowser(mob/user)
 	stat_panel.reinitialize()
 	return TRUE
 
-/client/proc/topic_asset_cache_preload_data(mob/user, list/args)
-	asset_cache_preload_data(args["asset_cache_preload_data"])
+/client/proc/topic_asset_cache_preload_data(mob/user, preload_data)
+	asset_cache_preload_data(preload_data)
 	return TRUE
 
-/client/proc/topic_commandbar_typing(mob/user, list/args)
-	handle_commandbar_typing(args["verb"], args["argument_length"])
+/client/proc/topic_commandbar_typing(mob/user, typed_verb, argument_length)
+	handle_commandbar_typing(typed_verb, argument_length)
 	return TRUE
 
-/client/proc/topic_open_link(mob/user, list/args)
-	src << link(args["link"])
+/client/proc/topic_open_link(mob/user, url)
+	src << link(url)
 	return TRUE
 
 ///dumb workaround because byond doesnt seem to recognize the Topic() typepath for /datum/proc/Topic() from the client Topic,
@@ -226,14 +219,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(filelength > UPLOAD_LIMIT)
 		to_chat(src, span_red("Error: AllowUpload(): File Upload too large. Upload Limit: [UPLOAD_LIMIT/1024]KiB."))
 		return 0
-/*	//Don't need this at the moment. But it's here if it's needed later.
-	//Helps prevent multiple files being uploaded at once. Or right after eachother.
-	var/time_to_wait = fileaccess_timer - world.time
-	if(time_to_wait > 0)
-		to_chat(src, span_red("Error: AllowUpload(): Spam prevention. Please wait [round(time_to_wait/10)] seconds."))
-		return 0
-	// ALLOW(sys_world_time_write): inside a commented-out block, not compiled
-	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY	*/
+	// Upload spam prevention is not needed at the moment: code/_helpers/files.dm has the timer if it is.
 	return 1
 
 	///////////
@@ -264,6 +250,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
 	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, key_step))
 
 	if(persistent_client_for(ckey))
 		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
@@ -317,7 +304,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		admin_datum.associate(src)
 		connecting_admin = TRUE
 	else if(GLOB.deadmins[ckey])
-		om_grant(src, GRANT_VERB, /client/proc/readmin, GLOB.deadmins[ckey])
+		grant(src, granted_verb(/client/proc/readmin), GLOB.deadmins[ckey])
 		connecting_admin = TRUE
 
 	if (byond_version >= 512)
@@ -325,7 +312,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			message_admins(span_adminnotice("[key_name(src)] has been detected as spoofing their byond version. Connection rejected."))
 			//add_system_note("Spoofed-Byond-Version", "Detected as using a spoofed byond version.")
 			log_suspicious_login("Failed Login: [key] - Spoofed byond version")
-			qdel(src)
+			spent(src)
 			return
 
 		if (num2text(byond_build) in GLOB.blacklisted_builds)
@@ -336,7 +323,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			if(connecting_admin)
 				to_chat_immediate(src, "As an admin, you are being allowed to continue using this version, but please consider changing byond versions")
 			else
-				qdel(src)
+				spent(src)
 				return
 
 	// A runtime in preference sanitizing (preview icon rebuilds, trait re-application) must never
@@ -355,7 +342,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		inline_js = file2text('html/statbrowser.js'),
 		inline_css = file2text('html/statbrowser.css'),
 	)
-	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
+	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	acquire_dpi()
 
@@ -409,12 +396,13 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		Destroy() //Clean up signals and timers.
 	return ..()
 
-// ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
+// A client logs out of the directory, admins and tickets.
 /client/Destroy()
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
 	GLOB.clients -= src
+	SSproximity.eye_remove(src)
 	persistent_client?.set_client(null)
 
 	log_access("Logout: [key_name(src)]")
@@ -423,14 +411,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		rel_clear(holder, nameof(holder.owner))
 		GLOB.admins -= src
 	if(skybox)
-		qdel(skybox)
+		ended_with(skybox, src)
 		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(fakeConversations)
-		qdel(fakeConversations)
+		ended_with(fakeConversations, src)
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
-	qdel(session)
+	ended_with(session, src)
 	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
@@ -456,7 +444,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 /client/proc/start_login_gate()
 	login_pending = TRUE
 	log_access("Login gate: holding [key_name(src)] for its login checks")
-	om_after_realtime(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, computer_id)
+	after(LOGIN_GATE_TIMEOUT, GLOBAL_PROC_REF(login_gate_timeout), ckey, clock = CLOCK_WORLD, with = list(computer_id))
 	log_client_to_db()
 
 /// A gate still closed after LOGIN_GATE_TIMEOUT fails open.
@@ -529,47 +517,40 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			disconnect_with_message("You have been banned.[ban["desc"]]")
 			return FALSE
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(!query.Execute())
-		qdel(query)
+	var/list/player_rows = flow_select("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(isnull(player_rows))
 		return TRUE
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
-	while(query.NextRow())
-		sql_id = query.item[1]
-		player_age = text2num(query.item[2])
-		break
+	if(length(player_rows))
+		var/list/player_row = player_rows[1]
+		sql_id = player_row[1]
+		player_age = text2num(player_row[2])
 
-	qdel(query)
 	account_join_date = findJoinDate()
 	if(account_join_date)
-		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
-		if(!query_datediff.Execute())
-			qdel(query_datediff)
+		var/list/datediff_rows = flow_select("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
+		if(isnull(datediff_rows))
 			return TRUE
-		if(query_datediff.NextRow())
-			account_age = text2num(query_datediff.item[1])
-		qdel(query_datediff)
+		if(length(datediff_rows))
+			var/list/datediff_row = datediff_rows[1]
+			account_age = text2num(datediff_row[1])
 
-	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
-	if(!query_ip.Execute())
-		qdel(query_ip)
+	var/list/ip_rows = flow_select("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
+	if(isnull(ip_rows))
 		return TRUE
 	related_accounts_ip = ""
-	while(query_ip.NextRow())
-		related_accounts_ip += "[query_ip.item[1]], "
-		break
-	qdel(query_ip)
+	if(length(ip_rows))
+		var/list/ip_row = ip_rows[1]
+		related_accounts_ip += "[ip_row[1]], "
 
-	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
-	if(!query_cid.Execute())
-		qdel(query_cid)
+	var/list/cid_rows = flow_select("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
+	if(isnull(cid_rows))
 		return TRUE
 	related_accounts_cid = ""
-	while(query_cid.NextRow())
-		related_accounts_cid += "[query_cid.item[1]], "
-		break
-	qdel(query_cid)
+	if(length(cid_rows))
+		var/list/cid_row = cid_rows[1]
+		related_accounts_cid += "[cid_row[1]], "
 
 	//Just the standard check to see if it's actually a number
 	if(sql_id)
@@ -586,7 +567,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	var/sql_computerid = src.computer_id
 	var/sql_admin_rank = admin_rank
 
-	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (GLOB.chat_service will queue it)
+	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
 
 	//Panic bunker code
 	if (isnum(player_age) && player_age == 0) //first connection
@@ -619,28 +600,27 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
-	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(query_hours.Execute())
-		while(query_hours.NextRow())
-			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
-			play_hours[query_hours.item[1]] = text2num(query_hours.item[3])
+	var/list/hours_rows = flow_select("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(!isnull(hours_rows))
+		for(var/list/hours_row as anything in hours_rows)
+			department_hours[hours_row[1]] = text2num(hours_row[2])
+			play_hours[hours_row[1]] = text2num(hours_row[3])
 	else
-		var/error_message = query_hours.ErrorMsg()
+		var/error_message = flow_sql_error()
 		log_sql("Error loading play hours for [ckey]: [error_message]")
 		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error_message]", "PROBLEMS!!")
-	qdel(query_hours)
 
 	// The writes: nothing reads them back, so they go out without holding the gate.
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		om_sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
+		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 	else
 		//New player!! Need to insert all the stuff
-		om_sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
+		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	om_sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
 	return TRUE
 
 /// The database ban check (moved here from world/IsBanned(), which can't wait on a query).
@@ -666,26 +646,23 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
 			failedcid = 1
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
-	query.Execute()
+	var/list/ban_rows = flow_select("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
 
-	while(query.NextRow())
-		var/pckey = query.item[1]
-		var/ackey = query.item[4]
-		var/reason = query.item[5]
-		var/expiration = query.item[6]
-		var/duration = query.item[7]
-		var/bantime = query.item[8]
-		var/bantype = query.item[9]
+	for(var/list/ban_row as anything in ban_rows)
+		var/pckey = ban_row[1]
+		var/ackey = ban_row[4]
+		var/reason = ban_row[5]
+		var/expiration = ban_row[6]
+		var/duration = ban_row[7]
+		var/bantime = ban_row[8]
+		var/bantype = ban_row[9]
 
 		var/expires = ""
 		if(text2num(duration) > 0)
 			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
 
 		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-		qdel(query)
 		return list("reason" = "[bantype]", "desc" = "[desc]")
-	qdel(query)
 	if (failedcid)
 		message_admins("[key] has logged in with a blank computer id in the ban check.")
 	if (failedip)
@@ -699,7 +676,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //checks if a client is afk
 //3000 frames = 5 minutes
-/// om_io() callback for the Discord registration link.
+/// io_job() callback for the Discord registration link.
 /proc/discord_registration_done(list/result, error, ckey, their_id)
 	var/client/C = GLOB.directory[ckey]
 	if(error)
@@ -715,7 +692,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	var/port = CONFIG_GET(number/register_server_port)
 	if(port)
 		// Designed to be used with `tools/registration`
-		om_http_get("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
+		http_get_async("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
 
 /// dx_winexists() callback: a client on a custom skin is told why assets may misbehave.
 /client/proc/asset_browser_checked(control_type)
@@ -738,14 +715,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): client procs (asset delivery to the client)
+	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): login-ordering hack: the delay lets the client's verb delivery finish first, and without it no client gets its verbs (a login hook replaces it)
 
 		//load info on what assets the client has
 		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")
 
 		//Precache the client with all other assets slowly, so as to not block other browse() calls
 		if (CONFIG_GET(flag/asset_simple_preload))
-			om_after_realtime(5 SECONDS, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), SSassets.transport, src, SSassets.transport.preload)
+			after(5 SECONDS, TYPE_PROC_REF(/datum/asset_transport, send_assets_slow), SSassets.transport, clock = CLOCK_WORLD, with = list(src, SSassets.transport.preload))
 
 /mob/proc/MayRespawn()
 	return FALSE
@@ -805,7 +782,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	to_chat(src, span_userdanger("You have been disconnected from the server."))
 	to_chat(src, span_warning(message))
 	to_chat(src, span_warning("If you feel this is in error, you can contact an administrator out-of-game (for example, on Discord)."))
-	qdel(src)
+	spent(src)
 
 /client/verb/toggle_fullscreen()
 	set name = "Toggle Fullscreen"
@@ -906,7 +883,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			panel_tabs = list()
 		if("Set-Tab")
 			stat_tab = payload["tab"]
-			GLOB.statpanels_service.immediate_send_stat_data(src)
+			SSstatpanels.immediate_send_stat_data(src)
 
 // Mouse stuff
 /client/Click(atom/object, atom/location, control, params)
@@ -948,9 +925,13 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		if (clicklimiter[SECOND_COUNT] > scl)
 			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
 			return
+	// Any click on the map dismisses an open interaction menu, as one dismisses BYOND's native popup
+	// (a right-click then opens the new one).
+	if(interaction_menu?.visible)
+		interaction_menu.hide()
 	// Clients cannot be hooked: the click event is emitted on the client's mob.
 	if(mob)
-		OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
+		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, usr)
 	. = ..()
 
 /// This grabs the DPI of the user per their skin (a winget round trip, through DX-exec)
@@ -963,19 +944,20 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/proc/open_filter_editor(atom/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		own_set(holder, nameof(holder.filteriffic), new /datum/filter_editor(in_atom))
+		rel_set(holder, nameof(holder.filteriffic), new /datum/filter_editor(in_atom))
 		holder.filteriffic.tgui_interact(mob)
 
 ///opens the particle editor UI for the in_atom object for this client
 /client/proc/open_particle_editor(atom/movable/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		own_set(holder, nameof(holder.particle_test), new /datum/particle_editor(in_atom))
+		rel_set(holder, nameof(holder.particle_test), new /datum/particle_editor(in_atom))
 		holder.particle_test.tgui_interact(mob)
 
 /client/proc/set_eye(new_eye)
 	if(new_eye == eye)
 		return
 	eye = new_eye
+	SSproximity.eye_update(src)
 
 /mob/proc/is_remote_viewing()
 	if(!client || !client.mob || !client.eye)

@@ -16,7 +16,7 @@
 
 	reload_time = 5		//Energy weapons are slower to reload than ballistics by default, but this is no change from current values
 
-	//self-recharging
+	//self-recharge
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/use_organic_power = 0 // If set, the weapon will draw from nutrition or blood.
 	var/recharge_time = 4
@@ -30,9 +30,13 @@
 	var/random_start_ammo = FALSE	//if TRUE, the weapon will spawn with randomly-determined ammo
 
 //if set, the weapon will recharge itself
-OM_FIELD(/obj/item/gun/energy, self_recharge, 0, CHANGE_EXPLICIT)
-/// Self-recharge (declared on self_recharge). Full, it parks; firing wakes it after a discharge.
-DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
+/obj/item/gun/energy/var/self_recharge = 0
+/// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
+/obj/item/gun/energy/var/tmp/recharge_due = TRUE
+TRACKED(/obj/item/gun/energy, self_recharge)
+TRACKED(/obj/item/gun/energy, modifystate)
+TRACKED(/obj/item/gun/energy, charge_cost)
+TRACKED(/obj/item/gun/energy, recharge_due)
 
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
@@ -45,20 +49,21 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 			rel_clear(src, nameof(power_supply))
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
-		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
-	update_icon()
+		power_supply.set_charge(charge_cost*rand(0,power_supply.maxcharge/charge_cost))
 
 /obj/item/gun/energy/get_cell()
 	return power_supply
 
-/obj/item/gun/energy/periodic_step()
+/// Self-recharge: full, it parks; firing wakes it after a discharge.
+/obj/item/gun/energy/proc/energy_gun_recharge_step(datum/act/timer/A)
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(COOLDOWN_FINISHED(src, recharge_cooldown))	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
-				return PROCESS_KILL
+				set_recharge_due(FALSE)
+				return
 
 			charge_tick++
-			if(charge_tick < recharge_time) return 0
+			if(charge_tick < recharge_time) return
 			charge_tick = 0
 
 			var/rechargeamt = power_supply.maxcharge*0.2
@@ -66,7 +71,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 			if(use_external_power)
 				var/obj/item/cell/external = get_external_power_supply()
 				if(!external || !external.use(rechargeamt)) //Take power from the borg...
-					return 0
+					return
 
 			if(use_organic_power)
 				var/mob/living/carbon/human/H
@@ -79,12 +84,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 						H = O.owner
 
 				if(istype(H))
-					var/start_nutrition = H.nutrition
+					var/start_nutrition = nutrition_of(H)
 					var/end_nutrition = 0
 
 					H.adjust_nutrition(-rechargeamt / 15)
 
-					end_nutrition = H.nutrition
+					end_nutrition = nutrition_of(H)
 
 					var/deficit = (rechargeamt / 15) - (start_nutrition - max(0, end_nutrition))
 					if(deficit > 0)
@@ -95,23 +100,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 						H.remove_blood(deficit)
 
 			power_supply.give(rechargeamt) //... to recharge 1/5th the battery
-			update_icon()
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD
 		else
 			charge_tick = 0
-	return 1
-
-/obj/item/gun/energy/switch_firemodes(mob/user)
-	if(..())
-		update_icon()
-
-DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refresh))
-
-/// The pulse drained the cell (through the contents): show the new charge.
-/obj/item/gun/energy/proc/energy_gun_emp_refresh(datum/damage_packet/packet)
-	update_icon()
 
 /obj/item/gun/energy/consume_next_projectile()
 	if(!power_supply) return null
@@ -120,45 +113,53 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	var/enhanced_cost = charge_cost * output_envelope
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
-	// Charge was drawn: wake the recharge (the self_recharge declaration refuses it on other guns).
-	om_task_periodic(src, PERIODIC_SLOW)
+	// Charge was drawn: wake the recharge.
+	set_recharge_due(TRUE)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
 	var/obj/item/projectile/projectile = new projectile_type(src)
 	if(output_envelope > 1)
 		projectile.damage *= output_envelope
-		projectile.armor_penetration += round((output_envelope - 1) * 20)
+		projectile.set_armor_penetration(combat_of(projectile).armor_penetration + (round((output_envelope - 1) * 20)))
 		projectile.color = "#88ddff"
 	return projectile
 
-/obj/item/gun/energy/proc/cell_inserted(mob/user, obj/item/cell/P)
+MSG_DEF_SELF(energy_gun/no_port, span_notice("%T% does not have a battery port."))
+MSG_DEF_SELF(energy_gun/unfitted, span_notice("This cell is not fitted for %T%."))
+MSG_DEF_SELF(energy_gun/has_cell, span_notice("%T% already has a power cell."))
+MSG_DEF(energy_gun/cell_loading, span_notice("You start to insert %I% into %T%."), "%U% is reloading %T%.")
+MSG_DEF(energy_gun/cell_loaded, span_notice("You insert %I% into %T%."), "%U% inserts %I% into %T%.")
+
+/// Whether the cell is the kind this gun takes.
+/obj/item/gun/energy/proc/cell_fits(obj/item/cell/P)
+	return istype(P, accept_cell_type)
+
+/// Refuses a cell the gun cannot take (no port, wrong kind, one already fitted) before the wait begins.
+/obj/item/gun/energy/proc/cell_load_started(datum/act/op/A)
+	var/obj/item/cell/P = A.held
+	if(self_recharge || battery_lock)
+		return MSG(energy_gun/no_port)
+	if(!cell_fits(P))
+		return MSG(energy_gun/unfitted)
+	if(power_supply)
+		return MSG(energy_gun/has_cell)
+
+/obj/item/gun/energy/proc/cell_load_time(datum/act/op/A)
+	var/obj/item/cell/P = A.held
+	return reload_time * P.w_class
+
+/obj/item/gun/energy/proc/cell_load_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/P = A.held
 	if(power_supply)
 		return
 	user.remove_from_mob(P)
 	rel_set(src, nameof(power_supply), P)
 	P.forceMove(src)
-	act_message(user, src, MSG_SELF(span_notice("You insert [P] into %T%.")), MSG_OTHERS("%U% inserts [P] into %T%."))
+	act_message_t(user, src, /datum/msg/energy_gun/cell_loaded, P)
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
-	update_held_icon()
 	user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
-
-/obj/item/gun/energy/proc/load_ammo(obj/item/C, mob/user)
-	if(istype(C, /obj/item/cell))
-		if(self_recharge || battery_lock)
-			to_chat(user, span_notice("[src] does not have a battery port."))
-			return
-		if(istype(C, accept_cell_type))
-			var/obj/item/cell/P = C
-			if(power_supply)
-				to_chat(user, span_notice("[src] already has a power cell."))
-			else
-				act_message(user, src, MSG_SELF(span_notice("You start to insert [P] into %T%.")), MSG_OTHERS("%U% is reloading %T%."))
-				om_task_timed(user, reload_time * P.w_class, src, src, PROC_REF(cell_inserted), list(user, P))
-		else
-			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return
 
 /obj/item/gun/energy/proc/unload_ammo(mob/user)
 	if(self_recharge || battery_lock)
@@ -166,29 +167,28 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 		return
 	if(power_supply)
 		user.put_in_hands(power_supply)
-		power_supply.update_icon()
 		act_message(user, src, MSG_SELF(span_notice("You remove [power_supply] from %T%.")), MSG_OTHERS("%U% removes [power_supply] from %T%."))
 		rel_clear(src, nameof(power_supply))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-		update_icon()
-		update_held_icon()
 		user.hud_used?.update_ammo_hud(user, src) // TGMC Ammo HUD
 	else
 		to_chat(user, span_notice("[src] does not have a power cell."))
 
-/// Old attackby: the parent's first, then loading.
-/obj/item/gun/energy/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	. = ..()
-	load_ammo(A, user)
-
-DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+// power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
+// the shield generator's gun, the generator's cell: a relation view across the hierarchy.
+CAPABILITIES(/obj/item/gun/energy)
+	ref_one(nameof(power_supply))
+	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharge_due)))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("load_cell", item(/obj/item/cell), priority(OP_PRIORITY_PART), label("Insert cell"), starts(PROC_REF(cell_load_started)), begins(MSG(energy_gun/cell_loading)), wait(PROC_REF(cell_load_time)), then(PROC_REF(cell_load_done)))
 
 /// Old attack_hand.
-/obj/item/gun/energy/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/energy/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/gun/energy/proc/get_external_power_supply()
@@ -217,42 +217,37 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		else
 			. += "Does not have a power cell."
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/appearance_overlays()
-	. = list()
-	if(power_supply == null)
-		if(modifystate)
-			icon_state = "[modifystate]_open"
-		else
-			icon_state = "[initial(icon_state)]_open"
-		return .
-	else if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
+/// The look: the charge meter state, over what the capabilities and the gun base drew.
+/obj/item/gun/energy/draw(datum/look/look)
+	..()
+	look.watch(power_supply) // a view, not a child: its charge changes redraw the gun
+	draw_charge_state(look)
 
+/// The base name of the gun's charge states ("laser" for laser100): the fire mode's state, else the icon's own.
+/obj/item/gun/energy/proc/charge_state_name()
+	return modifystate ? modifystate : initial(icon_state)
+
+/// The charge meter state (a quarter step of the cell, at least a quarter while a shot is left), or the open state without a cell.
+/// A gun that draws its charge as overlays instead overrides this.
+/obj/item/gun/energy/proc/draw_charge_state(datum/look/look)
+	var/base = charge_state_name()
+	if(!power_supply)
+		look.state("[base]_open")
+	else if(charge_meter)
+		var/ratio = power_supply.maxcharge > 0 ? power_supply.charge / power_supply.maxcharge : 0
 		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		if(modifystate)
-			icon_state = "[modifystate][ratio]"
-		else
-			icon_state = "[initial(icon_state)][ratio]"
-
-	else if(power_supply)
-		if(modifystate)
-			icon_state = "[modifystate]"
-		else
-			icon_state = "[initial(icon_state)]"
-
-	update_held_icon()
+		look.state("[base][ratio]")
+	else
+		look.state(base)
 
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)
 		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 	set_self_recharge(1)
-	update_icon()
 
 /obj/item/gun/energy/get_description_interaction()
 	var/list/results = list()
@@ -284,11 +279,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
-// power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
-// the shield generator's gun, the generator's cell: a relation view across the hierarchy.
-/obj/item/gun/energy/relations()
-	. = ..()
-	. += rel_one(nameof(power_supply))
 
 /obj/item/gun/energy/note_shot()
 	..()

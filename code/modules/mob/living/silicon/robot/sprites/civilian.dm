@@ -212,11 +212,11 @@
 								  REAGENT_WHISKEYSODA = "boozeorange",
 								  REAGENT_COFFEE = "boozebrown")
 
-/datum/robot_sprite/dogborg/service/booze/handle_extra_icon_updates(mob/living/silicon/robot/ourborg)
+/datum/robot_sprite/dogborg/service/booze/look_extras(datum/look/look, mob/living/silicon/robot/ourborg)
 	if(!("boozehound" in ourborg.sprite_extra_customization) || !ourborg.sprite_extra_customization["boozehound"])
 		return ..()
 	else
-		ourborg.icon_state = booze_options[ourborg.sprite_extra_customization["boozehound"]]
+		look.state(booze_options[ourborg.sprite_extra_customization["boozehound"]])
 
 /datum/robot_sprite/dogborg/service/booze/get_belly_overlay(mob/living/silicon/robot/ourborg, size = 1, b_class)
 	if(!("boozehound" in ourborg.sprite_extra_customization) || !ourborg.sprite_extra_customization["boozehound"] || b_class != "sleeper")
@@ -225,25 +225,26 @@
 		return "[booze_options[ourborg.sprite_extra_customization["boozehound"]]]-[b_class]-[size]"
 
 /datum/robot_sprite/dogborg/service/booze/get_rest_sprite(mob/living/silicon/robot/ourborg)
-	if(!(ourborg.rest_style in rest_sprite_options))
-		ourborg.rest_style = "Default"
 	if(!("boozehound" in ourborg.sprite_extra_customization) || !ourborg.sprite_extra_customization["boozehound"])
 		return ..()
 	else
 		return "[booze_options[ourborg.sprite_extra_customization["boozehound"]]]-rest"
 
 /datum/robot_sprite/dogborg/service/booze/handle_extra_customization(mob/living/silicon/robot/ourborg)
-	om_ask(ourborg, /datum/om/prompt/choice, PROC_REF(drink_chosen), title = "Drink Choice", message = "Choose your drink!", choices = booze_options, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(drink_chosen), answerer = ourborg, ask_flags = ASK_CONSCIOUS, title = "Drink Choice", question = "Choose your drink!", choices = booze_options, timeout = 0)
 	return 1
 
-/datum/robot_sprite/dogborg/service/booze/proc/drink_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/silicon/robot/ourborg = ask.answerer
-	var/choice = ask.choice
+/datum/robot_sprite/dogborg/service/booze/proc/drink_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/robot/ourborg = A.request.answerer
+	var/choice = A.answer.value
 	if(ourborg.sprite_datum == src)
-		LAZYSET(ourborg.sprite_extra_customization, "boozehound", choice)
+		var/list/custom = ourborg.sprite_extra_customization?.Copy()
+		LAZYSET(custom, "boozehound", choice)
+		ourborg.set_sprite_extra_customization(custom)
 		play_sfx(ourborg.loc, SFX_EFFECTS_BUBBLES, 2, vary = FALSE, extrarange = 4)
 		to_chat(ourborg, span_filter_notice("Your tank now displays [choice]. Drink up and enjoy!"))
-		ourborg.update_icon()
 		return 1
 
 // Tall sprites

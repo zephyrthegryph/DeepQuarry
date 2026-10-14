@@ -1,0 +1,62 @@
+human|none menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
+human|none click: Click: Search for sticks
+robot|none menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
+robot|none click: Click: Search for sticks
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use screwdriver
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/tool/crowbar
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use crowbar
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use wrench
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use wirecutters
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/multitool
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use multitool
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use welding tool
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/stack/cable_coil
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use cable coil
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use steel sheet
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item/card/id
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use identification card
++4 click: Click: Fur wall item
+@obj.structure human|/obj/item
+-click: Click: Use
++1 menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
++3 menu: Use item
++4 click: Click: Fur wall item
+human|/obj/item/shovel menu: Hit
+human|/obj/item/shovel menu: Search for sticks (refused: <span class='notice'>You don't see any loose sticks...</span>)
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel menu: Use shovel
+human|/obj/item/shovel click: Click: Fur wall item
+keys: dig_stump, drag_buckle, fur_wall_item, melee_hit, search_sticks, tree_hit

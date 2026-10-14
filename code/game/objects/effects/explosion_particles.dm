@@ -1,14 +1,11 @@
 /obj/effect/expl_particles
+	lifecycle_lifetime = 1.5 SECONDS
 	name = "explosive particles"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "explosion_particle"
 	opacity = 1
 	anchored = TRUE
 	mouse_opacity = 0
-
-/obj/effect/expl_particles/Initialize(mapload)
-	. = ..()
-	expire(1.5 SECONDS)
 
 /datum/effect/system/expl_particles
 	var/number = 10
@@ -23,7 +20,7 @@
 /datum/effect/system/expl_particles/proc/emit_one_particle()
 	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.get_location())
 	var/direct = pick(GLOB.alldirs)
-	om_after_drift(expl, direct, pick(1;25,2;50,3,4;200), 1)
+	expl.drift(direct, pick(1;25,2;50,3,4;200), 1)
 
 /datum/effect/system/expl_particles/proc/start()
 	var/i = 0
@@ -31,6 +28,7 @@
 		emit_one_particle()
 
 /obj/effect/explosion
+	lifecycle_lifetime = 1 SECOND
 	name = "explosive particles"
 	icon = 'icons/effects/96x96.dmi'
 	icon_state = "explosion"
@@ -39,10 +37,6 @@
 	mouse_opacity = 0
 	pixel_x = -32
 	pixel_y = -32
-
-/obj/effect/explosion/Initialize(mapload)
-	. = ..()
-	expire(1 SECOND)
 
 /datum/effect/system/explosion
 	var/turf/location
@@ -56,7 +50,10 @@
 	var/datum/effect/system/expl_particles/P = new/datum/effect/system/expl_particles()
 	P.set_up(10,get_location())
 	P.start()
-	om_after(src, 0.5 SECONDS, PROC_REF(spread_smoke))
+	after(src, 0.5 SECONDS, PROC_REF(spread_smoke))
+	// A fire-and-forget system: it lives for the smoke it still owes and then deletes itself, so the ownership audit sees a system on its way
+	// out (a pending expire()), not one dropped with its timer still holding it.
+	expire(1 SECOND)
 
 /datum/effect/system/explosion/proc/spread_smoke()
 	PRIVATE_PROC(TRUE)

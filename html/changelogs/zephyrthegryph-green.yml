@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Thermite poured on a wall is now drawn on it; the coating state was never found, so nothing showed."
+  - code_imp: "Removed the dx_old_forms lint (no replacement it named has landed) and exempted generated verdigris bindings from the system boundary lint."
+  - code_imp: "Per-object material state (wear, service, overrides, mix, engineered effects) lives in two cap_data records instead of 21 variables on every /obj; capability engine records and the APC's wires and emag message left /atom and /obj/machinery too."
+  - code_imp: "The state serializer carries an /obj's cap_data records beside its delta (state_extra / state_apply_extra)."

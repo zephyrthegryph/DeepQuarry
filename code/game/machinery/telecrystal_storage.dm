@@ -5,11 +5,11 @@
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_range = 5
-	light_power = 1.2
-	light_color = "#DDFFD3"
 	pixel_y = -4
 	max_n_of_items = 1000000
+
+CAPABILITIES(/obj/machinery/smartfridge/tcrystal)
+	configure(light_glow(range = 5, power = 1.2, color = "#DDFFD3"))
 
 /obj/machinery/smartfridge/tcrystal/accept_check(obj/item/O)
 	return istype(O,/obj/item/stack/telecrystal)
@@ -17,9 +17,9 @@
 /obj/machinery/smartfridge/tcrystal/proc/mod_amount(datum/stored_item/I,mod)
 	if(I.amount + mod <= 0)
 		own_take_member(src, nameof(item_records), I)
-		qdel(I)
+		spent(I)
 	else
-		I.amount += mod
+		I.set_amount(I.amount + (mod))
 
 /obj/machinery/smartfridge/tcrystal/stock(obj/item/stack/telecrystal/O)
 	var/hasRecord = FALSE	//Check to see if this passes or not.
@@ -27,49 +27,37 @@
 		if((O.type == I.item_path) && (O.name == I.item_name))
 			mod_amount(I,O.get_amount())
 			hasRecord = TRUE
-			qdel(O)
+			consumed(O, src)
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
-		own_add(src, nameof(item_records), item)
+		rel_add(src, nameof(item_records), item)
 		consume(O)
 
-/obj/machinery/smartfridge/tcrystal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/smartfridge/tcrystal, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
-	// The fridge's own Release runs first, as the old parent-first tgui_act() did.
+/// Release (the fridge's op, its question included): the fridge's own Release runs first, as the old parent-first tgui_act() did; when it refuses,
+/// the crystals' own release takes the same amount.
+/obj/machinery/smartfridge/tcrystal/ui_act_release(datum/act/op/A, amount, index)
 	. = ..()
 	if(.)
 		return
-	if(params["amount"])
-		release_crystals(ui.user, params["amount"], params["index"])
-		return TRUE
-	om_ask(ui.user, /datum/om/prompt/number/tcrystal_amount, PROC_REF(crystal_amount_entered), index = params["index"])
+	if(!amount)
+		amount = A.step_value("amount")
+	if(amount)
+		release_crystals(A.actor, amount, index)
 	return TRUE
-
-/// How many crystals to take out. Re-checked on the answer: still next to the fridge.
-/datum/om/prompt/number/tcrystal_amount
-	title = "How many items would you like to take out?"
-	message = "How many items?"
-	default = 1
-	requires = PROMPT_ADJACENT
-	var/index
-
-/obj/machinery/smartfridge/tcrystal/proc/crystal_amount_entered(datum/om/prompt/number/tcrystal_amount/ask)
-	release_crystals(ask.answerer, ask.number, ask.index)
-	return FALSE
 
 /obj/machinery/smartfridge/tcrystal/proc/release_crystals(mob/user, amount, index_param)
 	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))
 		return FALSE
 
-	var/index = text2num(index_param)
+	if(!isnum(amount) || amount <= 0 || amount != round(amount))
+		return FALSE
+	var/index = isnum(index_param) ? index_param : text2num(index_param)
+	if(!isnum(index) || index < 1 || index != round(index) || index > LAZYLEN(item_records))
+		return FALSE
 	var/datum/stored_item/I = item_records[index]
+	if(!I)
+		return FALSE
 	var/count = I.get_amount()
 
 	// Sanity check, there are probably ways to press the button when it shouldn't be possible.
@@ -98,10 +86,10 @@ UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
 	icon_state = "x4"
 	var/amount_to_spawn = 5
 
-MAP_RESOLVER(/obj/tcspawner, GLOBAL_PROC_REF(resolve_tcspawner))
-MAP_RESOLVER_VARS(/obj/tcspawner, "amount_to_spawn")
+CAPABILITIES(/obj/tcspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_tcspawner), vars = list("amount_to_spawn"))
 
-/// MAP_RESOLVER for telecrystal spawners: one stack, inside the closet on the tile if there is one.
+/// The map resolver of telecrystal spawners: one stack, inside the closet on the tile if there is one.
 /proc/resolve_tcspawner(atom/loc, path, list/varedits)
 	var/obj/tcspawner/P = path
 	var/turf/T = get_turf(loc)

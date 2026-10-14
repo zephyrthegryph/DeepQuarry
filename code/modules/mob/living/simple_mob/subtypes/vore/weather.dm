@@ -31,7 +31,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 	faction = FACTION_ECLIPSE
 	size_multiplier = 2
 	var/regenration_rate = -15
@@ -40,15 +39,15 @@
 		/obj/item/prop/tyrlore/fossiltank = 100,
 		)
 
+CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
+
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
 
-/datum/om/stage/life/special/vore/fossiltank
-	of = /mob/living/simple_mob/vore/fossiltank
-
-/datum/om/stage/life/special/vore/fossiltank/perform(mob/living/simple_mob/vore/fossiltank/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.regenration()
+/mob/living/simple_mob/vore/fossiltank/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.regenration()
 	..()
 
 /mob/living/simple_mob/vore/fossiltank/proc/regenration()
@@ -58,7 +57,7 @@
 
 /mob/living/simple_mob/vore/fossiltank/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "furnace"
 	B.desc = "Turns out the skull head opens, and you have been consumed into the beast's furnace! Sweltering heat rages around you as your metal confines rumble with the rurr of strange machinery. The chamber jostling you about as you may attempt to escape, or perhaps accept your fate."
 	B.digest_brute = 0
@@ -71,17 +70,17 @@
 	. = ..()
 	var/wellness = vitality()
 	if(wellness < 0.25)
-		icon_state = "rex_25"
-		icon_living = "rex_25"
+		set_icon_state("rex_25")
+		set_icon_living("rex_25")
 	else if(wellness < 0.5)
-		icon_state = "rex_50"
-		icon_living = "rex_50"
+		set_icon_state("rex_50")
+		set_icon_living("rex_50")
 	else if (wellness < 0.75)
-		icon_state = "rex_75"
-		icon_living = "rex_75"
+		set_icon_state("rex_75")
+		set_icon_living("rex_75")
 	else if (wellness > 0.75)
-		icon_state = "rex"
-		icon_living = "rex"
+		set_icon_state("rex")
+		set_icon_living("rex")
 
 /mob/living/simple_mob/vore/fossiltank/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 14))
@@ -105,7 +104,6 @@
 	melee_damage_upper = 17
 	attack_armor_pen = 20
 	glow_color = "#14ff20"
-	light_color = "#14ff20"
 	glow_range = 7
 	glow_intensity = 3
 	special_attack_min_range = 1
@@ -125,7 +123,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 
 	faction = FACTION_TYR_ANT
 
@@ -139,27 +136,33 @@
 	delete_on_death = TRUE
 
 /// Attacks still to chain after a warp. A field: one chained attack every 4 s while it is non-zero.
-OM_FIELD(/mob/living/simple_mob/vore/boss_jellyfish, chain_number, 0, CHANGE_MOB_CONDITIONS)
+/mob/living/simple_mob/vore/boss_jellyfish/var/chain_number = 0
+TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /// Who the chained attacks go at (a relation view).
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
-DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_attack, "chain_number")
 
-/// DECLARE_REPEAT while attacks remain in the chain: a dash or a puddle summon at the target.
-/mob/living/simple_mob/vore/boss_jellyfish/proc/chain_attack()
+CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	ref_one(nameof(chain_target), /atom)
+	configure(light_glow(color = "#14ff20"))
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
+	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))
+
+/// A dash or a puddle summon at the target (its every() runs while attacks remain in the chain).
+/mob/living/simple_mob/vore/boss_jellyfish/proc/chain_attack(datum/act/timer_act)
 	var/atom/A = chain_target
 	if(!A)
 		set_chain_number(0)
-		icon_state = "jellyfish"
-		icon_living = "jellyfish"
-		return REPEAT_STOP
+		set_icon_state("jellyfish")
+		set_icon_living("jellyfish")
+		return
 	set_chain_number(chain_number - 1)
 	if(prob(50))
-		icon_state = "jellyfish_yellow"
-		icon_living = "jellyfish_yellow"
+		set_icon_state("jellyfish_yellow")
+		set_icon_living("jellyfish_yellow")
 		dash_attack(A)
 	else
-		icon_state = "jellyfish_red"
-		icon_living = "jellyfish_red"
+		set_icon_state("jellyfish_red")
+		set_icon_living("jellyfish_red")
 		summon_puddles(A)
 
 /mob/living/simple_mob/vore/boss_jellyfish/on_death(gibbed)
@@ -167,7 +170,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 
 /mob/living/simple_mob/vore/boss_jellyfish/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
 	B.digest_brute = 1
@@ -180,58 +183,59 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 /mob/living/simple_mob/vore/boss_jellyfish/apply_melee_effects(atom/A) //Not a real threat unless multiple hits. It acts a timer for special traits.
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
-	if(nutrition > 500)
+	if(nutrition_of(src) > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)
+		after(src, 4 SECONDS, PROC_REF(sniper_shot), with = list(A))
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(3)
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
-		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
+		set_icon_state("jellyfish_blue")
+		set_icon_living("jellyfish_blue")
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
-		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
+		set_icon_state("jellyfish_blue")
+		set_icon_living("jellyfish_blue")
 	else if(vitality() < 0.75) //teleports then attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(1)
-		icon_state = "jellyfish_blue"
-		icon_living = "jellyfish_blue"
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
+		set_icon_state("jellyfish_blue")
+		set_icon_living("jellyfish_blue")
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A), keeps_dead = TRUE)
 	else //attacks once
 		if(prob(50))
-			icon_state = "jellyfish_yellow"
-			icon_living = "jellyfish_yellow"
-			om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
+			set_icon_state("jellyfish_yellow")
+			set_icon_living("jellyfish_yellow")
+			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A), keeps_dead = TRUE)
 		else
-			icon_state = "jellyfish_red"
-			icon_living = "jellyfish_red"
-			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
+			set_icon_state("jellyfish_red")
+			set_icon_living("jellyfish_red")
+			after(src, 4 SECONDS, PROC_REF(summon_puddles), with = list(A))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
 	ai_busy_begin()
 	if(!A)
+		ai_busy_end()
 		return
 
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
-	om_after(src, 5, PROC_REF(dash_attack_1), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(dash_attack_1), with = list(A), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack_1(atom/A)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	var/turf/T = get_turf(src) // Where we landed. This might be different than A's turf.
 
@@ -251,15 +255,15 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
 	ai_busy_end()
 	if(!chain_number)
-		icon_state = "jellyfish"
-		icon_living = "jellyfish"
+		set_icon_state("jellyfish")
+		set_icon_living("jellyfish")
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/sniper_shot(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/nutrition_gigabeam(get_turf(src))
@@ -270,12 +274,14 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 		if(L.stat != DEAD || !IIsAlly(L))
 			L.apply_body_effect(/datum/body_effect/mmo_drop/jelly_fish, 3, src)
 	if(!chain_number)
-		icon_state = "jellyfish"
-		icon_living = "jellyfish"
+		set_icon_state("jellyfish")
+		set_icon_living("jellyfish")
 
 /obj/item/projectile/beam/nutrition_gigabeam
 	damage = 40
-	armor_penetration = 90
+
+CAPABILITIES(/obj/item/projectile/beam/nutrition_gigabeam)
+	configure(item_combat(armor_penetration = 90))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/astral_sea_warp(atom/target)
 	if(!target)

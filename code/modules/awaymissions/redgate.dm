@@ -19,12 +19,11 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
-// its paired gate closes.
+// its paired gate closes (the link to it is undone with this gate, on both sides: the declared pair).
 /obj/structure/redgate/on_destroy(force)
 	var/obj/structure/redgate/other = target()
 	if(other)
-		rel_clear(src, nameof(target)) // the pair: other's target clears too
-		other.toggle_portal()
+		other.toggle_portal(closing = TRUE)
 	..()
 
 /obj/structure/redgate/proc/teleport(mob/M as mob)
@@ -85,19 +84,23 @@
 
 	return temptarg
 
-/obj/structure/redgate/proc/toggle_portal()
-	if(target())
-		icon_state = "on"
+/// Opens or closes the portal to match its link; `closing` says the partner is going and the link is not yet undone.
+/obj/structure/redgate/proc/toggle_portal(closing = FALSE)
+	if(target() && !closing)
+		set_icon_state("on")
 		set_density(TRUE)
 		plane = ABOVE_MOB_PLANE
-		set_light(5, 0.75, "#da5656")
+		set_glow(src, GLOW(5, 0.75, "#da5656"))
 	else
-		icon_state = "off"
+		set_icon_state("off")
 		set_density(FALSE)
 		plane = OBJ_PLANE
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
-/obj/structure/redgate/Bumped(mob/M as mob)
+/// Something walked into it (the bump action's notice).
+/obj/structure/redgate/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/M = N.bumper
 	src.teleport(M)
 	return
 
@@ -105,13 +108,13 @@
 	src.teleport(M)
 	return
 
-DECLARE_INTERACTIONS(/obj/structure/redgate, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_OBSERVER("Travel", PROC_REF(redgate_ghost_travel)), \
-)
-
 /// Old attack_hand.
-/obj/structure/redgate/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/redgate/proc/interaction_hand(datum/act/op/A)
+	redgate_use(A.actor)
+	return OP_OK
+
+/// The hand use of a gate; it asks who to admit by re-running itself with the same arguments.
+/obj/structure/redgate/proc/redgate_use(mob/M)
 	if(density)
 		if(ishuman(M))
 			var/mob/living/carbon/human/O = M
@@ -123,11 +126,11 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
+				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(redgate_use), args, /datum/prompt/choice, question = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
 				if(isnull(restricted_human))
-					return TRUE
+					return
 				if(!restricted_human)
-					return TRUE
+					return
 				restricted_human.redgate_restricted = FALSE
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
@@ -137,18 +140,20 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 	else
 		if(!find_partner())
 			to_chat(M, span_warning("The [src] remains off... seems like it doesn't have a destination."))
-	return TRUE
 
 /// Old attack_ghost: follow the gate to its target; with no target, the ghost default.
-/obj/structure/redgate/proc/redgate_ghost_travel(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/redgate/proc/redgate_ghost_travel(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(!target())
-		return FALSE
+		return OP_DECLINE
 	if(!(secret || target().secret) || check_rights_for(user?.client, R_HOLDER))
 		user.forceMove(get_turf(target()))
-	return TRUE
+	return OP_OK
 
-/obj/structure/redgate/away/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/redgate/away)
+	after_init(0, then(PROC_REF(check_partner)))
+
+/obj/structure/redgate/away/proc/check_partner(datum/act/timer/A)
 	if(!find_partner())
 		log_and_message_admins("An away redgate spawned but wasn't able to find a gateway to link to. If this appeared at roundstart, something has gone wrong, otherwise if you spawn another gate they should connect.")
 
@@ -220,24 +225,36 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 	var/start_pos
 	var/flag_return_delay = 3 SECONDS	//how long you have to hold onto your team's flag before it returns home
 
+// ALLOW(init/INSTANCE_STATE): remembers where it was placed so it can return there
 /obj/item/laserdome_flag/Initialize(mapload)
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-/obj/item/laserdome_flag/proc/flag_return_failed(mob/user)
+/obj/item/laserdome_flag/proc/flag_return_failed(datum/act/op/A)
+	var/mob/user = A.actor
 	user?.drop_from_inventory(src)
 
-/obj/item/laserdome_flag/proc/flag_returned(mob/user)
+/// How long the channelled return takes.
+/obj/item/laserdome_flag/proc/flag_return_wait(datum/act/op/A)
+	return flag_return_delay
+
+/obj/item/laserdome_flag/proc/flag_returned(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_from_inventory(src)
 	src.forceMove(src.start_pos)
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(flag_pick_up)))
+CAPABILITIES(/obj/item/laserdome_flag)
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
+	// The owning team channels a return with the flag in hand; moving, dropping it or being tagged drops it where they stand.
+	op("return_flag", ai(), wait(PROC_REF(flag_return_wait), keeps = HELD | STAY | ALIVE), on_interrupt(PROC_REF(flag_return_failed)), then(PROC_REF(flag_returned)))
 
 /// Picking the flag up: the other team is told who has it.
-/obj/item/laserdome_flag/proc/flag_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/laserdome_flag/proc/flag_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 
@@ -257,7 +274,7 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", P
 	if(grabbing_team == laser_team)
 		act_message(user, src, others = span_warning("%U% is returning %T%!"))
 		//channel return, rather than instant; if they fail the channel (e.g. because they got tagged!) then drop it
-		om_task_timed(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
+		perform_op(user, src, "return_flag", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 	else
 		act_message(user, src, others = span_warning("%U% has taken %T%!"))
@@ -306,10 +323,13 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", P
 /obj/structure/flag_decor/red
 	icon_state = "red_flag_deco"
 
-DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/flag_base)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/flag_base/proc/interaction_item(mob/user, obj/F, datum/interaction/interaction)
+/obj/structure/flag_base/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/F = A.held
 
 	//TODO- require the team's flag to be present before they can score?
 	if(istype(F,/obj/item/laserdome_flag))
@@ -329,7 +349,7 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 			GLOB.global_announcer.autosay("[capitalize(base_team)] flag returned!","Laserdome Announcer","Entertainment")
 			user.drop_from_inventory(flag)
 			flag.forceMove(src.loc)			//place our flag neatly back on its pedestal
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/laserdome_hyperball/get_mechanics_info(list/additional_information)
 	return ..(list("Dunking the ball directly into the opposing goal scores more points than throwing it in, but you must be next to the goal.") + additional_information)
@@ -360,16 +380,19 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 	w_class = ITEMSIZE_NO_CONTAINER
 	redgate_allowed = FALSE //you can't take the demonstration balls and go home either
 
+// ALLOW(init/INSTANCE_STATE): remembers where it was placed so it can return there
 /obj/item/laserdome_hyperball/Initialize(mapload)
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(hyperball_pick_up)))
+CAPABILITIES(/obj/item/laserdome_hyperball)
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
 
 /// Picking the ball up: the teams are told who has it.
-/obj/item/laserdome_hyperball/proc/hyperball_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/laserdome_hyperball/proc/hyperball_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 
@@ -380,12 +403,12 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	//get their uniform
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
-		icon_state = "[initial(icon_state)]_red"
-		item_state = "[initial(icon_state)]_red"
+		set_icon_state("[initial(icon_state)]_red")
+		set_item_state("[initial(icon_state)]_red")
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
-		icon_state = "[initial(icon_state)]_blue"
-		item_state = "[initial(icon_state)]_blue"
+		set_icon_state("[initial(icon_state)]_blue")
+		set_item_state("[initial(icon_state)]_blue")
 	else
 		return	//if they're not on a team, stop!
 
@@ -395,7 +418,6 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	last_team = grabbing_team
 	//finally, announcer calls out which team has the ball
 	GLOB.global_announcer.autosay("[capitalize(grabbing_team)] team on offense!","Laserdome Announcer","Entertainment")
-	update_icon()
 	update_held_icon()
 
 /obj/structure/hyperball_pedestal
@@ -432,10 +454,13 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	icon_state = "hyperball_goal_red"
 	goal_team = "red"
 
-DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/hyperball_goal)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/hyperball_goal/proc/interaction_item(mob/user, obj/B, datum/interaction/interaction)
+/obj/structure/hyperball_goal/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/B = A.held
 	var/mob/living/carbon/human/M = user
 	var/dunking_team
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
@@ -443,7 +468,7 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		dunking_team = "blue"
 	else
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(B,/obj/item/laserdome_hyperball))
 		var/obj/item/laserdome_hyperball/ball = B
@@ -469,10 +494,9 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 
 		user.drop_from_inventory(ball)
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
-		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
-		ball.update_icon()
-	return INTERACTION_HANDLED_PASS
+		ball.set_icon_state("[initial(ball.icon_state)]")
+		ball.set_item_state("[initial(ball.item_state)]")
+	return OP_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
@@ -502,9 +526,8 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 						GLOB.global_announcer.autosay("[ball.last_holder] threw the HYPERball and scored an own goal! +Points |de-ducted!|+ [capitalize(goal_team)] team score is now: [HGB.score].","Laserdome Announcer","Entertainment")
 
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
-		ball.icon_state = "[initial(ball.icon_state)]"
-		ball.item_state = "[initial(ball.item_state)]"
-		ball.update_icon()
+		ball.set_icon_state("[initial(ball.icon_state)]")
+		ball.set_item_state("[initial(ball.item_state)]")
 	else
 		//todo; throw the ball in a random direction
 		src.visible_message("\The [ball] bounces off \the [src]'s rim!")
@@ -560,6 +583,8 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
 	return target
 
-/obj/structure/redgate/relations()
-	. = ..()
-	. += rel_one(nameof(target), back = nameof(/obj/structure/redgate::target))
+CAPABILITIES(/obj/structure/redgate)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
+	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))
+	links(/obj/structure/redgate::target, /obj/structure/redgate::target)

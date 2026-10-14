@@ -185,9 +185,10 @@ GLOBAL_LIST_INIT(expedition_faction_decor_pools, list(
 	var/mob/living/simple_mob/SM = M
 	if(istype(SM))
 		var/list/fl = expedition_faction_loot_pool(faction)
-		SM.loot_list = SM.loot_list ? SM.loot_list.Copy() : list()
+		var/list/loot = SM.loot_list ? SM.loot_list.Copy() : list() // the type's table is shared (per_type()): this mob gets its own
 		for(var/p in fl)
-			SM.loot_list[p] = fl[p]
+			loot[p] = fl[p]
+		SM.loot_list = loot
 	return M
 
 // Spawn the faction's elite, guarding a guaranteed reward. Returns the boss.
@@ -198,8 +199,9 @@ GLOBAL_LIST_INIT(expedition_faction_decor_pools, list(
 	var/mob/M = new boss_path(T)
 	var/mob/living/simple_mob/SM = M
 	if(istype(SM))
-		SM.loot_list = SM.loot_list ? SM.loot_list.Copy() : list()
-		SM.loot_list[expedition_faction_boss_loot(faction)] = 100
+		var/list/loot = SM.loot_list ? SM.loot_list.Copy() : list() // the type's table is shared (per_type()): this mob gets its own
+		loot[expedition_faction_boss_loot(faction)] = 100
+		SM.loot_list = loot
 	return M
 
 #undef EXP_FACTION_INDEX

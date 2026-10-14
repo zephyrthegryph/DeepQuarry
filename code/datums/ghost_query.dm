@@ -20,7 +20,7 @@
 
 	// Then wait awhile.
 	if(wait_time)
-		om_after(src, wait_time, PROC_REF(finish_query))
+		after(src, wait_time, PROC_REF(finish_query))
 		return
 
 /// Once, `wait_time` after query(): drop candidates that no longer qualify and report.
@@ -29,7 +29,7 @@
 		if(!evaluate_candidate(D))
 			rel_remove(src, nameof(candidates), D)
 	finished = TRUE
-	OM_EMIT(src, /datum/om/event/ghost_query_complete)
+	PUBLISH_LEGACY(src, /datum/notice/ghost_query_complete)
 
 /// Test a candidate for allowance to join as this
 /datum/ghost_query/proc/evaluate_candidate(mob/observer/dead/candidate)
@@ -58,11 +58,10 @@
 	if(query_sound)
 		SEND_SOUND(C, sound(query_sound))
 
-	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), om_callable(src, PROC_REF(get_reply)), wait_time)
+	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), wait_time, then = PROC_REF(get_reply), owner = src, with = list(D))
 
-/// Process an async alert response
-/datum/ghost_query/proc/get_reply(response)
-	var/mob/observer/dead/D = usr
+/// Process an async alert response from the observer that received the question.
+/datum/ghost_query/proc/get_reply(mob/observer/dead/D, response)
 	if(!D?.client)
 		return
 
@@ -84,7 +83,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Prompt a second time
-				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), om_callable(src, PROC_REF(get_reply)), wait_time)
+				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), wait_time, then = PROC_REF(get_reply), owner = src, with = list(D))
 
 		if("I'm Sure")
 			if(!evaluate_candidate(D)) // Failed revalidation

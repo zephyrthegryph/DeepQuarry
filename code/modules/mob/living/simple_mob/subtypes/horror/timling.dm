@@ -33,7 +33,8 @@
 	play_sfx(src, SFX_H_SOUNDS_SHITTY_TIM)
 	..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/horror/TinyTim, DAMAGE_PROJECTILE, PROC_REF(play_reaction_sound))
+CAPABILITIES(/mob/living/simple_mob/horror/TinyTim)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 
 /datum/say_list/TinyTim
 	speak = list("Wuuuuuhhuuhhhhh?","Urk! Aaaaahaaa!", "Yuhyuhyuhyuh...")

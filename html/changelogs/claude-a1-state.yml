@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Framework A1: TRACKED publishes by key, damage reactions are before_op/after_op on damage keys, guards replace before-event vetoes, the one keyed timer after(key, clock, with), one-line CAPABILITY declarations, grant() for verbs and capabilities."

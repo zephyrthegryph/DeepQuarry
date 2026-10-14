@@ -5,11 +5,11 @@
 // cooking rule (code/datums/rules/declarations.dm) decides when food is cooked.
 /// A cooker steps while cooking, while on (its thermostat; it hibernates at temperature on a heat
 /// watch), and while off until its heat body has cooled back to the room and been released.
-OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cooking", "stat", "heat_body"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooker_needs_step")
+/obj/machinery/appliance/cooker/needs_step(datum/act/A)
+	return cooker_needs_step()
 
 /obj/machinery/appliance/cooker/proc/cooker_needs_step()
-	return cooking || !has_stat(MACHINE_STAT_ANY) || !isnull(heat_body)
+	return cooking || !has_condition() || !isnull(heat_body)
 
 /obj/machinery/appliance/cooker
 	var/min_temp = 80 + T0C	//Minimum temperature to do any cooking
@@ -31,9 +31,19 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooke
 
 	tgui_id = "CookingAppliance"
 
-UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_cooker{temperature:num,optimalTemp:num,temperatureEnough:bool,efficiency:num}")
+CAPABILITIES(/obj/machinery/appliance/cooker)
+	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
+	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
 
-/// The computed part of /obj/machinery/appliance/cooker's window data (declared on its UI_DATA row).
+/obj/machinery/appliance/cooker/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_appliance_cooker(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
+
+/// /obj/machinery/appliance/cooker's window data.
 /obj/machinery/appliance/cooker/proc/ui_data_obj_machinery_appliance_cooker(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -49,7 +59,7 @@ UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_
 	. = ..()
 	if(.)	//no need to duplicate adjacency check
 		var/temperature = get_temperature()
-		if(!has_stat(MACHINE_STAT_ANY))
+		if(!has_condition())
 			if (temperature < min_temp)
 				. += span_warning("\The [src] is still heating up and is too cold to cook anything yet.")
 			else
@@ -77,30 +87,24 @@ UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	own_take_all(src, nameof(cooking_objs))
-	for (var/i = 0, i < max_contents, i++)
-		own_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)
 
-	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
+/// The cooker's status light: idle, preheating, or off.
+/obj/machinery/appliance/cooker/draw(datum/look/look)
+	..()
+	draw_lights(look)
 
-APPEARANCE_NONE(/obj/machinery/appliance/cooker)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/appearance_overlays()
-	. = list()
-	var/image/light
-	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
-		light = image(icon, "light_idle")
-	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
-		light = image(icon, "light_preheating")
-	else
-		light = image(icon, "light_off")
-	light.pixel_x = light_x
-	light.pixel_y = light_y
-	. += light
+/// The lights a cooker shows; a type with lights of its own replaces this.
+/obj/machinery/appliance/cooker/proc/draw_lights(datum/look/look)
+	var/light = "light_off"
+	if(use_power == 1 && !has_condition())
+		light = "light_idle"
+	else if(use_power == 2 && !has_condition())
+		light = "light_preheating"
+	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
 
-/obj/machinery/appliance/cooker/machine_step()
-	if (!has_stat(MACHINE_STAT_ANY))
+/obj/machinery/appliance/cooker/work_step(datum/act/timer/A)
+	if (!has_condition())
 		heat_up()
 	else
 		set_heating(FALSE)
@@ -108,7 +112,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 	..()
 	if(cooking)
 		return
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		// Idle at temperature: hibernate until it cools below the thermostat band.
 		if(get_temperature() >= optimal_temp && arm_thermostat())
 			return PROCESS_KILL
@@ -120,7 +124,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /obj/machinery/appliance/cooker/power_change()
 	. = ..()
 	if(.)
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/appliance/cooker/proc/update_cooking_power()
 	var/temp_scale = 0
@@ -174,21 +178,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 		warm_contents()
 	else if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, !has_stat(MACHINE_STAT_ANY))
-		if(has_stat(MACHINE_STAT_ANY))
+		vg_heat_body_keep(heat_body, !has_condition())
+		if(has_condition())
 			release_contents_heat()
 
 /// Wakes the cooker when its body cools below the thermostat band.
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	own_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
+	rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
-	own_clear(src, nameof(thermostat_watch), OWN_DELETE)
-	MACHINE_WAKE(src)
+	rel_clear(src, nameof(thermostat_watch))
+	work_start(src)
 
 
 /// Heat capacity from `resistance` (the old per-process heating step is
@@ -252,3 +256,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
 		selected_option = null
 
+/// The starting cooking slots (owns_many(starts =)): one container per slot.
+/obj/machinery/appliance/cooker/proc/make_cooking_objs(current)
+	. = list()
+	for(var/i in 1 to max_contents)
+		. += new /datum/cooking_item(new container_type(src))

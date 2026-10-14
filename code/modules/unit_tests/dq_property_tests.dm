@@ -7,14 +7,18 @@ MATERIAL_MIX(/obj/item/dq_property_test, list(MAT_STEEL = 1000, MAT_CARDBOARD = 
 /obj/item/dq_property_test
 	name = "property test item"
 	w_class = ITEMSIZE_SMALL
-	sharp = TRUE
+
+CAPABILITIES(/obj/item/dq_property_test)
+	configure(item_combat(sharp = TRUE))
 
 /// Same values as its parent, so it must share the parent's interned table.
 /obj/item/dq_property_test/twin
 
 /obj/item/dq_property_test/blunt
-	sharp = FALSE
 	MATERIAL_BULK(MAT_STEEL, 200)
+
+CAPABILITIES(/obj/item/dq_property_test/blunt)
+	configure(item_combat(sharp = FALSE))
 
 GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	"big" = list("w_class" = ITEMSIZE_HUGE),
@@ -27,17 +31,18 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 /mob/dq_property_test/get_equipped_items()
 	return test_equipped ? test_equipped.Copy() : list()
 
-/datum/om/behaviour/dq_property_test
+CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_property_test, key = NONE)
+/datum/capability/dq_property_test
 	var/extra_mass = 2
 
-/datum/om/behaviour/dq_property_test/property_value(datum/E, id)
+/datum/capability/dq_property_test/property_value(datum/E, id)
 	if(id == PROP_MASS)
 		return extra_mass
 
 /datum/property_provider/behaviour/dq_test_mass
 	property = PROP_MASS
 	unit = PROP_UNIT_KILOGRAMS
-	behaviour_type = /datum/om/behaviour/dq_property_test
+	behaviour_type = /datum/capability/dq_property_test
 
 // Test-only definitions and providers, skipped by the global registry.
 
@@ -339,15 +344,15 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS, "missing"), ITEMSIZE_SMALL, "an unknown variant keeps the type value")
 	var/obj/item/dq_property_test/variant_item = allocate(path)
 	variant_item.variant = "big"
-	variant_item.w_class = ITEMSIZE_HUGE
+	variant_item.set_w_class(ITEMSIZE_HUGE)
 	TEST_ASSERT_EQUAL(PROPERTY(variant_item, PROP_SIZE_CLASS), ITEMSIZE_HUGE, "an instance of the variant reads its state")
 	GLOB.dq_variant_tables -= path
 
 	// Instances read saved state, and per-type values don't change.
 	var/obj/item/dq_property_test/item = allocate(path)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "an unchanged instance matches its type")
-	item.w_class = ITEMSIZE_LARGE
-	item.sharp = FALSE
+	item.set_w_class(ITEMSIZE_LARGE)
+	item.set_sharp(FALSE)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_LARGE, "instance state overrides the type value")
 	TEST_ASSERT(!HAS_TAG(item, TAG_SHARP), "a blunted instance is not sharp")
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "the per-type value is unchanged")
@@ -355,9 +360,9 @@ GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 3) < 0.0001, "instance matter drives instance mass")
 	TEST_ASSERT(!HAS_TAG(item, TAG_FLAMMABLE), "without cardboard the instance is not flammable")
 
-	// Behaviour contributors fold in with the aggregator.
-	om_attach(item, /datum/om/behaviour/dq_property_test)
-	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 5) < 0.0001, "the behaviour adds 2 kg, got [PROPERTY(item, PROP_MASS)]")
+	// Capability contributors fold in with the aggregator.
+	grant(item, /datum/capability/dq_property_test, item)
+	TEST_ASSERT(abs(PROPERTY(item, PROP_MASS) - 5) < 0.0001, "the capability adds 2 kg, got [PROPERTY(item, PROP_MASS)]")
 
 	// Equipment contributors: a mob's mass sums what it holds.
 	var/mob/dq_property_test/M = allocate(/mob/dq_property_test)

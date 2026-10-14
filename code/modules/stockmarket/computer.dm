@@ -12,97 +12,80 @@
 	var/screen = "stocks"
 	var/tmp/datum/stock/current_stock
 
-	light_color = LIGHT_COLOR_GREEN
 
-/obj/machinery/computer/stockexchange/Initialize(mapload)
-	. = ..()
-	logged_in = "Cargo Department"
-
-/obj/machinery/computer/stockexchange/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/stockexchange_attackby,
-		/datum/interaction/machine_hand/stockexchange_use,
-	)
-	..()
-
-/// Approximation: the old attackby unconditionally called ..() then always refreshed the UIs.
-/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
-/// fall through to the base attackby; the UI refresh now happens before that fallback rather
-/// than after, an order approximation - see report.
-/datum/interaction/machine_item/stockexchange_attackby
-	id = "stockexchange_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_attackby
-
-/obj/machinery/computer/stockexchange/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/stockexchange/proc/interaction_attackby(datum/act/op/A)
 	SStgui.update_uis(src)
-	return FALSE
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/stockexchange_use
-	id = "stockexchange_use"
-	name = "Use"
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_use
-
-/obj/machinery/computer/stockexchange/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/stockexchange/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/computer/stockexchange/proc/balance()
 	if (!logged_in)
 		return 0
-	return GLOB.supply_service.budget_balance()
+	return SSsupply.budget_balance()
 
 ///// MAIN TGUI SCREEN /////
 
-/obj/machinery/computer/stockexchange/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/computer/stockexchange, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_logout)
+/obj/machinery/computer/stockexchange/proc/ui_act_logout(datum/act/op/A)
+	add_fingerprint(A.actor)
 	logged_in = null
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_buy", ui_act_stocks_buy, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_buy)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_buy(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		buy_some_shares(S, ui.user)
+		buy_some_shares(S, user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_sell", ui_act_stocks_sell, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_sell)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_sell(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		sell_some_shares(S, ui.user)
+		sell_some_shares(S, user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_check", ui_act_stocks_check)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_check)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_check(datum/act/op/A)
+	add_fingerprint(A.actor)
 	screen = "logs"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_archive", ui_act_stocks_archive, UI_ARG_REF("share", null, /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_archive)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_archive(datum/act/op/A, share)
+	add_fingerprint(A.actor)
+	var/datum/stock/S = share
 	if(S)
 		rel_set(src, nameof(/obj/machinery/computer/stockexchange::current_stock), S)
 		screen = "archive"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_history", ui_act_stocks_history, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_history)
-	var/datum/stock/S = params["share"]
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_history(datum/act/op/A, share)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!isnull(share) && !(share in ui_source_glob_stockexchange_stocks()))
+		return FALSE
+	if(isnull(share))
+		return FALSE
+	var/datum/stock/S = share
 	if (S)
-		S.displayValues(ui.user)
+		S.displayValues(user)
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_backbutton", ui_act_stocks_backbutton)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_backbutton)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_backbutton(datum/act/op/A)
+	add_fingerprint(A.actor)
 	rel_clear(src, nameof(/obj/machinery/computer/stockexchange::current_stock))
 	screen = "stocks"
 
-UI_ACT(/obj/machinery/computer/stockexchange, "stocks_cycle_view", ui_act_stocks_cycle_view)
-UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
+/obj/machinery/computer/stockexchange/proc/ui_act_stocks_cycle_view(datum/act/op/A)
+	add_fingerprint(A.actor)
 	vmode++
 	if (vmode > 1)
 		vmode = 0
@@ -111,9 +94,16 @@ UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
 /obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()
 	return GLOB.stockExchange.stocks
 
-UI_DATA_REPLACE(/obj/machinery/computer/stockexchange, "screen:num", "merge:ui_data_obj_machinery_computer_stockexchange{stationName:text,balance:unknown,viewMode:text,stocks:list,logs:list,name:text,events:list,articles:list,maxValue:num,values:list}")
+/obj/machinery/computer/stockexchange/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screen"] = screen
+	var/list/merged_1 = ui_data_obj_machinery_computer_stockexchange(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/computer/stockexchange's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/stockexchange's window data.
 /obj/machinery/computer/stockexchange/proc/ui_data_obj_machinery_computer_stockexchange(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -274,7 +264,20 @@ UI_DATA_REPLACE(/obj/machinery/computer/stockexchange, "screen:num", "merge:ui_d
 
 	return data
 
-DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
+CAPABILITIES(/obj/machinery/computer/stockexchange)
+	configure(light_glow(color = LIGHT_COLOR_GREEN))
+	interface("StockExchange")
+	without("ui_open")
+	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
+	op("stocks_buy", ui_act("stocks_buy", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_buy)))
+	op("stocks_sell", ui_act("stocks_sell", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_sell)))
+	op("stocks_check", ui_act("stocks_check"), then(PROC_REF(ui_act_stocks_check)))
+	op("stocks_archive", ui_act("stocks_archive", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_archive)))
+	op("stocks_history", ui_act("stocks_history", arg("share", schema_ref(/datum/stock))), then(PROC_REF(ui_act_stocks_history)))
+	op("stocks_backbutton", ui_act("stocks_backbutton"), then(PROC_REF(ui_act_stocks_backbutton)))
+	op("stocks_cycle_view", ui_act("stocks_cycle_view"), then(PROC_REF(ui_act_stocks_cycle_view)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 ///// PROCS /////
 
@@ -285,29 +288,16 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 	if (!li)
 		to_chat(user, span_danger("No active account on the console!"))
 		return
-	var/b = GLOB.supply_service.budget_balance()
+	SSsupply.budget_balance()
 	var/avail = LAZYACCESS(S.shareholders, logged_in)
 	if (!avail)
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
 		return
 	var/price = S.current_value
-	var/_answer_k289 = rerun_ask(user, "k289", PROC_REF(sell_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Have: [avail], unit price: [price])", title = "Sell shares in [S.name]", default = 0)
-	if(isnull(_answer_k289))
-		return
-	var/amt = round(_answer_k289)
-	amt = min(amt, LAZYACCESS(S.shareholders, logged_in))
+	open_request(S, /datum/prompt/number/stock_sell, TYPE_PROC_REF(/datum/stock, sell_shares_answered), answerer = user, subject = src, question = "How many shares? \n(Have: [avail], unit price: [price])", title = "Sell shares in [S.name]", default = 0)
 
-	if (!user || (!(user in range(1, src)) && iscarbon(user)))
-		return
-	if (!amt)
-		return
-	if (li != logged_in)
-		return
-	b = GLOB.supply_service.budget_balance()
-	if (!isnum(b))
-		to_chat(user, span_danger("No active account on the console!"))
-		return
-
+/obj/machinery/computer/stockexchange/proc/sell_shares_apply(datum/stock/S, mob/user, amount)
+	var/amt = min(round(amount), LAZYACCESS(S.shareholders, logged_in))
 	var/total = amt * S.current_value
 	if (!S.sellShares(logged_in, amt))
 		to_chat(user, span_danger("Could not complete transaction."))
@@ -329,22 +319,10 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 	var/avail = S.available_shares
 	var/price = S.current_value
 	var/canbuy = round(b / price)
-	var/_answer_k324 = rerun_ask(user, "k324", PROC_REF(buy_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", title = "Buy shares in [S.name]", default = 0)
-	if(isnull(_answer_k324))
-		return
-	var/amt = round(_answer_k324)
-	if (!user || (!(user in range(1, src)) && iscarbon(user)))
-		return
-	if (li != logged_in)
-		return
-	b = balance()
-	if (!isnum(b))
-		to_chat(user, span_danger("No active account on the console!"))
-		return
+	open_request(S, /datum/prompt/number/stock_buy, TYPE_PROC_REF(/datum/stock, buy_shares_answered), answerer = user, subject = src, question = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", title = "Buy shares in [S.name]", default = 0)
 
-	amt = min(amt, S.available_shares, round(b / S.current_value))
-	if (!amt)
-		return
+/obj/machinery/computer/stockexchange/proc/buy_shares_apply(datum/stock/S, mob/user, amount)
+	var/amt = min(round(amount), S.available_shares, round(balance() / S.current_value))
 	if (!S.buyShares(logged_in, amt))
 		to_chat(user, span_danger("Could not complete transaction."))
 		return
@@ -363,3 +341,68 @@ DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 /// the current_stock this refers to (a relation view: null once it is deleted).
 /obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
 	return current_stock
+
+/datum/prompt/number/stock_sell
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/stock_sell/recheck_extra()
+	if(QDELETED(owner) || QDELETED(subject) || QDELETED(answerer))
+		return "gone"
+	var/datum/stock/S = owner
+	var/obj/machinery/computer/stockexchange/console = subject
+	if(!console.logged_in)
+		return "No active account on the console!"
+	if(!LAZYACCESS(S.shareholders, console.logged_in))
+		return "This account does not own any shares of [S.name]!"
+	if(isnull(value))
+		return null
+	var/amt = min(round(value), LAZYACCESS(S.shareholders, console.logged_in))
+	if((!(answerer in range(1, console)) && iscarbon(answerer)) || !amt)
+		return "silent"
+	if(!isnum(SSsupply.budget_balance()))
+		return "No active account on the console!"
+
+/datum/stock/proc/sell_shares_answered(datum/act/request/A)
+	var/datum/prompt/number/stock_sell/request = A.request
+	var/obj/machinery/computer/stockexchange/console = request.subject
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.value))
+		return
+	if(A.answer)
+		console.sell_shares_apply(src, request.answerer, request.value)
+	else if(request.last_error && !(request.last_error in list("gone", "silent")))
+		to_chat(request.answerer, span_danger(request.last_error))
+	SStgui.update_uis(console)
+
+/datum/prompt/number/stock_buy
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/stock_buy/recheck_extra()
+	if(QDELETED(owner) || QDELETED(subject) || QDELETED(answerer))
+		return "gone"
+	var/datum/stock/S = owner
+	var/obj/machinery/computer/stockexchange/console = subject
+	if(!console.logged_in)
+		return "No active account on the console!"
+	if(!isnum(console.balance()))
+		return "No active account on the console!"
+	if(isnull(value))
+		return null
+	if(!(answerer in range(1, console)) && iscarbon(answerer))
+		return "silent"
+	if(!isnum(console.balance()))
+		return "No active account on the console!"
+	if(!min(round(value), S.available_shares, round(console.balance() / S.current_value)))
+		return "silent"
+
+/datum/stock/proc/buy_shares_answered(datum/act/request/A)
+	var/datum/prompt/number/stock_buy/request = A.request
+	var/obj/machinery/computer/stockexchange/console = request.subject
+	if(QDELETED(console) || QDELETED(request.answerer) || isnull(request.value))
+		return
+	if(A.answer)
+		console.buy_shares_apply(src, request.answerer, request.value)
+	else if(request.last_error && !(request.last_error in list("gone", "silent")))
+		to_chat(request.answerer, span_danger(request.last_error))
+	SStgui.update_uis(console)

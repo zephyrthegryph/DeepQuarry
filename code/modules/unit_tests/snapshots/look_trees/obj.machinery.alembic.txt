@@ -1,0 +1,5 @@
+/obj/machinery/alembic icon: icons/obj/chemical.dmi
+/obj/machinery/alembic state: alembic
+/obj/machinery/alembic dir: 2
+/obj/machinery/alembic overlay: icons/obj/chemical.dmi:alembic:8:#000000
+

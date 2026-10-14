@@ -3,7 +3,6 @@
 //
 /obj/machinery/station_map
 	name = "station holomap"
-	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).
 	desc = "A virtual map of the surrounding station."
 	icon = 'icons/obj/machines/stationmap.dmi'
 	icon_state = "station_map"
@@ -12,8 +11,6 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/station_map
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = ON_BORDER|WALL_ITEM
@@ -23,84 +20,72 @@
 	var/use_auto_lights = 1
 	var/light_power_on = 1
 	var/light_range_on = 2
-	light_color = "#64C864"
 
-	var/image/small_station_map = null
-	var/image/floor_markings = null
 	var/image/panel = null
 
 	var/original_zLevel = 1	// zLevel on which the station map was initialized.
+	var/offsets_settled_flag = FALSE
 	var/bogus = TRUE		// set to 0 when you initialize the station map on a zLevel that has its own icon formatted for use by station holomaps.
 	var/datum/station_holomap/holomap_datum
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/station_holomap)
+
+CAPABILITIES(/obj/machinery/station_map)
+	configure(light_glow(color = "#64C864"))
+	configure(uses_power(idle = 10, active = 500))
+	without("silicon_hand") // silicons can't use it by a plain click
+	ref_one(nameof(watching_mob))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(watching_mob), wakes_on = list(nameof(watching_mob)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	owns_one(nameof(holomap_datum), starts = /datum/station_holomap)
+	op("watch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Watch"), needs(req_is(nameof(watching_mob), FALSE, because = MSG(station_map/watched)), req_on_holder_turf(because = MSG(station_map/stand_in_front))), then(PROC_REF(interaction_watch)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
 
 /// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
-OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_mob")
-
+/obj/machinery/station_map/var/mob/watching_mob
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
 	original_zLevel = loc.z
-	SSholomaps.station_holomaps += src
-	if(SSholomaps.holomaps_initialized)
+	if(holomaps_holomaps_initialized())
 		setup_holomap()
 
 /// Phase 2: leaves the holomap index and stops watching.
 /obj/machinery/station_map/lifecycle_dematerialize()
 	. = ..()
-	SSholomaps.station_holomaps -= src
 	stopWatching()
 
 /obj/machinery/station_map/proc/setup_holomap()
-	bogus = FALSE
 	var/turf/T = get_turf(src)
-	original_zLevel = T.z
-	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in SSholomaps.extraMiniMaps))
-		bogus = TRUE
+	set_original_zLevel(T.z)
+	if(!("[HOLOMAP_EXTRA_STATIONMAP]_[original_zLevel]" in holomaps_extraMiniMaps()))
+		set_bogus(TRUE)
 		holomap_datum.initialize_holomap_bogus()
-		update_icon()
 		return
 
 	holomap_datum.initialize_holomap(T, reinit = TRUE)
+	set_bogus(FALSE)
 
-	small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = dir)
+	after(src, 0.1 SECONDS, PROC_REF(offsets_settled)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
-	floor_markings = image('icons/obj/machines/stationmap.dmi', "decal_station_map")
-	floor_markings.dir = src.dir
+/// The pixel offset of a machine built from a frame is set a moment after init: the floor markings (which cancel it) draw once it has settled.
+/obj/machinery/station_map/proc/offsets_settled()
+	set_offsets_settled_flag(TRUE)
 
-	om_after(src, 1, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
+MSG_DEF_SELF(station_map/watched, "someone else is currently watching the holomap")
+MSG_DEF_SELF(station_map/stand_in_front, "you need to stand in front of %T%")
 
-/obj/machinery/station_map/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/station_map_watch,
-		/datum/interaction/machine_item/station_map_fingerprint,
-	)
-	..()
 
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/station_map_watch
-	id = "station_map_watch"
-	name = "Watch"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/station_map/proc/can_watch))
-	effect = /obj/machinery/station_map/proc/interaction_watch
-
-/// Requirement: TRUE, or why the user can't watch the holomap.
-/obj/machinery/station_map/proc/can_watch(mob/user, atom/target, obj/item/held)
-	if(watching_mob() && (watching_mob() != user))
-		return "someone else is currently watching the holomap"
-	if(user.loc != loc)
-		return "you need to stand in front of \the [src]"
-	return TRUE
-
-/obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/station_map/proc/interaction_watch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(watching_mob())
-		return TRUE
+		return OP_OK
 	startWatching(user)
-	return TRUE
+	return OP_OK
 
 // Let people bump up against it to watch
-/obj/machinery/station_map/Bumped(atom/movable/AM)
+/// Something walked into it (the bump action's notice).
+/obj/machinery/station_map/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(!watching_mob() && isliving(AM) && AM.loc == loc)
 		startWatching(AM)
 
@@ -135,8 +120,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 
 			rel_set(src, nameof(watching_mob), user)
 			dq_add_recursive_move(watching_mob())
-			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
-			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
+			observe(watching_mob(), /datum/notice/movable_attempted_move, src, then(PROC_REF(checkPosition)))
+			observe(watching_mob(), /datum/notice/qdeleting, src, then(PROC_REF(on_watcher_deleted)))
 			set_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
@@ -147,17 +132,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 // TODO - Implement for AI ~Leshana
 // user.station_holomap.toggleHolomap(user, isAI(user))
 
-/obj/machinery/station_map/machine_step()
+/obj/machinery/station_map/proc/work_step(datum/act/timer/A)
 	if((!operable()) || !anchored || !watching_mob())
 		stopWatching()
 
-/obj/machinery/station_map/proc/checkPosition()
+/obj/machinery/station_map/proc/checkPosition(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!watching_mob() || (watching_mob().loc != loc) || (dir != watching_mob().dir))
 		stopWatching()
 
-/obj/machinery/station_map/proc/on_watcher_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/obj/machinery/station_map/proc/on_watcher_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	// watching_mob() already reads null for a watcher mid-delete: hand it over.
 	if((watching_mob == source))
 		stopWatching(source)
@@ -171,57 +157,41 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 			if(QDELETED(watcher))
 				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
 			else
-				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
-		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
+				after(watcher, 0.5 SECONDS, GLOBAL_PROC_REF(remove_client_image), with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
+		unobserve(watcher, /datum/notice/movable_attempted_move, src)
+		unobserve(watcher, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(watching_mob))
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		stopWatching()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
-	if(has_stat(NOPOWER))
-		set_light(0)
+	if(power_lost())
+		set_glow(src, GLOW(0, null, null))
 	else
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/station_map/appearance_overlays()
-	. = list()
+/obj/machinery/station_map/draw(datum/look/look)
+	..()
 	if(!holomap_datum)
-		return .
+		return
 
-	if(has_stat(BROKEN))
-		icon_state = "station_mapb"
-	else if((has_stat(NOPOWER)) || !anchored)
-		icon_state = "station_map0"
+	if(broken_now())
+		look.state("station_mapb")
+	else if((power_lost()) || !anchored)
+		look.state("station_map0")
 	else
-		icon_state = "station_map"
-
-		if(bogus)
-			holomap_datum.initialize_holomap_bogus()
-		else
-			small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = src.dir)
-			. += small_station_map
-			holomap_datum.initialize_holomap(get_turf(src))
+		look.state("station_map")
+		if(!bogus)
+			look.overlay(look_overlay_image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], null, dir = dir))
 
 	// Put the little "map" overlay down where it looks nice
-	if(floor_markings)
-		floor_markings.dir = src.dir
-		floor_markings.pixel_x = -src.pixel_x
-		floor_markings.pixel_y = -src.pixel_y
-		. += floor_markings
+	if(!bogus && offsets_settled_flag)
+		look.overlay(look_overlay_image('icons/obj/machines/stationmap.dmi', "decal_station_map", pixel_x = -pixel_x, pixel_y = -pixel_y, dir = dir))
 
-	if(panel_open)
-		. += "station_map-panel"
-
-/// Old attackby: fingerprinted, then always fell through to ..().
-/datum/interaction/machine_item/station_map_fingerprint
-	id = "station_map_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
+	look.overlay("station_map-panel", when = panel_open)
 
 /datum/frame/frame_types/station_map
 	name = "Station Map Frame"
@@ -256,7 +226,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, TYPE_PROC_REF(/atom, appeara
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
 
-
 /// The watching_mob this refers to (a relation view: null once that is deleted).
 /obj/machinery/station_map/proc/watching_mob() as /mob
 	return watching_mob
+
+/// after() target: takes an image off a mob's client screen (after a fade-out).
+/proc/remove_client_image(mob/M, image/I)
+	M.client?.images -= I

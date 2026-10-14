@@ -1,0 +1,13 @@
+act('spin', { rate: 1, mode: 'a', camelCase: 1, 'hyphen-key': 2 });
+act('open-ended', { anything_goes: 1, ...rest });
+act('checks', { a: 1 });
+act('numbers', {});
+act('helpers', {});
+act('chain3', { v: 1 });
+act('chain4', { w: 1 });
+act('use-allowed', { q: 1, r: 2, extra_unknown: 3 });
+act('useAllowedElsewhere', { s: 1 });
+act('kept_above', {});
+act('kept_same', {});
+act('spin_unsent_ghost', {});
+act('orphan', { zzz: 1 });

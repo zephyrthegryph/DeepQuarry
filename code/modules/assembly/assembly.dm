@@ -5,13 +5,9 @@
 	icon_state = ""
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 100)
-	throwforce = 2
 	throw_speed = 3
 	throw_range = 10
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound =  SFX_ITEMS_PICKUP_COMPONENT
 
-	var/list/attached_overlays = null
 	var/tmp/obj/item/assembly_holder/holder
 	var/cooldown = FALSE //To prevent spam
 	var/wires_type = WIRE_RECEIVE | WIRE_PULSE
@@ -29,7 +25,21 @@
 	var/activation_cooldown = 3 SECONDS
 
 /// Secured (ready to act); unsecured it can be attached to other assemblies.
-OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
+/obj/item/assembly/var/secured = TRUE
+TRACKED(/obj/item/assembly, secured)
+
+/// The overlay states this part adds to itself and, as "<state>_l" / "<state>_r", to the holder it sits in.
+/obj/item/assembly/proc/holder_layers()
+	return null
+
+/// The sprite state the holder shows for this part.
+/obj/item/assembly/proc/holder_state()
+	return initial(icon_state)
+
+/obj/item/assembly/draw(datum/look/look)
+	..()
+	for(var/layer in holder_layers())
+		look.overlay(layer)
 
 /obj/item/assembly/proc/holder_movement()
 	return
@@ -46,10 +56,6 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 		holder().process_activation(src, 1, 0)
 	if(holder() && (wires_type & WIRE_PULSE_SPECIAL))
 		holder().process_activation(src, 0, 1)
-	if(!holder() && isobj(loc) && (wires_type & WIRE_PULSE))
-		var/obj/host = loc
-		if(host.attached_assembly == src) // attached through the assembly capability
-			cap_assembly_pulsed(host, src)
 	return 1
 
 /obj/item/assembly/proc/activate()
@@ -60,7 +66,6 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 
 /obj/item/assembly/proc/toggle_secure()
 	set_secured(!secured)
-	update_icon()
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)
@@ -69,29 +74,31 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/assembly, \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-	INTERACT_USE("Use", PROC_REF(interaction_self)), \
-)
+CAPABILITIES(/obj/item/assembly)
+	configure(item_thrown(force = 2))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	op("attach", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attackby: attach another unsecured assembly.
-/obj/item/assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(isassembly(W))
-		var/obj/item/assembly/A = W
-		if((!A.secured) && (!secured))
-			attach_assembly(A,user)
-			return TRUE
-	return FALSE
+		var/obj/item/assembly/other = W
+		if((!other.secured) && (!secured))
+			attach_assembly(other, user)
+			return OP_OK
+	return OP_DECLINE
 
-/obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(toggle_secure())
 		to_chat(user, span_notice("\The [src] is ready!"))
 	else
 		to_chat(user, span_notice("\The [src] can now be attached!"))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/assembly/periodic_step()
-	return PROCESS_KILL
+	return OP_OK
 
 /obj/item/assembly/examine(mob/user)
 	. = ..()
@@ -101,26 +108,20 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 		else
 			. += "\The [src] can be attached!"
 
-/// Old attack_self: subtypes override interaction_self() and call ..() first, matching the
-/// old override chain (a subtype's own handling takes priority; this base opens the UI).
-/// Compact INTERACT_USE dispatches virtually by proc name, so every subtype's override
-/// (voice, igniter, shock_kit, mousetrap, ...) is reached with no interaction of its own -
-/// one shared /datum/interaction/generic singleton covers the whole hierarchy.
-/obj/item/assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: the base opens the UI. A subtype with special_handling overrides this (without ..()) and
+/// does its own thing; the op is virtual by proc name, so every override is reached through the one "use" op.
+/obj/item/assembly/proc/interaction_self(datum/act/op/A)
 	if(special_handling)
-		return FALSE
-	if(!user)
-		return FALSE
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI_STATE(/obj/item/assembly, GLOB.tgui_deep_inventory_state)
+		return OP_DECLINE
+	tgui_interact(A.actor)
+	return OP_OK
 
 
 
 /obj/item/assembly/tgui_host()
 	if(istype(loc, /obj/item/assembly_holder))
-		return loc.tgui_host()
+		var/obj/item/assembly_holder/host = loc
+		return host.tgui_host()
 	return ..()
 
 /// the holder this refers to (a relation view: null once it is deleted).

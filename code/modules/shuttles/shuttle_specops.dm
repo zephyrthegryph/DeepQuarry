@@ -3,10 +3,12 @@
 	shuttle_tag = "Special Operations"
 	req_access = list(ACCESS_CENT_SPECOPS)
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SILICON("Use", PROC_REF(specops_silicon_refuse)))
+CAPABILITIES(/obj/machinery/computer/shuttle_control/specops)
+	op("specops_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(specops_silicon_refuse)))
 
 /// Old attack_ai: refuse silicons.
-/obj/machinery/computer/shuttle_control/specops/proc/specops_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/shuttle_control/specops/proc/specops_silicon_refuse(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("Access Denied."))
 	return TRUE
 
@@ -21,9 +23,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	var/cancel_countdown = 0
 	category = /datum/shuttle/autodock/ferry/specops
 
+CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
+	owns_one(nameof(announcer), /obj/item/radio/intercom)
+
 /datum/shuttle/autodock/ferry/specops/New()
 	..()
-	own_set(src, nameof(announcer), new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+	rel_set(src, nameof(announcer), new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 /datum/shuttle/autodock/ferry/specops/proc/radio_announce(message)
@@ -78,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 /datum/shuttle/autodock/ferry/specops/perform_shuttle_move()
 	..()
 
-	om_after(src, 2 SECONDS, PROC_REF(announce_arrival))
+	after(src, 2 SECONDS, PROC_REF(announce_arrival))
 
 /datum/shuttle/autodock/ferry/specops/cancel_launch()
 	if (!can_cancel())
@@ -114,8 +119,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	for(var/seconds in message_tracker)
 		var/delay = specops_countdown_time - seconds * 10
 		if(delay >= 0 && seconds * 10 < specops_countdown_time)
-			om_after(src, delay, PROC_REF(announce_countdown), seconds)
-	om_after(src, specops_countdown_time, PROC_REF(countdown_ended), user)
+			after(src, delay, PROC_REF(announce_countdown), with = list(seconds))
+	after(src, specops_countdown_time, PROC_REF(countdown_ended), with = list(user))
 
 /datum/shuttle/autodock/ferry/specops/proc/announce_countdown(seconds)
 	if(cancel_countdown || !launch_prep)
@@ -142,8 +147,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
-			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
-	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_portals), special_ops)
+			after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
+	after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_portals), with = list(special_ops))
 
 /proc/mauraders_portals(area/centcom/specops/special_ops)
 	var/spawn_marauder[] = new()
@@ -153,38 +158,42 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(L.name == "Marauder Exit")
 			var/obj/effect/portal/P = new(L.loc)
-			P.invisibility = INVISIBILITY_ABSTRACT //So it is not seen by anyone.
+			P.set_invisibility(INVISIBILITY_ABSTRACT) //So it is not seen by anyone.
 			P.failchance = 0//So it has no fail chance when teleporting.
 			rel_set(P, nameof(P.target), pick(spawn_marauder))//Where the marauder will arrive.
 			spawn_marauder.Remove(P.target_ref())
-	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), special_ops)
+	after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), with = list(special_ops))
 
 /proc/mauraders_drive(area/centcom/specops/special_ops)
 	for(var/obj/machinery/mass_driver/M in special_ops)
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
-			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
-	om_after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), special_ops) //Doors remain open for 5 seconds.
+			after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
+	after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), with = list(special_ops)) //Doors remain open for 5 seconds.
 
 /proc/mauraders_close(area/centcom/specops/special_ops)
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		if(marauder_bay_delay(M.id)) //Doors close at the same time.
 			M.close()
-	special_ops.readyreset()//Reset firealarm after the team launched.
+	special_ops?.readyreset()//Reset firealarm after the team launched.
 
 /obj/machinery/light/small/readylight
 	brightness_range = 5
 	brightness_power = 1
 	brightness_color = "#DA0205"
-	state = 0
+	var/state = 0
 
-/obj/machinery/light/small/readylight/set_state(new_state)
-	. = ..()
+/obj/machinery/light/small/readylight/proc/set_state(new_state)
+	. = FALSE
+	if(state != new_state)
+		state = new_state
+		tracked_changed(src, "state")
+		. = TRUE
 	if(state)
 		brightness_color = "00FF00"
 	else
 		brightness_color = initial(brightness_color)
-	update()
+	refresh_light()
 
 /datum/shuttle/autodock/ferry/specops/proc/announce_arrival()
 	if (!location)	//just arrived home
@@ -200,3 +209,5 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 			var/obj/machinery/light/small/readylight/light = locate_within(T, /obj/machinery/light/small/readylight)
 			if(light) light.set_state(1)
 
+
+SETTER(/obj/machinery/light/small/readylight, state)

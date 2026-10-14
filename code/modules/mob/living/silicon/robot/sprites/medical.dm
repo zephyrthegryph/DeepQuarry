@@ -253,8 +253,8 @@
 		SP.name = "paws of life"
 		SP.desc = "Zappy paws. For fixing cardiac arrest."
 		SP.icon = 'icons/mob/dogborg_vr.dmi'
-		SP.icon_state = "defibpaddles0"
-		SP.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		SP.set_icon_state("defibpaddles0")
+		SP.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/surgical/vale
 	name = "Traumahound"
@@ -296,8 +296,8 @@
 		SP.name = "paws of life"
 		SP.desc = "Zappy paws. For fixing cardiac arrest."
 		SP.icon = 'icons/mob/dogborg_vr.dmi'
-		SP.icon_state = "defibpaddles0"
-		SP.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		SP.set_icon_state("defibpaddles0")
+		SP.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/tall/surgical/raptor
 	name = "Raptor V-4 - Surgical"
@@ -374,8 +374,8 @@
 		SP.name = "paws of life"
 		SP.desc = "Zappy paws. For fixing cardiac arrest."
 		SP.icon = 'icons/mob/dogborg_vr.dmi'
-		SP.icon_state = "defibpaddles0"
-		SP.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		SP.set_icon_state("defibpaddles0")
+		SP.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/crisis/hound
 	name = "Medihound"
@@ -430,8 +430,8 @@
 		SP.name = "paws of life"
 		SP.desc = "Zappy paws. For fixing cardiac arrest."
 		SP.icon = 'icons/mob/dogborg_vr.dmi'
-		SP.icon_state = "defibpaddles0"
-		SP.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		SP.set_icon_state("defibpaddles0")
+		SP.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/tall/crisis/raptor
 	name = "Raptor V-4 - Crisis"

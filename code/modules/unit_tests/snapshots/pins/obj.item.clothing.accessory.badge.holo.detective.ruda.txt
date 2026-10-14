@@ -1,0 +1,22 @@
+@obj.item.clothing.accessory human|none
+@obj.item.clothing.accessory robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.clothing.accessory.badge human|/obj/item/tool/screwdriver
+@obj.item.clothing.accessory.badge human|/obj/item/tool/crowbar
+@obj.item.clothing.accessory.badge human|/obj/item/tool/wrench
+@obj.item.clothing.accessory.badge human|/obj/item/tool/wirecutters
+@obj.item.clothing.accessory.badge human|/obj/item/multitool
+@obj.item.clothing.accessory.badge human|/obj/item/weldingtool
+@obj.item.clothing.accessory.badge human|/obj/item/stack/cable_coil
+@obj.item.clothing.accessory.badge human|/obj/item/stack/material/steel
+@obj.item.clothing.accessory human|/obj/item/card/id
+-menu: Collar tag item
+-click: Click: Accessory attached hand
++5 menu: Use identification card (refused: Hisstective's Badge rejects your insufficient access rights.)
++6 click: Click: Holobadge imprint item
+@obj.item.clothing.accessory.badge human|/obj/item/kit
+@obj.item.clothing.accessory.badge human|/obj/item/storage
+@obj.item.clothing.accessory.badge human|/obj/item
+@obj.item.clothing.accessory human|/obj/item/card/emag
+keys: accessory_attached_hand, badge_display_self, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, holobadge_imprint_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, ruda_badge_self, toggle_digestable

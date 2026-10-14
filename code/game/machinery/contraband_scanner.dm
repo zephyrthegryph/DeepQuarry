@@ -7,10 +7,7 @@
 	anchored = TRUE
 	opacity = FALSE
 	density = FALSE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 250
 
 	var/deep_scan = TRUE		//check more than just their hands/pockets?
 	var/contraband_count = 0	//how many items have we detected? only one actually needs to be found to set off the alarm
@@ -25,6 +22,9 @@
 	var/trigger_sound	=	SFX_MACHINES_AIRALARM	//sound that plays when we're set off
 
 	var/static/list/contraband = list(/obj/item/melee,/obj/item/gun,/obj/item/material)
+
+CAPABILITIES(/obj/machinery/contraband_scanner)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 250))
 
 /obj/machinery/contraband_scanner/Crossed(mob/living/M as mob)
 	if(M.is_incorporeal())
@@ -54,7 +54,7 @@
 				if(power_fields)
 					A.arfgs_activate()
 				if(auto_cancel)
-					om_after(src, cooldown, PROC_REF(auto_cancel_lockdown), A)
+					after(src, cooldown, PROC_REF(auto_cancel_lockdown), with = list(A))
 
 	..()
 

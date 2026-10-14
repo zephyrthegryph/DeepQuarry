@@ -7,21 +7,21 @@
 
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
-	slot_flags = SLOT_BELT
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-
-DECLARE_UI_STATE(/obj/item/destTagger, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/destTagger, "DestinationTagger")
 
 /obj/item/destTagger/tgui_static_data(mob/user)
 	. = ..()
 	.["level_names"] = using_map.zlevels
 
-UI_DATA(/obj/item/destTagger, "currTag:num", "merge:ui_data_obj_item_destTagger{taggerLocs:unknown}")
+/obj/item/destTagger/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["currTag"] = currTag
+	var/list/merged_1 = ui_data_obj_item_destTagger(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/destTagger's window data (declared on its UI_DATA row).
+/// /obj/item/destTagger's window data.
 /obj/item/destTagger/proc/ui_data_obj_item_destTagger(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -29,30 +29,31 @@ UI_DATA(/obj/item/destTagger, "currTag:num", "merge:ui_data_obj_item_destTagger{
 
 	return data
 
-DECLARE_INTERACTIONS(/obj/item/destTagger, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/destTagger)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("DestinationTagger", state = nameof(GLOB.tgui_inventory_state))
+	op("set_tag", ui_act("set_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_set_tag)))
+	op("new_tag", ui_act("new_tag", arg("tag", schema_text(4096))), then(PROC_REF(ui_act_new_tag)))
 
 /// Old attack_self.
-/obj/item/destTagger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/destTagger/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/destTagger/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/item/destTagger, "set_tag", ui_act_set_tag, UI_ARG_TEXT("tag"))
-UI_ACT_PROC(/obj/item/destTagger, ui_act_set_tag)
-	var/new_tag = params["tag"]
+/obj/item/destTagger/proc/ui_act_set_tag(datum/act/op/A, tag)
+	add_fingerprint(A.actor)
+	var/new_tag = tag
 	if(!(new_tag in GLOB.tagger_locations))
 		return FALSE
 	currTag = new_tag
 	return TRUE
 
-UI_ACT(/obj/item/destTagger, "new_tag", ui_act_new_tag, UI_ARG_TEXT("tag"))
-UI_ACT_PROC(/obj/item/destTagger, ui_act_new_tag)
-	var/dest_tag = sanitizeName(params["tag"], allow_numbers = TRUE)
+/obj/item/destTagger/proc/ui_act_new_tag(datum/act/op/A, tag)
+	add_fingerprint(A.actor)
+	var/dest_tag = sanitizeName(tag, allow_numbers = TRUE)
 	if(!istext(dest_tag) || length(dest_tag) < 3)
 		return FALSE
 	if(dest_tag in GLOB.tagger_locations)

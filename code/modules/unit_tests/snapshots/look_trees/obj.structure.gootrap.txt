@@ -1,0 +1,11 @@
+/obj/structure/gootrap icon: icons/effects/blood.dmi
+/obj/structure/gootrap state: mfloor1
+/obj/structure/gootrap dir: 2
+/obj/structure/gootrap color: #030303
+/obj/structure/gootrap overlay: icons/effects/blood.dmi:mfloor1:8:#000000
+/obj/structure/gootrap/interim_actor_probe icon: icons/effects/blood.dmi
+/obj/structure/gootrap/interim_actor_probe state: mfloor1
+/obj/structure/gootrap/interim_actor_probe dir: 2
+/obj/structure/gootrap/interim_actor_probe color: #030303
+/obj/structure/gootrap/interim_actor_probe overlay: icons/effects/blood.dmi:mfloor1:8:#000000
+

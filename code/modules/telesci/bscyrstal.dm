@@ -8,15 +8,17 @@
 	w_class = ITEMSIZE_TINY
 	var/blink_range = 8 // The teleport range when crushed/thrown at someone.
 
-/obj/item/bluespace_crystal/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5, 5)
-	pixel_y = rand(-5, 5)
+CAPABILITIES(/obj/item/bluespace_crystal)
+	op("self", in_hand(), needs(req(PROC_REF(crystal_releasable))), then(PROC_REF(interaction_self)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
-DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// A crystal must be removable before crushing can teleport its holder.
+/obj/item/bluespace_crystal/proc/crystal_releasable(datum/act/op/A)
+	return A.actor ? A.actor.release_refusal(src, A.actor) : /datum/msg/req_wrong_item
 
 /// Old attack_self.
-/obj/item/bluespace_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_crystal/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
 	fx_sparks(get_turf(src), 5)
 	blink_mob(user)
@@ -34,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(in
 		if(isliving(hit_atom))
 			blink_mob(hit_atom)
 		dephase_shadekin() // mess with shadekins
-		qdel(src)
+		destroyed(src, null, BRUTE)
 
 // Artifical bluespace crystal, doesn't give you much research.
 

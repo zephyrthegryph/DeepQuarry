@@ -48,9 +48,6 @@ I think I covered everything.
 ///		Main type
 ///
 
-OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, firebreathtimer)
-OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
-
 /mob/living/simple_mob/vore/bigdragon
 	drag_buckle = FALSE
 	name = "large dragon"
@@ -104,7 +101,6 @@ OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	glow_intensity = 3
 	glow_color = "#ED9200"
 	say_list_type = /datum/say_list/bigdragon
-	devourable = 0	//No
 	universal_understand = 1 //So they can hear synth speach
 	max_tox = 0 // for virgo3b survivability
 	max_co2 = 0 // Also needed for 3b Survivability otherwise it chokes to death
@@ -185,7 +181,6 @@ OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	)
 	var/eyes
 
-	can_be_drop_prey = FALSE
 
 ///
 ///		Subtypes
@@ -208,7 +203,9 @@ OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	endurance = 200
 	melee_damage_lower = 20
 	melee_damage_upper = 15
-	allow_mind_transfer = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 ///
 ///		Misc define stuff
@@ -241,29 +238,11 @@ OWN_TIMER(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	The most common example of this being gold coins and ingots."
 	value = CATALOGUER_REWARD_SUPERHARD //Scan range is the same as flame breath range. Good luck.
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/set_style)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/special_toggle)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/export_style)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/import_style)
-
 /mob/living/simple_mob/vore/bigdragon/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	faction = FACTION_NEUTRAL
-
-/mob/living/simple_mob/vore/bigdragon/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	build_icons(1)
-	add_language(LANGUAGE_DRUDAKAR)
-	add_language(LANGUAGE_UNATHI)
-	icon_state = "dragon_maneNone" // ALLOW(decl): set after build_icons()
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
@@ -327,88 +306,59 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/bigdragon/appearance_overlays()
-	. = list()
-	. += ..()
-	update_fullness()
-	build_icons()
-
-/mob/living/simple_mob/vore/bigdragon/proc/build_icons(random)
-	cut_overlays()
+/// The dragon's modular look: tinted underbelly, body, ears, mane, horns and eyes layers, plus rage and flame overlays.
+/mob/living/simple_mob/vore/bigdragon/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		plane = MOB_LAYER
+		look.set_plane(MOB_LAYER)
 		return
-	else
-		plane = ABOVE_MOB_PLANE
-	if(random)
-		var/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
-		under = pick(underbelly_styles)
-		overlay_colors["Underbelly"] = pick(bodycolors)
-		body_style = pick(body_styles)
-		overlay_colors["Body"] = pick(bodycolors)
-		ears = pick(ear_styles)
-		overlay_colors["Ears"] = get_random_colour(0, 100, 150)
-		mane = pick(mane_styles)
-		overlay_colors["Mane"] = pick(bodycolors)
-		horns = pick(horn_styles)
-		var/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
-		overlay_colors["Horns"] = pick(horncolors)
-		eyes = pick(eye_styles)
-		overlay_colors["Eyes"] = get_random_colour(1)
-
-	var/image/I = image(icon, "dragon_under[under][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]")
-	I.color = overlay_colors["Underbelly"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_body[body_style][resting? "-rest" : null]")
-	I.color = overlay_colors["Body"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_ears[ears][resting? "-rest" : null]")
-	I.color = overlay_colors["Ears"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_mane[mane][resting? "-rest" : null]")
-	I.color = overlay_colors["Mane"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_horns[horns][resting? "-rest" : null]")
-	I.color = overlay_colors["Horns"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = MOB_PLANE
-	I.layer = MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "dragon_eyes[eyes][resting? "-rest" : null]")
-	I.color = overlay_colors["Eyes"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(I)
-
+	look.set_plane(ABOVE_MOB_PLANE)
+	look.state("dragon_maneNone")
+	var/rest_suffix = resting ? "-rest" : null
+	look.overlay(look_overlay_image(icon, "dragon_under[under][resting ? "-rest" : (vore_fullness ? "-[vore_fullness]" : null)]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Underbelly"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_body[body_style][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Body"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_ears[ears][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Ears"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_mane[mane][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Mane"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_horns[horns][rest_suffix]", MOB_LAYER, MOB_PLANE, color = overlay_colors["Horns"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "dragon_eyes[eyes][rest_suffix]", plane = PLANE_LIGHTING_ABOVE, color = overlay_colors["Eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 	if(enraged)
-		I = image(icon, "dragon_rage")
-		I.appearance_flags |= PIXEL_SCALE
-		I.plane = MOB_PLANE
-		I.layer = MOB_LAYER
-		add_overlay(I)
+		look.overlay(look_overlay_image(icon, "dragon_rage", MOB_LAYER, MOB_PLANE, appearance_flags = PIXEL_SCALE))
 	if(flames)
-		I = image(icon, "dragon_flame[resting? "-rest" : null]")
-		I.appearance_flags |= PIXEL_SCALE
-		I.plane = PLANE_LIGHTING_ABOVE
-		add_overlay(I)
+		look.overlay(look_overlay_image(icon, "dragon_flame[rest_suffix]", plane = PLANE_LIGHTING_ABOVE, appearance_flags = PIXEL_SCALE))
+
+/// Rolls a random modular style and colour set (spawn time).
+/// Each spawned dragon looks its own (rolls()): one style of each part, and the colours of its layers.
+/mob/living/simple_mob/vore/bigdragon/proc/roll_style(datum/roller/R, target)
+	var/static/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
+	var/static/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
+	switch(target)
+		if("under")
+			return R.choose(underbelly_styles)
+		if("body_style")
+			return R.choose(body_styles)
+		if("ears")
+			return R.choose(ear_styles)
+		if("mane")
+			return R.choose(mane_styles)
+		if("horns")
+			return R.choose(horn_styles)
+		if("eyes")
+			return R.choose(eye_styles)
+		if("overlay_colors")
+			var/list/colors = overlay_colors.Copy()
+			colors["Underbelly"] = R.choose(bodycolors)
+			colors["Body"] = R.choose(bodycolors)
+			colors["Ears"] = R.hex_colour(100, 150)
+			colors["Mane"] = R.choose(bodycolors)
+			colors["Horns"] = R.choose(horncolors)
+			colors["Eyes"] = "#[R.choose(list("FF0000", "FF7F00", "FFFF00", "00FF00", "0000FF", "4B0082", "8F00FF"))]"
+			return colors
+
+/// Recolours one layer; the colour table is replaced whole so the tracked write is seen.
+/mob/living/simple_mob/vore/bigdragon/proc/paint(part, value)
+	var/list/colors = overlay_colors.Copy()
+	colors[part] = value
+	set_overlay_colors(colors)
 
 /mob/living/simple_mob/vore/bigdragon/proc/set_style()
 	set name = "Set Dragon Style"
@@ -418,11 +368,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	var/list/options = list("Underbelly","Body","Ears","Mane","Horns","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, image('icons/effects/bigdragon_labels.dmi', option))
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+	open_request(src, /datum/prompt/choice, PROC_REF(style_part_chosen), answerer = src, choices = options, anchor = src, radius = 60, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// First radial answer: offer the styles of the picked part.
-/mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
-	var/part = ask.choice
+/mob/living/simple_mob/vore/bigdragon/proc/style_part_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/part = A.answer.value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options
@@ -459,48 +411,60 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 				LAZYSET(options, option, I)
 		else
 			return
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+	open_request(src, /datum/prompt/choice/bigdragon_style, PROC_REF(style_chosen), answerer = src, choices = options, anchor = src, radius = 90, part = part)
 
 /// Second radial answer: pick the colour for the chosen style.
-/mob/living/simple_mob/vore/bigdragon/proc/style_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/datum/prompt/choice/bigdragon_style
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
+	var/part
+
+/mob/living/simple_mob/vore/bigdragon/proc/style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bigdragon_style/ask = A.answer
+	var/choice = ask.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
-	var/part = ask.subject
+	var/part = ask.part
 	var/static/list/titles = list("Underbelly" = "Underbelly", "Body" = "Body", "Ears" = "Ear", "Mane" = "Mane", "Horns" = "Horn", "Eyes" = "Eye")
 	var/label = titles[part]
 	if(!label)
 		return
-	om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick [lowertext(label)] color:", title = "[label] Color", default = overlay_colors[part], overlay = part, style = choice)
+	open_request(src, /datum/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), answerer = src, question = "Pick [lowertext(label)] color:", title = "[label] Color", default = overlay_colors[part], overlay = part, style = choice)
 
 /// One of the dragon's overlay colours, picked after its style. The style lands with the colour.
-/datum/om/prompt/color/bigdragon_overlay
+/datum/prompt/color/bigdragon_overlay
 	ask_flags = ASK_CAPABLE
+	timeout = 0
 	/// The overlay_colors key: "Underbelly", "Body", "Ears", "Mane", "Horns" or "Eyes".
 	var/overlay
 	/// The style picked for that overlay.
 	var/style
 
-/mob/living/simple_mob/vore/bigdragon/proc/overlay_color_picked(datum/om/prompt/color/bigdragon_overlay/ask)
-	if(!ask.picked_color)
+/mob/living/simple_mob/vore/bigdragon/proc/overlay_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/bigdragon_overlay/ask = A.answer
+	if(!ask.value)
 		return
 	switch(ask.overlay)
 		if("Underbelly")
-			under = ask.style
+			set_under(ask.style)
 		if("Body")
-			body_style = ask.style
+			set_body_style(ask.style)
 		if("Ears")
-			ears = ask.style
+			set_ears(ask.style)
 		if("Mane")
-			mane = ask.style
+			set_mane(ask.style)
 		if("Horns")
-			horns = ask.style
+			set_horns(ask.style)
 		if("Eyes")
-			eyes = ask.style
+			set_eyes(ask.style)
 		else
 			return
-	overlay_colors[ask.overlay] = ask.picked_color
-	build_icons()
+	paint(ask.overlay, ask.value)
 
 ///
 ///		Vore stuff
@@ -518,7 +482,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you.")
 	gut1 = B
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
@@ -669,23 +633,20 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 ///		AI handling stuff
 ///
 
-/datum/om/stage/life/special/vore/bigdragon
-	of = /mob/living/simple_mob/vore/bigdragon
-
-/datum/om/stage/life/special/vore/bigdragon/perform(mob/living/simple_mob/vore/bigdragon/self, datum/om/frame/life/ctx)
-	if(!self.noenrage)
-		if(!self.enraged)
-			if(self.vitality() <= 0.5)
-				self.enraged = 1
-				om_after(self, 0, TYPE_PROC_REF(/mob/living, say), "No more games. COME HERE.")
-		if(self.enraged)
-			if(self.vitality() >= 0.5)
-				self.enraged = 0
-	if(self.resting)	//Give them a way to slowly heal over time while player controlled
-		self.mend(TREAT_TISSUE_REPAIR, 2.5)
-		self.mend(TREAT_BURN_CARE, 2.5)
-		self.mend(TREAT_ANTITOXIN, 5)
-		self.mend(TREAT_OXYGENATION, 5)
+/mob/living/simple_mob/vore/bigdragon/life_special(datum/seq_frame/life/F)
+	if(!src.noenrage)
+		if(!src.enraged)
+			if(src.vitality() <= 0.5)
+				set_enraged(1)
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."), keeps_dead = TRUE)
+		if(src.enraged)
+			if(src.vitality() >= 0.5)
+				set_enraged(0)
+	if(src.resting)	//Give them a way to slowly heal over time while player controlled
+		src.mend(TREAT_TISSUE_REPAIR, 2.5)
+		src.mend(TREAT_BURN_CARE, 2.5)
+		src.mend(TREAT_ANTITOXIN, 5)
+		src.mend(TREAT_OXYGENATION, 5)
 
 /mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A, stance)
 	. = TRUE
@@ -716,7 +677,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		om_after(src, 1, PROC_REF(yeet), am)
+		after(src, 0.1 SECONDS, PROC_REF(yeet), with = list(am))
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 //Split repulse into two parts so I can recycle this later
@@ -729,14 +690,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	if(distfromcaster == 0)
 		if(isliving(AM))
 			var/mob/living/M = AM
-			M.status_at_least(EFFECT_WEAKENED, 5)
+			M.status_at_least(STAT_WEAKENED, 5)
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 50, source = src)	//A dragon just slammed ontop of you
 			to_chat(M, span_userdanger("You're slammed into the floor by [src]!"))
 	else
 		if(isliving(AM))
 			var/mob/living/M = AM
-			M.status_at_least(EFFECT_WEAKENED, 1.5)
+			M.status_at_least(STAT_WEAKENED, 1.5)
 			if(!gentle)
 				M.injure(INJURY_BLUNT, 20, source = src)
 			to_chat(M, span_userdanger("You're thrown back by [src]!"))
@@ -748,7 +709,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
+	after(src, charge_warmup, PROC_REF(chargeend), key = "chargetimer", with = list(A), keeps_dead = TRUE)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -756,15 +717,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	if(QDELETED(A) || !isturf(get_turf(A)))
 		ai_busy_end()
 		return
-	status_flags |= LEAPING
-	flying  = 1		//So we can thunk into things
+	set_status_flags(status_flags | LEAPING)
+	set_flying(src, 1) //So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
-	flying = 0
+		set_status_flags(status_flags & ~LEAPING)
+	set_flying(src, 0)
 	dq_set_hovering(src, 0)
 
 	var/mob/living/target = null
@@ -784,12 +745,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	ai_busy_end()
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathstart(atom/A)
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	if(!enraged)
 		ai_busy_begin()
-	flames = 1
-	build_icons()
-	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	set_flames(1)
+	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A), keeps_dead = TRUE)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)
@@ -803,8 +763,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
 	set_glow_toggle(0)
-	flames = 0
-	build_icons()
+	set_flames(0)
 
 /obj/item/projectile/bullet/dragon
 	use_submunitions = 1
@@ -816,7 +775,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	submunitions = list(/obj/item/projectile/bullet/incendiary/dragonflame = 5)
 
 /obj/item/projectile/bullet/dragon/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/incendiary/dragonflame
 	name = "dragon flame"
@@ -844,7 +803,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		return 1
 
 /obj/item/projectile/bullet/incendiary/dragonflame/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/incendiary/dragonflame/Move()
 	. = ..()
@@ -874,11 +833,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 
 	handle_tame_item(O, user)
 
-	// DQEdit - legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	// Legacy ai_brain swap removed. Modern brain uses set_hostile() /
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
-	rel_set(src, nameof(vore_selected), gut2) //Just incase it eats someone right after being tamed
+	set_vore_selected(src, gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_hostile(FALSE)
 	ai_brain?.lose_target()
 
@@ -888,22 +847,22 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 //dragon variant that'll swap back to hostile if pissed off
 //Attack overrides to let us """Attack""" allies and heal them
 /mob/living/simple_mob/vore/bigdragon/proc/enrage(atom/movable/attacker)
-	enraged = 1
+	set_enraged(1)
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
-	// DQEdit - legacy ai_brain swap removed; brain stays put.
+	// Legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
-	rel_set(src, nameof(vore_selected), gut1)
+	set_vore_selected(src, gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)
 
 /mob/living/simple_mob/vore/bigdragon/proc/canceltimers()
 	//Cancel any charges or firebreaths winding up
-	if(om_timer_slot_pending(src, "firebreathtimer"))
-		om_cancel_timer_slot(src, "firebreathtimer")
-	if(om_timer_slot_pending(src, "chargetimer"))
-		om_cancel_timer_slot(src, "chargetimer")
+	if(after_pending(src, "firebreathtimer"))
+		cancel_after(src, "firebreathtimer")
+	if(after_pending(src, "chargetimer"))
+		cancel_after(src, "chargetimer")
 	//re-enable the AI
 	ai_busy_end()
 //Smack people it warns
@@ -930,44 +889,73 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.")
+	open_request(src, /datum/prompt/text, PROC_REF(import_style_entered), answerer = src, title = "Style loading", question = "Paste the style string you exported with Export Style.", timeout = 0)
 
-/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/om/prompt/text/ask)
-	var/input_style = ask.text
+/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input_style = A.answer.value
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
 		if((LAZYLEN(input_style_list) == 12) && (input_style_list[2] in underbelly_styles) && (input_style_list[4] in body_styles) && (input_style_list[6] in ear_styles) && (input_style_list[8] in mane_styles) && (input_style_list[10] in horn_styles) && (input_style_list[12] in ear_styles))
 			try
 				if(rgb2num(input_style_list[1]))
-					overlay_colors["Underbelly"] = input_style_list[1]
+					paint("Underbelly", input_style_list[1])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			under = input_style_list[2]
+			set_under(input_style_list[2])
 			try
 				if(rgb2num(input_style_list[3]))
-					overlay_colors["Body"] = input_style_list[3]
+					paint("Body", input_style_list[3])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			body_style = input_style_list[4]
+			set_body_style(input_style_list[4])
 			try
 				if(rgb2num(input_style_list[5]))
-					overlay_colors["Ears"] = input_style_list[5]
+					paint("Ears", input_style_list[5])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			ears = input_style_list[6]
+			set_ears(input_style_list[6])
 			try
 				if(rgb2num(input_style_list[7]))
-					overlay_colors["Mane"] = input_style_list[7]
+					paint("Mane", input_style_list[7])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			mane = input_style_list[8]
+			set_mane(input_style_list[8])
 			try
 				if(rgb2num(input_style_list[9]))
-					overlay_colors["Horns"] = input_style_list[9]
+					paint("Horns", input_style_list[9])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			horns = input_style_list[10]
+			set_horns(input_style_list[10])
 			try
 				if(rgb2num(input_style_list[11]))
-					overlay_colors["Eyes"] = input_style_list[11]
+					paint("Eyes", input_style_list[11])
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
-			eyes = input_style_list[12]
-			build_icons()
+			set_eyes(input_style_list[12])
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/bigdragon, "mob_radio", /obj/item/radio/headset/mob_headset)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, overlay_colors)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, body_style)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, horns)
+TRACKED(/mob/living/simple_mob/vore/bigdragon, eyes)
+
+CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	knows(LANGUAGE_DRUDAKAR)
+	knows(LANGUAGE_UNATHI)
+	rolls(nameof(under), PROC_REF(roll_style))
+	rolls(nameof(body_style), PROC_REF(roll_style))
+	rolls(nameof(ears), PROC_REF(roll_style))
+	rolls(nameof(mane), PROC_REF(roll_style))
+	rolls(nameof(horns), PROC_REF(roll_style))
+	rolls(nameof(eyes), PROC_REF(roll_style))
+	rolls(nameof(overlay_colors), PROC_REF(roll_style))
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/set_style, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/toggle_glow, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/flame_toggle, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/special_toggle, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE)
+
+
+/mob/living/simple_mob/vore/bigdragon/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

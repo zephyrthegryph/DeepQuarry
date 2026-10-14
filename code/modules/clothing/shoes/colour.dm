@@ -33,7 +33,9 @@
 /obj/item/clothing/shoes/white
 	name = "white shoes"
 	icon_state = "white"
-	permeability_coefficient = 0.01
+
+CAPABILITIES(/obj/item/clothing/shoes/white)
+	configure(item_protection(permeability = 0.01))
 
 /obj/item/clothing/shoes/rainbow
 	name = "rainbow shoes"
@@ -95,11 +97,11 @@
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
 	if (chained()) return
 
-	user.drop_item()
-	cuffs.forceMove(src)
+	if(!own_bring_in(src, nameof(chained), cuffs, null, user, TRUE, null, FALSE))
+		return
 	rel_set(src, nameof(chained), cuffs)
 	slowdown = 15
-	icon_state = "orange1"
+	set_icon_state("orange1")
 
 /obj/item/clothing/shoes/orange/proc/remove_cuffs(mob/user as mob)
 	if (!chained()) return
@@ -108,24 +110,26 @@
 	chained().add_fingerprint(user)
 
 	slowdown = initial(slowdown)
-	icon_state = "orange"
+	set_icon_state("orange")
 	rel_clear(src, nameof(chained))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
-	INTERACT_USE("Remove cuffs", PROC_REF(orange_shoes_uncuff_self)), \
-	INTERACT_ITEM(null, PROC_REF(orange_shoes_cuff_item)), \
-)
+CAPABILITIES(/obj/item/clothing/shoes/orange)
+	op("orange_shoes_uncuff_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cuffs"), then(PROC_REF(orange_shoes_uncuff_self)))
+	op("orange_shoes_cuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Orange shoes cuff item"), then(PROC_REF(orange_shoes_cuff_item)))
 
 /// Old attack_self: remove the cuffs, after the shoes' own self-use (the old ..()).
-/obj/item/clothing/shoes/orange/proc/orange_shoes_uncuff_self(mob/user, obj/item/held, datum/interaction/interaction)
-	shoes_shake_out_self(user, held, interaction)
+/obj/item/clothing/shoes/orange/proc/orange_shoes_uncuff_self(datum/act/op/A)
+	var/mob/user = A.actor
+	shoes_shake_out_self(A)
 	remove_cuffs(user)
 
 /// Old attackby: chain the shoes with handcuffs. The shoes' own item use (the old ..() first) follows.
-/obj/item/clothing/shoes/orange/proc/orange_shoes_cuff_item(mob/user, obj/item/H, datum/interaction/interaction)
+/obj/item/clothing/shoes/orange/proc/orange_shoes_cuff_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/H = A.held
 	if (istype(H, /obj/item/handcuffs))
 		attach_cuffs(H, user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/shoes/hitops
 	name = "white high-tops"

@@ -117,6 +117,9 @@
 //Should not exceed 0.4 else strange heat flow occur
 #define WALL_HEAT_TRANSFER_COEFFICIENT 0.0
 #define OPEN_HEAT_TRANSFER_COEFFICIENT 0.4
+/// A floor turf's solid, J/K: a 2 cm steel deck plate of 1 m² (78 kg at 490 J/(kg K)). It was 10 kJ/K, an eighth of that, too little to take
+/// the heat of a body standing on it (code/modules/heat/heat_mobs.dm).
+#define FLOOR_HEAT_CAPACITY 80000
 /// Wall material conductance (W/K for a 2.5 m^2, 0.25 m slab) that maps to a
 /// transfer coefficient of 1. The best conductors (~100 W/mK, 1000 W/K) reach the
 /// 0.25 cap and steel (11 W/mK) lands near 0.03, just under a floor tile.

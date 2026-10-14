@@ -36,10 +36,12 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Speech Verbs"
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_verbs_chosen), title = "Theme Choice", message = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs)
+	open_request(src, /datum/prompt/choice, PROC_REF(speech_verbs_chosen), answerer = src, title = "Theme Choice", question = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs, timeout = 0)
 
-/mob/living/silicon/pai/proc/speech_verbs_chosen(datum/om/prompt/choice/ask)
-	var/list/sayverbs = GLOB.possible_say_verbs[ask.choice]
+/mob/living/silicon/pai/proc/speech_verbs_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/sayverbs = GLOB.possible_say_verbs[A.answer.value]
 	speak_statement = sayverbs[1]
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
 	speak_query = sayverbs[(sayverbs.len>2 ? 3 : sayverbs.len)]
@@ -50,21 +52,23 @@
 	set desc = "Allows people to modify your access or block people from modifying your access."
 
 	if(idaccessible == 0)
-		idaccessible = 1
+		set_idaccessible(1)
 		act_message(src, null, MSG_SELF(span_notice("You allow access modifications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot opens.")), runemessage = "click")
 	else
-		idaccessible = 0
+		set_idaccessible(0)
 		act_message(src, null, MSG_SELF(span_notice("You block access modfications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot closes.")), runemessage = "click")
 
 /mob/living/silicon/pai/verb/toggle_gender_identity_vr()
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = VERB_CAT_IC_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(pai_gender_chosen), title = "Set Gender Identity", message = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
+	open_request(src, /datum/prompt/choice, PROC_REF(pai_gender_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 
-/mob/living/silicon/pai/proc/pai_gender_chosen(datum/om/prompt/choice/ask)
-	gender = ask.choice
+/mob/living/silicon/pai/proc/pai_gender_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	gender = A.answer.value
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
@@ -72,11 +76,7 @@
 	set category = VERB_CAT_ABILITIES_PAI
 
 	hide()
-	if(status_flags & HIDING)
-		hide_glow = TRUE
-	else
-		hide_glow = FALSE
-	update_icon()
+	set_hide_glow(!!(status_flags & HIDING))
 
 /mob/living/silicon/pai/verb/screen_message(message as text|null)
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
@@ -90,12 +90,14 @@
 	if(loc != card)
 		to_chat(src, span_warning("Your message won't be visible while unfolded!"))
 	if (!message)
-		om_ask(src, /datum/om/prompt/text, PROC_REF(screen_message_entered), title = "Screen Message", message = "Enter text you would like to show on your screen.", encode = FALSE)
+		open_request(src, /datum/prompt/text, PROC_REF(screen_message_entered), answerer = src, title = "Screen Message", question = "Enter text you would like to show on your screen.", encode = FALSE, timeout = 0)
 		return
 	show_screen_message(message)
 
-/mob/living/silicon/pai/proc/screen_message_entered(datum/om/prompt/text/ask)
-	show_screen_message(ask.text)
+/mob/living/silicon/pai/proc/screen_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	show_screen_message(A.answer.value)
 
 /mob/living/silicon/pai/proc/show_screen_message(message)
 	message = sanitize_or_reflect(message,src)
@@ -154,31 +156,31 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Toggle Eye Glow"
 
-	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)
+	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
 		to_chat(src, span_filter_notice("Your selected chassis cannot modify its eye glow!"))
 		return
 
 	if(eye_glow && !hide_glow)
-		eye_glow = FALSE
+		set_eye_glow(FALSE)
 	else
-		eye_glow = TRUE
-		hide_glow = FALSE
-	update_icon()
+		set_eye_glow(TRUE)
+		set_hide_glow(FALSE)
 
 /mob/living/silicon/pai/verb/pick_eye_color()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Pick Eye Color"
 
-	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)
+	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
 		to_chat(src, span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen."))
 		return
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(pai_eye_color_chosen), title = "Eye Color", message = "Choose your character's eye color:")
+	open_request(src, /datum/prompt/color, PROC_REF(pai_eye_color_chosen), answerer = src, title = "Eye Color", question = "Choose your character's eye color:", timeout = 0)
 
-/mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		eye_color = ask.picked_color
-		update_icon()
+/mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		set_eye_color(A.answer.value)
 		card.setEmotion(card.current_emotion)
 
 /mob/living/silicon/pai/proc/hug(mob/living/silicon/pai/H, mob/living/target)
@@ -210,11 +212,11 @@
 			else
 				t_him = "them"
 
-	if(H.zone_sel.selecting == BP_HEAD)
+	if(hud_of(H)?.zone_sel?.selecting == BP_HEAD)
 		act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
-	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_R_HAND || hud_of(H)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
-	else if(H.zone_sel.selecting == "mouth")
+	else if(hud_of(H)?.zone_sel?.selecting == "mouth")
 		act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 	else
 		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \

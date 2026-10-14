@@ -25,7 +25,9 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/working/hoverpod, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/mecha/working/hoverpod)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_stabilization", topic("toggle_stabilization"), then(PROC_REF(topic_toggle_stabilization)))
 
 /obj/mecha/working/hoverpod/Initialize(mapload)
 	. = ..()
@@ -44,9 +46,8 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/working/hoverpod, "ion_trail", /datum/effect/ef
 		ion_trail.stop()
 
 //Modified phazon code
-TOPIC_ACTION(/obj/mecha/working/hoverpod, "toggle_stabilization", PROC_REF(topic_toggle_stabilization))
 
-/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(mob/user, list/args)
+/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(datum/act/op/A)
 	stabilization_enabled = !stabilization_enabled
 	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
 	src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))
@@ -97,19 +98,15 @@ TOPIC_ACTION(/obj/mecha/working/hoverpod, "toggle_stabilization", PROC_REF(topic
 	max_universal_equip = 1
 	max_special_equip = 1
 
-/obj/mecha/working/hoverpod/combatpod/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
-	ME.attach(src)
+TYPE_TABLE(/obj/mecha/working/hoverpod/combatpod, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive \
+		))
 
 /obj/mecha/working/hoverpod/shuttlepod
 	desc = "Who knew a tiny ball could fit three people?"
 
-/obj/mecha/working/hoverpod/shuttlepod/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tool/passenger
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/passenger
-	ME.attach(src)
+TYPE_TABLE(/obj/mecha/working/hoverpod/shuttlepod, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/passenger, \
+		/obj/item/mecha_parts/mecha_equipment/tool/passenger \
+		))

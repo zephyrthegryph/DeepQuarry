@@ -4,9 +4,7 @@
 	desc = "Goo extracted from a slime, which can do different things depending on its color and what it is injected with."
 	icon = 'icons/mob/slimes.dmi'
 	icon_state = "grey slime extract"
-	force = 1
 	w_class = ITEMSIZE_TINY
-	throwforce = 0
 	throw_speed = 3
 	throw_range = 6
 	var/uses = 1 // uses before it goes inert
@@ -14,29 +12,43 @@
 	var/slime_type
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/slime_extract, 60, null)
+CAPABILITIES(/obj/item/slime_extract)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 1))
+	reagents(60)
+	every(2 SECONDS, then(PROC_REF(emit_step)), when = nameof(emitting))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/// TRUE while the extract emits (slime_extract_start_emitting() starts it).
+/obj/item/slime_extract/var/tmp/emitting = FALSE
+TRACKED(/obj/item/slime_extract, emitting)
+
+/// One slow step of an emitting extract; a kind with nothing to emit stops.
+/obj/item/slime_extract/proc/emit_step(datum/act/A)
+	set_emitting(FALSE)
 
 /// Old attackby.
-/obj/item/slime_extract/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slime_extract/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/enhancer))
 		if(enhanced)
 			to_chat(user, span_warning("You cannot enhance this extract further!"))
-			return FALSE
+			return OP_DECLINE
+		if(!consume(O, user))
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the enhancer to the slime extract. It may now be reused one more time."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		uses += 2
 		enhanced = TRUE
 		name = initial(name) // To remove the 'inert' part of the name.
-		consume(O, user)
 	else if(istype(O, /obj/item/slimepotion/reinvigoration))
 		to_chat(user, span_notice("You apply the reinvigorator to the slime extract. It rapidly expands, creating a brand new slime!"))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		new slime_type(get_turf(src))
 		consume(O, user)
 		consume(src, user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/slime_extract/examine(mob/user)
 	. = ..()
@@ -327,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_fire), with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/orange_heatwave
@@ -364,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 			if(protection < 1)
 				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.bodytemperature - ((H.bodytemperature + 50) * cold_factor) ), H.bodytemperature))
+				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() + 50) * cold_factor) ), H.body_temperature()))
 
 			if(protection < 0.7)
 				to_chat(L, span_danger("A scalding wave of heat overwhelms you!"))
@@ -376,7 +388,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		// This is most likely physically impossible but when has that stopped slimes before?
-		env.add_thermal_energy(15 * 1000 * 1000)
+		heat_add(env, 15 * 1000 * 1000, HEAT_SOURCE_REACTION)
 
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 	..()
@@ -429,7 +441,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_lightning), with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/yellow_flashlight
@@ -454,7 +466,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_emp), with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/yellow_battery
@@ -709,7 +721,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 			if(protection < 1)
 				var/cold_factor = abs(protection - 1)
-				H.set_bodytemperature(between(50, (H.bodytemperature - ((H.bodytemperature - 50) * cold_factor) ), H.bodytemperature))
+				H.set_bodytemperature(between(50, (H.body_temperature() - ((H.body_temperature() - 50) * cold_factor) ), H.body_temperature()))
 
 			if(protection < 0.7)
 				to_chat(L, span_danger("A chilling wave of cold overwhelms you!"))
@@ -721,7 +733,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		// This is most likely physically impossible but when has that stopped slimes before?
-		env.add_thermal_energy(-10 * 1000 * 1000) // For a moderately sized room this doesn't actually lower it that much.
+		heat_add(env, -10 * 1000 * 1000, HEAT_SOURCE_REACTION) // For a moderately sized room this doesn't actually lower it that much.
 
 	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.75)
 
@@ -863,9 +875,8 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/slime_extract/green/periodic_step()
+/obj/item/slime_extract/green/emit_step(datum/act/A)
 	radiate()
-	..()
 
 /obj/item/slime_extract/green/proc/radiate()
 	if(active)
@@ -896,7 +907,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	if(istype(holder.my_atom, /obj/item/slime_extract/green))
-		om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, holder.my_atom)
+		after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_start_emitting), with = list(holder.my_atom))
 
 /datum/decl/chemical_reaction/instant/slime/green_emitter
 	name = "Slime Radiation Emitter"
@@ -1044,7 +1055,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_explode, holder.my_atom, power)
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power))
 
 // ********************
 // * Bluespace slimes *
@@ -1305,7 +1316,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /obj/item/slime_extract/ruby/get_mechanics_info(list/additional_information)
 	return ..(list("When injected with phoron, this extract grants extra strength for a time. When injected with blood, this extract causes a wave of pulling force. When injected with water, \
-	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing force.") + additional_information)
+	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing combat_of(src).force.") + additional_information)
 
 /obj/item/slime_extract/ruby
 	name = "ruby slime extract"
@@ -1581,7 +1592,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_colors/on_reaction(datum/reagents/holder)
 	for(var/mob/living/carbon/human/H in range(3, holder.my_atom))
-		H.status_at_least(EFFECT_DRUGGED, 30)
+		H.status_at_least(STAT_DRUGGED, 30)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_unity
@@ -1618,9 +1629,11 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	play_sfx(extract, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_start_emitting(atom/extract)
-	om_task_periodic(extract, PERIODIC_SLOW)
+	var/obj/item/slime_extract/X = extract
+	if(istype(X))
+		X.set_emitting(TRUE)
 
 /proc/slime_extract_explode(atom/extract, power)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)
 	if(!QDELETED(extract)) // Explosion may or may not have deleted the extract.
-		qdel(extract)
+		destroyed(extract, null, "explosion")

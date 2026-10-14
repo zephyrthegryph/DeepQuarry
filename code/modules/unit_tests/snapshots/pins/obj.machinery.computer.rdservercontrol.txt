@@ -1,0 +1,39 @@
+human|none menu: Climb
+human|none click: nothing
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
++1 menu: Connect techweb
+@obj.machinery.computer human|/obj/item
+-menu: Use
++1 menu: Connect techweb
+@obj human|/obj/item/gripper
+@obj.machinery human|/obj/item/card/emag
++1 menu: Connect techweb
+keys: climb.climb, climb.climb_menu, connect_techweb, disconnect, drag_buckle, emag.subvert, emag.use, lockdown_server, lock_console, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_gripper, use_item

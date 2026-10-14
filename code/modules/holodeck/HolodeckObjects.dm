@@ -9,9 +9,10 @@
 	flags = TURF_ACID_IMMUNE
 
 // Old attackby: the holofloor ignores items.
-EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/floor/holofloor)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
-/turf/simulated/floor/holofloor/set_flooring()
+/turf/simulated/floor/holofloor/install_flooring()
 	return
 
 /turf/simulated/floor/holofloor/carpet
@@ -64,11 +65,14 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	name = "\proper space"
 	icon_state = "white"
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/holofloor/space/appearance_overlays()
-	. = list()
-	. += ..()
-	. += skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+/turf/simulated/floor/holofloor/space/draw(datum/look/look)
+	..()
+	look.overlay(space_dust())
+
+/// The dust of the skybox over this tile: one of its cached pieces, picked by where the tile is.
+/turf/simulated/floor/holofloor/space/proc/space_dust()
+	var/datum/system/skybox/sky = SSskybox.ready()
+	return sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'
@@ -110,10 +114,19 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 	base_icon = 'icons/turf/flooring/asteroid.dmi'
 	initial_flooring = null
 
-/turf/simulated/floor/holofloor/desert/Initialize(mapload)
-	. = ..()
-	if(prob(10))
-		add_overlay("asteroid[rand(0,9)]")
+/// Rolled before init (rolls()): the rocks this tile shows, one tile in ten ("asteroid0" to "asteroid9"), else null.
+/turf/simulated/floor/holofloor/desert/var/rocks
+
+CAPABILITIES(/turf/simulated/floor/holofloor/desert)
+	rolls(nameof(rocks), PROC_REF(roll_rocks))
+
+/turf/simulated/floor/holofloor/desert/proc/roll_rocks(datum/roller/R)
+	if(R.chance(10))
+		return "asteroid[R.number(0, 9)]"
+
+/turf/simulated/floor/holofloor/desert/draw(datum/look/look)
+	..()
+	look.overlay(rocks)
 
 /turf/simulated/floor/holofloor/bmarble
 	name = "marble"
@@ -159,7 +172,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 		play_sfx(target, SFX_WEAPONS_PUNCHMISS)
 		act_message(user, target, others = span_danger("%U% has attempted to punch %T%!"))
 		return TRUE
-	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(user.zone_sel.selecting))
+	var/obj/item/organ/external/affecting = target.get_organ(ran_zone(hud_of(user)?.zone_sel?.selecting))
 	var/armor_block = target.armor_against(INJURY_PAIN, affecting)
 
 	if(user.has_mutation(HULK))
@@ -176,18 +189,25 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(null, PROC_REF(holowindow_interaction_item)))
+CAPABILITIES(/obj/structure/window/reinforced/holowindow)
+	op("holowindow_interaction_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(holowindow_interaction_item)))   // ahead of the window's own item use, which its pass goes on to
+	// a hologram is not taken apart: the window's tool ops are refused ahead of them
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_PART + 5), wait(0), needs(req(PROC_REF(holo_refusal))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_PART + 5), wait(0), needs(req(PROC_REF(holo_refusal))))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 5), wait(0), needs(req(PROC_REF(holo_refusal))))
 
 /// Old attackby: slam a grabbed mob against it, or take a hit; then the window's own handling.
-/obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/window/reinforced/holowindow/proc/holowindow_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			spent(W, user)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
@@ -196,117 +216,56 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 				if(2)
 					act_message(user, M, others = span_danger("%U% bashes %T% against \the [src]!"))
 					if (prob(50))
-						M.status_at_least(EFFECT_WEAKENED, 1)
+						M.status_at_least(STAT_WEAKENED, 1)
 					M.injure(INJURY_PAIN, 10, null, src)
 					hit(25)
 				if(3)
 					act_message(M, user, others = span_danger("<big>%T% crushes %U% against \the [src]!</big>"))
-					M.status_at_least(EFFECT_WEAKENED, 5)
+					M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_PAIN, 20, null, src)
 					hit(50)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
-	if(W.flags & NOBLUDGEON) return INTERACTION_HANDLED_PASS
+	if(W.flags & NOBLUDGEON) return OP_PASS
 
 	if(W.obj_damage_type())
-		hit(W.force)
+		hit(combat_of(W).force)
 		if(get_integrity() <= 7)
 			set_anchored(FALSE)
-			update_nearby_icons()
 			step(src, get_dir(user, src))
 	else
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	return FALSE
+	return OP_DECLINE
 
-/obj/structure/window/reinforced/holowindow/screwdriver_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holowindow, you can't unfasten it!"))
-	return ITEM_INTERACT_BLOCKING
-
-/obj/structure/window/reinforced/holowindow/crowbar_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holowindow, you can't pry it!"))
-	return ITEM_INTERACT_BLOCKING
-
-/obj/structure/window/reinforced/holowindow/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holowindow, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+/// A holowindow refuses every physical tool: unfastening, prying and dismantling.
+/obj/structure/window/reinforced/holowindow/proc/holo_refusal(datum/act/op/A)
+	var/obj/item/tool = A.held
+	if(tool?.has_tool_quality(TOOL_SCREWDRIVER))
+		return "it's a holowindow, you can't unfasten it"
+	if(tool?.has_tool_quality(TOOL_CROWBAR))
+		return "it's a holowindow, you can't pry it"
+	return "it's a holowindow, you can't dismantle it"
 
 /obj/structure/window/reinforced/holowindow/shatter(display_message = 1)
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 	return
-
-/obj/machinery/door/window/holowindoor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/holowindoor_hit,
-		/datum/interaction/machine_item/holowindoor_toggle,
-	)
-	..()
-
-/// Old attackby: hitting the door with a weapon while it's still open/closed and not a card.
-/datum/interaction/machine_item/holowindoor_hit
-	id = "holowindoor_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/hit_offered, null))
-	effect = /obj/machinery/door/window/holowindoor/proc/interaction_hit
-
-/obj/machinery/door/window/holowindoor/proc/hit_offered(mob/actor, atom/target, obj/item/held)
-	if(operating == 1)
-		return FALSE
-	return density && istype(held, /obj/item) && !istype(held, /obj/item/card)
-
-/obj/machinery/door/window/holowindoor/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
-	var/aforce = I.force
-	play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	visible_message(span_bolddanger("[src] was hit by [I]."))
-	if(I.obj_damage_type())
-		take_damage(aforce, I.obj_damage_type(), MELEE)
-	return TRUE
-
-/// Old attackby: any other item toggles the door open/closed if allowed.
-/datum/interaction/machine_item/holowindoor_toggle
-	id = "holowindoor_toggle"
-	name = "Use"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/toggle_offered, null))
-	effect = /obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl
-
-/obj/machinery/door/window/holowindoor/proc/toggle_offered(mob/actor, atom/target, obj/item/held)
-	return operating != 1
-
-/obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	if (!src.requiresID())
-		user = null
-
-	if (src.allowed(user))
-		if (src.density)
-			open()
-		else
-			close()
-
-	else if (src.density)
-		flick(text("[]deny", src.base_state), src)
-
-	return TRUE
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
 	set_density(FALSE)
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 
-/obj/structure/bed/chair/holochair/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/bed/chair/holochair
+	can_dismantle = FALSE
 
-/obj/structure/bed/holobed/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holobed, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/bed/holobed
+	can_dismantle = FALSE
+
 /obj/item/holo
 	injury_kind = INJURY_PAIN
 	no_attack_log = 1
@@ -322,14 +281,15 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	force = 3.0
 	throw_speed = 1
 	throw_range = 5
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	unacidable = TRUE
 	var/active = 0
+
+TRACKED(/obj/item/holo/esword, active)
+TRACKED(/obj/item/holo/esword, lcolor)
 
 /obj/item/holo/esword/green
 	lcolor = "#008000"
@@ -346,54 +306,50 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 		return TRUE
 	return FALSE
 
-DECLARE_INTERACTIONS(/obj/item/holo/esword, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/holo/esword)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 3.0))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/holo/esword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+/obj/item/holo/esword/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	if (active)
-		force = 30
-		item_state = "[icon_state]_blade"
-		w_class = ITEMSIZE_LARGE
+		set_force(30)
+		set_item_state("[icon_state]_blade")
+		set_w_class(ITEMSIZE_LARGE)
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("[src] is now active."))
 	else
-		force = 3
-		item_state = "[icon_state]"
-		w_class = ITEMSIZE_SMALL
+		set_force(3)
+		set_item_state("[icon_state]")
+		set_w_class(ITEMSIZE_SMALL)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
-	update_icon()
+	// The held sprite follows item_state, so the hand it is in is redrawn with it.
+	update_held_icon()
 	add_fingerprint(user)
 	return TRUE
 
 /// Old attackby.
-/obj/item/holo/esword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/holo/esword/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
 		else
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
-		update_icon()
-	return FALSE
+	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/holo/esword/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-	blade_overlay.color = lcolor
-	if(active)
-		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+/// The blade, in its colour, while it is switched on (the look redraws the hand it is held in when the sprite changes).
+/obj/item/holo/esword/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 
 //BASKETBALL OBJECTS
 
@@ -404,8 +360,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_o
 	desc = "Here's your chance, do your dance at the Space Jam."
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
 	unacidable = TRUE
-	drop_sound = SFX_ITEMS_DROP_BASKETBALL
-	pickup_sound = SFX_ITEMS_PICKUP_BASKETBALL
+
+CAPABILITIES(/obj/item/beach_ball/holoball)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BASKETBALL, pickup = SFX_ITEMS_PICKUP_BASKETBALL))
 
 /obj/structure/holohoop
 	name = "basketball hoop"
@@ -417,26 +374,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_o
 	unacidable = TRUE
 	throwpass = 1
 
-DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/holohoop)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/holohoop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/holohoop/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(G.state<2)
 			to_chat(user, span_warning("You need a better grip to do that!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/grabbed = G?.grab_target()
 		grabbed.forceMove(src.loc)
-		grabbed.status_at_least(EFFECT_WEAKENED, 5)
+		grabbed.status_at_least(STAT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		consume(W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)
 		act_message(user, src, others = span_notice("%U% dunks [W] into %T%!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/structure/holohoop/CanPass(atom/movable/mover, turf/target)
 	if (istype(mover,/obj/item) && mover.throwing)
@@ -464,44 +424,22 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	unacidable = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
+
+CAPABILITIES(/obj/machinery/readybutton)
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
+	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
+	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
+	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req(PROC_REF(can_press_holds))), then(PROC_REF(interaction_press)))
 
 /// Old attack_ai: refuse silicons.
-/obj/machinery/readybutton/proc/readybutton_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, "The station AI is not to interact with these devices!")
-	return TRUE
-
-/obj/machinery/readybutton/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(readybutton_silicon_refuse)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/readybutton_touch,
-		/datum/interaction/machine_hand/ungated/readybutton_press,
-	)
-	..()
+/obj/machinery/readybutton/proc/readybutton_silicon_refuse(datum/act/op/A)
+	to_chat(A.actor, "The station AI is not to interact with these devices!")
+	return OP_OK
 
 /// Old attackby: always refused.
-/datum/interaction/machine_item/readybutton_touch
-	id = "readybutton_touch"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/readybutton/proc/interaction_touch
-
-/obj/machinery/readybutton/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, "The device is a solid button, there's nothing you can do with it!")
-	return TRUE
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/readybutton_press
-	id = "readybutton_press"
-	name = "Press"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/readybutton/proc/can_press))
-	effect = /obj/machinery/readybutton/proc/interaction_press
+/obj/machinery/readybutton/proc/interaction_touch(datum/act/op/A)
+	to_chat(A.actor, "The device is a solid button, there's nothing you can do with it!")
+	return OP_OK
 
 /// Requirement: the button is powered (and the presser conscious).
 /obj/machinery/readybutton/proc/can_press(mob/user, atom/target, obj/item/held)
@@ -509,22 +447,28 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 		return "this device is not powered"
 	return TRUE
 
-/obj/machinery/readybutton/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/readybutton/proc/can_press_holds(datum/act/op/A)
+	var/answer = can_press(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Old attack_hand: never called ..().
+/obj/machinery/readybutton/proc/interaction_press(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
-		return TRUE
+		return OP_OK
 
 	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
-		qdel(src)
-		return TRUE
+		spent(src, user)
+		return OP_OK
 
 	if(eventstarted)
 		to_chat(user, "The event has already begun!")
-		return TRUE
+		return OP_OK
 
-	ready = !ready
-
-	update_icon()
+	set_ready(!ready)
 
 	var/numbuttons = 0
 	var/numready = 0
@@ -535,16 +479,25 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 	if(numbuttons == numready)
 		begin_event()
-	return TRUE
+	return OP_OK
 
-DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARANCE_ICON_STATE = "auth_on"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "auth_off")))
+TRACKED(/obj/machinery/readybutton, ready)
+
+/// The look (the draw sweep: from its layers).
+/obj/machinery/readybutton/draw(datum/look/look)
+	..()
+	switch("[ready]")
+		if("1")
+			look.state("auth_on")
+		else
+			look.state("auth_off")
 
 /obj/machinery/readybutton/proc/begin_event()
 
 	eventstarted = 1
 
 	for(var/obj/structure/window/reinforced/holowindow/disappearing/W in currentarea())
-		qdel(W)
+		spent(W)
 
 	for(var/mob/M in currentarea())
 		to_chat(M, "FIGHT!")
@@ -565,9 +518,12 @@ DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARAN
 	meat_amount = 0
 	meat_type = null
 
-/mob/living/simple_mob/animal/space/carp/holodeck/Initialize(mapload)
-	. = ..()
-	set_light(2) //hologram lighting
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
+	after_init(0, then(PROC_REF(init_hologram_light)))
+
+/mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)
+	set_glow(src, GLOW(2, null, null)) //hologram lighting
+
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)
 	if (safe)
@@ -588,7 +544,7 @@ DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARAN
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/derez()
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " fades away!"))
-	qdel(src)
+	consume(src)
 
 
 /// the currentarea this refers to (a relation view: it reads null once the target is deleted).

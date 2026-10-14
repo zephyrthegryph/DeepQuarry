@@ -54,10 +54,29 @@
 	// ALLOW(instance_list): d: per-mob weather_areas, sized at creation and filled in place; mobs are few
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/overmap/stardog, /mob/living/simple_mob/proc/set_name)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/overmap/stardog, /mob/living/simple_mob/proc/set_desc)
+CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
+	after_init(0, then(PROC_REF(stardog_light_ready)))
+	links(/mob/living/simple_mob/vore/overmap/stardog::control_node, /obj/structure/control_pod::host)
+	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
+	// What the dog does on its own for a while (eating the weather it floats in, going down to a place and back up): the dog is still for as long as it takes.
+	op("eat_weather", ai(), needs(req_capable()), takes("event", "nut", "aff", "monster", "ore", "tre", "msg", "heal", "delet"), wait(20 SECONDS), then(PROC_REF(eat_space_weather_stardog_done)))
+	op("transition_up", ai(), needs(req_capable()), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_stardog_done)))
+	op("transition_down", ai(), needs(req_capable()), takes("destination"), wait(15 SECONDS), on_interrupt(PROC_REF(transition_stardog_failed)), then(PROC_REF(transition_down_done)))
+	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
+/// The one picked is told a hand is coming, as the wait starts.
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_reaches(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/that_one = A.step_value("pick")
+	if(istype(that_one))
+		to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/that_one = A.step_value("pick")
+	if(!istype(that_one))
+		return
 	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
 		to_chat(user, span_warning("\The [that_one] got away..."))
 		to_chat(that_one, span_notice("You got away!"))
@@ -68,89 +87,87 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/overmap/stardog, /mob/living/simpl
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_UNGATED(null, PROC_REF(stardog_interaction_hand)))
+MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_warning("%U% reaches for something in %T%'s fur..."))
 
-/// Old attack_hand: pick someone out of the fur.
-/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(!(user.pickup_pref && user.pickup_active))
-		return FALSE
+/// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return (read_once(istype(user) && user.vore_prefs.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
+
+/// The players standing in the fur who may be picked up.
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
 	var/list/possible_targets = list()
-
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!(player.z in child_om_marker.map_z))
 			continue
 		if(!(isliving(player) && istype(player.loc,/turf/simulated/floor/outdoors/fur) && player.client))
 			continue
-		if(player.resizable && player.pickup_pref)
+		if(player.vore_prefs.resizable && player.vore_prefs.pickup_pref)
 			possible_targets |= player
+	return possible_targets
 
-	if(!possible_targets.len)
-		return FALSE
-	act_message(user, src, MSG_SELF(span_notice("You look through %T%'s fur...")), MSG_OTHERS(span_warning("%U% reaches for something in %T%'s fur...")))
-	om_ask(user, /datum/om/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), choices = possible_targets)
-	return TRUE
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_choices(datum/act/A)
+	return fur_pick_targets()
 
 /// Re-checked on the answer: next to the stardog and able, and the one picked is still in its fur.
-/datum/om/prompt/choice/stardog_fur_pick
+/datum/prompt/choice/stardog_fur_pick
+	timeout = 0
 	title = "Select a mob to grab!"
-	message = "Select a mob:"
+	question = "Select a mob:"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/choice/stardog_fur_pick/valid()
-	var/mob/living/that_one = choice
+/datum/prompt/choice/stardog_fur_pick/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
+	var/mob/living/that_one = value
+	if(QDELETED(that_one))
+		return "gone"
 	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/om/prompt/choice/stardog_fur_pick/ask)
-	var/mob/living/user = ask.answerer
-	var/mob/living/that_one = ask.choice
-	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
+/mob/living/simple_mob/vore/overmap/stardog/life_type_post_due()
 	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
-	of = /mob/living/simple_mob/vore/overmap/stardog
-
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog/perform(mob/living/simple_mob/vore/overmap/stardog/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/overmap/stardog/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.admin_override)
-		self.affinity = 9999
-		self.set_nutrition(9999)
-	if(self.devourable)	//This will cause problems probably so please do not eat the dog
-		self.devourable = FALSE
-		self.digestable = FALSE
-	if(self.ckey && self.control_node)
-		if(self.nutrition <= 200)
-			self.adjust_affinity(-10)
-		else if(self.nutrition < 500)
-			self.adjust_affinity(-3)
+	if(src.admin_override)
+		src.affinity = 9999
+		src.set_nutrition(9999)
+	if(src.vore_prefs.devourable)	//This will cause problems probably so please do not eat the dog
+		src.vore_prefs.devourable = FALSE
+		src.vore_prefs.digestable = FALSE
+	if(src.ckey && src.control_node)
+		if(nutrition_of(src) <= 200)
+			src.adjust_affinity(-10)
+		else if(nutrition_of(src) < 500)
+			src.adjust_affinity(-3)
 		else
-			self.adjust_affinity(-1)
-		if(!self.affinity)
-			self.control_node.eject()
-	if(!self.ckey && self.resting)
-		self.lay_down()
+			src.adjust_affinity(-1)
+		if(!src.affinity)
+			src.control_node.eject()
+	if(!src.ckey && src.resting)
+		src.lay_down()
 
-	if(istype(self.loc, /turf/unsimulated/map))
-		if(!self.invisibility)
-			self.invisibility = INVISIBILITY_ABSTRACT
-			self.child_om_marker.invisibility = INVISIBILITY_NONE
+	if(istype(src.loc, /turf/unsimulated/map))
+		if(!src.invisibility)
+			set_invisibility(INVISIBILITY_ABSTRACT)
+			src.child_om_marker.invisibility = INVISIBILITY_NONE
 			//legacy ai_holder wander tuning removed.
-			self.melee_damage_lower = 50
-			self.melee_damage_upper = 100
-			self.mob_size = MOB_HUGE
-			self.child_om_marker.set_light(5, 1, "#ff8df5")
-			self.movement_cooldown = 5
+			src.melee_damage_lower = 50
+			src.melee_damage_upper = 100
+			src.set_mob_size(MOB_HUGE)
+			set_glow(src.child_om_marker, GLOW(5, 1, "#ff8df5"))
+			src.movement_cooldown = 5
 
-	else if(self.invisibility)
-		self.invisibility = INVISIBILITY_NONE
-		self.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
+	else if(src.invisibility)
+		set_invisibility(INVISIBILITY_NONE)
+		src.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
 		//legacy ai_holder wander tuning removed.
-		self.melee_damage_lower = 1
-		self.melee_damage_upper = 5
-		self.mob_size = MOB_SMALL
-		self.child_om_marker.set_light(0)
-		self.movement_cooldown = 0
+		src.melee_damage_lower = 1
+		src.melee_damage_upper = 5
+		src.set_mob_size(MOB_SMALL)
+		set_glow(src.child_om_marker, GLOW(0, null, null))
+		src.movement_cooldown = 0
 
 /mob/living/simple_mob/vore/overmap/stardog/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	to_chat(src, span_warning("You can't do that."))	//The dog can move back and forth between the overmap.
@@ -161,13 +178,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	to_chat(src, span_warning("You can't do that."))
 	return
 
-/mob/living/simple_mob/vore/overmap/stardog/Initialize(mapload)
-	. = ..()
-	child_om_marker?.set_light(5, 1, "#ff8df5")
-
-/mob/living/simple_mob/vore/overmap/stardog/relations()
-	. = ..()
-	. += rel_one(nameof(control_node), back = nameof(/obj/structure/control_pod::host))
+/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_light_ready(datum/act/timer/A)
+	set_glow(child_om_marker, GLOW(5, 1, "#ff8df5"))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -180,7 +192,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/adjust_affinity(amount)
 	if(amount > 0)
-		var/multiplier = nutrition / 250
+		var/multiplier = nutrition_of(src) / 250
 		affinity += (amount * multiplier)
 	if(amount < 0)
 		affinity += amount
@@ -267,36 +279,26 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	om_task_start(/datum/om/task/timed/stardog_eat_space_weather_stardog, src, E, nut = nut, aff = aff, mob = mob, ore = ore, tre = tre, msg = msg, heal = heal, delet = delet)
+	perform_op(src, src, "eat_weather", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("event" = E, "nut" = nut, "aff" = aff, "monster" = mob, "ore" = ore, "tre" = tre, "msg" = msg, "heal" = heal, "delet" = delet))
 	return TRUE
 
-/datum/om/task/timed/stardog_eat_space_weather_stardog
-	duration = 20 SECONDS
-	complete_proc = /mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done
-	var/nut
-	var/aff
-	var/mob
-	var/ore
-	var/tre
-	var/msg
-	var/heal
-	var/delet
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/om/task/timed/stardog_eat_space_weather_stardog/task)
-	var/obj/effect/overmap/event/E = task.target
-	var/nut = task.nut
-	var/aff = task.aff
-	var/mob = task.mob
-	var/ore = task.ore
-	var/tre = task.tre
-	var/msg = task.msg
-	var/heal = task.heal
-	var/delet = task.delet
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(datum/act/op/A)
+	var/obj/effect/overmap/event/E = A.arg("event")
+	var/nut = A.arg("nut")
+	var/aff = A.arg("aff")
+	var/monster = A.arg("monster")
+	var/ore = A.arg("ore")
+	var/tre = A.arg("tre")
+	var/msg = A.arg("msg")
+	var/heal = A.arg("heal")
+	var/delet = A.arg("delet")
+	if(QDELETED(E))
+		return
 	to_chat(src, span_notice("[msg]"))
 	if(nut || aff)
 		adjust_nutrition(nut)
 		adjust_affinity(aff)
-	if(mob)
+	if(monster)
 		spawn_mob()
 		to_chat(src, span_notice("You can feel something moving inside of you..."))
 	if(ore)
@@ -306,7 +308,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	if(heal)
 		fully_heal()
 	if(delet)
-		qdel(E)
+		consumed(E)
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/spawn_mob()
 	for(var/area/redgate/stardog/flesh_abyss/a in weather_areas)
@@ -321,7 +323,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 		if(istype(a, /area/redgate/stardog/flesh_abyss) && prob(chance))
 			a.spawn_treasure()
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(atom/our_dest)
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(datum/act/op/A)
+	var/atom/our_dest = A.arg("destination")
+	if(QDELETED(our_dest))
+		return
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(our_dest))
@@ -332,7 +337,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	set name = "Transition"
 	set desc = "Attempt to go to the location you have arrived at, or return to space!"
 	set category = VERB_CAT_ABILITIES_STARDOG
-	if(nutrition <= 500)
+	if(nutrition_of(src) <= 500)
 		to_chat(src, span_warning("You're too hungry..."))
 		return
 	if(istype(loc, /turf/unsimulated/map))
@@ -356,38 +361,41 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 		if(!destinations.len)
 			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
 			return
-		om_ask(src, /datum/om/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), choices = destinations)
+		open_request(src, /datum/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), answerer = src, choices = destinations)
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		perform_op(src, src, "transition_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
 /// Where to land. A cancel (or the timeout) decides not to.
-/datum/om/prompt/choice/stardog_transition
+/datum/prompt/choice/stardog_transition
 	title = "Transition"
-	message = "Where would you like to try to go?"
+	question = "Where would you like to try to go?"
 	timeout = 15 SECONDS
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/stardog_transition/cancelled()
-	to_chat(answerer, span_warning("You decide not to transition."))
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/om/prompt/choice/stardog_transition/ask)
-	var/obj/effect/overmap/visitable/our_dest = ask.choice
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if((R.outcome == REQ_CANCELLED || R.outcome == REQ_TIMED_OUT) && isnull(R.value))
+			to_chat(src, span_warning("You decide not to transition."))
+		return
+	var/obj/effect/overmap/visitable/our_dest = A.answer.value
+	if(QDELETED(our_dest))
+		return
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-	om_task_timed(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
+	perform_op(src, src, "transition_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("destination" = our_dest))
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done(datum/act/op/A)
 
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% disappears!!!")))
 	stop_pulling()
 	forceMove(get_turf(get_overmap_sector(z)))
 	adjust_nutrition(-500)
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed()
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed(datum/act/op/A)
 	to_chat(src, span_warning("You were interrupted."))
-	return
 
 /obj/effect/overmap/visitable/ship/simplemob/stardog
 	icon = 'icons/obj/overmap.dmi'
@@ -412,47 +420,45 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/tree_color = null
 	var/tree_type = /obj/structure/flora/tree/fur
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
-	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)), \
-	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
-	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
-	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond), REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)")), \
-)
+CAPABILITIES(/turf/simulated/floor/outdoors/fur)
+	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
+	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
+	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
+	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req(PROC_REF(emoter_is_living), silent = TRUE), req(PROC_REF(emoter_not_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
+
+MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
+
+/// Old Emote Beyond verb: Emote to those beyond the fur!
+/turf/simulated/floor/outdoors/fur/proc/emoter_is_living(datum/act/op/A)
+	return (isliving(A.actor)) ? null : /datum/msg/req_failed
+
+/turf/simulated/floor/outdoors/fur/proc/emoter_not_muted(datum/act/op/A)
+	return (dq_actor_not_ic_muted(A.actor)) ? null : MSG(fur/ic_muted)
+
+/// An item used on the fur does nothing to it: the click goes on (the old interaction_pass).
+/turf/simulated/floor/outdoors/fur/proc/fur_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /// Old attack_hand: the turf's own touch, then petting.
-/turf/simulated/floor/outdoors/fur/proc/fur_pet(mob/user, obj/item/held, datum/interaction/interaction)
-	turf_hand(user, held, interaction)
-	fur_verb_pet(user)
-	return TRUE
+/turf/simulated/floor/outdoors/fur/proc/fur_pet(datum/act/op/A)
+	var/mob/user = A.actor
+	turf_hand(user, A.held)
+	fur_verb_pet(A)
+	return OP_OK
 
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
 /turf/simulated/floor/outdoors/fur/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(ishuman(AM))
-		var/mob/living/carbon/human/L = AM
-		L.fur_submerge()
+		var/mob/living/carbon/human/sunk = AM
+		sunk.refresh_submersion() // a human standing in the fur is drawn sunk into it
 
-/mob/living/carbon/human/proc/fur_submerge()
-	if(QDESTROYING(src))
-		return
-
-	remove_layer(MOB_WATER_LAYER)
-
-	if(!istype(loc,/turf/simulated/floor/outdoors/fur) || lying)
-		return
-
-	var/atom/A = loc
-	var/image/I = image(icon = 'icons/turf/fur.dmi', icon_state = "submerged", layer = BODY_LAYER+MOB_WATER_LAYER)
-	I.color = A.color
-	overlays_standing[MOB_WATER_LAYER] = I
-
-	apply_layer(MOB_WATER_LAYER)
-
+// ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
 /turf/simulated/floor/outdoors/fur/Initialize(mapload)
 	. = ..()
 	if(tree_chance && prob(tree_chance) && !check_density())
@@ -463,7 +469,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 			tree.color = color
 
 /// Old Pet Fur verb: Pet the fur!
-/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You pet %T%.")), MSG_OTHERS(span_notice("%U% pets %T%.")), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
@@ -475,17 +482,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 
 /// Requirement: the actor isn't muted from IC speech.
 /proc/dq_actor_not_ic_muted(mob/actor, atom/target, obj/item/held)
+	READS_FROM() // a player's mute preference is asked when the verb is chosen
 	return !(actor?.client?.prefs?.muted & MUTE_IC)
 
-/// Old Emote Beyond verb: Emote to those beyond the fur!
-/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		return
-	var/mob/living/L = user
-	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
-
-/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
-	emote_beyond_entered(ask.answerer, ask.text)
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(datum/act/op/A)
+	var/mob/living/L = A.actor
+	emote_beyond_entered(L, A.step_value("message"))
+	return OP_OK
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
 	message = sanitize_or_reflect(message,L)
@@ -534,6 +537,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	icon = 'icons/obj/fur_tree.dmi'
 	icon_state = "tallfur1"
 	base_state = "tallfur"
+	sticks = FALSE // no sticks to find in fur
 	opacity = TRUE
 	product = /obj/item/stack/material/fur
 	product_amount = 10
@@ -595,18 +599,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		/mob/living/simple_mob/vore/woof
 	)
 
-/obj/structure/flora/tree/fur/choose_icon_state()
-	return "[base_state][rand(1, 2)]"
-
-/// Overrides tree's interaction_search_sticks(): no sticks to find in fur.
-/obj/structure/flora/tree/fur/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+/obj/structure/flora/tree/fur/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 2)]"
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)
 		var/obj/item/stack/material/fur/F = new product(get_turf(src), product_amount)
 		F.color = color
-		F.update_icon()
 	visible_message(span_notice("\The [src] is felled!"))
 	if(prob(mob_chance))
 		if(!mob_list.len)
@@ -616,21 +615,25 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
-		s.ghostjoin = TRUE
-		s.ghostjoin_icon()
+		s.set_ghostjoin(TRUE)
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 	if(s && istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		dog.adjust_affinity(15)
 
-	qdel(src)
+	destroyed(src)
 
 /obj/structure/flora/tree/fur/wall
 	name = "dense fur"
 	desc = "Silky and soft, but too thick to pass or cut!"
 
-EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/structure/flora/tree/fur/wall)
+	op("fur_wall_item", item(/obj/item), passes(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(fur_wall_item_passes)))
+
+/// An item used on the dense fur does nothing to it: the click goes on (the old interaction_pass).
+/obj/structure/flora/tree/fur/wall/proc/fur_wall_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /area/redgate/stardog
 	name = "dog"
@@ -826,8 +829,7 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 	var/mob/living/simple_mob/vore/overmap/stardog/host
 	var/mob/living/controller
 
-/obj/structure/control_pod/Initialize(mapload)
-	. = ..()
+/obj/structure/control_pod/proc/control_pod_setup(datum/act/timer/A)
 	set_up()
 
 /obj/structure/control_pod/proc/set_up()
@@ -837,36 +839,38 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 		if(!dog.control_node)
 			rel_set(src, nameof(host), dog)
 
-/obj/structure/control_pod/relations()
-	. = ..()
-	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
+MSG_DEF_SELF(control_pod/unresponsive, span_warning("It doesn't respond..."))
+MSG_DEF_SELF(control_pod/resists, span_warning("As you press your hand to %T%, it resists your advance... A sense of longing ripples through your mind..."))
+MSG_DEF(control_pod/reaching, span_notice("You reach out to touch %T%..."), span_notice("%U% reaches out to touch %T%..."))
+MSG_DEF(control_pod/pulls_back, span_warning("You pull back from %T%."), span_warning("%U% pulls back from %T%."))
 
-DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/control_pod)
+	ref_one(nameof(controller), /mob/living)
+	after_init(0, then(PROC_REF(control_pod_setup)))
+	op("hand", hand(), label("Use"), needs(req(PROC_REF(pod_free))), starts(PROC_REF(control_started)), begins(MSG(control_pod/reaching)), wait(10 SECONDS), on_interrupt(PROC_REF(control_failed)), then(PROC_REF(control_done)))
 
-/// Old attack_hand.
-/obj/structure/control_pod/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Nobody is in the pod.
+/obj/structure/control_pod/proc/pod_free(datum/act/op/A)
+	return read_once(controller) ? pod_busy_text(A) : null
+
+/// Why the pod is taken: names who is inside.
+/obj/structure/control_pod/proc/pod_busy_text(datum/act/op/A)
+	var/mob/living/user_inside = read_once(controller)
+	return span_warning("You can see \the [user_inside] inside! Tendrils of nerves seem to have attached themselves to \the [user_inside]! There's no room for you right now!")
+
+/// Refuses a pod with no dog to answer it, or a dog that does not trust anyone yet (take care of my dog).
+/obj/structure/control_pod/proc/control_started(datum/act/op/A)
 	if(!host)
 		set_up()
 		if(!host)
-			to_chat(user, span_warning("It doesn't respond..."))
-			return TRUE
-	control(user)
-	return TRUE
+			return MSG(control_pod/unresponsive)
+	if(!host.affinity)
+		return MSG(control_pod/resists)
 
-/obj/structure/control_pod/proc/control(mob/living/user)
-	if(!host.affinity)	//take care of my dog
-		to_chat(user, span_warning("As you press your hand to \the [src], it resists your advance... A sense of longing ripples through your mind..."))
-		return
-	if(controller)	//busy
-		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You reach out to touch %T%...")), MSG_OTHERS(span_notice("%U% reaches out to touch %T%...")))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
-	return TRUE
-
-/obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)
+/obj/structure/control_pod/proc/control_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(controller)	//got busy while you were waiting, get rekt
-		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
+		to_chat(user, pod_busy_text(A))
 		return
 	rel_set(src, nameof(controller), user)
 	visible_message(span_warning("\The [src] accepts \the [controller], submerging them beneath the surface of the flesh!"))
@@ -874,13 +878,12 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	user.forceMove(src)
 	move_player(user, host, "took control of [host] through [src]", share = TRUE)
 	log_admin("[host.ckey] has taken contol of \the [host].")
-	icon_state = "control_node1"
+	set_icon_state("control_node1")
 	plane = ABOVE_MOB_PLANE
-	set_light(5, 0.75, "#f94bff")
+	set_glow(src, GLOW(5, 0.75, "#f94bff"))
 
-/obj/structure/control_pod/proc/control_control_pod_failed(mob/living/user)
-	act_message(user, src, MSG_SELF(span_warning("You pull back from %T%.")), MSG_OTHERS(span_warning("%U% pulls back from %T%.")))
-	return
+/obj/structure/control_pod/proc/control_failed(datum/act/op/A)
+	act_message_t(A.actor, src, /datum/msg/control_pod/pulls_back)
 
 /obj/structure/control_pod/proc/eject()
 	to_chat(host, span_warning("You feel your control over \the [host] slip away from you!"))
@@ -888,9 +891,9 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	move_player(host, controller, "ejected from [host] through [src]")
 	visible_message(span_warning("\The [controller] is ejected from \the [src], tumbling free!"))
 	log_admin("[controller.ckey] is no longer controlling [host], they have been returned to their body, [controller].")
-	icon_state = "control_node0"
+	set_icon_state("control_node0")
 	plane = OBJ_PLANE
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	var/our_x = rand(-5,5) + x
 	var/our_y = rand(-5,5) + y
 
@@ -904,10 +907,13 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	icon = 'icons/obj/landmark_vr.dmi'
 	icon_state = "transition"
 
-/obj/effect/landmark/stardog/Initialize(mapload)
-	. = ..()
+// It is named after the area it is placed in (the dog lands by area name).
+CAPABILITIES(/obj/effect/landmark/stardog)
+	rolls(nameof(name), PROC_REF(area_name))
+
+/obj/effect/landmark/stardog/proc/area_name(datum/roller/R)
 	var/area/a = get_area(src)
-	name = a.name
+	return a ? a.name : name
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
 	name = "visual nexus"
@@ -918,53 +924,32 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	pixel_y = -16
 	clicksound = SFX_VORE_SQUISH1
 
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/dog_eye_swallow,
-	)
+CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
+
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
 	..()
+	look.state("screen_eye")
 
-/// The old attackby did nothing at all with any item, and never called ..(): swallow it silently.
-/datum/interaction/machine_item/dog_eye_swallow
-	id = "dog_eye_swallow"
-	name = "Use"
-	effect = /atom/proc/interaction_swallow
+MSG_DEF_SELF(ship_emote/too_far, "too far away")
+MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "screen_eye"
+/obj/machinery/computer/ship/navigation/proc/ship_emote_in_view(datum/act/op/A)
+	// The host's current seven-tile view has no published visibility dependency; sample the real view at admission and resumption.
+	return (A.actor && read_once(get_dist(A.actor, src)) <= 7 && (src in read_once(view(7, A.actor)))) ? null : MSG(ship_emote/too_far)
 
-/obj/machinery/computer/ship/navigation/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/emote_beyond,
-	)
-	..()
+/obj/machinery/computer/ship/navigation/proc/ship_emoter_capable(datum/act/op/A)
+	return (dq_actor_can_act(A.actor, src, A.held)) ? null : MSG(ship_emote/incapable)
 
-/// The old Emote Beyond verb: a subtle emote to those outside the ship, from within sight of its helm.
-/datum/interaction/machine_verb/emote_beyond
-	id = "ship_emote_beyond"
-	name = "Emote Beyond"
-	category = INTERACTION_CAT_CONFIGURE
-	requires = list(REQ_PROC(/proc/dq_emote_beyond_in_view, "too far away"), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
-	effect = /obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond
-	also_requires = list(REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)"))
+/obj/machinery/computer/ship/navigation/proc/ship_emoter_not_muted(datum/act/op/A)
+	return (dq_actor_not_ic_muted(A.actor)) ? null : MSG(fur/ic_muted)
 
 /// The old verb's `set src in oview(7)`.
 /proc/dq_emote_beyond_in_view(mob/actor, atom/target, obj/item/held)
 	return actor && target && get_dist(actor, target) <= 7 && (target in view(7, actor))
 
-/obj/machinery/computer/ship/navigation/proc/interaction_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		return TRUE
-	var/mob/living/L = user
-	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_entered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
-	return TRUE
-
-/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/om/prompt/text/ask)
-	var/mob/living/L = ask.answerer
-	var/message = sanitize_or_reflect(ask.text, L)
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/message = sanitize_or_reflect(A.step_value("message"), L)
 	if (!message)
 		return
 	if (L.stat == DEAD)
@@ -999,8 +984,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 	name = "eye"
 	icon_state = "bluwhicir"
 
-	var/list/our_eyes
-
 /area/redgate/stardog/eyes/Entered(mob/M)
 	. = ..()
 	consider_eyes()
@@ -1011,10 +994,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 
 /area/redgate/stardog/eyes/proc/consider_eyes()	//CONSIDER THEM PLEASE
 	var/close = FALSE
+	var/list/our_eyes = list()
 	var/list/check = get_area_turfs(/area/redgate/stardog/eyes)
 	for(var/turf/t in check)
 		for(var/thing in contents_of(t))
 			if(istype(thing, /obj/effect/dog_eye))	//We can have eyes in our eyes, it's fine
+				our_eyes += thing
 				continue
 			if(isobserver(thing))	//Ghosts aren't real
 				continue
@@ -1023,9 +1008,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 
 	for(var/obj/effect/dog_eye/e in our_eyes)
 		if(close)
-			e.icon_state = "eye_closed"	// u . u
+			e.set_icon_state("eye_closed")	// u . u
 		else
-			e.icon_state = "eye_open"	// * w *
+			e.set_icon_state("eye_open")	// * w *
 
 /obj/effect/dog_eye
 	name = "eye"
@@ -1043,12 +1028,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_e
 	icon_state = "nose"
 	anchored = TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
-	INTERACT_HAND("Boop", PROC_REF(interaction_boop_snoot)), \
-)
+CAPABILITIES(/obj/effect/dog_nose)
+	op("boop_snoot", hand(), label("Boop"), then(PROC_REF(interaction_boop_snoot)))
 
 /// Old attack_hand.
-/obj/effect/dog_nose/proc/interaction_boop_snoot(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dog_nose/proc/interaction_boop_snoot(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You boop the snoot.")), MSG_OTHERS(span_notice("%U% boops the snoot.")), runemessage = "boop")
 	return TRUE
 
@@ -1062,12 +1047,6 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	if(L.client)
 		to_chat(L, span_notice("A hot breath rushes up from under your feet, before the air rushes back down into the dog's nose as the dog sniffs you! SNEEF SNEEF!!!"))
 
-/obj/effect/dog_eye/Initialize(mapload)
-	. = ..()
-	var/area/redgate/stardog/eyes/e = get_area(src)
-	if(istype(e,/area/redgate/stardog/eyes))
-		rel_add(e, nameof(e.our_eyes), src)
-
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"
 	desc = "It's waiting to accept treats!"
@@ -1077,7 +1056,6 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	anchored = TRUE
 	pixel_x = -16
 	var/id = "mouth_a"							//same id will be linked
-	var/static/list/dog_teleporters = list()	//List of all the teleporters
 	var/reciever = FALSE						//If true, doesn't teleport, only recieves
 	var/obj/effect/dog_teleporter/target		//Target for teleporting to, automatically set by id
 	var/throw_through = TRUE					//When moved the mob/obj will be thrown south
@@ -1086,20 +1064,13 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	var/check_keys = FALSE
 	var/check_prefs = TRUE
 
-/obj/effect/dog_teleporter/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(dog_teleporters), src)
-	do_setup()
-	if(icon_state == "exit_b")	//♪♫Blinded by the light♪♫
-		set_light(5, 1, "#ffffff")
+// Every teleporter, for pairing by id (do_setup() pairs a sender on its first use).
+REGISTRY_MEMBERSHIP(/obj/effect/dog_teleporter, REGISTRY_DOG_TELEPORTERS)
 
 /obj/effect/dog_teleporter/proc/do_setup()
 	if(target)
 		return
-	for(var/obj/effect/dog_teleporter/T in dog_teleporters.Copy())
-		if(!istype(T,/obj/effect/dog_teleporter))
-			rel_remove(src, nameof(dog_teleporters), T)
-			continue
+	for(var/obj/effect/dog_teleporter/T as anything in REGISTRY_MEMBERS(REGISTRY_DOG_TELEPORTERS))
 		if(id == T.id)
 			if(T == src)
 				continue
@@ -1111,12 +1082,13 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	. = ..()
 	lets_go(AM)
 
-EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
-	INTERACT_HAND(null, PROC_REF(interaction_dog_teleport)), \
-)
+CAPABILITIES(/obj/effect/dog_teleporter)
+	ref_one(nameof(target), /obj/effect/dog_teleporter)
+	op("dog_teleport", hand(), then(PROC_REF(interaction_dog_teleport)))
 
 /// Old attack_hand: touching it sends you through.
-/obj/effect/dog_teleporter/proc/interaction_dog_teleport(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dog_teleporter/proc/interaction_dog_teleport(datum/act/op/A)
+	var/mob/living/user = A.actor
 	lets_go(user)
 	return TRUE
 
@@ -1134,12 +1106,12 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	var/mob/living/L = null
 	if(isliving(AM))
 		L = AM
-		if(check_prefs && (!L.devourable || !L.allowmobvore))
+		if(check_prefs && (!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore))
 			return
 		if(check_keys && !L.ckey)
 			return
 		L.stop_pulling()
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		L.reset_perspective() // Needed for food items that get gobbled with micros in them
 		GLOB.prey_eaten_roundstat++
 	if(target.reciever)		//We don't have to worry
@@ -1200,7 +1172,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		if(dog.client)
 			var/mob/thrower = I.throwing?.get_thrower()
 			to_chat(dog, span_notice("[thrower ? "\The [thrower]" : "Someone"] feeds \the [I] to you!"))
-		qdel(I)
+		consumed(I, dog)
 		GLOB.items_digested_roundstat++
 
 /obj/effect/dog_teleporter/reciever
@@ -1221,6 +1193,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	id = "mouth_b"
 
 /obj/effect/dog_teleporter/exit
+	light_on = TRUE
 	name = "exit"
 	desc = "You can see the light at the end of the tunnel!"
 	icon_state = "exit_b"
@@ -1230,7 +1203,11 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	check_keys = TRUE
 	check_prefs = FALSE	//We don't have to worry about it on the way out
 
+CAPABILITIES(/obj/effect/dog_teleporter/exit)
+	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
+
 /obj/effect/dog_teleporter/mouth_return
+	light_on = TRUE
 	name = "light"
 	desc = "You can see the light shining in from above!"
 	icon_state = "exit_b"
@@ -1239,6 +1216,9 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	pixel_y = -16
 	check_keys = TRUE
 	check_prefs = FALSE	//We don't have to worry about it on the way out
+
+CAPABILITIES(/obj/effect/dog_teleporter/mouth_return)
+	configure(light_glow(range = 5, power = 1, color = "#ffffff"))
 
 /obj/effect/dog_teleporter/reciever/exit	//tee hee
 	name = "exit"
@@ -1266,8 +1246,10 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	var/mobstuff = TRUE		//if false, we don't care about dogs, and that's terrible
 
 /// Something on it is still being digested. A field: it digests every 2 s while set.
-OM_FIELD(/turf/simulated/floor/water/digestive_enzymes, we_process, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_SLOW, "we_process")
+/turf/simulated/floor/water/digestive_enzymes/var/we_process = FALSE
+TRACKED(/turf/simulated/floor/water/digestive_enzymes, we_process)
+CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
+	every(2 SECONDS, then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process))
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source))
@@ -1277,7 +1259,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 	if(digest_stuff(source))
 		set_we_process(TRUE)
 
-/turf/simulated/floor/water/digestive_enzymes/periodic_step()
+/turf/simulated/floor/water/digestive_enzymes/proc/digestive_enzymes_step(datum/act/timer/A)
 	if(!digest_stuff())
 		set_we_process(FALSE)
 
@@ -1305,7 +1287,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 		return TRUE
 	if(isliving(digest_target))
 		var/mob/living/L = digest_target
-		if(L.unacidable || !L.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
+		if(L.unacidable || !L.vore_prefs.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
 			return FALSE
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -1325,7 +1307,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 			rel_set(src, nameof(linked_mob), s.parent) //dogge
 
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
-		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)
+		damage += clamp(((500 - nutrition_of(linked_mob)) / 100), 1 , 5)
 	var/list/stuff = list()
 	for(var/thing in contents_of(src))
 		if(can_digest(thing))
@@ -1350,13 +1332,13 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 					continue
 				H.drop_from_inventory(W)
 			if(linked_mob)
-				var/how_much = H.mob_size + H.nutrition
+				var/how_much = H.mob_size + nutrition_of(H)
 				if(!H.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
 				H.mind?.vore_death = TRUE
 				GLOB.prey_digested_roundstat++
-			qdel(H)	//glorp
+			dissolved(H, src)	//glorp
 			return
 		H.burn_skin(damage)
 		if(linked_mob)
@@ -1373,11 +1355,11 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 			L.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			L.release_vore_contents()
 			if(linked_mob)
-				var/how_much = L.mob_size + L.nutrition
+				var/how_much = L.mob_size + nutrition_of(L)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
-			qdel(L) //gloop
+			dissolved(L, src) //gloop
 			return
 		L.injure(INJURY_DIGESTION, damage, source = src)
 		if(linked_mob)
@@ -1387,6 +1369,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 			linked_mob.adjust_nutrition(how_much)
 
 /obj/structure/auto_flesh_door	//It's like a simple door, but it opens and closes automatically now and then!
+	proximity_tracked = TRUE
 	name = "flesh valve"
 	density = TRUE
 	opacity = TRUE
@@ -1409,15 +1392,40 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 		)
 	var/faction = FACTION_MACROBACTERIA
 
-/obj/structure/auto_flesh_door/Initialize(mapload)
-	. = ..()
-	countdown = rand(50,250)
-	update_icon()
+CAPABILITIES(/obj/structure/auto_flesh_door)
+	rolls(nameof(countdown), PROC_REF(roll_countdown))
+	// the door only matters while someone can see it: ambient, so it runs while a client is near (STAT_RELEVANCE) and parks the rest of the time
+	every(2 SECONDS, then(PROC_REF(auto_flesh_door_step)), when = STAT_RELEVANCE)
+	op("flesh_door_hand_help", hand(), stance(I_HELP), label("Knock"), then(PROC_REF(interaction_hand_help)))
+	op("flesh_door_hand_hurt", hand(), stance(I_HURT), label("Hammer on"), then(PROC_REF(interaction_hand_hurt)))
+	op("flesh_door_hand_disarm", hand(), stance(I_DISARM), label("Hammer on"), then(PROC_REF(interaction_hand_disarm)))
+	op("flesh_door_hand_grab", hand(), stance(I_GRAB), label("Hammer on"), then(PROC_REF(interaction_hand_grab)))
 
-/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
-/obj/structure/auto_flesh_door/periodic_step()
+/// The help-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_help(datum/act/op/A)
+	return interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_hurt(datum/act/op/A)
+	return interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_disarm(datum/act/op/A)
+	return interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_grab(datum/act/op/A)
+	return interaction_hand(A, I_GRAB)
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/auto_flesh_door/proc/roll_countdown(datum/roller/R)
+	. = islist(countdown) ? list() + countdown : countdown
+	. = R.number(50, 250)
+
+/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it waits.
+/obj/structure/auto_flesh_door/proc/auto_flesh_door_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	if(countdown <= 0)
 		SwitchState()
 	else
@@ -1425,7 +1433,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 	if(!state)
 		for(var/mob/living/L in contents_of(src.loc))
 			if(isliving(L))
-				L.status_at_least(EFFECT_WEAKENED, 3)
+				L.status_at_least(STAT_WEAKENED, 3)
 				if(prob(5))
 					to_chat(L, span_warning("\The [src] throbs heavily around you..."))
 
@@ -1445,16 +1453,15 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 
-DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "Knock", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Hammer on", PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/auto_flesh_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/auto_flesh_door/proc/interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 	else if(user.faction == faction)
 		SwitchState()
-	else if(interaction.stance == I_HELP)
+	else if(stance == I_HELP)
 		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
@@ -1462,7 +1469,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
-	return TRUE
+	return OP_OK
 
 /obj/structure/auto_flesh_door/CanPass(atom/movable/mover, turf/target)
 	return !density
@@ -1478,13 +1485,12 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-opening",src)
-	om_after(src, 8, PROC_REF(open_finish))
+	after(src, 0.8 SECONDS, PROC_REF(open_finish))
 
 /obj/structure/auto_flesh_door/proc/open_finish()
 	set_density(FALSE)
 	set_opacity(0)
-	state = 1
-	update_icon()
+	set_state(1)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(10,20)
@@ -1496,13 +1502,12 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-closing",src)
-	om_after(src, 8, PROC_REF(close_finish))
+	after(src, 0.8 SECONDS, PROC_REF(close_finish))
 
 /obj/structure/auto_flesh_door/proc/close_finish()
 	set_density(TRUE)
 	set_opacity(1)
-	state = 0
-	update_icon()
+	set_state(0)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(50,250)
@@ -1510,14 +1515,15 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	plane = ABOVE_MOB_PLANE
 	for(var/mob/living/L in contents_of(src.loc))
 		if(isliving(L))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
-APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-{state?open:closed}")
-
+/// The look (the draw sweep: from its template).
+/obj/structure/auto_flesh_door/draw(datum/look/look)
+	..()
+	look.state("flesh-[state ? "open" : "closed"]")
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
-	return !occupant.digest_pain
+	return !occupant.vore_prefs.digest_pain
 
-DECLARE_PERIODIC(/obj/structure/auto_flesh_door, PERIODIC_SLOW)

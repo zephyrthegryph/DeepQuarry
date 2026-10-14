@@ -31,7 +31,7 @@
 /mob/living/carbon/human/proc/get_temperature_reading_c()
 	// bodytemperature is in kelvin upstream; convert to celsius for the
 	// instrument readout. T0C = 273.15 (defined in upstream defines).
-	var/celsius = bodytemperature - T0C
+	var/celsius = body_temperature() - T0C
 	celsius += factor(BF_TEMPERATURE)
 	celsius += _dq_jitter(0.1)
 	return round(celsius * 10) / 10  // one decimal place

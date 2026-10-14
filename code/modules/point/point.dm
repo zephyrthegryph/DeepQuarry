@@ -47,7 +47,7 @@
 
 	add_overlay(thought_bubble)
 	dq_add_z_update_image(src, thought_bubble) // register with DQ z-image tracker so the point bubble follows z-moves
-	om_after(src, POINT_TIME, PROC_REF(clear_point_bubble), thought_bubble)
+	after(src, POINT_TIME, PROC_REF(clear_point_bubble), with = list(thought_bubble))
 
 /atom/movable/proc/clear_point_bubble(mutable_appearance/thought_bubble)
 	dq_remove_z_update_image(src, thought_bubble) // paired teardown for dq_add_z_update_image above
@@ -60,13 +60,15 @@
 	plane = ABOVE_PLANE
 	duration = POINT_TIME
 
-/obj/effect/temp_visual/point/Initialize(mapload, set_invis = 0)
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/point)
+	param(nameof(invisibility), pos = 1, apply = PROC_REF(settle_on_turf))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The pointer is drawn on the turf, offset as the thing pointed at.
+/obj/effect/temp_visual/point/proc/settle_on_turf(set_invis)
 	var/atom/old_loc = loc
 	abstract_move(get_turf(src))
 	pixel_x = old_loc.pixel_x
 	pixel_y = old_loc.pixel_y
-	invisibility = set_invis
 
 #undef POINT_TIME
 
@@ -77,7 +79,7 @@
 	if(istype(A, /obj/effect/temp_visual/point))
 		return FALSE
 
-	DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(_pointed), A))
+	input_submit(new /datum/input_event/point(src, A))
 
 /mob/proc/_pointed(atom/pointing_at)
 	if(client && !(pointing_at in view(client.view, src)))

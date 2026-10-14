@@ -10,26 +10,28 @@
 
 	switch(effecttype)
 		if(STUN)
-			status_at_least(EFFECT_STUNNED, effect * blocked)
+			status_at_least(STAT_STUNNED, effect * blocked)
 		if(WEAKEN)
-			status_at_least(EFFECT_WEAKENED, effect * blocked)
+			status_at_least(STAT_WEAKENED, effect * blocked)
 		if(PARALYZE)
-			status_at_least(EFFECT_PARALYZED, effect * blocked)
+			status_at_least(STAT_PARALYZED, effect * blocked)
 		if(AGONY)
 			injure(INJURY_PAIN, effect * blocked) // Useful for objects that cause "subdual" damage. PAIN!
 		if(IRRADIATE)
 			// P2-F7: check_protection is honoured: callers that pass 0 (DNA scanners and
 			// injectors dosing from inside the suit) skip the radiation armour.
 			var/rad_protection = check_protection ? radiation_protection_fraction() : 1
-			if(!(OM_EMIT(src, /datum/om/event/before/living_irradiate_effect, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
+			var/datum/act/irradiate/dose = ACT_TRY(src, irradiate, effect, blocked, check_protection, rad_protection)
+			if(dose)
+				act_done(dose)
 				add_radiation(effect * rad_protection)
 		if(STUTTER)
-			if(!status_immune(EFFECT_STUNNED)) // stun is usually associated with stutter
-				status_at_least(EFFECT_STUTTERING, (effect * blocked))
+			if(!status_immune(STAT_STUNNED)) // stun is usually associated with stutter
+				status_at_least(STAT_STUTTERING, (effect * blocked))
 		if(EYE_BLUR)
-			status_at_least(EFFECT_BLURRY, (effect * blocked))
+			status_at_least(STAT_BLURRY, (effect * blocked))
 		if(DROWSY)
-			status_at_least(EFFECT_DROWSY, (effect * blocked))
+			status_at_least(STAT_DROWSY, (effect * blocked))
 	return 1
 
 
@@ -38,7 +40,7 @@
 	return (100 - injury_armor(INJURY_RADIATION, null)) / 100
 
 /mob/living/proc/apply_effects(stun = 0, weaken = 0, paralyze = 0, irradiate = 0, stutter = 0, eyeblur = 0, drowsy = 0, agony = 0, blocked = 0, ignite = 0, flammable = 0)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0	// Cancelled by a component
 	if(blocked >= 100)
 		return 0

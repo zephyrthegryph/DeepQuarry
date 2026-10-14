@@ -24,8 +24,8 @@
 /datum/decl/hierarchy/outfit/costume/professional/post_equip(mob/living/carbon/human/H)
 	var/obj/item/storage/briefcase/new_briefcase = new(H)
 	new_briefcase.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/briefcase_item in new_briefcase) // ALLOW(latent): materialized above
-		qdel(briefcase_item)
+	for(var/obj/item/briefcase_item in new_briefcase) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		spent(briefcase_item, H)
 	new /obj/item/gun/projectile/pistol/toy(new_briefcase)
 	new /obj/item/ammo_magazine/mfoam_dart/pistol(new_briefcase)
 	new /obj/item/clothing/mask/gas/clown_hat(new_briefcase)

@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/tommygun icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/tommygun state: tommygun-mag
+/obj/item/gun/projectile/automatic/tommygun dir: 2
+/obj/item/gun/projectile/automatic/tommygun overlay: icons/obj/gun.dmi:tommygun-mag:8:#000000
+

@@ -65,7 +65,7 @@ TYPE_TABLE_DECLARE(/datum/decl/chemical_reaction/distilling, distilling_temp_ran
 		// Change gas temps
 		if(!GM)
 			return
-		GM.add_thermal_energy(temp_shift * 1000)
+		heat_add(GM, temp_shift * 1000, HEAT_SOURCE_DEVICE)
 
 // Subtypes //
 

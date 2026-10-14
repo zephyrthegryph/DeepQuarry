@@ -38,8 +38,8 @@
 
 /proc/dq_power_test_cable(turf/T, d1, d2)
 	var/obj/structure/cable/C = new(T)
-	C.d1 = d1
-	C.d2 = d2
+	C.set_d1(d1)
+	C.set_d2(d2)
 	C.power_register()
 	return C
 
@@ -68,32 +68,32 @@
 	var/list/cables = dq_power_test_line(run)
 	var/obj/machinery/power/terminal/left = allocate(/obj/machinery/power/terminal, run[1])
 	var/obj/machinery/power/terminal/right = allocate(/obj/machinery/power/terminal, run[5])
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	TEST_ASSERT(left.power_region, "the left machine is not on the cable")
 	TEST_ASSERT(left.power_region == right.power_region, "one cable run is two networks")
 	var/before = left.power_region
 
 	qdel(cables[3])
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	TEST_ASSERT(left.power_region, "the left side lost its network")
 	TEST_ASSERT(right.power_region, "the right side lost its network")
 	TEST_ASSERT(left.power_region != right.power_region, "a cut cable still joins the two sides")
 	TEST_ASSERT(left.power_region == before || right.power_region == before, "neither side kept the network's identity")
 
 	right.set_power_supply(1000)
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	TEST_ASSERT_EQUAL(power_avail(left.power_region), 0, "supply crossed the cut")
 	TEST_ASSERT_EQUAL(left.draw_power(100), 0, "a draw crossed the cut")
 
 	cables[3] = dq_power_test_cable(run[3], EAST, WEST)
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	TEST_ASSERT(left.power_region == right.power_region, "a repaired cable did not merge the networks")
 	// `avail` is a per-step law result (ProducerCredit et al, verdigris/domains/power/src/laws.rs),
 	// not pushed on every write. One blocking world step settles the merged
-	// region's ledger before GLOB.machine_service.process_power() re-polls it (a paced
+	// region's ledger before SSmachines.process_power() re-polls it (a paced
 	// vg_frame() does not step while the previous worker frame runs).
 	vg_world_run_steps(1)
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	TEST_ASSERT_EQUAL(power_avail(left.power_region), 1000, "the merged network does not carry the supply")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 600, "a draw on the merged network failed")
 	TEST_ASSERT_EQUAL(left.draw_power(600), 400, "a draw exceeded the supply left")
@@ -105,24 +105,25 @@
 	var/lost_signals = 0
 	var/restored_signals = 0
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/source, datum/om/event/machinery_power_lost/event)
-	EVENT_HANDLER
+/datum/unit_test/dq_power_apc_cycle/proc/on_lost(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	lost_signals++
 
-/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/source, datum/om/event/machinery_power_restored/event)
-	EVENT_HANDLER
+/datum/unit_test/dq_power_apc_cycle/proc/on_restored(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	restored_signals++
 
 /// One power step as the game runs it: DM's loads and topology in, one
 /// world step (Rust's laws; SSvg paces it in play), the results polled back.
 /proc/dq_power_test_step()
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	vg_world_run_steps(1)
-	GLOB.machine_service.process_power()
+	native_system().drain() // the step's APC reports (on_apc_report()) arrive through the frame's outbox, as the kernel's phase N delivers them
+	SSmachines.process_power()
 
 /proc/dq_power_test_apc()
 	for(var/obj/machinery/power/apc/candidate as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if(candidate.terminal && candidate.cell && candidate.area()?.requires_power && !candidate.has_stat(BROKEN | MAINT) && isturf(candidate.loc))
+		if(candidate.terminal && candidate.cell && candidate.area?.requires_power && !(candidate.broken_now() || candidate.under_maintenance()) && isturf(candidate.loc))
 			return candidate
 	return null
 
@@ -136,33 +137,33 @@
 	var/obj/machinery/power/terminal/T = A.terminal
 	var/old_charge = A.cell.charge
 	var/obj/machinery/M = allocate(/obj/machinery, get_turf(A))
-	om_hook(M, /datum/om/event/machinery_power_lost, src, PROC_REF(on_lost))
-	om_hook(M, /datum/om/event/machinery_power_restored, src, PROC_REF(on_restored))
+	observe(M, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_lost)))
+	observe(M, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_restored)))
 	M.power_change()
 
 	// Cut off, nearly empty, with a load.
 	A.disconnect_from_network()
-	A.area().use_power_static(2000, EQUIP)
+	dq_area_load(get_turf(A), 2000, EQUIP)
 	A.set_operating(TRUE)
 	A.set_chargemode(TRUE)
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	A.cell.charge = A.cell.maxcharge * 0.001
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
 	var/drained = FALSE
 	for(var/i in 1 to 20)
 		dq_power_test_step()
-		if(!A.area().power_equip)
+		if(!A.area.power_equip)
 			drained = TRUE
 			break
 	TEST_ASSERT(drained, "an empty isolated APC kept its area powered")
-	TEST_ASSERT(M.has_stat(NOPOWER), "a machine in the dark area still has power")
+	TEST_ASSERT(M.power_lost(), "a machine in the dark area still has power")
 	TEST_ASSERT(lost_signals, "the machine never heard machinery_power_lost")
 	TEST_ASSERT(A.charging == 0, "an isolated APC claims to charge")
 	var/low = A.cell.charge
@@ -173,24 +174,25 @@
 	var/restored = FALSE
 	for(var/i in 1 to 80)
 		dq_power_test_step()
-		if(A.area().power_equip && A.charging)
+		if(A.area.power_equip && A.charging)
 			restored = TRUE
 			break
 	TEST_ASSERT(restored, "the APC did not restore and charge once supply returned")
-	TEST_ASSERT(!M.has_stat(NOPOWER), "the machine did not get its power back")
+	TEST_ASSERT(!M.power_lost(), "the machine did not get its power back")
 	TEST_ASSERT(restored_signals, "the machine never heard machinery_power_restored")
 	dq_power_test_step()
 	TEST_ASSERT(A.cell.charge > low, "the cell did not charge ([A.cell.charge] after [low])")
 	TEST_ASSERT(!machine_stepping(A), "the APC polled during the cycle")
 
 	T.set_power_supply(0)
-	A.area().use_power_static(-2000, EQUIP)
+	dq_area_load(get_turf(A), -2000, EQUIP)
 	A.cell.charge = old_charge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
-	om_unhook(M, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src)
-	GLOB.machine_service.process_power()
+	unobserve(M, /datum/notice/machinery_power_lost, src)
+	unobserve(M, /datum/notice/machinery_power_restored, src)
+	SSmachines.process_power()
 
 /// A settled APC and an idle SMES neither poll nor hear from Rust.
 /datum/unit_test/dq_power_idle_apc_and_smes_sleep
@@ -210,27 +212,27 @@
 	A.connect_to_network()
 	A.set_operating(TRUE)
 	A.set_chargemode(TRUE)
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)
 	A.cell.charge = A.cell.maxcharge
 	A.seat_cell_charge(TRUE) // the seated cell's charge becomes Rust's again
-	A.update()
+	A.apply_area_power()
 	refresh_flush()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		if(!candidate.has_stat(BROKEN))
+		if(!candidate.broken_now())
 			S = candidate
 			break
 	var/old_smes = S ? list(S.stored_charge(), S.input_attempt, S.output_attempt) : null
 	if(S)
 		S.set_stored_charge(S.capacity)
-		S.input_attempt = FALSE
-		S.output_attempt = FALSE
-		S.power_sync()
+		S.set_input_attempt(FALSE)
+		S.set_output_attempt(FALSE)
+		refresh_flush()
 	// The monitor view settles geometrically; the APC reaches full charge.
 	for(var/i in 1 to 80)
 		dq_power_test_step()
@@ -244,13 +246,13 @@
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
 		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
 		S.set_stored_charge(old_smes[1])
-		S.input_attempt = old_smes[2]
-		S.output_attempt = old_smes[3]
-		S.power_sync()
+		S.set_input_attempt(old_smes[2])
+		S.set_output_attempt(old_smes[3])
+		refresh_flush()
 	else
 		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
 	T.set_power_supply(0)
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 
 /// A power sensor reads its network's numbers from the Rust ledger.
 /datum/unit_test/dq_power_monitor_reading
@@ -284,29 +286,3 @@
 			qdel(C)
 
 #endif
-
-/// Power's wakes reach their subscribers: an area's power change raises its
-/// OM channel.
-/datum/unit_test/dq_power_area_key_wakes_subscriber
-
-/datum/unit_test/dq_power_area_key_wakes_subscriber/Run()
-	var/obj/machinery/power/apc/A = dq_power_test_apc()
-	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
-	if(!A)
-		return
-	// Area power is an OM channel (CHANGE_AREA_POWER); whatever watches it (lights,
-	// machines asleep on sleep_until_keys()) is woken by the raise. Count the raise.
-	var/area/area = A.area()
-	var/datum/om/rec/rec = om_rec_of(area)
-	var/datum/om/scheduler/sched = rec.sched
-	var/old_listen = area.om_listen
-	area.om_listen |= CHANGE_AREA_POWER
-	sched.test_raises = list()
-	area.power_change()
-	var/raised = 0
-	for(var/list/raise as anything in sched.test_raises)
-		if(raise[1] == area && (raise[2] & CHANGE_AREA_POWER))
-			raised++
-	sched.test_raises = null
-	area.om_listen = old_listen
-	TEST_ASSERT(raised >= 1, "the area's power change did not raise CHANGE_AREA_POWER")

@@ -43,3 +43,14 @@
 
 ## Force tab indents on dm files
 *.dm whitespace=indent-with-non-tab
+
+## Include lists: parallel branches each append #include lines at the same spot. A union merge keeps
+## both sides' lines instead of conflicting (a resurrected include of a deleted file fails the compile,
+## and a duplicate #include is harmless). doc/rewrite/agent_workflow.md.
+deepquarry.dme merge=union
+code/modules/unit_tests/_unit_tests.dm merge=union
+
+## look_keys.txt records the look keys a pin run actually probed and matched. The union driver keeps both sides' rows so a plain `git
+## merge` never conflicts on it; the merge scripts then run tools/ci/check_look_keys_format.sh --normalize, which only drops rows (a type
+## whose merged key matches no row stays unverified and is probed by the next pin run). Nothing regenerates it from the tree.
+code/modules/unit_tests/snapshots/look_keys.txt merge=union

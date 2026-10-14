@@ -16,12 +16,15 @@
 	var/atom/movable/copied
 	var/mob/living/simple_mob/illusion/illusion = null
 
+CAPABILITIES(/obj/item/spell/illusion)
+	owns_one(nameof(illusion), /mob/living/simple_mob/illusion)
+	ref_one(nameof(copied))
+
 /obj/item/spell/illusion/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable))
 		var/atom/movable/AM = hit_atom
 		if(pay_energy(100))
 			rel_set(src, nameof(copied), AM)
-			update_icon()
 			to_chat(user, span_notice("You've copied \the [AM]'s appearance."))
 			user << 'sound/weapons/flash.ogg'
 			return 1
@@ -31,7 +34,7 @@
 			if(!copied())
 				rel_set(src, nameof(copied), user)
 			if(pay_energy(500))
-				own_set(src, nameof(illusion), new /mob/living/simple_mob/illusion(T))
+				rel_set(src, nameof(illusion), new /mob/living/simple_mob/illusion(T))
 				illusion.copy_appearance(copied())
 				illusion.copy_overlays(copied(), TRUE)
 				to_chat(user, span_notice("An illusion of \the [copied()] is made on \the [T]."))
@@ -42,35 +45,38 @@
 				illusion.ai_brain?.give_destination(T)
 /obj/item/spell/illusion/on_use_cast(mob/user)
 	if(illusion)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(illusion_action_chosen), title = "Illusion", message = "Would you like to have \the [illusion] speak, or do an emote?", choices = list("Speak","Emote","Cancel"), buttons = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(illusion_action_chosen), answerer = user, title = "Illusion", question = "Would you like to have \the [illusion] speak, or do an emote?", choices = list("Speak","Emote","Cancel"), buttons = TRUE, timeout = 0)
 
-/obj/item/spell/illusion/proc/illusion_action_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/spell/illusion/proc/illusion_action_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.value)
 		if("Speak")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_speak), title = "Illusion Speak", message = "What do you want \the [illusion] to say?", encode = FALSE)
+			open_request(src, /datum/prompt/text, PROC_REF(illusion_speak), answerer = A.request.answerer, title = "Illusion Speak", question = "What do you want \the [illusion] to say?", encode = FALSE, timeout = 0)
 		if("Emote")
-			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_emote), title = "Illusion Emote", message = "What do you want \the [illusion] to do?", encode = FALSE)
+			open_request(src, /datum/prompt/text, PROC_REF(illusion_emote), answerer = A.request.answerer, title = "Illusion Emote", question = "What do you want \the [illusion] to do?", encode = FALSE, timeout = 0)
 
-/obj/item/spell/illusion/proc/illusion_speak(datum/om/prompt/text/ask)
+/obj/item/spell/illusion/proc/illusion_speak(datum/act/request/A)
+	if(!A.answer)
+		return
 	//Sanitize occurs inside say() already.
-	if(ask.text && illusion)
-		illusion.say(ask.text)
+	if(A.answer.value && illusion)
+		illusion.say(A.answer.value)
 
-/obj/item/spell/illusion/proc/illusion_emote(datum/om/prompt/text/ask)
-	if(ask.text && illusion)
-		illusion.emote(ask.text)
+/obj/item/spell/illusion/proc/illusion_emote(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value && illusion)
+		illusion.emote(A.answer.value)
 
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
-DECLARE_APPEARANCE_PROC(/obj/item/spell/illusion, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spell/illusion/appearance_overlays()
-	. = list()
+/obj/item/spell/illusion/draw(datum/look/look)
+	..()
 	if(copied())
-		var/image/temp_image = image(copied())
 		var/matrix/M = matrix()
 		M.Scale(0.5, 0.5)
-		temp_image.transform = M
-		. += temp_image
+		look.overlay(look_overlay_image(of = copied(), transform = M))
 
 /// Copied (a relation view).
 /obj/item/spell/illusion/proc/copied() as /atom/movable

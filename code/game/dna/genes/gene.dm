@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/gene)
 /datum/gene // Traitgenes Removed /dna/ from path... WHY WAS THIS A SUBTYPE OF DNA!? It's taking a huge struct and making 50 of them at startup, growing with every new var and list stuffed in /datum/dna - Willbird
 	// Display name
 	var/name="BASE GENE"
@@ -50,9 +51,6 @@
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
-/datum/gene/trait/relations()
-	. = ..()
-	. += rel_one(nameof(linked_trait), back = nameof(/datum/trait::linked_gene))
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()
@@ -111,7 +109,7 @@
 			if(linked_trait.type in H.species.traits)
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, nameof(H.species))
+			var/datum/species/S = rel_private(H, nameof(H.species))
 			linked_trait.apply(S, H, S.traits[linked_trait.type])
 			S.traits.Add(linked_trait.type)
 			if(!(linked_trait.type in H.dna.species_traits)) // Set species traits too
@@ -128,7 +126,7 @@
 			if(!(linked_trait.type in H.species.traits))
 				return
 			// Mutate the mob's own copy, never the shared species prototype.
-			var/datum/species/S = proto_private(H, nameof(H.species))
+			var/datum/species/S = rel_private(H, nameof(H.species))
 			linked_trait.unapply(S, H, S.traits[linked_trait.type])
 			linked_trait.remove(S) // Does nothing, but may as well call it because it exists and has a place now
 			S.traits.Remove(linked_trait.type)

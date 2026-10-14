@@ -5,56 +5,66 @@ MATERIAL_MIX(/obj/item/syringe_cartridge, list(MAT_STEEL = 125, MAT_GLASS = 375)
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "syringe-cartridge"
 	var/icon_flight = "syringe-cartridge-flight" //so it doesn't look so weird when shot
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 3
-	force = 3
 	w_class = ITEMSIZE_TINY
 	var/tmp/obj/item/reagent_containers/syringe/syringe
+	/// Flying after being fired from a syringe gun: shows the flight sprite and no syringe, until it lands.
+	var/in_flight = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/syringe_cartridge/appearance_overlays()
-	. = list()
-	underlays.Cut()
-	if(syringe())
-		underlays += image(syringe().icon, src, syringe().icon_state)
-		if(length(syringe().filling)) underlays += syringe().filling
+TRACKED(/obj/item/syringe_cartridge, in_flight)
+
+/// The loaded syringe and its filling, drawn with the cartridge (the legacy look put them under the cartridge sprite; the look has no underlays).
+/obj/item/syringe_cartridge/draw(datum/look/look)
+	..()
+	if(in_flight)
+		look.state(icon_flight)
+		return
+	var/obj/item/reagent_containers/syringe/loaded = syringe()
+	if(!loaded)
+		return
+	look.watch(loaded)
+	look.overlay(look_overlay_image(initial(loaded.icon), loaded.icon_state))
+	if(loaded.reagents.total_volume && loaded.mode != NEEDLE_BROKEN && loaded.mode != NEEDLE_CAPPED)
+		look.overlay(look_overlay_image(initial(loaded.icon), "filler[round(loaded.reagents.total_volume, round(loaded.reagents.maximum_volume / 3))]", color = loaded.reagents.get_color()))
 
 /// Old attackby.
-/obj/item/syringe_cartridge/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/syringe_cartridge/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/syringe))
 		if(syringe())
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_set(src, nameof(syringe), I)
 		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
 		user.remove_from_mob(syringe())
 		syringe().forceMove(src)
-		sharp = TRUE
+		set_sharp(TRUE)
 		name = "syringe dart"
-		update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/syringe_cartridge)
+	ref_one(nameof(syringe), /obj/item/reagent_containers/syringe)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 3))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/syringe_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/syringe_cartridge/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(syringe())
 		to_chat(user, span_notice("You remove [syringe()] from [src]."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.put_in_hands(syringe())
 		rel_clear(src, nameof(syringe))
-		sharp = initial(sharp)
+		set_sharp(combat_of_type(type).sharp)
 		name = initial(name)
-		update_icon()
 	return TRUE
 
 /obj/item/syringe_cartridge/proc/prime()
-	//the icon state will revert back when update_icon() is called from throw_impact()
-	icon_state = icon_flight
-	underlays.Cut()
+	//the flight sprite reverts when throw_impact() lands it
+	set_in_flight(TRUE)
 
 /obj/item/syringe_cartridge/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	..() //handles embedding for us. Should have a decent chance if thrown fast enough
@@ -72,10 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 					add_attack_logs(thrower,L,"Shot with [src.name] containing [contained], trasferred [trans] units")
 
 		syringe().break_syringe(iscarbon(hit_atom)? hit_atom : null)
-		syringe().update_icon()
 
-	icon_state = initial(icon_state) //reset icon state
-	update_icon()
+	set_in_flight(FALSE) //back to the resting sprite
 
 /obj/item/gun/launcher/syringe
 	name = "syringe gun"
@@ -83,9 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	icon_state = "syringegun"
 	item_state = "syringegun"
 	w_class = ITEMSIZE_NORMAL
-	force = 7
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 
 	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic thunk"
@@ -102,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 // Loaded cartridges sit in the gun's contents; next is a view of the one on the bolt.
 /obj/item/gun/launcher/syringe/ownership()
 	. = ..()
-	. += owns(nameof(darts), policy = OWN_CONTAINED)
+	. += owns(nameof(darts), policy = OWN_CONTAINED, is_list = TRUE)
 
 /obj/item/gun/launcher/syringe/consume_next_projectile()
 	if(next())
@@ -116,10 +122,11 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	rel_clear(src, nameof(next))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/syringe/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/syringe/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(next())
 		act_message(user, src, MSG_SELF(span_warning("You unlatch and carefully relax the bolt on %T%, unloading the spring.")), \
 			MSG_OTHERS("%U% unlatches and carefully relaxes the bolt on %T%."))
@@ -131,10 +138,14 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 		rel_set(src, nameof(next), LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/launcher/syringe)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
+	configure(item_combat(force = 7))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gun/launcher/syringe/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/launcher/syringe/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(!length(darts))
 			to_chat(user, span_warning("[src] is empty."))
@@ -148,20 +159,22 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Old attackby.
-/obj/item/gun/launcher/syringe/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/syringe_cartridge))
-		var/obj/item/syringe_cartridge/C = A
+/obj/item/gun/launcher/syringe/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/syringe_cartridge))
+		var/obj/item/syringe_cartridge/C = held
 		if(length(darts) >= max_darts)
 			to_chat(user, span_warning("[src] is full!"))
-			return INTERACTION_HANDLED_PASS
-		if(!own_add(src, nameof(src.darts), C, user = user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		if(!move_into(src, nameof(src.darts), C, user))
+			return OP_PASS
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/launcher/syringe/rapid

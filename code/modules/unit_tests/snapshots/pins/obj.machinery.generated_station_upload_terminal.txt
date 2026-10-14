@@ -1,0 +1,29 @@
+human|none menu: Upload payload
+human|none click: Click: Upload payload
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Upload payload
++3 click: Click: Upload payload
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Upload payload
+human|/obj/item/tool/screwdriver click: Click: Upload payload
+human|/obj/item/tool/crowbar menu: Upload payload
+human|/obj/item/tool/crowbar click: Click: Upload payload
+human|/obj/item/tool/wrench menu: Upload payload
+human|/obj/item/tool/wrench click: Click: Upload payload
+human|/obj/item/tool/wirecutters menu: Upload payload
+human|/obj/item/tool/wirecutters click: Click: Upload payload
+human|/obj/item/multitool menu: Upload payload
+human|/obj/item/multitool click: Click: Upload payload
+human|/obj/item/weldingtool menu: Upload payload
+human|/obj/item/weldingtool click: Click: Upload payload
+human|/obj/item/stack/cable_coil menu: Upload payload
+human|/obj/item/stack/cable_coil click: Click: Upload payload
+human|/obj/item/stack/material/steel menu: Upload payload
+human|/obj/item/stack/material/steel click: Click: Upload payload
+human|/obj/item/card/id menu: Upload payload
+human|/obj/item/card/id click: Click: Upload payload
+human|/obj/item menu: Upload payload
+human|/obj/item click: Click: Upload payload
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, upload

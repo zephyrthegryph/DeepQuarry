@@ -2,13 +2,10 @@
 // This class of weapons takes force and appearance data from a material datum.
 // They are also fragile based on material data and many can break/smash apart.
 /obj/item/material
-	hitsound = SFX_WEAPONS_BLADESLICE
 	gender = NEUTER
 	throw_speed = 3
 	throw_range = 7
 	w_class = ITEMSIZE_NORMAL
-	sharp = FALSE
-	edge = FALSE
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
@@ -27,11 +24,16 @@
 	var/drops_debris = 1
 	var/named_from_material = 1 // Does it prepend the material's name to it's name?
 
-/obj/item/material/Initialize(mapload, material_key)
+TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
+
+/// The material it is made of (derives(), at init, before its Initialize() reads it): the type's forced one, else its default.
+/obj/item/material/proc/forced_material()
+	return TYPE_TABLE_GET(src, weapon_forced_material) || default_material
+
+// ALLOW(init/INSTANCE_STATE): a material weapon is made of its material (or the type's forced one), scaled by its force divisor
+/obj/item/material/Initialize(mapload)
 	. = ..()
-	if(!material_key)
-		material_key = default_material
-	set_material(material_key)
+	set_material(default_material)
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
@@ -52,23 +54,23 @@
 	return material
 
 /obj/item/material/proc/update_force()
-	if(edge || sharp)
-		force = material.edge_damage()
+	if(combat_of(src).edge || combat_of(src).sharp)
+		set_force(material.edge_damage())
 	else
-		force = material.blunt_damage()
-	force = round(force*force_divisor)
+		set_force(material.blunt_damage())
+	set_force(round(combat_of(src).force*force_divisor))
 	if(dulled)
-		force = round(force*dulled_divisor)
-	throwforce = round(material.blunt_damage()*thrown_force_divisor)
+		set_force(round(combat_of(src).force*dulled_divisor))
+	set_throwforce(round(material.blunt_damage()*thrown_force_divisor))
 
 /obj/item/material/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
-		qdel(src)
+		spent(src)
 	else
 		if(named_from_material)
 			name = "[material.display_name] [initial(name)]"
-		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_colour)
 			color = material.icon_colour
@@ -91,17 +93,27 @@
 	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
-EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(material_interaction_item)))
+CAPABILITIES(/obj/item/material)
+	configure(item_combat(sharp = FALSE, edge = FALSE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
+	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
+	// The whetstone's repair and the sharpening kit's re-edging take the time the tool says; the amount and the new material come from the tool.
+	op("repair", ai(), takes("repair_amount", "repair_time"), wait(PROC_REF(repair_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_timed_done)))
+	op("sharpen", ai(), takes("material", "sharpen_time"), wait(PROC_REF(sharpen_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(sharpen_timed_done)))
+	param(nameof(default_material), pos = 1)
+	derives(nameof(default_material), PROC_REF(forced_material))
 
 /// Old attackby: repairs with a whetstone or sharpening kit, then falls through as its ..() did.
-/obj/item/material/proc/material_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/material/proc/material_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/whetstone))
 		var/obj/item/whetstone/whet = W
 		repair(whet.repair_amount, whet.repair_time, user)
 	if(istype(W, /obj/item/material/sharpeningkit))
 		var/obj/item/material/sharpeningkit/SK = W
 		repair(SK.repair_amount, SK.repair_time, user)
-	return FALSE
+	return OP_DECLINE
 
 /// Wear from use. Wear is not a blow from outside, so armour doesn't apply.
 /obj/item/material/proc/material_wear(amount)
@@ -119,6 +131,8 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 		dull()
 
 /obj/item/material/proc/shatter(consumed)
+	if(loc?.release_refusal(src))
+		return
 	var/turf/T = get_turf(src)
 	T.visible_message(span_danger("\The [src] [material.destruction_desc]!"))
 	if(isliving(loc))
@@ -126,7 +140,7 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 		M.drop_from_inventory(src)
 	play_sfx(src, SFX_SHATTER)
 	if(!consumed && drops_debris) material.place_shard(T)
-	qdel(src)
+	consume(src)
 
 /obj/item/material/proc/dull()
 	var/turf/T = get_turf(src)
@@ -134,26 +148,30 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 	play_sfx(src, SFX_SHATTER)
 	dulled = 1
 	if(is_sharp(src) || has_edge(src))
-		sharp = FALSE
-		edge = FALSE
+		set_sharp(FALSE)
+		set_edge(FALSE)
 
 /obj/item/material/proc/repair(repair_amount, repair_time, mob/living/user)
 	if(!fragile)
 		if(get_integrity() < max_integrity)
 			act_message(user, src, MSG_SELF("You begin repairing %T%."), MSG_OTHERS("%U% begins repairing %T%."))
-			om_task_timed(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
+			perform_op(user, src, "repair", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("repair_amount" = repair_amount, "repair_time" = repair_time))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
 	else
 		to_chat(user, span_warning("You can't repair \the [src]."))
 		return
 
-/obj/item/material/proc/repair_timed_done(repair_amount, mob/living/user)
-	act_message(user, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
-	repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
+/obj/item/material/proc/repair_wait(datum/act/op/A)
+	return A.arg("repair_time")
+
+/obj/item/material/proc/repair_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
+	repair_damage(A.arg("repair_amount") * MATERIAL_WEAR_UNIT)
 	dulled = 0
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
+	return OP_OK
 
 /obj/item/material/proc/sharpen(material, sharpen_time, kit, mob/living/M)
 	if(!fragile && src.material.can_sharpen)
@@ -161,13 +179,16 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		act_message(M, src, MSG_SELF("You begin to replace parts of %T% with [kit]."), MSG_OTHERS("%U% begins to replace parts of %T% with [kit]."))
-		om_task_timed(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
+		perform_op(M, src, "sharpen", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("material" = material, "sharpen_time" = sharpen_time))
 		return TRUE
 	else
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))
 		return FALSE
 
-/obj/item/material/proc/sharpen_timed_done(material, mob/living/M)
-	act_message(M, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
-	src.set_material(material)
-	return TRUE
+/obj/item/material/proc/sharpen_wait(datum/act/op/A)
+	return A.arg("sharpen_time")
+
+/obj/item/material/proc/sharpen_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You finish replacing parts of %T%."), MSG_OTHERS("%U% has finished replacing parts of %T%."))
+	src.set_material(A.arg("material"))
+	return OP_OK

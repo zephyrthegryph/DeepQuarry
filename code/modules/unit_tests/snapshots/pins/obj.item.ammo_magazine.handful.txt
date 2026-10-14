@@ -1,0 +1,107 @@
+@obj human|none
+-click: Click: Pick up
++2 menu: Take round
++4 menu: Use
++5 click: Click: Take round
+@obj robot|none
+-click: Click: Pick up
++3 menu: Take round
++5 menu: Use
++6 click: Click: Take round
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++6 menu: Use
++7 click: Click: Load
+@obj human|/obj/item/kit
++0 menu: Combine
++2 menu: Load
++4 menu: Pick up
++5 menu: Take round
++7 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Combine
++2 menu: Load
++4 menu: Pick up
++5 menu: Take round
++7 menu: Use
++8 click: Click: Load
+@obj human|/obj/item
+-menu: Alternate use
+-click: Click: Use
++0 menu: Combine
++1 menu: Load
++3 menu: Pick up
++4 menu: Take round
++7 click: Click: Load
+keys: collect_item, collect_shells, combine, drag_buckle, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up, pick_up_item, take_round, toggle_digestable

@@ -1,0 +1,16 @@
+@obj.vehicle human|none
+@obj.vehicle robot|none
+@obj.vehicle ai|none
+@obj.vehicle ghost|none
+@obj.vehicle human|/obj/item/tool/screwdriver
+@obj.vehicle human|/obj/item/tool/crowbar
+@obj.vehicle human|/obj/item/tool/wrench
+@obj.vehicle human|/obj/item/tool/wirecutters
+@obj.vehicle human|/obj/item/multitool
+@obj.vehicle human|/obj/item/weldingtool
+@obj.vehicle human|/obj/item/stack/cable_coil
+@obj.vehicle human|/obj/item/stack/material/steel
+@obj.vehicle human|/obj/item/card/id
+@obj.vehicle human|/obj/item
+@obj.vehicle human|/obj/item/card/emag
+keys: drag_buckle, emag.subvert, emag.use, melee_hit, rover_engine_key, rover_engine_remove_key, rover_engine_start_engine, rover_engine_stop_engine, train_drag, train_hand, train_unlatch, use_crowbar, use_screwdriver, use_welder, vehicle_item

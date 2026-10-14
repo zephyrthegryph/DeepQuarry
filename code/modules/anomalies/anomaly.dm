@@ -4,19 +4,20 @@
 	icon = 'icons/obj/devices/tool.dmi'
 	icon_state = "neutralyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	item_flags = NOBLUDGEON
 
 /// Owned: lets us delete anomalies we hit (was the effect_remover component).
 /obj/item/anomaly_neutralizer/var/datum/effect_remover/effect_remover
 
-/obj/item/anomaly_neutralizer/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/anomaly_neutralizer)
+	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))
+	owns_one(nameof(effect_remover), /datum/effect_remover, starts = PROC_REF(make_effect_remover))
 
-	own_set(src, nameof(effect_remover), new /datum/effect_remover(src, \
+/// The starting effect remover (owns_one(starts =)): it clears anomalies.
+/obj/item/anomaly_neutralizer/proc/make_effect_remover(current)
+	return new /datum/effect_remover(src, \
 		success_feedback = "You neutralize %THEEFFECT with %THEWEAPON, frying its circuitry in the process.", \
-		on_clear_callback = om_callable(src, PROC_REF(on_anomaly_neutralized)), \
-		effects_we_clear = list(/obj/effect/anomaly)))
+		on_clear = PROC_REF(on_anomaly_neutralized), \
+		effects_we_clear = list(/obj/effect/anomaly))
 
 /obj/item/anomaly_neutralizer/proc/on_anomaly_neutralized(obj/effect/anomaly/target, mob/living/user)
 	target.anomalyNeutralize()
@@ -31,7 +32,6 @@
 	icon_state = "anomaly_releaser"
 	name = "advanced anomaly releaser"
 	desc = "Single-use injector that releases and stabilizes anomalies by injecting an unknown substance."
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 5
@@ -48,6 +48,10 @@
 	var/will_anchor = TRUE
 	// If it will apply stats to it
 	var/gives_stats = TRUE
+
+CAPABILITIES(/obj/item/anomaly_releaser)
+	configure(item_thrown(force = 0))
+TRACKED(/obj/item/anomaly_releaser, used)
 
 /obj/item/anomaly_releaser/science
 	icon = 'icons/obj/devices/tool.dmi'
@@ -71,22 +75,26 @@
 	desc = "A hand-held anomaly scanner, able to distinguish the particles that might affect a stable anomaly."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "anom_scanner"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	/// Relation view: the last anomaly scanned (set by the anomaly's scan, _anomalies.dm).
 	var/obj/effect/anomaly/buffered_anomaly
 
-DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/anomaly_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("AnomalyScanner")
+	without("ui_open")
+	ui_shape(anomaly_name = schema_text(), severity = num(), stability = num(), point_output = any, danger_type = any, unstable_type = any, containment_type = any, transformation_type = any, modifier = any, countdown = any)
 
 /// Old attack_self.
-/obj/item/anomaly_scanner/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/anomaly_scanner/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -96,12 +104,8 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-DECLARE_UI(/obj/item/anomaly_scanner, "AnomalyScanner")
-
-UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scanner{anomaly_name:text,severity:num,stability:num,point_output:unknown,danger_type:unknown,unstable_type:unknown,containment_type:unknown,transformation_type:unknown,modifier:unknown,countdown:unknown}")
-
-/// The computed part of /obj/item/anomaly_scanner's window data (declared on its UI_DATA row).
-/obj/item/anomaly_scanner/proc/ui_data_obj_item_anomaly_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/anomaly_scanner's window data.
+/obj/item/anomaly_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/obj/effect/anomaly/anom = buffered_anomaly
 
@@ -141,13 +145,14 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	self_recharge = 1
 	use_external_power = 1
 
-/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a particle, then the gun's own self-use.
-/obj/item/gun/energy/anomaly/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
-	var/chosen_particle = rerun_ask(user, "k147", PROC_REF(gun_self), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
-	if(isnull(chosen_particle))
-		return TRUE
+CAPABILITIES(/obj/item/gun/energy/anomaly)
+	extend("gun_self", asks(/datum/prompt/choice, fields = list("question" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL, "timeout" = 0), step = "particle"))
+
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): the particle picked is set, then the gun's own self-use.
+/obj/item/gun/energy/anomaly/gun_operate(datum/act/op/A, callback)
+	var/chosen_particle = A.step_value("particle")
 	if(!chosen_particle)
-		return FALSE
+		return OP_DECLINE
 
 	particle = chosen_particle
 	balloon_alert_visible("changed to [chosen_particle]")
@@ -191,15 +196,15 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	var/picked = FALSE
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
-/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
-/obj/item/assembly/signaler/anomaly/choice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
+CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
+	extend("use", asks(/datum/prompt/choice, fields = list("question" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = computed(PROC_REF(core_choices)), "timeout" = 0), step = "core", when = PROC_REF(core_wanted)))
 
-	if(picked)
-		return TRUE
+/// The core is asked for only where the self-use got past the signaler's own: a core not yet picked.
+/obj/item/assembly/signaler/anomaly/choice/proc/core_wanted(datum/act/op/A)
+	return special_handling && !picked
 
+/// The names of the cores on offer (drawn the first time they are wanted).
+/obj/item/assembly/signaler/anomaly/choice/proc/core_choices(datum/act/op/A)
 	if(isnull(choices))
 		choices = list()
 		var/list/core_types = subtypesof(/obj/effect/anomaly)
@@ -208,13 +213,60 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 			var/type = pick_n_take(core_types)
 			var/obj/effect/anomaly/anom = new type
 			choices[capitalize(anom.name)] = type
-			qdel(anom) // only the type is kept; don't leak the sample object
+			spent(anom, A.actor) // only the type is kept; don't leak the sample object
+	var/list/names = list()
+	for(var/name in choices)
+		names += name
+	return names
 
-	var/choice = rerun_ask(user, "k211", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose an anomaly core.", title = "Anomaly Core Selection", choices = choices)
-	if(isnull(choice))
-		return TRUE
+/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
+/obj/item/assembly/signaler/anomaly/choice/interaction_self(datum/act/op/A)
+	. = ..()
+	if(. == OP_OK)
+		return OP_OK
+
+	if(picked)
+		return OP_OK
+
+	var/choice = A.step_value("core")
 
 	if(choice && !picked)
 		anomaly_type = choices[choice]
-		picked = TRUE
+		set_picked(TRUE)
+	return OP_DECLINE
 
+/datum/prompt/choice/research_anomaly
+	timeout = 0
+	var/obj/item/captured_item
+	var/datum/captured_callback
+	var/item_expected = FALSE
+	var/callback_expected = FALSE
+	var/callback_value
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/research_anomaly)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_callback), /datum)
+
+/datum/prompt/choice/research_anomaly/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/callback = captured_callback
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_callback))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_callback), callback)
+
+/datum/prompt/choice/research_anomaly/proc/user_value()
+	return original_client_ckey ? GLOB.directory[original_client_ckey] : answerer
+
+/datum/prompt/choice/research_anomaly/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (callback_expected && QDELETED(captured_callback)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/research_anomaly/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

@@ -95,12 +95,12 @@
 	var/tmp/pending_immunity = 0
 
 /// Typed view of the owner while attached (contagions are humanoid-only).
-OM_FIELD_VIEW(/datum/affliction/contagion, tmp/mob/living/carbon/human, host, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/tmp/mob/living/carbon/human/host
 /// DISEASE_SPREAD_* routes.
-OM_FIELD(/datum/affliction/contagion, spread_flags, DISEASE_SPREAD_AIRBORNE, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/spread_flags = DISEASE_SPREAD_AIRBORNE
 /// Strain modifier bits (NEEDS_ALL_CURES, DORMANT, SPREAD_DEAD, PROCESSING, ...).
-OM_FIELD(/datum/affliction/contagion, virus_modifiers, NEEDS_ALL_CURES, CHANGE_DATUM_A)
-OM_FIELD(/datum/affliction/contagion, infectivity, 10, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/virus_modifiers = NEEDS_ALL_CURES
+/datum/affliction/contagion/var/infectivity = 10
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
@@ -142,8 +142,8 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/on_added()
 	..()
 	rel_set(src, nameof(host), owner)
-	// Starts its DECLARE_PERIODIC_WHILE (a non-atom has no materialize) once it has a host, and
-	// again on each body it is handed on to (starting re-evaluates; it doesn't stack).
+	// Its spread every() is gated on spread_lane_wanted, which re-evaluates once it has a host, and
+	// again on each body it is handed on to.
 	lifecycle_decls_init(src)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)
@@ -459,3 +459,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 			return 8
 		if(DISEASE_PANDEMIC)
 			return 9
+
+CAPABILITIES(/datum/affliction/contagion)
+	every(2 SECONDS, then(PROC_REF(contagion_step)), when = PROC_REF(spread_lane_wanted))
+	ref_one(nameof(host))

@@ -15,13 +15,10 @@
 	var/gun_type = /obj/item/gun/energy/lasercannon/mounted
 	var/obj/item/gun/gun
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
+CAPABILITIES(/obj/item/rig_module/mounted)
+	owns_one(nameof(gun), starts = nameof(gun_type), starts_set = list("mounted_gun" = TRUE))
 
-/obj/item/rig_module/mounted/Initialize(mapload)
-	. = ..()
-	gun.mounted_gun = TRUE
-
-/obj/item/rig_module/mounted/engage(atom/target)
+/obj/item/rig_module/mounted/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
@@ -90,7 +87,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	return ..()
 
-/obj/item/rig_module/mounted/energy_blade/activate()
+/obj/item/rig_module/mounted/energy_blade/activate(skip_engage = 0, mob/user)
 
 	..()
 
@@ -98,14 +95,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
-		deactivate()
+		deactivate(FALSE, user)
 		return
 
 	var/obj/item/melee/energy/blade/blade = new(M)
 	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
-/obj/item/rig_module/mounted/energy_blade/deactivate()
+/obj/item/rig_module/mounted/energy_blade/deactivate(forced = FALSE, mob/user)
 
 	..()
 
@@ -147,7 +144,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	return ..()
 
-/obj/item/rig_module/mounted/mop/activate()
+/obj/item/rig_module/mounted/mop/activate(skip_engage = 0, mob/user)
 
 	..()
 
@@ -155,14 +152,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
-		deactivate()
+		deactivate(FALSE, user)
 		return
 
 	var/obj/item/mop_deploy/blade = new(M)
 	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
-/obj/item/rig_module/mounted/mop/deactivate()
+/obj/item/rig_module/mounted/mop/deactivate(forced = FALSE, mob/user)
 
 	..()
 

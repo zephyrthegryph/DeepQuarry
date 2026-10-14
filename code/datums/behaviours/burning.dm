@@ -12,13 +12,19 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
  * The ignition rule (code/datums/rules/declarations.dm) starts it.
  * Mobs use the fire stacks status effect; their body side is H2's.
  *
- * A shared OM behaviour ticking once a second; the burning state lives on the
+ * A capability the object grants itself, ticking once a second; the burning state lives on the
  * object. Start with O.start_burning(); extinguish() ends it.
  * Can only be used on objects that use the integrity system.
  */
-/datum/om/behaviour/burning
-	every = 1 SECONDS
-	handles = list(/datum/om/event/before/attack_hand, /datum/om/event/examine)
+CAPABILITY_TYPE(burning, CAP_BURNING, /datum/capability/burning, key = NONE)
+/datum/capability/burning
+
+/datum/capability/burning/entries()
+	return list(
+		every(1 SECONDS, then(CAP_PROC(burn_tick))),
+		extend(/datum/act/attack_hand, instead(then(CAP_PROC(burn_touched)))),
+		on_notice(/datum/notice/examine, then(CAP_PROC(burn_examined))),
+	)
 
 /obj
 	/// Fire overlay appearance applied while burning.
@@ -32,10 +38,20 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
 	var/burn_ended_by
 
+CAPABILITIES(/obj)
+	extend(TAG_TOPIC, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate), id = "topic_usable")))
+	extend(TAG_TOPIC, then(PROC_REF(topic_touched), early = TRUE))
+	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
+	owns_one(nameof(burn_cool_watch), /datum/native_watch/heat)
+	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
+	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
+	owns_one(nameof(talking_atom), /datum/talking_atom)
+	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled)), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled)), then(PROC_REF(vv_topic_mass_delete_type)))
+
 
 /// TRUE while this object burns.
 /obj/proc/is_burning()
-	return om_attached(src, /datum/om/behaviour/burning)
+	return granted(src, /datum/capability/burning)
 
 /// Catches fire. Refused (FALSE) unless the object uses integrity and is flammable.
 /obj/proc/start_burning(fire_overlay = GLOB.fire_overlay, fire_particles = /particles/smoke/burning)
@@ -54,17 +70,18 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		add_shared_particles(fire_particles, "[fire_particles]_[isitem(src)]", isitem(src) ? NONE : PARTICLE_ATTACH_MOB)
 		burn_particle_type = fire_particles
 	burn_fuel = max_integrity * BURN_ENERGY_PER_INTEGRITY
-	om_attach(src, /datum/om/behaviour/burning)
+	grant(src, /datum/capability/burning, src)
 	return TRUE
 
-/datum/om/behaviour/burning/on_start(obj/O)
+/datum/capability/burning/on_activate(datum/activation/A)
+	var/obj/O = A.holder
 	O.burning_start_heat()
 	O.resistance_flags |= ON_FIRE
 	if(O.burn_overlay)
 		O.add_overlay(O.burn_overlay)
-	O.update_icon()
 
-/datum/om/behaviour/burning/on_stop(obj/O)
+/datum/capability/burning/on_deactivate(datum/activation/A)
+	var/obj/O = A.holder
 	O.burning_stop_heat()
 	if(O.burn_particle_type)
 		O.remove_shared_particles("[O.burn_particle_type]_[isitem(O)]")
@@ -73,7 +90,6 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		O.resistance_flags &= ~ON_FIRE
 		if(O.burn_overlay)
 			O.cut_overlay(O.burn_overlay)
-		O.update_icon()
 	O.burn_overlay = null
 
 /// The heat source and the cooling watch on the object's heat body.
@@ -86,7 +102,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(heat_body, BURN_POWER)
-	own_set(src, nameof(burn_cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
+	rel_set(src, nameof(burn_cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
 
 /// Below this the fire goes out.
 /obj/proc/burn_out_temperature()
@@ -96,7 +112,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /obj/proc/burning_stop_heat()
-	own_clear(src, nameof(burn_cool_watch), OWN_DELETE)
+	rel_clear(src, nameof(burn_cool_watch))
 	if(QDELETED(src) || isnull(heat_body))
 		return
 	vg_heat_body_power(heat_body, 0)
@@ -117,11 +133,11 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 /obj/extinguish()
 	. = ..()
 	if(is_burning())
-		om_detach(src, /datum/om/behaviour/burning)
+		revoke(src, /datum/capability/burning, src)
 
-/datum/om/behaviour/burning/tick(obj/O, dt)
-	// dt is in seconds.
-	O.burning_step(dt)
+/datum/capability/burning/proc/burn_tick(datum/act/timer/A)
+	var/obj/O = A.holder
+	O.burning_step(A.dt / (1 SECONDS))
 
 /// One step of burning, `seconds_per_tick` long.
 /obj/proc/burning_step(seconds_per_tick)
@@ -154,22 +170,24 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		burning_end(BURN_ENDED_FUEL)
 
 /// Alerts any examiners that the object is on fire (even though it should be rather obvious)
-/datum/om/behaviour/burning/on_examine(obj/O, datum/om/event/examine/event)
-	event.texts += span_danger("[O.p_Theyre()] burning!")
+/datum/capability/burning/proc/burn_examined(datum/notice/examine/A)
+	var/obj/O = A.holder
+	A.texts += span_danger("[O.p_Theyre()] burning!")
 
 /// Handles searing the hand of anyone who tries to touch the object without protection.
-/datum/om/behaviour/burning/on_before_attack_hand(obj/O, datum/om/event/before/attack_hand/event)
-	var/mob/living/carbon/user = event.user
+/datum/capability/burning/proc/burn_touched(datum/act/attack_hand/A)
+	var/obj/O = A.holder
+	var/mob/living/carbon/user = A.user
 	if(!iscarbon(user) || user.can_touch_burning(O))
 		to_chat(user, span_notice("You put out the fire on [O]."))
 		O.extinguish()
-		return EVENT_VETO
+		return TRUE
 
 	user.injure(INJURY_BURN, 5, user.hand ? BP_L_HAND : BP_R_HAND, O)
 	to_chat(user, span_userdanger("You burn your hand on [O]!"))
 	user.emote("scream")
 	play_sfx(O, SFX_ITEMS_WEAPONS_SEAR)
-	return EVENT_VETO
+	return TRUE
 
 /**
  * The gas side of a fire releasing `joules` on `location`, shared by burning
@@ -187,5 +205,5 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		return FALSE
 	air.adjust_multiple_gases(list(GAS_O2 = -oxygen, GAS_CO2 = oxygen))
 	if(heat_to_gas)
-		air.add_thermal_energy(joules)
+		heat_add(air, joules, HEAT_SOURCE_FIRE)
 	return TRUE

@@ -46,25 +46,27 @@
 /obj/random/fromList/TFGuns
 	//same weight as the crate
 
-DECLARE_LOOT(/obj/random/fromList/TFGuns, LOOT_TABLE(\
-	/obj/item/gun/energy/mouseray = 300, \
-	/obj/item/gun/energy/mouseray/corgi = 50, \
-	/obj/item/gun/energy/mouseray/woof = 50, \
-	/obj/item/gun/energy/mouseray/cat = 50, \
-	/obj/item/gun/energy/mouseray/chicken = 50, \
-	/obj/item/gun/energy/mouseray/lizard = 50, \
-	/obj/item/gun/energy/mouseray/rabbit = 50, \
-	/obj/item/gun/energy/mouseray/fennec = 50, \
-	/obj/item/gun/energy/mouseray/monkey = 5, \
-	/obj/item/gun/energy/mouseray/wolpin = 5, \
-	/obj/item/gun/energy/mouseray/otie = 5, \
-	/obj/item/gun/energy/mouseray/direwolf = 5, \
-	/obj/item/gun/energy/mouseray/giantrat = 5, \
-	/obj/item/gun/energy/mouseray/redpanda = 50, \
-	/obj/item/gun/energy/mouseray/catslug = 5, \
-	/obj/item/gun/energy/mouseray/teppi = 5, \
-	/obj/item/gun/energy/mouseray/metamorphosis = 1, \
-	/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1))
+CAPABILITIES(/obj/random/fromList/TFGuns)
+	loot(
+		table = list(
+			/obj/item/gun/energy/mouseray = 300,
+			/obj/item/gun/energy/mouseray/corgi = 50,
+			/obj/item/gun/energy/mouseray/woof = 50,
+			/obj/item/gun/energy/mouseray/cat = 50,
+			/obj/item/gun/energy/mouseray/chicken = 50,
+			/obj/item/gun/energy/mouseray/lizard = 50,
+			/obj/item/gun/energy/mouseray/rabbit = 50,
+			/obj/item/gun/energy/mouseray/fennec = 50,
+			/obj/item/gun/energy/mouseray/monkey = 5,
+			/obj/item/gun/energy/mouseray/wolpin = 5,
+			/obj/item/gun/energy/mouseray/otie = 5,
+			/obj/item/gun/energy/mouseray/direwolf = 5,
+			/obj/item/gun/energy/mouseray/giantrat = 5,
+			/obj/item/gun/energy/mouseray/redpanda = 50,
+			/obj/item/gun/energy/mouseray/catslug = 5,
+			/obj/item/gun/energy/mouseray/teppi = 5,
+			/obj/item/gun/energy/mouseray/metamorphosis = 1,
+			/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1))
 
 /obj/item/clothing/suit/recycling_shirt
 	name = "recycling shirt"
@@ -76,54 +78,60 @@ DECLARE_LOOT(/obj/random/fromList/TFGuns, LOOT_TABLE(\
 
 /obj/random/fromList/sexy_costumes //"sexy"
 
-DECLARE_LOOT(/obj/random/fromList/sexy_costumes, LOOT_TABLE(\
-	/obj/item/clothing/suit/maxman = 1, \
-	/obj/item/clothing/suit/sexyminer = 1, \
-	/obj/item/clothing/suit/lumber = 1, \
-	/obj/item/clothing/suit/shrine_maiden = 1, \
-	/obj/item/clothing/suit/iasexy = 1, \
-	/obj/item/clothing/suit/sumo = 1, \
-	/obj/item/clothing/under/dress/wench = 1, \
-	/obj/item/clothing/under/schoolgirl = 1, \
-	/obj/item/clothing/suit/stripper/stripper_pink = 1, \
-	/obj/item/clothing/suit/stripper/stripper_green = 1))
+CAPABILITIES(/obj/random/fromList/sexy_costumes)
+	loot(
+		table = list(
+			/obj/item/clothing/suit/maxman = 1,
+			/obj/item/clothing/suit/sexyminer = 1,
+			/obj/item/clothing/suit/lumber = 1,
+			/obj/item/clothing/suit/shrine_maiden = 1,
+			/obj/item/clothing/suit/iasexy = 1,
+			/obj/item/clothing/suit/sumo = 1,
+			/obj/item/clothing/under/dress/wench = 1,
+			/obj/item/clothing/under/schoolgirl = 1,
+			/obj/item/clothing/suit/stripper/stripper_pink = 1,
+			/obj/item/clothing/suit/stripper/stripper_green = 1))
 
 /obj/random/fromList/ducky
 
-DECLARE_LOOT(/obj/random/fromList/ducky, LOOT_TABLE(\
-	/obj/item/bikehorn/rubberducky = 100, \
-	/obj/item/bikehorn/rubberducky/blue = 1, \
-	/obj/item/bikehorn/rubberducky/pink = 1, \
-	/obj/item/bikehorn/rubberducky/grey = 1, \
-	/obj/item/bikehorn/rubberducky/white = 1))
+CAPABILITIES(/obj/random/fromList/ducky)
+	loot(
+		table = list(
+			/obj/item/bikehorn/rubberducky = 100,
+			/obj/item/bikehorn/rubberducky/blue = 1,
+			/obj/item/bikehorn/rubberducky/pink = 1,
+			/obj/item/bikehorn/rubberducky/grey = 1,
+			/obj/item/bikehorn/rubberducky/white = 1))
 
 /obj/random/fromList/insuls
 
-DECLARE_LOOT(/obj/random/fromList/insuls, LOOT_TABLE(\
-	/obj/item/clothing/gloves/yellow = 10, \
-	/obj/item/clothing/gloves/fyellow = 1))
+CAPABILITIES(/obj/random/fromList/insuls)
+	loot(table = list(/obj/item/clothing/gloves/yellow = 10, /obj/item/clothing/gloves/fyellow = 1))
 
 /obj/random/fromList/mecha_toys
 
-DECLARE_LOOT(/obj/random/fromList/mecha_toys, LOOT_TABLE(\
-	/obj/item/toy/mecha/ripley = 1, \
-	/obj/item/toy/mecha/fireripley = 1, \
-	/obj/item/toy/mecha/deathripley = 1, \
-	/obj/item/toy/mecha/gygax = 1, \
-	/obj/item/toy/mecha/durand = 1, \
-	/obj/item/toy/mecha/honk = 1, \
-	/obj/item/toy/mecha/marauder = 1, \
-	/obj/item/toy/mecha/seraph = 1, \
-	/obj/item/toy/mecha/mauler = 1, \
-	/obj/item/toy/mecha/odysseus = 1, \
-	/obj/item/toy/mecha/phazon = 1, \
-	/obj/item/toy/mecha/reticence = 1, \
-	/obj/item/toy/mecha/clarke = 1, \
-	/obj/item/toy/mecha/fivestars = 1))
+CAPABILITIES(/obj/random/fromList/mecha_toys)
+	loot(
+		table = list(
+			/obj/item/toy/mecha/ripley = 1,
+			/obj/item/toy/mecha/fireripley = 1,
+			/obj/item/toy/mecha/deathripley = 1,
+			/obj/item/toy/mecha/gygax = 1,
+			/obj/item/toy/mecha/durand = 1,
+			/obj/item/toy/mecha/honk = 1,
+			/obj/item/toy/mecha/marauder = 1,
+			/obj/item/toy/mecha/seraph = 1,
+			/obj/item/toy/mecha/mauler = 1,
+			/obj/item/toy/mecha/odysseus = 1,
+			/obj/item/toy/mecha/phazon = 1,
+			/obj/item/toy/mecha/reticence = 1,
+			/obj/item/toy/mecha/clarke = 1,
+			/obj/item/toy/mecha/fivestars = 1))
 
 /obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient
 	name = "dubious packaged burger"
 	desc = "God weeps. you flew too close to the sun. the plastic is yellowed. the bun is nearly entirely a whiteish-bluish-greenish mess. This abomination is probably sapient at this point, no doubt older than most of the station. you didn't even think twice. your wax wings are melting. it's over. you're falling. and the burger remains, as accursed as it is. this is your fault. you unleashed it from it's damnable prison. Pandora's box has been opened, and the only thing inside was this burger."
 	nutriment_desc = list("regret. regret. regret.")
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient, null, list(REAGENT_ID_MOLD = 5, REAGENT_ID_SALMONELLA = 5, REAGENT_ID_MINDBREAKER = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/packaged/vendburger/ancient)
+	configure(reagents(add = list(REAGENT_ID_MOLD = 5, REAGENT_ID_SALMONELLA = 5, REAGENT_ID_MINDBREAKER = 2)))

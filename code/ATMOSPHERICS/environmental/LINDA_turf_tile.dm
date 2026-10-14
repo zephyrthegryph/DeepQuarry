@@ -44,6 +44,10 @@
 	var/max_share = 0
 	#endif
 
+CAPABILITIES(/turf/open)
+	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
+	owns_one(nameof(air), /datum/gas_mixture)
+
 /turf/open/Initialize(mapload)
 	setup_open_air()
 	. = ..()
@@ -71,7 +75,7 @@
 				immutable_air[initial_gas_mix] = shared_air
 			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
 		else
-			own_set(src, nameof(air), create_gas_mixture())
+			rel_set(src, nameof(air), create_gas_mixture())
 		if(planetary_atmos)
 			if(!SSair.planetary[initial_gas_mix])
 				var/datum/gas_mixture/immutable/planetary/mix = new
@@ -96,12 +100,12 @@
 /// Shared immutable air (vacuum, planetary mixes) is only let go.
 /turf/open/lifecycle_unbind()
 	. = ..()
-	own_clear(src, nameof(active_hotspot), OWN_DELETE)
+	rel_clear(src, nameof(active_hotspot))
 	SSair?.remove_from_active(src)
 	if(immutable_atmos)
-		own_take(src, nameof(air))
+		rel_take(src, nameof(air))
 	else
-		own_clear(src, nameof(air), OWN_DELETE)
+		rel_clear(src, nameof(air))
 
 /////////////////GAS MIXTURE PROCS///////////////////
 
@@ -128,7 +132,7 @@
 	//acounts for changes in temperature: the seed, once
 	var/turf/parent = parent_type
 	if(initial_temperature != initial(initial_temperature) || initial_temperature != initial(parent.initial_temperature))
-		mix.set_temperature(initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
+		heat_set(mix, initial_temperature) // arena-backed write (no DM mirror under the opaque-handle model)
 
 	return mix
 
@@ -251,6 +255,8 @@
 
 	UNSETEMPTY(new_overlay_types)
 	src.atmos_overlay_types = new_overlay_types
+	// The mobs standing here are not told: each breather's air watch (air_watch.dm) hears the crossings of the levels it
+	// acts on, visible gas or not.
 
 /proc/typecache_of_gases_with_no_overlays()
 	. = list()

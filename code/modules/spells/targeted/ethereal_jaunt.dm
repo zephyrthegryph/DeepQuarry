@@ -16,7 +16,7 @@
 
 /datum/spell/targeted/ethereal_jaunt/cast(list/targets) //magnets, so mostly hardcoded
 	for(var/mob/living/target in targets)
-		target.transforming = 1 //protects the mob from being transformed (replaced) midjaunt and getting stuck in bluespace
+		target.set_transforming(1) //protects the mob from being transformed (replaced) midjaunt and getting stuck in bluespace
 		if(target?.buckled_to())
 			var/atom/movable/_tmp_buck_41 = target?.buckled_to()
 			_tmp_buck_41.unbuckle_mob( target, TRUE)
@@ -36,38 +36,45 @@
 			_tmp_buck_42.unbuckle_mob( target, TRUE)
 		jaunt_disappear(animation, target)
 		target.forceMove(holder)
-		target.transforming=0 //mob is safely inside holder now, no need for protection.
+		target.set_transforming(0) //mob is safely inside holder now, no need for protection.
 		jaunt_steam(mobloc)
-		om_after(src, duration, PROC_REF(jaunt_resurface), target, holder, animation)
+		after(src, duration, PROC_REF(jaunt_resurface), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	if(!target || !holder || !animation)
+		jaunt_finish(target, holder, animation)
+		return
 	var/mobloc = holder.last_valid_turf()
 	animation.forceMove(mobloc)
 	jaunt_steam(mobloc)
 	target.canmove = 0
 	holder.reappearing = 1
-	om_after(src, 2 SECONDS, PROC_REF(jaunt_reform), target, holder, animation)
+	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reform(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
+	if(!target || !holder || !animation)
+		jaunt_finish(target, holder, animation)
+		return
 	jaunt_reappear(animation, target)
-	om_after(src, 5, PROC_REF(jaunt_finish), target, holder, animation)
+	after(src, 0.5 SECONDS, PROC_REF(jaunt_finish), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
-	var/mobloc = holder.last_valid_turf()
-	if(!target.forceMove(mobloc))
-		for(var/direction in list(1,2,4,8,5,6,9,10))
-			var/turf/T = get_step(mobloc, direction)
-			if(T)
-				if(target.forceMove(T))
-					break
-	target.canmove = 1
-	target.reset_perspective() // Fixes a blackscreen
-	qdel(animation)
-	qdel(holder)
+	var/mobloc = holder?.last_valid_turf() || get_turf(target)
+	if(target)
+		if(mobloc && !target.forceMove(mobloc))
+			for(var/direction in list(1,2,4,8,5,6,9,10))
+				var/turf/T = get_step(mobloc, direction)
+				if(T)
+					if(target.forceMove(T))
+						break
+		target.canmove = 1
+		target.reset_perspective() // Fixes a blackscreen
+	spent(animation)
+	spent(holder)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "liquify"
+	animation.set_icon_state("liquify")
 	flick("liquify",animation)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)
@@ -89,13 +96,14 @@
 	anchored = TRUE
 	var/tmp/turf/last_valid_turf
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it started on
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(last_valid_turf), get_turf(loc))
 
-/obj/effect/dummy/spell_jaunt/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/dummy/spell_jaunt)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	extend(/datum/act/hit/projectile, instead())
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return
@@ -108,9 +116,8 @@
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
-	om_after(src, 2, PROC_REF(allow_move))
+	after(src, 0.2 SECONDS, PROC_REF(allow_move))
 
-DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1

@@ -4,7 +4,6 @@
 // turf graph so gases stay where vents push them and never render. Floors
 // get air via /turf/open/Initialize (because blocks_air defaults FALSE);
 // walls keep their existing blocks_air=1 and remain inert.
-OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 
 /turf/simulated
 	parent_type = /turf/open
@@ -16,7 +15,6 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 	var/turf_resource_types
 	var/list/resources
 
-	var/thermite = 0
 	oxygen = MOLES_O2STANDARD
 	nitrogen = MOLES_N2STANDARD
 	var/max_fire_temperature_sustained = 0 //The max temperature of the fire which it was subjected to
@@ -38,17 +36,17 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 		cut_overlay(wet_overlay)
 	wet_overlay = image('icons/effects/water.dmi', icon_state = "wet_floor")
 	add_overlay(wet_overlay)
-	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
-		om_cancel_timer_slot(src, "wet_cleanup_timer")
+	if(after_pending(src, "wet_cleanup_timer"))
+		cancel_after(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
-		after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
+		after(src, 160 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 	else
-		after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
+		after(src, 40 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY
-	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
-		om_cancel_timer_slot(src, "wet_cleanup_timer")
+	if(after_pending(src, "wet_cleanup_timer"))
+		cancel_after(src, "wet_cleanup_timer")
 	if(wet_overlay)
 		cut_overlay(wet_overlay)
 		wet_overlay = null
@@ -62,11 +60,10 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 		wet_overlay = null
 	wet_overlay = image('icons/turf/overlays.dmi',src,"snowfloor")
 	add_overlay(wet_overlay)
-	om_after(src, 5 MINUTES, PROC_REF(snow_dries))
+	after(src, 5 MINUTES, PROC_REF(snow_dries))
 
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
 // ChangeTurf() leaves nothing behind for the new turf (the old one's verbs go with its type).
-DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 
 /turf/simulated/Initialize(mapload)
 	. = ..()
@@ -74,7 +71,7 @@ DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 		holy = 1
 	levelupdate()
 	if(is_outdoors())
-		GLOB.planet_service.addTurf(src)
+		SSplanets.addTurf(src)
 
 /turf/simulated/examine(mob/user)
 	. = ..()
@@ -101,7 +98,7 @@ DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 	var/dirtslip = FALSE
 	if (isliving(A))
 		var/mob/living/M = A
-		if(M.lying || M.flying || M.is_incorporeal() || !(M.flags & ATOM_INITIALIZED)) // Also ignore newly spawning mobs
+		if(M.lying || stat_value(M, STAT_FLYING) || M.is_incorporeal() || !(M.flags & ATOM_INITIALIZED)) // Also ignore newly spawning mobs
 			return ..()
 
 		if(M.dirties_floor())

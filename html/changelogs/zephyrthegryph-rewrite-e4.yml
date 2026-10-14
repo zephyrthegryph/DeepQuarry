@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "E4: the action and hook engine. ACTION() generates act types, act_<name>() and past-tense notices; ACT_TRY, act_done, act_cancel, instead, adjusts, on_notice, on_op, on_change, observe, hook-carrying while_slotted, synchronous notice delivery with outcome filters and the depth-8 rule, and the PUBLISH / OM_EMIT twins."

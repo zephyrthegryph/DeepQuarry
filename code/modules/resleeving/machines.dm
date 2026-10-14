@@ -10,10 +10,13 @@
 	circuit = /obj/item/circuitboard/transhuman_clonepod
 
 //A full version of the pod
-/obj/machinery/clonepod/transhuman/full/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to container_limit)
-		own_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
+CAPABILITIES(/obj/machinery/clonepod/transhuman/full)
+	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL, starts = PROC_REF(make_biomass))
+
+/// A full pod starts with every biomass bottle it holds (owns_many(starts =)).
+/obj/machinery/clonepod/transhuman/full/proc/make_biomass(current)
+	. = list()
+	.[/obj/item/reagent_containers/glass/bottle/biomass] = container_limit
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.
@@ -22,14 +25,14 @@
 	attempting = 1 //One at a time!!
 	set_locked(1)
 	eject_wait = 1
-	om_after(src, 3 SECONDS, PROC_REF(allow_eject))
+	after(src, 3 SECONDS, PROC_REF(allow_eject))
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
 
 	//Get the DNA and generate a new mob
 	var/mob/living/carbon/human/H = current_project.produce_human_mob(src,FALSE,FALSE,"clone ([rand(0,999)])")
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Give breathing equipment if needed
 	if(current_project.breath_type != null && current_project.breath_type != GAS_O2)
@@ -43,24 +46,23 @@
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_BACK)
 			rel_set(H, nameof(H.internal), H.get_equipped_item(SLOT_ID_BACK))
-			if(istype(H.internal,/obj/item/tank) && H.internals)
-				H.internals.icon_state = "internal1"
+			if(istype(H.internal,/obj/item/tank) && hud_of(H)?.internals)
+				hud_of(H)?.internals?.icon_state = "internal1"
 
 	//Apply damage: the sleeve is grown out of genetic damage in the pod.
 	set_occupant(H)
 	H.body.afflict(/datum/affliction/genetic_damage, null, DQ_SLEEVE_GROWTH_LOAD)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 
 	//Machine specific stuff at the end
-	update_icon()
 	attempting = 0
 	return 1
 
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
-/obj/machinery/clonepod/transhuman/machine_step()
+/obj/machinery/clonepod/transhuman/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		if(occupant)
 			set_locked(0)
 			go_out()
@@ -103,7 +105,6 @@
 		set_occupant(null)
 		if(locked)
 			set_locked(0)
-		update_icon()
 		return PROCESS_KILL
 
 	return
@@ -144,9 +145,8 @@
 // here instead of read off the board (roadmap C6): still resolved lazily
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
 /// Print progress (percent); 0 while idle.
-OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE, "busy")
-
+/obj/machinery/transhuman/synthprinter/var/busy = 0
+TRACKED(/obj/machinery/transhuman/synthprinter, busy)
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the
@@ -162,9 +162,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
+	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/transhuman/synthprinter/RefreshParts()
 
@@ -190,11 +189,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	max_res_amount = store_rating
 
 /// Prints while busy with a body; idle, it sleeps until one is queued.
-/obj/machinery/transhuman/synthprinter/machine_step()
-	if(has_stat(NOPOWER))
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/transhuman/synthprinter)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
+	op("synthprinter_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_hand)))
+	op("synthprinter_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_item)))
+
+/obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
+	if(power_lost())
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
-		update_icon()
 		return
 
 	if(busy > 0 && busy <= 95)
@@ -212,7 +216,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 
 	rel_set(src, nameof(current_br), BR)
 	set_busy(5)
-	update_icon()
 
 	return 1
 
@@ -223,12 +226,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	if(!current_project)
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
-		update_icon()
 		return
 
 	//Get the DNA and generate a new mob
 	var/mob/living/carbon/human/H = current_project.produce_human_mob(src,TRUE,FALSE,"synth ([rand(0,999)])")
-	OM_EMIT(H, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(H, /datum/notice/human_dna_finalized)
 
 	//Apply damage
 	H.injure(INJURY_BLUNT, brute_value, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
@@ -241,25 +243,22 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	stored_material[MAT_STEEL] -= body_cost
 	stored_material[MAT_GLASS] -= body_cost
 	set_busy(0)
-	update_icon()
 
 	return 1
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(synthprinter_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(synthprinter_interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if((busy == 0) || (has_stat(NOPOWER)))
-		return TRUE
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if((busy == 0) || (power_lost()))
+		return OP_OK
 	to_chat(user, "Current print cycle is [busy]% complete.")
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	src.add_fingerprint(user)
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
@@ -292,10 +291,13 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 	return
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mode}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/transhuman/synthprinter/draw(datum/look/look)
+	..()
+	look.state("pod_[appearance_mode()]")
 
 /obj/machinery/transhuman/synthprinter/proc/appearance_mode()
-	if(busy && !has_stat(NOPOWER))
+	if(busy && !power_lost())
 		return "1"
 	return broken ? "g" : "0"
 
@@ -338,13 +340,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
+	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
-	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
 /// the occupant's environment, same as before the ledger tracked it.
-/datum/om/relation/slot/occupant/resleever
+/datum/relation_definition/slot/occupant/resleever
 	holder = /obj/machinery/transhuman/resleever
 	slot_id = OCCUPANT_SLOT_RESLEEVER
 	name = "resleever"
@@ -365,15 +366,19 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	blur_amount = (48 - manip_rating * 8)
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
-	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag), REQ_PANEL(FALSE), REQ_TARGET_STATE(/obj/machinery/transhuman/resleever/proc/can_take_dragged)), \
-	INTERACT_VERB("EJECT Occupant", PROC_REF(resleever_verb_eject)), \
-	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
-)
+/// Requirement: an attached mob refuses with the legacy text; a free passenger is allowed.
+/obj/machinery/transhuman/resleever/proc/can_take_dragged_refusal(datum/act/op/A)
+	var/answer = can_take_dragged(A.actor, src, A.held)
+	return istext(answer) ? answer : (answer ? null : /datum/msg/req_failed)
 
-DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resleever"))
+CAPABILITIES(/obj/machinery/transhuman/resleever)
+	interface("ResleevingPod", title = "Resleever")
+	without("ui_open")
+	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())
+	op("resleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(resleever_interaction_item)))
+	op("resleever_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(maintenance_panel_shut), because = /datum/msg/req_failed), req(PROC_REF(can_take_dragged_refusal))), then(PROC_REF(resleever_interaction_drag)))
+	op("resleever_verb_eject", menu(), label("EJECT Occupant"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_eject)))
+	op("resleever_verb_move_inside", menu(), label("Move INSIDE"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_move_inside)))
 
 /obj/machinery/transhuman/resleever/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
@@ -381,10 +386,8 @@ DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resle
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machinery_transhuman_resleever{occupied:bool,name:text,health:num,stat:num,mindStatus:bool,mindName:text}")
-
-/// The computed part of /obj/machinery/transhuman/resleever's window data (declared on its UI_DATA row).
-/obj/machinery/transhuman/resleever/proc/ui_data_obj_machinery_transhuman_resleever(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/transhuman/resleever's window data.
+/obj/machinery/transhuman/resleever/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/mob/living/carbon/human/H = get_occupant()
@@ -398,18 +401,20 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	return data
 
 /// Old attackby.
-/obj/machinery/transhuman/resleever/proc/resleever_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if(default_part_replacement(user, W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
 		if(!ismob(G?.grab_target()))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/M = G?.grab_target()
-		if(put_mob(M))
+		if(put_mob(M, user))
 			consume(G, user)
-			return INTERACTION_HANDLED_PASS //Don't call up else we'll get attack messsages
+			return OP_PASS //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
 		var/obj/item/paicard/sleevecard/C = W
 		user.unEquip(C)
@@ -417,9 +422,9 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 		consume(C, user)
 		sleevecards++
 		to_chat(user, span_notice("You store \the [C] in \the [src]."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /// Requirement: a mob carrying others can't be put inside. Anything that isn't a mob is turned away silently by the effect.
 /obj/machinery/transhuman/resleever/proc/can_take_dragged(mob/user, atom/target, atom/movable/held)
@@ -430,29 +435,28 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	return TRUE
 
 /// Old MouseDrop_T.
-/obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(mob/user, mob/living/carbon/O, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/O = A.held
 	if(!istype(O))
-		return 0 //not a mob
+		return OP_DECLINE //not a mob
 	if(user.incapacitated())
-		return 0 //user shouldn't be doing things
+		return OP_DECLINE //user shouldn't be doing things
 	if(O.anchored)
-		return 0 //mob is anchored???
+		return OP_DECLINE //mob is anchored???
 	if(get_dist(user, src) > 1 || get_dist(user, O) > 1)
-		return 0 //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
-	if(!ishuman(user) && !isrobot(user))
-		return 0 //not a borg or human
-
+		return OP_DECLINE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(O?.buckled_to())
-		return 0
+		return OP_DECLINE
 
-	if(put_mob(O))
+	if(put_mob(O, user))
 		if(O == user)
 			act_message(user, src, others = "%U% climbs into %T%.")
 		else
 			act_message(user, O, others = "%U% puts %T% into \the [src].")
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/transhuman/resleever/proc/putmind(datum/transhuman/mind_record/MR, mode = 1, mob/living/carbon/human/override = null, db_key)
 	var/mob/living/carbon/human/occupant = get_occupant()
@@ -491,12 +495,12 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	//Re-supply a NIF if one was backed up with them.
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
-		om_after(nif, 0, /proc/install_nif_software, nif, MR.nif_software) //Delay to not install software before NIF is fully installed
-		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
+		after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, MR.nif_software)) //Delay to not install software before NIF is fully installed
+		nif.set_durability(MR.nif_durability) //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences
 	if(!occupant.original_player)
-		occupant.real_name = occupant.mind.name
+		occupant.set_real_name(occupant.mind.name)
 		occupant.name = occupant.real_name
 		occupant.dna.real_name = occupant.real_name
 
@@ -511,8 +515,8 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	else
 		to_chat(occupant, span_warning("You feel a small pain in your head as you're given a new backup implant. Oh, and a new body. It's disorienting, to say the least."))
 
-	occupant.status_set(EFFECT_CONFUSED, max(occupant.status_units(EFFECT_CONFUSED), confuse_amount))								// Apply immedeate effects
-	occupant.status_at_least(EFFECT_BLURRY, blur_amount)
+	occupant.status_set(STAT_CONFUSED, max(occupant.status_units(STAT_CONFUSED), confuse_amount))								// Apply immedeate effects
+	occupant.status_at_least(STAT_BLURRY, blur_amount)
 
 	// Vore deaths get a fake modifier labeled as such
 	if(!occupant.mind)
@@ -521,7 +525,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	if(occupant.mind)
 		if(occupant.original_player && ckey(occupant.mind.key) != occupant.original_player)
 			log_and_message_admins("is now a cross-sleeved character. Body originally belonged to [occupant.real_name]. Mind is now [occupant.mind.name].",occupant)
-		var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(occupant.mind.special_role)
+		var/datum/antagonist/antag_data = SSantag.get_antag_data(occupant.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(occupant.mind)
 			antag_data.place_mob(occupant)
@@ -540,27 +544,28 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 		return
 	slot_remove(occupant, get_turf(src))
 	set_occupant(null)
-	icon_state = "implantchair"
+	set_icon_state("implantchair")
 	return
 
-/obj/machinery/transhuman/resleever/proc/put_mob(mob/living/carbon/human/M)
+/obj/machinery/transhuman/resleever/proc/put_mob(mob/living/carbon/human/M, mob/user)
 	if(!ishuman(M))
-		to_chat(usr, span_warning("\The [src] cannot hold this!"))
+		to_chat(user, span_warning("\The [src] cannot hold this!"))
 		return
 	if(get_occupant())
-		to_chat(usr, span_warning("\The [src] is already occupied!"))
+		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_RESLEEVER, usr))
-		to_chat(usr, span_warning("\The [src] won't take [M]!"))
+	if(!move_into(src, OCCUPANT_SLOT_RESLEEVER, M, user))
+		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
 	set_occupant(M)
-	src.add_fingerprint(usr)
-	icon_state = "implantchair_on"
+	src.add_fingerprint(user)
+	set_icon_state("implantchair_on")
 	return 1
 
 /// Old EJECT Occupant verb.
-/obj/machinery/transhuman/resleever/proc/resleever_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_verb_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	go_out()
@@ -568,10 +573,11 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	return
 
 /// Old Move INSIDE verb.
-/obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0 || !operable())
 		return
-	put_mob(user)
+	put_mob(user, user)
 	return
 
 /// The fresh clone may be ejected now.

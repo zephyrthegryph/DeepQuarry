@@ -31,6 +31,7 @@
 	if(!client)
 		return FALSE
 
+	mob_state_set_played(TRUE)
 	client.persistent_client.set_mob(src)
 
 	registry_join(REGISTRY_PLAYERS, src)
@@ -43,15 +44,16 @@
 	client.images = null				//remove the images such as AIs being unable to see runes
 	client.screen = list()				//remove hud items just in case
 	if(hud_used)
-		qdel(hud_used)		//remove the hud objects
+		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
-	next_move = 1
+	cooldown_set_end(src, next_move, 1)
 	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()
 	verb_store_login(src) // DECLARE_LOGIN_VERB (code/datums/om/grant_verbs.dm)
-	OM_EMIT(src, /datum/om/event/mob_login)
+	PUBLISH_LEGACY(src, /datum/notice/mob_login)
+	ckey_changed()
 
 	client.perspective = MOB_PERSPECTIVE
 	client.eye = src
@@ -59,10 +61,11 @@
 	add_click_catcher()
 	update_client_color()
 
-	if(!plane_holder) //Lazy
-		own_set(src, nameof(plane_holder), new /datum/plane_holder(src)) //Not a location, it takes it and saves it.
-	if(!vis_enabled)
-		vis_enabled = list()
+	// The plane masters live on the hud built above; recalculate_vis() rebuilds what this mob sees through them.
+	var/datum/hud/hud = hud_used
+	var/datum/plane_holder/plane_holder = new /datum/plane_holder(src) //Not a location, it takes it and saves it.
+	rel_set(hud, nameof(hud.plane_holder), plane_holder)
+	hud.vis_enabled = list()
 	client.screen += plane_holder.plane_masters
 	if(GLOB.global_vantag_hud)
 		vantag_hud = TRUE
@@ -86,6 +89,7 @@
 	var/turf/T = get_turf(src)
 	if(isturf(T))
 		update_client_z(T.z)
+	SSproximity.eye_update(client)
 
 	if(dq_get_cloaked(src) && dq_get_cloaked_selfimage(src))
 		client.images += dq_get_cloaked_selfimage(src)
@@ -98,7 +102,7 @@
 			CB.Invoke()
 
 	log_mob_tag(src, "TAG: [tag] NEW OWNER: [key_name(src)]")
-	OM_EMIT(src, /datum/om/event/mob_client_login, client)
+	PUBLISH_LEGACY(src, /datum/notice/mob_client_login, client)
 	client.init_verbs()
 
 	set_listening(LISTENING_PLAYER)

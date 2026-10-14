@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "AI, cyborg, drone and pAI questions use requests instead of the legacy om_ask prompts"

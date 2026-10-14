@@ -42,7 +42,7 @@
 
 /mob/living/simple_mob/vore/fluffball/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "tail"
 	B.desc = "The small critter seems to suddenly panic, lunging at you with its massive fluffy tail, using it like a weapon. Despite the appearance of the tail, it seems to be much larger on the inside, suddenly engulfing you completely in a world of endless softness. Inside, you are bound up nice and tight in an oddly comfortable prison of hair, it ripples over your body tickling every bit of exposed body on offer."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -117,7 +117,7 @@
 /mob/living/simple_mob/vore/fluffball/PounceTarget(mob/living/M, successrate = 100)
 	EXPIRY_SET(src, vore_pounce_cooldown, 20 SECONDS, CLOCK_WORLD) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% pounces on %T%!</span>!"))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS("<span class='danger'>%U% attempts to pounce %T% but misses!</span>!"))
@@ -128,11 +128,14 @@
 	else
 		return //just leave them
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/fluffball, INTERACT_ITEM(null, PROC_REF(fluffball_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
 
 /// Old attackby: the normal attack, then it steals food into its fluff.
-/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
 	hit_with_item(W, user)
 	if(istype(W,/obj/item/reagent_containers/food))
 		consume(W, user)

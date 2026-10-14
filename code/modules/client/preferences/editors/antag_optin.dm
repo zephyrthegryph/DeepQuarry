@@ -46,8 +46,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/antag_optin, get_flag_table, list( \
 		labels[row["key"]] = row["label"]
 	return list("labels" = labels)
 
-UI_ACT(/datum/preference_editor/antag_optin, "toggle_flag", ui_act_toggle_flag, UI_ARG_TEXT("flag", 64))
-UI_ACT_PREF_PROC(/datum/preference_editor/antag_optin, ui_act_toggle_flag)
+/datum/preference_editor/antag_optin/proc/ui_act_toggle_flag(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/key = params["flag"]
 	var/bit
 	for(var/list/row in TYPE_TABLE_GET(src, get_flag_table))
@@ -60,3 +59,15 @@ UI_ACT_PREF_PROC(/datum/preference_editor/antag_optin, ui_act_toggle_flag)
 	current ^= bit
 	preferences.update_preference_by_type(/datum/preference/numeric/human/be_special, current)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/antag_optin's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/antag_optin/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("toggle_flag")
+			typed = payload_args(src, params, list("flag" = schema_text(64)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_flag(user, typed, preferences, null, action)
+	return ..()

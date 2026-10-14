@@ -21,54 +21,57 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	var/up = 0
 	armor_spec = "melee=10"
-	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
-	body_parts_covered = HEAD|FACE|EYES
 	actions_types = list(/datum/action/item_action/flip_welding_mask)
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_HEAVY
-	drop_sound = SFX_ITEMS_DROP_HELM
-	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
-	INTERACT_USE("Flip", PROC_REF(welding_mask_flip_self)), \
-	INTERACT_VERB("Adjust welding mask", PROC_REF(head_welding_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(item_worn(hides = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE), covers = HEAD|FACE|EYES))
+	configure(item_protection(siemens = 0.9))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
+	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
+	op("head_welding_toggle_verb", menu(), label("Adjust welding mask"), needs(carried()), then(PROC_REF(head_welding_toggle_verb_op)))
+
+/// The head_welding_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/head/welding/proc/head_welding_toggle_verb_op(datum/act/op/A)
+	head_welding_toggle_verb(A.actor, A.held)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/head/welding/proc/welding_mask_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/welding/proc/welding_mask_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	head_welding_toggle_verb(user)
 
 /// Old verb "Adjust welding mask".
-/obj/item/clothing/head/welding/proc/head_welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/welding/proc/head_welding_toggle_verb(mob/user, obj/item/held)
 	if(!base_state)
 		base_state = icon_state
 
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
-			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
-			icon_state = base_state
+			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
+			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
+			set_icon_state(base_state)
 			flash_protection = FLASH_PROTECTION_MAJOR
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
-			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
-			icon_state = "[base_state]up"
+			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
+			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
+			set_icon_state("[base_state]up")
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face.")
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 /obj/item/clothing/head/welding/demon
@@ -125,13 +128,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
 	name = "cake-hat"
 	desc = "It's tasty looking!"
 	icon_state = "cake0"
-	body_parts_covered = HEAD
 	special_handling = TRUE
 
-OM_FIELD(/obj/item/clothing/head/cakehat, onfire, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/cakehat, PERIODIC_SLOW, "onfire")
+/obj/item/clothing/head/cakehat/var/onfire = FALSE
+TRACKED(/obj/item/clothing/head/cakehat, onfire)
 
-/obj/item/clothing/head/cakehat/periodic_step()
+/obj/item/clothing/head/cakehat/proc/cakehat_step(datum/act/timer/A)
 	var/turf/location = src.loc
 	if(istype(location, /mob/))
 		var/mob/living/carbon/human/M = location
@@ -141,19 +143,22 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/cakehat, PERIODIC_SLOW, "onfire")
 	if (istype(location, /turf))
 		location.hotspot_expose(700, 1)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_REF(cakehat_light_self)))
+CAPABILITIES(/obj/item/clothing/head/cakehat)
+	configure(item_worn(covers = HEAD))
+	op("cakehat_light_self", in_hand(), label("Light"), then(PROC_REF(cakehat_light_self)))
+	every(2 SECONDS, then(PROC_REF(cakehat_step)), when = nameof(onfire))
 
 /// Old attack_self.
-/obj/item/clothing/head/cakehat/proc/cakehat_light_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/cakehat/proc/cakehat_light_self(datum/act/op/A)
 	set_onfire(!onfire)
 	if (onfire)
-		force = 3
+		set_force(3)
 		injury_kind = INJURY_BURN
-		icon_state = "cake1"
+		set_icon_state("cake1")
 	else
-		force = null
+		set_force(null)
 		injury_kind = INJURY_BLUNT
-		icon_state = "cake0"
+		set_icon_state("cake0")
 	return
 
 /*
@@ -163,19 +168,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_
 	name = "ushanka"
 	desc = "Perfect for those cold winter nights."
 	icon_state = "ushankadown"
-	flags_inv = HIDEEARS
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear flaps", PROC_REF(ushanka_flaps_self)))
+CAPABILITIES(/obj/item/clothing/head/ushanka)
+	configure(item_worn(hides = HIDEEARS))
+	op("flaps", in_hand(), label("Toggle ear flaps"), then(PROC_REF(ushanka_flaps_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the ear flaps on the ushanka.")
 	else
-		src.icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the ear flaps on the ushanka.")
+	return OP_OK
+
 
 /obj/item/clothing/head/ushanka/black
 	icon_state = "blkushankadown"
@@ -197,13 +206,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	name = "carved pumpkin"
 	desc = "A jack o' lantern! Believed to ward off evil spirits."
 	icon_state = "hardhat0_pumpkin"//Could stand to be renamed
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
-	light_range = 2
 	light_overlay = "jackolantern"
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
+	configure(light_glow(range = 2))
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /*
  * Kitty ears
@@ -212,44 +221,38 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	name = "kitty ears"
 	desc = "A pair of kitty ears. Meow!"
 	icon_state = "kitty"
-	body_parts_covered = 0
-	siemens_coefficient = 1.5
 	item_icons = null
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/head/kitty/appearance_overlays()
-	. = list()
-	var/mob/living/carbon/human/user = loc
-	if(!istype(user))
-		return .
-	var/icon/ears = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kitty")
-	ears.Blend(rgb(user.r_hair, user.g_hair, user.b_hair), ICON_ADD)
-
-	var/icon/earbit = new/icon("icon" = 'icons/inventory/head/mob.dmi', "icon_state" = "kittyinner")
-	ears.Blend(earbit, ICON_OVERLAY)
-	. += ears
+CAPABILITIES(/obj/item/clothing/head/kitty)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 1.5))
 
 /obj/item/clothing/head/richard
 	name = "chicken mask"
 	desc = "You can hear the distant sounds of rhythmic electronica."
 	icon_state = "richard"
 	item_state_slots = list(slot_r_hand_str = "chickenhead", slot_l_hand_str = "chickenhead")
-	body_parts_covered = HEAD|FACE
-	flags_inv = BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/richard)
+	configure(item_worn(covers = HEAD|FACE, hides = BLOCKHAIR))
 
 /obj/item/clothing/head/santa
 	name = "santa hat"
 	desc = "It's a festive christmas hat, in red!"
 	icon_state = "santahatnorm"
 	item_state_slots = list(slot_r_hand_str = "santahat", slot_l_hand_str = "santahat")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/santa)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/santa/green
 	name = "green santa hat"
 	desc = "It's a festive christmas hat, in green!"
 	icon_state = "santahatgreen"
 	item_state_slots = list(slot_r_hand_str = "santahatgreen", slot_l_hand_str = "santahatgreen")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/santa/green)
+	configure(item_worn(covers = 0))
 
 /*
  * Xenoarch/Surface Loot Hats
@@ -270,8 +273,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/kitty, TYPE_PROC_REF(/atom, appe
 	var/brainloss_cost = 3 // Whenever it activates, inflict this much brainloss on the wearer, as its not good for the mind to wear things that manipulate it.
 
 /// Put on a sentient wearer's head (and not yet dropped): it watches the wearer's tension.
-OM_FIELD(/obj/item/clothing/head/psy_crown, crown_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_worn")
+/obj/item/clothing/head/psy_crown/var/crown_worn = FALSE
+TRACKED(/obj/item/clothing/head/psy_crown, crown_worn)
+CAPABILITIES(/obj/item/clothing/head/psy_crown)
+	every(2 SECONDS, then(PROC_REF(psy_crown_step)), when = nameof(crown_worn))
 
 /obj/item/clothing/head/psy_crown/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
@@ -300,7 +305,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_
 		if(flavor_drop)
 			to_chat(user, flavor_drop)
 
-/obj/item/clothing/head/psy_crown/periodic_step()
+/obj/item/clothing/head/psy_crown/proc/psy_crown_step(datum/act/timer/A)
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
@@ -343,15 +348,16 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/head/psy_crown, PERIODIC_SLOW, "crown_
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	drop_sound = SFX_ITEMS_DROP_SHOES
-	force = 1
-	throwforce = 3
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD
-	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
+
+CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(item_worn(covers = HEAD))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 
 /obj/item/clothing/head/cone
 	sprite_sheets = list(

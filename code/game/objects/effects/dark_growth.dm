@@ -7,7 +7,11 @@
 	var/health = 10
 	var/obj/structure/prop/dark_node/linked_node = null
 
-/obj/effect/dark/Initialize(mapload, check_glow)
+/// Whether this growth may glow (its constructor param).
+/obj/effect/dark/var/check_glow = FALSE
+
+// ALLOW(init/INSTANCE_STATE): dark growth that may glow does so one time in twenty
+/obj/effect/dark/Initialize(mapload)
 	. = ..()
 	if(check_glow && prob(5))
 		add_glow()
@@ -48,12 +52,12 @@
 				act_message(L, null, MSG_SELF("Your body gives off a faint, sparking, haze..."), MSG_OTHERS("%U%'s body gives off a faint, sparking, haze..."), runemessage = "gives off a faint, sparking haze")
 		var/datum/shadekin/comp = L.get_shadekin_state()
 		if(comp)
-			comp.dark_energy += 10
+			comp.set_dark_energy(comp.dark_energy + 10)
 			if(prob(10))
 				to_chat(L, span_notice("You can feel the energy flowing into you!"))
 		else if(prob(0.25))
 			to_chat(L, span_danger("The darkness seethes under your feet..."))
-			L.status_adjust(EFFECT_HALLUCINATING, 50)
+			L.status_adjust(STAT_HALLUCINATING, 50)
 
 /obj/effect/dark/proc/light_check()
 	var/turf/T = get_turf(src)
@@ -63,7 +67,7 @@
 		var/health_change = (T.get_lumcount() * -10) + 5
 		health = min(10, health + health_change)
 	if(health <= 0)
-		qdel(src)
+		consume(src)
 		return
 
 /obj/effect/dark/floor
@@ -78,20 +82,21 @@
 
 /obj/effect/dark/proc/unlinked()
 	rel_clear(src, nameof(linked_node)) // the pair takes us out of the node's children_effects
-	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
+	after(src, rand(2 SECONDS, 7 SECONDS), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
 	PRIVATE_PROC(TRUE)
 	if(!linked_node)
-		qdel(src)
+		consume(src)
 
-/obj/effect/dark/floor/Initialize(mapload, check_glow, node)
-	. = ..(mapload, !isspace(loc))
+CAPABILITIES(/obj/effect/dark/floor)
+	param(nameof(linked_node), pos = 2)
+	keeps_if(PROC_REF(off_space))
+	derives(nameof(check_glow), PROC_REF(off_space))
 
-	if(isspace(loc))
-		return INITIALIZE_HINT_QDEL
-
-	rel_set(src, nameof(linked_node), node)
+/// Floor growth does not grow in space (keeps_if()), and glows only off it (derives(), at init, before the base reads check_glow).
+/obj/effect/dark/floor/proc/off_space()
+	return !isspace(loc)
 
 /obj/structure/prop/dark_node
 	name = "crystal cluster"
@@ -103,14 +108,16 @@
 	var/list/children_effects
 	var/until_full_process = 0
 
-	light_range = 3
 	var/node_range = 9
 
-/obj/structure/prop/dark_node/Initialize(mapload)
-	. = ..()
-	set_light(light_range, -20, "#FFFFFF")
+/obj/structure/prop/dark_node/proc/init_dark_light(datum/act/timer/A)
+	set_glow(src, GLOW(glow_of(src).range, -20, "#FFFFFF"))
 
-DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
+
+CAPABILITIES(/obj/structure/prop/dark_node)
+	configure(light_glow(range = 3))
+	after_init(0, then(PROC_REF(init_dark_light)))
+	every(2 SECONDS, then(PROC_REF(dark_node_step)))
 
 // its dark tiles unlink and wither.
 /obj/structure/prop/dark_node/on_destroy(force)
@@ -118,19 +125,16 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 		dark_tile.unlinked()
 	..()
 
-/obj/effect/dark/relations()
-	. = ..()
-	. += rel_one(nameof(linked_node), back = nameof(/obj/structure/prop/dark_node::children_effects))
-/obj/structure/prop/dark_node/relations()
-	. = ..()
-	. += rel_many(nameof(children_effects), back = nameof(/obj/effect/dark::linked_node))
+CAPABILITIES(/obj/effect/dark)
+	links(/obj/effect/dark::linked_node, /obj/structure/prop/dark_node::children_effects, b_many = TRUE)
+	param(nameof(check_glow), pos = 1)
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
-		qdel(src)
+		consume(src)
 		return
 
 	if(!linked_node)
@@ -155,7 +159,7 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 				continue
 			// its Initialize linked it (the pair adds it to children_effects)
 
-/obj/structure/prop/dark_node/periodic_step()
+/obj/structure/prop/dark_node/proc/dark_node_step(datum/act/timer/A)
 	//set background = 1
 
 	if(!(locate_within(get_turf(src), /obj/effect/dark)))
@@ -180,13 +184,17 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 	name = "crystal dust"
 	desc = "A small scattering of bluespace crystals, dark energy sparks and flickers between them."
 	icon_state = "bsc_dust"
-	light_range = 1
 	node_range = 5
+
+CAPABILITIES(/obj/structure/prop/dark_node/dust)
+	configure(light_glow(range = 1))
 
 /obj/structure/prop/dark_node/statue
 	name = "phoronic cascade"
 	desc = "A huge structure made of pure phoron. Dark energy roils and bursts within it."
 	icon = 'icons/obj/props/decor32x64.dmi'
 	icon_state = "phoronic"
-	light_range = 5
 	node_range = 15
+
+CAPABILITIES(/obj/structure/prop/dark_node/statue)
+	configure(light_glow(range = 5))

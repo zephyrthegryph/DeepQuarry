@@ -6,7 +6,6 @@
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
 	center_of_mass_x = 17
 	center_of_mass_y = 12
-	force = 3
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
 	preserve_item = 1
@@ -20,9 +19,8 @@
 	var/unremovable_when_enabled = FALSE
 	actions_types = list(/datum/action/item_action/toggle_magboots)
 	step_volume_mod = 1.3
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	resistance_flags = FIRE_PROOF
+
 
 TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
@@ -31,20 +29,25 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 	if (magpulse)
 		slowdown += 3
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PROC_REF(magboots_toggle_self)))
+CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
+	configure(item_combat(force = 3))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
 /// Old attack_self: toggle the magnetic grip, after the shoes' own self-use (the old ..()).
-/obj/item/clothing/shoes/magboots/proc/magboots_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	shoes_shake_out_self(user, held, interaction)
+/obj/item/clothing/shoes/magboots/proc/magboots_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
+	shoes_shake_out_self(A)
 	if(magpulse)
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
 		set_slowdown()
-		force = 3
-		if(icon_base) icon_state = "[icon_base]0"
+		set_force(3)
+		if(icon_base) set_icon_state("[icon_base]0")
 		to_chat(user, mag_disable)
 		if(unremovable_when_enabled)
-			canremove = TRUE
+			set_canremove(TRUE)
 	else
 		//Checks to ensure if they're unremovable we're actually wearing them when we turn them on.
 		if(unremovable_when_enabled)
@@ -54,26 +57,27 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 			if(H.get_equipped_item(SLOT_ID_SHOES) != src)
 				to_chat(user, "You will have to put on the [src] before you can do that.")
 				return
-			canremove = FALSE
+			set_canremove(FALSE)
 
-		item_flags |= NOSLIP
+		set_item_flags(worn_of(src).flags | (NOSLIP))
 		magpulse = TRUE
 		set_slowdown()
-		force = 5
-		if(icon_base) icon_state = "[icon_base]1"
+		set_force(5)
+		if(icon_base) set_icon_state("[icon_base]1")
 		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
-	user.update_inv_shoes()	//so our mob-overlays update
+	changed(src)
 	user.update_mob_action_buttons()
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/magboots/proc/overshoe_clearance, null))))
+
 
 /// Magboots go on over shoes, but not over other overshoes.
-/obj/item/clothing/shoes/magboots/proc/overshoe_clearance(mob/living/carbon/human/H)
+/obj/item/clothing/shoes/magboots/proc/overshoe_clearance(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H) || !istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes))
-		return TRUE
+		return null
 	var/obj/item/clothing/shoes/worn = H.get_equipped_item(SLOT_ID_SHOES)
-	return worn.overshoes ? "\the [worn] are in the way" : TRUE
+	return worn.overshoes ? "\the [worn] are in the way" : null
 
 /obj/item/clothing/shoes/magboots/equipped(mob/user, slot)
 
@@ -95,7 +99,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
 	if(equipping && (slot == SLOT_ID_SHOES))
 		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
-			own_set(src, nameof(shoes), H.get_equipped_item(SLOT_ID_SHOES))
+			rel_set(src, nameof(shoes), H.get_equipped_item(SLOT_ID_SHOES))
 			H.unEquip(shoes, TRUE, src)
 			to_chat(user, "You slip \the [src] on over \the [shoes].")
 		return
@@ -103,11 +107,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	if(shoes)
 		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
-		own_take(src, nameof(shoes))
+		rel_take(src, nameof(shoes))
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()
-	. += "Its mag-pulse traction system appears to be [item_flags & NOSLIP ? "enabled" : "disabled"]."
+	. += "Its mag-pulse traction system appears to be [worn_of(src).flags & NOSLIP ? "enabled" : "disabled"]."
 
 /obj/item/clothing/shoes/magboots/vox
 
@@ -124,7 +128,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 
 	actions_types = list(/datum/action/item_action/toggle_magclaws)
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+
 
 /obj/item/clothing/shoes/magboots/vox/set_slowdown()
 	return //voxboots suffer no slowdown penalties!
@@ -135,11 +139,33 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/vox, fit_spec, list(REQ_FITS_BODYTY
 	if(magpulse)
 		act_message(user, src, MSG_SELF("%T% go limp as they are removed from your feet."), \
 			MSG_OTHERS("%T% go limp as they are removed from %U%'s feet."))
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
-		canremove = TRUE
+		set_canremove(TRUE)
 
 /obj/item/clothing/shoes/magboots/vox/examine(mob/user)
 	. = ..()
 	if(magpulse)
 		. += "It would be hard to take these off without relaxing your grip first." // Theoretically this message should only be seen by the wearer when the claws are equipped.
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+
+/proc/req_acceptance_overshoe_clearance()
+	return part_make(/datum/entry/part/req/acceptance_leaf/overshoe_clearance, list())
+
+
+/datum/entry/part/req/acceptance_leaf/overshoe_clearance/acceptance_reason(datum/act/op/A)
+	var/obj/item/clothing/shoes/magboots/I = A.target
+	return I.overshoe_clearance(A)
+
+
+/datum/entry/part/req/acceptance_leaf/overshoe_clearance/read_keys(datum/act/op/A)
+	. = list()
+	var/mob/living/carbon/human/H = A.wearer
+	if(!istype(H))
+		return
+	. += list(list(H, SLOT_OCCUPANCY_KEY))
+	var/obj/item/clothing/shoes/worn = H.get_equipped_item(SLOT_ID_SHOES)
+	if(istype(worn))
+		. += list(list(worn, nameof(worn.overshoes)))

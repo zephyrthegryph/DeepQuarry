@@ -14,12 +14,27 @@ MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
 
-DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self), REQ_ON_TURF))
+CAPABILITIES(/obj/item/floor_light)
+	op("install", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_install))), then(PROC_REF(interaction_self)))
+
+/// Installation must be able to consume the kit from its current holder.
+/obj/item/floor_light/proc/can_install(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(user && (user in turf_contents_of_type(get_turf(user), /mob))))
+		return "you can't use that here"
+	// Sample the real custodian's policy; the atomic consume rechecks it too.
+	var/obj/item/floor_light/kit = read_once(src)
+	var/reason = read_once(kit.loc?.release_refusal(kit, user))
+	if(reason)
+		return reason
+	return null
 
 /// Old attack_self.
-/obj/item/floor_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/floor_light/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!consume(src, user))
+		return FALSE
 	new /obj/machinery/floor_light(get_turf(user))
-	qdel(src)
 	return TRUE
 
 /obj/machinery/floor_light
@@ -30,9 +45,6 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	layer = TURF_LAYER+0.001
 	anchored = FALSE
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 2
-	active_power_usage = 20
-	power_channel = LIGHT
 
 	on = null
 	var/damaged
@@ -43,95 +55,70 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/prebuilt
 	anchored = TRUE
 
-/obj/machinery/floor_light/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/floor_light/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	act_message(user, src, others = span_notice("%U% has [anchored ? "attached" : "detached"] %T%."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floor_light/welder_act(mob/user, obj/item/tool)
-	if(!(damaged || (has_stat(BROKEN))))
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// When the welder does nothing (the click is used up, nothing is said).
+/obj/machinery/floor_light/proc/welder_refusal(datum/act/op/A)
+	return read_once(!(damaged || (broken_now()))) ? "no" : null
 
-/obj/machinery/floor_light/proc/welder_act_tool_done(mob/user)
+/obj/machinery/floor_light/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/floor_light/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(src))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(user, src, others = span_notice("%U% has repaired %T%."))
 	atom_fix()
-	damaged = null
+	set_damaged(null)
 	update_brightness()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floor_light/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/floor_light_harm,
-		/datum/interaction/machine_hand/ungated/floor_light_smash,
-		/datum/interaction/machine_hand/ungated/floor_light_use,
-	)
-	..()
+MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 
-/// The old attackby: if a harmful item is used in combat mode, run the attack_hand
-/// smash behavior, but always fall through to the base attack chain (it never stopped it).
-/datum/interaction/machine_item/floor_light_harm
-	id = "floor_light_harm"
-	name = "Hit"
-	stance = I_HURT
-	consumes_input = FALSE
-	effect = /obj/machinery/floor_light/proc/interaction_harm
-
-/obj/machinery/floor_light/proc/interaction_harm(mob/user, obj/item/held, datum/interaction/interaction)
-	if(held?.force)
+/obj/machinery/floor_light/proc/interaction_harm(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(combat_of(held).force)
 		attack_hand(user)
-	return FALSE
+	return OP_DECLINE
 
-/// Combat mode: smash the light (small mobs can't, and just use it).
-/datum/interaction/machine_hand/ungated/floor_light_smash
-	id = "floor_light_smash"
-	name = "Smash"
-	stance = I_HURT
-	effect = /obj/machinery/floor_light/proc/interaction_smash
-
-/obj/machinery/floor_light/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floor_light/proc/interaction_smash(datum/act/op/A)
+	var/mob/user = A.actor
 	if(issmall(user))
-		return FALSE
-	if(!isnull(damaged) && !has_stat(BROKEN))
+		return OP_DECLINE
+	if(!isnull(damaged) && !broken_now())
 		act_message(user, src, others = span_danger("%U% smashes %T%!"))
 		play_sfx(src, SFX_SHATTER)
 		atom_break()
 	else
 		act_message(user, src, others = span_danger("%U% attacks %T%!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
-		if(isnull(damaged)) damaged = 0
+		if(isnull(damaged))
+			set_damaged(rand(1, 4))
 	update_brightness()
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/floor_light_use
-	id = "floor_light_use"
-	name = "Use"
-	also_requires = list(
-		REQ_BECAUSE(REQ_ANCHORED, "it must be screwed down first"),
-		REQ_TARGET_STATE(/obj/machinery/floor_light/proc/can_switch),
-	)
-	effect = /obj/machinery/floor_light/proc/interaction_use
-
-/// Requirement: TRUE, or why the light can't be switched.
-/obj/machinery/floor_light/proc/can_switch(mob/user, atom/target, obj/item/held)
-	if(has_stat(BROKEN))
+/// Requirement: null, or why the light can't be switched.
+/obj/machinery/floor_light/proc/can_switch(datum/act/op/A)
+	if(broken_now())
 		return "it's too damaged to be functional"
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "it's unpowered"
-	return TRUE
+	return null
 
-/obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floor_light/proc/interaction_use(datum/act/op/A)
 	set_on(!on)
 	if(on) set_use_power(USE_POWER_ACTIVE)
 	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
 	update_brightness()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/floor_light/machine_step()
-	..()
+/obj/machinery/floor_light/proc/work_step(datum/act/timer/A)
 	var/need_update
 	if((!anchored || broken()) && on)
 		set_use_power(USE_POWER_OFF)
@@ -144,38 +131,48 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		update_brightness()
 	return PROCESS_KILL
 
+/// The light is lit while it is on and drawing its active power; else it stops drawing.
 /obj/machinery/floor_light/proc/update_brightness()
-	if(on && use_power == USE_POWER_ACTIVE)
-		if(light_range != default_light_range || light_power != default_light_power || light_color != default_light_colour)
-			set_light(default_light_range, default_light_power, default_light_colour)
-	else
+	if(!lit())
 		set_use_power(USE_POWER_OFF)
-		if(light_range || light_power)
-			set_light(0)
+	update_active_power_usage(lit() ? (default_light_range + default_light_power) * 10 : 0)
 
-	update_active_power_usage((light_range + light_power) * 10)
-	update_icon()
+/obj/machinery/floor_light/proc/lit()
+	return on && use_power == USE_POWER_ACTIVE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/floor_light, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/floor_light/appearance_overlays()
-	. = list()
-	if(use_power && !broken())
-		if(isnull(damaged))
-			. += CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001)
-		else
-			if(damaged == 0) //Needs init.
-				damaged = rand(1,4)
-			. += CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001)
+
+/// What the panel shows while it draws power and works: its light, flickering once damaged, and the light it casts while lit.
+/obj/machinery/floor_light/draw(datum/look/look)
+	..()
+	if(!use_power || broken())
+		return
+	if(isnull(damaged))
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
+	else
+		look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
+	if(lit())
+		look.glow(GLOW(default_light_range, default_light_power, default_light_colour))
 
 /obj/machinery/floor_light/proc/broken()
 	return (!operable())
 
-DAMAGE_REACTION(/obj/machinery/floor_light, DAMAGE_EXPLOSION, PROC_REF(floor_light_blast))
+CAPABILITIES(/obj/machinery/floor_light)
+	configure(uses_power(idle = 2, active = 20, channel = LIGHT))
+	started_work(step = PROC_REF(work_step))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("floor_light_harm", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), passes(), then(PROC_REF(interaction_harm)))
+	op("floor_light_smash", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(interaction_smash)))
+	op("floor_light_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_is(nameof(anchored), TRUE, because = MSG(floor_light/unanchored)), req(PROC_REF(can_switch))), then(PROC_REF(interaction_use)))
+
 /// A lighter blast marks the light as (lightly) damaged.
-/obj/machinery/floor_light/proc/floor_light_blast(datum/damage_packet/packet)
+/obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity >= 2 && isnull(damaged))
-		damaged = 0
+		set_damaged(rand(1, 4))
+	return HOOK_DECLINE
 
 /obj/machinery/floor_light/cultify()
-	default_light_colour = "#FF0000"
+	set_default_light_colour("#FF0000")
 	update_brightness()

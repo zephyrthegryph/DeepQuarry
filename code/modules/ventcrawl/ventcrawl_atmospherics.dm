@@ -16,9 +16,6 @@
 				M.pipes_shown -= pipe_image
 	return ..()
 
-/obj/machinery/atmospherics/explosion_contents_severity(severity)
-	return severity
-
 /obj/machinery/atmospherics/Entered(atom/movable/Obj)
 	if(isliving(Obj))
 		var/mob/living/L = Obj
@@ -42,10 +39,10 @@
 				user.add_ventcrawl(target_move)
 			user.forceMove(target_move)
 			user.reset_perspective(target_move) //if we don't do this, Byond only updates the eye every tick - required for smooth movement
-			if(COOLDOWN_FINISHED(user, next_play_vent))
-				COOLDOWN_START(user, next_play_vent, 30)
+			if(cooldown_ready(user, next_play_vent))
+				cooldown_start(user, next_play_vent, 3 SECONDS)
 				var/turf/T = get_turf(src)
-				GLOB.motiontracker_service.ping(T,40) // Teshari rattler
+				SSmotiontracker.ping(T,40) // Teshari rattler
 				play_sfx(T, SFX_MACHINES_VENTCRAWL)
 				var/message = pick(
 					prob(90);"* clunk *",
@@ -66,7 +63,7 @@
 	return 1
 
 /obj/machinery/atmospherics/unary/can_crawl_through()
-	if(welded)
+	if(is_welded(src))
 		return 0
 
 	. = ..()

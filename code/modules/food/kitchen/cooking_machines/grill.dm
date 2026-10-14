@@ -10,13 +10,11 @@
 	can_burn_food = TRUE
 	var/datum/looping_sound/grill/grill_loop
 	circuit = /obj/item/circuitboard/grill
-	active_power_usage = 4 KILOWATTS
 	heating_power = 4000
-	idle_power_usage = 2 KILOWATTS
 
 	optimal_power = 1.2 // Things on the grill cook .6 faster - this is now the fastest appliance to heat and to cook on. BURGERS GO SIZZLE.
 
-	stat = POWEROFF // Starts turned off.
+	starts_off = TRUE
 
 	// Grill is faster to heat and setup than the rest.
 	optimal_temp = 120 + T0C
@@ -28,25 +26,24 @@
 
 	tgui_id = "CookingGrill"
 
-/obj/machinery/appliance/cooker/grill/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
+CAPABILITIES(/obj/machinery/appliance/cooker/grill)
+	configure(uses_power(active = 4 KILOWATTS, idle = 2 KILOWATTS))
+	owns_one(nameof(grill_loop), /datum/looping_sound/grill, starts = /datum/looping_sound/grill)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
-	. = list()
-	if(!has_stat(MACHINE_STAT_ANY))
-		icon_state = on_icon
-		if(cooking == TRUE)
-			if(grill_loop)
-				grill_loop.start(src)
-		else
-			if(grill_loop)
-				grill_loop.stop(src)
+/// A grill shows no status light, only whether it is on. // TODO: Cooking icon
+/obj/machinery/appliance/cooker/grill/draw(datum/look/look)
+	..()
+	look.state(has_condition() ? off_icon : on_icon)
+
+/obj/machinery/appliance/cooker/grill/draw_lights(datum/look/look)
+	return
+
+/// The grill sizzles while it cooks.
+/obj/machinery/appliance/cooker/grill/loop_sync(datum/act/A)
+	if(!has_condition() && cooking == TRUE)
+		grill_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(grill_loop)
-			grill_loop.stop(src)
+		grill_loop?.stop(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/grill, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

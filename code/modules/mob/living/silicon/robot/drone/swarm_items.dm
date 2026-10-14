@@ -25,24 +25,13 @@
 		if(has_trait(M, TRAIT_AMBIENT_PEST_MOB))
 			src.loc.visible_message(span_danger("[src.loc] sucks [M] into its decompiler. There's a horrible crunching noise."),span_danger("It's a bit of a struggle, but you manage to suck [M] into your decompiler. It makes a series of visceral crunching noises."))
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-			qdel(M)
+			consumed(M, src)
 			if(wood)
 				wood.add_charge(2000)
 			if(plastic)
 				plastic.add_charge(2000)
 			return
 
-		else if(istype(M,/mob/living/silicon/robot/drone) && !M.client)
-
-			var/mob/living/silicon/robot/D = src.loc
-
-			if(!istype(D))
-				return
-
-			to_chat(D, span_danger("You begin decompiling [M]."))
-
-			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
-			return
 		else
 			continue
 
@@ -77,7 +66,7 @@
 		else
 			continue
 
-		qdel(W)
+		consumed(W, src)
 		grabbed_something = TRUE
 
 	if(istype(T,/turf/simulated/wall) && (COOLDOWN_FINISHED(src, field_cooldown_until)))
@@ -100,25 +89,24 @@
 	desc = "This is something you do not want to near."
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "disintegrate_pulse"
-	light_range = 4
-	light_power = 5
-	light_color = "#00B4D9"
 	pulses_remaining = 5
 	pulse_delay = 2 SECONDS
 
-DAMAGE_REACTION(/obj/effect/temporary_effect/pulse/disintegrate, DAMAGE_EMP, PROC_REF(emp_disperse))
+CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
+	configure(light_glow(range = 4, power = 5, color = "#00B4D9"))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(emp_disperse))))
 
-/obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/damage_packet/packet)
+/obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/act/A)
 	visible_message(span_warning("\The [src] flickers, before dispersing energetically."))
-	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+	spent(src)
+	return TRUE
 
 /obj/effect/temporary_effect/pulse/disintegrate/on_pulse()
 	var/turf/T = get_turf(src)
 	if(istype(T,/turf/simulated/wall))
 		T.take_damage(rand(20, 50))
 	else
-		qdel(src)
+		spent(src)
 
 // a pulse ending inside a wall blows it open.
 /obj/effect/temporary_effect/pulse/disintegrate/on_destroy(force)
@@ -143,6 +131,8 @@ DAMAGE_REACTION(/obj/effect/temporary_effect/pulse/disintegrate, DAMAGE_EMP, PRO
 		list(mode_name="deter", projectile_type=/obj/item/projectile/beam/shock, charge_cost = 175),
 		)
 
-/obj/item/gun/energy/xray/swarm/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/gun/energy/xray/swarm)
+	after_init(0, then(PROC_REF(swarm_xray_flip)))
+
+/obj/item/gun/energy/xray/swarm/proc/swarm_xray_flip(datum/act/timer/A)
 	adjust_scale(-1, 1)

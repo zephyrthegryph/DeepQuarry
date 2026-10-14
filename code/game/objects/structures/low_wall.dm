@@ -26,87 +26,87 @@
 	var/datum/material/material
 	var/grille_type
 
-DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
+TRACKED(/obj/structure/low_wall, material)
 
-/obj/structure/low_wall/Initialize(mapload, materialtype)
-	. = ..()
+/obj/structure/low_wall/draw(datum/look/look)
+	..()
+	low_wall_look(look)
+
+/// The sprite of the frame: the base type has none of its own (a blank), each style draws its corners over the connections.
+/obj/structure/low_wall/proc/low_wall_look(datum/look/look)
+	look.state("blank")
+
+/// The tint of the wall's material (a shared definition that never changes: the draw hears of a new material through the tracked `material`).
+/obj/structure/low_wall/proc/material_colour()
+	return material?.icon_colour
+
+CAPABILITIES(/obj/structure/low_wall)
+	smoothing()
+	climb()
+	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(nothing_on_the_wall))), begins(MSG(low_wall/disassembling)),
+		plays(SFX_ITEMS_RATCHET, at_start = TRUE, volume = 2), wait(4 SECONDS), then(PROC_REF(wrench_act_done)))
+	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
+	op("build_grille", stack(/obj/item/stack/rods, 2), label("Use"), needs(req(PROC_REF(grille_supported)), req(PROC_REF(grille_clear))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_grille)), wait(1 SECOND), then(PROC_REF(grille_built)))
+	op("build_window", stack(/obj/item/stack/material/glass, 4), label("Use"), needs(req(PROC_REF(window_supported)), req(PROC_REF(window_clear))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
+	op("build_window_cyborg", stack(/obj/item/stack/material/cyborg/glass, 4), label("Use"), needs(req(PROC_REF(window_supported)), req(PROC_REF(window_clear))),
+		starts(PROC_REF(fingerprinted)), begins(MSG(low_wall/assembling_window)), wait(4 SECONDS), then(PROC_REF(window_built)))
+	op("place", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("place_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on wall"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_drag)))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A low wall stands only on open floor.
+/obj/structure/low_wall/proc/build_of(materialtype)
 	var/turf/T = loc
 	if(!isturf(T) || T.density || T.opacity)
 		WARNING("[src] on invalid turf [T] at [x],[y],[z]")
-		return INITIALIZE_HINT_QDEL
-
-	if(!materialtype)
-		materialtype = default_material
-
-	material = get_material_by_name(materialtype)
-
-	max_integrity = material.integrity
+		spent(src)
+		return
+	set_material(get_material_by_name(materialtype))
+	set_max_integrity(material.integrity)
 	update_integrity(max_integrity)
 
-	make_climbable()
-
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/structure/low_wall/LateInitialize()
-	update_connections(1)
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbor_type = /obj/structure/low_wall))
 
-/obj/structure/low_wall/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/low_wall_item,
-		/datum/interaction/entry_drag/low_wall_drag,
-	)
-	..()
+MSG_DEF_SELF(low_wall/disassembling, span_notice("Now disassembling the low wall..."))
+MSG_DEF_SELF(low_wall/no_grille, span_notice("This type of wall frame doesn't support grilles."))
+MSG_DEF_SELF(low_wall/window_in_the_way, span_notice("There is a window in the way."))
+MSG_DEF_SELF(low_wall/assembling_grille, span_notice("Assembling grille..."))
+MSG_DEF_SELF(low_wall/no_window, span_notice("You can't build that type of window on this type of low wall."))
+MSG_DEF_SELF(low_wall/window_here, span_notice("There is already a window here."))
+MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 
-/// Old attackby: build a grille from rods, a window from glass, or drop an item on the wall.
-/datum/interaction/entry_item/low_wall_item
-	id = "low_wall_item"
-	name = "Use"
-	effect = /obj/structure/low_wall/proc/interaction_item
+/// The start of a build: the builder leaves a print.
+/obj/structure/low_wall/proc/fingerprinted(datum/act/op/A)
+	add_fingerprint(A.actor)
 
-/obj/structure/low_wall/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-
-	// Making grilles (only works on Bay ones currently)
-	if(istype(W, /obj/item/stack/rods))
-		handle_rod_use(user, W)
-		return TRUE
-
-	// Making windows, different per subtype
-	else if(istype(W, /obj/item/stack/material/glass) || istype(W, /obj/item/stack/material/cyborg/glass))
-		handle_glass_use(user, W)
-		return TRUE
-
-	// Handle placing things
-	if(isrobot(user))
-		return TRUE
-
+/// Old attackby: drop an item on the wall (a cyborg's module stays with it: the op is not a cyborg's).
+/obj/structure/low_wall/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	add_fingerprint(user)
 	if(W.loc != user) // This should stop mounted modules ending up outside the module.
-		return TRUE
-
+		return OP_OK
 	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
 		auto_align(W, dq_interaction_click_params(user))
-		return TRUE
+	return OP_OK
 
-	return TRUE
+/// The first structure fixed to the wall (a window or a grille), or null; what stands on a tile does not change while a click is decided.
+/obj/structure/low_wall/proc/fixture_on_the_wall()
+	for(var/obj/structure/S in read_once(turf_contents_of_type(loc, /obj/structure)))
+		if(istype(S, /obj/structure/window) || istype(S, /obj/structure/grille))
+			return S
+	return null
 
-/obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
-	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
-		if(istype(S, /obj/structure/window))
-			to_chat(user, span_notice("There is still a window on the low wall!"))
-			return TRUE
-		if(istype(S, /obj/structure/grille))
-			to_chat(user, span_notice("There is still a grille on the low wall!"))
-			return TRUE
-	play_sfx(loc, SFX_ITEMS_RATCHET, 2)
-	to_chat(user, span_notice("Now disassembling the low wall..."))
-	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+/obj/structure/low_wall/proc/nothing_on_the_wall(datum/act/op/A)
+	var/obj/structure/fixture = fixture_on_the_wall()
+	if(isnull(fixture))
+		return null
+	return istype(fixture, /obj/structure/window) ? span_notice("There is still a window on the low wall!") : span_notice("There is still a grille on the low wall!")
 
-/obj/structure/low_wall/proc/wrench_act_timed_done(mob/user)
-	to_chat(user, span_notice("You disassembled the low wall!"))
+/obj/structure/low_wall/proc/wrench_act_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You disassembled the low wall!"))
 	dismantle()
 
 /obj/structure/low_wall/proc/can_place_items()
@@ -117,34 +117,26 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			return FALSE
 	return TRUE
 
-/// Old MouseDrop_T: climb, hoist a window up, or place or push an item onto the wall.
-/// Items align to the click through dq_interaction_click_params().
-/datum/interaction/entry_drag/low_wall_drag
-	id = "low_wall_drag"
-	name = "Place on wall"
-	effect = /obj/structure/low_wall/proc/interaction_drag
-
-/obj/structure/low_wall/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
-	if(AM == user)
-		om_emit(src, new /datum/om/event/climb_start(user))
-		return INTERACTION_HANDLED_PASS
+/// Old MouseDrop_T: hoist a window up, or place or push an item onto the wall (climbing is the climb capability's own drag).
+/// Items align to the click through dq_interaction_click_params(). A cyborg's drag is not this op's.
+/obj/structure/low_wall/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
+	if(AM == user) // climbing is the climb capability's own drag
+		return OP_PASS
 	var/obj/O = AM
 	if(!istype(O))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(O, /obj/structure/window))
 		var/obj/structure/window/W = O
 		if(Adjacent(W) && !W.anchored)
 			to_chat(user, span_notice("You hoist [W] up onto [src]."))
 			W.forceMove(loc)
-			return INTERACTION_HANDLED_PASS
-	if(isrobot(user))
-		return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(can_place_items())
 		if(ismob(O.loc)) //If placing an item
 			if(!isitem(O) || user.get_active_hand() != O)
-				return FALSE
-			if(isrobot(user))
-				return INTERACTION_HANDLED_PASS
+				return OP_DECLINE
 			user.drop_item()
 			if(O.loc != src.loc)
 				step(O, get_dir(O, src))
@@ -152,59 +144,43 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		else if(isturf(O.loc) && isitem(O)) //If pushing an item on the tabletop
 			var/obj/item/I = O
 			if(I.anchored)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			if((isliving(user)) && (Adjacent(user)) && !(user.incapacitated()))
-				if(O.w_class <= user.can_pull_size)
+				if(O.w_class <= movement_of(user).pull_size)
 					O.forceMove(loc)
 					auto_align(I, dq_interaction_click_params(user), TRUE)
 				else
 					to_chat(user, span_warning("\The [I] is too big for you to move!"))
-				return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+				return OP_PASS
+	return OP_PASS
 
-/obj/structure/low_wall/proc/handle_rod_use(mob/user, obj/item/stack/rods/R)
-	if(!grille_type)
-		to_chat(user, span_notice("This type of wall frame doesn't support grilles."))
-		return
-	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
-		if(WINDOW.dir == get_dir(src, user))
-			to_chat(user, span_notice("There is a window in the way."))
-			return
-	if(R.get_amount() < 2)
-		to_chat(user, span_warning("You need at least two rods to do this."))
-		return
-	to_chat(user, span_notice("Assembling grille..."))
-	om_task_timed(user, 1 SECONDS, target = R, receiver = src, on_done = PROC_REF(handle_rod_use_timed_done), done_args = list(R))
-	return TRUE
+/obj/structure/low_wall/proc/grille_supported(datum/act/op/A)
+	return (!!read_once(grille_type)) ? null : MSG(low_wall/no_grille)
 
-/obj/structure/low_wall/proc/handle_rod_use_timed_done(obj/item/stack/rods/R)
-	if(!R.use(2))
-		return
+/// A window facing the builder is in the way of a grille.
+/obj/structure/low_wall/proc/grille_clear(datum/act/op/A)
+	return (!window_facing(A.actor)) ? null : MSG(low_wall/window_in_the_way)
+
+/obj/structure/low_wall/proc/window_facing(mob/user)
+	for(var/obj/structure/window/WINDOW in read_once(turf_contents_of_type(loc, /obj/structure/window)))
+		if(read_once(WINDOW.dir) == read_once(get_dir(src, user)))
+			return WINDOW
+	return null
+
+/obj/structure/low_wall/proc/grille_built(datum/act/op/A)
 	new grille_type(loc)
-	return
 
-/obj/structure/low_wall/proc/handle_glass_use(mob/user, obj/item/stack/material/glass/G)
-	var/window_type = get_window_build_type(user, G)
-	if(!window_type)
-		to_chat(user, span_notice("You can't build that type of window on this type of low wall."))
-		return
-	for(var/obj/structure/window/WINDOW in turf_contents_of_type(loc, /obj/structure/window))
-		if(WINDOW.dir == get_dir(src, user))
-			to_chat(user, span_notice("There is already a window here."))
-			return
-	if(G.get_amount() < 4)
-		to_chat(user, span_warning("You need at least four sheets of glass to do this."))
-		return
-	to_chat(user, span_notice("Assembling window..."))
-	om_task_timed(user, 4 SECONDS, target = G, receiver = src, on_done = PROC_REF(handle_glass_use_timed_done), done_args = list(G, window_type))
-	return TRUE
+/obj/structure/low_wall/proc/window_supported(datum/act/op/A)
+	return (!!read_once(get_window_build_type(A.actor, A.held))) ? null : MSG(low_wall/no_window)
 
-/obj/structure/low_wall/proc/handle_glass_use_timed_done(obj/item/stack/material/glass/G, window_type)
-	if(!G.use(4))
-		return
-	new window_type(loc, null, TRUE)
-	return
+/obj/structure/low_wall/proc/window_clear(datum/act/op/A)
+	return (!window_facing(A.actor)) ? null : MSG(low_wall/window_here)
+
+/obj/structure/low_wall/proc/window_built(datum/act/op/A)
+	var/window_type = get_window_build_type(A.actor, A.held)
+	if(window_type)
+		new window_type(loc, null, TRUE)
 
 /obj/structure/low_wall/proc/get_window_build_type(mob/user, obj/item/stack/material/glass/G)
 	return null
@@ -216,53 +192,33 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		return TRUE
 	return FALSE
 
-// Bay's version
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/bay/appearance_overlays()
-	. = list()
-
-	var/image/I
-	var/main_color = material.icon_colour
+// Bay's version: the mapped sprite, with the frame drawn corner by corner over the connections.
+/obj/structure/low_wall/bay/low_wall_look(datum/look/look)
+	if(!length(connections) || !length(other_connections))
+		return
+	var/main_color = material_colour()
 	for(var/i = 1 to 4)
 		if(other_connections[i] != "0")
-			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
-			I.color = main_color
+			look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1), color = main_color))
 		else
-			I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
-			I.color = main_color
-		. += I
+			look.overlay(look_overlay_image(icon, "frame[connections[i]]", dir = 1<<(i-1), color = main_color))
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
 			if(other_connections[i] != "0")
-				I = image(icon, "stripe_other[other_connections[i]]", dir = 1<<(i-1))
+				look.overlay(look_overlay_image(icon, "stripe_other[other_connections[i]]", dir = 1<<(i-1), color = stripe_color))
 			else
-				I = image(icon, "stripe[connections[i]]", dir = 1<<(i-1))
-			I.color = stripe_color
-			. += I
+				look.overlay(look_overlay_image(icon, "stripe[connections[i]]", dir = 1<<(i-1), color = stripe_color))
 
 // Eris's version
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/low_wall/eris)
-DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/low_wall/eris/appearance_overlays()
-	. = list()
-
-	var/image/I
-	var/main_color = material.icon_colour
+/obj/structure/low_wall/eris/low_wall_look(datum/look/look)
+	if(!length(connections) || !length(other_connections))
+		return
+	var/main_color = material_colour()
 	for(var/i = 1 to 4)
-		I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
-		I.color = main_color
-		. += I
-
+		look.overlay(look_overlay_image(icon, "frame[connections[i]]", dir = 1<<(i-1), color = main_color))
 		if(other_connections[i] != "0")
-			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
-			I.plane = ABOVE_OBJ_PLANE
-			I.layer = ABOVE_WINDOW_LAYER
-			I.color = main_color
-			. += I
+			look.overlay(look_overlay_image(icon, "frame_other[other_connections[i]]", plane = ABOVE_OBJ_PLANE, layer = ABOVE_WINDOW_LAYER, dir = 1<<(i-1), color = main_color))
 
 /// Emitters and the like can't take a low wall down in one shot.
 /obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)
@@ -295,7 +251,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appea
 	for(var/obj/structure/grille/G in turf_contents_of_type(loc, /obj/structure/grille))
 		if(G.anchored)
 			G.take_damage(G.max_integrity, BRUTE, MELEE) // Smash it apart with the wall.
-	qdel(src)
+	consume(src)
 
 /**
  * The two 'real' types
@@ -347,44 +303,39 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appea
 	noblend_objects = list(/obj/machinery/door/window)
 	color = "#666666"
 
-/obj/structure/grille/bay/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/structure/grille/bay/LateInitialize()
-	update_connections(1)
-	update_icon()
+CAPABILITIES(/obj/structure/grille/bay)
+	smoothing()
 
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
-APPEARANCE_NONE(/obj/structure/grille/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/grille/bay/appearance_overlays()
-	. = list()
+/obj/structure/grille/bay/draw(datum/look/look)
+	..()
+	// the mapped sprite, without the parent's states and layers
+	look.state(null)
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
 	if(destroyed)
 		if(on_frame)
-			icon_state = "broke_onframe"
+			look.state("broke_onframe")
 		else
-			icon_state = "broken"
+			look.state("broken")
 	else
 		var/image/I
-		icon_state = ""
+		look.state("")
 		if(on_frame)
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille_onframe[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 		else
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 
 /**
  * The window types for both types of short walls
@@ -401,51 +352,40 @@ DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearan
 	max_integrity = 24
 	glasstype = /obj/item/stack/material/glass
 
-/obj/structure/window/bay/Initialize(mapload)
-	. = ..()
+/// It takes its glass's colour (derives(), at init).
+/obj/structure/window/bay/proc/glass_colour()
 	var/obj/item/stack/material/glass/G = glasstype
 	var/datum/material/M = get_material_by_name(initial(G.default_type))
-	color = M.icon_colour
-	return INITIALIZE_HINT_LATELOAD
+	return M?.icon_colour
 
-/obj/structure/window/bay/LateInitialize()
-	icon_state = ""
-	update_icon()
+CAPABILITIES(/obj/structure/window/bay)
+	after_init(0, then(PROC_REF(connect_after_init)))
+	derives(nameof(color), PROC_REF(glass_colour))
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/window/bay/appearance_overlays()
-	. = list()
-	if(!anchored)
-		connections = string_list(list("0","0","0","0"))
-		other_connections = string_list(list("0","0","0","0"))
-	else
-		update_connections()
+/// Draws against its neighbours, once they exist.
+/obj/structure/window/bay/proc/connect_after_init(datum/act/timer/A)
+	update_connections()
 
+/obj/structure/window/bay/look_parts(datum/look/look)
+	look.state("")
+	if(length(connections) < 4 || length(other_connections) < 4)
+		return
 	var/percent_damage = 0 // Used for icon state of damage layer
 	var/damage_alpha = 0 // Used for alpha blending of damage layer
-	if (max_integrity && get_integrity() < max_integrity)
-		percent_damage = (max_integrity - get_integrity()) / max_integrity // Percentage of damage received (Not health remaining)
-		percent_damage = round(percent_damage, 0.25) // Round to nearest multiple of 25
+	if(max_integrity && get_integrity_damage() > 0)
+		percent_damage = round(get_integrity_damage() / max_integrity, 0.25) // Percentage of damage received (Not health remaining), to the nearest multiple of 25
 		damage_alpha = 256 * percent_damage - 1
 
 	var/img_dir
-	var/image/I
 	for(var/i = 1 to 4)
 		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			I = image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir)
-			I.color = color
+			look.overlay(look_overlay_image(icon, "[basestate]_other_onframe[other_connections[i]]", dir = img_dir, color = color))
 		else
-			I = image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir)
-			I.color = color
-		. += I
+			look.overlay(look_overlay_image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir, color = color))
 
 	if(damage_alpha)
-		var/image/D
-		D = image(icon, "window0_damage", dir = img_dir)
-		D.blend_mode = BLEND_MULTIPLY
-		D.alpha = damage_alpha
-		. += D
+		look.overlay(look_overlay_image(icon, "window0_damage", dir = img_dir, alpha = damage_alpha, blend_mode = BLEND_MULTIPLY))
 
 /obj/structure/window/bay/reinforced
 	name = "reinforced window"
@@ -494,32 +434,22 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, TYPE_PROC_REF(/atom, appearan
 	max_integrity = 24
 	alpha = 150
 
-/obj/structure/window/eris/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/window/eris)
+	after_init(0, then(PROC_REF(connect_after_init)))
 
-/obj/structure/window/eris/LateInitialize()
-	icon_state = ""
-	update_icon()
+/// Draws against its neighbours, once they exist.
+/obj/structure/window/eris/proc/connect_after_init(datum/act/timer/A)
+	update_connections()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/eris/appearance_overlays()
-	. = list()
-	if(!anchored)
-		connections = string_list(list("0","0","0","0"))
-		other_connections = string_list(list("0","0","0","0"))
-	else
-		update_connections()
-
-	var/img_dir
-	var/image/I
+/obj/structure/window/eris/look_parts(datum/look/look)
+	look.state("")
+	if(length(connections) < 4 || length(other_connections) < 4)
+		return
 	for(var/i = 1 to 4)
-		img_dir = 1<<(i-1)
 		if(other_connections[i] != "0")
-			I = image(icon, "[basestate][other_connections[i]]", dir = img_dir)
+			look.overlay(look_overlay_image(icon, "[basestate][other_connections[i]]", dir = 1<<(i-1)))
 		else
-			I = image(icon, "[basestate][connections[i]]", dir = img_dir)
-		. += I
+			look.overlay(look_overlay_image(icon, "[basestate][connections[i]]", dir = 1<<(i-1)))
 
 /obj/structure/window/eris/reinforced
 	name = "reinforced window"
@@ -572,10 +502,10 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, TYPE_PROC_REF(/atom, appeara
 
 	icon = null
 
-MAP_RESOLVER(/obj/effect/low_wall_spawner, GLOBAL_PROC_REF(resolve_low_wall_spawner))
-MAP_RESOLVER_VARS(/obj/effect/low_wall_spawner, "grille_type;low_wall_type;window_type")
+CAPABILITIES(/obj/effect/low_wall_spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_low_wall_spawner), vars = list("grille_type", "low_wall_type", "window_type"))
 
-/// MAP_RESOLVER for low wall spawners: the low wall, grille and window (once per tile).
+/// The map resolver of low wall spawners: the low wall, grille and window (once per tile).
 /proc/resolve_low_wall_spawner(atom/loc, path, list/varedits)
 	var/obj/effect/low_wall_spawner/P = path
 	var/turf/T = get_turf(loc)

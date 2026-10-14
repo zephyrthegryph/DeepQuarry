@@ -100,20 +100,29 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 						/mob/living/simple_mob/animal/space/carp/large/huge/roguemines = 1)
 	)
 
-/// Difficulty decays every RM_DIFF_DECAY_TIME while set (DECLARE_REPEAT).
-OM_FIELD(/datum/controller/rogue, decaying, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
+CAPABILITIES(/datum/controller/rogue)
+	owns_many(nameof(all_zones), /datum/rogue/zonemaster)
+	owns_many(nameof(clean_zones), /datum/rogue/zonemaster)
+	owns_many(nameof(ready_zones), /datum/rogue/zonemaster)
+
+/// Difficulty decays every RM_DIFF_DECAY_TIME while set (the every() below).
+/datum/controller/rogue/var/decaying = FALSE
+TRACKED(/datum/controller/rogue, decaying)
+
+/datum/controller/rogue/reactions()
+	. = ..()
+	. += every(RM_DIFF_DECAY_TIME, PROC_REF(decay), when = nameof(decaying))
 
 /datum/controller/rogue/New()
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
-		own_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
+		rel_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
 	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
-/// One difficulty decay (DECLARE_REPEAT while decaying; may also be called by hand).
-/datum/controller/rogue/proc/decay()
+/// One difficulty decay (the every() while decaying; may also be called by hand).
+/datum/controller/rogue/proc/decay(dt)
 	log_world("RM(stats): DECAY on controller from [difficulty] to [difficulty+(RM_DIFF_DECAY_AMT)] min 100.") //DEBUG code for playtest stats gathering.
 	adjust_difficulty(RM_DIFF_DECAY_AMT)
 
@@ -151,7 +160,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in ready_zones)
 		GLOB.rm_controller.dbg("RMC(mc): Finite state machine broken.")
 
-	own_add(src, nameof(clean_zones), ZM)
+	rel_add(src, nameof(clean_zones), ZM)
 
 /datum/controller/rogue/proc/mark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -160,7 +169,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in clean_zones)
 		GLOB.rm_controller.dbg("RMC(mr): Finite state machine broken.")
 
-	own_add(src, nameof(ready_zones), ZM)
+	rel_add(src, nameof(ready_zones), ZM)
 
 /datum/controller/rogue/proc/unmark_clean(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -197,7 +206,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 
 	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
-		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
+		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions: a long loop that has to yield to the tick
 			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
 			if(ZM_oldest) ZM_oldest.clean_zone()
 

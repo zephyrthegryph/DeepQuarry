@@ -5,15 +5,10 @@
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "sandbag"
 	w_class = ITEMSIZE_LARGE
-	force = 10.0
-	throwforce = 20.0
 	throw_speed = 5
 	throw_range = 3
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
 	max_amount = 30
-	attack_verb = list("hit", "bludgeoned", "pillowed")
 	no_variants = TRUE
 	stacktype = /obj/item/stack/sandbags
 
@@ -32,23 +27,37 @@
 
 	bag_material = MAT_SYNCLOTH
 
-/obj/item/stack/sandbags/Initialize(mapload, amt, bag_mat)
-	. = ..(mapload, amt)
-	recipes = GLOB.sandbag_recipes
-	update_icon()
-	if(bag_mat)
-		bag_material = bag_mat
+CAPABILITIES(/obj/item/stack/sandbags)
+	configure(item_thrown(force = 20.0))
+	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	param(nameof(bag_material), pos = 2)
+	keeps_if(PROC_REF(has_material))
+	derives(nameof(color), PROC_REF(material_colour))
+
+/// A bag of a material that does not exist is discarded (keeps_if()).
+/obj/item/stack/sandbags/proc/has_material()
+	return !!get_material_by_name("[bag_material]")
+
+/// It takes its material's colour (derives(), at init).
+/obj/item/stack/sandbags/proc/material_colour()
 	var/datum/material/M = get_material_by_name("[bag_material]")
-	if(!M)
-		return INITIALIZE_HINT_QDEL
-	color = M.icon_colour
+	return M ? M.icon_colour : color
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/sandbags/appearance_overlays()
-	. = list()
-	var/amount = get_amount()
+// ALLOW(init/INSTANCE_STATE): sandbags take their recipes and slowdown
+/obj/item/stack/sandbags/Initialize(mapload)
+	. = ..()
+	recipes = GLOB.sandbag_recipes
+	update_slowdown()
 
-	slowdown = round(amount / 10, 0.1)
+/// A bigger pile slows its carrier more.
+/obj/item/stack/sandbags/proc/update_slowdown()
+	slowdown = round(get_amount() / 10, 0.1)
+
+/obj/item/stack/sandbags/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		update_slowdown()
 
 /obj/item/stack/sandbags/produce_recipe(datum/stack_recipe/recipe, quantity, mob/user)
 	var/required = quantity*recipe.req_amount
@@ -71,19 +80,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/sandbag_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
+	start_build(user, recipe, required, produced)
 
-/datum/om/task/timed/sandbag_build
-	complete_proc = /obj/item/stack/sandbags/proc/produce_sandbag_done
-	var/datum/stack_recipe/recipe
-	var/required
-	var/produced
-
-/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/om/task/timed/sandbag_build/task)
-	var/datum/stack_recipe/recipe = task.recipe
-	var/mob/user = task.actor
-	var/required = task.required
-	var/produced = task.produced
+/obj/item/stack/sandbags/produce_recipe_done(datum/act/op/A)
+	var/datum/stack_recipe/recipe = A.arg("recipe")
+	var/mob/user = A.actor
+	var/required = A.arg("required")
+	var/produced = A.arg("produced")
 	if (use(required))
 		var/atom/O = new recipe.result_type(user.loc, bag_material)
 
@@ -99,12 +102,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 
 		if (istype(O, /obj/item/stack))
 			var/obj/item/stack/S = O
-			S.amount = produced
+			S.set_amount(produced, TRUE)
 			S.add_to_stacks(user)
 
 		if (istype(O, /obj/item/storage)) //BubbleWrap - so newly formed boxes are empty
 			for (var/obj/item/I in O)
-				qdel(I)
+				spent(I)
 
 		if ((pass_color || recipe.pass_color))
 			if(!color)
@@ -113,9 +116,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 					if(MAT.icon_colour)
 						O.color = MAT.icon_colour
 				else
-					return
+					return OP_OK
 			else
 				O.color = color
+		return OP_OK
+	return OP_FAILED
 
 // Empty bags. Yes, you need to fill them.
 
@@ -134,34 +139,35 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, TYPE_PROC_REF(/atom, appearanc
 	pass_color = TRUE
 
 	var/bag_material = MAT_CLOTH
-	custom_handling = TRUE
 
-/obj/item/stack/emptysandbag/Initialize(mapload, amt, bag_mat)
-	. = ..(mapload, amt)
-	if(bag_mat)
-		bag_material = bag_mat
+/// A bag of a material that does not exist is discarded (keeps_if()).
+/obj/item/stack/emptysandbag/proc/has_material()
+	return !!get_material_by_name("[bag_material]")
+
+/// It takes its material's colour (derives(), at init).
+/obj/item/stack/emptysandbag/proc/material_colour()
 	var/datum/material/M = get_material_by_name("[bag_material]")
-	if(!M)
-		return INITIALIZE_HINT_QDEL
-	color = M.icon_colour
+	return M ? M.icon_colour : color
 
-EXTEND_INTERACTIONS(/obj/item/stack/emptysandbag, INTERACT_USE("Fill", PROC_REF(emptysandbag_self)))
+CAPABILITIES(/obj/item/stack/emptysandbag)
+	keeps_if(PROC_REF(has_material))
+	derives(nameof(color), PROC_REF(material_colour))
+	without("ui_open")
+	// A bag is filled each second while the user stays put; the series stops when the pile is gone or the ground is no longer outdoors.
+	op("emptysandbag_self", in_hand(), label("Fill"), wait(1 SECOND, repeats = PROC_REF(fill_more), after_step = PROC_REF(fill_bag_done)))
+	param(nameof(bag_material), pos = 2)
 
-/// Old attack_self.
-/obj/item/stack/emptysandbag/proc/emptysandbag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	fill_next_bag(user)
+/// Another bag follows while there is a bag left and the ground is outdoors.
+/obj/item/stack/emptysandbag/proc/fill_more(datum/act/op/A)
+	return read_once(!QDELETED(src) && can_use(1) && istype(get_turf(src), /turf/simulated/floor/outdoors))
 
-/// Fills one sandbag a second while the user stays put on outdoor ground.
-/obj/item/stack/emptysandbag/proc/fill_next_bag(mob/user)
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
-
-/obj/item/stack/emptysandbag/proc/fill_bag_done(mob/user)
+/// A bag filled: one used, one sandbag made where the pile lies.
+/obj/item/stack/emptysandbag/proc/fill_bag_done(datum/act/op/A)
 	if(!can_use(1) || !istype(get_turf(src), /turf/simulated/floor/outdoors))
 		return
+	var/mob/user = A.actor
 	use(1)
 	var/obj/item/stack/sandbags/SB = new (get_turf(src), 1, bag_material)
 	SB.color = color
 	if(user)
 		to_chat(user, span_notice("You fill a sandbag."))
-	if(!QDELETED(src))
-		fill_next_bag(user)

@@ -135,9 +135,11 @@
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "seccloak"
 	color = "#F13C00"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/firecloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(istype(damage_source, /obj/item/projectile))
@@ -156,10 +158,12 @@
 	desc = "A slender, fancy and sharply pointed sword, wisps of fire swirling around it."
 	icon_state = "rapier"
 	item_state = "rapier"
-	slot_flags = SLOT_BELT
 	applies_material_colour = 0
 	force_divisor = 0.50
 	color = "#F13C00"
+
+CAPABILITIES(/obj/item/material/sword/rapier/solar)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/material/sword/rapier/solar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
@@ -175,24 +179,25 @@
 	item_state = "ziplas"
 	color = "#0000CC"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 300 //You got 5 shot
 	battery_lock = 1
 	projectile_type = /obj/item/projectile/icicle //But it hurts a lot
 	cell_type = /obj/item/cell/device/weapon
+
+CAPABILITIES(/obj/item/gun/energy/icelauncher)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/clothing/shoes/boots/frost
 	name = "frost boots"
 	desc = "Handmade boots of scavanged bits."
 	icon_state = "winterboots"
 	color = "#0000CC"
-	cold_protection = FEET
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = FEET
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
 	snow_speed = -1
-	rock_climbing = TRUE
-	item_flags = NOSLIP
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/frost)
+	configure(item_tooling(climbing = TRUE))
+	configure(item_worn(flags = NOSLIP))
+	configure(item_protection(cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Turtle
 /obj/item/material/twohanded/sledgehammer/gravity
@@ -202,9 +207,11 @@
 	force_divisor = 0.40 //
 	dulled_divisor = 0.80	//Still metal on a stick
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	force_wielded = 25
 	applies_material_colour = 1
+
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer/gravity)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/material/twohanded/sledgehammer/gravity/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
@@ -252,11 +259,6 @@
 	on each glove."
 	icon_state = "regen"
 	item_state = "graygloves"
-	siemens_coefficient = 0
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
@@ -274,16 +276,25 @@
 			H.custom_pain("Your hands hurt like hell!",1)
 	..()
 
-/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
-/obj/item/clothing/gloves/toxinregen/periodic_step()
+/// TRUE while worn (equipped() sets it): the slow step purges the wearer's toxins; taken off, it parks.
+/obj/item/clothing/gloves/toxinregen/var/tmp/purging = FALSE
+TRACKED(/obj/item/clothing/gloves/toxinregen, purging)
+
+CAPABILITIES(/obj/item/clothing/gloves/toxinregen)
+	configure(item_protection(siemens = 0, cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+	every(2 SECONDS, then(PROC_REF(purge_step)), when = nameof(purging))
+
+/// Works every 2 s while worn.
+/obj/item/clothing/gloves/toxinregen/proc/purge_step(datum/act/A)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
-		return PROCESS_KILL
-	if(!H || H.stat == DEAD || H.nutrition <= 10)
+		set_purging(FALSE)
+		return
+	if(!H || H.stat == DEAD || nutrition_of(H) <= 10)
 		return
 	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected
 
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	. = ..()
 	if(ismob(wearer))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_purging(TRUE)

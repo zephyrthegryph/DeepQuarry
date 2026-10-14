@@ -1,0 +1,2 @@
+/obj/bench
+	qdel(src)

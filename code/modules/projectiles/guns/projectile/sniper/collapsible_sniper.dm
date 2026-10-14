@@ -2,23 +2,18 @@
 
 /obj/item/gun/projectile/heavysniper/collapsible
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_VERB("Disassemble Rifle", PROC_REF(collapsible_sniper_verb_take_down), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
+	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
 
-/// Old Disassemble Rifle verb.
-/obj/item/gun/projectile/heavysniper/collapsible/proc/collapsible_sniper_verb_take_down(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat)
-		return
+MSG_DEF_SELF(sniper/empty_first, span_warning("You need to empty the rifle to break it down."))
+MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barrel."))
 
-	if(chambered)
-		to_chat(user, span_warning("You need to empty the rifle to break it down."))
-	else
-		collapse_rifle(user)
+/// Requirement: no round is chambered.
+/obj/item/gun/projectile/heavysniper/collapsible/proc/rifle_empty(datum/act/op/A)
+	return (!chambered) ? null : MSG(sniper/empty_first)
 
-/obj/item/gun/projectile/heavysniper/proc/collapse_rifle(mob/user)
-	to_chat(user, span_warning("You begin removing \the [src]'s barrel."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(barrel_removed), list(user))
-
-/obj/item/gun/projectile/heavysniper/proc/barrel_removed(mob/user)
+/obj/item/gun/projectile/heavysniper/proc/barrel_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.unEquip(src, force=1))
 		to_chat(user, span_warning("You remove \the [src]'s barrel."))
 		consume(src, user)
@@ -26,7 +21,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_V
 		var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
 		var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
 		rel_set(assembly, nameof(assembly.stock), stock)
-		assembly.part_count = 2
+		assembly.set_part_count(2)
 		assembly.update_build(user)
 		user.put_in_any_hand_if_possible(assembly) || assembly.dropInto(user.loc)
 		user.put_in_any_hand_if_possible(barrel) || barrel.dropInto(user.loc)
@@ -70,19 +65,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_V
 	. = ..()
 	rel_set(src, nameof(trigger_group), src)
 
-DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_NOT(REQ_FIELD_EQ("part_count", 1, "you can't disassemble this further"))), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
-/// Old attack_self.
-/obj/item/sniper_rifle_part/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/sniper_rifle_part)
+	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
+	op("add_part", item(/obj/item/sniper_rifle_part), begins(PROC_REF(adding_text)), wait(3 SECONDS), then(PROC_REF(part_added)))
 
-	to_chat(user, span_notice("You start disassembling \the [src]."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
-	return TRUE
+MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%."))
 
-/obj/item/sniper_rifle_part/proc/disassembled(mob/user)
+/// The line names the part being added.
+/obj/item/sniper_rifle_part/proc/adding_text(datum/act/op/A)
+	return msg_text(span_notice("You begin adding [A.held] to %T%."))
+
+/// Requirement: the part is more than one piece.
+/obj/item/sniper_rifle_part/proc/can_disassemble_holds(datum/act/op/A)
+	return (part_count != 1) ? null : MSG(sniper_part/last_part)
+
+/obj/item/sniper_rifle_part/proc/disassembled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(part_count == 1)
 		return
 	to_chat(user, span_notice("You disassemble \the [src]."))
@@ -95,18 +95,13 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 			rel_clear(P, nameof(P.trigger_group))
 		if(P != src)
 			user.put_in_any_hand_if_possible(P) || P.dropInto(loc)
-		P.part_count = 1
+		P.set_part_count(1)
 
 	update_build(user)
 
-/// Old attackby.
-/obj/item/sniper_rifle_part/proc/interaction_item(mob/user, obj/item/sniper_rifle_part/A, datum/interaction/interaction)
-
-	to_chat(user, span_notice("You begin adding \the [A] to \the [src]."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(part_added), list(A, user))
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/sniper_rifle_part/proc/part_added(obj/item/sniper_rifle_part/A, mob/user)
+/obj/item/sniper_rifle_part/proc/part_added(datum/act/op/op_act)
+	var/obj/item/sniper_rifle_part/A = op_act.held
+	var/mob/user = op_act.actor
 	if(istype(A, /obj/item/sniper_rifle_part/trigger_group))
 		if(A.part_count > 1 && src.part_count > 1)
 			to_chat(user, span_warning("Disassemble one of these parts first!"))
@@ -146,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 		rel_set(src, nameof(trigger_group), A.trigger_group())
 
 
-	part_count = A.part_count + src.part_count
+	set_part_count(A.part_count + src.part_count)
 	update_build(user)
 
 
@@ -154,19 +149,19 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 	switch(part_count)
 		if(1)
 			name = initial(name)
-			w_class = ITEMSIZE_NORMAL
-			icon_state = initial(icon_state)
+			set_w_class(ITEMSIZE_NORMAL)
+			set_icon_state(initial(icon_state))
 		if(2)
 			if(barrel() && trigger_group())
 				name = "AM rifle barrel-trigger assembly"
-				icon_state = "heavysniper-trigbar"
+				set_icon_state("heavysniper-trigbar")
 			else if(stock() && trigger_group())
 				name = "AM rifle stock-trigger assembly"
-				icon_state = "heavysniper-trigstock"
+				set_icon_state("heavysniper-trigstock")
 			else if(stock() && barrel())
 				name = "AM rifle stock-barrel assembly"
-				icon_state = "heavysniper-barstock"
-			w_class = ITEMSIZE_LARGE
+				set_icon_state("heavysniper-barstock")
+			set_w_class(ITEMSIZE_LARGE)
 
 		if(3)
 			var/obj/item/gun/projectile/heavysniper/collapsible/gun = new (get_turf(src), 0)

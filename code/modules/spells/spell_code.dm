@@ -53,13 +53,23 @@
 
 	var/atom/movable/screen/connected_button
 
+CAPABILITIES(/datum/spell)
+	owns_one(nameof(connected_button), /atom/movable/screen)
+	// The cast delay: no bar, the held item may change, and a spell that works unconscious or as a ghost does not need the caster up.
+	op("cast_delay", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY | ALIVE), silent_wait(), then(PROC_REF(cast_delayed)))
+	op("cast_delay_statallowed", ai(), takes("skipcharge"), wait(PROC_REF(cast_time), keeps = TARGET_PRESENT | STAY), silent_wait(), then(PROC_REF(cast_delayed)))
+
 ///////////////////////
 ///SETUP AND PROCESS///
 ///////////////////////
 
-/// TRUE while recharging: recharge_tick() adds a second's worth every second (DECLARE_REPEAT).
-OM_FIELD(/datum/spell, recharging, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
+/// TRUE while recharging: recharge_tick() adds a second's worth every second (the every() below).
+/datum/spell/var/recharging = FALSE
+TRACKED(/datum/spell, recharging)
+
+/datum/spell/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(recharge_tick), when = nameof(recharging))
 
 /datum/spell/New()
 	..()
@@ -73,29 +83,34 @@ DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
 	if(charge_counter < charge_max)
 		set_recharging(TRUE)
 
-/datum/spell/proc/recharge_tick()
+/datum/spell/proc/recharge_tick(dt)
 	charge_counter = min(charge_counter + 10, charge_max)
 	if(charge_counter >= charge_max)
 		set_recharging(FALSE)
-		return REPEAT_STOP
 
 /////////////////
 /////CASTING/////
 /////////////////
 
-/datum/spell/proc/choose_targets(mob/user = usr) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
+/datum/spell/proc/choose_targets(mob/user) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
 	return
 
-/datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
+/datum/spell/proc/perform(mob/user, skipcharge = 0) //if recharge is started is important for the trigger spells
 	if(!holder())
 		rel_set(src, nameof(holder), user) //just in case
 	if(!cast_check(skipcharge, user))
 		return
 	if(cast_delay)
-		var/flags = IGNORE_HELD_ITEM | ((spell_flags & (STATALLOWED|GHOSTCAST)) ? IGNORE_INCAPACITATED : NONE)
-		om_task_timed(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
+		perform_op(user, src, (spell_flags & (STATALLOWED|GHOSTCAST)) ? "cast_delay_statallowed" : "cast_delay", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("skipcharge" = skipcharge))
 		return
 	perform_cast(user, skipcharge)
+
+/datum/spell/proc/cast_time(datum/act/op/A)
+	return cast_delay
+
+/// The cast delay passed.
+/datum/spell/proc/cast_delayed(datum/act/op/A)
+	perform_cast(A.actor, A.arg("skipcharge"))
 
 /// The arguments of the perform_cast() running now, so target questions re-run it. Only set while it runs.
 GLOBAL_LIST_EMPTY(spell_cast_args)
@@ -108,7 +123,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		invocation(user, targets)
 		take_charge(user, skipcharge)
 
-		before_cast(targets) //applies any overlays and effects
+		before_cast(targets, user) //applies any overlays and effects
 		add_attack_logs(user, targets, "casted the spell [name]")
 		if(prob(critfailchance))
 			critfail(targets, user)
@@ -138,7 +153,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 	else if(amount < 0)
 		target.mend(TREAT_OXYGENATION, -amount)
 
-/datum/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
+/datum/spell/proc/adjust_var(mob/living/target, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 	switch(type)
 		if("trauma")
 			spell_injure(target, INJURY_BLUNT, amount, list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR))
@@ -149,11 +164,11 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		if("asphyxia")
 			spell_oxygen_debt(target, amount)
 		if("stunned")
-			target.status_adjust(EFFECT_STUNNED, amount)
+			target.status_adjust(STAT_STUNNED, amount)
 		if("weakened")
-			target.status_adjust(EFFECT_WEAKENED, amount)
+			target.status_adjust(STAT_WEAKENED, amount)
 		if("paralysis")
-			target.status_adjust(EFFECT_PARALYZED, amount)
+			target.status_adjust(STAT_PARALYZED, amount)
 		else
 			target.vars[type] += amount //I bear no responsibility for the runtimes that'll happen if you try to adjust non-numeric or even non-existant vars
 	return
@@ -162,11 +177,11 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 /////CASTING WRAPPERS//////
 ///////////////////////////
 
-/datum/spell/proc/before_cast(list/targets)
+/datum/spell/proc/before_cast(list/targets, mob/user)
 	var/valid_targets[0]
 	for(var/atom/target in targets)
 		// Check range again (fixes long-range EI NATH)
-		if(!(target in view_or_range(range,usr,selection_type)))
+		if(!(target in view_or_range(range,user,selection_type)))
 			continue
 
 		valid_targets += target
@@ -179,10 +194,10 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 				location = target
 			var/obj/effect/overlay/spell = new /obj/effect/overlay(location)
 			spell.icon = overlay_icon
-			spell.icon_state = overlay_icon_state
+			spell.set_icon_state(overlay_icon_state)
 			spell.set_anchored(TRUE)
 			spell.set_density(FALSE)
-			om_qdel_after(spell, overlay_lifespan)
+			spell.expire(overlay_lifespan)
 	return valid_targets
 
 /datum/spell/proc/after_cast(list/targets)
@@ -207,7 +222,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 /////////////////////
 /*Checkers, cost takers, message makers, etc*/
 
-/datum/spell/proc/cast_check(skipcharge = 0,mob/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
+/datum/spell/proc/cast_check(skipcharge = 0,mob/user) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
 
 	if(!(src in user.spell_list) && holder() == user)
 		log_world("## ERROR [user] utilized the spell '[src]' without having it.")
@@ -241,7 +256,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 
 	if(!(spell_flags & GHOSTCAST) && holder() == user)
 		if(user.stat && !(spell_flags & STATALLOWED))
-			to_chat(usr, "Not when you're incapacitated.")
+			to_chat(user, "Not when you're incapacitated.")
 			return 0
 
 		if(ishuman(user) && !(invocation_type in list(SpI_EMOTE, SpI_NONE)))
@@ -285,7 +300,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		return 0
 	return 1
 
-/datum/spell/proc/invocation(mob/user = usr, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
+/datum/spell/proc/invocation(mob/user, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
 
 	switch(invocation_type)
 		if(SpI_SHOUT)

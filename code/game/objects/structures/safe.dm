@@ -23,18 +23,8 @@ FLOOR SAFES
 	var/maxspace = 24	//the maximum combined w_class of stuff in the safe
 
 
-/obj/structure/safe/Initialize(mapload)
-	. = ..()
-	tumbler_1_pos = rand(0, 72)
-	tumbler_1_open = rand(0, 72)
-
-	tumbler_2_pos = rand(0, 72)
-	tumbler_2_open = rand(0, 72)
-
-	if(. != INITIALIZE_HINT_QDEL)
-		return INITIALIZE_HINT_LATELOAD
-
-/obj/structure/safe/LateInitialize()
+/// Takes in the items lying on its turf, as space allows.
+/obj/structure/safe/proc/take_loose_items(datum/act/timer/A)
 	for(var/obj/item/I in contents_of(loc))
 		if(space >= maxspace)
 			return
@@ -68,30 +58,38 @@ FLOOR SAFES
 	return num
 
 
-APPEARANCE_TEMPLATE(/obj/structure/safe, "{initial(icon_state)}{open?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/safe/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][open ? "-open" : ""]")
 
 
 // TGUI migration. attack_hand opens Safe.tsx; the Topic
 // dial/open/retrieve actions move to tgui_act below.
-/obj/structure/safe/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/safe_open_ui,
-		/datum/interaction/entry_item/safe_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/safe)
+	after_init(0, then(PROC_REF(take_loose_items)))
+	interface("Safe")
+	// the old attackby: put an item in the open safe, or a stethoscope hint while closed
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
+	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
+	op("retrieve", ui_act("retrieve", arg("ref")), then(PROC_REF(ui_act_retrieve)))
+	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(safe/not_human))))
+	rolls(nameof(tumbler_1_pos), range_of(0, 72))
+	rolls(nameof(tumbler_1_open), range_of(0, 72))
+	rolls(nameof(tumbler_2_pos), range_of(0, 72))
+	rolls(nameof(tumbler_2_open), range_of(0, 72))
 
-/datum/interaction/entry_hand/safe_open_ui
-	id = "safe_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
+MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 
-DECLARE_UI(/obj/structure/safe, "Safe")
+/// Only a human works the dial.
+/obj/structure/safe/proc/user_is_human(datum/act/op/A)
+	return (ishuman(A.actor)) ? null : MSG(safe/not_human)
 
-UI_DATA_REPLACE(/obj/structure/safe, "dial:num", "merge:ui_data_obj_structure_safe{open:bool,contents:list}")
-
-/// The computed part of /obj/structure/safe's window data (declared on its UI_DATA row).
-/obj/structure/safe/proc/ui_data_obj_structure_safe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/safe/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["dial"] = dial
 	data["open"] = !!open
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
@@ -99,27 +97,17 @@ UI_DATA_REPLACE(/obj/structure/safe, "dial:num", "merge:ui_data_obj_structure_sa
 	data["contents"] = c
 	return data
 
-/obj/structure/safe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ishuman(usr))
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/structure/safe, "open", ui_act_open)
-UI_ACT_PROC(/obj/structure/safe, ui_act_open)
-	var/mob/living/carbon/human/human_user = usr
+/obj/structure/safe/proc/ui_act_open(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	if(check_unlocked())
 		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
-		open = !open
-		update_icon()
+		set_open(!open)
 	else
 		to_chat(human_user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "decrement", ui_act_decrement)
-UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
-	var/mob/living/carbon/human/human_user = usr
+/obj/structure/safe/proc/ui_act_decrement(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -136,9 +124,8 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
 		check_unlocked(human_user, canhear)
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "increment", ui_act_increment)
-UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
-	var/mob/living/carbon/human/human_user = usr
+/obj/structure/safe/proc/ui_act_increment(datum/act/op/A)
+	var/mob/living/carbon/human/human_user = A.actor
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -155,27 +142,26 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
 		check_unlocked(human_user, canhear)
 	return TRUE
 
-UI_ACT(/obj/structure/safe, "retrieve", ui_act_retrieve, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
-	var/mob/living/carbon/human/human_user = usr
-	var/obj/item/P = params["ref"]
+/// The window hands back one of the things it listed.
+/obj/structure/safe/proc/ui_act_retrieve(datum/act/op/A, ref)
+	var/mob/living/carbon/human/human_user = A.actor
+	var/obj/item/P = ui_ref(ref, contents_of(src), /obj/item)
 	if(open && P && in_range(src, human_user))
+		var/was_stored = P.loc == src
 		human_user.put_in_hands(P)
+		if(was_stored && P.loc != src)
+			space = max(0, space - P.w_class)
 	return TRUE
 
 
-/// Old attackby: put an item in the open safe, or a stethoscope hint while closed.
-/datum/interaction/entry_item/safe_item
-	id = "safe_item"
-	name = "Use"
-	effect = /obj/structure/safe/proc/interaction_item
-
-/obj/structure/safe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/safe/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(open)
 		if(I.w_class + space <= maxspace)
+			if(!own_bring_in(src, nameof(contents), I, null, user, TRUE, null, FALSE))
+				return OP_OK
 			space += I.w_class
-			user.drop_item()
-			I.forceMove(src)
 			to_chat(user, span_notice("You put [I] in \the [src]."))
 			updateUsrDialog(user)
 		else
@@ -183,7 +169,7 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
 	else
 		if(istype(I, /obj/item/clothing/accessory/stethoscope))
 			to_chat(user, "Hold [I] in one of your hands while you manipulate the dial.")
-	return TRUE
+	return OP_OK
 
 
 //FLOOR SAFES
@@ -200,10 +186,9 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
 	var/turf/T = loc
 	if(istype(T) && !T.is_plating())
 		hide(1)
-	update_icon()
 
 /obj/structure/safe/floor/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+	hide_under_floor(src, intact)
 
 /obj/structure/safe/floor/hides_under_flooring()
 	return 1

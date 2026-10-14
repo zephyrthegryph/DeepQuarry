@@ -16,23 +16,26 @@
 	var/proj_trail_icon_state = "trail"
 	var/list/trails
 
+CAPABILITIES(/obj/item/projectile/spell_projectile)
+	owns_many(nameof(trails))
+
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
-		own_add(src, nameof(trails), trail)
+		rel_add(src, nameof(trails), trail)
 		trail.icon = proj_trail_icon
-		trail.icon_state = proj_trail_icon_state
+		trail.set_icon_state(proj_trail_icon_state)
 		trail.set_density(FALSE)
-		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
+		after(src, proj_trail_lifespan, PROC_REF(expire_trail), with = list(trail)) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
-	own_remove(src, nameof(trails), trail) // disposes of it
+	rel_remove(src, nameof(trails), trail) // disposes of it
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)
 		carried().prox_cast(targets, src)
-		qdel(src)
+		spent(src)
 	return
 
 /obj/item/projectile/spell_projectile/Bump(atom/A)

@@ -4,10 +4,8 @@
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap0"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 1000)
-	throwforce = 00
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 	var/colorindex = 0
 	var/mob/living/capsuleowner //taken from Capsule Code
 	var/sizetouse = 0.25
@@ -16,16 +14,18 @@
 	if(!capsuleowner())
 		rel_set(src, nameof(capsuleowner), user)
 
-DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/buttonofnormal)
+	configure(item_thrown(force = 00))
+	configure(item_combat(force = 0))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(capsuleowner), /mob/living)
 
 /// Old attack_self.
-/obj/item/buttonofnormal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/buttonofnormal/proc/interaction_self(datum/act/op/A)
 	if(colorindex)
 		nonrandom()
-	om_after(src, 10, PROC_REF(do_size_effect), capsuleowner())
+	after(src, 1 SECONDS, PROC_REF(do_size_effect), with = list(capsuleowner()))
 	return TRUE
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	if(isliving(A))
 		if(colorindex)
 			nonrandom()
-		om_after(src, 5, PROC_REF(do_size_effect), A)
+		after(src, 0.5 SECONDS, PROC_REF(do_size_effect), with = list(A))
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A
@@ -43,14 +43,14 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	sizetouse = rand(25,200)/100 //randmization occurs after press
 
 /// Old attackby.
-/obj/item/buttonofnormal/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/buttonofnormal/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		colorindex = (colorindex + 1) % 6
-		icon_state = "mobcap[colorindex]"
-		update_icon()
+		set_icon_state("mobcap[colorindex]")
 	if(istype(W, /obj/item/card/id))
 		rel_clear(src, nameof(capsuleowner))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code
 	switch(colorindex)
@@ -66,10 +66,8 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	icon = 'icons/obj/mobcap.dmi'
 	icon_state = "mobcap1"
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, 5000)
-	throwforce = 00
 	throw_speed = 2
 	throw_range = 20
-	force = 0
 	var/luckynumber7 = 0
 	var/colorindex = 1
 
@@ -80,46 +78,50 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	)
 
 /// Old attackby.
-/obj/item/daredevice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/daredevice/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		colorindex += 1
 		if(colorindex >= 6)
 			colorindex = 0
-		icon_state = "mobcap[colorindex]"
-		update_icon()
-	return FALSE
+		set_icon_state("mobcap[colorindex]")
+	return OP_DECLINE
 
-DECLARE_INTERACTIONS(/obj/item/daredevice, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/daredevice)
+	configure(item_thrown(force = 00))
+	configure(item_combat(force = 0))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/daredevice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/daredevice/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/capsuleowner = user
 	play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 	var/item = pick(winitems)
-	om_after(src, 10 SECONDS, PROC_REF(capsule_result), capsuleowner, item)
+	after(src, 10 SECONDS, PROC_REF(capsule_result), with = list(capsuleowner, item))
 	return TRUE
 
 /obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)
-	switch(luckynumber7)
-		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
-		if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
-		if(3)	capsuleowner.status_at_least(EFFECT_WEAKENED, 5) //Loss Knee spaghetti!
-		if(4)	capsuleowner.status_adjust(EFFECT_HALLUCINATING, 66) //loss woah, dude.
-		if(5)	new	item(capsuleowner.loc) //Win!
-		if(7)
-			new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
-			capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
-		if(9)
-			new	/obj/item/gun/energy/sizegun/not_advanced(capsuleowner.loc)
-			qdel(src)
-			return
-		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
-		else luckynumber7 = (rand(0,10))
+	if(capsuleowner)
+		switch(luckynumber7)
+			if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
+			if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
+			if(3)	capsuleowner.status_at_least(STAT_WEAKENED, 5) //Loss Knee spaghetti!
+			if(4)	capsuleowner.status_adjust(STAT_HALLUCINATING, 66) //loss woah, dude.
+			if(5)	new	item(capsuleowner.loc) //Win!
+			if(7)
+				new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
+				capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
+			if(9)
+				var/atom/product_location = capsuleowner.loc
+				if(consume(src, capsuleowner))
+					new /obj/item/gun/energy/sizegun/not_advanced(product_location)
+				return
+			if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
+			else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)
-	om_after(src, 10 SECONDS, PROC_REF(capsule_reset))
+	after(src, 10 SECONDS, PROC_REF(capsule_reset))
 
 /obj/item/daredevice/proc/capsule_reset()
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
@@ -139,9 +141,6 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 //
 /obj/item/projectile/beam/sizelaser/chaos //The Defintiely not advanced sizeguns laser.
 	name = "chaos size beam"
-	light_color = "#FF0000"
-	light_range = 3
-	light_power = 9 //should be plenty visible.
 	var/static/list/chaos_colors = list(
 					"#FF0000",
 					"#00FF00",
@@ -155,19 +154,20 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 					"#0F0F0F",
 					)
 
+CAPABILITIES(/obj/item/projectile/beam/sizelaser/chaos)
+	configure(light_glow(color = "#FF0000", range = 3, power = 9))
+
 /obj/item/projectile/beam/sizelaser/chaos/on_hit(atom/target)
-	light_color = pick(chaos_colors)
+	set_light_color(pick(chaos_colors))
 	var/chaos = rand(25,200)
 	var/mob/living/M = target
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = M
 		H.resize(chaos/100)
 		H.show_message(span_purple("The beam fires into your body, changing your size!"))
-		H.update_icon()
 	else if (istype(target, /mob/living/))
 		var/mob/living/H = M
 		H.resize(chaos/100)
-		H.update_icon()
 	else
 		return 1
 

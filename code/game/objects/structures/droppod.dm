@@ -10,15 +10,28 @@
 	var/finished = FALSE
 	var/datum/gas_mixture/pod_air/air
 
+TRACKED(/obj/structure/drop_pod, finished)
+
+CAPABILITIES(/obj/structure/drop_pod)
+	owns_one(nameof(air), /datum/gas_mixture/pod_air, starts = /datum/gas_mixture/pod_air, starts_args = NO_LOC)
+	op("use_wrench", tool(TOOL_WRENCH), wait(10 SECONDS), needs(req(PROC_REF(is_finished))), begins(MSG(drop_pod/breaking_down)), then(PROC_REF(wrench_act_done)))
+	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
+	param(nameof(cargo_at_make), pos = 1, keep = FALSE)
+	param(nameof(auto_open), pos = 2)
+
 /obj/structure/drop_pod/polite
 	polite = TRUE
 
-/obj/structure/drop_pod/Initialize(mapload, atom/movable/A, auto_open = FALSE)
+/// What the pod carries down, and whether it opens by itself (its constructor params).
+/obj/structure/drop_pod/var/tmp/atom/movable/cargo_at_make
+/obj/structure/drop_pod/var/auto_open = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a pod with cargo falls, and every pod makes its air
+/obj/structure/drop_pod/Initialize(mapload)
 	. = ..()
-	if(A)
-		A.forceMove(src) // helo
+	if(cargo_at_make)
+		cargo_at_make.forceMove(src) // helo
 		podfall(auto_open)
-	own_set(src, nameof(air), new /datum/gas_mixture/pod_air)
 
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
@@ -28,14 +41,14 @@
 		return
 
 	moveToNullspace()
-	icon_state = "[initial(icon_state)]_falling"
+	set_icon_state("[initial(icon_state)]_falling")
 
 	// Show warning on 3x3 area centred on our drop spot
 	var/list/turfs_nearby = block(get_step(T, SOUTHWEST), get_step(T, NORTHEAST))
 	for(var/turf/TN in turfs_nearby)
 		new /obj/effect/temporary_effect/shuttle_landing(TN)
 
-	om_after(src, 4 SECONDS, PROC_REF(do_fall), auto_open, T)
+	after(src, 4 SECONDS, PROC_REF(do_fall), with = list(auto_open, T))
 
 /obj/structure/drop_pod/proc/do_fall(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -50,14 +63,14 @@
 	animate(src, alpha = 255, time = 1 SECOND, flags = ANIMATION_PARALLEL)
 	filters += filter(type="drop_shadow", x=-64, y=100, size=10)
 	animate(filters[filters.len], x=0, y=0, size=0, time=3 SECONDS, flags=ANIMATION_PARALLEL, easing=SINE_EASING|EASE_OUT)
-	om_after(src, 2 SECONDS, PROC_REF(after_fall), auto_open, T)
+	after(src, 2 SECONDS, PROC_REF(after_fall), with = list(auto_open, T))
 
 /obj/structure/drop_pod/proc/after_fall(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	new /obj/effect/effect/smoke(T)
 	T.hotspot_expose(900)
-	om_after(src, 1 SECOND, PROC_REF(on_impact), auto_open, T)
+	after(src, 1 SECOND, PROC_REF(on_impact), with = list(auto_open, T))
 
 /obj/structure/drop_pod/proc/on_impact(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -78,16 +91,16 @@
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O == src)
 			continue
-		qdel(O)
+		destroyed(O)
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
 		L.gib()
 
 	// Landed! Simmer
 	plane = initial(plane)
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 
 	if(auto_open)
-		om_after(src, 2 SECONDS, PROC_REF(open_pod), TRUE)
+		after(src, 2 SECONDS, PROC_REF(open_pod), with = list(TRUE))
 	else
 		for(var/mob/M in contents_of(src))
 			to_chat(M, span_danger("You've landed! Open the hatch if you think it's safe! \The [src] has enough air to last for a while..."))
@@ -97,27 +110,16 @@
 		visible_message("\The [src] pops open!")
 	if(finished)
 		return
-	icon_state = "[initial(icon_state)]_open"
+	set_icon_state("[initial(icon_state)]_open")
 	play_sfx(src, SFX_EFFECTS_MAGNETCLAMP)
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
-	own_clear(src, nameof(air), OWN_DELETE)
-	finished = TRUE
+	rel_clear(src, nameof(air))
+	set_finished(TRUE)
 
-/obj/structure/drop_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/drop_pod_open,
-	)
-	..()
-
-/// Old attack_hand: open the pod.
-/datum/interaction/entry_hand/drop_pod_open
-	id = "drop_pod_open"
-	name = "Open"
-	effect = /obj/structure/drop_pod/proc/interaction_open
-
-/obj/structure/drop_pod/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/drop_pod/proc/interaction_open(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(istype(user) && (Adjacent(user) || (is_in_holder(user, src))) && !user.incapacitated())
 		if(finished)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
@@ -126,16 +128,15 @@
 			act_message(user, src, MSG_SELF(span_infoplain("You open %T%!")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens %T%!")))
 	return TRUE
 
-/obj/structure/drop_pod/wrench_act(mob/user, obj/item/O)
-	if(!finished)
-		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
-		return TRUE
-	to_chat(user, span_notice("You start breaking down \the [src]."))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
-	return TRUE
+MSG_DEF_SELF(drop_pod/not_opened, span_warning("%T% hasn't been opened yet. Do that first."))
+MSG_DEF_SELF(drop_pod/breaking_down, span_notice("You start breaking down %T%."))
 
-/obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)
-	playsound(user, O.usesound, 50, 1)
+/obj/structure/drop_pod/proc/is_finished(datum/act/op/A)
+	return (finished) ? null : MSG(drop_pod/not_opened)
+
+/obj/structure/drop_pod/proc/wrench_act_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	playsound(A.actor, sounds_of(O).use, 50, 1)
 	replace_with(src, /obj/item/stack/material/plasteel, 10)
 
 /obj/structure/drop_pod/return_air()
@@ -153,6 +154,6 @@
 
 /datum/gas_mixture/pod_air/New()
 	. = ..()
-	set_temperature(T20C) // arena default is TCMB; set the intended initial temperature
+	heat_set(src, T20C) // arena default is TCMB; set the intended initial temperature
 	adjust_gas(GAS_O2, 21) // literal "oxygen" doesn't match LINDA gas IDs; GAS_O2 is "o2"
 	adjust_gas(GAS_N2, 79)

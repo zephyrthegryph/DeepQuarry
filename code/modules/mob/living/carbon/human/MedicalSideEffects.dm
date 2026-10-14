@@ -63,7 +63,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 	var/datum/medical_effect/new_effect = new prototype.type
 	new_effect.strength = strength
 	new_effect.start = life_tick
-	own_add(src, nameof(side_effects), new_effect)
+	rel_add(src, nameof(side_effects), new_effect)
 
 /// Reconcile once per Life cycle, and only when the reagent holder changed
 /// (BODY_DIRTY_CHEMS, consumed by dq_process_dirty_medical_conditions). The old architecture
@@ -71,7 +71,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
 	for(var/datum/medical_effect/active in side_effects)
 		if(active.cure(src))
-			own_remove(src, nameof(side_effects), active)
+			rel_remove(src, nameof(side_effects), active)
 	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]
@@ -86,22 +86,22 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 			add_side_effect(effect_name)
 
 /// Medication side effects, every 15 life ticks.
-/datum/om/stage/life/medical/proc/side_effects(mob/living/carbon/human/self)
-	if(!LAZYLEN(self.side_effects) || self.life_tick % 15 != 0)
+/mob/living/carbon/human/proc/life_medical_side_effects()
+	if(!LAZYLEN(src.side_effects) || src.life_tick % 15 != 0)
 		return 0
 
 	// One full cycle(in terms of strength) every 10 minutes
-	for (var/datum/medical_effect/M in self.side_effects)
+	for (var/datum/medical_effect/M in src.side_effects)
 		if (!M) continue
-		var/strength_percent = sin((self.life_tick - M.start) / 2)
+		var/strength_percent = sin((src.life_tick - M.start) / 2)
 
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
-			if (M.cure(self) || M.strength > 50)
-				own_remove(self, nameof(self.side_effects), M)
+			if (M.cure(src) || M.strength > 50)
+				own_remove(src, nameof(src.side_effects), M)
 			else
-				if(self.life_tick % 45 == 0)
-					M.on_life(self, strength_percent*M.strength)
+				if(src.life_tick % 45 == 0)
+					M.on_life(src, strength_percent*M.strength)
 				// Effect slowly growing stronger
 				M.strength+=0.08
 

@@ -2,7 +2,8 @@
 	name = "Spells"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "wiz_spell_ready"
-	// Our spell buttons are the spell_button_on relation: spell_buttons().
+	/// The buttons listed on this master (the other end of each button's `listed_on`). Read with spell_buttons().
+	var/list/atom/movable/screen/spell/button_list
 	var/showing = 0
 
 	var/open_state = "master_open"
@@ -13,12 +14,13 @@
 	/// The mob whose spells these are (a relation view; the mob owns us in spell_masters).
 	var/mob/spell_holder
 
-/// A spell button -> the spell master it is listed on. The master reads its buttons with
-/// spell_buttons(), a button its master with spell_master_of(). Either end going drops the edge;
-/// an emptied master deletes itself when next clicked.
-/datum/om/relation/spell_button_on
-	name = "spell button"
-	source_single = TRUE
+/// The buttons listed on this spell master.
+/atom/movable/screen/movable/spell_master/proc/spell_buttons() as /list
+	return button_list
+
+/// The spell master this button is listed on, or null.
+/atom/movable/screen/spell/proc/spell_master_of() as /atom/movable/screen/movable/spell_master
+	return listed_on
 
 // the mob owns us in its spell_masters list; we leave it in phase 2.
 // (Screen objects leave every client's screen in phase 5.)
@@ -35,7 +37,7 @@
 
 /atom/movable/screen/movable/spell_master/Click()
 	if(!length(spell_buttons()))
-		qdel(src)
+		spent(src)
 		return
 
 	toggle_open()
@@ -85,11 +87,12 @@
 	if(!spell) return
 
 	var/mob/spell_holder = spell_holder()
-	if(spell.connected_button) //we have one already, for some reason
-		if(spell.connected_button.spell_master_of() == src)
+	var/atom/movable/screen/spell/existing = spell.connected_button
+	if(existing) //we have one already, for some reason
+		if(existing.spell_master_of() == src)
 			return
 		else
-			om_link(spell.connected_button, src, /datum/om/relation/spell_button_on)
+			rel_set(existing, nameof(existing.listed_on), src)
 			if(spell_holder?.client)
 				toggle_open(2)
 			return
@@ -100,7 +103,7 @@
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
 	rel_set(newscreen, nameof(newscreen.spell), spell)
 
-	own_set(spell, nameof(spell.connected_button), newscreen)
+	rel_set(spell, nameof(spell.connected_button), newscreen)
 
 	if(!spell.override_base) //if it's not set, we do basic checks
 		if(spell.spell_flags & CONSTRUCT_CHECK)
@@ -110,7 +113,7 @@
 	else
 		newscreen.spell_base = spell.override_base
 	newscreen.name = spell.name
-	om_link(newscreen, src, /datum/om/relation/spell_button_on)
+	rel_set(newscreen, nameof(newscreen.listed_on), src)
 	newscreen.update_charge(1)
 	if(spell_holder?.client)
 		toggle_open(2) //forces the icons to refresh on screen
@@ -121,7 +124,7 @@
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)
 	else
-		qdel(src)
+		spent(src)
 
 /atom/movable/screen/movable/spell_master/proc/silence_spells(amount)
 	for(var/atom/movable/screen/spell/spell as anything in spell_buttons())
@@ -165,7 +168,8 @@
 	/// OM handle of the spell this button casts; read with spell().
 	var/datum/spell/spell
 	var/handle_icon_updates = 0
-	// The master we are listed on is the spell_button_on relation: spell_master_of().
+	/// The master this button is listed on: one end of a link, the master's button_list the other. Read with spell_master_of().
+	var/atom/movable/screen/movable/spell_master/listed_on
 
 	var/icon/last_charged_icon
 
@@ -177,7 +181,7 @@
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()
 	if(!spell)
-		qdel(src)
+		ended_with(src)
 		return
 
 	if((last_charge == spell.charge_counter || !handle_icon_updates) && !forced_update)
@@ -187,7 +191,7 @@
 
 	if(spell.charge_type == Sp_RECHARGE || spell.charge_type == Sp_CHARGES)
 		if(spell.charge_counter < spell.charge_max)
-			icon_state = "[spell_base]_spell_base"
+			set_icon_state("[spell_base]_spell_base")
 			if(spell.charge_counter > 0)
 				var/icon/partial_charge = icon(src.icon, "[spell_base]_spell_ready")
 				partial_charge.Crop(1, 1, partial_charge.Width(), round(partial_charge.Height() * spell.charge_counter / spell.charge_max))
@@ -199,11 +203,11 @@
 				cut_overlay(last_charged_icon)
 				last_charged_icon = null
 		else
-			icon_state = "[spell_base]_spell_ready"
+			set_icon_state("[spell_base]_spell_ready")
 			if(last_charged_icon)
 				cut_overlay(last_charged_icon)
 	else
-		icon_state = "[spell_base]_spell_ready"
+		set_icon_state("[spell_base]_spell_ready")
 
 	add_overlay(spell.hud_state)
 
@@ -213,11 +217,19 @@
 	if(spell.silenced)
 		overlays += "silence"
 
-/atom/movable/screen/spell/Click()
+CAPABILITIES(/atom/movable/screen/spell)
+	links(/atom/movable/screen/spell::listed_on, /atom/movable/screen/movable/spell_master::button_list, b_many = TRUE)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/spell/proc/click_input(datum/act/input/A)
+	return cast_with_actor(A.actor)
+
+/atom/movable/screen/spell/proc/cast_with_actor(mob/user)
 	var/datum/spell/spell = spell()
-	if(!usr || !spell)
-		qdel(src)
+	if(!user || !spell)
+		spent(src, user)
 		return
 
-	spell.perform(usr)
+	spell.perform(user)
 	update_charge(1)

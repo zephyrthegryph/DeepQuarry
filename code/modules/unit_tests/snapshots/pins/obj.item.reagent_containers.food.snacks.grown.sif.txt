@@ -1,0 +1,64 @@
+@obj.item.reagent_containers human|none
+@obj.item.reagent_containers robot|none
+@obj ai|none
+@obj.item.reagent_containers ghost|none
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/multitool
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/weldingtool
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/card/id
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj.item.reagent_containers human|/obj/item/kit
++1 menu: Grown item
++4 menu: Sif grown item
+@obj.item.reagent_containers human|/obj/item/storage
++1 menu: Grown item
++4 menu: Sif grown item
+@obj.item.reagent_containers human|/obj/item
+-click: nothing
++0 menu: Grown item
++3 menu: Sif grown item
++5 click: Click: Sif grown item
+@obj human|/obj/item/material/kitchen/utensil
++0 menu: Grown item
++4 menu: Sif grown item
+keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, grown_item, grown_self, grown_squash, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, sif_grown_item, slice, stuff, toggle_digestable, unwrap

@@ -45,19 +45,19 @@ GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_I
 		else
 			return "vanilla"
 
-DECLARE_REAGENTS(/obj/machinery/icecream_vat, 100, list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
-
 /obj/machinery/icecream_vat/Initialize(mapload)
 	. = ..()
 	while(length(product_types) < 6)
 		LAZYADD(product_types, 5)
 
-EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
-	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
-)
-
-DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
+CAPABILITIES(/obj/machinery/icecream_vat)
+	reagents(100, starts = list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
+	interface("IcecreamVat")
+	without("ui_open")
+	op("index_action", ui_act("index_action", arg("iceIndex", num())), then(PROC_REF(ui_act_index_action)))
+	op("make_type", ui_act("make_type", arg("amount", num()), arg("index", num())), then(PROC_REF(ui_act_make_type)))
+	op("clear_reagent", ui_act("clear_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_clear_reagent)))
+	op("icecream_vat_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(icecream_vat_interaction_item)))
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()
@@ -67,10 +67,8 @@ DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
 		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
-UI_DATA_REPLACE(/obj/machinery/icecream_vat, "merge:ui_data_obj_machinery_icecream_vat{current_flavor:text,icecrem_data:list,cone_data:list,reagent_data:list}")
-
-/// The computed part of /obj/machinery/icecream_vat's window data (declared on its UI_DATA row).
-/obj/machinery/icecream_vat/proc/ui_data_obj_machinery_icecream_vat(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/icecream_vat's window data.
+/obj/machinery/icecream_vat/ui_data(datum/act/eval/A)
 	var/list/reagent_data = list()
 	for(var/datum/reagent/current_reagent in reagents.reagent_list)
 		UNTYPED_LIST_ADD(reagent_data, list("name" = current_reagent.name, "volume" = current_reagent.volume, "id" = current_reagent.id))
@@ -82,15 +80,15 @@ UI_DATA_REPLACE(/obj/machinery/icecream_vat, "merge:ui_data_obj_machinery_icecre
 		"reagent_data" = reagent_data
 	)
 
-UI_ACT(/obj/machinery/icecream_vat, "index_action", ui_act_index_action, UI_ARG_NUM("iceIndex"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
-	var/index_action = params["iceIndex"]
+/obj/machinery/icecream_vat/proc/ui_act_index_action(datum/act/op/A, iceIndex)
+	var/mob/user = A.actor
+	var/index_action = iceIndex
 	if(index_action <= 0)
 		return FALSE
 	if(index_action < 5)
 		dispense_flavour = index_action
 		flavour_name = get_flavour_name(dispense_flavour)
-		visible_message(span_notice("[ui.user] sets [src] to dispense [flavour_name] flavoured icecream."))
+		act_message(user, src, MSG_SELF(span_notice("You set %T% to dispense [flavour_name] flavoured icecream.")), MSG_OTHERS(span_notice("%U% sets %T% to dispense [flavour_name] flavoured icecream.")))
 		return TRUE
 	if(index_action < 7)
 		var/cone_name = get_flavour_name(index_action)
@@ -98,36 +96,37 @@ UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
 			product_types[index_action] -= 1
 			var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
 			I.cone_type = cone_name
-			I.icon_state = "icecream_cone_[cone_name]"
+			I.set_icon_state("icecream_cone_[cone_name]")
 			I.desc = "Delicious [cone_name] cone, but no ice cream."
-			visible_message(span_info("[ui.user] dispenses a crunchy [cone_name] cone from [src]."))
+			act_message(user, src, MSG_SELF(span_info("You dispense a crunchy [cone_name] cone from %T%.")), MSG_OTHERS(span_info("%U% dispenses a crunchy [cone_name] cone from %T%.")))
 		else
-			to_chat(ui.user, span_warning("There are no [cone_name] cones left!"))
+			to_chat(user, span_warning("There are no [cone_name] cones left!"))
 	return TRUE
 
-UI_ACT(/obj/machinery/icecream_vat, "make_type", ui_act_make_type, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_make_type)
-	var/amount = params["amount"]
+/obj/machinery/icecream_vat/proc/ui_act_make_type(datum/act/op/A, amount_arg, index_arg)
+	var/mob/user = A.actor
+	var/amount = amount_arg
 	if(amount <= 0 || amount > 10)
 		return FALSE
-	var/index = params["index"]
+	var/index = index_arg
 	if(index <= 0 || index > 6)
 		return FALSE
-	make(ui.user, index, amount)
+	make(user, index, amount)
 	return TRUE
 
-UI_ACT(/obj/machinery/icecream_vat, "clear_reagent", ui_act_clear_reagent, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
-	var/reagent_id = params["id"]
+/obj/machinery/icecream_vat/proc/ui_act_clear_reagent(datum/act/op/A, id)
+	var/reagent_id = id
 	if(!reagent_id)
 		return FALSE
 	reagents.del_reagent(reagent_id)
 	return TRUE
 
 /// Old attackby.
-/obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(default_part_replacement(user, O))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(O, /obj/item/reagent_containers/food/snacks/icecream))
 		var/obj/item/reagent_containers/food/snacks/icecream/I = O
 		if(!I.ice_creamed)
@@ -141,10 +140,10 @@ UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
 				to_chat(user, span_warning("There is not enough icecream left!"))
 		else
 			to_chat(user, span_notice("[O] already has icecream in it."))
-		return 1
+		return OP_OK
 	else if(O.is_open_container())
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/machinery/icecream_vat/proc/make(mob/user, make_type, amount)
 	for(var/R in get_ingredient_list(make_type))
@@ -173,7 +172,8 @@ UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
 	var/ice_creamed = 0
 	var/cone_type
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/icecream, 20, list(REAGENT_ID_NUTRIMENT = 5))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/icecream)
+	configure(reagents(volume = 20, add = list(REAGENT_ID_NUTRIMENT = 5)))
 
 /obj/item/reagent_containers/food/snacks/icecream/proc/add_ice_cream(flavour_name)
 	name = "[flavour_name] icecream"

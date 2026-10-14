@@ -8,27 +8,14 @@
 	var/heat_power = BUNSEN_HEAT_POWER
 	var/obj/item/reagent_containers/held_container
 
-OM_FIELD(/obj/machinery/bunsen_burner, heating, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/bunsen_burner/var/heating = FALSE
+TRACKED(/obj/machinery/bunsen_burner, heating)
 /// Boils its container while heating (start_boiling() .. end_boil()).
-DECLARE_PERIODIC_WHILE(/obj/machinery/bunsen_burner, MACHINE_PIPELINE, "heating")
-
 // The holder resizes to match the boiling container.
-DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/distilling)
 
-/obj/machinery/bunsen_burner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/bunsen_burner_place_container,
-		/datum/interaction/machine_hand/bunsen_burner_remove_container,
-	)
-	..()
-
-/datum/interaction/machine_item/bunsen_burner_place_container
-	id = "bunsen_burner_place_container"
-	name = "Place container"
-	held_type = /obj/item
-	effect = /obj/machinery/bunsen_burner/proc/interaction_place_container
-
-/obj/machinery/bunsen_burner/proc/interaction_place_container(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/bunsen_burner/proc/interaction_place_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	add_fingerprint(user)
 	// Handle container
 	if(!istype(W, /obj/item/reagent_containers))
@@ -41,48 +28,30 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 		to_chat(user, span_notice("You must remove \the [held_container] before you can place another container on \the [src]."))
 		return TRUE
 	// A new hand touches the beacon
-	if(!own_set(src, nameof(src.held_container), W, user = user))
+	if(!move_into(src, nameof(src.held_container), W, user))
 		return TRUE
 	reagents.maximum_volume = held_container.reagents.maximum_volume // Update internal reagent distilling volume
 	to_chat(user, span_notice("You put \the [held_container] onto \the [src]."))
 	if(held_container.reagents.total_volume > 0)
 		start_boiling()
-	else
-		update_icon()
 	return TRUE
 
-/obj/machinery/bunsen_burner/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. != ITEM_INTERACT_SUCCESS)
-		return .
-	if(!anchored)
-		drop_held_container()
-		if(heating)
-			end_boil()
-	return .
+/// When the crowbar does nothing (the click is used up, nothing is said).
+/obj/machinery/bunsen_burner/proc/crowbar_refusal(datum/act/op/A)
+	return read_once(!panel_open || !isturf(loc)) ? "no" : null
 
-/obj/machinery/bunsen_burner/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/bunsen_burner/proc/crowbar_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
-	if(!panel_open || !isturf(loc))
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 5, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
+/obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	drop_held_container()
 	to_chat(user, span_notice("You disassemble \the [src]."))
 	replace_with(src, /obj/item/stack/material/steel, 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/datum/interaction/machine_hand/bunsen_burner_remove_container
-	id = "bunsen_burner_remove_container"
-	name = "Remove container"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/bunsen_burner/proc/interaction_remove_container
-
-/obj/machinery/bunsen_burner/proc/interaction_remove_container(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bunsen_burner/proc/interaction_remove_container(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!held_container)
 		to_chat(user, span_notice("There is nothing on \the [src]."))
@@ -92,13 +61,12 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	to_chat(user, span_notice("You remove \the [held_container] from \the [src]."))
 	held_container.forceMove(get_turf(src))
 	held_container.attack_hand(user) // Pick it up
-	own_take(src, nameof(held_container))
+	rel_take(src, nameof(held_container))
 
 	// Removed beaker, so kill processing
 	if(heating)
 		end_boil()
 		return TRUE
-	update_icon()
 	return TRUE
 
 /obj/machinery/bunsen_burner/proc/start_boiling()
@@ -113,16 +81,26 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
-	update_icon()
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)
 		return
 	held_container.forceMove(get_turf(src))
-	own_take(src, nameof(held_container))
+	rel_take(src, nameof(held_container))
 
 /// Boils its container; runs while heating (declared).
-/obj/machinery/bunsen_burner/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/bunsen_burner)
+	owns_one(nameof(held_container), /obj/item/reagent_containers)
+	op("place_container", item(/obj/item), label("Place container"), then(PROC_REF(interaction_place_container)))
+	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
+	reagents(1, holder = /datum/reagents/distilling)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(crowbar_refusal), silent = TRUE)), starts(PROC_REF(crowbar_started)), wait(5), then(PROC_REF(crowbar_act_tool_done)))
+	extend("machine_anchor", then(PROC_REF(rewrenched)))
+	extend("machine_unanchor", then(PROC_REF(rewrenched)))
+
+/obj/machinery/bunsen_burner/proc/work_step(datum/act/timer/A)
 	if(held_container && !anchored)
 		drop_held_container()
 		end_boil()
@@ -139,9 +117,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 
 	// Slosh and toss. We use an internal distilling container, react it in there, then pass it back.
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
-	if(reagents.handle_reactions())
-		held_container.update_icon()
-		update_icon()
+	reagents.handle_reactions()
 	reagents.trans_to_obj(held_container, reagents.total_volume)
 
 	// every 25 degree step, do a message to show we are working
@@ -172,18 +148,17 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 		vg_heat_body_power(heat_body, 0)
 		vg_heat_body_keep(heat_body, FALSE)
 	visible_message(span_notice("\The [src] clicks."))
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/bunsen_burner/appearance_overlays()
-	. = list()
-	icon_state = "bunsen0"
+/// The burner, what sits on it, and the flame while it heats.
+/obj/machinery/bunsen_burner/draw(datum/look/look)
+	..()
+	look.state("bunsen0")
 	if(held_container)
-		var/image/I = image("icon"=held_container)
-		. += I
+		look.watch(held_container) // the sprite it draws of the container follows the container's own fill
+		look.watch(held_container.reagents)
+		look.overlay(image("icon" = held_container))
 	if(heating)
-		var/image/I = image(icon, icon_state = "bunsen1", layer = layer+0.1)
-		. += I
+		look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))
 
 /obj/machinery/bunsen_burner/examine(mob/user, infix, suffix)
 	. = ..()
@@ -201,6 +176,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appea
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
-/obj/machinery/bunsen_burner/ownership()
-	. = ..()
-	. += owns(nameof(held_container), policy = OWN_CONTAINED)
+/// After the base wrench: an unsecured burner lets go of its container and stops boiling.
+/obj/machinery/bunsen_burner/proc/rewrenched(datum/act/op/A)
+	if(!anchored)
+		drop_held_container()
+		if(heating)
+			end_boil()

@@ -1,0 +1,39 @@
+@obj.machinery.door human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery.door human|/obj/item/tool/screwdriver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Crowbar shut
+human|/obj/item/tool/crowbar menu: Open
+human|/obj/item/tool/crowbar click: Click: Crowbar shut
+@obj.machinery.door human|/obj/item/tool/wrench
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.door human|/obj/item/tool/wirecutters
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.door human|/obj/item/multitool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Open
+human|/obj/item/weldingtool menu: Repair (refused: It's already in good condition.)
+human|/obj/item/weldingtool click: Click: Repair
+human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil click: Click: Open
+@obj.machinery.door human|/obj/item/stack/material/steel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Open
+human|/obj/item/card/id click: Click: Open
+@obj.machinery.door human|/obj/item
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+@obj human|/obj/item/melee/energy/blade
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+keys: crowbar_shut, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pry_out, robot_remote_blocked, shred, silicon_hand, slice, strike, weld_repair

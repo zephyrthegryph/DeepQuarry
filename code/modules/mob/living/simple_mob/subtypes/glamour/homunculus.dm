@@ -15,6 +15,7 @@
 	min_co2 = 0
 	max_co2 = 0
 	min_n2 = 0
+	draws_life_state = FALSE
 	max_n2 = 0
 	minbodytemp = 0
 
@@ -22,10 +23,9 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/homunculus/replace_death(gibbed)
-	qdel(src)
+	consume(src)
 	return TRUE
 
-APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 
 /mob/living/simple_mob/homunculus/update_icons()
 	return
@@ -43,11 +43,8 @@ APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 	melee_damage_upper = 7
 
 
-/datum/om/stage/life/type_pre/simple_mob/homunculus/evil
-	of = /mob/living/simple_mob/homunculus/evil
-
-/datum/om/stage/life/type_pre/simple_mob/homunculus/evil/perform(mob/living/simple_mob/homunculus/evil/self, datum/om/frame/life/ctx)
-	self.handle_homunculus()
+/mob/living/simple_mob/homunculus/evil/life_type_pre(datum/seq_frame/life/F)
+	src.handle_homunculus()
 	return ..()
 
 /mob/living/simple_mob/homunculus/evil/proc/handle_homunculus()
@@ -58,7 +55,7 @@ APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 			name = H.name
 			desc = H.desc
 			icon = H.icon
-			icon_state = H.icon_state
+			set_icon_state(H.icon_state)
 			copy_overlays(H, TRUE)
 			resize(H.size_multiplier, ignore_prefs = TRUE)
 			var/obj/item/A = H.get_active_hand()
@@ -79,7 +76,7 @@ APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 					projectile_dispersion = 8
 					projectile_accuracy = -40
 				if(istype(A,/obj/item/gun/projectile/automatic) || istype(I,/obj/item/gun/projectile/automatic))
-					base_attack_cooldown = 5
+					set_base_attack_cooldown(5)
 					projectile_dispersion = 7
 					projectile_accuracy = -20
 				if(istype(A,/obj/item/gun/projectile/heavysniper) || istype(I,/obj/item/gun/projectile/heavysniper))

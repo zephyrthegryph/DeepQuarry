@@ -62,7 +62,7 @@
 			var/pull_up_time = max((3 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 			to_chat(src, span_notice("You start diving underwater..."))
 			src.audible_message(span_notice("[src] begins to dive under the water."), runemessage = "splish splosh")
-			om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the sea floor.", fail_message = span_warning("You stopped swimming downwards."))
+			zmove_timed(pull_up_time, direction, start, destination, "You reach the sea floor.", span_warning("You stopped swimming downwards."))
 			return 0
 
 		else if(!destination.CanZPass(src, direction)) // one for the down and non-special case
@@ -84,14 +84,14 @@
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
 				to_chat(src, span_notice("You grab \the [lattice] and start pulling yourself upward..."))
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
+				zmove_timed(pull_up_time, direction, start, destination, "You pull yourself up.", span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			else if(isdiveablewater(destination))
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 				to_chat(src, span_notice("You start swimming upwards..."))
 				src.audible_message(span_notice("[src] begins to swim towards the surface."), runemessage = "splish splosh")
-				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the surface.", fail_message = span_warning("You stopped swimming upwards."))
+				zmove_timed(pull_up_time, direction, start, destination, "You reach the surface.", span_warning("You stopped swimming upwards."))
 				return 0
 
 			else if(catwalk?.hatch_open)
@@ -103,7 +103,7 @@
 					to_chat(src, span_notice("There's something in the way up above in that direction, try another."))
 					return 0
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
+				zmove_timed(pull_up_time, direction, start, destination, "You pull yourself up.", span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			// Explicit check if the destination turf allows full passing
@@ -113,7 +113,7 @@
 
 			else if(isliving(src)) // . Are they a mob, and are they currently flying??
 				var/mob/living/H = src
-				if(H.flying)
+				if(stat_value(H, STAT_FLYING))
 					if(H.incapacitated(INCAPACITATION_ALL))
 						to_chat(src, span_notice("You can't fly in your current state."))
 						H.stop_flying() //Should already be done, but just in case.
@@ -121,7 +121,7 @@
 					var/fly_time = max(7 SECONDS + (H.movement_delay() * 10), 1) //So it's not too useful for combat. Could make this variable somehow, but that's down the road.
 					to_chat(src, span_notice("You begin to fly upwards..."))
 					H.audible_message(span_notice("[H] begins to flap \his wings, preparing to move upwards!"), runemessage = "flap flap")
-					om_task_start(/datum/om/task/timed/zmove, H, null, duration = fly_time, direction = direction, start = start, destination = destination, done_message = "You fly upwards.", needs_flight = TRUE, fail_message = span_warning("You stopped flying upwards."))
+					H.zmove_timed(fly_time, direction, start, destination, "You fly upwards.", span_warning("You stopped flying upwards."), TRUE)
 					return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
@@ -133,26 +133,28 @@
 
 	return zmove_finish(direction, start, destination)
 
-/// A timed z-move: diving, climbing, swimming or flying from `start` to `destination`.
-/datum/om/task/timed/zmove
-	complete_proc = /mob/proc/zmove_timed_done
-	var/direction
-	var/turf/start
-	var/turf/destination
-	var/done_message
-	/// Flying up: the mob must still be flying at the end.
-	var/needs_flight = FALSE
+/// A timed z-move: diving, climbing, swimming or flying from `start` to `destination`. It is the "zmove" op of the mob (mob_defines.dm): the time and
+/// both messages are the ones the movement worked out, and a flight has to last to the end.
+/mob/proc/zmove_timed(duration, direction, turf/start, turf/destination, done_message, fail_message, needs_flight = FALSE)
+	perform_op(src, src, "zmove", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = duration, "direction" = direction, "start" = start, "destination" = destination, "done" = done_message, "failed" = fail_message, "flight" = needs_flight))
+
+/mob/proc/zmove_time(datum/act/op/A)
+	return A.arg("time")
+
+/// A timed z-move was interrupted: the mob is told.
+/mob/proc/zmove_timed_failed(datum/act/op/A)
+	to_chat(src, A.arg("failed"))
 
 /// A timed z-move completed: move.
-/mob/proc/zmove_timed_done(datum/om/task/timed/zmove/task)
-	if(task.needs_flight)
+/mob/proc/zmove_timed_done(datum/act/op/A)
+	if(A.arg("flight"))
 		var/mob/living/H = src
-		if(!istype(H) || !H.flying)
+		if(!istype(H) || !stat_value(H, STAT_FLYING))
 			to_chat(src, span_warning("You stopped flying upwards."))
 			return
-	to_chat(src, span_notice(task.done_message))
-	var/direction = task.direction
-	if(zmove_finish(direction, task.start, task.destination))
+	to_chat(src, span_notice(A.arg("done")))
+	var/direction = A.arg("direction")
+	if(zmove_finish(direction, A.arg("start"), A.arg("destination")))
 		to_chat(src, span_notice(direction == UP ? "You move upwards." : "You move down."))
 
 /// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.
@@ -241,7 +243,7 @@
 	if(dq_get_hovering(src) || is_incorporeal())
 		return TRUE
 
-	if(flying) // . Allows movement up/down with wings.
+	if(stat_value(src, STAT_FLYING)) // . Allows movement up/down with wings.
 		return TRUE
 
 	if(Process_Spacemove())
@@ -322,20 +324,20 @@
 	// . Flight on mobs.
 	if(isliving(src))
 		var/mob/living/L = src // . Flight on mobs.
-		if(L.flying) //Some other checks are done in the wings_toggle proc
-			if(L.nutrition > 0.5)
+		if(stat_value(L, STAT_FLYING)) //Some other checks are done in the wings_toggle proc
+			if(nutrition_of(L) > 0.5)
 				L.adjust_nutrition(-0.5) //You use up -0.5 nutrition per TILE and tick of flying above open spaces. If people wanna flap their wings in the hallways, shouldn't penalize them for it.
 			if(L.incapacitated(INCAPACITATION_ALL))
 				L.stop_flying()
 				//Just here to see if the person is KO'd, stunned, etc. If so, it'll move onto can_fall.
-			else if(L.nutrition < 300 && L.nutrition > 299.4) //290 would be risky, as metabolism could mess it up. Let's do 289.
+			else if(nutrition_of(L) < 300 && nutrition_of(L) > 299.4) //290 would be risky, as metabolism could mess it up. Let's do 289.
 				to_chat(L, span_danger("You are starting to get fatigued... You probably have a good minute left in the air, if that. Even less if you continue to fly around! You should get to the ground soon!")) //Ticks are, on average, 3 seconds. So this would most likely be 90 seconds, but lets just say 60.
 				L.adjust_nutrition(-0.5)
 				return
-			else if(L.nutrition < 100 && L.nutrition > 99.4)
+			else if(nutrition_of(L) < 100 && nutrition_of(L) > 99.4)
 				to_chat(L, span_danger("You're seriously fatigued! You need to get to the ground immediately and eat before you fall!"))
 				return
-			else if(L.nutrition < 10) //Should have listened to the warnings!
+			else if(nutrition_of(L) < 10) //Should have listened to the warnings!
 				to_chat(L, span_danger("You lack the strength to keep yourself up in the air..."))
 				L.stop_flying()
 			else
@@ -594,14 +596,14 @@
 		if(has_trait(src, TRAIT_HEAVY_LANDING))
 			for(var/i = 1 to 10)
 				injure(INJURY_BLUNT, rand((damage_min * 2), (damage_max * 2)), ran_zone(), landing)
-			status_at_least(EFFECT_WEAKENED, 20)
+			status_at_least(STAT_WEAKENED, 20)
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()
 		else
 			for(var/i = 1 to 10)
 				injure(INJURY_BLUNT, rand(damage_min, damage_max), ran_zone(), landing)
-			status_at_least(EFFECT_WEAKENED, 4)
+			status_at_least(STAT_WEAKENED, 4)
 	// There is really no situation where smacking into a floor and possibly dying horribly would NOT result in you dropping your remote view... It's also safer then assuming they should persist.
 	reset_perspective()
 
@@ -657,7 +659,7 @@
 	if(lattice)
 		// Lattices seem a bit too flimsy to hold up a massive exosuit.
 		lattice.visible_message(span_danger("\The [lattice] collapses under the weight of \the [src]!"))
-		qdel(lattice)
+		destroyed(lattice, src, BRUTE)
 
 	// Then call parent to have us actually fall
 	return ..()
@@ -667,7 +669,7 @@
 	for(var/mob/living/L in contents_of(hit_atom))
 		act_message(src, L, others = span_danger("%U% crushes %T% as it lands on them!"))
 		L.injure(INJURY_BLUNT, rand(70, 100), null, src)
-		L.status_at_least(EFFECT_WEAKENED, 8)
+		L.status_at_least(STAT_WEAKENED, 8)
 
 	var/turf/landing = get_turf(hit_atom)
 
@@ -703,7 +705,7 @@
 	else
 		for(var/atom/movable/A in contents_of(src))
 			A.fall_impact(hit_atom, damage_min, damage_max, silent = TRUE)
-		qdel(src)
+		destroyed(src, null, BRUTE)
 
 	// And hurt the floor.
 	if(istype(hit_atom, /turf/simulated/floor))
@@ -732,7 +734,7 @@
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 
-	if(om_wants(src, /datum/om/event/before/falling_down) && om_emit(src, new /datum/om/event/before/falling_down(landing, drop_mob)) == EVENT_VETO)
+	if(guard(src, GUARD_FALL, drop_mob, null, landing))
 		return
 
 	if(drop_mob && drop_mob != src)
@@ -748,8 +750,8 @@
 
 		forceMove(get_turf(drop_mob))
 		if(!safe_fall)
-			drop_mob.status_at_least(EFFECT_WEAKENED, 8)
-			status_at_least(EFFECT_WEAKENED, 8)
+			drop_mob.status_at_least(STAT_WEAKENED, 8)
+			status_at_least(STAT_WEAKENED, 8)
 			play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 			var/tdamage
 			for(var/i = 1 to 5)	//Twice as less damage because cushioned fall, but both get damaged.
@@ -794,7 +796,7 @@
 
 	//Checking if there's any point trying to climb
 	var/turf/above_wall = GetAbove(src)
-	if(L.nutrition <= nutrition_cost)
+	if(nutrition_of(L) <= nutrition_cost)
 		to_chat(L, span_warning("You [HAS_SYNTHETIC_BIOLOGY(L) ? "lack the energy" : "are too hungry"] for such strenous activities!"))
 		return
 	if(!above_wall) //No multiZ
@@ -824,22 +826,22 @@
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
-		if(H.can_climb || H.species.can_climb)
+		if(movement_of(H).can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k824", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+			var/sure = rerun_ask(H, "k824", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 			if(isnull(sure))
 				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
-	else if(!L.can_climb)
-		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+	else if(!movement_of(L).can_climb)
+		var/sure = rerun_ask(L, "k829", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return
 		if(!sure || sure == "Stay grounded") return
@@ -852,7 +854,7 @@
 	if(istype(L, /mob/living/simple_mob/vore/alienanimals/catslug))
 		var/obj/O = L.get_active_hand()
 		if(istype(O, /obj/item/material/twohanded/spear))
-			var/choice = rerun_ask(L, "k840", PROC_REF(climb_wall), args, /datum/om/prompt/choice/alert, message = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"))
+			var/choice = rerun_ask(L, "k840", PROC_REF(climb_wall), args, /datum/prompt/choice, question = "Use your spear to climb faster? This will drop and break it!", title = "Scug Tactics", choices = list("Yes!", "No"), buttons = TRUE)
 			if(isnull(choice))
 				return
 			if(choice == "Yes!")
@@ -878,10 +880,10 @@
 		if(climbing_delay_min > 1.0)
 			climb_time += 2.5 SECONDS
 
-	if(L.nutrition >= 100 && L.nutrition <= 200)
+	if(nutrition_of(L) >= 100 && nutrition_of(L) <= 200)
 		to_chat(L, span_notice("Climbing while [HAS_SYNTHETIC_BIOLOGY(L) ? "low on power" : "hungry"] slows you down"))
 		climb_time += 1 SECONDS
-	else if(L.nutrition >= nutrition_cost && L.nutrition < 100)
+	else if(nutrition_of(L) >= nutrition_cost && nutrition_of(L) < 100)
 		to_chat(L, span_danger("You [HAS_SYNTHETIC_BIOLOGY(L) ? "lack enough power" : "are too hungry"] to climb safely!"))
 		climb_time +=3 SECONDS
 		if(fall_chance < 30)
@@ -890,47 +892,44 @@
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
+	perform_op(L, L, "climb_wall", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = src, "time" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/datum/om/task/timed/simulated_climb_wall
-	complete_proc = /turf/simulated/proc/climb_wall_done
-	cancel_proc = /turf/simulated/proc/climb_wall_interrupted
-	var/turf/above_mob
-	var/turf/above_wall
-	var/fall_chance
-	var/drop_our_held
-	var/nutrition_cost
-	var/fall_at
+/// How long the climb takes: what the one climbing worked out.
+/mob/living/proc/climb_time_of(datum/act/op/A)
+	return A.arg("time")
 
-/turf/simulated/proc/climb_wall_done(datum/om/task/timed/simulated_climb_wall/task)
-	var/mob/living/L = task.actor
-	var/turf/above_mob = task.above_mob
-	var/turf/above_wall = task.above_wall
-	var/fall_chance = task.fall_chance
-	var/drop_our_held = task.drop_our_held
-	var/nutrition_cost = task.nutrition_cost
+/// The top of the wall, or a fall back to where the climb began.
+/mob/living/proc/climb_wall_done(datum/act/op/A)
+	var/turf/simulated/wall = A.arg("wall")
+	var/turf/above_mob = A.arg("above_mob")
+	var/turf/above_wall = A.arg("above_wall")
+	var/fall_chance = A.arg("fall_chance")
+	var/drop_our_held = A.arg("drop_held")
+	var/nutrition_cost = A.arg("nutrition_cost")
+	if(QDELETED(wall))
+		return
 	if(prob(fall_chance))
-		L.forceMove(above_mob)
-		act_message(L, src, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
+		forceMove(above_mob)
+		act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
 			blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 	else
 		if(drop_our_held)
-			L.drop_item(get_turf(L))
-		L.forceMove(above_wall)
-		act_message(L, src, others = span_infoplain(span_bold("%U%") + " climbed up on " + span_bold("%T%")),	\
-			self = span_notice("You successfully scaled " + span_bold("%T%")),	\
+			drop_item(get_turf(src))
+		forceMove(above_wall)
+		act_message(src, wall, others = span_infoplain(span_bold("%U%") + " climbed up on " + span_bold("%T%")), \
+			self = span_notice("You successfully scaled " + span_bold("%T%")), \
 			blind = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
-	L.adjust_nutrition(-nutrition_cost)
+	adjust_nutrition(-nutrition_cost)
 
 /// Interrupted past the grace time: the climber falls.
-/turf/simulated/proc/climb_wall_interrupted(datum/om/task/timed/simulated_climb_wall/task)
-	var/mob/living/L = task.actor
-	var/turf/above_mob = task.above_mob
-	var/fall_at = task.fall_at
-	if(!L || ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
+/mob/living/proc/climb_wall_interrupted(datum/act/op/A)
+	var/turf/simulated/wall = A.arg("wall")
+	var/turf/above_mob = A.arg("above_mob")
+	var/fall_at = A.arg("fall_at")
+	if(QDELETED(wall) || ELAPSED_SINCE(wall, fall_at, CLOCK_WORLD) <= 0)
 		return
-	L.forceMove(above_mob)
-	act_message(L, src, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
+	forceMove(above_mob)
+	act_message(src, wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), self = span_danger("You slipped off " + span_bold("%T%")), \
 		blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 
 /mob/living/verb/climb_down()
@@ -945,7 +944,7 @@
 
 
 	//Check if we can even try to climb
-	if(nutrition <= nutrition_cost)
+	if(nutrition_of(src) <= nutrition_cost)
 		to_chat(src, span_warning("You [HAS_SYNTHETIC_BIOLOGY(src) ? "lack the energy" : "are too hungry"] for such strenous activities!"))
 		return
 	var/turf/below_wall = GetBelow(our_turf)
@@ -976,22 +975,22 @@
 			climbing_delay_min = H.species.climbing_delay
 		var/list/gear = list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM),
 		H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES), H.get_equipped_item(SLOT_ID_BELT), H.get_active_hand(), H.get_inactive_hand())
-		if(H.can_climb || H.species.can_climb)
+		if(movement_of(H).can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
 		if(!permit_human)
-			var/sure = rerun_ask(H, "k951", VERB_REF(climb_down), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+			var/sure = rerun_ask(H, "k951", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 			if(isnull(sure))
 				return
 			if(!sure || sure == "Stay grounded") return
 			fall_chance = clamp(100 - H.species.agility, 40, 90) //This should be 80 for most species. Traceur would reduce to 10%, so clamping higher
 	//If not a human mob, must be simple or silicon. They got a var stored on their mob we can check
-	else if(!src.can_climb)
-		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"))
+	else if(!movement_of(src).can_climb)
+		var/sure = rerun_ask(src, "k956", VERB_REF(climb_down), args, /datum/prompt/choice, question = "Are you sure you want to try without tools? It's VERY LIKELY you will fall and get hurt. More agile species might have better luck", title = "Second Thoughts", choices = list("Bring it!", "Stay grounded"), buttons = TRUE)
 		if(isnull(sure))
 			return
 		if(!sure || sure == "Stay grounded") return
@@ -1020,10 +1019,10 @@
 			climb_time += 10 SECONDS
 		if(climbing_delay_min > 1.0)
 			climb_time += 2.5 SECONDS
-	if(nutrition >= 100 && nutrition <= 200)
+	if(nutrition_of(src) >= 100 && nutrition_of(src) <= 200)
 		to_chat(src, span_notice("Climbing while [HAS_SYNTHETIC_BIOLOGY(src) ? "low on power" : "hungry"] slows you down"))
 		climb_time += 1 SECONDS
-	else if(nutrition >= nutrition_cost && nutrition < 100)
+	else if(nutrition_of(src) >= nutrition_cost && nutrition_of(src) < 100)
 		to_chat(src, span_danger("You [HAS_SYNTHETIC_BIOLOGY(src) ? "lack enough power" : "are too hungry"] to climb safely!"))
 		climb_time +=3 SECONDS
 		if(fall_chance < 30)
@@ -1033,30 +1032,21 @@
 		to_chat(src, span_danger("\The [climbing_surface] is not suitable for climbing! Even for a master climber, this is risky!"))
 		if(fall_chance < 75 )
 			fall_chance = 75
-	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climb down " + span_bold("%T%")),	\
+	act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climb down " + span_bold("%T%")), \
+		\
 		self = span_infoplain("You begin to descend " + span_bold("%T%")), 	\
 		blind = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
+	perform_op(src, src, "climb_down", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("time" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_at" = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time))
 
-/datum/om/task/timed/living_climb_down
-	complete_proc = /mob/living/proc/climb_down_done
-	cancel_proc = /mob/living/proc/climb_down_interrupted
-	var/turf/front_of_us
-	var/turf/destination
-	var/turf/below_wall
-	var/fall_chance
-	var/nutrition_cost
-	var/fall_at
-
-/mob/living/proc/climb_down_done(datum/om/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/destination = task.destination
-	var/turf/below_wall = task.below_wall
-	var/fall_chance = task.fall_chance
-	var/nutrition_cost = task.nutrition_cost
+/mob/living/proc/climb_down_done(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/destination = A.arg("destination")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_chance = A.arg("fall_chance")
+	var/nutrition_cost = A.arg("nutrition_cost")
 	if(prob(fall_chance))
 		src.forceMove(front_of_us)
 		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " falls off " + span_bold("%T%")), \
@@ -1064,16 +1054,16 @@
 			blind = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 	else
 		src.forceMove(destination)
-		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climbed down on " + span_bold("%T%")),	\
-			self = span_notice("You successfully descended " + span_bold("%T%")),	\
+		act_message(src, below_wall, others = span_infoplain(span_bold("%U%") + " climbed down on " + span_bold("%T%")), \
+			self = span_notice("You successfully descended " + span_bold("%T%")), \
 			blind = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
 	adjust_nutrition(-nutrition_cost)
 
 /// Interrupted past the grace time: the climber falls.
-/mob/living/proc/climb_down_interrupted(datum/om/task/timed/living_climb_down/task)
-	var/turf/front_of_us = task.front_of_us
-	var/turf/below_wall = task.below_wall
-	var/fall_at = task.fall_at
+/mob/living/proc/climb_down_interrupted(datum/act/op/A)
+	var/turf/front_of_us = A.arg("front_of_us")
+	var/turf/below_wall = A.arg("below_wall")
+	var/fall_at = A.arg("fall_at")
 	if(ELAPSED_SINCE(src, fall_at, CLOCK_WORLD) <= 0)
 		return
 	src.forceMove(front_of_us)

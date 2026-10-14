@@ -62,15 +62,18 @@
 	return 0
 
 
-TOPIC_ACTION(/datum/event2/meta, "force", PROC_REF(topic_force), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
-TOPIC_ACTION(/datum/event2/meta, "toggle", PROC_REF(topic_toggle), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/event2/meta)
+	op("force", topic("force"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_force)))
+	op("toggle", topic("toggle"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_toggle)))
 
-/datum/event2/meta/proc/topic_force(mob/user, list/args)
+/datum/event2/meta/proc/topic_force(datum/act/op/A)
+	var/mob/user = A.actor
 	// SSevent_ticker.start_event(event_type) // We don't use SSgame_master yet.
 	message_admins("Event '[name]' was forced by [user.key].")
 	return TRUE
 
-/datum/event2/meta/proc/topic_toggle(mob/user, list/args)
+/datum/event2/meta/proc/topic_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	enabled = !enabled
 	message_admins("Event '[name]' was toggled [enabled ? "on" : "off"] by [user.key].")
 	return TRUE

@@ -16,22 +16,16 @@
 
 	slowdown = 0.5
 
-	reach = 2
 
 	default_material = MAT_CLOTH
-
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
 TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/passive/fish))
 
-/obj/item/material/fishing_net/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/material/fishing_net/afterattack(atom/A, mob/user, proximity)
-	if(get_dist(get_turf(src), A) > reach)
+	if(get_dist(get_turf(src), A) > combat_of(src).reach)
 		return
 
 	if(istype(A, /turf))
@@ -57,70 +51,68 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 		var/mob/L = A
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
-		update_icon()
 		update_weight()
 		return
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
-	INTERACT_SELF("Empty", PROC_REF(fishing_net_self)), \
-	INTERACT_ITEM(null, PROC_REF(fishing_net_item)), \
-)
+CAPABILITIES(/obj/item/material/fishing_net)
+	configure(item_combat(reach = 2))
+	slot(CONTAINER_SLOT_NET)
+	op("fishing_net_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(fishing_net_self)))
+	op("fishing_net_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing net item"), then(PROC_REF(fishing_net_item)))
 
 /// Old attack_self: empty the net. Subtypes with special_handling fall through.
-/obj/item/material/fishing_net/proc/fishing_net_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/fishing_net/proc/fishing_net_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	for(var/mob/M in contents_of(src))
 		M.forceMove(get_turf(src))
 		act_message(user, M, MSG_SELF(span_notice("You release %T% from \the [src].")), MSG_OTHERS(span_notice("%U% releases %T% from \the [src].")))
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	update_icon()
 	update_weight()
-	return TRUE
+	return OP_OK
 
 /// Old attackby: a trapped creature may take the hit; then falls through as its ..() did.
-/obj/item/material/fishing_net/proc/fishing_net_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/material/fishing_net/proc/fishing_net_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(contents)
 		for(var/mob/living/L in contents)
 			if(prob(25))
 				L.attackby(W, user)
+	return OP_DECLINE
+
+/// The net, empty or with the creatures it holds (named and described by them).
+/obj/item/material/fishing_net/draw(datum/look/look)
+	..()
+	look.identity(name = initial(name), desc = initial(desc))
+	var/trapped = 0
+	for(var/mob/M as anything in look.things_in(src, CONTAINER_SLOT_NET, /mob))
+		look_trapped(look, M)
+		trapped++
+	look.state(trapped ? contain_state : empty_state)
+
+/// One creature in the net: seen through the mesh, and the net named for it.
+/obj/item/material/fishing_net/proc/look_trapped(datum/look/look, mob/M)
+	look.underlay(look_overlay_image(M.icon, M.icon_state))
+	look.identity(name = "filled net", desc = "A net with [M] inside.")
+
+/// TRUE while a creature is in the net.
+/obj/item/material/fishing_net/proc/holds_creature()
+	for(var/mob/M in contents_of(src))
+		return TRUE
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/fishing_net/appearance_overlays() // Also updates name and desc
-	. = list()
-	underlays.Cut()
-
-	. += ..()
-
-	name = initial(name)
-	desc = initial(desc)
-	var/contains_mob = FALSE
-	for(var/mob/M in contents_of(src))
-		var/image/victim = image(M.icon, M.icon_state)
-		underlays += victim
-		name = "filled net"
-		desc = "A net with [M] inside."
-		contains_mob = TRUE
-
-	if(contains_mob)
-		icon_state = contain_state
-
-	else
-		icon_state = empty_state
-
-	return .
-
 /obj/item/material/fishing_net/proc/update_weight()
-	if(icon_state == contain_state)	// Let's not do a for loop just to see if a mob is in here.
+	if(holds_creature())
 		slowdown = initial(slowdown) * 2
-		reach = 1
+		set_reach(1)
 	else
 		slowdown = initial(slowdown)
-		reach = initial(reach)
+		set_reach(combat_of_type(type).reach)
 
 /obj/item/material/fishing_net/butterfly_net
 	name = "butterfly net"
@@ -135,17 +127,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, app
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLUDGEON
 
-	reach = 1
 
 	default_material = MAT_CLOTH
-
 
 	special_handling = TRUE
 
 TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/sif/glitterfly, /mob/living/carbon/human))
 
 /obj/item/material/fishing_net/butterfly_net/afterattack(atom/A, mob/user, proximity)
-	if(get_dist(get_turf(src), A) > reach)
+	if(get_dist(get_turf(src), A) > combat_of(src).reach)
 		return
 
 	if(istype(A, /turf))
@@ -178,15 +168,17 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 		act_message(user, L, MSG_SELF(span_notice("You snatch %T% with \the [src].")), MSG_OTHERS(span_notice("%U% snatches %T% with \the [src].")))
 		L.forceMove(src)
 		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
-		update_icon()
 		update_weight()
 		return
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("Empty", PROC_REF(butterfly_net_self)))
+CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
+	configure(item_combat(reach = 1))
+	op("butterfly_net_self", in_hand(), label("Empty"), then(PROC_REF(butterfly_net_self)))
 
 /// Old attack_self.
-/obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/fishing_net/butterfly_net/proc/butterfly_net_self(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/mob/living/M in contents_of(src))
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))
@@ -198,7 +190,6 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	for(var/obj/item/I in contents_of(src))
 		I.forceMove(get_turf(src))
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
-	update_icon()
 	update_weight()
 	return
 
@@ -209,31 +200,13 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 		else
 			M.forceMove(get_turf(src))
 		to_chat(M, span_warning("You climb out of \the [src]."))
-		update_icon()
 		update_weight()
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net/butterfly_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/fishing_net/butterfly_net/appearance_overlays() // Also updates name and desc
-	. = list()
-	underlays.Cut()
-
-	name = initial(name)
-	desc = initial(desc)
-	var/contains_mob = FALSE
-	for(var/mob/M in contents_of(src))
-		name = "filled butterfly net"
-		desc = "A net with [M] inside."
-		contains_mob = TRUE
-
-	if(contains_mob)
-		icon_state = contain_state
-
-	else
-		icon_state = empty_state
-
-	return .
+/// A butterfly net does not show its catch.
+/obj/item/material/fishing_net/butterfly_net/look_trapped(datum/look/look, mob/M)
+	look.identity(name = "filled butterfly net", desc = "A net with [M] inside.")
 
 /datum/crafting_recipe/butterfly_net
 	name = "butterfly net"

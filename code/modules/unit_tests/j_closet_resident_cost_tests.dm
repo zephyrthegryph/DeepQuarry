@@ -1,0 +1,38 @@
+// Test-only exact cost-branch metadata and real finite resident budget transitions.
+/datum/unit_test/dq_closet_resident_cost_reads/proc/has_pair(list/pairs, datum/owner, key)
+	for(var/list/pair as anything in pairs)
+		if(pair[1] == owner && pair[2] == key)
+			return TRUE
+	return FALSE
+/datum/unit_test/dq_closet_resident_cost_reads/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
+	var/obj/item/pen/resident = allocate(/obj/item/pen, T)
+	var/obj/item/pen/candidate = allocate(/obj/item/pen, T)
+	resident.set_w_class(ITEMSIZE_SMALL)
+	candidate.set_w_class(ITEMSIZE_NORMAL)
+	C.set_storage_capacity(C.storage_cost_of(resident) + C.storage_cost_of(candidate))
+	var/old_reason = GLOB.act_last_reason
+	TEST_ASSERT(move_into(C, CONTAINER_SLOT_INTERIOR, resident), "Actual finite closet contains resident")
+	TEST_ASSERT_EQUAL(resident.loc, C, "Resident has real closet custody")
+	var/list/reads = dq_ledger_read_keys(candidate, C, CONTAINER_SLOT_INTERIOR, null, FALSE)
+	TEST_ASSERT(has_pair(reads, resident, nameof(resident.w_class)), "Finite collector includes resident item cost key, not only candidate")
+	TEST_ASSERT(has_pair(reads, candidate, nameof(candidate.w_class)), "Finite collector includes candidate cost key")
+	TEST_ASSERT_NULL(dq_ledger_refusal(candidate, C, CONTAINER_SLOT_INTERIOR, null, FALSE), "Exact inclusive finite budget initially allows")
+	resident.set_w_class(ITEMSIZE_LARGE)
+	TEST_ASSERT(dq_ledger_refusal(candidate, C, CONTAINER_SLOT_INTERIOR, null, FALSE), "Actual larger resident now exhausts finite budget")
+	TEST_ASSERT_EQUAL(resident.loc, C, "Pure budget refusal leaves resident custody unchanged")
+	TEST_ASSERT_EQUAL(candidate.loc, T, "Pure budget refusal leaves candidate outside")
+	resident.set_w_class(ITEMSIZE_SMALL)
+	TEST_ASSERT_NULL(dq_ledger_refusal(candidate, C, CONTAINER_SLOT_INTERIOR, null, FALSE), "Real resident cost setter restores budget")
+	var/datum/relation_definition/slot/D = dq_ledger(C).def_by_id(CONTAINER_SLOT_INTERIOR)
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture, T)
+	var/obj/structure/closet/nested = allocate(/obj/structure/closet, T)
+	reads = D.cost_read_keys(C, M)
+	TEST_ASSERT(has_pair(reads, M, nameof(M.mob_size)), "Living cost branch watches exact mob size")
+	TEST_ASSERT(!has_pair(reads, M, nameof(M.pinned)), "Admission pinning is not falsely claimed as a cost input")
+	reads = D.cost_read_keys(C, nested)
+	TEST_ASSERT(has_pair(reads, nested, nameof(nested.storage_cost)), "Nested closet cost branch watches exact storage cost")
+	var/obj/effect/other = allocate(/obj/effect, T)
+	TEST_ASSERT_EQUAL(length(D.cost_read_keys(C, other)), 0, "Constant fallback cost has no fabricated dependency")
+	GLOB.act_last_reason = old_reason

@@ -43,20 +43,20 @@ BONUS
 
 	switch(A.stage)
 		if(3, 4)
-			if(H.h_style != "Bald" && H.h_style != "Balding Hair")
+			if(H.looks.hair_style != "Bald" && H.looks.hair_style != "Balding Hair")
 				to_chat(H, span_warning("Your hair starts to fall out in clumps..."))
-				om_after(src, 5 SECONDS, PROC_REF(change_hair), H, null, "Balding Hair")
+				after(src, 5 SECONDS, PROC_REF(change_hair), with = list(H, null, "Balding Hair"))
 		if(5)
-			if(H.h_style != "Shaved" && H.h_style != "Bald")
+			if(H.looks.hair_style != "Shaved" && H.looks.hair_style != "Bald")
 				to_chat(H, span_warning("Your hair starts to fall out in clumps..."))
-				om_after(src, 5 SECONDS, PROC_REF(change_hair), H, "Shaved", "Bald")
+				after(src, 5 SECONDS, PROC_REF(change_hair), with = list(H, "Shaved", "Bald"))
 	return
 
 /datum/viral_trait/shedding/proc/change_hair(mob/living/carbon/human/H, f_style, h_style)
 	if(!H)
 		return
 	if(f_style)
-		H.f_style = f_style
+		H.looks.set_facial_style(f_style)
 	if(h_style)
-		H.h_style = h_style
+		H.looks.set_hair_style(h_style)
 	return

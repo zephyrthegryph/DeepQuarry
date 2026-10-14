@@ -8,59 +8,45 @@
 	anchored = TRUE
 	var/coinsToProduce = 6	//how many coins do we make per sheet? a sheet is 2000 units whilst a coin is 250, and some material should be lost in the process
 
-/obj/machinery/mineral/mint/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/mint_press,
-	)
-	..()
+CAPABILITIES(/obj/machinery/mineral/mint)
+	// One sheet every 2 seconds until the stack runs out: a lap per sheet. The stack is cleaned up when the last one is pressed.
+	op("press", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Press coins"), needs(req_is(nameof(anchored), TRUE, because = MSG(mint/unanchored)), req(PROC_REF(sheet_makes_coins), because = MSG(mint/no_coins))),
+		starts(PROC_REF(press_started)), wait(2 SECONDS, repeats = PROC_REF(press_more), after_step = PROC_REF(press_sheet)), on_interrupt(PROC_REF(press_interrupted)), then(PROC_REF(press_finished)))
 
-/// Old attackby: feed a material sheet through the press.
-/datum/interaction/machine_item/mint_press
-	id = "mint_press"
-	name = "Press coins"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	also_requires = list(REQ_BECAUSE(REQ_ANCHORED, "it must be properly secured to operate"))
-	effect = /obj/machinery/mineral/mint/proc/interaction_press
+MSG_DEF_SELF(mint/unanchored, "it must be properly secured to operate")
+MSG_DEF_SELF(mint/no_coins, "You can't make coins out of that.")
 
-/obj/machinery/mineral/mint/proc/interaction_press(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
-	if(!M.coin_type)
-		user.visible_message(span_notice("You can't make coins out of that."))
-		return TRUE
-	else if(M.coin_type)
-		act_message(user, src, others = "%U% starts to feed a sheet of [M.default_type] into %T%.")
-		press_next(user, M)
-	return TRUE
+/obj/machinery/mineral/mint/proc/sheet_makes_coins(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
+	return (istype(M) && M.coin_type) ? null : MSG(mint/no_coins)
 
-/// One sheet every 2 seconds (a timed action each) until the stack runs out.
-/obj/machinery/mineral/mint/proc/press_next(mob/user, obj/item/stack/material/M)
-	if(M.amount <= 0)
-		return
-	icon_state = "coinpress1"
-	om_task_start(/datum/om/task/timed/mint_press_sheet, user, src, M = M)
+/obj/machinery/mineral/mint/proc/press_started(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
+	act_message(A.actor, src, others = "%U% starts to feed a sheet of [M.default_type] into %T%.")
+	set_icon_state("coinpress1")
 
-/obj/machinery/mineral/mint/proc/press_interrupted(datum/om/task/timed/mint_press_sheet/task)
-	var/mob/user = task.actor
-	to_chat(user,span_warning("\The [src] is hand-operated and requires your full attention!"))
-	icon_state = "coinpress0"
+/// Another sheet follows while the stack has any left.
+/obj/machinery/mineral/mint/proc/press_more(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
+	return M.amount > 0
 
-/datum/om/task/timed/mint_press_sheet
-	duration = 2 SECONDS
-	complete_proc = /obj/machinery/mineral/mint/proc/press_sheet
-	cancel_proc = /obj/machinery/mineral/mint/proc/press_interrupted
-	var/obj/item/stack/material/M
+/obj/machinery/mineral/mint/proc/press_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_warning("\The [src] is hand-operated and requires your full attention!"))
+	set_icon_state("coinpress0")
 
-/obj/machinery/mineral/mint/proc/press_sheet(datum/om/task/timed/mint_press_sheet/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/material/M = task.M
-	M.amount--
+/// One sheet pressed.
+/obj/machinery/mineral/mint/proc/press_sheet(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/M = A.held
+	M.set_amount(M.amount - 1, TRUE)
 	while(coinsToProduce-- > 0)
 		new M.coin_type(user.loc)
 	src.visible_message(span_notice("\The [src] rattles and dispenses several [M.default_type] coins!"))
 	coinsToProduce = initial(coinsToProduce)
-	if(M.amount == 0)
-		icon_state = "coinpress0"
-		qdel(M)	//clean it up just to be sure
-		src.visible_message(span_notice("\The [src] has run out of usable materials."))
-		return
-	press_next(user, M)
+
+/// The stack ran out.
+/obj/machinery/mineral/mint/proc/press_finished(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
+	set_icon_state("coinpress0")
+	spent(M)	//clean it up just to be sure
+	src.visible_message(span_notice("\The [src] has run out of usable materials."))

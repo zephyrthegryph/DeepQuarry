@@ -1,0 +1,28 @@
+human|none menu: Remove bulb
+human|none click: Click: Remove bulb
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Remove bulb
++2 menu: Toggle emergency lights
++4 click: Click: Remove bulb
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Flicker
++1 menu: Toggle emergency lights
++3 click: Click: Toggle emergency lights
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/wrench
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Tune
+human|/obj/item/multitool click: Click: Tune
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+@obj human|/obj/item/light
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+keys: drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, robot_remote_blocked, silicon_hand, toggle_emergency, tune

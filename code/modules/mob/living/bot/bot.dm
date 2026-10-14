@@ -6,7 +6,6 @@
 	universal_speak = 1
 	density = FALSE
 
-	makes_dirt = FALSE	// No more dirt from Beepsky
 
 	var/obj/item/card/id/botcard = null
 	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
@@ -46,43 +45,46 @@
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
 
 	can_pain_emote = FALSE // Sanity/safety, if bots ever get emotes later, undo this
-	allow_mind_transfer = TRUE
 
-/mob/living/bot/Initialize(mapload)
-	. = ..()
+/// Whoever presses a button of the bot's window leaves their prints on it.
+/mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
 
-	botcard.access = botcard_access.Copy()
+/// Its ID card opens what its type says (owns_one(starts =)).
+/mob/living/bot/proc/start_botcard(current, mapload)
+	var/obj/item/card/id/card = new /obj/item/card/id(src)
+	card.set_access(botcard_access.Copy())
+	return card
 
-	access_scanner.req_access = req_access.Copy()
-	access_scanner.req_one_access = req_one_access.Copy()
+/// What it checks for access before taking orders (owns_one(starts =)).
+/mob/living/bot/proc/start_access_scanner(current, mapload)
+	var/obj/scanner = new /obj(src)
+	scanner.set_req_access(req_access.Copy())
+	scanner.set_req_one_access(req_one_access.Copy())
+	return scanner
 
-	if(!using_map.bot_patrolling)
-		will_patrol = FALSE
+/// A map that has bots stay put keeps every bot from patrolling (rolls(): the map's setting, read as it is made).
+/mob/living/bot/proc/map_patrol(datum/roller/R)
+	return using_map.bot_patrolling ? will_patrol : FALSE
 
+/// A bot made switched on starts working: its light and its target state (setup()).
+/mob/living/bot/proc/start_switched_on()
 	if(on)
-		turn_on() // Update lights and other stuff
-	update_icons()
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
+		turn_on()
 
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
-/datum/om/stage/life/bot_core
-	order = LIFE_PHASE_TAIL + 100
-	name = "bot core"
-	wake_on = 0
-	of = /mob/living/bot
-
-/datum/om/stage/life/bot_core/perform(mob/living/bot/self, datum/om/frame/life/ctx)
-	if(self.stat == DEAD)
+/mob/living/bot/proc/life_bot_core(datum/seq_frame/life/F)
+	if(src.stat == DEAD)
 		return
-	self.status_set(EFFECT_WEAKENED, 0)
-	self.status_set(EFFECT_STUNNED, 0)
-	self.status_set(EFFECT_PARALYZED, 0)
+	src.status_set(STAT_WEAKENED, 0)
+	src.status_set(STAT_STUNNED, 0)
+	src.status_set(STAT_PARALYZED, 0)
 
-	if(self.on && !self.client && !om_busy(self) && !self.paicard && !self.ai_running)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
+	if(src.on && !src.client && !bot_busy() && !src.paicard && !src.ai_running)
+		after(src, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
-/datum/om/stage/life/type_post/bot
-	of = /mob/living/bot
+/mob/living/bot/life_type_post_due()
+	return TRUE
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()
@@ -106,10 +108,11 @@
 	explode()
 	return TRUE
 
-EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interaction_item)))
 
 /// Old attackby: ID lock toggle, prox-sensor repair, pAI card; anything else reaches the attack.
-/mob/living/bot/proc/bot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/bot/proc/bot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(O.GetID())
 		if(access_scanner.allowed(user) && !open)
 			locked = !locked
@@ -122,7 +125,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 				to_chat(user, span_warning("Please close the access panel before locking it."))
 			else
 				to_chat(user, span_warning("Access denied."))
-		return TRUE
+		return OP_OK
 	else if(istype(O, /obj/item/assembly/prox_sensor) && emagged)
 		if(open)
 			to_chat(user, span_notice("You repair the bot's systems."))
@@ -130,47 +133,57 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 			consume(O, user)
 		else
 			to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
-		return TRUE
+		return OP_OK
 	else if(istype(O, /obj/item/paicard))
 		if(open)
 			insertpai(user, O)
 			to_chat(user, span_notice("You slot the card into \the [initial(src.name)]."))
 		else
 			to_chat(user, span_notice("You must open the panel first!"))
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
-/mob/living/bot/screwdriver_act(mob/user, obj/item/tool)
+/mob/living/bot/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(locked)
 		to_chat(user, span_notice("You need to unlock the controls first."))
-		return ITEM_INTERACT_BLOCKING
-	open = !open
+		return OP_OK
+	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/mob/living/bot/welder_act(mob/user, obj/item/tool)
+/mob/living/bot/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!is_injured() || !open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	mend(TREAT_PLATING_REPAIR, 10)
 	mend(TREAT_WIRING_REPAIR, 10)
 	act_message(user, src, MSG_SELF(span_notice("You repair %T%.")), MSG_OTHERS(span_notice("%U% repairs %T%.")))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/mob/living/bot/crowbar_act(mob/user, obj/item/tool)
-	if(!open || !paicard)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You are attempting to remove the pAI."))
-	om_task_timed(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI."))
 
-/mob/living/bot/proc/crowbar_act_bot_done(mob/user)
-	ejectpai(user)
-	return ITEM_INTERACT_SUCCESS
+/// What the bot's settings window shows: the settings while it is unlocked, or to a viewer whose inputs come over a link (a silicon's:
+/// A.authority & AUTH_REMOTE_ACCESS). The settings ops say the same with when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))).
+/mob/living/bot/proc/settings_unlocked(datum/act/eval/A)
+	return !locked || (A && (A.authority & AUTH_REMOTE_ACCESS))
 
-/mob/living/bot
-	silicon_use = SILICON_USE_HAND
+/mob/living/bot/proc/pai_removable(datum/act/op/A)
+	return open && !!paicard
+
+/mob/living/bot/proc/pai_blocked(datum/act/op/A)
+	return !open || !paicard
+
+/// A requirement that never holds: the blocked click is refused without a word.
+/mob/living/bot/proc/never_allowed(datum/act/op/A)
+	return /datum/msg/req_failed
+
+/mob/living/bot/proc/remove_pai(datum/act/op/A)
+	ejectpai(A.actor)
 
 /mob/living/bot/say_quote(message, datum/language/speaking = null)
 	return "beeps"
@@ -186,15 +199,14 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	else
 		..()
 
-DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
-/mob/living/bot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return 0
+/mob/living/bot/proc/on_emag(datum/act/op/A)
+	return OP_DECLINE
 
 /// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
 /mob/living/bot/proc/bot_steps(count, delay, step_proc)
 	if(count <= 0)
 		return
-	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
+	after(src, delay, PROC_REF(bot_step), with = list(count, delay, step_proc))
 
 /// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)
@@ -354,7 +366,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 /mob/living/bot/proc/startPatrol()
 	var/turf/T = getPatrolTurf()
 	if(T)
-		patrol_path = om_pathfinder().default_bot_pathfinding(src, T, 1)
+		patrol_path = path_for_bot(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
 		rel_clear(src, nameof(obstacle))
@@ -386,7 +398,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	return
 
 /mob/living/bot/proc/calcTargetPath()
-	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 0)
+	target_path = path_for_bot(src, get_turf(target), 0)
 	if(!target_path)
 		if(target && target.loc)
 			rel_add(src, nameof(ignore_list), target)
@@ -413,8 +425,8 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 /mob/living/bot/proc/turn_on()
 	if(stat)
 		return 0
-	on = 1
-	set_light(light_strength)
+	set_on(1)
+	set_glow(src, GLOW(light_strength, null, null))
 	update_icons()
 	resetTarget()
 	patrol_path = list()
@@ -422,21 +434,85 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	update_canmove()
 	return 1
 
-/// The bot works on `A` for `delay` (a timed action): it is busy -- its task claims it -- until
-/// the work ends, then `on_done`(done_args...) runs and the icon refreshes (also on failure).
-/// Returns the task, or a reason it didn't start.
-/mob/living/bot/proc/bot_work(delay, atom/A, on_done, list/done_args, timed_action_flags = NONE)
-	. = om_task_timed(src, delay, target = A, receiver = src, on_done = PROC_REF(bot_work_done), done_args = list(on_done) + (done_args || list()), timed_action_flags = timed_action_flags, on_fail = PROC_REF(update_icons), busy = src)
+/// What the bot is doing for a time: the inputs of the work and hold ops, and the two flags that make it busy.
+/mob/living/bot/var/tmp/working = FALSE
+/mob/living/bot/var/tmp/holding = FALSE
+/mob/living/bot/var/tmp/work_delay = 0
+/mob/living/bot/var/tmp/work_done
+/mob/living/bot/var/tmp/work_arg
+/mob/living/bot/var/tmp/work_failed
+/mob/living/bot/var/tmp/hold_done
+
+/// TRUE while the bot works on something or holds still: it takes no new job.
+/mob/living/bot/proc/bot_busy()
+	return holding || (working && length(op_pendings_of(src))) // an op ended by its target going away runs no handler: the flag alone would stay set
+
+/// The bot works on `A` for `delay` (the "work" op): it is busy until the work ends, then `on_done`(act) runs (the target is act.target, `arg` is
+/// work_arg), `on_fail` runs if the work breaks off and the icon refreshes (also when the work breaks off). Returns the op result, which is null for a bot already busy.
+/mob/living/bot/proc/bot_work(delay, atom/A, on_done, arg = null, on_fail = null)
+	if(bot_busy())
+		return null
+	working = TRUE
+	work_delay = delay
+	work_done = on_done
+	work_arg = arg
+	work_failed = on_fail
+	. = perform_op(src, A, "work", null, ORIGIN_AI, AUTH_AI)
+	if(!.)
+		working = FALSE
+	update_icons()
+	after(src, delay + 1 TICK, PROC_REF(work_icons)) // the work may end without a handler (its target deleted): the icon is looked at again then
+
+/mob/living/bot/proc/work_icons(datum/act/A)
 	update_icons()
 
-/mob/living/bot/proc/bot_work_done(on_done, ...)
-	call(src, on_done)(arglist(args.Copy(2)))
+/mob/living/bot/proc/work_time(datum/act/op/A)
+	return work_delay
+
+/mob/living/bot/proc/work_finished(datum/act/op/A)
+	working = FALSE
+	if(!QDELETED(A.target))
+		call(src, work_done)(A)
 	update_icons()
+
+/mob/living/bot/proc/work_broken(datum/act/op/A)
+	working = FALSE
+	if(work_failed)
+		call(src, work_failed)(A)
+	update_icons()
+
+/// The bot holds still for `delay` (a pause between two actions): it is busy meanwhile, then `on_end`, a proc of the bot, runs. Returns FALSE for a bot
+/// that is busy already.
+/mob/living/bot/proc/bot_hold(delay, on_end = null)
+	if(bot_busy())
+		return FALSE
+	holding = TRUE
+	hold_done = on_end
+	work_delay = delay
+	if(!perform_op(src, src, "hold", null, ORIGIN_AI, AUTH_AI))
+		holding = FALSE
+		return FALSE
+	return TRUE
+
+/mob/living/bot/proc/hold_finished(datum/act/op/A)
+	holding = FALSE
+	if(hold_done)
+		call(src, hold_done)()
+
+/mob/living/bot/proc/hold_broken(datum/act/op/A)
+	holding = FALSE
+	if(hold_done)
+		call(src, hold_done)()
+
+/// Stops what the bot is doing (it was turned off or short-circuited).
+/mob/living/bot/proc/bot_stop_work()
+	for(var/datum/pending_op/P as anything in op_pendings_of(src))
+		P.cancel(/datum/msg/op/stopped)
 
 /mob/living/bot/proc/turn_off()
-	on = 0
-	om_release_busy(src, "turned off") // If ever stuck... reboot!
-	set_light(0)
+	set_on(0)
+	bot_stop_work() // If ever stuck... reboot!
+	set_glow(src, GLOW(0, null, null))
 	update_icons()
 	update_canmove()
 
@@ -444,7 +520,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(paicard)
 		ejectpai()
 	release_vore_contents()
-	qdel(src)
+	destroyed(src, null, "explosion")
 
 /mob/living/bot/is_sentient()
 	if(paicard)
@@ -560,7 +636,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(!card.pai)
 		to_chat(user, span_notice("This card does not currently have a personality!"))
 		return
-	if(!own_set(src, nameof(src.paicard), card, user = user))
+	if(!move_into(src, nameof(src.paicard), card, user))
 		return
 	transfer_mind(AI.mind, src, "pAI installed into [src]")
 	name = AI.name
@@ -573,7 +649,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 		var/mob/living/silicon/pai/AI = paicard.pai
 		transfer_mind(mind, AI, "pAI ejected from [src]")
 		paicard.forceMove(src.loc)
-		own_take(src, nameof(paicard))
+		rel_take(src, nameof(paicard))
 		name = initial(name)
 		botcard.access = botcard_access.Copy()
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))
@@ -599,34 +675,52 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 
 /mob/living/bot/Login()
 	no_vore = FALSE // ROBOT VORE
-	om_grant(src, GRANT_VERB, /mob/proc/insidePanel, src)
+	grant(src, granted_verb(/mob/proc/insidePanel), src)
 
 	return ..()
 
 /mob/living/bot/Logout()
 	release_vore_contents()
-	om_revoke(src, GRANT_VERB, /mob/proc/insidePanel, src)
+	revoke(src, granted_verb(/mob/proc/insidePanel), src)
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
+	vore_prefs.devourable = FALSE
+	vore_prefs.feeding = FALSE
+	vore_prefs.can_be_drop_pred = FALSE
 
 	return ..()
 
 // === merged from bot_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/bot
 	no_vore = TRUE
-	devourable = FALSE
-	feeding = FALSE
-	can_be_drop_pred = FALSE
 
-DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
-DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
+CAPABILITIES(/mob/living/bot)
+	ref_one(nameof(target), /atom)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
+	configure(mob_movement(makes_dirt = FALSE))
+	silicon_hand()
+	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
+	ref_many(nameof(ignore_list))
+	owns_one(nameof(botcard), starts = PROC_REF(start_botcard))
+	owns_one(nameof(access_scanner), starts = PROC_REF(start_access_scanner))
+	rolls(nameof(will_patrol), PROC_REF(map_patrol))
+	knows(LANGUAGE_GALCOM, default = TRUE)
+	setup(PROC_REF(start_switched_on))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
+	op("work", ai(), reach(REACH_ANY), wait(PROC_REF(work_time)), then(PROC_REF(work_finished)), on_interrupt(PROC_REF(work_broken)))
+	op("hold", ai(), wait(PROC_REF(work_time), keeps = 0), then(PROC_REF(hold_finished)), on_interrupt(PROC_REF(hold_broken)))
+	// the legacy crowbar_act refused a closed bot or one with no pAI and ended the click: the crowbar does not fall through to a hit
+	op("eject_pai_blocked", tool(TOOL_CROWBAR), when(PROC_REF(pai_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never_allowed), silent = TRUE)))
+	op("eject_pai", tool(TOOL_CROWBAR), label("Remove the pAI"), when(PROC_REF(pai_removable)), begins(MSG(bot/removing_pai)), wait(1 SECOND), then(PROC_REF(remove_pai)))
+	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 /mob/living/bot/ownership()
 	. = ..()
 	. += owns(nameof(paicard), policy = OWN_CONTAINED)
 
-/mob/living/bot/relations()
-	. = ..()
-	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
-	. += rel_many(nameof(ignore_list))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/bot, on)
+TRACKED(/mob/living/bot, open)

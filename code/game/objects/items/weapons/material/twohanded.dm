@@ -26,38 +26,34 @@
 	var/base_icon
 	var/base_name
 	var/unwielded_force_divisor = 0.25
-	hitsound = SFX_SWING_HIT
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/material/twohanded)
+	configure(item_sounds(hit = SFX_SWING_HIT, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+
+TRACKED(/obj/item/material/twohanded, wielded)
 
 /obj/item/material/twohanded/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
-		wielded = 1
-		force = force_wielded
+		set_wielded(1)
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
-		update_icon()
 	else
-		wielded = 0
-		force = force_unwielded
+		set_wielded(0)
+		set_force(force_unwielded)
 		name = "[base_name]"
-	update_icon()
 	..()
 
 /obj/item/material/twohanded/update_force()
 	base_name = name
-	if(sharp || edge)
+	if(combat_of(src).sharp || combat_of(src).edge)
 		force_wielded = material.edge_damage()
 	else
 		force_wielded = material.blunt_damage()
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
-	force = force_unwielded
-	throwforce = round(force*thrown_force_divisor)
-
-/obj/item/material/twohanded/Initialize(mapload, material_key)
-	. = ..()
-	update_icon()
+	set_force(force_unwielded)
+	set_throwforce(round(combat_of(src).force*thrown_force_divisor))
 
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -67,11 +63,15 @@
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/twohanded/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded]"
-	item_state = icon_state
+/obj/item/material/twohanded/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/material/twohanded/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded]")
+	look.held_state(drawn_state)
 
 /obj/item/material/twohanded/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -91,32 +91,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	unwielded_force_divisor = 0.25
 	force_divisor = 0.7 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	dulled_divisor = 0.75	//Still metal on a stick
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	force_wielded = 30
-	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	applies_material_colour = 0
-	can_cleave = TRUE
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
+
+CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
-		pry = 1
-		force = force_wielded
+		set_wielded(1)
+		set_pry(1)
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
-		update_icon()
 	else
-		wielded = 0
-		pry = 0
-		force = force_unwielded
+		set_wielded(0)
+		set_pry(0)
+		set_force(force_unwielded)
 		name = "[base_name]"
-	update_icon()
 	..()
 
 /obj/item/material/twohanded/fireaxe/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -130,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 			var/obj/structure/window/W = A
 			W.shatter()
 		else if(istype(A,/obj/structure/grille))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
 			P.die_off()
@@ -141,7 +137,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	name = "scythe"
 	desc = "A sharp and curved blade on a long fibremetal handle, this tool makes it easy to reap what you sow."
 	force_divisor = 0.65
-	attack_verb = list("chopped", "sliced", "cut", "reaped")
+
+CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
+	configure(item_combat(attack_verbs = list("chopped", "sliced", "cut", "reaped")))
 
 //spears, bay edition
 /obj/item/material/twohanded/spear
@@ -149,24 +147,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	base_icon = "spearglass"
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
-	force = 10
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BACK
 	force_divisor = 0.5 			// 15 when wielded with hardness 30 (glass)
 	unwielded_force_divisor = 0.375
 	thrown_force_divisor = 1.5 		// 22.5 when thrown with weight 15 (glass)
 	throw_speed = 3
-	edge = FALSE
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	hitsound = SFX_WEAPONS_BLADESLICE
-	mob_throw_hit_sound =  SFX_WEAPONS_PIERCE
-	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 	default_material = MAT_GLASS
 	applies_material_colour = 0
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
-	reach = 2 // Spears are long.
-	attackspeed = 14
+
+CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10, edge = FALSE, sharp = TRUE, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored"), reach = 2, attack_speed = 14))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
 //This is mostly for centaurs.
 /obj/item/material/twohanded/spear/lance
@@ -176,12 +170,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	icon_state = "lance"
 	item_state = "lance"
 	force_divisor = 0.3
-	force = 10
 	thrown_force_divisor = 1
 	default_material = "MAT_STEEL"
 	fragile = 0
-	sharp = TRUE
-	edge = FALSE
+
+CAPABILITIES(/obj/item/material/twohanded/spear/lance)
+	configure(item_combat(force = 10, sharp = TRUE, edge = FALSE))
 
 /obj/item/material/twohanded/riding_crop
 	name = "riding crop"
@@ -192,7 +186,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	unbreakable = 1
 	base_icon = "riding_crop"
 	icon_state = "riding_crop0"
-	attack_verb = list("cropped","spanked","swatted","smacked","peppered")
+
+CAPABILITIES(/obj/item/material/twohanded/riding_crop)
+	configure(item_combat(attack_verbs = list("cropped","spanked","swatted","smacked","peppered")))
 
 /obj/item/material/twohanded/spear/flint
 	default_material = MAT_FLINT
@@ -213,17 +209,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	name = "sledgehammer"
 	desc = "A long, heavy hammer meant to be used with both hands. Typically used for breaking rocks and driving posts, it can also be used for breaking bones or driving points home."
 	unwielded_force_divisor = 0.25
-	force = 25
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
-	hitsound = SFX_WEAPONS_HEAVYSMASH
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
 	slowdown = 1.5
 	dulled_divisor = 0.95	//Still metal on a stick
-	sharp = 0
-	edge = 0
 	force_wielded = 23 //A fair bit less than the fireaxe.
-	attack_verb = list("attacked", "smashed", "crushed", "wacked", "pounded")
 	applies_material_colour = 0
 
 	item_icons = list(
@@ -231,20 +222,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 		slot_r_hand_str = 'icons/mob/items/righthand_material_ch.dmi',
 		)
 
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
+	configure(item_combat(force = 25, sharp = 0, edge = 0, attack_verbs = list("attacked", "smashed", "crushed", "wacked", "pounded")))
+	configure(item_sounds(hit = SFX_WEAPONS_HEAVYSMASH))
+
 /obj/item/material/twohanded/sledgehammer/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
-		pry = 1
-		force = force_wielded
+		set_wielded(1)
+		set_pry(1)
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
-		update_icon()
 	else
-		wielded = 0
-		pry = 0
-		force = force_unwielded
+		set_wielded(0)
+		set_pry(0)
+		set_force(force_unwielded)
 		name = "[base_name]"
-	update_icon()
 	..()
 
 /obj/item/material/twohanded/sledgehammer/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -255,7 +248,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 			var/obj/structure/window/W = A
 			W.shatter()
 		else if(istype(A,/obj/structure/grille))
-			qdel(A)
+			consumed(A, src)
 		else if(istype(A,/obj/effect/plant))
 			var/obj/effect/plant/P = A
 			P.die_off()
@@ -271,11 +264,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 	name = "Mjollnir"
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
-	hitsound = SFX_EFFECTS_LIGHTNINGBOLT
-	force = 50
-	throwforce = 15
 	force_wielded = 75
 	slowdown = 0
+
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
+	configure(item_thrown(force = 15))
+	configure(item_combat(force = 50))
+	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGBOLT))
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	..()
@@ -291,15 +286,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 		else
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
 			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
-			target.status_at_least(EFFECT_PARALYZED, 20)
+			target.status_at_least(STAT_PARALYZED, 20)
 			play_sfx(src.loc, SFX_SPARKS)
 			return
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/twohanded/sledgehammer/mjollnir/appearance_overlays()  //Currently only here to fuck with the on-mob icons.
-	. = list()
-	icon_state = "mjollnir[wielded]"
-	return .
+/obj/item/material/twohanded/sledgehammer/mjollnir/look_parts(datum/look/look)
+	look.state("mjollnir[wielded]")
 
 
 // === merged from twohanded_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -327,10 +319,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE
 	item_state = "saber"
 	unwielded_force_divisor = 0.1
 	force_divisor = 0.3
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/material/twohanded/longsword)
+	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if (src.wielded == 1)
@@ -360,9 +352,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE
 	var/disarm_defense = 1.5	//bonus multiplier to parry rate when in disarm stance
 	var/stun_chance = 25	//chance to weaken an opponent when used in disarm stance only, remembering that disarm also halves damage dealt
 	var/stun_duration = 2
-	attack_verb = list("struck","smashed","thumped","thrashed","beaten","slammed","battered")
-	edge = FALSE
-	sharp = FALSE
+
+CAPABILITIES(/obj/item/material/twohanded/staff)
+	configure(item_combat(attack_verbs = list("struck","smashed","thumped","thrashed","beaten","slammed","battered"), edge = FALSE, sharp = FALSE))
 
 /obj/item/material/twohanded/staff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	var/parry_chance
@@ -382,7 +374,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE
 /obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	. = ..()
 	if(src.wielded == 1 && stance == I_DISARM && prob(stun_chance))
-		target.status_at_least(EFFECT_WEAKENED, stun_duration)
+		target.status_at_least(STAT_WEAKENED, stun_duration)
 		act_message(user, src, others = span_danger("%U% trips [target] with %T%!"))
 
 /obj/item/material/twohanded/fireaxe/get_mechanics_info(list/additional_information)

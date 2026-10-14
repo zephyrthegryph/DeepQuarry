@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "A projectile-immune target no longer gets stunned by a blocked round, and zero-damage rounds reach hit hooks"

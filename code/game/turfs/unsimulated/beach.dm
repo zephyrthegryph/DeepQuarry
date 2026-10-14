@@ -18,10 +18,6 @@
 	init_from_table = FALSE
 	movement_cost = 4 // Water should slow you down, just like simulated turf.
 
-/turf/unsimulated/beach/water/Initialize(mapload)
-	. = ..()
-	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
-
 /turf/simulated/floor/beach
 	name = "Beach"
 	icon = 'icons/misc/beach.dmi'
@@ -55,10 +51,12 @@
 	icon_state = "desert"
 	initial_flooring = /datum/decl/flooring/sand/desert
 
-/turf/simulated/floor/beach/sand/desert/Initialize(mapload)
-	. = ..()
-	if(prob(5))
-		icon_state = "desert[rand(0,4)]"
+CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/turf/simulated/floor/beach/sand/desert/proc/roll_icon_state(datum/roller/R)
+	return R.chance(5) ? "desert[R.number(0, 4)]" : icon_state
 
 /turf/simulated/floor/beach/coastline
 	name = "Coastline"
@@ -76,13 +74,16 @@
 	movement_cost = 8 // Deep water should be difficult to wade through.
 	initial_flooring = /datum/decl/flooring/water/beach/deep
 
-/turf/simulated/floor/beach/water/Initialize(mapload)
-	. = ..()
-	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
-
 /datum/decl/flooring/water/beach/deep // We're custom-defining a 'deep' water turf for the beach.
 	name = "deep water"
 	desc = "Deep Ocean Water"
 	icon = 'icons/misc/beach.dmi'
 	icon_base = "seadeep"
 
+/turf/unsimulated/beach/water/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/misc/beach.dmi', "water2", layer = MOB_LAYER + 0.1))
+
+/turf/simulated/floor/beach/water/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/misc/beach.dmi', "water5", layer = MOB_LAYER + 0.1))

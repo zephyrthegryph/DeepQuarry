@@ -11,7 +11,6 @@
 	density = TRUE
 	anchored = TRUE
 	animate_movement=1
-	light_range = 3
 
 	can_buckle = TRUE
 	buckle_movable = 1
@@ -44,20 +43,30 @@
 
 	var/datum/looping_sound/idle_carengine/soundloop // Looping engine audio.
 
-	/// Until when an EMP keeps the vehicle dead (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
-EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
+TRACKED(/obj/vehicle, on)
+TRACKED(/obj/vehicle, open)
+TRACKED(/obj/vehicle, paint_color)
+
+/// A vehicle runs unless a pulse knocked its engine out (emp_disable() holds it down).
+STAT(/obj/vehicle, operable, ALL, virtual = TRUE)
+
+CAPABILITIES(/obj/vehicle)
+	configure(light_glow(range = 3))
+	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine, starts = /datum/looping_sound/idle_carengine)
+	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
+	emp_disable(PROC_REF(emp_outage))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-/obj/vehicle/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
-
 ///obj/vehicle/New()
 //	..()
 // //spawn the cell you want in each vehicle // Commented out in favour of initialize.
@@ -67,14 +76,14 @@ EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
 
 /obj/vehicle/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
 	. = ..()
-	M.update_water()
+	M.refresh_submersion()
 	if(riding_datum)
 		rel_set(riding_datum, nameof(riding_datum.ridden), src)
 		riding_datum.handle_vehicle_offsets()
 
 /obj/vehicle/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	. = ..(buckled_mob, force)
-	buckled_mob?.update_water()
+	buckled_mob?.refresh_submersion()
 	if(riding_datum)
 		riding_datum.restore_position(buckled_mob)
 		riding_datum.handle_vehicle_offsets() // So the person in back goes to the front.
@@ -103,66 +112,62 @@ EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
 	if(load && !(load in src?.buckled_mob_list()) && !istype(load, /datum/vehicle_dummy_load))
 		load.forceMove(loc)
 
-DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehicle_item)))
-
 /// Old attackby: mechanical vehicles take cells (and swallow every other item); others take weapon hits.
-/obj/vehicle/proc/interaction_vehicle_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/proc/interaction_vehicle_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/hand_labeler))
 		return TRUE
 	if(mechanical)
 		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
 		return TRUE
-	if(W.force && W.obj_damage_type())
+	if(combat_of(W).force && W.obj_damage_type())
 		user.setClickCooldown(user.get_attack_speed(W))
 		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
+				receive_weapon_hit(W, user, combat_of(W).force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+				receive_weapon_hit(W, user, combat_of(W).force * brute_dam_coeff, silent = FALSE)
+		return OP_PASS
+	return OP_DECLINE
 
-/// Shared paint step (bike, quad bike, trailer): a multitool on an open panel picks a new paint colour.
-/// Old attackby branch copied across those types; falls through when not applicable or cancelled.
-/obj/vehicle/proc/interaction_vehicle_paint(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!W.has_tool_quality(TOOL_MULTITOOL) || !open)
-		return FALSE
-	om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
-	return TRUE
-
-/obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(locked)
-		return ITEM_INTERACT_BLOCKING
-	open = !open
-	update_icon()
+		return OP_OK
+	set_open(!open)
 	to_chat(user, span_notice("Maintenance panel is now [open ? "opened" : "closed"]."))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/vehicle/crowbar_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(!cell || !open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	remove_cell(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/vehicle/welder_act(mob/user, obj/item/tool)
+/obj/vehicle/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!mechanical)
-		return ..()
+		return OP_DECLINE
 	if(!open || get_integrity() >= max_integrity)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	repair_damage(10)
 	user.setClickCooldown(user.get_attack_speed(tool))
-	playsound(src, welder.usesound, 50, TRUE)
+	playsound(src, sounds_of(welder).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_blue("You repair %T%!")), MSG_OTHERS(span_red("%U% repairs %T%!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/vehicle/proc/adjust_health(amount)
 	if(amount < 0)
@@ -170,16 +175,13 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	else
 		repair_damage(amount)
 
-/// Only mechanical vehicles care about EMPs.
-/obj/vehicle/emp_disable_react(datum/damage_packet/packet)
-	if(!mechanical)
-		return
-	return ..()
+/// emp_disable()'s outage: 30 s over the severity, for a mechanical vehicle only.
+/obj/vehicle/proc/emp_outage(severity)
+	return mechanical ? 30 SECONDS / max(severity, 1) : 0
 
 /// Down: sparks and the engine dies. Back: it restarts if it was running.
-/obj/vehicle/emp_disable_changed(disabled)
-	..()
-	if(!disabled)
+/obj/vehicle/proc/emp_state_changed(datum/act/A)
+	if(!emp_disabled(src))
 		stat_remove(EMPED)
 		if(emp_was_on)
 			turn_on()
@@ -189,12 +191,12 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	stat_add(EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 	pulse2.icon = 'icons/effects/effects.dmi'
-	pulse2.icon_state = "empdisable"
+	pulse2.set_icon_state("empdisable")
 	pulse2.name = "emp sparks"
 	pulse2.set_anchored(TRUE)
 	pulse2.set_dir(pick(GLOB.cardinal))
 
-	om_qdel_after(pulse2, 1 SECOND)
+	pulse2.expire(1 SECOND)
 	if(on)
 		turn_off()
 
@@ -214,11 +216,10 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		return FALSE
 	if(on)
 		return FALSE
-	on = 1
+	set_on(1)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
-	set_light(initial(light_range))
-	update_icon()
+	set_glow(src, GLOW(glow_of_type(type).range, null, null))
 	return TRUE
 
 /obj/vehicle/proc/turn_off()
@@ -226,23 +227,23 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 		return FALSE
 	if(!mechanical)
 		return FALSE
-	on = 0
+	set_on(0)
 	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
-	set_light(0)
-	update_icon()
+	set_glow(src, GLOW(0, null, null))
 
-DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
-/obj/vehicle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/vehicle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mechanical)
-		return FALSE
+		return OP_DECLINE
 
 	if(!emagged)
 		emagged = 1
 		if(locked)
 			locked = 0
 			to_chat(user, span_warning("You bypass [src]'s controls."))
-		return TRUE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/vehicle/proc/explode()
 	src.visible_message(span_bolddanger("[src] blows apart!"), 1)
@@ -265,10 +266,9 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 
 		if(cell)
 			cell.forceMove(Tsec)
-			cell.update_icon()
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 
-	qdel(src)
+	destroyed(src, null, "explosion")
 
 /obj/vehicle/atom_destruction(damage_flag)
 	. = ..()
@@ -301,7 +301,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	if(!istype(C))
 		return
 
-	if(!own_set(src, nameof(src.cell), C, user = H))
+	if(!move_into(src, nameof(src.cell), C, H))
 		return
 	powercheck()
 	to_chat(H, span_notice("You install [C] in [src]."))
@@ -315,7 +315,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	to_chat(H, span_notice("You remove [cell] from [src]."))
 	cell.forceMove(get_turf(H))
 	H.put_in_hands(cell)
-	own_take(src, nameof(cell))
+	rel_take(src, nameof(cell))
 	powercheck()
 
 /obj/vehicle/proc/RunOver(mob/living/M)

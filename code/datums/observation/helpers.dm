@@ -6,7 +6,7 @@
 /atom/proc/recursive_dir_set(atom/a, old_dir, new_dir)
 	set_dir(new_dir)
 
-/datum/proc/qdel_self()
-	EVENT_HANDLER
-	qdel(src)
+/datum/proc/qdel_self(datum/act/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	spent(src)
 

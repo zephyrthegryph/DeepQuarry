@@ -3,9 +3,12 @@
 	icon = 'icons/effects/effects_vr.dmi'
 	icon_state = "confetti"
 
-/obj/effect/effect/sparks/confetti/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/effect/sparks/confetti)
+	after_init(0, then(PROC_REF(init_confetti_sound)))
+
+/obj/effect/effect/sparks/confetti/proc/init_confetti_sound(datum/act/timer/A)
 	playsound(src, "sound/items/confetti.ogg", 100, 1)
+
 
 /datum/effect/effect/system/confetti_spread
 	var/total_sparks = 0 // To stop it being spammed and lagging!
@@ -31,8 +34,8 @@
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_after_drift(confetti, direction, steps, 5)
-	om_after(src, 20 + steps * 5, PROC_REF(dec_confetti_sparks))
+	confetti.drift(direction, steps, 5)
+	after(src, 2 SECONDS + steps * 0.5 SECONDS, PROC_REF(dec_confetti_sparks))
 
 /datum/effect/effect/system/confetti_spread/proc/dec_confetti_sparks()
 	src.total_sparks--

@@ -2,19 +2,19 @@
 /obj/item/reagent_containers/glass/replenishing
 	var/spawning_id
 
-DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
+	rolls(nameof(spawning_id), PROC_REF(roll_spawning_id))
+	every(2 SECONDS, then(PROC_REF(replenishing_step)))
 
-/obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
-	. = ..()
-	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
-		var/new_chem = pick(chemistry_service().chemical_reagents)
-		if(new_chem in GLOB.obtainable_chemical_blacklist)
-			continue
-		else
-			spawning_id = new_chem
-			break
+/// The reagent it replenishes: any reagent not on the obtainable blacklist (ten tries, as before).
+/obj/item/reagent_containers/glass/replenishing/proc/roll_spawning_id(datum/roller/R)
+	var/list/chems = SSchemistry.ready().chemical_reagents
+	for(var/x in 1 to 10)
+		var/new_chem = R.choose(chems)
+		if(!(new_chem in GLOB.obtainable_chemical_blacklist))
+			return new_chem
 
-/obj/item/reagent_containers/glass/replenishing/periodic_step()
+/obj/item/reagent_containers/glass/replenishing/proc/replenishing_step(datum/act/timer/A)
 	reagents.add_reagent(spawning_id, 0.3)
 
 //a talking gas mask!
@@ -22,12 +22,20 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	var/list/heard_talk
 	EXPIRY_DECLARE(last_twitch)
 	var/max_stored_messages = 100
+	/// Is it worn and has it something to say? The echo every() below runs while it is.
+	var/echoing = FALSE
+
+TRACKED(/obj/item/clothing/mask/gas/poltergeist, echoing)
+
+CAPABILITIES(/obj/item/clothing/mask/gas/poltergeist)
+	every(2 SECONDS, then(PROC_REF(poltergeist_step)), when = nameof(echoing))
 
 /// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
 /// (hearing or being put on starts it); otherwise it sleeps.
-/obj/item/clothing/mask/gas/poltergeist/periodic_step()
+/obj/item/clothing/mask/gas/poltergeist/proc/poltergeist_step(datum/act/A)
 	if(!length(heard_talk) || !isliving(src.loc))
-		return PROCESS_KILL
+		set_echoing(FALSE)
+		return
 	if(length(heard_talk) && isliving(src.loc) && prob(10))
 		var/mob/living/M = src.loc
 		M.say(DEFAULTPICK(heard_talk, null))
@@ -38,7 +46,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 		LAZYREMOVE(heard_talk, DEFAULTPICK(heard_talk, null))
 	LAZYADD(heard_talk, multilingual_to_message(message_pieces))
 	if(isliving(loc))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_echoing(TRUE)
 	if(isliving(src.loc) && ELAPSED(src, last_twitch, CLOCK_WORLD) > 5 SECONDS)
 		EXPIRY_STAMP(src, last_twitch, CLOCK_WORLD)
 
@@ -57,12 +65,14 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	var/wight_check_index = 1
 	var/list/shadow_wights
 
-DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/vampiric)
+	owns_many(nameof(shadow_wights))
+	every(2 SECONDS, then(PROC_REF(vampiric_step)))
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/item/vampiric/periodic_step()
+/// Acts only while a player is near; with none near, the run does nothing.
+/obj/item/vampiric/proc/vampiric_step(datum/act/timer/A)
 	if(!mob_near(world.view, TRUE))
-		return sleep_until_mob_near(world.view, TRUE)
+		return
 	//see if we've identified anyone nearby
 	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
@@ -99,7 +109,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
-			own_add(src, nameof(shadow_wights), new /obj/effect/shadow_wight(src.loc))
+			rel_add(src, nameof(shadow_wights), new /obj/effect/shadow_wight(src.loc))
 			play_sfx(src, SFX_EFFECTS_GHOST)
 			charges -= 0.1
 
@@ -118,9 +128,9 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 		if(isnull(W))
 			own_take_member(src, nameof(shadow_wights), W)
 		else if(isnull(W.loc))
-			own_take_member(src, nameof(shadow_wights), W)
+			rel_take(src, nameof(shadow_wights), W)
 		else if(get_dist(W, src) > 10)
-			own_take_member(src, nameof(shadow_wights), W)
+			rel_take(src, nameof(shadow_wights), W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()
@@ -146,16 +156,18 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	var/tmp/turf/target_turf
 	var/loc_last_process
 
-DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
+	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
 
-/obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
+// ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
+/obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload)
 	. = ..()
 	loc_last_process = src.loc
 
-/// Crawls toward its target turf every 2 s; arrived, it sleeps.
-/obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
+/// Crawls toward its target turf every 2 s (every() gated on target_turf); arrived, it does nothing.
+/obj/effect/decal/cleanable/blood/splatter/animated/proc/animated_blood_step(datum/act/timer/A)
 	if(!target_turf())
-		return PROCESS_KILL
+		return
 	if(target_turf() && src.loc != target_turf())
 		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
@@ -172,8 +184,6 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 				if(prob(50))
 					D = new(src.loc)
 					D.init_forensic_data().merge_blooddna(forensic_data)
-	else
-		..()
 
 /obj/effect/shadow_wight
 	name = "shadow wight"
@@ -181,12 +191,13 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 	icon_state = "shade"
 	density = TRUE
 
-DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/shadow_wight)
+	every(2 SECONDS, then(PROC_REF(shadow_wight_step)))
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/effect/shadow_wight/periodic_step()
+/// Acts only while a player is near; with none near, the run does nothing.
+/obj/effect/shadow_wight/proc/shadow_wight_step(datum/act/timer/A)
 	if(!mob_near(world.view, TRUE))
-		return sleep_until_mob_near(world.view, TRUE)
+		return
 	if(src.loc)
 		src.forceMove(get_turf(pick(orange(1,src))))
 		var/mob/living/carbon/M = locate_within(src.loc, /mob/living/carbon)
@@ -194,11 +205,11 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 			play_sfx(src, SFX_HALLUCINATIONS_VOICES)
 			to_chat(M, span_cult("The [src] phases right into your body, your entire form feeling cold and numb!")) //You just had a ghost possess / take residence you...YEAH, it's going to be alarming!
 			act_message(M, null, others = span_cult("%U%'s body glows bright red for a moment as glyphs spread across their form!")) //Let's try something fancy.
-			M.status_at_least(EFFECT_SLEEPING, rand(5, 10))
+			M.status_at_least(STAT_SLEEPING, rand(5, 10))
 
 			src.moveToNullspace()
 	else
-		qdel(src) //Let's not just sit in nullspace forever, yeah?
+		consume(src) //Let's not just sit in nullspace forever, yeah?
 		return PROCESS_KILL
 
 /obj/effect/shadow_wight/Bump(atom/obstacle)
@@ -207,7 +218,7 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 /obj/item/clothing/mask/gas/poltergeist/equipped(mob/user, slot)
 	. = ..()
 	if(length(heard_talk))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_echoing(TRUE)
 
 /// Accessor for the target_turf var.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf

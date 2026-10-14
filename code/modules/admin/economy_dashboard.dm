@@ -1,12 +1,12 @@
 /datum/economy_dashboard
 
-DECLARE_UI_STATE(/datum/economy_dashboard, ADMIN_STATE(R_ADMIN|R_DEBUG))
-
-DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Observatory"))
+CAPABILITIES(/datum/economy_dashboard)
+	interface("EconomyDashboard", title = "Economy Observatory", rights = R_ADMIN|R_DEBUG)
+	ui_shape(account_currency = any, personal_currency = any, personal_accounts = any, personal_balance_p10 = any, personal_balance_median = any, personal_balance_p90 = any, personal_zero_balance = any, personal_low_balance = any, department_savings = any, currency_created = any, currency_destroyed = any, currency_refunded = any, currency_sink_refunded = any, currency_internal_refunded = any, net_currency_flow = any, currency_sources = any, currency_sinks = any, projected_payroll = any, last_payroll_due = any, last_payroll_paid = any, unpaid_wages = any, allocation_policy = any, service_subsidies = any, service_invoice_count = any, service_sales_gross = any, service_sales_net = any, service_refund_count = any, service_refund_rate = any, service_tips = any, personal_orders = any, personal_order_spend = any, pending_personal_orders = any, market_generation = any, market_counterparties = any, market_listings = any, market_listing_stock = any, market_bids = any, market_target_units = any, market_fulfilled_units = any, market_purchase_volume = any, market_export_volume = any, covert_market_volume = any, covert_market_traces = any, covert_market_detections = any, faction_agents = any, agent_candidates = any, agent_accredited = any, agent_trusted = any, agent_operatives = any, agent_total_exposure = any, agent_contracts_completed = any, agent_contracts_failed = any, departments = any)
 
 /datum/economy_dashboard/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src, user)
 
 /datum/economy_dashboard/proc/ranked_ledger_rows(list/ledger)
 	var/list/rows = list()
@@ -20,10 +20,8 @@ DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Obser
 	var/index = clamp(round(1 + (length(sorted_balances) - 1) * percentile), 1, length(sorted_balances))
 	return sorted_balances[index]
 
-UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard{}")
-
-/// The computed part of /datum/economy_dashboard's window data (declared on its UI_DATA row).
-/datum/economy_dashboard/proc/ui_data_datum_economy_dashboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/economy_dashboard's window data.
+/datum/economy_dashboard/ui_data(datum/act/eval/A)
 	var/account_currency = 0
 	var/personal_currency = 0
 	var/personal_accounts = 0
@@ -42,7 +40,7 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 				personal_low_balance++
 	sortTim(personal_balances, GLOBAL_PROC_REF(cmp_numeric_asc))
 
-	var/projected_payroll = GLOB.supply_service.projected_station_payroll()
+	var/projected_payroll = SSsupply.projected_station_payroll()
 	var/last_payroll_due = 0
 	var/last_payroll_paid = 0
 	var/department_savings = 0
@@ -60,7 +58,7 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 			"savings" = budget.savings,
 			"income" = budget.monthly_income,
 			"expenses" = budget.monthly_expenses,
-			"projected_payroll" = GLOB.supply_service.projected_department_payroll(department),
+			"projected_payroll" = SSsupply.projected_department_payroll(department),
 			"last_payroll_due" = budget.last_payroll_due,
 			"last_payroll_paid" = budget.last_payroll_paid
 		)))
@@ -68,7 +66,7 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 	var/personal_orders = 0
 	var/personal_order_spend = 0
 	var/pending_personal_orders = 0
-	for(var/datum/supply_order/order in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/order in supply_order_history())
 		if(!order.personal_order)
 			continue
 		personal_orders++
@@ -76,13 +74,13 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 		if(order.status == SUP_ORDER_REQUESTED)
 			pending_personal_orders++
 
-	var/list/service_sales = GLOB.supply_service.service_invoice_summary(DEPARTMENT_CIVILIAN, -1)
+	var/list/service_sales = SSsupply.service_invoice_summary(DEPARTMENT_CIVILIAN, -1)
 	var/market_purchase_volume = 0
 	var/market_export_volume = 0
 	var/covert_market_volume = 0
 	var/covert_market_traces = 0
 	var/covert_market_detections = 0
-	for(var/datum/cargo_market_transaction/market_transaction in GLOB.supply_service.market_transactions)
+	for(var/datum/cargo_market_transaction/market_transaction in supply_market_transactions())
 		if(market_transaction.transaction_type == CARGO_MARKET_BUY)
 			market_purchase_volume += market_transaction.value
 		else if(market_transaction.transaction_type == CARGO_MARKET_SELL)
@@ -93,13 +91,13 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 			if(market_transaction.detected)
 				covert_market_detections++
 	var/market_listing_stock = 0
-	for(var/listing_id in GLOB.supply_service.market_listings)
-		var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listings?[listing_id]
+	for(var/listing_id in supply_market_listings())
+		var/datum/cargo_market_listing/listing = supply_market_listings()?[listing_id]
 		market_listing_stock += listing.stock
 	var/market_target_units = 0
 	var/market_fulfilled_units = 0
-	for(var/bid_id in GLOB.supply_service.market_bids)
-		var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bids?[bid_id]
+	for(var/bid_id in supply_market_bids())
+		var/datum/cargo_market_bid/bid = supply_market_bids()?[bid_id]
 		market_target_units += bid.target_units
 		market_fulfilled_units += bid.fulfilled_units
 	var/agent_contracts_completed = 0
@@ -133,20 +131,20 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 		"personal_zero_balance" = personal_zero_balance,
 		"personal_low_balance" = personal_low_balance,
 		"department_savings" = department_savings,
-		"currency_created" = GLOB.supply_service.currency_created,
-		"currency_destroyed" = GLOB.supply_service.currency_destroyed,
-		"currency_refunded" = GLOB.supply_service.currency_refunded,
-		"currency_sink_refunded" = GLOB.supply_service.currency_sink_refunded,
-		"currency_internal_refunded" = GLOB.supply_service.currency_internal_refunded,
-		"net_currency_flow" = GLOB.supply_service.currency_created - GLOB.supply_service.currency_destroyed + GLOB.supply_service.currency_sink_refunded,
-		"currency_sources" = ranked_ledger_rows(GLOB.supply_service.currency_sources),
-		"currency_sinks" = ranked_ledger_rows(GLOB.supply_service.currency_sinks),
+		"currency_created" = supply_currency_created(),
+		"currency_destroyed" = supply_currency_destroyed(),
+		"currency_refunded" = supply_currency_refunded(),
+		"currency_sink_refunded" = supply_currency_sink_refunded(),
+		"currency_internal_refunded" = supply_currency_internal_refunded(),
+		"net_currency_flow" = supply_currency_created() - supply_currency_destroyed() + supply_currency_sink_refunded(),
+		"currency_sources" = ranked_ledger_rows(supply_currency_sources()),
+		"currency_sinks" = ranked_ledger_rows(supply_currency_sinks()),
 		"projected_payroll" = projected_payroll,
 		"last_payroll_due" = last_payroll_due,
 		"last_payroll_paid" = last_payroll_paid,
 		"unpaid_wages" = max(0, last_payroll_due - last_payroll_paid),
-		"allocation_policy" = GLOB.supply_service.allocation_policy,
-		"service_subsidies" = GLOB.supply_service.service_subsidies,
+		"allocation_policy" = supply_allocation_policy(),
+		"service_subsidies" = supply_service_subsidies(),
 		"service_invoice_count" = service_sales["invoice_count"],
 		"service_sales_gross" = service_sales["gross_billed"],
 		"service_sales_net" = service_sales["net_billed"],
@@ -156,11 +154,11 @@ UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard
 		"personal_orders" = personal_orders,
 		"personal_order_spend" = personal_order_spend,
 		"pending_personal_orders" = pending_personal_orders,
-		"market_generation" = GLOB.supply_service.market_generation,
-		"market_counterparties" = length(GLOB.supply_service.market_counterparties),
-		"market_listings" = length(GLOB.supply_service.market_listings),
+		"market_generation" = supply_market_generation(),
+		"market_counterparties" = length(supply_market_counterparties()),
+		"market_listings" = length(supply_market_listings()),
 		"market_listing_stock" = market_listing_stock,
-		"market_bids" = length(GLOB.supply_service.market_bids),
+		"market_bids" = length(supply_market_bids()),
 		"market_target_units" = market_target_units,
 		"market_fulfilled_units" = market_fulfilled_units,
 		"market_purchase_volume" = market_purchase_volume,

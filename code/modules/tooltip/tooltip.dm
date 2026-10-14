@@ -38,11 +38,17 @@
 	// older atom from hiding a newer tooltip that reused the same browser.
 	var/_revision = 0
 
+CAPABILITIES(/datum/tooltip)
+	op("dismiss", ui_act(), then(PROC_REF(ui_act_dismiss)))
+	owns_one(nameof(tooltip_window), /datum/tgui_window)
+	interface("Tooltip", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
+	ui_shape(visible = num(), control = schema_text(), title = schema_text(), theme = schema_text(), cursor_params = schema_text(), screen_loc = schema_text(), view_w = num(), view_h = num(), revision = num(), tile_size = any)
+
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
 	owner = C // a client, not a datum: plain (the client owns us as its tooltips)
-	own_set(src, nameof(tooltip_window), new /datum/tgui_window(C, control))
+	rel_set(src, nameof(tooltip_window), new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend
@@ -57,12 +63,8 @@
 		window.close()
 	return ..()
 
-DECLARE_UI_STATE(/datum/tooltip, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control:text,title:text,theme:text,cursor_params:text,screen_loc:text,view_w:num,view_h:num,revision:num,tile_size:unknown}")
-
-/// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
-/datum/tooltip/proc/ui_data_datum_tooltip(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/tooltip's window data.
+/datum/tooltip/ui_data(datum/act/eval/A)
 	return list(
 		"visible" = _visible,
 		"control" = control,
@@ -78,8 +80,6 @@ UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
 
-DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
-
 /// Renders in the client's persistent tooltip browser element.
 /datum/tooltip/ui_window(mob/user)
 	return tooltip_window
@@ -91,8 +91,8 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 		return FALSE
 
 	if(!isnull(last_target()))
-		om_unhook(last_target(), /datum/om/event/qdeleting, src)
-	om_hook(thing, /datum/om/event/qdeleting, src, PROC_REF(on_target_qdel))
+		unobserve(last_target(), /datum/notice/qdeleting, src)
+	observe(thing, /datum/notice/qdeleting, src, then(PROC_REF(on_target_qdel)))
 	rel_set(src, nameof(last_target), thing)
 	_revision++
 	queueHide = FALSE
@@ -143,16 +143,16 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	// A previously-started Byond.winget() can finish after the immediate winset
 	// and briefly show the browser again. Reassert hidden after that async turn,
 	// but only if no newer hover has superseded this revision.
-	om_after(src, 0.1 SECONDS, PROC_REF(ensure_hidden), hide_revision)
+	after(src, 0.1 SECONDS, PROC_REF(ensure_hidden), with = list(hide_revision))
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
-		om_after(src, 0.1 SECONDS, PROC_REF(do_hide), hide_revision)
+		after(src, 0.1 SECONDS, PROC_REF(do_hide), with = list(hide_revision))
 	else
 		do_hide(hide_revision)
 	return TRUE
 
-/datum/tooltip/proc/on_target_qdel(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/tooltip/proc/on_target_qdel(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	hide()
 	rel_clear(src, nameof(last_target))
 
@@ -164,7 +164,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	if(!owner())
 		return
 	if(last_target())
-		om_unhook(last_target(), /datum/om/event/qdeleting, src)
+		unobserve(last_target(), /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(last_target))
 	_visible = FALSE
 	SStgui.update_uis(src)
@@ -175,10 +175,9 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	if(owner())
 		winset(owner(), control, "is-visible=false")
 
-UI_ACT(/datum/tooltip, "dismiss", ui_act_dismiss)
-UI_ACT_PROC(/datum/tooltip, ui_act_dismiss)
+/datum/tooltip/proc/ui_act_dismiss(datum/act/op/A)
 	hide()
-	return TRUE
+	return OP_OK
 
 //Open a tooltip for user, at a location based on params
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)

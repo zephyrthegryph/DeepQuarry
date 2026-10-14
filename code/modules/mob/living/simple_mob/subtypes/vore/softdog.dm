@@ -51,8 +51,9 @@
 	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
-DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/vore/woof)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /datum/say_list/softdog
 	speak = list("Woof~", "Woof!", "Yip!", "Yap!", "Yip~", "Yap~", "Awoooooo~", "Awoo!", "AwooooooooooOOOOOOoOooOoooOoOOoooo!")
@@ -82,7 +83,7 @@ DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/hide)
 
 /mob/living/simple_mob/vore/woof/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You have found yourself pumping on down, down, down into this extremely soft dog. The slick touches of pulsing walls roll over you in greedy fashion as you're swallowed away, the flesh forms to your figure as in an instant the world is replaced by the hot squeeze of canine gullet. And in another moment a heavy GLLRMMPTCH seals you away, the dog tossing its head eagerly, the way forward stretching to accommodate your shape as you are greedily guzzled down. The wrinkled, doughy walls pulse against you in time to the creature's steady heartbeat. The sounds of the outside world muffled into obscure tones as the wet, grumbling rolls of this soft creature's gut hold you, churning you tightly such that no part of you is spared from these gastric affections."
 
@@ -163,13 +164,12 @@ DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/hide)
 	gender = PLURAL
 	vore_digest_chance = 0
 	vore_escape_chance = 25
-	digestable = 0
 
 /mob/living/simple_mob/vore/woof/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 
 /mob/living/simple_mob/vore/woof/hostile/melee
@@ -203,32 +203,52 @@ DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/hide)
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = SFX_VOICE_LONG_AWOO
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Shove", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Hit", PROC_REF(cass_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
+	op("cass_revive", hand(), ungated(), stance(I_HELP), label("Pet"), when(PROC_REF(playing_dead)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(cass/petting)), wait(30 SECONDS), then(PROC_REF(stops_playing_dead)), on_interrupt(PROC_REF(petting_interrupted)))
+	op("cass_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(cass_interaction_hand_help)))
+	op("cass_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(cass_interaction_hand_disarm)))
+	op("cass_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(cass_interaction_hand_grab)))
+	op("cass_hand_hurt", hand(), ungated(), stance(I_HURT), label("Hit"), then(PROC_REF(cass_interaction_hand_hurt)))
 
-/// Old attack_hand: while playing dead, only a long help-pet revives her; alive, the normal touch.
-/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+/// The help-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_help(datum/act/op/A)
+	return cass_interaction_hand(A, I_HELP)
+
+/// The disarm-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_disarm(datum/act/op/A)
+	return cass_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_grab(datum/act/op/A)
+	return cass_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_hurt(datum/act/op/A)
+	return cass_interaction_hand(A, I_HURT)
+
+/// Old attack_hand: while playing dead, only a long help-pet revives her (the cass_revive op); any other touch is swallowed. Alive, the normal touch.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(datum/act/op/A, stance)
 	if(stat != DEAD)
-		return FALSE
-	if(interaction.stance == I_HELP)
-		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
-		om_task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
-/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)
+MSG_DEF(cass/petting, null, "%U% pets %T%.")
+
+/mob/living/simple_mob/vore/woof/cass/proc/playing_dead(datum/act/op/A)
+	return stat == DEAD
+
+/mob/living/simple_mob/vore/woof/cass/proc/stops_playing_dead(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	faction = M.faction
 	revive()
 	sight = initial(sight)
 	see_in_dark = initial(see_in_dark)
 	see_invisible = initial(see_invisible)
-	update_icon()
 	act_message(src, null, null, MSG_OTHERS("%U% stops playing dead."), runemessage = "%U% stops playing dead")
 
-/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)
-	act_message(M, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
+/mob/living/simple_mob/vore/woof/cass/proc/petting_interrupted(datum/act/op/A)
+	act_message(A.actor, null, null, MSG_OTHERS("The petting was interrupted!!!"), runemessage = "The petting was interrupted")
 
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)

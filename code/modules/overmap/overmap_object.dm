@@ -16,9 +16,6 @@
 	var/skybox_pixel_x
 	/// Shift from lower left corner of skybox
 	var/skybox_pixel_y
-	/// Cachey
-	var/image/cached_skybox_image
-
 	/// For showing to the pilot of the ship, so they see the 'real' appearance, despite others seeing the unknown ones
 	var/image/real_appearance
 
@@ -34,6 +31,11 @@
 	var/list/cam_plane_masters
 	var/atom/movable/screen/background/cam_background
 
+CAPABILITIES(/obj/effect/overmap)
+	owns_one(nameof(cam_background), /atom/movable/screen/background, starts = when(nameof(render_map), /atom/movable/screen/background), starts_args = NO_LOC)
+	owns_one(nameof(cam_screen), /atom/movable/screen/map_view, starts = when(nameof(render_map), /atom/movable/screen/map_view), starts_args = NO_LOC)
+	owns_many(nameof(cam_plane_masters))
+
 /obj/effect/overmap/Initialize(mapload)
 	. = ..()
 	if(!using_map.use_overmap)
@@ -41,46 +43,43 @@
 
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
-		own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 		cam_screen.name = "screen"
 		cam_screen.assigned_map = map_name
 		cam_screen.del_on_map_removal = FALSE
 		cam_screen.screen_loc = "[map_name]:1,1"
 
 		for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-			own_add(src, nameof(cam_plane_masters), plane_master)
+			rel_add(src, nameof(cam_plane_masters), plane_master)
 
 		for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 			instance.assigned_map = map_name
 			instance.del_on_map_removal = FALSE
 			instance.screen_loc = "[map_name]:CENTER"
 
-		own_set(src, nameof(cam_background), new /atom/movable/screen/background)
 		cam_background.assigned_map = map_name
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
 
 
-// ALLOW(lifecycle): its real appearance holder is detached before phase 4 drops it (DECLARE_REF(..., OWNED)).
+// Its real appearance holder is detached before phase 4 drops it (DECLARE_REF(..., OWNED)).
 /obj/effect/overmap/lifecycle_dematerialize()
 	image_anchor(real_appearance, null)
 	return ..()
 
+/// The most skybox images kept at once (an approximate LRU: a world has a few dozen overmap objects).
+#define OVERMAP_SKYBOX_CACHE_MAX 128
+
+/// The skybox image of each overmap object (its icon at its own offset): built on first use, dropped when any object's representation expires.
+DECLARE_SHARED_CACHE_EX(overmap_skybox_images, GLOBAL_PROC_REF(build_overmap_skybox_image), SC_EXPLICIT, OVERMAP_SKYBOX_CACHE_MAX, 0)
+
+/proc/build_overmap_skybox_image(obj/effect/overmap/object)
+	return object.build_skybox_representation()
+
 //Overlay of how this object should look on other skyboxes
 /obj/effect/overmap/proc/get_skybox_representation(zlevel)
-	if(!cached_skybox_image)
-		build_skybox_representation(zlevel)
-	return cached_skybox_image
+	return CACHED_KEY(overmap_skybox_images, SHARED_CACHE_UID(src), src)
 
-/// cached_skybox_image is a declared cache: expire_skybox_representation() raises
-/// CHANGE_EXPLICIT and the object-model core nulls it.
-/obj/effect/overmap/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["cached_skybox_image"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
-
-/obj/effect/overmap/proc/build_skybox_representation(zlevel)
+/obj/effect/overmap/proc/build_skybox_representation()
 	if(!skybox_icon)
 		return
 	var/image/I = image(icon = skybox_icon, icon_state = skybox_icon_state)
@@ -90,17 +89,15 @@
 		skybox_pixel_y = rand(200,600)
 	I.pixel_x = skybox_pixel_x
 	I.pixel_y = skybox_pixel_y
-	om_rec_of(src) // join the object model so the declared cache is cleared on CHANGE_EXPLICIT
-	cached_skybox_image = I
+	return I
 
 /obj/effect/overmap/proc/expire_skybox_representation()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(overmap_skybox_images)
 
 /obj/effect/overmap/proc/update_skybox_representation()
 	expire_skybox_representation()
-	build_skybox_representation()
 	for(var/obj/effect/overmap/visitable/O in contents_of(loc))
-		skybox_service().rebuild_skyboxes(O.map_z)
+		SSskybox.ready().rebuild_skyboxes(O.map_z)
 
 /obj/effect/overmap/proc/get_scan_data(mob/user)
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\n[scanner_desc]"}

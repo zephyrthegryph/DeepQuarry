@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-OWN_TIMER(/datum/tgui_window, payload_timeout)
-
 /datum/tgui_window
 	var/id
 	var/tmp/client/client
@@ -46,7 +44,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue
-	var/sent_assets = list()
+	var/sent_assets
 	// Vars passed to initialize proc (and saved for later)
 	var/initial_strict_mode
 	var/initial_fancy
@@ -148,7 +146,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
 	// Generate page html
-	var/html = asset_generation()?.basehtml || SStgui.basehtml
+	var/html = asset_generation()?.basehtml || tgui_basehtml()
 	html = replacetextEx(html, "\[tgui:windowId]", id)
 	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
 	// Inject assets
@@ -297,7 +295,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 /datum/tgui_window/proc/release_lock()
 	// Clean up assets sent by tgui datum which requested the lock
 	if(locked)
-		sent_assets = list()
+		sent_assets = null
 	locked = FALSE
 	rel_clear(src, nameof(locked_by))
 
@@ -424,7 +422,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 /datum/tgui_window/proc/send_asset(datum/asset/asset)
 	if(!client() || !asset)
 		return
-	sent_assets |= list(asset)
+	LAZYOR(sent_assets, list(asset))
 	. = asset.send(client())
 	if(istype(asset, /datum/asset/spritesheet))
 		var/datum/asset/spritesheet/spritesheet = asset
@@ -553,7 +551,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 							safe_geometry["pos"] = reported_pos
 					var/client/geometry_client = client()
 					LAZYSET(geometry_client.tgui_resolved_geometries, locked_by().interface, safe_geometry)
-			OM_EMIT(src, /datum/om/event/tgui_window_visible, client())
+			PUBLISH_LEGACY(src, /datum/notice/tgui_window_visible, client())
 		if("perf/flicker")
 			if(!accept_perf_telemetry())
 				return
@@ -575,7 +573,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 		if("cacheReloaded")
 			reinitialize()
 		if("chat/resend")
-			GLOB.chat_service.handle_resend(client(), payload)
+			SSchat.handle_resend(client(), payload)
 		if("oversizedPayloadRequest")
 			var/payload_id = payload["id"]
 			var/chunk_count = text2num(payload["chunkCount"])
@@ -643,7 +641,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 		"count" = chunk_count,
 		"chunks" = list(),
 	)
-	after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+	after(src, 10 SECONDS, PROC_REF(remove_oversized_payload), key = "payload_timeout:[payload_id]", with = list(payload_id))
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
 	var/list/payload = LAZYACCESS(oversized_payloads, payload_id)
@@ -652,7 +650,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 	var/list/chunks = payload["chunks"]
 	chunks += chunk
 	if(length(chunks) >= payload["count"])
-		om_cancel_timer_slot(src, "payload_timeout:[payload_id]")
+		cancel_after(src, "payload_timeout:[payload_id]")
 		var/message_type = payload["type"]
 		var/final_payload = chunks.Join()
 		remove_oversized_payload(payload_id)
@@ -661,7 +659,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else
-		after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+		after(src, 10 SECONDS, PROC_REF(remove_oversized_payload), key = "payload_timeout:[payload_id]", with = list(payload_id))
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)

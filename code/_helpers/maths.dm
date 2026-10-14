@@ -43,3 +43,29 @@
 			current_y_step += y_distance_sign
 			line += locate(current_x_step, current_y_step, starting_z)
 	return line
+
+// ---------------------------------------------------------------- dt helpers
+
+/// Exponential approach of `x` toward `target` with rate `k` per second over `dt` seconds.
+/// Exact for any dt: two half-steps equal one full step.
+/proc/approach(x, target, k, dt)
+	return target + (x - target) * NUM_E ** (-k * dt)
+
+/// Exponential decay of `x` at `rate` per second over `dt` seconds.
+/proc/decay(x, rate, dt)
+	return x * NUM_E ** (-rate * dt)
+
+/// TRUE with the probability that an event of `p_per_second` (0-1) happens within `dt` seconds.
+/proc/chance_over(p_per_second, dt)
+	if(p_per_second <= 0 || dt <= 0)
+		return FALSE
+	if(p_per_second >= 1)
+		return TRUE
+	return rand() < 1 - (1 - p_per_second) ** dt
+
+/// Linear move of `x` toward `target` by at most `speed * dt`.
+/proc/move_toward(x, target, speed, dt)
+	var/delta = speed * dt
+	if(abs(target - x) <= delta)
+		return target
+	return x + (target > x ? delta : -delta)

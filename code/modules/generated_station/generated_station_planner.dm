@@ -46,9 +46,9 @@
 		definition.minimum_area = definition.critical ? 48 : 36
 		definition.maximum_area = 100
 		for(var/capability in row[4])
-			own_add(definition, nameof(definition.requirements), new /datum/generated_station_capability_requirement(capability))
+			rel_add(definition, nameof(definition.requirements), new /datum/generated_station_capability_requirement(capability))
 		for(var/capability in row[5])
-			own_add(definition, nameof(definition.provisions), new /datum/generated_station_capability_provision(capability))
+			rel_add(definition, nameof(definition.provisions), new /datum/generated_station_capability_provision(capability))
 		catalog += definition
 	return catalog
 
@@ -58,15 +58,14 @@
 /datum/generated_station_planner
 	var/error_message
 
-/// The pending plan_async() job's state; plan_poll() polls it every tick while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/datum/generated_station_planner, tmp/list, poll_state, null, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/generated_station_planner, "poll_delay", plan_poll, "poll_state")
+/// The pending plan_async() job's state; plan_poll() polls it every tick while set (every()).
+/datum/generated_station_planner/var/tmp/list/poll_state
+TRACKED(/datum/generated_station_planner, poll_state)
 
-/datum/generated_station_planner/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+CAPABILITIES(/datum/generated_station_planner)
+	every(PROC_REF(poll_delay), then(PROC_REF(plan_poll)), when = nameof(poll_state))
 
-/datum/generated_station_planner/proc/poll_delay()
+/datum/generated_station_planner/proc/poll_delay(datum/act/A)
 	return world.tick_lag
 
 /datum/generated_station_planner/proc/plan(seed, width = 160, height = 160)
@@ -89,29 +88,30 @@ DECLARE_REPEAT(/datum/generated_station_planner, "poll_delay", plan_poll, "poll_
 	return state["spec"]
 
 /// plan() for the live game: the Rust job is polled on a timer and its result read back as lane
-/// work (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked with the spec, or
-/// null (error_message says why).
-/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, list/on_done)
+/// work (object_model_core.md §4.11), so nothing sleeps. When it ends, after(owner, 0, then, with = with + the spec, or
+/// null: error_message says why) runs.
+/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, then = null, datum/owner = null, list/with = null)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
 	var/request_json = plan_request(seed, width, height)
 	var/job_id = vg_verdigris_submit_station_layout(request_json)
-	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "done" = on_done)
+	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "then" = then, "owner" = owner, "with" = with)
 	if(!job_id)
 		return plan_async_end(state, plan_failed(null, request_json, seed, "Rust planner did not return a job handle"))
 	// The worker owns only immutable Rust data; the game keeps its ticks until the result is ready.
 	set_poll_state(state)
 
-/// Polls the pending Rust job (DECLARE_REPEAT while poll_state is set); once it is done, reads it back.
-/datum/generated_station_planner/proc/plan_poll()
+/// Polls the pending Rust job (every() while poll_state is set); once it is done, reads it back.
+/datum/generated_station_planner/proc/plan_poll(datum/act/timer/A)
 	var/list/state = poll_state
+	if(!state)
+		return
 	var/status = vg_verdigris_job_poll(state["job"])
 	if(status == "PENDING")
 		return
 	set_poll_state(null)
 	if(plan_ready(state, status))
-		om_task_slices(src, PROC_REF(plan_fetch_slice), state)
-	return REPEAT_STOP
+		job_cursor(src, PROC_REF(plan_fetch_slice), state)
 
 /// The job finished: TRUE with the header read and the pages ready to fetch; FALSE when it failed
 /// (the failure is handed on).
@@ -162,8 +162,8 @@ DECLARE_REPEAT(/datum/generated_station_planner, "poll_delay", plan_poll, "poll_
 
 /datum/generated_station_planner/proc/plan_async_end(list/state, datum/generated_station_spec/spec)
 	state["spec"] = spec
-	var/list/on_done = state["done"]
-	om_run(on_done, spec)
+	if(state["then"])
+		after(state["owner"], 0, state["then"], with = (state["with"] || list()) + list(spec))
 
 /// The plan's array sections, read a page at a time by plan_fetch_slice().
 GLOBAL_LIST_INIT(generated_station_plan_sections, list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks"))

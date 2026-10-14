@@ -5,14 +5,15 @@ SYSTEM_DEF(contracts)
 	var/next_subject_id = 1
 	var/next_evidence_id = 1
 	var/next_event_id = 1
-	var/list/contracts_by_id
-	var/list/offered_contracts
-	var/list/active_contracts
-	var/list/grace_contracts
-	var/list/closed_contracts
-	var/list/offer_candidates
+	/// Contract id -> the contract; the system owns every registered contract (a deleted one leaves it).
+	var/list/datum/contract/contracts_by_id
+	var/list/datum/contract/offered_contracts
+	var/list/datum/contract/active_contracts
+	var/list/datum/contract/grace_contracts
+	var/list/datum/contract/closed_contracts
+	var/list/datum/contract_offer_candidate/offer_candidates
 	var/list/offer_cooldowns
-	var/list/lifecycle_history
+	var/list/datum/contract_lifecycle_entry/lifecycle_history
 	var/next_candidate_id = 1
 	var/suppress_offer_reconcile = FALSE
 	var/offers_materialized = 0
@@ -22,10 +23,11 @@ SYSTEM_DEF(contracts)
 	var/list/event_subscriptions
 	var/list/definitions
 	var/list/subject_identities
-	var/list/evidence_by_id
+	/// Evidence id -> the evidence; the system owns it until unregister_evidence() spends it.
+	var/list/datum/contract_evidence/evidence_by_id
 	var/list/pending_subject_reconciliations
 	/// Bounded diagnostic history of published immutable event snapshots.
-	var/list/recent_events
+	var/list/datum/contract_event/recent_events
 	/// Round-local idempotency ledger, keyed by event type and producer occurrence ID.
 	var/list/seen_event_occurrences
 	var/list/event_occurrence_order
@@ -50,7 +52,7 @@ SYSTEM_DEF(contracts)
 	var/list/opportunity_rules_by_event
 	var/list/opportunity_windows
 	var/list/opportunity_cooldowns
-	var/list/opportunity_history
+	var/list/datum/contract_opportunity_history_entry/opportunity_history
 	var/opportunity_events_observed = 0
 	var/opportunities_triggered = 0
 	var/opportunities_suppressed = 0
@@ -79,9 +81,9 @@ SYSTEM_DEF(contracts)
 	custody_last_ended_at_by_subject = list()
 	security_record_subject_ids = list()
 	infrastructure_fact_revisions = list()
-	om_hook(OM_WORLD, /datum/om/event/world_mob_created, src, PROC_REF(on_mob_created))
-	om_hook(OM_WORLD, /datum/om/event/world_mob_death, src, PROC_REF(on_mob_death))
-	om_hook(OM_WORLD, /datum/om/event/world_payment_account_status, src, PROC_REF(on_payment_account_status))
+	observe(OM_WORLD, /datum/notice/world_mob_created, src, then(PROC_REF(on_mob_created)))
+	observe(OM_WORLD, /datum/notice/world_mob_death, src, then(PROC_REF(on_mob_death)))
+	observe(OM_WORLD, /datum/notice/world_payment_account_status, src, then(PROC_REF(on_payment_account_status)))
 	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		watch_contract_subject(subject)
 	for(var/definition_type as anything in subtypesof(/datum/contract_definition))
@@ -105,29 +107,31 @@ SYSTEM_DEF(contracts)
 	infrastructure_fact_revisions[key] = revision
 	return revision
 
-/datum/system/contracts/proc/on_mob_created(datum/source, datum/om/event/world_mob_created/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_mob_created(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_mob_created/event = A
 	var/mob/created_mob = event.mob
 	var/mob/living/carbon/human/subject = created_mob
 	if(istype(subject))
 		watch_contract_subject(subject)
 
 /datum/system/contracts/proc/watch_contract_subject(mob/living/carbon/human/subject)
-	om_hook(subject, /datum/om/event/mob_medical_issues_changed, src, PROC_REF(on_medical_issues_changed))
-	om_hook(subject, /datum/om/event/affliction_severity_changed, src, PROC_REF(on_affliction_severity_changed))
-	om_hook(subject, /datum/om/event/body_afflictions_changed, src, PROC_REF(on_body_afflictions_changed))
-	om_hook(subject, /datum/om/event/living_revived, src, PROC_REF(on_medical_subject_revived))
-	om_hook(subject, /datum/om/event/mob_login, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_logout, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_mind_transferred_into, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_mind_transferred_out_of, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/moved, src, PROC_REF(on_custody_input_changed))
-	om_hook(subject, /datum/om/event/mob_equipped_item, src, PROC_REF(on_custody_input_changed))
-	om_hook(subject, /datum/om/event/mob_unequipped_item, src, PROC_REF(on_custody_input_changed))
+	observe(subject, /datum/notice/mob_medical_issues_changed, src, then(PROC_REF(on_medical_issues_changed)))
+	observe(subject, /datum/notice/affliction_severity_changed, src, then(PROC_REF(on_affliction_severity_changed)))
+	observe(subject, /datum/notice/body_afflictions_changed, src, then(PROC_REF(on_body_afflictions_changed)))
+	observe(subject, /datum/notice/living_revived, src, then(PROC_REF(on_medical_subject_revived)))
+	observe(subject, /datum/notice/mob_login, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_logout, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_mind_transferred_into, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_mind_transferred_out_of, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/moved, src, then(PROC_REF(on_custody_input_changed)))
+	observe(subject, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_custody_input_changed)))
+	observe(subject, /datum/notice/mob_unequipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	refresh_physical_custody(subject)
 
-/datum/system/contracts/proc/on_custody_input_changed(mob/living/carbon/human/subject, datum/om/event/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_custody_input_changed(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/subject = A.target
 	refresh_physical_custody(subject)
 
 /datum/system/contracts/proc/is_physically_custodied(mob/living/carbon/human/subject)
@@ -224,8 +228,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"subject_name" = subject.real_name,
 	)
 
-/datum/system/contracts/proc/on_payment_account_status(datum/source, datum/om/event/world_payment_account_status/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_payment_account_status(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_payment_account_status/event = A
 	var/datum/money_account/account = event.account
 	if(!account || account.suspended)
 		return
@@ -276,8 +281,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/completion_number = completions_by_definition[definition.id] || 0
 	return !!queue_offer(definition.id, context, "Allied standing unlocked a higher-tier follow-up commission", "followup:[definition.id]:[completion_number]", 90)
 
-/datum/system/contracts/proc/on_medical_subject_availability(mob/living/carbon/human/subject, datum/om/event/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_medical_subject_availability(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/subject = A.target
 	queue_medical_subject_reconciliation(subject)
 
 /datum/system/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
@@ -285,10 +291,10 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
-	// Pass only the key: om_after() drops a call whose captured datum is gone, and a subject
+	// Pass only the key: after() drops a call whose captured datum is gone, and a subject
 	// deleted before the timer fires would then leave its key pending forever (blocking every
 	// later reconciliation for that key). The handler resolves the key and copes with a gone subject.
-	om_after(src, 0, PROC_REF(reconcile_subject_availability), key)
+	after(src, 0, PROC_REF(reconcile_subject_availability), with = list(key))
 
 /datum/system/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key
@@ -307,13 +313,15 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	reconcile_medical_trial_side_contracts()
 	consider_rare_medical_case(subject)
 
-/datum/system/contracts/proc/on_medical_issues_changed(mob/living/carbon/human/subject, datum/om/event/mob_medical_issues_changed/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_medical_issues_changed(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/subject = A.target
 	subject.refresh_contract_medical_eligibility()
 	consider_rare_medical_case(subject)
 
-/datum/system/contracts/proc/on_mob_death(datum/source, datum/om/event/world_mob_death/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_mob_death(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_mob_death/event = A
 	var/mob/living/dead_mob = event.living
 	if(ishuman(dead_mob))
 		var/mob/living/carbon/human/dead_subject = dead_mob
@@ -321,8 +329,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		reconcile_medical_trial_offers()
 		withdraw_rare_case_offers(dead_mob)
 
-/datum/system/contracts/proc/on_medical_subject_revived(mob/living/carbon/human/subject, datum/om/event/living_revived/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_medical_subject_revived(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/subject = A.target
 	subject.contract_medical_indications = null
 	subject.refresh_contract_medical_eligibility()
 
@@ -400,18 +409,19 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(!contract || contract.id)
 		return FALSE
 	contract.id = "DQ-[next_contract_id++]"
-	contracts_by_id[contract.id] = contract
-	offered_contracts += contract
+	rel_add(src, nameof(contracts_by_id), contract, contract.id)
+	rel_add(src, nameof(offered_contracts), contract)
 	return TRUE
 
 /datum/system/contracts/proc/unregister_contract(datum/contract/contract)
 	if(!contract)
 		return
-	contracts_by_id -= contract.id
-	offered_contracts -= contract
-	active_contracts -= contract
-	grace_contracts -= contract
-	closed_contracts -= contract
+	if(contract.id)
+		rel_take(src, nameof(contracts_by_id), key = contract.id)
+	rel_remove(src, nameof(offered_contracts), contract)
+	rel_remove(src, nameof(active_contracts), contract)
+	rel_remove(src, nameof(grace_contracts), contract)
+	rel_remove(src, nameof(closed_contracts), contract)
 	for(var/event_type in event_subscriptions)
 		event_subscriptions[event_type] -= contract
 
@@ -419,19 +429,19 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(!contract)
 		return
 	if(old_state == CONTRACT_OFFERED)
-		offered_contracts -= contract
+		rel_remove(src, nameof(offered_contracts), contract)
 	else if(old_state == CONTRACT_ACTIVE)
-		active_contracts -= contract
+		rel_remove(src, nameof(active_contracts), contract)
 	else if(old_state == CONTRACT_GRACE)
-		grace_contracts -= contract
+		rel_remove(src, nameof(grace_contracts), contract)
 	if(new_state == CONTRACT_OFFERED)
-		offered_contracts |= contract
+		rel_add(src, nameof(offered_contracts), contract)
 	else if(new_state == CONTRACT_ACTIVE)
-		active_contracts |= contract
+		rel_add(src, nameof(active_contracts), contract)
 	else if(new_state == CONTRACT_GRACE)
-		grace_contracts |= contract
+		rel_add(src, nameof(grace_contracts), contract)
 	else
-		closed_contracts |= contract
+		rel_add(src, nameof(closed_contracts), contract)
 
 /datum/system/contracts/proc/subscribe(datum/contract/contract, event_type)
 	if(!contract || !istext(event_type) || !length(event_type))
@@ -451,15 +461,20 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		event_subscriptions -= event_type
 
 /datum/system/contracts/proc/publish_event(datum/contract_event/event)
+	// Systems that boot first (atoms, the machine service's power poll) publish while booting: before initialize() made the tables no
+	// contract exists to hear it, and its dedup and history tables are not there yet.
+	if(!initialized)
+		spent(event)
+		return FALSE
 	if(!event?.is_valid())
 		events_rejected++
-		qdel(event)
+		spent(event)
 		return FALSE
 	if(event.occurrence_id)
 		var/dedup_key = "[event.event_type]|[event.occurrence_id]"
 		if(seen_event_occurrences[dedup_key])
 			events_deduplicated++
-			qdel(event)
+			spent(event)
 			return FALSE
 		seen_event_occurrences[dedup_key] = TRUE
 		event_occurrence_order += dedup_key
@@ -470,11 +485,11 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	event.id = "DQ-CE-[next_event_id++]"
 	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
-	recent_events += event
+	rel_add(src, nameof(recent_events), event)
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
 		var/datum/contract_event/expired_event = recent_events[1]
-		recent_events.Cut(1, 2)
-		qdel(expired_event)
+		rel_remove(src, nameof(recent_events), expired_event)
+		lapsed(expired_event)
 	observe_opportunity_event(event)
 	var/list/subscribers = event_subscriptions[event.event_type]
 	var/list/listeners = subscribers?.Copy()

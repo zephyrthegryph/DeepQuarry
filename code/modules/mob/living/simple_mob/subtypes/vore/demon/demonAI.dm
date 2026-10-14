@@ -66,7 +66,7 @@
 
 /mob/living/simple_mob/vore/demonAI/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "You slide down the slick, slippery gullet of the creature. It's warm, and the air is thick. You can feel the doughy walls of the creatures gut push and knead into your form! Slimy juices coat your form stinging against your flesh as they waste no time to start digesting you. The creature's heartbeat and the gurgling of their stomach are all you can hear as your jostled about, treated like nothing but food."
 
@@ -88,20 +88,20 @@
 		return TRUE
 	. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
+/mob/living/simple_mob/vore/demonAI/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/demonAI/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shifted_out)
-		self.set_density(FALSE)
+	if(src.shifted_out)
+		src.set_density(FALSE)
 
-/datum/om/stage/life/environment/simple_mob/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
+/mob/living/simple_mob/vore/demonAI/life_environment_due()
+	return TRUE
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/om/stage/life/environment/simple_mob/vore/demonAI/exchange(mob/living/simple_mob/vore/demonAI/self, datum/gas_mixture/environment)
-	if(self.shifted_out)
+/mob/living/simple_mob/vore/demonAI/life_environment_exchange(datum/gas_mixture/environment)
+	if(src.shifted_out)
 		return
 	. = ..()
 
@@ -115,7 +115,7 @@
 /mob/living/simple_mob/vore/demonAI/cloak()
 	if(dq_get_cloaked(src))
 		return
-	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
+	set_alpha_source(SRC_ALPHA_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 
@@ -123,7 +123,7 @@
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)// This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 // Check if cloaking if possible.
@@ -143,12 +143,9 @@
 	return dq_get_cloaked(src)
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/vore/demonAI
-	of = /mob/living/simple_mob/vore/demonAI
-
-/datum/om/stage/life/special/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/vore/demonAI/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 // Applies bonus base damage if dq_get_cloaked(src).
 /mob/living/simple_mob/vore/demonAI/apply_bonus_melee_damage(atom/A, damage_amount)
@@ -159,10 +156,11 @@
 	return ..()
 
 // Force uncloaking if attacked.
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PROC_REF(laugh_at_hit))
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/vore/demonAI)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
-/mob/living/simple_mob/vore/demonAI/proc/laugh_at_hit(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/demonAI/proc/laugh_at_hit(datum/act/A)
 	play_sfx(src, SFX_MISC_DEMONLAUGH)
 
 /mob/living/simple_mob/vore/demonAI/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
@@ -194,3 +192,6 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PR
 	if(dq_get_cloaked(src))
 		gibs(T)
 	return ..()
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/vore/demonAI, is_shifting)

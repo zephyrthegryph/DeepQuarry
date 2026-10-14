@@ -1,0 +1,5 @@
+/obj/machinery/shield_diffuser icon: icons/obj/machines/shielding.dmi
+/obj/machinery/shield_diffuser state: fdiffuser_on
+/obj/machinery/shield_diffuser dir: 2
+/obj/machinery/shield_diffuser overlay: icons/obj/machines/shielding.dmi:fdiffuser_on:8:#000000
+

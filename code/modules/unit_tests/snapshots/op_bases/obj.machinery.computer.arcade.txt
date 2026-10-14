@@ -1,0 +1,68 @@
+ai|none menu: Open controls
+ai|none menu: Use
+ai|none click: Click: Open controls
+human|/obj/item menu: Climb
+human|/obj/item menu: Open controls
+human|/obj/item menu: Pay
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Open controls
+human|/obj/item/card/emag menu: Pay
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Pay
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Pay
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Pay
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Pay
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Pay
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Pay
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Pay
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Pay
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Pay
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Use item
+human|none menu: Climb
+human|none menu: Open controls
+human|none click: Click: Open controls
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none menu: Open controls
+robot|none menu: Use
+robot|none click: Click: Open controls

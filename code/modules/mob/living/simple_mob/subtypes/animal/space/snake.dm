@@ -57,12 +57,14 @@
 	faction_bump_vore = 1 // Allows snakes to vore people who bump into them even if they are the same "friendly" faction.
 	vore_bump_emote = "coils around and unhinges its jaws at"
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/passive/snake)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 // Adds vore belly
 /mob/living/simple_mob/animal/passive/snake/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The snake coils its tail around you, pushing you to the ground and pinning you with its weight. It flicks its tongue at you, before pouncing onto your head, engulfing the upper half of your body with ease as it unhinges its jaw. With greedy swallows, it pulls you deeper, and deeper. The tight walls undulate rhythmically as the danger noodle rumbles contentedly at this new meal. The snake sends the last of you down with a deep swallow, hissing softly and closing its eyes as it enjoys its new meal, tucked away nicely under those beautiful, green scales."
 	B.item_digest_mode = IM_DIGEST_FOOD
@@ -132,36 +134,35 @@
 
 	endurance = 20
 
-	makes_dirt = FALSE
 
 	vore_default_mode = DM_HOLD
 
 	var/turns_since_scan = 0
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle
-	of = /mob/living/simple_mob/animal/passive/snake/python/noodle
+/mob/living/simple_mob/animal/passive/snake/python/noodle/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/snake/python/noodle/perform(mob/living/simple_mob/animal/passive/snake/python/noodle/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/snake/python/noodle/life_type_post(datum/seq_frame/life/F)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 5)
-			self.turns_since_scan = 0
-			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, nameof(self.movement_target))
-			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, nameof(self.movement_target))
-				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 5)
+			src.turns_since_scan = 0
+			if((src.movement_target) && !(isturf(src.movement_target.loc) || ishuman(src.movement_target.loc) ))
+				rel_clear(src, nameof(src.movement_target))
+			if(!src.movement_target || !(src.movement_target.loc in oview(src, 7)) )
+				rel_clear(src, nameof(src.movement_target))
+				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(src,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, nameof(self.movement_target), S)
-						om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "turns towards \the [self.movement_target] and slithers towards it.")
+						rel_set(src, nameof(src.movement_target), S)
+						after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("turns towards \the [src.movement_target] and slithers towards it."))
 						break
-			if(self.movement_target)
-				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+			if(src.movement_target)
+				after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))
@@ -172,17 +173,21 @@
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, INTERACT_ITEM(null, PROC_REF(noodle_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
+	configure(mob_movement(makes_dirt = FALSE))
+	op("noodle_item", item(/obj/item), then(PROC_REF(noodle_interaction_item)))
 
 /// Old attackby: snake snacks.
-/mob/living/simple_mob/animal/passive/snake/python/noodle/proc/noodle_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/snake/python/noodle/proc/noodle_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/reagent_containers/food/snacks/snakesnack))
 		act_message(user, src, null, MSG_OTHERS(span_notice("%U% feeds %I% to %T%.")), item = O)
 		adjust_nutrition(100) //It's sugar!
 		consume(O, user)
 	else
-		return FALSE
+		return OP_DECLINE
 
 /*
  * Special snek-snax for Noodle!
@@ -196,28 +201,22 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_SUGAR = 1)
 
-/obj/item/reagent_containers/food/snacks/snakesnack/Initialize(mapload)
-	. = ..()
-	if(!snack_colour)
-		snack_colour = pick( list("yellow","green","pink","blue") )
-	icon_state = "snack_[snack_colour]" // ALLOW(decl): random colour pick
-	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
+/// Its sugar colour names it (rolls()).
+/obj/item/reagent_containers/food/snacks/snakesnack/proc/colour_desc(datum/roller/R)
+	return "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 
 /obj/item/storage/box/snakesnackbox
+	starts_with = list(
+		/obj/item/reagent_containers/food/snacks/snakesnack = 7,
+	)
 	name = "box of Snake Snax"
 	desc = "A box containing Noodle's special sugermouse treats."
 	icon = 'icons/mob/snake_vr.dmi'
 	icon_state = "sneksnakbox"
 	storage_slots = 7
 
-/obj/item/storage/box/snakesnackbox/Initialize(mapload)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
-	. = ..()
-
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/snakesnack, null, list(REAGENT_ID_SUGAR = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/snakesnack)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
+	rolls(nameof(snack_colour), pick_one(list("yellow", "green", "pink", "blue")), when = cond_not(nameof(snack_colour)))
+	look_from(nameof(snack_colour), state = "snack_*")
+	rolls(nameof(desc), PROC_REF(colour_desc), from = list(nameof(snack_colour)))

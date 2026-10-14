@@ -6,12 +6,11 @@
 	var/obj/effect/fusion_em_field/parent
 	var/mysize = 0
 
-	light_color = COLOR_BLUE
 
-// The field owns its catchers (own_add in fusion_em_field/Initialize()); a catcher names its field.
-/obj/effect/fusion_particle_catcher/relations()
-	. = ..()
-	. += rel_one(nameof(parent))
+// The field owns its catchers (rel_add in fusion_em_field/Initialize()); a catcher names its field.
+CAPABILITIES(/obj/effect/fusion_particle_catcher)
+	configure(light_glow(color = COLOR_BLUE))
+	ref_one(nameof(parent), /obj/effect/fusion_em_field)
 
 /obj/effect/fusion_particle_catcher/proc/SetSize(newsize)
 	name = "collector [newsize]"
@@ -34,7 +33,6 @@
 
 /obj/effect/fusion_particle_catcher/bullet_act(obj/item/projectile/Proj)
 	parent.AddEnergy(Proj.damage)
-	update_icon()
 	return 0
 
 /obj/effect/fusion_particle_catcher/CanPass(atom/movable/mover, turf/target)

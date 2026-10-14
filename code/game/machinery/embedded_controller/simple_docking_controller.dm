@@ -5,10 +5,8 @@
 	var/tag_door
 	valid_actions = list("force_door", "toggle_override")
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controller, "merge:ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller{docking_status:unknown,override_enabled:num,exterior_status:unknown,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/simple_docking_controller's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/simple_docking_controller/proc/ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/simple_docking_controller/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
 
 	. = list(

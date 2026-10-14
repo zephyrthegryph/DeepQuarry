@@ -33,6 +33,10 @@
 	/// The installed item (part, cell, or fried remains). Null for internal parts.
 	var/obj/item/wrapped = null
 
+CAPABILITIES(/datum/robot_component)
+	ref_one(nameof(owner), /mob/living/silicon/robot)
+	owns_one(nameof(wrapped), /obj/item)
+
 /datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
 	rel_set(src, nameof(owner), R)
 	slot = new_slot
@@ -64,7 +68,7 @@
 	idle_usage = initial(idle_usage)
 	active_usage = initial(active_usage)
 	installed = ROBOT_PART_MISSING
-	own_take(src, nameof(wrapped))
+	rel_take(src, nameof(wrapped))
 	owner?.on_part_changed(src)
 
 /// Threshold event: the part is fried. The remains stay installed (and keep
@@ -77,9 +81,9 @@
 		brokenstate = comp.icon_state_broken
 	// Clear the slot before deleting the part so deletion handlers (the
 	// robot's cell watcher) see an empty slot rather than a removal.
-	own_clear(src, nameof(wrapped), OWN_DELETE)
+	rel_clear(src, nameof(wrapped))
 	if(!internal)
-		own_set(src, nameof(wrapped), new /obj/item/broken_device)
+		rel_set(src, nameof(wrapped), new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate
 	installed = ROBOT_PART_DESTROYED
 	max_damage = initial(max_damage)
@@ -164,7 +168,7 @@
 		rel_clear(A, nameof(A.location))
 	if(wrapped && !QDELETED(wrapped))
 		if(!wrapped.carried_afflictions)
-			own_set(wrapped, nameof(wrapped.carried_afflictions), new /datum/carried_afflictions(wrapped))
+			rel_set(wrapped, nameof(wrapped.carried_afflictions), new /datum/carried_afflictions(wrapped))
 		wrapped.carried_afflictions.take(leaving)
 	else
 		QDEL_LIST(leaving)
@@ -322,7 +326,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]
 		var/datum/robot_component/C = new component_type(src, slot)
-		own_put(src, nameof(components), slot, C)
+		rel_add(src, nameof(components), C, slot)
 		if(slot == ROBOT_SLOT_POWER)
 			continue
 		if(C.internal)
@@ -360,21 +364,61 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	var/obj/item/holder
 	var/list/afflictions
 
+CAPABILITIES(/datum/carried_afflictions)
+	ref_one(nameof(holder), /obj/item)
+	owns_many(nameof(afflictions))
+
 /datum/carried_afflictions/New(obj/item/part)
 	..()
 	rel_set(src, nameof(holder), part)
 
 /obj/item/var/datum/carried_afflictions/carried_afflictions
+
+CAPABILITIES(/obj/item)
+	// The item this one is attached to: a sparse link, not a var on /obj/item (item_master()).
+	links(LINK_END(/obj/item, LK_ITEM_MASTER), LINK_END(/obj/item, LK_ITEM_ATTACHED), sparse = TRUE, b_many = TRUE)
+	item_protection(heat_parts = 0, cold_parts = 0, gas_transfer = 1, permeability = 1, siemens = 1) // what it protects from: a type trait (code/game/objects/items.dm)
+	item_sounds(hit = SFX_SWING_HIT, pickup = SFX_GENERIC_PICKUP, drop = SFX_GENERIC_DROP) // what it sounds like: a type trait (code/game/objects/items.dm)
+	item_thrown(force = 0, catchable = TRUE) // how it flies: a type trait (code/game/objects/items/item_thrown.dm)
+	item_worn(slots = 0, hides = 0, covers = 0, flags = 0) // how it is worn: a type trait (code/game/objects/items/item_worn.dm)
+	item_tooling(speed = 1, pry = 0, climbing = FALSE) // how it works as a tool: a type trait (code/game/objects/items/item_tooling.dm)
+	item_combat(force = 0, sharp = FALSE, edge = FALSE, armor_penetration = 0, windup = 0, recovery = 0, can_cleave = FALSE, attack_speed = DEFAULT_ATTACK_COOLDOWN, reach = 1) // how it fights: a type trait (code/game/objects/items/item_combat.dm)
+	// an item on a floor or in a hand is picked up, put down or used, not struck by another; its own ops answer before any blow
+	without("melee_hit")
+	owns_one(nameof(carried_afflictions), /datum/carried_afflictions)
+	owns_one(nameof(economic_adoption), /datum/economic_adoption)
+	owns_one(nameof(identity), /datum/identification)
+	owns_one(nameof(mind_host), /datum/mind_host)
+	owns_many(nameof(possessed_voice))
+	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
+	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
+	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
+	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
+	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
+	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
+	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_collected)))
+	op("gen_silicon_item_silicon_equip_module", remote(), label("Equip"), priority(OP_PRIORITY_DEFAULT - 50), when(all_of(req(/mob/living/silicon, of = ON_ACTOR), req_on_origin(ORIGIN_CLICK, req(/mob/living/silicon/robot, of = ON_ACTOR)))), needs(req(PROC_REF(item_in_robot_module))), then(PROC_REF(item_silicon_equip_module)))
+/// Other silicons preserve the module action's successful no-op.
+/mob/living/silicon/proc/equip_item_from_module(obj/item/I)
+	return OP_OK
+
+/// A robot activates the selected module item, then updates its module display.
+/mob/living/silicon/robot/equip_item_from_module(obj/item/I)
+	activate_module(I)
+	hud_used.update_robot_modules_display()
+	return OP_OK
+
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
-		own_add(src, nameof(afflictions), A)
+		rel_add(src, nameof(afflictions), A)
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()
-	// own_take_all() empties `afflictions` in place: hand back the detached members it returns.
-	return own_take_all(src, nameof(afflictions)) || list()
+	// rel_take_all() empties `afflictions` in place: hand back the detached members it returns.
+	return rel_take_all(src, nameof(afflictions))
 
 /// Structural load the part carries (examine, installing checks).
 /datum/carried_afflictions/proc/carried_load()
@@ -399,9 +443,12 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 									"analyser_broken",
 									"radio_broken")
 
-/obj/item/broken_device/random/Initialize(mapload)
-	icon_state = pick(possible_icons) // ALLOW(decl): random pick
-	. = ..()
+CAPABILITIES(/obj/item/broken_device/random)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/broken_device/random/proc/roll_icon_state(datum/roller/R)
+	return R.choose(possible_icons)
 
 /obj/item/robot_parts/robot_component
 	icon = 'icons/obj/robot_component.dmi'

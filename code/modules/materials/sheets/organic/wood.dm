@@ -4,9 +4,10 @@
 	default_type = MAT_WOOD
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	no_variants = FALSE
+
+CAPABILITIES(/obj/item/stack/material/wood)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/material/wood/sif
 	name = MAT_SIFWOOD + " plank"
@@ -58,8 +59,6 @@
 	max_amount = 25
 	w_class = ITEMSIZE_HUGE
 	var/plank_type = /obj/item/stack/material/wood
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 /obj/item/stack/material/log/reagents_per_sheet()
 	return REAGENTS_PER_LOG
@@ -76,21 +75,23 @@
 	color = "#6f432a"
 	plank_type = /obj/item/stack/material/wood/hard
 
-EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(log_interaction_item)))
+CAPABILITIES(/obj/item/stack/material/log)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
+	op("log_cut", item(/obj/item), when(req(PROC_REF(item_cuts))), wait(PROC_REF(cut_time)), then(PROC_REF(cut_planks_done)))
 
-/// Old attackby.
-/obj/item/stack/material/log/proc/log_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W) || W.force <= 0)
-		return FALSE
-	if(W.sharp && W.edge)
-		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
-		user.setClickCooldown(time)
-		om_task_timed(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// The held item has a cutting edge and some force.
+/obj/item/stack/material/log/proc/item_cuts(datum/act/op/A)
+	var/obj/item/W = A.held
+	return (read_once(istype(W) && combat_of(W).force > 0 && combat_of(W).sharp && combat_of(W).edge)) ? null : MSG(req_failed)
 
-/obj/item/stack/material/log/proc/cut_planks_done(mob/user, our_material_name)
+/// A sharper, stronger blade cuts faster.
+/obj/item/stack/material/log/proc/cut_time(datum/act/op/A)
+	var/obj/item/W = A.held
+	return (3 SECONDS / max(combat_of(W).force / 10, 1)) * tooling_of(W).speed
+
+/obj/item/stack/material/log/proc/cut_planks_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/our_material_name = src.material.name
 	if(!use(1))
 		return
 	to_chat(user, span_notice("You cut up a log into planks."))
@@ -112,11 +113,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(l
 	default_type = MAT_WOODEN_STICK
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 	no_variants = FALSE
 	pass_color = TRUE
 	apply_colour = TRUE
+
+CAPABILITIES(/obj/item/stack/material/stick)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/material/stick/reagents_per_sheet()
 	return REAGENTS_PER_ROD

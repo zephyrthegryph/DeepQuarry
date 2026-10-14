@@ -2,7 +2,7 @@
 	if(!istype(T, /turf/simulated) || T.density)
 		return FALSE
 	if(!T.air)
-		own_set(T, nameof(T.air), T.create_gas_mixture())
+		rel_set(T, nameof(T.air), T.create_gas_mixture())
 		if(SSair?.initialized)
 			T.update_air_ref(0)
 	var/datum/gas_mixture/air = T.return_air()
@@ -10,7 +10,7 @@
 		return FALSE
 	for(var/gas_type in GLOB.meta_gas_info)
 		air.set_moles(gas_type, 0)
-	air.set_temperature(T20C)
+	heat_set(air, T20C)
 	air.set_volume(CELL_VOLUME)
 	var/standard_moles = ONE_ATMOSPHERE * air.return_volume() / (R_IDEAL_GAS_EQUATION * T20C)
 	air.set_moles(/datum/gas/oxygen, standard_moles * O2STANDARD)
@@ -42,8 +42,8 @@
 /obj/machinery/generated_station_data_relay/atom_destruction(damage_flag)
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	var/datum/expedition_site/site
-	for(var/key in GLOB.expedition_service?.sites)
-		var/datum/expedition_site/candidate = GLOB.expedition_service.sites[key]
+	for(var/key in SSexpedition?.sites)
+		var/datum/expedition_site/candidate = expedition_sites()[key]
 		if(candidate.station_simulation == simulation)
 			site = candidate
 			break
@@ -108,9 +108,9 @@
 		var/obj/machinery/generated_station_data_relay/relay = new(placement)
 		relay.station_id = station_spec.id
 		relay.department_id = department.id
-		own_add(station_materialization, nameof(station_materialization.infrastructure), relay)
+		rel_add(station_materialization, nameof(station_materialization.infrastructure), relay)
 		var/obj/machinery/camera/camera = new(camera_placement)
 		camera.set_dir(turn(generated_station_adjacent_wall_direction(camera_placement), 180))
 		rel_set(relay, nameof(relay.camera), camera)
-		own_add(station_materialization, nameof(station_materialization.infrastructure), camera)
+		rel_add(station_materialization, nameof(station_materialization.infrastructure), camera)
 	return TRUE

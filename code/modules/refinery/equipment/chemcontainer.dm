@@ -5,8 +5,6 @@
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "container"
 
-	drop_sound = SFX_ITEMS_DROP_GASCAN
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	w_class = ITEMSIZE_COST_LARGE
 
@@ -21,16 +19,24 @@
 	VAR_PRIVATE/label = ""
 
 /obj/item/reagent_containers/chem_canister
-	transfer_amount_verb = FALSE // Can't be set on these
+
+CAPABILITIES(/obj/item/reagent_containers/chem_canister)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
+	configure(reagents(contents_from = PROC_REF(loaded_contents)))
+
+/// A canister loaded with a reagent starts full of it (reagents(contents_from =)).
+/obj/item/reagent_containers/chem_canister/proc/loaded_contents()
+	if(loaded_reagent && SSchemistry.ready().chemical_reagents[loaded_reagent])
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
+		. = list()
+		.[R.id] = volume
 
 /obj/item/reagent_containers/chem_canister/Initialize(mapload)
 	. = ..()
 	if(loaded_reagent)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[loaded_reagent]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
-			reagents.add_reagent(R.id, volume)
-	update_icon()
 
 /obj/item/reagent_containers/chem_canister/examine(mob/user)
 	. = ..()
@@ -56,32 +62,6 @@
 	if (!flag)
 		return
 
-	else if(istype(target, /obj/machinery/chemical_dispenser)) //A dispenser. Refill a matching reagent container in it!
-		target.add_fingerprint(user)
-
-		if(!reagents.total_volume)
-			to_chat(user, span_warning("\The [src] is empty."))
-			return
-
-		var/found_any = FALSE
-		var/obj/machinery/chemical_dispenser/DISP = target
-		for(var/key in DISP.cartridges)
-			var/obj/item/reagent_containers/chem_disp_cartridge/C = DISP.cartridges[key]
-			if(C && C.label == label) // This allows it to be player configured
-				found_any = TRUE
-				if(C.reagents.total_volume >= C.reagents.maximum_volume)
-					continue
-				reagents.trans_to_obj(C, amount_per_transfer_from_this)
-				update_icon()
-				SStgui.update_uis(DISP)
-				to_chat(user, span_notice("You fill \the [target] with '\the [src]."))
-				return
-
-		if(found_any)
-			to_chat(user, span_notice("The [label] is already full."))
-		else
-			to_chat(user, span_notice("\The [target] has no [label] cartridges to fill."))
-
 	if(target.is_open_container() && target.reagents) //Something like a glass. Player probably wants to transfer TO it.
 
 		if(!reagents.total_volume)
@@ -94,28 +74,45 @@
 
 		var/trans = src.reagents.trans_to_obj(target, amount_per_transfer_from_this)
 		to_chat(user, span_notice("You transfer [trans] units of the solution to \the [target]."))
-		update_icon()
 
 	else
 		return ..()
 
-/obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
-	update_icon()
+/// Refills the cartridge of `DISP` that carries this canister's label (the dispenser's refill_cartridge op). TRUE when it poured.
+/obj/item/reagent_containers/chem_canister/proc/refill_dispenser(obj/machinery/chemical_dispenser/DISP, mob/user)
+	DISP.add_fingerprint(user)
+	if(!reagents.total_volume)
+		to_chat(user, span_warning("\The [src] is empty."))
+		return FALSE
+	var/found_any = FALSE
+	for(var/key in DISP.cartridges)
+		var/obj/item/reagent_containers/chem_disp_cartridge/C = DISP.cartridges[key]
+		if(C && C.label == label) // This allows it to be player configured
+			found_any = TRUE
+			if(C.reagents.total_volume >= C.reagents.maximum_volume)
+				continue
+			reagents.trans_to_obj(C, amount_per_transfer_from_this)
+			SStgui.update_uis(DISP)
+			to_chat(user, span_notice("You fill \the [DISP] with '\the [src]."))
+			return TRUE
+	if(found_any)
+		to_chat(user, span_notice("The [label] is already full."))
+	else
+		to_chat(user, span_notice("\The [DISP] has no [label] cartridges to fill."))
+	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/chem_canister/appearance_overlays()
-	. = list()
-	. += ..()
-	if(reagents && reagents.total_volume > 0)
-		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
-		switch(percent)
+/obj/item/reagent_containers/chem_canister/draw(datum/look/look)
+	..()
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	if(R?.total_volume > 0)
+		var/percent
+		switch((R.total_volume / R.maximum_volume) * 100)
 			if(0 to 25)			percent = 25
 			if(25 to 50)		percent = 50
 			if(50 to 75)		percent = 75
 			if(75 to INFINITY)	percent = 100
-		var/image/chems = image(icon, icon_state = "[icon_state]_c[percent]", dir = NORTH)
-		chems.color = reagents.get_color()
-		. += chems
+		look.overlay(look_overlay_image(icon, "[initial(icon_state)]_c[percent]", color = R.tint, dir = NORTH))
 
 
 // Preloads

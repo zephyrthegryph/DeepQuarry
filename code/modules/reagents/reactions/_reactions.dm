@@ -51,36 +51,17 @@
 
 	return TRUE
 
+/// How far one step of the reaction goes in `holder`, in reaction units (react_step() still caps it at `reaction_limit`). The maths is
+/// Rust's (verdigris/domains/chem/src/reaction.rs: the rate, the holder's catalytic surface, the yield limit, the completion of tiny
+/// remainders); DM gathers the numbers.
 /datum/decl/chemical_reaction/proc/calc_reaction_progress(datum/reagents/holder, reaction_limit)
-	var/progress = reaction_limit * reaction_rate //simple exponential progression
-	// Catalytic material surfaces alter the ordinary reaction rate; no recipe
-	// knows an alloy name and no special catalyst item is injected.
-	progress *= holder.my_atom?.material_reaction_rate_multiplier() || 1
-
-	//calculate yield
-	if(1-yield > 0.001) //if yield ratio is big enough just assume it goes to completion
-		/*
-			Determine the max amount of product by applying the yield condition:
-			(max_product/result_amount) / reaction_limit == yield/(1-yield)
-
-			We make use of the fact that:
-			reaction_limit = (holder.get_reagent_amount(reactant) / required_reagents[reactant]) of the limiting reagent.
-		*/
-		var/yield_ratio = yield/(1-yield)
-		var/max_product = yield_ratio * reaction_limit * result_amount //rearrange to obtain max_product
-		var/yield_limit = max(0, max_product - holder.get_reagent_amount(result))/result_amount
-
-		progress = min(progress, yield_limit) //apply yield limit
-
-	//apply min reaction progress - wasn't sure if this should go before or after applying yield
-	//I guess people can just have their miniscule reactions go to completion regardless of yield.
+	var/list/reactants = list()
 	for(var/reactant in required_reagents)
-		var/remainder = holder.get_reagent_amount(reactant) - progress*LAZYACCESS(required_reagents, reactant)
-		if(remainder <= min_reaction*LAZYACCESS(required_reagents, reactant))
-			progress = reaction_limit
-			break
-
-	return progress
+		reactants += holder.get_reagent_amount(reactant)
+		reactants += LAZYACCESS(required_reagents, reactant)
+	// Catalytic material surfaces alter the ordinary reaction rate; no recipe knows an alloy name.
+	var/multiplier = holder.my_atom?.material_reaction_rate_multiplier() || 1
+	return vg_chem_reaction_progress(reaction_limit, reaction_rate, multiplier, yield, result_amount, result ? holder.get_reagent_amount(result) : 0, min_reaction, reactants)
 
 /datum/decl/chemical_reaction/proc/react_step(datum/reagents/holder, belly_reagent)
 	//determine how far the reaction can proceed

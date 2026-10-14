@@ -3,10 +3,9 @@
 	var/volume = 0
 	unacidable = TRUE
 
-/obj/item/integrated_circuit/reagent/Initialize(mapload)
-	. = ..()
-	if(volume)
-		create_reagents(volume)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/smoke)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/smoke
 	name = "smoke generator"
@@ -55,6 +54,9 @@
 		smoke_system.start()
 	reagents.clear_reagents()
 	activate_pin(2)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/injector)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/injector
 	name = "integrated hypo-injector"
@@ -108,7 +110,7 @@
 
 /// The injection, 3 seconds after do_work() announced it.
 /obj/item/integrated_circuit/reagent/injector/proc/inject_mob(mob/living/L)
-	if(!L.can_inject(null, 0)) // No error message on second check
+	if(!L || !L.can_inject(null, 0)) // No error message on second check
 		activate_pin(3)
 		return
 	var/contained = reagents.get_reagents()
@@ -150,7 +152,7 @@
 				return
 			var/turf/T = get_turf(AM)
 			T.visible_message(span_warning("[src] is trying to inject [L]!"))
-			om_after(src, 3 SECONDS, PROC_REF(inject_mob), L)
+			after(src, 3 SECONDS, PROC_REF(inject_mob), with = list(L), keeps_dead = TRUE)
 			return
 		else
 			// Use standardized injection compatibility for objects
@@ -274,6 +276,9 @@
 				return
 			target.reagents.trans_to(source, transfer_amount)
 		activate_pin(2)
+
+CAPABILITIES(/obj/item/integrated_circuit/reagent/storage)
+	reagents(nameof(volume)) // a circuit with a volume holds that much
 
 /obj/item/integrated_circuit/reagent/storage
 	name = "reagent storage"

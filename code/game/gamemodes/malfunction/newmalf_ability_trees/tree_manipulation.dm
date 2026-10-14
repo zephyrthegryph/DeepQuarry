@@ -12,22 +12,28 @@
 /datum/malf_research_ability/manipulation/electrical_pulse
 	ability = /datum/game_mode/malfunction/verb/electrical_pulse
 	price = 50
-	next = new/datum/malf_research_ability/manipulation/hack_camera()
 	name = "Electrical Pulse"
+
+CAPABILITIES(/datum/malf_research_ability/manipulation/electrical_pulse)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/manipulation/hack_camera)
 
 
 /datum/malf_research_ability/manipulation/hack_camera
 	ability = /datum/game_mode/malfunction/verb/hack_camera
 	price = 1200
-	next = new/datum/malf_research_ability/manipulation/emergency_forcefield()
 	name = "Hack Camera"
+
+CAPABILITIES(/datum/malf_research_ability/manipulation/hack_camera)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/manipulation/emergency_forcefield)
 
 
 /datum/malf_research_ability/manipulation/emergency_forcefield
 	ability = /datum/game_mode/malfunction/verb/emergency_forcefield
 	price = 3000
-	next = new/datum/malf_research_ability/manipulation/machine_overload()
 	name = "Emergency Forcefield"
+
+CAPABILITIES(/datum/malf_research_ability/manipulation/emergency_forcefield)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/manipulation/machine_overload)
 
 
 /datum/malf_research_ability/manipulation/machine_overload
@@ -44,7 +50,7 @@
 	set category = VERB_CAT_SOFTWARE
 	var/price = 15
 	var/mob/living/silicon/ai/user = usr
-	if(!ability_prechecks(user, price) || !ability_pay(user,price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 	to_chat(user, "Sending feedback pulse...")
 	for(var/obj/machinery/power/apc/AP in REGISTRY_MEMBERS(REGISTRY_APCS))
@@ -71,47 +77,47 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), receiver = user, title = "Hack Camera", message = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), malf_target = target, price = price)
+	open_request(user, /datum/prompt/choice, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hack_camera_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Hack Camera", question = "Select required action:", choices = list("Reset", "Add X-Ray", "Add Motion Sensor", "Add EMP Shielding"), subject = target, costs = list("[RES_CPU]" = price), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/om/prompt/choice/malf/ask)
+/// The pick is paid for only when it changed the camera (OP_REFUSED releases the CPU set aside).
+/mob/living/silicon/ai/proc/malf_hack_camera_chosen(datum/act/request/A)
+	if(!A.answer)
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/obj/machinery/camera/target = ask.malf_target
-	var/price = ask.price
+	var/obj/machinery/camera/target = A.request.subject
+	if(!istype(target))
+		return OP_REFUSED
 
-	switch(ask.choice)
+	switch(A.answer.value)
 		if("Reset")
-			if(target.wires)
-				if(!ability_pay(user, price))
-					return
-				target.reset_wires()
-				to_chat(user, "Camera reactivated.")
+			if(!wiring_of(target))
+				return OP_REFUSED
+			target.reset_wires()
+			to_chat(user, "Camera reactivated.")
 		if("Add X-Ray")
 			if(target.isXRay())
 				to_chat(user, "Camera already has X-Ray function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeXRay()
-				target.reset_wires()
-				to_chat(user, "X-Ray camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeXRay()
+			target.reset_wires()
+			to_chat(user, "X-Ray camera module enabled.")
 		if("Add Motion Sensor")
 			if(target.isMotion())
 				to_chat(user, "Camera already has Motion Sensor function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeMotion()
-				target.reset_wires()
-				to_chat(user, "Motion Sensor camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeMotion()
+			target.reset_wires()
+			to_chat(user, "Motion Sensor camera module enabled.")
 		if("Add EMP Shielding")
 			if(target.isEmpProof())
 				to_chat(user, "Camera already has EMP Shielding function.")
-				return
-			else if(ability_pay(user, price))
-				target.upgradeEmpProof()
-				target.reset_wires()
-				to_chat(user, "EMP Shielding camera module enabled.")
-				return
+				return OP_REFUSED
+			target.upgradeEmpProof()
+			target.reset_wires()
+			to_chat(user, "EMP Shielding camera module enabled.")
+		else
+			return OP_REFUSED
+	return OP_OK
 
 /datum/game_mode/malfunction/verb/emergency_forcefield(turf/T as turf in world)
 	set name = "Emergency Forcefield"
@@ -121,13 +127,13 @@
 	var/mob/living/silicon/ai/user = usr
 	if(!T || !istype(T))
 		return
-	if(!ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	to_chat(user, "Emergency forcefield projection completed.")
 	new/obj/machinery/shield/malfai(T)
 	user.hacking = 1
-	om_after(user, 2 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, hacking_done))
+	after(user, 2 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, hacking_done))
 
 
 /datum/game_mode/malfunction/verb/machine_overload(obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -181,7 +187,7 @@
 	explosion_intensity = min(explosion_intensity, 12) // 3, 6, 12 explosion cap
 
 	// Charge the AI BEFORE damaging hardware, so a failed payment doesn't burn the APC/SMES for free.
-	if(!ability_pay(user,price))
+	if(!res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	M.use_power(2000000) // Major power spike, few of these will completely burn APC's cell - equivalent of 2GJ of power.
@@ -195,18 +201,18 @@
 		if(temp_apc)
 			temp_apc.emp_act(EMP_LIGHT) // Such power surges are not good for APC electronics
 			if(temp_apc.cell)
-				temp_apc.cell.maxcharge -= between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge)
+				temp_apc.cell.set_maxcharge(temp_apc.cell.maxcharge - between(0, (temp_apc.cell.maxcharge/2) + 500, temp_apc.cell.maxcharge))
 				if(temp_apc.cell.maxcharge < 100) // That's it, you busted the APC cell completely. Break the APC and completely destroy the cell.
-					qdel(temp_apc.cell)
+					destroyed(temp_apc.cell, null, "overload")
 					temp_apc.atom_break()
 
 
 	M.visible_message(span_notice("BZZZZZZZT"))
-	om_after(M, 5 SECONDS, TYPE_PROC_REF(/obj/machinery, malf_overload_boom), explosion_intensity)
+	after(M, 5 SECONDS, TYPE_PROC_REF(/obj/machinery, malf_overload_boom), with = list(explosion_intensity))
 
 // END ABILITY VERBS
 
 /// The end of a malfunctioning AI's machine overload.
 /obj/machinery/proc/malf_overload_boom(explosion_intensity)
 	explosion(get_turf(src), round(explosion_intensity/4),round(explosion_intensity/2),round(explosion_intensity),round(explosion_intensity * 2))
-	qdel(src)
+	destroyed(src, null, "explosion")

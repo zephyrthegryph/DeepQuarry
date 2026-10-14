@@ -1,0 +1,24 @@
+/obj/item/gripper deleted itself on creation
+/obj/item/gripper/engineering deleted itself on creation
+/obj/item/gripper/drone deleted itself on creation
+/obj/item/gripper/omni deleted itself on creation
+/obj/item/gripper/miner deleted itself on creation
+/obj/item/gripper/security deleted itself on creation
+/obj/item/gripper/paperwork deleted itself on creation
+/obj/item/gripper/medical deleted itself on creation
+/obj/item/gripper/research deleted itself on creation
+/obj/item/gripper/circuit deleted itself on creation
+/obj/item/gripper/service deleted itself on creation
+/obj/item/gripper/gravekeeper deleted itself on creation
+/obj/item/gripper/scene deleted itself on creation
+/obj/item/gripper/no_use deleted itself on creation
+/obj/item/gripper/no_use/organ deleted itself on creation
+/obj/item/gripper/no_use/organ/robotics deleted itself on creation
+/obj/item/gripper/no_use/mech deleted itself on creation
+/obj/item/gripper/no_use/loader deleted itself on creation
+/obj/item/gripper/syndicate deleted itself on creation
+/obj/item/gripper/dq_test icon: icons/obj/device.dmi
+/obj/item/gripper/dq_test state: gripper
+/obj/item/gripper/dq_test dir: 2
+/obj/item/gripper/dq_test overlay: icons/obj/device.dmi:gripper:8:#000000
+

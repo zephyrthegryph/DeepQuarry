@@ -1,0 +1,35 @@
+@obj.structure.prop.desert_rock human|none
+@obj.structure.prop.desert_rock robot|none
+@obj.structure ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Push
+human|/obj/item/tool/screwdriver click: Click: Push
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Push
+human|/obj/item/tool/crowbar click: Click: Push
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Push
+human|/obj/item/tool/wrench click: Click: Push
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Push
+human|/obj/item/tool/wirecutters click: Click: Push
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Push
+human|/obj/item/multitool click: Click: Push
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Push
+human|/obj/item/weldingtool click: Click: Push
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Push
+human|/obj/item/stack/cable_coil click: Click: Push
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Push
+human|/obj/item/stack/material/steel click: Click: Push
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Push
+human|/obj/item/card/id click: Click: Push
+human|/obj/item menu: Hit
+human|/obj/item menu: Push
+human|/obj/item click: Click: Push
+keys: drag_buckle, melee_hit, message, push

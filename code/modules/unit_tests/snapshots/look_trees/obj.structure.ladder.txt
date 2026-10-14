@@ -1,0 +1,17 @@
+/obj/structure/ladder icon: icons/obj/structures/multiz.dmi
+/obj/structure/ladder state: ladder01
+/obj/structure/ladder dir: 2
+/obj/structure/ladder overlay: icons/obj/structures/multiz.dmi:ladder01:8:#000000
+/obj/structure/ladder/up icon: icons/obj/structures/multiz.dmi
+/obj/structure/ladder/up state: ladder10
+/obj/structure/ladder/up dir: 2
+/obj/structure/ladder/up overlay: icons/obj/structures/multiz.dmi:ladder10:8:#000000
+/obj/structure/ladder/updown icon: icons/obj/structures/multiz.dmi
+/obj/structure/ladder/updown state: ladder11
+/obj/structure/ladder/updown dir: 2
+/obj/structure/ladder/updown overlay: icons/obj/structures/multiz.dmi:ladder11:8:#000000
+/obj/structure/ladder/dq_actor_probe icon: icons/obj/structures/multiz.dmi
+/obj/structure/ladder/dq_actor_probe state: ladder01
+/obj/structure/ladder/dq_actor_probe dir: 2
+/obj/structure/ladder/dq_actor_probe overlay: icons/obj/structures/multiz.dmi:ladder01:8:#000000
+

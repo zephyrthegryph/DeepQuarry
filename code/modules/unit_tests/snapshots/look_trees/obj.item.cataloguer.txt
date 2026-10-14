@@ -1,0 +1,21 @@
+/obj/item/cataloguer icon: icons/obj/device.dmi
+/obj/item/cataloguer state: cataloguer
+/obj/item/cataloguer dir: 2
+/obj/item/cataloguer overlay: icons/obj/device.dmi:cataloguer:8:#000000
+/obj/item/cataloguer/advanced icon: icons/obj/device.dmi
+/obj/item/cataloguer/advanced state: adv_cataloguer
+/obj/item/cataloguer/advanced dir: 2
+/obj/item/cataloguer/advanced overlay: icons/obj/device.dmi:adv_cataloguer:8:#000000
+/obj/item/cataloguer/debug icon: icons/obj/device.dmi
+/obj/item/cataloguer/debug state: debug_cataloguer
+/obj/item/cataloguer/debug dir: 2
+/obj/item/cataloguer/debug overlay: icons/obj/device.dmi:debug_cataloguer:8:#000000
+/obj/item/cataloguer/compact icon: icons/obj/device.dmi
+/obj/item/cataloguer/compact state: compact
+/obj/item/cataloguer/compact dir: 2
+/obj/item/cataloguer/compact overlay: icons/obj/device.dmi:compact:8:#000000
+/obj/item/cataloguer/compact/pathfinder icon: icons/obj/device.dmi
+/obj/item/cataloguer/compact/pathfinder state: pathcat
+/obj/item/cataloguer/compact/pathfinder dir: 2
+/obj/item/cataloguer/compact/pathfinder overlay: icons/obj/device.dmi:pathcat:8:#000000
+

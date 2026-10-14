@@ -25,64 +25,79 @@
 	icon_state = "tallcabinet"
 
 
+CAPABILITIES(/obj/structure/filingcabinet)
+	climb()
+	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
+	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
+	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
+
+// ALLOW(init/INSTANCE_STATE): gathers the papers the map placed on its tile
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
 			I.forceMove(src)
 	. = ..()
-	make_climbable()
 
 /// Old attackby.
-/obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/structure/filingcabinet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/folder) || istype(P, /obj/item/photo) || istype(P, /obj/item/paper_bundle))
+		if(!own_bring_in(src, nameof(contents), P, null, user, TRUE, null, FALSE))
+			return OP_PASS
 		to_chat(user, span_notice("You put [P] in [src]."))
-		user.drop_item()
-		P.forceMove(src)
 		open_animation()
 		SStgui.update_uis(src)
 	else
 		to_chat(user, span_notice("You can't put [P] in [src]!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/obj/structure/filingcabinet/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/structure/filingcabinet/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/filingcabinet/proc/dismantle_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/structure/filingcabinet/proc/dismantle_begins(datum/act/op/A)
+	return msg_text("You begin taking the [name] apart.")
+
+/obj/structure/filingcabinet/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You take the [name] apart."))
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)
 		I.forceMove(loc)
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	destroyed(src, user, "deconstructed")
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/filingcabinet/proc/has_files)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_TK(null, PROC_REF(interaction_tk)), \
-)
+MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 
-/// Requirement: TRUE when the cabinet holds something to browse.
-/obj/structure/filingcabinet/proc/has_files(mob/user, atom/target, obj/item/held)
-	return contents_count(src) > 0 ? TRUE : "it's empty"
+/// Requirement: the cabinet holds something to browse.
+/obj/structure/filingcabinet/proc/has_files(datum/act/op/A)
+	return (length(contents) > 0) ? null : MSG(filingcabinet/empty) // ALLOW(reads, spatial): what the cabinet holds is read when it is opened, never cached; a plain count of its own contents
 
 /// Old attack_hand.
-/obj/structure/filingcabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
+/obj/structure/filingcabinet/proc/interaction_hand(datum/act/op/A)
+	tgui_interact(A.actor)
 	return TRUE
 
 /// Old attack_tk: rummage in an anchored cabinet at range.
-/obj/structure/filingcabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/proc/interaction_tk(datum/act/op/A)
 	if(!anchored)
-		return FALSE
-	attack_self_tk(user)
+		return OP_DECLINE
+	attack_self_tk(A.actor)
 	return TRUE
 
 /obj/structure/filingcabinet/attack_self_tk(mob/user)
@@ -96,14 +111,8 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 			return
 	to_chat(user, span_notice("You find nothing in [src]."))
 
-DECLARE_UI_STATE(/obj/structure/filingcabinet, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/structure/filingcabinet, "FileCabinet")
-
-UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filingcabinet{cabinet_name:text,contents:list,contents_ref:list}")
-
-/// The computed part of /obj/structure/filingcabinet's window data (declared on its UI_DATA row).
-/obj/structure/filingcabinet/proc/ui_data_obj_structure_filingcabinet(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/structure/filingcabinet's window data.
+/obj/structure/filingcabinet/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["cabinet_name"] = "[name]"
@@ -115,18 +124,20 @@ UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filin
 
 	return data
 
-UI_ACT(/obj/structure/filingcabinet, "remove_object", ui_act_remove_object, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
-	var/obj/item/content = params["ref"]
-	if(istype(content) && (content.loc == src) && usr.Adjacent(src))
-		usr.put_in_hands(content)
+/obj/structure/filingcabinet/proc/ui_act_remove_object(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/content = ref
+	if(istype(content) && (content.loc == src) && user.Adjacent(src))
+		user.put_in_hands(content)
 		open_animation()
 		SStgui.update_uis(src)
 
 /obj/structure/filingcabinet/proc/open_animation()
 	flick("[initial(icon_state)]-open",src)
 	play_sfx(src, SFX_BUREAUCRACY_FILINGCABINET)
-	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
+	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /*
  * Security Record Cabinets
@@ -143,32 +154,35 @@ UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
 					S = R
 					break
 			var/obj/item/paper/P = new /obj/item/paper(src)
-			P.info = "<CENTER>" + span_bold("Security Record") + "</CENTER><BR>"
-			P.info += "Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"
-			P.info += "<BR>\n<CENTER>" + span_bold("Security Data") + "</CENTER><BR>\nCriminal Status: [S?.fields["criminal"]]<BR>\n<BR>\nMinor Crimes: [S?.fields["mi_crim"]]<BR>\nDetails: [S?.fields["mi_crim_d"]]<BR>\n<BR>\nMajor Crimes: [S?.fields["ma_crim"]]<BR>\nDetails: [S?.fields["ma_crim_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[S?.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"
+			P.set_info("<CENTER>" + span_bold("Security Record") + "</CENTER><BR>")
+			P.set_info(P.info + ("Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"))
+			P.set_info(P.info + ("<BR>\n<CENTER>" + span_bold("Security Data") + "</CENTER><BR>\nCriminal Status: [S?.fields["criminal"]]<BR>\n<BR>\nMinor Crimes: [S?.fields["mi_crim"]]<BR>\nDetails: [S?.fields["mi_crim_d"]]<BR>\n<BR>\nMajor Crimes: [S?.fields["ma_crim"]]<BR>\nDetails: [S?.fields["ma_crim_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[S?.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"))
 			var/counter = 1
 			while(S?.fields["com_[counter]"])
-				P.info += "[S?.fields["com_[counter]"]]<BR>"
+				P.set_info(P.info + ("[S?.fields["com_[counter]"]]<BR>"))
 				counter++
-			P.info += "</TT>"
+			P.set_info(P.info + ("</TT>"))
 			P.name = "Security Record ([G.fields["name"]])"
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-EXTEND_INTERACTIONS(/obj/structure/filingcabinet/security, \
-	INTERACT_HAND(null, PROC_REF(security_interaction_hand)), \
-	INTERACT_TK(null, PROC_REF(security_interaction_tk)), \
-)
+// The records are written the first time the cabinet is opened, then the cabinet's own hand and telekinetic use follow.
+CAPABILITIES(/obj/structure/filingcabinet/security)
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(security_interaction_hand)))
+	op("interaction_tk", tk(), then(PROC_REF(security_interaction_tk)))
 
-/// Old attack_hand.
-/obj/structure/filingcabinet/security/proc/security_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
+/obj/structure/filingcabinet/security/proc/security_interaction_hand(datum/act/op/A)
 	populate()
-	return FALSE
+	if(!isnull(has_files(A)))
+		to_chat(A.actor, span_warning("It's empty."))
+		return OP_OK
+	return interaction_hand(A)
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
-/obj/structure/filingcabinet/security/proc/security_interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/security/proc/security_interaction_tk(datum/act/op/A)
 	populate()
-	return FALSE
+	return interaction_tk(A)
 
 /*
  * Medical Record Cabinets
@@ -186,30 +200,33 @@ EXTEND_INTERACTIONS(/obj/structure/filingcabinet/security, \
 					break
 			if(M)
 				var/obj/item/paper/P = new /obj/item/paper(src)
-				P.info = "<CENTER>" + span_bold("Medical Record") + "</CENTER><BR>"
-				P.info += "Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"
+				P.set_info("<CENTER>" + span_bold("Medical Record") + "</CENTER><BR>")
+				P.set_info(P.info + ("Name: [G.fields["name"]] ID: [G.fields["id"]]<BR>\nSex: [G.fields["sex"]]<BR>\nAge: [G.fields["age"]]<BR>\nFingerprint: [G.fields["fingerprint"]]<BR>\nPhysical Status: [G.fields["p_stat"]]<BR>\nMental Status: [G.fields["m_stat"]]<BR>"))
 
-				P.info += "<BR>\n<CENTER>" + span_bold("Medical Data") + "</CENTER><BR>\nBlood Type: [M.fields["b_type"]]<BR>\nDNA: [M.fields["b_dna"]]<BR>\n<BR>\nMinor Disabilities: [M.fields["mi_dis"]]<BR>\nDetails: [M.fields["mi_dis_d"]]<BR>\n<BR>\nMajor Disabilities: [M.fields["ma_dis"]]<BR>\nDetails: [M.fields["ma_dis_d"]]<BR>\n<BR>\nAllergies: [M.fields["alg"]]<BR>\nDetails: [M.fields["alg_d"]]<BR>\n<BR>\nCurrent Diseases: [M.fields["cdi"]] (per disease info placed in log/comment section)<BR>\nDetails: [M.fields["cdi_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[M.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"
+				P.set_info(P.info + ("<BR>\n<CENTER>" + span_bold("Medical Data") + "</CENTER><BR>\nBlood Type: [M.fields["b_type"]]<BR>\nDNA: [M.fields["b_dna"]]<BR>\n<BR>\nMinor Disabilities: [M.fields["mi_dis"]]<BR>\nDetails: [M.fields["mi_dis_d"]]<BR>\n<BR>\nMajor Disabilities: [M.fields["ma_dis"]]<BR>\nDetails: [M.fields["ma_dis_d"]]<BR>\n<BR>\nAllergies: [M.fields["alg"]]<BR>\nDetails: [M.fields["alg_d"]]<BR>\n<BR>\nCurrent Diseases: [M.fields["cdi"]] (per disease info placed in log/comment section)<BR>\nDetails: [M.fields["cdi_d"]]<BR>\n<BR>\nImportant Notes:<BR>\n\t[M.fields["notes"]]<BR>\n<BR>\n<CENTER>" + span_bold("Comments/Log") + "</CENTER><BR>"))
 				var/counter = 1
 				while(M.fields["com_[counter]"])
-					P.info += "[M.fields["com_[counter]"]]<BR>"
+					P.set_info(P.info + ("[M.fields["com_[counter]"]]<BR>"))
 					counter++
-				P.info += "</TT>"
+				P.set_info(P.info + ("</TT>"))
 				P.name = "Medical Record ([G.fields["name"]])"
 			virgin = 0	//tabbing here is correct- it's possible for people to try and use it
 						//before the records have been generated, so we do this inside the loop.
 
-EXTEND_INTERACTIONS(/obj/structure/filingcabinet/medical, \
-	INTERACT_HAND(null, PROC_REF(medical_interaction_hand)), \
-	INTERACT_TK(null, PROC_REF(medical_interaction_tk)), \
-)
+// The records are written the first time the cabinet is opened, then the cabinet's own hand and telekinetic use follow.
+CAPABILITIES(/obj/structure/filingcabinet/medical)
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(medical_interaction_hand)))
+	op("interaction_tk", tk(), then(PROC_REF(medical_interaction_tk)))
 
-/// Old attack_hand.
-/obj/structure/filingcabinet/medical/proc/medical_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: fill the records, then the cabinet's own use (its "It's empty." stays the base requirement's, asked of the filled cabinet).
+/obj/structure/filingcabinet/medical/proc/medical_interaction_hand(datum/act/op/A)
 	populate()
-	return FALSE
+	if(!isnull(has_files(A)))
+		to_chat(A.actor, span_warning("It's empty."))
+		return OP_OK
+	return interaction_hand(A)
 
 /// Old attack_tk: fill the records first, then the base cabinet's telekinetic rummage.
-/obj/structure/filingcabinet/medical/proc/medical_interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/filingcabinet/medical/proc/medical_interaction_tk(datum/act/op/A)
 	populate()
-	return FALSE
+	return interaction_tk(A)

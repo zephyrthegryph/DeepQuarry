@@ -10,102 +10,71 @@
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
 
-/// Percent.
-OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
-/// Timer (machine steps).
-OM_FIELD(/obj/machinery/beehive, smoked, 0, CHANGE_MACHINE_SETTINGS)
-/// Bees inside or smoke still clearing: the hive has something to tick.
-OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, list("bee_count", "smoked"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/beehive, MACHINE_PIPELINE, "hive_active")
+TRACKED(/obj/machinery/beehive, closed)
 
+/// Percent.
+/obj/machinery/beehive/var/bee_count = 0
+/// Timer (machine steps).
+/obj/machinery/beehive/var/smoked = 0
+/// Bees inside or smoke still clearing: the hive has something to tick.
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked
 
-/obj/machinery/beehive/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/beehive)
+	ref_many(nameof(frames), /obj/item/honey_frame)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(hive_active), wakes_on = list(nameof(bee_count), nameof(smoked)))
+	climb()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(can_dismantle_holds))),
+		begins(MSG(beehive/dismantling)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE, volume = 0.5), wait(3 SECONDS), then(PROC_REF(dismantle_done)))
+	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
+	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(can_load_frame_holds))), then(PROC_REF(interaction_beehive_load_frame)))
+	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req(PROC_REF(can_move_bees_holds))), then(PROC_REF(interaction_beehive_bee_pack)))
+	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
+	// A closed hive is not harvested (the click goes on); an open one gives a frame every 3 seconds while it holds a filled one.
+	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), when(req(PROC_REF(hive_open))), starts(PROC_REF(harvest_started)),
+		begins(MSG(beehive/harvesting)), wait(3 SECONDS, repeats = PROC_REF(harvest_more), after_step = PROC_REF(harvest_frame)), then(PROC_REF(harvest_finished)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/beehive/appearance_overlays()
-	. = list()
-	icon_state = "beehive"
+/obj/machinery/beehive/draw(datum/look/look)
+	..()
+	look.state("beehive")
 	if(closed)
-		. += "lid"
+		look.overlay("lid")
 	if(length(frames))
-		. += "empty[length(frames)]"
+		look.overlay("empty[length(frames)]")
 	if(honeycombs >= 100)
-		. += "full[round(honeycombs / 100)]"
+		look.overlay("full[round(honeycombs / 100)]")
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				. += "bees1"
+				look.overlay("bees1")
 			if(41 to 80)
-				. += "bees2"
+				look.overlay("bees2")
 			if(81 to 100)
-				. += "bees3"
+				look.overlay("bees3")
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()
 	if(!closed)
 		. += "The lid is open."
 
-/obj/machinery/beehive/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/beehive_smoke,
-		/datum/interaction/machine_item/beehive_load_frame,
-		/datum/interaction/machine_item/beehive_bee_pack,
-		/datum/interaction/machine_item/beehive_scan,
-		/datum/interaction/machine_hand/ungated/beehive_harvest,
-	)
-	..()
+MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking the bees")
 
-/datum/interaction/machine_item/beehive_smoke
-	id = "beehive_smoke"
-	name = "Smoke bees"
-	held_type = /obj/item/bee_smoker
-	also_requires = list(REQ_FIELD_NOT("closed", "you need to open it with a crowbar before smoking the bees"))
-	effect = /obj/machinery/beehive/proc/interaction_beehive_smoke
-
-/obj/machinery/beehive/proc/interaction_beehive_smoke(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
-	set_smoked(30)
-	update_icon()
-	return TRUE
-
-/datum/interaction/machine_item/beehive_load_frame
-	id = "beehive_load_frame"
-	name = "Load frame"
-	held_type = /obj/item/honey_frame
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_load_frame))
-	effect = /obj/machinery/beehive/proc/interaction_beehive_load_frame
-
-/// Requirement: TRUE, or why this frame can't go in.
-/obj/machinery/beehive/proc/can_load_frame(mob/user, atom/target, obj/item/honey_frame/held)
+/// The requirement returns null or its original refusal.
+/obj/machinery/beehive/proc/can_load_frame_holds(datum/act/op/A)
+	var/obj/item/honey_frame/held = A.held
 	if(closed)
 		return "you need to open \the [src] with a crowbar before inserting \the [held]"
 	if(length(frames) >= maxFrames)
 		return "there is no place for an another frame"
 	if(held.honey)
 		return "\The [held] is full with beeswax and honey, empty it in the extractor first"
-	return TRUE
+	return null
 
-/obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
-	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
-	update_icon()
-	user.drop_from_inventory(held)
-	held.forceMove(src)
-	rel_add(src, nameof(frames), held)
-	return TRUE
-
-/datum/interaction/machine_item/beehive_bee_pack
-	id = "beehive_bee_pack"
-	name = "Move bees"
-	held_type = /obj/item/bee_pack
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_move_bees))
-	effect = /obj/machinery/beehive/proc/interaction_beehive_bee_pack
-
-/// Requirement: TRUE, or why the bees can't be moved in or split out.
-/obj/machinery/beehive/proc/can_move_bees(mob/user, atom/target, obj/item/bee_pack/held)
+/// The requirement returns null or its original refusal.
+/obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
+	var/obj/item/bee_pack/held = A.held
 	if(held.full && bee_count)
 		return "\The [src] already has bees inside"
 	if(!held.full && bee_count < 90)
@@ -114,9 +83,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 		return "smoke \the [src] first"
 	if(closed)
 		return "you need to open \the [src] with a crowbar before moving the bees"
-	return TRUE
+	return null
 
-/obj/machinery/beehive/proc/interaction_beehive_bee_pack(mob/user, obj/item/bee_pack/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
+	var/mob/user = A.actor
+	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
+	set_smoked(30)
+	return OP_OK
+
+/obj/machinery/beehive/proc/interaction_beehive_load_frame(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/honey_frame/held = A.held
+	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
+	user.drop_from_inventory(held)
+	held.forceMove(src)
+	rel_add(src, nameof(frames), held)
+	return OP_OK
+
+/obj/machinery/beehive/proc/interaction_beehive_bee_pack(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/bee_pack/held = A.held
 	if(held.full)
 		act_message(user, src, MSG_SELF(span_notice("You put the queen and the bees from %I% into %T%.")), \
 			MSG_OTHERS(span_notice("%U% puts the queen and the bees from %I% into %T%.")), \
@@ -129,16 +115,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 			item = held)
 		set_bee_count(bee_count / 2)
 		held.fill()
-	update_icon()
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/beehive_scan
-	id = "beehive_scan"
-	name = "Scan"
-	held_type = /obj/item/analyzer/plant_analyzer
-	effect = /obj/machinery/beehive/proc/interaction_beehive_scan
-
-/obj/machinery/beehive/proc/interaction_beehive_scan(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Scan result of \the [src]..."))
 	to_chat(user, "Beehive is [bee_count ? "[round(bee_count)]% full" : "empty"].[bee_count > 90 ? " Colony is ready to split." : ""]")
 	if(length(frames))
@@ -149,92 +129,88 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 		to_chat(user, "No frames installed.")
 	if(smoked)
 		to_chat(user, "The hive is smoked.")
-	return TRUE
+	return OP_OK
 
-/obj/machinery/beehive/crowbar_act(mob/user, obj/item/tool)
-	closed = !closed
+/obj/machinery/beehive/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	set_closed(!closed)
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/beehive/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/beehive/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/beehive/screwdriver_act(mob/user, obj/item/tool)
+MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_notice("%U% starts dismantling %T%."))
+
+/// Requirement: the hive holds no bees and no frames.
+/obj/machinery/beehive/proc/can_dismantle_holds(datum/act/op/A)
+	if(!bee_count && !length(frames))
+		return null
 	if(bee_count)
-		to_chat(user, span_notice("You can't dismantle \the [src] with these bees inside."))
-		return ITEM_INTERACT_BLOCKING
-	if(length(frames))
-		to_chat(user, span_notice("You can't dismantle \the [src] with [length(frames)] frames still inside!"))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You start dismantling \the [src]..."))
-	playsound(src, tool.usesound, 50, TRUE)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(dismantle_done), list(user))
-	return ITEM_INTERACT_SUCCESS
+		return span_notice("You can't dismantle the hive with these bees inside.")
+	return span_notice("You can't dismantle the hive with [length(frames)] frames still inside!")
 
-/obj/machinery/beehive/proc/dismantle_done(mob/user)
+/// Why can_dismantle_holds refuses: the bees, else the frames still inside.
+/obj/machinery/beehive/proc/dismantle_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bee_count || length(frames))
 		return
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	replace_with(src, /obj/item/beehive_assembly)
 
-/datum/interaction/machine_hand/ungated/beehive_harvest
-	id = "beehive_harvest"
-	name = "Harvest honeycombs"
-	effect = /obj/machinery/beehive/proc/interaction_beehive_harvest
+MSG_DEF(beehive/harvesting, span_notice("You start taking the honeycombs out of %T%..."), span_notice("%U% starts taking the honeycombs out of %T%."))
+MSG_DEF_SELF(beehive/no_combs, span_notice("There are no filled honeycombs."))
+MSG_DEF_SELF(beehive/bees_angry, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 
-/// One frame every 3 seconds (a timed action each) while there are filled honeycombs.
-/obj/machinery/beehive/proc/harvest_next(mob/user)
-	if(honeycombs >= 100 && length(frames))
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(harvest_frame), list(user))
-	else if(honeycombs < 100)
-		to_chat(user, span_notice("You take all filled honeycombs out."))
+/obj/machinery/beehive/proc/hive_open(datum/act/op/A)
+	return !closed ? null : /datum/msg/req_failed
 
-/obj/machinery/beehive/proc/harvest_frame(mob/user)
+/// Only an open hive with a filled frame in it, and bees that are smoked or absent, is harvested.
+/obj/machinery/beehive/proc/harvest_started(datum/act/op/A)
+	if(honeycombs < 100)
+		return MSG(beehive/no_combs)
+	if(!smoked && bee_count)
+		return MSG(beehive/bees_angry)
+
+/// Another frame follows while there are filled honeycombs.
+/obj/machinery/beehive/proc/harvest_more(datum/act/op/A)
+	return honeycombs >= 100 && length(frames)
+
+/// One frame taken out.
+/obj/machinery/beehive/proc/harvest_frame(datum/act/op/A)
 	if(honeycombs < 100 || !length(frames))
 		return
-	var/obj/item/honey_frame/H = pop(frames)
-	H.honey = 20
-	honeycombs -= 100
-	H.update_icon()
+	var/obj/item/honey_frame/H = frames[length(frames)]
+	rel_remove(src, nameof(frames), H)
+	H.set_honey(20)
+	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
-	update_icon()
-	harvest_next(user)
 
-/obj/machinery/beehive/proc/interaction_beehive_harvest(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!closed)
-		if(honeycombs < 100)
-			to_chat(user, span_notice("There are no filled honeycombs."))
-			return TRUE
-		if(!smoked && bee_count)
-			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
-			return TRUE
-		act_message(user, src, MSG_SELF(span_notice("You start taking the honeycombs out of %T%...")), \
-			MSG_OTHERS(span_notice("%U% starts taking the honeycombs out of %T%.")))
-		harvest_next(user)
-		return TRUE
+/obj/machinery/beehive/proc/harvest_finished(datum/act/op/A)
+	if(honeycombs < 100)
+		to_chat(A.actor, span_notice("You take all filled honeycombs out."))
 
-/obj/machinery/beehive/machine_step()
+/obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
-		update_icon()
 	set_smoked(max(0, smoked - 1))
 	if(!smoked && bee_count)
 		set_bee_count(min(bee_count * 1.005, 100))
-		update_icon()
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
 	var/trays = 0
 	for(var/obj/machinery/portable_atmospherics/hydroponics/H in view(7, src))
 		if(H.seed && !H.dead)
-			H.health += 0.05 * coef
+			H.set_health(H.health + 0.05 * coef)
 			++trays
-	honeycombs = min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100)
+	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
 /obj/machinery/honey_extractor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -245,18 +221,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 	circuit = /obj/item/circuitboard/honey_extractor
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 15
-	active_power_usage = 200
 	use_power = USE_POWER_IDLE
 
 	var/processing = 0
 	var/honey = 0
 
-/obj/machinery/honey_extractor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	RefreshParts()
-	update_icon()
+TRACKED(/obj/machinery/honey_extractor, honey)
+
+TRACKED(/obj/machinery/honey_extractor, processing)
 
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
@@ -265,72 +237,60 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 		. += "It has [honey] units of honey in its storage tank."
 
 /obj/machinery/honey_extractor/proc/appearance_state()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "[initial(icon_state)]_off"
 	if(processing)
 		return "[initial(icon_state)]_moving"
 	return initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
-DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
-
-/obj/machinery/honey_extractor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/honey_extractor_load_frame,
-		/datum/interaction/machine_item/honey_extractor_collect,
-	)
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/honey_extractor/draw(datum/look/look)
 	..()
+	look.state("[appearance_state()]")
+	if(panel_open == 1)
+		look.overlay("centrifuge_panel")
 
-/// The old attackby's shared guard: not spinning, powered, panel closed.
-/obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
+/// The requirement returns null or its original refusal.
+/obj/machinery/honey_extractor/proc/ready_for_item_holds(datum/act/op/A)
 	if(processing)
 		return "it's currently spinning, wait until it's finished"
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "it's powerless and can't grant your wishes"
 	if(panel_open)
 		return "its maintenance panel is open, it would not be safe to turn it on"
-	return TRUE
+	return null
 
-/datum/interaction/machine_item/honey_extractor_load_frame
-	id = "honey_extractor_load_frame"
-	name = "Load frame"
-	held_type = /obj/item/honey_frame
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_TARGET_STATE(/obj/machinery/honey_extractor/proc/can_extract_frame))
-	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame
-
-/// Requirement: the frame has honey to extract.
-/obj/machinery/honey_extractor/proc/can_extract_frame(mob/user, atom/target, obj/item/honey_frame/held)
+/// The requirement returns null or its original refusal.
+/obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
+	var/obj/item/honey_frame/held = A.held
 	if(!held.honey)
 		return "\The [held] is empty, put it into a beehive"
-	return TRUE
+	return null
 
-/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
+
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/honey_frame/held = A.held
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T% and turn it on.")), \
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
-	processing = held.honey
-	update_icon()
-	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
-	held.honey = 0
-	held.update_icon() //updates the honeyframe
-	om_after(src, 5 SECONDS, PROC_REF(finish_extracting))
-	return TRUE
+	set_processing(held.honey)
+	use_power_oneoff(power_of(src).active * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
+	held.set_honey(0)
+	after(src, 5 SECONDS, PROC_REF(finish_extracting))
+	return OP_OK
 
-/datum/interaction/machine_item/honey_extractor_collect
-	id = "honey_extractor_collect"
-	name = "Collect honey"
-	held_type = /obj/item/reagent_containers/glass
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_FIELD("honey", "there is no honey in it"))
-	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect
-
-/obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(mob/user, obj/item/reagent_containers/glass/held, datum/interaction/interaction)
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/held = A.held
 	var/transferred = min(held.reagents.maximum_volume - held.reagents.total_volume, honey)
 	held.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
-	honey -= transferred
+	set_honey(honey - transferred)
 	act_message(user, src, MSG_SELF(span_notice("You collect [transferred] units of honey from %T% into %I%.")), \
 		MSG_OTHERS(span_notice("%U% collects honey from %T% into %I%.")), \
 		item = held)
-	return TRUE
+	return OP_OK
 
 /obj/item/bee_smoker
 	name = "bee smoker"
@@ -348,14 +308,16 @@ DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list
 
 	var/honey = 0
 
-/obj/item/honey_frame/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/honey_frame, honey)
 
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0
 
-DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/honey_frame/draw(datum/look/look)
+	..()
+	if(appearance_has_honey() == 1)
+		look.overlay("honeycomb")
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"
@@ -368,18 +330,17 @@ DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = lis
 	icon = 'icons/obj/apiary_bees_etc.dmi'
 	icon_state = "apiary"
 
-DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(interaction_self)))
+MSG_DEF_SELF(beehive_assembly/assembling, span_notice("You start assembling %T%..."))
 
-/// Old attack_self.
-/obj/item/beehive_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You start assembling \the [src]..."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
-	return TRUE
+CAPABILITIES(/obj/item/beehive_assembly)
+	op("self", in_hand(), begins(MSG(beehive_assembly/assembling)), wait(3 SECONDS), then(PROC_REF(assemble_done)))
 
-/obj/item/beehive_assembly/proc/assemble_done(mob/user)
+/obj/item/beehive_assembly/proc/assemble_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!consume(src, user))
+		return
 	act_message(user, null, MSG_SELF(span_notice("You construct a beehive.")), MSG_OTHERS(span_notice("%U% constructs a beehive.")))
 	new /obj/machinery/beehive(get_turf(user))
-	consume(src, user)
 
 /obj/item/stack/material/wax
 	name = "wax"
@@ -404,8 +365,6 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 	pass_stack_colors = TRUE
 	supply_conversion_value = 0.5
 
-
-
 /obj/item/bee_pack
 	name = "bee pack"
 	desc = "Contains a queen bee and some worker bees. Everything you'll need to start a hive!"
@@ -413,42 +372,57 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 	icon_state = "beepack"
 	var/full = 1
 
-DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/bee_pack/draw(datum/look/look)
+	..()
+	switch("[full]")
+		if("0")
+			look.overlay("beepack-empty")
+		if("1")
+			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
-	full = 0
+	set_full(0)
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	update_icon()
 
 /obj/item/bee_pack/proc/fill()
-	full = initial(full)
+	set_full(initial(full))
 	name = initial(name)
 	desc = initial(desc)
-	update_icon()
 
-/obj/machinery/honey_extractor/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/honey_extractor/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(processing)
 		to_chat(user, span_notice("\The [src] is currently spinning, wait until it's finished."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "wrench" : "unwrench"] %T%.")), \
 		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/honey_extractor/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/honey_extractor/proc/screwdriver_used(datum/act/op/A)
 	if(processing)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/honey_extractor/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/machinery/honey_extractor)
+	configure(uses_power(idle = 15, active = 200))
+	default_parts()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(ready_for_item_holds)), req(PROC_REF(can_extract_frame_holds))), then(PROC_REF(interaction_honey_extractor_load_frame)))
+	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req(PROC_REF(ready_for_item_holds)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
+
+/obj/machinery/honey_extractor/proc/crowbar_used(datum/act/op/A)
 	if(processing)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/honey_extractor/proc/finish_extracting()
 	new /obj/item/stack/material/wax(loc)
-	honey += processing
-	processing = 0
-	update_icon()
+	set_honey(honey + processing)
+	set_processing(0)

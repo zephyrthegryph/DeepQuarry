@@ -1,89 +1,70 @@
 /turf/simulated/wall/r_wall
 	icon_state = "rgeneric"
 	rad_insulation = RAD_HEAVY_INSULATION
-/turf/simulated/wall/r_wall/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTEEL,MAT_PLASTEEL) //3strong
+TYPE_TABLE(/turf/simulated/wall/r_wall, wall_forced_materials, list(MAT_PLASTEEL,MAT_PLASTEEL)) //3strong
 
 /turf/simulated/wall/shull
 	icon_state = "hull-steel"
-/turf/simulated/wall/shull/Initialize(mapload) //Spaaaace ship.
-	. = ..(mapload,  MAT_STEELHULL, null, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/shull, wall_forced_materials, list(MAT_STEELHULL, null, MAT_STEELHULL)) //Spaaaace ship.
 /turf/simulated/wall/rshull
 	icon_state = "hull-r_steel"
 	rad_insulation = RAD_HEAVY_INSULATION
-/turf/simulated/wall/rshull/Initialize(mapload)
-	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/rshull, wall_forced_materials, list(MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL))
 /turf/simulated/wall/rpshull
 	icon_state = "hull-r_plasteel"
-/turf/simulated/wall/rpshull/Initialize(mapload)
-	. = ..(mapload,  MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL)
+TYPE_TABLE(/turf/simulated/wall/rpshull, wall_forced_materials, list(MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL))
 
 /turf/simulated/wall/thull
 	icon_state = "hull-titanium"
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/thull/Initialize(mapload)
-	. = ..(mapload,  MAT_TITANIUMHULL, null, MAT_TITANIUMHULL)
+TYPE_TABLE(/turf/simulated/wall/thull, wall_forced_materials, list(MAT_TITANIUMHULL, null, MAT_TITANIUMHULL))
 
 /turf/simulated/wall/cult
 	icon_state = "cult"
-/turf/simulated/wall/cult/Initialize(mapload)
-	. = ..(mapload, MAT_CULT,MAT_CULT2,MAT_CULT)
+TYPE_TABLE(/turf/simulated/wall/cult, wall_forced_materials, list(MAT_CULT,MAT_CULT2,MAT_CULT))
 /turf/unsimulated/wall/cult
 	name = "cult wall"
 	desc = "Hideous images dance beneath the surface."
 	icon = 'icons/turf/wall_masks.dmi'
 	icon_state = "cult"
 
-/turf/simulated/wall/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
-/turf/simulated/wall/diamond/Initialize(mapload)
-	. = ..(mapload, MAT_DIAMOND)
-/turf/simulated/wall/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/turf/simulated/wall/iron, wall_forced_materials, list(MAT_IRON))
+TYPE_TABLE(/turf/simulated/wall/diamond, wall_forced_materials, list(MAT_DIAMOND))
+TYPE_TABLE(/turf/simulated/wall/gold, wall_forced_materials, list(MAT_GOLD))
 
 /turf/simulated/wall/r_lead
 	rad_insulation = RAD_EXTREME_INSULATION
 
-/turf/simulated/wall/r_lead/Initialize(mapload)
-	. = ..(mapload, MAT_LEAD, MAT_LEAD)
-/turf/simulated/wall/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
-/turf/simulated/wall/sandstone/Initialize(mapload)
-	. = ..(mapload, MAT_SANDSTONE)
-/turf/simulated/wall/golddiamond/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD,MAT_DIAMOND)
-/turf/simulated/wall/snowbrick/Initialize(mapload)
-	. = ..(mapload, MAT_SNOWBRICK)
+TYPE_TABLE(/turf/simulated/wall/r_lead, wall_forced_materials, list(MAT_LEAD, MAT_LEAD))
+TYPE_TABLE(/turf/simulated/wall/phoron, wall_forced_materials, list(MAT_PHORON))
+TYPE_TABLE(/turf/simulated/wall/sandstone, wall_forced_materials, list(MAT_SANDSTONE))
+TYPE_TABLE(/turf/simulated/wall/golddiamond, wall_forced_materials, list(MAT_GOLD,MAT_DIAMOND))
+TYPE_TABLE(/turf/simulated/wall/snowbrick, wall_forced_materials, list(MAT_SNOWBRICK))
 
 /turf/simulated/wall/concrete
 	icon_state = "brick"
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/concrete/Initialize(mapload)
-	. = ..(mapload, MAT_CONCRETE) //3strong
+TYPE_TABLE(/turf/simulated/wall/concrete, wall_forced_materials, list(MAT_CONCRETE)) //3strong
 
 // Kind of wondering if this is going to bite me in the butt.
-/turf/simulated/wall/skipjack/Initialize(mapload)
-	. = ..(mapload, MAT_ALIENALLOY)
+TYPE_TABLE(/turf/simulated/wall/skipjack, wall_forced_materials, list(MAT_ALIENALLOY))
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
-/turf/simulated/wall/titanium/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUM)
+CAPABILITIES(/turf/simulated/wall/skipjack)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
+TYPE_TABLE(/turf/simulated/wall/titanium, wall_forced_materials, list(MAT_TITANIUM))
 
 /turf/simulated/wall/durasteel
 	rad_insulation = RAD_HEAVY_INSULATION
 
-/turf/simulated/wall/durasteel/Initialize(mapload)
-	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
+TYPE_TABLE(/turf/simulated/wall/durasteel, wall_forced_materials, list(MAT_DURASTEEL, MAT_DURASTEEL))
 
 // ENd
 
-/turf/simulated/wall/wood/Initialize(mapload)
-	. = ..(mapload,  MAT_WOOD)
+TYPE_TABLE(/turf/simulated/wall/wood, wall_forced_materials, list(MAT_WOOD))
 
-/turf/simulated/wall/log_sif/Initialize(mapload)
-	. = ..(mapload,  MAT_SIFLOG)
+TYPE_TABLE(/turf/simulated/wall/log_sif, wall_forced_materials, list(MAT_SIFLOG))
 
 // Shuttle Walls
 /turf/simulated/shuttle/wall
@@ -137,15 +118,16 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	icon = 'icons/turf/shuttle_alien.dmi'
 	icon_state = "alien"
 	base_state = "alien"
-	light_range = 3
-	light_power = 0.75
-	light_color = "#ff0066" // Pink-ish
 	light_on = TRUE
 	block_tele = TRUE // Will be used for dungeons so this is needed to stop cheesing with handteles.
 
-/turf/simulated/shuttle/wall/alien/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/turf/simulated/shuttle/wall/alien)
+	configure(light_glow(range = 3, power = 0.75, color = "#ff0066"))
+	after_init(0, then(PROC_REF(init_alien_light)))
+
+/turf/simulated/shuttle/wall/alien/proc/init_alien_light(datum/act/timer/A)
 	update_light()
+
 
 /turf/simulated/shuttle/wall/Initialize(mapload)
 	. = ..()
@@ -167,10 +149,10 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	match_turf(SOUTH, SOUTH)
 	match_turf(WEST, WEST)
 
-	icon_state = "[base_state][join_flags]"
+	set_icon_state("[base_state][join_flags]")
 	if(isDiagonal(join_flags))
 		if(hard_corner) //You are using 'hard' (aka full-tile) corners.
-			icon_state += "h" //Hard corners have 'h' at the end of the state
+			set_icon_state(icon_state + ("h")) //Hard corners have 'h' at the end of the state
 		else //Diagonals need an underlay to not look ugly.
 			takes_underlays = 1
 	else //Everything else doesn't deserve our time!
@@ -243,17 +225,11 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 /turf/simulated/shuttle/wall/voidcraft/green
 	stripe_color = "#00FF00"
 
-/turf/simulated/shuttle/wall/voidcraft/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/shuttle/wall/voidcraft/appearance_overlays()
-	. = list()
+/turf/simulated/shuttle/wall/voidcraft/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(stripe_color)
-		var/image/I = image(icon = src.icon, icon_state = "o_[icon_state]")
-		I.color = stripe_color
-		. += I
+		look.overlay(look_overlay_image(src.icon, "o_[drawn_state]", color = stripe_color))
 
 // Fake corners for making hulls look pretty
 /obj/structure/hull_corner
@@ -266,11 +242,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/a
 	density = TRUE
 	breakable = TRUE
 
-/obj/structure/hull_corner/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/hull_corner)
+	after_init(0, then(PROC_REF(look_after_init)))
 
-/obj/structure/hull_corner/LateInitialize()
+/// Draws against the walls around it, once they exist.
+/obj/structure/hull_corner/proc/look_after_init(datum/act/timer/A)
 	update_look()
 
 /obj/structure/hull_corner/proc/get_dirs_to_test()
@@ -326,7 +302,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/a
 /turf/simulated/wall/eris/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/eris)
 
-/turf/simulated/wall/eris/special_wall_connections(list/dirs, list/inrange)
+/turf/simulated/wall/eris/special_wall_connections(list/dirs)
 	..()
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
@@ -360,19 +336,14 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, TYPE_PROC_REF(/a
 /turf/simulated/wall/bay/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/bay)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/bay/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/wall/bay/look_parts(datum/look/look)
+	..()
 	if(stripe_color)
-		var/image/I
 		var/list/connections = get_wall_connections()
 		for(var/i = 1 to 4)
-			I = image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1))
-			I.color = stripe_color
-			. += I
+			look.overlay(look_overlay_image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1), color = stripe_color))
 
-/turf/simulated/wall/bay/special_wall_connections(list/dirs, list/inrange)
+/turf/simulated/wall/bay/special_wall_connections(list/dirs)
 	..()
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
@@ -409,25 +380,13 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, TYPE_PROC_REF(/atom, appearanc
 	var/diagonal_blending = FALSE
 
 // *INHALE
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/tgmc/appearance_overlays()
-	. = list()
-	if(!damage_overlays[1]) //list hasn't been populated
-		generate_overlays()
-
-
+/turf/simulated/wall/tgmc/look_parts(datum/look/look)
 	if(force_icon)
-		icon_state = "[wall_base_state][force_icon]"
+		look.state("[wall_base_state][force_icon]")
 	else
-		icon_state = "[wall_base_state][wall_connections]"
-
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		var/overlay = round(damage_fraction * damage_overlays.len) + 1
-		if(overlay > damage_overlays.len)
-			overlay = damage_overlays.len
-
-		. += damage_overlays[overlay]
+		look.state("[wall_base_state][wall_connections]")
+	if(damage_step)
+		look.overlay(damage_overlays[damage_step])
 
 /turf/simulated/wall/tgmc/update_connections(propagate)
 	if(!material)
@@ -470,12 +429,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 				continue
 			if(propagate)
 				W.update_connections()
-				W.update_icon()
 			if(W.wall_blend_category == wall_blend_category)
 				dirs |= direction
 				blend_log += "Blending with [W] at [get_dir(src, W)] because blend category is the same"
 
-	wall_connections = dirs
+	set_wall_connections(dirs)
 
 /turf/simulated/wall/tgmc/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall)
@@ -490,7 +448,9 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 	name = "hybrid wall"
 	desc = "Seems slightly more friendly than if the wall were ominous purple."
 	icon = 'icons/turf/shuttle_alien_blue.dmi'
-	light_color = "#1fdbf4" // Cyan-ish
+
+CAPABILITIES(/turf/simulated/shuttle/wall/alien/blue)
+	configure(light_glow(color = "#1fdbf4"))
 
 /turf/simulated/shuttle/wall/alien/blue/hard_corner
 	name = "hybrid wall"
@@ -512,11 +472,9 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 	blocks_air = 1
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
-
-/turf/simulated/flesh/Initialize(mapload)
-	. = ..()
-	update_icon()
+CAPABILITIES(/turf/simulated/flesh)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
 
 DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overlay), SC_NEVER)
 
@@ -524,20 +482,30 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 /proc/build_flesh_side_overlay(place_dir)
 	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/turf/simulated/flesh/appearance_overlays()
-	. = list()
+/// The cardinal sides of this wall that are open (a neighbour that is not dense), written by the adjacency index (code/game/turfs/turf_edges.dm).
+/turf/simulated/flesh/var/open_mask = 0
+TRACKED(/turf/simulated/flesh, open_mask)
 
+/turf/simulated/flesh/edges_changed(mask)
+	..()
+	var/open_sides = 0
+	for(var/direction in GLOB.cardinal)
+		var/turf/T = get_step(src, direction)
+		if(istype(T) && !T.density)
+			open_sides |= direction
+	set_open_mask(open_sides)
+	log_edge_trace("[type] at [x],[y],[z]: open sides [open_mask]")
+
+/// Flesh draws its sprite and, on each side that is open, the lip of the wall.
+/turf/simulated/flesh/draw(datum/look/look)
+	..()
 	if(density)
-		icon = 'icons/turf/stomach_vr.dmi'
-		icon_state = "flesh"
+		look.set_icon('icons/turf/stomach_vr.dmi')
+		look.state("flesh")
 		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src,direction)
-			if(istype(T) && !T.density)
+			if(open_mask & direction)
 				var/place_dir = turn(direction, 180)
-				. += CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir)
-
-	appearance_notify_neighbours("[type]", /turf/simulated/flesh)
+				look.overlay(CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir))
 
 /turf/simulated/gore
 	name = "wall of viscera"
@@ -560,8 +528,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 /turf/simulated/wall/rplastihull
 	icon_state = "rhull-plastitanium"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-/turf/simulated/wall/rplastihull/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL)
+TYPE_TABLE(/turf/simulated/wall/rplastihull, wall_forced_materials, list(MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL))
 
 /turf/simulated/wall/diamond
 	icon_state = "diamond"
@@ -625,12 +592,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 	icon = 'icons/turf/wall_masks_vr.dmi'
 	COOLDOWN_DECLARE(event_cooldown)
 
-/turf/simulated/wall/uranium/Initialize(mapload)
-	. = ..(mapload, MAT_URANIUM)
-	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
+CAPABILITIES(/turf/simulated/wall/uranium)
+	on_notice(/datum/notice/atom_propagate_rad_pulse, then(PROC_REF(radiate)))
 
-/turf/simulated/wall/uranium/radiate()
-	// EVENT_HANDLER is declared on /turf/simulated/wall/radiate(); this override
+/turf/simulated/wall/uranium/radiate(datum/act/notice/N)
+	// SHOULD_NOT_SLEEP is declared on /turf/simulated/wall/radiate(); this override
 	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)
 		return
@@ -657,13 +623,11 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, TYPE_PROC_REF(/atom, appearance_o
 	icon_state = "stonelogs"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-/turf/simulated/wall/stonelogs/Initialize(mapload)
-			. = ..(mapload, MAT_CONCRETE,MAT_LOG)
+TYPE_TABLE(/turf/simulated/wall/stonelogs, wall_forced_materials, list(MAT_CONCRETE,MAT_LOG))
 
 /turf/simulated/wall/glass
 	icon = 'icons/obj/structures_vr.dmi'
 	icon_state = "window-full"
 	opacity = 0
 
-/turf/simulated/wall/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/turf/simulated/wall/glass, wall_forced_materials, list(MAT_GLASS))

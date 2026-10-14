@@ -4,18 +4,9 @@
 // is the source of truth for per-line diff context.
 
 //# define AMAP
-/obj/machinery/computer/security/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/security_station_map,
-	)
-	..()
 
-/datum/interaction/machine_verb/security_station_map
-	id = "security_station_map"
-	name = ".map"
-	effect = /obj/machinery/computer/security/proc/interaction_station_map
-
-/obj/machinery/computer/security/proc/interaction_station_map(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/security/proc/interaction_station_map(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mapping)
 		return TRUE
 	log_game("[user]([user.key]) used station map L[z] in [src.loc.loc]")
@@ -39,7 +30,6 @@
 	for(var/i = 0; i<icount; i++)
 		imap += icon('icons/misc/imap.dmi', "blank")
 		imap += icon('icons/misc/imap.dmi', "blank")
-
 
 	for(var/wx = 1 ; wx <= world.maxx; wx++)
 
@@ -149,20 +139,16 @@
 			var/icon/I = imap[1+(ix + icx*iy)*2]
 			var/icon/I2 = imap[2+(ix + icx*iy)*2]
 
-
 			I.DrawBox(colour, rx, ry, rx+1, ry+1)
 
 			I2.DrawBox(colour2, rx, ry, rx+1, ry+1)
 
 	user.clearmap()
 
-	user.mapobjs = list()
-
 	for(var/i=0; i<icount;i++)
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
 		H.screen_loc = "[5 + i%icx],[6+ round(i/icx)]"
-
 
 		H.name = (i==0)?"maprefresh":"map"
 
@@ -174,11 +160,11 @@
 		HI.Insert(I, frame=1, delay = 5)
 		HI.Insert(J, frame=2, delay = 5)
 
-		qdel(I)
-		qdel(J)
+		spent(I)
+		spent(J)
 		H.icon = HI
 		H.hud_layerise()
-		usr.mapobjs += H
+		rel_add(user, nameof(user.mapobjs), H)
 #else
 
 	for(var/i = 0; i<icount; i++)
@@ -251,7 +237,6 @@
 							else
 								colour = rgb(255,128,128)
 
-
 				var/area/A = T.loc
 
 				if(A.fire)
@@ -273,27 +258,23 @@
 
 			var/icon/I = imap[1+(ix + icx*iy)]
 
-
 			I.DrawBox(colour, rx, ry, rx, ry)
 
 	user.clearmap()
-
-	user.mapobjs = list()
 
 	for(var/i=0; i<icount;i++)
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
 		H.screen_loc = "[5 + i%icx],[6+ round(i/icx)]"
 
-
 		H.name = (i==0)?"maprefresh":"map"
 
 		var/icon/I = imap[i+1]
 
 		H.icon = I
-		qdel(I)
+		spent(I)
 		H.hud_layerise()
-		usr.mapobjs += H
+		rel_add(user, nameof(user.mapobjs), H)
 
 #endif
 
@@ -304,7 +285,7 @@
 	return
 
 /obj/machinery/computer/security/proc/close(mob/user)
-	om_after(src, 2 SECONDS, PROC_REF(close_check), user)
+	after(src, 2 SECONDS, PROC_REF(close_check), with = list(user))
 
 /proc/getr(col)
 	return hex2num(copytext(col, 2,4))
@@ -317,14 +298,11 @@
 
 /mob/proc/clearmap()
 	src.client.screen -= src.mapobjs
-	for(var/atom/movable/screen/O in mapobjs)
-		qdel(O)
-
-	mapobjs = null
+	rel_clear(src, nameof(mapobjs)) // the screens are owned: clearing disposes of them
 
 /obj/machinery/computer/security/proc/close_check(mob/user)
 	var/using = null
-	if(user.mapobjs)
+	if(length(user.mapobjs))
 		for(var/obj/machinery/computer/security/seccomp in oview(1,user))
 			if(seccomp == src)
 				using = 1

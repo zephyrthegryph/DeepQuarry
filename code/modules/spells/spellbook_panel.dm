@@ -1,12 +1,15 @@
+CAPABILITIES(/obj/item/spellbook)
+	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
+	interface("Spellbook", title = "The Book of Spells", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("choose", ui_act("choose", arg("id", schema_text(4096))), then(PROC_REF(ui_act_choose)))
+	op("read_spellbook", in_hand(), label("Read"), then(PROC_REF(interaction_read_spellbook)))
+
 // Wizard spellbook — structured TGUI panel that replaces the legacy attack_self HTML.
 
 /obj/item/spellbook/proc/dq_open_spellbook(mob/user)
 	user.set_machine(src)
 	tgui_interact(user)
-
-DECLARE_UI_STATE(/obj/item/spellbook, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
 /obj/item/spellbook/ui_prepare(mob/user, datum/tgui/ui)
 	if(special_handling)
@@ -46,10 +49,8 @@ DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
 GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 
-UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
-
-/// The computed part of /obj/item/spellbook's window data (declared on its UI_DATA row).
-/obj/item/spellbook/proc/ui_data_obj_item_spellbook(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/spellbook's window data.
+/obj/item/spellbook/ui_data(datum/act/eval/A)
 	var/list/catalog = GLOBAL_TABLE_GET(spellbook_catalog)
 	var/list/data = list()
 	data["temp"] = temp || ""
@@ -61,23 +62,19 @@ UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
 	data["noclothes"] = catalog["noclothes"]
 	return data
 
-UI_ACT(/obj/item/spellbook, "clear_temp", ui_act_clear_temp)
-UI_ACT_PROC(/obj/item/spellbook, ui_act_clear_temp)
+/obj/item/spellbook/proc/ui_act_clear_temp(datum/act/op/A)
 	temp = null
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/spellbook, "choose", ui_act_choose, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/spellbook, ui_act_choose)
-	var/spell_id = params["id"]
-	if(!spell_id)
+/obj/item/spellbook/proc/ui_act_choose(datum/act/op/A, id)
+	if(!id)
 		return TRUE
-	choose_spell(ui.user, "[spell_id]", params, ui)
+	choose_spell(A.actor, "[id]")
 	SStgui.update_uis(src)
 	return TRUE
 
 // spellbook now opens via TGUI panel rather than admin_log_show.
-DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook), REQ_TARGET_STATE(/obj/item/spellbook/proc/can_read_markings)))
 
 /// Requirement: only wizards (or the mindless) make sense of the markings; special books handle this themselves.
 /obj/item/spellbook/proc/can_read_markings(mob/user, atom/target, obj/item/held)
@@ -87,12 +84,20 @@ DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interac
 
 /// Requirement: the actor is a wizard, or has no mind to judge (the old `user.mind && !is_antagonist` gate).
 /proc/dq_actor_is_wizard_or_mindless(mob/actor, atom/target, obj/item/held)
+	READS_FROM(actor)
 	return !actor?.mind || GLOB.wizards.is_antagonist(actor.mind) ? TRUE : FALSE
 
 /// Old attack_self: the spellbook panel opens via TGUI. Specially handled books leave it to their own self-use.
-/obj/item/spellbook/proc/interaction_read_spellbook(mob/user, obj/item/held, datum/interaction/interaction)
+
+/obj/item/spellbook/proc/interaction_read_spellbook(datum/act/op/A)
+	var/refusal = can_read_markings(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!user)
 		return TRUE
 	dq_open_spellbook(user)

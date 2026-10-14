@@ -27,6 +27,24 @@
 	var/id //for button usage
 	var/datum/looping_sound/shield_generator/shield_hum
 
+CAPABILITIES(/obj/machinery/shield_gen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
+	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator, starts = /datum/looping_sound/shield_generator)
+	owns_many(nameof(field))
+	climb()
+	interface("ShieldGenerator")
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	without("ui_open")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("change_radius", ui_act("change_radius", arg("val", num())), then(PROC_REF(ui_act_change_radius)))
+	op("strengthen_rate", ui_act("strengthen_rate", arg("val", num())), then(PROC_REF(ui_act_strengthen_rate)))
+	op("target_field_strength", ui_act("target_field_strength", arg("val", num())), then(PROC_REF(ui_act_target_field_strength)))
+	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
+	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds))), then(PROC_REF(interaction_open_ui_impl)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shield_gen_blast_trip)))
+
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
 	desc = "A machine that generates a field of energy optimized for blocking meteorites when activated.  This version comes with a more efficent shield matrix."
@@ -35,8 +53,7 @@
 // Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
 /obj/machinery/shield_gen/relations()
 	. = ..()
-	. += rel_many(nameof(capacitors), back = nameof(/obj/machinery/shield_capacitor::owned_gen))
-	// Remote shield buttons find generators by id (REL_KEYED sources).
+	// Remote shield buttons find generators by id (REL_KEYED sources). Moves to the button's ref_many(by = nameof(id)) with code/game/machinery/door_control.dm.
 	. += rel_key(nameof(id))
 
 /obj/machinery/shield_gen/Initialize(mapload)
@@ -48,41 +65,33 @@
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				rel_set(cap, nameof(cap.owned_gen), src)
-	own_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
-	make_climbable()
-
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_gen, MACHINE_PIPELINE, "active")
-
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
-/obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shield_gen/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_DECLINE
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		. = 1
+		. = OP_OK
 	fx_sparks(src, 5)
 
-/// Old attackby: swipe an ID to lock/unlock the controls.
-/datum/interaction/machine_item/shield_gen_swipe_id
-	id = "shield_gen_swipe_id"
-	name = "Swipe ID"
-	category = INTERACTION_CAT_LOCK
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/shield_gen/proc/interaction_swipe_id
-
-/obj/machinery/shield_gen/proc/interaction_swipe_id(mob/user, obj/item/card/id/C, datum/interaction/interaction)
+/obj/machinery/shield_gen/proc/interaction_swipe_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/C = A.held
 	if((ACCESS_CAPTAIN in C.GetAccess()) || (ACCESS_SECURITY in C.GetAccess()) || (ACCESS_ENGINE in C.GetAccess()))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 	else
 		to_chat(user, span_red("Access denied."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/shield_gen/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shield_gen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored?"bolted to the floor":"unbolted from the floor"] by %U%."))
 
 	if(active)
@@ -95,40 +104,31 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 				rel_set(cap, nameof(cap.owned_gen), src)
 	else
 		rel_clear(src, nameof(capacitors))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/shield_gen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_gen_swipe_id,
-		/datum/interaction/machine_hand/ungated/shield_gen_open_ui,
-	)
-	..()
+/// Requirement (was REQ_* shield_gen_not_broken): the legacy check answers TRUE to pass.
+/obj/machinery/shield_gen/proc/shield_gen_not_broken_holds(datum/act/op/A)
+	var/answer = shield_gen_not_broken(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
-/// Old attack_hand (never called ..()): open the interface unless broken.
-/datum/interaction/machine_hand/ungated/shield_gen_open_ui
-	id = "shield_gen_open_ui"
-	name = "Use"
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/shield_gen/proc/shield_gen_not_broken, null))
-	effect = /obj/machinery/shield_gen/proc/interaction_open_ui_impl
-
+/// Why shield_gen_not_broken_holds refuses: the legacy check's text, else the clause's own reason.
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
-/obj/machinery/shield_gen/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_gen/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/shield_gen, "ShieldGenerator")
+	return OP_OK
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return STATUS_CLOSE
 	return ..()
 
-UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_gen{capacitors:list,active:num,failing:bool,radius:num,max_radius:num,z_range:num,max_z_range:num,average_field_strength:num,target_field_strength:num,max_field_strength:num,shields:num,upkeep:num,strengthen_rate:num,max_strengthen_rate:num,gen_power:num}")
-
-/// The computed part of /obj/machinery/shield_gen's window data (declared on its UI_DATA row).
-/obj/machinery/shield_gen/proc/ui_data_obj_machinery_shield_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/shield_gen's window data.
+/obj/machinery/shield_gen/ui_data(datum/act/eval/A)
 	var/list/lockedData = list()
 
 	if(!locked)
@@ -159,7 +159,7 @@ UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_g
 
 	return list("locked" = locked, "lockedData" = lockedData)
 
-/obj/machinery/shield_gen/machine_step()
+/obj/machinery/shield_gen/proc/work_step(datum/act/timer/A)
 	if (!anchored)
 		toggle()
 		return
@@ -193,7 +193,7 @@ UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_g
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
 				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
-				MACHINE_WAKE(capacitor)
+				work_start(capacitor)
 
 		else
 			renwick_upkeep_per_field = max(renwick_upkeep_per_field, 0.5)
@@ -218,38 +218,33 @@ UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_g
 	else
 		average_field_strength = 0
 
-UI_ACT(/obj/machinery/shield_gen, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_toggle)
+/obj/machinery/shield_gen/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!active && !anchored)
-		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		to_chat(user, span_red("The [src] needs to be firmly secured to the floor first."))
 		return
 	toggle()
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "change_radius", ui_act_change_radius, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_change_radius)
-	field_radius = clamp(params["val"], 0, max_field_radius)
+/obj/machinery/shield_gen/proc/ui_act_change_radius(datum/act/op/A, val)
+	field_radius = clamp(val, 0, max_field_radius)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "strengthen_rate", ui_act_strengthen_rate, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_strengthen_rate)
-	strengthen_rate = clamp(params["val"], 0, max_strengthen_rate)
+/obj/machinery/shield_gen/proc/ui_act_strengthen_rate(datum/act/op/A, val)
+	strengthen_rate = clamp(val, 0, max_strengthen_rate)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "target_field_strength", ui_act_target_field_strength, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_target_field_strength)
-	target_field_strength = clamp(params["val"], 1, max_field_strength)
+/obj/machinery/shield_gen/proc/ui_act_target_field_strength(datum/act/op/A, val)
+	target_field_strength = clamp(val, 1, max_field_strength)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_gen, "z_range", ui_act_z_range, UI_ARG_NUM("val", 0, 10))
-UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_z_range)
-	z_range = params["val"]
+/obj/machinery/shield_gen/proc/ui_act_z_range(datum/act/op/A, val)
+	z_range = val
 	. = TRUE
 
-DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))
 
 /// A blast trips a running generator off.
-/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/damage_packet/packet)
+/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/act/A)
 	if(active)
 		toggle()
 
@@ -262,16 +257,14 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		if(T in covered_turfs)
 			covered_turfs.Remove(T)
 		for(var/turf/O in covered_turfs)
-			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
+			rel_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 		covered_turfs = null
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning start up.")
-		for(var/obj/effect/energy_field/E in field) // Update the icons here to ensure all the shields have been made already.
-			E.update_icon()
 		shield_hum.start()
 	else
-		own_clear(src, nameof(field), OWN_DELETE)
+		rel_clear(src, nameof(field))
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning fade out.")
@@ -286,22 +279,25 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		for(var/turf/O in covered_turfs)
 			if(locate(/obj/effect/energy_field, O) || locate(/obj/machinery/pointdefense, orange(2, O)))
 				continue
-			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
+			rel_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/shield_gen/appearance_overlays()
-	. = list()
-	if(has_stat(BROKEN))
-		icon_state = "broke"
-		set_light(0)
-		shield_hum.stop()
+/obj/machinery/shield_gen/draw(datum/look/look)
+	..()
+	if(broken_now())
+		look.state("broke")
+		look.glow(GLOW_OFF)
+		look.effect(PROC_REF(look_effect_shield_hum_stop))
 	else
 		if (src.active)
-			icon_state = "generator1"
-			set_light(4, 2, "#00CCFF")
+			look.state("generator1")
+			look.glow(4, 2, "#00CCFF")
 		else
-			icon_state = "generator0"
-			set_light(0)
+			look.state("generator0")
+			look.glow(GLOW_OFF)
+
+/// An effect of the look (the draw sweep): run once the look is applied, not while it is drawn.
+/obj/machinery/shield_gen/proc/look_effect_shield_hum_stop()
+	shield_hum?.stop()
 
 //grab the border tiles in a circle around this machine
 /obj/machinery/shield_gen/proc/get_shielded_turfs()

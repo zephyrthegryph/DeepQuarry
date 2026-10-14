@@ -1,9 +1,12 @@
+TRACKED(/obj/item/robot_module/robot/platform, eye_color)
+TRACKED(/obj/item/robot_module/robot/platform, decals)
+
 /obj/item/robot_module/robot/platform
 
 	hide_on_manifest = TRUE
 
 	var/pupil_color =     COLOR_CYAN
-	var/base_color =      COLOR_WHITE
+	var/body_color =      COLOR_WHITE
 	var/eye_color =       COLOR_BEIGE
 	var/armor_color =    "#68a2f2"
 	var/user_icon =       'icons/mob/robots_thinktank.dmi'
@@ -30,21 +33,17 @@
 	set src in usr
 
 	// A cancel answers "": the default colour.
-	om_ask(usr, /datum/om/prompt/color/platform_pupil, PROC_REF(pupil_color_chosen), cancel_answer = "")
+	open_request(src, /datum/prompt/color, PROC_REF(pupil_color_chosen), answerer = usr, ask_flags = ASK_CAPABLE, valid = PROC_REF(pupil_color_askable), title = "Pupil Colour Selection", question = "Select a pupil colour.", timeout = 0)
 
-/// Re-checked on the answer: able, and the module is still in the platform.
-/datum/om/prompt/color/platform_pupil
-	title = "Pupil Colour Selection"
-	message = "Select a pupil colour."
-	ask_flags = ASK_CAPABLE
+/// Re-checked on the answer: the module is still in the platform.
+/obj/item/robot_module/robot/platform/proc/pupil_color_askable(datum/request/R)
+	return loc == R.answerer
 
-/datum/om/prompt/color/platform_pupil/valid()
-	var/obj/item/module = subject
-	return module.loc == answerer ? null : "not installed"
-
-/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/om/prompt/color/platform_pupil/ask)
-	pupil_color = ask.picked_color || initial(pupil_color)
-	ask.answerer.update_icon()
+/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(QDELETED(user))
+		return
+	set_pupil_color((A.answer ? A.answer.value : null) || initial(pupil_color))
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"
@@ -60,31 +59,30 @@
 
 /obj/item/robot_module/robot/platform/explorer/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	own_add(src, nameof(modules), new /obj/item/tool/wrench/cyborg(src))
-	own_add(src, nameof(modules), new /obj/item/weldingtool/electric/mounted/cyborg(src))
-	own_add(src, nameof(modules), new /obj/item/tool/wirecutters/cyborg(src))
-	own_add(src, nameof(modules), new /obj/item/tool/screwdriver/cyborg(src))
-	own_add(src, nameof(modules), new /obj/item/pickaxe/plasmacutter(src))
-	own_add(src, nameof(modules), new /obj/item/material/knife/machete/cyborg(src))
+	rel_add(src, nameof(modules), new /obj/item/tool/wrench/cyborg(src))
+	rel_add(src, nameof(modules), new /obj/item/weldingtool/electric/mounted/cyborg(src))
+	rel_add(src, nameof(modules), new /obj/item/tool/wirecutters/cyborg(src))
+	rel_add(src, nameof(modules), new /obj/item/tool/screwdriver/cyborg(src))
+	rel_add(src, nameof(modules), new /obj/item/pickaxe/plasmacutter(src))
+	rel_add(src, nameof(modules), new /obj/item/material/knife/machete/cyborg(src))
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(7500)
 	var/obj/item/stack/medical/bruise_pack/bandaid = new(src)
-	bandaid.uses_charge = 1
-	bandaid.charge_costs = list(1000)
-	rel_add(bandaid, nameof(bandaid.synths), medicine)
-	own_add(src, nameof(modules), bandaid)
-	own_add(src, nameof(synths), medicine)
+	bandaid.set_uses_charge(1)
+	bandaid.set_charge_costs(list(1000))
+	bandaid.add_synth(medicine)
+	rel_add(src, nameof(modules), bandaid)
+	rel_add(src, nameof(synths), medicine)
 
-	own_add(src, nameof(modules), new /obj/item/gun/energy/robotic/phasegun(src))
+	rel_add(src, nameof(modules), new /obj/item/gun/energy/robotic/phasegun(src))
 
-	own_add(src, nameof(emag), new /obj/item/chainsaw(src))
+	rel_add(src, nameof(emag), new /obj/item/chainsaw(src))
 
 /obj/item/robot_module/robot/platform/explorer/respawn_consumable(mob/living/silicon/robot/R, rate)
 	. = ..()
 	for(var/obj/item/gun/energy/pew in modules)
 		if(pew.power_supply && pew.power_supply.charge < pew.power_supply.maxcharge)
 			pew.power_supply.give(pew.charge_cost * rate)
-			pew.update_icon()
 		else
 			pew.charge_tick = 0
 
@@ -100,10 +98,10 @@
 
 /obj/item/robot_module/robot/platform/cargo/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	own_add(src, nameof(modules), new /obj/item/packageWrap(src))
-	own_add(src, nameof(modules), new /obj/item/pen/multi(src))
-	own_add(src, nameof(modules), new /obj/item/destTagger(src))
-	own_add(src, nameof(emag), new /obj/item/stamp/denied)
+	rel_add(src, nameof(modules), new /obj/item/packageWrap(src))
+	rel_add(src, nameof(modules), new /obj/item/pen/multi(src))
+	rel_add(src, nameof(modules), new /obj/item/destTagger(src))
+	rel_add(src, nameof(emag), new /obj/item/stamp/denied)
 
 /obj/item/robot_module/robot/platform/cargo/respawn_consumable(mob/living/silicon/robot/R, rate)
 	. = ..()

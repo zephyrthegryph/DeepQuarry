@@ -18,10 +18,13 @@
 	var/mine_points = 500
 	var/survey_points = 0
 
-DECLARE_INTERACTIONS(/obj/item/card/mining_point_card, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/card/mining_point_card)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/card/mining_point_card/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/card/mining_point_card/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
 		var/datum/money_account/account = get_account(C.associated_account_number)
@@ -39,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/item/card/mining_point_card, INTERACT_ITEM(null, PROC_
 		else
 			to_chat(user, span_info("There's no survey points left on [src]."))
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/card/mining_point_card/examine(mob/user)
 	. = ..()

@@ -186,6 +186,7 @@ Proc for attack log creation, because really why not
 
 //checks whether this item is a module of the robot it is located in.
 /proc/is_robot_module(obj/item/thing)
+	READS_FROM(thing)
 	if (!thing || !isrobot(thing.loc))
 		return 0
 	var/mob/living/silicon/robot/R = thing.loc
@@ -236,10 +237,4 @@ DECLARE_SHARED_CACHE_EX(character_icons, GLOBAL_PROC_REF(build_character_icon), 
 
 ///Makes a call in the context of a different usr. Use sparingly
 /world/proc/push_usr(mob/user_mob, datum/callback/invoked_callback, ...)
-	var/temp = usr
-	usr = user_mob
-	if (length(args) > 2)
-		. = invoked_callback.Invoke(arglist(args.Copy(3)))
-	else
-		. = invoked_callback.Invoke()
-	usr = temp
+	. = with_actor(arglist(list(user_mob, invoked_callback) + args.Copy(3)))

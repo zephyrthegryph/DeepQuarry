@@ -1,0 +1,11 @@
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: Rotate Clockwise
+ghost|none menu: Rotate Counter Clockwise
+ghost|none menu: Turn Around
+ghost|none click: nothing
+human|none menu: Climb
+human|none menu: Rotate Clockwise
+human|none menu: Rotate Counter Clockwise
+human|none menu: Turn Around
+human|none menu: Use (refused: It needs to be firmly secured to the floor first.)
+human|none click: Click: Use

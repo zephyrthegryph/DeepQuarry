@@ -55,11 +55,11 @@
 		contract?.board_key || candidate?.board_key,
 		reason,
 	)
-	lifecycle_history += entry
+	rel_add(src, nameof(lifecycle_history), entry)
 	if(length(lifecycle_history) > CONTRACT_LIFECYCLE_HISTORY_LIMIT)
 		var/datum/contract_lifecycle_entry/expired = lifecycle_history[1]
-		lifecycle_history.Cut(1, 2)
-		qdel(expired)
+		rel_remove(src, nameof(lifecycle_history), expired)
+		lapsed(expired)
 
 /datum/system/contracts/proc/find_live_offer(offer_key) as /datum/contract
 	if(!offer_key)
@@ -83,8 +83,8 @@
 	if(!candidate || !(candidate in offer_candidates))
 		return FALSE
 	record_lifecycle("candidate-withdrawn", null, candidate, reason)
-	offer_candidates -= candidate
-	qdel(candidate)
+	rel_remove(src, nameof(offer_candidates), candidate)
+	spent(candidate)
 	return TRUE
 
 /datum/system/contracts/proc/board_limit(datum/contract_definition/definition)
@@ -197,7 +197,7 @@
 		candidate_expires_at,
 		priority,
 	)
-	offer_candidates += candidate
+	rel_add(src, nameof(offer_candidates), candidate)
 	record_lifecycle("candidate", null, candidate, reason)
 	var/datum/contract/materialized = candidate_context["defer_materialization"] ? null : try_materialize_candidate(candidate)
 	if(materialized)
@@ -207,7 +207,7 @@
 	if(BEFORE(src, cooldown_until, CLOCK_WORLD))
 		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
 	if(recheck_delay)
-		om_after(src, recheck_delay, PROC_REF(reconcile_offer_board), "Candidate timer")
+		after(src, recheck_delay, PROC_REF(reconcile_offer_board), with = list("Candidate timer"))
 	return null
 
 /datum/system/contracts/proc/try_materialize_candidate(datum/contract_offer_candidate/candidate) as /datum/contract
@@ -232,9 +232,9 @@
 		record_lifecycle("candidate-error", null, candidate, "Definition failed to create a valid contract.")
 		withdraw_candidate(candidate, "Definition failed to create a valid contract.")
 		return null
-	offer_candidates -= candidate
+	rel_remove(src, nameof(offer_candidates), candidate)
 	record_lifecycle("offered", contract, candidate, reason)
-	qdel(candidate)
+	spent(candidate)
 	offers_materialized++
 	notify_contract(contract, "New [contract.offer_kind] contract: [contract.title].")
 	return contract

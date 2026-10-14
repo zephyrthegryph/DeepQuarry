@@ -6,15 +6,7 @@
 	var/obj/item/communicator/comm = null
 	var/item_tf = FALSE
 
-	emote_type = 2 //This lets them emote through containers.  The communicator has a image feed of the person calling them so...
 
-/mob/living/voice/Initialize(mapload)
-	add_language(LANGUAGE_GALCOM)
-	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-
-	if(istype(loc, /obj/item/communicator))
-		rel_set(src, nameof(comm), loc) // the communicator carrying us
-	. = ..()
 
 // Proc: transfer_identity()
 // Parameters: 1 (speaker - the mob (usually an observer) to copy information from)
@@ -22,7 +14,7 @@
 /mob/living/voice/proc/transfer_identity(mob/speaker)
 	if(ismob(speaker))
 		icon = speaker.icon
-		icon_state = speaker.icon_state
+		set_icon_state(speaker.icon_state)
 		overlays = speaker.overlays
 		timeofdeath = speaker.timeofdeath
 
@@ -30,7 +22,7 @@
 		if(speaker.client && speaker.client.prefs)
 			var/datum/preferences/p = speaker.client.prefs
 			name = p.read_preference(/datum/preference/name/real_name)
-			real_name = name
+			set_real_name(name)
 			gender = p.read_preference(/datum/preference/choiced/gender/identifying)
 
 			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // migrated
@@ -74,10 +66,12 @@
 	set desc = "Changes your name."
 	set src = usr
 
-	om_ask(src, /datum/om/prompt/text, PROC_REF(voice_name_entered), title = "Communicator", message = "Who would you like to be now?", default = src.client.prefs.read_preference(/datum/preference/name/real_name), max_length = MAX_NAME_LEN, encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(voice_name_entered), answerer = src, title = "Communicator", question = "Who would you like to be now?", default = src.client.prefs.read_preference(/datum/preference/name/real_name), max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
 
-/mob/living/voice/proc/voice_name_entered(datum/om/prompt/text/ask)
-	var/new_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/mob/living/voice/proc/voice_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(new_name)
 		if(comm)
 			comm.visible_message(span_notice("[icon2html(comm,viewers(comm))] [src.name] has left, and now you see [new_name]."))
@@ -92,13 +86,10 @@
 // Proc: Life()
 // Parameters: None
 // Description: Checks the active variable on the Exonet node, and kills the mob if it goes down or stops existing.
-/datum/om/stage/life/type_pre/voice
-	of = /mob/living/voice
-
-/datum/om/stage/life/type_pre/voice/perform(mob/living/voice/self, datum/om/frame/life/ctx)
-	if(self.comm)
-		if(!self.comm.node || !self.comm.node.on || !self.comm.node.allow_external_communicators)
-			self.comm.close_connection(user = self, target = self, reason = "Connection to telecommunications array timed out")
+/mob/living/voice/life_type_pre(datum/seq_frame/life/F)
+	if(src.comm)
+		if(!src.comm.node || !src.comm.node.on || !src.comm.node.allow_external_communicators)
+			src.comm.close_connection(user = src, target = src, reason = "Connection to telecommunications array timed out")
 	..()
 
 // Proc: say()
@@ -112,7 +103,7 @@
 		if(!speech_type || speech_type == "default")
 			speech_type = speech_bubble_appearance()
 		var/image/speech_bubble = generate_speech_bubble(comm, "[speech_type][speech_bubble_test]")
-		om_after(src, 3 SECONDS, GLOBAL_PROC_REF(qdel), speech_bubble)
+		after(src, 3 SECONDS, GLOBAL_PROC_REF(qdel), with = list(speech_bubble))
 
 		for(var/mob/M in hearers(comm)) //simplifed since it's just a speech bubble
 			M << speech_bubble
@@ -151,6 +142,8 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-/mob/living/voice/relations()
-	. = ..()
-	. += rel_one(nameof(comm))
+CAPABILITIES(/mob/living/voice)
+	configure(mob_kind(emote_type = 2))
+	ref_one(nameof(comm))
+	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us
+	knows(LANGUAGE_GALCOM, default = TRUE)

@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "You can have several questions and actions pending at once (up to 10): a question no longer cancels, or is cancelled by, another window or a click that does not need your hands"
+  - qol: "Clicking the same thing again while its question is open brings that window forward instead of opening another"
+  - code_imp: "claims(mask) names what a waiting op holds (hands, body, target); only overlapping claims conflict"

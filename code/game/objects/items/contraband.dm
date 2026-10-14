@@ -16,7 +16,13 @@
 	starts_with = list(/obj/item/reagent_containers/pill/zoom = 7)
 
 /obj/item/reagent_containers/glass/beaker/vial/random
-	flags = NONE
+
+// A found vial is sealed.
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random)
+	configure(reagent_container(starts_open = FALSE))
+	rolls(nameof(vial_recipe), PROC_REF(roll_recipe))
+	configure(reagents(contents_from = nameof(vial_recipe)))
+	derives(nameof(desc), PROC_REF(contents_desc))
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/glass/beaker/vial/random, random_vial_reagents, list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1))
 
@@ -28,21 +34,19 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 		list(REAGENT_ID_IMPEDREZENE = 15)						= 2, \
 		list(REAGENT_ID_ZOMBIEPOWDER = 10)						= 1))
 
-/obj/item/reagent_containers/glass/beaker/vial/random/Initialize(mapload)
-	. = ..()
-	if(is_open_container())
-		flags ^= OPENCONTAINER
+/// The rolled recipe it is filled with (reagents(contents_from =)).
+/obj/item/reagent_containers/glass/beaker/vial/random/var/tmp/list/vial_recipe
 
-	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
-	for(var/reagent in picked_reagents)
-		reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick
+/// Rolled before init (rolls()): one of the type's weighted recipes.
+/obj/item/reagent_containers/glass/beaker/vial/random/proc/roll_recipe(datum/roller/R)
+	return R.weighted(TYPE_TABLE_GET(src, random_vial_reagents))
 
+/// The label names what it holds (derives(), at init, after it is filled).
+/obj/item/reagent_containers/glass/beaker/vial/random/proc/contents_desc()
 	var/list/names = list()
 	for(var/datum/reagent/R in reagents.reagent_list)
 		names += R.name
-
-	desc = "Contains [english_list(names)]."
-	update_icon()
+	return "Contains [english_list(names)]."
 
 //
 // Drug Powder
@@ -79,26 +83,35 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 
 /// Snorting.
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+// A powder is a sealed holder of its volume; a straw or a rolling paper used on it snorts a little (two units, into the blood of somebody who is flesh).
+CAPABILITIES(/obj/item/reagent_containers/powder)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount))
+	op("snort", inputs(item(/obj/item/glass_extra/straw), item(/obj/item/reagent_containers/rollingpaper)), label("Snort it"),
+		needs(req(PROC_REF(snorter_is_human))), then(PROC_REF(snorted)))
 
-/// Old attackby.
-/obj/item/reagent_containers/powder/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+MSG_DEF_SELF(powder/not_flesh, "You have to be fleshy to snort the naughty drugs.")
 
-	if(!ishuman(user)) /// You gotta be fleshy to snort the naughty drugs.
-		return FALSE
+/obj/item/reagent_containers/powder/proc/snorter_is_human(datum/act/op/A)
+	return (ishuman(A.actor)) ? null : MSG(powder/not_flesh)
 
-	if(!istype(W, /obj/item/glass_extra/straw) && !istype(W, /obj/item/reagent_containers/rollingpaper))
-		return FALSE
-
+/// A little is snorted: into the blood; the powder is used up with the last of it.
+/obj/item/reagent_containers/powder/proc/snorted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	act_message(user, src, others = span_warning("%U% snorts %T% with [W]!"))
 	play_sfx(loc, SFX_EFFECTS_SNORT)
-
 	if(reagents)
 		reagents.trans_to_mob(user, amount_per_transfer_from_this, CHEM_BLOOD)
-
 	if(!reagents.total_volume) /// Did we use all of it?
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 ////// End powder. /////////
 
@@ -111,10 +124,12 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PR
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/stolenpackage)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/stolenpackage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stolenpackage/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	// Another way of doing this. Commented out because the other method is better for this application.
 	/*var/spawn_chance = rand(1,100)
 	switch(spawn_chance)
@@ -209,10 +224,12 @@ DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(intera
 	icon = 'icons/obj/contraband_vr.dmi'
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_INTERACTIONS(/obj/item/miscdisc, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/miscdisc)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/miscdisc/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/miscdisc/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	to_chat(user, "As you hold the large disc in your open palm, fingers cusped around the edge, the crystal embedded in the item begins to vibrate. It lifts itself from the disc a few cenimetres, before beginning to glow with a bright red light. The glow lasts for a few seconds, before the crystal embeds itself back into the disc with a quick snap.")
 	return TRUE
 
@@ -225,10 +242,14 @@ DECLARE_INTERACTIONS(/obj/item/miscdisc, INTERACT_USE(null, PROC_REF(interaction
 	item_state = "table_parts"
 	w_class = ITEMSIZE_HUGE
 
-DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+CAPABILITIES(/obj/item/contraband)
+	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(unwrapped)))
 
-/// Old attack_self.
-/obj/item/contraband/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using the package in the hand opens it: what was inside lands in that hand.
+/obj/item/contraband/proc/unwrapped(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!consume(src, user))
+		return OP_REFUSED
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,
@@ -244,6 +265,6 @@ DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(inter
 		/obj/item/seeds/ambrosiavulgarisseed,
 		/obj/item/bodysnatcher)
 
-	user.put_in_hands(new contraband(usr.loc))
+	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, "You unwrap the package.")
-	consume(src, user)
+	return OP_OK

@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Status impairments now prevent machine operations until their effective sources clear."
+  - refactor: "Migrated machinery configuration questions to native operation workflows."

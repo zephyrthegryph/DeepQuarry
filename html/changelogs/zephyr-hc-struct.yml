@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Converted structure and machine hit reactions, emags, windows and questions (janitorial cart, safe, tank dispenser, canvas, ghost pods, prisms, canisters, pumps, turrets, cryo cell, requests console, suit cycler, floor layer and more) to the final op, hook and request forms."

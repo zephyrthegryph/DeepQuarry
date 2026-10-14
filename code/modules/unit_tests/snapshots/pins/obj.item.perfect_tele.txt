@@ -1,0 +1,63 @@
+@obj human|none
+-click: Click: Pick up
++2 menu: Remove cell
++4 click: Click: Remove cell
+@obj robot|none
+-click: Click: Pick up
++3 menu: Remove cell
++5 click: Click: Remove cell
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/tool/wrench
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/multitool
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/weldingtool
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/card/id
+-click: nothing
++1 menu: Remove cell
++3 click: Click: Remove cell
+@obj human|/obj/item/kit
++2 menu: Remove cell
+@obj human|/obj/item/storage
+-click: Click: Collect
++2 menu: Remove cell
++4 click: Click: Remove cell
+@obj human|/obj/item/cell
+-click: nothing
++0 menu: Insert
++2 menu: Remove cell
++4 click: Click: Insert
+human|/obj/item/perfect_tele_beacon menu: Insert
+human|/obj/item/perfect_tele_beacon menu: Move To Top
+human|/obj/item/perfect_tele_beacon menu: Remove cell
+human|/obj/item/perfect_tele_beacon menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/perfect_tele_beacon click: Click: Insert
+keys: choose_beacon, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable, translocate, unload

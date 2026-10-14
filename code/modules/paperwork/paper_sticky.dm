@@ -15,7 +15,10 @@
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
 
-APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writing:}")
+/// The look (the draw sweep: from its template).
+/obj/item/sticky_pad/draw(datum/look/look)
+	..()
+	look.state("[appearance_fill()][written_text ? "_writing" : ""]")
 
 /// The pad state for how many papers are left.
 /obj/item/sticky_pad/proc/appearance_fill()
@@ -25,63 +28,73 @@ APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writi
 		return "pad_used"
 	return "pad_full"
 
-/// Old attackby.
-/obj/item/sticky_pad/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
-	if(istype(thing, /obj/item/pen))
+MSG_DEF_SELF(sticky_pad/banned, span_warning("You are banned from leaving persistent information across rounds."))
+MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 
-		if(jobban_isbanned(user, JOB_GRAFFITI))
-			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-			return INTERACTION_HANDLED_PASS
+/// Old attackby with a pen: the pad may be written on by someone not banned from graffiti while it has room.
+/obj/item/sticky_pad/proc/can_write(datum/act/op/A)
+	return (!jobban_isbanned(A.actor, JOB_GRAFFITI)) ? null : MSG(sticky_pad/banned)
 
-		var/writing_space = MAX_MESSAGE_LEN - length(written_text)
-		if(writing_space <= 0)
-			to_chat(user, span_warning("There is no room left on \the [src]."))
-			return INTERACTION_HANDLED_PASS
-		var/_answer_k37 = rerun_ask(user, "k37", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to write?", max_length = writing_space, encode = FALSE)
-		if(isnull(_answer_k37))
-			return TRUE
-		var/text = sanitizeSafe(_answer_k37, writing_space)
-		if(!text || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
-			return INTERACTION_HANDLED_PASS
-		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
-		written_by = user.ckey
-		if(written_text)
-			written_text = "[written_text] [text]"
-		else
-			written_text = text
-		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/sticky_pad/proc/has_room(datum/act/op/A)
+	return (writing_space() > 0) ? null : MSG(sticky_pad/full)
+
+/obj/item/sticky_pad/proc/writing_space()
+	return MAX_MESSAGE_LEN - length(written_text)
+
+/obj/item/sticky_pad/proc/write_max_len(datum/act/A)
+	return writing_space()
+
+/obj/item/sticky_pad/proc/write_name_text(datum/act/A)
+	return writing_space() <= MAX_NAME_LEN
+
+/// The answer is written when the pen is still held and in reach, and the writer able.
+/obj/item/sticky_pad/proc/sticky_write(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
+	var/text = sanitizeSafe(A.step_value("write"), writing_space())
+	if(!text || !thing || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
+		return OP_PASS
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
+	written_by = user.ckey
+	if(written_text)
+		set_written_text("[written_text] [text]")
+	else
+		set_written_text(text)
+	SStgui.update_uis(src)
+	return OP_PASS
 
 /obj/item/sticky_pad/examine(mob/user)
 	. = ..()
 	if(.)
 		to_chat(user, span_notice("It has [papers] sticky note\s left."))
 
-DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/sticky_pad/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/sticky_pad/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/paper/paper = new paper_type(get_turf(src))
 	paper.set_content(written_text, "sticky note")
 	paper.last_modified_ckey = written_by
 	paper.color = color
-	written_text = null
+	set_written_text(null)
 	user.put_in_hands(paper)
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
-	papers--
+	set_papers(papers - 1)
 	if(papers <= 0)
 		consume(src, user)
-	else
-		update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/item/sticky_pad/MouseDrop(mob/user)
-	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
-		if(!isanimal(user))
+CAPABILITIES(/obj/item/sticky_pad)
+	drag_onto(PROC_REF(mousedrop_input))
+	op("sticky_pad_hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("sticky_pad_item", item(/obj/item/pen), label("Use"), needs(req(PROC_REF(can_write)), req(PROC_REF(has_room))), asks(/datum/prompt/text/paperwork_review, fields = list("question" = "What would you like to write?", "max_len" = computed(PROC_REF(write_max_len)), "encode" = FALSE, "name_text" = computed(PROC_REF(write_name_text))), step = "write"), then(PROC_REF(sticky_write)))
+
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/sticky_pad/proc/mousedrop_input(datum/act/input/A)
+	return pickup_with_actor(A.actor, A.over)
+
+/obj/item/sticky_pad/proc/pickup_with_actor(mob/user, mob/destination)
+	if(user && user == destination && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
+		if(ishuman(user))
 			if( !user.get_active_hand() )		//if active hand is empty
 				var/mob/living/carbon/human/H = user
 				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -97,23 +110,16 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 
 	return
 
-/obj/item/sticky_pad/random/Initialize(mapload)
-	. = ..()
-	color = pick(COLOR_YELLOW, COLOR_LIME, COLOR_CYAN, COLOR_ORANGE, COLOR_PINK)
+CAPABILITIES(/obj/item/sticky_pad/random)
+	rolls(nameof(color), pick_one(list(COLOR_YELLOW, COLOR_LIME, COLOR_CYAN, COLOR_ORANGE, COLOR_PINK)))
 
 /obj/item/paper/sticky
 	name = "sticky note"
 	desc = "Note to self: buy more sticky notes."
 	icon = 'icons/obj/stickynotes.dmi'
 	color = COLOR_YELLOW
-	slot_flags = 0
 
-/obj/item/paper/sticky/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(reset_persistence_tracking))
-
-/obj/item/paper/sticky/proc/reset_persistence_tracking()
+/obj/item/paper/sticky/proc/reset_persistence_tracking(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	SSpersistence.forget_value(src, /datum/persistent/paper/sticky)
 	pixel_x = 0
@@ -124,25 +130,22 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	..()
 	reset_persistence_tracking()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/sticky/appearance_overlays()
-	. = list()
-	if(icon_state != "scrap")
-		icon_state = info ? "paper_words" : "paper"
-
 // Copied from duct tape.
-EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sticky_pick_up)))
+CAPABILITIES(/obj/item/paper/sticky)
+	configure(item_worn(slots = 0))
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(reset_persistence_tracking)))
+	extend("pick_up_item", then(PROC_REF(sticky_picked_up)))
 
 /// Picking a note up off a wall ends its persistence.
-/obj/item/paper/sticky/proc/sticky_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/paper/sticky/proc/sticky_picked_up(datum/act/op/A)
 	if(!istype(loc, /turf))
 		reset_persistence_tracking()
+	return OP_OK
 
 /obj/item/paper/sticky/afterattack(A, mob/user, flag, params)
 
-	if(!in_range(user, A) || istype(A, /obj/machinery/door) || icon_state == "scrap")
+	if(!in_range(user, A) || istype(A, /obj/machinery/door) || crumpled)
 		return
 
 	var/turf/target_turf = get_turf(A)

@@ -49,82 +49,68 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 	var/has_mane = TRUE
-	var/image/mane_overlay
 	var/mane_living = "mane"
 	var/mane_dead = "mane-dead"
 	var/mane_rest = "mane_rest"
 	var/mane_color = "#FFFFFF"
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/add_mane()
+/// The lion's mane, tinted, over the body: the mane state of the body's current life state and fullness.
+/mob/living/simple_mob/vore/retaliate/lion/draw(datum/look/look)
+	..()
+	if(!has_mane)
+		return
+	var/mane_state = mane_living
 	if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)))
-		if(!vore_fullness || !(vore_icons & SA_ICON_LIVING))
-			mane_overlay = image(icon, "[mane_living]")
-		else
-			mane_overlay = image(icon, "[mane_living]-[vore_fullness]")
+		if(vore_fullness && (vore_icons & SA_ICON_LIVING))
+			mane_state = "[mane_living]-[vore_fullness]"
 	else if(stat >= DEAD)
-		if(!vore_fullness || !(vore_icons & SA_ICON_DEAD))
-			mane_overlay = image(icon, "[mane_dead]")
+		if(vore_fullness && (vore_icons & SA_ICON_DEAD))
+			mane_state = "[mane_dead]-[vore_fullness]"
 		else
-			mane_overlay = image(icon, "[mane_dead]-[vore_fullness]")
-	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
-		if(!vore_fullness || !(vore_icons & SA_ICON_REST))
-			mane_overlay = image(icon, "[mane_rest]")
+			mane_state = mane_dead
+	else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED)) && icon_rest)
+		if(vore_fullness && (vore_icons & SA_ICON_REST))
+			mane_state = "[mane_rest]-[vore_fullness]"
 		else
-			mane_overlay = image(icon, "[mane_rest]-[vore_fullness]")
-	mane_overlay.color = mane_color
-	mane_overlay.plane = PLANE_LIGHTING_ABOVE
-	mane_overlay.appearance_flags = appearance_flags | RESET_COLOR
-	add_overlay(mane_overlay)
-
-/mob/living/simple_mob/vore/retaliate/lion/proc/remove_mane()
-	if(mane_overlay)
-		cut_overlay(mane_overlay)
-		qdel(mane_overlay)
-		mane_overlay = null
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/retaliate/lion/appearance_overlays()
-	. = list()
-	. += ..()
-	if(has_mane)
-		add_mane()
-	else
-		remove_mane()
-
+			mane_state = mane_rest
+	look.overlay(look_overlay_image(icon, mane_state, plane = PLANE_LIGHTING_ABOVE, color = mane_color, appearance_flags = (appearance_flags | RESET_COLOR)))
 
 /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex()
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(sex_chosen), title = "Set Sex", message = "Please select a sex:", choices = list(FEMALE, MALE))
+	open_request(src, /datum/prompt/choice, PROC_REF(sex_chosen), answerer = src, title = "Set Sex", question = "Please select a sex:", choices = list(FEMALE, MALE), timeout = 0)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/om/prompt/choice/ask)
-	var/newsex = ask.choice
+/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newsex = A.answer.value
 	if(newsex == FEMALE)
-		icon_living = "lioness"
-		icon_dead = "lioness-dead"
-		icon_rest = "lioness_rest"
-		has_mane = FALSE
-		update_icon()
+		set_icon_living("lioness")
+		set_icon_dead("lioness-dead")
+		set_icon_rest("lioness_rest")
+		set_has_mane(FALSE)
 	else if(newsex == MALE)
-		icon_living = "lion"
-		icon_dead = "lion-dead"
-		icon_rest = "lion_rest"
-		has_mane = TRUE
-		update_icon()
+		set_icon_living("lion")
+		set_icon_dead("lion-dead")
+		set_icon_rest("lion_rest")
+		set_has_mane(TRUE)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color()
+/mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color()
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
 	set category = VERB_CAT_ABILITIES_SETTINGS
-	om_ask(src, /datum/om/prompt/color, PROC_REF(mane_color_picked), title = "Mane Color", message = "Please pick a mane color:", default = mane_color)
+	open_request(src, /datum/prompt/color, PROC_REF(mane_color_picked), answerer = src, title = "Mane Color", question = "Please pick a mane color:", default = mane_color, timeout = 0)
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		mane_color = ask.picked_color
-		update_icon()
+/mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		set_mane_color(A.answer.value)
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/proc/pick_color)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
+
+CAPABILITIES(/mob/living/simple_mob/vore/retaliate/lion)
+	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/retaliate/lion/proc/pick_mane_color, login = TRUE)
 

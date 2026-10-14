@@ -62,13 +62,9 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 	desc = "A shield adept for close quarters engagement.  It's also capable of protecting from less powerful projectiles."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "riot"
-	slot_flags = SLOT_BACK
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
-	attack_verb = list("shoved", "bashed")
 	var/cooldown = 0 //shield bash cooldown. based on world.time
 
 /obj/item/shield/riot/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -83,12 +79,12 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 			//to strong bullets and lasers.  They still do fine to pistol rounds of all kinds, however.
 			if(istype(damage_source, /obj/item/projectile))
 				var/obj/item/projectile/P = damage_source
-				if((is_sharp(P) && P.armor_penetration >= 10) || istype(P, /obj/item/projectile/beam))
+				if((is_sharp(P) && combat_of(P).armor_penetration >= 10) || istype(P, /obj/item/projectile/beam))
 					//If we're at this point, the bullet/beam is going to go through the shield, however it will hit for less damage.
 					//Bullets get slowed down, while beams are diffused as they hit the shield, so these shields are not /completely/
 					//useless.  Extremely penetrating projectiles will go through the shield without less damage.
 					act_message(user, src, others = span_danger("%U%'s [src.name] is pierced by [attack_text]!"))
-					if(P.armor_penetration < 30) //PTR bullets and x-rays will bypass this entirely.
+					if(combat_of(P).armor_penetration < 30) //PTR bullets and x-rays will bypass this entirely.
 						P.damage = P.damage / 2
 					return 0
 			//Otherwise, if we're here, we're gonna stop the attack entirely.
@@ -97,18 +93,18 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 			return 1
 	return 0
 
-DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/shield/riot)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))
+	op("baton_bash", item(/obj/item/melee/baton), label("Bash shield"), then(PROC_REF(baton_bashed)), passes())
 
-/// Old attackby.
-/obj/item/shield/riot/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/melee/baton))
-		if(COOLDOWN_FINISHED(src, cooldown))
-			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
-			play_sfx(src, SFX_EFFECTS_SHIELDBASH)
-			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/obj/item/shield/riot/proc/baton_bashed(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		act_message(A.actor, src, others = span_warning("%U% bashes %T% with [A.held]!"))
+		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
+		COOLDOWN_START(src, cooldown, 2.5 SECONDS)
+	return OP_OK
 
 /*
  * Energy Shield
@@ -120,17 +116,13 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "eshield"
 	item_state = "eshield"
-	slot_flags = SLOT_EARS
 	flags = NOCONDUCT
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 	var/lrange = 1.5
 	var/lpower = 1.5
 	var/lcolor = "#006AFF"
-	attack_verb = list("shoved", "bashed")
 	var/active = 0
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
@@ -153,84 +145,80 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 			return (base_block_chance - round(damage / 3)) //block bullets and beams using the old block chance
 	return base_block_chance
 
-DECLARE_INTERACTIONS(/obj/item/shield/energy, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/shield/energy/proc/can_recolor)), \
-)
+TRACKED(/obj/item/shield/energy, active)
+TRACKED(/obj/item/shield/energy, lcolor)
 
-/// Old attack_self.
-/obj/item/shield/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/shield/energy)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0, attack_verbs = list("shoved", "bashed")))
+	op("toggle", in_hand(), label("Toggle shield"), then(PROC_REF(shield_toggled)))
+	op("recolor", inputs(hand(), in_hand()), answers(INTENT_TOGGLE), label("Recolor shield"),
+		needs(req_adjacent()),
+		part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = "Are you sure you want to recolor your shield?", "title" = "Confirm Recolor", "timeout" = 0), "step" = "confirm", "resume" = CAPTURE, "keeps" = 0, "confirms" = TRUE)),
+		asks(/datum/prompt/color/energy_shield, keeps = 0), then(PROC_REF(shield_recolored)))
+
+/// The color starts from the live shield state when this second request opens, after confirmation.
+/datum/prompt/color/energy_shield
+	title = "Choose Energy Color"
+	timeout = 0
+
+/datum/prompt/color/energy_shield/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/shield/energy/shield = asking.target
+		if(istype(shield))
+			default = shield.lcolor
+
+/obj/item/shield/energy/proc/shield_toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You beat yourself in the head with [src]."))
 		user.injure(INJURY_BLUNT, 5, source = src)
-	active = !active
+	set_active(!active)
 	if (active)
-		force = 10
-		update_icon()
-		w_class = ITEMSIZE_LARGE
-		slot_flags = null
+		set_force(10)
+		set_w_class(ITEMSIZE_LARGE)
+		set_slot_flags(null)
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("\The [src] is now active."))
 
 	else
-		force = 3
-		update_icon()
-		w_class = ITEMSIZE_TINY
-		slot_flags = SLOT_EARS
+		set_force(3)
+		set_w_class(ITEMSIZE_TINY)
+		set_slot_flags(SLOT_EARS)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("\The [src] can now be concealed."))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/shield/energy/appearance_overlays()
-	. = list()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
+/// The look: the blade over the hilt in the shield's colour, lit while active.
+/obj/item/shield/energy/draw(datum/look/look)
+	..()
+	var/base = look.state_so_far(src)
 	if(lcolor)
-		blade_overlay.color = lcolor
-		color = lcolor
+		look.set_color(lcolor)
 	if(active)
-		. += blade_overlay
-		item_state = "[icon_state]_blade"
-		set_light(lrange, lpower, lcolor)
+		look.overlay(look_appearance(icon, "[base]_blade", color = lcolor))
+		look.held_state("[base]_blade")
+		look.glow(lrange, lpower, lcolor)
 	else
-		color = "FFFFFF"
-		set_light(0)
-		item_state = "[icon_state]"
+		look.set_color("FFFFFF")
+		look.held_state(base)
+		look.glow(GLOW_OFF)
 
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
-
-/// Requirement for recolouring the shield.
-/obj/item/shield/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(!in_range(src, user))
-		return TRUE // the effect declines silently
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
-
-/// Old click_alt.
-/obj/item/shield/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_shield_color), message = "Are you sure you want to recolor your shield?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
-
-/obj/item/shield/energy/proc/ask_shield_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(shield_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-
-/obj/item/shield/energy/proc/shield_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
-	update_icon()
+/obj/item/shield/energy/proc/shield_recolored(datum/act/op/A)
+	var/datum/prompt/color/choice = A.answer
+	if(!istype(choice) || !choice.value)
+		return OP_REFUSED
+	set_lcolor(sanitize_hexcolor(choice.value))
+	return OP_OK
 
 /obj/item/shield/energy/examine(mob/user)
 	. = ..()
@@ -241,9 +229,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 	desc = "An advanced riot shield made of lightweight materials that collapses for easy storage."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "teleriot0"
-	slot_flags = null
-	force = 3
-	throwforce = 3
 	throw_speed = 3
 	throw_range = 4
 	w_class = ITEMSIZE_NORMAL
@@ -255,39 +240,43 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 	else
 		return 0
 */
-EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/shield/riot/tele, active)
 
-/// Old attack_self.
-/obj/item/shield/riot/tele/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	active = !active
-	icon_state = "teleriot[active]"
+CAPABILITIES(/obj/item/shield/riot/tele)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 3))
+	op("toggle", in_hand(), label("Extend or retract shield"), then(PROC_REF(shield_toggled)))
+
+/obj/item/shield/riot/tele/proc/shield_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
+	set_icon_state("teleriot[active]")
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 
 	if(active)
-		force = 8
-		throwforce = 5
+		set_force(8)
+		set_throwforce(5)
 		throw_speed = 2
-		w_class = ITEMSIZE_LARGE
-		slot_flags = SLOT_BACK
+		set_w_class(ITEMSIZE_LARGE)
+		set_slot_flags(SLOT_BACK)
 		to_chat(user, span_notice("You extend \the [src]."))
 	else
-		force = 3
-		throwforce = 3
+		set_force(3)
+		set_throwforce(3)
 		throw_speed = 3
-		w_class = ITEMSIZE_NORMAL
-		slot_flags = null
+		set_w_class(ITEMSIZE_NORMAL)
+		set_slot_flags(null)
 		to_chat(user, span_notice("[src] can now be concealed."))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 
-// === merged from shields_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/shield/energy/imperial
 	name = "energy scutum"
 	desc = "It's really easy to mispronounce the name of this shield if you've only read it in books."
@@ -300,18 +289,19 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(inte
 	desc = "A shiny silvery shield with a large red leaf symbol in the center."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "wolfgirlshield"
-	slot_flags = SLOT_BACK | SLOT_OCLOTHING
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 2
 	throw_range = 6
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
-	attack_verb = list("shoved", "bashed")
 	var/cooldown = 0 //shield bash cooldown. based on world.time
+
+CAPABILITIES(/obj/item/shield/fluff/wolfgirlshield)
+	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("shoved", "bashed")))
 
 
 /obj/item/shield/riot/explorer
-	name = "green explorer shield" //CHOMP explo keep
+	name = "green explorer shield"
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "explorer_shield"
@@ -320,65 +310,67 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(inte
 		slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi'
 	)
 	base_block_chance = 40
-	slot_flags = SLOT_BACK
 	var/brightness_on
 	brightness_on = 6
 	var/on = 0
 	var/light_applied
 
+TRACKED(/obj/item/shield/riot/explorer, on)
+
 //POURPEL WHY U NO COVER
 
-EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(explorer_interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/shield/riot/explorer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield/riot/explorer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(brightness_on)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot turn the light on while in this [user.loc]")
 			return TRUE
-		on = !on
+		set_on(!on)
 		to_chat(user, "You [on ? "enable" : "disable"] the shield light.")
 		update_flashlight(user)
 
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.update_inv_l_hand()
-			H.update_inv_r_hand()
+			changed(src)
 	return TRUE
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)
 	if(on && !light_applied)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 		light_applied = 1
 	else if(!on && light_applied)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		light_applied = 0
-	update_icon()
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted:}")
+/// The look (the draw sweep: from its template).
+/obj/item/shield/riot/explorer/draw(datum/look/look)
+	..()
+	look.state("explorer_shield[on ? "_lighted" : ""]")
 
 /obj/item/shield/riot/explorer/purple
-	name = "purple explorer shield" //CHOMP explo keep
+	name = "purple explorer shield"
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention. This one is POURPEL"
 	icon_state = "explorer_shield_P"
 
-/// Old attackby.
-/obj/item/shield/riot/explorer/proc/explorer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/material/knife/machete))
-		if(COOLDOWN_FINISHED(src, cooldown))
-			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
-			play_sfx(src, SFX_EFFECTS_SHIELDBASH)
-			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/item/shield/riot/explorer)
+	configure(item_worn(slots = SLOT_BACK))
+	op("machete_bash", item(/obj/item/material/knife/machete), label("Bash shield"), then(PROC_REF(machete_bashed)), passes())
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
-APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P{on?_lighted:}")
+/obj/item/shield/riot/explorer/proc/machete_bashed(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		act_message(A.actor, src, others = span_warning("%U% bashes %T% with [A.held]!"))
+		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
+		COOLDOWN_START(src, cooldown, 2.5 SECONDS)
+	return OP_OK
+
+/// The look (the draw sweep: from its template).
+/obj/item/shield/riot/explorer/purple/draw(datum/look/look)
+	..()
+	look.state("explorer_shield_P[on ? "_lighted" : ""]")
 
 /obj/item/shield/primitive
 	name = "primitive shield"

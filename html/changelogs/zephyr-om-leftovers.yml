@@ -1,0 +1,6 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - bugfix: "Clicking a smole building or ruins with an item no longer flattens it unless on harm intent; remains crumble only on harm intent"
+  - bugfix: "Stardog's overmap marker no longer fails ownership on spawn"
+  - code_imp: "completion_plan.md archived"

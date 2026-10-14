@@ -1,0 +1,64 @@
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none click: nothing
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
+robot|none click: nothing
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Bath interaction item
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Bath interaction item
+human|/obj/item/tool/wrench menu: Dismantle
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Dismantle
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Remove padding (refused: It has no padding to remove.)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Remove padding
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Bath interaction item
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Bath interaction item
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/cable_coil menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Pad
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/material/steel menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Pad
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Bath interaction item
+human|/obj/item menu: Hit
+human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Bath interaction item
+@obj.structure human|/obj/item/stack
++3 menu: Use item
+@obj human|/obj/item/disk
++3 menu: Use disk
+@obj human|/obj/item/toy/plushie
++3 menu: Use generic small plush
+human|/obj/item/stack/material/processed_alloy menu: Hit
+human|/obj/item/stack/material/processed_alloy menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/material/processed_alloy menu: Treat alloy
+human|/obj/item/stack/material/processed_alloy menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/processed_alloy menu: Use steel sheet
+human|/obj/item/stack/material/processed_alloy click: Click: Pad
+keys: bath_buckle, bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, melee_hit, pad, rotatable.turn_around, tuck_disk, tuck_plushie, unpad

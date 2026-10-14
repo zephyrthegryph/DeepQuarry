@@ -106,10 +106,10 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 		return FALSE
 	if(istype(M, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/V = M
-		return !V.welded
+		return !is_welded(V)
 	if(is_type_in_list(M, LV.ignored_machine_types))
 		return FALSE
-	if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
+	if(!power_of(M).idle && !power_of(M).active && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 		return FALSE
 	if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 		return FALSE
@@ -175,12 +175,12 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 		return DQ_BEHAVIOR_DONE
 	if(!LV.Adjacent(M))
 		if(!brain.smart_step_toward(M, 1))
-			step_to(LV, M)
+			brain.act_step(M)
 		return DQ_BEHAVIOR_CONTINUE
 	// Adjacent — crawl in (enter_machine / ventcrawl), then remember the machine
 	// so we spread out instead of re-nesting it. Mirrors post_melee_attack's
 	// ignored_targets ring (cap 4).
-	LV.attack_target(M)
+	brain.perform_attack_op(LV, M, "mob_attacks.melee")
 	rel_add(LV, nameof(LV.dq_ignored_machines), M)
 	if(LAZYLEN(LV.dq_ignored_machines) > 3)
 		rel_remove(LV, nameof(LV.dq_ignored_machines), LV.dq_ignored_machines[1])

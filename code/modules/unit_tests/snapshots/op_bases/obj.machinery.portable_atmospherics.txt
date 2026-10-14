@@ -1,0 +1,35 @@
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item menu: Climb
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Connect to the port (refused: Nothing happens.)
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Connect to the port
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|none menu: Climb
+human|none menu: Use
+human|none click: Click: Use

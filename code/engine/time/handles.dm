@@ -1,0 +1,422 @@
+// Handles and weak arguments (the time engine: doc/rewrite/framework_gaps.md C1).
+//
+// OM handles: entity_handle(D) -> "id:gen", resolve_handle(h) -> D or null. The same model as the Rust core's handles: a slot table with a
+// generation per slot, no per-target datum. A deleted datum's slot is freed and its generation bumped, so a stale handle never resolves to
+// whatever reuses the id. Every deferred record in the engine (timers and their keyed and real-time forms, I/O callbacks, timed actions)
+// holds its datum arguments as handles, never as references: a record can outlive what it names without keeping it alive.
+//
+// A handle is text, so it can key a plain list. What it costs is kept off the hot path: the text is made once, when its slot is taken, and kept
+// per slot (om_handle_texts), so entity_handle() is a list read; resolve_handle() is one alist lookup (om_handle_ids: handle text -> slot id)
+// and a locate() of the target's address, kept per slot as two numbers (om_handle_ta / om_handle_ib), with no parsing of the weak key. A freed
+// slot's text leaves the index, so a stale handle misses it instead of being compared.
+//
+// A turf's handle is its key (own_key(): its position, led by a scramble so the strings hash well; no new string is made) and, once its z-level
+// has been released and reused, that level's generation. Resolving one reads a cached packed position (om_turf_pos), parsing the key only the
+// first time.
+
+// ---------------------------------------------------------------- handles
+//
+// A slot table: slot id -> the datum's weak key (own_key(): not its ref text, because retained
+// ref strings slow BYOND down), plus a generation per slot.
+// The table holds text, never the datum, so a handle doesn't keep its target
+// alive: a datum BYOND collects without qdel() (a dropped species, a stack
+// canary) simply stops resolving, like one that was qdel()ed.
+
+GLOBAL_LIST_EMPTY(om_handle_slots)
+GLOBAL_LIST_EMPTY(om_handle_gens)
+/// Per handle slot: the type of the datum it names (for the collected-without-qdel report).
+GLOBAL_LIST_EMPTY(om_handle_types)
+GLOBAL_LIST_EMPTY(om_handle_free)
+/// Per handle slot: the type part of the target's address (the number in "[0x<type><id>]"), or null while the slot is free or parked.
+GLOBAL_LIST_EMPTY(om_handle_ta)
+/// Per handle slot: the id part of the target's address (the last six hex digits of its ref).
+GLOBAL_LIST_EMPTY(om_handle_ib)
+/// A turf's plain handle (its key, the z-level never released) -> its position packed as x + 512 * (y + 512 * z), read by resolve_handle().
+/// A level too big to pack (x or y over 511, z over 63) is parsed each time instead.
+GLOBAL_ALIST_EMPTY(om_turf_pos)
+/// Per handle slot: the handle text ("id:gen") it answers to now, or null while the slot is free.
+GLOBAL_LIST_EMPTY(om_handle_texts)
+/// Handle text -> slot id, for every taken slot (a parked one too). A text leaves it when its slot is freed, so a stale handle misses.
+GLOBAL_ALIST_EMPTY(om_handle_ids)
+
+/// The datum's handle slot, 0 until entity_handle() is first called on it.
+/datum/var/tmp/om_hid = 0
+
+/// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
+/// A turf's handle is its key (own_key(): its position, led by a scramble so the strings hash well), with "#<generation>" once its z-level has
+/// been released and reused: turfs are never deleted and a turf's position survives ChangeTurf() (which resets the turf's vars).
+/// A client's is "@ckey", resolved through GLOB.directory.
+/proc/entity_handle(datum/D)
+	READS_FROM() // a handle is the datum's stable id: the slot table it reads is identity bookkeeping, not state a draw or condition depends on
+	if(isturf(D))
+		var/turf/T = D
+		var/key = T.own_key_text || own_key(T)
+		var/gen = relation_z_generation(T.z)
+		return gen ? "[key]#[gen]" : key
+	if(isclient(D))
+		var/client/C = D
+		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
+	if(!isdatum(D) || QDELETED(D))
+		return null
+	var/id = D.om_hid
+	if(id)
+		return GLOB.om_handle_texts[id]
+	var/list/slots = GLOB.om_handle_slots
+	var/list/gens = GLOB.om_handle_gens
+	var/list/texts = GLOB.om_handle_texts
+	var/list/free = GLOB.om_handle_free
+	if(length(free))
+		id = free[length(free)]
+		free.len--
+	else
+		slots.len++
+		gens.len++
+		texts.len++
+		id = length(slots)
+		gens[id] = 0
+	entity_handle_slot_bind(id, D)
+	var/text = "[id]:[gens[id]]"
+	texts[id] = text
+	GLOB.om_handle_ids[text] = id
+	var/list/types = GLOB.om_handle_types
+	if(length(types) < id)
+		types.len = id
+	types[id] = D.type
+	D.om_hid = id
+	return text
+
+/// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
+/// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
+/proc/entity_handle_of(datum/D)
+	READS_FROM() // the same identity bookkeeping as entity_handle()
+	if(isturf(D) || isclient(D))
+		return entity_handle(D)
+	if(!isdatum(D))
+		return null
+	var/id = D.om_hid
+	return id ? GLOB.om_handle_texts[id] : null
+
+/// Slot `id` names `D`: its weak key, and the two numbers of its address that resolve_handle() rebuilds the ref from. A key that is not the usual
+/// "<scramble>:<id>:<type>" (a ref kept as it is) leaves the numbers null, and the slot resolves through own_locate().
+/proc/entity_handle_slot_bind(id, datum/D)
+	var/key = D.own_key_text || own_key(D)
+	GLOB.om_handle_slots[id] = key
+	var/list/ta = GLOB.om_handle_ta
+	var/list/ib = GLOB.om_handle_ib
+	if(length(ta) < id)
+		ta.len = id
+		ib.len = id
+	var/first = findtext(key, ":")
+	var/second = first ? findtext(key, ":", first + 1) : 0
+	if(second && text2ascii(key) != 91)
+		ta[id] = text2num(copytext(key, second + 1))
+		ib[id] = text2num(copytext(key, first + 1, second))
+	else
+		ta[id] = null
+		ib[id] = null
+
+/// TRUE if handle `h` names `D`, even while `D` is being deleted (until phase 5
+/// releases its slot). A handle accessor (`owner()` = resolve_handle(owner_handle))
+/// reads null once its target is QDELETED, so `owner() == src` is FALSE inside
+/// src's own teardown: compare with entity_handle_is(owner_handle, src) there.
+/proc/entity_handle_is(h, datum/D)
+	if(!h || !D)
+		return FALSE
+	return h == entity_handle_of(D)
+
+/// A handle slot parked for a thing that collapsed into latent data (containment.md sec 4.5): it
+/// resolves to null until the entry re-materializes into the same slot (entity_handle_unpark()).
+#define OM_HANDLE_PARKED "\[latent]"
+
+/// Collapse into latent data keeps the identity: `D`'s handle slot is parked (not freed, generation
+/// unchanged) and every relation view naming D goes dormant under it (rel_go_dormant()). Returns the
+/// slot id to keep on the latent entry, or 0 when D never had a handle.
+/proc/entity_handle_park(datum/D)
+	var/id = D.om_hid
+	if(!id)
+		return 0
+	rel_go_dormant(D)
+	var/list/slots = GLOB.om_handle_slots
+	if(id <= length(slots) && slots[id] == own_key(D))
+		slots[id] = OM_HANDLE_PARKED
+	D.om_hid = 0
+	return id
+
+/// The re-materialized `D` takes over parked slot `id`: every old handle to the collapsed thing
+/// resolves to D again, and its dormant relation views re-link (rel_wake()).
+/proc/entity_handle_unpark(datum/D, id)
+	var/list/slots = GLOB.om_handle_slots
+	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
+		return FALSE
+	if(D.om_hid)
+		entity_handle_release(D)
+	entity_handle_slot_bind(id, D)
+	var/list/types = GLOB.om_handle_types
+	if(length(types) >= id)
+		types[id] = D.type
+	D.om_hid = id
+	rel_wake(D, id)
+	return TRUE
+
+/// A parked slot whose latent thing is gone for good (discarded, deleted as data): the slot is
+/// freed and its generation bumped, and its dormant views are dropped.
+/proc/entity_handle_release_parked(id)
+	var/list/slots = GLOB.om_handle_slots
+	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
+		return
+	entity_handle_slot_free(id)
+	GLOB.rel_dormant -= "[id]"
+
+/// The datum a handle names, or null if it has been deleted (whatever now uses its id).
+/proc/resolve_handle(h)
+	READS_FROM() // turns an id back into the datum: identity bookkeeping, not reactive state
+	if(!istext(h))
+		return null
+	var/id = GLOB.om_handle_ids[h]
+	if(!id)
+		return resolve_handle_keyed(h) // a turf's or a client's handle, or a stale / foreign text
+	var/ref = GLOB.om_handle_slots[id]
+	if(!ref || ref == OM_HANDLE_PARKED)
+		return null
+	var/ta = GLOB.om_handle_ta[id]
+	var/datum/D = isnull(ta) ? own_locate(ref) : locate("\[0x[num2text(ta, 1, 16)][num2text(GLOB.om_handle_ib[id], 6, 16)]\]")
+	if(!isdatum(D) || D.om_hid != id)
+		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
+		// A handle is not a reference: when it was the only thing naming its
+		// target, BYOND freed the target at once (a nullspace holder turned into
+		// a handle by the LC-refs sweep). That var owns what it names.
+		var/list/types = GLOB.om_handle_types
+		entity_handle_collected_report(id <= length(types) ? types[id] : null)
+		entity_handle_slot_free(id)
+		return null
+	if(QDELETED(D))
+		return null
+	return D
+
+/// The handles that are not slot texts: a turf's (its key, then "#generation" once its z-level was released), a client's ("@ckey") and the older
+/// "[0x...]" turf ref. Anything else (a stale slot text, junk) names nothing.
+/proc/resolve_handle_keyed(h)
+	READS_FROM() // the keyed form of resolve_handle(): identity bookkeeping, not reactive state
+	switch(text2ascii(h))
+		if(91) // "[": a turf's ref and its z-level's generation
+			var/ref_hash = findtext(h, "#")
+			var/turf/ref_turf = locate(ref_hash ? copytext(h, 1, ref_hash) : h)
+			if(!isturf(ref_turf))
+				return null
+			if(ref_hash && text2num(copytext(h, ref_hash + 1)) != relation_z_generation(ref_turf.z))
+				return null
+			return ref_turf
+		if(64) // "@": a client's ckey
+			return GLOB.directory[copytext(h, 2)]
+	var/packed = GLOB.om_turf_pos[h]
+	if(packed)
+		// A plain turf handle seen before: the position is a number. A released z-level (generation moved on) stops it resolving.
+		var/z = packed >> 18
+		if(relation_z_generation(z))
+			return null
+		return locate(packed & 511, (packed >> 9) & 511, z)
+	var/hash = findtext(h, "#")
+	var/key = hash ? copytext(h, 1, hash) : h
+	if(!findtext(key, "t"))
+		return null
+	var/turf/T = own_locate(key)
+	if(!isturf(T))
+		return null
+	// A released and recycled z-level bumps its generation: an old turf handle stops
+	// resolving instead of naming a turf of whatever site reuses the level.
+	var/gen = hash ? text2num(copytext(h, hash + 1)) : 0
+	if(gen != relation_z_generation(T.z))
+		return null
+	if(!hash && T.x <= 511 && T.y <= 511 && T.z <= 63)
+		GLOB.om_turf_pos[h] = T.x + 512 * (T.y + 512 * T.z)
+	return T
+
+/// Frees handle slot `id`: its text leaves the index (every handle to it stops resolving), its generation moves on, and it is free to reuse.
+/proc/entity_handle_slot_free(id)
+	var/list/texts = GLOB.om_handle_texts
+	if(id <= length(texts))
+		var/text = texts[id]
+		if(text)
+			GLOB.om_handle_ids -= text
+		texts[id] = null
+	GLOB.om_handle_slots[id] = null
+	GLOB.om_handle_gens[id]++
+	GLOB.om_handle_free += id
+
+/// Lifecycle phase 5: frees `D`'s handle slot. Every handle to it stops resolving.
+/// A handle's target was freed by BYOND without going through qdel() (a
+/// qdel'd datum releases its slot in phase 5, so it never gets here): the var
+/// holding the handle was its only owner. Reported once per type, with a stack
+/// trace naming the reader; a runtime, so a test run fails.
+/proc/entity_handle_collected_report(target_type)
+	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be DECLARE_REF(..., OWNED)/DECLARE_REF(..., HELD), not a handle (see the stack for the reader)")
+
+/proc/entity_handle_release(datum/D)
+	var/id = D.om_hid
+	if(!id)
+		return
+	D.om_hid = 0
+	var/list/slots = GLOB.om_handle_slots
+	if(id > length(slots) || slots[id] != own_key(D))
+		return
+	entity_handle_slot_free(id)
+
+/// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
+/// whether it still resolves.
+/proc/is_entity_handle(h)
+	var/static/regex/shape = regex(@"^(\d+:\d+|\d+t\d+:\d+:\d+(#\d+)?|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+	return istext(h) && shape.Find(h)
+
+/// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).
+/proc/qdel_handle(h)
+	var/datum/D = resolve_handle(h)
+	if(D)
+		spent(D)
+
+// ---------------------------------------------------------------- weak arguments
+//
+// Every deferred record in the OM (timers and their keyed/real-time forms, I/O
+// callbacks, timed actions) holds its datum arguments as OM handles, never as
+// references: a record can outlive what it names without keeping it alive (a
+// strong ref in a pending timer was a hard delete). capture_args() converts
+// at record time, resolve_captured() at fire time; a deleted argument drops
+// the call with a log_qdel() line. Synchronous paths never capture.
+//
+// Captured deeply: every datum anywhere in the arguments -- an argument, a list member, an assoc
+// value, at any depth -- becomes a handle marker, list(OM_CAPTURED_MARK, handle), in a copy of the
+// list that held it. A datum used as an assoc *key* can't be re-keyed without losing its value,
+// so capture refuses it (reported): pass the pair as a value instead. A list holding no datum is
+// kept as is (not copied).
+
+#define OM_CAPTURED_MARK "\[om-handle]"
+#define OM_CAPTURE_MAX_DEPTH 8
+
+/// Captures `call_args`' datums as handles, deeply. Returns list(captured, positions): positions
+/// are the argument indexes holding a handle or a list with handles in it. Null when an argument
+/// is already deleted or can't be captured (a datum assoc key).
+/proc/capture_args(list/call_args, nulls_for_gone = FALSE)
+	var/list/captured = call_args ? call_args.Copy() : null
+	var/list/positions = null
+	for(var/i in 1 to length(captured))
+		var/list/result = capture_value(captured[i], 0, nulls_for_gone)
+		if(!result)
+			return null
+		if(result[2])
+			captured[i] = result[1]
+			LAZYADD(positions, i)
+	return list(captured, positions)
+
+/// list(captured value, changed) for one value, or null when it can't be captured.
+/proc/capture_value(value, depth, nulls_for_gone = FALSE)
+	if(isdatum(value))
+		var/h = entity_handle(value)
+		if(isnull(h))
+			if(nulls_for_gone)
+				return list(null, FALSE) // already deleted: passed as null, like one deleted later
+			return null
+		return list(list(OM_CAPTURED_MARK, h), TRUE)
+	if(!islist(value))
+		return list(value, FALSE)
+	if(depth >= OM_CAPTURE_MAX_DEPTH)
+		OWN_REPORT("om_capture_args: an argument nests lists deeper than [OM_CAPTURE_MAX_DEPTH]")
+		return null
+	var/list/L = value
+	var/list/copy = null
+	for(var/j in 1 to length(L))
+		var/key = L[j]
+		if(isdatum(key) && !isnull(L[key]))
+			var/datum/K = key
+			OWN_REPORT("om_capture_args: a deferred call's argument uses [K.type] as an assoc key; pass it as a value")
+			return null
+		var/list/key_result = capture_value(key, depth + 1, nulls_for_gone)
+		if(!key_result)
+			return null
+		var/assoc = (istext(key) || isdatum(key)) ? L[key] : null
+		var/list/value_result = isnull(assoc) ? null : capture_value(assoc, depth + 1, nulls_for_gone)
+		if(!isnull(assoc) && !value_result)
+			return null
+		if(key_result[2] || value_result?[2])
+			if(!copy)
+				copy = L.Copy()
+			if(key_result[2])
+				copy[j] = key_result[1]
+			else if(value_result?[2])
+				copy[key] = value_result[1]
+	if(copy)
+		return list(copy, TRUE)
+	return list(L, FALSE)
+
+/// A deferred call as data: the callee and every datum argument held as handles (deeply), so a
+/// stored call never keeps what it names alive -- the replacement for CALLBACK / /datum/callback,
+/// whose strong references were invisible to ownership. Returns list(callee handle or null for a
+/// global proc, proc ref, captured args, positions), or null when an argument is already gone.
+/// Store it in any var; run it with deferred_run(). New code takes then =, owner = and with = and calls after(owner, 0, then, with = ...).
+/proc/deferred_call(datum/target, proc_ref, ...)
+	var/list/call_args = length(args) > 2 ? args.Copy(3) : null
+	var/list/capture = call_args ? capture_args(call_args) : list(null, null)
+	if(!capture)
+		return null
+	var/callee_handle = null
+	if(target)
+		callee_handle = entity_handle(target)
+		if(isnull(callee_handle))
+			return null
+	return list(callee_handle, proc_ref, capture[1], capture[2])
+
+/// Runs an deferred_call() spec with its stored arguments followed by `...`. Returns what the proc
+/// returned, or null when the target or a captured argument no longer exists (the call is dropped).
+/proc/deferred_run(list/spec, ...)
+	if(!islist(spec) || length(spec) != 4)
+		return null
+	var/datum/target = null
+	if(spec[1])
+		target = resolve_handle(spec[1])
+		if(!target)
+			return null
+	var/list/stored = spec[3]
+	var/list/call_args = stored ? stored.Copy() : list()
+	if(spec[4] && !resolve_captured(call_args, spec[4]))
+		return null
+	if(length(args) > 1)
+		call_args += args.Copy(2)
+	if(target)
+		return call(target, spec[2])(arglist(call_args))
+	return call(spec[2])(arglist(call_args))
+
+/// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
+/// null for it instead: cleanup that must still run). The record keeps its own copy.
+/proc/resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
+	for(var/i in positions)
+		var/list/result = resolve_captured_value(captured[i], nulls_for_gone)
+		if(!result)
+			return FALSE
+		captured[i] = result[1]
+	return TRUE
+
+/// list(resolved value) for one captured value, or null when a handle no longer resolves.
+/proc/resolve_captured_value(value, nulls_for_gone)
+	if(!islist(value))
+		return list(value)
+	var/list/L = value
+	if(length(L) == 2 && L[1] == OM_CAPTURED_MARK)
+		var/datum/D = resolve_handle(L[2])
+		if(!D)
+			if(!nulls_for_gone)
+				return null
+			GLOB.om_resolve_nulled++
+		return list(D)
+	var/list/out = L.Copy()
+	for(var/j in 1 to length(out))
+		var/key = out[j]
+		var/assoc = istext(key) ? out[key] : null
+		if(islist(key))
+			var/list/key_result = resolve_captured_value(key, nulls_for_gone)
+			if(!key_result)
+				return null
+			out[j] = key_result[1]
+		else if(islist(assoc))
+			var/list/value_result = resolve_captured_value(assoc, nulls_for_gone)
+			if(!value_result)
+				return null
+			out[key] = value_result[1]
+	return list(out)

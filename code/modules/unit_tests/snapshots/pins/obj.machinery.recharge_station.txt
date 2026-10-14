@@ -1,0 +1,73 @@
+@obj.machinery human|none
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery robot|none
++1 menu: Eject Recharger
++2 menu: Enter Recharger
++3 menu: Put in recharger (refused: needs a grab)
++4 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Eject Recharger (refused: You can't reach that.)
++1 menu: Enter Recharger (refused: You can't reach that.)
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/screwdriver menu: Eject Recharger
+human|/obj/item/tool/screwdriver menu: Enter Recharger
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Put in recharger (refused: needs a grab)
+human|/obj/item/tool/screwdriver menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Eject Recharger
+human|/obj/item/tool/crowbar menu: Enter Recharger
+human|/obj/item/tool/crowbar menu: Put in recharger (refused: needs a grab)
+human|/obj/item/tool/crowbar menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+@obj.machinery human|/obj/item/tool/wrench
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/multitool
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item/card/id
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj.machinery human|/obj/item
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
++3 menu: Replace parts (refused: needs a rapid part exchange device)
+@obj human|/obj/item/storage/part_replacer
++0 menu: Eject Recharger
++1 menu: Enter Recharger
++2 menu: Put in recharger (refused: needs a grab)
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked, silicon_hand

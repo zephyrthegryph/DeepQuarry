@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 	icon = 'icons/obj/device.dmi'
 	icon_state = "communicator"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	show_messages = 1
 
 
@@ -76,8 +75,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	// Ringtones! (Based on the PDA ones)
 	var/ttone = "beep" //The ringtone!
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 // Proc: New()
 // Parameters: None
@@ -95,15 +92,10 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 /// The open connections (communicating is a relation list, voice_mobs an owned list): fields, so the
 /// accessors and the framework's auto-clears (a partner or voice destroyed) re-evaluate the watchdog.
-OM_FIELD_VIEW_OF(/obj/item/communicator, communicating, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/communicator, voice_mobs, CHANGE_EXPLICIT)
-/// The connection watchdog runs while a connection is open.
-OM_DERIVE_FIELD(/obj/item/communicator, has_connections, list("communicating", "voice_mobs"))
-/obj/item/communicator/proc/has_connections()
+/// The connection watchdog runs while a connection is open (its every() gate, polled: the lists are relations).
+/obj/item/communicator/proc/has_connections(datum/act/A)
 	return length(voice_mobs) || length(communicating)
-DECLARE_PERIODIC_WHILE(/obj/item/communicator, PERIODIC_SLOW, "has_connections")
 //This is a pretty terrible way of doing this.
-DECLARE_START_TIMER(/obj/item/communicator, 5 SECONDS, PROC_REF(register_to_holder))
 
 // ITION START: Ayo communicator are better than PDAs /obj/item/communicator
 // Proc: AltClick()
@@ -111,23 +103,13 @@ DECLARE_START_TIMER(/obj/item/communicator, 5 SECONDS, PROC_REF(register_to_hold
 // Description: Checks if the user is made of silicon and returns if they are. If the user is not made of silicon and can use the communicator,
 //              removes the ID from the communicator if it has one, or sends a chat message indicating that the communicator does not have an ID.
 
-DECLARE_INTERACTIONS(/obj/item/communicator, \
-	INTERACT_ALT("Remove ID", PROC_REF(interaction_alt)), \
-	INTERACT_ITEM("Scan ID", PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_OBSERVER("View", PROC_REF(communicator_observer_use)), \
-)
-
 /// Old click_alt: eject the loaded ID.
-/obj/item/communicator/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return FALSE
-
+/obj/item/communicator/proc/interaction_alt(datum/act/op/A)
 	if(id)
 		remove_id()
 	else
-		to_chat(user, span_notice("This Communicator does not have an ID in it."))
-	return TRUE
+		to_chat(A.actor, span_notice("This Communicator does not have an ID in it."))
+	return OP_OK
 // Proc: GetAccess()
 // Parameters: None
 // Description: Returns the access level of the communicator's ID, if it has one. If the communicator does not have an ID, the procedure returns the
@@ -159,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		own_take(src, nameof(id))
+		rel_take(src, nameof(id))
 
 // Proc: id_check(mob/user as mob, choice as num)
 // Parameters: mob/user - the user who is attempting to check for an ID
@@ -178,14 +160,14 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id))
-				own_set(src, nameof(src.id), I, user = user)
+				move_into(src, nameof(src.id), I, user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, nameof(src.id))
-			if(!own_set(src, nameof(src.id), I, user = user))
-				own_set(src, nameof(src.id), old_id)
+			var/obj/old_id = rel_take(src, nameof(src.id))
+			if(!move_into(src, nameof(src.id), I, user))
+				rel_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)
 			return 1
@@ -196,7 +178,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Proc: register_to_holder()
 // Parameters: None
 // Description: Tries to register ourselves to the mob that we've presumably spawned in. Not the most amazing way of doing this.
-/obj/item/communicator/proc/register_to_holder()
+/obj/item/communicator/proc/register_to_holder(datum/act/A)
 	if(ismob(loc))
 		register_device(loc.name)
 		initialize_exonet(loc)
@@ -214,7 +196,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	if(!user || !isliving(user))
 		return
 	if(!exonet)
-		own_set(src, nameof(exonet), new /datum/exonet_protocol(src))
+		rel_set(src, nameof(exonet), new /datum/exonet_protocol(src))
 	if(!exonet.address)
 		exonet.make_address("communicator-[user.client]-[user.name]")
 	if(!node)
@@ -245,9 +227,8 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Proc: emp_act(severity, recursive)
 // Parameters: None
 // Description: Drops all calls when EMPed, so the holder can then get murdered by the antagonist.
-DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 /// An EMP drops the call.
-/obj/item/communicator/proc/communicator_emp(datum/damage_packet/packet)
+/obj/item/communicator/proc/communicator_emp(datum/act/A)
 	close_connection(reason = "Hardware error de%#_^@%-BZZZZZZZT")
 
 // Proc: add_to_EPv2()
@@ -267,7 +248,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Description: Searches all communicators and ghosts in the world, and adds them to the known_devices list if they are 'visible'.
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
-		own_set(src, nameof(exonet), new /datum/exonet_protocol(src))
+		rel_set(src, nameof(exonet), new /datum/exonet_protocol(src))
 	rel_clear(src, nameof(known_devices))
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
@@ -291,7 +272,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Proc: process()
 // Parameters: None
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
-/obj/item/communicator/periodic_step()
+/obj/item/communicator/proc/communicator_step(datum/act/timer/A)
 	// The watchdog only guards open connections (declared on has_connections).
 	update_ticks++
 	// Connection maintenance is the five-tick watchdog, not four of every five
@@ -306,7 +287,9 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: 2 (C - what is used on the communicator. user - the mob that has the communicator)
 // Description: When an ID is swiped on the communicator, the communicator reads the job and checks it against the Owner name, if success, the occupation is added.
 // ITION: If the ID has already been scanned it is instead inserted into the communicator
-/obj/item/communicator/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
+/obj/item/communicator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
 		if(!idcard.registered_name || !idcard.assignment)
@@ -322,25 +305,25 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 				to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 				add_overlay("pda-id")
 		// ITION END
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 // Proc: attack_self()
 // Parameters: 1 (user - the mob that clicked the device in their hand)
 // Description: Makes an exonet datum if one does not exist, allocates an address for it, maintains the lists of all devies, clears the alert icon, and
 //				finally makes NanoUI appear.
-/obj/item/communicator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/communicator/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	initialize_exonet(user)
-	alert_called = 0
-	update_icon()
+	set_alert_called(0)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 // Proc: MouseDrop()
 //Same thing PDAs do
 /obj/item/communicator/MouseDrop(obj/over_object as obj)
 	var/mob/M = usr
-	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
+	if (!(src.loc == M) || (src.loc && src.loc.loc == M))
 		return
 	if(!istype(over_object, /atom/movable/screen))
 		return attack_self(M)
@@ -348,9 +331,9 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 
 /// Old attack_ghost: recreates the known_devices list, so that the ghost looking at the device
 /// can see themselves, then falls through to the ghost's default so that the UI appears.
-/obj/item/communicator/proc/communicator_observer_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/communicator/proc/communicator_observer_use(datum/act/op/A)
 	populate_known_devices() //Update the devices so ghosts can see the list on NanoUI.
-	return FALSE
+	return OP_DECLINE
 
 /mob/observer/dead
 	var/datum/exonet_protocol/exonet = null
@@ -383,10 +366,6 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
-/obj/item/communicator/ownership()
-	. = ..()
-	. += owns(nameof(id), policy = OWN_SPILL)
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)
@@ -394,13 +373,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/co
 	for(var/mob/living/voice/voice in contents.Copy()) // ALLOW(decl): per-item message and deletion, not a drop
 		own_take_member(src, nameof(voice_mobs), voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
-		qdel(voice)
+		destroyed(voice)
 	close_connection(reason = "Connection timed out")
 	..()
 
-// Proc: update_icon()
+// Proc: appearance_comm_suffix()
 // Parameters: None
-// Description: Self explanatory
+// Description: The state suffix of the communicator's video call
 /obj/item/communicator/proc/appearance_comm_suffix()
 	if(video_source)
 		return "-video"
@@ -410,7 +389,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/co
 		return "-called"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_comm_suffix}")
+
+/// The look (the draw sweep: from its template).
+/obj/item/communicator/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_comm_suffix()]")
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator
@@ -428,7 +411,9 @@ APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_co
 	communications across different stations, planets, or even star systems. You can wear this one on your wrist!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "commwatch"
-	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // Commwatches and Wrtist PDAs can go on ID and belt slots
+
+CAPABILITIES(/obj/item/communicator/watch)
+	configure(item_worn(slots = SLOT_GLOVES | SLOT_ID | SLOT_BELT))
 
 
 #undef HOMETAB
@@ -440,5 +425,3 @@ APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_co
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
-
-DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

@@ -6,6 +6,9 @@
 #define MEGAWATTS *1000000
 #define GIGAWATTS *1000000000
 
+// Arcade ticket redemption.
+#define ARCADE_TICKETS_PER_PRIZE 2
+
 // Doors!
 #define DOOR_CRUSH_DAMAGE 20
 #define ALIEN_SELECT_AFK_BUFFER  1    // How many minutes that a person can be AFK before not being allowed to be an alien.
@@ -20,6 +23,11 @@
 #define EQUIP   1
 #define LIGHT   2
 #define ENVIRON 3
+
+/// The entry kind of uses_power() (code/game/machinery/machinery_power.dm): a machine's channel and its idle and active draw, a type trait.
+#define ENTRY_USES_POWER "uses_power"
+/// The change key a machine's uses_power() values publish under when one is set at run time (power_of() reads as it).
+#define USES_POWER_KEY "uses_power"
 #define TOTAL   4 // For total power used only.
 
 // Bitflags for machine stat variable.
@@ -30,13 +38,27 @@
 #define EMPED    0x10 // Temporary broken by EMP pulse.
 /// What operable() (machinery_fields.dm) rejects.
 #define MACHINE_INOPERABLE_FLAGS (NOPOWER | BROKEN | MAINT | EMPED)
-/// Every machine condition bit: has_stat(MACHINE_STAT_ANY) is "anything wrong at all".
+/// Every machine condition bit: has_condition() is "anything wrong at all".
 #define MACHINE_STAT_ANY (BROKEN | NOPOWER | POWEROFF | MAINT | EMPED)
 
 // Remote control states
 #define RCON_NO		1
 #define RCON_AUTO	2
 #define RCON_YES	3
+
+// The air alarm's modes (its window, its wires and the area's devices read them).
+#define AALARM_MODE_SCRUBBING	1
+#define AALARM_MODE_REPLACEMENT	2 //like scrubbing, but faster.
+#define AALARM_MODE_PANIC		3 //constantly sucks all air
+#define AALARM_MODE_CYCLE		4 //sucks off all air, then refill and switches to scrubbing
+#define AALARM_MODE_FILL		5 //emergency fill
+#define AALARM_MODE_OFF			6 //Shuts it all down.
+
+// A vent pump's pressure checks (its pressure_checks bits).
+/// Never past its external bound in the room.
+#define VENT_CHECK_EXTERNAL 1
+/// Never past its internal bound in its pipe.
+#define VENT_CHECK_INTERNAL 2
 
 // Used by firelocks
 #define FIREDOOR_OPEN 1
@@ -172,21 +194,28 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 
 // Note - I would prefer these be defined machines.dm, but some are used prior in file order. ~Leshana
 
-/// Gives a machine step work on the machine pipeline (code/game/machinery/machinery.dm machine_wake()).
-#define MACHINE_WAKE(M) machine_wake(M)
-/// Ends a machine's step work until the next MACHINE_WAKE().
-#define MACHINE_SLEEP(M) machine_sleep(M)
-
 // LINDA owns pipenets via SSair; SSair.process_pipenets is the live
 // dispatcher. Without this redirect, /datum/pipe_network/reconcile() never runs
 // and reconcile_air is silent — multi-pipeline networks don't equalize.
-#define START_PROCESSING_PIPENET(Datum) START_PROCESSING_IN_LIST(Datum, SSair.networks)
-#define STOP_PROCESSING_PIPENET(Datum) STOP_PROCESSING_IN_LIST(Datum, SSair.networks);SSair.currentrun.Remove(Datum)
+#define START_PROCESSING_PIPENET(Datum) \
+if (!(Datum.datum_flags & DF_ISPROCESSING)) {\
+	rel_add(SSair, nameof(SSair.networks), Datum);\
+	Datum.datum_flags |= DF_ISPROCESSING\
+}
+#define STOP_PROCESSING_PIPENET(Datum) rel_remove(SSair, nameof(SSair.networks), Datum);Datum.datum_flags &= ~DF_ISPROCESSING;SSair.currentrun.Remove(Datum)
 
 
 /// The machine world service's cadence (code/game/machinery/machine_service.dm): gas wakes, the
 /// pump commit and the power step. Machine timing that used to read SSmachines.wait reads this.
 #define MACHINE_SERVICE_INTERVAL (2 SECONDS)
+/// How long putting someone into a sleeper takes.
+#define SLEEPER_ENTER_WAIT (2 SECONDS)
+/// How far up a cryo cell's tube its occupant is shown (pixels).
+#define CRYO_OCCUPANT_RAISE 19
+/// How long a cryo cell occupant's own release sequence takes.
+#define CRYO_RELEASE_WAIT (2 MINUTES)
+/// The longest a brig door timer can be set, in deciseconds.
+#define MAX_TIMER 36000
 
 // GAS_DEPENDENCY_PRESSURE/TEMPERATURE/COMPOSITION and GAS_DEPENDENCY_OBSERVATION_STRIDE
 // are generated from the Rust constants in code/__defines/verdigris/_bindings.dm.
@@ -210,3 +239,37 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 //#define  PART_AI  		/obj/item/computer_hardware/ai_slot						// AI slot, an intellicard housing that allows modifications of AIs.
 #define  PART_TESLA  	/obj/item/computer_hardware/tesla_link					// Tesla Link, Allows remote charging from nearest APC.
 //#define  PART_SCANNER  	/obj/item/computer_hardware/scanner						// One of several optional scanner attachments.
+
+// Bomb tester simulation modes.
+#define BOMB_TESTER_MODE_SINGLE 1
+#define BOMB_TESTER_MODE_DOUBLE 2
+#define BOMB_TESTER_MODE_CANISTER 3
+
+/// The entry kind of item_sounds() (code/game/objects/items.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_SOUNDS "item_sounds"
+#define ITEM_SOUNDS_KEY "item_sounds"
+/// The entry kind of light_glow() (code/modules/lighting/glow.dm) and the key its run-time writes publish.
+#define ENTRY_LIGHT_GLOW "light_glow"
+#define LIGHT_GLOW_KEY "light_glow"
+/// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_COMBAT "item_combat"
+#define ITEM_COMBAT_KEY "item_combat"
+/// The entry kind of mob_movement() (code/modules/mob/mob_movement_trait.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_MOVEMENT "mob_movement"
+#define MOB_MOVEMENT_KEY "mob_movement"
+/// The entry kind of mob_kind() (code/modules/mob/mob_kind.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_KIND "mob_kind"
+#define MOB_KIND_KEY "mob_kind"
+/// The entry kind of item_thrown() (code/game/objects/items/item_thrown.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_THROWN "item_thrown"
+#define ITEM_THROWN_KEY "item_thrown"
+/// The entry kind of item_worn() (code/game/objects/items/item_worn.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_WORN "item_worn"
+#define ITEM_WORN_KEY "item_worn"
+/// The entry kind of item_tooling() (code/game/objects/items/item_tooling.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_TOOLING "item_tooling"
+#define ITEM_TOOLING_KEY "item_tooling"
+
+/// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_PROTECTION "item_protection"
+#define ITEM_PROTECTION_KEY "item_protection"

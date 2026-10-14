@@ -16,21 +16,19 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	// ALLOW(instance_list): d: rebuilt in place every cast and passed to recursive_content_check() to fill
 	var/list/atom/movable/things_to_siphon //Things which are actually drained as a result of the above not being null (a relation list view, rebuilt each cycle).
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
 
 /// What the spell is currently draining (a relation view). A field: it drains every 2 s while linked.
-OM_FIELD_VIEW(/obj/item/spell/energy_siphon, atom/movable, siphoning, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning")
+/obj/item/spell/energy_siphon/var/atom/movable/siphoning
 
 // the siphon stops draining its target.
 /obj/item/spell/energy_siphon/on_destroy(force)
 	stop_siphoning()
 	..()
 
-/// Drains every 2 s while linked (declared on siphoning); unlinked, it sleeps.
-/obj/item/spell/energy_siphon/periodic_step()
+/// Drains every 2 s while linked (every() gated on siphoning); unlinked, the run is skipped.
+/obj/item/spell/energy_siphon/proc/energy_siphon_step(datum/act/timer/A)
 	if(!pay_energy(100))
 		to_chat(owner_ref(), span_warning("You can't afford to maintain the siphon link!"))
 		stop_siphoning()
@@ -53,7 +51,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
 		rel_set(src, nameof(siphoning), AM)
-		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else
 		stop_siphoning()
@@ -74,7 +71,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
 	rel_clear(src, nameof(siphoning))
 	rel_clear(src, nameof(things_to_siphon))
-	update_icon()
 
 #define SIPHON_CELL_TO_ENERGY	0.5
 #define SIPHON_FBP_TO_ENERGY	5.0
@@ -88,8 +84,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 
 	if(!siphoning)
 		return 0
-
-	update_icon()
 
 	//playsound(source = src, soundin = 'TODO', vol = 30, vary = 0, extrarange = 0, falloff = 0, is_global = 0)
 
@@ -108,7 +102,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 		for(var/atom/movable/AM in things_to_drain)
 			var/big_number = AM.drain_power(0,0,charge_to_steal / CELLRATE) // This drains the cell, and leaves us with a big number.
 			flow_remaining = flow_remaining - (big_number * CELLRATE) // Which we reduce to our needed number by multiplying.
-			AM.update_icon() // So guns and batteries will display correctly.
 		charge_to_give = charge_to_give + (flow_rate - flow_remaining) * SIPHON_CELL_TO_ENERGY
 	// If we have 'leftover' flow, let's try to do more.
 	if(round(flow_remaining))
@@ -117,9 +110,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 			// Let's drain from FBPs.  Note that it is possible for the caster to drain themselves if they are an FBP and desperate.
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				var/nutrition_to_steal = flow_remaining * 0.025 // Should steal about 25 nutrition per second by default.
-				var/old_nutrition = H.nutrition
-				H.set_nutrition(max(H.nutrition - nutrition_to_steal, 0))
-				var/nutrition_delta = old_nutrition - H.nutrition
+				var/old_nutrition = nutrition_of(H)
+				H.set_nutrition(max(nutrition_of(H) - nutrition_to_steal, 0))
+				var/nutrition_delta = old_nutrition - nutrition_of(H)
 				charge_to_give += nutrition_delta * SIPHON_FBP_TO_ENERGY
 				flow_remaining = flow_remaining - nutrition_to_steal / 0.025
 			// Let's steal some energy from another Technomancer.
@@ -149,7 +142,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 		to_chat(user, span_warning("\The [siphoning] cannot be drained any further."))
 		stop_siphoning()
 
-APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_drain:}")
+/obj/item/spell/energy_siphon/draw(datum/look/look)
+	..()
+	look.state(siphoning() ? "energy_siphon_drain" : "energy_siphon")
 
 /obj/item/spell/energy_siphon/proc/create_lightning(mob/user, atom/source)
 	if(user && source && user != source)
@@ -162,7 +157,7 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 	lightning.old_style_target(user)
 	lightning.fire()
 	if(left > 1)
-		om_after(src, 0.3 SECONDS, PROC_REF(create_lightning_beam), user, source, left - 1)
+		after(src, 0.3 SECONDS, PROC_REF(create_lightning_beam), with = list(user, source, left - 1))
 
 /obj/item/projectile/beam/lightning/energy_siphon
 	name = "energy stream"
@@ -176,9 +171,9 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 		on_impact(A)
 
 		set_density(FALSE)
-		invisibility = INVISIBILITY_ABSTRACT
+		set_invisibility(INVISIBILITY_ABSTRACT)
 
-		qdel(src)
+		spent(src)
 		return 1
 	..()
 
@@ -201,6 +196,7 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 /obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
 	return siphoning
 
-/obj/item/spell/energy_siphon/relations()
-	. = ..()
-	. += rel_many(nameof(things_to_siphon))
+CAPABILITIES(/obj/item/spell/energy_siphon)
+	ref_one(nameof(siphoning))
+	every(2 SECONDS, then(PROC_REF(energy_siphon_step)), when = nameof(siphoning))
+	ref_many(nameof(things_to_siphon))

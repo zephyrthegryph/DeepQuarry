@@ -16,49 +16,49 @@
 	var/selfdestructing = 0
 	var/charges = 1
 
-/obj/machinery/syndicate_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/syndicate_beacon_talk,
-	)
+
+
+CAPABILITIES(/obj/machinery/syndicate_beacon)
+	extend(TAG_UI, needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))))
+	op("beacon_talk", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(topic_usable), because = MSG(op/topic_gate))), asks(/datum/prompt/choice/syndicate_beacon, fields = list("title" = "Ominous Beacon", "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(beacon_offer_answered)))
+
+/datum/prompt/choice/syndicate_beacon/prepare(datum/act/op/A)
 	..()
-
-/// Old attack_hand: never called ..(). single-conversation device; tgui_alert is the right
-/// primitive. The dynamic "you can switch teams" branch becomes a labelled button on the alert.
-/datum/interaction/machine_hand/ungated/syndicate_beacon_talk
-	id = "syndicate_beacon_talk"
-	name = "Use"
-	effect = /obj/machinery/syndicate_beacon/proc/interaction_talk
-
-/obj/machinery/syndicate_beacon/proc/interaction_talk(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
+	var/obj/machinery/syndicate_beacon/B = A.holder
+	var/mob/user = answerer
+	user.set_machine(B)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
 	var/can_traitor = FALSE
 	if(ishuman(user) || isAI(user))
 		if(is_special_character(user))
 			message += "Operative record found. Greetings, Agent [user.name]."
-		else if(charges < 1)
+		else if(B.charges < 1)
 			message += "Connection severed."
 		else
 			var/honorific = (user.gender == FEMALE) ? "Ms." : "Mr."
 			message += "Identity not found in operative database. What can the Syndicate do for you today, [honorific] [user.name]?"
-			can_traitor = !selfdestructing
-	if(length(temptext))
-		message += "\n\n[temptext]"
+			can_traitor = !B.selfdestructing
+	if(length(B.temptext))
+		message += "\n\n[B.temptext]"
 	if(can_traitor)
 		var/offer = pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(beacon_offer_answered), title = "Ominous Beacon", message = message, yes_text = offer, no_text = "Hang up", requires = PROMPT_ADJACENT)
+		choices = list(offer, "Hang up")
 	else
-		om_ask(user, /datum/om/prompt/choice, null, title = "Ominous Beacon", message = message, choices = list("Hang up"), buttons = TRUE)
-	return TRUE
+		choices = list("Hang up")
+	question = message
 
-/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/act/op/A)
+	if(!A.answer || A.answer.value == "Hang up")
+		return
+	var/mob/user = A.actor
 	betraitor(user, user)
+
+/// The only button of the second window ends the call.
+/obj/machinery/syndicate_beacon/proc/beacon_hung_up(datum/act/request/A)
+	return
 
 /// Offers `M` (who must be `user`) a traitor role; the beacon's accept path.
 /obj/machinery/syndicate_beacon/proc/betraitor(mob/user, mob/M)
-	if(!topic_allowed(user))
-		return
 	if(charges < 1)
 		updateUsrDialog(user)
 		return
@@ -73,7 +73,7 @@
 		if(1)
 			temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
 			updateUsrDialog(user)
-			om_after(src, rand(50,200), PROC_REF(selfdestruct))
+			after(src, rand(5 SECONDS,20 SECONDS), PROC_REF(selfdestruct))
 			return
 		if(2)
 			return
@@ -94,7 +94,6 @@
 //Singularity beacon
 ////////////////////////////////////////
 /obj/machinery/power/singularity_beacon
-	silicon_use = NONE // silicons can't use it
 	name = "ominous beacon"
 	desc = "This looks suspicious..."
 	icon = 'icons/obj/singularity.dmi'
@@ -103,14 +102,11 @@
 	anchored = FALSE
 	density = TRUE
 	layer = MOB_LAYER - 0.1 //so people can't hide it and it's REALLY OBVIOUS
-	stat = 0
 
 	active = 0
 	var/icontype = "beacon"
 
 /// Draws its (stealth) power while active.
-DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE, "active")
-
 /obj/machinery/power/singularity_beacon/proc/Activate(mob/user = null)
 	if(surplus() < 1500)
 		if(user)
@@ -119,7 +115,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.z == z)
 			singulo.target = src
-	icon_state = "[icontype]1"
+	set_icon_state("[icontype]1")
 	set_active(1)
 	if(user)
 		to_chat(user, span_notice("You activate the beacon."))
@@ -128,25 +124,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE
 	for(var/obj/singularity/singulo in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(singulo.target == src)
 			singulo.target = null
-	icon_state = "[icontype]0"
+	set_icon_state("[icontype]0")
 	set_active(0)
 	if(user)
 		to_chat(user, span_notice("You deactivate the beacon."))
 
-/obj/machinery/power/singularity_beacon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/singularity_beacon_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/singularity_beacon_toggle
-	id = "singularity_beacon_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/power/singularity_beacon/proc/interaction_toggle
-
-/obj/machinery/power/singularity_beacon/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/singularity_beacon/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(anchored)
 		if(active)
 			Deactivate(user)
@@ -156,23 +140,25 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE
 		to_chat(user, span_danger("You need to screw the beacon to the floor first!"))
 	return TRUE
 
-/obj/machinery/power/singularity_beacon/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/power/singularity_beacon/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(active)
 		to_chat(user, span_danger("You need to deactivate the beacon first!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(anchored)
 		set_anchored(FALSE)
 		to_chat(user, span_notice("You unscrew the beacon from the floor."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		disconnect_from_network()
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(!connect_to_network())
 		to_chat(user, "This device must be placed over an exposed cable.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_anchored(TRUE)
 	to_chat(user, span_notice("You screw the beacon to the floor and attach the cable."))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
 // an active beacon deactivates.
 /obj/machinery/power/singularity_beacon/on_destroy(force)
@@ -181,7 +167,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE
 	..()
 
 //stealth direct power usage
-/obj/machinery/power/singularity_beacon/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/power/singularity_beacon)
+	without("silicon_hand") // silicons can't use it by a plain click
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
+
+/obj/machinery/power/singularity_beacon/proc/work_step(datum/act/timer/A)
 	if(draw_power(1500) < 1500)
 		Deactivate()
 
@@ -194,8 +187,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/singularity_beacon, MACHINE_PIPELINE
 // attack_hand body relocated to code/modules/admin/misc_admin_panels.dm (structured TGUI).
 
 /obj/machinery/syndicate_beacon/virgo/betraitor(mob/user, mob/M)
-	if(!topic_allowed(user))
-		return
 	if(charges < 1)
 		updateUsrDialog(user)
 		return

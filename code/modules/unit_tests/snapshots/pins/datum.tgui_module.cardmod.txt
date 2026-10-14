@@ -1,0 +1,14 @@
+@datum human|none
+@datum robot|none
+@datum ai|none
+@datum ghost|none
+@datum human|/obj/item/tool/screwdriver
+@datum human|/obj/item/tool/crowbar
+@datum human|/obj/item/tool/wrench
+@datum human|/obj/item/tool/wirecutters
+@datum human|/obj/item/multitool
+@datum human|/obj/item/weldingtool
+@datum human|/obj/item/stack/cable_coil
+@datum human|/obj/item/stack/material/steel
+@datum human|/obj/item/card/id
+keys: access, account, assign, mode, modify, pc_exit, pc_minimize, pc_shutdown, print, reg, terminate, ui_open

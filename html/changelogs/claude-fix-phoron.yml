@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Standing in phoron, N2O, CO2 or oxygen-poor air affects you again: a breather idle in steady air now notices the air changing and breathes on time."

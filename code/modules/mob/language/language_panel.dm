@@ -4,12 +4,13 @@
 	if(!istype(user))
 		return
 	var/key = "[REF(source)]"
-	var/datum/languages_panel/panel = LAZYACCESS(GLOB.dq_languages_panels, key)
+	var/datum/languages_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_languages_panels, key))
 	if(!panel)
 		panel = new(source)
-		GLOB.dq_languages_panels[key] = panel
+		GLOB.dq_languages_panels[key] = entity_handle(panel)
 	panel.tgui_interact(user)
 
+/// Open panels: host key -> the panel's entity_handle (a deleted panel stops resolving).
 GLOBAL_LIST_EMPTY(dq_languages_panels)
 
 /datum/languages_panel
@@ -24,14 +25,15 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	if(host)
 		GLOB.dq_languages_panels -= "[REF(host)]"
 
-DECLARE_UI_STATE(/datum/languages_panel, GLOB.tgui_always_state)
+CAPABILITIES(/datum/languages_panel)
+	ref_one(nameof(host), /mob)
+	interface("LanguagesPanel", title = "Known Languages", state = nameof(GLOB.tgui_always_state))
+	op("set_default", ui_act("set_default", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_set_default)))
+	op("reset_default", ui_act("reset_default"), then(PROC_REF(ui_act_reset_default)))
+	op("edit_key", ui_act("edit_key", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_edit_key)))
 
-DECLARE_UI(/datum/languages_panel, "LanguagesPanel", UI_TITLE("Known Languages"))
-
-UI_DATA_REPLACE(/datum/languages_panel, "merge:ui_data_datum_languages_panel{prefix:unknown,has_default:bool,default_name:text,languages:list}")
-
-/// The computed part of /datum/languages_panel's window data (declared on its UI_DATA row).
-/datum/languages_panel/proc/ui_data_datum_languages_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/languages_panel's window data.
+/datum/languages_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host)
 		return data
@@ -60,30 +62,34 @@ UI_DATA_REPLACE(/datum/languages_panel, "merge:ui_data_datum_languages_panel{pre
 	data["languages"] = rows
 	return data
 
-/datum/languages_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/languages_panel/proc/ui_gate(datum/act/op/A)
 	if(!host)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/languages_panel, "set_default", ui_act_set_default, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/languages_panel, ui_act_set_default)
-	var/ref = "[params["ref"]]"
-	topic_dispatch(host, ui.user, list("default_lang" = ref))
+/datum/languages_panel/proc/ui_act_set_default(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	topic_dispatch(host, user, list("default_lang" = ref))
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/languages_panel, "reset_default", ui_act_reset_default)
-UI_ACT_PROC(/datum/languages_panel, ui_act_reset_default)
-	topic_dispatch(host, ui.user, list("default_lang" = "reset"))
+/datum/languages_panel/proc/ui_act_reset_default(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	topic_dispatch(host, user, list("default_lang" = "reset"))
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/languages_panel, "edit_key", ui_act_edit_key, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/languages_panel, ui_act_edit_key)
-	var/ref = "[params["ref"]]"
-	topic_dispatch(host, ui.user, list("set_lang_key" = ref))
+/datum/languages_panel/proc/ui_act_edit_key(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	topic_dispatch(host, user, list("set_lang_key" = ref))
 	SStgui.update_uis(src)
 	return TRUE
 

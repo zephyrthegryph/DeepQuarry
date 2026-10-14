@@ -7,7 +7,6 @@
 	armor_spec = "melee=50;bullet=15;laser=50;energy=10;bomb=25"
 	emp_protection = 10
 	slowdown = 0
-	item_flags = THICKMATERIAL
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -18,7 +17,11 @@
 	rigsuit_max_pressure = 5 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
-TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
+CAPABILITIES(/obj/item/rig/light)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(flags = THICKMATERIAL))
+
 
 /obj/item/clothing/suit/space/rig/light
 	name = DEVELOPER_WARNING_NAME // "suit"
@@ -62,19 +65,27 @@ TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GE
 //The cybersuit is not space-proof. It does however, have good siemens_coefficient values
 /obj/item/clothing/head/helmet/space/rig/light/hacker
 	name = "headgear"
-	siemens_coefficient = 0.4
-	flags_inv = HIDEEARS
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/light/hacker)
+	configure(item_worn(hides = HIDEEARS))
+	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/suit/space/rig/light/hacker
-	siemens_coefficient = 0.4
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/light/hacker)
+	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/shoes/lightrig/hacker
-	siemens_coefficient = 0.4
 	step_volume_mod = 0.3 //Special sneaky cyber-soles, for infiltration.
 	flags = NOSLIP //They're not magboots, so they're not super good for exterior hull walking, BUT for interior infiltration they'll do swell.
 
+CAPABILITIES(/obj/item/clothing/shoes/lightrig/hacker)
+	configure(item_protection(siemens = 0.4))
+
 /obj/item/clothing/gloves/gauntlets/rig/light/hacker
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/hacker)
+	configure(item_protection(siemens = 0))
 
 /obj/item/rig/light/ninja
 	name = "ominous suit control module"
@@ -107,11 +118,13 @@ TYPE_TABLE(/obj/item/rig/light, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GE
 		/obj/item/rig_module/self_destruct
 		)
 
-TYPE_TABLE(/obj/item/rig/light/ninja, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))))
+
 
 /obj/item/clothing/gloves/gauntlets/rig/light/ninja
 	name = "insulated gloves"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/magboots/rig/light/ninja
 	step_volume_mod = 0.25	//Not quite silent, but still damn quiet
@@ -131,3 +144,6 @@ TYPE_TABLE(/obj/item/rig/light/ninja, suit_storage_spec, list(HOLD_ONLY(list(POC
 		/obj/item/rig_module/stealth_field,
 		/obj/item/rig_module/vision
 		)
+
+CAPABILITIES(/obj/item/rig/light/ninja)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

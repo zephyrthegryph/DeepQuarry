@@ -97,7 +97,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 	if(get_turf(SL) == target)
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(target, 0))
-		step_to(SL, target)
+		brain.act_step(target)
 	return DQ_BEHAVIOR_CONTINUE
 
 // ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 
 /datum/ai_behavior/leech_infest/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/leech/SL = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(SL) || SL.host)   // already have a host; don't grab another
 		return null
 	if(!ishuman(threat))
@@ -128,7 +128,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 	if(!SL.can_special_attack(H))
 		return null
 	// Legacy infest condition: target is incapacitated / stat'd / resting / para'd.
-	if(!(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.has_status(EFFECT_PARALYZED)))
+	if(!(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.has_status(STAT_PARALYZED)))
 		return null
 	// Highest-value special — getting a host is the leech's whole goal.
 	return DQAI_RESULT(95, H)
@@ -160,7 +160,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 
 /datum/ai_behavior/leech_poison/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/animal/sif/leech/SL = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(SL) || SL.host)
 		return null
 	if(!ishuman(threat))
@@ -171,7 +171,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 	if(!SL.can_special_attack(H))
 		return null
 	// Legacy poison condition: target still on its feet (not yet infest-ready).
-	if(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.has_status(EFFECT_PARALYZED))
+	if(H.incapacitated() || (H.stat && H.stat != DEAD) || H.resting || H.has_status(STAT_PARALYZED))
 		return null
 	return DQAI_RESULT(80, H)
 

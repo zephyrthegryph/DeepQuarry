@@ -1,9 +1,7 @@
-/// Source atom type -> light source updates (update_corners()) since boot or the last
-/// "lightcensus" reset. Read through the localhost world Topic "lightcensus".
-GLOBAL_LIST_EMPTY(lighting_update_census)
-
 SYSTEM_DEF(lighting)
 	name = "Lighting"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/air
@@ -25,28 +23,37 @@ SYSTEM_DEF(lighting)
 
 
 /datum/system/lighting/initialize()
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_LIGHTING))
+		// initialized stays FALSE, so no turf or light grows a lighting object later either: the world is consistently unlit.
+		unit_test_boot_skipped(BOOT_NEED_LIGHTING, "create_all_lighting_objects (Lighting stays uninitialized)")
+	else if(!initialized)
+		initialized = TRUE
+		create_all_lighting_objects()
+	#else
 	if(!initialized)
 		initialized = TRUE
 		create_all_lighting_objects()
+	#endif
 
-	for(var/datum/planet/planet in GLOB.planet_service.planets)
+	for(var/datum/planet/planet in planets_planets())
 		if(!planet_shandlers[planet])
 			planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 
-	fire(FALSE, TRUE)
+	light_step(0, TRUE)
 	sunlight_queue_active += sunlight_queue + sunlight_queue // Run through shandler's twice during lobby wait to get some initial computation out of the way. After these two, the sunlight system will run MUCH faster.
 
 
 /// The light queues drain every tick (it was SSlighting's SS_TICKER fire()).
 /datum/system/lighting/reactions()
 	. = ..()
-	. += every(WORK_EVERY_TICK, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_PRESENTATION)
+	. += every(WORK_EVERY_TICK, PROC_REF(light_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_K, lane = LANE_PRESENTATION)
 
-// ALLOW(subsystem_fire): lighting folds in wave F5, after phase 4f makes it a Rust field
-/datum/system/lighting/fire(resumed, init_tick_checks)
-	MC_SPLIT_TICK_INIT(4)
+// Lighting folds in wave F5, after phase 4f makes it a Rust field
+/datum/system/lighting/proc/light_step(dt, init_tick_checks)
+	KERNEL_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	var/list/queue = sources_queue
 	var/i = 0
@@ -57,9 +64,8 @@ SYSTEM_DEF(lighting)
 		i += 1
 
 		var/datum/light_source/L = queue[i]
-		// Steady-state census (world Topic "lightcensus"): which sources keep being re-queued.
-		var/census_key = L.source_atom ? L.source_atom.type : /datum/light_source
-		GLOB.lighting_update_census[census_key] = (GLOB.lighting_update_census[census_key] || 0) + 1
+		// Which sources keep being re-queued (the churn metrics; world Topic "lightcensus").
+		CHURN_COUNT(lights, L.source_atom ? L.source_atom.type : /datum/light_source)
 		L.update_corners()
 
 		if(!QDELETED(L))
@@ -68,14 +74,14 @@ SYSTEM_DEF(lighting)
 			i -= 1 // update_corners() has removed L from the list, move back so we don't overflow or skip the next element
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
 		i = 0
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE CORNERS QUEUE
 	queue = corners_queue
@@ -87,14 +93,14 @@ SYSTEM_DEF(lighting)
 		C.update_objects()
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
 		i = 0
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE OBJECTS QUEUE
 	queue = objects_queue
@@ -108,7 +114,7 @@ SYSTEM_DEF(lighting)
 		O.needs_update = FALSE
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -116,7 +122,7 @@ SYSTEM_DEF(lighting)
 
 
 	if(!init_tick_checks)
-		MC_SPLIT_TICK
+		KERNEL_SPLIT_TICK
 
 	// UPDATE SUNLIGHT QUEUE
 	queue = sunlight_queue_active
@@ -129,7 +135,7 @@ SYSTEM_DEF(lighting)
 		shandler.sunlight_update()
 
 		// At init the whole queue drains in one pass (S10b: no stoplag yield); afterwards the MC budget splits it.
-		if(!init_tick_checks && MC_TICK_CHECK)
+		if(!init_tick_checks && KERNEL_OVER_BUDGET)
 			break
 	if (i)
 		queue.Cut(1, i + 1)
@@ -157,8 +163,8 @@ SYSTEM_DEF(lighting)
 	var/datum/planet_sunlight_handler/pshandler = z_to_pshandler[z]
 	if(istype(pshandler))
 		return pshandler
-	else if(GLOB.planet_service.initialized && length(GLOB.planet_service.z_to_planet) >= z && GLOB.planet_service.z_to_planet[z])
-		var/datum/planet/P = GLOB.planet_service.z_to_planet[z]
+	else if(SSplanets.initialized && length(planets_z_to_planet()) >= z && SSplanets.z_to_planet[z])
+		var/datum/planet/P = planets_z_to_planet()[z]
 		if(istype(P))
 			pshandler = get_pshandler_planet(P)
 			z_to_pshandler[z] = pshandler

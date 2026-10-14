@@ -15,17 +15,55 @@
 	opacity = 0
 	var/datum/entopic/entopic
 
-/obj/machinery/vending/nifsoft_shop/Initialize(mapload)
-	. = ..()
+MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
+MSG_DEF_SELF(nifsoft_shop/no_nif, "It seems unable to connect to your NIF...")
+MSG_DEF_SELF(nifsoft_shop/unauthorized, "You aren't authorized to buy that software.")
 
-	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
+CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
+	configure(emag(parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
+	owns_one(nameof(entopic), /datum/entopic, starts = PROC_REF(make_entopic))
+	// Software goes straight into the buyer's NIF: a buyer needs a working one that can take it, and the software's own access.
+	extend("vend", needs(
+		req(PROC_REF(nif_ready), because = MSG(nifsoft_shop/no_nif)),
+		req(PROC_REF(nif_can_take)),
+		req(PROC_REF(nif_soft_access), because = MSG(nifsoft_shop/unauthorized))))
 
-/obj/machinery/vending/nifsoft_shop/capabilities()
-	. = ..()
-	. = replace(., /datum/capability/wires, cap_wires(/datum/wires/vending/no_contraband)) //These wires can't be hacked for contraband.
-	. = replace(., /datum/capability/emag, cap_emag(say = "You short out %T%'s access lock & stock restrictions.", effect = PROC_REF(on_emag), mode = EMAG_REPEATABLE)) //Yeees, YEEES! Give me that black market tech.
+/// The projection the shop shows itself as (owned: made with the shop, deleted with it).
+/obj/machinery/vending/nifsoft_shop/proc/make_entopic(datum/act/A)
+	return new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon")
 
-/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The software the purchase names.
+/obj/machinery/vending/nifsoft_shop/proc/soft_of(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	return R?.item_path
+
+/// needs: the buyer has a working NIF.
+/obj/machinery/vending/nifsoft_shop/proc/nif_ready(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	return (istype(H) && H.nif?.stat == NIF_WORKING) ? null : MSG(nifsoft_shop/no_nif)
+
+/// needs: the buyer's NIF can take the software.
+/obj/machinery/vending/nifsoft_shop/proc/nif_can_take(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	if(!istype(H) || !H.nif)
+		return null
+	return H.nif.install_refusal(soft_of(A))
+
+/// Why the buyer's NIF cannot take the software, or null.
+/// needs: software with an access of its own goes only to someone with it (unless the shop is emagged or does not scan).
+/obj/machinery/vending/nifsoft_shop/proc/nif_soft_access(datum/act/op/A)
+	var/datum/nifsoft/path = soft_of(A)
+	if(!path || !initial(path.access) || !scan_id || emag_emagged(src))
+		return null
+	return (has_access(list(initial(path.access)), list(), A.actor.GetAccess())) ? null : MSG(nifsoft_shop/unauthorized)
+
+/// A purchase the shop turned away flashes on its projection as well.
+/obj/machinery/vending/nifsoft_shop/vend_turned_away(datum/act/notice/A)
+	..()
+	if(A.refusal in list(/datum/msg/nif/already_installed, /datum/msg/nif/not_for_chassis, /datum/msg/nif/not_for_organics, /datum/msg/nifsoft_shop/unauthorized))
+		flick("[icon_state]-deny", entopic.my_image)
+
+/obj/machinery/vending/nifsoft_shop/ui_data(datum/act/eval/A)
 	. = ..()
 	.["chargesMoney"] = TRUE
 
@@ -33,13 +71,14 @@
 /obj/machinery/vending/nifsoft_shop/power_change()
 	. = ..()
 	if(!entopic) return //Early APC init(), ignore
-	if(has_stat(BROKEN))
+	if(broken_now())
 		entopic.hide()
 	else
-		if(!has_stat(NOPOWER))
+		if(!power_lost())
+			cancel_after(src, "power_loss") // power came back before the projection went out
 			entopic.show()
 		else
-			after(src, rand(0, 15), PROC_REF(lose_power))
+			after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power), key = "power_loss")
 
 /obj/machinery/vending/nifsoft_shop/malfunction()
 	atom_break()
@@ -81,97 +120,51 @@
 			var/name = "[initial(NS.name)][context]"
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, NS, name)
 
-			product.price = initial(NS.cost)
-			product.amount = 10
-			product.category = category
+			product.set_price(initial(NS.cost))
+			product.set_amount(10)
+			product.set_category(category)
 			product.item_desc = initial(NS.desc)
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 
-/obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
-	. = ..()
-	if(.)
-		var/datum/nifsoft/path = R.item_path
-		if(!ishuman(user))
-			return FALSE
-
-		var/mob/living/carbon/human/H = user
-		if(!H.nif || H.nif.stat != NIF_WORKING)
-			to_chat(H, span_warning("[src] seems unable to connect to your NIF..."))
-			return FALSE
-
-		if(!H.nif.can_install(path))
-			flick("[icon_state]-deny", entopic.my_image)
-			return FALSE
-
-		if(initial(path.access))
-			var/list/soft_access = list(initial(path.access))
-			var/list/usr_access = user.GetAccess()
-			if(scan_id && !has_access(soft_access, list(), usr_access) && !is_emagged(src))
-				to_chat(user, span_warning("You aren't authorized to buy [initial(path.name)]."))
-				flick("[icon_state]-deny", entopic.my_image)
-				return FALSE
-
-// Also special treatment!
-/obj/machinery/vending/nifsoft_shop/vend(datum/stored_item/vending_product/R, mob/user)
-	var/mob/living/carbon/human/H = user
-	if(!can_buy(R, user))	//For SECURE VENDING MACHINES YEAH
-		to_chat(user, span_warning("Purchase not allowed."))	//Unless emagged of course
-		flick("[icon_state]-deny",entopic.my_image)
-		return
-	vend_ready = 0 //One thing at a time!!
-
+// Also special treatment! The software is written straight into the buyer's NIF once the vend delay is over.
+/obj/machinery/vending/nifsoft_shop/start_vend(datum/stored_item/vending_product/R, mob/user)
+	set_vend_ready(FALSE) // One thing at a time!!
+	rel_set(src, nameof(currently_vending), R)
 	if(R.category & CAT_COIN)
-		if(!coin)
-			to_chat(user, span_notice("You need to insert a coin to get this item."))
-			return
-		if(coin.string_attached)
-			if(prob(50))
-				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
-			else
-				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				own_clear(src, nameof(coin), OWN_DELETE)
-				categories &= ~CAT_COIN
-		else
-			own_clear(src, nameof(coin), OWN_DELETE)
-			categories &= ~CAT_COIN
-
+		swallow_coin(user)
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
-
 	use_power(vend_power_usage)	//actuators and stuff
-	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), R, H, user)
-	return 1
+	after(src, vend_delay, PROC_REF(finish_nifsoft_vend), key = "vend", with = list(R, user, user))
 
 //Can't throw intangible software at people.
 /obj/machinery/vending/nifsoft_shop/throw_item()
 	//TODO: Make it throw disks at people with random software? That might be fun. EVEN THE ILLEGAL ONES? ;o
 	return 0
 
-/datum/wires/vending/no_contraband
+/// Its wires can't be hacked for contraband; an emag can (Yeees, YEEES! Give me that black market tech).
+/obj/machinery/vending/nifsoft_shop/contraband_wire_pulsed(datum/act/A)
+	return
 
-/datum/wires/vending/no_contraband/on_pulse(index) //Can't hack for contraband, need emag.
-	if(index != WIRE_CONTRABAND)
-		..(index)
-
-/// The emag's effect (it runs before the emagged bit is set): unlock the hidden stock, or decline when it already is.
-/obj/machinery/vending/nifsoft_shop/proc/on_emag(mob/user, obj/item/card/emag/card)
-	if(is_emagged(src) && (categories & CAT_HIDDEN))
-		return FALSE
-	categories |= CAT_HIDDEN
-	return TRUE
+/// The emag's effect (it runs before the emagged key is set): unlock the hidden stock, or decline when it already is.
+/obj/machinery/vending/nifsoft_shop/proc/on_emag(datum/act/op/A)
+	if(emag_emagged(src) && (categories & CAT_HIDDEN))
+		return OP_REFUSED
+	set_categories(categories | CAT_HIDDEN)
+	return OP_OK
 
 /obj/machinery/vending/nifsoft_shop/proc/lose_power()
 	entopic.hide()
 
 /obj/machinery/vending/nifsoft_shop/proc/finish_nifsoft_vend(datum/stored_item/vending_product/R, mob/living/carbon/human/H, mob/user)
-	R.amount--
+	R.set_amount(R.amount - 1)
 	new R.item_path(H.nif)
 	H.nif.notify("New software installed: [R.item_name]")
 	flick("[icon_state]-vend",entopic.my_image)
 	if(has_logs)
 		do_logging(R, user, 1)
 
-	vend_ready = 1
+	set_vend_ready(TRUE)
 	rel_clear(src, nameof(currently_vending))

@@ -67,18 +67,28 @@ fn is_reservoir_env(env_capacity: f64, env_reservoir: bool, body_capacity: f64) 
     env_reservoir || env_capacity >= f64::from(RELAX_CAPACITY_RATIO) * body_capacity
 }
 
-/// Resolves the analytic model exactly at `now` and returns the net energy
-/// that left the body (clamped at its TCMB floor) for the caller to deposit
-/// into the environment. Clears `body.relax`.
-pub fn settle_relax(body: &mut HeatBody, conductance: f64, now: f64) -> f64 {
+/// The temperature a relaxing body (`body.relax`) has at `now` under its
+/// analytic model, without settling it. While the model runs the stored
+/// energy is the anchor value from `body.since`, so this, not
+/// [`HeatBody::temperature`], is what a read must report (the law sleeps
+/// until the model's due time, up to [`RELAX_MAX_INTERVAL`] later).
+#[must_use]
+pub fn relax_temperature_at(body: &HeatBody, conductance: f64, now: f64) -> f64 {
     let model = RateModel::Relax {
         target: relax_target(body.ambient, body.power, conductance),
         v0: body.temperature(),
         k: relax_rate(conductance, body.capacity),
         t0: body.since,
     };
+    model.value_at(now).max(f64::from(TCMB))
+}
+
+/// Resolves the analytic model exactly at `now` and returns the net energy
+/// that left the body (clamped at its TCMB floor) for the caller to deposit
+/// into the environment. Clears `body.relax`.
+pub fn settle_relax(body: &mut HeatBody, conductance: f64, now: f64) -> f64 {
     #[allow(clippy::cast_possible_truncation)]
-    let t = (model.value_at(now).max(f64::from(TCMB))) as f32;
+    let t = relax_temperature_at(body, conductance, now) as f32;
     let e_new = f64::from(phase_energy(t, body.capacity as f32, body.phase()));
     let out = body.energy + body.power * (now - body.since).max(0.0) - e_new;
     body.energy = e_new.max(body.capacity * f64::from(TCMB));
@@ -416,6 +426,18 @@ mod tests {
         assert!(!body.relax);
         assert!((before - moved - body.energy).abs() < 1e-6, "moved conserves with the stored energy");
         assert!(moved > 0.0, "a hot body relaxing toward a cooler ambient gives up energy");
+    }
+
+    #[test]
+    fn relax_temperature_at_reads_the_model_without_settling_and_agrees_with_settle() {
+        let body = HeatBody { capacity: 10.0, energy: 10.0 * 400.0, relax: true, since: 0.0, ambient: 300.0, ..Default::default() };
+        let conductance = 2.0;
+        let read = relax_temperature_at(&body, conductance, 10.0);
+        assert!(read < 400.0 - 1.0, "a relaxing body reads cooler than its anchor ({read})");
+        assert!(body.relax && (body.temperature() - 400.0).abs() < 1e-3, "reading does not settle the body");
+        let mut settled = body.clone();
+        let _ = settle_relax(&mut settled, conductance, 10.0);
+        assert!((settled.temperature() - read).abs() < 1e-3, "{} vs {read}", settled.temperature());
     }
 
     #[test]

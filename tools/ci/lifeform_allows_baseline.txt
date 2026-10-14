@@ -1,0 +1,2 @@
+# ALLOW keeps whose reason describes a lifecycle form (tools/analyze/src/lints/lifeforms.rs). rule<TAB>file<TAB>normalized line.
+# Shrink-only: convert the site to its form, then `analyze baseline --update --lint lifeform_allows`. A new one fails.

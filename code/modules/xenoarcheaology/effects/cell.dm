@@ -34,18 +34,18 @@
 					switch(effect)
 						if(CELL_CHARGE)
 							to_chat(L, span_notice("SYSTEM ALERT: Energy boost detected!"))
-							C.charge = min(C.maxcharge, C.charge + amount)
+							C.set_charge(min(C.maxcharge, C.charge + amount))
 						else
 							to_chat(L, span_warning("SYSTEM ALERT: Energy drain detected!"))
-							C.charge = max(0, min(C.maxcharge, C.charge - amount))
+							C.set_charge(max(0, min(C.maxcharge, C.charge - amount)))
 			continue
 
 		var/obj/item/cell/C = AM.get_cell()
 		if(C)
 			if(effect == CELL_CHARGE)
-				C.charge = min(C.maxcharge, C.charge + amount)
+				C.set_charge(min(C.maxcharge, C.charge + amount))
 			else
-				C.charge = max(0, C.charge - amount)
+				C.set_charge(max(0, C.charge - amount))
 
 	if(messaged_robots)
 		COOLDOWN_START(src, message_cooldown, (1 MINUTE))

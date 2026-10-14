@@ -1,0 +1,18 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
++1 menu: Read ID Card (refused: You can't do that.)
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+keys: collect_item, disguise, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

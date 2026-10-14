@@ -1,7 +1,3 @@
-#define MODE_SINGLE 1
-#define MODE_DOUBLE 2
-#define MODE_CANISTER 3
-
 /obj/machinery/bomb_tester
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "explosive effect simulator"
@@ -10,8 +6,6 @@
 	icon_state = "generic"
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 50
-	active_power_usage = 1.5 KILOWATTS
 
 	circuit = /obj/item/circuitboard/bomb_tester
 
@@ -21,12 +15,12 @@
 	var/obj/item/tank/tank2
 	var/obj/machinery/portable_atmospherics/canister/test_canister
 
-	var/sim_mode = MODE_SINGLE
+	var/sim_mode = BOMB_TESTER_MODE_SINGLE
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
 	EXPIRY_DECLARE(simulation_started)
-	/// om_after() timer that ends the running simulation, or 0.
+	/// after() timer that ends the running simulation, or 0.
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results
@@ -34,29 +28,50 @@
 	var/datum/gas_mixture/faketank
 	var/faketank_integrity
 
-/obj/machinery/bomb_tester/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	RefreshParts()
-	own_set(src, nameof(faketank), new /datum/gas_mixture)
+CAPABILITIES(/obj/machinery/bomb_tester)
+	configure(uses_power(idle = 50, active = 1.5 KILOWATTS))
+	default_parts()
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	owns_one(nameof(faketank), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
+	interface("BombTester")
+	op("set_mode", ui_act("set_mode", arg("mode", num(BOMB_TESTER_MODE_SINGLE, BOMB_TESTER_MODE_CANISTER))), then(PROC_REF(ui_act_set_mode)))
+	op("add_tank", ui_act("add_tank", arg("slot", num())), then(PROC_REF(ui_act_add_tank)))
+	op("remove_tank", ui_act("remove_tank", arg("ref")), then(PROC_REF(ui_act_remove_tank)))
+	op("canister_scan", ui_act("canister_scan"), then(PROC_REF(ui_act_canister_scan)))
+	op("set_can_pressure", ui_act("set_can_pressure", arg("pressure", num())), then(PROC_REF(ui_act_set_can_pressure)))
+	op("start_sim", ui_act("start_sim"), then(PROC_REF(ui_act_start_sim)))
+	extend(TAG_UI, needs(req(PROC_REF(not_simulating))))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("load_tank", item(/obj/item/tank), priority(OP_PRIORITY_DEFAULT - 1), label("Connect tank"), when(req(PROC_REF(tank_slot_available))), then(PROC_REF(interaction_load_tank)))
+	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
+	ref_one(nameof(test_canister), /obj/machinery/portable_atmospherics/canister)
+
+/// Selection follows the two real occupied tank variables, including one empty slot.
+/obj/machinery/bomb_tester/proc/tank_slot_available(datum/act/op/A)
+	return !tank1 || !tank2 ? null : MSG(req_wrong_state)
+
+MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
+
+/// A simulation that is running takes no new settings.
+/obj/machinery/bomb_tester/proc/not_simulating(datum/act/op/A)
+	return (!simulating) ? null : MSG(bomb_tester/simulating)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
-		own_take(src, nameof(tank1))
+		rel_take(src, nameof(tank1))
 	if(tank2)
 		tank2.forceMove(get_turf(src))
-		own_take(src, nameof(tank2))
+		rel_take(src, nameof(tank2))
 	simulation_finish(1)
 	return ..()
 
-/obj/machinery/bomb_tester/machine_step()
-	..()
+/obj/machinery/bomb_tester/proc/work_step(datum/act/timer/A)
 	if(test_canister() && !Adjacent(test_canister()))
 		rel_clear(src, nameof(test_canister))
 
 /obj/machinery/bomb_tester/proc/appearance_suffix()
-	return has_stat(NOPOWER) ? "-p" : "[simulating]"
+	return power_lost() ? "-p" : "[simulating]"
 
 /obj/machinery/bomb_tester/proc/appearance_tank1()
 	return tank1 ? 1 : 0
@@ -64,13 +79,18 @@
 /obj/machinery/bomb_tester/proc/appearance_tank2()
 	return tank2 ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "{icon_name}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank1", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank1"))))
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank2"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/bomb_tester/draw(datum/look/look)
+	..()
+	look.state("[icon_name][appearance_suffix()]")
+	if(appearance_tank1() == 1)
+		look.overlay("generic-tank1")
+	if(appearance_tank2() == 1)
+		look.overlay("generic-tank2")
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
-	if(simulating && has_stat(NOPOWER))
+	if(simulating && power_lost())
 		simulation_finish(1)
 
 /obj/machinery/bomb_tester/RefreshParts()
@@ -78,49 +98,23 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
-/obj/machinery/bomb_tester/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/bomb_tester_load_tank,
-		/datum/interaction/machine_hand/ungated/bomb_tester_open,
-	)
-	..()
-
-/datum/interaction/machine_item/bomb_tester_load_tank
-	id = "bomb_tester_load_tank"
-	name = "Connect tank"
-	held_type = /obj/item/tank
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/bomb_tester/proc/has_free_tank_slot, null))
-	effect = /obj/machinery/bomb_tester/proc/interaction_load_tank
-
-/obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
-	return !tank1 || !tank2
-
-/obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
-	var/adopted = tank1 ? own_set(src, nameof(src.tank2), I, user = user) : own_set(src, nameof(src.tank1), I, user = user)
+/obj/machinery/bomb_tester/proc/interaction_load_tank(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
-	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
 	return TRUE
 
-/datum/interaction/machine_hand/ungated/bomb_tester_open
-	id = "bomb_tester_open"
-	name = "Use"
-	effect = /obj/machinery/bomb_tester/proc/interaction_open
-
-/obj/machinery/bomb_tester/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bomb_tester/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/bomb_tester, "BombTester")
-
-UI_DATA(/obj/machinery/bomb_tester, "simulating:num", "merge:ui_data_obj_machinery_bomb_tester{mode:unknown,tank1:unknown,tank1ref:text,tank2:unknown,tank2ref:text,canister:unknown,sim_canister_output:num}")
-
-/// The computed part of /obj/machinery/bomb_tester's window data (declared on its UI_DATA row).
-/obj/machinery/bomb_tester/proc/ui_data_obj_machinery_bomb_tester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/bomb_tester/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	if(!simulating)
@@ -132,66 +126,57 @@ UI_DATA(/obj/machinery/bomb_tester, "simulating:num", "merge:ui_data_obj_machine
 		data["canister"] = test_canister()
 		data["sim_canister_output"] = sim_canister_output
 
+	data["simulating"] = simulating
 	return data
 
 /// The loaded tanks, for the UI's remove_tank refs.
 /obj/machinery/bomb_tester/proc/tank_slots()
 	return list(tank1, tank2)
 
-/obj/machinery/bomb_tester/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(simulating)
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/bomb_tester, "set_mode", ui_act_set_mode, UI_ARG_NUM("mode", MODE_SINGLE, MODE_CANISTER))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_set_mode)
-	sim_mode = params["mode"]
+/obj/machinery/bomb_tester/proc/ui_act_set_mode(datum/act/op/A, mode)
+	var/mob/user = A.actor
+	sim_mode = mode
 	var/text_mode
 	switch(sim_mode)
-		if(MODE_SINGLE)
+		if(BOMB_TESTER_MODE_SINGLE)
 			text_mode = "single gas tank detonation"
-		if(MODE_DOUBLE)
+		if(BOMB_TESTER_MODE_DOUBLE)
 			text_mode = "tank transfer valve detonation"
-		if(MODE_CANISTER)
+		if(BOMB_TESTER_MODE_CANISTER)
 			text_mode = "canister-assisted single gas tank detonation"
-	to_chat(ui.user, span_notice("[src] set to simulate a [text_mode]."))
+	to_chat(user, span_notice("[src] set to simulate a [text_mode]."))
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "add_tank", ui_act_add_tank, UI_ARG_NUM("slot"))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_add_tank)
-	if(istype(ui.user.get_active_hand(), /obj/item/tank))
-		var/obj/item/tank/T = ui.user.get_active_hand()
-		var/slot = params["slot"]
+/obj/machinery/bomb_tester/proc/ui_act_add_tank(datum/act/op/A, raw_slot)
+	var/mob/user = A.actor
+	if(istype(user.get_active_hand(), /obj/item/tank))
+		var/obj/item/tank/T = user.get_active_hand()
+		var/slot = raw_slot
 		var/slot_var
 		if(slot == 1 && !tank1)
 			slot_var = "tank1"
 		else if(slot == 2 && !tank2)
 			slot_var = "tank2"
 		else
-			to_chat(ui.user, span_warning("Slot [slot] is full."))
+			to_chat(user, span_warning("Slot [slot] is full."))
 			return
 
-		own_set(src, slot_var, T, user = ui.user)
+		move_into(src, slot_var, T, user)
 		return TRUE
 	else
-		to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))
+		to_chat(user, span_warning("You must be wielding a tank to insert it!"))
 
-UI_ACT(/obj/machinery/bomb_tester, "remove_tank", ui_act_remove_tank, UI_ARG_REF("ref", "proc:tank_slots", /obj/item/tank))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_remove_tank)
-	var/obj/item/tank/T = params["ref"]
+/obj/machinery/bomb_tester/proc/ui_act_remove_tank(datum/act/op/A, raw_ref)
+	var/obj/item/tank/T = ui_ref(raw_ref, tank_slots(), /obj/item/tank)
 	if(istype(T))
 		if(T == tank1)
-			own_take(src, nameof(/obj/machinery/bomb_tester::tank1))
+			rel_take(src, nameof(/obj/machinery/bomb_tester::tank1))
 		if(T == tank2)
-			own_take(src, nameof(/obj/machinery/bomb_tester::tank2))
+			rel_take(src, nameof(/obj/machinery/bomb_tester::tank2))
 		T.forceMove(get_turf(src))
-		update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "canister_scan", ui_act_canister_scan)
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_canister_scan)
+/obj/machinery/bomb_tester/proc/ui_act_canister_scan(datum/act/op/A)
 	for(var/obj/machinery/portable_atmospherics/canister/C in orange(1,src))
 		if(C && C == test_canister())
 			continue
@@ -202,18 +187,16 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_canister_scan)
 			rel_clear(src, nameof(/obj/machinery/bomb_tester::test_canister))
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "set_can_pressure", ui_act_set_can_pressure, UI_ARG_NUM("pressure"))
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_set_can_pressure)
-	sim_canister_output = CLAMP(params["pressure"], ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10)
+/obj/machinery/bomb_tester/proc/ui_act_set_can_pressure(datum/act/op/A, pressure)
+	sim_canister_output = CLAMP(pressure, ONE_ATMOSPHERE/10, ONE_ATMOSPHERE*10)
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "start_sim", ui_act_start_sim)
-UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
+/obj/machinery/bomb_tester/proc/ui_act_start_sim(datum/act/op/A)
 	start_simulating()
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/start_simulating()
-	if(!tank1 || (sim_mode == MODE_DOUBLE && !tank2) || (sim_mode == MODE_CANISTER && !test_canister()))
+	if(!tank1 || (sim_mode == BOMB_TESTER_MODE_DOUBLE && !tank2) || (sim_mode == BOMB_TESTER_MODE_CANISTER && !test_canister()))
 		simulation_results = "Error"
 		simulation_finish()
 		return
@@ -221,19 +204,18 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 		simulation_results = "Unstable"
 		simulation_finish()
 		return
-	simulating = 1
+	set_simulating(1)
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
-	rx_after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
-	update_icon()
+	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
 	switch(sim_mode)
-		if(MODE_SINGLE)
+		if(BOMB_TESTER_MODE_SINGLE)
 			single_tank_sim()
 
-		if(MODE_DOUBLE)
+		if(BOMB_TESTER_MODE_DOUBLE)
 			ttv_sim()
 
-		if(MODE_CANISTER)
+		if(BOMB_TESTER_MODE_CANISTER)
 			canister_sim()
 
 /obj/machinery/bomb_tester/proc/simulate_tank() //This is a heavily cut down version of check_status() from tanks.dm
@@ -279,7 +261,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 
 	simulation_results += "<br>Initial gas tank status:<br>[format_gas_for_results(faketank)]"
 
-	faketank.add_thermal_energy(15000)
+	heat_add(faketank, 15000, HEAT_SOURCE_OTHER)
 
 	var/intervals = 0
 	while(intervals < 10)
@@ -355,7 +337,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
 	cancel_after(src, "simulation")
-	simulating = 0
+	set_simulating(0)
 	set_use_power(USE_POWER_IDLE)
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE
@@ -372,7 +354,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 		playsound(src, "sound/machines/printer.ogg", 50, 1)
 		var/obj/item/paper/P = new(get_turf(src))
 		P.name = "Explosive Simulator printout"
-		P.info = simulation_results
+		P.set_info(simulation_results)
 
 /obj/machinery/bomb_tester/proc/format_gas_for_results(datum/gas_mixture/G)
 	// G.update_values() removed; no-op under LINDA.
@@ -388,11 +370,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 
 	return results
 
-#undef MODE_SINGLE
-#undef MODE_DOUBLE
-#undef MODE_CANISTER
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 

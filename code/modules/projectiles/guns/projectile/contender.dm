@@ -24,10 +24,11 @@
 	special_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/contender/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/contender/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(chambered)
 		chambered.forceMove(get_turf(src))
 		rel_clear(src, nameof(chambered))
@@ -36,14 +37,14 @@
 
 	if(!retracted_bolt)
 		to_chat(user, span_notice("You cycle back the bolt on [src], ejecting the casing and allowing you to reload."))
-		icon_state = icon_retracted
+		set_icon_state(icon_retracted)
 		retracted_bolt = 1
-		return 1
+		return OP_OK
 	else if(retracted_bolt && length(loaded))
 		to_chat(user, span_notice("You cycle the loaded round into the chamber, allowing you to fire."))
 	else
 		to_chat(user, span_notice("You cycle the boly back into position, leaving the gun empty."))
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	retracted_bolt = 0
 
 /obj/item/gun/projectile/contender/load_ammo(obj/item/A, mob/user)

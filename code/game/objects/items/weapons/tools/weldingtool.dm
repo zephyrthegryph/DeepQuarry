@@ -8,11 +8,8 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "welder"
 	item_state = "welder"
-	slot_flags = SLOT_BELT
 
 	//Amount of OUCH when it's thrown
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -29,37 +26,24 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 
 	var/acti_sound = SFX_ITEMS_WELDERACTIVATE
 	var/deac_sound = SFX_ITEMS_WELDERDEACTIVATE
-	usesound = SFX_ITEMS_WELDER2
 	var/change_icons = TRUE
 	var/flame_intensity = 2 //how powerful the emitted light is when used.
 	var/flame_color = "#FF9933" // What color the welder light emits when its on.  Default is an orange-ish color.
 	var/eye_safety_modifier = 0 // Increasing this will make less eye protection needed to stop eye damage.  IE at 1, sunglasses will fully protect.
 	var/burned_fuel_for = 0 // Keeps track of how long the welder's been on, used to gradually empty the welder if left one, without RNG.
 	var/no_passive_burn = FALSE // If true, the welder will not passively burn fuel. Used for things like electric welders.
-	toolspeed = 1
-	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
-	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 	tool_qualities = list(TOOL_WELDER)
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
-OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
+/obj/item/weldingtool/var/welding = 0
 /// If true, keeps the welder processing even while off (fuel regeneration).
-OM_FIELD(/obj/item/weldingtool, always_process, FALSE, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/weldingtool, burner_active, list("welding", "always_process"))
-/// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit.
-DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
+/obj/item/weldingtool/var/always_process = FALSE
+TRACKED(/obj/item/weldingtool, always_process)
 
-/// Whether the periodic burn/regeneration runs: lit, or a welder that always processes.
-/obj/item/weldingtool/proc/burner_active()
+/// Whether the periodic burn/regeneration runs: lit, or a welder that always processes (the every() gate, polled; a subtype overrides it).
+/obj/item/weldingtool/proc/burner_active(datum/act/A)
 	return welding || always_process
 
-/obj/item/weldingtool/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	own_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	update_icon()
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -72,7 +56,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 /obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M) && stance == I_HELP)
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
+		var/obj/item/organ/external/S = H.organs_by_name[hud_of(user)?.zone_sel?.selecting]
 
 		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()
@@ -106,31 +90,34 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 	remove_fuel(1, user)
 
 /// Old attackby.
-/obj/item/weldingtool/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/weldingtool/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(welding)
 			to_chat(user, span_danger("Stop welding first!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		status = !status
 		if(status)
 			to_chat(user, span_notice("You secure the welder."))
 		else
 			to_chat(user, span_notice("The welder can now be attached and modified."))
 		add_fingerprint(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((!status) && (istype(W,/obj/item/stack/rods)))
 		var/obj/item/stack/rods/R = W
 		R.use(1)
 		var/obj/item/flamethrower/F = new/obj/item/flamethrower(get_turf(user))
-		if(!own_set(F, nameof(F.weldtool), src, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(F, nameof(F.weldtool), src, user))
+			return OP_PASS
 		add_fingerprint(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/weldingtool/periodic_step()
+/// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit (every(), CAPABILITIES(/obj/item/weldingtool)).
+/obj/item/weldingtool/proc/weldingtool_step(datum/act/timer/A)
 	if(welding)
 		if(!no_passive_burn)
 			++burned_fuel_for
@@ -173,13 +160,21 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 			L.ignite_mob()
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
-DECLARE_INTERACTIONS(/obj/item/weldingtool, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/weldingtool)
+	configure(item_tooling(speed = 1))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0))
+	configure(item_sounds(use = SFX_ITEMS_WELDER2, drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
+	every(2 SECONDS, then(PROC_REF(weldingtool_step)), when = PROC_REF(burner_active))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(mousedrop_input))
+	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel)))
 
 /// Old attack_self.
-/obj/item/weldingtool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/weldingtool/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	setWelding(!welding, user)
 	return TRUE
 
@@ -200,76 +195,74 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 		reagents.remove_reagent(REAGENT_ID_FUEL, amount)
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more welding fuel to complete this task."))
-		update_icon()
 		return 0
 
 //Returns whether or not the welding tool is currently on.
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/appearance_overlays()
-	. = list()
-	. += ..()
-	// Welding overlay.
-	if(welding)
-		. += "[icon_state]-on"
-		item_state = "[initial(item_state)]1"
+/// The look: the flame and the fuel counter over the body, the flame's light, and the in-hand state while it burns.
+/obj/item/weldingtool/draw(datum/look/look)
+	..()
+	welder_overlays(look)
+	if(welding && flame_intensity)
+		look.glow(flame_intensity, flame_intensity, flame_color)
 	else
-		item_state = initial(item_state)
+		look.glow(GLOW_OFF)
 
-	// Fuel counter overlay.
+/// The flame overlay, the fuel counter and the in-hand state (a subtype with a body of its own draws none of them).
+/obj/item/weldingtool/proc/welder_overlays(datum/look/look)
+	if(welding)
+		look.overlay("[initial(icon_state)]-on")
+		look.held_state("[initial(item_state)]1")
+	else
+		look.held_state(initial(item_state))
+
+	look.watch(reagents) // the fuel counter follows the fuel in the tank
 	if(change_icons && get_max_fuel())
 		var/ratio = get_fuel() / get_max_fuel()
 		ratio = CEILING(ratio * 4, 1) * 25
-		. += "[icon_state][ratio]"
+		look.overlay("[initial(icon_state)][ratio]")
 
-	// Lights
-	if(welding && flame_intensity)
-		set_light(flame_intensity, flame_intensity, flame_color)
-	else
-		set_light(0)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/weldingtool/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
-//	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
-	var/mob/M = loc
-	if(istype(M))
-		M.update_inv_l_hand()
-		M.update_inv_r_hand()
-
-/obj/item/weldingtool/MouseDrop(obj/over_object as obj)
+/obj/item/weldingtool/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
 //Sets the welding state of the welding tool. If you see W.welding = 1 anywhere, please change it to W.setWelding(1)
 //so that the welding tool updates accordingly
@@ -285,12 +278,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 			else if(T)
 				T.visible_message(span_danger("\The [src] turns on."))
 			playsound(src, acti_sound, 50, 1)
-			src.force = 15
+			src.set_force(15)
 			src.injury_kind = INJURY_BURN
-			src.w_class = ITEMSIZE_LARGE
-			src.hitsound = 'sound/items/Welder.ogg'
+			src.set_w_class(ITEMSIZE_LARGE)
+			src.set_hitsound('sound/items/Welder.ogg')
 			set_welding(1)
-			update_icon()
 		else
 			if(M)
 				var/msg = max_fuel ? "welding fuel" : "charge"
@@ -303,12 +295,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 		else if(T)
 			T.visible_message(span_warning("\The [src] turns off."))
 		playsound(src, deac_sound, 50, 1)
-		src.force = 3
+		src.set_force(3)
 		src.injury_kind = initial(src.injury_kind)
-		src.w_class = initial(src.w_class)
+		src.set_w_class(initial(src.w_class))
 		set_welding(0)
-		src.hitsound = initial(src.hitsound)
-		update_icon()
+		src.set_hitsound(sounds_of_type(src.type).hit)
 
 //Decides whether or not to damage a player's eyes based on what they're wearing as protection
 //Note: This should probably be moved to mob
@@ -330,7 +321,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 				to_chat(user, span_warning("Your eyes sting a little."))
 				H.injure(INJURY_BURN, rand(1, 2), E, src, flags = INJURE_SILENT)
 				if(E.damage > 12)
-					user.status_adjust(EFFECT_BLURRY, rand(3,6))
+					user.status_adjust(STAT_BLURRY, rand(3,6))
 			if(0)
 				to_chat(user, span_warning("Your eyes burn."))
 				H.injure(INJURY_BURN, rand(2, 4), E, src, flags = INJURE_SILENT)
@@ -338,7 +329,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 					H.injure(INJURY_BURN, rand(4, 10), E, src, flags = INJURE_SILENT)
 			if(-1)
 				to_chat(user, span_danger("Your thermals intensify the welder's glow. Your eyes itch and burn severely."))
-				user.status_adjust(EFFECT_BLURRY, rand(12,20))
+				user.status_adjust(STAT_BLURRY, rand(12,20))
 				H.injure(INJURY_BURN, rand(12, 16), E, src, flags = INJURE_SILENT)
 		if(safety<2)
 
@@ -350,9 +341,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 				user.set_sdisabilities(user.sdisabilities | (BLIND))
 			else if (E.damage >= E.min_bruised_damage)
 				to_chat(user, span_danger("You go blind!"))
-				user.status_at_least(EFFECT_BLINDED, 5)
-				user.status_set(EFFECT_BLURRY, 5)
-				user.status_at_least(EFFECT_NEARSIGHTED, 2)
+				user.status_at_least(STAT_BLINDED, 5)
+				user.status_set(STAT_BLURRY, 5)
+				user.status_at_least(STAT_NEARSIGHTED, 2)
 	return
 
 /obj/item/weldingtool/is_hot()
@@ -381,8 +372,10 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 	max_fuel = 10
 	w_class = ITEMSIZE_SMALL
 	change_icons = 0
-	toolspeed = 2
 	eye_safety_modifier = 1 // Safer on eyes.
+
+CAPABILITIES(/obj/item/weldingtool/mini)
+	configure(item_tooling(speed = 2))
 
 /obj/item/weldingtool/mini/two
 	icon_state = "miniwelder2"
@@ -417,13 +410,15 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "welder"
-	toolspeed = 0.1
 	flame_color = "#6699FF" // Light bluish.
 	eye_safety_modifier = 2
 	change_icons = 0
 	always_process = TRUE
 
-/obj/item/weldingtool/alien/periodic_step()
+CAPABILITIES(/obj/item/weldingtool/alien)
+	configure(item_tooling(speed = 0.1))
+
+/obj/item/weldingtool/alien/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
@@ -435,16 +430,18 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	icon_state = "exwelder"
 	max_fuel = 40
 	w_class = ITEMSIZE_NORMAL
-	toolspeed = 0.5
 	change_icons = 0
 	flame_intensity = 3
 	always_process = TRUE
 	var/nextrefueltick = 0
 
-/obj/item/weldingtool/experimental/periodic_step()
+CAPABILITIES(/obj/item/weldingtool/experimental)
+	configure(item_tooling(speed = 0.5))
+
+/obj/item/weldingtool/experimental/weldingtool_step(datum/act/timer/A)
 	..()
 	if(get_fuel() < get_max_fuel() && COOLDOWN_FINISHED(src, nextrefueltick))
-		COOLDOWN_START(src, nextrefueltick, 10)
+		COOLDOWN_START(src, nextrefueltick, 1 SECONDS)
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 
 /obj/item/weldingtool/experimental/hybrid
@@ -453,10 +450,12 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	icon_state = "hybwelder"
 	max_fuel = 80 //more max fuel is better! Even if it doesn't actually use fuel.
 	eye_safety_modifier = -2	// Brighter than the sun. Literally, you can look at the sun with a welding mask of proper grade, this will burn through that.
-	toolspeed = 0.25
 	w_class = ITEMSIZE_NORMAL
 	flame_intensity = 5
-	reach = 2
+
+CAPABILITIES(/obj/item/weldingtool/experimental/hybrid)
+	configure(item_tooling(speed = 0.25))
+	configure(item_combat(reach = 2))
 
 /*
  * Backpack Welder.
@@ -469,31 +468,31 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	max_fuel = 10
 	w_class = ITEMSIZE_NO_CONTAINER
 	MATERIAL_NONE
-	toolspeed = 1.25
 	change_icons = 0
 	flame_intensity = 1
 	eye_safety_modifier = 1
 	always_process = FALSE
+
+/// A pack's nozzle exists only on its pack (keeps_if()).
+/obj/item/weldingtool/tubefed/proc/on_a_pack()
+	return istype(loc, /obj/item/weldpack)
 
 /obj/item/weldingtool/tubefed/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/weldpack))
 		var/obj/item/weldpack/holder = loc
 		rel_set(src, nameof(mounted_pack), holder)
-	else
-		return INITIALIZE_HINT_QDEL
 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 /// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
 /// automatic clear when the pack is destroyed re-evaluates burner_active.
-OM_FIELD_VIEW(/obj/item/weldingtool/tubefed, obj/item/weldpack, mounted_pack, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack", CHANGE_ITEM_LOC))
+/obj/item/weldingtool/tubefed/var/obj/item/weldpack/mounted_pack
 
 /// A nozzle works (and watches its hose) only while it is out of its pack.
-/obj/item/weldingtool/tubefed/burner_active()
+/obj/item/weldingtool/tubefed/burner_active(datum/act/A)
 	return mounted_pack && loc != mounted_pack
 
-/obj/item/weldingtool/tubefed/periodic_step()
+/obj/item/weldingtool/tubefed/weldingtool_step(datum/act/timer/A)
 	if(!ishuman(mounted_pack.loc))
 		mounted_pack.return_nozzle()
 	else
@@ -521,8 +520,10 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 	desc = "A bulky, cooler-burning welding tool that draws from a worn welding tank."
 	icon_state = "tubewelder"
 	max_fuel = 5
-	toolspeed = 1.75
 	eye_safety_modifier = 2
+
+CAPABILITIES(/obj/item/weldingtool/tubefed/survival)
+	configure(item_tooling(speed = 1.75))
 
 /*
  * Electric/Arc Welder
@@ -544,10 +545,6 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 
 /obj/item/weldingtool/electric/unloaded
 	cell_type = null
-
-/obj/item/weldingtool/electric/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/item/weldingtool/electric/get_cell()
 	return power_supply
@@ -590,50 +587,47 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 				power_supply.give(charge_cost)	//Give it back to the cell.
 		if(M)
 			eyecheck(M)
-		update_icon()
 		return 1
 	else
 		if(M)
 			to_chat(M, span_notice("You need more energy to complete this task."))
-		update_icon()
 		return 0
 
-EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(electric_interaction_item)), \
-)
+CAPABILITIES(/obj/item/weldingtool/electric)
+	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
+	op("insert_cell", item(/obj/item/cell), then(PROC_REF(electric_interaction_item)))
 
-/// Old attack_hand.
-/obj/item/weldingtool/electric/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: the hand on one held in the other hand takes its cell out (anything else is the pick up).
+/obj/item/weldingtool/electric/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(power_supply)
-			power_supply.update_icon()
 			user.put_in_hands(power_supply)
-			own_take(src, nameof(power_supply))
+			rel_take(src, nameof(power_supply))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
-			update_icon()
-			return TRUE
-		return FALSE
+			return OP_OK
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
-/// Old attackby.
-/obj/item/weldingtool/electric/proc/electric_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a device cell goes in (the click goes on).
+/obj/item/weldingtool/electric/proc/electric_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!power_supply)
-				if(!own_set(src, nameof(src.power_supply), W, user = user))
-					return FALSE
+				if(!move_into(src, nameof(src.power_supply), W, user))
+					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/weldingtool/electric/proc/get_external_power_supply()
 	if(isrobotmultibelt(src.loc)) //We are in a multibelt
@@ -666,13 +660,16 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	eye_safety_modifier = 2
 	always_process = TRUE
 
+CAPABILITIES(/obj/item/weldingtool/electric/mounted/exosuit)
+	ref_one(nameof(equip_mount), /obj/item/mecha_parts/mecha_equipment)
+
 /obj/item/weldingtool/electric/mounted/exosuit/Initialize(mapload)
 	. = ..()
 
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 		rel_set(src, nameof(equip_mount), loc)
 
-/obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
+/obj/item/weldingtool/electric/mounted/exosuit/weldingtool_step(datum/act/timer/A)
 	..()
 
 	if(equip_mount() && equip_mount().chassis)
@@ -687,10 +684,10 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	desc = "you shouldn't be reading this. Tell a dev!"
 	welding = TRUE
 
-/obj/item/weldingtool/dummy/periodic_step()
+/obj/item/weldingtool/dummy/weldingtool_step(datum/act/timer/A)
 	return
 
-/obj/item/weldingtool/dummy/burner_active()
+/obj/item/weldingtool/dummy/burner_active(datum/act/A)
 	return FALSE
 
 /obj/item/weldingtool/dummy/get_fuel()
@@ -706,9 +703,13 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 /obj/item/weldingtool/electric/ownership()
 	. = ..()
-	. += owns(nameof(power_supply), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
+	. += owns(nameof(power_supply), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
 	return equip_mount
+
+CAPABILITIES(/obj/item/weldingtool/tubefed)
+	configure(item_tooling(speed = 1.25))
+	ref_one(nameof(mounted_pack))
+	keeps_if(PROC_REF(on_a_pack))

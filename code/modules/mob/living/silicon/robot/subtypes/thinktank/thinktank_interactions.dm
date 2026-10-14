@@ -1,12 +1,29 @@
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
-	INTERACT_ITEM(null, PROC_REF(platform_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(platform_interaction_hand)), \
-	INTERACT_DRAG("Load into cargo", PROC_REF(platform_interaction_drag)), \
-	INTERACT_SILICON("Unload cargo", PROC_REF(platform_silicon_unload)), \
-	INTERACT_OBSERVER("Take control", PROC_REF(platform_ghost_take_control)))
+CAPABILITIES(/mob/living/silicon/robot/platform)
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
+	setup(PROC_REF(go_inactive))
+	platform_cargo()
+	ref_one(nameof(recharging))
+	ref_many(nameof(stored_atoms))
+	op("platform_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_item)))
+	op("platform_hand", hand(), ungated(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_hand)))
+	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
+	// a drop that is refused falls through to the cyborg's drag block
+	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), when(PROC_REF(cargo_loadable)), begins(PROC_REF(cargo_loading_text)), wait(3 SECONDS), then(PROC_REF(platform_loaded)))
+	// an empty hand on a closed platform that has no cell in its port takes the last stored thing out
+	op("platform_unload", hand(), label("Unload cargo"), priority(OP_PRIORITY_ATTACK), when(PROC_REF(cargo_unloadable)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
+	op("platform_silicon_unload", remote(), label("Unload cargo"), when(PROC_REF(cargo_unloadable_by_silicon)), begins(PROC_REF(cargo_unloading_text)), wait(3 SECONDS), then(PROC_REF(platform_unloaded)))
+
+/// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
+/// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).
+/mob/living/silicon/robot/platform/proc/ghost_control_possible(datum/act/op/A)
+	return read_once(!(client || key || stat == DEAD || !SSticker || !ticker_mode())) ? null : /datum/msg/req_failed // whether anyone is in it is asked when the click is made
+
+/mob/living/silicon/robot/platform/proc/ghost_control_question(datum/act/A)
+	return "Do you wish to take control of \the [src]?"
 
 /// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
-/mob/living/silicon/robot/platform/proc/platform_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/robot/platform/proc/platform_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		if(recharging)
 			var/obj/item/recharging_atom = recharging
@@ -15,15 +32,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
 				act_message(user, src, others = span_infoplain(span_bold("%U%") + " pops %I% out of %T%'s recharging port."), item = recharging_atom)
-			return TRUE
+			return OP_OK
 
-		if(try_remove_cargo(user))
-			return TRUE
-
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: a cell goes in the recharging port; a floor painter repaints; else the cyborg handling.
-/mob/living/silicon/robot/platform/proc/platform_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/mob/living/silicon/robot/platform/proc/platform_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell) && !opened)
 		if(recharging)
 			to_chat(user, span_warning("\The [src] already has \a [recharging] inserted into its recharging port."))
@@ -32,46 +48,27 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 			rel_set(src, nameof(recharging), W)
 			recharge_complete = FALSE
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%'s recharging port."), item = W)
-		return TRUE
+		return OP_OK
 
 	// Old code returned FALSE here so the painter's afterattack called try_paint(); a used-up input
 	// skips afterattack now, so paint directly.
 	if(istype(W, /obj/item/floor_painter))
 		try_paint(W, user)
-		return TRUE
+		return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
-/// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default.
-/mob/living/silicon/robot/platform/proc/platform_ghost_take_control(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(client || key || stat == DEAD || !SSticker || !SSticker.mode)
-		return FALSE
-
-	. = TRUE
-	om_ask(user, /datum/om/prompt/confirm/platform_control, PROC_REF(ghost_control_answered))
-
-/// A ghost takes a platform. Re-checked on the answer: still a ghost, and the platform is
-/// still empty, alive, and the round is running.
-/datum/om/prompt/confirm/platform_control
-	title = "Platform Control"
-	no_first = TRUE
-
-/datum/om/prompt/confirm/platform_control/prepare()
-	message = "Do you wish to take control of \the [subject]?"
-	return TRUE
-
-/datum/om/prompt/confirm/platform_control/valid()
-	var/mob/living/silicon/robot/platform/P = subject
-	if(!isobserver(answerer) || P.client || P.key || P.stat == DEAD || !SSticker || !SSticker.mode)
-		return "unavailable"
-	return null
-
-/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/om/prompt/confirm/platform_control/ask)
-	var/mob/observer/dead/user = ask.answerer
+/// A ghost takes a platform (the answer was yes).
+/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/act/op/A)
+	if(!A.step_value("take"))
+		return OP_OK
+	var/mob/observer/dead/user = A.actor
+	if(!istype(user))
+		return OP_OK
 
 	if(jobban_isbanned(user, "Robot"))
 		to_chat(user, span_warning("You are banned from synthetic roles and cannot take control of \the [src]."))
-		return
+		return OP_OK
 
 	// Boilerplate from drone fabs, unsure if there's a shared proc to use instead.
 	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
@@ -85,7 +82,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	if (deathtime < platform_respawn_time)
 		to_chat(user, "You have been dead for[pluralcheck] [deathtimeseconds] seconds.")
 		to_chat(user, "You must wait [platform_respawn_time/600] minute\s to take control of \the [src]!")
-		return
+		return OP_OK
 	// End boilerplate.
 
 	if(user.mind)
@@ -93,13 +90,14 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	if(key != user.key)
 		key = user.key
 	SetName("[modtype] [braintype]-[rand(100,999)]")
-	om_after(src, 1, PROC_REF(welcome_client))
-	qdel(user)
+	after(src, 0.1 SECONDS, PROC_REF(welcome_client))
+	spent(user)
+	return OP_OK
 
 /mob/living/silicon/robot/platform/proc/welcome_client()
 	if(client)
 		to_chat(src, span_notice(span_bold("You are a think-tank") + ", a kind of flexible and adaptive drone intelligence installed into an armoured platform. Your programming compels you to be friendly and helpful wherever possible."))
-	status_set(EFFECT_SLEEPING, 0)
-	status_set(EFFECT_WEAKENED, 0)
-	status_set(EFFECT_PARALYZED, 0)
-	resting = FALSE
+	status_set(STAT_SLEEPING, 0)
+	status_set(STAT_WEAKENED, 0)
+	status_set(STAT_PARALYZED, 0)
+	set_resting(FALSE)

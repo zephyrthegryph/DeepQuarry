@@ -15,12 +15,15 @@
 	offline_slowdown = 5
 	vision_restriction = 0  //This is dumb as hell and should be 0 if we want the suit to be even vaguely useful.
 	offline_vision_restriction = 2 //This actually serves as a good weakness for them, making them vulnerable to Ion weapons.
-	siemens_coefficient = 0.75
 	chest_type = /obj/item/clothing/suit/space/rig/breacher
 	helm_type = /obj/item/clothing/head/helmet/space/rig/breacher
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
 
-TYPE_TABLE(/obj/item/rig/breacher, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
+CAPABILITIES(/obj/item/rig/breacher)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.75))
+
+
 
 /obj/item/rig/breacher/fancy
 	name = "breacher chassis control module"
@@ -29,18 +32,24 @@ TYPE_TABLE(/obj/item/rig/breacher, suit_storage_spec, list(HOLD_ONLY(list(POCKET
 	icon_state = "breacher_rig"
 	armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60" //Still a tank just not indestructable
 	vision_restriction = 0
-	siemens_coefficient = 0.2
 	slowdown = 6
 	offline_slowdown = 10
 
-/obj/item/clothing/head/helmet/space/rig/breacher
-	force = 5
+CAPABILITIES(/obj/item/rig/breacher/fancy)
+	configure(item_protection(siemens = 0.2))
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
+/obj/item/clothing/head/helmet/space/rig/breacher
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
+	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_combat(force = 5))
+
+
 
 /obj/item/clothing/suit/space/rig/breacher
 
-TYPE_TABLE(/obj/item/clothing/suit/space/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
+
 
 /obj/item/clothing/shoes/magboots/rig/breacher
 
@@ -50,7 +59,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/breacher, fit_spec, list(REQ_FITS_B
  *	VOX
  */
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
+
 
 /obj/item/rig/vox	//Just to get the flags set up
 	name = "alien control module"
@@ -59,8 +68,6 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	icon_state = "vox_rig"
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.2
 	offline_slowdown = 2.5
 
 	air_type = /obj/item/tank/vox
@@ -70,12 +77,21 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	chest_type = /obj/item/clothing/suit/space/rig/vox
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
-TYPE_TABLE(/obj/item/rig/vox, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
+CAPABILITIES(/obj/item/rig/vox)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL))
+	configure(item_protection(siemens = 0.2))
+
+
 
 /obj/item/clothing/head/helmet/space/rig/vox
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE))
+
+
 
 /obj/item/clothing/shoes/magboots/rig/vox
 	name = "talons"
@@ -83,20 +99,23 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/vox, fit_spec, list(REQ_FITS
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi'
 		)
 
-TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+
 
 /obj/item/clothing/suit/space/rig/vox
 
-TYPE_TABLE(/obj/item/clothing/suit/space/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+
 
 /obj/item/clothing/gloves/gauntlets/rig/vox
 	name = DEVELOPER_WARNING_NAME
-	siemens_coefficient = 0
 	sprite_sheets = list(
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
 
-TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0))
+
+
 
 /obj/item/rig/vox/carapace
 	name = "dense alien control module"
@@ -172,8 +191,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 	desc = "A lightweight, alien rig dedicated for construction and engineering tasks. Not reccomended for hostile engagement."
 	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
-	siemens_coefficient = 0
 	offline_slowdown = 2.5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -193,14 +210,18 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 
 	air_type = /obj/item/tank/nitrogen
 
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/vox/ch
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox/ch
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
-TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
+CAPABILITIES(/obj/item/rig/vox/engineering)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL))
+	configure(item_protection(siemens = 0, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+
 
 /obj/item/rig/vox/security
 	name = "sturdy alien control module"
@@ -209,8 +230,6 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 	desc = "A medium weight, alien control module. Built sturdy for security engagements."
 	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.5
 	offline_slowdown = 5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -223,11 +242,27 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 
 	air_type = /obj/item/tank/vox
 
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/vox/ch
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox/ch
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
-TYPE_TABLE(/obj/item/rig/vox/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
+CAPABILITIES(/obj/item/rig/vox/security)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL))
+	configure(item_protection(siemens = 0.5, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/breacher)
+	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/breacher)
+	acceptance("fit", fits(list(SPECIES_UNATHI)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)

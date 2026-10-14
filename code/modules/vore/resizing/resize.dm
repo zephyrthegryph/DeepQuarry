@@ -6,10 +6,10 @@
 	if(istype(target) && src.lying && target.loc && target?.buckled_to() != src)
 		// src.lying being true means that in theory this code shouldn't run at the same time as the existing code for this in Bump. Probably.
 		// And optionally, this could be gated behind another preference, to prevent stunlock being abused.
-		if((mob_always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
+		if((movement_of(src).always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
 			return
 		if(!(stance == I_HELP || target.restrained()))
-			if(src.step_mechanics_pref && target.step_mechanics_pref)
+			if(src.vore_prefs.step_mechanics_pref && target.vore_prefs.step_mechanics_pref)
 				target.handle_micro_bump_other(src, 0, stance)
 			else
 				target.handle_micro_bump_other(src, 1, stance)
@@ -18,8 +18,6 @@
 // Adding needed defines to /mob/living
 // Note: Polaris had this on /mob/living/carbon/human We need it higher up for animals and stuff.
 /mob
-	var/step_mechanics_pref = TRUE		// Allow participation in macro-micro step mechanics
-	var/pickup_pref = TRUE				// Allow participation in macro-micro pickup mechanics
 	var/center_offset = 0.5				// Center offset for uneven scaling symmetry.
 	var/offset_override = TRUE			// Pref toggle for center offset.
 
@@ -44,15 +42,12 @@
 			return N
 
 /**
- * Scale up the size of a mob's icon by the size_multiplier.
- * NOTE: mob/living/carbon/human/update_icons() has a more complicated system and
- * 	is already applying this transform.   BUT, it does not call ..()
- *	as long as that is true, we should be fine.  If that changes we need to
- *	re-evaluate.
+ * Scale up the size of a mob's icon by the size_multiplier. A human scales through update_transform() instead.
  */
 /mob/living/update_icons()
 	. = ..()
-	ASSERT(!ishuman(src))
+	if(ishuman(src))
+		return // a human's transform is update_transform(), its look is its draw
 	var/cent_offset = center_offset
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0
@@ -147,18 +142,18 @@
 				new_size = clamp(new_size, RESIZE_MINIMUM, RESIZE_MAXIMUM) //If the sprite is below 32, we clamp it to only go to the resize max.
 		else
 			new_size = clamp(new_size, RESIZE_MINIMUM, RESIZE_MAXIMUM)
-		om_detach(src, /datum/om/behaviour/resize_guard)
+		revoke(src, /datum/capability/resize_guard, src)
 	else if(has_large_resize_bounds())
 		if(is_extreme_size(new_size))
-			om_attach(src, /datum/om/behaviour/resize_guard)
+			grant(src, /datum/capability/resize_guard, src)
 		else
-			om_detach(src, /datum/om/behaviour/resize_guard)
+			revoke(src, /datum/capability/resize_guard, src)
 
 	if(size_multiplier == new_size)
 		return 1
 
 	var/change = new_size - size_multiplier
-	size_multiplier = new_size //Change size_multiplier so that other items can interact with them
+	set_size_multiplier(new_size) //Change size_multiplier so that other items can interact with them
 
 	if(animate)
 		var/duration = (abs(change)+0.25) SECONDS
@@ -190,15 +185,15 @@
 		update_transform() //Lame way
 
 /mob/living/carbon/human/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
-	if(!resizable && !ignore_prefs)
+	if(!vore_prefs.resizable && !ignore_prefs)
 		return 1
 	var/previous_scale = size_multiplier
 	. = ..()
 	var/size_difference = previous_scale - size_multiplier
 	if((allow_stripping == TRUE) && ((size_difference >= 0.3) || (size_difference <= -0.3)))
-		if(size_strip_preference == SIZESTRIP_ITEMS)
+		if(vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 			drop_all_clothing(FALSE)
-		else if(size_strip_preference == SIZESTRIP_ALL)
+		else if(vore_prefs.size_strip_preference == SIZESTRIP_ALL)
 			drop_all_clothing(TRUE)
 	if(LAZYLEN(hud_list) && has_huds)
 		var/new_y_offset = vis_height * (size_multiplier - 1)
@@ -209,7 +204,7 @@
 
 // Optimize mannequins - never a point to animating or doing HUDs on these.
 /mob/living/carbon/human/dummy/mannequin/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = TRUE, allow_stripping = FALSE)
-	size_multiplier = new_size
+	set_size_multiplier(new_size)
 
 /**
  * Verb proc for a command that lets players change their size OOCly.
@@ -220,11 +215,23 @@
 	set name = "Adjust Mass"
 	set category = VERB_CAT_ABILITIES_GENERAL //Seeing as prometheans have an IC reason to be changing mass.
 
-	var/nagmessage = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
-	var/default = size_multiplier * 100
-	var/new_size = rerun_ask(src, "a1", PROC_REF(set_size), args, /datum/om/prompt/number, message = nagmessage, title = "Pick a Size", default = default, max = 600, min = 1)
-	if(isnull(new_size))
+	open_request(src, /datum/prompt/number/personal_mass, PROC_REF(personal_mass_answered), answerer = src, default = size_multiplier * 100)
+
+/datum/prompt/number/personal_mass
+	question = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
+	title = "Pick a Size"
+	timeout = 0
+	min_value = 1
+	max_value = 600
+
+/mob/living/proc/personal_mass_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	. = personal_mass_apply(A.answer.value)
+	SStgui.update_uis(src)
+	return .
+
+/mob/living/proc/personal_mass_apply(new_size)
 	if(size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 
@@ -235,7 +242,7 @@
 /mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE, stance = I_HELP) //second one is for the Grabber, only exists for animals to self-grab; `stance` is M's (the scooper's) stance
 	if(src == M)
 		return FALSE
-	if(!(pickup_pref && M.pickup_pref && M.pickup_active))
+	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && M.pickup_active))
 		return FALSE
 	if(stance != I_HELP)
 		return FALSE
@@ -289,7 +296,7 @@
 			src_message = "You carefully step over [tmob]."
 			tmob_message = "[src] steps over you carefully!"
 			var/mob/living/carbon/human/H = src
-			if(H.flying)
+			if(stat_value(H, STAT_FLYING))
 				return TRUE //Silently pass without a message.
 			if(istaurtail(H.tail_style))
 				var/datum/sprite_accessory/tail/taur/tail = H.tail_style
@@ -322,10 +329,10 @@
 /mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0, stance = I_HURT) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
-	if(flying)
+	if(stat_value(src, STAT_FLYING))
 		return
 	//If the prey is flying, don't smush them.
-	if(tmob.flying)
+	if(stat_value(tmob, STAT_FLYING))
 		return
 	//We can't be stepping on anyone
 	if(!canmove || src?.buckled_to())
@@ -379,8 +386,8 @@
 			to_chat(pred, span_danger("You pass over [tmob.name]."))
 			to_chat(prey, span_danger("[src.name] passes over you."))
 			return FALSE
-		tmob.resting = 1
-		tmob.status_at_least(EFFECT_WEAKENED, 3) // do both regardless of stance, dummy
+		tmob.set_resting(1)
+		tmob.status_at_least(STAT_WEAKENED, 3) // do both regardless of stance, dummy
 		if(nofetish)
 			to_chat(pred, span_danger("You casually knock [tmob.name] over."))
 			to_chat(prey, span_danger("[src.name] casually knocks you over."))
@@ -404,7 +411,7 @@
 	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
 		if(stance == I_GRAB)
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
-			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.pickup_pref && prey.pickup_pref))
+			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.vore_prefs.pickup_pref && prey.vore_prefs.pickup_pref))
 				message_pred = "You step down onto [prey], squishing them and forcing them down to the ground!"
 				message_prey = "[pred] steps down and squishes you with their foot, forcing you down to the ground!"
 				if(tail)
@@ -449,7 +456,7 @@
 						message_pred = STEP_TEXT_OWNER(tail.msg_owner_disarm_walk)
 						message_prey = STEP_TEXT_PREY(tail.msg_prey_disarm_walk)
 					add_attack_logs(pred, prey, "Pinned underfoot (walk, about [damage] halloss)")
-					tmob.status_at_least(EFFECT_WEAKENED, 2) //Removed halloss because it was being abused
+					tmob.status_at_least(STAT_WEAKENED, 2) //Removed halloss because it was being abused
 				if(I_HURT)
 					message_pred = "You methodically place your foot down upon [prey]'s body, slowly applying pressure, crushing them against the floor below!"
 					message_prey = "[pred] methodically places their foot upon your body, slowly applying pressure, crushing you against the floor below!"

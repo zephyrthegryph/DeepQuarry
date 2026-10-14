@@ -39,7 +39,7 @@
 /// Small-arms propellant cooks off here.
 #define AMMO_COOK_OFF_TEMPERATURE (T0C + 180)
 
-// ---- Burning (code/datums/entity_state/burning.dm) ----
+// ---- Burning (code/datums/behaviours/burning.dm) ----
 /// Heat a burning object releases, W. With BURN_ENERGY_PER_INTEGRITY this is
 /// the old flat 10 integrity per second.
 #define BURN_POWER 10000
@@ -86,3 +86,31 @@
 #define FIRE_REACTION_IGNITE 2
 /// Runs fire_trigger_proc instead of burning (volatile slimes).
 #define FIRE_REACTION_TRIGGER 3
+
+// ---- The heat network (code/domains/heat/) ----
+/// Outer space as a heat reservoir (heat_move(), the heat entries): infinite, at TCMB.
+#define HEAT_SPACE "heat:space"
+// Endpoints of a heat entry, besides a var name of the declaring side (nameof(v): a gas mixture or an atom):
+/// The activation's holder: the occupant of a while_slotted(..., on = ON_CONTENTS) entry, the machine itself at type level.
+#define HEAT_HOLDER "heat:holder"
+/// The side that declares the entry: the container of a while_slotted(..., on = ON_CONTENTS) entry, the machine itself at type level.
+#define HEAT_DECLARER "heat:declarer"
+/// The air around the declaring side (its turf's).
+#define HEAT_AIR "heat:air"
+/// The solid of the declaring side's turf (the hull a machine rejects heat into).
+#define HEAT_HULL "heat:hull"
+/// The station's heat-rejection loop as a reservoir: infinite, at 20 °C. What a heat pump with nothing better to reject into (a space
+/// heater, a thermoregulator) pumps against, booked in the heat ledger as leaving the simulation.
+#define HEAT_AMBIENT "heat:ambient"
+/// Port `i` of the declaring pipe machine: the gas of the pipeline the port is in, followed through merges and splits.
+#define HEAT_PORT(i) "heat:port:[i]"
+/// An infinite reservoir at `kelvin` (the sky a radiator sees).
+#define HEAT_SKY(kelvin) "heat:sky:[kelvin]"
+
+/// A heat store's handle as a reservoir for heat_move(), heat_equalize(), heat_conduct() (code/domains/heat/heat_store.dm).
+#define HEAT_STORE(h) list(HEAT_TARGET_BODY, h)
+
+/// watched() (code/modules/heat/watched.dm): the Rust-owned sources reactive code reads as a band, and the key a band change publishes on the atom.
+#define WATCH_HEAT "heat"
+#define WATCH_LUM "lum"
+#define WATCHED_KEY "watched"

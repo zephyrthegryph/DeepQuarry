@@ -7,7 +7,6 @@
 		"flags" = /datum/state_codec/atom_flags,
 		"reagents" = /datum/state_codec/reagents,
 		"forensic_data" = /datum/state_codec/owned,
-		"wires" = /datum/state_codec/owned,
 		"artifact_master" = /datum/state_codec/pinned,
 	)
 
@@ -16,13 +15,6 @@
 	. = ..()
 	if(atom_integrity == max_integrity)
 		. += "atom_integrity"
-
-/// /datum/wires excludes its own holder ref from state (C5); restore it once
-/// the atom's own vars, including a decoded wires datum, are all applied.
-/atom/state_post_apply(list/blob, flags)
-	..()
-	if(wires)
-		wires.holder = src
 
 // constraint_overrides holds compiled /datum/predicate instances (rules.md
 // §3), each a cached, shared-by-key singleton rather than owned by this item
@@ -48,9 +40,6 @@
 /obj/item/clothing/head/fishing/state_nondeterministic_list_vars()
 	return ..() + list("item_state_slots")
 
-/obj/item/trash/material/state_nondeterministic_list_vars()
-	return ..() + list("material_mix")
-
 /obj/machinery/state_codecs()
 	return ..() + list(
 		"circuit" = /datum/state_codec/child,
@@ -68,7 +57,7 @@
 		return
 	if(alt_appearances_owned || alt_appearances_viewing)
 		return "has alternate appearances, which cannot be serialized"
-	if(observer_event_listeners)
+	if(sparse_has(src, observer_listeners))
 		return "has observer-event listeners, which cannot be serialized"
 
 /atom/movable/state_refusal()
@@ -85,7 +74,6 @@
 	return ..() + list(
 		"mind_host" = /datum/state_codec/pinned,
 		"economic_adoption" = /datum/state_codec/pinned,
-		"material_response" = /datum/state_codec/pinned,
 		"carried_afflictions" = /datum/state_codec/pinned,
 	)
 

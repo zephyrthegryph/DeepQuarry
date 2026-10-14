@@ -71,7 +71,7 @@
  *
  * Returns [QDEL_HINT_QUEUE] (or a reference-finding hint under REFERENCE_TRACKING).
  */
-// ALLOW(lifecycle): the base of the core chain: tag, tgui and reference tracking.
+// The base of the core chain: tag, tgui and reference tracking.
 /datum/proc/Destroy(force = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)

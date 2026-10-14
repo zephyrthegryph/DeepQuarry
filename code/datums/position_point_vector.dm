@@ -198,9 +198,9 @@
 /datum/point/vector/processed/proc/start()
 	EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	EXPIRY_STAMP(src, last_move, CLOCK_WORLD)
-	om_task_periodic(src, PERIODIC_PROJECTILES)
+	SSpoint_steps.kernel_join(src)
 
-/datum/point/vector/processed/periodic_step()
+/datum/point/vector/processed/proc/point_step()
 	if(paused)
 		last_move += world.time - last_process
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)

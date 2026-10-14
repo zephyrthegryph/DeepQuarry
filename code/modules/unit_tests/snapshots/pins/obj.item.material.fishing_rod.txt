@@ -1,0 +1,35 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.material human|/obj/item/tool/screwdriver
+-menu: Use screwdriver
+-click: Click: Plate item
++3 menu: Use
++4 click: Click: Repair
+@obj.item.material human|/obj/item/tool/crowbar
++3 menu: Use
+@obj.item.material human|/obj/item/tool/wrench
++3 menu: Use
+@obj.item.material human|/obj/item/tool/wirecutters
+-click: Click: Repair
++3 menu: Use
++4 menu: Use wirecutter
++5 click: Click: Use wirecutter
+@obj.item.material human|/obj/item/multitool
++3 menu: Use
+@obj.item.material human|/obj/item/weldingtool
++3 menu: Use
+@obj.item.material human|/obj/item/stack/cable_coil
++3 menu: Use
+@obj.item.material human|/obj/item/stack/material/steel
++3 menu: Use
+@obj.item.material human|/obj/item/card/id
++3 menu: Use
+@obj.item.material human|/obj/item/kit
++4 menu: Use
+@obj.item.material human|/obj/item/storage
++4 menu: Use
+@obj.item.material human|/obj/item
++3 menu: Use
+keys: collect_item, drag_buckle, fishing_rod_item, fishing_rod_string, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable, use_wirecutter

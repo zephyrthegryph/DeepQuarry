@@ -44,11 +44,10 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		M.flash_eyes()
 
-	if(GLOB.emergency_shuttle_service.can_recall())
+	if(SSemergency_shuttle.can_recall())
 		GLOB.priority_announcement.Announce("The emergency shuttle has returned due to bluespace distortion.")
-		GLOB.emergency_shuttle_service.recall()
+		SSemergency_shuttle.recall()
 
-	AreaSet()
 	MiscSet()
 	APCSet()
 	OverlayAndAmbientSet()
@@ -61,30 +60,21 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	if(GLOB.endgame_exits?.len)
 		new /obj/singularity/narsie/large/exit(pick(GLOB.endgame_exits))
 
-	om_after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
-
-/datum/universal_state/supermatter_cascade/proc/AreaSet()
-	for(var/area/A in world)
-		if(!istype(A,/area) || istype(A, /area/space) || istype(A,/area/beach))
-			continue
-
-		A.update_icon()
+	after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
 
 /datum/universal_state/supermatter_cascade/OverlayAndAmbientSet()
 	return
 /datum/universal_state/supermatter_cascade/proc/MiscSet()
 	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if (!alm.has_stat(BROKEN))
+		if (!alm.broken_now())
 			alm.ex_act(2)
 
 /datum/universal_state/supermatter_cascade/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if (!APC.has_stat(BROKEN) && !APC.is_critical)
+		if (!APC.broken_now() && !APC.is_critical)
 			APC.set_chargemode(0)
-			if(APC.cell)
-				APC.cell.charge = 0
-			APC.wake_for_power_dependency()
-			APC.set_emagged(1)
+			APC.set_cell_charge(0)
+			key_set(APC, EMAG_EMAGGED, TRUE)
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()
 	for(var/mob/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -94,10 +84,10 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		if(!isliving(M.current))
 			continue
 		if(M.current.stat!=2)
-			M.current.status_at_least(EFFECT_WEAKENED, 10)
+			M.current.status_at_least(STAT_WEAKENED, 10)
 			M.current.flash_eyes()
 
-		GLOB.antag_service.clear_antag_roles(M)
+		SSantag.clear_antag_roles(M)
 
 /// The cascade announcement, then five minutes to get through the rift.
 /datum/universal_state/supermatter_cascade/proc/announce_cascade()
@@ -115,12 +105,12 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 
 	for(var/obj/machinery/computer/shuttle_control/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(C, /obj/machinery/computer/shuttle_control/research) || istype(C, /obj/machinery/computer/shuttle_control/mining))
-			C.req_access = list()
-			C.req_one_access = list()
-	om_after(src, 5 MINUTES, PROC_REF(universe_collapses))
+			C.set_req_access(list())
+			C.set_req_one_access(list())
+	after(src, 5 MINUTES, PROC_REF(universe_collapses))
 
 /datum/universal_state/supermatter_cascade/proc/universe_collapses()
-	play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic. No longer sleeps: the blast is an om_after() timer.
+	play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic. No longer sleeps: the blast is an after() timer.
 
 	// FIXME: Probably a better way
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))

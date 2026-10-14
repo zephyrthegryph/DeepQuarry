@@ -6,13 +6,12 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 
-/obj/effect/statclick/Initialize(mapload, text, target)
-	. = ..()
-	name = text
-	src.target = target
+CAPABILITIES(/obj/effect/statclick)
+	param(nameof(name), pos = 1)
+	param(nameof(target), pos = 2)
 
 /obj/effect/statclick/proc/cleanup()
-	qdel(src)
+	spent(src)
 
 /obj/effect/statclick/proc/update(text)
 	name = text
@@ -21,12 +20,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 /obj/effect/statclick/debug
 	var/class
 
-/obj/effect/statclick/debug/Click()
-	if(!check_rights_for(usr.client, R_HOLDER) || !target)
+CAPABILITIES(/obj/effect/statclick/debug)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). An admin opens the target's variables.
+/obj/effect/statclick/debug/proc/click_input(datum/act/input/A)
+	. = TRUE
+	var/mob/user = A.actor
+	if(!check_rights_for(user.client, R_HOLDER) || !target)
 		return
 	if(!class)
-		if(istype(target, /datum/controller/subsystem))
-			class = "subsystem"
+		if(istype(target, /datum/system))
+			class = "system"
 		else if(istype(target, /datum/controller))
 			class = "controller"
 		else if(isdatum(target))
@@ -34,45 +39,33 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 		else
 			class = "unknown"
 
-	usr.client.debug_variables(target)
-	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
+	user.client.debug_variables(target)
+	message_admins("Admin [key_name_admin(user)] is debugging the [target] [class].")
 
-ADMIN_VERB(restart_controller, R_DEBUG, "Restart Controller", "Restart one of the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME, controller in list("Kernel", "Failsafe"))
+ADMIN_VERB(restart_controller, R_DEBUG, "Restart Controller", "Restart one of the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME, controller in list("Kernel", "Watchdog"))
 	switch(controller)
 		if("Kernel")
 			Recreate_kernel()
 			feedback_add_details("admin_verb","RKernel")
-		if("Failsafe")
-			new /datum/controller/failsafe()
-			feedback_add_details("admin_verb","RFailsafe")
+		if("Watchdog")
+			Kernel.start_watchdog()
+			feedback_add_details("admin_verb","RWatchdog")
 
 	message_admins("Admin [key_name_admin(user)] has restarted the [controller] controller.")
 
-ADMIN_VERB(debug_antagonist_template, R_DEBUG, "Debug Antagonist", "Debug an antagonist template", ADMIN_CATEGORY_DEBUG_GAME, antag_type in GLOB.antag_service.all_antag_types)
-	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
+ADMIN_VERB(debug_antagonist_template, R_DEBUG, "Debug Antagonist", "Debug an antagonist template", ADMIN_CATEGORY_DEBUG_GAME, antag_type in antag_all_antag_types())
+	var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 	if(antag)
 		user.debug_variables(antag)
 		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
 
 ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various periodic loop controllers for the game (be careful!)", ADMIN_CATEGORY_DEBUG_GAME)
 	var/list/options = list()
-	options["Kernel"] = kernel()
-	options["MC"] = Master
-	options["Failsafe"] = Failsafe
+	options["Kernel"] = Kernel
+	options["Watchdog"] = Kernel.watchdog
 	options["Configuration"] = config
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		if(!istype(S))		//Eh, we're a debug verb, let's have typechecking.
-			continue
-		var/strtype = "SS[get_end_section_of_type(S.type)]"
-		if(options[strtype])
-			var/offset = 2
-			while(istype(options["[strtype]_[offset] - DUPE ERROR"], /datum/controller/subsystem))
-				offset++
-			options["[strtype]_[offset] - DUPE ERROR"] = S		//Something is very, very wrong.
-		else
-			options[strtype] = S
 
-	// The gameplay systems keep their SS<X> names.
+	// The systems keep their SS<X> names.
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		var/strtype = "SS[get_end_section_of_type(S.type)]"
 		if(!options[strtype])
@@ -81,7 +74,13 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	//Goon PS stuff, and other yet-to-be-subsystem things.
 	options["LEGACY: cameranet"] = GLOB.cameranet
 
-	var/pick = verb_ask(user, "pick", args, /datum/om/prompt/choice, message = "Choose a controller to debug/view variables of.", title = "VV controller:", choices = options)
+	var/pick
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_debug_controller) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(debug_controller_answered))
+		pick = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_debug_controller, PROC_REF(debug_controller_answered), answerer = user.mob, question = "Choose a controller to debug/view variables of.", title = "VV controller:", choices = options)
+		return
 	if(!pick)
 		return
 	var/datum/D = options[pick]
@@ -90,3 +89,29 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	feedback_add_details("admin_verb", "DebugController")
 	message_admins("Admin [key_name_admin(user)] is debugging the [pick] controller.")
 	user.debug_variables(D)
+
+
+/datum/prompt/choice/admin_debug_controller
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_debug_controller/normalize(given)
+	return given
+
+/datum/prompt/choice/admin_debug_controller/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_debug_controller/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/debug_controller/proc/debug_controller_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

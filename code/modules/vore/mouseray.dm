@@ -9,7 +9,6 @@
 	charge_cost = 240
 	projectile_type = /obj/item/projectile/beam/mouselaser
 	battery_lock = 1
-	force = 0
 	var/tf_type = /mob/living/simple_mob/animal/passive/mouse	//This type is what kind of mob it will try to turn people into!
 	var/cooldown = 0											//automatically set when used
 	var/cooldown_time = 15 SECONDS								//the amount of time between shots
@@ -21,22 +20,30 @@
 		"dust jumper" = /mob/living/simple_mob/vore/alienanimals/dustjumper
 		)
 
+CAPABILITIES(/obj/item/gun/energy/mouseray)
+	configure(item_combat(force = 0))
+
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
-/obj/item/gun/energy/mouseray/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/mouseray/gun_operate(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(tf_allow_select)
-		pick_type(user)
+		pick_type(A.actor)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
-	var/choice = rerun_ask(user, "a1", PROC_REF(pick_type), args, /datum/om/prompt/choice, message = "Select a type to turn things into.", title = "[src.name]", choices = tf_possible_types)
-	if(isnull(choice))
+	var/list/offered_types = tf_possible_types
+	open_request(src, /datum/prompt/choice/mouseray_type, PROC_REF(type_picked), answerer = user, title = name, choices = offered_types?.Copy())
+
+/obj/item/gun/energy/mouseray/proc/type_picked(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(!choice)
-		return
-	tf_type = tf_possible_types[choice]
-	to_chat(user, span_notice("You selected [choice]."))
+	var/mob/user = context.request.answerer
+	var/choice = context.answer.value
+	if(choice)
+		tf_type = tf_possible_types[choice]
+		to_chat(user, span_notice("You selected [choice]."))
+	SStgui.update_uis(src)
 
 /obj/item/gun/energy/mouseray/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
 	if(!COOLDOWN_FINISHED(src, cooldown))
@@ -58,20 +65,6 @@
 	if(tf_admin_pref_override)
 		G.tf_admin_pref_override = tf_admin_pref_override
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/mouseray/appearance_overlays()
-	. = list()
-	if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
-
-		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
-		if(power_supply.charge < charge_cost)
-			ratio = 0
-		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		icon_state = "[initial(icon_state)][ratio]"
-
 /obj/item/projectile/beam/mouselaser
 	name = "metamorphosis beam"
 	icon_state = "xray"
@@ -92,7 +85,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 	if(istype(M,/mob/living/carbon) && !M.mind)
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	M.drop_both_hands()
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
@@ -145,11 +138,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 			for(var/mob/living/M in O.possessed_voice)
 				if(M.tf_mob_holder) //Is this item possessed by IC methods?
 					if(istype(M.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
-						qdel(O)
+						replaced_by(O)
 						M.revert_mob_tf() //Voices can't eat, so this is the least intensive way to revert them.
 					else
 						M.forceMove(get_turf(O)) //Non-clothing items require a bit extra work since they don't drop contents when qdeleted.
-						qdel(O)
+						replaced_by(O)
 						M.revert_mob_tf()
 				else
 					continue //In case they have multiple voices through adminbus.
@@ -159,7 +152,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			firer.visible_message(span_warning("\The [src] buzzes impolitely."))
 			return
 	if(M.tf_mob_holder)
@@ -263,7 +256,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 	name = "unstable metamorphosis ray"
 	tf_allow_select = FALSE
 
-/obj/item/gun/energy/mouseray/metamorphosis/advanced/random/multitool_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/gun/energy/mouseray/metamorphosis/advanced/random)
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+
+/obj/item/gun/energy/mouseray/metamorphosis/advanced/random/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tf_allow_select)
 		to_chat(user, span_warning("You scramble the stored data on \the [src], making it less reliable."))
 		tf_allow_select = FALSE
@@ -272,7 +269,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 		to_chat(user, span_warning("You repair the damage to \the [src]."))
 		tf_allow_select = TRUE
 		name = "stable metamorphosis ray"
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/energy/mouseray/metamorphosis/advanced/random/Fire(atom/target, mob/living/user, clickparams, pointblank, reflex)
 	if(!COOLDOWN_FINISHED(src, cooldown))
@@ -351,22 +348,34 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/mouseray, TYPE_PROC_REF(/atom, appe
 	icon = 'icons/mob/randomlandmarks.dmi'
 	icon_state = "fanc_trejur"
 
-DECLARE_LOOT(/obj/random/mouseray, LOOT_TABLE(\
-	/obj/item/gun/energy/mouseray = 300, \
-	/obj/item/gun/energy/mouseray/corgi = 50, \
-	/obj/item/gun/energy/mouseray/woof = 50, \
-	/obj/item/gun/energy/mouseray/cat = 50, \
-	/obj/item/gun/energy/mouseray/chicken = 50, \
-	/obj/item/gun/energy/mouseray/lizard = 50, \
-	/obj/item/gun/energy/mouseray/rabbit = 50, \
-	/obj/item/gun/energy/mouseray/fennec = 50, \
-	/obj/item/gun/energy/mouseray/monkey = 5, \
-	/obj/item/gun/energy/mouseray/wolpin = 5, \
-	/obj/item/gun/energy/mouseray/otie = 5, \
-	/obj/item/gun/energy/mouseray/direwolf = 5, \
-	/obj/item/gun/energy/mouseray/giantrat = 5, \
-	/obj/item/gun/energy/mouseray/redpanda = 50, \
-	/obj/item/gun/energy/mouseray/catslug = 5, \
-	/obj/item/gun/energy/mouseray/teppi = 5, \
-	/obj/item/gun/energy/mouseray/metamorphosis = 1, \
-	/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1), LOOT_CHANCE(100))
+CAPABILITIES(/obj/random/mouseray)
+	loot(
+		table = list(
+			/obj/item/gun/energy/mouseray = 300,
+			/obj/item/gun/energy/mouseray/corgi = 50,
+			/obj/item/gun/energy/mouseray/woof = 50,
+			/obj/item/gun/energy/mouseray/cat = 50,
+			/obj/item/gun/energy/mouseray/chicken = 50,
+			/obj/item/gun/energy/mouseray/lizard = 50,
+			/obj/item/gun/energy/mouseray/rabbit = 50,
+			/obj/item/gun/energy/mouseray/fennec = 50,
+			/obj/item/gun/energy/mouseray/monkey = 5,
+			/obj/item/gun/energy/mouseray/wolpin = 5,
+			/obj/item/gun/energy/mouseray/otie = 5,
+			/obj/item/gun/energy/mouseray/direwolf = 5,
+			/obj/item/gun/energy/mouseray/giantrat = 5,
+			/obj/item/gun/energy/mouseray/redpanda = 50,
+			/obj/item/gun/energy/mouseray/catslug = 5,
+			/obj/item/gun/energy/mouseray/teppi = 5,
+			/obj/item/gun/energy/mouseray/metamorphosis = 1,
+			/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1),
+		chance = 100)
+
+/datum/prompt/choice/mouseray_type
+	question = "Select a type to turn things into."
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mouseray_type/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null

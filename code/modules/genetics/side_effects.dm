@@ -11,13 +11,13 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	om_after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 4)
-	om_after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
+	after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(STAT_WEAKENED, 4))
+	after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
 	//above is doing: Call S.finish() in S.duration (dropped if H, and so S, is deleted first)
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)
 	if(H && ishuman(H))
-		own_add(H, nameof(H.genetic_side_effects), src)
+		rel_add(H, nameof(H.genetic_side_effects), src)
 		rel_set(src, nameof(host), H)
 	// start the side effect, this should give some cue as to what's happening,
 	// such as gasping. These cues need to be unique among side-effects.
@@ -88,4 +88,4 @@
 /datum/genetics/side_effect/confuse/finish()
 	if(..()) return
 	var/mob/living/carbon/human/H = host
-	H.status_at_least(EFFECT_CONFUSED, 100)
+	H.status_at_least(STAT_CONFUSED, 100)

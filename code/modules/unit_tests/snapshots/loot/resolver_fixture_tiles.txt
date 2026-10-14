@@ -1,0 +1,36 @@
+2 2 /obj/effect/catwalk_plated 
+5 2 /obj/effect/decal/warning_stripes 
+8 2 /obj/effect/falling_effect 
+11 2 /obj/effect/fancy_shuttle_floor_preview 
+14 2 /obj/effect/floor_decal 
+17 2 /obj/effect/floor_decal/asteroid 
+20 2 /obj/effect/floor_decal/fancy_shuttle 
+23 2 /obj/effect/floor_decal/reset 
+2 5 /obj/effect/floorbreak 
+5 5 /obj/effect/gibspawner 
+8 5 /obj/effect/graffitispawner 
+11 5 /obj/effect/instantboom devastation = 0; heavyboom = 0; lightboom = 0; flash = 0
+14 5 /obj/effect/landmark name = "blobstart"
+17 5 /obj/effect/landmark/map_data height = 1
+20 5 /obj/effect/low_wall_spawner 
+23 5 /obj/effect/map_helper 
+2 8 /obj/effect/map_helper/airlock 
+5 8 /obj/effect/mouse_hole_spawner 
+8 8 /obj/effect/recycler_beacon 
+11 8 /obj/effect/spawner/onetankbomb 
+14 8 /obj/effect/wingrille_spawn 
+17 8 /obj/effect/wire_deleter 
+20 8 /obj/fiftyspawner type_to_spawn = /obj/item/stack/rods
+23 8 /obj/fruitspawner 
+2 11 /obj/item/animal_spawner 
+5 11 /obj/item/fossil/base 
+8 11 /obj/item/reagent_containers/food/snacks/bageltwo 
+11 11 /obj/random_multi id = "dq_pin"
+14 11 /obj/tcspawner 
+17 11 /obj/random_multi/single_item id = "dq_pin"; item_path = /obj/item/tool/wrench; weight = 2
+20 11 /obj/random/tool 
+23 11 /obj/effect/spawner/parts/t2 
+2 14 /obj/random/mob/sif 
+5 14 /obj/effect/floor_decal/corner/white dir = 1; color = "#123456"
+8 14 /obj/effect/gibspawner/human 
+11 14 /obj/effect/map_helper/airlock name = "dq pin helper"; command = "cycle"

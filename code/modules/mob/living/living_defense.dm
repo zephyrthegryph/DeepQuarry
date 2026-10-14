@@ -40,12 +40,12 @@
 
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
+		projectile_hit_end() // a human's bullet_act() may have started the hit action already
 		return PROJECTILE_CONTINUE
-	// Declared projectile reactions run before the stun and on_hit(): a blocking one stops them too.
-	if(projectile_pre_reactions(P))
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no effects
 		return 0
 	. = resolve_projectile_hit(P, def_zone)
-	end_projectile_reactions()
+	projectile_hit_end()
 
 /// The round's effects on a living target, after the declared reactions let it through.
 /mob/living/proc/resolve_projectile_hit(obj/item/projectile/P, def_zone)
@@ -63,7 +63,7 @@
 
 	// Armour on the struck part scales the secondary effects; the harm itself
 	// is armoured inside injure().
-	var/absorb = armor_against(P.injury_kind, def_zone, P.armor_penetration)
+	var/absorb = armor_against(P.injury_kind, def_zone, combat_of(P).armor_penetration)
 
 	//Stun Beams
 	if(P.taser_effect)
@@ -75,7 +75,7 @@
 		// was already applied by stun_effect_act above; on_hit skips it for
 		// taser_effect projectiles so it is not applied twice.
 		P.on_hit(src, absorb, def_zone)
-		qdel(P)
+		spent(P, src)
 		return
 
 	P.inflict_injury(src, def_zone)
@@ -92,12 +92,11 @@
 //Handles the effects of "stun" weapons
 /mob/living/proc/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	flash_pain()
-	if(om_wants(src, /datum/om/event/stun_effect))
-		om_emit(src, new /datum/om/event/stun_effect(stun_amount, agony_amount, def_zone, used_weapon, electric))
+	PUBLISH_LEGACY(src, /datum/notice/stun_effect, stun_amount, agony_amount, def_zone, used_weapon, electric)
 
 	if (stun_amount)
-		status_at_least(EFFECT_STUNNED, stun_amount)
-		status_at_least(EFFECT_WEAKENED, stun_amount)
+		status_at_least(STAT_STUNNED, stun_amount)
+		status_at_least(STAT_WEAKENED, stun_amount)
 		apply_effect(STUTTER, stun_amount)
 		apply_effect(EYE_BLUR, stun_amount)
 
@@ -171,12 +170,12 @@
 
 //Called when the mob is hit with an item in combat, in `stance` (the swing's interaction stance). Returns the blocked result
 /mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
-	act_message(src, user, others = span_danger("%U% has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by %T%!"))
+	act_message(src, user, others = span_danger("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] with [I.name] by %T%!"))
 
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
+	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -203,7 +202,7 @@
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
 
-	if(om_wants(src, /datum/om/event/before/hit_by_thrown) && om_emit(src, new /datum/om/event/before/hit_by_thrown(source, thrower, speed)) == EVENT_VETO)
+	if(guard(src, GUARD_THROWN_HIT, thrower, source, speed))
 		return
 
 	if(isitem(source))
@@ -240,7 +239,7 @@
 
 			if(!O || !src) return
 
-			if(O.sharp) //Projectile is suitable for pinning.
+			if(combat_of(O).sharp) //Projectile is suitable for pinning.
 
 				//Handles embedding for non-humans and simple_animals.
 				embed(O)
@@ -259,14 +258,12 @@
 
 /mob/living/proc/embed(obj/O, def_zone=null)
 	O.forceMove(src)
-	LAZYADD(src.embedded, O)
-	om_grant(src, GRANT_VERB, /mob/proc/yank_out_object, src)
+	rel_add(src, nameof(embedded), O)
+	grant(src, granted_verb(/mob/proc/yank_out_object), src)
 	throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 
 //This is called when the mob is thrown into a dense turf
 /mob/living/proc/turf_collision(turf/T, speed)
-	if(OM_EMIT(src, /datum/om/event/before/living_turf_collision, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
-		return
 	injure(INJURY_BLUNT, speed * 5, null, T) // A default of 25, spread across the body.
 	playsound(src, get_sfx(SFX_PUNCH), 50) //ouch sound
 
@@ -329,20 +326,20 @@
 
 //Finds the effective temperature that the mob is burning at.
 /mob/living/proc/fire_burn_temperature()
-	if (fire_stacks <= 0)
+	if (fire_stacks_of(src) <= 0)
 		return 0
 
 	//Scale quadratically so that single digit numbers of fire stacks don't burn ridiculously hot.
 	//lower limit of 700 K, same as matches and roughly the temperature of a cool flame.
-	return max(2.25*round(FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE*(fire_stacks/FIRE_MAX_FIRESUIT_STACKS)**2), 700)
+	return max(2.25*round(FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE*(fire_stacks_of(src)/FIRE_MAX_FIRESUIT_STACKS)**2), 700)
 
 // Called when struck by lightning.
 /mob/living/proc/lightning_act()
 	// The actual damage/electrocution is handled by the tesla_zap() that accompanies this.
-	status_at_least(EFFECT_PARALYZED, 5)
-	status_at_least(EFFECT_SLEEPING, 5)
-	status_adjust(EFFECT_STUTTERING, 20)
-	status_adjust(EFFECT_JITTERY, 150)
+	status_at_least(STAT_PARALYZED, 5)
+	status_at_least(STAT_SLEEPING, 5)
+	status_adjust(STAT_STUTTERING, 20)
+	status_adjust(STAT_JITTERY, 150)
 	emp_act(EMP_HEAVY)
 	to_chat(src, span_critical("You've been struck by lightning!"))
 
@@ -364,11 +361,11 @@
 /mob/living/proc/get_accuracy_penalty()
 	// Certain statuses make it harder to score a hit.
 	var/accuracy_penalty = 0
-	if(has_status(EFFECT_BLINDED))
+	if(has_status(STAT_BLINDED))
 		accuracy_penalty += 75
-	if(has_status(EFFECT_BLURRY))
+	if(has_status(STAT_BLURRY))
 		accuracy_penalty += 30
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		accuracy_penalty += 45
 
 	return accuracy_penalty
@@ -423,7 +420,7 @@
 
 /mob/living/proc/get_organ_target()
 	var/mob/shooter = src
-	var/t = shooter.zone_sel.selecting
+	var/t = hud_of(shooter)?.zone_sel?.selecting
 	if ((t in list( O_EYES, O_MOUTH )))
 		t = BP_HEAD
 	var/obj/item/organ/external/def_zone = ran_zone(t)

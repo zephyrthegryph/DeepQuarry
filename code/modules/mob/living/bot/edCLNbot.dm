@@ -20,10 +20,10 @@
 	var/green_switch = 0
 
 /mob/living/bot/cleanbot/edCLN/update_icons()
-	if(on && om_busy(src))
-		icon_state = "edCLN"
+	if(on && bot_busy())
+		set_icon_state("edCLN")
 	else
-		icon_state = "edCLN[on]"
+		set_icon_state("edCLN[on]")
 
 /mob/living/bot/cleanbot/edCLN/handleIdle()
 	if(vocal && prob(10))
@@ -45,13 +45,13 @@
 		if(istype(loc, /turf/simulated))
 			var/turf/simulated/T = loc
 			act_message(src, T, others = span_warning("%U% stomps on %T%, breaking it!"))
-			qdel(T)
+			spent(T)
 
 	if(red_switch && blue_switch && green_switch && prob(1))
 		src.explode()
 
 /mob/living/bot/cleanbot/edCLN/explode()
-	on = 0
+	set_on(0)
 	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
@@ -69,32 +69,46 @@
 	fx_sparks(src, 3)
 	return ..()
 
-UI_DATA(/mob/living/bot/cleanbot/edCLN, "red_switch:num", "green_switch:num", "blue_switch:num", "merge:ui_data_mob_living_bot_cleanbot_edCLN{version:text,rgbpanel:bool}")
+/mob/living/bot/cleanbot/edCLN/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["red_switch"] = red_switch
+	data["green_switch"] = green_switch
+	data["blue_switch"] = blue_switch
+	var/list/merged_1 = ui_data_mob_living_bot_cleanbot_edCLN(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /mob/living/bot/cleanbot/edCLN's window data (declared on its UI_DATA row).
+/// /mob/living/bot/cleanbot/edCLN's window data.
 /mob/living/bot/cleanbot/edCLN/proc/ui_data_mob_living_bot_cleanbot_edCLN(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["version"] = "v3.0"
 	data["rgbpanel"] = TRUE
 	return data
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "red_switch", ui_act_red_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_red_switch)
+CAPABILITIES(/mob/living/bot/cleanbot/edCLN)
+	op("red_switch", ui_act(), then(PROC_REF(ui_act_red_switch)))
+	op("green_switch", ui_act(), then(PROC_REF(ui_act_green_switch)))
+	op("blue_switch", ui_act(), then(PROC_REF(ui_act_blue_switch)))
+
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_red_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	red_switch = !red_switch
-	to_chat(ui.user, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "green_switch", ui_act_green_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_green_switch)
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_green_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	green_switch = !green_switch
-	to_chat(ui.user, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "blue_switch", ui_act_blue_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_blue_switch)
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_blue_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	blue_switch = !blue_switch
-	to_chat(ui.user, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
+	return OP_OK
 
 /mob/living/bot/cleanbot/edCLN/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
@@ -114,145 +128,77 @@ UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_blue_switch)
 	icon_state = "ed209_frame"
 	item_state = "buildpipe"
 	created_name = "ED-CLN Security Robot"
-	construction_graph = /datum/construction_graph/secbot_assembly/edCLN
 
 // Renaming with a pen is inherited from /obj/item/secbot_assembly (secbot_assembly_rename).
 
-/datum/construction_graph/secbot_assembly/edCLN
-	id = "edCLN_assembly"
-	states = list(0, 1, 2, 3, 4, 5, 6, 7, 8)
-	initial_states = list(0)
-	state_var = "build_step"
-	edge_types = list(
-		/datum/interaction/construction/secbot/edCLN/leg_0,
-		/datum/interaction/construction/secbot/edCLN/leg_1,
-		/datum/interaction/construction/secbot/edCLN/bucket,
-		/datum/interaction/construction/secbot/edCLN/weld_bucket,
-		/datum/interaction/construction/secbot/edCLN/prox,
-		/datum/interaction/construction/secbot/edCLN/wire,
-		/datum/interaction/construction/secbot/edCLN/mop,
-		/datum/interaction/construction/secbot/edCLN/attach_mop,
-		/datum/interaction/construction/secbot/edCLN/finish,
-	)
+STAGE_DEF(edcln, bucketed)
+STAGE_DEF(edcln, welded)
+STAGE_DEF(edcln, sensing)
+STAGE_DEF(edcln, wired)
+STAGE_DEF(edcln, moped)
+STAGE_DEF(edcln, attached)
+STAGE_DEF(edcln, finished)
 
-/datum/interaction/construction/secbot/edCLN/leg_0
-	parent_type = /datum/interaction/construction/secbot/leg
-	from_state = 0
-	to_state = 1
+MSG_DEF_SELF(stage/edcln/bucketed, "It has its bucket.")
+MSG_DEF_SELF(stage/edcln/welded, "Its bucket is welded on.")
+MSG_DEF_SELF(stage/edcln/sensing, "It has its proximity sensor.")
+MSG_DEF_SELF(stage/edcln/wired, "It is wired.")
+MSG_DEF_SELF(stage/edcln/moped, "It has its mop.")
+MSG_DEF_SELF(stage/edcln/attached, "Its mop is attached to the frame.")
+MSG_DEF_SELF(stage/edcln/finished, "It is finished.")
+MSG_DEF_SELF(edcln/start_attach_mop, "Attatching the mop to the frame...")
 
-/datum/interaction/construction/secbot/edCLN/leg_1
-	parent_type = /datum/interaction/construction/secbot/leg
-	from_state = 1
-	to_state = 2
+CAPABILITIES(/obj/item/secbot_assembly/edCLN_assembly)
+	without(CAP_CONSTRUCTION)
+	construction(start(STAGE_BOT_FRAME_BARE), bot_frame_legs(),
+		stage(STAGE_EDCLN_BUCKETED, item(/obj/item/reagent_containers/glass/bucket), consumes(), wait(0), then(PROC_REF(bucket_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_WELDED, tool(TOOL_WELDER), wait(0), then(PROC_REF(bucket_welded)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), begins(MSG(bot_frame/start_wire)), then(PROC_REF(wired_up)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_MOPED, item(/obj/item/mop), consumes(), wait(0), then(PROC_REF(mop_added)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_ATTACHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), begins(MSG(edcln/start_attach_mop)), then(PROC_REF(mop_attached)), undo = NO_UNDO),
+		stage(STAGE_EDCLN_FINISHED, item(/obj/item/cell), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
-/datum/interaction/construction/secbot/edCLN/bucket
-	from_state = 2
-	to_state = 3
-	step_text = "add a bucket"
-	item_type = /obj/item/reagent_containers/glass/bucket
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/secbot_assembly/edCLN_assembly/proc/bucket_added(datum/act/op/A)
+	name = "bucket/legs/frame assembly"
+	set_item_state("edCLN_bucket")
+	set_icon_state("edCLN_bucket")
+	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/bucket/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "bucket/legs/frame assembly"
-	assembly.item_state = "edCLN_bucket"
-	assembly.icon_state = "edCLN_bucket"
-	to_chat(actor, span_notice("You add \the [held] to \the [target]."))
-	return TRUE
+/obj/item/secbot_assembly/edCLN_assembly/proc/bucket_welded(datum/act/op/A)
+	name = "bucketed frame assembly"
+	to_chat(A.actor, span_notice("You welded the bucket to \the [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/weld_bucket
-	from_state = 3
-	to_state = 4
-	step_text = "weld the bucket on"
-	tool = TOOL_WELDER
+/obj/item/secbot_assembly/edCLN_assembly/sensor_added(datum/act/op/A)
+	name = "proximity bucket ED assembly"
+	set_item_state("edCLN_prox")
+	set_icon_state("edCLN_prox")
+	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/weld_bucket/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "bucketed frame assembly"
-	to_chat(actor, span_notice("You welded the bucket to \the [target]."))
-	return TRUE
+/obj/item/secbot_assembly/edCLN_assembly/proc/wired_up(datum/act/op/A)
+	name = "wired ED-CLN assembly"
+	to_chat(A.actor, span_notice("You wire the ED-CLN assembly."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/prox
-	from_state = 4
-	to_state = 5
-	step_text = "add the prox sensor"
-	item_type = /obj/item/assembly/prox_sensor
-	item_use = CONSTRUCTION_ITEM_DELETE
+/obj/item/secbot_assembly/edCLN_assembly/proc/mop_added(datum/act/op/A)
+	name = "mop ED-CLN assembly"
+	set_item_state("edCLN_mop")
+	set_icon_state("edCLN_mop")
+	to_chat(A.actor, span_notice("You add \the [A.held] to \the [src]."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/prox/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "proximity bucket ED assembly"
-	assembly.item_state = "edCLN_prox"
-	assembly.icon_state = "edCLN_prox"
-	to_chat(actor, span_notice("You add \the [held] to \the [target]."))
-	return TRUE
+/obj/item/secbot_assembly/edCLN_assembly/proc/mop_attached(datum/act/op/A)
+	name = "mopped ED-CLN assembly"
+	to_chat(A.actor, span_notice("Mop attached."))
+	return OP_OK
 
-/datum/interaction/construction/secbot/edCLN/wire
-	start_feedback = /datum/msg/start/interaction/construction/secbot/edCLN/wire
-	from_state = 5
-	to_state = 6
-	step_text = "wire it"
-	item_type = /obj/item/stack/cable_coil
-	item_amount = 1
-	item_use = CONSTRUCTION_ITEM_USE
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/secbot/edCLN/wire
-	self = "You start to wire %T%."
-
-/datum/interaction/construction/secbot/edCLN/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "wired ED-CLN assembly"
-	to_chat(actor, span_notice("You wire the ED-CLN assembly."))
-	return TRUE
-
-/datum/interaction/construction/secbot/edCLN/mop
-	from_state = 6
-	to_state = 7
-	step_text = "add a mop"
-	item_type = /obj/item/mop
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/edCLN/mop/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "mop ED-CLN assembly"
-	assembly.item_state = "edCLN_mop"
-	assembly.icon_state = "edCLN_mop"
-	to_chat(actor, span_notice("You add \the [held] to \the [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/edCLN/attach_mop
-	start_feedback = /datum/msg/start/interaction/construction/secbot/edCLN/attach_mop
-	from_state = 7
-	to_state = 8
-	step_text = "attach the mop to the frame"
-	tool = TOOL_SCREWDRIVER
-	tool_volume = 100
-	duration = 4 SECONDS
-	tool_scaled = FALSE
-
-/datum/msg/start/interaction/construction/secbot/edCLN/attach_mop
-	self = "Attatching the mop to the frame..."
-
-/datum/interaction/construction/secbot/edCLN/attach_mop/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	assembly.name = "mopped ED-CLN assembly"
-	to_chat(actor, span_notice("Mop attached."))
-	return TRUE
-
-/datum/interaction/construction/secbot/edCLN/finish
-	from_state = 8
-	to_state = CONSTRUCTION_DONE
-	step_text = "install a cell to finish it"
-	item_type = /obj/item/cell
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/edCLN/finish/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
-	to_chat(actor, span_notice("You complete the ED-CLN."))
-	var/turf/where = get_turf(assembly)
+/obj/item/secbot_assembly/edCLN_assembly/finished(datum/act/op/A)
+	to_chat(A.actor, span_notice("You complete the ED-CLN."))
+	var/turf/where = get_turf(src)
 	var/mob/living/bot/cleanbot/edCLN/bot = new /mob/living/bot/cleanbot/edCLN(where)
-	bot.name = assembly.created_name
-	consume(assembly, actor)
-	return TRUE
+	bot.name = created_name
+	consume(src, A.actor)
+	return OP_OK

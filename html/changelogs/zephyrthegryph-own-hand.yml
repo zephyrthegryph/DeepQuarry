@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Hand-converted the own_set/own_add residue that has no transfer argument to rel_set/rel_add with declared owns_one/owns_many"

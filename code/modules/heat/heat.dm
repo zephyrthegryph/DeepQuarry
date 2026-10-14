@@ -18,19 +18,9 @@
 /// null. A dead handle (released at equilibrium) reads as null from Rust and is
 /// cleared lazily.
 /atom/var/heat_body
+/// Written only through set_heat_body(): reactive code reads the temperature as a band (watched()), not the handle, so nothing generates it.
+TRACKED(/atom, heat_body)
 
-/// A declared field (set_heat_body() is the one writer). A machine hears CHANGE_MACHINE_SETTINGS
-/// (a cooker steps while it holds a heat body: cooker_needs_step()).
-OM_FIELD_SETTER(/atom, heat_body, 0)
-OM_FIELD_SETTER(/obj/machinery, heat_body, CHANGE_MACHINE_SETTINGS)
-
-/atom/proc/set_heat_body(value)
-	if(heat_body == value)
-		return FALSE
-	heat_body = value
-	if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
-	return TRUE
 
 // ---------------------------------------------------------------- the API
 
@@ -180,12 +170,6 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		return 0
 	return vg_heat_add_turf(src, joules) ? joules : 0
 
-/// Sets the solid temperature (DM authority: map load, holodeck programs, admin). The seed follows, so a turf
-/// registered after this starts there.
-/turf/proc/set_temperature(new_temperature)
-	initial_temperature = new_temperature
-	return vg_heat_set_turf_temperature(src, new_temperature)
-
 /turf/thermal_properties()
 	return list(heat_capacity, thermal_conductivity, THERMAL_EMISSIVITY_DEFAULT)
 
@@ -272,17 +256,13 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	src.lane = lane
 	src.keep_body = keep_body
 	if(!register() && keep_body)
-		qdel(src)
+		spent(src)
 		return null
 	return src
 
 /// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
-/datum/native_watch/heat/relations()
-	. = ..()
-	. += rel_one(nameof(target), back = nameof(/atom::heat_watches))
-/atom/relations()
-	. = ..()
-	. += rel_many(nameof(heat_watches), back = nameof(/datum/native_watch/heat::target))
+CAPABILITIES(/datum/native_watch/heat)
+	links(/datum/native_watch/heat::target, /atom::heat_watches, b_many = TRUE)
 
 /// The watch port and cell of this watch's target: a body's world kind and entity, or the turf solid
 /// (VG_HEAT_CELLS) and the turf.

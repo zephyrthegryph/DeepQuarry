@@ -147,6 +147,7 @@
 
 //Checks for specific types in a list
 /proc/is_type_in_list(atom/A, list/L)
+	READS_FROM() // the type of a thing against a list of types: nothing that changes
 	for(var/type in L)
 		if(istype(A, type))
 			return 1

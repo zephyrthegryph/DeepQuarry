@@ -1,0 +1,17 @@
+@obj.item.clothing.accessory human|none
+@obj.item.clothing.accessory robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.clothing.accessory human|/obj/item/tool/screwdriver
+@obj.item.clothing.accessory human|/obj/item/tool/crowbar
+@obj.item.clothing.accessory.collar human|/obj/item/tool/wrench
+@obj.item.clothing.accessory human|/obj/item/tool/wirecutters
+@obj.item.clothing.accessory human|/obj/item/multitool
+@obj.item.clothing.accessory human|/obj/item/weldingtool
+@obj.item.clothing.accessory human|/obj/item/stack/cable_coil
+@obj.item.clothing.accessory human|/obj/item/stack/material/steel
+@obj.item.clothing.accessory human|/obj/item/card/id
+@obj.item.clothing.accessory human|/obj/item/kit
+@obj.item.clothing.accessory human|/obj/item/storage
+@obj.item.clothing.accessory human|/obj/item
+keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collar_tag_item, collar_tag_self, collect_item, craftable_collar_self, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

@@ -161,7 +161,13 @@ impl ChunkLayout {
 pub struct CowStore<T> {
     layout: ChunkLayout,
     chunks: Vec<Option<Arc<Vec<T>>>>,
+    /// Which store this is (a snapshot keeps its source's), and how many mutating calls it has had: two stores
+    /// with the same pair are a snapshot and its unchanged source ([`unchanged_since`](Self::unchanged_since)).
+    lineage: u64,
+    writes: u64,
 }
+
+static NEXT_LINEAGE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
 impl<T: Clone + Default> CowStore<T> {
     #[must_use]
@@ -169,7 +175,17 @@ impl<T: Clone + Default> CowStore<T> {
         Self {
             layout,
             chunks: vec![None; layout.chunk_count()],
+            lineage: NEXT_LINEAGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+            writes: 0,
         }
+    }
+
+    /// TRUE when nothing was written to `self` since `base` was snapshotted from it, in O(1) (no chunk sweep).
+    /// `base` must be a snapshot nobody writes to (a watch state's previous view); a FALSE answer only means the
+    /// chunks have to be compared ([`chunks_differing_from`](Self::chunks_differing_from)).
+    #[must_use]
+    pub const fn unchanged_since(&self, base: &Self) -> bool {
+        self.lineage == base.lineage && self.writes == base.writes
     }
 
     #[must_use]
@@ -203,6 +219,7 @@ impl<T: Clone + Default> CowStore<T> {
     /// copying it if a snapshot still shares it.
     pub fn get_mut(&mut self, index: u32) -> Option<&mut T> {
         let (chunk, cell) = self.layout.locate(index)?;
+        self.writes += 1;
         let len = self.layout.chunk_len();
         let slot = self.chunks[chunk].get_or_insert_with(|| Arc::new(vec![T::default(); len]));
         Some(&mut Arc::make_mut(slot)[cell])
@@ -266,6 +283,7 @@ impl<T: Clone + Default> CowStore<T> {
 
     /// Calls `f(chunk, cells)` for every allocated chunk, in chunk order.
     pub fn for_each_chunk_mut(&mut self, mut f: impl FnMut(usize, &mut [T])) {
+        self.writes += 1;
         for (i, chunk) in self.chunks.iter_mut().enumerate() {
             if let Some(chunk) = chunk {
                 f(i, Arc::make_mut(chunk).as_mut_slice());
@@ -276,6 +294,7 @@ impl<T: Clone + Default> CowStore<T> {
     /// Allocates every chunk (e.g. before a field step that touches all
     /// cells, so the chunk iterators reach them).
     pub fn allocate_all(&mut self) {
+        self.writes += 1;
         let len = self.layout.chunk_len();
         for chunk in &mut self.chunks {
             chunk.get_or_insert_with(|| Arc::new(vec![T::default(); len]));
@@ -287,6 +306,7 @@ impl<T: Clone + Default> CowStore<T> {
     where
         T: PartialEq,
     {
+        self.writes += 1;
         let default = T::default();
         for chunk in &mut self.chunks {
             if chunk
@@ -307,6 +327,7 @@ impl<T: Clone + Default> CowStore<T> {
     where
         T: PartialEq,
     {
+        self.writes += 1;
         fn uniform<T: PartialEq>(c: &[T]) -> Option<&T> {
             let first = c.first()?;
             c.iter().all(|v| v == first).then_some(first)
@@ -377,6 +398,7 @@ impl<T: Clone + Default + Send + Sync> CowStore<T> {
     /// combine cross-chunk sums in chunk order afterwards.
     pub fn par_for_each_chunk_mut(&mut self, f: impl Fn(usize, &mut [T]) + Sync + Send) {
         use rayon::prelude::*;
+        self.writes += 1;
         self.chunks
             .par_iter_mut()
             .enumerate()
@@ -422,6 +444,19 @@ impl<T: Clone + Default + Send + Sync> CowStore<T> {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn unchanged_since_is_true_until_a_write_and_never_across_stores() {
+        let layout = ChunkLayout::linear_with_chunk(100, 10);
+        let mut store = CowStore::<u32>::new(layout);
+        store.set(3, 1);
+        let view = store.snapshot();
+        assert!(store.unchanged_since(&view));
+        store.set(4, 2);
+        assert!(!store.unchanged_since(&view));
+        let other = CowStore::<u32>::new(layout);
+        assert!(!other.unchanged_since(&CowStore::<u32>::new(layout)), "two new stores are not one lineage");
+    }
 
     #[test]
     fn snapshot_shares_until_written() {

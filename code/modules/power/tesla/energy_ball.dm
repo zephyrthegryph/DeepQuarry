@@ -23,16 +23,19 @@
 	var/energy_to_lower = -20
 	resistance_flags = BOMB_PROOF
 
-/obj/singularity/energy_ball/Initialize(mapload, starting_energy = 50, is_miniball = FALSE)
+CAPABILITIES(/obj/singularity/energy_ball)
+	param(nameof(miniball), pos = 2)
+
+// ALLOW(init/INSTANCE_STATE): a full energy ball glows
+/obj/singularity/energy_ball/Initialize(mapload)
 	. = ..()
-	miniball = is_miniball
 	if(!miniball)
-		set_light(10, 7, "#EEEEFF")
+		set_glow(src, GLOW(10, 7, "#EEEEFF"))
 
 // its orbiting mini-balls go with it.
 /obj/singularity/energy_ball/on_destroy(force)
 	for(var/obj/singularity/energy_ball/EB as anything in orbiting_balls())
-		qdel(EB)
+		destroyed(EB)
 
 	..()
 
@@ -41,13 +44,14 @@
 		return //don't annnounce miniballs
 	..()
 
-/obj/singularity/energy_ball/periodic_step(wait = 20)
+/// The ball's step (every 2 s, the singularity's every()): its energy, then a wander of one tile per decisecond and the zap.
+/obj/singularity/energy_ball/singularity_frame(datum/act/timer/A)
 	if(!src?.orbit_target())
 		if (handle_energy())
 			return
 
 		// One step per decisecond, then the zap (basket_ball_step()).
-		basket_ball_step(max(wait - 5, 4 + length(orbiting_balls()) * 1.5), dir)
+		basket_ball_step(max(2 SECONDS - 5, 4 + length(orbiting_balls()) * 1.5), dir)
 	else
 		energy = 0 // ensure we dont have miniballs of miniballs
 
@@ -82,7 +86,7 @@
 	if(left <= 0)
 		zap_after_move()
 	else if(moved)
-		om_after(src, 0.1 SECONDS, PROC_REF(basket_ball_step), left - 1, move_bias)
+		after(src, 0.1 SECONDS, PROC_REF(basket_ball_step), with = list(left - 1, move_bias))
 	else
 		basket_ball_step(left - 1, move_bias)
 
@@ -90,7 +94,7 @@
 	if (energy <= 0)
 		log_game("TESLA([x],[y],[z]) Collapsed entirely.")
 		investigate_log("collapsed.", I_SINGULO)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	if(energy >= energy_to_raise)
@@ -98,21 +102,21 @@
 		energy_to_raise = energy_to_raise * 1.25
 
 		play_sfx(src, SFX_EFFECTS_LIGHTNING_CHARGEUP)
-		om_after(src, 10 SECONDS, PROC_REF(new_mini_ball))
+		after(src, 10 SECONDS, PROC_REF(new_mini_ball))
 
 	else if(energy < energy_to_lower && length(orbiting_balls()))
 		energy_to_raise = energy_to_raise / 1.25
 		energy_to_lower = (energy_to_raise / 1.25) - 20
 
 		var/Orchiectomy_target = DEFAULTPICK(orbiting_balls(), null)
-		qdel(Orchiectomy_target)
+		spent(Orchiectomy_target)
 
 	else
 		dissipate() //sing code has a much better system.
 
 /// Miniballs only orbit a real ball; they don't count as singularities.
-/obj/singularity/energy_ball/skips_registry(registry_id)
-	return miniball && registry_id == REGISTRY_SINGULARITIES
+/obj/singularity/energy_ball/counts_as_singularity(datum/act/A)
+	return !miniball
 
 /obj/singularity/energy_ball/proc/new_mini_ball()
 	if(!loc)
@@ -127,18 +131,19 @@
 
 	EB.orbit(src, orbitsize, pick(FALSE, TRUE), rand(10, 25), pick(3, 4, 5, 6, 36))
 
-EXTEND_INTERACTIONS(/obj/singularity/energy_ball, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_energy_ball_touch)))
-
-/// Old attack_hand: touching it dusts you (instead of the singularity's consume).
-/obj/singularity/energy_ball/proc/interaction_energy_ball_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	dust_mob(user)
-	return TRUE
+/// Touching the ball dusts you (instead of the singularity's consume).
+/obj/singularity/energy_ball/touched(datum/act/op/A)
+	dust_mob(A.actor)
+	return OP_OK
 
 /obj/singularity/energy_ball/Bump(atom/A)
 	dust_mob(A)
 
-/obj/singularity/energy_ball/Bumped(atom/movable/AM)
-	dust_mob(AM)
+/// Whatever runs into the ball is dusted (instead of the singularity's consume).
+/obj/singularity/energy_ball/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	if(N.bumper && !QDELETED(N.bumper))
+		dust_mob(N.bumper)
 
 /// The miniballs orbiting this ball (ghosts may orbit it too; they don't count).
 /obj/singularity/energy_ball/proc/orbiting_balls()
@@ -235,7 +240,7 @@ EXTEND_INTERACTIONS(/obj/singularity/energy_ball, INTERACT_HAND_UNGATED(null, PR
 		else if(isliving(A))
 			var/dist = get_dist(source, A)
 			var/mob/living/L = A
-			if(om_has(L, EFFECT_GODMODE))
+			if(in_godmode(L))
 				continue
 			if(dist <= zap_range && (dist < closest_dist || !closest_mob) && L.stat != DEAD && !has_trait(L, TRAIT_TESLA_SHOCKIMMUNE))
 				closest_mob = L

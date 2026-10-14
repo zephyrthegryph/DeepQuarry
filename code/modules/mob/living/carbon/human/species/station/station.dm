@@ -526,7 +526,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/space/void/zaddat/(H), SLOT_ID_SUIT)
 
 	var/obj/item/storage/toolbox/lunchbox/survival/zaddat/L = new(get_turf(H))
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
@@ -639,7 +639,7 @@
 	return FALSE
 
 /datum/species/diona/equip_survival_gear(mob/living/carbon/human/H)
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H), SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H.get_equipped_item(SLOT_ID_BACK)), SLOT_ID_IN_BACKPACK)
@@ -666,17 +666,17 @@
 		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
-			qdel(Org)
+			ended_with(Org, H)
 
 		if(old_species)
-			qdel(old_species)
+			replaced_by(old_species, H)
 		return
 
 	for(var/mob/living/carbon/alien/diona/D in contents_of(H))
 		if(D.client)
 			D.forceMove(get_turf(H))
 		else
-			qdel(D)
+			ended_with(D, H)
 
 	act_message(H, null, others = span_danger("%U% splits apart with a wet slithering noise!"))
 
@@ -1226,7 +1226,7 @@
 	if(!silent)
 		to_chat(H, span_notice("You catch the air in your wings and greatly slow your fall."))
 		landing.visible_message(span_infoplain(span_bold("\The [H]") + " glides down from above, landing safely."))
-		H.status_at_least(EFFECT_STUNNED, 1)
+		H.status_at_least(STAT_STUNNED, 1)
 		play_sfx(H, SFX_RUSTLE, extrarange = 0)
 	return TRUE
 */
@@ -1531,17 +1531,17 @@
 	if(H.stat == DEAD) // If they're dead they won't need anything.
 		return
 
-	if(H.bodytemperature <= 260) //If they're really cold, they go into stasis.
+	if(H.body_temperature() <= 260) //If they're really cold, they go into stasis.
 		var/coldshock = 0
-		if(H.bodytemperature <= 260 && H.bodytemperature >= 200) //Chilly.
+		if(H.body_temperature() <= 260 && H.body_temperature() >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
-			H.status_set(EFFECT_BLURRY, 5) //Blurry vision in the cold.
-		if(H.bodytemperature <= 199 && H.bodytemperature >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
+			H.status_set(STAT_BLURRY, 5) //Blurry vision in the cold.
+		if(H.body_temperature() <= 199 && H.body_temperature() >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
-			H.status_set(EFFECT_BLURRY, 5)
-		if(H.bodytemperature <= 99) //Insanely cold.
+			H.status_set(STAT_BLURRY, 5)
+		if(H.body_temperature() <= 99) //Insanely cold.
 			coldshock = 16
-			H.status_set(EFFECT_BLURRY, 5)
+			H.status_set(STAT_BLURRY, 5)
 		H.adjust_shock(coldshock, "spider cold") //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
 	..()
 
@@ -1701,10 +1701,10 @@
 
 	//Cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage or trigger feral.
 	//NB: 'body_temperature' used here is the 'setpoint' species var
-	var/temp_diff = body_temperature - H.bodytemperature
+	var/temp_diff = body_temperature - H.body_temperature()
 	if(temp_diff >= 50)
 		H.adjust_shock(temp_diff/20, "xenochimera cold") // Divided by 20 is the same as previous numbers, but a full scale
-		H.status_at_least(EFFECT_BLURRY, 5)
+		H.status_at_least(STAT_BLURRY, 5)
 	..()
 
 /datum/species/xenochimera/get_race_key()
@@ -1876,9 +1876,9 @@
 	spawn_flags = SPECIES_CAN_JOIN
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
 
-	flesh_color = "##242424"
-	blood_color = "##00C202"
-	base_color = "##242424"
+	flesh_color = "#242424"
+	blood_color = "#00C202"
+	base_color = "#242424"
 
 	blurb = "Xenomorph Hybrids are a strange amalgamation of xenomorph and alternative-species DNA of \
 	disputed origin. While hybrids share many traits with their species's namesake, the vast majority \
@@ -1967,7 +1967,7 @@
 		return 1
 
 	// Lastly, mend broken bones. May remove this if it's abused.
-	for(var/obj/item/organ/external/E in H.bad_external_organs)
+	for(var/obj/item/organ/external/E in H.damaged_limbs())
 		if(E.is_fractured())
 			if (prob(mend_prob))
 				if (E.mend_fracture())
@@ -1987,7 +1987,7 @@
 
 	if(check_alien_ability(150,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
-		new /obj/effect/alien/weeds/node/weak(get_turf(src), null, "#321D37")	// Aliens.dm for weed node origin.
+		new /obj/effect/alien/weeds/node/weak(get_turf(src))	// Aliens.dm for weed node origin.
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 
@@ -2012,11 +2012,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_weak_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(resin_weak_chosen), answerer = src, choices = options, anchor = src, radius = 42, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// Radial answer: secrete the picked resin structure in front of us.
-/mob/living/carbon/human/proc/resin_weak_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/mob/living/carbon/human/proc/resin_weak_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 

@@ -1,0 +1,6 @@
+ghost|none click: nothing
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
+robot|none click: Click: Use

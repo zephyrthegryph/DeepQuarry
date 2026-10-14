@@ -8,6 +8,11 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
 
+CAPABILITIES(/obj/item/melee)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON))
+
 // Attacks mobs (atm only simple ones due to friendly fire issues) that are adjacent to the target and user.
 /obj/item/proc/cleave(mob/living/user, atom/target)
 	if(cleaving)
@@ -42,11 +47,11 @@
 
 // This cannot go into afterattack since some mobs delete themselves upon dying.
 /obj/item/material/pre_attack(mob/living/target, mob/living/user)
-	if(can_cleave && istype(target))
+	if(combat_of(src).can_cleave && istype(target))
 		cleave(user, target)
 	..()
 
 // This is purely the visual effect of cleaving.
 /obj/item/proc/cleave_visual(mob/living/user, mob/living/target)
 	var/obj/effect/temporary_effect/cleave_attack/E = new(get_turf(src))
-	E.dir = get_dir(user, target)
+	E.set_dir(get_dir(user, target))

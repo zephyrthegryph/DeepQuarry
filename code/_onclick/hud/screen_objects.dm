@@ -27,7 +27,7 @@
 		if(src in C.screen)
 			C.screen -= src
 
-/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
+/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	return
 
 /atom/movable/screen/text
@@ -65,19 +65,26 @@
 /atom/movable/screen/item_action
 	var/obj/item/owner
 
-/atom/movable/screen/item_action/Click()
-	if(!usr || !owner())
+CAPABILITIES(/atom/movable/screen/item_action)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/item_action/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/item_action/click_with_actor(mob/user, location, control, params)
+	if(!user || !owner())
 		return 1
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return
 
-	if(usr.stat || usr.restrained() || usr.has_status(EFFECT_STUNNED) || usr.lying)
+	if(user.stat || user.restrained() || user.has_status(STAT_STUNNED) || user.lying)
 		return 1
 
-	if(!(owner() in usr))
+	if(!(owner() in user))
 		return 1
 
-	owner().ui_action_click()
+	owner().ui_action_click(user)
 	return 1
 
 /atom/movable/screen/grab
@@ -90,23 +97,32 @@
 	return 1
 
 // Screen grabs are clicked through Click() above; touches and items do nothing.
-DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), 	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), )
+CAPABILITIES(/atom/movable/screen/grab)
+	op("swallow", hand(), ungated(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("swallow_2", item(/obj/item), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /atom/movable/screen/storage
 	name = "storage"
 
-/atom/movable/screen/storage/Click()
-	if(!usr.checkClickCooldown())
+CAPABILITIES(/atom/movable/screen/storage)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/storage/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/storage/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	var/obj/master = master_ref
 	if(master)
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(I)
-			usr.ClickOn(master)
+			input_submit(new /datum/input_event/click(user, master))
 	return 1
 
 /atom/movable/screen/zone_sel
@@ -116,10 +132,17 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/selecting = BP_TORSO
 	var/static/list/hover_overlays_cache = list() // ALLOW(cache): overlay objects placed in vis_contents (pooled objects)
 	var/hovering_choice
-	var/mutable_appearance/selecting_appearance
 
-/atom/movable/screen/zone_sel/Click(location, control,params)
-	if(isobserver(usr))
+CAPABILITIES(/atom/movable/screen/zone_sel)
+	owns_many(nameof(hover_overlays_cache))
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/zone_sel/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/zone_sel/click_with_actor(mob/user, location, control, params)
+	if(isobserver(user))
 		return
 
 	var/list/PL = params2list(params)
@@ -129,7 +152,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!choice)
 		return 1
 
-	return set_selected_zone(choice, usr)
+	return set_selected_zone(choice, user)
 
 /atom/movable/screen/zone_sel/MouseEntered(location, control, params)
 	MouseMove(location, control, params)
@@ -154,8 +177,8 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/obj/effect/overlay/zone_sel/overlay_object = hover_overlays_cache[choice]
 	if(!overlay_object)
 		overlay_object = new
-		overlay_object.icon_state = "[choice]"
-		own_put(src, nameof(hover_overlays_cache), choice, overlay_object)
+		overlay_object.set_icon_state("[choice]")
+		rel_add(src, nameof(hover_overlays_cache), overlay_object, choice)
 	vis_contents += overlay_object
 
 /obj/effect/overlay/zone_sel
@@ -219,46 +242,54 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(isobserver(user))
 		return
 	if(choice != selecting)
-		selecting = choice
-		update_icon()
-		if(user)
-			changed(user, CHANGE_MOB_TARGETING)
+		set_selecting(choice)
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/zone_sel/appearance_overlays()
-	. = list()
-	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
-	. += selecting_appearance
 
-/atom/movable/screen/Click(location, control, params)
-	..() // why the FUCK was this not called before
-	if(!usr)	return 1
+/// The selected zone is drawn over the doll.
+/atom/movable/screen/zone_sel/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/mob/zone_sel.dmi', "[selecting]"))
+
+CAPABILITIES(/atom/movable/screen)
+	ref_one(nameof(master_ref), /datum)
+	click_on(PROC_REF(screen_click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click goes to the clicker's
+/// input inbox as any atom's does (/atom/Click()), then the named HUD controls act on it.
+/atom/movable/screen/proc/screen_click_input(datum/act/input/A)
+	input_submit(new /datum/input_event/click(A.actor, src, A.native["location"], A.native["control"], A.params))
+	click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+	return TRUE
+
+/// The named HUD controls act on the mob supplied by their native click boundary.
+/atom/movable/screen/proc/click_with_actor(mob/user, location, control, params)
+	if(!user)	return 1
 	switch(name)
 		if("toggle")
-			if(usr.hud_used.inventory_shown)
-				usr.hud_used.inventory_shown = 0
-				usr.client.screen -= usr.hud_used.other
+			if(user.hud_used.inventory_shown)
+				user.hud_used.inventory_shown = 0
+				user.client.screen -= user.hud_used.other
 			else
-				usr.hud_used.inventory_shown = 1
-				usr.client.screen += usr.hud_used.other
+				user.hud_used.inventory_shown = 1
+				user.client.screen += user.hud_used.other
 
-			usr.hud_used.hidden_inventory_update()
+			user.hud_used.hidden_inventory_update()
 
 		if("equip")
-			if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+			if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 				return 1
-			if(ishuman(usr))
-				var/mob/living/carbon/human/H = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/H = user
 				H.quick_equip()
 
 		if("resist")
-			if(isliving(usr))
-				var/mob/living/L = usr
+			if(isliving(user))
+				var/mob/living/L = user
 				L.resist()
 
 		if("control_vtec")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.speed == 0 && R.vtec_active)
 					R.speed = -0.5
 					R.hud_used.control_vtec.icon_state = "speed_1"
@@ -270,15 +301,15 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					R.hud_used.control_vtec.icon_state = "speed_0"
 
 		if("mov_intent")
-			if(isliving(usr))
-				if(iscarbon(usr))
-					var/mob/living/carbon/C = usr
+			if(isliving(user))
+				if(iscarbon(user))
+					var/mob/living/carbon/C = user
 					if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.get_equipped_item(SLOT_ID_LEGCUFFED)] removed!"))
 						C.m_intent = I_WALK	//Just incase
 						C.hud_used.move_intent.icon_state = "walking"
 						return 1
-				var/mob/living/L = usr
+				var/mob/living/L = user
 				switch(L.m_intent)
 					if(I_RUN)
 						L.m_intent = I_WALK
@@ -287,42 +318,42 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 						L.m_intent = I_RUN
 						L.hud_used.move_intent.icon_state = "running"
 		if("m_intent")
-			if(!usr.m_int)
-				switch(usr.m_intent)
+			if(!user.m_int)
+				switch(user.m_intent)
 					if(I_RUN)
-						usr.m_int = "13,14"
+						user.m_int = "13,14"
 					if(I_WALK)
-						usr.m_int = "14,14"
+						user.m_int = "14,14"
 					if("face")
-						usr.m_int = "15,14"
+						user.m_int = "15,14"
 			else
-				usr.m_int = null
+				user.m_int = null
 		if(I_WALK)
-			usr.m_intent = I_WALK
-			usr.m_int = "14,14"
+			user.m_intent = I_WALK
+			user.m_int = "14,14"
 		if("face")
-			usr.m_intent = "face"
-			usr.m_int = "15,14"
+			user.m_intent = "face"
+			user.m_int = "15,14"
 		if(I_RUN)
-			usr.m_intent = I_RUN
-			usr.m_int = "13,14"
+			user.m_intent = I_RUN
+			user.m_int = "13,14"
 		if("Reset Machine")
-			usr.unset_machine()
+			user.unset_machine()
 		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
-				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
+				if(!C.stat && !C.has_status(STAT_STUNNED) && !C.has_status(STAT_PARALYZED) && !C.restrained())
 					if(C.internal)
 						rel_clear(C, nameof(C.internal)) // a relation: the tank stays in its inventory slot
 						to_chat(C, span_notice("No longer running on internals."))
-						if(C.internals)
-							C.internals.icon_state = "internal0"
+						if(hud_of(C)?.internals)
+							hud_of(C)?.internals?.icon_state = "internal0"
 					else
 
 						var/no_mask
-						if(!(C.get_equipped_item(SLOT_ID_MASK) && C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+						if(!(C.get_equipped_item(SLOT_ID_MASK) && worn_of(C.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 							var/mob/living/carbon/human/H = C
-							if(!(H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+							if(!(H.get_equipped_item(SLOT_ID_HEAD) && worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 								no_mask = 1
 
 						if(no_mask)
@@ -422,65 +453,65 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 								rel_set(C, nameof(C.internal), tankcheck[best])
 
 							if(C.internal)
-								if(C.internals)
-									C.internals.icon_state = "internal1"
+								if(hud_of(C)?.internals)
+									hud_of(C)?.internals?.icon_state = "internal1"
 							else
 								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
 
 		if("pull")
-			usr.stop_pulling()
+			user.stop_pulling()
 		if("throw")
-			if(!usr.stat && isturf(usr.loc) && !usr.restrained())
-				usr:toggle_throw_mode()
+			if(!user.stat && isturf(user.loc) && !user.restrained())
+				user.toggle_throw_mode()
 		if("drop")
-			if(usr.client)
-				usr.client.drop_item()
+			if(user.client)
+				user.client.drop_item()
 		if("autowhisper")
-			if(isliving(usr))
-				var/mob/living/u = usr
+			if(isliving(user))
+				var/mob/living/u = user
 				u.toggle_autowhisper()
 		if("autowhisper mode")
-			if(isliving(usr))
-				var/mob/living/u = usr
+			if(isliving(user))
+				var/mob/living/u = user
 				u.autowhisper_mode()
 		if("check known languages")
-			usr.check_languages()
+			user.check_languages()
 		if("set pose")
-			if(ishuman(usr))
-				var/mob/living/carbon/human/u = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/u = user
 				u.pose()
-			else if (issilicon(usr))
-				var/mob/living/silicon/u = usr
+			else if (issilicon(user))
+				var/mob/living/silicon/u = user
 				u.pose()
 
 		if("move upwards")
-			usr.up()
+			user.up()
 		if("Move Up") // AI version
-			usr.zMove(UP)
+			user.zMove(UP)
 
 		if("move downwards")
-			usr.down()
+			user.down()
 		if("Move Down") // AI version
-			usr.zMove(DOWN)
+			user.zMove(DOWN)
 
 		if("use held item on self")
 			var/atom/movable/screen/useself/s = src
-			if(ishuman(usr))
-				var/mob/living/carbon/human/u = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/u = user
 				var/obj/item/i = u.get_active_hand()
 				if(i)
 					s.can_use(u,i)
 				else
-					to_chat(usr, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
+					to_chat(user, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
 
 		if("module")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				R.pick_module()
 
 		if("inventory")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.module)
 					R.hud_used.toggle_show_robot_modules()
 					return 1
@@ -488,239 +519,253 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					to_chat(R, "You haven't selected a module yet.")
 
 		if("radio")
-			if(issilicon(usr))
-				usr:radio_menu()
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.radio_menu()
 		if("panel")
-			if(issilicon(usr))
-				usr:installed_modules()
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.installed_modules()
 
 		if("store")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.module)
 					R.uneq_active()
 				else
 					to_chat(R, "You haven't selected a module yet.")
 
 		if("module1")
-			if(isrobot(usr))
-				usr:toggle_module(1)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(1)
 
 		if("module2")
-			if(isrobot(usr))
-				usr:toggle_module(2)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(2)
 
 		if("module3")
-			if(isrobot(usr))
-				usr:toggle_module(3)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(3)
 
 		if("AI Core")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.view_core()
 
 		if("Show Camera List")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
-				var/camera = rerun_ask(ai_user, "k545", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
+				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
 				if(isnull(camera))
 					return
 				ai_user.ai_camera_list(camera)
 
 		if("Track With Camera")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
-				var/target_name = rerun_ask(ai_user, "k551", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
+				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/prompt/choice, question = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
 				if(isnull(target_name))
 					return
 				ai_user.ai_camera_track(target_name)
 
 		if("Toggle Camera Light")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.toggle_camera_light()
 
 		if("Crew Monitoring")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_crew_monitor()
 
 		if("Show Crew Manifest")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_crew_manifest()
 
 		if("Show Alerts")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_alarm_monitor()
 
 		if("Announcement")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_announcement()
 
 		if("Call Emergency Shuttle")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_call_shuttle()
 
 		if("State Laws")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_checklaws()
 
 		if("PDA - Messenger")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-				ai_user.aiPDA.cmd_pda_open_ui(usr)
+				ai_user.aiPDA.cmd_pda_open_ui(user)
 
 		if("Take Image")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.take_image()
 
 		if("View Images")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.view_images()
 
 		if("Multicamera Mode")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.toggle_multicam()
 
 		if("New Camera")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.drop_new_multicam()
 
 		if("shadekin status")
-			var/turf/T = get_turf(usr)
+			var/turf/T = get_turf(user)
 			if(T)
 				var/darkness = round(1 - T.get_lumcount(),0.1)
-				to_chat(usr,span_notice(span_bold("Darkness:") + " [darkness]"))
-			var/mob/living/H = usr
+				to_chat(user,span_notice(span_bold("Darkness:") + " [darkness]"))
+			var/mob/living/H = user
 			if(ismob(H))
 				var/datum/shadekin/SK = H.get_shadekin_state()
 				if(SK)
-					to_chat(usr,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
+					to_chat(user,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
 
 		if("glamour")
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			if(istype(H))
-				to_chat(usr,span_notice(span_bold("Energy:") + " [H.species.lleill_energy]/[H.species.lleill_energy_max]"))
+				to_chat(user,span_notice(span_bold("Energy:") + " [H.species.lleill_energy]/[H.species.lleill_energy_max]"))
 
 		if("danger level")
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc)
 				if(xc.feral > 50)
-					to_chat(usr, span_warning("You are currently <b>completely feral.</b>"))
+					to_chat(user, span_warning("You are currently <b>completely feral.</b>"))
 				else if(xc.feral > 10)
-					to_chat(usr, span_warning("You are currently <b>crazed and confused.</b>"))
+					to_chat(user, span_warning("You are currently <b>crazed and confused.</b>"))
 				else if(xc.feral > 0)
-					to_chat(usr, span_warning("You are currently <b>acting on instinct.</b>"))
+					to_chat(user, span_warning("You are currently <b>acting on instinct.</b>"))
 				else
-					to_chat(usr, span_notice("You are currently <b>calm and collected.</b>"))
+					to_chat(user, span_notice("You are currently <b>calm and collected.</b>"))
 				if(xc.feral > 0)
 					var/feral_passing = TRUE
-					if(H.traumatic_shock > min(60, H.nutrition/10))
-						to_chat(usr, span_warning("Your pain prevents you from regaining focus."))
+					if(H.traumatic_shock > min(60, nutrition_of(H)/10))
+						to_chat(user, span_warning("Your pain prevents you from regaining focus."))
 						feral_passing = FALSE
-					if(xc.feral + H.nutrition < 150)
-						to_chat(usr, span_warning("Your hunger prevents you from regaining focus."))
+					if(xc.feral + nutrition_of(H) < 150)
+						to_chat(user, span_warning("Your hunger prevents you from regaining focus."))
 						feral_passing = FALSE
-					if(H.status_units(EFFECT_JITTERY) >= 100)
-						to_chat(usr, span_warning("Your jitterness prevents you from regaining focus."))
+					if(H.status_units(STAT_JITTERY) >= 100)
+						to_chat(user, span_warning("Your jitterness prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(feral_passing)
 						var/turf/T = get_turf(H)
 						if(T.get_lumcount() <= 0.1)
-							to_chat(usr, span_notice("You are slowly calming down in darkness' safety..."))
+							to_chat(user, span_notice("You are slowly calming down in darkness' safety..."))
 						else if(isbelly(H.loc)) // Safety message for if inside a belly.
-							to_chat(usr, span_notice("You are slowly calming down within the darkness of something's belly, listening to their body as it moves around you. ...safe..."))
+							to_chat(user, span_notice("You are slowly calming down within the darkness of something's belly, listening to their body as it moves around you. ...safe..."))
 						else
-							to_chat(usr, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
+							to_chat(user, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
 				else
-					if(H.nutrition < 150)
-						to_chat(usr, span_warning("Your hunger is slowly making you unstable."))
+					if(nutrition_of(H) < 150)
+						to_chat(user, span_warning("Your hunger is slowly making you unstable."))
 
 		if("Reconstructing Form") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_NOW)
-					to_chat(usr, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
+					to_chat(user, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
 				else if(xc.revive_ready == REVIVING_DONE)
-					to_chat(usr, span_warning("You should have a notification + alert for this! Bug report that this is still here!"))
+					to_chat(user, span_warning("You should have a notification + alert for this! Bug report that this is still here!"))
 
 		if("Ready to Hatch") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_DONE) // Sanity check.
 					H.hatch() // Hatch.
 	return 1
 
-/atom/movable/screen/inventory/Click()
+CAPABILITIES(/atom/movable/screen/inventory)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/inventory/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/inventory/click_with_actor(mob/user, location, control, params)
+	if(!user)
+		return 1
 	// At this point in client Click() code we have passed the 1/10 sec check and little else
 	// We don't even know if it's a middle click
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	switch(name)
 		if("r_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
 				C.activate_hand("r")
 		if("l_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
 				C.activate_hand("l")
 		if("swap")
-			usr:swap_hand()
+			user.swap_hand()
 		if("hand")
-			usr:swap_hand()
+			user.swap_hand()
 		else
-			if(usr.attack_ui(slot_id))
-				usr.update_inv_l_hand(0)
-				usr.update_inv_r_hand(0)
+			user.attack_ui(slot_id)
 	return 1
 
 // Hand slots are special to handle the handcuffs overlay
 /atom/movable/screen/inventory/hand
-	var/image/handcuff_overlay
 
-DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/atom/movable/screen/inventory/hand/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!owner_hud())
-		return .
-	if(!handcuff_overlay)
-		var/state = (owner_hud().l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
-		handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-	if(owner_hud().mymob() && iscarbon(owner_hud().mymob()))
-		var/mob/living/carbon/C = owner_hud().mymob()
-		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-			. += handcuff_overlay
+/// The handcuff overlay shows while the owner's mob wears handcuffs (the draw hears the mob's slot changes).
+/atom/movable/screen/inventory/hand/draw(datum/look/look)
+	..()
+	var/datum/hud/owner_hud_now = src.hud // the relation itself: setting it redraws the hand
+	if(!owner_hud_now)
+		return
+	var/mob/M = owner_hud_now.mymob()
+	look.watch(owner_hud_now)
+	look.watch(M)
+	if(!iscarbon(M))
+		return
+	var/mob/living/carbon/C = M
+	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
+		look.overlay(look_overlay_image('icons/mob/screen_gen.dmi', (owner_hud_now.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"))
 
 // PIP stuff
 /atom/movable/screen/component_button
 	var/atom/movable/screen/parent
 
-/atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/atom/movable/screen/component_button)
+	param(nameof(parent), pos = 1)
+	click_on(PROC_REF(click_input))
 
-/atom/movable/screen/component_button/Click(params)
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/component_button/proc/click_input(datum/act/input/A)
 	if(parent())
-		parent().component_click(src, params)
+		parent().component_click(src, A.native["location"], A.actor)
+	return TRUE
 
 // Character setup stuff
 /atom/movable/screen/setup_preview
@@ -781,16 +826,18 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 	var/obj/item/mapping_unit/owner
 	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_full", /atom/movable/screen/mapper/mask_full)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_ping", /atom/movable/screen/mapper/mask_ping)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "bg", /atom/movable/screen/mapper/bg)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "frame", /atom/movable/screen/mapper/frame)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "powbutton", /atom/movable/screen/mapper/powbutton)
-DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /atom/movable/screen/mapper/mapbutton)
+CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
+	owns_one(nameof(mask_full), starts = /atom/movable/screen/mapper/mask_full)
+	owns_one(nameof(mask_ping), starts = /atom/movable/screen/mapper/mask_ping)
+	owns_one(nameof(bg), starts = /atom/movable/screen/mapper/bg)
+	owns_one(nameof(frame), starts = /atom/movable/screen/mapper/frame)
+	owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton)
+	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
+	param(nameof(owner), pos = 1)
 
-/atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
+// ALLOW(init/INSTANCE_STATE): the minimap holder frames itself for its owner's HUD and lays out its layers
+/atom/movable/screen/movable/mapper_holder/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(owner), newowner)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
@@ -856,6 +903,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	mouse_opacity = 0
 	var/atom/movable/screen/movable/mapper_holder/parent
 
+// ALLOW(init/INSTANCE_STATE): its parent is the atom it is created inside
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(parent), loc)
@@ -900,16 +948,23 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	plane = PLANE_HOLOMAP_FRAME
 	mouse_opacity = 1
 
-/atom/movable/screen/mapper/powbutton/Click()
-	if(!usr.checkClickCooldown())
+CAPABILITIES(/atom/movable/screen/mapper/powbutton)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mapper/powbutton/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/mapper/powbutton/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
 		return TRUE
-	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
 	parent().powerClick()
 	flick("powClick",src)
-	usr << get_sfx(SFX_BUTTON)
+	user << get_sfx(SFX_BUTTON)
 	return TRUE
 
 /atom/movable/screen/mapper/mapbutton
@@ -918,16 +973,23 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	plane = PLANE_HOLOMAP_FRAME
 	mouse_opacity = 1
 
-/atom/movable/screen/mapper/mapbutton/Click()
-	if(!usr.checkClickCooldown())
+CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mapper/mapbutton/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/mapper/mapbutton/click_with_actor(mob/user, location, control, params)
+	if(!user.checkClickCooldown())
 		return TRUE
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
 		return TRUE
-	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
 	parent().mapClick()
 	flick("mapClick",src)
-	usr << get_sfx(SFX_BUTTON)
+	user << get_sfx(SFX_BUTTON)
 	return TRUE
 
 // Markers are 16x16, people have apparently settled on centering them on the 8,8 pixel
@@ -960,7 +1022,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	var/mob/user = usr
 	if(!user.checkClickCooldown())
 		return TRUE
-	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED))
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
@@ -1014,10 +1076,10 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 		else
 			warned = TRUE
 			var/atom/movable/screen/ammo/F = new /atom/movable/screen/ammo(src)
-			F.icon_state = "frame"
+			F.set_icon_state("frame")
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			om_after(src, 2 SECONDS, PROC_REF(end_empty_flash), user, F, empty)
+			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty), keeps_dead = TRUE)
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")
@@ -1071,8 +1133,9 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 		add_overlay(object_overlays)
 
 /atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
-	user.client?.screen -= F
-	qdel(F)
+	if(user?.client)
+		user.client.screen -= F
+	spent(F, user)
 	overlays += empty
 
 /// The hud this screen object belongs to (a relation view: null once that is deleted).

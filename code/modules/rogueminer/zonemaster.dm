@@ -36,7 +36,7 @@
 	rel_set(src, nameof(myshuttle_landmark), locate_within(myarea(), /obj/effect/shuttle_landmark))
 	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
-	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
+	after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
 
 ///////////////////////////////
 ///// Utility Procs ///////////
@@ -126,8 +126,6 @@
 
 	GLOB.rm_controller.dbg("ZM(pa): The asteroid has [A.map.len] X-lists.")
 
-	var/list/changedturfs = list()
-
 	for(var/Ix=1, Ix <= A.map.len, Ix++)
 		var/list/curr_x = A.map[Ix]
 		GLOB.rm_controller.dbg("ZM(pa): Now doing X:[Ix] which has [curr_x.len] Y-lists.")
@@ -154,7 +152,6 @@
 
 					GLOB.rm_controller.dbg("ZM(pa): Replacing [P.type] with [T].")
 					var/turf/newturf = P.ChangeTurf(T)
-					changedturfs += newturf
 					switch(newturf.type)
 						if(/turf/simulated/mineral/vacuum)
 							place_resources(newturf)
@@ -162,9 +159,6 @@
 				else //Anything not a turf
 					GLOB.rm_controller.dbg("ZM(pa): Creating [T].")
 					new T(spot)
-
-	for(var/turf/T in changedturfs)
-		T.update_icon()
 
 /datum/rogue/zonemaster/proc/place_resources(turf/simulated/mineral/M)
 	#define XENOARCH_SPAWN_CHANCE 0.3
@@ -189,20 +183,20 @@
 		return
 
 	if(isnull(M.geologic_data))
-		own_set(M, nameof(M.geologic_data), new /datum/geosample(M))
+		rel_set(M, nameof(M.geologic_data), new /datum/geosample(M))
 
 	if(!prob(XENOARCH_SPAWN_CHANCE))
 		return
 
 	var/farEnough = 1
-	for(var/turf/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
+	for(var/turf/T as anything in xenoarch_digsite_spawning_turfs())
 		if(T in range(5, M))
 			farEnough = 0
 			break
 	if(!farEnough)
 		return
 
-	rel_add(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::digsite_spawning_turfs), M)
+	rel_add(SSxenoarch, nameof(/datum/system/xenoarch::digsite_spawning_turfs), M)
 
 	var/digsite = get_random_digsite_type()
 	var/target_digsite_size = rand(DIGSITESIZE_LOWER, DIGSITESIZE_UPPER)
@@ -232,34 +226,33 @@
 		processed_turfs.Add(archeo_turf)
 		if(isnull(archeo_turf.finds))
 			if(prob(50))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 190)))
 			else if(prob(75))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 90)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(110, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 90)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(110, 190)))
 			else
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 50)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(60, 140)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(150, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 50)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(60, 140)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(150, 190)))
 
 			//sometimes a find will be close enough to the surface to show
 			var/datum/find/F = archeo_turf.finds[1]
 			if(F.excavation_required <= F.view_range)
-				archeo_turf.archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-				archeo_turf.update_icon()
+				archeo_turf.set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 		//have a chance for an artifact to spawn here, but not in plant digsites
 		if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
-			rel_add(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), archeo_turf)
+			rel_add(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), archeo_turf)
 
 	//create artifact machinery
 	var/num_artifacts_spawn = rand(ARTIFACTSPAWNNUM_LOWER, ARTIFACTSPAWNNUM_UPPER)
-	while(length(GLOB.xenoarch_service.artifact_spawning_turfs) > num_artifacts_spawn)
-		rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), pick(GLOB.xenoarch_service.artifact_spawning_turfs))
+	while(length(xenoarch_artifact_spawning_turfs()) > num_artifacts_spawn)
+		rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), pick(xenoarch_artifact_spawning_turfs()))
 
-	var/list/artifacts_spawnturf_temp = length(GLOB.xenoarch_service.artifact_spawning_turfs) ? GLOB.xenoarch_service.artifact_spawning_turfs.Copy() : list()
+	var/list/artifacts_spawnturf_temp = length(SSxenoarch.artifact_spawning_turfs) ? SSxenoarch.artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
-		own_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
+		rel_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
 
 	#undef XENOARCH_SPAWN_CHANCE
 	#undef DIGSITESIZE_LOWER
@@ -385,7 +378,7 @@
 	clean_pass(delay, 1)
 	return myarea()
 
-/// One cleaning pass: turfs to space at once, then the objects one per `delay` (om_after_stagger).
+/// One cleaning pass: turfs to space at once, then the objects one per `delay`.
 /// The second pass catches what the first uncovered ("a deletion so nice that I give it twice").
 /datum/rogue/zonemaster/proc/clean_pass(delay, pass)
 	var/static/list/ignored = list(
@@ -411,10 +404,20 @@
 		else if(I.type in ignored)
 			continue
 		doomed += I
-	om_after_stagger(src, doomed, delay, PROC_REF(clean_atom), 1, null, pass == 1 ? PROC_REF(clean_second_pass) : PROC_REF(clean_done))
+	clean_atom(doomed, 1, delay, pass)
 
-/datum/rogue/zonemaster/proc/clean_atom(atom/I)
-	qdel(I)
+/// Cleans doomed[index], then the next one `delay` later; after the last, the next pass (or the end).
+/datum/rogue/zonemaster/proc/clean_atom(list/doomed, index, delay, pass)
+	if(index <= length(doomed))
+		var/atom/I = doomed[index]
+		if(!QDELETED(I))
+			spent(I)
+	if(index < length(doomed))
+		after(src, delay, PROC_REF(clean_atom), with = list(doomed, index + 1, delay, pass))
+	else if(pass == 1)
+		clean_second_pass()
+	else
+		clean_done()
 
 /datum/rogue/zonemaster/proc/clean_second_pass()
 	clean_pass(1, 2)
@@ -449,7 +452,6 @@
 	return myshuttle_landmark
 
 
-/datum/rogue/zonemaster/relations()
-	. = ..()
-	. += rel_many(nameof(rockspawns))
-	. += rel_many(nameof(mobspawns))
+CAPABILITIES(/datum/rogue/zonemaster)
+	ref_many(nameof(rockspawns))
+	ref_many(nameof(mobspawns))

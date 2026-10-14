@@ -2,23 +2,24 @@
 	name = "silver locket"
 	desc = "A small locket of high-quality metal."
 	icon_state = "locket"
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_MASK | SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
 	var/base_icon
 	var/open
 	var/tmp/obj/item/held	//Item inside locket.
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
-	INTERACT_USE("Flip open", PROC_REF(locket_flip_self)), \
-	INTERACT_ITEM(null, PROC_REF(locket_insert_item), REQ_FIELD("open", "you have to open it first")), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/locket)
+	configure(item_worn(slots = SLOT_MASK | SLOT_TIE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
+	op("locket_insert_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Locket insert item"), needs(req_is(nameof(open), TRUE, because = MSG(locket/no_open))), then(PROC_REF(locket_insert_item)))
+
+MSG_DEF_SELF(locket/no_open, "you have to open it first")
 
 /// Old attack_self: flip the locket open or closed.
-/obj/item/clothing/accessory/locket/proc/locket_flip_self(mob/user, obj/item/held_item, datum/interaction/interaction)
+/obj/item/clothing/accessory/locket/proc/locket_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!base_icon)
 		base_icon = icon_state
 
@@ -29,26 +30,46 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 	open = !open
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
-		icon_state = "[base_icon]_open"
+		set_icon_state("[base_icon]_open")
 		if(held())
 			to_chat(user, "\The [held()] falls out!")
 			held().forceMove(get_turf(user))
 			rel_clear(src, nameof(held))
 	else
-		icon_state = "[base_icon]"
+		set_icon_state("[base_icon]")
+
+/// A paper or photo must be releasable from its current holder before insertion.
+/obj/item/clothing/accessory/locket/proc/can_insert_keepsake(mob/user, atom/target, obj/item/held_item)
+	if(!istype(held_item, /obj/item/paper) && !istype(held_item, /obj/item/photo))
+		return TRUE
+	if(held())
+		return "the locket already has something inside"
+	var/reason = held_item.loc?.release_refusal(held_item, user)
+	if(reason)
+		return reason
+	return TRUE
 
 /// Old attackby: slip a paper or photo inside.
-/obj/item/clothing/accessory/locket/proc/locket_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/clothing/accessory/locket/proc/locket_insert_item(datum/act/op/A)
+	var/refusal = can_insert_keepsake(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))
 		if(held())
 			to_chat(user, "\The [src] already has something inside it.")
 		else
-			to_chat(user, "You slip [O] into [src].")
-			user.drop_item()
-			O.forceMove(src)
+			if(can_insert_keepsake(user, src, O) != TRUE)
+				return OP_PASS
+			if(!O.loc.release_to(O, src, null, user))
+				return OP_PASS
 			rel_set(src, nameof(held), O)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+			to_chat(user, "You slip [O] into [src].")
+		return OP_PASS
+	return OP_DECLINE
 
 /// Item inside locket. (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/locket/proc/held() as /obj/item

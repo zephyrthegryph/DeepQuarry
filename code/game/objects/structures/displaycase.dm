@@ -10,6 +10,9 @@
 	var/occupied = 1
 	var/destroyed = 0
 
+TRACKED(/obj/structure/displaycase, occupied)
+TRACKED(/obj/structure/displaycase, destroyed)
+
 // Glass-on-glass hit sound while the case still stands.
 /obj/structure/displaycase/play_attack_sound(damage_amount, damage_type, damage_flag)
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
@@ -19,47 +22,36 @@
 	SHOULD_CALL_PARENT(FALSE)
 	if(!destroyed)
 		set_density(FALSE)
-		destroyed = 1
+		set_destroyed(1)
 		new /obj/item/material/shard( src.loc )
 		play_sfx(src, SFX_SHATTER)
-		update_icon()
 
-APPEARANCE_TEMPLATE(/obj/structure/displaycase, "glassbox{destroyed?b:}{occupied}")
-
-
-/obj/structure/displaycase/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/displaycase_item,
-		/datum/interaction/entry_hand/displaycase_hand,
-	)
+/// The look (the draw sweep: from its template).
+/obj/structure/displaycase/draw(datum/look/look)
 	..()
+	look.state("glassbox[destroyed ? "b" : ""][occupied]")
 
-/// Old attackby: hit the case with a weapon.
-/datum/interaction/entry_item/displaycase_item
-	id = "displaycase_item"
-	name = "Use"
-	effect = /obj/structure/displaycase/proc/interaction_item
 
-/obj/structure/displaycase/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+CAPABILITIES(/obj/structure/displaycase)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+
+/obj/structure/displaycase/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 	receive_weapon_hit(W, user)
 	return TRUE
 
-/// Old attack_hand: take the gun from a shattered case, or kick it.
-/datum/interaction/entry_hand/displaycase_hand
-	id = "displaycase_hand"
-	name = "Use"
-	effect = /obj/structure/displaycase/proc/interaction_hand
-
-/obj/structure/displaycase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/displaycase/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (src.destroyed && src.occupied)
 		new /obj/item/gun/energy/captain( src.loc )
 		to_chat(user, span_notice("You deactivate the hover field built into the case."))
-		src.occupied = 0
+		set_occupied(0)
 		src.add_fingerprint(user)
-		update_icon()
 	else
 		to_chat(user, span_warning("You kick the display case."))
 		for(var/mob/O in oviewers())

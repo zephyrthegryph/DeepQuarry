@@ -68,13 +68,12 @@
 	desc = "You probably need some welder googles to look at this."
 	icon_state = "hawaiian_cyan"
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/hawaiian/blue
 	name = "blue hawaiian shirt"
@@ -95,20 +94,28 @@
 /obj/item/clothing/accessory/hawaiian_random
 	name = "random hawaiian shirt"
 
-/obj/item/clothing/accessory/hawaiian_random/Initialize(mapload)
-	var/random_color = pick("blue", "pink", "red", "yellow", "cyan")
-	icon_state = "hawaiian_[random_color]"
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian_random)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/accessory/hawaiian_random/proc/roll_look(datum/roller/R)
+	var/random_color = R.choose(list("blue", "pink", "red", "yellow", "cyan"))
 	name = "[random_color] hawaiian shirt"
-	. = ..()
+	return "hawaiian_[random_color]"
 
 /obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
 
-/obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
-	if(prob(50))
-		icon_state = "hawaiian_red"
-	color = color_rotation(rand(-11,12)*15)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): half are red, every one a little hue-shifted.
+/obj/item/clothing/accessory/hawaiian/random_flower/proc/roll_icon_state(datum/roller/R)
+	return R.chance(50) ? "hawaiian_red" : icon_state
+
+/obj/item/clothing/accessory/hawaiian/random_flower/proc/roll_color(datum/roller/R)
+	return color_rotation(R.number(-11, 12) * 15)
 
 /*
  * 80s
@@ -119,13 +126,12 @@
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel like an animal."
 	icon_state = "animalstyle"
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/tropical)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/tropical/green
 	name = "puke-green tropical shirt"
@@ -142,16 +148,15 @@
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel out of touch."
 	icon_state = "miamivice"
 
-/obj/item/clothing/accessory/tropical_random/Initialize(mapload)
-	. = ..()
-	var/obj/item/clothing/accessory/new_item = pick(/obj/item/clothing/accessory/tropical,
-													/obj/item/clothing/accessory/tropical/green,
-													/obj/item/clothing/accessory/tropical/pink,
-													/obj/item/clothing/accessory/tropical/blue)
+CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/accessory/tropical_random/proc/roll_look(datum/roller/R)
+	var/obj/item/clothing/accessory/new_item = R.choose(list(/obj/item/clothing/accessory/tropical, /obj/item/clothing/accessory/tropical/green, /obj/item/clothing/accessory/tropical/pink, /obj/item/clothing/accessory/tropical/blue))
 	name = initial(new_item.name)
 	desc = initial(new_item.desc)
-	icon_state = initial(new_item.icon_state)
+	return initial(new_item.icon_state)
 
 /*
  * Chaps
@@ -177,35 +182,34 @@
 	icon_state = "classicponcho"
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
-	max_heat_protection_temperature = T0C+100
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS|LEGS
-	heat_protection = CHEST|ARMS|LEGS
-	cold_protection = CHEST|ARMS|LEGS
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi'
 	)
 
+CAPABILITIES(/obj/item/clothing/accessory/poncho)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS|LEGS))
+	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
+
 //This is really scuffed and needs fixing sometime.
 
-TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
 /obj/item/clothing/accessory/poncho/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src)
 		if(H.species.name == SPECIES_TESHARI)
-			icon_override = 'icons/inventory/suit/mob_teshari.dmi'
+			set_icon_override('icons/inventory/suit/mob_teshari.dmi')
 		else
-			icon_override = 'icons/inventory/accessory/mob.dmi'
+			set_icon_override('icons/inventory/accessory/mob.dmi')
 		update_clothing_icon()
 
 /obj/item/clothing/accessory/poncho/dropped(mob/user, equipping, slot) //Resets the override to prevent the wrong .dmi from being used because equipped only triggers when wearing ponchos as suits.
 	..()
-	icon_override = null
+	set_icon_override(null)
 
 /obj/item/clothing/accessory/poncho/green
 	name = "green poncho"
@@ -270,9 +274,10 @@ TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONL
 	desc = "An elaborate brown and gold cloak."
 	icon_state = "qmcloak"
 	item_state = "qmcloak"
-	body_parts_covered = null
-	heat_protection = null
-	cold_protection = null
+
+CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
+	configure(item_worn(covers = TRAIT_NONE))
+	configure(item_protection(heat_parts = TRAIT_NONE, cold_parts = TRAIT_NONE))
 
 /obj/item/clothing/accessory/poncho/roles/cloak/ce
 	name = "chief engineer's cloak"
@@ -379,15 +384,15 @@ TYPE_TABLE(/obj/item/clothing/accessory/poncho, suit_storage_spec, list(HOLD_ONL
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "wcoat", slot_l_hand_str = "wcoat")
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
-	heat_protection = CHEST
-	cold_protection = CHEST
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
-TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+CAPABILITIES(/obj/item/clothing/accessory/wcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
+	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
+
+
 
 /obj/item/clothing/accessory/wcoat/red
 	name = "red waistcoat"
@@ -443,15 +448,12 @@ TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY
 	desc = "A warm knit sweater."
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	icon_state = "sweater"
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS
-	heat_protection = CHEST|ARMS
-	cold_protection = CHEST|ARMS
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE-275 //325k/125F
-	min_cold_protection_temperature = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE+80 //240K/-27F
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/sweater)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS))
+	configure(item_protection(heat_parts = CHEST|ARMS, cold_parts = CHEST|ARMS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE-275, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE+80, siemens = 0.9))
 
 /obj/item/clothing/accessory/sweater/pink
 	name = "pink sweater"
@@ -512,7 +514,9 @@ TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY
 	name = "virgin killer"
 	desc = "A knit sweater that leaves little to the imagination."
 	icon_state = "virginkiller"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/accessory/sweater/virgin)
+	configure(item_worn(covers = CHEST))
 
 /*
  * Misc
@@ -569,13 +573,10 @@ TYPE_TABLE(/obj/item/clothing/accessory/wcoat, suit_storage_spec, list(HOLD_ONLY
 	icon_state = "klbr"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(SLOT_ID_RIGHT_HAND = "armor", SLOT_ID_LEFT_HAND = "armor")
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = UPPER_TORSO|ARMS
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
-TYPE_TABLE(/obj/item/clothing/accessory/replika, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
+
 
 
 /obj/item/clothing/accessory/jacket/modwrap

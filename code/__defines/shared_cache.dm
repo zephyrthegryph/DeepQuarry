@@ -2,7 +2,7 @@
 //
 // One line declares a cache: its name, a builder proc and an invalidation policy.
 //
-//   DECLARE_SHARED_CACHE(wall_facts, GLOBAL_PROC_REF(build_wall_facts), SC_ON_EVENT(/datum/om/event/materials_changed))
+//   DECLARE_SHARED_CACHE(wall_facts, GLOBAL_PROC_REF(build_wall_facts), SC_ON_NOTICE(/datum/notice/material_facts_changed))
 //   var/list/facts = CACHED(wall_facts, material_key)
 //
 // The store is a plain global list, so a hit is one list index, the same cost as a
@@ -22,10 +22,8 @@
 // ---- Invalidation policies (the third argument) ----
 /// Never invalidated (still clearable by INVALIDATE_SHARED_CACHE()).
 #define SC_NEVER null
-/// Cleared when an event of `path` (or a subtype) is emitted on GLOB.om_world.
-#define SC_ON_EVENT(path) list("event", path)
-/// Cleared when any of `bits` is raised on GLOB.om_world (changed(GLOB.om_world, bits)).
-#define SC_ON_WORLD_CHANGE(bits) list("change", bits)
+/// Cleared when the world notice `path` (or a subtype) is published: its publisher calls shared_cache_notice(path) first.
+#define SC_ON_NOTICE(path) list("notice", path)
 /// Cleared only by INVALIDATE_SHARED_CACHE() (an explicit version bump).
 #define SC_EXPLICIT list("explicit")
 

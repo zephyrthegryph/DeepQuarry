@@ -6,10 +6,11 @@
 	colourName = "mime"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+CAPABILITIES(/obj/item/pen/crayon/mime)
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_crayon_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/mime/proc/mime_crayon_inverted(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -18,7 +19,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PR
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this crayon.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/rainbow
 	icon_state = "crayonrainbow"
@@ -27,86 +28,97 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PR
 	colourName = "rainbow"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+CAPABILITIES(/obj/item/pen/crayon/rainbow)
+	op("interaction_pick_colour", in_hand(), label("Pick colour"), then(PROC_REF(interaction_pick_colour)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/rainbow/proc/interaction_pick_colour(datum/act/op/A)
+	var/mob/living/user = A.actor
 	ask_rainbow_colour(user, "Crayon colour", "Crayon shade colour")
 	return
 
 /// A rainbow crayon or marker picks its main colour, then its shade (a cancel keeps that one).
 /obj/item/pen/crayon/proc/ask_rainbow_colour(mob/user, main_title, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = main_title, message = "Please select the main colour.", default = colour, shade_title = shade_title)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = main_title, question = "Please select the main colour.", default = colour, shade_title = shade_title)
 
 /obj/item/pen/crayon/proc/ask_rainbow_shade(mob/user, shade_title)
-	om_ask(user, /datum/om/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), title = shade_title, message = "Please select the shade colour.", default = shadeColour, shade = TRUE)
+	open_request(src, /datum/prompt/color/crayon_colour, PROC_REF(rainbow_colour_picked), answerer = user, title = shade_title, question = "Please select the shade colour.", default = shadeColour, shade = TRUE)
 
 /// Re-checked on the answer: the crayon is still carried.
-/datum/om/prompt/color/crayon_colour
+/datum/prompt/color/crayon_colour
 	ask_flags = ASK_CARRIED
+	timeout = 0
 	/// TRUE: this is the shade pick.
 	var/shade = FALSE
 	var/shade_title
 
-/datum/om/prompt/color/crayon_colour/cancelled()
-	var/obj/item/pen/crayon/C = subject
-	if(!shade && C)
-		C.ask_rainbow_shade(answerer, shade_title)
-
-/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/om/prompt/color/crayon_colour/ask)
-	if(ask.shade)
-		if(ask.picked_color)
-			shadeColour = ask.picked_color
+/obj/item/pen/crayon/proc/rainbow_colour_picked(datum/act/request/A)
+	// Explicit closing skipped old prompt rechecks; a rejected answer did not continue.
+	if(!A.answer && (A.request.outcome != REQ_CANCELLED || !isnull(A.request.value)))
 		return
-	if(ask.picked_color)
-		colour = ask.picked_color
-	ask_rainbow_shade(ask.answerer, ask.shade_title)
+	var/mob/user = A.request.answerer
+	if(!user || QDELETED(user))
+		return
+	var/datum/prompt/color/crayon_colour/prompt = A.request
+	if(prompt.shade)
+		if(A.answer && A.answer.value)
+			shadeColour = A.answer.value
+		return
+	if(A.answer && A.answer.value)
+		colour = A.answer.value
+	ask_rainbow_shade(user, prompt.shade_title)
 
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
 	if(istype(target,/turf/simulated/floor))
-		om_ask(user, /datum/om/prompt/choice/crayon_kind, PROC_REF(ask_drawing), subject = target, click_parameters = click_parameters)
+		open_request(src, /datum/prompt/choice/crayon_kind, PROC_REF(ask_drawing), answerer = user, subject = target, click_parameters = click_parameters)
 	return
 
 /// What to draw, then which one. The subject is the floor: still in reach, and the drawer able.
-/datum/om/prompt/choice/crayon_kind
+/datum/prompt/choice/crayon_kind
 	title = "Crayon scribbles"
-	message = "Choose what you'd like to draw."
+	recheck_on_open = TRUE
+	question = "Choose what you'd like to draw."
 	choices = list("graffiti","rune","letter","arrow")
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+	timeout = 0
 	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing
-	title = "Crayon scribbles"
-	requires = list(/datum/om/check/in_range, /datum/om/check/not_incapacitated)
+/datum/prompt/choice/crayon_drawing
+	parent_type = /datum/prompt/choice/crayon_kind
 	var/drawing_kind
-	var/click_parameters
 
-/datum/om/prompt/choice/crayon_drawing/prepare()
+/datum/prompt/choice/crayon_drawing/prepare(datum/act/context)
+	. = ..()
 	switch(drawing_kind)
 		if("letter")
-			message = "Choose the letter."
+			question = "Choose the letter."
 			choices = list("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z")
 		if("graffiti")
-			message = "Choose the graffiti."
+			question = "Choose the graffiti."
 			choices = list("amyjon","face","matt","revolution","engie","guy","end","dwarf","uboa")
 		if("rune")
-			message = "Choose the rune."
+			question = "Choose the rune."
 			choices = list("rune1", "rune2", "rune3", "rune4", "rune5", "rune6")
 		if("arrow")
-			message = "Choose the arrow."
+			question = "Choose the arrow."
 			choices = list("left", "right", "up", "down")
 		else
 			return FALSE
 	return TRUE
 
-/obj/item/pen/crayon/proc/ask_drawing(datum/om/prompt/choice/crayon_kind/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), subject = ask.subject, drawing_kind = ask.choice, click_parameters = ask.click_parameters)
+/obj/item/pen/crayon/proc/ask_drawing(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/crayon_kind/ask = context.answer
+	open_request(src, /datum/prompt/choice/crayon_drawing, PROC_REF(drawing_chosen), answerer = ask.answerer, subject = ask.subject, drawing_kind = ask.value, click_parameters = ask.click_parameters)
 
-/obj/item/pen/crayon/proc/drawing_chosen(datum/om/prompt/choice/crayon_drawing/ask)
+/obj/item/pen/crayon/proc/drawing_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/crayon_drawing/ask = context.answer
 	var/mob/user = ask.answerer
 	var/atom/target = ask.subject
-	var/drawtype = ask.choice
+	var/drawtype = ask.value
 	if(!drawtype)
 		return
 	switch(ask.drawing_kind)
@@ -118,19 +130,25 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PR
 			to_chat(user, "You start drawing a rune on the [target.name].")
 		if("arrow")
 			to_chat(user, "You start drawing an arrow on the [target.name].")
-	om_task_start(/datum/om/task/timed/crayon_draw, user, src, duration = instant ? 0 : 5 SECONDS, receiver = src, surface = target, drawtype = drawtype, click_parameters = ask.click_parameters)
+	perform_op(user, src, "draw", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("surface" = target, "drawtype" = drawtype, "click_parameters" = ask.click_parameters))
 
-/datum/om/task/timed/crayon_draw
-	complete_proc = /obj/item/pen/crayon/proc/draw_done
-	var/atom/surface
-	var/drawtype
-	var/click_parameters
+/// The drawing is a wait of the crayon's own (the surface, the picked drawing and the click come from the prompt chain that started it).
+CAPABILITIES(/obj/item/pen/crayon)
+	configure(item_combat(attack_verbs = list("attacked", "coloured")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	op("draw", ai(), takes("surface", "drawtype", "click_parameters"), wait(PROC_REF(draw_wait)), then(PROC_REF(draw_done)))
 
-/obj/item/pen/crayon/proc/draw_done(datum/om/task/timed/crayon_draw/task)
-	var/atom/target = task.surface
-	var/mob/user = task.actor
-	var/drawtype = task.drawtype
-	var/click_parameters = task.click_parameters
+/// How long the drawing takes: nothing for an instant crayon.
+/obj/item/pen/crayon/proc/draw_wait(datum/act/op/A)
+	return instant ? 0 : 5 SECONDS
+
+/obj/item/pen/crayon/proc/draw_done(datum/act/op/A)
+	var/atom/target = A.arg("surface")
+	var/mob/user = A.actor
+	var/drawtype = A.arg("drawtype")
+	var/click_parameters = A.arg("click_parameters")
+	if(QDELETED(target))
+		return OP_FAILED
 	var/list/mouse_control = params2list(click_parameters)
 	var/p_x = 0
 	var/p_y = 0
@@ -154,6 +172,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PR
 		if(!uses)
 			to_chat(user, span_warning("You used up your crayon!"))
 			consume(src, user)
+	return OP_OK
 
 /obj/item/pen/crayon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)
@@ -181,10 +200,11 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PR
 	colourName = "mime"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+CAPABILITIES(/obj/item/pen/crayon/marker/mime)
+	op("invert", in_hand(), label("Invert colours"), then(PROC_REF(mime_marker_inverted)))
 
-/// Old attack_self.
-/obj/item/pen/crayon/marker/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/marker/mime/proc/mime_marker_inverted(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -193,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colou
 		colour = "#000000"
 		shadeColour = "#FFFFFF"
 		to_chat(user, "You will now draw in black and white with this marker.")
-	return
+	return OP_OK
 
 /obj/item/pen/crayon/marker/rainbow
 	icon_state = "markerrainbow"
@@ -202,10 +222,12 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colou
 	colourName = "rainbow"
 	uses = 0
 
-EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+CAPABILITIES(/obj/item/pen/crayon/marker/rainbow)
+	op("interaction_pick_colour", in_hand(), label("Pick colour"), then(PROC_REF(interaction_pick_colour)))
 
 /// Old attack_self.
-/obj/item/pen/crayon/marker/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/crayon/marker/rainbow/proc/interaction_pick_colour(datum/act/op/A)
+	var/mob/living/user = A.actor
 	ask_rainbow_colour(user, "Marker colour", "Marker colour")
 	return
 
@@ -226,3 +248,15 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/rainbow, INTERACT_USE("Pick colo
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
+
+/datum/prompt/choice/crayon_kind/recheck_extra()
+	var/mob/drawer = answerer
+	var/atom/surface = subject
+	if(!istype(drawer) || QDELETED(drawer) || !istype(surface) || QDELETED(surface))
+		return "too far away"
+	var/turf/drawer_turf = get_turf(drawer)
+	var/turf/surface_turf = get_turf(surface)
+	if(!drawer_turf || !surface_turf || drawer_turf.z != surface_turf.z || get_dist(drawer_turf, surface_turf) > 1)
+		return "too far away"
+	if(drawer.incapacitated(INCAPACITATION_DEFAULT))
+		return "not able to"

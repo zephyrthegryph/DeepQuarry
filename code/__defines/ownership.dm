@@ -1,11 +1,11 @@
 // Ownership (doc/rewrite/ownership.md): own, shared, proto, relations.
 //
-// Every object-typed var is exactly one kind. Most need no declaration: the first own_set() /
-// own_add() on a var makes it an implicit owns(policy = OWN_DELETE), the first rel_link() an
+// Every object-typed var is exactly one kind. Most need no declaration: the first rel_set() /
+// rel_add() on a var makes it an implicit owns(policy = OWN_DELETE), the first rel_link() an
 // implicit plain relation, and a var typed as a registry type is implicitly shared (ownership.md §7).
 // Declare only the exceptions (a SPILL / CONTAINED / KEEP / conditional policy, pairs, keyed links,
 // hooks, protos, untyped shared vars, annotations) in two per-type list overrides, built once per
-// type like capabilities() (type_list()):
+// type (type_list()):
 //
 //	/obj/machinery/sleeper/ownership()
 //		. = ..()
@@ -27,6 +27,9 @@
 /// A light relation edge: a framework-maintained view var (1:1, or a list for 1:N).
 #define OWNK_REL 4
 
+/// owns(..., starts = STARTS_NONE) / no_starts(nameof(v)): a subtype cancels the starting occupant an ancestor declared (the var starts empty).
+#define STARTS_NONE "starts:none"
+
 // ---- teardown policies (OWNK_OWN) ----
 /// owns(nameof(v), policy = OWN_NONE, <annotations>): annotates the var without giving it a kind.
 #define OWN_NONE 0
@@ -38,6 +41,13 @@
 #define OWN_CONTAINED 3
 /// Released at teardown, not destroyed or moved: the value outlives the owner (a mind's body).
 #define OWN_KEEP 4
+/// rel_one(..., kind = RELK_OWNED, policy = OWN_PRIVATE_COPY): the var holds a registered prototype or a private
+/// copy of one (proto_private() / proto_set()); teardown deletes private copies only (the former proto()).
+#define OWN_PRIVATE_COPY 5
+/// Handed to a successor at teardown: owns(..., policy = OWN_HAND_OVER, successor = nameof(successor_var), successor_var = nameof(var_of_the_successor)). A movable moves into
+/// the successor and the successor takes it under that var (a wrecked mech's cell, which becomes the wreckage's salvage); with no successor
+/// (the var is empty: a plain qdel) the value ends with the holder as OWN_DELETE does.
+#define OWN_HAND_OVER 6
 
 // ---- what a relation does when the entity at its other end is deleted (other_deleted =) ----
 /// The view drops the dead entity (the default).
@@ -64,7 +74,7 @@
 /// REL: TRUE when the view is a list (1:N side, symmetric membership).
 #define OWNE_LIST 5
 /// REL: the target var names the holder's reactive procs read (watch =), or null. While linked,
-/// a changed() of the target marks the holder changed too.
+/// a state_changed() of the target marks the holder changed too.
 #define OWNE_WATCH 6
 /// REL: CLEAR or DELETE_ME (other_deleted =).
 #define OWNE_OTHER_DELETED 7
@@ -72,22 +82,36 @@
 #define OWNE_ON_UNLINK 8
 /// REL/OWN: the declared type of the value(s) (rel_one/rel_many(type =)), or null. Writes of anything else are refused.
 #define OWNE_TYPE 9
+/// OWN with policy OWN_HAND_OVER: list(the holder's var that names the successor, the successor's var that takes the value), or null.
+#define OWNE_TO 10
 
 /// Registry singletons: PATH and subtypes are shared. GETTER(D) returns the registered
 /// instance D stands for (so D is registered iff GETTER(D) == D).
 #define REGISTRY_TYPE(PATH, GETTER) ##PATH/registry_getter() { return GETTER; }
 
-// ---- owned timers ----
-/// NAME is a timer the entity owns: at most one pending per (entity, NAME), scheduled with
-/// after_slot(E, "NAME", ...), read with om_timer_slot_pending()/om_timer_slot_left(),
-/// cancelled with om_cancel_timer_slot(), and released by teardown with the entity's other
-/// owned things. A keyed family ("NAME:key") is declared once by NAME. Timer ids are never
-/// stored in vars (check_grep "stored timer handles").
-#define OWN_TIMER(PATH, NAME) ##PATH/declared_timer_slots() { . = ..(); . += #NAME; }
 
 /// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
 /// for every link, and nearly every call is a hit.
 #define OWN_KEY(D) (D.own_key_text || own_key(D))
 
+/// TRUE for a plain list and for an alist, the two containers a many relation var can hold. islist() is FALSE for an alist, so every relation
+/// branch that asks "is this a list" asks this instead (code/engine/refs/members.dm).
+#define REL_LISTLIKE(X) (islist(X) || istype(X, /alist))
+/// A plain many relation list this long or shorter is searched with `in` (a few compares); a longer one asks the reverse index instead.
+#define REL_SCAN_MAX 24
+/// A plain list this long or shorter may still hold a keyed member nothing recorded (a map filled outside the accessors): its releases scan for it.
+/// A longer one is trusted to the key index, because a scan per release is quadratic over a mass delete.
+#define REL_LEGACY_SCAN_MAX 64
+
 /// Reports an ownership violation (a runtime, so a test fails; captured in tests of the checks).
 #define OWN_REPORT(msg) dq_lifecycle_report("OWN: [msg]")
+
+// ---- the shape move_into() writes (engine/declare/transfer.dm) ----
+/// The place is a ledger slot of the holder: the item is placed there, no var is written.
+#define MOVE_SHAPE_LEDGER 0
+/// An owns_one var: set.
+#define MOVE_SHAPE_ONE 1
+/// An owns_many list var: add.
+#define MOVE_SHAPE_MANY 2
+/// An associative owns_many: put under the call's key.
+#define MOVE_SHAPE_KEYED 3

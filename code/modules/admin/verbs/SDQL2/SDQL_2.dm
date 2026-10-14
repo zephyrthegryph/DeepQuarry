@@ -187,17 +187,28 @@ Example: USING PROCCALL = BLOCKING, SELECT = FORCE_NULLS, PRIORITY = HIGH SELECT
 		CRASH("SDQL2 fatal error");};
 
 ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATEGORY_DEBUG_GAME, query_text as message)
-	var/prompt = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Run SDQL2 Query?", title = "SDQL2", choices = list("Yes", "Cancel"))
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_sdql_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(sdql2_query_replay_answered) && query_text == resumed.captured["original_query_text"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("a1" in replay_answers))
+		replay_answers["original_query_text"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_sdql_replay, PROC_REF(sdql2_query_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", buttons = TRUE, question = "Run SDQL2 Query?", title = "SDQL2", choices = list("Yes", "Cancel"))
+		return
+	var/prompt = replay_answers["a1"]
 	if(isnull(prompt))
 		return
 	if (prompt != "Yes")
 		return
-	var/list/results = world.SDQL2_query(query_text, key_name_admin(user), "[key_name(user)]")
+	var/list/results = world.SDQL2_query(query_text, key_name_admin(user), "[key_name(user)]", user)
 	if(length(results) == 3)
 		for(var/I in 1 to 3)
 			to_chat(user, span_admin(results[I]), confidential = TRUE)
 
-/world/proc/SDQL2_query(query_text, log_entry1, log_entry2)
+/world/proc/SDQL2_query(query_text, log_entry1, log_entry2, mob/user = null)
 	var/query_log = "executed SDQL query(s): \"[query_text]\"."
 	message_admins("[log_entry1] [query_log]")
 	query_log = "[log_entry2] [query_log]"
@@ -207,23 +218,23 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 
 	if(!length(query_text))
 		return
-	var/list/query_list = SDQL2_tokenize(query_text)
+	var/list/query_list = SDQL2_tokenize(query_text, user)
 	if(!length(query_list))
 		return
-	var/list/querys = SDQL_parse(query_list)
+	var/list/querys = SDQL_parse(query_list, user)
 	if(!length(querys))
 		return
 	var/list/datum/SDQL2_query/running = list()
 	for(var/list/query_tree in querys)
-		var/datum/SDQL2_query/query = new /datum/SDQL2_query(query_tree)
+		var/datum/SDQL2_query/query = new /datum/SDQL2_query(query_tree, FALSE, TRUE, SDQL2_OPTIONS_DEFAULT, FALSE, user)
 		if(QDELETED(query))
 			continue
-		if(usr)
-			query.show_next_to_key = usr.ckey
+		if(user)
+			query.show_next_to_key = user.ckey
 		running += query
 		var/msg = "Starting query #[query.id] - [query.get_query_text()]."
-		if(usr)
-			to_chat(usr, span_admin("[msg]"))
+		if(user)
+			to_chat(user, span_admin("[msg]"))
 		log_admin(msg)
 		query.ARun()
 	var/finished = FALSE
@@ -241,8 +252,8 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 			else if(query.state != SDQL2_STATE_IDLE)
 				finished = FALSE
 			else if(query.state == SDQL2_STATE_ERROR)
-				if(usr)
-					to_chat(usr, span_admin("SDQL query [query.get_query_text()] errored. It will NOT be automatically garbage collected. Please remove manually."))
+				if(user)
+					to_chat(user, span_admin("SDQL query [query.get_query_text()] errored. It will NOT be automatically garbage collected. Please remove manually."))
 				running -= query
 			else
 				if(query.finished)
@@ -254,8 +265,8 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 					//if(!CHECK_BITFIELD(query.options, SDQL2_OPTION_DO_NOT_AUTOGC))
 						//QDEL_IN(query, 50) Maybe when vorestation finally ports timers..
 				else
-					if(usr)
-						to_chat(usr, span_admin("SDQL query [query.get_query_text()] was halted. It will NOT be automatically garbage collected. Please remove manually."))
+					if(user)
+						to_chat(user, span_admin("SDQL query [query.get_query_text()] was halted. It will NOT be automatically garbage collected. Please remove manually."))
 					running -= query
 	while(!finished)
 
@@ -265,9 +276,18 @@ ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATE
 		span_admin("SDQL combined querys took [DisplayTimeText(end_time_total)] to complete.")) + combined_refs
 
 REGISTRY_MEMBERSHIP(/datum/SDQL2_query, REGISTRY_SDQL2_QUERIES)
-GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null, "VIEW VARIABLES (all)", null))
+/// The stat-panel button of the SDQL2 tab, made on first use: a statclick takes its name as a param(), which the lifecycle forms cannot apply
+/// while the globals are still being made.
+GLOBAL_DATUM(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all)
+
+/proc/sdql2_vv_statobj()
+	if(!GLOB.sdql2_vv_statobj)
+		GLOB.sdql2_vv_statobj = new /obj/effect/statclick/SDQL2_VV_all(null, "VIEW VARIABLES (all)", null)
+	return GLOB.sdql2_vv_statobj
 
 /datum/SDQL2_query
+	/// The actor whose usr/marked values and diagnostics this query uses; a relation view.
+	var/mob/requester
 	var/list/query_tree
 	var/state = SDQL2_STATE_IDLE
 	var/options = SDQL2_OPTIONS_DEFAULT
@@ -298,7 +318,12 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	var/obj/effect/statclick/SDQL2_delete/delete_click
 	var/obj/effect/statclick/SDQL2_action/action_click
 
-/datum/SDQL2_query/New(list/tree, SU = FALSE, admin_interact = TRUE, _options = SDQL2_OPTIONS_DEFAULT, finished_qdel = FALSE)
+CAPABILITIES(/datum/SDQL2_query)
+	owns_one(nameof(action_click), /obj/effect/statclick/SDQL2_action)
+	owns_one(nameof(delete_click), /obj/effect/statclick/SDQL2_delete)
+
+/datum/SDQL2_query/New(list/tree, SU = FALSE, admin_interact = TRUE, _options = SDQL2_OPTIONS_DEFAULT, finished_qdel = FALSE, mob/user = null)
+	rel_set(src, nameof(requester), user)
 	join_registries()
 	superuser = SU
 	allow_admin_interact = admin_interact
@@ -306,6 +331,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	options = _options
 	id = id_assign++
 	qdel_on_finish = finished_qdel
+	..()
 
 // a running query halts.
 /datum/SDQL2_query/on_destroy(force)
@@ -374,9 +400,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	if(!allow_admin_interact)
 		return
 	if(!delete_click)
-		own_set(src, nameof(delete_click), new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
+		rel_set(src, nameof(delete_click), make(/obj/effect/statclick/SDQL2_delete, at = null, name = "INITIALIZING", target = src))
 	if(!action_click)
-		own_set(src, nameof(action_click), new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
+		rel_set(src, nameof(action_click), make(/obj/effect/statclick/SDQL2_action, at = null, name = "INITIALIZNG", target = src))
 	var/list/L = list()
 	L[++L.len] = list("[id] ", "[delete_click.update("DELETE QUERY | STATE : [text_state()] | ALL/ELIG/FIN \
 	[islist(obj_count_all)? length(obj_count_all) : (isnull(obj_count_all)? "0" : obj_count_all)]/\
@@ -385,16 +411,16 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	L[++L.len] = list(" ", "[action_click.update("[SDQL2_IS_RUNNING? "HALT" : "RUN"]")]", REF(action_click))
 	return L
 
-/datum/SDQL2_query/proc/delete_click()
-	admin_del(usr)
+/datum/SDQL2_query/proc/delete_click(mob/user)
+	admin_del(user)
 
-/datum/SDQL2_query/proc/action_click()
+/datum/SDQL2_query/proc/action_click(mob/user)
 	if(SDQL2_IS_RUNNING)
-		admin_halt(usr)
+		admin_halt(user)
 	else
-		admin_run(usr)
+		admin_run(user)
 
-/datum/SDQL2_query/proc/admin_halt(user = usr)
+/datum/SDQL2_query/proc/admin_halt(mob/user)
 	if(!SDQL2_IS_RUNNING)
 		return
 	var/msg = "[key_name(user)] has halted query #[id]"
@@ -402,20 +428,21 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	log_admin(msg)
 	state = SDQL2_STATE_HALTING
 
-/datum/SDQL2_query/proc/admin_run(mob/user = usr)
+/datum/SDQL2_query/proc/admin_run(mob/user)
 	if(SDQL2_IS_RUNNING)
 		return
 	var/msg = "[key_name(user)] has (re)started query #[id]"
 	message_admins(msg)
 	log_admin(msg)
+	rel_set(src, nameof(requester), user)
 	show_next_to_key = user.ckey
 	ARun()
 
-/datum/SDQL2_query/proc/admin_del(user = usr)
+/datum/SDQL2_query/proc/admin_del(mob/user)
 	var/msg = "[key_name(user)] has stopped + deleted query #[id]"
 	message_admins(msg)
 	log_admin(msg)
-	qdel(src)
+	spent(src, user)
 
 /datum/SDQL2_query/proc/set_option(name, value)
 	switch(name)
@@ -483,13 +510,13 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 				dq_admin_report_html(showmob, "SDQL Result", text)
 		show_next_to_key = null
 	if(qdel_on_finish)
-		qdel(src)
+		spent(src)
 
 /datum/SDQL2_query/proc/PreSearch()
 	SDQL2_HALT_CHECK
 	switch(query_tree[1])
 		if("explain")
-			SDQL_testout(query_tree["explain"])
+			SDQL_testout(query_tree["explain"], user = requester)
 			state = SDQL2_STATE_HALTING
 			return
 		if("call")
@@ -794,7 +821,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 				if("or", "||")
 					result = (result || val)
 				else
-					to_chat(usr, span_danger("SDQL2: Unknown op [op]"))
+					to_chat(requester, span_danger("SDQL2: Unknown op [op]"))
 					result = null
 		else
 			result = val
@@ -864,7 +891,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 	return list("val" = val, "i" = i)
 
-/proc/SDQL_parse(list/query_list)
+/proc/SDQL_parse(list/query_list, mob/user = null)
 	var/datum/SDQL_parser/parser = new()
 	var/list/querys = list()
 	var/list/query_tree = list()
@@ -882,13 +909,13 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 		if(do_parse)
 			parser.query = query_tree
 			var/list/parsed_tree
-			parsed_tree = parser.parse()
+			parsed_tree = parser.parse(user)
 			if(parsed_tree.len > 0)
 				querys.len = querys_pos
 				querys[querys_pos] = parsed_tree
 				querys_pos++
 			else //There was an error so don't run anything, and tell the user which query has errored.
-				to_chat(usr, span_danger("Parsing error on [querys_pos]\th query. Nothing was executed."))
+				to_chat(user, span_danger("Parsing error on [querys_pos]\th query. Nothing was executed."))
 				return list()
 			query_tree = list()
 			do_parse = 0
@@ -896,10 +923,10 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			query_tree += val
 		pos++
 
-	qdel(parser)
+	spent(parser, user)
 	return querys
 
-/proc/SDQL_testout(list/query_tree, indent = 0)
+/proc/SDQL_testout(list/query_tree, indent = 0, mob/user = null)
 	var/static/whitespace = "&nbsp;&nbsp;&nbsp; "
 	var/spaces = ""
 	for(var/s = 0, s < indent, s++)
@@ -907,26 +934,27 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 	for(var/item in query_tree)
 		if(istype(item, /list))
-			to_chat(usr, "[spaces](")
-			SDQL_testout(item, indent + 1)
-			to_chat(usr, "[spaces])")
+			to_chat(user, "[spaces](")
+			SDQL_testout(item, indent + 1, user)
+			to_chat(user, "[spaces])")
 
 		else
-			to_chat(usr, "[spaces][item]")
+			to_chat(user, "[spaces][item]")
 
 		if(!isnum(item) && query_tree[item])
 
 			if(istype(query_tree[item], /list))
-				to_chat(usr, "[spaces][whitespace](")
-				SDQL_testout(query_tree[item], indent + 2)
-				to_chat(usr, "[spaces][whitespace])")
+				to_chat(user, "[spaces][whitespace](")
+				SDQL_testout(query_tree[item], indent + 2, user)
+				to_chat(user, "[spaces][whitespace])")
 
 			else
-				to_chat(usr, "[spaces][whitespace][query_tree[item]]")
+				to_chat(user, "[spaces][whitespace][query_tree[item]]")
 
 //Staying as a world proc as this is called too often for changes to offset the potential IsAdminAdvancedProcCall checking overhead.
 /world/proc/SDQL_var(object, list/expression, start = 1, source, superuser, datum/SDQL2_query/query)
 	var/v
+	var/mob/user = query?.requester
 	var/static/list/exclude = list("usr", "src", "marked", "global")
 	var/long = start < expression.len
 	var/datum/D
@@ -934,16 +962,16 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 		D = object
 
 	if (object == world && (!long || expression[start + 1] == ".") && !(expression[start] in exclude))
-		to_chat(usr, span_danger("World variables are not allowed to be accessed. Use global."))
+		to_chat(user, span_danger("World variables are not allowed to be accessed. Use global."))
 		return null
 
 	else if(expression [start] == "{" && long)
 		if(lowertext(copytext(expression[start + 1], 1, 3)) != "0x")
-			to_chat(usr, span_danger("Invalid pointer syntax: [expression[start + 1]]"))
+			to_chat(user, span_danger("Invalid pointer syntax: [expression[start + 1]]"))
 			return null
 		v = locate("\[[expression[start + 1]]]")
 		if(!v)
-			to_chat(usr, span_danger("Invalid pointer: [expression[start + 1]]"))
+			to_chat(user, span_danger("Invalid pointer: [expression[start + 1]]"))
 			return null
 		start++
 		long = start < expression.len
@@ -957,12 +985,12 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	else if(!long || expression[start + 1] == ".")
 		switch(expression[start])
 			if("usr")
-				v = usr
+				v = user
 			if("src")
 				v = source
 			if("marked")
-				if(usr.client && usr.client.holder && usr.client.holder.marked_datum())
-					v = usr.client.holder.marked_datum()
+				if(user?.client?.admin_datum()?.marked_datum())
+					v = user.client.admin_datum().marked_datum()
 				else
 					return null
 			if("world")
@@ -970,9 +998,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			if("global")
 				v = GLOB
 			if("MC")
-				v = Master
+				v = Kernel
 			if("FS")
-				v = Failsafe
+				v = Kernel.watchdog
 			if("CFG")
 				v = config
 			else
@@ -988,12 +1016,12 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 			var/list/L = v
 			var/index = query.SDQL_expression(source, expression[start + 2])
 			if(isnum(index) && (!(round(index) == index) || L.len < index))
-				to_chat(usr, span_danger("Invalid list index: [index]"))
+				to_chat(user, span_danger("Invalid list index: [index]"))
 				return null
 			return L[index]
 	return v
 
-/proc/SDQL2_tokenize(query_text)
+/proc/SDQL2_tokenize(query_text, mob/user = null)
 
 	var/list/whitespace = list(" ", "\n", "\t")
 	var/list/single = list("(", ")", ",", "+", "-", ".", "\[", "]", "{", "}", ";", ":")
@@ -1038,7 +1066,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 		else if(char == "'")
 			if(word != "")
-				to_chat(usr, span_red("SDQL2: You have an error in your SDQL syntax, unexpected ' in query: \"[span_gray("[query_text]")]\" following \"[span_gray("[word]")]\". Please check your syntax, and try again."))
+				to_chat(user, span_red("SDQL2: You have an error in your SDQL syntax, unexpected ' in query: \"[span_gray("[query_text]")]\" following \"[span_gray("[word]")]\". Please check your syntax, and try again."))
 				return null
 
 			word = "'"
@@ -1058,7 +1086,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 					word += char
 
 			if(i > len)
-				to_chat(usr, span_red("SDQL2: You have an error in your SDQL syntax, unmatched ' in query: \"[span_gray("[query_text]")]\". Please check your syntax, and try again."))
+				to_chat(user, span_red("SDQL2: You have an error in your SDQL syntax, unmatched ' in query: \"[span_gray("[query_text]")]\". Please check your syntax, and try again."))
 				return null
 
 			query_list += "[word]'"
@@ -1066,7 +1094,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 		else if(char == "\"")
 			if(word != "")
-				to_chat(usr, span_red("SDQL2: You have an error in your SDQL syntax, unexpected \" in query: \"[span_gray("[query_text]")]\" following \"[span_gray("[word]")]\". Please check your syntax, and try again."))
+				to_chat(user, span_red("SDQL2: You have an error in your SDQL syntax, unexpected \" in query: \"[span_gray("[query_text]")]\" following \"[span_gray("[word]")]\". Please check your syntax, and try again."))
 				return null
 
 			word = "\""
@@ -1086,7 +1114,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 					word += char
 
 			if(i > len)
-				to_chat(usr, span_red("SDQL2: You have an error in your SDQL syntax, unmatched \" in query: \"[span_gray("[query_text]")]\". Please check your syntax, and try again."))
+				to_chat(user, span_red("SDQL2: You have an error in your SDQL syntax, unmatched \" in query: \"[span_gray("[query_text]")]\". Please check your syntax, and try again."))
 				return null
 
 			query_list += "[word]\""
@@ -1102,13 +1130,23 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 /proc/is_proper_datum(thing)
 	return istype(thing, /datum) || istype(thing, /client)
 
-/obj/effect/statclick/SDQL2_delete/Click()
-	var/datum/SDQL2_query/Q = target
-	Q.delete_click()
+CAPABILITIES(/obj/effect/statclick/SDQL2_delete)
+	click_on(PROC_REF(click_input))
 
-/obj/effect/statclick/SDQL2_action/Click()
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_delete/proc/click_input(datum/act/input/A)
 	var/datum/SDQL2_query/Q = target
-	Q.action_click()
+	Q.delete_click(A.actor)
+	return TRUE
+
+CAPABILITIES(/obj/effect/statclick/SDQL2_action)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/statclick/SDQL2_action/proc/click_input(datum/act/input/A)
+	var/datum/SDQL2_query/Q = target
+	Q.action_click(A.actor)
+	return TRUE
 
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"
@@ -1142,3 +1180,27 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 #undef SDQL2_STAGE_SWITCH_CHECK
 
+/datum/prompt/choice/admin_sdql_replay
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_sdql_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_sdql_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_sdql_replay/refusal(given)
+	return null
+
+/datum/admin_verb/sdql2_query/proc/sdql2_query_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_query_text"], A.answer)

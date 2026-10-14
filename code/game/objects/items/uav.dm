@@ -19,13 +19,12 @@
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
 	light_cone_y_offset = 5
-	light_range = 4
-	light_power = 4
 	var/power_per_process = 50 // About 6.5 minutes of use on a high-cell (10,000)
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
-	// The mobs flying it are UAV_MASTERS(src) (the uav_master relation).
+	/// The mobs flying it (ref_many): they hear what the UAV hears and can move it. A deleted mob drops out.
+	var/tmp/list/masters
 
 	// So you know which is which
 	var/nickname = "Unnamed UAV"
@@ -42,19 +41,38 @@
 	// Idle shutdown time
 	var/no_masters_time = 0
 
+CAPABILITIES(/obj/item/uav)
+	configure(light_glow(range = 4, power = 4))
+	ref_many(nameof(masters), /mob)
+	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
+	// packing or unpacking it takes ten seconds beside it (chosen from the handle radial below)
+	op("repack", ai(), wait(10 SECONDS), then(PROC_REF(repacked)))
+	// the old attack_hand: on the floor, a radial of what to do with it (elsewhere the click declines to the ordinary hand)
+	op("handle", hand(), label("Handle"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(handle_options)), "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), when = PROC_REF(uav_on_floor)),
+		then(PROC_REF(option_chosen)))
+	// the old attackby: a pairing computer pairs it, a cell goes in
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// a cell goes into one that has none
+	op("insert_cell", item(/obj/item/cell), label("Insert the cell"), when(cond_not(req(PROC_REF(has_cell)))), priority(OP_PRIORITY_PART), wait(3 SECONDS), then(PROC_REF(cell_inserted)))
+	// a pen writes its nickname
+	op("nickname", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Nickname"), priority(OP_PRIORITY_PART + 1),
+		asks(/datum/prompt/text, fields = list("title" = "Nickname", "question" = computed(PROC_REF(nickname_question)), "default" = computed(PROC_REF(current_nickname)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
+		then(PROC_REF(nickname_entered)))
+
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
 
 /obj/item/uav/Initialize(mapload)
 	. = ..()
 
-	if(!cell && cell_type)
-		own_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
 
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
-DECLARE_DEFAULT_CHILD(/obj/item/uav, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/uav/examine(mob/user)
 	. = ..()
@@ -68,30 +86,31 @@ DECLARE_DEFAULT_CHILD(/obj/item/uav, "ion_trail", /datum/effect/effect/system/io
 	else if(get_integrity() <= (max_integrity/2))
 		. += span_warning("It looks pretty beaten up...")
 
-DECLARE_INTERACTIONS(/obj/item/uav, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/obj/item/uav/proc/uav_on_floor(datum/act/op/A)
+	return lies_on_floor(src)
 
-/// Old attack_hand.
-/obj/item/uav/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	//Has to be on the ground to work with it properly
-	if(!isturf(loc))
-		return FALSE
-
-	var/list/options = list(
+/obj/item/uav/proc/handle_options(datum/act/op/A)
+	return list(
 		"Pick Up" = radial_pickup,
 		"(Dis)Assemble" = radial_wrench,
 		"Toggle Power" = radial_power,
 		"Pairing Mode" = radial_pair)
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(option_chosen), choices = options, anchor = src, require_near = !issilicon(user))
-	return TRUE
 
-/obj/item/uav/proc/option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	if(!user || user.incapacitated() || !isturf(loc))
-		return
-	switch(ask.choice)
+/obj/item/uav/proc/nickname_question(datum/act/op/A)
+	return "Enter a nickname for [src]"
+
+/obj/item/uav/proc/current_nickname(datum/act/op/A)
+	return nickname
+
+/// Old attack_hand: the radial's choice (it has to be on the ground to work with it properly).
+/obj/item/uav/proc/option_chosen(datum/act/op/A)
+	if(!isturf(loc))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R?.value || user.incapacitated())
+		return OP_OK
+	switch(R.value)
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
@@ -104,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
 				act_message(user, src, MSG_SELF(span_info("You start [state == UAV_PACKED ? "unpacking" : "packing"] [src].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts [state == UAV_PACKED ? "unpacking" : "packing"] [src].")))
-				om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
+				perform_op(user, src, "repack", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
@@ -113,12 +132,16 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		if("Pairing Mode")
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
 				toggle_pairing(user)
+	return OP_OK
 
-/obj/item/uav/proc/attack_hand_timed_done(mob/user)
-	return toggle_packed(user)
+/obj/item/uav/proc/repacked(datum/act/op/A)
+	toggle_packed(A.actor)
+	return OP_OK
 
 /// Old attackby.
-/obj/item/uav/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/uav/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
 		rel_add(MC, nameof(MC.paired_uavs), src)
@@ -126,45 +149,48 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		act_message(user, src, others = span_notice("%U% pairs [I] to [nickname]"))
 		toggle_pairing()
 
-	else if(istype(I, /obj/item/cell) && !cell)
-		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
-
-	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(nickname_entered), title = "Nickname", message = "Enter a nickname for [src]", default = nickname, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-/obj/item/uav/proc/nickname_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_label = ask.text
+/obj/item/uav/proc/nickname_entered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_PASS
+	var/mob/user = A.actor
+	var/tmp_label = R.value
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)
 		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
 	else
 		to_chat(user, span_notice("You scribble your new nickname on the side of [src]."))
 		nickname = tmp_label
 		desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
+	return OP_PASS
 
-/obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
+/obj/item/uav/proc/cell_inserted(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	if(cell)
+		return
 	to_chat(user, span_notice("You insert [I] into [nickname]."))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	power_down()
-	own_set(src, nameof(src.cell), I, user = user)
+	move_into(src, nameof(src.cell), I, user)
 
-/obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
+/// Requirement: a cell is in the drone.
+/obj/item/uav/proc/has_cell(datum/act/op/A)
+	return (!isnull(cell)) ? null : /datum/msg/req_silent
+
+/obj/item/uav/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!cell)
-		return ITEM_INTERACT_BLOCKING
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
-	if(!(cell))
-		return
+		return OP_OK
 	to_chat(user, span_notice("You remove [cell] from [nickname]."))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	power_down()
 	cell.forceMove(get_turf(src))
-	own_take(src, nameof(cell))
+	rel_take(src, nameof(cell))
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one
@@ -194,28 +220,31 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			return "_packed"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/uav, "{initial(icon_state)}{appearance_uav_suffix}")
+/// The look (the draw sweep: from its template and its layers).
+/obj/item/uav/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_uav_suffix()]")
+	if(state == 2)
+		look.overlay("uav_pairing")
+
 // "2" is UAV_PAIRING.
-DECLARE_APPEARANCE(/obj/item/uav, "state", list( \
-	"2" = list(APPEARANCE_OVERLAYS = list("uav_pairing")) \
-))
 
-OM_FIELD(/obj/item/uav, state, UAV_OFF, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/uav, is_flying, list("state"))
-/// Drains its cell and watches for masters every 2 s while flying.
-DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
+/obj/item/uav/var/state = UAV_OFF
+TRACKED(/obj/item/uav, state)
 
-/obj/item/uav/proc/is_flying()
+/// Whether it flies (the every() gate, polled).
+/obj/item/uav/proc/is_flying(datum/act/A)
 	return state == UAV_ON
 
-/obj/item/uav/periodic_step()
+/// Drains its cell and watches for masters every 2 s while flying.
+/obj/item/uav/proc/uav_step(datum/act/timer/A)
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
 		play_sfx(src, SFX_ITEMS_DROP_METALBOOTS)
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
-	if(length(src?.uav_masters()))
+	if(length(masters))
 		no_masters_time = 0
 	else if(no_masters_time++ > 50)
 		power_down()
@@ -246,17 +275,15 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	switch(state)
 		if(UAV_OFF) //Packing
 			set_state(UAV_PACKED)
-			w_class = ITEMSIZE_LARGE
+			set_w_class(ITEMSIZE_LARGE)
 			slowdown = 0.5
 			set_density(FALSE)
-			update_icon()
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
-			w_class = ITEMSIZE_HUGE
+			set_w_class(ITEMSIZE_HUGE)
 			slowdown = 1.5
 			set_density(TRUE)
-			update_icon()
 			return TRUE
 	return FALSE
 
@@ -288,8 +315,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	return cell
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
-	if(signal && state == UAV_ON && (user in src?.uav_masters()))
-		if(COOLDOWN_FINISHED(src, next_move))
+	if(signal && state == UAV_ON && (user in masters))
+		if(cooldown_ready(src, next_move))
 			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move
@@ -299,13 +326,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	return "[nickname] - [get_x(src)],[get_y(src)],[get_z(src)] - I:[get_integrity()]/[max_integrity] - C:[cell ? "[cell.charge]/[cell.maxcharge]" : "Not Installed"]"
 
 /obj/item/uav/proc/add_master(mob/living/M)
-	om_link(M, src, /datum/om/relation/uav_master)
+	rel_add(src, nameof(masters), M)
 
 /obj/item/uav/proc/remove_master(mob/living/M)
-	om_unlink(M, src, /datum/om/relation/uav_master)
+	rel_remove(src, nameof(masters), M)
 
 /obj/item/uav/proc/clear_masters()
-	for(var/mob/living/M as anything in src?.uav_masters())
+	for(var/mob/living/M as anything in masters?.Copy())
 		remove_master(M)
 
 /obj/item/uav/proc/start_hover()
@@ -330,19 +357,19 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 
 /obj/item/uav/hear_talk(mob/M, list/message_pieces, verb)
 	var/name_used = M.GetVoice()
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/list/combined = master.combine_message(message_pieces, verb, M)
 		var/message = combined["formatted"]
 		var/rendered = span_game(span_say(span_italics("UAV received: " + span_name("[name_used]") + " [message]")))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/see_emote(mob/living/M, text)
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[text]"))))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/show_message(msg, type, alt, alt_type)
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 
@@ -354,7 +381,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	visible_message(span_danger("[src] shorts out and explodes!"))
 	power_down()
 	var/turf/T = get_turf(src)
-	qdel(src)
+	destroyed(src)
 	explosion(T, -1, 0, 1, 2) //Not very large
 
 #undef UAV_OFF

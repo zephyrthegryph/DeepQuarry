@@ -4,9 +4,9 @@
 
 /datum/shuttle/autodock/ferry/escape_pod/New()
 	move_time = move_time + rand(-30, 60)
-	if(name in GLOB.emergency_shuttle_service.escape_pods)
+	if(name in SSemergency_shuttle.escape_pods)
 		CRASH("An escape pod with the name '[name]' has already been defined.")
-	GLOB.emergency_shuttle_service.escape_pods[name] = src
+	rel_add(SSemergency_shuttle, nameof(SSemergency_shuttle.escape_pods), src, name)
 
 	..()
 
@@ -20,14 +20,14 @@
 	var/arming_controller_tag = arming_controller()
 	if(!arming_controller() && active_docking_controller())
 		arming_controller_tag = active_docking_controller().id_tag
-	rel_set(src, nameof(arming_controller), SSshuttles.docking_registry[arming_controller_tag])
+	rel_set(src, nameof(arming_controller), SSshuttles.docking_program(arming_controller_tag))
 	if(!istype(arming_controller(), /datum/embedded_program/docking/simple/escape_pod_berth))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
 	// Every pod names the shared berth program through a relation view, cleared when the
 	// program is deleted: no QDELETING registration.
 
 	//find the pod's own controller
-	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_registry[docking_controller_tag]
+	var/datum/embedded_program/docking/simple/prog = SSshuttles.docking_program(docking_controller_tag)
 	var/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/controller_master = prog.master
 	if(!istype(controller_master))
 		CRASH("Escape pod \"[name]\" could not find it's controller master! docking_controller_tag=[docking_controller_tag]")
@@ -56,31 +56,31 @@
 	var/tmp/datum/shuttle/autodock/ferry/escape_pod/pod
 	valid_actions = list("toggle_override", "force_door")
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "merge:ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod{docking_status:unknown,override_enabled:num,exterior_status:unknown,can_force:unknown,armed:num,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
 
 	. = list(
 		"docking_status" = docking_program.get_docking_status(),
 		"override_enabled" = docking_program.override_enabled,
 		"exterior_status" =	docking_program.memory["door_status"],								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
-		"can_force" = pod()?.can_force() || (GLOB.emergency_shuttle_service.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
+		"can_force" = pod()?.can_force() || (SSemergency_shuttle.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
 		"armed" = pod()?.arming_controller().armed,
 		"internalTemplateName" = "EscapePodConsole",
 	)
 
-UI_ACT(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "manual_arm", ui_act_manual_arm)
-UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, ui_act_manual_arm)
+CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod)
+	op("manual_arm", ui_act("manual_arm"), then(PROC_REF(ui_act_manual_arm)))
+	op("force_launch", ui_act("force_launch"), then(PROC_REF(ui_act_force_launch)))
+
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/ui_act_manual_arm(datum/act/op/A)
 	pod().arming_controller().arm()
 	. = TRUE
 
-UI_ACT(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "force_launch", ui_act_force_launch)
-UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, ui_act_force_launch)
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/ui_act_force_launch(datum/act/op/A)
 	if(pod().can_force())
 		pod().force_launch(src)
-	else if(GLOB.emergency_shuttle_service.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
+	else if(SSemergency_shuttle.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
 		pod().launch(src)
 	. = TRUE
 
@@ -90,10 +90,8 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/e
 	program = /datum/embedded_program/docking/simple/escape_pod_berth
 	valid_actions = list("toggle_override", "force_door")
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth, "merge:ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod_berth{docking_status:unknown,override_enabled:num,exterior_status:unknown,armed:unknown,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod_berth(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
 
 	var/armed = null
@@ -109,15 +107,18 @@ UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controll
 		"internalTemplateName" = "EscapePodBerthConsole",
 	)
 
-DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth, PROC_REF(on_emag), null, null)
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
 	set_emagged(1)
 	if (istype(program, /datum/embedded_program/docking/simple/escape_pod_berth))
 		var/datum/embedded_program/docking/simple/escape_pod_berth/P = program
 		if (!P.armed)
 			P.arm()
-	return 1
+	return OP_OK
 
 //A docking controller program for a simple door based docking port
 /datum/embedded_program/docking/simple/escape_pod_berth
@@ -136,7 +137,7 @@ DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 		return TRUE // Eat all commands.
 	return ..(command)
 
-/// om_after() callback from prepare_for_undocking(): the latecomers' grace is over.
+/// after() callback from prepare_for_undocking(): the latecomers' grace is over.
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/eject_timer_fired()
 	if(!closing)
 		close_door()
@@ -153,7 +154,7 @@ DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
 	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
-	om_after(src, eject_delay*10, PROC_REF(eject_timer_fired))
+	after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// Accessor for the arming_controller var.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth

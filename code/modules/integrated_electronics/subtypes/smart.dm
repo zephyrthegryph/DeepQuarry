@@ -47,9 +47,8 @@
 	power_draw_per_use = 80
 	var/obj/item/card/id/idc
 
-/obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
-	.=..()
-	own_set(src, nameof(idc), new /obj/item/card/id(src))
+CAPABILITIES(/obj/item/integrated_circuit/smart/advanced_pathfinder)
+	owns_one(nameof(idc), /obj/item/card/id, starts = /obj/item/card/id)
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())
@@ -58,7 +57,7 @@
 	var/turf/a_loc = get_turf(assembly())
 
 	var/turf/target_turf = locate(get_pin_data(IC_INPUT, 1), get_pin_data(IC_INPUT, 2), a_loc.z)
-	var/list/P = om_pathfinder().default_circuit_pathfinding(src, target_turf, 0, 200)
+	var/list/P = path_for_circuit(src, target_turf, 0, 200)
 
 	if(!P)
 		activate_pin(3)

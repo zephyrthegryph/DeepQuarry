@@ -1,0 +1,66 @@
+@obj human|none
++0 menu: Alternate use
+@obj robot|none
++0 menu: Alternate use
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Alternate use
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/kit
++0 menu: Alternate use
++4 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++0 menu: Alternate use
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item
+human|/obj/item/card/emag menu: Alternate use
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+keys: add, alt, clear, clear_entry, collect_item, controls, custom_order, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, link_account, move_to_top, pick_up_item, refund_transaction, reset_log, set_amount, subtract, toggle_digestable, toggle_lock

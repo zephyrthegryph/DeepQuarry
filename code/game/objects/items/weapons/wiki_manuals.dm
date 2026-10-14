@@ -1,3 +1,9 @@
+CAPABILITIES(/obj/item/book/manual/wiki)
+	op("open_wiki", ui_act(), then(PROC_REF(ui_act_open_wiki)))
+	interface("WikiBook", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	ui_shape(title = bool(), intro = schema_text(), url = any)
+
 // Wiki books that are linked to the configured wiki link.
 //
 // TGUI migration. TGUI cannot host external iframes the
@@ -26,29 +32,22 @@
 		return
 	tgui_interact(user)
 
-DECLARE_UI_STATE(/obj/item/book/manual/wiki, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/item/book/manual/wiki, "WikiBook")
-
 /obj/item/book/manual/wiki/ui_title(mob/user)
 	return title || name
 
-UI_DATA_REPLACE(/obj/item/book/manual/wiki, "merge:ui_data_obj_item_book_manual_wiki{title:bool,intro:text,url:unknown}")
-
-/// The computed part of /obj/item/book/manual/wiki's window data (declared on its UI_DATA row).
-/obj/item/book/manual/wiki/proc/ui_data_obj_item_book_manual_wiki(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/book/manual/wiki's window data.
+/obj/item/book/manual/wiki/ui_data(datum/act/eval/A)
 	return list(
 		"title" = title || name,
 		"intro" = wiki_intro_html,
 		"url" = get_wiki_url(),
 	)
 
-UI_ACT(/obj/item/book/manual/wiki, "open_wiki", ui_act_open_wiki)
-UI_ACT_PROC(/obj/item/book/manual/wiki, ui_act_open_wiki)
+/obj/item/book/manual/wiki/proc/ui_act_open_wiki(datum/act/op/A)
 	var/url = get_wiki_url()
-	if(url && ui.user?.client)
-		ui.user.client << link(url)
-	return TRUE
+	if(url && A.actor?.client)
+		A.actor.client << link(url)
+	return OP_OK
 
 /obj/item/book/manual/wiki/engineering_construction
 	name = "Station Repairs and Construction"

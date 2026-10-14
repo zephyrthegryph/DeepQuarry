@@ -59,11 +59,13 @@
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_grass)
 	// catalogue_delay encoded in GLOB.dq_catalogue_delay_by_type
 
+// ALLOW(init/INSTANCE_STATE): rolls whether a tree grows on this tile
 /turf/simulated/floor/outdoors/grass/sif/Initialize(mapload)
 	if(tree_chance && prob(tree_chance) && !check_density())
 		new /obj/structure/flora/tree/sif(src)
 	. = ..()
 
+// ALLOW(init/INSTANCE_STATE): rolls the grass and animals that start on this tile
 /turf/simulated/floor/outdoors/grass/Initialize(mapload)
 	if(grass && grass_chance && prob(grass_chance) && !check_density())
 		var/grass_type = pickweight(GLOB.grass_grass[grass])
@@ -92,6 +94,7 @@
 /turf/simulated/floor/outdoors/rocks/sif
 	var/animal_chance = 0.3 //Should spawn around... 0-7 per round? Tweak as needed.
 
+// ALLOW(init/INSTANCE_STATE): rolls whether a slug starts on this tile
 /turf/simulated/floor/outdoors/rocks/sif/Initialize(mapload)
 	if(animal_chance && prob(animal_chance) && !check_density())
 		new /mob/living/simple_mob/vore/slug(src)
@@ -100,19 +103,21 @@
 // end
 
 // Other tiles have ways to build on them, sif grass doesn't, so this snowflake is just on sif grass.
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/grass/sif, INTERACT_ITEM("Plate", PROC_REF(sif_grass_plate)))
+CAPABILITIES(/turf/simulated/floor/outdoors/grass/sif)
+	op("sif_grass_plate", item(/obj/item), label("Plate"), then(PROC_REF(sif_grass_plate)))
 
 /// Old attackby: floor tiles plate the grass.
-/turf/simulated/floor/outdoors/grass/sif/proc/sif_grass_plate(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/grass/sif/proc/sif_grass_plate(datum/act/op/A)
+	var/obj/item/C = A.held
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/obj/item/stack/tile/floor/S = C
 		if (S.get_amount() < 1)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		play_sfx(src, SFX_WEAPONS_GENHIT)
 		ChangeTurf(/turf/simulated/floor)
 		S.use(1)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 // end
 
 

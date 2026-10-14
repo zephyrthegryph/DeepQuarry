@@ -1,0 +1,25 @@
+/obj/structure/reagent_dispensers vol=5000 holder=/datum/reagents 
+/obj/structure/reagent_dispensers/watertank vol=5000 holder=/datum/reagents water=1000
+/obj/structure/reagent_dispensers/watertank/high vol=5000 holder=/datum/reagents water=5000
+/obj/structure/reagent_dispensers/watertank/barrel vol=5000 holder=/datum/reagents water=1000
+/obj/structure/reagent_dispensers/fueltank vol=5000 holder=/datum/reagents fuel=1000
+/obj/structure/reagent_dispensers/fueltank/high vol=5000 holder=/datum/reagents fuel=4000
+/obj/structure/reagent_dispensers/fueltank/barrel vol=5000 holder=/datum/reagents fuel=1000
+/obj/structure/reagent_dispensers/fueltank/barrel/two vol=5000 holder=/datum/reagents fuel=1000
+/obj/structure/reagent_dispensers/fueltank/barrel/three vol=5000 holder=/datum/reagents fuel=1000
+/obj/structure/reagent_dispensers/foam vol=5000 holder=/datum/reagents firefoam=1000
+/obj/structure/reagent_dispensers/he3 vol=5000 holder=/datum/reagents helium3=1000
+/obj/structure/reagent_dispensers/peppertank vol=5000 holder=/datum/reagents condensedcapsaicin=1000
+/obj/structure/reagent_dispensers/virusfood vol=5000 holder=/datum/reagents virusfood=1000
+/obj/structure/reagent_dispensers/acid vol=5000 holder=/datum/reagents sacid=1000
+/obj/structure/reagent_dispensers/water_cooler vol=5000 holder=/datum/reagents 
+/obj/structure/reagent_dispensers/water_cooler/full vol=5000 holder=/datum/reagents water=2000
+/obj/structure/reagent_dispensers/beerkeg vol=5000 holder=/datum/reagents beer=1000
+/obj/structure/reagent_dispensers/beerkeg/wood vol=5000 holder=/datum/reagents beer=1000
+/obj/structure/reagent_dispensers/beerkeg/wine vol=5000 holder=/datum/reagents redwine=1000
+/obj/structure/reagent_dispensers/beerkeg/fakenuke vol=5000 holder=/datum/reagents beer=1000
+/obj/structure/reagent_dispensers/cookingoil vol=5000 holder=/datum/reagents cookingoil=5000
+/obj/structure/reagent_dispensers/bloodbarrel vol=5000 holder=/datum/reagents blood=1000
+/obj/structure/reagent_dispensers/space_cleaner vol=5000 holder=/datum/reagents cleaner=1000
+/obj/structure/reagent_dispensers/coolanttank vol=5000 holder=/datum/reagents coolant=1000
+

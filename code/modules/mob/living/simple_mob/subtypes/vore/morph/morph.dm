@@ -14,7 +14,6 @@
 	movement_cooldown = -1
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
-	mob_bump_flag = SLIME
 
 	min_oxy = 0
 	max_oxy = 0
@@ -40,7 +39,6 @@
 
 	meat_amount = 0
 
-	showvoreprefs = 0
 	vore_active = 1
 	vore_default_mode = DM_HOLD
 
@@ -60,11 +58,30 @@
 	/mob/living/simple_mob/vore/morph,
 	/obj/effect))
 
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/take_over_prey)
+CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	ref_one(nameof(form), /atom/movable)
+	ref_one(nameof(original_mind), /datum/mind)
+	configure(mob_movement(bump = SLIME))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)
 
-DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/morph_color)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/simple_mob/vore/morph/proc/morph_color)
+CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
+	ref_one(nameof(parent_morph), /mob/living/simple_mob/vore/morph)
+	ref_one(nameof(prey_body), /mob/living/carbon/human)
+	ref_one(nameof(prey_mind), /datum/mind)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
+	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
+	param(nameof(prey_mind), pos = 1)
+	param(nameof(parent_morph), pos = 2)
+	param(nameof(prey_body), pos = 3, apply = PROC_REF(swap_made))
+	after_init(0, then(PROC_REF(end_if_no_prey)))
+
+/// A node made with no prey ends when its init is complete: ending it from the param's apply would delete it while the init above it still writes owned refs.
+/mob/living/simple_mob/vore/morph/dominated_prey/proc/end_if_no_prey(datum/act/timer/A)
+	if(!prey_mind)
+		spent(src)
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
 	return !is_type_in_typecache(A, blacklist_typecache) && (isobj(A) || ismob(A))
@@ -92,13 +109,13 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 
 /mob/living/simple_mob/vore/morph/proc/assume(atom/movable/target)
 	var/mob/living/carbon/human/humantarget = target
-	if(istype(humantarget) && !humantarget.allow_mimicry)
+	if(istype(humantarget) && !humantarget.vore_prefs.allow_mimicry)
 		to_chat(src, span_warning("[target] cannot be impersonated!"))
 		return
 	if(morphed)
 		to_chat(src, span_warning("You must restore to your original form first!"))
 		return
-	morphed = TRUE
+	set_morphed(TRUE)
 	rel_set(src, nameof(form), target)
 
 	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
@@ -106,7 +123,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	name = target.name
 	desc = target.desc
 	icon = target.icon
-	icon_state = target.icon_state
+	set_icon_state(target.icon_state)
 	alpha = max(target.alpha, 150)
 	copy_overlays(target, TRUE)
 	our_size_multiplier = size_multiplier
@@ -117,7 +134,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	set_density(target.density)
 
 	if(isobj(target))
-		size_multiplier = 1
+		set_size_multiplier(1)
 		icon_scale_x = target.icon_scale_x
 		icon_scale_y = target.icon_scale_y
 		update_transform()
@@ -139,7 +156,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	if(!morphed)
 		to_chat(src, span_warning("You're already in your normal form!"))
 		return
-	morphed = FALSE
+	set_morphed(FALSE)
 
 	if(!silent)
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
@@ -149,7 +166,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	desc = initial(desc)
 
 	icon = initial(icon)
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 	alpha = initial(alpha)
 	if(chosen_color)
@@ -170,7 +187,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 
 	maptext = null
 
-	size_multiplier = our_size_multiplier
+	set_size_multiplier(our_size_multiplier)
 	resize(size_multiplier, ignore_prefs = TRUE)
 
 	//Baseline stats
@@ -198,7 +215,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 	if(morphed)
 		var/temp_state = icon_state
 		..()
-		icon_state = temp_state
+		set_icon_state(temp_state)
 		//Stolen from protean blobs, ambush noms from resting! Doesn't hide you any better, but makes noms sneakier.
 		if(resting)
 			plane = ABOVE_OBJ_PLANE
@@ -206,7 +223,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 		else
 			plane = MOB_PLANE
 			to_chat(src,span_notice("Your form quivers back to life, allowing you to move again!"))
-			if(can_be_drop_pred) //Toggleable in vore panel
+			if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 				var/list/potentials = living_mobs(0)
 				if(potentials.len)
 					var/mob/living/target = pick(potentials)
@@ -214,18 +231,17 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/
 						if(target?.buckled_to())
 							var/atom/movable/_tmp_buck_27 = target?.buckled_to()
 							_tmp_buck_27.unbuckle_mob(target, force = TRUE)
-						vore_selected.nom_atom(target)
-						to_chat(target,span_vwarning("\The [src] quickly engulfs you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+						vore_selected_of(src).nom_atom(target)
+						to_chat(target,span_vwarning("\The [src] quickly engulfs you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 	else
 		..()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/morph/appearance_overlays()
-	. = list()
+
+/// A morphed mob wears its copied form's appearance, so it draws nothing (the look stays untouched); in its own form it is an ordinary simple mob.
+/mob/living/simple_mob/vore/morph/draw(datum/look/look)
 	if(morphed)
-		return .
-	. += ..()
-	return .
+		return
+	..()
 
 /mob/living/simple_mob/vore/morph/update_icons()
 	if(morphed)
@@ -245,12 +261,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	set name = "Pick Color"
 	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
-	om_ask(src, /datum/om/prompt/color, PROC_REF(morph_color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(morph_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		color = ask.picked_color
-		chosen_color = ask.picked_color
+/mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		color = A.answer.value
+		chosen_color = A.answer.value
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"
@@ -266,74 +284,76 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 				possible_mobs += H
 			else
 				continue
-	om_ask_sequence(/datum/om/flow/ask_sequence/morph_takeover, src, null, on_done = PROC_REF(take_over_agreed), steps = list(
-		new /datum/om/prompt/choice/morph_takeover_target(possible_mobs),
-		PROC_REF(take_over_ask_sure),
-		PROC_REF(take_over_ask_consent),
-		PROC_REF(take_over_ask_consent_again),
-	))
+	var/datum/control_transfer_review/morph_takeover/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.choices = possible_mobs
+	review.start()
 
-/datum/om/flow/ask_sequence/morph_takeover
-	/// The answer of the prompt keyed "prey".
+/datum/control_transfer_review/morph_takeover
 	var/mob/living/prey
+	var/prey_selected = FALSE
+	var/list/choices
 
-/datum/om/prompt/choice/morph_takeover_target
-	key = "prey"
+CAPABILITIES(/datum/control_transfer_review/morph_takeover)
+	ref_one(nameof(prey), /mob/living)
+
+/datum/prompt/choice/control_transfer_target/morph_takeover
 	title = "Take Over Prey"
-	message = "Select a mob to take over:"
+	question = "Select a mob to take over:"
 
-/datum/om/prompt/choice/morph_takeover_target/New(list/possible_mobs)
-	..()
-	choices = possible_mobs
+/datum/control_transfer_review/morph_takeover/why_not()
+	. = ..()
+	if(.)
+		return
+	return prey_selected && QDELETED(prey) ? "gone" : null
 
-/datum/om/prompt/confirm/morph_takeover_sure
-	key = "sure"
-	title = "Take Over Prey"
-	no_first = TRUE
+/datum/control_transfer_review/morph_takeover/start_step(datum/act/request/A)
+	open_request(src, /datum/prompt/choice/control_transfer_target/morph_takeover, PROC_REF(target_entered), answerer = actor, asker = actor, choices = choices)
 
-/// The prey's consent, asked of the prey; a no tells the morph (the asker).
-/datum/om/prompt/confirm/morph_takeover_consent
-	key = "allow"
-	title = "Allow Morph To Take Over"
-	no_first = TRUE
+/datum/control_transfer_review/morph_takeover/proc/target_entered(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	run_step(PROC_REF(target_step), A)
 
-/datum/om/prompt/confirm/morph_takeover_consent/prepare()
-	message = "\The [asker] has elected to attempt to take over your body and control you. Is this something you will allow to happen?"
-	return TRUE
+/datum/control_transfer_review/morph_takeover/proc/target_step(datum/act/request/A)
+	var/mob/living/selected = A.answer.value
+	if(!istype(selected) || QDELETED(selected))
+		retire()
+		return
+	rel_set(src, nameof(prey), selected)
+	prey_selected = TRUE
+	if(QDELETED(prey))
+		retire()
+		return
+	if(!prey.vore_prefs.allow_mimicry)
+		to_chat(actor, span_warning("\The [prey] cannot be impersonated!"))
+		retire()
+		return
+	ask(PROC_REF(sure_entered), "Take Over Prey", "You selected [prey] to attempt to take over. Are you sure?")
 
-/datum/om/prompt/confirm/morph_takeover_consent/declined()
-	to_chat(asker, span_warning("\The [answerer] declined your request for control."))
-	..()
+/datum/control_transfer_review/morph_takeover/proc/sure_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(offer_step))
 
-/datum/om/prompt/confirm/morph_takeover_consent/again
-	key = "allow2"
+/datum/control_transfer_review/morph_takeover/proc/offer_step(datum/act/request/A)
+	log_admin("[key_name_admin(actor)] offered [prey] to swap bodies as a morph.")
+	ask(PROC_REF(offer_entered), "Allow Morph To Take Over", "\The [actor] has elected to attempt to take over your body and control you. Is this something you will allow to happen?", prey, "declined your request for control.")
 
-/datum/om/prompt/confirm/morph_takeover_consent/again/prepare()
-	message = "Are you sure? The only way to undo this on your own is to OOC Escape."
-	return TRUE
+/datum/control_transfer_review/morph_takeover/proc/offer_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(final_offer_step))
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/mob/living/L = seq.prey
-	if(!L.allow_mimicry)
-		to_chat(src, span_warning("\The [L] cannot be impersonated!"))
-		return ASK_STOP
-	var/datum/om/prompt/confirm/morph_takeover_sure/ask = new
-	ask.message = "You selected [L] to attempt to take over. Are you sure?"
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/final_offer_step(datum/act/request/A)
+	ask(PROC_REF(final_entered), "Allow Morph To Take Over", "Are you sure? The only way to undo this on your own is to OOC Escape.", prey, "declined your request for control.")
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/mob/living/L = seq.prey
-	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
-	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
-	rel_set(ask, nameof(ask.answerer), L)
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/final_entered(datum/act/request/A)
+	confirmed(A, PROC_REF(finish_step))
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/morph_takeover/seq)
-	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
-	rel_set(ask, nameof(ask.answerer), seq.prey)
-	return ask
+/datum/control_transfer_review/morph_takeover/proc/finish_step(datum/act/request/A)
+	var/mob/living/simple_mob/vore/morph/operator = actor
+	operator.take_over_agreed(src)
+	retire()
 
-/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/morph_takeover/seq)
+/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/control_transfer_review/morph_takeover/seq)
 	var/mob/living/L = seq.prey
 	if(morphed || !isbelly(L.loc) || L.loc.loc != src)
 		return
@@ -358,37 +378,32 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	stop_pulling()
 	rel_set(src, nameof(original_mind), ensure_mind())
 	log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
-	new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
+	new /mob/living/simple_mob/vore/morph/dominated_prey(vore_selected_of(L), L.ensure_mind(), src, L)
 
 
 /mob/living/simple_mob/vore/morph/dominated_prey
 	name = "subservient node"
 	color = "#171717"
-	digestable = 0
-	devourable = 0
 	var/mob/living/simple_mob/vore/morph/parent_morph
 	var/mob/living/carbon/human/prey_body
 	/// The prey's mind, held in this node while the morph wears the prey.
 	var/datum/mind/prey_mind
 	vore_active = FALSE
 
-/mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
-	. = ..()
-	if(!pmind)
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(prey_mind), pmind)
-	rel_set(src, nameof(parent_morph), parent)
-	rel_set(src, nameof(prey_body), prey)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The morph and its prey swap seats.
+/mob/living/simple_mob/vore/morph/dominated_prey/proc/swap_made(prey)
+	if(!prey_mind)
+		return
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE
-	absorbed = TRUE
+	set_absorbed(TRUE)
 	// Both keep their own identity while in the other's seat.
 	move_player_mind(prey_mind, src, "taken over by morph [parent_morph]", share = TRUE)
 	move_player_mind(parent_morph.original_mind, prey_body, "morph took over [prey_body]", share = TRUE)
 	parent_morph.forceMove(src)
 	name = "[prey_body.name]"
-	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [prey_body.vore_selected]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
+	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [vore_selected_of(prey_body)]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
 
 /mob/living/simple_mob/vore/morph/dominated_prey/on_death(gibbed)
 	. = ..()
@@ -423,9 +438,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, TYPE_PROC_REF(/atom, 
 	else
 		parent_morph.forceMove(get_turf(prey_body))
 		return_bodies()
-		parent_morph.vore_selected.nom_atom(prey_body)
+		vore_selected_of(parent_morph).nom_atom(prey_body)
 		log_and_message_admins("and [key_name_admin(parent_morph)] have been returned to their original bodies. [get_area(src)] - [COORD(src)].", prey_body)
-	qdel(src)
+	dissolved(src)
 
 /// Each mind goes home: the morph's into the morph, the prey's into its body.
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/return_bodies()

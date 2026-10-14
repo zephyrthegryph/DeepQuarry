@@ -49,27 +49,28 @@
 ///   1. Armour for the hit part and kind (only for hits from outside the body,
 ///      INJURE_ARMORED). `armor_pen` points of it are ignored. Armour can turn
 ///      the edge of a cut or pierce, landing it as blunt trauma.
-///   2. Energy shields (/datum/om/event/living_shield_injury: shields drain a cell for
+///   2. Energy shields (/datum/definition_event/living_shield_injury: shields drain a cell for
 ///      what they absorb).
 ///   3. Resistance factors: BF_INCOMING_ALL x BF_INCOMING(category) (modifiers,
 ///      forms, species baselines, traits, reagents).
 ///   4. The body's species / part multiplier (immunities, prosthetics).
 /// INJURE_IGNORE_RESISTANCE skips stages 2-4. Every stage is recorded when
 /// the mob's injury trace is on or something listens to
-/// /datum/om/event/living_injury_explained (see explain_injury_stages()).
+/// /datum/definition_event/living_injury_explained (see explain_injury_stages()).
 /// Hot path: allocates nothing unless a listener or the trace needs it, and
 /// only marks the vitals dirty instead of recomputing them.
 /mob/living/proc/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(amount <= 0 || !body || kind < 1 || kind > INJURY_KIND_COUNT)
 		return 0
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
-	if(om_wants(src, /datum/om/event/before/living_injure))
-		var/list/amount_ref = list(amount)
-		if(OM_EMIT(src, /datum/om/event/before/living_injure, kind, amount_ref, zone, source, flags) & COMPONENT_CANCEL_INJURY)
-			return 0
-		amount = amount_ref[1]
-	var/list/explain = (injury_trace || om_wants(src, /datum/om/event/living_injury_explained)) ? list() : null
+	// A hook on the mob refuses the injury (a stasis field) or changes its amount in flight (a cluster that soaks it): doc section 8.
+	var/datum/act/injure/hit = ACT_TRY(src, injure, kind, amount, zone, source, flags)
+	if(!hit)
+		return 0
+	amount = ACT_FINAL(hit, amount, amount)
+	act_done(hit)
+	var/list/explain = (injury_trace || WANTS(src, /datum/notice/living_injury_explained)) ? list() : null
 	var/incoming_kind = kind
 	var/before = amount
 
@@ -87,10 +88,10 @@
 
 	if(!(flags & INJURE_IGNORE_RESISTANCE) && amount > 0)
 		// 2. Energy shields.
-		if(om_wants(src, /datum/om/event/living_shield_injury))
+		if(WANTS(src, /datum/notice/living_shield_injury))
 			before = amount
 			var/list/amount_ref = list(amount)
-			OM_EMIT(src, /datum/om/event/living_shield_injury, kind, amount_ref, zone, source, flags)
+			PUBLISH_LEGACY(src, /datum/notice/living_shield_injury, kind, amount_ref, zone, source, flags)
 			amount = max(0, amount_ref[1])
 			if(explain)
 				explain += list(list(INJURY_STAGE_SHIELD, before, amount, "energy shield"))
@@ -114,12 +115,12 @@
 	. = body.receive_injury(kind, amount, zone, source, affliction, flags)
 	if(!.)
 		return
-	BITSET(hud_updateflag, HEALTH_HUD)
-	changed(src, CHANGE_MOB_HEALTH)
+	flag_hud_update(HEALTH_HUD)
+	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 	if(!(flags & (INJURE_SILENT | INJURE_CONTINUOUS)))
 		flash_weak_pain()
 	body.on_status_changed()
-	OM_EMIT(src, /datum/om/event/living_injured, kind, ., zone, source, flags)
+	PUBLISH_LEGACY(src, /datum/notice/living_injured, kind, ., zone, source, flags)
 
 /// Apply several kinds at once: alist(INJURY_BLUNT = 10, INJURY_BURN = 5).
 /// (alist, because DM forbids numeric keys in a plain list literal.)
@@ -136,7 +137,7 @@
 	if(!weapon)
 		return 0
 	if(isnull(armor_pen))
-		armor_pen = weapon.armor_penetration
+		armor_pen = combat_of(weapon).armor_penetration
 	return injure_split(weapon.injury_kind, weapon.injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
 
 /// `amount` as `kind`, or shared out over `kinds` (INJURY_* -> share) for a
@@ -149,11 +150,11 @@
 		. += injure(split_kind, amount * kinds[split_kind], zone, source, armor_pen, null, flags)
 
 /// Records one injure() call's mitigation stages: sends
-/// /datum/om/event/living_injury_explained and, while the injury trace is on, logs the
+/// /datum/definition_event/living_injury_explained and, while the injury trace is on, logs the
 /// breakdown and shows it to the admins tracing this mob.
 /// `stages` is a list of list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /mob/living/proc/explain_injury_stages(incoming_kind, kind, list/stages, zone, atom/source, flags)
-	OM_EMIT(src, /datum/om/event/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
+	PUBLISH_LEGACY(src, /datum/notice/living_injury_explained, incoming_kind, kind, stages, zone, source, flags)
 	if(!injury_trace)
 		return
 	var/list/parts = list()
@@ -174,24 +175,6 @@
 /// The key in a worn / natural `armor` list ("melee", "bullet", ...) that
 /// resists an armour kind (INJURY_* or ARMOR_BLAST), or null when no armour
 /// resists it (frostbite, cellular, neural, digestion).
-/proc/injury_armor_key(kind)
-	switch(kind)
-		if(INJURY_BLUNT, INJURY_CUT)
-			return "melee"
-		if(INJURY_PIERCE)
-			return "bullet"
-		if(INJURY_BURN)
-			return "laser"
-		if(INJURY_ELECTRIC, INJURY_PAIN)
-			return "energy"
-		if(ARMOR_BLAST)
-			return "bomb"
-		if(INJURY_TOXIN, INJURY_CORROSIVE)
-			return "bio"
-		if(INJURY_RADIATION)
-			return "rad"
-	return null
-
 /// THE armour lookup: armour points against `kind` (INJURY_* or ARMOR_BLAST)
 /// at `zone` (a BP_* zone, a limb or an organ; null = averaged over the body).
 /// Worn / natural armour (injury_armor_set()) plus the BF_ARMOR(kind) factor.
@@ -244,8 +227,8 @@
 	amount *= factor(BF_HEALING_RECEIVED)
 	. = body.mend(tag, amount, target)
 	if(.)
-		BITSET(hud_updateflag, HEALTH_HUD)
-		changed(src, CHANGE_MOB_HEALTH)
+		flag_hud_update(HEALTH_HUD)
+		PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 
 /// B14 / P2-S12: the one writer that takes radiation OUT of a mob — acute
 /// dose and accumulated dose together (anti-radiation treatment, restoration).
@@ -256,6 +239,7 @@
 	var/before = radiation
 	radiation = max(radiation - amount, 0)
 	accumulated_rads = max(accumulated_rads - amount, 0)
+	radiation_changed()
 	return before - radiation
 
 /// P2-S12: the one writer that puts acute radiation INTO a mob. Callers apply
@@ -265,6 +249,8 @@
 		return 0
 	var/before = radiation
 	radiation = min(radiation + amount, RADIATION_CAP)
+	if(radiation != before)
+		radiation_changed()
 	return radiation - before
 
 /// P2-S12: natural decay owned by the radiation model: acute dose falls by
@@ -272,19 +258,31 @@
 /mob/proc/decay_radiation(amount, to_accumulated = 0)
 	radiation = max(radiation - amount, 0)
 	accumulated_rads = clamp(accumulated_rads + to_accumulated, 0, RADIATION_CAP)
+	radiation_changed()
 
 /// P2-S12: clear all radiation (restoration, rejuvenate, changeling panacea).
 /mob/proc/clear_radiation()
+	if(!radiation && !accumulated_rads)
+		return
 	radiation = 0
 	accumulated_rads = 0
+	radiation_changed()
+
+/// The dose changed (every radiation writer above calls it): the radiation step and the medical metric triggers hear it.
+/mob/proc/radiation_changed()
+	PUBLISH_CHANGE(src, MOB_KEY_RADIATION)
+
+/mob/living/radiation_changed()
+	body?.invalidate(BODY_DIRTY_METRICS)
+	..()
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.
 /mob/living/proc/fully_heal()
 	body?.clear_afflictions()
 	body?.restore()
-	BITSET(hud_updateflag, HEALTH_HUD)
-	changed(src, CHANGE_MOB_HEALTH)
+	flag_hud_update(HEALTH_HUD)
+	PUBLISH_CHANGE(src, MOB_KEY_HEALTH)
 
 
 // --- Questions ----------------------------------------------------------------------
@@ -337,6 +335,7 @@
 /// objects and structures, or null when it can't harm them (pain, toxins,
 /// electricity, radiation...). The one place object damage is derived.
 /proc/injury_kind_obj_damage_type(kind)
+	READS_FROM() // a scalar enum mapping; it reads no entity state
 	switch(kind)
 		if(INJURY_BLUNT, INJURY_CUT, INJURY_PIERCE)
 			return BRUTE

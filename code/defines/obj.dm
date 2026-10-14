@@ -4,21 +4,19 @@
 	anchored = TRUE
 	density = TRUE
 
-/// Old attackby.
-/obj/structure/signpost/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return attack_hand(user)
+/// A hand or an item (the old attackby sent it to attack_hand) asks whether to travel back.
+CAPABILITIES(/obj/structure/signpost)
+	op("hand", hand(), label("Use"), ungated(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k11"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), asks(/datum/prompt/choice, fields = list("question" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k11"), then(PROC_REF(interaction_hand)))
 
-DECLARE_INTERACTIONS(/obj/structure/signpost, 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), 	INTERACT_ITEM(null, PROC_REF(interaction_item)), )
-
-/// Old attack_hand.
-/obj/structure/signpost/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k11 = rerun_ask(user, "k11", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "Travel back to ss13?", title = "Return?", choices = list("Yes","No"))
-	if(isnull(_answer_k11))
-		return TRUE
+/// Old attack_hand (and attackby, which forwarded to it).
+/obj/structure/signpost/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	var/_answer_k11 = A.step_value("k11")
 	if(_answer_k11 == "Yes")
-		if(user.z != src.z)	return TRUE
+		if(user.z != src.z)	return OP_OK
 		user.forceMove(get_turf(pick(REGISTRY_MEMBERS(REGISTRY_LATEJOIN))))
-	return TRUE
+	return OP_OK
 
 /obj/structure/signpost_fake
 	icon = 'icons/obj/stationobjs.dmi'
@@ -170,12 +168,13 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_LARGE
-	force = 0.0
-	throwforce = 0.0
 	throw_speed = 1
 	throw_range = 20
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+
+CAPABILITIES(/obj/item/beach_ball)
+	configure(item_thrown(force = 0.0))
+	configure(item_combat(force = 0.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/beach_ball/afterattack(atom/target as mob|obj|turf|area, mob/user as mob)
 	user.drop_item()
@@ -189,13 +188,13 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	name = "dodgeball"
 	desc = "Think fast, chucklenuts!"
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
-	force = 0.1
-	throwforce = 0.1
 	throw_speed = 5
 	throw_range = 15
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
-	hitsound = SFX_WEAPONS_DODGEBALL
+
+CAPABILITIES(/obj/item/beach_ball/dodgeball)
+	configure(item_thrown(force = 0.1))
+	configure(item_combat(force = 0.1))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))
 
 /obj/effect/spawner
 	name = "object spawner"

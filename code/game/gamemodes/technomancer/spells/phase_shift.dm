@@ -15,9 +15,11 @@
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
 
-/obj/item/spell/phase_shift/Initialize(mapload)
-	. = ..()
-	set_light(3, 2, l_color = "#FA58F4")
+CAPABILITIES(/obj/item/spell/phase_shift)
+	configure(light_glow(range = 3, power = 2, color = "#FA58F4"))
+
+/obj/item/spell/phase_shift
+	light_on = TRUE
 
 /obj/effect/phase_shift
 	resistance_flags = BOMB_PROOF
@@ -26,21 +28,19 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "rift"
 
-DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
-
-/obj/effect/phase_shift/Initialize(mapload)
-	. = ..()
-	set_light(3, 5, l_color = "#FA58F4")
+/obj/effect/phase_shift
+	light_on = TRUE
 
 // whatever phased inside comes back out on the turf.
-/obj/effect/phase_shift/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/phase_shift)
+	configure(light_glow(range = 3, power = 5, color = "#FA58F4"))
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	every(2 SECONDS, then(PROC_REF(phase_shift_step)))
 
-/// Wears on whoever hides inside every 2 s; empty, it sleeps.
-/obj/effect/phase_shift/periodic_step()
+/// Wears on whoever hides inside every 2 s; empty, the run does nothing.
+/obj/effect/phase_shift/proc/phase_shift_step(datum/act/timer/A)
 	if(!(locate_within(src, /mob/living)))
-		return PROCESS_KILL
+		return
 	for(var/mob/living/L in contents)
 		L.adjust_instability(2)
 
@@ -50,7 +50,7 @@ DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
 
 	to_chat(user, span_notice("You step out of the rift."))
 	user.forceMove(get_turf(src))
-	qdel(src)
+	spent(src, user)
 
 /obj/item/spell/phase_shift/on_use_cast(mob/user)
 	if(isturf(user.loc)) //Check if we're not already in a rift.

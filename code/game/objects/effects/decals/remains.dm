@@ -61,15 +61,22 @@
 	desc = "They look like human remains. They've been here a long time."
 	icon_state = "mummified2"
 
-EXTEND_INTERACTIONS(/obj/effect/decal/remains, \
-	INTERACT_HAND(null, PROC_REF(interaction_crumble_remains)), \
-)
+CAPABILITIES(/obj/effect/decal/remains)
+	op("crumble_remains", hand(), stance(I_HURT), then(PROC_REF(interaction_crumble_remains)))
 
-/// Old attack_hand: the remains crumble away at a touch.
-/obj/effect/decal/remains/proc/interaction_crumble_remains(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: harm intent crumbles the remains away.
+/obj/effect/decal/remains/proc/interaction_crumble_remains(datum/act/op/A)
+	var/mob/user = A.actor
+	if(loc?.release_refusal(src, user))
+		return TRUE
 	to_chat(user, span_notice("[src] [crumble_message]."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
-		new crumble_into(F)
-	qdel(src)
+		var/atom/movable/debris = new crumble_into(F)
+		// A floor transform has no holder slot to inherit. Contained remains
+		// still leave debris on the floor when destroyed.
+		if(loc == F)
+			replace_with(src, debris)
+			return TRUE
+	consume(src, user)
 	return TRUE

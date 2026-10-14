@@ -6,9 +6,9 @@
 /// Swaps req_access and req_one_access for the shared copy with the same contents.
 /obj/proc/intern_access_lists()
 	if(length(req_access) && is_access_id_list(req_access))
-		req_access = string_list(req_access)
+		set_req_access(string_list(req_access))
 	if(length(req_one_access) && is_access_id_list(req_one_access))
-		req_one_access = string_list(req_one_access)
+		set_req_one_access(string_list(req_one_access))
 
 /proc/is_access_id_list(list/L)
 	for(var/entry in L)
@@ -43,6 +43,7 @@
 	return has_access(req_access, req_one_access, L)
 
 /proc/has_access(list/req_access, list/req_one_access, list/accesses)
+	READS_FROM()
 	// req_access list has priority if set
 	// Requires at least every access in list
 	for(var/req in req_access)
@@ -109,7 +110,7 @@ GLOBAL_LIST_INIT(centcom_job_names, list("VIP Guest", \
 		return C.registered_name
 
 /proc/get_all_job_icons() //For all existing HUD icons
-	return SSjob.occupations_by_name + GLOB.alt_titles_with_icons + list("Prisoner")
+	return job_occupations_by_name() + GLOB.alt_titles_with_icons + list("Prisoner")
 
 /proc/GetJobName(obj/source) //Used in secHUD icon generation
 	var/obj/item/card/id/I = source.GetID()

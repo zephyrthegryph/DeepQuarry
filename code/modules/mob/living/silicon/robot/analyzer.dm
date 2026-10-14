@@ -8,26 +8,25 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	icon_state = "robotanalyzer"
 	item_state = "analyzer"
 	desc = "A hand-held scanner able to diagnose robotic injuries."
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
 	var/mode = 1;
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/robotanalyzer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	do_scan(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/item/robotanalyzer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("mode", hand(), gesture(GESTURE_ALT), then(PROC_REF(mode_toggled)))
 
-/// Old click_alt.
-/obj/item/robotanalyzer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Alt-click: switch between scanning cyborgs and scanning for upgrades.
+/obj/item/robotanalyzer/proc/mode_toggled(datum/act/op/A)
 	mode = !mode
-	user.show_message(span_blue("[mode ? "Toggled to cyborg analyzing mode." : "Toggled to cyborg upgrade scan mode."]"), 1)
-	return TRUE
+	A.actor.show_message(span_blue("[mode ? "Toggled to cyborg analyzing mode." : "Toggled to cyborg upgrade scan mode."]"), 1)
 
 /obj/item/robotanalyzer/proc/do_scan(mob/living/M, mob/living/user)
 	if(CLUMSY_FAIL_CHANCE(user))
@@ -78,7 +77,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 				if(cell)
 					user.show_message("\t Power Cell Details: [span_blue("[capitalize(cell.name)]")] with a capacity of [cell.maxcharge] at [round(cell.percent())]% charge")
 				var/show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade in GLOB.research_service.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade in research_techweb_designs())
 					var/obj/item/borg/upgrade/utility/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || (R.stat != DEAD && (upgrade_type == /obj/item/borg/upgrade/utility/restart)) || (isshell(R) && (upgrade_type == /obj/item/borg/upgrade/utility/rename)))
@@ -92,7 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 					else
 						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [span_green("Usable")]"))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade in GLOB.research_service.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade in research_techweb_designs())
 					var/obj/item/borg/upgrade/basic/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || R.stat == DEAD)
@@ -102,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 						show_title = FALSE
 					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade in GLOB.research_service.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade in research_techweb_designs())
 					var/obj/item/borg/upgrade/advanced/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || R.stat == DEAD)
@@ -112,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 						show_title = FALSE
 					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade in GLOB.research_service.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade in research_techweb_designs())
 					var/obj/item/borg/upgrade/restricted/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || !R.supports_upgrade(initial(upgrade.build_path)) || R.stat == DEAD)
@@ -170,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 		return
 	user.show_message(D.render_chat(), 1)
 	log_diagnosis(user, M, D)
-	qdel(D)
+	spent(D, M)
 
 /// One upgrade line of the upgrade scan, from the upgrade's own detection.
 /obj/item/robotanalyzer/proc/show_upgrade_line(mob/user, mob/living/silicon/robot/R, upgrade_type, upgrade_name)

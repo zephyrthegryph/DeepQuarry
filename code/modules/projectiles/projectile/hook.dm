@@ -10,14 +10,12 @@
 
 	damage = 5
 	speed = 2
-	armor_penetration = 15
 
 	var/impact_sound = SFX_EFFECTS_UNCLOAK
 	var/crack_sound = 'sound/effects/teleport.ogg'
 	fire_sound = SFX_EFFECTS_ZZZT
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
-	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.
 	var/launcher_intent = null	// The stance the firer pulled the trigger in (receive_firer_stance()).
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
@@ -27,6 +25,10 @@
 
 	var/datum/beam/chain = null
 
+CAPABILITIES(/obj/item/projectile/energy/hook)
+	configure(item_combat(armor_penetration = 15))
+	owns_one(nameof(chain), /datum/beam)
+
 /obj/item/projectile/energy/hook/receive_firer_stance(stance)
 	launcher_intent = stance
 
@@ -35,13 +37,13 @@
 	range = expected_distance // So the hook hits the ground if no mob is hit.
 	target_distance = expected_distance
 	if(firer)	// Needed to ensure later checks in impact and on hit function.
-		own_set(src, nameof(chain), firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1))
+		rel_set(src, nameof(chain), firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1))
 
 	if(launcher_intent)
 		switch(launcher_intent)
 			if(I_HURT)
 				damage *= 3
-				sharp = TRUE
+				set_sharp(TRUE)
 				agony = 20
 			if(I_GRAB)
 				injury_kind = INJURY_PAIN
@@ -149,7 +151,7 @@
 						return
 					T = pick(possible_targets)
 
-				om_after(target, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 40, 1)
+				after(target, 0.2 SECONDS, GLOBAL_PROC_REF(playsound), with = list(target, crack_sound, 40, 1))
 				visible_message(span_notice("\The [T] is snatched by \the [src]!"))
 				T.throw_at(get_turf(firer), 7, 1, src)
 				success = TRUE
@@ -160,7 +162,7 @@
 				if(I_HELP)
 					var/message = pick(help_messages)
 					if(message == "slaps")
-						om_after(src, 1, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 50, 1)
+						after(src, 0.1 SECONDS, GLOBAL_PROC_REF(playsound), with = list(src, 'sound/effects/snap.ogg', 50, 1))
 					visible_message(span_notice("\The [src] [message] [target]."))
 					done_mob_unique = TRUE
 					success = TRUE
@@ -180,7 +182,7 @@
 					success = TRUE
 				if(I_GRAB)
 					var/turf/STurf = get_turf(L)
-					om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 60, 1)
+					after(STurf, 0.2 SECONDS, GLOBAL_PROC_REF(playsound), with = list(STurf, crack_sound, 60, 1))
 					act_message(src, L, others = span_critical("%U% rips %T% towards \the [firer]!"))
 					L.throw_at(get_turf(get_step(firer,get_dir(firer,L))), 6, 1, src)
 					done_mob_unique = TRUE
@@ -190,7 +192,6 @@
 		if(!S.anchored)
 			S.throw_at(get_turf(get_step(firer,get_dir(firer,S))), 4, 1, src)
 			success = TRUE
-	qdel(my_tracking_beam)
 	return success
 
 /*

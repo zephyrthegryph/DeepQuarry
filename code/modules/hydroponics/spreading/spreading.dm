@@ -2,7 +2,7 @@
 #define VINE_GROWTH_STAGES 5
 
 /proc/spacevine_infestation(potency_min=70, potency_max=100, maturation_min=5, maturation_max=15)
-	om_after(null, 0, /proc/spacevine_infestation_start, potency_min, potency_max, maturation_min, maturation_max) //to stop the secrets panel hanging (the global owner: a round event)
+	after(null, 0, GLOBAL_PROC_REF(spacevine_infestation_start), with = list(potency_min, potency_max, maturation_min, maturation_max)) //to stop the secrets panel hanging (the global owner: a round event)
 
 /obj/effect/dead_plant
 	anchored = TRUE
@@ -10,24 +10,25 @@
 	density = FALSE
 	color = DEAD_PLANT_COLOUR
 
-EXTEND_INTERACTIONS(/obj/effect/dead_plant, \
-	INTERACT_HAND(null, PROC_REF(interaction_clear_dead_plant)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_clear_dead_plant_item)), \
-)
+CAPABILITIES(/obj/effect/dead_plant)
+	op("clear_dead_plant", hand(), label("Interaction clear dead plant"), then(PROC_REF(interaction_clear_dead_plant)))
+	op("clear_dead_plant_item", item(/obj/item), label("Interaction clear dead plant item"), then(PROC_REF(interaction_clear_dead_plant_item)))
 
 /// Old attack_hand: a touch clears the dead plant away.
-/obj/effect/dead_plant/proc/interaction_clear_dead_plant(mob/user, obj/item/held, datum/interaction/interaction)
-	qdel(src)
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant(datum/act/op/A)
+	var/mob/user = A.actor
+	consume(src, user)
 	return TRUE
 
 /// Old attackby: any item clears it and lets the neighbouring vines regrow (the item's normal handling still follows).
-/obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/obj/effect/plant/neighbor in range(1, src))
 		neighbor.update_neighbors()
-	qdel(src)
-	return INTERACTION_HANDLED_PASS
+	consume(src, user)
+	return OP_PASS
 
-/// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
+/// Growing (plant_step every() on `growing`) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
 REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 /obj/effect/plant
@@ -51,41 +52,62 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/tmp/datum/seed/seed_static
 	var/sampled = 0
 	var/floor = 0
+	/// How far a wall plant sits into its wall, rolled once so a redraw keeps it.
+	var/wall_shift = 12
 	var/spread_chance = 40
 	var/spread_distance = 3
 	var/evolve_chance = 2
 	EXPIRY_DECLARE(mature_time) //minimum maturation time
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
+	/// Is it in the growing registry? The growth every() below runs while it is.
+	var/growing = FALSE
+
+TRACKED(/obj/effect/plant, growing)
+
+CAPABILITIES(/obj/effect/plant)
+	every(7.5 SECONDS, then(PROC_REF(plant_step)), when = nameof(growing))
+	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
+	rolls(nameof(wall_shift), range_of(12, 14))
+	param(nameof(seed_at_make), pos = 1)
+	param(nameof(parent), pos = 2)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(plant_blast_die_off))))
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
 	if(seed() && seed().get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
-	GLOB.plant_service.remove_plant(src)
+	SSplants.remove_plant(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
-		GLOB.plant_service.add_plant(neighbor)
+		SSplants.add_plant(neighbor)
 	..()
 
 /obj/effect/plant/single
 	spread_chance = 0
 
-/obj/effect/plant/Initialize(mapload, datum/seed/newseed, obj/effect/plant/newparent)
+/// The seed a vine grows from (its constructor param), or null for the default seed.
+/obj/effect/plant/var/datum/seed/seed_at_make
+
+// ALLOW(init/INSTANCE_STATE): a vine takes its seed's traits, growth and spread
+/obj/effect/plant/Initialize(mapload)
 	. = ..()
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
 
-	if(!newparent)
+	if(!parent)
 		rel_set(src, nameof(parent), src)
-	else
-		rel_set(src, nameof(parent), newparent)
 
-	if(!GLOB.plant_service)
+	if(!SSplants)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
 		return INITIALIZE_HINT_QDEL
 
+	var/datum/seed/newseed = seed_at_make
 	if(!istype(newseed))
-		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
+		newseed = SSplants.seeds[DEFAULT_SEED]
 	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
@@ -94,49 +116,75 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	max_health = round(seed().get_trait(TRAIT_ENDURANCE)/2)
 	if(seed().get_trait(TRAIT_SPREAD)==2)
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity)) // Grabby
-		max_growth = VINE_GROWTH_STAGES
-		growth_threshold = max_health/VINE_GROWTH_STAGES
+		set_max_growth(VINE_GROWTH_STAGES)
+		set_growth_threshold(max_health/VINE_GROWTH_STAGES)
 		icon = 'icons/obj/hydroponics_vines.dmi'
-		growth_type = 2 // Vines by default.
+		set_growth_type(2) // Vines by default.
 		if(seed().get_trait(TRAIT_CARNIVOROUS) >= 2)
-			growth_type = 1 // WOOOORMS.
+			set_growth_type(1) // WOOOORMS.
 		else if(!(seed().seed_noun in list("seeds","pits")))
 			if(seed().seed_noun in list("nodes", "cuttings"))
-				growth_type = 3 // Biomass
+				set_growth_type(3) // Biomass
 			else
-				growth_type = 4 // Mold
+				set_growth_type(4) // Mold
 	else
-		max_growth = seed().growth_stages
-		growth_threshold = max_health/seed().growth_stages
+		set_max_growth(seed().growth_stages)
+		set_growth_threshold(max_health/seed().growth_stages)
 
 	if(max_growth > 2 && prob(50))
-		max_growth-- //Ensure some variation in final sprite, makes the carpet of crap look less wonky.
+		set_max_growth(max_growth - 1) //Ensure some variation in final sprite, makes the carpet of crap look less wonky.
 
 	EXPIRY_SET(src, mature_time, seed().get_trait(TRAIT_MATURATION) + 15, CLOCK_WORLD) //prevent vines from maturing until at least a few seconds after they've been created.
 	spread_chance = seed().get_trait(TRAIT_POTENCY)
 	spread_distance = ((growth_type>0) ? round(spread_chance*0.6) : round(spread_chance*0.3))
-	update_icon()
 
 // Plants will sometimes be spawned in the turf adjacent to the one they need to end up in, for the sake of correct dir/etc being set.
 /obj/effect/plant/proc/finish_spreading()
 	set_dir(calc_dir())
-	update_icon()
-	GLOB.plant_service.add_plant(src)
+	SSplants.add_plant(src)
 	//Some plants eat through plating.
 	if(islist(seed().chems) && !isnull(seed().chems[REAGENT_ID_PACID]))
 		var/turf/T = get_turf(src)
 		T.ex_act(prob(80) ? 3 : 2)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/plant/appearance_overlays()
-	. = list()
-	//TODO: should really be caching this.
-	refresh_icon()
+TRACKED(/obj/effect/plant, health)
+TRACKED(/obj/effect/plant, wall_shift)
+
+/// The most stages the plant reaches: its own, held back at the fringe of its spread.
+/obj/effect/plant/proc/plant_growth_cap()
+	var/growth_cap = max_growth
+	if(spread_distance > 5)
+		var/at_fringe = get_dist(src, parent())
+		if(at_fringe >= (spread_distance-3))
+			growth_cap--
+		if(at_fringe >= (spread_distance-2))
+			growth_cap--
+	return max(1, growth_cap)
+
+/// The plant: its stage of growth, flush against the wall it grows from when it is not on the floor, tinted and lit by its seed.
+/obj/effect/plant/draw(datum/look/look)
+	..()
+	var/growth_cap = plant_growth_cap()
+	var/growth = growth_threshold ? min(growth_cap, round(health/growth_threshold)) : growth_cap
+	if(growth_type > 0)
+		switch(growth_type)
+			if(1)
+				look.state("worms")
+			if(2)
+				look.state("vines-[growth]")
+			if(3)
+				look.state("mass-[growth]")
+			if(4)
+				look.state("mold-[growth]")
+	else
+		look.state("[seed().get_trait(TRAIT_PLANT_ICON)]-[growth]")
+
+	look.effect(PROC_REF(plant_settle), growth > 2 && growth == growth_cap)
+
 	if(growth_type == 0 && !floor)
-		src.transform = null
 		var/matrix/M = matrix()
 		// should make the plant flush against the wall it's meant to be growing from.
-		M.Translate(0,-(rand(12,14)))
+		M.Translate(0, -wall_shift)
 		switch(dir)
 			if(WEST)
 				M.Turn(90)
@@ -144,10 +192,10 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 				M.Turn(180)
 			if(EAST)
 				M.Turn(270)
-		src.transform = M
+		look.set_transform(M)
 	var/icon_colour = seed().get_trait(TRAIT_PLANT_COLOUR)
 	if(icon_colour)
-		color = icon_colour
+		look.set_color(icon_colour)
 	// Apply colour and light from seed datum.
 	if(seed().get_trait(TRAIT_BIOLUM))
 		var/clr
@@ -157,34 +205,13 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 		var/blight = 1+round(seed().get_trait(TRAIT_POTENCY)/20)
 		if(blight >= 5)
 			blight = 5
-		set_light(blight, 0.5, l_color = clr)
-		return .
+		look.glow(blight, 0.5, clr)
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
-/obj/effect/plant/proc/refresh_icon()
-	var/growth = min(max_growth,round(health/growth_threshold))
-	var/at_fringe = get_dist(src,parent())
-	if(spread_distance > 5)
-		if(at_fringe >= (spread_distance-3))
-			max_growth--
-		if(at_fringe >= (spread_distance-2))
-			max_growth--
-	max_growth = max(1,max_growth)
-	if(growth_type > 0)
-		switch(growth_type)
-			if(1)
-				icon_state = "worms"
-			if(2)
-				icon_state = "vines-[growth]"
-			if(3)
-				icon_state = "mass-[growth]"
-			if(4)
-				icon_state = "mold-[growth]"
-	else
-		icon_state = "[seed().get_trait(TRAIT_PLANT_ICON)]-[growth]"
-
-	if(growth>2 && growth == max_growth)
+/// A fully grown plant stands tall (and, of woody seeds, blocks the way); a younger one lies flat and open.
+/obj/effect/plant/proc/plant_settle(full_grown)
+	if(full_grown)
 		plane = ABOVE_PLANE
 		set_opacity(1)
 		if(!isnull(seed().chems[REAGENT_ID_WOODPULP]))
@@ -221,31 +248,29 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 	if(dirList.len)
 		var/newDir = pick(dirList)
 		if(newDir == 16)
-			floor = 1
+			set_floor(1)
 			newDir = 1
 		return newDir
 
-	floor = 1
+	set_floor(1)
 	return 1
 
-EXTEND_INTERACTIONS(/obj/effect/plant, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_plant)), \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_plant)), \
-)
-
 /// Old attackby: a scalpel takes a sample, anything else hacks at the plant. The item's normal handling still follows.
-/obj/effect/plant/proc/interaction_hit_plant(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/plant/proc/interaction_hit_plant(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.setClickCooldown(user.get_attack_speed(held))
-	GLOB.plant_service.add_plant(src)
+	SSplants.add_plant(src)
 
 	if(istype(held, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-	else if(held.force)
-		health -= held.force
-	return INTERACTION_HANDLED_PASS
+	else if(combat_of(held).force)
+		set_health(health - combat_of(held).force)
+	return OP_PASS
 
 /// Old attack_hand: pull free whoever the plant has entangled.
-/obj/effect/plant/proc/interaction_touch_plant(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/plant/proc/interaction_touch_plant(datum/act/op/A)
+	var/mob/user = A.actor
 	manual_unbuckle(user)
 	return TRUE
 
@@ -262,15 +287,18 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 	if(prob(70))
 		sampled = TRUE
 	seed().harvest(user, 0, TRUE)
-	health -= rand(3, 5) * 5
+	set_health(health - rand(3, 5) * 5)
 	sampled = TRUE
 	check_health()
 	return TRUE
 
-/obj/effect/plant/wirecutter_act(mob/user, obj/item/tool)
-	user.setClickCooldown(user.get_attack_speed(tool))
-	GLOB.plant_service.add_plant(src)
-	return take_plant_sample(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+/// Wirecutters take a sample of the plant.
+/obj/effect/plant/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	user.setClickCooldown(user.get_attack_speed(A.held))
+	SSplants.add_plant(src)
+	take_plant_sample(user)
+	return OP_OK
 
 //handles being overrun by vines - note that attacker_parent may be null in some cases
 /obj/effect/plant/proc/vine_overrun(datum/seed/attacker_seed, obj/effect/plant/attacker_parent)
@@ -295,13 +323,13 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 	aggression -= resiliance
 
 	if(aggression > 0)
-		health -= aggression*5
+		set_health(health - aggression*5)
 		check_health()
 
-DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_off))
 
 /// A blast kills the plant by its own severity odds (instead of the blast packet).
-/obj/effect/plant/proc/plant_blast_die_off(datum/damage_packet/packet)
+/obj/effect/plant/proc/plant_blast_die_off(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(1.0)
 			die_off()
@@ -311,7 +339,7 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 		if(3.0)
 			if (prob(5))
 				die_off()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/plant/proc/check_health()
 	if(health <= 0)
@@ -333,7 +361,7 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 
 	if(turfs.len) //Pick a turf to spawn at if we can
 		var/turf/simulated/floor/T = pick(turfs) // end
-		var/datum/seed/seed = GLOB.plant_service.create_random_seed(1)
+		var/datum/seed/seed = SSplants.create_random_seed(1)
 		seed.set_trait(TRAIT_SPREAD,2)             // So it will function properly as vines.
 		seed.set_trait(TRAIT_POTENCY,rand(potency_min, potency_max)) // 70-100 potency will help guarantee a wide spread and powerful effects.
 		seed.set_trait(TRAIT_MATURATION,rand(maturation_min, maturation_max))
@@ -341,9 +369,9 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 
 		//make vine zero start off fully matured
 		var/obj/effect/plant/vine = new(T,seed)
-		vine.health = vine.max_health
+		vine.set_health(vine.max_health)
 		vine.mature_time = 0
-		vine.periodic_step()
+		vine.plant_step(null)
 
 		message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
 		return
@@ -357,7 +385,3 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 /// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
-
-/obj/effect/plant/ownership()
-	. = ..()
-	. += proto(nameof(seed_static))

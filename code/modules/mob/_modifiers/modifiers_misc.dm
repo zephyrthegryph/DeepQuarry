@@ -88,11 +88,11 @@ the artifact triggers the rage.
 	act_message(L, null, others = span_critical("%U% descends into an all consuming rage!"))
 
 	// End all stuns.
-	L.status_set(EFFECT_PARALYZED, 0)
-	L.status_set(EFFECT_STUNNED, 0)
-	L.status_set(EFFECT_WEAKENED, 0)
+	L.status_set(STAT_PARALYZED, 0)
+	L.status_set(STAT_STUNNED, 0)
+	L.status_set(STAT_WEAKENED, 0)
 	L.mend(TREAT_ANALGESIC, 200) // Rage drowns out the pain.
-	L.lying = 0
+	L.set_lying(0)
 	L.update_canmove()
 
 	// Temporarily end pain.
@@ -108,8 +108,8 @@ the artifact triggers the rage.
 
 		if(prob(last_shock_stage))
 			to_chat(L, span_warning("You pass out from the pain you were suppressing."))
-			L.status_at_least(EFFECT_PARALYZED, 5)
-			L.status_at_least(EFFECT_SLEEPING, 5)
+			L.status_at_least(STAT_PARALYZED, 5)
+			L.status_at_least(STAT_SLEEPING, 5)
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -139,7 +139,7 @@ the artifact triggers the rage.
 			to_chat(L, span_warning("You feel strange for a moment, but it passes."))
 			return FALSE // Happy trees aren't affected by blood rages.
 
-	if(L.nutrition < nutrition_cost)
+	if(nutrition_of(L) < nutrition_cost)
 		if(!suppress_failure)
 			to_chat(L, span_warning("You are too hungry to berserk."))
 		return FALSE // Too hungry to enrage.
@@ -272,7 +272,7 @@ the artifact triggers the rage.
 
 /datum/body_effect/homeothermic/on_tick(mob/living/L)
 	..()
-	L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 /datum/body_effect/exothermic
 	tick_interval = 2 SECONDS
@@ -285,8 +285,8 @@ the artifact triggers the rage.
 
 /datum/body_effect/exothermic/on_tick(mob/living/L)
 	..()
-	if(L.bodytemperature > T20C)
-		L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	if(L.body_temperature() > T20C)
+		L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 /datum/body_effect/endothermic
 	tick_interval = 2 SECONDS
@@ -299,8 +299,8 @@ the artifact triggers the rage.
 
 /datum/body_effect/endothermic/on_tick(mob/living/L)
 	..()
-	if(L.bodytemperature < T20C)
-		L.set_bodytemperature(round((L.bodytemperature + T20C) / 2))
+	if(L.body_temperature() < T20C)
+		L.set_bodytemperature(round((L.body_temperature() + T20C) / 2))
 
 // Nullifies EMP.
 /datum/body_effect/faraday

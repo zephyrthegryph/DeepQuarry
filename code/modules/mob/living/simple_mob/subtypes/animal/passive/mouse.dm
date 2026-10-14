@@ -38,56 +38,58 @@
 	say_list_type = /datum/say_list/mouse
 
 	hasthermals = FALSE
+	ghostjoin = TRUE
 
 	var/body_color //brown, gray, white and black, leave blank for random
 
 	var/list/datum/affliction/contagion/rat_diseases
 
-	can_be_drop_prey = TRUE
-	can_be_drop_pred = FALSE
 	species_sounds = "Mouse"
 
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_3p = list("squeaks", "squiks")
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	param(nameof(keep_parent_data), pos = 1)
+	op("mouse_hand_help", hand(), ungated(), stance(I_HELP), label("Scoop up"), then(PROC_REF(mouse_interaction_hand)))
+	trait(TRAIT_AMBIENT_PEST_MOB)
+	// numbered and coloured at random; a named mouse (keep_parent_data) keeps its name and description
+	rolls(nameof(name), PROC_REF(roll_numbered_name), when = cond_not(nameof(keep_parent_data)))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	rolls(nameof(body_color), pick_one(list("brown", "gray", "white", "black")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "mouse_*", item = "mouse_*", living = "mouse_*", dead = "mouse_*_dead", rest = "mouse_*_sleep")
+	rolls(nameof(desc), PROC_REF(roll_desc), from = list(nameof(body_color)), when = cond_not(nameof(keep_parent_data)))
+	rolls(nameof(holder_type), PROC_REF(roll_holder), from = list(nameof(body_color)))
+	rolls(nameof(carries_disease), chance(40))
+	owns_many(nameof(rat_diseases), /datum/affliction/contagion, starts = PROC_REF(start_diseases))
 
-/mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
-	. = ..()
-	ghostjoin = TRUE
-	ghostjoin_icon()
+/// A mouse made from another keeps its name and look (its constructor param); a named mouse keeps its own.
+/mob/living/simple_mob/animal/passive/mouse/var/keep_parent_data = FALSE
+/// It was born carrying a disease (rolls()).
+/mob/living/simple_mob/animal/passive/mouse/var/carries_disease = FALSE
 
+/// Its description names its colour (rolls()); a rat keeps its own.
+/mob/living/simple_mob/animal/passive/mouse/proc/roll_desc(datum/roller/R)
+	if(body_color == "rat")
+		return desc
+	return "A small [body_color] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 
-	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
+/// The holder it is scooped into matches its colour (rolls()); a colour with no holder of its own takes the rat's, unless the mouse keeps its own.
+/mob/living/simple_mob/animal/passive/mouse/proc/roll_holder(datum/roller/R)
+	var/path = text2path("/obj/item/holder/mouse/[body_color]")
+	if(path)
+		return path
+	return keep_parent_data ? holder_type : /obj/item/holder/mouse/rat
 
-	if(!keep_parent_data && name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-	real_name = name
-
-	if(!body_color)
-		body_color = pick( list("brown","gray","white","black") )
-	icon_state = "mouse_[body_color]" // ALLOW(decl): random colour pick
-	item_state = "mouse_[body_color]"
-	icon_living = "mouse_[body_color]"
-	icon_dead = "mouse_[body_color]_dead"
-	icon_rest = "mouse_[body_color]_sleep"
-	if (!keep_parent_data && body_color != "rat")
-		desc = "A small [body_color] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
-		holder_type = /obj/item/holder/mouse/rat
-	if (body_color == "operative")
-		holder_type = /obj/item/holder/mouse/operative
-	if (body_color == "brown")
-		holder_type = /obj/item/holder/mouse/brown
-	if (body_color == "gray")
-		holder_type = /obj/item/holder/mouse/gray
-	if (body_color == "white")
-		holder_type = /obj/item/holder/mouse/white
-	if (body_color == "black")
-		holder_type = /obj/item/holder/mouse/black
-
-	if(prob(40))
-		own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
+/// The strains it starts with (owns_many(starts =)).
+/mob/living/simple_mob/animal/passive/mouse/proc/start_diseases(current, mapload)
+	. = list()
+	if(carries_disease)
+		. += new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src)
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -115,8 +117,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/proc/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_[body_color]_splat"
-	src.icon_state = "mouse_[body_color]_splat"
+	src.set_icon_dead("mouse_[body_color]_splat")
+	set_icon_state("mouse_[body_color]_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -147,9 +149,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 /mob/living/simple_mob/animal/passive/mouse/brown/Tom
 	name = "Tom"
 	desc = "Jerry the cat is not amused."
+	keep_parent_data = TRUE
 
-/mob/living/simple_mob/animal/passive/mouse/brown/Tom/Initialize(mapload)
-	. = ..(mapload, TRUE)
 
 /mob/living/simple_mob/animal/passive/mouse/black
 	body_color = "black"
@@ -193,9 +194,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 /mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese
 	name = "Agent Cheese"
 	desc = "I like my cheese Swiss... not American."
+	keep_parent_data = TRUE
 
-/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese/Initialize(mapload)
-	. = ..(mapload, TRUE)
 
 // Mouse noises
 /datum/say_list/mouse
@@ -207,29 +207,31 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	set name = "Set Mouse Colour"
 	set category = VERB_CAT_ABILITIES_MOUSE
 	set desc = "Set the colour of your mouse."
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(mouse_colour_chosen), title = "Pick a colour", message = "Set Mouse Colour", choices = list("brown","gray","white","black"))
+	open_request(src, /datum/prompt/choice, PROC_REF(mouse_colour_chosen), answerer = src, title = "Pick a colour", question = "Set Mouse Colour", choices = list("brown","gray","white","black"), timeout = 0)
 
-/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/om/prompt/choice/ask)
-	var/new_mouse_colour = ask.choice
-	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
-	item_state = "mouse_[new_mouse_colour]"
-	icon_living = "mouse_[new_mouse_colour]"
-	icon_dead = "mouse_[new_mouse_colour]_dead"
-	icon_rest = "mouse_[new_mouse_colour]_sleep"
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_mouse_colour = A.answer.value
+	set_icon_state(resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]")
+	set_item_state("mouse_[new_mouse_colour]")
+	set_icon_living("mouse_[new_mouse_colour]")
+	set_icon_dead("mouse_[new_mouse_colour]_dead")
+	set_icon_rest("mouse_[new_mouse_colour]_sleep")
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
-	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, src) // one colour change only
+	grant(src, granted_verb(/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, hidden = TRUE), src) // one colour change only
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology
 	name = "Fleming"
 	desc = "A small white rodent, often found in Virology. This one isn't quite the nuisance!"
+	keep_parent_data = TRUE
 
-/mob/living/simple_mob/animal/passive/mouse/white/virology/Initialize(mapload)
+/// Fleming always carries a strain of its own, besides what any mouse may.
+/mob/living/simple_mob/animal/passive/mouse/white/virology/start_diseases(current, mapload)
 	. = ..()
-	name = initial(name)
-	desc = initial(desc)
-	own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
+	. += new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src)
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology/Crossed(atom/movable/AM)
 	. = ..()
@@ -240,13 +242,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
-	nutrition = 20	//To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
-	vore_taste = "cheese"
 
 	restrict_vore_ventcrawl = TRUE
 
-	can_pull_size = ITEMSIZE_TINY // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
-	can_pull_mobs = MOB_PULL_NONE // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
 
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"
 
@@ -254,17 +252,17 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	universal_understand = 1
 
 //Jank grabber that uses the 'attack_hand' insead of 'MouseDrop'
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_UNGATED_AS(I_HELP, "Scoop up", PROC_REF(mouse_interaction_hand)))
 
 /// Old attack_hand: scooping.
-/mob/living/simple_mob/animal/passive/mouse/proc/mouse_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	var/mob/living/carbon/human/H = user
 	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && !combat_mode)
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (H == src))
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/proc/mouse_scooped(mob/living/carbon/grabber, self_grab)
 
@@ -294,14 +292,16 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_U
 	name = "Apple"
 	desc = "Dainty, well groomed and cared for, her eyes glitter with untold knowledge..."
 	gender = FEMALE
+	keep_parent_data = TRUE
 
-/mob/living/simple_mob/animal/passive/mouse/white/apple/Initialize(mapload, keep_parent_data)
-	. = ..(mapload, TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holder/mouse)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD | SLOT_ID))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holder/mouse/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holder/mouse/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(isanimal(L))
@@ -310,7 +310,9 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	return TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/mining
-	body_color = "brown"
+	body_color = "miner"
+	keep_parent_data = TRUE
+	holder_type = /obj/item/holder/mouse/brown
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "mouse_miner"
 	item_state = "mouse_miner"
@@ -318,23 +320,14 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	name = "Cooper"
 	desc = "A lonely miner's best friend."
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/hide)
-
-/mob/living/simple_mob/animal/passive/mouse/mining/Initialize(mapload)
-	. = ..()
-
-	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
-	item_state = "mouse_miner"
-	icon_living = "mouse_miner"
-	icon_dead = "mouse_miner_dead"
-	icon_rest = "mouse_miner_sleep"
-	desc = "A lonely miner's best friend."
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/mining)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/mouse/mining/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_miner_splat"
-	src.icon_state = "mouse_miner_splat"
+	src.set_icon_dead("mouse_miner_splat")
+	set_icon_state("mouse_miner_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -342,8 +335,13 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/pro
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/mouse/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/beastmode)
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE) //No ventcrawl for hanner
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 
 DECLARE_REGISTRY(/mob/living/simple_mob/animal/passive/mouse, REGISTRY_GHOST_PODS)
+
+
+/mob/living/simple_mob/animal/passive/mouse/starting_nutrition() //To prevent draining maint mice for infinite food. Low nutrition has no mechanical effect on simplemobs, so wont hurt mice themselves.
+	return 20

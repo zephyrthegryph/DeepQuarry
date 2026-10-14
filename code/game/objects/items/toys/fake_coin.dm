@@ -9,17 +9,8 @@
 	description_fluff = "This isn't a real coin; you can't use it on vending machines."
 	icon_state = "coin"
 	randpixel = 8
-	force = 0.0
-	throwforce = 0.0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/sides = 2
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
-
-/obj/item/fake_coin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
 
 /obj/item/fake_coin/gold
 	name = MAT_GOLD + " coin"
@@ -106,10 +97,17 @@
 	desc = "Shiny green " + MAT_VERDANTIUM + ", pressed into a coin. It almost seems to glimmer under starlight."
 	icon_state = "coin_verdantium"
 
-DECLARE_INTERACTIONS(/obj/item/fake_coin, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/fake_coin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.0))
+	configure(item_combat(force = 0.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /// Old attack_self.
-/obj/item/fake_coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/fake_coin/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)

@@ -94,7 +94,7 @@
 	if(message == "")
 		return FALSE
 
-	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS)
+	if(has_status(STAT_SLEEPING) || stat == UNCONSCIOUS)
 		hear_sleep(multilingual_to_message(message_pieces))
 		return FALSE
 
@@ -168,7 +168,7 @@
 	var/not_included = list("A", "The", "Of", "In", "For", "Through", "Throughout", "Therefore", "Here", "There", "Then", "Now", "I", "You", "They", "He", "She", "By")
 	var/list/valid_names = splittext(real_name, " ") // Should output list("John", "Doe") as an example.
 	valid_names -= not_included
-	var/list/nicknames = splittext(nickname, " ")
+	var/list/nicknames = splittext(bio.nickname, " ")
 	valid_names += nicknames
 	valid_names += TYPE_TABLE_GET(src, special_mentions)
 	for(var/name in valid_names)
@@ -197,7 +197,7 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 	var/list/combined = combine_message(message_pieces, verb, speaker, always_stars = hard_to_hear, radio = TRUE)
 	var/message = combined["formatted"]
-	if(has_status(EFFECT_SLEEPING) || stat == UNCONSCIOUS) //If unconscious or sleeping
+	if(has_status(STAT_SLEEPING) || stat == UNCONSCIOUS) //If unconscious or sleeping
 		hear_sleep(multilingual_to_message(message_pieces))
 		return
 
@@ -206,7 +206,7 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 	message = "[encode_html_emphasis(message)][part_d]"
 
-	if((sdisabilities & DEAF) || has_status(EFFECT_DEAFENED))
+	if((sdisabilities & DEAF) || has_status(STAT_DEAFENED))
 		if(prob(20))
 			to_chat(src, span_warning("You feel your headset vibrate but can hear nothing from it!"))
 	else
@@ -294,8 +294,9 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 	if(ishuman(speaker))
 		var/mob/living/carbon/human/H = speaker
-		if(H.voice)
-			speaker_name = H.voice
+		var/voice = H.GetVoice()
+		if(voice)
+			speaker_name = voice
 
 	if(vname)
 		speaker_name = vname

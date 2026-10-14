@@ -15,6 +15,7 @@
 //! hand is re-implementing this module (`rust_architecture.md` §2).
 
 pub mod regulator;
+pub mod transfer;
 
 pub use regulator::{Regulator, RegulatorMode, RegulatorStep, cooling_cop, heating_cop, reservoir};
 

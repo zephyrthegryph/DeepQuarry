@@ -11,17 +11,14 @@
 	rim_pos = null // no fruit slices
 	var/lid_color = "black"
 
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask)
+	rolls(nameof(lid_color), pick_one(list("black", "red", "blue")))
+TRACKED(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, lid_color)
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/Initialize(mapload)
-	. = ..()
-	lid_color = pick("black", "red", "blue")
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "[base_icon]_[lid_color]"
+/// The shaker is drawn with the lid it rolled.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/draw_contents(datum/look/look)
+	..()
+	look.state("[base_icon]_[lid_color]")
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake
 	name = "protein shake"
@@ -30,13 +27,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessf
 	base_icon = "protein_shake"
 	desc = "NanoTrasen brand pre-done pre-workout mix. Also perfect for an empty stomach."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake, null, list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 35, REAGENT_ID_WATER = 25))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
+	configure(reagents(add = list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 35, REAGENT_ID_WATER = 25)))
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/Initialize(mapload)
-	. = ..()
-	cut_overlays()
-
-APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
+/// A shake in its carton keeps the carton's sprite: nothing of the glass is drawn on it.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/draw_contents(datum/look/look)
+	return
 
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake
@@ -46,10 +42,9 @@ APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pro
 	base_icon = "protean_shake"
 	desc = "A strangely unlabeled, unbranded pre-workout drink carton."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake, null, list(REAGENT_ID_LIQUIDPROTEAN = 50, REAGENT_ID_NUTRIMENT = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)
+	configure(reagents(add = list(REAGENT_ID_LIQUIDPROTEAN = 50, REAGENT_ID_NUTRIMENT = 50)))
 
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/Initialize(mapload)
-	. = ..()
-	cut_overlays()
-
-APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)
+/// A shake in its carton keeps the carton's sprite: nothing of the glass is drawn on it.
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/draw_contents(datum/look/look)
+	return

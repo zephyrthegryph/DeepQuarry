@@ -201,7 +201,7 @@
 	TEST_ASSERT_NULL(case.EA, "destroyed electronic assembly retained its internal device")
 	TEST_ASSERT_NULL(device.holder(), "destroyed electronic device retained its case")
 
-// A radio whose frequency was changed must not strand itself in GLOB.radio_service's
+// A radio whose frequency was changed must not strand itself in SSradio's
 // per-frequency listener list on deletion (registered at old freq, removed at
 // new). set_frequency() is the only legal way to retune.
 /datum/unit_test/dq_retuned_radio_unregisters_from_ssradio
@@ -212,16 +212,71 @@
 	// re-registration)... which is now impossible to test through the public
 	// API since callers were fixed — so retune correctly and assert both
 	// directions of the registration moved.
-	var/datum/radio_frequency/old_freq = GLOB.radio_service.return_frequency(R.frequency)
+	var/datum/radio_frequency/old_freq = SSradio.return_frequency(R.frequency)
 	R.set_frequency(ERT_FREQ)
 	if(old_freq)
 		for(var/list/devices in old_freq.devices)
 			TEST_ASSERT(!(R in old_freq.devices[devices]), "retuned radio still registered on its old frequency")
-	var/datum/radio_frequency/new_freq = GLOB.radio_service.return_frequency(ERT_FREQ)
+	var/datum/radio_frequency/new_freq = SSradio.return_frequency(ERT_FREQ)
 	TEST_ASSERT_NOTNULL(new_freq, "ERT frequency datum missing after retune")
 	qdel(R)
 	var/found = FALSE
 	for(var/filter_key in new_freq.devices)
 		if(R in new_freq.devices[filter_key])
 			found = TRUE
-	TEST_ASSERT(!found, "deleted radio still registered in GLOB.radio_service listener list — hard GC leak")
+	TEST_ASSERT(!found, "deleted radio still registered in SSradio listener list — hard GC leak")
+
+// A spent reagent holder (a pill's, a preview mannequin's loadout) deleted its
+// reagents through reagent_list, but its reagent_by_id index kept pointing at
+// them: every reagent hard-deleted (REF SEARCH found it only in reagent_by_id).
+/datum/unit_test/dq_spent_reagent_holder_releases_reagents
+
+/datum/unit_test/dq_spent_reagent_holder_releases_reagents/Run()
+	var/datum/reagents/holder = new /datum/reagents(60)
+	holder.add_reagent(REAGENT_ID_PARACETAMOL, 10)
+	holder.add_reagent(REAGENT_ID_SPACEACILLIN, 10)
+	holder.add_reagent(REAGENT_ID_INAPROVALINE, 10)
+	var/list/held = holder.reagent_list.Copy()
+	TEST_ASSERT_EQUAL(length(held), 3, "the holder took all three reagents")
+	spent(holder)
+	TEST_ASSERT(QDELETED(holder), "the holder is gone")
+	for(var/datum/reagent/R as anything in held)
+		TEST_ASSERT(QDELETED(R), "[R.type] died with its holder")
+		TEST_ASSERT(!(R in holder.reagent_list), "[R.type] left reagent_list")
+		TEST_ASSERT(holder.reagent_by_id[R.id] != R, "the deleted holder's id index still holds [R.type]: it hard-deletes")
+
+// A reagent deleted on its own leaves a live holder's id index too.
+/datum/unit_test/dq_deleted_reagent_leaves_live_holder_index
+
+/datum/unit_test/dq_deleted_reagent_leaves_live_holder_index/Run()
+	var/datum/reagents/holder = new /datum/reagents(60)
+	holder.add_reagent(REAGENT_ID_PARACETAMOL, 10)
+	holder.add_reagent(REAGENT_ID_SPACEACILLIN, 10)
+	var/datum/reagent/R = holder.reagent_by_id[REAGENT_ID_PARACETAMOL]
+	TEST_ASSERT_NOTNULL(R, "paracetamol is indexed")
+	qdel(R)
+	TEST_ASSERT(!(R in holder.reagent_list), "the deleted reagent left reagent_list")
+	TEST_ASSERT_NULL(holder.reagent_by_id[REAGENT_ID_PARACETAMOL], "the live holder's id index still holds the deleted reagent")
+	TEST_ASSERT(!holder.has_reagent(REAGENT_ID_PARACETAMOL), "has_reagent() sees the deleted reagent")
+	TEST_ASSERT(holder.has_reagent(REAGENT_ID_SPACEACILLIN), "the other reagent stays")
+	qdel(holder)
+
+/// Refuses an unforced qdel(): a kept thing whose verb recorded a caused ending.
+/datum/dq_gc_kept
+
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/dq_gc_kept)
+
+// A caused ending (ended_with(thing, screen)) on a thing that refuses deletion
+// never reaches ending_begin(), so its ending_causes entry stayed forever and
+// held its `by` (a HUD screen object): the screen hard-deleted.
+/datum/unit_test/dq_refused_ending_drops_its_cause
+
+/datum/unit_test/dq_refused_ending_drops_its_cause/Run()
+	var/datum/dq_gc_kept/kept = new
+	var/atom/movable/screen/by = new
+	ended_with(kept, by)
+	TEST_ASSERT(!QDELETED(kept), "the kept thing refused the delete")
+	TEST_ASSERT(!(kept in ending_causes), "the refused ending's cause stays in ending_causes, holding its `by`")
+	qdel(by)
+	qdel(kept, TRUE)
+	TEST_ASSERT(QDELETED(kept), "a forced qdel() ends it")

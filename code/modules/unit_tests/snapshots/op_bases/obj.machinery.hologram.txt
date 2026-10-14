@@ -1,0 +1,10 @@
+ai|none menu: Project
+ai|none menu: Use
+ai|none click: Click: Project
+human|none menu: Request AI presence
+human|none click: Click: Request AI presence
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Project
+robot|none menu: Request AI presence
+robot|none menu: Use
+robot|none click: Click: Request AI presence

@@ -1,0 +1,23 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery.power.rtg human|/obj/item/tool/screwdriver
+@obj.machinery.power.rtg human|/obj/item/tool/crowbar
+@obj.machinery.power.rtg human|/obj/item/tool/wrench
+@obj.machinery.power.rtg human|/obj/item/tool/wirecutters
+@obj.machinery.power.rtg human|/obj/item/multitool
+@obj.machinery.power.rtg human|/obj/item/weldingtool
+@obj.machinery.power.rtg human|/obj/item/stack/cable_coil
+@obj.machinery.power.rtg human|/obj/item/stack/material/steel
+@obj.machinery.power.rtg human|/obj/item/card/id
+@obj.machinery.power.rtg human|/obj/item
+@obj.machinery.power.rtg human|/obj/item/storage/part_replacer
+human|/obj/item/cell/void menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell/void menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell/void menu: Insert void cell
+human|/obj/item/cell/void menu: Move To Top
+human|/obj/item/cell/void menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell/void menu: Use
+human|/obj/item/cell/void click: Click: Insert void cell
+keys: cable_place, drag_buckle, insert_cell, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, take_cell

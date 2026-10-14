@@ -1,6 +1,7 @@
 //node1, air1, network1 correspond to input
 //node2, air2, network2 correspond to output
 /obj/machinery/atmospherics/binary/circulator
+	air1_volume = 400
 	name = "circulator"
 	desc = "A gas circulator turbine and heat exchanger."
 	icon = 'icons/obj/power.dmi'
@@ -21,17 +22,22 @@
 	var/volume_capacity_used = 0
 	var/stored_energy = 0
 	var/temperature_overlay
+	/// What its turbine shows: "off", "slow" or "run" (set as it circulates).
+	var/run_state = "off"
 
 	density = TRUE
 
-/obj/machinery/atmospherics/binary/circulator/Initialize(mapload)
-	. = ..()
-	air1.set_volume(400)
-	make_rotatable()
+
+MSG_DEF(circulator/secured, "You secure the bolts holding %T% to the floor.", "%U% secures the bolts holding %T% to the floor.")
+MSG_DEF(circulator/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")
+
+CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
+	rotatable()
+	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed
-	if(anchored && !has_stat(BROKEN) && network1)
+	if(anchored && !broken_now() && network1)
 		var/input_starting_pressure = air1.return_pressure()
 		var/output_starting_pressure = air2.return_pressure()
 		last_pressure_delta = max(input_starting_pressure - output_starting_pressure - 5, 0)
@@ -55,16 +61,15 @@
 				last_temperature = removed.return_temperature()
 
 				//Update the gas networks.
-				network1.mark_dirty()
+				gas_touched(air1)
 
 				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
-				// The "running" overlay times out 5 s after the last transfer: one timer,
-				// re-armed per transfer, instead of a machine polling the clock.
-				om_after_replace(src, 5 SECONDS, PROC_REF(expire_transfer_display))
+				// The "running" overlay times out 5 s after the last transfer: one keyed timer, re-armed per transfer.
+				after(src, 5 SECONDS, PROC_REF(expire_transfer_display), key = "transfer_display")
 		else
 			recent_moles_transferred = 0
 
-		update_icon()
+		update_run_state()
 		return removed
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_stored_energy()
@@ -76,35 +81,39 @@
 	if(!recent_moles_transferred || ELAPSED(src, last_worldtime_transfer, CLOCK_WORLD) < 5 SECONDS)
 		return
 	recent_moles_transferred = 0
-	update_icon()
+	update_run_state()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/binary/circulator/appearance_overlays()
-	. = list()
-	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
-	if (!operable() || !anchored)
-		return .
-	if (last_pressure_delta > 0 && recent_moles_transferred > 0)
-		if (temperature_overlay)
-			. += temperature_overlay
-		if (last_pressure_delta > 5*ONE_ATMOSPHERE)
-			. += "circ-run"
-		else
-			. += "circ-slow"
+/// What its turbine shows, from its last circulation.
+/obj/machinery/atmospherics/binary/circulator/proc/update_run_state()
+	if(last_pressure_delta > 0 && recent_moles_transferred > 0)
+		set_run_state(last_pressure_delta > 5*ONE_ATMOSPHERE ? "run" : "slow")
 	else
-		. += "circ-off"
+		set_run_state("off")
 
-	return .
+/obj/machinery/atmospherics/binary/circulator/draw(datum/look/look)
+	..()
+	look.state(anchored ? "circ-assembled" : "circ-unassembled")
+	if(!operable() || !anchored)
+		return
+	if(run_state == "off")
+		look.overlay("circ-off")
+		return
+	if(temperature_overlay)
+		look.overlay(temperature_overlay)
+	look.overlay("circ-[run_state]")
 
-/obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 75, 1)
+/obj/machinery/atmospherics/binary/circulator/derived()
+	. = ..()
+	. += drawn_from(nameof(run_state), nameof(temperature_overlay), nameof(anchored))
+
+/obj/machinery/atmospherics/binary/circulator/proc/anchor_message(datum/act/A)
+	return anchored ? /datum/msg/circulator/secured : /datum/msg/circulator/unsecured
+
+/// The wrench bolts it down (joining its pipes) or frees it; the generators beside it look for their circulators again.
+/obj/machinery/atmospherics/binary/circulator/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
-	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
-		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
-		MSG_BLIND("You hear a ratchet."))
-
 	if(anchored)
-		temperature_overlay = null
+		set_temperature_overlay(null)
 		if(dir & (NORTH|SOUTH))
 			initialize_directions = NORTH|SOUTH
 		else if(dir & (EAST|WEST))
@@ -130,9 +139,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/circulator, TYPE_PROC
 
 	for(var/obj/machinery/power/generator/generator in range(1, src))
 		generator.reconnect()
-		if(generator.anchored)
-			MACHINE_WAKE(generator)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/atmospherics/binary/circulator/examine(mob/user, infix, suffix)
 	. = ..()

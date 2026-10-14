@@ -1,3 +1,2 @@
 
-/obj/item/broken_gun/flechette/Initialize(mapload)
-	. = ..(mapload, /obj/item/gun/magnetic/railgun/flechette)
+TYPE_TABLE(/obj/item/broken_gun/flechette, broken_gun_forced_type, /obj/item/gun/magnetic/railgun/flechette)

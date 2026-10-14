@@ -15,25 +15,40 @@
 	if(A)
 		contain(A)
 
-/obj/structure/stasis_cage/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/stasis_cage_release,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Release", PROC_REF(stasis_cage_robot_release)))
-	..()
+CAPABILITIES(/obj/structure/stasis_cage)
+	ref_one(nameof(contained))
+	op("stuff_in", item(/mob/living/simple_mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), needs(req_adjacent()),
+		starts(PROC_REF(stuffing_started)), begins(PROC_REF(stuffing_begins)), wait(2 SECONDS, keeps = STAY | ALIVE | TARGET_PRESENT), then(PROC_REF(stuffed)))
+	op("release", hand(), label("Release"), then(PROC_REF(interaction_release)))
+	op("stasis_cage_robot_release", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Release"), then(PROC_REF(stasis_cage_robot_release)))
 
-/// Old attack_hand: release the contained animal.
-/datum/interaction/entry_hand/stasis_cage_release
-	id = "stasis_cage_release"
-	name = "Release"
-	effect = /obj/structure/stasis_cage/proc/interaction_release
+MSG_DEF_SELF(stasis_cage/needs_net, "It's going to be difficult to convince the creature to move into the cage without capturing it in a net.")
 
-/obj/structure/stasis_cage/proc/interaction_release(mob/user, obj/item/held, datum/interaction/interaction)
+/// Only a creature caught in an energy net can be stuffed inside; Bumped() is what the old drag did first.
+/obj/structure/stasis_cage/proc/stuffing_started(datum/act/op/A)
+	var/mob/living/simple_mob/animal = A.held
+	if(QDELETED(animal) || !istype(animal.buckled_to(), /obj/effect/energy_net))
+		return /datum/msg/stasis_cage/needs_net
+	animal.Bumped(A.actor)
+
+/obj/structure/stasis_cage/proc/stuffing_begins(datum/act/op/A)
+	return msg_text("You begin stuffing [A.held] into \the [src].", "%U% begins stuffing [A.held] into \the [src].")
+
+/obj/structure/stasis_cage/proc/stuffed(datum/act/op/A)
+	var/mob/living/simple_mob/animal = A.held
+	if(QDELETED(animal))
+		return OP_REFUSED
+	act_message(A.actor, animal, MSG_SELF("You have stuffed %T% into \the [src]."), MSG_OTHERS("%U% has stuffed %T% into \the [src]."))
+	contain(animal)
+	return OP_OK
+
+/obj/structure/stasis_cage/proc/interaction_release(datum/act/op/A)
 	release()
 	return TRUE
 
 /// Old attack_robot: a cyborg next to it releases the animal.
-/obj/structure/stasis_cage/proc/stasis_cage_robot_release(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/stasis_cage/proc/stasis_cage_robot_release(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		release()
 	return TRUE
@@ -48,7 +63,7 @@
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
 		var/atom/movable/_tmp_buck_11 = animal?.buckled_to()
 		_tmp_buck_11.forceMove(animal.loc)
-	icon_state = "critter"
+	set_icon_state("critter")
 	desc = initial(desc) + " \The [contained()] is kept inside."
 
 /obj/structure/stasis_cage/proc/release()
@@ -61,7 +76,7 @@
 		_tmp_buck_12.dropInto(src)
 	contained().set_stasis(null, src)
 	rel_clear(src, nameof(contained))
-	icon_state = "critteropen"
+	set_icon_state("critteropen")
 	underlays.Cut()
 	desc = initial(desc)
 
@@ -70,26 +85,6 @@
 	release()
 
 	..()
-
-/mob/living/simple_mob/MouseDrop(obj/structure/stasis_cage/over_object)
-	var/mob/user = usr
-	if(!istype(user))
-		return
-	if(istype(over_object) && Adjacent(over_object) && CanMouseDrop(over_object, user))
-
-		if(!src?.buckled_to() || !istype(src?.buckled_to(), /obj/effect/energy_net))
-			to_chat(user, "It's going to be difficult to convince \the [src] to move into \the [over_object] without capturing it in a net.")
-			return
-
-		act_message(user, src, MSG_SELF("You begin stuffing %T% into \the [over_object]."), MSG_OTHERS("%U% begins stuffing %T% into \the [over_object]."))
-		Bumped(user)
-		om_task_timed(user, 2 SECONDS, target = over_object, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(over_object, user))
-	else
-		return ..()
-
-/mob/living/simple_mob/proc/MouseDrop_timed_done(obj/structure/stasis_cage/over_object, mob/user)
-	act_message(user, src, MSG_SELF("You have stuffed %T% into \the [over_object]."), MSG_OTHERS("%U% has stuffed %T% into \the [over_object]."))
-	over_object.contain(src)
 
 /// Relation view: contained (reads null once it is gone).
 /obj/structure/stasis_cage/proc/contained() as /mob/living/simple_mob

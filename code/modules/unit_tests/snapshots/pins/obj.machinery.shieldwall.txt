@@ -1,0 +1,29 @@
+human|none menu: Touch
+human|none click: Click: Touch
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Touch
++3 click: Click: Touch
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver click: Click: Touch
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar click: Click: Touch
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench click: Click: Touch
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters click: Click: Touch
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool click: Click: Touch
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool click: Click: Touch
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil click: Click: Touch
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel click: Click: Touch
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id click: Click: Touch
+human|/obj/item menu: Touch
+human|/obj/item click: Click: Touch
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, swallow

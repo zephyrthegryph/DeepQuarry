@@ -50,7 +50,6 @@
 	w_class = ITEMSIZE_SMALL
 	item_state = "crossbow"
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	silenced = 1
 	projectile_type = /obj/item/projectile/energy/bolt
 	charge_cost = 480
@@ -67,10 +66,12 @@
 	desc = "A weapon favored by mercenary infiltration teams."
 	icon_state = "crossbowlarge"
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 200000)
-	slot_flags = SLOT_BELT
 	projectile_type = /obj/item/projectile/energy/bolt/large
+
+CAPABILITIES(/obj/item/gun/energy/crossbow/largecrossbow)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 
 /*
  * Plasma Stun
@@ -112,59 +113,36 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/stunrevolver/detective/appearance_overlays()
-	. = list()
-	if(power_supply == null)
-		if(unique_reskin)
-			icon_state = "[unique_reskin]_open"
-		else
-			icon_state = "[initial(icon_state)]_open"
-		return .
-	else if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
 
-		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
-		if(power_supply.charge < charge_cost)
-			ratio = 0
-		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
+/// The detective's revolver is drawn from the sprite it was reskinned to.
+/obj/item/gun/energy/stunrevolver/detective/charge_state_name()
+	return unique_reskin ? unique_reskin : initial(icon_state)
 
-		if(unique_reskin)
-			icon_state = "[unique_reskin][ratio]"
-		else
-			icon_state = "[initial(icon_state)][ratio]"
-
-	else if(power_supply)
-		if(unique_reskin)
-			icon_state = "[unique_reskin]"
-		else
-			icon_state = "[initial(icon_state)]"
-
-	update_held_icon()
-
-EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
-	INTERACT_VERB("Name Gun", PROC_REF(det_stunrevolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_security_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det_stunrevolver_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/energy/stunrevolver/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Gun", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_stunrevolver_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det_stunrevolver_verb_reskin)))
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
-/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	var/_answer_k156 = rerun_ask(M, "k156", PROC_REF(det_stunrevolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k156))
-		return
-	var/input = sanitizeSafe(_answer_k156)
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!security_naming_ok(M))
+		to_chat(M, span_warning("You don\'t feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/obj/item/gun/energy/stunrevolver/detective/reskin_options()
 	var/list/options = list()
 	options["Lawson Arms LAEP20"] = "stunrevolver"
 	options["Lawson Arms LTX1020"] = "vinstunrevolver"
@@ -173,14 +151,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	options["Lawson Arms LTX1020 (Stainless)"] = "stainstunrevolver"
 	options["Lawson Arms LTX1020 (Ace)"] = "snubstunrevolver"
 	options["Lawson Arms LTX1020 (Gold)"] = "goldstunrevolver"
-	var/choice = rerun_ask(M, "k177", PROC_REF(det_stunrevolver_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
-		unique_reskin = options[choice]
+		set_unique_reskin(options[choice])
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Vintage Stun Revolver

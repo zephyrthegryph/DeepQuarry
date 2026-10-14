@@ -1,0 +1,31 @@
+@obj.effect human|none
+@obj.effect robot|none
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Scan anomaly
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Scan anomaly
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Scan anomaly
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Scan anomaly
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Scan anomaly
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Scan anomaly
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Scan anomaly
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Scan anomaly
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Scan anomaly
+@obj human|/obj/item/mop_deploy
++1 menu: Use mop
+@obj human|/obj/item/soap
++2 menu: Use soap
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Scan anomaly
+human|/obj/item/anomaly_scanner menu: Use anomaly scanner
+human|/obj/item/anomaly_scanner click: Click: Scan anomaly
+keys: buffer_anomaly, drag_buckle, pass_insert, pass_insert_2, scan_anomaly

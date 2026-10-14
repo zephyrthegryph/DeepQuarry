@@ -14,66 +14,72 @@
 	. = ..()
 	. += "It has [uses_left] use\s remaining."
 
-DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/extraction_pack)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = computed(PROC_REF(possible_beacon_choices)), "timeout" = 0), step = "beacon", when = PROC_REF(has_possible_beacons)), then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/extraction_pack/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	op("attach", at_target(/atom/movable), label("Attach"), needs(req(PROC_REF(can_attach))), begins(PROC_REF(attach_begins)), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY | ADJACENT), then(PROC_REF(attach_done)))
+
+/// Requirement: the pack is linked to a beacon and the target can be sent (anything else is refused, some of it silently).
+/// Why the pack cannot be attached to the target: a text, the silent message for a target that is simply not eligible, or null.
+/obj/item/extraction_pack/proc/can_attach(datum/act/op/A)
+	var/atom/movable/target = A.target
+	if(!read_once(beacon()))
+		return "[src] is not linked to a beacon, and cannot be used."
+	if(!can_use_indoors)
+		var/turf/T = get_turf(target)
+		if(T && !T.is_outdoors())
+			return "[src] can only be used on things that are outdoors!"
+	if(!istype(target) || !read_once(A.actor.Adjacent(target)))
+		return /datum/msg/req_silent
+	if(!safe_for_living_creatures && read_once(check_for_living_mobs(target)))
+		return "[src] is not safe for use with living creatures, they wouldn't survive the trip back!"
+	if(!isturf(read_once(target.loc)) || target.anchored) // no extracting stuff inside other stuff
+		return /datum/msg/req_silent
+	return null
+
+/obj/item/extraction_pack/proc/attach_begins(datum/act/op/A)
+	return msg_text(span_notice("You start attaching the pack to [A.target]..."))
+
+/// The extraction beacons on this pack's networks.
+/obj/item/extraction_pack/proc/possible_beacons()
 	var/list/possible_beacons = list()
 	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
 		if(EP.beacon_network in beacon_networks)
 			possible_beacons += EP
+	return possible_beacons
 
-	if(!possible_beacons.len)
+/// The beacons the question offers.
+/obj/item/extraction_pack/proc/possible_beacon_choices(datum/act/op/A)
+	return possible_beacons()
+
+/// The question is asked only when there is a beacon to choose.
+/obj/item/extraction_pack/proc/has_possible_beacons(datum/act/op/A)
+	return length(possible_beacons()) > 0
+
+/// Old attack_self: link the pack to a beacon.
+/obj/item/extraction_pack/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!length(possible_beacons()))
 		to_chat(user, "There are no extraction beacons in existence!")
-		return TRUE
-
-	else
-		var/A
-
-		var/_answer_k33 = rerun_ask(user, "k33", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Select a beacon to connect to", title = "Balloon Extraction Pack", choices = possible_beacons)
-		if(isnull(_answer_k33))
-			return TRUE
-		A = _answer_k33
-
-		if(!A)
-			return TRUE
-		rel_set(src, nameof(beacon), A)
-		to_chat(user, "You link the extraction pack to the beacon system.")
-	return TRUE
-
-/obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
-	if(!beacon())
-		to_chat(user, "[src] is not linked to a beacon, and cannot be used.")
-		return
-	if(!can_use_indoors)
-		var/turf/T = get_turf(A)
-		if(T && !T.is_outdoors())
-			to_chat(user, "[src] can only be used on things that are outdoors!")
-			return
-	if(!flag)
-		return
-	if(!istype(A))
-		return
-	else
-		if(!safe_for_living_creatures && check_for_living_mobs(A))
-			to_chat(user, "[src] is not safe for use with living creatures, they wouldn't survive the trip back!")
-			return
-		if(!isturf(A.loc)) // no extracting stuff inside other stuff
-			return
-		if(A.anchored)
-			return
-		to_chat(user, span_notice("You start attaching the pack to [A]..."))
-		om_task_timed(user, 5 SECONDS, A, src, PROC_REF(attach_done), list(user, A))
+		return OP_OK
+	var/obj/structure/extraction_point/selected = A.step_value("beacon")
+	if(!istype(selected) || QDELETED(selected))
+		return OP_OK
+	rel_set(src, nameof(beacon), selected)
+	to_chat(user, "You link the extraction pack to the beacon system.")
+	return OP_OK
 
 /// The pack is on: the balloon lifts `A` off (a sequence of steps on the holder, fulton_*()).
-/obj/item/extraction_pack/proc/attach_done(mob/living/carbon/human/user, atom/movable/A)
+/obj/item/extraction_pack/proc/attach_done(datum/act/op/Op)
+	var/mob/user = Op.actor
+	var/atom/movable/A = Op.target
 	if(!beacon() || A.anchored || !isturf(A.loc))
-		return
+		return OP_OK
 	to_chat(user, span_notice("You attach the pack to [A] and activate it."))
 	uses_left--
 	if(isliving(A))
 		var/mob/living/M = A
-		M.status_adjust(EFFECT_STUNNED, 20) // Keep them from moving during the duration of the extraction
+		M.status_adjust(STAT_STUNNED, 20) // Keep them from moving during the duration of the extraction
 		if(M?.buckled_to())
 			var/atom/movable/_tmp_buck_15 = M?.buckled_to()
 			_tmp_buck_15.unbuckle_mob(M)
@@ -90,6 +96,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	holder_obj.fulton_expand(A, landing)
 	if(uses_left <= 0)
 		consume(src, user)
+	return OP_OK
 
 /obj/effect/extraction_holder/proc/fulton_balloon(state)
 	var/mutable_appearance/balloon = mutable_appearance('icons/obj/fulton_balloon.dmi', state)
@@ -99,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 /obj/effect/extraction_holder/proc/fulton_expand(atom/movable/A, turf/landing)
 	add_overlay(fulton_balloon("fulton_expand"))
-	om_after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), A, landing)
+	after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
 	cut_overlays()
@@ -110,39 +117,41 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	animate(pixel_z = 10, time = 10)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	om_after(src, 6 SECONDS, PROC_REF(fulton_launch), A, landing)
+	after(src, 6 SECONDS, PROC_REF(fulton_launch), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_launch(atom/movable/A, turf/landing)
 	play_sfx(src, SFX_ITEMS_FULTEXT_LAUNCH)
 	animate(src, pixel_z = 1000, time = 30)
 	if(ishuman(A))
 		var/mob/living/carbon/human/L = A
-		L.status_adjust(EFFECT_STUNNED, 20)
-		L.status_set(EFFECT_DROWSY, 0)
-	om_after(src, 3 SECONDS, PROC_REF(fulton_arrive), A, landing)
+		L.status_adjust(STAT_STUNNED, 20)
+		L.status_set(STAT_DROWSY, 0)
+	after(src, 3 SECONDS, PROC_REF(fulton_arrive), with = list(A, landing), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_arrive(atom/movable/A, turf/landing)
 	forceMove(landing)
 	animate(src, pixel_z = 10, time = 50)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	om_after(src, 7 SECONDS, PROC_REF(fulton_retract), A)
+	after(src, 7 SECONDS, PROC_REF(fulton_retract), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_retract(atom/movable/A)
 	cut_overlays()
 	add_overlay(fulton_balloon("fulton_retract"))
-	om_after(src, 0.4 SECONDS, PROC_REF(fulton_land), A)
+	after(src, 0.4 SECONDS, PROC_REF(fulton_land), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
-	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
-	A.set_density(initial(A.density))
-	animate(src, pixel_z = 0, time = 5)
-	om_after(src, 0.5 SECONDS, PROC_REF(fulton_release), A)
+	if(A)
+		A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
+		A.set_density(initial(A.density))
+	animate(src, pixel_z = 0, time = 0.5 SECONDS)
+	after(src, 0.5 SECONDS, PROC_REF(fulton_release), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_release(atom/movable/A)
-	A.forceMove(loc)
-	qdel(src)
+	if(A)
+		A.forceMove(loc)
+	consume(src)
 
 // Makes fultons work pretty much anywhere.
 
@@ -152,14 +161,16 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pointoff"
 
-DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_ON_TURF, "you must be standing on solid ground to deploy an extraction beacon")))
+MSG_DEF_SELF(fulton/needs_ground, "you must be standing on solid ground to deploy an extraction beacon")
 
-/// Old attack_self.
-/obj/item/fulton_core/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
-	return TRUE
+CAPABILITIES(/obj/item/fulton_core)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(actor_on_turf_holds))), wait(1.5 SECONDS), then(PROC_REF(deploy_done)))
 
-/obj/item/fulton_core/proc/deploy_done(mob/user)
+/// Requirement: the actor stands on a real turf.
+/obj/item/fulton_core/proc/actor_on_turf_holds(datum/act/op/A)
+	return (!!get_turf(A.actor)) ? null : MSG(fulton/needs_ground)
+
+/obj/item/fulton_core/proc/deploy_done(datum/act/op/A)
 	replace_with(src, /obj/structure/extraction_point)
 
 /obj/structure/extraction_point
@@ -173,9 +184,12 @@ DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interact
 
 REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS)
 
-/obj/structure/extraction_point/Initialize(mapload)
-	. = ..()
-	name += " ([rand(100,999)]) ([get_area_name(src, TRUE)])"
+CAPABILITIES(/obj/structure/extraction_point)
+	rolls(nameof(name), PROC_REF(roll_name))
+
+/// Rolled before init (rolls()): the beacon's number, and where it was set up.
+/obj/structure/extraction_point/proc/roll_name(datum/roller/R)
+	return "[name] ([R.number(100, 999)]) ([get_area_name(src, TRUE)])"
 
 /obj/effect/extraction_holder
 	name = "extraction holder"

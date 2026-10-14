@@ -39,7 +39,9 @@
 	icon = 'icons/mob/cultists.dmi'
 	icon_state = "initiate"
 	faction = "cult"
-	mob_class = MOB_CLASS_DEMONIC
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /datum/category_item/catalogue/fauna/cultist/human
 	name = "Cultists - Human"
@@ -72,7 +74,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/human
 	delete_on_death = TRUE
-	death_message = "let's out a maddening laugh as his body crumbles away."
 
 /mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -98,29 +99,36 @@
 
 	// Telegraph to give a small window to dodge if really close.
 	flick("bloodout",A)
-	icon_state = "bloodout"
-	om_after(src, jaunt_warning, PROC_REF(do_special_attack_1), A, destination, starting_turf) // For the telegraphing.
+	set_icon_state("bloodout")
+	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		set_icon_state("bloodin")
+		return FALSE
 
 	// Do the dig!
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% sinks into a puddle of blood %T%!")))
 	new /obj/effect/decal/cleanable/blood (src.loc)
-	flick("blood_out",A)
-	icon_state = "bloodout"
+	if(A)
+		flick("blood_out",A)
+	set_icon_state("bloodout")
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		flick("bloodin",A)
-		icon_state = "bloodin"
+		if(A)
+			flick("bloodin",A)
+		set_icon_state("bloodin")
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
 		ai_busy_end()
-		icon_state = "bloodin"
-		flick("bloodin",A)
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
 		return FALSE
 
 	var/overshoot = TRUE
@@ -138,8 +146,9 @@
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
 		ai_busy_end()
-		icon_state = "bloodin"
-		flick("bloodin",A)
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
 		return TRUE
 
 	// Otherwise we need to keep going.
@@ -151,13 +160,15 @@
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		icon_state = "bloodin"
-		flick("bloodin",A)
+		set_icon_state("bloodin")
+		if(A)
+			flick("bloodin",A)
 		return FALSE
 
 	ai_busy_end()
-	icon_state = "bloodin"
-	flick("bloodin",A)
+	set_icon_state("bloodin")
+	if(A)
+		flick("bloodin",A)
 	return FALSE
 
 // Does the jaunt movement
@@ -176,7 +187,7 @@
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			play_sfx(src, SFX_PUNCH, 1.5)
-			status_at_least(EFFECT_WEAKENED, 5)
+			status_at_least(STAT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 
@@ -237,7 +248,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/tesh
 	delete_on_death = TRUE
-	death_message = "let's out a shrill chirp as his body turns to dust."
 
 /mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -283,12 +293,10 @@
 	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
-	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
 
 /mob/living/simple_mob/humanoid/cultist/lizard
 	delete_on_death = TRUE
-	death_message = "hisses as he collapses into a pile of bones."
 
 /mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
 	new /obj/effect/decal/remains/unathi (src.loc)
@@ -336,7 +344,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/caster
 	delete_on_death = TRUE
-	death_message = "melts into a pile of blood and bones."
 
 /mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -385,7 +392,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/initiate
 	delete_on_death = TRUE
-	death_message = "lets out a horrified scream as his body crumbles away."
 
 /mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -426,13 +432,11 @@
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
-	base_attack_cooldown = 7.5
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
 	delete_on_death = TRUE
-	death_message = "burns away into nothing."
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -475,19 +479,24 @@
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
+	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
+	immune_to_incapacitation()
 
 /// Old attackby: shield block.
-/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
-	if(O.force)
+/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
+	if(combat_of(O).force)
 		if(prob(30))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
@@ -504,7 +513,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 
 /mob/living/simple_mob/humanoid/cultist/elite
 	delete_on_death = TRUE
-	death_message = "shatters into bone and blood like pieces like the now shattered mirror."
 
 /mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -549,21 +557,22 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
-	base_attack_cooldown = 5
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	var/obj/item/shield_projector/shields = null
 
 
 /mob/living/simple_mob/humanoid/cultist/magus
 	delete_on_death = TRUE
-	death_message = "let's out a dark laugh as it collapses into a puddle of blood."
 
 /mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
 	..()
 	ghostize()
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", /obj/item/shield_projector/rectangle/automatic/magus)
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
+	immune_to_incapacitation()
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus)
 
 ////////////////////////////
 //		Blood Hunter
@@ -603,7 +612,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 
-	base_attack_cooldown = 7.5
 
 	// loot_list = list(/obj/item/material/butterfly/saw = 100, /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt = 100) // Downstream
 
@@ -614,7 +622,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 /mob/living/simple_mob/humanoid/cultist/hunter
 	delete_on_death = TRUE
-	death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."
 
 /mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -752,20 +759,21 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, flickers of orange dancing as they press and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gutt, sloshing it  further about."
 
@@ -790,20 +798,22 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fire
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = " Through fire and smoke, you have been grappled and shoved head first into a gapping maw. Rippling powerful red flesh dragging deep into the mage's gullet, your frame causing their stomach is swell out against crimson robes. As you're forced to curl up in the stomach, the walls would ripple, and knead against your flesh. Laughter, and gutteral stomach noises would fill your ears as the cultist firmly kneads their hanging gut, sloshing it  further about before shoving you deeper into their system, descending deep within the serpent."
 
@@ -829,20 +839,23 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/p
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Taking advantage of your weakened state, the %pred makes their pounce! The world going dark as the ravenous Teshari forces your battered frame down their throat. It all coming to a stop as you're packed neatly into their steaming guts. Low and content chuckling barely audible over the rising cacophony of the stomach's activity."
 
@@ -867,20 +880,23 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/pro
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Not too long after you hit the ground the caster makes their way to your fallen self.  The ground below you glows a deep red and you sink through the surface, only to find yourself folded tightly in a cramped, slick, and caustic chamber! The mage's chanting barely audible over the sounds of the stomach walls making their claim."
 
@@ -896,3 +912,29 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/livi
 		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
 		"The motion of the %pred's trotting sloshes and sways you from side to side, occasionally coating you in more hot fluids! Eating away your stamina with irragular flexes to allow them to keep eating you away." ,)
 
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
+	immune_to_incapacitation()
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))
+	immune_to_incapacitation()

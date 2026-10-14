@@ -45,7 +45,7 @@
 		var/datum/recipe/R = new Rp() // Datums must be initialized to read list vars
 		if(!istype(R))
 			log_runtime("Recipe generation failed, recipe datum is [R].")
-			qdel(R)
+			spent(R)
 			continue
 
 		var/datum/lore/codex/page/cooking_recipe/D = new(holder(), src)
@@ -125,12 +125,12 @@
 		D.data += span_bold("Meal Quantity") + ": [text ? text : 0] plate\s<br>"
 
 		new_children_list[D.name] = D // We make this an associative list so we can alphabetize later
-		qdel(R) // Delete recipe datum after we're done with it
+		spent(R) // Delete recipe datum after we're done with it
 
 	// This nonsense alphabetizes the list and converts back to array format before handing off to the parent.
 	// Array format is necessary for the codex code to work properly.
 	new_children_list = sortList(new_children_list)
 	for(var/x = 1, x <= LAZYLEN(new_children_list), x++)
 		var/key = new_children_list[x]
-		own_add(src, nameof(child_pages), new_children_list[key])
+		rel_add(src, nameof(child_pages), new_children_list[key])
 	src.index_page()

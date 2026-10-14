@@ -32,8 +32,8 @@
 	var/old_type = T.type
 	var/turf/simulated/wall/W = T.ChangeTurf(/turf/simulated/wall)
 	TEST_ASSERT(istype(W), "ChangeTurf should make a wall")
-	W.material = get_material_by_name(MAT_PLASTEEL)
-	W.reinf_material = get_material_by_name(MAT_PLASTEEL)
+	W.set_material(get_material_by_name(MAT_PLASTEEL))
+	W.set_reinf_material(get_material_by_name(MAT_PLASTEEL))
 	W.update_material()
 	var/cap = W.material.integrity + W.reinf_material.integrity
 	TEST_ASSERT(W.uses_integrity, "walls use integrity")
@@ -65,7 +65,7 @@
 
 	// Changing the material keeps the damage already done.
 	W.take_damage(30)
-	W.reinf_material = null
+	W.set_reinf_material(null)
 	W.update_material()
 	TEST_ASSERT_EQUAL(W.max_integrity, W.material.integrity, "an unreinforced wall's cap is its plating")
 	TEST_ASSERT_EQUAL(W.get_integrity(), W.material.integrity - 30, "a material change keeps the wall's damage")
@@ -112,14 +112,17 @@
 	var/obj/structure/blob/normal/B = allocate(/obj/structure/blob/normal, T)
 	TEST_ASSERT_EQUAL(B.max_integrity, 25, "a normal blob has 25 integrity")
 	TEST_ASSERT_EQUAL(B.get_integrity(), 21, "a normal blob doesn't start at full health")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob", "a healthy blob looks healthy")
 
 	B.adjust_integrity(-6)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 15, "blob damage comes off integrity")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob_damaged", "a blob at 15 or less looks damaged")
 
 	B.adjust_integrity(5)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 20, "pulses heal blob integrity")
+	refresh_flush() // the blob draws its look at the refresh at the end of the frame
 	TEST_ASSERT_EQUAL(B.icon_state, "blob", "a healed blob looks healthy again")
 
 	B.deal_damage(DAMAGE_BLUNT, 4)
@@ -141,7 +144,7 @@
 	TEST_ASSERT_EQUAL(B.get_integrity(), 20, "brute resistance divides a hit by four")
 	B.blob_damage(6, BURN)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 14, "burns land in full")
-	TEST_ASSERT_EQUAL(B.icon_state, "blob_damaged", "below half integrity the blob looks damaged")
+	TEST_ASSERT_EQUAL(B.appearance_state(), "blob_damaged", "below half integrity the blob looks damaged (its look declares the state; icon_state stays the mapped sprite)")
 	B.regen()
 	TEST_ASSERT_EQUAL(B.get_integrity(), 15, "a pulse regenerates one point")
 	B.take_damage(100)
@@ -328,10 +331,10 @@
 
 	knife.fragile = FALSE
 	knife.can_dull = TRUE
-	knife.sharp = TRUE
+	knife.set_sharp(TRUE)
 	knife.material_wear(knife.get_integrity())
 	TEST_ASSERT(knife.dulled, "a worn-out blade goes dull")
-	TEST_ASSERT(!knife.sharp, "a dull blade loses its edge")
+	TEST_ASSERT(!combat_of(knife).sharp, "a dull blade loses its edge")
 	TEST_ASSERT(!QDELETED(knife), "a dulled blade survives")
 
 	var/obj/item/material/knife/glass = allocate(/obj/item/material/knife, T)
@@ -431,3 +434,61 @@
 	P.damage = 30
 	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through the mech body plan, not the generic adapter")
 	clear_debris(T)
+
+/// A casual click with a held item must not flatten a smole building; harm intent still hurts it.
+/datum/unit_test/dq_integrity_pool/smolebuilding_item_gate
+
+/datum/unit_test/dq_integrity_pool/smolebuilding_item_gate/Run()
+	var/turf/T = scratch_turf()
+	var/obj/structure/smolebuilding/building = allocate(/obj/structure/smolebuilding, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/card/id/card = allocate(/obj/item/card/id)
+	H.put_in_hands(card)
+	H.set_use_stance(I_HELP)
+	var/datum/op_result/calm = test_click(H, building, card)
+	TEST_ASSERT(!QDELETED(building), "a help-intent click with a card leaves the building standing")
+	TEST_ASSERT(calm && calm.outcome == ACT_REFUSED && calm.reason == MSG(harm_click_only), "a help-intent click with a card is refused with the harm-intent reason (got [calm?.outcome] [calm?.reason])")
+	H.set_use_stance(I_HURT)
+	var/datum/op_result/hit = test_click(H, building, card)
+	TEST_ASSERT(hit && findtext("[hit.key]", "smolebuilding_item") && hit.outcome == ACT_COMMITTED, "a harm-intent click with a card is the smash op, which outranks the actor's own melee (got [hit?.key] [hit?.outcome] [hit?.reason])")
+	clear_debris(T)
+
+/// The supermatter wall: an empty hand touches it (and is dusted), a held item is consumed only on harm intent, and any other click with an item is refused
+/// (the player is not dusted: the item op answers before the bare-hand touch).
+/datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate
+
+/datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate/Run()
+	var/turf/T = scratch_turf()
+	var/start = T.type
+	var/mob/living/carbon/human/bare = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/helper = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/striker = allocate(/mob/living/carbon/human, T)
+	var/turf/unsimulated/wall/supermatter/wall = T.ChangeTurf(/turf/unsimulated/wall/supermatter)
+	var/obj/item/card/id/calm_card = allocate(/obj/item/card/id)
+	var/obj/item/card/id/hard_card = allocate(/obj/item/card/id)
+	bare.set_use_stance(I_HELP)
+	var/datum/op_result/empty = test_click(bare, wall, null)
+	var/bare_dusted = QDELETED(bare) || bare.loc != T
+	helper.put_in_hands(calm_card)
+	helper.set_use_stance(I_HELP)
+	var/datum/op_result/calm = test_click(helper, wall, calm_card)
+	var/helper_safe = !QDELETED(helper) && helper.loc == T
+	var/calm_kept = !QDELETED(calm_card)
+	striker.put_in_hands(hard_card)
+	striker.set_use_stance(I_HURT)
+	var/datum/op_result/hard = test_click(striker, wall, hard_card)
+	var/hard_consumed = QDELETED(hard_card)
+	var/striker_safe = !QDELETED(striker) && striker.loc == T
+	var/empty_key = empty ? "[empty.key]" : ""
+	var/calm_outcome = calm ? calm.outcome : null
+	var/calm_reason = calm ? calm.reason : null
+	var/hard_key = hard ? "[hard.key]" : ""
+	wall.ChangeTurf(start)
+	TEST_ASSERT(findtext(empty_key, "supermatter_wall_hand"), "an empty hand touches the wall (got [empty_key])")
+	TEST_ASSERT(bare_dusted, "the bare-hand touch still dusts the toucher")
+	TEST_ASSERT(calm_outcome == ACT_REFUSED && calm_reason == MSG(harm_click_only), "a help-intent click with an item is refused with the harm-intent reason (got [calm_outcome] [calm_reason])")
+	TEST_ASSERT(helper_safe, "a help-intent click with an item does NOT dust the player")
+	TEST_ASSERT(calm_kept, "a help-intent click with an item leaves the item intact")
+	TEST_ASSERT(findtext(hard_key, "supermatter_wall_item"), "a harm-intent click with an item is the item op (got [hard_key])")
+	TEST_ASSERT(hard_consumed, "a harm-intent click with an item consumes it")
+	TEST_ASSERT(striker_safe, "a harm-intent item touch does not dust the player")

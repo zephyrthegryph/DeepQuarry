@@ -10,6 +10,7 @@ Deployable items
 	req_access = list(ACCESS_SECURITY)//I'm changing this until these are properly tested./N
 
 /obj/machinery/deployable/barrier
+	var/emagged = 0
 	name = "deployable barrier"
 	desc = "A deployable barrier. Swipe your ID card to lock/unlock it."
 	icon = 'icons/obj/objects.dmi'
@@ -19,29 +20,23 @@ Deployable items
 	max_integrity = 100
 	locked = 0.0
 
-DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(APPEARANCE_ICON_STATE = "barrier0"), "1" = list(APPEARANCE_ICON_STATE = "barrier1")))
-
-/obj/machinery/deployable/barrier/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/barrier_swipe_id,
-		/datum/interaction/machine_item/barrier_hit,
-	)
+/// The look (the draw sweep: from its layers).
+/obj/machinery/deployable/barrier/draw(datum/look/look)
 	..()
+	switch("[locked]")
+		if("0")
+			look.state("barrier0")
+		if("1")
+			look.state("barrier1")
 
-/// Old attackby: the ID-card branch. Every path inside returns, so nothing ever fell through.
-/datum/interaction/machine_item/barrier_swipe_id
-	id = "barrier_swipe_id"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/deployable/barrier/proc/interaction_swipe_id
-
-/obj/machinery/deployable/barrier/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/deployable/barrier/proc/interaction_swipe_id(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
 		if(emagged < 2.0)
 			set_locked(!locked)
 			set_anchored(!anchored)
-			icon_state = "barrier[locked]"
+			set_icon_state("barrier[locked]")
 			if((locked == 1.0) && (emagged < 2.0))
 				to_chat(user, "Barrier lock toggled on.")
 				return TRUE
@@ -54,47 +49,57 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 			return TRUE
 	return TRUE
 
-/// Old attackby: the "anything else" branch. Ends in `..()`, so the effect always declines afterwards.
-/datum/interaction/machine_item/barrier_hit
-	id = "barrier_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/deployable/barrier/proc/interaction_hit
-
-/obj/machinery/deployable/barrier/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/deployable/barrier/proc/interaction_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
+			receive_weapon_hit(W, user, combat_of(W).force * 0.75, INJURY_BURN)
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.5)
+			receive_weapon_hit(W, user, combat_of(W).force * 0.5)
 	play_sfx(src, SFX_WEAPONS_SMASH)
-	return FALSE
+	return OP_DECLINE
 
-/obj/machinery/deployable/barrier/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/deployable/barrier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_integrity() >= max_integrity && !emagged)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	repair_damage(max_integrity)
 	set_emagged(FALSE)
-	req_access = list(ACCESS_SECURITY)
+	set_req_access(list(ACCESS_SECURITY))
 	act_message(user, src, others = span_warning("%U% repairs %T%!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // At zero integrity the barrier blows apart.
 /obj/machinery/deployable/barrier/atom_destruction(damage_flag)
 	explode(FALSE)
 	return ..()
 
-DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_emp))
+CAPABILITIES(/obj/machinery/deployable/barrier)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(barrier_emp))))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	// Two stages (the access lock, then the anchoring); a fully shorted mechanism takes no third card use.
+	extend("emag.use", needs(req(PROC_REF(emag_stage_left))))
+	extend("emag.subvert", needs(req(PROC_REF(emag_stage_left))))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
+	op("hit", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
+
+/// Is there an emag stage left to break (emagged 0: the access lock, 1: the anchoring)?
+/obj/machinery/deployable/barrier/proc/emag_stage_left(datum/act/A)
+	return (emagged < 2) ? null : MSG(emag/already)
+
 /// An EMP may flip the barrier's lock and anchors.
-/obj/machinery/deployable/barrier/proc/barrier_emp(datum/damage_packet/packet)
+/obj/machinery/deployable/barrier/proc/barrier_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	if(prob(50/packet.severity))
 		set_locked(!locked)
 		set_anchored(!anchored)
-		icon_state = "barrier[locked]"
+		set_icon_state("barrier[locked]")
+	return HOOK_DECLINE
 
 /obj/machinery/deployable/barrier/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
 	if(istype(mover) && mover.checkpass(PASSTABLE) && !isliving(mover)) // Check if living so teshari can't evade security barriers by pressing W
@@ -113,24 +118,24 @@ DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_
 
 	explosion(src.loc,-1,-1,0)
 	if(delete_after && !QDELETED(src))
-		qdel(src)
+		destroyed(src, null, "explosion")
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), null)
-/obj/machinery/deployable/barrier/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer breaks the access lock, a second one the anchoring.
+/obj/machinery/deployable/barrier/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged == 0)
 		set_emagged(1)
-		req_access = null
-		req_one_access = null
+		set_req_access(null)
+		set_req_one_access(null)
 		to_chat(user, "You break the ID authentication lock on \the [src].")
 		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
-		return 1
 	else if(emagged == 1)
 		set_emagged(2)
 		to_chat(user, "You short out the anchoring mechanism on \the [src].")
 		fx_sparks(src, 2)
 		visible_message(span_warning("BZZzZZzZZzZT"))
-		return 1
+	return OP_OK
 
 
 /obj/structure/barricade/cutout
@@ -149,29 +154,36 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 	var/toppled = FALSE
 	var/human_name = TRUE
 
-	var/static/list/cutout_types
-	var/static/list/painters = list(/obj/item/reagent_containers/glass/paint, /obj/item/floor_painter)///obj/item/closet_painter)
+	var/list/cutout_types
 	resistance_flags = FLAMMABLE
 
 /obj/structure/barricade/cutout/Initialize(mapload)
 	. = ..()
 	color = null
-	if(human_name)
-		fake_name = random_name(pick(list(MALE, FEMALE)))
-	name = fake_name
-	desc = fake_desc
-	if(!cutout_types)
-		cutout_types = list()
-		var/list/types = typesof(/obj/structure/barricade/cutout)
-		for(var/cutout_type in types)
-			var/obj/structure/barricade/cutout/pathed_type = cutout_type
-			cutout_types[initial(pathed_type.construct_name)] = cutout_type
+
+/// A cutout of a person gets a random name.
+/obj/structure/barricade/cutout/proc/roll_fake_name(datum/roller/R)
+	return random_name(R.choose(list(MALE, FEMALE)))
+
+/// It shows the name and description of what it depicts.
+/obj/structure/barricade/cutout/proc/shown_name(datum/roller/R)
+	return fake_name
+
+/obj/structure/barricade/cutout/proc/shown_desc(datum/roller/R)
+	return fake_desc
+
+/// What a cutout can be painted as: construct name -> cutout type (per_type()).
+/obj/structure/barricade/cutout/proc/build_cutout_types()
+	. = list()
+	for(var/cutout_type in typesof(/obj/structure/barricade/cutout))
+		var/obj/structure/barricade/cutout/pathed_type = cutout_type
+		.[initial(pathed_type.construct_name)] = cutout_type
 
 /obj/structure/barricade/cutout/proc/topple()
 	if(toppled)
 		return
 	toppled = TRUE
-	icon_state = "cutout_pushed_over"
+	set_icon_state("cutout_pushed_over")
 	set_density(FALSE)
 	name = initial(name)
 	desc = initial(desc)
@@ -181,7 +193,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 	if(!toppled)
 		return
 	toppled = FALSE
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	set_density(TRUE)
 	name = fake_name
 	desc = fake_desc
@@ -193,9 +205,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 		topple()
 
 /// Old attack_hand: stand a toppled cutout back up (behind the structure gate, as before).
-/obj/structure/barricade/cutout/proc/cutout_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/barricade/cutout/proc/cutout_interaction_hand(datum/act/op/A)
 	if(!toppled)
-		return FALSE
+		return OP_DECLINE
 	untopple()
 	return TRUE
 
@@ -205,32 +217,27 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/deployable/barrier, PROC_REF(on_emag), nu
 	if(Adjacent(user))
 		. += span_notice("... from this distance, they seem to be made of [material.name] ...")
 
-EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
-	INTERACT_HAND("Stand up", PROC_REF(cutout_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(cutout_interaction_item)), \
-)
+CAPABILITIES(/obj/structure/barricade/cutout)
+	per_type(nameof(cutout_types), PROC_REF(build_cutout_types))
+	rolls(nameof(fake_name), PROC_REF(roll_fake_name), when = nameof(human_name))
+	rolls(nameof(name), PROC_REF(shown_name), from = list(nameof(fake_name)))
+	rolls(nameof(desc), PROC_REF(shown_desc))
+	op("cutout_interaction_hand", hand(), label("Stand up"), then(PROC_REF(cutout_interaction_hand)))
+	// A painter paints it; both paint inputs use the same answer and timed work.
+	op("cutout_interaction_item", item(/obj/item/reagent_containers/glass/paint), label("Paint"),
+		asks(/datum/prompt/choice, fields = list("title" = "Cutout Painting", "question" = "What would you like to paint the cutout as?", "choices" = nameof(cutout_types), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "paint", keeps = HELD | ALIVE),
+		needs(req_adjacent()), wait(10 SECONDS), then(PROC_REF(cutout_paint_done)))
+	op("cutout_paint_painter", item(/obj/item/floor_painter), label("Paint"),
+		asks(/datum/prompt/choice, fields = list("title" = "Cutout Painting", "question" = "What would you like to paint the cutout as?", "choices" = nameof(cutout_types), "subject" = computed(PROC_REF(paint_subject)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "paint", keeps = HELD | ALIVE),
+		needs(req_adjacent()), wait(10 SECONDS), then(PROC_REF(cutout_paint_done)))
 
-/// Old attackby.
-/obj/structure/barricade/cutout/proc/cutout_interaction_item(mob/user, obj/I, datum/interaction/interaction)
-	if(is_type_in_list(I, painters))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(cutout_type_chosen), message = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, requires = PROMPT_IN_HAND)
-		return TRUE
+/obj/structure/barricade/cutout/proc/paint_subject(datum/act/op/A)
+	return A.held
 
-	else
-		return FALSE
-
-/obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
-	if(!Adjacent(user))
-		return
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
-	return TRUE
-
-/obj/structure/barricade/cutout/proc/cutout_paint_done(choice)
-	var/picked_type = cutout_types[choice]
-	new picked_type(loc)
-	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
+/obj/structure/barricade/cutout/proc/cutout_paint_done(datum/act/op/A)
+	var/picked_type = cutout_types[A.step_value("paint")]
+	replace_with(src, picked_type) // Technically heals it too: the new cutout is a fresh one.
+	return OP_OK
 
 //Variants
 /obj/structure/barricade/cutout/greytide
@@ -319,4 +326,13 @@ EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
 	icon = 'icons/obj/cardboard_cutout.dmi'
 	icon_state = "cutout_random"
 
-DECLARE_LOOT(/obj/random/cutout, LOOT_TABLE(LOOT_TYPES(1, subtypesof(/obj/structure/barricade/cutout))), LOOT_CHANCE(20)) // Only spawns 20% of the time to avoid being predictable
+// Only spawns 20% of the time to avoid being predictable
+CAPABILITIES(/obj/random/cutout)
+	loot(table = list(loot_types(1, subtypesof(/obj/structure/barricade/cutout))), chance = 20)
+
+/obj/machinery/deployable/barrier/set_emagged(value)
+	if(emagged == value)
+		return FALSE
+	emagged = value
+	tracked_changed(src, "emagged")
+	return TRUE

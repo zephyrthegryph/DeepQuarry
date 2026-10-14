@@ -1,0 +1,74 @@
+human|none menu: Draw Boot Knife (refused: You can't do that.)
+human|none menu: Move To Top (refused: You can't reach that.)
+human|none menu: Switch Shoe Layer (refused: You can't do that.)
+human|none menu: Toggle Digestable (refused: You can't reach that.)
+human|none click: nothing
+robot|none menu: Draw Boot Knife (refused: You can't do that.)
+robot|none menu: Move To Top (refused: You can't reach that.)
+robot|none menu: Switch Shoe Layer (refused: You can't do that.)
+robot|none menu: Toggle Digestable (refused: You can't reach that.)
+robot|none click: nothing
+@obj ai|none
+-menu: Equip (refused: not possible right now)
+@obj.item.clothing.shoes ghost|none
+human|/obj/item/tool/screwdriver menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/tool/screwdriver menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/tool/crowbar menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/tool/wrench menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/tool/wirecutters menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/multitool menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/weldingtool menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/stack/cable_coil menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/stack/material/steel menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/card/id menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/card/id menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/kit menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/kit menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/kit click: nothing
+human|/obj/item/storage menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item/storage menu: Move To Top (refused: You can't reach that.)
+human|/obj/item/storage menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item/storage click: nothing
+human|/obj/item menu: Draw Boot Knife (refused: You can't do that.)
+human|/obj/item menu: Move To Top (refused: You can't reach that.)
+human|/obj/item menu: Switch Shoe Layer (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't reach that.)
+human|/obj/item click: nothing
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, micro_climb_out, micro_escape_macro, move_to_top, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable

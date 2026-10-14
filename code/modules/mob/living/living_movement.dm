@@ -17,7 +17,7 @@
 /mob/living/SelfMove(turf/n, direct, movetime)
 	// If on walk intent, don't willingly step into hazardous tiles.
 	// Unless the walker is confused.
-	if(m_intent == I_WALK && !has_status(EFFECT_CONFUSED))
+	if(m_intent == I_WALK && !has_status(STAT_CONFUSED))
 		if(!n.is_safe_to_enter(src))
 			to_chat(src, span_warning("\The [n] is dangerous to move into."))
 			return FALSE // In case any code wants to know if movement happened.
@@ -38,12 +38,12 @@ default behaviour is:
 	else
 		var/context_flags = FALSE
 		if(swapping)
-			context_flags = swapped.mob_swap_flags
+			context_flags = movement_of(swapped).swap
 		else
-			context_flags = swapped.mob_push_flags
-		if(!mob_bump_flag) //nothing defined, go wild
+			context_flags = movement_of(swapped).push
+		if(!movement_of(src).bump) //nothing defined, go wild
 			return TRUE
-		if(mob_bump_flag & context_flags)
+		if(movement_of(src).bump & context_flags)
 			return TRUE
 		return FALSE
 
@@ -93,11 +93,11 @@ default behaviour is:
 		//Leaping mobs just land on the tile, no pushing, no anything.
 		if(status_flags & LEAPING)
 			forceMove(tmob.loc)
-			status_flags &= ~LEAPING
+			set_status_flags(status_flags & ~LEAPING)
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((movement_of(tmob).always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -126,7 +126,7 @@ default behaviour is:
 			tmob.forceMove(oldloc)
 			now_pushing = FALSE
 			return
-		else if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
+		else if((movement_of(tmob).always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
 			forceMove(tmob.loc)
 			now_pushing = FALSE
 			return
@@ -144,16 +144,16 @@ default behaviour is:
 				if(H.has_mutation(HULK)) //No knocking over the hulk
 					return
 				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
-				H.status_at_least(EFFECT_WEAKENED, 5)
+				H.status_at_least(STAT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 			if(H.species.lightweight_light == 1 && !H.combat_mode)
 				act_message(src, H, others = span_warning("%U% bumps into %T%, knocking them off balance!"))
-				H.status_at_least(EFFECT_WEAKENED, 5)
+				H.status_at_least(STAT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
-		if(step_mechanics_pref && tmob.step_mechanics_pref)
+		if(vore_prefs.step_mechanics_pref && tmob.vore_prefs.step_mechanics_pref)
 			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
 			if(handle_micro_bump_other(tmob, 1, stance)) return
@@ -180,13 +180,13 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((has_status(EFFECT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING))
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)
 		if(isobj(AM))
 			var/obj/I = AM
-			if(!can_pull_size || can_pull_size < I.w_class)
+			if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 				return
 		now_pushing = TRUE
 
@@ -277,16 +277,16 @@ default behaviour is:
 
 /mob/living/Moved(atom/oldloc, direct, forced, movetime)
 	. = ..()
-	changed(src, CHANGE_MOB_LOC)
+	PUBLISH_CHANGE(src, MOB_KEY_LOC)
 	// A low-priority mob placed after it was made in nullspace joins its z-level's presence
 	// (z-level changes after that come through onTransitZ()).
 	if(low_priority && !life_z)
 		life_update_relevance()
 	handle_footstep(loc)
 	if(!forced && movetime /* && !is_incorporeal()*/)
-		GLOB.motiontracker_service?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
+		SSmotiontracker?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
 	if(is_shifted)
-		is_shifted = FALSE
+		set_is_shifted(FALSE)
 		pixel_x = default_pixel_x
 		pixel_y = default_pixel_y
 		layer = initial(layer)
@@ -319,7 +319,7 @@ default behaviour is:
 		return
 	else if(lastarea?.get_gravity() == 0)
 		inertial_drift()
-	else if(flying)
+	else if(stat_value(src, STAT_FLYING))
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))
@@ -341,7 +341,7 @@ default behaviour is:
 			inertia_dir = 0
 			return
 
-		om_after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), loc)
+		after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), with = list(loc))
 
 /mob/living/proc/handle_inertial_drift(locthen)
 	PRIVATE_PROC(TRUE)

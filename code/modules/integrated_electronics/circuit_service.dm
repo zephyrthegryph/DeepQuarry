@@ -1,14 +1,7 @@
-// The circuit world service (fold wave F3; was SScircuit): the integrated circuit component and
-// assembly tables and the fabricator recipe list. It has no periodic work, so it is a lazy service,
-// built on first use through circuit_service().
-GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
-
-/// The circuit service, initialized on first use.
-/proc/circuit_service() as /datum/world_service/circuit
-	RETURN_TYPE(/datum/world_service/circuit)
-	return LAZY_SERVICE(circuit_service)
-
-/datum/world_service/circuit
+// The circuit system (was SScircuit): the integrated circuit component and assembly tables and the fabricator
+// recipe list. It has no periodic work, so it is a lazy system, built on first use through SScircuit.ready()
+// (it stays out of the boot DAG).
+SYSTEM_DEF(circuit)
 	name = "Circuit"
 
 	var/list/all_components = list()								// Associative list of [component_name]:[component_path] pairs
@@ -18,20 +11,32 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 	var/list/all_circuits = list()									// Associative list of [circuit_name]:[circuit_path] pairs
 	var/list/circuit_fabricator_recipe_list = list()				// Associative list of [category_name]:[list_of_circuit_paths] pairs
 
-/datum/world_service/circuit/initialize()
+CAPABILITIES(/datum/system/circuit)
+	owns_many(nameof(prototype_assemblies))
+	owns_many(nameof(prototype_components))
+
+/datum/system/circuit/boots_in_dag()
+	return FALSE
+
+/// Typed, so `SScircuit.ready().var` reads as the system's own var.
+/datum/system/circuit/ready()
+	RETURN_TYPE(/datum/system/circuit)
+	return ..()
+
+/datum/system/circuit/initialize()
 	initialized = TRUE
 	circuits_init()
 	log_world("Circuit service initialized: [length(all_components)] components, [length(all_assemblies)] assemblies.")
 
-/datum/world_service/circuit/stat_line()
-	return "Components: [length(all_components)] | Assemblies: [length(all_assemblies)]"
+/datum/system/circuit/stat_entry(msg)
+	return "[..()]Components: [length(all_components)] | Assemblies: [length(all_assemblies)]"
 
-/datum/world_service/circuit/proc/circuits_init()
+/datum/system/circuit/proc/circuits_init()
 	//Cached lists for free performance
 	for(var/obj/item/integrated_circuit/IC as anything in typesof(/obj/item/integrated_circuit))
 		var/path = IC
 		all_components[initial(IC.name)] = path // Populating the component lists
-		own_put(src, nameof(prototype_components), path, new path)
+		rel_add(src, nameof(prototype_components), new path, path)
 
 		if(!(initial(IC.spawn_flags) & (IC_SPAWN_DEFAULT | IC_SPAWN_RESEARCH)))
 			continue
@@ -45,7 +50,7 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 	for(var/obj/item/electronic_assembly/A as anything in typesof(/obj/item/electronic_assembly))
 		var/path = A
 		all_assemblies[initial(A.name)] = path
-		own_put(src, nameof(prototype_assemblies), path, new path)
+		rel_add(src, nameof(prototype_assemblies), new path, path)
 
 
 	circuit_fabricator_recipe_list["Assemblies"] = list(

@@ -5,133 +5,131 @@
 	anchored = FALSE
 	density = FALSE
 
-OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
-OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/feeder/var/mob/living/carbon/human/attached
+/obj/machinery/feeder/var/obj/item/reagent_containers/beaker
 /// Feeds while a patient and a container are attached.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/feeder, MACHINE_PIPELINE, list("attached", "beaker"))
+TRACKED(/obj/machinery/feeder, fill_state)
+TRACKED(/obj/machinery/feeder, fill_color)
+/// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
+/obj/machinery/feeder/var/fill_state
+/obj/machinery/feeder/var/fill_color
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/feeder/appearance_overlays()
-	. = list()
-	if(attached())
-		icon_state = "feeding"
-	else
-		icon_state = ""
+/// Writes the fill overlay the container's level and colour show.
+/obj/machinery/feeder/proc/refresh_fill()
+	var/datum/reagents/reagents = beaker?.reagents
+	if(!reagents?.total_volume)
+		set_fill_state(null)
+		return
+	var/percent = round((reagents.total_volume / beaker.volume) * 100)
+	switch(percent)
+		if(0 to 9)
+			set_fill_state("reagent0")
+		if(10 to 19)
+			set_fill_state("reagent10")
+		if(20 to 44)
+			set_fill_state("reagent20")
+		if(45 to 59)
+			set_fill_state("reagent45")
+		if(60 to 74)
+			set_fill_state("reagent60")
+		if(75 to 89)
+			set_fill_state("reagent75")
+		if(90 to 94)
+			set_fill_state("reagent90")
+		if(95 to INFINITY)
+			set_fill_state("reagent100")
+	set_fill_color(reagents.get_color())
 
-
-	if(beaker)
-		var/datum/reagents/reagents = beaker.reagents
-		if(reagents.total_volume)
-			var/image/filling = image('icons/obj/feeder.dmi', src, "reagent")
-
-			var/percent = round((reagents.total_volume / beaker.volume) * 100)
-			switch(percent)
-				if(0 to 9)		filling.icon_state = "reagent0"
-				if(10 to 19) 	filling.icon_state = "reagent10"
-				if(20 to 44)	filling.icon_state = "reagent20"
-				if(45 to 59)	filling.icon_state = "reagent45"
-				if(60 to 74)	filling.icon_state = "reagent60"
-				if(75 to 89)	filling.icon_state = "reagent75"
-				if(90 to 94)	filling.icon_state = "reagent90"
-				if(95 to INFINITY)	filling.icon_state = "reagent100"
-
-			filling.icon += reagents.get_color()
-			. += filling
-
-/obj/machinery/feeder/MouseDrop(over_object, src_location, over_location)
+/// What it shows: hooked up while attached to a patient, and its container's fill in the reagent's colour.
+/obj/machinery/feeder/draw(datum/look/look)
 	..()
-	if(!isliving(usr))
+	look.state(attached() ? "feeding" : "")
+	if(fill_state)
+		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
+
+CAPABILITIES(/obj/machinery/feeder)
+	ref_one(nameof(attached), /mob/living/carbon/human)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
+	drag_onto(PROC_REF(drop_input))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_used)), wait(1.5 SECONDS), then(PROC_REF(screwdriver_act_timed_done)))
+	op("insert_beaker", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(beaker), FALSE, because = MSG(feeder/beaker))), then(PROC_REF(interaction_insert_beaker)))
+	op("reject", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_reject)))
+	op("take_beaker", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Take out container"), then(PROC_REF(interaction_take_beaker)))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
+/// then the native drop goes on.
+/obj/machinery/feeder/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
+
+/obj/machinery/feeder/proc/drop_patient_with_actor(mob/user, atom/over_object)
+	if(!isliving(user))
 		return
 
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
 		rel_clear(src, nameof(attached))
-		update_icon()
+		refresh_fill()
 		return
 
-	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
+	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
+		act_message(user, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		update_icon()
+		refresh_fill()
 
 
-/obj/machinery/feeder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/feeder_insert_beaker,
-		/datum/interaction/machine_item/feeder_reject,
-		/datum/interaction/machine_hand/feeder_take_beaker,
-	)
-	..()
+MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 
-/// Old attackby: the only branch.
-/datum/interaction/machine_item/feeder_insert_beaker
-	id = "feeder_insert_beaker"
-	name = "Insert container"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/reagent_containers
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container inserted"))
-	effect = /obj/machinery/feeder/proc/interaction_insert_beaker
-
-/obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.beaker), W, user = user))
+/obj/machinery/feeder/proc/interaction_insert_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!move_into(src, nameof(src.beaker), W, user))
 		return TRUE
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-	update_icon()
+	refresh_fill()
 	return TRUE
 
-/// Old attackby: fell off the end for anything else, silently doing nothing (no ..() call).
-/datum/interaction/machine_item/feeder_reject
-	id = "feeder_reject"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/feeder/proc/interaction_reject
-
-/obj/machinery/feeder/proc/interaction_reject(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/feeder/proc/interaction_reject(datum/act/op/A)
 	return TRUE
 
-/obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/machinery/feeder/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
-	update_icon()
-	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	refresh_fill()
+	return OP_OK
 
-/obj/machinery/feeder/proc/screwdriver_act_timed_done(mob/user)
+/obj/machinery/feeder/proc/screwdriver_act_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You deconstruct the feeder.")
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
-	qdel(src)
+		rel_take(src, nameof(beaker))
+	destroyed(src, user, "deconstructed")
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
-/obj/machinery/feeder/machine_step()
+/obj/machinery/feeder/proc/work_step(datum/act/timer/A)
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
 			rel_clear(src, nameof(attached))
-			update_icon()
+			refresh_fill()
 			return
 	// Give food
 	if(beaker && beaker.volume > 0)
 		var/transfer_amount = 2
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
-		update_icon()
+		refresh_fill()
 
-/// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
-/datum/interaction/machine_hand/feeder_take_beaker
-	id = "feeder_take_beaker"
-	name = "Take out container"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/feeder/proc/interaction_take_beaker
-
-/obj/machinery/feeder/proc/interaction_take_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/feeder/proc/interaction_take_beaker(datum/act/op/A)
 	if(!beaker)
-		return FALSE
+		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
-	own_take(src, nameof(beaker))
-	update_icon()
+	rel_take(src, nameof(beaker))
+	refresh_fill()
 	return TRUE
 
 /obj/machinery/feeder/examine(mob/user)

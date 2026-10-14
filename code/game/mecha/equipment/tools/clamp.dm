@@ -4,7 +4,8 @@
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
-	var/obj/mecha/working/ripley/cargo_holder
+	/// The chassis whose cargo bay it loads (any working exosuit: a hoverpod carries a clamp too, not only a ripley).
+	var/obj/mecha/working/cargo_holder
 	required_type = list(/obj/mecha/working)
 	ready_sound = SFX_MECHA_GASDISCONNECTED
 
@@ -14,16 +15,43 @@
 
 	return
 
+// The pilot's work on a door: the keeps drop HELD (the pilot holds nothing) and ADJACENT (the pilot rides inside the chassis).
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp)
+	ref_one(nameof(cargo_holder))
+	op("pry_firedoor_blocked", ai(), takes("door"), wait(10 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_blocked_firedoor)))
+	op("pry_firedoor", ai(), takes("door"), wait(5 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_firedoor)))
+	op("pry_airlock", ai(), takes("door"), wait(15 SECONDS, keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(pried_airlock)))
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_blocked_firedoor(datum/act/op/A)
+	var/obj/machinery/door/firedoor/FD = A.arg("door")
+	if(QDELETED(FD))
+		return OP_REFUSED
+	pry_firedoor(FD, TRUE)
+	return OP_OK
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_firedoor(datum/act/op/A)
+	var/obj/machinery/door/firedoor/FD = A.arg("door")
+	if(QDELETED(FD))
+		return OP_REFUSED
+	pry_firedoor(FD, FALSE)
+	return OP_OK
+
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pried_airlock(datum/act/op/A)
+	var/obj/machinery/door/airlock/AD = A.arg("door")
+	if(QDELETED(AD))
+		return OP_REFUSED
+	pry_airlock(AD)
+	return OP_OK
+
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_firedoor(obj/machinery/door/firedoor/FD, unblock)
 	play_sfx(FD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	if(unblock)
-		FD.blocked = 0
-		FD.update_icon()
-		FD.open(1)
+		FD.set_blocked(0)
+		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 		FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
 	else
 		FD.visible_message(span_danger("\The [chassis] forces \the [FD] open!"))
-		FD.open(1)
+		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_airlock(obj/machinery/door/airlock/AD)
 	if(!chassis?.Adjacent(AD))
@@ -59,10 +87,10 @@
 					var/obj/machinery/door/firedoor/FD = O
 					if(FD.blocked)
 						FD.visible_message(span_danger("\The [chassis] begins prying on \the [FD]!"))
-						om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 10 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, TRUE), IGNORE_HELD_ITEM)
+						perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_firedoor_blocked", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = FD))
 					else if(FD.density)
 						FD.visible_message(span_warning("\The [chassis] begins forcing \the [FD] open!"))
-						om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 5 SECONDS, FD, src, PROC_REF(pry_firedoor), list(FD, FALSE), IGNORE_HELD_ITEM)
+						perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_firedoor", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = FD))
 					else
 						FD.visible_message(span_danger("\The [chassis] forces \the [FD] closed!"))
 						FD.close(1)
@@ -73,7 +101,7 @@
 					else if(!AD.operating)
 						if(is_welded(AD))
 							AD.visible_message(span_warning("\The [chassis] begins prying on \the [AD]!"))
-							om_task_timed(chassis?.slot_item(MECHA_SLOT_PILOT), 15 SECONDS, AD, src, PROC_REF(pry_airlock), list(AD), IGNORE_HELD_ITEM)
+							perform_op(chassis?.slot_item(MECHA_SLOT_PILOT), src, "pry_airlock", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("door" = AD))
 						else
 							toggle_airlock(AD)
 				return
@@ -88,20 +116,20 @@
 		chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 		set_ready_state(FALSE)
 		chassis.use_power(energy_drain)
-		O.anchored = TRUE
+		O.set_anchored(TRUE)
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				var/obj/mecha/working/ripley/holder = cargo_holder()
-				LAZYADD(holder.cargo, O)
-				if(!O.move_into(holder, MECHA_SLOT_CARGO))
+				var/obj/mecha/working/holder = cargo_holder()
+				rel_add(holder, nameof(holder.cargo), O)
+				if(!move_into(holder, MECHA_SLOT_CARGO, O))
 					O.forceMove(holder)
-				O.anchored = FALSE
+				O.set_anchored(FALSE)
 				occupant_message(span_notice("[target] succesfully loaded."))
 				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 			else
 				occupant_message(span_warning("You must hold still while handling objects."))
-				O.anchored = initial(O.anchored)
+				O.set_anchored(initial(O.anchored))
 
 	//attacking
 	else if(isliving(target))
@@ -149,20 +177,20 @@
 				chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 				set_ready_state(FALSE)
 				chassis.use_power(energy_drain)
-				O.anchored = TRUE
+				O.set_anchored(TRUE)
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						var/obj/mecha/working/ripley/holder = cargo_holder()
-						LAZYADD(holder.cargo, O)
-						if(!O.move_into(holder, MECHA_SLOT_CARGO))
+						var/obj/mecha/working/holder = cargo_holder()
+						rel_add(holder, nameof(holder.cargo), O)
+						if(!move_into(holder, MECHA_SLOT_CARGO, O))
 							O.forceMove(holder)
-						O.anchored = FALSE
+						O.set_anchored(FALSE)
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
 						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 					else
 						chassis.occupant_message(span_warning("You must hold still while handling objects."))
-						O.anchored = initial(O.anchored)
+						O.set_anchored(initial(O.anchored))
 			else
 				chassis.occupant_message(span_warning("Not enough room in cargo compartment."))
 		else
@@ -187,5 +215,5 @@
 	return 1
 
 /// cargo holder
-/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working
 	return cargo_holder

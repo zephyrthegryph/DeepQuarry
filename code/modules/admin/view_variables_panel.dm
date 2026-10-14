@@ -30,9 +30,11 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 // clears the client's cached panel (clients aren't datums).
 
-DECLARE_UI_STATE(/datum/view_variables_panel, ADMIN_STATE(R_HOLDER))
-
-DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
+CAPABILITIES(/datum/view_variables_panel)
+	interface("ViewVariables", title = "Variables", rights = R_HOLDER)
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("forward_topic", ui_act("forward_topic", arg("href", schema_text(4096))), then(PROC_REF(ui_act_forward_topic)))
+	op("dropdown_select", ui_act("dropdown_select", arg("link", schema_text(4096))), then(PROC_REF(ui_act_dropdown_select)))
 
 /// Parses the legacy "<option value='[link]'>[name]</option>" strings into
 /// typed (name, link) records. Separator rows ("---") and the empty-link
@@ -61,9 +63,16 @@ DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
 		))
 	return out
 
-UI_DATA_REPLACE(/datum/view_variables_panel, "ref=refid", "merge:ui_data_datum_view_variables_panel{has_target:bool,is_list:bool,type:unknown,ref_for_paste:text,title:text,coords:listmap,marked:bool,tagged_index:bool,varedited:num,gc_destroyed:bool,header:unknown,dropdown:unknown,variables:list}")
+/datum/view_variables_panel/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["ref"] = refid
+	var/list/merged_1 = ui_data_datum_view_variables_panel(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/view_variables_panel's window data (declared on its UI_DATA row).
+/// /datum/view_variables_panel's window data.
 /datum/view_variables_panel/proc/ui_data_datum_view_variables_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_target"] = !!thing
@@ -147,48 +156,60 @@ UI_DATA_REPLACE(/datum/view_variables_panel, "ref=refid", "merge:ui_data_datum_v
 					"name" = varname,
 					"value_html" = "[thing_datum.vv_get_var(varname)]",
 				))
+		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
+		var/list/trait_fields = type_trait_fields_of(thing_datum)
+		for(var/field_name in trait_fields)
+			variables += list(list(
+				"name" = field_name,
+				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum)]",
+			))
 	data["variables"] = variables
 
 	return data
 
-/datum/view_variables_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/view_variables_panel/proc/ui_gate(datum/act/op/A)
 	if(!owner())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/view_variables_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/view_variables_panel, ui_act_refresh)
+/datum/view_variables_panel/proc/ui_act_refresh(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/refresh_target = thing
 	if(refresh_target && !QDELETED(refresh_target))
-		owner().debug_variables(refresh_target)
+		owner().debug_variables(refresh_target, user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/view_variables_panel, "forward_topic", ui_act_forward_topic, UI_ARG_TEXT("href"))
-UI_ACT_PROC(/datum/view_variables_panel, ui_act_forward_topic)
+/datum/view_variables_panel/proc/ui_act_forward_topic(datum/act/op/A, href)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	// The variable HTML and dropdown links all use the byond:// scheme
 	// dispatched through /client.Topic with _src_=vars (or _src_=holder
 	// for some operations). dispatch_forwarded_topic mirrors what the
 	// browser would do.
-	dispatch_forwarded_topic(ui.user, thing, "[params["href"]]")
+	dispatch_forwarded_topic(user, thing, "[href]")
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/view_variables_panel, "dropdown_select", ui_act_dropdown_select, UI_ARG_TEXT("link"))
-UI_ACT_PROC(/datum/view_variables_panel, ui_act_dropdown_select)
+/datum/view_variables_panel/proc/ui_act_dropdown_select(datum/act/op/A, link)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	// React passes us the chosen option's link string verbatim. The
 	// link is already a fully-formed byond:// querystring.
-	var/href_str = "[params["link"]]"
+	var/href_str = "[link]"
 	if(length(href_str))
-		dispatch_forwarded_topic(ui.user, thing, href_str)
+		dispatch_forwarded_topic(user, thing, href_str)
 		SStgui.update_uis(src)
 	return TRUE
 
-/client/proc/debug_variables(datum/thing in world)
-	if(!usr.client || !check_rights_for(usr.client, R_HOLDER))
-		to_chat(usr, span_danger("You need to be an administrator to access this."), confidential = TRUE)
+/client/proc/debug_variables(datum/thing in world, mob/requester)
+	requester = requester || mob
+	if(!requester?.client || !check_rights_for(requester.client, R_HOLDER))
+		to_chat(requester, span_danger("You need to be an administrator to access this."), confidential = TRUE)
 		return
 	if(!thing)
 		return
@@ -201,7 +222,7 @@ UI_ACT_PROC(/datum/view_variables_panel, ui_act_dropdown_select)
 		dq_vv_panel = new /datum/view_variables_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
-	dq_vv_panel.tgui_interact(usr)
+	dq_vv_panel.tgui_interact(requester)
 	SStgui.update_uis(dq_vv_panel)
 
 /client/proc/vv_update_display(datum/thing, span, content)

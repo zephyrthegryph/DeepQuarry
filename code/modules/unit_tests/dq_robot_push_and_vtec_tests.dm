@@ -19,7 +19,8 @@
 
 	// Some other, unrelated source (an anchoring effect, a trait, whatever)
 	// independently wants the robot unpushable.
-	R.add_push_disable_source("test_anchor")
+	var/datum/anchor = new
+	R.add_push_disable_source(anchor)
 	TEST_ASSERT(!(R.status_flags & CANPUSH), "an independent push-disable source should clear CANPUSH")
 
 	// A robot module that also disables pushing is installed, then removed
@@ -32,7 +33,8 @@
 	TEST_ASSERT(!(R.status_flags & CANPUSH), "removing the module's own push-disable source must not clobber the other still-active source's CANPUSH suppression")
 
 	// Now the other source withdraws too -- only now should CANPUSH return.
-	R.remove_push_disable_source("test_anchor")
+	R.remove_push_disable_source(anchor)
+	qdel(anchor)
 	TEST_ASSERT(R.status_flags & CANPUSH, "once every push-disable source has withdrawn, CANPUSH should be restored")
 
 	qdel(module)
@@ -45,7 +47,7 @@
 	TEST_ASSERT_NOTNULL(proto, "the VTEC upgrade prototype should resolve")
 
 	// Simulate the upgrade having been installed (mirrors what action() does).
-	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	grant(R, robot_vtec(), R)
 	R.vtec_active = TRUE
 	TEST_ASSERT(proto.is_installed(R), "VTEC should be detected as installed once its verb is present")
 
@@ -60,7 +62,7 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
 	var/obj/item/borg/upgrade/basic/vtec/proto = robot_upgrade_prototype(/obj/item/borg/upgrade/basic/vtec)
 
-	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	grant(R, robot_vtec(), R)
 	R.vtec_active = TRUE
 	TEST_ASSERT(proto.is_installed(R), "VTEC should be installed before the reset")
 

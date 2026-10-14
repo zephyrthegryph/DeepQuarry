@@ -7,8 +7,6 @@
 	cost = 150
 	obj_path = /obj/item/clothing/suit/armor/tesla
 
-OWN_TIMER(/obj/item/clothing/suit/armor/tesla, recharge_timer)
-
 /obj/item/clothing/suit/armor/tesla
 	name = "tesla armor"
 	desc = "This rather dangerous looking armor will hopefully shock your enemies, and not you in the process."
@@ -44,44 +42,46 @@ OWN_TIMER(/obj/item/clothing/suit/armor/tesla, recharge_timer)
 
 		//Deal with protecting our wearer now.
 		if(ready)
-			ready = 0
-			after_slot(src, "recharge_timer", cooldown_to_charge, PROC_REF(recharge_ready), user)
+			set_ready(FALSE)
+			after(src, cooldown_to_charge, PROC_REF(recharge_ready), key = "recharge_timer", with = list(user))
 			act_message(user, null, others = span_danger("%U%'s [src.name] blocks [attack_text]!"))
-			update_icon()
 			return 1
 	return 0
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", PROC_REF(tesla_armor_toggle_self)))
+CAPABILITIES(/obj/item/clothing/suit/armor/tesla)
+	op("tesla_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(tesla_armor_toggle_self)))
 
 /// Old attack_self.
-/obj/item/clothing/suit/armor/tesla/proc/tesla_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+/obj/item/clothing/suit/armor/tesla/proc/tesla_armor_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	update_icon()
-	user.update_inv_wear_suit()
+	changed(src)
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/tesla, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/armor/tesla/appearance_overlays()
-	. = list()
-	if(active && ready)
-		icon_state = ready_icon_state
-		item_state = ready_icon_state
-		set_light(2, 1, l_color = "#006AFF")
-	else
-		icon_state = normal_icon_state
-		item_state = normal_icon_state
-		set_light(0, 0, l_color = "#000000")
+TRACKED(/obj/item/clothing/suit/armor/tesla, active)
+TRACKED(/obj/item/clothing/suit/armor/tesla, ready)
 
-	if(ishuman(loc))
-		var/mob/living/carbon/human/H = loc
-		H.update_inv_wear_suit(0)
+/// Lit while it is active and ready to block; the worn suit and the wearer's action buttons follow (effects of the look).
+/obj/item/clothing/suit/armor/tesla/draw(datum/look/look)
+	..()
+	var/lit = active && ready
+	look.state(lit ? ready_icon_state : normal_icon_state)
+	look.held_state(lit ? ready_icon_state : normal_icon_state)
+	if(lit)
+		look.glow(2, 1, "#006AFF")
+	else
+		look.glow(GLOW_OFF)
+	look.effect(PROC_REF(look_effect_wearer_buttons))
+
+/obj/item/clothing/suit/armor/tesla/proc/look_effect_wearer_buttons()
+	var/mob/living/carbon/human/H = loc
+	if(istype(H))
+		changed(src)
 		H.update_mob_action_buttons()
-	. += ..()
 
 /obj/item/clothing/suit/armor/tesla/proc/recharge_ready(mob/user)
-	ready = 1
-	update_icon()
+	set_ready(TRUE)
 	to_chat(user, span_notice("\The [src] is ready to protect you once more."))
 
 /obj/item/clothing/suit/armor/tesla/proc/shoot_lightning(mob/target, power)

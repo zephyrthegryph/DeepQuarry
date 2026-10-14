@@ -18,41 +18,40 @@
 		rel_clear(src, nameof(pinned_target))
 		set_density(TRUE)
 
-/obj/structure/target_stake/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/target_stake_item,
-		/datum/interaction/entry_hand/target_stake_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/target_stake)
+	ref_one(nameof(pinned_target))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
-/// Old attackby: put a target on the stake.
-/datum/interaction/entry_item/target_stake_item
-	id = "target_stake_item"
-	name = "Use"
-	effect = /obj/structure/target_stake/proc/interaction_item
-
-/obj/structure/target_stake/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/target_stake/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Putting objects on the stake. Most importantly, targets
 	if(pinned_target)
 		return TRUE // get rid of that pinned target first!
 
 	if(istype(W, /obj/item/target))
+		var/atom/destination = loc
+		if(!destination)
+			return TRUE
+		var/reason = own_transfer_refusal(destination, W, null, user)
+		if(reason)
+			refuse(user, "[capitalize(reason)].")
+			return TRUE
+		var/atom/source = W.loc
+		if(source)
+			source.release_to(W, destination, null, user)
+		if(W.loc != destination)
+			return TRUE
 		set_density(FALSE)
 		W.set_density(TRUE)
-		user.remove_from_mob(W)
-		W.forceMove(loc)
 		W.layer = ABOVE_JUNK_LAYER
 		rel_set(src, nameof(pinned_target), W)
 		to_chat(user, "You slide the target into the stake.")
 	return TRUE
 
-/// Old attack_hand: take pinned targets off.
-/datum/interaction/entry_hand/target_stake_hand
-	id = "target_stake_hand"
-	name = "Use"
-	effect = /obj/structure/target_stake/proc/interaction_hand
-
-/obj/structure/target_stake/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/target_stake/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	// taking pinned targets off!
 	if(pinned_target)
 		set_density(TRUE)
@@ -72,3 +71,11 @@
 	return TRUE
 
 // pinned_target sits on the stake's turf (not in it): a one-sided REL view.
+
+/// Relation teardown clears the pinned target before the target's own hooks run.
+/obj/structure/target_stake/reactions()
+	. = ..()
+	. += on_change(list(nameof(pinned_target)), PROC_REF(pinned_target_changed))
+
+/obj/structure/target_stake/proc/pinned_target_changed(list/keys)
+	set_density(!pinned_target)

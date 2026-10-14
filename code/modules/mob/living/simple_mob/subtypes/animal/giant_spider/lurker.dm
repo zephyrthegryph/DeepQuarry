@@ -54,7 +54,7 @@
 /mob/living/simple_mob/animal/giant_spider/lurker/cloak()
 	if(dq_get_cloaked(src))
 		return
-	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
+	set_alpha_source(SRC_ALPHA_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 
@@ -62,7 +62,7 @@
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)// This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 // Check if cloaking if possible.
@@ -84,12 +84,9 @@
 
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/animal/giant_spider/lurker
-	of = /mob/living/simple_mob/animal/giant_spider/lurker
-
-/datum/om/stage/life/special/animal/giant_spider/lurker/perform(mob/living/simple_mob/animal/giant_spider/lurker/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/animal/giant_spider/lurker/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 
 // Applies bonus base damage if dq_get_cloaked(src).
@@ -103,14 +100,15 @@
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.apply_body_effect(/datum/body_effect/entangled, 2 SECONDS) //L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.apply_body_effect(/datum/body_effect/entangled, 2 SECONDS) //L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
 			play_sfx(src, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..() // For the poison.
 
 // Force uncloaking if attacked.
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/giant_spider/lurker, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/lurker)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/animal/giant_spider/lurker/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()

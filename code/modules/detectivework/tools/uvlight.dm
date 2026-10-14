@@ -3,47 +3,56 @@
 	desc = "A small handheld black light."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "uv_off"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	actions_types = list(/datum/action/item_action/toggle_uv_light)
 	MATERIAL_BULK(MAT_STEEL, 150)
 
+	/// Scanned atom handle (entity_handle) -> the invisibility it had before the scan.
 	var/list/scanned
+	/// Scanned atom handle (entity_handle) -> the alpha it had before the scan.
 	var/list/stored_alpha
 	var/list/reset_objects
 
 	var/range = 3
 	var/step_alpha = 50
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/uv_light, on, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/uv_light, PERIODIC_SLOW, "on")
+/obj/item/uv_light/var/on = FALSE
+TRACKED(/obj/item/uv_light, on)
 
-DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/uv_light)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))
 
 /// Old attack_self.
-/obj/item/uv_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/uv_light/proc/interaction_self(datum/act/op/A)
 	set_on(!on)
 	if(on)
-		set_light(range, 2, "#007fff")
-		icon_state = "uv_on"
+		set_glow(src, GLOW(range, 2, "#007fff"))
+		set_icon_state("uv_on")
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		clear_last_scan()
-		icon_state = "uv_off"
+		set_icon_state("uv_off")
 	return TRUE
 
 /obj/item/uv_light/proc/clear_last_scan()
 	if(length(scanned))
-		for(var/atom/O in scanned)
-			O.invisibility = LAZYACCESS(scanned, O)
+		for(var/object_handle in scanned)
+			var/atom/O = resolve_handle(object_handle) // a deleted atom stops resolving
+			if(!O)
+				continue
+			O.set_invisibility(LAZYACCESS(scanned, object_handle))
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(scanned)
 	if(length(stored_alpha))
-		for(var/atom/O in stored_alpha)
-			O.alpha = LAZYACCESS(stored_alpha, O)
+		for(var/object_handle in stored_alpha)
+			var/atom/O = resolve_handle(object_handle)
+			if(!O)
+				continue
+			O.alpha = LAZYACCESS(stored_alpha, object_handle)
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(stored_alpha)
 	if(length(reset_objects))
@@ -52,7 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 			if(dq_get_fluorescent(I) == 2) dq_set_fluorescent(I, 1)
 		rel_clear(src, nameof(reset_objects))
 
-/obj/item/uv_light/periodic_step()
+/obj/item/uv_light/proc/uv_light_step(datum/act/timer/tick)
 	clear_last_scan()
 	if(on)
 		step_alpha = round(255/range)
@@ -65,9 +74,9 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
-						LAZYSET(scanned, A, A.invisibility)
-						A.invisibility = INVISIBILITY_NONE
-						LAZYSET(stored_alpha, A, A.alpha)
+						LAZYSET(scanned, entity_handle(A), A.invisibility)
+						A.set_invisibility(INVISIBILITY_NONE)
+						LAZYSET(stored_alpha, entity_handle(A), A.alpha)
 						A.alpha = use_alpha
 					if(istype(A, /obj/item))
 						var/obj/item/O = A

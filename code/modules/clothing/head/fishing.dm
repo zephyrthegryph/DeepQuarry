@@ -11,8 +11,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		slot_head_str = 'icons/inventory/head/mob_fishing.dmi'
 		)
-	siemens_coefficient = 0.9
-	body_parts_covered = 0
 	var/slogan = ""
 	/// -1 until rolled, so a rolled size always differs from the initial value and is saved.
 	var/hatsize = -1
@@ -20,6 +18,11 @@
 	/// hat restored from saved state looks like the one that was saved instead of re-rolling.
 	var/colourtype
 
+CAPABILITIES(/obj/item/clothing/head/fishing)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 0.9))
+
+// ALLOW(init/INSTANCE_STATE): rolls its slogan and draws it
 /obj/item/clothing/head/fishing/Initialize(mapload)
 	. = ..()
 	roll_slogan()
@@ -39,13 +42,13 @@
 
 /// Worn and in-hand icons from the size and hue.
 /obj/item/clothing/head/fishing/proc/apply_icons()
-	icon_state = "[colourtype]soft[hatsize]"
-	item_state_slots = list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]")
+	set_icon_state("[colourtype]soft[hatsize]")
+	set_item_state_slots(list(slot_r_hand_str = "[colourtype]soft", slot_l_hand_str = "[colourtype]soft", slot_head_str = "[colourtype]soft[hatsize]"))
 
 /obj/item/clothing/head/fishing/proc/roll_slogan()
 	hatsize = 0
 	//short phrases that women and fish may have about you
-	var/feelings = list("love me",
+	var/static/list/feelings = list("love me",
 						"fear me",
 						"despise me",
 						"are ambivalent towards me",
@@ -111,7 +114,7 @@
 						"attempt to approach me"
 						)
 	//significantly more complex feelings that women and fish may have about you
-	var/verylongfeelings = list("construct inferior defensive walls lacking additional fall back locations as they believe their initial defense shall be enough to withstand me",
+	var/static/list/verylongfeelings = list("construct inferior defensive walls lacking additional fall back locations as they believe their initial defense shall be enough to withstand me",
 							"insist upon forming an unsteady yet reliable alliance in which they teeter upon the dual edge of betrayal and ruination in the perpetual desire to bring ruin upon me",
 							"construct elaborate fantasies about my graphic and harrowing death at the hands of a giant robot",
 							"call it oven when you of in the cold food of out hot eat the food",

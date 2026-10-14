@@ -1,0 +1,37 @@
+ai|none menu: Use
+ai|none click: Click: Use
+human|/obj/item click: nothing
+human|/obj/item/assembly/signaler menu: Hammer on the door
+human|/obj/item/assembly/signaler menu: Hold the door open
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Open
+human|/obj/item/assembly/signaler menu: Ring the bell
+human|/obj/item/assembly/signaler menu: Signaler
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler click: Click: Signaler
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/card/id click: nothing
+human|/obj/item/cell menu: Climb
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Use
+human|/obj/item/multitool click: nothing
+human|/obj/item/reagent_containers menu: Insert container
+human|/obj/item/reagent_containers menu: Take out container
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers click: Click: Insert container
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material click: nothing
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/weldingtool click: nothing
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
+robot|none click: Click: Use

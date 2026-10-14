@@ -1,0 +1,6 @@
+/obj/item/material/gravemarker icon: icons/obj/weapons.dmi
+/obj/item/material/gravemarker state: gravemarker
+/obj/item/material/gravemarker dir: 2
+/obj/item/material/gravemarker color: #666666
+/obj/item/material/gravemarker overlay: icons/obj/weapons.dmi:gravemarker:8:#000000
+

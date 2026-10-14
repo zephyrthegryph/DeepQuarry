@@ -1,0 +1,61 @@
+human|none menu: Climb
+human|none menu: Interaction hand (refused: It's empty.)
+human|none click: Click: Interaction hand
+robot|none menu: Climb
+robot|none menu: Interaction hand (refused: It's empty.)
+robot|none click: Click: Interaction hand
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Interaction hand (refused: It's empty.)
+human|/obj/item/tool/screwdriver menu: Take apart
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Take apart
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Interaction hand (refused: It's empty.)
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Interaction item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Interaction hand (refused: It's empty.)
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Interaction hand (refused: It's empty.)
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Interaction item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Interaction hand (refused: It's empty.)
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Interaction item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Interaction hand (refused: It's empty.)
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Interaction item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Interaction hand (refused: It's empty.)
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Interaction item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Interaction hand (refused: It's empty.)
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Interaction item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Interaction hand (refused: It's empty.)
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Interaction item
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Interaction hand (refused: It's empty.)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Interaction item
+keys: climb.climb, climb.climb_menu, drag_buckle, interaction_hand, interaction_item, interaction_tk, melee_hit, remove_object, use_screwdriver, use_wrench

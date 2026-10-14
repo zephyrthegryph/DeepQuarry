@@ -7,6 +7,8 @@
 #define PRESSURE_CHECK_OUTPUT 4
 
 /obj/machinery/atmospherics/binary/dp_vent_pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	icon = 'icons/atmos/vent_pump.dmi'
 	icon_state = "map_dp_vent"
 
@@ -19,7 +21,6 @@
 	level = 1
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 7500			//7500 W ~ 10 HP
 
 	pipe_flags = PIPING_ALL_LAYER
@@ -42,11 +43,7 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
 	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
@@ -59,32 +56,23 @@
 	rust_device_dirty()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/high_volume
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
 	name = "Large Dual Port Air Vent"
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/high_volume/Initialize(mapload)
-	. = ..()
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/binary/dp_vent_pump/appearance_overlays()
-	. = list()
-
-	var/vent_icon = "vent"
-
+/obj/machinery/atmospherics/binary/dp_vent_pump/draw(datum/look/look)
+	..()
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return .
-
-	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe))
+		return
+	var/vent_icon = "vent"
+	if(!T.is_plating() && node1 && node2 && node1.level == 1 && node2.level == 1 && istype(node1, /obj/machinery/atmospherics/pipe) && istype(node2, /obj/machinery/atmospherics/pipe)) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipes come or go
 		vent_icon += "h"
-
-	if(!powered())
+	if(!operable() || !use_power)
 		vent_icon += "off"
 	else
-		vent_icon += "[use_power ? "[pump_direction ? "out" : "in"]" : "off"]"
-
-	. += GLOB.icon_manager.get_atmos_icon("device", , , vent_icon)
+		vent_icon += pump_direction ? "out" : "in"
+	look.overlay(GLOB.icon_manager.get_atmos_icon("device", , , vent_icon))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_underlays()
 	..()
@@ -105,7 +93,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PR
 			add_underlay(T, node2, dir)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/hide(i)
-	update_icon()
 	update_underlays()
 
 /// Its flow law is a Rust device edge (the same shape as the vent pump's): the port it works through and the
@@ -171,24 +158,25 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/binary/dp_vent_pump, TYPE_PR
 	if(power_w > 0)
 		use_power(power_w)
 
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pump_direction)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, external_pressure_bound)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, input_pressure_min)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, output_pressure_max)
+TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/dp_vent_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(pump_direction), nameof(external_pressure_bound), nameof(input_pressure_min), nameof(output_pressure_max), nameof(pressure_checks))
+	. += drawn_from(nameof(use_power), nameof(pump_direction))
 
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -213,10 +201,16 @@ TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE
 
 	return 1
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
+CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(idle = 150))
+	examine_line(PROC_REF(gauge_text))
+
+/// The gauge, to someone beside it.
+/obj/machinery/atmospherics/binary/dp_vent_pump/proc/gauge_text(datum/act/eval/A)
+	var/mob/viewer = A.actor
+	if(viewer && Adjacent(viewer))
+		return "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
@@ -251,11 +245,10 @@ TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks, CHANGE
 		set_external_pressure_bound(between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
-	update_icon()
+	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 
 #undef EXTERNAL_PRESSURE_BOUND
 #undef INTERNAL_PRESSURE_BOUND

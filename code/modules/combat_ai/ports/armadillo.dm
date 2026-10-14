@@ -37,7 +37,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/armadillo, get_ai_behaviors, li
 	var/message = multilingual_to_message(message_pieces)
 	if(!message)
 		return
-	om_after(src, 1 SECOND, PROC_REF(dq_torta_grande), message)
+	after(src, 1 SECOND, PROC_REF(dq_torta_grande), with = list(message))
 
 /mob/living/simple_mob/animal/passive/armadillo/torta/proc/dq_torta_grande(message)
 	if(client || stat == DEAD)

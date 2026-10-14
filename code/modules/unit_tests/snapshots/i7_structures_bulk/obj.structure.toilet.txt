@@ -1,0 +1,73 @@
+human|none menu: Flush
+human|none menu: Use
+human|none menu: Yank the flush lever
+human|none click: Click: Use
+robot|none menu: Flush
+robot|none menu: Use
+robot|none menu: Use (refused: )
+robot|none menu: Yank the flush lever
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/tool/crowbar
+-click: Click: Use
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use crowbar
++6 menu: Yank the flush lever
++7 click: Click: Use crowbar
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use wrench (refused: )
++6 menu: Yank the flush lever
++7 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/multitool
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/weldingtool
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Flush
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Yank the flush lever
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/card/id
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Yank the flush lever
+@obj.structure human|/obj/item
++0 menu: Flush
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Yank the flush lever
+@obj.structure human|/obj/item/bluespace_crystal
+@obj human|/obj/item/stock_parts/matter_bin
+keys: drag_buckle, flush, flush_yank, insert_crystal, item, item_cyborg, melee_hit, replace_bin, silicon_use, swirlie, use, use_crowbar, use_wrench

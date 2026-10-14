@@ -36,32 +36,23 @@
 	if(captured)
 		. += span_notice("Control authority has been captured by [captured_by || "an expedition team"].")
 
-/obj/machinery/generated_station_department_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/department_control_override,
-	)
-	..()
+CAPABILITIES(/obj/machinery/generated_station_department_control)
+	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req_is(nameof(captured), FALSE)), when(req(PROC_REF(has_integrity))),
+		begins(MSG(generated_station_department_control/overriding)), wait(3 SECONDS), then(PROC_REF(override_done)))
 
-/datum/interaction/machine_hand/department_control_override
-	id = "department_control_override"
-	name = "Override"
-	behind_gate = FALSE
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/generated_station_department_control/proc/capturable, null))
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/generated_station_department_control/proc/interaction_override
+MSG_DEF(generated_station_department_control/overriding, span_notice("You begin overriding %T%."), span_notice("%U% begins overriding %T%."))
 
-/obj/machinery/generated_station_department_control/proc/capturable(mob/actor, atom/target, obj/item/held)
-	return !captured && get_integrity() > 0
+TRACKED(/obj/machinery/generated_station_department_control, captured)
 
-/obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, src, MSG_SELF(span_notice("You begin overriding %T%.")), MSG_OTHERS(span_notice("%U% begins overriding %T%.")))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
-	return TRUE
+/// The control is not wrecked.
+/obj/machinery/generated_station_department_control/proc/has_integrity(datum/act/op/A)
+	return (get_integrity_damage() < read_once(max_integrity)) ? null : /datum/msg/req_failed
 
-/obj/machinery/generated_station_department_control/proc/override_done(mob/user)
+/obj/machinery/generated_station_department_control/proc/override_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_integrity() <= 0)
 		return
-	captured = TRUE
+	set_captured(TRUE)
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
 
@@ -175,9 +166,9 @@
 /datum/expedition_site/proc/initialize_generated_station_runtime()
 	if(!station_spec || station_simulation)
 		return FALSE
-	own_set(src, nameof(station_simulation), new /datum/generated_station_simulation(station_spec))
-	own_set(src, nameof(station_director), new /datum/generated_station_director(station_simulation))
-	own_take_all(src, nameof(station_controls))
+	rel_set(src, nameof(station_simulation), new /datum/generated_station_simulation(station_spec))
+	rel_set(src, nameof(station_director), new /datum/generated_station_director(station_simulation))
+	rel_take_all(src, nameof(station_controls))
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node
@@ -196,14 +187,14 @@
 			continue
 		var/turf/control_turf = generated_station_control_turf(core)
 		if(!control_turf)
-			qdel(core)
+			spent(core)
 			continue
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, nameof(station_controls), control)
+		rel_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
-		qdel(core)
+		spent(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
 	// route for a required gameplay object. A late structural/furnishing pass can
 	// legitimately replace a landmark's original turf. Reconstruct any missing
@@ -235,7 +226,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, nameof(station_controls), control)
+		rel_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
 	return TRUE
 
@@ -248,12 +239,12 @@
 	if(!station_materialization)
 		return FALSE
 	var/datum/generated_station_materializer/repairer = new
-	own_set(repairer, nameof(repairer.result), station_materialization)
+	rel_set(repairer, nameof(repairer.result), station_materialization)
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	own_take(repairer, nameof(repairer.result))
-	qdel(repairer)
+	rel_take(repairer, nameof(repairer.result))
+	spent(repairer)
 	return succeeded
 
 /datum/expedition_site/proc/generated_station_status_text()

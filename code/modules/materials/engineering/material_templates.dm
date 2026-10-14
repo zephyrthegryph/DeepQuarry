@@ -6,7 +6,7 @@
 // composition is its template plus a total amount, both declared on its type:
 //     material_template = /datum/material_template/cell
 //     material_total = 2 * SHEET_MATERIAL_AMOUNT
-// Instances store only the roles whose material differs (material_overrides).
+// Instances store only the roles whose material differs (the build record's overrides, material_state.dm).
 // Amounts are derived on demand: fraction x total, with the last role taking the
 // remainder so every blueprint conserves its total exactly.
 //
@@ -27,6 +27,7 @@
 
 /// The shared singleton for a template type. Templates are read-only.
 /proc/material_template_singleton(template_path) as /datum/material_template
+	READS_FROM()
 	var/static/list/templates
 	if(!template_path)
 		return null
@@ -37,6 +38,7 @@
 		. = new template_path
 		templates[template_path] = .
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/material_template)
 /datum/material_template
 	/// MATERIAL_APPLICATION_* this blueprint serves, or null for plain bulk material.
 	var/application

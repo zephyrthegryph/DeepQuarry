@@ -8,10 +8,14 @@
 	var/list/provisions
 	var/critical = FALSE
 
+CAPABILITIES(/datum/generated_station_department_definition)
+	owns_many(nameof(provisions))
+	owns_many(nameof(requirements))
+
 /datum/generated_station_department_definition/New()
 	..()
-	own_take_all(src, nameof(requirements))
-	own_take_all(src, nameof(provisions))
+	rel_take_all(src, nameof(requirements))
+	rel_take_all(src, nameof(provisions))
 
 
 /// A capability consumed by a department. Providers may be implemented later
@@ -75,15 +79,20 @@
 	/// Semantic rooms partitioned from the remaining usable territory.
 	var/list/room_program
 
+CAPABILITIES(/datum/generated_station_layout_node)
+	owns_many(nameof(eva_vestibules))
+	owns_many(nameof(frontage_sockets))
+	owns_many(nameof(room_program))
+
 /datum/generated_station_layout_node/New()
 	..()
 	territory = list()
 	frontage_reservation = list()
 	local_circulation = list()
 	partition_walls = list()
-	own_take_all(src, nameof(frontage_sockets))
-	own_take_all(src, nameof(eva_vestibules))
-	own_take_all(src, nameof(room_program))
+	rel_take_all(src, nameof(frontage_sockets))
+	rel_take_all(src, nameof(eva_vestibules))
+	rel_take_all(src, nameof(room_program))
 
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
@@ -117,10 +126,13 @@
 	var/list/fixture_ids
 	var/occupancy_micros
 
+CAPABILITIES(/datum/generated_station_room_allocation)
+	owns_many(nameof(door_sockets))
+
 /datum/generated_station_room_allocation/New()
 	..()
 	tiles = list()
-	own_take_all(src, nameof(door_sockets))
+	rel_take_all(src, nameof(door_sockets))
 	content_circulation = list()
 	fixture_ids = list()
 
@@ -198,10 +210,13 @@
 	var/list/tiles
 	var/list/door_sockets
 
+CAPABILITIES(/datum/generated_station_eva_vestibule)
+	owns_many(nameof(door_sockets))
+
 /datum/generated_station_eva_vestibule/New()
 	..()
 	tiles = list()
-	own_take_all(src, nameof(door_sockets))
+	rel_take_all(src, nameof(door_sockets))
 
 
 /// Abstract relationship between two layout vertices.
@@ -239,13 +254,16 @@
 /datum/generated_station_validation_result
 	var/list/issues
 
+CAPABILITIES(/datum/generated_station_validation_result)
+	owns_many(nameof(issues))
+
 /datum/generated_station_validation_result/New()
 	..()
-	own_take_all(src, nameof(issues))
+	rel_take_all(src, nameof(issues))
 
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
-	own_add(src, nameof(issues), new /datum/generated_station_validation_issue(severity, code, message, subject_id))
+	rel_add(src, nameof(issues), new /datum/generated_station_validation_issue(severity, code, message, subject_id))
 
 /datum/generated_station_validation_result/proc/is_valid()
 	for(var/datum/generated_station_validation_issue/issue in issues)
@@ -298,17 +316,26 @@
 	/// crosses JSON; it is rebuilt from the authored catalog on the DM side.
 	var/list/fixture_type_registry
 
+CAPABILITIES(/datum/generated_station_spec)
+	owns_many(nameof(department_definitions))
+	owns_many(nameof(departments))
+	owns_many(nameof(fixture_blueprint))
+	owns_many(nameof(layout_edges))
+	owns_many(nameof(layout_nodes))
+	owns_many(nameof(network_blueprint))
+	owns_many(nameof(maintenance_doors))
+
 /datum/generated_station_spec/New()
 	..()
-	own_take_all(src, nameof(departments))
-	own_take_all(src, nameof(layout_nodes))
-	own_take_all(src, nameof(layout_edges))
+	rel_take_all(src, nameof(departments))
+	rel_take_all(src, nameof(layout_nodes))
+	rel_take_all(src, nameof(layout_edges))
 	circulation_tiles = list()
 	maintenance_tiles = list()
-	own_take_all(src, nameof(maintenance_doors))
+	rel_take_all(src, nameof(maintenance_doors))
 	structural_tiles = list()
-	own_take_all(src, nameof(fixture_blueprint))
-	own_take_all(src, nameof(network_blueprint))
+	rel_take_all(src, nameof(fixture_blueprint))
+	rel_take_all(src, nameof(network_blueprint))
 	content_quality = list()
 	fixture_type_registry = list()
 

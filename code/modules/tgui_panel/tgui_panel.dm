@@ -16,9 +16,12 @@
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
+CAPABILITIES(/datum/tgui_panel)
+	owns_one(nameof(window), /datum/tgui_window)
+
 /datum/tgui_panel/New(client/client, id)
 	rel_set(src, nameof(client), client)
-	own_set(src, nameof(window), new /datum/tgui_window(client, id))
+	rel_set(src, nameof(window), new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 
 /datum/tgui_panel/Del()
@@ -41,7 +44,7 @@
  */
 /datum/tgui_panel/proc/initialize(force = FALSE)
 	// Deferred a tick, until after the client constructor: a timer, the constructor never waits.
-	om_after(src, 1 TICKS, PROC_REF(initialize_window))
+	after(src, 1 TICKS, PROC_REF(initialize_window))
 
 /datum/tgui_panel/proc/initialize_window()
 	EXPIRY_STAMP(src, initialized_at, CLOCK_WORLD)
@@ -56,7 +59,7 @@
 	window.send_asset(get_asset_datum(/datum/asset/spritesheet_batched/chat))
 	// Other setup
 	request_telemetry()
-	om_after(src, 5 SECONDS, PROC_REF(on_initialize_timed_out))
+	after(src, 5 SECONDS, PROC_REF(on_initialize_timed_out))
 	window.send_message("testTelemetryCommand")
 
 /**

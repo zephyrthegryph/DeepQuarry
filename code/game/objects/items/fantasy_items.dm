@@ -41,10 +41,12 @@
 
 /obj/item/surgical/bone_clamp/alien/magic
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.75
 	icon_state = "bone_boneclamp"
 	name = "bone bone clamp"
 	desc = "A bone clamp made of bones for fixing bones using bones, it feels strangely adept. In fact, it doesn't really feel like actual bone at all..."
+
+CAPABILITIES(/obj/item/surgical/bone_clamp/alien/magic)
+	configure(item_tooling(speed = 0.75))
 
 // Bath
 
@@ -56,23 +58,25 @@
 	flags = OPENCONTAINER
 	var/amount_per_transfer_from_this = 5
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/bath, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/bath/appearance_overlays()
-	. = list()
+/obj/structure/bed/bath/look_parts(datum/look/look)
 	if(reagents.total_volume < 1)
-		icon_state = "bath"
+		look.state("bath")
 	else if(reagents.total_volume < 50)
-		icon_state = "bath1"
+		look.state("bath1")
 	else if(reagents.total_volume < 150)
-		icon_state = "bath2"
+		look.state("bath2")
 	else if(reagents.total_volume < 301)
-		icon_state = "bath3"
-	return .
+		look.state("bath3")
 
-EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_interaction_item)))
+CAPABILITIES(/obj/structure/bed/bath)
+	reagents(300)
+	op("bath_interaction_item", item(/obj/item), then(PROC_REF(bath_interaction_item)))
+	// buckling a grabbed victim, started by bath_interaction_item() with the grab held
+	op("bath_buckle", ai(), takes("subject"), wait(2 SECONDS), then(PROC_REF(bath_buckle_done)))
 
-/// Old attackby.
-/obj/structure/bed/bath/proc/bath_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/bed/bath/proc/bath_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is out of water!"))
@@ -81,36 +85,31 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 			to_chat(user, span_notice("You wet \the [I] in \the [src]."))
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 	if(istype(I, /obj/item/reagent_containers/glass))
-		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/living/affecting = G?.grab_target()
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_notice("%U% attempts to buckle [affecting] into %T%!"))
-		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
-	return INTERACTION_HANDLED_PASS
+		perform_op(user, src, "bath_buckle", I, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = affecting))
+	return OP_PASS
 
-/datum/om/task/timed/bath_bath_buckle
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/bed/bath/proc/bath_buckle_done
-	var/obj/item/I
-	var/mob/living/affecting
-
-/obj/structure/bed/bath/proc/bath_buckle_done(datum/om/task/timed/bath_bath_buckle/task)
-	var/obj/item/I = task.I
-	var/mob/user = task.actor
-	var/mob/living/affecting = task.affecting
+/obj/structure/bed/bath/proc/bath_buckle_done(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	var/mob/living/affecting = A.arg("subject")
+	if(QDELETED(affecting))
+		return OP_REFUSED
 	affecting.forceMove(loc)
 	if(buckle_mob(affecting))
 		act_message(affecting, src, MSG_SELF(span_danger("You are buckled to %T% by [user.name]!")), \
 			MSG_OTHERS(span_danger("%U% is buckled to %T% by [user.name]!")), \
 			MSG_BLIND(span_notice("You hear metal clanking.")))
 	consume(I, user)
+	return OP_OK
 
-DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 
 //oven
 
@@ -118,30 +117,8 @@ DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 	name = "oven"
 	desc = "Old fashioned cookies are ready, dear."
 	icon_state = "yeoldovenopen"
+	state_prefix = "yeoldoven"
 	tgui_id = "CookingOvenOld"
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/oven/yeoldoven/appearance_overlays()
-	. = list()
-	if(!open)
-		if(!has_stat(MACHINE_STAT_ANY))
-			icon_state = "yeoldovenclosed_on"
-			if(cooking == TRUE)
-				icon_state = "yeoldovenclosed_cooking"
-				if(oven_loop)
-					oven_loop.start(src)
-			else
-				icon_state = "yeoldovenclosed_on"
-				if(oven_loop)
-					oven_loop.stop(src)
-		else
-			icon_state = "yeoldovenclosed_off"
-			if(oven_loop)
-				oven_loop.stop(src)
-	else
-		icon_state = "yeoldovenopen"
-		if(oven_loop)
-			oven_loop.stop(src)
 
 //toilet
 
@@ -151,13 +128,31 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PRO
 	icon_state = "toilet3"
 	open = 1
 
-EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ITEM(null, PROC_REF(wooden_interaction_item)), \
-)
+// a hole in a box: a touch does nothing (no lid, no cistern to loot), and its own item use replaces the toilet's
+CAPABILITIES(/obj/structure/toilet/wooden)
+	without("use")
+	without("item")
+	without("item_cyborg")
+	op("wooden_touch", hand(), ungated(), then(PROC_REF(wooden_touched)))
+	op("wooden_item", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(wooden_interaction_item)))
+	op("wooden_item_cyborg", item(/obj/item), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(wooden_interaction_item_cyborg)))
+	op("wooden_swirlie", ai(), takes("subject"), wait(3 SECONDS), then(PROC_REF(wooden_swirlie_done)))
 
-/// Old attackby.
-/obj/structure/toilet/wooden/proc/wooden_interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/// A touch takes the click and does nothing.
+/obj/structure/toilet/wooden/proc/wooden_touched(datum/act/op/A)
+	return OP_OK
+
+/// Old attackby: a swirlie for a grabbed mob, or an item into the cistern.
+/obj/structure/toilet/wooden/proc/wooden_interaction_item(datum/act/op/A)
+	return wooden_item_used(A, FALSE)
+
+/// A cyborg's module never goes in the cistern.
+/obj/structure/toilet/wooden/proc/wooden_interaction_item_cyborg(datum/act/op/A)
+	return wooden_item_used(A, TRUE)
+
+/obj/structure/toilet/wooden/proc/wooden_item_used(datum/act/op/A, cyborg)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/grab))
 		user.setClickCooldown(user.get_attack_speed(I))
 		var/obj/item/grab/G = I
@@ -168,12 +163,12 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 			if(G.state>1)
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				var/mob/living/swirlie = swirlie_mob
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
 					rel_set(src, nameof(swirlie_mob), GM)
-					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
+					perform_op(user, src, "wooden_swirlie", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = GM))
 					rel_clear(src, nameof(swirlie_mob))
 				else
 					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
@@ -181,33 +176,36 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 			else
 				to_chat(user, span_notice("You need a tighter grip."))
 
-	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
+	if(cistern && !cyborg) //STOP PUTTING YOUR MODULES IN THE TOILET.
 		if(I.w_class > 3)
 			to_chat(user, span_notice("\The [I] does not fit."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(w_items + I.w_class > 5)
 			to_chat(user, span_notice("The cistern is full."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		I.forceMove(src)
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
-/datum/om/task/timed/wooden_wooden_swirlie
-	duration = 3 SECONDS
-	complete_proc = /obj/structure/toilet/wooden/proc/wooden_swirlie_done
-
-/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/om/task/timed/wooden_wooden_swirlie/task)
-	var/mob/living/user = task.actor
-	var/mob/living/GM = task.target
+/obj/structure/toilet/wooden/proc/wooden_swirlie_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/GM = A.arg("subject")
+	if(QDELETED(GM))
+		return OP_REFUSED
 	act_message(user, null, MSG_SELF(span_notice("You give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% gives [GM.name] a swirlie!")), MSG_BLIND("You hear a toilet flushing."))
 	if(!GM.internal)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+	return OP_OK
 
 
-APPEARANCE_NONE(/obj/structure/toilet/wooden)
+/// The look: the mapped sprite, none of what the types above draw.
+/obj/structure/toilet/wooden/draw(datum/look/look)
+	..()
+	// the mapped sprite, without the parent's states and layers
+	look.state(null)
 
 //cooking pot
 
@@ -219,23 +217,23 @@ APPEARANCE_NONE(/obj/structure/toilet/wooden)
 	visible_action = "starts cooking"
 	audible_action = "fire roar"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/microwave/cookingpot/appearance_overlays()
-	. = list()
+/obj/machinery/microwave/cookingpot/draw(datum/look/look)
+	..()
+	// the mapped sprite, without the parent's states and layers
+	look.state(null)
 	if(broken)
-		icon_state = "cookingpotb"
-		return .
+		look.state("cookingpotb")
+		return
 	if(dirty >= 100)
 		if(operating)
-			icon_state = "cookingpotbloody1"
+			look.state("cookingpotbloody1")
 		else
-			icon_state = "cookingpotbloody0"
-		return .
+			look.state("cookingpotbloody0")
+		return
 	if(operating)
-		icon_state = "cookingpot1"
+		look.state("cookingpot1")
 	else
-		icon_state = "cookingpot"
-	return .
+		look.state("cookingpot")
 
 /obj/machinery/microwave/cookingpot/broke(spark = FALSE)
 	. = ..()
@@ -257,18 +255,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/microwave/cookingpot, TYPE_PROC_REF(/atom
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "harpoonwand-2"
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/bluespace_harpoon/wand/appearance_overlays()
-	. = list()
-	if(transforming)
-		switch(mode)
-			if(0)
-				flick("harpoonwand-2-change", src)
-				icon_state = "harpoonwand-1"
-			if(1)
-				flick("harpoonwand-1-change",src)
-				icon_state = "harpoonwand-2"
-		transforming = 0
+/obj/item/bluespace_harpoon/wand/draw(datum/look/look)
+	..()
+	look.state(mode ? "harpoonwand-2" : "harpoonwand-1")
+	look.play_flick(mode ? "harpoonwand-1-change" : "harpoonwand-2-change")
 
 /*
  * magic orb
@@ -321,73 +311,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, a
 	icon_state = "teleporter"
 	beacons_left = 3
 	cell_type = /obj/item/cell/device
-	special_handling = TRUE
+	beacon_word = "page"
+	maker_word = "tome"
+	beacon_type = /obj/item/perfect_tele_beacon/magic
 
 /obj/item/perfect_tele_beacon/magic
 	name = "teleportation page"
 	desc = "A single page from a tome, with a glowing blue symbol on it. It seems like the symbol is raised as though there were something running beneath it..."
 	icon = 'icons/obj/props/fantasy.dmi'
 	icon_state = "page"
-
-/obj/item/perfect_tele/magic/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
-	. = ..(user, held, interaction, radial_menu_anchor)
-	if(.)
-		return TRUE
-	claim_network_beacons()
-
-	if(!(user.ckey in warned_users))
-		LAZYOR(warned_users, user.ckey)
-		tgui_alert_async(user,{"
-This device can be easily used to break ERP preferences due to the nature of teleporting and tele-vore.
-Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
-This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
-"},"OOC Warning")
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(page_chosen), choices = radial_images, anchor = radial_menu_anchor, require_near = TRUE, tooltips = TRUE)
-
-/obj/item/perfect_tele/magic/proc/page_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
-	if(!choice || !check_menu(user))
-		return
-
-	else if(choice == "New Beacon")
-		if(beacons_left <= 0)
-			to_chat(user, span_warning("The tome can't support any more pages!"))
-			return
-
-		om_ask(user, /datum/om/prompt/text, PROC_REF(page_named), title = "[src]", message = "New pages's name (2-20 char):", max_length = 20, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-		return
-
-	else
-		rel_set(src, nameof(destination), find_beacon(choice))
-		rebuild_radial_images()
-
-/obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_name = ask.text
-	if(!check_menu(user))
-		return
-	if(beacons_left <= 0)
-		to_chat(user, span_warning("The tome can't support any more pages!"))
-		return
-	if(length(new_name) > 20 || length(new_name) < 2)
-		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
-		return
-
-	if(find_beacon(new_name))
-		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
-		return
-
-	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
-	nb.tele_name = new_name
-	rel_set(nb, nameof(nb.tele_hand), src)
-	nb.creator = user.ckey
-	rel_add(src, nameof(beacons), nb)
-	beacons_left--
-	if(isliving(user))
-		var/mob/living/L = user
-		L.put_in_any_hand_if_possible(nb)
-	rebuild_radial_images()
 
 //sizegun
 
@@ -400,8 +332,8 @@ This device records all warnings given and teleport events for admin review in c
 
 //locked door
 
-/obj/structure/simple_door/dungeon/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_CULT)
+/obj/structure/simple_door/dungeon
+	material_name = MAT_CULT
 
 /obj/structure/simple_door/dungeon/locked
 	locked = TRUE

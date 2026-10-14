@@ -22,12 +22,10 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	icon_living = "space_jellyfish"
 	icon_dead = "space_jellyfish_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	faction = FACTION_JELLYFISH
 	endurance = 100
-	nutrition = 150
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
@@ -71,7 +69,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-	can_be_drop_prey = FALSE
 
 	/// world.time before which it can't reproduce again.
 	var/reproduce_after = 0
@@ -87,7 +84,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
 	B.mode_flags = 40
@@ -101,17 +98,25 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
-/mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	ref_one(nameof(budded_from), /mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
+
+/// The jellyfish this one budded from (its constructor param).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/var/tmp/mob/living/simple_mob/vore/alienanimals/space_jellyfish/budded_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/join_swarm(mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent)
 	enable_swarming()
-	GLOB.jellyfish_count ++
-	var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent = jellyfish
+	GLOB.jellyfish_count++
 	if(parent)
 		parent.faction = faction
 
@@ -120,36 +125,33 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
-	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
+	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition_of(src))
 
 // the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/lifecycle_dematerialize()
 	GLOB.jellyfish_count --
 	..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish
-	of = /mob/living/simple_mob/vore/alienanimals/space_jellyfish
-
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/perform(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.client)
+	if(src.client)
 		return
-	self.reproduce()
+	src.reproduce()
 
 /// Idle with a client (Login and Logout wake it) and through the reproduction cooldown, which ends
 /// by rewake instead of being counted down every frame.
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/idle(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
-	return self.client || !COOLDOWN_FINISHED(self, reproduce_after)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_due()
+	return !src.client && COOLDOWN_FINISHED(src, reproduce_after)
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/space_jellyfish/rewake_delay(mob/living/simple_mob/vore/alienanimals/space_jellyfish/self)
-	return max(self.reproduce_after - world.time, 0)
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/life_type_post_rewake()
+	return max(src.reproduce_after - world.time, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/proc/reproduce()
 	if(!COOLDOWN_FINISHED(src, reproduce_after))
 		return
 	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
 		return
-	if(nutrition < 500)
+	if(nutrition_of(src) < 500)
 		return
 	if(prob(10))
 		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
@@ -170,7 +172,12 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	var/inherited_nutriment = 0
 
-/obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload, inherit)
-	. = ..()
-	nutriment_amt += inherit
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
+	param(nameof(inherited_nutriment), pos = 1)
+
+/// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
+/obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
+	return ..() + nutriment_amt + inherited_nutriment
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/starting_nutrition()
+	return 150

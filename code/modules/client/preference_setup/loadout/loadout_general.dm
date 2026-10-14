@@ -4,7 +4,7 @@
 
 /datum/gear/plushieteshcolor/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/medication
 	display_name = "medication selection"
@@ -24,4 +24,4 @@
 	"Pill Bottle (Aphrodisiac)" = /obj/item/storage/pill_bottle/aphrodisiac
 	)
 	var/path_tweak = new /datum/gear_tweak/path(medications) // gear_tweaks is SHARED (_gear.dm): a plain tweak list, not an owned roster
-	own_add(src, nameof(gear_tweaks), path_tweak)
+	rel_add(src, nameof(gear_tweaks), path_tweak)

@@ -5,9 +5,6 @@
 	icon_override = 'icons/inventory/back/mob.dmi'
 	icon_state = "radiopack"
 	item_state = "radiopack"
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	var/handset_path = /obj/item/radio/bluespacehandset/linked
@@ -16,22 +13,33 @@
 	make_tethered(handset_path)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/bluespaceradio, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/bluespaceradio)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	drag_onto(PROC_REF(drop_input))
 
 /// See important note in code/datums/behaviours/tethered_item.dm
-/obj/item/bluespaceradio/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespaceradio/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/bluespaceradio/MouseDrop()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/bluespaceradio/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
+
+/obj/item/bluespaceradio/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = loc
 		if(!M.unEquip(src))
 			return
-		add_fingerprint(usr)
+		add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
 //Subspace Radio Handset
@@ -41,16 +49,17 @@ DECLARE_INTERACTIONS(/obj/item/bluespaceradio, INTERACT_HAND(null, PROC_REF(inte
 	bluespace_radio = TRUE
 	icon = 'icons/obj/device.dmi'
 	icon_state = "handset"
-	slot_flags = null
 	w_class = ITEMSIZE_LARGE
 	canhear_range = 1
-	item_flags = NOSTRIP
+
+CAPABILITIES(/obj/item/radio/bluespacehandset)
+	configure(item_worn(slots = TRAIT_NONE, flags = NOSTRIP))
 
 /obj/item/radio/bluespacehandset/linked/receive_range(freq, list/level)
 	//Only care about megabroadcasts or things that are targeted at us
 	if(!(0 in level))
 		return -1
-	if(wires.is_cut(WIRE_RADIO_RECEIVER))
+	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
 		return -1
 	if(!listening)
 		return -1

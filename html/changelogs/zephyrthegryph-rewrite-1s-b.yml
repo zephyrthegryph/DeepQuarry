@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The second half of the world services (planets, plants, radiation, radio, research, supply and the rest) are now systems; the world_service type and the world lanes are gone"

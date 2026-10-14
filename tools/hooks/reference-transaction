@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# reference-transaction hook (install: tools/hooks/install_pre_push.sh). Refuses any update of the merge worktree's branch
+# (rewrite/integ-current) made inside the merge worktree by a caller that does not hold the merge lock: a plain `git merge`, commit,
+# switch or rebase there, or an old copy of the merge tools that never took the lock, would stack a second batch on the first.
+# The merge tools themselves hold the lock (DQ_MERGE_SESSION) when they update it. Every other ref and worktree is untouched.
+[ "${1:-}" = "prepared" ] || exit 0
+hit=0
+while read -r _old _new ref; do
+	[ "$ref" = "refs/heads/rewrite/integ-current" ] && hit=1
+done
+[ "$hit" -eq 1 ] || exit 0
+top="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+lib="${DQ_MERGE_LOCK_LIB:-$top/tools/dq_machine_slots.sh}"
+[ -f "$lib" ] || exit 0
+# shellcheck source=/dev/null
+. "$lib"
+merge_lock_require || exit 1
+exit 0

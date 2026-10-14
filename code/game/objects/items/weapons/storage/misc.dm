@@ -39,25 +39,33 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	foldable = /obj/item/stack/material/cardboard
 	//starts_with = list(/obj/item/reagent_containers/food/snacks/donut/normal = 6)
 
-TYPE_TABLE(/obj/item/storage/box/donut, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/donut)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/donut/Initialize(mapload)
-	if(!empty)
-		for(var/i in 1 to 6)
-			var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
-			new type_to_spawn(src)
+CAPABILITIES(/obj/item/storage/box/donut)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut)))
+	initial_contents(PROC_REF(roll_donuts), when = cond_not(nameof(empty)))
+
+/// Rolled contents (initial_contents()): six donuts of the weighted kinds.
+/obj/item/storage/box/donut/proc/roll_donuts(datum/roller/R)
+	. = list()
+	for(var/i in 1 to 6)
+		. += R.weighted(GLOB.random_weighted_donuts)
+
+/obj/item/storage/box/donut/draw(datum/look/look)
 	. = ..()
-	update_icon()
+	for(var/mutable_appearance/ma in donut_overlays())
+		look.overlay(ma)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/donut, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/donut/appearance_overlays()
+/// One overlay per donut inside, each three pixels along from the last.
+/obj/item/storage/box/donut/proc/donut_overlays()
 	. = list()
 	var/x_offset = 0
-	for(var/obj/item/reagent_containers/food/snacks/donut/D in slot_contents(CONTAINER_SLOT_STORAGE))
+	for(var/obj/item/reagent_containers/food/snacks/donut/D in held_things())
 		var/mutable_appearance/ma = mutable_appearance(icon = icon, icon_state = D.overlay_state)
 		ma.pixel_x = x_offset
 		. += ma
 		x_offset += 3
+
+READS_AS(/obj/item/storage/box/donut/proc/donut_overlays, STORAGE_CONTENTS_KEY)
 
 /obj/item/storage/box/donut/empty
 	empty = TRUE
@@ -70,21 +78,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/donut, TYPE_PROC_REF(/atom, appear
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/worm = 6)
 
-TYPE_TABLE(/obj/item/storage/box/wormcan, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/reagent_containers/food/snacks/wormsickly, \
-		/obj/item/reagent_containers/food/snacks/worm, \
-		/obj/item/reagent_containers/food/snacks/wormdeluxe \
-	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/wormcan/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/box/wormcan)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/wormsickly,
+		/obj/item/reagent_containers/food/snacks/worm,
+		/obj/item/reagent_containers/food/snacks/wormdeluxe)))
+
+/obj/item/storage/box/wormcan/draw(datum/look/look)
 	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/wormcan/appearance_overlays()
-	. = list()
-	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "wormcan_empty"
+	if(held_count() == 0)
+		look.state("wormcan_empty")
 
 /obj/item/storage/box/wormcan/sickly
 	icon_state = "wormcan_sickly"
@@ -93,11 +97,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan, TYPE_PROC_REF(/atom, appe
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormsickly = 6)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/wormcan/sickly/appearance_overlays()
-	. = list()
-	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "wormcan_empty_sickly"
+/obj/item/storage/box/wormcan/sickly/draw(datum/look/look)
+	. = ..()
+	if(held_count() == 0)
+		look.state("wormcan_empty_sickly")
 
 /obj/item/storage/box/wormcan/deluxe
 	icon_state = "wormcan_deluxe"
@@ -106,8 +109,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/sickly, TYPE_PROC_REF(/ato
 	max_storage_space = ITEMSIZE_COST_TINY * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/wormdeluxe = 6)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wormcan/deluxe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/wormcan/deluxe/appearance_overlays()
-	. = list()
-	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "wormcan_empty_deluxe"
+/obj/item/storage/box/wormcan/deluxe/draw(datum/look/look)
+	. = ..()
+	if(held_count() == 0)
+		look.state("wormcan_empty_deluxe")

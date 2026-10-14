@@ -4,16 +4,8 @@
 	desc = "A stun baton for incapacitating people with."
 	icon_state = "stunbaton"
 	item_state = "baton"
-	slot_flags = SLOT_BELT
-	force = 15
-	sharp = FALSE
-	edge = FALSE
-	throwforce = 7
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
-	attack_verb = list("beaten")
 	var/lightcolor = "#FF6A00"
 	var/stunforce = 0
 	var/agonyforce = 60
@@ -26,44 +18,60 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/melee/baton/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/melee/baton, status)
+
+CAPABILITIES(/obj/item/melee/baton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	owns_one(nameof(bcell), /obj/item/cell)
+	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
+	drag_onto(PROC_REF(mousedrop_input))
+	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
+	op("baton_item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /obj/item/melee/baton/get_cell()
 	return bcell
 
-/obj/item/melee/baton/MouseDrop(obj/over_object as obj)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/melee/baton/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/melee/baton/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.
+CAPABILITIES(/obj/item/melee/baton/loaded)
+	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon) //this one starts with a cell pre-installed.
 
 /obj/item/melee/baton/proc/deductcharge()
 	if(status == 1)		//Only deducts charge when it's on
@@ -77,30 +85,32 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/devi
 /obj/item/melee/baton/proc/powercheck()
 	if(bcell)
 		if(bcell.charge < hitcost)
-			status = 0
-			update_icon()
+			set_status(0)
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/baton/appearance_overlays()
-	. = list()
+/obj/item/melee/baton/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/melee/baton/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
 	if(status)
-		icon_state = "[initial(name)]_active"
+		drawn_state = look.state("[initial(name)]_active")
 	else if(!bcell)
-		icon_state = "[initial(name)]_nocell"
+		drawn_state = look.state("[initial(name)]_nocell")
 	else
-		icon_state = "[initial(name)]"
+		drawn_state = look.state("[initial(name)]")
 
-	if(icon_state == "[initial(name)]_active")
-		set_light(2, 1, lightcolor)
+	if(drawn_state == "[initial(name)]_active")
+		look.glow(2, 1, lightcolor)
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/baton/dropped(mob/user, equipping, slot)
 	..()
 	if(status && grip_safety && !taped_safety)
-		status = 0
+		set_status(0)
 		visible_message(span_warning("\The [src]'s grip safety engages!"))
-	update_icon()
 
 /obj/item/melee/baton/examine(mob/user)
 	. = ..()
@@ -113,15 +123,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		if(!bcell)
 			. += span_warning("The baton does not have a power source installed.")
 
-/// Old attackby.
-/obj/item/melee/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: fit a cell, tape down the grip safety, or scrape the tape off.
+/obj/item/melee/baton/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
-				if(!own_set(src, nameof(src.bcell), W, user = user))
-					return INTERACTION_HANDLED_PASS
+				if(!move_into(src, nameof(src.bcell), W, user))
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
@@ -137,51 +148,41 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		if(taped_safety)
 			to_chat(user, span_notice("You painstakingly scrape away the tape over the grip safety."))
 			taped_safety = FALSE
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/melee/baton, \
-	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_hand.
-/obj/item/melee/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: the hand on a baton held in the other hand takes its cell out (anything else is the pick up).
+/obj/item/melee/baton/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(bcell)
-			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
-			status = 0
-			update_icon()
-			return TRUE
-		return FALSE
+			set_status(0)
+			return OP_OK
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
-/// Old attack_self. FALSE (special handling) moves on to a subtype's own attack_self.
-/obj/item/melee/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/obj/item/melee/baton/proc/baton_power_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bcell && bcell.charge >= hitcost)
-		status = !status
+		set_status(!status)
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-		update_icon()
 	else
-		status = 0
+		set_status(0)
 		if(!bcell)
 			to_chat(user, span_warning("[src] does not have a power source!"))
 		else
 			to_chat(user, span_warning("[src] is out of charge."))
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(status && CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_danger("You accidentally hit yourself with the [src]!"))
-		user.status_at_least(EFFECT_WEAKENED, 30)
+		user.status_at_least(STAT_WEAKENED, 30)
 		deductcharge()
 		return ITEM_INTERACT_SUCCESS
 	deductcharge()
@@ -231,31 +232,33 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	desc = "An improvised stun baton."
 	icon_state = "stunprod_nocell"
 	item_state = "prod"
-	force = 3
-	throwforce = 5
 	stunforce = 0
 	agonyforce = 60	//same force as a stunbaton, but uses way more charge.
 	hitcost = 2500	//runs off the same kind of big batteries as APCs, not small cells!
-	attack_verb = list("poked")
-	slot_flags = null
 	grip_safety = FALSE
 
-EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_REF(cattleprod_interaction_item)))
+CAPABILITIES(/obj/item/melee/baton/cattleprod)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 3, attack_verbs = list("poked")))
+	op("cattleprod_interaction_item", item(/obj/item), then(PROC_REF(cattleprod_interaction_item)))
+	without("baton_item")   // its own item use replaces the baton's
 
 /// Old attackby.
-/obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(!istype(W, /obj/item/cell/device))
 			if(!bcell)
-				if(!own_set(src, nameof(src.bcell), W, user = user))
-					return INTERACTION_HANDLED_PASS
+				if(!move_into(src, nameof(src.bcell), W, user))
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/melee/baton/get_description_interaction()
 	var/list/results = list()
@@ -274,13 +277,13 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
 	icon_state = "shocker"
-	force = 10
-	throwforce = 5
 	agonyforce = 25 // Less efficent than a regular baton.
-	attack_verb = list("poked")
+
+CAPABILITIES(/obj/item/melee/baton/shocker)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 10, attack_verbs = list("poked")))
 
 /obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	..(target, user, hit_zone, attack_modifier, stance)
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
-

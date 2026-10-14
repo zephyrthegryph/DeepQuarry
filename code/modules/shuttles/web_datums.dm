@@ -16,7 +16,7 @@
 	rel_set(src, nameof(start), _start)
 	rel_set(src, nameof(end), _end)
 	if(_interim)
-		interim = SSshuttles.get_landmark(_interim)
+		rel_set(src, nameof(interim), SSshuttles.get_landmark(_interim))
 	travel_time = _time
 	one_way = _oneway
 
@@ -167,6 +167,10 @@
 	var/list/autopaths									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
+CAPABILITIES(/datum/shuttle_web_master)
+	owns_many(nameof(autopaths))
+	owns_many(nameof(destinations))
+
 /datum/shuttle_web_master/New(new_shuttle, new_destination_class = null)
 	rel_set(src, nameof(my_shuttle), new_shuttle)
 	if(new_destination_class)
@@ -189,9 +193,9 @@
 		// routes, flight computers and autopaths from ever offering a null jump.
 		if(!D.my_landmark())
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
-			qdel(D)
+			spent(D)
 			continue
-		own_add(src, nameof(destinations), D)
+		rel_add(src, nameof(destinations), D)
 
 	// Now start the process of connecting all of them.
 	for(var/datum/shuttle_destination/D in destinations)
@@ -225,7 +229,7 @@
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()
 	for(var/datum/shuttle_autopath/built as anything in init_subtypes(autopath_class))
-		own_add(src, nameof(autopaths), built)
+		rel_add(src, nameof(autopaths), built)
 	for(var/datum/shuttle_autopath/P in autopaths)
 		rel_set(P, nameof(P.master), src)
 	// Drop autopaths that reference destinations pruned in build_destinations()
@@ -238,7 +242,7 @@
 				break
 		if(!valid)
 			log_mapping("Web shuttle autopath [P.type] pruned: references a destination with no landmark on this map.")
-			own_remove(src, nameof(autopaths), P)
+			rel_remove(src, nameof(autopaths), P)
 
 /datum/shuttle_web_master/proc/choose_path()
 	if(!length(autopaths) || !current_destination())
@@ -362,10 +366,9 @@
 
 // A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
 // Not pairs: one routes list would need two partner vars (start and end).
-/datum/shuttle_route/relations()
-	. = ..()
-	. += rel_one(nameof(start))
-	. += rel_one(nameof(end))
-/datum/shuttle_destination/relations()
-	. = ..()
-	. += rel_many(nameof(routes))
+CAPABILITIES(/datum/shuttle_route)
+	ref_one(nameof(start))
+	ref_one(nameof(end))
+	ref_one(nameof(interim))
+CAPABILITIES(/datum/shuttle_destination)
+	ref_many(nameof(routes))

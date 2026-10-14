@@ -5,24 +5,28 @@
 	icon_state = "dnakit"
 	storage_slots = 14
 
-TYPE_TABLE(/obj/item/storage/box/swabs, hold_spec, list(HOLD_ONLY(list(/obj/item/forensics/swab)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/swabs/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to storage_slots) // Fill 'er up.
-		new /obj/item/forensics/swab(src)
+CAPABILITIES(/obj/item/storage/box/swabs)
+	configure(storage(accepts = list(/obj/item/forensics/swab)))
+
+/obj/item/storage/box/swabs
+	starts_with = list(
+		/obj/item/forensics/swab = 14,
+	)
 
 /obj/item/storage/box/evidence
 	name = "evidence bag box"
 	desc = "A box claiming to contain evidence bags."
 	storage_slots = 7
 
-TYPE_TABLE(/obj/item/storage/box/evidence, hold_spec, list(HOLD_ONLY(list(/obj/item/evidencebag)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/evidence/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to storage_slots)
-		new /obj/item/evidencebag(src)
+CAPABILITIES(/obj/item/storage/box/evidence)
+	configure(storage(accepts = list(/obj/item/evidencebag)))
+
+/obj/item/storage/box/evidence
+	starts_with = list(
+		/obj/item/evidencebag = 7,
+	)
 
 /obj/item/storage/box/fingerprints
 	name = "box of fingerprint cards"
@@ -31,9 +35,11 @@ TYPE_TABLE(/obj/item/storage/box/evidence, hold_spec, list(HOLD_ONLY(list(/obj/i
 	icon_state = "dnakit"
 	storage_slots = 14
 
-TYPE_TABLE(/obj/item/storage/box/fingerprints, hold_spec, list(HOLD_ONLY(list(/obj/item/sample/print)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/fingerprints/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to storage_slots)
-		new /obj/item/sample/print(src)
+CAPABILITIES(/obj/item/storage/box/fingerprints)
+	configure(storage(accepts = list(/obj/item/sample/print)))
+
+/obj/item/storage/box/fingerprints
+	starts_with = list(
+		/obj/item/sample/print = 14,
+	)

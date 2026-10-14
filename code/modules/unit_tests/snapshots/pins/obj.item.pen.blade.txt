@@ -1,0 +1,42 @@
+@obj human|none
++0 menu: Click
++3 menu: Toggle blade
+@obj robot|none
++0 menu: Click
++4 menu: Toggle blade
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/tool/crowbar
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/tool/wrench
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/tool/wirecutters
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/multitool
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/weldingtool
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/stack/cable_coil
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/stack/material/steel
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/card/id
++0 menu: Click
++2 menu: Toggle blade
+@obj human|/obj/item/kit
++0 menu: Click
++3 menu: Toggle blade
+@obj human|/obj/item/storage
++0 menu: Click
++3 menu: Toggle blade
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pen_click, pen_click_alt, pen_toggle_blade, pick_up_item, toggle_digestable

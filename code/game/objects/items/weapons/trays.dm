@@ -6,8 +6,6 @@
 	icon = 'icons/obj/food.dmi'
 	icon_state = "tray"
 	desc = "A metal tray to lay food on."
-	throwforce = 12.0
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -17,7 +15,6 @@
 	var/min_bonus_damage = 3
 	var/max_bonus_damage = 5
 	COOLDOWN_DECLARE(shield_bash)
-	drop_sound = SFX_ITEMS_TRAYHIT1
 
 /obj/item/tray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/tray_sound = SFX_ITEMS_TRAYHIT_MIX
@@ -33,24 +30,24 @@
 
 	if(CLUMSY_FAIL_CHANCE(user))              //What if he's a clown?
 		to_chat(M, span_warning("You accidentally slam yourself with the [src]!"))
-		M.status_at_least(EFFECT_WEAKENED, 1)
+		M.status_at_least(STAT_WEAKENED, 1)
 		user.injure(INJURY_BLUNT, 2, source = src)
 		playsound(src, tray_sound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 
 	var/face_hit = FALSE
 
-	if(!(user.zone_sel.selecting == O_EYES) && !(user.zone_sel.selecting == BP_HEAD) && !(user.zone_sel.selecting == O_MOUTH))
+	if(!(hud_of(user)?.zone_sel?.selecting == O_EYES) && !(hud_of(user)?.zone_sel?.selecting == BP_HEAD) && !(hud_of(user)?.zone_sel?.selecting == O_MOUTH))
 		add_attack_logs(user,M,"Hit with [src]")
 		if(prob(15))
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_WEAKENED, 3)
 
 	else
 		//attack_area = BP_HEAD //Ensure we're hitting a valid area.
 		face_hit = TRUE //Our head is being hit! Let's presume we got hit in the face until we are told otherwise.
 		for(var/slot in list(SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES))
 			var/obj/item/protection = M.get_equipped_item(slot)
-			if(istype(protection) && (protection.body_parts_covered & FACE))
+			if(istype(protection) && (worn_of(protection).covers & FACE))
 				face_hit = FALSE
 				break
 
@@ -59,9 +56,9 @@
 			to_chat(M, span_warning("You get slammed in the face with the tray!"))
 			M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src) //This gets double damage. One here and one below.
 			if(prob(30))
-				M.status_at_least(EFFECT_STUNNED, rand(2,4))
+				M.status_at_least(STAT_STUNNED, rand(2,4))
 			else if(prob(30))
-				M.status_at_least(EFFECT_WEAKENED, 2)
+				M.status_at_least(STAT_WEAKENED, 2)
 		else
 			to_chat(M, span_warning("You get slammed in the face with the tray, against your mask!"))
 			if(M.get_equipped_item(SLOT_ID_MASK) && prob(33))
@@ -74,7 +71,7 @@
 					H.get_equipped_item(SLOT_ID_EYES).add_blood(H)
 
 			if(prob(10))
-				M.status_at_least(EFFECT_STUNNED, rand(1,3))
+				M.status_at_least(STAT_STUNNED, rand(1,3))
 	if(prob(33))
 		add_blood(M)
 		var/turf/location = get_turf(M)
@@ -86,19 +83,24 @@
 	M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/tray)
+	configure(item_thrown(force = 10.0))
+	configure(item_sounds(drop = SFX_ITEMS_TRAYHIT1))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/tray/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/tray/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/material/kitchen/rollingpin))
 		if(!COOLDOWN_FINISHED(src, shield_bash))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
 		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
 		COOLDOWN_START(src, shield_bash, 2.5 SECONDS)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /*
 ===============~~~~~================================~~~~~====================
@@ -120,6 +122,17 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 			val += 5
 
 	return val
+
+/// A tray with things on it does not go into a storage: nearly always it refuses, and now and then it slips and is put in anyway.
+/obj/item/tray/storage_balks(obj/item/storage/S, mob/user)
+	if(calc_carry() <= 0)
+		return FALSE
+	if(prob(85))
+		to_chat(user, span_warning("The tray won't fit in [S]."))
+		return TRUE
+	user.drop_from_inventory(src, get_turf(user))
+	to_chat(user, span_warning("God damn it!"))
+	return FALSE
 
 /obj/item/tray/pickup(mob/user)
 
@@ -153,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 	if(equipping)
 		return ..() //Don't bother searching if we're just being put in a pocket/in hands.
 	..()
-	om_after(src, 0, PROC_REF(spill_where_dropped)) //Allows the tray to update location, rather than just checking against mob's location
+	after(src, 0, PROC_REF(spill_where_dropped)) //Allows the tray to update location, rather than just checking against mob's location
 
 /obj/item/tray/proc/spill_where_dropped()
 	var/noTable = null

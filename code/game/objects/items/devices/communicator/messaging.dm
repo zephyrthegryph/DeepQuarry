@@ -86,8 +86,7 @@
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *[ttone]*"))
 
-	alert_called = 1
-	update_icon()
+	set_alert_called(1)
 
 	//Search for holder of the device.
 	var/mob/living/L = null
@@ -98,34 +97,50 @@
 		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
-/datum/om/prompt/text/communicator/reply
+/datum/prompt/text/communicator_reply
 	title = "Reply"
-	message = "Enter your message below."
+	question = "Enter your message below."
+	timeout = 0
+	usable_state = "default"
 	var/obj/item/communicator/comm
+	var/comm_expected = FALSE
 
-/obj/item/communicator/proc/reply_entered(datum/om/prompt/text/communicator/reply/ask)
-	var/mob/user = ask.answerer
-	var/message = ask.text
-	var/obj/item/communicator/comm = ask.comm
-	if(!message || !comm.exonet)
+CAPABILITIES(/datum/prompt/text/communicator_reply)
+	ref_one(nameof(comm), /obj/item/communicator)
+
+/datum/prompt/text/communicator_reply/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/communicator/captured = comm
+	comm_expected = !isnull(captured)
+	rel_clear(src, nameof(comm))
+	if(captured && !QDELETED(captured))
+		rel_set(src, nameof(comm), captured)
+
+/datum/prompt/text/communicator_reply/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(comm_expected && QDELETED(comm))
+		return "gone"
+
+
+// Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
+/obj/item/communicator/topic_usable(datum/act/op/A)
+	return (A.actor && get(src, /mob) == A.actor) ? null : MSG(op/topic_gate)
+
+/obj/item/communicator/proc/reply_subject(datum/act/op/A)
+	return src
+
+/obj/item/communicator/proc/topic_reply(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/obj/item/communicator/comm = href_target
+	var/message = A.step_value("message")
+	if(!comm?.exonet || !message)
 		return
 	exonet.send_message(comm.exonet.address, "text", message)
 	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
 	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
 	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
-
-TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPIC_REF("target", /obj/item/communicator))
-
-// Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
-/obj/item/communicator/topic_allowed(mob/user, list/href_list)
-	return user && get(src, /mob) == user
-
-/obj/item/communicator/proc/topic_reply(mob/user, list/args)
-	var/obj/item/communicator/comm = args["target"]
-	if(!comm?.exonet)
-		return
-	om_ask(user, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
-	return TRUE
 
 // Verb: text_communicator()
 // Parameters: None
@@ -135,7 +150,7 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 	set name = "Text Communicator"
 	set desc = "If there is a communicator available, send a text message to it."
 
-	if(SSticker.current_state < GAME_STATE_PLAYING)
+	if(ticker_current_state() < GAME_STATE_PLAYING)
 		to_chat(src, span_danger("The game hasn't started yet!"))
 		return
 
@@ -166,21 +181,52 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(ghost_text_recipient_chosen), choices = choices, title = "Recipient Choice", message = "Send a text message to whom?")
+	open_request(src, /datum/prompt/choice, PROC_REF(ghost_text_recipient_chosen), answerer = src, title = "Recipient Choice", question = "Send a text message to whom?", choices = choices, timeout = 0)
 
-/datum/om/prompt/text/ghost_text
-	message = "What do you want the message to say?"
+/datum/prompt/text/ghost_text
+	question = "What do you want the message to say?"
+	timeout = 0
 	encode = FALSE
 	multiline = TRUE
 	var/obj/item/communicator/recipient
+	var/recipient_expected = FALSE
 
-/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/om/prompt/choice/ask)
-	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = ask.choice)
+CAPABILITIES(/datum/prompt/text/ghost_text)
+	ref_one(nameof(recipient), /obj/item/communicator)
 
-/mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
+/datum/prompt/text/ghost_text/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/communicator/captured = recipient
+	recipient_expected = !isnull(captured)
+	rel_clear(src, nameof(recipient))
+	if(captured && !QDELETED(captured))
+		rel_set(src, nameof(recipient), captured)
+
+/datum/prompt/text/ghost_text/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
+
+/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/item/communicator/recipient = A.answer.value
+	if(!istype(recipient) || QDELETED(recipient))
+		return
+	open_request(src, /datum/prompt/text/ghost_text, PROC_REF(ghost_text_written), answerer = src, recipient = recipient)
+
+/mob/observer/dead/proc/ghost_text_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	return ghost_text_apply(A)
+
+/mob/observer/dead/proc/ghost_text_apply(datum/act/request/A)
+	var/datum/prompt/text/ghost_text/ask = A.answer
 	var/obj/item/communicator/chosen_communicator = ask.recipient
 	var/mob/observer/dead/O = src
-	var/text_message = sanitize(ask.text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	var/text_message = sanitize(ask.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(text_message && O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
 

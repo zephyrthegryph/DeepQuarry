@@ -21,6 +21,7 @@
 	var/subtype = 0
 
 // new pipe, set the icon_state as on map
+// ALLOW(init/INSTANCE_STATE): remembers the sprite it was placed with as its base
 /obj/structure/disposalpipe/Initialize(mapload)
 	. = ..()
 	base_icon_state = icon_state
@@ -59,14 +60,16 @@
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalpipe/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE	// hide if floor is intact
-	update_icon()
+	hide_under_floor(src, intact)	// hide if floor is intact
 
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version
 // this will be revealed if a T-scanner is used
 // if visible, use regular icon_state
-APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
+/// The look (the draw sweep: from its template).
+/obj/structure/disposalpipe/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]")
 
 // expel the held objects into a turf
 // called when there is a break in the pipe
@@ -84,7 +87,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 		for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 			AM.forceMove(T)
 			AM.pipe_eject(0)
-		qdel(H)
+		spent(H)
 		return
 
 	if(!T.is_plating() && istype(T,/turf/simulated/floor)) //intact floor, pop the tile
@@ -108,7 +111,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 				AM.throw_at(target, 100, 1)
 
 			H.vent_gas(T)
-			qdel(H)
+			spent(H)
 
 	else	// no specified direction, so throw in random direction
 
@@ -123,7 +126,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 				AM.throw_at(target, 5, 1)
 
 			H.vent_gas(T)	// all gas vent to turf
-			qdel(H)
+			spent(H)
 
 	return
 
@@ -138,7 +141,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 				var/obj/structure/disposalpipe/broken/P = new(get_turf(src))
 				P.set_dir(D)
 
-	invisibility = INVISIBILITY_ABSTRACT	// make invisible (since we won't delete the pipe immediately)
+	conceal(src, INVISIBILITY_ABSTRACT)	// make invisible (since we won't delete the pipe immediately)
 	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
@@ -151,14 +154,14 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(T)
 				AM.pipe_eject(0)
-			qdel(H)
+			spent(H)
 			return
 
 		// otherwise, do normal expel from turf
 		if(H)
 			pipe_expel(H, T, 0)
 
-	om_qdel_after(src, 2) // delete pipe after 2 ticks to ensure expel proc finished
+	expire(2) // delete pipe after 2 ticks to ensure expel proc finished
 
 // pipe affected by explosion
 // Light damage leaves broken pipe segments in place.
@@ -173,22 +176,31 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
-/obj/structure/disposalpipe/welder_act(mob/user, obj/item/I)
-	var/turf/T = get_turf(src)
-	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING // prevent interaction with T-scanner revealed pipes
-	add_fingerprint(user)
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/structure/disposalpipe)
+	op("use_welder", lit_welder(fuel = 0), label("Slice the pipe"), needs(req(PROC_REF(plating_refusal), silent = TRUE)), starts(PROC_REF(slice_started)), begins(PROC_REF(slice_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)), on_interrupt(PROC_REF(welder_act_tool_failed)))
 
-/obj/structure/disposalpipe/proc/welder_act_tool_done(mob/user)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
+/// Only a pipe under bare plating is sliced (a T-scanner shows the hidden ones; they are not reached).
+/obj/structure/disposalpipe/proc/on_bare_plating(datum/act/op/A)
+	var/turf/T = get_turf(src)
+	return istype(T) && read_once(T.is_plating())
+
+/obj/structure/disposalpipe/proc/plating_refusal(datum/act/op/A)
+	return on_bare_plating(A) ? null : "the plating is covered"
+
+/obj/structure/disposalpipe/proc/slice_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposalpipe/proc/slice_begins(datum/act/op/A)
+	return msg_text("You start slicing [src]....")
+
+/obj/structure/disposalpipe/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You slice [src]")
 	welded()
 
-/obj/structure/disposalpipe/proc/welder_act_tool_failed(mob/user)
-	to_chat(user, "You must stay still while welding the pipe.")
+/obj/structure/disposalpipe/proc/welder_act_tool_failed(datum/act/op/A)
+	to_chat(A.actor, "You must stay still while welding the pipe.")
 
 // called when pipe is cut with welder
 /obj/structure/disposalpipe/proc/welded()
@@ -248,7 +260,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				AM.forceMove(T)
 				AM.pipe_eject(0)
-			qdel(H)
+			ended_with(H, src)
 			..()
 			return
 
@@ -269,12 +281,12 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/segment
 	icon_state = "pipe-s"
 
+CAPABILITIES(/obj/structure/disposalpipe/segment)
+	derives(nameof(dpdir), PROC_REF(segment_ends)) // at init: the pipe's ends follow how it was placed
+
+// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/segment/Initialize(mapload)
 	. = ..()
-	if(icon_state == "pipe-s")
-		dpdir = dir | turn(dir, 180)
-	else
-		dpdir = dir | turn(dir, -90)
 
 	update()
 
@@ -282,9 +294,12 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/up
 	icon_state = "pipe-u"
 
+CAPABILITIES(/obj/structure/disposalpipe/up)
+	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
+
+// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/up/Initialize(mapload)
 	. = ..()
-	dpdir = dir
 	update()
 
 /obj/structure/disposalpipe/up/nextdir(fromdir)
@@ -331,9 +346,12 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 /obj/structure/disposalpipe/down
 	icon_state = "pipe-d"
 
+CAPABILITIES(/obj/structure/disposalpipe/down)
+	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
+
+// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/down/Initialize(mapload)
 	. = ..()
-	dpdir = dir
 	update()
 
 /obj/structure/disposalpipe/down/nextdir(fromdir)
@@ -346,7 +364,7 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 
 /obj/structure/disposalpipe/down/transfer(obj/structure/disposalholder/H)
 	var/nextdir = nextdir(H.dir)
-	H.dir = nextdir
+	H.set_dir(nextdir)
 
 	var/turf/T
 	var/obj/structure/disposalpipe/P
@@ -384,13 +402,16 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 					// i.e. will be treated as an empty turf
 	desc = "A broken piece of disposal pipe."
 
-/obj/structure/disposalpipe/broken/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/disposalpipe/broken)
+	after_init(0, then(PROC_REF(init_update)))
+
+/obj/structure/disposalpipe/broken/proc/init_update(datum/act/timer/A)
 	update()
+
 
 // called when welded
 /obj/structure/disposalpipe/broken/welded()
-	qdel(src)
+	destroyed(src, null, "deconstructed")
 
 // called when movable is expelled from a disposal pipe or outlet
 // by default does nothing, override for special behaviour
@@ -416,3 +437,15 @@ APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
 	else
 		dirs = GLOB.alldirs.Copy()
 	streak(dirs)
+
+/// A straight segment joins its two ends, a bent one turns.
+/obj/structure/disposalpipe/segment/proc/segment_ends()
+	return icon_state == "pipe-s" ? (dir | turn(dir, 180)) : (dir | turn(dir, -90))
+
+/// Its one end faces the way it was placed.
+/obj/structure/disposalpipe/up/proc/facing_end()
+	return dir
+
+/// Its one end faces the way it was placed.
+/obj/structure/disposalpipe/down/proc/facing_end()
+	return dir

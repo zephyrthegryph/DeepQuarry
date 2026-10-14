@@ -13,7 +13,6 @@
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-
 /*
  * Detective M1911
  */
@@ -21,28 +20,31 @@
 	desc = "A standard law enforcement issue pistol. Uses .45 rounds."
 	magazine_type = /obj/item/ammo_magazine/m45/rubber
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
-	INTERACT_VERB("Name Gun", PROC_REF(det_colt_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_security_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det_colt_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/projectile/colt/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Gun", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_colt_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det_colt_verb_reskin)))
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
-/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	var/_answer_k47 = rerun_ask(M, "k47", PROC_REF(det_colt_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k47))
-		return
-	var/input = sanitizeSafe(_answer_k47)
+/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!security_naming_ok(M))
+		to_chat(M, span_warning("You don\'t feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/obj/item/gun/projectile/colt/detective/reskin_options()
 	var/list/options = list()
 	options["MarsTech P11 Spur (Bubba'd)"] = "mod_colt"
 	options["MarsTech P11 Spur (Blued)"] = "blued_colt"
@@ -51,14 +53,19 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	options["MarsTech P11 Spur (Dark)"] = "dark_colt"
 	options["MarsTech P11 Spur (Green)"] = "green_colt"
 	options["MarsTech P11 Spur (Blue)"] = "blue_colt"
-	var/choice = rerun_ask(M, "k68", PROC_REF(det_colt_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
-		unique_reskin = options[choice]
+		set_icon_state(options[choice])
+		set_unique_reskin(options[choice])
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Security Sidearm
@@ -76,7 +83,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/sec/draw(datum/look/look)
+	..()
+	look.state("secguncomp[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/sec/flash
 	magazine_type = /obj/item/ammo_magazine/m45/flash
@@ -87,7 +97,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec, "secguncomp{ammo_magazine?:-e}
 	desc = "The MT Mk58 is a cheap, ubiquitous sidearm, produced by MarsTech. This one has a sweet wooden grip. Uses .45 rounds."
 	icon_state = "secgundark"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/sec/wood/draw(datum/look/look)
+	..()
+	look.state("secgundark[ammo_magazine ? "" : "-e"]")
 
 /*
  * Silenced Pistol
@@ -110,7 +123,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/sec/wood, "secgundark{ammo_magazine
 /obj/item/gun/projectile/silenced/empty
 	magazine_type = null
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/silenced/draw(datum/look/look)
+	..()
+	look.state("silenced_pistol[ammo_magazine ? "" : "-e"]")
 
 /*
  * Deagle
@@ -123,14 +139,16 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/silenced, "silenced_pistol{ammo_mag
 	Usually made with mass-production in mind, PCA weapons combine an eye for design with a great desire to make people dead."
 	icon_state = "deagle"
 	item_state = "deagle"
-	force = 14.0
 	caliber = ".44"
 	fire_sound = SFX_WEAPONS_GUNSHOT_DEAGLE
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m44
 	allowed_magazines = list(/obj/item/ammo_magazine/m44)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/deagle/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/deagle/gold
 	desc = "A gold plated gun folded over a million times by superior Tajaran gunsmiths. Uses .44 rounds."
@@ -160,7 +178,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/deagle, "{initial(icon_state)}{ammo
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol{ammo_magazine?loaded:}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/gyropistol/draw(datum/look/look)
+	..()
+	look.state("gyropistol[ammo_magazine ? "loaded" : ""]")
 
 /*
  * Silencer
@@ -193,35 +214,39 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/gyropistol, "gyropistol{ammo_magazi
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact/flash
 
 /// Old attack_hand.
-/obj/item/gun/projectile/pistol/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
 				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
-			silenced = 0
-			w_class = ITEMSIZE_SMALL
-			update_icon()
-			return TRUE
+			set_silenced(0)
+			set_w_class(ITEMSIZE_SMALL)
+			return OP_OK
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/pistol/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
-		silenced = I	//dodgy?
-		w_class = ITEMSIZE_NORMAL
+		set_silenced(I) //dodgy?
+		set_w_class(ITEMSIZE_NORMAL)
 		I.forceMove(src) //put the silencer into the gun
-		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol{silenced?-s:}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/pistol/draw(datum/look/look)
+	..()
+	look.state("pistol[silenced ? "-s" : ""][ammo_magazine ? "" : "-e"]")
 
 /*
  * Pistol
@@ -239,33 +264,37 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/pistol, "pistol{silenced?-s:}{ammo_
 	projectile_type = /obj/item/projectile/bullet/pistol
 
 /// Old attack_hand.
-/obj/item/gun/projectile/aps/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
 				return ..()
 			to_chat(user, span_notice("You unscrew [silenced] from [src]."))
 			user.put_in_hands(silenced)
-			silenced = 0
-			update_icon()
-			return TRUE
+			set_silenced(0)
+			return OP_OK
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/aps/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
-		silenced = I	//dodgy?
+		set_silenced(I) //dodgy?
 		I.forceMove(src) //put the silencer into the gun
-		update_icon()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps{silenced?-s:}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/aps/draw(datum/look/look)
+	..()
+	look.state("aps[silenced ? "-s" : ""][ammo_magazine ? "" : "-e"]")
 
 /*
  * Zip Gun (yar har)
@@ -321,7 +350,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/aps, "aps{silenced?-s:}{ammo_magazi
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm/luger)
 	projectile_type = /obj/item/projectile/bullet/pistol
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/luger/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/luger/brown
 	name = "\improper Jindal T15b \"Mäuse\""
@@ -343,7 +375,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/luger, "{initial(icon_state)}{ammo_
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm) // Can accept illegal large capacity magazines, or compact magazines.
 	move_delay = 0 // Pistols have move_delay of 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/p92x/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/p92x/rubber
 	magazine_type = /obj/item/ammo_magazine/m9mm/rubber
@@ -377,8 +412,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/p92x, "{initial(icon_state)}{ammo_m
 
 /// TRUE when a magazine with rounds in it is loaded.
 /obj/item/gun/projectile/giskard/proc/appearance_loaded()
-	return !!(ammo_magazine && ammo_magazine.stored_ammo.len)
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil{appearance_loaded?:_empty}")
+	return !!(ammo_magazine && length(ammo_magazine.stored_ammo))
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/giskard/draw(datum/look/look)
+	..()
+	look.state("giskardcivil[appearance_loaded() ? "" : "_empty"]")
 
 /obj/item/gun/projectile/giskard/olivaw
 	name = "\improper \"Olivaw\" holdout burst-pistol"
@@ -391,7 +429,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard, "giskardcivil{appearance_l
 		list(mode_name="2-round bursts", burst=2, fire_delay=0.2, move_delay=4,    burst_accuracy=list(0,-15),       dispersion=list(1.2, 1.8)),
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil{appearance_loaded?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/giskard/olivaw/draw(datum/look/look)
+	..()
+	look.state("olivawcivil[appearance_loaded() ? "" : "-e"]")
 
 /*
  * Makarov
@@ -408,7 +449,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/giskard/olivaw, "olivawcivil{appear
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_SMALL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/makarov/draw(datum/look/look)
+	..()
+	look.state("Makarov[ammo_magazine ? "" : "-e"]")
 
 /*
  * N99 (Fallout)
@@ -427,12 +471,18 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/makarov, "Makarov{ammo_magazine?:-e
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n99, "n99{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/n99/draw(datum/look/look)
+	..()
+	look.state("n99[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/n80
 	icon_state = "n80"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/n80/draw(datum/look/look)
+	..()
+	look.state("n80[ammo_magazine ? "" : "-e"]")
 
 /*
  * Écureuil 10mm Pistol (Skyrat Port)
@@ -450,19 +500,28 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/n80, "n80{ammo_magazine?:-e}")
 	load_method = MAGAZINE
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil, "ecureuil{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/ecureuil/draw(datum/look/look)
+	..()
+	look.state("ecureuil[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/ecureuil/tac
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac, "tac_ecureuil{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/ecureuil/tac/draw(datum/look/look)
+	..()
+	look.state("tac_ecureuil[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/ecureuil/tac2
 	name = "\improper Tactical \"Écureuil\" 10mm pistol"
 	icon_state = "tac_ecureuil"
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/ecureuil/tac2/draw(datum/look/look)
+	..()
+	look.state("tac2_ecureuil[ammo_magazine ? "" : "-e"]")
 
 /*
  * Lamia (Eris Port)
@@ -484,8 +543,19 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ecureuil/tac2, "tac2_ecureuil{ammo_
 /obj/item/gun/projectile/lamia/proc/appearance_fill()
 	if(!ammo_magazine)
 		return null
-	return round(ammo_magazine.stored_ammo.len * 100 / ammo_magazine.max_ammo, 33)
-DECLARE_APPEARANCE(/obj/item/gun/projectile/lamia, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("lamia_0")), "33" = list(APPEARANCE_OVERLAYS = list("lamia_33")), "66" = list(APPEARANCE_OVERLAYS = list("lamia_66")), "99" = list(APPEARANCE_OVERLAYS = list("lamia_99"))))
+	return round(length(ammo_magazine.stored_ammo) * 100 / ammo_magazine.max_ammo, 33)
+/// The look (the draw sweep: from its layers).
+/obj/item/gun/projectile/lamia/draw(datum/look/look)
+	..()
+	switch("[appearance_fill()]")
+		if("0")
+			look.overlay("lamia_0")
+		if("33")
+			look.overlay("lamia_33")
+		if("66")
+			look.overlay("lamia_66")
+		if("99")
+			look.overlay("lamia_99")
 
 /******GLOCK******/
 /obj/item/gun/projectile/automatic/glock
@@ -505,8 +575,10 @@ DECLARE_APPEARANCE(/obj/item/gun/projectile/lamia, "appearance_fill", list("0" =
 	list(mode_name="short bursts",	burst=5, move_delay=6, burst_accuracy = list(0,-1,-1,-2,-2), dispersion = list(0.6, 1.0, 1.0, 1.0, 1.2))
 	)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "{initial(icon_state)}{ammo_magazine?:-empty}")
-
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/glock/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /*******PPK*******/
 /obj/item/gun/projectile/ppk
@@ -521,8 +593,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/glock, "{initial(icon_sta
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "{initial(icon_state)}{ammo_magazine?:-empty}")
-
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/ppk/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /*******M2024*******/
 /obj/item/gun/projectile/m2024
@@ -537,7 +611,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/ppk, "{initial(icon_state)}{ammo_ma
 	magazine_type = /obj/item/ammo_magazine/m2024
 	allowed_magazines = list(/obj/item/ammo_magazine/m2024,/obj/item/ammo_magazine/m45)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/m2024/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /*******M1911 Custom fluff*******/
 /obj/item/gun/projectile/fluff/m1911
@@ -551,3 +628,63 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/m2024, "{initial(icon_state)}{ammo_
 	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m45
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)
+
+/datum/prompt/text/weapon_setting_review
+	timeout = 0
+	var/mob/settings_operator
+	var/settings_operator_expected = FALSE
+	var/obj/item/settings_held
+	var/settings_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/weapon_setting_review)
+	ref_one(nameof(settings_operator), /mob)
+	ref_one(nameof(settings_held), /obj/item)
+
+/datum/prompt/text/weapon_setting_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/obj/item/captured_held = settings_held
+	settings_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(settings_held))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(settings_held), captured_held)
+
+/datum/prompt/text/weapon_setting_review/recheck_extra()
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)))
+		return "gone"
+
+/datum/prompt/choice/weapon_setting_review
+	timeout = 0
+	var/mob/settings_operator
+	var/settings_operator_expected = FALSE
+	var/obj/item/settings_held
+	var/settings_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/weapon_setting_review)
+	ref_one(nameof(settings_operator), /mob)
+	ref_one(nameof(settings_held), /obj/item)
+
+/datum/prompt/choice/weapon_setting_review/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/obj/item/captured_held = settings_held
+	settings_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(settings_held))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(settings_held), captured_held)
+
+/datum/prompt/choice/weapon_setting_review/recheck_extra()
+	if((settings_operator_expected && QDELETED(settings_operator)) || (settings_held_expected && QDELETED(settings_held)))
+		return "gone"
+	if(!isnull(value) && isdatum(value))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"

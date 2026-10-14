@@ -1,0 +1,38 @@
+@obj.item.rig human|none
+@obj.item.rig robot|none
+@obj ai|none
+@obj.item.rig ghost|none
+@obj.item.rig human|/obj/item/tool/screwdriver
+@obj.item.rig human|/obj/item/tool/crowbar
+@obj.item.rig human|/obj/item/tool/wrench
+@obj.item.rig human|/obj/item/tool/wirecutters
+@obj.item.rig human|/obj/item/multitool
+@obj.item.rig human|/obj/item/weldingtool
+@obj.item.rig human|/obj/item/stack/cable_coil
+@obj.item.rig human|/obj/item/stack/material/steel
+@obj.item.rig human|/obj/item/card/id
+@obj.item.rig human|/obj/item/kit
+@obj.item.rig human|/obj/item/storage
+@obj human|/obj/item/card/emag
+@obj.item.rig human|/obj/item
+human|/obj/item/rig_module menu: Configure Voice Synthesiser (refused: You can't do that.)
+human|/obj/item/rig_module menu: Deploy Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Engage Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Install module
+human|/obj/item/rig_module menu: Move To Top
+human|/obj/item/rig_module menu: Open Hardsuit Interface (refused: You can't do that.)
+human|/obj/item/rig_module menu: Rig item
+human|/obj/item/rig_module menu: Rig shock hand
+human|/obj/item/rig_module menu: Select Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Switch Vision Mode (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Boots (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Chestpiece (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Gauntlets (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Visor (refused: You can't do that.)
+human|/obj/item/rig_module click: Click: Install module
+wires: AI Override, Interface Lock, Interface Shock, Security, System Control
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, nikki_rig_module_item, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock, use_crowbar, use_multitool, use_screwdriver, use_welder, use_wirecutter, use_wrench

@@ -3,7 +3,6 @@
 	desc = "A terminal for restoration of damaged IDs. Mostly used for aftermath of unfortunate falls into vats of acid."
 	icon_state = "restorer"
 	icon_keyboard = null
-	light_color = "#11cc00"
 	layer = ABOVE_WINDOW_LAYER
 	icon_keyboard = null
 	icon = 'icons/obj/machines/id_restorer_vr.dmi'
@@ -15,7 +14,9 @@
 	var/icon_success = "restorer_success"
 	var/icon_fail = "restorer_fail"
 
-	var/obj/item/card/id/inserted
+
+CAPABILITIES(/obj/machinery/computer/id_restorer)
+	configure(light_glow(color = "#11cc00"))
 
 //Frame
 /datum/frame/frame_types/id_restorer
@@ -29,7 +30,3 @@
 
 /datum/frame/frame_types/id_restorer/get_icon_state(state)
 	return "restorer_b[state]"
-
-/// inserted (a relation view: it reads null once the target is deleted).
-/obj/machinery/computer/id_restorer/proc/inserted() as /obj/item/card/id
-	return inserted

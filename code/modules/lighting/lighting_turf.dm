@@ -34,7 +34,7 @@
 		// snapshot this turf's underlays (notably shuttle landing) cannot preserve
 		// a stale lighting gradient as part of the turf's permanent appearance.
 		lighting_object.removefromturf()
-		qdel(lighting_object, force=TRUE)
+		spent(lighting_object, force = TRUE)
 
 // Builds a lighting object for us, but only if our area is dynamic.
 /turf/proc/lighting_build_overlay()
@@ -108,7 +108,7 @@
 
 ///Checks planets and fake_suns to see if our turf should be handled by either
 /turf/proc/check_for_sun()
-	if((GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) || (z in GLOB.fake_sunlight_zs))
+	if((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || (z in GLOB.fake_sunlight_zs))
 		return TRUE
 	return FALSE
 
@@ -149,14 +149,9 @@
 /// until M3's area channel event replaces the key.
 /turf/proc/reactor_area_changed()
 	for(var/obj/machinery/light/L in turf_contents_of_type(src, /obj/machinery/light))
-		L.subscribe_area_power()
-		L.area_power_changed()
+		L.refresh_area()
 
 // Held: corners are shared by four turfs and freed by the lighting subsystem; turfs are never destroyed.
 
 
 
-/// A relation list view: an opaque movable deleted on the turf leaves it with its teardown.
-/turf/relations()
-	. = ..()
-	. += rel_many(nameof(opacity_sources))

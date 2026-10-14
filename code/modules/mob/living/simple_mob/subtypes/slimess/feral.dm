@@ -88,14 +88,16 @@
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
-	qdel(src)
+	destroyed(src, null, BURN)
 
-DAMAGE_REACTION(/mob/living/simple_mob/slime/feral/dark_purple, DAMAGE_EXPLOSION, PROC_REF(blast_ignite))
+CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
+	op("feral_darkpurple_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(feral_darkpurple_interaction_item)))
 
-/mob/living/simple_mob/slime/feral/dark_purple/proc/blast_ignite(datum/damage_packet/packet)
+/mob/living/simple_mob/slime/feral/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")
 	ignite()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /mob/living/simple_mob/slime/feral/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
@@ -104,16 +106,16 @@ DAMAGE_REACTION(/mob/living/simple_mob/slime/feral/dark_purple, DAMAGE_EXPLOSION
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITEM(null, PROC_REF(feral_darkpurple_interaction_item)))
-
 /// Old attackby: burning weapons ignite it.
-/mob/living/simple_mob/slime/feral/dark_purple/proc/feral_darkpurple_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+/mob/living/simple_mob/slime/feral/dark_purple/proc/feral_darkpurple_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("[src] ignited due to being hit with a burning weapon ([W]) by [key_name(user)].")
 		ignite()
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/slime/feral/silver
 	desc = "This slime is shiny, and can deflect lasers or other energy weapons directed at it."
@@ -122,7 +124,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITE
 	coretype = /obj/item/slime_extract/silver
 	shiny = TRUE
 
-REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
+CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100))
 
 /mob/living/simple_mob/slime/feral/bluespace
 	desc = "Trapping this slime in a cell is generally futile, as it can teleport at will."
@@ -187,9 +189,8 @@ REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/be
 	coretype = /obj/item/slime_extract/ruby
 	melee_attack_delay = 1 SECOND
 
-/mob/living/simple_mob/slime/feral/ruby/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
+	body_effect(/datum/body_effect/slime_strength) // always swole
 
 /mob/living/simple_mob/slime/feral/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()
@@ -199,7 +200,7 @@ REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/be
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
@@ -223,12 +224,9 @@ REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/be
 	reagent_injected = REAGENT_ID_RADIUM
 	var/rads = 25
 
-/datum/om/stage/life/special/slime/feral/green
-	of = /mob/living/simple_mob/slime/feral/green
-
-/datum/om/stage/life/special/slime/feral/green/perform(mob/living/simple_mob/slime/feral/green/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/slime/feral/green/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/slime/feral/green/proc/irradiate()
@@ -247,12 +245,9 @@ REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/be
 	coretype = /obj/item/slime_extract/pink
 	glow_toggle = TRUE
 
-/datum/om/stage/life/special/slime/feral/pink
-	of = /mob/living/simple_mob/slime/feral/pink
-
-/datum/om/stage/life/special/slime/feral/pink/perform(mob/living/simple_mob/slime/feral/pink/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.heal_aura()
+/mob/living/simple_mob/slime/feral/pink/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.heal_aura()
 	..()
 
 /mob/living/simple_mob/slime/feral/pink/proc/heal_aura()
@@ -269,12 +264,9 @@ REFLECTS(/mob/living/simple_mob/slime/feral/silver, list(/obj/item/projectile/be
 	slime_color = "emerald"
 	coretype = /obj/item/slime_extract/emerald
 
-/datum/om/stage/life/special/slime/feral/emerald
-	of = /mob/living/simple_mob/slime/feral/emerald
-
-/datum/om/stage/life/special/slime/feral/emerald/perform(mob/living/simple_mob/slime/feral/emerald/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.zoom_aura()
+/mob/living/simple_mob/slime/feral/emerald/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.zoom_aura()
 	..()
 
 /mob/living/simple_mob/slime/feral/emerald/proc/zoom_aura()

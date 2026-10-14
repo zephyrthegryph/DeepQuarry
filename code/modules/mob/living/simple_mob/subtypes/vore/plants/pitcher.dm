@@ -51,8 +51,6 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	var/pitcher_metabolism = 0.1 //How much nutriment does the pitcher lose every 2 seconds? 0.1 should be around 30 every 10 minutes.
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
-	var/list/pitcher_plant_lure_messages = null
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/pitcher_plant //Putting vore variables separately because apparently that's tradition.
 	vore_bump_chance = 100
@@ -67,7 +65,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.desc	= "You leaned a little too close to the pitcher plant, stumbling over the lip and splashing into a puddle of liquid filling the bottom of the cramped pitcher. You squirm madly, righting yourself and scrabbling at the walls in vain as the slick surface offers no purchase. The dim light grows dark as the pitcher's cap lowers, silently sealing the exit. With a sinking feeling, you realize you won't be able to push the exit open even if you could somehow climb that high, leaving you helplessly trapped in the slick, tingling fluid. The ONLY POSSIBLE WAY OUT is if someone either kills this thing or lowers a lifeline down to help. Maybe some string, a wire, or a good rope would do the trick..."
 	B.digest_burn = 0.1 // Sloowwwwww churns
 	B.digest_brute = 0.1 // Okay so I know there's no physical churning because it's a plant just trust me on this you want both of these
@@ -118,38 +116,34 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		"%pred's stomach shifts and slushes as someone inside of it tries in vain to escape. It doesn't look like they can, though.",
 		"%pred seems unpertubed by the stubborn movement of its prey. They clearly aren't getting out on their own.")
 
-/datum/om/stage/life/type_post/simple_mob/vore/pitcher_plant
-	of = /mob/living/simple_mob/vore/pitcher_plant
+/mob/living/simple_mob/vore/pitcher_plant/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/pitcher_plant/perform(mob/living/simple_mob/vore/pitcher_plant/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/pitcher_plant/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive"))
+	if(!F.alive())
 		return
 
-	var/lastmeat = self.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
-	self.meat = max(0,self.meat - self.meatspeed) //Clamp it to zero
-	self.adjust_nutrition(lastmeat - self.meat) //If there's no meat, this will just be zero.
-	if(self.nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
+	var/lastmeat = src.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
+	src.meat = max(0,src.meat - src.meatspeed) //Clamp it to zero
+	src.adjust_nutrition(lastmeat - src.meat) //If there's no meat, this will just be zero.
+	if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_FRUIT)
 		if(prob(10)) //Should be about once every 20 seconds.
-			self.grow_fruit()
-	var/lastnutrition = self.nutrition
-	self.adjust_nutrition(-self.pitcher_metabolism)
-	var/digested = lastnutrition - self.nutrition // Metabolising nutrients heals the pitcher.
+			src.grow_fruit()
+	var/lastnutrition = nutrition_of(src)
+	src.adjust_nutrition(-src.pitcher_metabolism)
+	var/digested = lastnutrition - nutrition_of(src) // Metabolising nutrients heals the pitcher.
 	if(digested > 0)
-		self.mend(TREAT_TISSUE_REPAIR, digested)
-		self.mend(TREAT_ANTITOXIN, digested * 3)
-	if(self.nutrition < self.pitcher_metabolism) // Starving.
-		self.injure(INJURY_TOXIN, self.pitcher_metabolism, flags = INJURE_SILENT)
-	if(COOLDOWN_FINISHED(self, lifechecks_cooldown))
-		COOLDOWN_START(self, lifechecks_cooldown, 30 SECONDS)
-		self.vore_checks()
-		self.handle_hungry()
-	if (!self.anchored)
-		self.set_anchored(1) // If it's alive, it should root itself back down and once again be impossible to move.
-
-/mob/living/simple_mob/vore/pitcher_plant/Initialize(mapload)
-	. = ..()
-	pitcher_plant_lure_messages = GLOB.pitcher_plant_lure_messages
+		src.mend(TREAT_TISSUE_REPAIR, digested)
+		src.mend(TREAT_ANTITOXIN, digested * 3)
+	if(nutrition_of(src) < src.pitcher_metabolism) // Starving.
+		src.injure(INJURY_TOXIN, src.pitcher_metabolism, flags = INJURE_SILENT)
+	if(COOLDOWN_FINISHED(src, lifechecks_cooldown))
+		COOLDOWN_START(src, lifechecks_cooldown, 30 SECONDS)
+		src.vore_checks()
+		src.handle_hungry()
+	if (!src.anchored)
+		src.set_anchored(1) // If it's alive, it should root itself back down and once again be impossible to move.
 
 
 /mob/living/simple_mob/vore/pitcher_plant/on_death(gibbed)
@@ -161,14 +155,14 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/grow_fruit() //This proc handles the pitcher turning nutrition into fruit (and new pitchers).
 	if(!fruit)
-		if(nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
+		if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_FRUIT)
 			fruit = TRUE
 			adjust_nutrition(-NUTRITION_FRUIT)
 			return
 		else
 			return
 	if(fruit)
-		if(nutrition >= PITCHER_SATED + NUTRITION_PITCHER)
+		if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_PITCHER)
 			var/turf/T = safepick(circleviewturfs(src, 2))
 			if(T.density) //No spawning in walls
 				return
@@ -179,13 +173,17 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				fruit = FALSE //No admeming this to spawn endless pitchers.
 				adjust_nutrition(-NUTRITION_PITCHER)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pick fruit", PROC_REF(pitcher_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(pitcher_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/pitcher_plant)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	op("pitcher_interaction_hand", hand(), ungated(), stance(I_HELP), label("Pick fruit"), then(PROC_REF(pitcher_interaction_hand)))
+	op("pitcher_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pitcher_interaction_item)))
+	op("pitcher_fish_out", item(/obj/item/stack/cable_coil), claims(), starts(PROC_REF(fish_out_started)), wait(PROC_REF(fish_out_time)), then(PROC_REF(fish_out_done)))
+
+MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 
 /// Old attack_hand: a help-touch picks the fruit; anything else is the normal touch.
-/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(fruit)
 		to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
 		var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails
@@ -200,19 +198,37 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 	if(fruit)
 		. += "A plump fruit glistens beneath \the [src]'s cap."
 
-/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_done(mob/user, mob/living/carbon/human/H)
-	if(H.loc != vore_selected)
+/// The victim a wire loop can snag: the first human in the belly (only carbons, RIP mice).
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_victim()
+	return locate_within(vore_selected_of(src), /mob/living/carbon/human)
+
+/// You can just spam click to stack attempts if you feel like abusing it.
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_started(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!fish_out_victim())
+		return MSG(pitcher/empty)
+	act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
+
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_time(datum/act/op/A)
+	return rand(3 SECONDS, 7 SECONDS)
+
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = fish_out_victim()
+	if(!H)
 		return
 	if(prob(15))
 		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
 		rel_add(src, nameof(prey_excludes), H)
-		vore_selected.release_specific_contents(H)
-		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), H)
+		vore_selected_of(src).release_specific_contents(H)
+		after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(H))
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 
 /// Old attackby: feed meat, fish victims out with cable (the hit still lands, as before), newspaper does nothing.
-/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/reagent_containers/food/snacks/meat))
 		if(meat > NUTRITION_FRUIT - NUTRITION_MEAT) //Can't exceed 250
 			to_chat(user, span_infoplain("The [src] is full!"))
@@ -220,48 +236,40 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		meat += NUTRITION_MEAT
 		consume(O, user)
 		return TRUE
-	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
-		var/mob/living/carbon/human/H = locate_within(vore_selected, /mob/living/carbon/human) //Only works for carbons, RIP mice. Should pick the first human the code finds.
-		if(!H)
-			to_chat(user, span_infoplain("The pitcher is empty."))
-		else
-			act_message(user, src, MSG_SELF(span_infoplain("You use a loop of wire to try snagging someone trapped in %T%...")), MSG_OTHERS(span_infoplain("%U% uses a loop of wire to try fishing someone out of %T%.")))
-			//You can just spam click to stack attempts if you feel like abusing it.
-			om_task_timed(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
 		act_message(user, src, MSG_SELF(span_notice("You whap %T% with a rolled up newspaper.")), MSG_OTHERS(span_notice("%U% baps %T%, but it doesn't seem to do anything.")))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))
 		return TRUE // You can't newspaper people to freedom like you do with other mobs, but since that doesn't work, fucking tell people.
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/vore_checks()
 	if(ckey) //This isn't intended to be a playable mob but skip all of this if it's player-controlled.
 		return
-	if(vore_selected && contents_count(vore_selected)) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
+	if(vore_selected_of(src) && contents_count(vore_selected_of(src))) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
 		var/mob/living/L
 		var/N = 0
 		var/hasdigestable = 0
 		var/hasindigestable = 0
-		FOR_CONTENTS(L, vore_selected)
+		FOR_CONTENTS(L, vore_selected_of(src))
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
-			if(!L.digestable)
-				vore_selected.digest_mode = DM_DRAIN
+			if(!L.vore_prefs.digestable)
+				vore_selected_of(src).digest_mode = DM_DRAIN
 				N = 1
 				hasindigestable = 1
 				continue
 			else
-				vore_selected.digest_mode = DM_DIGEST
+				vore_selected_of(src).digest_mode = DM_DIGEST
 				N = 1
 				hasdigestable = 1
 				continue
 		if(hasdigestable && hasindigestable)
-			vore_selected.digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
+			vore_selected_of(src).digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
 		if(!N)
-			vore_selected.release_all_contents() //If there's no prey, spit out everything.
+			vore_selected_of(src).release_all_contents() //If there's no prey, spit out everything.
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/handle_hungry() //Let's run this check every 30 seconds. This is how a hungry pitcher tries to lure prey.
-	if(nutrition <= PITCHER_HUNGRY) //Is sanity check another way to say redundancy?
+	if(nutrition_of(src) <= PITCHER_HUNGRY) //Is sanity check another way to say redundancy?
 		var/turf/T = get_turf(src)
 		var/cardinal_turfs = T.CardinalTurfs()
 
@@ -272,10 +280,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 				continue
 			if(src.Adjacent(H)) //If they can breathe and are next to the pitcher, confuse them.
 				to_chat(H,span_red("The sweet, overwhelming scent from \the [src] makes your senses reel!"))
-				H.status_at_least(EFFECT_CONFUSED, scent_strength)
+				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
-				to_chat(H, span_red("[pick(pitcher_plant_lure_messages)]"))
+				to_chat(H, span_red("[pick(GLOB.pitcher_plant_lure_messages)]"))
 
 		for(var/turf/simulated/TR in cardinal_turfs)
 			TR.wet_floor(1) //Same effect as water. Slip into plant, get ate.
@@ -301,20 +309,18 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 	var/datum/seed/seed = null
 	var/obj/item/seeds/pit = null
 	special_handling = TRUE
-
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5))
-
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
-	. = ..()
 	bitesize = 1
-	own_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
-	seed = pit.seed()
+
+
+/// It grows into what its seed packet holds (derives(), once the packet exists).
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/seed_of_pit(target)
+	return pit?.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(istype(O,/obj/machinery/microwave))
 		return ..()
 	if(istype (O, /obj/machinery/seed_extractor))
-		var/obj/item/seeds/extracted = own_take(src, nameof(pit))
+		var/obj/item/seeds/extracted = rel_take(src, nameof(pit))
 		extracted?.forceMove(O.loc) //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
 		consume(src, user)
 		return
@@ -323,14 +329,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 	to_chat(user, span_notice("You squeeze \the [src], juicing it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
 	user.drop_from_inventory(src)
-	var/obj/item/seeds/dropped_pit = own_take(src, nameof(pit))
+	var/obj/item/seeds/dropped_pit = rel_take(src, nameof(pit))
 	dropped_pit?.forceMove(user.loc)
 	consume(src, user)
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTERACT_USE("Plant", PROC_REF(pitcher_fruit_self)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/pitcher_fruit)
+	configure(reagents(add = list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5)))
+	op("pitcher_fruit_self", in_hand(), label("Plant"), then(PROC_REF(pitcher_fruit_self)))
+	derives(nameof(seed), PROC_REF(seed_of_pit))
 
 /// Old attack_self: plant the fruit.
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/proc/pitcher_fruit_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You plant the fruit."))
 	new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed)
 	GLOB.seed_planted_shift_roundstat++
@@ -345,4 +355,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTE
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/ownership()
 	. = ..()
-	. += owns(nameof(pit), policy = OWN_CONTAINED)
+	. += owns(nameof(pit), policy = OWN_CONTAINED, starts = /obj/item/seeds/pitcherseed)

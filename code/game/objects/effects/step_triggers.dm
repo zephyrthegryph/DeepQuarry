@@ -6,8 +6,8 @@
 	invisibility = INVISIBILITY_BADMIN // nope cant see this shit
 	plane = ABOVE_PLANE
 	anchored = TRUE
-	icon = 'icons/mob/screen1.dmi' //VS Edit
-	icon_state = "centermarker" //VS Edit
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "centermarker"
 
 /obj/effect/step_trigger/proc/Trigger(atom/movable/A)
 	return 0
@@ -52,9 +52,12 @@
 	if(QDELETED(AM) || (tiles && curtiles >= tiles) || AM.z != src.z)
 		throw_end(AM)
 		return
-	om_after(src, speed, PROC_REF(throw_step), AM, curtiles + 1)
+	after(src, speed, PROC_REF(throw_step), with = list(AM, curtiles + 1))
 
 /obj/effect/step_trigger/thrower/proc/throw_step(atom/movable/AM, curtiles)
+	if(QDELETED(AM))
+		throw_end(AM)
+		return
 	var/stopthrow = 0
 	// Calculate if we should stop the process
 	if(!nostop)
@@ -164,6 +167,9 @@
 	var/obj/effect/landmark/the_landmark
 	var/landmark_id = null
 
+CAPABILITIES(/obj/effect/step_trigger/teleporter/landmark)
+	ref_one(nameof(the_landmark))
+
 /obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
@@ -205,7 +211,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 	if(isliving(A))
 		to_chat(A, span_danger("[deathmessage]"))
 		log_and_message_admins("[deathalert]", A)
-		qdel(A)
+		spent(A)
 
 /obj/effect/step_trigger/death/train_lost
 	deathmessage = "You fly down the tunnel of the train at high speed for a few moments before impact kills you with sheer concussive force."
@@ -254,13 +260,9 @@ But for now, for what it's been used for, it works.
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
-/obj/effect/step_trigger/autostrip/relations()
-	. = ..()
-	. += rel_one(nameof(target), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget)
-	. += rel_one(nameof(Mtarget), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget/mob)
-/obj/effect/autostriptarget/relations()
-	. = ..()
-	. += rel_key(nameof(targetid))
+CAPABILITIES(/obj/effect/step_trigger/autostrip)
+	ref_one(nameof(target), /obj/effect/autostriptarget, by = nameof(targetid))
+	ref_one(nameof(Mtarget), /obj/effect/autostriptarget/mob, by = nameof(targetid))
 
 /obj/effect/step_trigger/autostrip/Trigger(mob/living/carbon/human/H as mob)
 	if(!istype(H))
@@ -291,7 +293,7 @@ But for now, for what it's been used for, it works.
 				H.dna.SetSEState(gene.block,0)
 			domutcheck(H,null,MUTCHK_FORCED)
 			H.UpdateAppearance()
-			H.update_mutations()
+			changed(src)
 	if(H.species.name == SPECIES_VOX || H.species.name == SPECIES_ZADDAT)	//Species that 'actually' require survival gear to live. The rest don't.
 		H.species.equip_survival_gear(H)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon(H), SLOT_ID_UNIFORM)
@@ -312,9 +314,12 @@ But for now, for what it's been used for, it works.
 /obj/effect/autostriptarget/mob
 	name = "Autostrip target to send mobs to."
 
-/obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
-	. = ..()
-	teleport_z = src.z //This is for use in gateways, so mappers can hard map the X and Y without worrying about going to brazil
+CAPABILITIES(/obj/effect/step_trigger/teleporter/deathfall)
+	derives(nameof(teleport_z), PROC_REF(own_z))
+
+/// For gateways: mappers hard map the X and Y, the Z is its own (derives(), at init).
+/obj/effect/step_trigger/teleporter/proc/own_z()
+	return z
 
 /obj/effect/step_trigger/teleporter/deathfall/Trigger(atom/movable/A)
 	var/turf/simulated/T = locate(teleport_x, teleport_y, teleport_z)
@@ -347,18 +352,19 @@ But for now, for what it's been used for, it works.
 		message_admins("ERROR: planetary_fall step trigger lacks a planet to fall onto.")
 		return
 
-/obj/effect/step_trigger/teleporter/poi/Initialize(mapload) //This is for placing teleporters in gateways/POIS, where Z levels can be different and I cant be assed to make fake teleporter stairs
-	. = ..()
-	teleport_z = src.z
+CAPABILITIES(/obj/effect/step_trigger/teleporter/poi)
+	derives(nameof(teleport_z), PROC_REF(own_z))
 
 /obj/effect/step_trigger/teleporter/randomspawn //teleporter/random was taken. This version only teleports when stepped on *sometimes*, and you can give it a chance not to spawn
 	var/destroyprob = 99
 	var/teleprob = 1
 
-/obj/effect/step_trigger/teleporter/randomspawn/Initialize(mapload)
-	. = ..()
-	if(destroyprob && prob(destroyprob))
-		qdel(src)
+/// Most random spawn points don't survive the round start: kept unless the destroy roll succeeds (keeps_if()).
+/obj/effect/step_trigger/teleporter/randomspawn/proc/survives_destroy_roll()
+	return !(destroyprob && prob(destroyprob))
+
+CAPABILITIES(/obj/effect/step_trigger/teleporter/randomspawn)
+	keeps_if(PROC_REF(survives_destroy_roll))
 
 /obj/effect/step_trigger/teleporter/randomspawn/Trigger()
 	if(teleprob && !prob(teleprob))

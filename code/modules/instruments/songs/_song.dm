@@ -106,9 +106,13 @@
 	/// Exponential sustain dropoff rate per decisecond
 	var/sustain_exponential_dropoff = 1.4
 
-/// Are we currently playing? periodic_step() plays the song while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD(/datum/song, playing, FALSE, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
+/// Are we currently playing? song_step() plays the song while set (the every() below).
+/datum/song/var/playing = FALSE
+TRACKED(/datum/song, playing)
+
+/datum/song/reactions()
+	. = ..()
+	. += every(WORK_EVERY_TICK, PROC_REF(song_step), when = nameof(playing))
 
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
 	..()
@@ -164,7 +168,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	using_instrument_static = null
 	legacy = null
 	if(istext(I) || ispath(I))
-		I = instrument_service().instrument_data[I]
+		I = SSinstruments.ready().instrument_data[I]
 	if(istype(I))
 		using_instrument_static = I
 		rel_add(I, nameof(I.songs_using), src)
@@ -194,7 +198,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	//we can not afford to runtime, since we are going to be doing sound channel reservations and if we runtime it means we have a channel allocation leak.
 	//wrap the rest of the stuff to ensure stop_playing() is called.
 	do_hearcheck()
-	OM_EMIT(parent(), /datum/om/event/instrument_start, src, user)
+	PUBLISH_LEGACY(parent(), /datum/notice/instrument_start, src, user)
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
@@ -217,7 +221,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 		if(isnull(other_player) || !(other_player in view(get_turf(parent()))))
 			continue
 		// copies the main song info to target songs
-		other_instrument.lines = lines.Copy()
+		other_instrument.set_lines(lines.Copy())
 		other_instrument.max_repeats = max_repeats
 		other_instrument.tempo = tempo
 		other_instrument.start_playing(other_player)
@@ -240,7 +244,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	set_playing(FALSE)
 	if(!debug_mode)
 		compiled_chords = null
-	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
+	PUBLISH_LEGACY(parent(), /datum/notice/instrument_end, finished)
 	terminate_all_sounds(TRUE)
 	rel_clear(src, nameof(hearing_mobs))
 	rel_clear(src, nameof(music_player))
@@ -330,7 +334,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/set_bpm(bpm)
 	tempo = sanitize_tempo(600 / bpm)
 
-/datum/song/periodic_step(wait)
+/datum/song/proc/song_step(dt)
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.
 	process_song(world.tick_lag)
 	process_decay(world.tick_lag)
@@ -424,6 +428,24 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/music_player() as /atom
 	return music_player
 
-/datum/song/relations()
-	. = ..()
-	. += rel_many(nameof(hearing_mobs))
+CAPABILITIES(/datum/song)
+	op("start_new_song", ui_act(), then(PROC_REF(ui_act_start_new_song)))
+	op("toggle_sustain_hold_indefinitely", ui_act(), then(PROC_REF(ui_act_toggle_sustain_hold_indefinitely)))
+	ref_many(nameof(hearing_mobs))
+	interface("InstrumentEditor")
+	op("play_music", ui_act("play_music"), then(PROC_REF(ui_act_play_music)))
+	op("set_instrument_id", ui_act("set_instrument_id", arg("id", schema_text(4096))), then(PROC_REF(ui_act_set_instrument_id)))
+	op("change_instrument", ui_act("change_instrument", arg("new_instrument", schema_text(4096))), then(PROC_REF(ui_act_change_instrument)))
+	op("tempo", ui_act("tempo", arg("tempo_change", schema_text(4096))), then(PROC_REF(ui_act_tempo)))
+	op("import_song", ui_act("import_song"), asks(/datum/prompt/text/song_import, fields = list("title" = computed(PROC_REF(song_title))), step = "song"),
+		asks(/datum/prompt/choice/song_import_continue, step = "too_long", when = PROC_REF(import_too_long)), then(PROC_REF(ui_act_import_song)))
+	op("add_new_line", ui_act("add_new_line"), asks(/datum/prompt/text/song_line/add, fields = list("title" = computed(PROC_REF(instrument_title))), step = "line"), then(PROC_REF(ui_act_add_new_line)))
+	op("delete_line", ui_act("delete_line", arg("line_deleted", num())), then(PROC_REF(ui_act_delete_line)))
+	op("modify_line", ui_act("modify_line", arg("line_editing", num())), asks(/datum/prompt/text/song_line/modify, fields = list("title" = computed(PROC_REF(instrument_title)), "default" = computed(PROC_REF(edited_line))), step = "line", when = PROC_REF(line_exists)),
+		then(PROC_REF(ui_act_modify_line)))
+	op("set_sustain_mode", ui_act("set_sustain_mode", arg("new_mode")), then(PROC_REF(ui_act_set_sustain_mode)))
+	op("set_note_shift", ui_act("set_note_shift", arg("amount", num())), then(PROC_REF(ui_act_set_note_shift)))
+	op("set_volume", ui_act("set_volume", arg("amount", num())), then(PROC_REF(ui_act_set_volume)))
+	op("set_dropoff_volume", ui_act("set_dropoff_volume", arg("amount", num())), then(PROC_REF(ui_act_set_dropoff_volume)))
+	op("set_repeat_amount", ui_act("set_repeat_amount", arg("amount", num())), then(PROC_REF(ui_act_set_repeat_amount)))
+	op("edit_sustain_mode", ui_act("edit_sustain_mode", arg("amount", num())), then(PROC_REF(ui_act_edit_sustain_mode)))

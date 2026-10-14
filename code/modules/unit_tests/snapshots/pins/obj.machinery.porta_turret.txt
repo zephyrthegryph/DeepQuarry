@@ -1,0 +1,41 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Toggle (refused: You cannot unsecure an active turret!)
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/pda menu: Open controls
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda click: Click: Toggle
+@obj.machinery human|/obj/item/card/emag
+-menu: Climb
+-menu: Use cryptographic sequencer
++0 menu: Open controls
+keys: anchor.toggle, authaccess, authall, autharrest, authdown, authnorecord, authsynth, authweapon, authxeno, drag_buckle, emag.subvert, emag.use, lethal, lock.toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, robot_remote_blocked, salvage, silicon_hand, strike, ui_open

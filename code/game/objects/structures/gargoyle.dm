@@ -26,11 +26,34 @@
 	var/was_rayed = FALSE
 
 /// The petrified mob (a relation view); the statue watches it every second while it holds one.
-OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
+/obj/structure/gargoyle/var/mob/living/carbon/human/WR_gargoyle
 
-/obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
-	. = ..()
+CAPABILITIES(/obj/structure/gargoyle)
+	ref_one(nameof(WR_gargoyle))
+	setup(PROC_REF(petrify_human))
+	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
+	param(nameof(petrified), pos = 1, keep = FALSE)
+	param(nameof(ident_ovr), pos = 2)
+	param(nameof(mat_ovr), pos = 3)
+	param(nameof(adj_ovr), pos = 4)
+	param(nameof(tint_ovr), pos = 5)
+	param(nameof(can_revert), pos = 6)
+	param(nameof(discard_clothes), pos = 7)
+	op("anchor", tool(TOOL_WRENCH), label("Use"), needs(req(PROC_REF(anchor_refusal))), starts(PROC_REF(anchoring_started)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
+
+/// The human petrified, and what the statue overrides of their look (its constructor params).
+/obj/structure/gargoyle/var/tmp/mob/living/carbon/human/petrified
+/obj/structure/gargoyle/var/tmp/ident_ovr
+/obj/structure/gargoyle/var/tmp/mat_ovr
+/obj/structure/gargoyle/var/tmp/adj_ovr
+/obj/structure/gargoyle/var/tmp/tint_ovr
+/obj/structure/gargoyle/var/tmp/discard_clothes = FALSE
+
+/// A gargoyle statue takes in the human it petrifies, with their look, tint and state (setup() of its CAPABILITIES block).
+/obj/structure/gargoyle/proc/petrify_human()
+	var/mob/living/carbon/human/H = petrified
 	if(isspace(loc) || isopenspace(loc))
 		set_anchored(FALSE)
 	if(!istype(H) || !isturf(H.loc))
@@ -67,7 +90,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	else if(H.tail_style)
 		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
 
-	max_integrity = H.get_endurance() + 100
+	set_max_integrity(H.get_endurance() + 100)
 	original_int = H.vitality() * H.get_endurance() + 100
 	update_integrity(original_int)
 	name = "[identifier] of [H.name]"
@@ -90,31 +113,33 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 
 	var/list/body_layers = HUMAN_BODY_LAYERS
 	var/list/other_layers = HUMAN_OTHER_LAYERS
-	for (var/i = 1; i <= length(H.overlays_standing); i++)
+	var/list/layers = H.look_layers()
+	for(var/i in 1 to TOTAL_LAYERS)
 		if(i in other_layers)
 			continue
 		if(discard_clothes && !(i in body_layers))
 			continue
-		if(istype(H.overlays_standing[i], /image) && (i in body_layers))
-			var/image/old_image = H.overlays_standing[i]
-			var/image/new_image = image(old_image)
+		if(isnull(layers[i]))
+			continue
+		var/new_image = layers[i]
+		if(istype(layers[i], /image) && (i in body_layers))
+			var/image/old_image = layers[i]
+			var/image/tinted = image(old_image)
 			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-				tail_image = new_image
-			new_image.color = tint_color
-			new_image.layer = old_image.layer
-			add_overlay(new_image)
-		else
-			if(!isnull(H.overlays_standing[i]))
-				add_overlay(H.overlays_standing[i])
+				tail_image = tinted
+			tinted.color = tint_color
+			tinted.layer = old_image.layer
+			new_image = tinted
+		add_overlay(new_image)
 
-	initial_sleep = H.status_units(EFFECT_SLEEPING)
-	initial_blind = H.status_units(EFFECT_BLINDED)
+	initial_sleep = H.status_units(STAT_SLEEPING)
+	initial_blind = H.status_units(STAT_BLINDED)
 	initial_is_shifted = H.is_shifted
 	transform = H.transform
 	layer = H.layer
 	pixel_x = H.pixel_x
 	pixel_y = H.pixel_y
-	dir = H.dir
+	set_dir(H.dir)
 	initial_lying = H.lying
 	initial_lying_prev = H.lying_prev
 	H.set_sdisabilities(H.sdisabilities | MUTE)
@@ -127,11 +152,9 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	act_message(H, null, MSG_SELF(span_warning("Your skin abruptly [adjective] as you turn to [material]!")), \
 		MSG_OTHERS(span_warning("%U%'s skin rapidly [adjective] as they turn to [material]!")))
 	H.forceMove(src)
-	H.status_set(EFFECT_BLINDED, 0)
-	H.status_set(EFFECT_SLEEPING, 0)
+	H.status_set(STAT_BLINDED, 0)
+	H.status_set(STAT_SLEEPING, 0)
 	H.canmove = 0
-
-	can_revert = revert
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)
@@ -145,10 +168,10 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 	..()
 
-/obj/structure/gargoyle/periodic_step()
+/obj/structure/gargoyle/proc/gargoyle_step(datum/act/timer/A)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
-		qdel(src)
+		consume(src)
 		return
 	if(gargoyle.stat == DEAD) //died while in statue state.
 		unpetrify(deal_damage = TRUE, deleting = TRUE)
@@ -182,6 +205,8 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	return
 
 /obj/structure/gargoyle/proc/unpetrify(deal_damage = TRUE, deleting = FALSE)
+	if(deleting && loc?.release_refusal(src))
+		return
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		return
@@ -192,21 +217,21 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		comp.transformed = FALSE
 	else
 		if(was_rayed)
-			om_revoke(gargoyle, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, src)
+			revoke(gargoyle, granted_verb(/mob/living/carbon/human/proc/gargoyle_transformation), src)
 	if(gargoyle.loc == src)
 		gargoyle.forceMove(loc)
 		gargoyle.transform = transform
 		gargoyle.pixel_x = pixel_x
 		gargoyle.pixel_y = pixel_y
-		gargoyle.is_shifted = initial_is_shifted
-		gargoyle.dir = dir
-		gargoyle.lying = initial_lying
+		gargoyle.set_is_shifted(initial_is_shifted)
+		gargoyle.set_dir(dir)
+		gargoyle.set_lying(initial_lying)
 		gargoyle.lying_prev = initial_lying_prev
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)
 	gargoyle.set_sdisabilities(gargoyle.sdisabilities & (~MUTE))
-	gargoyle.status_set(EFFECT_BLINDED, initial_blind)
-	gargoyle.status_set(EFFECT_SLEEPING, initial_sleep)
+	gargoyle.status_set(STAT_BLINDED, initial_blind)
+	gargoyle.status_set(STAT_SLEEPING, initial_sleep)
 	gargoyle.canmove = 1
 	gargoyle.update_canmove()
 	var/hurtmessage = ""
@@ -221,7 +246,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		MSG_OTHERS(span_warning("%U%'s skin rapidly reverts, returning them to normal!")))
 	gargoyle = null
 	if(deleting)
-		qdel(src)
+		consume(src)
 
 /obj/structure/gargoyle/return_air()
 	return return_air_for_internal_lifeform()
@@ -243,46 +268,46 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
 	damage(damage)
 
-/obj/structure/gargoyle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/gargoyle_item,
-	)
-	..()
+/// Old attackby with a wrench: anchor or free the statue (not over open space).
+/// A statue is not anchored over space.
+/obj/structure/gargoyle/proc/anchor_refusal(datum/act/op/A)
+	return read_once(isspace(loc) || isopenspace(loc)) ? "you can't anchor that here" : null
 
-/// Old attackby: anchor with a wrench, feed the gargoyle's vore mode, or take a hit.
-/datum/interaction/entry_item/gargoyle_item
-	id = "gargoyle_item"
-	name = "Use"
-	effect = /obj/structure/gargoyle/proc/interaction_item
+/obj/structure/gargoyle/proc/anchoring_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/gargoyle/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: feed the petrified gargoyle's catch, or hit the statue.
+/obj/structure/gargoyle/proc/interaction_item(datum/act/op/A)
+	return gargoyle_item_used(A, TRUE)
+
+/// A cyborg's module only hits the statue (it never fed the gargoyle).
+/obj/structure/gargoyle/proc/interaction_item_cyborg(datum/act/op/A)
+	return gargoyle_item_used(A, FALSE)
+
+/obj/structure/gargoyle/proc/gargoyle_item_used(datum/act/op/A, may_feed)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
-	if(W.has_tool_quality(TOOL_WRENCH))
-		if(isspace(loc) || isopenspace(loc))
-			to_chat(user, span_warning("You can't anchor that here!"))
-			set_anchored(FALSE)
-			return TRUE
-		var/was_anchored = anchored
-		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
-	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
+	if(may_feed && gargoyle && vore_selected_of(gargoyle) && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
-			return TRUE
+			return OP_OK
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
-			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(gargoyle.vore_selected.name)] ."))
+			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
-			gargoyle.vore_selected.nom_atom(W)
-			return TRUE
-	else if(!(W.flags & NOBLUDGEON))
+			vore_selected_of(gargoyle).nom_atom(W)
+			return OP_OK
+		return OP_OK
+	if(!(W.flags & NOBLUDGEON))
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
-			playsound(src, W.hitsound, 50, 1)
-			damage(W.force)
-	return TRUE
+			playsound(src, sounds_of(W).hit, 50, 1)
+			damage(combat_of(W).force)
+	return OP_OK
 
-/obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
-	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
+/obj/structure/gargoyle/proc/attackby_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 	set_anchored(!anchored)
 
 /obj/structure/gargoyle/set_dir(new_dir)
@@ -296,7 +321,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		return
-	if(isitem(source) && gargoyle.vore_selected && gargoyle.trash_catching)
+	if(isitem(source) && vore_selected_of(gargoyle) && gargoyle.trash_catching)
 		var/obj/item/I = source
 		if(gargoyle.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && I.trash_eatable && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)
@@ -305,12 +330,12 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		var/mob/living/L = source
 		if(can_throw_vore(gargoyle, L))
 			var/drop_prey_temp = FALSE
-			if(gargoyle.can_be_drop_prey)
+			if(gargoyle.vore_prefs.can_be_drop_prey)
 				drop_prey_temp = TRUE
-				gargoyle.can_be_drop_prey = FALSE //Making sure the original gargoyle body is not the one getting throwvored instead.
+				gargoyle.vore_prefs.can_be_drop_prey = FALSE//Making sure the original gargoyle body is not the one getting throwvored instead.
 			gargoyle.hitby(L, throwingdatum)
 			if(drop_prey_temp)
-				gargoyle.can_be_drop_prey = TRUE
+				gargoyle.vore_prefs.can_be_drop_prey = TRUE
 			return
 	return ..()
 

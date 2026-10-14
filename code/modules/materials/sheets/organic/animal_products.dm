@@ -6,8 +6,9 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = SFX_ITEMS_DROP_LEATHER
-	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
+
+CAPABILITIES(/obj/item/stack/material/chitin)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 //don't see anywhere else to put these, maybe together they could be used to make the xenos suit?
 /obj/item/stack/xenochitin
@@ -99,11 +100,12 @@
 	default_type = MAT_FUR
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	no_variants = FALSE
 	pass_color = TRUE
 	apply_colour = TRUE
+
+CAPABILITIES(/obj/item/stack/material/fur)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /obj/item/stack/material/fur/wool
 	name = MAT_WOOL
@@ -163,14 +165,36 @@
 	name = "handmade blindfold"
 	desc = "A handmade blindfold that covers the eyes, preventing sight."
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/craftable, INTERACT_SELF("Label", PROC_REF(craftable_collar_self)))
+CAPABILITIES(/obj/item/clothing/accessory/collar/craftable)
+	op("craftable_collar_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Label"),
+		asks(/datum/prompt/text/collar_tag/craftable_label, fields = list("captured_item" = computed(PROC_REF(craftable_collar_held)), "item_expected" = TRUE), step = "label"),
+		then(PROC_REF(craftable_collar_self)))
 
-/// Old attack_self: the collar's own tag handling first (the old ..()), then labelling.
-/obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(collar_tag_self(user, held, interaction))
-		return TRUE
-	var/_answer_k169 = rerun_ask(user, "k169", PROC_REF(craftable_collar_self), args, /datum/om/prompt/text, message = "What would you like to label the collar?", title = "Collar Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k169))
-		return TRUE
-	given_name = sanitizeSafe(_answer_k169, MAX_NAME_LEN)
-	return TRUE
+/// The item the self-use came from (the collar), which the label question keeps (captured_item).
+/obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_held(datum/act/op/A)
+	return A.held
+
+/// Old attack_self after the collar's own tag handling (the parent op declines or the tag is already engraved): the typed label becomes the given name.
+/obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_self(datum/act/op/A)
+	var/label = A.step_value("label")
+	if(isnull(label))
+		return OP_OK
+	given_name = sanitizeSafe(label, MAX_NAME_LEN)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/// The existing collar prompt's relation views keep the exact original self-action arguments.
+/datum/prompt/text/collar_tag/craftable_label
+	question = "What would you like to label the collar?"
+	title = "Collar Labelling"
+	encode = FALSE
+	recheck_on_open = TRUE
+
+/datum/prompt/text/collar_tag/craftable_label/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/collar_tag/craftable_label/refusal(value)
+	return null
+
+/datum/prompt/text/collar_tag/craftable_label/recheck_extra()
+	return !owner || QDELETED(owner) || captures_gone() ? "gone" : null

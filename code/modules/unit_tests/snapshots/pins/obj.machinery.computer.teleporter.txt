@@ -1,0 +1,48 @@
+@obj.machinery.computer human|none
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer robot|none
++2 menu: Insert data card (refused: needs a data card)
++3 menu: Set teleporter ID
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID (refused: You can't reach that.)
+@obj.machinery.computer human|/obj/item/tool/screwdriver
++2 menu: Insert data card (refused: needs a data card)
++3 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/tool/crowbar
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/tool/wrench
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/tool/wirecutters
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/multitool
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/weldingtool
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/stack/cable_coil
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/stack/material/steel
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item/card/id
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj.machinery.computer human|/obj/item
++1 menu: Insert data card (refused: needs a data card)
++2 menu: Set teleporter ID
+@obj human|/obj/item/gripper
+@obj human|/obj/item/card/data
+-menu: Label Card (refused: You can't do that.)
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use item
++4 menu: Use data card
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, teleporter_computer_insert_card, teleporter_computer_set_id, teleporter_computer_use, teleporter_silicon_use, use_gripper, use_item

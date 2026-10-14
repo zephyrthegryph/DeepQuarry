@@ -42,22 +42,22 @@
 // And here are some good things for free:
 // Now you can click through portals, wormholes, gateways, and teleporters while observing. -Sayu
 
-EXTEND_INTERACTIONS(/obj/machinery/teleport/hub, INTERACT_OBSERVER("Follow the link", PROC_REF(hub_ghost_follow)))
-
-/obj/machinery/teleport/hub/proc/hub_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
+/// Declared with the hub's other ops (teleporter.dm).
+/obj/machinery/teleport/hub/proc/hub_ghost_follow(datum/act/op/A)
 	var/atom/l = loc
 	var/obj/machinery/computer/teleporter/com = locate(/obj/machinery/computer/teleporter, locate(l.x - 2, l.y, l.z))
 	if(!com?.teleport_control.locked())
-		return FALSE
-	user.forceMove(get_turf(com.teleport_control.locked()))
-	return TRUE
+		return OP_DECLINE
+	A.actor.forceMove(get_turf(com.teleport_control.locked()))
+	return OP_OK
 
-/// Declared with the portal's other interactions (portals.dm).
-/obj/effect/portal/proc/portal_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
+/// Declared with the portal's other ops (portals.dm).
+/obj/effect/portal/proc/portal_ghost_follow(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!target_ref())
-		return FALSE
+		return OP_DECLINE
 	user.forceMove(get_turf(target_ref()))
-	return TRUE
+	return OP_OK
 
 // -------------------------------------------
 // This was supposed to be used by adminghosts

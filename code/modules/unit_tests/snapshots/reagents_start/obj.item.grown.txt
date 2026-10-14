@@ -1,0 +1,2 @@
+/obj/item/grown vol=50 holder=/datum/reagents 
+

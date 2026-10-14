@@ -33,8 +33,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 7
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -49,7 +47,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	/// Cost of 'basic' things such as glass or steel. Un-upgraded chargers charge at ~40 charge a second, meaning 15 seconds per sheet. 22.5 for 'advanced' sheets (overcharged). This becomes ~10 seconds and ~15 seconds with a heavily upgraded charger.
 	var/charge_cost_basic = 1000
 	var/charge_cost_random = 3333 //Cost of 'random' things. Used by RMS_RAND. This takes ~85 seconds a sheet on a basic charger and ~33 seconds a sheet on an upgraded charger.
-	var/charge_stage = 0
 	var/overcharge = 0
 	var/overcharge_modifier = 1.5 //Multiplier in price for using the overcharge mode.
 
@@ -60,18 +57,12 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	var/static/image/radial_image_stone = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-sandstone")
 	var/static/image/radial_image_random = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "sheet-random")
 
-/obj/item/rms/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/rms, stored_charge)
 
-
-DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/rms/appearance_overlays()
-	. = list()
-	charge_stage = round((stored_charge/max_charge)*4)
-	if(charge_stage >= 4)
-		charge_stage = 4
-	. += "rms_charge[charge_stage]"
+/// The look: the charge meter in quarters.
+/obj/item/rms/draw(datum/look/look)
+	..()
+	look.overlay("rms_charge[max_charge ? min(round((stored_charge / max_charge) * 4), 4) : 0]")
 
 /obj/item/rms/examine(mob/user)
 	. = ..()
@@ -89,30 +80,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		to_chat(user, span_notice("The battery has no charge."))
 	else
 		play_sfx(get_turf(src), SFX_MACHINES_CLICK)
-		om_task_start(/datum/om/task/timed/rms_drain_battery, user, C, receiver = src, charge_needed = charge_needed)
-	stored_charge = CLAMP(stored_charge, 0, max_charge)
-	update_icon()
+		perform_op(user, src, "drain", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("cell" = C, "charge_needed" = charge_needed))
+	set_stored_charge(CLAMP(stored_charge, 0, max_charge))
 
-/datum/om/task/timed/rms_drain_battery
-	duration = 2
-	complete_proc = /obj/item/rms/proc/drain_battery_timed_done
-	var/charge_needed
-
-/obj/item/rms/proc/drain_battery_timed_done(datum/om/task/timed/rms_drain_battery/task)
-	var/user = task.actor
-	var/obj/item/cell/C = task.target
-	var/charge_needed = task.charge_needed
-	stored_charge += C.charge
+/obj/item/rms/proc/drain_battery_timed_done(datum/act/op/A)
+	var/user = A.actor
+	var/obj/item/cell/C = A.arg("cell")
+	var/charge_needed = A.arg("charge_needed")
+	if(QDELETED(C))
+		return OP_FAILED
+	set_stored_charge(stored_charge + C.charge)
 	if(C.charge > charge_needed) //We only drain what we need!
 		C.use(charge_needed)
 	else
 		C.use(C.charge)
-	C.update_icon()
 	to_chat(user, span_notice("You drain [C]."))
+	return OP_OK
 
 /obj/item/rms/proc/consume_resources(amount)
-	stored_charge -= amount
-	update_icon()
+	set_stored_charge(stored_charge - amount)
 	return
 
 /obj/item/rms/proc/can_afford(amount)
@@ -132,17 +118,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 			to_chat(user, span_notice("There is not enough charge to use the overcharged mode."))
 			return
 	play_sfx(src.loc, SFX_MACHINES_CLICK)
-	om_task_start(/datum/om/task/timed/rms_use_rms, user, A, receiver = src, product = product)
+	perform_op(user, src, "synthesize", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 
-/datum/om/task/timed/rms_use_rms
-	duration = 5
-	complete_proc = /obj/item/rms/proc/use_rms_timed_done
+/obj/item/rms/proc/use_rms_timed_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/living/user = op_act.actor
 	var/obj/product
-
-/obj/item/rms/proc/use_rms_timed_done(datum/om/task/timed/rms_use_rms/task)
-	var/atom/A = task.target
-	var/mob/living/user = task.actor
-	var/obj/product = task.product
+	if(QDELETED(A))
+		return OP_FAILED
 	// Only deduct charge once the action actually completes, so an interrupted use refunds nothing-spent.
 	if(overcharge)
 		consume_resources(charge_cost * overcharge_modifier)
@@ -159,6 +142,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 
 	fx_sparks(src, 5, FALSE)
 	product.forceMove(get_turf(A))
+	return OP_OK
 
 /obj/item/rms/proc/choose_overcharge(mob/living/user)
 	var/final_product
@@ -235,16 +219,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 			user.dust()
 	final_product = new new_metal
 	if(overcharge && (charge_cost_random > 0)) //We use ALL our energy in one go while overcharged! Also has a charge_cost_random sanity check in case of badmins.
-		final_product.amount = max(1, 1+round(stored_charge/charge_cost_random))
+		final_product.set_amount(max(1, 1+round(stored_charge/charge_cost_random)), TRUE)
 		consume_resources(stored_charge)
 	return final_product
-
-/obj/item/rms/proc/check_menu(mob/living/user)
-	if(!istype(user))
-		return FALSE
-	if(user.incapacitated() || !user.Adjacent(src))
-		return FALSE
-	return TRUE
 
 //Start of attack functions
 
@@ -261,59 +238,80 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		to_chat(user, span_notice("Invalid target for the device."))
 		return
 
-DECLARE_INTERACTIONS(/obj/item/rms, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/rms, mode_index)
+TRACKED(/obj/item/rms, charge_cost)
 
-/// Old attack_self.
-/obj/item/rms/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/choices = list(
-		"Steel" = radial_image_steel,
-		"Glass" = radial_image_glass,
-		"Cloth" = radial_image_cloth,
-		"Plastic" = radial_image_plastic,
-		"Stone" = radial_image_stone,
-		"Random" = radial_image_random
-	)
+CAPABILITIES(/obj/item/rms)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 7))
+	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),
+		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	// A battery is drained in two tenths of a second, a sheet is made in half a second; both are started from the click that reached the synthesizer.
+	op("drain", ai(), takes("cell", "charge_needed"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(drain_battery_timed_done)))
+	op("synthesize", ai(), takes("target"), wait(0.5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(use_rms_timed_done)))
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
-	return TRUE
+/obj/item/rms/proc/operator_living(datum/act/op/A)
+	return (isliving(A.actor)) ? null : MSG(op/not_available)
 
-/obj/item/rms/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
-	if(!check_menu(user))
-		return
+/datum/prompt/choice/rms_material
+	radial = TRUE
+	tooltips = TRUE
+	timeout = 0
+
+/datum/prompt/choice/rms_material/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/rms/synthesizer = asking.target
+		if(istype(synthesizer))
+			rel_set(src, nameof(anchor), synthesizer)
+			choices = list(
+				"Steel" = synthesizer.radial_image_steel,
+				"Glass" = synthesizer.radial_image_glass,
+				"Cloth" = synthesizer.radial_image_cloth,
+				"Plastic" = synthesizer.radial_image_plastic,
+				"Stone" = synthesizer.radial_image_stone,
+				"Random" = synthesizer.radial_image_random
+			)
+
+/obj/item/rms/proc/material_chosen(datum/act/op/A)
+	var/datum/prompt/choice/chosen = A.answer
+	var/choice = chosen.value
 	switch(choice)
 		if("Steel")
-			mode_index = modes.Find(RMS_STEEL)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_STEEL))
+			set_charge_cost(charge_cost_basic)
 		if("Glass")
-			mode_index = modes.Find(RMS_GLASS)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_GLASS))
+			set_charge_cost(charge_cost_basic)
 		if("Cloth")
-			mode_index = modes.Find(RMS_CLOTH)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_CLOTH))
+			set_charge_cost(charge_cost_basic)
 		if("Plastic")
-			mode_index = modes.Find(RMS_PLASTIC)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_PLASTIC))
+			set_charge_cost(charge_cost_basic)
 		if("Stone")
-			mode_index = modes.Find(RMS_STONE)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_STONE))
+			set_charge_cost(charge_cost_basic)
 		if("Random")
-			mode_index = modes.Find(RMS_RAND)
-			charge_cost = charge_cost_random
+			set_mode_index(modes.Find(RMS_RAND))
+			set_charge_cost(charge_cost_random)
 		else
-			return
+			return OP_FAILED
 
-	to_chat(user, span_notice("Changed mode to '[choice]'."))
+	to_chat(A.actor, span_notice("Changed mode to '[choice]'."))
 	play_sfx(src.loc, SFX_EFFECTS_POP)
+	return OP_OK
 
-/obj/item/rms/multitool_act(mob/user, obj/item/tool)
+/obj/item/rms/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	overcharge = !overcharge
 	if(overcharge)
 		to_chat(user, span_notice("The Rapid Material Synthesizer quietly whirrs..."))
 	else
 		to_chat(user, span_notice("The Rapid Material Synthesizer resumes normal operation."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 #undef RMS_STEEL
 #undef RMS_GLASS

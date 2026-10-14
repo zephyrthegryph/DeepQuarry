@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Overlay passthrough, newspaper, event collector, anomaly harvester, firework star, holodeck ready button, keycard authenticator, part replacer and compliance disk interactions are now ops."
+  - refactor: "Organ EMP hit, blob core, fake attackers and the mapping unit are a hit hook and every() declarations."
+  - refactor: "Events, songs, the sun rainbow, spells, rogue-mines decay, character preview polling and contagion spread run as reactions() every() work."

@@ -38,6 +38,8 @@
  */
 
 
+TRACKED(/obj/machinery/door/airlock/angled_bay, icon)
+
 /obj/machinery/door/airlock/angled_bay
 	icon_state = "preview"
 	dir = 2
@@ -96,23 +98,22 @@
 		if(FILL_METAL)
 			fill_icon = metal_fill_icon
 			glass = FALSE
-			opacity = TRUE
+			set_opacity(TRUE)
 		if(FILL_GLASS)
 			fill_icon = glass_fill_icon
 			glass = TRUE
-			opacity = FALSE
+			set_opacity(FALSE)
 		if(FILL_COLOR)
 			fill_icon = color_fill_icon
 			glass = FALSE
-			opacity = TRUE
+			set_opacity(TRUE)
 
 	// don't care about lights since those will be the same for every base, and panel and welded
 	var/cache_key = "[base_icon]:[fill_type]:[stripe_color]:[door_color]:[fill_color]"
 
 	var/icon/mine = angled_airlock_icon_cache[cache_key]
 	if(mine)
-		icon = mine
-		update_icon()
+		set_icon(mine)
 		return // hooray
 
 	// Base layer - the bare metal - absolutely required sprites
@@ -268,8 +269,7 @@
 	final.Insert(sparks_open, "sparks_open")
 
 	angled_airlock_icon_cache[cache_key] = final
-	icon = final
-	update_icon()
+	set_icon(final)
 
 /obj/machinery/door/airlock/angled_bay/proc/gimme_icon()
 	usr << ftp(icon, "[name].dmi")

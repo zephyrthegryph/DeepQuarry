@@ -11,8 +11,7 @@
 
 /obj/structure/stairs/Initialize(mapload)
 	. = ..()
-	if(check_integrity())
-		update_icon()
+	check_integrity()
 
 // Returns TRUE if the stairs are a complete and connected unit, FALSE if a piece is missing or obstructed
 // Will attempt to reconnect broken pieces
@@ -45,7 +44,7 @@
 		return FALSE
 
 	// Case 4: They're unlinked
-	B.dir = get_dir(get_turf(B), get_turf(M))
+	B.set_dir(get_dir(get_turf(B), get_turf(M)))
 	rel_set(B, nameof(B.top), T)
 	rel_set(B, nameof(B.middle), M)
 	T.dir	 = B.dir
@@ -68,16 +67,18 @@
 	var/obj/structure/stairs/top/top = null
 	var/obj/structure/stairs/middle/middle = null
 
-/obj/structure/stairs/bottom/Initialize(mapload)
-	. = ..()
-	if(!GetAbove(src))
-		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+/// A bottom or middle stair needs a level above it (keeps_if()): a condition.
+/obj/structure/stairs/proc/has_level_above()
+	return !!GetAbove(src)
 
-/obj/structure/stairs/bottom/relations()
-	. = ..()
-	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::bottom))
-	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::bottom))
+/// A top stair needs a level below it (keeps_if()): a condition.
+/obj/structure/stairs/proc/has_level_below()
+	return !!GetBelow(src)
+
+CAPABILITIES(/obj/structure/stairs/bottom)
+	keeps_if(PROC_REF(has_level_above), warn = "Stair created without level above")
+	links(/obj/structure/stairs/bottom::top, /obj/structure/stairs/top::bottom)
+	links(/obj/structure/stairs/bottom::middle, /obj/structure/stairs/middle::bottom)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -172,7 +173,7 @@
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
-		AM.dir = src.dir
+		AM.set_dir(src.dir)
 
 		// Bring the pulled/grabbed object(s) along behind us
 		for(var/atom/movable/P in pulling)
@@ -240,17 +241,12 @@
 	var/obj/structure/stairs/top/top = null
 	var/obj/structure/stairs/bottom/bottom = null
 
-/obj/structure/stairs/middle/Initialize(mapload)
-	. = ..()
-	if(!GetAbove(src))
-		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
-	make_climbable()
+CAPABILITIES(/obj/structure/stairs/middle)
+	keeps_if(PROC_REF(has_level_above), warn = "Stair created without level above")
+	links(/obj/structure/stairs/middle::top, /obj/structure/stairs/top::middle)
+	climb()
+	op("interaction_drag", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_drag)))
 
-/obj/structure/stairs/middle/relations()
-	. = ..()
-	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::middle))
-	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::middle))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -300,16 +296,15 @@
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
 	rel_set(T, nameof(T.middle), src) // pair: sets our top too
-	src.dir = T.dir
+	set_dir(T.dir)
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
-
 /// Old MouseDrop_T.
-/obj/structure/stairs/middle/proc/interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+/obj/structure/stairs/middle/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(check_integrity())
 		user.forceMove(get_turf(top)) // You can't really drag things when you have to climb up the gap in the stairs yourself
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/stairs/middle/Bumped(mob/user)
 	if(check_integrity() && bottom && (bottom in get_turf(user))) // Bottom must be enforced because the middle stairs don't actually need the bottom
@@ -323,16 +318,9 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 	var/obj/structure/stairs/middle/middle = null
 	var/obj/structure/stairs/bottom/bottom = null
 
-/obj/structure/stairs/top/Initialize(mapload)
-	. = ..()
-	if(!GetBelow(src))
-		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
-		return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/structure/stairs/top)
+	keeps_if(PROC_REF(has_level_below), warn = "Stair created without level below")
 
-/obj/structure/stairs/top/relations()
-	. = ..()
-	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::top))
-	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::top))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -431,7 +419,7 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 
 	// If the stairs aren't broken, go up.
 	if(check_integrity())
-		AM.dir = turn(src.dir, 180)
+		AM.set_dir(turn(src.dir, 180))
 		// Bring the pulled/grabbed object(s) along behind us
 		for(var/atom/movable/P in pulling)
 			P.forceMove(get_turf(src)) // They will move onto the turf but won't get past the check earlier in crossed. Aligns animation more cleanly
@@ -446,8 +434,7 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 				var/mob/living/L = P
 				if(L.client)
 					L.client.Process_Grab() // Update any miscellanous grabs, possibly break grab-chains
-		if(om_wants(AM, /datum/om/event/moved_down_stairs))
-			om_emit(AM, new /datum/om/event/moved_down_stairs(oldloc))
+		PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, oldloc)
 	return TRUE
 
 /obj/structure/stairs/top/use_stairs_instant(atom/movable/AM)
@@ -487,8 +474,7 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(bottom))
-	if(om_wants(AM, /datum/om/event/moved_down_stairs))
-		om_emit(AM, new /datum/om/event/moved_down_stairs(null))
+	PUBLISH_LEGACY(AM, /datum/notice/moved_down_stairs, null)
 
 // Mapping pieces, placed at the bottommost part of the stairs
 /obj/structure/stairs/spawner
@@ -496,7 +482,8 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 	icon = 'icons/obj/structures/stairs_64x64.dmi'
 	icon_state = ""
 
-MAP_RESOLVER(/obj/structure/stairs/spawner, GLOBAL_PROC_REF(resolve_stairs_spawner))
+CAPABILITIES(/obj/structure/stairs/spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_stairs_spawner))
 
 /proc/resolve_stairs_spawner(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(stairs_spawner_build), get_turf(loc), path, varedits)
@@ -526,9 +513,9 @@ MAP_RESOLVER(/obj/structure/stairs/spawner, GLOBAL_PROC_REF(resolve_stairs_spawn
 	if(!isopenspace(O))
 		O = new(O)
 
-	B.dir = dir
-	M.dir = dir
-	T.dir = dir
+	B.set_dir(dir)
+	M.set_dir(dir)
+	T.set_dir(dir)
 	B.check_integrity(B, M, T, O)
 
 // For ease of spawning. While you *can* spawn the base type and set its dir, this is useful for adminbus and a little bit quicker to map in

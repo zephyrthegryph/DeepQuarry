@@ -19,8 +19,7 @@
 	var/blood = 1
 	var/list/target_types = list() // ALLOW(instance_list): d: per-mob target_types, sized at creation and filled in place; mobs are few
 
-/mob/living/bot/cleanbot/Initialize(mapload)
-	. = ..()
+/mob/living/bot/cleanbot/proc/cleanbot_targets_ready(datum/act/timer/A)
 	get_targets()
 
 /// Phase 2: releases the turf it reserved.
@@ -43,7 +42,7 @@
 		act_message(src, null, others = "Something flies out of %U%. It seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(get_turf(src))
 		rel_add(src, nameof(ignore_list), gib)
-		om_after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), gib)
+		after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), with = list(gib))
 
 /mob/living/bot/cleanbot/proc/clear_ignored_gib(obj/gibref)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -118,7 +117,7 @@
 		cleantime = istype(D, /obj/effect/decal/cleanable/dirt) ? 10 : 50
 		if(prob(20))
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
-		bot_work(cleantime * cTimeMult, D, PROC_REF(UnarmedAttack_cleanbot_done), list(D))
+		bot_work(cleantime * cTimeMult, D, PROC_REF(cleaned_target))
 	else if(D == src)
 		for(var/obj/effect/O in contents_of(loc))
 			if(istype(O, /obj/effect/decal/cleanable/dirt))
@@ -128,18 +127,19 @@
 		if(cleantime != 0)
 			if(prob(20))
 				automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [loc]")
-			bot_work(cleantime * cTimeMult, loc, PROC_REF(UnarmedAttack_cleanbot_done2))
+			bot_work(cleantime * cTimeMult, loc, PROC_REF(cleaned_floor))
 		else
 			handleIdle()
 
-/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done(atom/D)
+/mob/living/bot/cleanbot/proc/cleaned_target(datum/act/op/A)
+	var/atom/D = A.target
 	var/cleaned_target_id = REF(D)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/f = loc
 		f.dirt = 0
 	if(!D)
 		return
-	qdel(D)
+	spent(D)
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,
@@ -160,7 +160,7 @@
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
 		rel_clear(src, nameof(target))
-/mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done2()
+/mob/living/bot/cleanbot/proc/cleaned_floor(datum/act/op/A)
 	var/cleaned_turf_id = REF(loc)
 	if(blood)
 		wash(CLEAN_TYPE_BLOOD)
@@ -169,7 +169,7 @@
 		T.dirt = 0
 	for(var/obj/effect/O in contents_of(loc))
 		if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-			qdel(O)
+			spent(O)
 	if(SScontracts)
 		emit_contract_event(CONTRACT_EVENT_SANITATION_COMPLETED, list(
 			"department" = DEPARTMENT_CIVILIAN,
@@ -189,7 +189,7 @@
 		), "automation:[REF(src)]:sanitation:[world.time]", src)
 
 /mob/living/bot/cleanbot/explode()
-	on = 0
+	set_on(0)
 	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
@@ -202,65 +202,63 @@
 	return ..()
 
 /mob/living/bot/cleanbot/update_icons()
-	if(om_busy(src))
-		icon_state = "cleanbot-c"
+	if(bot_busy())
+		set_icon_state("cleanbot-c")
 	else
-		icon_state = "cleanbot[on]"
+		set_icon_state("cleanbot[on]")
 
-EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
+CAPABILITIES(/mob/living/bot/cleanbot)
+	after_init(0, then(PROC_REF(cleanbot_targets_ready)))
+	interface("Cleanbot")
+	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
+	op("blood", ui_act("blood"), then(PROC_REF(ui_act_blood)))
+	op("patrol", ui_act("patrol"), then(PROC_REF(ui_act_patrol)))
+	op("vocal", ui_act("vocal"), then(PROC_REF(ui_act_vocal)))
+	op("wet_floors", ui_act("wet_floors"), then(PROC_REF(ui_act_wet_floors)))
+	op("spray_blood", ui_act("spray_blood"), then(PROC_REF(ui_act_spray_blood)))
 
-DECLARE_UI(/mob/living/bot/cleanbot, "Cleanbot")
-
-UI_DATA(/mob/living/bot/cleanbot, "on:num", "open:num", "locked:num", "blood:num", "patrol=will_patrol:num", "vocal:num", "wet_floors:num", "spray_blood:num", "merge:ui_data_mob_living_bot_cleanbot{version:text}")
-
-/// The computed part of /mob/living/bot/cleanbot's window data (declared on its UI_DATA row).
-/mob/living/bot/cleanbot/proc/ui_data_mob_living_bot_cleanbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state and settings.
+/mob/living/bot/cleanbot/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
+	data["blood"] = blood
+	data["patrol"] = will_patrol
+	data["vocal"] = vocal
+	data["wet_floors"] = wet_floors
+	data["spray_blood"] = spray_blood
 	data["version"] = "v2.0"
 	return data
 
-/mob/living/bot/cleanbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/cleanbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_start)
+/mob/living/bot/cleanbot/proc/ui_act_start(datum/act/op/A)
 	if(on)
 		turn_off()
 	else
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "blood", ui_act_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_blood)
+/mob/living/bot/cleanbot/proc/ui_act_blood(datum/act/op/A)
 	blood = !blood
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_patrol)
+/mob/living/bot/cleanbot/proc/ui_act_patrol(datum/act/op/A)
 	will_patrol = !will_patrol
 	patrol_path = null
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "vocal", ui_act_vocal)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_vocal)
+/mob/living/bot/cleanbot/proc/ui_act_vocal(datum/act/op/A)
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "wet_floors", ui_act_wet_floors)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_wet_floors)
+/mob/living/bot/cleanbot/proc/ui_act_wet_floors(datum/act/op/A)
 	wet_floors = !wet_floors
-	to_chat(ui.user, span_notice("You twiddle the screw."))
+	to_chat(A.actor, span_notice("You twiddle the screw."))
 	. = TRUE
 
-UI_ACT(/mob/living/bot/cleanbot, "spray_blood", ui_act_spray_blood)
-UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_spray_blood)
+/mob/living/bot/cleanbot/proc/ui_act_spray_blood(datum/act/op/A)
 	spray_blood = !spray_blood
-	to_chat(ui.user, span_notice("You press the weird button."))
+	to_chat(A.actor, span_notice("You press the weird button."))
 	. = TRUE
 
 /mob/living/bot/cleanbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -283,26 +281,29 @@ UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_spray_blood)
 	name = "proxy bucket"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "bucket_proxy"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Cleanbot"
 
-DECLARE_INTERACTIONS(/obj/item/bucket_sensor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/bucket_sensor)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0))
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/bucket_sensor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/bucket_sensor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic left arm") || (W.name == "robotic right arm"))))
 		user.drop_item()
 		consume(W, user)
 		var/turf/T = get_turf(loc)
-		var/mob/living/bot/cleanbot/A = new /mob/living/bot/cleanbot(T)
-		A.name = created_name
+		var/mob/living/bot/cleanbot/new_bot = new /mob/living/bot/cleanbot(T)
+		new_bot.name = created_name
 		to_chat(user, span_notice("You add the robot arm to the bucket and sensor assembly. Beep boop!"))
 		consume(src, user)
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS

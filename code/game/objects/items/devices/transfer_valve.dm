@@ -10,52 +10,51 @@
 	var/valve_open = 0
 	COOLDOWN_DECLARE(toggle)
 
-DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
-/obj/item/transfer_valve/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/// Old attackby: attach a tank (two at most) or an unsecured assembly to the valve controls.
+/obj/item/transfer_valve/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/turf/location = get_turf(src) // For admin logs
 	if(istype(item, /obj/item/tank))
 		if(tank_one && tank_two)
 			to_chat(user, span_warning("There are already two tanks attached, remove one first."))
-			return TRUE
+			return OP_OK
 
 		if(!tank_one)
-			if(!own_set(src, nameof(src.tank_one), item, user = user))
-				return TRUE
+			if(!move_into(src, nameof(src.tank_one), item, user))
+				return OP_OK
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
-			if(!own_set(src, nameof(src.tank_two), item, user = user))
-				return TRUE
+			if(!move_into(src, nameof(src.tank_two), item, user))
+				return OP_OK
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
 			log_game("[key_name_admin(user)] attached both tanks to a transfer valve.")
 
-		update_icon()
 		SStgui.update_uis(src) // update all UIs attached to src
+		return OP_OK
 //TODO: Have this take an assemblyholder
 	else if(isassembly(item))
-		var/obj/item/assembly/A = item
-		if(A.secured)
+		var/obj/item/assembly/AS = item
+		if(AS.secured)
 			to_chat(user, span_notice("The device is secured."))
-			return TRUE
+			return OP_OK
 		if(attached_device)
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
-			return TRUE
-		if(!own_set(src, nameof(src.attached_device), A, user = user))
-			return TRUE
+			return OP_OK
+		if(!move_into(src, nameof(src.attached_device), AS, user))
+			return OP_OK
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
-		rel_set(A, nameof(A.holder), src)
-		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
+		rel_set(AS, nameof(AS.holder), src)
+		AS.toggle_secure()	//securing it redraws the bomb it sits in (the holder watches its parts).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
 		message_admins("[key_name_admin(user)] attached a [item] to a transfer valve. [ADMIN_JMP(location)]")
 		log_game("[key_name_admin(user)] attached a [item] to a transfer valve.")
 		rel_set(src, nameof(attacher), user)
 		SStgui.update_uis(src) // update all UIs attached to src
-	return TRUE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/transfer_valve/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
@@ -72,16 +71,34 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 	if(isturf(loc))
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
-/obj/item/transfer_valve/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: the valve's window.
+/obj/item/transfer_valve/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
+	return OP_OK
 
-DECLARE_UI_STATE(/obj/item/transfer_valve, GLOB.tgui_inventory_state)
+CAPABILITIES(/obj/item/transfer_valve)
+	interface("TransferValve", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("tankone", ui_act("tankone"), then(PROC_REF(ui_act_tankone)))
+	op("tanktwo", ui_act("tanktwo"), then(PROC_REF(ui_act_tanktwo)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("device", ui_act("device"), then(PROC_REF(ui_act_device)))
+	op("remove_device", ui_act("remove_device"), then(PROC_REF(ui_act_remove_device)))
+	op("attach", inputs(item(/obj/item/tank), item(/obj/item/assembly)), label("Attach"), then(PROC_REF(interaction_item)))
+	op("view", in_hand(), then(PROC_REF(interaction_self)))
+	ref_one(nameof(attacher), /mob)
 
-DECLARE_UI(/obj/item/transfer_valve, "TransferValve")
+/obj/item/transfer_valve/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["valve"] = valve_open
+	var/list/merged_1 = ui_data_obj_item_transfer_valve(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/item/transfer_valve, "valve=valve_open:num", "merge:ui_data_obj_item_transfer_valve{tank_one:text,tank_two:text,attached_device:text}")
-
-/// The computed part of /obj/item/transfer_valve's window data (declared on its UI_DATA row).
+/// /obj/item/transfer_valve's window data.
 /obj/item/transfer_valve/proc/ui_data_obj_item_transfer_valve(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tank_one"] = tank_one ? tank_one.name : null
@@ -89,82 +106,75 @@ UI_DATA_REPLACE(/obj/item/transfer_valve, "valve=valve_open:num", "merge:ui_data
 	data["attached_device"] = attached_device ? attached_device.name : null
 	return data
 
-UI_ACT(/obj/item/transfer_valve, "tankone", ui_act_tankone)
-UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tankone)
+/obj/item/transfer_valve/proc/ui_act_tankone(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	remove_tank(tank_one)
 	if(.)
-		update_icon()
-		add_fingerprint(ui.user)
+		add_fingerprint(user)
 
-UI_ACT(/obj/item/transfer_valve, "tanktwo", ui_act_tanktwo)
-UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tanktwo)
+/obj/item/transfer_valve/proc/ui_act_tanktwo(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	remove_tank(tank_two)
 	if(.)
-		update_icon()
-		add_fingerprint(ui.user)
+		add_fingerprint(user)
 
-UI_ACT(/obj/item/transfer_valve, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/item/transfer_valve, ui_act_toggle)
+/obj/item/transfer_valve/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	toggle_valve()
 	if(.)
-		update_icon()
-		add_fingerprint(ui.user)
+		add_fingerprint(user)
 
-UI_ACT(/obj/item/transfer_valve, "device", ui_act_device)
-UI_ACT_PROC(/obj/item/transfer_valve, ui_act_device)
+/obj/item/transfer_valve/proc/ui_act_device(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(attached_device)
-		attached_device.attack_self(ui.user)
+		attached_device.attack_self(user)
 	if(.)
-		update_icon()
-		add_fingerprint(ui.user)
+		add_fingerprint(user)
 
-UI_ACT(/obj/item/transfer_valve, "remove_device", ui_act_remove_device)
-UI_ACT_PROC(/obj/item/transfer_valve, ui_act_remove_device)
+/obj/item/transfer_valve/proc/ui_act_remove_device(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(attached_device)
 		attached_device.forceMove(get_turf(src))
-		rel_clear(attached_device, nameof(/client::holder))
-		own_take(src, nameof(/obj/item/transfer_valve::attached_device))
-		update_icon()
+		rel_clear(attached_device, nameof(/obj/item/assembly::holder))
+		rel_take(src, nameof(/obj/item/transfer_valve::attached_device))
 	if(.)
-		update_icon()
-		add_fingerprint(ui.user)
+		add_fingerprint(user)
 
 /obj/item/transfer_valve/proc/process_activation(obj/item/D)
 	if(COOLDOWN_FINISHED(src, toggle))
 		COOLDOWN_START(src, toggle, 5 SECONDS)
 		toggle_valve()
 
-DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/transfer_valve/appearance_overlays()
-	. = list()
-	underlays = null
-
+/// The valve with its tanks and the device attached to it.
+/obj/item/transfer_valve/draw(datum/look/look)
+	..()
+	look.watch(tank_one)
+	look.watch(tank_two)
+	look.watch(attached_device)
 	if(!tank_one && !tank_two && !attached_device)
-		icon_state = "valve_1"
-		return .
-	icon_state = "valve"
+		look.state("valve_1")
+		return
+	look.state("valve")
 
 	if(tank_one)
-		. += "[tank_one.icon_state]"
+		look.overlay("[tank_one.icon_state]")
 	if(tank_two)
-		var/icon/J = new(icon, icon_state = "[tank_two.icon_state]")
-		J.Shift(WEST, 13)
-		underlays += J
+		look.underlay(look_overlay_image(icon, "[tank_two.icon_state]", pixel_x = -13))
 	if(attached_device)
-		. += "device"
+		look.overlay("device")
 
 /obj/item/transfer_valve/proc/remove_tank(obj/item/tank/T)
 	if(tank_one == T)
 		split_gases()
-		own_take(src, nameof(tank_one))
+		rel_take(src, nameof(tank_one))
 	else if(tank_two == T)
 		split_gases()
-		own_take(src, nameof(tank_two))
+		rel_take(src, nameof(tank_two))
 	else
 		return
 
@@ -172,7 +182,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 	var/turf/drop = get_turf(src)
 	if(drop && !QDELETED(T))
 		T.forceMove(drop)
-	update_icon()
 
 /obj/item/transfer_valve/proc/merge_gases()
 	if(valve_open)
@@ -235,7 +244,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 	else if(valve_open==1 && (tank_one && tank_two))
 		split_gases()
 
-	src.update_icon()
 
 // this doesn't do anything but the timer etc. expects it to be here
 // eventually maybe have it update icon to show state (timer, prox etc.) like old bombs

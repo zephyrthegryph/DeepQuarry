@@ -195,11 +195,29 @@ impl Mirror {
         }
     }
 
-    fn evaluate(&mut self, probes: &CowStore<GasCell>) -> Vec<Wake> {
+    fn evaluate(&mut self, probes: &CowStore<GasCell>, written: &[usize]) -> Vec<Wake> {
+        let started = std::time::Instant::now();
         let mut outbox: Outbox<GasCell> = Outbox::default();
         self.port.dispatch(&mut self.state);
-        self.state.evaluate(probes, &mut outbox);
+        self.state.evaluate_chunks(probes, written, &mut outbox);
         self.port.filter(&mut outbox);
+        // Cumulative: how often a drain finds changed mirror chunks and evaluates, and what that costs.
+        let stats = self.state.stats();
+        let metrics = crate::metrics::registry();
+        metrics.counter("gas_watch.mirror_evaluations").inc();
+        if stats.changed_chunks > 0 {
+            metrics.counter("gas_watch.mirror_full_passes").inc();
+            metrics
+                .counter("gas_watch.mirror_changed_chunks")
+                .add(stats.changed_chunks as u64);
+            metrics
+                .counter("gas_watch.mirror_evaluated")
+                .add(stats.evaluated as u64);
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        metrics
+            .counter("gas_watch.mirror_us")
+            .add(started.elapsed().as_micros() as u64);
         outbox.wakes().to_vec()
     }
 
@@ -228,6 +246,16 @@ struct Mixes {
     cells: HashMap<(u8, WatchId), Vec<u32>>,
     /// Dependency watches, by DM watch handle: `(mixture id, watch)`.
     dirty: HashMap<Subscriber, (u32, WatchId)>,
+    /// Probe chunks written since the mirrors last evaluated, each once (`written_mark`). The mirrors are
+    /// told which chunks changed instead of diffing the 16k-chunk store against a snapshot, which also
+    /// made every first write to a chunk copy it (the snapshot shared it).
+    written: Vec<usize>,
+    written_mark: Vec<bool>,
+    /// The pipe region revision each watched pipe handle's mirror was last read at. A region changes outside
+    /// [`store`] too (a device step's write-back, a heat exchanger levelling two loops), so a drain re-reads every
+    /// watched pipe handle whose region moved (`refresh_pipe_mirrors`): the network's own change tracking, not the
+    /// writer, keeps the mirror current.
+    pipe_seen: HashMap<u32, u64>,
 }
 
 impl Default for Mixes {
@@ -243,6 +271,9 @@ impl Default for Mixes {
             watched: HashMap::new(),
             cells: HashMap::new(),
             dirty: HashMap::new(),
+            written: Vec::new(),
+            written_mark: vec![false; layout.chunk_count()],
+            pipe_seen: HashMap::new(),
         }
     }
 }
@@ -275,6 +306,9 @@ pub(crate) fn reset_watches() {
         m.watched = fresh.watched;
         m.cells = fresh.cells;
         m.dirty = fresh.dirty;
+        m.written = fresh.written;
+        m.written_mark = fresh.written_mark;
+        m.pipe_seen = fresh.pipe_seen;
     });
     forget_turf_mark();
 }
@@ -484,9 +518,15 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
 /// chunk (1024 cells) when the watch states' last snapshot still shares it,
 /// even for an equal value, and a changed chunk also makes every watch in it
 /// re-evaluate at the next drain.
-fn set_probe(probes: &mut CowStore<GasCell>, h: u32, cell: GasCell) {
-    if probes.get(h) != Some(cell) {
-        probes.set(h, cell);
+fn set_probe(m: &mut Mixes, h: u32, cell: GasCell) {
+    if m.probes.get(h) != Some(cell) {
+        m.probes.set(h, cell);
+        if let Some((chunk, _)) = m.probes.layout().locate(h)
+            && !m.written_mark[chunk]
+        {
+            m.written_mark[chunk] = true;
+            m.written.push(chunk);
+        }
     }
 }
 
@@ -494,7 +534,7 @@ fn set_probe(probes: &mut CowStore<GasCell>, h: u32, cell: GasCell) {
 fn mirror(r: MixRef, mix: &Mixture) {
     with_mixes(|m| {
         if m.watched.contains_key(&r.id()) {
-            set_probe(&mut m.probes, r.id(), cell_of_mixture(mix));
+            set_probe(m, r.id(), cell_of_mixture(mix));
         }
     });
 }
@@ -686,7 +726,7 @@ fn watch_mirrored(
         for (h, mix) in loaded {
             *m.watched.entry(h).or_default() += 1;
             if let Some(mix) = mix {
-                set_probe(&mut m.probes, h, cell_of_mixture(&mix));
+                set_probe(m, h, cell_of_mixture(&mix));
             }
         }
         m.cells.insert((port, id), ids);
@@ -713,7 +753,14 @@ fn watch_mirrored(
 
 /// Runs both mirror ports' watches once: `(reactor wakes, dependency wakes)`.
 fn evaluate(m: &mut Mixes) -> (Vec<Wake>, Vec<Wake>) {
-    (m.reactor.evaluate(&m.probes), m.deps.evaluate(&m.probes))
+    let written = std::mem::take(&mut m.written);
+    for &c in &written {
+        m.written_mark[c] = false;
+    }
+    (
+        m.reactor.evaluate(&m.probes, &written),
+        m.deps.evaluate(&m.probes, &written),
+    )
 }
 
 /// Removes a watch [`watch`] returned.
@@ -734,6 +781,7 @@ pub fn unwatch(port: u8, id: WatchId) {
                 *n -= 1;
                 if *n == 0 {
                     m.watched.remove(&h);
+                    m.pipe_seen.remove(&h);
                 }
             }
         }
@@ -776,10 +824,26 @@ fn take_wakes() -> Vec<Wake> {
         }),
         TurfRefresh::Only(handles) => handles,
     };
+    let planned = started.elapsed();
     let fresh: Vec<(u32, GasCell)> = turfs
         .into_iter()
         .filter_map(|h| Some((h, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
         .collect();
+    {
+        let metrics = crate::metrics::registry();
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            metrics
+                .counter("gas_watch.plan_us_total")
+                .add(planned.as_micros() as u64);
+            metrics
+                .counter("gas_watch.load_us_total")
+                .add((started.elapsed() - planned).as_micros() as u64);
+            metrics
+                .counter("gas_watch.load_cells_total")
+                .add(fresh.len() as u64);
+        }
+    }
     {
         let metrics = crate::metrics::registry();
         #[allow(clippy::cast_precision_loss)]
@@ -799,19 +863,79 @@ fn take_wakes() -> Vec<Wake> {
             })
             .inc();
     }
+    let pipes = refresh_pipe_mirrors();
+    let evaluated = std::time::Instant::now();
     let deps = with_mixes(|m| {
+        for (h, c) in pipes {
+            set_probe(m, h, c);
+        }
         for (h, c) in fresh {
-            set_probe(&mut m.probes, h, c);
+            set_probe(m, h, c);
         }
         let (reactor, deps) = evaluate(m);
         out.extend(reactor);
         deps
     });
+    #[allow(clippy::cast_possible_truncation)]
+    crate::metrics::registry()
+        .counter("gas_watch.evaluate_us_total")
+        .add(evaluated.elapsed().as_micros() as u64);
     HELD.with_borrow_mut(|h| {
         h.1.extend(deps);
         out.append(&mut h.2);
     });
     out
+}
+
+/// The watched pipe handles whose region moved since their mirror was last read, freshly read. Pipe gas changes in
+/// ways [`store`] never sees (a device step writes its region back on the world, `crate::pipes::apply_devices`), so
+/// a watch on a pipe region asks the network's region revision instead of trusting every writer to report.
+fn refresh_pipe_mirrors() -> Vec<(u32, GasCell)> {
+    let handles: Vec<u32> = with_mixes(|m| {
+        m.watched
+            .keys()
+            .copied()
+            .filter(|&h| matches!(MixRef::from_id(h), Some(MixRef::Pipe(_))))
+            .collect()
+    });
+    if handles.is_empty() {
+        return Vec::new();
+    }
+    let revisions: Vec<(u32, u64)> = with_world(|w| {
+        let Ok(host) = w.network::<Pipes>() else {
+            return Ok(Vec::new());
+        };
+        Ok(handles
+            .iter()
+            .filter_map(|&h| {
+                let Some(MixRef::Pipe(slot)) = MixRef::from_id(h) else {
+                    return None;
+                };
+                let region = super::region_of_slot(slot)?;
+                Some((h, host.region_revision(region)))
+            })
+            .collect())
+    })
+    .unwrap_or_default();
+    let moved: Vec<(u32, u64)> = with_mixes(|m| {
+        revisions
+            .into_iter()
+            .filter(|(h, rev)| m.pipe_seen.get(h) != Some(rev))
+            .collect()
+    });
+    let fresh: Vec<(u32, u64, GasCell)> = moved
+        .into_iter()
+        .filter_map(|(h, rev)| Some((h, rev, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
+        .collect();
+    with_mixes(|m| {
+        fresh
+            .into_iter()
+            .map(|(h, rev, cell)| {
+                m.pipe_seen.insert(h, rev);
+                (h, cell)
+            })
+            .collect()
+    })
 }
 
 /// Which watched turf cells a drain must re-read (`turf_refresh_plan`).
@@ -832,8 +956,31 @@ struct TurfMark {
     geometry: PortSignature,
     /// The cells port's pinned view, to diff the next one against by chunk.
     pinned: std::sync::Arc<vg_core::owner::View<GasCell>>,
+    /// The geometry port's pinned view: every frame publishes a new one, so
+    /// only its chunks say whether a capacity actually changed.
+    geometry_pinned: std::sync::Arc<vg_core::owner::View<vg_core::field::Geom>>,
     /// The cells port's write mark (`MainPort::write_mark`).
     writes: u64,
+}
+
+/// Whether DM's view of the turf geometry (each cell's capacity and faces) changed between two marks: a geometry
+/// write DM issued since (it reads through the overlay before the worker applies it), a fallback piece, or a chunk
+/// of the pinned store that is not the same allocation. The worker publishes a new view of every port each frame
+/// (a new pointer and version), but a frame that changed no geometry shares every chunk with the last view, so the
+/// pointer and version alone said "changed" twice a second and every watched turf cell was re-read each time.
+fn geometry_changed<V: Clone + Default>(
+    (last_sig, last_view): (PortSignature, &vg_core::owner::View<V>),
+    (now_sig, now_view): (PortSignature, &vg_core::owner::View<V>),
+) -> bool {
+    if last_sig.2 != now_sig.2 || last_sig.3 != now_sig.3 {
+        return true;
+    }
+    last_sig != now_sig
+        && now_view
+            .store()
+            .chunks_differing_from(last_view.store())
+            .next()
+            .is_some()
 }
 
 thread_local! {
@@ -870,10 +1017,11 @@ fn turf_refresh_plan() -> TurfRefresh {
             cells.read_signature(),
             geometry.read_signature(),
             std::sync::Arc::clone(cells.pinned()),
+            std::sync::Arc::clone(geometry.pinned()),
             cells.write_mark(),
         ))
     });
-    let Ok((cells_sig, geom_sig, pinned, writes)) = now else {
+    let Ok((cells_sig, geom_sig, pinned, geometry_pinned, writes)) = now else {
         return TurfRefresh::All;
     };
     let last = LAST_TURF_MARK.with_borrow_mut(|m| {
@@ -881,17 +1029,32 @@ fn turf_refresh_plan() -> TurfRefresh {
             cells: cells_sig,
             geometry: geom_sig,
             pinned: std::sync::Arc::clone(&pinned),
+            geometry_pinned: std::sync::Arc::clone(&geometry_pinned),
             writes,
         })
     });
     let Some(last) = last else {
+        crate::metrics::registry()
+            .counter("gas_watch.plan_all_nomark")
+            .inc();
         return TurfRefresh::All;
     };
-    if last.cells == cells_sig && last.geometry == geom_sig {
+    let geometry_changed = geometry_changed(
+        (last.geometry, &last.geometry_pinned),
+        (geom_sig, &geometry_pinned),
+    );
+    if last.cells == cells_sig && !geometry_changed {
         return TurfRefresh::Unchanged;
     }
     // Geometry (capacity) or a fallback piece applied to the live store.
-    if last.geometry != geom_sig || last.cells.3 != cells_sig.3 {
+    if geometry_changed || last.cells.3 != cells_sig.3 {
+        crate::metrics::registry()
+            .counter(if geometry_changed {
+                "gas_watch.plan_all_geometry"
+            } else {
+                "gas_watch.plan_all_fallback"
+            })
+            .inc();
         return TurfRefresh::All;
     }
     let written: Option<Vec<u32>> = with_world(|w| {
@@ -903,6 +1066,9 @@ fn turf_refresh_plan() -> TurfRefresh {
     .ok()
     .flatten();
     let Some(mut written) = written else {
+        crate::metrics::registry()
+            .counter("gas_watch.plan_all_journal")
+            .inc();
         return TurfRefresh::All;
     };
     let layout = pinned.store().layout();
@@ -919,6 +1085,16 @@ fn turf_refresh_plan() -> TurfRefresh {
     };
     written.sort_unstable();
     written.dedup();
+    {
+        let metrics = crate::metrics::registry();
+        metrics.counter("gas_watch.plan_only").inc();
+        metrics
+            .counter("gas_watch.plan_only_written")
+            .add(written.len() as u64);
+        metrics
+            .counter("gas_watch.plan_only_chunks")
+            .add(changed_chunks.iter().filter(|&&c| c).count() as u64);
+    }
     TurfRefresh::Only(with_mixes(|m| {
         let mut out: Vec<u32> = written
             .iter()
@@ -926,12 +1102,17 @@ fn turf_refresh_plan() -> TurfRefresh {
             .filter(|h| m.watched.contains_key(h))
             .collect();
         if !changed_chunks.is_empty() {
+            // A frame rewrites whole chunks (every chunk next to an active one is a target), so a changed chunk
+            // mostly holds cells whose value is bit-identical to the last view's: only the cells that differ
+            // are re-read (a comparison, where a re-read builds a mixture and its probe).
+            let (now, then) = (pinned.store(), last.pinned.store());
             out.extend(m.watched.keys().copied().filter(|&h| {
                 h >= TURF_BASE
                     && layout
                         .locate(h - TURF_BASE)
                         .is_some_and(|(chunk, _)| changed_chunks[chunk])
                     && written.binary_search(&(h - TURF_BASE)).is_err()
+                    && now.get(h - TURF_BASE) != then.get(h - TURF_BASE)
             }));
         }
         out
@@ -1075,6 +1256,173 @@ mod tests {
         m
     }
 
+    fn floor_air() -> GasCell {
+        let mut moles = [0.0; vg_gas::cell::N];
+        moles[0] = 82.0;
+        moles[1] = 21.8;
+        GasCell::new(moles, 293.15)
+    }
+
+    /// A settled 8x8 room whose four corner turfs are watched, its mark taken.
+    fn watched_room() -> Vec<u32> {
+        crate::world::configure_for_test(8, 8, 1).unwrap();
+        let key = super::super::turf_key().unwrap();
+        with_world(|w| {
+            for cell in 0..64 {
+                super::super::register_cell(
+                    w,
+                    key,
+                    cell,
+                    floor_air(),
+                    vg_gas::gas::constants::CELL_VOLUME,
+                    false,
+                    Some(0),
+                );
+            }
+            w.step_blocking();
+            w.step_blocking();
+            Ok(())
+        })
+        .unwrap();
+        let corners = vec![0, 7, 56, 63];
+        for (i, &c) in corners.iter().enumerate() {
+            watch_dirty(MixRef::Turf(c).id(), 100 + i as u32, GAS_CHANGE_TEMPERATURE);
+        }
+        forget_turf_mark();
+        assert!(
+            matches!(turf_refresh_plan(), TurfRefresh::All),
+            "the first plan reads everything"
+        );
+        corners
+    }
+
+    #[test]
+    fn a_frame_that_changes_no_geometry_does_not_reread_every_watched_turf() {
+        let corners = watched_room();
+        for _ in 0..4 {
+            // Each step publishes a new view of every port (a new pointer and version), geometry included.
+            with_world(|w| {
+                w.step_blocking();
+                Ok(())
+            })
+            .unwrap();
+            match turf_refresh_plan() {
+                TurfRefresh::All => {
+                    panic!("a frame with no geometry change re-read every watched turf")
+                }
+                TurfRefresh::Only(cells) => {
+                    assert!(cells.is_empty(), "a settled room changed {cells:?}")
+                }
+                TurfRefresh::Unchanged => {}
+            }
+        }
+        // A DM write to a watched turf is still re-read, alone.
+        let r = MixRef::Turf(corners[0]);
+        let before = load(r).unwrap();
+        let mut after = before.clone();
+        after.set_temperature(320.0);
+        store(r, &before, &after);
+        match turf_refresh_plan() {
+            TurfRefresh::Only(cells) => assert_eq!(cells, vec![r.id()]),
+            _ => panic!("a write to one watched turf re-reads exactly that turf"),
+        }
+        for (i, _) in corners.iter().enumerate() {
+            unwatch_dirty(100 + i as u32);
+        }
+    }
+
+    #[test]
+    fn a_frame_rereads_only_the_watched_turfs_whose_gas_changed() {
+        // Two 16x16 chunks side by side; a hot turf in the east one. The frame writes both chunks (the west one is
+        // a target next to the active one), but the far west turf's gas is exactly what it was.
+        crate::world::configure_for_test(32, 16, 1).unwrap();
+        let key = super::super::turf_key().unwrap();
+        with_world(|w| {
+            for cell in 0..32 * 16 {
+                super::super::register_cell(
+                    w,
+                    key,
+                    cell,
+                    floor_air(),
+                    vg_gas::gas::constants::CELL_VOLUME,
+                    false,
+                    Some(0),
+                );
+            }
+            w.step_blocking();
+            w.step_blocking();
+            Ok(())
+        })
+        .unwrap();
+        let (far, near) = (MixRef::Turf(8 * 32), MixRef::Turf(8 * 32 + 20));
+        watch_dirty(far.id(), 201, GAS_CHANGE_TEMPERATURE);
+        watch_dirty(near.id(), 202, GAS_CHANGE_TEMPERATURE);
+        forget_turf_mark();
+        let _ = turf_refresh_plan();
+        let before = load(near).unwrap();
+        let mut hot = before.clone();
+        hot.set_temperature(400.0);
+        store(near, &before, &hot);
+        let _ = turf_refresh_plan();
+        let far_before = turf_read(8 * 32).unwrap().0;
+        with_world(|w| {
+            w.step_blocking();
+            Ok(())
+        })
+        .unwrap();
+        assert_eq!(
+            turf_read(8 * 32).unwrap().0,
+            far_before,
+            "the far turf's gas did not change"
+        );
+        match turf_refresh_plan() {
+            TurfRefresh::Only(cells) => {
+                assert!(
+                    cells.contains(&near.id()),
+                    "the heated turf changed: {cells:?}"
+                );
+                assert!(
+                    !cells.contains(&far.id()),
+                    "the far turf is unchanged: {cells:?}"
+                );
+            }
+            other => panic!(
+                "expected a partial re-read, got {}",
+                matches!(other, TurfRefresh::All)
+            ),
+        }
+        unwatch_dirty(201);
+        unwatch_dirty(202);
+    }
+
+    #[test]
+    fn a_geometry_change_rereads_every_watched_turf() {
+        let corners = watched_room();
+        let key = super::super::turf_key().unwrap();
+        with_world(|w| {
+            // A turf's capacity changes (a wall opened into a bigger space): every mirror's pressure may move.
+            super::super::register_cell(
+                w,
+                key,
+                9,
+                floor_air(),
+                4.0 * vg_gas::gas::constants::CELL_VOLUME,
+                false,
+                Some(0),
+            );
+            w.step_blocking();
+            Ok(())
+        })
+        .unwrap();
+        assert!(
+            matches!(turf_refresh_plan(), TurfRefresh::All),
+            "a capacity change must re-read every watched turf"
+        );
+        for (i, _) in corners.iter().enumerate() {
+            unwatch_dirty(100 + i as u32);
+        }
+    }
+
     #[test]
     fn a_world_rebuild_keeps_main_mixtures_and_their_gas() {
         with_world(|_| Ok(())).unwrap();
@@ -1158,5 +1506,52 @@ mod tests {
         reactor_wakes(&mut out);
         assert_eq!(out.len(), 1, "{out:?}");
         assert_eq!(out[0].source, r.id());
+    }
+
+    /// A pipe region changed outside `store` (a device step's write-back: a heat exchanger levelling two loops changes only the
+    /// temperature) still reaches a temperature watch on it: the drain reads the region's revision, not a report from the writer.
+    #[test]
+    fn a_temperature_watch_hears_a_pipe_region_written_by_the_world() {
+        use vg_gas::pipes::PipeGas;
+        with_world(|_| Ok(())).unwrap();
+        let node = with_world(|w| {
+            let node = w.entities_mut().bind().unwrap();
+            let mut gas = PipeGas::default();
+            gas.moles[vg_gas::gas::ids::GAS_OXYGEN] = 50.0;
+            gas.energy = 50.0 * 20.0 * 293.0;
+            w.edit_network::<Pipes>(move |host| {
+                let _ = host.bind_node(node, 0, 0, 100.0);
+                let region = host.region_of(node).expect("bound");
+                let _ = host.set_payload(region, gas);
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(node)
+        })
+        .unwrap();
+        let r = with_world(|w| Ok(crate::pipes::port_mixture(w, node.bits()))).unwrap().expect("a region");
+        let before = load(r).unwrap();
+        watch_dirty(r.id(), 301, GAS_CHANGE_TEMPERATURE);
+        let _ = drain_observations();
+        assert!(drain_observations().is_empty(), "nothing changed yet");
+        // The device law's write-back: the payload, on the world, with no `store`.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| {
+                let region = host.region_of(node).expect("bound");
+                if let Ok(p) = host.payload_mut(region) {
+                    p.energy *= 1.2;
+                }
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        let after = load(r).unwrap();
+        assert!(after.get_temperature() > before.get_temperature() + 10.0, "the write-back heated the region");
+        let obs = drain_observations();
+        assert_eq!(obs.len(), GAS_OBSERVATION_STRIDE, "the temperature watch heard the region: {obs:?}");
+        assert!(obs[2] as u8 & GAS_CHANGE_TEMPERATURE != 0, "as a temperature change: {obs:?}");
+        unwatch_dirty(301);
     }
 }

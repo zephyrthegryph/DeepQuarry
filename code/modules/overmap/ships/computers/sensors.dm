@@ -2,7 +2,6 @@
 	name = "sensors console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "teleport"
-	light_color = "#77fff8"
 	circuit = /obj/item/circuitboard/sensors
 	extra_view = 4
 	var/tmp/obj/machinery/shipsensors/sensors
@@ -12,7 +11,9 @@
 	icon_keyboard = null
 	icon_state = "adv_sensors"
 	icon_screen = "adv_sensors_screen"
-	light_color = "#05A6A8"
+
+CAPABILITIES(/obj/machinery/computer/ship/sensors/adv)
+	configure(light_glow(color = "#05A6A8"))
 
 /obj/machinery/computer/ship/sensors/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
 	if(!(. = ..()))
@@ -33,11 +34,23 @@
 		return
 	if(sensors() && sensors().use_power && sensors().powered())
 		var/sensor_range = round(sensors().range * 1.5) + 1
-		linked().set_light(sensor_range + 0.5)
+		set_glow(linked(), GLOW(sensor_range + 0.5, null, null))
 	else
-		linked().set_light(0)
+		set_glow(linked(), GLOW(0, null, null))
 
-DECLARE_UI(/obj/machinery/computer/ship/sensors, "OvermapShipSensors")
+// The sensors window: one op per button; the range is asked in the op (asks()), and applied by its handler.
+CAPABILITIES(/obj/machinery/computer/ship/sensors)
+	configure(light_glow(color = "#77fff8"))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	interface("OvermapShipSensors")
+	without("ui_open")
+	op("viewing", ui_act("viewing"), then(PROC_REF(ui_act_viewing)))
+	op("link", ui_act("link"), then(PROC_REF(ui_act_link)))
+	op("scan", ui_act("scan", arg("scan", schema_ref(/obj/effect/overmap))), then(PROC_REF(ui_act_scan)))
+	op("range", ui_act("range"),
+		asks(/datum/prompt/number/ship_sensor_range, fields = list("default" = computed(PROC_REF(sensor_range_default)), "displayed_max" = computed(PROC_REF(sensor_range_max))), step = "range"),
+		then(PROC_REF(ui_act_range)))
+	op("toggle_sensor", ui_act("toggle_sensor"), then(PROC_REF(ui_act_toggle_sensor)))
 
 /obj/machinery/computer/ship/sensors/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())
@@ -49,10 +62,9 @@ DECLARE_UI(/obj/machinery/computer/ship/sensors, "OvermapShipSensors")
 /obj/machinery/computer/ship/sensors/ui_title(mob/user)
 	return "[linked().name] Sensors Control"
 
-UI_DATA_REPLACE(/obj/machinery/computer/ship/sensors, "merge:ui_data_obj_machinery_computer_ship_sensors{viewing:unknown,on:unknown,range:unknown,health:unknown,max_health:num,heat:num,critical_heat:num,status:text,contacts:list}")
-
-/// The computed part of /obj/machinery/computer/ship/sensors's window data (declared on its UI_DATA row).
-/obj/machinery/computer/ship/sensors/proc/ui_data_obj_machinery_computer_ship_sensors(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window data.
+/obj/machinery/computer/ship/sensors/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["viewing"] = viewing_overmap(user)
@@ -94,69 +106,65 @@ UI_DATA_REPLACE(/obj/machinery/computer/ship/sensors, "merge:ui_data_obj_machine
 
 	return data
 
-/obj/machinery/computer/ship/sensors/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/// The console's guard: it works a linked ship.
+/obj/machinery/computer/ship/sensors/ui_gate(datum/act/op/A)
 	if(!..())
 		return FALSE
-	if(!linked())
+	return !!linked()
+
+/obj/machinery/computer/ship/sensors/proc/sensor_range_default(datum/act/op/A)
+	return sensors()?.range
+
+/obj/machinery/computer/ship/sensors/proc/sensor_range_max(datum/act/op/A)
+	return world.view
+
+/obj/machinery/computer/ship/sensors/proc/ui_act_viewing(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
+	if(!(A.authority & AUTH_REMOTE_ACCESS)) // a silicon views over its link, from anywhere it can work the console
+		if(get_dist(user, src) > 1 || user.blinded || !linked())
+			. = FALSE
+		else if(!viewing_overmap(user) && linked())
+			start_coordinated_remoteview(src, user, linked(), viewers)
+		else
+			user.reset_perspective()
+	terminal_typed(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/sensors, "viewing", ui_act_viewing)
-UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_viewing)
-	if(ui.user && !isAI(ui.user))
-		if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
-			. = FALSE
-		else if(!viewing_overmap(ui.user) && linked())
-			start_coordinated_remoteview(src, ui.user, linked(), viewers)
-		else
-			ui.user.reset_perspective()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
-
-UI_ACT(/obj/machinery/computer/ship/sensors, "link", ui_act_link)
-UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_link)
+/obj/machinery/computer/ship/sensors/proc/ui_act_link(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	find_sensors()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/sensors, "scan", ui_act_scan, UI_ARG_REF("scan", null, /obj/effect/overmap))
-UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_scan)
-	var/obj/effect/overmap/O = params["scan"]
-	if(istype(O) && !QDELETED(O) && (O in view(7,linked())))
-		new/obj/item/paper/(get_turf(src), O.get_scan_data(ui.user), "paper (Sensor Scan - [O])")
+/obj/machinery/computer/ship/sensors/proc/ui_act_scan(datum/act/op/A, obj/effect/overmap/scan)
+	if(!ui_gate(A))
+		return FALSE
+	if(istype(scan) && !QDELETED(scan) && (scan in view(7,linked())))
+		new/obj/item/paper/(get_turf(src), scan.get_scan_data(A.actor), "paper (Sensor Scan - [scan])")
 		playsound(src, "sound/machines/printer.ogg", 30, 1)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/sensors, "range", ui_act_range)
-UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_range)
-	if(!(sensors()))
+/obj/machinery/computer/ship/sensors/proc/ui_act_range(datum/act/op/A)
+	if(!ui_gate(A) || !sensors())
 		return FALSE
-	var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
-	if(isnull(nrange))
-		return
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return FALSE
+	var/nrange = A.step_value("range")
 	if(nrange)
 		sensors().set_range(CLAMP(nrange, 1, world.view))
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/sensors, "toggle_sensor", ui_act_toggle_sensor)
-UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
-	if(!(sensors()))
+/obj/machinery/computer/ship/sensors/proc/ui_act_toggle_sensor(datum/act/op/A)
+	if(!ui_gate(A) || !sensors())
 		return FALSE
 	sensors().toggle()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-/obj/machinery/computer/ship/sensors/machine_step()
-	..()
+/obj/machinery/computer/ship/sensors/proc/work_step(datum/act/timer/A)
 	refresh_sensor_light()
 	return PROCESS_KILL
 
@@ -173,7 +181,6 @@ UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
 	var/heat_reduction = 1.5 // mitigates this much heat per tick
 	var/heat = 0
 	var/range = 1
-	idle_power_usage = 5000
 
 // sensor consoles lose it.
 /obj/machinery/shipsensors/lifecycle_dematerialize()
@@ -189,25 +196,16 @@ UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
 		if(console.sensors() == src)
 			console.refresh_sensor_light()
 
-/obj/machinery/shipsensors/welder_act(mob/user, obj/item/tool)
-	var/damage = max_integrity - get_integrity()
-	if(!damage)
-		return ..()
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder?.isOn())
-		return ITEM_INTERACT_BLOCKING
-	if(!welder.remove_fuel(0, user))
-		to_chat(user, span_notice("You need more welding fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You start repairing the damage to [src]."))
-	play_sfx(src, SFX_ITEMS_WELDER)
-	om_task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
-	return ITEM_INTERACT_SUCCESS
+/// The sensors are damaged.
+/obj/machinery/shipsensors/proc/damaged(datum/act/A)
+	return get_integrity_damage() > 0
 
-/obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)
-	if(!welder.isOn())
-		return
-	to_chat(user, span_notice("You finish repairing the damage to [src]."))
+/// The repair takes a fifth of a decisecond per point of damage, half a second at least.
+/obj/machinery/shipsensors/proc/weld_time(datum/act/A)
+	return max(5, get_integrity_damage() / 5)
+
+/obj/machinery/shipsensors/proc/weld_repair_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You finish repairing the damage to [src]."))
 	repair_damage(max_integrity - get_integrity())
 
 /obj/machinery/shipsensors/proc/in_vacuum()
@@ -218,7 +216,10 @@ UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
 			return 0
 	return 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/shipsensors/draw(datum/look/look)
+	..()
+	look.state("[use_power ? "sensors" : "sensors_off"]")
 
 /obj/machinery/shipsensors/examine(mob/user)
 	. = ..()
@@ -235,12 +236,21 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 	if(!use_power && (get_integrity() <= 0 || !in_vacuum()))
 		return // No turning on if broken or misplaced.
 	if(!use_power) //need some juice to kickstart
-		use_power_oneoff(idle_power_usage*5)
+		use_power_oneoff(power_of(src).idle*5)
 	set_use_power(!use_power)
 	refresh_linked_consoles()
-	MACHINE_WAKE(src)
+	work_start(src)
 
-/obj/machinery/shipsensors/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+MSG_DEF_SELF(shipsensors/repairing, span_notice("You start repairing the damage to %T%."))
+
+CAPABILITIES(/obj/machinery/shipsensors)
+	configure(uses_power(idle = 5000))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(damaged)), begins(MSG(shipsensors/repairing)), plays(SFX_ITEMS_WELDER, at_start = TRUE), wait(PROC_REF(weld_time)), then(PROC_REF(weld_repair_done)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(sensors_emp_shutdown)))
+
+/obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum
 		if(!in_vacuum())
 			toggle()
@@ -250,7 +260,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 
 			take_damage(rand(10,50), BURN, FIRE)
 			toggle()
-		heat += idle_power_usage/15000
+		heat += power_of(src).idle/15000
 
 	if (heat > 0)
 		heat = max(0, heat - heat_reduction)
@@ -267,10 +277,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 	change_power_consumption(1500 * (range**2), USE_POWER_IDLE) //Exponential increase, also affects speed of overheating
 	refresh_linked_consoles()
 
-DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shutdown))
 
 /// A pulse knocks running sensors offline.
-/obj/machinery/shipsensors/proc/sensors_emp_shutdown(datum/damage_packet/packet)
+/obj/machinery/shipsensors/proc/sensors_emp_shutdown(datum/act/A)
 	if(!use_power)
 		return
 	toggle()
@@ -284,14 +293,26 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 	heat_reduction = 0.2
 	desc = "Miniaturized gravity scanner with various other sensors, used to detect irregularities in surrounding space. Can only run in vacuum to protect delicate quantum bluespace elements."
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/shipsensors/step_start_condition()
 	return use_power
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
 
 /// Accessor for the sensors var.
 /obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
 	return sensors
+
+/datum/prompt/number/ship_sensor_range
+	question = "Set new sensors range"
+	title = "Sensor range"
+	timeout = 0
+	var/displayed_max
+
+/datum/prompt/number/ship_sensor_range/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, displayed_max, 0, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

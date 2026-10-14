@@ -1,3 +1,7 @@
+/// Rolled before init (rolls()): a dropped tool sits up to 16 px up its tile three times in four.
+/obj/item/tool/proc/roll_drop_y(datum/roller/R)
+	return R.chance(75) ? R.number(0, 16) : pixel_y
+
 /*
  * Screwdriver
  */
@@ -8,57 +12,47 @@
 	icon_state = "screwdriver"
 	center_of_mass_x = 13
 	center_of_mass_y = 7
-	slot_flags = SLOT_BELT | SLOT_EARS
-	force = 6
 	w_class = ITEMSIZE_TINY
-	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	hitsound = SFX_WEAPONS_BLADESLICE
-	usesound = SFX_ITEMS_SCREWDRIVER
-	drop_sound = SFX_ITEMS_DROP_SCREWDRIVER
-	pickup_sound = SFX_ITEMS_PICKUP_SCREWDRIVER
 	material_total = 75
-	attack_verb = list("stabbed")
-	sharp  = TRUE
 	injury_kind = INJURY_PIERCE
-	toolspeed = 1
 	tool_qualities = list(TOOL_SCREWDRIVER)
 	var/random_color = TRUE
 
-/obj/item/tool/screwdriver/Initialize(mapload)
-	. = ..()
-	if(random_color)
-		switch(pick("red","blue","purple","brown","green","cyan","yellow"))
-			if ("red")
-				icon_state = "screwdriver2" // ALLOW(decl): random pick
-				item_state = "screwdriver"
-			if ("blue")
-				icon_state = "screwdriver" // ALLOW(decl): random pick
-				item_state = "screwdriver_blue"
-			if ("purple")
-				icon_state = "screwdriver3" // ALLOW(decl): random pick
-				item_state = "screwdriver_purple"
-			if ("brown")
-				icon_state = "screwdriver4" // ALLOW(decl): random pick
-				item_state = "screwdriver_brown"
-			if ("green")
-				icon_state = "screwdriver5" // ALLOW(decl): random pick
-				item_state = "screwdriver_green"
-			if ("cyan")
-				icon_state = "screwdriver6" // ALLOW(decl): random pick
-				item_state = "screwdriver_cyan"
-			if ("yellow")
-				icon_state = "screwdriver7" // ALLOW(decl): random pick
-				item_state = "screwdriver_yellow"
+CAPABILITIES(/obj/item/tool/screwdriver)
+	configure(item_tooling(speed = 1))
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 6, attack_verbs = list("stabbed"), sharp = TRUE))
+	rolls(nameof(icon_state), PROC_REF(roll_colour), when = nameof(random_color))
+	rolls(nameof(item_state), PROC_REF(item_state_for_colour), when = nameof(random_color), from = list(nameof(icon_state)))
+	rolls(nameof(pixel_y), PROC_REF(roll_drop_y))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
 
-	if (prob(75))
-		pixel_y = rand(0, 16)
+/// A random handle colour (rolls()): icon_state -> the matching in-hand item_state.
+GLOBAL_LIST_INIT(screwdriver_colours, list(
+		"screwdriver2" = "screwdriver",
+		"screwdriver" = "screwdriver_blue",
+		"screwdriver3" = "screwdriver_purple",
+		"screwdriver4" = "screwdriver_brown",
+		"screwdriver5" = "screwdriver_green",
+		"screwdriver6" = "screwdriver_cyan",
+		"screwdriver7" = "screwdriver_yellow"))
+
+/// Rolled before init (rolls()): one of the handle colours.
+/obj/item/tool/screwdriver/proc/roll_colour(datum/roller/R)
+	return R.choose(GLOB.screwdriver_colours)
+
+/// Rolled before init (rolls()), after the colour: the in-hand sprite of the colour it rolled.
+/obj/item/tool/screwdriver/proc/item_state_for_colour(datum/roller/R)
+	return GLOB.screwdriver_colours[icon_state] || item_state
+
 
 /obj/item/tool/screwdriver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M) || stance == I_HELP)
 		return ..()
-	if(user.zone_sel.selecting != O_EYES && user.zone_sel.selecting != BP_HEAD)
+	if(hud_of(user)?.zone_sel?.selecting != O_EYES && hud_of(user)?.zone_sel?.selecting != BP_HEAD)
 		return ..()
 	if(CLUMSY_HARM_CHANCE(user))
 		M = user
@@ -84,9 +78,11 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "screwdriver_a"
 	item_state = "screwdriver_black"
-	usesound = SFX_ITEMS_PSHOOM
-	toolspeed = 0.1
 	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/screwdriver/alien)
+	configure(item_tooling(speed = 0.1))
+	configure(item_sounds(use = SFX_ITEMS_PSHOOM))
 
 /obj/item/tool/screwdriver/hybrid
 	name = "strange screwdriver"
@@ -94,16 +90,18 @@
 	icon_state = "hybscrewdriver"
 	item_state = "screwdriver_black"
 	w_class = ITEMSIZE_NORMAL
-	usesound = SFX_EFFECTS_UNCLOAK
-	toolspeed = 0.4
 	random_color = FALSE
-	reach = 2
+
+CAPABILITIES(/obj/item/tool/screwdriver/hybrid)
+	configure(item_tooling(speed = 0.4))
+	configure(item_combat(reach = 2))
+	configure(item_sounds(use = SFX_EFFECTS_UNCLOAK))
 
 /obj/item/tool/screwdriver/power
 	name = "power screwdriver"
 	desc = "You shouldn't see this."
-	force = 8
-	attack_verb = list("drilled", "screwed", "jabbed", "whacked")
-	hitsound = SFX_ITEMS_DRILL_HIT
-	usesound = SFX_ITEMS_DRILL_USE_2
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/tool/screwdriver/power)
+	configure(item_tooling(speed = 0.25))
+	configure(item_combat(force = 8, attack_verbs = list("drilled", "screwed", "jabbed", "whacked")))
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))

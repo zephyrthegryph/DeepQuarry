@@ -4,6 +4,7 @@
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /obj/vehicle/train/engine/janicart
+	move_delay = 0.5
 	name = "janicart"
 	desc = "A ridable station cleaning cart. Has a large water tank to feed its floor scrubbers, the opening is big enough to fit a mop through to wet it. It also has a hook to hang a trashbag from. You're riding in style now!"
 	icon_state = "pussywagon"
@@ -35,32 +36,30 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "key", "key_type")
-DECLARE_REAGENTS(/obj/vehicle/train/engine/janicart, 600, null)
+/obj/vehicle/train/engine/janicart/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+
+CAPABILITIES(/obj/vehicle/train/engine/janicart)
+	rolls(nameof(callme), PROC_REF(roll_callme)) // one cart in five gets a nickname
+	reagents(600)
+	op("janicart_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart item"), then(PROC_REF(interaction_janicart_item)))
+	op("janicart_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart hand"), then(PROC_REF(interaction_janicart_hand)))
+	op("janicart_toggle_brush", menu(), label("Toggle brushes"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(janicart_toggle_brush)))
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()
-	// apply speed
-	move_delay = 0.5
 	turn_off()	//so engine verbs are correctly set
-	update_icon()
-
-	if(prob(20))
-		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
-
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
-	INTERACT_ITEM(null, PROC_REF(interaction_janicart_item)), \
-	INTERACT_HAND(null, PROC_REF(interaction_janicart_hand)), \
-	INTERACT_VERB("Toggle brushes", PROC_REF(janicart_toggle_brush), REQ_REACH(0)), \
-)
 
 // Nothing to unlatch (old verbs -= unlatch_v on Initialize).
 /obj/vehicle/train/engine/janicart/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
 	return FALSE
 
 /// Old attackby: wet a mop, or hook on a trash bag.
-/obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/mop))
 		if(reagents.total_volume > 1)
 			reagents.trans_to_obj(W, 2)
@@ -68,23 +67,24 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 		else
 			to_chat(user, span_notice("This [callme] is out of water!"))
-		return TRUE
+		return OP_OK
 	if(istype(W, /obj/item/storage/bag/trash))
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
 		rel_set(src, nameof(mybag), W)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old attack_hand: take the trash bag off first; otherwise the train's climb/unload.
-/obj/vehicle/train/engine/janicart/proc/interaction_janicart_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mybag())
-		return FALSE
+		return OP_DECLINE
 	mybag().forceMove(get_turf(user))
 	user.put_in_hands(mybag())
 	rel_clear(src, nameof(mybag))
-	return TRUE
+	return OP_OK
 
 //-------------------------------------------
 // Interaction procs
@@ -97,7 +97,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 			. += "\A [mybag()] is hanging on the [callme]."
 
 /// Old verb "Toggle brushes".
-/obj/vehicle/train/engine/janicart/proc/janicart_toggle_brush(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/janicart_toggle_brush(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -110,15 +111,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 /obj/vehicle/train/engine/janicart/latch(obj/vehicle/train/T, mob/user)
 	return // nothing latchs to this!
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/train/engine/janicart/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/vehicle/train/engine/janicart/draw(datum/look/look)
+	..()
 	if(!open)
-		var/image/O = image(icon = 'icons/obj/vehicles.dmi', icon_state = "pussywagon_overlay", dir = src.dir)
-		O.layer = FLY_LAYER
-		O.plane = MOB_PLANE
-		. += O
+		look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "pussywagon_overlay", layer = FLY_LAYER, plane = MOB_PLANE, dir = dir))
 
 /obj/vehicle/train/engine/janicart/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -143,3 +139,9 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/janicart, TYPE_PROC_REF(/atom,
 /// Accessor for the mybag var.
 /obj/vehicle/train/engine/janicart/proc/mybag() as /obj/item/storage/bag/trash
 	return mybag
+
+/// What people call it: usually "janitor cart", now and then a nickname.
+/obj/vehicle/train/engine/janicart/proc/roll_callme(datum/roller/R)
+	if(!R.chance(20))
+		return callme
+	return R.choose(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))

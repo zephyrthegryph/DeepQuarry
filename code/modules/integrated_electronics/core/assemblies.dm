@@ -22,23 +22,40 @@
 	var/tmp/obj/item/card/id/access_card	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 
+CAPABILITIES(/obj/item/electronic_assembly)
+	ref_one(nameof(access_card), /obj/item/card/id)
+	owns_one(nameof(export_view), /datum/ic_export_view)
+	every(2 SECONDS, then(PROC_REF(assembly_power_step)), when = nameof(power_relevant))
+	op("assembly_self", in_hand(), label("Use"),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you want to interact with?", "title" = "Interaction", "choices" = computed(PROC_REF(input_choices)), "timeout" = 0), step = "k_input"),
+		then(PROC_REF(interaction_self)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("assembly_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("assembly_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(assembly_robot_use)))
+	op("assembly_rename", menu(), label("Rename Circuit"), needs(carried()), then(PROC_REF(assembly_rename_op)))
+	interface("ICAssembly", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("export_circuit", ui_act("export_circuit"), then(PROC_REF(ui_act_export_circuit)))
+	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
+	op("remove_cell", ui_act("remove_cell"), then(PROC_REF(ui_act_remove_cell)))
+	op("wire_internal", ui_act("wire_internal", arg("pin1", schema_ref(/datum/integrated_io)), arg("pin2", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire_internal)))
+	op("remove_all_wires", ui_act("remove_all_wires", arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_remove_all_wires)))
+	op("open_circuit", ui_act("open_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_open_circuit)))
+	op("remove_circuit", ui_act("remove_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_remove_circuit)))
+	op("update_component_position", ui_act("update_component_position", arg("ref", schema_ref(/obj/item/integrated_circuit)), arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_update_component_position)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
 /// Entered()/Exited(); null until first computed.
-OM_FIELD_TYPED(/obj/item/electronic_assembly, tmp, power_relevant, null, CHANGE_EXPLICIT)
+/obj/item/electronic_assembly/var/tmp/power_relevant = null
+TRACKED(/obj/item/electronic_assembly, power_relevant)
+TRACKED(/obj/item/electronic_assembly, opened)
 
-DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/device)
-
-/// Has power-relevant work (a battery plus a circuit that makes or draws idle power).
-OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, list("power_relevant"))
-DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
-
-/obj/item/electronic_assembly/proc/has_power_work()
-	if(isnull(power_relevant))
-		recompute_power_relevant()
-	return power_relevant
-
-/obj/item/electronic_assembly/periodic_step(seconds_per_tick)
+/// Idle power every 2 s while there is power-relevant work (a battery plus a circuit that makes or draws idle power).
+/obj/item/electronic_assembly/proc/assembly_power_step(datum/act/timer/A)
+	var/seconds_per_tick = 20 // the interval, in deciseconds, as the old sweep passed it
 	handle_idle_power(seconds_per_tick)
 
 // Any circuit or cell entering/leaving contents can change whether there's power-relevant work to
@@ -99,19 +116,25 @@ DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_
 	return battery
 
 // TGUI
-DECLARE_UI_STATE(/obj/item/electronic_assembly, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 
 /obj/item/electronic_assembly/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/circuit_assets)
 	)
 
-UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "assembly_name=name:text", "merge:ui_data_obj_item_electronic_assembly{total_parts:num,total_complexity:num,battery_charge:num,battery_max:num,net_power:num,export_data:unknown,circuits:list,component_positions:bool}")
+/obj/item/electronic_assembly/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["max_components"] = max_components
+	data["max_complexity"] = max_complexity
+	data["assembly_name"] = name
+	var/list/merged_1 = ui_data_obj_item_electronic_assembly(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/electronic_assembly's window data (declared on its UI_DATA row).
-/obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/electronic_assembly's window data.
+/obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 
 	var/total_parts = 0
@@ -132,7 +155,7 @@ UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "
 
 	var/list/circuits = list()
 	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/circuit, src)
-		UNTYPED_LIST_ADD(circuits, circuit.tgui_data(user, ui, state))
+		UNTYPED_LIST_ADD(circuits, circuit.tgui_data(user))
 	data["circuits"] = circuits
 
 	// Include component positions for UI restoration
@@ -140,18 +163,18 @@ UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "
 
 	return data
 
-UI_ACT(/obj/item/electronic_assembly, "export_circuit", ui_act_export_circuit)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
+/obj/item/electronic_assembly/proc/ui_act_export_circuit(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!LAZYLEN(contents))
-		to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
+		to_chat(user, span_warning("There's nothing in the [src] to export!"))
 		return TRUE
 	if(!export_view)
-		own_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
+		rel_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
 	export_view.tgui_interact(user)
 	return TRUE
 
 /// The assembly's export window, a second window next to its editor. Owned by the assembly
-/// (implicit OWN through own_set), so it goes with it.
+/// (implicit OWN through rel_set), so it goes with it.
 /datum/ic_export_view
 	/// Relation view: the assembly this window exports.
 	var/tmp/obj/item/electronic_assembly/host_assembly
@@ -162,7 +185,9 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 /datum/ic_export_view/proc/assembly() as /obj/item/electronic_assembly
 	return host_assembly
 
-DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
+CAPABILITIES(/datum/ic_export_view)
+	interface("ICExport", title = "Circuit Export")
+	ui_shape(export_data = schema_text(), assembly_name = schema_text())
 
 /datum/ic_export_view/tgui_host(mob/user)
 	return assembly() || src
@@ -170,42 +195,40 @@ DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
 /datum/ic_export_view/tgui_state(mob/user)
 	return assembly()?.tgui_state(user) || ..()
 
-UI_DATA_REPLACE(/datum/ic_export_view, "merge:ui_data_datum_ic_export_view{}")
-
-/// The computed part of /datum/ic_export_view's window data (declared on its UI_DATA row).
-/datum/ic_export_view/proc/ui_data_datum_ic_export_view(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return assembly()?.tgui_data(user, ui, state) || list()
+/// /datum/ic_export_view's window data.
+/datum/ic_export_view/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	return assembly()?.tgui_data(user) || list()
 
 /datum/ic_export_view/tgui_static_data(mob/user)
 	return assembly()?.tgui_static_data(user) || list()
 
 // Actual assembly actions
 
-UI_ACT(/obj/item/electronic_assembly, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_rename)
-	electronic_assembly_verb_rename(ui.user)
+/obj/item/electronic_assembly/proc/ui_act_rename(datum/act/op/A)
+	var/mob/user = A.actor
+	electronic_assembly_verb_rename(user)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_cell", ui_act_remove_cell)
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_cell)
+/obj/item/electronic_assembly/proc/ui_act_remove_cell(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!battery)
-		to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
+		to_chat(user, span_warning("There's no power cell to remove from \the [src]."))
 		return FALSE
 	var/turf/T = get_turf(src)
-	var/obj/item/cell/device/removed = own_take(src, nameof(/obj/item/electronic_assembly::battery))
+	var/obj/item/cell/device/removed = rel_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
-	to_chat(ui.user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
+	to_chat(user, span_notice("You pull \the [removed] out of \the [src]'s power supplier."))
 	return TRUE
 
 	// Circuit actions
 
-UI_ACT(/obj/item/electronic_assembly, "wire_internal", ui_act_wire_internal, UI_ARG_REF("pin1", null, /datum/integrated_io), UI_ARG_REF("pin2", null, /datum/integrated_io))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
-	var/datum/integrated_io/pin1 = params["pin1"]
+/obj/item/electronic_assembly/proc/ui_act_wire_internal(datum/act/op/A, pin1_arg, pin2_arg)
+	var/datum/integrated_io/pin1 = pin1_arg
 	if(!istype(pin1))
 		return
-	var/datum/integrated_io/pin2 = params["pin2"]
+	var/datum/integrated_io/pin2 = pin2_arg
 	if(!istype(pin2))
 		return
 
@@ -227,9 +250,8 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
 
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_all_wires", ui_act_remove_all_wires, UI_ARG_REF("pin", null, /datum/integrated_io))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
-	var/datum/integrated_io/pin1 = params["pin"]
+/obj/item/electronic_assembly/proc/ui_act_remove_all_wires(datum/act/op/A, pin)
+	var/datum/integrated_io/pin1 = pin
 	if(!istype(pin1))
 		return
 
@@ -244,30 +266,36 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
 
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "open_circuit", ui_act_open_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_open_circuit)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_open_circuit(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return
-	C.tgui_interact(ui.user, null, ui)
+	C.tgui_interact(user, null, ui)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "remove_circuit", ui_act_remove_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_circuit)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_remove_circuit(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return
-	C.remove(ui.user)
+	C.remove(user)
 	return TRUE
 
-UI_ACT(/obj/item/electronic_assembly, "update_component_position", ui_act_update_component_position, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit), UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
-	var/obj/item/integrated_circuit/C = params["ref"]
+/obj/item/electronic_assembly/proc/ui_act_update_component_position(datum/act/op/A, ref, x, y)
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/integrated_circuit/C = ref
 	if(!istype(C))
 		return FALSE
 
-	var/new_x = params["x"]
-	var/new_y = params["y"]
+	var/new_x = x
+	var/new_y = y
 	if(!isnum(new_x) || !isnum(new_y))
 		return FALSE
 
@@ -287,14 +315,31 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 // End TGUI
 
 /// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
-/obj/item/electronic_assembly/proc/electronic_assembly_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/electronic_assembly_verb_rename(mob/user)
 	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k272 = rerun_ask(user, "k272", PROC_REF(electronic_assembly_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k272))
+	if(!ismob(M) || QDELETED(M))
 		return
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, question = "What do you want to name this?", default = name)
+
+/obj/item/electronic_assembly/proc/rename_entered(datum/act/request/A)
+	var/datum/prompt/text/electronics_rename/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
+			SStgui.update_uis(src)
+		return
+	apply_rename(A)
+	SStgui.update_uis(src)
+
+/obj/item/electronic_assembly/proc/apply_rename(datum/act/request/A)
+	var/mob/M = A.request.answerer
+	if(!check_interactivity(M))
+		return
+	var/_answer_k272 = A.answer.value
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
 	if(src && input)
 		to_chat(M, span_notice("The machine now has a label reading '[input]'."))
@@ -303,21 +348,13 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 /obj/item/electronic_assembly/proc/can_move()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/electronic_assembly/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = initial(icon_state) + "-open"
-	// else if(locked)
-		// For when I finish the locked assembly sprites.
-		// icon_state = initial(icon_state) // + "-locked" would be added once sprites are made
-	else
-		icon_state = initial(icon_state)
-	if(detail_color == COLOR_ASSEMBLY_BLACK) //Black colored overlay looks almost but not exactly like the base sprite, so just cut the overlay and avoid it looking kinda off.
-		return .
-	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_setups.dmi', "[icon_state]-color")
-	detail_overlay.color = detail_color
-	. += detail_overlay
+/obj/item/electronic_assembly/draw(datum/look/look)
+	..()
+	// Locked-assembly sprites are not made yet; only the open state changes the base sprite.
+	var/shown = look.state("[initial(icon_state)][opened ? "-open" : ""]")
+	if(detail_color == COLOR_ASSEMBLY_BLACK) // Black looks almost but not exactly like the base sprite, so draw no detail overlay.
+		return
+	look.overlay(look_appearance('icons/obj/integrated_electronics/electronic_setups.dmi', "[shown]-color", color = detail_color))
 
 /obj/item/electronic_assembly/examine(mob/user)
 	. = ..()
@@ -387,15 +424,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 		G.afterattack(target, user, proximity, null)
 
 /// Old attackby.
-/obj/item/electronic_assembly/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/integrated_circuit))
-		if(!user.unEquip(I) && !isrobot(user)) //Robots cannot de-equip items in grippers.
-			return INTERACTION_HANDLED_PASS
+		if(!user.unEquip(I) && I.loc == user) //an item a gripper holds is not in the actor's own inventory, so it is no refusal
+			return OP_PASS
 		if(add_circuit(I, user))
 			to_chat(user, span_notice("You slide \the [I] inside \the [src]."))
 			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 			tgui_interact(user)
-			return TRUE
+			return OP_OK
 
 	else if((istype(I, /obj/item/card/id) || istype(I, /obj/item/pda)) && !opened)
 		var/obj/item/card/id/id_card = null
@@ -408,7 +447,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 
 		if(!id_card)
 			to_chat(user, span_warning("You need an ID card to lock this assembly!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(locked)
 			// Trying to unlock
@@ -416,94 +455,114 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 				locked = FALSE
 				rel_clear(src, nameof(locked_by))
 				to_chat(user, span_notice("You unlock \the [src]."))
-				update_icon()
 			else
 				to_chat(user, span_warning("Access denied. This assembly was locked by [locked_by() ? locked_by().registered_name : "someone else"]."))
-			return TRUE
+			return OP_OK
 		else
 			// Trying to lock
 			locked = TRUE
 			rel_set(src, nameof(locked_by), id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
-			update_icon()
-			return TRUE
+			return OP_OK
 
 	else if(istype(I, /obj/item/integrated_electronics/wirer) || istype(I, /obj/item/integrated_electronics/debugger))
 		if(opened)
 			tgui_interact(user)
-			return TRUE
+			return OP_OK
 		else
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components.  \
 			Try using a crowbar."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	else if(istype(I, /obj/item/integrated_electronics/detailer))
 		var/obj/item/integrated_electronics/detailer/D = I
-		detail_color = D.detail_color
-		update_icon()
+		set_detail_color(D.detail_color)
 
 	else if(istype(I, /obj/item/cell/device))
 		if(!opened)
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't put anything inside.  Try using a crowbar."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(battery)
 			to_chat(user, span_warning("\The [src] already has \a [battery] inside.  Remove it first if you want to replace it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/cell/device/cell = I
-		if(!own_set(src, nameof(src.battery), cell, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.battery), cell, user))
+			return OP_PASS
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))
 		tgui_interact(user)
-		return TRUE
+		return OP_OK
 
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-/obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
+/obj/item/electronic_assembly/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!can_anchor)
-		return FALSE
+		return OP_DECLINE
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You've [anchored ? "" : "un"]secured \the [src] to \the [get_turf(src)]."))
 	if(anchored)
 		on_anchored()
 	else
 		on_unanchored()
-	playsound(src, tool.usesound, 50, TRUE)
-	return TRUE
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/item/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+/// A crowbar opens or closes the assembly, unless it is locked.
+/obj/item/electronic_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(locked)
 		to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
-		return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 50, TRUE)
-	opened = !opened
+		return OP_OK
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/electronic_assembly/screwdriver_act(mob/user, obj/item/tool)
+/// A screwdriver in the opened assembly opens its component window.
+/obj/item/electronic_assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(opened)
 		tgui_interact(user)
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components. Try using a crowbar."))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Use", PROC_REF(assembly_robot_use)), \
-	INTERACT_VERB("Rename Circuit", PROC_REF(electronic_assembly_verb_rename), REQ_IN_INVENTORY), \
-)
+/// The Rename Circuit menu entry.
+/obj/item/electronic_assembly/proc/assembly_rename_op(datum/act/op/A)
+	electronic_assembly_verb_rename(A.actor)
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/electronic_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The names the self-use question offers.
+/obj/item/electronic_assembly/proc/input_choices(datum/act/op/A)
+	var/list/options = input_prompt_options()
+	return options[1]
+
+/// Old attack_self: ask which input circuit to use, then ask that circuit for its input.
+/obj/item/electronic_assembly/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_interactivity(user))
-		return TRUE
+		return OP_OK
 	if(opened)
 		tgui_interact(user)
+	var/list/options = input_prompt_options()
+	var/list/input_selection = options[1]
+	var/list/available_inputs = options[2]
+	var/selection = A.step_value("k_input")
+	var/obj/item/integrated_circuit/input/choice
+	if(selection)
+		var/index = input_selection.Find(selection)
+		choice = available_inputs[index]
+	if(choice)
+		choice.ask_for_input(user)
+	SStgui.update_uis(src)
+	return OP_OK
 
+/obj/item/electronic_assembly/proc/input_prompt_options()
 	var/list/input_selection = list()
 	var/list/available_inputs = list()
 	for(var/obj/item/integrated_circuit/input/input in contents)
@@ -518,25 +577,15 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 				disp_name += " ([i+1])"
 			input_selection.Add(disp_name)
 
-	var/obj/item/integrated_circuit/input/choice
-	if(available_inputs)
-		var/selection = rerun_ask(user, "k490", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What do you want to interact with?", title = "Interaction", choices = input_selection)
-		if(isnull(selection))
-			return TRUE
-		if(selection)
-			var/index = input_selection.Find(selection)
-			choice = available_inputs[index]
-
-	if(choice)
-		choice.ask_for_input(user)
-	return TRUE
+	return list(input_selection, available_inputs)
 
 /// Old attack_robot: an adjacent cyborg uses it in hand; otherwise the default.
-/obj/item/electronic_assembly/proc/assembly_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/electronic_assembly/proc/assembly_robot_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	attack_self(user)
-	return TRUE
+	return OP_OK
 
 // Returns true if power was successfully drawn.
 /obj/item/electronic_assembly/proc/draw_power(amount)
@@ -584,7 +633,7 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 
 /obj/item/electronic_assembly/ownership()
 	. = ..()
-	. += owns(nameof(battery), policy = OWN_CONTAINED)
+	. += owns(nameof(battery), policy = OWN_CONTAINED, starts = /obj/item/cell/device)
 
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id

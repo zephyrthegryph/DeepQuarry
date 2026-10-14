@@ -8,14 +8,14 @@
 	var/name = "Generic Action"
 	/// The description of what the action does, shown in button tooltips
 	var/desc
-	// The target the action is attached to is the action_for relation (action_target()): if the
-	// target datum is deleted, the action is as well. Set in New() via the proc link_to().
-	// PLEASE set a target if you're making an action.
+	/// The datum the action is attached to (action_target()): if it is deleted, the action is as well. Set in New() via link_to().
+	/// PLEASE set a target if you're making an action.
+	var/datum/acts_for
 	/// Where any buttons we create should be by default. Accepts screen_loc and location defines
 	var/default_button_position = SCRN_OBJ_IN_LIST
-	// Who currently owns the action (action_owner()), and most often who is using it when it is triggered, is
-	// the action_granted_to relation. It can be the same as the target but is not ALWAYS the same: Grant()
-	// and Remove() set and unset it, and the owner being deleted removes the action from them.
+	/// Who currently owns the action (action_owner()), and most often who is using it when it is triggered. It can be the same as the
+	/// target but is not ALWAYS the same: Grant() and Remove() set and unset it, and the owner being deleted removes the action from them.
+	var/mob/granted_to
 	/// Flags that will determine of the owner / user of the action can... use the action
 	var/check_flags = NONE
 	/// Whether the button becomes transparent when it can't be used or just reddened
@@ -47,31 +47,37 @@
 	/// This is the icon state for any FOREGROUND overlay icons on the button (such as borders)
 	var/overlay_icon_state
 
+CAPABILITIES(/datum/action)
+	owns_many(nameof(viewers))
+	ref_one(nameof(acts_for), /datum, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(granted_to), /mob, on_unlink = PROC_REF(owner_unlinked))
+
+/// The datum this action acts for, or null.
+/datum/action/proc/action_target() as /datum
+	return acts_for
+
+/// The mob this action is granted to, or null.
+/datum/action/proc/action_owner() as /mob
+	return granted_to
+
+/// The owner link went: when the owner is the one being deleted, the action leaves it.
+/datum/action/proc/owner_unlinked(mob/owner)
+	if(QDELETED(src) || QDELETED(owner))
+		Remove(owner)
+
+/// The action leaves its owner when it is deleted (its buttons and the owner's action list).
+/datum/action/on_destroy(force)
+	if(granted_to)
+		Remove(granted_to)
+	..()
+
 /datum/action/New(Target)
 	link_to(Target)
 
 /// Links the passed target to our action (the action_for relation: its deletion deletes us)
 /datum/action/proc/link_to(Target)
 	if(Target)
-		om_link(src, Target, /datum/om/relation/action_for)
-
-
-/// An action -> the datum it acts for (an item, a mecha, a spell). Read with action_target().
-/// Deleting that datum deletes the action.
-/datum/om/relation/action_for
-	name = "action target"
-	source_single = TRUE
-	on_target_delete = OM_END_DELETE_OTHER
-
-/// An action -> the mob it is granted to (its owner). Read with action_owner(). Grant() and
-/// Remove() link and unlink it; either end being deleted runs Remove() on the owner.
-/datum/om/relation/action_granted_to
-	name = "action owner"
-	source_single = TRUE
-
-/datum/om/relation/action_granted_to/on_unlink(datum/action/source, mob/target, datum/om/edge/edge)
-	if(QDELETED(source) || QDELETED(target))
-		source.Remove(target)
+		rel_set(src, nameof(acts_for), Target)
 
 /// The button (owned, in `viewers`) shown on `hud`, or null.
 /datum/action/proc/button_for(datum/hud/hud)
@@ -93,8 +99,8 @@
 			return
 		Remove(owner)
 
-	OM_EMIT(grant_to, /datum/om/event/mob_granted_action, src)
-	om_link(src, grant_to, /datum/om/relation/action_granted_to)
+	PUBLISH_LEGACY(grant_to, /datum/notice/mob_granted_action, src)
+	rel_set(src, nameof(granted_to), grant_to)
 
 	GiveAction(grant_to)
 
@@ -110,13 +116,13 @@
 		HideFrom(viewer)
 	if(remove_from)
 		rel_remove(remove_from, nameof(/mob::actions), src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
-	own_clear(src, nameof(viewers), OWN_DELETE) // whatever HideFrom() couldn't reach
+	rel_clear(src, nameof(viewers)) // whatever HideFrom() couldn't reach
 
 	// While the owner relation is being torn down (either end deleted) the edge is already gone.
 	var/mob/owner = action_owner() || remove_from
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/mob_removed_action, src)
-		om_unlink(src, owner, /datum/om/relation/action_granted_to)
+		PUBLISH_LEGACY(owner, /datum/notice/mob_removed_action, src)
+		rel_set(src, nameof(granted_to), null)
 
 /// Actually triggers the effects of the action.
 /// Called when the on-screen button is clicked, for example.
@@ -134,7 +140,7 @@
 		if(owner.restrained())
 			return FALSE
 	if(check_flags & AB_CHECK_STUNNED)
-		if(owner.has_status(EFFECT_STUNNED))
+		if(owner.has_status(STAT_STUNNED))
 			return FALSE
 	if(check_flags & AB_CHECK_LYING)
 		if(owner.lying)
@@ -235,7 +241,7 @@
 		return
 
 	current_button.icon = button_icon
-	current_button.icon_state = button_icon_state
+	current_button.set_icon_state(button_icon_state)
 
 /**
  * Applies any overlays to our button
@@ -285,7 +291,7 @@
 	SetId(button, viewer)
 
 	rel_set(button, nameof(button.our_hud), our_hud)
-	own_add(src, nameof(viewers), button)
+	rel_add(src, nameof(viewers), button)
 	if(viewer.client)
 		viewer.client.screen += button
 
@@ -298,7 +304,7 @@
 	var/atom/movable/screen/movable/action_button/button = button_for(our_hud)
 	rel_remove(viewer, nameof(/mob::actions), src)
 	if(button)
-		own_remove(src, nameof(viewers), button)
+		rel_remove(src, nameof(viewers), button)
 
 /// Creates an action button movable for the passed mob, and returns it.
 /datum/action/proc/create_button()

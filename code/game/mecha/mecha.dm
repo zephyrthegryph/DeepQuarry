@@ -24,6 +24,8 @@
 
 	var/obj/item/cell/cell
 	var/state = MECHA_OPERATING
+	/// Passengers in the compartments, kept by the compartments' slot changes (mecha_passenger_changed()); the tracked mirror a requirement reads.
+	var/passenger_count = 0
 	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
 	EXPIRY_DECLARE(last_message)
 	var/add_req_access = 1
@@ -72,6 +74,8 @@
 	/// Set when the mech is destroyed in play (integrity ran out), not merely deleted: only then
 	/// does on_destroy() leave `wreckage`.
 	var/tmp/wrecked = FALSE
+	/// The wreckage a mech destroyed in play leaves (made in on_destroy()): where its cell and tank are handed over.
+	var/tmp/obj/effect/decal/mecha_wreckage/wreck
 
 	// ALLOW(instance_list): d: mech equipment list; many call sites index and edit it directly
 	var/list/equipment = list()		//This lists holds what stuff you bolted onto your baby ride
@@ -95,7 +99,6 @@
 	var/max_universal_equip = 2
 	var/max_special_equip = 1
 
-	var/list/starting_equipment = null	// List containing starting tools.
 
 // Mech Components, similar to Cyborg, but Bigger.
 	var/list/internal_components = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
@@ -168,10 +171,139 @@
 	var/weapons_only_cycle = FALSE	//So combat mechs don't switch to their equipment at times.
 
 	//Micro Mech Code
+	/// TRUE while temperature control runs: the cabin's heat pump exists exactly while this is set.
+	var/cabin_regulating = FALSE
 	var/max_micro_utility_equip = 0
 	var/max_micro_weapon_equip = 0
 	var/list/micro_utility_equipment
 	var/list/micro_weapon_equipment
+
+/// Electrical rating of the cabin's temperature control, W: about 10 K per 2 s on a 200 L cabin, as the old normaliser.
+#define MECHA_CABIN_REGULATOR_WATTS 1000
+
+TRACKED(/obj/mecha, cabin_regulating)
+TRACKED(/obj/mecha, state)
+
+MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
+
+CAPABILITIES(/obj/mecha)
+	// The climb in and the brain install are the actor's four seconds; the held item may change (IGNORE_HELD_ITEM).
+	op("climb_in", ai(), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(climb_in_interrupted)), then(PROC_REF(climb_in_done)))
+	op("mmi_install", ai(), takes("mmi"), wait(4 SECONDS, keeps = ADJACENT | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(mmi_install_interrupted)), then(PROC_REF(mmi_install_done)))
+	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
+	when(nameof(cabin_regulating), heat_pump(nameof(cabin_air), HEAT_AIR, MECHA_CABIN_REGULATOR_WATTS, T20C, HEAT_PUMP_BOTH, TRUE, power_draw = FALSE))
+	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	// A mech destroyed in play leaves wreckage (on_destroy() makes it): its cell and tank become the wreckage's salvage. A plain qdel leaves none, and they are
+	// deleted with the mech. (The components detach from the mech as they go, so on_destroy() hands those over itself.)
+	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(wreck.crowbar_salvage))
+	owns_one(nameof(internal_tank), /obj/item/tank, on_destroy = ON_DESTROY_HAND_OVER, successor = nameof(wreck), successor_var = nameof(wreck.crowbar_salvage))
+	// The equipment lists are views of what is bolted on: they are cleared with the mech (the equipment itself is handled in on_destroy()).
+	ref_many(nameof(equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(hull_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(weapon_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(utility_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(universal_equipment), /obj/item/mecha_parts/mecha_equipment)
+	ref_many(nameof(special_equipment), /obj/item/mecha_parts/mecha_equipment)
+	owns_one(nameof(minihud), /datum/mini_hud/mech)
+	ref_one(nameof(selected))
+	ref_one(nameof(active_jetpack))
+	ref_one(nameof(energy_relay))
+	ref_one(nameof(connected_port))
+	ref_one(nameof(active_id_card))
+	owns_many(nameof(internal_components))
+	ref_many(nameof(cargo), /obj)
+	owns_one(nameof(radio), /obj/item/radio)
+	owns_one(nameof(eject_action), /datum/action/innate/mecha/mech_eject, starts = /datum/action/innate/mecha/mech_eject)
+	owns_one(nameof(internals_action), /datum/action/innate/mecha/mech_toggle_internals, starts = /datum/action/innate/mecha/mech_toggle_internals)
+	owns_one(nameof(lights_action), /datum/action/innate/mecha/mech_toggle_lights, starts = /datum/action/innate/mecha/mech_toggle_lights)
+	owns_one(nameof(stats_action), /datum/action/innate/mecha/mech_view_stats, starts = /datum/action/innate/mecha/mech_view_stats)
+	every(2 SECONDS, then(PROC_REF(mecha_step)), when = PROC_REF(cabin_gate))
+	owns_one(nameof(strafing_action), /datum/action/innate/mecha/strafe, starts = /datum/action/innate/mecha/strafe)
+	owns_one(nameof(defence_action), /datum/action/innate/mecha/mech_defence_mode, starts = /datum/action/innate/mecha/mech_defence_mode)
+	owns_one(nameof(overload_action), /datum/action/innate/mecha/mech_overload_mode, starts = /datum/action/innate/mecha/mech_overload_mode)
+	owns_one(nameof(smoke_action), /datum/action/innate/mecha/mech_smoke, starts = /datum/action/innate/mecha/mech_smoke)
+	owns_one(nameof(zoom_action), /datum/action/innate/mecha/mech_zoom, starts = /datum/action/innate/mecha/mech_zoom)
+	owns_one(nameof(thrusters_action), /datum/action/innate/mecha/mech_toggle_thrusters, starts = /datum/action/innate/mecha/mech_toggle_thrusters)
+	owns_one(nameof(cycle_action), /datum/action/innate/mecha/mech_cycle_equip, starts = /datum/action/innate/mecha/mech_cycle_equip)
+	owns_one(nameof(switch_damtype_action), /datum/action/innate/mecha/mech_switch_damtype, starts = /datum/action/innate/mecha/mech_switch_damtype)
+	owns_one(nameof(phasing_action), /datum/action/innate/mecha/mech_toggle_phasing, starts = /datum/action/innate/mecha/mech_toggle_phasing)
+	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
+	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
+	interface("MechaInterface", autoupdate = TRUE)
+	without("ui_open")
+	op("rfreq", ui_act("rfreq", arg("delta", num())), then(PROC_REF(ui_act_rfreq)))
+	op("drop_from_cargo", ui_act("drop_from_cargo", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_drop_from_cargo)))
+	op("detach_equipment", ui_act("detach_equipment", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_detach_equipment)))
+	op("equip_interact", ui_act("equip_interact", arg("ref", schema_ref(/obj/item/mecha_parts/mecha_equipment))), then(PROC_REF(ui_act_equip_interact)))
+	op("view_main", ui_act("view_main"), then(PROC_REF(ui_act_view_main)))
+	op("access_add", ui_act("access_add", arg("id", num())), then(PROC_REF(ui_act_access_add)))
+	op("access_del", ui_act("access_del", arg("id", num())), then(PROC_REF(ui_act_access_del)))
+	op("access_finish", ui_act("access_finish"), then(PROC_REF(ui_act_access_finish)))
+	op("maint_req_access", ui_act("maint_req_access"), then(PROC_REF(ui_act_maint_req_access)))
+	op("maint_protocol", ui_act("maint_protocol"), then(PROC_REF(ui_act_maint_protocol)))
+	op("maint_set_air", ui_act("maint_set_air"), then(PROC_REF(ui_act_maint_set_air)))
+	op("maint_remove_passenger", ui_act("maint_remove_passenger"), then(PROC_REF(ui_act_maint_remove_passenger)))
+	op("update_content", topic("update_content"), then(PROC_REF(topic_update_content)))
+	op("close", topic("close"), then(PROC_REF(topic_close)))
+	op("select_equip", topic("select_equip", arg("select_equip", schema_ref(/obj/item/mecha_parts/mecha_equipment), optional = TRUE, among = PROC_REF(topic_equipment_pool))), then(PROC_REF(topic_select_equip)))
+	op("eject", topic("eject"), then(PROC_REF(topic_eject)))
+	op("toggle_lights", topic("toggle_lights"), then(PROC_REF(topic_toggle_lights)))
+	op("toggle_airtank", topic("toggle_airtank"), then(PROC_REF(topic_toggle_airtank)))
+	op("toggle_thrusters", topic("toggle_thrusters"), then(PROC_REF(topic_toggle_thrusters)))
+	op("smoke", topic("smoke"), then(PROC_REF(topic_smoke)))
+	op("toggle_zoom", topic("toggle_zoom"), then(PROC_REF(topic_toggle_zoom)))
+	op("toggle_defence_mode", topic("toggle_defence_mode"), then(PROC_REF(topic_toggle_defence_mode)))
+	op("switch_damtype", topic("switch_damtype"), then(PROC_REF(topic_switch_damtype)))
+	op("phasing", topic("phasing"), then(PROC_REF(topic_phasing)))
+	op("rmictoggle", topic("rmictoggle"), then(PROC_REF(topic_rmictoggle)))
+	op("rspktoggle", topic("rspktoggle"), then(PROC_REF(topic_rspktoggle)))
+	op("topic_rfreq", topic("rfreq", arg("rfreq", num(), optional = TRUE)), then(PROC_REF(topic_rfreq)))
+	op("port_disconnect", topic("port_disconnect"), then(PROC_REF(topic_port_disconnect)))
+	op("port_connect", topic("port_connect"), then(PROC_REF(topic_port_connect)))
+	op("view_log", topic("view_log"), then(PROC_REF(topic_view_log)))
+	op("change_name", topic("change_name"), asks(/datum/prompt/text, fields = list("title" = "Rename exosuit", "question" = "Choose new exosuit name", "default" = computed(PROC_REF(exosuit_default_name)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_INSIDE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(topic_change_name)))
+	op("toggle_id_upload", topic("toggle_id_upload"), then(PROC_REF(topic_toggle_id_upload)))
+	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
+	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
+	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), begins(PROC_REF(remove_passenger_begins)), wait(4 SECONDS), then(PROC_REF(topic_remove_passenger)))
+	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
+	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
+	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
+	op("repair_int_control_lost", topic("repair_int_control_lost"), when(PROC_REF(control_lost)), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot_recalibrate))), then(PROC_REF(start_recalibration)))
+	mecha_maintenance()
+	op("topic_drop_from_cargo", topic("drop_from_cargo", arg("drop_from_cargo", schema_ref(/obj), optional = TRUE, among = PROC_REF(topic_cargo_pool))), then(PROC_REF(topic_drop_from_cargo)))
+	op("mecha_paint_kit", item(/obj/item/kit/paint), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mecha_paint_kit_op)))
+	op("mecha_weld_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_weld_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_weld_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 3), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 4), label("Use"), then(PROC_REF(interaction_mecha_item)))
+	op("mecha_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_mecha_hand)))
+	op("mecha_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Enter exosuit"), then(PROC_REF(interaction_mecha_drag)))
+	op("mecha_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle strafing"), then(PROC_REF(interaction_mecha_alt)))
+	op("mecha_enter", menu(), label("Enter Exosuit"), then(PROC_REF(mecha_enter_op)))
+	op("mecha_enter_passenger", menu(), label("Enter Passenger Compartment"), then(PROC_REF(mecha_enter_passenger_op)))
+	op("mecha_eject", menu(), label("Eject"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_eject_op)))
+	op("mecha_stats", menu(), label("View Stats"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_stats_op)))
+	op("mecha_lights", menu(), label("Toggle Lights"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_lights_op)))
+	op("mecha_strafing", menu(), label("Toggle strafing"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_strafing_op)))
+	op("mecha_airtank", menu(), label("Toggle internal airtank usage"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_airtank_op)))
+	op("mecha_connect", menu(), label("Connect to port"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_connect_op)))
+	op("mecha_disconnect", menu(), label("Disconnect from port"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_disconnect_op)))
+	op("mecha_defence", menu(), label("Toggle defence mode"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_defence_op)))
+	op("mecha_overload", menu(), label("Toggle leg actuators overload"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_overload_op)))
+	op("mecha_smoke", menu(), label("Activate Smoke"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_smoke_op)))
+	op("mecha_zoom", menu(), label("Zoom"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_zoom_op)))
+	op("mecha_thrusters", menu(), label("Toggle thrusters"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_thrusters_op)))
+	op("mecha_damtype", menu(), label("Change melee damage type"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_damtype_op)))
+	op("mecha_phasing", menu(), label("Toggle phasing"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_phasing_op)))
+	op("mecha_cloak", menu(), label("Toggle cloaking"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_cloak_op)))
+	op("mecha_weapons_cycle", menu(), label("Toggle weapons only cycling"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_weapons_cycle_op)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(mecha_blast))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast_afflictions)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
+
+TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
@@ -184,21 +316,6 @@ TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 // Actions and effect systems: declared children (new type(src)); an action's target is the mecha.
-DECLARE_DEFAULT_CHILD(/obj/mecha, "eject_action", /datum/action/innate/mecha/mech_eject)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "internals_action", /datum/action/innate/mecha/mech_toggle_internals)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "lights_action", /datum/action/innate/mecha/mech_toggle_lights)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "stats_action", /datum/action/innate/mecha/mech_view_stats)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "strafing_action", /datum/action/innate/mecha/strafe)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "defence_action", /datum/action/innate/mecha/mech_defence_mode)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "overload_action", /datum/action/innate/mecha/mech_overload_mode)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_action", /datum/action/innate/mecha/mech_smoke)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "zoom_action", /datum/action/innate/mecha/mech_zoom)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "thrusters_action", /datum/action/innate/mecha/mech_toggle_thrusters)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "cycle_action", /datum/action/innate/mecha/mech_cycle_equip)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "switch_damtype_action", /datum/action/innate/mecha/mech_switch_damtype)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/mech_toggle_phasing)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
 
 
 /obj/mecha/Initialize(mapload)
@@ -208,8 +325,9 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 		var/obj/item/mecha_parts/component/C = new path(src)
 		C.attach(src)
 
-	if(starting_equipment && LAZYLEN(starting_equipment))
-		for(var/path in starting_equipment)
+	var/list/starting_equipment_types = TYPE_TABLE_GET(src, mecha_starting_equipment)
+	if(starting_equipment_types && LAZYLEN(starting_equipment_types))
+		for(var/path in starting_equipment_types)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
@@ -263,7 +381,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 /// the slot already empty and silently skip all of that cleanup. Turning
 /// this into a proper TRANSFER(eject_to_turf) belongs with migrating that
 /// cleanup into an on_unslotted() hook (J6) -- domain work, not this pass.
-/datum/om/relation/slot/occupant/mecha_pilot
+/datum/relation_definition/slot/occupant/mecha_pilot
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_PILOT
 	name = "pilot"
@@ -280,7 +398,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 /// forceMoves unconditionally), so resolving this slot's own move first, in
 /// phase 3, is a safe no-op from that loop's point of view -- same
 /// destination either way, so the second move it makes is idempotent.
-/datum/om/relation/slot/mecha_equipment_hardpoint
+/datum/relation_definition/slot/mecha_equipment_hardpoint
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_EQUIPMENT
 	name = "hardpoint"
@@ -288,7 +406,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/mecha_equipment_hardpoint/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 /// Internal: the cargo compartment. Capacity stays with cargo_capacity.
@@ -296,7 +414,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 /// Destroy()'s own cargo loop forceMoves to get_turf(src) unconditionally,
 /// so this slot resolving to the same turf first is a harmless no-op second
 /// move from that loop's point of view.
-/datum/om/relation/slot/mecha_cargo
+/datum/relation_definition/slot/mecha_cargo
 	holder = /obj/mecha
 	slot_id = MECHA_SLOT_CARGO
 	name = "cargo"
@@ -304,7 +422,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 	capacity_model = SLOT_CAPACITY_NONE
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
 
@@ -325,7 +443,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 	for(var/atom/movable/A in src.cargo)
 		if(isturf(A.loc))
 			step_rand(A)
-	LAZYCLEARLIST(cargo)
 
 	if(loc)
 		loc.Exited(src)
@@ -337,11 +454,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		rel_clear(src, nameof(hull_equipment))
-		rel_clear(src, nameof(weapon_equipment))
-		rel_clear(src, nameof(utility_equipment))
-		rel_clear(src, nameof(universal_equipment))
-		rel_clear(src, nameof(special_equipment))
+		wreck = WR // ALLOW(ownership): names the successor the declared hand-over below uses; a dying holder takes no new relation and the wreckage owns itself
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
 				rel_add(WR, nameof(WR.crowbar_salvage), E)
@@ -359,16 +472,9 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 				rel_add(WR, nameof(WR.crowbar_salvage), C)
 				C.forceMove(WR)
 
-		// cell and tank leave our ownership and become the wreck's salvage.
-		var/obj/item/cell/salvaged_cell = own_take(src, nameof(cell))
-		if(salvaged_cell)
-			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_cell)
-			salvaged_cell.forceMove(WR)
-			salvaged_cell.charge = rand(0, salvaged_cell.charge)
-		var/obj/item/tank/salvaged_tank = own_take(src, nameof(internal_tank))
-		if(salvaged_tank)
-			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_tank)
-			salvaged_tank.forceMove(WR)
+		// the cell and tank are handed to `wreck` by their declared policy (CAPABILITIES): the cell comes out part spent.
+		if(cell)
+			cell.set_charge(rand(0, cell.charge))
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			E.detach(loc)
@@ -377,28 +483,25 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 			var/obj/item/mecha_parts/component/C = internal_components[slot]
 			if(istype(C))
 				C.detach()
-				qdel(C)
-	rel_clear(src, nameof(equipment))
+				ended_with(C, src)
 
 	GLOB.mech_destroyed_roundstat++
 
 	..()
 
 /// These control what toggleable processes are executed within periodic_step() (MECHA_PROC_*).
-OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICIT)
+/obj/mecha/var/current_processes = MECHA_PROC_INT_TEMP
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
-/// relation channels (the pilot slot's om_link/om_unlink).
-OM_DERIVE_FIELD(/obj/mecha, cabin_active, list("current_processes", CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
-DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
-
-/obj/mecha/proc/cabin_active()
-	return slot_item(MECHA_SLOT_PILOT) || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
+/// relation channels (the pilot slot's link).
+/// The every() gate: the cabin simulation has something to advance.
+/obj/mecha/proc/cabin_gate(datum/act/A)
+	return pilot_of() || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
-/obj/mecha/periodic_step()
+/obj/mecha/proc/mecha_step(datum/act/timer/A)
 	var/static/max_ticks = 16
 
 	if (current_processes & MECHA_PROC_MOVEMENT)
@@ -416,13 +519,13 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	// Max value is 16. So we let it run between [0, 16] with this.
 	process_ticks = (process_ticks + 1) % 17
 
-// Normalizing cabin air temperature to 20 degrees celsius.
+// Cabin temperature control: its heat pump (CAPABILITIES) works in Rust while it runs; this pays its work from the cell.
 // Called every fourth process() tick (20 deciseconds).
 /obj/mecha/proc/process_preserve_temp()
-	if (cabin_air && cabin_air.return_volume() > 0)
-		var/cur = cabin_air.return_temperature()  // arena-authoritative; the DM mirror can lag
-		var/delta = cur - T20C
-		cabin_air.set_temperature(cur - max(-10, min(10, round(delta/4,0.1))))
+	set_cabin_regulating(TRUE)
+	var/drawn = heat_entries_bill(src)
+	if(drawn > 0)
+		cell?.use(drawn * CELLRATE)
 
 // Handles internal air tank action.
 // Called every third process() tick (15 deciseconds).
@@ -454,7 +557,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 				if(t_air)
 					t_air.merge(removed)
 				else //just delete the cabin gas, we're in space or some shit
-					qdel(removed)
+					spent(removed)
 
 // Inertial movement in space.
 // Called every process() tick (5 deciseconds).
@@ -479,21 +582,21 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	// the ZAS portable canister type was deleted in the LINDA migration.
 	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
 	// has return_air() and persists in the mech's contents.
-	own_set(src, nameof(internal_tank), new /obj/item/tank/air(src))
+	rel_set(src, nameof(internal_tank), new /obj/item/tank/air(src))
 	return internal_tank
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
-		own_set(src, nameof(src.cell), C, into = TRUE)
+		move_into(src, nameof(src.cell), C)
 		return
-	own_set(src, nameof(cell), new /obj/item/cell/mech(src))
+	rel_set(src, nameof(cell), new /obj/item/cell/mech(src))
 
 /obj/mecha/get_cell()
 	return cell
 
 /obj/mecha/proc/add_cabin()
 	proto_set(src, nameof(cabin_air), new /datum/gas_mixture) // a private mixture the mech owns
-	cabin_air.set_temperature(T20C)
+	heat_set(cabin_air, T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
 	var/cabin_volume = cabin_air.return_volume()
@@ -505,10 +608,10 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	return cabin_air
 
 /obj/mecha/proc/add_radio()
-	own_set(src, nameof(radio), new /obj/item/radio(src))
+	rel_set(src, nameof(radio), new /obj/item/radio(src))
 	radio.name = "[src] radio"
 	radio.icon = icon
-	radio.icon_state = icon_state
+	radio.set_icon_state(icon_state)
 	radio.subspace_transmission = 1
 
 /obj/mecha/proc/recalibration_done(T)
@@ -594,12 +697,14 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		"View Stats" = radial_image_statpanel
 	)
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(occupant_option_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(occupant_option_chosen), answerer = user, choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/mecha/proc/occupant_option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/mecha/proc/occupant_option_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
-	var/choice = ask.choice
+	var/choice = A.answer.value
 	if(!check_occupant_radial(user))
 		return
 	if(!choice)
@@ -612,9 +717,9 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		if("Toggle Light")
 			lights = !lights
 			if(lights)
-				set_light(light_range + lights_power)
+				set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
 			else
-				set_light(light_range - lights_power)
+				set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 			occupant_message("Toggled lights [lights?"on":"off"].")
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 			play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
@@ -656,9 +761,9 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 			return
 	if(!target.Adjacent(src))
 		if(selected && selected.is_ranged())
-			selected.action(target)
+			selected.action(target, null, user)
 	else if(selected && selected.is_melee())
-		selected.action(target, params)
+		selected.action(target, params, user)
 	else
 		src.melee_action(target)
 	return
@@ -883,7 +988,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 				float_direction = direction
 				start_process(MECHA_PROC_MOVEMENT)
 				src.mecha_log_message(span_warning("Movement control lost. Inertial movement started."))
-		om_after(src, get_step_delay(), PROC_REF(reset_can_move))
+		after(src, get_step_delay(), PROC_REF(reset_can_move))
 		return 1
 	return 0
 
@@ -934,9 +1039,9 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		if(istype(O, /obj/effect/portal))	//derpfix
 			set_anchored(0) // Portals can only move unanchored objects.
 			O.Crossed(src)
-			om_after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), TRUE) //countering the portal's deferred teleport
+			after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(TRUE)) //countering the portal's deferred teleport
 		if(O.anchored)
-			obstacle.Bumped(src)
+			bump_into(obstacle)
 		else
 			step(obstacle,src.dir)
 
@@ -947,9 +1052,9 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 /obj/mecha/proc/phase()	// Force the mecha to move forward by phasing.
 	if(can_phase)
 		can_phase = FALSE
-		flick("[initial_icon]-phase", src)
+		flick("[mecha_base_state()]-phase", src)
 		forceMove(get_step(src,src.dir))
-		om_after(src, get_step_delay() * 3, PROC_REF(phase_ready))
+		after(src, get_step_delay() * 3, PROC_REF(phase_ready))
 		return TRUE	// In the event this is sequenced
 	return FALSE
 
@@ -987,46 +1092,136 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		fx_sparks(src, 2, FALSE)
 	else
 		wrecked = TRUE
-		qdel(src)
+		destroyed(src)
 	return
 
 // Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which
 // counts as reach (movable/Adjacent: neighbor == loc); pred_mecha_pilot keeps them pilot-only.
-DECLARE_INTERACTIONS(/obj/mecha, \
-	INTERACT_ITEM(null, PROC_REF(interaction_mecha_paint_kit)), \
-	INTERACT_ITEM_AS(I_HELP, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM_AS(I_DISARM, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM_AS(I_GRAB, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_mecha_item)), \
-	INTERACT_HAND(null, PROC_REF(interaction_mecha_hand)), \
-	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), \
-	INTERACT_ALT("Toggle strafing", PROC_REF(interaction_mecha_alt)), \
-	INTERACT_VERB("Enter Exosuit", PROC_REF(mecha_verb_enter), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null)), \
-	INTERACT_VERB("Enter Passenger Compartment", PROC_REF(move_inside_passenger), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_passenger_bay, null), REQ_TARGET_STATE(/obj/mecha/proc/can_enter_passenger)), \
-	INTERACT_VERB("Eject", PROC_REF(mecha_verb_eject), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("View Stats", PROC_REF(view_stats), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle Lights", PROC_REF(mecha_verb_toggle_lights), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle strafing", PROC_REF(mecha_verb_toggle_strafing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle internal airtank usage", PROC_REF(toggle_internal_tank), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_airtank, null)), \
-	INTERACT_VERB("Connect to port", PROC_REF(mecha_verb_connect_to_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connectable, null)), \
-	INTERACT_VERB("Disconnect from port", PROC_REF(mecha_verb_disconnect_from_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connected, null)), \
-	INTERACT_VERB("Toggle defence mode", PROC_REF(mecha_verb_toggle_defence_mode), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_defence_mode, null)), \
-	INTERACT_VERB("Toggle leg actuators overload", PROC_REF(mecha_verb_toggle_overload), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_overload, null)), \
-	INTERACT_VERB("Activate Smoke", PROC_REF(mecha_verb_toggle_smoke), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_smoke, null)), \
-	INTERACT_VERB("Zoom", PROC_REF(mecha_verb_toggle_zoom), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_zoom, null)), \
-	INTERACT_VERB("Toggle thrusters", PROC_REF(mecha_verb_toggle_thrusters), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_thrusters, null)), \
-	INTERACT_VERB("Change melee damage type", PROC_REF(mecha_verb_switch_damtype), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_switch_damtype, null)), \
-	INTERACT_VERB("Toggle phasing", PROC_REF(mecha_verb_toggle_phasing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_phasing, null)), \
-	INTERACT_VERB("Toggle cloaking", PROC_REF(mecha_verb_toggle_cloak), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_cloak, null)), \
-	INTERACT_VERB("Toggle weapons only cycling", PROC_REF(mecha_verb_toggle_weapons_only_cycle), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-)
+MSG_DEF_SELF(mecha/not_pilot, "Only the pilot can do that.")
+MSG_DEF_SELF(mecha/not_pilot_recalibrate, "Only the pilot can recalibrate.")
+
+/// The mech's pilot, or null: the pilot ledger slot, which publishes OCCUPANT_KEY when someone gets in or out.
+/obj/mecha/proc/pilot_of()
+	return slot_item(MECHA_SLOT_PILOT)
+
+READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
+
+/// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
+/obj/mecha/proc/pilot_only(datum/act/op/A)
+	return A.actor && A.actor == pilot_of() ? null : MSG(mecha/not_pilot)
+
+/// A paint kit customises the mech (the handler is declared with the kit's code, paintkit.dm).
+/obj/mecha/proc/mecha_paint_kit_op(datum/act/op/A)
+	interaction_mecha_paint_kit(A.actor, A.held)
+	return OP_OK
+
+/// The Enter Exosuit menu entry (old set src in oview(1)).
+/obj/mecha/proc/mecha_enter_op(datum/act/op/A)
+	if(A.actor.loc == src)
+		return OP_DECLINE
+	mecha_verb_enter(A.actor)
+	return OP_OK
+
+/// The Enter Passenger Compartment menu entry.
+/obj/mecha/proc/mecha_enter_passenger_op(datum/act/op/A)
+	if(A.actor.loc == src || !pred_mecha_has_passenger_bay(A.actor, src, null) || can_enter_passenger(A.actor, src, null) != TRUE)
+		return OP_DECLINE
+	move_inside_passenger(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_eject_op(datum/act/op/A)
+	mecha_verb_eject(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_stats_op(datum/act/op/A)
+	view_stats(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_lights_op(datum/act/op/A)
+	mecha_verb_toggle_lights(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_strafing_op(datum/act/op/A)
+	mecha_verb_toggle_strafing(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_airtank_op(datum/act/op/A)
+	if(!pred_mecha_has_airtank(A.actor, src, null))
+		return OP_DECLINE
+	toggle_internal_tank(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_connect_op(datum/act/op/A)
+	if(!pred_mecha_port_connectable(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_connect_to_port(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_disconnect_op(datum/act/op/A)
+	if(!pred_mecha_port_connected(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_disconnect_from_port(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_defence_op(datum/act/op/A)
+	if(!pred_mecha_can_defence_mode(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_defence_mode(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_overload_op(datum/act/op/A)
+	if(!pred_mecha_can_overload(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_overload(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_smoke_op(datum/act/op/A)
+	if(!pred_mecha_can_smoke(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_smoke(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_zoom_op(datum/act/op/A)
+	if(!pred_mecha_can_zoom(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_zoom(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_thrusters_op(datum/act/op/A)
+	if(!pred_mecha_can_thrusters(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_thrusters(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_damtype_op(datum/act/op/A)
+	if(!pred_mecha_can_switch_damtype(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_switch_damtype(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_phasing_op(datum/act/op/A)
+	if(!pred_mecha_can_phasing(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_phasing(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_cloak_op(datum/act/op/A)
+	if(!pred_mecha_can_cloak(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_cloak(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_weapons_cycle_op(datum/act/op/A)
+	mecha_verb_toggle_weapons_only_cycle(A.actor)
+	return OP_OK
 
 /// Old attack_hand.
-/obj/mecha/proc/interaction_mecha_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		show_radial_occupant(user)
-		return TRUE
+		return OP_OK
 
 	user.setClickCooldown(user.get_attack_speed())
 	src.mecha_log_message("Attack by hand/paw. Attacker - [user].",1)
@@ -1054,7 +1249,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		else
 			act_message(user, src, MSG_SELF(span_danger("You hit %T% with no visible effect.")), MSG_OTHERS(span_danger("%U% hits %T%. Nothing happens.")))
 			src.log_append_to_last("Armor saved.")
-		return TRUE
+		return OP_OK
 	else if (user.has_mutation(HULK) && lands)
 		plan.injure(src, 15, MELEE)
 		if(prob(25))	//Hulks punch hard but lets not give them consistent internal damage.
@@ -1065,7 +1260,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		act_message(user, null, MSG_SELF(span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect.")))), \
 			MSG_OTHERS(span_infoplain((span_red(span_bold("%U% hits [src.name]. Nothing happens."))))))
 		src.log_append_to_last("Armor saved.")
-	return TRUE
+	return OP_OK
 
 /// The mech's packet sink. Each kind lands through the machine body plan
 /// (mech_body_plan().injure), keyed by the kind's armour key. Projectiles and throws
@@ -1127,25 +1322,28 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return FALSE
 
 //This refer to whenever you are caught in an explosion.
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast))
 /// The armour may soften a blast by a severity step: the packet is rescaled to the new severity.
-/obj/mecha/proc/mecha_blast(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	src.mecha_log_message("Affected by explosion of severity: [packet.severity].",1)
 	var/severity = mech_body_plan().blast_severity(src, packet.severity)
 	if(severity != packet.severity)
 		var/old_fraction = explosion_blast_fraction(packet.severity)
 		packet.scale(old_fraction ? explosion_blast_fraction(severity) / old_fraction : 0)
 		packet.severity = severity
+	return HOOK_DECLINE
 
-DAMAGE_REACTION_AFTER(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast_afflictions))
 /// A blast that got through the armour risks internal damage.
-/obj/mecha/proc/mecha_blast_afflictions(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_blast_afflictions(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 3)
 		mech_body_plan().roll_affliction(src, list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /// An EMP drains the cell, burns the hull and risks internal damage.
-/obj/mecha/proc/mecha_emp(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(get_charge())
 		use_power((cell.charge/2)/packet.severity)
 		take_damage(50 / packet.severity,"energy")
@@ -1171,11 +1369,17 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 // Maintenance steps and weld repairs: mecha_maintenance.dm.
 
 /// Outside combat mode a welder never strikes the exosuit (weld repairs are its tool interaction).
-/obj/mecha/proc/interaction_mecha_welder(mob/user, obj/item/W, datum/interaction/interaction)
-	return W.has_tool_quality(TOOL_WELDER) ? TRUE : FALSE
+/obj/mecha/proc/interaction_mecha_welder(datum/act/op/A)
+	var/obj/item/W = A.held
+	return W.has_tool_quality(TOOL_WELDER) ? OP_OK : OP_DECLINE
 
-/// Old attackby: every item is handled here (maintenance, parts, else dynattackby).
-/obj/mecha/proc/interaction_mecha_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: every item is handled here.
+/obj/mecha/proc/interaction_mecha_item(datum/act/op/A)
+	mecha_item_use(A.actor, A.held)
+	return OP_OK
+
+/// Maintenance, parts, else dynattackby.
+/obj/mecha/proc/mecha_item_use(mob/user, obj/item/W)
 
 	if(istype(W, /obj/item/mmi))
 		if(mmi_move_inside(W,user))
@@ -1209,7 +1413,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 	if(istype(W, /obj/item/card/robot))
 		var/obj/item/card/robot/RoC = W
-		return interaction_mecha_item(user, RoC.dummy_card, interaction)
+		return mecha_item_use(user, RoC.dummy_card)
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(add_req_access || maint_access)
@@ -1246,7 +1450,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		if(state==MECHA_CELL_OUT)
 			if(!src.cell)
 				to_chat(user, "You install the powercell")
-				if(!own_set(src, nameof(src.cell), W, user = user))
+				if(!move_into(src, nameof(src.cell), W, user))
 					return TRUE
 				src.mecha_log_message("Powercell installed")
 			else
@@ -1286,25 +1490,22 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	//Added a message here since people assume their first click failed or something./N
 //	to_chat(user, "Installing MMI, please stand by.")
 
-	act_message(usr, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
+	act_message(user, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
 
-	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
-	return !istext(started)
+	var/datum/op_result/started = perform_op(user, src, "mmi_install", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("mmi" = mmi_as_oc))
+	return started?.outcome != ACT_REFUSED
 
-/datum/om/task/timed/mecha_mmi_install
-	duration = 4 SECONDS
-	flags = IGNORE_HELD_ITEM
-	complete_proc = /obj/mecha/proc/mmi_install_done
-	fail_message = "You stop attempting to install the brain."
-	var/obj/item/mmi/mmi_as_oc
+/obj/mecha/proc/mmi_install_interrupted(datum/act/op/A)
+	to_chat(A.actor, "You stop attempting to install the brain.")
 
-/obj/mecha/proc/mmi_install_done(datum/om/task/timed/mecha_mmi_install/task)
-	var/obj/item/mmi/mmi_as_oc = task.mmi_as_oc
-	var/mob/user = task.actor
+/obj/mecha/proc/mmi_install_done(datum/act/op/A)
+	var/obj/item/mmi/mmi_as_oc = A.arg("mmi")
+	var/mob/user = A.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		mmi_moved_inside(mmi_as_oc,user)
 	else
 		to_chat(user, "Occupant detected.")
+	return OP_OK
 
 /obj/mecha/proc/mmi_moved_inside(obj/item/mmi/mmi_as_oc as obj,mob/user as mob)
 	if(mmi_as_oc && (user in range(1)))
@@ -1318,20 +1519,18 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
 		// Through the pilot slot (C8 step 2), so it gets the automatic
-		// om_link (occupant, etc.) the same way a human pilot does.
-		if(!brainmob.move_into(src, MECHA_SLOT_PILOT))
+		// link (occupant, etc.) the same way a human pilot does.
+		if(!move_into(src, MECHA_SLOT_PILOT, brainmob))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.forceMove(src)
 		rel_set(mmi_as_oc, nameof(mmi_as_oc.mecha), src)
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
-		update_icon()
 		set_dir(dir_in)
 		src.mecha_log_message("[mmi_as_oc] moved in as pilot.")
 		if(!mech_body_plan().has_affliction(src))
 			src?.slot_item(MECHA_SLOT_PILOT) << sound('sound/mecha/nominal.ogg',volume=50)
-		update_icon()
 		return 1
 	else
 		return 0
@@ -1450,7 +1649,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	return !!connected_port
 
 /// Old verb "Connect to port".
-/obj/mecha/proc/mecha_verb_connect_to_port(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_connect_to_port(mob/user, obj/item/held)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!occupant)
 		return
@@ -1475,7 +1674,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			occupant_message("Nothing happens")
 
 /// Old verb "Disconnect from port".
-/obj/mecha/proc/mecha_verb_disconnect_from_port(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_disconnect_from_port(mob/user, obj/item/held)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!occupant)
 		return
@@ -1489,15 +1688,15 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		occupant_message(span_danger("[name] is not connected to the port at the moment."))
 
 /// Old verb "Toggle Lights".
-/obj/mecha/proc/mecha_verb_toggle_lights(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_lights(mob/user, obj/item/held)
 	lights(user)
 
 /obj/mecha/proc/lights(mob/user)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user!=occupant)	return
 	lights = !lights
-	if(lights)	set_light(light_range + lights_power)
-	else		set_light(light_range - lights_power)
+	if(lights)	set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
+	else		set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
 	src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 	play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
@@ -1505,7 +1704,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 /// Old verb "Toggle internal airtank usage". The mech minihud calls it with no user after
 /// checking the clicker is the pilot, so a null user means the pilot.
-/obj/mecha/proc/toggle_internal_tank(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/toggle_internal_tank(mob/user, obj/item/held)
 	internal_tank(user || slot_item(MECHA_SLOT_PILOT))
 
 /obj/mecha/proc/internal_tank(mob/user)
@@ -1529,7 +1728,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	return
 
 /// Old verb "Toggle strafing".
-/obj/mecha/proc/mecha_verb_toggle_strafing(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_toggle_strafing(mob/user, obj/item/held)
 	strafing(user)
 
 /obj/mecha/proc/strafing(mob/user)
@@ -1541,20 +1740,22 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	return
 
 /// Old MouseDrop_T: drag yourself onto the mech to climb in.
-/obj/mecha/proc/interaction_mecha_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/O = A.held
 	//Humans can pilot mechs.
 	if(!ishuman(O))
-		return TRUE
+		return OP_OK
 
 	//Can't put other people into mechs (can comment this out if you want that to be possible)
 	if(O != user)
-		return TRUE
+		return OP_OK
 
 	move_inside(user)
-	return TRUE
+	return OP_OK
 
 /// Old verb "Enter Exosuit".
-/obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held)
 	move_inside(user)
 
 //returns an equipment object if we have one of that type, useful since is_type_in_list won't return the object
@@ -1596,7 +1797,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	else if(src.operation_allowed(user))
 		passed = 1
 	if(!passed)
-		to_chat(usr, span_warning("Access denied"))
+		to_chat(user, span_warning("Access denied"))
 		src.log_append_to_last("Permission denied.")
 		return
 	if(isliving(user))
@@ -1612,23 +1813,21 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			GrantActions(occupant, 1)
 	else
 		act_message(user, null, others = span_infoplain(span_bold("%U%") + " starts to climb into [src.name]"))
-		om_task_start(/datum/om/task/timed/mecha_climb_in, user, src, receiver = src)
+		perform_op(user, src, "climb_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return
 
-/datum/om/task/timed/mecha_climb_in
-	duration = 4 SECONDS
-	flags = IGNORE_HELD_ITEM
-	complete_proc = /obj/mecha/proc/climb_in_done
-	fail_message = "You stop entering the exosuit."
+/obj/mecha/proc/climb_in_interrupted(datum/act/op/A)
+	to_chat(A.actor, "You stop entering the exosuit.")
 
-/obj/mecha/proc/climb_in_done(datum/om/task/timed/mecha_climb_in/task)
-	var/mob/user = task.actor
+/obj/mecha/proc/climb_in_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
 		moved_inside(user)
 		if(ishuman(src?.slot_item(MECHA_SLOT_PILOT))) //Aeiou
 			GrantActions(src?.slot_item(MECHA_SLOT_PILOT), 1)
 	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
 		to_chat(user, "[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try better next time, loser.")
+	return OP_OK
 
 /obj/mecha/proc/reset_can_move()
 	can_move = 1
@@ -1637,17 +1836,15 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(H && H.client && (H in range(1)))
 		H.stop_pulling()
-		if(!H.move_into(src, MECHA_SLOT_PILOT))
+		if(!move_into(src, MECHA_SLOT_PILOT, H))
 			return
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
-		update_icon()
 		if(occupant.hud_used)
-			own_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
+			rel_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
-		occupant.in_enclosed_vehicle = 1	//Useful for when you need to know if someone is in a mecho.
 		update_cell_alerts()
 		update_damage_alerts()
 		set_dir(dir_in)
@@ -1678,24 +1875,25 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 				who << sound('sound/mecha/nominal.ogg',volume=50)
 
 /// Old click_alt: the pilot toggles strafing.
-/obj/mecha/proc/interaction_mecha_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		strafing(user)
-	return TRUE
+	return OP_OK
 
 /// Old verb "View Stats".
-/obj/mecha/proc/view_stats(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/view_stats(mob/user, obj/item/held)
 	if(!user || user != src?.slot_item(MECHA_SLOT_PILOT))
 		return
-	// TGUI: replaces legacy browse(get_stats_html()).
+	// The structured TGUI interface replaces the old browser window.
 	tgui_subview = "main"
 	tgui_interact(src?.slot_item(MECHA_SLOT_PILOT))
 	return
 
 
 /// Old verb "Eject".
-/obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/mecha_verb_eject(mob/user, obj/item/held)
 	if(!user || user!=src?.slot_item(MECHA_SLOT_PILOT))
 		return
 	src.go_out()
@@ -1706,7 +1904,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!src?.slot_item(MECHA_SLOT_PILOT)) return
 	var/atom/movable/mob_container
-	own_clear(src, nameof(minihud), OWN_DELETE)
+	rel_clear(src, nameof(minihud))
 	if(ishuman(occupant))
 		mob_container = src?.slot_item(MECHA_SLOT_PILOT)
 		RemoveActions(occupant, human_occupant=1)//AEIOU
@@ -1734,8 +1932,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
-		occupant.in_enclosed_vehicle = 0
-		update_icon()
 		set_dir(dir_in)
 
 
@@ -1794,59 +1990,33 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 ///// Rendering stats window ///////
 ////////////////////////////////////
 
-/obj/mecha/proc/get_stats_html()
-	// Bare stats body for TGUI consumption. The legacy <html>/
-	// <script>/<style> wrapper and the JS-driven 1s ticker are gone:
-	// TGUI's autoupdate handles refresh, and styling is set in
-	// MechaInterface.tsx's outer Box.
-	var/output = {"<div id='content'>
-						[src.get_stats_part()]
-						</div>
-						<div id='eq_list'>
-						[src.get_equipment_list()]
-						</div>
-						<hr>
-						<div id='commands'>
-						[src.get_commands()]
-						</div>
-					"}
-	return output
-
-// fully-structured TGUI for all five views (main + log +
-// attack_ai + access + maint). One MechaInterface.tsx renders all five
-// via the `view` data field; the legacy four browse() sub-UIs are gone.
+// fully-structured TGUI for the four views (main + log +
+// access + maint). One MechaInterface.tsx renders them
+// via the `view` data field; the legacy browse() sub-UIs are gone.
 /obj/mecha
 	var/tgui_subview = "main"
 	// Refs kept alive across sub-view interactions so tgui_data can
 	// re-render structured data on update without losing the caller/card.
 	/// Relation view: the id card the open access/maintenance dialog acts for.
 	var/obj/item/card/id/active_id_card
-	var/atom/active_caller
-	var/active_attack_target_name = ""
 
-DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
+/obj/mecha/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["view"] = tgui_subview
+	data["smoke_reserve"] = smoke_reserve
+	var/list/merged_1 = ui_data_obj_mecha(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merge:ui_data_obj_mecha{title:text,log_entries:unknown,ai_target_name:bool,ai_targets:list,access_current:list,access_available:list,maint_can_req_access:bool,maint_can_maint_access:bool,maint_can_set_air:bool,maint_can_remove_passenger:bool,damage_reports:list,high_pressure:bool,has_armor:bool,armor_percent:num,has_hull:bool,hull_percent:num,integrity_percent:num,cell_percent:unknown,use_internal_tank:bool,tank_pressure:unknown,tank_temp_k:unknown,tank_temp_c:unknown,cabin_pressure:num,cabin_temp_k:num,cabin_temp_c:num,lights:bool,dna_lock:bool,defence_mode_possible:bool,defence_mode:bool,overload_possible:bool,overload:bool,smoke_possible:bool,thrusters_possible:bool,thrusters:bool,cargo:list,radio_mic:bool,radio_spk:bool,radio_freq:text,airtank_disconnect:bool,airtank_connect:bool,id_upload_locked:bool,maint_access:bool,equipment:list,slots:list,can_eject:bool}")
-
-/// The computed part of /obj/mecha's window data (declared on its UI_DATA row).
-/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/mecha's window data.
+/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 	data["title"] = "[name]"
 	switch(tgui_subview)
 		if("log")
 			data["log_entries"] = get_log_tgui()
-			return data
-		if("attack_ai")
-			data["ai_target_name"] = active_attack_target_name || ""
-			var/list/targets = list()
-			for(var/obj/item/mecha_parts/mecha_equipment/W in equipment)
-				targets += list(list(
-					"ref" = "\ref[W]",
-					"name" = W.name,
-					"kind" = "",
-					"info_lines" = list(),
-				))
-			data["ai_targets"] = targets
 			return data
 		if("access")
 			var/obj/item/card/id/id_card = active_id_card
@@ -1958,9 +2128,8 @@ UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merg
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 	return data
 
-/obj/mecha/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/mecha/proc/ui_gate(datum/act/op/A)
+	var/action = A.window_action()
 	var/static/list/static_routes = list(
 		"toggle_lights" = "toggle_lights",
 		"rmictoggle" = "rmictoggle",
@@ -1982,26 +2151,32 @@ UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merg
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/mecha, "rfreq", ui_act_rfreq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/mecha, ui_act_rfreq)
-	Topic(null, list("rfreq" = params["delta"]))
+/obj/mecha/proc/ui_act_rfreq(datum/act/op/A, delta)
+	if(!ui_gate(A))
+		return FALSE
+	Topic(null, list("rfreq" = delta))
 	return TRUE
 
-UI_ACT(/obj/mecha, "drop_from_cargo", ui_act_drop_from_cargo, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/mecha, ui_act_drop_from_cargo)
-	Topic(null, list("drop_from_cargo" = params["ref"]))
+/obj/mecha/proc/ui_act_drop_from_cargo(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	Topic(null, list("drop_from_cargo" = ref))
 	return TRUE
 
-UI_ACT(/obj/mecha, "detach_equipment", ui_act_detach_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_detach_equipment)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+/obj/mecha/proc/ui_act_detach_equipment(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/mecha_parts/mecha_equipment/W = ref
 	if(W in equipment)
 		W.detach()
 	return TRUE
 
-UI_ACT(/obj/mecha, "equip_interact", ui_act_equip_interact, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_equip_interact)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+/obj/mecha/proc/ui_act_equip_interact(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/mecha_parts/mecha_equipment/W = ref
 	if(W && (W in equipment))
 		if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
 			W.Topic(null, list("view_stats" = "1"))
@@ -2009,63 +2184,61 @@ UI_ACT_PROC(/obj/mecha, ui_act_equip_interact)
 			W.Topic(null, list("show_reagents" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "view_main", ui_act_view_main)
-UI_ACT_PROC(/obj/mecha, ui_act_view_main)
-	tgui_subview = "main"
-	return TRUE
-// Attack-AI sub-view
-
-UI_ACT(/obj/mecha, "ai_use_equipment", ui_act_ai_use_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
-UI_ACT_PROC(/obj/mecha, ui_act_ai_use_equipment)
-	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
-	var/atom/target = active_caller
-	if(W && (W in equipment))
-		W.action(target)
+/obj/mecha/proc/ui_act_view_main(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	tgui_subview = "main"
 	return TRUE
 // Access sub-view
 
-UI_ACT(/obj/mecha, "access_add", ui_act_access_add, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/mecha, ui_act_access_add)
-	var/a = params["id"]
+/obj/mecha/proc/ui_act_access_add(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/a = id
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
-		operation_req_access += a
+		add_operation_req_access(a)
 	return TRUE
 
-UI_ACT(/obj/mecha, "access_del", ui_act_access_del, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/mecha, ui_act_access_del)
-	var/a = params["id"]
+/obj/mecha/proc/ui_act_access_del(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
+	var/a = id
 	if(a in operation_req_access)
-		operation_req_access -= a
+		remove_operation_req_access(a)
 	return TRUE
 
-UI_ACT(/obj/mecha, "access_finish", ui_act_access_finish)
-UI_ACT_PROC(/obj/mecha, ui_act_access_finish)
+/obj/mecha/proc/ui_act_access_finish(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	add_req_access = 0
 	tgui_subview = "main"
 	return TRUE
 // Maint sub-view
 
-UI_ACT(/obj/mecha, "maint_req_access", ui_act_maint_req_access)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_req_access)
+/obj/mecha/proc/ui_act_maint_req_access(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/obj/item/card/id/id_card = active_id_card
 	if(id_card)
 		tgui_subview = "access"
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_protocol", ui_act_maint_protocol)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_protocol)
+/obj/mecha/proc/ui_act_maint_protocol(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("maint_access" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_set_air", ui_act_maint_set_air)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_set_air)
+/obj/mecha/proc/ui_act_maint_set_air(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("set_internal_tank_valve" = "1"))
 	return TRUE
 
-UI_ACT(/obj/mecha, "maint_remove_passenger", ui_act_maint_remove_passenger)
-UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
+/obj/mecha/proc/ui_act_maint_remove_passenger(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	Topic(null, list("remove_passenger" = "1"))
 	return TRUE
 
@@ -2183,7 +2356,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 			output += "Universal Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in special_equipment)
 			output += "Special Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // VOREstation Edit -  Adds micro equipent to the menu
+		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // Adds micro equipent to the menu
 			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
 			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
@@ -2205,15 +2378,6 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 	for(var/obj/item/mecha_parts/mecha_equipment/MT in equipment)
 		output += "<div id='\ref[MT]'>[MT.get_equip_info()]</div>"
 	output += "</div>"
-	return output
-
-/obj/mecha/proc/get_log_html()
-	var/output = "<html><head><title>[src.name] Log</title></head><body style='font: 13px 'Courier', monospace;'>"
-	for(var/list/entry in log)
-		output += {"<div style='font-weight: bold;'>[time2text(entry["time"],"DDD MMM DD hh:mm:ss")] [GLOB.game_year]</div>
-						<div style='margin-left:15px; margin-bottom:10px;'>[entry["message"]]</div>
-						"}
-	output += "</body></html>"
 	return output
 
 /obj/mecha/proc/get_log_tgui()
@@ -2277,44 +2441,15 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 ///// Topic /////
 /////////////////
 
-// Href actions (TOPIC_ACTION registry). Pilot-only rows check topic_is_pilot(); the maintenance
-// rows are for someone standing next to the exosuit.
-TOPIC_ACTION(/obj/mecha, "update_content", PROC_REF(topic_update_content))
-TOPIC_ACTION(/obj/mecha, "close", PROC_REF(topic_close))
-TOPIC_ACTION(/obj/mecha, "select_equip", PROC_REF(topic_select_equip), TOPIC_REF("select_equip", /obj/item/mecha_parts/mecha_equipment, PROC_REF(topic_equipment_pool)))
-TOPIC_ACTION(/obj/mecha, "eject", PROC_REF(topic_eject))
-TOPIC_ACTION(/obj/mecha, "toggle_lights", PROC_REF(topic_toggle_lights))
-TOPIC_ACTION(/obj/mecha, "toggle_airtank", PROC_REF(topic_toggle_airtank))
-TOPIC_ACTION(/obj/mecha, "toggle_thrusters", PROC_REF(topic_toggle_thrusters))
-TOPIC_ACTION(/obj/mecha, "smoke", PROC_REF(topic_smoke))
-TOPIC_ACTION(/obj/mecha, "toggle_zoom", PROC_REF(topic_toggle_zoom))
-TOPIC_ACTION(/obj/mecha, "toggle_defence_mode", PROC_REF(topic_toggle_defence_mode))
-TOPIC_ACTION(/obj/mecha, "switch_damtype", PROC_REF(topic_switch_damtype))
-TOPIC_ACTION(/obj/mecha, "phasing", PROC_REF(topic_phasing))
-TOPIC_ACTION(/obj/mecha, "rmictoggle", PROC_REF(topic_rmictoggle))
-TOPIC_ACTION(/obj/mecha, "rspktoggle", PROC_REF(topic_rspktoggle))
-TOPIC_ACTION(/obj/mecha, "rfreq", PROC_REF(topic_rfreq), TOPIC_NUM("rfreq"))
-TOPIC_ACTION(/obj/mecha, "port_disconnect", PROC_REF(topic_port_disconnect))
-TOPIC_ACTION(/obj/mecha, "port_connect", PROC_REF(topic_port_connect))
-TOPIC_ACTION(/obj/mecha, "view_log", PROC_REF(topic_view_log))
-TOPIC_ACTION(/obj/mecha, "change_name", PROC_REF(topic_change_name))
-TOPIC_ACTION(/obj/mecha, "toggle_id_upload", PROC_REF(topic_toggle_id_upload))
-TOPIC_ACTION(/obj/mecha, "toggle_maint_access", PROC_REF(topic_toggle_maint_access))
-TOPIC_ACTION(/obj/mecha, "maint_access", PROC_REF(topic_maint_access))
-TOPIC_ACTION(/obj/mecha, "set_internal_tank_valve", PROC_REF(topic_set_internal_tank_valve))
-TOPIC_ACTION(/obj/mecha, "remove_passenger", PROC_REF(topic_remove_passenger))
-TOPIC_ACTION(/obj/mecha, "finish_req_access", PROC_REF(topic_finish_req_access))
-TOPIC_ACTION(/obj/mecha, "dna_lock", PROC_REF(topic_dna_lock))
-TOPIC_ACTION(/obj/mecha, "reset_dna", PROC_REF(topic_reset_dna))
-TOPIC_ACTION(/obj/mecha, "repair_int_control_lost", PROC_REF(topic_repair_int_control_lost))
-TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOPIC_REF("drop_from_cargo", /obj, PROC_REF(topic_cargo_pool)))
+// Href actions (topic ops). Pilot-only ones check topic_is_pilot(); the maintenance
+// ones are for someone standing next to the exosuit.
 
 // A conscious clicker; the pilot always reaches the controls, anyone else needs the usual obj reach.
-/obj/mecha/topic_allowed(mob/user, list/href_list)
-	if(!user || user.stat)
-		return FALSE
-	if(topic_is_pilot(user))
-		return TRUE
+/obj/mecha/topic_usable(datum/act/op/A)
+	if(!A.actor || A.actor.stat)
+		return MSG(op/topic_gate)
+	if(topic_is_pilot(A.actor))
+		return null
 	return ..()
 
 /obj/mecha/proc/topic_is_pilot(mob/user)
@@ -2328,18 +2463,20 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 /obj/mecha/proc/topic_cargo_pool()
 	return cargo
 
-/obj/mecha/proc/topic_update_content(mob/user, list/args)
+/obj/mecha/proc/topic_update_content(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	send_byjax(user, "exosuit.browser", "content", get_stats_part())
 
-/obj/mecha/proc/topic_close(mob/user, list/args)
+/obj/mecha/proc/topic_close(datum/act/op/A)
 	return
 
-/obj/mecha/proc/topic_select_equip(mob/user, list/args)
+/obj/mecha/proc/topic_select_equip(datum/act/op/A, href_select_equip)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
-	var/obj/item/mecha_parts/mecha_equipment/equip = args["select_equip"]
+	var/obj/item/mecha_parts/mecha_equipment/equip = href_select_equip
 	if(!equip)
 		return
 	rel_set(src, nameof(selected), equip)
@@ -2347,52 +2484,64 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	visible_message("[src] raises [equip].")
 	send_byjax(user, "exosuit.browser", "eq_list", get_equipment_list())
 
-/obj/mecha/proc/topic_eject(mob/user, list/args)
+/obj/mecha/proc/topic_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		mecha_verb_eject(user)
 
-/obj/mecha/proc/topic_toggle_lights(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_lights(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		lights(user)
 
-/obj/mecha/proc/topic_toggle_airtank(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_airtank(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		internal_tank(user)
 
-/obj/mecha/proc/topic_toggle_thrusters(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_thrusters(datum/act/op/A)
+	var/mob/user = A.actor
 	thrusters(user)
 
-/obj/mecha/proc/topic_smoke(mob/user, list/args)
+/obj/mecha/proc/topic_smoke(datum/act/op/A)
+	var/mob/user = A.actor
 	smoke(user)
 
-/obj/mecha/proc/topic_toggle_zoom(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_zoom(datum/act/op/A)
+	var/mob/user = A.actor
 	zoom(user)
 
-/obj/mecha/proc/topic_toggle_defence_mode(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_defence_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	defence_mode(user)
 
-/obj/mecha/proc/topic_switch_damtype(mob/user, list/args)
+/obj/mecha/proc/topic_switch_damtype(datum/act/op/A)
+	var/mob/user = A.actor
 	query_damtype(user)
 
-/obj/mecha/proc/topic_phasing(mob/user, list/args)
+/obj/mecha/proc/topic_phasing(datum/act/op/A)
+	var/mob/user = A.actor
 	phasing(user)
 
-/obj/mecha/proc/topic_rmictoggle(mob/user, list/args)
+/obj/mecha/proc/topic_rmictoggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	radio.broadcasting = !radio.broadcasting
 	send_byjax(user, "exosuit.browser", "rmicstate", (radio.broadcasting ? "Engaged" : "Disengaged"))
 
-/obj/mecha/proc/topic_rspktoggle(mob/user, list/args)
+/obj/mecha/proc/topic_rspktoggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	radio.listening = !radio.listening
 	send_byjax(user, "exosuit.browser", "rspkstate", (radio.listening ? "Engaged" : "Disengaged"))
 
-/obj/mecha/proc/topic_rfreq(mob/user, list/args)
+/obj/mecha/proc/topic_rfreq(datum/act/op/A, href_rfreq)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
-	var/delta = args["rfreq"]
+	var/delta = href_rfreq
 	if(!isnum(delta))
 		return
 	var/new_frequency = radio.frequency + delta
@@ -2401,33 +2550,46 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	radio.set_frequency(new_frequency)
 	send_byjax(user, "exosuit.browser", "rfreq", "[format_frequency(radio.frequency)]")
 
-/obj/mecha/proc/topic_port_disconnect(mob/user, list/args)
+/obj/mecha/proc/topic_port_disconnect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		mecha_verb_disconnect_from_port(user)
 
-/obj/mecha/proc/topic_port_connect(mob/user, list/args)
+/obj/mecha/proc/topic_port_connect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		mecha_verb_connect_to_port(user)
 
-/obj/mecha/proc/topic_view_log(mob/user, list/args)
+/obj/mecha/proc/topic_view_log(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	// fully-structured TGUI log sub-view.
 	tgui_subview = "log"
 	tgui_interact(user)
 
-/obj/mecha/proc/topic_change_name(mob/user, list/args)
+/obj/mecha/proc/exosuit_default_name(datum/act/op/A)
+	return initial(name)
+
+/obj/mecha/proc/topic_change_name(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
-	om_ask(user, /datum/om/prompt/text, PROC_REF(exosuit_renamed), default = initial(name), title = "Rename exosuit", message = "Choose new exosuit name", max_length = MAX_NAME_LEN, encode = FALSE, requires = list(/datum/om/check/inside_target))
+	var/newname = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
+	if(newname)
+		name = newname
+	else
+		tgui_alert_async(user, "nope.avi")
 
-/obj/mecha/proc/topic_toggle_id_upload(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_id_upload(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	add_req_access = !add_req_access
 	send_byjax(user, "exosuit.browser", "t_id_upload", "[add_req_access ? "L" : "Unl"]ock ID upload panel")
 
-/obj/mecha/proc/topic_toggle_maint_access(mob/user, list/args)
+/obj/mecha/proc/topic_toggle_maint_access(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	if(state)
@@ -2436,42 +2598,83 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	maint_access = !maint_access
 	send_byjax(user, "exosuit.browser", "t_maint_access", "[maint_access ? "Forbid" : "Permit"] maintenance protocols")
 
-/obj/mecha/proc/topic_maint_access(mob/user, list/args)
+/obj/mecha/proc/topic_maint_access(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!maint_access || !in_range(src, user))
 		return
 	if(state == MECHA_OPERATING)
-		state = MECHA_BOLTS_SECURED
+		set_state(MECHA_BOLTS_SECURED)
 		to_chat(user, "The securing bolts are now exposed.")
 	else if(state == MECHA_BOLTS_SECURED)
-		state = MECHA_OPERATING
+		set_state(MECHA_OPERATING)
 		to_chat(user, "The securing bolts are now hidden.")
 	output_maintenance_dialog(active_id_card, user)
 
-/obj/mecha/proc/topic_set_internal_tank_valve(mob/user, list/args)
-	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
-		return
-	om_ask(user, /datum/om/prompt/number/mecha_maint/tank_valve, PROC_REF(tank_valve_entered), default = internal_tank_valve)
+/// Requirement: the maintenance protocols are on and the securing bolts are exposed.
+/obj/mecha/proc/bolts_exposed(datum/act/op/A)
+	return state >= MECHA_BOLTS_SECURED ? null : MSG(req_silent)
 
-/obj/mecha/proc/topic_remove_passenger(mob/user, list/args)
-	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
-		return
+/// Requirement: somebody sits in a passenger compartment (the tracked passenger_count).
+/obj/mecha/proc/has_passengers(datum/act/op/A)
+	return passenger_count > 0 ? null : MSG(mecha_passenger/none)
+
+/// A compartment's occupancy changed: recount the passengers into the tracked mirror.
+/obj/mecha/proc/mecha_passenger_changed()
+	var/count = 0
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
+		count += P.slot_occupancy(OCCUPANT_SLOT_MECHA_PASSENGER)
+	set_passenger_count(count)
+
+/obj/mecha/proc/valve_subject(datum/act/op/A)
+	return src
+
+/obj/mecha/proc/valve_default(datum/act/op/A)
+	return internal_tank_valve
+
+/obj/mecha/proc/topic_set_internal_tank_valve(datum/act/op/A)
+	var/mob/user = A.actor
+	var/pressure = A.step_value("pressure")
+	if(pressure)
+		internal_tank_valve = pressure
+		to_chat(user, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
+
+/// The passengers a maintenance link can pull out: occupant name -> their compartment.
+/obj/mecha/proc/passenger_choices(datum/act/op/A)
 	var/list/passengers = list()
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
-		if(P?.slot_item(MECHA_SLOT_PILOT))
-			passengers["[P?.slot_item(MECHA_SLOT_PILOT)]"] = P
-	if(!length(passengers))
-		to_chat(user, span_warning("There are no passengers to remove."))
-		return
-	om_ask(user, /datum/om/prompt/choice/mecha_remove_passenger, PROC_REF(passenger_removal_chosen), choices = passengers)
+		if(P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
+			passengers["[P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)]"] = P
+	return passengers
 
-/obj/mecha/proc/topic_finish_req_access(mob/user, list/args)
+/// The hatch the maintenance panel's answer names.
+/obj/mecha/proc/chosen_passenger_bay(datum/act/op/A)
+	var/list/passengers = passenger_choices(A)
+	return passengers[A.step_value("passenger")]
+
+/obj/mecha/proc/remove_passenger_begins(datum/act/op/A)
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
+	return msg_text(span_notice("You begin opening the hatch on [P]..."), span_infoplain(span_bold("[A.actor]") + " begins opening the hatch on [P]..."))
+
+/obj/mecha/proc/topic_remove_passenger(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = chosen_passenger_bay(A)
+	if(!P)
+		log_world("MECHA: remove_passenger on [src] by [user]: the chosen passenger is gone")
+		return OP_REFUSED
+	var/mob/passenger_occupant = P.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
+	P.forced_out(user, passenger_occupant)
+	return OP_OK
+
+/obj/mecha/proc/topic_finish_req_access(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_range(src, user))
 		return
 	add_req_access = 0
 	// close TGUI panel (legacy browse(null))
 	SStgui.close_uis(src)
 
-/obj/mecha/proc/topic_dna_lock(mob/user, list/args)
+/obj/mecha/proc/topic_dna_lock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
 	if(istype(user, /mob/living/carbon/brain))
@@ -2481,75 +2684,55 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	dna = pilot.dna?.unique_enzymes
 	occupant_message("You feel a prick as the needle takes your DNA sample.")
 
-/obj/mecha/proc/topic_reset_dna(mob/user, list/args)
+/obj/mecha/proc/topic_reset_dna(datum/act/op/A)
+	var/mob/user = A.actor
 	if(topic_is_pilot(user))
 		dna = null
 
-/obj/mecha/proc/topic_repair_int_control_lost(mob/user, list/args)
-	// The declared interaction checks the pilot and that there is control damage.
-	var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
-	if(recalibrate?.applies_to(src))
-		recalibrate.attempt(user, src, null)
-
-/obj/mecha/proc/topic_drop_from_cargo(mob/user, list/args)
+/obj/mecha/proc/topic_drop_from_cargo(datum/act/op/A, href_drop_from_cargo)
+	var/mob/user = A.actor
 	if(!topic_is_pilot(user))
 		return
-	var/obj/O = args["drop_from_cargo"]
+	var/obj/O = href_drop_from_cargo
 	if(!O)
 		return
 	occupant_message(span_notice("You unload [O]."))
 	if(!slot_remove(O, get_turf(src)))
 		O.forceMove(get_turf(src))
-	LAZYREMOVE(cargo, O)
+	rel_remove(src, nameof(cargo), O)
 	var/turf/T = get_turf(O)
 	if(T)
 		T.Entered(O)
 	mecha_log_message("Unloaded [O]. Cargo compartment capacity: [cargo_capacity - length(cargo)]")
 
-/obj/mecha/proc/exosuit_renamed(datum/om/prompt/text/ask)
-	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	if(newname)
-		name = newname
-	else
-		tgui_alert_async(ask.answerer, "nope.avi")
-
 /// Maintenance-panel settings: re-checked on the answer, still next to the mech with its bolts exposed.
-/datum/om/prompt/number/mecha_maint
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/number/mecha_maint/valid()
-	var/obj/mecha/M = subject
-	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
-
-/datum/om/prompt/number/mecha_maint/tank_valve
+/datum/prompt/number/mecha_tank_valve
 	title = "Pressure setting"
-	message = "Input new output pressure"
-	round_entry = FALSE
+	question = "Input new output pressure"
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/choice/mecha_remove_passenger
-	title = "Forcibly Remove Passenger"
-	message = "Choose a passenger to forcibly remove."
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/choice/mecha_remove_passenger/valid()
+/datum/prompt/number/mecha_tank_valve/recheck_extra()
 	var/obj/mecha/M = subject
-	return M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
+	return !istype(M) || QDELETED(M) || M.state < MECHA_BOLTS_SECURED ? "bolts secured" : null
 
-/obj/mecha/proc/tank_valve_entered(datum/om/prompt/number/mecha_maint/tank_valve/ask)
-	if(ask.number)
-		internal_tank_valve = ask.number
-		to_chat(ask.answerer, "The internal pressure valve has been set to [internal_tank_valve]kPa.")
+/datum/prompt/number/mecha_tank_valve/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, INFINITY, 0, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
 
-/obj/mecha/proc/passenger_removal_chosen(datum/om/prompt/choice/mecha_remove_passenger/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = ask.choices[ask.choice]
-	var/mob/passenger_occupant = P?.slot_item(MECHA_SLOT_PILOT)
+/// Which passenger to pull out: re-checked on the answer, still next to the mech with its bolts exposed.
+/datum/prompt/choice/mecha_remove_passenger
+	title = "Forcibly Remove Passenger"
+	question = "Choose a passenger to forcibly remove."
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins opening the hatch on %I%...")), \
-		item = P)
-	om_task_timed(user, 4 SECONDS, src, P, TYPE_PROC_REF(/obj/item/mecha_parts/mecha_equipment/tool/passenger, forced_out), list(user, passenger_occupant))
-	return
+/datum/prompt/choice/mecha_remove_passenger/recheck_extra()
+	var/obj/mecha/M = subject || owner
+	return istype(M) && M.state >= MECHA_BOLTS_SECURED ? null : "bolts secured"
 
 
 
@@ -2637,10 +2820,12 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 //////// Mecha process() helpers ////////
 /////////////////////////////////////////
 /obj/mecha/proc/stop_process(process)
-	current_processes_remove(process)
+	set_current_processes(current_processes & ~process)
+	if(process == MECHA_PROC_INT_TEMP)
+		set_cabin_regulating(FALSE)
 
 /obj/mecha/proc/start_process(process)
-	current_processes_add(process)
+	set_current_processes(current_processes | process)
 
 /////////////
 /obj/mecha/cloak()
@@ -2697,7 +2882,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 
 	return TRUE
 
-// === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/mecha
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
@@ -2764,9 +2948,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 // cell and internal_tank are implicit owns(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
-/obj/mecha/ownership()
-	. = ..()
-	. += proto(nameof(cabin_air))
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.
@@ -2778,3 +2959,8 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	if(!islist(internal_components))
 		internal_components = slots // ALLOW(ownership): restores the slot-layout list own_take_member() nulled when it emptied; holds no entity
 	internal_components[slot] = null // ALLOW(ownership): re-adds the empty slot marker (a null value, no entity)
+
+/// Pure: the exosuit is on a player level (working and medical exosuits made there carry a tracking beacon).
+/obj/mecha/proc/on_player_level(datum/act/A)
+	var/turf/T = get_turf(src)
+	return T && isPlayerLevel(T.z)

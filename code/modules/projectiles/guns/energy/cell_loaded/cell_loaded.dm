@@ -22,8 +22,6 @@
 	allowed_magazines = list(/obj/item/ammo_magazine/cell_mag)
 	handle_casings = HOLD_CASINGS //Don't eject batteries!
 	recoil = 0
-	var/charge_left = 0
-	var/max_charge = 0
 	charge_sections = 5
 
 	special_handling = TRUE
@@ -42,20 +40,18 @@
 
 	return null
 
-/obj/item/gun/projectile/cell_loaded/proc/update_charge()
-	charge_left = 0
-	max_charge = 0
-
-	if(!chambered)
-		return
-
+/// The charge of the chambered kind of microbattery across the magazine, as a fraction of what those batteries hold full (0 with nothing chambered).
+/obj/item/gun/projectile/cell_loaded/proc/charge_fraction()
+	if(!chambered || !ammo_magazine)
+		return 0
 	var/obj/item/ammo_casing/microbattery/batt = chambered
-
-	if(ammo_magazine) //Crawl to find more
-		for(var/obj/item/ammo_casing/microbattery/bullet as anything in ammo_magazine.stored_ammo)
-			if(istype(bullet,batt.type))
-				charge_left += bullet.shots_left
-				max_charge += initial(bullet.shots_left)
+	var/charge_left = 0
+	var/max_charge = 0
+	for(var/obj/item/ammo_casing/microbattery/bullet as anything in ammo_magazine.stored_ammo)
+		if(istype(bullet,batt.type))
+			charge_left += bullet.shots_left
+			max_charge += initial(bullet.shots_left)
+	return max_charge ? charge_left / max_charge : 0
 
 /obj/item/gun/projectile/cell_loaded/proc/switch_to(obj/item/ammo_casing/microbattery/new_batt)
 	if(ishuman(loc))
@@ -65,17 +61,15 @@
 			to_chat(loc,span_warning("\The [src] is now firing [new_batt.type_name]."))
 
 	rel_set(src, nameof(chambered), new_batt)
-	update_charge()
-	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cell_loaded/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/cell_loaded/gun_operate(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(!chambered)
 		return
 
@@ -102,35 +96,18 @@
 	rel_clear(src, nameof(chambered))
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/cell_loaded/appearance_overlays()
-	. = list()
-	update_charge()
-
+/// The look: the chambered battery's mode bar, barrel tint and charge bar, all in its colour.
+/obj/item/gun/projectile/cell_loaded/draw(datum/look/look)
+	..()
 	if(!chambered)
-		return .
-
+		return
 	var/obj/item/ammo_casing/microbattery/batt = chambered
 	var/batt_color = batt.type_color //Used many times
-
-	//Mode bar
-	var/image/mode_bar = image(icon, icon_state = "[initial(icon_state)]_type")
-	mode_bar.color = batt_color
-	. += mode_bar
-
-	//Barrel color
-	var/image/barrel_color = image(icon, icon_state = "[initial(icon_state)]_barrel")
-	barrel_color.alpha = 150
-	barrel_color.color = batt_color
-	. += barrel_color
-
-	//Charge bar
-	var/ratio = CEILING(((charge_left / max_charge) * charge_sections), 1)
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_type", color = batt_color))
+	look.overlay(look_overlay_image(icon, "[initial(icon_state)]_barrel", alpha = 150, color = batt_color))
+	var/ratio = CEILING(charge_fraction() * charge_sections, 1)
 	for(var/i = 0, i < ratio, i++)
-		var/image/charge_bar = image(icon, icon_state = "[initial(icon_state)]_charge")
-		charge_bar.pixel_x = i
-		charge_bar.color = batt_color
-		. += charge_bar
+		look.overlay(look_overlay_image(icon, "[initial(icon_state)]_charge", pixel_x = i, color = batt_color))
 
 // The Magazine //
 /obj/item/ammo_magazine/cell_mag
@@ -142,18 +119,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/ato
 	ammo_type = /obj/item/ammo_casing/microbattery
 	initial_ammo = 0
 	max_ammo = 3
-	var/x_offset = 5  //for update_icon() shenanigans- moved here so it can be adjusted for bigger mags
+	var/x_offset = 5  //for the magazine look- moved here so it can be adjusted for bigger mags
 	var/capname = "nsfw_mag" //as above
 	var/chargename = "nsfw_mag" //as above
 	mag_type = MAGAZINE
 
 	var/list/modes
 
-EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC_REF(cell_mag_interaction_item)))
+CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
+	op("cell_mag_load", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), label("Load"), then(PROC_REF(cell_mag_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W
@@ -163,37 +143,24 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
-		if(!own_add(src, nameof(src.stored_ammo), B, user = user))
+		if(!move_into(src, nameof(src.stored_ammo), B, user))
 			return
-		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc
 		var/mob/living/M = cell_load.loc
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_magazine/cell_mag/appearance_overlays()
-	. = list()
-	if(!length(stored_ammo))
-		return .
-
+/// The look: a cap and a charge light per battery, in the battery's colour.
+/obj/item/ammo_magazine/cell_mag/draw(datum/look/look)
+	..()
 	var/current = 0
 	for(var/obj/item/ammo_casing/microbattery/batt as anything in stored_ammo)
-		var/image/cap = image(icon, icon_state = "[capname]_cap")
-		cap.color = batt.type_color
-		cap.pixel_x = current * x_offset //Caps don't need a pixel_y offset
-		. += cap
-
+		look.overlay(look_overlay_image(icon, "[capname]_cap", pixel_x = current * x_offset, color = batt.type_color)) //Caps don't need a pixel_y offset
 		if(batt.shots_left)
 			var/ratio = CEILING(((batt.shots_left / initial(batt.shots_left)) * 4), 1) //4 is how many lights we have a sprite for
-			var/image/charge = image(icon, icon_state = "[chargename]_charge-[ratio]")
-			charge.color = "#29EAF4" //Could use battery color but eh.
-			charge.pixel_x = current * x_offset
-			. += charge
-
+			look.overlay(look_overlay_image(icon, "[chargename]_charge-[ratio]", pixel_x = current * x_offset, color = "#29EAF4")) //Could use battery color but eh.
 		current++ //Increment for offsets
 
 /obj/item/ammo_magazine/cell_mag/advanced
@@ -209,8 +176,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, a
 	desc = "A miniature battery for an energy weapon."
 	icon = 'icons/obj/ammo_vr.dmi'
 	icon_state = "nsfw_batt"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	var/shots_left = 4
 
@@ -220,67 +185,66 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, a
 	var/type_name = null
 	projectile_type = /obj/item/projectile/beam
 
-/obj/item/ammo_casing/microbattery/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10, 10)
-	pixel_y = rand(-10, 10)
-	update_icon()
+TRACKED(/obj/item/ammo_casing/microbattery, type_color)
 
-DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/ammo_casing/microbattery/appearance_overlays()
-	. = list()
+CAPABILITIES(/obj/item/ammo_casing/microbattery)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 1))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
-	var/image/ends = image(icon, icon_state = "[initial(icon_state)]_ends")
-	ends.color = type_color
-	. += ends
+/obj/item/ammo_casing/microbattery/look_parts(datum/look/look)
+
+	look.overlay(look_appearance(icon, "[initial(icon_state)]_ends", color = type_color))
 
 /obj/item/ammo_casing/microbattery/expend()
-	shots_left--
+	set_shots_left(shots_left - 1)
 
 // The Pack //
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded = 1,
+		/obj/item/ammo_magazine/cell_mag/advanced = 1,
+		/obj/item/ammo_casing/microbattery/combat/stun = 3,
+		/obj/item/ammo_casing/microbattery/combat/net = 2,
+		/obj/item/ammo_casing/microbattery/medical/brute3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/burn3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize2 = 1,
+		/obj/item/ammo_casing/microbattery/medical/toxin3 = 1,
+		/obj/item/ammo_casing/microbattery/medical/omni3 = 1,
+	)
 	name = "hybrid cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded(src)
-	new /obj/item/ammo_magazine/cell_mag/advanced(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/net(src)
-	new /obj/item/ammo_casing/microbattery/combat/net(src)
-	new /obj/item/ammo_casing/microbattery/medical/brute3(src)
-	new /obj/item/ammo_casing/microbattery/medical/burn3(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize2(src)
-	new /obj/item/ammo_casing/microbattery/medical/toxin3(src)
-	new /obj/item/ammo_casing/microbattery/medical/omni3(src)
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded,
+		/obj/item/ammo_magazine/cell_mag,
+		/obj/item/ammo_casing/microbattery)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded = 1,
+		/obj/item/ammo_magazine/cell_mag/advanced = 1,
+		/obj/item/ammo_casing/microbattery/combat/shotstun = 2,
+		/obj/item/ammo_casing/microbattery/combat/lethal = 3,
+		/obj/item/ammo_casing/microbattery/combat/ion = 1,
+		/obj/item/ammo_casing/microbattery/combat/xray = 1,
+		/obj/item/ammo_casing/microbattery/medical/stabilize2 = 1,
+		/obj/item/ammo_casing/microbattery/medical/haste = 1,
+		/obj/item/ammo_casing/microbattery/medical/resist = 1,
+	)
 	name = "military cell-loaded gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded,/obj/item/ammo_magazine/cell_mag,/obj/item/ammo_casing/microbattery)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded(src)
-	new /obj/item/ammo_magazine/cell_mag/advanced(src)
-	new /obj/item/ammo_casing/microbattery/combat/shotstun(src)
-	new /obj/item/ammo_casing/microbattery/combat/shotstun(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/ion(src)
-	new /obj/item/ammo_casing/microbattery/combat/xray(src)
-	new /obj/item/ammo_casing/microbattery/medical/stabilize2(src)
-	new /obj/item/ammo_casing/microbattery/medical/haste(src)
-	new /obj/item/ammo_casing/microbattery/medical/resist(src)
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded,
+		/obj/item/ammo_magazine/cell_mag,
+		/obj/item/ammo_casing/microbattery)))
 
 // TGMC Ammo HUD: Custom handling for cell-loaded weaponry.
 /obj/item/gun/projectile/cell_loaded/get_ammo_count()

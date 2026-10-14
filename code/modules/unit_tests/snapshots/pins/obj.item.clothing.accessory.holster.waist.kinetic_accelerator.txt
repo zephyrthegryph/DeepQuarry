@@ -1,0 +1,17 @@
+@obj.item.clothing.accessory.holster human|none
+@obj.item.clothing.accessory.holster robot|none
+@obj ai|none
+@obj.item.clothing.accessory.holster ghost|none
+@obj.item.clothing.accessory.holster human|/obj/item/tool/screwdriver
+@obj.item.clothing.accessory.holster human|/obj/item/tool/crowbar
+@obj.item.clothing.accessory human|/obj/item/tool/wrench
+@obj.item.clothing.accessory.holster human|/obj/item/tool/wirecutters
+@obj.item.clothing.accessory.holster human|/obj/item/multitool
+@obj.item.clothing.accessory.holster human|/obj/item/weldingtool
+@obj.item.clothing.accessory.holster human|/obj/item/stack/cable_coil
+@obj.item.clothing.accessory.holster human|/obj/item/stack/material/steel
+@obj.item.clothing.accessory.holster human|/obj/item/card/id
+@obj.item.clothing.accessory.holster human|/obj/item/kit
+@obj.item.clothing.accessory.holster human|/obj/item/storage
+@obj.item.clothing.accessory.holster human|/obj/item
+keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, holster_draw_hand, holster_item, holster_quick_holster_verb, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

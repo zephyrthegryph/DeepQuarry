@@ -48,7 +48,7 @@
 					B.visible_message(span_danger("\The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = beam_origin.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
 					rel_add(src, nameof(active_beams), drain_beam)
-					om_after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), L, drain_beam)
+					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), with = list(L, drain_beam), key = "siphon:[REF(drain_beam)]")
 
 /datum/blob_type/ectoplasmic_horror/on_received_damage(obj/structure/blob/B, damage, damage_type)
 	if(prob(round(damage * 0.5)))
@@ -88,42 +88,44 @@
 					carrier.visible_message(span_danger("[icon2html(B,viewers(carrier))] \The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = carrier.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
 					rel_add(src, nameof(active_beams), drain_beam)
-					om_after(B, 9 SECONDS, TYPE_PROC_REF(/obj/item/blobcore_chunk, chunk_siphon), carrier, L, drain_beam)
+					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/item/blobcore_chunk, chunk_siphon), with = list(carrier, L, drain_beam), key = "siphon:[REF(drain_beam)]")
 
 /// The end of an ectoplasmic lash: the blob siphons energy through the beam.
 /obj/structure/blob/proc/ectoplasm_siphon(mob/living/L, datum/beam/drain_beam)
-	visible_message(span_alien("\The [src] siphons energy from \the [L]"))
-	L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 60 SECONDS)
-	overmind.add_points(rand(10,30))
-	qdel(drain_beam)
+	if(L && overmind)
+		visible_message(span_alien("\The [src] siphons energy from \the [L]"))
+		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 60 SECONDS)
+		overmind.add_points(rand(10,30))
+	spent(drain_beam, L)
 
 /obj/item/blobcore_chunk/proc/chunk_siphon(mob/living/carrier, mob/living/L, datum/beam/drain_beam)
 	var/obj/item/blobcore_chunk/B = src
 	if(B && drain_beam)
-		carrier.visible_message(span_alien("\The [B] siphons energy from \the [L]"))
-		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 30 SECONDS)
-		var/total_heal = 0
+		if(carrier && L)
+			carrier.visible_message(span_alien("\The [B] siphons energy from \the [L]"))
+			L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 30 SECONDS)
+			var/total_heal = 0
 
-		if(carrier.injury_load(INJURY_CATEGORY_PHYSICAL))
-			carrier.mend(TREAT_TISSUE_REPAIR, 5)
-			total_heal += 5
+			if(carrier.injury_load(INJURY_CATEGORY_PHYSICAL))
+				carrier.mend(TREAT_TISSUE_REPAIR, 5)
+				total_heal += 5
 
-		if(carrier.injury_load(INJURY_CATEGORY_THERMAL))
-			carrier.mend(TREAT_BURN_CARE, 5)
-			total_heal += 5
+			if(carrier.injury_load(INJURY_CATEGORY_THERMAL))
+				carrier.mend(TREAT_BURN_CARE, 5)
+				total_heal += 5
 
-		if(carrier.injury_load(INJURY_CATEGORY_TOXIC))
-			carrier.mend(TREAT_ANTITOXIN, 5)
-			total_heal += 5
+			if(carrier.injury_load(INJURY_CATEGORY_TOXIC))
+				carrier.mend(TREAT_ANTITOXIN, 5)
+				total_heal += 5
 
-		if(carrier.oxygen_debt())
-			carrier.mend(TREAT_OXYGENATION, 5)
-			total_heal += 5
+			if(carrier.oxygen_debt())
+				carrier.mend(TREAT_OXYGENATION, 5)
+				total_heal += 5
 
-		if(carrier.injury_load(INJURY_CATEGORY_GENETIC))
-			carrier.mend(TREAT_GENETIC_REPAIR, 5)
-			total_heal += 5
+			if(carrier.injury_load(INJURY_CATEGORY_GENETIC))
+				carrier.mend(TREAT_GENETIC_REPAIR, 5)
+				total_heal += 5
 
-		carrier.apply_body_effect(/datum/body_effect/berserk_exhaustion, total_heal SECONDS)
+			carrier.apply_body_effect(/datum/body_effect/berserk_exhaustion, total_heal SECONDS)
 		if(!QDELETED(drain_beam))
-			qdel(drain_beam)
+			spent(drain_beam, L)

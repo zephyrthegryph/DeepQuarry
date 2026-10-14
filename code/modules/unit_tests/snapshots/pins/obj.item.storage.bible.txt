@@ -1,0 +1,20 @@
+@obj.item.storage human|none
+@obj.item.storage robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.storage human|/obj/item/tool/screwdriver
+@obj.item.storage human|/obj/item/tool/crowbar
+@obj.item.storage human|/obj/item/tool/wrench
+@obj.item.storage human|/obj/item/tool/wirecutters
+@obj.item.storage human|/obj/item/multitool
+@obj.item.storage human|/obj/item/weldingtool
+@obj.item.storage human|/obj/item/stack/cable_coil
+@obj.item.storage human|/obj/item/stack/material/steel
+@obj.item.storage human|/obj/item/card/id
+@obj.item.storage human|/obj/item/kit
+-click: Click: Customise
++5 click: Click: Put in
+@obj.item.storage human|/obj/item/storage
+@obj.item.storage human|/obj/item
+@obj human|/obj/item/lightreplacer
+keys: collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, invoke, kit_customize, kit_customize_last, move_to_top, page_turn, pick_up_item, skin, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

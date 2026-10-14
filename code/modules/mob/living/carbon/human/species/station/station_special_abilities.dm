@@ -31,7 +31,7 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite anyone in your current state!")
 		return
 
@@ -41,20 +41,44 @@
 			choices += M
 
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_target_chosen), message = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", title = "Suck Blood", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_target_chosen), answerer = src, title = "Suck Blood", question = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// A pop-up bloodsuck question (Yes/No); carries the target and the privacy answer.
-/datum/om/prompt/choice/bloodsuck
+/datum/prompt/choice/bloodsuck
+	timeout = 0
 	choices = list("Yes", "No")
 	buttons = TRUE
 	ask_flags = ASK_CONSCIOUS
 	var/mob/living/carbon/human/target
 	var/subtle
 
-/mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/B = ask.choice
+CAPABILITIES(/datum/prompt/choice/bloodsuck)
+	ref_one(nameof(target), /mob/living/carbon/human)
+
+/datum/prompt/choice/bloodsuck/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/choice/bloodsuck/begin()
+	if(QDELETED(target))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/bloodsuck/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target gone" : null
+
+/mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/B = A.answer.value
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_mode_chosen), message = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", title = "Configure Bloodsuck", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud")
+		open_request(src, /datum/prompt/choice, PROC_REF(bloodsuck_mode_chosen), answerer = src, title = "Configure Bloodsuck", question = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud", timeout = 0)
 		return
 	if(!bloodsuck_can(B))
 		return
@@ -65,7 +89,7 @@
 		if("always subtle")
 			noise = FALSE
 		if("pop-up")
-			om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), message = "Do you want to be subtle?", title = "Privacy", target = B)
+			open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), answerer = src, question = "Do you want to be subtle?", title = "Privacy", target = B)
 			return
 		if("stance")
 			/*
@@ -84,29 +108,37 @@
 				bleed = TRUE
 	bloodsuck_begin(B, noise, bleed)
 
-/mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/om/prompt/choice/ask)
-	var/mode = ask.choice
-	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+/mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mode = A.answer.value
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.bloodsucker_controlmode = mode
 	if(mode == "stance") //We are printing to chat for better readability
 		to_chat(src, span_notice("You've chosen to use your stance for blood draining.\n Combat mode off - Loud, No Bleeding\n Disarm held - Subtle, Causes bleeding\n Grab held - Subtle, No Bleeding\n Combat mode on - Loud, Causes Bleeding"))
 
-/mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/om/prompt/choice/bloodsuck/ask)
-	om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), message = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = ask.choice)
+/mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bloodsuck/ask = A.request
+	open_request(src, /datum/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), answerer = src, question = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = A.answer.value)
 
-/mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/om/prompt/choice/bloodsuck/ask)
+/mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/bloodsuck/ask = A.request
 	var/mob/living/carbon/human/B = ask.target
 	if(bloodsuck_can(B))
-		bloodsuck_begin(B, ask.subtle != "Yes", ask.choice == "Yes")
+		bloodsuck_begin(B, ask.subtle != "Yes", A.answer.value == "Yes")
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, "You cannot suck blood so quickly in a row!")
 		return FALSE
 	if(!B || stat || !Adjacent(B))
 		return FALSE
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite in your current state.")
 		return FALSE
 	if(B.vessel.total_volume <= 0 || HAS_SYNTHETIC_BIOLOGY(B)) //Do they have any blood in the first place, and are they synthetic?
@@ -115,7 +147,7 @@
 	return TRUE
 
 /mob/living/carbon/human/proc/bloodsuck_begin(mob/living/carbon/human/B, noise, bleed)
-	COOLDOWN_START(src, last_special, 600)
+	cooldown_start(src, last_special, 60 SECONDS)
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% moves their head next to %T%'s neck, seemingly looking for something!"))))
 	else
@@ -125,19 +157,14 @@
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	om_task_start(/datum/om/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
+	perform_op(src, src, "bloodsuck", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = B, "noise" = noise, "bleed" = bleed, "from" = B.loc))
 
-/datum/om/task/timed/human_bloodsuck_human
-	duration = 30 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/bloodsuck_human_done
-	var/noise
-	var/bleed
-
-/mob/living/carbon/human/proc/bloodsuck_human_done(datum/om/task/timed/human_bloodsuck_human/task)
-	var/mob/living/carbon/human/B = task.target
-	var/noise = task.noise
-	var/bleed = task.bleed
-	if(!Adjacent(B)) return
+/mob/living/carbon/human/proc/bloodsuck_human_done(datum/act/op/A)
+	var/mob/living/carbon/human/B = A.arg("victim")
+	var/noise = A.arg("noise")
+	var/bleed = A.arg("bleed")
+	if(QDELETED(B) || B.loc != A.arg("from") || !Adjacent(B))
+		return
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% suddenly extends their fangs and plunges them down into %T%'s neck!"))))
 	else
@@ -159,40 +186,34 @@
 	else //Otherwise, we're letting blood drop to the floor
 		B.drip(80) //Remove enough blood to make them a bit woozy, but not take oxyloss.
 		adjust_nutrition(400)
-		om_after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
-		om_after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
+		after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
+		after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 
-/// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
-/// the target, then the next stage.
-/datum/om/task/timed/grab_drain
-	duration = 5 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/grab_drain_held
-	cancel_proc = /mob/living/carbon/human/proc/grab_drain_interrupted
-	var/obj/item/grab/grab
-	var/stage
-	/// A proc on the drainer: (target, stage) runs that stage and returns the next, or 0 when done.
-	var/stage_proc
-	/// The grab state the drain needs (0: any grab).
-	var/needed_grab = 0
-	/// "draining", "feeding": for the interruption message.
-	var/what
-
-/// Runs stage `stage` of a drain, and holds the grab for the next one.
+/// A drain through a grab (succubus_drain(), slime_feed()) runs in stages, five seconds of holding the target between one and the next: the "grab_drain"
+/// op is one repeating wait whose laps run the stages (code/library/mob/hands.dm).
+/// Runs stage `stage` of a drain now, and holds the grab for the next ones.
 /mob/living/carbon/human/proc/grab_drain_step(mob/living/carbon/human/T, obj/item/grab/G, stage, stage_proc, needed_grab, what)
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	om_task_start(/datum/om/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
+	perform_op(src, src, "grab_drain", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
 
-/mob/living/carbon/human/proc/grab_drain_held(datum/om/task/timed/grab_drain/task)
-	var/obj/item/grab/G = task.grab
-	if(QDELETED(G) || (task.needed_grab ? G.state != task.needed_grab : !G.state))
-		grab_drain_interrupted(task)
+/// A lap of five seconds is over: the grab must still be the one the drain needs, and the next stage runs. A stage that returns 0 ends the series.
+/mob/living/carbon/human/proc/grab_drain_lap(datum/act/op/A)
+	var/obj/item/grab/G = A.arg("grab")
+	var/needed_grab = A.arg("needed_grab")
+	if(QDELETED(G) || (needed_grab ? G.state != needed_grab : !G.state))
+		grab_drain_interrupted(A)
+		LAZYSET(A.args, "stage", 0)
 		return
-	grab_drain_step(task.target, G, task.stage + 1, task.stage_proc, task.needed_grab, task.what)
+	LAZYSET(A.args, "stage", call(src, A.arg("stage_proc"))(A.arg("victim"), A.arg("stage") + 1))
 
-/mob/living/carbon/human/proc/grab_drain_interrupted(datum/om/task/timed/grab_drain/task)
-	to_chat(src, span_warning("Your [task.what] of [task.target] has been interrupted!"))
+/// Another lap follows while the last stage named one.
+/mob/living/carbon/human/proc/grab_drain_more(datum/act/op/A)
+	return !!A.arg("stage")
+
+/mob/living/carbon/human/proc/grab_drain_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("Your [A.arg("what")] of [A.arg("victim")] has been interrupted!"))
 	absorbing_prey = FALSE
 
 //Welcome to the adapted changeling absorb code.
@@ -231,24 +252,24 @@
 		if(1)
 			to_chat(C, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [C] begins to drain you!"))
-			C.set_nutrition((C.nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.set_nutrition(T.nutrition*0.95)
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			T.set_nutrition(nutrition_of(T)*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel stronger with every passing moment of draining [T]."))
 			src.visible_message(span_danger("[C] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [C] drains you!"))
-			C.set_nutrition((C.nutrition + (T.nutrition*0.1)))
-			T.set_nutrition(T.nutrition*0.9)
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1)))
+			T.set_nutrition(nutrition_of(T)*0.9)
 		if(3 to 99)
-			C.set_nutrition((C.nutrition + (T.nutrition*0.1))) //Just keep draining them.
-			T.set_nutrition(T.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+			C.set_nutrition((nutrition_of(C) + (nutrition_of(T)*0.1))) //Just keep draining them.
+			T.set_nutrition(nutrition_of(T)*0.9)
+			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			if(nutrition_of(T) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			C.set_nutrition((C.nutrition + T.nutrition))
+			C.set_nutrition((nutrition_of(C) + nutrition_of(T)))
 			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
@@ -296,28 +317,28 @@
 				return 0
 			to_chat(src, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [src] begins to drain you!"))
-			set_nutrition((nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.set_nutrition(T.nutrition*0.95)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			T.set_nutrition(nutrition_of(T)*0.95)
 		if(2)
 			to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
 			act_message(src, T, others = span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
-			set_nutrition((nutrition + (T.nutrition*0.1)))
-			T.set_nutrition(T.nutrition*0.9)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.1)))
+			T.set_nutrition(nutrition_of(T)*0.9)
 		if(3 to 48) //Should be more than enough to get under 100.
-			set_nutrition((nutrition + (T.nutrition*0.1))) //Just keep draining them.
-			T.set_nutrition(T.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
-			if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
+			set_nutrition((nutrition_of(src) + (nutrition_of(T)*0.1))) //Just keep draining them.
+			T.set_nutrition(nutrition_of(T)*0.9)
+			T.status_adjust(STAT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
+			if(nutrition_of(T) < 100)//Did they drop below 100 nutrition_of(src)? If so, do one last check then jump to stage 50 (Lethal!)
 				stage = 49
 		if(49)
-			if(T.nutrition < 100)//Did they somehow not get drained below 100 nutrition yet? If not, go back to stage 3 and repeat until they get drained.
+			if(nutrition_of(T) < 100)//Did they somehow not get drained below 100 nutrition_of(src) yet? If not, go back to stage 3 and repeat until they get drained.
 				stage = 3 //Otherwise, advance to stage 50 (Lethal draining.)
 		if(50)
-			if(!T.digestable)
+			if(!T.vore_prefs.digestable)
 				to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
 				to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
-				set_nutrition((nutrition + T.nutrition))
+				set_nutrition((nutrition_of(src) + nutrition_of(T)))
 				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
@@ -337,8 +358,8 @@
 				return 0
 			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
-			T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
-			set_nutrition((nutrition + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition.
+			T.status_adjust(STAT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
+			set_nutrition((nutrition_of(src) + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition_of(src).
 		if(99)
 			if(drain_finalized != 1)
 				stage = 51
@@ -390,24 +411,24 @@
 		if(1)
 			to_chat(C, span_notice("You begin to feed [T]..."))
 			to_chat(T, span_notice("An odd sensation flows through your body as [C] begins to feed you!"))
-			T.set_nutrition((T.nutrition + (C.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
-			C.set_nutrition(C.nutrition*0.95)
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.05))) //Drain a small bit at first. 5% of the prey's nutrition_of(src).
+			C.set_nutrition(nutrition_of(C)*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel weaker with every passing moment of feeding [T]."))
 			src.visible_message(span_notice("[C] seems to be doing something to [T], resulting in [T]'s body looking stronger with every passing moment!"))
 			to_chat(T, span_notice("You feel stronger with every passing moment as [C] feeds you!"))
-			T.set_nutrition((T.nutrition + (C.nutrition*0.1)))
-			C.set_nutrition(C.nutrition*0.90)
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1)))
+			C.set_nutrition(nutrition_of(C)*0.90)
 		if(3 to 99)
-			T.set_nutrition((T.nutrition + (C.nutrition*0.1))) //Just keep draining them.
-			C.set_nutrition(C.nutrition*0.9)
-			T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
-			if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
+			T.set_nutrition((nutrition_of(T) + (nutrition_of(C)*0.1))) //Just keep draining them.
+			C.set_nutrition(nutrition_of(C)*0.9)
+			T.status_adjust(STAT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
+			if(nutrition_of(C) < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition_of(src)? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			T.set_nutrition((T.nutrition + C.nutrition))
+			T.set_nutrition((nutrition_of(T) + nutrition_of(C)))
 			C.set_nutrition(0) //Completely drained of everything.
 			C.absorbing_prey = FALSE
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
@@ -438,7 +459,7 @@
 		to_chat(src,span_warning("You can't shred that type of creature."))
 		return FALSE
 	//Needs to be capable (replace with incapacitated call?)
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src,span_warning("You cannot do that in your current state!"))
 		return FALSE
 	//Needs to be adjacent, at the very least.
@@ -446,7 +467,7 @@
 		to_chat(src,span_warning("You must be next to your target."))
 		return FALSE
 	//Cooldown on abilities
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src,span_warning("You can't perform an ability again so soon!"))
 		return FALSE
 
@@ -487,10 +508,12 @@
 	if(!choices.len)
 		to_chat(src,span_warning("There's nobody nearby to use this on."))
 		return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(shred_target_picked), message = "Who do you wish to target?", title = "Damage/Remove Prey's Organ", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(shred_target_picked), answerer = src, title = "Damage/Remove Prey's Organ", question = "Who do you wish to target?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/proc/shred_target_picked(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/T = ask.choice
+/mob/living/proc/shred_target_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/T = A.answer.value
 	if(can_shred(T) == T)
 		shred_limb_begin(T)
 
@@ -508,74 +531,175 @@
 
 /// Asks which organs to shred (and where to swallow them), then starts on T.
 /mob/living/proc/shred_limb_begin(mob/living/carbon/human/T)
-	om_flow_start(/datum/om/flow/shred_limb, src, T)
+	var/datum/shred_limb_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	rel_set(review, nameof(review.target), T)
+	review.start()
 
 /// Which external organ (confirmed when vital), which internal one if any (likewise), and a
 /// belly to swallow it into if any. The actor stays conscious throughout.
-/datum/om/flow/shred_limb
-	requires = PROMPT_CONSCIOUS
+/datum/shred_limb_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/actor
+	var/mob/living/carbon/human/target
 	var/obj/item/organ/external/T_ext
 	var/obj/item/organ/internal/T_int
 	var/obj/belly/B
+	var/external_selected = FALSE
+	var/internal_selected = FALSE
 
-/datum/om/flow/shred_limb/start()
-	//Let them pick any of the target's external organs. Picking something here is critical.
-	var/mob/living/carbon/human/T = target
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(external_chosen), message = "What do you wish to severely damage?", choices = T.organs, title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+CAPABILITIES(/datum/shred_limb_review)
+	ref_one(nameof(actor), /mob/living)
+	ref_one(nameof(target), /mob/living/carbon/human)
+	ref_one(nameof(T_ext), /obj/item/organ/external)
+	ref_one(nameof(T_int), /obj/item/organ/internal)
+	ref_one(nameof(B), /obj/belly)
 
-/datum/om/flow/shred_limb/proc/external_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(T_ext), ask.choice)
+/datum/prompt/choice/shred_limb
+	timeout = 0
+
+/datum/prompt/choice/shred_limb/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/shred_limb_review/review = owner
+	return review.why_not()
+
+/datum/prompt/yes_no/shred_limb
+	timeout = 0
+
+/datum/prompt/yes_no/shred_limb/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/shred_limb_review/review = owner
+	return review.why_not()
+
+/datum/shred_limb_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(target) || (external_selected && QDELETED(T_ext)) || (internal_selected && QDELETED(T_int)))
+		return "gone"
+	return actor.stat != CONSCIOUS ? "not conscious" : null
+
+/datum/shred_limb_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		failed_step("start", result.error)
+
+/datum/shred_limb_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(external_chosen), answerer = actor, asker = actor, question = "What do you wish to severely damage?", choices = target.organs, title = "Organ Choice")
+
+/datum/shred_limb_review/proc/failed_step(step, error)
+	stack_trace("shred limb step [step]: [error]")
+	retire()
+
+/datum/shred_limb_review/proc/external_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(external_chosen_step), A)
+	if(!result.ok)
+		failed_step("external", result.error)
+
+/datum/shred_limb_review/proc/external_chosen_step(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	rel_set(src, nameof(T_ext), A.request.value)
+	external_selected = TRUE
+	if(QDELETED(T_ext))
+		retire()
+		return
 	if(T_ext.vital)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_internal), message = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(external_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb")
 		return
 	ask_internal()
 
-//Any internal organ, if there are any
-/datum/om/flow/shred_limb/proc/ask_internal()
+/datum/shred_limb_review/proc/external_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.value != TRUE)
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_internal))
+	if(!result.ok)
+		failed_step("external confirmation", result.error)
+
+/datum/shred_limb_review/proc/ask_internal()
 	var/list/T_organs = T_ext.held_organs()
 	if(!length(T_organs))
 		ask_belly()
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(internal_chosen), answerer = actor, asker = actor, question = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_organs, title = "Organ Choice")
 
-/datum/om/flow/shred_limb/proc/internal_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(T_int), ask.choice || null)
+/datum/shred_limb_review/proc/internal_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(internal_chosen_step), A)
+	if(!result.ok)
+		failed_step("internal", result.error)
+
+/datum/shred_limb_review/proc/internal_chosen_step(datum/act/request/A)
+	// Closing this optional question supplied an empty answer then rechecked the flow.
+	if(why_not() || (!A.answer && !isnull(A.request.value)))
+		retire()
+		return
+	rel_set(src, nameof(T_int), A.answer ? A.request.value : null)
+	if(A.answer && QDELETED(T_int))
+		retire()
+		return
+	internal_selected = !isnull(T_int)
 	if(T_int?.vital)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_belly), message = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/yes_no/shred_limb, PROC_REF(internal_confirmed), answerer = actor, asker = actor, question = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb")
 		return
 	ask_belly()
 
-//And a belly, if they want
-/datum/om/flow/shred_limb/proc/ask_belly()
-	var/mob/living/L = actor
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(belly_chosen), message = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = L.vore_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+/datum/shred_limb_review/proc/internal_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.value != TRUE)
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_belly))
+	if(!result.ok)
+		failed_step("internal confirmation", result.error)
 
-/datum/om/flow/shred_limb/proc/belly_chosen(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(B), ask.choice || null)
-	var/mob/living/L = actor
-	L.shred_limb_answered(target, T_ext, T_int, B)
+/datum/shred_limb_review/proc/ask_belly()
+	open_request(src, /datum/prompt/choice/shred_limb, PROC_REF(belly_chosen), answerer = actor, asker = actor, question = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = actor.vore_organs, title = "Organ Choice")
+
+/datum/shred_limb_review/proc/belly_chosen(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(belly_chosen_step), A)
+	if(!result.ok)
+		failed_step("belly", result.error)
+
+/datum/shred_limb_review/proc/belly_chosen_step(datum/act/request/A)
+	if(why_not() || (!A.answer && !isnull(A.request.value)))
+		retire()
+		return
+	rel_set(src, nameof(B), A.answer ? A.request.value : null)
+	if(A.answer && QDELETED(B))
+		retire()
+		return
+	actor.shred_limb_answered(target, T_ext, T_int, B)
+	retire()
 
 /mob/living/proc/shred_limb_answered(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
 	if(can_shred(T) != T || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-	COOLDOWN_START(src, last_special, vore_shred_time)
+	cooldown_start(src, last_special, vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
-	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
+	perform_op(src, src, "shred_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "external" = T_ext, "internal" = T_int, "belly" = B))
 
-/datum/om/task/timed/living_shred_limb_living
-	complete_proc = /mob/living/proc/shred_limb_living_done
-	var/obj/item/organ/external/T_ext
-	var/obj/item/organ/internal/T_int
-	var/obj/belly/B
+/// How long the shredding takes: the preparing mob's own pace.
+/mob/living/proc/shred_limb_time(datum/act/op/A)
+	return vore_shred_time
 
-/mob/living/proc/shred_limb_living_done(datum/om/task/timed/living_shred_limb_living/task)
-	var/mob/living/carbon/human/T = task.target
-	var/obj/item/organ/external/T_ext = task.T_ext
-	var/obj/item/organ/internal/T_int = task.T_int
-	var/obj/belly/B = task.B
+/mob/living/proc/shred_limb_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.arg("victim")
+	var/obj/item/organ/external/T_ext = A.arg("external")
+	var/obj/item/organ/internal/T_int = A.arg("internal")
+	var/obj/belly/B = A.arg("belly")
+	if(QDELETED(T) || QDELETED(T_ext))
+		return
 	if(can_shred(T) != T)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
@@ -636,13 +760,13 @@
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot fly in this state!")
 		return
-	if(C.nutrition < 25 && !C.flying) //Don't have any food in you?" You can't fly.
+	if(nutrition_of(C) < 25 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't fly.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 
-	C.flying = !C.flying
+	set_flying(C, !stat_value(C, STAT_FLYING))
 	update_floating()
-	to_chat(C, span_notice("You have [C.flying?"started":"stopped"] flying."))
+	to_chat(C, span_notice("You have [stat_value(C, STAT_FLYING)?"started":"stopped"] stat_value(src, STAT_FLYING)."))
 
 /mob/living/
 	var/flight_vore = FALSE
@@ -668,13 +792,13 @@
 	if(!C.wing_style) //The species var isn't taken into account here, as it's only purpose is to give this proc to a person.
 		to_chat(src, "You don't have wings!")
 		return
-	if(!C.flying)
+	if(!stat_value(C, STAT_FLYING))
 		to_chat(src, "You must be flying to hover!")
 		return
 	if(C.incapacitated(INCAPACITATION_ALL))
 		to_chat(src, "You cannot hover in your current state!")
 		return
-	if(C.nutrition < 50 && !C.flying) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition. And it's not 25 since we don't want them to immediately fall.
+	if(nutrition_of(C) < 50 && !stat_value(C, STAT_FLYING)) //Don't have any food in you?" You can't hover, since it takes up 25 nutrition_of(src). And it's not 25 since we don't want them to immediately fall.
 		to_chat(C, span_notice("You lack the nutrition to fly."))
 		return
 	if(C.anchored)
@@ -686,7 +810,7 @@
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))
-		om_after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), FALSE) //.6 seconds.
+		after(C, 0.6 SECONDS, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
 	else
 		return
 
@@ -701,30 +825,33 @@
 	set name = "Toggle Eye Glowing"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.has_glowing_eyes = !species.has_glowing_eyes
-	update_eyes()
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
+	species.set_has_glowing_eyes(!species.has_glowing_eyes)
 	to_chat(src, "Your eyes [species.has_glowing_eyes ? "are now" : "are no longer"] glowing.")
+
+MSG_DEF_SELF(human/cocoon_no_space, "You don't have enough space to spin a cocoon!")
+MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current state."))
 
 /mob/living/carbon/human/proc/enter_cocoon()
 	set name = "Spin Cocoon"
 	set category = VERB_CAT_ABILITIES_WEAVER
-	if(!isturf(loc))
-		to_chat(src, "You don't have enough space to spin a cocoon!")
-		return
 
-	if(src?.buckled_to() ||stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
-		to_chat(src, span_warning("You can't do that in your current state."))
-		return
+	perform_op(src, src, "enter_cocoon", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-	om_task_timed(src, 25, target = src, receiver = src, on_done = PROC_REF(enter_cocoon_human_done), done_args = list())
+/// Requirement: standing on a turf, not inside something.
+/mob/living/carbon/human/proc/cocoon_has_space(datum/act/op/A)
+	return (read_once(isturf(loc))) ? null : /datum/msg/req_failed
 
-/mob/living/carbon/human/proc/enter_cocoon_human_done()
+/// Requirement: awake, loose and rested (no tongue flicking while stunned).
+/mob/living/carbon/human/proc/cocoon_fit(datum/act/op/A)
+	return (!(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once(cooldown_ready(src, last_special)))) ? null : /datum/msg/req_failed
+
+/mob/living/carbon/human/proc/enter_cocoon_human_done(datum/act/op/A)
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
 	forceMove(C)
 
 	var/mob_holder_type = src.holder_type || /obj/item/holder
-	C.w_class = src.size_multiplier * 4 //Egg size and weight scaled to match occupant.
+	C.set_w_class(src.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 	var/obj/item/holder/H = new mob_holder_type(C, src)
 	C.max_storage_space = H.w_class
 	C.icon_scale_x = 0.25 * C.w_class
@@ -738,9 +865,9 @@
 	set desc = "Dive under water, allowing for you to be stealthy and move faster."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 50) //No spamming!
+	cooldown_start(src, last_special, 5 SECONDS) //No spamming!
 
 	if(has_body_effect(/datum/body_effect/underwater_stealth))
 		to_chat(src, "You resurface!")
@@ -770,15 +897,15 @@
 	set desc = "Grab something in the water with you and devour them with your selected stomach."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 50) //No spamming!
+	cooldown_start(src, last_special, 5 SECONDS) //No spamming!
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
-	if(!(src.vore_selected))
+	if(!(vore_selected_of(src)))
 		to_chat(src, span_notice("No selected belly found."))
 		return
 
@@ -787,56 +914,79 @@
 		to_chat(src, "You must be underwater to do this!!")
 		return
 
-	var/list/targets = list() //Shameless copy and paste. If it ain't broke don't fix it!
+	if(!length(underwater_devour_targets()))
+		to_chat(src, span_notice("No eligible targets found."))
+		return
 
+	perform_op(src, src, "underwater_devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+
+/// Whoever is in the water next to us and can be dragged under.
+/mob/living/carbon/human/proc/underwater_devour_targets()
+	var/list/targets = list() //Shameless copy and paste. If it ain't broke don't fix it!
 	for(var/turf/T in range(1, src))
 		if(istype(T, /turf/simulated/floor/water))
 			for(var/mob/living/L in contents_of(T))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.can_be_drop_prey)
+				if(L.vore_prefs.devourable && L.vore_prefs.can_be_drop_prey)
 					targets += L
+	return targets
 
-	if(!(targets.len))
-		to_chat(src, span_notice("No eligible targets found."))
-		return
-
-	om_ask(src, /datum/om/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), choices = targets)
+/mob/living/carbon/human/proc/underwater_devour_choices(datum/act/op/A)
+	return underwater_devour_targets()
 
 /// Picking a victim for a vore ability. Re-checked on the answer: conscious.
-/datum/om/prompt/choice/victim
+/datum/prompt/choice/victim
+	timeout = 0
 	title = "Victim"
-	message = "Please select a target."
+	question = "Please select a target."
 	ask_flags = ASK_CONSCIOUS
 
-/// Also re-checked: still stealthed underwater, and the target is still next to us.
-/datum/om/prompt/choice/victim/underwater
+/datum/prompt/choice/victim/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	return null
 
-/datum/om/prompt/choice/victim/underwater/valid()
+/// Also re-checked: still stealthed underwater, and the target is still next to us.
+/datum/prompt/choice/victim/underwater
+
+/datum/prompt/choice/victim/underwater/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, choice) > 1)
+	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, value) > 1)
 		return "lost the chance"
 	return null
 
-/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/om/prompt/choice/victim/underwater/ask)
-	var/mob/living/target = ask.choice
+/// The victim is chosen: they are told, and where they stood is noted. The wait keeps them: it ends if they get away.
+/mob/living/carbon/human/proc/underwater_devour_started(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
-	var/starting_loc = target.loc
+	LAZYSET(A.args, "from", target.loc)
 
-	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(underwater_devour_human_done), done_args = list(target, starting_loc))
+/mob/living/carbon/human/proc/underwater_devour_escaped(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target) || target.loc == A.arg("from"))
+		return // the hunter was stopped, not outrun
+	to_chat(target, span_warning("You got away from whatever that was..."))
+	to_chat(src, span_notice("They got away."))
 
-/mob/living/carbon/human/proc/underwater_devour_human_done(mob/living/target, starting_loc)
-	if(target.loc != starting_loc)
-		to_chat(target, span_warning("You got away from whatever that was..."))
-		to_chat(src, span_notice("They got away."))
+/mob/living/carbon/human/proc/underwater_devour_human_done(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
 		return
 	if(target?.buckled_to()) //how are you src?.buckled_to() in the water?!
 		var/atom/movable/_tmp_buck_19 = target?.buckled_to()
 		_tmp_buck_19.unbuckle_mob()
-	act_message(target, src, MSG_SELF(span_vdanger("You are dragged below the water and feel yourself slipping directly into %T%'s [vore_selected.get_belly_name()]!")), \
+	act_message(target, src, MSG_SELF(span_vdanger("You are dragged below the water and feel yourself slipping directly into %T%'s [vore_selected_of(src).get_belly_name()]!")), \
 		MSG_OTHERS(span_vwarning("%U% suddenly disappears, being dragged into the water!")))
-	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
-	vore_selected.nom_atom(target)
+	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected_of(src).get_belly_name()]."))
+	vore_selected_of(src).nom_atom(target)
 
 /mob/living/carbon/human/proc/toggle_pain_module()
 	set name = "Toggle pain simulation."
@@ -859,48 +1009,58 @@
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(long_vore_chosen), message = "Do you wish to change the color of your appendage, use it, or change its functionality?", title = "Selection List", choices = list("Use it", "Color", "Functionality"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(long_vore_chosen), answerer = src, title = "Selection List", question = "Do you wish to change the color of your appendage, use it, or change its functionality?", choices = list("Use it", "Color", "Functionality"), buttons = TRUE, timeout = 0)
 
-/mob/living/proc/long_vore_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/mob/living/proc/long_vore_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.value)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
-			om_ask(src, /datum/om/prompt/color, PROC_REF(appendage_color_chosen), message = "Choose a color to set your appendage to!", default = appendage_color)
+			open_request(src, /datum/prompt/color, PROC_REF(appendage_color_chosen), answerer = src, question = "Choose a color to set your appendage to!", default = appendage_color, timeout = 0)
 		if("Functionality")
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(appendage_setting_chosen), message = "Choose if you want to be pulled to the target or pull them to you!", title = "Functionality Setting", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice, PROC_REF(appendage_setting_chosen), answerer = src, title = "Functionality Setting", question = "Choose if you want to be pulled to the target or pull them to you!", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE, timeout = 0)
 		if("Use it")
 			var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT.
 			for(var/mob/living/L in range(5, src))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+				if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 					targets += L
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
 				return
-			om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(long_vore_target_chosen), choices = targets)
+			open_request(src, /datum/prompt/choice/victim, PROC_REF(long_vore_target_chosen), answerer = src, choices = targets)
 
-/mob/living/proc/appendage_color_chosen(datum/om/prompt/color/ask)
-	appendage_color = ask.picked_color
+/mob/living/proc/appendage_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	appendage_color = A.answer.value
 
-/mob/living/proc/appendage_setting_chosen(datum/om/prompt/choice/ask)
-	appendage_alt_setting = (ask.choice != "Pull target to self")
+/mob/living/proc/appendage_setting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	appendage_alt_setting = (A.answer.value != "Pull target to self")
 
-/mob/living/proc/long_vore_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/long_vore_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || is_incorporeal())
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || is_incorporeal())
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if (get_dist(src,target) >= 6)
@@ -913,7 +1073,7 @@
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.launch_projectile(target, BP_TORSO, src) //Send it.
-	COOLDOWN_START(src, last_special, 100) //Cooldown for successful strike.
+	cooldown_start(src, last_special, 10 SECONDS) //Cooldown for successful strike.
 
 /obj/item/projectile/beam/appendage //The tongue projecitle.
 	name = "appendage"
@@ -923,7 +1083,6 @@
 	eyeblur = 0
 	can_miss = FALSE //Let's not miss our tongue!
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
-	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	excavation_amount = 0
 	hitscan_light_intensity = 0
@@ -932,8 +1091,6 @@
 	muzzle_flash_range = 0
 	impact_light_intensity = 0
 	impact_light_range  = 0
-	light_range = 0 //No your tongue can not glow...For now.
-	light_power = 0
 	light_on = 0 //NO LIGHT
 	combustion = FALSE //No, your tongue can't set the room on fire.
 	pass_flags = PASSTABLE
@@ -941,6 +1098,10 @@
 	muzzle_type = /obj/effect/projectile/muzzle/appendage
 	tracer_type = /obj/effect/projectile/tracer/appendage
 	impact_type = /obj/effect/projectile/impact/appendage
+
+CAPABILITIES(/obj/item/projectile/beam/appendage)
+	configure(light_glow(range = 0, power = 0))
+	configure(item_sounds(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /obj/item/projectile/beam/appendage/generate_hitscan_tracers()
 	if(firer) //This neat little code block allows for C O L O R A B L E tongues! Correction: 'Appendages'
@@ -959,11 +1120,9 @@
 			var/mob/living/F = firer
 			if(F.appendage_alt_setting == 1)
 				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
-				F.update_icon()
 				return
 		if(istype(M))
 			M.throw_at(firer, throw_range, M.throw_speed, firer) //Fun fact: living things have a throw_speed of 2.
-			M.update_icon()
 			return
 		else //Anything that isn't a /living
 			return
@@ -972,7 +1131,7 @@
 		if(hit_object.density || hit_object.anchored)
 			if(isliving(firer))
 				var/mob/living/originator = firer
-				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
+				originator.status_at_least(STAT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
 				act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
 					MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
 				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
@@ -982,7 +1141,7 @@
 	if(istype(target, /turf/simulated/wall) || istype(target, /obj/machinery/door) || istype(target, /obj/structure/window)) //This can happen normally due to odd terrain. For some reason, it seems to not actually interact with walls.
 		if(isliving(firer))
 			var/mob/living/originator = firer
-			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
+			originator.status_at_least(STAT_WEAKENED, 2) //Hit a wall? Whoops!
 			act_message(originator, null, MSG_SELF(span_warning("You trip over yourself and fall flat on your face!")), \
 				MSG_OTHERS(span_warning("%U% trips over their self and falls flat on their face!")))
 			play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
@@ -995,23 +1154,23 @@
 /obj/effect/projectile/muzzle/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "muzzle_appendage"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/tracer/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "appendage_beam"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00" //Doesn't matter. Not used.
+
+CAPABILITIES(/obj/effect/projectile/tracer/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 
 /obj/effect/projectile/impact/appendage
 	icon = 'icons/obj/projectiles_vr.dmi'
 	icon_state = "impact_appendage_combined"
-	light_range = 0
-	light_power = 0
-	light_color = "#FF0D00"
+
+CAPABILITIES(/obj/effect/projectile/impact/appendage)
+	configure(light_glow(range = 0, power = 0, color = "#FF0D00"))
 //LONG VORE ABILITY END
 
 /obj/item/gun/energy/gun/tongue //This is the 'tongue' gun for admin memery.
@@ -1021,7 +1180,6 @@
 	icon_state = "synthtongue"
 	item_state = "gun"
 	fire_delay = null
-	force = 0
 	fire_delay = 1 //Adminspawn. No delay.
 	charge_cost = 0 //This is an adminspawn gun...No reason to force it to have a charge state.
 
@@ -1034,16 +1192,16 @@
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/gun/tongue/appearance_overlays() //No updating the icon.
-	. = list()
-	icon_state = "synthtongue"
-	return .
+CAPABILITIES(/obj/item/gun/energy/gun/tongue)
+	configure(item_combat(force = 0))
+
+/// The look: always the tongue, whatever the charge.
+/obj/item/gun/energy/gun/tongue/draw_charge_state(datum/look/look)
+	look.state("synthtongue")
 
 /obj/item/gun/energy/bfgtaser/tongue
 	name = "9000-series Ball Tongue Taser"
 	desc = "A banned riot control device."
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser/tongue
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
@@ -1051,11 +1209,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	accuracy = 45
 	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
 
+CAPABILITIES(/obj/item/gun/energy/bfgtaser/tongue)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"
-	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	zaptype = /obj/item/projectile/beam/appendage
+
+CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
+	configure(item_sounds(hit = SFX_VORE_SUNESOUND_PRED_SCHLORP))
 
 /mob/living/proc/target_lunge() //The leaper leap, but usable as an ability
 	set name = "Lunge At Prey"
@@ -1065,11 +1228,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -1083,26 +1246,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 				continue
 			if(L == src) //no eating yourself. 1984.
 				continue
-			if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+			if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 				targets += L
 
 		if(!(targets.len))
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
+		open_request(src, /datum/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), answerer = src, choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
 
 /// Carries the lunge's warm-up and sound.
-/datum/om/prompt/choice/victim/lunge
+/datum/prompt/choice/victim/lunge
 	var/leap_warmup
 	var/leap_sound
 
-/mob/living/proc/target_lunge_chosen(datum/om/prompt/choice/victim/lunge/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/target_lunge_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/victim/lunge/ask = A.request
+	var/mob/living/target = A.answer.value
+	if(target && QDELETED(target))
+		return
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED))
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 	if (get_dist(src,target) >= 6)
@@ -1114,25 +1282,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	to_chat(target, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(target, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(target_lunge_leap), target, ask.leap_sound) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(target_lunge_leap), with = list(target, ask.leap_sound)) // For the telegraphing.
 
 /mob/living/proc/target_lunge_leap(mob/living/target, leap_sound)
-	if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!target || target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [target]!"))
 	throw_at(get_step(target, get_turf(src)), 7, 1, src)
 	playsound(src, leap_sound, 75, 1)
-	om_after(src, 5, PROC_REF(target_lunge_land), target) // For the throw to complete.
+	after(src, 0.5 SECONDS, PROC_REF(target_lunge_land), with = list(target), keeps_dead = TRUE) // For the throw to complete.
 
 /mob/living/proc/target_lunge_land(mob/living/target)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
-	if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(target && Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		target.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 
 /mob/living/proc/injection() // Allows the user to inject reagents into others somehow, like stinging, or biting.
@@ -1140,11 +1308,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Inject another being with something!"
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special)) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 10) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	var/list/choices = list("Inject")
 
@@ -1157,32 +1325,40 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	choices += "Change verb"
 	choices += "Chemical Refresher"
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_chosen), message = "Do you wish to inject somebody, or adjust settings?", title = "Selection List", choices = choices, buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(injection_chosen), answerer = src, title = "Selection List", question = "Do you wish to inject somebody, or adjust settings?", choices = choices, buttons = TRUE, timeout = 0)
 
-/mob/living/proc/injection_reagent_chosen(datum/om/prompt/choice/ask)
-	var/reagent_choice = ask.choice
+/mob/living/proc/injection_reagent_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/reagent_choice = A.answer.value
 	if(reagent_choice in trait_injection_reagents)
 		trait_injection_selected = reagent_choice
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_amount_chosen(datum/om/prompt/number/ask)
-	trait_injection_amount = clamp(ask.number, 0, 5)
+/mob/living/proc/injection_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	trait_injection_amount = clamp(A.answer.value, 0, 5)
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_verb_chosen(datum/om/prompt/text/ask)
-	trait_injection_verb = ask.text
+/mob/living/proc/injection_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	trait_injection_verb = A.answer.value
 	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
 
-/mob/living/proc/injection_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choice
+/mob/living/proc/injection_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.value
 	if(choice == "Change reagent")
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_reagent_chosen), message = "Choose which reagent to inject!", title = "Select reagent", choices = trait_injection_reagents || list())
+		open_request(src, /datum/prompt/choice, PROC_REF(injection_reagent_chosen), answerer = src, title = "Select reagent", question = "Choose which reagent to inject!", choices = trait_injection_reagents || list(), timeout = 0)
 		return
 	if(choice == "Change amount")
-		om_ask(src, /datum/om/prompt/number, PROC_REF(injection_amount_chosen), message = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max = 5, min = 0, round_entry = FALSE)
+		open_request(src, /datum/prompt/number, PROC_REF(injection_amount_chosen), answerer = src, timeout = 0, question = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max_value = 5, min_value = 0)
 		return
 	if(choice == "Change verb")
-		om_ask(src, /datum/om/prompt/text, PROC_REF(injection_verb_chosen), message = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_length = 60) //Whoaa there cowboy don't put a novel in there.
+		open_request(src, /datum/prompt/text, PROC_REF(injection_verb_chosen), answerer = src, timeout = 0, question = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_len = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>
@@ -1219,55 +1395,62 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		dq_admin_report_html(src, "Chemical Refresher", output)
 		return
 	else
-		var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT. AND KEEP COPYPASTING IT  (Pointing Rick Dalton: "That's my code!" ~CL)
-
-		for(var/mob/living/carbon/L in living_mobs(1, TRUE)) //Noncarbons don't even process reagents so don't bother listing others.
-			if(!istype(L, /mob/living/carbon))
-				continue
-			if(L == src) //no getting high off your own supply, get a nif or something, nerd.
-				continue
-			if(!L.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
-				continue
-			if(!L.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
-				continue
-			targets += L
-
-		if(!(targets.len))
+		if(!length(injection_targets()))
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(injection_target_chosen), choices = targets)
+		// The op asks who, checks the pick, and waits five seconds next to them (code/library/mob/living_abilities.dm).
+		perform_op(src, src, "injection", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/mob/living/proc/injection_target_chosen(datum/om/prompt/choice/victim/ask)
-	var/mob/living/target = ask.choice
-	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
-		to_chat(src, span_warning("You can't do that in your current state."))
-		return
+/// Whoever next to us can be injected with the selected reagent.
+/mob/living/proc/injection_targets()
+	var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT. AND KEEP COPYPASTING IT  (Pointing Rick Dalton: "That's my code!" ~CL)
+
+	for(var/mob/living/carbon/L in living_mobs(1, TRUE)) //Noncarbons don't even process reagents so don't bother listing others.
+		if(!istype(L, /mob/living/carbon))
+			continue
+		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
+			continue
+		if(!L.vore_prefs.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+			continue
+		if(!L.vore_prefs.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+			continue
+		targets += L
+	return targets
+
+/mob/living/proc/injection_choices(datum/act/op/A)
+	return injection_targets()
+
+MSG_DEF_SELF(injection/state, "You can't do that in your current state.")
+MSG_DEF_SELF(injection/kind, "That won't work on that kind of creature! (Only works on crew/monkeys)")
+MSG_DEF_SELF(injection/reagent, "You need to select a reagent.")
+MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Select a verb!)")
+
+/// The victim is picked: the pick is checked again, and the onlookers are told.
+/mob/living/proc/injection_started(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
+		return /datum/msg/op/not_available
+	if(has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !Adjacent(target))
+		return /datum/msg/injection/state
 	if(!istype(target, /mob/living/carbon)) //Safety.
-		to_chat(src, span_warning("That won't work on that kind of creature! (Only works on crew/monkeys)"))
-		return
-
-	var/synth = 0
-	if(HAS_SYNTHETIC_BIOLOGY(target))
-		synth = 1
-
+		return /datum/msg/injection/kind
 	if(!trait_injection_selected)
-		to_chat(src, span_notice("You need to select a reagent."))
-		return
-
+		return /datum/msg/injection/reagent
 	if(!trait_injection_verb)
-		to_chat(src, span_notice("Somehow, you forgot your means of injecting. (Select a verb!)"))
-		return
-
+		return /datum/msg/injection/means
 	act_message(src, target, others = span_warning("%U% is preparing to [trait_injection_verb] %T%!"))
-	om_task_timed(src, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(injection_living_done), done_args = list(target, synth))
 
-/mob/living/proc/injection_living_done(mob/living/target, synth)
+/mob/living/proc/injection_living_done(datum/act/op/A)
+	var/mob/living/target = A.answer_target()
+	if(QDELETED(target))
+		return
+	var/synth = HAS_SYNTHETIC_BIOLOGY(target) ? 1 : 0
 	add_attack_logs(src,target,"Injection trait ([trait_injection_selected], [trait_injection_amount])")
 	if(target.reagents && (trait_injection_amount > 0) && !synth)
 		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
 	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
-	switch(zone_sel.selecting)
+	switch(hud_used?.zone_sel?.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"
 		if(BP_TORSO)
@@ -1294,7 +1477,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set desc = "Bite prey and inject them with various toxins."
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(!ishuman(src))
@@ -1318,32 +1501,64 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		to_chat(C, span_warning("You must have a tighter grip to bite this creature."))
 		return
 
-	COOLDOWN_START(src, last_special, 600)
-	om_ask(src, /datum/om/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), grab = G, target = T)
+	cooldown_start(src, last_special, 60 SECONDS)
+	open_request(src, /datum/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), answerer = src, grab = G, target = T)
 
 /// Re-checked on the answer: conscious, and still holding the target by the neck.
-/datum/om/prompt/choice/succubus_bite
+/datum/prompt/choice/succubus_bite
+	timeout = 0
 	title = "Reagent"
-	message = "What do you wish to inject?"
+	question = "What do you wish to inject?"
 	choices = list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing")
 	ask_flags = ASK_CONSCIOUS
 	var/obj/item/grab/grab
 	var/mob/living/carbon/human/target
 
-/datum/om/prompt/choice/succubus_bite/valid()
-	if(answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK)
-		to_chat(answerer, span_warning("You must have a tighter grip to bite this creature."))
-		return "lost grip"
-	return null
+CAPABILITIES(/datum/prompt/choice/succubus_bite)
+	ref_one(nameof(grab), /obj/item/grab)
+	ref_one(nameof(target), /mob/living/carbon/human)
 
-/mob/living/proc/succubus_bite_chosen(datum/om/prompt/choice/succubus_bite/ask)
+/datum/prompt/choice/succubus_bite/prepare(datum/act/A)
+	..()
+	var/obj/item/grab/captured_grab = grab
+	var/mob/living/carbon/human/captured_target = target
+	rel_clear(src, nameof(grab))
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(grab), captured_grab)
+	rel_set(src, nameof(target), captured_target)
+
+/datum/prompt/choice/succubus_bite/begin()
+	if(QDELETED(grab) || QDELETED(target))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/succubus_bite/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(grab) || QDELETED(target))
+		return "gone"
+	return answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK ? "lost grip" : null
+
+/mob/living/proc/succubus_bite_chosen(datum/act/request/A)
+	var/datum/prompt/choice/succubus_bite/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.value) && ask.last_error == "lost grip")
+			to_chat(src, span_warning("You must have a tighter grip to bite this creature."))
+		return
 	var/mob/living/carbon/human/T = ask.target
-	var/choice = ask.choice
+	var/choice = A.answer.value
 	act_message(src, T, others = span_bolddanger("%U% moves their head next to %T%'s neck, seemingly looking for something!"))
 
-	om_task_timed(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
+	perform_op(src, src, "succubus_bite", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "choice" = choice, "from" = T.loc))
 
-/mob/living/proc/succubus_bite_living_done(mob/living/carbon/human/T, choice)
+/// The bite lands only on a victim who is still where they were when the choice was made.
+/mob/living/proc/succubus_bite_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.arg("victim")
+	var/choice = A.arg("choice")
+	if(QDELETED(T) || T.loc != A.arg("from") || !Adjacent(T))
+		return
 	if(choice == REAGENT_APHRODISIAC)
 		src.show_message(span_warning("You sink your fangs into [T] and inject your aphrodisiac!"))
 		act_message(src, T, others = span_red("%U% sinks their fangs into %T%!"))
@@ -1391,9 +1606,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 /datum/reagent/succubi_numbing/affect_blood(mob/living/carbon/M, alien, removed)
 
 
-	M.status_at_least(EFFECT_BLURRY, 10)
-	M.status_at_least(EFFECT_WEAKENED, 2)
-	M.status_at_least(EFFECT_DROWSY, 20)
+	M.status_at_least(STAT_BLURRY, 10)
+	M.status_at_least(STAT_WEAKENED, 2)
+	M.status_at_least(STAT_DROWSY, 20)
 	if(prob(7))
 		M.show_message(span_warning("You start to feel weakened, your body seems heavy."))
 	return
@@ -1410,8 +1625,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 
 /datum/reagent/succubi_paralize/affect_blood(mob/living/carbon/M, alien, removed) //will first keep it like that.  lets see what it changes. if nothing, than I will rework the effect again
 
-	M.status_at_least(EFFECT_WEAKENED, 20)
-	M.status_at_least(EFFECT_BLURRY, 10)
+	M.status_at_least(STAT_WEAKENED, 20)
+	M.status_at_least(STAT_BLURRY, 10)
 	if(prob(10))
 		M.show_message(span_warning("You lose sensation of your body."))
 	return
@@ -1421,16 +1636,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set desc = "you can lay Eggs"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 600)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(mobegglaying_chosen), message = "What do you want to do?", title = "Egg Option", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS)
+	cooldown_start(src, last_special, 60 SECONDS)
+	// The op asks what to do, then takes thirty seconds over it (code/library/mob/living_abilities.dm).
+	perform_op(src, src, "egg_laying", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
-/mob/living/proc/mobegglaying_chosen(datum/om/prompt/choice/ask)
-	om_task_timed(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, ask.choice))
-
-/mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
+/mob/living/proc/mobegglaying_living_done(datum/act/op/A)
+	var/mob/living/carbon/human/C = src
+	var/choice = A.step_value("choice")
 	if(choice == "Make a Egg" && eggs > 5)
 		src.show_message(span_warning("Your Belly is full of Eggs you cant have more!!"))
 		return 0
@@ -1458,28 +1673,39 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set desc = "Sting a target and inject a small amount of toxin"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(1))
 		victims += C
-	om_ask(src, /datum/om/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), choices = victims)
+	open_request(src, /datum/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), answerer = src, choices = victims)
 
 /// Re-checked on the answer: conscious, off cooldown, and next to the target.
-/datum/om/prompt/choice/insect_sting
+/datum/prompt/choice/insect_sting
+	timeout = 0
 	title = "Target"
-	message = "Who will we sting?"
+	question = "Who will we sting?"
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/insect_sting/valid()
+/datum/prompt/choice/insect_sting/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
 	var/mob/living/L = answerer
-	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(choice))
+	if(!cooldown_ready(L, last_special) || !L.Adjacent(value))
 		return "can't reach"
 	return null
 
-/mob/living/proc/insect_sting_chosen(datum/om/prompt/choice/insect_sting/ask)
-	var/mob/living/carbon/T = ask.choice
+/mob/living/proc/insect_sting_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/T = A.answer.value
+	if(T && QDELETED(T))
+		return
 	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
@@ -1488,7 +1714,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	to_chat(T, span_danger("You feel a stabbing pain as you are stung!"))
 	act_message(src, T, others = span_infoplain(span_red("%U% sinks their stinger into %T%!")))
 	T.bloodstr.add_reagent(REAGENT_ID_CONDENSEDCAPSAICINV,3)
-	COOLDOWN_START(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
+	cooldown_start(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
 
 /mob/living/proc/absorb_devour()
 	if(!absorbed || !isbelly(loc))
@@ -1503,27 +1729,49 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 			continue
 		if(potentialtarget == pred)
 			continue
-		if(potentialtarget.devourable)
+		if(potentialtarget.vore_prefs.devourable)
 			targets += potentialtarget
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))
 		return
-	om_ask(src, /datum/om/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), choices = targets, belly = belly)
+	open_request(src, /datum/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), answerer = src, choices = targets, belly = belly)
 
 /// An absorbed prey picking a victim for its pred's belly. Re-checked on the answer: still
 /// absorbed in that belly, inside a living pred. (No consciousness check.)
-/datum/om/prompt/choice/victim/absorbed
+/datum/prompt/choice/victim/absorbed
 	ask_flags = NONE
 	var/obj/belly/belly
 
-/datum/om/prompt/choice/victim/absorbed/valid()
+CAPABILITIES(/datum/prompt/choice/victim/absorbed)
+	ref_one(nameof(belly), /obj/belly)
+
+/datum/prompt/choice/victim/absorbed/prepare(datum/act/A)
+	..()
+	var/obj/belly/captured = belly
+	rel_clear(src, nameof(belly))
+	rel_set(src, nameof(belly), captured)
+
+/datum/prompt/choice/victim/absorbed/begin()
+	if(QDELETED(belly))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/victim/absorbed/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
-	if(!L.absorbed || L.loc != belly || !isliving(belly.loc))
+	if(QDELETED(belly) || !L.absorbed || L.loc != belly || !isliving(belly.loc))
 		return "not absorbed"
 	return null
 
-/mob/living/proc/absorb_devour_chosen(datum/om/prompt/choice/victim/absorbed/ask)
-	var/mob/living/target = ask.choice
+/mob/living/proc/absorb_devour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/target = A.answer.value
+	if(target && QDELETED(target))
+		return
 	var/mob/living/pred = loc.loc
 	var/obj/belly/belly = loc
 	if(!isliving(target)) //Safety.
@@ -1536,22 +1784,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		MSG_OTHERS(span_vnotice("%T%'s [belly] seems interested in %U%.")))
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
-	var/starting_loc = target.loc
-	om_task_start(/datum/om/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
+	perform_op(src, src, "absorb_devour", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target, "pred" = pred, "belly" = belly, "from" = target.loc))
 
-/datum/om/task/timed/living_absorb_devour_living
-	duration = 5 SECONDS
-	complete_proc = /mob/living/proc/absorb_devour_living_done
-	var/mob/living/pred
-	var/obj/belly/belly
-	var/starting_loc
-
-/mob/living/proc/absorb_devour_living_done(datum/om/task/timed/living_absorb_devour_living/task)
-	var/mob/living/pred = task.pred
-	var/obj/belly/belly = task.belly
-	var/mob/living/target = task.target
-	var/starting_loc = task.starting_loc
-	if(target.loc != starting_loc)
+/mob/living/proc/absorb_devour_living_done(datum/act/op/A)
+	var/mob/living/pred = A.arg("pred")
+	var/obj/belly/belly = A.arg("belly")
+	var/mob/living/target = A.arg("victim")
+	if(QDELETED(target) || QDELETED(pred) || QDELETED(belly))
+		return
+	if(target.loc != A.arg("from"))
 		to_chat(src, span_notice("\The [target] is no longer within reach."))
 		return
 	if(target?.buckled_to())
@@ -1567,17 +1808,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	set desc = "Change your name. Notifies admins."
 	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	om_ask(src, /datum/om/prompt/text, PROC_REF(name_change_entered), message = "What would you like your name to become?", title = "Name change", default = name, max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(name_change_entered), answerer = src, title = "Name change", question = "What would you like your name to become?", default = name, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/mob/living/proc/name_change_entered(datum/om/prompt/text/ask)
-	var/chosen_name = ask.text
-	if(!length(chosen_name) || !COOLDOWN_FINISHED(src, last_special))
+/mob/living/proc/name_change_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/chosen_name = A.answer.value
+	if(!length(chosen_name) || !cooldown_ready(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, (5 SECONDS)) //don't spam check the global list pls
+	cooldown_start(src, last_special, (5 SECONDS)) //don't spam check the global list pls
 	for(var/mob/checkplayer in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(checkplayer == src)
 			continue
@@ -1593,5 +1836,5 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	log_and_message_admins("[key_name(src)] set their name to [chosen_name]", src)
 	if(dna)
 		dna.real_name = chosen_name
-	real_name = chosen_name
+	set_real_name(chosen_name)
 	name = chosen_name

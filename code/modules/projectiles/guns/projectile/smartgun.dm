@@ -15,7 +15,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 	w_class = ITEMSIZE_LARGE
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/smartgun	//Only used for chameleon guns
-	slot_flags = SLOT_BACK
 	accuracy = -15
 	one_handed_penalty = 50
 
@@ -29,8 +28,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 	var/closed = TRUE
 	var/cycling = FALSE
 
-	var/static/mutable_appearance/mag_underlay
-
 /obj/item/gun/projectile/smartgun/make_worn_icon(body_type, slot_name, inhands, default_icon, default_layer, icon/clip_mask)
 	var/image/I = ..()
 	if(I)
@@ -39,11 +36,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 
 /obj/item/gun/projectile/smartgun/loaded
 	magazine_type = /obj/item/ammo_magazine/smartgun
-
-/obj/item/gun/projectile/smartgun/Initialize(mapload)
-	. = ..()
-	if(!mag_underlay)
-		mag_underlay = mutable_appearance(icon, icon_state = "smartgun_mag")
 
 /obj/item/gun/projectile/smartgun/consume_next_projectile()
 	if(!closed)
@@ -62,39 +54,42 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 		return
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+TRACKED(/obj/item/gun/projectile/smartgun, closed)
 
-/// Old click_alt.
-/obj/item/gun/projectile/smartgun/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/gun/projectile/smartgun)
+	configure(item_worn(slots = SLOT_BACK))
+	op("ready", hand(), answers(INTENT_TOGGLE), label("Ready or unready rifle"), then(PROC_REF(readiness_toggled)))
+
+/obj/item/gun/projectile/smartgun/proc/readiness_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ishuman(user) && !user.incapacitated() && Adjacent(user))
 		if(cycling)
 			to_chat(user, span_warning("[src] is still cycling!"))
-			return TRUE
+			return OP_OK
 
-		cycling = TRUE
+		set_cycling(TRUE)
 
 		if(closed)
-			icon_state = "[initial(icon_state)]_open"
 			play_sfx(src, SFX_WEAPONS_SMARTGUNOPEN)
 			to_chat(user, span_notice("You unready [src] so that it can be reloaded."))
 		else
-			icon_state = "[initial(icon_state)]_closed"
 			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
-		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
-	return TRUE
+		after(src, 2 SECONDS, PROC_REF(toggle_real_state), key = "smartgun_cycle")
+	return OP_OK
 
 /obj/item/gun/projectile/smartgun/proc/toggle_real_state()
-	cycling = FALSE
-	closed = !closed
+	set_cycling(FALSE)
+	set_closed(!closed)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/smartgun/appearance_overlays()
-	. = list()
-	. += ..()
-	underlays = null
-	if(ammo_magazine)
-		underlays += mag_underlay
+/// The look: the open or closed receiver (the target state while it cycles), and the magazine.
+/obj/item/gun/projectile/smartgun/draw(datum/look/look)
+	..()
+	if(cycling)
+		look.state("[initial(icon_state)][closed ? "_open" : "_closed"]")
+	else if(!closed)
+		look.state("[initial(icon_state)]_open")
+	look.overlay("smartgun_mag", when = !!ammo_magazine)
 
 /**
  * The bullet that flies through the air
@@ -128,12 +123,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, 
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
 	icon_state = "smartguncase"
 	randpixel = 10
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 
 	leaves_residue = FALSE
 	caliber = "smartgun"
 	projectile_type = /obj/item/projectile/bullet/smartgun
+
+CAPABILITIES(/obj/item/ammo_casing/smartgun)
+	configure(item_worn(slots = SLOT_BELT))
 
 /**
  * The magazine that holds the items of ammo
@@ -143,7 +140,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, 
 	desc = "A holder for smartgun rails for the S.M.A.R.T. rifle."
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
 	icon_state = "smartgunmag"
-	slot_flags = SLOT_BELT
 	MATERIAL_BULK(MAT_STEEL, 500)
 	w_class = ITEMSIZE_SMALL
 
@@ -152,3 +148,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/smartgun, TYPE_PROC_REF(/atom, 
 	max_ammo = 5
 	ammo_type = /obj/item/ammo_casing/smartgun
 	multiple_sprites = TRUE
+
+CAPABILITIES(/obj/item/ammo_magazine/smartgun)
+	configure(item_worn(slots = SLOT_BELT))

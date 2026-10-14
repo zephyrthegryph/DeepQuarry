@@ -19,8 +19,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 	flags = NOBLUDGEON
-	force = 10
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -42,10 +40,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		"Aux" = PIPING_LAYER_AUX
 	)
 
-/obj/item/pipe_dispenser/Initialize(mapload)
-	. = ..()
-	// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
-
 /obj/item/pipe_dispenser/proc/SetupPipes()
 	if(!first_atmos)
 		first_atmos = GLOB.atmos_pipe_recipes[GLOB.atmos_pipe_recipes[1]][1]
@@ -54,32 +48,42 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!recipe())
 		recipe_static = first_atmos
 
-DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
+// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
+CAPABILITIES(/obj/item/pipe_dispenser)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
+	owns_one(nameof(tool), /obj/item/tool/wrench/cyborg, starts = /obj/item/tool/wrench/cyborg)
+	op("controls", in_hand(), label("Open pipe controls"), then(PROC_REF(rpd_controls_opened)))
+	interface("RapidPipeDispenser", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("color", ui_act("color", arg("paint_color", schema_text(4096))), then(PROC_REF(ui_act_color)))
+	op("category", ui_act("category", arg("category", num())), then(PROC_REF(ui_act_category)))
+	op("piping_layer", ui_act("piping_layer", arg("piping_layer", num())), then(PROC_REF(ui_act_piping_layer)))
+	op("pipe_type", ui_act("pipe_type", arg("category", schema_text(4096)), arg("pipe_type", num())), then(PROC_REF(ui_act_pipe_type)))
+	op("setdir", ui_act("setdir", arg("dir", schema_text(4096)), arg("flipped", num())), then(PROC_REF(ui_act_setdir)))
+	op("mode", ui_act("mode", arg("mode", num())), then(PROC_REF(ui_act_mode)))
+	// What a click builds or breaks takes a fraction of a second beside the target; afterattack() picks the one that fits the mode and starts it.
+	op("destroy", ai(), takes("target"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(destroy_pipe_done)))
+	op("build_meter", ai(), takes("target", "layer"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_meter_done)))
+	op("build_sensor", ai(), takes("target"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_sensor_done)))
+	op("build_pipe", ai(), takes("target", "layer", "dir", "flipped", "recipe"), wait(0.2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_pipe_done)))
+	op("build_disposal", ai(), takes("target", "dir", "flipped", "recipe"), wait(0.4 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(build_disposal_done)))
 
-DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/pipe_dispenser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/item/pipe_dispenser/proc/rpd_controls_opened(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/item/pipe_dispenser/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-DECLARE_UI_STATE(/obj/item/pipe_dispenser, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
-
 /obj/item/pipe_dispenser/ui_prepare(mob/user, datum/tgui/ui)
 	SetupPipes()
 	return TRUE
 
-UI_DATA_REPLACE(/obj/item/pipe_dispenser, "merge:ui_data_obj_item_pipe_dispenser{category:text,piping_layer:unknown,pipe_layers:list,preview_rows:unknown,categories:list,selected_color:text,paint_colors:unknown,mode:num}")
-
-/// The computed part of /obj/item/pipe_dispenser's window data (declared on its UI_DATA row).
-/obj/item/pipe_dispenser/proc/ui_data_obj_item_pipe_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/pipe_dispenser's window data.
+/obj/item/pipe_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"category" = category,
 		"piping_layer" = piping_layer,
@@ -107,26 +111,27 @@ UI_DATA_REPLACE(/obj/item/pipe_dispenser, "merge:ui_data_obj_item_pipe_dispenser
 
 	return data
 
-/obj/item/pipe_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
+/obj/item/pipe_dispenser/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "color", ui_act_color, UI_ARG_TEXT("paint_color"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_color)
+/obj/item/pipe_dispenser/proc/ui_act_color(datum/act/op/A, paint_color_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	paint_color = params["paint_color"]
+	paint_color = paint_color_arg
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "category", ui_act_category, UI_ARG_NUM("category"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_category)
+/obj/item/pipe_dispenser/proc/ui_act_category(datum/act/op/A, category_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	category = params["category"]
+	category = category_arg
 	switch(category)
 		if(DISPOSALS_CATEGORY)
 			recipe_static = first_disposal
@@ -139,44 +144,48 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_category)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "piping_layer", ui_act_piping_layer, UI_ARG_NUM("piping_layer"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_piping_layer)
+/obj/item/pipe_dispenser/proc/ui_act_piping_layer(datum/act/op/A, piping_layer_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	piping_layer = params["piping_layer"]
+	piping_layer = piping_layer_arg
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "pipe_type", ui_act_pipe_type, UI_ARG_TEXT("category"), UI_ARG_NUM("pipe_type"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_pipe_type)
+/obj/item/pipe_dispenser/proc/ui_act_pipe_type(datum/act/op/A, category, pipe_type)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
 	var/static/list/recipes
 	if(!recipes)
 		recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-	recipe_static = recipes[params["category"]][params["pipe_type"]]
+	recipe_static = recipes[category][pipe_type]
 	p_dir = NORTH
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "setdir", ui_act_setdir, UI_ARG_TEXT("dir"), UI_ARG_NUM("flipped"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_setdir)
+/obj/item/pipe_dispenser/proc/ui_act_setdir(datum/act/op/A, dir, flipped)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	p_dir = text2dir(params["dir"])
-	p_flipped = params["flipped"]
+	p_dir = text2dir(dir)
+	p_flipped = flipped
 	playeffect = FALSE
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "mode", ui_act_mode, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
+/obj/item/pipe_dispenser/proc/ui_act_mode(datum/act/op/A, mode_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/playeffect = TRUE
-	var/n = params["mode"]
+	var/n = mode_arg
 	if(mode & n)
 		mode &= ~n
 	else
@@ -207,7 +216,7 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
 		play_sfx(src, SFX_MACHINES_CLICK)
-		om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
+		perform_op(user, src, "destroy", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
@@ -226,14 +235,14 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 				play_sfx(src, SFX_MACHINES_CLICK)
 				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, queued_piping_layer = queued_piping_layer)
+					perform_op(user, src, "build_meter", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "layer" = queued_piping_layer))
 				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
-					om_task_timed(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
+					perform_op(user, src, "build_sensor", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A))
 				else if(istype(recipe(), /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))
-					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, queued_piping_layer = queued_piping_layer, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+					perform_op(user, src, "build_pipe", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "layer" = queued_piping_layer, "dir" = queued_p_dir, "flipped" = queued_p_flipped, "recipe" = R))
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe()
@@ -245,48 +254,51 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				play_sfx(src, SFX_MACHINES_CLICK)
-				om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack3, user, A, queued_p_dir = queued_p_dir, queued_p_flipped = queued_p_flipped, R = R)
+				perform_op(user, src, "build_disposal", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "dir" = queued_p_dir, "flipped" = queued_p_flipped, "recipe" = R))
 
 			else
 				return ..()
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done(atom/A)
+/obj/item/pipe_dispenser/proc/destroy_pipe_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	animate_deletion(A)
-/datum/om/task/timed/pipe_dispenser_afterattack
-	duration = 2
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done2
-	var/queued_piping_layer
+	animate_deletion(target)
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done2(datum/om/task/timed/pipe_dispenser_afterattack/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_piping_layer = task.queued_piping_layer
+/obj/item/pipe_dispenser/proc/build_meter_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	var/mob/user = A.actor
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(A))
-	PM.setAttachLayer(queued_piping_layer)
+	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(target))
+	PM.setAttachLayer(A.arg("layer"))
 	if(mode & WRENCH_MODE)
 		do_wrench(PM, user)
-/obj/item/pipe_dispenser/proc/afterattack_timed_done3(atom/A, mob/user)
+	return OP_OK
+
+/obj/item/pipe_dispenser/proc/build_sensor_done(datum/act/op/A)
+	var/atom/target = A.arg("target")
+	var/mob/user = A.actor
+	if(QDELETED(target))
+		return OP_FAILED
 	activate()
-	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
+	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(target))
 	if(mode & WRENCH_MODE)
 		do_wrench(GS, user)
-/datum/om/task/timed/pipe_dispenser_afterattack2
-	duration = 2
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done4
-	var/queued_piping_layer
-	var/queued_p_dir
-	var/queued_p_flipped
-	var/datum/pipe_recipe/pipe/R
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done4(datum/om/task/timed/pipe_dispenser_afterattack2/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_piping_layer = task.queued_piping_layer
-	var/queued_p_dir = task.queued_p_dir
-	var/queued_p_flipped = task.queued_p_flipped
-	var/datum/pipe_recipe/pipe/R = task.R
+/obj/item/pipe_dispenser/proc/build_pipe_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/user = op_act.actor
+	var/queued_piping_layer = op_act.arg("layer")
+	var/queued_p_dir = op_act.arg("dir")
+	var/queued_p_flipped = op_act.arg("flipped")
+	var/datum/pipe_recipe/pipe/R = op_act.arg("recipe")
+	if(QDELETED(A))
+		return OP_FAILED
 	activate()
 	var/obj/machinery/atmospherics/path = R.pipe_type
 	var/pipe_item_type = initial(path.construction_type) || /obj/item/pipe
@@ -303,41 +315,38 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 		do_wrench(P, user)
 	else
 		build_effect(P)
-/datum/om/task/timed/pipe_dispenser_afterattack3
-	duration = 4
-	complete_proc = /obj/item/pipe_dispenser/proc/afterattack_timed_done5
-	var/queued_p_dir
-	var/queued_p_flipped
-	var/datum/pipe_recipe/disposal/R
+	return OP_OK
 
-/obj/item/pipe_dispenser/proc/afterattack_timed_done5(datum/om/task/timed/pipe_dispenser_afterattack3/task)
-	var/atom/A = task.target
-	var/mob/user = task.actor
-	var/queued_p_dir = task.queued_p_dir
-	var/queued_p_flipped = task.queued_p_flipped
-	var/datum/pipe_recipe/disposal/R = task.R
+/obj/item/pipe_dispenser/proc/build_disposal_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/user = op_act.actor
+	var/queued_p_dir = op_act.arg("dir")
+	var/queued_p_flipped = op_act.arg("flipped")
+	var/datum/pipe_recipe/disposal/R = op_act.arg("recipe")
+	if(QDELETED(A))
+		return OP_FAILED
 	var/obj/structure/disposalconstruct/C = new(A, R.pipe_type, queued_p_dir, queued_p_flipped, R.subtype)
 
 	if(!C.can_place())
 		to_chat(user, span_warning("There's not enough room to build that here!"))
-		qdel(C)
-		return
+		consume(C)
+		return OP_FAILED
 
 	activate()
 
 	C.add_fingerprint(user)
-	C.update_icon()
 	if(mode & WRENCH_MODE)
 		do_wrench(C, user)
 	else
 		build_effect(C)
+	return OP_OK
 
 /obj/item/pipe_dispenser/proc/build_effect(obj/P, time = 1.5)
 	P.filters += filter(type = "angular_blur", size = 30)
 	animate(P.filters[P.filters.len], size = 0, time = time)
 	var/outline = filter(type = "outline", size = 1, color = "#22AAFF")
 	P.filters += outline
-	om_after(P, time, /proc/rpd_build_effect_end, P, outline)
+	after(P, time, GLOBAL_PROC_REF(rpd_build_effect_end), with = list(P, outline))
 
 /proc/rpd_build_effect_end(obj/P, outline)
 	P.filters -= outline
@@ -346,11 +355,11 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 /obj/item/pipe_dispenser/proc/animate_deletion(obj/P, time = 1.5)
 	P.filters += filter(type = "angular_blur", size = 0)
 	animate(P.filters[P.filters.len], size = 30, time = time)
-	om_after(P, time, /proc/rpd_deletion_end, P)
+	after(P, time, GLOBAL_PROC_REF(rpd_deletion_end), with = list(P))
 
 /proc/rpd_deletion_end(obj/P)
 	P.filters -= filter(type = "angular_blur", size = 30)
-	qdel(P)
+	spent(P)
 
 /obj/item/pipe_dispenser/proc/activate()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)

@@ -17,7 +17,7 @@
 
 /proc/dx_review_cap(path, label, layer_order, examine_order)
 	var/datum/capability/dx_review/C = new path
-	C.label = label
+	C.set_label(label)
 	C.layer_order = layer_order
 	C.examine_order = examine_order
 	return C
@@ -26,17 +26,19 @@
 	var/tracked_value = 0
 	var/timed_flag = FALSE
 
-TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_review, tracked_value)
 
-/obj/cap_fixture/dx_review/capabilities()
-	. = ..()
-	. += dx_review_cap(/datum/capability/dx_review/a, "a")
-	. += dx_review_cap(/datum/capability/dx_review/b, "b", layer_order = 100, examine_order = -1)
-	. += dx_review_cap(/datum/capability/dx_review/c, "c")
+/obj/cap_fixture/dx_review/declared_capabilities(list/into)
+	..()
+	into += dx_review_cap(/datum/capability/dx_review/a, "a")
+	into += dx_review_cap(/datum/capability/dx_review/b, "b", layer_order = 100, examine_order = -1)
+	into += dx_review_cap(/datum/capability/dx_review/c, "c")
 
-/obj/cap_fixture/dx_review/replaced/capabilities()
-	. = ..()
-	. = replace(., /datum/capability/dx_review/a, dx_review_cap(/datum/capability/dx_review/a, "a2"))
+/obj/cap_fixture/dx_review/replaced/declared_capabilities(list/into)
+	..()
+	var/list/kept = replace(into, /datum/capability/dx_review/a, dx_review_cap(/datum/capability/dx_review/a, "a2"))
+	into.Cut()
+	into += kept
 
 /// replace() keeps the position; layer_order / examine_order reorder draw and examine only.
 /datum/unit_test/dx_review_order_and_replace/Run()
@@ -49,7 +51,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	for(var/datum/capability/dx_review/C as anything in caps_ordered(F, CAP_ORDER_DRAW))
 		labels += C.label
 	TEST_ASSERT_EQUAL(jointext(labels, ","), "a,c,b", "layer_order = 100 draws b last")
-	TEST_ASSERT_EQUAL(jointext(F.caps_examine(null), ","), "b,a,c", "examine_order = -1 lists b first")
+	TEST_ASSERT_EQUAL(jointext(caps_examine(F, null), ","), "b,a,c", "examine_order = -1 lists b first")
 	var/obj/cap_fixture/dx_review/replaced/R = allocate(/obj/cap_fixture/dx_review/replaced)
 	labels = list()
 	for(var/datum/capability/dx_review/C as anything in caps_of(R))
@@ -71,36 +73,10 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	TEST_ASSERT(!(X in caps_of(F)), "the type's list is untouched")
 	var/datum/system/dx_review/review_system = system(/datum/system/dx_review)
 	TEST_ASSERT(F in review_system.member_list(), "the holder joined the extra's system")
-	TEST_ASSERT("extra" in F.caps_examine(null), "the extra's examine line shows")
+	TEST_ASSERT("extra" in caps_examine(F, null), "the extra's examine line shows")
 	TEST_ASSERT(remove_capability(F, /datum/capability/dx_review/joining), "the extra detaches")
 	TEST_ASSERT(!(F in review_system.member_list()), "the holder left the system")
-	TEST_ASSERT(!("extra" in F.caps_examine(null)), "the examine line is gone")
-
-/obj/cap_fixture/dx_review_menu
-
-/obj/cap_fixture/dx_review_menu/capabilities()
-	. = ..()
-	. += cap_hand("Poke", PROC_REF(poke), works_unpowered = TRUE, applies = PROC_REF(pokeable))
-
-/obj/cap_fixture/dx_review_menu/var/can_poke = TRUE
-
-/obj/cap_fixture/dx_review_menu/proc/poke(mob/user)
-	return TRUE
-
-/obj/cap_fixture/dx_review_menu/proc/pokeable()
-	return can_poke
-
-/// The Menu runs a chosen capability entry by id; applies = hides it per instance.
-/datum/unit_test/dx_review_menu_ids_and_applies/Run()
-	var/obj/cap_fixture/dx_review_menu/F = allocate(/obj/cap_fixture/dx_review_menu)
-	var/list/entries = cap_interactions(F)
-	TEST_ASSERT_EQUAL(length(entries), 1, "one entry")
-	var/datum/interaction/capability/E = entries[1]
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(F))
-	TEST_ASSERT(run_chosen_interaction(H, F, E.id), "the Menu runs the capability entry by its id on this target")
-	TEST_ASSERT(E.applies_to(F), "offered while pokeable")
-	F.can_poke = FALSE
-	TEST_ASSERT(!E.applies_to(F), "not offered once applies says no")
+	TEST_ASSERT(!("extra" in caps_examine(F, null)), "the examine line is gone")
 
 /// M5: a revert only fires while the var still holds what timed_set wrote. M6: VV uses the setter.
 /datum/unit_test/dx_review_timed_and_vv/Run()
@@ -143,34 +119,34 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 /// M9: the look covers color, alpha and filters, and they are part of the key.
 /datum/unit_test/dx_review_look_coverage/Run()
 	var/obj/cap_fixture/dx_review_look/F = allocate(/obj/cap_fixture/dx_review_look)
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.icon_state, "base", "state applied")
 	TEST_ASSERT_EQUAL(F.color, "#ff0000", "color applied")
 	TEST_ASSERT_EQUAL(F.alpha, 200, "alpha applied")
 	TEST_ASSERT(F.get_filter("outline"), "filter applied")
-	var/key = F.look_key
-	F.tint = "#00ff00"
-	changed(F)
+	var/key = F.rx?.look_key
+	F.set_tint("#00ff00")
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(F.look_key != key, "a color change changes the key")
+	TEST_ASSERT(F.rx?.look_key != key, "a color change changes the key")
 	TEST_ASSERT_EQUAL(F.color, "#00ff00", "the new color applied")
 
 /obj/cap_fixture/dx_review_selfmark
 
 /obj/cap_fixture/dx_review_selfmark/on_state_changed(bits)
-	changed(src) // wrong on purpose: a reactive proc marking its own entity
+	state_changed(src) // wrong on purpose: a reactive proc marking its own entity
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("refresh_self_mark_expected", TRUE)
 	var/before = length(GLOB.refresh_self_marks)
 	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
-	changed(F)
+	state_changed(F)
 	// One drain, not refresh_flush(): the fixture re-marks itself forever, which flush reports as a
 	// runaway after its pass cap. One pass is enough for the detector, and the re-mark waits (deferred).
 	refresh_drain(null)
-	GLOB.refresh_self_mark_expected = FALSE
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.refresh_self_marks) > before, "the self-mark detector reported it")
 	TEST_ASSERT(F.refresh_queued, "the self re-mark waits for the next drain instead of spinning")
 	F.refresh_queued = FALSE
@@ -221,7 +197,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	refresh_flush()
 	TEST_ASSERT(!(/obj/item/healthanalyzer/proc/toggle_adv in basic.verbs), "a basic analyzer has no toggle")
 	TEST_ASSERT(/obj/item/healthanalyzer/proc/toggle_adv in adv.verbs, "an advanced analyzer has the toggle from init")
-	TEST_ASSERT(!basic.refresh_hidden_verbs, "no per-instance hide list on the basic one")
+	TEST_ASSERT(!basic.rx?.refresh_hidden_verbs, "no per-instance hide list on the basic one")
 
 /obj/cap_fixture/dx_review_light
 	var/lit = TRUE
@@ -230,18 +206,18 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	..()
 	look.state("lamp")
 	if(lit)
-		look.light(2, 1, "#ffcc00")
+		look.glow(2, 1, "#ffcc00")
 
-/// Review 2 H4: look.light() applies with the look and is taken back when the look stops setting it.
+/// Review 2 H4: look.glow() applies with the look and is taken back when the look stops setting it.
 /datum/unit_test/dx_review_look_light/Run()
 	var/obj/cap_fixture/dx_review_light/F = allocate(/obj/cap_fixture/dx_review_light)
-	changed(F)
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT_EQUAL(F.light_range, 2, "the look's light applied")
-	F.lit = FALSE
-	changed(F)
+	TEST_ASSERT_EQUAL(glow_of(F).range, 2, "the look's light applied")
+	F.set_lit(FALSE)
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(!F.light_range, "the light went off when the look stopped setting it")
+	TEST_ASSERT(!glow_of(F).range, "the light went off when the look stopped setting it")
 
 /obj/cap_fixture/dx_review_interval
 	periodic_interval = 1 SECONDS
@@ -261,15 +237,15 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/obj/cap_fixture/dx_review_interval/F = new
 	made += F
 	refresh_flush()
-	TEST_ASSERT(!om_timer_slot_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
+	TEST_ASSERT(!after_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
 	F.running = TRUE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
-	TEST_ASSERT(om_timer_slot_pending(F, "periodic_interval"), "armed once should_run() holds")
+	TEST_ASSERT(after_pending(F, "periodic_interval"), "armed once should_run() holds")
 	scheduler_advance(2.5)
 	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
 	F.running = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	var/steps = F.steps
 	scheduler_advance(2.5)
@@ -278,7 +254,7 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 /// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
 /proc/dx_cap_ui_data(atom/A, mob/user, cap_type)
 	var/list/data = list()
-	A.caps_ui_data(user, data)
+	caps_ui_data(A, user, data)
 	var/datum/capability/C = cap_of_all(A, cap_type)
 	var/list/caps = data["caps"]
 	return (C && caps) ? (caps[C.ui_key()] || list()) : list()

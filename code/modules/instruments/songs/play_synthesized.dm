@@ -76,9 +76,9 @@
 	if(clear_channels)
 		LAZYCLEARLIST(channels_playing)
 		LAZYCLEARLIST(channels_idle)
-		instrument_service().current_instrument_channels -= using_sound_channels
+		SSinstruments.ready().current_instrument_channels -= using_sound_channels
 		using_sound_channels = 0
-		sound_service().free_datum_channels(src)
+		SSsounds.ready().free_datum_channels(src)
 
 /**
  * Stops all sounds we are responsible for in a given person. Only works in synthesized mode.
@@ -97,7 +97,7 @@
 		return
 	if(using_sound_channels >= max_sound_channels)
 		return
-	. = instrument_service().reserve_instrument_channel(src)
+	. = SSinstruments.ready().reserve_instrument_channel(src)
 	if(!isnull(.))
 		using_sound_channels++
 

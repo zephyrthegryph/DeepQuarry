@@ -5,50 +5,51 @@
 	icon = 'icons/obj/wallet.dmi'
 	icon_state = "wallet-orange"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID
 
 	var/obj/item/card/id/front_id
 
-	drop_sound = SFX_ITEMS_DROP_LEATHER
-	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 
 	var/original_name // Due to loadout customizations and such
 
-TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/spacecash, \
-		/obj/item/card, \
-		/obj/item/clothing/mask/smokable/cigarette/, \
-		/obj/item/flashlight/pen, \
-		/obj/item/rectape, \
-		/obj/item/cartridge, \
-		/obj/item/encryptionkey, \
-		/obj/item/seeds, \
-		/obj/item/stack/medical, \
-		/obj/item/coin, \
-		/obj/item/dice, \
-		/obj/item/disk, \
-		/obj/item/implanter, \
-		/obj/item/flame/lighter, \
-		/obj/item/flame/match, \
-		/obj/item/forensics, \
-		/obj/item/glass_extra, \
-		/obj/item/haircomb, \
-		/obj/item/hand, \
-		/obj/item/key, \
-		/obj/item/lipstick, \
-		/obj/item/paper, \
-		/obj/item/pen, \
-		/obj/item/photo, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/sample, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/stamp, \
-		/obj/item/clothing/accessory/permit, \
-		/obj/item/clothing/accessory/badge, \
-		/obj/item/makeover, \
-		/obj/item/pizzavoucher, \
-		/obj/item/card_fluff \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/wallet)
+	ref_one(nameof(front_id), /obj/item/card/id)
+	configure(item_worn(slots = SLOT_ID))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
+	configure(storage(accepts = list(
+		/obj/item/spacecash,
+		/obj/item/card,
+		/obj/item/clothing/mask/smokable/cigarette/,
+		/obj/item/flashlight/pen,
+		/obj/item/rectape,
+		/obj/item/cartridge,
+		/obj/item/encryptionkey,
+		/obj/item/seeds,
+		/obj/item/stack/medical,
+		/obj/item/coin,
+		/obj/item/dice,
+		/obj/item/disk,
+		/obj/item/implanter,
+		/obj/item/flame/lighter,
+		/obj/item/flame/match,
+		/obj/item/forensics,
+		/obj/item/glass_extra,
+		/obj/item/haircomb,
+		/obj/item/hand,
+		/obj/item/key,
+		/obj/item/lipstick,
+		/obj/item/paper,
+		/obj/item/pen,
+		/obj/item/photo,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/sample,
+		/obj/item/tool/screwdriver,
+		/obj/item/stamp,
+		/obj/item/clothing/accessory/permit,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/makeover,
+		/obj/item/pizzavoucher,
+		/obj/item/card_fluff)))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
@@ -56,7 +57,6 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 		if(W == front_id())
 			rel_clear(src, nameof(front_id))
 			name = original_name || initial(name)
-			update_icon()
 
 /obj/item/storage/wallet/insert_item(obj/item/W, mob/user, prevent_warning = FALSE)
 	. = ..()
@@ -66,18 +66,24 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
-			update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/wallet/appearance_overlays()
-	. = list()
-	if(front_id())
-		var/tiny_state = "id-generic"
-		if(icon_exists(icon, "id-[front_id().icon_state]"))
-			tiny_state = "id-"+front_id().icon_state
-		var/image/tiny_image = new/image(icon, icon_state = tiny_state)
-		tiny_image.appearance_flags = RESET_COLOR
-		. += tiny_image
+/obj/item/storage/wallet/draw(datum/look/look)
+	. = ..()
+	look.overlay(id_overlay())
+
+/// The small picture of the ID at the front of the wallet, or null.
+/obj/item/storage/wallet/proc/id_overlay()
+	var/obj/item/card/id/front = front_id()
+	if(!front)
+		return null
+	var/tiny_state = "id-generic"
+	if(icon_exists(icon, "id-[front.icon_state]"))
+		tiny_state = "id-[front.icon_state]"
+	var/image/tiny_image = new/image(icon, icon_state = tiny_state)
+	tiny_image.appearance_flags = RESET_COLOR
+	return tiny_image
+
+READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 
 /obj/item/storage/wallet/GetID()
 	return front_id()
@@ -89,30 +95,36 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, TYPE_PROC_REF(/atom, appearanc
 	else
 		return ..()
 
-/obj/item/storage/wallet/random/Initialize(mapload)
-	. = ..()
-	var/amount = rand(50, 100) + rand(50, 100) // Triangular distribution from 100 to 200
-	var/obj/item/spacecash/SC = null
-	SC = new(src)
+CAPABILITIES(/obj/item/storage/wallet/random)
+	initial_contents(PROC_REF(roll_cash))
+
+/// Rolled contents (initial_contents()): one bundle of cash worth 100 to 200 (a triangular distribution).
+/obj/item/storage/wallet/random/proc/roll_cash(datum/roller/R)
+	var/amount = R.number(50, 100) + R.number(50, 100)
+	var/obj/item/spacecash/SC = new
 	for(var/i in list(100, 50, 20, 10, 5, 1))
-		if(amount < i)
-			continue
 		while(amount >= i)
 			amount -= i
-			SC.adjust_worth(i, 0)
-		SC.update_icon()
+			SC.adjust_worth(i)
+	return SC
 
 /obj/item/storage/wallet/poly
 	name = "polychromic wallet"
 	desc = "You can recolor it! Fancy! The future is NOW!"
 	icon_state = "wallet-white"
 
-DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/change_color)
+// The colour is chosen from a window: an op of the wallet, reached from the verb a carrier has.
+CAPABILITIES(/obj/item/storage/wallet/poly)
+	held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED)
+	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"),
+		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))),
+		then(PROC_REF(recolored)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(poly_wallet_emp)))
+	rolls(nameof(color), PROC_REF(roll_colour))
 
-/obj/item/storage/wallet/poly/Initialize(mapload)
-	. = ..()
-	color = get_random_colour()
-	update_icon()
+/// Rolled before init (rolls()): any colour (get_random_colour()'s distribution).
+/obj/item/storage/wallet/poly/proc/roll_colour(datum/roller/R)
+	return R.hex_colour()
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"
@@ -120,23 +132,21 @@ DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/c
 	set desc = "Change the color of the wallet."
 	set src in usr
 
-	if(usr.stat || usr.restrained() || usr.incapacitated())
-		return
+	perform_op(usr, src, "recolor", null, ORIGIN_VERB)
 
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(wallet_color_chosen), title = "Wallet Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/// The picked colour becomes the wallet's.
+/obj/item/storage/wallet/poly/proc/recolored(datum/act/op/A)
+	var/datum/prompt/color/picked = A.answer
+	if(picked.value != color)
+		color = picked.value
+	return OP_OK
 
-/obj/item/storage/wallet/poly/proc/wallet_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color && (ask.picked_color != color))
-		color = ask.picked_color
-
-DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_emp))
 /// An EMP glitches the wallet's colour display for a while.
-/obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/damage_packet/packet)
+/obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/act/A)
 	var/original_state = icon_state
-	icon_state = "wallet-emp"
-	update_icon()
+	set_icon_state("wallet-emp")
 
-	om_after(src, 20 SECONDS, PROC_REF(emp_recovered), original_state)
+	after(src, 20 SECONDS, PROC_REF(emp_recovered), with = list(original_state))
 
 /obj/item/storage/wallet/womens
 	name = "women's wallet"
@@ -146,8 +156,7 @@ DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_
 
 /obj/item/storage/wallet/poly/proc/emp_recovered(original_state)
 	if(src)
-		icon_state = original_state
-		update_icon()
+		set_icon_state(original_state)
 
 /// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id

@@ -7,8 +7,6 @@
 	icon_state = "telecrystal"
 	w_class = ITEMSIZE_TINY
 	max_amount = 240
-	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
-	custom_handling = TRUE
 
 /obj/item/stack/telecrystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(amount >= 5)
@@ -18,12 +16,16 @@
 	else
 		to_chat(user, span_warning("There are not enough telecrystals to do that."))
 
-EXTEND_INTERACTIONS(/obj/item/stack/telecrystal, INTERACT_USE(null, PROC_REF(telecrystal_self)))
+CAPABILITIES(/obj/item/stack/telecrystal)
+	configure(item_combat(force = 1))
+	without("ui_open")
+	op("redeem", in_hand(), then(PROC_REF(redeemed)))
 
-/// Old attack_self: add the crystals to your balance.
-/obj/item/stack/telecrystal/proc/telecrystal_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using the crystals in the hand adds them to your balance.
+/obj/item/stack/telecrystal/proc/redeemed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.mind && user.mind.accept_tcrystals) //Checks to see if antag type allows for tcrystals
 		to_chat(user, span_notice("You use \the [src], adding [src.amount] to your balance."))
 		user.mind.tcrystals += amount
 		use(amount)
-	return
+	return OP_OK

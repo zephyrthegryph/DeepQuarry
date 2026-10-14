@@ -62,9 +62,32 @@
 	if(QDELETED(src.media) || !istype(src.media))
 		to_chat(user, span_warning("You have no media datum to change, if you're not in the lobby tell an admin."))
 		return
-	var/value = client_ask("volume", PROC_REF(set_new_volume), args, 0, /datum/om/prompt/number, message = "Choose your Jukebox volume.", title = "Jukebox volume", default = media.volume, max = 100)
-	if(isnull(value))
+	open_request(src, /datum/prompt/number/jukebox_volume, PROC_REF(jukebox_volume_answered), answerer = user, default = media.volume)
+
+/datum/prompt/number/jukebox_volume
+	question = "Choose your Jukebox volume."
+	title = "Jukebox volume"
+	min_value = 0
+	max_value = 100
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/jukebox_volume/recheck_extra()
+	if(QDELETED(answerer))
+		return "gone"
+	. = ..()
+	if(.)
 		return
+	var/client/player = owner
+	if(!istype(player) || QDELETED(player.media) || !istype(player.media, /datum/media_manager))
+		return "The media manager is unavailable."
+
+/client/proc/jukebox_volume_answered(datum/act/request/A)
+	if(!A.answer)
+		if(!isnull(A.request.value) && (QDELETED(media) || !istype(media, /datum/media_manager)))
+			to_chat(A.request.answerer, span_warning("You have no media datum to change, if you're not in the lobby tell an admin."))
+		return
+	var/value = A.answer.value
 	value = round(max(0, min(100, value)))
 	media.update_volume(value / 100)
 
@@ -122,6 +145,11 @@
 	var/datum/tgui_window/media_window
 	var/const/WINDOW_ID = "rpane.mediapanel"
 
+CAPABILITIES(/datum/media_manager)
+	owns_one(nameof(media_window), /datum/tgui_window)
+	interface("MediaPlayer", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
+	ui_shape(url = schema_text(), start_time = num(), volume = num())
+
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
 	rel_set(src, nameof(owner), C)
@@ -133,12 +161,8 @@
 		window.close()
 	return ..()
 
-DECLARE_UI_STATE(/datum/media_manager, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:text,start_time:num,volume:num}")
-
-/// The computed part of /datum/media_manager's window data (declared on its UI_DATA row).
-/datum/media_manager/proc/ui_data_datum_media_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/media_manager's window data.
+/datum/media_manager/ui_data(datum/act/eval/A)
 	var/should_play = TRUE
 	if(owner()?.prefs)
 		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
@@ -149,7 +173,6 @@ UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:tex
 	)
 
 // Actually pop open the player in the background.
-DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
 
 /// Renders in the hidden media browser element open() initializes.
 /datum/media_manager/ui_window(mob/user)
@@ -164,7 +187,7 @@ DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
 	winset(owner(), WINDOW_ID, "is-disabled=false;is-visible=true")
-	own_set(src, nameof(media_window), new /datum/tgui_window(owner(), WINDOW_ID))
+	rel_set(src, nameof(media_window), new /datum/tgui_window(owner(), WINDOW_ID))
 	media_window.initialize(
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)

@@ -37,23 +37,23 @@
 		H.injure(INJURY_PAIN, disable_severity)
 
 	if(species.allergen_reaction & AG_WEAKEN)
-		H.status_at_least(EFFECT_WEAKENED, disable_severity)
+		H.status_at_least(STAT_WEAKENED, disable_severity)
 
 	if(species.allergen_reaction & AG_BLURRY)
-		H.status_at_least(EFFECT_BLURRY, disable_severity)
+		H.status_at_least(STAT_BLURRY, disable_severity)
 
 	if(species.allergen_reaction & AG_SLEEPY)
-		H.status_at_least(EFFECT_DROWSY, disable_severity)
+		H.status_at_least(STAT_DROWSY, disable_severity)
 
 	if(species.allergen_reaction & AG_CONFUSE)
-		H.status_at_least(EFFECT_CONFUSED, disable_severity/4)
+		H.status_at_least(STAT_CONFUSED, disable_severity/4)
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
-			om_after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
+			after(H, rand(0.3 SECONDS,0.6 SECONDS), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
-			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
+			H.status_at_least(STAT_WEAKENED, disable_severity / 3)
 
 	if(species.allergen_reaction & AG_SNEEZE)
 		if(prob(disable_severity/3))
@@ -62,7 +62,7 @@
 			else if(prob(80))
 				if(prob(30))
 					to_chat(H, span_warning("You feel like you are about to sneeze!"))
-				om_after(H, rand(0.75,3) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_sneeze))
+				after(H, rand(0.75,3) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_sneeze))
 
 	if(species.allergen_reaction & AG_COUGH)
 		if(prob(disable_severity/2))
@@ -84,7 +84,7 @@
 	if(remaining > 0)
 		H.emote(pick(list("whimper","belch","shiver")))
 		remaining--
-		om_after(H, rand(1,1.2) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib), remaining)
+		after(H, rand(1,1.2) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib), with = list(remaining))
 		return
 	H.emote("belch")
 	H.gib()

@@ -14,11 +14,16 @@
 
 TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes, list("lay", "force out", "push out"))
 
+/// Squeezing an egg out of the host takes twelve seconds beside them; with cascading on, the host then lays the rest, one every three seconds.
+CAPABILITIES(/obj/item/implant/reagent_generator/egg)
+	op("squeeze", ai(), takes("host"), wait(12 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(squeeze_done)))
+	op("cascade", ai(), takes("host", "egg"), wait(3 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(cascade_more), after_step = PROC_REF(cascade_lap)))
+
 /obj/item/implant/reagent_generator/egg/post_implant(mob/living/carbon/source)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	om_grant(source, GRANT_VERB, implant_verb_key(), src) // TGPanel
-	om_grant(source, GRANT_VERB, /mob/living/carbon/human/proc/toggle_cascade, src) // TGPanel
+	grant(source, implant_verb(), src) // TGPanel
+	grant(source, granted_verb(/mob/living/carbon/human/proc/toggle_cascade), src) // TGPanel
 	return 1
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg()
@@ -56,47 +61,59 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
 	act_message(usr, src, others = span_danger("%U% starts squeezing %T%'s lower body firmly..."))
-	om_task_timed(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
+	perform_op(usr, rimplant, "squeeze", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = src))
 
-/mob/living/carbon/human/proc/use_reagent_implant_egg_done(mob/usr_mob, obj/item/implant/reagent_generator/egg/rimplant)
-	if(src.Adjacent(usr_mob))
-		var/egg = rimplant.eggtype
-		new egg(get_turf(src))
-		src.status_set(EFFECT_STUNNED, 3)
-		play_sfx(src, SFX_VORE_INSERT)
-		var/index = rand(1,3)
+/// The squeeze is over: the egg is laid, and with cascading on the rest follow.
+/obj/item/implant/reagent_generator/egg/proc/squeeze_done(datum/act/op/A)
+	var/mob/living/carbon/human/host = A.arg("host")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(host) || !host.Adjacent(usr_mob))
+		return OP_FAILED
+	var/egg = eggtype
+	new egg(get_turf(host))
+	host.status_set(STAT_STUNNED, 3)
+	play_sfx(host, SFX_VORE_INSERT)
+	var/index = rand(1,3)
 
-		if (usr_mob != src)
-			var/emote = rimplant.emote_descriptor[index]
-			var/verb_desc = rimplant.verb_descriptor[index]
-			var/self_verb_desc = rimplant.self_verb_descriptor[index]
-			act_message(src, usr_mob, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), \
-				MSG_OTHERS(span_notice("%T% [verb_desc] [emote]")))
-		else
-			act_message(src, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(rimplant, reagent_implant_self_emotes))] an egg.")), \
-				MSG_OTHERS(span_notice("%U% [pick(rimplant.short_emote_descriptor)] an egg.")))
+	if (usr_mob != host)
+		var/emote = emote_descriptor[index]
+		var/verb_desc = verb_descriptor[index]
+		var/self_verb_desc = self_verb_descriptor[index]
+		act_message(host, usr_mob, MSG_SELF(span_notice("You [self_verb_desc] [emote]")), \
+			MSG_OTHERS(span_notice("%T% [verb_desc] [emote]")))
+	else
+		act_message(host, null, MSG_SELF(span_notice("You [pick(TYPE_TABLE_GET(src, reagent_implant_self_emotes))] an egg.")), \
+			MSG_OTHERS(span_notice("%U% [pick(short_emote_descriptor)] an egg.")))
 
-		if(prob(15))
-			act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
-		rimplant.reagents.remove_any(rimplant.transfer_amount)
+	if(prob(15))
+		act_message(host, null, others = span_notice("%U% [pick(random_emote)]."))
+	reagents.remove_any(transfer_amount)
 
-		if(rimplant.cascade)
-			to_chat(src, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
-			egg_cascade_next(rimplant, egg)
+	if(cascade)
+		to_chat(host, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
+		cascade_next(host, egg)
+	return OP_OK
 
-/mob/living/carbon/human/proc/egg_cascade_next(obj/item/implant/reagent_generator/egg/rimplant, egg)
-	if(rimplant.reagents.total_volume >= rimplant.transfer_amount)
-		om_task_timed(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
+/// Another egg is laid in three seconds while there is enough left for one.
+/obj/item/implant/reagent_generator/egg/proc/cascade_next(mob/living/carbon/human/host, egg)
+	if(reagents.total_volume >= transfer_amount)
+		perform_op(host, src, "cascade", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("host" = host, "egg" = egg))
 
-/mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
-	src.status_set(EFFECT_STUNNED, 3)
-	play_sfx(src, SFX_VORE_INSERT)
-	src.apply_effect(10,STUTTER,0)
-	new egg(get_turf(src))
-	rimplant.reagents.remove_any(rimplant.transfer_amount)
+/obj/item/implant/reagent_generator/egg/proc/cascade_more(datum/act/op/A)
+	return read_once(reagents.total_volume >= transfer_amount)
+
+/obj/item/implant/reagent_generator/egg/proc/cascade_lap(datum/act/op/A)
+	var/mob/living/carbon/human/host = A.arg("host")
+	if(QDELETED(host))
+		return
+	var/egg = A.arg("egg")
+	host.status_set(STAT_STUNNED, 3)
+	play_sfx(host, SFX_VORE_INSERT)
+	host.apply_effect(10,STUTTER,0)
+	new egg(get_turf(host))
+	reagents.remove_any(transfer_amount)
 	if(prob(25))
-		act_message(src, null, others = span_notice("%U% [pick(rimplant.random_emote)]."))
-	egg_cascade_next(rimplant, egg)
+		act_message(host, null, others = span_notice("%U% [pick(random_emote)]."))
 
 /mob/living/carbon/human/proc/toggle_cascade()
 
@@ -173,41 +190,50 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 // In format of You [self_emote_descriptor] some [generated_reagent] into [container]
 TYPE_TABLE_DECLARE(/obj/item/implant/reagent_generator, reagent_implant_self_emotes, list("transfer"))
 
-DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
+
+/// Makes its reagents every 2 s from implantation on.
+/obj/item/implant/reagent_generator/var/generating = FALSE
+TRACKED(/obj/item/implant/reagent_generator, generating)
+CAPABILITIES(/obj/item/implant/reagent_generator)
+	reagents(nameof(usable_volume))
+	every(2 SECONDS, then(PROC_REF(reagent_step)), when = nameof(generating))
 
 /obj/item/implanter/reagent_generator
 	var/implant_type = /obj/item/implant/reagent_generator
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_type")
+/obj/item/implanter/reagent_generator/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = nameof(implant_type))
+
 /obj/item/implanter/reagent_generator
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /// The verb this implant gives its host: assigned_proc under the implant's verb_name/verb_desc.
-/obj/item/implant/reagent_generator/proc/implant_verb_key()
-	return VERB_NAMED(assigned_proc, verb_name, verb_desc)
+/obj/item/implant/reagent_generator/proc/implant_verb()
+	return granted_verb(assigned_proc, verb_name = verb_name, verb_desc = verb_desc)
 
 /// Egg implants give the verb under its own name.
-/obj/item/implant/reagent_generator/egg/implant_verb_key()
-	return assigned_proc
+/obj/item/implant/reagent_generator/egg/implant_verb()
+	return granted_verb(assigned_proc)
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_generating(TRUE)
 	to_chat(source, span_notice("You implant [source] with \the [src]."))
-	om_grant(source, GRANT_VERB, implant_verb_key(), src)
+	grant(source, implant_verb(), src)
 	return 1
 
-/obj/item/implant/reagent_generator/periodic_step()
+/obj/item/implant/reagent_generator/proc/reagent_step(datum/act/timer/A)
 	var/before_gen
 	if(isliving(imp_in()) && generated_reagents)
 		before_gen = reagents.total_volume
 		var/mob/living/L = imp_in()
 		if(reagents.total_volume < reagents.maximum_volume)
-			if(L.nutrition >= gen_cost)
+			if(nutrition_of(L) >= gen_cost)
 				do_generation(L)
 		else
 			return
 	else
-		om_revoke(imp_in(), GRANT_VERB, implant_verb_key(), src)
+		revoke(imp_in(), implant_verb(), src)
 		return
 
 	if(reagents)
@@ -229,7 +255,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_typ
 
 	do_reagent_implant(usr)
 
-/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user = usr)
+/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user)
 	if(!isliving(user) || !user.checkClickCooldown())
 		return
 

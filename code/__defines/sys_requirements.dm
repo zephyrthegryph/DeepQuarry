@@ -5,8 +5,8 @@
 // declared on the interaction instead, so the resolver, the Menu and examine all know why the
 // interaction is unavailable, and the effect proc only does the work:
 //
-//   DECLARE_INTERACTIONS(/obj/machinery/thing,
-//   	INTERACT_HAND("Toggle", PROC_REF(toggle), REQ_FIELD("operable"), REQ_FIELD_NOT("locked")),
+//   CAPABILITIES(/obj/machinery/thing,
+//   	op("toggle", hand(), label("Toggle"), needs(req_is(STAT_OPERABLE), ...), then(PROC_REF(toggle))),
 //   )
 //
 // Every clause reads the interaction's target (the atom the effect proc runs on). The reason is

@@ -4,13 +4,16 @@
 // view. The DM side picks based on whether `displayed_data` is set on
 // the cataloguer.
 
-DECLARE_UI_STATE(/obj/item/cataloguer, GLOB.tgui_default_state)
+/obj/item/cataloguer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["points_stored"] = points_stored
+	var/list/merged_1 = ui_data_obj_item_cataloguer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-DECLARE_UI(/obj/item/cataloguer, "Cataloguer", UI_TITLE("Cataloguer"))
-
-UI_DATA_REPLACE(/obj/item/cataloguer, "points_stored:num", "merge:ui_data_obj_item_cataloguer{debug:bool,detail:list,groups:list}")
-
-/// The computed part of /obj/item/cataloguer's window data (declared on its UI_DATA row).
+/// /obj/item/cataloguer's window data.
 /obj/item/cataloguer/proc/ui_data_obj_item_cataloguer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["debug"] = !!debug
@@ -46,36 +49,48 @@ UI_DATA_REPLACE(/obj/item/cataloguer, "points_stored:num", "merge:ui_data_obj_it
 		data["groups"] = groups
 	return data
 
-UI_ACT(/obj/item/cataloguer, "pulse_scan", ui_act_pulse_scan)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_pulse_scan)
-	pulse_scan(ui.user)
-	return TRUE
+CAPABILITIES(/obj/item/cataloguer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
+	// A scan of something within scan_range: the user may walk about, the cataloguer stays in hand, and the scan is judged against the range where it ends.
+	op("scan", ai(), claims(), takes("scanned", "delay", "effects", "scan_start_time"), wait(PROC_REF(scan_time), keeps = HELD | ALIVE), on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_finished)))
+	op("pulse_scan", ui_act(), then(PROC_REF(ui_act_pulse_scan)))
+	op("back_to_list", ui_act(), then(PROC_REF(ui_act_back_to_list)))
+	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
+	op("controls", in_hand(), label("Open cataloguer"), then(PROC_REF(cataloguer_controls_opened)))
+	interface("Cataloguer", title = "Cataloguer", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("show_data", ui_act("show_data", arg("ref", schema_ref(/datum/category_item/catalogue))), then(PROC_REF(ui_act_show_data)))
+	op("debug_unlock", ui_act("debug_unlock", arg("ref", schema_ref(/datum/category_item/catalogue))), then(PROC_REF(ui_act_debug_unlock)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
-UI_ACT(/obj/item/cataloguer, "show_data", ui_act_show_data, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_show_data)
-	var/datum/category_item/catalogue/new_data = params["ref"]
+/obj/item/cataloguer/proc/ui_act_pulse_scan(datum/act/op/A)
+	pulse_scan(A.actor)
+	return OP_OK
+
+/obj/item/cataloguer/proc/ui_act_show_data(datum/act/op/A, ref)
+	var/datum/category_item/catalogue/new_data = ref
 	if(istype(new_data))
 		displayed_data = new_data
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/cataloguer, "back_to_list", ui_act_back_to_list)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_back_to_list)
+/obj/item/cataloguer/proc/ui_act_back_to_list(datum/act/op/A)
 	displayed_data = null
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/cataloguer, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_refresh)
+/obj/item/cataloguer/proc/ui_act_refresh(datum/act/op/A)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/cataloguer, "debug_unlock", ui_act_debug_unlock, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_debug_unlock)
+/obj/item/cataloguer/proc/ui_act_debug_unlock(datum/act/op/A, ref)
+	var/mob/user = A.actor
 	if(!debug)
 		return TRUE
-	var/datum/category_item/catalogue/item = params["ref"]
+	var/datum/category_item/catalogue/item = ref
 	if(item)
-		item.discover(ui.user, list("Debugger"))
+		item.discover(user, list("Debugger"))
 	SStgui.update_uis(src)
 	return TRUE

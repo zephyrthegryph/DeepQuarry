@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - rscadd: "Wolves, giant spiders and xenomorphs now hunt in packs: pack mates share what they see (after a short alert delay), spread over the people they fight, retreat and rally together, and the broodmother's broodlings follow and serve her"
+  - balance: "Hostile mobs hold a grudge against whoever hurt them for five minutes (was thirty seconds); a calm mob can take up to five seconds to notice something new nearby"
+  - refactor: "The combat AI's perception, targeting, paths, states (calm, alert, engaged, fleeing, regroup), dispositions (standings), leader election, roles and orders moved onto packs, modes() and standing(); tactics read the world only through brain accessors and tick at their own interval"

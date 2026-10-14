@@ -1,0 +1,9 @@
+ghost|none menu: Deflate
+ghost|none click: nothing
+human|none menu: Deflate
+human|none menu: Use hand
+human|none click: Click: Use hand
+robot|none menu: Deflate
+robot|none menu: Open
+robot|none menu: Use hand
+robot|none click: Click: Use hand

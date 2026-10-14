@@ -1,0 +1,30 @@
+@obj human|none
++0 menu: Fold out (refused: You can't do that.)
+@obj robot|none
++1 menu: Fold out (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/tool/crowbar
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/tool/wrench
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/tool/wirecutters
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/multitool
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/weldingtool
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/stack/cable_coil
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/stack/material/steel
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/card/id
++0 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/kit
++1 menu: Fold out (refused: You can't do that.)
+@obj human|/obj/item/storage
++1 menu: Fold out (refused: You can't do that.)
+keys: collect_item, drag_buckle, fold_out, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

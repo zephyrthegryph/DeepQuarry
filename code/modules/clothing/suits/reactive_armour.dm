@@ -5,10 +5,13 @@
 	w_class = ITEMSIZE_COST_LARGE
 	resistance_flags = FIRE_PROOF | UNACIDABLE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT_INSERT(/obj/item/assembly/signaler/anomaly, PROC_REF(reactive_shell_insert_core), "Insert anomaly core"))
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive_armor_shell)
+	op("reactive_shell_insert_core", item(/obj/item/assembly/signaler/anomaly), label("Insert anomaly core"), then(PROC_REF(reactive_shell_insert_core)))
 
 /// Old attackby: install an anomaly core.
-/obj/item/clothing/suit/armor/reactive_armor_shell/proc/reactive_shell_insert_core(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/suit/armor/reactive_armor_shell/proc/reactive_shell_insert_core(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/static/list/anomaly_armour_types = list(
 		/obj/effect/anomaly/grav = /obj/item/clothing/suit/armor/reactive/repulse,
 		/obj/effect/anomaly/flux = /obj/item/clothing/suit/armor/reactive/tesla,
@@ -25,11 +28,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 		var/armour_path = is_path_in_list(anomaly.anomaly_type, anomaly_armour_types, TRUE)
 		if(!armour_path)
 			armour_path = /obj/item/clothing/suit/armor/reactive/stealth
-		to_chat(user, span_notice("You insert [anomaly] into the chest plate, and the armour gently hums to life."))
+		var/anomaly_name = "[anomaly]"
+		if(!consume(anomaly, user))
+			return TRUE
+		to_chat(user, span_notice("You insert [anomaly_name] into the chest plate, and the armour gently hums to life."))
 		replace_with(src, armour_path)
-		consume(anomaly, user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/suit/armor/reactive
 	name = "reactive armor"
@@ -53,15 +58,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 
 	special_handling = TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive{active?:off}")
+/// The armour shows its state: "reactive" while active, "reactiveoff" when not.
+/obj/item/clothing/suit/armor/reactive/draw(datum/look/look)
+	..()
+	look.state("reactive[active ? "" : "off"]")
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle", PROC_REF(reactive_armor_toggle_self)))
+TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
-/// Old attack_self.
-/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(reactive_toggled)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(reactive_emp_glitch)))
+
+/obj/item/clothing/suit/armor/reactive/proc/reactive_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
-	update_icon()
 	add_fingerprint(user)
 
 /obj/item/clothing/suit/armor/reactive/handle_shield(mob/user, damage, atom/damage_source, mob/attacker, def_zone, attack_text)
@@ -86,10 +97,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	owner.visible_message(span_danger("The reactive armor doesn't do much, despite being emp'd! Besides giving off a special message, of course."))
 	return TRUE
 
-DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(reactive_emp_glitch))
 
 /// A pulse makes active armour act up (at most once per cooldown).
-/obj/item/clothing/suit/armor/reactive/proc/reactive_emp_glitch(datum/damage_packet/packet)
+/obj/item/clothing/suit/armor/reactive/proc/reactive_emp_glitch(datum/act/A)
 	if(!COOLDOWN_FINISHED(src, bad_effect) || !active)
 		return
 	visible_message(emp_message)
@@ -161,7 +171,6 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 /obj/item/clothing/suit/armor/reactive/tesla
 	name = "reactive tesla armor"
 	desc = "An experimental suit of armor with sensitive detectors hooked up to a huge capacitor grid, with emitters strutting out of it. Zap."
-	siemens_coefficient = -1
 	cooldown_message = span_danger("The tesla capacitors on the reactive tesla armor are still recharging! The armor merely emits some sparks.")
 	emp_message = span_warning("The tesla capacitors beep ominously for a moment.")
 	clothing_traits = list(TRAIT_TESLA_SHOCKIMMUNE)
@@ -169,6 +178,9 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	var/zap_power = 2.5e4
 	/// How far to the zaps we give off go?
 	var/zap_range = 20
+
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive/tesla)
+	configure(item_protection(siemens = -1))
 
 /obj/item/clothing/suit/armor/reactive/tesla/cooldown_activation(mob/living/carbon/human/owner)
 	fx_sparks(src, 1)
@@ -209,7 +221,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	for(var/mob/living/carbon/human/hallucinator in viewers(5, get_turf(src)))
 		if(hallucinator == owner)
 			continue
-		hallucinator.status_adjust(EFFECT_HALLUCINATING, 50)
+		hallucinator.status_adjust(STAT_HALLUCINATING, 50)
 		if(prob(10))
 			to_chat(hallucinator, span_danger("Your nose bleeds!"))
 			hallucinator.drip(1)
@@ -218,7 +230,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	act_message(src, owner, others = span_danger("%U% blocks [attack_text], but pulls a massive charge of mental energy into %T% from the surrounding environment!"))
-	owner.status_adjust(EFFECT_HALLUCINATING, 75)
+	owner.status_adjust(STAT_HALLUCINATING, 75)
 	to_chat(owner, span_danger("Your nose bleeds!"))
 	owner.drip(1)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
@@ -238,9 +250,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	for (var/atom/movable/target in repulse_targets(owner))
 		repulse(target, owner)
 
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = FALSE)
-	qdel(theme)
 
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
@@ -268,9 +279,8 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 
 /obj/item/clothing/suit/armor/reactive/barricade/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("The reactive armor shunts matter from an unstable dimension!"))
-	var/datum/armour_dimensional_theme/theme = new()
+	var/datum/armour_dimensional_theme/theme = dq_proto(/datum/armour_dimensional_theme)
 	theme.apply_random(get_turf(owner), dangerous = TRUE)
-	qdel(theme)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
@@ -341,7 +351,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	shock_turf_windup(owner.loc)
 
 /obj/item/clothing/suit/armor/reactive/weather/proc/shock_turf_windup(turf/target)
-	om_after(src, 1 SECOND, GLOBAL_PROC_REF(lightning_strike), target)
+	after(src, 1 SECOND, GLOBAL_PROC_REF(lightning_strike), with = list(target))
 
 /obj/item/clothing/suit/armor/reactive/stealth
 	name = "reactive stealth armor"
@@ -374,18 +384,21 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	owner.alpha = 0
 	in_stealth = TRUE
 	act_message(owner, null, others = span_danger("%U% is hit by [attack_text] in the chest!"))
-	om_after(src, stealth_time, PROC_REF(end_stealth), owner)
+	after(src, stealth_time, PROC_REF(end_stealth), with = list(owner), keeps_dead = TRUE)
 	decoy.say("*sidestep")
-	om_after(src, stealth_time, PROC_REF(destroy_illusion), decoy)
+	after(src, stealth_time, PROC_REF(destroy_illusion), with = list(decoy))
 	decoy.expire(stealth_time)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/end_stealth(mob/living/carbon/human/owner)
 	in_stealth = FALSE
-	animate(owner, alpha = initial(owner.alpha), time = animation_time)
+	if(owner)
+		animate(owner, alpha = initial(owner.alpha), time = animation_time)
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/destroy_illusion(mob/illusion)
+	if(QDELETED(illusion))
+		return
 	fx_sparks(illusion, 3, 3)
 	illusion.expire(animation_time)
 
@@ -395,10 +408,10 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	var/mob/living/attacker = hitby
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
 	attacker.alpha = 0
-	om_after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), attacker, initial(attacker.alpha))
+	after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), with = list(attacker, initial(attacker.alpha)))
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
-/// om_after() target: the misfired cloak wears off.
+/// after() target: the misfired cloak wears off.
 /proc/reactive_cloak_wear_off(mob/living/attacker, old_alpha)
 	attacker.alpha = old_alpha

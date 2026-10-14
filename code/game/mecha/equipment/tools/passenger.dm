@@ -11,7 +11,7 @@
 	equip_type = EQUIP_HULL
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/mecha_passenger
+/datum/relation_definition/slot/occupant/mecha_passenger
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/passenger
 	slot_id = OCCUPANT_SLOT_MECHA_PASSENGER
 	name = "passenger compartment"
@@ -23,6 +23,12 @@
 		to_chat(AM, span_danger("You tumble out of the destroyed [src.name]!"))
 	return ..()
 
+/// Somebody got in or out of the compartment: the chassis recounts its passengers (a requirement reads the tracked count).
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	. = ..()
+	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && chassis)
+		chassis.mecha_passenger_changed()
+
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/Exit(atom/movable/O)
 	return 0
 
@@ -30,7 +36,7 @@
 	if (chassis)
 		act_message(user, chassis, others = span_notice("%U% starts to climb into %T%."))
 
-	om_task_start(/datum/om/task/timed/passenger_boarded, user, src, receiver = src)
+	perform_op(user, src, "board", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
 	act_message(user, src, MSG_SELF(span_notice("You open the hatch on %T% and remove [passenger_occupant]!")), \
@@ -38,20 +44,19 @@
 	go_out()
 	mecha_log_message("[passenger_occupant] was removed.")
 
-/datum/om/task/timed/passenger_boarded
-	duration = 4 SECONDS
-	complete_proc = /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded
-	fail_message = span_info("You stop entering the exosuit.")
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/board_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_info("You stop entering the exosuit."))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/om/task/timed/passenger_boarded/task)
-	var/mob/user = task.actor
-	if(!src?.slot_item(MECHA_SLOT_PILOT))
-		if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
-			return
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
+		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))
+			return OP_REFUSED
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")
-	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
-		to_chat(user, span_warning("[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
+	else if(src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != user)
+		to_chat(user, span_warning("[src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)] was faster. Try harder next time, loser."))
+	return OP_OK
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -69,7 +74,7 @@
 		return
 	if(door_locked)
 		to_chat(occupant, span_notice("\The [src] is locked! You begin operating the emergency unlock mechanism. This will take one minute."))
-		om_after(src, 1 MINUTE, PROC_REF(emergency_unlocked), occupant)
+		after(src, 1 MINUTE, PROC_REF(emergency_unlocked), with = list(occupant))
 		return
 	passenger_disembark(occupant)
 
@@ -112,9 +117,11 @@
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock", PROC_REF(topic_toggle_lock))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
+	op("toggle_lock", topic("toggle_lock"), then(PROC_REF(topic_toggle_lock)))
+	op("board", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(board_interrupted)), then(PROC_REF(boarded)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(datum/act/op/A)
 	door_locked = !door_locked
 	occupant_message("Passenger compartment hatch [door_locked? "locked" : "unlocked"].")
 	if (chassis)
@@ -145,7 +152,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock"
 	return TRUE
 
 /// Old verb "Enter Passenger Compartment" (added to the chassis while a compartment was attached).
-/obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/move_inside_passenger(mob/user, obj/item/held)
 
 	//check that user can climb in
 	if (user.stat || !ishuman(user))
@@ -157,7 +164,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock"
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents_of(src))
-		if (P?.slot_item(MECHA_SLOT_PILOT))
+		if (P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 			feedback |= OCCUPIED
 			continue
 		if (P.door_locked)

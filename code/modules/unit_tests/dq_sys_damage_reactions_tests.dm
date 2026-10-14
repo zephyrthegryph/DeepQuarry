@@ -5,59 +5,40 @@
 	name = "reaction probe"
 	use_power = USE_POWER_OFF
 	max_integrity = 1000
-	var/emp_seen = 0
-	var/emp_severity = 0
 	var/projectile_seen = 0
 	var/blast_seen = 0
-	var/after_seen = 0
-	var/integrity_at_after = 0
-	var/pain_seen = 0
 	var/block_projectiles = FALSE
-	var/disable_changes = 0
-	EXPIRY_DECLARE(emp_until)
 
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EMP, PROC_REF(on_emp))
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(on_projectile))
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EXPLOSION, PROC_REF(on_blast))
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PAIN, PROC_REF(on_pain))
-DAMAGE_REACTION_AFTER(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(after_projectile))
-EMP_DISABLE(/obj/machinery/dq_reaction_probe, 30 SECONDS, "emp_until")
+CAPABILITIES(/obj/machinery/dq_reaction_probe)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(on_projectile))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(on_blast)))
 
-/obj/machinery/dq_reaction_probe/proc/on_emp(datum/damage_packet/packet)
-	emp_seen++
-	emp_severity = packet.severity
-
-/obj/machinery/dq_reaction_probe/proc/on_projectile(datum/damage_packet/packet)
+/obj/machinery/dq_reaction_probe/proc/on_projectile(datum/act/hit/projectile/A)
 	projectile_seen++
 	if(block_projectiles)
-		return DAMAGE_REACTION_BLOCK
+		return OP_OK
+	return HOOK_DECLINE
 
-/obj/machinery/dq_reaction_probe/proc/on_blast(datum/damage_packet/packet)
+/obj/machinery/dq_reaction_probe/proc/on_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	blast_seen = packet.severity
-
-/obj/machinery/dq_reaction_probe/proc/on_pain(datum/damage_packet/packet)
-	pain_seen++
-
-/obj/machinery/dq_reaction_probe/proc/after_projectile(datum/damage_packet/packet)
-	after_seen++
-	integrity_at_after = get_integrity()
-
-/obj/machinery/dq_reaction_probe/emp_disable_changed(disabled)
-	..()
-	disable_changes++
 
 /// Reflects every projectile.
 /obj/structure/dq_reflect_probe
 	name = "reflect probe"
 	density = TRUE
 
-REFLECTS(/obj/structure/dq_reflect_probe, list(/obj/item/projectile), 100)
+CAPABILITY(/obj/structure/dq_reflect_probe, reflects(list(/obj/item/projectile), 100))
 
-/// Reflects only burn, with a chance read from a var.
+/// Reflects only burn, with a chance answered by a holder proc.
 /obj/structure/dq_reflect_probe/burn_only
 	var/reflect_chance = 100
 
-REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance")
+CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_REF(current_reflect_chance)))
+
+/obj/structure/dq_reflect_probe/burn_only/proc/current_reflect_chance()
+	return reflect_chance
 
 /datum/unit_test/sys_damage_reactions
 	abstract_type = /datum/unit_test/sys_damage_reactions
@@ -70,72 +51,28 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	rel_set(P, nameof(P.starting), run_loc_floor_bottom_left)
 	return P
 
-/// Entry triggers fire once per hit, before the sink (or after it, for the AFTER phase); a
-/// zero-damage hit still fires its entry's reactions; BLOCK stops the sink.
+/// A hit hook runs once per hit, a zero-damage round included, and a cancelling hook stops the sink; an explosion notice reads packet.severity.
 /datum/unit_test/sys_damage_reactions/entries
 
 /datum/unit_test/sys_damage_reactions/entries/Run()
 	var/obj/machinery/dq_reaction_probe/probe = allocate(/obj/machinery/dq_reaction_probe)
-	var/full = probe.get_integrity()
 
 	probe.bullet_act(projectile(INJURY_BLUNT, 20))
-	TEST_ASSERT_EQUAL(probe.projectile_seen, 1, "a projectile hit runs the DAMAGE_PROJECTILE reaction once")
-	TEST_ASSERT_EQUAL(probe.after_seen, 1, "the AFTER reaction runs")
-	TEST_ASSERT(probe.integrity_at_after < full, "the AFTER reaction runs after the sink applied the hit")
-	TEST_ASSERT_EQUAL(probe.emp_seen, 0, "a projectile doesn't fire EMP reactions")
+	TEST_ASSERT_EQUAL(probe.projectile_seen, 1, "a projectile hit runs the projectile hook once")
 
 	probe.bullet_act(projectile(INJURY_BLUNT, 0))
-	TEST_ASSERT_EQUAL(probe.projectile_seen, 2, "a zero-damage round still fires the projectile reaction")
+	TEST_ASSERT_EQUAL(probe.projectile_seen, 2, "a zero-damage round still reaches the projectile hook")
 
 	var/before = probe.get_integrity()
 	probe.block_projectiles = TRUE
 	probe.bullet_act(projectile(INJURY_BLUNT, 20))
-	TEST_ASSERT_EQUAL(probe.projectile_seen, 3, "the blocking reaction ran")
-	TEST_ASSERT_EQUAL(probe.get_integrity(), before, "DAMAGE_REACTION_BLOCK stops the sink")
-	TEST_ASSERT_EQUAL(probe.after_seen, 2, "a blocked hit runs no AFTER reaction")
+	TEST_ASSERT_EQUAL(probe.projectile_seen, 3, "the blocking hook ran")
+	TEST_ASSERT_EQUAL(probe.get_integrity(), before, "a taken-over hit stops the sink")
 
 	probe.ex_act(2)
-	TEST_ASSERT_EQUAL(probe.blast_seen, 2, "the explosion reaction reads packet.severity")
+	TEST_ASSERT_EQUAL(probe.blast_seen, 2, "the explosion notice reads packet.severity")
 
-	probe.deal_damage(DAMAGE_PAIN, 5)
-	TEST_ASSERT_EQUAL(probe.pain_seen, 1, "a kind trigger fires when the packet carries that kind")
-	probe.deal_damage(DAMAGE_BLUNT, 5)
-	TEST_ASSERT_EQUAL(probe.pain_seen, 1, "a kind trigger doesn't fire for other kinds")
-
-/// EMP reactions: fire only when the pulse isn't blocked; EMP_DISABLE sets the field and EMPED,
-/// and the lapse (section 17) restores them, once.
-/datum/unit_test/sys_damage_reactions/emp_disable
-
-/datum/unit_test/sys_damage_reactions/emp_disable/Run()
-	var/obj/machinery/dq_reaction_probe/probe = allocate(/obj/machinery/dq_reaction_probe)
-	TEST_ASSERT(!probe.has_stat(EMPED), "starts working")
-	probe.emp_act(EMP_MEDIUM)
-	TEST_ASSERT_EQUAL(probe.emp_seen, 1, "an EMP runs the DAMAGE_EMP reaction")
-	TEST_ASSERT_EQUAL(probe.emp_severity, EMP_MEDIUM, "with the pulse's severity")
-	TEST_ASSERT(probe.has_stat(EMPED), "EMP_DISABLE sets EMPED on machinery")
-	TEST_ASSERT(EXPIRY_ACTIVE(probe, emp_until, CLOCK_WORLD), "EMP_DISABLE sets the declared field")
-	TEST_ASSERT_EQUAL(EXPIRY_LEFT(probe, emp_until, CLOCK_WORLD), 30 SECONDS / EMP_MEDIUM, "for duration / severity")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 1, "emp_disable_changed(TRUE) ran")
-
-	var/until = probe.emp_until
-	probe.emp_act(EMP_HEAVY)
-	TEST_ASSERT_EQUAL(probe.emp_until, until, "an EMP while down doesn't extend the outage")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 1, "nor re-runs the down hook")
-
-	probe.emp_until = world.time - 1
-	expiry_lapse_fire(probe, "emp_until")
-	TEST_ASSERT(!probe.has_stat(EMPED), "the lapse clears EMPED")
-	TEST_ASSERT_EQUAL(probe.emp_until, 0, "and the field")
-	TEST_ASSERT_EQUAL(probe.disable_changes, 2, "emp_disable_changed(FALSE) ran")
-	probe.emp_disable_lapsed()
-	TEST_ASSERT_EQUAL(probe.disable_changes, 2, "the lapse hook is idempotent")
-
-	probe.emp_protection_flags = EMP_PROTECT_SELF
-	probe.emp_act(EMP_HEAVY)
-	TEST_ASSERT_EQUAL(probe.emp_seen, 2, "a blocked pulse runs no EMP reaction")
-	TEST_ASSERT(!probe.has_stat(EMPED), "and disables nothing")
-
-/// REFLECTS: a matching round bounces (bullet_act returns PROJECTILE_CONTINUE) and lands nothing.
+/// reflects(): a matching round bounces (bullet_act returns PROJECTILE_CONTINUE) and lands nothing.
 /datum/unit_test/sys_damage_reactions/reflects
 
 /datum/unit_test/sys_damage_reactions/reflects/Run()
@@ -150,7 +87,8 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BLUNT, 20)), "a kind list of BURN ignores brute rounds")
 	TEST_ASSERT(burn.reflect_projectile(projectile(INJURY_BURN, 20)), "and reflects burn rounds")
 	burn.reflect_chance = 0
-	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BURN, 20)), "the chance is read from the named var")
+	TEST_ASSERT(!burn.reflect_projectile(projectile(INJURY_BURN, 20)), "the chance is answered by the holder proc")
+	TEST_ASSERT(cap_of(any, /datum/capability/reflects), "reflects() is a capability")
 
 /// Migrated real types: a mob family's explosion reaction blocks its ladder, and the
 /// reflecting slimes bounce beams.
@@ -176,7 +114,8 @@ REFLECTS(/obj/structure/dq_reflect_probe/burn_only, list(BURN), "reflect_chance"
 /mob/living/simple_mob/dq_projectile_immune
 	name = "projectile-immune probe"
 
-DAMAGE_REACTION(/mob/living/simple_mob/dq_projectile_immune, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+CAPABILITIES(/mob/living/simple_mob/dq_projectile_immune)
+	extend(/datum/act/hit/projectile, instead())
 
 /// A blocking DAMAGE_PROJECTILE reaction runs before the round's own effects, so a blocked stun
 /// round stuns nobody and injures nobody; the same round on an ordinary mob does stun.
@@ -189,12 +128,24 @@ DAMAGE_REACTION(/mob/living/simple_mob/dq_projectile_immune, DAMAGE_PROJECTILE, 
 	P.weaken = 10
 	var/vitality = immune.vitality()
 	immune.bullet_act(P, BP_TORSO)
-	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_STUNNED), 0, "a blocked stun round applies no stun")
-	TEST_ASSERT_EQUAL(immune.status_units(EFFECT_WEAKENED), 0, "nor weaken")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_STUNNED), 0, "a blocked stun round applies no stun")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_WEAKENED), 0, "nor weaken")
 	TEST_ASSERT_EQUAL(immune.vitality(), vitality, "nor damage")
 
 	var/mob/living/simple_mob/animal/passive/cockroach/control = allocate(/mob/living/simple_mob/animal/passive/cockroach)
 	var/obj/item/projectile/Q = projectile(INJURY_BLUNT, 0)
 	Q.stun = 10
 	control.bullet_act(Q, BP_TORSO)
-	TEST_ASSERT(control.status_units(EFFECT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")
+	TEST_ASSERT(control.status_units(STAT_STUNNED) > 0, "the same round stuns a mob with no blocking reaction")
+
+/// A zero-damage stun round (a taser dart) is vetoed by the same hook, and the hit action runs once per round.
+/datum/unit_test/sys_damage_reactions/blocked_zero_damage_stun
+
+/datum/unit_test/sys_damage_reactions/blocked_zero_damage_stun/Run()
+	var/mob/living/simple_mob/dq_projectile_immune/immune = allocate(/mob/living/simple_mob/dq_projectile_immune)
+	var/obj/item/projectile/P = projectile(INJURY_BLUNT, 0)
+	P.stun = 10
+	P.weaken = 10
+	immune.bullet_act(P, BP_TORSO)
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_STUNNED), 0, "a vetoed zero-damage round applies no stun")
+	TEST_ASSERT_EQUAL(immune.status_units(STAT_WEAKENED), 0, "nor weaken")

@@ -206,7 +206,7 @@
 /datum/contract_document/proc/register_agent_contact_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || field_id < 1 || field_id > 4)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	if(field_id == 4)
@@ -226,7 +226,7 @@
 	payload["contact_mode"] = contract.contact_mode
 	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed external freight subcontract — [contract.id]"
-	paper.info += "<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"))
 	paper.updateinfolinks()
 	return TRUE
 
@@ -247,7 +247,7 @@
 		loaded_crate.cargo_market_router_account = 0
 		loaded_crate.cargo_market_contract_key = null
 	paper.name = "withdrawn external freight subcontract — [contract.id]"
-	paper.info += "<br><b>Authenticated withdrawal:</b> [html_encode(account.owner_name)] withdrew this routing credential and preserved it for potential station review.<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated withdrawal:</b> [html_encode(account.owner_name)] withdrew this routing credential and preserved it for potential station review.<br>"))
 	paper.updateinfolinks()
 	to_chat(user, span_warning("You withdrew the route and forfeited its faction payment. Security must physically receive and examine this agreement before it becomes evidence; this declaration promises no immunity."))
 	return TRUE
@@ -255,19 +255,19 @@
 /datum/contract_document/proc/register_agent_endorsement(obj/item/paper/paper, mob/living/user)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_ENDORSEMENT)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	var/list/signers = payload["signers"]
 	var/list/signer_departments = payload["signer_departments"]
 	if(!istype(contract) || !islist(signers) || !islist(signer_departments) || !contract.register_endorsement(paper, user, evidence_id, signers, signer_departments))
 		return FALSE
-	paper.info += "<br><b>Authenticated endorsement:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated endorsement:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br>"))
 	paper.updateinfolinks()
 	return TRUE
 
 /datum/contract_document/proc/register_agent_approach_signature(obj/item/paper/paper, mob/living/user, field_id)
 	if(document_kind != CONTRACT_DOCUMENT_AGENT_CHARTER || payload["signed"] || field_id < 1 || field_id > 3)
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	var/selected_approach = field_id == 1 ? AGENT_APPROACH_REGISTERED : (field_id == 2 ? AGENT_APPROACH_DISCREET : AGENT_APPROACH_HOSTILE)
@@ -277,7 +277,7 @@
 	payload["approach"] = selected_approach
 	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed faction operation charter — [contract.id]"
-	paper.info += "<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"
+	paper.set_info(paper.info + ("<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"))
 	paper.updateinfolinks()
 	return TRUE
 
@@ -292,11 +292,11 @@
 		var/datum/contract_document/document = paper.contract_document
 		if(document?.document_kind != CONTRACT_DOCUMENT_AGENT_CONTACT || !document.payload["signed"] || document.payload["cooperated"])
 			continue
-		var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]
+		var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[document.payload["agent_contract_id"]]
 		if(!istype(contract) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || contract.contact_account_number != document.payload["contact_account"])
 			continue
 		for(var/market_id in contract.market_reservation_ids)
-			var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(market_id)
+			var/datum/cargo_market_bid/bid = SSsupply.market_bid(market_id)
 			if(!bid || bid.completed_at || !BEFORE(null, bid.expires_at, CLOCK_WORLD))
 				continue
 			crate.cargo_market_bid_id = bid.id
@@ -310,17 +310,17 @@
 
 /// Security discovers agreements by physically finding and scanning them.
 /proc/process_agent_forensic_scan(atom/target, mob/living/user)
-	if(!GLOB.supply_service?.market_security_auditor(user))
+	if(!SSsupply?.market_security_auditor(user))
 		return FALSE
 	if(istype(target, /obj/machinery/computer/supplycomp))
-		return GLOB.supply_service.audit_next_market_transaction(user)
+		return SSsupply.audit_next_market_transaction(user)
 	var/obj/item/paper/paper = target
 	if(!istype(paper))
 		return FALSE
 	var/datum/contract_document/document = paper.contract_document
 	if(!(document?.document_kind in list(CONTRACT_DOCUMENT_AGENT_CONTACT, CONTRACT_DOCUMENT_AGENT_ENDORSEMENT, CONTRACT_DOCUMENT_AGENT_CHARTER)))
 		return FALSE
-	var/datum/contract/faction_agent/contract = SScontracts.contracts_by_id[document.payload["agent_contract_id"]]
+	var/datum/contract/faction_agent/contract = contracts_contracts_by_id()[document.payload["agent_contract_id"]]
 	if(!istype(contract))
 		return FALSE
 	var/suspicious = contract.red_contract || (contract.approach in list(AGENT_APPROACH_DISCREET, AGENT_APPROACH_HOSTILE)) || contract.agent_faction == REPUTATION_FACTION_SYNDICATE || agent_contact_risk_rank(contract.contact_mode) >= 2
@@ -379,7 +379,7 @@
 	to_chat(user, span_warning("The document authenticates principal account [principal?.owner_name || contract.owner_account_number][contract.contact_account_number ? " and freight contact [contract.contact_name]" : ""]. Preserve the paper: it retains identifying fingerprints and may be used as evidence."))
 	return TRUE
 
-/datum/world_service/supply/proc/audit_next_market_transaction(mob/living/user)
+/datum/system/supply/proc/audit_next_market_transaction(mob/living/user)
 	var/datum/money_account/auditor = contract_account_for_mob(user)
 	var/auditor_key = "[auditor?.account_number || user.ckey]"
 	for(var/index = length(market_transactions), index >= 1, index--)

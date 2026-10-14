@@ -11,7 +11,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 	var/datum/managed_browser/feedback_viewer/viewer = new(user)
 	if(!QDELETED(viewer))
-		own_set(user, nameof(/client::feedback_viewer), viewer) // the client owns its viewer; viewer.my_client is the back view
+		rel_set(user, nameof(/client::feedback_viewer), viewer) // the client owns its viewer; viewer.my_client is the back view
 
 // This object holds the code to run the admin feedback viewer.
 /datum/managed_browser/feedback_viewer
@@ -24,7 +24,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 /datum/managed_browser/feedback_viewer/New(client/new_client)
 	if(!check_rights_for(new_client, R_ADMIN|R_DEBUG|R_EVENT)) // Just in case someone figures out a way to spawn this as non-staff.
 		message_admins("[new_client] tried to view feedback with insufficent permissions.")
-		qdel(src)
+		spent(src)
 		return
 
 	..()
@@ -54,7 +54,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 		"},
 		thing_to_find
 		)
-	query.Execute(SSsqlite.sqlite_db)
+	query.Execute(sqlite_sqlite_db())
 	SSsqlite.sqlite_check_for_errors(query, "Admin Feedback Viewer - Filter by [row_name] to find [thing_to_find]")
 	return query
 
@@ -69,7 +69,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 			DESC LIMIT 50;
 			"}
 			)
-		query.Execute(SSsqlite.sqlite_db)
+		query.Execute(sqlite_sqlite_db())
 		SSsqlite.sqlite_check_for_errors(query, "Admin Feedback Viewer")
 		last_query = query
 
@@ -111,28 +111,30 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	// structured TGUI AdminReport.
 	dq_admin_report_html(my_client().mob, "[author]'s Feedback", dat, src)
 
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "close", PROC_REF(topic_close))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "show_full_feedback", PROC_REF(topic_show_full_feedback), TOPIC_TEXT("feedback_author"), TOPIC_TEXT("feedback_content"))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_id", PROC_REF(topic_filter_id))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_author", PROC_REF(topic_filter_author))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_topic", PROC_REF(topic_filter_topic))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_content", PROC_REF(topic_filter_content))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF(topic_filter_datetime))
+CAPABILITIES(/datum/managed_browser/feedback_viewer)
+	extend(TAG_TOPIC, needs(req_topic_ok()))
+	op("close", topic("close"), then(PROC_REF(topic_close)))
+	op("show_full_feedback", topic("show_full_feedback", arg("feedback_author", schema_text(), optional = TRUE), arg("feedback_content", schema_text(), optional = TRUE)), then(PROC_REF(topic_show_full_feedback)))
+	op("filter_id", topic("filter_id"), asks(/datum/prompt/number/feedback_filter, fields = list("question" = "Write feedback ID here.", "title" = "Filter by ID"), step = "value"), then(PROC_REF(topic_filter_id)))
+	op("filter_author", topic("filter_author"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired key or hash here. Partial keys/hashes are allowed.", "title" = "Filter by Author"), step = "value"), then(PROC_REF(topic_filter_author)))
+	op("filter_topic", topic("filter_topic"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = computed(PROC_REF(filter_topic_question)), "title" = "Filter by Topic"), step = "value"), then(PROC_REF(topic_filter_topic)))
+	op("filter_content", topic("filter_content"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired content to find here. Partial matches are allowed.", "title" = "Filter by Content", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT), step = "value"), then(PROC_REF(topic_filter_content)))
+	op("filter_datetime", topic("filter_datetime"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", "title" = "Filter by Datetime"), step = "value"), then(PROC_REF(topic_filter_datetime)))
 
 // Only the viewer's own client drives it.
-/datum/managed_browser/feedback_viewer/topic_allowed(mob/user, list/href_list)
+/datum/managed_browser/feedback_viewer/op_topic_actor_ok(mob/actor)
 	var/client/C = my_client()
-	return C && user?.client == C
+	return C && actor.client == C
 
-/datum/managed_browser/feedback_viewer/proc/topic_close(mob/user, list/args)
+/datum/managed_browser/feedback_viewer/proc/topic_close(datum/act/op/A)
 	return TRUE // To avoid refreshing.
 
-/datum/managed_browser/feedback_viewer/proc/topic_show_full_feedback(mob/user, list/args)
-	display_big_feedback(args["feedback_author"], args["feedback_content"])
+/datum/managed_browser/feedback_viewer/proc/topic_show_full_feedback(datum/act/op/A, href_feedback_author, href_feedback_content)
+	display_big_feedback(href_feedback_author, href_feedback_content)
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_id(mob/user, list/args)
-	var/id_to_search = topic_ask(my_client(), args, "k130", /datum/om/prompt/number, message = "Write feedback ID here.", title = "Filter by ID")
+/datum/managed_browser/feedback_viewer/proc/topic_filter_id(datum/act/op/A)
+	var/id_to_search = A.step_value("value")
 	if(isnull(id_to_search))
 		return
 	if(id_to_search)
@@ -140,8 +142,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_author(mob/user, list/args)
-	var/author_to_search = topic_ask(my_client(), args, "k135", /datum/om/prompt/text, message = "Write desired key or hash here. Partial keys/hashes are allowed.", title = "Filter by Author")
+/datum/managed_browser/feedback_viewer/proc/topic_filter_author(datum/act/op/A)
+	var/author_to_search = A.step_value("value")
 	if(isnull(author_to_search))
 		return
 	if(author_to_search)
@@ -149,8 +151,12 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_topic(mob/user, list/args)
-	var/topic_to_search = topic_ask(my_client(), args, "k140", /datum/om/prompt/text, message = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))].", title = "Filter by Topic")
+/// The question of the topic filter lists the topics the config knows.
+/datum/managed_browser/feedback_viewer/proc/filter_topic_question(datum/act/op/A)
+	return "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))]."
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_topic(datum/act/op/A)
+	var/topic_to_search = A.step_value("value")
 	if(isnull(topic_to_search))
 		return
 	if(topic_to_search)
@@ -158,8 +164,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_content(mob/user, list/args)
-	var/content_to_search = topic_ask(my_client(), args, "k145", /datum/om/prompt/text, message = "Write desired content to find here. Partial matches are allowed.", title = "Filter by Content", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+/datum/managed_browser/feedback_viewer/proc/topic_filter_content(datum/act/op/A)
+	var/content_to_search = A.step_value("value")
 	if(isnull(content_to_search))
 		return
 	if(content_to_search)
@@ -167,8 +173,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(mob/user, list/args)
-	var/datetime_to_search = topic_ask(my_client(), args, "k150", /datum/om/prompt/text, message = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", title = "Filter by Datetime")
+/datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(datum/act/op/A)
+	var/datetime_to_search = A.step_value("value")
 	if(isnull(datetime_to_search))
 		return
 	if(datetime_to_search)
@@ -177,3 +183,31 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 
+
+
+/datum/prompt/text/feedback_filter
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/feedback_filter/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/feedback_filter/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/number/feedback_filter
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/feedback_filter/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/number/feedback_filter/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/feedback_filter/refusal(given)
+	return null

@@ -12,28 +12,25 @@
 	base_state = "pflash"
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
 
 // if already anchored, setup the proximity check
-DECLARE_START_TIMER(/obj/machinery/bluespace_denier, 10 SECONDS, PROC_REF(start_up))
 
-/obj/machinery/bluespace_denier/proc/start_up()
+/obj/machinery/bluespace_denier/proc/start_up(datum/act/A)
 	if(anchored)
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/bluespace_denier/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
-		icon_state = "[base_state]1"
+	if(!power_lost())
+		set_icon_state("[base_state]1")
 	else
-		icon_state = "[base_state]1-p"
+		set_icon_state("[base_state]1-p")
 
 //Let the AI trigger them directly.
-EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", PROC_REF(bluespace_denier_silicon_trigger)))
 
 /// Old attack_ai: the AI triggers it directly while it is anchored.
-/obj/machinery/bluespace_denier/proc/bluespace_denier_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bluespace_denier/proc/bluespace_denier_silicon_trigger(datum/act/op/A)
 	if(anchored)
 		pulse()
 	return TRUE
@@ -56,13 +53,21 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 			continue
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.
 
-DAMAGE_REACTION(/obj/machinery/bluespace_denier, DAMAGE_EMP, PROC_REF(denier_emp))
+CAPABILITIES(/obj/machinery/bluespace_denier)
+	configure(uses_power(idle = 2))
+	after_init(10 SECONDS, then(PROC_REF(start_up)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(denier_emp))))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("bluespace_denier_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Pulse"), then(PROC_REF(bluespace_denier_silicon_trigger)))
+
 /// An EMP may set off a pulse.
-/obj/machinery/bluespace_denier/proc/denier_emp(datum/damage_packet/packet)
+/obj/machinery/bluespace_denier/proc/denier_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	if(prob(75/packet.severity))
 		pulse()
+	return HOOK_DECLINE
 
 /obj/machinery/bluespace_denier/HasProximity(turf/T, WF, oldloc)
 	if(isnull(WF))
@@ -79,7 +84,8 @@ DAMAGE_REACTION(/obj/machinery/bluespace_denier, DAMAGE_EMP, PROC_REF(denier_emp
 	if(ishuman(AM))
 		pulse()
 
-/obj/machinery/bluespace_denier/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/bluespace_denier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	set_anchored(!anchored)
 	if(!anchored)
@@ -90,4 +96,4 @@ DAMAGE_REACTION(/obj/machinery/bluespace_denier, DAMAGE_EMP, PROC_REF(denier_emp
 		user.show_message(span_warning("[src] is now secured."))
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

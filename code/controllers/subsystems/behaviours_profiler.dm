@@ -3,22 +3,20 @@
 /// behaviour; profiled pipeline frames time each stage). Opened by the admin verb
 /// "OM Profiler" (Debug); tgui interface OmProfiler.tsx.
 
-/datum/controller/subsystem/behaviours
+/datum/system/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
 	EXPIRY_DECLARE(profile_reset_time)
 
-DECLARE_UI_STATE(/datum/controller/subsystem/behaviours, ADMIN_STATE(R_DEBUG))
+CAPABILITIES(/datum/system/behaviours)
+	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
-DECLARE_UI(/datum/controller/subsystem/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
-
-UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
-
-/// The computed part of /datum/controller/subsystem/behaviours's window data (declared on its UI_DATA row).
-/datum/controller/subsystem/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/system/behaviours's window data.
+/datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	var/datum/om/registry/reg = om_registry()
-	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background")
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
+	var/datum/definition_registry/reg = definition_registry()
+	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
 	data["elapsed_s"] = round(elapsed, 0.1)
 	data["last_run_ms"] = sched ? round(sched.last_run_ms, 0.001) : 0
@@ -34,7 +32,7 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 		lane_count[i] = 0
 	var/shared_bucket = FALSE
 	if(sched && reg)
-		for(var/datum/om/behaviour/B as anything in reg.behaviours)
+		for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 			if(!B?.id)
 				continue
 			if(B.id >= OM_MAX_STAT_TYPES)
@@ -45,11 +43,11 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 			var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
 			var/population = 0
 			if(B.id <= length(sched.rings))
-				for(var/datum/om/ring/R as anything in sched.rings[B.id])
+				for(var/datum/cadence_ring/R as anything in sched.rings[B.id])
 					population += R.population()
 			var/parked = 0
-			if(istype(B, /datum/om/pipeline))
-				var/datum/om/pipeline/P = B
+			if(istype(B, /datum/work_pipeline))
+				var/datum/work_pipeline/P = B
 				parked = length(P.parked_on(sched))
 			lane_ms[lane] += ms
 			lane_runs[lane] += runs
@@ -74,7 +72,7 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 			))
 	data["behaviours"] = behaviours
 	data["shared_bucket"] = shared_bucket
-	var/list/world_diag = sched ? om_world_diagnostics(sched) : null
+	var/list/world_diag = sched ? world_diagnostics(sched) : null
 	var/list/world_queued = world_diag?["queued"]
 	var/list/lanes = list()
 	for(var/i in 1 to OM_LANE_COUNT)
@@ -101,30 +99,8 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 				"us_per_call" = calls ? round(cost * 1000 / calls, 0.01) : 0,
 			))
 	data["stages"] = stages
-	// World services: the global state and world-level periodic work former subsystems held.
-	var/datum/om/global_owner/owner = om_global_owner()
-	var/list/services = list()
-	for(var/datum/world_service/WS as anything in world_services())
-		if(!WS)
-			continue
-		var/lane_parked = FALSE
-		if(WS.lane && owner?.om_rec)
-			var/i = owner.om_rec.att.Find(om_registry().behaviour(WS.lane))
-			lane_parked = i ? !!(owner.om_rec.att_state[i] & OM_ATT_PARKED) : FALSE
-		services += list(list(
-			"name" = WS.name,
-			"type" = "[WS.type]",
-			"initialized" = WS.initialized,
-			"on_demand" = WS.on_demand,
-			"parked" = lane_parked,
-			"resuming" = WS.resuming,
-			"steps" = WS.steps,
-			"ms" = round(WS.total_ms, 0.001),
-			"ms_per_s" = round(WS.total_ms / max(world.time / (1 SECONDS), 1), 0.001),
-			"avg_ms" = round(WS.cost, 0.001),
-			"status" = WS.stat_line(),
-		))
-	data["services"] = services
+	// The world services are systems now (their cost is in the systems section); the key stays for the panel.
+	data["services"] = list()
 	data["caches"] = shared_cache_stats()
 	if(world_diag)
 		data["world_step"] = list(
@@ -135,16 +111,17 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 		)
 	return data
 
-/datum/controller/subsystem/behaviours/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/system/behaviours/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/controller/subsystem/behaviours, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/controller/subsystem/behaviours, ui_act_reset)
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
+/datum/system/behaviours/proc/ui_act_reset(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/time_scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.stats = list()
 		sched.stage_cost = list()

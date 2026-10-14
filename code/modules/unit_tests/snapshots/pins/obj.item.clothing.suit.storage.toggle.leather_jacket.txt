@@ -1,0 +1,17 @@
+@obj.item.clothing.suit.storage.toggle human|none
+@obj.item.clothing.suit.storage.toggle robot|none
+@obj ai|none
+@obj.item.clothing.suit.storage.toggle ghost|none
+@obj.item.clothing.suit.storage.toggle human|/obj/item/tool/screwdriver
+@obj.item.clothing.suit.storage.toggle human|/obj/item/tool/crowbar
+@obj.item.clothing.suit.storage.toggle human|/obj/item/tool/wrench
+@obj.item.clothing.suit.storage.toggle human|/obj/item/tool/wirecutters
+@obj.item.clothing.suit.storage.toggle human|/obj/item/multitool
+@obj.item.clothing.suit.storage.toggle human|/obj/item/weldingtool
+@obj.item.clothing.suit.storage.toggle human|/obj/item/stack/cable_coil
+@obj.item.clothing.suit.storage.toggle human|/obj/item/stack/material/steel
+@obj.item.clothing.suit.storage.toggle human|/obj/item/card/id
+@obj.item.clothing.suit.storage.toggle human|/obj/item/kit
+@obj.item.clothing.suit.storage.toggle human|/obj/item/storage
+@obj.item.clothing.suit.storage.toggle human|/obj/item
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, suit_pockets_hand, suit_pockets_item, toggle_digestable, toggle_toggle_verb

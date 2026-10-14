@@ -1,0 +1,2 @@
+/obj/machinery/icecream_vat vol=100 holder=/datum/reagents flour=5,ice=5,milk=5,sugar=5
+

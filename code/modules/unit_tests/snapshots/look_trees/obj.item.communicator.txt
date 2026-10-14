@@ -1,0 +1,17 @@
+/obj/item/communicator icon: icons/obj/device.dmi
+/obj/item/communicator state: communicator
+/obj/item/communicator dir: 2
+/obj/item/communicator overlay: icons/obj/device.dmi:communicator:8:#000000
+/obj/item/communicator/watch icon: icons/obj/device.dmi
+/obj/item/communicator/watch state: commwatch
+/obj/item/communicator/watch dir: 2
+/obj/item/communicator/watch overlay: icons/obj/device.dmi:commwatch:8:#000000
+/obj/item/communicator/integrated icon: icons/obj/device.dmi
+/obj/item/communicator/integrated state: communicator
+/obj/item/communicator/integrated dir: 2
+/obj/item/communicator/integrated overlay: icons/obj/device.dmi:communicator:8:#000000
+/obj/item/communicator/commlink icon: icons/obj/device.dmi
+/obj/item/communicator/commlink state: communicator
+/obj/item/communicator/commlink dir: 2
+/obj/item/communicator/commlink overlay: icons/obj/device.dmi:communicator:8:#000000
+

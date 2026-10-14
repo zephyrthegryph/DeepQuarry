@@ -66,14 +66,14 @@
 	return native
 
 /// The kernel's frame (phase N). Rust's scheduler clock is the wheel tick itself (timers and keys carry absolute ticks,
-/// om_world_tick_of()), so the frame is told how many ticks passed since the last one: the whole tick count on the first
+/// world_tick_of()), so the frame is told how many ticks passed since the last one: the whole tick count on the first
 /// frame (that is what aligns the clocks), one tick on a normal one, more after a hitch. Rust bounds how much game time
 /// it paces from that. `elapsed_ds` (the kernel caps it at NATIVE_MAX_CATCHUP ticks) only scales the wake `budget`
 /// (normal/background wakes per tick), so a late tick takes the skipped ticks' share. Returns TRUE when a frame ran.
 /datum/system/native/proc/kernel_frame(elapsed_ds, budget = NATIVE_WAKE_BUDGET)
 	if(tick_lag_sent != world.tick_lag)
 		send_tick_lag()
-	var/tick_now = om_world_tick_of(world.time)
+	var/tick_now = world_tick_of(world.time)
 	var/ticks = max(tick_now - last_tick, 0) // never more than passed: Rust's clock must not run ahead of the wheel tick
 	last_tick = tick_now
 	var/budget_ticks = clamp(CEILING(elapsed_ds / world.tick_lag, 1), 1, NATIVE_MAX_CATCHUP)
@@ -131,7 +131,7 @@
 		var/datum/native_watch/gas/G = target
 		if(G.handle != a || QDELETED(G))
 			// ALLOW(system_boundary): the native system counts dead gas handles on the machine service that owns the gas world
-			GLOB.machine_service.gas_dead_last++
+			SSmachines.gas_dead_last++
 			return
 		if(!gas_changes)
 			gas_changes = list()
@@ -174,9 +174,9 @@
 
 /// CROSSED (`watch`, `band`): the watch's own delivery.
 /datum/system/native/proc/on_crossed(handle, band, list/box, p, count)
-	var/datum/native_watch/W = om_native_watch_of(handle)
+	var/datum/native_watch/W = kernel_native_native_watch_of(handle)
 	if(!W)
-		om_world_dropped()
+		world_wake_dropped()
 		return
 	native_crossed(W, band, box.Copy(p, p + count))
 
@@ -205,8 +205,8 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_key_name(key)
 	return GLOB.native_key_names[num2text(key, 12)]
 
-/// `E`'s value under `key` (a Rust channel mask, or a DM CHANGE_* channel) changed. Reactions hear it through
-/// publish_change() under the key's `native("...")` name (READERS demand-gates it). The om_raise_change() call is
+/// `E`'s value under `key` (a Rust channel mask) changed. Reactions hear it through
+/// publish_change() under the key's `native("...")` name (READERS demand-gates it). The entity_raise_change() call is
 /// the bridge for OM-era readers that key on channel bits: om_listen listeners, declared appearances, caches
 /// and periodic work (code/datums/om/entity.dm om_dispatch_change).
 /proc/native_publish_change(datum/E, key)
@@ -216,7 +216,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	var/name = native_key_name(key)
 	if(name && rx_readers(E, name))
 		publish_change(E, name)
-	om_raise_change(E, key)
+	entity_raise_change(E, key)
 	return TRUE
 
 /// Something of `kind` (an event header) happened to `E`, with `args`. Published as a /datum/notice/native:
@@ -224,7 +224,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_publish_notice(datum/E, kind, list/args)
 	if(QDELETED(E))
 		return FALSE
-	PUBLISH(E, /datum/notice/native, kind, args)
+	PUBLISH_LEGACY(E, /datum/notice/native, kind, args)
 	return TRUE
 
 /// A native watch crossed `band` with `detail` (the record's numbers). A watch declared by a reaction
@@ -235,11 +235,9 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	if(QDELETED(watch) || !watch.handle)
 		return FALSE
 	if(watch.rx_reaction)
-		// ALLOW(ownership): the watch resolves its owner by weak ref each delivery; the ref is a handle, not a held relation
-		var/datum/holder = om_resolve(watch.owner_ref)
+		var/datum/holder = resolve_handle(watch.owner_ref)
 		if(!holder)
-			// ALLOW(lifecycle): the pool and the native watch table are the lifecycle owners for these objects and delete them directly
-			qdel(watch)
+			ended_with(watch)
 			return FALSE
 		GLOB.native_deliveries[watch.delivery_source]++
 		rx_crossed(holder, watch.rx_reaction, band, watch.rx_listener)
@@ -249,7 +247,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /// Marks `watch` as the Rust side of the on_cross reaction `R` (and the observer `L`, when dynamic) on its
 /// owner: its crossings deliver through rx_crossed().
 /proc/native_watch_for_reaction(datum/native_watch/watch, datum/reaction/R, datum/rx_listener/L)
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_reaction = R
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_listener = L
@@ -280,6 +278,14 @@ GLOBAL_LIST_EMPTY(native_key_names)
 		return null
 	. = vg_component_set(entity, NATIVE_KEY_CODE(key), NATIVE_KEY_FIELD(key), index, value)
 	native_read_invalidate(entity)
+
+/// A freshly bound (or rebound) entity sends its settings: its push_to_rust() runs at the frame's refresh, coalesced with any other change of
+/// what it reads. The bind itself is not a tracked write, so the hook that learns of a (re)bind (power_registered()) calls this instead of
+/// calling push_to_rust() by hand.
+/proc/native_resync(datum/E)
+	if(!E || QDELING(E))
+		return
+	refresh_mark(E, DEP_PUSH, 0)
 
 // ---------------------------------------------------------------- reads
 
@@ -320,3 +326,27 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	var/datum/system/native/N = native_system()
 	if(entity && N.read_cache)
 		N.read_cache -= num2text(entity, 12)
+
+// ---- the step length (cadence holds reach Rust here; the grant holder is code/datums/om/cadence.dm) ----
+
+/// The step length last handed to Rust (vg_world_set_dt), seconds.
+/datum/system/native/var/current_dt = CADENCE_BASE_DT
+/// Holds the cadence holds for the gas step, created on first use.
+/datum/system/native/var/datum/step_cadence/native/step_cadence
+
+/// The cadence datum to hold cadence holds on.
+/datum/system/native/proc/get_step_cadence()
+	RETURN_TYPE(/datum/step_cadence)
+	if(!step_cadence)
+		step_cadence = new // ALLOW(ownership): the native system makes its grant holder lazily and keeps it for the whole run; it is a helper the system never hands out
+	return step_cadence
+
+/// Runs the world at the shortest step any cadence grant names.
+/datum/system/native/proc/apply_step_cadence()
+	set_step_dt(get_step_cadence().dt_seconds())
+
+/// Sets the step length: Rust integrates it from the next step (the native frame runs every tick either way).
+/datum/system/native/proc/set_step_dt(dt)
+	if(dt == current_dt)
+		return
+	current_dt = vg_world_set_dt(dt)

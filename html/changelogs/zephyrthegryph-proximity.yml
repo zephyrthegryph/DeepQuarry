@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Client-proximity relevance: map effects and beam points park while no player is near, via a cell tracker and every(when = STAT_RELEVANCE)"

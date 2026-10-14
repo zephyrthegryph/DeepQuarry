@@ -1,0 +1,27 @@
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Use
+robot|none click: Click: Use
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++2 menu: Use screwdriver
+@obj.structure human|/obj/item/tool/crowbar
++2 menu: Use crowbar
+@obj.structure human|/obj/item/tool/wrench
++2 menu: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++2 menu: Use wirecutters
+@obj.structure human|/obj/item/multitool
++2 menu: Use multitool
+@obj.structure human|/obj/item/weldingtool
++2 menu: Use welding tool
+@obj.structure human|/obj/item/stack/cable_coil
++2 menu: Use cable coil
+@obj.structure human|/obj/item/stack/material/steel
++2 menu: Use steel sheet
+@obj.structure human|/obj/item/card/id
++2 menu: Use identification card
+@obj.structure human|/obj/item
++2 menu: Use item
+keys: drag_buckle, hand, item, melee_hit

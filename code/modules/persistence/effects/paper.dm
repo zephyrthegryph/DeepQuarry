@@ -15,7 +15,7 @@
 	if(requires_noticeboard && LAZYLEN(board.notices) >= board.max_notices)
 		return
 	var/obj/item/paper/paper = new paper_type(creating)
-	paper.info = token["message"]
+	paper.set_info(token["message"])
 	paper.name = token["name"]
 	if(!paper.name)
 		paper.name = "No Title"
@@ -49,4 +49,4 @@
 	var/obj/structure/noticeboard/board = value.loc
 	if(istype(board))
 		board.remove_paper(value)
-	qdel(value)
+	spent(value)

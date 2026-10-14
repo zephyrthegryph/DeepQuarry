@@ -4,10 +4,7 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "taperoll"
 	w_class = ITEMSIZE_TINY
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-	toolspeed = 2 //It is now used in surgery as a not awful, but probably dangerous option, due to speed.
 
 /obj/item/tape_roll/proc/can_place(mob/living/carbon/human/H, mob/user)
 	if(isrobot(user) || user == H)
@@ -19,25 +16,92 @@
 
 	return FALSE
 
-/obj/item/tape_roll/proc/tape_eyes_done(mob/living/carbon/human/H, mob/living/user)
-	if(!can_place(H, user))
-		return
-	if(!H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
-		return
+MSG_DEF_SELF(tape/no_grip, span_danger("You need to have a firm grip on %T% before you can use %I%!"))
+MSG_DEF_SELF(tape/no_head, span_warning("%T% doesn't have a head."))
+MSG_DEF_SELF(tape/no_eyes, span_warning("%T% doesn't have any eyes."))
+MSG_DEF_SELF(tape/eyes_covered, span_warning("%T% is already wearing something on their eyes."))
+MSG_DEF_SELF(tape/no_mouth, span_warning("%T% doesn't have a mouth."))
+MSG_DEF_SELF(tape/mask_worn, span_warning("%T% is already wearing a mask."))
+MSG_DEF(tape/eyes_begin, null, span_danger("%U% begins taping over %T%'s eyes!"))
+MSG_DEF(tape/mouth_begin, null, span_danger("%U% begins taping up %T%'s mouth!"))
+
+CAPABILITIES(/obj/item/tape_roll)
+	configure(item_tooling(speed = 2))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	op("tape_eyes", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape over the eyes"),
+		when(PROC_REF(aimed_at_eyes)),
+		needs(req_adjacent(), req(PROC_REF(firm_grip)), req(PROC_REF(has_head)), req(PROC_REF(has_eyes)),
+			req(PROC_REF(eyes_free)), req(PROC_REF(face_free))),
+		begins(MSG(tape/eyes_begin)), wait(3 SECONDS), then(PROC_REF(tape_eyes_done)))
+	op("tape_mouth", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART + 1), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape up the mouth"),
+		when(PROC_REF(aimed_at_mouth)),
+		needs(req_adjacent(), req(PROC_REF(firm_grip)), req(PROC_REF(has_head)), req(PROC_REF(has_mouth)),
+			req(PROC_REF(mask_free)), req(PROC_REF(face_free))),
+		begins(MSG(tape/mouth_begin)), wait(3 SECONDS), then(PROC_REF(tape_mouth_done)))
+
+/obj/item/tape_roll/proc/aimed_at_eyes(datum/act/op/A)
+	return read_once(hud_of(A.actor)?.zone_sel?.selecting) == O_EYES
+
+/obj/item/tape_roll/proc/aimed_at_mouth(datum/act/op/A)
+	var/zone = read_once(hud_of(A.actor)?.zone_sel?.selecting)
+	return zone == O_MOUTH || zone == BP_HEAD
+
+/obj/item/tape_roll/proc/firm_grip(datum/act/op/A)
+	return (read_once(can_place(A.target, A.actor))) ? null : /datum/msg/tape/no_grip
+
+
+/obj/item/tape_roll/proc/has_head(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (!!read_once(H.organs_by_name[BP_HEAD])) ? null : /datum/msg/tape/no_head
+
+
+/obj/item/tape_roll/proc/has_eyes(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (!!read_once(H.has_eyes())) ? null : /datum/msg/tape/no_eyes
+
+
+/obj/item/tape_roll/proc/has_mouth(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (!!read_once(H.check_has_mouth())) ? null : /datum/msg/tape/no_mouth
+
+
+/obj/item/tape_roll/proc/eyes_free(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (!H.get_equipped_item(SLOT_ID_EYES)) ? null : /datum/msg/tape/eyes_covered
+
+
+/obj/item/tape_roll/proc/mask_free(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (!H.get_equipped_item(SLOT_ID_MASK)) ? null : /datum/msg/tape/mask_worn
+
+
+/// A helmet or hat that covers the face keeps the tape off.
+/obj/item/tape_roll/proc/face_free(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/worn = H.get_equipped_item(SLOT_ID_HEAD)
+	return (!worn || !(read_once(worn_of(worn).covers) & FACE)) ? null : span_warning("Remove their [worn] first.")
+
+/obj/item/tape_roll/proc/tape_eyes_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/mob/living/user = A.actor
+	if(!can_place(H, user)) // the grip is checked again where the work ends
+		return OP_FAILED
 	act_message(user, H, others = span_danger("%U% has taped up %T%'s eyes!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
-	H.update_inv_glasses()
+	changed(src)
 	play_sfx(src, SFX_EFFECTS_TAPE)
+	return OP_OK
 
-/obj/item/tape_roll/proc/tape_mouth_done(mob/living/carbon/human/H, mob/living/user)
-	if(!can_place(H, user))
-		return
-	if(!H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
-		return
+/obj/item/tape_roll/proc/tape_mouth_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/mob/living/user = A.actor
+	if(!can_place(H, user)) // the grip is checked again where the work ends
+		return OP_FAILED
 	act_message(user, H, others = span_danger("%U% has taped up %T%'s mouth!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
-	H.update_inv_wear_mask()
+	changed(src)
 	play_sfx(src, SFX_EFFECTS_TAPE)
+	return OP_OK
 
 /obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M))
@@ -48,42 +112,7 @@
 			to_chat(user, span_danger("You need to have a firm grip on [H] before you can use \the [src]!"))
 			return ITEM_INTERACT_FAILURE
 		else
-			if(user.zone_sel.selecting == O_EYES)
-
-				if(!H.organs_by_name[BP_HEAD])
-					to_chat(user, span_warning("\The [H] doesn't have a head."))
-					return ITEM_INTERACT_FAILURE
-				if(!H.has_eyes())
-					to_chat(user, span_warning("\The [H] doesn't have any eyes."))
-					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_EYES))
-					to_chat(user, span_warning("\The [H] is already wearing something on their eyes."))
-					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
-					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
-					return ITEM_INTERACT_FAILURE
-				act_message(user, null, others = span_danger("%U% begins taping over \the [H]'s eyes!"))
-
-				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
-
-			else if(user.zone_sel.selecting == O_MOUTH || user.zone_sel.selecting == BP_HEAD)
-				if(!H.organs_by_name[BP_HEAD])
-					to_chat(user, span_warning("\The [H] doesn't have a head."))
-					return ITEM_INTERACT_FAILURE
-				if(!H.check_has_mouth())
-					to_chat(user, span_warning("\The [H] doesn't have a mouth."))
-					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_MASK))
-					to_chat(user, span_warning("\The [H] is already wearing a mask."))
-					return ITEM_INTERACT_FAILURE
-				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
-					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
-					return ITEM_INTERACT_FAILURE
-				act_message(user, null, others = span_danger("%U% begins taping up \the [H]'s mouth!"))
-
-				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
-
-			else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+			if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 				if(!can_place(H, user))
 					return ITEM_INTERACT_FAILURE
 
@@ -113,7 +142,6 @@
 	w_class = ITEMSIZE_TINY
 	plane = MOB_PLANE
 	anchored = FALSE
-	drop_sound = null
 	flags = NOBLUDGEON
 
 	var/obj/item/stuck = null
@@ -124,12 +152,13 @@
 
 /obj/item/ducttape/proc/attach(obj/item/W)
 	own_move(W, src, nameof(src.stuck)) // CONTAINED: the move takes it in
-	icon_state = W.icon_state + "_taped"
+	set_icon_state(W.icon_state + "_taped")
 	name = W.name + " (taped)"
 	overlays = W.overlays
 
 /// Old attack_self.
-/obj/item/ducttape/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stuck)
 		return TRUE
 
@@ -138,32 +167,34 @@
 	user.drop_from_inventory(src)
 	stuck.forceMove(get_turf(src))
 	user.put_in_hands(stuck)
-	own_take(src, nameof(stuck))
+	rel_take(src, nameof(stuck))
 	overlays = null
 	consume(src, user)
 	return TRUE
 
 /// Old attackby.
-/obj/item/ducttape/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!(istype(src, /obj/item/handcuffs/cable/tape) || istype(src, /obj/item/clothing/mask/muzzle/tape)))
-		return FALSE
+		return OP_DECLINE
 	else
 		user.drop_from_inventory(I)
 		I.forceMove(src)
 		consume(I, user)
 		to_chat(user, span_notice("You place \the [I] back into \the [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/ducttape, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/ducttape)
+	configure(item_sounds(drop = TRAIT_NONE))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/item/ducttape/proc/interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+/obj/item/ducttape/proc/interaction_hand(datum/act/op/A)
 	set_anchored(FALSE)
-	return FALSE // Pick it up now that it's unanchored.
+	return OP_DECLINE // Pick it up now that it's unanchored.
 
 /obj/item/ducttape/afterattack(A, mob/user, flag, params)
 

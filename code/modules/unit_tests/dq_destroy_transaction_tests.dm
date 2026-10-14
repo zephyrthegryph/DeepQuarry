@@ -28,13 +28,16 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	w_class = ITEMSIZE_NORMAL
 	var/datum/dq_destroy_transaction_owned_child/child
 
+CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
+	owns_one(nameof(child), /datum/dq_destroy_transaction_owned_child)
+
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
-	own_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
+	rel_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
-/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_destroy_transaction_log("guard")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_unbind()
@@ -54,7 +57,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("destroy")
 	..()
 
-/datum/om/relation/slot/dq_destroy_transaction_probe_main
+/datum/relation_definition/slot/dq_destroy_transaction_probe_main
 	holder = /obj/item/dq_destroy_transaction_phase_probe
 	slot_id = "main"
 	is_default = TRUE
@@ -65,7 +68,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_content_probe
 	name = "content probe"
 	w_class = ITEMSIZE_SMALL
-	has_slot_hooks = TRUE
 	var/saw_destroying_flag = FALSE
 	var/loc_when_unslotted
 
@@ -74,7 +76,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	saw_destroying_flag = (flags & LEDGER_MOVE_DESTROYING) ? TRUE : FALSE
 	loc_when_unslotted = loc // doMove() already committed `loc =` before note_exit/on_unslotted runs
 
-/// An owned child (implicit OWN): its own Destroy() logs "links" (phase 4 deletes it).
+/// An owned child (declared owns_one on the probe): its own Destroy() logs "links" (phase 4 deletes it).
 /datum/dq_destroy_transaction_owned_child
 
 /datum/dq_destroy_transaction_owned_child/on_destroy(force)
@@ -106,7 +108,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_destroy_transaction_phase_probe/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe, T)
 	var/obj/item/dq_destroy_transaction_content_probe/content = allocate(/obj/item/dq_destroy_transaction_content_probe, T)
-	TEST_ASSERT(content.move_into(probe, "main"), "content probe into the phase probe's slot")
+	TEST_ASSERT(move_into(probe, "main", content), "content probe into the phase probe's slot")
 
 	dq_destroy_transaction_log_reset()
 	qdel(probe)
@@ -128,7 +130,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_destroy_transaction_phase_probe/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe, T)
 	var/obj/item/dq_destroy_transaction_content_probe/content = allocate(/obj/item/dq_destroy_transaction_content_probe, T)
-	TEST_ASSERT(content.move_into(probe, "main"), "content probe into the phase probe's slot")
+	TEST_ASSERT(move_into(probe, "main", content), "content probe into the phase probe's slot")
 
 	TEST_ASSERT(probe.slot_remove(content, T), "an ordinary slot_remove, not a destroy transaction")
 	TEST_ASSERT(!content.saw_destroying_flag, "and it did not carry LEDGER_MOVE_DESTROYING")
@@ -139,7 +141,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "nesting outer"
 	w_class = ITEMSIZE_NORMAL
 
-/datum/om/relation/slot/dq_destroy_transaction_nest_outer_slot
+/datum/relation_definition/slot/dq_destroy_transaction_nest_outer_slot
 	holder = /obj/item/dq_destroy_transaction_nest_outer
 	slot_id = "child_holder"
 	is_default = TRUE
@@ -153,7 +155,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	dq_destroy_transaction_log("inner-destroy")
 	..()
 
-/datum/om/relation/slot/dq_destroy_transaction_nest_inner_slot
+/datum/relation_definition/slot/dq_destroy_transaction_nest_inner_slot
 	holder = /obj/item/dq_destroy_transaction_nest_inner
 	slot_id = "grandchild"
 	is_default = TRUE
@@ -166,8 +168,8 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/obj/item/dq_destroy_transaction_nest_outer/outer = allocate(/obj/item/dq_destroy_transaction_nest_outer, T)
 	var/obj/item/dq_destroy_transaction_nest_inner/inner = allocate(/obj/item/dq_destroy_transaction_nest_inner, T)
 	var/obj/item/dq_containment_test/grandchild = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(inner.move_into(outer), "inner into outer")
-	TEST_ASSERT(grandchild.move_into(inner), "grandchild into inner")
+	TEST_ASSERT(move_into(outer, null, inner), "inner into outer")
+	TEST_ASSERT(move_into(inner, null, grandchild), "grandchild into inner")
 
 	dq_destroy_transaction_log_reset()
 	qdel(outer)
@@ -186,13 +188,13 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	w_class = ITEMSIZE_NORMAL
 	var/level_name
 
-/datum/om/relation/slot/dq_destroy_transaction_mind_slot
+/datum/relation_definition/slot/dq_destroy_transaction_mind_slot
 	holder = /obj/item/dq_destroy_transaction_mind_level
 	slot_id = "mind"
 	is_mind_slot = TRUE
 	drop_policy = SLOT_DROP_SPILL
 
-/datum/om/relation/slot/dq_destroy_transaction_mind_body_slot
+/datum/relation_definition/slot/dq_destroy_transaction_mind_body_slot
 	holder = /obj/item/dq_destroy_transaction_mind_level
 	slot_id = "body"
 	is_default = TRUE
@@ -203,7 +205,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /obj/item/dq_destroy_transaction_mind_probe
 	name = "mind probe"
 	w_class = ITEMSIZE_TINY
-	has_slot_hooks = TRUE
 	var/still_registered
 
 /obj/item/dq_destroy_transaction_mind_probe/on_unslotted(atom/holder, slot_id, flags = 0)
@@ -228,11 +229,11 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/obj/item/dq_destroy_transaction_mind_probe/head_mind = allocate(/obj/item/dq_destroy_transaction_mind_probe, T)
 	var/obj/item/dq_destroy_transaction_mind_probe/brain_mind = allocate(/obj/item/dq_destroy_transaction_mind_probe, T)
 
-	TEST_ASSERT(head.move_into(body, "body"), "head into body")
-	TEST_ASSERT(brain.move_into(head, "body"), "brain into head")
-	TEST_ASSERT(body_mind.move_into(body, "mind"), "body's own mind occupant")
-	TEST_ASSERT(head_mind.move_into(head, "mind"), "head's own mind occupant")
-	TEST_ASSERT(brain_mind.move_into(brain, "mind"), "brain's own mind occupant")
+	TEST_ASSERT(move_into(body, "body", head), "head into body")
+	TEST_ASSERT(move_into(head, "body", brain), "brain into head")
+	TEST_ASSERT(move_into(body, "mind", body_mind), "body's own mind occupant")
+	TEST_ASSERT(move_into(head, "mind", head_mind), "head's own mind occupant")
+	TEST_ASSERT(move_into(brain, "mind", brain_mind), "brain's own mind occupant")
 
 	dq_destroy_transaction_log_reset()
 	qdel(body)
@@ -248,7 +249,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	name = "occupant holder"
 	anchored = TRUE
 
-/datum/om/relation/slot/dq_destroy_transaction_occupant
+/datum/relation_definition/slot/dq_destroy_transaction_occupant
 	holder = /obj/structure/dq_destroy_transaction_occupant_holder
 	slot_id = "occupant"
 	is_default = TRUE
@@ -257,7 +258,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	capacity = 1
 	drop_policy = SLOT_DROP_TRANSFER
 
-/datum/om/relation/slot/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
+/datum/relation_definition/slot/dq_destroy_transaction_occupant/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	// Occupant machines eject to a turf, not into whatever the holder itself
 	// happens to be sitting in (containment.md §10, lifecycle.md §3).
 	return get_turf(holder)
@@ -268,7 +269,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/turf/T = dq_containment_floor()
 	var/obj/structure/dq_destroy_transaction_occupant_holder/pod = allocate(/obj/structure/dq_destroy_transaction_occupant_holder, T)
 	var/obj/item/dq_containment_test/occupant = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(occupant.move_into(pod), "occupant into the pod's sealed slot")
+	TEST_ASSERT(move_into(pod, null, occupant), "occupant into the pod's sealed slot")
 
 	qdel(pod)
 
@@ -289,7 +290,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 	TEST_ASSERT_NULL(B.partner, "destroying A nulled B's side of the pair too (phase 4)")
 
-/// A destroyed inside B's own transaction (B's /datum/om/event/qdeleting handler
+/// A destroyed inside B's own transaction (B's /datum/definition_event/qdeleting handler
 /// qdels its partner) -- the relation teardown must not double-clear or crash when
 /// the reciprocal side is already gone by the time phase 4 reaches it.
 /datum/dq_destroy_transaction_reentrant_pair
@@ -301,10 +302,10 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
-	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
+	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 
-/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(qdel_partner_on_signal && partner && !QDELETED(partner))
 		qdel(partner)
 
@@ -366,7 +367,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 100)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/item = allocate(/obj/item/dq_containment_test/wood, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		holders += box
 		contents_items += item
 
@@ -412,7 +413,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 20)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/dq_batch_probe/item = allocate(/obj/item/dq_containment_test/wood/dq_batch_probe, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		boxes += box
 		items += item
 	dq_destroy_transaction_log_reset()
@@ -437,7 +438,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	for(var/i in 1 to 10)
 		var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 		var/obj/item/dq_containment_test/wood/item = allocate(/obj/item/dq_containment_test/wood, T)
-		TEST_ASSERT(item.move_into(box, "main"), "item [i] into its box")
+		TEST_ASSERT(move_into(box, "main", item), "item [i] into its box")
 		boxes += box
 		items += item
 
@@ -489,3 +490,97 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 		TEST_ASSERT(thing.gc_destroyed != GC_BATCH_DOOMED, "every transaction ran")
 		TEST_ASSERT_NULL(thing.loc, "and every thing left its turf")
 	TEST_ASSERT_EQUAL(GLOB.dq_destroy_collect_depth, 0, "the scope is closed")
+
+// Observe the actual nested-ledger cleanup position without replacing disposal.
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order/ownership_field_disposed(var_name)
+	if(var_name == nameof(forensic_data))
+		dq_destroy_transaction_log(containment_ledger() ? "ledger-before-forensic-hook" : "ledger-missing-before-forensic-hook")
+	. = ..()
+	if(var_name == nameof(light))
+		dq_destroy_transaction_log(containment_ledger() ? "ledger-survives-light-hook" : "ledger-cleared-before-light-hook")
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_order
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_order/Run()
+	var/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_order, dq_containment_floor())
+	var/datum/ledger/before = probe.containment_ledger()
+	var/datum/rx_state/before_state = probe.rx
+	TEST_ASSERT_EQUAL(dq_ledger_peek(probe), before, "ledger peek preserves the initialized ledger identity")
+	TEST_ASSERT_EQUAL(probe.rx, before_state, "ledger peek does not allocate a new runtime record")
+	var/datum/ledger/L = dq_ledger(probe)
+	TEST_ASSERT(L, "the real inherited slot builds a ledger")
+	var/datum/rx_state/S = probe.rx
+	TEST_ASSERT_EQUAL(owner_of(L), S, "runtime record is the declared ledger owner")
+	var/list/saved_log = GLOB.dq_destroy_transaction_log
+	dq_destroy_transaction_log_reset()
+	qdel(probe)
+	var/list/ledger_log = GLOB.dq_destroy_transaction_log
+	GLOB.dq_destroy_transaction_log = saved_log
+	TEST_ASSERT(QDELETED(L), "holder disposal deletes the nested owned ledger")
+	TEST_ASSERT_NULL(S.containment_ledger, "runtime ownership releases the disposed ledger")
+	TEST_ASSERT_NULL(probe.rx, "holder disposal detaches runtime state")
+	TEST_ASSERT("ledger-before-forensic-hook" in ledger_log, "ledger remains live through preceding forensic cleanup")
+	TEST_ASSERT("ledger-cleared-before-light-hook" in ledger_log, "ledger is cleared before following light cleanup")
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort
+
+/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort/on_destroy(force)
+	..()
+	CRASH("runtime ledger abort fixture")
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_abort
+
+/datum/unit_test/dq_destroy_transaction_runtime_ledger_abort/Run()
+	var/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort/probe = allocate(/obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort, dq_containment_floor())
+	var/datum/ledger/L = dq_ledger(probe)
+	TEST_ASSERT(L, "real slot initializes ledger before aborted disposal")
+	var/datum/rx_state/S = probe.rx
+	var/list/saved_log = GLOB.dq_destroy_transaction_log
+	var/list/saved_capture = GLOB.dq_caught_capture
+	GLOB.dq_destroy_transaction_log = list()
+	GLOB.dq_caught_capture = list()
+	qdel(probe)
+	var/list/capture = GLOB.dq_caught_capture
+	GLOB.dq_caught_capture = saved_capture
+	GLOB.dq_destroy_transaction_log = saved_log
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/item/dq_destroy_transaction_phase_probe/runtime_ledger_abort"), "real on_destroy fault exercises aborted lifecycle")
+	TEST_ASSERT(QDELETED(probe), "aborted holder still reaches deletion")
+	TEST_ASSERT(QDELETED(L), "abort disposes declared runtime-owned ledger")
+	TEST_ASSERT_NULL(S.containment_ledger, "abort clears ledger ownership field")
+	TEST_ASSERT_NULL(probe.rx, "abort detaches native runtime record")
+
+// Reuse e1_solo's real declared holder-destroy hook as the observation.
+/obj/e1_fixture/late_destroy_abort
+
+/obj/e1_fixture/late_destroy_abort/destroy_effects()
+	var/static/datum/destroy_effects_data/dq_late_destroy_abort/data = new
+	return data
+
+/datum/destroy_effects_data/dq_late_destroy_abort
+
+/datum/destroy_effects_data/dq_late_destroy_abort/apply(datum/D)
+	CRASH("late destroy effects abort fixture")
+
+/datum/unit_test/dq_destroy_transaction_late_abort_hook_once
+
+/datum/unit_test/dq_destroy_transaction_late_abort_hook_once/Run()
+	var/obj/e1_fixture/late_destroy_abort/probe = allocate(/obj/e1_fixture/late_destroy_abort, dq_containment_floor())
+	var/list/saved_log = GLOB.e1_log
+	var/list/saved_capture = GLOB.dq_caught_capture
+	GLOB.e1_log = list()
+	GLOB.dq_caught_capture = list()
+	qdel(probe)
+	var/list/capture = GLOB.dq_caught_capture
+	var/list/hook_log = GLOB.e1_log
+	GLOB.dq_caught_capture = saved_capture
+	GLOB.e1_log = saved_log
+	var/hook_count = 0
+	for(var/entry in hook_log)
+		if(entry == "holder_destroy:/obj/e1_fixture/late_destroy_abort")
+			hook_count++
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/e1_fixture/late_destroy_abort"), "actual effects fault exercises late aborted cleanup")
+	TEST_ASSERT(QDELETED(probe), "late-aborted holder reaches deletion")
+	TEST_ASSERT_EQUAL(hook_count, 1, "completed declared destroy hook is not repeated after a later phase faults")
+	TEST_ASSERT_NULL(probe.rx, "late abort retains completed runtime teardown")

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Machines no longer run on the machine pipeline: the distillery and the fire alarm countdown are started work, and the pipeline, machine_step and MACHINE_WAKE are gone"

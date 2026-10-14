@@ -10,8 +10,6 @@
 
 	faction = FACTION_TYR
 
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
 
 	//I know very little of this and yes, I copy and pasted from ants
 	swallowTime = 3 SECONDS
@@ -28,9 +26,12 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/animal/tyr)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE))
+
 /mob/living/simple_mob/animal/tyr/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
 	B.digest_brute = 1

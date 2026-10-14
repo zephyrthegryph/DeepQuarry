@@ -1,8 +1,10 @@
+TRACKED(/obj/item/clothing, valid_accessory_slots)
+TRACKED(/obj/item/clothing, restricted_accessory_slots)
+
+TRACKED(/obj/item/clothing/shoes, overshoes)
+
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
-	siemens_coefficient = 0.9
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 	var/list/accessories
@@ -34,8 +36,6 @@
 /obj/item/clothing/proc/update_clothing_icon()
 	return
 
-DECLARE_VERB_IF(/obj/item/clothing, /obj/item/clothing/proc/change_color, "polychromic")
-
 /obj/item/clothing/Initialize(mapload)
 	. = ..()
 	if(starting_accessories)
@@ -45,12 +45,33 @@ DECLARE_VERB_IF(/obj/item/clothing, /obj/item/clothing/proc/change_color, "polyc
 	set_clothing_index()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/appearance_overlays()
-	. = list()
+/// A clothing item shows its own blood as a layer of its look: drawn from the tracked blood colour and the forensics record, not added by add_blood().
+/obj/item/clothing/draw(datum/look/look)
+	..()
+	look.watch(forensic_data)
 	if(forensic_data?.has_blooddna())
-		add_blood()
-	. += ..()
+		look.overlay(item_stain_image(type, icon, icon_state, dq_get_blood_color(src) || SYNTH_BLOOD_COLOUR))
+	if(gurgled)
+		look.overlay(GLOB.gurgled_overlays[gurgled_color || "green"])
+
+DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_image), SC_NEVER, 2048, 0)
+
+/// The blood stain of an item: the blood sprite cut to the item's own silhouette, tinted `colour`; one shared image per (type, sprite, colour).
+/proc/item_stain_image(item_type, icon, icon_state, colour)
+	READS_FROM()
+	if(!isfile(icon))
+		return build_item_stain_image(item_type, icon, icon_state, colour)
+	return CACHED_KEY(item_stain_images, "[item_type]|[icon]|[icon_state]|[colour]", item_type, icon, icon_state, colour)
+
+/proc/build_item_stain_image(item_type, icon, icon_state, colour)
+	var/image/blood = image(icon = 'icons/effects/blood.dmi', icon_state = "itemblood")
+	blood.filters += filter(type = "alpha", icon = icon(icon, icon_state))
+	blood.color = colour
+	return blood
+
+/// add_blood() and the gurgle code leave the stains to the look.
+/obj/item/clothing/stains_in_look()
+	return TRUE
 
 /obj/item/clothing/equipped(mob/user,slot)
 	..()
@@ -72,13 +93,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/clothing/proc/rig_self_detach()
 	var/obj/item/rig/owner_rig = master_rig()
 	rel_clear(src, nameof(master_rig))
-	canremove = TRUE
+	set_canremove(TRUE)
 	if(ismob(loc))
 		var/mob/M = loc
 		M.drop_from_inventory(src)
 	if(owner_rig && !QDELETED(owner_rig))
 		forceMove(owner_rig)   // retracted into the module (which may now be on the floor)
-		canremove = FALSE
+		set_canremove(FALSE)
 	else
 		forceMove(get_turf(src))   // module is gone; settle on the floor
 
@@ -96,10 +117,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 		rig_self_detach()
 
 /// Old click_alt: take off an attached accessory. Falls through to the default alt-click, as before.
-/obj/item/clothing/proc/clothing_remove_accessory_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_remove_accessory_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user) || user == src.loc)
 		removetie_proc(user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	. = ..()
@@ -119,7 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 			if(C.handle_low_temperature(tempcheck))
 				. = TRUE
 
-	if(min_cold_protection_temperature && min_cold_protection_temperature <= tempcheck)
+	if(protection_of(src).min_cold && protection_of(src).min_cold <= tempcheck)
 		. = TRUE
 
 /obj/item/clothing/proc/handle_high_temperature(tempcheck = T20C)
@@ -129,26 +151,26 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 			if(C.handle_high_temperature(tempcheck))
 				. = TRUE
 
-	if(max_heat_protection_temperature && max_heat_protection_temperature >= tempcheck)
+	if(protection_of(src).max_heat && protection_of(src).max_heat >= tempcheck)
 		. = TRUE
 
 // Returns the relative flag-vars for covered protection.
 /obj/item/clothing/proc/get_cold_protection_flags()
-	. = cold_protection
+	. = protection_of(src).cold_parts
 
 	if(LAZYLEN(accessories))
 		for(var/obj/item/clothing/C in accessories)
 			. |= C.get_cold_protection_flags()
 
 /obj/item/clothing/proc/get_heat_protection_flags()
-	. = heat_protection
+	. = protection_of(src).heat_parts
 
 	if(LAZYLEN(accessories))
 		for(var/obj/item/clothing/C in accessories)
 			. |= C.get_heat_protection_flags()
 
 /obj/item/clothing/proc/refit_for_species(target_species)
-	if(!dq_constraint(src, CONSTRAINT_FIT))
+	if(!dq_constraint_present(src, CONSTRAINT_FIT))
 		return //this item doesn't restrict who it fits
 
 	switch(target_species)
@@ -186,12 +208,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(recolor_picked), answerer = usr, title = "Color", question = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color && (ask.picked_color != color))
-		color = ask.picked_color
-	update_icon()
+/obj/item/clothing/proc/recolor_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value && (A.answer.value != color))
+		color = A.answer.value
 	update_clothing_icon()
 // end
 
@@ -200,25 +223,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/clothing/ears
 	name = "ears"
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_EARS
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/ears/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/ears/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
 
-EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_REF(ears_take_off_hand)))
+CAPABILITIES(/obj/item/clothing/ears)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 2))
+	op("ears_take_off_hand", hand(), then(PROC_REF(ears_take_off_hand)))
 
 /// Old attack_hand: take worn ears off into the hand.
-/obj/item/clothing/ears/proc/ears_take_off_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!user) return FALSE
+/obj/item/clothing/ears/proc/ears_take_off_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if (!user) return OP_DECLINE
 
 	if (src.loc != user || !ishuman(user))
-		return FALSE
+		return OP_DECLINE
 
 	var/mob/living/carbon/human/H = user
 	if(H.get_equipped_item(SLOT_ID_EAR_L) != src && H.get_equipped_item(SLOT_ID_EAR_R) != src)
-		return FALSE
+		return OP_DECLINE
 
 	if(!canremove)
 		return TRUE
@@ -228,7 +253,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 		user.drop_from_inventory(O)
 		if(!istype(src,/obj/item/clothing/ears/offear))
-			qdel(O)
+			spent(O)
 			O = src
 	else
 		O = src
@@ -246,30 +271,33 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_ears()
+		changed(src)
 
-/obj/item/clothing/ears/MouseDrop(obj/over_object)
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+/obj/item/clothing/ears/drop_with_actor(mob/user, obj/over_object)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
 		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
-				. = O.MouseDrop(over_object)
+				. = O.drop_with_actor(user, over_object)
 				consume(src, H)
 			else
-				. = ..()
+				. = ..(user, over_object)
 				consume(O, H)
 		else
-			. = ..()
+			. = ..(user, over_object)
 
 /obj/item/clothing/ears/offear
 	name = "Other ear"
 	w_class = ITEMSIZE_HUGE
 	icon = 'icons/mob/screen1_Midnight.dmi'
 	icon_state = "block"
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
+CAPABILITIES(/obj/item/clothing/ears/offear)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
+
+// ALLOW(init/INSTANCE_STATE): copies the look of the item it is made inside
 /obj/item/clothing/ears/offear/Initialize(mapload)
 	. = ..()
 	if(isobj(loc))
@@ -291,7 +319,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	gender = PLURAL //Carn: for grammarically correct text-parsing
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/hands/item.dmi'
-	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
 	var/obj/item/cell/cell = 0 // owned: the installed power cell, kept in the gloves' contents
@@ -304,17 +331,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	var/overgloves = 0							//Used by gauntlets and arm_guards
 	var/punch_force = 0							//How much damage do these gloves add to a punch?
 	var/punch_injury_kind						//What punches in these gloves inflict (INJURY_*); null = the punch's own kind.
-	heat_protection = HANDS
-	cold_protection = HANDS
-	body_parts_covered = HANDS
-	slot_flags = SLOT_GLOVES
-	attack_verb = list("challenged")
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 	valid_accessory_slots = (\
 		ACCESSORY_SLOT_RING\
@@ -322,6 +342,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	restricted_accessory_slots = (\
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
+
+CAPABILITIES(/obj/item/clothing/gloves)
+	configure(item_worn(covers = HANDS, slots = SLOT_GLOVES))
+	configure(item_combat(attack_verbs = list("challenged")))
+	configure(item_protection(siemens = 0.9, heat_parts = HANDS, cold_parts = HANDS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	owns_one(nameof(gloves), /obj/item/clothing/gloves)
+	owns_one(nameof(ring), /obj/item/clothing/accessory)
+	owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type))
 
 /obj/item/clothing/gloves/ownership()
 	. = ..()
@@ -334,16 +363,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 /obj/item/clothing/gloves/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_gloves()
+		changed(src)
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
-/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT)
+/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 	return 0 // return 1 to cancel attack_hand()
 
 /obj/item/clothing/gloves/wash()
 	. = ..()
 	transfer_blood = 0
-	update_icon()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
 	rel_set(src, nameof(wearer), user)
@@ -364,11 +392,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES))
+				rel_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES))
 			else if(istype(G, /obj/item/clothing/accessory))
-				own_set(src, nameof(ring), H.get_equipped_item(SLOT_ID_GLOVES))
+				rel_set(src, nameof(ring), H.get_equipped_item(SLOT_ID_GLOVES))
 			else
-				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
+				rel_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
 			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
@@ -379,20 +407,19 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	if(gloves)
 		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
-		own_take(src, nameof(gloves))
+		rel_take(src, nameof(gloves))
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
 		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
-		own_take(src, nameof(ring))
+		rel_take(src, nameof(ring))
 		return
 
 /obj/item/clothing/gloves
 	var/tmp/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_attack_type")
 
 /////////////////////////////////////////////////////////////////////
 //Rings
@@ -402,18 +429,20 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 	w_class = ITEMSIZE_TINY
 	icon = 'icons/inventory/hands/item.dmi'
 	gender = NEUTER
-	siemens_coefficient = 1
 	glove_level = 1
 	fingerprint_chance = 100
 	punch_force = 2
-	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/gloves/ring)
+	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 1))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 ///////////////////////////////////////////////////////////////////////
 //Head
 
-TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_DIONA))))
+
 /obj/item/clothing/head
 	name = DEVELOPER_WARNING_NAME // "Head"
 	icon = 'icons/inventory/head/item.dmi'
@@ -421,10 +450,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 		slot_l_hand_str = 'icons/mob/items/lefthand_hats.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		)
-	body_parts_covered = HEAD
-	heat_protection = HEAD
-	cold_protection = HEAD
-	slot_flags = SLOT_HEAD
 	w_class = ITEMSIZE_SMALL
 	blood_sprite_state = "helmetblood"
 
@@ -432,34 +457,36 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
-	var/tmp/image/helmet_light
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi'
 		)
-	drop_sound = SFX_ITEMS_DROP_HAT
-	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	helmet_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head, \
-	INTERACT_SELF(null, PROC_REF(head_light_self)), \
-	INTERACT_ROBOT("Pick up hat", PROC_REF(head_robot_pick_up)), \
-	INTERACT_SILICON("Wear hat", PROC_REF(head_silicon_wear)), \
-)
+CAPABILITIES(/obj/item/clothing/head)
+	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
+	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
+	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
+	op("head_robot_pick_up", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Pick up hat"), then(PROC_REF(head_robot_pick_up)))
+	// A cyborg picking the hat up (head_robot_pick_up()): three seconds beside it.
+	op("robot_hat_pickup", ai(), needs(req_capable()), wait(3 SECONDS), then(PROC_REF(robot_hat_done)))
+	op("head_silicon_wear", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Wear hat"), then(PROC_REF(head_silicon_wear)))
 
 /// Old attack_self: toggle the helmet light. Returns FALSE as the old body returned nothing,
 /// so subtypes' legacy attack_self bodies that ran after ..() still run.
-/obj/item/clothing/head/proc/head_light_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/proc/head_light_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
-	if(light_range)
+		return OP_DECLINE
+	if(glow_of(src).range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
-			return FALSE
+			return OP_DECLINE
 		update_flashlight(user)
 		to_chat(user, "You [light_on ? "enable" : "disable"] the helmet light.")
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
 	set_light_on(!light_on)
@@ -467,12 +494,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	if(light_system == STATIC_LIGHT)
 		update_light()
 
-	update_icon()
 	user.update_mob_action_buttons()
 
 /// Old attack_ai: a silicon wears the hat; otherwise the default.
-/obj/item/clothing/head/proc/head_silicon_wear(mob/user, obj/item/held, datum/interaction/interaction)
-	return mob_wear_hat(user) ? TRUE : FALSE
+/obj/item/clothing/head/proc/head_silicon_wear(datum/act/op/A)
+	var/mob/user = A.actor
+	return mob_wear_hat(user) ? OP_OK : OP_DECLINE
 
 /obj/item/clothing/head/attack_generic(mob/user)
 	if(!mob_wear_hat(user))
@@ -505,36 +532,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		to_chat(user, span_notice("You crawl under \the [src]."))
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/head/appearance_overlays()
-	. = list()
-	var/mob/living/carbon/human/H
-	if(ishuman(loc))
-		H = loc
-
+/// The helmet's lit lamp on the item; the worn lamp is built by make_worn_icon() (clothing_icons.dm). A change of the lamp redraws the head slot
+/// of whoever wears it (an effect of the look: the worn overlay stays the mob's own path).
+/obj/item/clothing/head/draw(datum/look/look)
+	..()
 	if(light_on)
-		// Generate object icon.
-		if(!GLOB.light_overlay_cache["[light_overlay]_icon"])
-			GLOB.light_overlay_cache["[light_overlay]_icon"] = image(icon = 'icons/obj/light_overlays.dmi', icon_state = "[light_overlay]")
-		helmet_light = GLOB.light_overlay_cache["[light_overlay]_icon"]
-		. += helmet_light
+		look.overlay(look_cached_image("[light_overlay]-item", 'icons/obj/light_overlays.dmi', light_overlay))
 
-		// Generate and cache the on-mob icon, which is used in update_inv_head().
-		var/body_type = (H && H.species.get_bodytype(H))
-		var/cache_key = "[light_overlay][body_type && LAZYACCESS(sprite_sheets, body_type) ? body_type : ""]"
-		if(!GLOB.light_overlay_cache[cache_key])
-			var/use_icon = LAZYACCESS(sprite_sheets, body_type) || 'icons/mob/light_overlays.dmi'
-			GLOB.light_overlay_cache[cache_key] = image(icon = use_icon, icon_state = "[light_overlay]")
-
-	else if(helmet_light)
-		helmet_light = null
-
-	H?.update_inv_head() //Will redraw the helmet with the light on the mob
 
 /obj/item/clothing/head/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_head()
+		changed(src)
 
 ///////////////////////////////////////////////////////////////////////
 //Mask
@@ -545,10 +554,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 		slot_l_hand_str = 'icons/mob/items/lefthand_masks.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_masks.dmi',
 		)
-	heat_protection = FALSE //No heat protection anywhere
-	cold_protection = FALSE //No heat protection anywhere
-	slot_flags = SLOT_MASK
-	body_parts_covered = HEAD|FACE|EYES
 	blood_sprite_state = "maskblood"
 	item_icons = list(
 		slot_wear_mask_str = 'icons/inventory/face/mob.dmi'
@@ -572,13 +577,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 	var/list/say_messages
 	var/list/say_verbs
 
-	drop_sound = SFX_GENERIC_DROP
-	pickup_sound = SFX_GENERIC_PICKUP
+CAPABILITIES(/obj/item/clothing/mask)
+	configure(item_worn(slots = SLOT_MASK, covers = HEAD|FACE|EYES))
+	configure(item_protection(heat_parts = FALSE, cold_parts = FALSE))
+	configure(item_sounds(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
+
 
 /obj/item/clothing/mask/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_mask()
+		changed(src)
 
 /obj/item/clothing/mask/proc/filter_air(datum/gas_mixture/air)
 	return
@@ -594,11 +602,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 		)
 	desc = "Comfortable-looking shoes."
 	gender = PLURAL //Carn: for grammarically correct text-parsing
-	siemens_coefficient = 0.9
-	body_parts_covered = FEET
-	heat_protection = FEET
-	cold_protection = FEET
-	slot_flags = SLOT_FEET
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
@@ -614,21 +617,42 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
-	permeability_coefficient = 0.50
 	slowdown = SHOES_SLOWDOWN
-	force = 2
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
-	drop_sound = SFX_ITEMS_DROP_SHOES
-	pickup_sound = SFX_ITEMS_PICKUP_SHOES
 
-	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/feet/mob_digi.dmi'
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
+
+MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
+
+CAPABILITIES(/obj/item/clothing/shoes)
+	configure(item_worn(covers = FEET, slots = SLOT_FEET))
+	configure(item_combat(force = 2))
+	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
+	// A micro climbing out of the shoes (container_resist()): they are inside them, so what is kept is that the shoes stay where they were and the micro stays put.
+	op("micro_climb_out", ai(), needs(req_capable()), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(micro_climbed_out)))
+	op("micro_escape_macro", ai(), needs(req_capable()), takes("macro", "time"), wait(PROC_REF(micro_escape_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(micro_pinned)), then(PROC_REF(micro_escaped_macro)))
+	owns_one(nameof(shoes), /obj/item/clothing/shoes)
+	owns_one(nameof(squeak), /datum/squeak)
+	owns_one(nameof(holding), /obj/item)
+	op("drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Drop onto"), then(PROC_REF(interaction_drag)))
+	op("shoes_draw_knife_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes draw knife hand"), then(PROC_REF(shoes_draw_knife_hand)))
+	op("shoes_shake_out_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes shake out self"), then(PROC_REF(shoes_shake_out_self)))
+	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
+	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
+	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds))), then(PROC_REF(shoes_draw_knife_verb)))
+
+/// Native requirement: return null or the component refusal.
+/obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
+	return holding ? null : "there is no knife in it"
+
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -643,13 +667,10 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 
 
 /// Old verb "Draw Boot Knife" (offered while a knife is held).
-/obj/item/clothing/shoes/proc/shoes_draw_knife_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_draw_knife_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		draw_knife(user)
-
-/// Requirement: a knife is tucked in these shoes.
-/obj/item/clothing/shoes/proc/pred_holding_knife(mob/actor, atom/target, obj/item/held)
-	return !!holding
 
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	if(user.stat || user.restrained() || user.incapacitated())
@@ -668,53 +689,41 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(user.put_in_hands(holding))
 		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
-		own_take(src, nameof(holding))
-		cut_overlay("[icon_state]_knife")
+		rel_take(src, nameof(holding))
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
 		holding.forceMove(src)
 
-	update_icon()
 	return
 
 /// Old attack_hand: draw the knife held in worn shoes.
-/obj/item/clothing/shoes/proc/shoes_draw_knife_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_draw_knife_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
 	if(can_hold_knife == 1 && holding && src.loc == M)
 		draw_knife(M)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old verb "Switch Shoe Layer".
-/obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(datum/act/op/A)
 	shoes_under_pants = !shoes_under_pants
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/shoes/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/clothing/shoes/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(holding)
-		. += "[icon_state]_knife"
-	// .contaminated + GLOB.contamination_overlay branch removed;
-	// see /obj/item/wash for the matching cleanup.
-	if(gurgled)
-		wash(CLEAN_ALL)
-		gurgle_contaminate()
-	if(ismob(usr))
-		var/mob/M = usr
-		M.update_inv_shoes()
+		look.overlay("[drawn_state]_knife")
 
 /obj/item/clothing/shoes/wash()
 	. = ..()
 	dq_set_blood_color(src, null)
 	track_blood = 0
-	update_icon()
 
 /obj/item/clothing/shoes/proc/handle_movement(turf/walking, running, mob/living/carbon/human/pred)
 	if(COOLDOWN_FINISHED(src, recent_squish) && istype(pred))
 		COOLDOWN_START(src, recent_squish, 4 SECONDS)
 		for(var/mob/living/M in contents)
-			if(pred.step_mechanics_pref && M.step_mechanics_pref)
+			if(pred.vore_prefs.step_mechanics_pref && M.vore_prefs.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)
 			else if (prob(1)) // Same old inshoe mechanics
 				var/emote = DEFAULTPICK(inside_emotes, null)
@@ -727,7 +736,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 	if(!istype(prey)) return
 	if(!pred.canmove || pred?.buckled_to()) return //We can't be stepping on anyone if src?.buckled_to() or incapable of moving
 	if(pred in src?.buckled_mob_list()) return
-	if(pred.flying) return //If we're flying, can't really step.
+	if(stat_value(pred, STAT_FLYING)) return //If we're stat_value(src, STAT_FLYING), can't really step.
 
 	// I kept interactions very similar to normal steppies, and removed some attack logs unless harm intent:
 	// I_HELP: No painful description, messages only sent to prey. Similar to inshoe steppies from before.
@@ -773,7 +782,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 			else
 				message_pred = "You firmly push your foot down on [prey], painfully but harmlessly pinning them to the insole of your [name]!"
 				message_prey = "[pred] firmly pushes their foot down on you, painfully but harmlessly pinning you to the insole of their [name]!"
-				prey.status_at_least(EFFECT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
+				prey.status_at_least(STAT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
 				add_attack_logs(pred, prey, "Pinned inshoe (walk, weaken(5))")
 
 		if(I_GRAB)
@@ -783,7 +792,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 			else
 				message_pred = "You pin [prey] down against the insole of your [name] with your foot, your toes curling up around their body, tightly trapping them inbetween them!"
 				message_prey = "[pred] pins you down against the insole of their [name] with their foot, their toes curling up around your body, tighly trapping you inbetween them!"
-				prey.status_at_least(EFFECT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
+				prey.status_at_least(STAT_WEAKENED, 5) // For flavour, only noticed prey if tossed out of shoe
 				add_attack_logs(pred, prey, "Grabbed inshoe (walk, weaken(5))")
 
 		if(I_HURT)
@@ -819,11 +828,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 /obj/item/clothing/shoes/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_shoes()
+		changed(src)
 
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
-/obj/item/clothing/shoes/proc/shoes_shake_out_self(mob/user, obj/item/held, datum/interaction/interaction)
-	clothing_circuit_self(user, held, interaction)
+/obj/item/clothing/shoes/proc/shoes_shake_out_self(datum/act/op/A)
+	var/mob/user = A.actor
+	clothing_circuit_self(A)
 	for(var/mob/M in contents_of(src))
 		if(isvoice(M)) //Don't knock voices out!
 			continue
@@ -837,7 +847,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 		return
 	if(!istype(macro))
 		to_chat(micro, span_notice("You start to climb out of [src]!"))
-		om_task_timed(micro, 5 SECONDS, src, src, PROC_REF(micro_climbed_out), list(micro))
+		perform_op(micro, src, "micro_climb_out", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 
 	var/escape_message_micro = "You start to climb out of [src]!"
@@ -850,25 +860,28 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
+	perform_op(micro, src, "micro_escape_macro", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("macro" = macro, "time" = escape_time))
 
-/obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
+/obj/item/clothing/shoes/proc/micro_climbed_out(datum/act/op/A)
+	var/mob/living/micro = A.actor
 	to_chat(micro, span_notice("You climb out of [src]!"))
 	micro.forceMove(loc)
 
-/obj/item/clothing/shoes/proc/micro_pinned(datum/om/task/timed/shoes_micro_escaped_macro/task)
-	var/mob/living/micro = task.actor
-	var/mob/living/carbon/human/macro = task.target
+/obj/item/clothing/shoes/proc/micro_escape_time(datum/act/op/A)
+	return A.arg("time")
+
+/obj/item/clothing/shoes/proc/micro_pinned(datum/act/op/A)
+	var/mob/living/micro = A.actor
+	var/mob/living/carbon/human/macro = A.arg("macro")
 	to_chat(micro, span_danger("You're pinned underfoot!"))
-	to_chat(macro, span_danger("You pin the escapee underfoot!"))
+	if(!QDELETED(macro))
+		to_chat(macro, span_danger("You pin the escapee underfoot!"))
 
-/datum/om/task/timed/shoes_micro_escaped_macro
-	complete_proc = /obj/item/clothing/shoes/proc/micro_escaped_macro
-	cancel_proc = /obj/item/clothing/shoes/proc/micro_pinned
-
-/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/om/task/timed/shoes_micro_escaped_macro/task)
-	var/mob/living/micro = task.actor
-	var/mob/living/carbon/human/macro = task.target
+/obj/item/clothing/shoes/proc/micro_escaped_macro(datum/act/op/A)
+	var/mob/living/micro = A.actor
+	var/mob/living/carbon/human/macro = A.arg("macro")
+	if(QDELETED(macro))
+		return
 	to_chat(micro, span_notice("You manage to escape [src]!"))
 	to_chat(macro, span_danger("Someone has climbed out of your [src]!"))
 	micro.forceMove(macro.loc)
@@ -883,17 +896,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 		slot_r_hand_str = 'icons/mob/items/righthand_suits.dmi',
 		)
 	var/fire_resist = T0C+100
-	body_parts_covered = CHEST|ARMS|LEGS
 	//Switch to taur sprites if a taur equips
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
-	max_heat_protection_temperature = T0C+100
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING
-	heat_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
-	cold_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
 	var/blood_overlay_type = "suit"
 	blood_sprite_state = "suitblood" //Defaults to the suit's blood overlay, so that some blood renders instead of no blood.
 
@@ -908,10 +916,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 	actions_types = list()
 
 	var/taurized = FALSE
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	preserve_item = 1
-	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
@@ -921,22 +927,32 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/suit/mob_digi.dmi'
+
+
+CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
+	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
+	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
+	owns_one(nameof(hood), /obj/item/clothing/head)
+
 
 TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
 	MakeHood()
-	toggleicon = "[initial(icon_state)]"
+	set_toggleicon("[initial(icon_state)]")
 	. = ..()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/clothing/suit/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/clothing/suit/proc/look_parts(datum/look/look)
 	if(has_hood_sprite) //If we have a special hood_sprite, great, let's use it! Only used by /obj/item/clothing/suit/storage/hooded atm.
-		icon_state = "[toggleicon][hood_up ? "_t" : ""]"
+		look.state("[toggleicon][hood_up ? "_t" : ""]")
 
 /obj/item/clothing/suit/dropped(mob/user, equipping, slot)
 	RemoveHood()
@@ -952,19 +968,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 	if(!hoodtype)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	own_set(src, nameof(hood), H)
+	rel_set(src, nameof(hood), H)
 	if(!actions_types.len) //If we don't already have a special action type, let's add it.
 		actions_types |= /datum/action/item_action/toggle_hood
 
 /obj/item/clothing/suit/proc/RemoveHood()
-	hood_up = FALSE
-	update_icon()
+	set_hood_up(FALSE)
 	if(hood)
-		hood.canremove = TRUE // This shouldn't matter anyways but just incase.
+		hood.set_canremove(TRUE) // This shouldn't matter anyways but just incase.
 		if(ishuman(hood.loc))
 			var/mob/living/carbon/H = hood.loc
 			H.unEquip(hood, 1)
-			H.update_inv_wear_suit()
+			changed(src)
 		hood.forceMove(src)
 
 /obj/item/clothing/suit/proc/ToggleHood()
@@ -985,22 +1000,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 			if(color != hood.color)
 				hood.color = color
 			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
-			hood_up = TRUE
-			hood.canremove = FALSE
-			update_icon()
-			H.update_inv_wear_suit()
+			set_hood_up(TRUE)
+			hood.set_canremove(FALSE)
+			changed(src)
 ///Hood stuff end.
 
 /obj/item/clothing/suit/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 /obj/item/clothing/suit/proc/taurize(mob/living/carbon/human/taur, has_taur_tail = FALSE)
 	if(has_taur_tail)
 		var/datum/sprite_accessory/tail/taur/taurtail = taur.tail_style
 		if(taurtail.suit_sprites && (icon_exists(taurtail.suit_sprites, get_worn_icon_state(slot_wear_suit_str))))
-			icon_override = taurtail.suit_sprites
+			set_icon_override(taurtail.suit_sprites)
 			taurized = TRUE
 	// means that if a taur puts on an already taurized suit without a taur sprite
 	// for their taur type, but the previous taur type had a sprite, it stays
@@ -1009,7 +1023,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 		taurized = FALSE
 
 	if(!taurized)
-		icon_override = initial(icon_override)
+		set_icon_override(initial(icon_override))
 		taurized = FALSE
 
 // Taur suits need to be shifted so its centered on their taur half.
@@ -1038,13 +1052,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 		slot_r_hand_str = 'icons/mob/items/righthand_uniforms.dmi',
 		)
 	name = "under"
-	body_parts_covered = ARMS|LEGS|ARMS
-	permeability_coefficient = 0.90
-	slot_flags = SLOT_ICLOTHING
-	heat_protection = ARMS|LEGS|CHEST
-	cold_protection = ARMS|LEGS|CHEST
 	armor_spec = ""
-	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	blood_sprite_state = "uniformblood"
@@ -1096,15 +1104,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
 	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
-	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/uniform/mob_digi.dmi'
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(under_worn_hand)), \
-	INTERACT_VERB("Toggle Suit Sensors", PROC_REF(under_toggle_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Roll Down Jumpsuit", PROC_REF(under_rollsuit_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_down, "it can't be rolled down")), \
-	INTERACT_VERB("Roll Up Sleeves", PROC_REF(under_rollsleeves_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_sleeves, "its sleeves can't be rolled")), \
-	INTERACT_VERB("Holster", PROC_REF(under_holster_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_has_holster, "it has no holster")), \
-)
+MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
+MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
+
+CAPABILITIES(/obj/item/clothing/under)
+	configure(item_worn(covers = ARMS|LEGS|ARMS, slots = SLOT_ICLOTHING))
+	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
+	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
+	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))
+	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
+	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
+	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
+	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds))), then(PROC_REF(under_holster_verb)))
+
+
+
+/// Native requirement: return null or the component refusal.
+/obj/item/clothing/under/proc/pred_has_holster_holds(datum/act/op/A)
+	for(var/obj/item/clothing/accessory/holster/H in accessories)
+		return null
+	return "it has no holster"
+
 
 /// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
 /obj/item/clothing/under/proc/pred_can_roll_down(mob/actor, atom/target, obj/item/held)
@@ -1114,24 +1136,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 /obj/item/clothing/under/proc/pred_can_roll_sleeves(mob/actor, atom/target, obj/item/held)
 	return rolled_sleeves != -1
 
-/// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
-/obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
-	return !!(locate_in_list(accessories, /obj/item/clothing/accessory/holster))
-
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
-/obj/item/clothing/under/proc/under_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_holster_verb(datum/act/op/A)
 	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, /obj/item/clothing/accessory/holster)
 	if(H)
-		H.holster_quick_holster_verb(user)
+		H.holster_quick_holster_verb(A)
 
 /// Old attack_hand: a worn uniform isn't pulled off by a click; its accessories get the touch.
-/obj/item/clothing/under/proc/under_worn_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_worn_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if ((ishuman(user) || issmall(user)) && src.loc == user)
 		if(LAZYLEN(accessories))
-			clothing_accessory_hand(user, held, interaction)
-		return TRUE
-	return FALSE
+			clothing_accessory_hand(A)
+		return OP_OK
+	return OP_DECLINE
 
+// ALLOW(init/INSTANCE_STATE): takes the sensor setting its wearer prefers and checks its rolled sprite
 /obj/item/clothing/under/Initialize(mapload)
 	. = ..()
 	if(worn_state)
@@ -1177,9 +1197,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_d")))
 		if(rolled_down != 1)
-			rolled_down = 0
+			set_rolled_down(0)
 	else
-		rolled_down = -1
+		set_rolled_down(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/proc/update_rollsleeves_status()
@@ -1202,15 +1222,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	// The _s is because the icon update procs append it.
 	if((under_icon == rolled_down_sleeves_icon && (icon_exists(under_icon, worn_state))) || (icon_exists(under_icon, "[worn_state]_r")))
 		if(rolled_sleeves != 1)
-			rolled_sleeves = 0
+			set_rolled_sleeves(0)
 	else
-		rolled_sleeves = -1
+		set_rolled_sleeves(-1)
 	if(H) update_clothing_icon()
 
 /obj/item/clothing/under/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_w_uniform()
+		changed(src)
 
 	set_clothing_index()
 
@@ -1247,13 +1267,40 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		if(value == sensor_mode)
 			default_choice = key
 			break
-	var/switchMode = rerun_ask(user, "a1", PROC_REF(set_sensors), args, /datum/om/prompt/choice, message = "Select a sensor mode:", title = "Suit Sensor Mode", choices = modes, default = default_choice)
-	if(isnull(switchMode))
+	open_request(src, /datum/prompt/choice/suit_sensor_mode, PROC_REF(sensor_mode_answered), answerer = user, choices = modes, default = default_choice)
+
+/obj/item/clothing/under/proc/sensor_mode_refusal(mob/user, check_distance)
+	if(istype(user, /mob/observer) || user.stat || user.restrained())
+		return "sensor user unavailable"
+	if(has_sensor >= 2)
+		return "sensor controls locked"
+	if(has_sensor <= 0)
+		return "no suit sensors"
+	if(check_distance && get_dist(user, src) > 1)
+		return "too far from suit"
+	return null
+
+/obj/item/clothing/under/proc/sensor_mode_answered(datum/act/request/context)
+	var/datum/prompt/choice/suit_sensor_mode/ask = context.request
+	var/mob/user = ask.answerer
+	if(QDELETED(user))
 		return
-	if(get_dist(user, src) > 1)
-		to_chat(user, "You have moved too far away.")
+	if(!context.answer)
+		if(ask.outcome == REQ_CANCELLED && !isnull(ask.value))
+			switch(ask.last_error)
+				if("sensor controls locked")
+					to_chat(user, "The controls are locked.")
+				if("no suit sensors")
+					to_chat(user, "This suit does not have any sensors.")
+				if("too far from suit")
+					to_chat(user, "You have moved too far away.")
+			SStgui.update_uis(src)
 		return
-	sensor_mode = modes[switchMode]
+	apply_sensor_mode(user, ask.choices[ask.value])
+	SStgui.update_uis(src)
+
+/obj/item/clothing/under/proc/apply_sensor_mode(mob/user, new_mode)
+	sensor_mode = new_mode
 
 	if (src.loc == user)
 		switch(sensor_mode)
@@ -1270,12 +1317,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	else if (istype(src.loc, /mob))
 		act_message(user, null, MSG_SELF("You adjust [src.loc]'s sensors."), MSG_OTHERS("%U% adjusts [src.loc]'s sensors."))
 
+
 /// Old verb "Toggle Suit Sensors".
-/obj/item/clothing/under/proc/under_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	set_sensors(user)
 
 /// Old verb "Roll Down Jumpsuit".
-/obj/item/clothing/under/proc/under_rollsuit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_rollsuit_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -1284,34 +1334,35 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		to_chat(user, span_notice("You cannot roll down [src]!"))
 		return
 	if((rolled_sleeves == 1) && !(rolled_down))
-		rolled_sleeves = 0
+		set_rolled_sleeves(0)
 
-	rolled_down = !rolled_down
+	set_rolled_down(!rolled_down)
 	if(rolled_down)
-		body_parts_covered = initial(body_parts_covered)
-		body_parts_covered &= ~(UPPER_TORSO|ARMS)
-		heat_protection &= ~(UPPER_TORSO|ARMS)
-		cold_protection &= ~(UPPER_TORSO|ARMS)
+		set_body_parts_covered(worn_of_type(type).covers)
+		set_body_parts_covered(worn_of(src).covers & (~(UPPER_TORSO|ARMS)))
+		protection_of(src).heat_parts &= ~(UPPER_TORSO|ARMS)
+		protection_of(src).cold_parts &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
-			icon_override = rolled_down_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_d")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_d")
 
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
-		body_parts_covered = initial(body_parts_covered)
-		heat_protection = initial(heat_protection)
-		cold_protection = initial(cold_protection)
+		set_body_parts_covered(worn_of_type(type).covers)
+		set_heat_protection(protection_of_type(type).heat_parts)
+		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll up your [src]."))
 	update_clothing_icon()
 	worn_protection_changed()
 
 /// Old verb "Roll Up Sleeves".
-/obj/item/clothing/under/proc/under_rollsleeves_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/proc/under_rollsleeves_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -1323,31 +1374,30 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		to_chat(user, span_notice("You must roll up your [src] first!"))
 		return
 
-	rolled_sleeves = !rolled_sleeves
+	set_rolled_sleeves(!rolled_sleeves)
 	if(rolled_sleeves)
-		body_parts_covered &= ~(ARMS)
-		heat_protection &= ~(ARMS)
-		cold_protection &= ~(ARMS)
+		set_body_parts_covered(worn_of(src).covers & (~(ARMS)))
+		protection_of(src).heat_parts &= ~(ARMS)
+		protection_of(src).cold_parts &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
-			icon_override = rolled_down_sleeves_icon
-			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(rolled_down_sleeves_icon)
+			set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		else
-			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
+			set_item_state_slots_at(slot_w_uniform_str, "[worn_state]_r")
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
-		body_parts_covered = initial(body_parts_covered)
-		heat_protection = initial(heat_protection)
-		cold_protection = initial(cold_protection)
+		set_body_parts_covered(worn_of_type(type).covers)
+		set_heat_protection(protection_of_type(type).heat_parts)
+		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_sleeves_icon)
-			icon_override = initial(icon_override)
-		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
+			set_icon_override(initial(icon_override))
+		set_item_state_slots_at(slot_w_uniform_str, worn_state)
 		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
 	worn_protection_changed()
 
-/obj/item/clothing/under/rank/Initialize(mapload)
-	sensor_mode = pick(0,1,2,3)
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/rank)
+	rolls(nameof(sensor_mode), pick_one(list(0, 1, 2, 3)))
 
 /obj/item/clothing/ownership()
 	. = ..()
@@ -1360,7 +1410,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		var/mob/living/carbon/human/H = user
 
 		// if digitigrade-use flag is set
-		if(H.digitigrade)
+		if(H.looks.digitigrade)
 
 			// Don't reset if already set
 			if(!fit_for_digi)
@@ -1434,18 +1484,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 /// Old attack_robot: ran ..() first (attack_ai: wear the hat, else the item default), then an
 /// adjacent cyborg starts picking the hat up.
-/obj/item/clothing/head/proc/head_robot_pick_up(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
-	if(!head_silicon_wear(user, held, interaction))
+/obj/item/clothing/head/proc/head_robot_pick_up(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
+	if(!mob_wear_hat(user))
 		actor_use_default(/datum/input_adapter/ai, user, src)
 
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 
 	balloon_alert(user, "picking up hat...")
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
-	return TRUE
+	perform_op(user, src, "robot_hat_pickup", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+	return OP_OK
 
-/obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)
+/obj/item/clothing/head/proc/robot_hat_done(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
 	if(!Adjacent(user) || user.incapacitated())
 		return
 	user.place_on_head(src)
@@ -1454,22 +1506,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(shoes_draw_knife_hand)), \
-	INTERACT_USE(null, PROC_REF(shoes_shake_out_self)), \
-	INTERACT_ITEM(null, PROC_REF(shoes_stuff_item)), \
-	INTERACT_VERB("Switch Shoe Layer", PROC_REF(shoes_toggle_layer_verb), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_NOT(REQ_FIELD_EQ("shoes_under_pants", -1)), "it cannot be worn above your suit")), \
-	INTERACT_VERB("Draw Boot Knife", PROC_REF(shoes_draw_knife_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/proc/pred_holding_knife, "there is no knife in it")), \
-)
-
 /// Old MouseDrop_T.
-/obj/item/clothing/shoes/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
-	if(!istype(user)) return FALSE // If the user passed in isn't a living mob, exit
-	if(target != user) return FALSE // If the user didn't drag themselves, exit
-	if(user.incapacitated() || user?.buckled_to()) return FALSE // If user is incapacitated or src?.buckled_to(), exit
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return FALSE // No jumping into your own equipment
-	if(ishuman(user) && user.get_effective_size() > 0.25) return FALSE // Only micro characters
+/obj/item/clothing/shoes/proc/interaction_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/target = A.held
+	if(!istype(user)) return OP_DECLINE // If the user passed in isn't a living mob, exit
+	if(target != user) return OP_DECLINE // If the user didn't drag themselves, exit
+	if(user.incapacitated() || user?.buckled_to()) return OP_DECLINE // If user is incapacitated or src?.buckled_to(), exit
+	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return OP_DECLINE // No jumping into your own equipment
+	if(ishuman(user) && user.get_effective_size() > 0.25) return OP_DECLINE // Only micro characters
 
 	var/full = 0
 	for(var/mob/M in contents_of(src))
@@ -1482,13 +1527,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		to_chat(user, span_warning("You crawl into \the [src]!"))
 		user.forceMove(src)
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing
 	COOLDOWN_DECLARE(struggle_cooldown)
 
 /// Old attackby ("sideways" override): stuff a micro or a knife into the shoes.
-/obj/item/clothing/shoes/proc/shoes_stuff_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/shoes/proc/shoes_stuff_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in contents_of(src))
@@ -1505,20 +1552,19 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if((can_hold_knife == 1) && (istype(I, /obj/item/material/shard) || \
 		istype(I, /obj/item/material/butterfly) || \
 		istype(I, /obj/item/material/kitchen/utensil) || \
 		istype(I, /obj/item/material/knife/tacknife)))
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
-			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.holding), I, user = user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		if(!move_into(src, nameof(src.holding), I, user))
+			return OP_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
-		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/clothing/gloves
 	sprite_sheets = list(
@@ -1564,3 +1610,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 
 /obj/item/clothing/shoes/muffles_death_of(mob/occupant)
 	return TRUE
+
+/datum/prompt/choice/suit_sensor_mode
+	question = "Select a sensor mode:"
+	title = "Suit Sensor Mode"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/suit_sensor_mode/recheck_extra()
+	var/obj/item/clothing/under/suit = owner
+	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
+		return "gone"
+	return suit.sensor_mode_refusal(answerer, !isnull(value))
+
+TRACKED(/obj/item/clothing/gloves, glove_level)
+TRACKED(/obj/item/clothing/gloves, overgloves)

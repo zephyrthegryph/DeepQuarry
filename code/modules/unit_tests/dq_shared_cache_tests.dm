@@ -1,6 +1,6 @@
 // Shared keyed caches (doc/rewrite/caching.md).
 
-/datum/om/event/shared_cache_test
+/datum/notice/shared_cache_test
 
 GLOBAL_VAR_INIT(sc_test_builds, 0)
 
@@ -27,8 +27,7 @@ DECLARE_SHARED_CACHE(sc_test_plain, GLOBAL_PROC_REF(sc_test_build), SC_NEVER)
 DECLARE_SHARED_CACHE(sc_test_pair, GLOBAL_PROC_REF(sc_test_build_pair), SC_EXPLICIT)
 DECLARE_SHARED_CACHE_EX(sc_test_int, GLOBAL_PROC_REF(sc_test_build_int), SC_NEVER, 0, SC_INT_KEYS)
 DECLARE_SHARED_CACHE(sc_test_falsy, GLOBAL_PROC_REF(sc_test_build_falsy), SC_NEVER)
-DECLARE_SHARED_CACHE(sc_test_event, GLOBAL_PROC_REF(sc_test_build), SC_ON_EVENT(/datum/om/event/shared_cache_test))
-DECLARE_SHARED_CACHE(sc_test_change, GLOBAL_PROC_REF(sc_test_build), SC_ON_WORLD_CHANGE(CHANGE_DATUM_D))
+DECLARE_SHARED_CACHE(sc_test_event, GLOBAL_PROC_REF(sc_test_build), SC_ON_NOTICE(/datum/notice/shared_cache_test))
 DECLARE_SHARED_CACHE_EX(sc_test_lru, GLOBAL_PROC_REF(sc_test_build), SC_NEVER, 4, 0)
 DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_NEVER, 0, SC_INTERN)
 
@@ -60,18 +59,14 @@ DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_
 	CACHED(sc_test_falsy, "z")
 	TEST_ASSERT_EQUAL(GLOB.sc_test_builds - before, 1, "a falsy value is built once too")
 
-/// Event and channel policies clear the cache.
+/// The notice policy clears the cache.
 /datum/unit_test/dq_shared_cache_invalidation
 
 /datum/unit_test/dq_shared_cache_invalidation/Run()
 	var/list/e = CACHED(sc_test_event, "e")
-	TEST_ASSERT(om_wants(GLOB.om_world, /datum/om/event/shared_cache_test), "an invalidating event is wanted on the world")
-	om_emit(GLOB.om_world, new /datum/om/event/shared_cache_test)
-	TEST_ASSERT(CACHED(sc_test_event, "e") != e, "the event cleared the cache")
-	var/list/c = CACHED(sc_test_change, "c")
-	TEST_ASSERT(CACHED(sc_test_change, "c") == c, "cached")
-	changed(GLOB.om_world, CHANGE_DATUM_D)
-	TEST_ASSERT(CACHED(sc_test_change, "c") != c, "the world channel cleared the cache")
+	TEST_ASSERT(CACHED(sc_test_event, "e") == e, "cached")
+	shared_cache_notice(/datum/notice/shared_cache_test)
+	TEST_ASSERT(CACHED(sc_test_event, "e") != e, "the notice cleared the cache")
 
 /// Bounded caches evict, interning shares identical lists, and a mutation is caught.
 /datum/unit_test/dq_shared_cache_bounds_guard
@@ -91,7 +86,7 @@ DECLARE_SHARED_CACHE_EX(sc_test_intern, GLOBAL_PROC_REF(sc_test_build_same), SC_
 	var/caught = FALSE
 	try
 		CACHED(sc_test_plain, "guard")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "writing into a shared list runtimes on the next hit")
 	TEST_ASSERT_EQUAL(v["key"], "guard", "and the entry is restored")
@@ -126,7 +121,7 @@ DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
 	var/caught = FALSE
 	try
 		CACHED(sc_test_images, "a")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "a write into a nested shared list runtimes on the next hit")
 	TEST_ASSERT_EQUAL(length(images), 2, "and the nested list is restored")
@@ -142,13 +137,13 @@ DECLARE_SHARED_CACHE(sc_test_obj, GLOBAL_PROC_REF(sc_test_build_obj), SC_NEVER)
 	var/caught = FALSE
 	try
 		CACHED(sc_test_obj, loose)
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "an unregistered datum key runtimes")
 	caught = FALSE
 	try
 		CACHED(sc_test_obj, "k[ref(loose)]")
-	catch // ALLOW(silent_catch): the test expects this runtime and asserts on it
+	catch
 		caught = TRUE
 	TEST_ASSERT(caught, "a text key embedding a ref runtimes")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)

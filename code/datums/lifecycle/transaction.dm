@@ -15,9 +15,12 @@
 /// (or, for a plain /datum with no override, the base no-op) returned.
 /// Test/debug tracing: while GLOB.dq_lifecycle_trace_depth > 0, every phase of
 /// every destroy transaction is logged, so a transaction that never returns
-/// (a sleep or a runaway loop in a phase) shows the last phase it finished.
+/// (a sleep or a runaway loop in a phase) shows the last phase it finished. Each line
+/// also carries the datum's reference count, so a step that leaves a reference behind
+/// (one that something outside the DM walk holds) shows as the step where the count rises.
+/// Log entries are not traced: logging a line creates an entry, evicting an old one destroys it, and tracing that destroy logs again without end.
 GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
-#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what]") }
+#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth && !istype(D, /datum/log_entry)) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what] refs=[refcount(D)]") }
 
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
 	var/hint = QDEL_HINT_QUEUE
@@ -36,6 +39,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		if(D)
 			dq_lifecycle_finish_aborted(D)
 	GLOB.destroy_transaction_depth--
+	if(D && hint != QDEL_HINT_LETMELIVE)
+		capability_runtime_forget(D)
+		staleness_forget(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
@@ -47,23 +53,36 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /// a movable's contents deleted (as /atom/movable/Destroy() would have).
 /proc/dq_lifecycle_finish_aborted(datum/D)
 	try
+		// A fault before phase 4 leaves ordinary owned fields intact, not re-set.
+		// Dispose them by their declared policies before the leftover-state scrub.
+		if(D.destroy_phase <= LIFECYCLE_PHASE_LINKS)
+			own_teardown(D)
 		dq_lifecycle_scrub(D)
-		// Leave the registries and the live world (phase 7's /atom/Destroy()
-		// may never have run): a deleted object left in a registry is a hard-delete source.
+		// Leave the registries and the live world (phase 7 may never have run).
 		if(isatom(D))
 			var/atom/A = D
 			A.dematerialize()
 		else
 			D.leave_registries()
-		// Phase 5 may never have run: without this a non-atom kept live OM
-		// timers, hooks and tasks on a dead datum. Also releases OM handles.
+	catch(var/exception/e)
+		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+	// Mandatory runtime cleanup must still run if a child or registry hook faulted.
+	try
 		dq_lifecycle_om_teardown(D)
+	catch(var/exception/runtime_error)
+		dq_report_caught(runtime_error, "tearing down runtime state after the aborted destroy of [D.type]")
+	try
+		if(D.rx)
+			rx_teardown(D)
+	catch(var/exception/native_error)
+		dq_report_caught(native_error, "tearing down native state after the aborted destroy of [D.type]")
+	try
 		if(ismovable(D))
 			var/atom/movable/AM = D
 			for(var/atom/movable/thing in contents_of(AM).Copy())
 				qdel(thing)
-	catch(var/exception/e)
-		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+	catch(var/exception/contents_error)
+		dq_report_caught(contents_error, "disposing contents after the aborted destroy of [D.type]")
 
 /// A destroyed movable leaves its loc (/atom/movable/Destroy() ends with
 /// moveToNullspace()). One still somewhere had a Destroy() that skipped ..()
@@ -135,7 +154,10 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				// guard refuses new ownership, relations, timers, hooks and tasks on D.
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 				D.datum_flags |= DF_DESTROYING
-				OM_EMIT(D, /datum/om/event/qdeleting, force)
+				PUBLISH_LEGACY(D, /datum/notice/qdeleting, force)
+				if(length(GLOB.notice_late_queue))
+					notice_late_subject_deleting(D) // notices queued past the depth cap for D reach its observers now, while D is still whole
+				ending_begin(D) // on_ending() hooks, lives_while() scopes, the ended notice with its cause (code/engine/lifeforms/lifetimes.dm)
 			if(DESTROY_STEP_LEAVE_REGISTRIES)
 				dq_lifecycle_leave_registries(D)
 				continue // untimed, as before
@@ -174,14 +196,14 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 				D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
 				if(D.om_rec)
-					om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
+					entity_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
 				if(ismovable(D))
 					dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
 				dq_lifecycle_clear_links(D)
 			if(DESTROY_STEP_TEARDOWN)
-				// Periodic work (om_task_periodic()), client screens, walk() loops, then the
+				// Periodic work (cadence_start()), client screens, walk() loops, then the
 				// object-model teardown: OM timers, hooks, tasks, deadlines, grants and
-				// behaviours (om_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
+				// behaviours (entity_teardown_rest()) and OM handles. /datum/Destroy() (phase 7) only
 				// clears the tag, closes tgui windows and does reference-tracking bookkeeping.
 				dq_lifecycle_teardown(D)
 			if(DESTROY_STEP_EFFECTS)
@@ -231,7 +253,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// sync() skips things being deleted.
 /proc/dq_lifecycle_leave_own_slot(atom/movable/AM)
 	var/atom/holder = AM.loc
-	var/datum/ledger/L = holder?.ledger
+	var/datum/ledger/L = holder?.containment_ledger()
 	if(!L?.entries[AM])
 		return
 	L.pending_exit_flags = LEDGER_MOVE_FORCED
@@ -258,12 +280,6 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// and qdel() returns it to life. Singletons and pooled objects that only a forced
 /// qdel() may delete use LIFECYCLE_KEEP_UNLESS_FORCED(type); state-dependent
 /// refusal overrides this. Must not sleep or change state.
-/datum/proc/lifecycle_keep(force)
-	SHOULD_NOT_SLEEP(TRUE)
-	// A registered singleton (REGISTRY_TYPE, doc/rewrite/ownership.md sec 2) is immortal: an
-	// unforced qdel() of one is refused. Controllers keep the MC's own replacement rules.
-	return !force && !istype(src, /datum/controller) && is_registered(src)
-
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved
 /// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and OM handles
@@ -272,11 +288,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// anything a DECLARE_REF line, lifecycle_unbind(), lifecycle_dematerialize(),
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
-/// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
-/datum/proc/on_destroy(force)
-	SHOULD_CALL_PARENT(TRUE)
-	return
-
+/// Behaviours get the same hook as /datum/scheduled_behaviour/proc/on_entity_destroy(E).
 // ---- Phase 1: unbind (hook point) ----
 
 /// Phase 1 (doc/rewrite/lifecycle.md §2): R10 entity bindings
@@ -285,26 +297,20 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// to disconnect topology before the holder leaves the world (for example
 /// /obj/machinery/atmospherics/lifecycle_unbind() tears down its pipe
 /// connections). Must not sleep; call ..().
-/datum/proc/lifecycle_unbind()
-	return
-
 // ---- Phase 2: dematerialize (hook point) ----
 
 /// Phase 2, for every datum, before a movable is released from its holder: the
 /// hook for a type's own indexes that are not OM registries (registries are
 /// left by dq_lifecycle_leave_registries() / an atom's dematerialize()). No
 /// type overrides it today; the default does nothing. Must not sleep.
-/datum/proc/lifecycle_dematerialize()
-	return
-
 // ---- Phase 5: teardown ----
 
-/// Ends any periodic work (om_task_periodic(), code/datums/om/periodic.dm),
+/// Ends any periodic work (cadence_start(), code/engine/kernel/cadences.dm),
 /// releases HUD/screen objects from any client they're shown to, stops walk()
 /// loops, and tears down the datum's object-model state.
 /proc/dq_lifecycle_teardown(datum/D)
 	if(D.periodic_pipe)
-		om_task_periodic_stop(D)
+		cadence_stop(D)
 	if(isatom(D))
 		var/atom/AT = D
 		AT.dq_lifecycle_release_screen()
@@ -321,16 +327,19 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 
 /// The object-model teardown (phase 5, and an aborted transaction): every OM
 /// timer, deadline, hook, task, grant and behaviour `D` has
-/// (om_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
+/// (entity_teardown_rest(), code/datums/om/entity.dm), then its OM handles stop
 /// resolving. Safe to call twice: both halves check their own state.
 /proc/dq_lifecycle_om_teardown(datum/D)
 	// Object model (code/datums/om/entity.dm): contributions and grants this
 	// datum holds anywhere, its own store, behaviours (on_stop), deadlines, tasks.
 	if(D.om_rec)
-		om_teardown_rest(D)
+		entity_teardown_rest(D)
 	// OM handles to D stop resolving (object_model_core.md §4.11).
 	if(D.om_hid)
-		om_handle_release(D)
+		entity_handle_release(D)
+	// Phase 4 may have aborted before native runtime ownership was disposed.
+	if(D.rx)
+		rx_teardown(D)
 
 // ---- Phase 6: effects ----
 
@@ -348,3 +357,6 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// handed to the GC from here.
 /proc/dq_lifecycle_scrub(datum/D)
 	own_scrub(D)
+
+/datum/controller/lifecycle_registry_immortal()
+	return FALSE

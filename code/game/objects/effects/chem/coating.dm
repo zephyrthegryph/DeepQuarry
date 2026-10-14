@@ -6,7 +6,8 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "dirt"
 
-DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
+CAPABILITIES(/obj/effect/decal/cleanable/chemcoating)
+	reagents(100)
 
 /obj/effect/decal/cleanable/chemcoating/Initialize(mapload)
 	. = ..()
@@ -19,7 +20,7 @@ DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
 				var/obj/effect/decal/cleanable/chemcoating/C = O
 				if(C.reagents && C.reagents.reagent_list.len)
 					C.reagents.trans_to_obj(src,C.reagents.total_volume)
-				qdel(O)
+				spent(O)
 
 /obj/effect/decal/cleanable/chemcoating/Bumped(A as mob|obj)
 	if(reagents)
@@ -29,9 +30,7 @@ DECLARE_REAGENTS(/obj/effect/decal/cleanable/chemcoating, 100, null)
 /obj/effect/decal/cleanable/chemcoating/Crossed(AM as mob|obj)
 	Bumped(AM)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/chemcoating, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/chemcoating/appearance_overlays()
-	. = list()
-	. += ..()
-	color = reagents.get_color()
-	. += add_janitor_hud_overlay()
+/// The coating is the colour of what it holds.
+/obj/effect/decal/cleanable/chemcoating/cleanable_look(datum/look/look)
+	look.set_color(reagents.get_color())
+	janitor_hud(look)

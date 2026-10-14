@@ -16,20 +16,20 @@
 		name = T_BOARD("[shuttle_tag] control console")
 
 // Try to auto-link the shuttle computer if it is constructed on a shuttle (and not pre-programmed)
-/obj/item/circuitboard/shuttle_console/construct(obj/machinery/computer/shuttle_control/M)
+/obj/item/circuitboard/shuttle_console/construct(obj/machinery/computer/shuttle_control/M, mob/user = null)
 	if(!shuttle_tag)
 		shuttle_tag = auto_detect_shuttle(M) // We don't have a preset tag, so lets try to auto-link.
 	if(shuttle_tag && M.set_shuttle_tag(shuttle_tag))
-		log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
+		log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", user)
 		M.ping("[M] auto-links with shuttle [shuttle_tag]")
 
 // Return shuttle_tag of shuttle of current area
 /obj/item/circuitboard/shuttle_console/proc/auto_detect_shuttle(obj/machinery/computer/shuttle_control/M)
 	var/area/A = get_area(M)
-	if(!A || !(A in SSshuttles.shuttle_areas))
+	if(!A || !(A in shuttles_shuttle_areas()))
 		return // Definately not on a shuttle
-	for(var/shuttle_name in SSshuttles.shuttles)
-		var/datum/shuttle/S = SSshuttles.shuttles[shuttle_name]
+	for(var/shuttle_name in shuttles_shuttles())
+		var/datum/shuttle/S = shuttles_shuttles()[shuttle_name]
 		if(A in S.find_childfree_areas())
 			// Found the owning shuttle! Return it if its a valid type
 			return (S.category == shuttle_category) ? S.name : null

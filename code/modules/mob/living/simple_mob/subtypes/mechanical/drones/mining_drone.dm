@@ -29,9 +29,7 @@
 
 	endurance = 50
 	movement_cooldown = 1.5
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
-	base_attack_cooldown = 2.5 SECONDS
 	projectiletype = /obj/item/projectile/energy/excavate
 	projectilesound = SFX_WEAPONS_PULSE3
 
@@ -65,26 +63,22 @@
 	COOLDOWN_DECLARE(search_cooldown_until)
 	var/search_cooldown = 5 SECONDS
 	var/ignoreunarmed = TRUE
-	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
-/mob/living/simple_mob/mechanical/mining_drone/Initialize(mapload)
-	own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
-	ion_trail.set_up(src)
-	ion_trail.start()
-	return ..()
-
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", /obj/item/ore_bag)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
-
+CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly breaks apart."))
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
+	owns_one(nameof(my_storage), starts = /obj/item/ore_bag)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/mining_drone
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mining_drone
-	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/mining_drone/on_death(gibbed)
-	var/obj/item/ore_bag/dropped = own_take(src, nameof(my_storage))
+	var/obj/item/ore_bag/dropped = rel_take(src, nameof(my_storage))
 	dropped?.forceMove(get_turf(src))
 	..()
 
@@ -110,19 +104,19 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields",
 			else //just so they don't attack "miners" for having their mining gear in their offhand
 				var/obj/item/OH = H.get_inactive_hand()
 				if(OH)
-					for (var/path in allowedtools)
+					for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 						if(istype(OH,path))
 							has_tool = TRUE
 							break
 		else
-			for (var/path in allowedtools)
+			for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 				if(istype(I,path))
 					has_tool = TRUE
 					break
 			if(!has_tool) //if a valid tool not found in main hand, check offhand
 				var/obj/item/OH = H.get_inactive_hand()
 				if(OH)
-					for (var/path in allowedtools)
+					for (var/path in TYPE_TABLE_GET(src, mining_drone_allowed_tools))
 						if(istype(OH,path))
 							has_tool = TRUE
 							break
@@ -134,30 +128,28 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields",
 
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	return ..()
-/datum/om/stage/life/special/mechanical/mining_drone
-	of = /mob/living/simple_mob/mechanical/mining_drone
 
-/datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
-	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (COOLDOWN_FINISHED(self, search_cooldown_until)) && (contents_count(self.my_storage) < self.my_storage.max_storage_space))
-		COOLDOWN_START(self, search_cooldown_until, self.search_cooldown)
+/mob/living/simple_mob/mechanical/mining_drone/life_special(datum/seq_frame/life/F)
+	if(src.my_storage && ((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !is_working() && isturf(src.loc) && (COOLDOWN_FINISHED(src, search_cooldown_until)) && (contents_count(src.my_storage) < src.my_storage.max_storage_space))
+		COOLDOWN_START(src, search_cooldown_until, src.search_cooldown)
 
-		for(var/turf/T in view(world.view,self))
-			if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
+		for(var/turf/T in view(world.view,src))
+			if(contents_count(src.my_storage) >= src.my_storage.max_storage_space)
 				break
 
 			if((locate_within(T, /obj/item/ore)) && prob(40))
-				self.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
-				self.my_storage.rangedload(T, self)
+				src.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
+				src.my_storage.rangedload(T, src)
 
-		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
-			act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
+		if(contents_count(src.my_storage) >= src.my_storage.max_storage_space)
+			act_message(src, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
 
-		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), /obj/structure/ore_box)
+		var/obj/structure/ore_box/OB = locate_in_list(view(2, src), /obj/structure/ore_box)
 
-		if(istype(OB) && self.my_storage && contents_count(self.my_storage))
-			self.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
-			for(var/obj/item/I in self.my_storage)
-				self.my_storage.remove_from_storage(I, OB)
+		if(istype(OB) && src.my_storage && contents_count(src.my_storage))
+			src.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
+			for(var/obj/item/I in src.my_storage)
+				src.my_storage.remove_from_storage(I, OB)
 
 /datum/decl/mob_organ_names/miningdrone
 TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("chassis", "comms array", "sensor suite", "left excavator module", "right excavator module", "maneuvering thruster"))
@@ -168,8 +160,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/miningdrone, mob_organ_hit_zones, list("c
 /mob/living/simple_mob/mechanical/mining_drone/scavenger //more aggro version for the debris field, with a weaker weapon
 	name = "scavenger drone"
 	ignoreunarmed = FALSE
-	allowedtools = list(/obj/item/pickaxe)
 	projectiletype = /obj/item/projectile/energy/excavate/weak
+
+TYPE_TABLE(/mob/living/simple_mob/mechanical/mining_drone/scavenger, mining_drone_allowed_tools, list(/obj/item/pickaxe))
 
 // === merged from combat_drone_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

@@ -1,0 +1,8 @@
+human|none menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+human|none menu: Toggle automatic control
+human|none click: Click: Toggle automatic control
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Manually toggle valve (refused: You try to turn the valve by hand, but its automatic circuit turns it back.)
+robot|none menu: Toggle automatic control
+robot|none menu: Use
+robot|none click: Click: Toggle automatic control

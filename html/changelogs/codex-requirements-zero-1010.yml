@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Convert pinned requirements to return their refusal reasons, preserving existing click behavior."

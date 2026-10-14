@@ -136,7 +136,7 @@
 	new /obj/item/thecake_layer/five(T)
 	new /obj/item/thecake_layer/six(T)
 
-	qdel(src)
+	spent(src)
 	return
 
 /obj/item/grenade/spawnergrenade/casino/universal_technomancer
@@ -150,7 +150,7 @@
 	new /obj/item/technomancer_catalog/universal(T)
 	new /obj/item/technomancer_core/universal(T)
 
-	qdel(src)
+	spent(src)
 	return
 
 /obj/item/grenade/spawnergrenade/clustaur

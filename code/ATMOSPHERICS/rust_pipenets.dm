@@ -38,7 +38,7 @@
 
 /// Frees the port behind `handle` (after Rust has removed it).
 /proc/rust_free_pipe_port(handle)
-	qdel(rust_pipe_port_of(handle))
+	spent(rust_pipe_port_of(handle))
 
 /// An entity handle's World slot index (a component's entity-index field).
 /proc/vg_entity_index(handle)
@@ -76,6 +76,18 @@
 	/// N-edge counterpart).
 	var/list/rust_flow_entities
 
+CAPABILITIES(/obj/machinery/atmospherics)
+	configure(uses_power(idle = 0, active = 0, channel = ENVIRON))
+	blast_contents() // a ventcrawler in the pipes takes the full blast
+	ref_one(nameof(node1))
+	ref_one(nameof(node2))
+	owns_many(nameof(rust_unbound_port_air), /datum/gas_mixture)
+	op("fit_material", stack(/obj/item/stack/material, 1), label("Fit engineered material"), wait(0), when(PROC_REF(material_fittable)),
+		needs(req(PROC_REF(no_shell))), then(PROC_REF(material_fitted)))
+	// a pipe painter used on anything it cannot paint does nothing (its own op paints a pipe, a tier above)
+	op("painter", item(/obj/item/pipe_painter), wait(0), then(PROC_REF(painter_swallowed)))
+	param(nameof(dir), pos = 1, overrides = TRUE)
+
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0
 
@@ -90,7 +102,7 @@
 	var/datum/gas_mixture/air = rust_unbound_port_air?["[index]"]
 	if(!air)
 		air = new(max(rust_pipe_port_volume(index), 1))
-		own_put(src, nameof(rust_unbound_port_air), "[index]", air)
+		rel_add(src, nameof(rust_unbound_port_air), air, "[index]")
 	return air
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_volume(index)
@@ -111,7 +123,7 @@
 /obj/machinery/atmospherics/proc/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	var/datum/gas_mixture/old_air = rust_unbound_port_air?["[index]"]
 	if(old_air && old_air != network_air)
-		own_put(src, nameof(rust_unbound_port_air), "[index]", null)
+		rel_add(src, nameof(rust_unbound_port_air), null, "[index]")
 	return FALSE
 
 /obj/machinery/atmospherics/proc/rust_allocate_pipe_ports()
@@ -132,7 +144,9 @@
 	rust_allocate_pipe_ports()
 	rust_register_pipe_port_data()
 	rust_register_pipe_edges()
-	if(commit && !GLOB.explosion_service.is_bulk_resolving())
+	if(GLOB.heat_edge_records_of[src])
+		heat_entries_complete(src) // its heat entries that name a port (HEAT_PORT(i)) can be made now
+	if(commit && !SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /// Queue authoritative port records without publishing any edges. Bulk graph
@@ -179,7 +193,7 @@
 		SSair.rust_queue_pipe_operation(RUST_PIPE_OP_DISCONNECT, rust_pipe_port_ids[old_edges[edge_index]], rust_pipe_port_ids[old_edges[edge_index + 1]])
 	for(var/edge_index = 1, edge_index < length(new_edges), edge_index += 2)
 		SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, rust_pipe_port_ids[new_edges[edge_index]], rust_pipe_port_ids[new_edges[edge_index + 1]])
-	if(!GLOB.explosion_service.is_bulk_resolving())
+	if(!SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /obj/machinery/atmospherics/proc/rust_unregister_pipe_topology()
@@ -199,7 +213,7 @@
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
 		rust_free_pipe_port(port_id)
 	rust_pipe_port_ids = null
-	if(SSair && !GLOB.explosion_service.is_bulk_resolving())
+	if(SSair && !SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /// Drop this compatibility membership without attempting to destroy a
@@ -210,7 +224,7 @@
 	if(network.rust_authoritative)
 		rel_remove(network, nameof(network.normal_members), src)
 		return
-	qdel(network)
+	spent(network)
 
 /// One topology edit (RUST_PIPE_OP_*), applied to the Rust network now;
 /// rust_commit_pending_pipenets() commits the batch and rebuilds wrappers.
@@ -553,17 +567,17 @@
 	rel_clear(network, nameof(network.leaks))
 	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
-		member.material_service?.environment_changed()
+		material_service_of(member)?.environment_changed()
 	for(var/datum/pipeline/line as anything in old_lines)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in line.members)
-			pipe.material_service?.environment_changed()
+			material_service_of(pipe)?.environment_changed()
 		// Likewise the line: no network to destroy, no gas to store back into its pipes.
 		rel_clear(line, nameof(line.network))
 		atmos_air_set(line, nameof(line.air), null)
 		rel_clear(line, nameof(line.leaks))
-		qdel(line)
+		spent(line)
 	// The network owns the retired region mixture: destroyed with it.
-	qdel(network)
+	spent(network)
 
 /datum/system/air/proc/rust_materialize_pipe_region(list/transition)
 	var/region = transition["region"]
@@ -571,7 +585,7 @@
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	own_set(network, nameof(network.air), region_air)
+	rel_set(network, nameof(network.air), region_air)
 	network.update = FALSE
 	rust_pipe_region_networks[region] = network
 
@@ -589,7 +603,7 @@
 		machine.rust_bind_pipe_port(index, network, region_air)
 		// A region replacement can preserve pressure/composition, so gas-dirty
 		// publication alone cannot tell sleepers to subscribe to the new handle.
-		machine.material_service?.environment_changed()
+		material_service_of(machine)?.environment_changed()
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new
@@ -598,7 +612,6 @@
 		rel_set(pipeline, nameof(pipeline.network), network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
-			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			if(pipe.leaking)
 				rel_add(pipeline, nameof(pipeline.leaks), pipe)
 				rel_add(network, nameof(network.leaks), pipe)
@@ -621,7 +634,7 @@
 	if(parent?.air)
 		return parent.air
 	if(!air_temporary)
-		own_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
+		rel_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)
@@ -632,9 +645,9 @@
 
 /obj/machinery/atmospherics/pipe/rust_bind_pipe_port(index, datum/pipe_network/network, datum/gas_mixture/network_air)
 	if(air_temporary == network_air)
-		own_take(src, nameof(air_temporary))
+		rel_take(src, nameof(air_temporary))
 	else
-		own_clear(src, nameof(air_temporary), OWN_DELETE)
+		rel_clear(src, nameof(air_temporary))
 	return TRUE
 
 /obj/machinery/atmospherics/unary/rust_pipe_port_count()

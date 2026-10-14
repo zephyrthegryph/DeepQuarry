@@ -76,3 +76,8 @@
  * * required_perms: Which admin permission flags to check the user for, such as [R_ADMIN]
  */
 #define ADMIN_STATE(required_perms) (GLOB.admin_states[required_perms] ||= new /datum/tgui_state/admin_state(required_perms))
+
+/// What a queued window is owed in phase R (code/modules/tgui/ui_push.dm): its data, a re-run of the host's interact (an update_uis() request), a status re-check.
+#define UI_PUSH_DATA (1<<0)
+#define UI_PUSH_INTERACT (1<<1)
+#define UI_PUSH_STATUS (1<<2)

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed a boot runtime when a trash pile's mouse nest held proximity relevance before the proximity system had set up"

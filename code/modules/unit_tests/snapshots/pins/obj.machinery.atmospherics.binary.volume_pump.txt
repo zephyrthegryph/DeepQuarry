@@ -1,0 +1,67 @@
+human|none menu: Open controls
+human|none menu: Set to max output
+human|none menu: Toggle power
+human|none click: Click: Open controls
+@obj.machinery.atmospherics.binary robot|none
+-menu: Ui open
+-click: Click: Ui open
++1 menu: Open controls
++2 menu: Set to max output
++3 menu: Toggle power
++5 click: Click: Open controls
+ai|none menu: Open controls
+ai|none menu: Use
+ai|none click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Set to max output
+human|/obj/item/tool/screwdriver menu: Toggle power
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Set to max output
+human|/obj/item/tool/crowbar menu: Toggle power
+human|/obj/item/tool/crowbar click: Click: Open controls
+@obj.machinery.atmospherics.binary human|/obj/item/tool/wrench
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Ui open
++0 menu: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Set to max output
+human|/obj/item/tool/wirecutters menu: Toggle power
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Set to max output
+human|/obj/item/multitool menu: Toggle power
+human|/obj/item/multitool menu: Toggle pressure limiter
+human|/obj/item/multitool click: Click: Toggle pressure limiter
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Set to max output
+human|/obj/item/weldingtool menu: Toggle power
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Set to max output
+human|/obj/item/stack/cable_coil menu: Toggle power
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Set to max output
+human|/obj/item/stack/material/steel menu: Toggle power
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Set to max output
+human|/obj/item/card/id menu: Toggle power
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item menu: Set to max output
+human|/obj/item menu: Toggle power
+human|/obj/item click: Click: Open controls
+human|/obj/item/stack/material menu: Open controls
+human|/obj/item/stack/material menu: Set to max output
+human|/obj/item/stack/material menu: Toggle power
+human|/obj/item/stack/material click: Click: Open controls
+human|/obj/item/pipe_painter menu: Open controls
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Set to max output
+human|/obj/item/pipe_painter menu: Toggle power
+human|/obj/item/pipe_painter click: Click: Painter
+keys: drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, max_output, melee_hit, overclock, painter, power, power_toggle, robot_remote_blocked, set_press, silicon_hand, ui_open, unwrench

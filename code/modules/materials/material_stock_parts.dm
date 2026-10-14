@@ -127,17 +127,17 @@
 // One sheet is consumed; the part absorbs the material id, takes on its
 // color, and re-derives its rating. The part creates its own required geometry.
 
-DECLARE_INTERACTIONS(/obj/item/stock_parts, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/stock_parts/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/stock_parts/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/S = W
 		if(material_id)
 			to_chat(user, span_warning("\The [src] already has a material core. Use a fresh part."))
-			return FALSE
+			return OP_DECLINE
 		if(!S.material || S.get_amount() < 1)
-			return FALSE
+			return OP_DECLINE
 		material_id = S.material.name
 		S.use(1)
 		var/datum/material/M = dq_get_material()
@@ -153,8 +153,8 @@ DECLARE_INTERACTIONS(/obj/item/stock_parts, INTERACT_ITEM(null, PROC_REF(interac
 			// glow etc.) from the imbued material.
 			M.dq_apply_material_behaviors(src)
 			to_chat(user, span_notice("You install a [M.display_name] material core in \the [initial(name)]. Effective rating: [rating]."))
-		return FALSE // Chain so upstream attackby side-effects (sound, fingerprint, etc.) still run
-	return FALSE
+		return OP_DECLINE // Chain so upstream attackby side-effects (sound, fingerprint, etc.) still run
+	return OP_DECLINE
 
 
 /obj/item/stock_parts/examine(mob/user)

@@ -40,9 +40,6 @@
 
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("flashes", "slaps", "smothers", "grapples")
@@ -69,7 +66,7 @@
 
 /mob/living/simple_mob/vore/vore_hostile/abyss_lurker/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "interior"
 	B.desc = "It's hot and overwhelmingly tight! The interior of the pale creature groans with the effort of squeezing you. Everything is hot and churning and eager to grind and smother you in thick fluids. The weight of the creature's body pressing in at you makes it hard to move at all, while you are squeezed to the very core of the creature! There seems almost not to even be an organ for this so much as the creature has folded around you, trying to incorporate your matter into its body with vigor!"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -80,14 +77,17 @@
 	B.escapechance = 25
 	B.escape_stun = 5
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTERACT_HAND_UNGATED(null, PROC_REF(abyss_lurker_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
+	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
 /// Old attack_hand: touching a willing prey-player makes the lurker target them instead of the normal touch.
-/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/proc/abyss_lurker_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/vore_hostile/abyss_lurker/proc/abyss_lurker_interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(client || !user.client || !ai_brain || !isliving(user))
-		return FALSE
-	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
-		return FALSE
+		return OP_DECLINE
+	if(!user.vore_prefs.devourable || !user.vore_prefs.allowmobvore || !user.vore_prefs.can_be_drop_prey)
+		return OP_DECLINE
 	ai_brain?.give_target(user, TRUE)
 	return TRUE
 
@@ -127,9 +127,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	has_eye_glow = TRUE
@@ -154,9 +151,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
-	throw_vore = TRUE
 	unacidable = TRUE
 
 	special_attack_min_range = 2
@@ -166,9 +160,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
+
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The flesh of the tall creature's stomach folds over you in doughy waves, squeezing you into the tightest shape it can manage with idle flexes churning down on you. Your limbs often find themselves lost between folds and tugged this way or that, held in a skin tight press that is not painful, but is hard to pull away from. You can see a strange, glittering pink and purple light glimmering through the flesh of the monster all around you, like your very own sea of stars. The walls rush in to fill all the space, squeezing you from head to toe no matter how you might wiggle, the weight of the semi-transparent interior flesh keeping you neatly secured deep inside while wringing the fight out of you."
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -186,7 +184,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -194,31 +192,31 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/proc/do_special_attack_1(mob/living/L)
 
-	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!L || L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/proc/do_special_attack_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
-	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(L && Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /////Gelatinous Cube/////
 
@@ -256,9 +254,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HUMAN
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("splashes against", "slaps", "smothers", "engulfs")
@@ -285,7 +280,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "interior"
 	B.desc = "An incredibly thick oozing slime surrounds you, filling in all the space around your form! It's hard to catch a breath here as the jiggling gel that makes up the body of the creature swiftly fills in the hole you made in its surface by entering. The gel is semi-transparent, and you can see your surroundings though its surface, and similarly you can be seen floating in the gel from the outside. When the cube moves, your whole body is wobbled along with it. There are clouds of still processing material floating all around you as the corrosive substance works on breaking everything down."
 	B.mode_flags = DM_FLAG_NUMBING
@@ -302,9 +297,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	B.selective_preference = DM_DIGEST
 	B.escape_stun = 3
 
-/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/Initialize(mapload)
-	. = ..()
-	color = random_color(TRUE)
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): random_color(TRUE)'s saturated colour.
+/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/proc/roll_color(datum/roller/R)
+	return R.saturated_colour()
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube
 	delete_on_death = TRUE

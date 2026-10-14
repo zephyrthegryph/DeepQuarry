@@ -14,15 +14,15 @@
 	can_atmos_pass = ATMOS_PASS_NO
 	var/win_path = /obj/structure/window/basic
 
-MAP_RESOLVER(/obj/effect/wingrille_spawn, GLOBAL_PROC_REF(resolve_wingrille))
-MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
+CAPABILITIES(/obj/effect/wingrille_spawn)
+	map_resolver(GLOBAL_PROC_REF(resolve_wingrille), vars = list("id", "win_path"))
 
-/// MAP_RESOLVER for window spawners: records the cell, then (once the load is in place, so every
+/// The map resolver of window spawners: records the cell, then (once the load is in place, so every
 /// neighbouring spawner is known) builds a grille and windows on the sides without a neighbour.
 /proc/resolve_wingrille(atom/loc, path, list/varedits)
 	var/obj/effect/wingrille_spawn/P = path
 	var/turf/T = get_turf(loc)
-	if(!T || !MAP_VAR(P, varedits, win_path) || !SSticker || SSticker.current_state >= GAME_STATE_FINISHED)
+	if(!T || !MAP_VAR(P, varedits, win_path) || !SSticker || round_game_state() >= GAME_STATE_FINISHED)
 		return TRUE
 	LAZYSET(GLOB.map_resolve_scratch["wingrille"], T, path)
 	map_resolve_later(GLOBAL_PROC_REF(wingrille_build), T, path, varedits)
@@ -44,7 +44,7 @@ MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
 			for(var/obj/structure/window/W in turf_contents_of_type(N, /obj/structure/window))
 				if(W.type == win_path && W.dir == get_dir(N, T))
 					found_connection = 1
-					qdel(W)
+					spent(W)
 		if(!found_connection)
 			var/obj/structure/window/new_win = new win_path(T)
 			new_win.set_dir(dir)
@@ -53,7 +53,7 @@ MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
 /// Per-type touches on each window a spawner makes.
 /proc/wingrille_window_spawned(obj/structure/window/W, path, list/varedits)
 	if(ispath(path, /obj/effect/wingrille_spawn/reinforced/crescent))
-		W.max_integrity = 1000000
+		W.set_max_integrity(1000000)
 		W.update_integrity(1000000)
 	else if(ispath(path, /obj/effect/wingrille_spawn/reinforced/polarized))
 		var/obj/effect/wingrille_spawn/reinforced/polarized/P = path

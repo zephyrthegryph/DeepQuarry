@@ -30,13 +30,13 @@
 	. = TRUE // So we don't fire a bolt as well.
 	switch(attackcycle)
 		if(1)
-			om_after(src, 2 SECONDS, PROC_REF(bomb_lines), A, 2)
+			after(src, 2 SECONDS, PROC_REF(bomb_lines), with = list(A, 2))
 			attackcycle = 0
 		if(2)
-			om_after(src, 1 SECOND, PROC_REF(dual_spin), A, 3, 7)
+			after(src, 1 SECOND, PROC_REF(dual_spin), with = list(A, 3, 7))
 			attackcycle = 0
 		if(3)
-			om_after(src, 1 SECOND, PROC_REF(quad_random_firing), A, 12, 1, 0.5 SECONDS)
+			after(src, 1 SECOND, PROC_REF(quad_random_firing), with = list(A, 12, 1, 0.5 SECONDS))
 			attackcycle = 0
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower
@@ -75,24 +75,24 @@
 			specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: CROSS X.")
-			om_after(src, 2 SECONDS, PROC_REF(star_burst), A, rng_cycle)
+			after(src, 2 SECONDS, PROC_REF(star_burst), with = list(A, rng_cycle))
 			attackcycle = 0
 		if(2)
 			specialattackprojectile = /obj/item/projectile/energy/wallbreaker/boss
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: PRECISION. SWEEP.")
-			om_after(src, 2 SECONDS, PROC_REF(dual_spin), A, rng_cycle, 7)
+			after(src, 2 SECONDS, PROC_REF(dual_spin), with = list(A, rng_cycle, 7))
 			attackcycle = 0
 		if(3)
 			specialattackprojectile = /obj/item/projectile/energy/lightingspark/nanoweave
 			rng_cycle = rand(1,4)
 			direct_say("PROTOCOL: DISCHARGE.")
-			om_after(src, 1 SECOND, PROC_REF(quad_random_firing), A, 12, rng_cycle, 15)
+			after(src, 1 SECOND, PROC_REF(quad_random_firing), with = list(A, 12, rng_cycle, 15))
 			attackcycle = 0
 		if(4)
 			specialattackprojectile = /obj/item/projectile/arc/explosive_rocket/big
 			rng_cycle = rand(1,4)
 			Beam(A, icon_state = "r_beam", time = 1 SECOND, maxdistance = INFINITY)
 			direct_say("PROTOCOL: MISSILE.")
-			om_after(src, 2 SECONDS, PROC_REF(singleproj), A, rng_cycle)
+			after(src, 2 SECONDS, PROC_REF(singleproj), with = list(A, rng_cycle))
 			attackcycle = 0

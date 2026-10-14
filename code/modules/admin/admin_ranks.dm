@@ -22,16 +22,16 @@ GLOBAL_PROTECT(protected_ranks)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		if (name == "NoRank") //only del if this is a true creation (and not just a New() proc call), other wise trialmins/coders could abuse this to deadmin other admins
-			om_qdel_after(src, 0)
+			expire(0)
 			CRASH("Admin proc call creation of admin datum")
 		return
 	name = init_name
 	source = init_source
 	if(!source)
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without a source.")
 	if(!name)
-		qdel(src)
+		spent(src)
 		CRASH("Admin rank created without name.")
 	if(init_rights)
 		rights = init_rights
@@ -135,9 +135,9 @@ GLOBAL_PROTECT(protected_ranks)
 ///	Return a list containing the backup data if they were loaded from the database backup json
 /// `prefetched`: reload_admins_async()'s rows (list("ranks" = rows)); without it the query
 /// blocks, which only boot does (load_admins(initial = TRUE)).
-/proc/load_admin_ranks(dbfail, no_update, list/prefetched)
+/proc/load_admin_ranks(dbfail, no_update, list/prefetched, mob/user)
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	GLOB.admin_ranks.Cut()
 	GLOB.protected_ranks.Cut()
@@ -160,16 +160,13 @@ GLOBAL_PROTECT(protected_ranks)
 	if(!CONFIG_GET(flag/admin_legacy_system) && !dbfail)
 		if(CONFIG_GET(flag/load_legacy_ranks_only))
 			if(!no_update)
-				sync_ranks_with_db()
+				sync_ranks_with_db(user)
 		else
 			var/list/rank_rows
 			if(prefetched)
 				rank_rows = prefetched["ranks"]
 			else
-				var/datum/db_query/query_load_admin_ranks = SSdbcore.NewQuery("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-				if(query_load_admin_ranks.Execute(async = FALSE)) // boot only (allowlisted)
-					rank_rows = query_load_admin_ranks.rows || list()
-				qdel(query_load_admin_ranks)
+				rank_rows = db_query_now("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]") // boot only: the ranks load before the kernel ticks, so nothing can wait on an io_job query yet
 			if(isnull(rank_rows))
 				message_admins("Error loading admin ranks from database. Loading from backup.")
 				log_sql("Error loading admin ranks from database. Loading from backup.")
@@ -251,9 +248,9 @@ GLOBAL_PROTECT(protected_ranks)
 /// returns TRUE if database admins had to be loaded from the backup json
 /// At runtime go through reload_admins_async(), which reads the tables on the I/O lane first
 /// and passes the rows as `prefetched`; only boot (initial) reads them blocking.
-/proc/load_admins(no_update, initial = FALSE, list/prefetched)
+/proc/load_admins(no_update, initial = FALSE, list/prefetched, mob/user)
 	if(!initial)
-		if(!global.config.PreConfigReload())
+		if(!global.config.PreConfigReload(user))
 			return
 
 	var/dbfail
@@ -269,7 +266,7 @@ GLOBAL_PROTECT(protected_ranks)
 	GLOB.admins.Cut()
 	GLOB.protected_admins.Cut()
 	GLOB.deadmins.Cut()
-	var/list/backup_file_json = load_admin_ranks(dbfail, no_update, prefetched)
+	var/list/backup_file_json = load_admin_ranks(dbfail, no_update, prefetched, user)
 	dbfail = backup_file_json != null
 	//Clear profile access
 	for(var/A in world.GetConfig("admin"))
@@ -291,10 +288,7 @@ GLOBAL_PROTECT(protected_ranks)
 		if(prefetched)
 			admin_rows = prefetched["admins"]
 		else
-			var/datum/db_query/query_load_admins = SSdbcore.NewQuery("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`")
-			if(query_load_admins.Execute(async = FALSE)) // boot only (allowlisted)
-				admin_rows = query_load_admins.rows || list()
-			qdel(query_load_admins)
+			admin_rows = db_query_now("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`") // boot only: the admins load before the kernel ticks, so nothing can wait on an io_job query yet
 		if(isnull(admin_rows))
 			message_admins("Error loading admins from database. Loading from backup.")
 			log_sql("Error loading admins from database. Loading from backup.")
@@ -317,8 +311,8 @@ GLOBAL_PROTECT(protected_ranks)
 					var/datum/admins/admin_holder = new(admin_ranks, admin_ckey)
 					admin_holder.fetched_feedback_link = admin_feedback || NO_FEEDBACK_LINK
 		if (!no_update)
-			save_admin_backup()
-			sync_admins_with_db()
+			save_admin_backup(user)
+			sync_admins_with_db(user)
 	//load admins from backup file
 	if(dbfail)
 		if(!backup_file_json)
@@ -349,30 +343,52 @@ GLOBAL_PROTECT(protected_ranks)
 	return dbfail
 
 /// Reloads the admins at runtime without waiting: reads the rank and admin tables on the I/O
-/// lane (om_io), then runs load_admins() with the rows. A failed read loads from the backup.
-/proc/reload_admins_async(no_update)
+/// lane (io_job), then runs load_admins() with the rows. A failed read loads from the backup.
+/proc/reload_admins_async(no_update, mob/user)
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	if(CONFIG_GET(flag/admin_legacy_system) || !SSdbcore.IsConnected())
-		load_admins(no_update, FALSE, list("ranks" = null, "admins" = null))
+		load_admins(no_update, FALSE, list("ranks" = null, "admins" = null), user)
 		return
-	om_io(null, /datum/om/io/sql, "SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", null, /proc/reload_admins_ranks_arrived, no_update)
+	var/datum/request/admin_reload/request = open_request(global.config, /datum/request/admin_reload, TYPE_PROC_REF(/datum/controller/configuration, admin_reload_finished), asker = user, no_update = no_update)
+	request?.read_ranks()
 
-/// om_io() callback: the ranks are in; now read the admins.
-/proc/reload_admins_ranks_arrived(list/result, error, no_update)
-	var/list/rank_rows = error ? null : (result["rows"] || list())
-	om_io(null, /datum/om/io/sql, "SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`", null, /proc/reload_admins_admins_arrived, no_update, list(rank_rows))
+/// Runtime reload context: the request registry retains it, independently of its initiating mob.
+/// No answerer or ASK flags: deleting the initiator never cancels the global reload.
+/datum/request/admin_reload
+	timeout = 10 MINUTES // The two sequential IO reads each have a five-minute backend budget.
+	var/no_update
+	var/list/rank_rows
 
-/// om_io() callback: both tables are in; rebuild the admins from them.
-/proc/reload_admins_admins_arrived(list/result, error, no_update, list/wrapped_rank_rows)
+/// The exact initiating mob, never a ckey lookup that could bind a replacement.
+/datum/request/admin_reload/proc/initiator() as /mob
+	return QDELETED(asker) ? null : asker
+
+/datum/request/admin_reload/proc/read_ranks()
+	io_job(src, /datum/io_backend/sql, "SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", null, PROC_REF(ranks_arrived))
+
+/// The first query is in; preserve the original query ordering and backup-on-error convention.
+/datum/request/admin_reload/proc/ranks_arrived(list/result, error)
+	rank_rows = error ? null : (result["rows"] || list())
+	io_job(src, /datum/io_backend/sql, "SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`", null, PROC_REF(admins_arrived))
+
+/// Both tables are in: completion calls the owner's handler before disposing this context.
+/datum/request/admin_reload/proc/admins_arrived(list/result, error)
 	var/list/admin_rows = error ? null : (result["rows"] || list())
-	load_admins(no_update, FALSE, list("ranks" = wrapped_rank_rows[1], "admins" = admin_rows))
+	request_end(src, REQ_ANSWERED, list("ranks" = rank_rows, "admins" = admin_rows))
 
-/// Writes the protected ranks to the database on the I/O lane (om_io); returns at once.
-/proc/sync_ranks_with_db()
+/datum/controller/configuration/proc/admin_reload_finished(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/request/admin_reload/request = A.request
+	var/mob/user = request.initiator()
+	load_admins(request.no_update, FALSE, request.value, user)
+
+/// Writes the protected ranks to the database on the I/O lane (io_job); returns at once.
+/proc/sync_ranks_with_db(mob/user)
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 
 	var/list/sql_ranks = list()
@@ -381,7 +397,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(!SSdbcore.mass_insert_io(null, format_table_name("admin_ranks"), sql_ranks, TRUE, FALSE, null, /proc/sync_ranks_with_db_done))
 		update_everything_flag_in_db()
 
-/// om_io() callback: the rank rows are written; now fix up R_EVERYTHING flags.
+/// io_job() callback: the rank rows are written; now fix up R_EVERYTHING flags.
 /proc/sync_ranks_with_db_done(list/result, error)
 	if(error)
 		log_sql("Admin rank DB sync failed: [error]")
@@ -402,32 +418,32 @@ GLOBAL_PROTECT(protected_ranks)
 			continue
 		var/flags_to_check = flags.Join(" != [R_EVERYTHING] AND ") + " != [R_EVERYTHING]"
 		var/flags_to_update = flags.Join(" = [R_EVERYTHING], ") + " = [R_EVERYTHING]"
-		om_io(null, /datum/om/io/sql,
+		io_job(null, /datum/io_backend/sql,
 			"SELECT flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")] WHERE rank = :rank AND ([flags_to_check])",
 			list("rank" = R.name),
 			/proc/update_everything_flag_checked, R.name, flags_to_update)
 
-/// om_io() callback: a row back means the rank's stored flags are stale; rewrite them.
+/// io_job() callback: a row back means the rank's stored flags are stale; rewrite them.
 /proc/update_everything_flag_checked(list/result, error, rank_name, flags_to_update)
 	if(error)
 		log_sql("Admin rank R_EVERYTHING check failed for [rank_name]: [error]")
 		return
 	if(!length(result["rows"])) //no row is returned if the rank already has the correct flag value
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("admin_ranks")] SET [flags_to_update] WHERE rank = :rank",
 		list("rank" = rank_name)
 	)
 
 /// Writes the protected ranks and admins to the database on the I/O lane; returns at once.
-/proc/sync_admins_with_db()
+/proc/sync_admins_with_db(mob/user)
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
+		to_chat(user, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
 		return
 
 	if(CONFIG_GET(flag/admin_legacy_system) || !SSdbcore.IsConnected()) //we're already using legacy system so there's nothing to save
 		return
-	sync_ranks_with_db()
+	sync_ranks_with_db(user)
 	var/list/sql_admins = list()
 	for(var/holder_ckey in GLOB.protected_admins)
 		var/datum/admins/holder = GLOB.protected_admins[holder_ckey]
@@ -435,16 +451,16 @@ GLOBAL_PROTECT(protected_ranks)
 	if(!SSdbcore.mass_insert_io(null, format_table_name("admin"), sql_admins, TRUE, FALSE, null, /proc/sync_admins_with_db_done))
 		sync_admins_with_db_done()
 
-/// om_io() callback: the admin rows are written; copy each admin's rank onto their player row.
+/// io_job() callback: the admin rows are written; copy each admin's rank onto their player row.
 /proc/sync_admins_with_db_done(list/result, error)
 	if(error)
 		log_sql("Admin DB sync failed: [error]")
 		return
-	om_sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
+	sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
 
-/proc/save_admin_backup()
+/proc/save_admin_backup(mob/user)
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
+		to_chat(user, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
 		return
 
 	if(CONFIG_GET(flag/admin_legacy_system)) //we're already using legacy system so there's nothing to save

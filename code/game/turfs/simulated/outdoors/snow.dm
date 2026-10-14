@@ -6,53 +6,47 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
+TRACKED(/turf/simulated/floor/outdoors/snow, crossed_dirs)
 
 /turf/simulated/floor/outdoors/snow/Entered(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		if(dq_get_hovering(L) || L.flying) // Flying things shouldn't make footprints.
-			if(L.flying)
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
+			if(stat_value(L, STAT_FLYING))
 				L.adjust_nutrition(-0.5)
 			return ..()
 		var/mdir = "[A.dir]"
-		LAZYSET(crossed_dirs, mdir, 1)
-		update_icon()
+		if(LAZYACCESS(crossed_dirs, mdir) != 1)
+			var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
+			footprints[mdir] = 1
+			set_crossed_dirs(footprints)
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/outdoors/snow/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/floor/outdoors/snow/draw(datum/look/look)
+	..()
 	for(var/d in crossed_dirs)
-		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
+		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
-	INTERACT_INSERT(/obj/item/shovel, PROC_REF(snow_shovel), "Dig up"), \
-	INTERACT_HAND_UNGATED("Scoop", PROC_REF(snow_scoop)), \
-)
+CAPABILITIES(/turf/simulated/floor/outdoors/snow)
+	op("snow_shovel", item(/obj/item/shovel), label("Dig up"), begins(PROC_REF(shovel_begins)), wait(4 SECONDS), then(PROC_REF(attackby_tool_done)), on_interrupt(PROC_REF(attackby_tool_failed)))
+	op("snow_scoop", hand(), ungated(), label("Scoop"), needs(req_adjacent()), begins(MSG(snow/scooping)), wait(1 SECOND), then(PROC_REF(scoop_done)))
 
-/// Old attackby: shovel the snow away.
-/turf/simulated/floor/outdoors/snow/proc/snow_shovel(mob/user, obj/item/W, datum/interaction/interaction)
-	use_tool(user, W, src, delay = 4 SECONDS, volume = 0, start_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
-	return INTERACTION_HANDLED_PASS
+/// A shovel clears the snow away.
+/turf/simulated/floor/outdoors/snow/proc/shovel_begins(datum/act/op/A)
+	return msg_text("You begin to remove \the [src] with your [A.held].")
 
-/turf/simulated/floor/outdoors/snow/proc/attackby_tool_done(mob/user)
-	to_chat(user, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
+/turf/simulated/floor/outdoors/snow/proc/attackby_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
 	new /obj/item/stack/material/snow(src, 10)
 	demote()
 
-/turf/simulated/floor/outdoors/snow/proc/attackby_tool_failed(mob/user)
-	to_chat(user, span_notice("You decide to not finish removing \the [src]."))
+/turf/simulated/floor/outdoors/snow/proc/attackby_tool_failed(datum/act/op/A)
+	to_chat(A.actor, span_notice("You decide to not finish removing \the [src]."))
 
-/// Old attack_hand: scoop up some snow.
-/turf/simulated/floor/outdoors/snow/proc/snow_scoop(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!Adjacent(user))
-		return TRUE
-	act_message(user, null, others = "%U% starts scooping up some snow.", blind = "You start scooping up some snow.")
-	om_task_timed(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
-	return TRUE
+MSG_DEF(snow/scooping, null, "%U% starts scooping up some snow.")
 
-/turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
+/turf/simulated/floor/outdoors/snow/proc/scoop_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/S = new /obj/item/stack/material/snow(user.loc)
 	user.put_in_hands(S)
 	act_message(user, null, others = "%U% scoops up a pile of snow.", blind = "You scoop up a pile of snow.")

@@ -19,15 +19,12 @@
 	player_msg = "You <b>increase the performance of other hivebots near you</b> passively.<br>\
 	You are otherwise very weak offensively."
 
-/datum/om/stage/life/special/mechanical/hivebot/support/commander
-	of = /mob/living/simple_mob/mechanical/hivebot/support/commander
-
-/datum/om/stage/life/special/mechanical/hivebot/support/commander/perform(mob/living/simple_mob/mechanical/hivebot/support/commander/self, datum/om/frame/life/ctx)
-	for(var/mob/living/L in range(4, self))
-		if(L == self)
+/mob/living/simple_mob/mechanical/hivebot/support/commander/life_special(datum/seq_frame/life/F)
+	for(var/mob/living/L in range(4, src))
+		if(L == src)
 			continue // Don't buff ourselves.
-		if(self.IIsAlly(L) && HAS_SYNTHETIC_BIOLOGY(L)) // Don't buff enemies.
-			L.apply_body_effect(/datum/body_effect/aura/hivebot_commander_buff, null, self)
+		if(src.IIsAlly(L) && HAS_SYNTHETIC_BIOLOGY(L)) // Don't buff enemies.
+			L.apply_body_effect(/datum/body_effect/aura/hivebot_commander_buff, null, src)
 
 // Modifier added to friendly hivebots nearby.
 // Boosts most stats by 30%.
@@ -44,7 +41,10 @@
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Useful to avoid having to manually set follow to a lot of hivebots that are gonna die in the next minute anyways.
-/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow/Initialize(mapload)
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow)
+	after_init(0, then(PROC_REF(rally_followers))) // once the map around it has loaded
+
+/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow/proc/rally_followers(datum/act/timer/A)
 	for(var/mob/living/L in hearers(7, src))
 		if(!L.ai_brain)
 			continue
@@ -52,7 +52,6 @@
 			continue
 		var/datum/ai_brain/AI = L.ai_brain
 		AI.set_follow(src)
-	return ..()
 
 
 // This hivebot adds charges to nearby allied hivebots that use the charge system for their special attacks.
@@ -68,22 +67,19 @@
 	var/resupply_cooldown = 4 SECONDS
 	COOLDOWN_DECLARE(resupply_cooldown_until)
 
-/datum/om/stage/life/special/mechanical/hivebot/support/logistics
-	of = /mob/living/simple_mob/mechanical/hivebot/support/logistics
-
-/datum/om/stage/life/special/mechanical/hivebot/support/logistics/perform(mob/living/simple_mob/mechanical/hivebot/support/logistics/self, datum/om/frame/life/ctx)
-	if(!COOLDOWN_FINISHED(self, resupply_cooldown_until))
+/mob/living/simple_mob/mechanical/hivebot/support/logistics/life_special(datum/seq_frame/life/F)
+	if(!COOLDOWN_FINISHED(src, resupply_cooldown_until))
 		return // On cooldown.
 
-	for(var/mob/living/simple_mob/SM in hearers(self.resupply_range, self))
-		if(SM == self)
+	for(var/mob/living/simple_mob/SM in hearers(src.resupply_range, src))
+		if(SM == src)
 			continue // We don't use charges buuuuut in case that changes in the future...
-		if(self.IIsAlly(SM)) // Don't resupply enemies.
+		if(src.IIsAlly(SM)) // Don't resupply enemies.
 			if(!isnull(SM.special_attack_charges) && SM.special_attack_charges < initial(SM.special_attack_charges))
 				SM.special_attack_charges += 1
-				to_chat(SM, span_notice("\The [self] has resupplied you, and you can use your special ability one additional time."))
-				to_chat(self, span_notice("You have resupplied \the [SM]."))
-				COOLDOWN_START(self, resupply_cooldown_until, self.resupply_cooldown)
+				to_chat(SM, span_notice("\The [src] has resupplied you, and you can use your special ability one additional time."))
+				to_chat(src, span_notice("You have resupplied \the [SM]."))
+				COOLDOWN_START(src, resupply_cooldown_until, src.resupply_cooldown)
 				break // Only one resupply per pulse.
 
 /datum/decl/mob_organ_names/hivebotsupport

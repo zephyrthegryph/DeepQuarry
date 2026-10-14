@@ -1,0 +1,2 @@
+/proc/tgs()
+	query.Execute()

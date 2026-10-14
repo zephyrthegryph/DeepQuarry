@@ -10,7 +10,7 @@
 
 /datum/event2/event/shipping_error/start()
 	var/datum/supply_order/O = new /datum/supply_order()
-	O.ordernum = GLOB.supply_service.ordernum
-	O.supply_pack_static = GLOB.supply_service.supply_pack[pick(GLOB.supply_service.supply_pack)]
+	O.ordernum = supply_ordernum()
+	O.supply_pack_static = supply_supply_pack()[pick(supply_supply_pack())]
 	O.ordered_by = random_name(pick(MALE,FEMALE), species = "Human")
-	GLOB.supply_service.shoppinglist += O
+	rel_add(SSsupply, nameof(SSsupply.shoppinglist), O)

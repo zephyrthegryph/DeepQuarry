@@ -1,0 +1,17 @@
+@obj.effect.alien human|none
+@obj.effect.alien robot|none
+@obj.effect ai|none
+@obj ghost|none
+@obj.effect.alien human|/obj/item/tool/screwdriver
+@obj.effect.alien human|/obj/item/tool/crowbar
+@obj.effect.alien human|/obj/item/tool/wrench
+@obj.effect.alien human|/obj/item/tool/wirecutters
+@obj.effect.alien human|/obj/item/multitool
+@obj.effect.alien human|/obj/item/weldingtool
+@obj.effect.alien human|/obj/item/stack/cable_coil
+@obj.effect.alien human|/obj/item/stack/material/steel
+@obj.effect.alien human|/obj/item/card/id
+@obj.effect.alien human|/obj/item/mop_deploy
+@obj.effect.alien human|/obj/item/soap
+@obj.effect human|/obj/item
+keys: drag_buckle, melee_hit, pass_insert, pass_insert_2, tear_up, touch_weeds, use_welder

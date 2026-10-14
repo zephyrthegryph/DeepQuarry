@@ -7,8 +7,6 @@
 	density = TRUE
 	bubble_icon = "science"
 	var/scan_in_progress = 0
-	var/scan_num = 0
-	var/tmp/obj/scanned_obj
 	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)
 	var/scan_duration = 50
@@ -24,45 +22,45 @@
 										/obj/structure/crystal
 									)
 
-/obj/machinery/artifact_analyser/Initialize(mapload)
-	. = ..()
-	reconnect_scanner()
+CAPABILITIES(/obj/machinery/artifact_analyser)
+	started_work(step = PROC_REF(work_step))
+	after_init(0, then(PROC_REF(reconnect_scanner)))
+	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
+	ref_one(nameof(scanned_object), /obj)
+	interface("XenoarchArtifactAnalyzer")
+	without("ui_open")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("artifact_analyser_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_analyser_use)))
 
-/obj/machinery/artifact_analyser/proc/reconnect_scanner()
+/obj/machinery/artifact_analyser/proc/reconnect_scanner(datum/act/A)
 	//connect to a nearby scanner pad
 	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 
-/obj/machinery/artifact_analyser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/artifact_analyser_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/artifact_analyser_use
-	id = "artifact_analyser_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use
-
-/obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable() || get_dist(src, user) > 1)
-		return TRUE
+		return OP_OK
 	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/artifact_analyser, "XenoarchArtifactAnalyzer")
+	return OP_OK
 
 /obj/machinery/artifact_analyser/ui_prepare(mob/user, datum/tgui/ui)
 	if(!owned_scanner())
 		reconnect_scanner()
 	return TRUE
 
-UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data_obj_machinery_artifact_analyser{owned_scanner:unknown}")
+/obj/machinery/artifact_analyser/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scan_in_progress"] = scan_in_progress
+	var/list/merged_1 = ui_data_obj_machinery_artifact_analyser(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/artifact_analyser's window data (declared on its UI_DATA row).
+/// /obj/machinery/artifact_analyser's window data.
 /obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -70,14 +68,8 @@ UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data
 
 	return data
 
-/obj/machinery/artifact_analyser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/artifact_analyser, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
+/obj/machinery/artifact_analyser/proc/ui_act_scan(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(scan_in_progress)
 		scan_in_progress = FALSE
 		atom_say("Scanning halted.")
@@ -93,12 +85,12 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 			if(O.invisibility)
 				continue
 			if(istype(O, /obj/machinery/artifact))
-				var/obj/machinery/artifact/A = O
-				if(A.in_use)
+				var/obj/machinery/artifact/A2 = O
+				if(A2.in_use)
 					artifact_in_use = 1
 				else
-					A.set_anchored(TRUE)
-					A.in_use = 1
+					A2.set_anchored(TRUE)
+					A2.in_use = 1
 
 			if(artifact_in_use)
 				atom_say("Cannot scan. Too much interference.")
@@ -118,16 +110,16 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 		else
 			scan_in_progress = 1
 			EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
-			om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
+			after(src, scan_duration + 0.1 SECONDS, PROC_REF(scan_timer_fired))
 			atom_say("Scanning begun.")
 	return TRUE
 
-/// A scan finishes on its timer (om_after() at the completion time), not by polling.
+/// A scan finishes on its timer (after() at the completion time), not by polling.
 /obj/machinery/artifact_analyser/proc/scan_timer_fired()
 	if(scan_in_progress)
 		finish_scan()
 
-/obj/machinery/artifact_analyser/machine_step()
+/obj/machinery/artifact_analyser/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL
 
 /obj/machinery/artifact_analyser/proc/finish_scan()
@@ -145,9 +137,9 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 	atom_say("Scanning complete.")
 	var/obj/item/paper/P = new(src.loc)
 	P.name = "[src] report #[++report_num]"
-	P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-	P.info += "<br>"
-	P.info += "[bicon(scanned_object())] [results]"
+	P.set_info(span_bold("[src] analysis report #[report_num]") + "<br>")
+	P.set_info(P.info + ("<br>"))
+	P.set_info(P.info + ("[bicon(scanned_object())] [results]"))
 	P.stamped = list(/obj/item/stamp)
 	P.add_overlay("paper_stamped")
 
@@ -214,10 +206,6 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 				return out
 
 			return "[scanned_obj.name] - mundane application."
-
-/// Accessor for the scanned_obj var.
-/obj/machinery/artifact_analyser/proc/scanned_obj() as /obj
-	return scanned_obj
 
 /// Accessor for the owned_scanner var.
 /obj/machinery/artifact_analyser/proc/owned_scanner() as /obj/machinery/artifact_scanpad

@@ -13,10 +13,9 @@
 	icon_state = "synx_living"
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
-	mob_bump_flag = SIMPLE_ANIMAL //This not existing was breaking vore bump for some reason.
 	parasitic = TRUE //Digestion immunity var
 
-	var/list/speak = list() // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
+	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
 	var/speak_chance = 0 //MAy have forgotten to readd that.
 	//Synx speech code overrides normal speech code but is still a x in 200 chance of triggereing, as all mobs do.
 	//VAR$ SETUP
@@ -29,7 +28,7 @@
 	var/stomach_distended_state = "synx_s"
 	var/transformed = FALSE
 	var/memorysize = 50 //Var for how many messages synxes remember if they know speechcode
-	var/list/voices = list() // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
+	var/list/voices = list("Garbled voice", "Unidentifiable Voice") // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
 	var/acid_damage_lower = SYNX_LOWER_DAMAGE - 1 //Variables for a hacky way to change to burn damage when they vomit up their stomachs. Set to 1 less than melee damage because it takes a minimum of 1 brute damage for this to activate.
 	var/acid_damage_upper = SYNX_UPPER_DAMAGE - 1
 	var/stomach_distended = 0 //Check for whether or not the synx has vomitted up its stomach.
@@ -133,7 +132,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /mob/living/simple_mob/animal/synx/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	//B.human_prey_swallow_time = 6 SECONDS //doesnt work
 	//B.nonhuman_prey_swallow_time = 3 SECONDS //doesnt work
 	B.vore_verb = "swallow"
@@ -190,41 +189,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	)
 */
 
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/distend_stomach)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/proc/contort)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/sonar_ping)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/shred_limb)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/disguise)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/randomspeech)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/set_style)
-
-/mob/living/simple_mob/animal/synx/Initialize(mapload, is_pet) //this is really cool. Should be able to ventcrawl canonicaly, contort, and make random speech.
-//some things should be here that arent tho.
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	build_icons(1)
-	if(!voremob_loaded)
-		voremob_loaded = TRUE
-		init_vore()
-	if(is_pet)
-		// A pet synx keeps to the owner: none of the wild synx verbs.
-		om_grant_each(src, GRANT_VERB_HIDE, list(
-			/mob/living/proc/ventcrawl,
-			/mob/living/simple_mob/animal/synx/proc/distend_stomach,
-			/mob/living/simple_mob/proc/contort,
-			/mob/living/simple_mob/animal/synx/proc/sonar_ping,
-			/mob/living/proc/shred_limb,
-			/mob/living/simple_mob/animal/synx/proc/disguise,
-			/mob/living/simple_mob/animal/synx/proc/randomspeech,
-			/mob/living/simple_mob/animal/synx/proc/set_style), src)
-		return
-	realname = name
-	voices += "Garbled voice"
-	voices += "Unidentifiable Voice"
-	speak += "Who is there?"
-	speak += "What is that thing?!"
-
 //////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// SPECIAL ITEMS/REAGENTS !!!! ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////// //keeping most of these the same except the stuff that apply to the standard synx. -lo
@@ -276,7 +240,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		M.custom_pain("You [pick("feel numb!","feel dizzy and heavy.","feel strange!")]",60)
 	if(prob(2))
 		M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
-		M.status_adjust(EFFECT_PARALYZED, 1)
+		M.status_adjust(STAT_PARALYZED, 1)
 	M.apply_body_effect(/datum/body_effect/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
@@ -294,7 +258,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		M.custom_pain("You feel no pain!",60)
 	if(prob(2))
 		M.custom_pain("You suddenly lose control over your body!",60)
-		M.status_adjust(EFFECT_PARALYZED, 1)
+		M.status_adjust(STAT_PARALYZED, 1)
 	M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
@@ -324,7 +288,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 			M.custom_pain("You feel no pain despite the clear signs of damage to your body!",0)
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",0)
-			M.status_adjust(EFFECT_PARALYZED, 1)
+			M.status_adjust(STAT_PARALYZED, 1)
 		M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 		(legacy duplicate removed)
 		// ^ I have no idea what this might cause, my ideal plan is that once the pain killer wears off you suddenly collapse;
@@ -334,11 +298,11 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 /datum/reagent/inaprovaline/synxchem/overdose(mob/living/carbon/M, alien, removed)
 	..()
 	if(!inert_for(M))
-		M.status_adjust(EFFECT_DIZZY, 10)
+		M.status_adjust(STAT_DIZZY, 10)
 		if(prob(5))
-			M.status_adjust(EFFECT_STUNNED, 1)
+			M.status_adjust(STAT_STUNNED, 1)
 		if(prob(2))
-			M.status_adjust(EFFECT_PARALYZED, 1)
+			M.status_adjust(STAT_PARALYZED, 1)
 
 
 /datum/reagent/inaprovaline/synxchem/holo/overdose(mob/living/carbon/M, alien, removed)
@@ -373,11 +337,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		var/mob/living/L = A
 
 /*		if(prob(forcefeedchance) && !ckey)//Forcefeeding code //Only triggers if not player-controlled //This does not currently work
-			L.status_at_least(EFFECT_WEAKENED, 2)
-			update_icon()
+			L.status_at_least(STAT_WEAKENED, 2)
 			ai_busy_begin()
 			src.feed_self_to_grabbed(src,L)
-			update_icon()
 			ai_busy_end()
 */
 		if(L.reagents) //Seemingly broken. Would probably be really annoying anyways, so probably for the best that it doesn't work. -Azel
@@ -401,29 +363,27 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 	if(speak.len>=memorysize)
 		speak -= (pick(speak))//making the list more dynamic
 	if(resting)
-		resting = !resting
+		set_resting(!resting)
 	if(message=="Honk!")
 		bikehorn()
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown
-	of = /mob/living/simple_mob/animal/synx/ai/pet/clown
+/mob/living/simple_mob/animal/synx/ai/pet/clown/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown/perform(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/synx/ai/pet/clown/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.vore_fullness)
-		self.size_multiplier = 1+(0.5*self.vore_fullness)
-		self.update_icons()
-	if(!self.vore_fullness && self.size_multiplier != 1)
-		self.size_multiplier = 1
-		self.update_icons()
-/datum/om/stage/life/type_post/simple_mob/animal/synx
-	of = /mob/living/simple_mob/animal/synx
+	var/wanted_size = src.vore_fullness ? 1+(0.5*src.vore_fullness) : 1
+	if(src.size_multiplier != wanted_size)
+		src.resize(wanted_size, animate = FALSE, uncapped = TRUE)
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/perform(mob/living/simple_mob/animal/synx/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/synx/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/animal/synx/life_type_post(datum/seq_frame/life/F)
 	..()
 //mob/living/simple_mob/animal/synx/ai/handle_idle_speaking() //Only ai-controlled synx will randomly speak
-	if(self.voices && prob(self.speak_chance/2))
-		self.randomspeech()
+	if(src.voices && prob(src.speak_chance/2))
+		src.randomspeech()
 
 /mob/living/simple_mob/animal/synx/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay) //Synx can only eat people if their organs are on the inside.
 	if(stomach_distended)
@@ -441,28 +401,25 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
 	set category = VERB_CAT_ABILITIES_SYNX
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	if(status_flags & HIDING)
-		status_flags &= ~HIDING
+		set_status_flags(status_flags & ~HIDING)
 		reset_plane_and_layer()
 		to_chat(src,span_notice("You have stopped hiding."))
 	else
-		status_flags |= HIDING
+		set_status_flags(status_flags | HIDING)
 		layer = HIDING_LAYER //Just above cables with their 2.44
 		plane = OBJ_PLANE
 		to_chat(src,span_notice("You are now hiding."))
-
-
-	update_icons()
 
 /mob/living/simple_mob/animal/synx/proc/disguise()
 	set name = "Toggle Form"
 	set desc = "Switch between amorphous and humanoid forms."
 	set category = VERB_CAT_ABILITIES_SYNX
 
-	if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained())
+	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained())
 		return
 
 	// If transform isn't true
@@ -471,16 +428,15 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		return
 	if(!transformed)
 		to_chat(src,span_warning("Now they see your true form."))
-		icon_living = transformed_state //Switch state to transformed state
+		set_icon_living(transformed_state) //Switch state to transformed state
 		movement_cooldown = 3
 	else // If transformed is true.
 		to_chat(src,span_warning("You changed back into your disguise."))
-		icon_living = initial(icon_living) //Switch state to what it was originally defined.
+		set_icon_living(initial(icon_living)) //Switch state to what it was originally defined.
 		movement_cooldown = 6
 
 
-	transformed = !transformed
-	update_icons()
+	set_transformed(!transformed)
 
 /mob/living/simple_mob/animal/synx/proc/randomspeech()
 	set name = "speak"
@@ -493,13 +449,12 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 
 /mob/living/simple_mob/animal/synx/proc/handle_mimic()
 	name = pick(voices)
-	om_after(src, 2, TYPE_PROC_REF(/mob, say), pick(speak))
-	om_after(src, 5, PROC_REF(end_mimic))
+	after(src, 0.2 SECONDS, TYPE_PROC_REF(/mob, say), with = list(pick(speak)))
+	after(src, 0.5 SECONDS, PROC_REF(end_mimic))
 
 //lo- procs adjusted to mobs.
 
 /mob/living/simple_mob/animal/synx
-	var/next_sonar_ping = 0
 
 /mob/living/simple_mob/animal/synx/proc/sonar_ping()
 	set name = "Listen In"
@@ -509,13 +464,13 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(!COOLDOWN_FINISHED(src, next_sonar_ping))
+	if(!cooldown_ready(src, next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))
 		to_chat(src, span_warning("You are for all intents and purposes currently deaf!"))
 		return
-	COOLDOWN_START(src, next_sonar_ping, 10 SECONDS)
+	cooldown_start(src, next_sonar_ping, 10 SECONDS)
 	var/heard_something = FALSE
 	to_chat(src, span_notice("You take a moment to listen in to your environment..."))
 	for(var/mob/living/L in range(client.view, src))
@@ -559,103 +514,87 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		return
 
 	if(!stomach_distended && !transformed) //true if stomach distended is null, 0, or ""
-		stomach_distended = !stomach_distended //switch statement
+		set_stomach_distended(!stomach_distended) //switch statement
 		to_chat (src, span_notice("You disgorge your stomach, spilling its contents!"))
 		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
 		melee_damage_upper = 1
-		icon_living = stomach_distended_state
-		attacktext = attacktext.Copy()
-		attacktext += distend_attacktext
-		attacktext -= initial_attacktext
+		set_icon_living(stomach_distended_state)
+		attacktext = (attacktext + distend_attacktext) - initial_attacktext // a new list: the type's table is shared (per_type())
 
 		for(var/belly in src.vore_organs) //Spit out all contents because our insides are now outsides
 			var/obj/belly/B = belly
 			for(var/atom/movable/A in B)
 				play_sfx(src, SFX_EFFECTS_SPLAT)
 				B.release_specific_contents(A)
-		update_icons()
 		return
 
 	if(stomach_distended) //If our stomach has been vomitted
-		stomach_distended = !stomach_distended
+		set_stomach_distended(!stomach_distended)
 		to_chat (src, span_notice("You swallow your insides!"))
 		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
 		melee_damage_upper = SYNX_UPPER_DAMAGE
-		icon_living = initial(icon_living)
-		attacktext = attacktext.Copy()
-		attacktext += initial_attacktext
-		attacktext -= distend_attacktext
-		update_icons()
+		set_icon_living(initial(icon_living))
+		attacktext = (attacktext + initial_attacktext) - distend_attacktext // a new list: the type's table is shared (per_type())
 		return
 
 ///
 ///		Icon generation stuff
 ///
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/synx/appearance_overlays()
-	. = list()
-	update_fullness()
-	build_icons()
-	for(var/belly_class in vore_fullness_ex)
-		var/vs_fullness = vore_fullness_ex[belly_class]
-		if(vs_fullness > 0)
-			if(transformed)
-				//transformed bellysprites dont exist yet. Uncomment this when they do. -Reo
-				//add_overlay("[iconstate]-t_[belly_class]-[vs_fullness]")
-				pass()
-			else
-				. += "[icon_state]_[belly_class]-[vs_fullness]"
+TRACKED(/mob/living/simple_mob/animal/synx, overlay_colors)
+TRACKED(/mob/living/simple_mob/animal/synx, body_style)
+TRACKED(/mob/living/simple_mob/animal/synx, horns)
+TRACKED(/mob/living/simple_mob/animal/synx, eyes)
 
-
-/mob/living/simple_mob/animal/synx/proc/build_icons(random)
-	cut_overlays()
+/// The modular look: tinted body, horns, markings and eyes layers over the base state, and the belly sprites unless transformed (they do not exist yet).
+/mob/living/simple_mob/animal/synx/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		icon_state = "synx_dead"
-		plane = MOB_LAYER
+		look.state("synx_dead")
+		look.set_plane(MOB_LAYER)
 		return
-	if(random)
-		var/list/bodycolors = list("#FFFFFF")
-		body_style = pick(body_styles)
-		overlay_colors["Body"] = pick(bodycolors)
-		horns = pick(horn_styles)
-		var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
-		overlay_colors["Horns"] = pick(horncolors)
-		var/list/markingcolors = list("#2F2F2F")
-		markings = pick(TYPE_TABLE_GET(src, synx_marking_styles))
-		overlay_colors["Marks"] = pick(markingcolors)
-		var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
-		eyes = pick(eye_styles)
-		overlay_colors["Eyes"] = pick(eyecolors)
+	if(transformed)
+		//transformed bellysprites dont exist yet. Drop the base's belly layers when they do. -Reo
+		for(var/belly_state in vore_fullness_states(look.state_so_far(src)))
+			look.hide(belly_state)
+	var/suffix = transformed ? "-t" : null
+	var/hiding = (status_flags & HIDING)
+	var/layer_plane = hiding ? OBJ_PLANE : MOB_PLANE
+	var/layer_layer = hiding ? HIDING_LAYER : MOB_LAYER
+	look.overlay(look_overlay_image(icon, "synx_body[body_style][suffix][stomach_distended ? "-s" : null]", layer_layer, layer_plane, color = overlay_colors["Body"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_horns[horns][suffix]", layer_layer, layer_plane, color = overlay_colors["Horns"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_markings[markings][suffix]", layer_layer, layer_plane, color = overlay_colors["Marks"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
+	look.overlay(look_overlay_image(icon, "synx_eyes[eyes][suffix]", layer_layer, layer_plane, color = overlay_colors["Eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
+/// Rolls the modular style and colours of a new synx.
+/// Each synx looks its own (rolls()): a style of each part and the colours of its layers.
+/mob/living/simple_mob/animal/synx/proc/roll_look(datum/roller/R, target)
+	switch(target)
+		if("body_style")
+			return R.choose(body_styles)
+		if("horns")
+			return R.choose(horn_styles)
+		if("markings")
+			return R.choose(TYPE_TABLE_GET(src, synx_marking_styles))
+		if("eyes")
+			return R.choose(eye_styles)
+		if("overlay_colors")
+			var/list/colors = overlay_colors.Copy()
+			colors["Body"] = "#FFFFFF"
+			colors["Horns"] = R.choose(list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0"))
+			colors["Marks"] = "#2F2F2F"
+			colors["Eyes"] = R.choose(list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF"))
+			return colors
 
-	var/image/I = image(icon, "synx_body[body_style][transformed? "-t" : null][stomach_distended? "-s" : null]")
-	I.color = overlay_colors["Body"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
+/// A wild synx remembers its own name to fall back to after mimicking a voice (rolls(), after its name's).
+/mob/living/simple_mob/animal/synx/proc/roll_realname(datum/roller/R)
+	return name
 
-	I = image(icon, "synx_horns[horns][transformed? "-t" : null]")
-	I.color = overlay_colors["Horns"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "synx_markings[markings][transformed? "-t" : null]")
-	I.color = overlay_colors["Marks"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
-
-	I = image(icon, "synx_eyes[eyes][transformed? "-t" : null]")
-	I.color = overlay_colors["Eyes"]
-	I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-	I.plane = (status_flags & HIDING)? OBJ_PLANE : MOB_PLANE
-	I.layer = (status_flags & HIDING)? HIDING_LAYER : MOB_LAYER
-	add_overlay(I)
+/// Starting vore organs: a synx has its bellies from the start (setup()).
+/mob/living/simple_mob/animal/synx/proc/load_vore_at_spawn()
+	if(!voremob_loaded)
+		voremob_loaded = TRUE
+		init_vore()
 
 /mob/living/simple_mob/animal/synx/proc/set_style()
 	set name = "Set Style"
@@ -665,11 +604,13 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	var/list/options = list("Body","Horns","Marks","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/effects/synx_labels.dmi', option))
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_part_chosen), choices = options, anchor = src, radius = 60)
+	open_request(src, /datum/prompt/choice, PROC_REF(style_part_chosen), answerer = src, choices = options, anchor = src, radius = 60, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// First radial answer: offer the styles of the picked part.
-/mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/om/prompt/choice/radial/ask)
-	var/part = ask.choice
+/mob/living/simple_mob/animal/synx/proc/style_part_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/part = A.answer.value
 	if(!part || QDELETED(src) || src.incapacitated())
 		return
 	var/list/options
@@ -692,36 +633,58 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	for(var/option in options)
 		var/image/I = new /image('icons/mob/synx_modular.dmi', "[state_prefix][option]", dir = 2)
 		LAZYSET(options, option, I)
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+	open_request(src, /datum/prompt/choice/synx_style, PROC_REF(style_chosen), answerer = src, choices = options, anchor = src, radius = 90, part = part)
 
 /// Second radial answer: pick the colour for the chosen style.
-/mob/living/simple_mob/animal/synx/proc/style_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/datum/prompt/choice/synx_style
+	radial = TRUE
+	autopick_single_option = TRUE
+	timeout = 0
+	var/part
+
+/mob/living/simple_mob/animal/synx/proc/style_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/synx_style/ask = A.answer
+	var/choice = ask.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
-	switch(ask.subject)
+	switch(ask.part)
 		if("Body")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Body Color", message = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Body Color", question = "Pick body color:", default = overlay_colors["Body"], part = "Body", style_var = "body_style", style = choice)
 		if("Horns")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Horn Color", message = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Horn Color", question = "Pick horn color:", default = overlay_colors["Horns"], part = "Horns", style_var = "horns", style = choice)
 		if("Marks")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Marking Color", message = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Marking Color", question = "Pick marking color:", default = overlay_colors["Marks"], part = "Marks", style_var = "markings", style = choice)
 		if("Eyes")
-			om_ask(src, /datum/om/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), title = "Eye Color", message = "Pick eye color:", default = overlay_colors["Eyes"], part = "Eyes", style_var = "eyes", style = choice)
+			open_request(src, /datum/prompt/color/synx_part, PROC_REF(synx_part_color_chosen), answerer = src, title = "Eye Color", question = "Pick eye color:", default = overlay_colors["Eyes"], part = "Eyes", style_var = "eyes", style = choice)
 
 /// The colour for a part picked in the customisation menu; the part's style is set with it.
-/datum/om/prompt/color/synx_part
+/datum/prompt/color/synx_part
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 	/// The overlay_colors key.
 	var/part
 	/// The mob var holding the part's style, and the style picked.
 	var/style_var
 	var/style
 
-/mob/living/simple_mob/animal/synx/proc/synx_part_color_chosen(datum/om/prompt/color/synx_part/ask)
-	vars[ask.style_var] = ask.style
-	overlay_colors[ask.part] = ask.picked_color
-	build_icons()
+/mob/living/simple_mob/animal/synx/proc/synx_part_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/color/synx_part/ask = A.answer
+	switch(ask.style_var)
+		if("body_style")
+			set_body_style(ask.style)
+		if("horns")
+			set_horns(ask.style)
+		if("markings")
+			set_markings(ask.style)
+		if("eyes")
+			set_eyes(ask.style)
+	var/list/colors = overlay_colors.Copy()
+	colors[ask.part] = ask.value
+	set_overlay_colors(colors)
 
 ////////////////////////////////////////
 ////////////////PET VERSION/////////////
@@ -737,14 +700,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 
 /mob/living/simple_mob/animal/synx/ai/pet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 1
 	B.digest_brute = 0
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 5
 	B.digest_brute = 5
@@ -775,10 +738,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	new /obj/item/seeds/hardlightseed/typesx(location)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/gib()
+	if(loc?.release_refusal(src))
+		return
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
-	qdel(src)
+	consume(src)
 
 ////////////////////////////////////////
 ////////////////SYNX VARIATIONS/////////
@@ -794,7 +759,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	icon_dead = "synx_hardlight_dead"
 	icon_gib = null
 	alpha = 127
-	speak = list("SX System Online")
+	speak = list("SX System Online", "Who is there?", "What is that thing?!")
 	faction = "neutral"//Can be safely bapped with newspaper.
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
@@ -872,9 +837,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	faction = "SYN"
 
 
-/mob/living/simple_mob/animal/synx/ai/pet/greed/synth/Initialize(mapload)
-	. = ..()
-	name = "SYN-KinC-([rand(100,999)])"
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
+	rolls(nameof(name), PROC_REF(roll_name))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/mob/living/simple_mob/animal/synx/ai/pet/greed/synth/proc/roll_name(datum/roller/R)
+	return "SYN-KinC-([R.number(100, 999)])"
 
 /mob/living/simple_mob/animal/synx/ai/pet/greed/synth/goodboy
 	faction = "neutral"
@@ -916,38 +884,63 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 /mob/living/simple_mob/animal/synx/ai/pet/debug
 	name = "Syntox"
 	desc = "ERROR Connection to translation server could not be established!"
+	// a pet: no remembered voices or words, and none of the wild synx verbs (its CAPABILITIES)
+	speak = list()
+	voices = list()
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename()
+/// A pet keeps no name of its own to fall back to.
+/mob/living/simple_mob/animal/synx/ai/pet/debug/roll_realname(datum/roller/R)
+	return null
+
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
 	set name = "rename"
 	set desc = "Renames the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Renaming", message = "What would you like to change name to?", var_name = "name")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Renaming", question = "What would you like to change name to?", var_name = "name")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc()
 	set name = "redesc"
 	set desc = "Redescribes the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Redescribing", message = "What would you like to change desc to?", var_name = "desc")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Redescribing", question = "What would you like to change desc to?", var_name = "desc")
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite()
+/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite()
 	set name = "resprite"
 	set desc = "Resprite the synx"
 	set category = VERB_CAT_DEBUG
-	om_ask(usr, /datum/om/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), title = "Respriting", message = "What would you like to change icon_state to?", var_name = "icon_state")
+	open_request(src, /datum/prompt/text/synx_debug_var, PROC_REF(debug_var_entered), answerer = usr, title = "Respriting", question = "What would you like to change icon_state to?", var_name = "icon_state")
 
 /// A debug synx var edit. `var_name` is the var set.
-/datum/om/prompt/text/synx_debug_var
+/datum/prompt/text/synx_debug_var
+	timeout = 0
 	var/var_name
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/om/prompt/text/synx_debug_var/ask)
-	vars[ask.var_name] = ask.text
+/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/synx_debug_var/request = A.request
+	switch(request.var_name)
+		if("name")
+			name = A.answer.value
+		if("desc")
+			desc = A.answer.value
+		if("icon_state")
+			set_icon_state(A.answer.value)
 
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
-DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
+	// a pet synx keeps to its owner: none of the wild synx verbs
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/contort, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping, hidden = TRUE)
+	verb_entry(/mob/living/proc/shred_limb, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
+	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
-	. = ..(mapload, TRUE)
 
 ////////////////////////////////////////
 ////////////////SYNX SPAWNER////////////
@@ -955,7 +948,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple
 /obj/random/mob/synx
 	name = "This is synxes"
 
-DECLARE_LOOT(/obj/random/mob/synx, LOOT_TABLE(/mob/living/simple_mob/animal/synx/ai))
+CAPABILITIES(/obj/random/mob/synx)
+	configure(loot(table = list(/mob/living/simple_mob/animal/synx/ai)))
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -989,4 +983,25 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 /mob/living/simple_mob/animal/synx/proc/end_mimic()
 	name = realname
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/synx, "mob_radio", /obj/item/radio/headset/mob_headset)
+CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(mob_movement(bump = SIMPLE_ANIMAL))
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	rolls(nameof(body_style), PROC_REF(roll_look))
+	rolls(nameof(horns), PROC_REF(roll_look))
+	rolls(nameof(markings), PROC_REF(roll_look))
+	rolls(nameof(eyes), PROC_REF(roll_look))
+	rolls(nameof(overlay_colors), PROC_REF(roll_look))
+	rolls(nameof(realname), PROC_REF(roll_realname), from = list(nameof(name)))
+	setup(PROC_REF(load_vore_at_spawn))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach)
+	verb_entry(/mob/living/simple_mob/proc/contort)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping)
+	verb_entry(/mob/living/proc/shred_limb)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style)
+
+
+/mob/living/simple_mob/animal/synx/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

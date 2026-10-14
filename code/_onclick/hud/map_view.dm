@@ -15,6 +15,9 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
+CAPABILITIES(/atom/movable/screen/map_view_tg)
+	owns_many(nameof(popup_plane_masters))
+
 
 // hides itself from every client still viewing it (held by ckey).
 /atom/movable/screen/map_view_tg/on_destroy(force)
@@ -30,9 +33,9 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	assigned_map = map_key
 	set_position(1, 1)
 
-	own_clear(src, nameof(popup_plane_masters), OWN_DELETE)
+	rel_clear(src, nameof(popup_plane_masters))
 	for(var/atom/movable/screen/fresh as anything in get_tgui_plane_masters())
-		own_add(src, nameof(popup_plane_masters), fresh)
+		rel_add(src, nameof(popup_plane_masters), fresh)
 
 	for(var/atom/movable/screen/instance as anything in popup_plane_masters)
 		instance.assigned_map = assigned_map
@@ -52,14 +55,16 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
  */
 /atom/movable/screen/map_view_tg/proc/display_to(mob/show_to, datum/tgui_window/window)
 	if(window && !window.visible)
-		om_hook(window, /datum/om/event/tgui_window_visible, src, PROC_REF(display_on_ui_visible))
+		observe(window, /datum/notice/tgui_window_visible, src, then(PROC_REF(display_on_ui_visible)))
 	else
 		display_to_client(show_to.client)
 
-/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/tgui_window/window, datum/om/event/tgui_window_visible/event)
-	EVENT_HANDLER
+/atom/movable/screen/map_view_tg/proc/display_on_ui_visible(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/tgui_window/window = A.target
+	var/datum/notice/tgui_window_visible/event = A
 	display_to_client(event.client)
-	om_unhook(window, /datum/om/event/tgui_window_visible, src)
+	unobserve(window, /datum/notice/tgui_window_visible, src)
 
 /atom/movable/screen/map_view_tg/proc/display_to_client(client/show_to)
 	show_to.register_map_obj(src)

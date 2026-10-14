@@ -10,7 +10,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_medigun.dmi',
 		)
 	w_class = ITEMSIZE_HUGE
-	force = 0
 	var/beam_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
 	var/busy = MEDIGUN_IDLE // Set to true when scanning, to stop multiple scans.
 	var/action_cancelled = FALSE
@@ -34,11 +33,11 @@
 		var/mob/living/M = loc
 		if(istype(M))
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
-				LAZYSET(item_state_slots, slot_l_hand_str, wielded_item_state)
-				LAZYSET(item_state_slots, slot_r_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_l_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_r_hand_str, wielded_item_state)
 			else
-				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
-				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_l_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_r_hand_str, initial(item_state))
 		..()
 
 // Draws a box showing the limits of movement while scanning something.
@@ -103,19 +102,23 @@
 /obj/item/bork_medigun/proc/delete_box(list/box_segments, client/C)
 	for(var/i in box_segments)
 		C.images -= i
-		qdel(i)
+		spent(i)
 
 /obj/item/bork_medigun/proc/color_box(list/box_segments, new_color, new_time)
 	for(var/i in box_segments)
 		animate(i, color = new_color, time = new_time)
 
-DECLARE_INTERACTIONS(/obj/item/bork_medigun, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/bork_medigun)
+	configure(item_combat(force = 0))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	ref_one(nameof(current_target), /mob)
 
 /// Old attack_hand.
-/obj/item/bork_medigun/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bork_medigun/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)// && loc != get_turf)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /// Relation view: current target (reads null once it is gone).
 /obj/item/bork_medigun/proc/current_target() as /mob

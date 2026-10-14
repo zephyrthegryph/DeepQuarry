@@ -29,39 +29,45 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	icon_state = "photo"
 	item_state = "paper"
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/id
 	var/icon/img	//Big photo image
 	var/scribble	//Scribble on the back.
 	var/icon/tiny
+
 	var/photo_size = 3
 	resistance_flags = FLAMMABLE
 
-/obj/item/photo/Initialize(mapload)
-	. = ..()
+TRACKED(/obj/item/photo, tiny)
+
+/obj/item/photo/proc/assign_photo_id(datum/act/timer/A)
 	id = GLOB.photo_count++
 
-DECLARE_INTERACTIONS(/obj/item/photo, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Rename photo", PROC_REF(photo_verb_rename), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_self.
-/obj/item/photo/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/photo/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.examinate(src)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/photo/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/item/photo/proc/interaction_item(datum/act/op/A)
+	return paperwork_caption_stage(A.actor, A.held)
+
+/// The Rename photo menu entry.
+/obj/item/photo/proc/photo_rename_op(datum/act/op/A)
+	photo_verb_rename(A.actor)
+	return OP_OK
+
+/obj/item/photo/proc/paperwork_caption_stage(mob/user, obj/item/P, paperwork_answer, paperwork_answer_ready = FALSE)
 	if(istype(P, /obj/item/pen))
-		var/txt = rerun_ask(user, "k53", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to write on the back?", title = "Photo Writing", max_length = 128)
+		if(!paperwork_answer_ready)
+			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_caption_answered), answerer = user, paperwork_operator = user, paperwork_held = P, question = "What would you like to write on the back?", title = "Photo Writing", max_len = 128)
+			return OP_OK
+		var/txt = paperwork_answer
 		if(isnull(txt))
-			return TRUE
+			return OP_OK
 		if(loc == user && user.stat == 0)
 			scribble = txt
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/photo/examine(mob/user)
 	//This is one time we're not going to call parent, because photos are 'secret' unless you're close enough.
@@ -78,11 +84,27 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 /obj/item/photo/proc/show(mob/user as mob)
 	tgui_interact(user)
 
-DECLARE_UI(/obj/item/photo, "Photo")
+CAPABILITIES(/obj/item/photo)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	after_init(0, then(PROC_REF(assign_photo_id)))
+	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("photo_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("photo_rename", menu(), label("Rename photo"), needs(carried()), then(PROC_REF(photo_rename_op)))
+	interface("Photo")
+	without("ui_open")
+	ui_shape(title = schema_text(), size = num(), scribble = bool(), image_html = schema_text())
 
-UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merge:ui_data_obj_item_photo{scribble:bool,image_html:text}")
+/obj/item/photo/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	data["size"] = photo_size
+	var/list/merged_1 = ui_data_obj_item_photo(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/photo's window data (declared on its UI_DATA row).
+/// /obj/item/photo's window data.
 /obj/item/photo/proc/ui_data_obj_item_photo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["scribble"] = scribble || ""
@@ -95,8 +117,14 @@ UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merg
 	return data
 
 /// Old Rename photo verb.
-/obj/item/photo/proc/photo_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(photo_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the photo?", title = "Photo Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+/obj/item/photo/proc/photo_verb_rename(mob/user, obj/item/held)
+	return paperwork_photo_label_stage(user, held)
+
+/obj/item/photo/proc/paperwork_photo_label_stage(mob/user, obj/item/held, paperwork_answer, paperwork_answer_ready = FALSE)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_photo_label_answered), answerer = user, paperwork_operator = user, paperwork_held = held, question = "What would you like to label the photo?", title = "Photo Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k97 = paperwork_answer
 	if(isnull(_answer_k97))
 		return
 	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
@@ -116,14 +144,22 @@ UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merg
 	icon_state = "album"
 	item_state = "briefcase"
 
-TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/item/photo)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
+CAPABILITIES(/obj/item/storage/photo_album)
+	configure(storage(accepts = list(/obj/item/photo)))
+	drag_onto(PROC_REF(mousedrop_input))
 
-	if(ishuman(usr))
-		var/mob/living/carbon/human/M = usr
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/storage/photo_album/mousedrop_input(datum/act/input/A)
+	if(!handle_album_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/storage/photo_album/proc/handle_album_drop(mob/user, obj/over_object)
+
+	if(ishuman(user))
+		var/mob/living/carbon/human/M = user
 		if(!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 		play_sfx(src, SFX_RUSTLE, 2)
 		if((!( M.restrained() ) && !( M.stat ) && M.get_equipped_item(SLOT_ID_BACK) == src))
 			switch(over_object.name)
@@ -133,14 +169,14 @@ TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/it
 				if("l_hand")
 					M.unEquip(src)
 					M.put_in_l_hand(src)
-			add_fingerprint(usr)
-			return
-		if(over_object == usr && in_range(src, usr) || usr.contents.Find(src))
-			if(usr.s_active)
-				usr.s_active.close(usr)
-			show_to(usr)
-			return
-	return
+			add_fingerprint(user)
+			return TRUE
+		if(over_object == user && in_range(src, user) || user.contents.Find(src))
+			if(user.s_active)
+				user.s_active.close(user)
+			show_to(user)
+			return TRUE
+	return TRUE
 
 /*********
 * camera *
@@ -152,7 +188,6 @@ TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/it
 	icon_state = "camera"
 	item_state = "camera"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	var/pictures_max = 10
 	var/pictures_left = 10
@@ -163,8 +198,14 @@ TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/it
 	var/list/picture_planes
 
 /// Old Set Photo Focus verb.
-/obj/item/camera/proc/camera_verb_focus(mob/user, obj/item/held, datum/interaction/interaction)
-	var/nsize = rerun_ask(user, "k165", PROC_REF(camera_verb_focus), args, /datum/om/prompt/choice, message = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
+/obj/item/camera/proc/camera_verb_focus(mob/user, obj/item/held)
+	return paperwork_focus_stage(user, held)
+
+/obj/item/camera/proc/paperwork_focus_stage(mob/user, obj/item/held, paperwork_answer, paperwork_answer_ready = FALSE)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/choice/paperwork_review, PROC_REF(paperwork_focus_answered), answerer = user, paperwork_operator = user, paperwork_held = held, question = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
+		return
+	var/nsize = paperwork_answer
 	if(isnull(nsize))
 		return
 	if(nsize)
@@ -174,34 +215,43 @@ TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/it
 /obj/item/camera/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-DECLARE_INTERACTIONS(/obj/item/camera, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Set Photo Focus", PROC_REF(camera_verb_focus), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/camera)
+	configure(item_worn(slots = SLOT_BELT))
+	op("camera_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("camera_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("camera_focus", menu(), label("Set Photo Focus"), needs(carried()), then(PROC_REF(camera_focus_op)))
+
+/// The Set Photo Focus menu entry.
+/obj/item/camera/proc/camera_focus_op(datum/act/op/A)
+	camera_verb_focus(A.actor)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/camera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camera/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	on = !on
 	if(on)
-		src.icon_state = icon_on
+		set_icon_state(icon_on)
 	else
-		src.icon_state = icon_off
+		set_icon_state(icon_off)
 	to_chat(user, "You switch the camera [on ? "on" : "off"].")
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/camera/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/camera/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/camera_film))
 		if(pictures_left)
 			to_chat(user, span_notice("[src] still has some film in it!"))
-			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_notice("You insert [I] into [src]."))
-		user.drop_item()
-		consume(I, user)
+			return OP_PASS
+		var/film_name = "[I]"
+		if(!consume(I, user))
+			return OP_PASS
+		to_chat(user, span_notice("You insert [film_name] into [src]."))
 		pictures_left = pictures_max
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 
 /obj/item/camera/proc/get_icon(list/turfs, turf/center)
@@ -283,9 +333,9 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	pictures_left--
 	desc = "A polaroid camera. It has [pictures_left] photos left."
 	to_chat(user, span_notice("[pictures_left] photos left."))
-	icon_state = icon_off
+	set_icon_state(icon_off)
 	on = 0
-	om_after(src, 64, PROC_REF(recharged))
+	after(src, 6.4 SECONDS, PROC_REF(recharged))
 
 /obj/item/camera/proc/can_capture_turf(turf/T, mob/user)
 	var/viewer = user
@@ -330,7 +380,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	var/obj/item/photo/p = new()
 	p.name = "photo"
 	p.icon = ic
-	p.tiny = pc
+	p.set_tiny(pc)
 	p.img = photoimage
 	p.desc = mobs
 	p.pixel_x = rand(-10, 10)
@@ -348,7 +398,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 
 	p.name = name
 	p.icon = icon(icon, icon_state)
-	p.tiny = icon(tiny)
+	p.set_tiny(icon(tiny))
 	p.img = icon(img)
 	p.desc = desc
 	p.pixel_x = pixel_x
@@ -362,6 +412,36 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	return p
 
 /obj/item/camera/proc/recharged()
-	icon_state = icon_on
+	set_icon_state(icon_on)
 	on = 1
 
+
+/obj/item/photo/proc/paperwork_caption_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_caption_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/photo/proc/paperwork_caption_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_caption_stage(ask.paperwork_operator, ask.paperwork_held, ask.value, TRUE)
+
+/obj/item/photo/proc/paperwork_photo_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_photo_label_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/photo/proc/paperwork_photo_label_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_photo_label_stage(ask.paperwork_operator, ask.paperwork_held, ask.value, TRUE)
+
+/obj/item/camera/proc/paperwork_focus_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_focus_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/camera/proc/paperwork_focus_apply(datum/act/request/A)
+	var/datum/prompt/choice/paperwork_review/ask = A.answer
+	return paperwork_focus_stage(ask.paperwork_operator, ask.paperwork_held, ask.value, TRUE)

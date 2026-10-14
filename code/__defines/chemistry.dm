@@ -74,3 +74,17 @@
 /// A jet or pressure injector (hypospray, autoinjector): also works through a
 /// prosthetic's fluid port, but still stopped by thick hide and thick material.
 #define INJECT_METHOD_HYPO 2
+
+// ---- One Life cycle of a metabolism holder (/datum/reagents/metabolism/proc/metabolize(); vg_chem::metabolism) ----
+/// /datum/reagents/metabolism/proc/cycle_taken(): what one reagent takes up this cycle.
+#define CHEM_TAKEN_REMOVED 1
+#define CHEM_TAKEN_DOSE 2
+#define CHEM_TAKEN_MAX_DOSE 3
+#define CHEM_TAKEN_OVERDOSING 4
+#define CHEM_TAKEN_OVERDOSE_INJURY 5
+/// The share of an ingested uptake the gut absorbs.
+#define CHEM_TAKEN_ABSORBED 6
+/// /datum/reagents/metabolism/proc/cycle_body(): the body's share of the rates.
+#define CHEM_BODY_REMOVED 1
+#define CHEM_BODY_INGEST_REMOVED 2
+#define CHEM_BODY_INGEST_ABSORBED 3

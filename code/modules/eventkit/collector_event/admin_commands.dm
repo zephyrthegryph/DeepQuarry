@@ -30,7 +30,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collecto
 		"Force Clear Blockers"
 	)
 
-	var/option = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "What Would You Like To Do?", title = "Event Collector", choices = options, default = "Cancel")
+	var/option
+	var/datum/request/resumed = length(args) > 2 ? args[3] : null
+	if(istype(resumed, /datum/prompt/choice/admin_collector_configuration) && resumed.owner == src && resumed.answerer == user.mob && resumed.subject == target && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(collector_configuration_answered))
+		option = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_collector_configuration, PROC_REF(collector_configuration_answered), answerer = user.mob, subject = target, question = "What Would You Like To Do?", title = "Event Collector", choices = options, default = "Cancel")
+		return
 	if(isnull(option))
 		return
 	switch(option)
@@ -57,3 +63,30 @@ ADMIN_VERB_AND_CONTEXT_MENU(induce_malfunction, R_ADMIN, "Toggle Malfunction Sta
 		return
 
 	target.induce_failure()
+
+/// The typed subject preserves the original context-menu target across the wait.
+/datum/prompt/choice/admin_collector_configuration
+	timeout = 0
+	rights = R_ADMIN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_collector_configuration/normalize(given)
+	return given
+
+/datum/prompt/choice/admin_collector_configuration/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_collector_configuration/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer) || !subject || QDELETED(subject))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/modify_event_collector/proc/collector_configuration_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	var/obj/structure/event_collector/target = A.request.subject
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, target, A.answer)

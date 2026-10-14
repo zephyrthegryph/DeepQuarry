@@ -35,34 +35,35 @@
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/new_mimic = new(loc)
 			visible_message(span_bolddanger("[new_mimic] suddenly growls as it turns out to be a mimic!"))
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "open"
-			new_mimic.icon_living = "open"
+			new_mimic.set_icon_state("open")
+			new_mimic.set_icon_living("open")
 		else
 			return ..()
 	else
 		return ..()
 
-DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(blast_consume))
+CAPABILITIES(/obj/structure/closet/crate/mimic)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_consume))))
 
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
-/obj/structure/closet/crate/mimic/proc/blast_consume(datum/damage_packet/packet)
+/obj/structure/closet/crate/mimic/proc/blast_consume(datum/act/A)
 	latent_discard()
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
-	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+	consumed(src)
+	return TRUE
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 
@@ -119,7 +120,10 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
-	showvoreprefs = 0 //Hides mechanical vore prefs for mimics. You can't see their gaping maws when they're just sitting idle.
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	ref_one(nameof(real_crate), /obj/structure/closet/crate)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/vore/aggressive/mimic
 	tt_desc = "Mimus vorare"
@@ -129,13 +133,12 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	swallowTime = 3 SECONDS
 	vore_capacity = 1
 	vore_default_mode = DM_DIGEST
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/vore/aggressive/mimic/will_show_tooltip()
@@ -171,18 +174,18 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/airlock/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/airlock/new_mimic = new(loc)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the vars of the mimic that spawns
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "amimicopen"
-			new_mimic.icon_living = "amimicopen"
+			new_mimic.set_icon_state("amimicopen")
+			new_mimic.set_icon_living("amimicopen")
 		else
-			qdel(src.loc)
+			spent(src.loc)
 			new/obj/machinery/door/airlock/maintenance/common (src.loc) //Places the Airlock
-			qdel(src)//Deletes the "mimic"
+			spent(src)//Deletes the "mimic"
 			return ..()
 	else
 		return ..()
@@ -191,7 +194,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 
@@ -229,7 +232,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 /mob/living/simple_mob/vore/aggressive/mimic/airlock/replace_death(gibbed)
 	new/obj/machinery/door/airlock/maintenance/common (src.loc)
 	rel_clear(src, nameof(real_crate))
-	qdel(src)
+	replaced_by(src)
 	return TRUE
 
 
@@ -242,15 +245,10 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	mimic_chance = 30
 	mimic_active = TRUE
 
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
-DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/closet/crate/mimic/closet/appearance_overlays()
-	. = list()
-	if(opened)
-		icon_state = "copen"
-	else
-		icon_state = "cmimic"
+/// Draws itself entirely: the open or closed sprite of the mimic closet, with none of the closet's usual overlays.
+/obj/structure/closet/crate/mimic/closet/draw(datum/look/look)
+	..()
+	look.state(opened ? "copen" : "cmimic")
 
 /obj/structure/closet/crate/mimic/closet/open()
 	if(src.opened)
@@ -261,14 +259,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/closet/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/closet/new_mimic = new(loc)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the mimic that spawns
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
 			new_mimic.name = name
 			new_mimic.desc = desc
-			new_mimic.icon_state = "cmimicopen"
-			new_mimic.icon_living = "cmimicopen"
+			new_mimic.set_icon_state("cmimicopen")
+			new_mimic.set_icon_living("cmimicopen")
 		else
 			return ..()
 	else
@@ -278,7 +276,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 
@@ -353,26 +351,32 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 
 /obj/effect/floormimic/proc/awaken(mob/living/L)
 	if(!mimic_active)
-		qdel(src)
+		spent(src, L)
 		return
 	mimic_active = FALSE
 	if(!prob(mimic_chance))
-		qdel(src)
+		spent(src, L)
 		return
 	var/mob/living/simple_mob/vore/aggressive/mimic/floor/new_mimic = new mimic_type(drop_location())
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
 	replace_with(src, new_mimic)
 
-EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormimic_awaken_item)))
-
 /// Old attackby: prodding an active mimic wakes it.
-/obj/effect/floormimic/proc/floormimic_awaken_item(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/floormimic/proc/floormimic_awaken_item(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(mimic_active)
 		awaken(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/effect/floormimic)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+	op("floormimic_awaken_item", item(/obj/item), then(PROC_REF(floormimic_awaken_item)))
+
+/// Any blast destroys the mimic outright.
+/obj/effect/floormimic/proc/blasted_away(datum/act/A)
+	spent(src)
+	return TRUE
 
 /obj/effect/floormimic/safe
 	mimic_chance = 0
@@ -403,11 +407,13 @@ DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, d
 
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	base_attack_cooldown = 5
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor)
+	configure(mob_kind(attack_cooldown = 5))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
-	qdel(src)
+	dissolved(src)
 	return TRUE
 
 /obj/effect/floormimic/tile
@@ -447,7 +453,9 @@ DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, d
 
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	base_attack_cooldown = 10
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
+	configure(mob_kind(attack_cooldown = 10))
 
 /obj/effect/floormimic/plating
 	name = "loose plating"
@@ -486,6 +494,8 @@ DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, d
 
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	base_attack_cooldown = 10
 	attack_armor_pen = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/plating)
+	configure(mob_kind(attack_cooldown = 10))
 

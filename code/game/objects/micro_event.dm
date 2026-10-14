@@ -6,34 +6,26 @@
 	var/shrinking = TRUE
 	var/size_limit = 0.5
 
-/// Old attack_ghost: staff also get the size settings, then the portal's own ghost use.
-/obj/structure/portal_event/resize/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(!target && check_rights_for(user?.client, R_HOLDER))
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_size_mode), title = "Change portal size settings", message = "Would you like to adjust the portal's size settings?", no_first = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
-	return ..()
+CAPABILITIES(/obj/structure/portal_event/resize)
+	op("portal_resize_settings", observer(), priority(OP_PRIORITY_NORMAL + 2), when(req_empty(nameof(target)), req_rights(R_HOLDER)), passes(), 		asks(/datum/prompt/choice, fields = list("title" = "Change portal size settings", "question" = "Would you like to adjust the portal's size settings?", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "adjust"), 		asks(/datum/prompt/choice, fields = list("title" = "Change portal size settings", "question" = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", "choices" = list("Shrink", "Grow"), "buttons" = TRUE, "timeout" = 0), step = "mode", when = PROC_REF(size_adjusting)), 		asks(/datum/prompt/number, fields = list("title" = "Pick a Size", "question" = computed(PROC_REF(size_limit_question)), "default" = 1, "min_value" = 0, "max_value" = INFINITY, "timeout" = 0), step = "limit", when = PROC_REF(size_adjusting)), 		then(PROC_REF(apply_size_settings)))
 
-/datum/om/prompt/number/portal_size_limit
-	title = "Pick a Size"
-	default = 1
-	round_entry = FALSE
-	requires = PROMPT_ADMIN(R_HOLDER)
-	var/shrinking = TRUE
+/// Staff said yes to adjusting the size settings.
+/obj/structure/portal_event/resize/proc/size_adjusting(datum/act/op/A)
+	return A.step_value("adjust") == "Yes"
 
-/datum/om/prompt/number/portal_size_limit/prepare()
-	message = shrinking ? "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)" : "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
-	return TRUE
+/// The size limit question, worded for the mode picked.
+/obj/structure/portal_event/resize/proc/size_limit_question(datum/act/op/A)
+	if(A.step_value("mode") == "Shrink")
+		return "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)"
+	return "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
 
-/obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(ask_size_limit), title = "Change portal size settings", message = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
-
-/obj/structure/portal_event/resize/proc/ask_size_limit(datum/om/prompt/choice/ask)
-	om_ask(ask.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (ask.choice == "Shrink"))
-
-/obj/structure/portal_event/resize/proc/size_settings_chosen(datum/om/prompt/number/portal_size_limit/ask)
-	if(isnull(ask.number))
-		return
-	shrinking = ask.shrinking
-	size_limit = ask.number
+/// The size settings staff picked (nothing when they declined).
+/obj/structure/portal_event/resize/proc/apply_size_settings(datum/act/op/A)
+	if(A.step_value("adjust") != "Yes")
+		return OP_PASS
+	shrinking = (A.step_value("mode") == "Shrink")
+	size_limit = A.step_value("limit")
+	return OP_PASS
 
 /obj/structure/portal_event/resize/teleport(atom/movable/M as mob|obj)
 	if(!isliving(M))
@@ -92,7 +84,8 @@
 	. = ..()
 	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
-DECLARE_START_TIMER(/obj/structure/timer_door, "time_til_open", /datum/proc/qdel_self)
+CAPABILITIES(/obj/structure/timer_door)
+	after_init(nameof(time_til_open), then(TYPE_PROC_REF(/datum, qdel_self)))
 
 DESTROY_EFFECTS(/obj/structure/timer_door, new /datum/destroy_effects_data(message = "%SRC% opens up!", message_class = "danger", sound = SFX_EFFECTS_BANG, sound_volume = 75))
 

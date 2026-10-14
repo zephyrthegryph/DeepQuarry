@@ -28,10 +28,10 @@
 		enabled_icon_state = icon_state
 
 	if(disabled_for || diffused_for)
-		icon_state = "shield_broken"
+		set_icon_state("shield_broken")
 		overlays.Cut() // Snowflake handling, avoiding SSoverlays
 	else
-		icon_state = enabled_icon_state
+		set_icon_state(enabled_icon_state)
 		//flags |= OVERLAY_QUEUED //Trick SSoverlays
 		//SSoverlays.queue += src
 
@@ -45,9 +45,9 @@
 
 /obj/effect/shield/proc/update_glow()
 	if(density)
-		set_light(3, 3, "#66FFFF")
+		set_glow(src, GLOW(3, 3, "#66FFFF"))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 /obj/effect/shield/proc/update_opacity()
 	if(gen()?.check_flag(MODEFLAG_PHOTONIC) && !disabled_for && !diffused_for)
@@ -56,7 +56,7 @@
 		set_opacity(0)
 
 // Prevents singularities and pretty much everything else from moving the field segments away.
-// The only thing that is allowed to move us is the Destroy() proc.
+// Only teardown is allowed to move us.
 /obj/effect/shield/forceMove(atom/destination, direction, movetime)
 	if(QDELING(src))
 		return ..()
@@ -146,7 +146,7 @@
 			continue
 		// Note: Range is a non-exact aproximation of the spread effect. If it doesn't look good
 		// we'll need to switch to actually walking along the shields to get exact number of steps away.
-		om_after(S, get_dist(src, S) * 2, PROC_REF(impact_flash))
+		after(S, get_dist(src, S) * 2, PROC_REF(impact_flash))
 	impact_flash()
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment
@@ -154,19 +154,20 @@
 	alpha = 100
 	animate(src, alpha = initial(alpha), time = 1 SECOND)
 
-EXTEND_INTERACTIONS(/obj/effect/shield, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_shield)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_shield)), \
-)
+CAPABILITIES(/obj/effect/shield)
+	op("touch_shield", hand(), then(PROC_REF(interaction_touch_shield)))
+	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_emp_drain)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shield_blast_drain))))
 
 /// Old attack_hand, just for fun: the touched segments flash.
-/obj/effect/shield/proc/interaction_touch_shield(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/shield/proc/interaction_touch_shield(datum/act/op/A)
 	flash_adjacent_segments(3)
 	return TRUE
 
 /obj/effect/shield/take_damage(damage, damtype, hitby)
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return
 
 	if(!damtype)
@@ -219,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 /obj/effect/shield/CanPass(atom/movable/mover, turf/target)
 	// Somehow we don't have a generator. This shouldn't happen. Delete the shield.
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return 1
 
 	if(disabled_for || diffused_for)
@@ -236,20 +237,21 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 	update_nearby_tiles() //Force ZAS update
 
 // EMP. It may seem weak but keep in mind that multiple shield segments are likely to be affected.
-DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EMP, PROC_REF(shield_emp_drain))
-DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drain))
 
-/obj/effect/shield/proc/shield_emp_drain(datum/damage_packet/packet)
+/obj/effect/shield/proc/shield_emp_drain(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(disabled_for)
 		return
 	deal_damage(DAMAGE_IONIC, emp_ionic_damage(packet.severity) * 0.45, flags = DAMAGE_PACKET_SILENT)
 
 // Explosions
 /// A blast lands on the shield by its own scale (instead of the blast packet).
-/obj/effect/shield/proc/shield_blast_drain(datum/damage_packet/packet)
+/obj/effect/shield/proc/shield_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!disabled_for)
 		deal_damage(DAMAGE_BLAST, rand(10,15) / packet.severity, flags = DAMAGE_PACKET_SILENT)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 // Fire
 /// Overheating: fire drains the shield.
@@ -267,7 +269,9 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_EM)
 
 /// Old attackby: attacks with hand tools, blocked by the Hyperkinetic flag (afterattack still follows, as before).
-/obj/effect/shield/proc/interaction_hit_shield(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/shield/proc/interaction_hit_shield(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/I = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
@@ -275,19 +279,19 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 	if(gen().check_flag(MODEFLAG_HYPERKINETIC))
 		act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = I)
 		if(I.obj_damage_type() == BURN)
-			take_damage(I.force, SHIELD_DAMTYPE_HEAT)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_HEAT)
 		else if (I.obj_damage_type() == BRUTE)
-			take_damage(I.force, SHIELD_DAMTYPE_PHYSICAL)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_PHYSICAL)
 		else
-			take_damage(I.force, SHIELD_DAMTYPE_EM)
+			take_damage(combat_of(I).force, SHIELD_DAMTYPE_EM)
 	else
 		act_message(user, src, others = span_danger("%U% tries to attack %T% with %I%, but it passes through!"), item = I)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /obj/effect/shield/Bumped(atom/movable/mover)
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return 0
 	mover.shield_impact(src)
 	return ..()
@@ -299,14 +303,14 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 
 /obj/effect/shield/proc/overcharge_shock(mob/living/M)
 	M.injure(INJURY_ELECTRIC, rand(20, 40), null, src)
-	M.status_at_least(EFFECT_WEAKENED, 5)
+	M.status_at_least(STAT_WEAKENED, 5)
 	to_chat(M, span_danger("As you come into contact with \the [src] a surge of energy paralyses you!"))
 	take_damage(10, SHIELD_DAMTYPE_EM)
 
 // Called when a flag is toggled. Can be used to add on-toggle behavior, such as visual changes.
 /obj/effect/shield/proc/flags_updated()
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return
 
 	// Update airflow - If atmospheric we block air as long as we're enabled (density works for this)
@@ -377,7 +381,7 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 	S.take_damage(get_shield_damage(), SHIELD_DAMTYPE_PHYSICAL, src)
 	visible_message(span_danger("\The [src] breaks into dust!"))
 	make_debris()
-	qdel(src)
+	destroyed(src, null, BRUTE)
 
 /// Owning generator (a relation view: it reads null once the target is deleted).
 /obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator

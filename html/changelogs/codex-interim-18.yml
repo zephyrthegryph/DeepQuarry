@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated soulcatcher prompts and blob paired references to native forms."

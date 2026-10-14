@@ -96,7 +96,7 @@
 	for(var/atom/movable/screen/screen_obj in screen_maps[map_name])
 		screen_maps[map_name] -= screen_obj
 		if(screen_obj.del_on_map_removal)
-			qdel(screen_obj)
+			spent(screen_obj)
 	screen_maps -= map_name
 
 /**
@@ -151,7 +151,7 @@
 	background.assigned_map = map_name
 	background.fill_rect(1, 1, width, height)
 	if(bg_icon)
-		background.icon_state = bg_icon
+		background.set_icon_state(bg_icon)
 	register_map_obj(background)
 
 	return map_name
@@ -171,4 +171,4 @@
 	clear_map("[window_id]_map")
 	// Clients cannot be hooked: the event is emitted on the client's mob.
 	if(mob)
-		OM_EMIT(mob, /datum/om/event/popup_cleared, window_id)
+		PUBLISH_LEGACY(mob, /datum/notice/popup_cleared, window_id)

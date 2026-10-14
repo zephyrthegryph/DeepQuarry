@@ -14,9 +14,8 @@
 		theme_type = pick(subtypesof(/datum/armour_dimensional_theme/dangerous))
 	else
 		theme_type = pick(subtypesof(/datum/armour_dimensional_theme/safe))
-	var/datum/armour_dimensional_theme/theme = new theme_type()
+	var/datum/armour_dimensional_theme/theme = dq_proto(theme_type)
 	theme.apply(source)
-	qdel(theme)
 
 /datum/armour_dimensional_theme/proc/apply(turf/source)
 	var/obj/effect/effect/smoke/poof = new(source)

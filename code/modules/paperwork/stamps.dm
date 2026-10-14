@@ -4,17 +4,18 @@
 	icon = 'icons/obj/bureaucracy_yw.dmi'
 	icon_state = "stamp-qm"
 	item_state = "stamp"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_HOLSTER
 	throw_speed = 7
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 60)
 	pressure_resistance = 2
-	attack_verb = list("stamped")
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	var/stamptext = null
+
+CAPABILITIES(/obj/item/stamp)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_thrown(force = 0))
+	configure(item_combat(attack_verbs = list("stamped")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/stamp/captain
 	name = "site manager's rubber stamp"
@@ -51,7 +52,9 @@
 /obj/item/stamp/denied
 	name = "\improper DENIED rubber stamp"
 	icon_state = "stamp-deny"
-	attack_verb = list("DENIED")
+
+CAPABILITIES(/obj/item/stamp/denied)
+	configure(item_combat(attack_verbs = list("DENIED")))
 
 /obj/item/stamp/accepted
 	name = "\improper ACCEPTED rubber stamp"
@@ -106,34 +109,37 @@
 	icon_state = "stamp-zenghu"
 
 // Syndicate stamp to forge documents.
-DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/stamp/chameleon)
+	op("disguise", in_hand(), label("Disguise"),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = computed(PROC_REF(stamp_choice_names)), "timeout" = 0), step = "k124"),
+		then(PROC_REF(interaction_self)))
+
+/// Stamp metadata is immutable; enumerating choices must not construct temporary items.
+/obj/item/stamp/chameleon/proc/stamp_choice_types()
+	var/list/stamps = list()
+	for(var/stamp_type in typesof(/obj/item/stamp) - src.type)
+		var/obj/item/stamp/S = stamp_type
+		stamps[capitalize(initial(S.name))] = stamp_type
+	return stamps
 
 /// Old attack_self.
-/obj/item/stamp/chameleon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The names the disguise question lists (EXIT first: picking it changes nothing).
+/obj/item/stamp/chameleon/proc/stamp_choice_names(datum/act/op/A)
+	. = list("EXIT")
+	for(var/name in sortList(stamp_choice_types()))
+		. += name
 
-	var/list/stamp_types = typesof(/obj/item/stamp) - src.type // Get all stamp types except our own
-	var/list/stamps = list()
-
-	// Generate them into a list
-	for(var/stamp_type in stamp_types)
-		var/obj/item/stamp/S = new stamp_type
-		stamps[capitalize(S.name)] = S
-
-	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
-
-	var/input_stamp = rerun_ask(user, "k124", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose a stamp to disguise as:", title = "Stamp Choice", choices = show_stamps)
-	if(isnull(input_stamp))
-		return TRUE
+/obj/item/stamp/chameleon/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/stamps = stamp_choice_types()
+	var/input_stamp = A.step_value("k124")
 
 	if(user && (src?.loc == user)) // Er, how necessary is this in attack_self?
 
 		var/obj/item/stamp/chosen_stamp = stamps[capitalize(input_stamp)]
 
 		if(chosen_stamp)
-			name = chosen_stamp.name
-			icon_state = chosen_stamp.icon_state
+			name = initial(chosen_stamp.name)
+			set_icon_state(initial(chosen_stamp.icon_state))
 
-	// Clean up the temporary picker instances we created above.
-	for(var/stamp_key in stamps)
-		qdel(stamps[stamp_key])
 	return TRUE

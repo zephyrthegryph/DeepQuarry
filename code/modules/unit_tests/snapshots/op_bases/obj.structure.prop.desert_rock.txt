@@ -1,0 +1,4 @@
+human|none menu: Push
+human|none click: Click: Push
+robot|none menu: Push
+robot|none click: Click: Push

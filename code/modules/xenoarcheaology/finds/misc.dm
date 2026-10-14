@@ -38,16 +38,17 @@
 	anchored = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/material/regular_crystal)
 
+// ALLOW(init/INSTANCE_STATE): rolls the colour of each crystal
 /obj/machinery/crystal/Initialize(mapload)
 	randomize_color()
 	return ..()
 
 /obj/machinery/crystal/proc/randomize_color()
 	if(prob(30))
-		icon_state = "crystal2"
-		set_light(3, 3, "#CC00CC")
+		set_icon_state("crystal2")
+		set_glow(src, GLOW(3, 3, "#CC00CC"))
 	else
-		set_light(3, 3, "#33CC33")
+		set_glow(src, GLOW(3, 3, "#33CC33"))
 
 // Icy crystals.
 /datum/category_item/catalogue/material/ice_crystal
@@ -64,8 +65,8 @@
 
 /obj/machinery/crystal/ice/randomize_color()
 	if(prob(30))
-		icon_state = "icecrystal1"
-	set_light(3, 3, "#C4FFFF")
+		set_icon_state("icecrystal1")
+	set_glow(src, GLOW(3, 3, "#C4FFFF"))
 
 // Magma crystals.
 /datum/category_item/catalogue/material/magma_crystal
@@ -84,12 +85,12 @@
 
 /obj/machinery/crystal/lava/randomize_color()
 	if(prob(50))
-		icon_state = "grey_crystal2"
+		set_icon_state("grey_crystal2")
 
 	if(prob(30))
 		color = "#E03131"
 
-	set_light(3, 3, color)
+	set_glow(src, GLOW(3, 3, color))
 
 //large finds
 			//machinery type artifacts?

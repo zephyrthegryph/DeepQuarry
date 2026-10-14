@@ -56,28 +56,35 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 
 	// Telegraph to give a small window to dodge if really close.
 	flick("phase_shift",A)
-	icon_state = "phase_shift"
-	om_after(src, jaunt_warning, PROC_REF(do_special_attack_1), A, destination, starting_turf) // For the telegraphing.
+	set_icon_state("phase_shift")
+	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/construct/wraith/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		set_icon_state("phase_shift2")
+		return FALSE
 
 	// Do the dig!
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% vanishes into thin air %T%!")))
-	flick("phase_shift",A)
-	icon_state = "phase_shift"
+	if(A)
+		flick("phase_shift",A)
+	set_icon_state("phase_shift")
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		flick("phase_shift2",A)
-		icon_state = "phase_shift2"
+		if(A)
+			flick("phase_shift2",A)
+		set_icon_state("phase_shift2")
 		return FALSE
 
 	// Did we make it?
 	if(!(src in destination))
 		ai_busy_end()
-		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		set_icon_state("phase_shift2")
+		if(A)
+			flick("phase_shift2",A)
 		return FALSE
 
 	var/overshoot = TRUE
@@ -94,8 +101,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
 		ai_busy_end()
-		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		set_icon_state("phase_shift2")
+		if(A)
+			flick("phase_shift2",A)
 		return TRUE
 
 	// Otherwise we need to keep going.
@@ -107,13 +115,15 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		set_icon_state("phase_shift2")
+		if(A)
+			flick("phase_shift2",A)
 		return FALSE
 
 	ai_busy_end()
-	icon_state = "phase_shift2"
-	flick("phase_shift2",A)
+	set_icon_state("phase_shift2")
+	if(A)
+		flick("phase_shift2",A)
 	return FALSE
 
 // Does the jaunt movement
@@ -132,7 +142,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
 			play_sfx(src, SFX_PUNCH, 1.5)
-			status_at_least(EFFECT_WEAKENED, 5)
+			status_at_least(STAT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 

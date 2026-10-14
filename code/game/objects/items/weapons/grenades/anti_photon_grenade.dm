@@ -12,21 +12,21 @@
 		..()
 		return
 	playsound(src, light_sound, 50, 1, 5)
-	set_light(10, -10, "#FFFFFF")
+	set_glow(src, GLOW(10, -10, "#FFFFFF"))
 
 	var/extra_delay = rand(0,90)
-	om_after(src, 200 + extra_delay, PROC_REF(grenade_light), extra_delay)
+	after(src, 20 SECONDS + extra_delay, PROC_REF(grenade_light), with = list(extra_delay))
 
 /obj/item/grenade/anti_photon/proc/grenade_light(extra_delay)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(prob(10+extra_delay))
-		set_light(10, 10, "#[num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)]")
-	om_after(src, 10, PROC_REF(grenade_blast))
+		set_glow(src, GLOW(10, 10, "#[num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)][num2hex(rand(64,255), 2)]"))
+	after(src, 1 SECONDS, PROC_REF(grenade_blast))
 
 /obj/item/grenade/anti_photon/proc/grenade_blast()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	detonate(TRUE) // See above for this sinful choice
 	playsound(src, blast_sound, 50, 1, 5)
-	qdel(src)
+	spent(src)

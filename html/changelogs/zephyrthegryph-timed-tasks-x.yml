@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timed actions as ops: the emergency beacon, low walls (wrench, rods, glass), railing welding, barricade repair, flora uprooting, stump digging, reflectors (dismantle, weld), grille windows, snowball compacting, the drone circuit analysis, UAV cell insertion and the sniper rifle take-down and parts are ops with a wait."

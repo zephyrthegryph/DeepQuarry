@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/p90 icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/p90 state: p90smgnew-48
+/obj/item/gun/projectile/automatic/p90 dir: 2
+/obj/item/gun/projectile/automatic/p90 overlay: icons/obj/gun.dmi:p90smgnew-48:8:#000000
+

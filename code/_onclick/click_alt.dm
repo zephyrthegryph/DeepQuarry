@@ -10,12 +10,6 @@
 /mob/proc/base_click_alt(atom/target)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
-	// Check if they've hooked in to prevent src from alt clicking anything
-
-	// If it has a signal handler that returns a click action, done.
-	if(OM_EMIT(target, /datum/om/event/before/click_alt, src) & CLICK_ACTION_ANY)
-		return TRUE
-
 	// If it has a custom click_alt that returns success/block, done.
 	return target.click_alt(src) & CLICK_ACTION_ANY
 	/* //NYI Start
@@ -64,17 +58,6 @@
 
 /atom/proc/click_alt(mob/user)
 	SHOULD_CALL_PARENT(FALSE)
-	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_ALT, where the override ran.
-	var/list/outcome = list()
-	var/datum/interaction/answered = run_interaction_entry(user, src, user.get_active_hand(), INTERACTION_ENTRY_ALT, outcome)
-	if(answered)
-		if(!answered.consumes_input)
-			return NONE
-		return (INTERACTION_TRY_RAN in outcome) ? CLICK_ACTION_SUCCESS : CLICK_ACTION_BLOCKING
-
-	if(OM_EMIT(src, /datum/om/event/before/click_alt, user) & CLICK_ACTION_SUCCESS)
-		return TRUE
-
 	if(has_trait(src, TRAIT_ALT_CLICK_BLOCKER) && !isobserver(user))
 		return TRUE
 

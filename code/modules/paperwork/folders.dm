@@ -5,9 +5,6 @@
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
 	pressure_resistance = 2
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	/// Card stock: barely slows a fire (containment paths, C2).
 	insulation = 0.1
 
@@ -15,7 +12,7 @@
 // destroys its pages, as before. C2: the pages are inside the cover, and a
 // stab goes straight through it. ----
 
-/datum/om/relation/slot/folder_pages
+/datum/relation_definition/slot/folder_pages
 	holder = /obj/item/folder
 	slot_id = CONTAINER_SLOT_PAGES
 	name = "pages"
@@ -28,8 +25,10 @@
 	name = "folder pages"
 	spec = list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_PAPERWORK), "only paper, photos and bundles fit"))
 
-/obj/item/folder/on_slot_changed(slot_id, atom/movable/thing, inserted)
-	update_icon()
+/// A folder shows its papers once it holds any (the slot publishes its occupancy, so the look redraws by itself).
+/obj/item/folder/draw(datum/look/look)
+	..()
+	look.overlay("folder_paper", when = length(slot_contents(CONTAINER_SLOT_PAGES)) > 0)
 
 /obj/item/folder/blue
 	desc = "A blue folder."
@@ -68,8 +67,8 @@
 	//add some memos
 	var/obj/item/paper/P = new()
 	P.name = "Memo RE: proper analysis procedure"
-	P.info = "<br>We keep test dummies in pens here for a reason"
-	P.move_into(src)
+	P.set_info("<br>We keep test dummies in pens here for a reason")
+	move_into(src, null, P)
 
 /obj/item/folder/yellow_ce
 	desc = "A yellow folder with CE markings."
@@ -79,51 +78,67 @@
 	desc = "A red folder with HoS markings."
 	icon_state = "folder_hos"
 
-APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
-
-/// Old attackby.
-/obj/item/folder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: file a paperwork item. Anything else is handled, the click going on.
+/obj/item/folder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(HAS_TAG(W, TAG_PAPERWORK))
 		var/why = dq_ledger_refusal(W, src, CONTAINER_SLOT_PAGES, user)
 		if(why)
 			to_chat(user, span_warning("You can't put \the [W] into \the [src]: [why]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
-		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
+		if(move_into(src, CONTAINER_SLOT_PAGES, W, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
-	else if(istype(W, /obj/item/pen))
-		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to label the folder?", title = "Folder Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_k98))
-			return TRUE
-		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)
-		if(in_range(user, src) && user.stat == 0)
-			name = "folder[(n_name ? text("- '[n_name]'") : null)]"
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
+
+/// Old attackby with a pen: label the folder.
+/obj/item/folder/proc/folder_label(datum/act/op/A)
+	var/mob/user = A.actor
+	var/n_name = sanitizeSafe(A.step_value("k98"), MAX_NAME_LEN)
+	if(in_range(user, src) && user.stat == 0)
+		name = "folder[(n_name ? text("- '[n_name]'") : null)]"
+	return OP_PASS
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
-		if(P.move_into(src, CONTAINER_SLOT_PAGES, user))
+		if(move_into(src, CONTAINER_SLOT_PAGES, P, user))
 			to_chat(user, span_notice("You tuck the [P] into \the [src]."))
 
 // TGUI migration. attack_self opens Folder.tsx; the Topic
 // remove/rename/read/look/browse actions move to tgui_act. Reading a
 // paper/photo chains to that item's TGUI viewer (Paper.tsx / Photo.tsx).
-DECLARE_INTERACTIONS(/obj/item/folder, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/folder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/folder/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/item/folder, "Folder")
+CAPABILITIES(/obj/item/folder)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("folder_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("folder_label", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), label("Use"),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "k98"),
+		then(PROC_REF(folder_label)))
+	interface("Folder")
+	without("ui_open")
+	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
+	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
+	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
 
-UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_item_folder{items:list}")
+/obj/item/folder/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["folder_name"] = name
+	var/list/merged_1 = ui_data_obj_item_folder(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/folder's window data (declared on its UI_DATA row).
+/// /obj/item/folder's window data.
 /obj/item/folder/proc/ui_data_obj_item_folder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/items = list()
@@ -136,53 +151,58 @@ UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_it
 	data["items"] = items
 	return data
 
-/obj/item/folder/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
+/obj/item/folder/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.stat || user.restrained())
 		return FALSE
-	if(usr.stat || usr.restrained())
-		return FALSE
-	if(loc != usr)
+	if(loc != user)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/folder, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_remove)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_remove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
-	if(slot_remove(O, usr.loc, usr))
-		usr.put_in_hands(O)
+	if(slot_remove(O, user.loc, user))
+		user.put_in_hands(O)
 	return TRUE
 
-UI_ACT(/obj/item/folder, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_rename)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_rename(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/p = O
-		p.paper_verb_rename(usr)
+		p.paper_verb_rename(user)
 	else if(istype(O, /obj/item/photo))
 		var/obj/item/photo/ph = O
-		ph.photo_verb_rename(usr)
+		ph.photo_verb_rename(user)
 	else if(istype(O, /obj/item/paper_bundle))
 		var/obj/item/paper_bundle/pb = O
-		pb.paper_bundle_verb_rename(usr)
+		pb.paper_bundle_verb_rename(user)
 	return TRUE
 
-UI_ACT(/obj/item/folder, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/folder, ui_act_open)
-	var/obj/item/O = params["ref"]
+/obj/item/folder/proc/ui_act_open(datum/act/op/A, kind, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return FALSE
-	switch(params["kind"])
+	switch(kind)
 		if("paper")
 			var/obj/item/paper/p = O
-			p.show_content(usr)
+			p.show_content(user)
 		if("photo")
 			var/obj/item/photo/ph = O
-			ph.show(usr)
+			ph.show(user)
 		if("bundle")
 			var/obj/item/paper_bundle/pb = O
-			pb.attack_self(usr)
+			pb.attack_self(user)
 	return TRUE

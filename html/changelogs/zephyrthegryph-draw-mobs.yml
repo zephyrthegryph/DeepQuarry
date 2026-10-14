@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Simple mobs and robots draw their whole look over tracked state: pounce, eyes, belly fullness, hands, body effects, robot panels, sprites, lights and modules redraw by themselves"
+  - code_imp: "Belly fullness is a tracked value recomputed when a belly publishes that its contents or sprite settings changed"

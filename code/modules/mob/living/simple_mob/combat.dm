@@ -77,7 +77,7 @@
 // Generally used to do the regular attack.
 // Override for doing special stuff with the direct result of the attack.
 /mob/living/simple_mob/proc/apply_attack(atom/A, damage_to_do, stance = I_HURT)
-	return A.attack_generic(src, damage_to_do, pick(attacktext))
+	return generic_hit(A, src, damage_to_do, pick(attacktext))
 
 // Override for special effects after a successful attack, like injecting poison or stunning the target.
 /mob/living/simple_mob/proc/apply_melee_effects(atom/A, stance = I_HURT)
@@ -160,10 +160,19 @@
 		reload_count++
 
 
-/mob/living/simple_mob/proc/try_reload()
-	om_task_timed(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
+/// TRUE while the mob is at some timed work of its own (an op waiting on it): its AI stays still and it takes no second job.
+/mob/living/simple_mob/proc/is_working()
+	return length(op_pendings_of(src)) > 0
 
-/mob/living/simple_mob/proc/reload_done()
+/mob/living/simple_mob/proc/try_reload()
+	if(is_working())
+		return
+	perform_op(src, src, "reload", null, ORIGIN_AI, AUTH_AI)
+
+/mob/living/simple_mob/proc/reload_wait(datum/act/op/A)
+	return reload_time
+
+/mob/living/simple_mob/proc/reload_done(datum/act/op/A)
 	if(reload_sound)
 		playsound(src, reload_sound, 70, 1)
 	reload_count = 0
@@ -240,7 +249,7 @@
 /// (after a half-second deploy), then retracts with `retract_message` and calls
 /// `then_proc(target)` if given.
 /mob/living/simple_mob/proc/rocket_volley(atom/target, rocket_type, count, retract_message, then_proc)
-	om_after(src, 0.5 SECONDS, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, 1)
+	after(src, 0.5 SECONDS, PROC_REF(rocket_volley_step), with = list(target, rocket_type, count, retract_message, then_proc, 1))
 
 /mob/living/simple_mob/proc/rocket_volley_step(atom/target, rocket_type, count, retract_message, then_proc, i)
 	var/turf/T = get_turf(target)
@@ -252,9 +261,9 @@
 		rocket.old_style_target(T, src)
 		rocket.fire()
 	if(i < count)
-		om_after(src, 1 SECOND, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, i + 1)
+		after(src, 1 SECOND, PROC_REF(rocket_volley_step), with = list(target, rocket_type, count, retract_message, then_proc, i + 1))
 		return
-	om_after(src, 1 SECOND, PROC_REF(rocket_volley_end), target, retract_message, then_proc)
+	after(src, 1 SECOND, PROC_REF(rocket_volley_end), with = list(target, retract_message, then_proc), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/rocket_volley_end(atom/target, retract_message, then_proc)
 	visible_message(span_warning(retract_message))
@@ -277,7 +286,7 @@
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
-	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A) + args.Copy(4)))
+	if(!after(src, true_attack_delay, PROC_REF(attack_delay_done), with = list(then_proc, list(A) + args.Copy(4)), keeps_dead = TRUE))
 		ai_busy_end()
 
 /mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)

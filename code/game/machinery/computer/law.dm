@@ -1,3 +1,6 @@
+MSG_DEF_SELF(upload/item_required, "needs an item")
+MSG_DEF_SELF(upload/module_required, "needs a AI module")
+
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/computer/aiupload
@@ -10,23 +13,15 @@
 	var/opened = 0
 
 
-/obj/machinery/computer/aiupload/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/aiupload_access_internals,
-		/datum/interaction/machine_item/aiupload_install,
-		/datum/interaction/machine_hand/ungated/aiupload_select_ai,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
-	..()
-
-/// The old "Access Computer's Internals" object verb.
-/datum/interaction/machine_verb/aiupload_access_internals
-	id = "aiupload_access_internals"
-	name = "Access Computer's Internals"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/computer/aiupload/proc/interaction_access_internals
-
-/obj/machinery/computer/aiupload/proc/interaction_access_internals(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/machinery/computer/aiupload)
+	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_access_internals)))
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect))), then(PROC_REF(interaction_install)))
+	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai))),
+		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
+	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	ref_one(nameof(current), /mob/living/silicon/ai)
+/obj/machinery/computer/aiupload/proc/interaction_access_internals(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_dist(src, user) > 1 || user.restrained() || user.lying || user.stat || istype(user, /mob/living/silicon))
 		return TRUE
 
@@ -37,53 +32,39 @@
 		to_chat(user, span_notice("The access panel is now closed."))
 	return TRUE
 
-/// The old attackby: installs an AI module, else falls through to the base behaviour.
-/datum/interaction/machine_item/aiupload_install
-	id = "aiupload_install"
-	name = "Install module"
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_connect))
-	effect = /obj/machinery/computer/aiupload/proc/interaction_install
-
 /// Requirement: the console only reaches the station's contact levels.
-/obj/machinery/computer/aiupload/proc/can_connect(mob/user, atom/target, obj/item/held)
-	if(using_map && !(user.z in using_map.contact_levels))
+/obj/machinery/computer/aiupload/proc/can_connect(datum/act/op/A)
+	var/mob/user = A.actor
+	if(using_map && !(read_once(user.z) in using_map.contact_levels))
 		return "unable to establish a connection, you're too far away from the station"
-	return TRUE
+	return null
 
-/// Requirement: TRUE, or why no AI can be selected.
-/obj/machinery/computer/aiupload/proc/can_select_ai(mob/user, atom/target, obj/item/held)
-	if(has_stat(NOPOWER))
+/// Requirement: null, or why no AI can be selected.
+/obj/machinery/computer/aiupload/proc/can_select_ai(datum/act/op/A)
+	if(power_lost())
 		return "the upload computer has no power"
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "the upload computer is broken"
-	if(!length(active_ais()))
-		return "no active AIs detected"
-	return TRUE
+	return null
 
-/obj/machinery/computer/aiupload/proc/interaction_install(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/computer/aiupload/proc/interaction_install(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/aiModule))
 		var/obj/item/aiModule/M = O
 		M.install(src, user)
 		return TRUE
 	return FALSE
 
-/// The old attack_hand: never called ..(), selected an active AI for law changes.
-/datum/interaction/machine_hand/ungated/aiupload_select_ai
-	id = "aiupload_select_ai"
-	name = "Select AI"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/aiupload/proc/can_select_ai))
-	effect = /obj/machinery/computer/aiupload/proc/interaction_select_ai
-
-/obj/machinery/computer/aiupload/proc/interaction_select_ai(mob/user, obj/item/held, datum/interaction/interaction)
-	// Also the selection prompt's callback: re-check quietly (can_select_ai() told the user up front).
-	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(active_ais()))
-		return TRUE
-	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
+/obj/machinery/computer/aiupload/proc/interaction_select_ai(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/ai/picked = A.step_value("selection")
+	if(!(picked in active_ais()))
+		return OP_OK
 	if(picked)
 		rel_set(src, nameof(current), picked)
 		to_chat(user, "[src.current().name] selected for law changes.")
-	return TRUE
+	return OP_OK
 
 /obj/machinery/computer/borgupload
 	name = "cyborg upload console"
@@ -94,52 +75,33 @@
 	var/mob/living/silicon/robot/current
 
 
-/obj/machinery/computer/borgupload/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/borgupload_install,
-		/datum/interaction/machine_hand/ungated/borgupload_select_borg,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_swallow)))
-	..()
-
-/// The old attackby: installs an AI module, else falls through to the base behaviour.
-/datum/interaction/machine_item/borgupload_install
-	id = "borgupload_install"
-	name = "Install module"
-	held_type = /obj/item/aiModule
-	effect = /obj/machinery/computer/borgupload/proc/interaction_install
-
-/obj/machinery/computer/borgupload/proc/interaction_install(mob/user, obj/item/aiModule/module, datum/interaction/interaction)
+CAPABILITIES(/obj/machinery/computer/borgupload)
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item/aiModule, because = MSG(upload/module_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_install)))
+	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg))),
+		asks(/datum/prompt/choice/borg_upload_selection, fields = list("title" = "Borg selection", "question" = "Unshackled borg signals detected:"), step = "selection"), then(PROC_REF(interaction_select_borg)))
+	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	ref_one(nameof(current), /mob/living/silicon/robot)
+/obj/machinery/computer/borgupload/proc/interaction_install(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/aiModule/module = A.held
 	module.install(src, user)
 	return TRUE
 
-/// The old attack_hand: never called ..(), selected a free cyborg for law changes.
-/datum/interaction/machine_hand/ungated/borgupload_select_borg
-	id = "borgupload_select_borg"
-	name = "Select cyborg"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/borgupload/proc/can_select_borg))
-	effect = /obj/machinery/computer/borgupload/proc/interaction_select_borg
-
-/// Requirement: TRUE, or why no cyborg can be selected.
-/obj/machinery/computer/borgupload/proc/can_select_borg(mob/user, atom/target, obj/item/held)
-	if(has_stat(NOPOWER))
+/// Requirement: null, or why no cyborg can be selected.
+/obj/machinery/computer/borgupload/proc/can_select_borg(datum/act/op/A)
+	if(power_lost())
 		return "the upload computer has no power"
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "the upload computer is broken"
-	if(!length(free_borg_choices()))
-		return "no free cyborgs detected"
-	return TRUE
+	return null
 
-/obj/machinery/computer/borgupload/proc/interaction_select_borg(mob/user, obj/item/held, datum/interaction/interaction)
-	// Also the selection prompt's callback: re-check quietly (can_select_borg() told the user up front).
-	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(free_borg_choices()))
-		return TRUE
-	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
+/obj/machinery/computer/borgupload/proc/interaction_select_borg(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/robot/picked = free_borg_choices()[A.step_value("selection")]
 	if(picked)
 		rel_set(src, nameof(current), picked)
 		to_chat(user, "[src.current().name] selected for law changes.")
-	return TRUE
-
+	return OP_OK
 
 /// current (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aiupload/proc/current() as /mob/living/silicon/ai
@@ -148,3 +110,29 @@
 /// current (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
 	return current
+
+
+/// Current registry candidates are request fields, not a cached world output.
+/datum/prompt/choice/ai_upload_selection
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/ai_upload_selection/prepare(datum/act/A)
+	..()
+	choices = active_ais()
+
+/datum/prompt/choice/ai_upload_selection/recheck_extra()
+	if(!length(active_ais()))
+		return "no active AIs detected"
+	return null
+
+/datum/prompt/choice/borg_upload_selection
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/borg_upload_selection/prepare(datum/act/A)
+	..()
+	choices = free_borg_choices()
+
+/datum/prompt/choice/borg_upload_selection/recheck_extra()
+	if(!length(free_borg_choices()))
+		return "no free cyborgs detected"
+	return null

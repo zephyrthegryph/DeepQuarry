@@ -52,6 +52,20 @@
 	/// Set once the mission's on_complete() has fired, so it only pays out once.
 	var/rewarded = FALSE
 
+CAPABILITIES(/datum/expedition_site)
+	links(/datum/expedition_site::origin_console, /obj/machinery/computer/shuttle_control/explore::active_expedition)
+	owns_one(nameof(overmap_sector), /obj/effect/overmap/visitable/sector/expedition)
+	owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition)
+	owns_one(nameof(mission), /datum/expedition_mission)
+	owns_one(nameof(station_defense), /datum/generated_station_defense_runtime)
+	owns_one(nameof(station_director), /datum/generated_station_director)
+	owns_one(nameof(station_materialization), /datum/generated_station_materialization)
+	owns_one(nameof(station_simulation), /datum/generated_station_simulation)
+	owns_one(nameof(station_spec), /datum/generated_station_spec)
+	owns_one(nameof(station_utilities), /datum/generated_station_utility_topology)
+	owns_many(nameof(station_controls))
+	ref_many(nameof(participants), /mob/living)
+
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
 	difficulty = _difficulty
@@ -83,7 +97,7 @@
 	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition() == src
 
 /datum/expedition_site/proc/has_travel_lease()
-	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[flight_destination_id]
+	var/datum/flight_destination/destination = SSflight?.destinations[flight_destination_id]
 	return LAZYLEN(destination?.active_plans)
 
 /// The landing (a relation view: null once it is gone).
@@ -110,8 +124,3 @@
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
 	return assigned_shuttle
 
-/datum/expedition_site/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["floors"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

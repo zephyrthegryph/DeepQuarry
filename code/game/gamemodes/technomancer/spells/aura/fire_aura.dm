@@ -17,9 +17,9 @@
 	aspect = ASPECT_FIRE
 	glow_color = "#FF6A00"
 
-/obj/item/spell/aura/fire/periodic_step()
+/obj/item/spell/aura/fire/aura_step(datum/act/timer/A)
 	if(!pay_energy(100))
-		qdel(src)
+		spent(src)
 		return
 	var/list/nearby_things = range(round(calculate_spell_power(4)),owner_ref())
 

@@ -19,15 +19,15 @@
 			log_admin("[key_name(M)] exited build mode.")
 			M.client.buildmode = 0
 			M.client.show_popup_menus = 1
-			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, FALSE)
 			for(var/obj/effect/bmode/buildholder/H in REGISTRY_MEMBERS(REGISTRY_BUILDMODE_HOLDERS))
 				if(H.cl() == M.client)
-					qdel(H)
+					spent(H, M)
 		else
 			log_admin("[key_name(M)] entered build mode.")
 			M.client.buildmode = 1
 			M.client.show_popup_menus = 0
-			M.plane_holder.set_vis(VIS_BUILDMODE, TRUE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, TRUE)
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)
@@ -39,10 +39,10 @@
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
 			rel_set(D, nameof(D.master), H)
 
-			own_set(H, nameof(H.builddir), A)
-			own_set(H, nameof(H.buildhelp), B)
-			own_set(H, nameof(H.buildmode), C)
-			own_set(H, nameof(H.buildquit), D)
+			rel_set(H, nameof(H.builddir), A)
+			rel_set(H, nameof(H.buildhelp), B)
+			rel_set(H, nameof(H.buildmode), C)
+			rel_set(H, nameof(H.buildquit), D)
 			M.client.screen += A
 			M.client.screen += B
 			M.client.screen += C
@@ -84,11 +84,18 @@
 	icon_state = "buildhelp"
 	screen_loc = "NORTH,WEST+1"
 
-/obj/effect/bmode/buildhelp/Click()
+CAPABILITIES(/obj/effect/bmode/buildhelp)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/bmode/buildhelp/proc/click_input(datum/act/input/A)
+	return show_help_with_actor(A.actor)
+
+/obj/effect/bmode/buildhelp/proc/show_help_with_actor(mob/user)
 	switch(master().cl().buildmode)
 
 		if(BUILDMODE_BASIC)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button        = Construct / Upgrade<br>\
 							Right Mouse Button       = Deconstruct / Delete / Downgrade<br>\
 							Left Mouse Button + ctrl = R-Window<br>\
@@ -98,7 +105,7 @@
 							***********************************************************"))
 
 		if(BUILDMODE_ADVANCED)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Set object type<br>\
 							Middle Mouse Button on buildmode button= On/Off object type saying<br>\
 							Middle Mouse Button on turf/obj        = Capture object type<br>\
@@ -112,46 +119,46 @@
 							***********************************************************"))
 
 		if(BUILDMODE_EDIT)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Select var(type) & value<br>\
 							Left Mouse Button on turf/obj/mob      = Set var(type) & value<br>\
 							Right Mouse Button on turf/obj/mob     = Reset var's value<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_THROW)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Select<br>\
 							Right Mouse Button on turf/obj/mob     = Throw<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_ROOM)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf              = Select as point A<br>\
 							Right Mouse Button on turf             = Select as point B<br>\
 							Right Mouse Button on buildmode button = Change floor/wall type/area name<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_LADDER)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf              = Set as upper ladder loc<br>\
 							Right Mouse Button on turf             = Set as lower ladder loc<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_CONTENTS)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Select<br>\
 							Right Mouse Button on turf/obj/mob     = Move into selection<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_LIGHTS)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Make it glow<br>\
 							Right Mouse Button on turf/obj/mob     = Reset glowing<br>\
 							Right Mouse Button on buildmode button = Change glow properties<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_AI)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button drag box             = Select only mobs in box<br>\
 							Left Mouse Button drag box + shift     = Select additional mobs in area<br>\
 							Left Mouse Button on non-mob           = Deselect all mobs<br>\
@@ -173,7 +180,7 @@
 							***********************************************************"))
 
 		if(BUILDMODE_DROP)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Set object type<br>\
 							Middle Mouse Button on buildmode button= On/Off object type saying<br>\
 							Middle Mouse Button on turf/obj        = Capture object type<br>\
@@ -206,6 +213,13 @@
 	var/copied_faction = null
 	var/warned = 0
 
+CAPABILITIES(/obj/effect/bmode/buildholder)
+	ref_many(nameof(selected_mobs), /mob/living)
+	owns_one(nameof(builddir), /obj/effect/bmode/builddir)
+	owns_one(nameof(buildhelp), /obj/effect/bmode/buildhelp)
+	owns_one(nameof(buildmode), /obj/effect/bmode/buildmode)
+	owns_one(nameof(buildquit), /obj/effect/bmode/buildquit)
+
 REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 
@@ -213,35 +227,52 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/on_destroy(force)
 	for(var/mob/living/unit in selected_mobs?.Copy())
 		deselect_AI_mob(cl(), unit)
-	rel_clear(src, nameof(selected_mobs))
 	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.
 /obj/effect/bmode/buildholder/proc/ask_base_turf(mob/user, turf/T)
-	om_ask(user, /datum/om/prompt/confirm/buildmode_base_turf, PROC_REF(base_turf_acknowledged), target_turf = T)
+	open_request(src, /datum/prompt/choice/buildmode_base_turf, PROC_REF(base_turf_acknowledged), answerer = user, subject = T)
 
-/datum/om/prompt/confirm/buildmode_base_turf
+/datum/prompt/choice/buildmode_base_turf
 	title = "GRIEF ALERT"
-	message = "Are you -sure- you want to delete this turf and make it the base turf for this Z level?"
-	no_first = TRUE
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/turf/target_turf
+	question = "Are you -sure- you want to delete this turf and make it the base turf for this Z level?"
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
 
-/obj/effect/bmode/buildholder/proc/base_turf_acknowledged(datum/om/prompt/confirm/buildmode_base_turf/ask)
-	var/mob/user = ask.answerer
-	var/turf/T = ask.target_turf
+/datum/prompt/choice/buildmode_base_turf/recheck_extra()
+	var/obj/effect/bmode/buildholder/holder = owner
+	var/mob/user = answerer
+	var/turf/target = subject
+	if(!istype(holder) || QDELETED(holder) || !istype(user) || QDELETED(user) || !istype(target) || QDELETED(target))
+		return "gone"
+	return null
+
+/obj/effect/bmode/buildholder/proc/base_turf_acknowledged(datum/act/request/context)
+	if(!context.answer || context.answer.value != "Yes")
+		return
+	var/mob/user = context.answer.answerer
+	var/turf/T = context.answer.subject
 	warned = 1
 	log_admin("[key_name(user)] has acknowledged the deletion of [T] and turned it into base turf. This could have resulted in spacing.")
 	T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
 	T.flags |= ADMIN_SPAWNED
 
+/// The selection marker a mob shows the admins who picked it in buildmode, made the first time one does.
+sparse(/mob/living, buildmode_selected_image, type = /image)
+
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
 	rel_add(src, nameof(selected_mobs), unit)
-	C.images += unit.selected_image
+	var/image/selected = sparse_get(unit, buildmode_selected_image)
+	if(!selected)
+		selected = sparse_set(unit, buildmode_selected_image, image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel"))
+	C.images += selected
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
 	rel_remove(src, nameof(selected_mobs), unit)
-	C.images -= unit.selected_image
+	C.images -= sparse_get(unit, buildmode_selected_image)
 
 /obj/effect/bmode/buildmode
 	icon_state = "buildmode1"
@@ -262,7 +293,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	var/new_light_range = 3
 	var/new_light_intensity = 3
 
-/obj/effect/bmode/buildmode/Click(location, control, params)
+CAPABILITIES(/obj/effect/bmode/buildmode)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/effect/bmode/buildmode/proc/click_input(datum/act/input/A)
+	return configure_with_actor(A.actor, A.params)
+
+/obj/effect/bmode/buildmode/proc/configure_with_actor(mob/user, params)
 	var/list/pa = params2list(params)
 
 	if(pa.Find("middle"))
@@ -275,7 +313,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			master().cl().buildmode = 1
 		else
 			master().cl().buildmode++
-		src.icon_state = "buildmode[master().cl().buildmode]"
+		set_icon_state("buildmode[master().cl().buildmode]")
 
 	else if(pa.Find("right"))
 		switch(master().cl().buildmode)
@@ -283,21 +321,23 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 				return 1
 			if(BUILDMODE_ADVANCED)
-				ask_path(usr, "objholder")
+				ask_path(user, "objholder")
 
 			if(BUILDMODE_EDIT)
-				om_ask(usr, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
+				open_request(src, /datum/prompt/text/buildmode_edit, PROC_REF(ask_edit_type), answerer = user, title = "Name", question = "Enter variable name:", default = "name")
 
 			if(BUILDMODE_ROOM)
-				om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
+				open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(ask_area_name), answerer = user, title = "Room Builder", question = "Would you like to generate a new area as well?", choices = list("No", "Yes"), buttons = TRUE)
 
 			if(BUILDMODE_LIGHTS)
-				om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
+				open_request(src, /datum/prompt/choice/buildmode_light, PROC_REF(ask_light_value), answerer = user, title = "Light Maker", question = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 			if(BUILDMODE_DROP)
-				ask_path(usr, "objholder")
+				ask_path(user, "objholder")
 	return 1
 
 /proc/build_click(mob/user, buildmode, params, obj/object)
+	if(!user?.client)
+		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
 		if(H.cl() == user.client)
@@ -344,8 +384,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					T.flags |= ADMIN_SPAWNED
 					return
 				else if(istype(object,/obj))
-					log_admin("[key_name(usr)] qdel'd [object].")
-					qdel(object)
+					log_admin("[key_name(user)] qdel'd [object].")
+					spent(object, user)
 					return
 			else if(istype(object,/turf) && pa.Find("alt") && pa.Find("left"))
 				var/obj/new_door = new /obj/machinery/door/airlock(get_turf(object))
@@ -382,15 +422,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					var/obj/A = new holder.buildmode.objholder (get_turf(object))
 					A.set_dir(holder.builddir.dir)
 					A.flags |= ADMIN_SPAWNED
-					//log_admin("BUILDMODE: [key_name(usr)] spawned [A] at x:[object.x] y:[object.y] z:[object.z].") //Too spammy. We'll just log when they select the item initially.
+					//log_admin("BUILDMODE: [key_name(user)] spawned [A] at x:[object.x] y:[object.y] z:[object.z].") //Too spammy. We'll just log when they select the item initially.
 			else if(pa.Find("right") && !pa.Find("alt"))
 				if(isobj(object))
-					log_admin("BUILDMODE: [key_name(usr)] qdel'd [object].")
-					qdel(object)
+					log_admin("BUILDMODE: [key_name(user)] qdel'd [object].")
+					spent(object, user)
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type
 				to_chat(user, span_notice("[object]([object.type]) copied to buildmode."))
-				log_admin("BUILDMODE: [key_name(usr)] has copied [object.type] to buildmode.")
+				log_admin("BUILDMODE: [key_name(user)] has copied [object.type] to buildmode.")
 			else if(pa.Find("left") && pa.Find("alt"))
 				user.client.debug_variables(object)
 			else if(pa.Find("right") && pa.Find("alt"))
@@ -398,20 +438,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("middle"))
 				holder.buildmode.objholder = text2path("[object.type]")
 				if(holder.buildmode.objsay)
-					to_chat(usr, "[object.type]")
-					log_admin("BUILDMODE: [key_name(usr)] selected [object.type].")
+					to_chat(user, "[object.type]")
+					log_admin("BUILDMODE: [key_name(user)] selected [object.type].")
 
 		if(BUILDMODE_EDIT)
 			if(pa.Find("left")) //I cant believe this shit actually compiles.
 				if(object.vars.Find(holder.buildmode.varholder))
-					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to [holder.buildmode.valueholder]")
+					log_admin("[key_name(user)] modified [object.name]'s [holder.buildmode.varholder] to [holder.buildmode.valueholder]")
 					object.vars[holder.buildmode.varholder] = holder.buildmode.valueholder // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
 					to_chat(user, span_danger("[initial(object.name)] does not have a var called '[holder.buildmode.varholder]'"))
 			if(pa.Find("right"))
 				if(object.vars.Find(holder.buildmode.varholder))
-					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to initial state.")
+					log_admin("[key_name(user)] modified [object.name]'s [holder.buildmode.varholder] to initial state.")
 					object.vars[holder.buildmode.varholder] = initial(object.vars[holder.buildmode.varholder]) // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
@@ -421,7 +461,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("left"))
 				if(istype(object, /atom/movable))
 					rel_set(holder, nameof(holder.throw_atom), object)
-					log_admin("[key_name(usr)] selected [object] to throw.")
+					log_admin("[key_name(user)] selected [object] to throw.")
 			if(pa.Find("right"))
 				if(holder.throw_atom())
 					holder.throw_atom().throw_at(object, 10, 1) //No logging here since this gets spammed.
@@ -449,7 +489,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					holder.buildmode.floor_holder,
 					holder.buildmode.area_enabled,
 					holder.buildmode.area_name)
-				log_admin("BUILDMODE: [key_name(usr)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
+				log_admin("BUILDMODE: [key_name(user)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
@@ -469,9 +509,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				rel_set(A, nameof(A.target_up), B) // pair: sets B.target_down
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
-				A.update_icon()
-				B.update_icon()
-				log_admin("BUILDMODE: [key_name(usr)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
+				log_admin("BUILDMODE: [key_name(user)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
@@ -482,17 +520,17 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("right"))
 				if(holder.throw_atom() && istype(object, /atom/movable))
 					object.forceMove(holder.throw_atom())
-					log_admin("[key_name(usr)] moved [object] into [holder.throw_atom()].")
+					log_admin("[key_name(user)] moved [object] into [holder.throw_atom()].")
 
 		if(BUILDMODE_LIGHTS)
 			if(pa.Find("left"))
 				if(object)
-					object.set_light(holder.buildmode.new_light_range, holder.buildmode.new_light_intensity, holder.buildmode.new_light_color)
-					log_admin("[key_name(usr)] adjusted [object]'s L I C to [holder.buildmode.new_light_range], [holder.buildmode.new_light_intensity], [holder.buildmode.new_light_color].")
+					set_glow(object, GLOW(holder.buildmode.new_light_range, holder.buildmode.new_light_intensity, holder.buildmode.new_light_color))
+					log_admin("[key_name(user)] adjusted [object]'s L I C to [holder.buildmode.new_light_range], [holder.buildmode.new_light_intensity], [holder.buildmode.new_light_color].")
 			if(pa.Find("right"))
 				if(object)
-					object.set_light(0, 0, "#FFFFFF")
-					log_admin("[key_name(usr)] adjusted [object]'s light to default.")
+					set_glow(object, GLOW(0, 0, "#FFFFFF"))
+					log_admin("[key_name(user)] adjusted [object]'s light to default.")
 
 		if(BUILDMODE_AI)
 			if(pa.Find("left"))
@@ -508,12 +546,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 								AI.go_wake()
 								L.datum_flags |= DF_VAR_EDITED //we'll consider messing with AI as varediting it.
 								to_chat(user, span_notice("\The [L]'s AI has been enabled."))
-								log_admin("[key_name(usr)] activated [L]'s AI.")
+								log_admin("[key_name(user)] activated [L]'s AI.")
 							else
 								AI.go_sleep()
 								L.datum_flags |= DF_VAR_EDITED
 								to_chat(user, span_notice("\The [L]'s AI has been disabled."))
-								log_admin("[key_name(usr)] deactivated [L]'s AI.")
+								log_admin("[key_name(user)] deactivated [L]'s AI.")
 							return
 						else
 							to_chat(user, span_warning("\The [L] is not AI controlled."))
@@ -526,7 +564,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.set_hostile(!AI.get_hostile())
 							L.datum_flags |= DF_VAR_EDITED
 							to_chat(user, span_notice("\The [L] is now [AI.get_hostile() ? "hostile" : "passive"]."))
-							log_admin("[key_name(usr)] made [L]'s AI hostile.")
+							log_admin("[key_name(user)] made [L]'s AI hostile.")
 						else
 							to_chat(user, span_warning("\The [L] is not AI controlled."))
 						return
@@ -556,7 +594,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("middle"))
 				if(pa.Find("shift"))
 					to_chat(user, span_notice("All selected mobs set to wander"))
-					log_admin("[key_name(usr)] told selected mobs to wander.")
+					log_admin("[key_name(user)] told selected mobs to wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
 						var/datum/ai_brain/AI = unit.ai_brain
 						if(AI)
@@ -564,7 +602,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("ctrl"))
 					to_chat(user, span_notice("Setting mobs set to NOT wander"))
-					log_admin("[key_name(usr)] told selected mobs to not wander.")
+					log_admin("[key_name(user)] told selected mobs to not wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
 						var/datum/ai_brain/AI = unit.ai_brain
 						if(AI)
@@ -572,7 +610,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("alt") && isatom(object))
 					to_chat(user, span_notice("Adding [object] to Entity Narrate List!"))
-					log_admin("[key_name(usr)] added [object] to the entity narration list.")
+					log_admin("[key_name(user)] added [object] to the entity narration list.")
 					SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/add_mob_for_narration, object)
 
 			if(pa.Find("right"))
@@ -583,7 +621,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						return
 					else
 						var/mob/living/L = object
-						log_admin("[key_name(usr)] changed [L]'s faction from [L.faction] to [holder.copied_faction].")
+						log_admin("[key_name(user)] changed [L]'s faction from [L.faction] to [holder.copied_faction].")
 						L.faction = holder.copied_faction
 						L.datum_flags |= DF_VAR_EDITED
 						to_chat(user, span_notice("Pasted faction '[holder.copied_faction]'."))
@@ -599,7 +637,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.give_target(A)
 							i++
 						to_chat(user, span_notice("Commanded [i] mob\s to attack \the [A]."))
-						log_admin("[key_name(usr)] told selected mobs to attack [A].")
+						log_admin("[key_name(user)] told selected mobs to attack [A].")
 						var/image/orderimage = image(GLOB.buildmode_hud,A,"ai_targetorder")
 						orderimage.plane = PLANE_BUILDMODE
 						flick_overlay(orderimage, list(user.client), 8, TRUE)
@@ -626,7 +664,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							message += "."
 					if(j)
 						message += "[j] mob\s to follow \the [L]."
-					log_admin("[key_name(usr)] told selected mobs to attack/follow [L].")
+					log_admin("[key_name(user)] told selected mobs to attack/follow [L].")
 					to_chat(user, span_notice(message))
 					var/image/orderimage = image(GLOB.buildmode_hud,L,"ai_targetorder")
 					orderimage.plane = PLANE_BUILDMODE
@@ -651,7 +689,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.give_destination(T)
 							told++
 					to_chat(user, span_notice("Commanded [told] mob\s to move to \the [T], and manually placed [forced] of them."))
-					log_admin("[key_name(usr)] told selected mobs to move to [T].")
+					log_admin("[key_name(user)] told selected mobs to move to [T].")
 					var/image/orderimage = image(GLOB.buildmode_hud,T,"ai_turforder")
 					orderimage.plane = PLANE_BUILDMODE
 					flick_overlay(orderimage, list(user.client), 8, TRUE)
@@ -664,22 +702,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("left") && !pa.Find("ctrl"))
 				if(ispath(holder.buildmode.objholder))
 					drop_from_sky(get_turf(object), holder.buildmode.objholder, FALSE, TRUE)
-					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] nonlethally.")
+					log_admin("[key_name(user)] dropped [holder.buildmode.objholder] onto [object] nonlethally.")
 			else if(pa.Find("right"))
 				if(ispath(holder.buildmode.objholder))
 					drop_from_sky(get_turf(object), holder.buildmode.objholder, TRUE, TRUE)
-					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] lethally.")
+					log_admin("[key_name(user)] dropped [holder.buildmode.objholder] onto [object] lethally.")
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type
 				to_chat(user, span_notice("[object]([object.type]) copied to buildmode."))
-				log_admin("[key_name(usr)] copied [object] ([object.type]) to buildmode.")
+				log_admin("[key_name(user)] copied [object] ([object.type]) to buildmode.")
 			if(pa.Find("middle"))
 				holder.buildmode.objholder = text2path("[object.type]")
-				log_admin("[key_name(usr)] selected [holder.buildmode.objholder].")
+				log_admin("[key_name(user)] selected [holder.buildmode.objholder].")
 				if(holder.buildmode.objsay)
-					to_chat(usr, "[object.type]")
+					to_chat(user, "[object.type]")
 
 /proc/build_drag(client/user, buildmode, atom/fromatom, atom/toatom, atom/fromloc, atom/toloc, fromcontrol, tocontrol, params)
+	if(!user)
+		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
 		if(H.cl() == user)
@@ -716,97 +756,115 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					i++
 
 			to_chat(user, span_notice("Band-selected [i] mobs."))
-			log_admin("[key_name(usr)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
+			log_admin("[key_name(user)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
 			return
 
-/// Buildmode's questions (title, message and choices set at each call); `step` carries the
-/// answer before (the var name being edited, the light setting being changed, the var a path goes to).
-/datum/om/prompt/text/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/datum/om/prompt/number/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/datum/om/prompt/choice/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/datum/om/prompt/color/buildmode
-	requires = PROMPT_ADMIN(R_BUILDMODE)
-	var/step
-
-/obj/effect/bmode/buildmode/proc/ask_edit_type(datum/om/prompt/text/buildmode/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/buildmode, PROC_REF(ask_edit_value), title = "Type", message = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = ask.text)
-
-/obj/effect/bmode/buildmode/proc/ask_edit_value(datum/om/prompt/choice/buildmode/ask)
-	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
-	var/mob/user = ask.answerer
-	if((ask.step in locked) && !check_rights_for(user.client, R_DEBUG))
+/obj/effect/bmode/buildmode/proc/ask_edit_type(datum/act/request/context)
+	if(!context.answer)
 		return
-	switch(ask.choice)
+	open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(ask_edit_value), answerer = context.answer.answerer, title = "Type", question = "Select variable type:", choices = list("text","number","mob-reference","obj-reference","turf-reference"), step = context.answer.value)
+
+/obj/effect/bmode/buildmode/proc/ask_edit_value(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_edit/ask = context.answer
+	var/mob/user = ask.answerer
+	switch(ask.value)
 		if("text")
-			om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(edit_text_entered), title = "Value", message = "Enter variable value:", default = "value", step = ask.step)
+			open_request(src, /datum/prompt/text/buildmode_edit, PROC_REF(edit_text_entered), answerer = user, title = "Value", question = "Enter variable value:", default = "value", step = ask.step)
 		if("number")
-			om_ask(user, /datum/om/prompt/number/buildmode, PROC_REF(edit_number_entered), title = "Value", message = "Enter variable value:", default = 123, step = ask.step)
+			open_request(src, /datum/prompt/number/buildmode_edit, PROC_REF(edit_number_entered), answerer = user, title = "Value", question = "Enter variable value:", default = 123, edit_var = ask.step)
 		if("mob-reference")
-			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), step = ask.step)
+			var/list/mob_choices = REGISTRY_MEMBERS(REGISTRY_MOBS)
+			open_request(src, /datum/prompt/choice/buildmode_mob_reference, PROC_REF(edit_mob_ref_picked), answerer = user, choices = mob_choices?.Copy(), step = ask.step)
 		if("obj-reference", "turf-reference")
-			om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(edit_ref_picked), title = "Value", message = "Enter variable value:", choices = world, step = ask.step)
+			open_request(src, /datum/prompt/choice/buildmode_edit, PROC_REF(edit_ref_picked), answerer = user, title = "Value", question = "Enter variable value:", choices = world, step = ask.step)
 
-/obj/effect/bmode/buildmode/proc/edit_text_entered(datum/om/prompt/text/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.text)
+/obj/effect/bmode/buildmode/proc/edit_text_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.value)
 
-/obj/effect/bmode/buildmode/proc/edit_number_entered(datum/om/prompt/number/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.number)
+/obj/effect/bmode/buildmode/proc/edit_number_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.edit_var, ask.value)
 
-/obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/om/prompt/choice/buildmode/ask)
-	edit_answered(ask.answerer, ask.step, ask.choice)
+/obj/effect/bmode/buildmode/proc/edit_mob_ref_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_mob_reference/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.value)
+
+/obj/effect/bmode/buildmode/proc/edit_ref_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_edit/ask = context.answer
+	edit_answered(ask.answerer, ask.step, ask.value)
 
 /obj/effect/bmode/buildmode/proc/edit_answered(mob/user, var_name, value)
 	master().buildmode.varholder = var_name
 	master().buildmode.valueholder = value
 	log_admin("BUILDMODE: [key_name(user)] set var-edit: [valueholder].")
 
-/obj/effect/bmode/buildmode/proc/ask_area_name(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		om_ask(ask.answerer, /datum/om/prompt/text/buildmode, PROC_REF(area_name_entered), title = "Room Buildmode", message = "New area name", max_length = MAX_NAME_LEN)
+/obj/effect/bmode/buildmode/proc/ask_area_name(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
+	if(ask.value == "Yes")
+		open_request(src, /datum/prompt/text/buildmode_room_name, PROC_REF(area_name_entered), answerer = ask.answerer, title = "Room Buildmode", question = "New area name")
 		return
 	area_enabled = 0
 	ask_room_holder(ask.answerer)
 
-/obj/effect/bmode/buildmode/proc/area_name_entered(datum/om/prompt/text/buildmode/ask)
+/obj/effect/bmode/buildmode/proc/area_name_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_room_name/ask = context.answer
 	area_enabled = 1
-	area_name = sanitize(ask.text, MAX_NAME_LEN)
+	area_name = sanitize(ask.value, MAX_NAME_LEN)
 	log_admin("BUILDMODE ROOM: [key_name(ask.answerer)] area: [area_name].")
 	ask_room_holder(ask.answerer)
 
 /// Optional: a cancel keeps the holders.
 /obj/effect/bmode/buildmode/proc/ask_room_holder(mob/user)
-	om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(room_answered), title = "Room Builder", message = "Would you like to change the floor or wall holders?", choices = list("Floor", "Wall"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice/buildmode_room_setting, PROC_REF(room_answered), answerer = user, title = "Room Builder", question = "Would you like to change the floor or wall holders?", choices = list("Floor", "Wall"), buttons = TRUE)
 
-/obj/effect/bmode/buildmode/proc/room_answered(datum/om/prompt/choice/buildmode/ask)
-	switch(ask.choice)
+/obj/effect/bmode/buildmode/proc/room_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_room_setting/ask = context.answer
+	switch(ask.value)
 		if("Floor")
 			ask_path(ask.answerer, "floor_holder", /turf/simulated/floor/plating)
 		if("Wall")
 			ask_path(ask.answerer, "wall_holder", /turf/simulated/wall)
 
-/obj/effect/bmode/buildmode/proc/ask_light_value(datum/om/prompt/choice/buildmode/ask)
-	switch(ask.choice)
+/obj/effect/bmode/buildmode/proc/ask_light_value(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_light/ask = context.answer
+	switch(ask.value)
 		if("Range")
-			om_ask(ask.answerer, /datum/om/prompt/number/buildmode, PROC_REF(light_number_entered), title = "Light Maker", message = "New light range.", default = 3, step = ask.choice)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light range.", default = 3, light_setting = ask.value)
 		if("Power")
-			om_ask(ask.answerer, /datum/om/prompt/number/buildmode, PROC_REF(light_number_entered), title = "Light Maker", message = "New light power.", default = 3, step = ask.choice)
+			open_request(src, /datum/prompt/number/buildmode_light, PROC_REF(light_number_entered), answerer = ask.answerer, title = "Light Maker", question = "New light power.", default = 3, light_setting = ask.value)
 		if("Color")
-			om_ask(ask.answerer, /datum/om/prompt/color/buildmode, PROC_REF(light_color_picked), title = "Light Maker", message = "New light color.", default = new_light_color, step = ask.choice)
+			open_request(src, /datum/prompt/color/buildmode_light, PROC_REF(light_color_picked), answerer = ask.answerer, title = "Light Maker", question = "New light color.", default = new_light_color, light_setting = ask.value)
 
-/obj/effect/bmode/buildmode/proc/light_number_entered(datum/om/prompt/number/buildmode/ask)
-	lights_answered(ask.answerer, ask.step, ask.number)
+/obj/effect/bmode/buildmode/proc/light_number_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/buildmode_light/ask = context.answer
+	lights_answered(ask.answerer, ask.light_setting, ask.value)
 
-/obj/effect/bmode/buildmode/proc/light_color_picked(datum/om/prompt/color/buildmode/ask)
-	lights_answered(ask.answerer, ask.step, ask.picked_color)
+/obj/effect/bmode/buildmode/proc/light_color_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/color/buildmode_light/ask = context.answer
+	lights_answered(ask.answerer, ask.light_setting, ask.value)
 
 /obj/effect/bmode/buildmode/proc/lights_answered(mob/user, what, input)
 	if(!input)
@@ -832,21 +890,27 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 /// Asks for a typepath (typed in part, then picked from the matches) and stores it in `var_name`.
 /obj/effect/bmode/buildmode/proc/ask_path(mob/user, var_name, default_path)
-	om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(ask_path_match), title = "Typepath", message = "Enter full or partial typepath.", default = "[default_path]", step = var_name)
+	open_request(src, /datum/prompt/text/buildmode_path, PROC_REF(ask_path_match), answerer = user, title = "Typepath", question = "Enter full or partial typepath.", default = "[default_path]", path_var = var_name)
 
-/obj/effect/bmode/buildmode/proc/ask_path_match(datum/om/prompt/text/buildmode/ask)
+/obj/effect/bmode/buildmode/proc/ask_path_match(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/buildmode_path/ask = context.answer
 	var/mob/user = ask.answerer
-	var/list/matches = paths_matching(ask.text)
+	var/list/matches = paths_matching(ask.value)
 	if(!matches.len)
 		tgui_alert_async(user, "No results found.  Sorry.")
 		return
 	if(matches.len == 1)
-		path_answered(user, ask.step, matches[1])
+		path_answered(user, ask.path_var, matches[1])
 		return
-	om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(path_picked), title = "Spawn Atom", message = "Select an atom type", choices = matches, step = ask.step)
+	open_request(src, /datum/prompt/choice/buildmode_path, PROC_REF(path_picked), answerer = user, title = "Spawn Atom", question = "Select an atom type", choices = matches, path_var = ask.path_var)
 
-/obj/effect/bmode/buildmode/proc/path_picked(datum/om/prompt/choice/buildmode/ask)
-	path_answered(ask.answerer, ask.step, ask.choice)
+/obj/effect/bmode/buildmode/proc/path_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/buildmode_path/ask = context.answer
+	path_answered(ask.answerer, ask.path_var, ask.value)
 
 /obj/effect/bmode/buildmode/proc/path_answered(mob/user, var_name, result)
 	log_admin("BUILDMODE/ITEM GENERATION: [key_name(user)] selected [result] to be spawned.")
@@ -1020,3 +1084,171 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /// The master this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/proc/master() as /obj/effect/bmode/buildholder
 	return master
+
+/datum/prompt/text/buildmode_path
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	var/path_var
+
+/datum/prompt/text/buildmode_path/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_path/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/buildmode_path
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	var/path_var
+
+/datum/prompt/choice/buildmode_path/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/buildmode_room_setting
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+
+/datum/prompt/choice/buildmode_room_setting/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_room_name
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_BUILDMODE
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+
+/datum/prompt/text/buildmode_room_name/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/buildmode_room_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+
+/// Scalar variable-edit questions; reference pickers retain their existing adapter.
+/datum/prompt/text/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/text/buildmode_edit/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/choice/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/choice/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	var/static/list/locked = list("vars", "key", "ckey", "client", "firemut", "ishulk", "telekinesis", "xray", "virus", "viruses", "cuffed", "ka", "last_eaten", "urine")
+	if(!isnull(value) && (step in locked) && !check_rights_for(user.client, R_DEBUG))
+		return "locked variable"
+	return null
+
+/datum/prompt/number/buildmode_edit
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/edit_var
+
+/datum/prompt/number/buildmode_edit/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_edit/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+
+/datum/prompt/choice/buildmode_mob_reference
+	title = "Value"
+	question = "Enter variable value:"
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/step
+
+/datum/prompt/choice/buildmode_mob_reference/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	if(!isnull(value))
+		var/mob/picked = value
+		if(!istype(picked) || QDELETED(picked))
+			return "gone"
+	return null
+
+/datum/prompt/choice/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/light_setting
+
+/datum/prompt/number/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/color/buildmode_light
+	timeout = 0
+	rights = R_BUILDMODE
+	recheck_on_open = TRUE
+	var/light_setting
+
+/datum/prompt/color/buildmode_light/recheck_extra()
+	var/obj/effect/bmode/buildmode/editor = owner
+	var/mob/user = answerer
+	if(!istype(editor) || QDELETED(editor) || !istype(user) || QDELETED(user))
+		return "gone"
+	return null
+
+/datum/prompt/number/buildmode_light/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default || 0, INFINITY, 0, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/color/buildmode_light/normalize(given)
+	return given
+
+/datum/prompt/color/buildmode_light/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker

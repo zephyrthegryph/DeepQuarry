@@ -1,0 +1,126 @@
+@obj.structure.bed human|none
+-menu: Melt
++0 menu: Rotate Clockwise
++1 menu: Rotate Counter Clockwise
++2 menu: Turn Around
+@obj.structure.bed robot|none
+-menu: Melt
++0 menu: Rotate Clockwise
++1 menu: Rotate Counter Clockwise
++2 menu: Turn Around
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Rotate Clockwise
++1 menu: Rotate Counter Clockwise
++2 menu: Turn Around
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Turn Around
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Turn Around
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Dismantle (refused: You cannot dismantle that.)
++2 menu: Move To Top
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
++8 click: Click: Dismantle
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Move To Top
++2 menu: Remove padding (refused: It has no padding to remove.)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
++8 click: Click: Remove padding
+@obj.structure human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Turn Around
+@obj.structure human|/obj/item/weldingtool
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Turn Around
+@obj.structure human|/obj/item/stack/cable_coil
+-click: Click: Use
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Pad (refused: You cannot pad that.)
++4 menu: Rotate Clockwise
++5 menu: Rotate Counter Clockwise
++6 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Turn Around
++9 click: Click: Pad
+@obj.structure human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Move To Top
++2 menu: Pad (refused: You cannot pad that.)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
++8 click: Click: Pad
+@obj.structure human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
+@obj.structure human|/obj/item
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Turn Around
+@obj.structure human|/obj/item/stack
+-menu: Pad (refused: You cannot pad that with that.)
+-menu: Turn Around (refused: It is fastened to the floor!)
++1 menu: Move To Top
++2 menu: Pad (refused: You cannot pad that.)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
++7 menu: Use
+@obj human|/obj/item/disk
+-menu: Turn Around (refused: It is fastened to the floor!)
++1 menu: Move To Top
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Turn Around
++7 menu: Use
+@obj human|/obj/item/toy/plushie
+-menu: Turn Around (refused: It is fastened to the floor!)
++1 menu: Move To Top
++2 menu: Name Plushie (refused: You can't do that.)
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Turn Around
++8 menu: Use
+human|/obj/item/assembly/shock_kit menu: Attach kit (refused: The kit is not ready to be attached!)
+human|/obj/item/assembly/shock_kit menu: Hit
+human|/obj/item/assembly/shock_kit menu: Move To Top
+human|/obj/item/assembly/shock_kit menu: Rotate Clockwise
+human|/obj/item/assembly/shock_kit menu: Rotate Counter Clockwise
+human|/obj/item/assembly/shock_kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/shock_kit menu: Turn Around
+human|/obj/item/assembly/shock_kit menu: Use
+human|/obj/item/assembly/shock_kit click: Click: Attach kit
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, interaction_tk, melee_hit, pad, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, shock_kit, touch, tuck_disk, tuck_plushie, unpad

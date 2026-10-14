@@ -17,9 +17,6 @@ FIRE ALARM
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
 	panel_open = FALSE
 	var/seclevel
 	circuit = /obj/item/circuitboard/firealarm
@@ -34,6 +31,26 @@ FIRE ALARM
 	var/engwarn = FALSE // Looping Alarms
 	var/critwarn = FALSE // Looping Alarms
 	var/causalitywarn = FALSE // Looping Alarms
+
+/// TRUE while the fire alarm's lockdown countdown runs.
+/obj/machinery/firealarm/var/timing = 0
+TRACKED(/obj/machinery/firealarm, timing)
+
+CAPABILITIES(/obj/machinery/firealarm)
+	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
+	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
+	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
+	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
+	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm, starts = /datum/looping_sound/alarm/sm_causality_alarm)
+	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm, starts = /datum/looping_sound/alarm/sm_critical_alarm)
+	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm, starts = /datum/looping_sound/alarm/engineering_alarm)
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm, starts = /datum/looping_sound/alarm/fire_alarm)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(firealarm_shot))))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(firealarm_emp))))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("cut_out", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Cut the wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wires_cut_out)))
 
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
@@ -54,16 +71,8 @@ FIRE ALARM
 
 /obj/machinery/firealarm/Initialize(mapload)
 	. = ..()
-	if(!pixel_x && !pixel_y)
-		offset_alarm()
-
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
-
-	own_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
 
 // a sounding alarm is reset for its area.
@@ -75,140 +84,130 @@ FIRE ALARM
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/firealarm/appearance_overlays()
-	. = list()
 
+/// What the alarm shows: dark with its panel open, broken or unpowered; else its detector state and the security level, lit red while the
+/// detector is off and in the level's colour while it detects.
+/obj/machinery/firealarm/draw(datum/look/look)
+	..()
 	if(panel_open)
-		set_light(0)
-		return .
-
-	if(has_stat(BROKEN))
-		icon_state = "firex"
-		set_light(0)
-		return .
-	else if(has_stat(NOPOWER))
-		icon_state = "firep"
-		set_light(0)
-		return .
-
-	var/fire_state
-
-	. = list()
-	icon_state = "fire"
-	if(!detecting)
-		fire_state = "fire1"
-		set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-	else
-		fire_state = "fire0"
-		switch(seclevel)
-			if("blue")	set_light(l_range = 2, l_power = 0.25, l_color = "#1024A9")
-			if("delta")	set_light(l_range = 4, l_power = 0.9, l_color = "#FF6633")
-			if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
-			if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
-			if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-			if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
-			if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
-
-	. += mutable_appearance(icon, fire_state)
-	. += emissive_appearance(icon, fire_state)
-
+		look.state("fire")
+		return
+	if(broken_now())
+		look.state("firex")
+		return
+	if(power_lost())
+		look.state("firep")
+		return
+	look.state("fire")
+	look.glow(detecting ? "fire0" : "fire1")
 	if(seclevel)
-		. += mutable_appearance(icon, "overlay_[seclevel]")
-		. += emissive_appearance(icon, "overlay_[seclevel]")
+		look.glow("overlay_[seclevel]")
+	if(!detecting)
+		look.glow(GLOW(4, 0.9, "#ff0000"))
+	else if(seclevel)
+		look.glow(level_glow(seclevel))
 
+/// The light of a security level on a detecting alarm.
+/obj/machinery/firealarm/proc/level_glow(level)
+	switch(level)
+		if("blue")
+			return GLOW(2, 0.25, "#1024A9")
+		if("delta")
+			return GLOW(4, 0.9, "#FF6633")
+		if("green")
+			return GLOW(2, 0.25, "#00ff00")
+		if("orange")
+			return GLOW(2, 0.25, "#ff9900")
+		if("red")
+			return GLOW(4, 0.9, "#ff0000")
+		if("violet")
+			return GLOW(2, 0.25, "#9933ff")
+		if("yellow")
+			return GLOW(2, 0.25, "#ffff00")
+	return null
 
 /// Heat behaviour rule: the detector trips above 200 C.
 /obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
 	if(detecting)
 		alarm()
 
-DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_PROJECTILE, PROC_REF(firealarm_shot))
-/// Getting shot sets the alarm off.
-/obj/machinery/firealarm/proc/firealarm_shot(datum/damage_packet/packet)
+/// Getting shot sets the alarm off (before the hit lands; the hit goes on).
+/obj/machinery/firealarm/proc/firealarm_shot(datum/act/hit/projectile/A)
 	alarm()
+	return HOOK_DECLINE
 
-DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
-/// An EMP may set the alarm off for a while.
-/obj/machinery/firealarm/proc/firealarm_emp(datum/damage_packet/packet)
-	if(prob(50 / packet.severity))
-		alarm(rand(30 / packet.severity, 60 / packet.severity))
+/// An EMP may set the alarm off for a while (before the hit lands; the hit goes on).
+/obj/machinery/firealarm/proc/firealarm_emp(datum/act/hit/emp/A)
+	var/severity = A.packet.severity
+	if(prob(50 / severity))
+		alarm(rand(30 / severity, 60 / severity))
+	return HOOK_DECLINE
 
-/obj/machinery/firealarm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/firealarm_trigger,
-		/datum/interaction/machine_hand/ungated/firealarm_use,
-	)
-	..()
-
-/datum/interaction/machine_item/firealarm_trigger
-	id = "firealarm_trigger"
-	name = "Trigger"
-	effect = /obj/machinery/firealarm/proc/interaction_firealarm_trigger
-
-/obj/machinery/firealarm/proc/interaction_firealarm_trigger(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/obj/machinery/firealarm/proc/interaction_firealarm_trigger(datum/act/op/A)
+	add_fingerprint(A.actor)
 	alarm()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/firealarm/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/machinery/firealarm/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/firealarm/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
-	playsound(src, tool.usesound, 50, TRUE)
+/// The wirecutters behind the open panel: the wires come out and the alarm comes off the wall.
+/obj/machinery/firealarm/proc/wires_cut_out(datum/act/op/A)
+	var/obj/item/tool = A.held
+	act_message(A.actor, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	return dismantle() ? OP_OK : OP_DECLINE
 
-/obj/machinery/firealarm/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/firealarm/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	detecting = !detecting
+		return OP_OK
+	set_detecting(!detecting)
 	act_message(user, src, MSG_SELF(span_notice("You have [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit.")), \
 		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-// Machine pipeline (doc/rewrite/machine_pipeline.dm, code/game/machinery/machine_pipeline.dm):
-// `polls = FALSE` below opts this type out of SSmachines' process() roster onto
-// the OM machine pipeline instead (see the "fire alarms" section there). Hotspots
-// call fire_act() directly while exposing their turf, so an idle alarm needs no
-// poll at all; the countdown path (nothing in this fork currently sets `timing`
-// on a plain firealarm — only /obj/machinery/partyalarm does — kept for parity
-// with any future lockdown caller) has no publish/subscribe event to hook, so it
-// rewakes on the pipeline's own MACHINE_PIPELINE_INTERVAL cadence while counting
-// down instead of a dedicated timer.
+/// One interval of the lockdown countdown (started_work): nothing in this fork starts it on a plain firealarm (only /obj/machinery/partyalarm has
+/// a live caller), so an idle alarm costs nothing; a powered one counts down while `timing` and trips the alarm at zero. Hotspots reach an alarm
+/// through its heat rule, not a poll.
+/obj/machinery/firealarm/proc/work_step(datum/act/timer/A)
+	if(time > 0)
+		time = max(time - (MACHINE_SERVICE_INTERVAL / 10), 0)
+	if(time <= 0)
+		alarm()
+		time = 0
+		set_timing(0)
+	if(detecting && (locate_within(loc, /obj/effect/hotspot)))
+		alarm()
+	if(!timing)
+		return PROCESS_KILL
 
 /obj/machinery/firealarm/power_change()
 	. = ..()
 	// A burst of power changes (every grid binding at boot) shares one pending settle.
-	if(!om_timer_slot_pending(src, "power_settle"))
-		after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
+	if(!after_pending(src, "power_settle"))
+		after(src, rand(0 SECONDS,1.5 SECONDS), PROC_REF(power_change_settle), key = "power_settle")
 
-OWN_TIMER(/obj/machinery/firealarm, power_settle)
+/obj/machinery/firealarm/proc/firealarm_use_ready(datum/act/op/A)
+	return (!A.actor.stat && operable()) ? null : MSG(req_failed)
 
-/datum/interaction/machine_hand/ungated/firealarm_use
-	id = "firealarm_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/firealarm/proc/interaction_firealarm_use
 
-/obj/machinery/firealarm/proc/interaction_firealarm_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || !operable())
-		return TRUE
+/obj/machinery/firealarm/proc/interaction_firealarm_use(datum/act/op/A)
+	var/mob/user = A.actor
 
 	add_fingerprint(user)
-	var/area/A = get_area(src)
-	if(A.fire)
+	var/area/zone = get_area(src)
+	if(zone.fire)
 		reset(user)
 	else
 		alarm(0, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/firealarm/proc/reset(mob/user)
 	if(!(working))
@@ -218,7 +217,6 @@ OWN_TIMER(/obj/machinery/firealarm, power_settle)
 		GLOB.fire_alarm.clearAlarm(src.loc, FA)
 		FA.soundloop?.stop() // Mapped alarms may be destroyed before Initialize creates this.
 		FA.firewarn = FALSE // Soundloop Fix
-	update_icon()
 	if(user)
 		log_game("[user] reset a fire alarm at [COORD(src)]")
 
@@ -232,15 +230,12 @@ OWN_TIMER(/obj/machinery/firealarm, power_settle)
 		GLOB.fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
 		FA.soundloop?.start() // Mapped alarms may be triggered before Initialize creates this.
 		FA.firewarn = TRUE // Soundloop Fix
-	update_icon()
 	// playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS) // Disable as per soundloop
 	if(user)
 		log_game("[user] triggered a fire alarm at [COORD(src)]")
 
 /obj/machinery/firealarm/proc/set_security_level(newlevel)
-	if(seclevel != newlevel)
-		seclevel = newlevel
-		update_icon()
+	set_seclevel(newlevel)
 
 /obj/machinery/partyalarm
 	name = "\improper PARTY BUTTON"
@@ -254,41 +249,43 @@ OWN_TIMER(/obj/machinery/firealarm, power_settle)
 	var/lockdownbyai = 0
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
 
 // TGUI migration. PartyAlarm.tsx handles both clear-text
 // (humans/AI) and scrambled (everyone else) display via a data flag.
-/obj/machinery/partyalarm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/partyalarm_use,
-	)
-	..()
 
-/datum/interaction/machine_hand/ungated/partyalarm_use
-	id = "partyalarm_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/partyalarm/proc/interaction_partyalarm_use
-
-/obj/machinery/partyalarm/proc/interaction_partyalarm_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/partyalarm/proc/interaction_partyalarm_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || !operable())
-		return TRUE
+		return OP_OK
 	user.set_machine(src)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/machinery/partyalarm, "PartyAlarm", UI_TITLE("Party Button"))
+CAPABILITIES(/obj/machinery/partyalarm)
+	configure(uses_power(idle = 2, active = 6))
+	interface("PartyAlarm", title = "Party Button")
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("alarm", ui_act("alarm"), then(PROC_REF(ui_act_alarm)))
+	op("time", ui_act("time", arg("value", num())), then(PROC_REF(ui_act_time)))
+	op("tp", ui_act("tp", arg("value", num())), then(PROC_REF(ui_act_tp)))
+	extend(TAG_UI, needs(req(PROC_REF(button_usable))))
+	op("partyalarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_partyalarm_use)))
 
-UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machinery_partyalarm{party_on:unknown,timing:bool,scrambled:bool}")
+MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 
-/// The computed part of /obj/machinery/partyalarm's window data (declared on its UI_DATA row).
-/obj/machinery/partyalarm/proc/ui_data_obj_machinery_partyalarm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The button answers someone who is awake, and only while it works.
+/obj/machinery/partyalarm/proc/button_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	return (!user.stat && operable()) ? null : MSG(partyalarm/unusable)
+
+/obj/machinery/partyalarm/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	var/area/A = get_area(src)
-	data["party_on"] = !!A?.party
+	var/area/here = get_area(src)
+	data["party_on"] = !!here?.party
 	data["timing"] = !!timing
-	data["scrambled"] = !(ishuman(user) || isAI(user))
+	data["scrambled"] = !(ishuman(user) || istype(user, /mob/living/silicon/ai))
+	data["time"] = time
 	return data
 
 /obj/machinery/partyalarm/proc/reset()
@@ -307,38 +304,25 @@ UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machin
 	A.partyalert()
 	return
 
-// Topic dispatch lifted into tgui_act.
-/obj/machinery/partyalarm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(usr.stat || !operable())
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/partyalarm, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_reset)
+/obj/machinery/partyalarm/proc/ui_act_reset(datum/act/op/A)
 	reset()
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "alarm", ui_act_alarm)
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_alarm)
+/obj/machinery/partyalarm/proc/ui_act_alarm(datum/act/op/A)
 	alarm()
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "time", ui_act_time, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_time)
-	timing = params["value"]
+/obj/machinery/partyalarm/proc/ui_act_time(datum/act/op/A, value)
+	timing = value
 	return TRUE
 
-UI_ACT(/obj/machinery/partyalarm, "tp", ui_act_tp, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_tp)
-	var/tp = params["value"]
+/obj/machinery/partyalarm/proc/ui_act_tp(datum/act/op/A, value)
+	var/tp = value
 	time += tp
 	time = min(max(round(time), 0), 120)
 	return TRUE
 
 /obj/machinery/firealarm/proc/power_change_settle()
-	update_icon()
 	// Looping Red/Violet/Orange Alarms
 	if(!soundloop)
 		return
@@ -356,3 +340,9 @@ UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_tp)
 			critalarm.start()
 		if(causalitywarn)
 			causality.start()
+
+/// A wall-mounted fire alarm the map did not offset sits on the wall it faces.
+/obj/machinery/firealarm/proc/roll_wall_offset(datum/roller/R)
+	if(!pixel_x && !pixel_y)
+		offset_alarm()
+	return list(pixel_x, pixel_y)

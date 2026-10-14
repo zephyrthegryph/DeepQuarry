@@ -7,10 +7,14 @@
 	var/modifier_duration = null // Will last forever by default.  Final duration may differ due to 'spell power'
 	var/spell_light_intensity = 2
 	var/spell_light_range = 3
+	var/spell_light_color = COLOR_WHITE
 
-/obj/item/spell/modifier/Initialize(mapload)
-	. = ..()
-	set_light(spell_light_range, spell_light_intensity, l_color = light_color)
+CAPABILITIES(/obj/item/spell/modifier)
+	look_glow(PROC_REF(spell_glow))
+
+/// The spell's light while it is held ready.
+/obj/item/spell/modifier/proc/spell_glow(datum/act/A)
+	return GLOW(spell_light_range, spell_light_intensity, spell_light_color)
 
 /obj/item/spell/modifier/on_melee_cast(atom/hit_atom, mob/user)
 	if(isliving(hit_atom))

@@ -3,7 +3,6 @@
 	icon = 'icons/obj/assemblies/new_assemblies.dmi'
 	icon_state = "holder"
 	item_state = "assembly"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
@@ -27,10 +26,9 @@
 
 	rel_set(D, nameof(D.holder), src)
 	rel_set(D2, nameof(D2.holder), src)
-	own_set(src, nameof(src.a_left), D, user = user, into = TRUE)
-	own_set(src, nameof(src.a_right), D2, user = user, into = TRUE)
+	move_into(src, nameof(src.a_left), D, user)
+	move_into(src, nameof(src.a_right), D2, user)
 	name = "[D.name]-[D2.name] assembly"
-	update_icon()
 	user.put_in_hands(src)
 
 	return TRUE
@@ -38,19 +36,19 @@
 /obj/item/assembly_holder/proc/detached()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly_holder/appearance_overlays()
-	. = list()
+/// Each part's state and layers, left and right.
+/obj/item/assembly_holder/draw(datum/look/look)
+	..()
 	if(a_left)
-		. += "[a_left.icon_state]_left"
-		for(var/O in a_left.attached_overlays)
-			. += "[O]_l"
+		look.watch(a_left)
+		look.overlay("[a_left.holder_state()]_left")
+		for(var/O in a_left.holder_layers())
+			look.overlay("[O]_l")
 	if(a_right)
-		. += "[a_right.icon_state]_right"
-		for(var/O in a_right.attached_overlays)
-			. += "[O]_r"
-	if(master)
-		master.update_icon()
+		look.watch(a_right)
+		look.overlay("[a_right.holder_state()]_right")
+		for(var/O in a_right.holder_layers())
+			look.overlay("[O]_r")
 
 /obj/item/assembly_holder/examine(mob/user)
 	. = ..()
@@ -96,56 +94,51 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	if(a_right)
 		a_right.on_found(finder)
 
-/obj/item/assembly_holder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/assembly_holder_hand,
-		/datum/interaction/entry_self/assembly_holder_self,
-	)
-	..()
+TRACKED(/obj/item/assembly_holder, secured)
+CAPABILITIES(/obj/item/assembly_holder)
+	configure(item_thrown(force = 5))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("use", in_hand(), label("Use"),
+		asks(/datum/prompt/choice, fields = list("question" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left", "Right"), "buttons" = TRUE, "timeout" = 0), step = "side", when = PROC_REF(asks_side)),
+		then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attack_hand: notify the parts before falling through (never handled the click itself).
-/datum/interaction/entry_hand/assembly_holder_hand
-	id = "assembly_holder_hand"
-	name = "Use"
-	effect = /obj/item/assembly_holder/proc/interaction_hand
-
-/obj/item/assembly_holder/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
+/obj/item/assembly_holder/proc/interaction_hand(datum/act/op/A)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
 	if(a_left && a_right)
 		a_left.holder_movement()
 		a_right.holder_movement()
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/assembly_holder/screwdriver_act(mob/user, obj/item/tool)
+/// Two secured parts of the same type: which side is used is asked (the window code can not tell them apart otherwise).
+/obj/item/assembly_holder/proc/asks_side(datum/act/op/A)
+	return secured && a_left && a_right && istype(a_left, a_right.type)
+
+/obj/item/assembly_holder/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!a_left || !a_right)
 		to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	a_left.toggle_secure()
 	a_right.toggle_secure()
-	secured = !secured
+	set_secured(!secured)
 	to_chat(user, span_notice(secured ? "\The [src] is ready!" : "\The [src] can now be taken apart!"))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_self: split assembly (unsecured) or use the parts (secured).
-/datum/interaction/entry_self/assembly_holder_self
-	id = "assembly_holder_self"
-	name = "Use"
-	effect = /obj/item/assembly_holder/proc/interaction_self
-
-/obj/item/assembly_holder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly_holder/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(src.secured)
 		if(!a_left || !a_right)
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-			return TRUE
+			return OP_OK
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
-			var/_answer_k143 = rerun_ask(usr, "k143", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Which side would you like to use?", title = "Side", choices = list("Left","Right"))
-			if(isnull(_answer_k143))
-				return TRUE
+			var/_answer_k143 = A.step_value("side")
 			switch(_answer_k143)
 				if("Left")	a_left.attack_self(user)
 				if("Right")	a_right.attack_self(user)
-			return TRUE
+			return OP_OK
 		else
 			if(!istype(a_left,/obj/item/assembly/igniter))
 				a_left.attack_self(user)
@@ -154,10 +147,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	else
 		var/turf/T = get_turf(src)
 		if(!T)
-			return TRUE
+			return OP_OK
+		if(loc?.release_refusal(src, user))
+			return OP_OK
 		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
-		var/obj/item/assembly/left = own_take(src, nameof(a_left))
-		var/obj/item/assembly/right = own_take(src, nameof(a_right))
+		var/obj/item/assembly/left = rel_take(src, nameof(a_left))
+		var/obj/item/assembly/right = rel_take(src, nameof(a_right))
 		if(left)
 			rel_clear(left, nameof(left.holder))
 			left.forceMove(T)
@@ -165,7 +160,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 			rel_clear(right, nameof(right.holder))
 			right.forceMove(T)
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly_holder/proc/process_activation(obj/D, normal = 1)
 	if(!D)
@@ -177,8 +172,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 			a_right.pulsed(0)
 		if(a_left != D)
 			a_left.pulsed(0)
-	if(master)
-		master.receive_signal()
+	if(item_master(src))
+		item_master(src).receive_signal()
 	return 1
 
 /obj/item/assembly_holder/hear_talk(mob/M, list/message_pieces, verb)
@@ -202,18 +197,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	tmr.set_secured(TRUE)
 	rel_set(tmr, nameof(tmr.holder), src)
 
-	own_set(src, nameof(a_left), tmr)
-	own_set(src, nameof(a_right), ign)
-	secured = 1
-	update_icon()
+	rel_set(src, nameof(a_left), tmr)
+	rel_set(src, nameof(a_right), ign)
+	set_secured(TRUE)
 	name = initial(name) + " ([tmr.time] secs)"
 
 	if(loc)
-		om_grant(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
+		grant(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
 
 /obj/item/assembly_holder/timer_igniter/detached()
 	if(loc)
-		om_revoke(loc, GRANT_VERB, /obj/item/assembly_holder/timer_igniter/verb/configure, src)
+		revoke(loc, granted_verb(/obj/item/assembly_holder/timer_igniter/verb/configure), src)
 	..()
 
 /obj/item/assembly_holder/timer_igniter/verb/configure()
@@ -221,32 +215,58 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	set category = VERB_CAT_OBJECT
 	set src in usr
 
-	if ( !(usr.stat || usr.restrained()) )
-		var/obj/item/assembly_holder/holder
-		if(istype(src,/obj/item/grenade/chem_grenade))
-			var/obj/item/grenade/chem_grenade/gren = src
-			holder=gren.detonator
-		var/obj/item/assembly/timer/tmr = holder.a_left
-		if(!istype(tmr,/obj/item/assembly/timer))
-			tmr = holder.a_right
-		if(!istype(tmr,/obj/item/assembly/timer))
-			to_chat(usr, span_notice("This detonator has no timer."))
-			return
+	if(!istype(src, /obj/item/grenade/chem_grenade))
+		to_chat(usr, span_notice("This detonator has no timer."))
+		return
+	var/obj/item/grenade/chem_grenade/grenade = src
+	grenade.configure_detonator_timer(usr)
 
+/// The granted verb runs on the grenade; resolve its current detonator again on an answer.
+/obj/item/grenade/chem_grenade/proc/configure_detonator_timer(mob/user, timer_answer, answer_ready = FALSE)
+	if(!(user.stat || user.restrained()))
+		var/obj/item/assembly_holder/holder = detonator
+		if(!holder)
+			to_chat(user, span_notice("This detonator has no timer."))
+			return
+		var/obj/item/assembly/timer/tmr = holder.a_left
+		if(!istype(tmr, /obj/item/assembly/timer))
+			tmr = holder.a_right
+		if(!istype(tmr, /obj/item/assembly/timer))
+			to_chat(user, span_notice("This detonator has no timer."))
+			return
 		if(tmr.timing)
-			to_chat(usr, span_notice("Clock is ticking already."))
+			to_chat(user, span_notice("Clock is ticking already."))
+		else if(!answer_ready)
+			open_request(src, /datum/prompt/number/grenade_timer_configuration, PROC_REF(detonator_timer_entered), answerer = user)
+		else if(timer_answer > 0 && timer_answer < 1000)
+			tmr.time = timer_answer
+			name = initial(name) + "([tmr.time] secs)"
+			to_chat(user, span_notice("Timer set to [tmr.time] seconds."))
 		else
-			var/ntime = rerun_ask(usr, "k231", VERB_REF(configure), args, /datum/om/prompt/number, message = "Enter desired time in seconds", title = "Time", default = 5, max = 1000)
-			if(isnull(ntime))
-				return
-			if (ntime > 0 && ntime < 1000)
-				tmr.time = ntime
-				name = initial(name) + "([tmr.time] secs)"
-				to_chat(usr, span_notice("Timer set to [tmr.time] seconds."))
-			else
-				to_chat(usr, span_notice("Timer can't be [ntime <= 0 ? "negative" : "more than 1000 seconds"]."))
+			to_chat(user, span_notice("Timer can't be [timer_answer <= 0 ? "negative" : "more than 1000 seconds"]."))
 	else
-		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
+		to_chat(user, span_notice("You cannot do this while [user.stat ? "unconscious/dead" : "restrained"]."))
+
+/obj/item/grenade/chem_grenade/proc/detonator_timer_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	configure_detonator_timer(A.request.answerer, A.answer.value, TRUE)
+
+/datum/prompt/number/grenade_timer_configuration
+	question = "Enter desired time in seconds"
+	title = "Time"
+	default = 5
+	min_value = 0
+	max_value = 1000
+	timeout = 0
+	recheck_on_open = TRUE
+
+/// Keep the legacy server answer raw; the real numeric window still rounds and bounds entries.
+/datum/prompt/number/grenade_timer_configuration/recheck_extra()
+	return QDELETED(owner) || QDELETED(answerer) ? "gone" : null
+
+/datum/prompt/number/grenade_timer_configuration/normalize(given)
+	return isnum(given) ? given : null
 
 /obj/item/assembly_holder/ownership()
 	. = ..()

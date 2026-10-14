@@ -26,8 +26,6 @@
 	var/list/unlock_ids // Lazy: leaf nodes unlock nothing.
 	/// List of items you need to deconstruct to unlock this node.
 	var/list/required_items_to_unlock // Lazy
-	/// Boosting this will autounlock this node
-	var/autounlock_by_boost = TRUE
 	/// The points cost to research the node, type = amount
 	var/list/research_costs
 	/// The category of the node
@@ -40,8 +38,6 @@
 	var/list/experiments_to_unlock // Lazy
 	/// Whether or not this node should show on the wiki
 	var/show_on_wiki = TRUE
-	/// Hidden Mech nodes unlocked when mech fabricator emaged.
-	var/illegal_mech_node = FALSE
 	/**
 	 * If set, the researched node will be announced on these channels by an announcement system
 	 * with 'announce_research_node' set to TRUE when researched by the station.
@@ -64,7 +60,7 @@
 	for(var/id in unlock_ids)
 		unlock_ids[id] = TRUE
 
-// Nodes are immutable global datums registered at startup via GLOB.research_service.
+// Nodes are immutable global datums registered at startup via SSresearch.
 // Destroying one at runtime would corrupt every techweb that references this node ID,
 // so qdel() refuses (the error_node sentinel may still be deleted).
 /datum/techweb_node/lifecycle_keep(force)
@@ -74,7 +70,7 @@
 	return TRUE
 
 /datum/techweb_node/lifecycle_dematerialize()
-	GLOB.research_service.techweb_nodes -= id
+	SSresearch.techweb_nodes -= id
 	..()
 
 /datum/techweb_node/proc/on_design_deletion(datum/design_techweb/D)
@@ -127,10 +123,10 @@
 /datum/techweb_node/proc/on_station_research(atom/research_source)
 	SHOULD_CALL_PARENT(TRUE)
 
-/// Nodes are round definitions in GLOB.research_service.techweb_nodes: shared.
+/// Nodes are round definitions in SSresearch.techweb_nodes: shared.
 REGISTRY_TYPE(/datum/techweb_node, GLOBAL_PROC_REF(registry_techweb_node))
 
 /// The registered node D stands for (D itself when it is the table's entry for its id).
 /proc/registry_techweb_node(datum/techweb_node/D)
-	var/datum/techweb_node/entry = GLOB.research_service?.techweb_nodes[D.id]
+	var/datum/techweb_node/entry = SSresearch?.techweb_nodes[D.id]
 	return entry == D ? D : null

@@ -370,41 +370,46 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set category = VERB_CAT_IC_SETTINGS
 
 	// An empty pose (or a cancel) clears it.
-	om_ask(src, /datum/om/prompt/text/pose, PROC_REF(pose_entered), message = "This is [src]. [p_they()]...")
+	open_request(src, /datum/prompt/text/pose, PROC_REF(pose_entered), answerer = src, question = "This is [src]. [p_they()]...")
 
 /// Entering a pose; a cancel clears it.
-/datum/om/prompt/text/pose
+/datum/prompt/text/pose
 	title = "Pose"
-
-/datum/om/prompt/text/pose/cancelled()
-	var/mob/living/carbon/human/H = subject
-	H?.pose_cleared()
+	timeout = 0
 
 /// The pose's options, carrying the entered pose.
-/datum/om/prompt/checklist/pose_options
+/datum/prompt/checklist/pose_options
 	title = "Pose Options"
-	message = "Which options would you like to enable for your poses?"
+	question = "Which options would you like to enable for your poses?"
 	choices = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose")
 	min_picks = 0
+	timeout = 0
 	var/pose
 
 /mob/living/carbon/human/proc/pose_cleared()
 	pose = null
 	remove_pose_indicator()
 
-/mob/living/carbon/human/proc/pose_entered(datum/om/prompt/text/pose/ask)
-	var/new_pose = strip_html_simple(ask.text)
+/mob/living/carbon/human/proc/pose_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
+			pose_cleared()
+		return
+	var/new_pose = strip_html_simple(A.answer.value)
 	if(!new_pose)
 		pose_cleared()
 		return
-	om_ask(src, /datum/om/prompt/checklist/pose_options, PROC_REF(pose_options_chosen), pose = new_pose)
+	open_request(src, /datum/prompt/checklist/pose_options, PROC_REF(pose_options_chosen), answerer = src, pose = new_pose)
 
-/mob/living/carbon/human/proc/pose_options_chosen(datum/om/prompt/checklist/pose_options/ask)
-	var/new_pose = ask.pose
+/mob/living/carbon/human/proc/pose_options_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/checklist/pose_options/prompt = A.answer
+	var/new_pose = prompt.pose
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
 	pose_move = FALSE
-	for(var/o in ask.picked)
+	for(var/o in A.answer.value)
 		if(o == "Cancel Pose on Movement")
 			pose_move = TRUE
 		if(o == "Disable Pose Icon")
@@ -464,8 +469,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	var/new_wagging = isnull(setting) ? !wagging : setting
 	if(new_wagging != wagging)
-		wagging = new_wagging
-		update_tail_showing()
+		set_wagging(new_wagging)
 	return 1
 
 /mob/living/carbon/human/proc/toggle_wing(setting,message = 0)
@@ -476,8 +480,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 	var/new_flapping = isnull(setting) ? !flapping : setting
 	if(new_flapping != flapping)
-		flapping = new_flapping
-		update_wing_showing()
+		set_flapping(new_flapping)
 	return 1
 
 
@@ -486,8 +489,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set desc = "Toggles your ability to resist resizing attempts"
 	set category = VERB_CAT_IC_SETTINGS
 
-	resizable = !resizable
-	to_chat(src, span_notice("You are now [resizable ? "susceptible" : "immune"] to being resized."))
+	vore_prefs.resizable = !vore_prefs.resizable
+	to_chat(src, span_notice("You are now [vore_prefs.resizable ? "susceptible" : "immune"] to being resized."))
 
 
 /mob/living/carbon/human/proc/handle_flip_vr()
@@ -506,7 +509,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			pass_flags |= PASSTABLE
 			added_passtable = TRUE
 	else
-		status_at_least(EFFECT_CONFUSED, 1) //Thud
+		status_at_least(STAT_CONFUSED, 1) //Thud
 
 	if(dir & WEST)
 		SpinAnimation(7,1,0)
@@ -517,8 +520,8 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		for(var/obj/structure/stairs/top/S in contents_of(loc))
 			S.use_stairs_instant(src)
 			act_message(src, null, MSG_SELF(span_warning("You fall down the stairs!")), MSG_OTHERS(span_warning("%U% falls down the stairs!")))
-			status_at_least(EFFECT_CONFUSED, 10) //Thud
-			status_adjust(EFFECT_WEAKENED, 12)
+			status_at_least(STAT_CONFUSED, 10) //Thud
+			status_adjust(STAT_WEAKENED, 12)
 			injure(INJURY_BLUNT, 8, null, S)
 			if(prob(80))
 				if(prob(50))
@@ -531,7 +534,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 						right_leg.fracture()
 			break // Only fall down the first stairs in the turf... If somehow more than one exists
 
-	om_after(src, 7, PROC_REF(flip_end), original_density, added_passtable)
+	after(src, 0.7 SECONDS, PROC_REF(flip_end), with = list(original_density, added_passtable))
 
 /mob/living/carbon/human/proc/flip_end(original_density, added_passtable)
 	if(!lying)
@@ -543,18 +546,19 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = VERB_CAT_IC_SETTINGS
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_identity_chosen), message = "Please select a gender Identity:", title = "Set Gender Identity", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
+	open_request(src, /datum/prompt/choice, PROC_REF(gender_identity_chosen), answerer = src, title = "Set Gender Identity", question = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM), timeout = 0)
 	return 1
 
-/mob/living/carbon/human/proc/gender_identity_chosen(datum/om/prompt/choice/ask)
-	change_gender_identity(ask.choice)
+/mob/living/carbon/human/proc/gender_identity_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	change_gender_identity(A.answer.value)
 
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Hide your wings, or show them if you already hid them."
-	wings_hidden = !wings_hidden
-	update_wing_showing()
+	set_wings_hidden(!wings_hidden)
 	var/message = ""
 	if(!wings_hidden)
 		message = "reveals their wings!"
@@ -575,10 +579,9 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			to_chat(src,span_notice("Your current tail is too considerable to hide!"))
 			return
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
-		species.tail = null //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
-	tail_hidden = !tail_hidden
-	update_tail_showing()
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		species.set_tail(null) //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
+	set_tail_hidden(!tail_hidden)
 	var/message = ""
 	if(!tail_hidden)
 		message = "reveals their tail!"

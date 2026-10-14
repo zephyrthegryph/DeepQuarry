@@ -6,8 +6,8 @@
 
 	// Each node in the web
 	var/list/used_designs = list()
-	for(var/node_id in GLOB.research_service.techweb_nodes)
-		var/datum/techweb_node/node = GLOB.research_service.techweb_nodes[node_id]
+	for(var/node_id in SSresearch.techweb_nodes)
+		var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id]
 		if(node.id == /datum/techweb_node/error_node::id)
 			continue
 
@@ -51,21 +51,21 @@
 					failed = TRUE
 
 				used_designs += design
-				if(!(design in GLOB.research_service.techweb_designs))
+				if(!(design in SSresearch.techweb_designs))
 					TEST_NOTICE(src, "TECHWEB NODE - [node.type] has a non-existant design_id: \"[design]\"")
 					failed = TRUE
 
 		// Must have valid prereqs
 		if(length(node.prereq_ids))
 			for(var/req in node.prereq_ids)
-				if(!(req in GLOB.research_service.techweb_nodes))
+				if(!(req in SSresearch.techweb_nodes))
 					TEST_NOTICE(src, "TECHWEB NODE - [node.type] has a non-existant prereq_id: \"[req]\"")
 					failed = TRUE
 
 	// We can't check for for some stuff in here if we haven't already checked and made sure the nodes are valid first
 	if(!failed)
-		for(var/node_id in GLOB.research_service.techweb_nodes)
-			var/datum/techweb_node/node = GLOB.research_service.techweb_nodes[node_id]
+		for(var/node_id in SSresearch.techweb_nodes)
+			var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id]
 
 			// Check that our cost and make sure it's more expensive than our prior tier, unless they have a required experiment.
 			if(!length(node.required_experiments) && length(node.prereq_ids))
@@ -77,7 +77,7 @@
 							current_cost = LAZYACCESS(node.research_costs, check_cost_type)
 
 					for(var/prereq_node_id in node.prereq_ids)
-						var/datum/techweb_node/prereq_node = GLOB.research_service.techweb_nodes[prereq_node_id]
+						var/datum/techweb_node/prereq_node = SSresearch.techweb_nodes[prereq_node_id]
 						var/prereq_currentcost = prereq_node.research_costs ? INFINITY : 0
 						if(prereq_node.starting_node)
 							continue
@@ -93,7 +93,7 @@
 
 					// forbid designs with RND_CATEGORY_INITIAL in non-starting nodes
 					for(var/design_id in node.design_ids)
-						var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id]
+						var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
 						if((RND_CATEGORY_INITIAL in design.category))
 							TEST_NOTICE(src, "TECHWEB NODE - [node.type]'s [design_id] is flagged as RND_CATEGORY_INITIAL in a non-starting techweb node.")
 							failed = TRUE
@@ -105,15 +105,15 @@
 
 					// starting nodes need to have all design inside it flagged with RND_CATEGORY_INITIAL
 					for(var/design_id in node.design_ids)
-						var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id]
+						var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
 						if(!(RND_CATEGORY_INITIAL in design.category))
 							TEST_NOTICE(src, "TECHWEB NODE - [node.type]'s [design_id] was part of a starting node, but is not category tagged RND_CATEGORY_INITIAL.")
 							failed = TRUE
 
 	// Each design
 	var/used_design_paths = list()
-	for(var/design_id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id]
+	for(var/design_id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
 		if(design.id == DESIGN_ID_IGNORE)
 			continue
 

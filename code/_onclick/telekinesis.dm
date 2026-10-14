@@ -33,7 +33,6 @@
 	COOLDOWN_DECLARE(throw_cooldown)
 	var/atom/movable/focus
 	var/mob/living/host
-	item_flags = DROPDEL | NOSTRIP
 
 /obj/item/tk_grab/dropped(mob/user, equipping, slot)
 	..()
@@ -45,13 +44,16 @@
 /obj/item/tk_grab/equipped(mob/user, slot)
 	..()
 	if( (slot == SLOT_ID_HAND_L) || (slot== SLOT_ID_HAND_R) )	return
-	qdel(src)
+	spent(src, user)
 	return
 
-DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/tk_grab)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/tk_grab/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tk_grab/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(focus())
 		focus().attack_self_tk(user)
 	return TRUE
@@ -96,14 +98,14 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	else
 		apply_focus_overlay()
 		focus().throw_at(target, 10, 1, user)
-		COOLDOWN_START(src, throw_cooldown, 3)
+		COOLDOWN_START(src, throw_cooldown, 0.3 SECONDS)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H_user = user
 			if(istype(H_user.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/telekinetic))
 				var/obj/item/clothing/gloves/telekinetic/TKG = H_user.get_equipped_item(SLOT_ID_GLOVES)
 				TKG.use_grip_power(user,TRUE)
 				if(!TKG.has_grip_power())
-					qdel(src) // Drop TK
+					spent(src, user) // Drop TK
 	return
 
 /obj/item/tk_grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -116,7 +118,6 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 		consume(src, user)
 		return
 	rel_set(src, nameof(focus), target)
-	update_icon()
 	apply_focus_overlay()
 	return
 
@@ -129,17 +130,15 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	O.layer = FLY_LAYER
 	O.set_dir(pick(GLOB.cardinal))
 	O.icon = 'icons/effects/effects.dmi'
-	O.icon_state = "nothing"
+	O.set_icon_state("nothing")
 	flick("empdisable",O)
 	O.expire(5)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/tk_grab, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tk_grab/appearance_overlays()
-	. = list()
+/obj/item/tk_grab/draw(datum/look/look)
+	..()
 	if(focus() && focus().icon && focus().icon_state)
-		. += icon(focus().icon, focus().icon_state)
-	return .
+		look.overlay(icon(focus().icon, focus().icon_state))
 
 /// The thing held by telekinesis (a relation view: null once that is deleted).
 /obj/item/tk_grab/proc/focus() as /atom/movable

@@ -50,10 +50,6 @@
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100)
 
 // Crack visuals / warnings as integrity drops past thresholds.
-/obj/structure/window/on_update_integrity(old_value, new_value)
-	. = ..()
-	update_icon()
-
 /obj/structure/window/atom_destruction(damage_flag)
 	shatter()
 	return ..()
@@ -64,17 +60,7 @@
 		if(get_integrity() >= max_integrity)
 			visible_message("[src] looks fully repaired." )
 	else // Reinforce
-		silicate = min(silicate + amount, 100)
-		updateSilicate()
-
-/obj/structure/window/proc/updateSilicate()
-	cut_overlays()
-	update_icon()
-
-	var/image/img = image(src)
-	img.color = "#ffffff"
-	img.alpha = silicate * 255 / 100
-	add_overlay(img)
+		set_silicate(min(silicate + amount, 100))
 
 /obj/structure/window/proc/shatter(display_message = 1)
 	play_sfx(src, SFX_SHATTER)
@@ -127,7 +113,6 @@
 	if(!reinf && get_integrity() - source.thrown_impact_force(throwingdatum) <= 7)
 		set_anchored(FALSE)
 		update_verbs()
-		update_nearby_icons()
 		step(src, get_dir(source, src))
 	..()
 
@@ -135,52 +120,34 @@
 	return receive_thrown(source, throwingdatum, reinf ? 0.25 : 1)
 
 /// Old attack_tk: knock on the window at range.
-/obj/structure/window/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("Something knocks on [src]."))
+/obj/structure/window/proc/interaction_tk(datum/act/op/A)
+	A.actor.visible_message(span_notice("Something knocks on [src]."))
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
-	return TRUE
+	return OP_OK
 
-/obj/structure/window/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/window_bang,
-		/datum/interaction/entry_hand/window_hand,
-		/datum/interaction/entry_item/window_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK("Knock", PROC_REF(interaction_tk)))
-	..()
-
-/// Old attack_hand's harm branch: bang on (or claw at) the window (combat mode only).
-/datum/interaction/entry_hand/window_bang
-	id = "window_bang"
-	name = "Bang on"
-	effect = /obj/structure/window/proc/interaction_bang
-	stance = I_HURT
-
-/obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand in combat mode: bang on the window (a shredding species claws it; a Hulk smashes through).
+/obj/structure/window/proc/interaction_bang(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.has_mutation(HULK))
-		return FALSE // a Hulk smashes through: interaction_hand()
+		return interaction_hand(A) // a Hulk smashes through
 	user.setClickCooldown(user.get_attack_speed())
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/shreddamage = H.species.can_shred(H, FALSE, 15)
 		if(shreddamage)
-			attack_generic(H, shreddamage + 5, "attacks")
-			return TRUE
+			generic_hit(src, H, shreddamage + 5, "attacks")
+			return OP_OK
 
 	play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
 	user.do_attack_animation(src)
 	act_message(user, src, MSG_SELF(span_danger("You bang against %T%!")), \
 		MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
 		MSG_BLIND("You hear a banging sound."))
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: a Hulk smashes through, or a knock.
-/datum/interaction/entry_hand/window_hand
-	id = "window_hand"
-	name = "Knock"
-	effect = /obj/structure/window/proc/interaction_hand
-
-/obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: knock on the window (a Hulk smashes through).
+/obj/structure/window/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	if(user.has_mutation(HULK))
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
@@ -192,7 +159,7 @@
 		act_message(user, null, MSG_SELF("You knock on the [src.name]."), \
 			MSG_OTHERS("[user.name] knocks on the [src.name]."), \
 			MSG_BLIND("You hear a knocking sound."))
-	return TRUE
+	return OP_OK
 
 /obj/structure/window/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
@@ -208,20 +175,17 @@
 	user.do_attack_animation(src)
 	return 1
 
-/// Old attackby: slam a grabbed mob, wire for tinting, build a frame, or take a hit.
-/datum/interaction/entry_item/window_item
-	id = "window_item"
-	name = "Use"
-	effect = /obj/structure/window/proc/interaction_item
-
-/obj/structure/window/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: slam a grabbed mob against it, wire it for tinting, or hit it.
+/obj/structure/window/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Slamming.
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(isliving(G?.grab_target()))
 			var/mob/living/M = G?.grab_target()
 			var/state = G.state
-			qdel(W)	//gotta delete it here because if window breaks, it won't get deleted
+			consumed(W, src)	//gotta delete it here because if window breaks, it won't get deleted
 			switch (state)
 				if(1)
 					act_message(user, M, others = span_warning("%U% slams %T% against \the [src]!"))
@@ -230,51 +194,47 @@
 				if(2)
 					act_message(user, M, others = span_danger("%U% bashes %T% against \the [src]!"))
 					if (prob(50))
-						M.status_at_least(EFFECT_WEAKENED, 1)
+						M.status_at_least(STAT_WEAKENED, 1)
 					M.injure(INJURY_BLUNT, 10, null, src)
 					hit(25)
 				if(3)
 					act_message(M, user, others = span_danger("<big>%T% crushes %U% against \the [src]!</big>"))
-					M.status_at_least(EFFECT_WEAKENED, 5)
+					M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 20, null, src)
 					hit(50)
-			return TRUE
+			return OP_OK
 
-	if(W.flags & NOBLUDGEON) return TRUE
+	if(W.flags & NOBLUDGEON) return OP_OK
 
-	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
-		var/obj/item/stack/cable_coil/C = W
-		if (C.use(1))
-			play_sfx(src, SFX_EFFECTS_SPARKS1, 0.75)
-			act_message(user, src, MSG_SELF(span_notice("You begin to wire %T% for electrochromic tinting.")), \
-				MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting.")), \
-				MSG_BLIND("You hear sparks."))
-			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
-	else if(istype(W,/obj/item/frame) && anchored)
-		var/obj/item/frame/F = W
-		F.try_build(src, user)
+	if(istype(W,/obj/item/frame) && anchored)
+		return OP_OK // its own op, frame.mount, hangs it on the window
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
-			hit(W.force)
+			hit(combat_of(W).force)
 			if(get_integrity() <= 7)
 				set_anchored(FALSE)
-				update_nearby_icons()
 				step(src, get_dir(user, src))
 		else
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	return TRUE
+	return OP_OK
 
-/obj/structure/window/proc/attackby_tool_done(state)
-	if(!(state == 0))
-		return
+MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tinting."), span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting."))
+
+/// A reinforced pane, not yet fastened in, not tinted already, is wired for tint with a length of cable.
+/obj/structure/window/proc/can_polarize(datum/act/op/A)
+	return read_once(reinf && state == 0) && !istype(src, /obj/structure/window/reinforced/polarized)
+
+/obj/structure/window/proc/attackby_tool_done(datum/act/op/A)
+	if(state != 0)
+		return OP_OK
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	var/obj/structure/window/reinforced/polarized/P = new(loc, dir)
 	if(is_fulltile())
-		P.fulltile = TRUE
-		P.icon_state = "fwindow"
-	P.max_integrity = max_integrity
+		P.set_fulltile(TRUE)
+		P.set_icon_state("fwindow")
+	P.set_max_integrity(max_integrity)
 	P.update_integrity(get_integrity())
 	P.state = state
 	P.set_anchored(anchored)
@@ -295,15 +255,30 @@
 	update_nearby_tiles(need_rebuild=1) //Compel updates before
 	. = ..()
 	if(.)
-		updateSilicate()
 		update_nearby_tiles(need_rebuild=1)
 
-/obj/structure/window/Initialize(mapload, start_dir=null, constructed=0)
+CAPABILITIES(/obj/structure/window)
+	smoothing()
+	rolls(nameof(tilt_sign), pick_one(list(-1, 1)))
+	param(nameof(dir), pos = 1)
+	param(nameof(constructed), pos = 2)
+	op("bang", hand(), stance(I_HURT), label("Bang on"), then(PROC_REF(interaction_bang)))
+	op("knock", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Knock"), then(PROC_REF(interaction_hand)))
+	op("polarize", stack(/obj/item/stack/cable_coil, 1), priority(OP_PRIORITY_PART + 1), label("Wire for tinting"), when(PROC_REF(can_polarize)), plays(SFX_EFFECTS_SPARKS1, at_start = TRUE), begins(MSG(window/wiring)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	window_construction()
+	op("tk_knock", tk(), label("Knock"), then(PROC_REF(interaction_tk)))
+	// weld repair: a lit welder in the help stance mends a damaged window
+	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair the window"), priority(OP_PRIORITY_PART + 10), wait(4 SECONDS), costs(RES_FUEL, 1),
+		needs(req_welder_lit(), req(PROC_REF(is_damaged), because = MSG(window/undamaged))), begins(MSG(start/interaction/window_repair)), says(MSG(interaction/window_repair)), then(PROC_REF(weld_repair)))
+
+/// A window a player built (its constructor param).
+/obj/structure/window/var/constructed = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a window insulates, starts loose when built, turns, and updates its tiles and the tables beside it
+/obj/structure/window/Initialize(mapload)
 	. = ..()
 	update_rad_insulation()
-
-	if (start_dir)
-		set_dir(start_dir)
 
 	//player-constructed windows
 	if (constructed)
@@ -317,23 +292,12 @@
 	ini_dir = dir
 
 	update_nearby_tiles(need_rebuild=1)
-	update_nearby_icons()
-
-	for(var/obj/structure/table/T in view(src, 1))
-		T.update_connections()
-		T.update_icon()
 
 // neighbouring windows and tables re-smooth without it.
 /obj/structure/window/on_destroy(force)
 	set_density(FALSE)
 	update_nearby_tiles()
-	var/turf/location = loc
 	..()
-	for(var/obj/structure/window/W in orange(location, 1))
-		W.update_icon()
-	for(var/obj/structure/table/T in view(location, 1))
-		T.update_connections()
-		T.update_icon()
 
 /obj/structure/window/Move()
 	var/ini_dir = dir
@@ -342,10 +306,6 @@
 	. = ..()
 	set_dir(ini_dir)
 	update_nearby_tiles(need_rebuild=1)
-	if(loc != location)
-		for(var/obj/structure/table/T in view(location, 1) | view(loc, 1))
-			T.update_connections()
-			T.update_icon()
 
 //checks if this window is full-tile one
 /obj/structure/window/proc/is_fulltile()
@@ -356,55 +316,57 @@
 		return TRUE
 	return ..()
 
-//This proc is used to update the icons of nearby windows. It should not be confused with update_nearby_tiles(), which is an atmos proc!
-/obj/structure/window/proc/update_nearby_icons()
-	update_icon()
-	for(var/obj/structure/window/W in orange(src, 1))
-		W.update_icon()
-
 //Updates the availabiliy of the rotation verbs
 /obj/structure/window/proc/update_verbs()
 	if(anchored || is_fulltile())
-		om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
-		om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
-		om_revoke(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
+		revoke(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
+		revoke(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
+		revoke(src, granted_verb(/atom/movable/proc/turn_around), src)
 	else if(!is_fulltile())
-		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
-		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
-		om_grant(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
+		grant(src, granted_verb(/atom/movable/proc/rotate_counterclockwise), src)
+		grant(src, granted_verb(/atom/movable/proc/rotate_clockwise), src)
+		grant(src, granted_verb(/atom/movable/proc/turn_around), src)
 
-//merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
-DECLARE_APPEARANCE_PROC(/obj/structure/window, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/window/appearance_overlays()
-	. = list()
-	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
-	//this way it will only update full-tile ones
+TRACKED(/obj/structure/window, tilt_sign)
+
+/// Which way the sprite of a slim window leans as it takes damage, rolled once (1 or -1).
+/obj/structure/window/var/tilt_sign = 1
+
+/// The glass: a slim one leans as it takes damage, a full tile joins its neighbours; silicate lays a white sheen over either.
+/obj/structure/window/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/obj/structure/window/proc/look_parts(datum/look/look)
 	if(!is_fulltile())
 		// Rotate the sprite somewhat so non-fulltiled windows can be seen as needing repair.
-		var/full_tilt_degrees = 15
-		var/tilt_to_apply = abs((get_integrity() / max_integrity) - 1)
-		if(tilt_to_apply && prob(50))
-			tilt_to_apply = -tilt_to_apply
-		adjust_rotation(LERP(0, full_tilt_degrees, tilt_to_apply))
+		look.effect(PROC_REF(window_tilt), LERP(0, 15, max_integrity ? get_integrity_damage() / max_integrity : 0) * tilt_sign)
+		look.state("[basestate]")
+		look.overlay(look_overlay_image(icon, "[basestate]", color = "#ffffff", alpha = silicate * 255 / 100), silicate > 0)
+		return
+	look.effect(PROC_REF(window_fulltile_flags))
+	look.state("")
+	if(length(connections) < 4)
+		return
+	for(var/image/I in window_overlay_images(connections))
+		look.overlay(I)
+	if(silicate > 0)
+		for(var/i = 1 to 4)
+			look.overlay(look_overlay_image(icon, "[basestate][connections[i]]", dir = 1<<(i-1), color = "#ffffff", alpha = silicate * 255 / 100))
 
-		icon_state = "[basestate]"
-		return .
-	else
-		flags &= ~ON_BORDER // Removes ON_BORDER
-	var/list/dirs = list()
-	if(anchored)
-		for(var/obj/structure/window/W in orange(src,1))
-			if(W.anchored && W.density && W.glasstype == src.glasstype && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
-				dirs += get_dir(src, W)
+/// A slim window leans by `degrees`.
+/obj/structure/window/proc/window_tilt(degrees)
+	adjust_rotation(degrees)
 
-	icon_state = ""
-	. += window_overlay_images(dirs_to_corner_states(dirs))
+/// A full tile does not stand on a border.
+/obj/structure/window/proc/window_fulltile_flags()
+	flags &= ~ON_BORDER // Removes ON_BORDER
 
 /// The overlay images for a full-tile window in this state (doc/rewrite/init_and_turfs.md sec 3.5):
 /// built once per (icon, basestate, corner connections, damage step, layer) and shared by every
 /// window in that state. Read-only: callers pass it to add_overlay(), which copies.
 /obj/structure/window/proc/window_overlay_images(list/connections)
-	var/ratio = CEILING((get_integrity() / max_integrity) * 4, 1) * 25
+	var/ratio = CEILING(((max_integrity - get_integrity_damage()) / max_integrity) * 4, 1) * 25
 	var/step = ratio > 75 ? 100 : ratio
 	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
 
@@ -534,29 +496,37 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// The window's tint id: linked from the multitool's buffered tint button, else the one entered.
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/multitool/MT = A.held?.get_multitool()
+	if(istype(MT?.connectable(), /obj/machinery/button/windowtint))
+		var/obj/machinery/button/windowtint/buffered_button = MT.connectable()
+		src.id = buffered_button.id
+		to_chat(user, span_notice("\The [src] is linked to \the [buffered_button] with ID '[id]'."))
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/t = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if(t)
 		src.id = t
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
+	return OP_OK
 
-/// Overrides window's interaction_item(): a multitool programs the tint ID while unanchored.
-/obj/structure/window/reinforced/polarized/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	var/obj/item/multitool/MT = W.get_multitool()
-	if(MT && !anchored) // Only allow programming if unanchored!
-		// First check if they have a windowtint button buffered
-		if(istype(MT.connectable(), /obj/machinery/button/windowtint))
-			var/obj/machinery/button/windowtint/buffered_button = MT.connectable()
-			src.id = buffered_button.id
-			to_chat(user, span_notice("\The [src] is linked to \the [buffered_button] with ID '[id]'."))
-			return TRUE
-		// Otherwise fall back to asking them... and remind them what the current ID is.
-		if(id)
-			to_chat(user, "The window's current ID is [id].")
-		om_ask(user, /datum/om/prompt/text, PROC_REF(window_id_entered), title = name, default = id, message = "Enter the new ID for the window.", encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-		return TRUE
-	return ..()
+/// No tint button is buffered in the multitool: the window asks for an id (and says the current one).
+/obj/structure/window/reinforced/polarized/proc/asks_id(datum/act/op/A)
+	var/obj/item/multitool/MT = A.held?.get_multitool()
+	return !istype(MT?.connectable(), /obj/machinery/button/windowtint)
+
+/obj/structure/window/reinforced/polarized/proc/id_question(datum/act/A)
+	return id ? "The window's current ID is [id]. Enter the new ID for the window." : "Enter the new ID for the window."
+
+CAPABILITIES(/obj/structure/window/reinforced/polarized)
+	// a multitool programs the tint id while the window is loose: from a buffered tint button, else as asked
+	op("program", tool(TOOL_MULTITOOL), wait(0), label("Program"), when(cond_not(nameof(anchored))),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "default" = "id", "encode" = FALSE, "timeout" = 0), when = PROC_REF(asks_id)),
+		then(PROC_REF(window_id_entered)))
 
 /obj/structure/window/reinforced/polarized/proc/toggle()
 	if(opacity)
@@ -578,20 +548,10 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	flags = WALL_ITEM
 	var/range = 7
 
-/obj/machinery/button/windowtint/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/windowtint_toggle,
-	)
-	..()
-
-/datum/interaction/machine_hand/windowtint_toggle
-	id = "windowtint_toggle"
-	name = "Toggle"
-	effect = /obj/machinery/button/windowtint/proc/interaction_toggle
-
-/obj/machinery/button/windowtint/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: tint or clear the polarized windows in range that share its id.
+/obj/machinery/button/windowtint/proc/interaction_toggle(datum/act/op/A)
 	toggle_tint()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/button/windowtint/proc/toggle_tint()
 	use_power(5)
@@ -604,57 +564,60 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 
 /obj/machinery/button/windowtint/power_change()
 	. = ..()
-	if(active && !powered(power_channel))
+	if(active && !powered(power_of(src).channel))
 		toggle_tint()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/windowtint/draw(datum/look/look)
+	..()
+	look.state("light[active]")
 
-/obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
-	var/obj/item/multitool/multitool = tool
-	if(!id)
-		om_ask(user, /datum/om/prompt/text/windowtint_button_id, PROC_REF(button_id_entered), subject = tool, button = src)
-		return ITEM_INTERACT_SUCCESS
-	store_in_multitool(user, multitool)
-	return ITEM_INTERACT_SUCCESS
+/// The question a multitool asks of a button with no id yet.
+/obj/machinery/button/windowtint/proc/id_question(datum/act/A)
+	return "Enter an ID for \the [src]."
 
-/// Setting a tint button's ID with a multitool (the subject, held throughout); the button stays next to them and unset.
-/datum/om/prompt/text/windowtint_button_id
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/machinery/button/windowtint/button
-
-/datum/om/prompt/text/windowtint_button_id/prepare()
-	title = button.name
-	message = "Enter an ID for \the [button]."
-	return TRUE
-
-/datum/om/prompt/text/windowtint_button_id/valid()
-	if(button.id)
-		return "already set"
-	return button.Adjacent(answerer) ? null : "too far away"
-
-/obj/machinery/button/windowtint/proc/button_id_entered(datum/om/prompt/text/windowtint_button_id/ask)
-	var/mob/user = ask.answerer
-	var/new_id = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// A multitool names a button that has no id yet (held throughout, still beside it), then stores it.
+/obj/machinery/button/windowtint/proc/button_id_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/new_id = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if(new_id)
-		id = new_id
+		set_id(new_id)
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
-		store_in_multitool(user, user.get_active_hand())
+		store_in_multitool(user, A.held)
+	return OP_OK
+
+/// A multitool stores a named button's id in its buffer.
+/obj/machinery/button/windowtint/proc/id_stored(datum/act/op/A)
+	store_in_multitool(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/button/windowtint/proc/store_in_multitool(mob/user, obj/item/multitool/multitool)
 	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
 		rel_set(multitool, nameof(multitool.connectable), src)
-		multitool.update_icon()
 
-/obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)
+MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
+
+CAPABILITIES(/obj/machinery/button/windowtint)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(windowtint/wires_cut)), then(PROC_REF(wires_cut)))
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), label("Set ID"), when(cond_not(nameof(id))),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0)),
+		needs(req_is(nameof(id), FALSE, because = /datum/msg/req_silent)), then(PROC_REF(button_id_entered)))
+	op("store_id", tool(TOOL_MULTITOOL), wait(0), label("Store ID"), when(nameof(id)), then(PROC_REF(id_stored)))
+
+/// The cutters through an open panel: the wires come out and the button comes off the wall.
+/obj/machinery/button/windowtint/proc/wires_cut(datum/act/op/A)
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
-	playsound(src, tool.usesound, 50, TRUE)
+		return OP_DECLINE // a shut panel: the cutters go on to the legacy tool handling, as before
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	new /obj/item/stack/cable_coil(get_turf(src), 5)
-	return dismantle() ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	dismantle()
+	return OP_OK
 
 /* moved this block to code\game\objects\items\weapons\rcd.dm
 /obj/structure/window/rcd_values(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
@@ -666,7 +629,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			spent(src, user)
 			return TRUE
 	return FALSE
 */

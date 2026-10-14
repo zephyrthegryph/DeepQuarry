@@ -10,11 +10,20 @@
 	var/upperdrop = 10
 	var/outcropdrop = /obj/item/ore/glass
 
-/obj/structure/outcrop/Initialize(mapload)
-	. = ..()
-	if(prob(1))
-		add_overlay("[initial(icon_state)]-egg")
-	make_climbable()
+CAPABILITIES(/obj/structure/outcrop)
+	rolls(nameof(has_egg), chance(1))
+	climb()
+	op("pickaxe", item(/obj/item/pickaxe), label("Dig"), priority(OP_PRIORITY_PART), begins(MSG(outcrop/hacking)), wait(4 SECONDS), then(PROC_REF(dig_done)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+MSG_DEF(outcrop/hacking, span_notice("%U% begins to hack away at %T%."), span_notice("%U% begins to hack away at %T%."))
+
+/// Rolled before init (rolls()): one outcrop in a hundred shows an egg.
+/obj/structure/outcrop/var/has_egg = FALSE
+
+/obj/structure/outcrop/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]-egg", when = has_egg)
 
 /obj/structure/outcrop/diamond
 	name = "shiny outcrop"
@@ -88,36 +97,33 @@
 	upperdrop = 8
 	outcropdrop = /obj/item/ore/uranium
 
-/obj/structure/outcrop/proc/dig_done(mob/user)
+/obj/structure/outcrop/proc/dig_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You have finished digging!"))
 	for(var/i=0;i<(rand(mindrop,upperdrop));i++)
 		new outcropdrop(get_turf(src))
-	qdel(src)
-
-DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+	consume(src, user)
 
 /// Old attackby.
-/obj/structure/outcrop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/pickaxe))
-		to_chat(user, span_notice("[user] begins to hack away at \the [src]."))
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(dig_done), list(user))
-		return INTERACTION_HANDLED_PASS
+/obj/structure/outcrop/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/melee/shock_maul))
 		var/obj/item/melee/shock_maul/S = W
 		if(!S.wielded || !S.status)
 			to_chat(user, span_warning("\The [S] must be wielded in two hands and powered on to be used to mine this!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You pulverize \the [src]!"))
 		for(var/i=0;i<(rand(mindrop,upperdrop));i++)
 			new outcropdrop(get_turf(src))
 		play_sfx(src, SFX_WEAPONS_RESONATOR_BLAST)
 		user.visible_message(span_warning("\The [S] discharges with a thunderous, hair-raising crackle!"))
 		S.deductcharge()
-		S.status = 0
+		S.set_status(0)
 		S.update_held_icon()
-		qdel(src)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		consume(src, user)
+		return OP_PASS
+	return OP_PASS
 
 /obj/random/outcrop //In case you want an outcrop without pre-determining the type of ore.
 	name = "random rock outcrop"
@@ -125,14 +131,16 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 	icon = 'icons/obj/outcrop.dmi'
 	icon_state = "outcrop-random"
 
-DECLARE_LOOT(/obj/random/outcrop, LOOT_TABLE(\
-	/obj/structure/outcrop = 100, \
-	/obj/structure/outcrop/iron = 100, \
-	/obj/structure/outcrop/coal = 100, \
-	/obj/structure/outcrop/silver = 65, \
-	/obj/structure/outcrop/gold = 50, \
-	/obj/structure/outcrop/uranium = 30, \
-	/obj/structure/outcrop/phoron = 30, \
-	/obj/structure/outcrop/diamond = 7, \
-	/obj/structure/outcrop/platinum = 15, \
-	/obj/structure/outcrop/lead = 15))
+CAPABILITIES(/obj/random/outcrop)
+	loot(
+		table = list(
+			/obj/structure/outcrop = 100,
+			/obj/structure/outcrop/iron = 100,
+			/obj/structure/outcrop/coal = 100,
+			/obj/structure/outcrop/silver = 65,
+			/obj/structure/outcrop/gold = 50,
+			/obj/structure/outcrop/uranium = 30,
+			/obj/structure/outcrop/phoron = 30,
+			/obj/structure/outcrop/diamond = 7,
+			/obj/structure/outcrop/platinum = 15,
+			/obj/structure/outcrop/lead = 15))

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Battery rack: declared with the machine library; its window no longer answers the SMES's buttons, its look follows its cells"

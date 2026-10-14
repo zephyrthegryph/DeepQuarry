@@ -1,0 +1,17 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Unfasten
+human|/obj/item/tool/wrench click: Click: Unfasten
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Configure
+human|/obj/item/multitool click: Click: Configure
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+keys: configure, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, unfasten

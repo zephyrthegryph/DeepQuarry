@@ -52,10 +52,10 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 	if(!ckeys_with_customitems.len)
 		populate_inactive_customitems_finish(list(), C?.ckey)
 		return
-	//run a query to get all ckeys inactive for over 2 months (om_io: the answer continues below)
-	om_io(null, /datum/om/io/sql, "SELECT ckey, lastseen FROM erro_player WHERE datediff(Now(), lastseen) > 60", null, /proc/populate_inactive_customitems_inactive, ckeys_with_customitems, C?.ckey)
+	//run a query to get all ckeys inactive for over 2 months (io_job: the answer continues below)
+	io_job(null, /datum/io_backend/sql, "SELECT ckey, lastseen FROM erro_player WHERE datediff(Now(), lastseen) > 60", null, /proc/populate_inactive_customitems_inactive, ckeys_with_customitems, C?.ckey)
 
-/// om_io() callback: the long-inactive players are known; now check which of the rest have any
+/// io_job() callback: the long-inactive players are known; now check which of the rest have any
 /// database entry at all.
 /proc/populate_inactive_customitems_inactive(list/result, error, list/ckeys_with_customitems, asker_ckey)
 	var/list/inactive_ckeys = list()
@@ -74,9 +74,9 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 	for(var/i in 1 to length(ckeys_with_customitems))
 		placeholders += ":k[i]"
 		arguments["k[i]"] = ckeys_with_customitems[i]
-	om_io(null, /datum/om/io/sql, "SELECT ckey FROM erro_player WHERE ckey IN ([jointext(placeholders, ",")])", arguments, /proc/populate_inactive_customitems_known, ckeys_with_customitems, inactive_ckeys, asker_ckey)
+	io_job(null, /datum/io_backend/sql, "SELECT ckey FROM erro_player WHERE ckey IN ([jointext(placeholders, ",")])", arguments, /proc/populate_inactive_customitems_known, ckeys_with_customitems, inactive_ckeys, asker_ckey)
 
-/// om_io() callback: whoever isn't in the player table has no database entry.
+/// io_job() callback: whoever isn't in the player table has no database entry.
 /proc/populate_inactive_customitems_known(list/result, error, list/ckeys_with_customitems, list/inactive_ckeys, asker_ckey)
 	var/list/known = list()
 	for(var/list/row as anything in result?["rows"])

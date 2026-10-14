@@ -23,6 +23,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /obj/item/poi/pascalb
+	proximity_tracked = TRUE
 	icon_state = "pascalb"
 	name = "misshapen manhole cover"
 	desc = "The top of this twisted chunk of metal is faintly stamped with a five pointed star. 'Property of US Army, Pascal B - 1957'."
@@ -31,14 +32,12 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
+/// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/item/poi/pascalb)
+	every(2 SECONDS, then(PROC_REF(pascalb_step)), when = STAT_RELEVANCE)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/poi/pascalb/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/item/poi/pascalb/proc/pascalb_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/item/poi/pascalb/proc/radiate()
 	if(active)
@@ -104,12 +103,11 @@ DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
 	starts_with = list(
 		/obj/item/fuel_assembly/deuterium = 6)
 
-/obj/structure/closet/crate/oldreactor/Initialize(mapload)
-	. = ..()
-	// Not climbable!
-	unmake_climbable()
+CAPABILITIES(/obj/structure/closet/crate/oldreactor)
+	without(CAP_CLIMB) // not climbable
 
 /obj/item/poi/brokenoldreactor
+	proximity_tracked = TRUE
 	icon_state = "poireactor_broken"
 	name = "ruptured fission reactor rack"
 	desc = "This broken hunk of machinery looks extremely dangerous."
@@ -118,14 +116,12 @@ DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
+/// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/item/poi/brokenoldreactor)
+	every(2 SECONDS, then(PROC_REF(brokenoldreactor_step)), when = STAT_RELEVANCE)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/poi/brokenoldreactor/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/item/poi/brokenoldreactor/proc/brokenoldreactor_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/item/poi/brokenoldreactor/proc/radiate()
 	if(active)
@@ -189,22 +185,34 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 	var/fried = FALSE
 	var/has_paper = FALSE
 
-/obj/item/poi/broken_drone_circuit/Initialize(mapload)
-	. = ..()
-	drone_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]]"
-	var/new_canalyzer = "[drone_name] [examine_canalyzer]"	//Only way I could think to dynamically insert drone name here
-	examine_canalyzer = new_canalyzer
+/// Rolled before init (rolls()): the drone's model and serial.
+/obj/item/poi/broken_drone_circuit/proc/roll_drone_name(datum/roller/R)
+	return "[R.choose(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD"))]-[R.number(1000, 9999)]]"
+
+/// Rolled before init (rolls()), after the name: the analyzer readout starts with it.
+/obj/item/poi/broken_drone_circuit/proc/canalyzer_with_name(datum/roller/R)
+	return "[drone_name] [examine_canalyzer]"
 
 /// Requirement: a fried circuit is past working on.
-/obj/item/poi/broken_drone_circuit/proc/can_work_on(mob/living/user, atom/target, obj/item/held)
-	if(istype(user) && fried)
-		return "it's covered in black marks, you feel there's nothing more you can do"
-	return TRUE
+TRACKED(/obj/item/poi/broken_drone_circuit, fried)
+
+CAPABILITIES(/obj/item/poi/broken_drone_circuit)
+	// the old attack_self: study the circuit for a while
+	op("analyze", in_hand(), label("Analyze"), when(cond_not(nameof(fried))), begins(MSG(drone_circuit/analyzing)), wait(5 SECONDS), then(PROC_REF(analyzed)))
+	op("analyze_fried", in_hand(), label("Analyze"), when(nameof(fried)), then(PROC_REF(analyzed_fried)))
+	// the old attackby: screwdriver, wirecutters, multitool and analyzer on the blackbox (a fried board is past saving)
+	op("work", item(/obj/item), label("Use"), needs(req_is(nameof(fried), FALSE, because = MSG(drone_circuit/fried))), then(PROC_REF(interaction_item)))
+	rolls(nameof(drone_name), PROC_REF(roll_drone_name))
+	rolls(nameof(examine_canalyzer), PROC_REF(canalyzer_with_name), from = list(nameof(drone_name)))
+
+MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's nothing more you can do.")
 
 /// Old attackby.
-/obj/item/poi/broken_drone_circuit/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/poi/broken_drone_circuit/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/turf/message_turf = get_turf(user)	//We use this to ensure everyone can see it!
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
@@ -217,9 +225,10 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 
 	if(istype(I, /obj/item/paper) && unscrewed)
 		if(!has_paper)
+			if(!consume(I, user))
+				return OP_PASS
 			to_chat(user, "You feed the debug printer some paper")
 			has_paper = TRUE
-			consume(I, user)
 		else
 			to_chat(user, span_notice("[src] cannot hold more than 1 sheet of paper."))
 
@@ -231,7 +240,7 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 			deaf_message = span_bold("[src]") + " flashes red repeatedly", runemessage= "Beep! Beep!")
 			to_chat(user, span_warning("The components spark from the multitool's unregulated pulse. \
 			Perhaps it'd been better to use more sophisticated tools..."))
-			fried = TRUE
+			set_fried(TRUE)
 			message_turf.visible_message(message = span_bold("[src]") + " FLASHES VIOLENTLY!",
 			blind_message = "ZAP!", runemessage = "CRACKLE!")
 			var/used_hand = user.get_organ(user.get_active_hand())
@@ -259,27 +268,19 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 				deaf_message = span_bold("[src]") + " flashes green!", runemessage= "RATTLE RATTLE")
 				var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 				P.name = "[drone_name] blackbox transcript"
-				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
+				P.set_info("[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]")
 				has_paper = FALSE
 
-	return FALSE
+	return OP_DECLINE
 
-DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/poi/broken_drone_circuit/proc/can_work_on)), \
-)
+MSG_DEF(drone_circuit/analyzing, "You take your time to analyze the circuit...", "%U% is studiously examining %T%")
 
-/// Old attack_self.
-/obj/item/poi/broken_drone_circuit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-
-	act_message(user, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
+/// What the board shows, from what has been done to it.
+/obj/item/poi/broken_drone_circuit/proc/analysis_text()
 	var/message = ""
 	if(fried)
-		message += "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
-		to_chat(user, message)
-		return TRUE
-	else
-		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
+		return "Amidst the scorch mark, you barely make out [drone_name] stenciled on the board... \n"
+	message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
 
 	if(unlocked)
 		message += "The power logic to the blackbox is scorched. Whatever secrets lie in the blackbox are yours for taking! \n"
@@ -294,9 +295,14 @@ DECLARE_INTERACTIONS(/obj/item/poi/broken_drone_circuit, \
 		It looks like a single pulse will fry this system for good\n"
 	if(unscrewed && !has_paper)
 		message += "Looks like there's a printer without any paper in it."
+	return message
 
-	om_task_timed(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
-	return TRUE
+/obj/item/poi/broken_drone_circuit/proc/analyzed(datum/act/op/A)
+	to_chat(A.actor, analysis_text())
 
-/obj/item/poi/broken_drone_circuit/proc/attack_self_timed_done(mob/user, message)
-	to_chat(user, message)
+/// A fried board is read at once.
+/obj/item/poi/broken_drone_circuit/proc/analyzed_fried(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You take your time to analyze the circuit..."), MSG_OTHERS("%U% is studiously examining %T%"))
+	to_chat(A.actor, analysis_text())
+	return OP_OK
+

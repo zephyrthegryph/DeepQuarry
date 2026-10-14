@@ -1,0 +1,76 @@
+@obj human|none
++0 menu: Alternate use
++3 menu: Toggle Cataloguer (refused: You can't do that.)
+@obj robot|none
++0 menu: Alternate use
++4 menu: Toggle Cataloguer (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++1 menu: Toggle Cataloguer (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Alternate use
++2 menu: Toggle Cataloguer (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/kit
++0 menu: Alternate use
++3 menu: Toggle Cataloguer (refused: You can't do that.)
++5 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++0 menu: Alternate use
++3 menu: Toggle Cataloguer (refused: You can't do that.)
++5 menu: Use
++6 click: Click: Use
+@obj human|/obj/item
++2 menu: Toggle Cataloguer (refused: You can't do that.)
+keys: alt, back_to_list, collect_item, compact_toggle_effect, controls, debug_unlock, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pulse_scan, refresh, scan, show_data, toggle_digestable

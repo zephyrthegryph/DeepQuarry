@@ -14,9 +14,11 @@
 	aspect = ASPECT_UNSTABLE
 	spawner_type = /obj/effect/temporary_effect/destablize
 
-/obj/item/spell/spawner/destablize/Initialize(mapload)
-	. = ..()
-	set_light(3, 2, l_color = "#C26DDE")
+CAPABILITIES(/obj/item/spell/spawner/destablize)
+	configure(light_glow(range = 3, power = 2, color = "#C26DDE"))
+
+/obj/item/spell/spawner/destablize
+	light_on = TRUE
 
 /obj/item/spell/spawner/destablize/on_ranged_cast(atom/hit_atom, mob/user)
 	if(within_range(hit_atom) && pay_energy(2000))
@@ -28,13 +30,13 @@
 	desc = "This can't be good..."
 	icon_state = "blueshatter"
 	time_to_die = null
-	light_range = 6
-	light_power = 20
-	light_color = "#C26DDE"
 	light_on = TRUE
 	var/pulses_remaining = 40 // Lasts 20 seconds.
 	var/instability_power = 5
 	var/instability_range = 6
+
+CAPABILITIES(/obj/effect/temporary_effect/destablize)
+	configure(light_glow(range = 6, power = 20, color = "#C26DDE"))
 
 /obj/effect/temporary_effect/destablize/Initialize(mapload)
 	. = ..()
@@ -43,9 +45,9 @@
 /// A pulse every half second until pulses_remaining runs out.
 /obj/effect/temporary_effect/destablize/proc/radiate_loop()
 	if(!pulses_remaining)
-		qdel(src)
+		lapsed(src)
 		return
-	om_after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
+	after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
 
 /obj/effect/temporary_effect/destablize/proc/radiate_pulse()
 	for(var/mob/living/L in range(src, instability_range) )

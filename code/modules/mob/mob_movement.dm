@@ -1,8 +1,8 @@
 /mob/proc/setMoveCooldown(timeout)
-	next_move = max(world.time + timeout, next_move)
+	cooldown_set_end(src, next_move, max(world.time + timeout, cooldown_end(src, next_move)))
 
 /mob/proc/checkMoveCooldown()
-	if(COOLDOWN_TIMELEFT(src, next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
+	if(cooldown_left(src, next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
 		return FALSE // Need to wait more.
 	return TRUE
 
@@ -12,7 +12,7 @@
 		. += 5
 
 	if(lying)
-		if(has_status(EFFECT_WEAKENED))
+		if(has_status(STAT_WEAKENED))
 			. += 14			// Very slow when weakened.
 		else
 			. += 8
@@ -20,7 +20,7 @@
 	// Movespeed delay based on movement mode
 	switch(m_intent)
 		if(I_RUN)
-			if(has_status(EFFECT_DROWSY))
+			if(has_status(STAT_DROWSY))
 				. += 6
 			. += CONFIG_GET(number/run_speed)
 		if(I_WALK)
@@ -39,33 +39,40 @@
 	diagonal_action(SOUTHWEST)
 
 /client/proc/diagonal_action(direction)
-	switch(client_dir(direction, 1))
+	var/resolved_direction = client_dir(direction, 1)
+	switch(resolved_direction)
 		if(NORTHEAST)
 			swap_hand()
 			return
 		if(SOUTHEAST)
 			attack_self()
 			return
+		if(SOUTHWEST, NORTHWEST)
+			mob?.diagonal_inventory_action(resolved_direction)
+			return
+
+/// Inventory hotkeys support every living mob; nonliving mobs receive the existing refusal.
+/mob/proc/diagonal_inventory_action(direction)
+	var/mob/living/C = src
+	if(!istype(C))
+		if(direction == SOUTHWEST)
+			to_chat(src, span_red("This mob type cannot throw items."))
+		else if(direction == NORTHWEST)
+			to_chat(src, span_red("This mob type cannot drop items."))
+		return
+	switch(direction)
 		if(SOUTHWEST)
-			if(isliving(usr))
-				var/mob/living/carbon/C = usr
-				C.toggle_throw_mode()
-			else
-				to_chat(usr, span_red("This mob type cannot throw items."))
-			return
+			C.toggle_throw_mode()
 		if(NORTHWEST)
-			if(isliving(usr))
-				var/mob/living/carbon/C = usr
-				if(!C.get_active_hand())
-					if(C?.pulling_target())
-						C.stop_pulling()
-						return
-					to_chat(usr, span_red("You have nothing to drop in your hand."))
+			if(!C.get_active_hand())
+				if(C.pulling_target())
+					C.stop_pulling()
 					return
-				drop_item()
-			else
-				to_chat(usr, span_red("This mob type cannot drop items."))
-			return
+				to_chat(C, span_red("You have nothing to drop in your hand."))
+				return
+			// Preserve the native client's drop guard, including drops inside bellies.
+			if(!isrobot(C) && C.stat == CONSCIOUS && (isturf(C.loc) || isbelly(C.loc)))
+				C.drop_item()
 
 //This gets called when you press the delete button.
 /client/verb/delete_key_pressed()
@@ -163,7 +170,7 @@
 			next_move_dir_sub = 0 	// I'm not really sure why next_move_dir_sub even exists.
 			return
 		else //We are anything BUT an observer.
-			if(!my_mob.canmove || my_mob.has_status(EFFECT_PARALYZED) || my_mob.has_status(EFFECT_STUNNED))//If you want to be very restrictive, add my_mob.restrained() and it'll stop people cuffed/straight jacketed. For now, that's too restrictive for a bugfix PR.
+			if(!my_mob.canmove || my_mob.has_status(STAT_PARALYZED) || my_mob.has_status(STAT_STUNNED))//If you want to be very restrictive, add my_mob.restrained() and it'll stop people cuffed/straight jacketed. For now, that's too restrictive for a bugfix PR.
 				return
 			else //Proceed like normal.
 				Process_Incorpmove(direct)
@@ -214,8 +221,10 @@
 		return
 
 	// Relaymove could handle it
-	if(OM_EMIT(my_mob, /datum/om/event/before/mob_relay_movement, direct))
+	var/datum/act/relay_movement/relay = ACT_TRY(my_mob, relay_movement, direct)
+	if(!relay)
 		return TRUE
+	act_cancel(relay)
 
 	// Can't control ourselves when drifting
 	if((isspace(loc) || my_mob.lastarea?.get_gravity() == 0) && isturf(loc))
@@ -245,18 +254,18 @@
 		to_chat(src, span_blue("You're pinned to a wall by [my_mob.pinned[1]]!"))
 		return 0
 
-	var/old_delay = mob.next_move
+	var/old_delay = cooldown_end(mob, next_move)
 
 	if(istype(my_mob?.buckled_to(), /obj/vehicle) || ismob(my_mob?.buckled_to()))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		EXPIRY_STAMP(my_mob, next_move, CLOCK_WORLD)
+		cooldown_set_end(my_mob, next_move, world.time)
 		//drunk driving
-		if(my_mob.has_status(EFFECT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
+		if(my_mob.has_status(STAT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
 			direct = turn(direct, pick(90, -90))
 		if(ismob(my_mob?.buckled_to()))
 			var/mob/M = my_mob?.buckled_to()
-			if(M.next_move > my_mob.next_move) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
+			if(cooldown_end(M, next_move) > cooldown_end(my_mob, next_move)) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
 				return
 		var/atom/movable/_tmp_buck_30 = my_mob?.buckled_to()
 		return _tmp_buck_30.relaymove(my_mob,direct)
@@ -276,7 +285,7 @@
 				if((!l_hand || l_hand.is_stump()) && (!r_hand || r_hand.is_stump()))
 					return // No hands to drive your chair? Tough luck!
 			//drunk wheelchair driving
-			else if(my_mob.has_status(EFFECT_CONFUSED))
+			else if(my_mob.has_status(STAT_CONFUSED))
 				switch(my_mob.m_intent)
 					if(I_RUN)
 						if(prob(50))
@@ -291,7 +300,7 @@
 	var/pre_move_loc = loc
 
 	// Confused direction randomization
-	if(my_mob.has_status(EFFECT_CONFUSED))
+	if(my_mob.has_status(STAT_CONFUSED))
 		switch(my_mob.m_intent)
 			if(I_RUN)
 				if(prob(75))
@@ -318,9 +327,9 @@
 
 	//total_delay = DS2NEARESTTICK(total_delay) //Rounded to the next tick in equivalent ds
 	if(ELAPSED_SINCE(src, mob.last_move_time, CLOCK_WORLD) < total_delay * 1.25)
-		mob.next_move = DS2NEARESTTICK(old_delay + total_delay)
+		cooldown_set_end(mob, next_move, DS2NEARESTTICK(old_delay + total_delay))
 	else
-		mob.next_move = DS2NEARESTTICK(world.time + total_delay)
+		cooldown_set_end(mob, next_move, DS2NEARESTTICK(world.time + total_delay))
 
 	if(!isliving(my_mob))
 		moving = 0
@@ -347,8 +356,8 @@
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
 				// grab_chain_step wraps the built-in Move() (no sleep; called directly).
 				M.grab_chain_step(pre_move_loc, get_dir(M, pre_move_loc), total_delay)
-				om_after(M, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
-				om_after(my_mob, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
+				after(M, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
+				after(my_mob, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
 
 	// Update all the grabs!
 	for (var/obj/item/grab/G in my_mob)
@@ -387,39 +396,32 @@
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 	set name = "Set Incorporeal Speed"
 
-	om_ask(usr, /datum/om/prompt/number, PROC_REF(incorporeal_speed_entered), title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)
+	open_request(src, /datum/prompt/number, PROC_REF(incorporeal_speed_entered), answerer = usr, title = "Incorporeal movement speed", question = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max_value = 5, min_value = 0, timeout = 0)
 
-/client/proc/incorporeal_speed_entered(datum/om/prompt/number/ask)
-	incorporeal_speed = ask.number * world.tick_lag
+/client/proc/incorporeal_speed_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	incorporeal_speed = A.answer.value * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()
 ///Allows mobs to run though walls
 /// Leaving a predator's belly as a ghost; any answer but yes clears the pending leave.
-/datum/om/prompt/confirm/leave_belly
+/datum/prompt/yes_no/leave_belly
 	title = "Leave belly?"
-	message = "Do you want to leave your predator's belly?"
+	question = "Do you want to leave your predator's belly?"
+	timeout = 0
 	/// The direction the ghost pressed.
 	var/dir
 
-/datum/om/prompt/confirm/leave_belly/proc/reset_leaving()
-	if(answerer?.client)
-		answerer.client.is_leaving_belly = FALSE
-
-/datum/om/prompt/confirm/leave_belly/cancelled()
-	unpark()
-	reset_leaving()
-
-/datum/om/prompt/confirm/leave_belly/declined()
-	reset_leaving()
-
-/datum/om/prompt/confirm/leave_belly/refused(reason)
-	reset_leaving()
-
-/// Confirmed: the ghost moves out on the direction it pressed.
-/client/proc/leave_belly_answered(datum/om/prompt/confirm/leave_belly/ask)
+/// Confirmed: the ghost moves out on the direction it pressed. Anything else clears the pending leave.
+/client/proc/leave_belly_answered(datum/act/request/A)
+	var/datum/prompt/yes_no/leave_belly/asked = A.request
+	if(!A.answer?.value)
+		is_leaving_belly = FALSE
+		return
 	is_leaving_belly = 2
-	Process_Incorpmove(ask.dir)
+	Process_Incorpmove(asked.dir)
 
 /client/proc/Process_Incorpmove(direct)
 	if(isbelly(mob.loc) && isobserver(mob))
@@ -427,7 +429,7 @@
 			return
 		if(!is_leaving_belly)
 			is_leaving_belly = TRUE
-			om_ask(mob, /datum/om/prompt/confirm/leave_belly, PROC_REF(leave_belly_answered), dir = direct)
+			open_request(src, /datum/prompt/yes_no/leave_belly, PROC_REF(leave_belly_answered), answerer = mob, dir = direct)
 			return
 		is_leaving_belly = FALSE
 	if(isghosttrap(mob.loc))
@@ -464,7 +466,7 @@
 						D.return_to_spawn()
 					return
 			mob.forceMove(get_step(mob, direct))
-			mob.dir = direct
+			mob.set_dir(direct)
 			//RS Port #658 End
 		if(2)
 			if(prob(50))
@@ -502,7 +504,7 @@
 			else
 				anim(mobloc,mob,'icons/mob/mob.dmi',,"shadow",,mob.dir)
 				mob.forceMove(get_step(mob, direct))
-			mob.dir = direct
+			mob.set_dir(direct)
 
 	mob.Post_Incorpmove()
 	return 1

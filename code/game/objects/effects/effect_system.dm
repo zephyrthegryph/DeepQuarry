@@ -25,6 +25,9 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	var/atom/holder
 	var/setup = 0
 
+CAPABILITIES(/datum/effect/effect/system)
+	ref_one(nameof(holder))
+
 /datum/effect/effect/system/proc/set_up(n = 3, c = 0, turf/loc)
 	if(n > 10)
 		n = 10
@@ -76,7 +79,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_after_drift(steam, direction, steps, 5)
+	steam.drift(direction, steps, 5)
 	steam.expire(20 + steps * 5)
 
 /datum/effect/effect/system/steam_spread/start()
@@ -106,7 +109,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 		if(GLOB.fx_live_sparks >= FX_SPARKS_MAX_LIVE)
 			return
 		var/obj/effect/effect/sparks/spark = new(origin)
-		om_after_drift(spark, pick(cardinals ? GLOB.cardinal : GLOB.alldirs), pick(1, 2, 3), 5)
+		spark.drift(pick(cardinals ? GLOB.cardinal : GLOB.alldirs), pick(1, 2, 3), 5)
 
 /obj/effect/effect/sparks
 	name = "sparks"
@@ -114,6 +117,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/amount = 6.0
 	anchored = TRUE
 	mouse_opacity = 0
+	lifecycle_lifetime = 5 SECONDS
 
 // the pool counts a spark from when it exists until on_destroy().
 /obj/effect/effect/sparks/on_materialize()
@@ -126,7 +130,6 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	expire(5 SECONDS)
 
 // a dying spark can still light its tile.
 /obj/effect/effect/sparks/on_destroy(force)
@@ -165,10 +168,8 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	pixel_x = -32
 	pixel_y = -32
 
-/obj/effect/effect/smoke/Initialize(mapload)
-	. = ..()
-	if(time_to_live)
-		expire(time_to_live)
+CAPABILITIES(/obj/effect/effect/smoke)
+	lives_for(nameof(time_to_live))
 
 /obj/effect/effect/smoke/Crossed(mob/living/carbon/M as mob )
 	if(M.is_incorporeal())
@@ -180,13 +181,13 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 /obj/effect/effect/smoke/proc/affect(mob/living/carbon/M)
 	if (!istype(M))
 		return 0
-	if(M.get_equipped_item(SLOT_ID_MASK) && (M.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+	if(M.get_equipped_item(SLOT_ID_MASK) && (worn_of(M.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(!M.get_organ(O_LUNGS)) // Making sure smoke doesn't affect lungless people
 			return 0
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 			return 0
 	return 1
 
@@ -200,10 +201,20 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "sparks"
 
-/obj/effect/effect/smoke/illumination/Initialize(mapload, lifetime=10, range=null, power=null, color=null)
-	time_to_live=lifetime
-	. = ..()
-	set_light(range, power, color)
+CAPABILITIES(/obj/effect/effect/smoke/illumination)
+	param(nameof(time_to_live), pos = 1, default = 10)
+	param(nameof(glow_range), pos = 2)
+	param(nameof(glow_power), pos = 3)
+	param(nameof(glow_color), pos = 4, apply = PROC_REF(glow))
+
+/// The light the smoke gives (its constructor params).
+/obj/effect/effect/smoke/illumination/var/glow_range
+/obj/effect/effect/smoke/illumination/var/glow_power
+/obj/effect/effect/smoke/illumination/var/glow_color
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/effect/smoke/illumination/proc/glow(colour)
+	set_glow(src, GLOW(glow_range, glow_power, glow_color))
 
 /////////////////////////////////////////////
 // Bad smoke
@@ -276,14 +287,15 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	opacity = FALSE
 	var/strength = 5 // How much damage to do inside each affect()
 
-DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/effect/smoke/elemental)
+	every(2 SECONDS, then(PROC_REF(elemental_step)))
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
-/obj/effect/effect/smoke/elemental/periodic_step()
+/obj/effect/effect/smoke/elemental/proc/elemental_step(datum/act/timer/A)
 	for(var/mob/living/L in range(1, src))
 		affect(L)
 
@@ -291,9 +303,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	name = "burning cloud"
 	desc = "A cloud of something that is on fire."
 	color = "#FF9933"
-	light_color = "#FF0000"
-	light_range = 2
-	light_power = 5
+
+CAPABILITIES(/obj/effect/effect/smoke/elemental/fire)
+	configure(light_glow(color = "#FF0000", range = 2, power = 5))
 
 /obj/effect/effect/smoke/elemental/fire/affect(mob/living/L)
 	L.inflict_heat_damage(strength)
@@ -363,15 +375,19 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(smoke, direction, steps, 10)
-	om_after(src, steps * 10 + smoke.time_to_live*0.75+rand(10,30), PROC_REF(expire_smoke), smoke)
+	smoke.drift(direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + smoke.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_smoke), with = list(smoke), keeps_dead = TRUE)
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
 	if(smoke)
-		qdel(smoke)
+		consume(smoke)
 	src.total_smoke--
 
 /datum/effect/effect/system/smoke_spread/start(I)
+	// A fire-and-forget system: it lives as long as the longest expire_smoke() it can still owe (3 s of drift, 75% of the smoke's life, up to
+	// 3 s of jitter, 1 s spare) and then deletes itself. start() again (start_repeatedly) re-arms it.
+	var/obj/effect/effect/smoke/kind = smoke_type
+	expire(3 SECONDS + initial(kind.time_to_live) * 0.75 + 3 SECONDS + 1 SECOND)
 	var/i = 0
 	for(i=0, i<src.number, i++)
 		if(src.total_smoke > 20)
@@ -416,6 +432,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	var/processing = 1
 	var/on = 1
 
+/// A starting occupant (owns_one(nameof(ion_trail), ..., starts = /datum/effect/effect/system/ion_trail_follow)) is made as new type(holder): it
+/// follows its holder from the start, and `start_now` (starts_args = list(TRUE)) lights it at once.
+/datum/effect/effect/system/ion_trail_follow/New(atom/attach_to, start_now = FALSE)
+	..()
+	if(isatom(attach_to))
+		set_up(attach_to)
+		if(start_now)
+			start()
+
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
 	rel_set(src, nameof(oldposition), get_turf(atom))
@@ -436,9 +461,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 			rel_set(src, nameof(oldposition), T)
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
-			I.icon_state = "blank"
+			I.set_icon_state("blank")
 			I.expire(20)
-	om_after(src, 2, PROC_REF(reschedule_trail))
+	after(src, 0.2 SECONDS, PROC_REF(reschedule_trail))
 
 /datum/effect/effect/system/ion_trail_follow/proc/reschedule_trail()
 	if(src.on)
@@ -477,11 +502,11 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		src.number++
 		rel_set(src, nameof(oldposition), get_turf(holder))
 		I.set_dir(src.holder.dir)
-		om_after(src, 10, PROC_REF(expire_steam_trail), I)
-	om_after(src, 2, PROC_REF(reschedule_steam))
+		after(src, 1 SECOND, PROC_REF(expire_steam_trail), with = list(I))
+	after(src, 0.2 SECONDS, PROC_REF(reschedule_steam))
 
 /datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
-	qdel(I)
+	consume(I)
 	src.number--
 
 /datum/effect/effect/system/steam_trail_follow/proc/reschedule_steam()
@@ -527,7 +552,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		for(var/mob/M in viewers(1, get_location()))
 			if (prob (50 * amount))
 				to_chat(M, span_warning("The explosion knocks you down."))
-				M.status_at_least(EFFECT_WEAKENED, rand(1,5))
+				M.status_at_least(STAT_WEAKENED, rand(1,5))
 		return
 	else
 		var/devst = -1
@@ -560,6 +585,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 			)
 
 /obj/effect/effect/teleport_greyscale
+	lifecycle_lifetime = 2 SECONDS
 	name = "teleportation"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "teleport_greyscale"
@@ -567,10 +593,6 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	mouse_opacity = 0
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-
-/obj/effect/effect/teleport_greyscale/Initialize(mapload)
-	. = ..()
-	expire(2 SECONDS)
 
 /datum/effect/effect/system/teleport_greyscale
 	var/color = "#FFFFFF"
@@ -586,7 +608,6 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	var/obj/effect/effect/teleport_greyscale/tele = new /obj/effect/effect/teleport_greyscale(src.get_location())
 	tele.color = color
 
-// === merged from effect_system_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 
 /////////////////////////////////////////////
 // Confetti and Glitter
@@ -603,11 +624,8 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	var/amount = 6.0
 	var/time_to_live = 500
 
-/obj/effect/effect/confetti/Initialize(mapload)
-	. = ..()
-	if(time_to_live)
-		expire(time_to_live)
-				//make confetti on ground cleanable decal to spawn
+CAPABILITIES(/obj/effect/effect/confetti)
+	lives_for(nameof(time_to_live))
 
 /datum/effect/effect/system/confetti_spread
 	var/total_confetti = 0 // To stop it being spammed and lagging!
@@ -640,12 +658,12 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(confetti, direction, steps, 10)
-	om_after(src, steps * 10 + confetti.time_to_live*0.75+rand(10,30), PROC_REF(expire_confetti), confetti)
+	confetti.drift(direction, steps, 1 SECOND)
+	after(src, steps * 1 SECOND + confetti.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_confetti), with = list(confetti), keeps_dead = TRUE)
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)
 	if(confetti)
-		qdel(confetti)
+		consume(confetti)
 	src.total_confetti--
 
 /datum/effect/effect/system/confetti_spread/start(I)
@@ -690,3 +708,8 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return oldposition
 
+
+/// Starts the effect `times` times, `interval` deciseconds apart, on the effect's own clock.
+/datum/effect/effect/system/proc/start_repeatedly(times, interval)
+	for(var/i in 0 to times - 1)
+		after(src, i * interval, PROC_REF(start))

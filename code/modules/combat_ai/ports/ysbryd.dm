@@ -56,7 +56,7 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 	var/mob/living/simple_mob/ysbryd/Y = brain.holder
 	if(!istype(Y))
 		return DQ_BEHAVIOR_DONE
-	var/mob/living/threat = brain.primary_threat
+	var/mob/living/threat = brain.primary_target()
 
 	if(threat)
 		// Honor the legacy 1-minute re-acquire gate: don't abandon a live victim
@@ -72,3 +72,8 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 		// Brain dropped the target — release the haunt.
 		Y.disconnect_target()
 	return DQ_BEHAVIOR_DONE
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/ysbryd)
+	ref_one(nameof(chosen_target), /mob/living)
+	immune_to_incapacitation()

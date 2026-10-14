@@ -23,18 +23,18 @@
 	var/number = 0 // This is used to make the slime semi-unique for indentification.
 	var/harmless = FALSE // Set to true when pacified. Makes the slime harmless, not get hungry, and not be able to grow/reproduce.
 
-/mob/living/simple_mob/slime/xenobio/Initialize(mapload, mob/living/simple_mob/slime/xenobio/my_predecessor)
-	if(slime_mutation)
-		slime_mutation = shared_type_list(type, "slime_mutation", slime_mutation)
-	//legacy ASSERT against ai_holder_type removed; slimes now use the
-	// brain framework and /datum/slime_state for discipline.
-	number = rand(1, 1000)
-	update_name()
+/// The slime this one split from (its constructor param, dropped once inherited).
+/mob/living/simple_mob/slime/xenobio/var/tmp/mob/living/simple_mob/slime/xenobio/predecessor
 
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/simple_mob/slime/xenobio/proc/inherit_made(mob/living/simple_mob/slime/xenobio/from)
+	if(from)
+		inherit_information(from)
 
-	if(my_predecessor)
-		inherit_information(my_predecessor)
+/// A wild slime is named for its colour, age and number (rolls(), after its number; a docile one keeps its name).
+/mob/living/simple_mob/slime/xenobio/proc/roll_slime_name(datum/roller/R)
+	return "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
+
 
 // it lets go of its victim.
 /mob/living/simple_mob/slime/xenobio/on_destroy(force)
@@ -47,23 +47,35 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/slime/xenobio/appearance_overlays()
-	. = list()
-	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
-	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
-	icon_rest = icon_dead
-	. += ..()
+// TRUE while it is feeding on something.
+/mob/living/simple_mob/slime/xenobio
+	var/consuming = FALSE
+TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 
-/datum/om/stage/life/special/slime/xenobio
-	of = /mob/living/simple_mob/slime/xenobio
+/// The slime's sprite names follow its age and whether it is feeding.
+/mob/living/simple_mob/slime/xenobio/proc/sync_slime_sprites(datum/act/A)
+	set_icon_living(slime_living_state())
+	set_icon_dead(slime_dead_state())
+	set_icon_rest(icon_dead)
 
-/datum/om/stage/life/special/slime/xenobio/perform(mob/living/simple_mob/slime/xenobio/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
+/mob/living/simple_mob/slime/xenobio/proc/slime_living_state()
+	return "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][consuming ? " eating" : ""]"
 
-		if(self.victim)
-			self.handle_consumption()
+/mob/living/simple_mob/slime/xenobio/proc/slime_dead_state()
+	return "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
+
+/mob/living/simple_mob/slime/xenobio/draw(datum/look/look)
+	..()
+	// The base drew from icon_living, which the reaction above refreshes; the names are derived here too so the draw never trails it.
+	var/dead_state = slime_dead_state()
+	look.life_state(src, slime_living_state(), dead_state, dead_state)
+
+/mob/living/simple_mob/slime/xenobio/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
+
+		if(src.victim)
+			src.handle_consumption()
 
 	..()
 
@@ -86,34 +98,32 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 	if(is_adult)
 		return
 
-	is_adult = TRUE
+	set_is_adult(TRUE)
 	melee_damage_lower = round(melee_damage_lower * 2) // 20
 	melee_damage_upper = round(melee_damage_upper * 2) // 30
 	endurance = endurance_adult
 	max_nutrition = 1200
 	amount_grown = 0
-	update_icon()
 	update_name()
 
 /mob/living/simple_mob/slime/xenobio/proc/make_baby()
 	if(!is_adult)
 		return
 
-	is_adult = FALSE
+	set_is_adult(FALSE)
 	melee_damage_lower = round(melee_damage_lower / 2) // 20
 	melee_damage_upper = round(melee_damage_upper / 2) // 30
 	endurance = initial(endurance)
 	max_nutrition = initial(max_nutrition)
 	set_nutrition(400)
 	amount_grown = 0
-	update_icon()
 	update_name()
 
 /mob/living/simple_mob/slime/xenobio/proc/update_name()
 	if(harmless) // Docile slimes are generally named, so we shouldn't mess with it.
 		return
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
-	real_name = name
+	set_real_name(name)
 
 //body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // reads /datum/slime_state instead of the deleted ai_holder.
@@ -123,11 +133,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 /mob/living/simple_mob/slime/proc/update_allowed_vore_types(allowed, harmless)
 	if(harmless) // If we're harmless, we should always be able to be eaten.
 		allowed = TRUE
-	can_be_drop_prey = allowed
-	stumble_vore = allowed
-	slip_vore = allowed
-	drop_vore = allowed
-	throw_vore = allowed
+	vore_prefs.can_be_drop_prey = allowed
+	vore_prefs.stumble_vore = allowed
+	vore_prefs.slip_vore = allowed
+	vore_prefs.drop_vore = allowed
+	vore_prefs.throw_vore = allowed
 
 //enrage / relax / pacify bodies live in
 // code/modules/combat_ai/ports/slime_mob_overrides.dm; they now drive slime_state.
@@ -205,7 +215,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 			var/mob/living/simple_mob/slime/new_slime = pick(babies)
 			new_slime.universal_speak = universal_speak
 			move_player(src, new_slime, "slime split")
-			qdel(src)
+			replaced_by(src, new_slime)
 		else
 			to_chat(src, span_warning("I am not ready to reproduce yet..."))
 	else

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Spray bottles run on the reagent_container capability"
+  - bugfix: "Spray bottles, splashes and other no-harm items work on an adjacent person again"

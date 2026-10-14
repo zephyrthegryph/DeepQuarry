@@ -2,22 +2,26 @@
 	name = "spore"
 	icon_state = "declone"
 	damage = 3
-	armor_penetration = 40
 	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 
+CAPABILITIES(/obj/item/projectile/energy/blob)
+	configure(item_combat(armor_penetration = 40))
+
 TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list(REAGENT_ID_MOLD))
 
 /obj/item/projectile/energy/blob/splattering
 	splatter = TRUE
 
+CAPABILITIES(/obj/item/projectile/energy/blob/splattering)
+	reagents(nameof(splatter_volume)) // the cloud it bursts into
+
 /obj/item/projectile/energy/blob/Initialize(mapload)
 	. = ..()
 	if(splatter)
-		create_reagents(splatter_volume)
 		ready_chemicals()
 
 /obj/item/projectile/energy/blob/on_impact(atom/A)
@@ -72,6 +76,8 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/freezing, blob_projectile_chems, lis
 	icon_state = "SpearFlight"
 	damage = 20
 	injury_kind = INJURY_CORROSIVE
-	armor_penetration = 20
 	penetrating = 3
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
+
+CAPABILITIES(/obj/item/projectile/bullet/thorn)
+	configure(item_combat(armor_penetration = 20))

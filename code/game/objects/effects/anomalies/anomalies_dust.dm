@@ -13,7 +13,7 @@
 	COOLDOWN_DECLARE(pulse_cooldown)
 	var/pulse_delay = 5 SECONDS
 
-/obj/effect/anomaly/dust/Initialize(mapload, new_lifespan, drops_core)
+/obj/effect/anomaly/dust/Initialize(mapload)
 	. = ..()
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
@@ -49,12 +49,12 @@
 		if(!person.has_lungs())
 			continue
 		person.emote(prob(50) ? "cough" : "sneeze")
-		person.status_at_least(EFFECT_STUNNED, 2)
+		person.status_at_least(STAT_STUNNED, 2)
 		person.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.4, 10 SECONDS) // dust coats the lungs
 		if(prob(15))
-			person.status_at_least(EFFECT_STUNNED, 2)
+			person.status_at_least(STAT_STUNNED, 2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))
-			om_after(src, 3 SECONDS, PROC_REF(extraCough), person)
+			after(src, 3 SECONDS, PROC_REF(extraCough), with = list(person))
 
 	for(var/turf/simulated/floor/ground in circleviewturfs(src, 3))
 		if(ground.can_dirty)
@@ -68,8 +68,10 @@
 			new /obj/effect/decal/cleanable/filth(ground)
 
 /obj/effect/anomaly/dust/proc/extraCough(mob/living/coughing)
+	if(!coughing)
+		return
 	coughing.emote("cough")
-	om_after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), "cough")
+	after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 
 /obj/effect/anomaly/dust/detonate()
 	COOLDOWN_RESET(src, pulse_cooldown)

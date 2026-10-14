@@ -21,7 +21,7 @@
 	return GLOB.home_system_choices + list("Unset")
 
 /datum/preference/text/human/home_system/apply_to_human(mob/living/carbon/human/target, value)
-	target.home_system = value
+	target.bio.home_system = value
 
 /datum/preference/text/human/birthplace
 	savefile_key = "birthplace"
@@ -43,7 +43,7 @@
 	return GLOB.home_system_choices + list("Unset")
 
 /datum/preference/text/human/birthplace/apply_to_human(mob/living/carbon/human/target, value)
-	target.birthplace = value
+	target.bio.birthplace = value
 
 /datum/preference/text/human/citizenship
 	savefile_key = "citizenship"
@@ -65,7 +65,7 @@
 	return GLOB.citizenship_choices + list("None")
 
 /datum/preference/text/human/citizenship/apply_to_human(mob/living/carbon/human/target, value)
-	target.citizenship = value
+	target.bio.citizenship = value
 
 /datum/preference/text/human/religion
 	savefile_key = "religion"
@@ -87,7 +87,7 @@
 	return GLOB.religion_choices + list("None")
 
 /datum/preference/text/human/religion/apply_to_human(mob/living/carbon/human/target, value)
-	target.religion = value
+	target.bio.religion = value
 
 // Economic Status
 

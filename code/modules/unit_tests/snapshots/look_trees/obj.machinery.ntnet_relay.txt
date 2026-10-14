@@ -1,0 +1,5 @@
+/obj/machinery/ntnet_relay icon: icons/obj/stationobjs.dmi
+/obj/machinery/ntnet_relay state: ntnet
+/obj/machinery/ntnet_relay dir: 2
+/obj/machinery/ntnet_relay overlay: icons/obj/stationobjs.dmi:ntnet:8:#000000
+

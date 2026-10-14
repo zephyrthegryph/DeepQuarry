@@ -76,22 +76,13 @@ GLOBAL_LIST_INIT(preference_editors_by_key, init_preference_editors_by_key())
 /datum/preference_editor/proc/build_ui_static_data(datum/preferences/preferences)
 	return list()
 
-/// Handle an atomic multi-pref action sent from the UI: the editor's UI_ACT row for `action`
-/// parses `params` (declared UI model, doc/rewrite/systems.md section 3) and its
-/// UI_ACT_PREF_PROC handler runs. Returns one of:
+/// Handle an atomic multi-pref action sent from the UI: each editor routes its own actions (its handle_action() override, arguments through their
+/// schemas) and runs before_action() first. Returns one of:
 ///   PREF_UPDATE_ACCEPTED  — apply preview, persist, refresh UI
-///   PREF_UPDATE_REJECTED  — show an error (also: a declared arg failed validation)
-///   PREF_UPDATE_UNCHANGED — no-op (also: no row for `action`)
+///   PREF_UPDATE_REJECTED  — show an error (also: an argument failed its schema)
+///   PREF_UPDATE_UNCHANGED — no-op (also: no handler for `action`)
 /datum/preference_editor/proc/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	var/datum/ui_decl/decl = ui_decl_of(src)
-	var/list/row = decl?.acts[action]
-	if(!row)
-		return PREF_UPDATE_UNCHANGED
-	var/list/typed = ui_parse_args(src, row[2], params, user, action)
-	if(!typed)
-		return PREF_UPDATE_REJECTED
-	before_action(preferences, user, action)
-	return call(src, row[1])(user, typed, preferences, null, action)
+	return PREF_UPDATE_UNCHANGED
 
 /// Runs before each of this editor's actions (after its args validated).
 /datum/preference_editor/proc/before_action(datum/preferences/preferences, mob/user, action)

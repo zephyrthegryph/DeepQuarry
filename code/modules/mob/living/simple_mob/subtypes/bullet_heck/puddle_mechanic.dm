@@ -40,7 +40,12 @@
 	spread_range = 3
 	var/fuse_time = 3.5 SECONDS
 
-DECLARE_START_TIMER(/obj/item/grenade/shooter/auto_explode, "fuse_time", PROC_REF(detonate))
+CAPABILITIES(/obj/item/grenade/shooter/auto_explode)
+	after_init(nameof(fuse_time), then(PROC_REF(fuse_out)))
+
+/// The fuse runs out.
+/obj/item/grenade/shooter/auto_explode/proc/fuse_out(datum/act/A)
+	detonate()
 
 /obj/item/grenade/shooter/auto_explode/blood_boss
 	spread_range = 2

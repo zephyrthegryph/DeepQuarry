@@ -5,8 +5,6 @@
 	icon_state = "borgcharger0(old)"
 	density = TRUE
 
-	idle_power_usage = 100
-	active_power_usage = 1000
 	use_power = USE_POWER_IDLE
 
 	var/spawn_progress_time = 0
@@ -14,15 +12,44 @@
 	EXPIRY_DECLARE(last_process_time)
 
 	var/list/construction
-	var/list/tgui_construction
 	var/list/spawning_types = list() // ALLOW(instance_list): d: filled in New() with the replicator's output table
 	var/list/stored_materials = list() // ALLOW(instance_list): d: consumed with pop() in step with spawning_types
 
 	var/fail_message
 
-/obj/machinery/replicator/Initialize(mapload)
-	. = ..()
+/// The machine's buttons: button text -> list("type", "background", "icon", "foreground"), rolled from what this kind makes (button_candidates()).
+/obj/machinery/replicator/proc/roll_construction(datum/roller/R)
+	var/static/list/icons = list(
+		"round" = "circle",
+		"square" = "square",
+		"diamond" = "gem",
+		"heart" = "heart",
+		"dog" = "dog",
+		"human" = "user",
+	)
+	var/static/list/colors = list(
+		"toggle" = "pink",
+		"switch" = "yellow",
+		"lever" = "red",
+		"button" = "black",
+		"pad" = "white",
+		"hole" = "black",
+	)
+	var/list/candidates = button_candidates()
+	. = list()
+	for(var/i in 1 to button_count(R))
+		if(!length(candidates))
+			break
+		var/background = R.choose(list("yellow","purple","green","blue","red","orange","white"))
+		var/icon = R.choose(icons)
+		var/color = R.choose(colors)
+		var/type = R.choose(candidates)
+		candidates -= type
+		.["a [background], [icon] shaped [color]"] = list("type" = type, "background" = background, "icon" = icons[icon], "foreground" = colors[color])
 
+/// What this kind of replicator can make (a fresh list: roll_construction() takes from it).
+/obj/machinery/replicator/proc/button_candidates()
+	// /mob/living/simple_mob/mimic/crate, // // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
 	var/static/list/viables = list(
 	/obj/item/roller,
 	/obj/structure/closet/crate,
@@ -64,56 +91,30 @@
 	/obj/item/tool/screwdriver,
 	/obj/item/grenade/chem_grenade/cleaner,
 	/obj/item/grenade/chem_grenade/metalfoam)
+	return viables.Copy()
 
-// /mob/living/simple_mob/mimic/crate, // // AI TEMPORARY REMOVAL, REPLACE BACK IN LIST WHEN FIXED
-	var/quantity = rand(5, 15)
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/type = pick(viables)
-		viables.Remove(type)
-		LAZYSET(construction, button_desc, type)
-		LAZYINITLIST(tgui_construction); tgui_construction.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/// How many buttons it has.
+/obj/machinery/replicator/proc/button_count(datum/roller/R)
+	return R.number(5, 15)
 
-	fail_message = span_notice("[icon2html(src,viewers(src))] a [pick("loud","soft","sinister","eery","triumphant","depressing","cheerful","angry")] \
-		[pick("horn","beep","bing","bleep","blat","honk","hrumph","ding")] sounds and a \
-		[pick("yellow","purple","green","blue","red","orange","white")] \
-		[pick("light","dial","meter","window","protrusion","knob","antenna","swirly thing")] \
-		[pick("swirls","flashes","whirrs","goes schwing","blinks","flickers","strobes","lights up")] on the \
-		[pick("front","side","top","bottom","rear","inside")] of [src]. A [pick("slot","funnel","chute","tube")] opens up in the \
-		[pick("front","side","top","bottom","rear","inside")].")
+/// What it says when it cannot make something.
+/obj/machinery/replicator/proc/roll_fail_message(datum/roller/R)
+	return span_notice("[icon2html(src,viewers(src))] a [R.choose(list("loud","soft","sinister","eery","triumphant","depressing","cheerful","angry"))] \
+		[R.choose(list("horn","beep","bing","bleep","blat","honk","hrumph","ding"))] sounds and a \
+		[R.choose(list("yellow","purple","green","blue","red","orange","white"))] \
+		[R.choose(list("light","dial","meter","window","protrusion","knob","antenna","swirly thing"))] \
+		[R.choose(list("swirls","flashes","whirrs","goes schwing","blinks","flickers","strobes","lights up"))] on the \
+		[R.choose(list("front","side","top","bottom","rear","inside"))] of [src]. A [R.choose(list("slot","funnel","chute","tube"))] opens up in the \
+		[R.choose(list("front","side","top","bottom","rear","inside"))].")
 
-/obj/machinery/replicator/machine_step()
+/obj/machinery/replicator/proc/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -132,69 +133,77 @@
 						spawned_obj.desc += " It is made of [source_material]."
 					else
 						spawned_obj.desc = "It is made of [source_material]."
-				qdel(source_material)
+				spent(source_material)
 
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
 
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
-/obj/machinery/replicator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/replicator_insert,
-	)
-	..()
+CAPABILITIES(/obj/machinery/replicator)
+	rolls(nameof(construction), PROC_REF(roll_construction))
+	rolls(nameof(fail_message), PROC_REF(roll_fail_message))
+	configure(uses_power(idle = 100, active = 1000))
+	started_work(step = PROC_REF(work_step))
+	interface("XenoarchReplicator")
+	without("ui_open")
+	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
+	op("insert", item(/obj/item), label("Insert"), needs(req(PROC_REF(can_insert_holds), because = PROC_REF(can_insert_refusal))), then(PROC_REF(insert_op)))
 
-DECLARE_UI(/obj/machinery/replicator, "XenoarchReplicator")
-
-UI_DATA(/obj/machinery/replicator, "merge:ui_data_obj_machinery_replicator{tgui_construction:bool}")
-
-/// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
-/obj/machinery/replicator/proc/ui_data_obj_machinery_replicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/replicator's window data.
+/obj/machinery/replicator/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["tgui_construction"] = (tgui_construction || list())
+	var/list/buttons = list()
+	for(var/key in construction)
+		var/list/button = construction[key]
+		buttons += list(list("key" = key, "background" = button["background"], "icon" = button["icon"], "foreground" = button["foreground"]))
+	data["tgui_construction"] = buttons
 	return data
 
-UI_ACT(/obj/machinery/replicator, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
-	var/key = params["key"]
+/obj/machinery/replicator/proc/ui_act_construct(datum/act/op/A, key_arg)
+	var/key = key_arg
 	if(key in construction)
 		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
 			if(LAZYLEN(spawning_types))
 				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
 			else
 				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(construction, key))
+			var/list/button = construction[key]
+			spawning_types.Add(button["type"])
 			spawn_progress_time = 0
 			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
+			set_icon_state("borgcharger1(old)")
 		else
 			visible_message(fail_message)
 
-/// The old attackby: never called ..(), inserted a material into the replicator.
-/datum/interaction/machine_item/replicator_insert
-	id = "replicator_insert"
-	name = "Insert"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/replicator/proc/interaction_insert
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/replicator/proc/can_insert))
-
-/// Requirement: no armblades, no grabs, nothing the user can't let go of.
+/// Requirement: no armblades, no grabs (an item that cannot be let go of). What is in the hand needs no accessibility check.
 /obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)
-	if(!istype(held) || !held.canremove || !user.canUnEquip(held))
+	if(!istype(held) || !held.canremove)
 		return "you cannot put [held] into the machine"
 	return TRUE
 
-/obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// The insert op: it passes the actor and the item to interaction_insert(), which the vore and clothing replicators override.
+/obj/machinery/replicator/proc/insert_op(datum/act/op/A)
+	interaction_insert(A.actor, A.held)
+	return OP_OK
+
+/// can_insert() reads TRUE to allow, or a reason text.
+/obj/machinery/replicator/proc/can_insert_holds(datum/act/op/A)
+	var/answer = read_once(can_insert(A.actor, src, A.held))
+	return answer == TRUE ? null : (istext(answer) ? answer : /datum/msg/req_failed)
+
+/obj/machinery/replicator/proc/can_insert_refusal(datum/act/op/A)
+	var/why = read_once(can_insert(A.actor, src, A.held))
+	return istext(why) ? why : null
+
+/obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W)
 	user.drop_item()
 	W.forceMove(src)
 	rel_add(src, nameof(stored_materials), W)
@@ -212,8 +221,6 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 18 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_mobs
-	var/list/tgui_vore_selection
 	var/list/viable_mobs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/mob/living/simple_mob/animal/passive/fox,
 	/mob/living/simple_mob/animal/passive/cow,
@@ -239,48 +246,20 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	//So if xenoarch isn't careful and is just shoving items willy-nilly without taking the proper precautions they can end up in a bit of trouble!
 
 
-/obj/machinery/replicator/vore/Initialize(mapload) //This replicator turns people into mobs!
-	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
+/obj/machinery/replicator/vore/button_candidates()
+	return viable_mobs.Copy()
 
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/generated_mob = pick(viable_mobs)
-		viable_mobs.Remove(generated_mob)
-		LAZYSET(created_mobs, button_desc, generated_mob)
-		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/obj/machinery/replicator/vore/button_count(datum/roller/R)
+	return quantity
 
-/obj/machinery/replicator/vore/machine_step()
+/obj/machinery/replicator/vore/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -321,7 +300,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
@@ -335,11 +314,14 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
 		return "you cannot put [held] into the machine"
 
-/obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/replicator/vore/interaction_insert(mob/living/user, obj/item/W)
+	return consent_insert_stage(user, W, list())
+
+/obj/machinery/replicator/vore/proc/consent_insert_stage(mob/living/user, obj/item/W, list/consent_answers)
 	if(istype(W, /obj/item/holder/micro)) //Are you putting a micro in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
-		if(!inserted_mob.allow_spontaneous_tf) //Do they allow TF?
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf) //Do they allow TF?
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD) //Hey medical...
@@ -350,16 +332,18 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			var/_answer_k351 = rerun_ask(inserted_mob, "k351", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k351 = consent_answers["k351"]
 			if(isnull(_answer_k351))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k351", question = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k351
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				var/_answer_k356 = rerun_ask(inserted_mob, "k356", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
+				var/_answer_k356 = consent_answers["k356"]
 				if(isnull(_answer_k356))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k356", question = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
 					return
 				response = _answer_k356
 				if(response != "Certain")
@@ -374,7 +358,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
 		var/mob/living/inserted_mob = the_grab?.grab_target() //Get the mob that is grabbed.
-		if(!inserted_mob.allow_spontaneous_tf)
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD)
@@ -385,16 +369,18 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			var/_answer_k380 = rerun_ask(inserted_mob, "k380", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k380 = consent_answers["k380"]
 			if(isnull(_answer_k380))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k380", question = "Are you -sure- you want to be put in this machine?\n(This machine will turn you into one of the various types of mobs in the game.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k380
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				var/_answer_k385 = rerun_ask(inserted_mob, "k385", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
+				var/_answer_k385 = consent_answers["k385"]
 				if(isnull(_answer_k385))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k385", question = "This is the last warning: Are you absolutely certain you want to be transformed into a mob?", title = "WARNING: FINAL CHANCE!", choices = list("No", "Certain"))
 					return
 				response = _answer_k385
 				if(response != "Certain")
@@ -438,32 +424,6 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
-UI_DATA(/obj/machinery/replicator/vore, "merge:ui_data_obj_machinery_replicator_vore{tgui_construction:bool}")
-
-/// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
-/obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-	data["tgui_construction"] = (tgui_vore_selection || list())
-	return data
-
-UI_ACT(/obj/machinery/replicator/vore, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
-	. = ..()
-	if(.)
-		return
-	var/key = params["key"]
-	if(key in created_mobs)
-		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-			if(LAZYLEN(spawning_types))
-				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-			else
-				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(created_mobs, key))
-			spawn_progress_time = 0
-			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
-		else
-			visible_message(fail_message)
 
 
 
@@ -477,8 +437,6 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "borgcharger0(old)"
 	var/quantity = 35 //This needs to be replaced with a GUI that lets you select the item you want.
-	var/list/created_items
-	var/list/tgui_vore_selection
 	var/list/viable_items = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	/obj/item/clothing/accessory/ring,
 	/obj/item/clothing/gloves/evening,
@@ -516,48 +474,20 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	) 	// Currently: 3 gloves, 5 undersuits, 3 oversuits, 5 plushies, 5 headwear, 7 shoes, 7 misc. = 35
 		//Fishing hat was going to be added, but it was simply too powerful for this world.
 
-/obj/machinery/replicator/clothing/Initialize(mapload) //The specific thing about the VORE replicator is that it will only contain obj/items. Only things that can be picked up, used, and worn!
-	. = ..() //TODO: Someone can replace the 'alien' interface with something neater sometime. It is simply out of my abilities at the current moment.
+/obj/machinery/replicator/clothing/button_candidates()
+	return viable_items.Copy()
 
-	for(var/i=0, i<quantity, i++)
-		var/background = pick("yellow","purple","green","blue","red","orange","white")
-		var/list/icons = list(
-			"round" = "circle",
-			"square" = "square",
-			"diamond" = "gem",
-			"heart" = "heart",
-			"dog" = "dog",
-			"human" = "user",
-		)
-		var/icon = pick(icons)
-		var/list/colors = list(
-			"toggle" = "pink",
-			"switch" = "yellow",
-			"lever" = "red",
-			"button" = "black",
-			"pad" = "white",
-			"hole" = "black",
-		)
-		var/color = pick(colors)
-		var/button_desc = "a [background], [icon] shaped [color]"
-		var/generated_item = pick(viable_items)
-		viable_items.Remove(generated_item)
-		LAZYSET(created_items, button_desc, generated_item)
-		LAZYINITLIST(tgui_vore_selection); tgui_vore_selection.Add(list(list(
-			"key" = button_desc,
-			"background" = background,
-			"icon" = icons[icon],
-			"foreground" = colors[color],
-		)))
+/obj/machinery/replicator/clothing/button_count(datum/roller/R)
+	return quantity
 
-/obj/machinery/replicator/clothing/machine_step()
+/obj/machinery/replicator/clothing/work_step(datum/act/timer/A)
 	// Works while something is queued and it has power; a queue (its UI) or power wakes it.
 	if(!spawning_types.len)
 		last_process_time = 0
 		return PROCESS_KILL
 	if(!powered())
 		last_process_time = 0
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 	if(!last_process_time)
 		EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 	if(spawning_types.len && powered())
@@ -592,7 +522,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 
 			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
-				icon_state = "borgcharger0(old)"
+				set_icon_state("borgcharger0(old)")
 
 		else if(prob(5))
 			src.visible_message(span_notice("[icon2html(src,viewers(src))] [src] [pick("clicks","whizzes","whirrs","whooshes","clanks","clongs","clonks","bangs")]."))
@@ -605,11 +535,14 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	if(. == TRUE && (held.possessed_voice || is_type_in_list(held, GLOB.item_vore_blacklist)))
 		return "you cannot put [held] into the machine"
 
-/obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/replicator/clothing/interaction_insert(mob/living/user, obj/item/W)
+	return consent_insert_stage(user, W, list())
+
+/obj/machinery/replicator/clothing/proc/consent_insert_stage(mob/living/user, obj/item/W, list/consent_answers)
 	if(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)) //Are you putting a micro/mouse in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
-		if(!inserted_mob.allow_spontaneous_tf) //Do they allow TF?
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf) //Do they allow TF?
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD) //Hey medical...
@@ -620,16 +553,18 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response //Let's see if they are SURE they accept the fact they will be a clothing, plushie, or something else.
-			var/_answer_k604 = rerun_ask(inserted_mob, "k604", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k604 = consent_answers["k604"]
 			if(isnull(_answer_k604))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k604", question = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k604
 			if(response != "Certain") //If they don't agree, stop.
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else //If they /do/ agree, give them one last chance.
-				var/_answer_k609 = rerun_ask(inserted_mob, "k609", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
+				var/_answer_k609 = consent_answers["k609"]
 				if(isnull(_answer_k609))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k609", question = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
 					return
 				response = _answer_k609
 				if(response != "I accept the possibilities")
@@ -644,7 +579,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
 		var/mob/living/inserted_mob = the_grab?.grab_target() //Get the mob that is grabbed.
-		if(!inserted_mob.allow_spontaneous_tf)
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD)
@@ -655,16 +590,18 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 			return TRUE
 		if(inserted_mob.client)
 			var/response
-			var/_answer_k633 = rerun_ask(inserted_mob, "k633", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
+			var/_answer_k633 = consent_answers["k633"]
 			if(isnull(_answer_k633))
+				open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k633", question = "Are you -sure- you want to be put in this machine?\n(This machine can turn you into various clothing, footwear, plushies, and other miscellaneous objects. This means that more likely than not, you will be used as whatever object is used. Make certain your preferences align with this possibility.)", title = "WARNING: Are you sure you want to be put in the machine and transformed?", choices = list("No", "Certain"))
 				return
 			response = _answer_k633
 			if(response != "Certain")
 				to_chat(user, span_notice("[W] stops you from placing them in the machine."))
 				return TRUE
 			else
-				var/_answer_k638 = rerun_ask(inserted_mob, "k638", PROC_REF(interaction_insert), args, /datum/om/prompt/choice/alert, message = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
+				var/_answer_k638 = consent_answers["k638"]
 				if(isnull(_answer_k638))
+					open_request(src, /datum/prompt/choice/replicator_consent, PROC_REF(consent_insert_answered), answerer = inserted_mob, instigator = user, source_item = W, consent_answers = consent_answers, consent_key = "k638", question = "This is the last warning: Are you absolutely certain you want to be transformed into an object and have the possibility of being used as such?", title = "WARNING: FINAL CHANCE!", choices = list("No", "I accept the possibilities"))
 					return
 				response = _answer_k638
 				if(response != "I accept the possibilities")
@@ -707,31 +644,70 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	return TRUE
 
 
-DECLARE_UI(/obj/machinery/replicator/clothing, "XenoarchReplicatorClothing")
+CAPABILITIES(/obj/machinery/replicator/clothing)
+	interface("XenoarchReplicatorClothing")
+	without("ui_open")
+	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
-UI_DATA(/obj/machinery/replicator/clothing, "merge:ui_data_obj_machinery_replicator_clothing{tgui_construction:bool}")
 
-/// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
-/obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
-	data["tgui_construction"] = (tgui_vore_selection || list())
-	return data
 
-UI_ACT(/obj/machinery/replicator/clothing, "construct", ui_act_construct, UI_ARG_TEXT("key"))
-UI_ACT_OVERRIDE(/obj/machinery/replicator/clothing, ui_act_construct)
+/// Original insertion arguments remain weak while the prospective transformed mob answers.
+/datum/prompt/choice/replicator_consent
+	timeout = 0
+	buttons = TRUE
+	var/mob/instigator
+	var/obj/item/source_item
+	var/instigator_expected = FALSE
+	var/source_item_expected = FALSE
+	var/list/consent_answers
+	var/consent_key
+
+CAPABILITIES(/datum/prompt/choice/replicator_consent)
+	ref_one(nameof(instigator), /mob)
+	ref_one(nameof(source_item), /obj/item)
+
+/datum/prompt/choice/replicator_consent/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_user = instigator
+	var/obj/item/captured_item = source_item
+	instigator_expected = !isnull(captured_user)
+	source_item_expected = !isnull(captured_item)
+	rel_clear(src, nameof(instigator))
+	rel_clear(src, nameof(source_item))
+	if(captured_user && !QDELETED(captured_user))
+		rel_set(src, nameof(instigator), captured_user)
+	if(captured_item && !QDELETED(captured_item))
+		rel_set(src, nameof(source_item), captured_item)
+
+/datum/prompt/choice/replicator_consent/recheck_extra()
 	. = ..()
 	if(.)
 		return
-	var/key = params["key"]
-	if(key in created_items)
-		if(LAZYLEN(stored_materials) > LAZYLEN(spawning_types))
-			if(LAZYLEN(spawning_types))
-				visible_message(span_notice("[icon2html(src,viewers(src))] a [pick("light","dial","display","meter","pad")] on [src]'s front [pick("blinks","flashes")] [pick("red","yellow","blue","orange","purple","green","white")]."))
-			else
-				visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
-			spawning_types.Add(LAZYACCESS(created_items, key))
-			spawn_progress_time = 0
-			set_use_power(USE_POWER_ACTIVE)
-			icon_state = "borgcharger1(old)"
-		else
-			visible_message(fail_message)
+	if(instigator_expected && QDELETED(instigator))
+		return "gone"
+	if(source_item_expected && QDELETED(source_item))
+		return "gone"
+
+/obj/machinery/replicator/vore/proc/consent_insert_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = consent_insert_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/machinery/replicator/vore/proc/consent_insert_apply(datum/act/request/A)
+	var/datum/prompt/choice/replicator_consent/ask = A.answer
+	ask.consent_answers[ask.consent_key] = ask.value
+	return consent_insert_stage(ask.instigator, ask.source_item, ask.consent_answers)
+
+/obj/machinery/replicator/clothing/proc/consent_insert_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = consent_insert_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/machinery/replicator/clothing/proc/consent_insert_apply(datum/act/request/A)
+	var/datum/prompt/choice/replicator_consent/ask = A.answer
+	ask.consent_answers[ask.consent_key] = ask.value
+	return consent_insert_stage(ask.instigator, ask.source_item, ask.consent_answers)

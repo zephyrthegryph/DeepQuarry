@@ -20,7 +20,7 @@
 
 /datum/ai_behavior/maul_unconscious/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || !brain.model)
+	if(!owner)
 		return null
 	// Look for unconscious living mobs in melee reach. Prefer faction-enemies but
 	// don't strictly require the disposition check — pack predators don't care.
@@ -35,15 +35,10 @@
 		return DQAI_RESULT(50, L)
 	return null
 
+/// The strike itself is a plain melee attack (which also records it in last_attack_at).
 /datum/ai_behavior/maul_unconscious/start(datum/ai_brain/brain, atom/target, atom/source)
-	. = ..()
-	if(. == DQ_BEHAVIOR_FAILED)
-		return
-	var/mob/living/simple_mob/SM = brain.get_owner()
-	if(!istype(SM))
-		return DQ_BEHAVIOR_FAILED
-	SM.attack_target(target, SM.input_stance())
-	return DQ_BEHAVIOR_DONE
+	var/datum/ai_behavior/melee_attack/strike = dq_get_behavior(/datum/ai_behavior/melee_attack)
+	return strike.start(brain, target, source)
 
 // --- Idle speak -------------------------------------------------------------
 // Random barks from the mob's say_list while not in combat. Used to be
@@ -57,7 +52,7 @@
 	cooldown = 15 SECONDS
 
 /datum/ai_behavior/idle_speak/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !owner.say_list)
@@ -94,11 +89,11 @@
 	cooldown = 1 SECOND
 
 /datum/ai_behavior/retaliate_to_attacker/evaluate(datum/ai_brain/brain, atom/source)
-	var/atom/attacker = brain.model?.get_last_attacker()
+	var/atom/attacker = brain.last_attacker()
 	if(!ismob(attacker))
 		return null
 	// If they're already our primary threat, nothing to do.
-	if(attacker == brain.primary_threat)
+	if(attacker == brain.primary_target())
 		return null
 	// Promote them.
 	return DQAI_RESULT(100, attacker)
@@ -106,9 +101,6 @@
 /datum/ai_behavior/retaliate_to_attacker/start(datum/ai_brain/brain, atom/target, atom/source)
 	// Switching primary_threat will make the standard attack behaviors pick the
 	// attacker on the next tick.
-	var/mob/old = brain.primary_threat
-	rel_set(brain, nameof(brain.primary_threat), target)
-	if(old != target)
-		OM_EMIT(brain.holder, /datum/om/event/dqai_target_changed, target, old)
+	brain.set_primary_target(target)
 	brain.invalidate_selection()
 	return DQ_BEHAVIOR_DONE

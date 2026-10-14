@@ -1,5 +1,5 @@
 /mob/living/carbon/human/gib()
-	transforming = 1 //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
+	set_transforming(1) //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
 	// Organs and limbs the gib deletes go as one batched destroy (batch.dm).
 	dq_destroy_collect_begin()
 
@@ -67,9 +67,9 @@
 	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
 		brain.sync_defib_window()
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	animate_tail_stop()
 	stop_flying()
@@ -97,9 +97,9 @@
 		if(B.host_brain.mind)
 			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
 			B.host_brain.name = "host brain"
-			B.host_brain.real_name = "host brain"
+			B.host_brain.set_real_name("host brain")
 
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/proc/release_control, B)
+		revoke(src, granted_verb(/mob/living/carbon/proc/release_control), B)
 
 	// Handle vorny
 	if(isbelly(loc))
@@ -120,12 +120,12 @@
 	if(mind)
 		var/area/A = get_area(src)
 		if(!(A?.flag_check(AREA_BLOCK_SUIT_SENSORS)) && isbelly(loc))
-			if(!isbelly(loc) || !vore_death_privacy)
+			if(!isbelly(loc) || !vore_prefs.vore_death_privacy)
 				for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_MOBS))
 					if(O.client?.prefs?.read_preference(/datum/preference/toggle/show_dsay))
 						to_chat(O, span_deadsay(span_bold("[src]") + " has died in " + span_bold(strip_improper("[A]")) + ". [ghost_follow_link(src, O)] "))
 
-	GLOB.mob_service.report_death(src)
+	SSmobs.report_death(src)
 
 	if(wearing_rig)
 		wearing_rig.notify_ai(span_danger("Warning: user death event. Mobility control passed to integrated intelligence system."))
@@ -149,16 +149,14 @@
 /mob/living/carbon/human/proc/ChangeToHusk()
 	if(has_mutation(HUSK))	return
 
-	if(f_style)
-		f_style = "Shaved"		//we only change the icon_state of the hair datum, so it doesn't mess up their UI/UE
-	if(h_style)
-		h_style = "Bald"
-	update_hair(0)
+	if(looks.facial_style)
+		looks.set_facial_style("Shaved")//we only change the icon_state of the hair datum, so it doesn't mess up their UI/UE
+	if(looks.hair_style)
+		looks.set_hair_style("Bald")
 
 	add_mutation(HUSK)
-	status_flags |= DISFIGURED	//makes them unknown without fucking up other stuff like admintools
+	set_status_flags(status_flags | DISFIGURED) //makes them unknown without fucking up other stuff like admintools
 	remove_blood(560)
-	update_icons_body()
 	return
 
 /mob/living/carbon/human/proc/Drain()
@@ -169,15 +167,13 @@
 /mob/living/carbon/human/proc/ChangeToSkeleton()
 	if(src.has_mutation(SKELETON))	return
 
-	if(f_style)
-		f_style = "Shaved"
-	if(h_style)
-		h_style = "Bald"
-	update_hair(0)
+	if(looks.facial_style)
+		looks.set_facial_style("Shaved")
+	if(looks.hair_style)
+		looks.set_hair_style("Bald")
 
 	add_mutation(SKELETON)
-	status_flags |= DISFIGURED
-	update_icons_body()
+	set_status_flags(status_flags | DISFIGURED)
 	return
 
 

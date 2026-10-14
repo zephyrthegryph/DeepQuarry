@@ -1,0 +1,63 @@
+@obj.machinery.reagent_refinery human|none
+-click: nothing
++0 menu: Climb
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery robot|none
+@obj.machinery ai|none
+@obj.machinery.reagent_refinery ghost|none
+@obj.machinery.reagent_refinery human|/obj/item/tool/screwdriver
++4 menu: Set transfer amount
++6 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/crowbar
++4 menu: Set transfer amount
++6 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/wrench
++4 menu: Set transfer amount
++6 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/wirecutters
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/multitool
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/weldingtool
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/stack/cable_coil
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/stack/material/steel
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/card/id
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item
+-click: nothing
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
++4 menu: Set transfer amount
++6 menu: Use
+@obj human|/obj/item/reagent_containers/food/drinks/glass2
++4 menu: Set transfer amount
++6 menu: Use
+@obj human|/obj/item/reagent_containers/food/drinks/shaker
++4 menu: Set transfer amount
++6 menu: Use
+keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_pump_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench

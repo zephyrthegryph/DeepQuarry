@@ -8,7 +8,6 @@
 	anchored = TRUE
 	icon = 'icons/obj/pandemic.dmi'
 	icon_state = "pandemic0"
-	idle_power_usage = 20
 	use_power = TRUE
 
 	var/temp_html = ""
@@ -20,93 +19,108 @@
 /obj/item/reagent_containers/glass/beaker/vial/vaccine
 	max_transfer_amount = 15
 	volume = 15
+	sellable_type = /datum/sellable/vaccine
 
-/obj/item/reagent_containers/glass/beaker/vial/vaccine/Initialize(mapload)
-	. = ..()
-	make_sellable(/datum/sellable/vaccine)
+/obj/machinery/computer/pandemic/draw(datum/look/look)
+	..()
+	if(broken_now())
+		look.state((beaker ? "pandemic1_b" : "pandemic0_b"))
+		return
+	look.state("pandemic[(beaker)?"1":"0"][!(power_lost()) ? "" : "_nopower"]")
 
-/obj/machinery/computer/pandemic/Initialize(mapload)
-	. = ..()
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/pandemic/appearance_overlays()
-	. = list()
-	if(has_stat(BROKEN))
-		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")
-		return .
-	icon_state = "pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]"
-
-/obj/machinery/computer/pandemic/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!operable())
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/computer/pandemic, "create_culture_bottle", ui_act_create_culture_bottle, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_culture_bottle)
+/obj/machinery/computer/pandemic/proc/ui_act_create_culture_bottle(datum/act/op/A, index)
+	var/mob/user = A.actor
 	if(wait)
 		return FALSE
-	create_culture_bottle(params["index"])
+	create_culture_bottle(index, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "create_vaccine_bottle", ui_act_create_vaccine_bottle, UI_ARG_TEXT("index"))
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_vaccine_bottle)
+/obj/machinery/computer/pandemic/proc/ui_act_create_vaccine_bottle(datum/act/op/A, index)
 	if(wait)
 		atom_say("The replicator is not ready yet.")
 		return FALSE
-	create_vaccine_bottle(params["index"])
+	create_vaccine_bottle(index)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "eject_beaker", ui_act_eject_beaker)
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_eject_beaker)
+/obj/machinery/computer/pandemic/proc/ui_act_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	eject_beaker()
-	update_tgui_static_data(ui.user)
+	update_tgui_static_data(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "destroy_eject_beaker", ui_act_destroy_eject_beaker)
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_destroy_eject_beaker)
+/obj/machinery/computer/pandemic/proc/ui_act_destroy_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	beaker.reagents.clear_reagents()
 	eject_beaker()
-	update_tgui_static_data(ui.user)
+	update_tgui_static_data(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "empty_beaker", ui_act_empty_beaker)
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_empty_beaker)
+/obj/machinery/computer/pandemic/proc/ui_act_empty_beaker(datum/act/op/A)
 	beaker.reagents.clear_reagents()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "rename_disease", ui_act_rename_disease, UI_ARG_VALUE("index"), UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_rename_disease)
-	rename_disease(params["index"], params["name"])
+/obj/machinery/computer/pandemic/proc/ui_act_rename_disease(datum/act/op/A, index, raw_name)
+	rename_disease(index, raw_name)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "print_release_form", ui_act_print_release_form, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_print_release_form)
-	var/strain_index = params["index"]
-	if(isnull(strain_index))
-		atom_say("Unable to respond to command.")
-		return FALSE
-	var/type = get_virus_id_by_index(strain_index)
-	if(!type)
-		atom_say("Unable to find requested strain.")
-		return FALSE
-	var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[type]
-	if(!A)
-		atom_say("Unable to find requested strain.")
-		return FALSE
-	print_form(A, ui.user)
-	return TRUE
+/obj/machinery/computer/pandemic/proc/ui_act_print_release_form(datum/act/op/A, index)
+	if(A.step_value("reason"))
+		release_form_written(A)
+	return OP_OK
 
-DECLARE_UI_STATE(/obj/machinery/computer/pandemic, GLOB.tgui_default_state)
+/obj/machinery/computer/pandemic/proc/release_strain(datum/act/op/A)
+	var/id = get_virus_id_by_index(A.args["index"])
+	return id ? GLOB.archive_diseases[id] : null
 
-DECLARE_UI(/obj/machinery/computer/pandemic, "Pandemic")
+/obj/machinery/computer/pandemic/proc/release_form_ready(datum/act/op/A)
+	// Printing is a volatile legacy flag; sample the actual busy state at admission and resumption.
+	return (!read_once(printing)) ? null : MSG(pandemic/printing)
 
-UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_computer_pandemic{is_ready:bool,has_beaker:bool,has_blood:bool,beaker:list,blood:list,viruses:unknown,resistances:unknown}")
+/obj/machinery/computer/pandemic/proc/release_has_reason(datum/act/op/A)
+	return !!A.step_value("reason")
 
-/// The computed part of /obj/machinery/computer/pandemic's window data (declared on its UI_DATA row).
-/obj/machinery/computer/pandemic/proc/ui_data_obj_machinery_computer_pandemic(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/pandemic/proc/release_reason_disease(datum/act/op/A)
+	var/datum/prompt/text/pandemic_release_reason/P = A.step_answer("reason")
+	return P?.affliction
+
+/obj/machinery/computer/pandemic/proc/release_reason_text(datum/act/op/A)
+	return A.step_value("reason")
+
+MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
+MSG_DEF_SELF(pandemic/not_beaker, "not possible right now")
+
+CAPABILITIES(/obj/machinery/computer/pandemic)
+	configure(uses_power(idle = 20))
+	op("insert_beaker", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert beaker"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(is_beaker_or_syringe)))), needs(req(PROC_REF(is_beaker_or_syringe), because = MSG(pandemic/not_beaker)), req(PROC_REF(empty_slot_holds)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_beaker)))
+	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
+	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
+	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
+	op("eject_beaker", ui_act("eject_beaker"), then(PROC_REF(ui_act_eject_beaker)))
+	op("destroy_eject_beaker", ui_act("destroy_eject_beaker"), then(PROC_REF(ui_act_destroy_eject_beaker)))
+	op("empty_beaker", ui_act("empty_beaker"), then(PROC_REF(ui_act_empty_beaker)))
+	op("rename_disease", ui_act("rename_disease", arg("index"), arg("name", schema_text(4096))), then(PROC_REF(ui_act_rename_disease)))
+	op("print_release_form", ui_act("print_release_form", arg("index", num())), needs(req(PROC_REF(release_form_ready))),
+		asks(/datum/prompt/text/pandemic_release_reason, step = "reason", fields = list("title" = "Write", "question" = "Enter a reason for the release", "multiline" = TRUE, "affliction" = computed(PROC_REF(release_strain)), "timeout" = 0)),
+		asks(/datum/prompt/yes_no/pandemic_release_sign, step = "signature", fields = list("title" = "Signature", "question" = "Would you like to add your signature?", "disease" = computed(PROC_REF(release_reason_disease)), "reason" = computed(PROC_REF(release_reason_text)), "timeout" = 0), when = PROC_REF(release_has_reason)), then(PROC_REF(ui_act_print_release_form)))
+	extend(TAG_UI, needs(req(PROC_REF(console_works))))
+
+CAPABILITIES(/datum/prompt/text/pandemic_release_reason)
+	ref_one(nameof(affliction), /datum/affliction/contagion/engineered)
+	ref_one(nameof(console), /obj/machinery/computer/pandemic)
+
+CAPABILITIES(/datum/prompt/yes_no/pandemic_release_sign)
+	ref_one(nameof(disease), /datum/affliction/contagion/engineered)
+	ref_one(nameof(console), /obj/machinery/computer/pandemic)
+
+MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
+MSG_DEF_SELF(pandemic/printing, "The console is already printing.")
+
+/// The console answers only while it works.
+/obj/machinery/computer/pandemic/proc/console_works(datum/act/op/A)
+	return (operable()) ? null : MSG(pandemic/not_working)
+
+/obj/machinery/computer/pandemic/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["is_ready"] = !wait
 	if(!beaker)
@@ -143,46 +157,51 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	own_take(src, nameof(beaker))
-	icon_state = "pandemic0"
+	rel_take(src, nameof(beaker))
+	set_icon_state("pandemic0")
 
-/obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
-	D = GLOB.archive_diseases[D.GetDiseaseID()]
-	if(!istype(D))
-		visible_message(span_warning("ERROR: Unable to print form."))
-		play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-		return
-	if(!(printing) && D)
-		om_ask(user, /datum/om/prompt/text/pandemic_release_reason, PROC_REF(release_reason_written), affliction = D)
-
-/datum/om/prompt/text/pandemic_release_reason
-	title = "Write"
-	message = "Enter a reason for the release"
-	multiline = TRUE
-	requires = PROMPT_USABLE
+/// The release reason keeps the archived strain from the opening selection.
+/datum/prompt/text/pandemic_release_reason
 	var/datum/affliction/contagion/engineered/affliction
+	var/obj/machinery/computer/pandemic/console
+	recheck_on_open = TRUE
 
-/obj/machinery/computer/pandemic/proc/release_reason_written(datum/om/prompt/text/pandemic_release_reason/ask)
-	if(!ask.text)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/pandemic_release_sign, PROC_REF(release_form_written), disease = ask.affliction, reason = ask.text)
+/datum/prompt/text/pandemic_release_reason/prepare(datum/act/A)
+	..()
+	rel_set(src, nameof(console), A.holder)
 
-/datum/om/prompt/confirm/pandemic_release_sign
-	title = "Signature"
-	message = "Would you like to add your signature?"
-	answer_on_no = TRUE
-	requires = PROMPT_USABLE
+/datum/prompt/text/pandemic_release_reason/recheck_extra()
+	if(!istype(affliction) || QDELETED(affliction))
+		return "Unable to find requested strain."
+	if(QDELETED(console) || !console.request_usable(src))
+		return "The console is no longer within reach."
+	return ..()
+
+/// The signature question: the strain and the reason are kept on it.
+/datum/prompt/yes_no/pandemic_release_sign
 	var/datum/affliction/contagion/engineered/disease
 	var/reason
+	var/obj/machinery/computer/pandemic/console
+	recheck_on_open = TRUE
 
-/datum/om/prompt/confirm/pandemic_release_sign/valid()
-	var/obj/machinery/computer/pandemic/P = subject
-	return P.printing ? "busy" : null
+/datum/prompt/yes_no/pandemic_release_sign/prepare(datum/act/A)
+	..()
+	rel_set(src, nameof(console), A.holder)
 
-/obj/machinery/computer/pandemic/proc/release_form_written(datum/om/prompt/confirm/pandemic_release_sign/ask)
-	var/mob/living/user = ask.answerer
-	var/datum/affliction/contagion/engineered/D = ask.disease
-	var/reason = ask.reason
+/datum/prompt/yes_no/pandemic_release_sign/recheck_extra()
+	if(QDELETED(console) || console.printing || !console.request_usable(src))
+		return "The console is no longer ready to print."
+	if(QDELETED(disease))
+		return "Unable to find requested strain."
+	return ..()
+
+/obj/machinery/computer/pandemic/proc/release_form_written(datum/act/op/A)
+	var/datum/prompt/yes_no/pandemic_release_sign/R = A.step_answer("signature")
+	if(!R)
+		return
+	var/mob/living/user = A.actor
+	var/datum/affliction/contagion/engineered/D = R.disease
+	var/reason = R.reason
 	reason += "<span class=\"paper_field\"></span>"
 	var/english_symptoms = list()
 	for(var/I in D.symptoms)
@@ -191,7 +210,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	var/symptoms = english_list(english_symptoms)
 
 	var/signature
-	if(ask.yes)
+	if(R.value)
 		signature = "<font face=\"Times New Roman\">" + span_italics("[user ? user.real_name : "Anonymous"]") + "</font>"
 	else
 		signature = "<span class=\"paper_field\"></span>"
@@ -201,57 +220,44 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 	play_sfx(loc, SFX_MACHINES_PRINTER)
 
-	P.info = span_underline(span_huge(span_bold("<center> Releasing Virus </center>")))
-	P.info += "<HR>"
-	P.info += span_underline("Name of the Virus:") + " [D.name] <BR>"
-	P.info += span_underline("Symptoms:") + " [symptoms]<BR>"
-	P.info += span_underline("Spreads by:") + " [D.spread_text]<BR>"
-	P.info += span_underline("Cured by:") + " [D.cure_text]<BR>"
-	P.info += "<BR>"
-	P.info += span_underline("Reason for releasing:") + " [reason]"
-	P.info += "<HR>"
-	P.info += "The Virologist is responsible for any biohazards caused by the virus released.<BR>"
-	P.info += span_underline("Virologist's sign:") + " [signature]<BR>"
-	P.info += "If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"
+	P.set_info(span_underline(span_huge(span_bold("<center> Releasing Virus </center>"))))
+	P.set_info(P.info + ("<HR>"))
+	P.set_info(P.info + (span_underline("Name of the Virus:") + " [D.name] <BR>"))
+	P.set_info(P.info + (span_underline("Symptoms:") + " [symptoms]<BR>"))
+	P.set_info(P.info + (span_underline("Spreads by:") + " [D.spread_text]<BR>"))
+	P.set_info(P.info + (span_underline("Cured by:") + " [D.cure_text]<BR>"))
+	P.set_info(P.info + ("<BR>"))
+	P.set_info(P.info + (span_underline("Reason for releasing:") + " [reason]"))
+	P.set_info(P.info + ("<HR>"))
+	P.set_info(P.info + ("The Virologist is responsible for any biohazards caused by the virus released.<BR>"))
+	P.set_info(P.info + (span_underline("Virologist's sign:") + " [signature]<BR>"))
+	P.set_info(P.info + ("If approved, stamp below with the Chief Medical Officer's stamp, and/or the Captain's stamp if required:"))
 	P.updateinfolinks()
 	P.name = "Releasing Virus - [D.name]"
 	printing = FALSE
 
-/obj/machinery/computer/pandemic/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/pandemic_insert_beaker,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
 
-/// Insert a beaker/syringe of blood.
-/datum/interaction/machine_item/pandemic_insert_beaker
-	id = "pandemic_insert_beaker"
-	name = "Insert beaker"
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/pandemic/proc/beaker_slot_empty, "a beaker is already loaded"))
-	effect = /obj/machinery/computer/pandemic/proc/interaction_insert_beaker
-
-/obj/machinery/computer/pandemic/proc/is_beaker_or_syringe(mob/actor, atom/target, obj/item/held)
-	return (istype(held, /obj/item/reagent_containers/glass) && held.is_open_container()) || istype(held, /obj/item/reagent_containers/syringe)
+/obj/machinery/computer/pandemic/proc/is_beaker_or_syringe(datum/act/op/A)
+	var/obj/item/held = A.held
+	if((istype(held, /obj/item/reagent_containers/glass) && held.is_open_container()) || istype(held, /obj/item/reagent_containers/syringe))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/computer/pandemic/proc/beaker_slot_empty(mob/actor, atom/target, obj/item/held)
 	return !beaker
 
 /// The old stat check was silent (no message), so it stays in the effect.
-/obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/pandemic/proc/interaction_insert_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!operable())
 		return TRUE
-	if(!own_set(src, nameof(src.beaker), I, user = user))
+	if(!move_into(src, nameof(src.beaker), I, user))
 		return TRUE
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
-	icon_state = "pandemic1"
+	set_icon_state("pandemic1")
 	return TRUE
-
-/obj/machinery/computer/pandemic/screwdriver_act(mob/user, obj/item/tool)
-	eject_beaker()
-	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/computer/pandemic/proc/get_viruses_data(datum/reagent/blood/blood)
 	. = list()
@@ -316,7 +322,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	return disease.GetDiseaseID()
 
 /obj/machinery/computer/pandemic/proc/create_vaccine_bottle(index)
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	var/id = get_virus_id_by_index(text2num(index))
 	var/datum/affliction/contagion/disease = GLOB.archive_diseases[id]
 	if(!disease)
@@ -326,24 +332,24 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	bottle.reagents.add_reagent(REAGENT_ID_VACCINE, 15, list(get_by_index("resistances", id)))
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 5)
 	wait = TRUE
-	om_after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))
+	after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
-/obj/machinery/computer/pandemic/proc/create_culture_bottle(index)
+/obj/machinery/computer/pandemic/proc/create_culture_bottle(index, mob/user)
 	var/id = get_virus_id_by_index(text2num(index))
 	var/datum/affliction/contagion/engineered/adv_disease = GLOB.archive_diseases[id]
 
 	if(!istype(adv_disease))
-		to_chat(usr, span_warning("ERROR: Cannot replicate virus strain."))
+		to_chat(user, span_warning("ERROR: Cannot replicate virus strain."))
 		return FALSE
 
 	if(!beaker.reagents.has_reagent(REAGENT_ID_BLOOD, 10))
-		to_chat(usr, span_warning("ERROR: Not enough blood in the sample."))
+		to_chat(user, span_warning("ERROR: Not enough blood in the sample."))
 		return
 
 	var/old_name = adv_disease.name
 
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	adv_disease = adv_disease.Copy()
 	adv_disease.name = old_name
 	var/list/cures = get_beaker_cures(id)
@@ -358,7 +364,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 	beaker.reagents.remove_reagent(REAGENT_ID_BLOOD, 10)
 	wait = TRUE
-	om_after(src, 5 SECONDS, PROC_REF(reset_replicator_cooldown))
+	after(src, 5 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
 /obj/machinery/computer/pandemic/proc/get_beaker_cures(disease_id)
@@ -402,3 +408,6 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 /obj/machinery/computer/pandemic/ownership()
 	. = ..()
 	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+
+/obj/machinery/computer/pandemic/proc/empty_slot_holds(datum/act/op/A)
+	return (!beaker) ? null : MSG(pandemic/beaker_loaded)

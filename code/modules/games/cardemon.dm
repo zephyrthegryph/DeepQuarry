@@ -7,10 +7,14 @@
 	icon_state = "card_pack_cardemon"
 	parentdeck = "cardemon"
 
-/obj/item/pack/cardemon/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/pack/cardemon)
+	owns_many(nameof(cards), starts = PROC_REF(starting_cards))
+
+/// The cards it starts with (owns_many(starts =)).
+/obj/item/pack/cardemon/proc/starting_cards()
 	var/datum/playingcard/P
 	var/i
+	. = list()
 	for(i=0; i<5; i++)
 		var/rarity
 		if(prob(10))
@@ -32,4 +36,4 @@
 			P.name = "[rarity] [P.name]"
 			P.card_icon += "_[rarity]"
 		P.back_icon = "card_back_cardemon"
-		own_add(src, nameof(cards), P)
+		. += P

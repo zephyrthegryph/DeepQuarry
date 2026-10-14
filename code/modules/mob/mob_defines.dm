@@ -22,48 +22,8 @@
 	var/datum/mind/mind
 
 	var/stat = CONSCIOUS //Whether a mob is alive or dead.
-	COOLDOWN_DECLARE(next_move) // world.time when mob is next allowed to self-move.
 
-	/**
-	 * Whether and how a mob is incapacitated
-	 *
-	 * Normally being restrained, agressively grabbed, or in stasis counts as incapacitated
-	 * unless there is a flag being used to check if it's ignored
-	 *
-	 * * bitflags: (see code/__DEFINES/status_effects.dm)
-	 * * INCAPABLE_RESTRAINTS - if our mob is in a restraint (handcuffs)
-	 * * INCAPABLE_STASIS - if our mob is in stasis (stasis bed, etc.)
-	 * * INCAPABLE_GRAB - if our mob is being agressively grabbed
-	 *
-	**/
-	VAR_FINAL/incapacitated = NONE
 
-	//Not in use yet
-	var/obj/effect/organstructure/organStructure = null
-
-	var/tmp/atom/movable/screen/hands = null
-	var/tmp/atom/movable/screen/pullin = null
-	var/tmp/atom/movable/screen/purged = null
-	var/tmp/atom/movable/screen/internals = null
-	var/tmp/atom/movable/screen/i_select = null
-	var/tmp/atom/movable/screen/m_select = null
-	var/tmp/atom/movable/screen/healths = null
-	var/tmp/atom/movable/screen/throw_icon = null
-	var/tmp/atom/movable/screen/pain = null
-	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
-	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
-	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
-	var/tmp/atom/movable/screen/gun/run/gun_run_icon = null
-	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
-	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
-	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
-	var/tmp/atom/movable/screen/wizard/energy/wiz_energy_display = null
-	var/tmp/atom/movable/screen/wizard/instability/wiz_instability_display = null
-	var/tmp/atom/movable/screen/autowhisper_display = null
-
-	var/tmp/datum/plane_holder/plane_holder = null
-	var/list/vis_enabled = null		// List of vision planes that should be graphically visible (list of their VIS_ indexes).
-	var/list/planes_visible = null	// List of atom planes that are logically visible/interactable (list of actual plane numbers).
 
 	//spells hud icons - this interacts with add_spell and remove_spell
 	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
@@ -75,18 +35,14 @@
 	I'll make some notes on where certain variable defines should probably go.
 	Changing this around would probably require a good look-over the pre-existing code.
 	*/
-	var/tmp/atom/movable/screen/zone_sel/zone_sel = null
 
-	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 	var/damageoverlaytemp = 0
 
 	var/computer_id = null
 	var/list/logging
 
-	var/already_placed = 0.0
 	var/other_mobs = null
 	var/memory = ""
-	var/poll_answer = 0.0
 	var/disabilities = 0	//Carbon
 	var/transforming = null	//Carbon
 	var/other = 0.0
@@ -97,11 +53,9 @@
 	var/sec_record = ""
 	var/gen_record = ""
 	var/exploit_record = ""
-	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
-	var/antitoxs = null
 	var/phoron = null
 	var/resting = 0			//Carbon
 	var/lying = 0
@@ -120,15 +74,12 @@
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
-	var/emote_type = 1		// Define emote default type, 1 for seen emotes, 2 for heard emotes
 	var/facing_dir = null   // Used for the ancient art of moonwalking.
 
 	var/name_archive //For admin things like possession
 
 	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
-	var/death_message = "seizes up and falls limp..."
-	COOLDOWN_DECLARE(cpr_time) //Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
 	var/charges = 0.0
@@ -137,7 +88,6 @@
 	var/m_int = null//Living
 	var/m_intent = I_RUN//Living
 	var/lastKnownIP = null
-	var/no_pull_when_living = FALSE //Test for if it can be pulled when alive
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
 	/// own buckled occupant directly, handle_buckled_mob_movement()) so
 	/// /mob/living/Move() doesn't redirect that step back into the buckled
@@ -155,7 +105,6 @@
 
 	var/inertia_dir = 0
 
-	var/music_lastplayed = "null"
 
 	var/job = null//Living
 
@@ -163,8 +112,6 @@
 	var/const/deafness = 2//Carbon
 	var/const/muteness = 4//Carbon
 
-	var/can_pull_size = ITEMSIZE_NO_CONTAINER // Maximum w_class the mob can pull.
-	var/can_pull_mobs = MOB_PULL_LARGER // Whether or not the mob can pull other mobs.
 
 	var/datum/dna/dna = null//Carbon
 	var/radiation = 0.0//Carbon
@@ -181,22 +128,8 @@
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
-	var/can_be_antagged = FALSE // To prevent pAIs/mice/etc from getting antag in autotraitor and future auto- modes. Uses inheritance instead of a bunch of typechecks.
 	var/away_from_keyboard = FALSE	//are we at, or away, from our keyboard?
 	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
-
-//Generic list for proc holders. Only way I can see to enable certain verbs/procs. Should be modified if needed.
-	var/proc_holder_list[] = list()//Right now unused.
-	//Also unlike the spell list, this would only store the object in contents, not an object in itself.
-
-	/* Add this line to whatever stat module you need in order to use the proc holder list.
-	Unlike the object spell system, it's also possible to attach verb procs from these objects to right-click menus.
-	This requires creating a verb for the object proc holder.
-
-	if (proc_holder_list.len)//Generic list for proc_holder objects.
-		for(var/obj/effect/proc_holder/P in proc_holder_list)
-			statpanel("[P.panel]","",P)
-	*/
 
 //The last mob/living/carbon to push/drag/grab this mob (mostly used by slimes friend recognition)
 	var/tmp/mob/living/carbon/LAssailant = null
@@ -219,8 +152,6 @@
 
 	var/digitalcamo = 0 // Can they be tracked by the AI?
 
-	var/tmp/list/radar_blips // list of screen objects, radar blips (currently unused; null until populated)
-	var/radar_open = 0 	// nonzero is radar is open
 
 
 	var/obj/control_object //Used by admins to possess objects. All mobs should have this var
@@ -253,12 +184,9 @@
 	var/default_pixel_x = 0 //For offsetting mobs
 	var/default_pixel_y = 0
 
-	var/attack_icon //Icon to use when attacking w/o anything in-hand
-	var/attack_icon_state //State for above
 
 	var/registered_z
 
-	var/in_enclosed_vehicle = 0	//For mechs and fighters ambiance. Can be used in other cases.
 
 	///List of progress bars this mob is currently seeing for actions
 	var/tmp/list/progressbars = null //for stacking do_after bars
@@ -284,7 +212,110 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
-	COOLDOWN_DECLARE(slip_protect)
+TRACKED(/mob, incorporeal_move)
+
+CAPABILITIES(/mob)
+	ref_one(nameof(LAssailant), /mob/living/carbon) // the last carbon to push, drag or grab this mob
+	ref_one(nameof(click_intercept), /datum)
+	ref_one(nameof(focus), /datum) // what receives the mob's keyboard input (itself by default)
+	ref_one(nameof(mind), /datum/mind)
+	// Who the character says they are (profile_records.dm).
+	profile(nameof(bio), /datum/record/identity)
+	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
+	profile(nameof(vore_prefs), /datum/record/vore_prefs)
+	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
+	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
+	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
+	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
+	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
+	// per-subtype constant tables: every instance of a type shares one list
+	per_type(nameof(speak_emote), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(shouldnt_see), TYPE_PROC_REF(/datum, per_type_own))
+	ref_one(nameof(control_object)) // the object an admin possesses
+	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
+	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
+	ref_many(nameof(spell_list))
+	ref_many(nameof(actions))
+	ref_many(nameof(pinned), /obj/item) // Borrowed objects pinning the mob to a wall.
+	owns_many(nameof(mapobjs), /atom/movable/screen) // the camera-overview map screens this mob is shown: disposed of when cleared
+	ref_many(nameof(embedded), /obj/item) // Items embedded in a mob with no organs to hold them: a deleted item leaves the list.
+	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
+	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
+	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))
+	// A timed move between levels: diving, swimming, climbing a lattice or flying up (multiz/movement.dm).
+	op("zmove", ai(), needs(req_capable()), takes("time", "direction", "start", "destination", "done", "failed", "flight"), wait(PROC_REF(zmove_time)), on_interrupt(PROC_REF(zmove_timed_failed)), then(PROC_REF(zmove_timed_done)))
+	// A spin (animations.dm): a quarter turn every lap, whatever the mob does meanwhile; not an action, so it keeps nothing and holds nothing.
+	op("spin", ai(), claims(0), takes("left", "speed", "facing"), wait(PROC_REF(spin_lap_time), keeps = 0, repeats = PROC_REF(spin_more), after_step = PROC_REF(spin_step)))
+	mob_state()
+	ref_one(nameof(teleop))
+	telekinetic_reach()
+	godmode_immunities()
+	every(1 DECISECONDS, then(PROC_REF(dizzy_shake_tick)), when = nameof(dizzy_shaking))
+	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = nameof(jittery_shaking))
+	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
+	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
+	owns_one(nameof(dna), /datum/dna)
+	owns_one(nameof(hud_used), /datum/hud)
+	owns_one(nameof(machine_shim), /datum/using_machine_shim)
+	owns_one(nameof(remote_view), /datum/remote_view)
+	owns_one(nameof(vorePanel), /datum/vore_look)
+	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
+	owns_many(nameof(vore_organs))
+	owns_many(nameof(alerts))
+	owns_many(nameof(screens))
+	// Selected, spontaneous and previewed bellies are borrowed views, separate from owned vore_organs.
+	ref_one(nameof(spont_belly_front))
+	ref_one(nameof(spont_belly_rear))
+	ref_one(nameof(spont_belly_left))
+	ref_one(nameof(spont_belly_right))
+	ref_one(nameof(previewing_belly))
+	hover(PROC_REF(hover_input))
+	op("flavor_more", topic("flavor_more"), then(PROC_REF(topic_flavor_more)))
+	op("flavor_change", topic("flavor_change", arg("flavor_change", schema_text(32), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_flavor_change)))
+	// The links of living mobs, humans and cyborgs, guarded by their holder type: they move into those types' own blocks (code/library/mob/hands.dm,
+	// code/modules/combat_ai/integration/mob_living.dm) when that work is free.
+	op("default_lang_reset", topic("default_lang=reset"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), then(TYPE_PROC_REF(/mob/living, topic_default_lang_reset)))
+	op("default_lang", topic("default_lang", arg("default_lang", schema_ref(/datum/language), optional = TRUE, among = TYPE_PROC_REF(/mob/living, topic_known_languages))), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), then(TYPE_PROC_REF(/mob/living, topic_default_lang)))
+	op("set_lang_key", topic("set_lang_key", arg("set_lang_key", schema_ref(/datum/language), optional = TRUE, among = TYPE_PROC_REF(/mob/living, topic_known_languages))), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_self()), asks(/datum/prompt/text/language_key, fields = list("language" = arg_of("set_lang_key")), step = "key"), then(TYPE_PROC_REF(/mob/living, topic_set_lang_key)))
+	op("vore_prefs", topic("vore_prefs"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_vore_prefs)))
+	op("ooc_notes", topic("ooc_notes"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_ooc_notes)))
+	op("print_ooc_notes_chat", topic("print_ooc_notes_chat"), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living, topic_print_ooc_notes_chat)))
+	op("lookitem", topic("lookitem", arg("lookitem", schema_ref(/obj/item), optional = TRUE)), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_lookitem)))
+	op("lookitem_desc_only", topic("lookitem_desc_only", arg("lookitem_desc_only", schema_ref(/obj/item), optional = TRUE, among = TYPE_PROC_REF(/mob/living/carbon/human, topic_worn_items))), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_lookitem_desc_only)))
+	op("criminal", topic("criminal"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_criminal)))
+	op("medical", topic("medical"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_medical)))
+	op("secrecord", topic("secrecord"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_secrecord)))
+	op("medrecord", topic("medrecord"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_medrecord)))
+	op("emprecord", topic("emprecord"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_emprecord)))
+	op("secrecordComment", topic("secrecordComment"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_seccomments)))
+	op("medrecordComment", topic("medrecordComment"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_medcomments)))
+	op("emprecordComment", topic("emprecordComment"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_empcomments)))
+	op("secrecordadd", topic("secrecordadd"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_secadd)))
+	op("medrecordadd", topic("medrecordadd"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_medadd)))
+	op("emprecordadd", topic("emprecordadd"), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE)), then(TYPE_PROC_REF(/mob/living/carbon/human, topic_hud_empadd)))
+	op("showalerts", topic("showalerts"), needs(req(/mob/living/silicon, of = ON_HOLDER, silent = TRUE), req_self()), then(TYPE_PROC_REF(/mob/living/silicon, topic_showalerts)))
+	op("vv_setspecies", topic_in(VV_TOPIC, VV_HK_SET_SPECIES), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_SPAWN)), asks(/datum/prompt/choice, fields = list("title" = "Species", "question" = "Please choose a new species", "choices" = computed(TYPE_PROC_REF(/mob/living/carbon/human, vv_species_choices)), "rights" = R_SPAWN, "timeout" = 0), step = "species"), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_set_species)))
+	op("vv_turn_skeleton", topic_in(VV_TOPIC, VK_HK_TURN_SKELETON), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_FUN)), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_turn_skeleton)))
+	op("vv_turn_monkey", topic_in(VV_TOPIC, VV_HK_TURN_MONKEY), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_SPAWN)), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_turn_monkey)))
+	op("vv_turn_alien", topic_in(VV_TOPIC, VV_HK_TURN_ALIEN), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_SPAWN)), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_turn_alien)))
+	op("vv_turn_ai", topic_in(VV_TOPIC, VK_HK_TURN_AI), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_SPAWN)), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_turn_ai)))
+	op("vv_turn_robot", topic_in(VV_TOPIC, VK_HK_TURN_ROBOT), needs(req(/mob/living/carbon/human, of = ON_HOLDER, silent = TRUE), req_rights(R_SPAWN)), then(TYPE_PROC_REF(/mob/living/carbon/human, vv_topic_turn_robot)))
+	op("vv_regen_icons", topic_in(VV_TOPIC, VV_HK_REGEN_ICONS), then(PROC_REF(vv_topic_regen_icons)))
+	op("vv_regen_icons_full", topic_in(VV_TOPIC, VV_HK_REGEN_ICONS_FULL), then(PROC_REF(vv_topic_regen_icons_full)))
+	op("vv_player_panel", topic_in(VV_TOPIC, VV_HK_PLAYER_PANEL), then(PROC_REF(vv_topic_player_panel)))
+	op("vv_toggle_godmode", topic_in(VV_TOPIC, VV_HK_GODMODE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_godmode)))
+	op("vv_addlanguage", topic_in(VV_TOPIC, VV_HK_ADDLANGUAGE), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Language", "question" = "Please choose a language to add.", "choices" = computed(PROC_REF(vv_language_choices))), step = "language"), then(PROC_REF(vv_language_added_apply)))
+	op("vv_remlanguage", topic_in(VV_TOPIC, VV_HK_REMOVELANGUAGE), needs(req_rights(R_SPAWN), req_is(MOB_STATE_KNOWS_LANGUAGE, because = MSG(vv/no_languages))), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Language", "question" = "Please choose a language to remove.", "choices" = computed(PROC_REF(vv_known_language_choices))), step = "language"), then(PROC_REF(vv_language_removed_apply)))
+	op("vv_addverb", topic_in(VV_TOPIC, VV_HK_ADDVERB), needs(req_rights(R_DEBUG)), asks(/datum/prompt/choice/vv_debug, fields = list("title" = "Verbs", "question" = "Select a verb!", "choices" = computed(PROC_REF(vv_verb_choices))), step = "verb"), then(PROC_REF(vv_verb_added_apply)))
+	op("vv_remverb", topic_in(VV_TOPIC, VV_HK_REMOVEVERB), needs(req_rights(R_DEBUG)), asks(/datum/prompt/choice/vv_debug, fields = list("title" = "Verbs", "question" = "Please choose a verb to remove.", "choices" = computed(PROC_REF(vv_current_verb_choices))), step = "verb"), then(PROC_REF(vv_verb_removed_apply)))
+	op("vv_give_spell", topic_in(VV_TOPIC, VV_HK_GIVE_SPELL), then(PROC_REF(vv_topic_give_spell)))
+	op("vv_remove_spell", topic_in(VV_TOPIC, VV_HK_REMOVE_SPELL), then(PROC_REF(vv_topic_remove_spell)))
+	op("vv_give_modifier", topic_in(VV_TOPIC, VV_HK_GIVE_MODIFIER), then(PROC_REF(vv_topic_give_modifier)))
+	op("vv_gib", topic_in(VV_TOPIC, VV_HK_GIB), then(PROC_REF(vv_topic_gib)))
+	op("vv_buildmode", topic_in(VV_TOPIC, VV_HK_BUILDMODE), needs(req_rights(R_BUILDMODE)), then(PROC_REF(vv_topic_buildmode)))
+	op("vv_dropall", topic_in(VV_TOPIC, VV_HK_DROP_ALL), then(PROC_REF(vv_topic_drop_all)))
+	op("vv_direct_control", topic_in(VV_TOPIC, VV_HK_DIRECT_CONTROL), then(PROC_REF(vv_topic_direct_control)))
+	op("vv_give_ai", topic_in(VV_TOPIC, VV_HK_GIVE_AI), needs(req(/mob/living, of = ON_HOLDER, silent = TRUE), req_rights(R_HOLDER), req_is(MOB_STATE_PLAYED, FALSE, because = MSG(vv/player_mob)), req(PROC_REF(vv_not_remote_driven), because = MSG(vv/player_mob))), asks(/datum/prompt/text/vv_ai_faction, step = "faction"), asks(/datum/prompt/choice/vv_ai_stance, step = "stance"), asks(/datum/prompt/choice/vv_ai_wake, step = "wake"), then(TYPE_PROC_REF(/mob/living, vv_topic_give_ai)))
 
 
 /mob
@@ -292,20 +323,34 @@
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
-	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
-	var/tmp/atom/movable/screen/shadekin/lleill_display = null
-	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(control_object)) // the object an admin possesses
-	. += rel_many(nameof(spell_list))
-	. += rel_many(nameof(actions))
-	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))
-/obj/item/relations()
-	. = ..()
-	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+/// A mob's stat: set_stat() is its setter (always use it, never write the var) and publishes the stat key on a real change.
+TRACKED(/mob, stat)
+TRACKED(/mob, seedarkness)
+TRACKED(/mob, transforming)
+TRACKED(/mob, real_name)
+
+
+/mob/proc/set_mob_size(value)
+	if(mob_size == value)
+		return FALSE
+	mob_size = value
+	ledger_refresh_contribution()
+	tracked_changed(src, nameof(mob_size))
+	return TRUE
+SETTER(/mob, mob_size)
+/mob/proc/set_pinned(list/value)
+	if(pinned == value)
+		return FALSE
+	var/list/new_pins = value ? value.Copy() : null
+	rel_clear(src, nameof(pinned))
+	for(var/obj/item/pin as anything in new_pins)
+		rel_add(src, nameof(pinned), pin)
+	return TRUE
+SETTER(/mob, pinned)

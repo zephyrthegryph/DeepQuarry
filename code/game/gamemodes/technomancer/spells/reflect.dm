@@ -14,9 +14,12 @@
 	toggled = 1
 	var/reflecting = 0
 	var/damage_to_energy_multiplier = 60.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 1200 energy cost
-/obj/item/spell/reflect/Initialize(mapload, coreless)
+
+CAPABILITIES(/obj/item/spell/reflect)
+	look_glow(GLOW(3, 2, "#006AFF"))
+
+/obj/item/spell/reflect/Initialize(mapload)
 	. = ..()
-	set_light(3, 2, l_color = "#006AFF")
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 
@@ -62,7 +65,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
+					after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 
 				return PROJECTILE_CONTINUE // complete projectile permutation
 
@@ -80,11 +83,11 @@
 
 				if(!reflecting)
 					reflecting = 1
-					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
+					after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 		return 1
 	return 0
 
 /obj/item/spell/reflect/proc/expire_reflect()
 	to_chat(owner_ref(), span_danger("Your shield fades due being used up!"))
-	qdel(src)
+	spent(src)
 

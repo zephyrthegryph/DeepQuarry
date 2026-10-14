@@ -1,0 +1,53 @@
+@obj.item.mecha_parts human|none
+@obj.item.mecha_parts robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.mecha_parts human|/obj/item/tool/screwdriver
+@obj.item.mecha_parts human|/obj/item/tool/crowbar
+@obj.item.mecha_parts human|/obj/item/tool/wrench
+@obj.item.mecha_parts human|/obj/item/tool/wirecutters
+@obj.item.mecha_parts human|/obj/item/multitool
+@obj.item.mecha_parts human|/obj/item/weldingtool
+@obj.item.mecha_parts human|/obj/item/stack/cable_coil
+@obj.item.mecha_parts human|/obj/item/stack/material/steel
+@obj.item.mecha_parts human|/obj/item/card/id
+@obj.item.mecha_parts human|/obj/item/kit
+@obj.item.mecha_parts human|/obj/item/storage
+human|/obj/item/mecha_parts/part/ripley_torso menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_torso menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_torso menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_torso menu: Use
+human|/obj/item/mecha_parts/part/ripley_torso click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_left_arm menu: Use
+human|/obj/item/mecha_parts/part/ripley_left_arm click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_right_arm menu: Use
+human|/obj/item/mecha_parts/part/ripley_right_arm click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_left_leg menu: Use
+human|/obj/item/mecha_parts/part/ripley_left_leg click: Click: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Attach part
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Move To Top
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mecha_parts/part/ripley_right_leg menu: Use
+human|/obj/item/mecha_parts/part/ripley_right_leg click: Click: Attach part
+human|/obj/item/circuitboard/mecha/ripley/main menu: Move To Top
+human|/obj/item/circuitboard/mecha/ripley/main menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/circuitboard/mecha/ripley/main menu: Use
+human|/obj/item/circuitboard/mecha/ripley/main click: Click: Use
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Move To Top
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/circuitboard/mecha/ripley/peripherals menu: Use
+human|/obj/item/circuitboard/mecha/ripley/peripherals click: Click: Use
+@obj human|/obj/item/stack/material/plasteel
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+keys: attach, collect_item, construction.build:mecha_step_1, construction.build:mecha_step_10, construction.build:mecha_step_11, construction.build:mecha_step_12, construction.build:mecha_step_13, construction.build:mecha_step_14, construction.build:mecha_step_2, construction.build:mecha_step_3, construction.build:mecha_step_4, construction.build:mecha_step_5, construction.build:mecha_step_6, construction.build:mecha_step_7, construction.build:mecha_step_8, construction.build:mecha_step_9, construction.undo:mecha_step_1, construction.undo:mecha_step_10, construction.undo:mecha_step_11, construction.undo:mecha_step_12, construction.undo:mecha_step_13, construction.undo:mecha_step_2, construction.undo:mecha_step_3, construction.undo:mecha_step_4, construction.undo:mecha_step_5, construction.undo:mecha_step_6, construction.undo:mecha_step_7, construction.undo:mecha_step_8, construction.undo:mecha_step_9, drag_buckle, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

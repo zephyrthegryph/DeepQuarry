@@ -6,14 +6,11 @@
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
 	randpixel = 8
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
 	thrown_force_divisor = 0.5
 	item_state = "shard-glass"
-	attack_verb = list("stabbed", "slashed", "sliced", "cut")
 	default_material = MAT_GLASS
 	unbreakable = 1 //It's already broken.
 	drops_debris = 0
@@ -23,9 +20,11 @@
 	if(!istype(material))
 		return
 
-	icon_state = "[material.shard_icon][pick("large", "medium", "small")]"
+	set_icon_state("[material.shard_icon][pick("large", "medium", "small")]")
 	randpixel_xy()
-	update_icon()
+	color = material.icon_colour
+	// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity
+	alpha = 255 * (1 - (1 - material.opacity)*(1 - material.opacity))
 
 	if(material.shard_type)
 		name = "[material.display_name] [material.shard_type]"
@@ -36,27 +35,25 @@
 			else
 				gender = NEUTER
 	else
-		qdel(src)
+		spent(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/shard/appearance_overlays()
-	. = list()
-	if(material)
-		color = material.icon_colour
-		// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity
-		alpha = 255 * (1 - (1 - material.opacity)*(1 - material.opacity))
-	else
-		color = "#ffffff"
-		alpha = 255
+CAPABILITIES(/obj/item/material/shard)
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "slashed", "sliced", "cut")))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
-/obj/item/material/shard/welder_act(mob/user, obj/item/W)
+/obj/item/material/shard/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!material.shard_can_repair)
-		return ..()
+		return OP_DECLINE
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
-		material.place_sheet(loc, 1)
-		qdel(src)
-	return TRUE
+		var/atom/product_location = loc
+		var/datum/material/product_material = material
+		if(!consume(src, user))
+			return OP_OK
+		product_material.place_sheet(product_location, 1)
+	return OP_OK
 
 /obj/item/material/shard/afterattack(atom/target, mob/living/carbon/human/user as mob, proximity)
 	if(!proximity)
@@ -83,7 +80,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 	if(prob(75))
 		will_break = TRUE
 
-	if(user.get_equipped_item(SLOT_ID_GLOVES) && (user.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & HANDS) && istype(user.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
+	if(user.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(user.get_equipped_item(SLOT_ID_GLOVES)).covers & HANDS) && istype(user.get_equipped_item(SLOT_ID_GLOVES), /obj/item/clothing/gloves)) // Not-gloves aren't gloves, and therefore don't protect us
 		protected_hands = TRUE // If we're wearing gloves we can probably handle it just fine
 		for(var/I in forbidden_gloves)
 			if(istype(user.get_equipped_item(SLOT_ID_GLOVES), I)) // forbidden_gloves is a blacklist, so if we match anything in there, our hands are not protected
@@ -121,7 +118,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 			if(H.species.siemens_coefficient<0.5) //Thick skin.
 				return
 
-			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+			if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 				return
 
 			if(H.species.flags & NO_MINOR_CUT)
@@ -136,24 +133,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 				if(affecting)
 					if(affecting.is_robotic())
 						return
-					H.injure(INJURY_BLUNT, force, affecting, src)
+					H.injure(INJURY_BLUNT, combat_of(src).force, affecting, src)
 					if(affecting.organ_can_feel_pain())
-						H.status_at_least(EFFECT_WEAKENED, 3)
+						H.status_at_least(STAT_WEAKENED, 3)
 					return
 				check -= picked
 			return
 
 // Preset types - left here for the code that uses them
-/obj/item/material/shard/shrapnel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/material/shard/shrapnel, weapon_forced_material, MAT_STEEL)
 
-/obj/item/material/shard/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PGLASS)
+TYPE_TABLE(/obj/item/material/shard/phoron, weapon_forced_material, MAT_PGLASS)
 
 
 // === merged from shards_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-/obj/item/material/shard/titaniumglass/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUMGLASS)
+TYPE_TABLE(/obj/item/material/shard/titaniumglass, weapon_forced_material, MAT_TITANIUMGLASS)
 
-/obj/item/material/shard/plastitaniumglass/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTITANIUMGLASS)
+TYPE_TABLE(/obj/item/material/shard/plastitaniumglass, weapon_forced_material, MAT_PLASTITANIUMGLASS)

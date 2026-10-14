@@ -1,0 +1,70 @@
+@obj.item.reagent_containers.glass human|none
+@obj.item.reagent_containers.glass robot|none
+@obj ai|none
+@obj.item.reagent_containers.glass ghost|none
+@obj.item.reagent_containers.glass human|/obj/item/tool/screwdriver
+@obj.item.reagent_containers.glass human|/obj/item/tool/crowbar
+@obj.item.reagent_containers.glass human|/obj/item/tool/wrench
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-menu: Rename food
+-click: nothing
++0 menu: Cut a hole in it
++1 menu: Dip into it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
++6 click: Click: Cut a hole in it
+@obj.item.reagent_containers.glass human|/obj/item/multitool
+@obj.item.reagent_containers.glass human|/obj/item/weldingtool
+@obj.item.reagent_containers.glass human|/obj/item/stack/cable_coil
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+-menu: Rename food
+-click: nothing
++0 menu: Arm the robot frame
++1 menu: Dip into it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
++6 click: Click: Arm the robot frame
+@obj.item.reagent_containers.glass human|/obj/item/card/id
+@obj.item.reagent_containers.glass human|/obj/item/kit
+@obj.item.reagent_containers human|/obj/item/storage
+-menu: Rename food
++1 menu: Dip into it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
+@obj.item.reagent_containers human|/obj/item/pen
+@obj human|/obj/item/flashlight/pen
+@obj.item.reagent_containers human|/obj/item
+-menu: Rename food
++0 menu: Dip into it
++2 menu: Open or close the lid
++3 menu: Set transfer amount
+@obj human|/obj/item/assembly/prox_sensor
+-click: nothing
++0 menu: Add the sensor (refused: This wooden bucket doesn't play well with electronics.)
++1 menu: Dip into it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
++6 click: Click: Add the sensor
+human|/obj/item/mop menu: Dip into it
+human|/obj/item/mop menu: Move To Top
+human|/obj/item/mop menu: Open or close the lid
+human|/obj/item/mop menu: Set transfer amount
+human|/obj/item/mop menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mop menu: Wet it (refused: The bucket is empty!)
+human|/obj/item/mop click: Click: Wet it
+human|/obj/item/soap menu: Clean
+human|/obj/item/soap menu: Dip into it
+human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Open or close the lid
+human|/obj/item/soap menu: Set transfer amount
+human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/soap menu: Wet it (refused: The bucket is empty!)
+human|/obj/item/soap click: Click: Wet it
+human|/obj/item/material/knife/machete/hatchet menu: Cut a hole in it
+human|/obj/item/material/knife/machete/hatchet menu: Dip into it
+human|/obj/item/material/knife/machete/hatchet menu: Move To Top
+human|/obj/item/material/knife/machete/hatchet menu: Open or close the lid
+human|/obj/item/material/knife/machete/hatchet menu: Set transfer amount
+human|/obj/item/material/knife/machete/hatchet menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/material/knife/machete/hatchet click: Click: Cut a hole in it
+keys: collect_item, cut_helmet, drag_buckle, gen_silicon_item_silicon_equip_module, glass_container.milk, glass_handling.blood_test, glass_handling.dip, glass_handling.label, hatchet_helmet, kit_customize, kit_customize_last, move_to_top, pick_up_item, reagent_container.drink, reagent_container.feed, reagent_container.fill, reagent_container.lid, reagent_container.pour, reagent_container.set_amount, reagent_container.splash, robot_frame, sensor, toggle_digestable, wet

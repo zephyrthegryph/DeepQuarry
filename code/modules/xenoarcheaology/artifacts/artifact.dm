@@ -17,29 +17,27 @@
 
 	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
 	var/artifact_master_type = /datum/artifact_master
+	/// The air of its tile is at or past ARTIFACT_HEAT_BREAK (gas_level()).
+	var/overheated = FALSE
+TRACKED(/obj/machinery/artifact, overheated)
 
-/// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
-/// ARTIFACT_HEAT_BREAK (and re-arms when moved).
-/obj/machinery/artifact/machine_step()
-	var/turf/T = get_turf(src)
-	var/datum/gas_mixture/env = T?.return_air()
-	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
-		qdel(src)
-		return PROCESS_KILL
-	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, om_callable(src, PROC_REF(heat_wake)))
-	if(W)
-		LAZYSET(W.last_side, "temperature:[TRUE]:[ARTIFACT_HEAT_BREAK]", FALSE) // below it now: the first reading above fires
-	return PROCESS_KILL
+/// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (gas_level(), code/domains/atmos/gas_level.dm), and a
+/// move re-points the level at the new tile's air.
+CAPABILITIES(/obj/machinery/artifact)
+	gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)
+	on_change(nameof(overheated), ENTER, then(PROC_REF(burst_in_heat)))
 
-/obj/machinery/artifact/proc/heat_wake()
-	MACHINE_WAKE(src)
+/obj/machinery/artifact/proc/burst_in_heat(datum/act/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	destroyed(src)
 
 /obj/machinery/artifact/Moved(atom/old_loc)
 	. = ..()
 	if(isturf(loc) && !QDELETED(src))
-		MACHINE_WAKE(src)
+		gas_level_rearm_all(src)
 
 
+// ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect
 /obj/machinery/artifact/Initialize(mapload)
 
 	if(artifact_master_type)
@@ -51,9 +49,9 @@
 	var/datum/artifact_effect/my_effect = artifact_master.get_primary() //Gets the primary effect of the artifact.
 
 	if(!isnull(predefined_icon_num))
-		icon_num = predefined_icon_num
+		set_icon_num(predefined_icon_num)
 	else
-		icon_num = rand(0, 15)
+		set_icon_num(rand(0, 15))
 
 	icon_state = "ano[icon_num]0"
 	if(icon_num == 7 || icon_num == 8 || icon_num == 15)
@@ -81,11 +79,13 @@
 		my_effect.trigger = pick(TRIGGER_TOUCH, TRIGGER_HEAT, TRIGGER_COLD)
 	artifact_master.do_large_randomization()
 	. = ..()
-	update_icon()
 /obj/machinery/artifact/proc/appearance_active()
 	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano{icon_num}{appearance_active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/artifact/draw(datum/look/look)
+	..()
+	look.state("ano[icon_num][appearance_active()]")
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

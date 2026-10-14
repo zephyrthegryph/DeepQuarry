@@ -1,0 +1,13 @@
+# tracked_tests: raw writes of TRACKED/SETTER/STAT/derive() vars in tests and benchmarks. rule<TAB>file<TAB>normalized line.
+# Shrink-only: `analyze baseline --update --lint tracked_tests` drops fixed sites and never adds one.
+outside_setter	code/modules/unit_tests/dq_atmos_tests.dm	A.safe = TRUE
+outside_setter	code/modules/unit_tests/dq_atmos_tests.dm	smartfridge.shoot_inventory = FALSE
+outside_setter	code/modules/unit_tests/dq_atmos_tests.dm	G.flowing = !G.flowing
+outside_setter	code/modules/unit_tests/dq_draw_framework.dm	H.stat = UNCONSCIOUS
+outside_setter	code/modules/unit_tests/dq_draw_framework.dm	H.stat = DEAD
+outside_setter	code/modules/unit_tests/dq_draw_framework.dm	H.stat = CONSCIOUS
+outside_setter	code/modules/unit_tests/kernel_sequence.dm	E.heat = 5
+outside_setter	code/modules/unit_tests/kernel_sequence.dm	E.heat = 0
+outside_setter	code/modules/unit_tests/kernel_sequence.dm	E.heat = 3
+outside_setter	code/modules/unit_tests/kernel_sequence.dm	E.heat = 1
+outside_setter	code/modules/unit_tests/kernel_sequence.dm	E.heat = 7 // a raw write: nothing publishes "heat"

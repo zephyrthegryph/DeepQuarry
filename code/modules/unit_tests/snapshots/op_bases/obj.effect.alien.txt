@@ -1,0 +1,54 @@
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Tear up
+human|/obj/item/card/id menu: Touch weeds
+human|/obj/item/card/id click: Click: Touch weeds
+human|/obj/item/mop_deploy menu: Hit
+human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Tear up
+human|/obj/item/mop_deploy menu: Touch weeds
+human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Tear up
+human|/obj/item/multitool menu: Touch weeds
+human|/obj/item/multitool click: Click: Touch weeds
+human|/obj/item/soap menu: Clean
+human|/obj/item/soap menu: Hit
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Tear up
+human|/obj/item/soap menu: Touch weeds
+human|/obj/item/soap click: Click: Insert a soap
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Tear up
+human|/obj/item/stack/cable_coil menu: Touch weeds
+human|/obj/item/stack/cable_coil click: Click: Touch weeds
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Tear up
+human|/obj/item/stack/material/steel menu: Touch weeds
+human|/obj/item/stack/material/steel click: Click: Touch weeds
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Tear up
+human|/obj/item/tool/crowbar menu: Touch weeds
+human|/obj/item/tool/crowbar click: Click: Touch weeds
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Tear up
+human|/obj/item/tool/screwdriver menu: Touch weeds
+human|/obj/item/tool/screwdriver click: Click: Touch weeds
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Tear up
+human|/obj/item/tool/wirecutters menu: Touch weeds
+human|/obj/item/tool/wirecutters click: Click: Touch weeds
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Tear up
+human|/obj/item/tool/wrench menu: Touch weeds
+human|/obj/item/tool/wrench click: Click: Touch weeds
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Tear up
+human|/obj/item/weldingtool menu: Touch weeds
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
+human|none menu: Tear up
+human|none menu: Touch weeds
+human|none click: Click: Touch weeds
+robot|none menu: Tear up
+robot|none menu: Touch weeds
+robot|none click: Click: Touch weeds

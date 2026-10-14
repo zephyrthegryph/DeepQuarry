@@ -7,7 +7,6 @@
 	item_state = "grenade"
 	throw_speed = 4
 	throw_range = 20
-	slot_flags = SLOT_MASK|SLOT_BELT
 
 	var/active = 0
 	var/det_time = 50
@@ -19,8 +18,6 @@
 	///Var for special attack_self handling
 	var/special_handling = FALSE
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/grenade/proc/clown_check(mob/living/user)
 	if(CLUMSY_HARM_CHANCE(user))
@@ -28,7 +25,7 @@
 
 		activate(user)
 		add_fingerprint(user)
-		om_after(src, 5, PROC_REF(detonate))
+		after(src, 0.5 SECONDS, PROC_REF(detonate))
 		return 0
 	return 1
 
@@ -40,16 +37,28 @@
 		else if(det_time == null)
 			. += "\The [src] is set for instant detonation."
 
-// EXTEND, not DECLARE: subtypes DECLARE item interactions of their own, which this must not replace.
-EXTEND_INTERACTIONS(/obj/item/grenade, \
-	INTERACT_SELF("Prime", PROC_REF(grenade_interaction_self)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(grenade_interaction_hand)), \
-)
+TRACKED(/obj/item/grenade, det_time)
 
-/// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/grenade/proc/grenade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+MSG_DEF_SELF(grenade/timer_1s, "You set %T% for 1 second detonation time.")
+MSG_DEF_SELF(grenade/timer_3s, "You set %T% for 3 second detonation time.")
+MSG_DEF_SELF(grenade/timer_5s, "You set %T% for 5 second detonation time.")
+MSG_DEF_SELF(grenade/timer_instant, "You set %T% for instant detonation.")
+
+CAPABILITIES(/obj/item/grenade)
+	configure(item_worn(slots = SLOT_MASK|SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
+	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
+	// the screwdriver turns the timer round: instant, 1 s, 3 s, 5 s; a grenade with another fuse only takes the prints
+	stages(nameof(det_time),
+		stage_step(1, 10, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_1s)), then(PROC_REF(timer_handled))),
+		stage_step(10, 30, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_3s)), then(PROC_REF(timer_handled))),
+		stage_step(30, 50, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_5s)), then(PROC_REF(timer_handled))),
+		stage_step(50, 1, tool(TOOL_SCREWDRIVER), label("Set the timer"), wait(0), says(MSG(grenade/timer_instant)), then(PROC_REF(timer_handled))))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(timer_handled)))
+
+/obj/item/grenade/proc/grenade_primed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!active)
 		if(clown_check(user))
 			to_chat(user, span_warning("You prime \the [name]! [det_time/10] seconds!"))
@@ -59,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 			if(iscarbon(user))
 				var/mob/living/carbon/C = user
 				C.throw_mode_on()
-	return TRUE
+	return OP_OK
 
 /obj/item/grenade/proc/activate(mob/user as mob)
 	if(active)
@@ -68,39 +77,27 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 	if(user)
 		msg_admin_attack("[key_name_admin(user)] primed \a [src.name]")
 
-	icon_state = initial(icon_state) + "_active"
+	set_icon_state(initial(icon_state) + "_active")
 	active = 1
 	playsound(src, arm_sound, 75, 1, -3)
 
-	om_after(src, det_time, PROC_REF(detonate))
+	after(src, det_time, PROC_REF(detonate))
 
 /obj/item/grenade/proc/detonate()
 	var/turf/T = get_turf(src)
 	if(T)
 		T.hotspot_expose(700,125)
-		GLOB.motiontracker_service.ping(src,100)
+		SSmotiontracker.ping(src,100)
 
-/obj/item/grenade/screwdriver_act(mob/user, obj/item/tool)
-	switch(det_time)
-		if(1)
-			det_time = 10
-			to_chat(user, span_notice("You set the [name] for 1 second detonation time."))
-		if(10)
-			det_time = 30
-			to_chat(user, span_notice("You set the [name] for 3 second detonation time."))
-		if(30)
-			det_time = 50
-			to_chat(user, span_notice("You set the [name] for 5 second detonation time."))
-		if(50)
-			det_time = 1
-			to_chat(user, span_notice("You set the [name] for instant detonation."))
-	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+/// The screwdriver leaves its user's prints.
+/obj/item/grenade/proc/timer_handled(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.
-/obj/item/grenade/proc/grenade_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grenade/proc/grenade_interaction_hand(datum/act/op/A)
 	walk(src, null, null)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/grenade/vendor_action(obj/machinery/vending/V)
 	activate(V)
@@ -116,6 +113,6 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 
 	spraying.start(start_data)
 	if(duration > 0)
-		om_after(src, 1 SECOND, PROC_REF(effect_spraying), spraying, --duration)
+		after(src, 1 SECOND, PROC_REF(effect_spraying), with = list(spraying, --duration))
 		return
-	qdel(src)
+	spent(src)

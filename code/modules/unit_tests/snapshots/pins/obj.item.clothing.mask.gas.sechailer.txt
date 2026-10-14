@@ -1,0 +1,76 @@
+@obj.item.clothing human|none
++1 menu: HALT! (refused: You can't do that.)
++4 menu: Select gas mask phrase (refused: You can't do that.)
++5 menu: Select phrase
+@obj.item.clothing robot|none
++2 menu: HALT! (refused: You can't do that.)
++5 menu: Select gas mask phrase (refused: You can't do that.)
++6 menu: Select phrase
+@obj ai|none
+@obj.item ghost|none
++0 menu: HALT! (refused: You can't do that.)
++2 menu: Select gas mask phrase (refused: You can't do that.)
+@obj.item.clothing human|/obj/item/tool/screwdriver
+-click: Click: Use
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
++6 menu: Turn the restrictor
++8 click: Click: Turn the restrictor
+@obj.item.clothing human|/obj/item/tool/crowbar
+-click: Click: Use
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
++7 menu: Use crowbar (refused: this mask has an integrated hailer, you can't remove it)
++8 click: Click: Use crowbar
+@obj.item.clothing human|/obj/item/tool/wrench
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Cut the restrictor
++2 menu: HALT! (refused: You can't do that.)
++4 menu: Select gas mask phrase (refused: You can't do that.)
++5 menu: Select phrase
++8 click: Click: Cut the restrictor
+@obj.item.clothing human|/obj/item/multitool
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/weldingtool
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/stack/cable_coil
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/stack/material/steel
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/card/id
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/kit
++2 menu: HALT! (refused: You can't do that.)
++4 menu: Select gas mask phrase (refused: You can't do that.)
++5 menu: Select phrase
+@obj.item.clothing human|/obj/item/storage
++2 menu: HALT! (refused: You can't do that.)
++4 menu: Select gas mask phrase (refused: You can't do that.)
++5 menu: Select phrase
+@obj human|/obj/item
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+@obj.item.clothing human|/obj/item/card/emag
+-menu: Adjust Healing Timer (refused: You can't do that.)
+-menu: Adjust Suit Health (refused: You can't do that.)
++1 menu: HALT! (refused: You can't do that.)
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
+keys: aggressiveness_1_2, aggressiveness_2_3, aggressiveness_3_4, aggressiveness_4_1, break_1, break_2, break_3, break_4, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, restrictor_broken, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable, use_crowbar

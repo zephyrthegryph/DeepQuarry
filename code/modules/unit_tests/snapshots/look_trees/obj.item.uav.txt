@@ -1,0 +1,9 @@
+/obj/item/uav icon: icons/obj/uav.dmi
+/obj/item/uav state: uav
+/obj/item/uav dir: 2
+/obj/item/uav overlay: icons/obj/uav.dmi:uav:8:#000000
+/obj/item/uav/loaded icon: icons/obj/uav.dmi
+/obj/item/uav/loaded state: uav
+/obj/item/uav/loaded dir: 2
+/obj/item/uav/loaded overlay: icons/obj/uav.dmi:uav:8:#000000
+

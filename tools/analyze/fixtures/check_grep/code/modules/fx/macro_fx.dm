@@ -1,0 +1,10 @@
+/proc/macro_fx()
+	to_chat(x, "\red Hello")
+	to_chat(x, "\blue World")
+	to_chat(x, "\bold text")
+	to_chat(x, "\italics")
+	to_chat(x, "\ix")
+	to_chat(x, "\improper thing")
+	to_chat(x, "\icon[x]")
+	to_chat(x, "\red allowed") // ALLOW(check_grep): ok
+	to_chat(x, "\the thing")

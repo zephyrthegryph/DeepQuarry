@@ -16,8 +16,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi',
 			)
 	item_state = "flamethrower_0"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -31,25 +29,37 @@
 	var/obj/item/tank/phoron/ptank = null
 	var/volume_per_max_burn = 20 // gets divided by the intended burn ratio
 
-/obj/item/flamethrower/Initialize(mapload)
-	. = ..()
-	weldtool.status = 0 // for disassembly
-	update_icon()
+TRACKED(/obj/item/flamethrower, status)
 
-DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly/igniter)
+CAPABILITIES(/obj/item/flamethrower)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0))
+	owns_one(nameof(igniter), /obj/item/assembly/igniter)
+	owns_one(nameof(ptank), /obj/item/tank/phoron)
+	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool, starts_set = list("status" = 0)) // for disassembly
+	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
+	interface("Flamethrower")
+	without("ui_open")
+	op("light", ui_act("light"), then(PROC_REF(ui_act_light)))
+	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+CAPABILITIES(/obj/item/flamethrower/full)
+	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter, starts_set = list("secured" = FALSE)) // for disassembly
 
 /obj/item/flamethrower/full/Initialize(mapload)
 	. = ..()
-	igniter.set_secured(FALSE) // for disassembly
-	status = TRUE
-
-DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
+	set_status(TRUE)
 
 /// On or off: while lit it heats its turf every 2 s.
-OM_FIELD(/obj/item/flamethrower, lit, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/flamethrower, PERIODIC_SLOW, "lit")
+/obj/item/flamethrower/var/lit = FALSE
+TRACKED(/obj/item/flamethrower, lit)
 
-/obj/item/flamethrower/periodic_step()
+/obj/item/flamethrower/proc/flamethrower_step(datum/act/timer/A)
 	var/turf/location = loc
 	if(istype(location, /mob/))
 		var/mob/living/M = location
@@ -59,19 +69,17 @@ DECLARE_PERIODIC_WHILE(/obj/item/flamethrower, PERIODIC_SLOW, "lit")
 		location.hotspot_expose(700, 2)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/flamethrower/appearance_overlays()
-	. = list()
+/obj/item/flamethrower/draw(datum/look/look)
+	..()
 	if(igniter)
-		. += "+igniter[status]"
+		look.overlay("+igniter[status]")
 	if(ptank)
-		. += "+ptank"
+		look.overlay("+ptank")
 	if(lit)
-		. += "+lit"
-		item_state = "flamethrower_1"
+		look.overlay("+lit")
+		look.held_state("flamethrower_1")
 	else
-		item_state = "flamethrower_0"
-	return .
+		look.held_state("flamethrower_0")
 
 /obj/item/flamethrower/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))
@@ -90,16 +98,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 
 			// suck out fuel and burn it
 			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
-			qdel(used_gas)
+			consumed(used_gas, src)
 			if(!check_fuel())
 				set_lit(FALSE)
-			update_icon()
 		else
 			to_chat(user, span_notice("There is not enough pressure in [src]'s tank!"))
 			set_lit(FALSE)
-			update_icon()
 		// prevent spam
-		COOLDOWN_START(src, operating, 15)
+		COOLDOWN_START(src, operating, 1.5 SECONDS)
 	return
 
 /obj/item/flamethrower/proc/thrower_spew_percent()
@@ -109,72 +115,78 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 	return ptank != null && ptank.air_contents.total_moles() > 5 // minimum fuel usage is five moles, for EXTREMELY hot mix or super low pressure
 
 /// Old attackby.
-/obj/item/flamethrower/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/flamethrower/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(user.stat || user.restrained() || user.lying)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(isigniter(W))
 		var/obj/item/assembly/igniter/I = W
-		if(I.secured)	return INTERACTION_HANDLED_PASS
-		if(igniter)		return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.igniter), I, user = user))
-			return INTERACTION_HANDLED_PASS
-		update_icon()
-		return INTERACTION_HANDLED_PASS
+		if(I.secured)	return OP_PASS
+		if(igniter)		return OP_PASS
+		if(!move_into(src, nameof(src.igniter), I, user))
+			return OP_PASS
+		return OP_PASS
 
 	if(istype(W,/obj/item/tank/phoron))
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
-			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.ptank), W, user = user))
-			return INTERACTION_HANDLED_PASS
-		update_icon()
-		return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		if(!move_into(src, nameof(src.ptank), W, user))
+			return OP_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/flamethrower/wrench_act(mob/user, obj/item/tool)
+/obj/item/flamethrower/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(status || user.stat || user.restrained() || user.lying)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	if(loc?.release_refusal(src, user))
+		return OP_OK
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
-		own_take(src, nameof(weldtool))
+		rel_take(src, nameof(weldtool))
 	if(igniter)
 		igniter.forceMove(T)
-		own_take(src, nameof(igniter))
+		rel_take(src, nameof(igniter))
 	if(ptank)
 		ptank.forceMove(T)
-		own_take(src, nameof(ptank))
+		rel_take(src, nameof(ptank))
 	new /obj/item/stack/rods(T)
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	consume(src, user)
+	return OP_OK
 
-/obj/item/flamethrower/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/flamethrower/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!igniter || lit || user.stat || user.restrained() || user.lying)
-		return ITEM_INTERACT_BLOCKING
-	status = !status
+		return OP_OK
+	set_status(!status)
 	to_chat(user, span_notice("[igniter] is now [status ? "secured" : "unsecured"]!"))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-DECLARE_INTERACTIONS(/obj/item/flamethrower, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/flamethrower/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flamethrower/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained() || user.lying)
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/flamethrower, "Flamethrower")
+/obj/item/flamethrower/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["lit"] = lit
+	data["constructed"] = status
+	data["throw_amount"] = throw_amount
+	var/list/merged_1 = ui_data_obj_item_flamethrower(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "throw_amount", "merge:ui_data_obj_item_flamethrower{has_tank:bool,throw_min:num,throw_max:num,fuel_kpa:unknown}")
-
-/// The computed part of /obj/item/flamethrower's window data (declared on its UI_DATA row).
+/// /obj/item/flamethrower's window data.
 /obj/item/flamethrower/proc/ui_data_obj_item_flamethrower(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/dat = list()
 	// Tank
@@ -184,15 +196,15 @@ UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "th
 	dat["fuel_kpa"] = check_fuel() ? ptank.air_contents.return_pressure() : 0
 	return dat
 
-/obj/item/flamethrower/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(usr.stat || usr.restrained() || usr.lying)
+/obj/item/flamethrower/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.stat || user.restrained() || user.lying)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "light", ui_act_light)
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_light)
+/obj/item/flamethrower/proc/ui_act_light(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
 		return FALSE
 	set_lit(!lit)
@@ -200,23 +212,24 @@ UI_ACT_PROC(/obj/item/flamethrower, ui_act_light)
 		play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
 	else
 		play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
-	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "amount", ui_act_amount, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_amount)
-	throw_amount = params["amount"]
+/obj/item/flamethrower/proc/ui_act_amount(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
+	throw_amount = amount
 	throw_amount = clamp(throw_amount,THROWER_MIN,THROWER_MAX)
 	return TRUE
 
-UI_ACT(/obj/item/flamethrower, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/flamethrower, ui_act_remove)
+/obj/item/flamethrower/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!ptank)
 		return FALSE
-	usr.put_in_hands(ptank)
-	own_take(src, nameof(/obj/item/flamethrower::ptank))
+	user.put_in_hands(ptank)
+	rel_take(src, nameof(/obj/item/flamethrower::ptank))
 	set_lit(0)
-	update_icon()
 	return TRUE
 
 // Projectile

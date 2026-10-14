@@ -1,0 +1,33 @@
+initial | charges: 1
+initial | connection_severed: 0
+initial | honorific: "Mr."
+initial | recognized: 0
+initial | selfdestructing: 0
+initial | temp: ""
+initial | user_name: "Jay Zeta"
+initial | user_ref: "[ref]"
+text_set | charges: 1
+text_set | connection_severed: 0
+text_set | honorific: "Mr."
+text_set | recognized: 0
+text_set | selfdestructing: 0
+text_set | temp: "Pin greeting"
+text_set | user_name: "Jay Zeta"
+text_set | user_ref: "[ref]"
+selfdestructing | charges: 1
+selfdestructing | connection_severed: 0
+selfdestructing | honorific: "Mr."
+selfdestructing | recognized: 0
+selfdestructing | selfdestructing: 1
+selfdestructing | temp: "Pin greeting"
+selfdestructing | user_name: "Jay Zeta"
+selfdestructing | user_ref: "[ref]"
+charges_spent | charges: 0
+charges_spent | connection_severed: 1
+charges_spent | honorific: "Mr."
+charges_spent | recognized: 0
+charges_spent | selfdestructing: 0
+charges_spent | temp: "Pin greeting"
+charges_spent | user_name: "Jay Zeta"
+charges_spent | user_ref: "[ref]"
+

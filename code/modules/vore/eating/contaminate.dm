@@ -24,9 +24,9 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 		wash(CLEAN_WASH)
 
 	if(!gurgled)
-		gurgled = TRUE
-		gurgled_color = contamination_color
-		if(!isbelly(src.loc)) //Moved non-worn overlay stuff to belly_obj_vr.dm Exited proc. No need to add overlays to things that won't make it out.
+		set_gurgled(TRUE)
+		set_gurgled_color(contamination_color)
+		if(!stains_in_look() && !isbelly(src.loc)) //Moved non-worn overlay stuff to belly_obj_vr.dm Exited proc. No need to add overlays to things that won't make it out.
 			add_overlay(GLOB.gurgled_overlays[gurgled_color])
 		var/list/pickfrom = GLOB.contamination_flavors[contamination_flavor]
 		var/gurgleflavor = pick(pickfrom)
@@ -44,21 +44,17 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	else
 		return TRUE
 
-// Added ahead of the sink's own interactions (its declare_interactions() override in watercloset.dm).
-EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_wash_gurgled_item)))
+MSG_DEF_SELF(sink/washing_gurgled, span_notice("You start washing %I%."))
+MSG_DEF(sink/washed_gurgled, span_notice("You wash %I% using %T%."), span_notice("%U% washes %I% using %T%."))
 
-/// Old attackby: wash the soggy item before it can interact with the sink.
-/obj/structure/sink/proc/sink_wash_gurgled_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I) && I.gurgled)
-		to_chat(user, span_notice("You start washing [I]."))
+/// The held thing is soggy: the wash op takes it before the sink's other item ops.
+/obj/structure/sink/proc/holding_gurgled(datum/act/op/A)
+	var/obj/item/I = A.held
+	return istype(I) && I.gurgled ? null : /datum/msg/req_failed
 
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), claims = TRUE) // the wash claims the sink
-		return TRUE
-	return FALSE
-
-/obj/structure/sink/proc/wash_gurgled_done(mob/user, obj/item/I)
+/obj/structure/sink/proc/wash_gurgled_done(datum/act/op/A)
+	var/obj/item/I = A.held
 	I.wash(CLEAN_SCRUB)
-	act_message(user, src, MSG_SELF(span_notice("You wash [I] using %T%.")), MSG_OTHERS(span_notice("%U% washes [I] using %T%.")))
 
 //////////////
 // Special handling of gurgle_contaminate
@@ -89,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_was
 	if(!gurgled)
 	//Don't make them wet, just drain
 		var/obj/item/cell/C = src
-		C.charge = 0
+		C.set_charge(0)
 	return TRUE
 
 /obj/item/storage/box/gurgle_contaminate(atom/movable/item_storage = null)

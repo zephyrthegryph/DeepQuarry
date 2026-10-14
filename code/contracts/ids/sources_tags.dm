@@ -1,0 +1,44 @@
+// Flyweight sources and tags (doc/rewrite/final_api.html, sections 5 and 9). SOURCE_DEF(name) declares a flyweight source: no instance, no
+// strings; `analyze gen declare_ids` writes SRC_<NAME>. SRC_STATUS: calls without source = use it (the ~700 existing status callers share one hold
+// per status); SRC_VV: the admin's edit of a var in VV; SRC_AI_CONTROL: a bolt held through the AI's interface; SRC_HELD_ITEM: "the item owns it
+// while it is in that hand or slot"; SRC_ALL: a wildcard release() and status_end() accept.
+
+
+SOURCE_DEF(status)
+SOURCE_DEF(vv)
+SOURCE_DEF(ai_control)
+SOURCE_DEF(busy_work)
+SOURCE_DEF(held_item)
+SOURCE_DEF(all)
+/// A thing hidden under an intact floor (hide_under_floor() in code/_helpers/concealment.dm).
+SOURCE_DEF(under_floor)
+/// A thing its owner keeps out of sight (conceal()).
+SOURCE_DEF(concealed)
+/// A door's swing: open or shut is a hold on its density and opacity (set_density() and set_opacity() on /obj/machinery/door).
+SOURCE_DEF(door_state)
+/// A round event that holds a machine's state for good (an AI locked out of a door by a runtime): released by no one but an admin.
+SOURCE_DEF(round_event)
+/// The power grid's reading of a machine's area channel (set_powered()).
+SOURCE_DEF(grid)
+/// The machine's damage (atom_break() holds it, atom_fix() releases it).
+SOURCE_DEF(damage)
+/// A machine's maintenance state (an open service hatch).
+SOURCE_DEF(maintenance)
+/// A machine's own on/off switch.
+SOURCE_DEF(switch)
+/// The faction tables as AI base standings (code/modules/combat_ai/standings/standings.dm), and an admin's word on what a brain thinks of someone.
+SOURCE_DEF(ai_faction)
+SOURCE_DEF(ai_lord)
+SOURCE_DEF(ai_alpha)
+SOURCE_DEF(ai_admin)
+
+/// Tags and capability ids share the numbers a bare id can be, so tags start at TAG_BASE and extend() tells the two apart.
+#define TAG_BASE 1000
+/// Every ui_act() op gets TAG_UI automatically.
+#define TAG_UI 1001
+/// Every topic() op gets TAG_TOPIC automatically (a topic_in() op in a namespace does not: its dispatch brings its own gate).
+#define TAG_TOPIC 1002
+/// Ops that operate the thing (gated by a lock and by operability): extend(TAG_CONTROL, needs(...)).
+#define TAG_CONTROL 1003
+/// The ways into an occupant pod (occupant_pod(): a drag, a grab, "Move Inside"): extend(TAG_POD_ENTER, needs(...)) says what the machine asks of them all.
+#define TAG_POD_ENTER 1004

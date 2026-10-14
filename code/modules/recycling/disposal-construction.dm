@@ -17,10 +17,25 @@
 	var/dpdir = 0	// directions as disposalpipe
 	var/base_state = "pipe-s"
 
-/obj/structure/disposalconstruct/Initialize(mapload, newtype, newdir, flipped, newsubtype)
+CAPABILITIES(/obj/structure/disposalconstruct)
+	rotatable()
+	param(nameof(ptype), pos = 1)
+	param(nameof(dir), pos = 2)
+	param(nameof(flipped_at_make), pos = 3)
+	param(nameof(subtype_at_make), pos = 4)
+	op("flip", menu(), label("Flip Pipe"), needs(req_adjacent(), req_capable(), req_is(nameof(anchored), FALSE, because = MSG(disposalconstruct/unfasten_first))), then(PROC_REF(disposalconstruct_verb_flip)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_welder", lit_welder(fuel = 0), label("Weld in place"), needs(req(PROC_REF(weld_refusal))), starts(PROC_REF(weld_started)), begins(PROC_REF(weld_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
+
+MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe before flipping it")
+
+/// Whether the part is made flipped, and its sort type (its constructor params).
+/obj/structure/disposalconstruct/var/flipped_at_make = FALSE
+/obj/structure/disposalconstruct/var/subtype_at_make = 0
+
+// ALLOW(init/INSTANCE_STATE): a pipe part normalises a bent straight into a corner, its facing to a cardinal, and its density and sort type to its kind
+/obj/structure/disposalconstruct/Initialize(mapload)
 	. = ..()
-	ptype = newtype
-	dir = newdir
 	// Disposals handle "bent"/"corner" strangely, handle this specially.
 	if(ptype == DISPOSAL_PIPE_STRAIGHT && (dir in GLOB.cornerdirs))
 		ptype = DISPOSAL_PIPE_CORNER
@@ -38,14 +53,12 @@
 		if(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE)
 			set_density(TRUE)
 		if(DISPOSAL_PIPE_SORTER, DISPOSAL_PIPE_SORTER_FLIPPED)
-			subtype = newsubtype
+			subtype = subtype_at_make
 
-	if(flipped)
+	if(flipped_at_make)
 		do_a_flip()
 	else
 		update() // do_a_flip() calls update anyway, so, lazy way of catching unupdated pipe!
-
-	make_rotatable()
 
 // update iconstate and dpdir due to dir and type
 /obj/structure/disposalconstruct/proc/update()
@@ -104,9 +117,9 @@
 			dpdir = dir | flip
 
 	if(!(ptype in list(DISPOSAL_PIPE_BIN, DISPOSAL_PIPE_OUTLET, DISPOSAL_PIPE_CHUTE, DISPOSAL_PIPE_UPWARD, DISPOSAL_PIPE_DOWNWARD, DISPOSAL_PIPE_TAGGER, DISPOSAL_PIPE_TAGGER_PARTIAL)))
-		icon_state = "con[base_state]"
+		set_icon_state("con[base_state]")
 	else
-		icon_state = base_state
+		set_icon_state(base_state)
 
 	if(invisibility)				// if invisible, fade icon
 		alpha = 128
@@ -117,17 +130,17 @@
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalconstruct/hide(intact)
-	invisibility = (intact && level==1) ? INVISIBILITY_ABSTRACT: INVISIBILITY_NONE	// hide if floor is intact
+	hide_under_floor(src, intact && level == 1)	// hide if floor is intact
 	update()
 
-EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe", PROC_REF(disposalconstruct_verb_flip), REQ_BECAUSE(REQ_NOT(REQ_ANCHORED), "you must unfasten the pipe before flipping it")))
-
 /// Old Flip Pipe verb.
-/obj/structure/disposalconstruct/proc/disposalconstruct_verb_flip(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/disposalconstruct/proc/disposalconstruct_verb_flip(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
-		return
+		return OP_DECLINE
 
 	do_a_flip()
+	return OP_OK
 
 /obj/structure/disposalconstruct/proc/do_a_flip()
 	switch(ptype)
@@ -187,8 +200,6 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 			return /obj/structure/disposalpipe/tagger/partial
 	return
 
-
-
 // attackby item
 // wrench: (un)anchor
 // weldingtool: convert to real pipe
@@ -217,21 +228,23 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 			nicetype = "partial tagging pipe"
 	return nicetype
 
-/obj/structure/disposalconstruct/wrench_act(mob/user, obj/item/I)
+/obj/structure/disposalconstruct/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/nicetype = construction_name()
 	var/ispipe = is_pipe()
 	add_fingerprint(user)
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	var/obj/structure/disposalpipe/CP = locate_on(T, /obj/structure/disposalpipe)
 
 	if(anchored)
 		set_anchored(FALSE)
 		if(ispipe)
-			level = 2
+			set_level(2)
 			set_density(FALSE)
 		else
 			set_density(TRUE)
@@ -240,7 +253,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		if(!ispipe)
 			if(!istype(CP, /obj/structure/disposalpipe/trunk))
 				to_chat(user, "The [nicetype] requires a trunk underneath it in order to work.")
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 		else if(CP)
 			update()
 			var/pdir = CP.dpdir
@@ -248,46 +261,47 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 				pdir = CP.dir
 			if(pdir & dpdir)
 				to_chat(user, "There is already a [nicetype] at that location.")
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 
 		set_anchored(TRUE)
 		if(ispipe)
-			level = 1
+			set_level(1)
 			set_density(FALSE)
 		else
 			set_density(TRUE)
 		to_chat(user, "You attach the [nicetype] to the underfloor.")
-	playsound(src, I.usesound, 100, 1)
+	playsound(src, sounds_of(I).use, 100, 1)
 	update()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposalconstruct/welder_act(mob/user, obj/item/I)
+/// A segment is welded only on bare plating, and only once it is fastened to it.
+/obj/structure/disposalconstruct/proc/weld_refusal(datum/act/op/A)
+	var/turf/T = read_once(loc)
+	if(!istype(T) || !read_once(T.is_plating()))
+		return "you can only attach the [read_once(construction_name())] if the floor plating is removed"
+	if(!read_once(anchored))
+		return "you need to attach it to the plating first"
+
+/obj/structure/disposalconstruct/proc/weld_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposalconstruct/proc/weld_begins(datum/act/op/A)
+	return msg_text("Welding the [construction_name()] in place.")
+
+/obj/structure/disposalconstruct/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/nicetype = construction_name()
 	var/ispipe = is_pipe()
-	add_fingerprint(user)
-	var/turf/T = src.loc
-	if(!T.is_plating())
-		to_chat(user, "You can only attach the [nicetype] if the floor plating is removed.")
-		return ITEM_INTERACT_BLOCKING
-	if(!anchored)
-		to_chat(user, "You need to attach it to the plating first!")
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "Welding the [nicetype] in place.", receiver = src, job_type = /datum/om/task/timed/tool_job/disposal_weld, job_params = list("nicetype" = nicetype, "ispipe" = ispipe))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/disposalconstruct/proc/welder_act_tool_done(mob/user, nicetype, ispipe)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "The [nicetype] has been welded in place!")
 	update()
 	if(ispipe)
 		var/pipetype = dpipetype()
 		var/obj/structure/disposalpipe/P = new pipetype(src.loc)
 		transfer_fingerprints_to(P)
-		P.base_icon_state = base_state
+		P.set_base_icon_state(base_state)
 		P.set_dir(dir)
 		P.dpdir = dpdir
-		P.update_icon()
 		if(ptype == DISPOSAL_PIPE_SORTER || ptype == DISPOSAL_PIPE_SORTER_FLIPPED)
 			var/obj/structure/disposalpipe/sortjunction/SortP = P
 			SortP.sortType = sortType
@@ -306,8 +320,8 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 /obj/structure/disposalconstruct/hides_under_flooring()
 	if(anchored)

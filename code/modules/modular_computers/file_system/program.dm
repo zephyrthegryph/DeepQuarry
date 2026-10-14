@@ -37,6 +37,13 @@
 	var/ntnet_speed = 0						// GQ/s - current network connectivity transfer rate
 	/// Name of the tgui interface
 
+CAPABILITIES(/datum/computer_file/program)
+	owns_one(nameof(TM), /datum/tgui_module)
+	ref_one(nameof(computer), /obj/item/modular_computer)
+	op("PC_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
+	op("PC_shutdown", ui_act("PC_shutdown"), then(PROC_REF(ui_act_pc_shutdown)))
+	op("PC_minimize", ui_act("PC_minimize"), then(PROC_REF(ui_act_pc_minimize)))
+
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()
 	if(comp && istype(comp))
@@ -45,20 +52,18 @@
 /datum/computer_file/program/tgui_host()
 	return computer().tgui_host()
 
+TRACKED(/datum/computer_file/program, program_icon_state)
+TRACKED(/datum/computer_file/program, program_key_state)
+
 /datum/computer_file/program/clone()
 	var/datum/computer_file/program/temp = ..()
 	temp.required_access = required_access
 	temp.filedesc = filedesc
-	temp.program_icon_state = program_icon_state
+	temp.set_program_icon_state(program_icon_state)
 	temp.requires_ntnet = requires_ntnet
 	temp.requires_ntnet_feature = requires_ntnet_feature
 	temp.usage_flags = usage_flags
 	return temp
-
-// Relays icon update to the computer.
-/datum/computer_file/program/proc/update_computer_icon()
-	if(computer())
-		computer().update_icon()
 
 // Attempts to create a log in global ntnet datum. Returns 1 on success, 0 on fail.
 /datum/computer_file/program/proc/generate_network_log(text)
@@ -137,7 +142,7 @@
 	if(can_run(user, 1) || !requires_access_to_run)
 		rel_set(computer(), nameof(/obj/item/modular_computer::active_program), src)
 		if(tguimodule_path)
-			own_set(src, nameof(TM), new tguimodule_path(src))
+			rel_set(src, nameof(TM), new tguimodule_path(src))
 			// Prefer the card inserted into the computer's card slot for access checks;
 			// fall back to the user's own access if no card is slotted.
 			var/obj/item/card/id/auth_card = computer()?.card_slot?.stored_card()
@@ -155,15 +160,13 @@
 		generate_network_log("Connection to [network_destination] closed.")
 	if(TM)
 		SStgui.close_uis(TM)
-	own_clear(src, nameof(TM), OWN_DELETE)
+	rel_clear(src, nameof(TM))
 	return 1
 
 /datum/computer_file/program/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/headers)
 	)
-
-DECLARE_UI(/datum/computer_file/program, UI_FROM_VAR("tgui_id"))
 
 /// An inactive program shows its computer; a program wrapping a tgui module shows the module.
 /datum/computer_file/program/ui_redirect(mob/user)
@@ -190,24 +193,28 @@ DECLARE_UI(/datum/computer_file/program, UI_FROM_VAR("tgui_id"))
 // Calls beginning with "PRG_" are reserved for programs handling.
 // Calls beginning with "PC_" are reserved for computer handling (by whatever runs the program)
 // ALWAYS INCLUDE PARENT CALL ..() OR DIE IN FIRE.
-UI_ACT(/datum/computer_file/program, "PC_exit", ui_act_pc_exit)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_exit)
+/// The answer to a question one of the program's buttons asked still counts: the window the program shows is still open and interactive for the one who answers.
+/datum/computer_file/program/proc/request_usable(datum/request/R)
+	return window_request_usable(src, R)
+
+/datum/computer_file/program/proc/ui_act_pc_exit(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
-	computer().kill_program()
-	ui.close()
+	computer().kill_program(FALSE, user)
+	SStgui.get_open_ui(user, src)?.close()
 	return 1
 
-UI_ACT(/datum/computer_file/program, "PC_shutdown", ui_act_pc_shutdown)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_shutdown)
+/datum/computer_file/program/proc/ui_act_pc_shutdown(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
 	computer().shutdown_computer()
-	ui.close()
+	SStgui.get_open_ui(user, src)?.close()
 	return 1
 
-UI_ACT(/datum/computer_file/program, "PC_minimize", ui_act_pc_minimize)
-UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
+/datum/computer_file/program/proc/ui_act_pc_minimize(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(computer()))
 		return
 	if(!computer().active_program())
@@ -217,12 +224,10 @@ UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
 	program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
 	rel_clear(computer(), nameof(/obj/item/modular_computer::active_program))
-	computer().update_icon()
-	ui.close()
+	SStgui.get_open_ui(user, src)?.close()
 
 	if(istype(user))
 		computer().tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
-
 
 /// Device that runs this program. (a relation view: null once that is deleted).
 /datum/computer_file/program/proc/computer() as /obj/item/modular_computer

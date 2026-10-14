@@ -121,19 +121,16 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 
 	if(istype(object, /obj/structure/table) && material)
 		var/obj/structure/table/table = object
-		table.material_static = material
-		table.update_connections(TRUE)
-		table.update_icon()
-		table.update_desc()
-		table.update_material()
+		table.set_layers(material, table.reinforced())
+		table.refresh_layers()
 		return
 
 	if(istype(object, /obj/machinery/light))
 		var/obj/machinery/light/light = object
 		light.brightness_color = window_colour
 		light.brightness_color_ns = window_colour
-		light.set_light(0)
-		light.update()
+		set_glow(light, GLOW(0, null, null))
+		light.refresh_light()
 
 	var/replace_path = get_replacement_object_typepath(object)
 	if(!replace_path)
@@ -143,18 +140,18 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 		if(istype(new_object, /obj/machinery/door/airlock))
 			var/obj/machinery/door/airlock/airlock = object
 			var/obj/machinery/door/airlock/new_airlock = new_object
-			new_airlock.req_one_access = airlock.req_one_access?.Copy()
-			cap_set(new_airlock, CAP_BOLTED, is_bolted(airlock))
+			new_airlock.set_req_one_access(airlock.req_one_access?.Copy())
+			set_bolted(new_airlock, is_bolted(airlock), TRUE)
 			if(istype(object, /obj/machinery/door/airlock/multi_tile))
 				for(var/turf/location in object.locs)
 					if(location == object.loc)
 						continue
 					var/obj/machinery/door/airlock/long_airlock = new replace_path(location)
-					long_airlock.req_one_access = airlock.req_one_access?.Copy()
-					cap_set(long_airlock, CAP_BOLTED, is_bolted(airlock))
+					long_airlock.set_req_one_access(airlock.req_one_access?.Copy())
+					set_bolted(long_airlock, is_bolted(airlock), TRUE)
 					long_airlock.name = airlock.name
 		new_object.name = object.name
-	qdel(object)
+	spent(object)
 
 /**
  * Returns the typepath of an object to replace the provided object.

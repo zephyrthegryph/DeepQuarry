@@ -1,0 +1,2 @@
+/obj/item/integrated_circuit/passive/power/chemical_cell vol=60 holder=/datum/reagents 
+

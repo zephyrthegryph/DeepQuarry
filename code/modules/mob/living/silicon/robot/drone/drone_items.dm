@@ -15,21 +15,29 @@
 /obj/item/matter_decompiler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-/obj/item/matter_decompiler/proc/decompile_drone_interrupted(datum/om/task/timed/matter_decompiler_decompile_drone/task)
-	var/mob/living/silicon/robot/D = task.actor
-	to_chat(D, span_danger("You need to remain still while decompiling such a large object."))
+MSG_DEF_SELF(decompiler/begin, span_danger("You begin decompiling %T%."))
 
-/datum/om/task/timed/matter_decompiler_decompile_drone
-	duration = 5 SECONDS
-	complete_proc = /obj/item/matter_decompiler/proc/decompile_drone_done
-	cancel_proc = /obj/item/matter_decompiler/proc/decompile_drone_interrupted
-	var/mob/M
+/// A client-less drone is eaten whole, five seconds standing still. (Pests and loose scrap on the tile are the instant part of afterattack.)
+CAPABILITIES(/obj/item/matter_decompiler)
+	ref_one(nameof(metal), /datum/matter_synth/metal)
+	ref_one(nameof(glass), /datum/matter_synth/glass)
+	ref_one(nameof(wood), /datum/matter_synth/wood)
+	ref_one(nameof(plastic), /datum/matter_synth/plastic)
+	op("decompile_drone", at_target(/mob/living/silicon/robot/drone), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(decompilable)), begins(MSG(decompiler/begin)), on_interrupt(PROC_REF(decompile_drone_interrupted)), wait(5 SECONDS), then(PROC_REF(decompile_drone_done)))
 
-/obj/item/matter_decompiler/proc/decompile_drone_done(datum/om/task/timed/matter_decompiler_decompile_drone/task)
-	var/mob/living/silicon/robot/D = task.actor
-	var/mob/M = task.M
+/// The decompiler is carried by a cyborg and the drone has nobody in it.
+/obj/item/matter_decompiler/proc/decompilable(datum/act/op/A)
+	var/mob/living/silicon/robot/drone/M = A.target
+	return read_once(istype(loc, /mob/living/silicon/robot) && !M.client)
+
+/obj/item/matter_decompiler/proc/decompile_drone_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_danger("You need to remain still while decompiling such a large object."))
+
+/obj/item/matter_decompiler/proc/decompile_drone_done(datum/act/op/A)
+	var/mob/living/silicon/robot/D = A.actor
+	var/mob/M = A.target
 	to_chat(D, span_danger("You carefully and thoroughly decompile [M], storing as much of its resources as you can within yourself."))
-	qdel(M)
+	spent(M)
 	new/obj/effect/decal/cleanable/blood/oil(get_turf(src))
 
 	if(metal)
@@ -40,6 +48,7 @@
 		wood.add_charge(2000)
 	if(plastic)
 		plastic.add_charge(1000)
+	return OP_OK
 
 /obj/item/matter_decompiler/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity, params)
 
@@ -57,24 +66,13 @@
 		if(has_trait(M, TRAIT_AMBIENT_PEST_MOB))
 			src.loc.visible_message(span_danger("[src.loc] sucks [M] into its decompiler. There's a horrible crunching noise."),span_danger("It's a bit of a struggle, but you manage to suck [M] into your decompiler. It makes a series of visceral crunching noises."))
 			new/obj/effect/decal/cleanable/blood/splatter(get_turf(src))
-			qdel(M)
+			consumed(M, src)
 			if(wood)
 				wood.add_charge(2000)
 			if(plastic)
 				plastic.add_charge(2000)
 			return
 
-		else if(istype(M,/mob/living/silicon/robot/drone) && !M.client)
-
-			var/mob/living/silicon/robot/D = src.loc
-
-			if(!istype(D))
-				return
-
-			to_chat(D, span_danger("You begin decompiling [M]."))
-
-			om_task_start(/datum/om/task/timed/matter_decompiler_decompile_drone, D, src, receiver = src, M = M)
-			return
 		else
 			continue
 
@@ -131,7 +129,7 @@
 		else
 			continue
 
-		qdel(W)
+		consumed(W, src)
 		grabbed_something = 1
 
 	if(grabbed_something)

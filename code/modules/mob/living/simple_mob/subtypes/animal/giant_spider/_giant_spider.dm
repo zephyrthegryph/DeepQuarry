@@ -116,8 +116,6 @@
 		/obj/item/stack/material/chitin = 1\
 		)
 
-	allow_mind_transfer = TRUE
-	can_be_drop_prey = FALSE
 	species_sounds = "Spider"
 	pain_emote_1p = list("chitter", "click")
 	pain_emote_3p = list("chitters", "clicks")
@@ -125,12 +123,12 @@
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
 	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	no_pull_when_living = TRUE
 
 
-/mob/living/simple_mob/animal/giant_spider/Initialize(mapload)
-	. = ..()
-	enable_swarming()
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+	configure(mob_movement(no_pull_when_living = TRUE))
+	swarming()
 
 /mob/living/simple_mob/animal/giant_spider/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover) && !istype(mover, /mob/living/simple_mob/animal/giant_spider) && mover.density == TRUE && stat != DEAD)
@@ -169,20 +167,20 @@
 	ai_busy_begin()
 	// Telegraph, since getting bitten suddenly feels bad.
 	do_windup_animation(A, warning_warmup)
-	om_after(src, warning_warmup, PROC_REF(warning_leap), A) // For the telegraphing.
+	after(src, warning_warmup, PROC_REF(warning_leap), with = list(A)) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_leap(mob/living/A)
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), 4, 1, src)
 	playsound(src, warning_sound, 75, 1)
 
-	om_after(src, 0.5 SECONDS, PROC_REF(warning_finish), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(warning_finish), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_finish(mob/living/A)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	. = FALSE
 
@@ -202,7 +200,7 @@
 
 	if(victim?.reagents)
 		victim.reagents.add_reagent(REAGENT_ID_WARNINGTOXIN, poison_per_bite)
-		victim.status_adjust(EFFECT_WEAKENED, 2)
+		victim.status_adjust(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% has bitten %T%!")))
 		to_chat(victim, span_critical("\The [src] bites you and retreats!"))
 		. = TRUE

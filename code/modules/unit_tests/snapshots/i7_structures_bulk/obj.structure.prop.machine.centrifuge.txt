@@ -1,0 +1,15 @@
+@obj.structure.prop human|none
+@obj.structure.prop robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.prop human|/obj/item/tool/screwdriver
+@obj.structure.prop human|/obj/item/tool/crowbar
+@obj.structure.prop human|/obj/item/tool/wrench
+@obj.structure.prop human|/obj/item/tool/wirecutters
+@obj.structure.prop human|/obj/item/multitool
+@obj.structure.prop human|/obj/item/weldingtool
+@obj.structure.prop human|/obj/item/stack/cable_coil
+@obj.structure.prop human|/obj/item/stack/material/steel
+@obj.structure.prop human|/obj/item/card/id
+@obj.structure.prop human|/obj/item
+keys: drag_buckle, melee_hit, message, toggle

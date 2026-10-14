@@ -17,13 +17,16 @@
 	var/tmp/moving_upwards
 	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
 
-/// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
+/// Used for controller processing: lift_step() drives the lift while set (every()).
+/datum/turbolift/var/tmp/busy_state
+TRACKED(/datum/turbolift, busy_state)
+TRACKED(/datum/turbolift, priority_mode)
+TRACKED(/datum/turbolift, fire_mode)
 
-/datum/turbolift/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+CAPABILITIES(/datum/turbolift)
+	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
+	owns_many(nameof(floors))
+	every(1 SECOND, then(PROC_REF(lift_step)), when = nameof(busy_state))
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -33,16 +36,15 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 
 // Enter priority mode, blocking all calls for awhile
 /datum/turbolift/proc/priority_mode(time = 30 SECONDS)
-	priority_mode = TRUE
+	set_priority_mode(TRUE)
 	cancel_pending_floors()
-	update_ext_panel_icons()
 	control_panel_interior.audible_message(span_info("This turbolift is responding to a priority call.  Please exit the lift when it stops and make way."), runemessage = "BUZZ")
-	om_after(src, time, PROC_REF(end_priority_mode))
+	after(src, time, PROC_REF(end_priority_mode))
 
 /datum/turbolift/proc/update_fire_mode(new_fire_mode)
 	if(fire_mode == new_fire_mode)
 		return
-	fire_mode = new_fire_mode
+	set_fire_mode(new_fire_mode)
 	if(new_fire_mode)
 		cancel_pending_floors()
 
@@ -62,26 +64,25 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				A.play_ambience(M)
 		// Disable safeties on the doors during firemode, reset when done
 		for(var/obj/machinery/door/airlock/door in F.doors)
-			door.safe = new_fire_mode ? FALSE : initial(door.safe)
+			turbolift_fire_safeties(door, src, new_fire_mode)
 
 	// Disable safeties on the doors during firemode, reset when done
 	for(var/obj/machinery/door/airlock/door in doors)
-		door.safe = new_fire_mode ? FALSE : initial(door.safe)
-	update_ext_panel_icons()
-	control_panel_interior.update_icon()
+		turbolift_fire_safeties(door, src, new_fire_mode)
 
 // Cancel all pending calls
+/// Fire mode holds a door's safeties off for the lift; out of fire mode the lift lets go (the door's own safeties are back).
+/proc/turbolift_fire_safeties(obj/machinery/door/airlock/door, datum/turbolift/lift, fire_mode)
+	if(fire_mode)
+		hold(door, STAT_SAFE, null, lift)
+	else
+		release(door, STAT_SAFE, lift)
+
 /datum/turbolift/proc/cancel_pending_floors()
 	for(var/datum/turbolift_floor/floor in queued_floors)
 		if(floor.ext_panel)
 			floor.ext_panel.reset()
 	rel_clear(src, nameof(queued_floors))
-
-// Update the icons of all exterior panels (after we change modes etc)
-/datum/turbolift/proc/update_ext_panel_icons()
-	for(var/datum/turbolift_floor/floor in floors)
-		if(floor.ext_panel)
-			floor.ext_panel.update_icon()
 
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
 	if(!use_floor)
@@ -105,11 +106,8 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 		door.close()
 	return
 
-#define LIFT_MOVING    1	// Lift will try moving.
-#define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
-#define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/periodic_step()
+/datum/turbolift/proc/lift_step(datum/act/timer/A)
 	if(EXPIRY_ACTIVE(src, next_process, CLOCK_WORLD))
 		return
 	switch(busy_state)
@@ -203,12 +201,12 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				var/mob/living/M = AM
 				M.gib()
 			else if(AM.simulated && !(istype(AM, /mob/observer)) && !(AM.is_incorporeal()))
-				qdel(AM)
+				spent(AM)
 
 	origin.move_contents_to(destination)
 
 	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
-		GLOB.machine_service.power_reregister(get_area_turfs(destination))
+		SSmachines.power_reregister(get_area_turfs(destination))
 
 	rel_set(src, nameof(current_floor), next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")
@@ -227,13 +225,9 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 /datum/turbolift/proc/is_functional()
 	return 1
 
-#undef LIFT_MOVING
-#undef LIFT_WAITING_A
-#undef LIFT_WAITING_B
 
 /datum/turbolift/proc/end_priority_mode()
-	priority_mode = FALSE
-	update_ext_panel_icons()
+	set_priority_mode(FALSE)
 
 
 /// Where are we going? (a relation view: it reads null once the target is deleted).

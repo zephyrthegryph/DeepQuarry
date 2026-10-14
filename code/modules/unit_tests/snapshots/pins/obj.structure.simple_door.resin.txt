@@ -1,0 +1,30 @@
+@obj.structure.simple_door human|none
+@obj.structure.simple_door robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Tear at
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Tear at
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Tear at
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Tear at
+@obj.structure human|/obj/item/multitool
++1 menu: Tear at
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++1 menu: Tear at
++3 menu: Use welder
++4 click: Click: Use welder
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Tear at
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Tear at
+@obj.structure human|/obj/item/card/id
++1 menu: Tear at
+@obj.structure human|/obj/item
++1 menu: Tear at
+@obj human|/obj/item/pickaxe
++2 menu: Tear at
+keys: dig, drag_buckle, melee_hit, resin_hand, silicon_open, tear, use_welder

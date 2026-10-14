@@ -1,6 +1,4 @@
 /obj/machinery/recycling
-	idle_power_usage = 5
-	active_power_usage = 500
 	density = TRUE
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -9,26 +7,37 @@
 	var/negative_dir = null // ition
 	var/hand_fed = TRUE
 
-/obj/machinery/recycling/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/recycling)
+	configure(uses_power(idle = 5, active = 500))
+	started_work(step = PROC_REF(work_step))
+	op("feed", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Feed"), needs(req_is(nameof(working), FALSE, because = MSG(recycling/working))), then(PROC_REF(interaction_feed)))
+	default_parts()
 
-/obj/machinery/recycling/machine_step()
+/obj/machinery/recycling/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL // these are all stateful
 
-DECLARE_APPEARANCE(/obj/machinery/recycling, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/crusher, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("crusher-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/sorter, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sorter-panel"))))
-DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("stamper-panel"))))
+/obj/machinery/recycling/draw(datum/look/look)
+	..()
+	look.overlay(panel_overlay(), panel_open)
+
+/// The layer an open service panel shows.
+/obj/machinery/recycling/proc/panel_overlay()
+	return "-panel"
+
+/obj/machinery/recycling/crusher/panel_overlay()
+	return "crusher-panel"
+
+/obj/machinery/recycling/sorter/panel_overlay()
+	return "sorter-panel"
+
+/obj/machinery/recycling/stamper/panel_overlay()
+	return "stamper-panel"
 
 /**
  * Generic procs common to all
  */
-/obj/machinery/recycling/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/recycling_feed,
-	)
-	..()
+MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 
 /**
  * Old attackby: several silent guards (actor must be living and adjacent, not busy), then
@@ -36,22 +45,16 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
  * it never called ..() (unconditionally intercepts every item) and the guards mix silent
  * returns with messaged refusals.
  */
-/datum/interaction/machine_item/recycling_feed
-	id = "recycling_feed"
-	name = "Feed"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/recycling/proc/interaction_feed
-	also_requires = list(REQ_FIELD_NOT("working", "it's busy; wait until it's idle"))
-
-/obj/machinery/recycling/proc/interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/recycling/proc/interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!isliving(user) || !Adjacent(user))
-		return TRUE
+		return OP_OK
 
 	if(default_part_replacement(user, O))
-		return TRUE
+		return OP_OK
 	if(!hand_fed)
-		return TRUE
+		return OP_OK
 	var/mob/living/M = user
 	if(can_accept_item(O))
 		M.drop_from_inventory(O)
@@ -59,7 +62,7 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 		act_message(M, src, MSG_SELF(span_info("You insert [O] into %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " inserts [O] into %T%.")))
 	else
 		to_chat(user, span_warning("\The [src] can't accept [O] for recycling."))
-	return TRUE
+	return OP_OK
 
 // Conveyors etc
 /obj/machinery/recycling/Bumped(atom/A)
@@ -110,9 +113,9 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "crusher-process"
+	set_icon_state("crusher-process")
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 5 SECONDS, PROC_REF(crush_done), O)
+	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
 
 /obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
 	var/trash = 1 // Trash multiplier
@@ -130,14 +133,14 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 		if(istype(D))
 			D.add_materials(modified_mats)
 			set_use_power(USE_POWER_IDLE)
-			icon_state = "crusher"
-			qdel(O)
+			set_icon_state("crusher")
+			destroyed(O, src, BRUTE)
 			working = FALSE
 			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
 	set_use_power(USE_POWER_IDLE)
-	icon_state = "crusher"
-	qdel(O)
+	set_icon_state("crusher")
+	destroyed(O, src, BRUTE)
 	working = FALSE
 
 /**
@@ -154,8 +157,10 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 	working = FALSE
 
 /// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
-OM_FIELD(/obj/machinery/recycling/sorter, dispensing, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible, "dispensing")
+/obj/machinery/recycling/sorter/var/dispensing = FALSE
+TRACKED(/obj/machinery/recycling/sorter, dispensing)
+CAPABILITIES(/obj/machinery/recycling/sorter)
+	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
 
 /obj/machinery/recycling/sorter/can_accept_item(obj/item/O)
 	if(istype(O, /obj/item/debris_pack))
@@ -165,9 +170,9 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 /obj/machinery/recycling/sorter/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "sorter-process"
+	set_icon_state("sorter-process")
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 2 SECONDS, PROC_REF(sort_done), O)
+	after(src, 2 SECONDS, PROC_REF(sort_done), with = list(O))
 
 /obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
 	sort_item(O)
@@ -180,11 +185,11 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 			materials[mat] += item_matter[mat]
 		else
 			materials[mat] = item_matter[mat]
-	qdel(O)
+	consumed(O, src)
 
-/// Dispenses one dust pile every 2 seconds (declared: while dispensing) while any material has a
+/// Dispenses one dust pile every 2 seconds (while dispensing) while any material has a
 /// sheet's worth, then idles.
-/obj/machinery/recycling/sorter/proc/dispense_if_possible()
+/obj/machinery/recycling/sorter/proc/dispense_if_possible(datum/act/timer/A)
 	for(var/mat in materials)
 		if(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
 			materials[mat] -= (SHEET_MATERIAL_AMOUNT)
@@ -192,9 +197,8 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 			return
 	set_dispensing(FALSE)
 	set_use_power(USE_POWER_IDLE)
-	icon_state = "sorter"
+	set_icon_state("sorter")
 	working = FALSE
-	return REPEAT_STOP
 
 /**
  * This machine makes sheets after being provided with material dust from a sorter.
@@ -214,13 +218,13 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 /obj/machinery/recycling/stamper/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "stamper-process"
+	set_icon_state("stamper-process")
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 6.4 SECONDS, PROC_REF(stamp_done), O)
+	after(src, 6.4 SECONDS, PROC_REF(stamp_done), with = list(O))
 
 /obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
 	dust_to_sheet(O)
-	icon_state = "stamper"
+	set_icon_state("stamper")
 	set_use_power(USE_POWER_IDLE)
 	working = FALSE
 
@@ -249,9 +253,15 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	icon_state = "debris"
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/debris_pack/Initialize(mapload, list/matter_init)
-	set_material_mix(matter_init.Copy())
-	. = ..()
+CAPABILITIES(/obj/item/debris_pack)
+	param(nameof(matter_at_make), pos = 1, apply = PROC_REF(hold_matter), keep = FALSE)
+
+/// The matter a debris pack holds (its constructor param, dropped once set).
+/obj/item/debris_pack/var/tmp/list/matter_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/debris_pack/proc/hold_matter(list/matter_init)
+	set_material_mix(matter_init?.Copy())
 
 /obj/item/material_dust
 	name = "dust"
@@ -261,9 +271,11 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	w_class = ITEMSIZE_SMALL
 	var/material_name
 
-/obj/item/material_dust/Initialize(mapload, mat)
-	material_name = mat
+CAPABILITIES(/obj/item/material_dust)
+	param(nameof(material_name), pos = 1, apply = PROC_REF(dust_of))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The dust is named and coloured for its material.
+/obj/item/material_dust/proc/dust_of(mat)
 	name = "[material_name] [initial(name)]"
 	var/datum/material/M = get_material_by_name(material_name)
 	color = M?.icon_colour
-	. = ..()

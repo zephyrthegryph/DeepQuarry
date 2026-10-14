@@ -1,0 +1,30 @@
+@obj.effect human|none
+@obj.effect robot|none
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Engrave
+human|/obj/item/tool/screwdriver click: Click: Engrave
+human|/obj/item/tool/crowbar menu: Engrave
+human|/obj/item/tool/crowbar click: Click: Engrave
+human|/obj/item/tool/wrench menu: Engrave
+human|/obj/item/tool/wrench click: Click: Engrave
+human|/obj/item/tool/wirecutters menu: Engrave
+human|/obj/item/tool/wirecutters click: Click: Engrave
+human|/obj/item/multitool menu: Engrave
+human|/obj/item/multitool click: Click: Engrave
+human|/obj/item/weldingtool menu: Clear graffiti
+human|/obj/item/weldingtool menu: Engrave
+human|/obj/item/weldingtool click: Click: Clear graffiti
+human|/obj/item/stack/cable_coil menu: Engrave
+human|/obj/item/stack/cable_coil click: Click: Engrave
+human|/obj/item/stack/material/steel menu: Engrave
+human|/obj/item/stack/material/steel click: Click: Engrave
+human|/obj/item/card/id menu: Engrave
+human|/obj/item/card/id click: Click: Engrave
+@obj human|/obj/item/mop_deploy
++0 menu: Engrave
+@obj human|/obj/item/soap
++1 menu: Engrave
+human|/obj/item menu: Engrave
+human|/obj/item click: Click: Engrave
+keys: clear_graffiti, drag_buckle, engrave_graffiti, pass_insert, pass_insert_2

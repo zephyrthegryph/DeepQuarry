@@ -42,6 +42,7 @@
 		if(0 to 1)
 			. += span_boldwarning("It is completely destroyed.")
 
+// ALLOW(init/INSTANCE_STATE): a part flagged to start damaged begins at its danger integrity
 /obj/item/mecha_parts/component/Initialize(mapload)
 	. = ..()
 	if(start_damaged)
@@ -54,9 +55,10 @@
 
 // Damage code.
 
-DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_emp))
 /// An EMP wears the component down, less so the more resistant it is.
-/obj/item/mecha_parts/component/proc/component_emp(datum/damage_packet/packet)
+/obj/item/mecha_parts/component/proc/component_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	var/severity = packet.severity || EMP_HARMLESS
 	if(severity + emp_resistance >= EMP_NONE)
 		return
@@ -148,17 +150,14 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)
 	if(get_integrity() >= max_integrity)
 		return
-	om_task_start(/datum/om/task/timed/component_paste_repair, user, site, receiver = src, NP = NP)
+	perform_op(user, src, "paste_repair", NP, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("site" = site))
 
-/datum/om/task/timed/component_paste_repair
-	duration = 1 SECOND
-	complete_proc = /obj/item/mecha_parts/component/proc/paste_repair_done
-	var/obj/item/stack/nanopaste/NP
-
-/obj/item/mecha_parts/component/proc/paste_repair_done(datum/om/task/timed/component_paste_repair/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/nanopaste/NP = task.NP
-	var/atom/site = task.target
+/obj/item/mecha_parts/component/proc/paste_repair_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/nanopaste/NP = A.held
+	var/atom/site = A.arg("site")
+	if(QDELETED(NP) || QDELETED(site))
+		return OP_REFUSED
 	NP.use(1)
 	adjust_integrity(NP.mech_repair)
 	if(get_integrity() >= max_integrity)
@@ -167,23 +166,31 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 		to_chat(user, span_warning("Insufficient nanopaste to complete repairs!"))
 	else
 		paste_repair_step(user, NP, site)
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/component, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/mecha_parts/component)
+	ref_one(nameof(chassis))
+	// One nanopaste repair a second (paste_repair_step starts the next while the paste lasts).
+	op("paste_repair", ai(), takes("site"), wait(1 SECOND), then(PROC_REF(paste_repair_done)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(component_emp)))
 
 /// Old attackby.
-/obj/item/mecha_parts/component/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/mecha_parts/component/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 
 		if(get_integrity() < max_integrity)
 			to_chat(user, span_notice("You start to repair damage to \the [src]."))
 			paste_repair_step(user, NP, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		else
 			to_chat(user, span_notice("\The [src] doesn't require repairs."))
 
-	return FALSE
+	return OP_DECLINE
 
 // Various procs to handle different calls by Exosuits. IE, movement actions, damage actions, etc.
 

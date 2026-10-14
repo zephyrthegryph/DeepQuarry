@@ -1,0 +1,5 @@
+/obj/item/holowarrant icon: icons/obj/device.dmi
+/obj/item/holowarrant state: holowarrant
+/obj/item/holowarrant dir: 2
+/obj/item/holowarrant overlay: icons/obj/device.dmi:holowarrant:8:#000000
+

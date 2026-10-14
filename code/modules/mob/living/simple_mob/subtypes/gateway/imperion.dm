@@ -324,13 +324,13 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperionblaster(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_1), target)
+	after(src, 1.5 SECONDS, PROC_REF(launch_rockets_1), with = list(target))
 
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_1(atom/target)
 	var/obj/item/projectile/B = new /obj/item/projectile/bullet/imperionspear(get_turf(src))
 	B.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_2), target)
+	after(src, 1.5 SECONDS, PROC_REF(launch_rockets_2), with = list(target))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_2(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
@@ -347,13 +347,14 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_followup(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5, PROC_REF(microsingularity_second), target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear)
+	after(src, 0.15 SECONDS, PROC_REF(microsingularity_second), with = list(target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_second(atom/target, shot_type)
 	var/obj/item/projectile/B = new shot_type(get_turf(src))
 	B.launch_projectile(target, BP_TORSO, src)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields", /obj/item/shield_projector/rectangle/automatic/imperion)
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/imperion)
 
 /obj/item/shield_projector/rectangle/automatic/imperion
 	max_integrity = 250
@@ -376,16 +377,18 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperionspear = 5)
 
 /obj/item/projectile/bullet/imperionspear/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperionspear
 	name = "energy spear"
 	icon_state = "arcane_barrage"
 	damage = 35
-	armor_penetration = 35
 	speed = 7.0
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperionspear)
+	configure(item_combat(armor_penetration = 35))
 
 /obj/item/projectile/bullet/imperionblaster
 	use_submunitions = 1
@@ -397,16 +400,18 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperionblaster = 8)
 
 /obj/item/projectile/bullet/imperionblaster/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperionblaster
 	name = "energy pellet"
 	icon_state = "dark_pellet"
 	damage = 15
-	armor_penetration = 100
 	speed = 4.5
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperionblaster)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/imperiontesla
 	use_submunitions = 1
@@ -418,17 +423,19 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperiontesla = 2)
 
 /obj/item/projectile/bullet/imperiontesla/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperiontesla
 	name = "energy sphere"
 	icon_state = "tesla_projectile"
 	damage = 50
-	armor_penetration = 50
 	agony = 50
 	speed = 10.0
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperiontesla)
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/energy/homing_bolt/missile
 	name = "homing rocket"
@@ -441,7 +448,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 
 /obj/item/projectile/energy/homing_bolt/missile/throw_impact(atom/target, speed)
 	explosion(target, 0, 0, 2, 4)//No need to have a question.
-	qdel(src)
+	spent(src)
 
 //Cool boss visuals, auras, and me saying no to stun.
 
@@ -461,9 +468,8 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 
 	factors = alist(BF_DISABLE_DURATION = 0)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion)
+	body_effect(/datum/body_effect/bossbuff)
 
 /datum/body_effect/aura/despair
 	tick_interval = 2 SECONDS

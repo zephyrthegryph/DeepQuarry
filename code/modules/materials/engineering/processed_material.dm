@@ -30,7 +30,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(!new_material)
 		return FALSE
 	default_type = material_name
-	material = new_material
+	set_material(new_material)
 	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	if(apply_colour || pass_color)
@@ -66,6 +66,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
 
+CAPABILITIES(/datum/material/processed_alloy)
+	owns_one(nameof(batch_template), /datum/material_batch)
+
 
 /proc/register_processed_material(datum/material_batch/batch)
 	if(!istype(batch) || !length(batch.composition))
@@ -77,11 +80,13 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return existing
 	var/key = "processed_alloy_[copytext(fingerprint, 1, 13)]"
 	var/datum/material/processed_alloy/material = new
-	material.name = key
+	material.set_name(key)
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
-	own_set(material, nameof(material.batch_template), batch.copy_batch())
-	material.hardness = batch.hardness
+	rel_set(material, nameof(material.batch_template), batch.copy_batch())
+	// A template is a definition, not a piece of stock: it records the temperature stock is made at and holds no heat of its own.
+	material.batch_template.settle_heat(null)
+	material.set_hardness(batch.hardness)
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
 	material.brittleness = batch.brittleness
@@ -101,7 +106,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	var/corrosion_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_CORROSION) || 0
 	var/bluespace_skin = LAZYACCESS(batch.surface_layers, MATERIAL_SURFACE_SLIME_BLUESPACE) || 0
 	if(metal_skin)
-		material.hardness = clamp(material.hardness + metal_skin * 0.2, 1, 100)
+		material.set_hardness(clamp(material.hardness + metal_skin * 0.2, 1, 100))
 		material.integrity = clamp(material.integrity + round(metal_skin * 0.8), 5, 250)
 	if(corrosion_skin)
 		material.corrosion_resistance = clamp(material.corrosion_resistance + corrosion_skin * 0.6, 0, 100)
@@ -239,7 +244,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 			dominant = get_material_by_name(component)
 			dominant_amount = LAZYACCESS(batch.composition, component)
 	if(dominant)
-		material.icon_colour = dominant.icon_colour
+		material.set_icon_colour(dominant.icon_colour)
 	material.material_facts_changed()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
@@ -257,7 +262,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	// on the output turf preserves both initialization and the returned ref.
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
 	own_clear(stock, nameof(stock.batch_state), OWN_DELETE)
-	own_set(stock, nameof(stock.batch_state), batch.copy_for_amount(stack_amount))
+	rel_set(stock, nameof(stock.batch_state), batch.copy_for_amount(stack_amount))
 	stock.feedstock_purity = batch.purity
 	stock.feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(stock)]-[rand()]"), 1, 9))
 	stock.update_thermal_processing()
@@ -289,69 +294,77 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	/// current amount, so splitting/merging/using never creates or destroys value.
 	var/export_value_per_sheet = 0
 
-// INIT: this stack's material, colour, export value and a batch copy sized to its amount
-// ALLOW(init): the material is a per-instance argument and the batch copy is sized to this stack
-/obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
-	if(_material_name)
-		default_type = _material_name
-	. = ..(mapload, _amount)
+CAPABILITIES(/obj/item/stack/material/processed_alloy)
+	owns_one(nameof(batch_state), /datum/material_batch)
+	every(2 SECONDS, then(PROC_REF(processed_alloy_step)), when = nameof(hot))
+	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
+	param(nameof(default_type), pos = 2)
+
+// ALLOW(init/INSTANCE_STATE): a processed alloy stack takes its alloy's colour, value and batch
+/obj/item/stack/material/processed_alloy/Initialize(mapload)
+	. = ..()
 	if(istype(material, /datum/material/processed_alloy))
 		color = material.icon_colour
 		export_value_per_sheet = max(material.supply_conversion_value, 0)
 		set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 		var/datum/material/processed_alloy/processed = material
-		own_set(src, nameof(batch_state), processed.batch_template.copy_for_amount(amount))
+		rel_set(src, nameof(batch_state), processed.batch_template.copy_for_amount(amount))
 
 
-/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
-OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
+/// Hot stock's conductance to the air, per J/K of its heat capacity, W/K: the old 8 % of the gap per 2 s step (-ln(0.92) / 2 s).
+#define PROCESSED_STOCK_COOLING_RATE 0.0417
+
+/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), processed_alloy_step()).
+/obj/item/stack/material/processed_alloy/var/hot = FALSE
+TRACKED(/obj/item/stack/material/processed_alloy, hot)
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
 		return batch_state
 	var/datum/material/processed_alloy/processed = material
-	own_set(src, nameof(batch_state), processed?.batch_template?.copy_for_amount(amount))
+	rel_set(src, nameof(batch_state), processed?.batch_template?.copy_for_amount(amount))
 	return batch_state
 
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
 	var/datum/material_batch/batch = physical_batch()
-	if(batch?.temperature > T20C + 40)
-		set_light(2, 1, "#ff7b22")
+	if(batch?.temperature() > T20C + 40)
+		set_glow(src, GLOW(2, 1, "#ff7b22"))
 		set_hot(TRUE)
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		set_hot(FALSE)
 
-/obj/item/stack/material/processed_alloy/periodic_step()
+/// Hot stock cools through a heat link to its turf's air (PROCESSED_STOCK_COOLING_RATE of its capacity, W/K: the old 8 % of the gap per
+/// 2 s), and gives the rest to the air and lets its heat store go once within 5 K of it.
+/obj/item/stack/material/processed_alloy/proc/processed_alloy_step(datum/act/timer/A)
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
 		set_hot(FALSE)
 		return
-	var/ambient_temperature = T20C
 	var/turf/open/turf = get_turf(src)
-	if(istype(turf) && turf.air)
-		ambient_temperature = turf.air.return_temperature()
-	batch.temperature += (ambient_temperature - batch.temperature) * 0.08
-	if(abs(batch.temperature - ambient_temperature) < 5)
-		batch.temperature = ambient_temperature
-		set_light(0)
+	var/datum/gas_mixture/air = istype(turf) ? turf.air : null
+	var/ambient_temperature = air ? air.return_temperature() : T20C
+	if(abs(batch.temperature() - ambient_temperature) < 5)
+		batch.settle_heat(air ? turf : null)
+		set_glow(src, GLOW(0, null, null))
 		set_hot(FALSE)
-	return
+		return
+	if(air)
+		batch.cool_into(turf, batch.thermal_capacity() * PROCESSED_STOCK_COOLING_RATE)
 
 /obj/item/stack/material/processed_alloy/split(tamount)
 	var/old_amount = get_amount()
 	var/datum/material_batch/original = physical_batch()?.copy_batch()
 	var/obj/item/stack/material/processed_alloy/new_stack = ..()
 	if(!new_stack || !original)
-		qdel(original)
+		spent(original)
 		return new_stack
 	new_stack.set_processed_material(material.name)
 	own_clear(new_stack, nameof(new_stack.batch_state), OWN_DELETE)
-	own_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
-	own_clear(src, nameof(batch_state), OWN_DELETE)
-	own_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
-	qdel(original)
+	rel_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
+	rel_clear(src, nameof(batch_state))
+	rel_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
+	spent(original)
 	return new_stack
 
 /obj/item/stack/material/processed_alloy/transfer_to(obj/item/stack/target, tamount = null, type_verified)
@@ -364,8 +377,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	var/datum/material_batch/target_batch = processed_target.physical_batch()?.copy_batch()
 	var/transferred = ..(target, tamount, type_verified)
 	if(!transferred)
-		qdel(source_batch)
-		qdel(target_batch)
+		consumed(source_batch, src)
+		consumed(target_batch, src)
 		return 0
 	var/datum/material_batch/new_target = target_batch.copy_for_amount(target_before)
 	var/datum/material_batch/source_portion = source_batch.copy_for_amount(transferred)
@@ -382,30 +395,31 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 		new_target.cost_ledger[category] = (new_target.cost_ledger[category] || 0) + source_portion.cost_ledger[category]
 	new_target.cost_basis += source_portion.cost_basis
 	new_target.energy_spent += source_portion.energy_spent
-	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
+	// The two portions' heat mixes: they meet at their common temperature, then the merged batch (now the size of both) holds both.
+	if(abs(new_target.temperature() - source_portion.temperature()) > 0.01)
+		heat_equalize(HEAT_STORE(new_target.ensure_heat_store()), HEAT_STORE(source_portion.ensure_heat_store()))
 	new_target.recalculate()
 	own_clear(processed_target, nameof(processed_target.batch_state), OWN_DELETE)
-	own_set(processed_target, nameof(processed_target.batch_state), new_target)
+	rel_set(processed_target, nameof(processed_target.batch_state), new_target)
 	processed_target.update_thermal_processing()
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
-		own_clear(src, nameof(batch_state), OWN_DELETE)
-		own_set(src, nameof(batch_state), new_source)
+		rel_clear(src, nameof(batch_state))
+		rel_set(src, nameof(batch_state), new_source)
 		update_thermal_processing()
-	qdel(source_portion)
-	qdel(source_batch)
-	qdel(target_batch)
+	consumed(source_portion, src)
+	consumed(source_batch, src)
+	consumed(target_batch, src)
 	return transferred
 
 /// Every amount mutation on a stack (use/add/set_amount, hence split/merge/
-/// transfer) ends in update_icon(), so this is the one seam that keeps the
+/// transfer) ends in set_amount(), so this is the one seam that keeps the
 /// export value in step with the sheets actually present: a split can no
 /// longer leave both halves carrying the whole stack's value.
-DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/material/processed_alloy/appearance_overlays()
-	. = list()
-	. += ..()
-	refresh_export_value()
+/obj/item/stack/material/processed_alloy/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		refresh_export_value()
 
 /obj/item/stack/material/processed_alloy/proc/refresh_export_value()
 	if(!export_value_per_sheet)
@@ -417,7 +431,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(
 	if(!istype(new_material, /datum/material/processed_alloy))
 		return FALSE
 	default_type = material_name
-	material = new_material
+	set_material(new_material)
 	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	color = material.icon_colour
@@ -435,7 +449,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/material/processed_alloy, TYPE_PROC_REF(
 	if(!istype(material, /datum/material/processed_alloy))
 		return
 	var/datum/material_batch/batch = physical_batch()
-	if(batch.temperature > T20C + 40)
+	if(batch.temperature() > T20C + 40)
 		. += span_warning("The alloy is still dangerously hot.")
 	if(length(batch.surface_layers))
 		. += span_notice("Surface treatment: [jointext(batch.surface_layers, ", ")].")

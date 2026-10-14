@@ -9,20 +9,20 @@
 //   - The effect's DEFINITION is a flyweight /datum/body_effect subtype (one shared instance
 //     per type, body_effect_def()), declaring `factors`, texts, a stacking rule and hooks.
 //     Definitions are shared: they never hold per-mob state.
-//   - An APPLICATION is one contribution to EFFECT_BODY_EFFECTS on the mob, keyed by the
+//   - An APPLICATION is one keyed hold on STAT_BODY_EFFECT_COUNTS on the mob, keyed by the
 //     definition's type, held by the mob itself; its value is the number of stacks.
-//   - A timed application expires through om_after() on the mob's timer clock. For a living
+//   - A timed application expires through after() on the mob's timer clock. For a living
 //     mob that is CLOCK_BIO, so stasis slows or stops the countdown and suspension pauses it
 //     (an entangled patient in a stasis bag is still entangled when they come out). A
 //     definition with `world_clock` counts real time instead (the global OM owner).
 //   - Per-tick work is an OM behaviour on the mob: a definition with `tick_interval` gets
-//     on_tick(L) on an om_after() cadence (same clock as its expiry) while it is on.
+//     on_tick(L) on an after() cadence (same clock as its expiry) while it is on.
 //   - Per-application state (the origin, a synced item, a counter) lives on the mob, keyed by
 //     the definition's type: body_effect_origin(), body_effect_state()/set_body_effect_state().
 //     It is dropped when the last stack ends.
 //
 // The body reads the per-key value (type -> stacks) in recompute_factors(); a change of the
-// contribution invalidates the factors through /datum/om/effect/body_effects/on_changed().
+// hold invalidates the factors (invalidate_factors() after each write).
 //
 // API (on /mob/living):
 //   apply_body_effect(type, duration, origin, suppress)  timed when duration > 0, held otherwise
@@ -108,6 +108,7 @@
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
+	READS_FROM()
 	RETURN_TYPE(/datum/body_effect)
 	var/static/list/defs = list()
 	var/datum/body_effect/def = defs[path]
@@ -117,14 +118,6 @@
 		def = new path
 		defs[path] = def
 	return def
-
-/// The contribution's effect type: a change of any application re-reads the factors.
-/datum/om/effect/body_effects
-
-/datum/om/effect/body_effects/on_changed(datum/E, old_value, new_value)
-	if(isliving(E))
-		var/mob/living/L = E
-		L.invalidate_factors()
 
 /mob/living
 	/// Body effect type -> list of timed-stack names, one per timed stack, soonest first. Each
@@ -144,7 +137,7 @@
 /mob/living/proc/body_effects()
 	RETURN_TYPE(/list)
 	var/static/list/none = list()
-	return om_value_of(src, EFFECT_BODY_EFFECTS) || none
+	return stat_value(src, STAT_BODY_EFFECT_COUNTS) || none
 
 /mob/living/proc/body_effect_stacks(path)
 	var/list/active = body_effects()
@@ -174,13 +167,13 @@
 /mob/living/proc/set_body_effect_origin(path, atom/origin)
 	if(isnull(origin))
 		if(body_effect_origins && (path in body_effect_origins))
-			own_put(src, nameof(body_effect_origins), path, null)
+			rel_add(src, nameof(body_effect_origins), null, path)
 			if(!length(body_effect_origins))
-				own_clear(src, nameof(body_effect_origins), OWN_DELETE)
+				rel_clear(src, nameof(body_effect_origins))
 		return
 	var/datum/body_effect_origin/O = new
 	rel_set(O, nameof(O.origin), origin)
-	own_put(src, nameof(body_effect_origins), path, O)
+	rel_add(src, nameof(body_effect_origins), O, path)
 
 /mob/living/proc/body_effect_state(path)
 	return body_effect_data?[path]
@@ -212,12 +205,10 @@
 	UNSETEMPTY(body_effect_factors)
 	invalidate_factors()
 
-OWN_TIMER(/mob/living, body_effect)
-
 /// The timer slot for body effect timer `name` ("[path]#[serial]" or "[path]#tick"): on the mob,
 /// or, for a world-clock effect, on the global owner under a name that includes the mob.
 /mob/living/proc/body_effect_slot(datum/body_effect/def, name)
-	return def.world_clock ? "body_effect:[om_handle(src)]:[name]" : "body_effect:[name]"
+	return def.world_clock ? "body_effect:[entity_handle(src)]:[name]" : "body_effect:[name]"
 
 /// Schedules body effect timer `name` for `path` on the definition's clock (replacing one of that
 /// name). The slot owns the timer: firing, cancelling and deletion end it.
@@ -227,13 +218,13 @@ OWN_TIMER(/mob/living, body_effect)
 	return after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)
 
 /mob/living/proc/body_effect_cancel(datum/body_effect/def, name)
-	om_cancel_timer_slot(def.world_clock ? null : src, body_effect_slot(def, name))
+	cancel_after(def.world_clock ? null : src, body_effect_slot(def, name))
 
 /mob/living/proc/body_effect_pending(datum/body_effect/def, name)
-	return om_timer_slot_pending(def.world_clock ? null : src, body_effect_slot(def, name))
+	return after_pending(def.world_clock ? null : src, body_effect_slot(def, name))
 
 /mob/living/proc/body_effect_timer_left(datum/body_effect/def, name)
-	return om_timer_slot_left(def.world_clock ? null : src, body_effect_slot(def, name)) || 0
+	return after_left(def.world_clock ? null : src, body_effect_slot(def, name)) || 0
 
 /// A new timed stack of `path`: its name, scheduled to expire after `duration`.
 /mob/living/proc/body_effect_new_stack(datum/body_effect/def, path, duration)
@@ -293,8 +284,9 @@ OWN_TIMER(/mob/living, body_effect)
 				set_body_effect_origin(path, null)
 			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
-	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
-	changed(src, CHANGE_MOB_CONDITIONS)
+	hold(src, STAT_BODY_EFFECT_COUNTS, stacks, src, key = path)
+	invalidate_factors()
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
 		LAZYINITLIST(body_effect_timers)
 		LAZYADD(body_effect_timers[path], body_effect_new_stack(def, path, duration))
@@ -305,8 +297,6 @@ OWN_TIMER(/mob/living, body_effect)
 			record_genetic_effect(path, TRUE)
 		if(def.changes_icon_scale())
 			update_transform()
-		if(def.mob_overlay_state)
-			update_modifier_visuals()
 		if(def.client_color)
 			update_client_color()
 		if(LAZYLEN(def.filter_parameters))
@@ -347,7 +337,8 @@ OWN_TIMER(/mob/living, body_effect)
 			UNSETEMPTY(body_effect_timers)
 	var/current = body_effect_stacks(path)
 	if(current > 1 && length(timers))
-		om_hold(src, EFFECT_BODY_EFFECTS, src, current - 1, path)
+		hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = path)
+		invalidate_factors()
 		return
 	end_body_effect(path, FALSE, TRUE)
 
@@ -372,7 +363,8 @@ OWN_TIMER(/mob/living, body_effect)
 	if(length(timers))
 		body_effect_cancel(body_effect_def(key), timers[1])
 		timers.Cut(1, 2)
-	om_hold(src, EFFECT_BODY_EFFECTS, src, current - 1, key)
+	hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = key)
+	invalidate_factors()
 	return TRUE
 
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
@@ -384,9 +376,10 @@ OWN_TIMER(/mob/living, body_effect)
 		body_effect_timers -= path
 		UNSETEMPTY(body_effect_timers)
 	body_effect_cancel(def, "[path]#tick")
-	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
+	if(!release(src, STAT_BODY_EFFECT_COUNTS, src, path))
 		return
-	changed(src, CHANGE_MOB_CONDITIONS)
+	invalidate_factors()
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(def.on_expired_text && !silent)
 		to_chat(src, def.on_expired_text)
 	// A persistent trait leaves the character only when deliberately removed from a living
@@ -404,8 +397,6 @@ OWN_TIMER(/mob/living, body_effect)
 		return
 	if(def.changes_icon_scale())
 		update_transform()
-	if(def.mob_overlay_state)
-		update_modifier_visuals()
 	if(def.client_color)
 		update_client_color()
 	if(LAZYLEN(def.filter_parameters))

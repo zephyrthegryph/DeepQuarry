@@ -1,0 +1,39 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++2 menu: Toggle worn
++4 click: Click: Toggle worn
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Cut out
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/pda menu: Open controls
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda click: Click: Toggle
+wires: AI Control, Atmospherics Alarm, ID Scan, Primary Power, Siphon
+keys: alarm, ch4_scrub, co2_scrub, cut_out, direction, drag_buckle, excheck, fuel_scrub, incheck, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mode, n2o_scrub, n2_scrub, o2_scrub, panel.open, panic_siphon, power, rcon, reset, reset_external_pressure, reset_internal_pressure, robot_remote_blocked, scrubbing, set_external_pressure, set_internal_pressure, silicon_hand, temperature, threshold, tox_scrub, ui_open, wires.open

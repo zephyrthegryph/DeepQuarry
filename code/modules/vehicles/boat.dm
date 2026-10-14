@@ -12,8 +12,7 @@
 	var/tmp/datum/material/material_static
 	var/riding_datum_type = /datum/riding/boat/small
 
-/obj/vehicle/boat/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/vehicle/boat/sifwood, boat_forced_material, MAT_SIFWOOD)
 
 /obj/vehicle/boat/dragon
 	name = "dragon boat"
@@ -25,13 +24,12 @@
 	max_buckled_mobs = 5
 	riding_datum_type = /datum/riding/boat/big
 
-/obj/vehicle/boat/dragon/Initialize(mapload, material_name)
-	. = ..(mapload, material_name)
+/obj/vehicle/boat/dragon/build_of(material_name)
+	..()
 	var/image/I = image(icon, src, "dragon_boat_underlay", BELOW_MOB_LAYER)
 	underlays += I
 
-/obj/vehicle/boat/dragon/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/vehicle/boat/dragon/sifwood, boat_forced_material, MAT_SIFWOOD)
 
 // Oars, which must be held inhand while in a boat to move it.
 /obj/item/oar
@@ -40,41 +38,63 @@
 	desc = "Used to provide propulsion to a boat."
 	icon_state = "oar"
 	item_state = "oar"
-	force = 12
 	var/tmp/datum/material/material_static
 
-/obj/item/oar/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
 
-/obj/item/oar/Initialize(mapload, material_name)
-	..(mapload)
+TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
+
+CAPABILITIES(/obj/item/oar)
+	configure(item_combat(force = 12))
+	param(nameof(oar_material), pos = 1, apply = PROC_REF(carve))
+
+/// The material an oar is made of (its constructor param), or the type's forced one, or wood.
+/obj/item/oar/var/oar_material
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/oar/proc/carve(material_name)
+	var/forced_material = TYPE_TABLE_GET(src, oar_forced_material)
+	if(forced_material)
+		material_name = forced_material
 	if(!material_name)
 		material_name = MAT_WOOD
 	material_static = get_material_by_name("[material_name]")
 	if(!material())
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material().icon_colour
-	return INITIALIZE_HINT_NORMAL
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/boat, "riding_datum", "riding_datum_type")
+CAPABILITIES(/obj/vehicle/boat)
+	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
+	op("boat_board", item(/atom/movable), gesture(GESTURE_DRAG), label("Board"), then(PROC_REF(interaction_boat_board)))
+	param(nameof(boat_material), pos = 1, apply = PROC_REF(build_of))
 
-/obj/vehicle/boat/Initialize(mapload, material_name)
-	..(mapload)
+TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
+
+/// The material a boat is built of (its constructor param), or the type's forced one, or wood.
+/obj/vehicle/boat/var/boat_material
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/vehicle/boat/proc/build_of(material_name)
+	var/forced_material = TYPE_TABLE_GET(src, boat_forced_material)
+	if(forced_material)
+		material_name = forced_material
 	if(!material_name)
 		material_name = MAT_WOOD
 	material_static = get_material_by_name("[material_name]")
 	if(!material())
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material().icon_colour
-	return INITIALIZE_HINT_NORMAL
 
 // Boarding.
-EXTEND_INTERACTIONS(/obj/vehicle/boat, INTERACT_DRAG("Board", PROC_REF(interaction_boat_board)))
 
 /// Old MouseDrop_T: drop a mob on the boat to seat it.
-/obj/vehicle/boat/proc/interaction_boat_board(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/boat/proc/interaction_boat_board(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(!ismob(C))
-		return FALSE
+		return OP_DECLINE
 	user_buckle_mob(C, user)
 	return TRUE
 

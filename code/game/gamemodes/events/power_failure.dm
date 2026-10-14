@@ -9,20 +9,15 @@
 		var/area/current_area = get_area(S)
 		if((current_area.type in skipped_areas) || !(S.z in using_map.station_levels))
 			continue
-		S.last_charge			= S.stored_charge()
-		S.last_output_attempt	= S.output_attempt
-		S.last_input_attempt 	= S.input_attempt
+		S.held_through_outage = list(S.stored_charge(), S.output_attempt, S.input_attempt)
 		S.set_stored_charge(0)
-		S.inputting(0)
-		S.outputting(0)
-		S.update_icon()
-		S.power_change()
+		S.set_input_on(0)
+		S.set_output_on(0)
 
 
 	for(var/obj/machinery/power/apc/C in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(!C.is_critical && C.cell && (C.z in using_map.station_levels))
-			C.cell.charge = 0
-			C.wake_for_power_dependency()
+			C.set_cell_charge(0)
 
 /proc/power_restore(announce = 1)
 	var/static/list/skipped_areas = list(/area/ai)
@@ -31,17 +26,18 @@
 		GLOB.command_announcement.Announce("Power has been restored to [station_name()]. We apologize for the inconvenience.", "Power Systems Nominal", new_sound = ANNOUNCER_MSG_POWER_ON)
 	for(var/obj/machinery/power/apc/C in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(C.cell && (C.z in using_map.station_levels))
-			C.cell.charge = C.cell.maxcharge
-			C.wake_for_power_dependency()
+			C.set_cell_charge(C.cell.maxcharge)
 	for(var/obj/machinery/power/smes/S in REGISTRY_MEMBERS(REGISTRY_SMES))
 		var/area/current_area = get_area(S)
 		if((current_area.type in skipped_areas) || isNotStationLevel(S.z))
 			continue
-		S.set_stored_charge(S.last_charge)
-		S.output_attempt = S.last_output_attempt
-		S.input_attempt = S.last_input_attempt
-		S.update_icon()
-		S.power_change()
+		var/list/held = S.held_through_outage
+		if(!held)
+			continue
+		S.held_through_outage = null
+		S.set_stored_charge(held[1])
+		S.set_output_attempt(held[2])
+		S.set_input_attempt(held[3])
 
 /proc/power_restore_quick(announce = 1)
 
@@ -51,8 +47,6 @@
 		if(isNotStationLevel(S.z))
 			continue
 		S.set_stored_charge(S.capacity)
-		S.output_level = S.output_level_max
-		S.output_attempt = 1
-		S.input_attempt = 1
-		S.update_icon()
-		S.power_change()
+		S.set_output_level(S.output_level_max)
+		S.set_output_attempt(1)
+		S.set_input_attempt(1)

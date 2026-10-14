@@ -1,0 +1,29 @@
+human|none menu: Work out
+human|none click: Click: Work out
+@obj.machinery robot|none
+-click: Click: Use
++2 menu: Work out
++3 click: Click: Work out
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Work out
+human|/obj/item/tool/screwdriver click: Click: Work out
+human|/obj/item/tool/crowbar menu: Work out
+human|/obj/item/tool/crowbar click: Click: Work out
+human|/obj/item/tool/wrench menu: Work out
+human|/obj/item/tool/wrench click: Click: Work out
+human|/obj/item/tool/wirecutters menu: Work out
+human|/obj/item/tool/wirecutters click: Click: Work out
+human|/obj/item/multitool menu: Work out
+human|/obj/item/multitool click: Click: Work out
+human|/obj/item/weldingtool menu: Work out
+human|/obj/item/weldingtool click: Click: Work out
+human|/obj/item/stack/cable_coil menu: Work out
+human|/obj/item/stack/cable_coil click: Click: Work out
+human|/obj/item/stack/material/steel menu: Work out
+human|/obj/item/stack/material/steel click: Click: Work out
+human|/obj/item/card/id menu: Work out
+human|/obj/item/card/id click: Click: Work out
+human|/obj/item menu: Work out
+human|/obj/item click: Click: Work out
+keys: drag_buckle, fitness_workout_hand, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

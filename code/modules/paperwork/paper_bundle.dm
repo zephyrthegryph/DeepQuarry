@@ -4,30 +4,28 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paper"
 	item_state = "paper"
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_range = 2
 	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
-	attack_verb = list("bapped")
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/page = 1    // current page
 	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
 
 
 /// Old attackby.
-/obj/item/paper_bundle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if (istype(W, /obj/item/paper/carbon))
 		var/obj/item/paper/carbon/C = W
 		if (!C.iscopy && !C.copied)
 			to_chat(user, span_notice("Take off the carbon copy first."))
 			add_fingerprint(user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	// adding sheets
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		insert_sheet_at(user, length(pages)+1, W)
@@ -48,26 +46,25 @@
 		consume(W, user)
 	else
 		if(istype(W, /obj/item/tape_roll))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(istype(W, /obj/item/pen))
 			// legacy close (TGUI handles paper_bundle now)
 			SStgui.close_uis(src)
 		var/obj/P = pages[page]
 		P.attackby(W, user)
 
-	update_icon()
 	attack_self(user) //Update the browsed page.
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/paper_bundle/proc/insert_sheet_at(mob/user, index, obj/item/sheet)
+	if(!own_bring_in(src, nameof(pages), sheet, null, user, TRUE, null, FALSE))
+		return
 	if(istype(sheet, /obj/item/paper))
 		to_chat(user, span_notice("You add [(sheet.name == "paper") ? "the paper" : sheet.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 	else if(istype(sheet, /obj/item/photo))
 		to_chat(user, span_notice("You add [(sheet.name == "photo") ? "the photo" : sheet.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 
-	user.drop_from_inventory(sheet)
-	sheet.forceMove(src)
 
 	// pages is an ordered relation list: rebuild it in the new order through the accessors.
 	var/list/ordered = pages ? pages.Copy() : list()
@@ -89,7 +86,7 @@
 			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEYRE% trying to burn it!</span>"), \
 			item = P)
 
-		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
+		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class))
 
 /obj/item/paper_bundle/examine(mob/user)
 	. = ..()
@@ -105,25 +102,47 @@
 /obj/item/paper_bundle/proc/show_content(mob/user)
 	tgui_interact(user)
 
-DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Rename bundle", PROC_REF(paper_bundle_verb_rename), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Loose bundle", PROC_REF(paper_bundle_verb_loosen), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_self.
-/obj/item/paper_bundle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
-	update_icon()
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/item/paper_bundle, "PaperBundle")
+/// The Rename bundle menu entry.
+/obj/item/paper_bundle/proc/bundle_rename_op(datum/act/op/A)
+	paper_bundle_verb_rename(A.actor)
+	return OP_OK
 
-UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_paper_bundle{total_pages:num,scribble:unknown,page_name:text,page_kind:text,page_info:text}")
+/// The Loose bundle menu entry.
+/obj/item/paper_bundle/proc/bundle_loosen_op(datum/act/op/A)
+	paper_bundle_verb_loosen(A.actor)
+	return OP_OK
 
-/// The computed part of /obj/item/paper_bundle's window data (declared on its UI_DATA row).
+CAPABILITIES(/obj/item/paper_bundle)
+	configure(item_thrown(force = 0))
+	configure(item_combat(attack_verbs = list("bapped")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	op("bundle_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("bundle_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("bundle_rename", menu(), label("Rename bundle"), needs(carried()), then(PROC_REF(bundle_rename_op)))
+	op("bundle_loosen", menu(), label("Loose bundle"), needs(carried()), then(PROC_REF(bundle_loosen_op)))
+	interface("PaperBundle")
+	without("ui_open")
+	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+
+/obj/item/paper_bundle/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["page"] = page
+	var/list/merged_1 = ui_data_obj_item_paper_bundle(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
+
+/// /obj/item/paper_bundle's window data.
 /obj/item/paper_bundle/proc/ui_data_obj_item_paper_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["total_pages"] = length(pages)
@@ -150,57 +169,67 @@ UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_pape
 		data["page_info"] = ""
 	return data
 
-/obj/item/paper_bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
+/obj/item/paper_bundle/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!((src?.loc == user) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == user))))
+		to_chat(user, span_notice("You need to hold it in hands!"))
 		return FALSE
-	if(!((src?.loc == usr) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == usr))))
-		to_chat(usr, span_notice("You need to hold it in hands!"))
-		return FALSE
-	usr.set_machine(src)
+	user.set_machine(src)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "next_page", ui_act_next_page)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
-	var/obj/item/in_hand = usr.get_active_hand()
+/obj/item/paper_bundle/proc/ui_act_next_page(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-		insert_sheet_at(usr, page + 1, in_hand)
+		insert_sheet_at(user, page + 1, in_hand)
 	else if(page != length(pages))
 		page++
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "prev_page", ui_act_prev_page)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_prev_page)
-	var/obj/item/in_hand = usr.get_active_hand()
+/obj/item/paper_bundle/proc/ui_act_prev_page(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-		insert_sheet_at(usr, page, in_hand)
+		insert_sheet_at(user, page, in_hand)
 	else if(page > 1)
 		page--
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/paper_bundle, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
+/obj/item/paper_bundle/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!length(pages))
 		return TRUE
 	var/obj/item/W = pages[page]
-	usr.put_in_hands(W)
-	rel_remove(src, nameof(/datum/radial_menu::pages), pages[page])
-	to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
+	user.put_in_hands(W)
+	rel_remove(src, nameof(pages), pages[page])
+	to_chat(user, span_notice("You remove the [W.name] from the bundle."))
 	if(length(pages) <= 1)
 		var/obj/item/paper/P = pages[1]
-		usr.drop_from_inventory(src)
-		usr.put_in_hands(P)
-		qdel(src)
+		user.drop_from_inventory(src)
+		user.put_in_hands(P)
+		spent(src)
 		return TRUE
 	if(page > length(pages))
 		page = length(pages)
-	update_icon()
 	return TRUE
 
 /// Old Rename bundle verb.
-/obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k189 = rerun_ask(user, "k189", PROC_REF(paper_bundle_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the bundle?", title = "Bundle Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+/obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held)
+	return paper_bundle_label_stage(user, held)
+
+/obj/item/paper_bundle/proc/paper_bundle_label_stage(mob/user, obj/item/held, paper_answer, paper_answer_ready = FALSE)
+	if(!paper_answer_ready)
+		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_bundle_label_answered), answerer = user, paper_operator = user, paper_held = held, question = "What would you like to label the bundle?", title = "Bundle Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k189 = paper_answer
 	if(isnull(_answer_k189))
 		return
 	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)
@@ -211,7 +240,7 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
 
 
 /// Old Loose bundle verb.
-/obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held)
 	to_chat(user, span_notice("You loosen the bundle."))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(user.loc)
@@ -221,41 +250,37 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
 	return
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper_bundle/appearance_overlays()
-	. = list()
-	var/obj/item/paper/P = pages[1]
-	icon_state = P.icon_state
-	. += P.overlays
-	underlays = 0
+/// The top sheet and its stamps, the other sheets stacked beneath it, an attached photo and the clip.
+/obj/item/paper_bundle/draw(datum/look/look)
+	..()
+	if(!length(pages))
+		return
+	var/obj/item/paper/top = pages[1]
+	look.watch(top)
+	look.state(top.icon_state)
+	for(var/list/mark in top.stamp_marks)
+		look.overlay(top.stamp_image(mark))
 	var/i = 0
-	var/photo
-	for(var/obj/O in contents_of(src))
-		var/image/img = image('icons/obj/bureaucracy.dmi')
+	var/photo = FALSE
+	var/offset_x = 0
+	var/offset_y = 0
+	for(var/obj/O in pages)
+		look.watch(O)
 		if(istype(O, /obj/item/paper))
-			img.icon_state = O.icon_state
-			img.pixel_x -= min(1*i, 2)
-			img.pixel_y -= min(1*i, 2)
-			pixel_x = min(0.5*i, 1)
-			pixel_y = min(  1*i, 2)
-			underlays += img
+			look.underlay(look_overlay_image('icons/obj/bureaucracy.dmi', O.icon_state, pixel_x = -min(1*i, 2), pixel_y = -min(1*i, 2)))
+			offset_x = min(0.5*i, 1)
+			offset_y = min(1*i, 2)
 			i++
 		else if(istype(O, /obj/item/photo))
 			var/obj/item/photo/Ph = O
-			img = Ph.tiny
-			photo = 1
-			. += img
-	if(i>1)
-		desc =  "[i] papers clipped to each other."
-	else
-		desc = "A single sheet of paper."
-	if(photo)
-		desc += "\nThere is a photo attached to it."
-	. += image('icons/obj/bureaucracy.dmi', "clip")
-	return .
+			photo = TRUE
+			look.overlay(Ph.tiny)
+	look.offset(offset_x, offset_y)
+	look.identity(desc = "[i > 1 ? "[i] papers clipped to each other." : "A single sheet of paper."][photo ? "\nThere is a photo attached to it." : ""]")
+	look.overlay(look_overlay_image('icons/obj/bureaucracy.dmi', "clip"))
 
 /obj/item/paper_bundle/proc/burn_through(mob/user, obj/item/flame/P, class)
-	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+	if(user && P && get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
 		act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
 			MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
@@ -266,3 +291,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, TYPE_PROC_REF(/atom, appearance_
 
 	else
 		to_chat(user, span_red("You must hold \the [P] steady to burn \the [src]."))
+
+/obj/item/paper_bundle/proc/paper_bundle_label_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paper_bundle_label_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/paper_bundle/proc/paper_bundle_label_apply(datum/act/request/A)
+	var/datum/prompt/text/paper_rename_review/ask = A.answer
+	return paper_bundle_label_stage(ask.paper_operator, ask.paper_held, ask.value, TRUE)

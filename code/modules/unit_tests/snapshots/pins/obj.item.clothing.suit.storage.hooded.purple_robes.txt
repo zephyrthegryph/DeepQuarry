@@ -1,0 +1,32 @@
+@obj.item.clothing.suit.storage human|none
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage robot|none
++6 menu: Toggle Eyes (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++2 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/screwdriver
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/crowbar
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/wrench
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/wirecutters
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/multitool
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit human|/obj/item/weldingtool
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/stack/cable_coil
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/card/id
++5 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/kit
++6 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/storage
++6 menu: Toggle Eyes (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item
++5 menu: Toggle Eyes (refused: You can't do that.)
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, purple_robes_toggle_verb, suit_pockets_hand, suit_pockets_item, toggle_digestable

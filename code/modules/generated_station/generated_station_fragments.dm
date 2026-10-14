@@ -26,7 +26,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment/activity_motif, build_motif_fe
 		var/datum/generated_room_feature/feature = new feature_type
 		if(feature.atom_type)
 			atom_types += feature.atom_type
-		qdel(feature)
+		spent(feature)
 	return atom_types
 
 // The semantic motif types are authored compositions, not aliases for one
@@ -59,12 +59,12 @@ TYPE_TABLE(/datum/generated_room_fragment/activity_motif, build_occupied_offsets
 		var/list/offset = occupied_offsets[i]
 		var/turf/target = locate(origin.x + offset[1] - 1, origin.y + offset[2] - 1, origin.z)
 		if(!target || target.density || !feature.atom_type)
-			qdel(feature)
+			spent(feature)
 			return FALSE
 		var/atom/movable/created = new feature.atom_type(target)
 		created.set_dir(feature.placement_kind == "wall" ? SOUTH : NORTH)
 		owner.register_furnishing(created)
-		qdel(feature)
+		spent(feature)
 	return TRUE
 
 // Command: public service, administration, communications, planning, records, briefing.

@@ -45,3 +45,6 @@
 /// Accessor for the origin var.
 /datum/event2/event/wallrot/proc/origin() as /turf/simulated/wall
 	return origin
+
+CAPABILITIES(/datum/event2/event/wallrot)
+	ref_one(nameof(origin))

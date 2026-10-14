@@ -55,21 +55,24 @@
 			result[filename] = item
 	return result
 
-SUBSYSTEM_DEF(tgui)
+SYSTEM_DEF(tgui)
 	name = "tgui"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	wait = 9
-	flags = SS_NO_INIT | SS_KERNEL_HOSTED
-	priority = FIRE_PRIORITY_TGUI
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-	dependencies = list(
-		/datum/controller/subsystem/assets
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/assets
 	)
 
-	/// A list of UIs scheduled to process
-	var/list/current_run = list()
+	/// The open windows that opted into periodic refreshes (autoupdate). The system's one recurring work item
+	/// exists only while this is non-empty. Everything else about a window is event-driven (see ui_status).
+	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
+	/// The current modal of each host datum, keyed by REF(host) (code/modules/tgui/modal.dm): owned here, a deleted modal leaves it.
+	var/list/modals
 	/// The HTML base used for all UIs.
 	var/basehtml
 	/// interface name -> list of code-split chunk files (`*.chunk.js`/`.css`) that
@@ -96,7 +99,12 @@ SUBSYSTEM_DEF(tgui)
 	var/list/asset_generations = list()
 	var/asset_generation_sequence = 0
 
-/datum/controller/subsystem/tgui/PreInit()
+CAPABILITIES(/datum/system/tgui)
+	owns_many(nameof(modals), /datum/tgui_modal)
+	ref_many(nameof(autoupdating), /datum/tgui)
+	ref_many(nameof(all_uis), /datum/tgui)
+
+/datum/system/tgui/preinit()
 	basehtml = file2text('tgui/public/tgui.html')
 
 	// Inject inline helper functions
@@ -120,7 +128,7 @@ SUBSYSTEM_DEF(tgui)
 	load_chunk_manifest()
 	load_window_geometry_manifest()
 
-/datum/controller/subsystem/tgui/proc/load_chunk_manifest(manifest_path = "tgui/public/tgui-chunk-manifest.json")
+/datum/system/tgui/proc/load_chunk_manifest(manifest_path = "tgui/public/tgui-chunk-manifest.json")
 	chunk_manifest = null
 	chunk_files = null
 	if(fexists(manifest_path))
@@ -138,17 +146,17 @@ SUBSYSTEM_DEF(tgui)
 				seen_files[filename] = TRUE
 				chunk_files += filename
 
-/datum/controller/subsystem/tgui/proc/load_window_geometry_manifest(manifest_path = "tgui/public/tgui-window-manifest.json")
+/datum/system/tgui/proc/load_window_geometry_manifest(manifest_path = "tgui/public/tgui-window-manifest.json")
 	if(fexists(manifest_path))
 		var/raw = file2text(manifest_path)
 		if(raw)
 			window_geometry_manifest = json_decode(raw)
 
-/datum/controller/subsystem/tgui/proc/get_default_geometry(interface_name)
+/datum/system/tgui/proc/get_default_geometry(interface_name)
 	var/datum/tgui_asset_generation/generation = get_current_asset_generation()
 	return generation?.get_default_geometry(interface_name)
 
-/datum/controller/subsystem/tgui/proc/get_current_asset_generation() as /datum/tgui_asset_generation
+/datum/system/tgui/proc/get_current_asset_generation() as /datum/tgui_asset_generation
 	if(current_asset_generation)
 		return current_asset_generation
 	var/datum/tgui_asset_generation/generation = new
@@ -163,7 +171,7 @@ SUBSYSTEM_DEF(tgui)
 
 /// Validates and atomically publishes a complete live TGUI generation. Nothing
 /// in the current generation is mutated; failure leaves every window untouched.
-/datum/controller/subsystem/tgui/proc/reload_development_chunks()
+/datum/system/tgui/proc/reload_development_chunks()
 	var/development_directory = "tgui/public/.tmp"
 	var/development_manifest = "[development_directory]/tgui-chunk-manifest.json"
 	var/development_geometry = "[development_directory]/tgui-window-manifest.json"
@@ -209,7 +217,7 @@ SUBSYSTEM_DEF(tgui)
 	log_tgui(null, "Published immutable TGUI asset generation [generation_id] with [length(new_chunk_files)] chunks.", context = "SStgui/reload_development_chunks")
 	return TRUE
 
-/datum/controller/subsystem/tgui/OnConfigLoad()
+/datum/system/tgui/OnConfigLoad()
 	var/storage_iframe = CONFIG_GET(string/storage_cdn_iframe)
 
 	if(storage_iframe && storage_iframe != /datum/config_entry/string/storage_cdn_iframe::default)
@@ -228,28 +236,41 @@ SUBSYSTEM_DEF(tgui)
 
 	basehtml = replacetextEx(basehtml, "\[tgui:storagecdn]", storage_iframe)
 
-/datum/controller/subsystem/tgui/Shutdown()
+/datum/system/tgui/on_shutdown()
 	close_all_uis()
 
-/datum/controller/subsystem/tgui/stat_entry(msg)
+/datum/system/tgui/stat_entry(msg)
 	msg = "P:[length(all_uis)]"
 	return ..()
 
-/datum/controller/subsystem/tgui/fire(resumed = FALSE)
-	if(!resumed)
-		src.current_run = all_uis.Copy()
-	// Cache for sanic speed (lists are references anyways)
-	var/list/current_run = src.current_run
-	while(length(current_run))
-		var/datum/tgui/ui = current_run[length(current_run)]
-		current_run.len--
-		// TODO: Move user/src_object check to process()
-		if(ui?.user && ui.src_object())
-			ui.process(wait * 0.1)
-		else
-			ui.close(0)
-		if(MC_TICK_CHECK)
-			return
+/// The autoupdate pass (phase K): the refresh of the windows that opted into one. A window's status, range and
+/// liveness are event-driven (status_watch(), the ping timer): this is the only recurring work, and it parks
+/// when no window is autoupdating (set_autoupdate(TRUE) wakes it).
+/datum/system/tgui/reactions()
+	. = ..()
+	. += every(9, PROC_REF(refresh_autoupdating), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+
+/datum/system/tgui/proc/refresh_autoupdating(dt)
+	if(!length(autoupdating))
+		return STEP_PARK
+	for(var/datum/tgui/ui as anything in autoupdating.Copy())
+		if(QDELETED(ui) || ui.closing)
+			rel_remove(src, nameof(autoupdating), ui)
+			continue
+		ui.process()
+	return STEP_DONE
+
+/// Registers or drops `ui` from the autoupdate pass to match its autoupdate flag (only while it is open).
+/datum/system/tgui/proc/sync_autoupdate(datum/tgui/ui)
+	if(!(ui in all_uis))
+		return
+	if(ui.autoupdate && !QDELETED(ui) && !ui.closing)
+		if(!(ui in autoupdating))
+			rel_add(src, nameof(autoupdating), ui)
+			log_tgui(ui.user, "autoupdate on", context = "SStgui/sync_autoupdate")
+		kernel_wake_work("[type]:refresh_autoupdating")
+	else
+		rel_remove(src, nameof(autoupdating), ui)
 
 /**
  * public
@@ -260,7 +281,7 @@ SUBSYSTEM_DEF(tgui)
  * required user mob
  * return datum/tgui
  */
-/datum/controller/subsystem/tgui/proc/request_pooled_window(mob/user)
+/datum/system/tgui/proc/request_pooled_window(mob/user)
 	if(!user.client)
 		return null
 	var/list/windows = user.client.tgui_windows
@@ -282,7 +303,8 @@ SUBSYSTEM_DEF(tgui)
 		if(window.status == TGUI_WINDOW_READY && window.asset_generation() != get_current_asset_generation())
 			window.status = TGUI_WINDOW_CLOSED
 		if(window.status == TGUI_WINDOW_READY)
-			om_after_unique(src, 1 SECOND, PROC_REF(maintain_client_prewarm), user.client)
+			if(!after_pending(src, "prewarm:[REF(user.client)]"))
+				after(src, 1 SECOND, PROC_REF(maintain_client_prewarm), key = "prewarm:[REF(user.client)]", with = list(user.client))
 			return window
 		if(window.status == TGUI_WINDOW_CLOSED)
 			window.status = TGUI_WINDOW_LOADING
@@ -292,7 +314,8 @@ SUBSYSTEM_DEF(tgui)
 		log_tgui(user, "Error: Pool exhausted",
 			context = "SStgui/request_pooled_window")
 		return null
-	om_after_unique(src, 1 SECOND, PROC_REF(maintain_client_prewarm), user.client)
+	if(!after_pending(src, "prewarm:[REF(user.client)]"))
+		after(src, 1 SECOND, PROC_REF(maintain_client_prewarm), key = "prewarm:[REF(user.client)]", with = list(user.client))
 	return window
 
 /**
@@ -302,7 +325,7 @@ SUBSYSTEM_DEF(tgui)
  * not create one large login spike. A slot already opened or acquired by a
  * real UI is left untouched.
  */
-/datum/controller/subsystem/tgui/proc/prewarm_client_window(client/client, pool_index)
+/datum/system/tgui/proc/prewarm_client_window(client/client, pool_index)
 	if(!client || QDELETED(client) || pool_index < 1 || pool_index > TGUI_WINDOW_SOFT_LIMIT)
 		return
 	var/window_id = TGUI_WINDOW_ID(pool_index)
@@ -326,7 +349,7 @@ SUBSYSTEM_DEF(tgui)
 		client.session?.flush_assets()
 
 /** Keep a small idle reserve warm, starting at most one browser per call. */
-/datum/controller/subsystem/tgui/proc/maintain_client_prewarm(client/client)
+/datum/system/tgui/proc/maintain_client_prewarm(client/client)
 	if(!client || QDELETED(client))
 		return
 	var/reserve_count = 0
@@ -354,11 +377,11 @@ SUBSYSTEM_DEF(tgui)
 	if(reserve_count < prewarm_window_reserve && closed_index)
 		prewarm_client_window(client, closed_index)
 
-/datum/controller/subsystem/tgui/proc/schedule_client_prewarm(client/client)
+/datum/system/tgui/proc/schedule_client_prewarm(client/client)
 	if(!client)
 		return
 	for(var/index in 1 to prewarm_window_reserve)
-		om_after_realtime((1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), src, client)
+		after((1 + ((index - 1) * 2)) SECONDS, PROC_REF(maintain_client_prewarm), src, clock = CLOCK_WORLD, with = list(client))
 
 /**
  * public
@@ -367,7 +390,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * required user mob
  */
-/datum/controller/subsystem/tgui/proc/force_close_all_windows(mob/user)
+/datum/system/tgui/proc/force_close_all_windows(mob/user)
 	log_tgui(user, context = "SStgui/force_close_all_windows")
 	var/client/client = user?.client
 	if(!client)
@@ -394,7 +417,7 @@ SUBSYSTEM_DEF(tgui)
 /// DreamSeeker keeps cloned native windows across reconnects and server process
 /// restarts. Hide and close those shells before this client builds a fresh pool,
 /// otherwise an old page can surface without a matching server-side datum.
-/datum/controller/subsystem/tgui/proc/reconcile_client_windows(client/client)
+/datum/system/tgui/proc/reconcile_client_windows(client/client)
 	if(!client)
 		return
 	client.tgui_chunk_warm_started = FALSE
@@ -418,7 +441,7 @@ SUBSYSTEM_DEF(tgui)
  * required user mob
  * required window_id string
  */
-/datum/controller/subsystem/tgui/proc/force_close_window(mob/user, window_id)
+/datum/system/tgui/proc/force_close_window(mob/user, window_id)
 	log_tgui(user, context = "SStgui/force_close_window")
 	// Close all tgui datums based on window_id.
 	for(var/datum/tgui/ui in user.tgui_open_uis)
@@ -442,7 +465,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return datum/tgui The found UI.
  */
-/datum/controller/subsystem/tgui/proc/try_update_ui(
+/datum/system/tgui/proc/try_update_ui(
 		mob/user,
 		datum/src_object,
 		datum/tgui/ui)
@@ -472,7 +495,8 @@ SUBSYSTEM_DEF(tgui)
  *
  * return datum/tgui The found UI.
  */
-/datum/controller/subsystem/tgui/proc/get_open_ui(mob/user, datum/src_object)
+/datum/system/tgui/proc/get_open_ui(mob/user, datum/src_object)
+	RETURN_TYPE(/datum/tgui)
 	// No UIs opened for this src_object
 	if(!LAZYLEN(src_object?.open_tguis))
 		return null
@@ -495,7 +519,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs updated.
  */
-/datum/controller/subsystem/tgui/proc/update_uis(datum/src_object, datum/tgui/now_ui)
+/datum/system/tgui/proc/update_uis(datum/src_object, datum/tgui/now_ui)
 	// No UIs opened for this src_object
 	if(!LAZYLEN(src_object?.open_tguis))
 		return 0
@@ -504,7 +528,7 @@ SUBSYSTEM_DEF(tgui)
 		// Check if UI is valid.
 		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
 			if(ui == now_ui)
-				INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+				ui.process(TRUE)
 			else
 				ui.request_push()
 			count++
@@ -519,7 +543,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs closed.
  */
-/datum/controller/subsystem/tgui/proc/close_uis(datum/src_object)
+/datum/system/tgui/proc/close_uis(datum/src_object)
 	// No UIs opened for this src_object
 	if(!LAZYLEN(src_object?.open_tguis))
 		return 0
@@ -538,7 +562,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs closed.
  */
-/datum/controller/subsystem/tgui/proc/close_all_uis()
+/datum/system/tgui/proc/close_all_uis()
 	var/count = 0
 	for(var/datum/tgui/ui in all_uis)
 		// Check if UI is valid.
@@ -557,13 +581,13 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs updated.
  */
-/datum/controller/subsystem/tgui/proc/update_user_uis(mob/user, datum/src_object)
+/datum/system/tgui/proc/update_user_uis(mob/user, datum/src_object)
 	var/count = 0
 	if(length(user?.tgui_open_uis) == 0)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
 		if(isnull(src_object) || (ui.src_object == src_object))
-			ui.process(wait * 0.1, force = 1)
+			ui.process(TRUE)
 			count++
 	return count
 
@@ -577,7 +601,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs closed.
  */
-/datum/controller/subsystem/tgui/proc/close_user_uis(mob/user, datum/src_object, logout = FALSE)
+/datum/system/tgui/proc/close_user_uis(mob/user, datum/src_object, logout = FALSE)
 	var/count = 0
 	if(length(user?.tgui_open_uis) == 0)
 		return count
@@ -594,10 +618,11 @@ SUBSYSTEM_DEF(tgui)
  *
  * required ui datum/tgui The UI to be added.
  */
-/datum/controller/subsystem/tgui/proc/on_open(datum/tgui/ui)
+/datum/system/tgui/proc/on_open(datum/tgui/ui)
 	ui.user?.tgui_open_uis |= ui
 	LAZYOR(ui.src_object().open_tguis, ui)
-	all_uis |= ui
+	rel_add(src, nameof(all_uis), ui)
+	sync_autoupdate(ui)
 
 /**
  * private
@@ -608,10 +633,10 @@ SUBSYSTEM_DEF(tgui)
  *
  * return bool If the UI was removed or not.
  */
-/datum/controller/subsystem/tgui/proc/on_close(datum/tgui/ui)
+/datum/system/tgui/proc/on_close(datum/tgui/ui)
 	// Remove it from the list of processing UIs.
-	all_uis -= ui
-	current_run -= ui
+	rel_remove(src, nameof(all_uis), ui)
+	rel_remove(src, nameof(autoupdating), ui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
 		ui.user.tgui_open_uis -= ui
@@ -628,7 +653,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs closed.
  */
-/datum/controller/subsystem/tgui/proc/on_logout(mob/user)
+/datum/system/tgui/proc/on_logout(mob/user)
 	close_user_uis(user, logout = TRUE)
 
 /**
@@ -641,7 +666,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return bool If the UIs were transferred.
  */
-/datum/controller/subsystem/tgui/proc/on_transfer(mob/source, mob/target)
+/datum/system/tgui/proc/on_transfer(mob/source, mob/target)
 	// The old mob had no open UIs.
 	if(length(source?.tgui_open_uis) == 0 || QDELETED(target))
 		return FALSE
@@ -662,7 +687,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return bool If the UI was transferred.
  */
-/datum/controller/subsystem/tgui/proc/transfer_ui(datum/tgui/ui, mob/target)
+/datum/system/tgui/proc/transfer_ui(datum/tgui/ui, mob/target)
 	if(QDELETED(ui) || ui.closing || QDELETED(target))
 		return FALSE
 	var/mob/source = ui.user
@@ -674,6 +699,7 @@ SUBSYSTEM_DEF(tgui)
 	if(!islist(target.tgui_open_uis))
 		target.tgui_open_uis = list()
 	target.tgui_open_uis |= ui
+	ui.status_watch()
 	return TRUE
 
 /**
@@ -689,7 +715,7 @@ SUBSYSTEM_DEF(tgui)
  *
  * return int The number of UIs transferred.
  */
-/datum/controller/subsystem/tgui/proc/rehome_uis(datum/src_object, mob/target)
+/datum/system/tgui/proc/rehome_uis(datum/src_object, mob/target)
 	var/count = 0
 	if(!LAZYLEN(src_object?.open_tguis) || QDELETED(target))
 		return count
@@ -705,3 +731,18 @@ SUBSYSTEM_DEF(tgui)
 /// The chunk asset bundle of this generation: its own for a live build, else the registry singleton.
 /datum/tgui_asset_generation/proc/chunk_assets() as /datum/asset/simple/namespaced
 	return live_chunk_assets || get_asset_datum(/datum/asset/simple/namespaced/tgui_chunks)
+
+// ---- Modals of host datums (code/modules/tgui/modal.dm): the one place that touches `modals` ----
+
+/// The modal `host` shows now, or null.
+/proc/tgui_modal_current(datum/host)
+	RETURN_TYPE(/datum/tgui_modal)
+	return LAZYACCESS(SStgui.modals, REF(host))
+
+/// Takes `host`'s modal out of SStgui without disposing of it.
+/proc/tgui_modal_detach(datum/host)
+	return rel_take(SStgui, nameof(SStgui.modals), key = REF(host))
+
+/// Makes `modal` the one `host` shows; SStgui owns it from here.
+/proc/tgui_modal_attach(datum/host, datum/tgui_modal/modal)
+	return rel_add(SStgui, nameof(SStgui.modals), modal, REF(host))

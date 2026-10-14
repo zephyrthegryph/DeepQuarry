@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added the buckle() and climb() library capabilities (code/library/structures), with focused tests; no existing chair, bed or table is converted yet"

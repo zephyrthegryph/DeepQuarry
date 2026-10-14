@@ -1,12 +1,42 @@
-// LINDA atmospherics rewrite (commit 6fdac16ef1). gas_mixture var accesses (e.g. mix.total_moles) converted to proc calls (mix.total_moles()) for the LINDA engine API. Bulk rewrite by tools/verdigris/linda_rewrite_chomp_atmos.py.
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
+// The cryo cell (doc/rewrite/final_api.html sections 14 and 16.4, doc/rewrite/conversion_guide.md).
+//
+// ONE CAPABILITIES list says what it is: a machine (machine_basics()) and an occupant pod (occupant_pod(): a person, or any carbon, is dragged or
+// grabbed in at once, climbs in from the menu, is let out from the menu or by moving; the occupant's own eject is a two-minute release sequence; they
+// leave to the south when that tile is open, else onto the cell's own; they are shown in the tube; tools wait for an empty cell). Entering needs a
+// working cell joined to its pipe. While the cell is on and works, its occupant is held asleep (a while_slotted() status, gated on the cell: a cell
+// switched off or out of power lets them wake, and nobody releases anything by hand), and every machine interval the cell trades heat with them
+// through the gas domain, sends the frozen deeper under, treats what automated triage demands, and drips its beaker into them. The beaker sits in a
+// bay (beaker_bay()), its eject button leaving it where the occupant leaves.
+//
+// Its on-state is its own tracked `cooling` (set_cooling()), and its pipe is the unary device's (piped(), as a vent's or a scrubber's). The gas
+// domain wakes the pipe network when the occupant's heat moves the cell's gas (its heat_link() entry); nothing here marks it by hand.
+// What the machine core still keeps until the machine track (phase 4): the stat bits read through machine_basics()'s bridge, set_use_power(), and
+// maintenance_flags (the panel and the crowbar).
 
 /// Mend per tick at the base rate (oxygenation below freezing).
 #define CRYO_BASE_RATE 1
 /// Below this the cell repairs tissue, faster the colder it is.
 #define CRYO_DEEP_COLD 225
+/// The cell does nothing with less gas than this in it (moles).
+#define CRYO_MIN_MOLES 10
+/// Below freezing the cold sends the occupant under: sleep for CRYO_SLEEP_SCALE / body temperature status units, paralysis for
+/// CRYO_PARALYSIS_SCALE / body temperature, at least CRYO_MIN_STATUS of each.
+#define CRYO_SLEEP_SCALE 2000
+#define CRYO_PARALYSIS_SCALE 3000
+#define CRYO_MIN_STATUS 5
+/// The beaker drips this many units a tick into a patient carrying no cryo medicine, at this multiplier.
+#define CRYO_DRIP_UNITS 1
+#define CRYO_DRIP_MULTIPLIER 10
+/// An occupant leaving colder than this, but not frozen solid below CRYO_THAW_FLOOR, is warmed to it on the way out (no burns from the thaw).
+#define CRYO_THAW_TEMPERATURE 261
+#define CRYO_THAW_FLOOR 70
+/// The tube's glass and fluid: raised over the base and see-through.
+#define CRYO_GLASS_RAISE 18
+#define CRYO_GLASS_ALPHA 200
+
+MSG_DEF_SELF(cryo_cell/not_connected, "The cell is not correctly connected to its pipe network!")
+MSG_DEF_SELF(cryo_cell/cannot_release, "You can't work the release.")
+MSG_DEF_SELF(cryo_cell/cold_liquid, "You feel a cold liquid surround you. Your skin starts to freeze up.")
 
 /obj/machinery/atmospherics/unary/cryo_cell
 	name = "cryo cell"
@@ -19,273 +49,145 @@
 	layer = UNDER_JUNK_LAYER
 	interact_offline = 1
 
-	on = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 200
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
 	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
-	var/temperature_archived
 	var/obj/item/reagent_containers/glass/beaker = null
+	/// Switched on from its window: it holds its occupant under and trades heat with them while it works.
+	var/cooling = FALSE
 
-	var/image/fluid
+TRACKED(/obj/machinery/atmospherics/unary/cryo_cell, cooling)
 
+/// The occupant's body against the cell's gas, W/K: the old full settle per service interval, as a conductance (the body's capacity over two
+/// seconds), so the pair meets within an interval whatever the step length.
+#define CRYO_OCCUPANT_CONDUCTANCE (HUMAN_HEAT_CAPACITY / 2)
+
+/// The occupant is linked to the cell's gas by its heat entry, not coupled to the room.
+/obj/machinery/atmospherics/unary/cryo_cell/interior_heat_reservoir()
+	return HEAT_TARGET_NONE
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/cryo_cell)
+	configure(uses_power(idle = 20, active = 200))
+	machine_basics(repair = NONE)
+	occupant_pod(OCCUPANT_SLOT_CRYO, accepts = /mob/living/carbon, exit_to = SOUTH, controls_inside = FALSE, eject_wait_inside = CRYO_RELEASE_WAIT, shown_y = CRYO_OCCUPANT_RAISE, bare = TRUE)
+	extend(TAG_POD_ENTER, needs(req_operable(), req(PROC_REF(pipe_connected))))
+	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, holds_status(STAT_SLEEPING), on = ON_CONTENTS))
+	// While it works, the occupant's body and the cell's gas trade heat through one link (the heat domain conserves it and wakes the pipe network).
+	when(cond_all(nameof(cooling), STAT_OPERABLE), while_slotted(OCCUPANT_SLOT_CRYO, heat_link(HEAT_HOLDER, HEAT_PORT(1), CRYO_OCCUPANT_CONDUCTANCE), on = ON_CONTENTS))
+	owns_one(nameof(beaker), /obj/item/reagent_containers/glass, on_destroy = ON_DESTROY_SPILL)
+	beaker_bay(nameof(beaker), eject_button = "ejectBeaker", exit_to = SOUTH)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(cooling_frame)), when = cond_all(nameof(cooling), STAT_OPERABLE, OCCUPANT_POD_OCCUPIED))
+	on_notice(/datum/notice/pod_entered, then(PROC_REF(occupant_entered)))
+	on_notice(/datum/notice/pod_left, then(PROC_REF(occupant_left)))
+	section(window, "the cell's window: its occupant takes no part in it (occupant_pod(controls_inside = FALSE)), and it opens unpowered")
+	interface("Cryo", title = "Cryo Cell")
+	extend("ui_open", ungated(), needs(req_closed(SPACE_PANEL), req(PROC_REF(actor_outside), silent = TRUE)))
+	extend(TAG_UI, then(PROC_REF(control_touched), early = TRUE))
+	op("switchOn", ui_act("switchOn"), then(PROC_REF(switch_on)))
+	op("switchOff", ui_act("switchOff"), then(PROC_REF(switch_off)))
+	op("ejectOccupant", ui_act("ejectOccupant"), needs(req_is(OCCUPANT_POD_OCCUPIED, because = MSG(occupant_pod/empty)), req_actor_kind(list(/mob/living/simple_mob/slime, /mob/living/silicon/pai), not = TRUE, because = MSG(cryo_cell/cannot_release))),
+		then(PROC_REF(eject_from_window)), logs(LOG_GAME))
+
+// ALLOW(init/INSTANCE_STATE): its pipe connection follows the direction it was placed in
 /obj/machinery/atmospherics/unary/cryo_cell/Initialize(mapload)
 	. = ..()
-	icon = 'icons/obj/cryogenics_split.dmi'
-	icon_state = "base"
 	initialize_directions = dir
-	var/image/tank = image(icon,"tank")
-	tank.alpha = 200
-	tank.pixel_y = 18
-	tank.plane = MOB_PLANE
-	tank.layer = MOB_LAYER+0.2 //Above fluid
-	fluid = image(icon, "tube_filler")
-	fluid.pixel_y = 18
-	fluid.alpha = 200
-	fluid.plane = MOB_PLANE
-	fluid.layer = MOB_LAYER+0.1 //Below glass, above mob
-	add_overlay(tank)
-	update_icon()
 
-/obj/machinery/atmospherics/unary/cryo_cell/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_SPILL)
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_PIPELINE, list("on", "node"))
+// ---- conditions ----
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/cryo
-	holder = /obj/machinery/atmospherics/unary/cryo_cell
-	slot_id = OCCUPANT_SLOT_CRYO
-	name = "cryo cell"
-	// No view fields (OM relations step 3): `occupant` is still an ordinary
-	// var every reader here uses, but this slot's own on_link()/on_unlink()
-	// are its only writer now -- there is no generic field-link mechanism
-	// left to do it for them.
+/// The actor is not the one inside.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/actor_outside(datum/act/op/A)
+	return (A.actor != occupant_of(src)) ? null : MSG(req_failed)
 
-/obj/machinery/atmospherics/unary/cryo_cell/machine_step()
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	..()
-	if(air_contents)
-		temperature_archived = air_contents.return_temperature()
+// ---- the window's buttons ----
 
-	if(occupant)
-		if(occupant.stat != 2)
-			process_occupant()
+/obj/machinery/atmospherics/unary/cryo_cell/proc/control_touched(datum/act/op/A)
+	add_fingerprint(A.actor)
 
-	if(air_contents)
-		expel_gas()
+/obj/machinery/atmospherics/unary/cryo_cell/proc/switch_on(datum/act/op/A)
+	set_cooling(TRUE)
+	return OP_OK
 
-	if(air_contents && abs(temperature_archived-air_contents.return_temperature()) > 1)
-		network?.mark_dirty()
+/obj/machinery/atmospherics/unary/cryo_cell/proc/switch_off(datum/act/op/A)
+	set_cooling(FALSE)
+	return OP_OK
 
-	return 1
+/obj/machinery/atmospherics/unary/cryo_cell/proc/eject_from_window(datum/act/op/A)
+	if(!length(occupant_eject(src)))
+		return OP_FAILED
+	return OP_OK
 
-/obj/machinery/atmospherics/unary/cryo_cell/relaymove(mob/user as mob)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	// note that relaymove will also be called for mobs outside the cell with UI open
-	if(occupant == user && !user.stat)
-		go_out()
+// ---- the occupant ----
 
-EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cryo_cell_interaction_hand), REQ_BECAUSE(REQ_PANEL(FALSE), "close the maintenance panel first")), \
-	INTERACT_ITEM(null, PROC_REF(cryo_cell_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(cryo_cell_interaction_drag)), \
-	INTERACT_VERB("Eject occupant", PROC_REF(cryo_cell_move_eject)), \
-	INTERACT_VERB("Move Inside", PROC_REF(cryo_cell_move_inside)), \
-)
-
-/// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(user == occupant)
-		return TRUE
-
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/atmospherics/unary/cryo_cell, "Cryo", UI_TITLE("Cryo Cell"))
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/cryo_cell, "merge:ui_data_obj_machinery_atmospherics_unary_cryo_cell{isOperating:num,hasOccupant:bool,occupant:unknown,cellTemperature:num,cellTemperatureStatus:text,isBeakerLoaded:bool,beakerLabel:text,beakerVolume:unknown}")
-
-/// The computed part of /obj/machinery/atmospherics/unary/cryo_cell's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_data_obj_machinery_atmospherics_unary_cryo_cell(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_CRYO)
-	// this is the data which will be sent to the ui
-	var/list/data = list()
-	data["isOperating"] = on
-	data["hasOccupant"] = occupant ? TRUE : FALSE
-
-	var/list/occupantData = list()
-	if(occupant)
-		occupantData["name"] = occupant.name
-		occupantData["stat"] = occupant.stat
-		occupantData["vitality"] = round(occupant.vitality() * 100)
-		occupantData["critical"] = occupant.is_critical()
-		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
-		occupantData["diagnosis"] = D.report_data()
-		qdel(D)
-		occupantData["bodyTemperature"] = occupant.bodytemperature
-	data["occupant"] = occupantData;
-
-	var/air_temperature = air_contents.return_temperature()
-	data["cellTemperature"] = round(air_temperature)
-	data["cellTemperatureStatus"] = "good"
-	if(air_temperature > T0C) // if greater than 273.15 kelvin (0 celcius)
-		data["cellTemperatureStatus"] = "bad"
-	else if(air_temperature > 225)
-		data["cellTemperatureStatus"] = "average"
-
-	data["isBeakerLoaded"] = beaker ? TRUE : FALSE
-	data["beakerLabel"] = null
-	data["beakerVolume"] = 0
-	if(beaker)
-		data["beakerLabel"] = beaker.label_text ? beaker.label_text : null
-		if(beaker.reagents && beaker.reagents.reagent_list.len)
-			for(var/datum/reagent/R in beaker.reagents.reagent_list)
-				data["beakerVolume"] += R.volume
-
-	return data
-
-/obj/machinery/atmospherics/unary/cryo_cell/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(ui.user == occupant)
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOn", ui_act_switchon)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchon)
-	. = TRUE
-	set_on(1)
-	add_fingerprint(ui.user)
-
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOff", ui_act_switchoff)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchoff)
-	. = TRUE
-	set_on(0)
-	add_fingerprint(ui.user)
-
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectBeaker", ui_act_ejectbeaker)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectbeaker)
-	. = TRUE
-	if(beaker)
-		beaker.forceMove(get_step(src.loc, SOUTH))
-		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
-		update_icon()
-	add_fingerprint(ui.user)
-
-UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectOccupant", ui_act_ejectoccupant)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
-	. = TRUE
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(!occupant || isslime(ui.user) || ispAI(ui.user))
-		return 0 // don't update UIs attached to this object
-	go_out()
-	add_fingerprint(ui.user)
-
-/// Old attackby. It never called ..(), so every item stops here.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(istype(G, /obj/item/reagent_containers/glass))
-		if(beaker)
-			to_chat(user, span_warning("A beaker is already loaded into the machine."))
-			return TRUE
-
-		if(!own_set(src, nameof(src.beaker), G, user = user))
-			return TRUE
-		act_message(user, src, MSG_SELF("You add \a [G] to %T%!"), MSG_OTHERS("%U% adds \a [G] to %T%!"))
-		SStgui.update_uis(src)
-		update_icon()
-	else if(istype(G, /obj/item/grab))
-		var/obj/item/grab/grab = G
-		var/mob/M = grab?.grab_target()
-		if(!ismob(M))
-			return TRUE
-		if(occupant)
-			to_chat(user,span_warning("\The [src] is already occupied by [occupant]."))
-		if(M.has_buckled_mobs())
-			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
-			return TRUE
-		consume(grab, user)
-		put_mob(M)
-
-	return TRUE
-
-/// Old MouseDrop_T: allows borgs to put people into cryo without external assistance.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
-	if(!ismob(target) || user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user)|| !ishuman(target))
-		return FALSE
-	put_mob(target)
-	return TRUE
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/unary/cryo_cell/appearance_overlays()
-	. = list()
-	fluid.color = null
-	if(on)
-		if(beaker)
-			fluid.color = beaker.reagents.get_color()
-		. += fluid
-
-/obj/machinery/atmospherics/unary/cryo_cell/proc/process_occupant()
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(air_contents.total_moles() < 10)
+/// Someone got in (by any path): the fire on them goes out, the cold reaches them, they are held upright in the tube, the cell draws full power.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/occupant_entered(datum/act/A)
+	var/datum/notice/pod_entered/N = A
+	var/mob/living/carbon/M = N.occupant
+	if(!istype(M))
 		return
-	if(occupant)
-		if(occupant.stat >= DEAD)
-			return
-		// The occupant and the cell's gas settle to a shared temperature; the
-		// heat the body loses is what the gas gains.
-		var/air_heat_capacity = air_contents.heat_capacity()
-		var/equilibrium_temperature = (HUMAN_HEAT_CAPACITY * occupant.bodytemperature + air_heat_capacity * air_contents.return_temperature()) / (HUMAN_HEAT_CAPACITY + air_heat_capacity)
-		occupant.set_bodytemperature(equilibrium_temperature)
-		air_contents.set_temperature(equilibrium_temperature)
-		occupant.set_stat(UNCONSCIOUS)
-		occupant.dir = SOUTH
-		if(occupant.bodytemperature < T0C)
-			occupant.status_at_least(EFFECT_SLEEPING, max(5, (1/occupant.bodytemperature)*2000))
-			occupant.status_at_least(EFFECT_PARALYZED, max(5, (1/occupant.bodytemperature)*3000))
-			if(!treat_occupant())
-				return
-		var/has_cryo = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1
-		var/has_clonexa = occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1
-		var/has_cryo_medicine = has_cryo || has_clonexa
-		if(beaker && !has_cryo_medicine)
-			beaker.reagents.trans_to_mob(occupant, 1, CHEM_BLOOD, 10, can_dialysis = FALSE)
+	M.extinguish_mob()
+	if(M.stat != DEAD && (M.is_critical() || M.has_status(STAT_SLEEPING)))
+		act_message_t(M, src, /datum/msg/cryo_cell/cold_liquid)
+	M.cozyloop?.start() // Cozy Music
+	buckle_mob(M, forced = TRUE, check_loc = FALSE)
+	set_use_power(USE_POWER_ACTIVE)
 
-/// One tick of cold treatment, decided by automated triage: mend the demanded
-/// tags at the cell's rates, or release a patient triage finds healthy.
+/// They left (by any path): unbuckled, thawed to CRYO_THAW_TEMPERATURE when chilled but not frozen solid, the music stops, the cell idles.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/occupant_left(datum/act/A)
+	var/datum/notice/pod_left/N = A
+	var/mob/living/carbon/M = N.occupant
+	if(istype(M))
+		if(M.buckled_to() == src)
+			unbuckle_mob(M, force = TRUE)
+		if(M.body_temperature() < CRYO_THAW_TEMPERATURE && M.body_temperature() >= CRYO_THAW_FLOOR) //Patch by Aranclanos to stop people from taking burn damage after being ejected
+			M.set_bodytemperature(CRYO_THAW_TEMPERATURE)
+		M.cozyloop?.stop() // Cozy Music
+	set_use_power(USE_POWER_IDLE)
+
+// ---- one machine interval, while the cell is on, works and is occupied ----
+
+/obj/machinery/atmospherics/unary/cryo_cell/proc/cooling_frame(datum/act/timer/A)
+	var/mob/living/carbon/occupant = occupant_of(src)
+	if(!occupant || occupant.stat == DEAD || !piped() || !air_contents || air_contents.total_moles() < CRYO_MIN_MOLES)
+		return
+	if(occupant.body_temperature() < T0C)
+		occupant.status_at_least(STAT_SLEEPING, max(CRYO_MIN_STATUS, CRYO_SLEEP_SCALE / occupant.body_temperature()))
+		occupant.status_at_least(STAT_PARALYZED, max(CRYO_MIN_STATUS, CRYO_PARALYSIS_SCALE / occupant.body_temperature()))
+		if(!treat_occupant())
+			return
+	var/has_cryo_medicine = occupant.reagents.get_reagent_amount(REAGENT_ID_CRYOXADONE) >= 1 || occupant.reagents.get_reagent_amount(REAGENT_ID_CLONEXADONE) >= 1
+	if(beaker && !has_cryo_medicine)
+		beaker.reagents.trans_to_mob(occupant, CRYO_DRIP_UNITS, CHEM_BLOOD, CRYO_DRIP_MULTIPLIER, can_dialysis = FALSE)
+
+/// One tick of cold treatment, decided by automated triage: mend the demanded tags at the cell's rates, or release a patient triage finds healthy.
 /// Returns FALSE when the occupant was released.
 /obj/machinery/atmospherics/unary/cryo_cell/proc/treat_occupant()
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
+	var/mob/living/carbon/occupant = occupant_of(src)
 	if(!occupant)
 		return FALSE
 	var/list/demand = occupant.treatment_demand(/datum/diagnostic_profile/automation)
 	if(demand)
-		var/list/rates = cryo_treatment_rates(occupant.bodytemperature)
+		var/list/rates = cryo_treatment_rates(occupant.body_temperature())
 		for(var/tag in rates)
 			if(demand[tag])
 				occupant.mend(tag, rates[tag])
 	else
 		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 		var/healthy = D?.band == DIAG_BAND_NONE && D.status == DIAG_STATUS_ALIVE
-		qdel(D)
+		spent(D)
 		if(healthy)
-			release_treated_occupant()
+			release_treated_occupant(occupant)
 			return FALSE
-	if(occupant.bodytemperature < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
+	if(occupant.body_temperature() < CRYO_DEEP_COLD && (occupant.radiation || occupant.accumulated_rads))
 		occupant.purge_radiation(25)
 	return TRUE
 
-/// What the cell's cold (and the beaker's chemistry) treats this tick at
-/// `temperature`: TREAT_* -> amount. Below freezing the cell only oxygenates;
-/// below CRYO_DEEP_COLD it repairs tissue, colder being faster, and each
-/// beaker reagent's treatment tags multiply the matching rates.
+/// What the cell's cold (and the beaker's chemistry) treats this tick at `temperature`: TREAT_* -> amount. Below freezing the cell only oxygenates;
+/// below CRYO_DEEP_COLD it repairs tissue, colder being faster, and each beaker reagent's treatment tags multiply the matching rates.
 /obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_treatment_rates(temperature)
 	var/list/rates = list(TREAT_OXYGENATION = CRYO_BASE_RATE)
 	if(temperature >= CRYO_DEEP_COLD)
@@ -299,105 +201,59 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 				rates[tag] *= 1 + R.treatment_tags[tag]
 	return rates
 
-/// Triage finds nothing left to treat: stop the treatment and release the
-/// occupant (once awake enough to leave).
-/obj/machinery/atmospherics/unary/cryo_cell/proc/release_treated_occupant()
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(!occupant)
-		return
+/// Triage finds nothing left to treat: stop the treatment and release the occupant.
+/obj/machinery/atmospherics/unary/cryo_cell/proc/release_treated_occupant(mob/living/carbon/occupant)
 	log_game("CRYO: [src] released [key_name(occupant)]: automated triage reports no remaining treatment demand.")
 	visible_message(span_notice("\The [src] pings: treatment complete."))
 	play_sfx(src, SFX_MACHINES_PING)
-	go_out()
+	occupant_eject(src)
 
-/obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()
-	if(air_contents.total_moles() < 1)
-		return
+// ---- what it shows ----
 
-	// Just have the gas disappear to nowhere.
-	//expel_gas.temperature = T20C // Lets expel hot gas and see if that helps people not die as they are removed
-	//loc.assume_air(expel_gas)
+/// The split sprite: the cell's base, its occupant in the tube (occupant_pod(shown_y)), the fluid tinted by the beaker while it runs, and the glass.
+/obj/machinery/atmospherics/unary/cryo_cell/draw(datum/look/look)
+	..()
+	look.set_icon('icons/obj/cryogenics_split.dmi')
+	look.state("base")
+	if(cooling)
+		// ALLOW(sys_dx_untracked_read): the fluid takes the beaker's colour when the cell is switched on or its beaker changes, not as the mix drains
+		look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tube_filler", layer = MOB_LAYER + 0.1, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE, color = beaker?.reagents.get_color())) //Below glass, above mob
+	look.overlay(look_overlay_image('icons/obj/cryogenics_split.dmi', "tank", layer = MOB_LAYER + 0.2, plane = MOB_PLANE, alpha = CRYO_GLASS_ALPHA, pixel_y = CRYO_GLASS_RAISE)) //Above fluid
 
-/obj/machinery/atmospherics/unary/cryo_cell/proc/go_out()
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(!(occupant))
-		return
-	vis_contents -= occupant
-	occupant.pixel_x = occupant.default_pixel_x
-	occupant.pixel_y = occupant.default_pixel_y
-	if(occupant.bodytemperature < 261 && occupant.bodytemperature >= 70) //Patch by Aranclanos to stop people from taking burn damage after being ejected
-		occupant.set_bodytemperature(261) // Changed to 70 from 140 by Zuhayr due to reoccurance of bug.
-	unbuckle_mob(occupant, force = TRUE)
-	occupant.cozyloop.stop() // Cozy Music
-	//this doesn't account for walls or anything, but i don't forsee that being a problem.
-	slot_remove(occupant, get_step(src.loc, SOUTH))
-	set_use_power(USE_POWER_IDLE)
-	SStgui.update_uis(src)
-	return
+/obj/machinery/atmospherics/unary/cryo_cell/ui_data(datum/act/eval/A)
+	var/mob/living/carbon/occupant = occupant_of(src)
+	var/list/data = list()
+	data["isOperating"] = cooling
+	data["hasOccupant"] = occupant ? TRUE : FALSE
 
-/obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(!operable())
-		to_chat(usr, span_warning("The cryo cell is not functioning."))
-		return
-	if(!istype(M))
-		to_chat(usr, span_danger("The cryo cell cannot handle such a lifeform!"))
-		return
+	var/list/occupantData = list()
 	if(occupant)
-		to_chat(usr, span_danger("The cryo cell is already occupied!"))
-		return
-	if(M.abiotic())
-		to_chat(usr, span_warning("Subject may not have abiotic items on."))
-		return
-	if(!node)
-		to_chat(usr, span_warning("The cell is not correctly connected to its pipe network!"))
-		return
-	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_CRYO))
-		return
-	M.extinguish_mob()
-	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
-		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
-	occupant.cozyloop.start() // Cozy Music
-	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
-	vis_contents |= occupant
-	occupant.pixel_y += 19
-	set_use_power(USE_POWER_ACTIVE)
-	add_fingerprint(usr)
-	SStgui.update_uis(src)
-	return 1
+		occupantData["name"] = occupant.name
+		occupantData["stat"] = occupant.stat
+		occupantData["vitality"] = round(occupant.vitality() * 100)
+		occupantData["critical"] = occupant.is_critical()
+		var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
+		occupantData["diagnosis"] = D.report_data()
+		spent(D)
+		occupantData["bodyTemperature"] = occupant.body_temperature()
+	data["occupant"] = occupantData
 
-/// The occupant's two-minute release sequence finished.
-/obj/machinery/atmospherics/unary/cryo_cell/proc/release_sequence_done(mob/living/carbon/who)
-	if(src?.slot_item(OCCUPANT_SLOT_CRYO) != who) //Check if someone's released/replaced/bombed him already
-		return
-	go_out()//and release him from the eternal prison.
+	var/air_temperature = air_contents.return_temperature()
+	data["cellTemperature"] = round(air_temperature)
+	data["cellTemperatureStatus"] = "good"
+	if(air_temperature > T0C)
+		data["cellTemperatureStatus"] = "bad"
+	else if(air_temperature > CRYO_DEEP_COLD)
+		data["cellTemperatureStatus"] = "average"
 
-/// Old verb "Eject occupant".
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(user == occupant)//If the user is inside the tube...
-		if(user.stat == 2)//and he's not dead....
-			return
-		to_chat(user, span_notice("Release sequence activated. This will take two minutes."))
-		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), user)
-	else
-		if(user.stat != 0)
-			return
-		go_out()
-	add_fingerprint(user)
-	return
-
-/// Old verb "Move Inside".
-/obj/machinery/atmospherics/unary/cryo_cell/proc/cryo_cell_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isliving(user))
-		var/mob/living/L = user
-		if(L.has_buckled_mobs())
-			to_chat(L, span_warning("You have other entities attached to yourself. Remove them first."))
-			return
-		if(L.stat != CONSCIOUS)
-			return
-		put_mob(L)
+	data["isBeakerLoaded"] = beaker ? TRUE : FALSE
+	data["beakerLabel"] = null
+	data["beakerVolume"] = 0
+	if(beaker)
+		data["beakerLabel"] = beaker.label_text ? beaker.label_text : null
+		for(var/datum/reagent/R as anything in beaker.reagents?.reagent_list)
+			data["beakerVolume"] += R.volume
+	return data
 
 /atom/proc/return_air_for_internal_lifeform(mob/living/lifeform)
 	return return_air()
@@ -410,18 +266,18 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	else
 		return null
 
-/datum/data/function/proc/reset()
-	return
-
-/datum/data/function/proc/r_input(href, href_list, mob/user)
-	return
-
-/datum/data/function/proc/display()
-	return
-
-/obj/machinery/atmospherics/unary/cryo_cell/step_has_work()
-	return on && node
-
 #undef CRYO_BASE_RATE
 #undef CRYO_DEEP_COLD
+#undef CRYO_MIN_MOLES
+#undef CRYO_SLEEP_SCALE
+#undef CRYO_PARALYSIS_SCALE
+#undef CRYO_MIN_STATUS
+#undef CRYO_DRIP_UNITS
+#undef CRYO_DRIP_MULTIPLIER
+#undef CRYO_THAW_TEMPERATURE
+#undef CRYO_THAW_FLOOR
+#undef CRYO_GLASS_RAISE
+#undef CRYO_GLASS_ALPHA
 
+/obj/machinery/atmospherics/unary/cryo_cell/proc/pipe_connected(datum/act/A)
+	return piped() ? null : MSG(cryo_cell/not_connected)

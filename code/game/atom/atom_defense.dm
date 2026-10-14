@@ -41,8 +41,6 @@
 	damage_amount = run_atom_armor(damage_amount, damage_type, damage_flag, attack_dir, armour_penetration)
 	if(damage_amount < DAMAGE_PRECISION)
 		return
-	if(OM_EMIT(src, /datum/om/event/before/atom_take_damage, damage_amount, damage_type, damage_flag, sound_effect, attack_dir, armour_penetration) & COMPONENT_NO_TAKE_DAMAGE)
-		return
 
 	. = damage_amount
 
@@ -94,18 +92,20 @@
 	if(atom_integrity == new_value)
 		return
 	atom_integrity = new_value
-	changed(src, CHANGE_INTEGRITY) // damage is a dispatched change: derived procs (draw) re-run; OM observers hear it
 	on_update_integrity(old_value, new_value)
 	dq_rules_publish(src, RULE_KEY_INTEGRITY)
+	PUBLISH_CHANGE(src, ATOM_INTEGRITY_KEY)
 	return new_value
 
 /// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
 /atom/proc/get_integrity()
 	return atom_integrity
+READS_AS(/atom/proc/get_integrity, ATOM_INTEGRITY_KEY)
 
-/// How much integrity the atom is missing (0 when intact).
+/// How much integrity the atom is missing (0 when intact). A condition may read it: it stands for ATOM_INTEGRITY_KEY.
 /atom/proc/get_integrity_damage()
 	return max(0, max_integrity - atom_integrity)
+READS_AS(/atom/proc/get_integrity_damage, ATOM_INTEGRITY_KEY)
 
 /// Repairs the atom by repair_amount, clamped to max_integrity. Fires atom_fix() when crossing
 /// back above the integrity_failure threshold. Returns the new integrity.
@@ -134,12 +134,12 @@
 /// Called after the atom takes damage and integrity is below integrity_failure level
 /atom/proc/atom_break(damage_flag)
 	SHOULD_CALL_PARENT(TRUE)
-	caps_set_broken(TRUE) // the breakable capability's CAP_BROKEN
+	PUBLISH_CHANGE(src, INTEGRITY_KEY_BROKEN) // the integrity state (G8): readers of "broken" re-run
 
 /// Called when integrity is repaired above the breaking point having been broken before
 /atom/proc/atom_fix()
 	SHOULD_CALL_PARENT(TRUE)
-	caps_set_broken(FALSE)
+	PUBLISH_CHANGE(src, INTEGRITY_KEY_BROKEN)
 
 ///what happens when the atom's integrity reaches zero.
 /atom/proc/atom_destruction(damage_flag)

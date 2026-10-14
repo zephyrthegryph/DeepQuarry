@@ -55,8 +55,6 @@
 	vore_stomach_name = "stummy"
 	vore_default_item_mode = IM_DIGEST
 
-	vore_taste = "some kind of snack from a distant unseen universe"
-	vore_smell = "some kind of snack from a distant unseen universe"
 
 	var/succlet_move_chance = 2
 	var/succlet_eat_chance = 50
@@ -72,7 +70,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/succlet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stummy"
 	B.desc = "It's a star shaped stomach. A stummy, if you will. It's warm and soft, not unlike plush, but it's tight!"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -93,20 +91,20 @@
 	else
 		. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet
-	of = /mob/living/simple_mob/vore/alienanimals/succlet
+/mob/living/simple_mob/vore/alienanimals/succlet/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/succlet/perform(mob/living/simple_mob/vore/alienanimals/succlet/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/succlet/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.stat)
+	if(src.stat)
 		return
-	if(self.client)
+	if(src.client)
 		return
-	if(isbelly(self.loc))	//No teleporting out of bellies
+	if(isbelly(src.loc))	//No teleporting out of bellies
 		return
-	if(prob(self.succlet_move_chance) || self.vitality() < self.succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
+	if(prob(src.succlet_move_chance) || src.vitality() < src.succlet_last_health)	//This chance can be adjusted, but moving is probably pretty resource expensive on the server, so the chance should stay low
 		var/list/mylist = list()	//Look I'm just saying, you can make it higher if you want but don't cry to me if the server lags, I made this as a joke
-		for(var/mob/M in view(world.view, get_turf(self)))	//Is there anyone nearby to target?
+		for(var/mob/M in view(world.view, get_turf(src)))	//Is there anyone nearby to target?
 			if(istype(M, /mob/living/simple_mob/vore/alienanimals/succlet))
 				continue
 			if(isobserver(M))
@@ -116,17 +114,16 @@
 			if(ismob(M))
 				mylist |= M
 		if(mylist.len > 0)
-			self.succlet_move(pick(mylist))
+			src.succlet_move(pick(mylist))
 		else
-			for(var/turf/T in view(world.view, get_turf(self)))	//No, so let's pick a turf to travel to
+			for(var/turf/T in view(world.view, get_turf(src)))	//No, so let's pick a turf to travel to
 				if(isturf(T))
 					mylist |= T
 			if(mylist.len)
-				self.succlet_move(pick(mylist))
-	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
+				src.succlet_move(pick(mylist))
+	src.succlet_last_health = src.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet
-	death_message = "shrieks in agony as it is eradicated from reality."
 
 /mob/living/simple_mob/vore/alienanimals/succlet/on_death(gibbed)
 	. = ..()
@@ -135,16 +132,21 @@
 	play_sfx(src, SFX_VOICE_SUCCLET_SHRIEK)
 	expire(25)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_ITEM(null, PROC_REF(succlet_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "some kind of snack from a distant unseen universe", "vore_smell" = "some kind of snack from a distant unseen universe"))
+	configure(mob_kind(death_message = "shrieks in agony as it is eradicated from reality."))
+	op("succlet_item", item(/obj/item), then(PROC_REF(succlet_interaction_item)))
 
 /// Old attackby: newspaper swat.
-/mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))
 		act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 		release_vore_contents()
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_move(target)
 	if(!target)
@@ -156,7 +158,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 
 	if(isliving(target))
 		l = target
-		if(l.devourable && l.allowmobvore && l.can_be_drop_prey)
+		if(l.vore_prefs.devourable && l.vore_prefs.allowmobvore && l.vore_prefs.can_be_drop_prey)
 			target_turf = get_turf(l)
 		else
 			to_chat(src, span_warning("You can't move on to [l], they are watching..."))
@@ -184,7 +186,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.has_status(EFFECT_BLINDED))
+			else if (!check.has_status(STAT_BLINDED))
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	for(var/atom/T in view(world.view, target_turf))	//Is anyone at our target?
@@ -193,12 +195,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 			if(check.stat == CONSCIOUS)
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
-			else if (!check.has_status(EFFECT_BLINDED))
+			else if (!check.has_status(STAT_BLINDED))
 				to_chat(src, span_warning("You can't move, [check] is watching..."))
 				return
 	forceMove(target_turf)
 	if(l)
-		l.status_at_least(EFFECT_WEAKENED, succlet_weaken_rate)
+		l.status_at_least(STAT_WEAKENED, succlet_weaken_rate)
 		if(client || prob(succlet_eat_chance))
 			animal_nom(l)
 			l.stop_pulling()
@@ -222,17 +224,38 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 	icon_living = "poison_succlet"
 	icon_rest = "poison_succlet"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(succlet_poison_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/poison)
+	op("succlet_poison_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(succlet_poison_interaction_hand_help)))
+	op("succlet_poison_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(succlet_poison_interaction_hand_hurt)))
+	op("succlet_poison_hand_disarm", hand(), stance(I_DISARM), label("Shove"), then(PROC_REF(succlet_poison_interaction_hand_disarm)))
+	op("succlet_poison_hand_grab", hand(), stance(I_GRAB), label("Grab"), then(PROC_REF(succlet_poison_interaction_hand_grab)))
+
+/// The help-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_help(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_hurt(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_disarm(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_grab(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_GRAB)
 
 /// Old attack_hand: the normal touch, then a sting unless helping.
-/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	unarmed_touch(user, interaction.stance)
-	. = TRUE
-	if(interaction.stance != I_HELP)
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	unarmed_touch(user, stance)
+	. = OP_OK
+	if(stance != I_HELP)
 		if(isliving(user))
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))
-			l.status_adjust(EFFECT_HALLUCINATING, 25)
+			l.status_adjust(STAT_HALLUCINATING, 25)
 			l.injure(INJURY_PAIN, 200, source = src)
 			l.injure(INJURY_TOXIN, 10, source = src, affliction = /datum/affliction/venom/neurotoxic_sting)
 
@@ -240,8 +263,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	IN
 	icon_state = "moss_succlet"
 	icon_living = "moss_succlet"
 	icon_rest = "moss_succlet"
-	vore_taste = "moss"
-	vore_smell = "moss"
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/moss)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "moss", "vore_smell" = "moss"))
 
 /mob/living/simple_mob/vore/alienanimals/succlet/king
 	desc = "A big soft, fuzzy, innocent looking star shaped creature. It looks regal with its crown!"
@@ -249,7 +273,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	IN
 	icon_living = "king_succlet"
 	icon_rest = "king_succlet"
 	succlet_weaken_rate = 60	//The weight of authority is heavy!
-	vore_taste = "the king of snacks from a distant unseen universe"
-	vore_smell = "the king of snacks from a distant unseen universe"
 
 	endurance = 10000
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/king)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "the king of snacks from a distant unseen universe", "vore_smell" = "the king of snacks from a distant unseen universe"))

@@ -5,25 +5,21 @@
 	icon_state = "fdiffuser_on"
 	circuit = /obj/item/circuitboard/shield_diffuser
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 25		// Previously 100.
-	active_power_usage = 500	// Previously 2000
 	anchored = TRUE
 	density = FALSE
 	level = 1
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /// Proximity alarm countdown in steps (meteor_alarm()); while it runs the diffuser is silenced.
-OM_FIELD(/obj/machinery/shield_diffuser, alarm, 0, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery/shield_diffuser, enabled, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/shield_diffuser/var/alarm = 0
+/obj/machinery/shield_diffuser/var/enabled = TRUE
+TRACKED(/obj/machinery/shield_diffuser, enabled)
 /// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
-OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled", "alarm"))
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffuser_has_work")
-
+// ALLOW(init/INSTANCE_STATE): takes its built parts and hides under the floor tile it is placed on
 /obj/machinery/shield_diffuser/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 
 	var/turf/T = get_turf(src)
 	hide(!T.is_plating())
@@ -31,18 +27,23 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffus
 //If underfloor, hide the cable^H^H diffuser
 /obj/machinery/shield_diffuser/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+		hide_under_floor(src, i)
 
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1
 
-/obj/machinery/shield_diffuser/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shield_diffuser)
+	configure(uses_power(idle = 25, active = 500))
+	default_parts()
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+
+/obj/machinery/shield_diffuser/proc/work_step(datum/act/timer/A)
 	if(alarm)
 		set_alarm(alarm - 1)
-		if(!alarm)
-			update_icon()
-		else
+		if(alarm)
 			return
 
 	if(!enabled)
@@ -53,39 +54,29 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffus
 			S.diffuse(5)
 		// Legacy shield support
 		for(var/obj/effect/energy_field/S in turf_contents_of_type(shielded_tile, /obj/effect/energy_field))
-			qdel(S)
+			spent(S)
 	return PROCESS_KILL
 
 /// Appearance reader: working and switched on.
 /obj/machinery/shield_diffuser/proc/appearance_diffusing()
 	return operable() && enabled
 
-APPEARANCE_TEMPLATE(/obj/machinery/shield_diffuser, "fdiffuser_{appearance_diffusing?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1" = list(APPEARANCE_ICON_STATE = "fdiffuser_emergency")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/shield_diffuser/draw(datum/look/look)
+	..()
+	look.state("fdiffuser_[appearance_diffusing() ? "on" : "off"]")
+	if(appearance_alarmed() == 1)
+		look.state("fdiffuser_emergency")
 
 /// Appearance reader: alarm raised (as 1/0).
 /obj/machinery/shield_diffuser/proc/appearance_alarmed()
 	return alarm ? 1 : 0
 
-/obj/machinery/shield_diffuser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/shield_diffuser_toggle,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
-/// Old attack_hand: silence the alarm, or toggle the diffuser.
-/datum/interaction/machine_hand/shield_diffuser_toggle
-	id = "shield_diffuser_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/shield_diffuser/proc/interaction_toggle
-
-/obj/machinery/shield_diffuser/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/shield_diffuser/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(alarm)
 		to_chat(user, "You press an override button on \the [src], re-enabling it.")
 		set_alarm(0)
-		update_icon()
 		return TRUE
 	set_enabled(!enabled)
 	set_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
@@ -96,7 +87,6 @@ DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1
 	if(!duration)
 		return
 	set_alarm(round(max(alarm, duration)))
-	update_icon()
 
 /// Shield segments call this when they regenerate or appear, so stable
 /// diffusers do not need to scan their four neighboring turfs forever.

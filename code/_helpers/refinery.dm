@@ -41,7 +41,7 @@
 				var/list/ore_components = GLOB.ore_reagents[D.type]
 				if(remaining_volume >= REAGENTS_PER_ORE)
 					holdingitems -= D
-					qdel(D)
+					consumed(D, R.my_atom)
 					if(islist(ore_components))
 						var/amount_to_take = (REAGENTS_PER_ORE/(ore_components.len))
 						for(var/i in ore_components)
@@ -54,20 +54,20 @@
 			O.reagents.trans_to_obj(R.my_atom, min(O.reagents.total_volume, remaining_volume))
 			if(O.reagents.total_volume == 0)
 				holdingitems -= O
-				qdel(O)
+				consumed(O, R.my_atom)
 			if (R.total_volume >= R.maximum_volume)
 				break
 
 		else
 			// Cronch
 			holdingitems -= O
-			qdel(O)
+			consumed(O, R.my_atom)
 
 	return (R.total_volume > start_volume)
 
 // start: Repurposed coffee grinders and supermatter do not mix.
 /proc/puny_protons(regrets = 0, atom/our_atom, list/holdingitems)
-	our_atom.set_light(0)
+	set_glow(our_atom, GLOW(0, null, null))
 	if(regrets > 0) // If you thought grinding supermatter would end well. Values taken from ex_act() for the supermatter stacks.
 		radiation_pulse(
 			source = get_turf(our_atom),
@@ -77,7 +77,7 @@
 			strength = 15 + (regrets * 4),
 		)
 		explosion(get_turf(our_atom), round(regrets / 12) , round(regrets / 6), round(regrets / 3), round(regrets / 25))
-		qdel(our_atom)
+		destroyed(our_atom, null, "explosion")
 		return
 
 	else // If you added supermatter but didn't try grinding it, or somehow this is negative.

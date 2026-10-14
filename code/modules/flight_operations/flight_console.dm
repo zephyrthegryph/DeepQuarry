@@ -15,7 +15,15 @@
 		return ADMIN_STATE(R_ADMIN | R_EVENT | R_DEBUG)
 	return GLOB.tgui_default_state
 
-DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Operations"))
+CAPABILITIES(/datum/flight_operations_ui)
+	interface("FlightOperations", title = "Flight Operations")
+	op("jump", ui_act("jump", arg("destination_id", schema_text(4096))), then(PROC_REF(ui_act_jump)))
+	op("select_destination", ui_act("select_destination", arg("destination_id")), then(PROC_REF(ui_act_select_destination)))
+	op("engage", ui_act("engage"), then(PROC_REF(ui_act_engage)))
+	op("abort", ui_act("abort"), then(PROC_REF(ui_act_abort)))
+	op("abandon_expedition", ui_act("abandon_expedition"), then(PROC_REF(ui_act_abandon_expedition)))
+	op("toggle_engines", ui_act("toggle_engines"), then(PROC_REF(ui_act_toggle_engines)))
+	op("thrust_limit", ui_act("thrust_limit", arg("value", num())), then(PROC_REF(ui_act_thrust_limit)))
 
 /datum/flight_operations_ui/ui_prepare(mob/user, datum/tgui/ui)
 	if(!resolve_vessel())
@@ -31,7 +39,7 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 		return console.linked()
 	if(istype(host(), /obj/machinery/computer/shuttle_control/explore))
 		var/obj/machinery/computer/shuttle_control/explore/console = host()
-		var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[console.shuttle_tag]
+		var/datum/shuttle/autodock/overmap/shuttle = shuttles_shuttles()[console.shuttle_tag]
 		return shuttle?.myship()
 	return null
 
@@ -39,13 +47,13 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 	if(forced_vessel())
 		return forced_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = resolve_ship()
-	return GLOB.flight_service?.vessel_for_ship(ship) || GLOB.flight_service?.register_vessel(ship)
+	return SSflight?.vessel_for_ship(ship) || SSflight?.register_vessel(ship)
 
 /datum/flight_operations_ui/proc/serialize_destinations(datum/flight_vessel/viewing_vessel)
 	var/list/destination_data = list()
 	var/obj/effect/overmap/visitable/ship/viewing_ship = viewing_vessel?.ship()
-	for(var/id in GLOB.flight_service.destinations)
-		var/datum/flight_destination/destination = GLOB.flight_service.destinations[id]
+	for(var/id in SSflight.destinations)
+		var/datum/flight_destination/destination = SSflight.destinations[id]
 		if(!destination?.discovered || (destination.kind != FLIGHT_DEST_SYSTEM && !destination.is_available()))
 			continue
 		var/list/render_data = list(
@@ -70,25 +78,23 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 			"is_current" = destination.target() == viewing_ship,
 		)
 		if(destination.kind == FLIGHT_DEST_VESSEL)
-			var/datum/flight_vessel/render_vessel = GLOB.flight_service.vessel_for_ship(destination.target())
+			var/datum/flight_vessel/render_vessel = SSflight.vessel_for_ship(destination.target())
 			var/is_carrier = istype(render_vessel?.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier)
-			var/datum/flight_port/render_port = is_carrier ? null : GLOB.flight_service.ports[render_vessel?.docked_port_id]
+			var/datum/flight_port/render_port = is_carrier ? null : SSflight.ports[render_vessel?.docked_port_id]
 			render_data["scene_role"] = render_port ? "docked" : "orbital"
 			render_data["docked_port_id"] = render_port?.id
 			render_data["docked_host_id"] = render_port?.host_destination_id
 		destination_data += list(render_data)
 	return destination_data
 
-UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operations_ui{vessel:unknown,vessel_id:num,vessel_destination_id:num,orbit_parent_id:unknown,docked_port_id:unknown,capabilities:unknown,engines_online:unknown,thrust_limit:unknown,total_thrust:unknown,can_burn:unknown,destinations:unknown,contacts:list,plan:list,expedition:list,server_time:unknown}")
-
-/// The computed part of /datum/flight_operations_ui's window data (declared on its UI_DATA row).
-/datum/flight_operations_ui/proc/ui_data_datum_flight_operations_ui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/flight_operations_ui's window data.
+/datum/flight_operations_ui/ui_data(datum/act/eval/A)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()
 	var/list/data = list(
 		"vessel" = vessel?.name || "Unlinked vessel",
 		"vessel_id" = vessel?.id,
-		"vessel_destination_id" = GLOB.flight_service?.destination_for_target(ship)?.id,
+		"vessel_destination_id" = SSflight?.destination_for_target(ship)?.id,
 		"orbit_parent_id" = vessel?.orbit_parent_id,
 		"docked_port_id" = vessel?.docked_port_id,
 		"capabilities" = vessel?.capabilities || 0,
@@ -107,8 +113,8 @@ UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operati
 	data["destinations"] = serialize_destinations(vessel)
 	if(ship)
 		var/list/contacts = list()
-		for(var/contact_id in GLOB.flight_service.vessels)
-			var/datum/flight_vessel/contact_vessel = GLOB.flight_service.vessels[contact_id]
+		for(var/contact_id in SSflight.vessels)
+			var/datum/flight_vessel/contact_vessel = SSflight.vessels[contact_id]
 			if(contact_vessel == vessel || contact_vessel.orbit_parent_id != vessel.orbit_parent_id)
 				continue
 			contacts += list(list("name" = contact_vessel.name, "ref" = contact_vessel.id))
@@ -142,63 +148,71 @@ UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operati
 		)
 	return data
 
-/datum/flight_operations_ui/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/flight_operations_ui/proc/ui_gate(datum/act/op/A)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "jump", ui_act_jump, UI_ARG_TEXT("destination_id"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
+/datum/flight_operations_ui/proc/ui_act_jump(datum/act/op/A, destination_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
-		GLOB.flight_service.plans -= vessel.active_plan.id
+		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/jump_plan = SSflight.create_plan(vessel, destination_id)
 	if(!jump_plan || !jump_plan.start())
-		to_chat(ui.user, span_warning("The jump could not be initiated."))
+		to_chat(user, span_warning("The jump could not be initiated."))
 		return TRUE
-	to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
+	to_chat(user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "select_destination", ui_act_select_destination, UI_ARG_VALUE("destination_id"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_select_destination)
+/datum/flight_operations_ui/proc/ui_act_select_destination(datum/act/op/A, destination_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
-		GLOB.flight_service.plans -= vessel.active_plan.id
+		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/plan = SSflight.create_plan(vessel, destination_id)
 	if(!plan)
-		to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
+		to_chat(user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "engage", ui_act_engage)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_engage)
+/datum/flight_operations_ui/proc/ui_act_engage(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.active_plan?.start())
-		to_chat(ui.user, span_warning("The flight plan could not be engaged."))
+		to_chat(user, span_warning("The flight plan could not be engaged."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "abort", ui_act_abort)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abort)
+/datum/flight_operations_ui/proc/ui_act_abort(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	vessel.active_plan?.request_abort()
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "abandon_expedition", ui_act_abandon_expedition)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abandon_expedition)
+/datum/flight_operations_ui/proc/ui_act_abandon_expedition(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
-	GLOB.expedition_service.abandon_assignment(ui.user, vessel)
+	SSexpedition.abandon_assignment(user, vessel)
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "toggle_engines", ui_act_toggle_engines)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_toggle_engines)
+/datum/flight_operations_ui/proc/ui_act_toggle_engines(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.ship())
 		return FALSE
@@ -208,12 +222,13 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_toggle_engines)
 			engine.toggle()
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "thrust_limit", ui_act_thrust_limit, UI_ARG_NUM("value"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
+/datum/flight_operations_ui/proc/ui_act_thrust_limit(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.ship())
 		return FALSE
-	vessel.ship().thrust_limit = clamp(params["value"] / 100, 0, 1)
+	vessel.ship().thrust_limit = clamp(value / 100, 0, 1)
 	for(var/datum/ship_engine/engine in vessel.ship().engines)
 		engine.set_thrust_limit(vessel.ship().thrust_limit)
 	return TRUE
@@ -221,10 +236,21 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 /obj/machinery/computer/ship
 	var/datum/flight_operations_ui/flight_operations_ui
 
+CAPABILITIES(/obj/machinery/computer/ship)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+	// The buttons every ship console's window has (code/modules/overmap/ships/computers/ship.dm).
+	op("sync", ui_act("sync"), then(PROC_REF(ui_act_sync)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("topic_sync", topic("sync"), then(PROC_REF(topic_sync)))
+	op("ship_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(ai_control), TRUE, because = MSG(ship/ai_denied))), then(PROC_REF(ship_silicon_use)))
+	op("ship_ghost_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(PROC_REF(ship_ghost_view)))
+	op("ship_console_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(ship_access_holds)), any_of(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(ship/access_denied)), req_is(nameof(ai_control), TRUE, because = MSG(ship/access_denied)))), then(PROC_REF(interaction_use)))
+
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()
 	if(!flight_operations_ui)
-		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
+		rel_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 /obj/machinery/computer/ship/helm/ui_redirect(mob/user)
@@ -236,9 +262,14 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 /obj/machinery/computer/shuttle_control/explore
 	var/datum/flight_operations_ui/flight_operations_ui
 
+CAPABILITIES(/obj/machinery/computer/shuttle_control/explore)
+	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+	op("plot_expedition", ui_act("plot_expedition"), then(PROC_REF(ui_act_plot_expedition)))
+	op("pick", ui_act("pick"), then(PROC_REF(ui_act_pick)))
+
 /obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)
 	if(!flight_operations_ui)
-		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
+		rel_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 

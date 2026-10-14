@@ -1,0 +1,5 @@
+/obj/machinery/deployable/barrier icon: icons/obj/objects.dmi
+/obj/machinery/deployable/barrier state: barrier0
+/obj/machinery/deployable/barrier dir: 2
+/obj/machinery/deployable/barrier overlay: icons/obj/objects.dmi:barrier0:8:#000000
+

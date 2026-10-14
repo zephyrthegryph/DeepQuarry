@@ -1,0 +1,4 @@
+human|none menu: Toggle
+human|none click: Click: Toggle
+robot|none menu: Toggle
+robot|none click: Click: Toggle

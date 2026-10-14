@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated more character, creature and item prompts to native requests while preserving cancellation and answer checks."

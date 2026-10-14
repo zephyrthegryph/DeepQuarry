@@ -8,8 +8,8 @@
 
 /// Processes thru any assets that were registered before we were loaded as a transport.
 /datum/asset_transport/webroot/proc/load_existing_assets()
-	for (var/asset_name in SSassets.cache)
-		var/datum/asset_cache_item/ACI = SSassets.cache[asset_name]
+	for (var/asset_name in assets_cache())
+		var/datum/asset_cache_item/ACI = assets_cache()[asset_name]
 		save_asset_to_webroot(ACI)
 
 /// Register a browser asset with the asset cache system
@@ -38,7 +38,7 @@
 /// asset_cache_item - asset cache item datum for the asset, optional, overrides asset_name
 /datum/asset_transport/webroot/get_asset_url(asset_name, datum/asset_cache_item/asset_cache_item)
 	if (!istype(asset_cache_item))
-		asset_cache_item = SSassets.cache[asset_name]
+		asset_cache_item = assets_cache()[asset_name]
 	var/url = CONFIG_GET(string/asset_cdn_url) //config loading will handle making sure this ends in a /
 	return "[url][get_asset_suffex(asset_cache_item)]"
 
@@ -61,7 +61,7 @@
 	for (var/asset_name in asset_list)
 		var/datum/asset_cache_item/ACI = asset_list[asset_name]
 		if (!istype(ACI))
-			ACI = SSassets.cache[asset_name]
+			ACI = assets_cache()[asset_name]
 		if (!ACI)
 			legacy_assets += asset_name //pass it on to base send_assets so it can output an error
 			continue

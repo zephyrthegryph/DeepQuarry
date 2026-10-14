@@ -1,0 +1,23 @@
+@obj.machinery.computer human|none
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+-click: nothing
++1 menu: View
++2 click: Click: View
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Disconnect
+-click: Click: Disconnect
++3 click: Click: Use item
+@obj.machinery.computer human|/obj/item/tool/crowbar
+@obj.machinery.computer human|/obj/item/tool/wrench
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+@obj.machinery.computer human|/obj/item/multitool
+@obj.machinery.computer human|/obj/item/weldingtool
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+@obj.machinery.computer human|/obj/item/stack/material/steel
+@obj.machinery.computer human|/obj/item/card/id
+@obj.machinery.computer human|/obj/item
+@obj human|/obj/item/gripper
+@obj.machinery human|/obj/item/card/emag
+keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, ship_console_use, ship_ghost_view, ship_silicon_use, silicon_hand, sync, use_gripper, use_item

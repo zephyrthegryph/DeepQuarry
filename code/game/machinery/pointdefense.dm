@@ -12,9 +12,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	desc = "A specialized computer designed to synchronize a variety of weapon systems and a vessel's astronav data."
 	icon = 'icons/obj/pointdefense.dmi'
 	icon_state = "control"
-	power_channel = EQUIP
 	use_power = USE_POWER_ACTIVE
-	active_power_usage = 5 KILOWATTS
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/pointdefense_control
@@ -37,18 +35,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(!id_tag)
 		. += "[desc_panel_image("multitool")]to set ident tag"
 
-DECLARE_UI(/obj/machinery/pointdefense_control, "PointDefenseControl")
+CAPABILITIES(/obj/machinery/pointdefense_control)
+	configure(uses_power(channel = EQUIP, active = 5 KILOWATTS))
+	interface("PointDefenseControl")
+	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
+	ref_many(nameof(targets))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
+		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
+		then(PROC_REF(ident_entered)))
 
-/obj/machinery/pointdefense_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
-UI_ACT(/obj/machinery/pointdefense_control, "toggle_active", ui_act_toggle_active, UI_ARG_REF("target", null, /obj/machinery/pointdefense))
-UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
-	var/obj/machinery/pointdefense/PD = params["target"]
+/obj/machinery/pointdefense_control/proc/ui_act_toggle_active(datum/act/op/A, target)
+	var/mob/user = A.actor
+	var/obj/machinery/pointdefense/PD = ui_ref(target, null, /obj/machinery/pointdefense)
 	if(!istype(PD))
 		return FALSE
 
@@ -56,17 +55,14 @@ UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
 		return FALSE
 
 	if(!(get_z(PD) in GetConnectedZlevels(get_z(src))))
-		to_chat(ui.user, span_warning("[PD] is not within control range."))
+		to_chat(user, span_warning("[PD] is not within control range."))
 		return FALSE
 
 	if(!PD.Activate()) //Activate() whilst the device is active will return false.
 		PD.Deactivate()
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machinery_pointdefense_control{id:text,turrets:list}")
-
-/// The computed part of /obj/machinery/pointdefense_control's window data (declared on its UI_DATA row).
-/obj/machinery/pointdefense_control/proc/ui_data_obj_machinery_pointdefense_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/pointdefense_control/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["id"] = id_tag
 	var/list/turrets = list()
@@ -89,22 +85,25 @@ UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machiner
 	data["turrets"] = turrets
 	return data
 
-/obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
-	return ITEM_INTERACT_SUCCESS
+/// The multitool question's title: the machine's name.
+/obj/machinery/pointdefense/proc/ident_title(datum/act/A)
+	return "[src]"
 
-/obj/machinery/pointdefense_control/proc/ident_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_ident = ask.text
-	if(new_ident && new_ident != id_tag && user.Adjacent(src))
+/obj/machinery/pointdefense_control/proc/ident_title(datum/act/A)
+	return "[src]"
+
+/// The multitool's answer: the controller joins that network, unless it already has one.
+/obj/machinery/pointdefense_control/proc/ident_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_ident = A.answer?.value
+	if(new_ident && new_ident != id_tag)
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
 				to_chat(user, span_warning("The [new_ident] network already has a controller."))
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 //
 // The acutal point defense battery
@@ -130,12 +129,6 @@ UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machiner
 	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /// Steps (watches for and shoots meteors) while switched on and working.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/pointdefense, MACHINE_PIPELINE, list("active", "operable"))
-
-/obj/machinery/pointdefense/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	update_icon()
 
 /obj/machinery/pointdefense/get_description_interaction()
 	. = ..()
@@ -145,7 +138,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/pointdefense, MACHINE_PIPELINE, list("
 /obj/machinery/pointdefense/proc/appearance_live()
 	return (active && id_tag && operable()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearance_live?:_off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/pointdefense/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_live() ? "" : "_off"]")
 
 // Find controller with the same tag on connected z levels (if any)
 /obj/machinery/pointdefense/proc/get_controller()
@@ -156,22 +152,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 		if(PDC.id_tag == id_tag && (get_z(PDC) in connected_z_levels))
 			return PDC
 
-/obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/pointdefense/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)
+/// The multitool's answer: the battery joins that network.
+/obj/machinery/pointdefense/proc/ident_entered(datum/act/op/A)
+	var/new_ident = A.answer?.value
 	if(new_ident && new_ident != id_tag)
-		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
-		id_tag = new_ident
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
-
-/obj/machinery/pointdefense/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
+		to_chat(A.actor, span_notice("You register [src] with the [new_ident] network."))
+		set_id_tag(new_ident)
+	return OP_OK
 
 //Guns cannot shoot through hull or generally dense turfs.
 /obj/machinery/pointdefense/proc/space_los(meteor)
@@ -179,10 +166,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 		if(T.density)
 			return FALSE
 	return TRUE
-
-/obj/machinery/pointdefense_control/relations()
-	. = ..()
-	. += rel_many(nameof(targets))
 
 /obj/machinery/pointdefense/proc/Shoot(obj/effect/meteor/M)
 	if(!istype(M))
@@ -192,7 +175,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	var/Angle = round(Get_Angle(src,M))
 	var/matrix/rot_matrix = matrix()
 	rot_matrix.Turn(Angle)
-	om_after(src, rotation_speed, PROC_REF(finish_shot), M)
+	after(src, rotation_speed, PROC_REF(finish_shot), with = list(M))
 	animate(src, transform = rot_matrix, rotation_speed, easing = SINE_EASING)
 
 	set_dir(ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH)
@@ -210,22 +193,30 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	//We throw a laser but it doesnt have to hit for meteor to explode
 	var/obj/item/projectile/beam/coildefense/coil = new(get_turf(src))
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
-	use_power_oneoff(idle_power_usage * 10)
+	use_power_oneoff(power_of(src).idle * 10)
 	coil.launch_projectile(target = M.loc, user = src)
-	om_after(src, 10, PROC_REF(fire_sound_delayed))
+	after(src, 1 SECONDS, PROC_REF(fire_sound_delayed))
 
 /obj/machinery/pointdefense/proc/fire_sound_delayed()
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 
-/obj/machinery/pointdefense/machine_step()
-	..()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/pointdefense)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), STAT_OPERABLE))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
+		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),
+		then(PROC_REF(ident_entered)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	default_parts()
+	ref_one(nameof(engaging), /obj/effect/meteor)
+
+/obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
 
 	if(!LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
-		return PROCESS_KILL
+		return // no meteors about: it looks again next step
 	find_and_shoot()
 
 /obj/machinery/pointdefense/proc/find_and_shoot()
@@ -267,7 +258,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	if(get_dist(M, src) > kill_range)
 		return FALSE
 	// If we can shoot it, then shoot
-	if(emagged || !space_los(M))
+	if(emagged() || !space_los(M))
 		return FALSE
 
 	return TRUE
@@ -303,19 +294,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	set_active(FALSE)
 	return TRUE
 
-/// Audit: an active point defense must not sleep through meteors.
-/obj/machinery/pointdefense/om_sleep_violation()
-	if(!asleep_on_keys() || (!operable()) || !active)
-		return null
-	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
-		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"
-	return null
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/pointdefense/arm_wakes()
-	..()
-	sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pointdefense/step_start_condition()
 	return active && LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))

@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 /datum/planet/virgo4/New()
 	..()
 	GLOB.planet_virgo4 = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/virgo4(src))
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/virgo4(src))
 
 /datum/planet/virgo4/update_sun()
 	..()
@@ -91,7 +91,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 
 /datum/weather_holder/virgo4
@@ -199,7 +199,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 /*
 /datum/weather/virgo4/snow/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in GLOB.cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -233,7 +233,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 /*
 /datum/weather/virgo4/blizzard/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in GLOB.cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -615,7 +615,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 /obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
 	. = ..()
 	set_stored_charge(0)
-	RCon = TRUE
-	input_level = input_level_max
-	output_level = output_level_max
-	input_attempt = TRUE
+	set_RCon(TRUE)
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
+	set_input_attempt(TRUE)

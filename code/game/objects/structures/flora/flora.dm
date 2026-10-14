@@ -23,19 +23,34 @@
 	var/min_harvests = -1
 	var/list/harvest_loot = null	// Should be an associative list for things to spawn, and their weights. An example would be a branch from a tree.
 
-/obj/structure/flora/Initialize(mapload)
-	. = ..()
+TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 
-	if(randomize_size)
-		icon_scale_x = rand(min_x_scale * 100, max_x_scale * 100) / 100
-		icon_scale_y = rand(min_y_scale * 100, max_y_scale * 100) / 100
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): one of the type's numbered looks, when it has several.
+/obj/structure/flora/proc/roll_icon_state(datum/roller/R)
+	var/variants = TYPE_TABLE_GET(src, initial_icon_variant_count)
+	if(variants)
+		return "[initial(icon_state)][R.number(1, variants)]"
+	return icon_state
 
-		if(prob(50))
-			icon_scale_x *= -1
-		update_transform()
+/// Rolled before init (rolls()): a randomly sized plant is a little wider or narrower, and mirrored half the time.
+/obj/structure/flora/proc/roll_scale_x(datum/roller/R)
+	if(!randomize_size)
+		return icon_scale_x
+	var/scale = R.number(min_x_scale * 100, max_x_scale * 100) / 100
+	return R.chance(50) ? -scale : scale
 
-	if(randomize_harvest_count)
-		max_harvests = max(0, rand(min_harvests, max_harvests)) // Incase you want to weight it more toward 'not harvestable', set min_harvests to a negative value.
+/// Rolled before init (rolls()): a randomly sized plant's height.
+/obj/structure/flora/proc/roll_scale_y(datum/roller/R)
+	return randomize_size ? R.number(min_y_scale * 100, max_y_scale * 100) / 100 : icon_scale_y
+
+/// Its own setup (setup()): it takes the scale it rolled.
+/obj/structure/flora/proc/apply_rolled_scale()
+	update_transform()
+
+/// Rolled before init (rolls()): how many harvests it gives. A negative min_harvests weighs it toward none.
+/obj/structure/flora/proc/roll_harvests(datum/roller/R)
+	return max(0, R.number(min_harvests, max_harvests))
+
 
 /obj/structure/flora/examine(mob/user)
 	. = ..()
@@ -49,22 +64,28 @@
 		var/obj/item/tool = removal_tool
 		. += span_notice("\The [src] can be removed with \a [initial(tool.name)].")
 
+CAPABILITIES(/obj/structure/flora)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
+	rolls(nameof(icon_scale_x), PROC_REF(roll_scale_x))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_scale_y))
+	rolls(nameof(max_harvests), PROC_REF(roll_harvests), when = nameof(randomize_harvest_count))
+	setup(PROC_REF(apply_rolled_scale))
+
+MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
+
+/// A shovel uproots it when its type can be removed that way (a fixed property of the type; the shovel is no harvest tool).
+/obj/structure/flora/proc/removable(datum/act/op/A)
+	return !!read_once(removal_tool)
+
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-/obj/structure/flora/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/flora_item,
-	)
-	..()
-
-/// Old attackby: harvest, or uproot with the removal tool.
-/datum/interaction/entry_item/flora_item
-	id = "flora_item"
-	name = "Use"
-	effect = /obj/structure/flora/proc/interaction_item
-
-/obj/structure/flora/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: harvest with the harvest tool.
+/obj/structure/flora/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 
 	if(can_harvest(W))
 		var/harvest_spawn = pickweight(harvest_loot)
@@ -73,18 +94,13 @@
 			to_chat(user, span_notice("You harvest \the [AM] from \the [src]."))
 		else
 			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
-		return TRUE
+		return OP_OK
 
-	if(removal_tool && istype(W, removal_tool))
-		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
+	return OP_OK
 
-	return TRUE
-
-/obj/structure/flora/proc/attackby_timed_done(mob/living/user)
-	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
-	qdel(src)
+/obj/structure/flora/proc/uprooted(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% uproots and discards %T%!"))
+	consume(src, A.actor)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
 	. = FALSE
@@ -102,7 +118,7 @@
 	else
 		AM.forceMove(drop_location())
 
-	harvest_count++
+	set_harvest_count(harvest_count + 1)
 	return AM
 
 //bushes
@@ -117,9 +133,9 @@
 	harvest_loot = list(/obj/item/stack/material/fiber = 1)
 	max_harvests = 1
 
-/obj/structure/flora/bush/Initialize(mapload)
-	. = ..()
-	icon_state = "snowbush[rand(1, 6)]"
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/bush/roll_icon_state(datum/roller/R)
+	return "snowbush[R.number(1, 6)]"
 
 /obj/structure/flora/pottedplant
 	name = "potted plant"
@@ -166,104 +182,97 @@
 		var/choice = pickweight(possibleseeds)
 		new choice(get_turf(user))
 
-/obj/structure/flora/ausbushes/Initialize(mapload, bush_icon)
-	. = ..()
-	if(bush_icon)
-		icon_state = bush_icon
-		return
-	icon_state = "firstbush_[rand(1, 4)]"
+TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
+
+CAPABILITIES(/obj/structure/flora/ausbushes)
+	param(nameof(bush_icon), pos = 1)
+
+/// The look it is planted with (its constructor param).
+/obj/structure/flora/ausbushes/var/bush_icon
+
+/// Rolled before init: one of the type's looks, else the one it was planted with (its param), else a first bush.
+/obj/structure/flora/ausbushes/roll_icon_state(datum/roller/R)
+	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
+	if(icon_choice)
+		bush_icon = "[icon_choice[1]]_[R.number(1, icon_choice[2])]"
+	return bush_icon || "firstbush_[R.number(1, 4)]"
 
 /obj/structure/flora/ausbushes/reedbush
 	icon_state = "reedbush_1"
 
-/obj/structure/flora/ausbushes/reedbush/Initialize(mapload)
-	. = ..(mapload, "reedbush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/reedbush, ausbush_icon_choice, list("reedbush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/leafybush
 	icon_state = "leafybush_1"
 
-/obj/structure/flora/ausbushes/leafybush/Initialize(mapload)
-	. = ..(mapload, "leafybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/leafybush, ausbush_icon_choice, list("leafybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/palebush
 	icon_state = "palebush_1"
 
-/obj/structure/flora/ausbushes/palebush/Initialize(mapload)
-	. = ..(mapload, "palebush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/palebush, ausbush_icon_choice, list("palebush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/stalkybush
 	icon_state = "stalkybush_1"
 
-/obj/structure/flora/ausbushes/stalkybush/Initialize(mapload)
-	. = ..(mapload, "stalkybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/stalkybush, ausbush_icon_choice, list("stalkybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/grassybush
 	icon_state = "grassybush_1"
 
-/obj/structure/flora/ausbushes/grassybush/Initialize(mapload)
-	. = ..(mapload, "grassybush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/grassybush, ausbush_icon_choice, list("grassybush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/fernybush
 	icon_state = "fernybush_1"
 
-/obj/structure/flora/ausbushes/fernybush/Initialize(mapload)
-	. = ..(mapload, "fernybush_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/fernybush, ausbush_icon_choice, list("fernybush", 3, FALSE))
 
 /obj/structure/flora/ausbushes/sunnybush
 	icon_state = "sunnybush_1"
 
-/obj/structure/flora/ausbushes/sunnybush/Initialize(mapload)
-	. = ..(mapload, )
-	icon_state = "sunnybush_[rand(1, 3)]"
+/obj/structure/flora/ausbushes/sunnybush/roll_icon_state(datum/roller/R)
+	return "sunnybush_[R.number(1, 3)]"
 
 /obj/structure/flora/ausbushes/genericbush
 	icon_state = "genericbush_1"
 
-/obj/structure/flora/ausbushes/genericbush/Initialize(mapload)
-	. = ..(mapload, )
-	icon_state = "genericbush_[rand(1, 4)]"
+/obj/structure/flora/ausbushes/genericbush/roll_icon_state(datum/roller/R)
+	return "genericbush_[R.number(1, 4)]"
 
 /obj/structure/flora/ausbushes/pointybush
 	icon_state = "pointybush_1"
 
-/obj/structure/flora/ausbushes/pointybush/Initialize(mapload)
-	. = ..(mapload, "pointybush_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/pointybush, ausbush_icon_choice, list("pointybush", 4, FALSE))
 
 /obj/structure/flora/ausbushes/lavendergrass
 	icon_state = "lavendergrass_1"
 
-/obj/structure/flora/ausbushes/lavendergrass/Initialize(mapload)
-	. = ..(mapload, "lavendergrass_[rand(1, 4)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/lavendergrass, ausbush_icon_choice, list("lavendergrass", 4, FALSE))
 
 /obj/structure/flora/ausbushes/ywflowers
 	icon_state = "ywflowers_1"
 
-/obj/structure/flora/ausbushes/ywflowers/Initialize(mapload)
-	. = ..(mapload, "ywflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/ywflowers, ausbush_icon_choice, list("ywflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/brflowers
 	icon_state = "brflowers_1"
 
-/obj/structure/flora/ausbushes/brflowers/Initialize(mapload)
-	. = ..(mapload, "brflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/brflowers, ausbush_icon_choice, list("brflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/ppflowers
 	icon_state = "ppflowers_1"
 
-/obj/structure/flora/ausbushes/ppflowers/Initialize(mapload)
-	. = ..(mapload, "ppflowers_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/ppflowers, ausbush_icon_choice, list("ppflowers", 3, FALSE))
 
 /obj/structure/flora/ausbushes/sparsegrass
 	icon_state = "sparsegrass_1"
 
-/obj/structure/flora/ausbushes/sparsegrass/Initialize(mapload)
-	. = ..(mapload, "sparsegrass_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/sparsegrass, ausbush_icon_choice, list("sparsegrass", 3, FALSE))
 
 /obj/structure/flora/ausbushes/fullgrass
 	icon_state = "fullgrass_1"
 
-/obj/structure/flora/ausbushes/fullgrass/Initialize(mapload)
-	. = ..(mapload, "fullgrass_[rand(1, 3)]")
+TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("fullgrass", 3, FALSE))
 
 /obj/structure/flora/skeleton
 	name = "hanging skeleton model"
@@ -283,77 +292,49 @@
 	plane = OBJ_PLANE
 	var/obj/item/stored_item
 
+// the pot's own Use and Insert replace flora's harvest and uproot (the original overrides never called ..())
+CAPABILITIES(/obj/structure/flora/pottedplant)
+	owns_one(nameof(stored_item), /obj/item)
+	without("item")
+	without("uproot")
+	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
+		needs(req(PROC_REF(pot_empty)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
+	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full))), wait(1 SECOND), then(PROC_REF(item_found)))
+
 /obj/structure/flora/pottedplant/examine(mob/user)
 	. = ..()
 	if(in_range(user, src) && stored_item)
 		. += span_filter_notice(span_italics("You can see something in there..."))
 
-// Pottedplant's Use and Insert fully replace flora's harvest/uproot ones (the original
-// overrides never called ..()), so it declares its own interactions instead of flora's.
-/obj/structure/flora/pottedplant/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/pottedplant_item,
-		/datum/interaction/entry_hand/pottedplant_hand,
-	)
+/// Requirement: nothing is hidden in the pot yet.
+/obj/structure/flora/pottedplant/proc/pot_empty(datum/act/op/A)
+	return (!stored_item) ? null : MSG(pottedplant/full)
 
-/// Old attackby: hide a tiny item in the pot.
-/datum/interaction/entry_item/pottedplant_item
-	id = "pottedplant_item"
-	name = "Hide item"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/pottedplant/proc/can_hide_item))
-	effect = /obj/structure/flora/pottedplant/proc/interaction_hide_item
+MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be something in here.")
 
-/// Requirement: one tiny item fits in the pot.
-/obj/structure/flora/pottedplant/proc/can_hide_item(mob/user, atom/target, obj/item/I)
-	if(issilicon(user) || !istype(I))
-		return TRUE // the effect declines silently
-	if(stored_item)
-		return "[I] won't fit in, there already appears to be something in here"
-	if(I.w_class > ITEMSIZE_TINY)
-		return "[I] is too big to fit inside it"
-	return TRUE
-
-/obj/structure/flora/pottedplant/proc/interaction_hide_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(issilicon(user))
-		return TRUE // Don't try to put modules in here, you're a borg. TODO: Inventory refactor to not be ass.
-
-	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, I = I)
-	return TRUE
-
-/datum/om/task/timed/pottedplant_attackby
-	duration = 1 SECOND
-	complete_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_done2
-	cancel_proc = /obj/structure/flora/pottedplant/proc/attackby_timed_failed2
-	var/obj/item/I
-
-/obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
-	var/obj/item/I = task.I
-	var/mob/user = task.actor
-	if(!own_set(src, nameof(src.stored_item), I, user = user))
+/// Hiding a tiny item in the pot (never a cyborg's module) takes a moment.
+/obj/structure/flora/pottedplant/proc/item_hidden(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	if(!move_into(src, nameof(src.stored_item), I, user))
 		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
-/obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
+/obj/structure/flora/pottedplant/proc/hide_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("You refrain from putting things into the plant pot."))
 
-/// Old attack_hand: find whatever is hidden in the pot.
-/datum/interaction/entry_hand/pottedplant_hand
-	id = "pottedplant_hand"
-	name = "Search"
-	effect = /obj/structure/flora/pottedplant/proc/interaction_hand
+MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing of interest in %T%...")))
 
-/obj/structure/flora/pottedplant/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!stored_item)
-		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
-	else
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return TRUE
+/// Requirement: something is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/pot_full(datum/act/op/A)
+	return (!!stored_item) ? null : MSG(pottedplant/nothing)
 
-/obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
+/// Finding whatever is hidden in the pot.
+/obj/structure/flora/pottedplant/proc/item_found(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"
@@ -400,11 +381,11 @@
 	name = "unusual potted plant"
 	desc = "This is an unusual plant. It's bulbous ends emit a soft blue light."
 	icon_state = "plant-09"
-	light_range = 2
-	light_power = 0.6
-	light_color = "#33CCFF"
 	light_on = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/flora/sif_tree)
+
+CAPABILITIES(/obj/structure/flora/pottedplant/unusual)
+	configure(light_glow(range = 2, power = 0.6, color = "#33CCFF"))
 
 /obj/structure/flora/pottedplant/orientaltree
 	name = "potted oriental tree"
@@ -460,10 +441,10 @@
 	name = "subterranean potted plant"
 	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
 	icon_state = "plant-20"
-	light_range = 2
-	light_power = 0.6
-	light_color = "#FF6633"
 	light_on = TRUE
+
+CAPABILITIES(/obj/structure/flora/pottedplant/subterranean)
+	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
 
 /obj/structure/flora/pottedplant/minitree
 	name = "potted tree"
@@ -510,46 +491,51 @@
 	max_harvests = 2
 	min_harvests = 0
 
-/obj/structure/flora/mushroom/Initialize(mapload)
-	. = ..()
-	icon_state = "mush[rand(1,4)]"
-	if(prob(50))
-		adjust_scale(-1, 1)
-	pixel_x = rand(-4, 4)
+/obj/structure/flora/mushroom/roll_icon_state(datum/roller/R)
+	return "mush[R.number(1, 4)]"
+
+CAPABILITIES(/obj/structure/flora/mushroom)
+	rolls(nameof(pixel_x), range_of(-4, 4))
+
+/// Rolled before init (rolls()): a mushroom is mirrored half the time.
+/obj/structure/flora/mushroom/roll_scale_x(datum/roller/R)
+	return R.chance(50) ? -1 : icon_scale_x
 
 /obj/random/pottedplant
 	name = "random potted plant"
 	desc = "This is a random potted plant."
 
-DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
-	/obj/structure/flora/pottedplant = 10, \
-	/obj/structure/flora/pottedplant/large = 10, \
-	/obj/structure/flora/pottedplant/fern = 10, \
-	/obj/structure/flora/pottedplant/overgrown = 10, \
-	/obj/structure/flora/pottedplant/bamboo = 10, \
-	/obj/structure/flora/pottedplant/largebush = 10, \
-	/obj/structure/flora/pottedplant/thinbush = 10, \
-	/obj/structure/flora/pottedplant/mysterious = 10, \
-	/obj/structure/flora/pottedplant/smalltree = 10, \
-	/obj/structure/flora/pottedplant/unusual = 10, \
-	/obj/structure/flora/pottedplant/orientaltree = 10, \
-	/obj/structure/flora/pottedplant/smallcactus = 10, \
-	/obj/structure/flora/pottedplant/tall = 10, \
-	/obj/structure/flora/pottedplant/sticky = 10, \
-	/obj/structure/flora/pottedplant/smelly = 10, \
-	/obj/structure/flora/pottedplant/small = 10, \
-	/obj/structure/flora/pottedplant/aquatic = 10, \
-	/obj/structure/flora/pottedplant/shoot = 10, \
-	/obj/structure/flora/pottedplant/flower = 10, \
-	/obj/structure/flora/pottedplant/crystal = 10, \
-	/obj/structure/flora/pottedplant/subterranean = 10, \
-	/obj/structure/flora/pottedplant/minitree = 10, \
-	/obj/structure/flora/pottedplant/stoutbush = 10, \
-	/obj/structure/flora/pottedplant/drooping = 10, \
-	/obj/structure/flora/pottedplant/tropical = 10, \
-	/obj/structure/flora/pottedplant/dead = 10, \
-	/obj/structure/flora/pottedplant/decorative = 10, \
-	/obj/structure/flora/pottedplant/xmas = 1))
+CAPABILITIES(/obj/random/pottedplant)
+	loot(
+		table = list(
+			/obj/structure/flora/pottedplant = 10,
+			/obj/structure/flora/pottedplant/large = 10,
+			/obj/structure/flora/pottedplant/fern = 10,
+			/obj/structure/flora/pottedplant/overgrown = 10,
+			/obj/structure/flora/pottedplant/bamboo = 10,
+			/obj/structure/flora/pottedplant/largebush = 10,
+			/obj/structure/flora/pottedplant/thinbush = 10,
+			/obj/structure/flora/pottedplant/mysterious = 10,
+			/obj/structure/flora/pottedplant/smalltree = 10,
+			/obj/structure/flora/pottedplant/unusual = 10,
+			/obj/structure/flora/pottedplant/orientaltree = 10,
+			/obj/structure/flora/pottedplant/smallcactus = 10,
+			/obj/structure/flora/pottedplant/tall = 10,
+			/obj/structure/flora/pottedplant/sticky = 10,
+			/obj/structure/flora/pottedplant/smelly = 10,
+			/obj/structure/flora/pottedplant/small = 10,
+			/obj/structure/flora/pottedplant/aquatic = 10,
+			/obj/structure/flora/pottedplant/shoot = 10,
+			/obj/structure/flora/pottedplant/flower = 10,
+			/obj/structure/flora/pottedplant/crystal = 10,
+			/obj/structure/flora/pottedplant/subterranean = 10,
+			/obj/structure/flora/pottedplant/minitree = 10,
+			/obj/structure/flora/pottedplant/stoutbush = 10,
+			/obj/structure/flora/pottedplant/drooping = 10,
+			/obj/structure/flora/pottedplant/tropical = 10,
+			/obj/structure/flora/pottedplant/dead = 10,
+			/obj/structure/flora/pottedplant/decorative = 10,
+			/obj/structure/flora/pottedplant/xmas = 1))
 
 /obj/structure/flora/sif
 	icon = 'icons/obj/flora/sifflora.dmi'
@@ -571,9 +557,6 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	name = "subterranean bulbs"
 	desc = "This is a subterranean plant. It's bulbous ends glow faintly."
 	icon_state = "glowplant"
-	light_range = 2
-	light_power = 0.6
-	light_color = "#FF6633"
 	light_on = TRUE
 	catalogue_data = list(/datum/category_item/catalogue/flora/subterranean_bulbs)
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/cavebulbs = 1)
@@ -581,9 +564,10 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	max_harvests = 2
 	min_harvests = 0
 
-/obj/structure/flora/sif/subterranean/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,2)]"
-	. = ..()
+CAPABILITIES(/obj/structure/flora/sif/subterranean)
+	configure(light_glow(range = 2, power = 0.6, color = "#FF6633"))
+
+TYPE_TABLE(/obj/structure/flora/sif/subterranean, initial_icon_variant_count, 2)
 
 /datum/category_item/catalogue/flora/eyebulbs
 	name = "Sivian Flora - Eyebulbs"
@@ -602,9 +586,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 	min_harvests = 0
 	harvest_loot = list(/obj/item/reagent_containers/food/snacks/grown/sif/eyebulbs = 1)
 
-/obj/structure/flora/sif/eyes/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/eyes, initial_icon_variant_count, 3)
 
 /datum/category_item/catalogue/flora/mosstendrils
 	name = "Sivian Flora - Moss Stalks"
@@ -629,9 +611,7 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 		/obj/item/reagent_containers/food/snacks/grown/sif/wildwabback = 30
 	)
 
-/obj/structure/flora/sif/tendrils/Initialize(mapload)
-	icon_state = "[initial(icon_state)][rand(1,3)]"
-	. = ..()
+TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 
 /obj/structure/flora/sif/tendrils/get_harvestable_desc()
 	return span_notice("\The [src] seems to be growing over something.")
@@ -661,17 +641,23 @@ DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
 
 	var/variantnum = null
 
-/obj/structure/flora/sif/frostbelle/Initialize(mapload)
-	. = ..()
-	variantnum = rand(1,3)
-	update_icon()
+CAPABILITIES(/obj/structure/flora/sif/frostbelle)
+	rolls(nameof(variantnum), PROC_REF(roll_variantnum))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/flora/sif/frostbelle/proc/roll_variantnum(datum/roller/R)
+	. = islist(variantnum) ? list() + variantnum : variantnum
+	. = R.number(1, 3)
 
 /obj/structure/flora/sif/frostbelle/proc/appearance_variant()
 	if(max_harvests > 0 && harvest_count < max_harvests)
 		return variantnum
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{appearance_variant}")
+/// The look (the draw sweep: from its template).
+/obj/structure/flora/sif/frostbelle/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_variant()]")
 
 /obj/structure/flora/sif/frostbelle/get_harvestable_desc()
 	return span_notice("\The [src] seems to be budding.")
@@ -808,7 +794,3 @@ APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{
 	icon = 'icons/obj/flora/amayastuff.dmi'
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
-
-/obj/structure/flora/pottedplant/ownership()
-	. = ..()
-	. += owns(nameof(stored_item), policy = OWN_CONTAINED)

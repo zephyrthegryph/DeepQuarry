@@ -23,21 +23,21 @@
 
 	var/datum/reagents/udder = null
 
-/mob/living/simple_mob/animal/passive/cow/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
+	hose_sockets(list(/datum/hose_connector/output/cow))
+	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the cow
+	op("cow_item", item(/obj/item), then(PROC_REF(cow_interaction_item)))
+	op("cow_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(cow_interaction_hand_disarm)))
 
-	own_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-	rel_set(udder, nameof(udder.my_atom), src)
-
-	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
-	INTERACT_ITEM(null, PROC_REF(cow_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(cow_interaction_hand)))
+/// The disarm-stance input of cow_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand_disarm(datum/act/op/A)
+	return cow_interaction_hand(A, I_DISARM)
 
 /// Old attackby: milking.
-/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
 		act_message(user, src, null, MSG_OTHERS(span_notice("%U% milks %T% using %I%.")), item = O)
@@ -47,27 +47,28 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 		if(!transfered)
 			to_chat(user, span_red("The udder is dry. Wait a bit longer..."))
 	else
-		return FALSE
+		return OP_DECLINE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/cow
-	of = /mob/living/simple_mob/animal/passive/cow
+/mob/living/simple_mob/animal/passive/cow/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/cow/perform(mob/living/simple_mob/animal/passive/cow/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/cow/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.stat == CONSCIOUS)
-		if(self.udder && prob(5))
-			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+	if(src.stat == CONSCIOUS)
+		if(src.udder && prob(5))
+			src.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
 /// Old attack_hand: cow tipping.
-/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(mob/living/carbon/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(!stat && interaction.stance == I_DISARM && icon_state != icon_dead)
+/mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/M = A.actor
+	. = OP_OK
+	if(!stat && stance == I_DISARM && icon_state != icon_dead)
 		act_message(M, src, MSG_SELF(span_notice("You tip over %T%.")), MSG_OTHERS(span_warning("%U% tips over %T%.")))
-		status_at_least(EFFECT_WEAKENED, 30)
-		icon_state = icon_dead
-		om_after(src, rand(20, 50), PROC_REF(get_up_after_tipping), M)
+		status_at_least(STAT_WEAKENED, 30)
+		set_icon_state(icon_dead)
+		after(src, rand(2 SECONDS, 5 SECONDS), PROC_REF(get_up_after_tipping), with = list(M))
 	else
-		return FALSE
+		return OP_DECLINE
 
 /datum/say_list/cow
 	speak = list("moo?","moo","MOOOOOO")
@@ -79,7 +80,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/cow, mob_organ_hit_zones, list("head", "t
 
 /mob/living/simple_mob/animal/passive/cow/proc/get_up_after_tipping(mob/M)
 	if(!stat && M)
-		icon_state = icon_living
+		set_icon_state(icon_living)
 		var/list/responses = list(	"[src] looks at you imploringly.",
 									"[src] looks at you pleadingly",
 									"[src] looks at you with a resigned expression.",

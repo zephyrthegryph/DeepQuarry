@@ -1,0 +1,5 @@
+/obj/machinery/computer/security/telescreen/entertainment icon: icons/obj/entertainment_monitor.dmi
+/obj/machinery/computer/security/telescreen/entertainment state: screen
+/obj/machinery/computer/security/telescreen/entertainment dir: 2
+/obj/machinery/computer/security/telescreen/entertainment overlay: icons/obj/entertainment_monitor.dmi:glass:-32767
+

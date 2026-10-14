@@ -1,0 +1,34 @@
+@obj human|none
++2 menu: Remove ID
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+-click: nothing
++2 menu: View
++3 click: Click: View
+@obj human|/obj/item/tool/screwdriver
++1 menu: Remove ID
+@obj human|/obj/item/tool/crowbar
++1 menu: Remove ID
+@obj human|/obj/item/tool/wrench
++1 menu: Remove ID
+@obj human|/obj/item/tool/wirecutters
++1 menu: Remove ID
+@obj human|/obj/item/multitool
++1 menu: Remove ID
+@obj human|/obj/item/weldingtool
++1 menu: Remove ID
+@obj human|/obj/item/stack/cable_coil
++1 menu: Remove ID
+@obj human|/obj/item/stack/material/steel
++1 menu: Remove ID
+@obj human|/obj/item/card/id
+-click: nothing
++1 menu: Remove ID
++2 menu: Scan ID
++4 click: Click: Scan ID
+@obj human|/obj/item/kit
++2 menu: Remove ID
+@obj human|/obj/item/storage
++2 menu: Remove ID
+keys: add_hex, collect_item, copy, copy_name, decline, dial, disconnect, drag_buckle, edit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, Light, message, move_to_top, newsfeed, open, pick_up_item, remove_id, rename, scan_id, set_ringer_tone, startvideo, switch_tab, toggle_digestable, view, write_target_address

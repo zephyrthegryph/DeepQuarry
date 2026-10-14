@@ -6,9 +6,7 @@
 	reference = "fuel_chamber"
 
 /obj/structure/particle_accelerator/fuel_chamber/pre_mapped
-	construction_state = 3
 	anchored = TRUE
 
-/obj/structure/particle_accelerator/fuel_chamber/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
+CAPABILITIES(/obj/structure/particle_accelerator/fuel_chamber/pre_mapped)
+	configure(construction_graph(start = STAGE_PA_CLOSED, via = list(STAGE_PA_BOLTED, STAGE_PA_WIRED)))

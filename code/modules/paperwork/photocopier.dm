@@ -8,9 +8,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 200
-	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/photocopier
 	can_buckle = TRUE
 	var/obj/item/copyitem = null	//what's in the copier!
@@ -19,29 +16,41 @@
 	var/maxcopies = 10	//how many copies can be copied at once- idea shamelessly stolen from bs12's copier!
 	var/copying = FALSE // Is the printer busy with something? Sanity check variable.
 
-/obj/machinery/photocopier/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/photocopier/examine(mob/user as mob)
 	. = ..()
 	if(Adjacent(user))
 		. += "The screen shows there's [toner ? "[toner]" : "no"] toner left in the printer."
 
-/obj/machinery/photocopier/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/photocopier_insert,
-		/datum/interaction/machine_item/photocopier_toner,
-		/datum/interaction/machine_item/photocopier_catchall,
-	)
-	..()
+// The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
+CAPABILITIES(/obj/machinery/photocopier)
+	configure(uses_power(idle = 30, active = 200, channel = EQUIP))
+	interface("Photocopier")
+	without("ui_open")
+	op("make_copy", ui_act(), then(PROC_REF(ui_act_make_copy)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("set_copies", ui_act("set_copies", arg("num_copies", num())), then(PROC_REF(ui_act_set_copies)))
+	op("ai_photo", ui_act("ai_photo"), asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(album_names)), "timeout" = 0), step = "picture", when = PROC_REF(album_ready)),
+		then(PROC_REF(ui_act_ai_photo)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert", inputs(item(/obj/item/paper), item(/obj/item/photo), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
+	default_parts()
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(photocopier_blast_spill)))
 
-DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
+/// The window data.
+/obj/machinery/photocopier/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["current_toner"] = toner
+	data["num_copies"] = copies
+	data["max_copies"] = maxcopies
+	var/list/computed = ui_data_obj_machinery_photocopier(A.actor, null, null)
+	for(var/key in computed)
+		data[key] = computed[key]
+	return data
 
-UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copies:num", "max_copies=maxcopies:num", "merge:ui_data_obj_machinery_photocopier{has_item:bool,isAI:num,can_AI_print:bool,has_toner:bool,max_toner:num}")
-
-/// The computed part of /obj/machinery/photocopier's window data (declared on its UI_DATA row).
+/// The computed part of the window data (ui_data()).
 /obj/machinery/photocopier/proc/ui_data_obj_machinery_photocopier(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -53,51 +62,66 @@ UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copie
 
 	return data
 
-UI_ACT(/obj/machinery/photocopier, "make_copy", ui_act_make_copy)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_make_copy)
-	om_after(src, 0, PROC_REF(copy_operation), ui.user)
-	. = TRUE
+/obj/machinery/photocopier/proc/ui_act_make_copy(datum/act/op/A)
+	after(src, 0, PROC_REF(copy_operation), with = list(A.actor))
+	return OP_OK
 
-UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
+/obj/machinery/photocopier/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
 	if(copyitem)
-		copyitem.forceMove(ui.user.loc)
-		ui.user.put_in_hands(copyitem)
-		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, nameof(/obj/machinery/photocopier::copyitem))
+		copyitem.forceMove(user.loc)
+		user.put_in_hands(copyitem)
+		to_chat(user, span_notice("You take \the [copyitem] out of \the [src]."))
+		rel_take(src, nameof(copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
-	. = TRUE
+	return TRUE
 
-UI_ACT(/obj/machinery/photocopier, "set_copies", ui_act_set_copies, UI_ARG_NUM("num_copies"))
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_set_copies)
-	copies = clamp(params["num_copies"], 1, maxcopies)
-	. = TRUE
+/obj/machinery/photocopier/proc/ui_act_set_copies(datum/act/op/A, num_copies)
+	copies = clamp(num_copies, 1, maxcopies)
+	return TRUE
 
-UI_ACT(/obj/machinery/photocopier, "ai_photo", ui_act_ai_photo)
-UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
-	if(!issilicon(ui.user))
+/// The camera album of the AI working the copier, or null (anyone else, or a silicon with no camera).
+/obj/machinery/photocopier/proc/ai_album(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	if(!istype(tempAI) || !tempAI.aiCamera)
+		return null
+	return tempAI.aiCamera.getsource(tempAI)
+
+/// The AI's photo print asks for a picture when the copier can print one and the album has one.
+/obj/machinery/photocopier/proc/album_ready(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures)
+
+/obj/machinery/photocopier/proc/album_names(datum/act/op/A)
+	. = list()
+	var/obj/item/camera/siliconcam/source_cam = ai_album(A)
+	for(var/obj/item/photo/photo in source_cam?.aipictures)
+		. += photo.name
+
+/obj/machinery/photocopier/proc/ui_act_ai_photo(datum/act/op/A)
+	var/mob/living/silicon/tempAI = A.actor
+	var/obj/item/camera/siliconcam/source_cam = ai_album(A)
+	if(!source_cam || !operable() || toner < 5)
 		return
-	if(!operable())
+	if(!length(source_cam.aipictures))
+		to_chat(tempAI, span_userdanger("No images saved"))
 		return
-
-	if(toner >= 5)
-		var/mob/living/silicon/tempAI = ui.user
-		var/obj/item/camera/siliconcam/camera = tempAI.aiCamera
-
-		if(!camera)
-			return
-		var/obj/item/photo/selection = camera.selectpicture(ui.user)
-		if (!selection)
-			return
-
-		var/obj/item/photo/p = photocopy(selection)
-		if (p.desc == "")
-			p.desc += "Copied by [tempAI.name]"
-		else
-			p.desc += " - Copied by [tempAI.name]"
-		toner -= 5
-	. = TRUE
+	var/picked = A.step_value("picture")
+	var/obj/item/photo/selection
+	for(var/obj/item/photo/photo in source_cam.aipictures)
+		if(photo.name == picked)
+			selection = photo
+			break
+	if(!selection)
+		return
+	var/obj/item/photo/p = photocopy(selection)
+	if(p.desc == "")
+		p.desc += "Copied by [tempAI.name]"
+	else
+		p.desc += " - Copied by [tempAI.name]"
+	set_toner(toner - 5)
+	return TRUE
 
 /// Makes `copies` copies, one after another (each a few steps on the machine's timers).
 /obj/machinery/photocopier/proc/copy_operation(mob/user)
@@ -113,14 +137,14 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		return
 	if (istype(copyitem, /obj/item/paper) || istype(copyitem, /obj/item/photo))
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
-		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+		after(src, 1.1 SECONDS, PROC_REF(copy_print), with = list(user, left, copyitem.type))
 	else if (istype(copyitem, /obj/item/paper_bundle))
-		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+		after(src, 1.1 SECONDS, PROC_REF(copy_print), with = list(user, left, copyitem.type))
 	else if (has_buckled_mobs()) // EDIT: For ass-copying.
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
 		// Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
-		om_after(src, rand(20,45), PROC_REF(copy_ass_scan), user, left)
+		after(src, rand(2 SECONDS,4.5 SECONDS), PROC_REF(copy_ass_scan), with = list(user, left))
 	else
 		to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
 		playsound(src, "sound/machines/buzz-two.ogg", 100)
@@ -139,121 +163,105 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		var/obj/item/paper_bundle/B = bundlecopy(copyitem)
 		finish_delay = 1.1 SECONDS * length(B?.pages)
-	om_after(src, finish_delay, PROC_REF(copy_finished), user, left)
+	after(src, finish_delay, PROC_REF(copy_finished), with = list(user, left))
 
 /obj/machinery/photocopier/proc/copy_ass_scan(mob/user, left)
 	copyass(user)
-	om_after(src, 1.5 SECONDS, PROC_REF(copy_finished), user, left)
+	after(src, 1.5 SECONDS, PROC_REF(copy_finished), with = list(user, left))
 
 /obj/machinery/photocopier/proc/copy_finished(mob/user, left)
 	audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")
 	playsound(src, "sound/machines/buzzbeep.ogg", 30)
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	copy_next(user, left - 1)
 
-/datum/interaction/machine_item/photocopier_insert
-	id = "photocopier_insert"
-	name = "Insert"
-	held_type = list(/obj/item/paper, /obj/item/photo, /obj/item/paper_bundle)
-	effect = /obj/machinery/photocopier/proc/interaction_insert
-
-/obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/photocopier/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!copyitem)
-		if(!own_set(src, nameof(src.copyitem), O, user = user))
-			return TRUE
+		if(!move_into(src, nameof(src.copyitem), O, user))
+			return OP_OK
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)
 		flick(insert_anim, src)
 	else
 		to_chat(user, span_notice("There is already something in \the [src]."))
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/photocopier_toner
-	id = "photocopier_toner"
-	name = "Insert toner"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/toner
-	effect = /obj/machinery/photocopier/proc/interaction_insert_toner
-
-/obj/machinery/photocopier/proc/interaction_insert_toner(mob/user, obj/item/toner/O, datum/interaction/interaction)
+/obj/machinery/photocopier/proc/interaction_insert_toner(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/toner/O = A.held
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-		user.drop_item()
+		var/refill_amount = O.toner_amount
+		if(!consume(O, user))
+			return OP_OK
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		toner += O.toner_amount
-		consume(O, user)
+		set_toner(toner + refill_amount)
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
-	return TRUE
+	return OP_OK
 
-/// Old attackby never called ..(): any other item is silently swallowed.
-/datum/interaction/machine_item/photocopier_catchall
-	id = "photocopier_catchall"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
+/obj/machinery/photocopier/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/photocopier/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/photocopier/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/photocopier/crowbar_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/photocopier/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/machinery/photocopier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopier_blast_spill))
 
 /// A blast can burst the toner out onto the floor.
-/obj/machinery/photocopier/proc/photocopier_blast_spill(datum/damage_packet/packet)
+/obj/machinery/photocopier/proc/photocopier_blast_spill(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity >= 2 && prob(50) && toner > 0)
 		new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
-		toner = 0
+		set_toner(0)
 
 /obj/machinery/photocopier/proc/copy(obj/item/paper/copy, need_toner=1)
 	var/obj/item/paper/c = new /obj/item/paper (loc)
 	if(toner > 10)	//lots of toner, make it dark
-		c.info = "<font color = #101010>"
+		c.set_info("<font color = #101010>")
 	else			//no toner? shitty copies for you!
-		c.info = "<font color = #808080>"
+		c.set_info("<font color = #808080>")
 	var/copied = html_decode(copy.info)
 	copied = replacetext(copied, "<font face=\"[c.deffont]\" color=", "<font face=\"[c.deffont]\" nocolor=")	//state of the art techniques in action
 	copied = replacetext(copied, "<font face=\"[c.crayonfont]\" color=", "<font face=\"[c.crayonfont]\" nocolor=")	//This basically just breaks the existing color tag, which we need to do because the innermost tag takes priority.
-	c.info += copied
-	c.info += "</font>"//</font>
+	c.set_info(c.info + (copied))
+	c.set_info(c.info + ("</font>"))//</font>
 	c.name = copy.name // -- Doohl
 	c.fields = copy.fields
 	c.stamps = copy.stamps
 	c.stamped = copy.stamped
-	c.ico = copy.ico
-	c.offset_x = copy.offset_x
-	c.offset_y = copy.offset_y
 	var/evidence_id = copy.medical_scan_evidence?["evidence_id"]
 	if(evidence_id)
 		c.attach_contract_evidence(evidence_id)
-	var/list/temp_overlays = copy.overlays       //Iterates through stamps
-	var/image/img                                //and puts a matching
-	for (var/j = 1, j <= min(temp_overlays.len, length(copy.ico)), j++) //gray overlay onto the copy
-		if (findtext(LAZYACCESS(copy.ico, j), "cap") || findtext(LAZYACCESS(copy.ico, j), "cent"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-circle")
-		else if (findtext(LAZYACCESS(copy.ico, j), "tal"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-square")
-		else if (findtext(LAZYACCESS(copy.ico, j), "deny"))
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-x")
+	var/list/grey_marks //Iterates through the stamps and puts a matching
+	for(var/list/mark in copy.stamp_marks) //gray mark onto the copy
+		var/grey_state
+		if(findtext(mark[1], "cap") || findtext(mark[1], "cent"))
+			grey_state = "paper_stamp-circle"
+		else if(findtext(mark[1], "tal"))
+			grey_state = "paper_stamp-square"
+		else if(findtext(mark[1], "deny"))
+			grey_state = "paper_stamp-x"
 		else
-			img = image('icons/obj/bureaucracy.dmi', "paper_stamp-dots")
-		img.pixel_x = copy.offset_x[j]
-		img.pixel_y = copy.offset_y[j]
-		c.add_overlay(img)
+			grey_state = "paper_stamp-dots"
+		grey_marks = (grey_marks || list()) + list(list(grey_state, mark[2], mark[3]))
+	c.set_stamp_marks(grey_marks)
 	c.updateinfolinks()
 	if(need_toner)
-		toner--
+		set_toner(toner - 1)
 	if(toner == 0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A [span_red("red")] light on \the [src] flashes, indicating that it is out of toner."))
@@ -274,9 +282,9 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 		p.tiny.MapColors(rgb(77,77,77), rgb(150,150,150), rgb(28,28,28), rgb(100,100,100))
 	p.icon = I
 	if(need_toner)
-		toner -= 5	//photos use a lot of ink!
+		set_toner(toner - 5)	//photos use a lot of ink!
 	if(toner < 0)
-		toner = 0
+		set_toner(0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 
@@ -343,15 +351,15 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	p.pixel_x = rand(-10, 10)
 	p.pixel_y = rand(-10, 10)
 	p.img = temp_img
-	p.drop_sound = 'sound/items/drop/paper.ogg'
+	p.set_drop_sound('sound/items/drop/paper.ogg')
 	var/icon/small_img = icon(temp_img) // Icon() is needed or else temp_img will be rescaled too >.>
 	var/icon/ic = icon('icons/obj/items.dmi',"photo")
 	small_img.Scale(8, 8)
 	ic.Blend(small_img,ICON_OVERLAY, 10, 13)
 	p.icon = ic
-	toner -= 10 // PHOTOCOPYING YOUR ASS IS EXPENSIVE (And so you can't just spam it a bunch).
+	set_toner(toner - 10) // PHOTOCOPYING YOUR ASS IS EXPENSIVE (And so you can't just spam it a bunch).
 	if(toner < 0)
-		toner = 0
+		set_toner(0)
 		playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 		visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 	return p
@@ -363,7 +371,7 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	var/obj/item/paper_bundle/p = new /obj/item/paper_bundle (src)
 	for(var/obj/item/W in bundle.pages)
 		if(toner <= 0 && need_toner)
-			toner = 0
+			set_toner(0)
 			playsound(src, "sound/machines/buzz-sigh.ogg", 100)
 			visible_message(span_notice("A red light on \the [src] flashes, indicating that it is out of toner."))
 			break
@@ -376,8 +384,6 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 		rel_add(p, nameof(p.pages), W)
 
 	p.forceMove(src.loc)
-	p.update_icon()
-	p.icon_state = "paper_words"
 	p.name = bundle.name
 	p.pixel_y = rand(-8, 8)
 	p.pixel_x = rand(-9, 9)
@@ -391,7 +397,7 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	for(var/obj/item/clothing/C in contents_of(M))
 		if(M.item_is_in_hands(C))
 			continue
-		if((C.body_parts_covered & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))
+		if((worn_of(C).covers & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))
 			to_chat(M, span_warning("One needs to not be wearing pants to photocopy one's ass..."))
 			return FALSE
 	return TRUE
@@ -403,8 +409,9 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	icon = 'icons/obj/device.dmi'
 	icon_state = "tonercartridge"
 	var/toner_amount = 30
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/toner)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/machinery/photocopier/ownership()
 	. = ..()

@@ -5,13 +5,8 @@
  * Utensils
  */
 /obj/item/material/kitchen/utensil
-	drop_sound = SFX_ITEMS_DROP_KNIFE
-	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	w_class = ITEMSIZE_TINY
 	thrown_force_divisor = 1
-	attack_verb = list("attacked", "stabbed", "poked")
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
@@ -21,21 +16,25 @@
 
 	var/list/food_inserted_micros
 
-DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
-/obj/item/material/kitchen/utensil/Initialize(mapload)
-	. = ..()
-	if (prob(60))
-		src.pixel_y = rand(0, 4)
+CAPABILITIES(/obj/item/material/kitchen/utensil)
+	configure(item_combat(attack_verbs = list("attacked", "stabbed", "poked"), sharp = TRUE, edge = TRUE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
+	reagents(nameof(scoop_volume))
+	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+	// Feeding someone else takes five seconds; the one fed has to still be beside the feeder when it ends.
+	op("force_feed", ai(), takes("patient"), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(force_feed_done)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/kitchen/utensil/appearance_overlays()
-	. = list()
-	. += ..()
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
+	return R.chance(60) ? R.number(0, 4) : pixel_y
+
+TRACKED(/obj/item/material/kitchen/utensil, loaded)
+
+/obj/item/material/kitchen/utensil/draw(datum/look/look)
+	..()
 	if(loaded)
-		var/image/I = new(icon, "loadedfood")
-		I.color = loaded_color
-		. += I
+		look.overlay(look_appearance(icon, "loadedfood", color = loaded_color))
 
 /obj/item/material/kitchen/utensil/proc/load_food(mob/user, obj/item/reagent_containers/food/snacks/loading)
 	if (reagents.total_volume > 0)
@@ -45,16 +44,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 		to_chat(user, span_notice("Nothing to scoop up in \the [loading]!"))
 		return
 
-	loaded = "\the [loading]"
+	set_loaded("\the [loading]")
 	act_message(user, src, MSG_SELF(span_notice("You scoop up some of [loaded] with %T%!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " scoops up some of [loaded] with %T%!")))
 	loading.bitecount++
 	loading.reagents.trans_to_obj(src, min(loading.reagents.total_volume, scoop_volume))
-	loaded_color = loading.filling_color
+	set_loaded_color(loading.filling_color)
 
 	if(loading.food_inserted_micros && loading.food_inserted_micros.len)
 		if(!food_inserted_micros)
-			own_set(src, nameof(food_inserted_micros), list())
+			rel_set(src, nameof(food_inserted_micros), list())
 
 		for(var/mob/living/F in loading.food_inserted_micros)
 			var/do_transfer = FALSE
@@ -67,26 +66,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 					do_transfer = TRUE
 
 			if(do_transfer)
-				own_add(src, nameof(src.food_inserted_micros), F, into = TRUE) // out of the food, whose food_inserted_micros lets it go
+				move_into(src, nameof(src.food_inserted_micros), F) // out of the food, whose food_inserted_micros lets it go
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
-	update_icon()
 
-/obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
-	if(!loaded)
-		return
+/obj/item/material/kitchen/utensil/proc/force_feed_done(datum/act/op/A)
+	var/mob/living/carbon/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	if(!loaded || QDELETED(M) || !user.Adjacent(M))
+		return OP_FAILED
 	act_message(user, M, others = span_bold("%U%") + " feeds some of [loaded] to %T% with \the [src].")
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
-	loaded = null
-	update_icon()
+	set_loaded(null)
+	return OP_OK
 
 /obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M))
 		return ..()
 
 	if(stance != I_HELP)
-		if(user.zone_sel.selecting == BP_HEAD || user.zone_sel.selecting == O_EYES)
+		if(hud_of(user)?.zone_sel?.selecting == BP_HEAD || hud_of(user)?.zone_sel?.selecting == O_EYES)
 			if(CLUMSY_HARM_CHANCE(user))
 				M = user
 			return eyestab(M,user)
@@ -101,7 +101,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 				if(!can_food_vore(M, F))
 					F.forceMove(get_turf(src))
 				else
-					M.vore_selected.nom_atom(F)
+					vore_selected_of(M).nom_atom(F)
 		if(M == user)
 			if(!M.can_eat(loaded))
 				return ITEM_INTERACT_FAILURE
@@ -110,11 +110,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 			act_message(user, M, others = span_warning("%U% begins to feed %T%!"))
 			if(!M.can_force_feed(user, loaded))
 				return ITEM_INTERACT_FAILURE
-			om_task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
+			perform_op(user, src, "force_feed", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M))
 			return ITEM_INTERACT_SUCCESS
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
-		loaded = null
-		update_icon()
+		set_loaded(null)
 		return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You don't have anything on \the [src]."))	//if we have help intent and no food scooped up DON'T STAB OURSELVES WITH THE FORK
@@ -140,9 +139,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	name = "fork"
 	desc = "It's a fork. Sure is pointy."
 	icon_state = "fork"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/fork)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/fork/plastic
 	default_material = MAT_PLASTIC
@@ -151,9 +151,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	name = "foon"
 	desc = "It's a foon. The forgotten cousin of the spork."
 	icon_state = "foon"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/foon)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/foon/plastic
 	default_material = MAT_PLASTIC
@@ -162,9 +163,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	name = "spork"
 	desc = "It's a spork. The (un)holy merger of a spoon and fork."
 	icon_state = "spork"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/spork)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 
 /obj/item/material/kitchen/utensil/spork/plastic
 	default_material = MAT_PLASTIC
@@ -173,11 +175,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	name = "spoon"
 	desc = "It's a spoon. You can see your own upside-down face in it."
 	icon_state = "spoon"
-	attack_verb = list("attacked", "poked")
-	edge = FALSE
-	sharp = FALSE
 	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1 //2 when wielded with weight 20 (steel)
+
+CAPABILITIES(/obj/item/material/kitchen/utensil/spoon)
+	configure(item_combat(attack_verbs = list("attacked", "poked"), edge = FALSE, sharp = FALSE))
 
 /obj/item/material/kitchen/utensil/spoon/plastic
 	default_material = MAT_PLASTIC
@@ -205,22 +207,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	name = "rolling pin"
 	desc = "Used to knock out the " + JOB_BARTENDER+ "."
 	icon_state = "rolling_pin"
-	attack_verb = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")
 	default_material = MAT_WOOD
 	force_divisor = 0.7 // 10 when wielded with weight 15 (wood)
 	dulled_divisor = 0.75	// Still a club
 	thrown_force_divisor = 1 // as above
-	drop_sound = SFX_ITEMS_DROP_WOODEN
-	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
+
+CAPABILITIES(/obj/item/material/kitchen/rollingpin)
+	configure(item_combat(attack_verbs = list("bashed", "battered", "bludgeoned", "thrashed", "whacked")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/material/kitchen/rollingpin/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_warning("\The [src] slips out of your hand and hits your head."))
 		user.injure(INJURY_BLUNT, 10, BP_HEAD, src)
-		user.status_at_least(EFFECT_PARALYZED, 2)
+		user.status_at_least(STAT_PARALYZED, 2)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
 /obj/item/material/kitchen/utensil/ownership()
 	. = ..()
-	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL)
+	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL, is_list = TRUE)

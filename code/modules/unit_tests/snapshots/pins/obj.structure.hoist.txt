@@ -1,0 +1,29 @@
+human|none menu: Collapse Hoist
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Collapse Hoist
+robot|none menu: Use
+robot|none click: Click: Use
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/tool/wrench
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/multitool
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/weldingtool
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item/card/id
++0 menu: Collapse Hoist
+@obj.structure human|/obj/item
++0 menu: Collapse Hoist
+keys: drag_buckle, hand, hoist_verb_collapse, melee_hit, silicon_hand

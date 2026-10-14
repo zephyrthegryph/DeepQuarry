@@ -5,14 +5,12 @@
 /obj/structure/disposalpipe/junction
 	icon_state = "pipe-j1"
 
+CAPABILITIES(/obj/structure/disposalpipe/junction)
+	derives(nameof(dpdir), PROC_REF(junction_ends)) // at init: the pipe's ends follow how it was placed
+
+// ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/junction/Initialize(mapload)
 	. = ..()
-	if(icon_state == "pipe-j1")
-		dpdir = dir | turn(dir, -90) | turn(dir,180)
-	else if(icon_state == "pipe-j2")
-		dpdir = dir | turn(dir, 90) | turn(dir,180)
-	else // pipe-y
-		dpdir = dir | turn(dir,90) | turn(dir, -90)
 	update()
 	return
 
@@ -55,6 +53,7 @@
 	var/last_sort = FALSE
 	var/sort_scan = TRUE
 	var/panel_open = FALSE
+TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 
 /obj/structure/disposalpipe/sortjunction/proc/updatedesc()
 	desc = initial(desc)
@@ -88,17 +87,16 @@
 	if(sortType)
 		LAZYADD(GLOB.tagger_locations["[sortType]"], get_z(src))
 
-	set_wires(new /datum/wires/disposals(src))
 
 	updatedir()
 	updatename()
 	updatedesc()
 	update()
 
-DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/disposalpipe/sortjunction/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposalpipe/sortjunction/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 
 	if(istype(I, /obj/item/destTagger))
 		var/obj/item/destTagger/O = I
@@ -113,26 +111,29 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 			to_chat(user, span_blue("Changed filter to '[sortType]'."))
 			updatename()
 			updatedesc()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
-	panel_open = !panel_open
-	playsound(src, I.usesound, 100, 1)
+/obj/structure/disposalpipe/sortjunction/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	set_panel_open(!panel_open)
+	playsound(src, sounds_of(I).use, 100, 1)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)
+/obj/structure/disposalpipe/sortjunction/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	wires_open(src, user)
+	return OP_OK
 
-/obj/structure/disposalpipe/sortjunction/wirecutter_act(mob/user, obj/item/I)
+/obj/structure/disposalpipe/sortjunction/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	wires_open(src, user)
+	return OP_OK
 
 /obj/structure/disposalpipe/sortjunction/proc/divert_check(checkTag)
 	return sortType == checkTag
@@ -145,10 +146,10 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 /obj/structure/disposalpipe/sortjunction/nextdir(fromdir, sortTag)
 	if(sort_scan)
 		if(divert_check(sortTag))
-			if(!wires.is_cut(WIRE_SORT_SIDE))
+			if(!wire_is_cut(src, WIRE_SORT_SIDE))
 				last_sort = TRUE
 		else
-			if(!wires.is_cut(WIRE_SORT_FORWARD))
+			if(!wire_is_cut(src, WIRE_SORT_FORWARD))
 				last_sort = FALSE
 	if(fromdir != sortdir && last_sort)
 		return sortdir
@@ -156,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 	return dir
 
 /obj/structure/disposalpipe/sortjunction/proc/reset_scan()
-	if(!wires.is_cut(WIRE_SORT_SCAN))
+	if(!wire_is_cut(src, WIRE_SORT_SCAN))
 		sort_scan = TRUE
 
 /obj/structure/disposalpipe/sortjunction/transfer(obj/structure/disposalholder/H)
@@ -178,12 +179,11 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
-DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/disposalpipe/sortjunction/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/structure/disposalpipe/sortjunction/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(panel_open)
-		. += "[icon_state]-open"
+		look.overlay("[drawn_state]-open")
 
 //a three-way junction that filters all wrapped and tagged items
 /obj/structure/disposalpipe/sortjunction/wildcard
@@ -262,3 +262,49 @@ DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(
 	return H.destinationTag
 
 #undef CORPSE_SORT_TAG
+
+// ---- the wires ----
+
+CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Disposals Sorting Pipe", count = 6, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_SORT_SCAN, cut = PROC_REF(scan_wire_cut), pulse = PROC_REF(scan_wire_pulsed))
+	on_wire(WIRE_SORT_FORWARD, pulse = PROC_REF(forward_wire_pulsed))
+	on_wire(WIRE_SORT_SIDE, pulse = PROC_REF(side_wire_pulsed))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+
+
+/obj/structure/disposalpipe/sortjunction/proc/wire_lights()
+	return list(
+		"The sorting light is [last_sort ? "green" : "red"].",
+		"The scan light is [sort_scan ? "lit" : "off"].")
+
+/// The scan wire cut freezes the sorter for good; mended, it scans again.
+/obj/structure/disposalpipe/sortjunction/proc/scan_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	sort_scan = N.mended
+
+/// The scan wire pulsed freezes sorting for ten seconds.
+/obj/structure/disposalpipe/sortjunction/proc/scan_wire_pulsed(datum/act/A)
+	if(sort_scan)
+		sort_scan = FALSE
+	after(src, 10 SECONDS, PROC_REF(reset_scan))
+
+/// A frozen sorter sends things forward.
+/obj/structure/disposalpipe/sortjunction/proc/forward_wire_pulsed(datum/act/A)
+	last_sort = FALSE
+
+/// A frozen sorter sends things aside.
+/obj/structure/disposalpipe/sortjunction/proc/side_wire_pulsed(datum/act/A)
+	last_sort = TRUE
+
+/// A junction joins three ends: the two sides of a j1 or j2 and the way it faces, or the two arms of a y.
+/obj/structure/disposalpipe/junction/proc/junction_ends()
+	if(icon_state == "pipe-j1")
+		return dir | turn(dir, -90) | turn(dir, 180)
+	if(icon_state == "pipe-j2")
+		return dir | turn(dir, 90) | turn(dir, 180)
+	return dir | turn(dir, 90) | turn(dir, -90) // pipe-y

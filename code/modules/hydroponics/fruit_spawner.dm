@@ -5,17 +5,17 @@
 	icon_state = "no name"
 	var/seedtype = null
 
-MAP_RESOLVER(/obj/fruitspawner, GLOBAL_PROC_REF(resolve_fruitspawner))
-MAP_RESOLVER_VARS(/obj/fruitspawner, "seedtype")
+CAPABILITIES(/obj/fruitspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_fruitspawner), vars = list("seedtype"))
 
-/// MAP_RESOLVER for fruit spawners: one harvest of the seed, into the closet on the tile if any
+/// The map resolver of fruit spawners: one harvest of the seed, into the closet on the tile if any
 /// (or into what holds the spawner).
 /proc/resolve_fruitspawner(atom/loc, path, list/varedits)
 	var/obj/fruitspawner/P = path
 	var/seedtype = MAP_VAR(P, varedits, seedtype)
-	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
+	if(!seedtype || !SSplants.seeds[seedtype])
 		return TRUE
-	var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
+	var/datum/seed/S = SSplants.seeds[seedtype]
 	S.harvest(map_spawn_container(loc), 0, 0, 1)
 	return TRUE
 

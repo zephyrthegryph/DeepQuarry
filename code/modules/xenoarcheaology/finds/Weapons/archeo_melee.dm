@@ -16,15 +16,6 @@
 	desc = "A mysterious blade that emanates terrifying power"
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	force = 30
-	throwforce = 10
-	toolspeed = 5 //Syncs perfectly with the animation time.
-	hitsound = SFX_WEAPONS_BLADESLICE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
 	var/stored_blood = 0 //How much energy we have!
@@ -36,15 +27,24 @@
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
 
 //The last human that touched us (an OM handle): the blade works on them while it has one.
-OM_FIELD_VIEW(/obj/item/melee/artifact_blade, tmp/mob/living/carbon/human, last_touched, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touched")
+/obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
+
+CAPABILITIES(/obj/item/melee/artifact_blade)
+	configure(item_tooling(speed = 5))
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
+	op("convert_turf", ai(), takes("turf"), wait(PROC_REF(convert_time)), then(PROC_REF(convert_turf_done)))
+	ref_one(nameof(last_touched))
+	every(2 SECONDS, then(PROC_REF(artifact_blade_step)), when = nameof(last_touched))
+	op("blade_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
 	if(stored_blood && user == last_touched())
 		. += span_cult("You can sense the blade has about " + span_bold("[stored_blood]") + " lifeforce contained within it.")
 
-/obj/item/melee/artifact_blade/periodic_step()
+/obj/item/melee/artifact_blade/proc/artifact_blade_step(datum/act/timer/A)
 	if(!last_touched() || !stored_blood) //Nobody has touched us yet or we have no energy...For now.
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
@@ -63,18 +63,19 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 			return
 
 // a charged blade punishes its wielder.
+DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(message = "%SRC% screeches as it's destroyed", message_class = "cult"))
+
 /obj/item/melee/artifact_blade/on_destroy(force)
 	if(stored_blood && last_touched() && last_touched().stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched(), span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))
-		last_touched().status_at_least(EFFECT_PARALYZED, 10)
-		last_touched().status_at_least(EFFECT_SLEEPING, 10)
-		last_touched().status_adjust(EFFECT_JITTERY, 1000)
-		last_touched().status_adjust(EFFECT_BLURRY, 10)
+		last_touched().status_at_least(STAT_PARALYZED, 10)
+		last_touched().status_at_least(STAT_SLEEPING, 10)
+		last_touched().status_adjust(STAT_JITTERY, 1000)
+		last_touched().status_adjust(STAT_BLURRY, 10)
 		last_touched().apply_body_effect(/datum/body_effect/agonize, 30 SECONDS)
 		blood_splatter(last_touched(), last_touched(), 1)
 		if(last_touched().loc)
 			conjure_animation(last_touched().loc)
-	visible_message(span_cult("\The [src] screeches as it's destroyed"))
 	var/turf/T = get_turf(last_touched())
 	if(istype(T))
 		lightning_strike(T, TRUE)
@@ -88,9 +89,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 	if(M == user) //No accidentally hitting yourself and exploding.
 		return
 	var/zone = (user.hand ? BP_L_ARM:BP_R_ARM) //Which arm we're in!
-	var/prior_force = force
+	var/prior_force = combat_of(src).force
 	if(empowered)
-		force = force*2
+		set_force(combat_of(src).force*2)
 		empowered = 0
 	/// First, we check a few things.
 	/// Check 1: We aren't a cultist and they're a human AND they're not AI controlled
@@ -101,9 +102,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 		act_message(user, null, others = span_cult("%U%'s arm is engulfed in dark flames!"))
 		to_chat(user, span_cult("An inexplicable force rips through your arm as it's engulfed in flames, tearing the sword from your grasp!"))
 		user.drop_from_inventory(src, user.loc)
-		user.status_at_least(EFFECT_WEAKENED, 5)
+		user.status_at_least(STAT_WEAKENED, 5)
 		throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,10),5)
-		user.injure(INJURY_BURN, rand(force/2, force), zone, src)
+		user.injure(INJURY_BURN, rand(combat_of(src).force/2, combat_of(src).force), zone, src)
 		return ITEM_INTERACT_SUCCESS
 
 	..() //We hit them!
@@ -126,7 +127,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 
 		/// If the thing we're hitting is dead, our faction, friendly, or synthetic, we get no blood.
 		if(M.stat < DEAD && M.faction != user.faction && !ispassive(M) && !issilicon(M) && !isbot(M) && !isslime(M))
-			stored_blood += force
+			stored_blood += combat_of(src).force
 
 	//If the user isn't 'worthy' they get a single swing before the sword THROWS itself away from them. Possibly even off-screen!
 	else if(istype(user, /mob/living/simple_mob/construct))
@@ -143,7 +144,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 		var/spooky = SFX_EFFECTS_GHOST_MIX //It's just a cursed, talking sword. Nothing to fear!
 		playsound(src, spooky, 50, 1)
 
-	force = prior_force //Return our force back.
+	set_force(prior_force)//Return our force back.
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/melee/artifact_blade/pickup(mob/living/user as mob)
@@ -153,38 +154,83 @@ DECLARE_PERIODIC_WHILE(/obj/item/melee/artifact_blade, PERIODIC_SLOW, "last_touc
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
 		rel_set(src, nameof(last_touched), user)
 
-DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
 
-/// Requirement: the blade rests between actions.
-/obj/item/melee/artifact_blade/proc/cooled_down(mob/user, atom/target, obj/item/held)
-	return COOLDOWN_FINISHED(src, special_cooldown) ? TRUE : "the blade does not respond to your attempts, having recently performed an action"
+/// Old attack_self. The blade rests between actions (a cooldown is no tracked state, so it is refused here rather than by a requirement).
+/obj/item/melee/artifact_blade/proc/interaction_self(datum/act/op/A)
+	if(!COOLDOWN_FINISHED(src, special_cooldown))
+		to_chat(A.actor, span_warning("the blade does not respond to your attempts, having recently performed an action"))
+		return OP_OK
+	blade_action_stage(A.actor, A.held, list())
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/artifact_blade/proc/blade_action_stage(mob/user, obj/item/held, list/answers)
 	COOLDOWN_START(src, special_cooldown, 12 SECONDS)
 	if(stored_blood < 10)
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))
 		return TRUE
 	if(stored_blood >= 10)
-		var/choice = rerun_ask(user, "k176", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What action do you wish to have the blade perform?", title = "Download", choices = abilities)
+		var/choice = answers["k176"]
+		if(!("k176" in answers))
+			open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k176", question = "What action do you wish to have the blade perform?", title = "Download", choices = abilities)
+			return TRUE
 		if(isnull(choice))
 			return TRUE
 		if(choice && loc == user)
 			switch(choice)
 				if("Consecrate")
-					var/decision2 = rerun_ask(user, "k180", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", title = "Consecrate!", choices = list("Toggle on", "Toggle off"))
+					var/decision2 = answers["k180"]
+					if(!("k180" in answers))
+						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k180", question = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", title = "Consecrate!", choices = list("Toggle on", "Toggle off"), buttons = TRUE)
+						return TRUE
 					if(isnull(decision2))
 						return TRUE
 					consecrate_toggle(user, decision2)
 					return TRUE
 				/// Spawning logic. Checks the 'summonables' list.
 				if("Summon")
-					var/summoned_item = rerun_ask(user, "k185", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What do you wish to summon?", title = "Summon", choices = summonables)
+					var/summoned_item = answers["k185"]
+					if(!("k185" in answers))
+						open_request(src, /datum/prompt/choice/artifact_blade_action, PROC_REF(blade_action_answered), answerer = user, held_item = held, answers = answers, answer_key = "k185", question = "What do you wish to summon?", title = "Summon", choices = summonables)
+						return TRUE
 					if(isnull(summoned_item))
 						return TRUE
 					summon_item(user, summoned_item)
 					return TRUE
 	return TRUE
+
+/// Replay keeps the original borrowed invocation arguments and answers for each branch.
+/datum/prompt/choice/artifact_blade_action
+	timeout = 0
+	var/obj/item/held_item
+	var/held_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
+	ref_one(nameof(held_item), /obj/item)
+
+/datum/prompt/choice/artifact_blade_action/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/captured_held = held_item
+	held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(held_item))
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(held_item), captured_held)
+
+/datum/prompt/choice/artifact_blade_action/recheck_extra()
+	if((held_expected && QDELETED(held_item)))
+		return "gone"
+
+/obj/item/melee/artifact_blade/proc/blade_action_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = blade_action_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/melee/artifact_blade/proc/blade_action_apply(datum/act/request/A)
+	var/datum/prompt/choice/artifact_blade_action/ask = A.answer
+	ask.answers[ask.answer_key] = ask.value
+	return blade_action_stage(ask.answerer, ask.held_item, ask.answers)
 
 /obj/item/melee/artifact_blade/proc/consecrate_toggle(mob/user as mob, toggle)
 	switch(toggle)
@@ -204,10 +250,13 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 /// To add to the list: Add-Item, Multi-line text (Front-facing name), Associated value = yes, Atom Typepath = whatever you want.
 /// This should appear something like " Paper = /obj/item/paper " if you did it right, and will let them summon paper!
 /obj/item/melee/artifact_blade/proc/summon_item(mob/user as mob, selected_item)
+	return summon_item_stage(user, selected_item, null)
+
+/obj/item/melee/artifact_blade/proc/summon_item_stage(mob/user, selected_item, decision2)
 	if(selected_item)
 		if(selected_item == "Soulstone")
-			var/decision2 = rerun_ask(user, "k209", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", title = "Generate Gem", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", title = "Generate Gem")
 				return
 			if(stored_blood < 200)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -222,8 +271,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 			else
 				return
 		if(selected_item == "Shell")
-			var/decision2 = rerun_ask(user, "k223", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", title = "Generate Shell", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", title = "Generate Shell")
 				return
 			if(stored_blood < 500)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -239,8 +288,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 		/// In some cases, if a xenoarch was REALLY unlucky, they could only find 3-4 large artifacts in the (readily) available Z levels without scouring the entire universe.
 		/// So this acts as a "You sacrifice a LOT to get a random artifact"
 		if(selected_item == "Cultic Artifact")
-			var/decision2 = rerun_ask(user, "k238", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", title = "Generate Artifact", choices = list("YES", "NO"))
 			if(isnull(decision2))
+				open_request(src, /datum/prompt/choice/artifact_blade_summon, PROC_REF(summon_item_answered), answerer = user, selected_item = selected_item, question = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", title = "Generate Artifact")
 				return
 			if(stored_blood < 1000)
 				to_chat(user, span_cult("The blade does not have enough lifeforce!"))
@@ -266,6 +315,23 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 	else
 		return
 
+/datum/prompt/choice/artifact_blade_summon
+	timeout = 0
+	choices = list("YES", "NO")
+	buttons = TRUE
+	var/selected_item
+
+/obj/item/melee/artifact_blade/proc/summon_item_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = summon_item_apply(context)
+	SStgui.update_uis(src)
+	return .
+
+/obj/item/melee/artifact_blade/proc/summon_item_apply(datum/act/request/context)
+	var/datum/prompt/choice/artifact_blade_summon/request = context.answer
+	return summon_item_stage(request.answerer, request.selected_item, request.value)
+
 /// While this COULD just use the cultify() proc ultimately, I decided against that as this isn't meant to be
 /// Some sort of weapon of mass destruction. It's supposed to be a funny, spooky artifact that you find.
 /// Thus, it uses the 'occult_act' proc, which does a HEAVILY watered down version of the cultify() proc.
@@ -283,20 +349,25 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 	animation.icon = 'icons/effects/effects.dmi'
 	animation.plane = OBJ_PLANE
 	animation.layer = ABOVE_JUNK_LAYER
-	animation.icon_state = "cultwall"
+	animation.set_icon_state("cultwall")
 	flick("cultwall",animation)
-	om_qdel_after(animation, 1 SECOND)
+	animation.expire(1 SECOND)
 
 /// When it actually, properly converts the turf.
 /obj/item/melee/artifact_blade/proc/convert_turf(atom/A, mob/living/user) //Shamelessly taken from RCD code.
 	if(stored_blood < consecration_cost)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
-	conjure_animation(A, toolspeed)
-	om_task_timed(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
+	conjure_animation(A, tooling_of(src).speed)
+	perform_op(user, src, "convert_turf", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("turf" = A))
 	return TRUE
 
-/obj/item/melee/artifact_blade/proc/convert_turf_done(atom/A, mob/living/user)
+/obj/item/melee/artifact_blade/proc/convert_time(datum/act/op/A)
+	return tooling_of(src).speed
+
+/obj/item/melee/artifact_blade/proc/convert_turf_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("turf")
+	var/mob/living/user = op_act.actor
 	if(stored_blood < consecration_cost)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return

@@ -8,10 +8,14 @@
 	desc = "An ancient trick-taking card game from a bygone-Earth country. For 2 players!"
 	icon_state = "deck"
 
-/obj/item/deck/schnapsen/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/deck/schnapsen)
+	owns_many(nameof(cards), starts = PROC_REF(starting_cards))
+
+/// The cards it starts with (owns_many(starts =)).
+/obj/item/deck/schnapsen/proc/starting_cards()
 	var/datum/playingcard/P
 	var/colour
+	. = list()
 	for(var/suit in list("acorns","leaves","bells","hearts"))
 		switch(suit)
 			if("acorns") colour = "acorn_"
@@ -26,4 +30,4 @@
 			else
 				P.card_icon = "[colour]col"
 			P.back_icon = "card_back"
-			own_add(src, nameof(cards), P)
+			. += P

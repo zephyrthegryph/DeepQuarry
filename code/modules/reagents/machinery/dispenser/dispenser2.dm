@@ -20,7 +20,6 @@
 	var/max_catriges = 30
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100
 	anchored = TRUE
 	unacidable = TRUE
 
@@ -30,12 +29,49 @@
 	var/list/saved_recipes
 	var/import_job = JOB_CHEMIST
 
+CAPABILITIES(/obj/machinery/chemical_dispenser)
+	configure(uses_power(idle = 100))
+	rotatable()
+	owns_one(nameof(container), /obj/item/reagent_containers)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
+	interface("ChemDispenser", observe = TRUE)
+	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
+	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
+	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))
+	op("remove", ui_act("remove", arg("amount", num()), arg("reagent")), then(PROC_REF(ui_act_remove)))
+	op("ejectBeaker", ui_act("ejectBeaker"), then(PROC_REF(ui_act_ejectbeaker)))
+	op("import_config", ui_act("import_config", arg("config")), then(PROC_REF(ui_act_import_config)))
+	op("record_recipe", ui_act("record_recipe"), then(PROC_REF(ui_act_record_recipe)))
+	op("cancel_recording", ui_act("cancel_recording"), then(PROC_REF(ui_act_cancel_recording)))
+	op("clear_recipes", ui_act("clear_recipes"),
+		asks(/datum/prompt/choice, fields = list("question" = "Clear all recipes?", "title" = "Clear?", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "a1"),
+		then(PROC_REF(ui_act_clear_recipes)))
+	// the name, then (only when a recipe has that name) whether to overwrite it
+	op("save_recording", ui_act("save_recording"),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name this recipe?", "title" = "Recipe Name?", "default" = "Recipe Name", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "a2"),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(recipe_overwrite_question)), "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "a3", when = PROC_REF(recipe_name_taken)),
+		then(PROC_REF(ui_act_save_recording)))
+	op("dispense_recipe", ui_act("dispense_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_dispense_recipe)))
+	op("remove_recipe", ui_act("remove_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_remove_recipe)))
+	extend(TAG_UI, needs(req(PROC_REF(not_broken), silent = TRUE)))
+	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
+	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
+	// A chemical canister refills the cartridge under its label (it was the canister's afterattack, which the dispenser's ops now answer first).
+	op("refill_cartridge", item(/obj/item/reagent_containers/chem_canister), label("Refill cartridge"), then(PROC_REF(canister_refill)))
+	op("set_container", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Set container"),
+		needs(req(PROC_REF(no_container), silent = TRUE), req(PROC_REF(can_take_container))), then(PROC_REF(container_set)))
+	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Dispenser", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
+
+/obj/machinery/chemical_dispenser/proc/canister_refill(datum/act/op/A)
+	var/obj/item/reagent_containers/chem_canister/C = A.held
+	C.refill_dispenser(src, A.actor)
+	return OP_OK
+
 /obj/machinery/chemical_dispenser/Initialize(mapload)
 	. = ..()
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
 			add_cartridge(new type(src))
-	make_rotatable()
 
 /obj/machinery/chemical_dispenser/examine(mob/user)
 	. = ..()
@@ -62,7 +98,7 @@
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
 
-	if(!own_put(src, nameof(src.cartridges), C.label, C, user = user, into = TRUE))
+	if(!move_into(src, nameof(src.cartridges), C, user, key = C.label))
 		return
 	if(user)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
@@ -71,79 +107,61 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
-	. = own_take_member(src, nameof(cartridges), label)
+	. = rel_take(src, nameof(cartridges), key = label)
 	SStgui.update_uis(src)
 
-/obj/machinery/chemical_dispenser/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("View", PROC_REF(chemical_dispenser_ghost_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/chemical_dispenser_add_cartridge,
-		/datum/interaction/machine_item/chemical_dispenser_set_container,
-		/datum/interaction/machine_hand/ungated/chemical_dispenser_use,
-	)
-	..()
+/// The old attackby: a cartridge goes into a free slot under its label.
+/obj/machinery/chemical_dispenser/proc/cartridge_added(datum/act/op/A)
+	add_cartridge(A.held, A.actor)
+	return OP_OK
 
-/datum/interaction/machine_item/chemical_dispenser_add_cartridge
-	id = "chemical_dispenser_add_cartridge"
-	name = "Insert cartridge"
-	held_type = /obj/item/reagent_containers/chem_disp_cartridge
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_add_cartridge
+MSG_DEF_SELF(chemical_dispenser/beakers_only, "This machine only accepts beakers.")
+MSG_DEF_SELF(chemical_dispenser/not_open, "You don't see how it could dispense reagents into %I%.")
+MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it.")
 
-/obj/machinery/chemical_dispenser/proc/interaction_add_cartridge(mob/user, obj/item/W, datum/interaction/interaction)
-	add_cartridge(W, user)
-	return TRUE
+/// No container is set on it.
+/obj/machinery/chemical_dispenser/proc/no_container(datum/act/op/A)
+	return (!container) ? null : /datum/msg/req_failed
 
-/datum/interaction/machine_item/chemical_dispenser_set_container
-	id = "chemical_dispenser_set_container"
-	name = "Set container"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_set_container
-	also_requires = list(REQ_FIELD_NOT("container"), REQ_TARGET_STATE(/obj/machinery/chemical_dispenser/proc/can_take_container))
+/// The held container can be set on the dispenser.
+/obj/machinery/chemical_dispenser/proc/can_take_container(datum/act/op/A)
+	return container_refusal(A)
 
-/// Requirement: TRUE, or why this container can't be set on the dispenser.
-/obj/machinery/chemical_dispenser/proc/can_take_container(mob/user, atom/target, obj/item/held)
+/// Why the held container can't be set on the dispenser, or null.
+/obj/machinery/chemical_dispenser/proc/container_refusal(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(!accept_drinking && istype(held, /obj/item/reagent_containers/food))
-		return "this machine only accepts beakers"
+		return MSG(chemical_dispenser/beakers_only)
 	if(!held?.is_open_container())
-		return "you don't see how it could dispense reagents into [held]"
+		return MSG(chemical_dispenser/not_open)
 	if(istype(held, /obj/item/reagent_containers/glass/cooler_bottle))
-		return "you don't see how [held] could fit into it"
-	return TRUE
+		return MSG(chemical_dispenser/no_fit)
+	return null
 
-/obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.container), RC, user = user))
-		return TRUE
+/// The old attackby: the container is set on the dispenser.
+/obj/machinery/chemical_dispenser/proc/container_set(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/RC = A.held
+	if(!move_into(src, nameof(src.container), RC, user))
+		return OP_OK
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
-	return TRUE
-
-/obj/machinery/chemical_dispenser/wrench_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
-	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
-	if(!label)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
-	if(!cartridge)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You remove \the [cartridge] from \the [src]."))
-	cartridge.forceMove(loc)
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-DECLARE_UI(/obj/machinery/chemical_dispenser, "ChemDispenser")
+	return OP_OK
 
 /obj/machinery/chemical_dispenser/ui_title(mob/user)
 	return ui_title
 
-UI_DATA_REPLACE(/obj/machinery/chemical_dispenser, "amount:num", "glass=accept_drinking:num", "recordingRecipe=recording_recipe:list", "merge:ui_data_obj_machinery_chemical_dispenser{isBeakerLoaded:num,beakerContents:list,beakerCurrentVolume:num,beakerMaxVolume:num,chemicals:list,recipes:bool}")
+/// The window's data.
+/obj/machinery/chemical_dispenser/ui_data(datum/act/eval/A)
+	. = list()
+	.["amount"] = amount
+	.["glass"] = accept_drinking
+	.["recordingRecipe"] = recording_recipe
+	var/list/part = ui_data_part_chemical_dispenser(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-/// The computed part of /obj/machinery/chemical_dispenser's window data (declared on its UI_DATA row).
-/obj/machinery/chemical_dispenser/proc/ui_data_obj_machinery_chemical_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/chemical_dispenser/proc/ui_data_part_chemical_dispenser(datum/act/eval/A)
 	var/list/data = list()
 	data["isBeakerLoaded"] = container ? 1 : 0
 
@@ -169,56 +187,63 @@ UI_DATA_REPLACE(/obj/machinery/chemical_dispenser, "amount:num", "glass=accept_d
 	data["recipes"] = (saved_recipes || list())
 	return data
 
-/obj/machinery/chemical_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(has_stat(BROKEN))
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// Requirement: a broken dispenser ignores its buttons (silently, as the old ui_act_allowed() did).
+/obj/machinery/chemical_dispenser/proc/not_broken(datum/act/op/A)
+	return (!broken_now()) ? null : /datum/msg/req_silent
 
-UI_ACT(/obj/machinery/chemical_dispenser, "amount", ui_act_amount, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_amount)
-	amount = clamp(round(params["amount"], 1), 0, 120) // round to nearest 1 and clamp 0 - 120
+/// The save question's second step: a recipe of that name exists already.
+/obj/machinery/chemical_dispenser/proc/recipe_name_taken(datum/act/op/A)
+	return !!LAZYACCESS(saved_recipes, A.step_value("a2"))
+
+/obj/machinery/chemical_dispenser/proc/recipe_overwrite_question(datum/act/op/A)
+	return "\"[A.step_value("a2")]\" already exists, do you want to overwrite it?"
+
+/obj/machinery/chemical_dispenser/proc/ui_act_amount(datum/act/op/A, amount_set)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	amount = clamp(round(amount_set, 1), 0, 120) // round to nearest 1 and clamp 0 - 120
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "dispense", ui_act_dispense, UI_ARG_TEXT("reagent"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense)
-	var/label = params["reagent"]
+/obj/machinery/chemical_dispenser/proc/ui_act_dispense(datum/act/op/A, reagent)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	var/label = reagent
 	if(recording_recipe)
 		recording_recipe += list(list("id" = label, "amount" = amount))
 	else if(LAZYACCESS(cartridges, label) && container && container.is_open_container())
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		C.reagents.trans_to(container, amount)
-		MACHINE_WAKE(src)
+		work_start(src)
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "remove", ui_act_remove, UI_ARG_NUM("amount"), UI_ARG_VALUE("reagent"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove)
-	var/amount = params["amount"]
-	if(!container || !amount || recording_recipe)
+/obj/machinery/chemical_dispenser/proc/ui_act_remove(datum/act/op/A, amount_out, reagent)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	if(!container || !amount_out || recording_recipe)
 		return
 	var/datum/reagents/R = container.reagents
-	var/id = params["reagent"]
-	if(amount > 0)
-		R.remove_reagent(id, amount)
-	else if(amount == -1) // Isolate
+	var/id = reagent
+	if(amount_out > 0)
+		R.remove_reagent(id, amount_out)
+	else if(amount_out == -1) // Isolate
 		R.isolate_reagent(id)
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "ejectBeaker", ui_act_ejectbeaker)
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_ejectbeaker)
+/obj/machinery/chemical_dispenser/proc/ui_act_ejectbeaker(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	if(container)
 		container.forceMove(get_turf(src))
-		if(Adjacent(ui.user)) // So the AI doesn't get a beaker somehow.
-			ui.user.put_in_hands(container)
-		own_take(src, nameof(/datum/cooking_item::container))
+		if(Adjacent(user)) // So the AI doesn't get a beaker somehow.
+			user.put_in_hands(container)
+		rel_take(src, nameof(container))
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "import_config", ui_act_import_config, UI_ARG_LIST("config"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_import_config)
-	var/list/our_data = params["config"]
+/obj/machinery/chemical_dispenser/proc/ui_act_import_config(datum/act/op/A, config)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	var/list/our_data = config
 	if(!islist(our_data))
 		return FALSE
 	var/list/new_recipes = list()
@@ -228,36 +253,33 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_import_config)
 				if(istext(steps["id"]) && isnum(steps["amount"]))
 					new_recipes[key] += list(list("id" = steps["id"], "amount" = steps["amount"]))
 	if(length(new_recipes))
-		saved_recipes = new_recipes
+		set_saved_recipes(new_recipes)
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "record_recipe", ui_act_record_recipe)
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_record_recipe)
+/obj/machinery/chemical_dispenser/proc/ui_act_record_recipe(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	recording_recipe = list()
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "cancel_recording", ui_act_cancel_recording)
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_cancel_recording)
+/obj/machinery/chemical_dispenser/proc/ui_act_cancel_recording(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	recording_recipe = null
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "clear_recipes", ui_act_clear_recipes)
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_clear_recipes)
-	var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Clear all recipes?", title = "Clear?", choices = list("No", "Yes"))
-	if(isnull(_answer_a1))
-		return
-	if(_answer_a1 == "Yes")
-		saved_recipes = list()
+/obj/machinery/chemical_dispenser/proc/ui_act_clear_recipes(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	if(A.step_value("a1") == "Yes")
+		set_saved_recipes(list())
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "save_recording", ui_act_save_recording)
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_save_recording)
-	var/name = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
-	if(isnull(name))
-		return
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return
-	if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
+/obj/machinery/chemical_dispenser/proc/ui_act_save_recording(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	var/name = A.step_value("a2")
+	if(LAZYACCESS(saved_recipes, name) && A.step_value("a3") != "Yes")
 		return
 	if(name && recording_recipe)
 		for(var/list/L in recording_recipe)
@@ -265,22 +287,23 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_save_recording)
 			// Verify this dispenser can dispense every chemical
 			if(!LAZYACCESS(cartridges, label))
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
-				to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
+				to_chat(user, span_warning("[src] cannot find <b>[label]</b>!"))
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				return
-		LAZYSET(saved_recipes, name, recording_recipe)
+		set_saved_recipes_at(name, recording_recipe)
 		recording_recipe = null
 		. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "dispense_recipe", ui_act_dispense_recipe, UI_ARG_TEXT("recipe"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense_recipe)
-	var/list/chemicals_to_dispense = LAZYACCESS(saved_recipes, params["recipe"])
+/obj/machinery/chemical_dispenser/proc/ui_act_dispense_recipe(datum/act/op/A, recipe)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	var/list/chemicals_to_dispense = LAZYACCESS(saved_recipes, recipe)
 	if(!LAZYLEN(chemicals_to_dispense))
 		return
 
 	if(!recording_recipe)
 		if(!container)
-			to_chat(ui.user, span_warning("There is no beaker in [src]."))
+			to_chat(user, span_warning("There is no beaker in [src]."))
 			return
 
 		for(var/list/L in chemicals_to_dispense)
@@ -290,46 +313,45 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense_recipe)
 			var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 			if(!C)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
-				to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
+				to_chat(user, span_warning("[src] cannot find <b>[label]</b>!"))
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				break
 
 			// Allows copying recipes
 			play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 			var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
-			MACHINE_WAKE(src)
+			work_start(src)
 			if(dispense_amount != amount_actually_dispensed)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
-				to_chat(ui.user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))
+				to_chat(user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 				break
 	else
 		recording_recipe += chemicals_to_dispense
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "remove_recipe", ui_act_remove_recipe, UI_ARG_TEXT("recipe"))
-UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove_recipe)
-	LAZYREMOVE(saved_recipes, params["recipe"])
+/obj/machinery/chemical_dispenser/proc/ui_act_remove_recipe(datum/act/op/A, recipe)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	remove_saved_recipes(recipe)
 	. = TRUE
 
-/// Old attack_ghost: view the interface unless broken. Never fell through.
-/obj/machinery/chemical_dispenser/proc/chemical_dispenser_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!has_stat(BROKEN))
-		tgui_interact(user)
-	return TRUE
-
-/datum/interaction/machine_hand/ungated/chemical_dispenser_use
-	id = "chemical_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/chemical_dispenser/proc/interaction_use
-
-/obj/machinery/chemical_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(BROKEN))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
-
-/obj/machinery/chemical_dispenser/ownership()
-	. = ..()
-	. += owns(nameof(container), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.
+
+/// The cartridges the screwdriver's question offers, by label.
+/obj/machinery/chemical_dispenser/proc/cartridge_choices(datum/act/A)
+	return cartridges
+
+/// The screwdriver's answer: that cartridge comes out.
+/obj/machinery/chemical_dispenser/proc/cartridge_chosen(datum/act/op/A)
+	var/obj/item/tool = A.held
+	var/label = A.answer?.value
+	if(!label)
+		return OP_OK
+	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
+	if(!cartridge)
+		return OP_OK
+	to_chat(A.actor, span_notice("You remove \the [cartridge] from \the [src]."))
+	cartridge.forceMove(loc)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK

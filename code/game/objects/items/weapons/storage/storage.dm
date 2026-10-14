@@ -1,7 +1,8 @@
-// Storage items (doc/rewrite/containment.md section 8, roadmap C4).
+// Storage items (doc/rewrite/containment.md section 8; doc/rewrite/final_api.html section 11 "Containers and slots").
 //
-// A storage item is a holder with one internal slot (/datum/om/relation/slot/storage).
-// Everything goes in and out through the containment ledger (C1):
+// A storage item is a holder with one internal slot (/datum/relation_definition/slot/storage) and the storage() capability (code/library/containers/storage.dm)
+// that says what the slot takes and what a person can do with the item: its ops, its rules and the settings below. Everything goes in and out
+// through the containment ledger (C1):
 //
 //   S.insert_refusal(W, user)            why W can't go in, or null
 //   S.insert_item(W, user, silent)       put W in (from a hand, the floor, another holder)
@@ -9,14 +10,12 @@
 //   S.gather_all(turf, user)             quick-gather everything on a tile
 //   S.drop_contents(user)                quick-empty onto the floor
 //
-// Capacity is the slot's: the ledger keeps the storage-cost units used
-// (max_storage_space is the limit) and storage_slots caps the count, so no
-// check re-adds the contents. What a storage takes is its hold constraint
-// (P3, CONSTRAINT_HOLD on the slot).
+// Capacity is the slot's: the ledger keeps the storage-cost units used (max_storage_space is the limit) and storage_slots caps the count, so no
+// check re-adds the contents. What a storage takes is declared with its capability: configure(storage(accepts = list(types), refuses = list(types),
+// max_size = ITEMSIZE_X)) in the type's CAPABILITIES list; restrict_hold() narrows one instance (an exact-fit kit).
 //
-// The HUD (/datum/storage_hud) is made when someone opens the storage and
-// deleted when the last viewer closes it, so a storage nobody is looking into
-// has no screen objects.
+// The HUD (/datum/storage_hud) is made when someone opens the storage and deleted when the last viewer closes it, so a storage nobody is looking
+// into has no screen objects.
 //
 // For use_to_pickup and allow_quick_gather, see /obj/item/attackby() (items.dm).
 
@@ -30,7 +29,6 @@
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	MATERIAL_BULK(MAT_FIBERS, 50)
-	latent_contents = TRUE
 
 	/// Mobs looking into this storage.
 	var/list/is_seeing
@@ -42,7 +40,6 @@
 	/// Most things this holds, or null for no count limit. Also picks the
 	/// boxed HUD layout over the volume bar.
 	var/storage_slots = null
-
 	var/use_to_pickup	//Set this to make it possible to use this item in an inverse way, so you can have the item in your hand and click items on the floor to pick them up.
 	var/display_contents_with_number	//Set this to make the storage item group contents of the same type and display them as a number.
 	var/allow_quick_empty	//Set this variable to allow the object to have the 'empty' verb, which dumps all the contents on the floor.
@@ -56,55 +53,66 @@
 	/// Used for attack_self chain
 	var/special_handling = FALSE
 
-// ---- The slot ----
+CAPABILITIES(/obj/item/storage)
+	storage(
+		space = nameof(/obj/item/storage::max_storage_space),
+		slots = nameof(/obj/item/storage::storage_slots),
+		max_size = ITEMSIZE_SMALL,
+		empties = nameof(/obj/item/storage::allow_quick_empty),
+		gather_toggle = nameof(/obj/item/storage::allow_quick_gather),
+		special = nameof(/obj/item/storage::special_handling),
+		pocketable = nameof(/obj/item/storage::pocketable),
+		quiet = list(/obj/item/hand_labeler))
+	op("feed_replacer", item(/obj/item/lightreplacer), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
+		then(PROC_REF(feed_replacer)))
+	owns_one(nameof(hud), /datum/storage_hud)
+	ref_many(nameof(is_seeing), /mob)
+	drag_onto(PROC_REF(mousedrop_input))
 
-/// A storage item's interior. Internal, so it takes C2's default damage and
-/// heat shares. Contents are deleted with the storage, as before.
-/datum/om/relation/slot/storage
-	holder = /obj/item/storage
-	slot_id = CONTAINER_SLOT_STORAGE
-	name = "storage"
-	exposure = SLOT_EXPOSURE_INTERNAL
-	capacity_model = SLOT_CAPACITY_UNITS
-	holder_constraint = CONSTRAINT_HOLD
-	drop_policy = SLOT_DROP_DELETE
+/// A held light replacer that has room takes the good bulbs out of a storage.
+/obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
+	return holds_good_bulb() && A.actor.lets_go_of_held()
 
-/datum/om/relation/slot/storage/capacity_for(obj/item/storage/holder)
-	return holder.max_storage_space
+/// Whether it holds a bulb or tube that still works.
+/obj/item/storage/proc/holds_good_bulb()
+	for(var/obj/item/light/L in slot_contents(CONTAINER_SLOT_STORAGE))
+		if(L.status == 0)
+			return TRUE
+	return FALSE
 
-/datum/om/relation/slot/storage/cost(obj/item/storage/holder, atom/movable/thing)
-	if(isitem(thing))
-		var/obj/item/I = thing
-		return I.get_storage_cost()
-	return ITEMSIZE_COST_NO_CONTAINER
+READS_AS(/obj/item/storage/proc/holds_good_bulb, STORAGE_CONTENTS_KEY)
 
-/// Things counted against storage_slots: the real ones plus latent entries
-/// (C5 overrides latent_count()).
-/datum/om/relation/slot/storage/proc/count_used(obj/item/storage/holder)
-	var/datum/ledger/L = dq_ledger(holder)
-	var/list/things = L?.slots[slot_id]
-	return length(things) + latent_count(holder)
+/// How many things it holds, declared or real: what a look that shows the fill reads. It is published as STORAGE_CONTENTS_KEY when a move changes it.
+/obj/item/storage/proc/held_count()
+	return storage_total(src)
 
-/// Latent entries in this slot, for the count limit. None until C5.
-/datum/om/relation/slot/storage/proc/latent_count(obj/item/storage/holder)
-	return holder.latent_count(CONTAINER_SLOT_STORAGE)
+READS_AS(/obj/item/storage/proc/held_count, STORAGE_CONTENTS_KEY)
 
-/datum/om/relation/slot/storage/refusal(obj/item/storage/holder, atom/movable/thing, mob/actor)
-	if(!isitem(thing))
-		return "that can't go in a container"
-	var/obj/item/W = thing
-	if(actor && actor.isEquipped(W) && !actor.canUnEquip(W))
-		return "you can't let go of \the [W]"
-	if(holder.storage_slots != null && count_used(holder) >= holder.storage_slots)
-		return "\the [holder] is full"
-	. = ..()
-	if(.)
-		return .
-	if(W.w_class >= holder.w_class && istype(W, /obj/item/storage))
-		return "it's a container as big as \the [holder]"
-	if(has_trait(W, TRAIT_NODROP))
-		return "\the [W] is stuck to your hand"
-	return null
+/// What it holds, a copy in the order the window shows it (the things themselves, so a look can read them). Published as held_count() is.
+/obj/item/storage/proc/held_things()
+	return slot_contents(CONTAINER_SLOT_STORAGE)
+
+READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
+
+/obj/item/storage/proc/feed_replacer(datum/act/op/A)
+	make_contents_real()
+	var/obj/item/lightreplacer/LP = A.held
+	if(LP.uses >= LP.max_uses)
+		return OP_REFUSED
+	var/amt_inserted = 0
+	for(var/obj/item/light/L in stored_items())
+		if(L.status == 0 && LP.uses < LP.max_uses)
+			LP.add_uses(1)
+			amt_inserted++
+			consume(L, A.actor)
+	if(!amt_inserted)
+		return OP_REFUSED
+	to_chat(A.actor, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
+	return OP_OK
+
+/// An item that does something of its own when it is put into a storage (a tray with things on it spills) answers TRUE to stop the put-in.
+/obj/item/proc/storage_balks(obj/item/storage/S, mob/user)
+	return FALSE
 
 // ---- Latent contents (C5) ----
 // Legacy storage code walks contents directly, so the storage materializes
@@ -115,7 +123,7 @@
 	return empty ? null : starts_with
 
 /obj/item/storage/latent_generator_clear()
-	starts_with = null
+	set_starts_with(null)
 
 /// Latent only for plain spawns: a variant needs apply_variant(), so it is made now.
 /obj/item/storage/latent_spawn_ok(path, value)
@@ -136,7 +144,6 @@
 		// Latent-safe types without a variant stay declared until the storage
 		// is used (C5); the rest are made now.
 		dq_latent_declare(src)
-		update_icon()
 	else
 		starts_with = null
 
@@ -152,10 +159,6 @@
 		var/mob/M = loc
 		M.remove_from_mob(src)
 	..()
-
-/obj/item/storage/pickup(mob/user)
-	make_contents_real()
-	return ..()
 
 /obj/item/storage/equipped(mob/user, slot)
 	make_contents_real()
@@ -177,7 +180,7 @@
 	var/total_storage_space = 0
 	for(var/obj/item/I in contents) // ALLOW(latent): declared contents counted below
 		total_storage_space += I.get_storage_cost()
-	var/list/generator = latent_declared ? starts_with : null
+	var/list/generator = latent_is_declared() ? starts_with : null
 	for(var/path in generator)
 		if(dq_latent_eligible(path) && latent_spawn_ok(path, generator[path]))
 			total_storage_space += dq_type_storage_cost(path) * dq_latent_spawn_count(generator[path])
@@ -185,10 +188,6 @@
 		max_storage_space = max(total_storage_space, max_storage_space)
 
 // ---- Insertion ----
-
-/// What storage takes (constraints, rules.md section 3): pocket-sized things
-/// unless a type says otherwise. Types override this; see HOLD_ONLY and HOLD_MAX_SIZE.
-TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /// Why `W` can't go in right now, or null if it can. One ledger check: the
 /// slot's acceptance and hold constraint, the count and space limits, and
@@ -224,7 +223,7 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 		if(W.loc != src)
 			return FALSE
 		W.dropped(wearer)
-	else if(!W.move_into(src, CONTAINER_SLOT_STORAGE, user))
+	else if(!move_into(src, CONTAINER_SLOT_STORAGE, W, user))
 		return FALSE
 
 	W.on_enter_storage(src)
@@ -240,7 +239,6 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
 				else if(W.w_class >= 3) //Otherwise they can only see large or normal items from a distance...
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
-	update_icon()
 	return TRUE
 
 /// insert_item() that tells `user` why when it's refused.
@@ -282,19 +280,24 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /// checked the move (a one-call transfer, code/datums/ownership/transfer.dm), so it commits straight
 /// into `slot` with `flags`; otherwise slot_remove() checks it.
 /obj/item/storage/proc/storage_exit(obj/item/W, atom/destination, mob/user, slot = null, flags = 0, checked = FALSE)
+	var/previous_plane = W.plane
+	var/previous_layer = W.layer
 	if(ismob(destination))
 		W.hud_layerise()
 	else
 		W.reset_plane_and_layer()
+	var/moved
 	if(checked)
-		if(!dq_ledger_force_move(W, destination, flags, slot))
-			return FALSE
-	else if(!slot_remove(W, destination, user))
+		moved = dq_ledger_force_move(W, destination, flags, slot)
+	else
+		moved = slot_remove(W, destination, user)
+	if(!moved)
+		W.plane = previous_plane
+		W.layer = previous_layer
 		return FALSE
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)
-	update_icon()
 	return TRUE
 
 /// Called before removal completes, allowing you to delay or cancel it. Only
@@ -310,8 +313,13 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /// Keep the HUD in step with every move in or out, however it happened.
 /obj/item/storage/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	PUBLISH_CHANGE(src, STORAGE_CONTENTS_KEY)
 	if(hud)
 		refresh_hud()
+	// A worn storage shows what is in it on the wearer's sprite.
+	if(ismob(loc))
+		var/mob/wearer = loc
+		changed(src)
 
 // ---- Gather and empty ----
 
@@ -339,26 +347,14 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 	else
 		to_chat(user, span_notice("You fail to pick anything up with \the [src]."))
 
-/obj/item/storage/proc/toggle_gathering_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// Switches between gathering a whole tile at once and one item at a time.
+/obj/item/storage/proc/toggle_gathering(mob/user)
 	collection_mode = !collection_mode
 	switch (collection_mode)
 		if(1)
 			to_chat(user, "[src] now picks up all items on a tile at once.")
 		if(0)
 			to_chat(user, "[src] now picks up one item at a time.")
-
-/// Requirement for "Switch Gathering Method" (old: the verb was only added when allow_quick_gather).
-/obj/item/storage/proc/pred_can_toggle_gathering(mob/actor, atom/target, obj/item/held)
-	return allow_quick_gather
-
-/// Requirement for "Empty Contents" (old: the verb was only added when allow_quick_empty).
-/obj/item/storage/proc/pred_can_quick_empty(mob/actor, atom/target, obj/item/held)
-	return allow_quick_empty
-
-/obj/item/storage/proc/quick_empty_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	try_quick_empty(user)
 
 /// Quick-empty onto the floor, if `user` can.
 /obj/item/storage/proc/try_quick_empty(mob/user)
@@ -408,30 +404,34 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 // ---- Interaction ----
 
-/obj/item/storage/MouseDrop(obj/over_object as obj)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/storage/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/storage/proc/handle_inventory_drop(mob/user, obj/over_object)
 	make_contents_real()
 	if(!canremove)
-		return
+		return TRUE
 
-	if (isliving(usr) || isobserver(usr))
-		var/mob/user = usr
+	if (isliving(user) || isobserver(user))
 
 		if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+			return TRUE
 
 		if(over_object == user && Adjacent(user)) // this must come before the screen objects only block
 			open(user)
-			return
+			return TRUE
 
 		if(!(istype(over_object, /atom/movable/screen)))
-			return ..()
+			return FALSE
 
 		//makes sure that the storage is equipped, so that we can't drag it into our hand from miles away.
 		if(!(loc == user) || (loc && loc.loc == user))
-			return
+			return TRUE
 
 		if(user.restrained() || user.stat || user.is_paralyzed() || user.incapacitated(INCAPACITATION_KNOCKOUT))
-			return
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
@@ -441,89 +441,26 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 				user.unEquip(src)
 				user.put_in_l_hand(src)
 		add_fingerprint(user)
+	return TRUE
 
-/// Old click_alt: open or close the storage; anywhere else, the default alt-click.
-/obj/item/storage/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Opens the storage for `user`, or closes it when they are looking into it. FALSE when it did neither (not a living thing).
+/obj/item/storage/proc/toggle_window(mob/user)
 	make_contents_real()
 	if(user in is_seeing)
-		src.close(user)
+		close(user)
 		return TRUE
-	if(isliving(user) && Adjacent(user))
-		src.open(user)
-		return TRUE
-	return FALSE
-
-/**
- * Old attackby: place an item into the storage. The old override ran the item's base
- * attackby first (signal listeners, then a pickup-mode bag gathering the tile), so this does too.
- */
-/obj/item/storage/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	make_contents_real()
-	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, dq_interaction_click_params(user))) == EVENT_VETO)
-		return TRUE
-	// A pickup-mode bag collects first, as the old override's ..() did; then the item's own
-	// collect default must not run again, so the input is used up.
-	var/obj/item/storage/bag = W
-	var/pass = (istype(bag) && bag.try_collect(src, user)) ? TRUE : INTERACTION_HANDLED_PASS
-
-	if(isrobot(user))
-		return pass //Robots can't interact with storage items.
-
-	if(istype(W, /obj/item/lightreplacer))
-		var/obj/item/lightreplacer/LP = W
-		var/amt_inserted = 0
-		for(var/obj/item/light/L in stored_items())
-			if(L.status == 0 && LP.uses < LP.max_uses)
-				LP.add_uses(1)
-				amt_inserted++
-				consume(L, user)
-		if(amt_inserted)
-			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
-			return pass
-
-	var/refusal = insert_refusal(W, user)
-	if(refusal)
-		refuse_insert(W, user, refusal)
-		return pass
-
-	if(istype(W, /obj/item/tray))
-		var/obj/item/tray/T = W
-		if(T.calc_carry() > 0)
-			if(prob(85))
-				to_chat(user, span_warning("The tray won't fit in [src]."))
-				return pass
-			else
-				user.drop_from_inventory(W, get_turf(user))
-				to_chat(user, span_warning("God damn it!"))
-
-	W.add_fingerprint(user)
-	return insert_item(W, user) ? TRUE : pass
-
-/// Old attack_hand, the part before the pickup: a pocketed storage comes to hand, a held one opens.
-/obj/item/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	make_contents_real()
-	if(ishuman(user) && !pocketable)
-		var/mob/living/carbon/human/H = user
-		if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
-			H.put_in_hands(src)
-			return TRUE
-		if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
-			H.put_in_hands(src)
-			return TRUE
-	if(src.loc == user)
-		src.open(user)
-		src.add_fingerprint(user)
-		return TRUE
-	return FALSE
+	if(!isliving(user))
+		return FALSE
+	open(user)
+	return TRUE
 
 /// Picking the storage up: whoever was looking inside stops.
-/obj/item/storage/proc/interaction_pick_up_storage(mob/living/user, obj/item/held, datum/interaction/interaction)
-	interaction_pick_up(user, held, interaction)
+/obj/item/storage/pickup(mob/user)
+	make_contents_real()
 	for(var/mob/M in range(1))
 		if (M.s_active == src)
-			src.close(M)
-	src.add_fingerprint(user)
-	return TRUE
+			close(M)
+	return ..()
 
 /**
  * Collect `target` with this bag when it is in pickup mode: its whole tile in
@@ -539,59 +476,8 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 		try_insert(target, user)
 	return TRUE
 
-/// Old attack_self: quick-empty. FALSE lets a subtype's self-use go on.
-/obj/item/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	make_contents_real()
-	if(special_handling)
-		return FALSE
-	if((user.get_active_hand() == src) || (isrobot(user)) && allow_quick_empty)
-		if(allow_quick_empty)
-			try_quick_empty(user)
-			return TRUE
-	return FALSE
-
 /obj/item/storage/AllowDrop()
 	return TRUE
-
-// Allows micros to drag themselves into storage items
-DECLARE_INTERACTIONS(/obj/item/storage, \
-	INTERACT_ITEM("Put in", PROC_REF(interaction_item)), \
-	INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_hand)), \
-	INTERACT_SELF("Empty", PROC_REF(interaction_self)), \
-	INTERACT_ALT("Open", PROC_REF(interaction_alt)), \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up_storage)), \
-)
-
-/// Old MouseDrop_T.
-/obj/item/storage/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
-	make_contents_real()
-	if(!istype(user)) return INTERACTION_HANDLED_PASS
-	if(target != user) return INTERACTION_HANDLED_PASS
-	if(user.incapacitated() || user?.buckled_to()) return INTERACTION_HANDLED_PASS
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return INTERACTION_HANDLED_PASS
-	if(ishuman(user) && user.get_effective_size(TRUE) > 0.25) return INTERACTION_HANDLED_PASS
-	if(ismouse(user) && user.get_effective_size(TRUE) > 1) return INTERACTION_HANDLED_PASS
-
-	// Create a dummy holder with user's size to test insertion
-	var/obj/item/holder/D = new/obj/item/holder
-	if(ismouse(user))
-		D.w_class = ITEMSIZE_TINY // Mouse smol
-	else if(ishuman(user))
-		D.w_class = ITEMSIZE_SMALL // Players small
-	else        // Other creatures not accepted at this time
-		qdel(D) // If there's a better way to check the size of a
-		return INTERACTION_HANDLED_PASS
-	if(insert_refusal(D, user)) // If the dummy item doesn't fit, exit
-		qdel(D)
-		return INTERACTION_HANDLED_PASS
-	qdel(D)
-
-	// Scoop and insert target into storage
-	var/obj/item/holder/H = new user.holder_type(get_turf(user), user)
-	if(insert_item(H, null, TRUE))
-		to_chat(user, span_notice("You climb into \the [src]."))
-	return FALSE
 
 // ---- Legacy wrappers for mob inventory (C3 moves these callers onto slots) ----
 // Only for: /mob/living/equip_to_storage (mob/living/inventory.dm, 3 calls),
@@ -650,8 +536,8 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 		user.s_active.hide_from(user)
 
 	if(!hud)
-		own_set(src, nameof(hud), new /datum/storage_hud(src))
-	LAZYDISTINCTADD(is_seeing, user)
+		rel_set(src, nameof(hud), new /datum/storage_hud(src))
+	rel_add(src, nameof(is_seeing), user)
 	rel_set(user, nameof(/mob::s_active), src)
 	var/client/C = user.client
 	if(C)
@@ -660,7 +546,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 
 /// Takes the HUD off `user`'s screen. The last viewer out deletes it.
 /obj/item/storage/proc/hide_from(mob/user)
-	LAZYREMOVE(is_seeing, user)
+	rel_remove(src, nameof(is_seeing), user)
 	var/client/C = user.client
 	if(C && hud)
 		C.screen -= hud.screen_atoms()
@@ -670,7 +556,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	if(user.s_active == src)
 		rel_clear(user, nameof(/mob::s_active))
 	if(!LAZYLEN(is_seeing))
-		own_clear(src, nameof(hud), OWN_DELETE)
+		rel_clear(src, nameof(hud))
 
 /// Lays the HUD out again after a change, for everyone looking.
 /obj/item/storage/proc/refresh_hud()
@@ -707,21 +593,28 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
 
+CAPABILITIES(/datum/storage_hud)
+	owns_one(nameof(closer), /atom/movable/screen/close)
+	owns_many(nameof(backdrop))
+	owns_many(nameof(catchers))
+	ref_many(nameof(shown), /obj/item)
+	ref_one(nameof(storage), /obj/item/storage)
+
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /datum/storage_hud/New(obj/item/storage/S)
 	..()
 	rel_set(src, nameof(storage), S)
-	own_set(src, nameof(backdrop), list())
-	own_set(src, nameof(catchers), list())
+	rel_set(src, nameof(backdrop), list())
+	rel_set(src, nameof(catchers), list())
 	var/obj/item/storage/master = S
 	if(S.storage_slots)
-		own_add(src, nameof(backdrop), new_backdrop(master, "block"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "block"))
 	else
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
-	own_set(src, nameof(closer), new /atom/movable/screen/close())
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
+	rel_set(src, nameof(closer), new /atom/movable/screen/close())
 	rel_set(closer, nameof(closer.master_ref), master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
@@ -742,7 +635,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
 	rel_set(B, nameof(B.master_ref), master)
-	B.icon_state = state
+	B.set_icon_state(state)
 	return B
 
 /// Every screen object to put on a viewer's screen (items are in `shown`).
@@ -753,8 +646,8 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	own_clear(src, nameof(catchers), OWN_DELETE)
-	own_set(src, nameof(catchers), list())
+	rel_clear(src, nameof(catchers))
+	rel_set(src, nameof(catchers), list())
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -790,7 +683,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/storage_slot/SS = new(null, I)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	own_add(src, nameof(catchers), SS)
+	rel_add(src, nameof(catchers), SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.
@@ -900,22 +793,27 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	/// Relation view: the stored item this catcher stands for.
 	var/obj/item/held_item
 
-/atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
-	. = ..()
-	ASSERT(held_item)
-	name += held_item.name
-	rel_set(src, nameof(held_item), held_item)
+CAPABILITIES(/atom/movable/storage_slot)
+	param(nameof(held_item), pos = 1, apply = PROC_REF(name_for))
+	click_on(PROC_REF(slot_click))
+	ref_one(nameof(held_item), /obj/item)
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The slot is named for the item it holds.
+/atom/movable/storage_slot/proc/name_for(obj/item/item)
+	ASSERT(item)
+	name += item.name
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)
 	ASSERT(islist(somethings))
 	overlays = somethings
 
-/atom/movable/storage_slot/Click()
+/// The native Click's actor, handed over by the engine (click_on()): clicking a slot is clicking the stored item, through the clicker's input inbox.
+/atom/movable/storage_slot/proc/slot_click(datum/act/input/A)
 	var/obj/item/I = held_item
 	if(I)
-		usr.ClickOn(I)
-	return 1
+		input_submit(new /datum/input_event/click(A.actor, I))
+	return TRUE
 
 // ---- Sizes ----
 
@@ -966,7 +864,7 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 /proc/build_type_storage_cost(path)
 	var/obj/item/probe = new_unmaterialized(path, null)
 	. = probe.get_storage_cost()
-	qdel(probe)
+	spent(probe)
 
 /obj/item/proc/get_storage_cost()
 	if (storage_cost)
@@ -991,7 +889,7 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	// Runs at Initialize for fitted kits: read contents, don't make a ledger.
 	var/list/items = list()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		items += I
 	storage_slots = length(items)
 
@@ -1003,6 +901,10 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 		max_size = max(I.w_class, max_size)
 		max_storage_space += I.get_storage_cost()
 	restrict_hold(types, max_size)
+
+/// Narrows what this one storage takes: `types` replaces the types it accepts, `max_size` the largest w_class (null keeps what the type says).
+/obj/item/storage/restrict_hold(list/types, max_size)
+	storage_restrict(src, types, max_size)
 
 /*
  * Trinket Box - READDING SOON
@@ -1018,48 +920,38 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	var/closed_state
 	special_handling = TRUE
 
-TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/clothing/accessory/ring, \
-		/obj/item/coin, \
-		/obj/item/clothing/accessory/medal \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+TRACKED(/obj/item/storage/trinketbox, open)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/trinketbox/appearance_overlays()
-	. = list()
+CAPABILITIES(/obj/item/storage/trinketbox)
+	configure(storage(accepts = list(
+		/obj/item/clothing/accessory/ring,
+		/obj/item/coin,
+		/obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL))
+	
+	op("lid", in_hand(), label("Open"), then(PROC_REF(flip_lid)))
+
+/obj/item/storage/trinketbox/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-
-		var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
+		look.state(open_state || "[initial(icon_state)]_open")
+		var/list/held = held_things()
 		if(length(held) >= 1)
 			var/contained_image = null
-			if(istype(held[1],  /obj/item/clothing/accessory/ring))
+			if(istype(held[1], /obj/item/clothing/accessory/ring))
 				contained_image = "ring_trinket"
 			else if(istype(held[1], /obj/item/coin))
 				contained_image = "coin_trinket"
 			else if(istype(held[1], /obj/item/clothing/accessory/medal))
 				contained_image = "medal_trinket"
-			if(contained_image)
-				. += contained_image
+			look.overlay(contained_image)
 	else
-		icon_state = closed_state
+		look.state(closed_state || initial(icon_state))
 
-/obj/item/storage/trinketbox/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]_open"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
 
-EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(interaction_open_lid)))
-
-/// Old attack_self: after the storage's own self-use, flip the lid.
-/obj/item/storage/trinketbox/proc/interaction_open_lid(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
-	open = !open
-	update_icon()
-	return TRUE
+/// Used in hand: the lid flips.
+/obj/item/storage/trinketbox/proc/flip_lid(datum/act/op/A)
+	set_open(!open)
+	return OP_OK
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()
@@ -1068,10 +960,3 @@ EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(
 	FOR_REAL_CONTENTS(var/atom/movable/display_item as anything, src)
 		. += span_notice("\The [src] contains \the [display_item]!")
 		return
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/storage, \
-	INTERACT_VERB("Switch Gathering Method", PROC_REF(toggle_gathering_mode_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_toggle_gathering, "it has only one gathering method")), \
-	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
-)
-

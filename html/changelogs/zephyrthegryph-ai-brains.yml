@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Combat AI melee and innate-ranged attacks now go through the mob's attack ops, so AI attacks obey the same requirements and cooldowns as other actors"
+  - code_imp: "AI brain loops park on the relevance stat; AI decisions can be traced per brain"

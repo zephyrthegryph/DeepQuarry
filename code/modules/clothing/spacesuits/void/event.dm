@@ -23,16 +23,16 @@
 //This is probably the most appealing to get your hands on for basic protection and the specialist stuff
 //Don't expect it to stand up to modern assault/laser rifles, but it'll make you a fair bit tougher against most low-end pistols and SMGs
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MINING))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/engineering
 	name = "vintage engineering voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. This one in particular seems to be an ode to the Ship of Theseus, but the insulation and radiation proofing are top-notch, and it has several oily stains that seem to be impossible to scrub off."
 	icon_state = "rig0-vintageengi"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
-	min_pressure_protection = 0  * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/engineering)
+	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 /obj/item/clothing/suit/space/void/refurb/engineering
 	name = "vintage engineering voidsuit"
@@ -41,16 +41,17 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb, suit_storage_spec, list(HO
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	slowdown = 1
 	armor_spec = "melee=40;bullet=20;laser=20;energy=5;bomb=35;bio=100;rad=100;cold=60"
-	min_pressure_protection = 0  * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 	breach_threshold = 14 //These are kinda thicc
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/engineering)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_MINING, POCKET_HEAVYTOOLS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(min_pressure = 0  * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 //Medical Crewsuit (GREEN, CROSS)
 //This thing is basically tissuepaper, but it has very solid rad protection for its age
 //It also has the bonus of not slowing you down quite as much as other suits, same as the crew suit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_CE, POCKET_MINING, POCKET_HEAVYTOOLS))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/medical
 	name = "vintage medical voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The green and white markings indicate this as a medic's suit."
@@ -73,14 +74,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/engineering, suit_storage_s
 //Marine Crewsuit (BLUE, SHIELD)
 //Really solid, balance between Sec and Sec EVA, but it has slightly worse shock protection
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/medical, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/marine
 	name = "vintage marine's voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The blue markings indicate this as the marine/guard variant, likely from a merchant ship."
 	icon_state = "rig0-vintagemarine"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/marine)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/suit/space/void/refurb/marine
 	name = "vintage marine's voidsuit"
@@ -91,20 +94,25 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/medical, suit_storage_spec,
 	armor_spec = "melee=40;bullet=35;laser=35;energy=5;bomb=40;bio=100;rad=50;cold=60"
 	breach_threshold = 14 //These are kinda thicc
 	resilience = 0.15 //Armored
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/marine)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.8))
 
 //Officer Crewsuit (GOLD, X)
 //The best of the bunch - at the time, this would have been almost cutting edge
 //Now it's good, but it's badly outclassed by the hot shit that the TSCs and such can get
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/marine, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/officer
 	name = "vintage officer's voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. This variant appears to be an officer's, and has the best protection of all the old models."
 	icon_state = "rig0-vintageofficer"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/officer)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/space/void/refurb/officer
 	name = "vintage officer's voidsuit"
@@ -115,19 +123,24 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/marine, suit_storage_spec, 
 	armor_spec = "melee=50;bullet=45;laser=45;energy=10;bomb=30;bio=100;rad=60;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.1 //Heavily Armored
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/officer)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.7))
 
 //Pilot Crewsuit (ROYAL BLUE, I)
 //The lightest weight of the lot, but protection is about the same as the crew variant's. It has an extra helmet variant for those who prefer that design.
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/officer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/pilot
 	name = "vintage pilot's voidsuit bubble helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The standard pilot model has a nice clear bubble helmet that doesn't fog up easily and has much better visibility, at the cost of relatively poor protection."
 	icon_state = "rig0-vintagepilot"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/pilot)
+	configure(item_protection(siemens = 0.9))
 
 //fluff alt-variant helmet, no changes to protection or anything despite the desc (and it wouldn't matter unless you found a base-type since armor values aren't transferred during refits)
 /obj/item/clothing/head/helmet/space/void/refurb/pilot/alt
@@ -142,19 +155,24 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/officer, suit_storage_spec,
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	slowdown = 0
 	armor_spec = "melee=25;bullet=20;laser=20;energy=5;bomb=20;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/pilot)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.9))
 
 //Scientist Crewsuit (PURPLE, O)
 //Baseline values are slightly worse than the gray crewsuit, but it has significantly better Energy protection and is the only other suit with 100% rad immunity besides the engi suit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/pilot, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/research
 	name = "vintage research voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The purple markings indicate this as a scientist's helmet. Got your crowbar handy?"
 	icon_state = "rig0-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/research)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/helmet/space/void/refurb/research/alt
 	name = "vintage research voidsuit bubble helmet"
@@ -167,12 +185,15 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/pilot, suit_storage_spec, l
 	icon_state = "rig-vintagescientist"
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 	armor_spec = "melee=25;bullet=10;laser=10;energy=50;bomb=10;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/research)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, /obj/item/storage/firstaid), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.8))
 
 //Miner's Crewsuit (BROWN)
 //Basically just the basic suit, but with brown markings. If anyone wants to tweak this, go wild.
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/research, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_XENOARC, /obj/item/storage/firstaid))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/mining
 	name = "vintage miner's's voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. This one has brown markings, denoting it as a miner's helmet."
@@ -191,14 +212,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/research, suit_storage_spec
 //Mercenary Crewsuit (RED, CROSS)
 //The best of the best, this should be ultra-rare
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mining, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING))))
+
 /obj/item/clothing/head/helmet/space/void/refurb/mercenary
 	name = "vintage mercenary voidsuit helmet"
 	desc = "A refurbished early contact era voidsuit helmet of human design. These things aren't especially good against modern weapons but they're sturdy, incredibly easy to come by, and there are lots of spare parts for repairs. The visor has a bad habit of fogging up and collecting condensation, but it beats sucking hard vacuum. The red markings indicate this as the mercenary variant. The company ID has been scratched off."
 	icon_state = "rig0-vintagemerc"
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/refurb/mercenary)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/void/refurb/mercenary
 	name = "vintage mercenary voidsuit"
@@ -209,9 +232,12 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mining, suit_storage_spec, 
 	armor_spec = "melee=55;bullet=45;laser=45;energy=25;bomb=50;bio=100;rad=50;cold=60"
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
-	siemens_coefficient = 0.6
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mercenary, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mercenary)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.6))
+
+
 
 
 /obj/item/clothing/head/helmet/space/void/refurb/talon
@@ -364,18 +390,19 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/refurb/mercenary, suit_storage_spe
 
 	armor_spec = "melee=30;bullet=30;laser=30;energy=20;bomb=20;bio=100;rad=20;cold=60"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
-	INTERACT_VERB("Helmet Color", PROC_REF(aether_select_color_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
+	op("aether_select_color_verb", menu(), label("Helmet Color"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Select a new color:", "title" = computed(PROC_REF(aether_select_color_verb_a1_title)), "choices" = list("White", "Blue", "Purple", "Yellow", "Red", "Green"), "timeout" = 0), step = "a1"), then(PROC_REF(aether_select_color_verb)))
 
 /// Old verb "Helmet Color".
-/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/choice = rerun_ask(user, "a1", PROC_REF(aether_select_color_verb), list(user), /datum/om/prompt/choice, message = "Select a new color:", title = "[src] Color", choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
-	if(isnull(choice))
-		return
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb_a1_title(datum/act/op/A)
+	return "[src] Color"
+
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/choice = A.step_value("a1")
 	if(!choice)
 		return
-	icon_state = "moebiushelm_[choice]"
+	set_icon_state("moebiushelm_[choice]")
 	update_clothing_icon()
 	to_chat(user, span_notice("[src] color changed to: [choice]"))
 
@@ -395,7 +422,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
 	desc = "The altevians' newest iteration of their armored suits. This one is tailored for zero-g environments, and while it can still be worn in an area with gravity, it'll put a strain on even the most athletic of individuals."
 
 	icon = 'icons/inventory/suit/item_altevian.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob_altevian.dmi'
 	icon_state = "rig-heartbreaker"
 
 	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
@@ -403,21 +429,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
 	no_cycle = TRUE
 	slowdown = 2.5
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/altevian_heartbreaker, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))
+CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
+	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_altevian.dmi'))
+
 
 /obj/item/clothing/head/helmet/space/void/altevian_heartbreaker
 	name = "\improper heartbreaker helmet"
 	desc = "The altevians' newest iteration of their armored suits. This one is tailored for zero-g environments, and while it can still be worn in an area with gravity, it'll put a strain on even the most athletic of individuals."
 
 	icon = 'icons/inventory/head/item_altevian.dmi'
-	default_worn_icon = 'icons/inventory/head/mob_altevian.dmi'
 	icon_state = "rig0-heartbreaker"
 
 	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
 
 	no_cycle = TRUE
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ALTEVIAN))))
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
+	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob_altevian.dmi'))
+
 
 /obj/item/clothing/suit/space/void/salvagecorp_shipbreaker
 	name = "\improper CSC industrial voidsuit"
@@ -428,7 +461,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker, fit_
 	slowdown = 1.5
 	breach_threshold = 14
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING))))
+
 
 /obj/item/clothing/head/helmet/space/void/salvagecorp_shipbreaker
 	name = "\improper CSC industrial voidsuit helmet"
@@ -436,3 +469,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker, suit_stor
 	icon_state = "breaker_helmet"
 
 	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
+
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/medical)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mining)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

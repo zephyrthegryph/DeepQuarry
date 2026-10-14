@@ -11,6 +11,9 @@
 	var/capacity = 500
 	var/stored_charge = 0
 
+CAPABILITIES(/obj/item/anobattery)
+	owns_one(nameof(battery_effect), /datum/artifact_effect)
+
 /obj/item/anobattery/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -40,7 +43,7 @@
 /obj/item/anobattery/proc/UpdateSprite()
 	var/p = (stored_charge/capacity)*100
 	p = min(p, 100)
-	icon_state = "anobattery[round(p,25)]"
+	set_icon_state("anobattery[round(p,25)]")
 
 /obj/item/anobattery/proc/use_power(amount)
 	stored_charge = max(0, stored_charge - amount)
@@ -52,7 +55,7 @@
 	var/duration = 0
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
-	/// om_after() timer that ends the emission at time_end, or 0.
+	/// after() timer that ends the emission at time_end, or 0.
 	EXPIRY_DECLARE(last_activation)
 	EXPIRY_DECLARE(last_process)
 	var/tmp/obj/item/anobattery/inserted_battery
@@ -64,42 +67,45 @@
 	rel_set(src, nameof(last_user_touched), user)
 	..()
 
-OM_FIELD(/obj/item/anodevice, activated, FALSE, CHANGE_EXPLICIT)
-/// Runs its battery effect while activated.
-DECLARE_PERIODIC_WHILE(/obj/item/anodevice, PERIODIC_SLOW, "activated")
-
-DECLARE_INTERACTIONS(/obj/item/anodevice, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE("Open", PROC_REF(interaction_open)), \
-)
+/obj/item/anodevice/var/activated = FALSE
+TRACKED(/obj/item/anodevice, activated)
+CAPABILITIES(/obj/item/anodevice)
+	/// Runs its battery effect while activated.
+	every(2 SECONDS, then(PROC_REF(anodevice_step)), when = nameof(activated))
+	interface("XenoarchHandheldPowerUtilizer", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("changeduration", ui_act("changeduration", arg("duration", num(0, 300))), then(PROC_REF(ui_act_changeduration)))
+	op("changeinterval", ui_act("changeinterval", arg("interval", num(0, 100))), then(PROC_REF(ui_act_changeinterval)))
+	op("startup", ui_act("startup"), then(PROC_REF(ui_act_startup)))
+	op("shutdown", ui_act("shutdown"), then(PROC_REF(ui_act_shutdown)))
+	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 
 /// Old attackby.
-/obj/item/anodevice/proc/interaction_item(mob/user, obj/I, datum/interaction/interaction)
+/obj/item/anodevice/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/I = A.held
 	if(istype(I, /obj/item/anobattery))
 		if(!inserted_battery())
+			if(!own_bring_in(src, nameof(inserted_battery), I, null, user, TRUE, null, FALSE))
+				return OP_PASS
 			to_chat(user, span_blue("You insert the battery."))
-			user.drop_item()
-			I.forceMove(src)
 			rel_set(src, nameof(inserted_battery), I)
 			UpdateSprite()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 
 /// Old attack_self: open the interface.
-/obj/item/anodevice/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/anodevice/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/anodevice, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/anodevice, "XenoarchHandheldPowerUtilizer")
-
-UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:unknown,anomaly:text,charge:num,capacity:num,timeleft:num,activated:num,duration:num,interval:num}")
-
-/// The computed part of /obj/item/anodevice's window data (declared on its UI_DATA row).
-/obj/item/anodevice/proc/ui_data_obj_item_anodevice(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/anodevice's window data.
+/obj/item/anodevice/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["inserted_battery"] = inserted_battery()
@@ -121,20 +127,18 @@ UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:
 
 	return data
 
-UI_ACT(/obj/item/anodevice, "changeduration", ui_act_changeduration, UI_ARG_NUM("duration", 0, 300))
-UI_ACT_PROC(/obj/item/anodevice, ui_act_changeduration)
-	duration = params["duration"]
+/obj/item/anodevice/proc/ui_act_changeduration(datum/act/op/A, duration_arg)
+	duration = duration_arg
 	if(activated)
 		arm_emission_timer()
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "changeinterval", ui_act_changeinterval, UI_ARG_NUM("interval", 0, 100))
-UI_ACT_PROC(/obj/item/anodevice, ui_act_changeinterval)
-	interval = params["interval"]
+/obj/item/anodevice/proc/ui_act_changeinterval(datum/act/op/A, interval_arg)
+	interval = interval_arg
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "startup", ui_act_startup)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
+/obj/item/anodevice/proc/ui_act_startup(datum/act/op/A)
+	var/mob/user = A.actor
 	if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
 		set_activated(TRUE)
 		visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
@@ -143,16 +147,14 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
 		arm_emission_timer()
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	else
-		to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
+		to_chat(user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "shutdown", ui_act_shutdown)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_shutdown)
+/obj/item/anodevice/proc/ui_act_shutdown(datum/act/op/A)
 	set_activated(FALSE)
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "ejectbattery", ui_act_ejectbattery)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
+/obj/item/anodevice/proc/ui_act_ejectbattery(datum/act/op/A)
 	if(inserted_battery())
 		inserted_battery().forceMove(get_turf(src))
 		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
@@ -161,7 +163,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 	return TRUE
 
 /// Runs its battery effect every 2 s; declared: while activated (its "startup" sets it).
-/obj/item/anodevice/periodic_step()
+/obj/item/anodevice/proc/anodevice_step(datum/act/timer/A)
 	if(activated)
 		if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0) )
 			//make sure the effect is active
@@ -224,7 +226,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()
 	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
-	rx_after(src, duration + 1, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
+	after(src, duration + 0.1 SECONDS, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
 
 /// The keyed timer: the set duration has run out.
 /obj/item/anodevice/proc/emission_timer_fired()
@@ -242,11 +244,11 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 
 /obj/item/anodevice/proc/UpdateSprite()
 	if(!inserted_battery())
-		icon_state = "anodev"
+		set_icon_state("anodev")
 		return
 	var/p = (inserted_battery().stored_charge/inserted_battery().capacity)*100
 	p = min(p, 100)
-	icon_state = "anodev[round(p,25)]"
+	set_icon_state("anodev[round(p,25)]")
 
 /obj/item/anodevice/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

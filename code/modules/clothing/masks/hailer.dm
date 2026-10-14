@@ -4,7 +4,6 @@
 	icon_state = "halfgas"
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)
-	body_parts_covered = FACE
 	var/obj/item/hailer/hailer
 	COOLDOWN_DECLARE(hail_cooldown)
 	var/phrase = 1
@@ -46,28 +45,55 @@
 	name = "\improper SWAT mask"
 	desc = "A close-fitting tactical mask with an especially aggressive Compli-o-nator 3000."
 	icon_state = "officermask"
-	body_parts_covered = HEAD|FACE|EYES
-	flags_inv = HIDEFACE|BLOCKHAIR
 	aggressiveness = 3
 	phrase = 12
+
+CAPABILITIES(/obj/item/clothing/mask/gas/sechailer/swat)
+	configure(item_worn(covers = HEAD|FACE|EYES, hides = HIDEFACE|BLOCKHAIR))
 
 
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	sechailer_halt_verb(user)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
-	INTERACT_ALT("Select phrase", PROC_REF(sechailer_phrase_alt)), \
-	INTERACT_VERB("Select gas mask phrase", PROC_REF(sechailer_selectphrase_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("HALT!", PROC_REF(sechailer_halt_verb), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/clothing/mask/gas/sechailer, aggressiveness)
+
+CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
+	configure(item_worn(covers = FACE))
+	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))
+	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
+	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	// the aggressiveness restrictor: the screwdriver turns it 1 -> 2 -> 3 -> 4 -> 1 (each with its opening phrase); wirecutters break it (5)
+	stages(nameof(aggressiveness),
+		stage_step(1, 2, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_2)), then(PROC_REF(restrictor_turned))),
+		stage_step(2, 3, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_3)), then(PROC_REF(restrictor_turned))),
+		stage_step(3, 4, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_4)), then(PROC_REF(restrictor_turned))),
+		stage_step(4, 1, tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), wait(0), says(MSG(sechailer/restrictor_1)), then(PROC_REF(restrictor_turned))),
+		stage_step(1, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_1"),
+		stage_step(2, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_2"),
+		stage_step(3, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_3"),
+		stage_step(4, 5, tool(TOOL_WIRECUTTER), label("Cut the restrictor"), wait(0), says(MSG(sechailer/restrictor_broken)), key = "break_4"))
+	op("restrictor_broken", tool(TOOL_SCREWDRIVER), label("Turn the restrictor"), when(req_stage(nameof(aggressiveness), 5)), wait(0), says(MSG(sechailer/restrictor_dead)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), needs(req(PROC_REF(hailer_removal_refusal))), then(PROC_REF(crowbar_used)))
+
+/// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb_op(datum/act/op/A)
+	sechailer_selectphrase_verb(A.actor, A.held)
+	return OP_OK
+
+/// The sechailer_halt_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb_op(datum/act/op/A)
+	sechailer_halt_verb(A.actor, A.held)
+	return OP_OK
 
 /// Old click_alt. It never reached the clothing alt-click.
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	sechailer_selectphrase_verb(user)
 	return TRUE
 
 /// Old verb "Select gas mask phrase".
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb(mob/user, obj/item/held)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 
@@ -98,49 +124,44 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 			else
 				to_chat(user, span_notice("It's broken."))
 
-DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag), null)
-/obj/item/clothing/mask/gas/sechailer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/clothing/mask/gas/sechailer/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently fry [src]'s vocal circuit with the cryptographic sequencer."))
 	else
-		return
+		return OP_DECLINE
+	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/screwdriver_act(mob/user, obj/item/tool)
+MSG_DEF_SELF(sechailer/restrictor_1, span_notice("You set the aggressiveness restrictor to the first position."))
+MSG_DEF_SELF(sechailer/restrictor_2, span_notice("You set the aggressiveness restrictor to the second position."))
+MSG_DEF_SELF(sechailer/restrictor_3, span_notice("You set the aggressiveness restrictor to the third position."))
+MSG_DEF_SELF(sechailer/restrictor_4, span_notice("You set the aggressiveness restrictor to the fourth position."))
+MSG_DEF_SELF(sechailer/restrictor_broken, span_warning("You broke it!"))
+MSG_DEF_SELF(sechailer/restrictor_dead, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
+
+/// Each restrictor position opens on its own phrase.
+/obj/item/clothing/mask/gas/sechailer/proc/restrictor_turned(datum/act/op/A)
 	switch(aggressiveness)
-		if(1)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the second position."))
-			aggressiveness = 2
-			phrase = 7
 		if(2)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the third position."))
-			aggressiveness = 3
-			phrase = 13
+			phrase = 7
 		if(3)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the fourth position."))
-			aggressiveness = 4
+			phrase = 13
+		else
 			phrase = 1
-		if(4)
-			to_chat(user, span_notice("You set the aggressiveness restrictor to the first position."))
-			aggressiveness = 1
-			phrase = 1
-		if(5)
-			to_chat(user, span_warning("You adjust the restrictor but nothing happens, probably because its broken."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/clothing/mask/gas/sechailer/wirecutter_act(mob/user, obj/item/tool)
-	if(aggressiveness == 5)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_warning("You broke it!"))
-	aggressiveness = 5
-	return ITEM_INTERACT_SUCCESS
+/// The hailer comes off only a mask that has a separate one, and only when the mask's holder lets it go.
+/obj/item/clothing/mask/gas/sechailer/proc/hailer_removal_refusal(datum/act/op/A)
+	if(!read_once(hailer()))
+		return "this mask has an integrated hailer, you can't remove it"
+	return read_once(loc?.release_refusal(src, A.actor))
 
-/obj/item/clothing/mask/gas/sechailer/crowbar_act(mob/user, obj/item/tool)
-	if(!hailer())
-		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
-		return ITEM_INTERACT_BLOCKING
+/obj/item/clothing/mask/gas/sechailer/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	transfer_blooddna_to(mask)
 	transfer_fingerprints_to(mask)
 	transfer_fibres_to(mask)
@@ -149,11 +170,11 @@ DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag)
 		user.put_in_hands(mask)
 	else
 		hailer().forceMove(mask.loc)
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	consume(src, user)
+	return OP_OK
 
 /// Old verb "HALT!".
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb(mob/user, obj/item/held)
 	var/key = phrase_list[phrase]
 	var/message = phrase_list[key]
 

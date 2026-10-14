@@ -1,0 +1,17 @@
+@obj.item.mecha_parts.mecha_equipment human|none
+@obj.item.mecha_parts.mecha_equipment robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.mecha_parts human|/obj/item/tool/screwdriver
+@obj.item.mecha_parts human|/obj/item/tool/crowbar
+@obj.item.mecha_parts human|/obj/item/tool/wrench
+@obj.item.mecha_parts human|/obj/item/tool/wirecutters
+@obj.item.mecha_parts human|/obj/item/multitool
+@obj.item.mecha_parts human|/obj/item/weldingtool
+@obj.item.mecha_parts human|/obj/item/stack/cable_coil
+@obj.item.mecha_parts human|/obj/item/stack/material/steel
+@obj.item.mecha_parts human|/obj/item/card/id
+@obj.item.mecha_parts human|/obj/item/kit
+@obj.item.mecha_parts human|/obj/item/storage
+@obj.item.mecha_parts human|/obj/item
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

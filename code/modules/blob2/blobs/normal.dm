@@ -2,29 +2,26 @@
 	name = "normal blob"
 	base_name = "blob"
 	icon_state = "blob"
-	light_range = 0
 	max_integrity = 25
 	health_regen = 1
 
-/obj/structure/blob/normal/Initialize(mapload, new_overmind)
-	. = ..()
+CAPABILITIES(/obj/structure/blob/normal)
+	configure(light_glow(range = 0))
+	after_init(0, then(PROC_REF(blob_normal_integrity)))
+
+/obj/structure/blob/normal/proc/blob_normal_integrity(datum/act/timer/A)
 	update_integrity(21) // Doesn't start at full health.
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/normal, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/structure/blob/normal/appearance_overlays()
-	. = list()
-	. += ..()
-	if(get_integrity() <= 15)
-		icon_state = "blob_damaged"
-		desc = "A thin lattice of slightly twitching tendrils."
+/obj/structure/blob/normal/look_parts(datum/look/look)
+	..()
+	var/desc_shown
+	if(get_integrity_damage() >= max_integrity - 15)
+		look.state("blob_damaged")
+		desc_shown = "A thin lattice of slightly twitching tendrils."
 	else
-		icon_state = "blob"
-		desc = "A thick wall of writhing tendrils."
-
-	if(overmind)
-		name = "[overmind.blob_type.name]"
-	else
-		name = "inert [base_name]"
+		look.state("blob")
+		desc_shown = "A thick wall of writhing tendrils."
+	look.identity(name = look_title ? "[look_title]" : "inert [base_name]", desc = desc_shown)
 
 /obj/structure/blob/normal/pulsed()
 	..()

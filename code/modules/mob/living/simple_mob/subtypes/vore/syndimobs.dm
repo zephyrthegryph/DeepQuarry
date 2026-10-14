@@ -82,22 +82,22 @@
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2))
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2))
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 
 	var/turf/T = get_turf(src)
 
@@ -117,7 +117,7 @@
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
@@ -201,30 +201,27 @@
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
-
 	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 1)
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
 	projectilesound = SFX_WEAPONS_SERDY_TYPE901
 	projectile_dispersion = 3
 	projectile_accuracy = -15
-	base_attack_cooldown = 8
 	reload_max = 30
 
 	say_list_type = /datum/say_list/merc
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
-/mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
-	. = ..()
-	var/oursize = rand(90, 200) / 100
-	resize(oursize)
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(mob_kind(attack_cooldown = 8))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(syndimob_warning_flash(delay))
 
-	om_after(src, delay, PROC_REF(implant_detonates))
+	after(src, delay, PROC_REF(implant_detonates))
 	return ..()
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/alt1
@@ -258,8 +255,10 @@
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	random_skin = 0
-	base_attack_cooldown = 0.3
 	reload_max = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/lmg)
+	configure(mob_kind(attack_cooldown = 0.3))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/smg
 	name = "mercenary commando"
@@ -275,8 +274,10 @@
 	projectile_dispersion = 1
 	projectile_accuracy = -10
 	random_skin = 0
-	base_attack_cooldown = 0.1
 	reload_max = 15
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/smg)
+	configure(mob_kind(attack_cooldown = 0.1))
 /*
 /mob/living/simple_mob/vore/wolftaur/syndicate/awp
 	name = "mercenary commando sniper"
@@ -292,9 +293,11 @@
 	projectile_dispersion = 0
 	projectile_accuracy = 50
 	random_skin = 0
-	base_attack_cooldown = 30
 	ranged_attack_delay = 2.5
 	reload_max = 5
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/awp)
+	configure(mob_kind(attack_cooldown = 30))
 \*
 */
 

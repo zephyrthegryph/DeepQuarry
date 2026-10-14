@@ -74,7 +74,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		var/was_stunned = L.incapacitated(INCAPACITATION_DISABLED)
-		L.status_at_least(EFFECT_WEAKENED, weaken_amount)
+		L.status_at_least(STAT_WEAKENED, weaken_amount)
 
 		play_sfx(src, SFX_EFFECTS_BREAK_STONE)
 		if(was_stunned) // Try to prevent chain-stuns by having them thrown.

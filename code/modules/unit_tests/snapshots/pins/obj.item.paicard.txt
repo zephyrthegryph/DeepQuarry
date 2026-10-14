@@ -1,0 +1,94 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+-click: nothing
++0 menu: Inhabit (refused: You have no pai name set.)
++3 click: Click: Inhabit
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Check part
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj human|/obj/item/kit
+-click: Click: Customise
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++3 menu: Use
++4 click: Click: Use
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/paiparts/cell menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/cell menu: Move To Top
+human|/obj/item/paiparts/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/cell menu: Use
+human|/obj/item/paiparts/cell click: Click: Install part
+human|/obj/item/paiparts/processor menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/processor menu: Move To Top
+human|/obj/item/paiparts/processor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/processor menu: Use
+human|/obj/item/paiparts/processor click: Click: Install part
+human|/obj/item/paiparts/board menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/board menu: Move To Top
+human|/obj/item/paiparts/board menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/board menu: Use
+human|/obj/item/paiparts/board click: Click: Install part
+human|/obj/item/paiparts/capacitor menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/capacitor menu: Move To Top
+human|/obj/item/paiparts/capacitor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/capacitor menu: Use
+human|/obj/item/paiparts/capacitor click: Click: Install part
+human|/obj/item/paiparts/projector menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/projector menu: Move To Top
+human|/obj/item/paiparts/projector menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/projector menu: Use
+human|/obj/item/paiparts/projector click: Click: Install part
+human|/obj/item/paiparts/emitter menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/emitter menu: Move To Top
+human|/obj/item/paiparts/emitter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/emitter menu: Use
+human|/obj/item/paiparts/emitter click: Click: Install part
+human|/obj/item/paiparts/speech_synthesizer menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
+human|/obj/item/paiparts/speech_synthesizer menu: Move To Top
+human|/obj/item/paiparts/speech_synthesizer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paiparts/speech_synthesizer menu: Use
+human|/obj/item/paiparts/speech_synthesizer click: Click: Install part
+@obj human|/obj/item
+-menu: Alternate use
+keys: activate_tool, check_part, cleardna, clearlaws, clear_preview, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, id_access, inhabit, install_board, install_capacitor, install_cell, install_emitter, install_processor, install_projector, install_synthesizer, item, kit_customize, kit_customize_last, move_to_top, open_panel, pick_up_item, preview, select_pai, select_tool, setdna, setlaws, toggle_digestable, use, wires

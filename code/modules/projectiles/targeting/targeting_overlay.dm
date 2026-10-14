@@ -18,8 +18,11 @@
 	var/target_permissions = 0 // Permission bitflags.
 
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
-OM_FIELD_VIEW(/obj/aiming_overlay, obj/item, aiming_with, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
+/obj/aiming_overlay/var/obj/item/aiming_with
+CAPABILITIES(/obj/aiming_overlay)
+	links(/obj/aiming_overlay::aiming_at, /mob/living::aimed, b_many = TRUE)
+	ref_one(nameof(aiming_with))
+	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
@@ -36,29 +39,29 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 		target_permissions |= perm
 
 	// Update HUD icons.
-	if(owner().gun_move_icon)
+	if(hud_of(owner())?.gun_move_icon)
 		if(!(target_permissions & TARGET_CAN_MOVE))
-			owner().gun_move_icon.icon_state = "no_walk0"
-			owner().gun_move_icon.name = "Allow Movement"
+			hud_of(owner())?.gun_move_icon?.icon_state = "no_walk0"
+			hud_of(owner())?.gun_move_icon?.name = "Allow Movement"
 		else
-			owner().gun_move_icon.icon_state = "no_walk1"
-			owner().gun_move_icon.name = "Disallow Movement"
+			hud_of(owner())?.gun_move_icon?.icon_state = "no_walk1"
+			hud_of(owner())?.gun_move_icon?.name = "Disallow Movement"
 
-	if(owner().item_use_icon)
+	if(hud_of(owner())?.item_use_icon)
 		if(!(target_permissions & TARGET_CAN_CLICK))
-			owner().item_use_icon.icon_state = "no_item0"
-			owner().item_use_icon.name = "Allow Item Use"
+			hud_of(owner())?.item_use_icon?.icon_state = "no_item0"
+			hud_of(owner())?.item_use_icon?.name = "Allow Item Use"
 		else
-			owner().item_use_icon.icon_state = "no_item1"
-			owner().item_use_icon.name = "Disallow Item Use"
+			hud_of(owner())?.item_use_icon?.icon_state = "no_item1"
+			hud_of(owner())?.item_use_icon?.name = "Disallow Item Use"
 
-	if(owner().radio_use_icon)
+	if(hud_of(owner())?.radio_use_icon)
 		if(!(target_permissions & TARGET_CAN_RADIO))
-			owner().radio_use_icon.icon_state = "no_radio0"
-			owner().radio_use_icon.name = "Allow Radio Use"
+			hud_of(owner())?.radio_use_icon?.icon_state = "no_radio0"
+			hud_of(owner())?.radio_use_icon?.name = "Allow Radio Use"
 		else
-			owner().radio_use_icon.icon_state = "no_radio1"
-			owner().radio_use_icon.name = "Disallow Radio Use"
+			hud_of(owner())?.radio_use_icon?.icon_state = "no_radio1"
+			hud_of(owner())?.radio_use_icon?.name = "Disallow Radio Use"
 
 	var/message = "no longer permitted to "
 	var/use_span = "warning"
@@ -80,27 +83,20 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 	if(aiming_at)
 		to_chat(aiming_at, "<span class='[use_span]'>You are [message].</span>")
 
-/obj/aiming_overlay/periodic_step()
+/obj/aiming_overlay/proc/aiming_step(datum/act/timer/A)
 	if(!owner())
-		qdel(src)
+		consume(src)
 		return
-	..()
 	update_aiming()
 
-/obj/aiming_overlay/relations()
-	. = ..()
-	. += rel_one(nameof(aiming_at), back = nameof(/mob/living::aimed))
-/mob/living/relations()
-	. = ..()
-	. += rel_many(nameof(aimed), back = nameof(/obj/aiming_overlay::aiming_at))
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
-	om_after(src, 0, PROC_REF(update_aiming))
+	after(src, 0, PROC_REF(update_aiming))
 
 /obj/aiming_overlay/proc/update_aiming()
 
 	if(!owner())
-		qdel(src)
+		consume(src)
 		return
 
 	if(QDELETED(aiming_at))
@@ -108,17 +104,16 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 		return
 
 	if(!locked && EXPIRY_EXPIRED(src, lock_time, CLOCK_WORLD))
-		locked = 1
+		set_locked(1)
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))
-		update_icon()
 
 	var/cancel_aim = 1
 
 	var/mob/living/carbon/human/H = owner()
 	if(!(aiming_with() in owner()) || (istype(H) && !H.item_is_in_hands(aiming_with())))
 		to_chat(owner(), span_warning("You must keep hold of your weapon!"))
-	else if(owner().has_status(EFFECT_BLINDED))
+	else if(owner().has_status(STAT_BLINDED))
 		to_chat(owner(), span_warning("You are blind and cannot see your target!"))
 	else if(!aiming_at || !istype(aiming_at.loc, /turf))
 		to_chat(owner(), span_warning("You have lost sight of your target!"))
@@ -179,11 +174,14 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 
 	rel_add(aiming_at, nameof(aiming_at.aimed), src)
 	toggle_active(1)
-	locked = 0
-	update_icon()
+	set_locked(0)
 	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
-APPEARANCE_TEMPLATE(/obj/aiming_overlay, "{locked?locked:locking}")
+TRACKED(/obj/aiming_overlay, locked)
+
+/obj/aiming_overlay/draw(datum/look/look)
+	..()
+	look.state("[locked ? "locked" : "locking"]")
 
 /obj/aiming_overlay/proc/toggle_active(force_state = null)
 	if(!isnull(force_state))
@@ -203,7 +201,7 @@ APPEARANCE_TEMPLATE(/obj/aiming_overlay, "{locked?locked:locking}")
 		else
 			to_chat(owner(), span_notice("You will no longer aim rather than fire."))
 			owner().client.remove_gun_icons()
-		owner().gun_setting_icon?.icon_state = "gun[active]"
+		hud_of(owner())?.gun_setting_icon?.icon_state = "gun[active]"
 
 /obj/aiming_overlay/proc/cancel_aiming(no_message = 0)
 	if(!aiming_with() || !aiming_at)

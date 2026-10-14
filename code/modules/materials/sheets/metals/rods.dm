@@ -4,15 +4,10 @@
 	singular_name = "metal rod"
 	icon_state = "rods"
 	w_class = ITEMSIZE_NORMAL
-	force = 9.0
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
 	MATERIAL_BULK(MAT_STEEL, REAGENTS_PER_ROD)
 	max_amount = 60
-	attack_verb = list("hit", "bludgeoned", "whacked")
 
 	color = "#666666"
 
@@ -26,42 +21,41 @@
 	stacktype = /obj/item/stack/rods
 	no_variants = TRUE
 
-/obj/item/stack/rods/Initialize(mapload)
-	. = ..()
-	recipes = GLOB.rods_recipes
-	update_icon()
+/// A few rods show their count; a pile shows the plain state.
+/obj/item/stack/rods/look_state()
+	var/count = get_amount()
+	if((count <= 5) && (count > 0))
+		return "rods-[count]"
+	return "rods"
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/rods/appearance_overlays()
-	. = list()
-	var/amount = get_amount()
-	if((amount <= 5) && (amount > 0))
-		icon_state = "rods-[amount]"
-	else
-		icon_state = "rods"
+CAPABILITIES(/obj/item/stack/rods)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 9.0, attack_verbs = list("hit", "bludgeoned", "whacked")))
+	per_type(nameof(recipes), PROC_REF(rods_recipes))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	op("splint", item(/obj/item/tape_roll), passes(), then(PROC_REF(taped_into_splint)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
-EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_interaction_item)))
+/// Tape wound round a rod makes a makeshift splint.
+/obj/item/stack/rods/proc/taped_into_splint(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
+	new_splint.add_fingerprint(user)
 
-/// Old attackby.
-/obj/item/stack/rods/proc/rods_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/tape_roll))
-		var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
-		new_splint.add_fingerprint(user)
+	act_message(user, null, MSG_SELF(span_notice("You use make \a [new_splint] out of a [singular_name].")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " constructs \a [new_splint] out of a [singular_name].")))
+	src.use(1)
+	return OP_OK
 
-		act_message(user, null, MSG_SELF(span_notice("You use make \a [new_splint] out of a [singular_name].")), \
-			MSG_OTHERS(span_infoplain(span_bold("%U%") + " constructs \a [new_splint] out of a [singular_name].")))
-		src.use(1)
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
-
-/obj/item/stack/rods/welder_act(mob/user, obj/item/tool)
+/obj/item/stack/rods/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(get_amount() < 2)
 		to_chat(user, span_warning("You need at least two rods to do this."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/stack/material/steel/new_item = new(user.loc)
 	new_item.add_to_stacks(user)
 	act_message(src, user, others = span_notice("%U% is shaped into metal by %T% with the welding tool."), blind = span_notice("You hear welding."))
@@ -69,7 +63,11 @@ EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_inte
 	use(2)
 	if(QDELETED(src) && replace)
 		user.put_in_hands(new_item)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/stack/rods/reagents_per_sheet()
 	return REAGENTS_PER_ROD
+
+/// What rods build (per_type(): the shared recipe list).
+/obj/item/stack/rods/proc/rods_recipes()
+	return GLOB.rods_recipes

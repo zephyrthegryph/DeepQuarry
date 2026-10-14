@@ -27,21 +27,22 @@
 	var/monitor_stored_energy = 0
 
 /datum/material_service/proc/register_diagnostics()
-	om_hook(owner(), /datum/om/event/before/atom_tool_act, src, PROC_REF(on_tool_act))
-	om_hook(owner(), /datum/om/event/before/attackby, src, PROC_REF(replace_with_stock))
-	om_hook(owner(), /datum/om/event/examine, src, PROC_REF(examine_service))
+	observe(owner(), /datum/act/tool_act, src, instead(then(PROC_REF(on_tool_act))))
+	observe(owner(), /datum/act/attackby, src, instead(then(PROC_REF(replace_with_stock))))
+	observe(owner(), /datum/notice/examine, src, then(PROC_REF(examine_service)))
 
 /// Secondary multitool / screwdriver use on the owner.
-/datum/material_service/proc/on_tool_act(datum/source, datum/om/event/before/atom_tool_act/event)
-	EVENT_HANDLER
-	if(!event.secondary)
-		return NONE
-	switch(event.tool_quality)
+/datum/material_service/proc/on_tool_act(datum/act/tool_act/use)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!use.secondary)
+		return HOOK_DECLINE
+	var/result = NONE
+	switch(use.tool_quality)
 		if(TOOL_MULTITOOL)
-			return inspect_with_tool(source, event.user, event.tool)
+			result = inspect_with_tool(use.target, use.user, use.tool)
 		if(TOOL_SCREWDRIVER)
-			return open_service_cover(source, event.user, event.tool)
-	return NONE
+			result = open_service_cover(use.target, use.user, use.tool)
+	return result ? result : HOOK_DECLINE
 
 /obj/proc/material_diagnostics_tool_act(mob/user, obj/item/tool)
 	if(!has_functional_construction() || !tool?.has_tool_quality(TOOL_MULTITOOL))
@@ -52,13 +53,16 @@
 	return service.inspect_with_tool(src, user, tool)
 
 /datum/material_service/proc/unregister_diagnostics()
-	om_unhook(owner(), list(/datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby, /datum/om/event/examine), src)
+	unobserve(owner(), /datum/act/tool_act, src)
+	unobserve(owner(), /datum/act/attackby, src)
+	unobserve(owner(), /datum/notice/examine, src)
 	rel_clear(src, nameof(monitor_tool))
 	rel_clear(src, nameof(monitor_user))
 	last_reading = null
 
-/datum/material_service/proc/examine_service(datum/source, datum/om/event/examine/event)
-	EVENT_HANDLER
+/datum/material_service/proc/examine_service(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/examine/event = A
 	var/list/text = event.texts
 	text += span_notice("[summary()] Right-click with a multitool to measure operation; right-click with a screwdriver to open the service cover.")
 	if(maintenance_open)
@@ -87,7 +91,7 @@
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
 	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
-	monitor_configuration = owner().material_configuration_revision
+	monitor_configuration = material_assembly_view(owner()).configuration_revision
 	reset_observation()
 	schedule(0)
 	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
@@ -102,14 +106,14 @@
 	act_message(user, owner(), others = span_notice("%U% [maintenance_open ? "opens" : "closes"] [owner()]'s service cover."))
 	return ITEM_INTERACT_SUCCESS
 
-/datum/material_service/proc/replace_with_stock(datum/source, datum/om/event/before/attackby/event)
-	EVENT_HANDLER
-	var/obj/item/item = event.item
-	var/mob/user = event.user
+/datum/material_service/proc/replace_with_stock(datum/act/attackby/use)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/item/item = use.item
+	var/mob/user = use.user
 	if(!maintenance_open || !istype(item, /obj/item/stack/material))
-		return NONE
+		return HOOK_DECLINE
 	INVOKE_ASYNC(src, PROC_REF(fit_stock), item, user) // ALLOW(scheduler): callee prompts (tgui_input_list)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+	return TRUE
 
 /datum/material_service/proc/fit_stock(obj/item/stack/material/stock, mob/user)
 	if(!can_service(user) || !stock || stock.loc != user)
@@ -117,7 +121,7 @@
 	var/list/roles = list()
 	for(var/role in owner().material_roles())
 		roles += role
-	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/om/prompt/choice, message = "Which component should be replaced?", title = "Service assembly", choices = roles)
+	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/prompt/choice, question = "Which component should be replaced?", title = "Service assembly", choices = roles)
 	if(isnull(role))
 		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner().material_roles()))
@@ -127,40 +131,35 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner(), stock = stock, role = role, quantity = quantity, material_id = material_id)
+	perform_op(user, src, "fit_stock", stock, ORIGIN_SYSTEM, with = list("role" = role, "quantity" = quantity, "material_id" = material_id))
 
-/datum/om/task/timed/material_service_fit_stock
-	duration = 2 SECONDS
-	complete_proc = /datum/material_service/proc/fit_stock_done
-	var/obj/item/stack/material/stock
-	var/role
-	var/quantity
-	var/material_id
-
-/datum/material_service/proc/fit_stock_done(datum/om/task/timed/material_service_fit_stock/task)
-	var/obj/item/stack/material/stock = task.stock
-	var/mob/user = task.actor
-	var/role = task.role
-	var/quantity = task.quantity
-	var/material_id = task.material_id
+/datum/material_service/proc/fit_stock_done(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
+	var/mob/user = A.actor
+	var/role = A.arg("role")
+	var/quantity = A.arg("quantity")
+	var/material_id = A.arg("material_id")
+	if(QDELETED(stock))
+		return
 	if(!can_service(user) || !maintenance_open || stock.loc != user || !stock.use(quantity))
 		return
 	advance()
 	if(QDELETED(owner()))
 		return
 	owner().set_construction_material(role, material_id)
+	var/datum/material_assembly/wear = material_assembly(owner())
 	if(role == MATERIAL_ROLE_LINER)
-		owner().material_environment_liner_integrity = 100
+		wear.liner_integrity = 100
 	if(role == MATERIAL_ROLE_STRUCTURE)
-		owner().material_environment_exterior_integrity = 100
-		owner().material_environment_fatigue = 0
-	if(owner().material_environment_liner_integrity > 0 && owner().material_environment_exterior_integrity > 0 && owner().material_environment_fatigue < 100)
-		owner().material_environment_leaking = FALSE
+		wear.exterior_integrity = 100
+		wear.fatigue = 0
+	if(wear.liner_integrity > 0 && wear.exterior_integrity > 0 && wear.fatigue < 100)
+		wear.leaking = FALSE
 		owner().material_environment_repaired()
 	owner().material_service_changed()
 	if(isitem(owner()))
 		var/obj/item/item = owner()
-		item.apply_material_role_effects(item.engineered_material_profile)
+		item.apply_material_role_effects(material_build_view(item).profile)
 	if(istype(owner(), /obj/structure/cable))
 		var/obj/structure/cable/cable = owner()
 		cable.material_overlay?.invalidate_material_cache()
@@ -170,20 +169,24 @@
 /datum/material_service/tgui_host(mob/user)
 	return owner()
 
-DECLARE_UI(/datum/material_service, "EngineeringAssembly")
+CAPABILITIES(/datum/material_service)
+	owns_many(nameof(gas_watches), /datum/native_watch/gas)
+	interface("EngineeringAssembly")
+	// Fitting a new component from a stack of sheets (fit_stock() asks which one): the user stays for two seconds.
+	op("fit_stock", ai(), takes("role", "quantity", "material_id"), wait(2 SECONDS), then(PROC_REF(fit_stock_done)))
+	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
 
 /datum/material_service/ui_title(mob/user)
 	return "[owner().name] — diagnostics"
 
-UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{status:unknown,temperature:num,buffer:num,input:num,output:num,lossEnergy:num,parts:list,limiting:unknown,configuration:num,liner:num,shell:num,fatigue:num,monitoring:bool,reading:unknown,emitter:map}")
-
-/// The computed part of /datum/material_service's window data (declared on its UI_DATA row).
-/datum/material_service/proc/ui_data_datum_material_service(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/material_service's window data.
+/datum/material_service/ui_data(datum/act/eval/A)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())
 		var/datum/material/material = owner().material_for_role(role)
 		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
-	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner().material_configuration_revision, "liner" = owner().material_environment_liner_integrity, "shell" = owner().material_environment_exterior_integrity, "fatigue" = owner().material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
+	var/datum/material_assembly/wear = material_assembly_view(owner())
+	var/list/data = list("status" = status, "temperature" = temperature(), "buffer" = buffer_energy(), "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = wear.configuration_revision, "liner" = wear.liner_integrity, "shell" = wear.exterior_integrity, "fatigue" = wear.fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
 	if(istype(owner(), /obj/machinery/power/emitter))
 		var/obj/machinery/power/emitter/emitter = owner()
 		data["emitter"] = list("output" = emitter.material_output_setting, "cadence" = emitter.material_cadence_setting, "stored" = emitter.material_stored_energy, "active" = emitter.active)
@@ -209,26 +212,29 @@ UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{s
 			return "Controls motion: [round(material.elasticity)] elasticity, [round(material.hardness)] hardness."
 	return "Functional behavior follows this material's measured physical properties."
 
-/datum/material_service/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/material_service/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(owner()) || !user.Adjacent(owner()) || user.incapacitated())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/material_service, "emitter_setting", ui_act_emitter_setting, UI_ARG_CHOICE("setting", list("output", "cadence")), UI_ARG_NUM("value", 0.25, 3))
-UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
+/datum/material_service/proc/ui_act_emitter_setting(datum/act/op/A, setting, value_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(setting) && !(setting in list("output", "cadence")))
+		return FALSE
 	var/obj/machinery/power/emitter/emitter = owner()
 	if(!istype(emitter))
 		return FALSE
-	if(!emitter.allowed(user) || emitter.locked)
+	if(!emitter.allowed(user) || lock_locked(emitter))
 		return TRUE
-	var/value = params["value"]
+	var/value = value_arg
 	if(!isnum(value))
 		return TRUE
-	if(params["setting"] == "output")
+	if(setting == "output")
 		emitter.material_output_setting = value
-	else if(params["setting"] == "cadence")
+	else if(setting == "cadence")
 		emitter.material_cadence_setting = value
 	emitter.material_service_changed()
 	return TRUE
@@ -245,7 +251,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	monitor_minimum_output = INFINITY
 	monitor_minimum_flow = INFINITY
 	monitor_minimum_pressure = INFINITY
-	monitor_maximum_temperature = temperature
+	monitor_maximum_temperature = temperature()
 	monitor_stored_energy = owner().material_operating_reservoir()
 
 /// Only physical observation records an interval. Opening/refreshing a UI does
@@ -257,10 +263,11 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 		rel_clear(src, nameof(monitor_tool))
 		rel_clear(src, nameof(monitor_user))
 		return FALSE
-	if(monitor_configuration != owner().material_configuration_revision)
-		monitor_configuration = owner().material_configuration_revision
+	var/datum/material_assembly/wear = material_assembly_view(owner())
+	if(monitor_configuration != wear.configuration_revision)
+		monitor_configuration = wear.configuration_revision
 		reset_observation()
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature)
+	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature())
 	// The last delivery's destination, as recorded when the pump delivered (the mixture itself is
 	// owned by its turf or network; the service keeps only the readings).
 	if(last_delivery_pressure)
@@ -272,7 +279,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	var/input = input_joules - monitor_last_input
 	var/output = output_joules - monitor_last_output
 	var/flow = delivered_moles - monitor_last_moles
-	if(output <= 0 || input <= 0 || owner().material_environment_leaking || owner().material_environment_fatigue >= 100)
+	if(output <= 0 || input <= 0 || wear.leaking || wear.fatigue >= 100)
 		reset_observation()
 		last_input_watts = 0
 		last_output_watts = 0
@@ -280,7 +287,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	monitor_minimum_output = min(monitor_minimum_output, output / interval)
 	monitor_minimum_flow = min(monitor_minimum_flow, flow / interval)
 	monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
-	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature, last_delivery_temperature)
+	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature(), last_delivery_temperature)
 	last_input_watts = input / interval
 	last_output_watts = output / interval
 	monitor_last_input = input_joules
@@ -290,7 +297,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)
-	last_reading = list("name" = owner().name, "assembly" = owner().material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
+	last_reading = list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 
@@ -340,8 +347,8 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 		SScontracts.retain_evidence(tool.engineering_evidence_id)
 	var/obj/item/paper/report = new(get_turf(src))
 	report.name = "engineering measurement — [reading["name"]]"
-	report.info = "<h3>Engineering measurement</h3>"
-	report.info += "<b>Observer:</b> [html_encode("[reading["observer_name"] || "Unidentified operator"]")]<br>"
+	report.set_info("<h3>Engineering measurement</h3>")
+	report.set_info(report.info + ("<b>Observer:</b> [html_encode("[reading["observer_name"] || "Unidentified operator"]")]<br>"))
 	var/static/list/labels = list("name" = "Assembly", "assembly" = "Serial", "configuration" = "Configuration revision", "duration" = "Observed duration (seconds)", "input_joules" = "Input energy (J)", "output_joules" = "Delivered energy (J)", "minimum_output_watts" = "Minimum delivered power (W)", "minimum_flow_moles" = "Minimum gas transfer (mol/s)", "minimum_pressure_kpa" = "Minimum delivery pressure (kPa)", "maximum_temperature_k" = "Peak temperature (K)")
 	for(var/key in labels)
 		var/value = reading[key]
@@ -349,10 +356,9 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 			continue
 		if(isnum(value))
 			value = round(value, 0.1)
-		report.info += "<b>[labels[key]]:</b> [html_encode("[value]")]<br>"
-	report.info += "<b>Measured efficiency:</b> [round(reading["efficiency"] * 100, 0.1)]%<br>"
+		report.set_info(report.info + ("<b>[labels[key]]:</b> [html_encode("[value]")]<br>"))
+	report.set_info(report.info + ("<b>Measured efficiency:</b> [round(reading["efficiency"] * 100, 0.1)]%<br>"))
 	report.attach_contract_evidence(tool.engineering_evidence_id)
-	report.update_icon()
-	toner--
-	use_power(active_power_usage)
+	set_toner(toner - 1)
+	use_power(power_of(src).active)
 	return TRUE

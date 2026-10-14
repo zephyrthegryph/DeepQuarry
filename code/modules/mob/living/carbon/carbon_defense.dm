@@ -17,7 +17,7 @@
 		var/hit_embed_chance = I.embed_chance
 		if(dq_armor_turns_edge(INJURY_CUT, blocked)) // Armour that turns the edge also keeps the blade from lodging.
 			weapon_sharp = FALSE
-			hit_embed_chance = I.force/(I.w_class*3)
+			hit_embed_chance = combat_of(I).force/(I.w_class*3)
 		var/damage = effective_force
 		if (blocked)
 			damage *= (100 - blocked)/100
@@ -48,38 +48,39 @@
 // Knifing
 /mob/living/carbon/proc/attack_throat(obj/item/W, obj/item/grab/G, mob/user)
 
-	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
+	if(!combat_of(W).edge || !combat_of(W).force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	act_message(user, src, others = span_danger("%U% begins to slit %T%'s throat with %I%!"), item = W)
-
-	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
-	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
+	cooldown_start(user, next_move, 20) //also should prevent user from triggering this repeatedly
+	perform_op(user, src, "slit_throat", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/datum/om/task/timed/carbon_attack_throat_carbon
-	duration = 2 SECONDS
-	complete_proc = /mob/living/carbon/proc/attack_throat_carbon_done
-	var/obj/item/W
-	var/obj/item/grab/G
+MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%!"))
 
-/mob/living/carbon/proc/attack_throat_carbon_done(datum/om/task/timed/carbon_attack_throat_carbon/task)
-	var/obj/item/W = task.W
-	var/obj/item/grab/G = task.G
-	var/mob/user = task.actor
-	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
+/// The grab `user` holds on this mob, if any.
+/mob/living/carbon/proc/grab_held_by(mob/user)
+	for(var/obj/item/grab/G in src?.grabbed_by_list())
+		if(G?.grab_assailant() == user)
+			return G
+	return null
+
+/mob/living/carbon/proc/attack_throat_carbon_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/obj/item/grab/G = grab_held_by(user)
+	if(!G || !W) //check that we still have a grab
 		return 0
 
 	var/damage_mod = 1
 	//presumably, if they are wearing a helmet that stops pressure effects, then it probably covers the throat as well
 	var/obj/item/clothing/head/helmet = get_equipped_item(SLOT_ID_HEAD)
-	if(istype(helmet) && (helmet.body_parts_covered & HEAD) && (helmet.min_pressure_protection != null)) // Both min- and max_pressure_protection must be set for it to function at all, so we can just check that one is set.
+	if(istype(helmet) && (worn_of(helmet).covers & HEAD) && (protection_of(helmet).min_pressure != null)) // Both min- and max_pressure_protection must be set for it to function at all, so we can just check that one is set.
 		//we don't do an armor_check here because this is not an impact effect like a weapon swung with momentum, that either penetrates or glances off.
 		damage_mod = 1.0 - min(body.worn_armor(HEAD, MELEE), 100) / 100
 
 	var/total_damage = 0
 	for(var/i in 1 to 3)
-		var/damage = min(W.force*1.5, 20)*damage_mod
+		var/damage = min(combat_of(W).force*1.5, 20)*damage_mod
 		receive_weapon_hit(W, user, damage, zone = BP_HEAD, silent = FALSE, armored = FALSE)
 		total_damage += damage
 
@@ -94,8 +95,8 @@
 		else
 			act_message(user, src, others = span_danger("%U% cut %T%'s neck with %I%!"), item = W)
 
-		if(W.hitsound)
-			playsound(src, W.hitsound, 50, 1, -1)
+		if(sounds_of(W).hit)
+			playsound(src, sounds_of(W).hit, 50, 1, -1)
 
 	G.note_action()
 	flick(G.hud.icon_state, G.hud)
@@ -106,7 +107,7 @@
 
 /mob/living/carbon/proc/shank_attack(obj/item/W, obj/item/grab/G, mob/user, hit_zone)
 
-	if(!W.sharp || !W.force || W.obj_damage_type() != BRUTE)
+	if(!combat_of(W).sharp || !combat_of(W).force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
 	act_message(user, src, others = span_danger("%U% plunges %I% into %T%!"), item = W)
@@ -114,17 +115,17 @@
 	var/damage = shank_armor_helper(W, G, user)
 	receive_weapon_hit(W, user, damage, zone = BP_TORSO, silent = FALSE, armored = FALSE)
 
-	if(W.hitsound)
-		playsound(src, W.hitsound, 50, 1, -1)
+	if(sounds_of(W).hit)
+		playsound(src, sounds_of(W).hit, 50, 1, -1)
 
 	add_attack_logs(user,src,"Knifed (shanked)")
 
 	return 1
 
 /mob/living/carbon/proc/shank_armor_helper(obj/item/W, obj/item/grab/G, mob/user)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	var/damage_mod = 1
-	if(W.edge)
+	if(combat_of(W).edge)
 		damage = damage * 1.25 //small damage bonus for having sharp and edge
 
 	// Whatever is worn over the chest, combined (worn protection cache).

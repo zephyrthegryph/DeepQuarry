@@ -17,29 +17,33 @@
 	fire_sound = SFX_WEAPONS_BLADESLICE
 	fire_sound_text = "a strange noise"
 
-OM_FIELD(/obj/item/gun/launcher/spikethrower, spikes, 5, CHANGE_EXPLICIT)
-/// Short of spikes: derived from spikes (raised by set_spikes()).
-OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, list("spikes"))
-/obj/item/gun/launcher/spikethrower/proc/spikes_short()
-	return spikes < max_spikes
-DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spikes_short")
+/obj/item/gun/launcher/spikethrower/var/spikes = 5
+/// Regrows spikes every 2 s while short of them; full, the gate keeps it idle.
+CAPABILITIES(/obj/item/gun/launcher/spikethrower)
+	every(2 SECONDS, then(PROC_REF(spikethrower_step)), when = PROC_REF(spikes_short))
 
+/// Short of spikes.
+/obj/item/gun/launcher/spikethrower/proc/spikes_short(datum/act/A)
+	return spikes < max_spikes
+
+// ALLOW(init/INSTANCE_STATE): starts its spike regeneration timer from when it is made
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 
-/// Regrows spikes every 2 s while short (declared on spikes_short); full, it sleeps.
-/obj/item/gun/launcher/spikethrower/periodic_step()
+/obj/item/gun/launcher/spikethrower/proc/spikethrower_step(datum/act/timer/A)
 	if(COOLDOWN_FINISHED(src, regen_cooldown))
 		set_spikes(spikes + 1)
 		COOLDOWN_START(src, regen_cooldown, spike_gen_time)
-		update_icon()
 
 /obj/item/gun/launcher/spikethrower/examine(mob/user)
 	. = ..()
 	. += "It has [spikes] spike\s remaining."
 
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/spikethrower/draw(datum/look/look)
+	..()
+	look.state("spikethrower[spikes]")
 
 /obj/item/gun/launcher/spikethrower/update_release_force()
 	return
@@ -79,20 +83,20 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
 	taser_effect = 1
 	agony = 55
 	injury_kind = INJURY_PAIN
-	light_color = "#8837A3"
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun
 	tracer_type = /obj/effect/projectile/tracer/darkmatterstun
 	impact_type = /obj/effect/projectile/impact/darkmatterstun
+
+CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/beam/darkmatter
 	name = "dark matter bolt"
 	icon_state = "darkb"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 35
-	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
 
@@ -100,16 +104,22 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
 
+CAPABILITIES(/obj/item/projectile/beam/darkmatter)
+	configure(light_glow(color = "#8837A3"))
+	configure(item_combat(armor_penetration = 35))
+
 /obj/item/projectile/energy/darkmatter
 	name = "dark matter pellet"
 	icon_state = "dark_pellet"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 20
-	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
+
+CAPABILITIES(/obj/item/projectile/energy/darkmatter)
+	configure(light_glow(color = "#8837A3"))
+	configure(item_combat(armor_penetration = 35))
 
 /*
  * Vox Sonic Cannon
@@ -137,9 +147,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
 	icon_state = "sound"
 	fire_sound = SFX_EFFECTS_BASSCANNON
 	damage = 5
-	armor_penetration = 30
 	embed_chance = 0
 	vacuum_traversal = 0
+
+CAPABILITIES(/obj/item/projectile/sonic)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/sonic/weak
 	agony = 50

@@ -58,9 +58,9 @@
 /datum/looping_sound/sequence/sound_loop()
 	if(QDELETED(src) || !running)
 		return
-	INVOKE_ASYNC(src, PROC_REF(sequence_step)) // ALLOW(scheduler): sequence process_data may sleep (om_sleep_violation exemption)
+	INVOKE_ASYNC(src, PROC_REF(sequence_step)) // ALLOW(scheduler): sequence process_data may sleep (sleep_violation exemption)
 
-/datum/looping_sound/sequence/om_sleep_violation()
+/datum/looping_sound/sequence/sleep_violation()
 	if(stepping)
 		return null
 	return ..()
@@ -183,7 +183,7 @@
 	for(var/sound in instructions)
 		var/file = (sound == MORSE_DOT) ? dot_soundfile : dash_soundfile
 		if(offset)
-			om_after(src, offset, PROC_REF(play), file)
+			after(src, offset, PROC_REF(play), with = list(file))
 		else
 			play(file)
 		offset += ((sound == MORSE_DOT) ? dot_delay : dash_delay) + spaces_between_sounds

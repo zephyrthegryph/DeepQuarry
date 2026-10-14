@@ -1,0 +1,883 @@
+// The look builder (doc/rewrite/dx_conventions.md §3). draw(look) describes the whole presentation;
+// the builder produces a change key, so an identical result costs a string compare and churns no
+// overlays. One builder is reused for every draw (draws never sleep). Everything an atom shows goes
+// through it: raw add_overlay()/overlays += outside it is banned (dx_raw_overlays), because it would
+// bypass the key and leak overlays.
+
+/datum/look
+	var/icon_state
+	var/icon
+	var/color
+	var/alpha
+	var/invisibility
+	var/matrix/transform
+	var/dir
+	var/plane
+	var/layer
+	var/list/overlays
+	/// look.underlay(): icon_states (or images) drawn beneath the base sprite.
+	var/list/underlays
+	/// Names from look.variant(): each replaces the base state by "<base>-name" when the icon has it.
+	var/list/variants
+	/// list(name, value or null, glows) per look.part(): resolved against the icon when applied.
+	var/list/parts
+	/// name -> filter params (look.add_look_filter()).
+	var/list/filters
+	var/list/vis
+	/// A one-shot flick state: played when the look is applied, not part of the key's steady state.
+	var/flick_state
+	/// list(range, power, color) from look.glow(range, ...), or null for no light from the look.
+	var/list/light_spec
+	/// look.held_state(): the item_state hands draw this item with, or null (unchanged).
+	var/held_state
+	/// look.identity(): the name and description shown, or null (unchanged).
+	var/identity_name
+	var/identity_desc
+	/// look.offset(): the pixel offset the holder shows, or null for none asked (x and y together).
+	var/offset_x
+	var/offset_y
+	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
+	var/list/effects
+	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
+	var/list/watched
+	/// look.neighbours(): the types of the neighbours this draw looked for (the watched turfs tell the holder only of those).
+	var/list/neighbour_types
+	/// look.watch_look(): own key -> look serial (cap_engine_state.look_serial) of the atoms whose whole look this draw composes: only a change of THEIR LOOK
+	/// (look_published()) redraws the holder, and the serials are part of the change key, so the holder's look is applied again when one moved.
+	var/list/watched_looks
+	/// Anything was set: a type that draws nothing keeps its mapped appearance.
+	var/touched = FALSE
+
+GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
+
+/datum/look/proc/reset()
+	light_spec = null
+	icon_state = null
+	icon = null
+	color = null
+	alpha = null
+	invisibility = null
+	transform = null
+	dir = null
+	plane = null
+	layer = null
+	overlays = null
+	underlays = null
+	variants = null
+	parts = null
+	filters = null
+	vis = null
+	flick_state = null
+	held_state = null
+	offset_x = null
+	offset_y = null
+	identity_name = null
+	identity_desc = null
+	effects = null
+	watched = null
+	watched_looks = null
+	neighbour_types = null
+	touched = FALSE
+
+/// The base icon_state. The last call wins (a capability's broken state is overridden by a type
+/// that draws its own broken state after ..()). Returns `name`, so a draw that builds on the state it
+/// chose can keep it: `state = look.state("[base]-open")`.
+/datum/look/proc/state(name)
+	icon_state = name
+	touched = TRUE
+	return name
+
+/// The base icon_state this draw has chosen so far (a parent's draw, a capability), else the one `A` shows now.
+/// A draw that refines the state ("[state]-busy") starts from it.
+/datum/look/proc/state_so_far(atom/A)
+	return isnull(icon_state) ? A.icon_state : icon_state
+
+/// An overlay icon_state (or an image / mutable_appearance), added only `when` is true. `icon`
+/// draws the state from another icon file than the holder's (one shared image per icon and state).
+/datum/look/proc/overlay(name, when = TRUE, icon)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(overlays, icon ? look_image(icon, name) : name)
+
+/// An underlay icon_state (or an image / mutable_appearance), drawn beneath the base sprite, added only `when` is true. `icon` draws the
+/// state from another icon file than the holder's. Like overlay(), the builder is the only writer of the holder's underlays.
+/datum/look/proc/underlay(name, when = TRUE, icon)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(underlays, icon ? look_image(icon, name) : name)
+
+/// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
+/// this state): every overlay or part named `name` added so far (a part by its name, or by name-value).
+/datum/look/proc/hide(name)
+	touched = TRUE
+	if(overlays)
+		for(var/entry in overlays.Copy())
+			if(istext(entry) && entry == name)
+				overlays -= entry
+		if(!length(overlays))
+			overlays = null
+	if(parts)
+		var/list/kept
+		for(var/list/entry in parts)
+			var/full = isnull(entry[2]) ? entry[1] : "[entry[1]]-[entry[2]]"
+			if(entry[1] != name && full != name)
+				LAZYADD(kept, list(entry))
+		parts = kept
+
+/**
+ * The base state gets a variant: with the icon having "<base>-name" the base is replaced by it (a
+ * lit or open sprite of the same thing). Variants apply in the order given; a variant the icon has no
+ * state for changes nothing. Only `when` is true.
+ */
+/datum/look/proc/variant(name, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYADD(variants, "[name]")
+
+/**
+ * A named part drawn over the base: `value` is TRUE for a plain part ("panel"), or a value (text or
+ * number) for "panel-open"; null / FALSE / "" draws nothing. It resolves when the look is applied to the
+ * first state the holder's icon has of "<base>-name[-value]" then "name[-value]". A part with no state draws nothing.
+ */
+/datum/look/proc/part(name, value = TRUE)
+	touched = TRUE
+	if(isnull(name) || isnull(value) || value == 0 || value == "")
+		return
+	var/shown = (value == TRUE) ? null : "[value]"
+	for(var/list/entry in parts)
+		if(entry[1] == "[name]" && entry[2] == shown)
+			return // drawn already (a type and its capabilities can both name a part)
+	LAZYADD(parts, list(list("[name]", shown, FALSE)))
+
+/// A gauge overlay: "[name][step]" for level (0..1) quantised to 0..levels. Null level: nothing.
+/datum/look/proc/gauge(name, level, levels = 4)
+	touched = TRUE
+	if(isnull(level))
+		return
+	var/step = clamp(round(level * levels), 0, levels)
+	LAZYADD(overlays, "[name][step]")
+
+/**
+ * Two things glow, and the first argument says which.
+ *
+ * A light: `look.glow(range, power, color)` (numbers first) or `look.glow(GLOW(range, power, color))`. The holder casts that light while
+ * this look holds; the engine applies it when the look is applied (draw() never calls set_glow(): a draw writes no state). A look that
+ * names no light (or a range or power of 0) turns off a light an earlier look gave; `look.glow(GLOW_OFF)` is dark even where the type starts lit. The values may come from tracked reads, or from a proc whose reads are declared: `look.glow(scan_light())`.
+ *
+ * An emissive part: `look.glow(name, value)` draws the part `name` (with a `value`, the part of that value) so it shows in the dark. A part
+ * of that name already added (look.part()) is upgraded, so a glow never needs the part beside it. `value` is TRUE (or any value) to do it,
+ * FALSE or null not to; only `when` is true.
+ */
+/datum/look/proc/glow(name, value = TRUE, when = TRUE, power = null, color = null)
+	touched = TRUE
+	if(islist(name) || isnum(name))
+		var/list/spec = islist(name) ? name : list(name, isnull(power) ? (value == TRUE ? 1 : value) : power, isnull(color) ? (when == TRUE ? null : when) : color)
+		var/range = spec[1]
+		var/strength = length(spec) >= 2 ? spec[2] : 1
+		if(!range || !strength)
+			if(islist(name))
+				light_spec = list(0, 0, null) // GLOW_OFF: dark even where the type starts lit
+			return
+		light_spec = list(range, strength, length(spec) >= 3 ? spec[3] : null)
+		return
+	if(!when || isnull(name) || isnull(value) || value == 0 || value == "")
+		return
+	var/wanted = (value == TRUE) ? null : "[value]"
+	for(var/list/entry in parts)
+		if(entry[1] == name && (isnull(wanted) || entry[2] == wanted))
+			entry[3] = TRUE
+			return
+	LAZYADD(parts, list(list("[name]", wanted, TRUE)))
+
+/**
+ * An effect of this look that is not drawing: `proc_ref(args...)` runs on the holder once the look has been applied (the look changed), outside
+ * the output, so it may write state, start a sound loop or call another entity. Draw stays pure (it only names the effect); a
+ * state-bound effect (a value that must follow a var even when the look does not change) is on_change(). Effects are part of the change
+ * key, so a draw that stops naming one does not leave it behind, and one that names a different value runs again. Only `when` is true.
+ *	look.effect(PROC_REF(add_eyes), has_eye_glow)
+ */
+/datum/look/proc/effect(proc_ref, ...)
+	touched = TRUE
+	if(isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy()))
+
+/// effect() only `when` is true: the condition first, so `look.effect_if(vore_eyes, PROC_REF(add_eyes))` reads like the legacy `if(vore_eyes) add_eyes()`.
+/datum/look/proc/effect_if(when, proc_ref, ...)
+	touched = TRUE
+	if(!when || isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy(2)))
+
+/**
+ * This draw read `thing` (a hat's item_state, a container's contents, a part's look): a change published on `thing` redraws the holder, as a
+ * change of the holder's own state does. The subscription follows the draw, so a draw that stops reading `thing` stops hearing it. The thing
+ * publishes through its tracked vars or PUBLISH_CHANGE(); a plain var it writes is not heard. Null reads nothing.
+ */
+/datum/look/proc/watch(datum/thing)
+	if(!isdatum(thing) || QDELETED(thing))
+		return
+	LAZYOR(watched, OWN_KEY(thing))
+
+/**
+ * This draw composes `thing`'s whole look (a voodoo doll that wears the look of its necklace's wearer, a remote scene tool): the holder redraws when THAT
+ * ATOM'S LOOK changes (it applied a new look, or a mob's worn layers changed: look_published()), and not on every var `thing` writes, which watch() would. The
+ * subscription follows the draw. Read `thing` through the name given here (the reads lint takes it as a watched relation, like watch()), and compose from what it
+ * shows (its overlays, its worn layers, its sprite vars); a value that is not part of its look (a name, a client) is tracked on the holder, or watch() instead.
+ *	look.watch_look(wearer)
+ *	var/image/shown = get_humanoid_displacement_map_image(wearer, discarded, map)
+ */
+/datum/look/proc/watch_look(atom/thing)
+	if(!isatom(thing) || QDELETED(thing))
+		return
+	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
+
+/// watch_look() for a draw that shows `thing` on `wearer` (an item in a hand, on the body): `thing` is not followed through its look when its own draw
+/// composes the wearer's look (look_composes()), or each would redraw the other for good.
+/datum/look/proc/watch_look_unless_composing(atom/thing, atom/wearer)
+	if(!isatom(thing) || look_composes(thing, wearer))
+		return
+	watch_look(thing)
+
+/**
+ * What stands on the turfs `dirs` away from `holder`: the movables of `type` there (a list, empty when none), and the draw hears about them. It watches
+ * each of those turfs (a mover of `type` entering or leaving one redraws the holder) and each neighbour found (its own tracked changes: dir,
+ * anchored, a tracked look var). `dirs` is one direction or a list of them. A holder that moves does not re-point the subscription until it draws again.
+ *	var/obj/machinery/other = look.neighbours(src, dir, /obj/machinery/reagent_refinery)[1]
+ */
+/datum/look/proc/neighbours(atom/holder, dirs = GLOB.cardinal, type = /atom/movable)
+	touched = TRUE
+	. = list()
+	var/turf/here = get_turf(holder)
+	if(!here)
+		return
+	LAZYOR(neighbour_types, type)
+	for(var/dir_away in (islist(dirs) ? dirs : list(dirs)))
+		var/turf/T = dir_away ? get_step(here, dir_away) : here // direction 0 is the holder's own tile
+		if(!T)
+			continue
+		watch(T)
+		for(var/atom/movable/AM as anything in global.contents_of(T, type)) // the global proc: the look's own contents_of() reads a slot
+			if(AM == holder)
+				continue // the holder is not its own neighbour (watching itself would redraw it forever)
+			. += AM
+			watch(AM)
+
+/// The first atom of `type` on the turf `dir` away from `holder` (neighbours() for one direction), or null.
+/datum/look/proc/neighbour(atom/holder, dir_away, type = /atom/movable)
+	var/list/found = neighbours(holder, dir_away, type)
+	return length(found) ? found[1] : null
+
+/// A mob's glowing eyes: the "<state>-eyes" sprite of its icon, above the lighting plane (so it glows in the dark), tinted `color` when given.
+/// What add_eyes()/remove_eyes() hung on the mob; the draw only says whether they show.
+/datum/look/proc/eyes(atom/holder, state, color, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(state))
+		return
+	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
+
+/**
+ * What `holder` (the atom being drawn) keeps in `slot` (null: its default slot) that is a `type`, as the types held: real things by their own type, and latent
+ * ones (a cabinet's declared guns, not made yet) by the type of their entry, once each. A draw that only classifies its contents (a gun cabinet counting energy
+ * and projectile guns) reads this and materializes nothing. The draw hears the slot's occupancy: a thing entering or leaving, and a latent entry made or used.
+ *	for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))
+ *		if(ispath(kind, /obj/item/gun/energy))
+ */
+/datum/look/proc/contents_of(atom/holder, slot, type = /atom/movable)
+	RETURN_TYPE(/list)
+	touched = TRUE
+	return holder.slot_kinds(slot, type)
+
+READS_AS(/datum/look/proc/contents_of, SLOT_OCCUPANCY_KEY)
+
+/**
+ * The real things of `type` in `holder`'s `slot` (null: its default slot), for a draw that shows them (a caged vehicle). Each is watched: a change
+ * published on it redraws the holder. The draw hears the slot's occupancy as it does for contents_of().
+ */
+/datum/look/proc/things_in(atom/holder, slot, type = /atom/movable)
+	RETURN_TYPE(/list)
+	touched = TRUE
+	. = list()
+	for(var/atom/movable/thing as anything in holder.slot_contents(slot))
+		if(istype(thing, type))
+			. += thing
+			watch(thing)
+
+READS_AS(/datum/look/proc/things_in, SLOT_OCCUPANCY_KEY)
+
+/**
+ * The picture another atom shows now, as list(icon, icon_state, dir), for a draw that builds part of its look out of it (a cliff cuts the ground above it out
+ * of the turf's own picture). The draw hears of the atom's changes (watch()).
+ */
+/datum/look/proc/picture_of(atom/thing)
+	RETURN_TYPE(/list)
+	touched = TRUE
+	if(!istype(thing))
+		return list(null, null, null)
+	watch(thing)
+	return list(thing.icon, thing.icon_state, thing.dir)
+
+/**
+ * A copy of another atom as one of this look's overlays (a caged vehicle behind its cage's frame), at `layer` when given: the atom as it looks now, in its own
+ * plane. The draw hears of the atom's changes (watch()).
+ */
+/datum/look/proc/show_copy_of(atom/thing, layer = null)
+	touched = TRUE
+	if(!istype(thing) || QDELETED(thing))
+		return
+	watch(thing)
+	var/image/copy = image(thing)
+	if(!isnull(layer))
+		copy.layer = layer
+	LAZYADD(overlays, copy)
+
+/// Another icon file for the base state.
+/datum/look/proc/set_icon(file)
+	icon = file
+	touched = TRUE
+
+// ---- part names and the per-icon state cache ----
+
+/// icon file text -> assoc set of its icon_states. An icon's states never change in a round, so each
+/// file is read once; a look resolving parts costs list lookups, not icon_states() calls.
+GLOBAL_LIST_EMPTY(look_icon_states)
+/// "[type]" -> the part names a look asked for that the type's icon has no state for (filled in test builds).
+GLOBAL_LIST_EMPTY(look_missing_parts)
+
+/// The set of state names `icon` (a file) has.
+/proc/look_states_of(icon)
+	RETURN_TYPE(/list)
+	var/key = isfile(icon) ? "[icon]" : null
+	var/list/found = key ? GLOB.look_icon_states[key] : null
+	if(found)
+		return found
+	found = list()
+	if(icon)
+		for(var/state in icon_states(icon))
+			found[state] = TRUE
+	if(key)
+		GLOB.look_icon_states[key] = found
+	return found
+
+/// Whether `icon` has a state named `state`.
+/proc/look_icon_has_state(icon, state)
+	return !!look_states_of(icon)[state]
+
+/**
+ * The state of part `name` (with `value`) in `icon` for base state `base`: the first of
+ * "<base>-name[-value]", "name[-value]" that exists. Null when the icon has none. Names are exact:
+ * tools/dq_icons/rename_states.py --standard moves legacy states to the standard names.
+ */
+/proc/look_resolve_part(icon, base, name, value)
+	var/list/states = look_states_of(icon)
+	var/full = isnull(value) ? "[name]" : "[name]-[value]"
+	if(base && states["[base]-[full]"])
+		return "[base]-[full]"
+	if(states[full])
+		return full
+	return null
+
+/**
+ * The standard parts of `A`'s look that its icon has no state for (from the capabilities' look_parts()),
+ * less what A says it knowingly lacks (look_lacks()). What the unit test lists.
+ */
+/proc/look_missing_standard_parts(atom/A)
+	. = list()
+	var/list/lacks = A.look_lacks()
+	var/base = initial(A.icon_state)
+	for(var/datum/capability/C as anything in caps_all(A))
+		for(var/part_name in C.look_parts())
+			if(part_name in lacks)
+				continue
+			if(!look_resolve_part(A.icon, base, part_name, null))
+				. |= part_name
+
+/// The standard part names this atom's type knowingly has no sprite for (an allowlist for the
+/// missing-parts test). Override to declare them.
+/atom/proc/look_lacks()
+	return null
+
+/// TRUE for a type whose standard parts the unit test enforces (types opt in as their sprites are named).
+/proc/look_checked(atom/holder)
+	return FALSE
+
+/// The standard part names this capability draws (its layer). Null draws none.
+/datum/capability/proc/look_parts()
+	if(!layer_name || layer_name == CAP_NO_LAYER)
+		return null
+	return list(layer_name)
+
+/// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
+/proc/look_image(icon, name)
+	var/static/list/cache = list() // ALLOW(cache): images shared by icon file and name, built once on first use and never written after
+	var/key = "[icon]:[name]"
+	var/image/I = cache[key]
+	if(!I)
+		I = image(icon = icon, icon_state = name)
+		cache[key] = I
+	return I
+
+/// A fresh overlay image for look.overlay() with its placement and tint set in one call (a draw() writes nothing, so an overlay raised, tinted, put on
+/// another plane or turned is built here): `icon_state` of `icon`, or the appearance of `of` (an atom drawn into the look, a scanner's patient).
+/proc/look_overlay_image(icon, icon_state, layer = FLOAT_LAYER, plane = FLOAT_PLANE, alpha = 255, pixel_x = 0, pixel_y = 0, pixel_w = 0, pixel_z = 0, color = null, dir = null, matrix/transform = null, list/filters = null, atom/of = null, appearance_flags = null, invisibility = null, blend_mode = null)
+	var/image/I = of ? image(of) : image(icon = icon, icon_state = icon_state)
+	I.layer = layer
+	I.plane = plane
+	I.alpha = alpha
+	I.pixel_x = pixel_x
+	I.pixel_y = pixel_y
+	I.pixel_w = pixel_w
+	I.pixel_z = pixel_z
+	if(!isnull(color))
+		I.color = color
+	if(!isnull(dir))
+		I.dir = dir
+	if(transform)
+		I.transform = transform
+	if(length(filters))
+		I.filters = filters
+	if(!isnull(appearance_flags))
+		I.appearance_flags = appearance_flags
+	if(!isnull(invisibility))
+		I.invisibility = invisibility
+	if(!isnull(blend_mode))
+		I.blend_mode = blend_mode
+	return I
+
+/// A text overlay for look.overlay() (a timer's countdown, a display's lines): `text` as maptext over a box `width` by `height` pixels, built in one call.
+/proc/look_maptext_image(text, width = 32, height = 32, maptext_x = 0, maptext_y = 0)
+	var/image/I = image(icon = null)
+	I.maptext = text
+	I.maptext_width = width
+	I.maptext_height = height
+	I.maptext_x = maptext_x
+	I.maptext_y = maptext_y
+	return I
+
+/datum/look/proc/set_color(value)
+	color = value
+	touched = TRUE
+
+/datum/look/proc/set_alpha(value)
+	alpha = value
+	touched = TRUE
+
+/// The holder's invisibility level (a hidden HUD button): part of the key. A draw that stops naming it gives the holder its type default back.
+/datum/look/proc/set_invisibility(value)
+	invisibility = value
+	touched = TRUE
+
+/datum/look/proc/set_transform(matrix/M)
+	transform = M
+	touched = TRUE
+
+/datum/look/proc/set_dir(value)
+	dir = value
+	touched = TRUE
+
+/datum/look/proc/set_plane(value)
+	plane = value
+	touched = TRUE
+
+/datum/look/proc/set_layer(value)
+	layer = value
+	touched = TRUE
+
+/// The holder's pixel offset (a wall bin sits in the wall it faces, a mob stands a little low): x and y together, part of the key. A draw that stops
+/// naming it gives the holder its mapped offset back.
+/datum/look/proc/offset(x = 0, y = 0)
+	offset_x = x
+	offset_y = y
+	touched = TRUE
+
+/// A named filter (filter(type = ..., ...) params), only `when` is true.
+/datum/look/proc/add_look_filter(name, list/params, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(name))
+		return
+	LAZYSET(filters, name, params)
+
+/// An atom shown in vis_contents (movables only), only `when` is true.
+/datum/look/proc/show(atom/movable/thing, when = TRUE)
+	touched = TRUE
+	if(!when || !thing)
+		return
+	LAZYADD(vis, thing) // ALLOW(ownership): vis is the look's per-draw scratch list of shown atoms, rebuilt on every draw; it is not a relation
+
+/// A one-shot animation state, played when this look is applied.
+/// The state hands draw this item with (its item_state). The holder's hands are redrawn when it changes. A draw that does
+/// not call it leaves the item_state as it is (a reskin or a script may have set it).
+/datum/look/proc/held_state(state)
+	held_state = state
+	touched = TRUE
+
+/// What the thing is called and how it is described. Null leaves either as it is (so a name call and a desc call compose); a draw that does not call it changes
+/// neither (a player's rename stays).
+/datum/look/proc/identity(name = null, desc = null)
+	if(!isnull(name))
+		identity_name = name
+	if(!isnull(desc))
+		identity_desc = desc
+	touched = TRUE
+
+/datum/look/proc/play_flick(name)
+	flick_state = name
+	touched = TRUE
+
+/// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
+/datum/look/proc/change_key()
+	var/list/parts = list(icon_state, look_icon_key(icon), color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
+	var/list/overlay_keys = list()
+	for(var/entry in overlays)
+		overlay_keys += look_part_key(entry)
+	parts += jointext(overlay_keys, ",")
+	if(underlays)
+		var/list/underlay_keys = list()
+		for(var/entry in underlays)
+			underlay_keys += look_part_key(entry)
+		parts += "under:[jointext(underlay_keys, ",")]"
+	if(variants)
+		parts += "variants:[jointext(variants, ",")]"
+	for(var/list/entry in src.parts)
+		parts += "part:[entry[1]]:[entry[2]]:[entry[3]]"
+	if(filters)
+		for(var/name in filters)
+			parts += "[name]=[json_encode(filters[name])]"
+	for(var/list/entry in effects)
+		var/list/bits = list()
+		for(var/bit in entry)
+			bits += "[bit]"
+		parts += "fx:[jointext(bits, ":")]"
+	if(vis)
+		for(var/atom/movable/thing as anything in vis)
+			parts += "vis:[SHARED_CACHE_UID(thing)]"
+	for(var/key in watched_looks)
+		parts += "look:[key]=[watched_looks[key]]" // the other atom's look version: images built from it have no key of their own
+	return jointext(parts, "|")
+
+/// The key of one overlay entry: an icon_state as it is; an image or mutable_appearance by what it
+/// shows. (Stringifying an appearance gives its type, so two different images would share one key
+/// and a changed image would never be applied.)
+/proc/look_part_key(entry)
+	if(istext(entry))
+		return entry
+	if(istype(entry, /icon))
+		return look_icon_key(entry)
+	if(isimage(entry) || istype(entry, /mutable_appearance))
+		var/image/I = entry
+		. = "{[look_icon_key(I.icon)]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
+		// A transform and a maptext are part of the key only when the image has one, so the keys of the images that set neither stay as they were.
+		var/matrix/M = I.transform
+		if(M && !(M.a == 1 && M.b == 0 && M.c == 0 && M.d == 0 && M.e == 1 && M.f == 0))
+			. += ":t[M.a],[M.b],[M.c],[M.d],[M.e],[M.f]"
+		if(length(I.maptext))
+			. += ":m[I.maptext],[I.maptext_x],[I.maptext_y],[I.maptext_width],[I.maptext_height]"
+		// What an image carries inside it is part of what it shows: a worn item's blood and accessories, a clip mask's filter.
+		if(length(I.overlays))
+			var/list/inner = list()
+			for(var/sub in I.overlays)
+				inner += look_part_key(new /mutable_appearance(sub))
+			. += ":o([jointext(inner, ",")])"
+		if(length(I.underlays))
+			var/list/under = list()
+			for(var/sub in I.underlays)
+				under += look_part_key(new /mutable_appearance(sub))
+			. += ":u([jointext(under, ",")])"
+		if(length(I.filters))
+			var/list/filter_keys = list()
+			// Only these filters take an icon: reading the icon of another (an outline) is an error.
+			var/static/list/icon_filters = list("alpha", "displace", "layer")
+			for(var/dm_filter/F as anything in I.filters)
+				filter_keys += (F.type in icon_filters) ? "[F.type]=[look_icon_key(F.icon)]" : "[F.type]"
+			. += ":f([jointext(filter_keys, ",")])"
+		return . + "}"
+	return "[entry]"
+
+/// The key of an icon: a file by its name; an icon made at runtime (a body, a tinted tail) by an id that is never reused, so two different
+/// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
+/proc/look_icon_key(icon)
+	READS_FROM()
+	if(isnull(icon) || isfile(icon) || istext(icon))
+		return "[icon]"
+	if(istype(icon, /icon))
+		var/icon/runtime_icon = icon
+		return SHARED_CACHE_UID(runtime_icon)
+	return "[icon]"
+
+#define LOOK_SET_ICON (1<<0)
+#define LOOK_SET_ICON_STATE (1<<1)
+#define LOOK_SET_COLOR (1<<2)
+#define LOOK_SET_ALPHA (1<<3)
+#define LOOK_SET_TRANSFORM (1<<4)
+#define LOOK_SET_DIR (1<<5)
+#define LOOK_SET_PLANE (1<<6)
+#define LOOK_SET_LAYER (1<<7)
+#define LOOK_SET_LIGHT (1<<8)
+#define LOOK_SET_OFFSET (1<<9)
+#define LOOK_SET_INVISIBILITY (1<<10)
+
+/// Applies the look to A. Only what the look set is touched; what it set last time and not now is
+/// taken back: overlays, filters and vis_contents are removed, and a base property (icon, color,
+/// alpha, ...) goes back to its type default.
+/datum/look/proc/apply_to(atom/A)
+	var/datum/rx_state/cache = rx_of(A)
+	var/was = cache.look_set_bits
+	var/now = 0
+	var/old_icon = A.icon
+	var/old_state = A.icon_state
+	if(!isnull(icon))
+		A.icon = icon
+		now |= LOOK_SET_ICON
+	else if(was & LOOK_SET_ICON)
+		A.icon = initial(A.icon)
+	// The base state, then variants ("<base>-lit") the icon has: only what the look asked is touched.
+	var/base = icon_state
+	if(isnull(base))
+		base = (was & LOOK_SET_ICON_STATE) ? initial(A.icon_state) : A.icon_state
+	var/resolved = base
+	for(var/name in variants)
+		var/candidate = "[resolved]-[name]"
+		if(look_icon_has_state(A.icon, candidate))
+			resolved = candidate
+	if(!isnull(icon_state) || resolved != base)
+		A.look_set_icon_state(resolved)
+		now |= LOOK_SET_ICON_STATE
+	else if(was & LOOK_SET_ICON_STATE)
+		A.look_set_icon_state(initial(A.icon_state))
+	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
+		A.look_changed_sprite(old_icon, old_state)
+	if(!isnull(color))
+		A.color = color
+		now |= LOOK_SET_COLOR
+	else if(was & LOOK_SET_COLOR)
+		A.color = initial(A.color)
+	if(!isnull(alpha))
+		A.alpha = alpha
+		now |= LOOK_SET_ALPHA
+	else if(was & LOOK_SET_ALPHA)
+		A.alpha = initial(A.alpha)
+	if(!isnull(invisibility))
+		A.look_set_invisibility(invisibility)
+		now |= LOOK_SET_INVISIBILITY
+	else if(was & LOOK_SET_INVISIBILITY)
+		A.look_set_invisibility(initial(A.invisibility))
+	if(transform)
+		A.transform = transform
+		now |= LOOK_SET_TRANSFORM
+	else if(was & LOOK_SET_TRANSFORM)
+		A.transform = null
+	if(!isnull(dir))
+		A.look_set_dir(dir)
+		now |= LOOK_SET_DIR
+	else if(was & LOOK_SET_DIR)
+		A.look_set_dir(initial(A.dir))
+	if(!isnull(plane))
+		A.plane = plane
+		now |= LOOK_SET_PLANE
+	else if(was & LOOK_SET_PLANE)
+		A.plane = initial(A.plane)
+	if(!isnull(layer))
+		A.layer = layer
+		now |= LOOK_SET_LAYER
+	else if(was & LOOK_SET_LAYER)
+		A.layer = initial(A.layer)
+	if(!isnull(offset_x))
+		A.pixel_x = offset_x
+		A.pixel_y = offset_y
+		now |= LOOK_SET_OFFSET
+	else if(was & LOOK_SET_OFFSET)
+		A.pixel_x = initial(A.pixel_x)
+		A.pixel_y = initial(A.pixel_y)
+	if(light_spec)
+		if(!light_spec[1])
+			A.look_apply_light(0) // GLOW_OFF: the range only, so the power and colour stay for the next light
+		else if(light_spec[3])
+			A.look_apply_light(light_spec[1], light_spec[2], light_spec[3])
+		else
+			A.look_apply_light(light_spec[1], light_spec[2])
+		now |= LOOK_SET_LIGHT
+	else if(was & LOOK_SET_LIGHT)
+		A.look_apply_light(0)
+	cache.look_set_bits = now
+	if(!isnull(identity_name))
+		A.name = identity_name
+	if(!isnull(identity_desc))
+		A.desc = identity_desc
+	if(!isnull(held_state))
+		A.look_apply_held_state(held_state)
+	if(cache.look_overlays)
+		A.cut_overlay(cache.look_overlays)
+		cache.look_overlays = null
+	var/list/added
+	for(var/name in overlays)
+		LAZYADD(added, name)
+	for(var/list/entry in parts)
+		var/state = look_resolve_part(A.icon, resolved, entry[1], entry[2])
+		if(!state)
+#ifdef UNIT_TESTS
+			LAZYINITLIST(GLOB.look_missing_parts["[A.type]"])
+			GLOB.look_missing_parts["[A.type]"] |= (entry[2] ? "[entry[1]]-[entry[2]]" : entry[1])
+#endif
+			continue
+		LAZYADD(added, state)
+		if(entry[3])
+			LAZYADD(added, emissive_appearance(A.icon, state))
+	if(added)
+		A.add_overlay(added)
+		cache.look_overlays = added
+	if(cache.look_underlays)
+		A.underlays.Cut()
+		cache.look_underlays = FALSE
+	for(var/entry in underlays)
+		A.underlays += entry
+		cache.look_underlays = TRUE
+	for(var/name in cache.look_filters)
+		if(!filters || !(name in filters))
+			A.look_remove_filter(name)
+	cache.look_filters = null
+	for(var/name in filters)
+		A.look_add_filter(name, 1, filters[name])
+		LAZYADD(cache.look_filters, name)
+	if(ismovable(A))
+		var/atom/movable/M = A
+		for(var/atom/movable/thing as anything in cache.look_vis)
+			if(!vis || !(thing in vis))
+				M.vis_contents -= thing
+		cache.look_vis = null
+		for(var/atom/movable/thing as anything in vis)
+			M.vis_contents |= thing
+			LAZYADD(cache.look_vis, thing)
+	else if(isturf(A)) // a turf shows its shared visuals (an underwater tile's water layer) the same way a movable does
+		var/turf/T = A
+		for(var/atom/movable/thing as anything in cache.look_vis)
+			if(!vis || !(thing in vis))
+				T.vis_contents -= thing
+		cache.look_vis = null
+		for(var/atom/movable/thing as anything in vis)
+			T.vis_contents |= thing
+			LAZYADD(cache.look_vis, thing)
+	vis = null // the atoms this draw showed are on the target's cache now: the look keeps none of them
+	if(flick_state)
+		flick(flick_state, A)
+
+#undef LOOK_SET_ICON
+#undef LOOK_SET_ICON_STATE
+#undef LOOK_SET_COLOR
+#undef LOOK_SET_ALPHA
+#undef LOOK_SET_INVISIBILITY
+#undef LOOK_SET_TRANSFORM
+#undef LOOK_SET_DIR
+#undef LOOK_SET_PLANE
+#undef LOOK_SET_LAYER
+#undef LOOK_SET_LIGHT
+#undef LOOK_SET_OFFSET
+
+
+// ---- transient visuals: look_flash() ----
+
+/**
+ * Shows `state` on A for `duration` (an overlay, or the base icon_state with as_state = TRUE), then
+ * takes it back: a transient visual needs no var and no draw() branch of its own. Re-flashing the same
+ * state restarts its time.
+ *	look_flash(src, "pointer_flash", 0.5 SECONDS)
+ */
+/proc/look_flash(atom/A, state, duration, as_state = FALSE)
+	if(QDELETED(A) || !state || duration <= 0)
+		return
+	var/datum/cap_engine_state/engine = cap_engine_state_make(A)
+	if(as_state)
+		engine.look_flash_state = state
+	else
+		LAZYSET(engine.look_flashes, state, TRUE)
+	state_changed(A)
+	var/token = "[state]:[++GLOB.look_flash_seq]"
+	LAZYSET(engine.look_flash_tokens, state, token)
+	after(A, duration, GLOBAL_PROC_REF(look_flash_end), with = list(A, state, token, as_state), keeps_dead = TRUE)
+
+GLOBAL_VAR_INIT(look_flash_seq, 0)
+
+/proc/look_flash_end(atom/A, state, token, as_state)
+	if(QDELETED(A))
+		return
+	var/datum/cap_engine_state/engine = cap_engine_state_of(A)
+	if(!engine || engine.look_flash_tokens?[state] != token)
+		return
+	LAZYREMOVE(engine.look_flash_tokens, state)
+	if(as_state)
+		if(engine.look_flash_state == state)
+			engine.look_flash_state = null
+	else
+		LAZYREMOVE(engine.look_flashes, state)
+	state_changed(A)
+
+/// A layer image that carries parts of its own (an emissive blocker, the damage on a body), built once and cached: `base` with each of `parts` (a list) as an
+/// overlay of its own. The result is shared and never written after; it is handed to look.overlay() like any layer.
+/proc/look_composed_image(image/base, list/parts)
+	READS_FROM()
+	for(var/part in parts)
+		base.overlays += part
+	return base
+
+/// A layer built in one call: a draw writes nothing, not even the members of an image it made, so a tinted, faded or re-planed
+/// layer is made here and handed to look.overlay(). (mutable_appearance() takes the layer, plane, alpha and flags; this adds the colour.)
+/proc/look_appearance(icon, icon_state = "", color = null, alpha = 255, layer = FLOAT_LAYER, plane = FLOAT_PLANE, appearance_flags = NONE)
+	var/mutable_appearance/MA = mutable_appearance(icon, icon_state, layer, plane, alpha, appearance_flags)
+	if(!isnull(color))
+		MA.color = color
+	return MA
+
+
+/// Presentation integration hooks. The look builder owns the requested changes; downstream adapters own their transport.
+/atom/proc/look_changed_sprite(old_icon, old_state)
+	return
+
+/atom/proc/look_apply_held_state(state)
+	return
+
+/atom/proc/look_apply_light(range, power, color)
+	return
+
+/atom/proc/look_remove_filter(name)
+	return
+
+/atom/proc/look_add_filter(name, priority, list/params)
+	return
+
+/// Commits a priority layer replacement chosen by an appearance adapter. Rendering owns
+/// the raw overlay operations; the adapter chooses the old and new appearance values.
+/proc/look_replace_priority_overlay(atom/target, mutable_appearance/old, mutable_appearance/replacement)
+	target.cut_overlay(list(old), TRUE)
+	target.add_overlay(list(replacement), TRUE)
+
+// ---- keyed appearance cache: one shared image per (key), built on first use ----
+
+DECLARE_SHARED_CACHE_EX(look_cached_images, GLOBAL_PROC_REF(build_look_cached_image), SC_NEVER, 4096, 0)
+
+/**
+ * The shared image of `state` in `icon`, tinted `color` and put on `plane` / `layer` when given, built once per `key` and reused by every holder that
+ * asks for the same key (a stool's seat, a chair's armrest). The key must name everything that varies the image (icon, state, tint, plane); a
+ * draw hands the result to look.overlay(). Replaces the hand-rolled "if(isnull(GLOB.x[key])) build and store" idiom, which a draw may not hold.
+ *	. += look_cached_image("[icon]-[base_icon]-[material.name]", icon, base_icon, material.icon_colour)
+ */
+/proc/look_cached_image(key, icon, state, color, plane, layer)
+	READS_FROM()
+	if(!isfile(icon))
+		return build_look_cached_image(icon, state, color, plane, layer) // a runtime /icon has no stable identity: built uncached
+	. = CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+	if(GLOB.staleness_on && staleness_gate())
+		GLOB.staleness_depth++
+		staleness_check_image(key, ., build_look_cached_image(icon, state, color, plane, layer))
+		GLOB.staleness_depth--
+
+/proc/build_look_cached_image(icon, state, color, plane, layer)
+	var/image/I = image(icon = icon, icon_state = state)
+	if(!isnull(color))
+		I.color = color
+	if(!isnull(plane))
+		I.plane = plane
+	if(!isnull(layer))
+		I.layer = layer
+	return I

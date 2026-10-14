@@ -1,0 +1,75 @@
+/// Counts the real human's redraws (its whole look is one draw).
+/mob/living/carbon/human/interim_energy_melee_holder
+	var/left_redraws = 0
+	var/right_redraws = 0
+
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_energy_melee_holder/draw(datum/look/look)
+	set_left_redraws(left_redraws + 1)
+	set_right_redraws(right_redraws + 1)
+	..()
+
+/// Draws the real look and applies it, observing the overlays it lays.
+/obj/item/melee/energy/sword/interim_holder_appearance
+	var/list/observed_overlays
+
+/obj/item/melee/energy/sword/interim_holder_appearance/proc/observe()
+	refresh_flush() // the queued draws run: the holder hears its item's change
+	var/datum/look/look = new
+	draw(look)
+	observed_overlays = look.overlays ? look.overlays.Copy() : list()
+	look.apply_to(src)
+
+/datum/unit_test/interim_energy_melee_holder_appearance/Run()
+	test_driver_begin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/interim_energy_melee_holder/holder = allocate(/mob/living/carbon/human/interim_energy_melee_holder, T)
+	var/mob/living/carbon/human/interim_energy_melee_holder/bystander = allocate(/mob/living/carbon/human/interim_energy_melee_holder, T)
+	var/obj/item/melee/energy/sword/interim_holder_appearance/sword = allocate(/obj/item/melee/energy/sword/interim_holder_appearance, T)
+	TEST_ASSERT(holder.put_in_active_hand(sword), "the actual energy sword occupies its holder's hand")
+	sword.observe()
+	var/inherited_count = length(sword.observed_overlays)
+	var/inactive_blades = 0
+	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
+		if(entry && entry.icon_state == "esword_blade")
+			inactive_blades++
+	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
+	bystander.set_left_redraws(0)
+	bystander.set_right_redraws(0)
+	sword.activate(holder)
+	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
+	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
+	TEST_ASSERT_EQUAL(glow_of(sword).range, sword.lrange, "the real active sword enables its configured illumination")
+	TEST_ASSERT_EQUAL(glow_of(sword).power, sword.lpower, "the real active sword uses its configured light power")
+	sword.observe()
+	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "appearance generation does not redraw the ambient caller's left hand")
+	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "appearance generation does not redraw the ambient caller's right hand")
+	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count + 1, "the real extended sword adds exactly one overlay to its inherited appearance")
+	var/active_blades = 0
+	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
+		if(entry && entry.icon_state == "esword_blade")
+			active_blades++
+	TEST_ASSERT_EQUAL(active_blades, 1, "the actual extended appearance contains exactly one blade overlay")
+	TEST_ASSERT_EQUAL(holder.get_active_hand(), sword, "appearance generation preserves actual held ownership")
+	sword.deactivate(holder)
+	TEST_ASSERT(!sword.active, "the actual sword interaction retracts its blade")
+	TEST_ASSERT_EQUAL(glow_of(sword).range, 0, "the real retracted sword extinguishes its illumination")
+	TEST_ASSERT_EQUAL(sword.item_state, "esword", "the actual retracted sword restores its held item state")
+	sword.observe()
+	TEST_ASSERT_EQUAL(length(sword.observed_overlays), inherited_count, "retracting the actual blade restores its inherited appearance count")
+	var/retracted_blades = 0
+	for(var/mutable_appearance/entry as anything in sword.observed_overlays)
+		if(entry && entry.icon_state == "esword_blade")
+			retracted_blades++
+	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
+	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
+	holder.set_left_redraws(0)
+	holder.set_right_redraws(0)
+	sword.observe()
+	TEST_ASSERT_EQUAL(holder.left_redraws, 0, "an unheld energy sword does not redraw its former holder")
+	TEST_ASSERT_EQUAL(holder.right_redraws, 0, "an unheld energy sword leaves its former holder's right hand untouched")
+	TEST_ASSERT_EQUAL(bystander.left_redraws, 0, "an unheld energy sword never redraws an unrelated ambient caller")
+	TEST_ASSERT_EQUAL(bystander.right_redraws, 0, "an unheld energy sword leaves the unrelated caller's right hand untouched")

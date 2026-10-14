@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Dispenser cartridges, powder, rolling paper and e-cigarette cartridges run on the reagent_container capability"

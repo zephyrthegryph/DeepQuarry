@@ -14,6 +14,8 @@
 	// Structures shrug off a plain telekinetic grab or poke; ones that react declare an INTERACT_TK.
 	tk_reach = FALSE
 
+/// The smoothing code writes these through their setters (interned lists, so an unchanged shape publishes nothing); a draw reads them.
+
 // the base structure: leaves its parts behind.
 /obj/structure/on_destroy(force)
 	if(parts)
@@ -24,13 +26,13 @@
 	if(breakable)
 		if(user.has_mutation(HULK))
 			user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!" ))
-			attack_generic(user,1,"smashes")
+			generic_hit(src, user, 1, "smashes")
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			var/shreddamage = H.species.can_shred(user, FALSE, 11)
 			if(shreddamage)
-				attack_generic(user, shreddamage, "attacks")
-	om_emit(src, new /datum/om/event/climb_shake(user))
+				generic_hit(src, user, shreddamage, "attacks")
+	climb_shake_off(src, user)
 	return ..()
 
 // Default destruction for integrity-using structures: drop any parts (via Destroy) and delete.
@@ -38,7 +40,7 @@
 /obj/structure/atom_destruction(damage_flag)
 	. = ..()
 	if(!QDELETED(src))
-		qdel(src)
+		destroyed(src)
 
 /obj/structure/proc/can_touch(mob/user)
 	if (!user)
@@ -48,7 +50,7 @@
 	if (user.restrained() || user?.buckled_to())
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
-	if (user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING) || user.lying || user.has_status(EFFECT_WEAKENED))
+	if (user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED))
 		return 0
 	if (isAI(user))
 		to_chat(user, span_notice("You need hands for this."))
@@ -69,21 +71,32 @@
 /obj/structure/proc/can_visually_connect_to(obj/structure/S)
 	return istype(S, src)
 
+/// The neighbours a smoothing structure joins (its adjacency() mask, code/engine/lifeforms/adjacency.dm): faces and corners.
+/obj/structure/var/smooth_mask = 0 // ALLOW(base_vars): the smoothing structures' join mask, written by the adjacency index through smooth_changed()
+
+/// The smoothing entry every structure that joins its neighbours' look declares: one shared kind with walls, each deciding what it joins.
+/proc/smoothing()
+	return adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = TYPE_PROC_REF(/obj/structure, smooth_joins), when = "anchored", changed = TYPE_PROC_REF(/obj/structure, smooth_changed))
+
+/// adjacency() connects: a structure joins the anchored structures it can visually connect to.
+/obj/structure/proc/smooth_joins(atom/other, bit)
+	var/obj/structure/S = other
+	return istype(S) && can_visually_connect_to(S) && S.can_visually_connect()
+
+/// adjacency() changed: the neighbours around it changed; it redraws against them.
+/obj/structure/proc/smooth_changed(mask)
+	smooth_mask = mask
+	update_connections()
+
 /obj/structure/proc/update_connections(propagate = 0)
-	var/list/dirs = list()
+	if(propagate)
+		adjacency_refresh(src, TRUE) // a change the index cannot see (a flip, a material): this structure and its neighbours look again
+	var/list/dirs = adjacency_mask_dirs(smooth_mask)
 	var/list/other_dirs = list()
 
-	for(var/obj/structure/S in orange(src, 1))
-		if(can_visually_connect_to(S))
-			if(S.can_visually_connect())
-				if(propagate)
-					S.update_connections()
-					S.update_icon()
-				dirs += get_dir(src, S)
-
 	if(!can_visually_connect())
-		connections = string_list(list("0", "0", "0", "0"))
-		other_connections = string_list(list("0", "0", "0", "0"))
+		set_connections(string_list(list("0", "0", "0", "0")))
+		set_other_connections(string_list(list("0", "0", "0", "0")))
 		return FALSE
 
 	for(var/direction in GLOB.cardinal)
@@ -92,12 +105,7 @@
 		for(var/b_type in blend_objects)
 			if(istype(T, b_type))
 				success = 1
-				if(propagate)
-					var/turf/simulated/wall/W = T
-					if(istype(W))
-						W.update_connections(1)
-				if(success)
-					break // breaks inner loop
+				break // breaks inner loop
 		if(!success)
 			blend_obj_loop:
 				for(var/obj/O in turf_contents_of_type(T, /obj))
@@ -118,13 +126,7 @@
 			dirs += get_dir(src, T)
 			other_dirs += get_dir(src, T)
 
-	refresh_neighbors()
-
 	// Interned: structures with the same shape share one read-only list.
-	connections = string_list(dirs_to_corner_states(dirs))
-	other_connections = string_list(dirs_to_corner_states(other_dirs))
+	set_connections(string_list(dirs_to_corner_states(dirs)))
+	set_other_connections(string_list(dirs_to_corner_states(other_dirs)))
 	return TRUE
-
-/obj/structure/proc/refresh_neighbors()
-	for(var/turf/T as anything in RANGE_TURFS(1, src))
-		T.update_icon()

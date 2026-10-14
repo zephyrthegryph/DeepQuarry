@@ -35,6 +35,13 @@
 	/// Set when there is an IDS warning due to malicious (antag) software.
 	var/intrusion_detection_alarm = FALSE
 
+CAPABILITIES(/datum/ntnet)
+	owns_many(nameof(available_antag_software))
+	owns_many(nameof(available_news))
+	owns_many(nameof(available_station_software))
+	owns_many(nameof(email_accounts))
+	ref_many(nameof(chat_channels), /datum/ntnet_conversation) // a channel deleted by its operator leaves the list
+
 
 // If new NTNet datum is spawned, it replaces the old one.
 /datum/ntnet/New()
@@ -115,8 +122,8 @@
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_software_lists()
-	own_take_all(src, nameof(available_station_software))
-	own_take_all(src, nameof(available_antag_software))
+	rel_take_all(src, nameof(available_station_software))
+	rel_take_all(src, nameof(available_antag_software))
 	for(var/F in typesof(/datum/computer_file/program))
 		var/datum/computer_file/program/prog = new F
 		// Invalid type (shouldn't be possible but just in case), invalid filetype (not executable program) or invalid filename (unset program)
@@ -124,22 +131,22 @@
 			continue
 		// Check whether the program should be available for station/antag download, if yes, add it to lists.
 		if(prog.available_on_ntnet)
-			own_add(src, nameof(available_station_software), prog)
+			rel_add(src, nameof(available_station_software), prog)
 		if(prog.available_on_syndinet)
-			own_add(src, nameof(available_antag_software), prog)
+			rel_add(src, nameof(available_antag_software), prog)
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_news_list()
-	own_take_all(src, nameof(available_news))
+	rel_take_all(src, nameof(available_news))
 	for(var/F in typesof(/datum/computer_file/data/news_article/))
 		var/datum/computer_file/data/news_article/news = new F(1)
 		if(news.stored_data)
-			own_add(src, nameof(available_news), news)
+			rel_add(src, nameof(available_news), news)
 
 // Generates service email list. Currently only used by broadcaster service
 /datum/ntnet/proc/build_emails_list()
 	for(var/F in subtypesof(/datum/computer_file/data/email_account/service))
-		own_add(src, nameof(email_accounts), new F(TRUE))
+		rel_add(src, nameof(email_accounts), new F(TRUE))
 
 // Attempts to find a downloadable file according to filename var
 /datum/ntnet/proc/find_ntnet_file_by_name(filename)

@@ -32,16 +32,16 @@
 				step_towards(hand, S)
 				to_chat(src, span_warning("The [S] pulls \the [hand] from your grip!"))
 
-	if(!lying && (!get_equipped_item(SLOT_ID_SHOES) || !(get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)) && (!species || !(species.flags & NOSLIP)) && prob(current_size*5))
+	if(!lying && (!get_equipped_item(SLOT_ID_SHOES) || !(worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP)) && (!species || !(species.flags & NOSLIP)) && prob(current_size*5))
 		to_chat(src, span_danger("A strong gravitational force slams you to the ground!"))
-		status_at_least(EFFECT_WEAKENED, current_size)
+		status_at_least(STAT_WEAKENED, current_size)
 	..()
 
 /obj/singularity_act()
 	if(simulated)
 		ex_act(1)
 		if(src)
-			qdel(src)
+			spent(src)
 		return 2
 
 /obj/singularity_pull(S, current_size)
@@ -50,7 +50,7 @@
 
 	if(current_size >= STAGE_FOUR)
 		step_towards(src,S)
-		om_after(src, 0.1 SECONDS, PROC_REF(singularity_step), S)
+		after(src, 0.1 SECONDS, PROC_REF(singularity_step), with = list(S))
 	else if(current_size > STAGE_ONE)
 		step_towards(src,S)
 	else ..()
@@ -66,7 +66,7 @@
 	return
 
 /obj/machinery/power/supermatter/shard/singularity_act()
-	qdel(src)
+	spent(src)
 	return 5000
 
 /obj/machinery/power/supermatter/singularity_act()
@@ -77,11 +77,11 @@
 	if(forensic_data?.get_hiddenprints())
 		prints = ", all touchers : " + forensic_data?.get_hiddenprints()
 
-	GLOB.turf_cascade_service.start_cascade(get_turf(src), /turf/unsimulated/wall/supermatter)
+	SSturf_cascade.start_cascade(get_turf(src), /turf/unsimulated/wall/supermatter)
 	SetUniversalState(/datum/universal_state/supermatter_cascade)
 	log_admin("New super singularity made by eating a SM crystal [prints]. Last touched by [forensic_data?.get_lastprint()].")
 	message_admins("New super singularity made by eating a SM crystal [prints]. Last touched by [forensic_data?.get_lastprint()].")
-	qdel(src)
+	spent(src)
 	return 50000
 
 /obj/item/projectile/beam/emitter/singularity_pull()

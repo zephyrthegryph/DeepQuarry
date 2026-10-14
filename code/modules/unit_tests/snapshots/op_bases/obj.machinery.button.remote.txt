@@ -1,0 +1,4 @@
+ai|none menu: Toggle
+ai|none menu: Use
+ai|none click: Click: Toggle
+ghost|none click: nothing

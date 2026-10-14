@@ -1,0 +1,5 @@
+/obj/machinery/bunsen_burner icon: icons/obj/device.dmi
+/obj/machinery/bunsen_burner state: bunsen0
+/obj/machinery/bunsen_burner dir: 2
+/obj/machinery/bunsen_burner overlay: icons/obj/device.dmi:bunsen0:8:#000000
+

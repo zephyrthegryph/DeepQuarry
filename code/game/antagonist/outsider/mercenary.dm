@@ -26,8 +26,8 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 /datum/antagonist/mercenary/create_global_objectives()
 	if(!..())
 		return 0
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
-	own_add(src, nameof(global_objectives), new /datum/objective/nuclear)
+	rel_clear(src, nameof(global_objectives))
+	rel_add(src, nameof(global_objectives), new /datum/objective/nuclear)
 	return 1
 
 /datum/antagonist/mercenary/equip(mob/living/carbon/human/player)
@@ -38,17 +38,17 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 	player.equip_to_slot_or_del(new /obj/item/clothing/under/syndicate(player), SLOT_ID_UNIFORM)
 	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/boots/swat(player), SLOT_ID_SHOES)
 	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(player), SLOT_ID_GLOVES)
-	if(player.backbag == 2) player.equip_to_slot_or_del(new /obj/item/storage/backpack(player), SLOT_ID_BACK)
-	if(player.backbag == 3) player.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel/norm(player), SLOT_ID_BACK)
-	if(player.backbag == 4) player.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel(player), SLOT_ID_BACK)
-	if(player.backbag == 5) player.equip_to_slot_or_del(new /obj/item/storage/backpack/messenger(player), SLOT_ID_BACK)
-	if(player.backbag == 6) player.equip_to_slot_or_del(new /obj/item/storage/backpack/sport(player), SLOT_ID_BACK)
+	if(player.bio.backbag == 2) player.equip_to_slot_or_del(new /obj/item/storage/backpack(player), SLOT_ID_BACK)
+	if(player.bio.backbag == 3) player.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel/norm(player), SLOT_ID_BACK)
+	if(player.bio.backbag == 4) player.equip_to_slot_or_del(new /obj/item/storage/backpack/satchel(player), SLOT_ID_BACK)
+	if(player.bio.backbag == 5) player.equip_to_slot_or_del(new /obj/item/storage/backpack/messenger(player), SLOT_ID_BACK)
+	if(player.bio.backbag == 6) player.equip_to_slot_or_del(new /obj/item/storage/backpack/sport(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/reagent_containers/pill/cyanide(player), SLOT_ID_IN_BACKPACK)
 
 	player.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	player.mind.accept_tcrystals = 1
 
-	var/obj/item/radio/uplink/U = new(player.loc, player.mind, DEFAULT_TELECRYSTAL_AMOUNT)
+	var/obj/item/radio/uplink/U = new(player.loc)
 	player.put_in_hands(U)
 
 	create_id("Mercenary", player)

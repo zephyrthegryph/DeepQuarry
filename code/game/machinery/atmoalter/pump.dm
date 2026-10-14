@@ -20,57 +20,59 @@
 /obj/machinery/portable_atmospherics/powered/pump/filled
 	start_pressure = 90 * ONE_ATMOSPHERE
 
-/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload, skip_cell)
-	. = ..()
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
+	climb()
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(pump_step)), when = nameof(on))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(pump_emp))))
+	interface("PortablePump", state = nameof(GLOB.tgui_physical_state))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("direction", ui_act("direction"), then(PROC_REF(ui_act_direction)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	param(nameof(skip_cell), pos = 1, overrides = TRUE)
 
-	if(!skip_cell)
-		own_set(src, nameof(cell), new/obj/item/cell/apc(src))
+/// Made without its cell (its constructor param).
+/obj/machinery/portable_atmospherics/powered/pump/var/skip_cell = FALSE
+
+/// A portable machine comes with its cell unless made without one.
+/obj/machinery/portable_atmospherics/powered/pump/starting_cell(datum/act/A)
+	return skip_cell ? null : /obj/item/cell/apc
+
+// ALLOW(init/INSTANCE_STATE): a pump fills with air, a per-instance mixture
+/obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload)
+	. = ..()
 
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
 
-	make_climbable()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/pump/appearance_overlays()
-	. = list()
+/obj/machinery/portable_atmospherics/powered/pump/draw(datum/look/look)
+	..()
+	look.state((on && cell && cell.charge) ? "psiphon:1" : "psiphon:0") // ALLOW(derived_reads): a cell that runs dry calls power_change() and update_icon()
+	look.overlay("siphon-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
+	look.overlay("siphon-connector", when = !!connected_port())
 
-	if(on && cell && cell.charge)
-		icon_state = "psiphon:1"
-	else
-		icon_state = "psiphon:0"
+/obj/machinery/portable_atmospherics/powered/pump/derived()
+	. = ..()
+	. += drawn_from(nameof(on))
 
-	if(holding)
-		. += "siphon-open"
-
-	if(connected_port())
-		. += "siphon-connector"
-
-	return .
-
-DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, PROC_REF(pump_emp))
-/// An EMP scrambles a working pump's settings.
-/obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/damage_packet/packet)
+/// An EMP scrambles a working pump's settings (before the hit lands; the hit goes on).
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 
-	if(prob(50/packet.severity))
+	var/severity = A.packet.severity
+	if(prob(50/severity))
 		set_on(!on)
 
-	if(prob(100/packet.severity))
+	if(prob(100/severity))
 		direction_out = !direction_out
 
 	target_pressure = rand(0,1300)
-	if(on)
-		changed(src, CHANGE_MACHINE_SETTINGS)
-	update_icon()
+	return HOOK_DECLINE
 
-// Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
-// section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
-// process() roster. The body below is unchanged, just relocated to
-// /datum/om/stage/machine/power/portable_pump/perform(); it never hibernates on its own (it runs
-// every tick while `on`, exactly as process() did), so idle() there is simply `!on`.
-/obj/machinery/portable_atmospherics/powered/pump/proc/pump_step()
+/// One service interval of pumping while it is on (its every()): toward its target, between its tank or the room and its own gas.
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_step(datum/act/A)
 	react_or_update()
 	if(!on)
 		return PROCESS_KILL
@@ -122,27 +124,11 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 		//ran out of charge
 		if (!cell.charge)
 			power_change()
-			update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/return_air()
 	return air_contents
 
-/obj/machinery/portable_atmospherics/powered/pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
-	..()
-
-DECLARE_UI(/obj/machinery/portable_atmospherics/powered/pump, "PortablePump")
-
-
-DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/powered/pump, GLOB.tgui_physical_state)
-
-UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_data_obj_machinery_portable_atmospherics_powered_pump{on:bool,direction:bool,connected:bool,pressure:unknown,target_pressure:num,default_pressure:num,min_pressure:num,max_pressure:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
-
-/// The computed part of /obj/machinery/portable_atmospherics/powered/pump's window data (declared on its UI_DATA row).
-/obj/machinery/portable_atmospherics/powered/pump/proc/ui_data_obj_machinery_portable_atmospherics_powered_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/portable_atmospherics/powered/pump/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["on"] = on ? TRUE : FALSE
 	data["direction"] = !direction_out ? TRUE : FALSE
@@ -166,31 +152,22 @@ UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_dat
 
 	return data
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_power(datum/act/op/A)
 	set_on(!on)
-	if(on)
-		changed(src, CHANGE_MACHINE_SETTINGS)
-	. = 1
-	update_icon()
+	return OP_OK
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "direction", ui_act_direction)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_direction)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_direction(datum/act/op/A)
 	direction_out = !direction_out
 	. = 1
-	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_eject)
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_eject(datum/act/op/A)
 	if(holding)
 		holding.forceMove(loc)
-		own_take(src, nameof(/datum/rule_binding::holding))
+		rel_take(src, nameof(src.holding))
 	. = 1
-	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_act_pressure(datum/act/op/A, raw_pressure)
+	var/pressure = raw_pressure
 	if(pressure == "reset")
 		pressure = initial(target_pressure)
 		. = TRUE
@@ -204,7 +181,6 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
 		. = TRUE
 	if(.)
 		target_pressure = clamp(round(pressure), pressuremin, pressuremax)
-	update_icon()
 
 
 /obj/machinery/portable_atmospherics/powered/pump/huge
@@ -213,20 +189,35 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
 	icon_state = "siphon:0"
 	anchored = TRUE
 	volume = 500000
-	// Its own machine_step() (anchored/power checks every frame while on), on the machine
-	// pipeline's step/huge_* stage (machine_pipeline.dm) rather than the base portable stages.
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50		//internal circuitry, friction losses and stuff
-	active_power_usage = 1000	// Blowers running
 	power_rating = 100000	//100 kW ~ 135 HP
 
 	var/static/gid = 1
 	var/id = 0
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/pump/huge, MACHINE_PIPELINE, "on")
+MSG_DEF_SELF(huge_portable/console_only, "You can't directly interact with this machine. Use its control console.")
+MSG_DEF_SELF(huge_portable/turn_off, "Turn it off first!")
+MSG_DEF_SELF(huge_portable/bolted, "The bolts are too tight for you to unscrew!")
+MSG_DEF_SELF(huge_portable/anchored, "You wrench it down.")
+MSG_DEF_SELF(huge_portable/unanchored, "You unwrench it.")
 
-/// Switching it keeps the power draw in step (machine_step() no longer runs while off to do it).
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge)
+	configure(uses_power(idle = 50, active = 1000))
+	huge_portable_controls()
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(huge_step)), when = nameof(on))
+
+/// What a huge portable (a pump or a scrubber) is to a hand: worked only from its console; it takes no cell or tank; its wrench bolts it down
+/// while it is off. A plain proc returning entries (the pump and the scrubber share it).
+/proc/huge_portable_controls()
+	return list(without("ui_open"), without("cell_in"), without("cell_out"), without("tank_bay.holding.insert"), without("port"),
+		op("console_only", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), says(MSG(huge_portable/console_only)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
+		op("swallow_cell", item(/obj/item/cell), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
+		op("swallow_tank", item(/obj/item/tank), label("Use"), wait(0), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, swallowed))),
+		op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, is_off), because = MSG(huge_portable/turn_off))),
+			says(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, anchor_message)), then(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, anchor_toggled))))
+
+/// Switching it keeps the power draw in step.
 /obj/machinery/portable_atmospherics/powered/pump/huge/set_on(value)
 	. = ..()
 	if(.)
@@ -240,40 +231,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/pump/huge, M
 
 	name = "[name] (ID [id])"
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/pump_huge_no_interact,
-		/datum/interaction/machine_item/pump_huge_reject_item,
-	)
+/obj/machinery/portable_atmospherics/powered/pump/huge/draw(datum/look/look)
 	..()
+	look.state((on && operable()) ? "siphon:1" : "siphon:0")
 
-/// The huge pump can't be used by hand at all; direct the player to the console.
-/datum/interaction/machine_hand/ungated/pump_huge_no_interact
-	id = "pump_huge_no_interact"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_no_interact
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/proc/interaction_no_interact(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You can't directly interact with this machine. Use the pump control console."))
-	return TRUE
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/pump/huge/appearance_overlays()
-	. = list()
-
-	if(on && operable())
-		icon_state = "siphon:1"
-	else
-		icon_state = "siphon:0"
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
+/// One service interval while it is on: loose or dead, it switches off.
+/obj/machinery/portable_atmospherics/powered/pump/huge/proc/huge_step(datum/act/A)
 	if(!anchored || (!operable()))
 		set_on(0)
 		last_flow_rate = 0
 		last_power_draw = 0
-		update_icon()
-		return // set_on(0) ends the declared work
+		return
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
 		set_use_power(new_use_power)
@@ -310,33 +278,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, 
 		use_power(power_draw)
 		update_connected_network()
 
-/// The huge pump doesn't use power cells or hold tanks; using either on it does nothing.
-/datum/interaction/machine_item/pump_huge_reject_item
-	id = "pump_huge_reject_item"
-	name = "Use"
-	category = INTERACTION_CAT_INSERT
-	held_type = list(/obj/item/cell, /obj/item/tank)
-	effect = /atom/proc/interaction_swallow
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/wrench_act(mob/user, obj/item/tool)
-	if(on)
-		to_chat(user, span_warning("Turn \the [src] off first!"))
-		return ITEM_INTERACT_BLOCKING
-	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/screwdriver_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING
-
-
 /obj/machinery/portable_atmospherics/powered/pump/huge/stationary
 	name = "Stationary Air Pump"
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/stationary/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_warning("The bolts are too tight for you to unscrew!"))
-	return ITEM_INTERACT_BLOCKING
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump/huge/stationary)
+	extend("anchor", needs(req(TYPE_PROC_REF(/obj/machinery/portable_atmospherics/powered, never), because = MSG(huge_portable/bolted))))
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/stationary/purge
 	on = 1
@@ -347,11 +293,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump/huge, 
 	. = ..()
 	if(operable())
 		set_on(1)
-
-/obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
-	return on && anchored && operable()
-
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/powered/pump/step_start_condition()
-	return on

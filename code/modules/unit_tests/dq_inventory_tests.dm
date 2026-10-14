@@ -84,7 +84,7 @@
 	var/obj/item/tool/wrench/A = allocate(/obj/item/tool/wrench, T)
 	var/obj/item/tool/screwdriver/B = allocate(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/crowbar/C = allocate(/obj/item/tool/crowbar, T)
-	H.hand = FALSE // right hand active
+	H.set_hand(FALSE) // right hand active
 
 	TEST_ASSERT(H.put_in_hands(A), "the first item goes in a hand")
 	dq_assert_in_slot(H, A, SLOT_ID_HAND_R, "pickup to the active hand")
@@ -112,7 +112,7 @@
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_BELT), "the belt slot is empty")
 
 	// Drop the active hand.
-	H.hand = FALSE
+	H.set_hand(FALSE)
 	H.drop_item()
 	TEST_ASSERT_EQUAL(belt.loc, T, "drop_item puts the active hand's item on the floor")
 	TEST_ASSERT_NULL(H.get_right_hand(), "the dropped hand is empty")
@@ -134,7 +134,7 @@
 	if(!target || target.density)
 		target = get_step(T, WEST)
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
-	H.hand = FALSE
+	H.set_hand(FALSE)
 	TEST_ASSERT(H.put_in_r_hand(W), "hold the wrench")
 	TEST_ASSERT(H.throw_item(target), "throw it")
 	TEST_ASSERT_NULL(H.get_right_hand(), "the thrown item left the hand")
@@ -180,7 +180,7 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
 	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "a pocket needs a jumpsuit")
-	TEST_ASSERT(!pen.move_into(H, SLOT_ID_POCKET_L, H), "the ledger slot refuses it too")
+	TEST_ASSERT(!move_into(H, SLOT_ID_POCKET_L, pen, H), "the ledger slot refuses it too")
 	TEST_ASSERT_EQUAL(pen.loc, T, "a refused pen stays put")
 	var/obj/item/clothing/under/color/grey/U = allocate(/obj/item/clothing/under/color/grey, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "jumpsuit on")
@@ -210,10 +210,10 @@
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
-	M.has_hands = FALSE
+	M.set_has_hands(FALSE)
 	TEST_ASSERT(!M.put_in_l_hand(W), "a mob without hands can't hold anything")
 	TEST_ASSERT_EQUAL(W.loc, T, "the refused item stays on the floor")
-	M.has_hands = TRUE
+	M.set_has_hands(TRUE)
 	TEST_ASSERT(M.put_in_l_hand(W), "a handed simple mob holds it")
 	dq_assert_in_slot(M, W, SLOT_ID_HAND_L, "simple mob pickup")
 	TEST_ASSERT(W.equip_refusal(M, SLOT_ID_HEAD, TRUE), "a simple mob has no head slot")
@@ -229,11 +229,12 @@
 /datum/unit_test/dq_inventory_robot_modules/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
 	if(!R.module)
-		own_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
+		rel_set(R, nameof(R.module), new /obj/item/robot_module/robot/standard(R))
 	var/obj/item/tool = null
 	for(var/obj/item/I in R.module.modules)
-		tool = I
-		break
+		TEST_ASSERT(!I.canremove, "module setup marks every constructed module tool nonremovable")
+		if(!tool)
+			tool = I
 	TEST_ASSERT_NOTNULL(tool, "the standard module has tools")
 	R.activate_module(tool)
 	var/slot = R.module_slot_of(tool)
@@ -349,8 +350,48 @@
 		if(id && H.get_equipped_item(id) != I)
 			TEST_FAIL("[label]: [I] is in [id] but the slot reads [H.get_equipped_item(id)]")
 			return FALSE
-	for(var/datum/om/relation/slot/def as anything in L.defs)
+	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		if(def.capacity_model == SLOT_CAPACITY_COUNT && length(L.slots[def.slot_id]) > def.capacity)
 			TEST_FAIL("[label]: [def.slot_id] holds [length(L.slots[def.slot_id])] things")
 			return FALSE
 	return TRUE
+
+/// Configuration must be complete when the real constructor returns, including subtype tools.
+/datum/unit_test/dq_inventory_power_tool_setup
+
+/datum/unit_test/dq_inventory_power_tool_setup/Run()
+	var/obj/item/mecha_parts/mecha_equipment/tool/powertool/P = allocate(/obj/item/mecha_parts/mecha_equipment/tool/powertool, test_floor())
+	TEST_ASSERT_NOTNULL(P.my_tool, "the declared power tool child exists")
+	TEST_ASSERT_EQUAL(P.my_tool.name, P.name, "power tool setup names its child after the equipment")
+	TEST_ASSERT(P.my_tool.anchored, "power tool setup anchors its child")
+	TEST_ASSERT(!P.my_tool.canremove, "power tool setup marks its child nonremovable")
+	TEST_ASSERT_EQUAL(P.my_tool.loc, P, "setup preserves child custody")
+	var/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/D = allocate(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, test_floor())
+	TEST_ASSERT_EQUAL(D.my_deployer, D.my_tool, "subtype initializer still borrows the same configured child")
+	TEST_ASSERT_EQUAL(D.my_tool.name, D.name, "inherited setup configures the subtype child")
+	TEST_ASSERT(D.my_tool.anchored && !D.my_tool.canremove, "inherited setup applies both subtype child flags")
+
+/datum/unit_test/dq_inventory_multiple_augment_setup
+
+/datum/unit_test/dq_inventory_multiple_augment_setup/Run()
+	var/obj/item/organ/internal/augment/armmounted/shoulder/multiple/M = allocate(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, test_floor())
+	TEST_ASSERT_NOTNULL(M.my_radial_icon, "ancestor setup creates the augment radial image")
+	var/list/tools = M.all_integrated_tools()
+	TEST_ASSERT(length(tools) > 0, "real declared starting tools exist")
+	TEST_ASSERT(length(M.synths) > 0, "real declared starting synthesizers exist")
+	TEST_ASSERT_EQUAL(length(M.integrated_tool_images), length(tools), "every configured tool has a radial image")
+	var/stacks = 0
+	for(var/obj/item/I as anything in tools)
+		TEST_ASSERT(!I.canremove, "every augment tool is nonremovable")
+		TEST_ASSERT_EQUAL(tooling_of(I).speed, tooling_of(M).speed, "every augment tool inherits configured toolspeed")
+		TEST_ASSERT_EQUAL(item_my_augment(I), M, "each tool points back to its owning augment")
+		TEST_ASSERT_EQUAL(I.loc, M, "each stowed tool remains in the augment")
+		TEST_ASSERT(findtext(I.name, "integrated ") == 1, "setup labels every carried tool")
+		TEST_ASSERT_NOTNULL(M.integrated_tool_images[I.name], "configured names index the radial images")
+		if(istype(I, /obj/item/stack))
+			var/obj/item/stack/S = I
+			stacks++
+			TEST_ASSERT_EQUAL(S.uses_charge, length(M.synths), "stack tools use every configured synthesizer")
+			for(var/datum/matter_synth/MS as anything in M.synths)
+				TEST_ASSERT(MS in S.synths, "stack tools borrow actual augment synthesizers")
+	TEST_ASSERT(stacks > 0, "the real multi-tool augment exercises stack synthesizer setup")

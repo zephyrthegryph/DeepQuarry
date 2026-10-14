@@ -1,6 +1,6 @@
-# tools/dx — one-time DX capability migration tools
+# tools/dx — DX capability migration tools
 
-Both tools are for the machine migration waves (framework_review2.md §4 item 10). They are
+The converters are for the machine migration waves (framework_review2.md §4 item 10). They are
 table-driven, have a `--selftest` with inline fixtures, and default to nothing clever: anything
 they can't prove safe they list instead of changing. Run them with the repo's Python 3.11+.
 
@@ -36,6 +36,31 @@ python tools/dx/convert_map_capabilities.py maps/southern_cross/*.dmm           
 `--numeric` writes `cap_state = 192` instead of `CAP_WELDED|CAP_BOLTED`: use it for maps loaded
 at runtime by the map loader (submaps, templates), which does not see preprocessor defines.
 Convert a type's maps in the same commit that removes its old vars.
+
+## gen_capability_varmap.py — generates `capability_varmap.json`
+
+`capability_varmap.json` is GENERATED: never hand-edit it. The generator reads every `/T/capabilities()` and
+`CAPABILITY(T, ...)` under `code/` (test/benchmark fixtures skipped), resolves the library bundles
+(`machine_basics`, `wall_machine`, `maintenance_hatch`, `door`, `console`, ...) recursively to library constructors
+(`cap_panel`, `cap_bolts`, ...), honours `. = ..()` inheritance (nearest ancestor by path prefix),
+`without(., X)` / `replace(., X, ...)` (X a `/datum/capability/x` or an op key such as `CAP_EMAG`) and `cap_state =`
+type defaults, and so finds the `cap_state` bits each type can carry. `refine()` / `cap_require()` edit operations
+and carry no bit. Bits map back to the legacy vars maps used through the tables at the top of the script
+(`BIT_VARS`, per-family `FAMILY_VARS`: `p_open`, APC `opened` 0/1/2 and `wiresexposed`, drop `operating` /
+`failure_timer`, keep `req_access` ...); a var is only mapped when the type carries its bit (`locked` is the bolts
+on a door and the ID lock on an APC; a vendor has no lock bit, so its `locked` varedit stays alone). Types that
+change state in base code rather than a `capabilities()` go in `STATE_HOLDERS` (the door base).
+A subtype with its own `cap_state = ...` default gets its own entry (an airlock that starts bolted).
+
+```
+python tools/dx/gen_capability_varmap.py             # regenerate (run after a wave converts a type)
+python tools/dx/gen_capability_varmap.py --check     # exit 1 when the json is stale (check_ratchets.sh)
+python tools/dx/gen_capability_varmap.py --list      # bits carried per type
+python tools/dx/gen_capability_varmap.py --selftest
+```
+
+Waves regenerate the table in their commit but do not touch maps: the integrator runs
+`convert_map_capabilities.py` per phase over `maps/` (use `--numeric` for runtime-loaded submaps).
 
 ## rename_icon_states.py — readable capability layer names
 

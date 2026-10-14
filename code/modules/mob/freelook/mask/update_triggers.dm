@@ -10,7 +10,7 @@
 		return
 	if(!updating_cult_vision)
 		updating_cult_vision = 1
-		om_after(src, CULT_UPDATE_BUFFER, PROC_REF(cult_vision_settle), old_loc)
+		after(src, CULT_UPDATE_BUFFER, PROC_REF(cult_vision_settle), with = list(old_loc))
 
 /mob/living/proc/cult_vision_settle(atom/old_loc)
 	updating_cult_vision = 0
@@ -20,7 +20,8 @@
 
 #undef CULT_UPDATE_BUFFER
 
-/mob/living/Initialize(mapload)
+/// The cult's net sees a living mob come, when it is placed in the world.
+/mob/living/on_materialize()
 	. = ..()
 	GLOB.cultnet.updateVisibility(src, 0)
 

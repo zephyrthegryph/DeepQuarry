@@ -3,8 +3,6 @@
 	name = "NTNet Quantum Relay"
 	desc = "A very complex router and transmitter capable of connecting electronic devices together. Looks fragile."
 	use_power = USE_POWER_ACTIVE
-	active_power_usage = 20000 //20kW, apropriate for machine that keeps massive cross-Zlevel wireless network operational.
-	idle_power_usage = 100
 	icon_state = "ntnet"
 	anchored = TRUE
 	density = TRUE
@@ -22,9 +20,19 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
 
+CAPABILITIES(/obj/machinery/ntnet_relay)
+	configure(uses_power(active = 20000, idle = 100))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
+	interface("NTNetRelay")
+	without("ui_open")
+	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("purge", ui_act("purge"), then(PROC_REF(ui_act_purge)))
+
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable(additional_flags = 0)
-	if(!..(additional_flags))
+	if(!..())
 		return 0
 	if(dos_failure)
 		return 0
@@ -32,20 +40,28 @@
 		return 0
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/ntnet_relay/appearance_overlays()
-	. = list()
+TRACKED(/obj/machinery/ntnet_relay, enabled)
+TRACKED(/obj/machinery/ntnet_relay, dos_failure)
+
+/obj/machinery/ntnet_relay/draw(datum/look/look)
+	..()
 	if(operable())
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
+	else
+		look.state("[initial(icon_state)]_off")
+	look.effect(PROC_REF(look_effect_noise), operable())
+
+/// The relay hums while it works: its sound loop follows the look, outside the draw.
+/obj/machinery/ntnet_relay/proc/look_effect_noise(working)
+	if(working)
 		if(!noisy)
 			soundloop.start()
 			noisy = TRUE
 	else
-		icon_state = "[initial(icon_state)]_off"
 		soundloop.stop()
 		noisy = FALSE
 
-/obj/machinery/ntnet_relay/machine_step()
+/obj/machinery/ntnet_relay/proc/work_step(datum/act/timer/A)
 	if(operable())
 		set_use_power(USE_POWER_ACTIVE)
 	else
@@ -56,43 +72,33 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 
 	// If DoS traffic exceeded capacity, crash.
 	if((dos_overload > dos_capacity) && !dos_failure)
-		dos_failure = 1
-		update_icon()
+		set_dos_failure(1)
 		GLOB.ntnet_global.add_log("Quantum relay switched from normal operation mode to overload recovery mode.")
 	// If the DoS buffer reaches 0 again, restart.
 	if((dos_overload == 0) && dos_failure)
-		dos_failure = 0
-		update_icon()
+		set_dos_failure(0)
 		GLOB.ntnet_global.add_log("Quantum relay switched from overload recovery mode to normal operation mode.")
-	..()
 
-DECLARE_UI(/obj/machinery/ntnet_relay, "NTNetRelay")
+/obj/machinery/ntnet_relay/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["enabled"] = enabled
+	data["dos_capacity"] = dos_capacity
+	data["dos_overload"] = dos_overload
+	data["dos_crashed"] = dos_failure
+	return data
 
-UI_DATA_REPLACE(/obj/machinery/ntnet_relay, "enabled:num", "dos_capacity:num", "dos_overload:num", "dos_crashed=dos_failure:num")
-
-/obj/machinery/ntnet_relay/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
-UI_ACT(/obj/machinery/ntnet_relay, "restart", ui_act_restart)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_restart)
+/obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
 	dos_overload = 0
-	dos_failure = 0
-	update_icon()
+	set_dos_failure(0)
 	GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
 	. = TRUE
 
-UI_ACT(/obj/machinery/ntnet_relay, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_toggle)
-	enabled = !enabled
+/obj/machinery/ntnet_relay/proc/ui_act_toggle(datum/act/op/A)
+	set_enabled(!enabled)
 	GLOB.ntnet_global.add_log("Quantum relay manually [enabled ? "enabled" : "disabled"].")
-	update_icon()
 	. = TRUE
 
-UI_ACT(/obj/machinery/ntnet_relay, "purge", ui_act_purge)
-UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
+/obj/machinery/ntnet_relay/proc/ui_act_purge(datum/act/op/A)
 	LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
 	GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
 	. = TRUE
@@ -105,17 +111,6 @@ UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
 		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
 // NTNet (a registered singleton) lists us in its relays relation list; attacking DoS programs
@@ -132,10 +127,9 @@ UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
 /obj/machinery/ntnet_relay
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ntnet_relay/step_start_condition()
 	return TRUE // sets its power draw
-
 
 /// A shared (registered) definition/flyweight: never cleared.
 /obj/machinery/ntnet_relay/proc/NTNet() as /datum/ntnet

@@ -1,6 +1,6 @@
 /// Urgent requests (doc/rewrite/kernel.md sec 1.2 phase U).
 ///
-/// request_urgent(member, work, deadline) asks the kernel to run one member's work item ahead of its cadence,
+/// kernel_urgent(member, work, deadline) asks the kernel to run one member's work item ahead of its cadence,
 /// from a slice of the tick reserved for it (KERNEL_URGENT_SHARE, phase U). The rules:
 ///   - dedup: one pending request per (member, work). A second request keeps the earlier deadline;
 ///   - execution token: the run stamps the item's last-run time for that member (work_item.take_dt), so the
@@ -20,17 +20,17 @@
 	var/requested_at = 0
 	var/breached = FALSE
 
-/// world.time `delay` deciseconds from now, for request_urgent()'s deadline.
+/// world.time `delay` deciseconds from now, for kernel_urgent()'s deadline.
 /proc/urgent_deadline(delay)
 	return world.time + delay
 
 /// Asks for `member`'s run of `work` (a /datum/work_item, or its key) by `deadline` (absolute world.time). Returns the
 /// pending request, or null when `work` is unknown, not urgent, or parked.
-/proc/request_urgent(datum/member, work, deadline)
+/proc/kernel_urgent(datum/member, work, deadline)
 	var/datum/controller/kernel/K = kernel()
-	return K.request_urgent(member, work, deadline)
+	return K.kernel_urgent(member, work, deadline)
 
-/datum/controller/kernel/proc/request_urgent(datum/member, work, deadline)
+/datum/controller/kernel/proc/kernel_urgent(datum/member, work, deadline)
 	var/datum/work_item/W = istype(work, /datum/work_item) ? work : work_by_key["[work]"]
 	if(!W || !W.urgent || W.parked)
 		return null

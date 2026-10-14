@@ -1,10 +1,10 @@
-/datum/admins/proc/CheckAdminHref(href, href_list)
+/datum/admins/proc/CheckAdminHref(href, href_list, mob/user)
 	var/auth = href_list["admin_token"]
 	. = auth && (auth == href_token || auth == GLOB.href_token)
 	if(.)
 		return
 	var/msg = !auth ? "no" : "a bad"
-	message_admins("[key_name_admin(usr)] clicked an href with [msg] authorization key!")
+	message_admins("[key_name_admin(user)] clicked an href with [msg] authorization key!")
 
 	/* Debug code in case one needs to dig missing token HREFS
 	var/debug_admin_hrefs = TRUE // Remove once everything is converted over
@@ -14,20 +14,19 @@
 		return TRUE
 	*/
 
-	log_admin("[key_name(usr)] clicked an href with [msg] authorization key! [href]")
+	log_admin("[key_name(user)] clicked an href with [msg] authorization key! [href]")
 
-// The admin panel's href actions are TOPIC_ACTION rows on /datum/admins, split by area under
-// code/modules/admin/topic/. This gate runs before every one of them.
-/datum/admins/topic_allowed(mob/user, list/href_list)
-	. = ..()
-	if(!.)
-		return
-	if(!user?.client || user.client != owner() || !check_rights_for(user.client, 0))
-		log_admin("[key_name(user)] tried to use the admin panel without authorization.")
-		message_admins("[user?.key] has attempted to override the admin panel!")
-		return FALSE
-	if(!CheckAdminHref(list2params(href_list), href_list))
-		return FALSE
+// The admin panel's href actions are topic ops of /datum/admins (its CAPABILITIES block, code/modules/admin/holder2.dm), their handlers split by area under
+// code/modules/admin/topic/. extend(TAG_TOPIC, needs(...)) there puts this owner check and the href token before every one of them.
+/datum/admins/op_topic_actor_ok(mob/actor)
+	var/client/C = actor.client
+	return C && C == owner() && check_rights_for(C, 0)
+
+/datum/admins/op_topic_refused(mob/actor, key, reason, list/href_list)
+	..()
+	if(reason == /datum/msg/op/topic_gate)
+		log_admin("[key_name(actor)] tried to use the admin panel without authorization.")
+		message_admins("[actor?.key] has attempted to override the admin panel!")
 
 /// A trusted in-game panel (tgui) running one of this holder's href actions for `user`:
 /// the admin token is supplied, every row's rights and the owner check still apply.

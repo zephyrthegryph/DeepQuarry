@@ -6,15 +6,11 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "atmos"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
 
 
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -26,24 +22,27 @@ MATERIAL_MIX(/obj/item/analyzer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 	return atmosanalyzer_scan(src, air, user)
 
-DECLARE_INTERACTIONS(/obj/item/analyzer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/analyzer/proc/can_analyze)))
+CAPABILITIES(/obj/item/analyzer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("analyze", in_hand(), when(cond_not(nameof(special_handling))), needs(req_conscious(), req(PROC_REF(can_analyze), because = MSG(analyzer/clumsy))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the analyzer.
-/obj/item/analyzer/proc/can_analyze(mob/user, atom/target, obj/item/held)
-	if(special_handling || user.stat)
-		return TRUE // the effect declines silently
-	if(!user.IsAdvancedToolUser())
-		return "you don't have the dexterity to do this"
-	return TRUE
+/obj/item/analyzer/proc/can_analyze(datum/act/op/A)
+	return (advanced_tool_user(A.actor)) ? null : MSG(analyzer/clumsy)
 
-/obj/item/analyzer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	if (user.stat)
-		return
+/// Can `user` work a dexterous tool (hands, a species that can)?
+/proc/advanced_tool_user(mob/user)
+	READS_FROM() // a body's dexterity is asked when the tool is used
+	return user.IsAdvancedToolUser()
 
-	analyze_gases_by(src, src, user)
-	return
+MSG_DEF_SELF(analyzer/clumsy, "You don't have the dexterity to do this.")
+
+/// Old attack_self: analyse the air around you.
+/obj/item/analyzer/proc/interaction_self(datum/act/op/A)
+	analyze_gases_by(src, src, A.actor)
+	return OP_OK
 
 /obj/item/analyzer/afterattack(obj/O, mob/user, proximity)
 	if(proximity)

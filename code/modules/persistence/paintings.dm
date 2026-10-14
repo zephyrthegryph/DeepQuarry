@@ -10,7 +10,7 @@
 	. = ..()
 	if(fexists(filename))
 		SSpersistence.all_paintings = json_decode(file2text(filename))
-		var/list/tokens = SSpersistence.all_paintings
+		var/list/tokens = persistence_all_paintings()
 		for(var/list/token in tokens)
 			token["age"]++ // Increment age!
 			if(!CheckTokenSanity(token))
@@ -18,7 +18,7 @@
 
 	SSpersistence.unpicked_paintings = SSpersistence.all_paintings.Copy()
 
-	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
+	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.load_persistent()
 
 /datum/persistent/paintings/CheckTokenSanity(list/token)
@@ -28,7 +28,7 @@
 	return TRUE
 
 /datum/persistent/paintings/Shutdown()
-	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
+	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		P.save_persistent()
 
 	if(SSpersistence.all_paintings.len > max_entries)
@@ -36,7 +36,7 @@
 		var/over = this_many - max_entries
 		log_admin("There are [over] more painting(s) stored than the maximum allowed.")
 		while(over > 0)
-			var/list/d = SSpersistence.all_paintings[1]
+			var/list/d = persistence_all_paintings()[1]
 			var/png_filename = "data/paintings/[d["persistence_id"]]/[d["md5"]].png"
 			fdel(png_filename)
 			if(SSpersistence.all_paintings.Remove(list(d)))
@@ -47,4 +47,4 @@
 
 	if(fexists(filename))
 		fdel(filename)
-	to_file(file(filename), json_encode(SSpersistence.all_paintings))
+	to_file(file(filename), json_encode(persistence_all_paintings()))

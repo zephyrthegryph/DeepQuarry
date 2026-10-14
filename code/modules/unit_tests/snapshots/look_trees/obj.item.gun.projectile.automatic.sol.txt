@@ -1,0 +1,6 @@
+/obj/item/gun/projectile/automatic/sol icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/sol state: SMG-IS
+/obj/item/gun/projectile/automatic/sol dir: 2
+/obj/item/gun/projectile/automatic/sol overlay: icons/obj/gun.dmi:SMG-IS:8:#000000
+/obj/item/gun/projectile/automatic/sol overlay: icons/obj/gun.dmi:smg_100:-32767
+

@@ -76,7 +76,7 @@
 		to_chat(user, span_danger("None of the reagents seem suitable."))
 	return 1
 
-/obj/item/rig_module/chem_dispenser/engage(atom/target)
+/obj/item/rig_module/chem_dispenser/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0

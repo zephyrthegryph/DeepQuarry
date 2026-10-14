@@ -77,7 +77,7 @@
 
 /mob/living/simple_mob/ysbryd/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The horrifying beast yawns it's skull maw wide before your face, unveiling a dark but surprisingly fleshy interior. Not that you have much time to appreciate it before your head is engulfed in the void, and dragged roughly into the depths beyond it. Before long, you're trapped in pitch darkness. Intense pressure binding you from every possible direction, fleshy walls grinding over your form. Despite this, it's quiet in here, uncomfortably so. No bodily functions can be heard, no groaning guts, merely the sound of your own body pressing against the stomach lining."
 	B.digest_brute = 3
@@ -116,42 +116,39 @@
 	if(!isliving(M))
 		return
 	rel_set(src, nameof(chosen_target), M)
-	if(!(VIS_EVENT_INVIS in chosen_target.vis_enabled))
-		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
-		chosen_target.vis_enabled += VIS_EVENT_INVIS
+	if(!(VIS_EVENT_INVIS in hud_of(chosen_target)?.vis_enabled))
+		hud_of(chosen_target)?.plane_holder?.set_vis(VIS_EVENT_INVIS,TRUE)
+		hud_of(chosen_target)?.vis_enabled += VIS_EVENT_INVIS
 
 /mob/living/simple_mob/ysbryd/proc/disconnect_target()
 	if(!chosen_target)
 		return
-	if((VIS_EVENT_INVIS in chosen_target.vis_enabled))
-		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
-		chosen_target.vis_enabled -= VIS_EVENT_INVIS
+	if((VIS_EVENT_INVIS in hud_of(chosen_target)?.vis_enabled))
+		hud_of(chosen_target)?.plane_holder?.set_vis(VIS_EVENT_INVIS,FALSE)
+		hud_of(chosen_target)?.vis_enabled -= VIS_EVENT_INVIS
 	rel_clear(src, nameof(chosen_target))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/ysbryd/replace_death(gibbed)
 	if(chosen_target)
 		disconnect_target()
-	qdel(src)
+	dissolved(src)
 	return TRUE
 
-/datum/om/stage/life/type_pre/simple_mob/ysbryd
-	of = /mob/living/simple_mob/ysbryd
-
-/datum/om/stage/life/type_pre/simple_mob/ysbryd/perform(mob/living/simple_mob/ysbryd/self, datum/om/frame/life/ctx)
-	if(self.chosen_target)
-		self.handle_target()
-	if(self.vitality() * self.get_endurance() <= self.boost_health)
-		self.movement_cooldown = -2
+/mob/living/simple_mob/ysbryd/life_type_pre(datum/seq_frame/life/F)
+	if(src.chosen_target)
+		src.handle_target()
+	if(src.vitality() * src.get_endurance() <= src.boost_health)
+		src.movement_cooldown = -2
 	return ..()
 
 /mob/living/simple_mob/ysbryd/proc/handle_target()
 	if(!chosen_target)
 		return
-	chosen_target.fear = min((chosen_target.fear + 3),102)
+	chosen_target.status_set(STAT_FEAR, min((chosen_target.status_units(STAT_FEAR) + 3),102))
 	if(COOLDOWN_FINISHED(src, effect_cooldown))
 		if(prob(5))
-			chosen_target.status_at_least(EFFECT_HALLUCINATING, 10)
+			chosen_target.status_at_least(STAT_HALLUCINATING, 10)
 			COOLDOWN_START(src, effect_cooldown, 30 SECONDS)
 		if(prob(5))
 			var/chosen_threat = pick(emote_threats)

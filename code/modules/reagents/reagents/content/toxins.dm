@@ -151,7 +151,7 @@
 		M.adjust_fire_stacks(removed * 10)
 		if(prob(10))
 			to_chat(M, span_critical("You feel something boiling within you!"))
-			om_after(M, rand(30, 60), TYPE_PROC_REF(/mob/living, ignite_mob))
+			after(M, rand(3, 6) SECONDS, TYPE_PROC_REF(/mob/living, ignite_mob))
 
 /datum/reagent/toxin/lead
 	name = REAGENT_LEAD
@@ -191,8 +191,8 @@
 	var/poison_strength = strength * M.species.chem_strength_tox
 	if(strength)
 		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
-		M.status_at_least(EFFECT_DRUGGED, 10)
-		M.status_adjust(EFFECT_JITTERY, 5)
+		M.status_at_least(STAT_DRUGGED, 10)
+		M.status_adjust(STAT_JITTERY, 5)
 
 /datum/reagent/toxin/phoron
 	name = REAGENT_PHORON
@@ -259,7 +259,7 @@
 /datum/reagent/toxin/cyanide/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(dose > 5) //Puts you to sleep if its in your system for too long. This is equivalent to 100 seconds (50 ticks).
-		M.status_at_least(EFFECT_SLEEPING, 1)
+		M.status_at_least(STAT_SLEEPING, 1)
 
 /datum/reagent/toxin/mold
 	name = REAGENT_MOLD
@@ -356,7 +356,7 @@
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, H.losebreath - 10)
-			H.status_at_least(EFFECT_WEAKENED, 10)
+			H.status_at_least(STAT_WEAKENED, 10)
 
 /datum/reagent/toxin/potassium_chlorophoride
 	name = REAGENT_POTASSIUMCHLOROPHORIDE
@@ -381,7 +381,7 @@
 		if(H.stat != 1)
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, M.losebreath-10)
-			H.status_at_least(EFFECT_WEAKENED, 10)
+			H.status_at_least(STAT_WEAKENED, 10)
 
 /datum/reagent/toxin/zombiepowder
 	name = REAGENT_ZOMBIEPOWDER
@@ -408,15 +408,15 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
-	M.status_at_least(EFFECT_MUTED, 10)
-	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
+	M.set_status_flags(M.status_flags | FAKEDEATH)
+	M.status_at_least(STAT_MUTED, 10)
+	M.status_set(STAT_PARALYZED, max(M.status_units(STAT_PARALYZED), 10))
 
 // its mob wakes from fake death.
 /datum/reagent/toxin/zombiepowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/lichpowder
@@ -440,9 +440,9 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
-	M.status_at_least(EFFECT_MUTED, 10)
-	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
+	M.set_status_flags(M.status_flags | FAKEDEATH)
+	M.status_at_least(STAT_MUTED, 10)
+	M.status_set(STAT_PARALYZED, max(M.status_units(STAT_PARALYZED), 10))
 
 	if(prob(0.1))
 		act_message(M, null, MSG_SELF("You wheeze sharply... it's cold."), MSG_OTHERS("%U% wheezes."))
@@ -452,7 +452,7 @@
 /datum/reagent/lichpowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/toxin/fertilizer //Reagents used for plant fertilizers.
@@ -515,13 +515,13 @@
 		var/turf/simulated/wall/W = T
 		if(locate_on(W, /obj/effect/overlay/wallrot))
 			for(var/obj/effect/overlay/wallrot/E in turf_contents_of_type(W, /obj/effect/overlay/wallrot))
-				qdel(E)
+				dissolved(E)
 			W.visible_message(span_notice("The fungi are completely dissolved by the solution!"))
 
 /datum/reagent/toxin/plantbgone/touch_obj(obj/O, volume)
 	..()
 	if(istype(O, /obj/effect/plant))
-		qdel(O)
+		dissolved(O)
 	else if(istype(O, /obj/effect/alien/weeds/))
 		var/obj/effect/alien/weeds/alien_weeds = O
 		alien_weeds.take_damage(rand(15, 35), BRUTE)
@@ -622,7 +622,7 @@
 
 /datum/reagent/thermite/venom/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_BURN, 3 * removed, source = src)
-	if(M.fire_stacks <= 1.5)
+	if(fire_stacks_of(M) <= 1.5)
 		M.adjust_fire_stacks(0.15)
 	if(inert_for(M))
 		return
@@ -657,7 +657,7 @@
 		else if(prob(20))
 			act_message(M, null, others = span_warning("%U% [pick("dry heaves!","coughs!","splutters!","rubs at their eyes!")]"))
 	else
-		M.status_at_least(EFFECT_BLURRY, 10)
+		M.status_at_least(STAT_BLURRY, 10)
 
 /datum/reagent/lexorin
 	name = REAGENT_LEXORIN
@@ -681,7 +681,7 @@
 		M.injure(INJURY_TOXIN, 3 * removed, source = src)
 		if(prob(10))
 			to_chat(M, span_warning("Your cellular mass hardens for a moment."))
-			M.status_at_least(EFFECT_STUNNED, 6)
+			M.status_at_least(STAT_STUNNED, 6)
 		return
 	M.injure(INJURY_CORROSIVE, 3 * removed, source = src)
 	if(M.losebreath < 15)
@@ -716,7 +716,7 @@
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME && prob(25))
 			var/color_shift = rand(-100, 100)
-			om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), color_shift)
+			after(H, 1 TICK, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), with = list(color_shift))
 		if(H.species.flags & NO_DNA)
 			return
 
@@ -758,7 +758,7 @@
 			M.mend(TREAT_TISSUE_REPAIR, 25 * removed)
 			M.mend(TREAT_BURN_CARE, 25 * removed)
 			M.mend(TREAT_ANTITOXIN, rand(10, 30) * removed)
-			M.status_at_least(EFFECT_DRUGGED, 10)
+			M.status_at_least(STAT_DRUGGED, 10)
 	else
 		if(prob(10))
 			to_chat(M, span_danger("Your insides are burning!"))
@@ -800,24 +800,24 @@
 		if(effective_dose == metabolism * 2 || prob(5))
 			M.emote("yawn")
 	else if(effective_dose < 1.5 * threshold)
-		M.status_at_least(EFFECT_BLURRY, 10)
+		M.status_at_least(STAT_BLURRY, 10)
 	else if(effective_dose < 5 * threshold)
 		if(prob(50))
-			M.status_at_least(EFFECT_WEAKENED, 2)
-		M.status_at_least(EFFECT_DROWSY, 20)
+			M.status_at_least(STAT_WEAKENED, 2)
+		M.status_at_least(STAT_DROWSY, 20)
 	else
 		// Kept: a different symptom set, not a strength.
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
-			M.status_at_least(EFFECT_BLURRY, 30)
+			M.status_at_least(STAT_BLURRY, 30)
 			if(prob(20))
-				M.status_at_least(EFFECT_DEAFENED, 4)
+				M.status_at_least(STAT_DEAFENED, 4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-				M.status_at_least(EFFECT_CONFUSED, 2)
+				M.status_at_least(STAT_CONFUSED, 2)
 			else
-				M.status_at_least(EFFECT_WEAKENED, 2)
+				M.status_at_least(STAT_WEAKENED, 2)
 		else
-			M.status_at_least(EFFECT_SLEEPING, 20)
-		M.status_at_least(EFFECT_DROWSY, 60)
+			M.status_at_least(STAT_SLEEPING, 20)
+		M.status_at_least(STAT_DROWSY, 60)
 
 /datum/reagent/chloralhydrate
 	name = REAGENT_CHLORALHYDRATE
@@ -850,22 +850,22 @@
 		effective_dose *= 2
 
 	if(effective_dose == metabolism)
-		M.status_at_least(EFFECT_CONFUSED, 2)
-		M.status_adjust(EFFECT_DROWSY, 2)
+		M.status_at_least(STAT_CONFUSED, 2)
+		M.status_adjust(STAT_DROWSY, 2)
 	else if(effective_dose < 2 * threshold)
-		M.status_at_least(EFFECT_WEAKENED, 30)
-		M.status_at_least(EFFECT_BLURRY, 10)
+		M.status_at_least(STAT_WEAKENED, 30)
+		M.status_at_least(STAT_BLURRY, 10)
 	else
 		// Kept: a different symptom set, not a strength.
 		if(alien == IS_SLIME)
 			if(prob(30))
-				M.status_at_least(EFFECT_DEAFENED, 4)
+				M.status_at_least(STAT_DEAFENED, 4)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-			M.status_at_least(EFFECT_BLURRY, 60)
-			M.status_at_least(EFFECT_WEAKENED, 30)
-			M.status_at_least(EFFECT_CONFUSED, 40)
+			M.status_at_least(STAT_BLURRY, 60)
+			M.status_at_least(STAT_WEAKENED, 30)
+			M.status_at_least(STAT_CONFUSED, 40)
 		else
-			M.status_at_least(EFFECT_SLEEPING, 30)
+			M.status_at_least(STAT_SLEEPING, 30)
 
 	if(effective_dose > 1 * threshold)
 		M.injure(INJURY_TOXIN, removed, source = src)
@@ -953,8 +953,8 @@
 		drug_strength *= M.species.chem_strength_tox
 	drug_strength *= species_mult(M)
 
-	M.status_adjust(EFFECT_DIZZY, drug_strength)
-	M.status_at_least(EFFECT_CONFUSED, drug_strength * 5)
+	M.status_adjust(STAT_DIZZY, drug_strength)
+	M.status_at_least(STAT_CONFUSED, drug_strength * 5)
 
 /datum/reagent/impedrezene
 	name = REAGENT_IMPEDREZENE
@@ -973,11 +973,11 @@
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/impedrezene/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_adjust(EFFECT_JITTERY, -5)
+	M.status_adjust(STAT_JITTERY, -5)
 	if(prob(80))
 		M.injure(INJURY_NEURAL, 0.1 * removed, source = src)
 	if(prob(50))
-		M.status_at_least(EFFECT_DROWSY, 3)
+		M.status_at_least(STAT_DROWSY, 3)
 	if(prob(10))
 		M.emote("drool")
 
@@ -1006,7 +1006,7 @@
 
 	drug_strength = CLAMP(drug_strength, 0, 150) //Let's not have users be hallucinating more than 5 minutes.
 
-	M.status_at_least(EFFECT_HALLUCINATING, drug_strength)
+	M.status_at_least(STAT_HALLUCINATING, drug_strength)
 
 /* Transformations */
 
@@ -1109,7 +1109,7 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/irradiated_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	//GLOB.radiation_service.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
+	//SSradiation.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
 	M.add_radiation(5 * removed)	// Irradiate you. Because it's inside you.
 
 /datum/reagent/neurophage_nanites
@@ -1148,25 +1148,19 @@
 	return ..()
 
 /mob/living/carbon/human/proc/slime_color_shift(color_shift)
-	var/mob/living/carbon/human/H = src
-	if(prob(33))
-		if(H.r_skin)
-			H.r_skin = max(0, min(255, H.r_skin + color_shift))
-		if(H.r_hair)
-			H.r_hair = max(0, min(255, H.r_hair + color_shift))
-		if(H.r_facial)
-			H.r_facial = max(0, min(255, H.r_facial + color_shift))
-	if(prob(33))
-		if(H.g_skin)
-			H.g_skin = max(0, min(255, H.g_skin + color_shift))
-		if(H.g_hair)
-			H.g_hair = max(0, min(255, H.g_hair + color_shift))
-		if(H.g_facial)
-			H.g_facial = max(0, min(255, H.g_facial + color_shift))
-	if(prob(33))
-		if(H.b_skin)
-			H.b_skin = max(0, min(255, H.b_skin + color_shift))
-		if(H.b_hair)
-			H.b_hair = max(0, min(255, H.b_hair + color_shift))
-		if(H.b_facial)
-			H.b_facial = max(0, min(255, H.b_facial + color_shift))
+	// each channel (red, green, blue) of skin, hair and beard shifts at a one-in-three chance; a zero channel stays
+	for(var/channel in 1 to 3)
+		if(!prob(33))
+			continue
+		var/list/channels = hex2rgb(looks.skin_color)
+		var/value = channels[channel]
+		if(value)
+			looks.set_skin_color(colour_set_channel(looks.skin_color, channel, value + color_shift))
+		channels = hex2rgb(looks.hair_color)
+		value = channels[channel]
+		if(value)
+			looks.set_hair_color(colour_set_channel(looks.hair_color, channel, value + color_shift))
+		channels = hex2rgb(looks.facial_color)
+		value = channels[channel]
+		if(value)
+			looks.set_facial_color(colour_set_channel(looks.facial_color, channel, value + color_shift))

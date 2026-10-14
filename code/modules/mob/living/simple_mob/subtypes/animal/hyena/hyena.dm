@@ -46,7 +46,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	melee_damage_lower = 6 // hyenas go for the legs/lower bits
 	melee_damage_upper = 12 // not as high damage, but faster bites. nomnomnom <3
 	attack_injury_kind = INJURY_CUT
-	base_attack_cooldown = 2
 	attacktext = list("bit", "nipped", "chomped", "clawed", "scratched", "lewded")
 	attack_sound = SFX_WEAPONS_BITE // placeholder till I find a better bite
 
@@ -78,7 +77,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 	say_list_type = /datum/say_list/hyena
 
-	allow_mind_transfer = TRUE
 
 	var/obj/item/clothing/head/hat = null // The hat the yeen is wearing when initialized, var will update with the chosen hat.
 
@@ -93,9 +91,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 /mob/living/simple_mob/animal/hyena/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
-		update_icon()
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
 			return
@@ -124,10 +121,9 @@ They're also cool, and Rykka/Nyria wrote this uwu
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
 				var/obj/item/clothing/head/new_hat = get_active_hand()
-				if(!own_set(src, nameof(src.hat), new_hat, user = user, slot = SLOT_ID_BODY)) // out of the paw, onto the head
+				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
 					return
 				to_chat(user, span_notice("You put on the hat."))
-				update_icon()
 			return
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
@@ -149,17 +145,12 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-/mob/living/simple_mob/animal/hyena/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_kind(attack_cooldown = 2))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/hyena/appearance_overlays()
-	. = list()
-	. += ..()
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -15 // Hyenas are smol! - TODO: Test this.
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/hyena/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Hyenas are smol! - TODO: Test this.

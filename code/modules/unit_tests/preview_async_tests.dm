@@ -34,7 +34,7 @@
 	TEST_ASSERT(length(prefs.character_preview_b64["south"]), "the fresh render has no south image")
 	TEST_ASSERT(!prefs.dq_apply_preview_result(stale_generation, list("bg" = "stale")), "a stale result was applied")
 	TEST_ASSERT(prefs.dq_apply_preview_result(fresh_generation, list("bg" = "fresh")), "the latest result was refused")
-	qdel(prefs)
+	qdel(prefs, TRUE) // preferences refuse an unforced delete: this test owns its fixture
 
 /// The iconforge preview matches getFlatIcon pixel for pixel on a real mannequin,
 /// including a colour-matrix overlay and an offset overlay that forces a crop.
@@ -42,7 +42,7 @@
 
 /datum/unit_test/dq_preview_async_matches_getflaticon/Run()
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
-	mannequin.regenerate_icons()
+	refresh_flush() // the human draws through the refresh queue; nothing redraws on regenerate_icons()
 	mannequin.ImmediateOverlayUpdate()
 	TEST_ASSERT(length(mannequin.overlays), "mannequin has no overlays to test with")
 	var/mutable_appearance/matrix_overlay = new(mannequin.overlays[1])
@@ -101,3 +101,44 @@
 	for(var/channel in 1 to 3)
 		diff = max(diff, abs(a[channel] - b[channel]))
 	return diff
+
+/// The real preview proc draws the mannequin itself: a freshly made mannequin has nothing drawn until the refresh queue runs,
+/// and update_character_previews() must not flatten that blank look.
+/datum/unit_test/dq_preview_draws_mannequin_before_flatten
+
+/datum/unit_test/dq_preview_draws_mannequin_before_flatten/Run()
+	var/datum/preferences/dq_preview_test_stub/prefs = new()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
+	TEST_ASSERT(!length(mannequin.overlays), "the mannequin already had overlays before the preview ran")
+	prefs.update_character_previews(mannequin, TRUE)
+	var/drawn = length(mannequin.overlays)
+	qdel(prefs, TRUE) // preferences refuse an unforced delete: this test owns its fixture, and a failed assert must not leak it
+	TEST_ASSERT(drawn, "update_character_previews flattened a mannequin that was never drawn")
+
+/// draw_now() builds the look of a mob that was made in the same call, and follows a direction change.
+/datum/unit_test/dq_draw_now_draws_fresh_human
+
+/datum/unit_test/dq_draw_now_draws_fresh_human/Run()
+	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
+	TEST_ASSERT(!length(mannequin.overlays), "a fresh mannequin already had overlays")
+	draw_now(mannequin)
+	TEST_ASSERT(length(mannequin.overlays), "draw_now left the mannequin undrawn")
+	var/icon/flat = getFlatIcon(mannequin, defdir = SOUTH, no_anim = TRUE)
+	TEST_ASSERT_NOTNULL(flat, "the drawn mannequin did not flatten")
+
+/// State-name caches are keyed by file text, so two dynamic rsc icons (which stringify alike) must never share an entry:
+/// each reports its own states, and a runtime icon is never cached at all.
+/datum/unit_test/dq_icon_states_cache_runtime_icons
+
+/datum/unit_test/dq_icon_states_cache_runtime_icons/Run()
+	var/icon/first = icon('icons/effects/effects.dmi')
+	var/icon/second = icon('icons/obj/items.dmi')
+	var/list/first_expected = icon_states(first)
+	var/list/second_expected = icon_states(second)
+	TEST_ASSERT(length(first_expected) != length(second_expected), "fixture icons have the same state count")
+	var/first_file = fcopy_rsc(first)
+	var/second_file = fcopy_rsc(second)
+	TEST_ASSERT_EQUAL(length(icon_states_fast(first_file)), length(first_expected), "first runtime icon got the wrong state list")
+	TEST_ASSERT_EQUAL(length(icon_states_fast(second_file)), length(second_expected), "second runtime icon got another icon's state list")
+	TEST_ASSERT(icon_has_stable_key('icons/effects/effects.dmi'), "a DMI path has no stable key")
+	TEST_ASSERT(!icon_has_stable_key(first), "a runtime /icon was given a cache key")

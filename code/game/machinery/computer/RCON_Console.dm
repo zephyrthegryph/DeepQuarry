@@ -9,29 +9,21 @@
 	desc = "Console used to remotely control electrical machinery on the station."
 	icon_keyboard = "power_key"
 	icon_screen = "ai-fixer"
-	light_color = "#a97faa"
 	circuit = /obj/item/circuitboard/rcon_console
 	req_one_access = list(ACCESS_ENGINE)
 	var/current_tag = null
 	var/datum/tgui_module/rcon/rcon
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/rcon)
-
-
-/obj/machinery/computer/rcon/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+CAPABILITIES(/obj/machinery/computer/rcon)
+	configure(light_glow(color = "#a97faa"))
+	owns_one(nameof(rcon), starts = /datum/tgui_module/rcon)
+	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui)))
 
 // Proc: ui_interact()
 // Description: Uses dark magic (TGUI) to render this machine's UI
 /obj/machinery/computer/rcon/ui_redirect(mob/user)
 	return rcon
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/rcon/appearance_overlays()
-	. = list()
-	. += ..()
-	if(operable())
-		. += "ai-fixer-empty"
+/obj/machinery/computer/rcon/draw(datum/look/look)
+	..()
+	look.overlay("ai-fixer-empty", when = operable())

@@ -8,7 +8,7 @@
 // - The swarm's own troubles are nanite afflictions
 //   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
-//   holds it alive through /datum/om/event/before/living_body_status, knocks it out through
+//   holds it alive through the /datum/act/body_status question it takes over, knocks it out through
 //   the consciousness model and leaves its control cluster inert, until it is
 //   revived by calibration, plating repair and defibrillation.
 
@@ -59,7 +59,7 @@
 /// A dormant core is held alive but is not awake: dormancy's consciousness
 /// penalty applies even though the keep-alive answers the status signal.
 /datum/body/humanoid/nanoform/is_unconscious()
-	if(!is_dormant() || om_has(owner, EFFECT_GODMODE))
+	if(!is_dormant() || in_godmode(owner))
 		return ..()
 	ensure_vitals()
 	return consciousness <= CONSCIOUSNESS_THRESHOLD
@@ -68,7 +68,7 @@
 	return has_affliction(/datum/affliction/core_dormancy)
 
 /datum/body/humanoid/nanoform/proc/go_dormant_if_dying()
-	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE) || is_dormant() || !is_lethal())
+	if(owner.is_dead() || in_godmode(owner) || is_dormant() || !is_lethal())
 		return
 	log_game("NANOFORM: [key_name(owner)] took lethal damage[istype(owner.loc, /obj/item/rig/protean) ? " while folded into their control cluster" : ""]; going dormant.")
 	afflict(/datum/affliction/core_dormancy)
@@ -181,7 +181,7 @@
 			continue
 		if(E)
 			E.removed()
-			qdel(E)
+			spent(E)
 		var/list/organ_data = H.species.has_limbs[limb_tag]
 		var/limb_path = organ_data["path"]
 		var/obj/item/organ/external/new_limb = new limb_path(H)
@@ -195,17 +195,10 @@
 		new organ_type(H, TRUE) // takes its place in its limb
 		regrown++
 	if(regrown)
-		H.regenerate_icons()
 		log_game("NANOFORM: [key_name(H)] regrew [regrown] part(s).")
 	return regrown
 
 // --- Core dormancy ---------------------------------------------------------------------
-
-/// A nanoform body that lost cohesion retreats into its core. It neither dies
-/// nor acts: it is held alive and unconscious
-/// (consciousness_at_max), its control cluster goes inert, and it is revived
-/// step by step by treatment mechanisms.
-OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 
 /datum/affliction/core_dormancy
 	name = "core dormancy"
@@ -221,7 +214,7 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	treated_by = list(TREAT_CALIBRATION = 1, TREAT_PLATING_REPAIR = 1, TREAT_DEFIBRILLATION = 1)
 	/// DORMANCY_* revival step.
 	var/revival_step = DORMANCY_SEALED
-	/// The mob whose /datum/om/event/before/living_body_status we answer.
+	/// The mob whose body status question (/datum/act/body_status) we answer: held alive.
 	var/mob/living/held_mob
 
 
@@ -229,10 +222,10 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)
 	rel_set(src, nameof(held_mob), owner)
-	om_hook(held_mob, /datum/om/event/before/living_body_status, src, PROC_REF(hold_alive))
+	observe(held_mob, /datum/act/body_status, src, instead())
 	// Without a control cluster to work through, the core is repaired on the body itself.
-	om_hook(held_mob, /datum/om/event/before/atom_tool_act, src, PROC_REF(on_body_screwdriver))
-	om_hook(held_mob, /datum/om/event/before/attackby, src, PROC_REF(on_body_attackby))
+	observe(held_mob, /datum/act/tool_act, src, instead(then(PROC_REF(on_body_screwdriver))))
+	observe(held_mob, /datum/act/attackby, src, instead(then(PROC_REF(on_body_attackby))))
 	log_game("NANOFORM: [key_name(held_mob)] entered core dormancy at [AREACOORD(held_mob)].")
 	play_sfx(held_mob, SFX_VOICE_BORG_DEATHSOUND)
 	held_mob.visible_message(span_bold("[held_mob.name]") + " shudders and retreats inwards, coalescing into a single core component!")
@@ -258,19 +251,17 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	..()
 
 /datum/affliction/core_dormancy/proc/release()
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	if(!held_mob)
 		return
-	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
+	unobserve(held_mob, /datum/act/body_status, src)
+	unobserve(held_mob, /datum/act/tool_act, src)
+	unobserve(held_mob, /datum/act/attackby, src)
 	var/datum/forms/protean/F = held_mob.get_protean_forms()
 	F?.rig?.wake()
 	log_game("NANOFORM: [key_name(held_mob)] left core dormancy.")
 	rel_clear(src, nameof(held_mob))
-
-/datum/affliction/core_dormancy/proc/hold_alive(mob/living/source, datum/om/event/before/living_body_status/event)
-	EVENT_HANDLER
-	return COMPONENT_BODY_KEEP_ALIVE
 
 /// Dormant cores don't progress or heal on their own; they stay down.
 /datum/affliction/core_dormancy/progress()
@@ -286,25 +277,25 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	var/datum/forms/protean/F = held_mob?.get_protean_forms()
 	return !F?.in_rig()
 
-/datum/affliction/core_dormancy/proc/on_body_screwdriver(mob/living/source, datum/om/event/before/atom_tool_act/event)
-	EVENT_HANDLER
-	if(event.tool_quality != TOOL_SCREWDRIVER || event.secondary)
-		return NONE
-	var/mob/living/user = event.user
-	var/obj/item/tool = event.tool
+/datum/affliction/core_dormancy/proc/on_body_screwdriver(datum/act/tool_act/use)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(use.tool_quality != TOOL_SCREWDRIVER || use.secondary)
+		return HOOK_DECLINE
+	var/mob/living/user = use.user
+	var/obj/item/tool = use.tool
 	if(revival_step != DORMANCY_SEALED || !repaired_on_body())
-		return NONE
-	repair_with(tool, user, source)
+		return HOOK_DECLINE
+	repair_with(tool, user, use.target)
 	return ITEM_INTERACT_SUCCESS
 
-/datum/affliction/core_dormancy/proc/on_body_attackby(mob/living/source, datum/om/event/before/attackby/event)
-	EVENT_HANDLER
-	var/obj/item/W = event.item
-	var/mob/living/user = event.user
+/datum/affliction/core_dormancy/proc/on_body_attackby(datum/act/attackby/use)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/item/W = use.item
+	var/mob/living/user = use.user
 	if(!repaired_on_body() || !is_repair_item(W))
-		return NONE
-	repair_with(W, user, source)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+		return HOOK_DECLINE
+	repair_with(W, user, use.target)
+	return TRUE
 
 /// Whether `W` is the tool for the current revival step.
 /datum/affliction/core_dormancy/proc/is_repair_item(obj/item/W)
@@ -328,42 +319,42 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	var/step = revival_step
 	switch(step)
 		if(DORMANCY_SEALED)
-			playsound(site, W.usesound, 50, 1)
+			playsound(site, sounds_of(W).use, 50, 1)
 		if(DORMANCY_PASTED)
 			var/obj/item/shockpaddles/paddles = W
 			if(!paddles.can_use(user))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			om_task_start(/datum/om/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
+			perform_op(user, src, "paddles_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site))
 			return
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
+	perform_op(user, src, "repair_step", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site, "time" = 5 SECONDS))
 
-/datum/om/task/timed/core_dormancy_paddles_charge
-	duration = 5 SECONDS
-	complete_proc = /datum/affliction/core_dormancy/proc/paddles_charge
-	var/obj/item/W
-	var/step
+// The revival steps are ops of the dormancy (it is their holder): whoever works on the cluster, or on the body, is the actor and stays beside the site.
+CAPABILITIES(/datum/affliction/core_dormancy)
+	op("paddles_charge", ai(), needs(req_capable()), takes("tool", "step", "site"), wait(5 SECONDS), then(PROC_REF(paddles_charge)))
+	op("repair_step", ai(), needs(req_capable()), takes("tool", "step", "site", "time"), wait(PROC_REF(repair_step_time)), then(PROC_REF(repair_step_done)))
 
-/datum/affliction/core_dormancy/proc/paddles_charge(datum/om/task/timed/core_dormancy_paddles_charge/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
+/// The paddles charge, then the shock follows a second later.
+/datum/affliction/core_dormancy/proc/paddles_charge(datum/act/op/A)
+	var/obj/item/W = A.arg("tool")
+	var/mob/living/user = A.actor
+	var/atom/site = A.arg("site")
+	var/step = A.arg("step")
+	if(QDELETED(W) || QDELETED(site) || !user.Adjacent(site))
+		return
 	play_sfx(site, SFX_MACHINES_DEFIB_CHARGE)
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
+	perform_op(user, src, "repair_step", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("tool" = W, "step" = step, "site" = site, "time" = 1 SECOND))
 
-/datum/om/task/timed/core_dormancy_repair_step
-	complete_proc = /datum/affliction/core_dormancy/proc/repair_step_done
-	var/obj/item/W
-	var/step
+/datum/affliction/core_dormancy/proc/repair_step_time(datum/act/op/A)
+	return A.arg("time")
 
-/datum/affliction/core_dormancy/proc/repair_step_done(datum/om/task/timed/core_dormancy_repair_step/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/atom/site = task.target
-	var/step = task.step
+/datum/affliction/core_dormancy/proc/repair_step_done(datum/act/op/A)
+	var/obj/item/W = A.arg("tool")
+	var/mob/living/user = A.actor
+	var/atom/site = A.arg("site")
+	var/step = A.arg("step")
 	var/mob/living/patient = held_mob
-	if(!patient || revival_step != step)
+	if(!patient || revival_step != step || QDELETED(W) || QDELETED(site) || !user.Adjacent(site))
 		return
 	switch(step)
 		if(DORMANCY_SEALED)
@@ -407,14 +398,14 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
+		after(src, DORMANCY_REBOOT_TIME, PROC_REF(complete_revival), key = "reboot_timer")
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body
 	if(!patient || !istype(B))

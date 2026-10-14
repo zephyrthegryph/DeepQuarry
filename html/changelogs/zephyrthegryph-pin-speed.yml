@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Look pins run as one sweep that makes each type once, probes on one instance, shards across parallel test worlds, skips unchanged types by analyzer key, and sits behind a machine-wide two-run cap"

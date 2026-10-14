@@ -3,14 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-// The chat delivery world service (was SSchat): queued chat payloads go out every tick, parked
+// The chat delivery system (was SSchat): queued chat payloads go out every tick, parked
 // while nothing is queued.
-GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
-
-/datum/world_service/chat
+SYSTEM_DEF(chat)
 	name = "Chat"
-	lane = /datum/om/behaviour/world/chat
-	on_demand = TRUE
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	/// Assosciates a ckey with a list of messages to send to them.
 	var/list/list/datum/chat_payload/client_to_payloads = list()
@@ -21,7 +18,7 @@ GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
 	/// Assosciates a ckey with their next sequence number.
 	var/list/client_to_sequence_number = list()
 
-/datum/world_service/chat/proc/generate_payload(client/target, message_data)
+/datum/system/chat/proc/generate_payload(client/target, message_data)
 	var/sequence = client_to_sequence_number[target.ckey]
 	client_to_sequence_number[target.ckey] += 1
 
@@ -43,11 +40,16 @@ GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
 		client_history -= "[oldest]"
 	return payload
 
-/datum/world_service/chat/proc/send_payload_to_client(client/target, datum/chat_payload/payload)
+/datum/system/chat/proc/send_payload_to_client(client/target, datum/chat_payload/payload)
 	target.tgui_panel.window.send_message("chat/message", payload.into_message())
 	SEND_TEXT(target, payload.get_content_as_html())
 
-/datum/world_service/chat/service_step(resumed)
+/datum/system/chat/reactions()
+	. = ..()
+	. += every(WORK_EVERY_TICK, PROC_REF(send_queued), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/// Sends the queued payloads; parks the item when nothing is queued.
+/datum/system/chat/proc/send_queued(dt)
 	for(var/ckey in client_to_payloads)
 		var/client/target = GLOB.directory[ckey]
 		if(isnull(target)) // verify client still exists
@@ -58,58 +60,6 @@ GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
 			send_payload_to_client(target, payload)
 		LAZYREMOVE(client_to_payloads, ckey)
 
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
-
-/datum/world_service/chat/has_work()
-	return length(client_to_payloads)
-
-/datum/world_service/chat/proc/queue(queue_target, list/message_data)
-	var/list/targets = islist(queue_target) ? queue_target : list(queue_target)
-	for(var/target in targets)
-		var/client/client = CLIENT_FROM_VAR(target)
-		if(isnull(client))
-			continue
-		LAZYADDASSOCLIST(client_to_payloads, client.ckey, generate_payload(client, message_data))
-	demand()
-
-/datum/world_service/chat/proc/send_immediate(send_target, list/message_data)
-	var/list/targets = islist(send_target) ? send_target : list(send_target)
-	for(var/target in targets)
-		var/client/client = CLIENT_FROM_VAR(target)
-		if(isnull(client))
-			continue
-		send_payload_to_client(client, generate_payload(client, message_data))
-
-/datum/world_service/chat/proc/handle_resend(client/client, sequence)
-	var/list/client_history = client_to_reliability_history[client.ckey]
-	sequence = "[sequence]"
-	if(isnull(client_history) || !(sequence in client_history))
-		return
-
-	var/datum/chat_payload/payload = client_history[sequence]
-	if(payload.resends > CHAT_RELIABILITY_MAX_RESENDS)
-		return // we tried but byond said no
-
-	payload.resends += 1
-	send_payload_to_client(client, client_history[sequence])
-	/*
-	SSblackbox.record_feedback(
-		"nested tally",
-		"chat_resend_byond_version",
-		1,
-		list(
-			"[client.byond_version]",
-			"[client.byond_build]",
-		),
-	)
-	*/
-
-/// chat (was SSchat).
-/datum/om/behaviour/world/chat
-	name = "world: chat"
-	every = 1
-
-/datum/om/behaviour/world/chat/service()
-	return GLOB.chat_service
+		if(KERNEL_OVER_BUDGET)
+			return STEP_YIELD
+	return length(client_to_payloads) ? STEP_DONE : STEP_PARK

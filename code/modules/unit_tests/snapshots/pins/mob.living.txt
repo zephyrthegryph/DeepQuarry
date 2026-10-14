@@ -1,0 +1,18 @@
+@mob human|none
+-menu: Nutrition heal
+@mob robot|none
+-menu: Nutrition heal
+@mob ai|none
+@mob ghost|none
+-menu: Nutrition heal
+@mob human|/obj/item/tool/screwdriver
+@mob human|/obj/item/tool/crowbar
+@mob human|/obj/item/tool/wrench
+@mob human|/obj/item/tool/wirecutters
+@mob human|/obj/item/multitool
+@mob human|/obj/item/weldingtool
+@mob human|/obj/item/stack/cable_coil
+@mob human|/obj/item/stack/material/steel
+@mob human|/obj/item/card/id
+@mob human|/obj/item
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

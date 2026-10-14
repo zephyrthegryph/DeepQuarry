@@ -997,8 +997,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 
 /area/security/brig/prison_break()
 	for(var/obj/structure/closet/secure_closet/brig/temp_closet in area_contents_of_type(src, /obj/structure/closet/secure_closet/brig))
-		temp_closet.locked = 0
-		temp_closet.icon_state = "closed_unlocked"
+		temp_closet.force_lock(FALSE)
 	for(var/obj/machinery/door_timer/temp_timer in area_contents_of_type(src, /obj/machinery/door_timer))
 		temp_timer.timer_duration = 1
 	..()
@@ -1009,8 +1008,7 @@ NOTE: there are two lists of areas in the end of this file: centcom and station 
 
 /area/security/prison/prison_break()
 	for(var/obj/structure/closet/secure_closet/brig/temp_closet in area_contents_of_type(src, /obj/structure/closet/secure_closet/brig))
-		temp_closet.locked = 0
-		temp_closet.icon_state = "closed_unlocked"
+		temp_closet.force_lock(FALSE)
 	for(var/obj/machinery/door_timer/temp_timer in area_contents_of_type(src, /obj/machinery/door_timer))
 		temp_timer.timer_duration = 1
 	..()
@@ -1802,9 +1800,13 @@ GLOBAL_LIST_INIT(the_station_areas, list(
 	power_light = 0
 	power_equip = 0
 	power_environ = 0
-	var/asteroid_spawns = list()
-	var/mob_spawns = list()
+	var/list/asteroid_spawns
+	var/list/mob_spawns
 	var/shuttle_area //It would be neat if this were more dynamic, but eh.
+
+CAPABILITIES(/area/asteroid/rogue)
+	ref_many(nameof(asteroid_spawns), /obj/asteroid_spawner)
+	ref_many(nameof(mob_spawns), /obj/rogue_mobspawner)
 
 
 /area/rnd/outpost

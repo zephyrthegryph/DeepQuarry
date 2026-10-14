@@ -129,13 +129,13 @@ GLOBAL_LIST(fusion_reactions)
 		if(T && (holder.z == T.z))
 			if(ishuman(mob))
 				var/mob/living/carbon/human/H = mob
-				H.status_adjust(EFFECT_HALLUCINATING, rand(100,150))
+				H.status_adjust(STAT_HALLUCINATING, rand(100,150))
 
 	for(var/obj/machinery/fusion_fuel_injector/I in range(world.view, origin))
 		if(I.cur_assembly && I.cur_assembly.fuel_type == REAGENT_ID_SUPERMATTER)
 			explosion(get_turf(I), 1, 2, 3)
-			om_qdel_after(I, 5)
-	qdel(holder)
+			after(null, 0.5 SECONDS, GLOBAL_PROC_REF(destroyed), with = list(I))
+	spent(holder)
 	explosion(origin, 1, 2, 5)
 
 	return 1

@@ -4,11 +4,22 @@
 	var/uses = 0
 	info = "<center><img src='talisman.png'></center><br/><br/>"
 
-EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_talisman)), INTERACT_USE("Invoke", PROC_REF(interaction_talisman)))
+// Its own self-use ops come before the paper's (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/paper/talisman)
+	op("talisman_crumple", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Crumple"), then(PROC_REF(talisman_crumple_op)))
+	op("talisman_invoke", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Invoke"), then(PROC_REF(talisman_invoke_op)))
+
+/obj/item/paper/talisman/proc/talisman_crumple_op(datum/act/op/A)
+	talisman_use(A.actor, I_HURT)
+	return OP_OK
+
+/obj/item/paper/talisman/proc/talisman_invoke_op(datum/act/op/A)
+	talisman_use(A.actor, I_HELP)
+	return OP_OK
 
 /// Old attack_self: the paper's own self-use (read or crumple), then the talisman's effect.
-/obj/item/paper/talisman/proc/interaction_talisman(mob/living/user, obj/item/held, datum/interaction/interaction)
-	interaction_paper_self(user, held, interaction)
+/obj/item/paper/talisman/proc/talisman_use(mob/living/user, stance)
+	paper_use(user, stance)
 	if(QDELETED(src))
 		return TRUE
 	if(iscultist(user))
@@ -38,7 +49,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 				to_chat(user, span_warning("To use this talisman, attack your target directly."))
 				return
 			if("supply")
-				supply()
+				supply(null, user)
 		user.injure(INJURY_BLUNT, 5)
 		if(src && src.imbue!="supply" && src.imbue!="runestun")
 			if(delete)
@@ -62,9 +73,9 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		..()
 
 
-/obj/item/paper/talisman/proc/supply(key)
+/obj/item/paper/talisman/proc/supply(key, mob/user)
 	if (!src.uses)
-		qdel(src)
+		spent(src, user)
 		return
 
 	// Talisman rune picker is just a labelled list-of-actions; the pick goes to imbue_rune().
@@ -79,15 +90,13 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		"Kal om neth — summon a soul stone" = "soulstone",
 		"Da A'ig Osk — summon a construct shell" = "construct",
 	)
-	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(talisman_chant_chosen), title = "Talisman", message = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
+	open_request(src, /datum/prompt/choice/talisman_chant, PROC_REF(talisman_chant_chosen), answerer = user, title = "Talisman", question = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
 
-/// A pick made with an item the answerer carries (a talisman, a pinpointer, a technomancer
-/// device or spell): re-checked that it's still carried and they're able.
-/datum/om/prompt/choice/carried_item
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-
-/obj/item/paper/talisman/proc/talisman_chant_chosen(datum/om/prompt/choice/carried_item/ask)
-	var/rune = ask.choices[ask.choice]
+/obj/item/paper/talisman/proc/talisman_chant_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/talisman_chant/ask = context.answer
+	var/rune = ask.choices[ask.value]
 	if(rune && uses > 0)
 		imbue_rune(ask.answerer, rune)
 
@@ -104,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		if("teleport")
 			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
 			new_talisman.imbue = "[pick("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri", "orkan", "allaq")]"
-			new_talisman.info = "[new_talisman.imbue]"
+			new_talisman.set_info("[new_talisman.imbue]")
 		if("emp", "conceal", "communicate", "runestun", "armor")
 			var/obj/item/paper/talisman/new_talisman = new /obj/item/paper/talisman(T)
 			new_talisman.imbue = rune
@@ -115,9 +124,14 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		else
 			return
 	src.uses--
-	supply()
+	supply(null, user)
 
 
 /obj/item/paper/talisman/supply
 	imbue = "supply"
 	uses = 5
+
+/datum/prompt/choice/talisman_chant
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CARRIED | ASK_CAPABLE

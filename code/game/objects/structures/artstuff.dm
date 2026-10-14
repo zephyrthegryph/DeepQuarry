@@ -11,24 +11,14 @@
 	density = TRUE
 	var/obj/item/canvas/painting = null
 
-/obj/structure/easel/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/easel)
+	ref_one(nameof(painting))
+	climb()
+	op("item", item(/obj/item/canvas), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/structure/easel/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/easel_item,
-	)
-	..()
-
-/// Old attackby: adding canvases.
-/datum/interaction/entry_item/easel_item
-	id = "easel_item"
-	name = "Use"
-	held_type = /obj/item/canvas
-	effect = /obj/structure/easel/proc/interaction_item
-
-/obj/structure/easel/proc/interaction_item(mob/user, obj/item/canvas/canvas, datum/interaction/interaction)
+/obj/structure/easel/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/canvas/canvas = A.held
 	user.drop_from_inventory(canvas)
 	rel_set(src, nameof(painting), canvas) // the canvas sits on our turf: a view, not owned
 	canvas.forceMove(get_turf(src))
@@ -76,10 +66,13 @@
 	pixel_x = 10
 	pixel_y = 9
 
+/// The description gives the canvas size (derives(), at init).
+/obj/item/canvas/proc/sized_desc()
+	return "[desc] (Canvas size is [width]x[height].)"
+
 /obj/item/canvas/Initialize(mapload)
 	. = ..()
 	reset_grid()
-	desc += " (Canvas size is [width]x[height].)"
 
 /obj/item/canvas/proc/reset_grid()
 	grid = new/list(width,height)
@@ -87,16 +80,10 @@
 		for(var/y in 1 to height)
 			grid[x][y] = canvas_color
 
-DECLARE_INTERACTIONS(/obj/item/canvas, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_HELP, "Paint", PROC_REF(interaction_paint)), \
-)
-
-/// Old attack_self.
-/obj/item/canvas/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/// Old attack_self: look at the canvas.
+/obj/item/canvas/proc/interaction_self(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/item/canvas/dropped(mob/user, equipping, slot)
 	pixel_x = initial(pixel_x)
@@ -109,55 +96,56 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	else
 		return GLOB.tgui_default_state
 
-DECLARE_UI(/obj/item/canvas, "Canvas")
+CAPABILITIES(/obj/item/canvas)
+	interface("Canvas")
+	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
+	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
+	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
+	op("view", in_hand(), then(PROC_REF(interaction_self)))
+	op("base_color", item(/obj/item/paint_palette), label("Fill"),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Color Fill", "question" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "timeout" = 0), step = "sure"),
+		asks(/datum/prompt/color, fields = list("title" = "Base Color", "question" = "Select a base color for the canvas:", "default" = "canvas_color", "timeout" = 0), step = "colour", when = PROC_REF(fill_confirmed)),
+		then(PROC_REF(base_color_chosen)))
+	op("paint_open", item(/obj/item), stance(I_HELP), label("Paint"), then(PROC_REF(interaction_paint)))
+	derives(nameof(desc), PROC_REF(sized_desc))
 
-/// Old attackby.
-/obj/item/canvas/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/paint_palette))
-		om_ask(user, /datum/om/prompt/confirm/canvas_fill, PROC_REF(ask_base_color), subject = I, canvas = src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 
-/// Old attackby outside combat mode: open the canvas to paint on it.
-/obj/item/canvas/proc/interaction_paint(mob/living/user, obj/item/I, datum/interaction/interaction)
-	tgui_interact(user)
-	return INTERACTION_HANDLED_PASS
+/// A finished painting takes no more strokes.
+/obj/item/canvas/proc/canvas_open(datum/act/op/A)
+	return (!finalized) ? null : MSG(canvas/finished)
 
-UI_DATA(/obj/item/canvas, "grid:list", "name=painting_name:text", "finalized")
+/// Old attackby outside combat mode: open the canvas to paint on it (the click goes on).
+/obj/item/canvas/proc/interaction_paint(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_PASS
+
+/obj/item/canvas/ui_data(datum/act/eval/A)
+	return list("grid" = grid, "name" = painting_name, "finalized" = finalized)
 
 /obj/item/canvas/examine(mob/user)
 	. = ..()
 	tgui_interact(user)
 
-/obj/item/canvas/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(finalized)
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/item/canvas, "paint", ui_act_paint, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
-UI_ACT_PROC(/obj/item/canvas, ui_act_paint)
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/item/canvas/proc/ui_act_paint(datum/act/op/A, x, y)
+	var/mob/user = A.actor
+	var/obj/item/I = user.get_active_hand()
 	var/color = get_paint_tool_color(I)
 	if(!color)
 		return FALSE
-	var/x = params["x"]
-	var/y = params["y"]
 	if(grid?[x]?[y])
 		grid[x][y] = color
 	used = TRUE
 	update_appearance()
 	. = TRUE
 
-UI_ACT(/obj/item/canvas, "finalize", ui_act_finalize)
-UI_ACT_PROC(/obj/item/canvas, ui_act_finalize)
+/obj/item/canvas/proc/ui_act_finalize(datum/act/op/A)
 	. = TRUE
 	if(!finalized)
-		finalize(ui.user)
+		finalize(A.actor)
 
 /obj/item/canvas/proc/finalize(mob/user)
-	finalized = TRUE
+	set_finalized(TRUE)
 	author_name = user.real_name
 	author_ckey = user.ckey
 	generate_proper_overlay()
@@ -220,42 +208,32 @@ UI_ACT_PROC(/obj/item/canvas, ui_act_finalize)
 	else if(istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag))
 		return canvas_color
 
-/// Filling a canvas with a palette (the subject, held throughout); the canvas stays next to the painter.
-/datum/om/prompt/confirm/canvas_fill
-	title = "Confirm Color Fill"
-	message = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?"
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/canvas/canvas
+/// The palette's fill: asked only after a yes.
+/obj/item/canvas/proc/fill_confirmed(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["sure"]
+	return !!R?.value
 
-/datum/om/prompt/confirm/canvas_fill/valid()
-	return canvas.Adjacent(answerer) ? null : "too far away"
-
-/datum/om/prompt/color/canvas_base
-	title = "Base Color"
-	message = "Select a base color for the canvas:"
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/canvas/canvas
-
-/datum/om/prompt/color/canvas_base/valid()
-	return canvas.Adjacent(answerer) ? null : "too far away"
-
-/obj/item/canvas/proc/ask_base_color(datum/om/prompt/confirm/canvas_fill/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color/canvas_base, PROC_REF(base_color_chosen), subject = ask.subject, canvas = src, default = canvas_color)
-
-/obj/item/canvas/proc/base_color_chosen(datum/om/prompt/color/canvas_base/ask)
-	var/mob/living/user = ask.answerer
-	var/basecolor = ask.picked_color
+/// Old attackby with a paint palette: after a yes, the whole canvas takes the chosen base colour (the click goes on).
+/obj/item/canvas/proc/base_color_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["colour"]
+	if(!R)
+		return OP_PASS
+	var/mob/living/user = A.actor
+	var/basecolor = R.value
 	if(basecolor)
 		canvas_color = basecolor
 		reset_grid()
 		act_message(user, src, MSG_SELF("You smear paint on %T%, changing the color of the entire thing."), MSG_OTHERS("%U% smears paint on %T%, covering the entire thing in paint."), runemessage = "smears paint")
 		update_appearance()
+	return OP_PASS
 
 /obj/item/canvas/proc/try_rename(mob/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(renamed), message = "What do you want to name the painting?", max_length = 250, requires = PROMPT_USABLE_BY("physical"))
+	open_request(src, /datum/prompt/text, PROC_REF(renamed), answerer = user, question = "What do you want to name the painting?", max_len = 250, usable_state = "physical", timeout = 0)
 
-/obj/item/canvas/proc/renamed(datum/om/prompt/text/ask)
-	var/new_name = ask.text
+/obj/item/canvas/proc/renamed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = A.answer.value
 	if(new_name != painting_name && new_name)
 		painting_name = new_name
 		SStgui.update_uis(src)
@@ -341,30 +319,24 @@ UI_ACT_PROC(/obj/item/canvas, ui_act_finalize)
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "palette"
 
-DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/paint_palette)
+	// a brush dipped in the palette picks its new colour (the click goes on)
+	op("pick_color", item(/obj/item/paint_brush), label("Pick a colour"),
+		asks(/datum/prompt/color, fields = list("title" = "Paint Palette", "question" = "Select a new paint color:", "default" = computed(PROC_REF(brush_colour)), "timeout" = 0)),
+		then(PROC_REF(brush_color_picked)))
 
-/// Old attackby.
-/obj/item/paint_palette/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/paint_brush))
-		var/obj/item/paint_brush/P = W
-		om_ask(user, /datum/om/prompt/color/paint_palette, PROC_REF(brush_color_picked), brush = P, default = P.selected_color)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// The brush's colour now: the question's default.
+/obj/item/paint_palette/proc/brush_colour(datum/act/op/A)
+	var/obj/item/paint_brush/P = A.held
+	return P?.selected_color
 
-/// Picking a brush colour at a palette (the subject): both stay next to the painter.
-/datum/om/prompt/color/paint_palette
-	title = "Paint Palette"
-	message = "Select a new paint color:"
-	ask_flags = ASK_NEAR_SUBJECT
-	var/obj/item/paint_brush/brush
-
-/datum/om/prompt/color/paint_palette/valid()
-	return answerer.Adjacent(brush) ? null : "too far away"
-
-/obj/item/paint_palette/proc/brush_color_picked(datum/om/prompt/color/paint_palette/ask)
-	if(ask.picked_color)
-		ask.brush.update_paint(ask.picked_color)
+/// Old attackby with a brush: the brush takes the picked colour.
+/obj/item/paint_palette/proc/brush_color_picked(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/obj/item/paint_brush/P = A.held
+	if(R && istype(P))
+		P.update_paint(R.value)
+	return OP_PASS
 
 /obj/item/frame/painting
 	name = "painting frame"
@@ -441,45 +413,35 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	desc_with_canvas = "A painting hung where only the determined can reach it."
 	persistence_id = "away_area"
 
-/obj/structure/sign/painting/Initialize(mapload, dir, building)
-	. = ..()
-	if(persistence_id)
-		SSpersistence.painting_frames += src
-	if(dir)
-		set_dir(dir)
-	if(building)
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
-		pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
+/// A frame built on a wall (its constructor param).
+/obj/structure/sign/painting/var/building = FALSE
 
-/// Phase 2: leaves the persistent painting frames.
-/obj/structure/sign/painting/lifecycle_dematerialize()
-	. = ..()
-	SSpersistence.painting_frames -= src
+/// Every painting frame (the persistence system saves and loads those with a persistence_id): a registry, so a deleted frame leaves it.
+REGISTRY_MEMBERSHIP(/obj/structure/sign/painting, REGISTRY_PAINTING_FRAMES)
 
-/obj/structure/sign/painting/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/sign_painting_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/sign/painting)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+	op("vv_removepainting", topic_in(VV_TOPIC, "removepainting"), then(PROC_REF(vv_topic_remove_painting)))
+	rolls(ROLL_PIXEL, WALL_OFFSET(30, 30), when = nameof(building))
 
-/// Old attackby: frame a canvas, or rename with a pen.
-/datum/interaction/entry_item/sign_painting_item
-	id = "sign_painting_item"
-	name = "Use"
-	effect = /obj/structure/sign/painting/proc/interaction_item
-
-/obj/structure/sign/painting/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!current_canvas && istype(I, /obj/item/canvas))
 		frame_canvas(user, I)
 	else if(current_canvas && current_canvas.painting_name == initial(current_canvas.painting_name) && istype(I,/obj/item/pen))
 		try_rename(user)
 	return TRUE
 
-/obj/structure/sign/painting/wirecutter_act(mob/user, obj/item/I)
+/obj/structure/sign/painting/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(current_canvas)
 		unframe_canvas(user)
-		return TRUE
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /obj/structure/sign/painting/examine(mob/user)
 	. = ..()
@@ -502,7 +464,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	if(!allowed(user))
 		to_chat(user, span_notice("Access lock prevents you from putting a painting into this frame. Ask [curator] for help!"))
 		return
-	if(own_set(src, nameof(src.current_canvas), new_canvas, user = user))
+	if(move_into(src, nameof(src.current_canvas), new_canvas, user))
 		if(!current_canvas.finalized)
 			current_canvas.finalize(user)
 		to_chat(user,span_notice("You frame [current_canvas]."))
@@ -514,7 +476,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		return
 	if(current_canvas)
 		current_canvas.forceMove(drop_location())
-		own_take(src, nameof(current_canvas))
+		rel_take(src, nameof(current_canvas))
 		loaded = FALSE
 		to_chat(user, span_notice("You remove the painting from the frame."))
 		update_appearance()
@@ -526,7 +488,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 /obj/structure/sign/painting/proc/update_appearance()
 	name = current_canvas ? "painting - [current_canvas.painting_name]" : initial(name)
 	desc = current_canvas ? desc_with_canvas : initial(desc)
-	icon_state = "[base_icon_state]-[current_canvas?.generated_icon ? "hidden" : "empty"]"
+	set_icon_state("[base_icon_state]-[current_canvas?.generated_icon ? "hidden" : "empty"]")
 
 	cut_overlays()
 
@@ -561,7 +523,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		return
 
 	var/list/painting_category = list()
-	for (var/list/P in SSpersistence.unpicked_paintings)
+	for (var/list/P in persistence_unpicked_paintings())
 		if(P["persistence_id"] == persistence_id)
 			painting_category[++painting_category.len] = P
 
@@ -599,12 +561,12 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, nameof(current_canvas), new_canvas)
+	rel_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
 
@@ -617,59 +579,62 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
  * For now, we do it this way because calling this on a canvas itself might cause issues due to the whole dimension thing.
 */
 /obj/structure/sign/painting/proc/admin_lateload_painting(spawn_specific = 0, which_painting = 0)
-	if(!check_rights_for(usr.client, R_HOLDER))
+	var/mob/admin = usr // ALLOW(sys_usr_outside_verb): called from the vvar dropdown, which is a verb: the admin who chose it is usr
+	if(!check_rights_for(admin.client, R_HOLDER))
 		return 0
 	if(spawn_specific && isnum(which_painting))
-		var/list/painting = SSpersistence.all_paintings[which_painting]
+		var/list/painting = persistence_all_paintings()[which_painting]
 		var/title = painting["title"]
 		var/author_name = painting["author"]
 		var/author_ckey = painting["ckey"]
-		to_chat(usr, span_notice("The chosen painting is the following \n\n \
+		to_chat(admin, span_notice("The chosen painting is the following \n\n \
 		Title: [title] \n \
 		Author's Name: [author_name]. \n \
 		Author's CKey: [author_ckey]"))
-		om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
+		open_request(src, /datum/prompt/yes_no/painting_lateload, PROC_REF(lateload_confirmed), answerer = admin, rights = R_HOLDER, which = which_painting, title = "Is this the painting you want?", question = "Check your chat log (if filtering for notices, check where you don't) for painting details.", timeout = 0)
 	else
-		om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
+		open_request(src, /datum/prompt/yes_no, PROC_REF(lateload_list_confirmed), answerer = admin, rights = R_HOLDER, title = "Generate list?", question = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
+			If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
+			Proceed? It will likely have over 500 entries", yes_text = "Proceed!", no_text = "Cancel", timeout = 0)
 
-/datum/om/prompt/confirm/painting_lateload
-	title = "Is this the painting you want?"
-	message = "Check your chat log (if filtering for notices, check where you don't) for painting details."
-	requires = PROMPT_ADMIN(R_HOLDER)
+/// The admin's pick of a painting to spawn: the index of the painting is kept on the question.
+/datum/prompt/yes_no/painting_lateload
 	var/which
 
-/datum/om/prompt/confirm/painting_list
-	title = "Generate list?"
-	message = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
-		If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
-		Proceed? It will likely have over 500 entries"
-	yes_text = "Proceed!"
-	no_text = "Cancel"
-	requires = PROMPT_ADMIN(R_HOLDER)
-
-/obj/structure/sign/painting/proc/lateload_list_confirmed(datum/om/prompt/confirm/painting_list/ask)
+/// The paintings an admin can pick from, by the name the list shows them under (the value is the painting's index).
+/obj/structure/sign/painting/proc/lateload_choices()
 	var/list/paintings = list()
 	var/current = 1
-	for(var/entry in SSpersistence.all_paintings)
+	for(var/entry in persistence_all_paintings())
 		var/key = "[entry["title"]] by [entry["author"]]"
 		paintings[key] = current
 		current += 1
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(lateload_picked), choices = paintings, title = "Spawn painting", message = "Choose which painting to spawn!", requires = PROMPT_ADMIN(R_HOLDER))
+	return paintings
 
-/obj/structure/sign/painting/proc/lateload_picked(datum/om/prompt/choice/ask)
-	admin_lateload_painting(1, ask.choices[ask.choice])
+/obj/structure/sign/painting/proc/lateload_list_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(lateload_picked), answerer = A.request.answerer, rights = R_HOLDER, choices = assoc_to_keys(lateload_choices()), title = "Spawn painting", question = "Choose which painting to spawn!", timeout = 0)
 
-/obj/structure/sign/painting/proc/lateload_confirmed(datum/om/prompt/confirm/painting_lateload/ask)
-	var/which_painting = ask.which
-	var/list/painting = SSpersistence.all_paintings[which_painting]
+/obj/structure/sign/painting/proc/lateload_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	admin_lateload_painting(1, lateload_choices()[A.answer.value])
+
+/obj/structure/sign/painting/proc/lateload_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/datum/prompt/yes_no/painting_lateload/R = A.request
+	var/which_painting = R.which
+	var/list/painting = persistence_all_paintings()[which_painting]
 	var/title = painting["title"]
 	var/author_name = painting["author"]
 	var/author_ckey = painting["ckey"]
 	var/persistence_id = painting["persistence_id"]
 	var/png = "data/persistent/paintings/[persistence_id]/[painting["md5"]].png"
 	if(!fexists("data/persistent/paintings/[persistence_id]/[painting["md5"]].png"))
-		to_chat(usr, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
-		log_runtime("[usr] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
+		to_chat(R.answerer, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
+		log_runtime("[R.answerer] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
 		Painting was titled [title] by [author_ckey] of [persistence_id]")
 		return 0
 
@@ -690,15 +655,15 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.fill_grid_from_icon(I)
 	new_canvas.generated_icon = I
 	new_canvas.icon_generated = TRUE
-	new_canvas.finalized = TRUE
+	new_canvas.set_finalized(TRUE)
 	new_canvas.painting_name = title
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, nameof(current_canvas), new_canvas)
+	rel_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
-	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)
+	log_and_message_admins("spawned painting from [author_ckey] with title [title]", R.answerer)
 
 /obj/structure/sign/painting/proc/save_persistent()
 	if(!persistence_id || !current_canvas || current_canvas.no_save)
@@ -711,7 +676,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 
 	var/data = current_canvas.get_data_string()
 	var/md5 = md5(lowertext(data))
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5 && entry["persistence_id"] == persistence_id)
 			return
 	var/png_directory = "data/persistent/paintings/[persistence_id]/"
@@ -736,7 +701,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		return
 	var/data = current_canvas.get_data_string()
 	var/md5 = md5(lowertext(data))
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5 && entry["persistence_id"] == persistence_id)
 			SSpersistence.all_paintings.Remove(list(entry))
 			SSpersistence.all_paintings.Add(list(entry))
@@ -747,25 +712,25 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	. = ..()
 	VV_DROPDOWN_OPTION("removepainting", "Remove Persistent Painting")
 
-VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topic_remove_painting))
 
-/obj/structure/sign/painting/proc/vv_topic_remove_painting(mob/user, list/args)
+/obj/structure/sign/painting/proc/vv_topic_remove_painting(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!persistence_id || !current_canvas)
 		to_chat(user,span_warning("This is not a persistent painting."))
 		return
 	var/md5 = md5(lowertext(current_canvas.get_data_string()))
 	var/author = current_canvas.author_ckey
 	var/list/filenames_found = list()
-	for(var/list/entry in SSpersistence.all_paintings)
+	for(var/list/entry in persistence_all_paintings())
 		if(entry["md5"] == md5)
 			filenames_found += "data/persistent/paintings/[entry["persistence_id"]]/[entry["md5"]].png"
 			SSpersistence.all_paintings -= list(entry)
 	for(var/png in filenames_found)
 		if(fexists(png))
 			fdel(png)
-	for(var/obj/structure/sign/painting/P in SSpersistence.painting_frames)
+	for(var/obj/structure/sign/painting/P in persistence_painting_frames())
 		if(P.current_canvas && md5(P.current_canvas.get_data_string()) == md5)
-			own_clear(P, nameof(P.current_canvas), OWN_DELETE)
+			rel_clear(P, nameof(P.current_canvas), OWN_DELETE)
 			P.update_appearance()
 	loaded = FALSE
 	log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))

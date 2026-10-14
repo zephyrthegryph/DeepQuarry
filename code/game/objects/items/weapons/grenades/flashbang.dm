@@ -49,35 +49,35 @@
 		bang_effectiveness = H.species.sound_mod
 	if(eye_safety < 1 && get_dist(M, T) <= round(max_range * 0.7 * flash_effectiveness))
 		M.flash_eyes()
-		M.status_at_least(EFFECT_CONFUSED, 2 * flash_effectiveness)
-		M.status_at_least(EFFECT_WEAKENED, 5 * flash_effectiveness)
+		M.status_at_least(STAT_CONFUSED, 2 * flash_effectiveness)
+		M.status_at_least(STAT_WEAKENED, 5 * flash_effectiveness)
 
 	//Now applying sound
 	if((get_dist(M, T) <= round(max_range * 0.3 * bang_effectiveness) || src.loc == M.loc || src.loc == M))
 		if(ear_safety > 0)
-			M.status_at_least(EFFECT_CONFUSED, 2)
-			M.status_at_least(EFFECT_WEAKENED, 1)
+			M.status_at_least(STAT_CONFUSED, 2)
+			M.status_at_least(STAT_WEAKENED, 1)
 		else
-			M.status_at_least(EFFECT_CONFUSED, 10)
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_CONFUSED, 10)
+			M.status_at_least(STAT_WEAKENED, 3)
 			if ((prob(14) || (M == src.loc && prob(70))))
 				M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 			else
 				M.set_ear_damage(M.ear_damage + (rand(0, 5)))
-				M.status_at_least(EFFECT_DEAFENED, 15)
+				M.status_at_least(STAT_DEAFENED, 15)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(get_dist(M, T) <= round(max_range * 0.5 * bang_effectiveness))
 		if(!ear_safety)
-			M.status_at_least(EFFECT_CONFUSED, 8)
+			M.status_at_least(STAT_CONFUSED, 8)
 			M.set_ear_damage(M.ear_damage + (rand(0, 3)))
-			M.status_at_least(EFFECT_DEAFENED, 10)
+			M.status_at_least(STAT_DEAFENED, 10)
 			M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(!ear_safety && get_dist(M, T) <= (max_range * 0.7 * bang_effectiveness))
-		M.status_at_least(EFFECT_CONFUSED, 4)
+		M.status_at_least(STAT_CONFUSED, 4)
 		M.set_ear_damage(M.ear_damage + (rand(0, 1)))
-		M.status_at_least(EFFECT_DEAFENED, 5)
+		M.status_at_least(STAT_DEAFENED, 5)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 
 	//This really should be in mob not every check
@@ -134,6 +134,9 @@
 	can_repeat = FALSE
 	banglet = TRUE
 
+CAPABILITIES(/obj/item/grenade/flashbang/clusterbang/segment)
+	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
+
 /obj/item/grenade/flashbang/clusterbang/segment/Initialize(mapload) //Segments should never exist except part of the clusterbang, since these immediately 'do their thing' and asplode
 	. = ..()
 
@@ -141,11 +144,13 @@
 	var/temploc = src.loc//Saves the current location to know where to step away from
 	walk_away(src,temploc,stepdist)//I must go, my people need me
 
-	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
 
 /obj/item/grenade/flashbang/cluster
 	icon_state = "flashbang_active" // only exists primed
 	banglet = TRUE
+
+CAPABILITIES(/obj/item/grenade/flashbang/cluster)
+	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
 
 /obj/item/grenade/flashbang/cluster/Initialize(mapload)//Same concept as the segments, so that all of the parts don't become reliant on the clusterbang
 	. = ..()
@@ -154,7 +159,6 @@
 	var/temploc = src.loc
 	walk_away(src,temploc,stepdist)
 
-	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
 
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."
@@ -162,3 +166,11 @@
 /obj/item/grenade/flashbang/clusterbang/primed/Initialize(mapload)
 	. = ..()
 	activate()
+
+/// A scattered bang's fuse: 1.5 to 6 seconds (after_init()).
+/obj/item/grenade/flashbang/proc/scattered_fuse(datum/act/timer/A)
+	return rand(1.5 SECONDS, 6 SECONDS)
+
+/// Its fuse burnt out (after_init()).
+/obj/item/grenade/flashbang/proc/fuse_out(datum/act/timer/A)
+	detonate()

@@ -20,7 +20,7 @@
 		if (tempnetwork.len)
 			T[text("[][]", C.c_tag, (C.can_use() ? null : " (Deactivated)"))] = C
 
-	own_set(src, nameof(track), new /datum/trackable())
+	rel_set(src, nameof(track), new /datum/trackable())
 	track.cameras = T
 	return T
 
@@ -131,7 +131,7 @@
 			LAZYSET(TB.others, name, mob_ref)
 
 	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
-	own_set(src, nameof(track), TB)
+	rel_set(src, nameof(track), TB)
 	return targets
 
 /mob/living/silicon/ai/proc/ai_camera_track(target_name in trackable_mobs())
@@ -147,7 +147,7 @@
 
 	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
 	var/mob/target = target_ref ? locate_in_list(track.tracked, target_ref) : null
-	own_clear(src, nameof(track), OWN_DELETE)
+	rel_clear(src, nameof(track))
 	ai_actual_track(target)
 
 /mob/living/silicon/ai/proc/ai_cancel_tracking(forced = 0)
@@ -172,21 +172,23 @@
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 
-	ai_track_step() // the first look is immediate; the declared repeat follows from here
+	ai_track_step() // the first look is immediate; the every() follows from here
 
 	return TRUE
 
 /// Delay until the next follow-camera step: a second, or ten while the target is out of coverage.
 /mob/living/silicon/ai/var/track_delay = 1 SECOND
 
-DECLARE_REPEAT(/mob/living/silicon/ai, "track_delay", ai_track_step, "cameraFollow")
+/// The every() interval of ai_track_step(): track_delay.
+/mob/living/silicon/ai/proc/track_interval(datum/act/A)
+	return track_delay
 
 /// Follow camera mode: keeps the eye on `cameraFollow` every second (every ten while it is out of
-/// camera coverage) while tracking.
-/mob/living/silicon/ai/proc/ai_track_step()
+/// camera coverage) while tracking (its every() in CAPABILITIES(/mob/living/silicon/ai)).
+/mob/living/silicon/ai/proc/ai_track_step(datum/act/A)
 	var/mob/living/target = cameraFollow
 	if(QDELETED(target))
-		return REPEAT_STOP
+		return
 	switch(target.tracking_status())
 		if(TRACKING_NO_COVERAGE)
 			to_chat(src, "Target is not near any active cameras.")
@@ -200,27 +202,29 @@ DECLARE_REPEAT(/mob/living/silicon/ai, "track_delay", ai_track_step, "cameraFoll
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(!eyeobj)
 		view_core()
-		return REPEAT_STOP
+		ai_cancel_tracking(1)
+		return
 	eyeobj.setLoc(get_turf(target), 0)
 
 // camera.dm declares the camera's other interactions.
-EXTEND_INTERACTIONS(/obj/machinery/camera, INTERACT_SILICON("Look through", PROC_REF(camera_silicon_look)))
+
 
 /// Old attack_ai: the AI moves its eye to the camera. Nothing for cyborgs.
-/obj/machinery/camera/proc/camera_silicon_look(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/camera/proc/camera_silicon_look(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	if(!istype(user))
-		return TRUE
+		return OP_OK
 	if(!can_use())
-		return TRUE
+		return OP_OK
 	var/mob/observer/eye/eyeobj = user.active_eye()
 	eyeobj?.setLoc(get_turf(src))
-	return TRUE
+	return OP_OK
 
 // ai.dm declares the AI's other interactions.
-EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_SILICON("Camera list", PROC_REF(ai_silicon_camera_list)))
+
 
 /// Old attack_ai: an AI clicking an AI gets the camera list.
-/mob/living/silicon/ai/proc/ai_silicon_camera_list(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/ai/proc/ai_silicon_camera_list(datum/act/op/A)
 	ai_camera_list()
 	return TRUE
 

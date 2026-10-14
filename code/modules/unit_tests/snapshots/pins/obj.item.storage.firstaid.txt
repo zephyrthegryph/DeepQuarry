@@ -1,0 +1,37 @@
+@obj.item.storage human|none
+@obj.item.storage robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.storage human|/obj/item/tool/screwdriver
+@obj.item.storage human|/obj/item/tool/crowbar
+@obj.item.storage human|/obj/item/tool/wrench
+@obj.item.storage human|/obj/item/tool/wirecutters
+@obj.item.storage human|/obj/item/multitool
+@obj.item.storage human|/obj/item/weldingtool
+@obj.item.storage human|/obj/item/stack/cable_coil
+@obj.item.storage human|/obj/item/stack/material/steel
+@obj.item.storage human|/obj/item/card/id
+@obj.item.storage human|/obj/item/kit
+@obj.item.storage human|/obj/item/storage
+-click: Click: Put in
++5 click: Click: Collect
+@obj.item.storage human|/obj/item
+@obj human|/obj/item/lightreplacer
+human|/obj/item/robot_parts/l_arm menu: Add robot arm
+human|/obj/item/robot_parts/l_arm menu: Move To Top
+human|/obj/item/robot_parts/l_arm menu: Open
+human|/obj/item/robot_parts/l_arm menu: Put in
+human|/obj/item/robot_parts/l_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/l_arm click: Click: Add robot arm
+human|/obj/item/robot_parts/r_arm menu: Add robot arm
+human|/obj/item/robot_parts/r_arm menu: Move To Top
+human|/obj/item/robot_parts/r_arm menu: Open
+human|/obj/item/robot_parts/r_arm menu: Put in
+human|/obj/item/robot_parts/r_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/r_arm click: Click: Add robot arm
+human|/obj/item/organ/external/arm menu: Move To Top
+human|/obj/item/organ/external/arm menu: Open
+human|/obj/item/organ/external/arm menu: Put in
+human|/obj/item/organ/external/arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/organ/external/arm click: Click: Put in
+keys: add_arm, collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

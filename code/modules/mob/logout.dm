@@ -1,11 +1,18 @@
 /mob/Logout()
-	OM_EMIT(src, /datum/om/event/mob_logout)
+	mob_state_set_played(!!client)
+	PUBLISH_LEGACY(src, /datum/notice/mob_logout)
+	ckey_changed()
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)
 	disconnect_time = world.realtime // ition: logging when we disappear.
 	update_client_z(null)
+	if(client)
+		SSproximity.eye_remove(client)
 	log_access("Mob Logout: [key_name(src)]")
 	unset_machine()
+	// The client HUD (screens, plane masters, vision) goes with the client; Login() builds a new one.
+	if(hud_used)
+		rel_clear(src, nameof(hud_used))
 
 	var/datum/admins/is_admin = GLOB.admin_datums[src.ckey]
 	if(is_admin && is_admin.check_for_rights(R_HOLDER))

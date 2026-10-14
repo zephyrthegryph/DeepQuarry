@@ -14,7 +14,7 @@
 	var/obj/item/modular_computer/tablet/fabricated_tablet = null
 
 	// Utility vars
-	state = 0 							// 0: Select device type, 1: Select loadout, 2: Payment, 3: Thankyou screen
+	var/state = 0 							// 0: Select device type, 1: Select loadout, 2: Payment, 3: Thankyou screen
 	var/devtype = 0 						// 0: None(unselected), 1: Laptop, 2: Tablet
 	var/total_price = 0						// Price of currently vended device.
 
@@ -27,12 +27,29 @@
 	var/dev_nanoprint = 0					// 0: None, 1: Standard
 	var/dev_card = 0						// 0: None, 1: Standard
 
+CAPABILITIES(/obj/machinery/lapvend)
+	owns_one(nameof(fabricated_laptop), /obj/item/modular_computer/laptop)
+	owns_one(nameof(fabricated_tablet), /obj/item/modular_computer/tablet)
+	interface("ComputerFabricator")
+	without("ui_open")
+	op("pick_device", ui_act("pick_device", arg("pick", num())), then(PROC_REF(ui_act_pick_device)))
+	op("clean_order", ui_act("clean_order"), then(PROC_REF(ui_act_clean_order)))
+	op("confirm_order", ui_act("confirm_order"), then(PROC_REF(ui_act_confirm_order)))
+	op("hw_cpu", ui_act("hw_cpu", arg("cpu", num())), then(PROC_REF(ui_act_hw_cpu)))
+	op("hw_battery", ui_act("hw_battery", arg("battery", num())), then(PROC_REF(ui_act_hw_battery)))
+	op("hw_disk", ui_act("hw_disk", arg("disk", num())), then(PROC_REF(ui_act_hw_disk)))
+	op("hw_netcard", ui_act("hw_netcard", arg("netcard", num())), then(PROC_REF(ui_act_hw_netcard)))
+	op("hw_tesla", ui_act("hw_tesla", arg("tesla", num())), then(PROC_REF(ui_act_hw_tesla)))
+	op("hw_nanoprint", ui_act("hw_nanoprint", arg("print", num())), then(PROC_REF(ui_act_hw_nanoprint)))
+	op("hw_card", ui_act("hw_card", arg("card", num())), then(PROC_REF(ui_act_hw_card)))
+	op("pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), then(PROC_REF(interaction_pay)))
+
 // Removes all traces of old order and allows you to begin configuration from scratch.
 /obj/machinery/lapvend/proc/reset_order()
 	set_state(0)
 	devtype = 0
-	own_clear(src, nameof(fabricated_laptop), OWN_DELETE)
-	own_clear(src, nameof(fabricated_tablet), OWN_DELETE)
+	rel_clear(src, nameof(fabricated_laptop))
+	rel_clear(src, nameof(fabricated_tablet))
 	dev_cpu = 1
 	dev_battery = 1
 	dev_disk = 1
@@ -46,204 +63,185 @@
 	total_price = 0
 	if(devtype == 1) 		// Laptop, generally cheaper to make it accessible for most station roles
 		if(fabricate)
-			own_set(src, nameof(fabricated_laptop), new /obj/item/modular_computer/laptop(src))
+			rel_set(src, nameof(fabricated_laptop), new /obj/item/modular_computer/laptop(src))
 		total_price = 99
 		switch(dev_cpu)
 			if(1)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.processor_unit), new/obj/item/computer_hardware/processor_unit/small(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.processor_unit), new/obj/item/computer_hardware/processor_unit/small(fabricated_laptop))
 			if(2)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.processor_unit), new/obj/item/computer_hardware/processor_unit(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.processor_unit), new/obj/item/computer_hardware/processor_unit(fabricated_laptop))
 				total_price += 299
 		switch(dev_battery)
 			if(1) // Basic(750C)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module(fabricated_laptop))
 			if(2) // Upgraded(1100C)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/advanced(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/advanced(fabricated_laptop))
 				total_price += 199
 			if(3) // Advanced(1500C)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/super(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.battery_module), new/obj/item/computer_hardware/battery_module/super(fabricated_laptop))
 				total_price += 499
 		switch(dev_disk)
 			if(1) // Basic(128GQ)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive(fabricated_laptop))
 			if(2) // Upgraded(256GQ)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/advanced(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/advanced(fabricated_laptop))
 				total_price += 99
 			if(3) // Advanced(512GQ)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/super(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.hard_drive), new/obj/item/computer_hardware/hard_drive/super(fabricated_laptop))
 				total_price += 299
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card(fabricated_laptop))
 				total_price += 99
 			if(2) // Advanced (Long Range)
 				if(fabricate)
-					own_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_laptop))
+					rel_set(fabricated_laptop, nameof(fabricated_laptop.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_laptop))
 				total_price += 299
 		if(dev_tesla)
 			total_price += 399
 			if(fabricate)
-				own_set(fabricated_laptop, nameof(fabricated_laptop.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_laptop))
+				rel_set(fabricated_laptop, nameof(fabricated_laptop.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_laptop))
 		if(dev_nanoprint)
 			total_price += 99
 			if(fabricate)
-				own_set(fabricated_laptop, nameof(fabricated_laptop.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_laptop))
+				rel_set(fabricated_laptop, nameof(fabricated_laptop.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_laptop))
 		if(dev_card)
 			total_price += 199
 			if(fabricate)
-				own_set(fabricated_laptop, nameof(fabricated_laptop.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_laptop))
+				rel_set(fabricated_laptop, nameof(fabricated_laptop.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_laptop))
 
 		return total_price
 	else if(devtype == 2) 	// Tablet, more expensive, not everyone could probably afford this.
 		if(fabricate)
-			own_set(src, nameof(fabricated_tablet), new /obj/item/modular_computer/tablet(src))
-			own_set(fabricated_tablet, nameof(fabricated_tablet.processor_unit), new/obj/item/computer_hardware/processor_unit/small(fabricated_tablet))
+			rel_set(src, nameof(fabricated_tablet), new /obj/item/modular_computer/tablet(src))
+			rel_set(fabricated_tablet, nameof(fabricated_tablet.processor_unit), new/obj/item/computer_hardware/processor_unit/small(fabricated_tablet))
 		total_price = 199
 		switch(dev_battery)
 			if(1) // Basic(300C)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module/nano(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module/nano(fabricated_tablet))
 			if(2) // Upgraded(500C)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module/micro(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module/micro(fabricated_tablet))
 				total_price += 199
 			if(3) // Advanced(750C)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.battery_module), new/obj/item/computer_hardware/battery_module(fabricated_tablet))
 				total_price += 499
 		switch(dev_disk)
 			if(1) // Basic(32GQ)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive/micro(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive/micro(fabricated_tablet))
 			if(2) // Upgraded(64GQ)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive/small(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive/small(fabricated_tablet))
 				total_price += 99
 			if(3) // Advanced(128GQ)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.hard_drive), new/obj/item/computer_hardware/hard_drive(fabricated_tablet))
 				total_price += 299
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card(fabricated_tablet))
 				total_price += 99
 			if(2) // Advanced (Long Range)
 				if(fabricate)
-					own_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_tablet))
+					rel_set(fabricated_tablet, nameof(fabricated_tablet.network_card), new/obj/item/computer_hardware/network_card/advanced(fabricated_tablet))
 				total_price += 299
 		if(dev_nanoprint)
 			total_price += 99
 			if(fabricate)
-				own_set(fabricated_tablet, nameof(fabricated_tablet.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_tablet))
+				rel_set(fabricated_tablet, nameof(fabricated_tablet.nano_printer), new/obj/item/computer_hardware/nano_printer(fabricated_tablet))
 		if(dev_card)
 			total_price += 199
 			if(fabricate)
-				own_set(fabricated_tablet, nameof(fabricated_tablet.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_tablet))
+				rel_set(fabricated_tablet, nameof(fabricated_tablet.card_slot), new/obj/item/computer_hardware/card_slot(fabricated_tablet))
 		if(dev_tesla)
 			total_price += 399
 			if(fabricate)
-				own_set(fabricated_tablet, nameof(fabricated_tablet.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_tablet))
+				rel_set(fabricated_tablet, nameof(fabricated_tablet.tesla_link), new/obj/item/computer_hardware/tesla_link(fabricated_tablet))
 		return total_price
 	return 0
 
-UI_ACT(/obj/machinery/lapvend, "pick_device", ui_act_pick_device, UI_ARG_NUM("pick"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_pick_device)
+/obj/machinery/lapvend/proc/ui_act_pick_device(datum/act/op/A, pick)
 	if(state) // We've already picked a device type
 		return FALSE
-	devtype = params["pick"]
+	devtype = pick
 	set_state(1)
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "clean_order", ui_act_clean_order)
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_clean_order)
+/obj/machinery/lapvend/proc/ui_act_clean_order(datum/act/op/A)
 	reset_order()
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "confirm_order", ui_act_confirm_order)
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_confirm_order)
+/obj/machinery/lapvend/proc/ui_act_confirm_order(datum/act/op/A)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
 	set_state(2) // Wait for ID swipe for payment processing
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_cpu", ui_act_hw_cpu, UI_ARG_NUM("cpu"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_cpu)
+/obj/machinery/lapvend/proc/ui_act_hw_cpu(datum/act/op/A, cpu)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_cpu = params["cpu"]
+	dev_cpu = cpu
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_battery", ui_act_hw_battery, UI_ARG_NUM("battery"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_battery)
+/obj/machinery/lapvend/proc/ui_act_hw_battery(datum/act/op/A, battery)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_battery = params["battery"]
+	dev_battery = battery
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_disk", ui_act_hw_disk, UI_ARG_NUM("disk"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_disk)
+/obj/machinery/lapvend/proc/ui_act_hw_disk(datum/act/op/A, disk)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_disk = params["disk"]
+	dev_disk = disk
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_netcard", ui_act_hw_netcard, UI_ARG_NUM("netcard"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_netcard)
+/obj/machinery/lapvend/proc/ui_act_hw_netcard(datum/act/op/A, netcard)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_netcard = params["netcard"]
+	dev_netcard = netcard
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_tesla", ui_act_hw_tesla, UI_ARG_NUM("tesla"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_tesla)
+/obj/machinery/lapvend/proc/ui_act_hw_tesla(datum/act/op/A, tesla)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_tesla = params["tesla"]
+	dev_tesla = tesla
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_nanoprint", ui_act_hw_nanoprint, UI_ARG_NUM("print"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_nanoprint)
+/obj/machinery/lapvend/proc/ui_act_hw_nanoprint(datum/act/op/A, print)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_nanoprint = params["print"]
+	dev_nanoprint = print
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
-UI_ACT(/obj/machinery/lapvend, "hw_card", ui_act_hw_card, UI_ARG_NUM("card"))
-UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_card)
+/obj/machinery/lapvend/proc/ui_act_hw_card(datum/act/op/A, card)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	dev_card = params["card"]
+	dev_card = card
 	fabricate_and_recalc_price(FALSE)
 	return TRUE
 
 
-
-/obj/machinery/lapvend/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/lapvend_pay,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/lapvend, "ComputerFabricator")
 
 /obj/machinery/lapvend/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
@@ -251,10 +249,8 @@ DECLARE_UI(/obj/machinery/lapvend, "ComputerFabricator")
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{state:num,devtype:num,hw_battery:num,hw_disk:num,hw_netcard:num,hw_tesla:num,hw_nanoprint:num,hw_card:num,hw_cpu:num,totalprice:num}")
-
-/// The computed part of /obj/machinery/lapvend's window data (declared on its UI_DATA row).
-/obj/machinery/lapvend/proc/ui_data_obj_machinery_lapvend(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/lapvend's window data.
+/obj/machinery/lapvend/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["state"] = state
@@ -272,14 +268,9 @@ UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{sta
 
 	return data
 
-/// The old attackby: while awaiting payment, swiped a card; else fell through to ..().
-/datum/interaction/machine_item/lapvend_pay
-	id = "lapvend_pay"
-	name = "Pay"
-	held_type = /obj/item
-	effect = /obj/machinery/lapvend/proc/interaction_pay
-
-/obj/machinery/lapvend/proc/interaction_pay(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/lapvend/proc/interaction_pay(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/card/id/I = W.GetID()
 	// Awaiting payment state
 	if(state == 2)
@@ -291,18 +282,17 @@ UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{sta
 				fabricated_laptop.forceMove(src.loc)
 				fabricated_laptop.screen_on = 0
 				fabricated_laptop.set_anchored(FALSE)
-				fabricated_laptop.update_icon()
-				own_take(src, nameof(fabricated_laptop))
+				rel_take(src, nameof(fabricated_laptop))
 			else if((devtype == 2) && fabricated_tablet)
 				if(fabricated_tablet.battery_module)
 					fabricated_tablet.battery_module.charge_to_full()
 				fabricated_tablet.forceMove(src.loc)
-				own_take(src, nameof(fabricated_tablet))
+				rel_take(src, nameof(fabricated_tablet))
 			ping("Enjoy your new product!")
 			set_state(3)
 			return TRUE
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 // Simplified payment processing, returns 1 on success.
 /obj/machinery/lapvend/proc/process_payment(mob/user, obj/item/card/id/I, obj/item/ID_container)
@@ -316,7 +306,7 @@ UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{sta
 		return 0
 
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		var/attempt_pin = rerun_ask(user, "k299", PROC_REF(process_payment), args, /datum/om/prompt/number, message = "Enter pin code", title = "Vendor transaction")
+		var/attempt_pin = rerun_ask(user, "k299", PROC_REF(process_payment), args, /datum/prompt/number, question = "Enter pin code", title = "Vendor transaction")
 		if(isnull(attempt_pin))
 			return
 		customer_account = attempt_account_access(I.associated_account_number, attempt_pin, 2)
@@ -331,3 +321,5 @@ UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{sta
 	else
 		return customer_account.debit(total_price, "Computer Manufacturer", "Purchase of [(devtype == 1) ? "laptop computer" : "tablet microcomputer"]", name)
 
+
+TRACKED(/obj/machinery/lapvend, state)

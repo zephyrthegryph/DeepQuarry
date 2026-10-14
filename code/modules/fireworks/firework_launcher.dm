@@ -13,38 +13,30 @@
 	EXPIRY_DECLARE(last_launch)
 	var/launch_cooldown = 5 MINUTES
 
+// ALLOW(init/INSTANCE_STATE): takes its built parts and stamps its cooldown so a rebuild cannot skip it
 /obj/machinery/firework_launcher/Initialize(mapload)
 	. = ..()
 
-	default_apply_parts()
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
-	update_icon()
 
 /obj/machinery/firework_launcher/RefreshParts()
-	launch_cooldown = 5 MINUTES
+	set_launch_cooldown(5 MINUTES)
 	var/rating = get_part_rating(/obj/item/stock_parts/micro_laser) - get_part_count(/obj/item/stock_parts/micro_laser)
-	launch_cooldown = max(0, (launch_cooldown - ((rating*30) SECONDS)))			// For every part tier above 1 on the two lasers, reduce cooldown by 30 seconds. 1 minute cooldown on the tier 5 parts, 3 minutes on tier 3.
+	set_launch_cooldown(max(0, (launch_cooldown - ((rating*30) SECONDS))))			// For every part tier above 1 on the two lasers, reduce cooldown by 30 seconds. 1 minute cooldown on the tier 5 parts, 3 minutes on tier 3.
 
 	. = ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}{anchored?1:0}{panel_open?_open:}")
-
-/obj/machinery/firework_launcher/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/firework_launcher_load_star,
-		/datum/interaction/machine_verb/firework_launcher_eject,
-		/datum/interaction/machine_hand/ungated/firework_launcher_launch,
-	)
+/// The look (the draw sweep: from its template).
+/obj/machinery/firework_launcher/draw(datum/look/look)
 	..()
+	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
-/// Old attackby's firework-star branch.
-/datum/interaction/machine_item/firework_launcher_load_star
-	id = "firework_launcher_load_star"
-	name = "Insert firework star"
-	held_type = /obj/item/firework_star
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/firework_launcher/proc/can_load_star))
-	effect = /obj/machinery/firework_launcher/proc/interaction_load_star
+CAPABILITIES(/obj/machinery/firework_launcher)
+	default_parts()
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("load_star", item(/obj/item/firework_star), priority(OP_PRIORITY_DEFAULT - 1), label("Insert firework star"), needs(req(PROC_REF(can_load_star_holds))), then(PROC_REF(interaction_load_star)))
+	op("eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Firework Star"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds))), then(PROC_REF(interaction_eject)))
+	op("launch", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Launch"), needs(req(PROC_REF(can_launch_holds))), then(PROC_REF(interaction_launch)))
 
 /// Requirement: the launcher is empty.
 /obj/machinery/firework_launcher/proc/can_load_star(mob/user, atom/target, obj/item/held)
@@ -53,33 +45,34 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		return "\The [src] already has \a [star] inside, unload it first"
 	return TRUE
 
-/obj/machinery/firework_launcher/proc/interaction_load_star(mob/user, obj/item/firework_star/O, datum/interaction/interaction)
+/// Requirement (was REQ_* can_load_star): the legacy check answers TRUE to pass.
+/obj/machinery/firework_launcher/proc/can_load_star_holds(datum/act/op/A)
+	var/answer = can_load_star(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_load_star_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/firework_launcher/proc/interaction_load_star(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/firework_star/O = A.held
 	if(user.unEquip(O, 0, src))
 		rel_set(src, nameof(loaded_star), O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
-		update_icon()
 		return TRUE
 	return TRUE
 
-/obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
+/// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
+/obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
+	var/answer = dq_actor_can_act(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "you can't do that right now")
 
-/obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
-
-/// Old object verb.
-/datum/interaction/machine_verb/firework_launcher_eject
-	id = "firework_launcher_eject"
-	name = "Eject Firework Star"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/firework_launcher/proc/interaction_eject
-
-/obj/machinery/firework_launcher/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why dq_actor_can_act_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/firework_launcher/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!loaded_star())
 		to_chat(user, span_notice("There is no firework star loaded in \the [src]."))
 		return TRUE
@@ -87,15 +80,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		loaded_star().forceMove(get_turf(src))
 		rel_clear(src, nameof(loaded_star))
 		add_fingerprint(user)
-		update_icon()
 	return TRUE
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/firework_launcher_launch
-	id = "firework_launcher_launch"
-	name = "Launch"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/firework_launcher/proc/can_launch))
-	effect = /obj/machinery/firework_launcher/proc/interaction_launch
 
 /// Requirement: TRUE, or why the loaded firework can't be launched.
 /obj/machinery/firework_launcher/proc/can_launch(mob/user, atom/target, obj/item/held)
@@ -115,18 +100,26 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		return "\The [src] beeps as it seems some interference is preventing launch of this type of firework"
 	return TRUE
 
-/obj/machinery/firework_launcher/proc/interaction_launch(mob/user, obj/item/held, datum/interaction/interaction)				// Maybe this proc could be better as entirely its own proc, called from attack_hand, but also I don't really see the point
+/// Requirement (was REQ_* can_launch): the legacy check answers TRUE to pass.
+/obj/machinery/firework_launcher/proc/can_launch_holds(datum/act/op/A)
+	var/answer = can_launch(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_launch_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/firework_launcher/proc/interaction_launch(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/planet/P = get_planet()
 	var/datum/weather_holder/WH = P.weather_holder
 
 	to_chat(user, span_notice("You launch the firework!"))
 	play_sfx(get_turf(src), SFX_WEAPONS_RPG)
 	loaded_star().trigger_firework(WH)
-	qdel(loaded_star())
+	spent(loaded_star(), user)
 	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
-	update_icon()
 	flick("launcher_launch", src)
 	return TRUE
 
@@ -138,11 +131,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 	if(!T.is_outdoors())
 		return
 
-	var/datum/planet/P = GLOB.planet_service.z_to_planet[T.z]
+	var/datum/planet/P = planets_z_to_planet()[T.z]
 	if(!P)
 		return
 	return P
 
 /// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
-	return loaded_star
+	return loaded_star // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu

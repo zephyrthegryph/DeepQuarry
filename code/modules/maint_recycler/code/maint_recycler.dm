@@ -19,11 +19,8 @@
 	resistance_flags = INDESTRUCTIBLE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 300
-	active_power_usage = 300
 	clicksound = SFX_RECYCLER_TYPING
 
-	light_color = "#0f8f0f"
 
 	var/door_open = FALSE
 	var/door_moving = FALSE
@@ -31,7 +28,6 @@
 
 	var/obj/effect/overlay/recycler/hatch
 	var/obj/effect/overlay/recycler/monitor_screen
-	var/obj/effect/overlay/recycler/item_overlay
 
 	var/item_offset_x = -7
 	var/item_offset_y = 0
@@ -113,29 +109,34 @@
 	/// * Rectifier distort @ 39
 	/// filter curve EQ w/ telephone preset
 
+CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(light_glow(color = "#0f8f0f"))
+	configure(uses_power(idle = 300, active = 300))
+	after_init(0, then(PROC_REF(move_after_init)))
+	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(hatch), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	interface("RecyclerInterface")
+	without("ui_open")
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req_is(nameof(door_open), TRUE, because = MSG(maint_recycler/door_open)), req_is(nameof(inserted_item), FALSE, because = /datum/msg/req_failed)), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
-
-/obj/machinery/maint_recycler/ownership()
-	. = ..()
-	. += owns(nameof(inserted_item), policy = OWN_SPILL)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	own_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
 	src.vis_contents |= hatch
 
-	var/image/underlay = image('code/modules/maint_recycler/icons/maint_recycler.dmi',src,"underlay")
-	underlay.layer = src.layer-0.2 //we need the underlay as a kind of inbetween, we sandwich the item overlay between it and us
-	//so even the big boy chunky items don't clip.
-	//at least for 32x32 stuff!
-	src.underlays |= underlay
-
-	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -143,63 +144,50 @@
 
 	src.vis_contents |= monitor_screen
 
-	own_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
-	item_overlay.layer = src.layer-0.1
-	src.vis_contents |= item_overlay
+	//the monitor and door are objects of their own because they animate. The item inside and the underlay are drawn by draw().
 
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
-
-	//ditto for the monitor and door. sure, these COULD be overlays, but that is way more effort
-
-/obj/machinery/maint_recycler/LateInitialize()
+/// A mapped one moves to a marker, once the markers exist.
+/obj/machinery/maint_recycler/proc/move_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
 	move_to_marker()
 
 /obj/machinery/maint_recycler/proc/move_to_marker()
 	if(GLOB.recycler_locations.len > 0)
 		var/turf/spot = pick(GLOB.recycler_locations)
 		forceMove(spot)
-		dir = SOUTH
+		set_dir(SOUTH)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 		testing("[src] has been placed at [loc], [x],[y],[z]")
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
-/obj/machinery/maint_recycler/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/maint_recycler/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(door_open)
-		return ..()
+		return OP_DECLINE
 	if(operable())
 		to_chat(user, span_warning("\The [src]'s door won't budge!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_warning("You lever \the [src]'s door open!"))
 	open_door(user)
 	eject_item(user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.04, vary = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/maint_recycler/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/maint_recycler_insert,
-		/datum/interaction/machine_hand/maint_recycler_use,
-	)
-	..()
+MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 
-/datum/interaction/machine_item/maint_recycler_insert
-	id = "maint_recycler_insert"
-	name = "Insert"
-	held_type = /obj/item
-	also_requires = list(REQ_FIELD("door_open", "its door isn't open"), REQ_FIELD_NOT("inserted_item"))
-	effect = /obj/machinery/maint_recycler/proc/interaction_attackby
-
-/obj/machinery/maint_recycler/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/maint_recycler/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	switch(get_item_whitelist(O))
 		if(RECYCLER_FORBIDDEN) //the usual stuff.
 			deny_act(O,user)
-			return TRUE
+			return OP_OK
 
 		if(RECYCLER_EVIL)
 			evil_act(O,user)
-			return TRUE
+			return OP_OK
 
 	if(istype(O,/obj/item/holder))
 		var/obj/item/holder/h = O
@@ -208,22 +196,21 @@
 		var/consent = mob_consent_check(m, PROC_REF(interaction_attackby), args)
 		if(isnull(consent))
 			to_chat(user, span_notice("You hold \the [O] over \the [src]'s processing compartment..."))
-			return TRUE
+			return OP_OK
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		if(consent)
 			if(user in range(1,src))
-				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
-				own_set(src, nameof(src.inserted_item), m, user = user)
+				m.set_dir(SOUTH) //the disposal bins do that and it simply doesn't work.
+				move_into(src, nameof(src.inserted_item), m, user)
 			else
-				return TRUE //too far away, dumbass.
+				return OP_OK //too far away, dumbass.
 		else
 			deny_act(O,user)
 	else
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
-		own_set(src, nameof(src.inserted_item), O, user = user)
+		move_into(src, nameof(src.inserted_item), O, user)
 
-	update_icon()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/maint_recycler/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
@@ -234,8 +221,7 @@
 		if(get_item_whitelist(source) == RECYCLER_ALLOWED)
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
-				own_set(src, nameof(src.inserted_item), source, into = TRUE)
-				update_icon()
+				move_into(src, nameof(src.inserted_item), source)
 				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)
 				return
@@ -270,7 +256,7 @@
 	playsound(src,angry_sounds,80)
 	set_screen_state("screen_mad",30)
 
-	om_after(src, 0.3 SECONDS, PROC_REF(shoot_at), user)
+	after(src, 0.3 SECONDS, PROC_REF(shoot_at), with = list(user))
 
 	credit_user(user,-10) //get fucked
 
@@ -279,14 +265,14 @@
 	door_moving = TRUE
 	flick("door closing",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
-	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), FALSE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(FALSE))
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
-	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), TRUE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(TRUE))
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
 	door_moving = FALSE
@@ -299,9 +285,11 @@
 /obj/machinery/maint_recycler/proc/shoot_at(mob/victim, burst = 3)
 	if(victim == null) return
 	for(var/i = 1 to burst)
-		om_after(src, (0.3 * i SECONDS), PROC_REF(shoot), victim)
+		after(src, (0.3 * i SECONDS), PROC_REF(shoot), with = list(victim))
 
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
+	if(!victim)
+		return
 	var/projectile = /obj/item/projectile/beam/stun
 	var/obj/item/projectile/P = new projectile(loc)
 	play_sfx(src, SFX_WEAPONS_TASER)
@@ -315,24 +303,23 @@
 	if(inserted_item)
 		if(!door_open)
 			open_door(user)
-			om_after(src, 1 SECOND, PROC_REF(eject_item_act), user)
+			after(src, 1 SECOND, PROC_REF(eject_item_act), with = list(user))
 		else
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	var/atom/movable/ejected = own_take(src, nameof(inserted_item))
+	var/atom/movable/ejected = rel_take(src, nameof(inserted_item))
 	if(!ejected)
 		return
 	ejected.forceMove(get_turf(src))
 	visible_message(span_warning("[src] ejects \the [ejected] from its recycling chamber!"))
 	ejected.throw_at(get_step(src,SOUTH),5,1,src)
-	update_icon()
 
 /obj/machinery/maint_recycler/proc/start_recycling(mob/user)
 	if(inserted_item)
 		if(door_open)
 			close_door(user)
-			om_after(src, 1 SECOND, PROC_REF(recycle_act), user)
+			after(src, 1 SECOND, PROC_REF(recycle_act), with = list(user))
 		else
 			recycle_act(user)
 
@@ -343,71 +330,52 @@
 	door_locked = TRUE
 	play_sfx(src, SFX_RECYCLER_RECYCLE_ACT)
 	set_screen_state("screen_recycle",20)
-	om_after(src, 2 SECONDS, PROC_REF(post_recycle), user)
+	after(src, 2 SECONDS, PROC_REF(post_recycle), with = list(user))
 
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	var/recycled = own_take(src, nameof(inserted_item))
+	var/recycled = rel_take(src, nameof(inserted_item))
 	if(istype(recycled,/mob))
 		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?
 	else
-		qdel(recycled)
+		consumed(recycled, src)
 	set_screen_state("screen_cashout",10)
 	door_locked = FALSE
 	open_door(user)
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/maint_recycler/appearance_overlays()
-	. = list()
-	if(inserted_item != null)
-		item_overlay.appearance = inserted_item.appearance;
-		//todo, assoc list for icon states from type
-		if(istype(inserted_item,/mob/living/simple_mob/animal/passive/mouse))
-			item_overlay.icon = src.icon
-			item_overlay.icon_state = "hepme" //the creature deserves its horrible end
+/// The underlay the item sits on, and the item inside shrunk and offset between the underlay and the machine (the mouse shows the creature's end).
+/obj/machinery/maint_recycler/draw(datum/look/look)
+	..()
+	look.underlay(look_overlay_image(icon, "underlay", layer = layer - 0.2)) //we need the underlay as a kind of inbetween, we sandwich the item between it and us
+	//so even the big boy chunky items don't clip.
+	//at least for 32x32 stuff!
+	if(!inserted_item)
+		return
+	look.watch(inserted_item)
+	var/matrix/scaled = matrix()
+	scaled.Scale(item_overlay_scale, item_overlay_scale)
+	if(istype(inserted_item, /mob/living/simple_mob/animal/passive/mouse))
+		look.overlay(look_overlay_image(icon, "hepme", layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE)) //the creature deserves its horrible end
+	else
+		look.overlay(look_overlay_image(layer = layer - 0.1, plane = plane, pixel_x = item_offset_x, pixel_y = item_offset_y, transform = scaled, of = inserted_item, appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE))
 
-		item_overlay.vis_flags = VIS_INHERIT_ID //gotta reapply
-		item_overlay.appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PASS_MOUSE
-
-		item_overlay.plane = src.plane
-		item_overlay.layer = src.layer - 0.1
-		item_overlay.pixel_x = item_offset_x
-		item_overlay.pixel_y = item_offset_y
-		var/matrix/scaleMatrix = new()
-		scaleMatrix.Scale(item_overlay_scale,item_overlay_scale)
-		item_overlay.transform = scaleMatrix
-	else //hide it
-		item_overlay.icon = null
-		item_overlay.icon_state = "fsdfsd"
-		item_overlay.overlays = null
-		item_overlay.underlays = null
-
-	. += ..()
-
-/datum/interaction/machine_hand/maint_recycler_use
-	id = "maint_recycler_use"
-	name = "Use"
-	effect = /obj/machinery/maint_recycler/proc/interaction_use
-
-/obj/machinery/maint_recycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/maint_recycler/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	if(!is_on)
 		set_on_state(TRUE)
-	return TRUE
+	return OP_OK
 
 /*
 TGUI PROCS
 */
-DECLARE_UI(/obj/machinery/maint_recycler, "RecyclerInterface")
 
-UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_maint_recycler{heldItemName:text,heldItemValue:unknown,userName:text,userBalance:unknown,itemIcon:text}")
-
-/// The computed part of /obj/machinery/maint_recycler's window data (declared on its UI_DATA row).
-/obj/machinery/maint_recycler/proc/ui_data_obj_machinery_maint_recycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/maint_recycler's window data.
+/obj/machinery/maint_recycler/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["heldItemName"] = inserted_item?.name
 	data["heldItemValue"] = try_get_obj_value(inserted_item)
@@ -428,34 +396,32 @@ UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_main
 		get_asset_datum(/datum/asset/simple/maint_recycler)
 	)
 
-/obj/machinery/maint_recycler/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/maint_recycler, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_eject)
-	eject_item(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_eject(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	eject_item(user)
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "recycle", ui_act_recycle)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_recycle)
-	if(canRecycle(ui.user, try_get_obj_value(inserted_item)))
-		start_recycling(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_recycle(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(canRecycle(user, try_get_obj_value(inserted_item)))
+		start_recycling(user)
 	else
-		deny_act(inserted_item,ui.user)
-		to_chat(ui.user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
+		deny_act(inserted_item,user)
+		to_chat(user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_close)
-	close_door(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_close(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	close_door(user)
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "open", ui_act_open)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_open)
-	open_door(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_open(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	open_door(user)
 	. = TRUE
 
 /obj/machinery/maint_recycler/tgui_close(mob/user)
@@ -488,7 +454,7 @@ UTILITY PROCS
 /obj/machinery/maint_recycler/proc/mob_consent_check(mob/probable_victim, proc_name, list/proc_args)
 	if(probable_victim.key)
 		if(probable_victim.client) //sanity check to make sure they are alright with getting squished to death
-			var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/om/prompt/choice/alert, message = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!")
+			var/answer = rerun_ask(probable_victim, "consent", proc_name, proc_args, /datum/prompt/choice, question = "Do you want to be put in \The [src]? Industrial machinery is pretty damn deadly, you'll probably die. to death. A fine paste.", title = "Welcome to the Hydralulic Press Prompt", choices = list("OSHA is for chumps", "what the fuck? get me outta here!"), cancel_answer = "what the fuck? get me outta here!", buttons = TRUE)
 			return isnull(answer) ? null : (answer == "OSHA is for chumps")
 		else return FALSE //no logged out users
 	else return TRUE //mindless mobs that've never felt the gentle touch of a client are fine
@@ -529,13 +495,13 @@ UTILITY PROCS
 
 /obj/machinery/maint_recycler/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_on_state(FALSE)
 
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	om_after(src, duration, PROC_REF(reset_screen_state))
+	after(src, duration, PROC_REF(reset_screen_state))
 
 /obj/machinery/maint_recycler/proc/reset_screen_state()
 	if(!is_on)
@@ -548,11 +514,11 @@ UTILITY PROCS
 	is_on = state
 	if(is_on)
 		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 		monitor_screen.icon_state = "screen_default"
 	else
 		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		monitor_screen.icon_state = "screen_off"
 
 #undef RECYCLER_ALLOWED

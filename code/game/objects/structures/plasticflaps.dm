@@ -16,11 +16,17 @@
 		/mob/living/silicon/robot/drone
 		)
 
-/obj/structure/plasticflaps/wirecutter_act(mob/user, obj/item/P)
-	use_tool(user, P, src, delay = 1 SECOND, quality = TOOL_WIRECUTTER, volume = 50, start_self = "You start to cut the plastic flaps.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
-	return TRUE
+CAPABILITIES(/obj/structure/plasticflaps)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), starts(PROC_REF(wirecutter_started)), begins(PROC_REF(wirecutter_begins)), wait(1 SECOND), then(PROC_REF(wirecutter_act_tool_done)))
 
-/obj/structure/plasticflaps/proc/wirecutter_act_tool_done(mob/user)
+/obj/structure/plasticflaps/proc/wirecutter_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/plasticflaps/proc/wirecutter_begins(datum/act/op/A)
+	return msg_text("You start to cut the plastic flaps.", null)
+
+/obj/structure/plasticflaps/proc/wirecutter_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You cut the plastic flaps."))
 	replace_with(src, /obj/item/stack/material/plastic, 4)
 

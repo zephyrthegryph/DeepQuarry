@@ -29,8 +29,16 @@
 	mind_initialize()	//updates the mind (or creates and initializes one if one doesn't exist)
 	mind.active = 1		//indicates that the mind is currently synced with a client
 	//If they're SSD, remove it so they can wake back up.
-	GLOB.antag_service.update_antag_icons(mind)
+	SSantag.update_antag_icons(mind)
 	client.screen |= GLOB.global_hud.darksight
+	// The darksight overlay is client state: it lives on the hud Login() just built.
+	var/image/dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
+	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
+	dsma.alpha = 0
+	dsma.plane = PLANE_LIGHTING
+	dsma.blend_mode = BLEND_ADD
+	dsoverlay.appearance = dsma
+	hud_used.dsoverlay = dsoverlay
 	client.images |= dsoverlay
 
 	if(ai_brain && !ai_brain.autopilot)
@@ -42,7 +50,7 @@
 	// Vore stuff
 
 	if(!no_vore)
-		om_grant(src, GRANT_VERB, /mob/living/proc/vorebelly_printout, src)
+		grant(src, granted_verb(/mob/living/proc/vorebelly_printout), src)
 		if(!vorePanel)
 			add_vore_panel_button()
 
@@ -55,6 +63,5 @@
 			voice_sounds_list = DEFAULT_TALK_SOUNDS
 	resize(size_multiplier, animate = FALSE, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE, aura_animation = FALSE)
 	init_vore(TRUE)
-	refresh_hud()
 
 	return .

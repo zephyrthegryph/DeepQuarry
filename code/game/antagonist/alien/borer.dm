@@ -51,12 +51,12 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 					break
 		if(istype(host))
 			var/obj/item/organ/external/head = host.get_organ(BP_HEAD)
-			om_link(borer, host, /datum/om/relation/host_of) // also lists it in head.implants
+			borer.take_host(host) // also lists it in head.implants
 			borer.forceMove(head)
 			if(!borer.host_brain)
-				own_set(borer, nameof(borer.host_brain), new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
+				rel_set(borer, nameof(borer.host_brain), new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
 			borer.host_brain.name = host.name
-			borer.host_brain.real_name = host.real_name
+			borer.host_brain.set_real_name(host.real_name)
 			return
 		// Place them at a vent if they can't get a host.
 		borer.forceMove(get_turf(pick(get_vents())))
@@ -67,7 +67,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 /datum/antagonist/borer/proc/get_vents()
 	var/list/vents = list()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
+		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 50)
 				vents += temp_vent
 	return vents

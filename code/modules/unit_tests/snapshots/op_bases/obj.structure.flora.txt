@@ -1,0 +1,4 @@
+human|none menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+human|none click: Click: Search
+robot|none menu: Search (refused: <span class='filter_notice'><span class='bold'>You see nothing of interest in %T%...</span></span>)
+robot|none click: Click: Search

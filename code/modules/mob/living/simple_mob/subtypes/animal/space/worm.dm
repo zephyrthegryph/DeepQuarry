@@ -30,7 +30,6 @@
 
 	organ_names = /datum/decl/mob_organ_names
 
-	mob_class = MOB_CLASS_ABERRATION	// It's a monster.
 
 	meat_amount = 10
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/worm
@@ -55,8 +54,8 @@
 	COOLDOWN_DECLARE(maw_cooldown_until)	// Ends maw_cooldown after the maw opens; also the auto-stop time while open.
 	var/maw_cooldown = 30 SECONDS
 	var/open_maw = FALSE	// Are we trying to eat things?
+	var/segment_dir = 0	// The directions of the links around this segment, from where its neighbours stand.
 
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/animal/space/space_worm/head
 	name = "space worm"
@@ -67,7 +66,6 @@
 
 	endurance = 300
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 10
 	melee_damage_upper = 25
@@ -79,6 +77,9 @@
 
 	var/segment_count = 6
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
+	configure(mob_movement(hovering = TRUE))
+
 /mob/living/simple_mob/animal/space/space_worm/head/severed
 	segment_count = 0
 	severed = TRUE
@@ -89,27 +90,27 @@
 /mob/living/simple_mob/animal/space/space_worm/head/long
 	segment_count = 10
 
-/datum/om/stage/life/special/animal/space/space_worm/head
-	of = /mob/living/simple_mob/animal/space/space_worm/head
-
-/datum/om/stage/life/special/animal/space/space_worm/head/perform(mob/living/simple_mob/animal/space/space_worm/head/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/space/space_worm/head/life_special(datum/seq_frame/life/F)
 	..()
-	self.update_body_faction()
+	src.update_body_faction()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
-	. = list()
-	. += ..()
+/// The head: its maw and whether a segment follows it, with the heading it holds from that segment.
+/mob/living/simple_mob/animal/space/space_worm/head/draw(datum/look/look)
+	..()
+	var/state
 	if(!open_maw && !stat)
-		icon_state = "[icon_living][previous ? 1 : 0]_hunt"
+		state = "[icon_living][previous ? 1 : 0]_hunt"
 	else
-		icon_state = "[icon_living][previous ? 1 : 0]"
-
-	if(previous)
-		set_dir(get_dir(previous,src))
-
+		state = "[icon_living][previous ? 1 : 0]"
 	if(stat)
-		icon_state = "[icon_state]_dead"
+		state = "[state]_dead"
+	look.state(state)
+	if(previous)
+		look.set_dir(segment_dir)
+
+/// The head faces away from the segment behind it.
+/mob/living/simple_mob/animal/space/space_worm/head/refresh_links()
+	set_segment_dir(previous ? get_dir(previous, src) : 0)
 
 /mob/living/simple_mob/animal/space/space_worm/head/Initialize(mapload)
 	. = ..()
@@ -138,14 +139,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	else
 		set_maw(!open_maw)
 
+
 /mob/living/simple_mob/animal/space/space_worm/proc/set_maw(state = FALSE)
-	open_maw = state
+	set_open_maw(state)
 	if(open_maw)
 		COOLDOWN_START(src, maw_cooldown_until, maw_cooldown)
 		movement_cooldown = initial(movement_cooldown) + 1.5
 	else
 		movement_cooldown = initial(movement_cooldown)
-	update_icon()
 
 /mob/living/simple_mob/animal/space/space_worm/on_death(gibbed)
 	..()
@@ -155,30 +156,27 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	if(previous)
 		previous.death()
 
-/datum/om/stage/life/special/animal/space/space_worm
-	of = /mob/living/simple_mob/animal/space/space_worm
-
-/datum/om/stage/life/special/animal/space/space_worm/perform(mob/living/simple_mob/animal/space/space_worm/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/space/space_worm/life_special(datum/seq_frame/life/F)
 	..()
 
-	if(COOLDOWN_FINISHED(self, maw_cooldown_until))	// Auto-stop eating.
-		if(self.open_maw)
-			to_chat(self, span_notice("Your jaws cannot remain open.."))
-			self.set_maw(FALSE)
+	if(COOLDOWN_FINISHED(src, maw_cooldown_until))	// Auto-stop eating.
+		if(src.open_maw)
+			to_chat(src, span_notice("Your jaws cannot remain open.."))
+			src.set_maw(FALSE)
 
-	if(self.next && !(self.next in view(self,1)) && !self.z_transitioning)
-		self.Detach(1)
+	if(src.next && !(src.next in view(src,1)) && !src.z_transitioning)
+		src.Detach(1)
 
-	if(self.stat == DEAD && self.sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
-		if(self.previous)
-			self.previous.Detach(1)
-		if(self.next)
-			self.Detach(1)
+	if(src.stat == DEAD && src.sever_chunks) // Dead chunks fall off and die immediately if we sever_chunks
+		if(src.previous)
+			src.previous.Detach(1)
+		if(src.next)
+			src.Detach(1)
 
-	if(prob(self.stomachProcessProbability))
-		self.ProcessStomach()
+	if(prob(src.stomachProcessProbability))
+		src.ProcessStomach()
 
-	self.update_icon()
+	refresh_links()
 
 	return
 
@@ -198,7 +196,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 /mob/living/simple_mob/animal/space/space_worm/on_destroy(force) // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)
-		previous.Detach(1)
+		if(loc && next && !QDELETED(next)) // only a chunk cut out of a live worm leaves a severed head; a worm deleted from the front, or out of the world, takes its back half with it
+			previous.Detach(1)
+		else
+			consume(previous)
 	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)
@@ -209,33 +210,39 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 		else
 			previous.z_transitioning = FALSE
 		previous.forceMove(old_loc)	// None of this 'ripped in half by an airlock' business.
-	update_icon()
+	refresh_links()
+	if(next)
+		next.refresh_links()
 
 /mob/living/simple_mob/animal/space/space_worm/head/Bump(atom/obstacle)
 	if(open_maw && !stat && obstacle != previous)
-		om_after(src, 1, PROC_REF(bump_eat), obstacle) // a tick later, after the bump settles
+		after(src, 0.1 SECONDS, PROC_REF(bump_eat), with = list(obstacle)) // a tick later, after the bump settles
 	else
 		rel_clear(src, nameof(currentlyEating))
 		. = ..(obstacle)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/space/space_worm/appearance_overlays()
-	. = list()
+/// A segment: the sprite of the links around it (a midsection bends toward both neighbours, a tail faces the one it hangs from), tinted as that neighbour.
+/mob/living/simple_mob/animal/space/space_worm/draw(datum/look/look)
+	..()
+	var/state
 	if(previous) //midsection
-		icon_state = "spaceworm[get_dir(src,previous) | get_dir(src,next)]"
-		if(stat)
-			icon_state = "[icon_state]_dead"
-
+		state = "spaceworm[segment_dir]"
 	else //tail
-		icon_state = "spacewormtail"
-		if(stat)
-			icon_state = "[icon_state]_dead"
-		set_dir(get_dir(src,next))
-
+		state = "spacewormtail"
+		look.set_dir(segment_dir)
+	if(stat)
+		state = "[state]_dead"
+	look.state(state)
 	if(next)
-		color = next.color
+		look.watch(next)
+		look.set_color(next.color)
 
-	return .
+/// Recomputes the link direction from where the neighbours stand (they move; this segment's sprite follows).
+/mob/living/simple_mob/animal/space/space_worm/proc/refresh_links()
+	if(previous)
+		set_segment_dir(get_dir(src, previous) | get_dir(src, next))
+	else
+		set_segment_dir(next ? get_dir(src, next) : 0)
 
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)
@@ -249,24 +256,52 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	if(istype(target,/turf/simulated/wall))
 		var/turf/simulated/wall/W = target
 		// 10 seconds for an R-wall, 5 seconds for a normal one.
-		om_task_timed(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		eat_work("eat_wall", list("wall" = W))
 		return
 	if(istype(target,/atom/movable))
 		if(istype(target,/mob))
 			eat_movable(target)
 		else // 5 ticks to eat stuff like tables.
-			om_task_timed(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+			eat_work("eat_object", list("object" = target))
 		return
 	eat_finished(FALSE)
+
+/// Starts one of the worm's eating jobs (the ops of its CAPABILITIES); a job that cannot start frees the worm for its next thought.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_work(key, list/with)
+	var/datum/op_result/started = perform_op(src, src, key, null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = with)
+	if(started?.outcome == ACT_REFUSED)
+		log_game("space worm [key]: refused ([started.reason])")
+		eat_finished(FALSE)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_finished(success)
 	if(success)
 		rel_clear(src, nameof(currentlyEating))
 	ai_busy_end()
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
+/// Ten seconds for an R-wall, five for a normal one.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_time(datum/act/op/A)
+	var/turf/simulated/wall/W = A.arg("wall")
+	return !QDELETED(W) && W.reinf_material ? 10 SECONDS : 5 SECONDS
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(datum/act/op/A)
+	var/turf/simulated/wall/W = A.arg("wall")
+	if(QDELETED(W))
+		eat_finished(FALSE)
+		return
 	W.dismantle_wall()
 	eat_finished(TRUE)
+
+/// The job ended before it was done (the worm was moved, killed, or what it worked on went): it is free again.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_interrupted(datum/act/op/A)
+	eat_finished(FALSE)
+
+/// Half a second to eat stuff like tables.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_object_done(datum/act/op/A)
+	var/atom/movable/object = A.arg("object")
+	if(QDELETED(object))
+		eat_finished(FALSE)
+		return
+	eat_movable(object)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_movable(atom/movable/objectOrMob)
 	if(istype(objectOrMob, /obj/machinery/door))	// Doors and airlocks take time based on their durability and our damageo.
@@ -280,45 +315,59 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 		else
 			EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
 		// No eating shields.
-		om_task_timed(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
+		eat_work("eat_field", list("field" = EF))
 		return
 	eat_consume(objectOrMob)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
-	om_task_start(/datum/om/task/timed/worm_batter_door, src, D, hits_left = total_hits - hit + 1)
+	eat_work("batter_door", list("door" = D, "hits_left" = total_hits - hit + 1, "again" = TRUE))
 
-/// Battering a door (the target) a hit every half second until it breaks or the hits run out,
-/// then swallowing it.
-/datum/om/task/timed/worm_batter_door
-	steps = list(/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck = 5)
-	cancel_proc = /mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed
-	var/hits_left = 1
-
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_task_failed(datum/om/task/timed/task)
-	eat_finished(FALSE)
-
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/om/task/timed/worm_batter_door/task)
-	var/obj/machinery/door/D = task.target
+/// Battering a door a hit every half second until it breaks or the hits run out, then swallowing it: a lap per hit.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(datum/act/op/A)
+	var/obj/machinery/door/D = A.arg("door")
+	if(QDELETED(D))
+		LAZYSET(A.args, "again", FALSE)
+		eat_finished(FALSE)
+		return
 	D.visible_message(span_danger("Something crashes against \the [D]!"))
 	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
 	if(QDELETED(D))
-		return STEP_FAIL("gone")
+		LAZYSET(A.args, "again", FALSE)
+		eat_finished(FALSE)
+		return
 	if(!D.operable())
 		D.open(TRUE)
 		eat_consume(D)
-		return STEP_DONE
-	if(--task.hits_left > 0)
-		return STEP_REPEAT(5)
+		LAZYSET(A.args, "again", FALSE)
+		return
+	LAZYSET(A.args, "hits_left", A.arg("hits_left") - 1)
+	if(A.arg("hits_left") > 0)
+		return
 	eat_consume(D)
-	return STEP_DONE
+	LAZYSET(A.args, "again", FALSE)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(obj/effect/energy_field/EF)
+/// Another hit follows until the door is gone, swallowed or the hits run out.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_more(datum/act/op/A)
+	return !!A.arg("again")
+
+/// Force through an energy field: as long as its strength says.
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_time(datum/act/op/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
+	return QDELETED(EF) ? 1 TICK : EF.get_strength() * 5
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(datum/act/op/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
+	if(QDELETED(EF))
+		eat_finished(FALSE)
+		return
 	EF.adjust_strength(rand(-8, -10))
 	EF.visible_message(span_danger("\The [src] crashes through \the [EF]!"))
 	eat_finished(FALSE)
 
-/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_failed(obj/effect/energy_field/EF)
-	EF.visible_message(span_danger("\The [EF] reverberates as it returns to normal."))
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_failed(datum/act/op/A)
+	var/obj/effect/energy_field/EF = A.arg("field")
+	if(!QDELETED(EF))
+		EF.visible_message(span_danger("\The [EF] reverberates as it returns to normal."))
 	eat_finished(FALSE)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_consume(atom/movable/objectOrMob)
@@ -332,10 +381,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 
 	rel_set(src, nameof(previous), attachement)
 	rel_set(attachement, nameof(attachement.next), src)
+	refresh_links()
+	attachement.refresh_links()
 
 	return
 
 /mob/living/simple_mob/animal/space/space_worm/proc/Detach(die = 0)
+	if(loc?.release_refusal(src))
+		return
 	var/mob/living/simple_mob/animal/space/space_worm/head/newHead = new severed_head_type(loc,0)
 	var/mob/living/simple_mob/animal/space/space_worm/newHeadPrevious = previous
 
@@ -346,7 +399,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	if(die)
 		newHead.death()
 
-	qdel(src)
+	consume(src)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/ProcessStomach()
 	for(var/atom/movable/stomachContent in contents)
@@ -359,17 +412,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 				if(!istype(stomachContent,/obj/item/stack/material/phoron))
 					var/obj/item/stack/oldStack = stomachContent
 					new /obj/item/stack/material/phoron(src, oldStack.get_amount())
-					qdel(oldStack)
+					dissolved(oldStack, src)
 					continue
 			else if(istype(stomachContent,/obj/item)) //converts to plasma, keeping the w_class
 				var/obj/item/oldItem = stomachContent
 				new /obj/item/stack/material/phoron(src, oldItem.w_class)
-				qdel(oldItem)
+				dissolved(oldItem, src)
 				continue
 			else
 				new /obj/item/stack/material/phoron(src, flatPlasmaValue) //just flat amount
 				if(!isliving(stomachContent))
-					qdel(stomachContent)
+					dissolved(stomachContent, src)
 				else
 					var/mob/living/L = stomachContent
 					if(iscarbon(L))
@@ -409,3 +462,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	return 0
 
 // Neighbouring segments: Destroy() severs the back half and unlinks the front.
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(previous), /mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(next), /mob/living/simple_mob/animal/space/space_worm)
+	ref_one(nameof(currentlyEating), /atom)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+	immune_to_incapacitation()
+	// The maw's jobs (AttemptToEat()): each frees the worm's AI again however it ends.
+	op("eat_wall", ai(), takes("wall"), wait(PROC_REF(eat_wall_time)), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_wall_done)))
+	op("eat_object", ai(), takes("object"), wait(0.5 SECONDS), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_object_done)))
+	op("eat_field", ai(), takes("field"), wait(PROC_REF(eat_field_time)), on_interrupt(PROC_REF(eat_field_failed)), then(PROC_REF(eat_field_done)))
+	op("batter_door", ai(), takes("door", "hits_left", "again"), wait(0.5 SECONDS, repeats = PROC_REF(eat_door_more), after_step = PROC_REF(eat_door_struck)), on_interrupt(PROC_REF(eat_interrupted)))

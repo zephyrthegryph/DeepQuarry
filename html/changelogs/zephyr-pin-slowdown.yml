@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The look state pin clears the test floor after every probe, so a type's probes no longer get slower as blob chunks and cabinet guns pile up and the full-directory sweep finishes"

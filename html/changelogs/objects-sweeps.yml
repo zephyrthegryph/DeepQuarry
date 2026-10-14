@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Objects, turfs, effects, hud and datums: remaining periodic, repeat and interaction declarations converted to every(), after() and op() entries"

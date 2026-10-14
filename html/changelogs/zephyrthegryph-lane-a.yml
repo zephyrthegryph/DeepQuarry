@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A runtime in an action or notice hook no longer leaks nesting depth until every action is refused"
+  - bugfix: "every() keeps running after a runtime in its gate or interval proc"
+  - bugfix: "A request ends as soon as its owner is deleted; a request opened without a timeout now times out after 10 minutes"
+  - bugfix: "Runechat messages are delivered oldest first; a built bike frame no longer makes and deletes a cell"
+  - code_imp: "Added rel_take_all(), STARTS_NONE / no_starts(), rel_clear(policy); rel_take with no member on a list var takes nothing"

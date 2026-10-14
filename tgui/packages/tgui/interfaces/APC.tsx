@@ -19,22 +19,16 @@ type Data = {
   gridCheck: BooleanLike;
   failTime: number;
   locked: BooleanLike;
-  normallyLocked: BooleanLike;
   siliconUser: BooleanLike;
   externalPower;
   chargingStatus;
   powerCellStatus: number;
   emagged: BooleanLike;
   chargeMode: BooleanLike;
-  totalCharging: number;
   totalLoad: number;
   coverLocked: BooleanLike;
   emergencyLights: boolean;
-  // The power_channels() capability's data: channels, breaker, night shift.
-  caps?: { power?: PowerData };
-};
-
-type PowerData = {
+  // The APC's ui_data(): channels, breaker, night shift.
   powerChannels: {
     title: string;
     powerLoad: number;
@@ -131,15 +125,11 @@ const ApcContent = (props) => {
     powerCellStatus,
     emagged,
     chargeMode,
-    totalCharging,
     totalLoad,
     coverLocked,
     emergencyLights,
   } = data;
-  const power = data.caps?.power;
-  const powerChannels = power?.powerChannels;
-  const isOperating = power?.isOperating;
-  const nightshiftSetting = power?.nightshiftSetting;
+  const { powerChannels, isOperating, nightshiftSetting } = data;
 
   const is_locked: BooleanLike = locked && !siliconUser;
   const externalPowerStatus: powerStatus =
@@ -262,13 +252,7 @@ const ApcContent = (props) => {
             );
           })}
           <LabeledList.Item label="Total Load">
-            {totalCharging ? (
-              <b>
-                {totalLoad} W (+ {totalCharging} W charging)
-              </b>
-            ) : (
-              <b>{totalLoad} W</b>
-            )}
+            <b>{totalLoad} W</b>
           </LabeledList.Item>
         </LabeledList>
       </Section>

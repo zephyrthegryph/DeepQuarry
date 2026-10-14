@@ -6,9 +6,9 @@
 	var/boing = FALSE
 	var/object_launch_prob = 20
 
-/obj/effect/anomaly/grav/Initialize(mapload, new_lifespan)
-	. = ..()
+/obj/effect/anomaly/grav/proc/init_wibbly_filters(datum/act/timer/A)
 	apply_wibbly_filters(src)
+
 
 /obj/effect/anomaly/grav/anomalyEffect(seconds_per_tick)
 	..()
@@ -21,13 +21,13 @@
 	for(var/mob/living/M in range(0, src))
 		if(ishuman(M))
 			var/mob/living/carbon/human/human = M
-			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (human.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(human.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				continue
 		gravShock(M)
 	for(var/mob/living/M in range(4, src))
 		if(ishuman(M))
 			var/mob/living/carbon/human/human = M
-			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (human.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(human.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				continue
 		step_towards(M, src)
 	for(var/obj/O in range(0, src))
@@ -48,12 +48,19 @@
 /obj/effect/anomaly/grav/Bump(atom/A)
 	gravShock(A)
 
-/obj/effect/anomaly/grav/Bumped(atom/movable/AM)
+CAPABILITIES(/obj/effect/anomaly/grav)
+	after_init(0, then(PROC_REF(init_wibbly_filters)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/anomaly/grav/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	gravShock(AM)
 
 /obj/effect/anomaly/grav/proc/gravShock(mob/living/living_debris)
 	if(boing && isliving(living_debris) && !living_debris.stat && !living_debris.can_overcome_gravity())
-		living_debris.status_set(EFFECT_STUNNED, 2)
+		living_debris.status_set(STAT_STUNNED, 2)
 		var/atom/target = get_edge_target_turf(living_debris, get_dir(src, get_step_away(living_debris, src)))
 		living_debris.throw_at(target, 5, 1)
 		boing = FALSE

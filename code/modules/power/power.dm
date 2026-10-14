@@ -13,9 +13,10 @@
 	/// The Rust power region this machine's node is on (polled, not pushed;
 	/// power_grid.dm), or 0.
 	var/power_region = 0
+	/// "entity@x,y,z" of the node last sent to Rust (power_send_node()), or null when it has none: a node already
+	/// there is not sent again.
+	var/tmp/power_node_at
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	/// Persistent supply registered with set_power_supply() (W). Every
 	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
 	/// most never set a nonzero supply, which costs nothing.
@@ -63,30 +64,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		power_warn(power_region)
 		return power_draw(power_region, amount, src)
 
-/// Supply for the next power step only (pulse sources: coils, collectors,
-/// fusion). A producer that runs every tick calls it every tick, as before.
-/obj/machinery/power/proc/add_avail(amount)
-	if(!power_region || amount <= 0 || !vg_entity)
-		return FALSE
-	native_write(src, NATIVE_PRODUCER_PULSE, amount)
-	return TRUE
-
-/// A persistent supply rate (W): it stays until changed, so a steady
-/// generator can sleep. Repeating the same rate is free.
-/obj/machinery/power/proc/set_power_supply(amount)
-	amount = max(amount, 0)
-	if(amount == power_supply_rate)
-		return
-	power_supply_rate = amount
-	if(vg_entity)
-		native_write(src, NATIVE_PRODUCER_SUPPLY, amount)
-
-/obj/machinery/power/proc/clear_power_supply()
-	set_power_supply(0)
-
-/obj/machinery/power/proc/draw_power(amount)
-	return power_draw(power_region, amount, src)
-
 /obj/machinery/power/proc/surplus()
 	return power_netexcess(power_region)
 
@@ -128,13 +105,21 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// `power_autoconnect()` after `vg_bind()` regardless, so every anchored
 /// machine still gets its node sent once `vg_entity` is real -- an early
 /// call here just has nothing to do yet.
-/obj/machinery/power/proc/power_send_node()
+/// `force` sends it even when this very node is already there (the admin re-register); otherwise a node already
+/// sent from this turf is not sent again: a machine with no cable under it retries connect_to_network() on every
+/// step, and each resend was a topology edit that made the power step re-read every machine's region.
+/obj/machinery/power/proc/power_send_node(force = FALSE)
 	var/turf/T = power_turf()
 	if(!istype(T))
 		return FALSE
 	if(!vg_entity)
 		return FALSE
+	var/at = "[vg_entity]@[T.x],[T.y],[T.z]"
+	if(at == power_node_at && !force)
+		return TRUE
 	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
+	power_node_at = at
+	power_topology_edited(src)
 	power_node_sent()
 	return TRUE
 
@@ -155,9 +140,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		bound += M
 		entities += M.vg_entity
 		coords += list(T.x, T.y, T.z)
+		M.power_node_at = "[M.vg_entity]@[T.x],[T.y],[T.z]"
 	if(!length(bound))
 		return 0
 	vg_power_bind_machine_list(entities, coords)
+	power_topology_edited(/obj/machinery/power)
 	for(var/obj/machinery/power/M as anything in bound)
 		M.power_node_sent()
 	return length(bound)
@@ -197,6 +184,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(!vg_entity)
 		return FALSE
 	vg_power_unbind_node(vg_entity)
+	power_node_at = null
+	power_topology_edited(src)
 	var/was = !!power_region
 	power_bind(0)
 	return was
@@ -209,7 +198,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 			power_grid_move_node(src, 0, region_id)
 		return
 	var/old = power_region
-	power_region = region_id
+	set_power_region(region_id)
 	power_grid_move_node(src, old, region_id)
 	power_network_changed(old, region_id)
 
@@ -219,19 +208,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 // attach a wire to a power machine - leads from the turf you are standing on
 //almost never called, overwritten by all power machines but terminal and generator
-/obj/machinery/power/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/power_cable_place,
-	)
-	..()
+CAPABILITIES(/obj/machinery/power)
+	configure(uses_power(idle = 0, active = 0))
+	op("cable_place", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Lay cable"), then(PROC_REF(interaction_cable_place)))
+	extend("machine_anchor", then(PROC_REF(rewired)))
+	extend("machine_unanchor", then(PROC_REF(rewired)))
 
-/datum/interaction/machine_item/power_cable_place
-	id = "power_cable_place"
-	name = "Lay cable"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/power/proc/interaction_cable_place
-
-/obj/machinery/power/proc/interaction_cable_place(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
+/obj/machinery/power/proc/interaction_cable_place(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/cable_coil/coil = A.held
 	var/turf/T = user.loc
 
 	if(!T.is_plating() || !istype(T, /turf/simulated/floor))
@@ -244,12 +229,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	return TRUE
 
 // Power machinery should also connect/disconnect from the network.
-/obj/machinery/power/wrench_act(mob/user, obj/item/W)
-	if((. = ..()))
-		if(anchored)
-			connect_to_network()
-		else
-			disconnect_from_network()
 
 // Used for power spikes by the engine, has specific effects on different machines.
 /obj/machinery/power/proc/overload(obj/machinery/power/source)
@@ -276,6 +255,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		power_source = source_area.get_apc()
 	var/region = 0
 	var/obj/item/cell/cell
+	var/obj/machinery/power/apc/source_apc
 	if(istype(power_source,/obj/structure/cable))
 		var/obj/structure/cable/Cable = power_source
 		region = Cable.get_power_region()
@@ -283,6 +263,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		var/obj/machinery/power/P = power_source
 		if(istype(P, /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/apc = P
+			source_apc = apc
 			cell = apc.cell
 			region = apc.terminal?.power_region
 		else
@@ -306,7 +287,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 			return
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
-			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
+			if(protection_of(G).siemens == 0)	return 0		//to avoid spamming with insulated glvoes on
 	//Checks again. If we are still here subject will be shocked, trigger standard 20 tick warning
 	//Since this one is longer it will override the original one.
 	if(region)
@@ -330,6 +311,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		source_area.use_power_oneoff(drained_energy/CELLRATE, EQUIP)
 	else if (from_grid && region)
 		power_draw(region, drained_energy/CELLRATE)
+	else if (source_apc)
+		source_apc.set_cell_charge(cell.charge - drained_energy) // the cell and the power domain's charge together
 	else if (cell)
 		cell.use(drained_energy)
 	return drained_energy
+
+/// After the base wrench: a secured power machine joins the cable under it, an unsecured one leaves it.
+/obj/machinery/power/proc/rewired(datum/act/op/A)
+	if(anchored)
+		connect_to_network()
+	else
+		disconnect_from_network()

@@ -14,12 +14,9 @@
 
 	var/mode = 1  // 1 mode - teleport you to turf  0 mode teleport turf to you
 	COOLDOWN_DECLARE(firable)
-	var/transforming = 0
 	var/failure_chance = 15 // This can become negative with part tiers above 3, which helps offset penalties
 	var/obj/item/stock_parts/scanning_module/scanmod
 	var/dropnoms_active = TRUE
-
-DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_parts/scanning_module)
 
 /obj/item/bluespace_harpoon/Initialize(mapload)
 	. = ..()
@@ -38,53 +35,59 @@ DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_pa
 	else
 		failure_chance = 75 // You can't even use it if there's no scanmod, but why not.
 
-/obj/item/bluespace_harpoon/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/item/bluespace_harpoon/proc/screwdriver_used(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(!scanmod)
 		to_chat(user, span_warning("There's no scanner module installed!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	var/turf/T = get_turf(src)
 	to_chat(user, span_notice("You remove [scanmod] from [src]."))
-	playsound(src, tool.usesound, 75, 1)
+	playsound(src, sounds_of(tool).use, 75, 1)
 	scanmod.forceMove(T)
-	own_take(src, nameof(scanmod))
+	rel_take(src, nameof(scanmod))
 	update_fail_chance()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE("Change fire mode", PROC_REF(interaction_fire_mode)), \
-	INTERACT_VERB("Change Fire Mode", PROC_REF(harpoon_verb_fire_mode), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Spatial Rearrangement", PROC_REF(harpoon_verb_dropnom_mode), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/bluespace_harpoon)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("fire_mode", in_hand(), label("Change fire mode"), then(PROC_REF(interaction_fire_mode)))
+	op("harpoon_verb_fire_mode", menu(), label("Change Fire Mode"), needs(carried()), then(PROC_REF(harpoon_verb_fire_mode_op)))
+	op("harpoon_verb_dropnom_mode", menu(), label("Toggle Spatial Rearrangement"), needs(carried()), then(PROC_REF(harpoon_verb_dropnom_mode)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/// The harpoon_verb_fire_mode op: the verb's effect, as the old resolver ran it.
+/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode_op(datum/act/op/A)
+	harpoon_verb_fire_mode(A.actor, A.held)
+	return OP_OK
 
 /// Old attackby.
-/obj/item/bluespace_harpoon/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/stock_parts/scanning_module))
 		if(scanmod)
 			to_chat(user, span_warning("There's already [scanmod] installed! Remove it first."))
-			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.scanmod), I, user = user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		if(!move_into(src, nameof(src.scanmod), I, user))
+			return OP_PASS
 		to_chat(user, span_notice("You install [scanmod] into [src]."))
 		update_fail_chance()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/bluespace_harpoon/afterattack(atom/A, mob/user as mob)
 	if(!user || !A || isstorage(A))
 		return
 	if(!scanmod)
 		to_chat(user,span_warning("The scanning module has been removed from [src]!"))
-		return
-	if(transforming)
-		to_chat(user,span_warning("You can't fire while \the [src] transforming!"))
 		return
 	if(!COOLDOWN_FINISHED(src, firable))
 		to_chat(user,span_warning("\The [src] is recharging..."))
@@ -140,10 +143,10 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 			else
 				user.forceMove(ToTurf)
 				var/vore_happened = FALSE
-				if(can_dropnom && living_user.can_be_drop_pred)
+				if(can_dropnom && living_user.vore_prefs.can_be_drop_pred)
 					var/obj/belly/belly_dest
-					if(living_user.vore_selected)
-						belly_dest = living_user.vore_selected
+					if(vore_selected_of(living_user))
+						belly_dest = vore_selected_of(living_user)
 					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
@@ -153,15 +156,15 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 								vore_happened = TRUE
 								to_chat(prey, span_vdanger("[living_user] materializes around you, as you end up in their [belly_dest]!"))
 								to_chat(living_user, span_vnotice("You materialize around [prey] as they end up in your [belly_dest]!"))
-				if(can_dropnom && !vore_happened && living_user.can_be_drop_prey)
+				if(can_dropnom && !vore_happened && living_user.vore_prefs.can_be_drop_prey)
 					var/mob/living/pred
 					for(var/mob/living/potential_pred in turf_contents_of_type(ToTurf, /mob/living))
-						if(potential_pred != user && potential_pred.can_be_drop_pred)
+						if(potential_pred != user && potential_pred.vore_prefs.can_be_drop_pred)
 							pred = potential_pred
 					if(pred)
 						var/obj/belly/belly_dest
-						if(pred.vore_selected)
-							belly_dest = pred.vore_selected
+						if(vore_selected_of(pred))
+							belly_dest = vore_selected_of(pred)
 						else if(length(pred.vore_organs))
 							belly_dest = pick(pred.vore_organs)
 						if(belly_dest)
@@ -184,20 +187,20 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 				M.forceMove(pick(trange(24,user)))
 			else
 				M.forceMove(ToTurf)
-				if(can_dropnom && living_user.can_be_drop_pred && M.can_be_drop_prey)
+				if(can_dropnom && living_user.vore_prefs.can_be_drop_pred && M.vore_prefs.can_be_drop_prey)
 					var/obj/belly/belly_dest
-					if(living_user.vore_selected)
-						belly_dest = living_user.vore_selected
+					if(vore_selected_of(living_user))
+						belly_dest = vore_selected_of(living_user)
 					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
 						M.forceMove(belly_dest)
 						to_chat(living_user, span_vnotice("[M] materializes inside you as they end up in your [belly_dest]!"))
 						to_chat(M, span_vdanger("You materialize inside [living_user] as you end up in their [belly_dest]!"))
-				else if(can_dropnom && living_user.can_be_drop_prey && M.can_be_drop_pred && !user_vored)
+				else if(can_dropnom && living_user.vore_prefs.can_be_drop_prey && M.vore_prefs.can_be_drop_pred && !user_vored)
 					var/obj/belly/belly_dest
-					if(M.vore_selected)
-						belly_dest = M.vore_selected
+					if(vore_selected_of(M))
+						belly_dest = vore_selected_of(M)
 					else if(length(M.vore_organs))
 						belly_dest = pick(M.vore_organs)
 					if(belly_dest)
@@ -209,36 +212,30 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 
 
 /// Old attack_self: switch the fire mode.
-/obj/item/bluespace_harpoon/proc/interaction_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/interaction_fire_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	harpoon_verb_fire_mode(user)
 	return TRUE
 
 /// Old Change Fire Mode verb.
-/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
-	if(transforming) return
-	mode = !mode
-	transforming = 1
+/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode(mob/user, obj/item/held)
+	set_mode(!mode)
 	to_chat(user,span_info("You change \the [src]'s mode to [mode ? "transmiting" : "receiving"]."))
-	update_icon()
 
 /// Old Toggle Spatial Rearrangement verb.
-/obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 
-DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/bluespace_harpoon/appearance_overlays()
-	. = list()
-	if(transforming)
-		switch(mode)
-			if(0)
-				flick("harpoon-2-change", src)
-				icon_state = "harpoon-1"
-			if(1)
-				flick("harpoon-1-change",src)
-				icon_state = "harpoon-2"
-		transforming = 0
+TRACKED(/obj/item/bluespace_harpoon, mode)
+
+/// The look: the mode's sprite, and the change animation of the mode it switched to.
+/obj/item/bluespace_harpoon/draw(datum/look/look)
+	..()
+	look.state(mode ? "harpoon-2" : "harpoon-1")
+	look.play_flick(mode ? "harpoon-1-change" : "harpoon-2-change")
 
 /obj/item/bluespace_harpoon/ownership()
 	. = ..()
-	. += owns(nameof(scanmod), policy = OWN_CONTAINED)
+	. += owns(nameof(scanmod), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/scanning_module)

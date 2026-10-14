@@ -1,0 +1,43 @@
+human|none menu: Climb
+human|none menu: Use
+human|none click: Click: Use
+@obj.machinery robot|none
++1 menu: Climb
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Swipe ID
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Swipe ID
+human|/obj/item menu: Climb
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+@obj.machinery human|/obj/item/card/emag
+-menu: Use cryptographic sequencer
+keys: change_radius, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shield_gen_open_ui, shield_gen_swipe_id, silicon_hand, strengthen_rate, target_field_strength, toggle, use_wrench, z_range

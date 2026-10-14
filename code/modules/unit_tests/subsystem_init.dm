@@ -1,22 +1,9 @@
-/// Tests that all subsystems that need to properly initialize.
-/datum/unit_test/subsystem_init
+/// The systems the kernel boots in its DAG (the former subsystems among them) must initialize.
+/datum/unit_test/system_init
 
-/datum/unit_test/subsystem_init/Run()
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		if(subsystem.flags & SS_NO_INIT)
-			continue
-		if(subsystem.initialized)
-			continue
-
-		var/should_fail = !(subsystem.flags & SS_OK_TO_FAIL_INIT)
-		var/list/message_strings = list("[subsystem] ([subsystem.type]) is a subsystem meant to initialize but could not get initialized.")
-
-		if(!isnull(subsystem.initialization_failure_message))
-			message_strings += "The subsystem reported the following: [subsystem.initialization_failure_message]"
-
-		if(should_fail)
-			TEST_FAIL(jointext(message_strings, "\n"))
-			continue
-
-		message_strings += "This subsystem is marked as SS_OK_TO_FAIL_INIT. This is still a bug, but it is non-blocking."
-		TEST_NOTICE(src, jointext(message_strings, "\n"))
+/datum/unit_test/system_init/Run()
+	var/list/former_subsystems = list(
+		SSassets, SSatoms, SSbehaviours, SSdbcore, SSearly_assets, SSgarbage, SSoverlays, SSprofiler, SSsqlite, SStgui, SSblackbox,
+	)
+	for(var/datum/system/booted as anything in former_subsystems)
+		TEST_ASSERT(booted.initialized, "[booted] ([booted.type]) is a system the kernel boots, but it never initialized")

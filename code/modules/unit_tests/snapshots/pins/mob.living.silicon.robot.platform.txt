@@ -1,0 +1,91 @@
+@mob human|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++4 menu: Platform hand
++8 menu: Tap
++9 click: Click: Platform hand
+@mob robot|none
+-menu: Nutrition heal
+-click: Click: Help
++3 menu: Pet
++4 menu: Platform hand
++8 menu: Tap
++9 click: Click: Platform hand
+@mob ai|none
+@mob.living.silicon ghost|none
+-click: nothing
++2 menu: Take control
++3 click: Click: Take control
+@mob.living human|/obj/item/tool/screwdriver
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++7 menu: Use screwdriver
++8 click: Click: Platform item
+@mob.living human|/obj/item/tool/crowbar
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++5 menu: Pry the cover or a part
++7 menu: Use crowbar
++9 click: Click: Platform item
+@mob.living human|/obj/item/tool/wrench
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++7 menu: Use wrench
++8 click: Click: Platform item
+@mob.living human|/obj/item/tool/wirecutters
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++7 menu: Use wirecutters
++8 menu: Work the wiring (refused: You can't reach the wiring.)
++9 click: Click: Platform item
+@mob.living human|/obj/item/multitool
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++6 menu: Use multitool
++8 menu: Work the wiring (refused: You can't reach the wiring.)
++9 click: Click: Platform item
+@mob.living human|/obj/item/weldingtool
+-menu: Nutrition heal
+-click: Click: Use on
++4 menu: Platform hand
++7 menu: Use welding tool
++8 menu: Weld the dents (refused: Nothing to fix here.)
++9 click: Click: Platform item
+@mob human|/obj/item/stack/cable_coil
+-click: Click: Use on
++4 menu: Platform hand
++6 menu: Use cable coil
++8 click: Click: Platform item
+@mob human|/obj/item/stack/material/steel
+-click: Click: Use on
++4 menu: Platform hand
++7 menu: Use steel sheet
++8 click: Click: Platform item
+@mob human|/obj/item/card/id
+-click: Click: Use on
++4 menu: Platform hand
++6 menu: Use identification card
++8 click: Click: Platform item
+@mob human|/obj/item
+-click: Click: Use on
++4 menu: Platform hand
++6 menu: Use item
++8 click: Click: Platform item
+human|/obj/item/card/emag menu: Disarm
+human|/obj/item/card/emag menu: Grab
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Hold with
+human|/obj/item/card/emag menu: Platform hand
+human|/obj/item/card/emag menu: Shove with
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag menu: Use on
+human|/obj/item/card/emag click: Click: Use
+wires: AI Control, Camera, Law Check, Lockdown
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, break_bolt, butcher, climb_down, climb_wall, deploy_shell, dominate_predator, dominate_prey, drag_buckle, drop_hat, eat_minerals, egg_laying, emag.subvert, emag.use, extract_mmi, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, platform_cargo.eject_cargo, platform_drag, platform_hand, platform_item, platform_silicon_unload, platform_take_control, platform_unload, polymorph, revert_beast_form, robot_bolt_wrench, robot_hold, robot_item, robot_pet, robot_pry, robot_punch, robot_screwdriver, robot_tap, robot_utility.customize_appearance, robot_utility.nom, robot_utility.purge_nutrition, robot_utility.spark_plug, robot_utility.toggle_decals, robot_utility.toggle_glowy_stomach, robot_utility.toggle_grabbability, robot_utility.toggle_lights, robot_weld_repair, robot_wires, shred_limb, spin, succubus_bite, take_power_part, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

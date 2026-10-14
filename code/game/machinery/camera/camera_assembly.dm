@@ -1,3 +1,4 @@
+TRACKED(/obj/item/camera_assembly, state)
 MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 /obj/item/camera_assembly
 	name = "camera assembly"
@@ -22,181 +23,189 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 				4 = Screwdriver panel closed and is fully built (you cannot attach upgrades)
 	*/
 
+MSG_DEF_SELF(camera_assembly/not_on_floor, "it has to be on the floor to be wrenched into place")
+MSG_DEF_SELF(camera_assembly/wrenched, "You wrench the assembly into place.")
+MSG_DEF_SELF(camera_assembly/unwrenched, "You unattach the assembly from its place.")
+MSG_DEF_SELF(camera_assembly/welded, "You weld the assembly securely into place.")
+MSG_DEF_SELF(camera_assembly/unwelded, "You unweld the assembly from its place.")
+MSG_DEF_SELF(camera_assembly/wired, "You add wires to the assembly.")
+MSG_DEF_SELF(camera_assembly/unwired, "You cut the wires from the circuits.")
+
+CAPABILITIES(/obj/item/camera_assembly)
+	// 0 loose, 1 wrenched down, 2 welded, 3 wired (upgrades go in, the screwdriver configures it), 4 built into a camera
+	stages(nameof(state),
+		stage_step(0, 1, tool(TOOL_WRENCH), label("Wrench into place"), wait(0), needs(req(PROC_REF(floor_refusal))), says(MSG(camera_assembly/wrenched)), then(PROC_REF(fastened))),
+		stage_step(1, 0, tool(TOOL_WRENCH), label("Unfasten"), wait(0), says(MSG(camera_assembly/unwrenched)), then(PROC_REF(unfastened))),
+		stage_step(1, 2, lit_welder(fuel = 0), label("Weld into place"), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), says(MSG(camera_assembly/welded))),
+		stage_step(2, 1, lit_welder(fuel = 0), label("Unweld"), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), says(MSG(camera_assembly/unwelded))),
+		stage_step(2, 3, stack(/obj/item/stack/cable_coil, 2), label("Wire"), wait(0), says(MSG(camera_assembly/wired))),
+		stage_step(3, 2, tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(camera_assembly/unwired)), then(PROC_REF(wires_cut))))
+	owns_many(nameof(upgrades))
+	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Configure"), wait(0), when(req_stage(nameof(state), 3)), starts(PROC_REF(configure_started)),
+		asks(/datum/prompt/text, fields = list("title" = "Set Network", "question" = computed(PROC_REF(networks_question)), "default" = computed(PROC_REF(networks_default)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "networks"),
+		asks(/datum/prompt/text, fields = list("title" = "Set Camera Name", "question" = "How would you like to name the camera?", "default" = computed(PROC_REF(name_default)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "name", when = PROC_REF(networks_given)),
+		then(PROC_REF(camera_configured)))
+
 
 /// Old attackby.
-/obj/item/camera_assembly/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	switch(state)
-		if(2)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if(C.use(2))
-					to_chat(user, span_notice("You add wires to the assembly."))
-					state = 3
-				else
-					to_chat(user, span_warning("You need 2 coils of wire to wire the assembly."))
-				return INTERACTION_HANDLED_PASS
-
+/obj/item/camera_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	// Upgrades!
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
+		if(!move_into(src, nameof(upgrades), W, user))
+			return OP_PASS
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
-		user.remove_from_mob(W)
-		W.forceMove(src)
-		own_move(W, src, nameof(upgrades))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	// Taking out upgrades
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/camera_assembly/wrench_act(mob/user, obj/item/tool)
-	if(state == 0 && isturf(loc))
-		playsound(src, tool.usesound, 50, TRUE)
-		to_chat(user, span_notice("You wrench the assembly into place."))
-		set_anchored(TRUE)
-		state = 1
-		update_icon()
-		auto_turn()
-		return TRUE
-	if(state == 1)
-		playsound(src, tool.usesound, 50, TRUE)
-		to_chat(user, span_notice("You unattach the assembly from its place."))
-		set_anchored(FALSE)
-		state = 0
-		update_icon()
-		return TRUE
-	return FALSE
+/// Only an assembly lying on the floor is wrenched down.
+/obj/item/camera_assembly/proc/floor_refusal(datum/act/op/A)
+	return read_once(isturf(loc)) ? null : MSG(camera_assembly/not_on_floor)
 
-/obj/item/camera_assembly/welder_act(mob/user, obj/item/tool)
-	if(state != 1 && state != 2)
-		return FALSE
-	weld(tool, user, PROC_REF(welded), list(user))
-	return TRUE
-
-/obj/item/camera_assembly/proc/welded(mob/user)
-	if(state == 1)
-		to_chat(user, span_notice("You weld the assembly securely into place."))
-		state = 2
-	else
-		to_chat(user, span_notice("You unweld the assembly from its place."))
-		state = 1
+/// Wrenched down: it is fastened and faces away from the wall.
+/obj/item/camera_assembly/proc/fastened(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(TRUE)
-	return TRUE
+	auto_turn()
+	return OP_OK
 
-/obj/item/camera_assembly/wirecutter_act(mob/user, obj/item/tool)
-	if(state != 3)
-		return FALSE
+/obj/item/camera_assembly/proc/unfastened(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	set_anchored(FALSE)
+	return OP_OK
+
+/obj/item/camera_assembly/proc/weld_start_message(datum/act/op/A)
+	return msg_text("You start to weld the [src]..")
+
+/obj/item/camera_assembly/proc/weld_started(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	var/obj/item/weldingtool/welder = W.get_welder()
+	welder.eyecheck(A.actor)
+	if(sounds_of(W).use)
+		play_sfx(src, sounds_of(W).use, volume = 50, vary = TRUE)
+	return OP_OK
+
+/obj/item/camera_assembly/proc/weld_duration(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	return 2 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/// The cut wires drop as two lengths of cable.
+/obj/item/camera_assembly/proc/wires_cut(datum/act/op/A)
+	var/obj/item/tool = A.held
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You cut the wires from the circuits."))
-	state = 2
-	return TRUE
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/item/camera_assembly/crowbar_act(mob/user, obj/item/tool)
+/obj/item/camera_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!LAZYLEN(upgrades))
-		return FALSE
+		return OP_DECLINE
 	var/obj/upgrade = locate_in_list(upgrades, /obj)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
-		playsound(src, tool.usesound, 50, TRUE)
-		own_take_member(src, nameof(upgrades), upgrade)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
+		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
-	return TRUE
+	return OP_OK
 
-/obj/item/camera_assembly/screwdriver_act(mob/user, obj/item/tool)
-	if(state != 3)
-		return FALSE
-	playsound(src, tool.usesound, 50, TRUE)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(camera_networks_entered), message = "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: "+using_map.station_short+",Security,Secret ", default = camera_network ? camera_network : NETWORK_DEFAULT, title = "Set Network", requires = PROMPT_ADJACENT)
-	return TRUE
+/obj/item/camera_assembly/proc/configure_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/item/camera_assembly/proc/camera_networks_entered(datum/om/prompt/text/ask)
-	if(!ask.text)
-		to_chat(ask.answerer, "No input found please hang up and try your call again.")
-		return
-	var/list/tempnetwork = splittext(ask.text, ",")
-	if(tempnetwork.len < 1)
-		to_chat(ask.answerer, "No network found please hang up and try your call again.")
-		return
+/obj/item/camera_assembly/proc/networks_question(datum/act/op/A)
+	return "Which networks would you like to connect this camera to? Separate networks with a comma. No Spaces!\nFor example: [using_map.station_short],Security,Secret "
+
+/obj/item/camera_assembly/proc/networks_default(datum/act/op/A)
+	return camera_network ? camera_network : NETWORK_DEFAULT
+
+/// The networks answer, as a list (empty when none was given).
+/obj/item/camera_assembly/proc/networks_answered(datum/act/op/A)
+	var/answer = A.step_value("networks")
+	return answer ? splittext(answer, ",") : list()
+
+/// The name is asked only once some network was given.
+/obj/item/camera_assembly/proc/networks_given(datum/act/op/A)
+	return length(networks_answered(A)) > 0
+
+/obj/item/camera_assembly/proc/name_default(datum/act/op/A)
+	if(camera_name)
+		return camera_name
 	var/area/camera_area = get_area(src)
-	var/temptag = "[sanitize(camera_area.name)] ([rand(1, 999)])"
-	om_ask(ask.answerer, /datum/om/prompt/text/camera_name, PROC_REF(camera_configured), default = camera_name ? camera_name : temptag, networks = tempnetwork)
+	return "[sanitize(camera_area.name)] ([rand(1, 999)])"
 
-/datum/om/prompt/text/camera_name
-	title = "Set Camera Name"
-	message = "How would you like to name the camera?"
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	requires = PROMPT_ADJACENT
-	var/list/networks
-
-/datum/om/prompt/text/camera_name/valid()
-	var/obj/item/camera_assembly/A = subject
-	return A.state == 3 ? null : "wrong state"
-
-/obj/item/camera_assembly/proc/camera_configured(datum/om/prompt/text/camera_name/ask)
-	state = 4
+/// Networks and a name given, the assembly closes up into a camera, and the builder turns it.
+/obj/item/camera_assembly/proc/camera_configured(datum/act/op/A)
+	var/mob/user = A.actor
+	var/list/networks = networks_answered(A)
+	if(!length(networks))
+		to_chat(user, "No network found please hang up and try your call again.")
+		return OP_OK
+	var/camera_tag = A.step_value("name")
+	if(isnull(camera_tag))
+		return OP_OK
+	set_state(4)
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
-	own_set(C, nameof(C.assembly), src)
+	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
-	C.replace_networks(uniqueList(ask.networks))
-	C.c_tag = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	ask_camera_direction(ask.answerer, C, 5)
+	C.replace_networks(uniqueList(networks))
+	C.c_tag = sanitizeSafe(camera_tag, MAX_NAME_LEN)
+	ask_camera_direction(user, C, 5)
+	return OP_OK
 
 /// Turns the new camera until the builder is happy, with up to `chances` more tries.
 /obj/item/camera_assembly/proc/ask_camera_direction(mob/user, obj/machinery/camera/C, chances)
-	om_ask(user, /datum/om/prompt/choice/camera_direction, PROC_REF(camera_direction_chosen), subject = C, camera = C, chances = chances)
+	open_request(src, /datum/prompt/choice/camera_direction, PROC_REF(camera_direction_chosen), answerer = user, title = "Assembling Camera", question = "Direction?", choices = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT"), camera = C, chances = chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/datum/om/prompt/choice/camera_direction
-	title = "Assembling Camera"
-	message = "Direction?"
-	choices = list("NORTH", "EAST", "SOUTH", "WEST", "LEAVE IT")
-	requires = PROMPT_ADJACENT
+/datum/prompt/choice/camera_direction
 	var/obj/machinery/camera/camera
 	var/chances = 0
 
-/obj/item/camera_assembly/proc/camera_direction_chosen(datum/om/prompt/choice/camera_direction/ask)
-	var/obj/machinery/camera/C = ask.camera
-	if(ask.choice != "LEAVE IT")
-		C.dir = text2dir(ask.choice)
-	if(ask.chances > 0)
-		om_ask(ask.answerer, /datum/om/prompt/confirm/camera_direction_ok, PROC_REF(camera_direction_confirmed), subject = C, camera = C, chances = ask.chances)
+CAPABILITIES(/datum/prompt/choice/camera_direction)
+	ref_one(nameof(camera), /obj/machinery/camera)
 
-/datum/om/prompt/confirm/camera_direction_ok
-	title = "Confirmation"
-	answer_on_no = TRUE
-	var/obj/machinery/camera/camera
-	var/chances = 0
-
-/datum/om/prompt/confirm/camera_direction_ok/prepare()
-	message = "Is this what you want? Chances Remaining: [chances]"
-	return TRUE
-
-/obj/item/camera_assembly/proc/camera_direction_confirmed(datum/om/prompt/confirm/camera_direction_ok/ask)
-	if(ask.yes)
+/obj/item/camera_assembly/proc/camera_direction_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	ask_camera_direction(ask.answerer, ask.camera, ask.chances - 1)
+	var/datum/prompt/choice/camera_direction/R = A.request
+	var/obj/machinery/camera/C = R.camera
+	if(A.answer.value != "LEAVE IT")
+		C.set_dir(text2dir(A.answer.value))
+	if(R.chances > 0)
+		open_request(src, /datum/prompt/yes_no/camera_direction_ok, PROC_REF(camera_direction_confirmed), answerer = R.answerer, title = "Confirmation", question = "Is this what you want? Chances Remaining: [R.chances]", camera = C, chances = R.chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-DECLARE_APPEARANCE(/obj/item/camera_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "camera1"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "cameracase")))
+/datum/prompt/yes_no/camera_direction_ok
+	var/obj/machinery/camera/camera
+	var/chances = 0
 
-DECLARE_INTERACTIONS(/obj/item/camera_assembly, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/datum/prompt/yes_no/camera_direction_ok)
+	ref_one(nameof(camera), /obj/machinery/camera)
+
+/obj/item/camera_assembly/proc/camera_direction_confirmed(datum/act/request/A)
+	var/datum/prompt/yes_no/camera_direction_ok/R = A.request
+	if(!A.answer || A.answer.value)
+		return
+	ask_camera_direction(R.answerer, R.camera, R.chances - 1)
+
+/// The look (the draw sweep: from its layers).
+/obj/item/camera_assembly/draw(datum/look/look)
+	..()
+	switch("[anchored]")
+		if("1")
+			look.state("camera1")
+		else
+			look.state("cameracase")
 
 /// Old attack_hand.
-/obj/item/camera_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camera_assembly/proc/interaction_hand(datum/act/op/A)
 	if(!anchored)
-		return FALSE
+		return OP_DECLINE
 	return TRUE
-
-/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
-/obj/item/camera_assembly/proc/weld(obj/item/weldingtool/WT, mob/user, on_done, list/done_args)
-	if(om_busy(src)) // a weld in progress claims it
-		return 0
-	var/result = use_tool(user, WT, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
-	return result
-
-
-/obj/item/camera_assembly/proc/weld_finished(on_done, list/done_args)
-	if(on_done)
-		call(src, on_done)(arglist(done_args))

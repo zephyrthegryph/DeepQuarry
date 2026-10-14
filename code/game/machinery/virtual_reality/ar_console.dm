@@ -18,14 +18,9 @@
 	perfect_replica = TRUE //All alien VR sleepers make perfect replicas.
 	spawn_with_clothing = FALSE //alien VR sleepers do not spawn with clothing.
 
-/obj/machinery/vr_sleeper/alien/Initialize(mapload)
-	. = ..()
-	if(possible_species && possible_species.len)
-		produce_species = pick(possible_species)
-
-/obj/machinery/vr_sleeper/alien/machine_step()
+/obj/machinery/vr_sleeper/alien/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		if(occupant)
 			perform_exit()
 			visible_message(span_infoplain(span_bold("\The [src]") + " emits a low droning sound, before the pod door clicks open."))
@@ -34,21 +29,14 @@
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		perform_exit()
 
-/obj/machinery/vr_sleeper/alien/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/vr_sleeper_alien_scan,
-		/datum/interaction/machine_verb/vr_sleeper_alien_eject,
-	)
-	..()
+CAPABILITIES(/obj/machinery/vr_sleeper/alien)
+	rolls(nameof(produce_species), PROC_REF(roll_produce_species))
+	op("scan_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_scan_impl)))
+	op("eject_impl", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_impl)))
 
-/// Old attackby: always fingerprints, then lets a medical scanner analyze the occupant.
-/datum/interaction/machine_item/vr_sleeper_alien_scan
-	id = "vr_sleeper_alien_scan"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl
-
-/obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/alien/proc/interaction_scan_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	add_fingerprint(user)
 
@@ -56,15 +44,10 @@
 		I.attack(occupant, user)
 	return TRUE
 
-/datum/interaction/machine_verb/vr_sleeper_alien_eject
-	id = "vr_sleeper_alien_eject"
-	name = "Eject"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl
-
-/obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vr_sleeper/alien/proc/interaction_eject_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	if(has_stat(BROKEN) || (eject_dead && occupant && occupant.stat == DEAD))
+	if(broken_now() || (eject_dead && occupant && occupant.stat == DEAD))
 		perform_exit()
 	else
 		go_out()
@@ -77,7 +60,12 @@
 		return
 
 	if(avatar())
-		om_ask(avatar(), /datum/om/prompt/confirm/leave_vr, PROC_REF(alien_exit))
+		ask_leave_vr(PROC_REF(alien_exit_confirmed))
+		return
+	alien_exit()
+
+/obj/machinery/vr_sleeper/alien/proc/alien_exit_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
 		return
 	alien_exit()
 
@@ -90,7 +78,7 @@
 	rel_clear(occupant, nameof(occupant.vr_link)) //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): materialized above
+	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(A == circuit)
 			continue
 		if(component_parts && (A in component_parts))
@@ -118,13 +106,15 @@
 
 	if(avatar() && !occupant.stat)
 		to_chat(occupant,span_alien("\The [src] begins to [pick("whir","hum","pulse")] as a screen appears in front of you."))
-		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(alien_engage_answered), title = "Commmit?", message = "This pod is already linked. Are you certain you wish to engage?", requires = list(/datum/om/check/inside_target), answer_on_no = TRUE)
+		open_request(src, /datum/prompt/yes_no, PROC_REF(alien_engage_answered), answerer = occupant, title = "Commmit?", question = "This pod is already linked. Are you certain you wish to engage?", ask_flags = ASK_INSIDE, timeout = 0)
 		return
 	alien_engage(occupant)
 
-/obj/machinery/vr_sleeper/alien/proc/alien_engage_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/occupant = ask.answerer
-	if(!ask.yes)
+/obj/machinery/vr_sleeper/alien/proc/alien_engage_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/occupant = A.request.answerer
+	if(!A.answer.value)
 		visible_message(span_alien("\The [src] pulses!"))
 		perform_exit()
 		return
@@ -143,12 +133,12 @@
 		// If the user has a non-default (Human) bodyshape, make it match theirs.
 		if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
 			avatar().shapeshifter_change_shape(occupant.species.name)
-		avatar().status_at_least(EFFECT_SLEEPING, 6)
+		avatar().status_at_least(STAT_SLEEPING, 6)
 
 		occupant.enter_vr(avatar())
 		if(spawn_with_clothing)
 			SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
-		om_grant(avatar(), GRANT_VERB, /mob/living/carbon/human/proc/perform_exit_vr, avatar())
+		grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar())
 		avatar().set_virtual_reality_mob(FALSE) //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
 
 		//This handles all the 'We make it look like ourself' code.
@@ -162,9 +152,9 @@
 			avatar().sync_organ_dna()
 			avatar().initialize_vessel()
 
-		OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
+		PUBLISH_LEGACY(avatar(), /datum/notice/human_dna_finalized)
 
-		om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(alien_avatar_renamed), message = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?")
+		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 
 		avatar().forceMove(T)
 		visible_message(span_alium("\The [src] [pick("gurgles", "churns", "sloshes")] before spitting out \the [avatar()]!"))
@@ -172,13 +162,13 @@
 	else
 
 		// There's only one body per one of these pods, so let's be kind.
-		om_ask(avatar(), /datum/om/prompt/text/vr_avatar_name, PROC_REF(alien_avatar_renamed), message = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar().name]. Would you like to change it to something else?")
+		open_request(src, /datum/prompt/text, PROC_REF(alien_avatar_renamed), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar().name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)
 		occupant.enter_vr(avatar())
 
-/obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/om/prompt/text/vr_avatar_name/ask)
-	if(ask.text)
-		avatar().real_name = ask.text
-		avatar().name = ask.text
+/obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/act/request/A)
+	if(A.answer && A.answer.value)
+		avatar().set_real_name(A.answer.value)
+		avatar().name = A.answer.value
 
 
 /*
@@ -193,3 +183,14 @@
 
 /obj/machinery/vr_sleeper/alien/beta_replicant
 	produce_species = SPECIES_REPLICANT_BETA
+
+/obj/machinery/vr_sleeper/alien/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null
+
+/// A pod with a list of species makes one of them.
+/obj/machinery/vr_sleeper/alien/proc/roll_produce_species(datum/roller/R)
+	return length(possible_species) ? R.choose(possible_species) : produce_species

@@ -25,6 +25,8 @@
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
 
+TRACKED(/obj/structure/simple_door, state)
+
 /// Heat behaviour rule: a flammable material door burns.
 /obj/structure/simple_door/proc/rule_burn(datum/rule/rule)
 	TemperatureAct(get_temperature())
@@ -34,11 +36,14 @@
 	if(burnt > 0)
 		take_damage(burnt * 10, BURN, FIRE, FALSE)
 
-/obj/structure/simple_door/Initialize(mapload, material_name)
-	. = ..()
-	set_material(material_name)
+/// The material the door is made of (its constructor param; a subtype's default).
+/obj/structure/simple_door/var/material_name = MAT_STEEL
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A door of no known material is not made.
+/obj/structure/simple_door/proc/make_of(material_key)
+	set_material(material_key)
 	if(!material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
 
 /obj/structure/simple_door/proc/set_material(material_name)
 	if(!material_name)
@@ -46,9 +51,9 @@
 	material = get_material_by_name(material_name)
 	if(!material)
 		return
-	max_integrity = max(1,round(material.integrity/10)) * 10
+	set_max_integrity(max(1,round(material.integrity/10)) * 10)
 	update_integrity(max_integrity)
-	icon_state = material.door_icon_base
+	set_icon_state(material.door_icon_base)
 	name = "[material.display_name] door"
 	color = material.icon_colour
 	set_rad_insulation(material.radiation_transmission(RAD_DOOR_THICKNESS_MM))
@@ -56,44 +61,39 @@
 		set_opacity(0)
 	else
 		set_opacity(1)
-	if(material.products_need_process())
-		om_task_periodic(src, PERIODIC_SLOW)
+	set_radiating(material.products_need_process())
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/structure/simple_door/get_material()
 	return material
 
-/obj/structure/simple_door/Bumped(atom/user)
-	..()
+/// A door of a radioactive material gives off its radiation every few seconds.
+/obj/structure/simple_door/var/tmp/radiating = FALSE
+TRACKED(/obj/structure/simple_door, radiating)
+
+CAPABILITIES(/obj/structure/simple_door)
+	every(2 SECONDS, then(PROC_REF(radiate_step)), when = nameof(radiating))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("dig", item(/obj/item/pickaxe), label("Dig"), when(req(PROC_REF(is_breakable))), begins(MSG(simple_door/digging)), wait(PROC_REF(dig_time)), then(PROC_REF(dug)))
+	// those aren't machinery, they're slabs of a mineral: a cyborg beside it opens it, the AI can't
+	op("silicon_open", remote(), label("Open"), when(req_actor_kind(/mob/living/silicon/robot)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
+	param(nameof(material_name), pos = 1, apply = PROC_REF(make_of))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/simple_door/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/user = N.bumper
 	if(!state)
 		return TryToSwitchState(user)
 	return
 
-/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
-/obj/structure/simple_door/proc/simple_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isAI(user)) //so the AI can't open it
-		return TRUE
-	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
-		TryToSwitchState(user)
-	return TRUE
-
-/obj/structure/simple_door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/simple_door_hand,
-		/datum/interaction/entry_item/simple_door_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use)))
-	..()
-
-/// Old attack_hand: open/close the door.
-/datum/interaction/entry_hand/simple_door_hand
-	id = "simple_door_hand"
-	name = "Use"
-	effect = /obj/structure/simple_door/proc/interaction_hand
-
-/obj/structure/simple_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	TryToSwitchState(user)
-	return TRUE
+/// A hand (or a cyborg beside it) opens or shuts it.
+/obj/structure/simple_door/proc/interaction_hand(datum/act/op/A)
+	TryToSwitchState(A.actor)
+	return OP_OK
 
 /obj/structure/simple_door/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/effect/beam))
@@ -131,13 +131,12 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]opening",src)
-	om_after(src, 1 SECOND, PROC_REF(open_finish))
+	after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/simple_door/proc/open_finish()
 	set_density(FALSE)
 	set_opacity(0)
-	state = 1
-	update_icon()
+	set_state(1)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 
@@ -145,28 +144,26 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]closing",src)
-	om_after(src, 1 SECOND, PROC_REF(close_finish))
+	after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/simple_door/proc/close_finish()
 	set_density(TRUE)
 	set_opacity(1)
-	state = 0
-	update_icon()
+	set_state(0)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 
 /obj/structure/simple_door/proc/appearance_base()
 	return material.door_icon_base
 
-APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/simple_door/draw(datum/look/look)
+	..()
+	look.state("[appearance_base()][state ? "open" : ""]")
 
-/// Old attackby: lock/unlock with the matching key, dig/hit the door, or fall back to toggling.
-/datum/interaction/entry_item/simple_door_item
-	id = "simple_door_item"
-	name = "Use"
-	effect = /obj/structure/simple_door/proc/interaction_item
-
-/obj/structure/simple_door/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/simple_door/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -178,12 +175,10 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return TRUE
-	if(istype(W,/obj/item/pickaxe) && breakable)
-		var/obj/item/pickaxe/digTool = W
-		act_message(user, src, others = span_danger("%U% starts digging %T%!"))
-		om_task_timed(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
+		return OP_OK
+	if(istype(W,/obj/item/lockpick))
+		return OP_PASS // the pick's own "pick" op (code/game/objects/items/lockpicks.dm) works the lock
+	if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		act_message(user, src, others = span_danger("%U% hits %T% with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
 			play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
@@ -193,22 +188,32 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 			play_sfx(src, SFX_WEAPONS_SMASH)
 		receive_weapon_hit(W, user)
 	else
-		interaction_hand(user, W, interaction)
-	return TRUE
+		TryToSwitchState(user)
+	return OP_OK
 
-/obj/structure/simple_door/proc/attackby_timed_done(mob/user)
-	if(!(src))
-		return
-	act_message(user, src, others = span_danger("%U% finished digging %T%!"))
+MSG_DEF(simple_door/digging, null, span_danger("%U% starts digging %T%!"))
+
+/obj/structure/simple_door/proc/is_breakable(datum/act/op/A)
+	return (breakable) ? null : MSG(req_failed)
+
+/// Digging takes as long as the pick is slow and the door is sound.
+/obj/structure/simple_door/proc/dig_time(datum/act/op/A)
+	var/obj/item/pickaxe/digTool = A.held
+	return digTool.digspeed * get_integrity() / 10
+
+/obj/structure/simple_door/proc/dug(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger("%U% finished digging %T%!"))
 	Dismantle()
 
-/obj/structure/simple_door/welder_act(mob/user, obj/item/W)
+/obj/structure/simple_door/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!breakable)
-		return TRUE
+		return OP_OK
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(material.ignition_point && WT.remove_fuel(0, user))
 		TemperatureAct(150)
-	return TRUE
+	return OP_OK
 
 /// Projectile adapter: a door soaks most of a round.
 /obj/structure/simple_door/projectile_damage(obj/item/projectile/P, def_zone)
@@ -232,7 +237,7 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("The [src] is destroyed!"))
 
-/obj/structure/simple_door/periodic_step()
+/obj/structure/simple_door/proc/radiate_step(datum/act/A)
 	// material.radioactivity moved to a component; query the helper.
 	var/rad = dq_material_radioactivity(material)
 	if(!rad)
@@ -246,30 +251,30 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 		strength = rad
 	)
 
-/obj/structure/simple_door/iron/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_IRON)
+/obj/structure/simple_door/iron
+	material_name = MAT_IRON
 
-/obj/structure/simple_door/silver/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SILVER)
+/obj/structure/simple_door/silver
+	material_name = MAT_SILVER
 
-/obj/structure/simple_door/gold/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_GOLD)
+/obj/structure/simple_door/gold
+	material_name = MAT_GOLD
 
 /obj/structure/simple_door/uranium
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	proximity_tracked = TRUE
 
-/obj/structure/simple_door/uranium/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_URANIUM)
-
-DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
+/obj/structure/simple_door/uranium
+	material_name = MAT_URANIUM
 
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/structure/simple_door/uranium/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/// Radiates only while a client is near (the proximity tracker, STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/structure/simple_door/uranium)
+	every(2 SECONDS, then(PROC_REF(uranium_door_step)), when = STAT_RELEVANCE)
+
+/obj/structure/simple_door/uranium/proc/uranium_door_step(datum/act/timer/A)
 	radiate()
 
 /obj/structure/simple_door/uranium/proc/radiate()
@@ -289,59 +294,59 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-/obj/structure/simple_door/sandstone/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SANDSTONE)
+/obj/structure/simple_door/sandstone
+	material_name = MAT_SANDSTONE
 
-/obj/structure/simple_door/phoron/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_PHORON)
+/obj/structure/simple_door/phoron
+	material_name = MAT_PHORON
 
-/obj/structure/simple_door/diamond/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_DIAMOND)
+/obj/structure/simple_door/diamond
+	material_name = MAT_DIAMOND
 
 //I was going to give wooden doors RAD_VERY_LIGHT_INSULATION but they need a proper parent instead of this garbage.
-/obj/structure/simple_door/wood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_WOOD)
+/obj/structure/simple_door/wood
+	material_name = MAT_WOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/hardwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_HARDWOOD)
+/obj/structure/simple_door/hardwood
+	material_name = MAT_HARDWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/sifwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_SIFWOOD)
+/obj/structure/simple_door/sifwood
+	material_name = MAT_SIFWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/birchwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_BIRCHWOOD)
+/obj/structure/simple_door/birchwood
+	material_name = MAT_BIRCHWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/pinewood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_PINEWOOD)
+/obj/structure/simple_door/pinewood
+	material_name = MAT_PINEWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/oakwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_OAKWOOD)
+/obj/structure/simple_door/oakwood
+	material_name = MAT_OAKWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/acaciawood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_ACACIAWOOD)
+/obj/structure/simple_door/acaciawood
+	material_name = MAT_ACACIAWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/redwood/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_REDWOOD)
+/obj/structure/simple_door/redwood
+	material_name = MAT_REDWOOD
 	knock_sound = SFX_MACHINES_DOOR_KNOCK_WOOD
 
-/obj/structure/simple_door/resin/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_RESIN)
+/obj/structure/simple_door/resin
+	material_name = MAT_RESIN
 
-/obj/structure/simple_door/cult/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_CULT)
+/obj/structure/simple_door/cult
+	material_name = MAT_CULT
 
-/obj/structure/simple_door/glamour/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_GLAMOUR)
+/obj/structure/simple_door/glamour
+	material_name = MAT_GLAMOUR
 
-/obj/structure/simple_door/snowbrick/Initialize(mapload, material_name)
-	. = ..(mapload, material_name || MAT_SNOWBRICK)
+/obj/structure/simple_door/snowbrick
+	material_name = MAT_SNOWBRICK
 
 /obj/structure/simple_door/cult/TryToSwitchState(atom/user)
 	if(isliving(user))
@@ -353,47 +358,38 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 // start: Allows removing resin doors.
 // Resin's Use fully replaces the base simple_door's (the original override never called
 // ..() into it either), so it declares its own interaction.
-/obj/structure/simple_door/resin/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/simple_door_resin_tear,
-		/datum/interaction/entry_hand/simple_door_resin_hand,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use))) // doesn't chain to the base door's
+// The resin door replaces the base door's hand and item: a hand pulls at it, in combat mode tears at it; the cyborg's open stays.
+CAPABILITIES(/obj/structure/simple_door/resin)
+	without("use")
+	without("item")
+	op("resin_hand", hand(), label("Use"), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(interaction_resin_hand)))
+	op("tear", hand(), label("Tear at"), stance(I_HURT), then(PROC_REF(interaction_resin_tear)))
 
-/// Old attack_hand: a Hulk destroys it, a xenomorph melts through it, or it opens as usual.
-/datum/interaction/entry_hand/simple_door_resin_hand
-	id = "simple_door_resin_hand"
-	name = "Use"
-	effect = /obj/structure/simple_door/resin/proc/interaction_resin_hand
-
-/obj/structure/simple_door/resin/proc/interaction_resin_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A Hulk destroys it, a xenomorph melts through it, or it opens as usual.
+/obj/structure/simple_door/resin/proc/interaction_resin_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		Dismantle(1)
-		return TRUE
+		return OP_OK
 	TryToSwitchState(user)
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand's harm branch: a carbon tears at the resin, or a xenomorph melts it (combat mode only).
-/datum/interaction/entry_hand/simple_door_resin_tear
-	id = "simple_door_resin_tear"
-	name = "Tear at"
-	effect = /obj/structure/simple_door/resin/proc/interaction_resin_tear
-	stance = I_HURT
-
-/obj/structure/simple_door/resin/proc/interaction_resin_tear(mob/user, obj/item/held, datum/interaction/interaction)
+/// Combat mode: a carbon tears at the resin, or a xenomorph melts it; a Hulk or anyone else gets the ordinary use.
+/obj/structure/simple_door/resin/proc/interaction_resin_tear(datum/act/op/A)
+	var/mob/user = A.actor
 	if((HULK in user.mutations) || !istype(user, /mob/living/carbon))
-		return FALSE // a Hulk destroys it, anyone else opens it: interaction_resin_hand()
+		return interaction_resin_hand(A)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/mob/living/carbon/M = user
 	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
 		act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 		Dismantle(1)
-		return TRUE
+		return OP_OK
 	act_message(user, null, others = span_warning("%U% tears at the [name]!"))
 	take_damage(20, BRUTE, MELEE, FALSE)
-	return TRUE
+	return OP_OK
 // end.
 
 /datum/material/flockium
@@ -417,5 +413,5 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 	icon = 'icons/goonstation/featherzone.dmi'
 	icon_state = "flockdoor"
 
-/obj/structure/simple_door/flock/Initialize(mapload, newmat)
-	. = ..(mapload, MAT_FLOKIUM)
+/obj/structure/simple_door/flock
+	material_name = MAT_FLOKIUM

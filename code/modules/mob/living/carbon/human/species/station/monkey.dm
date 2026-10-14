@@ -96,8 +96,8 @@
 
 /datum/species/monkey/handle_post_spawn(mob/living/carbon/human/H)
 	if(!H.ckey)
-		H.can_be_drop_prey = TRUE
-		H.digest_leave_remains = TRUE
+		H.vore_prefs.can_be_drop_prey = TRUE
+		H.vore_prefs.digest_leave_remains = TRUE
 		H.set_low_priority(TRUE)
 	return ..()
 
@@ -203,27 +203,27 @@
 /mob/living/carbon/human/sharkm
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sharkm/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_AKULA)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+/mob/living/carbon/human/sharkm
+	species_at_make = SPECIES_MONKEY_AKULA
+TYPE_TABLE(/mob/living/carbon/human/sharkm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sergallingm
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sergallingm/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_SERGAL)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+/mob/living/carbon/human/sergallingm
+	species_at_make = SPECIES_MONKEY_SERGAL
+TYPE_TABLE(/mob/living/carbon/human/sergallingm, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/sparram
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/sparram/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_NEVREAN)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+/mob/living/carbon/human/sparram
+	species_at_make = SPECIES_MONKEY_NEVREAN
+TYPE_TABLE(/mob/living/carbon/human/sparram, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/wolpin
 	low_sorting_priority = TRUE
 
-/mob/living/carbon/human/wolpin/Initialize(mapload)
-	. = ..(mapload, SPECIES_MONKEY_VULPKANIN)
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
+/mob/living/carbon/human/wolpin
+	species_at_make = SPECIES_MONKEY_VULPKANIN
+TYPE_TABLE(/mob/living/carbon/human/wolpin, initial_species_copy, TRUE)

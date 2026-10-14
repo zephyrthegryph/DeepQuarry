@@ -1,5 +1,5 @@
 /mob/living/proc/regenerate_limbs(noheal = FALSE, list/excluded_zones = list())
-	OM_EMIT(src, /datum/om/event/living_regenerate_limbs, noheal, excluded_zones)
+	return
 
 /mob/living/carbon/human/regenerate_limbs(noheal = FALSE, list/excluded_zones = list())
 	var/list/zone_list = BP_ALL
@@ -8,7 +8,7 @@
 	for(var/organ in zone_list)
 		regenerate_limb(organ)
 	for(var/obj/item/organ/external/stump/stump in organs)
-		qdel(stump)
+		replaced_by(stump, src)
 
 /mob/living/proc/regenerate_limb(limb_zone, noheal)
 	return
@@ -20,12 +20,11 @@
 		if(!bodypart.is_stump())
 			return FALSE
 		bodypart.removed()
-		qdel(bodypart)
+		replaced_by(bodypart, src)
 		bodypart = null
 	var/list/organ_data = species.has_limbs[limb_zone]
 	var/limb_path = organ_data["path"]
 	var/obj/item/organ/O = new limb_path(src)
 	organ_data["descriptor"] = O.name
 
-	update_icons_body()
 	return TRUE

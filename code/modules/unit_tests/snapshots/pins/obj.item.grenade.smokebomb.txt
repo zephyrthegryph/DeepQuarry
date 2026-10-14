@@ -1,0 +1,49 @@
+@obj.item.grenade human|none
+@obj.item.grenade robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Grenade interaction hand
++3 menu: Use screwdriver
++4 click: Click: Grenade interaction hand
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Grenade interaction hand
++2 menu: Set smoke colour
++4 click: Click: Set smoke colour
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Grenade interaction hand
++3 click: Click: Grenade interaction hand
+@obj human|/obj/item/kit
++1 menu: Grenade interaction hand
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Grenade interaction hand
++4 click: Click: Grenade interaction hand
+keys: collect_item, det_time_10_30, det_time_1_10, det_time_30_50, det_time_50_1, drag_buckle, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, prime, smoke_color, toggle_digestable, use_screwdriver

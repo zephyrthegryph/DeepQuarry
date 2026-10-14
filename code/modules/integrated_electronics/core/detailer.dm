@@ -3,7 +3,6 @@
 	desc = "A combination autopainter and flash anodizer designed to give electronic assemblies a colorful, wear-resistant finish."
 	icon = 'icons/obj/integrated_electronics/electronic_tools.dmi'
 	icon_state = "detailer"
-	item_flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	var/detail_color = COLOR_ASSEMBLY_WHITE
 	var/static/list/color_list = list(
@@ -25,35 +24,30 @@
 		"hot pink" = COLOR_ASSEMBLY_HOT_PINK
 		)
 
-/obj/item/integrated_electronics/detailer/Initialize(mapload)
-	update_icon()
-	return ..()
+/obj/item/integrated_electronics/detailer/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color", color = detail_color))
 
-DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/integrated_electronics/detailer/appearance_overlays()
-	. = list()
-	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")
-	detail_overlay.color = detail_color
-	. += detail_overlay
+/obj/item/integrated_electronics/detailer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["detail_color"] = detail_color
+	data["color_list"] = color_list
+	return data
 
-DECLARE_UI_STATE(/obj/item/integrated_electronics/detailer, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/integrated_electronics/detailer, "ICDetailer")
-
-UI_DATA(/obj/item/integrated_electronics/detailer, "detail_color", "color_list:list")
-
-UI_ACT(/obj/item/integrated_electronics/detailer, "change_color", ui_act_change_color, UI_ARG_TEXT("color"))
-UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
-	if(!(params["color"] in color_list))
+/obj/item/integrated_electronics/detailer/proc/ui_act_change_color(datum/act/op/A, color)
+	if(!(color in color_list))
 		return // to prevent href exploits causing runtimes
-	detail_color = color_list[params["color"]]
-	update_icon()
+	set_detail_color(color_list[color])
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/detailer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/detailer)
+	configure(item_worn(flags = NOBLUDGEON))
+	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
+	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
 
-/// Old attack_self.
-/obj/item/integrated_electronics/detailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/item/integrated_electronics/detailer/proc/detailer_controls_requested(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 

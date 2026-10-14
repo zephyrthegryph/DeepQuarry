@@ -23,18 +23,21 @@
 	/// Relation list: the registered pilot helmets.
 	var/list/obj/item/clothing/head/pilot/helmets
 
+CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
+	ref_many(nameof(helmets))
+	owns_one(nameof(web_master), /datum/shuttle_web_master)
+
 /datum/shuttle/autodock/web_shuttle/New()
-	own_set(src, nameof(web_master), new web_master_type(src))
+	rel_set(src, nameof(web_master), new web_master_type(src))
 	build_destinations()
 	if(autopilot)
-		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
+		set_shuttle_flags(shuttle_flags | SHUTTLE_FLAGS_PROCESS)
 		set_process_state(DO_AUTOPILOT)
 		if(autopilot_first_delay)
 			autopilot_delay = autopilot_first_delay
 	if(!visible_name)
 		visible_name = name
 	..()
-
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!
@@ -127,8 +130,8 @@
 		if(autopilot)
 			return
 		autopilot = TRUE
-		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
-		SSshuttles.process_shuttles |= src
+		set_shuttle_flags(shuttle_flags | SHUTTLE_FLAGS_PROCESS)
+		rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 		autopilot_delay = initial(autopilot_delay)
 		if(process_state == IDLE_STATE)
 			set_process_state(DO_AUTOPILOT)
@@ -136,8 +139,8 @@
 		if(!autopilot)
 			return
 		autopilot = FALSE
-		shuttle_flags_remove(SHUTTLE_FLAGS_PROCESS)
-		SSshuttles.process_shuttles -= src
+		set_shuttle_flags(shuttle_flags & ~SHUTTLE_FLAGS_PROCESS)
+		rel_remove(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 		if (process_state == DO_AUTOPILOT)
 			set_process_state(initial(process_state))
 
@@ -146,10 +149,16 @@
 	message_passengers(padded_message)
 
 /datum/shuttle/autodock/web_shuttle/proc/rename_shuttle(mob/user)
+	return rename_shuttle_stage(user, null, FALSE)
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_stage(mob/user, response, response_ready)
 	if(!can_rename)
 		to_chat(user, span_warning("You can't rename this vessel."))
 		return
-	var/new_name = rerun_ask(user, "k161", PROC_REF(rename_shuttle), args, /datum/om/prompt/text, message = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", title = "Rename Shuttle", default = visible_name)
+	if(!response_ready)
+		open_request(src, /datum/prompt/text/web_shuttle_name, PROC_REF(rename_shuttle_answered), answerer = user, default = visible_name)
+		return
+	var/new_name = response
 	if(isnull(new_name))
 		return
 	var/sanitized_name = sanitizeName(new_name, MAX_NAME_LEN, TRUE)
@@ -197,38 +206,38 @@
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
 
-/obj/machinery/computer/shuttle_control/web/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shuttle_control_web_register_helmet,
-	)
-	..()
-
-/datum/interaction/machine_item/shuttle_control_web_register_helmet
-	id = "shuttle_control_web_register_helmet"
-	name = "Register helmet"
-	held_type = /obj/item/clothing/head/pilot
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/shuttle_control/web/proc/has_shuttle, null))
-	effect = /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet
-
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
-	return SSshuttles.shuttles[shuttle_tag]
+	return shuttles_shuttles()[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
-	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
+/// Requirement (was REQ_* has_shuttle): the legacy check answers TRUE to pass.
+/obj/machinery/computer/shuttle_control/web/proc/has_shuttle_holds(datum/act/op/A)
+	var/answer = has_shuttle(A.actor, src, A.held)
+	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
+
+/obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clothing/head/pilot/H = A.held
+	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	rel_set(H, nameof(H.shuttle_comp), src)
 	rel_add(shuttle, nameof(shuttle.helmets), H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control/web, "merge:ui_data_obj_machinery_computer_shuttle_control_web{}")
+/obj/machinery/computer/shuttle_control/web/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	var/list/merged_1 = ui_data_obj_machinery_computer_shuttle_control_web(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/computer/shuttle_control/web's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/shuttle_control/web's window data.
 /obj/machinery/computer/shuttle_control/web/proc/ui_data_obj_machinery_computer_shuttle_control_web(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/routes[0]
-	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(user, span_warning("Unable to establish link with the shuttle."))
 		return
@@ -301,73 +310,84 @@ UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control/web, "merge:ui_data_obj_
 
 	return data
 
-/obj/machinery/computer/shuttle_control/web/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/shuttle_control/web/console_gate(mob/user)
 	if(!..())
 		return FALSE
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!istype(WS))
 		message_admins("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
 		return FALSE
 	if(WS.moving_status != SHUTTLE_IDLE)
-		to_chat(ui.user, span_blue("[WS.visible_name] is busy moving."))
+		to_chat(user, span_blue("[WS.visible_name] is busy moving."))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "rename_command", ui_act_rename_command)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_rename_command)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
-	WS.rename_shuttle(ui.user)
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_rename_command(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
+	WS.rename_shuttle(user)
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "dock_command", ui_act_dock_command)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_dock_command)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_dock_command(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
-		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
+		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
 	WS.dock()
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "undock_command", ui_act_undock_command)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_undock_command)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_undock_command(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
-		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
+		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
 	WS.undock()
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "toggle_cloaking", ui_act_toggle_cloaking)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_toggle_cloaking)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_cloaking(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(!WS.can_cloak)
 		return
 	dq_set_cloaked(WS, !dq_get_cloaked(WS))
 	if(dq_get_cloaked(WS))
-		to_chat(ui.user, span_danger("Ship stealth systems have been activated. The station will not be warned of our arrival."))
+		to_chat(user, span_danger("Ship stealth systems have been activated. The station will not be warned of our arrival."))
 	else
-		to_chat(ui.user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
+		to_chat(user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "toggle_autopilot", ui_act_toggle_autopilot)
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_toggle_autopilot)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_toggle_autopilot(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	WS.adjust_autopilot(!WS.autopilot)
 
-UI_ACT(/obj/machinery/computer/shuttle_control/web, "traverse", ui_act_traverse, UI_ARG_NUM("traverse"))
-UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
-	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+/obj/machinery/computer/shuttle_control/web/proc/ui_act_traverse(datum/act/op/A, traverse)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/datum/shuttle/autodock/web_shuttle/WS = shuttles_shuttles()[shuttle_tag]
 	if(WS.autopilot)
-		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
+		to_chat(user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
 
 	if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
-		to_chat(ui.user, span_red("The ship's drive is inoperable while the engines are charging."))
+		to_chat(user, span_red("The ship's drive is inoperable while the engines are charging."))
 		return
 
-	var/index = params["traverse"]
+	var/index = traverse
 	var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
 	if(!istype(new_route))
 		message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
 		return
 
-	if(!check_docking(ui.user, WS))
+	if(!check_docking(user, WS))
 		return TRUE
 
 	var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
@@ -376,11 +396,11 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 		return
 
 	rel_set(WS, nameof(/datum/shuttle/autodock::next_location), target_destination.my_landmark())
-	if(!can_move(WS, ui.user))
+	if(!can_move(WS, user))
 		return
 
 	rel_set(WS.web_master, nameof(/datum/shuttle_web_master::future_destination), target_destination)
-	to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
+	to_chat(user, span_notice("[WS.visible_name] flight computer received command."))
 	WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 
 	var/travel_time = new_route.travel_time * WS.flight_time_modifier
@@ -395,13 +415,13 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	if(MS.skip_docking_checks() || MS.check_undocked())
 		return 1
 
-	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"))
+	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/prompt/choice, question = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"), buttons = TRUE)
 	if(isnull(choice))
 		return
 	if(!choice || choice == "Cancel")
 		return 0
 
-	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"))
+	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/prompt/choice, question = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"), buttons = TRUE)
 	if(isnull(_answer_k402))
 		return
 	choice = _answer_k402
@@ -435,13 +455,14 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 
 /obj/shuttle_connector/Initialize(mapload)
 	. = ..()
-	om_hook(SSshuttles, /datum/om/event/observer_shuttle_added, src, PROC_REF(setup_routes))
+	observe(SSshuttles, /datum/notice/observer_shuttle_added, src, then(PROC_REF(setup_routes)))
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
-/obj/shuttle_connector/proc/setup_routes(datum/source, datum/om/event/observer_shuttle_added/event)
-	EVENT_HANDLER
+/obj/shuttle_connector/proc/setup_routes(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/observer_shuttle_added/event = A
 	var/new_shuttle = event.shuttle
-	var/datum/shuttle/autodock/web_shuttle/ES = SSshuttles.shuttles[shuttle_name]
+	var/datum/shuttle/autodock/web_shuttle/ES = shuttles_shuttles()[shuttle_name]
 	if(ES != new_shuttle)
 		return // Its not our shuttle! Ignore!
 	if(destinations && istype(ES))
@@ -449,7 +470,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 
 		for(var/new_dest in destinations)
 			var/datum/shuttle_destination/D = new new_dest(WM)
-			own_add(WM, nameof(WM.destinations), D)
+			rel_add(WM, nameof(WM.destinations), D)
 
 			for(var/type_to_link in D.routes_to_make)
 				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)
@@ -457,7 +478,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	else
 		WARNING("[log_info_line()]'s shuttle [global.log_info_line(ES)] initialized but destinations:[destinations]")
 
-	qdel(src)
+	spent(src)
 
 //A sensor for detecting air outside shuttles! Handy, that.
 /obj/machinery/shuttle_sensor
@@ -466,7 +487,11 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	icon_state = "airlock_sensor_standby"
 	var/id_tag
 
-/obj/machinery/shuttle_sensor/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/shuttle_sensor)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/shuttle_sensor/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL //nty
 
 /obj/machinery/shuttle_sensor/proc/air_list()
@@ -503,10 +528,27 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	if(aircontents)
 		return aircontents
 
-/datum/shuttle/autodock/web_shuttle/relations()
-	. = ..()
-	. += rel_many(nameof(helmets))
-/obj/machinery/computer/shuttle_control/web/relations()
-	. = ..()
-	. += rel_many(nameof(linked_doors))
-	. += rel_many(nameof(linked_sensors))
+CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
+	ref_many(nameof(linked_doors))
+	ref_many(nameof(linked_sensors))
+	op("rename_command", ui_act("rename_command"), then(PROC_REF(ui_act_rename_command)))
+	op("dock_command", ui_act("dock_command"), then(PROC_REF(ui_act_dock_command)))
+	op("undock_command", ui_act("undock_command"), then(PROC_REF(ui_act_undock_command)))
+	op("toggle_cloaking", ui_act("toggle_cloaking"), then(PROC_REF(ui_act_toggle_cloaking)))
+	op("toggle_autopilot", ui_act("toggle_autopilot"), then(PROC_REF(ui_act_toggle_autopilot)))
+	op("traverse", ui_act("traverse", arg("traverse", num())), then(PROC_REF(ui_act_traverse)))
+	op("register_helmet", item(/obj/item/clothing/head/pilot), priority(OP_PRIORITY_DEFAULT - 1), label("Register helmet"), when(req(PROC_REF(has_shuttle_holds))), then(PROC_REF(interaction_register_helmet)))
+
+/datum/prompt/text/web_shuttle_name
+	title = "Rename Shuttle"
+	question = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely."
+	timeout = 0
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = rename_shuttle_apply(A)
+	SStgui.update_uis(src)
+
+/datum/shuttle/autodock/web_shuttle/proc/rename_shuttle_apply(datum/act/request/A)
+	return rename_shuttle_stage(A.request.answerer, A.request.value, TRUE)

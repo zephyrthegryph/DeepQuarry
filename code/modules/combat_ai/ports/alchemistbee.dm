@@ -54,9 +54,9 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 
 /proc/dq_alchemistbee_count_near(datum/ai_brain/brain, atom/center, radius)
 	. = 0
-	if(!brain.model || !center)
+	if(!center)
 		return 0
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(get_dist(center, M) > radius)
 			continue
 		. += 1
@@ -81,7 +81,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 
 /datum/ai_behavior/alchemistbee_chemblast/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vr/alchemistbee/B = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(B) || !threat)
 		return null
 	if(!B.can_special_attack(threat))
@@ -122,7 +122,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 
 /datum/ai_behavior/alchemistbee_dangerbolt/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vr/alchemistbee/B = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(B) || !threat)
 		return null
 	if(!B.can_special_attack(threat))
@@ -130,8 +130,8 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 	// Net "pullable" tally around the target, mirroring the legacy ++/-- logic:
 	// free attackable movables increment, anchored ones decrement.
 	var/tally = 0
-	if(brain.model)
-		for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	if(brain.perceives())
+		for(var/mob/living/M as anything in brain.known_hostiles())
 			if(get_dist(threat, M) > ALCHEMISTBEE_DANGERBOLT_RADIUS)
 				continue
 			if(M.anchored)
@@ -170,7 +170,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 
 /datum/ai_behavior/alchemistbee_homingcluster/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vr/alchemistbee/B = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(B) || !threat)
 		return null
 	if(!B.can_special_attack(threat))
@@ -208,7 +208,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 
 /datum/ai_behavior/alchemistbee_aoe_backpedal/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vr/alchemistbee/B = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(B) || !threat)
 		return null
 	var/dist = get_dist(B, threat)
@@ -231,7 +231,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 	var/danger_range = max(ALCHEMISTBEE_HOMINGCLUSTER_RADIUS, ALCHEMISTBEE_DANGERBOLT_RADIUS) + 3
 	var/turf/away = get_step_away(owner, target, danger_range)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 

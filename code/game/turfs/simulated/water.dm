@@ -24,37 +24,41 @@
 
 	var/watercolor = null
 
-/turf/simulated/floor/water/proc/handle_water_icons()
-	icon_state = under_state // This isn't set at compile time in order for it to show as water in the map editor.
-	var/image/water_sprite = image(icon = water_icon, icon_state = water_state, layer = WATER_LAYER)
-	add_overlay(water_sprite)
 
 /turf/simulated/floor/water/Initialize(mapload)
 	. = ..()
-	update_icon()
 	handle_fish()
 	// soundloop = new(list(src), FALSE) // Removing soundloop for now.
 	// soundloop.start() // Removing soundloop for now.
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/water/appearance_overlays()
-	. = list()
-	. += ..()
-	handle_water_icons()
+/// The floor's look, then the water over its bed.
+/turf/simulated/floor/water/draw(datum/look/look)
+	..()
+	look_water(look)
+
+/// The bed shows its state (it is not set at compile time in order for the turf to show as water in the map editor) and the water sprite lies over it.
+/turf/simulated/floor/water/proc/look_water(datum/look/look)
+	look.state(under_state)
+	look.overlay(look_overlay_image(water_icon, water_state, layer = WATER_LAYER))
+
+/turf/simulated/floor/water/edge_look_state()
+	return under_state
 
 /turf/simulated/floor/water/get_edge_icon_state()
 	return "water_shallow"
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
-	INTERACT_INSERT(/obj/item/material/fishing_rod, PROC_REF(water_fishing), "Cast a line"), \
-	INTERACT_ITEM("Fill", PROC_REF(water_fill)), \
-)
+CAPABILITIES(/turf/simulated/floor/water)
+	op("water_fishing", item(/obj/item/material/fishing_rod), label("Cast a line"), priority(OP_PRIORITY_PART + 1), claims(), starts(PROC_REF(fishing_cast)), wait(PROC_REF(fishing_wait_time)), on_interrupt(PROC_REF(fishing_ended)), then(PROC_REF(fishing_done)))
+	op("water_fill", item(/obj/item), label("Fill"), then(PROC_REF(water_fill)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(explosive_fishing)))
 
 /// Old attackby: fill an open container or wet a mop.
-/turf/simulated/floor/water/proc/water_fill(mob/user, obj/item/O, datum/interaction/interaction)
+/turf/simulated/floor/water/proc/water_fill(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
-		RG.reagents.add_reagent(reagent_type, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
+		RG.reagents.add_reagent(reagent_type, min(RG.reagents.get_free_space(), reagent_transfer_amount(RG)))
 		act_message(user, src, MSG_SELF(span_notice("You fill %I% using %T%.")), MSG_OTHERS(span_notice("%U% fills %I% using %T%.")), item = RG)
 		return TRUE
 
@@ -64,7 +68,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 		play_sfx(src, SFX_EFFECTS_SLOSH)
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /turf/simulated/floor/water/return_air_for_internal_lifeform(mob/living/L)
 	if(L && L.lying)
@@ -73,7 +77,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 			var/datum/gas_mixture/above_air = return_air()
 			var/amount = 300
 			water_breath.adjust_gas(GAS_O2, amount) // Assuming water breathes just extract the oxygen directly from the water.
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 		else
 			var/gasid = GAS_CO2
@@ -84,9 +88,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 			var/datum/gas_mixture/water_breath = new()
 			var/datum/gas_mixture/above_air = return_air()
 			water_breath.adjust_gas(gasid, BREATH_MOLES) // They have no oxygen, but non-zero moles and temp
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
-	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !L.flying)
+	if(L && L.is_bad_swimmer() && depth >= 2 && !L.buckled() && !stat_value(L, STAT_FLYING))
 		if(prob(10))
 			act_message(L, null, MSG_SELF(span_warning("You struggle to keep your head above the water!")), MSG_OTHERS(span_notice("%U% splashes wildly.")))
 		if(L.can_breathe_water())
@@ -94,7 +98,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 			var/datum/gas_mixture/above_air = return_air()
 			var/amount = 300
 			water_breath.adjust_gas(GAS_O2, amount) // Assuming water breathes just extract the oxygen directly from the water.
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 		else
 			var/gasid = GAS_CO2
@@ -105,16 +109,16 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 			var/datum/gas_mixture/water_breath = new()
 			var/datum/gas_mixture/above_air = return_air()
 			water_breath.adjust_gas(gasid, BREATH_MOLES) // They have no oxygen, but non-zero moles and temp
-			water_breath.set_temperature(above_air.return_temperature())
+			heat_set(water_breath, above_air.return_temperature())
 			return water_breath
 	return return_air() // Otherwise their head is above the water, so get the air from the atmosphere instead.
 
 /turf/simulated/floor/water/Entered(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(dq_get_hovering(L) || L.flying || L.is_incorporeal())
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
 			return
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water))
@@ -125,9 +129,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 /turf/simulated/floor/water/Exited(atom/movable/AM, atom/newloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		if(dq_get_hovering(L) || L.flying || L.is_incorporeal())
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
 			return
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(newloc, /turf/simulated/floor/water))
@@ -174,8 +178,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 /mob/living/proc/check_submerged()
 	if(src?.buckled_to())
 		return 0
-	if(dq_get_hovering(src) || flying || is_incorporeal())
-		if(flying)
+	if(dq_get_hovering(src) || stat_value(src, STAT_FLYING) || is_incorporeal())
+		if(stat_value(src, STAT_FLYING))
 			adjust_nutrition(-0.5)
 		return 0
 	if(locate_within(loc, /obj/structure/catwalk))
@@ -222,7 +226,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 /turf/simulated/floor/water/blood/Entered(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water))

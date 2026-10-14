@@ -5,23 +5,15 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_pump
 
-/obj/machinery/reagent_refinery/pump/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
-
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
-
-	make_climbable()
+CAPABILITIES(/obj/machinery/reagent_refinery/pump)
+	configure(uses_power(idle = 0, active = 50))
+	default_parts()
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/input, /datum/hose_connector/output))
+	climb()
+	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
+	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
 
 /obj/machinery/reagent_refinery/pump/refinery_step()
 	if(!anchored)
@@ -41,28 +33,12 @@
 		return amount_per_transfer_from_this
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/pump/appearance_overlays()
-	. = list()
-	if(reagents && reagents.total_volume >= 5)
-		var/image/filling = image(icon, loc, "pump_r",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
-
-/obj/machinery/reagent_refinery/pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/reagent_pump_use,
-	)
+/obj/machinery/reagent_refinery/pump/draw(datum/look/look)
 	..()
-
-/datum/interaction/machine_hand/ungated/reagent_pump_use
-	id = "reagent_pump_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use
-
-/obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_set_transfer_amount(user, held, interaction)
-	return TRUE
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	if(R?.total_volume >= 5)
+		look.overlay(look_overlay_image(icon, "pump_r", color = R.tint, dir = dir))
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

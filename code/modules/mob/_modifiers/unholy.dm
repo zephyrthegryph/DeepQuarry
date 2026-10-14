@@ -34,10 +34,10 @@
 
 
 /datum/body_effect/ambush/on_start(mob/living/L)
-	L.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
+	L.set_alpha_source(SRC_ALPHA_AMBUSH, 30/255)
 
 /datum/body_effect/ambush/on_end(mob/living/L, expired)
-	L.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
+	L.clear_alpha_source(SRC_ALPHA_AMBUSH)
 
 ////////// On-hit
 /datum/body_effect/deep_wounds
@@ -121,7 +121,7 @@
 			for(var/obj/item/organ/external/O in H.organs) // Fix limbs, no matter if they are Man or Machine.
 				H.mend(TREAT_RESTORATION, rand(2,6), O)
 
-			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
+			for(var/obj/item/organ/E in H.damaged_limbs()) // Fix bones
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()
@@ -172,9 +172,9 @@
 /datum/body_effect/gluttonyregeneration/on_tick(mob/living/L)
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		var/starting_nutrition = H.nutrition
+		var/starting_nutrition = nutrition_of(H)
 		H.adjust_nutrition(-10)
-		var/healing_amount = starting_nutrition - H.nutrition //Anything above 9 nutrition will return 10. Anything below will give 0-9. Nutrition is capped at 0.
+		var/healing_amount = starting_nutrition - nutrition_of(H) //Anything above 9 nutrition_of(src) will return 10. Anything below will give 0-9. Nutrition is capped at 0.
 		if(healing_amount)
 			H.occult_mend(healing_amount * 0.25, healing_amount * 0.25)
 			H.mend(TREAT_OXYGENATION, healing_amount * 0.25)

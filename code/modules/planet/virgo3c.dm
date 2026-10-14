@@ -34,7 +34,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 /datum/planet/virgo3c/New()
 	..()
 	GLOB.planet_virgo3c = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/virgo3c(src))
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/virgo3c(src))
 
 /datum/planet/virgo3c/update_sun()
 	..()
@@ -112,7 +112,7 @@ GLOBAL_DATUM(planet_virgo3c, /datum/planet/virgo3c)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 
 /datum/weather_holder/virgo3c

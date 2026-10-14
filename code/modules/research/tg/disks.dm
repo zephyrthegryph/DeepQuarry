@@ -21,7 +21,7 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	proto_set(src, nameof(stored_research_static), locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin))
+	proto_set(src, nameof(stored_research_static), locate_in_list(SSresearch.techwebs, /datum/techweb/admin))
 	return ..()
 
 MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
@@ -37,9 +37,8 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	///List of all `/datum/design` stored on the disk.
 	var/list/blueprints
 
-/obj/item/disk/design_disk/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
+CAPABILITIES(/obj/item/disk/design_disk)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /**
  * Used for special interactions with a techweb when uploading the designs.
@@ -53,6 +52,5 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-/obj/item/disk/tech_disk/ownership()
-	. = ..()
-	. += proto(nameof(stored_research_static))
+CAPABILITIES(/obj/item/disk/tech_disk)
+	owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY)

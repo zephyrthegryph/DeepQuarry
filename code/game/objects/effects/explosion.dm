@@ -62,10 +62,10 @@
 	lightboom = 0
 	flash = 0
 
-MAP_RESOLVER(/obj/effect/instantboom, GLOBAL_PROC_REF(resolve_instantboom))
-MAP_RESOLVER_VARS(/obj/effect/instantboom, "devastation;flash;heavyboom;lightboom")
+CAPABILITIES(/obj/effect/instantboom)
+	map_resolver(GLOBAL_PROC_REF(resolve_instantboom), vars = list("devastation", "flash", "heavyboom", "lightboom"))
 
-/// MAP_RESOLVER for instant explosions: the explosion, where it was placed.
+/// The map resolver of instant explosions: the explosion, where it was placed.
 /proc/resolve_instantboom(atom/loc, path, list/varedits)
 	var/obj/effect/instantboom/P = path
 	explosion(get_turf(loc), MAP_VAR(P, varedits, devastation), MAP_VAR(P, varedits, heavyboom), MAP_VAR(P, varedits, lightboom), MAP_VAR(P, varedits, flash))

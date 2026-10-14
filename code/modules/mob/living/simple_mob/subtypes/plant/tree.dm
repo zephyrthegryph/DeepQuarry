@@ -8,7 +8,6 @@
 	icon_dead = "pine_1"
 	icon_gib = "pine_1"
 
-	mob_class = MOB_CLASS_PLANT
 
 	faction = FACTION_PLANTS
 	endurance = 250
@@ -31,19 +30,21 @@
 
 	pixel_x = -16
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE // Can't feel pain and shouldn't take damage anyways, but, sanity
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_PLANT, death_message = "is hacked into pieces!"))
 
 /mob/living/simple_mob/animal/space/tree/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(15))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/tree
 	delete_on_death = TRUE
-	death_message = "is hacked into pieces!"
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()

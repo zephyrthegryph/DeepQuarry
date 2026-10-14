@@ -5,11 +5,10 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "holocontrol"
 
-	var/static/list/supported_programs = list()
-	var/static/list/secret_programs = list()
+	var/list/supported_programs
+	var/list/secret_programs
 
 	use_power = USE_POWER_IDLE
-	active_power_usage = 8000
 
 	var/current_program = "Off"
 	var/tmp/area/looking_glass/my_area
@@ -29,35 +28,52 @@
 			break
 	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
-	if(!supported_programs.len)
-		supported_programs["Off"] = null
-		supported_programs["Diagnostics"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "diagnostic")
-		supported_programs["Space 1"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space1")
-		supported_programs["Space 2"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space2")
-		supported_programs["Space 3"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space3")
-		supported_programs["Space 4"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space4")
-		supported_programs["Space 5"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space5")
-		supported_programs["Space 6"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space6")
 
-		secret_programs["Maw"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "maw")
-		secret_programs["Flesh"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "flesh")
-		secret_programs["Synth Int"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides")
-		secret_programs["Synth Int 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides_active")
-		secret_programs["Two Teshari"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "doubletesh")
-		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
-		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
+/// The programs every looking glass shows (per_type()): name -> skybox image.
+/obj/machinery/computer/looking_glass/proc/build_supported_programs()
+	. = list()
+	.["Off"] = null
+	.["Diagnostics"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "diagnostic")
+	.["Space 1"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space1")
+	.["Space 2"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space2")
+	.["Space 3"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space3")
+	.["Space 4"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space4")
+	.["Space 5"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space5")
+	.["Space 6"] = image(icon = 'icons/skybox/skybox.dmi', icon_state = "space6")
 
-/obj/machinery/computer/looking_glass/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+/// The programs an emagged looking glass adds (per_type()).
+/obj/machinery/computer/looking_glass/proc/build_secret_programs()
+	. = list()
+	.["Maw"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "maw")
+	.["Flesh"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "flesh")
+	.["Synth Int"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides")
+	.["Synth Int 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "synthinsides_active")
+	.["Two Teshari"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "doubletesh")
+	.["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
+	.["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
-DECLARE_UI(/obj/machinery/computer/looking_glass, "LookingGlass")
+CAPABILITIES(/obj/machinery/computer/looking_glass)
+	per_type(nameof(supported_programs), PROC_REF(build_supported_programs))
+	per_type(nameof(secret_programs), PROC_REF(build_secret_programs))
+	configure(uses_power(active = 8000))
+	interface("LookingGlass")
+	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
+	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
+	op("immersion", ui_act("immersion"), then(PROC_REF(ui_act_immersion)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(looking_glass_blast_unload)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:text", "immersion:num", "merge:ui_data_obj_machinery_computer_looking_glass{supportedPrograms:list,gravity:num}")
+/obj/machinery/computer/looking_glass/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["currentProgram"] = current_program
+	data["immersion"] = immersion
+	var/list/merged_1 = ui_data_obj_machinery_computer_looking_glass(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/computer/looking_glass's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/looking_glass's window data.
 /obj/machinery/computer/looking_glass/proc/ui_data_obj_machinery_computer_looking_glass(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -65,7 +81,7 @@ UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:t
 	for(var/P in supported_programs)
 		program_list.Add(P)
 
-	if(emagged)
+	if(emagged())
 		for(var/P in secret_programs)
 			program_list.Add(P)
 
@@ -77,38 +93,35 @@ UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:t
 
 	return data
 
-UI_ACT(/obj/machinery/computer/looking_glass, "program", ui_act_program, UI_ARG_TEXT("program"))
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_program)
+/obj/machinery/computer/looking_glass/proc/ui_act_program(datum/act/op/A, program)
 	if(COOLDOWN_FINISHED(src, ready))
-		var/prog = params["program"]
+		var/prog = program
 		if(prog == "Off")
 			current_program = "Off"
 			unload_program()
-		else if((prog in supported_programs) || (emagged && (prog in secret_programs)))
+		else if((prog in supported_programs) || (emagged() && (prog in secret_programs)))
 			current_program = prog
 			load_program(prog)
 	else
 		visible_message(span_warning("ERROR. Recalibrating displays."))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/looking_glass, "gravity", ui_act_gravity)
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_gravity)
+/obj/machinery/computer/looking_glass/proc/ui_act_gravity(datum/act/op/A)
 	toggle_gravity(my_area())
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/looking_glass, "immersion", ui_act_immersion)
-UI_ACT_PROC(/obj/machinery/computer/looking_glass, ui_act_immersion)
+/obj/machinery/computer/looking_glass/proc/ui_act_immersion(datum/act/op/A)
 	immersion = !immersion
 	my_area()?.toggle_optional(immersion)
 	return TRUE
 
-DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/looking_glass/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/looking_glass/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
 	to_chat(user, span_notice("You unlock several programs that were hidden somewhere in memory."))
 	log_game("[key_name(user)] emagged the [name]")
-	return 1
+	return OP_OK
 
 /obj/machinery/computer/looking_glass/proc/load_program(prog_name)
 	COOLDOWN_START(src, ready, 10 SECONDS)
@@ -144,15 +157,14 @@ DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, nul
 	unload_program()
 	..()
 
-DAMAGE_REACTION(/obj/machinery/computer/looking_glass, DAMAGE_EXPLOSION, PROC_REF(looking_glass_blast_unload))
 
 /// A blast unloads the running program.
-/obj/machinery/computer/looking_glass/proc/looking_glass_blast_unload(datum/damage_packet/packet)
+/obj/machinery/computer/looking_glass/proc/looking_glass_blast_unload(datum/act/A)
 	unload_program()
 
 /obj/machinery/computer/looking_glass/power_change()
 	. = ..()
-	if (. && (has_stat(NOPOWER)))
+	if (. && (power_lost()))
 		unload_program()
 
 /// Accessor for the my_area var.

@@ -1,0 +1,84 @@
+@obj.vehicle human|none
+-menu: Unlatch
+-click: Click: Interaction train hand
++0 menu: Interaction janicart hand
++5 menu: Toggle brushes
++6 menu: Unlatch (refused: You can't do that.)
++7 click: Click: Interaction janicart hand
+@obj.vehicle robot|none
+-menu: Unlatch
+-click: Click: Interaction train hand
++0 menu: Interaction janicart hand
++5 menu: Toggle brushes
++6 menu: Unlatch (refused: You can't do that.)
++7 click: Click: Interaction janicart hand
+@obj.vehicle ai|none
+@obj.vehicle ghost|none
++3 menu: Toggle brushes (refused: You can't reach that.)
+@obj.vehicle human|/obj/item/tool/screwdriver
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/tool/crowbar
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/tool/wrench
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/tool/wirecutters
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/multitool
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/weldingtool
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/stack/cable_coil
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/stack/material/steel
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/card/id
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+@obj.vehicle human|/obj/item/card/emag
+-menu: Unlatch
++2 menu: Interaction janicart hand
++3 menu: Interaction janicart item
++8 menu: Toggle brushes
++9 menu: Unlatch (refused: You can't do that.)
+keys: drag_buckle, emag.subvert, emag.use, engine_key, engine_remove_key, engine_remove_key_alt, engine_start_engine, engine_stop_engine, janicart_hand, janicart_item, janicart_toggle_brush, melee_hit, train_drag, train_hand, train_unlatch, use_crowbar, use_screwdriver, use_welder, vehicle_item

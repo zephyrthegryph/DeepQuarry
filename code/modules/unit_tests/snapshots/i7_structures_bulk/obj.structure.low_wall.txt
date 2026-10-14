@@ -1,0 +1,69 @@
+@obj.structure human|none
++0 menu: Climb
+@obj.structure robot|none
++0 menu: Climb
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use wrench
++7 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/multitool
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/weldingtool
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Climb
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Place on wall
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/card/id
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Read ID Card (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item
++0 menu: Climb
++2 menu: Move To Top
++3 menu: Place on wall
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/stack/rods
++0 menu: Climb
++3 menu: Place on wall
++6 menu: Use (refused: <span class='notice'>This type of wall frame doesn't support grilles.</span>)
+@obj human|/obj/item/stack/material/glass
+@obj human|/obj/item/stack/material/cyborg/glass
+keys: build_grille, build_window, build_window_cyborg, climb.climb, climb.climb_menu, drag_buckle, melee_hit, place, place_drag, use_wrench

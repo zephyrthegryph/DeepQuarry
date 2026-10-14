@@ -10,7 +10,7 @@
 // plan turns the injury kind into a lesion and calls apply_lesion_damage());
 // healing through mend(tag, amount, organ). apply_lesion_damage() and
 // restore_lesions() are body-internal: only code/modules/body and
-// code/modules/organs call them (enforced by tools/ci/check_grep.sh).
+// code/modules/body call them (enforced by tools/ci/check_grep.sh).
 //
 // Detached organs carry their lesions in detached_afflictions (see limb.dm).
 
@@ -102,7 +102,7 @@
 	if(owner?.body)
 		owner.body.add_affliction(L, src)
 	else
-		own_add(src, nameof(detached_afflictions), L)
+		rel_add(src, nameof(detached_afflictions), L)
 	L.add_damage(amount)
 	return L
 
@@ -113,7 +113,7 @@
 	else
 		own_take_member(src, nameof(detached_afflictions), L)
 		recalc_integrity()
-	qdel(L)
+	spent(L)
 
 /// Remove every lesion (rejuvenate / full heal).
 /obj/item/organ/internal/proc/clear_lesions()
@@ -129,7 +129,7 @@
 /obj/item/organ/internal/proc/apply_lesion_damage(amount, lesion_type = null, silent = FALSE)
 	if(amount < 0)
 		CRASH("apply_lesion_damage() called with a negative amount ([amount]) on [src]; heal through mend().")
-	if(!amount || om_has(owner, EFFECT_GODMODE))
+	if(!amount || in_godmode(owner))
 		return 0
 	if(is_robotic())
 		amount *= PROSTHETIC_ORGAN_DAMAGE_MULT

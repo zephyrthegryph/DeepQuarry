@@ -21,16 +21,16 @@
 
 /datum/ai_behavior/evasive_juke/evaluate(datum/ai_brain/brain, atom/source)
 	// Only relevant immediately after a melee strike.
-	if(!brain.primary_threat)
+	if(!brain.primary_target())
 		return null
 	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 4, CLOCK_WORLD) > 0)
 		return null
 	if(brain.last_juke_at == brain.last_attack_at)
 		return null
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || !owner.Adjacent(brain.primary_threat))
+	if(!owner || !owner.Adjacent(brain.primary_target()))
 		return null
-	return DQAI_RESULT(70, brain.primary_threat)
+	return DQAI_RESULT(70, brain.primary_target())
 
 /datum/ai_behavior/evasive_juke/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
@@ -39,7 +39,7 @@
 	brain.last_juke_at = brain.last_attack_at
 	var/turf/T = get_step(owner, pick(GLOB.alldirs))
 	if(T && !T.density)
-		step_to(owner, T)
+		brain.act_step(T)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -56,7 +56,7 @@
 	var/kite_distance = 4
 
 /datum/ai_behavior/kite_away/evaluate(datum/ai_brain/brain, atom/source)
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/mob/living/owner = brain.get_owner()
@@ -78,7 +78,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target, kite_distance)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -94,7 +94,7 @@
 	cooldown = 5 SECONDS
 
 /datum/ai_behavior/hit_and_run/evaluate(datum/ai_brain/brain, atom/source)
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat || !ismob(threat))
 		return null
 	if(!brain.last_attack_at || ELAPSED_SINCE(src, brain.last_attack_at + 6, CLOCK_WORLD) > 0)
@@ -116,7 +116,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/hit_and_run/tick(datum/ai_brain/brain, atom/target, atom/source)
@@ -127,7 +127,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Pack flee (on dying / outmatched) -------------------------------------
@@ -143,12 +143,15 @@
 
 /datum/ai_behavior/pack_retreat/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
+	// A packmate sounded the retreat (an order in force on the pack): the whole pack falls back.
+	if(brain.intent_from_others(/datum/ai_intent/retreat))
+		return DQAI_RESULT(110, threat)
 	var/dying = owner.vitality() < 0.3
 	// "Outmatched" — we have no nearby faction allies and the target is robust.
-	var/no_backup = brain.model && !length(brain.model.visible_friendlies)
+	var/no_backup = !length(brain.known_friendlies())
 	var/outmatched = FALSE
 	if(no_backup && isliving(threat))
 		var/mob/living/threat_living = threat
@@ -158,6 +161,12 @@
 		return null
 	return DQAI_RESULT(120, threat)  // overrides plain flee_low_hp
 
+/datum/ai_behavior/pack_retreat/start(datum/ai_brain/brain, atom/target, atom/source)
+	. = ..()
+	// Falling back is the pack's: the order goes on the pack so every member hears it (and it ends with this member or after eight seconds).
+	if(brain.pack && !brain.intent_from_others(/datum/ai_intent/retreat))
+		intend(brain.pack, /datum/ai_intent/retreat, target, brain.holder, 8 SECONDS)
+
 /datum/ai_behavior/pack_retreat/tick(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !target)
@@ -166,7 +175,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Return home -----------------------------------------------------------
@@ -182,7 +191,7 @@
 	var/return_threshold = 5
 
 /datum/ai_behavior/return_home/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null  // in combat, don't run home
 	var/mob/living/owner = brain.get_owner()
 	var/turf/home = brain.home_turf()
@@ -215,7 +224,7 @@
 	var/follow_distance = 2
 
 /datum/ai_behavior/follow_leader/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null
 	var/mob/leader = brain.get_leader()
 	if(!leader)

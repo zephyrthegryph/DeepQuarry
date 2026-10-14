@@ -187,10 +187,10 @@ TYPE_TABLE(/datum/reagent/nutriment/coating, get_data_schema, list("cooked"))
 	if(hotspot && !istype(T, /turf/space))
 		var/datum/gas_mixture/lowertemp = T.remove_air(xgm_total_moles(T.return_air())) // XGM T:air:total_moles → LINDA helper
 		var/lowertemp_temperature = lowertemp.return_temperature()
-		lowertemp.set_temperature(max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0))
+		heat_set(lowertemp, max(min(lowertemp_temperature-2000, lowertemp_temperature / 2), 0), HEAT_SOURCE_REACTION)
 		lowertemp.react()
 		T.assume_air(lowertemp)
-		qdel(hotspot)
+		spent(hotspot)
 
 	if(volume >= 3)
 		T.wet_floor(2)
@@ -252,7 +252,7 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		data["temperature"] -= (6 * removed) / (1 + volume*0.1)//Cools off as it burns you
 		if (COOLDOWN_FINISHED(src, burn_message_cooldown)	)
 			to_chat(M, span_danger("Searing hot oil burns you, wash it off quick!"))
-			COOLDOWN_START(src, burn_message_cooldown, 100)
+			COOLDOWN_START(src, burn_message_cooldown, 10 SECONDS)
 
 /datum/reagent/nutriment/triglyceride/oil/cooking
 	name = REAGENT_COOKINGOIL
@@ -782,7 +782,7 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/frostoil/affect_blood(mob/living/carbon/M, alien, removed)
-	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.bodytemperature, 215))
+	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.body_temperature(), 215))
 	if(prob(1))
 		M.emote("shiver")
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5)
@@ -918,39 +918,39 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		if(!H.can_feel_pain())
 			return
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
+			if(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & EYES)
 				eyes_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
-			if((H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_HEAD).item_flags & FLEXIBLEMATERIAL))
+			if((worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE) && !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
 		if(H.get_equipped_item(SLOT_ID_MASK))
-			if(!eyes_covered && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
+			if(!eyes_covered && worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & EYES)
 				eyes_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
-			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_MASK).item_flags & FLEXIBLEMATERIAL))
+			if(!mouth_covered && (worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & FACE) && !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
-		if(H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES)
+		if(H.get_equipped_item(SLOT_ID_EYES) && worn_of(H.get_equipped_item(SLOT_ID_EYES)).covers & EYES)
 			if(!eyes_covered)
 				eyes_covered = 1
 				if(!safe_thing)
 					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(skin_burns)
 			for(var/obj/item/clothing/C in H.get_worn_clothing())
-				if(C.body_parts_covered & HEAD)
+				if(worn_of(C).covers & HEAD)
 					head_covered = 1
-				if(C.body_parts_covered & UPPER_TORSO)
+				if(worn_of(C).covers & UPPER_TORSO)
 					chest_covered = 1
-				if(C.body_parts_covered & LOWER_TORSO)
+				if(worn_of(C).covers & LOWER_TORSO)
 					groin_covered = 1
-				if(C.body_parts_covered & LEGS)
+				if(worn_of(C).covers & LEGS)
 					legs_covered = 1
-				if(C.body_parts_covered & ARMS)
+				if(worn_of(C).covers & ARMS)
 					arms_covered = 1
-				if(C.body_parts_covered & HANDS)
+				if(worn_of(C).covers & HANDS)
 					hands_covered = 1
-				if(C.body_parts_covered & FEET)
+				if(worn_of(C).covers & FEET)
 					feet_covered = 1
 				if(head_covered && chest_covered && groin_covered && legs_covered && arms_covered && hands_covered && feet_covered)
 					break
@@ -960,23 +960,23 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 			return
 	else if(eyes_covered)
 		to_chat(M, span_warning("Your [safe_thing] protects you from most of the pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength * 3)
-		M.status_at_least(EFFECT_BLINDED, effective_strength)
-		M.status_at_least(EFFECT_STUNNED, 5)
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_BLURRY, effective_strength * 3)
+		M.status_at_least(STAT_BLINDED, effective_strength)
+		M.status_at_least(STAT_STUNNED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		if(!skin_burns)
 			return
 	else if(mouth_covered) // Mouth cover is better than eye cover
 		to_chat(M, span_warning("Your [safe_thing] protects your face from the pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength)
+		M.status_at_least(STAT_BLURRY, effective_strength)
 		if(!skin_burns)
 			return
 	else// Oh dear :D
 		to_chat(M, span_warning("You're sprayed directly in the eyes with pepperspray!"))
-		M.status_at_least(EFFECT_BLURRY, effective_strength * 5)
-		M.status_at_least(EFFECT_BLINDED, effective_strength * 2)
-		M.status_at_least(EFFECT_STUNNED, 5)
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_BLURRY, effective_strength * 5)
+		M.status_at_least(STAT_BLINDED, effective_strength * 2)
+		M.status_at_least(STAT_STUNNED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		if(!skin_burns)
 			return
 	if(skin_burns)

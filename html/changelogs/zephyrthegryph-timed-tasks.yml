@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timed actions (whetstone, bear traps, barbed wire, snow shovelling, confetti, catwalk plating, the Tyr elevator and the workers' folders) are ops with a wait; a second input by the same player now stops the first wait"

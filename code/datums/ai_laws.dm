@@ -34,6 +34,14 @@
 	var/list/state_inherent = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
 	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
 
+CAPABILITIES(/datum/ai_laws)
+	ref_many(nameof(sorted_laws))
+	owns_one(nameof(zeroth_law), /datum/ai_law/zero)
+	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
+	owns_many(nameof(inherent_laws), /datum/ai_law)
+	owns_many(nameof(ion_laws), /datum/ai_law/ion)
+	owns_many(nameof(supplied_laws))
+
 /datum/ai_laws/New()
 	..()
 	sort_laws()
@@ -110,11 +118,11 @@
 	if(!law)
 		return
 
-	own_set(src, nameof(zeroth_law), new /datum/ai_law/zero(law))
+	rel_set(src, nameof(zeroth_law), new /datum/ai_law/zero(law))
 	if(law_borg) //Making it possible for slaved borgs to see a different law 0 than their AI. --NEO
-		own_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
+		rel_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
 	else
-		own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
+		rel_clear(src, nameof(zeroth_law_borg))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_ion_law(law)
@@ -126,7 +134,7 @@
 			return
 
 	var/new_law = new/datum/ai_law/ion(law)
-	own_add(src, nameof(ion_laws), new_law)
+	rel_add(src, nameof(ion_laws), new_law)
 	if(state_ion.len < length(ion_laws))
 		state_ion += 1
 
@@ -141,7 +149,7 @@
 			return
 
 	var/new_law = new/datum/ai_law/inherent(law)
-	own_add(src, nameof(inherent_laws), new_law)
+	rel_add(src, nameof(inherent_laws), new_law)
 	if(state_inherent.len < length(inherent_laws))
 		state_inherent += 1
 
@@ -162,12 +170,12 @@
 	if(!islist(supplied_laws))
 		supplied_laws = list() // ALLOW(ownership): an empty owned list, padded below
 	while (length(src.supplied_laws) < number)
-		supplied_laws += "" // ALLOW(ownership): empty law slots (not entities); own_add() would dedup them
+		supplied_laws += "" // ALLOW(ownership): empty law slots (not entities); rel_add() would dedup them
 		if(state_supplied.len < length(supplied_laws))
 			state_supplied += 1
 
 	var/new_law = new/datum/ai_law/supplied(law, number)
-	own_put(src, nameof(supplied_laws), number, new_law)
+	rel_add(src, nameof(supplied_laws), new_law, number)
 	if(state_supplied.len < length(supplied_laws))
 		state_supplied += 1
 
@@ -194,7 +202,7 @@
 /datum/ai_law/supplied/delete_law(datum/ai_laws/laws)
 	var/index = laws.supplied_laws.Find(src)
 	if(index)
-		own_put(laws, nameof(laws.supplied_laws), index, "")
+		rel_add(laws, nameof(laws.supplied_laws), "", index)
 		laws.state_supplied[index] = 1
 
 /// Deletes `law` from this set's owned law list `var_name`, shifting its state flags down.
@@ -211,19 +219,19 @@
 *	Clear Laws	*
 ****************/
 /datum/ai_laws/proc/clear_zeroth_laws()
-	own_clear(src, nameof(zeroth_law), OWN_DELETE)
-	own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
+	rel_clear(src, nameof(zeroth_law))
+	rel_clear(src, nameof(zeroth_law_borg))
 
 /datum/ai_laws/proc/clear_ion_laws()
-	own_clear(src, nameof(ion_laws), OWN_DELETE)
+	rel_clear(src, nameof(ion_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_inherent_laws()
-	own_clear(src, nameof(inherent_laws), OWN_DELETE)
+	rel_clear(src, nameof(inherent_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_supplied_laws()
-	own_clear(src, nameof(supplied_laws), OWN_DELETE)
+	rel_clear(src, nameof(supplied_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/get_formatted_laws()
@@ -306,11 +314,3 @@
 
 
 
-/datum/ai_laws/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
-/datum/ai_laws/relations()
-	. = ..()
-	. += rel_many(nameof(sorted_laws))

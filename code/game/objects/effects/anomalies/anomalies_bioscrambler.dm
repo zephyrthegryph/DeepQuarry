@@ -16,7 +16,10 @@
 	/// Range of anomaly pulse
 	var/range = 2
 
-/obj/effect/anomaly/bioscrambler/Initialize(mapload, new_lifespan, drops_core)
+CAPABILITIES(/obj/effect/anomaly/bioscrambler)
+	ref_one(nameof(pursuit_target))
+
+/obj/effect/anomaly/bioscrambler/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(pursuit_target), find_nearest_target())
 
@@ -67,7 +70,7 @@
 	for(var/mob/living/carbon/target in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(target.z != z)
 			continue
-		if(om_has(target, EFFECT_GODMODE))
+		if(in_godmode(target))
 			continue
 		if(target.stat >= UNCONSCIOUS)
 			continue

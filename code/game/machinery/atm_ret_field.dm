@@ -6,89 +6,98 @@
 	anchored = TRUE
 	opacity = FALSE
 	density = FALSE
-	power_channel = ENVIRON	//so they shut off last
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2500
 	integrity_failure = 0.5
 	var/ispowered = TRUE
 	var/isactive = FALSE
 	var/wasactive = FALSE		//controls automatic reboot after power-loss
 	var/alwaysactive = FALSE	//for a special subtype
 
-	/// Until when an EMP keeps the generator shut down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
 	var/hatch_open = FALSE
 	var/wires_intact = TRUE
-	var/list/areas_added
 	var/field_type = /obj/structure/atmospheric_retention_field
 	circuit = /obj/item/circuitboard/arf_generator
+TRACKED(/obj/machinery/atmospheric_field_generator, hatch_open)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
-	active_power_usage = 2000
 	field_type = /obj/structure/atmospheric_retention_field/impassable
+
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/impassable)
+	configure(uses_power(active = 2000))
 
 /obj/machinery/atmospheric_field_generator/perma
 	name = "static atmospheric retention field generator"
 	desc = "A floor-mounted piece of equipment that generates an atmosphere-retaining energy field when powered and activated. This model is designed to always be active, though the field will still drop from loss of power or electromagnetic interference.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
 	alwaysactive = TRUE
-	active_power_usage = 2000
+
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma)
+	configure(uses_power(active = 2000))
 
 /obj/machinery/atmospheric_field_generator/perma/impassable
-	active_power_usage = 1500
 	field_type = /obj/structure/atmospheric_retention_field/impassable
 
-/obj/machinery/atmospheric_field_generator/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
+	configure(uses_power(active = 1500))
+
+/obj/machinery/atmospheric_field_generator/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isactive)
 		to_chat(user, span_warning("You can't open the ARF-G whilst it's running!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
-	hatch_open = !hatch_open
-	update_icon()
+	set_hatch_open(!hatch_open)
 	if(alwaysactive && wires_intact)
 		generate_field()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hatch_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
 	alwaysactive = !alwaysactive
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/wirecutter_act(mob/user, obj/item/tool)
+/obj/machinery/atmospheric_field_generator/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hatch_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
-	wires_intact = !wires_intact
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	set_wires_intact(!wires_intact)
+	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
-	if(!hatch_open)
-		return NONE
-	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start to disassemble \the [src].", start_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// When the welder answers (it did nothing otherwise and the click went on).
+/obj/machinery/atmospheric_field_generator/proc/welder_applies(datum/act/op/A)
+	return !!read_once(hatch_open)
 
-/obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
+/obj/machinery/atmospheric_field_generator/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/atmospheric_field_generator/proc/welder_begins(datum/act/op/A)
+	return msg_text("You start to disassemble \the [src].", "[A.actor] starts to disassemble \the [src].")
+
+/obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
-	qdel(src)
+	destroyed(src, user, "deconstructed")
 
 /obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)
 	. = ..()
 	generate_field()
 
 /obj/machinery/atmospheric_field_generator/proc/appearance_state()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "broken"
 	if(hatch_open)
 		return wires_intact ? "open_wires" : "open_wirescut"
 	return isactive ? "on" : "off"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/atmospheric_field_generator/draw(datum/look/look)
+	..()
+	look.state("arfg_[appearance_state()]")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
@@ -100,20 +109,29 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearanc
 		ispowered = FALSE
 		disable_field()
 
-EMP_DISABLE(/obj/machinery/atmospheric_field_generator, 7.5 SECONDS, "emp_until")
+CAPABILITIES(/obj/machinery/atmospheric_field_generator)
+	configure(uses_power(channel = ENVIRON, idle = 10, active = 2500))
+	emp_disable(7.5 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_generator_blast))))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_welder", lit_welder(fuel = 5), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(welder_applies)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(1.5 SECONDS), then(PROC_REF(welder_act_tool_done)))
 
-/obj/machinery/atmospheric_field_generator/emp_disable_changed(disabled)
-	..()
-	if(disabled)
+/// A pulse took it down (the field drops) or its outage ended (the field comes back if it was on, or is always on).
+/obj/machinery/atmospheric_field_generator/proc/emp_state_changed(datum/act/A)
+	if(emp_disabled(src))
 		disable_field() //shutting dowwwwwwn
 	else if(alwaysactive || wasactive) //reboot after a short delay if we were online before
 		generate_field()
 
-DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PROC_REF(field_generator_blast))
 /// A light blast knocks the field generator out like a pulse.
-/obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/damage_packet/packet)
+/obj/machinery/atmospheric_field_generator/proc/field_generator_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(packet.severity == 3)
 		emp_act(3)
+	return HOOK_DECLINE
 
 /obj/machinery/atmospheric_field_generator/atom_break(damage_flag)
 	. = ..()
@@ -126,8 +144,8 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything
 		return
 	else
-		isactive = TRUE
-		icon_state = "arfg_on"
+		set_isactive(TRUE)
+		set_icon_state("arfg_on")
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
 		set_use_power(USE_POWER_ACTIVE)
@@ -138,12 +156,12 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 		if(alwaysactive == TRUE && operable()) //If we're not damaged, don't turn off if we're always on.
 			return
 		else
-			icon_state = "arfg_off"
+			set_icon_state("arfg_off")
 			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
-				qdel(F)
+				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
 			set_use_power(USE_POWER_IDLE)
-			isactive = FALSE
+			set_isactive(FALSE)
 	return
 
 /obj/machinery/atmospheric_field_generator/Initialize(mapload)
@@ -154,17 +172,6 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 			log_mapping("Duplicate ARFGS at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL
 
-	var/area/A = get_area(src)
-	ASSERT(istype(A))
-
-	LAZYADD(A.all_arfgs, src)
-	areas_added = list(A)
-
-	for(var/direction in GLOB.cardinal)
-		A = get_area(get_step(src,direction))
-		if(istype(A) && !(A in areas_added))
-			LAZYADD(A.all_arfgs, src)
-			areas_added += A
 
 /obj/structure/atmospheric_retention_field
 	resistance_flags = BOMB_PROOF
@@ -180,40 +187,35 @@ DAMAGE_REACTION(/obj/machinery/atmospheric_field_generator, DAMAGE_EXPLOSION, PR
 	can_atmos_pass = ATMOS_PASS_NO
 	var/basestate = "arfg_field"
 
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/atmospheric_retention_field/appearance_overlays()
-	. = list()
+/obj/structure/atmospheric_retention_field/draw(datum/look/look)
+	..()
 	var/list/dirs = list()
 	for(var/obj/structure/atmospheric_retention_field/F in orange(src,1))
 		dirs += get_dir(src, F)
 
 	var/list/connections = dirs_to_corner_states(dirs)
 
-	icon_state = ""
+	look.state("")
 	for(var/i = 1 to 4)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		. += I
-
-	return .
+		look.overlay(I)
 
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles() //Force ZAS update
-	update_connections(1)
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
-DECLARE_INTERACTIONS(/obj/structure/atmospheric_retention_field, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
+	smoothing()
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/atmospheric_retention_field/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/atmospheric_retention_field/proc/interaction_hand(datum/act/op/A)
 	if(density)
 		visible_message("You touch the retention field, and it crackles faintly. Tingly!")
 	else

@@ -1,0 +1,17 @@
+@obj.machinery.atmospherics.omni human|none
+@obj.machinery.atmospherics.omni robot|none
+@obj.machinery.atmospherics.omni ai|none
+@obj ghost|none
+@obj.machinery.atmospherics.omni human|/obj/item/tool/screwdriver
+@obj.machinery.atmospherics.omni human|/obj/item/tool/crowbar
+@obj.machinery.atmospherics.omni human|/obj/item/tool/wrench
+@obj.machinery.atmospherics.omni human|/obj/item/tool/wirecutters
+@obj.machinery.atmospherics.omni human|/obj/item/multitool
+@obj.machinery.atmospherics.omni human|/obj/item/weldingtool
+@obj.machinery.atmospherics.omni human|/obj/item/stack/cable_coil
+@obj.machinery.atmospherics.omni human|/obj/item/stack/material/steel
+@obj.machinery.atmospherics.omni human|/obj/item/card/id
+@obj.machinery.atmospherics.omni human|/obj/item
+@obj.machinery.atmospherics.omni human|/obj/item/stack/material
+@obj.machinery.atmospherics.omni human|/obj/item/pipe_painter
+keys: configure, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, power, power_toggle, robot_remote_blocked, set_flow_rate, silicon_hand, switch_filter, switch_mode, ui_open, unwrench

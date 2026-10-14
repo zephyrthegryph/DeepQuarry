@@ -7,9 +7,12 @@
 	var/releasedelay = 15 // seconds (anomalyEffect() gets seconds)
 	anomaly_core = /obj/item/assembly/signaler/anomaly/pyro
 
-/obj/effect/anomaly/pyro/Initialize(mapload, new_lifespan, drops_core)
-	. = ..()
+CAPABILITIES(/obj/effect/anomaly/pyro)
+	after_init(0, then(PROC_REF(init_wibbly_filters)))
+
+/obj/effect/anomaly/pyro/proc/init_wibbly_filters(datum/act/timer/A)
 	apply_wibbly_filters(src)
+
 
 /obj/effect/anomaly/pyro/anomalyEffect(seconds_per_tick)
 	..()

@@ -5,9 +5,17 @@
 	var/our_color = "#FFFFFF"
 	var/our_brightness = 1.0
 
-/// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/datum/sun_holder, tmp, rainbow_ends_at, 0, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
+CAPABILITIES(/datum/sun_holder)
+	owns_one(nameof(sun), /atom/movable/sun_visuals)
+
+/// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (the every() below).
+/datum/sun_holder/var/tmp/rainbow_ends_at = 0
+TRACKED(/datum/sun_holder, rainbow_ends_at)
+
+/datum/sun_holder/reactions()
+	. = ..()
+	. += every(0.3 SECONDS, PROC_REF(rainbow_step), when = nameof(rainbow_ends_at))
+
 /// The running rainbow's next colour, and the light to restore when it ends.
 /datum/sun_holder/var/tmp/rainbow_index = 1
 /datum/sun_holder/var/tmp/rainbow_original_brightness
@@ -16,7 +24,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 /datum/sun_holder/New(source)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
-	own_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
+	rel_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
 	our_planet_static = source
 
 /datum/sun_holder/proc/update_color(new_color)
@@ -65,14 +73,14 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	update_brightness(0.8)
 	set_rainbow_ends_at(world.time + 30 SECONDS)
 
-/// One colour of the rainbow every 0.3 s until `rainbow_ends_at`, then the original light (DECLARE_REPEAT).
-/datum/sun_holder/proc/rainbow_step()
+/// One colour of the rainbow every 0.3 s until `rainbow_ends_at`, then the original light.
+/datum/sun_holder/proc/rainbow_step(dt)
 	var/static/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
 	if(!BEFORE(src, rainbow_ends_at, CLOCK_WORLD))
 		set_rainbow_ends_at(0)
 		update_brightness(rainbow_original_brightness)
 		update_color(rainbow_original_color)
-		return REPEAT_STOP
+		return
 	update_color(colors[rainbow_index])
 	if(++rainbow_index > colors.len)
 		rainbow_index = 1
@@ -86,25 +94,26 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	alpha = 0
 	color = "#FFFFFF"
 
-	var/turfs_providing_spreads = list()
-	var/spreads = list()
+	var/turfs_providing_spreads
+	var/spreads
 
 /atom/movable/sun_visuals/Initialize(mapload)
 	. = ..()
-	spreads["1"] = new /atom/movable/sun_visuals_overlap(src, NORTH, "white_gradient")
-	spreads["2"] = new /atom/movable/sun_visuals_overlap(src, SOUTH, "white_gradient")
-	spreads["4"] = new /atom/movable/sun_visuals_overlap(src, EAST, "white_gradient")
-	spreads["8"] = new /atom/movable/sun_visuals_overlap(src, WEST, "white_gradient")
+	LAZYINITLIST(spreads)
+	spreads["1"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTH, icon_state = "white_gradient")
+	spreads["2"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTH, icon_state = "white_gradient")
+	spreads["4"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = EAST, icon_state = "white_gradient")
+	spreads["8"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = WEST, icon_state = "white_gradient")
 
-	spreads["i5"] = new /atom/movable/sun_visuals_overlap(src, NORTHEAST, "white_inner")
-	spreads["i6"] = new /atom/movable/sun_visuals_overlap(src, SOUTHEAST, "white_inner")
-	spreads["i9"] = new /atom/movable/sun_visuals_overlap(src, NORTHWEST, "white_inner")
-	spreads["i10"] = new /atom/movable/sun_visuals_overlap(src, SOUTHWEST, "white_inner")
+	spreads["i5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_inner")
+	spreads["i6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_inner")
+	spreads["i9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_inner")
+	spreads["i10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_inner")
 
-	spreads["o5"] = new /atom/movable/sun_visuals_overlap(src, NORTHEAST, "white_outer")
-	spreads["o6"] = new /atom/movable/sun_visuals_overlap(src, SOUTHEAST, "white_outer")
-	spreads["o9"] = new /atom/movable/sun_visuals_overlap(src, NORTHWEST, "white_outer")
-	spreads["o10"] = new /atom/movable/sun_visuals_overlap(src, SOUTHWEST, "white_outer")
+	spreads["o5"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHEAST, icon_state = "white_outer")
+	spreads["o6"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHEAST, icon_state = "white_outer")
+	spreads["o9"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = NORTHWEST, icon_state = "white_outer")
+	spreads["o10"] = make(/atom/movable/sun_visuals_overlap, at = src, dir = SOUTHWEST, icon_state = "white_outer")
 
 /atom/movable/sun_visuals/proc/set_color(new_color)
 	src.color = new_color
@@ -165,13 +174,13 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 			LAZYADD(localspreads[dirturf], OL)
 
 	if(LAZYLEN(localspreads))
-		turfs_providing_spreads[T] = localspreads
+		LAZYSET(turfs_providing_spreads, T, localspreads)
 
 /atom/movable/sun_visuals/proc/remove_from_turf(turf/T)
 	T.vis_contents -= src
 	T.dynamic_lumcount -= 0.5
 	T.set_luminosity(0, TRUE)
-	var/list/applied = turfs_providing_spreads[T]
+	var/list/applied = LAZYACCESS(turfs_providing_spreads, T)
 	if(LAZYLEN(applied))
 		for(var/turf/old as anything in applied)
 			old.vis_contents -= applied[old]
@@ -184,7 +193,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 					old.outdoors_adjacent = TRUE
 					old.set_luminosity(0)
 			applied -= old
-		turfs_providing_spreads -= T
+		LAZYREMOVE(turfs_providing_spreads, T)
 		applied.Cut()
 
 /atom/movable/sun_visuals_overlap
@@ -195,11 +204,9 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 	alpha = 0
 	color = "#FFFFFF"
 
-/atom/movable/sun_visuals_overlap/Initialize(mapload, newdir, newstate)
-	. = ..()
-	icon_state = newstate
-	dir = newdir
-
+CAPABILITIES(/atom/movable/sun_visuals_overlap)
+	param(nameof(dir), pos = 1)
+	param(nameof(icon_state), pos = 2)
 
 /// Accessor for a shared definition.
 /datum/sun_holder/proc/our_planet() as /datum/planet

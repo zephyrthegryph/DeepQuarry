@@ -13,12 +13,15 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { pruneStaleRunCopies, runCopyBase } from './lib/run_copies';
 import Juke from './juke/index.js';
 import { assertBuildRoot } from './lib/build_root';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
+import { claimFreePort, shouldRetryBoot } from './lib/free_port';
+import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
+import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
-import { UI_TYPES_DIR, UI_TYPES_JSON, writeUiTypes } from './lib/ui_types';
 import {
   BALANCE_RESULTS_FILE,
   BALANCE_RUNS_DIR,
@@ -72,7 +75,25 @@ import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_ar
 import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
 import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 
+import {
+  checkVerdigrisProvenance,
+  installVerdigrisLibrary,
+  verdigrisInputHash,
+} from './lib/verdigris_provenance';
+import {
+  dropVerdigris,
+  restoreVerdigris,
+  storeVerdigris,
+  verdigrisCacheDir,
+  verdigrisCacheKey,
+} from './lib/verdigris_cache';
+
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
+
+/** `cargo <args>` under the machine-wide cargo slot (lib/machine_slots.ts, tools/dq_machine_slots.sh): by default one cargo build at a
+ * time on the machine, the merge worktree first, instead of a dozen worktrees fighting over the cores. DQ_SLOTS_CARGO=N changes it. */
+const cargoExec = (args: string[], options?: any) =>
+  withSlot('cargo', `cargo ${args.slice(0, 2).join(' ')}`, () => Juke.exec('cargo', args, options), (m) => Juke.logger.info(m));
 
 export const DME_NAME = 'deepquarry';
 
@@ -99,6 +120,28 @@ function findDreamChecker(): string | null {
 
 assertBuildRoot(import.meta.url);
 Juke.chdir('../..', import.meta.url);
+
+// Worktree guard. Many agents build in parallel git worktrees with
+// byte-identical build.ts; Bun's shared runtime transpiler cache has been
+// observed resolving one worktree's invocation to another checkout, silently
+// overwriting the wrong deepquarry.dmb. The entry scripts disable that cache
+// and export DQ_BUILD_ROOT (derived by the shell, not by Bun); refuse to run
+// unless the root we chdir'd into is the invoking worktree's toplevel.
+{
+  const real = (p: string) => fs.realpathSync.native(path.resolve(p)).toLowerCase();
+  const scriptRoot = path.resolve(path.dirname(process.argv[1] ?? '.'), '../..');
+  const expected = process.env.DQ_BUILD_ROOT || scriptRoot;
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: expected, encoding: 'utf-8' });
+  const toplevel = top.status === 0 ? top.stdout.trim() : expected;
+  const roots = { cwd: process.cwd(), argv: scriptRoot, DQ_BUILD_ROOT: expected, git: toplevel };
+  const distinct = new Set(Object.values(roots).map(real));
+  if (distinct.size !== 1) {
+    console.error('build.ts: repo root mismatch, refusing to build the wrong checkout:');
+    for (const [k, v] of Object.entries(roots)) console.error(`  ${k}: ${v}`);
+    console.error('  (stale Bun transpiler cache? run via tools/build/build.sh, or set BUN_RUNTIME_TRANSPILER_CACHE_PATH=0)');
+    process.exit(1);
+  }
+}
 
 export const DefineParameter = new Juke.Parameter({
   type: 'string[]',
@@ -143,7 +186,7 @@ export const DmMapsIncludeTarget = new Juke.Target({
   },
 });
 
-// DQAdd Start — regenerate .dmi files from their PNG + .dmi.toml sources
+// regenerate .dmi files from their PNG + .dmi.toml sources
 // before DM compile. Architecture A migration: every DMI has editable
 // PNG + TOML sources alongside it; this target re-packs them when stale.
 //
@@ -161,11 +204,15 @@ export const IconRepackTarget = new Juke.Target({
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
       'icons', 'maps',
-    ]);
+    ], {
+      // The repack watches this pid and exits (with its worker pool) when the build
+      // dies; Windows does not kill child processes with their parent.
+      env: { ...process.env, DQ_BUILD_PID: String(process.pid) },
+    });
   },
 });
 
-// DQAdd — remove all generated DMI files in icons/gen/. Use this when you
+// remove all generated DMI files in icons/gen/. Use this when you
 // want to force a full repack on the next build (e.g. after hash corruption).
 export const CleanIconsTarget = new Juke.Target({
   executes: async () => {
@@ -173,7 +220,6 @@ export const CleanIconsTarget = new Juke.Target({
     Juke.rm('icons/gen', { recursive: true });
   },
 });
-// DQAdd End
 
 // Width/height of every .dmm, so map templates aren't parsed at boot just to
 // learn their size (doc/rewrite/fixes.md Q2). DM falls back to parsing when an
@@ -182,15 +228,26 @@ export const MapBoundsTarget = new Juke.Target({
   inputs: ['maps/**/*.dmm'],
   outputs: [MAP_BOUNDS_FILE],
   executes: async () => {
+    // A fresh worktree has no bounds yet: take the main checkout's. DM re-parses any template whose recorded file
+    // size no longer matches, and any map the seed lacks, so a seed from another branch stays correct.
+    const seededFrom = seedFromMainCheckout(process.cwd(), MAP_BOUNDS_FILE);
+    if (seededFrom) {
+      Juke.logger.info(`map-bounds: seeded ${MAP_BOUNDS_FILE} from ${seededFrom} (DM re-parses templates whose size differs)`);
+      return;
+    }
     const count = writeMapBounds(['maps']);
     Juke.logger.info(`Wrote bounds for ${count} maps to ${MAP_BOUNDS_FILE}`);
   },
 });
 
-// DQAdd Start — validate that every .dm file under code/ is included in
+// validate that every .dm file under code/ is included in
 // deepquarry.dme. Runs before the DM compile so missing includes are caught
 // with a helpful error rather than silently-uncompiled code.
+// Key of the last passing validation (deepquarry.dme, the .dm file list and their stats); see lib/seed.ts.
+const VALIDATE_DME_RECORD = 'data/validate-dme.json';
 export const ValidateDmeTarget = new Juke.Target({
+  // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
+  dependsOn: () => [GenTarget],
   inputs: ['code/**/*.dm', `${DME_NAME}.dme`],
   executes: async () => {
     // A .dm file is "compiled" if it is reachable from the .dme through the
@@ -236,7 +293,29 @@ export const ValidateDmeTarget = new Juke.Target({
       }
     };
 
-    seed(fs.readFileSync(`${DME_NAME}.dme`, 'utf-8'), '.');
+    const dmeText = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+    const dmFiles = Juke.glob('code/**/*.dm');
+    const statOf = (f: string): string => {
+      try {
+        const st = fs.statSync(f);
+        return `${st.size}:${st.mtimeMs}`;
+      } catch {
+        return 'missing';
+      }
+    };
+    const dmeKey = dmeValidationKey(dmeText, dmFiles, statOf);
+    if (!process.env.DQ_FULL_CHECKS && !process.env.CI) {
+      try {
+        if (JSON.parse(fs.readFileSync(VALIDATE_DME_RECORD, 'utf-8')).key === dmeKey) {
+          Juke.logger.info(`validate-dme: up to date (hash ${dmeKey.slice(0, 12)}, ${dmFiles.length} files); skipped`);
+          return;
+        }
+      } catch {
+        // no record yet
+      }
+    }
+
+    seed(dmeText, '.');
     while (queue.length > 0) {
       const file = queue.pop() as string;
       if (reachable.has(file)) continue;
@@ -251,7 +330,6 @@ export const ValidateDmeTarget = new Juke.Target({
       'code/modules/unit_tests/',
     ];
 
-    const dmFiles = Juke.glob('code/**/*.dm');
     const missing: string[] = [];
     for (const file of dmFiles) {
       const normalized = file.replace(/\\/g, '/');
@@ -276,12 +354,13 @@ export const ValidateDmeTarget = new Juke.Target({
       );
       throw new Juke.ExitCode(1);
     }
-    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
+    fs.mkdirSync('data', { recursive: true });
+    fs.writeFileSync(VALIDATE_DME_RECORD, JSON.stringify({ key: dmeKey, checkedAt: new Date().toISOString() }));
+    Juke.logger.info(`ValidateDme: (hash ${dmeKey.slice(0, 12)}) all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
   },
 });
-// DQAdd End
 
-// DQAdd Start — build the in-tree verdigris Rust FFI cdylib before the
+// build the in-tree verdigris Rust FFI cdylib before the
 // server runs. Produces verdigris.dll (Windows) / libverdigris.so (Linux)
 // at the repo root, where DreamDaemon loads it via the generated vg_* bindings (cave-gen
 // + vendored auxmos atmos). The compiled lib is a gitignored per-platform
@@ -300,8 +379,18 @@ const VERDIGRIS_RUST_TARGET =
   process.platform === 'win32'
     ? 'i686-pc-windows-msvc'
     : 'i686-unknown-linux-gnu';
+const VERDIGRIS_PROVENANCE = `${VERDIGRIS_LIB}.provenance.json`;
+// Provenance checking (lib/verdigris_provenance.ts) proves a library was built
+// from this checkout's Rust inputs. It needs the Rust build to embed
+// VERDIGRIS_SOURCE_HASH from DQ_VERDIGRIS_INPUT_HASH, which the crates do not do
+// yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
+const VERDIGRIS_PROVENANCE_ENFORCED = process.env.DQ_VERDIGRIS_PROVENANCE === '1';
+const verdigrisProvenanceMismatch = (): string | null =>
+  VERDIGRIS_PROVENANCE_ENFORCED
+    ? checkVerdigrisProvenance(process.cwd(), VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, process.env.RUSTFLAGS || '')
+    : null;
 
-// DQAdd Start — generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
+// generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
 // verdigris/ffi/src/abi.rs from the #[auxmacros::bind] functions. Every DM and
 // DLL build runs the check first and fails when either file is stale.
@@ -314,9 +403,59 @@ export const VerdigrisBindingsTarget = new Juke.Target({
   },
 });
 
+// The bindings check reads every Rust source and every DM file (15+ s on Windows). It is skipped when nothing it
+// reads has changed since it last passed here: the Rust sources and the generated files by content, the DM tree by
+// its file list (the DM side only checks that the types a component names exist; editing inside a file that removes
+// such a type is caught by CI, which always runs the full check, and by the next Rust or file-list change).
+// data/verdigris-bindings-check.json holds the key; DQ_FULL_CHECKS=1 forces the full check.
+const verdigrisBindingsCheckKey = (): string => {
+  const hash = createHash('sha256').update('vg-bindings-check-v1|');
+  const rs: string[] = [];
+  const walk = (dir: string, keep: (name: string) => boolean, out: string[]) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'target' || entry.name.startsWith('target-') || entry.name === 'node_modules') continue;
+      const full = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(full, keep, out);
+      else if (keep(entry.name)) out.push(full);
+    }
+  };
+  walk('verdigris', (n) => n.endsWith('.rs') || n === 'Cargo.toml', rs);
+  walk('code/__defines/verdigris', (n) => n.endsWith('.dm'), rs);
+  for (const file of rs.sort()) {
+    hash.update(file);
+    hash.update(fs.readFileSync(file));
+  }
+  const dm: string[] = [];
+  walk('code', (n) => n.endsWith('.dm'), dm);
+  // `gen` restores its build output into code/ after a fresh tree's first key was computed: leave it out.
+  hash.update(dm.filter((f) => !isGeneratedDm(f)).sort().join('\n'));
+  return hash.digest('hex');
+};
+const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
+
 export const VerdigrisBindingsCheckTarget = new Juke.Target({
   executes: () => {
+    const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
+    const key = full ? null : verdigrisBindingsCheckKey();
+    if (key) {
+      // A fresh worktree takes the main checkout's passing record; it only counts when its key equals ours.
+      const seededFrom = seedFromMainCheckout(process.cwd(), VERDIGRIS_BINDINGS_CHECK_RECORD);
+      if (seededFrom) Juke.logger.info(`verdigris bindings: seeded the check record from ${seededFrom} (used only if its key matches)`);
+      try {
+        if (JSON.parse(fs.readFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, 'utf-8')).key === key) {
+          Juke.logger.info('verdigris bindings: inputs unchanged since the last passing check; skipped');
+          return;
+        }
+      } catch {
+        // no record yet
+      }
+    }
     const stale = generateVerdigrisBindings(process.cwd(), true);
+    if (key && !stale.length) {
+      fs.mkdirSync('data', { recursive: true });
+      fs.writeFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, JSON.stringify({ key, checkedAt: new Date().toISOString() }));
+    }
     if (stale.length) {
       Juke.logger.error(
         `verdigris bindings are stale (${stale.join(', ')}). `
@@ -326,14 +465,82 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
     }
   },
 });
-// DQAdd End
+
+// Shared content-addressed cache of built libraries (lib/verdigris_cache.ts), so a
+// fresh worktree copies the DLL instead of compiling the Rust workspace.
+const verdigrisAbi = (): string | undefined => {
+  try {
+    return /#define VERDIGRIS_ABI "([0-9a-f]+)"/.exec(
+      fs.readFileSync('code/__defines/verdigris/_bindings.dm', 'utf-8'),
+    )?.[1];
+  } catch {
+    return undefined;
+  }
+};
+let verdigrisPendingStore: { cache: string; key: string; commit: string } | null = null;
+const verdigrisCacheHit = (): boolean => {
+  verdigrisPendingStore = null;
+  const cache = verdigrisCacheDir();
+  if (!cache) return false;
+  const k = verdigrisCacheKey(
+    process.cwd(),
+    VERDIGRIS_RUST_TARGET,
+    process.env.RUSTFLAGS || '',
+    VERDIGRIS_PROVENANCE_ENFORCED ? 'provenance' : '',
+  );
+  if ('bypass' in k) {
+    Juke.logger.info(`verdigris cache: bypassed (${k.bypass})`);
+    return false;
+  }
+  const sidecars = VERDIGRIS_PROVENANCE_ENFORCED ? [VERDIGRIS_PROVENANCE] : [];
+  if (restoreVerdigris(cache, k.key, VERDIGRIS_LIB, sidecars)) {
+    const abi = verdigrisAbi();
+    const abiOk = !abi || fs.readFileSync(VERDIGRIS_LIB).includes(Buffer.from(abi, 'latin1'));
+    if (abiOk && !verdigrisProvenanceMismatch()) {
+      Juke.logger.info(`verdigris cache: hit ${k.key} (${cache})`);
+      return true;
+    }
+    Juke.logger.warn(`verdigris cache: entry ${k.key} fails the ABI/provenance check; dropping it and rebuilding`);
+    dropVerdigris(cache, k.key);
+    fs.rmSync(VERDIGRIS_LIB, { force: true });
+  } else {
+    Juke.logger.info(`verdigris cache: miss ${k.key}; building and storing`);
+  }
+  verdigrisPendingStore = { cache, key: k.key, commit: k.commit };
+  return false;
+};
+const storeVerdigrisBuild = (built: string): void => {
+  const pending = verdigrisPendingStore;
+  if (!pending) return;
+  verdigrisPendingStore = null;
+  try {
+    const files = [VERDIGRIS_LIB, built.replace(/\.dll$/, '.pdb')];
+    if (VERDIGRIS_PROVENANCE_ENFORCED) files.push(VERDIGRIS_PROVENANCE);
+    storeVerdigris(pending.cache, pending.key, pending.commit, files, {
+      target: VERDIGRIS_RUST_TARGET,
+      rustflags: process.env.RUSTFLAGS || '',
+      abi: verdigrisAbi() || null,
+    });
+    Juke.logger.info(`verdigris cache: stored ${pending.key}`);
+  } catch (error) {
+    Juke.logger.warn(`verdigris cache: store failed: ${error instanceof Error ? error.message : error}`);
+  }
+};
 
 export const VerdigrisTarget = new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
+    const mismatch = verdigrisProvenanceMismatch();
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
     if (process.env.DQ_PREBUILT_VERDIGRIS === '1' && fs.existsSync(VERDIGRIS_LIB)) {
+      if (mismatch) {
+        Juke.logger.error(
+          `verdigris: prebuilt ${VERDIGRIS_LIB} is unsafe to reuse: ${mismatch}. `
+            + 'Copy its matching provenance sidecar or rebuild in this checkout.',
+        );
+        throw new Juke.ExitCode(1);
+      }
       Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
       // Warn now (before a long compile); DreamDaemon() refuses to boot on it.
       try {
@@ -343,12 +550,20 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
+    if (verdigrisCacheHit()) return false;
     const probe = spawnSync('cargo', ['--version'], {
       stdio: 'ignore',
       shell: true,
     });
     const cargoOk = !probe.error && probe.status === 0;
     if (!cargoOk) {
+      if (mismatch && fs.existsSync(VERDIGRIS_LIB)) {
+        Juke.logger.error(
+          `verdigris: cargo not found and ${VERDIGRIS_LIB} cannot be used: ${mismatch}. `
+            + 'Install Rust or copy a matching library and provenance sidecar.',
+        );
+        throw new Juke.ExitCode(1);
+      }
       if (fs.existsSync(VERDIGRIS_LIB)) {
         Juke.logger.info(
           `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
@@ -362,6 +577,7 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
+    if (mismatch) Juke.logger.info(`verdigris: rebuilding ${VERDIGRIS_LIB} because ${mismatch}`);
     return true;
   },
   inputs: [
@@ -383,20 +599,241 @@ export const VerdigrisTarget = new Juke.Target({
     'verdigris/tools/**/build.rs',
     'verdigris/tools/**/*.rs',
   ],
-  outputs: [VERDIGRIS_LIB],
+  // With provenance enforced, a mismatched file can have a newer mtime than every
+  // source (for example a copied DLL), so force Juke to run even when its
+  // timestamp check would pass.
+  outputs: () =>
+    !VERDIGRIS_PROVENANCE_ENFORCED
+      ? [VERDIGRIS_LIB]
+      : verdigrisProvenanceMismatch()
+        ? []
+        : [VERDIGRIS_LIB, VERDIGRIS_PROVENANCE],
   executes: async () => {
-    await Juke.exec(
-      'cargo',
-      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET, '--package', 'verdigris', '--lib'],
-      { cwd: 'verdigris' },
-    );
-    fs.copyFileSync(
-      `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
-      VERDIGRIS_LIB,
-    );
+    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
+    if (!VERDIGRIS_PROVENANCE_ENFORCED) {
+      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
+      fs.copyFileSync(built, VERDIGRIS_LIB);
+      storeVerdigrisBuild(built);
+      return;
+    }
+    const rustflags = process.env.RUSTFLAGS || '';
+    const cargoOptions = {
+      cwd: 'verdigris',
+      env: { ...process.env, DQ_VERDIGRIS_INPUT_HASH: verdigrisInputHash(process.cwd()) },
+    };
+    // Restored source files can retain old timestamps while Cargo keeps newer
+    // rlibs. Clean local crates when provenance is stale, preserving cached
+    // third-party dependencies.
+    if (verdigrisProvenanceMismatch()) {
+      const localCrates = ['vg-core', 'vg-gas', 'vg-heat', 'vg-layout', 'vg-power', 'vg-ffi', 'auxmacros', 'auxcallback', 'verdigris'];
+      await cargoExec(['clean', '--release', '--target', VERDIGRIS_RUST_TARGET, ...localCrates.flatMap((c) => ['-p', c])], cargoOptions);
+    }
+    await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+    try {
+      installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes('lacks generated exports')) throw error;
+      // Cargo can report a cached release artifact as fresh after source files
+      // are restored across worktrees. Rebuild the FFI crate once from scratch.
+      Juke.logger.warn(`verdigris: ${error.message}; rebuilding the FFI crate`);
+      await cargoExec(['clean', '-p', 'vg-ffi', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      await cargoExec(['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
+    }
+    storeVerdigrisBuild(built);
   },
 });
-// DQAdd End
+
+// the analyze lint engine (tools/analyze, doc: tools/analyze/README.md). One Rust
+// binary replaces tools/ci's Python lints and check_grep.sh. Like verdigris it is built when its
+// sources are newer than the binary (inputs/outputs dirty-check; the target dir is excluded by
+// enumerating sources). `lint`/`analyze` run it; DM-only work that has no cargo can reuse a
+// prebuilt binary (DQ_ANALYZE_NO_BUILD=1 in tools/ci/analyze.sh does the same for the shell).
+const ANALYZE_DIR = process.env.CARGO_TARGET_DIR
+  ? `${process.env.CARGO_TARGET_DIR}`
+  : 'tools/analyze/target';
+// Cargo profile for the analyzer: `release` (CI, the push gate; DQ_ANALYZE_PROFILE=release) or `dev-fast`
+// (local default: incremental, no LTO; an edit under tools/analyze/src rebuilds in about 10 s, not 2 minutes).
+const ANALYZE_PROFILE = process.env.DQ_ANALYZE_PROFILE || (process.env.CI ? 'release' : 'dev-fast');
+const analyzeCargoArgs = (): string[] => ['build', '--profile', ANALYZE_PROFILE, '--manifest-path', 'tools/analyze/Cargo.toml'];
+const ANALYZE_BIN = `${ANALYZE_DIR}/${ANALYZE_PROFILE}/${process.platform === 'win32' ? 'analyze.exe' : 'analyze'}`;
+
+// The analyze binary is cached by content outside the worktrees (DQ_ANALYZE_CACHE, default
+// E:/dq-cache/analyze-bin on Windows, else ~/.cache/dq/analyze-bin; `off` disables it), keyed by a
+// hash of the engine's sources, so a fresh worktree copies the binary instead of a 2 minute cargo
+// build. `<bin>.key` records which sources the binary in the target dir was built from.
+const analyzeCacheDir = (): string | null => {
+  const env = process.env.DQ_ANALYZE_CACHE;
+  if (env === 'off' || env === '0') return null;
+  if (env) return path.resolve(env);
+  if (process.platform === 'win32' && fs.existsSync('E:/')) return 'E:/dq-cache/analyze-bin';
+  return path.join(os.homedir(), '.cache', 'dq', 'analyze-bin');
+};
+// A cargo target dir shared by several worktrees (DQ_ANALYZE_TARGET=<dir>) is OFF by default, and must stay off. Cargo names a path
+// package's artifacts and fingerprints by its path relative to the workspace, not by where the checkout is, so every worktree
+// builds into the same files, and it judges "fresh" by file mtime: a worktree whose sources are older than the artifact another
+// worktree just built (a different branch, a merge) links THAT worktree's library, fails to compile ("cannot find look_keys in
+// dq_analyze") or, worse, builds and caches a binary from someone else's sources under this worktree's source key. Each worktree
+// builds in its own tools/analyze/target; the compiled dependencies are shared through sccache, and finished binaries through
+// the content-addressed cache below.
+const analyzeSharedTargetDir = (): string | null => {
+  const env = process.env.DQ_ANALYZE_TARGET;
+  if (!env || env === 'off' || env === '0') return null;
+  return path.resolve(env);
+};
+const analyzeWalk = (dir: string): string[] => {
+  const out: string[] = [];
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    const full = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) out.push(...analyzeWalk(full));
+    else out.push(full);
+  }
+  return out;
+};
+const analyzeSourceKey = (): string => {
+  const hash = createHash('sha256').update(`analyze-v2|${ANALYZE_PROFILE}|${process.platform}|${process.arch}|`);
+  const files = [
+    'tools/analyze/Cargo.toml',
+    'tools/analyze/Cargo.lock',
+    'tools/analyze/build.rs',
+    // Every file under src/ (not only .rs) and fixtures/ (include_str! embeds them), so no source change can reuse a stale binary.
+    ...analyzeWalk('tools/analyze/src'),
+    ...analyzeWalk('tools/analyze/fixtures'),
+  ]
+    .map((f) => f.replace(/\\/g, '/'))
+    .sort();
+  for (const file of files) {
+    hash.update(file);
+    hash.update('|');
+    try {
+      // CRLF and LF checkouts of the same source share a binary.
+      hash.update(fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n'));
+    } catch {
+      hash.update('<missing>');
+    }
+    hash.update('|');
+  }
+  return hash.digest('hex').slice(0, 32);
+};
+let analyzePendingKey: string | null = null;
+
+export const AnalyzeBuildTarget = new Juke.Target({
+  onlyWhen: () => {
+    const key = analyzeSourceKey();
+    analyzePendingKey = key;
+    const keyFile = `${ANALYZE_BIN}.key`;
+    const current = fs.existsSync(ANALYZE_BIN) && fs.existsSync(keyFile) ? fs.readFileSync(keyFile, 'utf-8').trim() : null;
+    if (current === key) return false;
+    const cache = analyzeCacheDir();
+    const cached = cache ? `${cache}/${key}/${path.basename(ANALYZE_BIN)}` : null;
+    if (cached && fs.existsSync(cached)) {
+      fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
+      fs.copyFileSync(cached, ANALYZE_BIN);
+      fs.writeFileSync(keyFile, key);
+      Juke.logger.info(`analyze cache: hit ${key} (${cache})`);
+      return false;
+    }
+    const probe = spawnSync('cargo', ['--version'], { stdio: 'ignore', shell: true });
+    const cargoOk = !probe.error && probe.status === 0;
+    if (!cargoOk) {
+      if (!fs.existsSync(ANALYZE_BIN)) {
+        Juke.logger.warn(`analyze: cargo not found and ${ANALYZE_BIN} is missing; the lint engine cannot run. Install rustup (see verdigris/README.md).`);
+      }
+      return false;
+    }
+    if (cache) Juke.logger.info(`analyze cache: miss ${key}; building and storing`);
+    return true;
+  },
+  executes: async () => {
+    // Build into one shared target dir (cargo's own lock serialises concurrent worktrees and
+    // different sources rebuild incrementally), then copy the binary to this worktree's path.
+    const shared = analyzeSharedTargetDir();
+    if (shared) {
+      fs.mkdirSync(shared, { recursive: true });
+      Juke.logger.info(`analyze: building in shared target ${shared} (waits on cargo's lock if another build is running)`);
+      const cargoEnv = { ...process.env, CARGO_TARGET_DIR: path.resolve(shared) };
+      await cargoExec(analyzeCargoArgs(), { env: cargoEnv });
+      const built = path.join(path.resolve(shared), ANALYZE_PROFILE, path.basename(ANALYZE_BIN));
+      fs.mkdirSync(path.dirname(ANALYZE_BIN), { recursive: true });
+      const tmpBin = `${ANALYZE_BIN}.${process.pid}.tmp`;
+      fs.copyFileSync(built, tmpBin);
+      fs.renameSync(tmpBin, ANALYZE_BIN);
+    } else {
+      await cargoExec(analyzeCargoArgs());
+    }
+    const key = analyzePendingKey;
+    if (!key) return;
+    fs.writeFileSync(`${ANALYZE_BIN}.key`, key);
+    const cache = analyzeCacheDir();
+    if (!cache) return;
+    try {
+      const dir = `${cache}/${key}`;
+      fs.mkdirSync(dir, { recursive: true });
+      // Copy then rename, so a concurrent reader never sees a half-written binary.
+      const tmp = `${dir}/.${process.pid}.tmp`;
+      fs.copyFileSync(ANALYZE_BIN, tmp);
+      fs.renameSync(tmp, `${dir}/${path.basename(ANALYZE_BIN)}`);
+      Juke.logger.info(`analyze cache: stored ${key}`);
+    } catch (error) {
+      Juke.logger.warn(`analyze cache: store failed: ${error instanceof Error ? error.message : error}`);
+    }
+  },
+});
+
+// The generated DM and TypeScript (`analyze gen`: code/engine/_generated/*.dm, code/_generated/reads.dm,
+// tgui/packages/tgui/interfaces/generated/*.d.ts) are not committed; every target that compiles or
+// lints DM runs this first. `analyze gen` rewrites only the files whose text changed (so an unchanged
+// tree keeps its mtimes and the .dmb caches hold) and caches its parse per file in data/analyze-cache:
+// about 3 s warm, 18 s cold. It fails on a generator diagnostic (a bad declaration) or a generated
+// file missing from deepquarry.dme. DQ_SKIP_GEN=1 skips it (the files must already exist).
+export const GenTarget = new Juke.Target({
+  dependsOn: [AnalyzeBuildTarget],
+  executes: async () => {
+    if (process.env.DQ_SKIP_GEN === '1') {
+      Juke.logger.warn('gen: DQ_SKIP_GEN=1, not regenerating code/engine/_generated');
+      return;
+    }
+    if (!fs.existsSync(ANALYZE_BIN)) {
+      if (fs.existsSync('code/engine/_generated/declare.dm')) {
+        Juke.logger.warn(`gen: no analyze binary (${ANALYZE_BIN}); compiling the generated files already on disk, which may be stale`);
+        return;
+      }
+      Juke.logger.error('gen: the generated DM is missing and the analyze engine cannot be built (install cargo, see verdigris/README.md)');
+      throw new Juke.ExitCode(1);
+    }
+    const started = Date.now();
+    const result = spawnSync(ANALYZE_BIN, ['gen'], { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 });
+    const lines = `${result.stdout || ''}${result.stderr || ''}`.split(/\r?\n/).filter((l) => l && !l.startsWith('fresh '));
+    const written = lines.filter((l) => l.startsWith('wrote '));
+    const other = lines.filter((l) => !l.startsWith('wrote '));
+    if (result.error || result.status !== 0) {
+      for (const line of lines) console.log(line);
+      Juke.logger.error('gen: `analyze gen` failed (see the diagnostics above)');
+      throw new Juke.ExitCode(1);
+    }
+    for (const line of other) console.log(line);
+    Juke.logger.info(`gen: ${written.length} generated file(s) rewritten in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+  },
+});
+
+// `tools/build/build.sh analyze` runs every engine lint (what tools/ci/check_ratchets.sh and
+// tools/ci/check_grep.sh wrap); extra arguments go to `analyze check` (e.g. --lint scheduler).
+export const AnalyzeTarget = new Juke.Target({
+  dependsOn: [GenTarget], // some lints read the generated DM (sem/reads)
+  executes: async ({ args }) => {
+    if (!fs.existsSync(ANALYZE_BIN)) {
+      Juke.logger.warn('analyze: no binary, skipping the engine lints');
+      return;
+    }
+    await Juke.exec(ANALYZE_BIN, ['check', ...(args || [])]);
+  },
+});
 
 /** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
 const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
@@ -442,10 +879,10 @@ export const DmTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     nativeDefaultCompiler() && DmbcTarget,
-    IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
-    ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
-    VerdigrisBindingsCheckTarget, // DQAdd — _bindings.dm must match the Rust binds
-    DreamCheckerTarget, // DQAdd — run SpacemanDMM lint before DM compile if available
+    IconRepackTarget, // regenerate .dmi from PNG+TOML before DM compile
+    ValidateDmeTarget, // fail fast if any code/ .dm is missing from the DME
+    VerdigrisBindingsCheckTarget, // _bindings.dm must match the Rust binds
+    GenTarget, // DreamChecker runs beside DreamMaker below (it used to run first, ~45 s on its own)
     MapBoundsTarget, // boot reads template sizes from data/map_template_bounds.json
   ],
   inputs: [
@@ -471,12 +908,27 @@ export const DmTarget = new Juke.Target({
   executes: async ({ get }) => {
     // Production build: no DEBUG (no runtime line numbers, ~56 MB less at world
     // load; doc/rewrite/init_and_turfs.md §0.5). Pass -D DEBUG to get them back.
-    await DreamMaker(`${DME_NAME}.dme`, {
-      defines: ['CBT', ...get(DefineParameter)],
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
-    });
+    // DreamChecker lints the same tree while DreamMaker compiles it. Either failing fails the target, and a
+    // DreamChecker failure deletes the fresh .dmb so the next run cannot skip this target as up to date.
+    const checker = findDreamChecker();
+    if (!checker) {
+      Juke.logger.info('dreamchecker not found on PATH, DREAMCHECKER_EXE, or ~/SpacemanDMM — skipping DM lint (install via tools/ci/install_spaceman_dmm.sh)');
+    }
+    const results = await Promise.allSettled([
+      checker ? runDreamChecker().then(() => Juke.logger.info('dream-checker: passed')) : Promise.resolve(),
+      DreamMaker(`${DME_NAME}.dme`, {
+        defines: ['CBT', ...get(DefineParameter)],
+        warningsAsErrors: get(WarningParameter).includes('error'),
+        ignoreWarningCodes: get(NoWarningParameter),
+        namedDmVersion: get(DmVersionParameter),
+      }),
+    ]);
+    if (results[0].status === 'rejected') {
+      fs.rmSync(`${DME_NAME}.dmb`, { force: true });
+      Juke.logger.error('dream-checker failed (see above); the .dmb was removed');
+      throw results[0].reason;
+    }
+    if (results[1].status === 'rejected') throw results[1].reason;
   },
 });
 
@@ -615,6 +1067,10 @@ type WorldRun = {
    * results are likely missing or incomplete; always logged as an explicit
    * error rather than folded into an ordinary "not clean". */
   killedByWatchdog: boolean;
+  daemonExitCode: number | null;
+  daemonSignal: string | null;
+  daemonReason: string | null;
+  daemonError: string | null;
 };
 
 /**
@@ -642,6 +1098,10 @@ async function runTestWorld(
   let killedByWatchdog = false;
   let runtimeError: string | null = null;
   let runtimeIdentity: RuntimeIdentity | undefined;
+  let daemonExitCode: number | null = null;
+  let daemonSignal: string | null = null;
+  let daemonReason: string | null = null;
+  let daemonError: string | null = null;
   try {
     const result = await DreamDaemon(
       {
@@ -662,6 +1122,9 @@ async function runTestWorld(
       params,
     );
     killedByWatchdog = !!result.killedByWatchdog;
+    daemonExitCode = result.code;
+    daemonSignal = result.signal;
+    daemonReason = result.watchdogReason ?? null;
   } catch (error) {
     runtimeError = String(error);
     if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) {
@@ -672,6 +1135,8 @@ async function runTestWorld(
       throw error;
     }
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
+    // The error is kept for the benchmark diagnostics.
+    daemonError = String(error);
   }
   const processSummary = sampler ? sampler.stop() : null;
   let cleanText: string | null = null;
@@ -698,7 +1163,39 @@ async function runTestWorld(
     process: processSummary,
     samples: sampler?.samples ?? [],
     killedByWatchdog,
+    daemonExitCode,
+    daemonSignal,
+    daemonReason,
+    daemonError,
   };
+}
+
+/** Keep every benchmark boot's outputs before the next boot clears shared paths. */
+function saveBenchIterationDiagnostics(runId: string, iteration: number, run: WorldRun): string {
+  const dest = `data/bench/iterations/${runId}/iteration${iteration}`;
+  fs.mkdirSync(dest, { recursive: true });
+  writeJson(`${dest}/runner.json`, {
+    duration_seconds: run.durationSeconds,
+    clean: run.clean,
+    killed_by_watchdog: run.killedByWatchdog,
+    daemon_exit_code: run.daemonExitCode,
+    daemon_signal: run.daemonSignal,
+    daemon_reason: run.daemonReason,
+    daemon_error: run.daemonError,
+    has_test_results: run.results !== null,
+    has_benchmark_results: fs.existsSync('data/bench/scenarios.json'),
+  });
+  for (const source of ['data/unit_tests.json', 'data/bench/scenarios.json', 'data/bench/process.json']) {
+    if (fs.existsSync(source)) fs.copyFileSync(source, `${dest}/${path.basename(source)}`);
+  }
+  const logSource = 'data/logs/ci';
+  if (fs.existsSync(logSource)) {
+    fs.cpSync(logSource, `${dest}/logs`, {
+      recursive: true,
+      filter: (source) => !path.relative(logSource, source).split(path.sep).includes('profiler'),
+    });
+  }
+  return dest;
 }
 
 // ---------------------------------------------------------------------------
@@ -709,20 +1206,6 @@ async function runTestWorld(
 // recompile never swaps the binary under a running daemon), its own log
 // directory, results file and focus file, and a free TCP port picked by the
 // OS. Nothing is written to a shared source file.
-
-/** A free localhost TCP port, picked by the OS. */
-function freePort(): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.unref();
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      const port = typeof address === 'object' && address ? address.port : 0;
-      server.close(() => resolve(port));
-    });
-  });
-}
 
 function pidAlive(pid: number): boolean {
   if (!pid || Number.isNaN(pid)) return false;
@@ -781,7 +1264,18 @@ function acquireRunSlot(): RunSlot {
   throw new Juke.ExitCode(1);
 }
 
-/** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
+/** Hard-links `from` to `to` (replacing `to`), falling back to a copy where
+ * links aren't possible (another volume, a filesystem without them). */
+function linkOrCopy(from: string, to: string): void {
+  fs.rmSync(to, { force: true });
+  try {
+    fs.linkSync(from, to);
+  } catch {
+    fs.copyFileSync(from, to);
+  }
+}
+
+/** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 120 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
 type IsolatedRun = WorldRun & { logDir: string; rawLogs?: RuntimeLogArchive; inventory?: IssuedSuiteInventory };
@@ -797,7 +1291,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: CapturedCompiledRun } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; worldSlot?: HeldSlot | null; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: CapturedCompiledRun } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
@@ -808,7 +1302,12 @@ async function runIsolatedTestWorld(
   Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
-  const runBase = `${base}.${slot.tag}`;
+  // The copy is named for this process as well as the slot. Slot names are reused, and a previous occupant's file can still be
+  // held (its DreamDaemon closing its handles, a scanner holding it) when removeDerivedArtifacts() gives up after 5 s and leaves
+  // it behind: copying onto that name failed with EBUSY (copyfile deepquarry.test.dmb -> deepquarry.test.run2.dmb). A name no
+  // earlier run used cannot be held by one; leftovers of dead processes are pruned (and any that stay locked are logged).
+  pruneStaleRunCopies(base, pidAlive, (m) => Juke.logger.warn(m));
+  const runBase = runCopyBase(base, slot.tag, process.pid);
   const logDir = `data/logs/${slot.tag}`;
   const rawLogs: RuntimeLogArchive = {};
   let logDirectoryCleared = false;
@@ -854,13 +1353,29 @@ async function runIsolatedTestWorld(
       // particular, the unknown-focus sentinel must see no focused request.
       params[options.exactBatch ? 'test-select' : 'test-focus'] = focusFile;
     }
-    const port = await freePort();
+    let portClaim = await claimFreePort();
+    let port = portClaim.port;
     Juke.logger.info(
       `Test world ${slot.tag}${options.label ? ` (${options.label})` : ''}: ${runBase}.dmb on port ${port}, logs in ${logDir}.`,
     );
     const started = Date.now();
     let killedByWatchdog = false;
+    let daemonExitCode: number | null = null;
+    let daemonSignal: string | null = null;
+    let daemonReason: string | null = null;
+    let daemonError: string | null = null;
+    // At most DQ_SLOTS_TEST_WORLD (default: a third of the CPUs) test worlds boot at once on the machine; the run slot above is per
+    // worktree. A sharded run passes the slot it took with the rest of its group (worldSlot), so no shard queues while another holds one.
+    const worldSlot = options.worldSlot !== undefined ? options.worldSlot : await acquireSlot('test_world', `test world ${slot.tag}${options.label ? ` (${options.label})` : ''}`, (m) => Juke.logger.info(m));
     try {
+      for (let attempt = 1; ; attempt++) {
+      const attemptStart = Date.now();
+      daemonError = null;
+      // boot_profile=1 (DQ_WORLD_PARAMS): the world logs its own launch-to-world/New time from launch_tod, and DreamDaemon profiles
+      // global variable initialisation and the compiled map load too (they run before any DM code could start the profiler).
+      // BYOND numbers are 32-bit floats, so the stamp is deciseconds since midnight UTC (what world.timeofday counts), not epoch time.
+      if (params.boot_profile) params.launch_tod = String(Math.round((Date.now() % 86_400_000) / 100));
+      try {
       const result = await DreamDaemon(
         {
           dmbFile: `${runBase}.dmb`,
@@ -868,6 +1383,8 @@ async function runIsolatedTestWorld(
           namedDmVersion: dmVersion,
           runtimeLibrary: options.capturedRun?.runtimeLibrary,
           watchdogFile: resultsFile,
+          watchdogCleanFile: `${logDir}/finished_run.lk`,
+          stallFile: `${logDir}/tests.log`,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: (pid) => { worldSpawned = true; options.sampler?.start(pid); },
           onPreparedOutput: (dmb) => { options.capturedRun?.verifyHosted(dmb); options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
@@ -878,15 +1395,32 @@ async function runIsolatedTestWorld(
         '-close',
         ddSecurityFlag(),
         '-verbose',
+        ...(params.boot_profile ? ['-profile'] : []),
         '-params',
         new URLSearchParams(params).toString(),
       );
       killedByWatchdog = !!result.killedByWatchdog;
       receiptOutcome.killedByWatchdog = killedByWatchdog;
-    } catch (error) {
-      receiptOutcome.error = String(error);
-      if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) throw error;
-      // DreamDaemon exits non-zero even on clean runs; the files below decide.
+      daemonExitCode = result.code;
+      daemonSignal = result.signal;
+      daemonReason = result.watchdogReason ?? null;
+      } catch (error) {
+        receiptOutcome.error = String(error);
+        if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) throw error;
+        // DreamDaemon exits non-zero even on clean runs; the files below decide.
+        daemonError = String(error);
+      }
+      // A world that died within seconds with no results and no clean marker never booted: its port was taken by another
+      // world between the pick and the bind. Claim another port and launch again.
+      if (!shouldRetryBoot(Date.now() - attemptStart, fs.existsSync(resultsFile), fs.existsSync(`${logDir}/clean_run.lk`), attempt)) break;
+      portClaim.release();
+      portClaim = await claimFreePort();
+      Juke.logger.info(`Test world ${slot.tag} died at boot (attempt ${attempt}); retrying on port ${portClaim.port} (was ${port}).`);
+      port = portClaim.port;
+      }
+    } finally {
+      portClaim.release();
+      worldSlot?.release();
     }
     options.capturedRun?.verifyRetained();
     let cleanText: string | null = null;
@@ -916,6 +1450,10 @@ async function runIsolatedTestWorld(
       process: processSummary,
       samples: options.sampler?.samples ?? [],
       killedByWatchdog,
+      daemonExitCode,
+      daemonSignal,
+      daemonReason,
+      daemonError,
       logDir,
       rawLogs,
     };
@@ -945,6 +1483,33 @@ async function runIsolatedTestWorld(
         await removeDerivedArtifacts(`${runBase}.dyn.rsc`);
       } finally { slot.release(); }
     }
+  }
+}
+
+/**
+ * The boot gate's verdict (unit_test_boot_gate(), doc/rewrite/boot_gate.md): a world that logged a runtime or a
+ * warning before its first test fails the run, and this says so on its own line so the author of a focused run
+ * does not take it for their test's failure. Returns whether the boot was clean (true when no report was written).
+ */
+function reportBootGate(logDir: string): boolean {
+  const file = `${logDir}/boot_report.json`;
+  if (!fs.existsSync(file)) return true;
+  try {
+    const report = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    if (!report.runtimes && !report.warnings) return true;
+    Juke.logger.error(
+      `BOOT GATE: the world logged ${report.runtimes} runtime(s) and ${report.warnings} warning(s) before the first test. `
+        + `This fails every run until fixed; it is not your test (unless your change runs at boot). See ${file}`
+        + (report.runtimes ? ` and ${logDir}/runtime-errors.log` : '')
+        + '.',
+    );
+    for (const line of report.first_warnings || []) console.error(`  boot warning: ${line}`);
+    if (report.runtimes && fs.existsSync(`${logDir}/runtime-errors.log`)) {
+      console.error(fs.readFileSync(`${logDir}/runtime-errors.log`, 'utf-8').split(/\r?\n/).slice(0, 40).join('\n'));
+    }
+    return false;
+  } catch {
+    return true;
   }
 }
 
@@ -978,8 +1543,10 @@ export const FocusParameter = new Juke.Parameter({ type: 'string[]' });
 
 function focusedTestNames(get: any): string[] | null {
   // Accepts full paths or bare names (dq_foo, which is what tools/dq_focused_test.sh passes).
+  // `--focus=@file` reads the names from a file, one per line (or comma separated): tools/dq_focused_test.sh
+  // passes a long list that way, since a Windows command line stops at 8191 characters.
   const names = (get(FocusParameter) as string[])
-    .flatMap((s) => s.split(','))
+    .flatMap((s) => (s.startsWith('@') ? fs.readFileSync(s.slice(1), 'utf-8').split(/[\r\n,]+/) : s.split(',')))
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => (s.startsWith('/datum/unit_test/') ? s : `/datum/unit_test/${s.replace(/^\/+/, '')}`));
@@ -1247,11 +1814,13 @@ function recordSweepHashes(results: Record<string, UnitTestEntry>): void {
   }
 }
 
-type TestTier = 'normal' | 'all' | 'exhaustive';
+type TestTier = 'normal' | 'all' | 'exhaustive' | 'e0';
 
 /** `--tier=`: `normal` (the default: every integration merge), `all` (normal
- * plus the exhaustive whole-type sweeps: CI and nightly) or `exhaustive`
- * (only those sweeps). The older names still work: fast = normal,
+ * plus the exhaustive whole-type sweeps: CI and nightly), `exhaustive`
+ * (only those sweeps) or `e0` (only the E0 proofs, which cannot pass until
+ * the engines land: no other tier runs them, doc/testing.md "The E0 proofs").
+ * The older names still work: fast = normal,
  * full = all, sweep = exhaustive. `--exhaustive` is shorthand for `--tier=all`.
  * The world does the filtering (the test-tier world param against each
  * test's `tier` var); a --focus run ignores the tier and runs what it names. */
@@ -1259,11 +1828,11 @@ function resolveTier(get: any): TestTier {
   if (get(ExhaustiveParameter)) return 'all';
   const raw = ((get(TierParameter) as string | null) ?? 'normal').toLowerCase();
   const aliases: Record<string, TestTier> = {
-    normal: 'normal', fast: 'normal', all: 'all', full: 'all', exhaustive: 'exhaustive', sweep: 'exhaustive',
+    normal: 'normal', fast: 'normal', all: 'all', full: 'all', exhaustive: 'exhaustive', sweep: 'exhaustive', e0: 'e0',
   };
   const tier = aliases[raw];
   if (!tier) {
-    Juke.logger.error(`--tier=${raw}: expected normal, all or exhaustive.`);
+    Juke.logger.error(`--tier=${raw}: expected normal, all, exhaustive or e0.`);
     throw new Juke.ExitCode(2);
   }
   return tier;
@@ -1315,7 +1884,15 @@ function sweepTestPredicate(): (name: string) => boolean {
   return declaredVarPredicate('is_sweep_test', (v) => v === 'TRUE' || v === '1');
 }
 
-function tierIncludes(tier: TestTier, exhaustive: boolean): boolean {
+/** Whether a unit-test type is an E0 proof (its `tier` var is TEST_TIER_E0). */
+function e0TestPredicate(): (name: string) => boolean {
+  return declaredVarPredicate('tier', (v) => v === 'TEST_TIER_E0');
+}
+
+/** The E0 proofs belong to the `e0` tier alone: `all` does not include them. */
+function tierIncludes(tier: TestTier, exhaustive: boolean, e0 = false): boolean {
+  if (e0) return tier === 'e0';
+  if (tier === 'e0') return false;
   if (tier === 'all') return true;
   return exhaustive ? tier === 'exhaustive' : tier === 'normal';
 }
@@ -1324,6 +1901,24 @@ function tierIncludes(tier: TestTier, exhaustive: boolean): boolean {
 function testWorldParams(get: any): Record<string, string> {
   const params: Record<string, string> = { 'test-tier': resolveTier(get) };
   if (get(ProfileTestsParameter)) params['test-profile'] = '1';
+  // `tools/dq_focused_test.sh --bless`: snapshot tests write their current rows over the recorded files
+  // (code/modules/unit_tests/dq_snapshot_files.dm) instead of failing.
+  if (process.env.DQ_SNAPSHOT_BLESS === '1') {
+    params['snapshot-bless'] = '1';
+    Juke.logger.warn('DQ_SNAPSHOT_BLESS=1: snapshot tests rewrite their recorded files; review the diff before committing.');
+  }
+  // tools/dq_focused_test.sh: one slice of a sweep per focused world (DQ_FOCUS_SHARD=index/count, 0-based; the sweep tests ask
+  // sweep_owns()), and extra world params (DQ_WORLD_PARAMS=key=value&key=value; the look sweep's look-plan, look-types, look-order,
+  // look-dump). A sharded dm-test run sets its own shard params after this, so they win there.
+  const slice = /^(\d+)\/(\d+)$/.exec(process.env.DQ_FOCUS_SHARD ?? '');
+  if (slice) {
+    params['shard-index'] = slice[1];
+    params['shard-count'] = slice[2];
+  }
+  for (const pair of (process.env.DQ_WORLD_PARAMS ?? '').split('&')) {
+    const eq = pair.indexOf('=');
+    if (eq > 0) params[pair.slice(0, eq)] = pair.slice(eq + 1);
+  }
   return params;
 }
 
@@ -1432,7 +2027,8 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
   }
   if (selection) for (const name of [...known]) if (!selection.has(name)) known.delete(name);
   const isExhaustive = exhaustiveTestPredicate();
-  for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name))) known.delete(name);
+  const isE0 = e0TestPredicate();
+  for (const name of [...known]) if (!tierIncludes(tier, isExhaustive(name), isE0(name))) known.delete(name);
   const DEFAULT_WEIGHT_DS = 5; // ~0.5s: most non-sweep tests are quick
   const sorted = [...known].sort(
     (a, b) => (durations.get(b) ?? DEFAULT_WEIGHT_DS) - (durations.get(a) ?? DEFAULT_WEIGHT_DS),
@@ -1455,6 +2051,19 @@ type ShardRun = WorldRun & { index: number; logDir: string };
  * (lib/dd_slot.ts) is also taken when DQ_DD_SLOT_BASE configures a shared
  * DreamDaemon budget; without one, the dd-slot fallback is per-worktree with
  * only two non-priority slots, which would serialize a 4-shard run. */
+/** The per-shard DreamDaemon watchdog backstop, in minutes. Each shard does
+ * roughly 1/shardCount of the work (sweeps self-divide via sweep_types(),
+ * other tests are bin-packed), so the backstop scales down with shard count --
+ * sqrt rather than linear, since boot overhead and a still-heavy slice don't
+ * shrink that fast. A whole-tier run (no --focus/--select/--affected) gets a
+ * much larger base: the normal tier on 4 shards took up to 34 min per shard on
+ * a contended machine (2026-10-04), past the old 23 min default. Floored at 12
+ * minutes; DQ_DD_WATCHDOG_MINUTES (lib/byond.ts) overrides it. */
+function shardWatchdogMinutes(shardCount: number, wholeTier: boolean): number {
+  const base = wholeTier ? 120 : 45;
+  return Math.max(base / Math.sqrt(shardCount), 12);
+}
+
 async function runShardWorld(
   dmbFile: string,
   dmVersion: string | null,
@@ -1465,17 +2074,14 @@ async function runShardWorld(
   worldParams: Record<string, string>,
   linkFrom: string,
   compiledOutput: CompiledOutput,
+  wholeTier: boolean,
+  worldSlot: HeldSlot | null,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = new ProcessSampler(`data/bench/process-${tag}.json`);
   const ddSlot = process.env.DQ_DD_SLOT_BASE ? await acquireDdSlot(priority) : null;
-  // Each shard does roughly 1/shardCount of the suite's work (sweeps
-  // self-divide via sweep_types(), other tests are bin-packed), so its
-  // watchdog backstop scales down with shard count too -- sqrt rather than
-  // linear, since boot overhead and a still-heavy slice don't shrink that
-  // fast. Floored at 12 minutes; DQ_DD_WATCHDOG_MINUTES (lib/byond.ts) overrides it.
-  const shardWatchdogMs = Math.max(Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000), 12 * 60 * 1000);
+  const shardWatchdogMs = Math.round(shardWatchdogMinutes(shardCount, wholeTier) * 60 * 1000);
   try {
     const run = await runIsolatedTestWorld(
       dmbFile,
@@ -1487,7 +2093,7 @@ async function runShardWorld(
         ...worldParams,
       },
       null,
-      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, compiledOutput },
+      { watchdogTimeoutMs: shardWatchdogMs, sampler, label: `${tag} of ${shardCount}`, linkFrom, compiledOutput, worldSlot },
     );
     return { ...run, index: shardIndex };
   } finally {
@@ -1589,7 +2195,8 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
       + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
       + `plus every sweep test in the tier in each shard${selection ? ' that matches the selection' : ''}.`,
   );
-  const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
+  const wholeTier = !selection;
+  const watchdogMinutes = shardWatchdogMinutes(shardCount, wholeTier);
   const started = Date.now();
   // One private copy of the build for this run (a concurrent recompile in this
   // worktree must not swap the binary under running worlds). Each shard then
@@ -1599,6 +2206,10 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     copyWritableRuntimePair(compiledOutput, privateBase);
   }
   let runs: ShardRun[];
+  // All the shards' test_world slots at once (one queue entry): a shard never waits for a slot while its siblings hold theirs, so two
+  // sharded runs cannot each hold part of the budget. A slot goes back as its shard's world ends.
+  const worldSlots: (HeldSlot | null)[] = await acquireSlotGroup('test_world', shardCount, `dm-test ${shardCount} shards`, (m) => Juke.logger.info(m));
+  if (worldSlots.length === 0) for (let i = 0; i < shardCount; i++) worldSlots.push(null);
   try {
     runs = await Promise.all(
       Array.from({ length: shardCount }, (_, i) =>
@@ -1612,9 +2223,12 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           worldParams,
           privateBase,
           compiledOutput,
+          wholeTier,
+          worldSlots[i] ?? null,
         )),
     );
   } finally {
+    for (const slot of worldSlots) slot?.release();
     if (compiledOutput.kind === 'conventional') {
       await removeDerivedArtifacts(`${privateBase}.dmb`);
       await removeDerivedArtifacts(`${privateBase}.rsc`);
@@ -1625,13 +2239,14 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     if (run.killedByWatchdog) {
       Juke.logger.error(
         `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
-          + `${Math.round(shardWatchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
+          + `${Math.round(watchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
           + `${run.results ? 'Partial' : 'No'} results were captured.`,
       );
     }
     if (!run.clean) {
       Juke.logger.error(`Shard ${run.index} (logs in ${run.logDir}) was not clean:`);
       printLogTails(run.logDir, 40);
+      reportBootGate(run.logDir);
     }
   }
   const { results, clean, totalCpuSeconds } = mergeShardResults(runs);
@@ -1831,11 +2446,17 @@ export const DmTestTarget = new Juke.Target({
     // mode, --shards=0 sizes from free dd-slots. A --focus run is one world:
     // it's a handful of tests, so extra boots would only cost time.
     const requestedShards = get(ShardsParameter);
-    const shardCount = focus
+    let shardCount = focus
       ? 1
       : requestedShards === 0
         ? pickAutoShardCount()
         : Math.max(requestedShards ?? defaultShardCount(), 1);
+    // More shards than the machine runs test worlds at once would only queue: clamp, so the group of slots can be satisfied.
+    const worldBudget = slotCapacity('test_world');
+    if (worldBudget > 0 && shardCount > worldBudget) {
+      Juke.logger.info(`dm-test: ${shardCount} shards asked for, but at most ${worldBudget} test worlds run at once on this machine (DQ_SLOTS_TEST_WORLD): using ${worldBudget}.`);
+      shardCount = worldBudget;
+    }
     if (shardCount > 1) {
       await runSharded(shardCount, get);
       return;
@@ -1848,12 +2469,30 @@ export const DmTestTarget = new Juke.Target({
     if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
     const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus, { compiledOutput, capturedRun });
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
-    if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
+    if (!run.clean) {
+      printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
+      reportBootGate(run.logDir);
+      // The state guard (unit_test_globals_guard()): globals an earlier test left changed, the usual cause of a
+      // failure that shows only in a long run.
+      try {
+        const leaks = fs.readFileSync(`${run.logDir}/tests.log`, 'utf-8').split(/\r?\n/).filter((l) => l.includes('STATE LEAK'));
+        if (leaks.length) {
+          Juke.logger.warn(`State guard: ${leaks.length} global(s) left changed by a test (suspects for an order-dependent failure):`);
+          console.error(leaks.slice(0, 30).join('\n'));
+        }
+      } catch {
+        // no tests.log
+      }
+    }
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
-    // Keep the successful output pair for inspection; the next derived build
-    // still invokes its compiler. Only the temporary derived manifest is removed.
-    // Failed compilation uses the existing cleanup path above.
-    if (!capturedRun) await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    // Keep deepquarry.test.dmb/.rsc (only drop the derived .dme text) so an
+    // unchanged rerun -- a flake recheck, a focused rerun while iterating --
+    // can reuse them via compileDerived()'s content-hash cache instead of
+    // recompiling. removeDerivedArtifacts() in compileDerived()'s catch
+    // already cleans up fully on a failed compile.
+    // DQ_KEEP_DERIVED_DME=1 (tools/dq_focused_test.sh --split-slow): a second dm-test shares this .dmb and re-reads the
+    // derived .dme for its compile-hash check; deleting it under that run would fail its cache hit.
+    if (!capturedRun && process.env.DQ_KEEP_DERIVED_DME !== '1') await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
@@ -2043,16 +2682,26 @@ export const BenchTarget = new Juke.Target({
         // The world writes the flight recorder of each scenario here (code/modules/benchmarks/_benchmark.dm).
         fs.rmSync('data/bench/kernel_ticks', { recursive: true, force: true });
         const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
+        const diagnostics = saveBenchIterationDiagnostics(identity.id, i, run);
         let world: WorldBenchDocument;
         try {
           world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
         } catch {
           printLogTails();
-          failures.push(`iteration ${i}: the world wrote no benchmark results`);
+          failures.push(
+            `iteration ${i}: the world wrote no benchmark results `
+              + `(daemon ${run.daemonReason ?? 'unknown'}, exit ${run.daemonExitCode ?? 'unknown'}, `
+              + `watchdog ${run.killedByWatchdog ? 'timed out' : 'no'}; diagnostics: ${diagnostics})`,
+          );
           continue;
         }
+        if (run.killedByWatchdog || run.daemonError) {
+          failures.push(`iteration ${i}: DreamDaemon ${run.daemonError ?? run.daemonReason ?? 'failed'}; diagnostics: ${diagnostics}`);
+        }
         for (const scenario of Object.values(world.scenarios)) {
-          if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
+          if (scenario.status !== 'passed') {
+            failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}; diagnostics: ${diagnostics}`);
+          }
         }
         const profiles: string[] = [];
         if (fs.existsSync('data/logs/ci/profiler')) {
@@ -2371,7 +3020,7 @@ export const AutowikiTarget = new Juke.Target({
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget,
-    VerdigrisTarget, // DQAdd — autowiki boots the world, which loads the FFI lib
+    VerdigrisTarget, // autowiki boots the world, which loads the FFI lib
   ],
   outputs: ['data/autowiki_edits.txt'],
   executes: async ({ get }) => {
@@ -2406,49 +3055,10 @@ export const AutowikiTarget = new Juke.Target({
   },
 });
 
-// Declared UI model (doc/rewrite/systems.md section 3): boot a -DUI_TYPES_DUMP world, which
-// writes data/ui_types.json and exits, then generate the tgui interface types from it.
-export const UiTypesTarget = new Juke.Target({
-  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter],
-  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, VerdigrisTarget],
-  outputs: [UI_TYPES_JSON],
-  executes: async ({ get }) => {
-    fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
-    await DreamMaker(`${DME_NAME}.test.dme`, {
-      defines: ['CBT', 'UI_TYPES_DUMP', ...get(DefineParameter)],
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
-    });
-    Juke.rm(UI_TYPES_JSON);
-    try {
-      await DreamDaemon(
-        { dmbFile: `${DME_NAME}.test.dmb`, namedDmVersion: get(DmVersionParameter) },
-        '-close',
-        ddSecurityFlag(),
-        '-verbose',
-        '-params',
-        'log-directory=ci',
-      );
-    } catch (error) {
-      // The dump boot ends the world with qdel(world) as soon as the file is written; DreamDaemon
-      // reports that shutdown as a non-zero exit. The file is what counts.
-      if (!fs.existsSync(UI_TYPES_JSON)) throw error;
-    }
-    Juke.rm('*.test.*');
-    if (!fs.existsSync(UI_TYPES_JSON)) {
-      Juke.logger.error('ui-types: the dump boot wrote no data/ui_types.json');
-      throw new Juke.ExitCode(1);
-    }
-    const touched = writeUiTypes(UI_TYPES_JSON, UI_TYPES_DIR);
-    Juke.logger.info(`ui-types: ${touched.length} file(s) updated in ${UI_TYPES_DIR}`);
-  },
-});
-
 export const BunTarget = new Juke.Target({
   parameters: [CiParameter],
   inputs: ['tgui/**/package.json'],
-  // DQAdd Start — skip `bun install` when tgui/node_modules is newer
+  // skip `bun install` when tgui/node_modules is newer
   // than every package.json + bun.lock under tgui/. Without this Juke
   // re-runs `bun install --frozen-lockfile` on every build (~5s) even
   // when nothing has changed; the install itself then no-ops in ~70ms
@@ -2472,7 +3082,6 @@ export const BunTarget = new Juke.Target({
       return true; // bail conservatively if any stat fails
     }
   },
-  // DQAdd End
   executes: () => {
     return bun('install', '--frozen-lockfile', '--ignore-scripts');
   },
@@ -2649,11 +3258,12 @@ export const TguiLintTarget = new Juke.Target({
   dependsOn: [BunTarget, BiomeCheckTarget, TguiTscTarget],
 });
 
-// DQAdd Start — run SpacemanDMM dreamchecker before the DM compile if the
+// run SpacemanDMM dreamchecker before the DM compile if the
 // binary is available. Best-effort: if dreamchecker is not on PATH the target
 // no-ops with a warning. CI installs it via tools/ci/install_spaceman_dmm.sh;
 // local dev can skip it without consequence.
 export const DreamCheckerTarget = new Juke.Target({
+  dependsOn: [GenTarget], // it lints the generated DM too
   inputs: ['code/**/*.dm', 'deepquarry.dme'],
   onlyWhen: () => {
     if (!findDreamChecker()) {
@@ -2664,36 +3274,20 @@ export const DreamCheckerTarget = new Juke.Target({
     }
     return true;
   },
-  executes: async () => {
-    const dreamChecker = findDreamChecker();
-    if (!dreamChecker) {
-      throw new Error('DreamChecker disappeared after dependency detection.');
-    }
-    // DreamChecker 1.11 auto-selects a root-level DME when multiple manifests
-    // are present, even though SpacemanDMM.toml names deepquarry.dme. Local
-    // profiling creates audit*.dme copies concurrently, which previously made
-    // release builds lint a UNIT_TESTS manifest instead of production code.
-    const stashDirectory = 'data/.dreamchecker-dme-stash';
-    fs.mkdirSync(stashDirectory, { recursive: true });
-    const stashed = fs.readdirSync('.')
-      .filter((name) => name.endsWith('.dme') && name !== `${DME_NAME}.dme`)
-      .map((name) => {
-        const destination = `${stashDirectory}/${name}`;
-        fs.renameSync(name, destination);
-        return { destination, name };
-      });
-    try {
-      await Juke.exec(dreamChecker, []);
-    } finally {
-      for (const { destination, name } of stashed) {
-        if (fs.existsSync(destination) && !fs.existsSync(name)) {
-          fs.renameSync(destination, name);
-        }
-      }
-    }
-  },
+  executes: () => runDreamChecker(),
 });
-// DQAdd End
+
+/** SpacemanDMM's DreamChecker over deepquarry.dme; throws on any diagnostic it fails on. */
+async function runDreamChecker(): Promise<void> {
+  const dreamChecker = findDreamChecker();
+  if (!dreamChecker) {
+    throw new Error('DreamChecker disappeared after dependency detection.');
+  }
+  // DreamChecker 1.11 auto-selects a root-level DME when several are present, so name the production manifest
+  // explicitly. It used to move the other root *.dme files away for the run; that renamed deepquarry.test.dme
+  // under a parallel test compile (EBUSY on Windows). Nothing is renamed or written now.
+  await Juke.exec(dreamChecker, ['-e', `${DME_NAME}.dme`]);
+}
 
 export const TguiDevTarget = new Juke.Target({
   dependsOn: [BunTarget],
@@ -2715,11 +3309,11 @@ export const TestTarget = new Juke.Target({
 });
 
 export const LintTarget = new Juke.Target({
-  dependsOn: [TguiLintTarget, DreamCheckerTarget], // DQAdd — DM lint via SpacemanDMM if available
+  dependsOn: [TguiLintTarget, DreamCheckerTarget, AnalyzeTarget], // DM lint via SpacemanDMM if available; the analyze engine lints
 });
 
 export const BuildTarget = new Juke.Target({
-  dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // DQAdd — verdigris FFI lib
+  dependsOn: [TguiTarget, DmTarget, VerdigrisTarget], // verdigris FFI lib
 });
 
 export const ServerTarget = new Juke.Target({
@@ -2772,7 +3366,7 @@ export const TguiCleanTarget = new Juke.Target({
 });
 
 export const CleanTarget = new Juke.Target({
-  dependsOn: [TguiCleanTarget, CleanIconsTarget], // DQAdd — also remove icons/gen/
+  dependsOn: [TguiCleanTarget, CleanIconsTarget], // also remove icons/gen/
   executes: async () => {
     Juke.rm('*.{dmb,rsc}');
     Juke.rm('_maps/templates.dm');

@@ -1,2 +1,1 @@
-/turf/simulated/wall/elevator/Initialize(mapload)
-	. = ..(mapload, MAT_ALIEN_ELEVAT)
+TYPE_TABLE(/turf/simulated/wall/elevator, wall_forced_materials, list(MAT_ALIEN_ELEVAT))

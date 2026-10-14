@@ -7,27 +7,46 @@ Destructive Analyzer
 It is used to destroy hand-held objects and advance technological research. Used to perform /datum/experiment/physical/destructive_analysis experiments.
 */
 
+MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
+
 /obj/machinery/rnd/destructive_analyzer
 	name = "destructive analyzer"
 	icon_state = "d_analyzer"
 	var/decon_mod = 0
 	circuit = /obj/item/circuitboard/destructive_analyzer
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 2500
 	var/rped_recycler_ready = TRUE
 	var/datum/remote_materials/rmat
 
-/obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	own_set(src, nameof(rmat), new /datum/remote_materials( \
-		src, \
-		mapload, \
-		mat_container_flags = MATCONTAINER_NO_INSERT \
-	))
+/// Busy analysing an item (or recycling parts).
+/obj/machinery/rnd/destructive_analyzer/var/busy = FALSE
+TRACKED(/obj/machinery/rnd/destructive_analyzer, busy)
 
+///Reset the state of this machine
+/obj/machinery/rnd/destructive_analyzer/proc/reset_busy()
+	set_busy(FALSE)
+
+CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
+	configure(uses_power(idle = 30, active = 2500))
+	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
+	interface("DestructiveAnalyzer")
+	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
+	extend("part_replacement.replace", needs(req(PROC_REF(idle), because = MSG(analyzer/busy))))
+	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
+	// An item goes in through the closed hatch while it is idle (not a cyborg's module item); a part replacer dragged onto it recycles its lowest parts.
+	op("load", item(/obj/item), label("Load"), priority(OP_PRIORITY_DEFAULT), when(req(PROC_REF(hatch_shut))), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)),
+		needs(req(PROC_REF(idle), because = MSG(analyzer/busy))), then(PROC_REF(interaction_load)))
+	op("recycle", item(/obj/item/storage/part_replacer), gesture(GESTURE_DRAG), label("Recycle parts"), then(PROC_REF(interaction_recycle)))
+	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))
+
+/// Its link to the ore silo (owns_one(starts =)): it takes nothing in through it.
+/obj/machinery/rnd/destructive_analyzer/proc/make_rmat(current, mapload)
+	return new /datum/remote_materials(src, mapload, mat_container_flags = MATCONTAINER_NO_INSERT)
+
+/obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
 	//Destructive analysis
 	var/static/list/destructive_events = list(
-		/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
+		/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 	)
 
 	new /datum/experiment_handler(src, \
@@ -45,129 +64,98 @@ It is used to destroy hand-held objects and advance technological research. Used
 	T *= 0.1
 	decon_mod = clamp(T, 0, 1)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/rnd/destructive_analyzer/appearance_overlays()
-	. = list()
-	var/current_item = loaded_item
-	if(panel_open)
-		icon_state = "d_analyzer_t"
-	else if(current_item)
-		icon_state = "d_analyzer_l"
-	else
-		icon_state = "d_analyzer"
-
-/obj/machinery/rnd/destructive_analyzer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/destructive_analyzer_part_replace,
-		/datum/interaction/machine_item/destructive_analyzer_load,
-		/datum/interaction/machine_drag/destructive_analyzer_recycle,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
+/// Its open panel and the item it holds have their own states.
+/obj/machinery/rnd/destructive_analyzer/draw(datum/look/look)
 	..()
+	look.hide(LOOK_PANEL_OPEN)
+	if(panel_open(src))
+		look.state("d_analyzer_t")
+	else if(loaded_item)
+		look.state("d_analyzer_l")
+	else
+		look.state("d_analyzer")
 
-/obj/machinery/rnd/destructive_analyzer/proc/not_busy(mob/actor, atom/target, obj/item/held)
-	return !busy
+/// Not busy analysing (a requirement of the part replacer).
+/obj/machinery/rnd/destructive_analyzer/proc/idle(datum/act/A)
+	return (!busy) ? null : MSG(analyzer/busy)
 
-/datum/interaction/machine_item/destructive_analyzer_part_replace
-	id = "destructive_analyzer_part_replace"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
-	effect = /obj/machinery/proc/interaction_part_replacement
+/// Its maintenance hatch is shut (an item goes in only then).
+/obj/machinery/rnd/destructive_analyzer/proc/hatch_shut(datum/act/op/A)
+	return (!panel_open(src)) ? null : /datum/msg/req_failed
 
-/datum/interaction/machine_item/destructive_analyzer_load
-	id = "destructive_analyzer_load"
-	name = "Load"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/panel_closed, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/rnd/destructive_analyzer/proc/not_busy, "it's busy right now"))
-	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_load
-
-/obj/machinery/rnd/destructive_analyzer/proc/panel_closed(mob/actor, atom/target, obj/item/held)
-	return !panel_open
-
-/obj/machinery/rnd/destructive_analyzer/proc/interaction_load(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_load(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/current_item = loaded_item
 	if(current_item)
 		to_chat(user, span_notice("There is something already loaded into \the [src]."))
 	else
-		if(isrobot(user)) //Don't put your module items in there!
-			return TRUE
 		if(is_type_in_list(O, GLOB.item_deconstruction_blacklist))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
-		if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
+			return
+		if((worn_of(O).flags & DROPDEL) || (worn_of(O).flags & NOSTRIP))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
+			return
 		if(O?.tether_host())
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
-			return TRUE
+			return
 		if(LAZYLEN(O.contents))
 			var/bad_item = FALSE
 			for(var/obj/item/thing in contents_of(O))
-				if(thing.item_flags & ABSTRACT)
+				if(worn_of(thing).flags & ABSTRACT)
 					continue
 				bad_item = TRUE
 				break
 			if(bad_item)
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
-				return TRUE
+				return
 		set_busy(TRUE)
-		if(!own_set(src, nameof(src.loaded_item), O, user = user))
-			return TRUE
+		if(!move_into(src, nameof(src.loaded_item), O, user))
+			return
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)
-		om_after(src, 1 SECONDS, PROC_REF(analyze_finish))
-	return TRUE
+		after(src, 1 SECONDS, PROC_REF(analyze_finish))
 
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	update_icon()
 	reset_busy()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // RPED recycling
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/interaction/machine_drag/destructive_analyzer_recycle
-	id = "destructive_analyzer_recycle"
-	name = "Recycle parts"
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle
-
-/obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
-	var/obj/item/storage/part_replacer/replacer = dropping
+/obj/machinery/rnd/destructive_analyzer/proc/interaction_recycle(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/storage/part_replacer/replacer = A.held
 	replacer.hide_from(user)
 	if(!rped_recycler_ready)
 		to_chat(user, span_notice("\The [src]'s stock parts recycler isn't ready yet."))
-		return TRUE
+		return
 
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
 		atom_say("Mass part deconstruction attempt canceled - no valid parts for recycling detected.")
-		return TRUE
+		return
 	// Sending salvaged materials to the silo
 	var/datum/material_container/materials = get_silo_material_container_datum(TRUE)
 	if(!materials)
-		return TRUE
+		return
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents_of(replacer)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() > lowest_rating)
 			continue
 		materials.insert_item(B, decon_mod, src)
 	// Feedback
 	play_sfx(get_turf(src), SFX_MACHINES_CLICK)
 	rped_recycler_ready = FALSE
-	om_after(src, 5 SECONDS, PROC_REF(rped_ready))
+	after(src, 5 SECONDS, PROC_REF(rped_ready))
 	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
-	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/rped_ready()
 	PRIVATE_PROC(TRUE)
@@ -192,12 +180,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 // Handling deconstruction
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-DECLARE_UI(/obj/machinery/rnd/destructive_analyzer, "DestructiveAnalyzer")
-
-UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_machinery_rnd_destructive_analyzer{server_connected:bool,node_data:list,item_icon:text,indestructible:unknown,loaded_item:unknown,already_deconstructed:bool,recoverable_points:unknown}")
-
-/// The computed part of /obj/machinery/rnd/destructive_analyzer's window data (declared on its UI_DATA row).
-/obj/machinery/rnd/destructive_analyzer/proc/ui_data_obj_machinery_rnd_destructive_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/rnd/destructive_analyzer's window data.
+/obj/machinery/rnd/destructive_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
@@ -212,7 +196,7 @@ UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_mach
 
 		var/list/boostable_nodes = techweb_item_unlock_check(current_item)
 		for(var/id in boostable_nodes)
-			var/datum/techweb_node/unlockable_node = GLOB.research_service.techweb_node_by_id(id)
+			var/datum/techweb_node/unlockable_node = SSresearch.techweb_node_by_id(id)
 			var/list/node_data = list()
 			node_data["node_name"] = unlockable_node.display_name
 			node_data["node_id"] = unlockable_node.id
@@ -227,8 +211,8 @@ UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_mach
 	data["research_point_id"] = DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 	return data
 
-UI_ACT(/obj/machinery/rnd/destructive_analyzer, "eject_item", ui_act_eject_item)
-UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
+/obj/machinery/rnd/destructive_analyzer/proc/ui_act_eject_item(datum/act/op/A)
+	var/mob/user = A.actor
 	var/current_item = loaded_item
 	if(busy)
 		balloon_alert(user, "already busy!")
@@ -237,19 +221,18 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
 		unload_item()
 		return TRUE
 
-UI_ACT(/obj/machinery/rnd/destructive_analyzer, "deconstruct", ui_act_deconstruct, UI_ARG_TEXT("deconstruct_id"))
-UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
-	if(!user_try_decon_id(params["deconstruct_id"]))
+/obj/machinery/rnd/destructive_analyzer/proc/ui_act_deconstruct(datum/act/op/A, deconstruct_id)
+	var/mob/user = A.actor
+	if(!user_try_decon_id(deconstruct_id))
 		balloon_alert(user, "analysis failed!")
 	return TRUE
 
 ///Drops the loaded item where it can and nulls it.
 /obj/machinery/rnd/destructive_analyzer/proc/unload_item()
-	var/obj/item/current_item = own_take(src, nameof(loaded_item))
+	var/obj/item/current_item = rel_take(src, nameof(loaded_item))
 	if(!current_item)
 		return FALSE
 	current_item.forceMove(drop_location())
-	update_icon()
 	return TRUE
 
 /**
@@ -262,10 +245,10 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 	if(!current_item || QDELETED(src))
 		return FALSE
 	set_busy(TRUE)
-	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
-	use_power(active_power_usage)
+	after(src, 2.4 SECONDS, PROC_REF(reset_busy))
+	use_power(power_of(src).active)
 	// Destroy items inside
-	own_take(src, nameof(loaded_item)) // destroyed below
+	rel_take(src, nameof(loaded_item)) // destroyed below
 	var/list/destructing = list()
 	destructing += current_item
 	for(var/atom/movable/AM in contents_of(current_item))
@@ -275,7 +258,6 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 		destroy_item_individual(thing_destroying, gain_research_points)
 	// feedback
 	play_sfx(src, SFX_MACHINES_DESTRUCTIVE_ANALYZER)
-	update_icon()
 	return TRUE
 
 /**
@@ -302,13 +284,13 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 
 	//Perform experiment
 	techweb_item_generate_points(thing, stored_research)
-	OM_EMIT(src, /datum/om/event/machinery_destructive_scan, thing)
+	PUBLISH_LEGACY(src, /datum/notice/machinery_destructive_scan, thing)
 
 	//Finally, let's add it to the material silo, if applicable.
 	var/datum/material_container/materials = get_silo_material_container_datum(FALSE)
 	if(materials)
 		materials.insert_item(thing, decon_mod, src, FALSE)
-	qdel(thing)
+	consumed(thing, src)
 
 /**
  * Attempts to destroy the loaded item using a provided research id.
@@ -330,7 +312,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 			return FALSE
 		return TRUE
 
-	var/datum/techweb_node/node_to_discover = GLOB.research_service.techweb_node_by_id(id)
+	var/datum/techweb_node/node_to_discover = SSresearch.techweb_node_by_id(id)
 	if(!istype(node_to_discover))
 		return FALSE
 	if(!destroy_item())

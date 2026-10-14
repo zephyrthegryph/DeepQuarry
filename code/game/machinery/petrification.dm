@@ -4,8 +4,6 @@
 	icon = 'icons/obj/machines/petrification.dmi'
 	icon_state = "petrification"
 
-	idle_power_usage = 100
-	active_power_usage = 1000
 	use_power = USE_POWER_IDLE
 	anchored = TRUE
 	unacidable = TRUE
@@ -19,11 +17,24 @@
 	var/mob/living/carbon/human/target
 	var/list/remotes
 
-/obj/machinery/petrification/Initialize(mapload)
-	. = ..()
-	if(!pixel_x && !pixel_y)
-		pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
-		pixel_y = (dir & 3) ? (dir == 1 ? 26 : -26) : 0
+CAPABILITIES(/obj/machinery/petrification)
+	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
+	configure(uses_power(idle = 100, active = 1000))
+	owns_many(nameof(remotes))
+	interface("PetrificationInterface")
+	op("set_option", ui_act("set_option", arg("option", schema_text(4096))),
+		asks(/datum/prompt/color/statue_tint, step = "tint", fields = list("title" = "Statue color", "question" = computed(PROC_REF(tint_question)), "default" = computed(PROC_REF(tint_default))), when = PROC_REF(choosing_tint)),
+		asks(/datum/prompt/text/statue_option, step = "text", fields = list("title" = computed(PROC_REF(option_title)), "question" = computed(PROC_REF(option_question)), "default" = computed(PROC_REF(option_default)), "option" = computed(PROC_REF(option_name))), when = PROC_REF(choosing_text)),
+		then(PROC_REF(ui_act_set_option)))
+	op("petrify", ui_act("petrify"), then(PROC_REF(ui_act_petrify)))
+	op("remote", ui_act("remote"), then(PROC_REF(ui_act_remote)))
+	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	ref_one(nameof(target), /mob/living/carbon/human)
+
+/// Whoever presses a button leaves their prints on the machine.
+/obj/machinery/petrification/proc/ui_fingerprint(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/petrification/proc/get_viable_targets()
 	var/list/targets = list()
@@ -128,11 +139,12 @@
 	G.was_rayed = TRUE
 
 	if (can_unpetrify)
-		om_grant(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, G)
+		grant(statue, granted_verb(/mob/living/carbon/human/proc/gargoyle_transformation), G)
 		comp?.cooldown = 0
 	else
 		// A permanent statue: the structure hides the gargoyle verbs for as long as it stands, whoever grants them.
-		om_grant_each(statue, GRANT_VERB_HIDE, list(/mob/living/carbon/human/proc/gargoyle_transformation, /mob/living/carbon/human/proc/gargoyle_pause, /mob/living/carbon/human/proc/gargoyle_checkenergy), G)
+		for(var/granted_path in list(/mob/living/carbon/human/proc/gargoyle_transformation, /mob/living/carbon/human/proc/gargoyle_pause, /mob/living/carbon/human/proc/gargoyle_checkenergy))
+			grant(statue, granted_verb(granted_path, hidden = TRUE), G)
 		comp?.cooldown = INFINITY
 
 	if (!petrifier)
@@ -140,23 +152,18 @@
 	SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/petrification/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/petrification, "PetrificationInterface")
-
-UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text", "adjective:text", "tint:text", "able_to_unpetrify:num", "discard_clothes:num", "merge:ui_data_obj_machinery_petrification{t:bool,target:text,can_remote:bool}")
-
-/// The computed part of /obj/machinery/petrification's window data (declared on its UI_DATA row).
-/obj/machinery/petrification/proc/ui_data_obj_machinery_petrification(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/petrification/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/list/h = rgb2num(tint)
 	data["t"] = ((h[1]*0.299)+(h[2]*0.587)+(h[3]*0.114)) > 102 //0.4 luminance
 	data["target"] = "[target_ref() ? target_ref() : "None"]"
 	data["can_remote"] = is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint)
+	data["material"] = material
+	data["identifier"] = identifier
+	data["adjective"] = adjective
+	data["tint"] = tint
+	data["able_to_unpetrify"] = able_to_unpetrify
+	data["discard_clothes"] = discard_clothes
 	return data
 
 /obj/machinery/petrification/proc/set_input(option, mob/user)
@@ -164,10 +171,6 @@ UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text"
 	if (!(option in only_these))
 		return
 	switch(option)
-		if("tint")
-			om_ask(user, /datum/om/prompt/color, PROC_REF(tint_chosen), title = "Statue color", message = "Choose the color for the [identifier] to be:", default = tint, requires = PROMPT_USABLE)
-		if("material","identifier","adjective")
-			om_ask(user, /datum/om/prompt/text/statue_option, PROC_REF(statue_text_entered), title = "Statue [option]", message = "What should the [option] be?", default = vars[option], option = option)
 		if("able_to_unpetrify", "discard_clothes")
 			vars[option] = !vars[option] // ALLOW(api): TGUI settings keyed by option name
 		if("target")
@@ -175,21 +178,58 @@ UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text"
 			if (!length(targets))
 				popup_msg(user, "No targets within range. Make sure there is a humanoid being within a 3x3 metre square in front of the interface.")
 				return
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(petrify_target_chosen), title = "Petrification Target", message = "Choose the target.", choices = targets, requires = PROMPT_USABLE)
+			open_request(src, /datum/prompt/choice/statue_target, PROC_REF(petrify_target_chosen), answerer = user, title = "Petrification Target", question = "Choose the target.", choices = targets)
 
-/obj/machinery/petrification/proc/tint_chosen(datum/om/prompt/color/ask)
-	if (ask.picked_color)
-		tint = ask.picked_color
 
-/datum/om/prompt/text/statue_option
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_USABLE
+/obj/machinery/petrification/proc/choosing_tint(datum/act/op/A)
+	return A.args["option"] == "tint"
+
+/obj/machinery/petrification/proc/choosing_text(datum/act/op/A)
+	return A.args["option"] in list("material", "identifier", "adjective")
+
+/obj/machinery/petrification/proc/tint_question(datum/act/op/A)
+	return "Choose the color for the [identifier] to be:"
+
+/obj/machinery/petrification/proc/tint_default(datum/act/op/A)
+	return tint
+
+/obj/machinery/petrification/proc/option_name(datum/act/op/A)
+	return A.args["option"]
+
+/obj/machinery/petrification/proc/option_title(datum/act/op/A)
+	return "Statue [A.args["option"]]"
+
+/obj/machinery/petrification/proc/option_question(datum/act/op/A)
+	return "What should the [A.args["option"]] be?"
+
+/obj/machinery/petrification/proc/option_default(datum/act/op/A)
+	switch(A.args["option"])
+		if("material")
+			return material
+		if("identifier")
+			return identifier
+		if("adjective")
+			return adjective
+
+/obj/machinery/petrification/proc/tint_chosen(datum/act/op/A)
+	var/value = A.step_value("tint")
+	if(value)
+		tint = value
+
+/datum/prompt/text/statue_option
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
 	/// "material", "identifier" or "adjective".
 	var/option
 
-/obj/machinery/petrification/proc/statue_text_entered(datum/om/prompt/text/statue_option/ask)
+/obj/machinery/petrification/proc/statue_text_entered(datum/act/op/A)
+	var/datum/prompt/text/statue_option/ask = A.step_answer("text")
+	if(!ask)
+		return
 	var/option = ask.option
-	var/input = sanitizeSafe(ask.text, 25)
+	var/input = sanitizeSafe(ask.value, 25)
 	if (length(input) <= 0)
 		return
 	if (option == "adjective")
@@ -209,61 +249,84 @@ UI_DATA_REPLACE(/obj/machinery/petrification, "material:text", "identifier:text"
 							input += "s"
 	vars[option] = input // ALLOW(api): TGUI settings keyed by option name
 
-/obj/machinery/petrification/proc/petrify_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/H = ask.choices[ask.choice]
+/obj/machinery/petrification/proc/petrify_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/mob/living/carbon/human/H = ask.choices[ask.value]
 	if(!ishuman(H) || !is_valid_target(H))
 		return
-	om_flow_start(/datum/om/flow/petrify_consent, ask.answerer, H, machine = src)
+	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(first_confirmed), answerer = H, operator = A.request.answerer, question = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.")
 
 /// The chosen target confirms twice; a no or a cancel at either step tells the operator (actor).
-/datum/om/flow/petrify_consent
-	name = "petrify consent"
-	var/obj/machinery/petrification/machine
+/datum/prompt/choice/petrify_consent
+	title = "Petrification Target"
+	choices = list("Confirm", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	var/mob/operator
 
-/datum/om/flow/petrify_consent/start()
-	om_ask(target, /datum/om/prompt/confirm, PROC_REF(first_confirmed), title = "Petrification Target", message = "You have been selected as a petrification target. If you press confirm, you will possibly be turned into a statue, and if the option is selected, possibly one that cannot be reverted back from a statue at all.", yes_text = "Confirm", no_text = "Cancel")
+CAPABILITIES(/datum/prompt/choice/petrify_consent)
+	ref_one(nameof(operator), /mob)
 
-/datum/om/flow/petrify_consent/proc/first_confirmed()
-	om_ask(target, /datum/om/prompt/confirm, PROC_REF(second_confirmed), title = "Petrification Target", message = "This is your last warning, are you -certain-?", yes_text = "Confirm", no_text = "Cancel")
+/datum/prompt/choice/petrify_consent/prepare(datum/act/A)
+	..()
+	var/mob/captured_operator = operator
+	rel_clear(src, nameof(operator))
+	rel_set(src, nameof(operator), captured_operator)
 
-/datum/om/flow/petrify_consent/proc/second_confirmed()
-	if(!machine.is_valid_target(target))
-		machine.popup_msg(actor, "They declined the request.", FALSE)
+/datum/prompt/choice/petrify_consent/recheck_extra()
+	return QDELETED(operator) ? "gone" : null
+
+/obj/machinery/petrification/proc/first_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/petrify_consent/ask = A.request
+	var/mob/living/carbon/human/H = ask.answerer
+	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
 		return
-	rel_set(machine, nameof(machine.target), target)
-	SStgui.update_uis(machine)
-
-/datum/om/flow/petrify_consent/ended(reason)
-	if(reason == "gone" || !machine)
+	if(!A.answer || ask.value != "Confirm")
+		popup_msg(ask.operator, "They declined the request.", FALSE)
 		return
-	machine.popup_msg(actor, "They declined the request.", FALSE)
+	open_request(src, /datum/prompt/choice/petrify_consent, PROC_REF(second_confirmed), answerer = H, operator = ask.operator, question = "This is your last warning, are you -certain-?")
 
-/obj/machinery/petrification/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if (ui.user)
-		add_fingerprint(ui.user)
-	return TRUE
+/obj/machinery/petrification/proc/second_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/petrify_consent/ask = A.request
+	var/mob/living/carbon/human/H = ask.answerer
+	if(QDELETED(ask.operator) || !istype(H) || QDELETED(H))
+		return
+	if(!A.answer || ask.value != "Confirm")
+		popup_msg(ask.operator, "They declined the request.", FALSE)
+		return
+	if(!is_valid_target(H))
+		popup_msg(ask.operator, "They declined the request.", FALSE)
+		return
+	rel_set(src, nameof(target), H)
+	SStgui.update_uis(src)
 
-UI_ACT(/obj/machinery/petrification, "set_option", ui_act_set_option, UI_ARG_TEXT("option"))
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_set_option)
-	if (params["option"])
-		set_input(params["option"], ui.user)
+/obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)
+	var/mob/user = A.actor
+	if (option)
+		switch(option)
+			if("tint")
+				tint_chosen(A)
+			if("material", "identifier", "adjective")
+				statue_text_entered(A)
+			else
+				set_input(option, user)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/petrification, "petrify", ui_act_petrify)
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_petrify)
-	petrify(ui.user)
+/obj/machinery/petrification/proc/ui_act_petrify(datum/act/op/A)
+	var/mob/user = A.actor
+	petrify(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/petrification, "remote", ui_act_remote)
-UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
+/obj/machinery/petrification/proc/ui_act_remote(datum/act/op/A)
+	var/mob/user = A.actor
 	if (is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
 		var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
 		if (!QDELETED(PE))
 			PE.visible_message(span_warning("\The [PE] disappears!"))
-			qdel(PE)
+			spent(PE)
 		var/obj/item/petrifier/P = new(loc, src)
 		P.material = material
 		P.identifier = identifier
@@ -271,9 +334,9 @@ UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
 		P.tint = tint
 		P.able_to_unpetrify = able_to_unpetrify
 		P.discard_clothes = discard_clothes
-		rel_set(P, nameof(/datum/accessory_stat_modifier::target), target_ref())
-		own_put(src, nameof(/obj/machinery/petrification::remotes), target_ref(), P)
-		ui.user.put_in_hands(P)
+		rel_set(P, nameof(/obj/item/petrifier::target), target_ref())
+		rel_add(src, nameof(/obj/machinery/petrification::remotes), P, target_ref())
+		user.put_in_hands(P)
 	return TRUE
 
 /obj/item/paper/petrification_notes
@@ -283,3 +346,32 @@ UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
 /// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/petrification/proc/target_ref() as /mob/living/carbon/human
 	return target
+
+/datum/prompt/color/statue_tint
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
+
+/datum/prompt/color/statue_tint/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/color/statue_tint/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker
+
+/// The old name-text normalization stripped tokens without truncating raw submissions.
+/datum/prompt/text/statue_option/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/choice/statue_target
+	timeout = 0
+	usable_state = "default"
+	recheck_on_open = TRUE
+
+/// The map did not offset it: it sits on the wall it faces.
+/obj/machinery/petrification/proc/roll_wall_offset(datum/roller/R)
+	if(pixel_x || pixel_y)
+		return list(pixel_x, pixel_y)
+	return list((dir & 3) ? 0 : (dir == 4 ? 26 : -26), (dir & 3) ? (dir == 1 ? 26 : -26) : 0)

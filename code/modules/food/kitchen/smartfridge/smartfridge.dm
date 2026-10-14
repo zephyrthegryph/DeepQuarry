@@ -8,8 +8,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
@@ -17,10 +15,7 @@
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
-	var/seconds_electrified = 0;
-	var/shoot_inventory = 0
 	locked = 0
-	var/scan_id = 1
 	var/is_secure = 0
 	var/wrenchable = 0
 	var/persistent = null // Path of persistence datum used to track contents
@@ -31,6 +26,52 @@
 	var/datum/looping_sound/fridge/soundloop
 	var/playing_sound = FALSE
 
+/// Throws its stock: the throw wire cut, or pulsed (item_throw()).
+STAT(/obj/machinery/smartfridge, shoot_inventory, ANY)
+/// Checks the ID for a secure stock (the ID wire pulsed stops it; cut, it scans for good: id_scan()).
+STAT(/obj/machinery/smartfridge, scan_id, TOP, base = TRUE)
+/// Shocks the hand at it: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
+STAT(/obj/machinery/smartfridge, electrified, TOP, base = 0)
+
+CAPABILITIES(/obj/machinery/smartfridge)
+	default_parts()
+	configure(uses_power(idle = 5, active = 100))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), gate = PROC_REF(step_gate), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
+	owns_one(nameof(soundloop), /datum/looping_sound/fridge, starts = /datum/looping_sound/fridge)
+	owns_many(nameof(item_records))
+	interface("SmartVend")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
+	// Release takes `amount` out of record `index`; with no amount it asks how many (the old act_ask re-run).
+	op("release", ui_act("Release", arg("amount", num(default = 0)), arg("index", num())),
+		asks(/datum/prompt/number, fields = list("question" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "timeout" = 0), step = "amount", when = PROC_REF(release_asks_amount)),
+		then(PROC_REF(ui_act_release)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Smartfridge", count = 3, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
+	shock_wire(stat = STAT_ELECTRIFIED)
+	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
+	item_throw(stat = STAT_SHOOT_INVENTORY)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(throw_frame)), when = cond_all(STAT_OPERABLE, STAT_SHOOT_INVENTORY))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds))), then(PROC_REF(smartfridge_interaction_item)))
+	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
+
+/obj/machinery/smartfridge/proc/wire_lights()
+	return list(
+		"The orange light is [shock_live(src) ? "off" : "on"].",
+		"The red light is [shoot_inventory ? "off" : "blinking"].",
+		"A [scan_id ? "purple" : "yellow"] light is on.")
+
+/// Reaching into a live fridge's wires shocks a carbon at it instead.
+/obj/machinery/smartfridge/proc/wire_touch_shocks(datum/act/A)
+	var/datum/act/touch_wires/T = A
+	if(iscarbon(T.user) && Adjacent(T.user) && shock_live(src) && shock(T.user, 100))
+		return OP_REFUSED
+	return HOOK_DECLINE
+
 /obj/machinery/smartfridge/secure
 	is_secure = 1
 
@@ -38,14 +79,6 @@
 	. = ..()
 	if(persistent)
 		SSpersistence.track_value(src, persistent)
-	if(is_secure)
-		set_wires(new /datum/wires/smartfridge/secure(src))
-	else
-		set_wires(new /datum/wires/smartfridge(src))
-
-	own_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
-	update_icon()
-	default_apply_parts()
 
 // Stock is a stock slot (roadmap C9, code/datums/containment/stock.dm).
 // Inserted items whose state serializes and matches the record's fold into
@@ -59,7 +92,6 @@
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
 
-
 // a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/lifecycle_dematerialize()
 	if(persistent)
@@ -69,20 +101,24 @@
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
 	return FALSE
 
-/obj/machinery/smartfridge/machine_step()
+/// Whether a step may run now (a drying rack works only powered and whole).
+/obj/machinery/smartfridge/proc/step_gate(datum/act/A)
+	return TRUE
+
+/obj/machinery/smartfridge/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		soundloop.stop()
 		playing_sound = FALSE
 		return PROCESS_KILL
-	if(!playing_sound && !has_stat(MACHINE_STAT_ANY))
+	if(!playing_sound && !has_condition())
 		soundloop.start()
 		playing_sound = TRUE
-	if(src.seconds_electrified > 0)
-		src.seconds_electrified--
-	if(src.shoot_inventory && prob(2))
-		src.throw_item()
-	if(seconds_electrified <= 0 && !shoot_inventory)
-		return PROCESS_KILL
+	return PROCESS_KILL // its only timed work, throwing its stock, is an every() on STAT_SHOOT_INVENTORY
+
+/// One frame of a fridge that throws its stock (every() runs it only while it is operable and throwing).
+/obj/machinery/smartfridge/proc/throw_frame(datum/act/timer/A)
+	if(prob(2))
+		throw_item()
 
 /obj/machinery/smartfridge/power_change()
 	. = ..()
@@ -93,13 +129,13 @@
 		else
 			soundloop?.start()
 			playing_sound = TRUE
-			// machine_step() sleeps on NOPOWER; resume pending work on restore.
+			// work_step(null) sleeps on NOPOWER; resume pending work on restore.
 			if(has_pending_work())
-				MACHINE_WAKE(src)
+				work_start(src)
 
 /// TRUE when process() still has time-dependent work to do once powered.
 /obj/machinery/smartfridge/proc/has_pending_work()
-	return seconds_electrified > 0 || shoot_inventory
+	return FALSE // the throwing is an every() on STAT_SHOOT_INVENTORY; a subtype with work of its own says so
 
 // Number of stored products, used to pick the fill-level overlay. Counts the
 // actual item_records contents rather than contents.len, because contents also
@@ -110,49 +146,55 @@
 	for(var/datum/stored_item/I as anything in item_records)
 		. += I.get_amount()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/smartfridge/appearance_overlays()
-	. = list()
+/obj/machinery/smartfridge/draw(datum/look/look)
+	..()
+	for(var/datum/stored_item/record as anything in item_records)
+		look.watch(record) // the stock count: a record's amount and what it keeps are tracked on it
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/machinery/smartfridge/proc/look_parts(datum/look/look)
 	if(panel_open)
-		. += "[icon_base]-panel"
+		look.overlay("[icon_base]-panel")
 
-	if(has_stat(BROKEN))
-		icon_state = "[icon_base]-broken"
+	if(broken_now())
+		look.state("[icon_base]-broken")
 
-	if(has_stat(NOPOWER))
-		icon_state = "[icon_base]-off"
+	if(power_lost())
+		look.state("[icon_base]-off")
 		switch(stored_count())
 			if(0)
-				. += "[icon_base]-0-off"
+				look.overlay("[icon_base]-0-off")
 			if(1 to 3)
-				. += "[icon_base]-[icon_contents]1-off"
+				look.overlay("[icon_base]-[icon_contents]1-off")
 			if(3 to 6)
-				. += "[icon_base]-[icon_contents]2-off"
+				look.overlay("[icon_base]-[icon_contents]2-off")
 			if(6 to INFINITY)
-				. += "[icon_base]-[icon_contents]3-off"
+				look.overlay("[icon_base]-[icon_contents]3-off")
 	else
-		icon_state = icon_base
+		look.state(icon_base)
 		switch(stored_count())
 			if(0)
-				. += "[icon_base]-0"
+				look.overlay("[icon_base]-0")
 			if(1 to 3)
-				. += "[icon_base]-[icon_contents]1"
+				look.overlay("[icon_base]-[icon_contents]1")
 			if(3 to 6)
-				. += "[icon_base]-[icon_contents]2"
+				look.overlay("[icon_base]-[icon_contents]2")
 			if(6 to INFINITY)
-				. += "[icon_base]-[icon_contents]3"
+				look.overlay("[icon_base]-[icon_contents]3")
 
-EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
-	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item), REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/smartfridge/proc/is_powered_for_stocking), "it is unpowered and useless")), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(smartfridge_interaction_hand)), \
-)
+/// Requirement: is_powered_for_stocking returns null to allow, or a refusal reason.
+/obj/machinery/smartfridge/proc/is_powered_for_stocking_holds(datum/act/op/A)
+	return is_powered_for_stocking(A.actor, src, A.held)
 
 /// Requirement: the fridge has power.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking(mob/user, atom/target, obj/item/held)
-	return !has_stat(NOPOWER)
+	return !power_lost() ? null : "it is unpowered and useless"
 
 /// Old attackby.
-/obj/machinery/smartfridge/proc/smartfridge_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/smartfridge/proc/smartfridge_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(accept_check(O))
 		user.remove_from_mob(O)
 		stock(O)
@@ -163,14 +205,14 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
 		P.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/G in contents_of(P)) // ALLOW(latent): materialized above
+		for(var/obj/G in contents_of(P)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			act_message(user, src, MSG_SELF(span_notice("You load %T% with %I%.")), MSG_OTHERS(span_notice("%U% loads %T% with %I%.")), item = P)
-			if(contents_count(P) > 0) // ALLOW(latent): materialized above
+			if(contents_count(P) > 0) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.
@@ -178,54 +220,52 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		var/obj/item/wrapped = B.get_wrapped_item()
 		if(!wrapped)
 			to_chat(user, span_filter_notice("\The [B] is not holding anything."))
-			return TRUE
+			return OP_OK
 		else if(accept_check(wrapped))
 			stock(wrapped)
 			to_chat(user, span_filter_notice("You use \the [B] to put \the [wrapped] into \the [src]."))
 			sortTim(item_records, GLOBAL_PROC_REF(cmp_stored_item_name))
 		else
 			to_chat(user, span_filter_notice("\The [src] refuses \the [wrapped]."))
-		return TRUE
+		return OP_OK
 
 	else
 		to_chat(user, span_notice("\The [src] smartly refuses [O]."))
-		return TRUE
-	return INTERACTION_HANDLED_PASS
+		return OP_OK
+	return OP_PASS
 
-/obj/machinery/smartfridge/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
 		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
-	playsound(src, tool.usesound, 50, TRUE)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/machinery/smartfridge/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/wrench_used(datum/act/op/A)
 	if(!wrenchable)
-		return ..()
-	return ..()
+		return OP_DECLINE
+	return OP_DECLINE
 
-/obj/machinery/smartfridge/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/smartfridge/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!allowed(user))
 		to_chat(user, span_warning("\The [src] smartly denies you access to deconstruct it."))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/smartfridge/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	attack_hand(user)
-	return ITEM_INTERACT_SUCCESS
+/// The wirecutters or a multitool behind the open panel: the fridge's window, where its wires are.
+/obj/machinery/smartfridge/proc/wire_tool_used(datum/act/op/A)
+	attack_hand(A.actor)
+	return OP_OK
 
-/obj/machinery/smartfridge/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
-
-DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
-/obj/machinery/smartfridge/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/smartfridge/secure/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(1)
 	set_locked(-1)
 	to_chat(user, span_filter_notice("You short out the product lock on [src]."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/smartfridge/proc/find_record(obj/item/O)
 	for(var/datum/stored_item/I as anything in item_records)
@@ -234,15 +274,14 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	return null
 
 /obj/machinery/smartfridge/proc/stock(obj/item/O)
-	MACHINE_WAKE(src)
+	work_start(src)
 	var/datum/stored_item/I = find_record(O)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		own_add(src, nameof(item_records), I)
+		rel_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
-	update_icon()
 
 /obj/machinery/smartfridge/proc/vend(datum/stored_item/I, count)
 	var/amount = I.get_amount()
@@ -253,22 +292,27 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	for(var/i = 1 to min(amount, count))
 		I.get_product(get_turf(src))
 	SStgui.update_uis(src)
-	update_icon()
 
 /// Old attack_hand.
-/obj/machinery/smartfridge/proc/smartfridge_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smartfridge/proc/smartfridge_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
-	wires.Interact(user)
+		return OP_OK
+	wires_open(src, user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
+/// The window's data.
+/obj/machinery/smartfridge/ui_data(datum/act/eval/A)
+	. = list()
+	.["name"] = name
+	.["secure"] = is_secure
+	var/list/part = ui_data_part_smartfridge(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-UI_DATA_REPLACE(/obj/machinery/smartfridge, "name:text", "secure=is_secure:num", "merge:ui_data_obj_machinery_smartfridge{contents:list,locked:num}")
-
-/// The computed part of /obj/machinery/smartfridge's window data (declared on its UI_DATA row).
-/obj/machinery/smartfridge/proc/ui_data_obj_machinery_smartfridge(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/smartfridge/proc/ui_data_part_smartfridge(datum/act/eval/A)
 	. = list()
 
 	var/list/items = list()
@@ -281,32 +325,23 @@ UI_DATA_REPLACE(/obj/machinery/smartfridge, "name:text", "secure=is_secure:num",
 	.["contents"] = items
 	.["locked"] = locked
 
-/obj/machinery/smartfridge/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// Release asks how many only when the button did not say.
+/obj/machinery/smartfridge/proc/release_asks_amount(datum/act/op/A)
+	return !A.args["amount"]
 
-UI_ACT(/obj/machinery/smartfridge, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
-	var/amount = 0
-	if(params["amount"])
-		amount = params["amount"]
-	else
-		var/_answer_k289 = act_ask(ui.user, action, params, ui, "k289", /datum/om/prompt/number, message = "How many items?", title = "How many items would you like to take out?", default = 1)
-		if(isnull(_answer_k289))
-			return
-		amount = _answer_k289
-
-	if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
+/// Release: `amount` (or the answered number) out of record `index`.
+/obj/machinery/smartfridge/proc/ui_act_release(datum/act/op/A, amount, index)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	if(!amount)
+		amount = A.step_value("amount")
+	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))
 		return FALSE
 
-	var/index = params["index"]
 	if(index < 1 || index > LAZYLEN(item_records))
 		return TRUE
 
 	vend(item_records[index], amount)
-	update_icon()
 	return TRUE
 
 /obj/machinery/smartfridge/proc/throw_item()
@@ -326,20 +361,25 @@ UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
 	throw_item.throw_at(target,16,3,src)
 	src.visible_message(span_warning("[src] launches [throw_item.name] at [target.name]!"))
 	SStgui.update_uis(src)
-	update_icon()
 	return TRUE
 
 /*
  * Secure Smartfridges
  */
-/obj/machinery/smartfridge/secure/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	return operable()
+// A secure fridge's buttons do nothing while it does not work (the old ui_act_allowed()).
+CAPABILITIES(/obj/machinery/smartfridge/secure)
+	configure(wires(count = 4, randomize = TRUE)) // a dud beside the three, and each fridge its own colours
+	extend("release", needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-UI_ACT_OVERRIDE(/obj/machinery/smartfridge/secure, ui_act_release)
+/obj/machinery/smartfridge/secure/proc/ui_gate(datum/act/op/A)
+	return (operable()) ? null : /datum/msg/req_silent
+
+/// Release behind the ID scan.
+/obj/machinery/smartfridge/secure/ui_act_release(datum/act/op/A, amount, index)
+	var/mob/user = A.actor
 	if(user.contents.Find(src) || (in_range(src, user) && istype(loc, /turf)))
-		if((!allowed(user) && scan_id) && !emagged && locked != -1)
+		if((!allowed(user) && scan_id) && !emagged() && locked != -1)
 			to_chat(user, span_warning("Access denied."))
 			return TRUE
 	return ..()
@@ -427,7 +467,7 @@ UI_ACT_OVERRIDE(/obj/machinery/smartfridge/secure, ui_act_release)
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/smartfridge/step_start_condition()
 	return operable() // its hum
 

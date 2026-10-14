@@ -24,6 +24,9 @@ emp_act
 		else // Otherwise we blocked normally and stopped all the damage.
 			return 0
 
+	if(projectile_hit_begin(P)) // a hit hook took the round over: no autopsy, embed or effects
+		return 0
+
 	if(!P.nodamage)
 		organ.add_autopsy_data("[P.name]", P.damage)
 
@@ -53,7 +56,7 @@ emp_act
 /mob/living/carbon/human/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	var/obj/item/organ/external/affected = get_organ(check_zone(def_zone))
 	var/siemens_coeff = get_siemens_coefficient_organ(affected)
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 	stun_amount *= siemens_coeff
 	agony_amount *= siemens_coeff
@@ -136,7 +139,7 @@ emp_act
 				siemens_value += get_siemens_coefficient_organ(organ) * weight
 				total += weight
 
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_value *= 1.5
 
 	return (siemens_value / max(total, 1))
@@ -150,7 +153,7 @@ emp_act
 	var/list/results = list()
 	var/list/clothing_items = list(get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_SHOES))
 	for(var/obj/item/clothing/C in clothing_items)
-		if(istype(C) && (C.body_parts_covered & def_zone.body_part))
+		if(istype(C) && (worn_of(C).covers & def_zone.body_part))
 			results.Add(C)
 	return results
 
@@ -175,7 +178,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL))
 			return gear
 	return null
 
@@ -183,7 +186,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL) && !(gear.item_flags & ALLOW_SURVIVALFOOD))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL) && !(worn_of(gear).flags & ALLOW_SURVIVALFOOD))
 			return gear
 	return null
 
@@ -202,7 +205,7 @@ emp_act
 		act_message(user, src, others = span_danger("%U% misses %T% with %I%!"), item = I)
 		return null
 
-	if(check_shields(I.force, I, user, target_zone, "the [I.name]"))
+	if(check_shields(combat_of(I).force, I, user, target_zone, "the [I.name]"))
 		return
 
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
@@ -217,9 +220,9 @@ emp_act
 	if(!affecting)
 		return //should be prevented by attacked_with_item() but for sanity.
 
-	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
+	visible_message(span_danger("[src] has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
+	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -279,13 +282,10 @@ emp_act
 					if(bloody)//Apply blood
 						if(get_equipped_item(SLOT_ID_MASK))
 							get_equipped_item(SLOT_ID_MASK).add_blood(src)
-							update_inv_wear_mask(0)
 						if(get_equipped_item(SLOT_ID_HEAD))
 							get_equipped_item(SLOT_ID_HEAD).add_blood(src)
-							update_inv_head(0)
 						if(get_equipped_item(SLOT_ID_EYES) && prob(33))
 							get_equipped_item(SLOT_ID_EYES).add_blood(src)
-							update_inv_glasses(0)
 				if(BP_TORSO)//Easier to score a stun but lasts less time
 					if(prob(effective_force + 10))
 						apply_effect(6, WEAKEN, blocked)
@@ -310,18 +310,19 @@ emp_act
 		return 1
 	return 0
 
-DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
-/mob/living/carbon/human/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	var/obj/item/organ/external/affecting = get_organ(user.zone_sel.selecting)
+/// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
+/mob/living/carbon/human/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/external/affecting = get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
-		return EMAG_DECLINED
+		return OP_DECLINE
 	if(affecting.sabotaged)
 		to_chat(user, span_warning("[src]'s [affecting.name] is already sabotaged!"))
-		return EMAG_DECLINED
-	to_chat(user, span_notice("You sneakily slide [emag_source] into the dataport on [src]'s [affecting.name] and short out the safeties."))
+		return OP_DECLINE
+	to_chat(user, span_notice("You sneakily slide [A.held] into the dataport on [src]'s [affecting.name] and short out the safeties."))
 	affecting.sabotaged = 1
-	return 1
+	return OP_OK
 
 //this proc handles being hit by a thrown atom
 /mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -330,7 +331,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
-	if(om_wants(src, /datum/om/event/before/hit_by_thrown) && om_emit(src, new /datum/om/event/before/hit_by_thrown(source, thrower, speed)) == EVENT_VETO)
+	if(guard(src, GUARD_THROWN_HIT, thrower, source, speed))
 		return
 
 	if(isitem(source))
@@ -338,13 +339,13 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		if(in_throw_mode && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
 			if(canmove && !restrained() && !src.is_incorporeal())
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
-					if(!(om_wants(src, /datum/om/event/before/catch_throw) && om_emit(src, new /datum/om/event/before/catch_throw(source, speed)) == EVENT_VETO))
+					if(!omen_blocks_catch(source, speed))
 						put_in_active_hand(thrown_object)
 						act_message(src, null, others = span_warning("%U% catches [thrown_object]!"))
 						throw_mode_off()
 						return
 
-		var/throw_damage = thrown_object.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
+		var/throw_damage = thrown_of(thrown_object).force*(speed/THROWFORCE_SPEED_DIVISOR)
 
 		if(species && species.throwforce_absorb_threshold >= throw_damage)
 			act_message(src, null, others = span_infoplain(span_bold("%I%") + " simply bounces off of %U%'s body!"), item = thrown_object)
@@ -353,7 +354,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		var/zone
 		if (isliving(thrower))
 			var/mob/living/L = thrower
-			zone = check_zone(L.zone_sel.selecting)
+			zone = check_zone(hud_of(L)?.zone_sel?.selecting)
 		else
 			zone = ran_zone(BP_TORSO,75)	//Hits a random part of the body, geared towards the chest
 
@@ -383,7 +384,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
 
-		var/armor = armor_against(thrown_object.injury_kind, affecting, thrown_object.armor_penetration)
+		var/armor = armor_against(thrown_object.injury_kind, affecting, combat_of(thrown_object).armor_penetration)
 		if(armor < 100)
 			receive_thrown(thrown_object, throwingdatum, zone = zone)
 
@@ -417,7 +418,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 
 			if(!thrown_object || !src) return
 
-			if(thrown_object.loc == src && thrown_object.sharp) //Projectile is embedded and suitable for pinning.
+			if(thrown_object.loc == src && combat_of(thrown_object).sharp) //Projectile is embedded and suitable for pinning.
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
@@ -437,13 +438,13 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		if(temp && !temp.is_usable())
 			return FALSE	// The hand isn't working in the first place
 
-	if(!O.catchable)
+	if(!thrown_of(O).catchable)
 		return FALSE
 
 	// Alright, our hand works? Time to try the catching.
 	var/catch_chance = 90	// Default 90% catch rate
 
-	if(O.sharp)
+	if(combat_of(O).sharp)
 		catch_chance -= 50	// Catching knives is hard
 
 	catch_chance -= get_accuracy_penalty()	// Same issues with shooting a gun, or swinging a weapon
@@ -470,15 +471,12 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	else
 		add_blood(source)
 		bloody_hands = amount
-	update_inv_gloves()		//updates on-mob overlays for bloody hands and/or bloody gloves
 
 /mob/living/carbon/human/proc/bloody_body(mob/living/source)
 	if(get_equipped_item(SLOT_ID_SUIT))
 		get_equipped_item(SLOT_ID_SUIT).add_blood(source)
-		update_inv_wear_suit(0)
 	if(get_equipped_item(SLOT_ID_UNIFORM))
 		get_equipped_item(SLOT_ID_UNIFORM).add_blood(source)
-		update_inv_w_uniform(0)
 
 /// Human post-injury reactions: rig soak / suit breaches, damage overlays,
 /// agony screams and burn husking of corpses.
@@ -488,7 +486,6 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 		handle_suit_punctures(kind, amount, zone)
 		if(injury_is_located(kind))
 			damageoverlaytemp = 20
-			UpdateDamageIcon()
 		// A corpse burned past 3.5x its species health is husked.
 		if(stat == DEAD && category == INJURY_CATEGORY_THERMAL && injury_load(INJURY_CATEGORY_THERMAL) > species.total_health * 3.5)
 			ChangeToHusk()
@@ -528,8 +525,8 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	for(var/part in weights)
 		var/through = weights[part]
 		for(var/obj/item/clothing/C in worn)
-			if(C.body_parts_covered & part)
-				through *= C.permeability_coefficient
+			if(worn_of(C).covers & part)
+				through *= protection_of(C).permeability
 		. += through
 
 // This is for preventing harm by being covered in water, which only prometheans need to deal with.
@@ -556,39 +553,27 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	if(!..())
 		return 0
 
-	var/organ_chance = 50
-	var/damage = shank_armor_helper(W, G, user)
-	var/obj/item/organ/external/chest = get_organ(hit_zone)
-
-	if(W.edge)
-		organ_chance = 75
-	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
-	act_message(user, src, others = span_danger("%U% begins to twist %I% around inside %T%'s [chest]!"), item = W)
-	om_task_start(/datum/om/task/timed/human_shank_attack_human, user, src, receiver = src, W = W, G = G, organ_chance = organ_chance, damage = damage, chest = chest)
+	cooldown_start(user, next_move, 20)
+	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/datum/om/task/timed/human_shank_attack_human
-	duration = 2 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/shank_attack_human_done
-	var/obj/item/W
-	var/obj/item/grab/G
-	var/organ_chance
-	var/damage
-	var/obj/item/organ/external/chest
+/mob/living/carbon/human/proc/shank_twist_text(datum/act/op/A)
+	var/obj/item/W = A.held
+	return msg_text(null, span_danger("%U% begins to twist [W] around inside %T%'s [get_organ(BP_TORSO)]!"))
 
-/mob/living/carbon/human/proc/shank_attack_human_done(datum/om/task/timed/human_shank_attack_human/task)
-	var/obj/item/W = task.W
-	var/obj/item/grab/G = task.G
-	var/mob/user = task.actor
-	var/organ_chance = task.organ_chance
-	var/damage = task.damage
-	var/obj/item/organ/external/chest = task.chest
-	if(!(G && G?.grab_assailant() == user && G?.grab_target() == src)) //check that we still have a grab
+/mob/living/carbon/human/proc/shank_attack_human_done(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/obj/item/grab/G = grab_held_by(user)
+	if(!G || !W) //check that we still have a grab
 		return 0
+	var/organ_chance = combat_of(W).edge ? 75 : 50
+	var/damage = shank_armor_helper(W, G, user)
+	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
 
 	act_message(user, src, others = span_danger("%U% twists %I% around inside %T%'s [chest]!"), item = W)
 
-	if(prob(organ_chance))
+	if(chest && prob(organ_chance))
 		var/obj/item/organ/internal/selected_organ = pick(chest.held_organs())
 		injure(INJURY_CUT, damage * 0.5, selected_organ, W, affliction = /datum/affliction/lesion/laceration)
 		G.note_action()
@@ -600,7 +585,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
 	if(!check_has_mouth())
 		return TRUE
 
-	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FACE))
+	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && worn_of(get_equipped_item(SLOT_ID_SUIT)).covers & FACE))
 		return TRUE
 
 	return FALSE

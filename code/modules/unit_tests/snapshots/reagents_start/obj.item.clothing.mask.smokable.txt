@@ -1,0 +1,15 @@
+/obj/item/clothing/mask/smokable vol=0 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/cigarette vol=15 holder=/datum/reagents nicotine=2
+/obj/item/clothing/mask/smokable/cigarette/cigar vol=20 holder=/datum/reagents nicotine=4
+/obj/item/clothing/mask/smokable/cigarette/cigar/cohiba vol=20 holder=/datum/reagents nicotine=7
+/obj/item/clothing/mask/smokable/cigarette/cigar/havana vol=30 holder=/datum/reagents nicotine=10
+/obj/item/clothing/mask/smokable/cigarette/joint vol=25 holder=/datum/reagents nicotine=2
+/obj/item/clothing/mask/smokable/cigarette/joint/blunt vol=45 holder=/datum/reagents nicotine=4
+/obj/item/clothing/mask/smokable/pipe vol=50 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/pipe/cobpipe vol=35 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/pipe/bonepipe vol=30 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/ecig vol=0 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/ecig/simple vol=0 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/ecig/util vol=0 holder=/datum/reagents 
+/obj/item/clothing/mask/smokable/ecig/deluxe vol=0 holder=/datum/reagents 
+

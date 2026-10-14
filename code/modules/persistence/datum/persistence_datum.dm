@@ -106,7 +106,7 @@
 		fdel(filename)
 
 	var/list/to_store = list()
-	for(var/thing in SSpersistence.tracking_values[type])
+	for(var/thing in persistence_tracking_values()[type])
 		if(!IsValidEntry(thing))
 			continue
 		to_store[++to_store.len] = CompileEntry(thing)
@@ -115,10 +115,10 @@
 		to_file(file(filename), json_encode(to_store))
 
 /datum/persistent/proc/RemoveValue(atom/value)
-	qdel(value)
+	spent(value)
 
 /datum/persistent/proc/GetAdminSummary(mob/user, can_modify)
-	var/list/my_tracks = SSpersistence.tracking_values[type]
+	var/list/my_tracks = persistence_tracking_values()[type]
 	if(!my_tracks?.len)
 		return
 

@@ -1,0 +1,17 @@
+/datum/unit_test/interim_teleport_incantation/Run()
+	test_driver_begin()
+	run_invocations()
+	test_driver_end()
+
+/datum/unit_test/interim_teleport_incantation/proc/run_invocations()
+	var/turf/floor = test_floor()
+	var/area/destination = get_area(floor)
+	TEST_ASSERT(destination && destination.name, "Real map floor supplies a named teleport destination")
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, floor)
+	var/datum/spell/area_teleport/spell = allocate(/datum/spell/area_teleport)
+	TEST_ASSERT_EQUAL(spell.invocation, initial(spell.invocation), "Actual teleport spell starts with its declared incantation")
+	var/expected = "[initial(spell.invocation)][uppertext(destination.name)]"
+	spell.invocation(actor, destination)
+	TEST_ASSERT_EQUAL(spell.invocation, expected, "First actual invocation appends exactly the current destination")
+	spell.invocation(actor, destination)
+	TEST_ASSERT_EQUAL(spell.invocation, expected, "Repeated actual invocation does not accumulate previous destination text")

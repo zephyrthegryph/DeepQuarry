@@ -48,9 +48,9 @@
 	source_turf = isturf(top_atom) ? top_atom : top_atom.loc // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 	pixel_turf = get_turf_pixel(top_atom) || source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 
-	light_power = source_atom.light_power
-	light_range = source_atom.light_range
-	light_color = source_atom.light_color
+	light_power = glow_of(source_atom).power
+	light_range = glow_of(source_atom).range
+	light_color = glow_of(source_atom).color
 
 	PARSE_LIGHT_COLOR(src)
 
@@ -186,15 +186,15 @@
 	var/atom/source_atom = src.source_atom
 
 	if (QDELETED(source_atom))
-		qdel(src)
+		spent(src)
 		return
 
-	if (source_atom.light_power != light_power)
-		light_power = source_atom.light_power
+	if (glow_of(source_atom).power != light_power)
+		light_power = glow_of(source_atom).power
 		update = TRUE
 
-	if (source_atom.light_range != light_range)
-		light_range = source_atom.light_range
+	if (glow_of(source_atom).range != light_range)
+		light_range = glow_of(source_atom).range
 		update = TRUE
 
 	if (!top_atom)
@@ -202,7 +202,7 @@
 		update = TRUE
 
 	if (!light_range || !light_power)
-		qdel(src)
+		spent(src)
 		return
 
 	if (isturf(top_atom))
@@ -232,8 +232,8 @@
 	if (light_range && light_power && !applied)
 		update = TRUE
 
-	if (source_atom.light_color != light_color)
-		light_color = source_atom.light_color
+	if (glow_of(source_atom).color != light_color)
+		light_color = glow_of(source_atom).color
 		PARSE_LIGHT_COLOR(src)
 		update = TRUE
 
@@ -294,7 +294,7 @@
 
 	var/list/datum/lighting_corner/gone_corners = effect_str - corners
 	for (var/datum/lighting_corner/corner as anything in gone_corners)
-		LAZYREMOVE(corner.affecting, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
+		LAZYREMOVE(corner.affecting, src)
 		REMOVE_CORNER(corner)
 	effect_str -= gone_corners
 
@@ -311,12 +311,5 @@
 #undef SETUP_CORNERS_REMOVAL_CACHE
 #undef SETUP_CORNERS_CACHE
 
-// source_atom owns the source (atom.light); source_atom and top_atom are one-sided back views.
-// atom.light_sources is a relation list view of the sources lighting from it (as source or top
-// atom), kept in step by New() and update(). effect_str (corner -> strength) and corner.affecting
-// are the engine's own symmetric links (see the ALLOW notes above).
-/atom/relations()
-	. = ..()
-	. += rel_many(nameof(light_sources))
 
 

@@ -81,9 +81,9 @@
 		if(istype(assembly(),/obj/item/electronic_assembly/clothing))
 			light_source = assembly().loc
 		if(light_toggled)
-			light_source.set_light(l_range = light_brightness, l_power = light_brightness, l_color = light_rgb)
+			set_glow(light_source, GLOW(light_brightness, light_brightness, light_rgb))
 		else
-			light_source.set_light(0)
+			set_glow(light_source, GLOW(0, null, null))
 	power_draw_idle = light_toggled ? light_brightness * light_brightness : 0 // Should be the same draw as regular lights.
 
 /obj/item/integrated_circuit/output/light/power_fail() // Turns off the flashlight if there's no power left.
@@ -148,11 +148,8 @@
 
 	var/mob/living/voice/my_voice
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice", /mob/living/voice)
-
-/obj/item/integrated_circuit/output/text_to_speech/advanced/Initialize(mapload)
-	. = ..()
-	my_voice.name = "TTS Circuit"
+CAPABILITIES(/obj/item/integrated_circuit/output/text_to_speech/advanced)
+	owns_one(nameof(my_voice), starts = /mob/living/voice, starts_set = list("name" = "TTS Circuit"))
 
 /// A text-to-speech circuit's voice is not a mob of the world: no mob registry.
 /mob/living/voice/skips_registry(registry_id)
@@ -183,14 +180,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	power_draw_per_use = 20
 	var/list/sounds
 
-/obj/item/integrated_circuit/output/sound/Initialize(mapload)
-	. = ..()
-	extended_desc = list()
-	extended_desc += "The first input pin determines which sound is used. The choices are; "
-	extended_desc += jointext(sounds || list(), ", ")
-	extended_desc += ". The second pin determines the volume of sound that is played"
-	extended_desc += ", and the third determines if the frequency of the sound will vary with each activation."
-	extended_desc = jointext(extended_desc, null)
+CAPABILITIES(/obj/item/integrated_circuit/output/sound)
+	per_type(nameof(extended_desc), PROC_REF(build_extended_desc))
+
+/// Its description lists the sounds this circuit plays (per_type(): one text per type).
+/obj/item/integrated_circuit/output/sound/proc/build_extended_desc()
+	return "The first input pin determines which sound is used. The choices are; [jointext(sounds || list(), ", ")]. The second pin determines the volume of sound that is played, and the third determines if the frequency of the sound will vary with each activation."
 
 /obj/item/integrated_circuit/output/sound/do_work()
 	var/ID = get_pin_data(IC_INPUT, 1)
@@ -368,10 +363,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 //	var/datum/beam/holo_beam = null // A visual effect, to make it easy to know where a hologram is coming from.
 	// It is commented out due to picking up the assembly killing the beam.
 
-/obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
+CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(on_moved)))
+	owns_one(nameof(hologram), /obj/effect/overlay/holographic)
 
 // its hologram goes with it.
 
@@ -435,7 +430,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 
 	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
-			own_set(src, nameof(hologram), new /obj/effect/overlay/holographic(src))
+			rel_set(src, nameof(hologram), new /obj/effect/overlay/holographic(src))
 			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
 		//	holo_icon.GrayScale() // So it looks better colored.
 			if(holo_color) // The color pin should ensure that it is a valid hex.
@@ -450,7 +445,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	return FALSE
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
-	own_clear(src, nameof(hologram), OWN_DELETE)
+	rel_clear(src, nameof(hologram))
 
 
 	power_draw_idle = 0
@@ -459,8 +454,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	if(hologram)
 		update_hologram()
 
-/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(hologram)
 		update_hologram_position()
 

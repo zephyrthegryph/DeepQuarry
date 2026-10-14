@@ -10,29 +10,43 @@
 	var/do_rotation = TRUE
 
 /// A wreck that never learned what gun it was (spawned without a type) cleans itself up.
-/obj/item/broken_gun/reactions()
-	. = ..()
-	. += after_init(30 SECONDS, PROC_REF(validate_gun_type))
+CAPABILITIES(/obj/item/broken_gun)
+	after_init(30 SECONDS, then(PROC_REF(validate_gun_type)))
+	param(nameof(gun_path), pos = 1, apply = PROC_REF(break_from))
+	op("inspect", ai(), wait(5 SECONDS), then(PROC_REF(inspect_done)))
+	op("repair", item(/obj/item), label("Use"), when(PROC_REF(repairs_with)), starts(PROC_REF(repair_started)), wait(PROC_REF(repair_time)), then(PROC_REF(repair_with)))
 
-/obj/item/broken_gun/Initialize(mapload, path)
-	. = ..()
+MSG_DEF_SELF(broken_gun/short, "You do not have enough %I% to continue repairs.")
+
+TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
+
+/// The gun this is the broken form of (its constructor param, or the type's forced one).
+/obj/item/broken_gun/var/gun_path
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/broken_gun/proc/break_from(path)
+	var/forced_type = TYPE_TABLE_GET(src, broken_gun_forced_type)
+	if(forced_type)
+		path = forced_type
 	if(path)
 		if(!setup_gun(path))
-			return INITIALIZE_HINT_QDEL
+			spent(src)
+			return
 		setup_repair_needs()
 
 
-/obj/item/broken_gun/proc/validate_gun_type()
+/obj/item/broken_gun/proc/validate_gun_type(datum/act/A)
 	if(!my_guntype)
-		qdel(src)
+		consume(src)
 
 /obj/item/broken_gun/examine(mob/user)
 	. = ..()
 	if(get_dist(get_turf(user),get_turf(src)) <= 1)
 		to_chat(user, span_notice("You begin inspecting \the [src]."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(inspect_done), list(user))
+		perform_op(user, src, "inspect", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/broken_gun/proc/inspect_done(mob/user)
+/obj/item/broken_gun/proc/inspect_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("\The [src] can possibly be restored with:"))
 	for(var/obj/item/res as anything in material_needs)
 		if(material_needs[res] > 0)
@@ -52,11 +66,11 @@
 	if(ispath(path))
 		name = "[pick("busted", "broken", "shattered", "scrapped")] [initial(path.name)]"
 		icon = initial(path.icon)
-		icon_state = initial(path.icon_state)
+		set_icon_state(initial(path.icon_state))
 
 		my_guntype = path
 
-		w_class = initial(path.w_class)
+		set_w_class(initial(path.w_class))
 
 		if(do_rotation)
 			adjust_rotation(rand() * pick(-1,1) * rand(0, 45))
@@ -91,33 +105,34 @@
 
 	material_needs[/obj/item/stack/material/steel] = rand(1,5)
 
-DECLARE_INTERACTIONS(/obj/item/broken_gun, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/broken_gun/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(can_repair_with(W, user))
-		om_task_timed(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
-
-/obj/item/broken_gun/proc/can_repair_with(obj/item/I, mob/user)
-	for(var/path in material_needs)
-		if(!ispath(path) || !istype(I, path))
-			continue
-		if(material_needs[path] <= 0)
-			continue
-		if(istype(I, /obj/item/stack))
-			var/obj/item/stack/S = I
-			if(S.can_use(material_needs[path]))
-				return TRUE
-			else
-				to_chat(user, span_notice("You do not have enough [I] to continue repairs."))
-		else
+/// The held item is one the wreck still needs.
+/obj/item/broken_gun/proc/repairs_with(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/list/needs = read_once(material_needs)
+	for(var/path in needs)
+		if(ispath(path) && istype(I, path) && needs[path] > 0)
 			return TRUE
 	return FALSE
 
-/obj/item/broken_gun/proc/repair_with(obj/item/I, mob/user)
+/// A needed stack holds enough for the repair, else the op ends with the refusal before it waits.
+/obj/item/broken_gun/proc/repair_started(datum/act/op/A)
+	var/obj/item/I = A.held
+	for(var/path in material_needs)
+		if(!ispath(path) || !istype(I, path) || material_needs[path] <= 0)
+			continue
+		if(!istype(I, /obj/item/stack))
+			return
+		var/obj/item/stack/S = I
+		if(S.can_use(material_needs[path]))
+			return
+	return MSG(broken_gun/short)
+
+/obj/item/broken_gun/proc/repair_time(datum/act/op/A)
+	return rand() * 10 SECONDS + 5 SECONDS
+
+/obj/item/broken_gun/proc/repair_with(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
 	for(var/path in material_needs)
 		if(!ispath(path) || !istype(I, path))
 			continue

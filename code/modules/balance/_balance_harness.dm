@@ -42,6 +42,11 @@
 	/// Everything this scenario spawned, deleted by cleanup().
 	var/list/spawned
 
+/// Not in the main .dme, so it cannot carry a generated CAPABILITIES declaration: the table proc declares what it spawned.
+/datum/balance_scenario/ownership()
+	. = ..()
+	. += owns(nameof(spawned), is_list = TRUE)
+
 /datum/balance_scenario/on_destroy(force) // the scenario owns what it spawned; cleanup() removes it.
 	cleanup()
 	..()
@@ -72,7 +77,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 /// Spawns `type` at the scenario site and tracks it for cleanup.
 /datum/balance_scenario/proc/spawn_thing(type)
 	var/atom/movable/thing = new type(site)
-	own_add(src, nameof(spawned), thing)
+	rel_add(src, nameof(spawned), thing)
 	return thing
 
 /// Deletes everything the scenario spawned (between trials and at the end).
@@ -94,7 +99,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 /// One Life frame (one LIFE_CYCLE of the life pipeline), run now.
 /datum/balance_scenario/proc/live(mob/living/L)
 	if(!QDELETED(L))
-		om_run_frame_now(L, /datum/om/pipeline/life)
+		seq_run_frame_now(L, /datum/sequence/life)
 
 /// A human's blood as a fraction of its species' normal volume, or null.
 /datum/balance_scenario/proc/blood_fraction(mob/living/carbon/human/H)
@@ -188,7 +193,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 		entry["units"] = scenario.units || list()
 		entry["notes"] = scenario.notes || list()
 		log_test("BALANCE: [scenario_id] [entry["status"]] in [entry["duration_seconds"]]s: [length(results)] results, [length(missing)] missing, [entry["runtimes"]] runtimes[entry["error"] ? " ([entry["error"]])" : ""]")
-		qdel(scenario)
+		spent(scenario)
 		CHECK_TICK
 	var/list/document = list(
 		"kind" = "balance",

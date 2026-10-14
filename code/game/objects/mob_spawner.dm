@@ -23,21 +23,20 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 	/mob/living/simple_mob/animal/passive/cat = 25 \
 	))
 
+/obj/structure/mob_spawner/proximity_tracked = TRUE
+
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
-DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
-
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
-/obj/structure/mob_spawner/relations()
-	. = ..()
-	. += rel_many(nameof(spawned_mobs))
+CAPABILITIES(/obj/structure/mob_spawner)
+	every(2 SECONDS, then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
+	ref_many(nameof(spawned_mobs))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/mob_spawner/periodic_step()
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/structure/mob_spawner/proc/mob_spawner_step(datum/act/timer/A)
 	if(!can_spawn())
 		return
 	var/chosen_mob = choose_spawn()
@@ -66,7 +65,7 @@ DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
@@ -82,18 +81,18 @@ DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 	if(L in spawned_mobs)
 		rel_remove(src, nameof(spawned_mobs), L)
 
-DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/mob_spawner/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
-	if(!I.force || I.flags & NOBLUDGEON || !destructible)
-		return INTERACTION_HANDLED_PASS
+/obj/structure/mob_spawner/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
+	if(!combat_of(I).force || I.flags & NOBLUDGEON || !destructible)
+		return OP_PASS
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
-	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with %I% by %T%."), item = I)
+	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? "[pick(combat_of(I).attack_verbs)]":"attacked"] with %I% by %T%."), item = I)
 	receive_weapon_hit(I, user, silent = FALSE)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/mob_spawner/damage_sink(datum/damage_packet/packet)
 	if(!destructible)
@@ -130,9 +129,13 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	var/datum/proximity_monitor/mobspawner/prox
 	var/list/mobs_in_range
 
-/obj/structure/mob_spawner/scanner/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
+CAPABILITIES(/obj/structure/mob_spawner/scanner)
+	every(2 SECONDS, then(PROC_REF(scanner_spawn_step)))
+	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner, starts = PROC_REF(make_prox))
+
+/// The starting proximity monitor (owns_one(starts =)): it watches `range` tiles.
+/obj/structure/mob_spawner/scanner/proc/make_prox(current)
+	return new /datum/proximity_monitor/mobspawner(src, range)
 
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))
@@ -155,7 +158,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	//and then we spawn them
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
@@ -175,7 +178,11 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
 		rel_remove(src, nameof(mobs_in_range), AM)
 
-/obj/structure/mob_spawner/scanner/periodic_step()
+/// The scanner spawner is not gated on a player being near: it spawns on those its proximity monitor sees (its own every(); the base step does nothing here).
+/obj/structure/mob_spawner/scanner/mob_spawner_step(datum/act/timer/A)
+	return
+
+/obj/structure/mob_spawner/scanner/proc/scanner_spawn_step(datum/act/timer/timer)
 	if(!can_spawn())
 		return
 	if(COOLDOWN_FINISHED(src, spawn_cooldown))
@@ -318,7 +325,10 @@ TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest/mousehole, mob_spawner_types, l
 	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, /* Because I'm a horrible person. <3 */ \
 	/obj/effect/spider/spiderling/non_growing = 5))
 
-DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "tunnel_hole")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/mob_spawner/mouse_nest/mousehole/draw(datum/look/look)
+	..()
+	look.state("tunnel_hole")
 
 /obj/structure/mob_spawner/recycler
 	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."

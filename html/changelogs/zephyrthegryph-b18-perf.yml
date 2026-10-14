@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The server uses about 50 MB less memory: capability handlers and framework hooks are global procs instead of procs every atom type carries."
+  - code_imp: "Timers and periodic steps no longer wake a mob's Life or a machine's processing for nothing; the native frame, the gas watch drain and the kernel loop do less work per tick."

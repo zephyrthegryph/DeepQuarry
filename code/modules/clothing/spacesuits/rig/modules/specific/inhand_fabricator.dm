@@ -16,7 +16,7 @@
 	var/fire_force = 30
 	var/fire_distance = 10
 
-/obj/item/rig_module/fabricator/engage(atom/target)
+/obj/item/rig_module/fabricator/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
@@ -53,10 +53,10 @@
 	fabrication_type = /obj/item/energy_net
 	use_power_cost = 70
 
-/obj/item/rig_module/fabricator/energy_net/engage(atom/target)
+/obj/item/rig_module/fabricator/energy_net/engage(atom/target, notify_ai, mob/user)
 
 	if(holder && holder.wearer())
-		if(..(target) && target)
+		if(..(target, notify_ai, user) && target)
 			set_dir(get_dir(src,target))  // Face the target
 			holder.wearer().Beam(target,"n_beam",,10)
 		return 1

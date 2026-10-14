@@ -1,0 +1,47 @@
+@obj.item.mecha_parts.mecha_equipment human|none
+@obj.item.mecha_parts.mecha_equipment robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.mecha_parts human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++2 click: nothing
+@obj.item.mecha_parts human|/obj/item/kit
+-menu: Use
+@obj.item.mecha_parts human|/obj/item/storage
+-menu: Use
+-click: Click: Use
++3 click: Click: Collect
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

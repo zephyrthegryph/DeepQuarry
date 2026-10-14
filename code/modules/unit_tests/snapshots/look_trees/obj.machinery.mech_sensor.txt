@@ -1,0 +1,5 @@
+/obj/machinery/mech_sensor icon: icons/obj/airlock_machines.dmi
+/obj/machinery/mech_sensor state: airlock_sensor_off
+/obj/machinery/mech_sensor dir: 2
+/obj/machinery/mech_sensor overlay: icons/obj/airlock_machines.dmi:airlock_sensor_off:8:#000000
+

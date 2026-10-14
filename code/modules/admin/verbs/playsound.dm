@@ -9,8 +9,19 @@ GLOBAL_VAR_INIT(internet_sound_cooldown, 0)
 GLOBAL_LIST_EMPTY(sounds_cache) // ALLOW(cache): admin-uploaded sound list, not a keyed cache
 
 ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all players.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
+	// Replay only the actual ended request, through the public admin dispatcher.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_global_sound_replay) || istype(resumed, /datum/prompt/number/admin_global_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_sound_replay_answered) && S == resumed.captured["original_sound"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/freq = 1
-	var/vol = verb_ask(user, "a1", args, /datum/om/prompt/number, message = "What volume would you like the sound to play at?", default = 100, max = 100, min = 1)
+	if(!("a1" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/number/admin_global_sound_replay, PROC_REF(play_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", question = "What volume would you like the sound to play at?", default = 100, max_value = 100, min_value = 1)
+		return
+	var/vol = replay_answers["a1"]
 	if(isnull(vol))
 		return
 	if(!vol)
@@ -29,7 +40,11 @@ ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all play
 
 	GLOB.sounds_cache += S
 
-	var/res = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", choices = list("Yes", "No", "Cancel"))
+	if(!("a2" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_global_sound_replay, PROC_REF(play_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a2", question = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", choices = list("Yes", "No", "Cancel"))
+		return
+	var/res = replay_answers["a2"]
 	if(isnull(res))
 		return
 	if(!res)
@@ -58,7 +73,7 @@ ADMIN_VERB(play_local_sound, R_SOUNDS, "Play Local Sound", "Plays a sound around
 	feedback_add_details("admin_verb", "Play Local Sound")
 
 ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a sound to a single mob.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
-	var/mob/target_mob = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
+	var/mob/target_mob = verb_ask(user, "a3", args, /datum/prompt/choice, question = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
 	if(isnull(target_mob))
 		return
 	if(QDELETED(target_mob))
@@ -69,13 +84,24 @@ ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a so
 	feedback_add_details("admin_verb", "Play Direct Mob Sound")
 
 ADMIN_VERB(play_z_sound, R_SOUNDS, "Play Z Sound", "Plays a sound to a single z-level.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
+	// Replay only the actual ended request, through the public admin dispatcher.
+	var/list/replay_answers = list()
+	if(length(args) >= 3)
+		var/datum/request/resumed = args[3]
+		if((istype(resumed, /datum/prompt/choice/admin_z_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_z_sound_replay_answered) && S == resumed.captured["original_sound"])
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/target_z = user.mob.z
 	var/sound/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = 777)
 	uploaded_sound.priority = 250
 
 	GLOB.sounds_cache += S
 
-	var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", title = "Confirmation request", choices = list("Play","Cancel"))
+	if(!("a4" in replay_answers))
+		replay_answers["original_sound"] = args[2]
+		open_request(src, /datum/prompt/choice/admin_z_sound_replay, PROC_REF(play_z_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a4", question = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", title = "Confirmation request", choices = list("Play", "Cancel"))
+		return
+	var/_answer_a4 = replay_answers["a4"]
 	if(isnull(_answer_a4))
 		return
 	if(_answer_a4 != "Play")
@@ -94,19 +120,25 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	sounds += "--CANCEL--"
 	sounds += GLOB.sounds_cache
 
-	var/melody = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Select a sound from the server to play", title = "Server sound list", choices = sounds, default = "--CANCEL--")
-	if(isnull(melody))
-		return
+	open_request(src, /datum/prompt/choice/admin_server_sound, PROC_REF(server_sound_answered), answerer = user.mob, choices = sounds, default = "--CANCEL--")
 
-	if(!melody || melody == "--CANCEL--")
-		return
+/datum/prompt/choice/admin_server_sound
+	rights = R_SOUNDS
+	timeout = 0
+	recheck_on_open = TRUE
+	question = "Select a sound from the server to play"
+	title = "Server sound list"
 
-	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, melody)
+/datum/admin_verb/play_server_sound/proc/server_sound_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.value || A.answer.value == "--CANCEL--")
+		return
+	var/client/user = A.request.answerer.client
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/play_sound, A.answer.value)
 	feedback_add_details("admin_verb", "Play Server Sound") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ///Takes an input from either proc/play_web_sound or the request manager and runs it through youtube-dl and prompts the user before playing it to the server.
 /proc/web_sound(mob/user, input, credit)
-	if(!check_rights(R_SOUNDS))
+	if(!admin_require(user.client, R_SOUNDS, "web_sound", TRUE))
 		return
 	var/ytdl = CONFIG_GET(string/invoke_youtubedl)
 	if(!ytdl)
@@ -153,13 +185,13 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	music_extra_data["album"] = data["album"]
 	var/duration = data["duration"] * 1 SECONDS
 	// youtube-dl has answered; the questions come now, and the flow plays it.
-	om_flow_start(/datum/om/flow/web_sound, user, null, url = web_sound_url, extra = music_extra_data, page = webpage_url, song_title = data["title"], duration = duration, credit = credit, input = input)
+	user.ask_web_sound(web_sound_url, music_extra_data, webpage_url, data["title"], duration, credit, input)
 
-/// The questions before a web sound plays: a length warning for long songs, whether to show the
-/// song, and whether to credit the admin. A cancel at any step stops it.
-/datum/om/flow/web_sound
-	name = "web sound"
-	requires = PROMPT_ADMIN(R_SOUNDS)
+/// The original admin mob owns each question; a cancel stops without playing or broadcasting.
+/datum/prompt/choice/web_sound
+	buttons = TRUE
+	timeout = 0
+	rights = R_SOUNDS
 	var/url
 	var/list/extra
 	var/page
@@ -167,33 +199,48 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	var/duration
 	var/credit
 	var/input
-	/// "Yes": show the title and link.
 	var/show
+	recheck_on_open = TRUE
 
-/datum/om/flow/web_sound/start()
+/mob/proc/ask_web_sound(url, list/extra, page, song_title, duration, credit, input)
 	if(duration > 10 MINUTES)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(length_answered), buttons = TRUE, title = "Length Warning!", message = "This song is over 10 minutes long. Are you sure you want to play it?", choices = list("No", "Yes", "Cancel"))
+		open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_length_answered), answerer = src, url = url, extra = extra, page = page, song_title = song_title, duration = duration, credit = credit, input = input, title = "Length Warning!", question = "This song is over 10 minutes long. Are you sure you want to play it?", choices = list("No", "Yes", "Cancel"))
 		return
-	ask_show()
+	ask_web_sound_show(url, extra, page, song_title, duration, credit, input)
 
-/datum/om/flow/web_sound/proc/length_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Yes")
-		ask_show()
-
-/datum/om/flow/web_sound/proc/ask_show()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(show_answered), buttons = TRUE, title = "Show Info?", message = "Show the title of and link to this song to the players?\n[song_title]", choices = list("Yes", "No", "Cancel"))
-
-/datum/om/flow/web_sound/proc/show_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/proc/web_sound_length_answered(datum/act/request/A)
+	if(!A.answer)
 		return
-	show = ask.choice
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(anon_answered), buttons = TRUE, title = "Credit Yourself?", message = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.value == "Yes")
+		ask_web_sound_show(ask.url, ask.extra, ask.page, ask.song_title, ask.duration, ask.credit, ask.input)
 
-/datum/om/flow/web_sound/proc/anon_answered(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/mob/proc/ask_web_sound_show(url, list/extra, page, song_title, duration, credit, input)
+	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_show_answered), answerer = src, url = url, extra = extra, page = page, song_title = song_title, duration = duration, credit = credit, input = input, title = "Show Info?", question = "Show the title of and link to this song to the players?\n[song_title]", choices = list("Yes", "No", "Cancel"))
+
+/mob/proc/web_sound_show_answered(datum/act/request/A)
+	if(!A.answer)
 		return
-	var/mob/user = actor
-	var/list/music_extra_data = extra
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/web_sound, PROC_REF(web_sound_anon_answered), answerer = src, url = ask.url, extra = ask.extra, page = ask.page, song_title = ask.song_title, duration = ask.duration, credit = ask.credit, input = ask.input, show = ask.value, title = "Credit Yourself?", question = "Display who played the song?", choices = list("Yes", "No", "Cancel"))
+
+/mob/proc/web_sound_anon_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/web_sound/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	var/mob/user = src
+	var/list/music_extra_data = ask.extra
+	var/show = ask.show
+	var/song_title = ask.song_title
+	var/page = ask.page
+	var/credit = ask.credit
+	var/input = ask.input
+	var/url = ask.url
+	var/duration = ask.duration
 	if(show == "Yes")
 		music_extra_data["title"] = song_title
 	else
@@ -202,7 +249,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		music_extra_data["artist"] = "Song Artist Hidden"
 		music_extra_data["upload_date"] = "Song Upload Date Hidden"
 		music_extra_data["album"] = "Song Album Hidden"
-	switch(ask.choice)
+	switch(ask.value)
 		if("Yes")
 			if(show == "Yes")
 				to_chat(world, span_boldannounce("[user.key] played: [page]"), confidential = TRUE)
@@ -222,7 +269,16 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 /proc/web_sound_play(mob/user, web_sound_url, list/music_extra_data, duration)
 	var/stop_web_sounds = !web_sound_url
 	if(web_sound_url && !findtext(web_sound_url, GLOB.is_http_protocol))
-		tgui_alert_async(user, "The media provider returned a content URL that isn't using the HTTP or HTTPS protocol. This is a security risk and the sound will not be played.", "Security Risk", list("OK"))
+		var/mob/notification_actor
+		if(istext(user))
+			stack_trace("tgui_alert() received text for user instead of list")
+		else if(istype(user, /mob))
+			notification_actor = user
+		else if(istype(user, /client))
+			var/client/notification_client = user
+			notification_actor = notification_client.mob
+		if(notification_actor)
+			open_request(notification_actor, /datum/prompt/choice/web_sound_security_notification, null, answerer = notification_actor, question = "The media provider returned a content URL that isn't using the HTTP or HTTPS protocol. This is a security risk and the sound will not be played.", title = "Security Risk", choices = list("OK"))
 		to_chat(user, span_boldwarning("BLOCKED: Content URL not using HTTP(S) Protocol!"), confidential = TRUE)
 		return
 	for(var/m in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -241,17 +297,30 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	feedback_add_details("admin_verb", "Play Internet Sound")
 
 ADMIN_VERB(play_web_sound, R_SOUNDS, "Play Internet Sound", "Plays a sound from the internet to all players.", ADMIN_CATEGORY_FUN_SOUNDS)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_web_sound_replay) || istype(resumed, /datum/prompt/text/admin_web_sound_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(play_web_sound_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/ytdl = CONFIG_GET(string/invoke_youtubedl)
 	if(!ytdl)
 		to_chat(user, span_boldwarning("Youtube-dl was not configured, action unavailable"), confidential = TRUE) //Check config.txt for the INVOKE_YOUTUBEDL value
 		return
 
 	if(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown))
-		var/override = verb_ask(user, "override", args, /datum/om/prompt/choice/alert, message = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", title = "Musicalis Interruptus", choices = list("No","Yes"))
+		if(!("override" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_web_sound_replay, PROC_REF(play_web_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "override", buttons = TRUE, question = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", title = "Musicalis Interruptus", choices = list("No","Yes"))
+			return
+		var/override = replay_answers["override"]
 		if(override != "Yes")
 			return
 
-	var/web_sound_input = verb_ask(user, "a6", args, /datum/om/prompt/text, message = "Enter content URL (supported sites only, leave blank to stop playing)", title = "Play Internet Sound")
+	if(!("a6" in replay_answers))
+		open_request(src, /datum/prompt/text/admin_web_sound_replay, PROC_REF(play_web_sound_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a6", question = "Enter content URL (supported sites only, leave blank to stop playing)", title = "Play Internet Sound")
+		return
+	var/web_sound_input = replay_answers["a6"]
 	if(isnull(web_sound_input))
 		return
 
@@ -280,3 +349,117 @@ ADMIN_VERB(stop_sounds, R_SOUNDS, "Stop All Playing Sounds", "Stops all playing 
 #undef SHELLEO_STDOUT
 #undef SHELLEO_STDERR
 
+
+/datum/prompt/choice/admin_web_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_web_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_web_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_web_sound_replay/refusal(given)
+	return null
+
+/datum/prompt/text/admin_web_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_web_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/admin_web_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/admin_verb/play_web_sound/proc/play_web_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/admin_global_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_global_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_global_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_global_sound_replay/refusal(given)
+	return null
+
+/datum/admin_verb/play_sound/proc/play_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_sound"], A.answer)
+
+/datum/prompt/choice/admin_z_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_z_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_z_sound_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_z_sound_replay/refusal(given)
+	return null
+
+/datum/admin_verb/play_z_sound/proc/play_z_sound_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer.captured["original_sound"], A.answer)
+
+/datum/prompt/number/admin_global_sound_replay
+	timeout = 0
+	rights = R_SOUNDS
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_global_sound_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/number/admin_global_sound_replay/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/admin_global_sound_replay/refusal(given)
+	return null
+
+/datum/prompt/choice/web_sound_security_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/web_sound_security_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

@@ -11,37 +11,39 @@
 	var/base_icon_state = "nboard0"
 	var/const/max_notices = 5
 
+CAPABILITIES(/obj/structure/noticeboard)
+	owns_many(nameof(notices))
+	interface("NoticeBoard")
+	without("ui_open")
+	op("read", ui_act("read", arg("ref", schema_ref(/obj/item/paper))), then(PROC_REF(ui_act_read)))
+	op("look", ui_act("look", arg("ref", schema_ref(/obj/item/photo))), then(PROC_REF(ui_act_look)))
+	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
+	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(noticeboard_blast_dismantle))))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(5 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Offset"), wait(0), asks(/datum/prompt/choice/noticeboard_offset, step = "offset"), then(PROC_REF(offset_chosen)))
+
+// ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
 /obj/structure/noticeboard/Initialize(mapload)
 	. = ..()
-
-	// Grab any mapped notices.
-	own_take_all(src, nameof(notices))
 	for(var/obj/item/paper/note in get_turf(src))
-		own_add(src, nameof(src.notices), note, into = TRUE)
 		if(LAZYLEN(notices) >= max_notices)
 			break
-	// notices in contents
-	for(var/obj/item/paper/note in contents)
-		own_add(src, nameof(notices), note)
-		if(LAZYLEN(notices) >= max_notices)
-			break
-
-	update_icon()
+		move_into(src, nameof(src.notices), note)
 
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
 		paper.forceMove(src)
 		own_move(paper, src, nameof(notices)) // it may come from another holder (a bundle, a clipboard)
-		if(!skip_icon_update)
-			update_icon()
 
 /obj/structure/noticeboard/proc/remove_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper) && paper.loc == src)
 		paper.dropInto(loc)
 		own_take_member(src, nameof(notices), paper)
 		SSpersistence.forget_value(paper, /datum/persistent/paper)
-		if(!skip_icon_update)
-			update_icon()
 
 /obj/structure/noticeboard/proc/dismantle()
 	for(var/thing in notices)
@@ -49,20 +51,24 @@
 	replace_with(src, /obj/item/stack/material/wood)
 
 
-DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboard_blast_dismantle))
 
 /// Any blast knocks the board down into its parts.
-/obj/structure/noticeboard/proc/noticeboard_blast_dismantle(datum/damage_packet/packet)
+/obj/structure/noticeboard/proc/noticeboard_blast_dismantle(datum/act/hit/explosion/A)
 	dismantle()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/noticeboard/proc/appearance_count()
 	return LAZYLEN(notices)
 
-APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_count}")
+/// The look (the draw sweep: from its template).
+/obj/structure/noticeboard/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state][appearance_count()]")
 
 /// Old attackby.
-/obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/paper) || istype(I, /obj/item/photo))
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
@@ -74,16 +80,26 @@ APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_co
 				SSpersistence.track_value(I, /datum/persistent/paper)
 			else
 				to_chat(user, span_warning("You hesitate, certain [I] will not be seen among the many others already attached to \the [src]."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-/obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
-	var/choice = rerun_ask(user, "k79", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which direction do you wish to place the noticeboard?", title = "Noticeboard Offset", choices = list("North", "South", "East", "West", "No Offset"))
-	if(isnull(choice))
-		return ITEM_INTERACT_BLOCKING
-	if(!choice || !Adjacent(user) || tool.loc != user || user.incapacitated())
-		return ITEM_INTERACT_BLOCKING
-	playsound(loc, tool.usesound, 50, TRUE)
+/// The answer moves the board (the op re-checks the user is still beside it with the screwdriver in hand).
+/obj/structure/noticeboard/proc/offset_chosen(datum/act/op/A)
+	var/choice = A.step_value("offset")
+	if(!choice)
+		return OP_OK
+	apply_noticeboard_offset(choice, A.held)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/prompt/choice/noticeboard_offset
+	title = "Noticeboard Offset"
+	question = "Which direction do you wish to place the noticeboard?"
+	choices = list("North", "South", "East", "West", "No Offset")
+	timeout = 0
+
+/obj/structure/noticeboard/proc/apply_noticeboard_offset(choice, obj/item/tool)
+	playsound(loc, sounds_of(tool).use, 50, TRUE)
 	switch(choice)
 		if("North")
 			pixel_x = 0
@@ -102,28 +118,27 @@ APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_co
 			pixel_y = 0
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/noticeboard/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, start_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/noticeboard/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)
+/obj/structure/noticeboard/proc/wrench_begins(datum/act/op/A)
+	return msg_text(null, "[A.actor] begins dismantling [src].")
+
+/obj/structure/noticeboard/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% has dismantled %T%!"))
 	dismantle()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_ai: look at the board.
-/obj/structure/noticeboard/proc/noticeboard_silicon_examine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/noticeboard_silicon_examine(datum/act/op/A)
+	var/mob/user = A.actor
 	examine(user)
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Examine", PROC_REF(noticeboard_silicon_examine)), \
-)
-
 /// Old attack_hand.
-/obj/structure/noticeboard/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	examine(user)
 	return TRUE
 
@@ -131,12 +146,8 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 	tgui_interact(user)
 	return ..()
 
-DECLARE_UI(/obj/structure/noticeboard, "NoticeBoard")
-
-UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{notices:list}")
-
-/// The computed part of /obj/structure/noticeboard's window data (declared on its UI_DATA row).
-/obj/structure/noticeboard/proc/ui_data_obj_structure_noticeboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/structure/noticeboard's window data.
+/obj/structure/noticeboard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/tgui_notices = list()
@@ -150,87 +161,58 @@ UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{not
 	data["notices"] = tgui_notices
 	return data
 
-UI_ACT(/obj/structure/noticeboard, "read", ui_act_read, UI_ARG_REF("ref", null, /obj/item/paper))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_read)
-	var/obj/item/paper/P = params["ref"]
-	if(P && P.loc == src)
-		P.show_content(ui.user)
-	. = TRUE
-
-UI_ACT(/obj/structure/noticeboard, "look", ui_act_look, UI_ARG_REF("ref", null, /obj/item/photo))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_look)
-	var/obj/item/photo/P = params["ref"]
-	if(P && P.loc == src)
-		P.show(ui.user)
-	. = TRUE
-
-UI_ACT(/obj/structure/noticeboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_remove)
-	if(!in_range(src, ui.user))
+/obj/structure/noticeboard/proc/ui_act_read(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
 		return FALSE
-	var/obj/item/I = params["ref"]
+	var/obj/item/paper/P = ref
+	if(P && P.loc == src)
+		P.show_content(user)
+	. = TRUE
+
+/obj/structure/noticeboard/proc/ui_act_look(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/photo/P = ref
+	if(P && P.loc == src)
+		P.show(user)
+	. = TRUE
+
+/obj/structure/noticeboard/proc/ui_act_remove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!in_range(src, user))
+		return FALSE
+	var/obj/item/I = ref
 	remove_paper(I)
 	if(istype(I))
-		ui.user.put_in_hands(I)
-	add_fingerprint(ui.user)
+		user.put_in_hands(I)
+	add_fingerprint(user)
 	. = TRUE
 
-UI_ACT(/obj/structure/noticeboard, "write", ui_act_write, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/structure/noticeboard, ui_act_write)
-	if(!in_range(src, ui.user))
+/obj/structure/noticeboard/proc/ui_act_write(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
 		return FALSE
-	var/obj/item/P = params["ref"]
+	if(!in_range(src, user))
+		return FALSE
+	var/obj/item/P = ref
 	if((P && P.loc == src)) //if the paper's on the board
-		var/mob/living/M = ui.user
+		var/mob/living/M = user
 		if(istype(M))
 			var/obj/item/pen/E = M.get_type_in_hands(/obj/item/pen)
 			if(E)
 				add_fingerprint(M)
-				P.attackby(E, ui.user)
+				P.attackby(E, user)
 			else
 				to_chat(M, span_notice("You'll need something to write with!"))
 				. = TRUE
 
 /obj/structure/noticeboard/anomaly
-	notices = 5
 	icon_state = "nboard05"
 
-/obj/structure/noticeboard/anomaly/Initialize(mapload)
-	. = ..()
-	var/obj/item/paper/P = new()
-	P.name = "Memo RE: proper analysis procedure"
-	P.info = "<br>We keep test dummies in pens here for a reason, so standard procedure should be to activate newfound alien artifacts and place the two in close proximity. Promising items I might even approve monkey testing on."
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Memo RE: materials gathering"
-	P.info = "Corasang,<br>the hands-on approach to gathering our samples may very well be slow at times, but it's safer than allowing the blundering miners to roll willy-nilly over our dig sites in their mechs, destroying everything in the process. And don't forget the escavation tools on your way out there!<br>- R.W"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Memo RE: ethical quandaries"
-	P.info = "Darion-<br><br>I don't care what his rank is, our business is that of science and knowledge - questions of moral application do not come into this. Sure, so there are those who would employ the energy-wave particles my modified device has managed to abscond for their own personal gain, but I can hardly see the practical benefits of some of these artifacts our benefactors left behind. Ward--"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "READ ME! Before you people destroy any more samples"
-	P.info = "how many times do i have to tell you people, these xeno-arch samples are del-i-cate, and should be handled so! careful application of a focussed, concentrated heat or some corrosive liquids should clear away the extraneous carbon matter, while application of an energy beam will most decidedly destroy it entirely - like someone did to the chemical dispenser! W, <b>the one who signs your paychecks</b>"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Reminder regarding the anomalous material suits"
-	P.info = "Do you people think the anomaly suits are cheap to come by? I'm about a hair trigger away from instituting a log book for the damn things. Only wear them if you're going out for a dig, and for god's sake don't go tramping around in them unless you're field testing something, R"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
+CAPABILITIES(/obj/structure/noticeboard/anomaly)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/anomaly_1, /obj/item/paper/notice/anomaly_2, /obj/item/paper/notice/anomaly_3, /obj/item/paper/notice/anomaly_4, /obj/item/paper/notice/anomaly_5))
 
 // Rework this whole thing, it was bad.
 /obj/structure/noticeboard/anomaly
@@ -240,110 +222,139 @@ UI_ACT_PROC(/obj/structure/noticeboard, ui_act_write)
 	name = "medical notice board"
 	icon_state = "nboard02"
 
-/obj/structure/noticeboard/medical/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Staff Notice: Patient rooms"
-	P.info = "<br>No matter how many times I've said this, it doesn't seem to stick, so I'm leaving this reminder: Screwing patients in the patient rooms is a serious breach of professionality and your code of ethics. Take it to the dorms."
-	P.stamped = list(/obj/item/stamp/cmo)
-	P.add_overlay("paper_stamped_cmo")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Staff Notice: Breakroom & Storage"
-	P.info = "<br>Enjoy the view from the new breakroom. You've also got a storage room full of leftover supplies from the shift before yours."
-	P.stamped = list(/obj/item/stamp/cmo)
-	P.add_overlay("paper_stamped_cmo")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/medical)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/medical_1, /obj/item/paper/notice/medical_2))
 
 /obj/structure/noticeboard/toxins
 	name = "toxins lab notice board"
 	icon_state = "nboard01"
 
-/obj/structure/noticeboard/toxins/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Staff Notice: Toxins Mixing"
-	P.info = "<br>Toxins Mixing is currently shut down for the time being, due to damage requiring parts from off station to fix. Please do not use at this time, or risk setting the entire outpost on fire."
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/toxins)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/toxins_1))
 
 /obj/structure/noticeboard/nanite
 	name = "nanite lab notice board"
 	icon_state = "nboard01"
 
-/obj/structure/noticeboard/nanite/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Staff Notice: Nanite Laboratory"
-	P.info = "<br>The Nanite Laboratory is nearly complete. We're simply awaiting specialized machinery and equipment from central. The lab is currently shut down. Please do not use at this time."
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/nanite)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/nanite_1))
 
 /obj/structure/noticeboard/blueshield
 	name = "blueshield notice board"
 	icon_state = "nboard01"
 
-/obj/structure/noticeboard/blueshield/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Staff Notice: Blueshield Special Reserve"
-	P.info = "<br>This secure storage unit is intended to be used for special equipment specifically for the use of Blueshield Agents in the event of a Code Red threat to Heads of Staff. Heads of Staff found 'commandeering' this equipment can expect to be severely reprimanded.<br><br>(Underneath, there is a messy handwritten addition.)<br><i>Sorry, we haven't had time or spare funds to issue anything yet. You know how frontier budgets are! Sit tight, champ. -Z.V.</i>"
-	P.stamped = list(/obj/item/stamp/centcomm)
-	P.add_overlay("paper_stamped_cent")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/blueshield)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/blueshield_1))
 
 /obj/structure/noticeboard/library
 	icon_state = "nboard02"
 
-/obj/structure/noticeboard/library/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Library Warning: coffee stains"
-	P.info = "<br>I seem to tell you guys this daily, but please, stop bringing coffee to carpeted areas. It's hard enough to get the stains off wood,let alone carpet."
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Library Warning: loud noises"
-	P.info = "Ssshh!<br>People are trying to read in the library, stop bringing the jukebox over there!"
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/library)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/library_1, /obj/item/paper/notice/library_2))
 
 /obj/structure/noticeboard/exploration
 	icon_state = "nboard03"
 
-/obj/structure/noticeboard/exploration/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Memo: Prototype ship"
-	P.info = "<br> With the lost of our last Research installation and the damage sustained to the old exploration shuttle,We've decided to finally approve the construction of the Prototype Star-Runner class Exploration Vessel. Keep in mind it's a prototype, so try not to scratch it's paint. We don't have a second."
-	P.stamped = list(/obj/item/stamp/centcomm)
-	P.add_overlay("paper_stamped_cent")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Memo RE: Expedition Requirements"
-	P.info = "Jones,<br>For the last time, Expeditions regulations require atleast three crew members, including the Pathfinder and/or Research Director. The next time you activate your bluespace drive with less then that, and you're fired from the department.I won't have this conversation again. <br>- R.F"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-
-	P = new()
-	P.name = "Memo RE: Pilot duties"
-	P.info = "Pilots, As you're fully aware, we're on the edge of civilized space out here. <br> Leaving the shuttle area is dangerious. This is why the Prototype is equipped with a proper camera system to keep an eye on the explorers. If you get yourselves killed, and an explorer has to crash land the ship back here, the company is NOT going to be happy.<br>- R.F"
-	P.stamped = list(/obj/item/stamp/rd)
-	P.add_overlay("paper_stamped_rd")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/exploration)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/exploration_1, /obj/item/paper/notice/exploration_2, /obj/item/paper/notice/exploration_3))
 
 /obj/structure/noticeboard/airlock
 	icon_state = "nboard01"
 
-/obj/structure/noticeboard/airlock/Initialize(mapload)
-	var/obj/item/paper/P = new()
-	P.name = "Staff Notice: Airlock Proceedure"
-	P.info = "<br>Due to the large amount of new staff unfamiliar with our proceedures we've left you some instructions. <br> To exit through an airlock, simply hit the button to open the interior, and then cycle to exterior once inside. To re-enter the station, enter the airlock, Close the exterior hatch, and look for the customized thermal regulators installed on the wall. <br>This should heat up the air in the airlock, allowing you to open the interior door with no issues."
-	P.stamped = list(/obj/item/stamp/captain)
-	P.add_overlay("paper_stamp-cap")
-	P.forceMove(src)
-	. = ..()
+CAPABILITIES(/obj/structure/noticeboard/airlock)
+	owns_many(nameof(notices), starts = list(/obj/item/paper/notice/airlock_1))
+
+// The memos the mapped boards start with (owns_many(nameof(notices), starts = ...)).
+/obj/item/paper/notice
+
+/obj/item/paper/notice/anomaly_1
+	name = "Memo RE: proper analysis procedure"
+	info = "<br>We keep test dummies in pens here for a reason, so standard procedure should be to activate newfound alien artifacts and place the two in close proximity. Promising items I might even approve monkey testing on."
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/anomaly_2
+	name = "Memo RE: materials gathering"
+	info = "Corasang,<br>the hands-on approach to gathering our samples may very well be slow at times, but it's safer than allowing the blundering miners to roll willy-nilly over our dig sites in their mechs, destroying everything in the process. And don't forget the escavation tools on your way out there!<br>- R.W"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/anomaly_3
+	name = "Memo RE: ethical quandaries"
+	info = "Darion-<br><br>I don't care what his rank is, our business is that of science and knowledge - questions of moral application do not come into this. Sure, so there are those who would employ the energy-wave particles my modified device has managed to abscond for their own personal gain, but I can hardly see the practical benefits of some of these artifacts our benefactors left behind. Ward--"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/anomaly_4
+	name = "READ ME! Before you people destroy any more samples"
+	info = "how many times do i have to tell you people, these xeno-arch samples are del-i-cate, and should be handled so! careful application of a focussed, concentrated heat or some corrosive liquids should clear away the extraneous carbon matter, while application of an energy beam will most decidedly destroy it entirely - like someone did to the chemical dispenser! W, <b>the one who signs your paychecks</b>"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/anomaly_5
+	name = "Reminder regarding the anomalous material suits"
+	info = "Do you people think the anomaly suits are cheap to come by? I'm about a hair trigger away from instituting a log book for the damn things. Only wear them if you're going out for a dig, and for god's sake don't go tramping around in them unless you're field testing something, R"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/medical_1
+	name = "Staff Notice: Patient rooms"
+	info = "<br>No matter how many times I've said this, it doesn't seem to stick, so I'm leaving this reminder: Screwing patients in the patient rooms is a serious breach of professionality and your code of ethics. Take it to the dorms."
+	stamped = list(/obj/item/stamp/cmo)
+	stamp_marks = list(list("paper_stamped_cmo", 0, 0))
+
+/obj/item/paper/notice/medical_2
+	name = "Staff Notice: Breakroom & Storage"
+	info = "<br>Enjoy the view from the new breakroom. You've also got a storage room full of leftover supplies from the shift before yours."
+	stamped = list(/obj/item/stamp/cmo)
+	stamp_marks = list(list("paper_stamped_cmo", 0, 0))
+
+/obj/item/paper/notice/toxins_1
+	name = "Staff Notice: Toxins Mixing"
+	info = "<br>Toxins Mixing is currently shut down for the time being, due to damage requiring parts from off station to fix. Please do not use at this time, or risk setting the entire outpost on fire."
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/nanite_1
+	name = "Staff Notice: Nanite Laboratory"
+	info = "<br>The Nanite Laboratory is nearly complete. We're simply awaiting specialized machinery and equipment from central. The lab is currently shut down. Please do not use at this time."
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/blueshield_1
+	name = "Staff Notice: Blueshield Special Reserve"
+	info = "<br>This secure storage unit is intended to be used for special equipment specifically for the use of Blueshield Agents in the event of a Code Red threat to Heads of Staff. Heads of Staff found 'commandeering' this equipment can expect to be severely reprimanded.<br><br>(Underneath, there is a messy handwritten addition.)<br><i>Sorry, we haven't had time or spare funds to issue anything yet. You know how frontier budgets are! Sit tight, champ. -Z.V.</i>"
+	stamped = list(/obj/item/stamp/centcomm)
+	stamp_marks = list(list("paper_stamped_cent", 0, 0))
+
+/obj/item/paper/notice/library_1
+	name = "Library Warning: coffee stains"
+	info = "<br>I seem to tell you guys this daily, but please, stop bringing coffee to carpeted areas. It's hard enough to get the stains off wood,let alone carpet."
+
+/obj/item/paper/notice/library_2
+	name = "Library Warning: loud noises"
+	info = "Ssshh!<br>People are trying to read in the library, stop bringing the jukebox over there!"
+
+/obj/item/paper/notice/exploration_1
+	name = "Memo: Prototype ship"
+	info = "<br> With the lost of our last Research installation and the damage sustained to the old exploration shuttle,We've decided to finally approve the construction of the Prototype Star-Runner class Exploration Vessel. Keep in mind it's a prototype, so try not to scratch it's paint. We don't have a second."
+	stamped = list(/obj/item/stamp/centcomm)
+	stamp_marks = list(list("paper_stamped_cent", 0, 0))
+
+/obj/item/paper/notice/exploration_2
+	name = "Memo RE: Expedition Requirements"
+	info = "Jones,<br>For the last time, Expeditions regulations require atleast three crew members, including the Pathfinder and/or Research Director. The next time you activate your bluespace drive with less then that, and you're fired from the department.I won't have this conversation again. <br>- R.F"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/exploration_3
+	name = "Memo RE: Pilot duties"
+	info = "Pilots, As you're fully aware, we're on the edge of civilized space out here. <br> Leaving the shuttle area is dangerious. This is why the Prototype is equipped with a proper camera system to keep an eye on the explorers. If you get yourselves killed, and an explorer has to crash land the ship back here, the company is NOT going to be happy.<br>- R.F"
+	stamped = list(/obj/item/stamp/rd)
+	stamp_marks = list(list("paper_stamped_rd", 0, 0))
+
+/obj/item/paper/notice/airlock_1
+	name = "Staff Notice: Airlock Proceedure"
+	info = "<br>Due to the large amount of new staff unfamiliar with our proceedures we've left you some instructions. <br> To exit through an airlock, simply hit the button to open the interior, and then cycle to exterior once inside. To re-enter the station, enter the airlock, Close the exterior hatch, and look for the customized thermal regulators installed on the wall. <br>This should heat up the air in the airlock, allowing you to open the interior door with no issues."
+	stamped = list(/obj/item/stamp/captain)
+	stamp_marks = list(list("paper_stamp-cap", 0, 0))

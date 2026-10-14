@@ -35,8 +35,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	endurance = 150
 	movement_cooldown = -1
 	pass_flags = PASSTABLE
-	makes_dirt = FALSE	// Goop
-	mob_class = MOB_CLASS_SLIME
 
 	response_help = "pets"
 
@@ -62,7 +60,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 10 // One attack a second.
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("glomped")
 	speak_emote = list("chirps")
@@ -79,7 +76,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	var/injection_amount = 5 // This determines how much.
 	var/mood = ":3" // Icon to use to display 'mood', as an overlay.
 
-	can_be_drop_prey = FALSE
 
 	species_sounds = "Slime"
 	pain_emote_1p = list("squish", "squelch")
@@ -93,18 +89,20 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_see = list("bounces", "jiggles", "sways")
 	emote_hear = list("squishes")
 
-DECLARE_VERB(/mob/living/simple_mob/slime, /mob/living/proc/ventcrawl)
+CAPABILITIES(/mob/living/simple_mob/slime)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
+	configure(mob_movement(makes_dirt = FALSE))
+	verb_entry(/mob/living/proc/ventcrawl)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))
+	op("slime_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat off"), then(PROC_REF(slime_interaction_hand)))
 
 /mob/living/simple_mob/slime/Initialize(mapload)
 	update_mood()
 	set_glow_color(color)
 	refresh_glow()
-	update_icon()
 	return ..()
-
-/mob/living/simple_mob/slime/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
@@ -125,41 +123,29 @@ TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
 	set_glow_toggle(initial(glow_toggle))
 	refresh_glow()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/slime/appearance_overlays()
-	. = list()
-	. += ..()
 
+/mob/living/simple_mob/slime/draw(datum/look/look)
+	..()
 	if(stat != DEAD)
 		// General slime shine.
-		var/image/I = image(icon, src, "slime light")
-		I.appearance_flags = RESET_COLOR
-		. += I
+		look.overlay(look_overlay_image(icon, "slime light", appearance_flags = RESET_COLOR))
 
 		// 'Shiny' overlay, for gemstone-slimes.
 		if(shiny)
-			I = image(icon, src, "slime shiny")
-			I.appearance_flags = RESET_COLOR
-			. += I
+			look.overlay(look_overlay_image(icon, "slime shiny", appearance_flags = RESET_COLOR))
 
 		// Mood overlay.
-		I = image(icon, src, "aslime-[mood]")
-		I.appearance_flags = RESET_COLOR
-		. += I
+		look.overlay(look_overlay_image(icon, "aslime-[mood]", appearance_flags = RESET_COLOR))
 
 	// Hat simulator.
 	if(hat)
+		look.watch(hat)
 		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7 // Slimes are small.
-		I.color = hat.color
-		I.appearance_flags = RESET_COLOR | KEEP_APART
-		I.blend_mode = BLEND_OVERLAY
-		. += I
+		look.overlay(look_overlay_image('icons/inventory/head/mob.dmi', hat_state, pixel_y = -7, color = hat.color, appearance_flags = (RESET_COLOR|KEEP_APART))) // Slimes are small.
 
 // Controls the 'mood' overlay. Overrided in subtypes for specific behaviour.
 /mob/living/simple_mob/slime/proc/update_mood()
-	mood = "feral" // This is to avoid another override in the /feral subtype.
+	set_mood("feral") // This is to avoid another override in the /feral subtype.
 
 /mob/living/simple_mob/slime/proc/unify()
 	unity = TRUE
@@ -183,33 +169,30 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appea
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/datum/om/stage/life/special/slime
-	of = /mob/living/simple_mob/slime
-
-/datum/om/stage/life/special/slime/perform(mob/living/simple_mob/slime/self, datum/om/frame/life/ctx)
-	self.mend(TREAT_OXYGENATION, 1)
-	self.mend(TREAT_ANTITOXIN, 1)
-	self.mend(TREAT_BURN_CARE, 1)
-	self.mend(TREAT_GENETIC_REPAIR, 1)
-	self.mend(TREAT_TISSUE_REPAIR, 1)
+/mob/living/simple_mob/slime/life_special(datum/seq_frame/life/F)
+	src.mend(TREAT_OXYGENATION, 1)
+	src.mend(TREAT_ANTITOXIN, 1)
+	src.mend(TREAT_BURN_CARE, 1)
+	src.mend(TREAT_GENETIC_REPAIR, 1)
+	src.mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
-	INTERACT_ITEM(null, PROC_REF(slime_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat off", PROC_REF(slime_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
-/mob/living/simple_mob/slime/proc/slime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/proc/slime_interaction_hand(datum/act/op/A)
+	var/mob/living/L = A.actor
+	. = OP_OK
 	if(hat)
 		remove_hat(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 // Clicked on while holding an object.
 /// Old attackby: hat simulator, and weapons may pass through.
-/mob/living/simple_mob/slime/proc/slime_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/proc/slime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
@@ -225,7 +208,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% passes right through %T%!")), item = I)
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Called when hit with an active slimebaton (or xeno taser).
 // Subtypes react differently.
@@ -241,28 +224,25 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 		to_chat(user, span_warning("\The [src] is already wearing \a [hat]."))
 		return
 	else
-		if(!own_set(src, nameof(src.hat), new_hat, user = user))
+		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/slime/proc/remove_hat(mob/living/user)
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-		update_icon()
 
 /mob/living/simple_mob/slime/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /mob/living/simple_mob/slime/speech_bubble_appearance()
 	return "slime"
@@ -276,7 +256,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/slime, mob_organ_hit_zones, list("cytopla
 
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime
-	base_attack_cooldown = 2 SECONDS
 	var/static/list/allowed_attack_types = list(
 							/obj/item/melee/baton/slime,
 							/obj/item/slimepotion)

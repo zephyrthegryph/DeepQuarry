@@ -1,0 +1,19 @@
+@obj.machinery.power.smes human|none
+@obj.machinery.power.smes robot|none
+@obj.machinery.power.smes ai|none
+@obj ghost|none
+@obj.machinery.power.smes human|/obj/item/tool/screwdriver
+@obj.machinery.power.smes human|/obj/item/tool/crowbar
+@obj.machinery.power.smes human|/obj/item/tool/wrench
+@obj.machinery.power.smes human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Rcon tag
+@obj.machinery.power.smes human|/obj/item/weldingtool
+@obj.machinery.power.smes human|/obj/item/stack/cable_coil
+@obj.machinery.power.smes human|/obj/item/stack/material/steel
+@obj.machinery.power.smes human|/obj/item/card/id
+@obj.machinery.power.smes human|/obj/item
+human|/obj/item/smes_coil menu: Open controls
+human|/obj/item/smes_coil click: Click: Install coil
+wires: Failsafes, Grounding, Input, Output, RCon
+keys: add_cable, cable_place, cut_terminal, drag_buckle, failing, input, install_coil, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, output, rcon_tag, robot_remote_blocked, silicon_hand, tryinput, tryoutput, ui_open, weld

@@ -9,6 +9,10 @@
 	anchored = 1
 	var/tmp/obj/machinery/hyperpad/centre/primary
 
+CAPABILITIES(/obj/machinery/hyperpad)
+	op("hyperpad_ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 2), label("View"), then(PROC_REF(hyperpad_ghost_use)))
+	op("hyperpad_delegate", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Activate"), then(PROC_REF(interaction_delegate)))
+
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
@@ -25,94 +29,68 @@
 	var/list/linked
 	var/max_item_teleport = 30
 
-/obj/machinery/hyperpad/centre/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/hyperpad/centre)
+	after_init(0, then(PROC_REF(detect_and_light)))
+	ref_one(nameof(linked_pad), /obj/machinery/hyperpad/centre, by = nameof(map_pad_link_id), target_key = nameof(map_pad_id))
+	owns_many(nameof(linked))
+	op("hyperpad_centre_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(hyperpad_centre_ghost_travel)))
+	op("hyperpad_centre_teleport", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Activate"), then(PROC_REF(interaction_teleport)))
+
+/obj/machinery/hyperpad/centre/proc/detect_and_light(datum/act/timer/A)
 	if(map_pad_id)
 		detect()
-	set_light(3, 1, newcolor)
+	set_glow(src, GLOW(3, 1, newcolor))
 
 // Its linked pads go with it.
 
 // Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
-/obj/machinery/hyperpad/centre/relations()
-	. = ..()
-	. += rel_one(nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/hyperpad/centre)
-	. += rel_key(nameof(map_pad_id))
-
 /// Always usable, powered or not.
 /obj/machinery/hyperpad/operable(additional_flags = 0)
 	return TRUE
 
 /// Old attack_ghost: ran the parent pad's first (the ghost default, then the primary pad's),
 /// then drifts the ghost to the linked pad.
-/obj/machinery/hyperpad/centre/proc/hyperpad_centre_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
-	hyperpad_ghost_use(ghost, held, interaction)
+/obj/machinery/hyperpad/centre/proc/hyperpad_centre_ghost_travel(datum/act/op/A)
+	var/mob/observer/dead/ghost = A.actor
+	hyperpad_ghost_view(ghost)
 	if(linked_pad() && !QDELETED(linked_pad()))
 		ghost.forceMove(get_turf(linked_pad()))
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: ran the ghost default first, then the primary pad's ghost Use.
-/obj/machinery/hyperpad/proc/hyperpad_ghost_use(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/proc/hyperpad_ghost_view(mob/observer/dead/ghost)
 	actor_use_default(/datum/input_adapter/ghost, ghost, src)
 	if(primary())
 		actor_use(/datum/input_adapter/ghost, ghost, primary())
-	return TRUE
 
-/obj/machinery/hyperpad/centre/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Travel", PROC_REF(hyperpad_centre_ghost_travel)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/hyperpad_centre_teleport,
-	)
-	..()
+/obj/machinery/hyperpad/proc/hyperpad_ghost_use(datum/act/op/A)
+	hyperpad_ghost_view(A.actor)
+	return OP_OK
 
-/datum/interaction/machine_hand/hyperpad_centre_teleport
-	id = "hyperpad_centre_teleport"
-	name = "Activate"
-	effect = /obj/machinery/hyperpad/centre/proc/interaction_teleport
-
-/obj/machinery/hyperpad/centre/proc/interaction_teleport(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/centre/proc/interaction_teleport(datum/act/op/A)
+	var/mob/user = A.actor
 	detect(user)
 	if(!linked_pad() || QDELETED(linked_pad()))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
-			return TRUE
+			return OP_OK
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
-		return TRUE
+		return OP_OK
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)] seconds."))
-		return TRUE
+		return OP_OK
 	if(linked_pad().teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
-		return TRUE
+		return OP_OK
 	src.add_fingerprint(user)
 	startteleport(user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/hyperpad/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("View", PROC_REF(hyperpad_ghost_use)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/hyperpad_delegate,
-	)
-	..()
-
-/datum/interaction/machine_hand/hyperpad_delegate
-	id = "hyperpad_delegate"
-	name = "Activate"
-	effect = /obj/machinery/hyperpad/proc/interaction_delegate
-
-/obj/machinery/hyperpad/proc/interaction_delegate(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/proc/interaction_delegate(datum/act/op/A)
 	if(primary())
-		primary().attack_hand(user)
-	return TRUE
+		primary().attack_hand(A.actor)
+	return OP_OK
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE
@@ -127,9 +105,9 @@
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			own_add(src, nameof(linked), new_pad) // the centre's pieces go with it
+			rel_add(src, nameof(linked), new_pad) // the centre's pieces go with it
 			rel_set(new_pad, nameof(new_pad.primary), src)
-			new_pad.dir = dirs[iterate]
+			new_pad.set_dir(dirs[iterate])
 			iterate += 1
 		if(length(linked) == 8)
 			ready = 1
@@ -142,14 +120,15 @@
 		return
 	play_sfx(get_turf(src), SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
-	om_after(src, teleport_speed, PROC_REF(doteleport), user)
+	after(src, teleport_speed, PROC_REF(doteleport), with = list(user))
 	var/speed = teleport_speed/8
 	for(var/obj/machinery/hyperpad/P in linked)
-		om_after(src, speed, PROC_REF(animate_discharge), P)
+		after(src, speed, PROC_REF(animate_discharge), with = list(P))
 		speed += teleport_speed/8
 
 /obj/machinery/hyperpad/centre/proc/animate_discharge(obj/machinery/hyperpad/Pad)
-	Pad.cut_overlays()
+	if(Pad)
+		Pad.cut_overlays()
 
 /obj/machinery/hyperpad/centre/proc/doteleport(mob/user)
 	if(!src || QDELETED(src))
@@ -205,11 +184,12 @@
 	color_overlay.color = newcolor
 	var/timer = teleport_cooldown/8
 	for(var/obj/machinery/hyperpad/P in linked)
-		om_after(src, timer, PROC_REF(animate_charge), P, color_overlay)
+		after(src, timer, PROC_REF(animate_charge), with = list(P, color_overlay))
 		timer += teleport_cooldown/8
 
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
-	Pad.add_overlay(color)
+	if(Pad && color)
+		Pad.add_overlay(color)
 
 /// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre

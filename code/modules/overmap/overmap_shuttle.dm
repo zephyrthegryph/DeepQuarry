@@ -127,11 +127,17 @@
 	var/opened = 0
 	var/datum/shuttle/autodock/overmap/parent_shuttle
 	var/base_tank = /obj/item/tank/phoron
+	/// Whether a tank sits in the port, kept for the look.
+	var/loaded = FALSE
+
+TRACKED(/obj/structure/fuel_port, opened)
+TRACKED(/obj/structure/fuel_port, loaded)
 
 /obj/structure/fuel_port/Initialize(mapload)
 	. = ..()
 	if(base_tank)
 		new base_tank(src)
+	set_loaded(contents_count(src) > 0)
 
 /obj/structure/fuel_port/heavy
 	base_tank = /obj/item/tank/phoron/pressurized
@@ -141,51 +147,47 @@
 	opened = 1	//shows open so you can diagnose 'oops, no gas' easily
 	icon_state = "fuel_port_empty"	//set the default state just to be safe
 
-DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/fuel_port/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fuel_port/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		to_chat(user, "<spawn class='notice'>The door is secured tightly. You'll need a crowbar to open it.")
 		return TRUE
 	else if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
-	update_icon()
+		set_loaded(contents_count(src) > 0)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fuel_port/appearance_overlays()
-	. = list()
+/obj/structure/fuel_port/draw(datum/look/look)
 	if(opened)
-		if(contents_count(src) > 0)
-			icon_state = icon_full
+		if(loaded)
+			look.state(icon_full)
 		else
-			icon_state = icon_empty
+			look.state(icon_empty)
 	else
-		icon_state = icon_closed
-	. += ..()
+		look.state(icon_closed)
+	..()
 
 /// Old attackby.
-/obj/structure/fuel_port/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fuel_port/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/tank))
 		if(!opened)
 			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(contents_count(src) == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
-	update_icon()
-	return INTERACTION_HANDLED_PASS
+			set_loaded(contents_count(src) > 0)
+	return OP_PASS
 
-/obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
-	opened = !opened
+/obj/structure/fuel_port/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open up" : "tightly shut"] \the [src] door."))
 	play_sfx(src, opened ? SFX_EFFECTS_LOCKER_OPEN : SFX_EFFECTS_LOCKER_CLOSE)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Walls hide stuff inside them, but we want to be visible.
 /obj/structure/fuel_port/hide()
@@ -196,9 +198,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 	return myship
 
 /// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
-/obj/structure/fuel_port/relations()
-	. = ..()
-	. += rel_one(nameof(parent_shuttle), back = nameof(/datum/shuttle/autodock/overmap::fuel_ports))
-/datum/shuttle/autodock/overmap/relations()
-	. = ..()
-	. += rel_many(nameof(fuel_ports), back = nameof(/obj/structure/fuel_port::parent_shuttle))
+CAPABILITIES(/obj/structure/fuel_port)
+	links(/obj/structure/fuel_port::parent_shuttle, /datum/shuttle/autodock/overmap::fuel_ports, b_many = TRUE)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))

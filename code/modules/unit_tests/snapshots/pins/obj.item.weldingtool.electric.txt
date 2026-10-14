@@ -1,0 +1,73 @@
+@obj human|none
+-click: Click: Pick up
++2 menu: Take cell
++4 click: Click: Take cell
+@obj robot|none
+-click: Click: Pick up
++3 menu: Take cell
++5 click: Click: Take cell
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++1 menu: Take cell
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/kit
++2 menu: Take cell
++4 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++2 menu: Take cell
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item
+-menu: Alternate use
++1 menu: Take cell
+@obj human|/obj/item/cell
+-click: nothing
++0 menu: Insert cell
++2 menu: Take cell
++4 menu: Use
++5 click: Click: Insert cell
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, insert_cell, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, take_cell, toggle_digestable

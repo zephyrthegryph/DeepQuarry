@@ -68,8 +68,7 @@
 		if(decal == 1)
 			var/obj/effect/decal/cleanable/blood/C
 			C = new(pick_n_take(target_turfs))
-			C.basecolor = get_random_colour(rand(0, 1))
-			C.update_icon()
+			C.set_basecolor(get_random_colour(rand(0, 1)))
 			C.add_contagions(list(chosen_disease)) // private copies (cleanable.dm)
 		else if(decal == 2)
 			var/obj/effect/decal/cleanable/vomit/V
@@ -78,7 +77,7 @@
 		else
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))
-			own_add(M, nameof(M.infections), chosen_disease.Copy())
+			rel_add(M, nameof(M.infections), chosen_disease.Copy())
 
 /// Accessor for the target_area var.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area

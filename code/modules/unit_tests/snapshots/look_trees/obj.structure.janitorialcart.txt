@@ -1,0 +1,5 @@
+/obj/structure/janitorialcart icon: icons/obj/janitor.dmi
+/obj/structure/janitorialcart state: cart
+/obj/structure/janitorialcart dir: 2
+/obj/structure/janitorialcart overlay: icons/obj/janitor.dmi:cart:8:#000000
+

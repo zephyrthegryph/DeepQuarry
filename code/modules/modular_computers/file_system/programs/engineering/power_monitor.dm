@@ -19,13 +19,11 @@
 	var/datum/tgui_module/power_monitor/TMA = TM
 	if(istype(TMA) && TMA.has_alarm())
 		if(!has_alert)
-			program_icon_state = "power_monitor_warn"
+			set_program_icon_state("power_monitor_warn")
 			ui_header = "power_warn.gif"
-			update_computer_icon()
 			has_alert = 1
 	else
 		if(has_alert)
-			program_icon_state = "power_monitor"
+			set_program_icon_state("power_monitor")
 			ui_header = "power_norm.gif"
-			update_computer_icon()
 			has_alert = 0

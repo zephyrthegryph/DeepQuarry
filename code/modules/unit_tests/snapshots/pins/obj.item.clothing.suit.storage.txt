@@ -1,0 +1,59 @@
+@obj.item.clothing human|none
+-click: Click: Use
++3 menu: Suit pockets hand
++6 click: Click: Suit pockets hand
+@obj.item.clothing robot|none
+-click: Click: Use
++4 menu: Suit pockets hand
++7 click: Click: Suit pockets hand
+@obj ai|none
+@obj.item ghost|none
+@obj.item.clothing human|/obj/item/tool/screwdriver
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing human|/obj/item/tool/crowbar
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing human|/obj/item/tool/wrench
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing human|/obj/item/tool/wirecutters
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing human|/obj/item/multitool
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing.suit human|/obj/item/weldingtool
+@obj.item.clothing human|/obj/item/stack/cable_coil
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
+@obj.item.clothing human|/obj/item/card/id
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+@obj.item.clothing human|/obj/item/kit
++3 menu: Suit pockets hand
++4 menu: Suit pockets item
+@obj.item.clothing human|/obj/item/storage
++3 menu: Suit pockets hand
++4 menu: Suit pockets item
+@obj human|/obj/item
+-click: Click: Use
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, suit_pockets_hand, suit_pockets_item, toggle_digestable

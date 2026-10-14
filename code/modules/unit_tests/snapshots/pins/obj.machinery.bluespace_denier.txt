@@ -1,0 +1,22 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Pulse
++3 click: Click: Pulse
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Pulse
++2 click: Click: Pulse
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+keys: bluespace_denier_silicon_trigger, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wrench

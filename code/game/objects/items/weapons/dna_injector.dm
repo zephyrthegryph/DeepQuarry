@@ -1,3 +1,7 @@
+#define DNA_POOL_GOOD (1<<0)
+#define DNA_POOL_NEUTRAL (1<<1)
+#define DNA_POOL_BAD (1<<2)
+
 /obj/item/dnainjector
 	name = "\improper DNA injector"
 	desc = "This injects the person with DNA."
@@ -8,7 +12,6 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/uses = 1
 	var/nofail
 
@@ -16,18 +19,48 @@
 	var/datatype=0
 	var/value=0
 
-	// Traitgenes edit begin - Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
+	// Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
 	var/has_radiation = TRUE
-	// Traitgenes edit end
 
-/obj/item/dnainjector/Initialize(mapload) // Traitgenes edit - Moved to init
+MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
+
+CAPABILITIES(/obj/item/dnainjector)
+	configure(item_worn(slots = SLOT_EARS))
+	rolls(nameof(rolled_gene), PROC_REF(roll_gene))
+	setup(PROC_REF(load_gene))
+	owns_one(nameof(buf), /datum/dna2/record)
+	op("inject", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Inject"),
+		needs(req_adjacent(), req(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))
+
+/// A random injector rolls its gene (rolls()) from these pools (DNA_POOL_*), and is labelled with it, or may remove it, as its type says.
+/obj/item/dnainjector/var/random_pools = 0
+/obj/item/dnainjector/var/random_labeled = FALSE
+/obj/item/dnainjector/var/random_disable = FALSE
+/// The gene it starts loaded with (rolled before init), and whether it removes that gene.
+/obj/item/dnainjector/var/tmp/datum/gene/trait/rolled_gene
+/obj/item/dnainjector/var/disabling = FALSE
+
+/// Rolled before init (rolls()): a gene from the type's pools, or none for an injector that is not random.
+/obj/item/dnainjector/proc/roll_gene(datum/roller/R)
+	var/list/pool = list()
+	if(random_pools & DNA_POOL_GOOD)
+		pool += GLOB.dna_genes_good
+	if(random_pools & DNA_POOL_NEUTRAL)
+		pool += GLOB.dna_genes_neutral
+	if(random_pools & DNA_POOL_BAD)
+		pool += GLOB.dna_genes_bad
+	return R.choose(pool)
+
+/// Its own setup (setup()): the rolled gene sets the block it writes, and a premade injector builds the DNA buffer that carries it.
+/obj/item/dnainjector/proc/load_gene()
+	if(rolled_gene)
+		pick_block(rolled_gene, random_labeled, random_disable, disabling)
 	if(datatype && block)
-		own_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
-		own_set(buf, nameof(buf.dna), new /datum/dna)
+		rel_set(src, nameof(buf), new /datum/dna2/record)
+		rel_set(buf, nameof(buf.dna), new /datum/dna)
 		buf.types = datatype
 		buf.dna.ResetSE()
 		SetValue(src.value)
-	. = ..() // Traitgenes edit - Moved to init
 
 /obj/item/dnainjector/proc/GetRealBlock(selblock)
 	if(selblock==0)
@@ -69,7 +102,7 @@
 		L.apply_effect(rand(5,20), IRRADIATE, check_protection = 0)
 		L.injure(INJURY_CELLULAR, max(2, L.injury_load(INJURY_CATEGORY_GENETIC)), source = src)
 
-	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
+	// NO_DNA and Synthetics cannot be mutated
 	var/allow = TRUE
 	if(HAS_SYNTHETIC_BIOLOGY(M))
 		allow = FALSE
@@ -77,14 +110,13 @@
 		var/mob/living/carbon/human/H = M
 		if(!H.species || H.species.flags & NO_DNA)
 			allow = FALSE
-	// Traitgenes edit end
-	if (!(M.has_mutation(NOCLONE)) && allow) // prevents drained people from having their DNA changed, Traitgenes edit - NO_DNA and Synthetics cannot be mutated
+	if (!(M.has_mutation(NOCLONE)) && allow) // prevents drained people from having their DNA changed; NO_DNA and synthetics cannot be mutated
 		if(buf)
 			if (buf.types & DNA2_BUF_UI)
 				if (!block) //isolated block?
 					M.UpdateAppearance(buf.dna.UI.Copy())
 					if (buf.types & DNA2_BUF_UE) //unique enzymes? yes
-						M.real_name = buf.dna.real_name
+						M.set_real_name(buf.dna.real_name)
 						M.name = buf.dna.real_name
 					uses--
 				else
@@ -98,37 +130,27 @@
 				else
 					M.dna.SetSEValue(block,src.GetValue())
 				uses--
-				// Traitgenes edit - Moved gene checks to after side effects
+				// Moved gene checks to after side effects
 				if(prob(5))
 					trigger_side_effect(M)
-			// Traitgenes edit begin - Do gene updates here, and more comprehensively
+			// Do gene updates here, and more comprehensively
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
 				H.sync_dna_traits(FALSE,FALSE)
 				H.sync_organ_dna()
 			M.regenerate_icons()
-			// Traitgenes edit end
 
 	if (user)
 		user.drop_from_inventory(src)
-	qdel(src)
+	spent(src, M)
 	return uses
 
-/obj/item/dnainjector/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if (!user.IsAdvancedToolUser())
-		return ITEM_INTERACT_FAILURE
-	if (om_busy(src))
-		return ITEM_INTERACT_FAILURE
+/obj/item/dnainjector/proc/advanced_user(datum/act/op/A)
+	return (read_once(A.actor.IsAdvancedToolUser())) ? null : /datum/msg/req_silent
 
-	act_message(user, src, others = span_danger("%U% is trying to inject \the [M] with %T%!"))
-
-
-	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
-	return TRUE
-
-/obj/item/dnainjector/proc/attack_timed_done(mob/living/M, mob/living/user)
-
-
+/obj/item/dnainjector/proc/injected(datum/act/op/A)
+	var/mob/living/M = A.target
+	var/mob/living/user = A.actor
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	user.do_attack_animation(M)
 
@@ -137,10 +159,10 @@
 	var/mob/living/carbon/human/H = M
 	if(!istype(H))
 		to_chat(user, span_warning("Apparently it didn't work..."))
-		return ITEM_INTERACT_FAILURE
+		return OP_FAILED
 
 	inject(M, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Traitgenes Injectors are randomized now due to no hardcoded genes. Split into good or bad, and then versions that specify what they do on the label.
 // Otherwise scroll down further for how to make unique injectors
@@ -160,73 +182,79 @@
 /obj/item/dnainjector/random
 	name = "\improper DNA injector"
 	desc = "This injects the person with DNA."
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_disable = TRUE
 
 // Purely rando
-/obj/item/dnainjector/random/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
-	. = ..()
 
-/obj/item/dnainjector/random_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_labeled
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // Good/bad but also neutral genes mixed in, less OP selection of genes
-/obj/item/dnainjector/random_good/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_good
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL
+	random_disable = TRUE
 
-/obj/item/dnainjector/random_good_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_good_labeled
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL
+	random_labeled = TRUE
+	random_disable = TRUE
 
-/obj/item/dnainjector/random_bad/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_bad
+	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_disable = TRUE
 
-/obj/item/dnainjector/random_bad_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_bad_labeled
+	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // Purely good/bad genes, intended to be usually good rewards or punishments
-/obj/item/dnainjector/random_verygood/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
-	. = ..()
+/obj/item/dnainjector/random_verygood
+	random_pools = DNA_POOL_GOOD
 
-/obj/item/dnainjector/random_verygood_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
-	. = ..()
+/obj/item/dnainjector/random_verygood_labeled
+	random_pools = DNA_POOL_GOOD
+	random_labeled = TRUE
 
-/obj/item/dnainjector/random_verybad/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
-	. = ..()
+/obj/item/dnainjector/random_verybad
+	random_pools = DNA_POOL_BAD
 
-/obj/item/dnainjector/random_verybad_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
-	. = ..()
+/obj/item/dnainjector/random_verybad_labeled
+	random_pools = DNA_POOL_BAD
+	random_labeled = TRUE
 
 // Random neutral traits
-/obj/item/dnainjector/random_neutral/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_neutral
+	random_pools = DNA_POOL_NEUTRAL
+	random_disable = TRUE
 
-/obj/item/dnainjector/random_neutral_labeled/Initialize(mapload)
-	pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
-	. = ..()
+/obj/item/dnainjector/random_neutral_labeled
+	random_pools = DNA_POOL_NEUTRAL
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // If you want a unique injector, use a subtype of these
 /obj/item/dnainjector/set_trait
 	var/trait_path
-	var/disabling = FALSE
+	random_labeled = TRUE
 
-/obj/item/dnainjector/set_trait/Initialize(mapload)
-	var/G = get_gene_from_trait(trait_path)
-	if(trait_path && G)
-		pick_block( G, TRUE, FALSE, disabling)
-	else
-		qdel(src)
-		return
-	. = ..()
+CAPABILITIES(/obj/item/dnainjector/set_trait)
+	keeps_if(PROC_REF(has_gene))
+	setup(PROC_REF(loaded))
 
+/// Its gene is the one its trait names (rolls() of the base type).
+/obj/item/dnainjector/set_trait/roll_gene(datum/roller/R)
+	return trait_path ? get_gene_from_trait(trait_path) : null
+
+/// An injector whose trait has no gene is discarded (keeps_if()).
+/obj/item/dnainjector/set_trait/proc/has_gene()
+	return !!rolled_gene
+
+/// Once loaded (setup(), after the base's), a used set injector removes its trait.
+/obj/item/dnainjector/set_trait/proc/loaded()
 	disabling = TRUE
 
 // Injectors for all original genes and some new ones
@@ -342,10 +370,11 @@
 	trait_path = /datum/trait/negative/disability_damagedspine
 /obj/item/dnainjector/set_trait/damagedspine/disable
 	disabling = TRUE
-// CHOMPEnable Start
 /obj/item/dnainjector/set_trait/nonconduct // shock
 	trait_path = /datum/trait/positive/nonconductive_plus
 /obj/item/dnainjector/set_trait/nonconduct/disable
 	disabling = TRUE
-// CHOMPEnable End
 
+#undef DNA_POOL_GOOD
+#undef DNA_POOL_NEUTRAL
+#undef DNA_POOL_BAD

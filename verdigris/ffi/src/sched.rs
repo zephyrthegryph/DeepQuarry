@@ -6,8 +6,7 @@
 //!
 //! DM holds numbers only: a **subscriber** is the datum's registry index
 //! (a `/datum/native_watch/world` handle, < 2^24). Each tick the OM scheduler makes one call,
-//! `vg_world_step`, which fires due timers and rate crossings, dispatches
-//! key publications, collects every watch port's wakes, and returns the
+//! `vg_world_step`, which fires due rate crossings, collects every watch port's wakes, and returns the
 //! lanes' wakes for the tick, [`WAKE_STRIDE`] numbers per wake.
 
 // The watch binds take one Rust parameter per DM argument (the generated
@@ -40,12 +39,6 @@ pub const WAKE_STRIDE: u32 = 5;
 /// Reason class: a condition watch (Threshold, Band, Difference, ...).
 /// @dm-define WORLD_REASON_CONDITION
 pub const REASON_CONDITION: u32 = 0x10_0000;
-/// Reason class: a `om_world_at` timer fired.
-/// @dm-define WORLD_REASON_TIMER
-pub const REASON_TIMER: u32 = 0x20_0000;
-/// Reason class: a DM-owned key was published.
-/// @dm-define WORLD_REASON_KEY
-pub const REASON_KEY: u32 = 0x40_0000;
 /// Reason class: a rate model crossed a watched level.
 /// @dm-define WORLD_REASON_RATE
 pub const REASON_RATE: u32 = 0x80_0000;
@@ -60,8 +53,6 @@ pub const GAS_HANDLES: u32 = 0x0FFF;
 
 const _: () = {
     assert!(REASON_CONDITION == reason::CONDITION);
-    assert!(REASON_TIMER == reason::TIMER);
-    assert!(REASON_KEY == reason::KEY);
     assert!(REASON_RATE == reason::RATE);
     assert!(REASON_DETAIL == reason::CONDITION - 1);
 };
@@ -98,19 +89,6 @@ fn cmp(v: &ByondValue) -> Result<Cmp> {
         1 => Ok(Cmp::Below),
         c => bail!("bad comparison {c} (0 above, 1 below)"),
     }
-}
-
-/// Key kind (< 256) and id (< 2^24) as one key.
-fn key(kind: &ByondValue, id: &ByondValue) -> Result<u64> {
-    let kind = whole(kind, "key kind")?;
-    if kind == 0 || kind > 255 {
-        bail!("key kind must be 1..255, got {kind}");
-    }
-    let id = whole(id, "key id")?;
-    if id > 0x00FF_FFFF {
-        bail!("key id must be below 2^24, got {id}");
-    }
-    Ok(u64::from(kind) << 24 | u64::from(id))
 }
 
 /// A watched cell: a number (a `vg_entity`, a gas arena id), or a turf datum
@@ -221,7 +199,14 @@ pub(crate) fn step(
     })?;
     let t1 = std::time::Instant::now();
     let mut watch_wakes: Vec<Wake> = Vec::new();
-    registry::for_each(|_, d| d.take_wakes(&mut watch_wakes));
+    registry::for_each(|id, d| {
+        let at = std::time::Instant::now();
+        d.take_wakes(&mut watch_wakes);
+        #[allow(clippy::cast_possible_truncation)]
+        crate::metrics::registry()
+            .counter(&format!("frame.us.sched_domain_{id}"))
+            .add(at.elapsed().as_micros() as u64);
+    });
     let owners = watch_wakes
         .iter()
         .map(|wk| (wk.watch.index, wk.subscriber))
@@ -239,15 +224,18 @@ pub(crate) fn step(
         metrics
             .gauge("world_step.sched_us")
             .set(t2.elapsed().as_secs_f64() * 1e6);
+        // Cumulative, so a bench window's cost per part is the difference of two marks.
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            metrics.counter("frame.us.sched_evaluate").add((t1 - t0).as_micros() as u64);
+            metrics.counter("frame.us.sched_step").add(t2.elapsed().as_micros() as u64);
+        }
     }
     let mut out = Vec::with_capacity(wakes.len());
     for (w, e) in wakes {
         #[allow(clippy::cast_precision_loss)]
         let (source, kind) = match e {
             Some(e) => (entity_value(e), 0.0),
-            None if w.reason & reason::KEY != 0 && w.source > 0x00FF_FFFF => {
-                ((w.source & 0x00FF_FFFF) as f32, (w.source >> 24) as f32)
-            }
             None => (w.source as f32, 0.0),
         };
         out.push(Record {
@@ -268,57 +256,6 @@ pub(crate) struct Record {
     pub reason: u32,
     pub source: f32,
     pub kind: f32,
-}
-
-/// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
-/// at the next step). Returns the token.
-#[auxmacros::bind("/proc/world_at")]
-fn world_at(sub: ByondValue, lane_v: ByondValue, tick: ByondValue) -> Result<ByondValue> {
-    let (sub, lane) = (subscriber(&sub)?, lane(&lane_v)?);
-    let t = num(&tick)?;
-    if !t.is_finite() {
-        bail!("bad tick {t}");
-    }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-    let t = t.max(0.0).ceil() as Tick;
-    Ok(token(with_world(|w| {
-        w.sched_at(sub, lane, t).map_err(|e| eyre!("{e}"))
-    })?))
-}
-
-/// `om_world_on_key`: wakes `subscriber` when key (`kind`, `id`) is published
-/// with any bit of `mask`. Returns the token.
-#[auxmacros::bind("/proc/world_on_key")]
-fn world_on_key(
-    sub: ByondValue,
-    kind: ByondValue,
-    id: ByondValue,
-    mask: ByondValue,
-    lane_v: ByondValue,
-) -> Result<ByondValue> {
-    let sub = subscriber(&sub)?;
-    let key = key(&kind, &id)?;
-    let mask = whole(&mask, "mask")? & REASON_DETAIL;
-    if mask == 0 {
-        bail!("key mask must be non-zero (below WORLD_REASON_CONDITION)");
-    }
-    let lane = lane(&lane_v)?;
-    Ok(token(with_world(|w| {
-        w.sched_on_key(sub, key, mask, lane)
-            .map_err(|e| eyre!("{e}"))
-    })?))
-}
-
-/// `om_world_publish`: DM-owned state under key (`kind`, `id`) changed. Merged
-/// per tick; a key nobody subscribes to costs a lookup and is not stored.
-#[auxmacros::bind("/proc/world_publish")]
-fn world_publish(kind: ByondValue, id: ByondValue, mask: ByondValue) -> Result<ByondValue> {
-    let key = key(&kind, &id)?;
-    let mask = whole(&mask, "mask")? & REASON_DETAIL;
-    with_world(|w| {
-        w.sched_publish(key, mask);
-        Ok(ByondValue::null())
-    })
 }
 
 /// `qdel(watch)`: drops one subscription. Returns 1 if the token was live.
@@ -353,10 +290,9 @@ fn world_subscriptions(sub: ByondValue) -> Result<ByondValue> {
     with_world(|w| Ok(ByondValue::from(w.subscriptions(Some(sub)) as f32)))
 }
 
-/// Scheduler counters as a flat list: timers pending, timers fired, rate
-/// crossings fired, key publications, rate models, keys with subscribers,
-/// live subscriptions, wakes received, merged, delivered, deferred, 0,
-/// backlog urgent/normal/background, 0.
+/// Scheduler counters as a flat list: timers pending (rate crossings), rate
+/// crossings fired, rate models, live subscriptions, wakes received, merged,
+/// delivered, deferred, 0, backlog urgent/normal/background, 0.
 #[auxmacros::bind("/proc/world_sched_stats")]
 fn world_sched_stats() -> Result<ByondValue> {
     let v = with_world(|w| {
@@ -365,11 +301,8 @@ fn world_sched_stats() -> Result<ByondValue> {
         #[allow(clippy::cast_precision_loss)]
         Ok(vec![
             r.timers_pending as f32,
-            r.timers_fired as f32,
             r.crossings_fired as f32,
-            r.publications as f32,
             r.models as f32,
-            w.sched_keys() as f32,
             w.subscriptions(None) as f32,
             received as f32,
             merged as f32,
@@ -451,8 +384,64 @@ fn world_watch_band(
         unit: chans[ch_id.index()].unit,
         levels,
         hysteresis: self::hysteresis(&hysteresis)?,
+        start: None,
     };
     watch(&code, &sub, &lane, &cond)
+}
+
+/// `om_world_when` bands on several channels of one cell, as one watch: wakes
+/// when any of `chs` moves into a different band of its own increasing list in
+/// `levels` (the same position). `starts` holds each channel's band as the
+/// watcher read it itself (how many of its levels are at or under the value):
+/// the watch starts there, so only a move out of it wakes, never the
+/// registration. `hysteresis`
+/// < 0 takes each channel's. A breather's air watch (one per breather, on its
+/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+/// `cell` is one cell for every channel, or a list with one cell per channel
+/// (the air watch also follows the temperature of the turfs around the mob).
+#[auxmacros::bind("/proc/world_watch_bands")]
+fn world_watch_bands(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    chs: ByondValue,
+    levels: ByondValue,
+    starts: ByondValue,
+    hysteresis: ByondValue,
+) -> Result<ByondValue> {
+    let chans = channels(whole(&code, "code")?)?;
+    let cells = match cell.get_list_values() {
+        Ok(list) => list.iter().map(cell_arg).collect::<Result<Vec<u32>>>()?,
+        Err(_) => Vec::new(),
+    };
+    let single = if cells.is_empty() { Some(cell_arg(&cell)?) } else { None };
+    let starts = starts.get_list_values()?;
+    let hyst = self::hysteresis(&hysteresis)?;
+    let chs = chs.get_list_values()?;
+    let lists = levels.get_list_values()?;
+    if chs.len() != lists.len() || chs.len() != starts.len() || chs.is_empty() || (single.is_none() && cells.len() != chs.len()) {
+        bail!("world_watch_bands: {} channels, {} level lists, {} cells", chs.len(), lists.len(), cells.len());
+    }
+    let mut bands = Vec::with_capacity(chs.len());
+    for (i, ((ch, list), start)) in chs.iter().zip(&lists).zip(&starts).enumerate() {
+        let cell = single.unwrap_or(cells[i]);
+        let ch_id = channel(&chans, ch)?;
+        let levels = list
+            .get_list_values()?
+            .iter()
+            .map(|v| Ok(v.get_number()?))
+            .collect::<Result<Vec<f32>>>()?;
+        bands.push(Cond::Band {
+            cell,
+            ch: ch_id,
+            unit: chans[ch_id.index()].unit,
+            levels,
+            hysteresis: hyst,
+            start: Some(whole(start, "start")? as usize),
+        });
+    }
+    watch(&code, &sub, &lane, &Cond::Any(bands))
 }
 
 /// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel

@@ -19,14 +19,10 @@
 	local_transmit = 0
 	can_pick_shell = FALSE
 
-	can_pull_size = ITEMSIZE_NO_CONTAINER
-	can_pull_mobs = MOB_PULL_SMALLER
 
-	mob_always_swap = 1
 
 	speed = 3
 
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	mob_size = MOB_LARGE
 
@@ -41,7 +37,6 @@
 
 	holder_type = /obj/item/holder/drone
 
-	can_be_antagged = TRUE
 
 	var/spell_setup = list(
 		/datum/spell/aoe_turf/conjure/swarmer,
@@ -53,17 +48,21 @@
 		/datum/spell/aoe_turf/conjure/swarmer/melee
 		)
 
+// It speaks the swarm's language.
+CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	configure(mob_movement(softfall = TRUE))
+	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, always_swap = 1))
+	knows(LANGUAGE_SWARMBOT)
+
 /mob/living/silicon/robot/drone/swarm/Initialize(mapload)
 	. = ..()
-
-	add_language(LANGUAGE_SWARMBOT, 1)
-
 	for(var/spell in spell_setup)
 		src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
 
 /mob/living/silicon/robot/drone/swarm/setup_module()
 	..()
-	flavor_text = "Some form of ancient machine."
+	bio.flavor_text = "Some form of ancient machine."
 
 /mob/living/silicon/robot/drone/swarm/gunner
 	name = "swarm gunner"

@@ -81,36 +81,33 @@
 				if(!V.tf_mob_holder)
 					V.ghostize(0)
 					V.set_stat(DEAD)
-					qdel(V)
+					destroyed(V)
 
+	material_records_teardown(src)
 	..()
 
-/// The tgui state an href action on this obj is checked against (topic_allowed()).
+/// The tgui state an href action on this obj is checked against (topic_usable()).
 /obj/proc/topic_state()
 	return GLOB.tgui_default_state
 
-// Every href action on an obj needs the user able to interact with it (CanUseTopic()).
-/obj/topic_allowed(mob/user, list/href_list)
-	if(!user)
-		return FALSE
-	if(CanUseTopic(user, topic_state(), href_list) == STATUS_INTERACTIVE)
-		CouldUseTopic(user)
-		return TRUE
-	CouldNotUseTopic(user)
-	return FALSE
+// Every href action on an obj needs the user able to interact with it (CanUseTopic()): topic_usable(), a requirement of every topic op (extend(TAG_TOPIC) in CAPABILITIES(/obj), code/datums/behaviours/burning.dm). A type narrows or
+// replaces it by overriding topic_usable(); the fingerprint a successful link leaves is an early effect.
+/obj/proc/topic_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user || !user.CanUseObjTopic(src))
+		return MSG(op/topic_gate)
+	return (CanUseTopic(user, topic_state()) == STATUS_INTERACTIVE) ? null : MSG(op/topic_gate)
 
-/obj/CanUseTopic(mob/user, datum/tgui_state/state = GLOB.tgui_default_state)
-	if(user.CanUseObjTopic(src))
-		return ..()
-	to_chat(user, span_danger("[icon2html(src, user.client)]Access Denied!"))
-	return STATUS_CLOSE
+/obj/proc/topic_touched(datum/act/op/A)
+	CouldUseTopic(A.actor)
+	return OP_OK
 
-/mob/living/silicon/CanUseObjTopic(obj/O)
-	var/id = src.GetIdCard()
-	return O.check_access(id)
-
-/mob/proc/CanUseObjTopic()
-	return 1
+/obj/op_topic_refused(mob/actor, key, reason, list/href_list)
+	..()
+	if(reason == /datum/msg/op/topic_gate)
+		if(actor && !actor.CanUseObjTopic(src))
+			obj_access_denied(actor, src)
+		CouldNotUseTopic(actor)
 
 /obj/proc/CouldUseTopic(mob/user)
 	var/atom/host = tgui_host()
@@ -118,6 +115,27 @@
 
 /obj/proc/CouldNotUseTopic(mob/user)
 	// Nada
+
+/obj/CanUseTopic(mob/user, datum/tgui_state/state = GLOB.tgui_default_state)
+	if(user.CanUseObjTopic(src))
+		return ..()
+	obj_access_denied(user, src)
+	return STATUS_CLOSE
+
+/// Access feedback belongs to direct UI checks or actual topic refusal dispatch, never requirement evaluation.
+/proc/obj_access_denied(mob/user, obj/O)
+	READS_FROM()
+	user.access_denied_feedback(O)
+
+/mob/proc/access_denied_feedback(obj/O)
+	to_chat(src, span_danger("[icon2html(O, client)]Access Denied!"))
+
+/mob/living/silicon/CanUseObjTopic(obj/O)
+	var/id = src.GetIdCard()
+	return O.check_access(id)
+
+/mob/proc/CanUseObjTopic()
+	return 1
 
 /obj/item/proc/is_used_on(obj/O, mob/user)
 
@@ -202,8 +220,9 @@
 	if(blood_overlay && clean_types & CLEAN_WASH)
 		overlays.Remove(blood_overlay)
 	if(gurgled && clean_types & CLEAN_WASH)
-		gurgled = FALSE
-		cut_overlay(GLOB.gurgled_overlays[gurgled_color])
+		set_gurgled(FALSE)
+		if(!stains_in_look())
+			cut_overlay(GLOB.gurgled_overlays[gurgled_color])
 	// phoron contamination wash branch removed; .contaminated +
 	// GLOB.contamination_overlay are gone (ZAS contamination machinery wasn't
 	// ported under LINDA). Restore if contamination gameplay returns.
@@ -214,47 +233,43 @@
 	VV_DROPDOWN_OPTION(VV_HK_MASS_DEL_TYPE, "Delete all of type")
 	VV_DROPDOWN_OPTION(VV_HK_FAKE_CONVO, "Add Fake Prop Conversation")
 
-VV_TOPIC_ACTION(/obj, VV_HK_MASS_DEL_TYPE, PROC_REF(vv_topic_mass_delete_type), TOPIC_RIGHTS(R_DEBUG|R_SERVER))
-VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), TOPIC_RIGHTS(R_FUN))
 
-/obj/proc/vv_topic_mass_delete_type(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen))
-	return TRUE
-
-/obj/item/pda/proc/vv_topic_fake_convo(mob/user, list/args)
+/obj/item/pda/proc/vv_topic_fake_convo(datum/act/op/A)
+	var/mob/user = A.actor
 	createPropFakeConversation_admin(user)
 	return TRUE
 
-/datum/om/prompt/choice/mass_delete_scope
+/datum/prompt/choice/mass_delete_scope
 	choices = list("Strict type","Type and subtypes","Cancel")
 	buttons = TRUE
-	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+	rights = R_DEBUG|R_SERVER
+	timeout = 0
 
-/datum/om/prompt/choice/mass_delete_scope/prepare()
-	message = "Strict type ([subject.type]) or type and all subtypes?"
-	return TRUE
+/datum/prompt/choice/mass_delete_scope/prepare(datum/act/A)
+	..()
+	question = "Strict type ([owner.type]) or type and all subtypes?"
 
-/datum/om/prompt/confirm/mass_delete
-	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+/datum/prompt/yes_no/mass_delete
+	rights = R_DEBUG|R_SERVER
+	timeout = 0
 	var/scope
 	/// The second, final confirmation.
 	var/second = FALSE
 
-/datum/om/prompt/confirm/mass_delete/prepare()
-	message = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [subject.type]?"
-	return TRUE
+/datum/prompt/yes_no/mass_delete/prepare(datum/act/A)
+	..()
+	question = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [owner.type]?"
 
-/obj/proc/mass_delete_scope_chosen(datum/om/prompt/choice/mass_delete_scope/ask)
-	if(ask.choice == "Cancel")
+/// The mass delete questions after the scope are asked unless the scope was "Cancel".
+/obj/proc/mass_delete_not_cancelled(datum/act/op/A)
+	return A.step_value("scope") != "Cancel"
+
+/// "Delete all of type" (VV): the scope, then two confirmations; this runs when all three are answered.
+/obj/proc/vv_topic_mass_delete_type(datum/act/op/A)
+	var/mob/user = A.actor
+	var/action_type = A.step_value("scope")
+	if(action_type == "Cancel")
 		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_sure), scope = ask.choice)
-
-/obj/proc/mass_delete_sure(datum/om/prompt/confirm/mass_delete/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_confirmed), scope = ask.scope, second = TRUE)
-
-/obj/proc/mass_delete_confirmed(datum/om/prompt/confirm/mass_delete/ask)
-	var/mob/user = ask.answerer
-	var/action_type = ask.scope
 	var/O_type = type
 	switch(action_type)
 		if("Strict type")
@@ -262,7 +277,7 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 			for(var/obj/Obj in world)
 				if(Obj.type == O_type)
 					i++
-					qdel(Obj)
+					spent(Obj)
 				CHECK_TICK
 			if(!i)
 				to_chat(user, "No objects of this type exist")
@@ -274,11 +289,13 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 			for(var/obj/Obj in world)
 				if(istype(Obj,O_type))
 					i++
-					qdel(Obj)
+					spent(Obj)
 				CHECK_TICK
 			if(!i)
 				to_chat(user, "No objects of this type exist")
 				return
 			log_admin("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
 			message_admins(span_notice("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
+
+
 

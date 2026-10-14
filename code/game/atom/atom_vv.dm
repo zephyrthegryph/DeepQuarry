@@ -18,22 +18,81 @@
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_FILTERS, "Edit Filters")
 	VV_DROPDOWN_OPTION(VV_HK_TEST_MATRIXES, "Test Matrices")
 
-/// Admin var-edit questions about an atom (its VV_TOPIC_ACTION rows).
-/datum/om/prompt/number/vv_edit
-	requires = PROMPT_ADMIN(R_VAREDIT)
-	min = -INFINITY
-
-/// "Modify Transform": the kind, then the x (and for all but a rotation, the y) mod.
-/datum/om/flow/vv_transform
-	requires = PROMPT_ADMIN(R_VAREDIT)
+/// Native VV transform/spin questions retain the original actor and captured target.
+/datum/prompt/choice/vv_edit
+	rights = R_VAREDIT
+	timeout = 0
 	var/transform_kind
 	var/x_mod
+	var/num_spins = -1
+	var/spins_per_sec
+	recheck_on_open = TRUE
 
-/datum/om/flow/vv_transform/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(kind_chosen), title = "Transform Mod", message = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"), requires = PROMPT_ADMIN(R_VAREDIT))
+CAPABILITIES(/datum/prompt/choice/vv_edit)
+	ref_one(nameof(subject), /atom)
 
-/datum/om/flow/vv_transform/proc/kind_chosen(datum/om/prompt/choice/ask)
-	transform_kind = ask.choice
+/datum/prompt/choice/vv_edit/prepare(datum/act/A)
+	..()
+	var/datum/request/request = src
+	var/atom/captured_subject = subject
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
+
+/datum/prompt/choice/vv_edit/recheck_extra()
+	return QDELETED(subject) ? "gone" : null
+
+/// Native VV transform/spin questions retain the original actor and captured target.
+/datum/prompt/number/vv_edit
+	rights = R_VAREDIT
+	timeout = 0
+	min_value = -INFINITY
+	max_value = INFINITY
+	step = 1
+	var/transform_kind
+	var/x_mod
+	var/num_spins = -1
+	var/spins_per_sec
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/number/vv_edit)
+	ref_one(nameof(subject), /atom)
+
+/datum/prompt/number/vv_edit/prepare(datum/act/A)
+	..()
+	var/datum/request/request = src
+	var/atom/captured_subject = subject
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
+
+/datum/prompt/number/vv_edit/recheck_extra()
+	return QDELETED(subject) ? "gone" : null
+
+/// Native VV transform/spin questions retain the original actor and captured target.
+/datum/prompt/yes_no/vv_edit
+	rights = R_VAREDIT
+	timeout = 0
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/yes_no/vv_edit)
+	ref_one(nameof(subject), /atom)
+
+/datum/prompt/yes_no/vv_edit/prepare(datum/act/A)
+	..()
+	var/datum/request/request = src
+	var/atom/captured_subject = subject
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
+
+/datum/prompt/yes_no/vv_edit/recheck_extra()
+	return QDELETED(subject) ? "gone" : null
+
+/mob/proc/vv_transform_begin(atom/target)
+	open_request(src, /datum/prompt/choice/vv_edit, PROC_REF(vv_transform_kind_chosen), answerer = src, subject = target, title = "Transform Mod", question = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"))
+
+/mob/proc/vv_transform_kind_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/transform_kind = context.answer.value
 	var/question
 	switch(transform_kind)
 		if("Scale", "Shear")
@@ -44,26 +103,31 @@
 			question = "Choose angle to rotate"
 		else
 			return
-	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(x_entered), title = "Transform Mod", message = question)
+	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_transform_x_entered), answerer = src, subject = context.request.subject, title = "Transform Mod", question = question, transform_kind = transform_kind)
 
-/datum/om/flow/vv_transform/proc/x_entered(datum/om/prompt/number/vv_edit/ask)
-	x_mod = ask.number
+/mob/proc/vv_transform_x_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/vv_edit/ask = context.answer
+	var/x_mod = ask.value
 	var/question
-	switch(transform_kind)
+	switch(ask.transform_kind)
 		if("Scale", "Shear")
 			question = "Choose y mod"
 		if("Translate")
 			question = "Choose y mod (negative = down, positive = up)"
 		else
-			apply()
+			vv_transform_apply(ask.subject, ask.transform_kind, x_mod)
 			return
-	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(y_entered), title = "Transform Mod", message = question)
+	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_transform_y_entered), answerer = src, subject = ask.subject, title = "Transform Mod", question = question, transform_kind = ask.transform_kind, x_mod = x_mod)
 
-/datum/om/flow/vv_transform/proc/y_entered(datum/om/prompt/number/vv_edit/ask)
-	apply(ask.number)
+/mob/proc/vv_transform_y_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/vv_edit/ask = context.answer
+	vv_transform_apply(ask.subject, ask.transform_kind, ask.x_mod, ask.value)
 
-/datum/om/flow/vv_transform/proc/apply(y_mod)
-	var/atom/A = target
+/mob/proc/vv_transform_apply(atom/A, transform_kind, x_mod, y_mod)
 	var/matrix/M = A.transform
 	switch(transform_kind)
 		if("Scale")
@@ -75,81 +139,76 @@
 		if("Rotate")
 			A.transform = M.Turn(x_mod)
 
-/// "Spin Animation": infinite or a count, the rate, and the direction.
-/datum/om/flow/vv_spin
-	requires = PROMPT_ADMIN(R_VAREDIT)
-	var/num_spins = -1
-	var/spins_per_sec
+/mob/proc/vv_spin_begin(atom/target)
+	open_request(src, /datum/prompt/yes_no/vv_edit, PROC_REF(vv_spin_infinite_answered), answerer = src, subject = target, title = "Spin Animation", question = "Do you want infinite spins?")
 
-/datum/om/flow/vv_spin/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(infinite_answered), title = "Spin Animation", message = "Do you want infinite spins?", answer_on_no = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
-
-/datum/om/flow/vv_spin/proc/infinite_answered(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		ask_rate()
+/mob/proc/vv_spin_infinite_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(count_entered), title = "Spin Animation", message = "How many spins?", min = 0)
-
-/datum/om/flow/vv_spin/proc/count_entered(datum/om/prompt/number/vv_edit/ask)
-	num_spins = ask.number
-	ask_rate()
-
-/datum/om/flow/vv_spin/proc/ask_rate()
-	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(rate_entered), title = "Spin Animation", message = "How many spins per second?", min = 0)
-
-/datum/om/flow/vv_spin/proc/rate_entered(datum/om/prompt/number/vv_edit/ask)
-	spins_per_sec = ask.number
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_chosen), title = "Spin Animation", message = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
-
-/datum/om/flow/vv_spin/proc/direction_chosen(datum/om/prompt/choice/ask)
-	if(!num_spins || !spins_per_sec)
+	if(context.answer.value)
+		vv_spin_ask_rate(context.request.subject)
 		return
-	var/atom/A = target
-	A.SpinAnimation(1 SECONDS / spins_per_sec, num_spins, ask.choice == "Clockwise" ? 1 : 0)
+	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_spin_count_entered), answerer = src, subject = context.request.subject, title = "Spin Animation", question = "How many spins?", min_value = 0)
 
-/atom/proc/vv_stop_animations_answered(datum/om/prompt/confirm/ask)
+/mob/proc/vv_spin_count_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	vv_spin_ask_rate(context.request.subject, context.answer.value)
+
+/mob/proc/vv_spin_ask_rate(atom/target, num_spins = -1)
+	open_request(src, /datum/prompt/number/vv_edit, PROC_REF(vv_spin_rate_entered), answerer = src, subject = target, title = "Spin Animation", question = "How many spins per second?", min_value = 0, num_spins = num_spins)
+
+/mob/proc/vv_spin_rate_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/number/vv_edit/ask = context.answer
+	open_request(src, /datum/prompt/choice/vv_edit, PROC_REF(vv_spin_direction_chosen), answerer = src, subject = ask.subject, title = "Spin Animation", question = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, num_spins = ask.num_spins, spins_per_sec = ask.value)
+
+/mob/proc/vv_spin_direction_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/vv_edit/ask = context.answer
+	if(!ask.num_spins || !ask.spins_per_sec)
+		return
+	var/atom/A = ask.subject
+	A.SpinAnimation(1 SECONDS / ask.spins_per_sec, ask.num_spins, ask.value == "Clockwise" ? 1 : 0)
+
+
+/atom/proc/vv_topic_explosion(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_explosion, src)
+	return TRUE
+
+/atom/proc/vv_topic_emp(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_emp, src)
+	return TRUE
+
+/atom/proc/vv_topic_modify_transform(datum/act/op/A)
+	var/mob/user = A.actor
+	user?.vv_transform_begin(src)
+	return TRUE
+
+/atom/proc/vv_topic_spin_animation(datum/act/op/A)
+	var/mob/user = A.actor
+	user?.vv_spin_begin(src)
+	return TRUE
+
+/atom/proc/vv_topic_stop_animations(datum/act/op/A)
 	animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
 
-/atom/proc/vv_auto_rename_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		vv_auto_rename(src, ask.text)
+/atom/proc/vv_topic_auto_rename(datum/act/op/A)
+	var/new_name = A.step_value("name")
+	if(new_name)
+		vv_auto_rename(src, new_name)
 
-VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EXPLOSION, PROC_REF(vv_topic_explosion))
-VV_TOPIC_ACTION(/atom, VV_HK_TRIGGER_EMP, PROC_REF(vv_topic_emp))
-VV_TOPIC_ACTION(/atom, VV_HK_MODIFY_TRANSFORM, PROC_REF(vv_topic_modify_transform), TOPIC_RIGHTS(R_VAREDIT))
-VV_TOPIC_ACTION(/atom, VV_HK_SPIN_ANIMATION, PROC_REF(vv_topic_spin_animation), TOPIC_RIGHTS(R_VAREDIT))
-VV_TOPIC_ACTION(/atom, VV_HK_STOP_ALL_ANIMATIONS, PROC_REF(vv_topic_stop_animations), TOPIC_RIGHTS(R_VAREDIT))
-VV_TOPIC_ACTION(/atom, VV_HK_AUTO_RENAME, PROC_REF(vv_topic_auto_rename), TOPIC_RIGHTS(R_VAREDIT))
-VV_TOPIC_ACTION(/atom, VV_HK_EDIT_FILTERS, PROC_REF(vv_topic_edit_filters), TOPIC_RIGHTS(R_VAREDIT))
-VV_TOPIC_ACTION(/atom, VV_HK_TEST_MATRIXES, PROC_REF(vv_topic_test_matrixes), TOPIC_RIGHTS(R_VAREDIT))
-
-/atom/proc/vv_topic_explosion(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_explosion, src)
-
-/atom/proc/vv_topic_emp(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_emp, src)
-
-/atom/proc/vv_topic_modify_transform(mob/user, list/args)
-	om_flow_start(/datum/om/flow/vv_transform, user, src)
-	return TRUE
-
-/atom/proc/vv_topic_spin_animation(mob/user, list/args)
-	om_flow_start(/datum/om/flow/vv_spin, user, src)
-	return TRUE
-
-/atom/proc/vv_topic_stop_animations(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
-	return TRUE
-
-/atom/proc/vv_topic_auto_rename(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
-	return TRUE
-
-/atom/proc/vv_topic_edit_filters(mob/user, list/args)
+/atom/proc/vv_topic_edit_filters(datum/act/op/A)
+	var/mob/user = A.actor
 	user.client?.open_filter_editor(src)
 	return TRUE
 
-/atom/proc/vv_topic_test_matrixes(mob/user, list/args)
+/atom/proc/vv_topic_test_matrixes(datum/act/op/A)
+	var/mob/user = A.actor
 	user.client?.open_matrix_tester(src)
 	return TRUE
 
@@ -174,21 +233,21 @@ VV_TOPIC_ACTION(/atom, VV_HK_TEST_MATRIXES, PROC_REF(vv_topic_test_matrixes), TO
 	//var/old_light_flags = light_flags
 	// Disable frozen lights for now, so we can actually modify it
 	switch(var_name)
-		if(NAMEOF(src, light_range))
+		if("light_range", "@light_glow.range")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_range = var_value)
+				set_glow(src, GLOW(var_value, null, null))
 			else
 				set_light_range(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_power))
+		if("light_power", "@light_glow.power")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_power = var_value)
+				set_glow(src, GLOW(null, var_value, null))
 			else
 				set_light_power(var_value)
 			. =  TRUE
-		if(NAMEOF(src, light_color))
+		if("light_color", "@light_glow.color")
 			if(light_system == STATIC_LIGHT)
-				set_light(l_color = var_value)
+				set_glow(src, GLOW(null, null, var_value))
 			else
 				set_light_color(var_value)
 			. =  TRUE
@@ -212,7 +271,6 @@ VV_TOPIC_ACTION(/atom, VV_HK_TEST_MATRIXES, PROC_REF(vv_topic_test_matrixes), TO
 	switch(var_name)
 		if(NAMEOF(src, color))
 			add_atom_colour(color, ADMIN_COLOUR_PRIORITY)
-			update_icon()
 
 /proc/vv_auto_rename(atom/target, newname)
 	target.name = newname

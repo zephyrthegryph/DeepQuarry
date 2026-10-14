@@ -47,7 +47,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
 			switch(melee_injury_kind)
 				if(INJURY_BLUNT)
-					M.status_at_least(EFFECT_PARALYZED, 1)
+					M.status_at_least(STAT_PARALYZED, 1)
 					M.injure(INJURY_BLUNT, rand(force/2, force), hit_zone, src)
 				if(INJURY_BURN)
 					M.injure(INJURY_BURN, rand(force/2, force), hit_zone, src)
@@ -73,7 +73,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 			src.visible_message("[src] pushes [T] out of the way.")
 
 		melee_can_hit = 0
-		om_after(src, melee_cooldown, PROC_REF(reset_melee))
+		after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -92,7 +92,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 
 				melee_can_hit = 0
 
-				om_after(src, melee_cooldown, PROC_REF(reset_melee))
+				after(src, melee_cooldown, PROC_REF(reset_melee))
 	return
 
 /obj/mecha/combat/moved_inside(mob/living/carbon/human/H as mob)
@@ -120,9 +120,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 	..()
 	return
 
-TOPIC_ACTION(/obj/mecha/combat, "close", PROC_REF(topic_close))
-
-/obj/mecha/combat/topic_close(mob/user, list/args)
+/obj/mecha/combat/topic_close(datum/act/op/A)
 	am = null
 
 /obj/mecha/combat/proc/reset_melee()

@@ -21,38 +21,37 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_speed = 7
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 10)
 	var/colour = "black"	//what colour the ink is!
 	pressure_resistance = 2
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/can_click = TRUE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/pen, \
-	INTERACT_SELF("Click", PROC_REF(interaction_click)), \
-	INTERACT_ALT("Click", PROC_REF(interaction_click_alt)), \
-)
+CAPABILITIES(/obj/item/pen)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	op("pen_click", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click)))
+	op("pen_click_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click_alt)))
 
 /// Old attack_self: click the pen. Specially handled pens leave it to their own self-use.
-/obj/item/pen/proc/interaction_click(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/proc/interaction_click(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!user.checkClickCooldown())
-		return TRUE
+		return OP_OK
 	if(!can_click)
-		return TRUE
+		return OP_OK
 	user.setClickCooldown(1 SECOND)
 	to_chat(user, span_notice("Click."))
 	play_sfx(src, SFX_ITEMS_PENCLICK)
-	return TRUE
+	return OP_OK
 
 /*
  * Coloured Pens
@@ -117,26 +116,29 @@ DECLARE_INTERACTIONS(/obj/item/pen, \
 	special_handling = TRUE
 
 /// Old click_alt.
-/obj/item/pen/proc/interaction_click_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/proc/interaction_click_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("Click."))
 	play_sfx(src, SFX_ITEMS_PENCLICK)
-	return TRUE
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(interaction_cycle_colour)))
+CAPABILITIES(/obj/item/pen/multi)
+	op("cycle_colour", in_hand(), label("Change colour"), then(PROC_REF(interaction_cycle_colour)))
 
 /// Old attack_self.
-/obj/item/pen/multi/proc/interaction_cycle_colour(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/multi/proc/interaction_cycle_colour(datum/act/op/A)
+	var/mob/user = A.actor
 	if(++selectedColor > 3)
 		selectedColor = 1
 
 	colour = colors[selectedColor]
 
 	if(colour == "black")
-		icon_state = "pen"
+		set_icon_state("pen")
 	else
-		icon_state = "pen_[colour]"
+		set_icon_state("pen_[colour]")
 
 	to_chat(user, span_notice("Changed color to '[colour].'"))
 
@@ -152,7 +154,8 @@ EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(
 /obj/item/pen/reagent
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/pen/reagent, 30, null)
+CAPABILITIES(/obj/item/pen/reagent)
+	reagents(30)
 
 /obj/item/pen/reagent/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
@@ -176,12 +179,9 @@ DECLARE_REAGENTS(/obj/item/pen/reagent, 30, null)
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 3
 	w_class = ITEMSIZE_TINY
 	throw_speed = 7
 	throw_range = 15
-	armor_penetration = 20
 
 	var/active = 0
 	var/active_embed_chance = 0
@@ -191,62 +191,63 @@ DECLARE_REAGENTS(/obj/item/pen/reagent, 30, null)
 	var/active_icon_state
 	var/default_icon_state
 
-/obj/item/pen/blade/Initialize(mapload)
-	. = ..()
+// Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/pen/blade)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 3))
+	configure(item_combat(armor_penetration = 20))
+	after_init(0, then(PROC_REF(remember_icon_states)))
+	op("pen_toggle_blade", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle blade"), then(PROC_REF(interaction_toggle_blade)))
+
+/obj/item/pen/blade/proc/remember_icon_states(datum/act/timer/A)
 	active_icon_state = "[icon_state]-x"
 	default_icon_state = icon_state
 
-EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(interaction_toggle_blade)))
-
 /// Old click_alt: the pen's click, then the blade toggles.
-/obj/item/pen/blade/proc/interaction_toggle_blade(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_click_alt(user, held, interaction)
+/obj/item/pen/blade/proc/interaction_toggle_blade(datum/act/op/A)
+	var/mob/user = A.actor
+	interaction_click_alt(A)
 	if(active)
 		deactivate(user)
 	else
 		activate(user)
 
 	to_chat(user, span_notice("You [active ? "de" : ""]activate \the [src]'s blade."))
-	return TRUE
+	return OP_OK
 
 /obj/item/pen/blade/proc/activate(mob/living/user)
 	if(active)
 		return
 	active = 1
-	icon_state = active_icon_state
+	set_icon_state(active_icon_state)
 	embed_chance = active_embed_chance
-	force = active_force
-	throwforce = active_throwforce
-	sharp = TRUE
-	edge = TRUE
-	w_class = active_w_class
+	set_force(active_force)
+	set_throwforce(active_throwforce)
+	set_sharp(TRUE)
+	set_edge(TRUE)
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
-	catchable = FALSE
+	set_catchable(FALSE)
 
-	attack_verb = attack_verb | list(\
-		"slashed",\
-		"cut",\
-		"shredded",\
-		"stabbed"\
-		)
+	set_attack_verb(combat_of(src).attack_verbs | list("slashed", "cut", "shredded", "stabbed"))
 
 /obj/item/pen/blade/proc/deactivate(mob/living/user)
 	if(!active)
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF, 0.3)
 	active = 0
-	icon_state = default_icon_state
+	set_icon_state(default_icon_state)
 	embed_chance = initial(embed_chance)
-	force = initial(force)
-	throwforce = initial(throwforce)
-	sharp = initial(sharp)
-	edge = initial(edge)
-	w_class = initial(w_class)
+	set_force(combat_of_type(type).force)
+	set_throwforce(thrown_of_type(type).force)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
+	set_w_class(initial(w_class))
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
-	catchable = TRUE
+	set_catchable(TRUE)
 
 /obj/item/pen/blade/blue
 	desc = "It's a normal blue ink pen."
@@ -268,7 +269,8 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 /obj/item/pen/reagent/sleepy
 	desc = "It's a black ink pen with a sharp point and a carefully engraved \"Waffle Co.\""
 
-DECLARE_REAGENTS(/obj/item/pen/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDRATE = 22))
+CAPABILITIES(/obj/item/pen/reagent/sleepy)
+	configure(reagents(add = list(REAGENT_ID_CHLORALHYDRATE = 22)))
 
 
 /*
@@ -276,7 +278,8 @@ DECLARE_REAGENTS(/obj/item/pen/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDR
  */
 /obj/item/pen/reagent/paralysis
 
-DECLARE_REAGENTS(/obj/item/pen/reagent/paralysis, null, list(REAGENT_ID_ZOMBIEPOWDER = 5, REAGENT_ID_CRYPTOBIOLIN = 10))
+CAPABILITIES(/obj/item/pen/reagent/paralysis)
+	configure(reagents(add = list(REAGENT_ID_ZOMBIEPOWDER = 5, REAGENT_ID_CRYPTOBIOLIN = 10)))
 
 /*
  * Chameleon Pen
@@ -285,13 +288,22 @@ DECLARE_REAGENTS(/obj/item/pen/reagent/paralysis, null, list(REAGENT_ID_ZOMBIEPO
 	var/signature = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
-	INTERACT_USE("Set signature", PROC_REF(interaction_signature)), \
-	INTERACT_VERB("Change Pen Colour", PROC_REF(chameleon_pen_verb_colour), REQ_IN_INVENTORY), \
-)
+// Its self-use comes before the pen's own click (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/pen/chameleon)
+	op("pen_signature", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Set signature"), then(PROC_REF(interaction_signature)))
+	op("pen_colour", menu(), label("Change Pen Colour"), needs(carried()), then(PROC_REF(chameleon_pen_colour_op)))
 
 /// Old attack_self.
-/obj/item/pen/chameleon/proc/interaction_signature(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/chameleon/proc/interaction_signature(datum/act/op/A)
+	paperwork_signature_stage(A.actor, A.held)
+	return OP_OK
+
+/// The Change Pen Colour menu entry.
+/obj/item/pen/chameleon/proc/chameleon_pen_colour_op(datum/act/op/A)
+	chameleon_pen_verb_colour(A.actor)
+	return OP_OK
+
+/obj/item/pen/chameleon/proc/paperwork_signature_stage(mob/user, obj/item/held, paperwork_answer, paperwork_answer_ready = FALSE)
 	/*
 	// Limit signatures to official crew members
 	var/personnel_list[] = list()
@@ -303,7 +315,10 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	if(new_signature)
 		signature = new_signature
 	*/
-	var/_answer_k301 = rerun_ask(user, "k301", PROC_REF(interaction_signature), args, /datum/om/prompt/text, message = "Enter new signature. Leave blank for 'Anonymous'", title = "New Signature", default = signature)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_signature_answered), answerer = user, paperwork_operator = user, paperwork_held = held, question = "Enter new signature. Leave blank for 'Anonymous'", title = "New Signature", default = signature)
+		return TRUE
+	var/_answer_k301 = paperwork_answer
 	if(isnull(_answer_k301))
 		return TRUE
 	signature = _answer_k301
@@ -315,9 +330,15 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	return signature ? signature : "Anonymous"
 
 /// Old Change Pen Colour verb.
-/obj/item/pen/chameleon/proc/chameleon_pen_verb_colour(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/chameleon/proc/chameleon_pen_verb_colour(mob/user, obj/item/held)
+	return paperwork_ink_stage(user, held)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_stage(mob/user, obj/item/held, paperwork_answer, paperwork_answer_ready = FALSE)
 	var/list/possible_colours = list ("Yellow", "Green", "Pink", "Blue", "Orange", "Cyan", "Red", "Invisible", "Black")
-	var/selected_type = rerun_ask(user, "k314", PROC_REF(chameleon_pen_verb_colour), args, /datum/om/prompt/choice, message = "Pick new colour.", title = "Pen Colour", choices = possible_colours)
+	if(!paperwork_answer_ready)
+		open_request(src, /datum/prompt/choice/paperwork_review, PROC_REF(paperwork_ink_answered), answerer = user, paperwork_operator = user, paperwork_held = held, question = "Pick new colour.", title = "Pen Colour", choices = possible_colours)
+		return
+	var/selected_type = paperwork_answer
 	if(isnull(selected_type))
 		return
 
@@ -353,14 +374,11 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 	icon = 'icons/obj/crayons.dmi'
 	icon_state = "crayonred"
 	w_class = ITEMSIZE_TINY
-	attack_verb = list("attacked", "coloured")
 	colour = "#FF0000" //RGB
 	var/shadeColour = "#220000" //RGB
 	var/uses = 30 //0 for unlimited uses
 	var/instant = 0
 	var/colourName = "red" //for updateIcon purposes
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	can_click = FALSE
 	special_handling = TRUE
 
@@ -384,7 +402,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_STUNNED, stun_duration)
+	M.status_at_least(STAT_STUNNED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/paralyse
@@ -394,7 +412,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_PARALYZED, stun_duration)
+	M.status_at_least(STAT_PARALYZED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pen/autostun/weaken
@@ -404,5 +422,81 @@ EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
 
 	if(!istype(M))
 		return ITEM_INTERACT_FAILURE
-	M.status_at_least(EFFECT_WEAKENED, stun_duration)
+	M.status_at_least(STAT_WEAKENED, stun_duration)
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/pen/chameleon/proc/paperwork_signature_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_signature_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/pen/chameleon/proc/paperwork_signature_apply(datum/act/request/A)
+	var/datum/prompt/text/paperwork_review/ask = A.answer
+	return paperwork_signature_stage(ask.paperwork_operator, ask.paperwork_held, ask.value, TRUE)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paperwork_ink_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/pen/chameleon/proc/paperwork_ink_apply(datum/act/request/A)
+	var/datum/prompt/choice/paperwork_review/ask = A.answer
+	return paperwork_ink_stage(ask.paperwork_operator, ask.paperwork_held, ask.value, TRUE)
+
+/datum/prompt/text/paperwork_review
+	timeout = 0
+	var/mob/paperwork_operator
+	var/obj/item/paperwork_held
+	var/paperwork_operator_expected = FALSE
+	var/paperwork_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/paperwork_review)
+	ref_one(nameof(paperwork_operator), /mob)
+	ref_one(nameof(paperwork_held), /obj/item)
+
+/datum/prompt/text/paperwork_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = paperwork_operator
+	var/obj/item/captured_held = paperwork_held
+	paperwork_operator_expected = !isnull(captured_operator)
+	paperwork_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(paperwork_operator))
+	rel_clear(src, nameof(paperwork_held))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(paperwork_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(paperwork_held), captured_held)
+
+/datum/prompt/text/paperwork_review/recheck_extra()
+	if((paperwork_operator_expected && QDELETED(paperwork_operator)) || (paperwork_held_expected && QDELETED(paperwork_held)))
+		return "gone"
+
+/datum/prompt/choice/paperwork_review
+	timeout = 0
+	var/mob/paperwork_operator
+	var/obj/item/paperwork_held
+	var/paperwork_operator_expected = FALSE
+	var/paperwork_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/paperwork_review)
+	ref_one(nameof(paperwork_operator), /mob)
+	ref_one(nameof(paperwork_held), /obj/item)
+
+/datum/prompt/choice/paperwork_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = paperwork_operator
+	var/obj/item/captured_held = paperwork_held
+	paperwork_operator_expected = !isnull(captured_operator)
+	paperwork_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(paperwork_operator))
+	rel_clear(src, nameof(paperwork_held))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(paperwork_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(paperwork_held), captured_held)
+
+/datum/prompt/choice/paperwork_review/recheck_extra()
+	if((paperwork_operator_expected && QDELETED(paperwork_operator)) || (paperwork_held_expected && QDELETED(paperwork_held)))
+		return "gone"

@@ -10,7 +10,9 @@
 	name = "precursor relic"
 	desc = "An angular, faintly humming artifact of unknown origin. Xenoarchaeology will want this back at the station."
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 5
+
+CAPABILITIES(/obj/item/expedition_artifact)
+	configure(item_thrown(force = 5))
 
 // ---------------------------------------------------------------------------
 // Rescue target: a sealed stasis capsule holding a stranded surveyor. Unanchored
@@ -34,38 +36,33 @@
 	/// Set TRUE once a scanner logs its data; the survey objective polls this.
 	var/scanned = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/expedition_survey_beacon/proc/can_log)), \
-)
+MSG_DEF(survey_beacon/logging, span_notice("You begin logging %T%'s readings with %I%..."), span_notice("%U% sweeps %I% across %T%."))
+MSG_DEF_SELF(survey_beacon/logged, span_warning("%T% has already been logged."))
 
-/// Requirement: the marker hasn't been logged yet (only asked of scanners; other items fall through).
-/obj/structure/expedition_survey_beacon/proc/can_log(mob/user, atom/target, obj/item/held)
-	if(!istype(held, /obj/item/survey_scanner) && !istype(held, /obj/item/analyzer))
-		return TRUE
-	if(scanned)
-		return "[src] has already been logged"
-	return TRUE
+CAPABILITIES(/obj/structure/expedition_survey_beacon)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("survey_scanner", item(/obj/item/survey_scanner), label("Use"), needs(req(PROC_REF(not_logged))),
+		begins(MSG(survey_beacon/logging)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE, volume = 0.6), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
+	op("analyzer", item(/obj/item/analyzer), label("Use"), needs(req(PROC_REF(not_logged))),
+		begins(MSG(survey_beacon/logging)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
+
+/// Requirement: the marker hasn't been logged yet.
+/obj/structure/expedition_survey_beacon/proc/not_logged(datum/act/op/A)
+	return (!scanned) ? null : MSG(survey_beacon/logged)
 
 /// Old attack_hand.
-/obj/structure/expedition_survey_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/expedition_survey_beacon/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("[src] needs a survey scanner or analyzer to log its readings — your bare hands won't cut it."))
 	return TRUE
 
 // Scanned with a survey scanner or any handheld analyzer.
-/// Old attackby.
-/obj/structure/expedition_survey_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))
-		return FALSE
-	act_message(user, src, MSG_SELF(span_notice("You begin logging %T%'s readings with [W]...")), MSG_OTHERS(span_notice("%U% sweeps [W] across %T%.")))
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
-	return INTERACTION_HANDLED_PASS
-
-/obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)
+/obj/structure/expedition_survey_beacon/proc/log_readings_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(scanned)
 		return
-	scanned = TRUE
+	set_scanned(TRUE)
 	to_chat(user, span_notice("Survey data logged to [W]."))
 
 // Handheld survey scanner — exploration department gear (in the explorer kit;
@@ -101,26 +98,33 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 	new /obj/effect/decal/cleanable/ash(get_turf(src))
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/expedition_demo_target/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/expedition_demo_target/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return FALSE
+		return OP_DECLINE
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
 		receive_weapon_hit(W, user, silent = FALSE)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-/obj/structure/expedition_demo_target/attack_generic(mob/user, damage)
+CAPABILITIES(/obj/structure/expedition_demo_target)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/expedition_demo_target/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	user.setClickCooldown(user.get_attack_speed())
 	if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 		act_message(user, src, others = span_danger("%U% smashes into %T%!"))
 		receive_generic_attack(user, damage)
 	user.do_attack_animation(src)
-	return 1
+	return OP_OK
 
 // ---------------------------------------------------------------------------
 // Objective marker: a beacon dropped at a far corner of the site. The "reach"

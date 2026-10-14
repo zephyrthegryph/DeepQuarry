@@ -8,6 +8,9 @@
 	var/ready = 0
 	var/chunk_type = /datum/chunk
 
+CAPABILITIES(/datum/visualnet)
+	owns_many(nameof(chunks))
+
 /datum/visualnet/New()
 	..()
 	join_registries()
@@ -28,7 +31,7 @@ REGISTRY_MEMBERSHIP(/datum/visualnet, REGISTRY_VISUAL_NETS)
 	y &= ~0xf
 	var/key = "[x],[y],[z]"
 	if(!LAZYACCESS(chunks, key))
-		own_put(src, nameof(chunks), key, new chunk_type(null, x, y, z))
+		rel_add(src, nameof(chunks), new chunk_type(null, x, y, z), key)
 
 	return LAZYACCESS(chunks, key)
 

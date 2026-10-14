@@ -27,7 +27,6 @@
 	faction = FACTION_PAKKUN
 
 	movement_cooldown = 2
-	can_be_drop_pred = 1 //They can tongue vore.
 
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -43,7 +42,6 @@
 	response_disarm = "shoves"
 	response_harm = "punches"
 
-	base_attack_cooldown = 5 SECONDS
 	projectiletype = /obj/item/projectile/beam/appendage
 	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
@@ -56,23 +54,22 @@
 
 	endurance = 100
 
-	allow_mind_transfer = TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/pakkun
-	of = /mob/living/simple_mob/vore/pakkun
+/mob/living/simple_mob/vore/pakkun/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/pakkun/perform(mob/living/simple_mob/vore/pakkun/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/pakkun/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.client)
+	if(src.client)
 		return
-	if(!self.ai_brain)
+	if(!src.ai_brain)
 		return
 
-	if(self.autorest_cooldown)
-		self.autorest_cooldown --
-	else if(prob(5) && (self.resting || !self.ai_brain.primary_threat))
-		self.autorest_cooldown = rand(50,200)
-		self.lay_down()
+	if(src.autorest_cooldown)
+		src.autorest_cooldown --
+	else if(prob(5) && (src.resting || !src.ai_brain.primary_threat))
+		src.autorest_cooldown = rand(50,200)
+		src.lay_down()
 
 /mob/living/simple_mob/vore/pakkun/lay_down()
 	. = ..()
@@ -82,26 +79,28 @@
 		return
 
 	if(resting)
-		if(isbelly(vore_selected))
-			vore_selected.digest_mode = DM_UNABSORB
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = DM_UNABSORB
 		ai_brain.go_sleep()
 
 	else
-		if(isbelly(vore_selected))
-			vore_selected.digest_mode = vore_default_mode
+		if(isbelly(vore_selected_of(src)))
+			vore_selected_of(src).digest_mode = vore_default_mode
 		ai_brain.go_wake()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Shake awake", PROC_REF(pakkun_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(pakkun_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
+	configure(mob_kind(attack_cooldown = 5 SECONDS))
+	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))
+	op("pakkun_interaction_item", item(/obj/item), then(PROC_REF(pakkun_interaction_item)))
 
 /// Old attack_hand: a help-touch shakes a resting pakkun awake; anything else is the normal touch.
-/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(stat == DEAD)
-		return FALSE
+		return OP_DECLINE
 	if(!resting)
-		return FALSE
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	act_message(user, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("%U% shakes %T% awake.")))
 	lay_down()
@@ -110,12 +109,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		rel_add(src, nameof(prey_excludes), target)
-		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), target)
+		after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(target))
 	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "you land with a soft bump in what can only be described as a big soft slimy sack, the walls effortlessly stretching to match your every move with no sign of reaching any kind of elastic \
 	limit - and to add insult to injury, it seems the thing is... pressing on you, kneading over the lump you make in its midsection, as though rubbing in the fact that you've just been caught."
@@ -128,15 +127,17 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	B.digest_mode = DM_SELECT
 
 /// Old attackby: if they're newspapered, they'll spit out any junk they've eaten for whatever reason.
-/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!istype(O, /obj/item/newspaper) || ckey || !isturf(user.loc))
-		return FALSE
+		return OP_DECLINE
 	act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 	release_vore_contents()
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))
 			rel_add(src, nameof(prey_excludes), L)
-			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
+			after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(L))
 	return TRUE
 
 //a palette-swapped version that's a bit bossier, in JRPG tradition
@@ -204,25 +205,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	icon_living = "snappy"
 	icon_state = "snappy"
 	icon_rest = "snappy-rest"
-	digestable = 0 // pet mob, do not eat
-	devourable = 0
 
 	vore_default_mode = DM_HOLD
 	/// The help-touchers she remembers (a relation list).
 	var/list/petters
 
-/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/relations()
-	. = ..()
-	. += rel_many(nameof(petters))
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
+	ref_many(nameof(petters))
+	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(snappy_interaction_hand)))
 
 /// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
-/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	if(!(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
 		rel_add(src, nameof(petters), M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
 	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap
@@ -231,7 +230,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERA
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_mode = DM_HOLD
 	B.desc = "the lizard gently yet insistently stuffs you down her gullet - evidently enjoying this moment of playtime as you land in a sprawled heap in the stretchy, clinging sack that makes up \
 	most of her girth. Your movements are rewarded only with squeezing from outside, the skin of the reptile easily stretching out to match your movements no matter how hard you try to push. If anything, \

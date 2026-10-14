@@ -18,7 +18,6 @@
 	desc = "A large quadrupedal AI platform, colloquially known as a 'think-tank' due to the flexible onboard intelligence."
 	icon = 'icons/mob/robots_thinktank.dmi'
 	icon_state = "tachi"
-	color = "#68a2f2"
 
 	cell_type =   /obj/item/cell/mech
 	module =      /obj/item/robot_module/robot/platform
@@ -27,9 +26,6 @@
 	modtype = "Standard"
 	speak_statement = "chirps"
 
-	mob_bump_flag =   HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags =  HEAVY
 	mob_size =        MOB_LARGE
 
 	var/has_had_player = FALSE
@@ -56,11 +52,6 @@
 		/obj/machinery/power/supermatter
 	)
 
-/mob/living/silicon/robot/platform/relations()
-	. = ..()
-	. += rel_one(nameof(recharging))
-	. += rel_many(nameof(stored_atoms))
-
 /mob/living/silicon/robot/platform/Login()
 	. = ..()
 	has_had_player = TRUE
@@ -70,11 +61,9 @@
 	if(mind)
 		mind.name = real_name
 
-/mob/living/silicon/robot/platform/Initialize(mapload)
-	. = ..()
+/// A platform waits inactive until someone takes it over (setup()).
+/mob/living/silicon/robot/platform/proc/go_inactive()
 	SetName("inactive [initial(name)]")
-	update_icon()
-	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 
 /// Platforms carry heavier armour plating (the ROBOT_SLOT_ARMOUR entry).
 TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
@@ -91,7 +80,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 
 // Stored atoms and the recharging cell drop out.
 /mob/living/silicon/robot/platform/on_destroy(force)
-	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
+	revoke(src, platform_cargo(), src)
 	for(var/atom/movable/drop_atom as anything in stored_atoms?.Copy())
 		if(!QDELETED(drop_atom) && drop_atom.loc == src)
 			drop_atom.dropInto(loc)
@@ -129,7 +118,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 /mob/living/silicon/robot/platform/setup_module()
 	..()
 	if(ispath(module, /obj/item/robot_module))
-		own_set(src, nameof(module), new module(src))
+		rel_set(src, nameof(module), new module(src))
 
 /mob/living/silicon/robot/platform/module_reset(notify = TRUE)
 	return FALSE
@@ -170,4 +159,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 				recharge_complete = TRUE
 				act_message(src, null, others = span_infoplain("[span_bold("%U%")] beeps and flashes a green light above \his recharging port."))
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot/platform, "mmi", /obj/item/mmi/digital/robot)
+/mob/living/silicon/robot/platform/ownership()
+	. = ..()
+	. += owns(nameof(mmi), policy = OWN_CONTAINED, starts = /obj/item/mmi/digital/robot)
+

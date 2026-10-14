@@ -7,8 +7,8 @@ SYSTEM_DEF(internal_wiki)
 	name = "Wiki"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/atoms
-		// Supply packs come from GLOB.supply_service, which boots after SSmapping (before atoms).
+		/datum/system/atoms
+		// Supply packs come from SSsupply, which boots after SSmapping (before atoms).
 	)
 
 	VAR_PRIVATE/list/pages = list()
@@ -289,8 +289,8 @@ SYSTEM_DEF(internal_wiki)
 	return get_donor_value(highest_cached_donator)
 // Helpers for formatting wiki data for tgui pages
 /datum/system/internal_wiki/proc/assemble_reaction_data(list/data, datum/reagent/R)
-	var/list/reaction_list = chemistry_service().chemical_reactions_by_product[R.id]
-	var/list/distilled_list = chemistry_service().distilled_reactions_by_product[R.id]
+	var/list/reaction_list = SSchemistry.ready().chemical_reactions_by_product[R.id]
+	var/list/distilled_list = SSchemistry.ready().distilled_reactions_by_product[R.id]
 
 	data["instant_reactions"] = null
 	if(reaction_list != null && length(reaction_list) > 0)
@@ -305,7 +305,7 @@ SYSTEM_DEF(internal_wiki)
 			var/list/assemble_reaction = list()
 			var/list/reqs = list()
 			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = chemistry_service().chemical_reagents[RQ]
+				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
@@ -313,7 +313,7 @@ SYSTEM_DEF(internal_wiki)
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
 			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = chemistry_service().chemical_reagents[IH]
+				var/datum/decl/chemical_reaction/r_IH = SSchemistry.ready().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
@@ -321,7 +321,7 @@ SYSTEM_DEF(internal_wiki)
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
 			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = chemistry_service().chemical_reagents[CL]
+				var/datum/decl/chemical_reaction/r_CL = SSchemistry.ready().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
@@ -355,7 +355,7 @@ SYSTEM_DEF(internal_wiki)
 			assemble_reaction["rejects_xgm_gas"] = CR.rejects_xgm_gas ? GLOB.gas_data.name[CR.rejects_xgm_gas] : null
 			var/list/reqs = list()
 			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = chemistry_service().chemical_reagents[RQ]
+				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.ready().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
@@ -363,7 +363,7 @@ SYSTEM_DEF(internal_wiki)
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
 			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = chemistry_service().chemical_reagents[IH]
+				var/datum/decl/chemical_reaction/r_IH = SSchemistry.ready().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
@@ -371,7 +371,7 @@ SYSTEM_DEF(internal_wiki)
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
 			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = chemistry_service().chemical_reagents[CL]
+				var/datum/decl/chemical_reaction/r_CL = SSchemistry.ready().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
@@ -402,8 +402,8 @@ SYSTEM_DEF(internal_wiki)
 		grind_list["material"] = display_reactions
 
 	display_reactions = list()
-	for(var/SN in GLOB.plant_service.seeds)
-		var/datum/seed/S = GLOB.plant_service.seeds[SN]
+	for(var/SN in plants_seeds())
+		var/datum/seed/S = plants_seeds()[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				continue
@@ -518,15 +518,15 @@ SYSTEM_DEF(internal_wiki)
 		smashers[id] = P
 		searchcache_smasher.Add(id)
 		pages.Add(P)
-		qdel(R)
+		spent(R)
 
 /datum/system/internal_wiki/proc/init_reagent_data()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble chemical reactions wiki
-	for(var/reagent in chemistry_service().chemical_reagents)
+	for(var/reagent in SSchemistry.ready().chemical_reagents)
 		var/datum/internal_wiki/page/P = null
-		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent]
 		if(!allow_reagent(R.id))
 			continue
 		if((R.wiki_flag & WIKI_FOOD)) // Processed later
@@ -551,8 +551,8 @@ SYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// seeds and plants
-	for(var/SN in GLOB.plant_service.seeds)
-		var/datum/seed/S = GLOB.plant_service.seeds[SN]
+	for(var/SN in plants_seeds())
+		var/datum/seed/S = plants_seeds()[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				spoiler_entries.Add(S.type)
@@ -620,9 +620,9 @@ SYSTEM_DEF(internal_wiki)
 						"Price" = initial(res.price_tag),
 						"Flags" = R.wiki_flag
 						)
-		qdel(R)
+		spent(R)
 	// basically condiments, tofu, cheese, soysauce, etc
-	for(var/datum/decl/chemical_reaction/instant/CR in chemistry_service().chemical_reactions)
+	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
 		if(!allow_reagent(CR.result))
 			continue
 		if(CR.wiki_flag & WIKI_SPOILER)
@@ -683,7 +683,7 @@ SYSTEM_DEF(internal_wiki)
 	//Reagents can be resolved to nicer names as well
 	for(var/Rp in food_recipes)
 		for(var/rid in food_recipes[Rp]["Reagents"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -694,7 +694,7 @@ SYSTEM_DEF(internal_wiki)
 			food_recipes[Rp]["Allergens"] |= Rd.allergen_type
 			food_recipes[Rp]["Medallergens"] |= Rd.medallergen_type
 		for(var/rid in food_recipes[Rp]["Catalysts"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -831,7 +831,7 @@ SYSTEM_DEF(internal_wiki)
 
 	data["pump_reagent"] = null
 	if(O.reagent)
-		var/datum/reagent/REG = chemistry_service().chemical_reagents[O.reagent]
+		var/datum/reagent/REG = SSchemistry.ready().chemical_reagents[O.reagent]
 		data["pump_reagent"] = REG.name
 
 	data["grind_reagents"] = null
@@ -840,7 +840,7 @@ SYSTEM_DEF(internal_wiki)
 		var/list/collect = list()
 		var/total_parts = 0
 		for(var/Rid in output)
-			var/datum/reagent/CBR = chemistry_service().chemical_reagents[Rid]
+			var/datum/reagent/CBR = SSchemistry.ready().chemical_reagents[Rid]
 			if(!collect[CBR.name])
 				collect[CBR.name] = 0
 			collect[CBR.name] += 1
@@ -894,7 +894,7 @@ SYSTEM_DEF(internal_wiki)
 	data["stack_size"] = initial(stack_path.max_amount) ? initial(stack_path.max_amount) : 0
 	var/supply_value = M.supply_conversion_value ? M.supply_conversion_value : 0
 	data["supply_points"] = supply_value
-	var/value = supply_value * GLOB.supply_service.points_per_money
+	var/value = supply_value * supply_points_per_money()
 	value = FLOOR(value * 100, 1) / 100 // Truncate decimals
 	data["market_price"] = value
 
@@ -914,7 +914,7 @@ SYSTEM_DEF(internal_wiki)
 			var/list/collect = list()
 			var/total_parts = 0
 			for(var/Rid in output)
-				var/datum/reagent/CBR = chemistry_service().chemical_reagents[Rid]
+				var/datum/reagent/CBR = SSchemistry.ready().chemical_reagents[Rid]
 				if(CBR)
 					if(!collect[CBR.name])
 						collect[CBR.name] = 0
@@ -1031,7 +1031,7 @@ SYSTEM_DEF(internal_wiki)
 	if(S.chems && length(S.chems) > 0)
 		var/list/chems = list()
 		for(var/CB in S.chems)
-			var/datum/reagent/CBR = chemistry_service().chemical_reagents[CB]
+			var/datum/reagent/CBR = SSchemistry.ready().chemical_reagents[CB]
 			if(CBR)
 				chems.Add(CBR.name)
 			else
@@ -1056,7 +1056,7 @@ SYSTEM_DEF(internal_wiki)
 	if(S.mutants && length(S.mutants) > 0)
 		var/list/mutations = list()
 		for(var/MS in S.mutants)
-			var/datum/seed/mut = GLOB.plant_service.seeds[MS]
+			var/datum/seed/mut = plants_seeds()[MS]
 			if(mut)
 				mutations.Add(mut.display_name)
 		data["mutations"] = mutations
@@ -1139,7 +1139,7 @@ SYSTEM_DEF(internal_wiki)
 		var/list/inducers = list()
 		for(var/R in M.reagents)
 			var/amnt = M.reagents[R]
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[R]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[R]
 			if(Rd)
 				inducers["[Rd.name]"] = amnt
 			else
@@ -1185,7 +1185,7 @@ SYSTEM_DEF(internal_wiki)
 	data["industrial_use"] = R.industrial_use
 	data["supply_points"] = R.supply_conversion_value ? R.supply_conversion_value : 0
 	data["cooling_mod"] = R.coolant_modifier
-	var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * GLOB.supply_service.points_per_money
+	var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * supply_points_per_money()
 	value = FLOOR(value * 100,1) / 100 // Truncate decimals
 	data["market_price"] = value
 	data["sintering"] = SSinternal_wiki.assemble_sintering(GLOB.reagent_sheets[R.id])
@@ -1297,7 +1297,7 @@ SYSTEM_DEF(internal_wiki)
 	var/list/recipe_data = list()
 	var/value = recipe["Price"] ? recipe["Price"] : 0
 	recipe_data["supply_points"] = value
-	value *= GLOB.supply_service.points_per_money // convert to cash
+	value *= supply_points_per_money() // convert to cash
 	value = FLOOR(value * 100,1) / 100 // Truncate decimals
 	recipe_data["market_price"] = value
 	recipe_data["appliance"] = recipe["Appliance"]

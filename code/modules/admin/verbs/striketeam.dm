@@ -16,7 +16,7 @@
 		to_chat(usr, span_red("There are [(6000-world.time)/10] seconds remaining before it may be called."))
 		return
 
-	om_flow_start(/datum/om/flow/strike_team, mob, null)
+	mob?.ask_admin_strike_team()
 
 /proc/strike_team_datum(choice)
 	switch(choice)
@@ -25,33 +25,52 @@
 		if("Mercenaries")
 			return GLOB.commandos
 
-/// Spawn Strike Team: the team type, a confirmation (unless a team is already on its way), then
-/// the mission text; the team spawns if nobody beat the admin to it.
-/datum/om/flow/strike_team
-	name = "strike team"
-	requires = PROMPT_ADMIN(R_HOLDER)
+/// Strike-team questions retain the original admin mob, rights and team identity through every answer.
+/datum/prompt/choice/admin_strike_team
+	title = "Strike Team"
+	rights = R_HOLDER
+	timeout = 0
+	var/team_type
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_strike_team
+	title = "Specify Mission"
+	max_len = MAX_MESSAGE_LEN
+	rights = R_HOLDER
+	timeout = 0
 	var/team_type
 
-/datum/om/flow/strike_team/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Strike Team", message = "Select type of strike team:", choices = list("Heavy Asset Protection", "Mercenaries"))
+/mob/proc/ask_admin_strike_team()
+	open_request(src, /datum/prompt/choice/admin_strike_team, PROC_REF(admin_strike_team_type_picked), answerer = src, question = "Select type of strike team:", choices = list("Heavy Asset Protection", "Mercenaries"))
 
-/datum/om/flow/strike_team/proc/type_picked(datum/om/prompt/choice/ask)
-	team_type = ask.choice
+/mob/proc/admin_strike_team_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_strike_team/ask = A.answer
+	var/team_type = ask.value
 	var/datum/antagonist/deathsquad/team = strike_team_datum(team_type)
 	if(team.deployed)
-		to_chat(actor, span_red("Someone is already sending a team."))
+		to_chat(src, span_red("Someone is already sending a team."))
 		return
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(sure), title = "Strike Team", message = "Do you want to send in a strike team? Once enabled, this is irreversible.")
+	open_request(src, /datum/prompt/choice/admin_strike_team, PROC_REF(admin_strike_team_sure), answerer = src, team_type = team_type, buttons = TRUE, choices = list("Yes", "No"), question = "Do you want to send in a strike team? Once enabled, this is irreversible.")
 
-/datum/om/flow/strike_team/proc/sure()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(mission_entered), title = "Specify Mission", message = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.", max_length = MAX_MESSAGE_LEN)
+/mob/proc/admin_strike_team_sure(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_strike_team/ask = A.answer
+	if(ask.value != "Yes")
+		return
+	open_request(src, /datum/prompt/text/admin_strike_team, PROC_REF(admin_strike_team_mission_entered), answerer = src, team_type = ask.team_type, question = "This 'mode' will go on until everyone is dead or the station is destroyed. You may also admin-call the evac shuttle when appropriate. Spawned commandos have internals cameras which are viewable through a monitor inside the Spec. Ops. Office. Assigning the team's detailed task is recommended from there. While you will be able to manually pick the candidates from active ghosts, their assignment in the squad will be random.\n\nPlease specify which mission the strike team shall undertake.")
 
-/datum/om/flow/strike_team/proc/mission_entered()
-	var/datum/antagonist/deathsquad/team = strike_team_datum(team_type)
+/mob/proc/admin_strike_team_mission_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.value))
+		return
+	var/datum/prompt/text/admin_strike_team/ask = A.answer
+	var/datum/antagonist/deathsquad/team = strike_team_datum(ask.team_type)
 	consider_ert_load()
 
 	if(team.deployed)
-		to_chat(actor, "Looks like someone beat you to it.")
+		to_chat(src, "Looks like someone beat you to it.")
 		return
 
 	team.attempt_random_spawn()
@@ -66,24 +85,40 @@ GLOBAL_VAR(can_call_ert)
 GLOBAL_VAR_INIT(silent_ert, FALSE)
 
 ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Team", "Send an emergency response team to the station.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	if(SSticker.current_state <= GAME_STATE_PREGAME)
+	// Only this verb's actual ended native request supplies replay answers.
+	var/list/replay_answers = list()
+	if(length(args) > 1)
+		var/datum/request/resumed = args[2]
+		if((istype(resumed, /datum/prompt/choice/admin_response_team_replay)) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(response_team_replay_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(ticker_current_state() <= GAME_STATE_PREGAME)
 		to_chat(user, span_danger("The round hasn't started yet!"))
 		return
 	if(GLOB.send_emergency_team)
 		to_chat(user, span_danger("[using_map.boss_name] has already dispatched an emergency response team!"))
 		return
-	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to dispatch an Emergency Response Team?", title = "ERT", choices = list("Yes","No"))
+	if(!("a1" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a1", buttons = TRUE, question = "Do you want to dispatch an Emergency Response Team?", title = "ERT", choices = list("Yes","No"))
+		return
+	var/_answer_a1 = replay_answers["a1"]
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
 		return
-	var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Do you want this Response Team to be announced?", title = "ERT", choices = list("Yes","No"))
+	if(!("a2" in replay_answers))
+		open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a2", buttons = TRUE, question = "Do you want this Response Team to be announced?", title = "ERT", choices = list("Yes","No"))
+		return
+	var/_answer_a2 = replay_answers["a2"]
 	if(isnull(_answer_a2))
 		return
 	if(_answer_a2 != "Yes")
 		GLOB.silent_ert = TRUE
 	if(get_security_level() != "red") // Allow admins to reconsider if the alert level isn't Red
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice/alert, message = "The station is not in red alert. Do you still want to dispatch a response team?", title = "ERT", choices = list("Yes","No"))
+		if(!("a3" in replay_answers))
+			open_request(src, /datum/prompt/choice/admin_response_team_replay, PROC_REF(response_team_replay_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "a3", buttons = TRUE, question = "The station is not in red alert. Do you still want to dispatch a response team?", title = "ERT", choices = list("Yes","No"))
+			return
+		var/_answer_a3 = replay_answers["a3"]
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")
@@ -163,7 +198,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 		GLOB.ert_base_chance += 3
 	if(get_security_level() == "delta")
 		GLOB.ert_base_chance += 10           // Need those big guns
-	om_after(null, 3 MINUTES, GLOBAL_PROC_REF(increment_ert_chance))
+	after(null, 3 MINUTES, GLOBAL_PROC_REF(increment_ert_chance))
 
 
 /proc/trigger_armed_response_team(force = 0)
@@ -191,7 +226,10 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	GLOB.send_emergency_team = 1
 	consider_ert_load()
 
-	om_after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
+	after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
+
+/proc/ert_load_finished(z)
+	log_and_message_admins("Loaded the ERT shuttle just now.")
 
 /proc/close_armed_response_team()
 	GLOB.send_emergency_team = 0 // Can no longer join the ERT.
@@ -201,9 +239,33 @@ GLOBAL_VAR(ert_loaded)
 /proc/consider_ert_load()
 	if(!GLOB.ert_loaded)
 		GLOB.ert_loaded = TRUE
-		var/datum/map_template/MT = SSmapping.map_templates["Special Area - ERT"]
+		var/datum/map_template/MT = mapping_map_templates()["Special Area - ERT"]
 		if(!istype(MT))
 			log_mapping("ERT Area is not a valid map template!")
 		else
-			MT.load_new_z(centered = TRUE)
-			log_and_message_admins("Loaded the ERT shuttle just now.")
+			MT.load_new_z_async(TRUE, GLOBAL_PROC_REF(ert_load_finished))
+
+/datum/prompt/choice/admin_response_team_replay
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_response_team_replay/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_response_team_replay/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_response_team_replay/refusal(given)
+	return null
+
+/datum/admin_verb/response_team/proc/response_team_replay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

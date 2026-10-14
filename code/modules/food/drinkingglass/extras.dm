@@ -1,6 +1,8 @@
 /// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/glass2/proc/glass2_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(length(extras) >= 2) return FALSE // max 2 extras, one on each side of the drink
+/obj/item/reagent_containers/food/drinks/glass2/proc/glass2_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(length(extras) >= 2) return OP_DECLINE // max 2 extras, one on each side of the drink
 
 	if(istype(I, /obj/item/glass_extra))
 		var/obj/item/glass_extra/GE = I
@@ -9,13 +11,12 @@
 			user.remove_from_mob(GE)
 			GE.forceMove(src)
 			to_chat(user, span_notice("You add \the [GE] to \the [src]."))
-			update_icon()
 		else
 			to_chat(user, span_warning("There's no space to put \the [GE] on \the [src]!"))
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/fruit_slice))
 		if(!rim_pos)
 			to_chat(user, span_warning("There's no space to put \the [I] on \the [src]!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
 		rel_add(src, nameof(extras), FS)
 		user.remove_from_mob(FS)
@@ -23,15 +24,9 @@
 		FS.pixel_y = 0
 		FS.forceMove(src)
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
-		update_icon()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra)), \
-	INTERACT_ITEM(null, PROC_REF(glass2_item)), \
-)
+		return OP_DECLINE
+	return OP_PASS
 
 /// Requirement: something on the glass to remove (only asked while the glass is in the other hand; otherwise the effect falls through).
 /obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra(mob/user, atom/target, obj/item/held)
@@ -42,15 +37,21 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_remove_extra(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
 	if(src != user.get_inactive_hand())
-		return FALSE
+		return OP_DECLINE
 
-	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
+	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))
-		return TRUE
+		return OP_OK
 	if(!choice || !(choice in extras))
-		return TRUE
+		return OP_OK
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
@@ -58,8 +59,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	else
 		to_chat(user, span_warning("Something went wrong, please try again."))
 
-	update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/item/glass_extra
 	name = "generic glass addition"
@@ -84,50 +84,46 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	glass_desc = "There is a straw in the glass."
 	icon_state = "straw"
 
-// This isn't great code, so if you're doing something that happens many times or isn't user-initiated
-// like this is, where it'll likely happen 0-4 times a shift, then don't copy this pattern.
-/obj/item/glass_extra/straw/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
-	if(ismob(target) && proximity_flag)
-		// Clicked protean blob
-		var/mob/living/carbon/human/blob_host = target
-		if(ishuman(blob_host) && istype(blob_host.current_form(), /datum/form/protean_blob))
-			sipp_mob(target, user, REAGENT_ID_LIQUIDPROTEAN)
-			return
-		// Clicked humanoid
-		else if(ishuman(target))
-			var/mob/living/carbon/human/H = target
-			var/speciesname = H.species?.name
-			switch(speciesname)
-				if(SPECIES_PROTEAN)
-					sipp_mob(target, user, REAGENT_ID_LIQUIDPROTEAN)
-					return
-				if(SPECIES_PROMETHEAN)
-					sipp_mob(target, user, REAGENT_ID_NUTRIMENT)
-					return
-	return ..()
+CAPABILITIES(/obj/item/glass_extra/straw)
+	// Sipping a protean or a promethean (the reagent it gives depends on what they are): three seconds next to them.
+	op("sip", at_target(/mob/living/carbon/human), when(req(PROC_REF(sip_reagent_known))), needs(req(PROC_REF(sip_victim_whole), because = MSG(straw/too_little))),
+		begins(MSG(straw/sipping)), wait(3 SECONDS), then(PROC_REF(sipp_done)))
 
-/obj/item/glass_extra/straw/proc/sipp_mob(mob/living/victim, mob/user, reagent_type = REAGENT_ID_NUTRIMENT)
-	if(victim.is_critical())
-		to_chat(user, span_warning("There's not enough of [victim] left to sip on!"))
-		return
+MSG_DEF(straw/sipping, span_info("You start sipping on %T% with %I%."), span_infoplain(span_bold("%U%") + " starts sipping on %T% with %I%!"))
+MSG_DEF_SELF(straw/too_little, span_warning("There's not enough of %T% left to sip on!"))
 
-	act_message(user, victim, MSG_SELF(span_info("You start sipping on %T% with [src].")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts sipping on %T% with [src]!")))
-	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
+/// The reagent a sip of this person gives, or null when they are not something to sip on.
+/obj/item/glass_extra/straw/proc/sip_reagent_of(mob/living/carbon/human/H)
+	if(!ishuman(H))
+		return null
+	// Clicked protean blob
+	if(istype(H.current_form(), /datum/form/protean_blob))
+		return REAGENT_ID_LIQUIDPROTEAN
+	// Clicked humanoid
+	switch(H.species?.name)
+		if(SPECIES_PROTEAN)
+			return REAGENT_ID_LIQUIDPROTEAN
+		if(SPECIES_PROMETHEAN)
+			return REAGENT_ID_NUTRIMENT
+	return null
 
-/datum/om/task/timed/straw_sipp
-	duration = 3 SECONDS
-	complete_proc = /obj/item/glass_extra/straw/proc/sipp_done
-	var/reagent_type
+/// Null-or-reason requirement callback: null allows, a reason refuses.
+/obj/item/glass_extra/straw/proc/sip_reagent_known(datum/act/op/A)
+	return (read_once(!isnull(sip_reagent_of(A.target)))) ? null : MSG(req_failed)
 
-/obj/item/glass_extra/straw/proc/sipp_done(datum/om/task/timed/straw_sipp/task)
-	var/mob/living/victim = task.target
-	var/mob/user = task.actor
-	var/reagent_type = task.reagent_type
+/// Null-or-reason requirement callback: null allows, a reason refuses.
+/obj/item/glass_extra/straw/proc/sip_victim_whole(datum/act/op/A)
+	var/mob/living/victim = A.target
+	return (!victim.is_critical()) ? null : MSG(req_failed)
+
+/obj/item/glass_extra/straw/proc/sipp_done(datum/act/op/A)
+	var/mob/living/carbon/human/victim = A.target
+	var/mob/user = A.actor
+	var/reagent_type = sip_reagent_of(victim) || REAGENT_ID_NUTRIMENT
 	act_message(user, victim, MSG_SELF(span_info("You take a sip of %T% with [src]. Yum!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " sips some of %T% with [src]!")))
-	if(victim.vore_taste)
-		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))
+	if(victim.vore_prefs.vore_taste)
+		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_prefs.vore_taste]!"))
 
 	victim.injure(INJURY_BLUNT, 5, source = src)
 

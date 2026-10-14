@@ -16,6 +16,11 @@
 	var/transfer_message = "Transfer Message"
 	var/delete_message = "Delete Message"
 
+CAPABILITIES(/obj/soulgem)
+	// a soulgem is an abstract container of minds
+	without("melee_hit")
+	owns_many(nameof(brainmobs))
+
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
 // the linked belly (a relation view) is saved as the belly's name.
 /obj/soulgem/state_codecs()
@@ -32,6 +37,7 @@
 		saved["linked_belly"] = saved["linked_belly_handle"]
 		saved -= "linked_belly_handle"
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
@@ -60,14 +66,14 @@
 
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
-	own_clear(target, nameof(/mob::soulgem), OWN_DELETE)
+	rel_clear(target, nameof(/mob::soulgem), OWN_DELETE)
 	var/mob/living/old_owner = owner()
 	forceMove(target)
 	rel_set(src, nameof(owner), target)
 	if(old_owner && old_owner.soulgem == src)
-		own_transfer(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
+		rel_move(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
 	else
-		own_set(target, nameof(/mob::soulgem), src)
+		rel_set(target, nameof(/mob::soulgem), src)
 
 // Cleaning up our refs before deletion
 
@@ -132,23 +138,23 @@
 
 // The capture function which transfers the given mob's mind into the soulcatcher
 /obj/soulgem/proc/catch_mob(mob/M, custom_name)
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 	if(!M.mind)	return
 	if(isbrain(owner())) return
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
 	rel_set(brainmob, nameof(brainmob.gem), src)
 	rel_set(brainmob, nameof(brainmob.container), src)
-	brainmob.status_set(EFFECT_MUTED, 0)
+	brainmob.status_set(STAT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, nameof(brainmobs), brainmob)
+	rel_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
 	brainmob.name = custom_name ? custom_name : brainmob.mind.name
-	brainmob.real_name = custom_name ? custom_name : brainmob.mind.name
+	brainmob.set_real_name(custom_name ? custom_name : brainmob.mind.name)
 
 	//If we caught our owner, special settings.
 	if(M == owner() && !own_mind()) // Need some more sanity if we allow takeover
@@ -156,18 +162,18 @@
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
 		rel_set(src, nameof(own_mind), brainmob.mind)
-		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
-		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self, brainmob)
-		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body, brainmob)
+		grant(brainmob, granted_verb(/mob/proc/enter_soulcatcher, hidden = TRUE), brainmob) //No recursive self capturing...
+		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/transfer_self), brainmob)
+		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/reenter_body), brainmob)
 
 	if(isliving(M))
 		if(ishuman(M))
-			GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+			SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
 		brainmob.transient = TRUE
-		qdel(M) //Bye ghost
+		spent(M) //Bye ghost
 
 	//Give them a flavortext message
 	var/message = span_notice("[capture_message][inside_flavor]")
@@ -210,7 +216,7 @@
 	self.mind.transfer_to(owner())
 	rel_clear(src, nameof(own_mind))
 	taken_over_name = null
-	qdel(self)
+	spent(self)
 
 // Sets the custom messages depending on the input
 /obj/soulgem/proc/set_custom_message(message, target)
@@ -303,25 +309,26 @@
 // Updates the vore FX signal links to the new given belly
 /obj/soulgem/proc/update_linked_belly(obj/belly, skip_unreg = FALSE)
 	if(!belly && linked_belly())
-		om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
+		unobserve(linked_belly(), /datum/notice/belly_update_vore_fx, src)
 		rel_clear(src, nameof(linked_belly))
 		return
 	if(!isbelly(belly))
 		return
 	if(!linked_belly())
 		rel_set(src, nameof(linked_belly), belly)
-		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
+		observe(linked_belly(), /datum/notice/belly_update_vore_fx, src, then(PROC_REF(on_belly_vore_fx_event)))
 		return
 	if(belly != linked_belly())
 		if(!skip_unreg)
-			om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
+			unobserve(linked_belly(), /datum/notice/belly_update_vore_fx, src)
 		rel_set(src, nameof(linked_belly), belly)
-		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
+		observe(linked_belly(), /datum/notice/belly_update_vore_fx, src, then(PROC_REF(on_belly_vore_fx_event)))
 
 // Handles the vore fx updates for the captured souls
 /// Event wrapper: the linked belly refreshed its vore fx.
-/obj/soulgem/proc/on_belly_vore_fx_event(obj/belly/source, datum/om/event/before/belly_update_vore_fx/event)
-	EVENT_HANDLER
+/obj/soulgem/proc/on_belly_vore_fx_event(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/belly_update_vore_fx/event = N
 	soulgem_show_vfx(event.volume)
 
 /obj/soulgem/proc/soulgem_show_vfx(severity = 0)
@@ -378,8 +385,8 @@
 	taken_over_name = null
 
 /obj/soulgem/proc/take_control(mob/M)
-	if(!(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
+	if(!(owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) || !(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TAKEOVER)) return
 	if(!own_mind())
 		if(issilicon(owner()) || isanimal(owner()))
 			taken_over_name = owner().name
@@ -389,7 +396,7 @@
 	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
-	qdel(M)
+	spent(M)
 
 // Funtion to test if the owner's body has been taken over
 /obj/soulgem/proc/is_taken_over()
@@ -420,7 +427,7 @@
 	for(var/mob/M in range(1, get_turf(owner())))
 		if(M == owner())
 			continue
-		if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
+		if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 			continue
 		if(M.client && M.soulgem)
 			valid_objects += M.soulgem
@@ -431,12 +438,18 @@
 
 // Transfer the selected soul to either a valid object or another soulcatcher
 /obj/soulgem/proc/transfer_selected()
+	return soulgem_selected_stage()
+
+/obj/soulgem/proc/soulgem_selected_stage(obj/selected_target, prompted = FALSE)
 	if(!selected_soul()) return
-	if(!(selected_soul().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER)) return
+	if(!(selected_soul().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER)) return
 	var/list/valid_objects = find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
-	var/obj/target = rerun_ask(owner(), "a1", PROC_REF(transfer_selected), args, /datum/om/prompt/choice, message = "Select where you want to store the mind into.", title = "Mind Transfer Target", choices = valid_objects)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_selected_answered), answerer = owner(), question = "Select where you want to store the mind into.", title = "Mind Transfer Target", choices = valid_objects)
+		return
+	var/obj/target = selected_target
 	if(isnull(target))
 		return
 	transfer_mob_selector(selected_soul(), target)
@@ -474,28 +487,34 @@
 	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
-	qdel(M)
+	consumed(M, src)
 
 // Transfers a captured soul to another soulcatcher
 /obj/soulgem/proc/transfer_mob_soulcatcher(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem)
+	return soulgem_transfer_stage(M, gem)
+
+/obj/soulgem/proc/soulgem_transfer_stage(mob/living/carbon/brain/caught_soul/vore/M, obj/soulgem/gem, response, prompted = FALSE)
 	if(is_taken_over()) return
 	if(!istype(M) || !gem) return
 	if(!gem.owner()) return
-	var/_answer_a2 = rerun_ask(gem.owner(), "a2", PROC_REF(transfer_mob_soulcatcher), args, /datum/om/prompt/choice/alert, message = "Do you want to allow [owner()] to transfer [selected_soul()] to your soulcatcher?", title = "Allow Transfer", choices = list("No", "Yes"))
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_transfer_answered), answerer = gem.owner(), soulgem_mob = M, soulgem_destination = gem, question = "Do you want to allow [owner()] to transfer [selected_soul()] to your soulcatcher?", title = "Allow Transfer", choices = list("No", "Yes"), buttons = TRUE)
+		return
+	var/_answer_a2 = response
 	if(isnull(_answer_a2))
 		return
 	if((_answer_a2 != "Yes"))
 		return
 	if(!in_range(gem.owner(), owner()))
 		return
-	if(!(gem.owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
+	if(!(gem.owner().vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 		return
 	if(M.mind == own_mind())
 		rel_clear(src, nameof(own_mind))
 	own_take_member(src, nameof(brainmobs), M)
 	rel_set(M, nameof(M.gem), gem)
 	rel_set(M, nameof(M.container), gem)
-	own_add(gem, nameof(gem.brainmobs), M)
+	rel_add(gem, nameof(gem.brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
 
@@ -520,7 +539,7 @@
 	to_chat(M, span_notice("[release_message]"))
 	own_take_member(src, nameof(brainmobs), M)
 	M.ghostize(FALSE)
-	qdel(M)
+	spent(M)
 	return TRUE
 
 // Delete section to delete captured souls from the soulcatcher
@@ -539,11 +558,17 @@
 
 // The function handling the actual delete, returns TRUE on success
 /obj/soulgem/proc/delete_mob(mob/M)
+	return soulgem_delete_stage(M)
+
+/obj/soulgem/proc/soulgem_delete_stage(mob/M, response, prompted = FALSE)
 	if(is_taken_over()) return FALSE
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
-		var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(delete_mob), args, /datum/om/prompt/choice/alert, message = "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES)
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/soulgem_consent, PROC_REF(soulgem_delete_answered), answerer = M, soulgem_mob = M, question = "Do you really want to allow [owner()] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES, buttons = TRUE)
+			return
+		var/_answer_a3 = response
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")
@@ -552,7 +577,7 @@
 	own_take_member(src, nameof(brainmobs), M)
 	var/mob/observer/dead/ghost = M.ghostize(FALSE)
 	ghost.abandon_mob()
-	qdel(M)
+	spent(M)
 	return TRUE
 
 /// the own_mind this refers to (a relation view: null once it is deleted).
@@ -570,3 +595,65 @@
 /// the owner this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/owner() as /mob/living
 	return owner
+
+/obj/soulgem/proc/soulgem_selected_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_selected_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_selected_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_selected_stage(ask.value, TRUE)
+
+/obj/soulgem/proc/soulgem_transfer_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_transfer_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_transfer_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_transfer_stage(ask.soulgem_mob, ask.soulgem_destination, ask.value, TRUE)
+
+/obj/soulgem/proc/soulgem_delete_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soulgem_delete_apply(A)
+	SStgui.update_uis(src)
+
+/obj/soulgem/proc/soulgem_delete_apply(datum/act/request/A)
+	var/datum/prompt/choice/soulgem_consent/ask = A.answer
+	return soulgem_delete_stage(ask.soulgem_mob, ask.value, TRUE)
+
+/datum/prompt/choice/soulgem_consent
+	timeout = 0
+	var/mob/soulgem_mob
+	var/soulgem_mob_expected = FALSE
+	var/obj/soulgem/soulgem_destination
+	var/soulgem_destination_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/soulgem_consent)
+	ref_one(nameof(soulgem_mob), /mob)
+	ref_one(nameof(soulgem_destination), /obj/soulgem)
+
+/datum/prompt/choice/soulgem_consent/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_mob = soulgem_mob
+	soulgem_mob_expected = !isnull(captured_mob)
+	rel_clear(src, nameof(soulgem_mob))
+	if(captured_mob && !QDELETED(captured_mob))
+		rel_set(src, nameof(soulgem_mob), captured_mob)
+	var/obj/soulgem/captured_destination = soulgem_destination
+	soulgem_destination_expected = !isnull(captured_destination)
+	rel_clear(src, nameof(soulgem_destination))
+	if(captured_destination && !QDELETED(captured_destination))
+		rel_set(src, nameof(soulgem_destination), captured_destination)
+
+/datum/prompt/choice/soulgem_consent/recheck_extra()
+	if((soulgem_mob_expected && QDELETED(soulgem_mob)) || (soulgem_destination_expected && QDELETED(soulgem_destination)))
+		return "gone"
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"

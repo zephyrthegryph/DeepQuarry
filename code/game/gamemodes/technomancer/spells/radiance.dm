@@ -21,11 +21,12 @@
 	var/power = 250
 	toggled = 1
 
-DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/spell/radiance)
+	every(2 SECONDS, then(PROC_REF(radiance_step)))
+	look_glow(GLOW(7, 4, "#D9D900"))
 
-/obj/item/spell/radiance/Initialize(mapload, coreless)
+/obj/item/spell/radiance/Initialize(mapload)
 	. = ..()
-	set_light(7, 4, l_color = "#D9D900")
 	log_and_message_admins("has casted [src].")
 
 // admins are told the maintained spell stopped.
@@ -33,7 +34,7 @@ DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
 	log_and_message_admins("has stopped maintaining [src].")
 	..()
 
-/obj/item/spell/radiance/periodic_step()
+/obj/item/spell/radiance/proc/radiance_step(datum/act/timer/A)
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/removed = null
 	var/datum/gas_mixture/env = null
@@ -45,8 +46,8 @@ DECLARE_PERIODIC(/obj/item/spell/radiance, PERIODIC_SLOW)
 
 		var/thermal_power = 300 * adjusted_power
 
-		removed.add_thermal_energy(thermal_power)
-		removed.set_temperature(between(0, removed.return_temperature(), 10000))
+		heat_add(removed, thermal_power, HEAT_SOURCE_SPELL)
+		heat_set(removed, between(0, removed.return_temperature(), 10000), HEAT_SOURCE_SPELL)
 
 		env.merge(removed)
 

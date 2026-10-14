@@ -6,7 +6,6 @@
 
 	rel_add(src, nameof(communicating), comm)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	update_icon()
 
 // Proc: del_communicating()
 // Parameters: 1 (comm - the communicator to remove from communicating)
@@ -15,7 +14,6 @@
 	if(!comm || !istype(comm)) return
 
 	rel_remove(src, nameof(communicating), comm)
-	update_icon()
 
 // Proc: open_connection()
 // Parameters: 2 (user - the person who initiated the connecting being opened, candidate - the communicator or observer that will connect to the device)
@@ -36,12 +34,12 @@
 		return
 	var/obj/item/communicator/comm = candidate
 	rel_remove(src, nameof(voice_invites), candidate)
-	LAZYREMOVE(comm.voice_requests, src)
+	rel_remove(comm, nameof(comm.voice_requests), src)
 
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
 		to_chat(user, span_notice("[icon2html(src,user.client)] Attempting to call [comm]."))
-		om_after(src, 1 SECOND, PROC_REF(dial_communicator), user, comm, 1)
+		after(src, 1 SECOND, PROC_REF(dial_communicator), with = list(user, comm, 1))
 		return
 
 	src.add_communicating(comm)
@@ -52,14 +50,14 @@
 	switch(stage)
 		if(1)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Dialing internally from [station_name()], [system_name()]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 2)
+			after(src, 2 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 2))
 		if(2)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Connection re-routed to [comm] at [comm.exonet.address]."))
-			om_after(src, 4 SECONDS, PROC_REF(dial_communicator), user, comm, 3)
+			after(src, 4 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 3))
 		if(3)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Connection to [comm] at [comm.exonet.address] established."))
 			comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connection to [src] at [exonet.address] established."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 4)
+			after(src, 2 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 4))
 		if(4)
 			src.add_communicating(comm)
 			comm.add_communicating(src)
@@ -72,7 +70,7 @@
 		return
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
-	LAZYREMOVE(voice_requests, candidate)
+	rel_remove(src, nameof(voice_requests), candidate)
 	rel_remove(src, nameof(voice_invites), candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
@@ -83,40 +81,39 @@
 	log_game(msg)
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	own_add(src, nameof(voice_mobs), new_voice)
+	rel_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
 	blackness.screen_loc = ui_entire_screen
 	blackness.icon = 'icons/effects/effects.dmi'
-	blackness.icon_state = "1"
+	blackness.set_icon_state("1")
 	blackness.mouse_opacity = 2			//Can't see anything!
 	new_voice.client.screen.Add(blackness)
 
-	update_icon()
 
 	//Now for some connection fluff.
 	if(user)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connecting to [candidate]."))
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Attempting to call [src]."))
-	om_after(src, 1 SECOND, PROC_REF(dial_ghost), user, new_voice, blackness, candidate ? "[candidate]" : "someone", 1)
+	after(src, 1 SECOND, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate ? "[candidate]" : "someone", 1), keeps_dead = TRUE)
 
 /// The ghost's dial-up: a black screen while the fluff plays, then the call opens.
 /obj/item/communicator/proc/dial_ghost(mob/user, mob/living/voice/new_voice, atom/movable/screen/blackness, candidate_name, stage)
 	switch(stage)
 		if(1)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Dialing to [station_name()], Kara Subsystem, [system_name()]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 2)
+			after(src, 2 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 2), keeps_dead = TRUE)
 		if(2)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connecting to [station_name()] telecommunications array."))
-			om_after(src, 4 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 3)
+			after(src, 4 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 3), keeps_dead = TRUE)
 		if(3)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [station_name()] telecommunications array established.  Redirecting signal to [src]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 4)
+			after(src, 2 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 4), keeps_dead = TRUE)
 		if(4)
 			//We're connected, no need to hide everything.
 			new_voice.client?.screen.Remove(blackness)
-			qdel(blackness)
+			spent(blackness, user)
 
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [src] established."))
 			to_chat(new_voice, span_infoplain(span_bold("To talk to the person on the other end of the call, just talk normally.")))
@@ -135,14 +132,12 @@
 	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		return
 
-	for(var/mob/living/voice/voice in voice_mobs) //Handle ghost-callers
+	for(var/mob/living/voice/voice in voice_mobs?.Copy()) //Handle ghost-callers
 		if(target && voice != target) //If no target is inputted, it deletes all of them.
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		own_take_member(src, nameof(voice_mobs), voice)
-		qdel(voice)
-		update_icon()
+		rel_remove(src, nameof(voice_mobs), voice)
 
 	for(var/obj/item/communicator/comm in communicating) //Now we handle real communicators.
 		if(target && comm != target)
@@ -176,15 +171,14 @@
 	if(!who)
 		return
 
-	LAZYOR(voice_requests, candidate)
+	rel_add(src, nameof(voice_requests), candidate)
 
 	if(ringer)
 		play_sfx(src, SFX_MACHINES_TWOBEEP)
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *beep*"))
 
-	alert_called = 1
-	update_icon()
+	set_alert_called(1)
 
 	//Search for holder of the device.
 	var/mob/living/L = null
@@ -207,7 +201,7 @@
 		var/obj/item/communicator/comm = candidate
 		rel_remove(comm, nameof(comm.voice_invites), src)
 
-	LAZYREMOVE(voice_requests, candidate)
+	rel_remove(src, nameof(voice_requests), candidate)
 
 	//Search for holder of our device.
 	var/mob/living/us = null
@@ -292,7 +286,7 @@
 	set name = "Call Communicator"
 	set desc = "If there is a communicator available, send a request to speak through it.  This will reset your respawn timer, if someone picks up."
 
-	if(SSticker.current_state < GAME_STATE_PLAYING)
+	if(ticker_current_state() < GAME_STATE_PLAYING)
 		to_chat(src, span_danger("The game hasn't started yet!"))
 		return
 
@@ -303,13 +297,22 @@
 		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
-	om_ask(src, /datum/om/prompt/confirm/join_as_voice, PROC_REF(join_as_voice_confirmed), message = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
+	open_request(src, /datum/prompt/choice/join_as_voice, PROC_REF(join_as_voice_confirmed), answerer = src, question = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
 
-/datum/om/prompt/confirm/join_as_voice
+/datum/prompt/choice/join_as_voice
 	title = "Join as Voice?"
+	timeout = 0
+	buttons = TRUE
+	choices = list("Yes", "No")
 	var/prefs_name
 
-/mob/observer/dead/proc/join_as_voice_confirmed(datum/om/prompt/confirm/join_as_voice/ask)
+/mob/observer/dead/proc/join_as_voice_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.value != "Yes")
+		return
+	return join_as_voice_apply(A)
+
+/mob/observer/dead/proc/join_as_voice_apply(datum/act/request/A)
+	var/datum/prompt/choice/join_as_voice/ask = A.answer
 	var/prefs_name = ask.prefs_name
 
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD == 1)
@@ -337,10 +340,12 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_request_target_chosen), choices = choices, title = "Recipient Choice", message = "Send a voice request to whom?")
+	open_request(src, /datum/prompt/choice, PROC_REF(voice_request_target_chosen), answerer = src, title = "Recipient Choice", question = "Send a voice request to whom?", choices = choices, timeout = 0)
 
-/mob/observer/dead/proc/voice_request_target_chosen(datum/om/prompt/choice/ask)
-	var/obj/item/communicator/chosen_communicator = ask.choice
+/mob/observer/dead/proc/voice_request_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/obj/item/communicator/chosen_communicator = A.answer.value
 	var/mob/observer/dead/O = src
 	if(O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "voice")
@@ -366,7 +371,7 @@
 		return
 
 	to_chat(user, span_notice("[icon2html(src, user.client)] Attempting to start video over existing call."))
-	om_after(src, 3 SECONDS, PROC_REF(connect_video_done), user, comm)
+	after(src, 3 SECONDS, PROC_REF(connect_video_done), with = list(user, comm))
 
 /obj/item/communicator/proc/connect_video_done(mob/user, obj/item/communicator/comm)
 	if(video_source || !(src in comm.communicating) || !comm.camera)
@@ -376,18 +381,16 @@
 	rel_set(src, nameof(video_source), comm.camera)
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
-	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	observe(video_source, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_active_camera_screen)))
 	dq_add_recursive_move(video_source)
-	update_icon()
 
 // Proc: end_video()
 // Parameters: reason - the text reason to print for why it ended
 // Description: Ends the video call by clearing video_source
 /obj/item/communicator/proc/end_video(reason)
-	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
+	unobserve(video_source, /datum/notice/movable_attempted_move, src)
 	show_static()
 	rel_clear(src, nameof(video_source))
 
 	if(reason)
 		visible_message(reason)
-	update_icon()

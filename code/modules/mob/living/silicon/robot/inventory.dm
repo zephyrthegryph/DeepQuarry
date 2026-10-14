@@ -83,7 +83,6 @@
 		return
 	clear_module_slot(slot)
 	after_equip()
-	update_icon()
 	if(shown_robot_modules)
 		hud_used.update_robot_modules_display()
 
@@ -95,7 +94,7 @@
 /// Drop every module. Called on events (stat change, weapon lock, EMP),
 /// never per tick; does nothing (and redraws nothing) when already empty.
 /mob/living/silicon/robot/proc/uneq_all()
-	module_active = null
+	set_module_active(null)
 	var/removed_any_module = FALSE
 	for(var/slot in 1 to 3)
 		if(clear_module_slot(slot))
@@ -103,7 +102,6 @@
 	if(!removed_any_module)
 		return
 	after_equip()
-	update_icon()
 
 	// Refresh inventory if needed
 	if(hud_used && shown_robot_modules)
@@ -190,9 +188,8 @@
 	for(var/slot in 1 to 3)
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 		if(slot_screen)
-			slot_screen.icon_state = slot == module ? "inv[slot] +a" : "inv[slot]"
-	module_active = I
-	update_icon()
+			slot_screen.set_icon_state(slot == module ? "inv[slot] +a" : "inv[slot]")
+	set_module_active(I)
 
 //deselect_module(module) - Deselects the module slot specified by "module"
 /mob/living/silicon/robot/proc/deselect_module(module) //Module is 1-3
@@ -203,9 +200,8 @@
 		return
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(module)
 	if(slot_screen)
-		slot_screen.icon_state = "inv[module]"
-	module_active = null
-	update_icon()
+		slot_screen.set_icon_state("inv[module]")
+	set_module_active(null)
 
 //toggle_module(module) - Toggles the selection of the module slot specified by "module".
 /mob/living/silicon/robot/proc/toggle_module(module) //Module is 1-3
@@ -244,7 +240,7 @@
 /mob/living/silicon/robot/proc/activate_module(obj/item/O)
 	if(!(locate_in_list(src.module.modules, O)) && !(locate_in_list(src.module.emag, O)))
 		return
-	if(om_timer_slot_pending(src, "weapon_lock"))
+	if(after_pending(src, "weapon_lock"))
 		to_chat(src, span_danger("Error: Modules locked."))
 		return
 	if(activated(O))
@@ -253,22 +249,21 @@
 	for(var/slot in 1 to 3)
 		if(get_module_slot(slot))
 			continue
-		if(!O.move_into(src, SLOT_ID_MODULE(slot), src))
+		if(!move_into(src, SLOT_ID_MODULE(slot), O, src))
 			return
 		O.hud_layerise()
 		var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 		O.screen_loc = slot_screen?.screen_loc
 		if(istype(O, /obj/item/borg/sight))
 			var/obj/item/borg/sight/S = O
-			sight_mode |= S.sight_mode
-		update_icon()
+			set_sight_mode(sight_mode | S.sight_mode)
 		after_equip(O)
 		on_equipment_changed()
 		return
 	to_chat(src, span_notice("You need to disable a module first!"))
 
 /// Equipment changed: power demand is recomputed and modules/components react
-/// through /datum/om/event/robot_equipment_changed (the belly component handles its ore
+/// through /datum/definition_event/robot_equipment_changed (the belly component handles its ore
 /// bag and pounce there).
 /mob/living/silicon/robot/proc/after_equip(obj/item/O)
 	if(istype(O, /obj/item/gps))
@@ -278,7 +273,7 @@
 			tracker.toggle_tracking()
 	recompute_power_demand()
 	update_items()
-	OM_EMIT(src, /datum/om/event/robot_equipment_changed, O)
+	PUBLISH_LEGACY(src, /datum/notice/robot_equipment_changed, O)
 	if(O)
 		for(var/datum/action/A as anything in O.actions)
 			A.Grant(src)
@@ -304,19 +299,20 @@
 /// A module left its slot, by whatever means: it is no longer active or seen.
 /mob/living/silicon/robot/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
-	if(inserted)
-		return
 	var/slot = 0
 	for(var/i in 1 to 3)
 		if(slot_id == SLOT_ID_MODULE(i))
 			slot = i
 	if(!slot)
 		return
+	module_slots_changed(inserted ? null : thing)
+	if(inserted)
+		return
 	if(module_active == thing)
-		module_active = null
+		set_module_active(null)
 	if(istype(thing, /obj/item/borg/sight))
 		var/obj/item/borg/sight/S = thing
-		sight_mode &= ~S.sight_mode
+		set_sight_mode(sight_mode & ~S.sight_mode)
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 	if(slot_screen)
-		slot_screen.icon_state = "inv[slot]"
+		slot_screen.set_icon_state("inv[slot]")

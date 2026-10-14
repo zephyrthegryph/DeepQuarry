@@ -5,6 +5,9 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 	var/static/list/diseases_minor = list()
 	var/static/list/diseases_moderate_major = list()
 
+CAPABILITIES(/datum/event/disease_outbreak)
+	owns_one(nameof(chosen_disease), /datum/affliction/contagion)
+
 /datum/event/disease_outbreak/setup()
 	if(isemptylist(diseases_minor) && isemptylist(diseases_moderate_major))
 		populate_diseases()
@@ -20,12 +23,12 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 			else
 				stack_trace("Disease Outbreak: Invalid Event Level [severity]. Expected: 1-2")
 				virus = /datum/affliction/contagion/cold
-		own_set(src, nameof(chosen_disease), new virus)
+		rel_set(src, nameof(chosen_disease), new virus)
 	else
 		if(severity == EVENT_LEVEL_MAJOR)
-			own_set(src, nameof(chosen_disease), create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
+			rel_set(src, nameof(chosen_disease), create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
 		else
-			own_set(src, nameof(chosen_disease), create_virus(severity * 2))
+			rel_set(src, nameof(chosen_disease), create_virus(severity * 2))
 
 	chosen_disease.set_virus_modifiers(chosen_disease.virus_modifiers | CARRIER)
 
@@ -34,7 +37,7 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 
 	var/list/candidates = list()
 	for(var/mob/living/carbon/human/G in REGISTRY_MEMBERS(REGISTRY_HUMANS))
-		if(G.mind && G.stat != DEAD && G.is_client_active(5) && !GLOB.antag_service.player_is_antag(G.mind))
+		if(G.mind && G.stat != DEAD && G.is_client_active(5) && !SSantag.player_is_antag(G.mind))
 			var/area/A = get_area(G)
 			if(!A)
 				continue
@@ -67,7 +70,7 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 	var/list/payload_symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
 	own_clear(A, nameof(A.symptoms), OWN_DELETE)
 	for(var/datum/viral_trait/payload_symptom as anything in payload_symptoms)
-		own_add(A, nameof(A.symptoms), payload_symptom)
+		rel_add(A, nameof(A.symptoms), payload_symptom)
 	A.AssignProperties(A.GenerateProperties())
 	var/list/symptoms_to_try = transmissable_symptoms.Copy()
 	while(length(symptoms_to_try))

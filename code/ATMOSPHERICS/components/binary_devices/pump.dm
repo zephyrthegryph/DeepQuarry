@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	material_template = /datum/material_template/pump
 	material_total = 4 * SHEET_MATERIAL_AMOUNT
 	icon = 'icons/atmos/pump.dmi'
@@ -37,24 +39,12 @@ Thus, the two variables affect pump operation are set in New():
 
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 
 	var/max_pressure_setting = 15000	//kPa
 
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-
-/obj/machinery/atmospherics/binary/pump/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	if(frequency)
-		set_frequency(frequency)
-
-/obj/machinery/atmospherics/binary/pump/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
@@ -96,7 +86,7 @@ Thus, the two variables affect pump operation are set in New():
 	. = native_write(src, NATIVE_PUMP_POWER_RATING, value)
 	rust_device_dirty()
 
-/obj/machinery/atmospherics/binary/pump/set_on(value)
+/obj/machinery/atmospherics/binary/pump/proc/set_on(value)
 	. = native_write(src, NATIVE_PUMP_ON, value)
 	rust_device_dirty()
 
@@ -104,15 +94,15 @@ Thus, the two variables affect pump operation are set in New():
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
 /// it whenever integrity changes, and the reconciler covers anchored.
 /obj/machinery/atmospherics/binary/pump/pump_input_operable()
-	return anchored && !has_stat(BROKEN)
+	return anchored && !broken_now()
 
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/pump/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -134,17 +124,8 @@ Thus, the two variables affect pump operation are set in New():
 
 	return 1
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/pump, "GasPump")
-
-/obj/machinery/atmospherics/binary/pump/ui_prepare(mob/user, datum/tgui/ui)
-	if(!operable())
-		return FALSE
-	return TRUE
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_machinery_atmospherics_binary_pump{}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/pump's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/binary/pump/proc/ui_data_obj_machinery_atmospherics_binary_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/atmospherics/binary/pump/ui_data(datum/act/eval/A)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 
@@ -178,78 +159,66 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
-	update_icon()
+	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 	return
 
-/obj/machinery/atmospherics/binary/pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pump_open_ui,
-		/datum/interaction/machine_alt/pump_max_output,
-	)
+CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(idle = 150))
+	pipe_device_window("GasPump")
+	pipe_device_switch()
+	pipe_device_max(PROC_REF(max_output_set))
+	pipe_device_unwrench()
+	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+	// "set" asks for the value; "min" and "max" set it at once
+	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_press_question)), "title" = "Pressure control", "default" = computed(PROC_REF(set_press_default)), "max_value" = nameof(max_pressure_setting), "timeout" = 0), step = "k231", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_act_set_press)))
+
+/obj/machinery/atmospherics/binary/pump/proc/power_switched(datum/act/op/A)
+	toggle_power()
+	return OP_OK
+
+/// The switch also sets the pump's Rust-owned on flag.
+/obj/machinery/atmospherics/binary/pump/toggle_power()
 	..()
-
-/// Old attack_hand: `if(..()) return; add_fingerprint(user); if(!allowed(user)) ...; tgui_interact(user)`.
-/datum/interaction/machine_hand/pump_open_ui
-	id = "pump_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl
-
-/obj/machinery/atmospherics/binary/pump/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
-
-/// Old click_alt: sets the pump to max output.
-/datum/interaction/machine_alt/pump_max_output
-	id = "pump_max_output"
-	name = "Set to max output"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/binary/pump/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/binary/pump/proc/interaction_max_output
-
-/obj/machinery/atmospherics/binary/pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	to_chat(user, span_notice("You set the [name] to max output"))
-	set_target_pressure(max_pressure_setting)
-	add_fingerprint(user)
-	return TRUE
-
-UI_ACT(/obj/machinery/atmospherics/binary/pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_power)
-	set_use_power(!use_power)
 	set_on(!!use_power)
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/binary/pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
-	var/press = params["press"]
+/// The alt-click's highest output.
+/obj/machinery/atmospherics/binary/pump/proc/max_output_set(datum/act/op/A)
+	set_target_pressure(max_pressure_setting)
+	return OP_OK
+
+/obj/machinery/atmospherics/binary/pump/proc/press_is_set(datum/act/op/A)
+	return A.args["press"] == "set"
+
+/obj/machinery/atmospherics/binary/pump/proc/set_press_question(datum/act/op/A)
+	return "Enter new output pressure (0-[max_pressure_setting]kPa)"
+
+/obj/machinery/atmospherics/binary/pump/proc/set_press_default(datum/act/op/A)
+	return get_target_pressure()
+
+/obj/machinery/atmospherics/binary/pump/proc/ui_act_set_press(datum/act/op/A, press)
 	switch(press)
 		if("min")
 			set_target_pressure(0)
 		if("max")
 			set_target_pressure(max_pressure_setting)
 		if("set")
-			var/new_pressure = act_ask(ui.user, action, params, ui, "k231", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure control", default = get_target_pressure(), max = max_pressure_setting)
-			if(isnull(new_pressure))
-				return
+			var/new_pressure = A.step_value("k231")
 			set_target_pressure(between(0, new_pressure, max_pressure_setting))
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
+	return OP_OK
 
-/obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
-	update_icon()
+/obj/machinery/atmospherics/binary/pump/draw(datum/look/look)
+	..()
+	look.state("[base_icon]-[running_state()]")
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appearance_running?on:off}")
-
-/obj/machinery/atmospherics/binary/pump/proc/appearance_running()
-	return powered() && use_power
+/// "on" while it works and runs, else "off".
+/obj/machinery/atmospherics/binary/pump/proc/running_state()
+	return (operable() && use_power) ? "on" : "off"
 
 /obj/machinery/atmospherics/binary/pump/update_underlays()
 	..()
@@ -295,41 +264,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 	use_power = USE_POWER_IDLE
 	init_on = TRUE
 
-/obj/machinery/atmospherics/binary/pump/wrench_act(mob/user, obj/item/W)
-	if (!has_stat(NOPOWER) && use_power)
-		to_chat(user, span_warning("You cannot unwrench this [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/binary/pump/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
-	atom_deconstruct()
-
-// click_alt is now /datum/interaction/machine_alt/pump_max_output (above),
-// from the interaction-framework conversion landed on master.
-/obj/machinery/atmospherics/binary/pump/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
-
-	set_use_power(!use_power)
-	set_on(!!use_power)
-	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	update_icon()
-	add_fingerprint(user)
-	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
-
-	return CLICK_ACTION_SUCCESS
-
 /obj/machinery/atmospherics/binary/pump/high_power
 	icon = 'icons/atmos/volume_pump.dmi'
 	icon_state = "map_off"
@@ -347,10 +281,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump, "{base_icon}-{appea
 	init_on = TRUE
 	icon_state = "map_on"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/pump/high_power, "{appearance_running?on:off}")
+/obj/machinery/atmospherics/binary/pump/high_power/draw(datum/look/look)
+	..()
+	look.state(running_state())
 
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev))
+	. += drawn_from(nameof(use_power))

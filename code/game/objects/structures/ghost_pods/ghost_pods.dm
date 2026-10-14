@@ -7,11 +7,29 @@
 	var/icon_state_opened = null	// Icon to switch to when 'used'.
 	var/used = FALSE
 	var/busy = FALSE // Don't spam ghosts by spamclicking.
+	/// Operator who started this query, distinct from its volunteer winner.
+	var/mob/opening_actor
 	var/needscharger //For drone pods that want their pod to turn into a charger.
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 	unacidable = TRUE
 	var/delay_to_self_open = 0 // How long to wait for first attempt.  Note that the timer by default starts when the pod is created.
 	var/delay_to_try_again = 0 // How long to wait if first attempt fails.  Set to 0 to never try again.
+
+TRACKED(/obj/structure/ghost_pod, used)
+TRACKED(/obj/structure/ghost_pod, busy)
+
+CAPABILITIES(/obj/structure/ghost_pod)
+	ref_one(nameof(opening_actor))
+	owns_one(nameof(Q), /datum/ghost_query)
+
+/// Why `user`'s ghost may not take a ghost role here, or null: the ghost-role ban, then the OOC notes (the old not_has_ooc_text() check, as a reason).
+/proc/ghost_role_refusal(mob/observer/dead/user, ban_reason = "You cannot inhabit this creature because you are banned from playing ghost roles.")
+	READS_FROM() // bans, config and preferences are not round state an op could watch
+	if(jobban_isbanned(user, JOB_GHOSTROLES))
+		return ban_reason
+	if(CONFIG_GET(flag/allow_metadata) && length(user.client?.prefs?.read_preference(/datum/preference/text/living/ooc_notes)) < 15)
+		return "Please set informative OOC notes related to RP/ERP preferences. Set them using the 'OOC Notes' button on the 'General' tab in character setup."
+	return null
 
 // Call this to get a ghost volunteer.
 /obj/structure/ghost_pod/proc/trigger(mob/user, alert, adminalert)
@@ -20,28 +38,29 @@
 	if(busy)
 		return FALSE
 
+	rel_set(src, nameof(opening_actor), user)
 	if(alert)
 		visible_message(alert)
 	if(adminalert)
-		log_and_message_admins(adminalert)
-	busy = TRUE
-	own_set(src, nameof(Q), new ghost_query_type())
-	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+		log_and_message_admins(adminalert, user)
+	set_busy(TRUE)
+	rel_set(src, nameof(Q), new ghost_query_type())
+	observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 	Q.query()
 
-/obj/structure/ghost_pod/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
-	EVENT_HANDLER
-	busy = FALSE
+/obj/structure/ghost_pod/proc/get_winner(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	set_busy(FALSE)
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
-		om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-		own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+		unobserve(Q, /datum/notice/ghost_query_complete, src)
+		rel_clear(src, nameof(Q)) //get rid of the query
 		create_occupant(D)
 		return
 
 	// No volunteer: an automatic pod's auto_trigger() repeat tries again after delay_to_try_again.
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.
 /obj/structure/ghost_pod/proc/create_occupant(mob/M)
@@ -49,37 +68,40 @@
 
 /// Marks the pod used and opened (and swaps it for a charger if it needs one).
 /obj/structure/ghost_pod/proc/open_pod()
-	used = TRUE
-	icon_state = icon_state_opened
+	set_used(TRUE)
+	set_icon_state(icon_state_opened)
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	if(needscharger)
 		replace_with(src, /obj/machinery/recharge_station/ghost_pod_recharger)
 
 // This type is triggered manually by a player discovering the pod and deciding to open it.
 /obj/structure/ghost_pod/manual
-	silicon_use = ROBOT_USE_HAND_ADJACENT // borgs can open pods
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
 
-/obj/structure/ghost_pod/manual/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/ghost_pod_open,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_manual_observer_use)))
-	..()
+TRACKED(/obj/structure/ghost_pod/manual, confirm_before_open)
 
-/// Old attack_hand: open the pod.
-/datum/interaction/entry_hand/ghost_pod_open
-	id = "ghost_pod_open"
-	name = "Open"
-	effect = /obj/structure/ghost_pod/manual/proc/interaction_open
+CAPABILITIES(/obj/structure/ghost_pod/manual)
+	silicon_hand(adjacent = TRUE) // borgs can open pods
+	op("open", hand(), label("Open"), needs(req_is(nameof(used), FALSE, because = /datum/msg/req_silent)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = computed(PROC_REF(touch_question)), "timeout" = 0), when = nameof(confirm_before_open)),
+		then(PROC_REF(interaction_open)))
+	// the old attack_ghost: a ghost takes over an activated pod that stays open to ghosts
+	op("inhabit", observer(), label("Inhabit"), needs(req(PROC_REF(may_inhabit))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Control Pod", "question" = "Are you certain you wish to activate this pod?", "timeout" = 0), keeps = TARGET_PRESENT),
+		then(PROC_REF(inhabit_confirmed)))
 
-/obj/structure/ghost_pod/manual/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!used)
-		if(confirm_before_open)
-			om_ask(user, /datum/om/prompt/confirm/ghost_pod_touch, PROC_REF(touch_confirmed))
-			return TRUE
-		touch_pod(user)
-	return TRUE
+/obj/structure/ghost_pod/manual/proc/touch_question(datum/act/A)
+	return "Are you sure you want to touch \the [src]?"
+
+/// Old attack_hand: open the pod (a pod with a surprise asks first).
+/obj/structure/ghost_pod/manual/proc/interaction_open(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(confirm_before_open)
+		var/datum/prompt/R = A.answer
+		if(!R?.value)
+			return OP_OK
+	touch_pod(user)
+	return OP_OK
 
 // This type is triggered on a timer, as opposed to needing another player to 'open' the pod.  Good for away missions.
 /obj/structure/ghost_pod/automatic
@@ -87,162 +109,130 @@
 	delay_to_try_again = 20 MINUTES
 	/// How long until auto_trigger() next runs: delay_to_self_open first, then delay_to_try_again.
 	var/next_auto_delay = 0
+	/// Set when the pod will not try again (it gave its one try, or has no retry delay).
+	var/auto_done = FALSE
+TRACKED(/obj/structure/ghost_pod/automatic, auto_done)
 
-DECLARE_REPEAT(/obj/structure/ghost_pod/automatic, "auto_delay", auto_trigger, null)
+CAPABILITIES(/obj/structure/ghost_pod/automatic)
+	every(PROC_REF(auto_delay), then(PROC_REF(auto_trigger)), when = cond_all(cond_not(nameof(used)), cond_not(nameof(auto_done))))
 
-/// The repeat's delay: delay_to_self_open until the first try, then delay_to_try_again.
-/obj/structure/ghost_pod/automatic/proc/auto_delay()
+/// The every() delay: delay_to_self_open until the first try, then delay_to_try_again.
+/obj/structure/ghost_pod/automatic/proc/auto_delay(datum/act/A)
 	return next_auto_delay || delay_to_self_open
 
 /// Opens itself on a timer; if that fails to get a volunteer, tries again later if allowed to.
-/obj/structure/ghost_pod/automatic/proc/auto_trigger()
+/obj/structure/ghost_pod/automatic/proc/auto_trigger(datum/act/timer/A)
 	if(used)
-		return REPEAT_STOP
+		return
 	trigger() // FALSE while a query is still out; the next run tries again
 	if(!delay_to_try_again)
-		return REPEAT_STOP
+		set_auto_done(TRUE)
+		return
 	next_auto_delay = delay_to_try_again
 
 // This type is triggered by a ghost clicking on it, as opposed to a living player.  A ghost query type isn't needed.
 /obj/structure/ghost_pod/ghost_activated
 
-// Subtypes with their own ghost use override ghost_pod_observer_use() (it never fell through).
-EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_observer_use), REQ_TARGET_STATE(/obj/structure/ghost_pod/ghost_activated/proc/can_inhabit)))
-
-/// Requirement: TRUE, or why this ghost can't take the pod. Subtypes with their own ghost use override it.
-/obj/structure/ghost_pod/ghost_activated/proc/can_inhabit(mob/observer/dead/user, atom/target, obj/item/held)
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot inhabit this creature because you are banned from playing ghost roles"
+/// Requirement: the ghost may take the pod. Subtypes with their own ghost use override inhabit_refusal().
+/obj/structure/ghost_pod/ghost_activated/proc/can_inhabit(datum/act/op/A)
+	var/why = ghost_role_refusal(A.actor)
+	if(why)
+		return why
 	if(used)
-		return "another spirit appears to have gotten to it before you, sorry"
-	return TRUE
+		return MSG(ghost_pod/taken)
+	return null
 
-/// Old attack_ghost: a ghost inhabits the pod.
-/obj/structure/ghost_pod/ghost_activated/proc/ghost_pod_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	//No OOC notes
-	if (not_has_ooc_text(user))
-		return TRUE
+/// Why this ghost can't take the pod, or null.
+/// The question a ghost answers before it takes the pod: its title and text (a subtype with its own words overrides them).
+/obj/structure/ghost_pod/ghost_activated/proc/inhabit_title(datum/act/A)
+	return "Control Pod"
 
-	om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed))
-	return TRUE
+/obj/structure/ghost_pod/ghost_activated/proc/inhabit_question(datum/act/A)
+	return "Are you certain you wish to activate this pod?"
 
-/// A ghost confirms taking a pod. The pod is busy while it's open (manual pods): any answer
-/// or a cancel frees it.
-/datum/om/prompt/confirm/ghost_pod_activate
-	title = "Control Pod"
-	message = "Are you certain you wish to activate this pod?"
-	answer_on_no = TRUE
-
-/datum/om/prompt/confirm/ghost_pod_activate/cancelled()
-	var/obj/structure/ghost_pod/pod = subject
-	if(pod)
-		pod.busy = FALSE
-
-/obj/structure/ghost_pod/proc/activation_confirmed(datum/om/prompt/confirm/ghost_pod_activate/ask)
-	var/mob/observer/dead/user = ask.answerer
-	busy = FALSE
-	if(!ask.yes)
-		return
+/// Old attack_ghost: the ghost said yes, and takes the pod (unless another spirit got there first).
+/obj/structure/ghost_pod/ghost_activated/proc/ghost_pod_observer_use(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
 	if(used)
-		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
-		return
-	create_occupant(user)
-
-/datum/om/prompt/confirm/ghost_pod_touch
-	title = "Confirm"
-	no_first = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/confirm/ghost_pod_touch/prepare()
-	message = "Are you sure you want to touch \the [subject]?"
-	return TRUE
-
-/datum/om/prompt/confirm/ghost_pod_touch/valid()
-	var/obj/structure/ghost_pod/pod = subject
-	return pod.used ? "already used" : null
-
-/obj/structure/ghost_pod/manual/proc/touch_confirmed(datum/om/prompt/confirm/ghost_pod_touch/ask)
-	touch_pod(ask.answerer)
+		to_chat(A.actor, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
+		return OP_OK
+	create_occupant(A.actor)
+	return OP_OK
 
 /obj/structure/ghost_pod/manual/proc/touch_pod(mob/living/user)
 	if(used)
 		return
 	trigger(user)
 	if(!used)
-		activated = TRUE
+		set_activated(TRUE)
 		ghostpod_startup(FALSE)
 
 /// Asks a ghost which maintenance critter to become; spawn_maint_critter() makes it once confirmed.
 /obj/structure/ghost_pod/proc/ask_maint_critter(mob/M, message, title)
-	om_ask(M, /datum/om/prompt/choice/maint_critter, PROC_REF(maint_critter_chosen), message = message, title = title, choices = GLOB.maint_mob_pred_options)
+	open_request(src, /datum/prompt/choice, PROC_REF(maint_critter_chosen), valid = PROC_REF(answerer_has_client), answerer = M, question = message, title = title, choices = assoc_to_keys(GLOB.maint_mob_pred_options), timeout = 0)
 
-/// A ghost picks a maintenance critter (message and title from the call). A cancel resets the pod.
-/datum/om/prompt/choice/maint_critter
-	requires = list(/datum/om/check/has_client)
+/// Re-checked: the ghost still has a client.
+/obj/structure/ghost_pod/proc/answerer_has_client(datum/request/R)
+	var/mob/M = R.answerer
+	return istype(M) && !!M.client
 
-/datum/om/prompt/choice/maint_critter/cancelled()
-	var/obj/structure/ghost_pod/pod = subject
-	pod?.maint_critter_cancelled(answerer)
-
-/// Confirms the pick; a no asks again with the first prompt's message and title.
-/datum/om/prompt/confirm/maint_critter
+/// Confirms the pick; a no asks again with the first question's text and title.
+/datum/prompt/yes_no/maint_critter
 	title = "Confirmation"
-	no_first = TRUE
-	answer_on_no = TRUE
 	var/critter
 	var/first_message
 	var/first_title
-
-/datum/om/prompt/confirm/maint_critter/prepare()
-	message = "Are you sure you want to play as [critter]?"
-	return TRUE
-
-/datum/om/prompt/confirm/maint_critter/cancelled()
-	var/obj/structure/ghost_pod/pod = subject
-	pod?.maint_critter_cancelled(answerer)
 
 /obj/structure/ghost_pod/proc/maint_critter_cancelled(mob/M)
 	to_chat(M, span_notice("No mob selected, cancelling."))
 	reset_ghostpod()
 
-/obj/structure/ghost_pod/proc/maint_critter_chosen(datum/om/prompt/choice/maint_critter/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/maint_critter, PROC_REF(maint_critter_confirmed), critter = ask.choice, first_message = ask.message, first_title = ask.title)
-
-/obj/structure/ghost_pod/proc/maint_critter_confirmed(datum/om/prompt/confirm/maint_critter/ask)
-	if(!ask.yes)
-		ask_maint_critter(ask.answerer, ask.first_message, ask.first_title)
+/// A ghost picks a maintenance critter (message and title from the call). A cancel resets the pod.
+/obj/structure/ghost_pod/proc/maint_critter_chosen(datum/act/request/A)
+	var/datum/prompt/choice/asked = A.request
+	var/mob/M = asked.answerer
+	if(!A.answer)
+		maint_critter_cancelled(M)
 		return
-	spawn_maint_critter(ask.answerer, ask.critter)
+	var/critter = A.answer.value
+	open_request(src, /datum/prompt/yes_no/maint_critter, PROC_REF(maint_critter_confirmed), answerer = M, question = "Are you sure you want to play as [critter]?", critter = critter, first_message = asked.question, first_title = asked.title, timeout = 0)
+
+/obj/structure/ghost_pod/proc/maint_critter_confirmed(datum/act/request/A)
+	var/datum/prompt/yes_no/maint_critter/R = A.request
+	if(!A.answer)
+		maint_critter_cancelled(R.answerer)
+		return
+	if(!A.answer.value)
+		ask_maint_critter(R.answerer, R.first_message, R.first_title)
+		return
+	spawn_maint_critter(R.answerer, R.critter)
 
 /obj/structure/ghost_pod/proc/spawn_maint_critter(mob/M, choice)
 	return
 
 /// Offers the new mob's player their saved vore bellies.
 /mob/living/proc/offer_load_bellies()
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(load_bellies_answered), title = "Load Bellies", message = "Do you want to load the vore bellies from your current slot?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(load_bellies_answered), answerer = src, title = "Load Bellies", question = "Do you want to load the vore bellies from your current slot?", timeout = 0)
 
-/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
+/mob/living/proc/load_bellies_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
-		rel_set(src, nameof(vore_selected), vore_organs[1])
+		set_vore_selected(src, vore_organs[1])
 
 /// Lets a freshly spawned character pick a new name.
 /mob/living/carbon/human/proc/offer_spawn_rename()
-	om_ask(src, /datum/om/prompt/text/spawn_rename, PROC_REF(spawn_renamed))
+	open_request(src, /datum/prompt/text, PROC_REF(spawn_renamed), answerer = src, title = "Name change", question = "Your mind feels foggy, and you recall your name might be [real_name]. Would you like to change your name?", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/datum/om/prompt/text/spawn_rename
-	title = "Name change"
-	max_length = MAX_NAME_LEN
-
-/datum/om/prompt/text/spawn_rename/prepare()
-	var/mob/living/carbon/human/H = answerer
-	message = "Your mind feels foggy, and you recall your name might be [H.real_name]. Would you like to change your name?"
-	return TRUE
-
-/mob/living/carbon/human/proc/spawn_renamed(datum/om/prompt/text/spawn_rename/ask)
-	var/newname = ask.text
+/mob/living/carbon/human/proc/spawn_renamed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/newname = A.answer.value
 	if(newname)
-		real_name = newname
+		set_real_name(newname)
 
 
 REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
@@ -254,42 +244,51 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 	var/remains_active = FALSE
 	var/activated = FALSE
 
-/// Old attack_ghost: a ghost takes over an activated pod that stays open to ghosts.
-/obj/structure/ghost_pod/manual/proc/ghost_pod_manual_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		to_chat(user, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
-		return TRUE
+TRACKED(/obj/structure/ghost_pod/manual, remains_active)
+TRACKED(/obj/structure/ghost_pod/manual, activated)
 
-	//No OOC notes
-	if (not_has_ooc_text(user))
-		return TRUE
-
+/// A ghost may take over the pod: not banned, OOC notes set, the pod stays open to ghosts, is activated and unused.
+/obj/structure/ghost_pod/manual/proc/may_inhabit(datum/act/op/A)
+	var/why = ghost_role_refusal(A.actor)
+	if(why)
+		return why
 	if(!remains_active || busy)
-		return TRUE
-
+		return MSG(ghost_pod/closed)
 	if(!activated)
-		to_chat(user, span_warning("\The [src] has not yet been activated.  Sorry."))
-		return TRUE
-
+		return MSG(ghost_pod/not_activated)
 	if(used)
-		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
-		return TRUE
+		return MSG(ghost_pod/taken)
+	return null
 
-	busy = TRUE
-	if(!om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed)))
-		busy = FALSE
-	return TRUE
+/// The ghost said yes: it takes the pod (unless another spirit got there first).
+/obj/structure/ghost_pod/manual/proc/inhabit_confirmed(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
+	if(used)
+		to_chat(A.actor, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
+		return OP_OK
+	create_occupant(A.actor)
+	return OP_OK
+
+MSG_DEF_SELF(ghost_pod/closed, "It is not open to spirits right now.")
+MSG_DEF_SELF(ghost_pod/not_activated, "It has not yet been activated.  Sorry.")
+MSG_DEF_SELF(ghost_pod/taken, "Another spirit appears to have gotten to it before you.  Sorry.")
 
 /obj/structure/ghost_pod/proc/ghostpod_startup(notify = FALSE)
 	registry_join(REGISTRY_GHOST_PODS, src)
 	if(notify)
 		trigger()
 
-/obj/structure/ghost_pod/ghost_activated/Initialize(mapload)
-	. = ..()
-	if(!mapload)
-		return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated)
+	after_init(0, then(PROC_REF(start_up_spawned)))
+	// the old attack_ghost: a ghost takes the pod after a yes
+	op("inhabit", observer(), label("Inhabit"), needs(req(PROC_REF(can_inhabit))),
+		asks(/datum/prompt/yes_no, fields = list("title" = computed(PROC_REF(inhabit_title)), "question" = computed(PROC_REF(inhabit_question)), "timeout" = 0), keeps = TARGET_PRESENT),
+		then(PROC_REF(ghost_pod_observer_use)))
 
-/obj/structure/ghost_pod/ghost_activated/LateInitialize()
+/// A pod made during the round starts up once it exists (a mapped one waits).
+/obj/structure/ghost_pod/ghost_activated/proc/start_up_spawned(datum/act/timer/A)
+	if(A.mapload)
+		return
 	ghostpod_startup(spawn_active)
-

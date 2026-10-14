@@ -24,23 +24,23 @@
 
 /// Deciseconds of windup before the swing lands. Override `melee_windup` per weapon.
 /obj/item/proc/get_melee_windup()
-	if(melee_windup)
-		return melee_windup
+	if(combat_of(src).windup)
+		return combat_of(src).windup
 	// Indexed by w_class: TINY, SMALL, NORMAL, LARGE, HUGE.
 	var/static/list/windup_by_size = list(2, 3, 4, 6, 9)
 	return windup_by_size[clamp(w_class, ITEMSIZE_TINY, ITEMSIZE_HUGE)]
 
 /// Deciseconds of recovery (post-swing click cooldown). Override `melee_recovery` per weapon.
 /obj/item/proc/get_melee_recovery()
-	if(melee_recovery)
-		return melee_recovery
+	if(combat_of(src).recovery)
+		return combat_of(src).recovery
 	var/static/list/recovery_by_size = list(3, 4, 5, 7, 10)
 	return recovery_by_size[clamp(w_class, ITEMSIZE_TINY, ITEMSIZE_HUGE)]
 
 /// TRUE if this weapon's swing sweeps a 3-tile frontal arc instead of a single tile.
 /obj/item/proc/melee_is_sweep()
-	if(!isnull(melee_sweep))
-		return melee_sweep
+	if(!isnull(combat_of(src).sweep))
+		return combat_of(src).sweep
 	return w_class >= ITEMSIZE_LARGE
 
 // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@
 		return FALSE
 	if(QDELETED(target) || QDELETED(weapon))
 		return FALSE
-	if(!weapon.force || (weapon.flags & NOBLUDGEON))
+	if(!combat_of(weapon).force || (weapon.flags & NOBLUDGEON))
 		return FALSE
 	if(!Adjacent(target))
 		return FALSE
@@ -110,7 +110,7 @@
 
 	// Telegraph the targeted tiles for the duration of the windup (auto-clears).
 	for(var/turf/T as anything in swing_tiles)
-		new /obj/effect/temp_visual/swing_telegraph(T, windup)
+		make(/obj/effect/temp_visual/swing_telegraph, at = T, duration = windup)
 
 	// Pull-back animation.
 	do_windup_animation(target, windup)
@@ -123,24 +123,25 @@
 	melee_swing_resolving = FALSE
 	var/serial = ++melee_swing_serial
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
-	om_after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), serial)
+	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	om_task_start(/datum/om/task/timed/living_begin_melee_swing_living, src, src, duration = windup, target_arg = target, weapon = weapon, swing_tiles = swing_tiles, progress = FALSE, interaction_key = "melee_swing", hidden = TRUE)
+	// The op (code/library/mob/living_abilities.dm) shows no bar or cog and holds nothing.
+	var/datum/op_result/started = perform_op(src, src, "melee_swing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target, "weapon" = weapon, "tiles" = swing_tiles, "windup" = windup))
+	if(started?.outcome == ACT_REFUSED)
+		is_swinging = FALSE
+		return FALSE
 	return TRUE
 
-/datum/om/task/timed/living_begin_melee_swing_living
-	complete_proc = /mob/living/proc/begin_melee_swing_living_done
-	cancel_proc = /mob/living/proc/begin_melee_swing_living_failed
-	var/mob/living/target_arg
-	var/obj/item/weapon
-	var/list/turf/swing_tiles
+/// The windup is the weapon's, worked out when the swing began.
+/mob/living/proc/melee_swing_windup(datum/act/op/A)
+	return A.arg("windup")
 
-/mob/living/proc/begin_melee_swing_living_done(datum/om/task/timed/living_begin_melee_swing_living/task)
-	var/mob/living/target = task.target_arg
-	var/obj/item/weapon = task.weapon
-	var/list/turf/swing_tiles = task.swing_tiles
+/mob/living/proc/begin_melee_swing_living_done(datum/act/op/A)
+	var/mob/living/target = A.arg("target")
+	var/obj/item/weapon = A.arg("weapon")
+	var/list/turf/swing_tiles = A.arg("tiles")
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
@@ -159,7 +160,7 @@
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
 	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 1.6)
-	var/zone = zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
+	var/zone = hud_used?.zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
 	// Resolve THROUGH the weapon's attack() so per-weapon overrides (stunbaton
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
 	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes
@@ -176,6 +177,5 @@
 
 	return TRUE
 
-/mob/living/proc/begin_melee_swing_living_failed(datum/om/task/timed/living_begin_melee_swing_living/task)
+/mob/living/proc/begin_melee_swing_living_failed(datum/act/op/A)
 	is_swinging = FALSE
-	return FALSE

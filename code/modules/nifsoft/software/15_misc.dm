@@ -17,7 +17,7 @@
 			rel_set(src, nameof(apc), locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 		act_message(H, null, MSG_SELF(span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()].")), \
@@ -30,8 +30,8 @@
 /datum/nifsoft/apc_recharge/life()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		if(apc() && (get_dist(H,apc()) <= 1) && H.nutrition < 440) // 440 vs 450, life() happens before we get here so it'll never be EXACTLY 450
-			H.set_nutrition(min(H.nutrition+10, 450))
+		if(apc() && (get_dist(H,apc()) <= 1) && nutrition_of(H) < 440) // 440 vs 450, life() happens before we get here so it'll never be EXACTLY 450
+			H.set_nutrition(min(nutrition_of(H)+10, 450))
 			apc().drain_power(7000/450*10) //This is from the large rechargers. No idea what the math is.
 			return TRUE
 		else
@@ -67,7 +67,7 @@
 	if((. = ..()))
 		if(used >= 1500)
 			nif().notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 /datum/nifsoft/heatsinks/stat_text()
@@ -125,21 +125,39 @@
 	cost = 300
 	wear = 0.5
 
+/datum/nifsoft/sizechange
+	var/tmp/datum/prompt/number/size_prompt
+
+CAPABILITIES(/datum/nifsoft/sizechange)
+	ref_one(nameof(size_prompt), /datum/prompt/number)
+
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
-		var/new_size = rerun_ask(usr, "k128", PROC_REF(activate), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1)
-		if(isnull(new_size))
-			return
+		var/obj/item/nif/implant = nif()
+		var/datum/prompt/number/ask
+		if(implant?.human && !QDELETED(implant.human))
+			ask = open_request(src, /datum/prompt/number, PROC_REF(size_chosen), answerer = implant.human, timeout = 0, step = 1, question = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max_value = 600, min_value = 1, subject = implant)
+		rel_set(src, nameof(size_prompt), ask)
+		// This is a pulse: the answer can outlive its original implanted owner.
+		after(src, 0, PROC_REF(deactivate))
 
-		if (!nif().human.size_range_check(new_size))
-			if(new_size)
-				to_chat(nif().human,span_notice("The safety features of the NIF Program prevent you from choosing this size."))
-			return
-		else
-			if(nif().human.resize(new_size/100, uncapped=nif().human.has_large_resize_bounds(), ignore_prefs = TRUE))
-				to_chat(nif().human,span_notice("You set the size to [new_size]%"))
-				nif().human.visible_message(span_warning("Swirling grey mist envelops [nif().human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
-		om_after(src, 0, PROC_REF(deactivate))
+/datum/nifsoft/sizechange/proc/size_chosen(datum/act/request/A)
+	var/datum/prompt/number/ask = A.request
+	if(ask != size_prompt)
+		return
+	rel_clear(src, nameof(size_prompt))
+	var/obj/item/nif/implant = nif()
+	var/mob/living/carbon/human/human = implant?.human
+	if(!human || ask.subject != implant || ask.answerer != human || human.nif != implant || implant.stat != NIF_WORKING || !A.answer)
+		return
+	var/new_size = ask.value
+	if(!human.size_range_check(new_size))
+		if(new_size)
+			to_chat(human, span_notice("The safety features of the NIF Program prevent you from choosing this size."))
+		return
+	if(human.resize(new_size / 100, uncapped = human.has_large_resize_bounds(), ignore_prefs = TRUE))
+		to_chat(human, span_notice("You set the size to [new_size]%"))
+		act_message(human, null, MSG_SELF(span_notice("Swirling streams of nanites wrap around you as you change size!")), MSG_OTHERS(span_warning("Swirling grey mist envelops [MSG_LITERAL("[human]")] as they change size!")))
 
 /datum/nifsoft/sizechange/deactivate(force = FALSE)
 	if((. = ..()))

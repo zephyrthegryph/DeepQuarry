@@ -1,10 +1,8 @@
 // Time dilation and sendmaps tracking (was SStime_track): sampled every 10 s into the perf log.
-GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
-
-/datum/world_service/time_track
+SYSTEM_DEF(time_track)
 	name = "Time Tracking"
-	lane = /datum/om/behaviour/world/time_track
-	needs = list(/datum/controller/subsystem/dbcore)
+	needs = list(/datum/system/dbcore)
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	var/time_dilation_current = 0
 
@@ -45,7 +43,12 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		"SendMaps: Per client: Map data: Look for movable changes: Movables examined" = "movables_examined",
 	)
 
-/datum/world_service/time_track/initialize()
+/// Samples every 10 s.
+/datum/system/time_track/reactions()
+	. = ..()
+	. += every(10 SECONDS, PROC_REF(sample_time), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/time_track/initialize()
 	initialized = TRUE
 	//GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[SSmapping.current_map.map_name].csv"
 	GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[using_map.name].csv"
@@ -104,9 +107,9 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		) + sendmaps_headers
 	)
 
-/datum/world_service/time_track/service_step(resumed)
+/datum/system/time_track/proc/sample_time(dt)
 	if(disabled)
-		return TRUE
+		return STEP_DONE
 
 	var/current_realtime = REALTIMEOFDAY
 	var/current_byondtime = world.time
@@ -117,9 +120,9 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 
 		time_dilation_current = tick_drift / (current_tickcount - last_tick_tickcount) * 100
 
-		time_dilation_avg_fast = MC_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
-		time_dilation_avg = MC_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
-		time_dilation_avg_slow = MC_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
+		time_dilation_avg_fast = KERNEL_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
+		time_dilation_avg = KERNEL_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
+		time_dilation_avg_slow = KERNEL_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
 		//GLOB.glide_size_multiplier = (current_byondtime - last_tick_byond_time) / (current_realtime - last_tick_realtime)
 	else
 		first_run = FALSE
@@ -131,11 +134,11 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 	var/list/send_maps_data = null
 	try
 		send_maps_data = json_decode(sendmaps_json)
-	catch // ALLOW(silent_catch): malformed profiler JSON is dumped to bad_sendmaps.json and tracking stops
+	catch
 		text2file(sendmaps_json,"bad_sendmaps.json")
 		disabled = TRUE
 		log_world("Time tracking stopped: malformed sendmaps profile JSON (bad_sendmaps.json).")
-		return TRUE
+		return STEP_DONE
 	var/send_maps_sort = send_maps_data.Copy() //Doing it like this guarantees us a properly sorted list
 
 	for(var/list/packet in send_maps_data)
@@ -160,7 +163,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			time_dilation_avg,
 			time_dilation_avg_slow,
 			MAPTICK_LAST_INTERNAL_TICK_USAGE,
-			0, // SStimer timers: gone (om_after timers live on their owners)
+			0, // SStimer timers: gone (after() timers live on their owners)
 			SSair.cost_turfs,
 			SSair.cost_gas_events,
 			SSair.cost_highpressure,
@@ -172,42 +175,39 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			SSair.gas_reactions_last,
 			SSair.gas_visuals_last,
 			SSair.gas_pressure_last,
-			length(SSair.hotspots),
+			REGISTRY_COUNT(REGISTRY_HOTSPOTS),
 			length(SSair.networks),
 			length(SSair.high_pressure_delta),
 			SSair.fire_cost,
 			SSair.ticks,
 			SSair.tick_overrun,
-			GLOB.machine_service.cost_machinery,
-			GLOB.machine_service.cost_powernets,
+			machines_cost_machinery(),
+			machines_cost_powernets(),
 			0, // power objects: gone (powersinks drain on their own periodic step)
-			om_pipeline_parked_count(/datum/om/pipeline/machine),
-			length(GLOB.machine_service.power_grids),
-			GLOB.machine_service.cost,
-			GLOB.machine_service.steps,
+			0, // parked machines: none (a machine's work is a stat-gated every())
+			length(machines_power_grids()),
+			SSmachines.fire_cost,
+			SSmachines.times_fired,
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
-			GLOB.machine_service.gas_dirty_last,
-			GLOB.machine_service.gas_woken_last,
-			SSbehaviours.cost,
+			machines_gas_dirty_last(),
+			machines_gas_woken_last(),
+			SSbehaviours.fire_cost,
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),
-			om_ai_brain_cost(),
+			round(GLOB.ai_brain_cost_ms, 0.01),
 			0, // SStimer cost: gone
-			SSdbcore.all_queries_num,
-			SSdbcore.queries_active_num,
-			SSdbcore.queries_standby_num
+			0, // all_queries: the query pump is gone (I/O lane jobs are counted by SSdb)
+			0, // queries_active
+			0 // queries_standby
 		) + send_maps_values
 	)
 
-	SSdbcore.reset_tracking()
-	return TRUE
+	return STEP_DONE
 
-/// time_track (was SStime_track).
-/datum/om/behaviour/world/time_track
-	name = "world: time_track"
-	every = 10 SECONDS
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+/// Time dilation for the server metrics (code/modules/metrics/): how far game time falls behind real time.
+/datum/metrics_source/time_dilation
 
-/datum/om/behaviour/world/time_track/service()
-	return GLOB.time_track_service
+/datum/metrics_source/time_dilation/collect(datum/system/server_metrics/M, dt)
+	M.gauge("server/time_dilation/current", SStime_track.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
+	M.gauge("server/time_dilation/avg", SStime_track.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")

@@ -43,8 +43,8 @@
 	var/source_name
 	/// When the support lapses (a cooldown; 0 = until removed).
 	COOLDOWN_DECLARE(expires_at)
-	/// Optional validity check (performer adjacent, machine powered...): an om_callable() spec.
-	var/list/still_valid
+	/// Optional validity check (performer adjacent, machine powered...): a PROC_REF on the source, called as source.still_valid() (holder_call()).
+	var/still_valid
 
 
 /datum/body_support/proc/is_valid()
@@ -52,7 +52,7 @@
 		return FALSE
 	if(!source)
 		return FALSE
-	if(still_valid && !om_run(still_valid))
+	if(still_valid && !holder_call(source, still_valid))
 		return FALSE
 	return TRUE
 
@@ -72,18 +72,26 @@
 	/// The physiology, or null (simple and machine plans).
 	var/datum/physiology/physiology
 
+CAPABILITIES(/datum/body)
+	owns_one(nameof(physiology), /datum/physiology)
+	owns_many(nameof(afflictions))
+	owns_many(nameof(supports))
+	// Life's wake sources on its mob's air and body temperature (code/modules/mob/living/life/air_watch.dm).
+	owns_one(nameof(air_watch), /datum/native_watch/world)
+	owns_one(nameof(body_heat_watch), /datum/native_watch/heat)
+
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
 /// `still_valid` fails). Re-adding from the same source refreshes it.
-/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, list/still_valid)
+/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, still_valid)
 	return set_support(source, factor_id, floor, null, duration, still_valid)
 
 /// A multiplier below 1 on `factor_id` from `source`: a restriction (a
 /// chokehold on the airway, a crushing grip on the chest).
-/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, list/still_valid)
+/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, still_valid)
 	return set_support(source, factor_id, null, multiplier, duration, still_valid)
 
-/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, list/still_valid)
+/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, still_valid)
 	if(!physiology || !source)
 		return null
 	var/datum/body_support/S
@@ -97,7 +105,7 @@
 		S.factor_id = factor_id
 		rel_set(S, nameof(S.source), source)
 		S.source_name = "[source]"
-		own_add(src, nameof(supports), S)
+		rel_add(src, nameof(supports), S)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
 	S.floor = floor
 	S.multiplier = multiplier
@@ -120,7 +128,7 @@
 
 /datum/body/proc/drop_support(datum/body_support/S, reason)
 	log_runtime("PHYSIOLOGY: [key_name(owner)] lost the [S.source_name] support on factor [S.factor_id] ([reason])")
-	own_remove(src, nameof(supports), S)
+	rel_remove(src, nameof(supports), S)
 	invalidate(BODY_DIRTY_PHYSIOLOGY)
 
 /// Drop lapsed supports.
@@ -284,6 +292,14 @@
 	var/oxygen_debt = 0
 	/// Breath quality of the last breath, 0..1 (Breathing system).
 	var/breath_quality = 1
+	/// When the last scheduled breath was taken, on the owner's own (bio) clock: the breath cadence is time,
+	/// so a breathing step woken from sleep breathes when one is due.
+	EXPIRY_TMP_DECLARE(last_breath_at)
+	/// The air on the owner's turf changed since its last breath (a visible gas arrived or left): breathing must not idle.
+	var/tmp/air_stale = FALSE
+	/// The last breath carried a gas that acts on every breath (a poison, N2O, methane, the exhaled gas building up):
+	/// breathing stays awake and keeps breathing on its cadence while it does. Set by the breath exchange.
+	var/tmp/breath_hazard = FALSE
 	/// Circulating blood volume, fraction of normal (Blood system).
 	var/blood_fraction = 1
 	/// Debt band last logged.
@@ -552,41 +568,34 @@
 
 /// Oxygen debt and its consequences, before the Body's status pass. Cheap while
 /// the body is settled; bodies without a physiology never get it.
-/datum/om/stage/life/physiology
-	order = LIFE_PHASE_BODY + 85
-	name = "physiology"
-	wake_on = CHANGE_MOB_HEALTH
-	// P2-S6: oxygen debt stops on a paused (stasis) frame; the pipeline skips the stage.
-	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
-
-/datum/om/stage/life/physiology/applies(mob/living/self)
-	var/datum/body/proto = self.body_type
+/mob/living/proc/life_physiology_applies()
+	var/datum/body/proto = src.body_type
 	return !!initial(proto.physiology_type)
 
-/datum/om/stage/life/physiology/perform(mob/living/self, datum/om/frame/life/ctx)
-	self.body?.physiology_tick(ctx.dt)
+/mob/living/proc/life_physiology(datum/seq_frame/life/F)
+	src.body?.physiology_tick(F.dt)
 
 /// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a
-/// validity check. Woken by CHANGE_MOB_HEALTH through the body's invalidate() (factors, organs,
+/// validity check. Woken by MOB_KEY_HEALTH through the body's invalidate() (factors, organs,
 /// breath quality, blood volume, supports); a timed support's expiry is the rewake.
-/datum/om/stage/life/physiology/idle(mob/living/self)
-	var/datum/body/B = self.body
+/mob/living/proc/life_physiology_due()
+	var/datum/body/B = src.body
 	if(!B?.physiology)
-		return TRUE
-	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
 		return FALSE
+	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
+		return TRUE
 	var/datum/physiology/P = B.physiology
 	if(P.shortfall || P.oxygen_debt)
-		return FALSE
+		return TRUE
 	for(var/datum/body_support/S as anything in B.supports)
 		if(S.still_valid)
-			return FALSE
-	return TRUE
+			return TRUE
+	return FALSE
 
 /// The soonest timed support's expiry, so the physiology prunes it on time.
-/datum/om/stage/life/physiology/rewake_delay(mob/living/self)
+/mob/living/proc/life_physiology_rewake()
 	. = 0
-	for(var/datum/body_support/S as anything in self.body?.supports)
+	for(var/datum/body_support/S as anything in src.body?.supports)
 		if(!COOLDOWN_STARTED(S, expires_at))
 			continue
 		var/left = max(COOLDOWN_TIMELEFT(S, expires_at), 1)

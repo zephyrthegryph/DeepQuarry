@@ -1,0 +1,23 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Disconnect the monitor
+human|/obj/item/tool/screwdriver click: Click: Disconnect the monitor
+human|/obj/item/tool/crowbar click: nothing
+@obj.machinery human|/obj/item/tool/wrench
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery.power human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+keys: azimuth, azimuth_rate, cable_place, disassemble, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, refresh, robot_remote_blocked, silicon_hand, tracking, ui_open

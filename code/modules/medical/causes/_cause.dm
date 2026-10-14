@@ -44,9 +44,12 @@
 	// dm-health: type list</datum/affliction_trigger_outcome>?
 	var/list/produces
 
+CAPABILITIES(/datum/affliction_trigger)
+	owns_many(nameof(produces))
+
 
 /datum/affliction_trigger/proc/setup()
-	own_clear(src, nameof(produces), OWN_DELETE)
+	rel_clear(src, nameof(produces))
 
 
 /datum/affliction_trigger/New()
@@ -66,7 +69,7 @@
 // dm-health: param threshold num?
 // dm-health: param tier text?
 /datum/affliction_trigger/proc/declare(condition_type, chance = 100, requires_present = null, requires_absent = null, threshold = null, tier = null)
-	own_add(src, nameof(produces), new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
+	rel_add(src, nameof(produces), new /datum/affliction_trigger_outcome(condition_type, chance, requires_present, requires_absent, threshold, tier))
 
 
 // --- Outcome record -----------------------------------------------------
@@ -263,7 +266,7 @@ GLOBAL_PROTECT(affliction_triggers_by_kind)
 		// have no authored produces; skip those naturally.
 		var/datum/affliction_trigger/c = new T()
 		if(!length(c.produces))
-			qdel(c)
+			spent(c)
 			continue
 		GLOB.affliction_triggers_all += c
 		// Index by the cause's PARENT type (the kind), not its own

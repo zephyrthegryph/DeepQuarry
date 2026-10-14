@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Datum-hosted tgui modules (monitors, consoles) declare their windows and buttons with the final forms"

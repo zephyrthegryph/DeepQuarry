@@ -11,23 +11,16 @@
 	opacity = 0
 	density = FALSE
 	anchored = FALSE
-	force = 1.0
-	throwforce = 1.0
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/spacecash/Initialize(mapload)
-	. = ..()
+/obj/item/spacecash/proc/register_sellable(datum/act/timer/A)
 	make_sellable(/datum/sellable/spacecash)
-	note_seed = rand(0, SPACECASH_NOTE_LAYOUTS - 1)
 
 /obj/item/spacecash
 	/// Picked once at init: where this pile starts in the shared note layouts, so a redraw keeps
@@ -48,14 +41,14 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 /// The banknote image for the `index`th note of this pile.
 /obj/item/spacecash/proc/banknote_image(denomination, index)
 	var/list/layouts = GLOB.spacecash_note_layouts
-	var/image/banknote = image('icons/obj/economy.dmi', "spacecash[denomination]")
-	banknote.transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1]
-	return banknote
+	return look_overlay_image('icons/obj/economy.dmi', "spacecash[denomination]", transform = layouts[((note_seed + index) % SPACECASH_NOTE_LAYOUTS) + 1])
 
 /// Old attackby.
-/obj/item/spacecash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/spacecash/proc/cash_combine(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/spacecash))
-		if(istype(W, /obj/item/spacecash/ewallet)) return INTERACTION_HANDLED_PASS
+		if(istype(W, /obj/item/spacecash/ewallet)) return OP_PASS
 
 		var/obj/item/spacecash/SC = W
 
@@ -68,65 +61,71 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the [initial_name]s to a bundle of [SC.worth] [initial_name]s."))
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spacecash/appearance_overlays()
-	. = list()
-	name = "[worth] [initial_name]\s"
+TRACKED(/obj/item/spacecash, worth)
+TRACKED(/obj/item/spacecash, note_seed)
+
+/obj/item/spacecash/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// The pile's name, state or scattered notes (a charge card draws none of it).
+/obj/item/spacecash/proc/look_parts(datum/look/look)
+	look.identity(name = "[worth] [initial_name]\s")
 	if(worth in list(1000,500,200,100,50,20,10,5,1))
-		icon_state = "spacecash[worth]"
-		desc = "It's worth [worth] [initial_name]s."
-		return .
-	var/sum = src.worth
+		look.state("spacecash[worth]")
+		look.identity(desc = "It's worth [worth] [initial_name]s.")
+		return
+	var/sum = worth
 	var/num = 0
 	for(var/i in list(1000,500,200,100,50,20,10,5,1))
 		while(sum >= i && num < 50)
 			sum -= i
 			num++
-			. += banknote_image(i, num)
+			look.overlay(banknote_image(i, num))
 	if(num == 0) // Less than one thaler, let's just make it look like 1 for ease
-		. += banknote_image(1, 0)
-	src.desc = "They are worth [worth] [initial_name]s."
+		look.overlay(banknote_image(1, 0))
+	look.identity(desc = "They are worth [worth] [initial_name]s.")
 
-/obj/item/spacecash/proc/adjust_worth(adjust_worth = 0, update = 1)
-	worth += adjust_worth
+/obj/item/spacecash/proc/adjust_worth(adjust_worth = 0)
+	set_worth(worth + adjust_worth)
 	if(worth > 0)
-		if(update)
-			update_icon()
 		return worth
 	else
-		qdel(src)
+		spent(src)
 		return 0
 
-/obj/item/spacecash/proc/set_worth(new_worth = 0, update = 1)
-	worth = max(0, new_worth)
-	if(update)
-		update_icon()
-	return worth
+CAPABILITIES(/obj/item/spacecash)
+	configure(item_thrown(force = 1.0))
+	configure(item_combat(force = 1.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	after_init(0, then(PROC_REF(register_sellable)))
+	rolls(nameof(note_seed), range_of(0, 49))
+	op("cash_take", in_hand(), label("Use"),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(cash_take_question)), "title" = "Take Money", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k92"),
+		then(PROC_REF(cash_take)))
+	op("cash_combine", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(cash_combine)))
 
-DECLARE_INTERACTIONS(/obj/item/spacecash, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/obj/item/spacecash/proc/cash_take_question(datum/act/op/A)
+	return "How many [initial_name]s do you want to take? (0 to [src.worth])"
 
 /// Old attack_self.
-/obj/item/spacecash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k92", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "How many [initial_name]s do you want to take? (0 to [src.worth])", title = "Take Money", default = 20, max = src.worth)
-	if(isnull(amount))
-		return TRUE
+/obj/item/spacecash/proc/cash_take(datum/act/op/A)
+	var/mob/user = A.actor
+	var/amount = A.step_value("k92")
 	if(!src || QDELETED(src))
-		return TRUE
+		return OP_OK
 	amount = round(CLAMP(amount, 0, src.worth))
 
 	if(!amount)
-		return TRUE
+		return OP_OK
 
 	adjust_worth(-amount)
 	var/obj/item/spacecash/SC = new (user.loc)
 	SC.set_worth(amount)
 	user.put_in_hands(SC)
-	return TRUE
+	return OP_OK
 
 /obj/item/spacecash/c1
 	name = "1 Thaler"
@@ -195,14 +194,16 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 	initial_name = "charge card"
 	icon_state = "efundcard"
 	desc = "A card that holds an amount of money."
-	drop_sound = SFX_ITEMS_DROP_CARD
-	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/item/spacecash/ewallet)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD, pickup = SFX_ITEMS_PICKUP_CARD))
+	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
-APPEARANCE_NONE(/obj/item/spacecash/ewallet)
+/// A charge card keeps its mapped look and name.
+/obj/item/spacecash/ewallet/look_parts(datum/look/look)
+	return
 
 /obj/item/spacecash/ewallet/examine(mob/user)
 	. = ..()

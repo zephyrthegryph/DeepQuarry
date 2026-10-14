@@ -167,7 +167,7 @@
 			emote_sound = pick(bigsound)
 	else if(ispAI(user))
 		var/mob/living/silicon/pai/me = user
-		if(istype(GLOB.pai_service.chassis_data(me.chassis_name), /datum/pai_sprite/large))
+		if(istype(SSpai.chassis_data(me.chassis_name), /datum/pai_sprite/large))
 			emote_sound = pick(bigsound)
 		else if(user.size_multiplier >= 1.5)
 			emote_sound = pick(bigsound)
@@ -194,7 +194,7 @@
 			emote_sound = pick(bigsound)
 	else if(ispAI(user))
 		var/mob/living/silicon/pai/me = user
-		if(istype(GLOB.pai_service.chassis_data(me.chassis_name), /datum/pai_sprite/large))
+		if(istype(SSpai.chassis_data(me.chassis_name), /datum/pai_sprite/large))
 			emote_sound = pick(bigsound)
 		else if(user.size_multiplier >= 1.5)
 			emote_sound = pick(bigsound)

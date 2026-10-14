@@ -32,49 +32,45 @@
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
 	resistance_flags = FIRE_PROOF | ACID_PROOF | LAVA_PROOF
 
-/obj/effect/energy_field/Initialize(mapload, new_gen)
-	. = ..()
-	update_integrity(0) // Fields start down; the generator charges them.
-	rel_set(src, nameof(my_gen), new_gen)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A field starts down (the generator charges it), unless a diffuser stops it.
+/obj/effect/energy_field/proc/raise_field(new_gen)
+	update_integrity(0)
 	if(nearby_active_shield_diffuser(src))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	update_nearby_tiles()
 
 // Leaves its generator's field (a shield generator or a forcefield artifact).
 
-// Neighbouring fields redraw.
 /obj/effect/energy_field/on_destroy(force)
 	update_nearby_tiles()
-	var/turf/current_loc = get_turf(src)
 	..()
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(current_loc, direction)
-		if(T)
-			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
-				F.update_icon()
 
-DAMAGE_REACTION(/obj/effect/energy_field, DAMAGE_EXPLOSION, PROC_REF(field_blast_drain))
 
 /// A blast drains the field instead of damaging it.
-/obj/effect/energy_field/proc/field_blast_drain(datum/damage_packet/packet)
+/obj/effect/energy_field/proc/field_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	adjust_strength(-(4 - packet.severity) * 4)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/energy_field/bullet_act(obj/item/projectile/Proj)
 	adjust_strength(-Proj.get_structure_damage() / 10)
 
-EXTEND_INTERACTIONS(/obj/effect/energy_field, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_energy_field)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_touch_energy_field)), \
-)
+CAPABILITIES(/obj/effect/energy_field)
+	op("hit_energy_field", item(/obj/item), then(PROC_REF(interaction_hit_energy_field)))
+	op("touch_energy_field", hand(), then(PROC_REF(interaction_touch_energy_field)))
+	param(nameof(my_gen), pos = 1, apply = PROC_REF(raise_field))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_blast_drain))))
 
 /// Old attackby: a forceful hit weakens the field; the item's normal handling carries on.
-/obj/effect/energy_field/proc/interaction_hit_energy_field(mob/user, obj/item/held, datum/interaction/interaction)
-	if(held.force)
-		adjust_strength(-held.force / 20)
+/obj/effect/energy_field/proc/interaction_hit_energy_field(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(combat_of(held).force)
+		adjust_strength(-combat_of(held).force / 20)
 		user.do_attack_animation(src)
 		user.setClickCooldown(user.get_attack_speed(held))
-	return FALSE
+	return OP_DECLINE
 
 /obj/effect/energy_field/attack_generic(mob/user, damage)
 	if(damage)
@@ -83,9 +79,9 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 		user.setClickCooldown(user.get_attack_speed())
 
 /// Old attack_hand: harmless, but still produces the 'impact' effect; the touch carries on.
-/obj/effect/energy_field/proc/interaction_touch_energy_field(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/energy_field/proc/interaction_touch_energy_field(datum/act/op/A)
 	impact_effect(3)
-	return FALSE
+	return OP_DECLINE
 
 /obj/effect/energy_field/Bumped(atom/A)
 	..(A)
@@ -109,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	update_integrity(clamp(renwicks * FIELD_INTEGRITY_PER_RENWICK, 0, max_integrity))
 
 /obj/effect/energy_field/proc/set_max_strength(renwicks)
-	max_integrity = renwicks * FIELD_INTEGRITY_PER_RENWICK
+	set_max_integrity(renwicks * FIELD_INTEGRITY_PER_RENWICK)
 	if(get_integrity() > max_integrity)
 		update_integrity(max_integrity)
 
@@ -136,7 +132,6 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 		set_density(TRUE)
 
 	if(density != old_density)
-		update_icon()
 		update_nearby_tiles()
 
 /// A drained field stays up for its generator to recharge.
@@ -144,29 +139,21 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	SHOULD_CALL_PARENT(FALSE)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/obj/effect/energy_field/appearance_overlays()
-	. = list()
-	var/list/adjacent_shields_dir = list()
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(src, direction)
-		if(T) // Incase we somehow stepped off the map.
-			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
-				adjacent_shields_dir |= direction
-				break
-	// Adjacent fields draw edges toward us: tell them when we appear, go down or come back.
-	appearance_notify_neighbours("[density]|[x],[y],[z]", /obj/effect/energy_field)
+/// The field's sprite and glow, with an edge toward each field beside it (the neighbours are watched: one appearing, going down or leaving redraws this one).
+/obj/effect/energy_field/draw(datum/look/look)
+	..()
 	// Icon_state and Glow
 	if(density)
-		icon_state = "shield"
-		set_light(3, 3, "#66FFFF")
+		look.state("shield")
+		look.glow(3, 3, "#66FFFF")
 	else
-		icon_state = "shield_broken"
-		set_light(3, 5, "#FF9900")
+		look.state("shield_broken")
+		look.glow(3, 5, "#FF9900")
 
 	// Edge overlays
-	for(var/found_dir in adjacent_shields_dir)
-		. += image(src.icon, src, icon_state = "shield_edge", dir = found_dir)
+	for(var/direction in GLOB.cardinal)
+		if(length(look.neighbours(src, direction, /obj/effect/energy_field)))
+			look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment, and spreads to nearby shields.
 /obj/effect/energy_field/proc/impact_effect(i, list/affected_shields = list())
@@ -176,7 +163,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, TYPE_PROC_REF(/atom, appearanc
 	affected_shields |= src
 	i--
 	if(i)
-		om_after(src, 2, PROC_REF(spread_impact), i, affected_shields)
+		after(src, 0.2 SECONDS, PROC_REF(spread_impact), with = list(i, affected_shields))
 
 /obj/effect/energy_field/proc/spread_impact(i, list/affected_shields)
 	for(var/direction in GLOB.cardinal)

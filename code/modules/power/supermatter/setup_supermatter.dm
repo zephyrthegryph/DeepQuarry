@@ -20,7 +20,7 @@
 		to_chat(usr, "Error: you are not an admin!")
 		return
 
-	var/response = rerun_ask(usr, "k23", PROC_REF(setup_supermatter), args, /datum/om/prompt/choice, message = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"))
+	var/response = rerun_ask(usr, "k23", PROC_REF(setup_supermatter), args, /datum/prompt/choice, question = "Are you sure? This will start up the engine with selected gas as coolant.", title = "Engine setup", choices = list("N2", "CO2", "PH", "Abort"))
 	if(isnull(response))
 		return
 	if(!response || response == "Abort")
@@ -130,9 +130,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
 	P.set_use_power(USE_POWER_IDLE)
-	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	P.update_icon()
 	return SETUP_OK
 
 
@@ -210,25 +207,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	if(!S)
 		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!")
 		return SETUP_WARNING
-	S.input_attempt = 1
-	S.output_attempt = 1
+	S.set_input_attempt(1)
+	S.set_output_attempt(1)
 	if(target_input_level)
 		if(target_input_level > S.input_level_max)
-			S.input_level = S.input_level_max
+			S.set_input_level(S.input_level_max)
 		else
-			S.input_level = target_input_level
+			S.set_input_level(target_input_level)
 	else
-		S.input_level = S.input_level_max
+		S.set_input_level(S.input_level_max)
 
 	if(target_output_level)
 		if(target_output_level > S.output_level_max)
-			S.output_level = S.output_level_max
+			S.set_output_level(S.output_level_max)
 		else
-			S.output_level = target_output_level
+			S.set_output_level(target_output_level)
 	else
-		S.output_level = S.output_level_max
+		S.set_output_level(S.output_level_max)
 
-	S.update_icon()
 	return SETUP_OK
 
 
@@ -289,7 +285,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 		return SETUP_WARNING
 
 	found.trigger()
-	found.update_icon()
 	return SETUP_OK
 
 

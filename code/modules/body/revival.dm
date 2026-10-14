@@ -85,9 +85,8 @@
 		brain.set_damage(0)
 		brain.reset_defib_window()
 	remove_mutation(HUSK)
-	status_flags &= ~DISFIGURED
+	set_status_flags(status_flags & ~DISFIGURED)
 	can_defib = TRUE
-	update_icons_body()
 
 /// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
 /// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.
@@ -136,17 +135,15 @@
 	reload_fullscreen()
 	reset_perspective()
 	update_canmove()
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	// 6. Subtype contributions, then everything else.
 	on_revived(reason, source)
-	refresh_hud()
-	refresh_vision()
-	update_icon()
-	// set_stat() raised CHANGE_MOB_STAT, which wakes every Life stage (LIFE_WAKE_ALL).
-	OM_EMIT(src, /datum/om/event/living_revived, source, reason)
+	// The HUD and sight redraw by themselves: set_stat() published nameof(stat), flag_hud_update() MOB_KEY_HUD_FLAGS.
+	// set_stat() publishes the stat key, which wakes every Life step (LIFE_WAKE_KEYS).
+	PUBLISH_LEGACY(src, /datum/notice/living_revived, source, reason)
 	log_game("REVIVE: [key_name(src)] by [source ? "[source] ([source.type])" : "nothing"] ([reason]) at [AREACOORD(src)].")
 	return TRUE
 

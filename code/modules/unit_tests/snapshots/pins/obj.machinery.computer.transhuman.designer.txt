@@ -1,0 +1,46 @@
+human|none menu: Body designer hand
+human|none menu: Climb
+human|none click: Click: Body designer hand
+@obj.machinery.computer robot|none
+-click: Click: Use
++1 menu: Body designer hand
++4 click: Click: Body designer hand
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
++0 menu: Body designer hand
+@obj.machinery.computer human|/obj/item
+-menu: Use
++0 menu: Body designer hand
+@obj human|/obj/item/gripper
+human|/obj/item/disk/body_record menu: Body designer hand
+human|/obj/item/disk/body_record menu: Climb
+human|/obj/item/disk/body_record menu: Insert disk
+human|/obj/item/disk/body_record menu: Use Body Design Disk
+human|/obj/item/disk/body_record click: Click: Use item
+keys: body_designer_hand, body_designer_insert_disk, climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_gripper, use_item

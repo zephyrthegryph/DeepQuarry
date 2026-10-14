@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "interfaces": [
+    {
+      "name": "ObjectModelSchemaFixture",
+      "dm_type": "/datum/object_model/ui/schema_fixture",
+      "data": {
+        "value": { "type": "number" },
+        "description": { "type": "text", "optional": true }
+      },
+      "actions": {
+        "set": {
+          "value": { "type": "number", "min": 0, "max": 10 }
+        }
+      }
+    }
+  ]
+}

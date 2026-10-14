@@ -3,8 +3,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "extrapolator_scan"
 	desc = "A bulky scanning device, used to extract genetic material of potential pathogens."
-	item_flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	/// Whether the extrapolator is curently in use
 	var/using = FALSE
@@ -27,24 +25,33 @@
 	/// Cooldown for when the extrapolator can be used next.
 	COOLDOWN_DECLARE(usage_cooldown)
 
-/obj/item/extrapolator/Initialize(mapload, obj/item/stock_parts/scanning_module/starting_scanner)
-	. = ..()
+/// The scanning module the extrapolator is made with (its constructor param): a part or its type.
+/obj/item/extrapolator/var/tmp/scanner_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/extrapolator/proc/fit_scanner(starting_scanner)
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		own_set(src, nameof(scanner), new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
-	else if(istype(starting_scanner))
-		own_set(src, nameof(src.scanner), starting_scanner, into = TRUE)
-
+		rel_set(src, nameof(scanner), new starting_scanner(src))
+	else if(istype(starting_scanner, /obj/item/stock_parts/scanning_module))
+		move_into(src, nameof(src.scanner), starting_scanner)
 	refresh_parts()
 
-DECLARE_INTERACTIONS(/obj/item/extrapolator, \
-	INTERACT_INSERT(/obj/item/stock_parts/scanning_module, PROC_REF(interaction_item), "Install"), \
-	INTERACT_USE("Toggle mode", PROC_REF(interaction_self)), \
-)
+CAPABILITIES(/obj/item/extrapolator)
+	configure(item_worn(flags = NOBLUDGEON, slots = SLOT_BELT))
+	op("mode", in_hand(), label("Toggle extrapolator mode"), then(PROC_REF(extrapolator_mode_selected)))
+	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	param(nameof(scanner_at_make), pos = 1, apply = PROC_REF(fit_scanner), keep = FALSE)
+	// The isolations, started by isolate_symptom() / isolate_disease() once the user chose what to take from the subject.
+	op("isolate_symptom", ai(), takes("subject", "disease"), wait(PROC_REF(extract_wait)), then(PROC_REF(isolate_symptom_timed_done)))
+	op("isolate_disease", ai(), takes("subject", "disease"), wait(PROC_REF(isolate_wait)), then(PROC_REF(isolate_disease_timed_done)))
 
-/obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/item/extrapolator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(!scanner)
-		if(!own_set(src, nameof(src.scanner), item, user = user))
+		if(!move_into(src, nameof(src.scanner), item, user))
 			return TRUE
 		to_chat(user, span_notice("You install \the [scanner] in [src]."))
 		refresh_parts()
@@ -52,27 +59,30 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		to_chat(user, span_notice("[src] already has \the [scanner] installed."))
 	return TRUE
 
-/obj/item/extrapolator/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/extrapolator/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!scanner)
 		to_chat(user, span_warning("\The [src] has no scanner to remove!"))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
-	own_take(src, nameof(scanner))
-	playsound(src, tool.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	rel_take(src, nameof(scanner))
+	playsound(src, sounds_of(tool).use, 50, 1)
+	return OP_OK
 
-/obj/item/extrapolator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/extrapolator/proc/extrapolator_mode_selected(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
-		icon_state = "extrapolator_sample"
+		set_icon_state("extrapolator_sample")
 		scan = FALSE
 		to_chat(user, span_notice("You remove the probe from the device and set it to EXTRACT."))
 	else
-		icon_state = "extrapolator_scan"
+		set_icon_state("extrapolator_scan")
 		scan = TRUE
 		to_chat(user, span_notice("You put the probe back into the device and set it to SCAN."))
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/examine(mob/user)
 	. = ..()
@@ -114,39 +124,73 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 			var/list/atom/targets = find_valid_targets(user, target)
 			var/target_amt = length(targets)
 			if(target_amt > 1)
-				om_ask(user, /datum/om/prompt/choice/extrapolator/analyze_target, PROC_REF(analyze_target_answered), choices = targets, default = targets[1])
+				open_request(src, /datum/prompt/choice/viral_extrapolator/analyze_target, PROC_REF(analyze_target_answered), answerer = user, choices = targets, default = targets[1])
 				return
 			target = target_amt ? targets[1] : null
 		analyze_target_chosen(user, target)
 	else
 		to_chat(user, span_warning("The extrapolator has no scanner installed!"))
 
-/// Extrapolator prompts: re-checked on the answer, the extrapolator is still carried.
-/datum/om/prompt/choice/extrapolator
+/// Extrapolator prompts retain the carried/capable answer checks.
+/datum/prompt/choice/viral_extrapolator
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/atom/target
+	timeout = 0
+	var/atom/extraction_target
+	var/datum/affliction/contagion/extraction_disease
+	var/target_expected = FALSE
+	var/disease_expected = FALSE
 
-/datum/om/prompt/choice/extrapolator/analyze_target
+CAPABILITIES(/datum/prompt/choice/viral_extrapolator)
+	ref_one(nameof(extraction_target), /atom)
+	ref_one(nameof(extraction_disease), /datum/affliction/contagion)
+
+/datum/prompt/choice/viral_extrapolator/prepare(datum/act/A)
+	. = ..()
+	var/atom/target = extraction_target
+	var/datum/affliction/contagion/disease = extraction_disease
+	rel_clear(src, nameof(extraction_target))
+	rel_clear(src, nameof(extraction_disease))
+	rel_set(src, nameof(extraction_target), target)
+	rel_set(src, nameof(extraction_disease), disease)
+
+/datum/prompt/choice/viral_extrapolator/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(answerer) || (target_expected && QDELETED(extraction_target)) || (disease_expected && QDELETED(extraction_disease)))
+		return "gone"
+	if(isdatum(value))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"
+	return null
+
+/datum/prompt/choice/viral_extrapolator/analyze_target
 	title = "Viral Extrapolation"
-	message = "Select object to analyze"
+	question = "Select object to analyze"
 
-/datum/om/prompt/choice/extrapolator/disease
+/datum/prompt/choice/viral_extrapolator/disease
 	title = "Viral Extraction"
-	message = "Select disease to extract"
+	question = "Select disease to extract"
 
-/datum/om/prompt/choice/extrapolator/isolate_what
+/datum/prompt/choice/viral_extrapolator/isolate_what
 	title = "Isolate"
-	message = "What would you like to isolate?"
+	question = "What would you like to isolate?"
 	choices = list("Symptom", "Disease")
 	buttons = TRUE
-	var/datum/affliction/contagion/engineered/disease
 
-/datum/om/prompt/choice/extrapolator/symptom
+/datum/prompt/choice/viral_extrapolator/symptom
 	title = "Symptom Extraction"
-	message = "Select symptom to isolate"
+	question = "Select symptom to isolate"
 
-/obj/item/extrapolator/proc/analyze_target_answered(datum/om/prompt/choice/extrapolator/analyze_target/ask)
-	analyze_target_chosen(ask.answerer, ask.choice)
+/obj/item/extrapolator/proc/analyze_target_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_analyze_target_answered(A)
+
+/obj/item/extrapolator/proc/apply_analyze_target_answered(datum/act/request/A)
+	var/datum/prompt/choice/viral_extrapolator/analyze_target/ask = A.request
+	analyze_target_chosen(ask.answerer, A.answer.value)
 
 /obj/item/extrapolator/proc/analyze_target_chosen(mob/user, atom/target)
 	var/list/result = target?.extrapolator_act(user, src, dry_run = TRUE)
@@ -224,19 +268,31 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return
 	if(length(diseases) > 1)
-		om_ask(user, /datum/om/prompt/choice/extrapolator/disease, PROC_REF(disease_chosen), choices = diseases, default = diseases[1], target = target)
+		open_request(src, /datum/prompt/choice/viral_extrapolator/disease, PROC_REF(disease_chosen), answerer = user, choices = diseases, default = diseases[1], extraction_target = target, target_expected = !isnull(target))
 	else
-		om_ask(user, /datum/om/prompt/choice/extrapolator/isolate_what, PROC_REF(isolation_chosen), target = target, disease = diseases[1])
+		open_request(src, /datum/prompt/choice/viral_extrapolator/isolate_what, PROC_REF(isolation_chosen), answerer = user, extraction_target = target, target_expected = !isnull(target), extraction_disease = diseases[1], disease_expected = !isnull(diseases[1]))
 	return TRUE
 
-/obj/item/extrapolator/proc/disease_chosen(datum/om/prompt/choice/extrapolator/disease/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/extrapolator/isolate_what, PROC_REF(isolation_chosen), target = ask.target, disease = ask.choice)
+/obj/item/extrapolator/proc/disease_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_disease_chosen(A)
 
-/obj/item/extrapolator/proc/isolation_chosen(datum/om/prompt/choice/extrapolator/isolate_what/ask)
+/obj/item/extrapolator/proc/apply_disease_chosen(datum/act/request/A)
+	var/datum/prompt/choice/viral_extrapolator/disease/ask = A.request
+	open_request(src, /datum/prompt/choice/viral_extrapolator/isolate_what, PROC_REF(isolation_chosen), answerer = ask.answerer, extraction_target = ask.extraction_target, target_expected = !isnull(ask.extraction_target), extraction_disease = A.answer.value, disease_expected = !isnull(A.answer.value))
+
+/obj/item/extrapolator/proc/isolation_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_isolation_chosen(A)
+
+/obj/item/extrapolator/proc/apply_isolation_chosen(datum/act/request/A)
+	var/datum/prompt/choice/viral_extrapolator/isolate_what/ask = A.request
 	var/mob/living/user = ask.answerer
-	var/atom/target = ask.target
-	var/datum/affliction/contagion/engineered/target_disease = ask.disease
-	if(ask.choice == "Symptom")
+	var/atom/target = ask.extraction_target
+	var/datum/affliction/contagion/engineered/target_disease = ask.extraction_disease
+	if(A.answer.value == "Symptom")
 		isolate_symptom(user, target, target_disease)
 	else
 		isolate_disease(user, target, target_disease)
@@ -252,51 +308,59 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		to_chat(user, span_warning("[icon2html(src, user)] There are no symptoms that could be isolated.."))
 		return
 	if(length(symptoms) > 1)
-		om_ask(user, /datum/om/prompt/choice/extrapolator/symptom, PROC_REF(symptom_answered), choices = symptoms, default = symptoms[1], target = target)
+		open_request(src, /datum/prompt/choice/viral_extrapolator/symptom, PROC_REF(symptom_answered), answerer = user, choices = symptoms, default = symptoms[1], extraction_target = target, target_expected = !isnull(target))
 		return TRUE
 	return symptom_chosen(user, symptoms[1], target)
 
-/obj/item/extrapolator/proc/symptom_answered(datum/om/prompt/choice/extrapolator/symptom/ask)
-	symptom_chosen(ask.answerer, ask.choice, ask.target)
+/obj/item/extrapolator/proc/symptom_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_symptom_answered(A)
+
+/obj/item/extrapolator/proc/apply_symptom_answered(datum/act/request/A)
+	var/datum/prompt/choice/viral_extrapolator/symptom/ask = A.request
+	symptom_chosen(ask.answerer, A.answer.value, ask.extraction_target)
 
 /obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/viral_trait/chosen, atom/target)
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))
 	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
-	own_add(symptom_holder, nameof(symptom_holder.symptoms), chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
+	rel_add(symptom_holder, nameof(symptom_holder.symptoms), chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
+	perform_op(user, src, "isolate_symptom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "disease" = symptom_holder))
 	return TRUE
 
-/datum/om/task/timed/extrapolator_isolate_symptom
-	complete_proc = /obj/item/extrapolator/proc/isolate_symptom_timed_done
-	var/datum/affliction/contagion/engineered/symptom_holder
+/obj/item/extrapolator/proc/extract_wait(datum/act/op/A)
+	return extract_time
 
-/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/om/task/timed/extrapolator_isolate_symptom/task)
-	var/mob/living/user = task.actor
-	var/atom/target = task.target
-	var/datum/affliction/contagion/engineered/symptom_holder = task.symptom_holder
+/obj/item/extrapolator/proc/isolate_wait(datum/act/op/A)
+	return isolate_time
+
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/target = A.arg("subject")
+	var/datum/affliction/contagion/engineered/symptom_holder = A.arg("disease")
+	if(QDELETED(target) || QDELETED(symptom_holder))
+		return OP_REFUSED
 	create_culture(user, symptom_holder, target)
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease, timer = 10 SECONDS)
 	. = FALSE
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]...")), \
 		MSG_OTHERS(span_notice("%U% begins to thoroughly scan [target] with %T%...")))
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
+	perform_op(user, src, "isolate_disease", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "disease" = target_disease))
 	return TRUE
 
-/datum/om/task/timed/extrapolator_isolate_disease
-	complete_proc = /obj/item/extrapolator/proc/isolate_disease_timed_done
-	var/datum/affliction/contagion/engineered/target_disease
-
-/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/om/task/timed/extrapolator_isolate_disease/task)
-	var/mob/living/user = task.actor
-	var/atom/target = task.target
-	var/datum/affliction/contagion/engineered/target_disease = task.target_disease
+/obj/item/extrapolator/proc/isolate_disease_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/target = A.arg("subject")
+	var/datum/affliction/contagion/engineered/target_disease = A.arg("disease")
+	if(QDELETED(target) || QDELETED(target_disease))
+		return OP_REFUSED
 	create_culture(user, target_disease, target)
-	return TRUE
+	return OP_OK
 
 /obj/item/extrapolator/proc/create_culture(mob/living/user, datum/affliction/contagion/engineered/disease)
 	. = FALSE

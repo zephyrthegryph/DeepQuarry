@@ -10,18 +10,18 @@
 
 /mob/living/silicon/robot/syndicate/setup_radio()
 	..()
-	own_set(radio, nameof(radio.keyslot), new /obj/item/encryptionkey/syndicate(radio))
+	rel_set(radio, nameof(radio.keyslot), new /obj/item/encryptionkey/syndicate(radio))
 	radio.recalculateChannels()
 
 /mob/living/silicon/robot/syndicate/setup_brain()
 	..()
-	own_set(src, nameof(mmi), new /obj/item/mmi/digital/robot(src)) // Explicitly a drone.
+	rel_set(src, nameof(mmi), new /obj/item/mmi/digital/robot(src)) // Explicitly a drone.
 	updatename(modtype)
 	play_sfx(src, SFX_MECHA_NOMINALSYNDI)
 
 /mob/living/silicon/robot/syndicate/setup_laws()
 	..()
-	own_set(src, nameof(laws), new /datum/ai_laws/syndicate_override())
+	rel_set(src, nameof(laws), new /datum/ai_laws/syndicate_override())
 
 /mob/living/silicon/robot/syndicate/setup_module()
 	..()
@@ -30,25 +30,25 @@
 
 /mob/living/silicon/robot/syndicate/protector/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/protector(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/protector(src))
 	modtype = "Protector"
 	restrict_modules_to = list("Protector")
 
 /mob/living/silicon/robot/syndicate/mechanist/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/mechanist(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/mechanist(src))
 	modtype = "Mechanist"
 	restrict_modules_to = list("Mechanist")
 
 /mob/living/silicon/robot/syndicate/combat_medic/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/combat_medic(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/combat_medic(src))
 	modtype = "Combat Medic"
 	restrict_modules_to = list("Combat Medic")
 
 /mob/living/silicon/robot/syndicate/ninja/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/ninja(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/syndicate/ninja(src))
 	modtype = "Ninja"
 	restrict_modules_to = list("Ninja")
 

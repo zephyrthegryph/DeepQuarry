@@ -16,7 +16,7 @@
 	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
-				if(L.zone_sel.selecting == BP_GROIN)
+				if(hud_of(L)?.zone_sel?.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return
 				act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
@@ -121,7 +121,7 @@
 
 // Handles the actual harming by a melee weapon.
 /mob/living/simple_mob/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
-	effective_force = O.force
+	effective_force = combat_of(O).force
 
 	//Animals can't be stunned(?)
 	if(O.injury_kind == INJURY_PAIN)
@@ -129,7 +129,7 @@
 	if(supernatural && istype(O,/obj/item/nullrod))
 		effective_force *= 2
 		set_purge(3)
-	if(O.force <= resistance)
+	if(combat_of(O).force <= resistance)
 		to_chat(user,span_danger("This weapon is ineffective, it does no damage."))
 		return 2 //???
 
@@ -230,12 +230,11 @@
 
 
 // Electromagnetism
-DAMAGE_REACTION(/mob/living/simple_mob, DAMAGE_EMP, PROC_REF(synthetic_emp_surge))
-
-/mob/living/simple_mob/proc/synthetic_emp_surge(datum/damage_packet/packet)
+/mob/living/simple_mob/proc/synthetic_emp_surge(datum/act/A)
 	if(!(biology & BIOLOGY_SYNTHETIC))
 		return
-	var/severity = packet.severity
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	var/endurance_scale = get_endurance()
 	// Scaled to endurance: weak mobs always take two direct EMP hits to kill; stronger ones may take more.
 	var/static/list/cap_by_severity = list(60, 30, 15, 7)
@@ -284,8 +283,12 @@ DAMAGE_REACTION(/mob/living/simple_mob, DAMAGE_EMP, PROC_REF(synthetic_emp_surge
 	/// Played whenever the mob is touched, hit with an item or struck by something thrown (the horrors' shrieks).
 	var/reaction_sound
 
-DAMAGE_REACTION(/mob/living/simple_mob, DAMAGE_THROWN, PROC_REF(play_reaction_sound))
+/// A thrown thing is the generic hit: the sound is for this entry alone.
+/mob/living/simple_mob/proc/thrown_reaction_sound(datum/act/A)
+	var/datum/notice/hit/N = A
+	if(N.packet?.entry == DAMAGE_ENTRY_THROWN)
+		play_reaction_sound(A)
 
-/mob/living/simple_mob/proc/play_reaction_sound(datum/damage_packet/packet)
+/mob/living/simple_mob/proc/play_reaction_sound(datum/act/A)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)

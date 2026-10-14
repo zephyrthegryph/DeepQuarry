@@ -72,7 +72,10 @@
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(death_message = "falls down and stops moving..."))
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt
 	icon_state = "altskeleton"
@@ -86,7 +89,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You're not sure quite how, but you've found your way inside of the skeleton's stomach! It's cramped and cold and sounds heavily of xylophones!"
 	B.mode_flags = 40
@@ -97,7 +100,6 @@
 	B.escapechance = 25
 
 /mob/living/simple_mob/vore/alienanimals/skeleton
-	death_message = "falls down and stops moving..."
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/on_death(gibbed)
 	. = ..()

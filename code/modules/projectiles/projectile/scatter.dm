@@ -46,7 +46,6 @@
 	icon_state = "omnilaser"
 	damage = 10
 	injury_kind = INJURY_BURN
-	light_color = "#00C6FF"
 
 	stutter = 2
 
@@ -99,7 +98,6 @@
 	name = "pellet"
 	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 12
-	armor_penetration = 0
 
 /obj/item/projectile/scatter/flechette
 	damage = 60

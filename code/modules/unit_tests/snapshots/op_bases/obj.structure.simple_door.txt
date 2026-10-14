@@ -1,0 +1,7 @@
+human|none menu: Tear at
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Open
+robot|none menu: Tear at
+robot|none menu: Use
+robot|none click: Click: Open

@@ -1,0 +1,28 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+human|/obj/item/tank/jetpack menu: Build jetpacked
+human|/obj/item/tank/jetpack menu: Move To Top
+human|/obj/item/tank/jetpack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tank/jetpack click: Click: Build jetpacked
+human|/obj/item/borg/upgrade/advanced/jetpack menu: Build jetpacked
+human|/obj/item/borg/upgrade/advanced/jetpack menu: Move To Top
+human|/obj/item/borg/upgrade/advanced/jetpack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/borg/upgrade/advanced/jetpack click: Click: Build jetpacked
+@obj human|/obj/item/stack/material/plastic
+@obj human|/obj/item/stock_parts/console_screen
+@obj human|/obj/item/stock_parts/spring
+@obj human|/obj/item/cell
+keys: collect_item, construction.build:spacebike_controlled, construction.build:spacebike_finished, construction.build:spacebike_finished.screwdriver, construction.build:spacebike_jetpacked, construction.build:spacebike_lit, construction.build:spacebike_powered, construction.build:spacebike_seated, construction.build:spacebike_wired, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

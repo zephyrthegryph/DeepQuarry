@@ -61,7 +61,7 @@
 /proc/delete_box(list/box_segments, client/C)
 	for(var/i in box_segments)
 		C.images -= i
-		qdel(i)
+		spent(i)
 
 /proc/color_box(list/box_segments, new_color, new_time)
 	for(var/i in box_segments)

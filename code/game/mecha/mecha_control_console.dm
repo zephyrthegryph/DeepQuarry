@@ -3,27 +3,24 @@
 	desc = "Used to track exosuits, as well as view their logs and activate EMP beacons."
 	icon_keyboard = "rd_key"
 	icon_screen = "mecha"
-	light_color = "#a97faa"
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/mecha_control
 	var/list/located
 	var/screen = 0
 	var/list/stored_data
 
-/obj/machinery/computer/mecha/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+/// The window data.
+/obj/machinery/computer/mecha/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["stored_data"] = stored_data
+	var/list/computed = ui_data_obj_machinery_computer_mecha(A.actor, null, null)
+	for(var/key in computed)
+		data[key] = computed[key]
+	return data
 
-DECLARE_UI(/obj/machinery/computer/mecha, "MechaControlConsole")
-
-UI_DATA(/obj/machinery/computer/mecha, "stored_data:list", "merge:ui_data_obj_machinery_computer_mecha{beacons:list}")
-
-/// The computed part of /obj/machinery/computer/mecha's window data (declared on its UI_DATA row).
+/// The computed part of the console's window data (ui_data())
 /obj/machinery/computer/mecha/proc/ui_data_obj_machinery_computer_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-
 
 	var/list/beacons = list()
 	for(var/obj/item/mecha_parts/mecha_tracking/TR in world)
@@ -36,43 +33,49 @@ UI_DATA(/obj/machinery/computer/mecha, "stored_data:list", "merge:ui_data_obj_ma
 
 	return data
 
-UI_ACT(/obj/machinery/computer/mecha, "send_message", ui_act_send_message, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
-UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_send_message)
-	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
-	if(istype(MT))
-		om_ask(ui.user, /datum/om/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), tracker = MT)
+// The console's window: a beacon's message is asked in the op (asks()), its handler sends the answer.
+CAPABILITIES(/obj/machinery/computer/mecha)
+	configure(light_glow(color = "#a97faa"))
+	interface("MechaControlConsole")
+	without("ui_open")
+	op("send_message", ui_act("send_message", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), needs(req(PROC_REF(beacon_named), silent = TRUE)),
+		asks(/datum/prompt/text/mecha_tracker_message, step = "message"), then(PROC_REF(ui_act_send_message)))
+	op("shock", ui_act("shock", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_shock)))
+	op("get_log", ui_act("get_log", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), then(PROC_REF(ui_act_get_log)))
+	op("clear_log", ui_act(), then(PROC_REF(ui_act_clear_log)))
+
+/// A beacon button names a beacon.
+/obj/machinery/computer/mecha/proc/beacon_named(datum/act/op/A)
+	return (!isnull(A.args["mt"])) ? null : MSG(req_failed)
+
+/obj/machinery/computer/mecha/proc/ui_act_send_message(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
+	if(!istype(mt))
+		return TRUE
+	var/message = A.step_value("message")
+	var/obj/mecha/M = mt.in_mecha()
+	if(message && M)
+		M.occupant_message(message)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/mecha, "shock", ui_act_shock, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
-UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_shock)
-	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
-	if(istype(MT))
-		MT.shock()
+/obj/machinery/computer/mecha/proc/ui_act_shock(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
+	if(istype(mt))
+		mt.shock()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/mecha, "get_log", ui_act_get_log, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
-UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_get_log)
-	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
-	if(istype(MT))
-		stored_data = MT.get_mecha_log()
+/obj/machinery/computer/mecha/proc/ui_act_get_log(datum/act/op/A, obj/item/mecha_parts/mecha_tracking/mt)
+	if(istype(mt))
+		stored_data = mt.get_mecha_log()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/mecha, "clear_log", ui_act_clear_log)
-UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_clear_log)
+/obj/machinery/computer/mecha/proc/ui_act_clear_log(datum/act/op/A)
 	stored_data = null
-	return TRUE
+	return OP_OK
 
-/datum/om/prompt/text/mecha_tracker_message
+/datum/prompt/text/mecha_tracker_message
 	title = "Transmit message"
-	message = "Input message"
+	question = "Input message"
 	default = ""
-	requires = PROMPT_USABLE
-	var/obj/item/mecha_parts/mecha_tracking/tracker
-
-/obj/machinery/computer/mecha/proc/mecha_message_entered(datum/om/prompt/text/mecha_tracker_message/ask)
-	var/obj/mecha/M = ask.tracker.in_mecha()
-	if(ask.text && M)
-		M.occupant_message(ask.text)
+	timeout = 0
 
 /obj/item/mecha_parts/mecha_tracking
 	name = "Exosuit tracking beacon"
@@ -80,10 +83,8 @@ UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_clear_log)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "motion2"
 
-UI_DATA(/obj/item/mecha_parts/mecha_tracking, "merge:ui_data_obj_item_mecha_parts_mecha_tracking{ref:text,charge:unknown,name:text,health:unknown,maxHealth:num,cell:num,cellCharge:num,cellMaxCharge:num,airtank:unknown,pilot:unknown,location:unknown,active:unknown,cargoUsed:num,cargoMax:num}")
-
-/// The computed part of /obj/item/mecha_parts/mecha_tracking's window data (declared on its UI_DATA row).
-/obj/item/mecha_parts/mecha_tracking/proc/ui_data_obj_item_mecha_parts_mecha_tracking(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/mecha_parts/mecha_tracking's window data.
+/obj/item/mecha_parts/mecha_tracking/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!in_mecha())
 		return FALSE
@@ -109,7 +110,13 @@ UI_DATA(/obj/item/mecha_parts/mecha_tracking, "merge:ui_data_obj_item_mecha_part
 
 	return data
 
-DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(/atom, damage_reaction_qdel))
+CAPABILITIES(/obj/item/mecha_parts/mecha_tracking)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(tracking_emp))))
+
+/// An EMP destroys the beacon outright.
+/obj/item/mecha_parts/mecha_tracking/proc/tracking_emp(datum/act/hit/emp/A)
+	destroyed(src)
+	return OP_OK
 
 /obj/item/mecha_parts/mecha_tracking/proc/in_mecha()
 	if(istype(loc, /obj/mecha))
@@ -120,14 +127,13 @@ DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(
 	var/obj/mecha/M = in_mecha()
 	if(M)
 		M.emp_act(EMP_HARMLESS)
-	qdel(src)
+	spent(src)
 
 /obj/item/mecha_parts/mecha_tracking/proc/get_mecha_log()
 	if(!in_mecha())
 		return list()
 	var/obj/mecha/M = loc
 	return M.get_log_tgui()
-
 
 /obj/item/storage/box/mechabeacons
 	name = "Exosuit Tracking Beacons"

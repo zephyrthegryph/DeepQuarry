@@ -32,7 +32,7 @@
 	return ..()
 
 /// Explosion adapter: blast from the propagated severity, delivered in type
-/// batches by GLOB.explosion_service. Objects are destroyed by integrity.
+/// batches by SSexplosions. Objects are destroyed by integrity.
 /obj/ex_act(severity)
 	if(..())
 		return
@@ -42,12 +42,12 @@
 /obj/atom_break(damage_flag)
 	. = ..()
 	if(broken_icon_state)
-		icon_state = broken_icon_state
+		set_icon_state(broken_icon_state)
 
 /obj/atom_fix()
 	. = ..()
 	if(broken_icon_state)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
 /// emp_integrity_factor lose integrity to it; for the rest only the declared DAMAGE_EMP
@@ -106,7 +106,7 @@
 	handle_deconstruct(disassembled)
 
 	//inform objects we were deconstructed
-	OM_EMIT(src, /datum/om/event/obj_deconstruct, disassembled)
+	PUBLISH_LEGACY(src, /datum/notice/obj_deconstruct, disassembled)
 
 	// Destroyed: each slot's drop policy decides what survives (damage.md §6,
 	// doc/rewrite/lifecycle.md §3). Only what is left outside a slot falls
@@ -117,12 +117,12 @@
 		dq_lifecycle_resolve_contents()
 
 	for(var/obj/item/item in contents)
-		if(item.item_flags & ABSTRACT)
+		if(worn_of(item).flags & ABSTRACT)
 			continue
 		item.forceMove(get_turf(src))
 
 	//delete our self
-	qdel(src)
+	destroyed(src)
 
 ///what happens when the obj's integrity reaches zero.
 /// Destruction (damage.md §6): debris entries first, then each slot's drop policy.

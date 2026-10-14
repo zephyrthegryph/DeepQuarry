@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated medical setup, changeling choices, weapon labels and wheel controls to native requests."

@@ -8,6 +8,7 @@
 
 	icon = 'icons/mob/xenos_32.dmi'
 	vis_height = 32
+	sight = SEE_MOBS
 
 	faction = "xeno"
 	endurance = 200
@@ -47,23 +48,26 @@
 	var/xeno_build_time = 5 //time to build a structure
 
 	//HUD
-	var/datum/action/innate/xeno_ch/xeno_build/build_action = new
-	var/datum/action/innate/xeno_ch/xeno_neuro/neurotox_action = new
-	var/datum/action/innate/xeno_ch/xeno_acidspit/acidspit_action = new
-	var/datum/action/innate/xeno_ch/xeno_corrode/corrode_action = new
-	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action = new
-	var/datum/action/innate/xeno_ch/xeno_spin/spin_action = new
-
-	can_be_drop_prey = FALSE
-
-/mob/living/simple_mob/xeno_ch/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	sight |= SEE_MOBS
+	var/datum/action/innate/xeno_ch/xeno_build/build_action
+	var/datum/action/innate/xeno_ch/xeno_neuro/neurotox_action
+	var/datum/action/innate/xeno_ch/xeno_acidspit/acidspit_action
+	var/datum/action/innate/xeno_ch/xeno_corrode/corrode_action
+	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action
+	var/datum/action/innate/xeno_ch/xeno_spin/spin_action
 
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
+
+
+CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	owns_one(nameof(build_action), /datum/action/innate/xeno_ch/xeno_build, starts = /datum/action/innate/xeno_ch/xeno_build)
+	owns_one(nameof(neurotox_action), /datum/action/innate/xeno_ch/xeno_neuro, starts = /datum/action/innate/xeno_ch/xeno_neuro)
+	owns_one(nameof(acidspit_action), /datum/action/innate/xeno_ch/xeno_acidspit, starts = /datum/action/innate/xeno_ch/xeno_acidspit)
+	owns_one(nameof(corrode_action), /datum/action/innate/xeno_ch/xeno_corrode, starts = /datum/action/innate/xeno_ch/xeno_corrode)
+	owns_one(nameof(pounce_action), /datum/action/innate/xeno_ch/xeno_pounce, starts = /datum/action/innate/xeno_ch/xeno_pounce)
+	owns_one(nameof(spin_action), /datum/action/innate/xeno_ch/xeno_spin, starts = /datum/action/innate/xeno_ch/xeno_spin)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	op("xeno_build", menu(button = "Build Resin Structure"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(xeno_build_choices)), "radial" = TRUE, "radius" = 60, "autopick_single_option" = TRUE, "timeout" = 0), step = "choice"), wait(PROC_REF(xeno_build_wait)), then(PROC_REF(xeno_build_done)))
+	verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
@@ -90,9 +94,10 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch, /mob/living/simple_mob/verb/t
 	icon_pounce_x = -32
 	icon_pounce_y = -32
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/ventcrawl) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/hide) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/hunter)
+	verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/ventcrawl, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/hide, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/hunter/Login()
 	. = ..()
@@ -118,11 +123,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/hunter, /mob/living/proc/hide)
 	icon_pounce_x = -32
 	icon_pounce_y = -32
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/proc/hide) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/neurotoxin) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/acidspit) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/sentinel)
+	verb_entry(/mob/living/simple_mob/proc/pounce_toggle, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/hide, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/sentinel/Login()
 	. = ..()
@@ -151,10 +157,11 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/sentinel, /mob/living/simple_m
 
 	movement_cooldown = 2
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/neurotoxin) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/acidspit) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/corrosive_acid) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/proc/speen) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/xeno_ch/queen)
+	verb_entry(/mob/living/simple_mob/proc/neurotoxin, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/acidspit, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/corrosive_acid, login = TRUE) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/speen, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/xeno_ch/queen/Login()
 	. = ..()
@@ -171,3 +178,6 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/xeno_ch/queen, /mob/living/simple_mob/
 	icon_living = "alienqmaid"
 	icon_rest = "alienqmaid_sleep"
 	icon_state = "alienqmaid"
+
+/mob/living/simple_mob/xeno_ch/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

@@ -1,0 +1,29 @@
+@obj.machinery.computer human|none
++0 menu: .map
+@obj.machinery.computer robot|none
++0 menu: .map
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
++0 menu: .map (refused: You can't reach that.)
+@obj.machinery.computer human|/obj/item/tool/screwdriver
++0 menu: .map
+@obj.machinery.computer human|/obj/item/tool/crowbar
++0 menu: .map
+@obj.machinery.computer human|/obj/item/tool/wrench
++0 menu: .map
+@obj.machinery.computer human|/obj/item/tool/wirecutters
++0 menu: .map
+@obj.machinery.computer human|/obj/item/multitool
++0 menu: .map
+@obj.machinery.computer human|/obj/item/weldingtool
++0 menu: .map
+@obj.machinery.computer human|/obj/item/stack/cable_coil
++0 menu: .map
+@obj.machinery.computer human|/obj/item/stack/material/steel
++0 menu: .map
+@obj.machinery.computer human|/obj/item/card/id
++0 menu: .map
+@obj.machinery.computer human|/obj/item
++0 menu: .map
+@obj human|/obj/item/gripper
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, security_robot_use, silicon_hand, station_map, use_gripper, use_item

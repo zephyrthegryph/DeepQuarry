@@ -23,23 +23,31 @@
 	var/floor_build_type = /datum/decl/flooring/tiling // Basic steel floor.
 
 /mob/living/bot/floorbot/update_icons()
-	if(om_busy(src))
-		icon_state = "floorbot-c"
+	if(bot_busy())
+		set_icon_state("floorbot-c")
 	else if(amount > 0)
-		icon_state = "floorbot[on]"
+		set_icon_state("floorbot[on]")
 	else
-		icon_state = "floorbot[on]e"
+		set_icon_state("floorbot[on]e")
 
-DECLARE_UI(/mob/living/bot/floorbot, "Floorbot")
+CAPABILITIES(/mob/living/bot/floorbot)
+	interface("Floorbot")
+	op("start", ui_act("start"), then(PROC_REF(ui_act_start)))
+	op("vocal", ui_act("vocal"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_vocal)))
+	op("improve", ui_act("improve"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_improve)))
+	op("tiles", ui_act("tiles"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_tiles)))
+	op("make", ui_act("make"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_make)))
+	op("bridgemode", ui_act("bridgemode", arg("dir")), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_bridgemode)))
 
-UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num", "amount:num", "merge:ui_data_mob_living_bot_floorbot{possible_bmode:list,improvefloors:num,eattiles:num,maketiles:num,bmode:text}")
-
-/// The computed part of /mob/living/bot/floorbot's window data (declared on its UI_DATA row).
-/mob/living/bot/floorbot/proc/ui_data_mob_living_bot_floorbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/floorbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-
-
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
+	data["vocal"] = vocal
+	data["amount"] = amount
 	data["possible_bmode"] = list("NORTH", "EAST", "SOUTH", "WEST")
 
 	data["improvefloors"] = null
@@ -47,14 +55,12 @@ UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num
 	data["maketiles"] = null
 	data["bmode"] = null
 
-	if(!locked || issilicon(user))
+	if(settings_unlocked(A))
 		data["improvefloors"] = improvefloors
 		data["eattiles"] = eattiles
 		data["maketiles"] = maketiles
 		data["bmode"] = dir2text(targetdirection)
 	return data
-
-EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
 /mob/living/bot/floorbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
@@ -65,53 +71,31 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		return 1
 
-/mob/living/bot/floorbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(src)
-	return TRUE
-
-UI_ACT(/mob/living/bot/floorbot, "start", ui_act_start)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_start)
+/mob/living/bot/floorbot/proc/ui_act_start(datum/act/op/A)
 	if(on)
 		turn_off()
 	else
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "vocal", ui_act_vocal)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_vocal)
-	if(locked && !issilicon(ui.user))
-		return
+/mob/living/bot/floorbot/proc/ui_act_vocal(datum/act/op/A)
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "improve", ui_act_improve)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_improve)
-	if(locked && !issilicon(ui.user))
-		return
+/mob/living/bot/floorbot/proc/ui_act_improve(datum/act/op/A)
 	improvefloors = !improvefloors
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "tiles", ui_act_tiles)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_tiles)
-	if(locked && !issilicon(ui.user))
-		return
+/mob/living/bot/floorbot/proc/ui_act_tiles(datum/act/op/A)
 	eattiles = !eattiles
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "make", ui_act_make)
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_make)
-	if(locked && !issilicon(ui.user))
-		return
+/mob/living/bot/floorbot/proc/ui_act_make(datum/act/op/A)
 	maketiles = !maketiles
 	. = TRUE
 
-UI_ACT(/mob/living/bot/floorbot, "bridgemode", ui_act_bridgemode, UI_ARG_VALUE("dir"))
-UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
-	if(locked && !issilicon(ui.user))
-		return
-	targetdirection = text2dir(params["dir"])
+/mob/living/bot/floorbot/proc/ui_act_bridgemode(datum/act/op/A, dir)
+	targetdirection = text2dir(dir)
 	. = TRUE
 
 /mob/living/bot/floorbot/handleRegular()
@@ -148,24 +132,24 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 #ifdef FLOORBOT_PATCHES_HOLES
 		for(var/turf/space/T in view(src)) // Breaches are of higher priority
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 
 		for(var/turf/simulated/mineral/floor/T in view(src)) // Asteroids are of smaller priority
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 #endif
 		// Look for broken floors even if we aren't improvefloors
 		for(var/turf/simulated/floor/T in view(src))
 			if(confirmTarget(T))
-				target = T
+				rel_set(src, nameof(target), T)
 				return
 
 	if(amount < maxAmount && (eattiles || maketiles))
 		for(var/obj/item/stack/S in view(src))
 			if(confirmTarget(S))
-				target = S
+				rel_set(src, nameof(target), S)
 				return
 
 /mob/living/bot/floorbot/confirmTarget(atom/A) // The fact that we do some checks twice may seem confusing but remember that the bot's settings may be toggled while it's moving and we want them to stop in that case
@@ -205,7 +189,7 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 	if(!..())
 		return
 
-	if(om_busy(src))
+	if(bot_busy())
 		return
 
 	if(get_turf(A) != loc)
@@ -215,10 +199,10 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 		var/turf/simulated/floor/F = A
 		if(F.flooring)
 			act_message(src, null, others = span_warning("%U% begins to tear the floor tile from the floor!"))
-			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done), list(F))
+			bot_work(5 SECONDS, A, PROC_REF(tore_up_tile))
 		else
 			act_message(src, null, others = span_danger("%U% begins to tear through the floor!"))
-			bot_work(15 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done2), list(F))
+			bot_work(15 SECONDS, A, PROC_REF(tore_through_floor))
 		rel_clear(src, nameof(target))
 	else if(isopenturf(A) || istype(A, /turf/simulated/mineral/floor))
 		var/building = 2
@@ -227,56 +211,64 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 		if(amount < building)
 			return
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to repair the hole."))
-		bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done3), list(A, building))
+		bot_work(5 SECONDS, A, PROC_REF(repaired_hole), building)
 		rel_clear(src, nameof(target))
 	else if(istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.broken || F.burnt)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to remove the broken floor."))
-			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done4), list(F))
+			bot_work(5 SECONDS, F, PROC_REF(removed_broken_floor))
 			rel_clear(src, nameof(target))
 		else if(!F.flooring && amount)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to improve the floor."))
-			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done5), list(F))
+			bot_work(5 SECONDS, F, PROC_REF(improved_floor))
 			rel_clear(src, nameof(target))
 	else if(istype(A, /obj/item/stack/tile/floor) && amount < maxAmount)
 		var/obj/item/stack/tile/floor/T = A
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to collect tiles."))
-		bot_work(2 SECONDS, T, PROC_REF(UnarmedAttack_floorbot_done6), list(T))
+		bot_work(2 SECONDS, T, PROC_REF(collected_tiles))
 		rel_clear(src, nameof(target))
 	else if(istype(A, /obj/item/stack/material) && amount + 4 <= maxAmount)
 		var/obj/item/stack/material/M = A
 		if(M.get_material_name() == MAT_STEEL)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to make tiles."))
-			bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done7), list(M))
+			bot_work(5 SECONDS, A, PROC_REF(made_tiles))
 
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/tore_up_tile(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	F.break_tile_to_plating()
 	addTiles(1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done2(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/tore_through_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	F.ReplaceWithLattice()
 	addTiles(1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done3(atom/A, building)
-	if(A && (locate(/obj/structure/lattice, A) && building == 1 || !locate(/obj/structure/lattice, A) && building == 2)) // Make sure that it still needs repairs
+/mob/living/bot/floorbot/proc/repaired_hole(datum/act/op/A)
+	var/atom/hole = A.target
+	var/building = work_arg
+	if(hole && (locate(/obj/structure/lattice, hole) && building == 1 || !locate(/obj/structure/lattice, hole) && building == 2)) // Make sure that it still needs repairs
 		var/obj/item/I
 		if(building == 1)
 			I = new /obj/item/stack/tile/floor(src)
 		else
 			I = new /obj/item/stack/rods(src)
-		A.attackby(I, src)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done4(turf/simulated/floor/F)
+		hole.attackby(I, src)
+/mob/living/bot/floorbot/proc/removed_broken_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	if(F.broken || F.burnt)
 		F.make_plating()
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done5(turf/simulated/floor/F)
+/mob/living/bot/floorbot/proc/improved_floor(datum/act/op/A)
+	var/turf/simulated/floor/F = A.target
 	if(!F.flooring)
-		F.set_flooring(get_flooring_data(floor_build_type))
+		F.install_flooring(get_flooring_data(floor_build_type))
 		addTiles(-1)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done6(obj/item/stack/tile/floor/T)
+/mob/living/bot/floorbot/proc/collected_tiles(datum/act/op/A)
+	var/obj/item/stack/tile/floor/T = A.target
 	if(T)
 		var/eaten = min(maxAmount - amount, T.get_amount())
 		T.use(eaten)
 		addTiles(eaten)
-/mob/living/bot/floorbot/proc/UnarmedAttack_floorbot_done7(obj/item/stack/material/M)
+/mob/living/bot/floorbot/proc/made_tiles(datum/act/op/A)
+	var/obj/item/stack/material/M = A.target
 	if(M)
 		M.use(1)
 		addTiles(4)
@@ -289,7 +281,7 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
 	N.latent_discard()
-	QDEL_LIST(N.contents) // ALLOW(latent): discarded above
+	QDEL_LIST(N.contents) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
@@ -332,16 +324,13 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 
 /* Assembly */
 
-EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/item/stack/tile/floor, PROC_REF(interaction_floorbot_tiles), "Add tiles", REQ_TARGET_STATE(/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles)))
+// Ten floor tiles on an empty toolbox start a floorbot; a toolbox with something in it takes them like any storage.
+CAPABILITIES(/obj/item/storage/toolbox/mechanical)
+	op("add_tiles", item(/obj/item/stack/tile/floor), when(req_storage_empty()), label("Add tiles"), then(PROC_REF(add_floorbot_tiles)))
 
-/// Requirement: the toolbox must be empty to become a floorbot kit.
-/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles(mob/user, atom/target, obj/item/held)
-	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
-		return "they won't fit in as there is already stuff inside"
-	return TRUE
-
-/// Old attackby: ten floor tiles in an empty toolbox start a floorbot.
-/obj/item/storage/toolbox/mechanical/proc/interaction_floorbot_tiles(mob/living/user, obj/item/stack/tile/floor/T, datum/interaction/interaction)
+/obj/item/storage/toolbox/mechanical/proc/add_floorbot_tiles(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/stack/tile/floor/T = A.held
 	if(user.s_active)
 		user.s_active.close(user)
 	if(T.use(10))
@@ -351,24 +340,27 @@ EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/i
 		consume(src, user)
 	else
 		to_chat(user, span_warning("You need 10 floor tiles for a floorbot."))
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/toolbox_tiles
 	desc = "It's a toolbox with tiles sticking out the top"
 	name = "tiles and toolbox"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "toolbox_tiles"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toolbox_tiles)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/toolbox_tiles/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/toolbox_tiles/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(isprox(W))
 		consume(W, user)
 		var/obj/item/toolbox_tiles_sensor/B = new /obj/item/toolbox_tiles_sensor()
@@ -378,31 +370,34 @@ DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(inter
 		consume(src, user)
 	else if (istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/toolbox_tiles_sensor
 	desc = "It's a toolbox with tiles sticking out the top and a sensor attached"
 	name = "tiles, toolbox and sensor arrangement"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "toolbox_tiles_sensor"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-DECLARE_INTERACTIONS(/obj/item/toolbox_tiles_sensor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toolbox_tiles_sensor)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0))
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/toolbox_tiles_sensor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/toolbox_tiles_sensor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic right arm") || (W.name == "robotic left arm"))))
 		consume(W, user)
 		var/turf/T = get_turf(user.loc)
-		var/mob/living/bot/floorbot/A = new /mob/living/bot/floorbot(T)
-		A.name = created_name
+		var/mob/living/bot/floorbot/new_bot = new /mob/living/bot/floorbot(T)
+		new_bot.name = created_name
 		to_chat(user, span_notice("You add the robot arm to the odd looking toolbox assembly! Boop beep!"))
 		consume(src, user)
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS

@@ -44,6 +44,19 @@ Energy is conserved everywhere, in SI units.
 - **Replaces** the ad-hoc `return_temperature()` procs on `/turf` (which returns the solid's temperature), gas mixtures, tanks, canisters and mecha. There is one meaning everywhere.
 - **Generated constants.** Units, thresholds and material defaults come from Rust. There are no hardcoded body temperatures and no duplicate ignition points.
 
+### 2.1a The heat network (landed)
+
+Every heat flow goes through one Rust primitive (`vg_core::thermo::transfer`): `q` moves between two reservoirs as `+q`/`−q` in one operation,
+capped so neither passes its floor, and is booked. Persistent edges (`heat_link`, `heat_pump`, `heat_engine`; `verdigris/ffi/src/heat_net.rs`)
+are integrated each world step with the exact pair solution (radiation linearised at the pair's temperatures), any step length; pumps use the
+Carnot-bounded regulator and book their work in, engines book theirs out. Each step's books (`vg_heat_books()`: transferred, work in/out,
+external in/out, per `HEAT_SOURCE_*`) must explain the change in the finite reservoirs' energy; debug builds assert it, release builds count
+unbalanced steps. Property tests run random networks of reservoirs and edges for 1000 frames.
+
+DM declares edges as scoped entries (`code/domains/heat/heat_entries.dm`) and one-off moves with `heat_move()`/`heat_add()`/`heat_set()`
+(`heat_net.dm`). Mob body temperature is the mob's heat body (`body_temperature()`); Life drives its environment conductance and metabolic
+power. Tooling: the *Show Heat Links* admin verb. Decisions and numbers: `intended_changes.md`, "Heat network".
+
 ### 2.2 Heat nodes are created on demand
 
 - An item, machine or container follows the temperature of its surroundings until something heats or cools it directly. Only then does it get a heat node, which it keeps until it returns to equilibrium.
@@ -61,6 +74,16 @@ Energy is conserved everywhere, in SI units.
   Exchange runs both ways, so rooms warm up with people in them.
 - **Thresholds.** Comfort, damage and the species limits (about 120 overrides) become `Band` watches on the body node. The life system wakes only when the band changes, and there is one damage ladder.
 - **Space and radiation.** Stefan–Boltzmann heat loss, with one model instead of three.
+
+### Implementation (H2, landed)
+
+`code/modules/heat/heat_mobs.dm` and the human environment stage (`code/modules/mob/living/carbon/human/life.dm`). The body is linked through
+clothing with `set_surroundings(air, surface, sky_area)`: convection (`C·(1−protection)·density / (15 · LIFE_CYCLE_SECONDS)`) shared between
+its tile's air (coupling slot 0) and heat links to the air of the tiles open to it; contact with the floor solid under it
+(`BODY_FLOOR_CONDUCTANCE`) and each wall beside it (`BODY_WALL_CONDUCTANCE_FRACTION` of that); a radiative link to the 2.7 K sky in space or
+below `BODY_SKY_DENSITY` of a standard cell. Floors hold `FLOOR_HEAT_CAPACITY` (80 kJ/K), so a cold room's floor, not its few kJ/K of air,
+takes a chilled body's heat. Inside the comfort range every link is zero: at game rates (kW/K) occupants would otherwise heat every room.
+Pins and numbers: `dq_body_heat_behaviour.dm`, `intended_changes.md` ("Body heat against the room").
 
 ## 4. Items, cooking, reagents (H3)
 
@@ -89,6 +112,8 @@ Code: `code/modules/heat/heat_objects.dm`, rules in `code/datums/rules/declarati
   - oxygen consumption through a gas command.
 
   It ends when the thing runs out of fuel or oxygen, or its temperature drops below a limit. The burning component's flat `10 * seconds_per_tick` damage is replaced.
+- **Gas reactions** (landed): DM decides a reaction's rate and stoichiometry; `gas_react()` hands the deltas to Rust, which computes the
+  enthalpy and settles the mixture's temperature in one booked step (`verdigris/domains/gas/src/reaction_energy.rs`).
 - **Burning mobs** use the same state. They stop calling `hotspot_expose` every tick and stop passing fire stacks as a temperature (B16).
 
 ### Implementation (H3)
@@ -121,6 +146,14 @@ It replaces five copies of the coefficient-of-performance maths, the heat-deleti
 - Heat capacity, conductance, emissivity, melting, ignition and critical temperatures, and latent heat all come from `/datum/material` (`_materials.dm:219-297`), and composites derive them.
 - Fixing the conductance scale (B8) makes wall materials matter.
 - `material_service`'s thermal state moves to Rust heat nodes (M4), and SSmaterial_services is deleted (S4). Its non-thermal state stays with material science.
+
+### Implementation (landed)
+
+A datum that is not an atom keeps a Rust heat body by handle: a heat store (`code/domains/heat/heat_store.dm`, `heat_store_*()`), with an
+optional phase plateau, power, heat links and heat engines; `HEAT_STORE(h)` names it to `heat_move()`, `heat_equalize()` and `heat_conduct()`.
+A material service's thermal stock is a store linked to its turf's air and to the gas it holds (a heat engine for a thermoelectric cell); a
+processed batch holds a store while it differs from its surroundings and cools through a link to its turf's air. Numbers: `intended_changes.md`
+("Material science heat").
 
 ## 8. Tests and lint
 

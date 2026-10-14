@@ -1,0 +1,22 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+@obj.structure human|/obj/item/tool/wrench
+@obj.structure human|/obj/item/tool/wirecutters
+@obj.structure human|/obj/item/multitool
+@obj.structure human|/obj/item/weldingtool
+@obj.structure human|/obj/item/stack/cable_coil
+-click: Click: Use
++2 click: Click: Repair
+@obj.structure human|/obj/item/stack/material/steel
+-click: Click: Use
++2 click: Click: Repair
+@obj.structure human|/obj/item/card/id
+@obj.structure human|/obj/item
+human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Use
+human|/obj/item/stack click: Click: Repair
+keys: drag_buckle, melee_hit, repair, repair_or_hit

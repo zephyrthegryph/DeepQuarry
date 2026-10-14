@@ -20,33 +20,34 @@
 
 	var/obj/item/tank/jetpack/rig/jets
 
-/obj/item/rig_module/maneuvering_jets/engage()
+/obj/item/rig_module/maneuvering_jets/engage(atom/target, notify_ai, mob/user)
 	if(!..())
 		return 0
 	jets.toggle_rockets_effect(holder?.wearer())
 	return 1
 
-/obj/item/rig_module/maneuvering_jets/activate()
+/obj/item/rig_module/maneuvering_jets/activate(skip_engage = 0, mob/user)
 
 	if(active)
 		return 0
 
 	active = 1
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 
 	if(!jets.on)
 		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
-/obj/item/rig_module/maneuvering_jets/deactivate()
+/obj/item/rig_module/maneuvering_jets/deactivate(forced = FALSE, mob/user)
 	if(!..())
 		return 0
 	if(jets.on)
 		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/maneuvering_jets, "jets", /obj/item/tank/jetpack/rig)
+CAPABILITIES(/obj/item/rig_module/maneuvering_jets)
+	owns_one(nameof(jets), starts = /obj/item/tank/jetpack/rig)
 
 
 /obj/item/rig_module/maneuvering_jets/installed()

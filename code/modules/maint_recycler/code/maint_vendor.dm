@@ -10,7 +10,6 @@
 	unacidable = TRUE
 	resistance_flags = INDESTRUCTIBLE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 
 	description_fluff = "While RSG's \"Trash 4 Cash\" recycling campaign came to an end decades ago, the underlying systems still work as well as ever thanks to an underground network of mega-dweebs and other assorted idiots maintaining it."
 
@@ -24,9 +23,18 @@
 	var/is_on = FALSE
 	var/light_range_on = 2
 	var/light_power_on = 1
-	light_color = "#0f8f0f"
 
 	var/obj/effect/overlay/recycler/monitor_screen
+
+CAPABILITIES(/obj/machinery/maint_vendor)
+	configure(light_glow(color = "#0f8f0f"))
+	configure(uses_power(idle = 10))
+	after_init(0, then(PROC_REF(move_after_init)))
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler, starts = /obj/effect/overlay/recycler, starts_args = NO_LOC)
+	owns_many(nameof(product_datums))
+	interface("RecyclerVendor")
+	op("purchase", ui_act("purchase", arg("index", num())), then(PROC_REF(ui_act_purchase)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -36,9 +44,8 @@
 	for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
-		own_add(src, nameof(product_datums), entry)
+		rel_add(src, nameof(product_datums), entry)
 	//move to relevant location
-	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -46,35 +53,26 @@
 
 	src.vis_contents |= monitor_screen
 	shuffle_inplace(product_datums) //looks weird to have a billion carpet entries right next to eachother
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/maint_vendor/LateInitialize()
+/// A mapped one moves to a marker, once the markers exist.
+/obj/machinery/maint_vendor/proc/move_after_init(datum/act/timer/A)
+	if(!A.mapload)
+		return
 	move_to_marker()
 
 /obj/machinery/maint_vendor/proc/move_to_marker()
 	if(GLOB.recycler_vendor_locations.len > 0)
 		var/turf/spot = pick(GLOB.recycler_vendor_locations)
 		forceMove(spot)
-		dir = SOUTH
+		set_dir(SOUTH)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 		testing("[src] has been placed at [loc], [x],[y],[z]")
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
 
-/obj/machinery/maint_vendor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/maint_vendor_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/maint_vendor_open_ui
-	id = "maint_vendor_open_ui"
-	name = "Use"
-	effect = /obj/machinery/maint_vendor/proc/interaction_open_ui_impl
-
-/obj/machinery/maint_vendor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/maint_vendor/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 
@@ -129,29 +127,24 @@
 		purchase_failed(user, "Out of Stock")
 		return FALSE
 	if(LAZYLEN(attempted_entry.required_access)) //access check
-		req_one_access = attempted_entry.required_access
+		set_req_one_access(attempted_entry.required_access)
 		if(!allowed(user))
 			purchase_failed(user, "Access Denied")
-			req_one_access = list()
+			set_req_one_access(list())
 			return FALSE
-		req_one_access = list()
+		set_req_one_access(list())
 
 	return TRUE
 
-/// Appearance reader: TRUE while the vendor has power (product display glow).
-/obj/machinery/maint_vendor/proc/appearance_powered()
-	return has_stat(NOPOWER) ? FALSE : TRUE
-
 //product display. screen is distinct.
-DECLARE_APPEARANCE(/obj/machinery/maint_vendor, "appearance_powered", list(
-	"1" = list(APPEARANCE_OVERLAYS = list("passiveGlow")),
-))
-APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" = "passiveGlow"))
+/obj/machinery/maint_vendor/draw(datum/look/look)
+	..()
+	look.glow("passiveGlow", when = !power_lost())
 
 /obj/machinery/maint_vendor/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	om_after(src, duration, PROC_REF(reset_screen_state))
+	after(src, duration, PROC_REF(reset_screen_state))
 
 /obj/machinery/maint_vendor/proc/reset_screen_state()
 	if(!is_on)
@@ -167,23 +160,20 @@ APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" 
 		get_asset_datum(/datum/asset/spritesheet_batched/maint_vendor) //for the item icons
 	)
 
-UI_ACT(/obj/machinery/maint_vendor, "purchase", ui_act_purchase, UI_ARG_NUM("index"))
-UI_ACT_PROC(/obj/machinery/maint_vendor, ui_act_purchase)
-	var/datum/maint_recycler_vendor_entry/entry = product_datums[params["index"]]
-	attempt_purchase(ui.user,entry)
+/obj/machinery/maint_vendor/proc/ui_act_purchase(datum/act/op/A, index)
+	var/mob/user = A.actor
+	var/datum/maint_recycler_vendor_entry/entry = product_datums[index]
+	attempt_purchase(user,entry)
 	return TRUE
-
-DECLARE_UI(/obj/machinery/maint_vendor, "RecyclerVendor")
 
 /obj/machinery/maint_vendor/tgui_close(mob/user)
 	. = ..()
 	if(LAZYLEN(open_tguis) > 0) return
 	set_on_state(FALSE)
 
-UI_DATA_REPLACE(/obj/machinery/maint_vendor, "merge:ui_data_obj_machinery_maint_vendor{items:list,userBalance:unknown,userName:text}")
-
-/// The computed part of /obj/machinery/maint_vendor's window data (declared on its UI_DATA row).
-/obj/machinery/maint_vendor/proc/ui_data_obj_machinery_maint_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/maint_vendor's window data.
+/obj/machinery/maint_vendor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/list/items = list()
 
@@ -219,14 +209,14 @@ UI_DATA_REPLACE(/obj/machinery/maint_vendor, "merge:ui_data_obj_machinery_maint_
 	is_on = state
 	if(is_on)
 		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 		monitor_screen.icon_state = "screen_default"
 	else
 		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		monitor_screen.icon_state = "screen_off"
 
 /obj/machinery/maint_vendor/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_on_state(FALSE)

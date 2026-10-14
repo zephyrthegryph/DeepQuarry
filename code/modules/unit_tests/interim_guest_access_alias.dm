@@ -1,0 +1,18 @@
+/// GetAccess keeps its truthy empty list and stable mutable alias until expiry.
+/datum/unit_test/interim_guest_access_alias/Run()
+	test_driver_begin()
+	var/obj/item/card/id/guest/pass = allocate(/obj/item/card/id/guest)
+	var/obj/item/card/id/guest/other = allocate(/obj/item/card/id/guest)
+	EXPIRY_SET(pass, expiration_time, 1 MINUTE, CLOCK_WORLD)
+	EXPIRY_SET(other, expiration_time, 1 MINUTE, CLOCK_WORLD)
+	var/list/access = pass.GetAccess()
+	TEST_ASSERT(islist(access) && access, "a valid empty pass still returns a truthy list")
+	TEST_ASSERT_EQUAL(length(access), 0, "an empty pass initially grants no access")
+	TEST_ASSERT_EQUAL(pass.GetAccess(), access, "repeated reads return the same mutable list")
+	access += ACCESS_ENGINE
+	TEST_ASSERT(ACCESS_ENGINE in pass.GetAccess(), "mutation through the public list alias reaches the pass")
+	TEST_ASSERT(!(ACCESS_ENGINE in other.GetAccess()), "another pass never aliases the first pass's access")
+	EXPIRY_STAMP(pass, expiration_time, CLOCK_WORLD)
+	TEST_ASSERT_EQUAL(pass.GetAccess(), pass.access, "an expired pass returns its permanent-access list")
+	TEST_ASSERT(!(ACCESS_ENGINE in pass.GetAccess()), "expiration stops granting the temporary access")
+	TEST_ASSERT(ACCESS_ENGINE in access, "expiration preserves an outstanding temporary-list alias")

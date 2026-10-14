@@ -43,7 +43,7 @@
 	play_sfx(T, SFX_EXPLOSION) // Local sound.
 
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS)) // For everyone else.
-		if(M.z == T.z && get_dist(M, T) > world.view && !M.has_status(EFFECT_DEAFENED) && !istype(M.loc,/turf/space))
+		if(M.z == T.z && get_dist(M, T) > world.view && !M.has_status(STAT_DEAFENED) && !istype(M.loc,/turf/space))
 			M << 'sound/effects/explosionfar.ogg'
 
 	exploding = FALSE

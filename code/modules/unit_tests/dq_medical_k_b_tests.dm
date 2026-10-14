@@ -67,7 +67,7 @@
 	var/obj/item/organ/internal/heart/O = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(O, "setup: the human has a heart")
 	O.set_robotic(ORGAN_ROBOT)
-	O.meat_type = null
+	O.set_meat_type(null)
 	O.set_initial_meat()
 	TEST_ASSERT_EQUAL(O.meat_type, /obj/item/stack/material/steel, "a robotic organ in an organic body yields steel")
 
@@ -92,10 +92,13 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/stomach/machine/S = allocate(/obj/item/organ/internal/stomach/machine)
 	rel_set(S, nameof(S.owner), H)
-	H.robobody_count = 3
-	var/before = H.bodytemperature
-	S.handle_organ_proc_special()
-	TEST_ASSERT_EQUAL(H.bodytemperature, before, "the machine stomach writes no chassis heat")
+	for(var/organ_tag in list(BP_HEAD, BP_TORSO, BP_GROIN)) // a full chassis: three prosthetic core parts
+		var/obj/item/organ/external/E = H.organs_by_name[organ_tag]
+		E.set_robotic(ORGAN_ROBOT)
+	TEST_ASSERT_EQUAL(H.robobody_count(), 3, "the core parts count as a chassis")
+	var/before = H.body_temperature()
+	S.handle_organ_proc_special(1)
+	TEST_ASSERT_EQUAL(H.body_temperature(), before, "the machine stomach writes no chassis heat")
 	rel_clear(S, nameof(S.owner))
 
 /// P2-S11: nutrition writers clamp.
@@ -104,17 +107,17 @@
 /datum/unit_test/dq_k_b_s11_nutrition_writers_clamp/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
-	TEST_ASSERT_EQUAL(H.nutrition, 100, "set_nutrition sets")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 100, "set_nutrition sets")
 	H.adjust_nutrition(-500)
-	TEST_ASSERT_EQUAL(H.nutrition, 0, "adjust_nutrition never goes below zero")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 0, "adjust_nutrition never goes below zero")
 	H.set_nutrition(H.max_nutrition + 1000)
-	TEST_ASSERT_EQUAL(H.nutrition, H.max_nutrition, "set_nutrition never exceeds max_nutrition")
+	TEST_ASSERT_EQUAL(nutrition_of(H), H.max_nutrition, "set_nutrition never exceeds max_nutrition")
 
 /// P2-S13: the species gate is data on the reagent, applied through effective_dose().
 /datum/unit_test/dq_k_b_s13_species_gate_data
 
 /datum/unit_test/dq_k_b_s13_species_gate_data/Run()
-	var/datum/reagent/R = chemistry_service().chemical_reagents[REAGENT_ID_ETHYLREDOXRAZINE]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_ETHYLREDOXRAZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: ethylredoxrazine exists")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/dq_test_diona_tag/D = allocate(/mob/living/carbon/human/dq_test_diona_tag)
@@ -122,7 +125,7 @@
 	TEST_ASSERT_EQUAL(R.effective_dose(D, 5, CHEM_BLOOD), 0, "a diona ignores it in the blood")
 	TEST_ASSERT_EQUAL(R.effective_dose(D, 5, CHEM_INGEST), 0, "a diona ignores it when ingested")
 	TEST_ASSERT(R.species_immune(D, CHEM_BLOOD), "species_immune() reads immune_species_blood")
-	var/datum/reagent/C = chemistry_service().chemical_reagents[REAGENT_ID_CALCIUMCARBONATE]
+	var/datum/reagent/C = SSchemistry.ready().chemical_reagents[REAGENT_ID_CALCIUMCARBONATE]
 	TEST_ASSERT(C.species_immune(D, CHEM_BLOOD), "calcium carbonate's blood gate is data")
 	TEST_ASSERT(!C.species_immune(D, CHEM_INGEST), "calcium carbonate's ingest route is not gated")
 
@@ -177,12 +180,12 @@
 /datum/unit_test/dq_k_b_k5_germ_writer/Run()
 	var/obj/item/I = allocate(/obj/item)
 	I.germ_level = 10
-	var/datum/reagent/R = chemistry_service().chemical_reagents[REAGENT_ID_STERILIZINE]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_STERILIZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: sterilizine exists")
 	var/old_volume = R.volume
-	R.volume = 1
+	R.set_volume(1)
 	R.touch_obj(I)
-	R.volume = old_volume
+	R.set_volume(old_volume)
 	TEST_ASSERT_EQUAL(I.germ_level, 0, "sterilizine cleans an object to zero, never below")
 	var/obj/item/organ/internal/heart/O = allocate(/obj/item/organ/internal/heart)
 	O.germ_level = 0
@@ -202,12 +205,12 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/dq_test_slime_tag/S = allocate(/mob/living/carbon/human/dq_test_slime_tag)
 	var/mob/living/carbon/human/dq_test_diona_tag/D = allocate(/mob/living/carbon/human/dq_test_diona_tag)
-	var/datum/reagent/mind = chemistry_service().chemical_reagents[REAGENT_ID_MINDBREAKER]
+	var/datum/reagent/mind = SSchemistry.ready().chemical_reagents[REAGENT_ID_MINDBREAKER]
 	TEST_ASSERT_EQUAL(mind.species_mult(H), 1, "an unlisted species gets full strength")
 	TEST_ASSERT_EQUAL(mind.species_mult(S), 0.15, "a Promethean feels mindbreaker at ~1/6")
 	TEST_ASSERT(mind.inert_for(D), "diona are inert to a reagent's extras by default")
 	TEST_ASSERT(!mind.inert_for(H), "humans are not inert")
-	var/datum/reagent/kelo = chemistry_service().chemical_reagents[REAGENT_ID_KELOTANE]
+	var/datum/reagent/kelo = SSchemistry.ready().chemical_reagents[REAGENT_ID_KELOTANE]
 	kelo.apply_species_injuries(H, kelo.species_injuries_blood, 5)
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_PHYSICAL), 0, "kelotane's species reaction spares humans")
 	kelo.apply_species_injuries(S, kelo.species_injuries_blood, 5)

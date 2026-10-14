@@ -1,0 +1,323 @@
+// Old-code pins: real occupant slots, live grabs and the existing timed entry points.
+/datum/unit_test/dq_timed_pin/machinery_occupant
+	abstract_type = /datum/unit_test/dq_timed_pin/machinery_occupant
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/Run()
+	set_global("dview_mob", GLOB.dview_mob)
+	..()
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/proc/powered(obj/machinery/M)
+	M.set_grid_power(TRUE)
+	M.set_broken_condition(FALSE)
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/proc/started(mob/user, duration)
+	var/datum/action = running(user)
+	TEST_ASSERT(action, "the real input starts timed work")
+	TEST_ASSERT(isnull(declared_duration(action)) || declared_duration(action) == duration, "the existing action duration is preserved")
+	return action
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_escape
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_escape/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/washing_machine/M = allocate(/obj/machinery/washing_machine, T)
+	var/mob/living/carbon/human/H = person(T)
+	H.forceMove(M)
+	test_menu(H, M, "washing_machine_climb_out")
+	started(H, 2 SECONDS)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(H.loc, M, "the occupant remains inside before the open-door escape finishes")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(H.loc, T, "the real completion moves the occupant onto the floor")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_escape_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_escape_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/washing_machine/M = allocate(/obj/machinery/washing_machine, T)
+	var/mob/living/carbon/human/H = person(T)
+	H.forceMove(M)
+	test_menu(H, M, "washing_machine_climb_out")
+	var/datum/action = started(H, 2 SECONDS)
+	var/turf/away = get_step(T, EAST)
+	H.forceMove(away)
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "moving out cancels the real escape task")
+	TEST_ASSERT_EQUAL(H.loc, away, "a cancelled completion never teleports the occupant back")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_entry
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_entry/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_storage_unit/M = allocate(/obj/machinery/suit_storage_unit, T)
+	powered(M)
+	M.set_isopen(TRUE)
+	var/mob/living/carbon/human/H = person(T)
+	test_menu(H, M, "move_inside")
+	started(H, 1 SECOND)
+	test_time(0.5 SECONDS)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE), "the real slot is empty before entry completes")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE), H, "completion fills the real sealed occupant slot")
+	TEST_ASSERT_EQUAL(H.loc, M, "physical containment agrees with the slot")
+	TEST_ASSERT(!M.isopen, "entry closes the actual door")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_storage_unit/M = allocate(/obj/machinery/suit_storage_unit, T)
+	powered(M)
+	M.set_isopen(TRUE)
+	var/mob/living/carbon/human/H = person(T)
+	test_menu(H, M, "move_inside")
+	var/datum/action = started(H, 1 SECOND)
+	H.forceMove(get_step(T, EAST))
+	test_time(2 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "moving cancels actual suit-storage entry")
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE), "cancelled entry never acquires the occupant")
+	TEST_ASSERT(M.isopen, "cancelled entry does not close the door")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/cycler_grab
+/datum/unit_test/dq_timed_pin/machinery_occupant/cycler_grab/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_cycler/M = allocate(/obj/machinery/suit_cycler, T)
+	powered(M)
+	M.set_locked(FALSE)
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(G.grab_target(), V, "the real held grab identifies its actual victim")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the actor really holds the live grab")
+	var/datum/op_result/picked = test_menu(H, M, "cycler_insert_grab")
+	TEST_ASSERT_EQUAL(picked?.key, "cycler_insert_grab", "the public menu picks the actual machine loading operation")
+	started(H, 2 SECONDS)
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "the victim remains outside until insertion completes")
+	TEST_ASSERT(!QDELETED(G), "the real grab is not consumed early")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), V, "completion inserts the real grabbed victim")
+	TEST_ASSERT_EQUAL(V.loc, M, "the victim is physically contained")
+	TEST_ASSERT(QDELETED(G), "successful insertion consumes the actual grab")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/cycler_drop_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/cycler_drop_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_cycler/M = allocate(/obj/machinery/suit_cycler, T)
+	powered(M)
+	M.set_locked(FALSE)
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(G.grab_target(), V, "the real held grab identifies its actual victim")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the actor really holds the live grab")
+	var/datum/op_result/picked = test_menu(H, M, "cycler_insert_grab")
+	TEST_ASSERT_EQUAL(picked?.key, "cycler_insert_grab", "the public menu picks the actual machine loading operation")
+	var/datum/action = started(H, 2 SECONDS)
+	H.drop_item()
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "losing the held grab cancels timed insertion")
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_SUIT_CYCLER), "the dropped-grab victim is never inserted")
+	TEST_ASSERT_EQUAL(V.loc, T, "the actual victim stays on the floor")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/vr_entry
+/datum/unit_test/dq_timed_pin/machinery_occupant/vr_entry/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/vr_sleeper/M = allocate(/obj/machinery/vr_sleeper, T)
+	powered(M)
+	var/mob/living/carbon/human/H = person(T)
+	TEST_ASSERT_NULL(H.mind, "the real headless fixture has no mind to transfer into VR")
+	test_menu(H, M, "vr_sleeper_climb_in")
+	started(H, 2 SECONDS)
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_VR_POD), "the pod remains empty before the timed entry")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(M.slot_item(OCCUPANT_SLOT_VR_POD), H, "timed completion inserts the real occupant")
+	TEST_ASSERT_EQUAL(H.loc, M, "the occupant is physically inside the pod")
+	TEST_ASSERT_NULL(M.avatar(), "a mindless occupant does not fabricate an avatar")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/vr_move_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/vr_move_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/vr_sleeper/M = allocate(/obj/machinery/vr_sleeper, T)
+	powered(M)
+	var/mob/living/carbon/human/H = person(T)
+	test_menu(H, M, "vr_sleeper_climb_in")
+	var/datum/action = started(H, 2 SECONDS)
+	H.forceMove(get_step(T, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "moving cancels the actual VR entry")
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_VR_POD), "cancelled entry leaves the real slot empty")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_headless_finish
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_headless_finish/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/cryopod/M = allocate(/obj/machinery/cryopod, T)
+	var/mob/living/carbon/human/H = person(T)
+	TEST_ASSERT_NULL(H.client, "this real fixture cannot impersonate a live player")
+	test_menu(H, M, "cryopod_enter")
+	started(H, 2 SECONDS)
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_CRYOPOD), "the pod remains empty during entry")
+	test_time(2 SECONDS)
+	TEST_ASSERT_NULL(running(H), "the real timed action completes")
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_CRYOPOD), "the existing live-client guard declines headless completion")
+	TEST_ASSERT_EQUAL(H.loc, T, "the declined occupant stays outside")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_move_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_move_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/cryopod/M = allocate(/obj/machinery/cryopod, T)
+	var/mob/living/carbon/human/H = person(T)
+	test_menu(H, M, "cryopod_enter")
+	var/datum/action = started(H, 2 SECONDS)
+	H.forceMove(get_step(T, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "moving cancels actual cryopod entry")
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_CRYOPOD), "cancelled entry never fills the cryopod")
+
+// The native source-side drag operation carries the actual wearer as its target.
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_completion
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_completion/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/oxygen_pump/M = allocate(/obj/machinery/oxygen_pump, T)
+	var/mob/living/carbon/human/H = person(T)
+	TEST_ASSERT(M.can_apply_to_target(H, H), "the real pump accepts the unequipped adjacent human")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "the fixture starts without a mask")
+	test_drag(H, M, H)
+	started(H, 2.5 SECONDS)
+	test_time(2 SECONDS)
+	TEST_ASSERT_NULL(M.breather(), "the wearer is not attached before the placement wait finishes")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "the mask is not equipped early")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_MASK), M.contained, "the actual completion equips its owned mask")
+	TEST_ASSERT_EQUAL(M.breather(), H, "the real breather relation points to the wearer")
+	test_time(0.2 SECONDS)
+	TEST_ASSERT_EQUAL(H.internal, M.tank, "the real delayed hookup connects the actual tank")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_completion_out_of_range
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_completion_out_of_range/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/oxygen_pump/M = allocate(/obj/machinery/oxygen_pump, T)
+	var/mob/living/carbon/human/H = person(get_step(get_step(T, EAST), EAST))
+	TEST_ASSERT(!M.can_apply_to_target(H, H), "the actual distance check rejects a wearer outside adjacency")
+	M.place_mask_done(H, H)
+	test_time(0.2 SECONDS)
+	TEST_ASSERT_NULL(M.breather(), "a refused completion never acquires a wearer")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "a refused completion never equips the mask")
+	TEST_ASSERT_NULL(H.internal, "a refused completion never connects internals")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_grab
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_grab/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/washing_machine/M = allocate(/obj/machinery/washing_machine, T)
+	var/open_state = M.state
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	test_click(H, M, G)
+	started(H, 5 SECONDS)
+	test_time(4.5 SECONDS)
+	TEST_ASSERT(!length(M.washing), "the victim is not stored before the actual load finishes")
+	TEST_ASSERT(!QDELETED(G), "the real grab is not spent before completion")
+	test_time(1 SECOND)
+	TEST_ASSERT(V in M.washing, "completion stores the actual grabbed victim")
+	TEST_ASSERT_EQUAL(V.loc, M, "real physical custody agrees with occupant storage")
+	TEST_ASSERT(QDELETED(G), "successful loading consumes the actual grab")
+	TEST_ASSERT(M.state != open_state, "successful loading closes the actual door")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_grab_drop_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/washing_grab_drop_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/washing_machine/M = allocate(/obj/machinery/washing_machine, T)
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	test_click(H, M, G)
+	var/datum/action = started(H, 5 SECONDS)
+	H.drop_item()
+	test_time(6 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "losing the held grab cancels the actual loading action")
+	TEST_ASSERT(!length(M.washing), "cancelled loading leaves the real occupant storage empty")
+	TEST_ASSERT_EQUAL(V.loc, T, "the real victim stays outside on cancellation")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_grab
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_grab/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_storage_unit/M = allocate(/obj/machinery/suit_storage_unit, T)
+	powered(M)
+	M.set_isopen(TRUE)
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(G.grab_target(), V, "the real held grab identifies its actual victim")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the actor really holds the live grab")
+	var/datum/op_result/picked = test_menu(H, M, "use_item")
+	TEST_ASSERT_EQUAL(picked?.key, "use_item", "the public menu picks the actual machine loading operation")
+	started(H, 2 SECONDS)
+	test_time(1.5 SECONDS)
+	TEST_ASSERT(isnull(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)), "the victim is not stored before the actual load finishes")
+	TEST_ASSERT(!QDELETED(G), "the real grab is not spent before completion")
+	test_time(1 SECOND)
+	TEST_ASSERT(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) == V, "completion stores the actual grabbed victim")
+	TEST_ASSERT_EQUAL(V.loc, M, "real physical custody agrees with occupant storage")
+	TEST_ASSERT(QDELETED(G), "successful loading consumes the actual grab")
+	TEST_ASSERT(!M.isopen, "successful loading closes the actual door")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_grab_drop_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/suit_storage_grab_drop_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/suit_storage_unit/M = allocate(/obj/machinery/suit_storage_unit, T)
+	powered(M)
+	M.set_isopen(TRUE)
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/V = person(T)
+	var/obj/item/grab/G = allocate(/obj/item/grab, H, V)
+	if(H.get_active_hand() != G)
+		H.put_in_active_hand(G)
+	TEST_ASSERT_EQUAL(G.grab_target(), V, "the real held grab identifies its actual victim")
+	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the actor really holds the live grab")
+	var/datum/op_result/picked = test_menu(H, M, "use_item")
+	TEST_ASSERT_EQUAL(picked?.key, "use_item", "the public menu picks the actual machine loading operation")
+	var/datum/action = started(H, 2 SECONDS)
+	H.drop_item()
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "losing the held grab cancels the actual loading action")
+	TEST_ASSERT(isnull(M.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)), "cancelled loading leaves the real occupant storage empty")
+	TEST_ASSERT_EQUAL(V.loc, T, "the real victim stays outside on cancellation")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_move_cancel
+/datum/unit_test/dq_timed_pin/machinery_occupant/oxygen_move_cancel/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/oxygen_pump/M = allocate(/obj/machinery/oxygen_pump, T)
+	var/mob/living/carbon/human/H = person(T)
+	test_drag(H, M, H)
+	var/datum/action = started(H, 2.5 SECONDS)
+	H.forceMove(get_step(T, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(action, H), "moving cancels actual mask placement")
+	TEST_ASSERT_NULL(M.breather(), "cancelled placement never acquires the wearer")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "cancelled placement never equips its mask")
+	TEST_ASSERT_NULL(H.internal, "cancelled placement never connects the tank")
+
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_unsupported_actor
+/datum/unit_test/dq_timed_pin/machinery_occupant/cryo_unsupported_actor/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/cryopod/M = allocate(/obj/machinery/cryopod, T)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	R.enable_godmode()
+	TEST_ASSERT(!M.check_occupant_allowed(R), "the actual ordinary cryopod rejects the robot type")
+	test_chat_clear()
+	var/datum/op_result/result = test_menu(R, M, "cryopod_enter")
+	TEST_ASSERT_EQUAL(result?.key, "cryopod_enter", "the unsupported actor picks the real native entry key")
+	TEST_ASSERT_EQUAL(result?.outcome, ACT_REFUSED, "type rejection happens before the entry wait")
+	TEST_ASSERT_NULL(running(R), "the unsupported actor never acquires timed entry work")
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(M.slot_item(OCCUPANT_SLOT_CRYOPOD), "the unsupported actor cannot become the real occupant")
+	TEST_ASSERT_EQUAL(R.loc, T, "the declined robot remains outside the pod")

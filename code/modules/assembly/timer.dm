@@ -11,8 +11,8 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 	var/time = 10
 
 
-OM_FIELD(/obj/item/assembly/timer, timing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/assembly/timer, PERIODIC_SLOW, "timing")
+/obj/item/assembly/timer/var/timing = FALSE
+TRACKED(/obj/item/assembly/timer, timing)
 
 /obj/item/assembly/timer/activate()
 	if(!..())
@@ -20,14 +20,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/assembly/timer, PERIODIC_SLOW, "timing")
 
 	set_state(!timing)
 
-	update_icon()
 	return 0
 
 /obj/item/assembly/timer/toggle_secure()
 	set_secured(!secured)
 	if(!secured)
 		set_timing(FALSE)
-	update_icon()
 	return secured
 
 /obj/item/assembly/timer/proc/set_state(state)
@@ -40,24 +38,21 @@ DECLARE_PERIODIC_WHILE(/obj/item/assembly/timer, PERIODIC_SLOW, "timing")
 	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
-/obj/item/assembly/timer/periodic_step()
+/obj/item/assembly/timer/proc/timer_step(datum/act/timer/A)
 	if(timing && time-- <= 0)
 		set_state(0)
 		timer_end()
 		time = 10
 
-DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/assembly/timer/appearance_overlays()
-	. = list()
-	attached_overlays = list()
-	if(timing)
-		. += "timer_timing"
-		attached_overlays += "timer_timing"
-	if(holder())
-		holder().update_icon()
-	return .
+/obj/item/assembly/timer/holder_layers()
+	return timing ? list("timer_timing") : null
 
-DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
+CAPABILITIES(/obj/item/assembly/timer)
+	every(2 SECONDS, then(PROC_REF(timer_step)), when = nameof(timing))
+	interface("AssemblyTimer", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
+	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))
+	op("set_time", ui_act("set_time", arg("time", num())), then(PROC_REF(ui_act_set_time)))
 
 /obj/item/assembly/timer/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
@@ -65,18 +60,19 @@ DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
 		return FALSE
 	return TRUE
 
-UI_DATA(/obj/item/assembly/timer, "time:num", "timing:num")
+/obj/item/assembly/timer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["time"] = time
+	data["timing"] = timing
+	return data
 
-UI_ACT(/obj/item/assembly/timer, "timing", ui_act_timing)
-UI_ACT_PROC(/obj/item/assembly/timer, ui_act_timing)
+/obj/item/assembly/timer/proc/ui_act_timing(datum/act/op/A)
 	set_state(!timing)
-	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/timer, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
-UI_ACT_PROC(/obj/item/assembly/timer, ui_act_set_time)
+/obj/item/assembly/timer/proc/ui_act_set_time(datum/act/op/A, time_arg)
 	var/real_new_time = 0
-	var/new_time = params["time"]
+	var/new_time = time_arg
 	if(isnum(new_time))
 		real_new_time = new_time
 	else

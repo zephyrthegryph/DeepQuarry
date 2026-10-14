@@ -20,9 +20,13 @@
 /datum/proc/ui_allowed(mob/user, action)
 	return TRUE
 
-/// Per-type list: action -> LOG_GAME / LOG_ADMIN, for the actions the dispatcher logs.
+/// Per-type table: action -> LOG_GAME / LOG_ADMIN, for the actions the dispatcher logs. A type sets its
+/// own with TYPE_TABLE(/type, ui_logged_actions, list("action" = LOG_GAME)); an empty table logs nothing. Shared and
+/// read-only.
+TYPE_TABLE_DECLARE(/datum, ui_logged_actions, list())
+
 /datum/proc/ui_logged()
-	return list()
+	return TYPE_TABLE_GET(src, ui_logged_actions)
 
 /// Runs `ui_<action>` if the host has one. Returns list(handled, result).
 /proc/ui_named_dispatch(datum/host, action, list/params, datum/tgui/ui)
@@ -43,10 +47,6 @@
 				break
 		if(!owner_cap)
 			return null
-	// A legacy UI_ACT row for this action still wins until its host is migrated.
-	var/datum/ui_decl/decl = ui_decl_of(host)
-	if(decl?.acts[action])
-		return null
 	var/mob/user = ui?.user
 	// ui_rights (code/datums/sys/ui.dm): an admin panel refuses, and audits, anyone without one of its rights.
 	if(host.ui_rights && !admin_require(user?.client, host.ui_rights, "[host.type]:[key]"))
@@ -61,7 +61,7 @@
 			continue
 		named[arg] = params[raw]
 	named["user"] = user
-	var/datum/dispatch_context/ctx = new(user, host, null, null, ui)
+	var/datum/dispatch_context/ctx = new(user, host, null, ui)
 	var/log_level
 	if(owner_cap)
 		named["holder"] = host
@@ -104,6 +104,7 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 
 /// A number (or numeric text) clamped to [min_value, max_value]; null if it isn't one.
 /proc/ui_number(value, min_value = -INFINITY, max_value = INFINITY, round_to = 0)
+	READS_FROM()
 	if(istext(value))
 		value = text2num(value)
 	if(!isnum(value) || value != value)
@@ -128,9 +129,10 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 
 /// The datum a ref names, if it is in `within` (or anywhere with within null) and of type `type`.
 /proc/ui_ref(value, list/within, type)
+	READS_FROM() // a ref names a thing when a choice is made, never cached
 	if(!istext(value))
 		return null
-	var/datum/D = within ? locate(value) in within : locate(value)
+	var/datum/D = within ? locate(value) in within : locate(value) // ALLOW(spatial): a ref lookup in a list the caller passes (a UI's own table), not a walk of an atom's contents
 	if(!D || (type && !istype(D, type)))
 		return null
 	return D

@@ -102,7 +102,7 @@
 			held_station_offer = existing
 			break
 		TEST_ASSERT(held_station_offer, "a full station board had no fixture offer to hold aside")
-		SScontracts.offered_contracts -= held_station_offer
+		rel_remove(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 		preexisting_station_offers--
 		expected_published = min(4, max(0, CONTRACT_BOARD_DEPARTMENT_LIMIT - preexisting_station_offers))
 	TEST_ASSERT(expected_published > 0, "the lifecycle test could not obtain a station-board fixture slot")
@@ -156,7 +156,7 @@
 		if(candidate.definition_id == "dq_offer_lifecycle_test")
 			SScontracts.withdraw_candidate(candidate, "Lifecycle test cleanup")
 	if(held_station_offer)
-		SScontracts.offered_contracts |= held_station_offer
+		rel_add(SScontracts, nameof(SScontracts.offered_contracts), held_station_offer)
 	for(var/offer_key in test_keys)
 		SScontracts.offer_cooldowns -= offer_key
 
@@ -255,8 +255,8 @@
 /datum/unit_test/dq_contract_internal_escrow
 
 /datum/unit_test/dq_contract_internal_escrow/Run()
-	var/currency_created_before = GLOB.supply_service.currency_created
-	var/currency_destroyed_before = GLOB.supply_service.currency_destroyed
+	var/currency_created_before = SSsupply.currency_created
+	var/currency_destroyed_before = SSsupply.currency_destroyed
 	var/datum/money_account/funder = new
 	funder.owner_name = "Test issuer"
 	funder.money = 500
@@ -274,8 +274,8 @@
 	TEST_ASSERT_EQUAL(funder.money, 500, "suspended issuer lost its escrow refund")
 	TEST_ASSERT_EQUAL(contract.escrow_balance, 0, "refunded escrow remained available")
 	funder.suspended = FALSE
-	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, currency_created_before, "internal escrow refund was counted as newly created currency")
-	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, currency_destroyed_before, "internal escrow funding was counted as destroyed currency")
+	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow refund was counted as newly created currency")
+	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "internal escrow funding was counted as destroyed currency")
 	qdel(contract)
 	var/station_money_before = GLOB.station_account.money
 	var/datum/contract/completed_contract = new
@@ -288,8 +288,8 @@
 	emit_contract_event("dq_escrow_payout_event", list("contract_id" = completed_contract.id), "dq-escrow-payout:[REF(completed_contract)]")
 	TEST_ASSERT_EQUAL(completed_contract.state, CONTRACT_COMPLETED, "funded payout contract did not complete")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_money_before + 200, "internal escrow payout did not reach its recipient")
-	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
-	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
+	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
+	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
 	GLOB.station_account.money = station_money_before
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
@@ -516,7 +516,7 @@
 			break
 	if(!original_routine)
 		original_routine = trial_terms_definition.create_contract(list("offer_key" = "dq-medical-rotation-test", "board_key" = "[CONTRACT_SCOPE_DEPARTMENT]:[DEPARTMENT_MEDICAL]", "offer_kind" = CONTRACT_OFFER_STANDING))
-	TEST_ASSERT(om_timer_slot_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
+	TEST_ASSERT(after_pending(original_routine, "offer_timer"), "routine medical offer had no expiry timer")
 	original_routine.cancel("Lifecycle test")
 	TEST_ASSERT(SScontracts.find_candidate(original_routine.offer_key), "closing a standing medical offer did not queue its cooldown-safe replacement")
 	TEST_ASSERT(SScontracts.offer_cooldowns[original_routine.offer_key] > world.time, "closing a standing offer did not enforce its publication cooldown")
@@ -559,7 +559,7 @@
 	TEST_ASSERT(trial.accept(), "medical study could not be accepted")
 	for(var/index in 1 to 3)
 		var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-		subject.real_name = "Trial Subject [index]"
+		subject.set_real_name("Trial Subject [index]")
 		var/obj/item/organ/host = subject.organ_in(O_LUNGS)
 		var/datum/affliction/pulmonary_contusion/condition = subject.body.afflict(/datum/affliction/pulmonary_contusion, host, 30)
 		TEST_ASSERT_NOTNULL(condition, "pulmonary contusion could not be afflicted")
@@ -669,9 +669,9 @@
 /datum/unit_test/dq_medical_trial_cohort_protocols
 
 /datum/unit_test/dq_medical_trial_cohort_protocols/Run()
-	var/mob/living/carbon/human/healthy = new(run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/healthy_two = new(run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/affected = new(run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/healthy = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/healthy_two = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/affected = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/organ/lungs = affected.organ_in(O_LUNGS)
 	var/datum/affliction/pulmonary_contusion/illness = affected.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 	var/list/available_indications = medical_trial_qualifying_indications(list(healthy, affected), FALSE)
@@ -789,9 +789,9 @@
 	))
 	TEST_ASSERT(conditional in SScontracts.offered_contracts, "three-person therapeutic offer was not published")
 	var/mob/living/carbon/human/departing = subjects[1]
-	OM_EMIT(departing, /datum/om/event/mob_logout)
+	PUBLISH_LEGACY(departing, /datum/notice/mob_logout)
 	registry_leave(REGISTRY_PLAYERS, departing)
-	// Reconciliation is deferred to an om_after(0) timer, which fires on the next scheduler slot
+	// Reconciliation is deferred to an after(0) timer, which fires on the next scheduler slot
 	// (OM_SLOT_DS) and pass: not always inside one decisecond on a busy test world.
 	for(var/i in 1 to 40)
 		if(!length(SScontracts.pending_subject_reconciliations))
@@ -821,7 +821,7 @@
 	trial.profile.cohort = "healthy-volunteer safety"
 	TEST_ASSERT(trial.accept(), "fax-path test study could not be accepted")
 	var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-	subject.real_name = "Test Subject"
+	subject.set_real_name("Test Subject")
 	var/obj/item/paper/consent = create_contract_document(run_loc_floor_bottom_left, "test consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	var/datum/contract_document/consent_component = consent.contract_document
 	consent.on_field_written(subject, 1, null)
@@ -886,12 +886,13 @@
 	TEST_ASSERT(participant.consent_withdrawn && trial.participants[identity.id] == participant, "post-submission withdrawal incorrectly erased already-received evidence")
 
 	var/mob/living/carbon/human/withdrawing_subject = new(test_turf)
-	withdrawing_subject.real_name = "Withdrawing Subject"
+	withdrawing_subject.set_real_name("Withdrawing Subject")
 	var/obj/item/paper/withdrawing_consent = create_contract_document(test_turf, "withdrawal test consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	withdrawing_consent.on_field_written(withdrawing_subject, 1, null)
 	var/datum/contract_subject_identity/withdrawing_identity = SScontracts.subject_identity(withdrawing_subject)
 	var/datum/medical_trial_participant/withdrawing_participant = trial.participants[withdrawing_identity.id]
 	TEST_ASSERT(withdrawing_participant, "second consenting subject was not enrolled")
+	TEST_ASSERT_EQUAL(owner_of(withdrawing_participant), trial, "real enrollment gives the trial custody of the withdrawing record")
 	TEST_ASSERT(trial.print_consent_revocation(test_turf, withdrawing_identity.id, owner.account_number), "unsubmitted participant could not obtain a withdrawal form")
 	var/obj/item/paper/unsubmitted_withdrawal
 	for(var/obj/item/paper/page in turf_contents_of_type(test_turf, /obj/item/paper))
@@ -903,6 +904,8 @@
 	var/consent_evidence_id = withdrawing_participant.consent_evidence_id
 	TEST_ASSERT(process_contract_fax(unsubmitted_withdrawal, CONTRACT_FAX_VEYMED, owner.account_number), "unsubmitted consent withdrawal was rejected")
 	TEST_ASSERT(!trial.participants[withdrawing_identity.id], "withdrawn unsubmitted participant still occupied a cohort slot")
+	TEST_ASSERT(QDELETED(withdrawing_participant), "actual fax withdrawal retires the exact enrolled record")
+	TEST_ASSERT(!QDELETED(participant) && trial.participants[identity.id] == participant, "withdrawing another subject preserves the exact submitted control record")
 	var/datum/contract_evidence/voided_consent = SScontracts.evidence_by_id[consent_evidence_id]
 	TEST_ASSERT(voided_consent?.void_reason, "withdrawal did not void the prior consent evidence")
 
@@ -920,7 +923,7 @@
 	fallback_account.owner_name = "Fallback Clinician"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
-	fallback_clinician.real_name = fallback_account.owner_name
+	fallback_clinician.set_real_name(fallback_account.owner_name)
 	fallback_clinician.job = JOB_MEDICAL_DOCTOR
 	var/datum/mind/fallback_mind = new("fallback_clinician")
 	rel_set(fallback_mind, nameof(fallback_mind.initial_account), fallback_account)
@@ -966,14 +969,14 @@
 	var/obj/structure/closet/crate/corpse_crate = new(run_loc_floor_bottom_left)
 	create_contract_document(corpse_crate, "test corpse manifest", "test", trial.id, CONTRACT_DOCUMENT_MANIFEST, autopsy.issuer_name, list("side_contract_id" = autopsy.id))
 	corpse.forceMove(corpse_crate)
-	TEST_ASSERT(!GLOB.supply_service.forbidden_atoms_check(corpse_crate), "the real supply-shuttle freight guard rejected an eligible dead body")
+	TEST_ASSERT(!SSsupply.forbidden_atoms_check(corpse_crate), "the real supply-shuttle freight guard rejected an eligible dead body")
 	process_contract_export(corpse_crate)
 	TEST_ASSERT_EQUAL(autopsy.state, CONTRACT_COMPLETED, "manifested irreversible corpse export did not complete recovery contract")
 
 	// Evidence is accepted during grace, so unsubmitted consent must remain
 	// revocable for that same interval.
 	var/mob/living/carbon/human/grace_subject = new(test_turf)
-	grace_subject.real_name = "Grace Subject"
+	grace_subject.set_real_name("Grace Subject")
 	var/obj/item/paper/grace_consent = create_contract_document(test_turf, "grace consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	grace_consent.on_field_written(grace_subject, 1, null)
 	var/datum/contract_subject_identity/grace_identity = SScontracts.subject_identity(grace_subject)
@@ -1011,11 +1014,11 @@
 /datum/unit_test/dq_medical_contract_machine_integration/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/doctor = new(test_turf)
-	doctor.real_name = "Integration Doctor"
+	doctor.set_real_name("Integration Doctor")
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
-	head_id.forceMove(management) // CONTAINED: in its contents before own_set
-	own_set(management, nameof(management.scan), head_id)
+	head_id.forceMove(management) // CONTAINED: in its contents before rel_set
+	rel_set(management, nameof(management.scan), head_id)
 	var/datum/contract_definition/definition = SScontracts.definitions["experimental_medication_study"]
 	var/datum/contract/medical_trial/trial = definition.create_contract()
 	TEST_ASSERT(management.accept_management_contract(trial, doctor), "department management console rejected a valid medical trial")
@@ -1044,7 +1047,7 @@
 /datum/unit_test/dq_rare_case_report_workflow/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/subject = new(test_turf)
-	subject.real_name = "Rare Case Patient"
+	subject.set_real_name("Rare Case Patient")
 	var/datum/mind/test_mind = own(new /datum/mind) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	test_mind.transfer_to(subject)
@@ -1060,8 +1063,8 @@
 	var/mob/living/carbon/human/doctor = new(test_turf)
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
-	head_id.forceMove(management) // CONTAINED: in its contents before own_set
-	own_set(management, nameof(management.scan), head_id)
+	head_id.forceMove(management) // CONTAINED: in its contents before rel_set
+	rel_set(management, nameof(management.scan), head_id)
 	TEST_ASSERT(management.accept_management_contract(report, doctor), "department console rejected the rare-case report")
 	TEST_ASSERT(report.print_case_forms(test_turf), "rare-case forms did not print (state [report.state], consent time [report.consent_time], location [test_turf])")
 	var/obj/item/paper/consent
@@ -1079,7 +1082,7 @@
 	TEST_ASSERT(report.consent_time, "patient signature did not register rare-case consent")
 	TEST_ASSERT(report.print_case_forms(test_turf), "registered rare-case paperwork had no replacement path")
 	report.consent_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	narrative.info += " Treatment relieved pleural pressure. Follow-up showed stable respiration without complication."
+	narrative.set_info(narrative.info + (" Treatment relieved pleural pressure. Follow-up showed stable respiration without complication."))
 	narrative.on_field_written(doctor, 1, null)
 	narrative.on_field_written(doctor, 2, null)
 	var/obj/item/paper/baseline = new(test_turf)
@@ -1096,12 +1099,12 @@
 	for(var/obj/item/page as anything in list(consent, narrative, baseline, followup))
 		rel_add(packet, nameof(packet.pages), page)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
-	fax.set_stat(0)
-	packet.forceMove(fax) // CONTAINED: in its contents before own_set
-	own_set(fax, nameof(fax.copyitem), packet)
+	dq_machine_clear(fax)
+	packet.forceMove(fax) // CONTAINED: in its contents before rel_set
+	rel_set(fax, nameof(fax.copyitem), packet)
 	own_take(management, nameof(management.scan))
 	head_id.forceMove(fax)
-	own_set(fax, nameof(fax.scan), head_id)
+	rel_set(fax, nameof(fax.scan), head_id)
 	TEST_ASSERT(fax.sendfax(CONTRACT_FAX_CASE_REGISTRY, doctor), "powered fax machine rejected the authenticated rare-case packet")
 	TEST_ASSERT_EQUAL(report.state, CONTRACT_COMPLETED, "real fax-machine submission did not complete the rare-case report")
 	qdel(fax)
@@ -1116,7 +1119,7 @@
 /datum/unit_test/dq_rare_case_consent_revocation/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/subject = new(test_turf)
-	subject.real_name = "Registry Withdrawal Patient"
+	subject.set_real_name("Registry Withdrawal Patient")
 	var/datum/mind/subject_mind = new("rare_case_withdrawal_patient")
 	subject_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	subject_mind.transfer_to(subject)
@@ -1210,7 +1213,7 @@
 		sleep(2)
 		// The stage timer is due now; under a busy MC the Behaviours subsystem may not have
 		// fired this tick yet, so run the scheduler's pass here instead of waiting on the MC.
-		var/datum/om/scheduler/sched = engineering.performance_requirement.om_rec?.sched || GLOB.om_live_sched || om_scheduler()
+		var/datum/time_scheduler/sched = engineering.performance_requirement.om_rec?.sched || GLOB.om_live_sched || time_scheduler()
 		sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(engineering.state, CONTRACT_COMPLETED, "qualifying sustained supermatter telemetry did not complete Engineering's contract")
 	qdel(engineering)
@@ -1346,9 +1349,9 @@
 	TEST_ASSERT(command.accept(), "producer-backed Command contract could not be accepted")
 	var/obj/machinery/computer/skills/management = new(test_turf)
 	var/obj/item/card/id/command_id = new(management)
-	command_id.access |= ACCESS_CAPTAIN
-	own_set(management, nameof(management.scan), command_id)
-	management.authenticated = actor.real_name
+	command_id.include_access(ACCESS_CAPTAIN)
+	rel_set(management, nameof(management.scan), command_id)
+	management.set_authenticated(actor.real_name)
 	var/list/old_allocations = list()
 	var/list/old_percents = list()
 	var/list/old_configured = list()
@@ -1360,7 +1363,7 @@
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 10, actor), "authoritative Engineering allocation edit failed")
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_MEDICAL, 10, actor), "authoritative Medical allocation edit failed")
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_ACTIVE, "Department Management policy edits completed Command's contract before funds moved")
-	GLOB.supply_service.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
+	SSsupply.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_COMPLETED, "the authoritative funded budget-cycle settlement did not complete Command's contract")
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/department_budget = GLOB.department_accounts[department]
@@ -1378,7 +1381,7 @@
 	var/datum/data/record/general_record = new
 	general_record.fields["id"] = "producer-case"
 	general_record.fields["name"] = actor.real_name
-	own_add(GLOB.data_core, nameof(/datum/datacore::general), general_record)
+	rel_add(GLOB.data_core, nameof(/datum/datacore::general), general_record)
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
 	rel_set(security_console, nameof(security_console.active1), general_record)
@@ -1408,16 +1411,16 @@
 
 /datum/unit_test/dq_contract_budget_acceptance_feasibility/Run()
 	var/station_money = GLOB.station_account.money
-	var/old_salary_support = GLOB.supply_service.nt_salary_support
+	var/old_salary_support = SSsupply.nt_salary_support
 	GLOB.station_account.money = 2500
-	GLOB.supply_service.nt_salary_support = 0
+	SSsupply.nt_salary_support = 0
 	var/datum/contract_definition/outcome/command_budget_mandate/definition = SScontracts.definitions["command_budget_mandate"]
 	var/datum/contract/outcome/contract = definition.create_contract(list("allocation_target" = 20000, "department_target" = 5, "minimum_allocation" = 2000))
 	var/prepared = definition.prepare_accept(contract, null, null, null)
 	var/scaled_total = contract.primary_target
 	var/scaled_departments = contract.secondary_target
 	GLOB.station_account.money = station_money
-	GLOB.supply_service.nt_salary_support = old_salary_support
+	SSsupply.nt_salary_support = old_salary_support
 	TEST_ASSERT(prepared, "fundable low-budget mandate was rejected instead of scaled")
 	TEST_ASSERT(scaled_total <= 2500, "budget mandate exceeded authoritative next-cycle funding")
 	TEST_ASSERT_EQUAL(scaled_departments, 1, "budget mandate retained more funded departments than available money supports")
@@ -1454,33 +1457,33 @@
 	var/datum/money_account/provider = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
 	var/provider_expenses_before = provider.monthly_expenses
 	var/provider_total_expenses_before = provider.total_expenses
-	var/refunds_before = GLOB.supply_service.currency_refunded
-	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
+	var/refunds_before = SSsupply.currency_refunded
+	var/internal_refunds_before = SSsupply.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.account_number = 860001
 	customer.owner_name = "Refund Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
 	provider.money = max(provider.money, 500)
-	var/period = GLOB.supply_service.service_accounting_period
-	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_invoice(customer, provider, "Unit test checkout", list("Meal" = 1), list("Meal" = 200), list("total" = 200, "subsidy" = 0, "personal" = 200, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	var/period = SSsupply.service_accounting_period
+	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Meal" = 1), list("Meal" = 200), list("total" = 200, "subsidy" = 0, "personal" = 200, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	TEST_ASSERT(invoice, "refund settlement test invoice was not created")
-	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, provider, "Unit test checkout", refund_operator), "test invoice refund failed")
-	GLOB.supply_service.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, provider, "Unit test checkout", refund_operator), "test invoice refund failed")
+	SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	var/datum/money_account/subsidized_customer = new
 	subsidized_customer.account_number = 860002
 	subsidized_customer.owner_name = "Subsidized Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
-	var/datum/service_invoice/subsidized_invoice = GLOB.supply_service.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
-	GLOB.supply_service.settle_service_contract_period(period)
+	var/datum/service_invoice/subsidized_invoice = SSsupply.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	SSsupply.settle_service_contract_period(period)
 	TEST_ASSERT_EQUAL(service.state, CONTRACT_ACTIVE, "a refunded invoice or one fabricated high-price customer completed the settled Service contract")
 	TEST_ASSERT(subsidized_invoice.settled, "closed-period invoice was not finalized")
-	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
+	TEST_ASSERT(!SSsupply.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
 	provider.money = old_provider_money
 	provider.monthly_expenses = provider_expenses_before
 	provider.total_expenses = provider_total_expenses_before
-	GLOB.supply_service.currency_refunded = refunds_before
-	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
+	SSsupply.currency_refunded = refunds_before
+	SSsupply.currency_internal_refunded = internal_refunds_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	qdel(customer)
@@ -1638,7 +1641,7 @@
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
-		player.real_name = account.owner_name
+		player.set_real_name(account.owner_name)
 		player.job = "Scientist"
 		var/datum/mind/player_mind = own(new /datum/mind("reassignment_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		rel_set(player_mind, nameof(player_mind.initial_account), account)
@@ -1689,12 +1692,12 @@
 	TEST_ASSERT_EQUAL(trial.negotiated_effect("identity"), "anonymous", "identity negotiation did not produce a gameplay effect")
 	TEST_ASSERT(trial.accept(), "negotiated-effect trial could not be accepted")
 	var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-	subject.real_name = "Negotiated Privacy Subject"
+	subject.set_real_name("Negotiated Privacy Subject")
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/medical_trial_participant/participant = new(identity.id, list(), TRUE, 0)
 	participant.dose = MEDICAL_TRIAL_MINIMUM_DOSE
 	participant.exposure_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	own_put(trial, nameof(trial.participants), identity.id, participant)
+	rel_add(trial, nameof(trial.participants), participant, identity.id)
 	var/list/baseline = list("subject_id" = identity.id, "scan_time" = participant.exposure_time, "snapshot" = list(), "operator_account" = 0)
 	var/list/trial_markers = list()
 	trial_markers[trial.id] = 1
@@ -1867,12 +1870,24 @@
 
 	var/list/fact_a = list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100))
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "first broker fact was rejected")
+	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
+	TEST_ASSERT_NOTNULL(window, "real first event created its window")
+	var/datum/contract_opportunity_signal/first_signal = rule.signals[1]
+	var/list/first_lane = window.facts_by_signal[first_signal.id]
+	var/datum/contract_opportunity_observation/first_record = first_lane["dq_opportunity_test|guardrail-a"]
+	TEST_ASSERT_NOTNULL(first_record, "first authoritative fact has its original record")
+	TEST_ASSERT_EQUAL(owner_of(first_record), window, "the real window owns its first observation")
 	TEST_ASSERT(!emit_contract_event("dq_opportunity_test", fact_a, "guardrail-a:1"), "global occurrence deduplication accepted the same broker event twice")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "one capped fact generated an opportunity")
 
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 2, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 40)), "guardrail-a:2"), "new fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 1, "actor_account" = 910001, "entity" = "A", "category" = "alpha", "metrics" = list("value" = 100)), "guardrail-a:stale"), "stale revision did not reach the broker for its own rejection")
-	var/datum/contract_opportunity_window/window = SScontracts.opportunity_windows[window_key]
+	TEST_ASSERT_EQUAL(SScontracts.opportunity_windows[window_key], window, "revision kept the original window")
+	TEST_ASSERT(QDELETED(first_record), "real replacement retired the exact prior record")
+	var/datum/contract_opportunity_observation/current_record = first_lane["dq_opportunity_test|guardrail-a"]
+	TEST_ASSERT_NOTNULL(current_record, "replacement leaves a current authoritative record")
+	TEST_ASSERT(current_record != first_record, "replacement created a distinct record")
+	TEST_ASSERT_EQUAL(owner_of(current_record), window, "replacement remains owned after the stale-revision control")
 	var/list/snapshot = window.signal_snapshot(rule.signals[1])
 	TEST_ASSERT_EQUAL(snapshot["facts"], 1, "revision replacement duplicated one authoritative fact")
 	TEST_ASSERT_EQUAL(snapshot["value"], 40, "stale revision replaced the newer broker fact")
@@ -1897,13 +1912,20 @@
 	window.latched = TRUE
 
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-a", "fact_revision" = 3, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-a:3"), "inactive fact revision was rejected")
+	TEST_ASSERT(QDELETED(current_record), "inactive revision retired the exact replacement record")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-b", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-b:2"), "second inactive fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-c", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-c:2"), "third inactive fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-d", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-d:2"), "fourth inactive fact revision was rejected")
 	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-e", "fact_revision" = 2, "fact_active" = FALSE, "metrics" = list("value" = 0)), "guardrail-e:2"), "fifth inactive fact revision was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "resolved trigger remained available for acceptance")
+	TEST_ASSERT(emit_contract_event("dq_opportunity_test", list("fact_id" = "guardrail-f", "fact_revision" = 1, "metrics" = list("value" = 10)), "guardrail-f:1"), "final real teardown control event was accepted")
+	var/datum/contract_opportunity_observation/teardown_record = first_lane["dq_opportunity_test|guardrail-f"]
+	TEST_ASSERT_NOTNULL(teardown_record, "final event leaves an actual record for window teardown")
+	TEST_ASSERT(!QDELETED(teardown_record), "teardown control is still alive before its window goes")
+	TEST_ASSERT_EQUAL(owner_of(teardown_record), window, "original window owns the live teardown control")
 	SScontracts.opportunity_windows -= window_key
 	qdel(window)
+	TEST_ASSERT(QDELETED(teardown_record), "window teardown retires the exact remaining observation")
 	SScontracts.opportunity_cooldowns -= window_key
 
 /datum/unit_test/dq_opportunity_contract_catalog
@@ -1965,7 +1987,7 @@
 	record.account_number = account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
-	own_put(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), "[account_number]", record)
+	rel_add(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), record, "[account_number]")
 
 	TEST_ASSERT(GLOB.station_faction_relations.add_agent_exposure(account_number, REPUTATION_FACTION_SYNDICATE, 15, "Focused trace A", "broker-trace-a"), "first covert trace was rejected")
 	TEST_ASSERT(!SScontracts.find_live_offer(offer_key) && !SScontracts.find_candidate(offer_key), "one covert trace generated an investigation")

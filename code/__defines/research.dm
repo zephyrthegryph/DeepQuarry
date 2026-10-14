@@ -83,15 +83,15 @@
 #define SCIPAPER_GAIN_TO_MONEY 125
 
 ///Connects the 'server_var' to a valid research server on your Z level.
-///Used for machines in LateInitialize, to ensure that RND servers are loaded first.
+///Used for machines in an after_init() pass, to ensure that RND servers are loaded first.
 #define CONNECT_TO_RND_SERVER_ROUNDSTART(server_var, holder) do { \
-	var/list/found_servers = GLOB.research_service.get_available_servers(get_turf(holder)); \
+	var/list/found_servers = SSresearch.get_available_servers(get_turf(holder)); \
 	var/obj/machinery/rnd/server/selected_server = length(found_servers) ? found_servers[1] : null; \
 	if (selected_server) { \
 		server_var = selected_server.stored_research; \
 	}; \
 	else { \
-		var/datum/techweb/station_fallback_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science); \
+		var/datum/techweb/station_fallback_web = locate_in_list(research_techwebs(), /datum/techweb/science); \
 		server_var = station_fallback_web; \
 	}; \
 } while (FALSE)

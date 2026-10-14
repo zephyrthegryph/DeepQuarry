@@ -9,7 +9,9 @@
 	unacidable = TRUE
 	flippable = FALSE
 
-APPEARANCE_NONE(/obj/structure/bed/nest)
+/// Draws none of what the types above draw.
+/obj/structure/bed/nest/look_parts(datum/look/look)
+	return
 
 /obj/structure/bed/nest/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(buckled_mob)
@@ -22,20 +24,20 @@ APPEARANCE_NONE(/obj/structure/bed/nest)
 				buckled_mob.old_y = 0
 				unbuckle_mob(buckled_mob)
 			else
-				if(!COOLDOWN_FINISHED(buckled_mob, last_special))
+				if(!cooldown_ready(buckled_mob, last_special))
 					return
-				COOLDOWN_START(buckled_mob, last_special, NEST_RESIST_TIME)
+				cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
 				act_message(buckled_mob, null, MSG_SELF(span_warning("You struggle to break free from the gelatinous resin...")), \
 					MSG_OTHERS(span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin...")), \
 					MSG_BLIND(span_notice("You hear squelching...")))
-				om_after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), user, buckled_mob)
+				after(src, NEST_RESIST_TIME, PROC_REF(struggle_free), with = list(user, buckled_mob))
 			src.add_fingerprint(user)
 	return
 
 /// The end of a struggle out of the resin.
 /obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
 	if(user?.buckled_to() == src)
-		COOLDOWN_START(buckled_mob, last_special, NEST_RESIST_TIME)
+		cooldown_start(buckled_mob, last_special, NEST_RESIST_TIME)
 		buckled_mob.pixel_y = 0
 		buckled_mob.old_y = 0
 		unbuckle_mob(buckled_mob)
@@ -71,45 +73,38 @@ APPEARANCE_NONE(/obj/structure/bed/nest)
 	return
 
 // Nest's Use and item overrides fully replace bed's (the original overrides never called
-// ..() into it either), so it declares its own interactions.
-/obj/structure/bed/nest/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/nest_item,
-		/datum/interaction/entry_hand/nest_hand/harm,
-		/datum/interaction/entry_hand/nest_hand,
-	)
+// ..() into it either), so it declares its own interactions and takes none of the bed's ops.
+CAPABILITIES(/obj/structure/bed/nest)
+	bed_hands_off()
+	without("drag_buckle")   // the nest replaced every inherited interaction, the default drag buckle too
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_nest_item)))
+	op("melt", hand(), stance(I_HURT), label("Melt"), then(PROC_REF(interaction_melt)))
+	op("hand", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_hand)))
 
-/// Old attackby: hit the nest.
-/datum/interaction/entry_item/nest_item
-	id = "nest_item"
-	name = "Use"
-	effect = /obj/structure/bed/nest/proc/interaction_nest_item
-
-/obj/structure/bed/nest/proc/interaction_nest_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/bed/nest/proc/interaction_nest_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	for(var/mob/M in viewers(src, 7))
 		M.show_message(span_warning("[user] hits [src] with [W]!"), 1)
 	receive_weapon_hit(W, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/bed/nest/atom_destruction(damage_flag)
 	set_density(FALSE)
 	return ..()
 
 // start - Allows xenos to clean nests.
-/// Old attack_hand: a Hulk destroys it, or a xenomorph melts through it.
-/datum/interaction/entry_hand/nest_hand
-	id = "nest_hand"
-	name = "Use"
-	effect = /obj/structure/bed/nest/proc/interaction_hand
+/// Old attack_hand: a Hulk destroys it.
+/obj/structure/bed/nest/proc/interaction_hand(datum/act/op/A)
+	return nest_hand_used(A, FALSE)
 
 /// Combat mode: hivenode carriers melt the nest away.
-/datum/interaction/entry_hand/nest_hand/harm
-	id = "nest_hand_harm"
-	name = "Melt"
-	stance = I_HURT
+/obj/structure/bed/nest/proc/interaction_melt(datum/act/op/A)
+	return nest_hand_used(A, TRUE)
 
-/obj/structure/bed/nest/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/nest/proc/nest_hand_used(datum/act/op/A, harm)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
@@ -118,11 +113,11 @@ APPEARANCE_NONE(/obj/structure/bed/nest)
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(interaction.stance == I_HURT)
+			if(harm)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
 					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return TRUE
-	return TRUE
+					return OP_OK
+	return OP_OK
 // end.

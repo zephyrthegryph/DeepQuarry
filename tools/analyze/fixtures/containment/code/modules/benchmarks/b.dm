@@ -1,0 +1,2 @@
+/mob/bench
+	loc = T

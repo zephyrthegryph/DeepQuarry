@@ -1,0 +1,9 @@
+/obj/item/entrepreneur/emf icon: icons/obj/entrepreneur.dmi
+/obj/item/entrepreneur/emf state: emf-80
+/obj/item/entrepreneur/emf dir: 2
+/obj/item/entrepreneur/emf overlay: icons/obj/entrepreneur.dmi:emf-80:8:#000000
+/obj/item/entrepreneur/emf/professional icon: icons/obj/entrepreneur.dmi
+/obj/item/entrepreneur/emf/professional state: emf-0
+/obj/item/entrepreneur/emf/professional dir: 2
+/obj/item/entrepreneur/emf/professional overlay: icons/obj/entrepreneur.dmi:emf-0:8:#000000
+

@@ -17,28 +17,21 @@
 		"Jelly" = /obj/item/reagent_containers/food/snacks/variable/jelly
 		)
 
-/obj/machinery/appliance/mixer/candy/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/appliance/mixer/candy)
+	owns_one(nameof(candymaker_loop), /datum/looping_sound/candymaker, starts = /datum/looping_sound/candymaker)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
-	own_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/candy/appearance_overlays()
-	. = list()
-	. += ..()
-
-	if(!has_stat(MACHINE_STAT_ANY))
-		icon_state = on_icon
-		if(candymaker_loop)
-			candymaker_loop.start(src)
+/// The candy maker hums while it is on, beside the mixer's own sound.
+/obj/machinery/appliance/mixer/candy/loop_sync(datum/act/A)
+	..()
+	if(!has_condition())
+		candymaker_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(candymaker_loop)
-			candymaker_loop.stop(src)
+		candymaker_loop?.stop(src)
 
 /obj/machinery/appliance/mixer/candy/change_product_appearance(obj/item/reagent_containers/food/snacks/product)
 	food_color = get_random_colour(1)
 	. = ..()
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/mixer/candy, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

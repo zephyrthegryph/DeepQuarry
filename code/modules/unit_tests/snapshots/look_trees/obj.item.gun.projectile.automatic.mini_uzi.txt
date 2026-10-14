@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/mini_uzi icon: icons/obj/64x32guns_ch.dmi
+/obj/item/gun/projectile/automatic/mini_uzi state: mini-uzi
+/obj/item/gun/projectile/automatic/mini_uzi dir: 2
+/obj/item/gun/projectile/automatic/mini_uzi overlay: icons/obj/64x32guns_ch.dmi:mini-uzi:8:#000000
+

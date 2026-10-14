@@ -13,9 +13,6 @@ Pipelines + Other Objects -> Pipe network
 	material_template = /datum/material_template/pressure
 	material_total = SHEET_MATERIAL_AMOUNT
 	anchored = TRUE
-	idle_power_usage = 0
-	active_power_usage = 0
-	power_channel = ENVIRON
 	var/nodealert = 0
 	var/power_rating //the maximum amount of power the machine can use to do work, affects how powerful the machine is, in Watts
 	/// Bumped (rust_device_dirty()) when the device's Rust law changed for a reason that is no DM var of its own:
@@ -53,11 +50,7 @@ Pipelines + Other Objects -> Pipe network
 	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
 
-/obj/machinery/atmospherics/relations()
-	. = ..()
-	. += rel_one(nameof(node1))
-	. += rel_one(nameof(node2))
-	. += rel_many(nameof(network_memberships), back = nameof(/datum/pipe_network::normal_members))
+
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)
@@ -80,10 +73,11 @@ Pipelines + Other Objects -> Pipe network
 /// network's shared mixture is only let go (the network owns it).
 /proc/atmos_air_set(datum/holder, var_name, datum/gas_mixture/value)
 	. = atmos_air_assign(holder, var_name, value)
-	// A gas watch (watches_gas) follows its port to whichever mixture it now has.
 	var/atom/A = holder
-	if(istype(A) && A.cap_data)
-		gas_watch_rearm(A)
+	if(istype(A) && cap_of(A, CAP_GAS_WATCH))
+		gas_watch_arm(A) // a gas_watch() follows its mixture
+	if(istype(A) && cap_of(A, CAP_GAS_LEVEL))
+		gas_level_rearm_all(A) // so does a gas_level()
 
 /proc/atmos_air_assign(datum/holder, var_name, datum/gas_mixture/value)
 	var/datum/gas_mixture/old = holder.vars[var_name]
@@ -92,7 +86,7 @@ Pipelines + Other Objects -> Pipe network
 	if(!value || !value.own_holder_ref || (value.own_holder_ref == own_key(holder) && value.own_slot == var_name) || !owner_of(value))
 		return proto_set(holder, var_name, value)
 	proto_set(holder, var_name, null)
-	holder.vars[var_name] = value // ALLOW(api, ownership): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network
+	holder.vars[var_name] = value // ALLOW(api): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network
 	return value
 
 /obj/machinery/atmospherics/proc/engineered_material()
@@ -104,7 +98,7 @@ Pipelines + Other Objects -> Pipe network
 /obj/machinery/atmospherics/pipe/supports_engineered_material()
 	return TRUE
 
-/obj/machinery/atmospherics/pipe/Initialize(mapload, newdir)
+/obj/machinery/atmospherics/pipe/Initialize(mapload)
 	if(power_rating > 0)
 		ensure_pump_materials()
 	return ..()
@@ -115,16 +109,15 @@ Pipelines + Other Objects -> Pipe network
 		var/datum/material/material = engineered_material()
 		. += span_notice("Pressure construction: [material?.display_name || engineered_material_id]; exposed liner integrity [round(material_liner_integrity)]%.")
 
-/obj/machinery/atmospherics/Initialize(mapload, newdir)
+// ALLOW(init/INSTANCE_STATE): a pipe device takes its colour (or none it cannot show) and sets up its connection directions
+/obj/machinery/atmospherics/Initialize(mapload)
 	. = ..()
-	if(!isnull(newdir))
-		set_dir(newdir)
 	if(!pipe_color)
-		pipe_color = color
+		set_pipe_color(color)
 	color = null
 
 	if(!pipe_color_check(pipe_color))
-		pipe_color = null
+		set_pipe_color(null)
 	init_dir()
 
 /obj/machinery/atmospherics/examine_icon()
@@ -159,43 +152,28 @@ Pipelines + Other Objects -> Pipe network
 /obj/machinery/atmospherics/proc/check_connectable(obj/machinery/atmospherics/target)
 	return (src.connect_types & target.connect_types)
 
-/obj/machinery/atmospherics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/atmospherics_fit_material,
-		/datum/interaction/machine_item/atmospherics_pipe_painter,
-	)
-	..()
+MSG_DEF_SELF(atmospherics/has_shell, "It already has an engineered material shell.")
 
-/// Fitting an engineered material shell (stack of material) onto pipe/device structure.
-/datum/interaction/machine_item/atmospherics_fit_material
-	id = "atmospherics_fit_material"
-	name = "Fit engineered material"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/proc/offer_fit_material, null))
-	also_requires = list(REQ_FIELD_NOT("engineered_material_id", "it already has an engineered material shell"))
-	effect = /obj/machinery/atmospherics/proc/interaction_fit_material
-
-/// The pipe painter recolors this on afterattack; the attackby branch itself does nothing but must not fall through to ..().
-/datum/interaction/machine_item/atmospherics_pipe_painter
-	id = "atmospherics_pipe_painter"
-	name = "Paint"
-	held_type = /obj/item/pipe_painter
-	consumes_input = FALSE
-	effect = /atom/proc/interaction_swallow
-
-/// Whether A stack of material could be fitted at all (falls through to ..() otherwise).
-/obj/machinery/atmospherics/proc/offer_fit_material(mob/actor, atom/target, obj/item/held)
+/// A stack of material could be fitted at all.
+/obj/machinery/atmospherics/proc/material_fittable(datum/act/op/A)
 	return supports_engineered_material()
 
-/obj/machinery/atmospherics/proc/interaction_fit_material(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(stock.get_amount() < 1 || !stock.material)
-		return TRUE
-	var/datum/material/material = stock.material
-	engineered_material_id = material.name
+/obj/machinery/atmospherics/proc/no_shell(datum/act/A)
+	return (!engineered_material_id) ? null : MSG(atmospherics/has_shell)
+
+/obj/machinery/atmospherics/proc/painter_swallowed(datum/act/op/A)
+	return OP_OK
+
+/// The sheet (the op's cost) becomes the device's structure and liner.
+/obj/machinery/atmospherics/proc/material_fitted(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
+	var/datum/material/material = stock?.material
+	if(!material)
+		return OP_FAILED
+	set_engineered_material_id(material.name)
 	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
-	stock.use(1)
-	to_chat(user, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
-	return TRUE
+	to_chat(A.actor, span_notice("You fit [material.display_name] onto [src]. Its actual geometry and operating conditions will determine performance."))
+	return OP_OK
 
 /obj/machinery/atmospherics/proc/add_underlay(turf/T, obj/machinery/atmospherics/node, direction, icon_connect_type)
 	if(node)
@@ -218,16 +196,6 @@ Pipelines + Other Objects -> Pipe network
 		return null
 
 	return node.pipe_color
-
-/obj/machinery/atmospherics/machine_step()
-	if(being_loaded)
-		return
-	last_flow_rate = 0
-	last_power_draw = 0
-	// Nothing to do at this level: park. Subtypes with work call ..() for the resets above and
-	// return their own verdict. Returning null here kept every plain pipe (~9k on Southern Cross)
-	// step_active forever once anything woke it, so the machine pipeline ran them all every frame.
-	return PROCESS_KILL
 
 /// Completion callback for deferred Rust gas transfers. Devices which queued a
 /// request must make their scheduling decision from the committed amount, not
@@ -297,9 +265,9 @@ Pipelines + Other Objects -> Pipe network
 		I.setPipingLayer(piping_layer)
 		if(istype(I, /obj/item/pipe/trinary/flippable))
 			var/obj/item/pipe/trinary/flippable/flip = I
-			flip.icon_state = "[flip.icon_state][flip.mirrored ? "m" : ""]"
+			flip.set_icon_state("[flip.icon_state][flip.mirrored ? "m" : ""]")
 		transfer_fingerprints_to(I)
-	qdel(src)
+	destroyed(src)
 
 // Return the neighboring nodes whose physical links must be refreshed during construction.
 /obj/machinery/atmospherics/proc/get_neighbor_nodes_for_init()
@@ -308,11 +276,11 @@ Pipelines + Other Objects -> Pipe network
 // Called on construction (i.e from pipe item) but not on initialization
 /obj/machinery/atmospherics/proc/on_construction(obj_color, set_layer)
 	wake_automatic_shutoff_valves()
-	pipe_color = obj_color
+	set_pipe_color(obj_color)
 	setPipingLayer(set_layer)
 	// TODO - M.connect_types = src.connect_types - Or otherwise copy from item? Or figure it out from piping layer?
 	var/turf/T = get_turf(src)
-	level = !T.is_plating() ? 2 : 1
+	set_level(!T.is_plating() ? 2 : 1)
 	atmos_init()
 	if(QDELETED(src))
 		return // TODO - Eventually should get rid of the need for this.
@@ -329,25 +297,25 @@ Pipelines + Other Objects -> Pipe network
 	// Do it the Polaris way
 	switch(piping_layer)
 		if(PIPING_LAYER_SCRUBBER)
-			icon_state = "[icon_state]-scrubbers"
+			set_icon_state("[icon_state]-scrubbers")
 			connect_types = CONNECT_TYPE_SCRUBBER
 			layer = PIPES_SCRUBBER_LAYER
-			icon_connect_type = "-scrubbers"
+			set_icon_connect_type("-scrubbers")
 		if(PIPING_LAYER_SUPPLY)
-			icon_state = "[icon_state]-supply"
+			set_icon_state("[icon_state]-supply")
 			connect_types = CONNECT_TYPE_SUPPLY
 			layer = PIPES_SUPPLY_LAYER
-			icon_connect_type = "-supply"
+			set_icon_connect_type("-supply")
 		if(PIPING_LAYER_FUEL)
-			icon_state = "[icon_state]-fuel"
+			set_icon_state("[icon_state]-fuel")
 			connect_types = CONNECT_TYPE_FUEL
 			layer = PIPES_FUEL_LAYER
-			icon_connect_type = "-fuel"
+			set_icon_connect_type("-fuel")
 		if(PIPING_LAYER_AUX)
-			icon_state = "[icon_state]-aux"
+			set_icon_state("[icon_state]-aux")
 			connect_types = CONNECT_TYPE_AUX
 			layer = PIPES_AUX_LAYER
-			icon_connect_type = "-aux"
+			set_icon_connect_type("-aux")
 	if(pipe_flags & PIPING_ALL_LAYER)
 		connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY|CONNECT_TYPE_SCRUBBER|CONNECT_TYPE_FUEL|CONNECT_TYPE_AUX
 
@@ -390,7 +358,7 @@ Pipelines + Other Objects -> Pipe network
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
 
-TRACKED(/obj/machinery/atmospherics, rust_device_rev, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics, rust_device_rev)
 
 /// The device's Rust law needs re-publishing (see rust_device_rev): push_to_rust() runs once this frame.
 /obj/machinery/atmospherics/proc/rust_device_dirty()

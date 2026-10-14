@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - qol: "Timed actions of converted objects show a progress bar again and stop when you walk away"

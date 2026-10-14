@@ -13,15 +13,16 @@
 	var/malfunction = 0
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+TRACKED(/obj/item/implant, malfunction)
 
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.
 /obj/item/implant/slot_key()
 	return type
 
-/obj/item/implant/proc/trigger(emote, source as mob)
+/// Self-initiated emotes pass the host as actor; involuntary emotes pass null.
+/obj/item/implant/proc/trigger(emote, source as mob, mob/actor)
 	return
 
 /obj/item/implant/proc/activate()
@@ -39,7 +40,7 @@
 		// The implant site slot (organ_external.dm, OM relations step 2) is
 		// the implanted_in relation: this move sets part/imp_in and the
 		// organ's implants membership, same as the physical placement.
-		move_into(affected, ORGAN_SLOT_IMPLANTS)
+		move_into(affected, ORGAN_SLOT_IMPLANTS, src)
 	else
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
@@ -50,7 +51,7 @@
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 // Takes place after handle_implant, if that returns TRUE
-/obj/item/implant/proc/post_implant(mob/source)
+/obj/item/implant/proc/post_implant(mob/source, mob/user = null)
 
 /obj/item/implant/proc/get_data()
 	return "No information available"
@@ -67,30 +68,32 @@
 	M?.injure(INJURY_BURN, 15, part, src)
 	name = "melted implant"
 	desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
-	icon_state = "implant_melted"
-	malfunction = MALFUNCTION_PERMANENT
+	set_icon_state("implant_melted")
+	set_malfunction(MALFUNCTION_PERMANENT)
 
 /obj/item/implant/proc/implant_loadout(mob/living/carbon/human/H)
 	. = istype(H) && handle_implant(H, initialize_loc)
 	if(.)
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		known_implant = TRUE
 		post_implant(H)
 
-DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/implant)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("load_implanter", item(/obj/item/implanter), passes(), label("Load implanter"), then(PROC_REF(load_implanter)))
+	ref_one(nameof(imp_in), /mob)
+	ref_one(nameof(part), /obj/item/organ/external)
 
-/// Old attackby.
-/obj/item/implant/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/implanter))
-		var/obj/item/implanter/implanter = I
-		if(implanter.imp)
-			return INTERACTION_HANDLED_PASS
-		if(!own_set(implanter, nameof(implanter.imp), src, user = user))
-			return INTERACTION_HANDLED_PASS
-		implanter.update()
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// An implanter takes the implant (when it is empty); the click goes on.
+/obj/item/implant/proc/load_implanter(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/implanter/implanter = A.held
+	if(implanter.imp)
+		return OP_OK
+	if(!move_into(implanter, nameof(implanter.imp), src, user))
+		return OP_OK
+	implanter.update()
+	return OP_OK
 
 //////////////////////////////
 //	Tracking Implant
@@ -107,20 +110,20 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/weak	//This is for the loadout
 	degrade_time = 2.5 MINUTES
 
-/obj/item/implant/tracking/Initialize(mapload, ...)
-	. = ..()
-	id = rand(1, 1000)
-
 /// Watches its host every 2 s from implantation until it melts down.
-OM_FIELD(/obj/item/implant/tracking, tracking_active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/tracking, PERIODIC_SLOW, "tracking_active")
+/obj/item/implant/tracking/var/tracking_active = FALSE
+TRACKED(/obj/item/implant/tracking, tracking_active)
+CAPABILITIES(/obj/item/implant/tracking)
+	every(2 SECONDS, then(PROC_REF(tracking_step)), when = nameof(tracking_active))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(tracking_implant_emp))))
+	rolls(nameof(id), range_of(1, 1000))
 
 /obj/item/implant/tracking/post_implant(mob/source)
 	set_tracking_active(TRUE)
 
 // leaves its limb's implant list.
 
-/obj/item/implant/tracking/periodic_step()
+/obj/item/implant/tracking/proc/tracking_step(datum/act/timer/A)
 	var/mob/living/implant_mob // Get implant's mob from our host organ
 	if(istype(loc, /obj/item/organ))
 		var/obj/item/organ/O = loc
@@ -130,8 +133,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/tracking, PERIODIC_SLOW, "tracking_acti
 		if(ELAPSED(implant_mob, timeofdeath, CLOCK_WORLD) >= degrade_time)
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
-			icon_state = "implant_melted"
-			malfunction = MALFUNCTION_PERMANENT
+			set_icon_state("implant_melted")
+			set_malfunction(MALFUNCTION_PERMANENT)
 			set_tracking_active(FALSE)
 	return 1
 
@@ -152,12 +155,12 @@ circuitry. As a result neurotoxins can cause massive damage.<HR>
 Implant Specifics:<BR>"}
 	return dat
 
-DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implant_emp))
 /// An EMP makes the tracker malfunction for a while, maybe melting it down.
-/obj/item/implant/tracking/proc/tracking_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/tracking/proc/tracking_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(malfunction) //no, dawg, you can't malfunction while you are malfunctioning
-		return
-	malfunction = MALFUNCTION_TEMPORARY
+		return HOOK_DECLINE
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	var/delay = 20
 	switch(packet.severity)
@@ -171,7 +174,8 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 		if(4)
 			delay = rand(0.5*60*10,1*60*10)	//from .5 to 1 minutes of free time
 
-	om_after(src, delay, PROC_REF(malfunction_recover))
+	after(src, delay, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 //////////////////////////////
 //	Death Explosive Implant
@@ -194,7 +198,7 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
-/obj/item/implant/dexplosive/trigger(emote, source as mob)
+/obj/item/implant/dexplosive/trigger(emote, source as mob, mob/actor)
 	if(emote == "deathgasp")
 		src.activate("death")
 	return
@@ -241,7 +245,7 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 	msg = replace_characters(msg, replacechars)
 	if(findtext(msg,phrase))
 		activate()
-		qdel(src)
+		spent(src)
 
 /obj/item/implant/explosive/proc/limb_boom()
 	if(!part)
@@ -251,11 +255,11 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 		istype(part,/obj/item/organ/external/head))
 		part.owner?.injure(INJURY_BLUNT, 80, part.organ_tag, src, flags = INJURE_IGNORE_RESISTANCE)	//mangle them instead
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
-		qdel(src)
+		spent(src)
 	else
 		explosion(get_turf(imp_in()), -1, -1, 1, 3)
 		part.droplimb(0,DROPLIMB_BLUNT)
-		qdel(src)
+		spent(src)
 
 /obj/item/implant/explosive/activate()
 	if (malfunction == MALFUNCTION_PERMANENT)
@@ -271,7 +275,7 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 					play_sfx(src, SFX_ITEMS_COUNTDOWN)
-					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
+					after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
 				T.gib()
@@ -287,41 +291,71 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 	if(t)
 		t.hotspot_expose(3500,125)
 
-/obj/item/implant/explosive/post_implant(mob/source as mob)
-	om_ask(usr, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
+/obj/item/implant/explosive/post_implant(mob/source as mob, mob/user = null)
+	if(user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), answerer = user, source = source)
 
 /// The explosive implant's yield, then its phrase; `source` is the implantee.
-/datum/om/prompt/choice/explosive_implant_level
+/datum/prompt/choice/explosive_implant_level
 	title = "Implant Intent"
-	message = "What sort of explosion would you prefer?"
-	choices = list("Localized Limb", "Destroy Body", "Full Explosion")
+	question = "What sort of explosion would you prefer?"
+	timeout = 0
 	buttons = TRUE
 	var/mob/source
 
-/datum/om/prompt/text/explosive_implant_phrase
-	message = "Choose activation phrase:"
+CAPABILITIES(/datum/prompt/choice/explosive_implant_level)
+	ref_one(nameof(source), /mob)
+
+/datum/prompt/choice/explosive_implant_level/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+	var/static/list/levels = list("Localized Limb", "Destroy Body", "Full Explosion")
+	choices = levels
+
+/datum/prompt/text/explosive_implant_phrase
+	question = "Choose activation phrase:"
+	timeout = 0
 	var/mob/source
 	var/level
 
-/obj/item/implant/explosive/proc/explosive_level_chosen(datum/om/prompt/choice/explosive_implant_level/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/explosive_implant_phrase, PROC_REF(explosive_configured), source = ask.source, level = ask.choice)
+CAPABILITIES(/datum/prompt/text/explosive_implant_phrase)
+	ref_one(nameof(source), /mob)
 
-/obj/item/implant/explosive/proc/explosive_configured(datum/om/prompt/text/explosive_implant_phrase/ask)
+/datum/prompt/text/explosive_implant_phrase/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+
+/obj/item/implant/explosive/proc/explosive_level_chosen(datum/act/request/A)
+	var/datum/prompt/choice/explosive_implant_level/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
+	open_request(src, /datum/prompt/text/explosive_implant_phrase, PROC_REF(explosive_configured), answerer = ask.answerer, source = ask.source, level = ask.value)
+
+/obj/item/implant/explosive/proc/explosive_configured(datum/act/request/A)
+	var/datum/prompt/text/explosive_implant_phrase/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
 	var/mob/user = ask.answerer
 	var/mob/source = ask.source
 	elevel = ask.level
-	phrase = ask.text
+	phrase = ask.value
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
 	phrase = replace_characters(phrase, replacechars)
 	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
 	to_chat(user, "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.")
 
-DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_implant_emp))
+CAPABILITIES(/obj/item/implant/explosive)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(explosive_implant_emp))))
 /// An EMP may set the charge off, or melt it down.
-/obj/item/implant/explosive/proc/explosive_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/explosive/proc/explosive_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(malfunction)
-		return
-	malfunction = MALFUNCTION_TEMPORARY
+		return HOOK_DECLINE
+	set_malfunction(MALFUNCTION_TEMPORARY)
 	switch (packet.severity)
 		if (4)	//Weak EMP will make implant tear limbs off.
 			if (prob(25))
@@ -347,7 +381,8 @@ DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_impl
 						activate()		//50% chance of bye bye
 					else
 						meltdown()		//50% chance of implant disarming
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 /obj/item/implant/explosive/islegal()
 	return 0
@@ -356,7 +391,7 @@ DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_impl
 	if (ishuman(imp_in()) && part)
 		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 		play_sfx(src, SFX_ITEMS_COUNTDOWN)
-		om_after(src, 25, PROC_REF(small_boom_goes))
+		after(src, 2.5 SECONDS, PROC_REF(small_boom_goes))
 
 //////////////////////////////
 //	Chemical Implant
@@ -387,13 +422,8 @@ Can only be loaded while still in its original case.<BR>
 the implant may become unstable and either pre-maturely inject the subject or simply break."}
 	return dat
 
-/obj/item/implant/chem/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(50)
-	own_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
 
-/obj/item/implant/chem/trigger(emote, source as mob)
+/obj/item/implant/chem/trigger(emote, source as mob, mob/actor)
 	if(emote == "deathgasp")
 		src.activate(src.reagents.total_volume)
 	return
@@ -409,12 +439,15 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		expire(0)
 	return
 
-DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
+CAPABILITIES(/obj/item/implant/chem)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(chem_implant_emp))))
+	reagents(50)
 /// An EMP may make the implant release its chemicals.
-/obj/item/implant/chem/proc/chem_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/chem/proc/chem_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(malfunction)
-		return
-	malfunction = MALFUNCTION_TEMPORARY
+		return HOOK_DECLINE
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	switch(packet.severity)
 		if(1)
@@ -430,7 +463,8 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 			if(prob(20))
 				activate(5)
 
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 //////////////////////////////
 //	Loyalty Implant
@@ -460,14 +494,14 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 	var/mob/living/carbon/human/H = M
 	if(!H.mind)
 		return
-	var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(H.mind.special_role)
+	var/datum/antagonist/antag_data = SSantag.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
 		act_message(H, null, MSG_SELF("You feel the corporate tendrils of [using_map.company_name] try to invade your mind!"), MSG_OTHERS("%U% seems to resist the implant!"))
 		. = FALSE
 
 /obj/item/implant/loyalty/post_implant(mob/M)
 	var/mob/living/carbon/human/H = M
-	GLOB.antag_service.clear_antag_roles(H.mind, 1)
+	SSantag.clear_antag_roles(H.mind, 1)
 	to_chat(H, span_notice("You feel a surge of loyalty towards [using_map.company_name]."))
 
 //////////////////////////////
@@ -491,14 +525,14 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 "} + span_bold("Integrity:") + {"Implant can only be used three times before the nanobots are depleted."}
 	return dat
 
-/obj/item/implant/adrenalin/trigger(emote, mob/source as mob)
+/obj/item/implant/adrenalin/trigger(emote, mob/source as mob, mob/actor)
 	if (src.uses < 1)	return 0
 	if (emote == "pale")
 		src.uses--
 		to_chat(source, span_notice("You feel a sudden surge of energy!"))
-		source.status_set(EFFECT_STUNNED, 0)
-		source.status_set(EFFECT_WEAKENED, 0)
-		source.status_set(EFFECT_PARALYZED, 0)
+		source.status_set(STAT_STUNNED, 0)
+		source.status_set(STAT_WEAKENED, 0)
+		source.status_set(STAT_PARALYZED, 0)
 
 	return
 
@@ -529,10 +563,13 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 	return dat
 
 /// Monitors its host every 2 s from implantation until it has raised its alarm (or broke).
-OM_FIELD(/obj/item/implant/death_alarm, alarm_armed, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/death_alarm, PERIODIC_SLOW, "alarm_armed")
+/obj/item/implant/death_alarm/var/alarm_armed = FALSE
+TRACKED(/obj/item/implant/death_alarm, alarm_armed)
+CAPABILITIES(/obj/item/implant/death_alarm)
+	every(2 SECONDS, then(PROC_REF(death_alarm_step)), when = nameof(alarm_armed))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(death_alarm_emp))))
 
-/obj/item/implant/death_alarm/periodic_step()
+/obj/item/implant/death_alarm/proc/death_alarm_step(datum/act/timer/A)
 	if (!implanted) return
 	var/mob/M = imp_in()
 
@@ -555,35 +592,36 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/death_alarm, PERIODIC_SLOW, "alarm_arme
 				a.autosay("[mobname] has died in Space!", "[mobname]'s Death Alarm")
 			else
 				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
 			a.autosay("[mobname] has died in [name]!", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 		else
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm")
-			qdel(a)
+			consume(a)
 			set_alarm_armed(FALSE)
 
-DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_emp))
 /// For some reason alarms stop going off in case they are emp'd, even without this.
-/obj/item/implant/death_alarm/proc/death_alarm_emp(datum/damage_packet/packet)
+/obj/item/implant/death_alarm/proc/death_alarm_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(malfunction) //so I'm just going to add a meltdown chance here
-		return
-	malfunction = MALFUNCTION_TEMPORARY
+		return HOOK_DECLINE
+	set_malfunction(MALFUNCTION_TEMPORARY)
 	if(prob(40)) // Make the malfunction a probability because annoying
 		activate("emp")	//let's shout that this dude is dead
 	if(packet.severity == 1)
 		if(prob(40))	//small chance of obvious meltdown
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
-			malfunction = MALFUNCTION_PERMANENT
+			set_malfunction(MALFUNCTION_PERMANENT)
 		set_alarm_armed(FALSE)
 
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
@@ -599,6 +637,9 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 	var/activation_emote = "sigh"
 	var/obj/item/scanned
 
+CAPABILITIES(/obj/item/implant/compressed)
+	ref_one(nameof(scanned), /obj/item)
+
 /obj/item/implant/compressed/get_data()
 	var/dat = {"
 "} + span_bold("Implant Specifications:") + {"<BR>
@@ -612,7 +653,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
-/obj/item/implant/compressed/trigger(emote, mob/source as mob)
+/obj/item/implant/compressed/trigger(emote, mob/source as mob, mob/actor)
 	if (src.scanned() == null)
 		return 0
 
@@ -628,20 +669,34 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 		scanned().forceMove(t)
 	consume(src)
 
-/obj/item/implant/compressed/post_implant(mob/source)
+/obj/item/implant/compressed/post_implant(mob/source, mob/user = null)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
+	if(user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/implant_emote, PROC_REF(emote_chosen), answerer = user, choices = choices, source = source)
 
 /// An emote-triggered implant's activation emote (compressed matter, uplink); `source` is the implantee.
-/datum/om/prompt/choice/implant_emote
+/datum/prompt/choice/implant_emote
 	title = "Implant Activation"
-	message = "Choose activation emote. If you cancel this, one will be picked at random."
+	question = "Choose activation emote. If you cancel this, one will be picked at random."
+	timeout = 0
 	var/mob/source
 
-/obj/item/implant/compressed/proc/emote_chosen(datum/om/prompt/choice/implant_emote/ask)
-	activation_emote = ask.choice
+CAPABILITIES(/datum/prompt/choice/implant_emote)
+	ref_one(nameof(source), /mob)
+
+/datum/prompt/choice/implant_emote/prepare(datum/act/A)
+	..()
+	var/mob/captured_source = source
+	rel_clear(src, nameof(source))
+	rel_set(src, nameof(source), captured_source)
+
+/obj/item/implant/compressed/proc/emote_chosen(datum/act/request/A)
+	var/datum/prompt/choice/implant_emote/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.source))
+		return
+	activation_emote = ask.value
 	announce_activation(ask.source)
 
 /obj/item/implant/compressed/proc/announce_activation(mob/source)
@@ -652,7 +707,6 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 /obj/item/implant/compressed/islegal()
 	return 0
 
-// === merged from implant_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/implant/vrlanguage
 	name = "language"
 	desc = "Allows the user to understand and speak almost all known languages.."
@@ -671,7 +725,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 		<b>Integrity:</b> Implant can only be used once before the nanobots are depleted."}
 	return dat
 
-/obj/item/implant/vrlanguage/trigger(emote, mob/source as mob)
+/obj/item/implant/vrlanguage/trigger(emote, mob/source as mob, mob/actor)
 	if (src.uses < 1)
 		return 0
 	if (emote == "smile")
@@ -701,7 +755,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 	icon_state = "implant_evil"
-	var/owner
+	var/mob/owner
 	var/active = TRUE
 
 /obj/item/implant/sizecontrol/get_data()
@@ -760,23 +814,29 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 					var/resizing_value = text2num(size_mult.match)
 					H.resize(CLAMP(resizing_value/100 , RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS), uncapped = H.has_large_resize_bounds()) // Let resize handle size limits. It's meant to do that.
 
-/obj/item/implant/sizecontrol/post_implant(mob/source, mob/living/user = usr)
+/obj/item/implant/sizecontrol/post_implant(mob/source, mob/user = null)
 	if(source != user)
-		owner = user
+		rel_set(src, nameof(owner), user)
 
-DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_emp))
+CAPABILITIES(/obj/item/implant/sizecontrol)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(sizecontrol_emp))))
+	ref_one(nameof(owner), /mob)
 /// An EMP resizes the implantee at random.
-/obj/item/implant/sizecontrol/proc/sizecontrol_emp(datum/damage_packet/packet)
+/obj/item/implant/sizecontrol/proc/sizecontrol_emp(datum/act/hit/emp/A)
 	if(isliving(imp_in()))
 		var/newsize = pick(RESIZE_HUGE,RESIZE_BIG,RESIZE_NORMAL,RESIZE_SMALL,RESIZE_TINY,RESIZE_A_HUGEBIG,RESIZE_A_BIGNORMAL,RESIZE_A_NORMALSMALL,RESIZE_A_SMALLTINY)
 		var/mob/living/H = imp_in()
 		H.resize(newsize)
+	return HOOK_DECLINE
 
 /obj/item/implanter/sizecontrol
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/sizecontrol, "imp", /obj/item/implant/sizecontrol)
+/obj/item/implanter/sizecontrol/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/sizecontrol)
+
 /obj/item/implanter/sizecontrol
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -795,38 +855,60 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/sizecontrol, "imp", /obj/item/implant/
 	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/compliance, "imp", /obj/item/implant/compliance)
+/obj/item/implanter/compliance/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compliance)
+
 /obj/item/implanter/compliance
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /// The compliance implant's laws. Re-checked on the answer: the implanter is still carried and still loaded with that implant.
-/datum/om/prompt/text/compliance_laws
+/datum/prompt/text/compliance_laws
+	timeout = 0
 	title = "Compliance Laws"
-	message = "Please Input Laws"
+	question = "Please Input Laws"
 	default = ""
 	multiline = TRUE
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 	var/obj/item/implant/compliance/implant
 
-/datum/om/prompt/text/compliance_laws/valid()
-	var/obj/item/implanter/compliance/implanter = subject
-	return implanter.imp == implant ? null : "implant changed"
+CAPABILITIES(/datum/prompt/text/compliance_laws)
+	ref_one(nameof(implant), /obj/item/implant/compliance)
 
-/obj/item/implanter/compliance/proc/laws_entered(datum/om/prompt/text/compliance_laws/ask)
+/datum/prompt/text/compliance_laws/prepare(datum/act/A)
+	..()
+	var/obj/item/implant/compliance/captured_implant = implant
+	rel_clear(src, nameof(implant))
+	rel_set(src, nameof(implant), captured_implant)
+
+/datum/prompt/text/compliance_laws/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/item/implanter/compliance/implanter = owner
+	return !QDELETED(implanter) && !QDELETED(implant) && implanter.imp == implant ? null : "implant changed"
+
+/obj/item/implanter/compliance/proc/laws_entered(datum/act/request/A)
+	var/datum/prompt/text/compliance_laws/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.implant))
+		return
 	var/mob/user = ask.answerer
 	var/obj/item/implant/compliance/implant = ask.implant
-	var/newlaws = sanitize(ask.text, 2048)
+	var/newlaws = sanitize(ask.value, 2048)
 	if(newlaws)
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
 		implant.laws = newlaws //Organic
 
-EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PROC_REF(compliance_implanter_self)))
+CAPABILITIES(/obj/item/implanter/compliance)
+	without("toggle")
+	op("compliance_implanter_self", in_hand(), label("Set laws"), then(PROC_REF(compliance_implanter_self)))
 
 /// Old attack_self.
-/obj/item/implanter/compliance/proc/compliance_implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/implanter/compliance/proc/compliance_implanter_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
-		om_ask(user, /datum/om/prompt/text/compliance_laws, PROC_REF(laws_entered), implant = implant)
+		open_request(src, /datum/prompt/text/compliance_laws, PROC_REF(laws_entered), answerer = user, implant = implant)
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
 
@@ -849,7 +931,7 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 <b>Set Laws:</b>[laws]"}
 	return dat
 
-/obj/item/implant/compliance/post_implant(mob/source, mob/living/user = usr)
+/obj/item/implant/compliance/post_implant(mob/source, mob/user = null)
 	if(!ishuman(source)) //No compliance implanting non-humans.
 		return
 
@@ -865,9 +947,9 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 		to_chat(target, span_notice("((OOC NOTE: Commands that go against server rules should be disregarded and ahelped.))"))
 		to_chat(target, span_notice("((OOC NOTE: If you did not agree to this, you are not compelled to follow the laws.))"))
 
-/// om_after() target: one step of a temporary malfunction wears off.
+/// after() target: one step of a temporary malfunction wears off.
 /obj/item/implant/proc/malfunction_recover()
-	malfunction--
+	set_malfunction(malfunction - 1)
 
 /obj/item/implant/explosive/proc/small_boom_goes()
 	if (ishuman(imp_in()) && part)
@@ -880,7 +962,7 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 		else
 			part.droplimb(0,DROPLIMB_BLUNT)
 	explosion(get_turf(imp_in()), -1, -1, 1, 3)
-	qdel(src)
+	spent(src)
 
 /// Relation view: imp in (reads null once it is gone).
 /obj/item/implant/proc/imp_in() as /mob

@@ -10,7 +10,7 @@
 //
 // Minds move between bodies and mind hosts (brain organs, MMIs, posibrains,
 // protean cores) through /proc/transfer_mind() — see
-// code/datums/entity_state/mind_host.dm.
+// code/modules/mob/mind_host.dm.
 
 /datum/character_identity
 	/// The character's real name.
@@ -86,13 +86,14 @@
 	..()
 	rel_set(identity(), nameof(/mob::dna), dna)
 	if(identity().flavor_texts)
-		flavor_texts = identity().flavor_texts
+		bio.flavor_texts = identity().flavor_texts
 	else
-		identity().flavor_texts = flavor_texts
+		identity().flavor_texts = bio.flavor_texts
 	if(identity().languages)
 		languages = identity().languages
 	else
 		identity().languages = languages
+	sync_language_state()
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
 		var/list/traits = identity().genetic_effects?.Copy()
 		for(var/effect_type in traits)
@@ -107,7 +108,7 @@
 		return
 	rel_set(src, nameof(identity), I)
 	if(mind)
-		own_set(mind, nameof(mind.identity), I)
+		rel_set(mind, nameof(mind.identity), I)
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
@@ -132,7 +133,7 @@
 	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		own_set(src, nameof(identity), L.identity())
+		rel_set(src, nameof(identity), L.identity())
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------

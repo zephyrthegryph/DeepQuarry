@@ -60,8 +60,8 @@
 
 	var/attached = 0
 	var/detached = 0
-	om_hook(H, /datum/om/event/body_part_detached, src, PROC_REF(dq_count_detached))
-	om_hook(recipient, /datum/om/event/body_part_attached, src, PROC_REF(dq_count_attached))
+	observe(H, /datum/notice/body_part_detached, src, then(PROC_REF(dq_count_detached)))
+	observe(recipient, /datum/notice/body_part_attached, src, then(PROC_REF(dq_count_attached)))
 
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	TEST_ASSERT(isturf(arm.loc), "the severed arm lies on the floor")
@@ -94,12 +94,12 @@
 
 /datum/unit_test/var/dq_part_signal_count = 0
 
-/datum/unit_test/proc/dq_count_detached(datum/source, datum/om/event/body_part_detached/event)
-	EVENT_HANDLER
+/datum/unit_test/proc/dq_count_detached(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_part_signal_count++
 
-/datum/unit_test/proc/dq_count_attached(datum/source, datum/om/event/body_part_attached/event)
-	EVENT_HANDLER
+/datum/unit_test/proc/dq_count_attached(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_part_signal_count++
 
 /// A blunt sever destroys the limb; what was inside it is flung out through
@@ -225,7 +225,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
-	brain.parent_organ = BP_TORSO
+	brain.set_parent_organ(BP_TORSO)
 	TEST_ASSERT(brain.place_into(torso, SLOT_ID_PART_ORGANS), "the brain moves to the torso")
 	TEST_ASSERT_EQUAL(brain.loc, torso, "the brain sits in the torso")
 	TEST_ASSERT_EQUAL(brain.owner, H, "the brain is still owned")

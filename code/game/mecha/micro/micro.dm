@@ -34,7 +34,7 @@
 			switch(melee_injury_kind)
 				if(INJURY_BLUNT)
 					if(!ishuman(M))
-						M.status_at_least(EFFECT_PARALYZED, 1)
+						M.status_at_least(STAT_PARALYZED, 1)
 					M.injure(INJURY_BLUNT, rand(force/2, force), hit_zone, src)
 				if(INJURY_BURN)
 					M.injure(INJURY_BURN, rand(force/2, force), hit_zone, src)
@@ -54,7 +54,7 @@
 			src.visible_message("[src] pushes [target] out of the way.")
 
 		melee_can_hit = 0
-		om_after(src, melee_cooldown, PROC_REF(reset_melee))
+		after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -69,14 +69,12 @@
 					else
 						play_sfx(src, SFX_WEAPONS_SMASH)
 					melee_can_hit = 0
-					om_after(src, melee_cooldown, PROC_REF(reset_melee))
+					after(src, melee_cooldown, PROC_REF(reset_melee))
 					break
 	return
 
 
-TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
-
-/obj/mecha/micro/topic_close(mob/user, list/args)
+/obj/mecha/micro/topic_close(datum/act/op/A)
 	am = null
 
 // override move_inside() so only micro crew can use them
@@ -88,10 +86,11 @@ TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
 	else
 		..()
 
-/obj/mecha/micro/move_inside_passenger()
-	var/mob/living/carbon/C = usr
-	if (C.get_effective_size(TRUE) >= 0.5)
-		to_chat(C, span_warning("You can't fit in this suit!"))
+/obj/mecha/micro/move_inside_passenger(mob/user, obj/item/held)
+	if(!user)
+		return
+	if (user.get_effective_size(TRUE) >= 0.5)
+		to_chat(user, span_warning("You can't fit in this suit!"))
 		return
 	else
 		..()

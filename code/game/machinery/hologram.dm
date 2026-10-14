@@ -38,7 +38,6 @@ Possible to do for anyone motivated enough:
 	plane = TURF_PLANE
 	layer = ABOVE_TURF_LAYER
 	var/power_per_hologram = 500 //per usage per hologram
-	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
 	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad (a relation view)
 	/// The holograms this pad projects, one per master (owned; each names its AI in `master`).
@@ -46,38 +45,22 @@ Possible to do for anyone motivated enough:
 	COOLDOWN_DECLARE(request_cooldown) //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
-/obj/machinery/hologram/holopad/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/holopad_request,
-		/datum/interaction/machine_hand/ungated/holopad_request,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Project", PROC_REF(holopad_silicon_use)))
-	..()
+CAPABILITIES(/obj/machinery/hologram/holopad)
+	configure(uses_power(idle = 5))
+	op("holopad_request_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
+	op("holopad_request_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Request AI presence"), asks(/datum/prompt/yes_no, fields = list("title" = "Request AI", "question" = "Would you like to request an AI's presence?", "timeout" = 0), when = PROC_REF(holopad_human_actor)), then(PROC_REF(ai_request_answered)))
+	op("holopad_project", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Project"), then(PROC_REF(holopad_silicon_use)))
+	started_work(step = PROC_REF(work_step))
+	ref_many(nameof(masters))
+	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
+	display_disconnect_op()
 
-/datum/interaction/machine_item/holopad_request
-	id = "holopad_request_item"
-	name = "Request AI presence"
-	held_type = /obj/item
-	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/datum/interaction/machine_hand/ungated/holopad_request
-	id = "holopad_request_hand"
-	name = "Request AI presence"
-	effect = /obj/machinery/hologram/holopad/proc/interaction_request
-
-/obj/machinery/hologram/holopad/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
-
-/obj/machinery/hologram/holopad/proc/interaction_request(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Carn: Hologram requests.
-	if(!istype(user))
-		return TRUE
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ai_request_answered), message = "Would you like to request an AI's presence?", title = "Request AI", requires = PROMPT_ADJACENT)
-	return TRUE
-
-/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/user = ask.answerer
+/obj/machinery/hologram/holopad/proc/ai_request_answered(datum/act/op/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/mob/living/carbon/human/user = A.actor
 	if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
-		COOLDOWN_START(src, request_cooldown, 200)
+		COOLDOWN_START(src, request_cooldown, 20 SECONDS)
 		to_chat(user, span_notice("You request an AI's presence."))
 		var/area/area = get_area(src)
 		for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
@@ -87,9 +70,10 @@ Possible to do for anyone motivated enough:
 		to_chat(user, span_notice("A request for AI presence was already sent recently."))
 
 /// Old attack_ai: the AI moves its eye here, then makes or clears its hologram. Nothing for cyborgs.
-/obj/machinery/hologram/holopad/proc/holopad_silicon_use(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hologram/holopad/proc/holopad_silicon_use(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	if(!istype(user))
-		return TRUE
+		return OP_OK
 	/*There are pretty much only three ways to interact here.
 	I don't need to check for client since they're clicking on an object.
 	This may change in the future but for now will suffice.*/
@@ -100,7 +84,7 @@ Possible to do for anyone motivated enough:
 		activate_holo(user)
 	else//If there is a hologram, remove it.
 		clear_holo(user)
-	return TRUE
+	return OP_OK
 
 /// The hologram this pad projects for `user`, or null. (Replaces LAZYACCESS(masters, user): masters
 /// is now a plain list of AIs, and the pad owns the holograms.)
@@ -115,7 +99,7 @@ Possible to do for anyone motivated enough:
 
 /obj/machinery/hologram/holopad/proc/activate_holo(mob/living/silicon/ai/user)
 	var/mob/observer/eye/eyeobj = user?.active_eye()
-	if(!has_stat(NOPOWER) && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
+	if(!power_lost() && eyeobj?.loc == src.loc)//If the projector has power and client eye is on it
 		if(user.holo)
 			to_chat(user, span_danger("ERROR:") + " Image feed in progress.")
 			return
@@ -147,9 +131,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		master.show_message(rendered, type)
 	return
 
-/obj/machinery/hologram/holopad/relations()
-	. = ..()
-	. += rel_many(nameof(masters))
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
@@ -167,21 +148,21 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		hologram.color = A.holo_color
 
 	if(hologram.color)	//hologram lighting
-		hologram.set_light(2,1,hologram.color)
+		set_glow(hologram, GLOW(2, 1, hologram.color))
 	else
-		hologram.set_light(2)
+		set_glow(hologram, GLOW(2, null, null))
 
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
-	own_add(src, nameof(holograms), hologram)
+	rel_add(src, nameof(holograms), hologram)
 	rel_add(src, nameof(masters), A)
-	set_light(2)			//pad lighting
-	icon_state = "holopad1"
+	set_glow(src, GLOW(2, null, null))			//pad lighting
+	set_icon_state("holopad1")
 	flick("holopadload", src)
 	rel_set(A, nameof(A.holo), src)
 	if(LAZYLEN(masters))
-		MACHINE_WAKE(src)
+		work_start(src)
 
 	// Let the AI experience area ambiences too
 	var/area/ar = get_area(hologram.loc)
@@ -193,22 +174,22 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		rel_clear(user, nameof(user.holo))
 	var/obj/effect/overlay/aiholo/old_holo = hologram_of(user)
 	if(old_holo)
-		own_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
+		rel_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
 	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
-		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
-		icon_state = "holopad0"
+		set_glow(src, GLOW(0, null, null))			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
+		set_icon_state("holopad0")
 	return 1
 
-/obj/machinery/hologram/holopad/machine_step()
+/obj/machinery/hologram/holopad/proc/work_step(datum/act/timer/A)
 	for (var/mob/living/silicon/ai/master in masters)
 		var/active_ai = (master && !master.stat && master.client && master?.active_eye())//If there is an AI attached, it's not incapacitated, it has a client, and the client eye is centered on the projector.
-		if((has_stat(NOPOWER)) || !active_ai)
+		if((power_lost()) || !active_ai)
 			clear_holo(master)
 			continue
 
 		use_power(power_per_hologram)
-	if(..() == PROCESS_KILL && !LAZYLEN(masters))
+	if(!LAZYLEN(masters))
 		return PROCESS_KILL
 
 /obj/machinery/hologram/holopad/proc/move_hologram(mob/living/silicon/ai/user)
@@ -240,8 +221,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	icon = 'icons/obj/stationobjs.dmi'
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
+
+CAPABILITIES(/obj/machinery/hologram)
+	configure(uses_power(idle = 5, active = 100))
 
 //Destruction procs.
 // its AI masters' holograms are cleared.
@@ -265,3 +247,6 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 #undef HOLOGRAM_POWER_USAGE
 #undef IS_RANGE_BASED
 
+
+/obj/machinery/hologram/holopad/proc/holopad_human_actor(datum/act/op/A)
+	return istype(A.actor, /mob/living/carbon/human)

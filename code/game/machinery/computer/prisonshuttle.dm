@@ -15,57 +15,54 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	desc = "Used to move the prison shuttle to and from its destination."
 	icon_keyboard = "security_key"
 	icon_screen = "syndishuttle"
-	light_color = "#00ffff"
 	req_access = list(ACCESS_SECURITY)
 	circuit = /obj/item/circuitboard/prison_shuttle
 	var/hacked = 0
 	var/allowedtocall = 0
 	var/prison_break = 0
+	/// The shuttle this console sent is in flight.
+	var/in_flight = FALSE
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
-OM_FIELD(/obj/machinery/computer/prison_shuttle, in_flight, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/computer/prison_shuttle, 0.5 SECONDS, prison_process, "in_flight")
+TRACKED(/obj/machinery/computer/prison_shuttle, in_flight)
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"
-// notification state — the to_chat() notice already covers that flow.
-/obj/machinery/computer/prison_shuttle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/prison_shuttle_open_ui,
-	)
-	..()
+// notification state; the chat notice already covers that flow.
 
 /**
  * Old attack_hand: access/hacked and prison_break checks ran BEFORE the `..()` gate call, so
  * they used to fire even when the console itself was unpowered/broken. The machinery hand gate
  * now always runs first (see machine_hand) and those checks are can_open_console(), after it.
  */
-/datum/interaction/machine_hand/prison_shuttle_open_ui
-	id = "prison_shuttle_open_ui"
-	name = "Use"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/prison_shuttle/proc/can_open_console))
-	effect = /obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl
+TRACKED(/obj/machinery/computer/prison_shuttle, hacked)
 
-/// Requirement: TRUE, or why the console can't be used.
-/obj/machinery/computer/prison_shuttle/proc/can_open_console(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why the console can't be used.
+/obj/machinery/computer/prison_shuttle/proc/can_open_console(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!allowed(user) && !hacked)
 		return "access denied"
 	if(prison_break)
 		return "unable to locate shuttle"
-	return TRUE
+	return null
 
-/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
-	post_signal("prison")
+/obj/machinery/computer/prison_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	record_window_open(A)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/prison_shuttle, "PrisonShuttleConsole", UI_TITLE("Prison Shuttle"))
+CAPABILITIES(/obj/machinery/computer/prison_shuttle)
+	configure(light_glow(color = "#00ffff"))
+	interface("PrisonShuttleConsole", title = "Prison Shuttle")
+	extend("ui_open", needs(req(PROC_REF(can_open_console))), then(PROC_REF(record_window_open)))
+	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
+	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
+	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console))), then(PROC_REF(interaction_open_ui_impl)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
-UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machinery_computer_prison_shuttle{moving:bool,at_station:bool,time_left:unknown,can_move:bool}")
-
-/// The computed part of /obj/machinery/computer/prison_shuttle's window data (declared on its UI_DATA row).
-/obj/machinery/computer/prison_shuttle/proc/ui_data_obj_machinery_computer_prison_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
 	data["at_station"] = !!GLOB.prison_shuttle_at_station
@@ -73,34 +70,34 @@ UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machi
 	data["can_move"] = prison_can_move() && !prison_break
 	return data
 
-UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_dock", ui_act_send_to_dock)
-UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_dock)
+/obj/machinery/computer/prison_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!prison_can_move())
-		to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE
 	if(!GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_prison = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_station", ui_act_send_to_station)
-UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
+/obj/machinery/computer/prison_shuttle/proc/ui_act_send_to_station(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!prison_can_move())
-		to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE
 	if(GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_station = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 
@@ -120,13 +117,13 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 			if (!GLOB.prison_shuttle_moving_to_prison || !GLOB.prison_shuttle_moving_to_station)
 				GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 			set_in_flight(TRUE)
-			prison_break = 1
+			set_prison_break(1)
 		if(1)
-			prison_break = 0
+			set_prison_break(0)
 
 
 /obj/machinery/computer/prison_shuttle/proc/post_signal(command)
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1311)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1311)
 	if(!frequency) return
 	var/datum/signal/status_signal = new
 	rel_set(status_signal, nameof(status_signal.source), src)
@@ -137,7 +134,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 
 
 /// The prison shuttle in flight: counts down every half second, then arrives.
-/obj/machinery/computer/prison_shuttle/proc/prison_process()
+/obj/machinery/computer/prison_shuttle/proc/prison_process(datum/act/timer/A)
 	if(GLOB.prison_shuttle_time - world.timeofday > 0)
 		var/ticksleft = GLOB.prison_shuttle_time - world.timeofday
 
@@ -154,10 +151,6 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 		if(0)
 			GLOB.prison_shuttle_at_station = 1
 			if (GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
-
-			if (!prison_can_move())
-				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-				return
 
 			var/area/start_location = locate(/area/shuttle/prison/prison)
 			var/area/end_location = locate(/area/shuttle/prison/station)
@@ -176,16 +169,12 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 				for(var/atom/movable/AM as mob|obj in contents_of(T))
 					AM.Move(D)
 				if(istype(T, /turf/simulated))
-					qdel(T)
+					spent(T)
 			start_location.move_contents_to(end_location)
 
 		if(1)
 			GLOB.prison_shuttle_at_station = 0
 			if (GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison) return
-
-			if (!prison_can_move())
-				to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-				return
 
 			var/area/start_location = locate(/area/shuttle/prison/station)
 			var/area/end_location = locate(/area/shuttle/prison/prison)
@@ -205,7 +194,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 				for(var/atom/movable/AM as mob|obj in contents_of(T))
 					AM.Move(D)
 				if(istype(T, /turf/simulated))
-					qdel(T)
+					spent(T)
 
 			for(var/mob/living/carbon/bug in area_contents_of_type(end_location, /mob/living/carbon)) // If someone somehow is still in the shuttle's docking area...
 				bug.gib()
@@ -216,13 +205,19 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 			start_location.move_contents_to(end_location)
 	return
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/prison_shuttle, PROC_REF(on_emag), null)
-/obj/machinery/computer/prison_shuttle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/prison_shuttle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!hacked)
-		hacked = 1
+		set_hacked(1)
 		to_chat(user, span_notice("You disable the lock."))
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 #undef PRISON_MOVETIME
 #undef PRISON_STATION_AREATYPE
 #undef PRISON_DOCK_AREATYPE
+
+/obj/machinery/computer/prison_shuttle/proc/record_window_open(datum/act/op/A)
+	A.actor.set_machine(src)
+	post_signal("prison")
+	return OP_OK

@@ -4,17 +4,16 @@
 */
 
 // 1 decisecond click delay (above and beyond mob/next_move)
-/mob/COOLDOWN_DECLARE(next_click)
 
 // /atom/Click, DblClick, MouseWheel, MouseDrop and /mob/proc/ClickOn live with the
 // input router (code/modules/keybindings/router.dm); per-actor click handling is in
 // the capability adapters (code/modules/keybindings/adapters.dm).
 
 /mob/proc/setClickCooldown(timeout)
-	COOLDOWN_START(src, next_click, max(timeout, COOLDOWN_TIMELEFT(src, next_click)))
+	cooldown_start(src, next_click, max(timeout, cooldown_left(src, next_click)))
 
 /mob/proc/checkClickCooldown()
-	if(COOLDOWN_TIMELEFT(src, next_click) && !CONFIG_GET(flag/no_click_cooldown))
+	if(cooldown_left(src, next_click) && !CONFIG_GET(flag/no_click_cooldown))
 		return FALSE
 	return TRUE
 
@@ -123,17 +122,16 @@
 
 	var/obj/item/projectile/beam/laser_vision/LE = new (T)
 	LE.icon = 'icons/effects/genetics.dmi'
-	LE.icon_state = "eyelasers"
+	LE.set_icon_state("eyelasers")
 	play_sfx(src, SFX_WEAPONS_TASER2)
 	rel_set(LE, nameof(LE.firer), src)
 	LE.preparePixelProjectile(A, src, params)
 	LE.fire()
 
 /mob/living/carbon/human/LaserEyes(atom/A, params)
-	if(nutrition>0)
+	if(nutrition_of(src)>0)
 		..()
-		set_nutrition(max(nutrition - rand(1,5),0))
-		refresh_hud()
+		set_nutrition(max(nutrition_of(src) - rand(1,5),0))
 	else
 		to_chat(src, span_warning("You're out of energy!  You need food!"))
 
@@ -174,22 +172,34 @@
 	mouse_opacity = 2
 	screen_loc = "SOUTHWEST to NORTHEAST"
 
-/atom/movable/screen/click_catcher/Click(location, control, params)
+CAPABILITIES(/atom/movable/screen/click_catcher)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The turf a catcher click resolves to gets
+/// the click (its own native Click, still inside this one).
+/atom/movable/screen/click_catcher/proc/click_input(datum/act/input/A)
+	var/result = resolve_click_with_actor(A.actor, A.params)
+	if(isturf(result))
+		var/turf/T = result
+		T.Click(A.native["location"], A.native["control"], A.params)
+	return TRUE
+
+/atom/movable/screen/click_catcher/proc/resolve_click_with_actor(mob/user, params)
 	var/list/P = params2list(params)
 	switch(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, click_catcher_table)))
 		if(INPUT_ACTION_SWAP_HANDS)
-			if(istype(usr, /mob/living/carbon))
-				var/mob/living/carbon/C = usr
+			if(istype(user, /mob/living/carbon))
+				var/mob/living/carbon/C = user
 				C.swap_hand()
 				return 1
-	var/turf/T = get_turf(usr)
+	var/turf/T = get_turf(user)
 	if(T)
 		T = screen_loc2turf(P[SCREEN_LOC], T)
 		if(T)
 			if(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, shift_table)) == INPUT_ACTION_INSPECT)
-				usr.face_atom(T)
+				user.face_atom(T)
 				return 1
-			T.Click(location, control, params)
+			return T
 	return 1
 
 /// MouseWheelOn

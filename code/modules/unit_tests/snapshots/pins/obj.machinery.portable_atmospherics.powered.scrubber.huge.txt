@@ -1,0 +1,23 @@
+@obj.machinery.portable_atmospherics.powered.scrubber human|none
+@obj.machinery.portable_atmospherics.powered.scrubber robot|none
+@obj.machinery ai|none
+@obj.machinery.portable_atmospherics.powered.scrubber ghost|none
+@obj.machinery.portable_atmospherics human|/obj/item/tool/screwdriver
+-menu: Climb
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Wrench
+human|/obj/item/tool/wrench click: Click: Wrench
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool click: nothing
+@obj.machinery.portable_atmospherics.powered human|/obj/item/weldingtool
+-menu: Climb
+human|/obj/item/stack/cable_coil click: nothing
+@obj.machinery.portable_atmospherics.powered human|/obj/item/stack/material/steel
+-menu: Climb
+human|/obj/item/card/id click: nothing
+human|/obj/item click: nothing
+@obj.machinery human|/obj/item/cell
+-menu: Climb
+human|/obj/item/tank menu: Use
+human|/obj/item/tank click: Click: Use
+keys: anchor, console_only, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, robot_remote_blocked, silicon_hand, swallow_cell, swallow_tank, volume_adj

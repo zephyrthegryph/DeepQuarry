@@ -136,7 +136,7 @@
 	if(istype(T,/turf/simulated/shuttle))
 		shuttlework = 1
 		var/turf/simulated/shuttle/SS = T
-		if(!SS.landed_holder()) own_set(SS, nameof(SS.landed_holder_ref), new /obj/landed_holder(SS))
+		if(!SS.landed_holder()) rel_set(SS, nameof(SS.landed_holder_ref), new /obj/landed_holder(SS))
 		X = SS.landed_holder().land_on(B)
 
 	//Generic non-shuttle turf move.
@@ -148,10 +148,10 @@
 
 		X = B.ChangeTurf(T.type)
 		X.set_dir(old_dir1)
-		X.icon_state = old_icon_state1
+		X.set_icon_state(old_icon_state1)
 		X.icon = old_icon1
 		X.copy_overlays(T, TRUE)
-		X.decals = old_decals
+		X.set_decals(old_decals)
 
 	// air-transfer used ZAS zone.air. Under LINDA each turf has its own
 	// air via return_air(); copy from source-turf's air to dest-turf's air directly.
@@ -204,7 +204,7 @@
 	return TRUE
 
 ///similar function to RANGE_TURFS(), but will search spiralling outwards from the center (like the above, but only turfs)
-/proc/spiral_range_turfs(dist = 0, center = usr, orange = FALSE, list/outlist = list(), tick_checked)
+/proc/spiral_range_turfs(dist = 0, atom/center = null, orange = FALSE, list/outlist = list(), tick_checked)
 	outlist.Cut()
 	if(!dist)
 		outlist += center

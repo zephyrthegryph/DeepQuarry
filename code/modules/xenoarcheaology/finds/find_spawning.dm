@@ -4,7 +4,6 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "ano01"
 	var/find_type = 0
-	item_flags = ABSTRACT
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
 /proc/artifact_spawn_debug_tool(mob/target)
@@ -12,21 +11,22 @@
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	om_ask_begin(null, usr, /datum/om/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), list(receiver = usr.client, subject = target, title = "Spawn Artifact", message = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list"))
+	open_request(usr.client, /datum/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), answerer = usr, subject = target, title = "Spawn Artifact", question = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list", timeout = 0)
 
-/client/proc/artifact_spawn_debug_chosen(datum/om/prompt/number/ask)
-	var/mob/target = ask.subject
-	if(isnull(ask.number) || !target?.loc)
+/client/proc/artifact_spawn_debug_chosen(datum/act/request/A)
+	var/mob/target = A.request.subject
+	if(!A.answer || isnull(A.answer.value) || !target?.loc)
 		return
-	new /obj/item/archaeological_find(target.loc, ask.number)
+	new /obj/item/archaeological_find(target.loc, A.answer.value)
 
-/obj/item/archaeological_find/Initialize(mapload, new_item_type)
+CAPABILITIES(/obj/item/archaeological_find)
+	configure(item_worn(flags = ABSTRACT))
+	param(nameof(find_type), pos = 1)
+	rolls(nameof(find_type), range_of(1, MAX_ARCHAEO))
+
+// ALLOW(init/INSTANCE_STATE): a find makes the item it is, decorates and describes it, and gives way to it
+/obj/item/archaeological_find/Initialize(mapload)
 	. = ..()
-	if(new_item_type)
-		find_type = new_item_type
-	else
-		find_type = rand(1, MAX_ARCHAEO)
-
 	var/item_type = "object"
 	var/secondary_item_type = "object"
 	icon_state = "unknown[rand(1,4)]"
@@ -82,7 +82,7 @@
 			item_type = "bowl"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "bowl"
+			new_item.set_icon_state("bowl")
 			apply_image_decorations = TRUE
 			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
 			additional_desc = "There appear to be [pick("dark","faintly glowing","pungent","bright")] [pick("red","purple","green","blue")] stains inside."
@@ -90,7 +90,7 @@
 			item_type = "urn"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "urn[rand(1,2)]"
+			new_item.set_icon_state("urn[rand(1,2)]")
 			apply_image_decorations = TRUE
 			additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
 		if(ARCHAEO_STATUETTE)
@@ -176,7 +176,7 @@
 			item_type = "box"
 			new_item = new /obj/item/storage/box(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "box"
+			new_item.set_icon_state("box")
 			var/obj/item/storage/box/new_box = new_item
 			var/max_size = pick(1,2,2,3,3,3,4,4)
 			new_box.restrict_hold(null, max_size)
@@ -225,7 +225,7 @@
 					new_metal = picked_metal
 					break
 			new_metal = new new_metal(src.loc)
-			new_metal.amount = rand(5,45)
+			new_metal.set_amount(rand(5,45))
 			new_item = new_metal
 
 		if(ARCHAEO_PEN)
@@ -263,7 +263,7 @@
 			if(prob(25))
 				new_item = new /obj/item/soulstone(src.loc)
 				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-				new_item.icon_state = icon_state
+				new_item.set_icon_state(icon_state)
 				new_item.name = "Redspace Gem"
 				new_item.desc = "A glowing stone made of what appears to be a pure chunk of redspace. It seems to have the power to transfer the consciousness of dead or nearly-dead humanoids into it."
 
@@ -285,18 +285,18 @@
 			new_item = new /obj/item/radio/beacon(src.loc)
 			talkative = FALSE
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "unknown[rand(1,4)]"
+			new_item.set_icon_state("unknown[rand(1,4)]")
 			new_item.desc = ""
 
 		if(ARCHAEO_CLAYMORE)
 			apply_prefix = FALSE
 			new_item = new /obj/item/material/sword(src.loc)
-			new_item.force = 10
+			new_item.set_force(10)
 			new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 			item_type = new_item.name
 			if(prob(30))
 				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-				new_item.icon_state = "blade1"
+				new_item.set_icon_state("blade1")
 
 		if(ARCHAEO_CULTROBES)
 			//arcane clothing
@@ -342,7 +342,7 @@
 		if(ARCHAEO_KATANA)
 			apply_prefix = FALSE
 			new_item = new /obj/item/material/sword/katana(src.loc)
-			new_item.force = 10
+			new_item.set_force(10)
 			new_item.name = "katana"
 			item_type = new_item.name
 		if(ARCHAEO_LASER)
@@ -358,24 +358,24 @@
 			var/new_laser = pick(possible_laser_paths)
 			new_gun.projectile_type = new_laser
 			new_item = new_gun
-			new_item.icon_state = "egun[rand(1,18)]"
+			new_item.set_icon_state("egun[rand(1,18)]")
 			new_gun.desc = "This is an antique energy weapon."
 
 			//10% chance to have an unchargeable cell
 			//15% chance to gain a random amount of starting energy, otherwise start with an empty cell
 			if(prob(10))
-				new_gun.power_supply.maxcharge = 0
+				new_gun.power_supply.set_maxcharge(0)
 			if(prob(15))
-				new_gun.power_supply.charge = rand(0, new_gun.power_supply.maxcharge)
+				new_gun.power_supply.set_charge(rand(0, new_gun.power_supply.maxcharge))
 			else
-				new_gun.power_supply.charge = 0
+				new_gun.power_supply.set_charge(0)
 			item_type = "Relic Laser Gun"
 
 		/// Artifact type gun that requires a random caliber and selects a random bullet type it shoots out!.
 		if(ARCHAEO_GUN)
 			var/obj/item/gun/projectile/artifact/new_gun = new /obj/item/gun/projectile/artifact(src.loc)
 			new_item = new_gun
-			new_item.icon_state = "gun[rand(1,7)]"
+			new_item.set_icon_state("gun[rand(1,7)]")
 			item_type = "Relic Gun"
 			//There is no 'global list of all the gun caliber types' so...Whatever. This will have to do. (Side note: After further review, making it a global list would result in the gun requiring unobtainable calibers, so this is ideal.)
 			//When someone does make a global list of all the calibers, replace the below with it.
@@ -394,7 +394,7 @@
 			var/num_bullets = rand(1,new_gun.max_shells)
 			own_clear(new_gun, nameof(new_gun.loaded), OWN_DELETE) //Remove all the bullets we spawned with.
 			for(var/i = 1, i <= num_bullets, i++)//Load our gun with the special artifact ammo.
-				own_add(new_gun, nameof(new_gun.loaded), new /obj/item/ammo_casing/artifact(new_gun))
+				rel_add(new_gun, nameof(new_gun.loaded), new /obj/item/ammo_casing/artifact(new_gun))
 
 		if(ARCHAEO_UNKNOWN) //This previously spawned NOTHING...Are you kidding me?
 			var/new_sample = new /obj/item/research_sample/rare(src.loc) //So instead, you get a really good research sample. Eat your heart out, science.
@@ -623,14 +623,13 @@
 			new_item = new /obj/item/reagent_containers/syringe(src.loc)
 			var/obj/item/reagent_containers/syringe/S = new_item
 
-			S.volume = 15
 			//If S hasn't initialized yet, S.reagents will be null.
 			//However, in that case Initialize will set the maximum volume to the volume for us, so we don't need to do anything.
 			S.reagents?.maximum_volume = 15
 			item_type = new_item.name
 			var/additional_chems = 5 //5 random chems added to the syringe! 15u of RANDOM stuff! (I tried to keep this 30, but this was...Horribly bugged. There is no icon_state for 16-30, so the icon was invisible when filled.)
 			for(var/x=1;x<=additional_chems;x++)
-				var/new_chem = pick(chemistry_service().chemical_reagents)
+				var/new_chem = pick(SSchemistry.ready().chemical_reagents)
 				var/list/currently_banned_chems = list()
 				currently_banned_chems += GLOB.obtainable_chemical_blacklist
 				if(new_chem in currently_banned_chems)
@@ -687,7 +686,7 @@
 			TH.force_unwielded *= 0.7
 			TH.force_wielded *= 0.5
 		else
-			MW.force *= 0.3
+			MW.set_force(combat_of(MW).force * (0.3))
 
 	if(istype(secondary_item, /obj/item/material))
 		var/possible_object_paths = list()
@@ -708,7 +707,7 @@
 			TH.force_unwielded *= 0.7
 			TH.force_wielded *= 0.5
 		else
-			MW.force *= 0.3
+			MW.set_force(combat_of(MW).force * (0.3))
 
 	//Why is ring/material and item/material two different things (and have the same /datum/material var) instead of datum/material being on /obj ? Hell if I know. Someone should fix that eventually. Outside of the scope of this PR.
 	if(istype(new_item, /obj/item/clothing/accessory/ring/material))
@@ -848,7 +847,7 @@
 		new_item.desc = src.desc
 
 		if(talkative)
-			own_set(new_item, nameof(new_item.talking_atom), new /datum/talking_atom(new_item))
+			rel_set(new_item, nameof(new_item.talking_atom), new /datum/talking_atom(new_item))
 
 		if(become_anomalous)
 			new_item.become_anomalous()
@@ -861,7 +860,7 @@
 			T.last_find_name = new_item.name
 		if(secondary_item) //Is this part of a set?
 			if(talkative)
-				own_set(secondary_item, nameof(secondary_item.talking_atom), new /datum/talking_atom(secondary_item))
+				rel_set(secondary_item, nameof(secondary_item.talking_atom), new /datum/talking_atom(secondary_item))
 
 			if(become_anomalous)
 				secondary_item.become_anomalous()
@@ -869,7 +868,7 @@
 		return INITIALIZE_HINT_QDEL
 
 	else if(talkative)
-		own_set(src, nameof(talking_atom), new /datum/talking_atom(src))
+		rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
 
 	if(become_anomalous)
 		become_anomalous()

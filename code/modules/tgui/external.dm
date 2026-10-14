@@ -17,8 +17,12 @@
  */
 
 /datum/proc/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui/parent_ui = null, custom_state = null)
-	// The declared UI model (doc/rewrite/systems.md section 3): DECLARE_UI rows open the window.
+	// The type's declared interface entries open the window.
 	return ui_open(src, user, ui, parent_ui, custom_state)
+
+/// TRUE when `user` is a ghost looking at a window it may not act in: the read-only view (an admin's interactive window is not one).
+/proc/tgui_is_observer_view(mob/user, datum/tgui/ui)
+	return isobserver(user) && (!ui || ui.status != STATUS_INTERACTIVE)
 
 /**
  * public
@@ -31,10 +35,11 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
+	. = list()
 	if(isatom(src))
 		var/atom/A = src
-		A.caps_ui_data(user, .) // capabilities add theirs (code/datums/capabilities/)
+		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
+	present_tgui_data(src, user, ., tgui_is_observer_view(user, ui), ui?.lookup_scope) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
 
 /**
  * public
@@ -52,14 +57,6 @@
  */
 /datum/proc/tgui_static_data(mob/user)
 	return list()
-
-/**
- * public
- *
- * The om change channels that raise a coalesced push to this datum's open UIs.
- */
-/datum/proc/tgui_change_mask()
-	return CHANGE_GENERIC_MASK
 
 /**
  * public
@@ -102,16 +99,28 @@
  */
 /datum/proc/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	SHOULD_CALL_PARENT(TRUE)
-	OM_EMIT(src, /datum/om/event/ui_act, ui.user, action)
+	PUBLISH_LEGACY(src, /datum/notice/ui_act, ui.user, action)
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
+		if(ui && isobserver(ui.user))
+			log_world("UI: [ui.user] (observer) pressed [action] in [src.type]'s window: refused, an observer's window is read-only")
+		return TRUE
+	// A window button is an op with a ui_act() binding: it runs first (code/engine/present/outputs.dm, present_ui_act()).
+	var/datum/op_result/button = present_ui_act(src, ui.user, action, params, ui)
+	if(button)
 		return TRUE
 	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
 	var/list/named = ui_named_dispatch(src, action, params, ui)
 	if(named)
 		return named[2]
-	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
-	return ui_dispatch(src, action, params, ui, state)
+	// The one action every window has: the layout toggle (tgui LayoutToggle) writes the viewer's layout preference
+	// (write_preference() validates the value).
+	if(action == "change_ui_state")
+		var/new_state = params?["new_state"]
+		if(istext(new_state) && length(new_state) <= 64)
+			ui.user?.client?.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], new_state)
+		return FALSE
+	return FALSE // no op, capability or named proc answers `action`
 
 /**
  * public
@@ -151,9 +160,9 @@
  * This is a proc over a var for memory reasons
  */
 /datum/proc/tgui_state(mob/user)
-	// DECLARE_UI_STATE / UI_STATE (declared UI model), else ui_rights (an admin panel); an instance-dependent state
-	// overrides this.
-	var/datum/tgui_state/declared = ui_decl_of(src)?.state
+	// interface(state =, rights =): the state the window's declaration carries, else ui_rights (an admin panel); an instance-dependent
+	// state overrides this.
+	var/datum/tgui_state/declared = interface_state(src)
 	if(declared)
 		return declared
 	if(ui_rights)
@@ -262,7 +271,7 @@
  *
  * return bool Whether the topic is passed (TRUE), or cancelled (FALSE).
  */
-/proc/tgui_Topic(href_list)
+/proc/tgui_Topic(href_list, mob/user)
 	// Skip non-tgui topics
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(!href_list["tgui"])
@@ -274,25 +283,25 @@
 		// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 		if (href_list["ns"])
 			context += " ([href_list["ns"]])"
-		log_tgui(usr, href_list["message"],
+		log_tgui(user, href_list["message"],
 			context = context)
 	// Reload all tgui windows
 	if(type == "cacheReloaded")
 		#ifdef DEBUG
-		if(usr.client.address != "127.0.0.1" && usr.client.address != "::1")
+		if(user.client.address != "127.0.0.1" && user.client.address != "::1")
 			return TRUE
 		// Every development build may assign new async chunk ids. Refresh the
 		// manifest and registrations before any browser is told to reload.
 		if(!SStgui.reload_development_chunks())
 			return TRUE
 		#else
-		if(usr.client.tgui_cache_reloaded)
+		if(user.client.tgui_cache_reloaded)
 			return TRUE
 		#endif
 		// Mark as reloaded
-		usr.client.tgui_cache_reloaded = TRUE
+		user.client.tgui_cache_reloaded = TRUE
 		// Notify windows
-		var/list/windows = usr.client.tgui_windows
+		var/list/windows = user.client.tgui_windows
 		for(var/window_id in windows)
 			var/datum/tgui_window/window = windows[window_id]
 			if (window.status == TGUI_WINDOW_READY)
@@ -302,12 +311,12 @@
 	var/window_id = href_list["window_id"]
 	var/datum/tgui_window/window
 	if(window_id)
-		window = usr.client.tgui_windows[window_id]
+		window = user.client.tgui_windows[window_id]
 		if(!window)
-			log_tgui(usr,
+			log_tgui(user,
 				"Error: Couldn't find the window datum, force closing.",
 				context = window_id)
-			SStgui.force_close_window(usr, window_id)
+			SStgui.force_close_window(user, window_id)
 			return TRUE
 
 	// Decode payload
@@ -317,7 +326,7 @@
 		var/payload_text = href_list["payload"]
 
 		if (!rustg_json_is_valid(payload_text))
-			log_tgui(usr, "Error: Invalid JSON")
+			log_tgui(user, "Error: Invalid JSON")
 			return TRUE
 
 		payload = json_decode(payload_text)

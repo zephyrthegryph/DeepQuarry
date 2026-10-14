@@ -16,22 +16,22 @@
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
 	rel_set(src, nameof(owner_rig), owner)
 	// screenobjs owns every element; power/health/air/airtoggle are views into it.
-	rel_set(src, nameof(power), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/power ()))
-	rel_set(src, nameof(health), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/health ()))
-	rel_set(src, nameof(air), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/air ()))
-	rel_set(src, nameof(airtoggle), own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/airtoggle ()))
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1_f)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2_f)
+	rel_set(src, nameof(power), rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/power ()))
+	rel_set(src, nameof(health), rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/health ()))
+	rel_set(src, nameof(air), rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/air ()))
+	rel_set(src, nameof(airtoggle), rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/airtoggle ()))
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco1_f)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/rig/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
 		rel_set(S, nameof(S.master_ref), owner_rig())
 	..()
 
-/datum/mini_hud/rig/periodic_step()
+/datum/mini_hud/rig/hud_step()
 	if(!owner_rig())
-		qdel(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/rigcell = owner_rig().cell
@@ -58,14 +58,14 @@
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
 	rel_set(src, nameof(owner_mech), owner)
 	// screenobjs owns every element; power/health/air/airtoggle are views into it.
-	rel_set(src, nameof(power), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/power ()))
-	rel_set(src, nameof(health), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/health ()))
-	rel_set(src, nameof(air), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/air ()))
-	rel_set(src, nameof(airtoggle), own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/airtoggle ()))
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1_f)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2_f)
+	rel_set(src, nameof(power), rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/power ()))
+	rel_set(src, nameof(health), rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/health ()))
+	rel_set(src, nameof(air), rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/air ()))
+	rel_set(src, nameof(airtoggle), rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/airtoggle ()))
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco1_f)
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/mech/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
 		rel_set(S, nameof(S.master_ref), owner_mech())
@@ -73,9 +73,9 @@
 
 // the mech owns us as its minihud; owner_mech is a plain relation back.
 
-/datum/mini_hud/mech/periodic_step()
+/datum/mini_hud/mech/hud_step()
 	if(!owner_mech())
-		qdel(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/mechcell = owner_mech().cell
@@ -135,14 +135,21 @@
 	icon_state = "airoff"
 	screen_loc = ui_rig_airtoggle
 
-/atom/movable/screen/rig/airtoggle/Click()
-	var/mob/living/carbon/human/user = usr
+CAPABILITIES(/atom/movable/screen/rig/airtoggle)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/rig/airtoggle/proc/click_input(datum/act/input/A)
+	toggle_air_with_actor(A.actor)
+	return TRUE
+
+/atom/movable/screen/rig/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/item/rig/owner_rig = master_ref
 	if(!owner_rig || user != owner_rig.wearer())
 		return
-	user.toggle_internals()
+	user.toggle_internals(user)
 
 /atom/movable/screen/mech
 	icon = 'icons/mob/screen_rigmech.dmi'
@@ -187,14 +194,21 @@
 	icon_state = "airoff"
 	screen_loc = ui_mech_airtoggle
 
-/atom/movable/screen/mech/airtoggle/Click()
-	var/mob/living/carbon/human/user = usr
+CAPABILITIES(/atom/movable/screen/mech/airtoggle)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/mech/airtoggle/proc/click_input(datum/act/input/A)
+	toggle_air_with_actor(A.actor)
+	return TRUE
+
+/atom/movable/screen/mech/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/mecha/owner_mech = master_ref
 	if(user != owner_mech?.slot_item(MECHA_SLOT_PILOT))
 		return
-	owner_mech.toggle_internal_tank()
+	owner_mech.toggle_internal_tank(user)
 
 
 /// The rig this hud shows (a relation view: null once that is deleted).

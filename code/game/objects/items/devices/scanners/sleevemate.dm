@@ -7,8 +7,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "sleevemate"
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -21,28 +19,24 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
 	rel_clear(src, nameof(stored_mind))
-	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
 	rel_set(src, nameof(stored_mind), M.mind)
 	stored_mind().get_identity() // make sure the identity rides the stored mind
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
-	soulcatcher_pref_flags = M.soulcatcher_pref_flags
+	soulcatcher_pref_flags = M.vore_prefs.soulcatcher_pref_flags
 	M.ghostize()
-	stored_mind().current = null
-	update_icon()
+	rel_clear(stored_mind(), nameof(/datum/mind::current))
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE
 	transfer_mind(stored_mind(), M, "sleevemate upload")
-	M.soulcatcher_pref_flags = soulcatcher_pref_flags
+	M.vore_prefs.soulcatcher_pref_flags = soulcatcher_pref_flags
 	clear_mind()
 
 
@@ -56,23 +50,35 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				choices += H
 	// Subtargets
 	if(choices.len > 1)
-		om_ask(user, /datum/om/prompt/choice/sleevemate_target, PROC_REF(scan_target_chosen), choices = choices, default = M, subject = M, sleevemate = src)
+		open_request(src, /datum/prompt/choice/sleevemate_target, PROC_REF(scan_target_chosen), answerer = user, choices = choices, default = M, subject = M, sleevemate = src)
 		return ITEM_INTERACT_SUCCESS
 	return scan_target(user, M)
 
 /// Picking which of the mobs (the target and the ones in its bellies) to scan. Re-checked on the
 /// answer: still next to the target and holding the scanner.
-/datum/om/prompt/choice/sleevemate_target
+/datum/prompt/choice/sleevemate_target
 	title = "Target Validation"
-	message = "Ambiguous target. Please validate target:"
+	question = "Ambiguous target. Please validate target:"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 	var/obj/item/sleevemate/sleevemate
 
-/datum/om/prompt/choice/sleevemate_target/valid()
+CAPABILITIES(/datum/prompt/choice/sleevemate_target)
+	ref_one(nameof(sleevemate), /obj/item/sleevemate)
+
+/datum/prompt/choice/sleevemate_target/prepare(datum/act/A)
+	..()
+	var/obj/item/sleevemate/captured = sleevemate
+	rel_clear(src, nameof(sleevemate))
+	rel_set(src, nameof(sleevemate), captured)
+
+/datum/prompt/choice/sleevemate_target/recheck_extra()
 	return answerer.get_active_hand() == sleevemate ? null : "not holding it"
 
-/obj/item/sleevemate/proc/scan_target_chosen(datum/om/prompt/choice/sleevemate_target/ask)
-	scan_target(ask.answerer, ask.choice)
+/obj/item/sleevemate/proc/scan_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	scan_target(A.request.answerer, A.answer.value)
 
 /obj/item/sleevemate/proc/scan_target(mob/living/user, mob/living/M)
 	if(isrobot(M))
@@ -89,22 +95,45 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		to_chat(user,span_warning("Not a compatible subject to work with!"))
 		return ITEM_INTERACT_FAILURE
 
-DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sleevemate/proc/can_manage_mind)))
+CAPABILITIES(/obj/item/sleevemate)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
+	// The timed scans and transfers, started by the topic ops above once they have checked the target.
+	op("mindscan_wait", ai(), takes("subject", "nif"), wait(8 SECONDS), on_interrupt(PROC_REF(Topic_timed_failed)), then(PROC_REF(Topic_timed_done)))
+	op("bodyscan_wait", ai(), takes("subject"), wait(8 SECONDS), on_interrupt(PROC_REF(Topic_timed_failed)), then(PROC_REF(Topic_timed_done2)))
+	op("mindsteal_wait", ai(), takes("subject"), wait(35 SECONDS), then(PROC_REF(Topic_timed_done3)))
+	op("mindupload_wait", ai(), takes("subject"), wait(35 SECONDS), then(PROC_REF(Topic_timed_done4)))
+	ref_one(nameof(stored_mind), /datum/mind)
+	// the old attack_self: what to do with the stored mind
+	op("manage_mind", in_hand(), needs(req(PROC_REF(can_manage_mind))),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stored_title)), "question" = "What would you like to do?", "choices" = list("Delete", "Backup", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
+		then(PROC_REF(stored_mind_action)))
+	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
+	op("mindscan", topic("mindscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindscan)))
+	op("bodyscan", topic("bodyscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_bodyscan)))
+	op("mindsteal", topic("mindsteal", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), asks(/datum/prompt/choice/sleevemate_mindsteal, fields = list("victim" = arg_of("target")), step = "confirm"), then(PROC_REF(topic_mindsteal)))
+	op("mindput", topic("mindput", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindput)))
+	op("mindupload", topic("mindupload", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindupload)))
+	op("mindrelease", topic("mindrelease", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS), arg("mindrelease", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_mindrelease)))
 
 /// Requirement: there has to be a stored mind to manage.
-/obj/item/sleevemate/proc/can_manage_mind(mob/living/user, atom/target, obj/item/held)
-	if(!stored_mind())
-		return "no stored mind in it"
-	return TRUE
+/obj/item/sleevemate/proc/can_manage_mind(datum/act/op/A)
+	return (!!stored_mind) ? null : MSG(sleevemate/empty)
 
-/obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(stored_mind_action), title = "Stored: [stored_mind().name]", message = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
+MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
-/obj/item/sleevemate/proc/stored_mind_action(datum/om/prompt/choice/ask)
-	if(!stored_mind())
-		return
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/item/sleevemate/proc/stored_title(datum/act/A)
+	return "Stored: [stored_mind()?.name]"
+
+/// Old attack_self: delete or back up the stored mind.
+/obj/item/sleevemate/proc/stored_mind_action(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R || !stored_mind())
+		return OP_OK
+	var/mob/living/user = A.actor
+	switch(R.value)
 		if("Delete")
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
@@ -112,7 +141,8 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] backed up to database."))
 			our_db().m_backup(stored_mind(),null,one_time = TRUE)
 		if("Cancel")
-			return
+			return OP_OK
+	return OP_OK
 
 /obj/item/sleevemate/proc/scan_mob(mob/living/carbon/human/H, mob/living/user)
 	var/output = ""
@@ -181,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 		var/datum/nifsoft/soulcatcher/SC = H.nif.imp_check(NIF_SOULCATCHER)
 		if(SC)
 			output += "<br>"
-			output += span_bold("Soulcatcher detected ([SC.brainmobs.len] minds)") + "<br>"
+			output += span_bold("Soulcatcher detected ([LAZYLEN(SC.brainmobs)] minds)") + "<br>"
 			for(var/mob/living/carbon/brain/caught_soul/mind in SC.brainmobs)
 				output += "<i>[mind.name]: </i> [mind.transient == FALSE ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindrelease=[mind.name]'>Load</a>\]" : span_warning("Incompatible")]<br>"
 
@@ -190,26 +220,21 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 
 	to_chat(user,output)
 
-TOPIC_ACTION(/obj/item/sleevemate, "mindscan", PROC_REF(topic_mindscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "bodyscan", PROC_REF(topic_bodyscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindsteal", PROC_REF(topic_mindsteal), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindput", PROC_REF(topic_mindput), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindupload", PROC_REF(topic_mindupload), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS), TOPIC_TEXT("mindrelease", MAX_NAME_LEN))
 
 // Every scan link works only from the active hand.
-/obj/item/sleevemate/topic_allowed(mob/user, list/href_list)
+/obj/item/sleevemate/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(user.get_active_hand() != src)
-		to_chat(user,span_warning("You're not holding \the [src]."))
-		return FALSE
+	return A.actor.get_active_hand() == src ? null : MSG(op/topic_gate)
+
+/// Every scan link spends a click, held or not (it was the gate's first act).
+/obj/item/sleevemate/proc/topic_click_spent(datum/act/op/A)
+	A.actor.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	return OP_OK
 
 /// The link's target, if it is there and next to `user` (says why not otherwise).
-/obj/item/sleevemate/proc/topic_target(mob/user, list/args)
-	var/mob/living/target = args["target"]
+/obj/item/sleevemate/proc/topic_target(mob/user, mob/living/target)
 	if(!target)
 		to_chat(user,span_warning("Unable to operate on that target."))
 		return null
@@ -218,8 +243,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		return null
 	return target
 
-/obj/item/sleevemate/proc/topic_mindscan(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindscan(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
@@ -233,10 +259,11 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		persist_nif_data(H)
 
 	act_message(user, null, MSG_SELF(span_notice("You begin scanning [target]'s mind.")), MSG_OTHERS("%U% begins scanning [target]'s mind."))
-	om_task_start(/datum/om/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
+	perform_op(user, src, "mindscan_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "nif" = nif))
 
-/obj/item/sleevemate/proc/topic_bodyscan(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_bodyscan(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!ishuman(target))
@@ -246,24 +273,28 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	var/mob/living/carbon/human/H = target
 
 	act_message(user, target, MSG_SELF(span_notice("You begin scanning %T%'s body.")), MSG_OTHERS("%U% begins scanning %T%'s body."))
-	om_task_start(/datum/om/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
+	perform_op(user, src, "bodyscan_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = H))
 
-/obj/item/sleevemate/proc/topic_mindsteal(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/// The mind steal link, after "Continue": the target is looked at again, as the scan buttons do.
+/obj/item/sleevemate/proc/topic_mindsteal(datum/act/op/A, href_target)
+	var/mob/living/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
 		to_chat(user,span_warning("Target seems totally braindead."))
 		return
-
 	if(stored_mind())
 		to_chat(user,span_warning("There is already someone's mind stored inside"))
 		return
+	if(A.step_value("confirm") != "Continue")
+		return
+	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
+	perform_op(user, src, "mindsteal_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target))
 
-	om_ask(user, /datum/om/prompt/confirm/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), victim = target)
-
-/obj/item/sleevemate/proc/topic_mindput(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindput(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!stored_mind())
@@ -294,8 +325,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	SC.catch_mob(GLOB.sleevemate_mob)
 	to_chat(user,span_notice("Mind transferred into Soulcatcher!"))
 
-/obj/item/sleevemate/proc/topic_mindupload(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindupload(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!stored_mind())
@@ -317,10 +349,11 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 
 	act_message(user, target, MSG_SELF(span_notice("You begin uploading a mind into %T%!")), \
 		MSG_OTHERS(span_warning("%U% begins uploading someone's mind into %T%!")))
-	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
+	perform_op(user, src, "mindupload_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target))
 
-/obj/item/sleevemate/proc/topic_mindrelease(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindrelease(datum/act/op/A, href_target, href_mindrelease)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(stored_mind())
@@ -333,96 +366,112 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	if(!SC)
 		return
 	for(var/mob/living/carbon/brain/caught_soul/soul in SC.brainmobs)
-		if(soul.name == args["mindrelease"])
+		if(soul.name == href_mindrelease)
 			get_mind(soul)
-			qdel(soul)
+			rel_remove(SC, nameof(SC.brainmobs), soul)
 			to_chat(user,span_notice("Mind downloaded!"))
 			return
 	to_chat(user,span_notice("Unable to find that mind in Soulcatcher!"))
 
-/datum/om/task/timed/sleevemate_topic
-	duration = 8 SECONDS
-	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done
-	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed
-	var/nif
-
-/obj/item/sleevemate/proc/Topic_timed_done(datum/om/task/timed/sleevemate_topic/task)
-	var/mob/living/target = task.target
-	var/nif = task.nif
-	var/mob/usr_mob = task.actor
-	our_db().m_backup(target.mind,nif,one_time = TRUE)
+/obj/item/sleevemate/proc/Topic_timed_done(datum/act/op/A)
+	var/mob/living/target = A.arg("subject")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(target) || !usr_mob.Adjacent(target))
+		to_chat(usr_mob,span_warning("You must remain close to your target!"))
+		return OP_FAILED
+	our_db().m_backup(target.mind,A.arg("nif"),one_time = TRUE)
 	to_chat(usr_mob,span_notice("Mind backed up!"))
+	return OP_OK
 
-/obj/item/sleevemate/proc/Topic_timed_failed(datum/om/task/timed/sleevemate_topic/task)
-	var/mob/usr_mob = task.actor
-	to_chat(usr_mob,span_warning("You must remain close to your target!"))
-/datum/om/task/timed/sleevemate_topic2
-	duration = 8 SECONDS
-	complete_proc = /obj/item/sleevemate/proc/Topic_timed_done2
-	cancel_proc = /obj/item/sleevemate/proc/Topic_timed_failed2
-	var/mob/living/carbon/human/H
+/obj/item/sleevemate/proc/Topic_timed_failed(datum/act/op/A)
+	to_chat(A.actor,span_warning("You must remain close to your target!"))
 
-/obj/item/sleevemate/proc/Topic_timed_done2(datum/om/task/timed/sleevemate_topic2/task)
-	var/mob/living/carbon/human/H = task.H
-	var/mob/usr_mob = task.actor
+/obj/item/sleevemate/proc/Topic_timed_done2(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("subject")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(H) || !usr_mob.Adjacent(H))
+		to_chat(usr_mob,span_warning("You must remain close to your target!"))
+		return OP_FAILED
 	var/datum/transhuman/body_record/BR = new()
 	BR.init_from_mob(H, TRUE, TRUE, database_key = db_key)
 	to_chat(usr_mob,span_notice("Body scanned!"))
+	return OP_OK
 
-/obj/item/sleevemate/proc/Topic_timed_failed2(datum/om/task/timed/sleevemate_topic2/task)
-	var/mob/usr_mob = task.actor
-	to_chat(usr_mob,span_warning("You must remain close to your target!"))
-/obj/item/sleevemate/proc/Topic_timed_done3(mob/living/target, mob/usr_mob)
+/obj/item/sleevemate/proc/Topic_timed_done3(datum/act/op/A)
+	var/mob/living/target = A.arg("subject")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	if(!stored_mind() && target.mind)
 		get_mind(target)
 		to_chat(usr_mob,span_notice("Mind downloaded!"))
-/obj/item/sleevemate/proc/Topic_timed_done4(mob/living/target, mob/usr_mob)
+		return OP_OK
+	return OP_FAILED
+
+/obj/item/sleevemate/proc/Topic_timed_done4(datum/act/op/A)
+	var/mob/living/target = A.arg("subject")
+	var/mob/usr_mob = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	if(!stored_mind())
 		to_chat(usr_mob,span_warning("\The [src] no longer has a stored mind."))
-		return
+		return OP_FAILED
 	put_mind(target)
 	to_chat(usr_mob,span_notice("Mind transferred into [target]!"))
+	return OP_OK
 
 /obj/item/sleevemate/proc/appearance_has_mind()
 	return stored_mind() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_mind?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/sleevemate/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_has_mind() ? "_on" : ""]")
 
 /// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
-/datum/om/prompt/confirm/sleevemate_mindsteal
+/datum/prompt/choice/sleevemate_mindsteal
 	title = "Confirmation"
-	message = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?"
-	yes_text = "Continue"
-	no_text = "Cancel"
+	question = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?"
+	choices = list("Continue", "Cancel")
+	buttons = TRUE
+	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/mob/living/victim
 
-/datum/om/prompt/confirm/sleevemate_mindsteal/valid()
-	var/obj/item/sleevemate/sleevemate = subject
+CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
+	ref_one(nameof(victim), /mob/living)
+
+/datum/prompt/choice/sleevemate_mindsteal/prepare(datum/act/A)
+	..()
+	var/mob/living/captured = victim
+	rel_clear(src, nameof(victim))
+	rel_set(src, nameof(victim), captured)
+
+/datum/prompt/choice/sleevemate_mindsteal/recheck_extra()
+	if(QDELETED(victim))
+		return "gone"
+	var/obj/item/sleevemate/sleevemate = owner
 	if(sleevemate.stored_mind())
 		return "already holding a mind"
 	if(!answerer.Adjacent(victim))
 		return "too far away"
 	return null
 
-/obj/item/sleevemate/proc/mindsteal_confirmed(datum/om/prompt/confirm/sleevemate_mindsteal/ask)
-	var/mob/living/user = ask.answerer
-	var/mob/living/target = ask.victim
-	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
-	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
+/obj/item/sleevemate/proc/hack_question(datum/act/A)
+	return "How would you like to modify the [src]?"
 
-DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
-/obj/item/sleevemate/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	var/list/choices = list("Body Snatcher","Mind Binder")
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(hack_chosen), message = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return 1
-
-/obj/item/sleevemate/proc/hack_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/// The sequencer's choice: the sleevemate becomes a body snatcher or a mind binder (a card use is spent only when one is picked).
+/obj/item/sleevemate/proc/hack_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/choice = R?.value
 	if(!(choice in list("Body Snatcher","Mind Binder")))
-		return
-	to_chat(user,span_danger("You hack [src]!"))
+		return OP_DECLINE
+	to_chat(A.actor, span_danger("You hack [src]!"))
+	// the device is replaced once the emag op has finished with it (the library marks and pays on the holder after this effect)
+	after(src, 0, PROC_REF(hacked_into), with = list(choice))
+	return OP_OK
+
+/obj/item/sleevemate/proc/hacked_into(choice)
 	fx_sparks(src.loc, 5, FALSE)
 	play_sfx(src, SFX_SPARKS)
 	if(isliving(src.loc))
@@ -430,15 +479,13 @@ DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 		L.unEquip(src)
 	src.forceMove(get_turf(src))
 	if(choice == "Body Snatcher")
-		new /obj/item/bodysnatcher(src.loc)
+		replace_with(src, /obj/item/bodysnatcher)
 	if(choice == "Mind Binder")
-		new /obj/item/mindbinder(src.loc)
-	qdel(src)
-	return 1
+		replace_with(src, /obj/item/mindbinder)
 
 /// The transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/sleevemate/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 
 /// Relation view: stored mind (reads null once it is gone).
 /obj/item/sleevemate/proc/stored_mind() as /datum/mind

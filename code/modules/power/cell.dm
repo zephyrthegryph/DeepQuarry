@@ -10,8 +10,6 @@
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
 	icon_state = "b_st"
 	item_state = "cell"
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -37,12 +35,9 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
-	// Overlay stuff.
+	/// Whether the cell draws its charge-level overlay.
 	var/standard_overlays = TRUE
-	var/last_overlay_state = null // Used to optimize update_icon() calls.
 
 	/// gradual_charge(): the charge multiplier, whether it sparks, and whether a user must stay in
 	/// reach, for the steps still left.
@@ -52,12 +47,34 @@
 	/// gradual_charge(): the user who must stay in reach (a relation view; cleared if they die).
 	var/tmp/mob/living/gradual_user
 
-/// If true, the cell will recharge itself (periodic_step()).
-OM_FIELD(/obj/item/cell, self_recharge, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/cell, PERIODIC_SLOW, "self_recharge")
-/// gradual_charge(): one-second charge steps still to run.
-OM_FIELD_TYPED(/obj/item/cell, tmp, gradual_charge_left, 0, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_left")
+/obj/item/cell
+	/// If true, the cell recharges itself (recharge_step()).
+	var/self_recharge = FALSE
+	/// TRUE while a self-charging cell is below full: use() raises it, a step that finds the cell full drops it.
+	var/tmp/recharging = TRUE
+	/// gradual_charge(): one-second charge steps still to run.
+	var/tmp/gradual_charge_left = 0
+
+TRACKED(/obj/item/cell, charge)
+TRACKED(/obj/item/cell, self_recharge)
+TRACKED(/obj/item/cell, recharging)
+TRACKED(/obj/item/cell, gradual_charge_left)
+
+// A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
+MSG_DEF_SELF(cell/needs_item, "needs an item")
+MSG_DEF_SELF(cell/not_in_hand, "not in your hand")
+
+CAPABILITIES(/obj/item/cell)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	op("inject_cell", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(cell/needs_item)), req_adjacent(), req_capable()), then(PROC_REF(interaction_item)))
+	op("electrovore_charge", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP), label("Charge with your body"), then(PROC_REF(electrovore_charge)))
+	op("electrovore_drain", inputs(in_hand(), menu()), needs(req(PROC_REF(electrovore_in_hand))), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Drain its charge"), then(PROC_REF(electrovore_drain)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(cell_emp_drain)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(cell_blast_corrupt)))
+	every(2 SECONDS, then(PROC_REF(recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
+	every(1 SECOND, then(PROC_REF(gradual_charge_tick)), when = nameof(gradual_charge_left))
 
 /obj/item/cell/Initialize(mapload)
 	. = ..()
@@ -67,15 +84,15 @@ DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_le
 	apply_blueprint_effects()
 	enable_material_service()
 	c_uid = cell_uid++
-	update_icon()
 
 /obj/item/cell/get_cell()
 	return src
 
-/// Self-recharge (declared on self_recharge). Full, it parks; use() wakes it after a discharge.
-/obj/item/cell/periodic_step()
+/// Self-recharge (while self_recharge holds). Full, it parks; use() starts it again after a discharge.
+/obj/item/cell/proc/recharge_step(datum/act/timer/A)
 	if(charge >= maxcharge)
-		return PROCESS_KILL
+		set_recharging(FALSE)
+		return
 	if(COOLDOWN_FINISHED(src, charge_cooldown))
 		give(charge_amount)
 		// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
@@ -97,21 +114,11 @@ DECLARE_REPEAT(/obj/item/cell, 1 SECOND, gradual_charge_step, "gradual_charge_le
 
 	return use(cell_amt) / CELLRATE
 
-#define OVERLAY_FULL	2
-#define OVERLAY_PARTIAL	1
-#define OVERLAY_EMPTY	0
-
-APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_state)}_%p")
-
-/// Charge percentage for the charge overlay; null (no overlay) for cells without standard overlays.
-/obj/item/cell/proc/appearance_charge_level()
-	if(!standard_overlays)
-		return null
-	return percent()
-
-#undef OVERLAY_FULL
-#undef OVERLAY_PARTIAL
-#undef OVERLAY_EMPTY
+/// The look: the charge-level overlay, a quarter step of the stored charge.
+/obj/item/cell/draw(datum/look/look)
+	..()
+	if(standard_overlays)
+		look.overlay("[initial(icon_state)]_[clamp(round(percent() * 4 / 100, 1), 0, 4) * 25]")
 
 /obj/item/cell/proc/percent()		// return % charge of cell
 	var/charge_percent = 0
@@ -135,7 +142,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
-	var/temperature = material_service?.temperature || T20C
+	var/temperature = material_service_of(src)?.temperature() || T20C
 	var/current = max(amount / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
 	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
@@ -145,11 +152,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// physical quench/recovery cues emitted here.
 /obj/item/cell/proc/update_superconducting_state(requested_output = 0)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(!conductor?.critical_temperature || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(!conductor?.critical_temperature || !service)
 		material_superconducting = FALSE
 		material_quenched = FALSE
 		return FALSE
-	var/temperature = material_service.temperature
+	var/temperature = service.temperature()
 	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
 	var/within_current = current_density <= conductor.critical_current_density
 	if(material_quenched)
@@ -193,11 +201,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// the complete cell assembly. This is not conductor resistance; contacts,
 /// electrodes, and the powered device itself still produce heat.
 /obj/item/cell/proc/material_record_enhanced_output(base_cost, multiplier)
-	if(multiplier <= 1 || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(multiplier <= 1 || !service)
 		return
-	material_service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
+	service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(conductor?.critical_temperature && material_service.temperature >= conductor.critical_temperature)
+	if(conductor?.critical_temperature && service.temperature() >= conductor.critical_temperature)
 		material_superconducting = FALSE
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -207,29 +216,34 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// for cryogenic/thermoelectric composites: it can hold a conductor below its
 /// critical temperature, while the insulation layer controls heat leaking back.
 /obj/item/cell/proc/run_material_heat_pump(delivered_charge)
-	if(delivered_charge <= 0 || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(delivered_charge <= 0 || !service)
 		return 0
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
 		return 0
 	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
-	if(material_service.temperature <= target_temperature)
+	if(service.temperature() <= target_temperature)
 		return 0
-	var/available_cooling = (material_service.temperature - target_temperature) * material_service.thermal_mass()
+	var/available_cooling = (service.temperature() - target_temperature) * service.thermal_mass()
 	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
 	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
 	var/work_charge = min(charge, work_joules * CELLRATE)
 	var/moved_heat = work_charge / CELLRATE * thermal.heat_pump_coefficient
 	if(moved_heat <= 0)
 		return 0
-	charge -= work_charge
-	material_service.add_heat(-moved_heat)
+	set_charge(charge - work_charge)
+	// The pump moves the cell's heat into its surroundings, and its work ends there as heat too.
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
-	ambient?.add_thermal_energy(moved_heat + work_charge / CELLRATE)
-	material_service.input_joules += work_charge / CELLRATE
-	material_service.loss_joules += work_charge / CELLRATE
+	if(ambient)
+		heat_move(HEAT_STORE(service.heat_store), ambient, moved_heat)
+		heat_add(ambient, work_charge / CELLRATE, HEAT_SOURCE_DEVICE)
+	else
+		service.add_heat(-moved_heat, HEAT_SOURCE_MATERIAL)
+	service.input_joules += work_charge / CELLRATE
+	service.loss_joules += work_charge / CELLRATE
 	return moved_heat
 
 /// A conservative preflight budget for consumers that perform physical work
@@ -243,24 +257,27 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /obj/item/cell/proc/amount_missing()
 	return max(maxcharge - charge, 0)
 
-// use power from a cell, returns the amount actually used
-/obj/item/cell/proc/use(amount, update_appearance = TRUE)
+// use power from a cell, returns the amount actually used. `seconds`: the draw was a steady load over that long,
+// settled in one batch (an emergency light's discharge): its rate, not its total, is what the cell's discharge
+// limit, efficiency and heating see.
+/obj/item/cell/proc/use(amount, seconds = 0)
 	if(rigged && amount > 0)
 		explode()
 		return 0
 	refresh_material_discharge()
+	var/span = seconds > 1 ? seconds : 1
 	if(amount > 0)
-		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / max(material_discharge_limit, 1))
-	material_service?.advance()
+		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / span / max(material_discharge_limit, 1))
+	material_service_of(src)?.advance()
 	if(QDELETED(src))
 		return 0
 	amount = material_cell_use_cost(amount)
-	amount = clamp(amount, 0, material_discharge_credit)
-	var/efficiency = material_delivery_efficiency(amount)
+	amount = clamp(amount, 0, span > 1 ? material_discharge_limit * span : material_discharge_credit)
+	var/efficiency = material_delivery_efficiency(amount / span)
 	var/used = min(charge * efficiency, amount)
 	var/debited = used / efficiency
 	var/charge_before = charge
-	charge = max(0, min(charge - used, charge - debited))
+	set_charge(max(0, min(charge - used, charge - debited)))
 	// BYOND uses single-precision numbers. Account the represented change in
 	// stored charge, not a pre-rounding estimate of that change.
 	debited = charge_before - charge
@@ -268,26 +285,22 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		// Pay a representable charge step rather than reporting an affordable
 		// fractional action as failed after already debiting the cell. Any
 		// rounding surplus is included in the actual waste-heat accounting.
-		charge = max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON))
+		set_charge(max(0, charge - max(charge_before * MATERIAL_CHARGE_FLOAT_EPSILON, MATERIAL_CHARGE_FLOAT_EPSILON)))
 		debited = charge_before - charge
 	used = min(used, debited)
-	material_discharge_credit -= used
-	if(material_service)
-		material_service.input_joules += debited / CELLRATE
-		material_service.output_joules += used / CELLRATE
-		material_service.loss_joules += (debited - used) / CELLRATE
-		material_service.add_heat((debited - used) / CELLRATE)
+	if(span <= 1)
+		material_discharge_credit -= used
+	var/datum/material_service/service = material_service_of(src)
+	if(service)
+		service.input_joules += debited / CELLRATE
+		service.output_joules += used / CELLRATE
+		service.loss_joules += (debited - used) / CELLRATE
+		service.add_heat((debited - used) / CELLRATE)
 		run_material_heat_pump(used)
-	update_superconducting_state(amount)
+	update_superconducting_state(amount / span)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
-		// ALLOW(sys_periodic_toggle): wake, not a toggle: the declared state (self_recharge) already holds; the self-recharge body parks itself once full (work of its own that ran out) and this restarts it after a discharge. `charge` has 200+ writers across the tree, so it is not a field.
-		om_task_periodic(src, PERIODIC_SLOW)
-	if(used && istype(loc, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = loc
-		A.wake_for_power_dependency()
-	if(update_appearance)
-		update_icon()
+		set_recharging(TRUE) // the self-charge parks itself once full; a discharge starts it again
 	return used
 
 // Checks if the specified amount can be provided. If it can, it removes the amount
@@ -298,20 +311,13 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	return use(amount) >= amount
 
 // recharge the cell
-/obj/item/cell/proc/give(amount, update_appearance = TRUE)
+/obj/item/cell/proc/give(amount)
 	if(rigged && amount > 0)
 		explode()
 		return 0
 
 	var/amount_used = clamp(amount, 0, maxcharge - charge)
-	charge += amount_used
-	if(amount_used && istype(loc, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = loc
-		A.wake_for_power_dependency()
-	if(update_appearance)
-		update_icon()
-		if(loc)
-			loc.update_icon()
+	set_charge(charge + amount_used)
 	return amount_used
 
 /// Recharges the cell over time. 100 per second multiplied by the multiplier, `iterations` times
@@ -329,29 +335,30 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	set_gradual_charge_left(iterations)
 	gradual_charge_step()
 
+/// The gradual charge's clock: one step a second while steps are left.
+/obj/item/cell/proc/gradual_charge_tick(datum/act/timer/A)
+	gradual_charge_step()
+
 /// One gradual_charge() step; ends when the steps run out or the user wanders off.
 /obj/item/cell/proc/gradual_charge_step()
 	if(gradual_charge_left <= 0)
-		return REPEAT_STOP
+		return
 	var/charged_object = src
 	if(gradual_needs_user) //If we have a user, time to check to make sure they're adjacent/holding us!
 		var/mob/living/user = gradual_user
 		if(!user)
 			set_gradual_charge_left(0)
-			return REPEAT_STOP
+			return
 		if(istype(loc, /obj/machinery/power/apc)) //We're in an APC!
 			charged_object = loc
 		if(loc != user && !(user in orange(1,charged_object))) //If we have a user fed to us, they need to hold us or be in range of us.
 			if(loc.loc && loc.loc != user) //Are we inside of something the user is holding?
 				set_gradual_charge_left(0)
-				return REPEAT_STOP
-	charge += 100 * gradual_multiplier
-	if(charge > maxcharge)
-		charge = maxcharge
+				return
+	set_charge(min(charge + 100 * gradual_multiplier, maxcharge))
 	if(gradual_sparks)
 		var/T = get_turf(src)
 		new /obj/effect/effect/sparks(T)
-	update_icon()
 	set_gradual_charge_left(gradual_charge_left - 1)
 
 /obj/item/cell/examine(mob/user)
@@ -367,10 +374,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 			return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)), INTERACT_SELF_AS(I_HELP, "Charge with your body", PROC_REF(interaction_electrovore)), INTERACT_SELF_AS(I_HURT, "Drain its charge", PROC_REF(interaction_electrovore)))
+
 
 /// Old attackby.
-/obj/item/cell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/cell/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = W
 
@@ -384,7 +393,7 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 			message_admins("LOG: [user.name] ([user.ckey]) injected a power cell with phoron, rigging it to explode.")
 
 		S.reagents.clear_reagents()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/cell/proc/explode()
 	// use() and give() can both be reached before qdel drains.  Make detonation
@@ -417,31 +426,31 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 	// Clear the trigger before queueing.  Destruction callbacks and machinery
 	// shutdown may attempt another draw while the explosion is pending.
 	rigged = FALSE
-	charge = 0
+	set_charge(0)
 	explosion(T, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
 	consume(src)
 
 /obj/item/cell/proc/corrupt()
-	charge /= 2
-	maxcharge /= 2
+	set_charge(charge / 2)
+	set_maxcharge(maxcharge / 2)
 	if (prob(10))
 		rigged = 1 //broken batterys are dangerous
 
-DAMAGE_REACTION(/obj/item/cell, DAMAGE_EMP, PROC_REF(cell_emp_drain))
+
 
 /// A pulse drains charge, less the material's EMP resistance.
-/obj/item/cell/proc/cell_emp_drain(datum/damage_packet/packet)
-	charge -= (charge / packet.severity) * (1 - material_emp_resistance / 100)
-	if (charge < 0)
-		charge = 0
+/obj/item/cell/proc/cell_emp_drain(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
+	set_charge(max(0, charge - (charge / packet.severity) * (1 - material_emp_resistance / 100)))
 
-	update_icon()
 
-DAMAGE_REACTION_AFTER(/obj/item/cell, DAMAGE_EXPLOSION, PROC_REF(cell_blast_corrupt))
 
 /// A cell that survives a blast can come out of it corrupted.
-/obj/item/cell/proc/cell_blast_corrupt(datum/damage_packet/packet)
+/obj/item/cell/proc/cell_blast_corrupt(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(prob(50 / packet.severity))
 		corrupt()
 
@@ -460,3 +469,7 @@ DAMAGE_REACTION_AFTER(/obj/item/cell, DAMAGE_EXPLOSION, PROC_REF(cell_blast_corr
 		return round(damage)
 	else
 		return 0
+
+/// Immediate admission samples the real hand getters, including robot virtual hands; these effects never suspend.
+/obj/item/cell/proc/electrovore_in_hand(datum/act/op/A)
+	return (A.actor && (read_once(A.actor.get_active_hand()) == src || read_once(A.actor.get_inactive_hand()) == src)) ? null : MSG(cell/not_in_hand)

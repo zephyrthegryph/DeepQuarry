@@ -1,5 +1,28 @@
+TRACKED(/obj/machinery/atmospherics/unary/freezer, pumping)
+TRACKED(/obj/machinery/atmospherics/unary/freezer, cooling)
+TRACKED(/obj/machinery/atmospherics/unary/freezer, set_temperature)
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	configure(uses_power(idle = 5))
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
+	silicon_ui()
+	reagents(120)
+	// A heat pump from its pipeline's gas into the room around it, toward the thermostat: the room takes the heat plus the work, at a
+	// Carnot-bounded COP that better parts and coolant raise.
+	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_COOL, FALSE, nameof(carnot_fraction), nameof(max_cop)))
+	gas_watch(air = nameof(air_contents), changed = PROC_REF(gas_changed))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(service)), when = nameof(cooling))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reconsider)))
+	on_change(nameof(set_temperature), ANY, then(PROC_REF(reconsider)))
+	part_replacement()
+	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
+	interface("GasTemperatureSystem")
+	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
+	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
+
 //TODO: Put this under a common parent type with heaters to cut down on the copypasta
-#define FREEZER_PERF_MULT 2.5
+/// The share of the Carnot COP stock parts achieve; each part tier above the first adds to it (RefreshParts()).
+#define FREEZER_CARNOT_FRACTION 0.4
 #define REAGENT_COOLING_CONSUMED 0.1
 #define REAGENT_COOLING_MINMOD 0.15
 #define REAGENT_COOLING_MAXMOD 5
@@ -13,10 +36,14 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 5			// 5 Watts for thermostat related circuitry
 	circuit = /obj/item/circuitboard/unary_atmos/cooler
 
-	var/heatsink_temperature = T20C	// The constant temperature reservoir into which the freezer pumps heat. Probably the hull of the station or something.
+	/// The share of the Carnot COP its pump achieves (parts and coolant raise it).
+	var/carnot_fraction = FREEZER_CARNOT_FRACTION
+	/// Upper bound on its COP.
+	var/max_cop = 10
+	/// TRUE while it pumps: its heat pump exists exactly while this is set.
+	var/pumping = FALSE
 	var/internal_volume = 600		// L
 
 	var/max_power_rating = 20000	// Power rating when the usage is turned up to 100
@@ -25,15 +52,10 @@
 	var/set_temperature = T20C		// Thermostat
 	var/cooling = 0
 	var/reagent_cooling = 0
-	gas_dependency_mask = GAS_DEPENDENCY_ALL
-
-DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 
 /obj/machinery/atmospherics/unary/freezer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/atmospherics/unary/freezer/atmos_init()
 	if(node)
@@ -49,36 +71,29 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	if(check_for_obstacles())
 		rel_clear(src, nameof(node))
 
-	if(node)
-		update_icon()
-
-/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and cooling.
-/obj/machinery/atmospherics/unary/freezer/proc/appearance_freezer_state()
-	if(!node)
-		return 0
-	return (use_power && cooling) ? 2 : 1
-
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freezer_state", list(
-	"0" = list(APPEARANCE_ICON_STATE = "freezer_0"),
-	"1" = list(APPEARANCE_ICON_STATE = "freezer"),
-	"2" = list(APPEARANCE_ICON_STATE = "freezer_1"),
-))
-
-/obj/machinery/atmospherics/unary/freezer
-	silicon_use = SILICON_USE_UI
-
-/obj/machinery/atmospherics/unary/freezer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/part_replacement,
-	)
+/// Unconnected, connected and idle, or working.
+/obj/machinery/atmospherics/unary/freezer/draw(datum/look/look)
 	..()
+	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+		look.state("freezer_0")
+	else
+		look.state((use_power && cooling) ? "freezer_1" : "freezer")
 
-DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
+/obj/machinery/atmospherics/unary/freezer/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(cooling))
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_setting:num", "reagentPower=reagent_cooling:num", "merge:ui_data_obj_machinery_atmospherics_unary_freezer{on:num,gasPressure:num,gasTemperature:num,minGasTemperature:num,maxGasTemperature:num,targetGasTemperature:num,reagentVolume:num,reagentMaximum:num,gasTemperatureClass:text}")
+/obj/machinery/atmospherics/unary/freezer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["powerSetting"] = power_setting
+	data["reagentPower"] = reagent_cooling
+	var/list/merged_1 = ui_data_obj_machinery_atmospherics_unary_freezer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/atmospherics/unary/freezer's window data (declared on its UI_DATA row).
+/// /obj/machinery/atmospherics/unary/freezer's window data.
 /obj/machinery/atmospherics/unary/freezer/proc/ui_data_obj_machinery_atmospherics_unary_freezer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
@@ -102,90 +117,60 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_s
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "toggleStatus", ui_act_togglestatus)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_togglestatus)
-	. = TRUE
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_togglestatus(datum/act/op/A)
 	set_use_power(!use_power)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setgastemperature)
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_setgastemperature(datum/act/op/A, temp)
+	var/mob/user = A.actor
 	. = TRUE
-	var/amount = params["temp"]
+	var/amount = temp
 	if(amount > 0)
-		set_temperature = min(amount, 1000)
+		set_set_temperature(min(amount, 1000))
 	else
-		set_temperature = max(amount, 0)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+		set_set_temperature(max(amount, 0))
+	heat_entries_refresh(src)
+	reconsider()
 
-UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setPower", ui_act_setpower, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
+/obj/machinery/atmospherics/unary/freezer/proc/ui_act_setpower(datum/act/op/A, value)
+	var/mob/user = A.actor
 	. = TRUE
-	var/new_setting = between(0, params["value"], 100)
+	var/new_setting = between(0, value, 100)
 	set_power_level(new_setting)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+	reconsider()
 
-/obj/machinery/atmospherics/unary/freezer/machine_step()
-	..()
+// ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----
 
+/// Its pipe's gas changed (its gas watch): it looks again whether it has work.
+/obj/machinery/atmospherics/unary/freezer/proc/gas_changed(list/observation, index)
+	reconsider()
+
+/// What it does now: the heat pump (its CAPABILITIES entry) exists while it is switched on and works; it cools while its loop's gas is above the
+/// thermostat.
+/obj/machinery/atmospherics/unary/freezer/proc/reconsider(datum/act/A)
+	var/on = !!(operable() && use_power)
+	set_pumping(on)
+	set_cooling(on && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature)
+
+/// One interval of cooling: coolant and parts set the pump's share of Carnot, it pays its work and uses up coolant (the heat moves in Rust).
+/obj/machinery/atmospherics/unary/freezer/proc/service(datum/act/A)
 	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
-	if(!operable() || !use_power)
-		cooling = 0
-		update_icon()
-		register_gas_dependencies()
-		return PROCESS_KILL
+	var/coolant_fraction = clamp(FREEZER_CARNOT_FRACTION * get_part_bonus() * CLAMP(reagent_cooling, REAGENT_COOLING_MINMOD, REAGENT_COOLING_MAXMOD), 0.05, 1)
+	if(abs(coolant_fraction - carnot_fraction) > 0.01)
+		carnot_fraction = coolant_fraction
+		heat_entries_refresh(src)
+	use_power(-heat_entries_power(src))
+	reagents.remove_any(REAGENT_COOLING_CONSUMED)
+	reconsider()
 
-	var/air_temperature = air_contents.return_temperature()
-	if(network && air_contents.total_moles() && air_temperature > set_temperature)
-		cooling = 1
-
-		var/heat_transfer = max( -air_contents.get_thermal_energy_change(set_temperature - 5), 0 )
-
-		//Assume the heat is being pumped into the hull which is fixed at heatsink_temperature
-		//not /really/ proper thermodynamics but whatever
-		var/cop = FREEZER_PERF_MULT * air_temperature/heatsink_temperature	//heatpump coefficient of performance from thermodynamics -> power used = heat_transfer/cop
-		heat_transfer = min(heat_transfer, cop * power_rating)	//limit heat transfer by available power
-
-		// Process coolant
-		heat_transfer *= CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD)
-		reagents.remove_any(REAGENT_COOLING_CONSUMED)
-
-		var/removed = -air_contents.add_thermal_energy(-heat_transfer)		//remove the heat
-		if(debug)
-			visible_message("[src]: Removing [removed] W.")
-
-		use_power(power_rating)
-		// Heat pump: the room around the machine is the hot side. It receives
-		// the heat taken from the loop plus the electrical work.
-		var/datum/gas_mixture/environment = loc?.return_air()
-		environment?.add_thermal_energy(removed + power_rating)
-
-		network.mark_dirty()
-	else
-		cooling = 0
-		register_gas_dependencies()
-		update_icon()
-		return PROCESS_KILL
-
-	update_icon()
-	return 1
-
-/// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
-/// test process() makes before it cools anything.
-/obj/machinery/atmospherics/unary/freezer/gas_wake_condition()
-	return use_power && operable() && network && air_contents.total_moles() && air_contents.return_temperature() > set_temperature
+/// How much better than stock its parts make the pump (1: stock).
+/obj/machinery/atmospherics/unary/freezer/proc/get_part_bonus()
+	return max(1, (get_part_rating(/obj/item/stock_parts/manipulator) + get_part_rating(/obj/item/stock_parts/matter_bin)) / 2)
 
 /obj/machinery/atmospherics/unary/freezer/power_change()
 	. = ..()
 	if(.)
-		// process() hibernates on NOPOWER; a power transition is a dependency change.
-		invalidate_gas_dependencies()
+		reconsider()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()
@@ -197,13 +182,14 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
 	manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 
 	max_power_rating = initial(max_power_rating) * cap_rating / 2			//more powerful
-	heatsink_temperature = initial(heatsink_temperature) / ((manip_rating + bin_rating) / 2)	//more efficient
+	carnot_fraction = clamp(FREEZER_CARNOT_FRACTION * max(1, (manip_rating + bin_rating) / 2), 0.05, 1)	//more efficient
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
 	set_power_level(power_setting)
 
 /obj/machinery/atmospherics/unary/freezer/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)
+	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/freezer/examine(mob/user)
 	. = ..()
@@ -213,4 +199,4 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
 #undef REAGENT_COOLING_MINMOD
 #undef REAGENT_COOLING_MAXMOD
 #undef REAGENT_COOLING_CONSUMED
-#undef FREEZER_PERF_MULT
+#undef FREEZER_CARNOT_FRACTION

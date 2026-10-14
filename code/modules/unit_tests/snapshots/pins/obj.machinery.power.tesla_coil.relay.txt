@@ -1,0 +1,18 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
+@obj.machinery.power human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Secure
+human|/obj/item/tool/wrench click: Click: Secure
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool click: Click: Modify
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery.power human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+@obj human|/obj/item/storage/part_replacer
+wires: Zap
+keys: buckle, cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, modify, part_replacement.replace, robot_remote_blocked, silicon_hand

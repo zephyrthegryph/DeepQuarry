@@ -154,3 +154,7 @@
 /// Accessor for the chosen_window var.
 /datum/event2/event/window_break/proc/chosen_window() as /obj/structure/window
 	return chosen_window
+
+CAPABILITIES(/datum/event2/event/window_break)
+	ref_one(nameof(chosen_turf_with_windows))
+	ref_one(nameof(chosen_window))

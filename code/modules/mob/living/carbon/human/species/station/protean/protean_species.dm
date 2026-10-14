@@ -162,7 +162,7 @@
 
 /datum/species/protean/handle_post_spawn(mob/living/carbon/human/H)
 	..()
-	H.synth_color = TRUE
+	H.looks.set_synth_color(TRUE)
 
 /datum/species/protean/equip_survival_gear(mob/living/carbon/human/H)
 	..()
@@ -171,14 +171,14 @@
 	var/obj/item/clothing/accessory/permit/nanotech/permit = new()
 	permit.set_name(H.real_name)
 
-	if(H.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
+	if(H.bio.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
 		H.equip_to_slot_or_del(permit, SLOT_ID_HAND_L)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(permit, SLOT_ID_IN_BACKPACK)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_IN_BACKPACK)
 
-	om_after(src, 1, PROC_REF(finish_survival_gear), H) //Let their real nif load if they have one
+	after(src, 0.1 SECONDS, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 
 /datum/species/protean/proc/finish_survival_gear(mob/living/carbon/human/H)
 	if(QDELETED(H)) //Observing, mannequins, etc. can delete the human first.
@@ -242,13 +242,26 @@
 	var/registring = "REGISTRANT: "
 
 /obj/item/clothing/accessory/permit/nanotech/set_name(new_name)
-	owner = 1
+	set_owner(TRUE)
 	if(new_name)
-		name += " ([new_name])"
-		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
-		registring += "[new_name]"
+		name = "[initial(name)] ([new_name])"
+		validstring = "[initial(validstring)][time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
+		registring = "[initial(registring)][new_name]"
 
 /obj/item/clothing/accessory/permit/nanotech/examine(mob/user)
 	. = ..()
 	. += validstring
 	. += registring
+
+/datum/species/protean/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	. = ..()
+	. += list(list(src, nameof(base_species)))
+	if(!H || base_species == name)
+		return
+	var/list/visited = seen ? seen.Copy() : list()
+	if(src in visited)
+		return
+	visited += src
+	var/datum/species/S = GLOB.all_species[base_species]
+	if(S && !(S in visited))
+		. += S.acceptance_bodytype_reads(H, visited)

@@ -9,21 +9,11 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_snowsuit, list(
 	"science" = list("name" = "science snowsuit", "icon_state" = "snowsuit_science"),
 ))
 
-/obj/item/clothing/suit/storage/snowsuit/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/suit/storage/snowsuit)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
+	configure(item_protection(cold_parts = CHEST|ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
+	variants(nameof(variant), PROC_REF(variant_table))
 
-/obj/item/clothing/suit/storage/snowsuit/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_suit_storage_snowsuit[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/suit/storage/snowsuit/proc/variant_table()
+	return GLOB.dq_variants_suit_storage_snowsuit

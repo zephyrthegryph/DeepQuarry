@@ -14,22 +14,36 @@
 	/// Material Container
 	var/datum/material_container/materials
 
+CAPABILITIES(/obj/machinery/ore_silo)
+	ref_many(nameof(holds))
+	ref_many(nameof(ore_connected_machines))
+	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
+	interface("OreSilo")
+	op("remove", ui_act("remove", arg("id", num())), then(PROC_REF(ui_act_remove)))
+	op("hold", ui_act("hold", arg("id", num())), then(PROC_REF(ui_act_hold)))
+	op("remove_mat", ui_act("remove_mat", arg("amount", num()), arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_mat)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
+	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
+		GLOB.ore_silo_default = src
 
-	own_set(src, nameof(materials), new /datum/material_container( \
+/// The starting material store (owns_one(starts =)): every material, unlimited.
+/obj/machinery/ore_silo/proc/make_materials(current)
+	return new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \
 		MATCONTAINER_EXAMINE, \
 		container_events = list( \
-			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
-			(/datum/om/event/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
+			(/datum/notice/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/ore_silo, on_item_consumed), \
+			(/datum/notice/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
 		), \
 		allowed_items = /obj/item/stack \
-	))
-	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
-		GLOB.ore_silo_default = src
+	)
 
 // the default silo clears.
 /obj/machinery/ore_silo/lifecycle_dematerialize()
@@ -50,8 +64,9 @@
 	if(panel_open)
 		. += span_notice("The whole machine can be [span_bold("pried")] apart.")
 
-/obj/machinery/ore_silo/proc/on_item_consumed(datum/material_container/container, datum/om/event/matcontainer_item_consumed/event)
-	EVENT_HANDLER
+/obj/machinery/ore_silo/proc/on_item_consumed(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/matcontainer_item_consumed/event = N
 	var/obj/item/item_inserted = event.item
 	var/mats_consumed = event.mats_consumed
 	var/amount_inserted = event.material_amount
@@ -59,45 +74,39 @@
 
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
 
-/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/material_container/container, datum/om/event/matcontainer_stack_retrieved/event)
-	EVENT_HANDLER
+/obj/machinery/ore_silo/proc/log_sheets_ejected(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/matcontainer_stack_retrieved/event = N
 	var/obj/item/stack/material/sheets = event.new_stack
 	var/atom/context = event.context
 
 	silo_log(context, "ejected", -sheets.amount, "[sheets.singular_name]", list(GET_MATERIAL_REF(sheets.default_type) = sheets.amount * SHEET_MATERIAL_AMOUNT))
 
-/obj/machinery/ore_silo/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/ore_silo/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/ore_silo/crowbar_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/ore_silo/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/ore_silo/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/ore_silo/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.buffer), src)
 	balloon_alert(user, "saved to multitool buffer")
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/ore_silo/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
+	return OP_OK
 
 /obj/machinery/ore_silo/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-DECLARE_UI(/obj/machinery/ore_silo, "OreSilo")
-
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials:unknown,machines:list,logs:list}")
-
-/// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
-/obj/machinery/ore_silo/proc/ui_data_obj_machinery_ore_silo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/ore_silo's window data.
+/obj/machinery/ore_silo/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["materials"] = materials.material_list_data(user)
@@ -130,9 +139,8 @@ UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials
 
 	return data
 
-UI_ACT(/obj/machinery/ore_silo, "remove", ui_act_remove, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove)
-	var/index = params["id"]
+/obj/machinery/ore_silo/proc/ui_act_remove(datum/act/op/A, id)
+	var/index = id
 	if(isnull(index))
 		return
 
@@ -143,9 +151,8 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove)
 	remote.disconnect()
 	return TRUE
 
-UI_ACT(/obj/machinery/ore_silo, "hold", ui_act_hold, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
-	var/index = params["id"]
+/obj/machinery/ore_silo/proc/ui_act_hold(datum/act/op/A, id)
+	var/index = id
 	if(isnull(index))
 		return
 
@@ -156,13 +163,12 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
 	remote.toggle_holding()
 	return TRUE
 
-UI_ACT(/obj/machinery/ore_silo, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
-	var/datum/material/ejecting = GET_MATERIAL_REF(params["id"])
+/obj/machinery/ore_silo/proc/ui_act_remove_mat(datum/act/op/A, amount_arg, id)
+	var/datum/material/ejecting = GET_MATERIAL_REF(id)
 	if(!istype(ejecting))
 		return
 
-	var/amount = params["amount"]
+	var/amount = amount_arg
 	if(isnull(amount))
 		return
 
@@ -265,9 +271,3 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
 		separator = ", "
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
-
-
-/obj/machinery/ore_silo/relations()
-	. = ..()
-	. += rel_many(nameof(holds))
-	. += rel_many(nameof(ore_connected_machines))

@@ -53,8 +53,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/animate_start = 0
 	/// Our animation lifespan, how long this message will last
 	var/animate_lifespan = 0
-	/// Callback to finish_image_generation passed to GLOB.runechat_service
-	var/list/finish_callback // om_callable() spec queued on the runechat service
+	/// The row finish_image_generation() has on the runechat queue (SSrunechat.enqueue()), or null.
+	var/list/finish_queued
 
 /**
  * Constructs a chat message overlay
@@ -72,20 +72,20 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		CRASH("Invalid target given for chatmessage")
 	if(!istype(owner) || QDELETED(owner) || !owner.client)
 		stack_trace("/datum/chatmessage created with [isnull(owner) ? "null" : "invalid"] mob owner")
-		qdel(src)
+		spent(src)
 		return
 	generate_image(text, target, owner, extra_classes, lifespan)
 
 /// Phase 1: a message leaves its client's images and seen list (keyed by the loc), and
-/// GLOB.runechat_service's queue, while its image and callback (owned, dropped in phase 4) still exist.
+/// SSrunechat's queue, while its image and callback (owned, dropped in phase 4) still exist.
 /datum/chatmessage/lifecycle_unbind()
 	var/client/owner = owned_by()
 	if(owner)
 		if(owner.seen_messages)
 			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
 		owner.images.Remove(message)
-	if (finish_callback)
-		GLOB.runechat_service.message_queue -= list(finish_callback)
+	if (finish_queued)
+		SSrunechat.dequeue(finish_queued)
 
 
 /**
@@ -101,13 +101,13 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 /datum/chatmessage/proc/generate_image(text, atom/target, mob/owner, list/extra_classes, lifespan)
 
 	if(!target || !owner)
-		qdel(src)
+		spent(src)
 		return
 
 	// Register client who owns this message
 	rel_set(src, nameof(owned_by), owner.client)
 	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
-	// message is dropped by its om_qdel_after() lifespan timer.
+	// message is dropped by its expire() lifespan timer.
 
 	var/extra_length = owned_by().prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
 	var/maxlen = extra_length ? CHAT_MESSAGE_EXT_LENGTH : CHAT_MESSAGE_LENGTH
@@ -136,7 +136,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	// Reject whitespace
 	var/static/regex/whitespace = new(@"^\s*$")
 	if(whitespace.Find(text))
-		qdel(src)
+		spent(src)
 		return
 
 	// Non mobs speakers can be small
@@ -194,12 +194,10 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
 
-	finish_callback = om_callable(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
-	GLOB.runechat_service.message_queue += list(finish_callback)
-	GLOB.runechat_service.demand()
+	finish_queued = SSrunechat.enqueue(src, PROC_REF(finish_image_generation), list(msgwidth, mheight, target, owner, complete_text, lifespan))
 
 /datum/chatmessage/proc/finish_image_generation(msgwidth, mheight, atom/target, mob/owner, complete_text, lifespan)
-	finish_callback = null
+	finish_queued = null
 	var/rough_time = REALTIMEOFDAY
 
 	approx_lines = max(1, mheight / CHAT_MESSAGE_APPROX_LHEIGHT)
@@ -208,9 +206,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	// Translate any existing messages upwards, apply exponential decay factors to timers
 	rel_set(src, nameof(message_loc), target.runechat_holder(src))
 	if(!owned_by())
-		qdel(src)
+		spent(src)
 		return
-	om_hook(message_loc(), /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
+	observe(message_loc(), /datum/notice/qdeleting, src, then(TYPE_PROC_REF(/datum, qdel_self)))
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
@@ -279,7 +277,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	animate_lifespan = lifespan
 
 	if(!owner)
-		qdel(src)
+		spent(src)
 		return
 	if(owner.contains(target)) // Special case, holding an atom speaking (pAI, recorder...)
 		message.plane = PLANE_PLAYER_HUD_ABOVE
@@ -298,7 +296,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	animate(alpha = 0, time = CHAT_MESSAGE_EOL_FADE)
 
 	// Register with the runechat SS to handle destruction
-	om_qdel_after(src, lifespan + CHAT_MESSAGE_GRACE_PERIOD)
+	expire(lifespan + CHAT_MESSAGE_GRACE_PERIOD)
 
 /datum/chatmessage/proc/get_current_alpha(time_spent)
 	if(time_spent < CHAT_MESSAGE_SPAWN_TIME)
@@ -318,7 +316,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return
 	ending_life = TRUE
 	animate(message, alpha = 0, time = fadetime, flags = ANIMATION_PARALLEL)
-	om_qdel_after(src, fadetime)
+	expire(fadetime)
 
 /**
  * Creates a message overlay at a defined location for a given speaker

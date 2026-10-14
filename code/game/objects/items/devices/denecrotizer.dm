@@ -12,13 +12,12 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 				return
 
 			if(var_value)
-				ghostjoin = TRUE
+				set_ghostjoin(TRUE)
 				registry_join(REGISTRY_GHOST_PODS, src)
 			else
-				ghostjoin = FALSE
+				set_ghostjoin(FALSE)
 				registry_leave(REGISTRY_GHOST_PODS, src)
 
-			ghostjoin_icon()
 			. =  TRUE
 
 	if(!isnull(.))
@@ -31,42 +30,54 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 //The stuff we want to be revivable normally
 /mob/living/simple_mob/animal
 	ic_revivable = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal)
+	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
 /mob/living/simple_mob/vore/otie
 	ic_revivable = TRUE
 /mob/living/simple_mob/vore
 	ic_revivable = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
+	configure(mob_movement(bump = 0))
 //The stuff that would be revivable but that we don't want to be revivable
 /mob/living/simple_mob/animal/giant_spider/nurse //no you can't revive the ones who can lay eggs and get webs everywhere
 	ic_revivable = FALSE
 /mob/living/simple_mob/animal/giant_spider/carrier //or the ones who fart babies when they die
 	ic_revivable = FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_REF(simple_mob_observer_join), REQ_TARGET_STATE(/mob/living/simple_mob/proc/can_ghost_join)))
 
-/// Requirement: TRUE, or why this ghost can't inhabit us.
-/mob/living/simple_mob/proc/can_ghost_join(mob/observer/dead/user, atom/target, obj/item/held)
-	if(ghostjoin && jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot inhabit this creature because you are banned from playing ghost roles"
-	return TRUE
+/// Requirement: this ghost may inhabit us (not banned, nobody in us yet, preferences that allow a captured mob).
+/mob/living/simple_mob/proc/can_ghost_join(datum/act/op/A)
+	return ghost_join_refusal(src, A.actor)
 
-/// A ghost has clicked us (old attack_ghost). FALSE falls to the ghost's default (examine).
-/mob/living/simple_mob/proc/simple_mob_observer_join(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(!ghostjoin)
-		return FALSE
-	if(!evaluate_ghost_join(user))
-		return FALSE
+/// Why the ghost `D` may not take `M` over, or null.
+/proc/ghost_join_refusal(mob/living/simple_mob/M, mob/observer/dead/D)
+	READS_FROM() // bans, a player's presence and preferences are asked when the ghost clicks
+	if(jobban_isbanned(D, JOB_GHOSTROLES))
+		return "You cannot inhabit this creature because you are banned from playing ghost roles."
+	if(M.ckey)
+		return "Sorry, someone else has already inhabited [M]."
+	if(M.capture_caught && !D.client?.prefs?.read_preference(/datum/preference/toggle/human/capture_crystal))
+		return "Sorry, [M] is participating in capture mechanics, and your preferences do not allow for that."
+	return null
 
-	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), om_callable(src, PROC_REF(reply_ghost_join)), 20 SECONDS)
-	return TRUE
+/mob/living/simple_mob/proc/ghost_join_question(datum/act/A)
+	return "Would you like to become [src]? It is bound to [revivedby]."
 
-/// A reply to an async alert request was received
-/mob/living/simple_mob/proc/reply_ghost_join(response)
-	if(response != "Yes")
-		return // ok
-
-	var/mob/observer/dead/D = usr
-	if(evaluate_ghost_join(D))
-		ghost_join(D)
+/// Old attack_ghost: a ghost said yes to becoming us (re-checked on the answer).
+/mob/living/simple_mob/proc/reply_ghost_join(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/observer/dead/user = A.actor
+	if(!R?.value)
+		return OP_OK
+	if(!ghostjoin || !user?.client || ghost_join_refusal(src, user))
+		return OP_OK
+	if(evaluate_ghost_join(user))
+		ghost_join(user)
+	return OP_OK
 
 /// Inject a ghost into this mob. Assumes you've done all sanity before this point.
 /mob/living/simple_mob/proc/ghost_join(mob/observer/dead/D)
@@ -79,11 +90,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		D.mind.transfer_to(src)
 	else
 		src.ckey = D.ckey
-	qdel(D)
+	spent(D)
 
 	// Clean up the simplemob
-	ghostjoin = FALSE
-	ghostjoin_icon()
+	set_ghostjoin(FALSE)
 	if(capture_caught)
 		to_chat(src, span_notice("You are bound to [revivedby], follow their commands within reason and to the best of your abilities, and avoid betraying or abandoning them.") + " " + span_warning("You are allied with [revivedby]. Do not attack anyone for no reason. Of course, you may do scenes as you like, but you must still respect preferences."))
 		act_message(src, null, others = "%U%'s eyes flicker with a curious intelligence.", runemessage = "looks around")
@@ -127,6 +137,22 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
 
+TRACKED(/obj/item/denecrotizer, charges)
+
+CAPABILITIES(/obj/item/denecrotizer)
+	// The three revives, started by check_target() / ghostjoin_rez() / basic_rez() with the creature; each takes revive_time.
+	op("tame", ai(), takes("target"), wait(PROC_REF(revive_wait)), then(PROC_REF(check_target_timed_done)))
+	op("ghostjoin_rez", ai(), takes("target"), wait(PROC_REF(revive_wait)), then(PROC_REF(ghostjoin_rez_timed_done)))
+	op("basic_rez", ai(), takes("target"), wait(PROC_REF(revive_wait)), on_interrupt(PROC_REF(basic_rez_timed_failed)), then(PROC_REF(basic_rez_timed_done)))
+
+/obj/item/denecrotizer/proc/revive_wait(datum/act/op/A)
+	return revive_time
+
+/obj/item/denecrotizer/draw(datum/look/look)
+	..()
+	if(charges == 0)
+		look.state("[initial(icon_state)]-o")
+
 /obj/item/denecrotizer/examine(mob/user)
 	. = ..()
 	var/cooldowntime = round((cooldown - (world.time - last_used)) * 0.1)
@@ -167,76 +193,69 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 			return FALSE
 		if(!target.mind)
 			act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-			om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(check_target_timed_done), done_args = list(target, user))
+			perform_op(user, src, "tame", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 			return FALSE
 		else
 			to_chat(user, span_notice("[src] doesn't seem to work on that."))
 			return FALSE
 	return TRUE
 
-/obj/item/denecrotizer/proc/check_target_timed_done(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/check_target_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.faction = user.faction
 	target.revivedby = user.name
-	target.ghostjoin = 1
+	target.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, target)
-	target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
+	set_charges(charges - 1)
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
 	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
-		update_icon()
+	return OP_OK
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	om_task_timed(user, revive_time, target = target, receiver = src, on_done = PROC_REF(ghostjoin_rez_timed_done), done_args = list(target, user))
+	perform_op(user, src, "ghostjoin_rez", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 	return
 
-/obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/ghostjoin_rez_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.faction = user.faction
 	target.revivedby = user.name
 	target.revive()
-	target.update_icon()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	log_and_message_admins("used a denecrotizer to revive a simple mob: [target]. [ADMIN_FLW(src)]", user)
 	if(!target.mind) //if it doesn't have a mind then no one has been playing as it, and it is safe to offer to ghosts.
-		target.ghostjoin = 1
+		target.set_ghostjoin(1)
 		registry_join(REGISTRY_GHOST_PODS, target)
-		target.ghostjoin_icon()
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
-		update_icon()
-	return
+	set_charges(charges - 1)
+	return OP_OK
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	act_message(user, target, others = "%U% presses [src] to %T%...", runemessage = "presses [src] to [target]")
-	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
+	perform_op(user, src, "basic_rez", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = target))
 
-/datum/om/task/timed/denecrotizer_basic_rez
-	complete_proc = /obj/item/denecrotizer/proc/basic_rez_timed_done
-	cancel_proc = /obj/item/denecrotizer/proc/basic_rez_timed_failed
-
-/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/om/task/timed/denecrotizer_basic_rez/task)
-	var/mob/living/simple_mob/target = task.target
-	var/mob/living/user = task.actor
+/obj/item/denecrotizer/proc/basic_rez_timed_done(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
+	if(QDELETED(target))
+		return OP_REFUSED
 	target.revive()
-	target.update_icon()
 	act_message(target, user, others = "%U% lifts its head and looks at %T%.", runemessage = "lifts its head and looks at [user]")
 	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
-	charges--
-	if(charges == 0)
-		icon_state = "[initial(icon_state)]-o"
-		update_icon()
-	return
+	set_charges(charges - 1)
+	return OP_OK
 
-/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/om/task/timed/denecrotizer_basic_rez/task)
-	var/mob/living/simple_mob/target = task.target
-	var/mob/living/user = task.actor
+/obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/act/op/A)
+	var/mob/living/simple_mob/target = A.arg("target")
+	var/mob/living/user = A.actor
 	act_message(user, src, others = "%U% bonks [target] with %T%. Nothing happened.")
-	return
 
 /obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(check_target(target, user, stance))
@@ -247,19 +266,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
-
-/mob/living/simple_mob/proc/ghostjoin_icon() //puts an icon on mobs for ghosts, so they can see if a mob has been revived and is joinable
-	var/static/image/I
-	if(!I)
-		I = image('icons/mob/hud_vr.dmi', "ghostjoin")
-		I.invisibility = INVISIBILITY_OBSERVER
-		I.plane = PLANE_GHOSTS
-		I.appearance_flags = KEEP_APART|RESET_TRANSFORM
-
-	cut_overlay(I)
-
-	if(ghostjoin)
-		add_overlay(I)
 
 /obj/item/denecrotizer/medical //Can revive more things, but without the special ghost and faction stuff. For medical use.
 	name = "commercial denecrotizer"

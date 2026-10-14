@@ -16,30 +16,27 @@
 	/// The axe it starts with (a declared default child), or null for an empty cabinet.
 	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
 
-DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
+TRACKED(/obj/structure/fireaxecabinet, open)
+TRACKED(/obj/structure/fireaxecabinet, hitstaken)
 
-/obj/structure/fireaxecabinet/Initialize(mapload)
-	. = ..()
-	update_icon()
+MSG_DEF_SELF(fireaxecabinet/locked, "The cabinet won't budge.")
 
-/obj/structure/fireaxecabinet/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/fireaxecabinet_item,
-		/datum/interaction/entry_hand/fireaxecabinet_hand,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle lock", PROC_REF(fireaxecabinet_silicon_lock)))
-	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_tk)))
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Open/Close", PROC_REF(toggle_openness_effect)))
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Remove Fire Axe", PROC_REF(remove_fire_axe_effect)))
-	..()
+CAPABILITIES(/obj/structure/fireaxecabinet)
+	// a multitool on an intact cabinet resets its lock: a locked one opens up, a shut unlocked one locks again
+	op("unlock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 1), label("Reset the lock"), when(PROC_REF(lock_resettable_open)), starts(PROC_REF(reset_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
+	op("lock_reset", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_PART + 2), label("Reset the lock"), when(PROC_REF(lock_resettable_shut)), starts(PROC_REF(lock_started)), begins(MSG(fireaxecabinet/resetting)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done2)))
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	// a cyborg's module only ever strikes the glass or resets the lock, as if the cabinet were locked
+	op("robot_item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(struck_shut)))
+	op("hand", hand(), label("Use"), needs(req_is(nameof(locked), FALSE, because = MSG(fireaxecabinet/locked))), then(PROC_REF(interaction_hand)))
+	op("fireaxecabinet_silicon_lock", remote(), label("Toggle lock"), then(PROC_REF(fireaxecabinet_silicon_lock)))
+	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
+	op("toggle_openness_effect", menu(), label("Open/Close"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(toggle_openness_effect)))
+	op("remove_fire_axe_effect", menu(), label("Remove Fire Axe"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), needs(req_adjacent(), req_capable()), then(PROC_REF(remove_fire_axe_effect)))
 
-/// Old attackby: unlock/lock the case, smash the glass, or take/replace the axe, depending on state and item.
-/datum/interaction/entry_item/fireaxecabinet_item
-	id = "fireaxecabinet_item"
-	name = "Use"
-	effect = /obj/structure/fireaxecabinet/proc/interaction_item
-
-/obj/structure/fireaxecabinet/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)  //Marker -Agouri
+/obj/structure/fireaxecabinet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	//..() //That's very useful, Erro
 
 	// This could stand to be put further in, made better, etc. but fuck you. Fuck whoever
@@ -47,120 +44,126 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 	user.setClickCooldown(10)
 	// Seriously why the fuck is this even a closet aghasjdhasd I hate you
 
-	if (isrobot(user) || locked)
-		if(O.has_tool_quality(TOOL_MULTITOOL))
-			to_chat(user, span_warning("Resetting circuitry..."))
-			play_sfx(src, SFX_MACHINES_LOCKRESET)
-			use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user))
-			return TRUE
-		else if(istype(O, /obj/item))
-			var/obj/item/W = O
-			if(smashed || open)
-				if(open)
-					toggle_close_open()
-				return TRUE
-			else
-				play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100) //We don't want this playing every time
-			if(W.force < 15)
-				to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
-			else
-				hitstaken++
-				if(hitstaken == 4)
-					play_sfx(src, SFX_EFFECTS_GLASSBR3) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
-					smashed = 1
-					locked = 0
-					open= 1
-			update_icon()
-		return TRUE
+	if(locked)
+		return struck_shut(A)
 	if (istype(O, /obj/item/material/twohanded/fireaxe) && open)
 		if(!fireaxe)
-			if(O:wielded)
-				O:wielded = 0
-				O.update_icon()
-			if(!own_set(src, nameof(src.fireaxe), O, user = user))
-				return TRUE
+			if(!move_into(src, nameof(src.fireaxe), O, user))
+				return OP_OK
+			O.update_held_icon() // it is in the cabinet now, not in a hand: the axe unwields itself
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
-			update_icon()
 		else
 			if(smashed)
-				return TRUE
+				return OP_OK
 			else
 				toggle_close_open()
 	else
 		if(smashed)
-			return TRUE
+			return OP_OK
 		if(O.has_tool_quality(TOOL_MULTITOOL))
 			if(open)
-				open = 0
-				update_icon()
-				flick("[icon_state]closing", src)
-				return TRUE
-			else
-				to_chat(user, span_warning("Resetting circuitry..."))
-				play_sfx(src, SFX_MACHINES_LOCKENABLE)
-				use_tool(user, O, src, delay = 2 SECONDS, quality = TOOL_MULTITOOL, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done2), done_args = list(user))
-				return TRUE
+				set_open(0)
+				flick("[cabinet_state()]closing", src)
+				return OP_OK
+			return OP_OK // a shut cabinet's lock is reset by the lock_reset op
 		else
 			toggle_close_open()
-	return TRUE
+	return OP_OK
 
-/obj/structure/fireaxecabinet/proc/attackby_tool_done(mob/user)
+/// A locked cabinet (or any cyborg module) only strikes the glass, or a multitool resets the lock.
+/obj/structure/fireaxecabinet/proc/struck_shut(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	user.setClickCooldown(10)
+	if(istype(O, /obj/item))
+		var/obj/item/W = O
+		if(smashed || open)
+			if(open)
+				toggle_close_open()
+			return OP_OK
+		else
+			play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100) //We don't want this playing every time
+		if(combat_of(W).force < 15)
+			to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
+		else
+			set_hitstaken(hitstaken + 1)
+			if(hitstaken == 4)
+				play_sfx(src, SFX_EFFECTS_GLASSBR3) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
+				set_smashed(1)
+				locked = 0
+				set_open(1)
+
+	return OP_OK
+
+MSG_DEF_SELF(fireaxecabinet/resetting, span_warning("Resetting circuitry..."))
+
+/// A locked cabinet (struck shut) is unlocked by resetting its lock.
+/obj/structure/fireaxecabinet/proc/lock_resettable_open(datum/act/op/A)
+	return !!read_once(locked)
+
+/// A shut, unbroken, unlocked cabinet is locked again.
+/obj/structure/fireaxecabinet/proc/lock_resettable_shut(datum/act/op/A)
+	return read_once(!locked && !smashed && !open)
+
+/obj/structure/fireaxecabinet/proc/reset_started(datum/act/op/A)
+	A.actor.setClickCooldown(10)
+	play_sfx(src, SFX_MACHINES_LOCKRESET)
+
+/obj/structure/fireaxecabinet/proc/lock_started(datum/act/op/A)
+	A.actor.setClickCooldown(10)
+	play_sfx(src, SFX_MACHINES_LOCKENABLE)
+
+/obj/structure/fireaxecabinet/proc/attackby_tool_done(datum/act/op/A)
 	locked = 0
-	to_chat(user, span_warning("You disable the locking modules."))
-	update_icon()
-/obj/structure/fireaxecabinet/proc/attackby_tool_done2(mob/user)
+	to_chat(A.actor, span_warning("You disable the locking modules."))
+	return OP_OK
+
+/obj/structure/fireaxecabinet/proc/attackby_tool_done2(datum/act/op/A)
 	locked = 1
-	to_chat(user, span_warning("You re-enable the locking modules."))
+	to_chat(A.actor, span_warning("You re-enable the locking modules."))
+	return OP_OK
 
-/// Old attack_hand: take the axe if open, or toggle the case.
-/datum/interaction/entry_hand/fireaxecabinet_hand
-	id = "fireaxecabinet_hand"
-	name = "Use"
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("locked"), "the cabinet won't budge"))
-	effect = /obj/structure/fireaxecabinet/proc/interaction_hand
-
-/obj/structure/fireaxecabinet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fireaxecabinet/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, nameof(fireaxe))
+			rel_take(src, nameof(fireaxe))
 			to_chat (user, span_notice("You take the fire axe from the [name]."))
 			add_fingerprint(user)
-			update_icon()
 		else
 			if(smashed)
-				return TRUE
+				return OP_OK
 			else
 				toggle_close_open()
 
 	else
 		toggle_close_open()
-	return TRUE
+	return OP_OK
 
 /// Old attack_tk: pull the axe out of an open case at range; otherwise act as a hand would.
-/obj/structure/fireaxecabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fireaxecabinet/proc/interaction_tk(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open && fireaxe)
 		fireaxe.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove the fire axe."))
-		own_take(src, nameof(fireaxe))
-		update_icon()
-		return TRUE
+		rel_take(src, nameof(fireaxe))
+		return OP_OK
 	attack_hand(user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/fireaxecabinet/proc/toggle_close_open()
-	open = !open
+	set_open(!open)
 	if(open)
-		update_icon()
-		flick("[icon_state]opening", src)
+		flick("[cabinet_state()]opening", src)
 	else
-		update_icon()
-		flick("[icon_state]closing", src)
+		flick("[cabinet_state()]closing", src)
 
-/obj/structure/fireaxecabinet/proc/toggle_openness_effect(mob/user, obj/item/held, datum/interaction/interaction) //nice name, huh? HUH?! -Erro //YEAH -Agouri
+/obj/structure/fireaxecabinet/proc/toggle_openness_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
-	if (isrobot(user) || locked || smashed)
+	if (locked || smashed)
 		if(locked)
 			to_chat(user, span_warning("The cabinet won't budge!"))
 		else if(smashed)
@@ -168,45 +171,49 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 		return
 
 	toggle_close_open()
-	update_icon()
 
-/obj/structure/fireaxecabinet/proc/remove_fire_axe_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if (isrobot(user))
-		return
+/obj/structure/fireaxecabinet/proc/remove_fire_axe_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if (open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, nameof(fireaxe))
+			rel_take(src, nameof(fireaxe))
 			to_chat(user, span_notice("You take the Fire axe from the [name]."))
 		else
 			to_chat(user, span_notice("The [name] is empty."))
 	else
 		to_chat(user, span_notice("The [name] is closed."))
-	update_icon()
 
 /// Old attack_ai: lock or unlock it remotely.
-/obj/structure/fireaxecabinet/proc/fireaxecabinet_silicon_lock(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fireaxecabinet/proc/fireaxecabinet_silicon_lock(datum/act/op/A)
+	var/mob/user = A.actor
 	if(smashed)
 		to_chat(user, span_warning("The security of the cabinet is compromised."))
-		return TRUE
+		return OP_OK
 	locked = !locked
 	if(locked)
 		to_chat(user, span_warning("Cabinet locked."))
 	else
 		to_chat(user, span_notice("Cabinet unlocked."))
-	return TRUE
+	return OP_OK
 
 //Template: fireaxe[has fireaxe][is opened][hits taken][is smashed]. If you want the opening or closing animations, add "opening" or "closing" right after the numbers
 /obj/structure/fireaxecabinet/proc/appearance_hasaxe()
 	return fireaxe ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{open}{hitstaken}{smashed}")
+/// The look (the draw sweep: from its template).
+/obj/structure/fireaxecabinet/draw(datum/look/look)
+	..()
+	look.state(cabinet_state())
+
+/// The cabinet's sprite for its state: the draw shows it, and the door animations are named after it ("<state>opening").
+/obj/structure/fireaxecabinet/proc/cabinet_state()
+	return "fireaxe[appearance_hasaxe()][open][hitstaken][smashed]"
 
 /obj/structure/fireaxecabinet/empty
 	fireaxe_type = null
 
 /obj/structure/fireaxecabinet/ownership()
 	. = ..()
-	. += owns(nameof(fireaxe), policy = OWN_CONTAINED)
+	. += owns(nameof(fireaxe), policy = OWN_CONTAINED, starts = nameof(fireaxe_type))

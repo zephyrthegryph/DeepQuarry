@@ -12,17 +12,16 @@
 	var/list/linked_objects
 
 // many-to-many with puzzle doors: leaves each door's lock list.
-/obj/structure/prop/lock/relations()
-	. = ..()
-	. += rel_many(nameof(linked_objects), back = nameof(/obj/machinery/door/blast/puzzle::locks))
+CAPABILITIES(/obj/structure/prop/lock)
+	links(/obj/structure/prop/lock::linked_objects, /obj/machinery/door/blast/puzzle::locks, a_many = TRUE, b_many = TRUE)
 
 /obj/structure/prop/lock/proc/toggle_lock()
 	enabled = !enabled
 
 	if(enabled)
-		icon_state = "[initial(icon_state)]-active"
+		set_icon_state("[initial(icon_state)]-active")
 	else
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 
 /obj/structure/prop/lock/projectile
 	name = "beam lock"
@@ -45,4 +44,4 @@
 
 		if(timed)
 			timing = 1
-			om_after(src, time_limit, PROC_REF(toggle_lock))
+			after(src, time_limit, PROC_REF(toggle_lock))

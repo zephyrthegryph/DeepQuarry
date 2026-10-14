@@ -56,7 +56,7 @@
 
 	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker)
 	B.reagents.add_reagent(REAGENT_ID_BICARIDINE, 30)
-	own_set(cell, nameof(cell.beaker), B)
+	rel_set(cell, nameof(cell.beaker), B)
 	var/list/boosted = cell.cryo_treatment_rates(100)
 	TEST_ASSERT(boosted[TREAT_TISSUE_REPAIR] > cold[TREAT_TISSUE_REPAIR], "bicaridine in the beaker should boost tissue repair")
 	TEST_ASSERT_EQUAL(boosted[TREAT_BURN_CARE], cold[TREAT_BURN_CARE], "bicaridine should not boost burn care")
@@ -65,20 +65,20 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_CUT, 25, BP_L_ARM, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	var/physical_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
-	TEST_ASSERT(H.move_into(cell, OCCUPANT_SLOT_CRYO), "the patient should enter the cryo cell")
+	TEST_ASSERT(move_into(cell, OCCUPANT_SLOT_CRYO, H), "the patient should enter the cryo cell")
 	H.set_bodytemperature(100)
 	for(var/i in 1 to 5)
 		cell.treat_occupant()
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) < physical_before, "cryo should mend the demanded tissue repair ([physical_before] -> [H.injury_load(INJURY_CATEGORY_PHYSICAL)])")
-	TEST_ASSERT_EQUAL(cell?.slot_item(OCCUPANT_SLOT_CRYO), H, "cryo should keep treating a patient triage still finds injured")
+	TEST_ASSERT_EQUAL(occupant_of(cell), H, "cryo should keep treating a patient triage still finds injured")
 
 	// A patient triage finds healthy is released.
 	var/mob/living/carbon/human/well = allocate(/mob/living/carbon/human)
 	H.forceMove(get_turf(cell)) // free the one-occupant slot
-	TEST_ASSERT(well.move_into(cell, OCCUPANT_SLOT_CRYO), "the patient should enter the cryo cell")
+	TEST_ASSERT(move_into(cell, OCCUPANT_SLOT_CRYO, well), "the patient should enter the cryo cell")
 	well.set_bodytemperature(100)
 	TEST_ASSERT(!cell.treat_occupant(), "cryo should release a patient with no treatment demand")
-	TEST_ASSERT_NULL(cell?.slot_item(OCCUPANT_SLOT_CRYO), "the released patient should have left the cell")
+	TEST_ASSERT_NULL(occupant_of(cell), "the released patient should have left the cell")
 
 
 // --- Medigun: only its mode's tags -------------------------------------------------
@@ -93,9 +93,9 @@
 	H.injure(INJURY_CELLULAR, 20, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 
 	// Brute tank only: trauma mends, burns and cellular damage don't.
-	pack.brutecharge = 60
-	pack.burncharge = 0
-	pack.toxcharge = 0
+	pack.set_brutecharge(60)
+	pack.set_burncharge(0)
+	pack.set_toxcharge(0)
 	var/physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	var/genetic = H.injury_load(INJURY_CATEGORY_GENETIC)
@@ -106,8 +106,8 @@
 	TEST_ASSERT(pack.brutecharge < 60, "treating should drain the brute tank")
 
 	// Burn tank only: burns mend, trauma doesn't.
-	pack.brutecharge = 0
-	pack.burncharge = 60
+	pack.set_brutecharge(0)
+	pack.set_burncharge(60)
 	physical = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	thermal = H.injury_load(INJURY_CATEGORY_THERMAL)
 	pack.treat_demand(H, 5)
@@ -116,7 +116,7 @@
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_GENETIC), genetic, "no medigun mode mends cellular damage")
 
 	// Empty tanks treat nothing.
-	pack.burncharge = 0
+	pack.set_burncharge(0)
 	TEST_ASSERT_EQUAL(pack.treat_demand(H, 5), 0, "empty tanks should treat nothing")
 
 #endif

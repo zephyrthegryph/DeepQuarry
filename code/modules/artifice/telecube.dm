@@ -38,8 +38,8 @@
 	var/randomize_colors = FALSE
 
 	var/glow_color = "#FFFFFF"
-	var/image/glow = null
-	var/image/charge = null
+	/// On the floor (not held or stored): its glow then shows through the dark.
+	var/on_floor = FALSE
 
 	var/cooldown_time = 30 SECONDS
 	var/ready = TRUE
@@ -49,50 +49,36 @@
 
 	var/omniteleport = FALSE // Will this teleport anchored things too?
 
+// ALLOW(init/INSTANCE_STATE): rolls its colours and makes its paired cube where it is placed
 /obj/item/telecube/Initialize(mapload)
 	. = ..()
 
-	glow = image("[icon_state]-ready")
-	glow.appearance_flags = KEEP_APART
-	charge = image("[icon_state]-charging")
-	charge.appearance_flags = KEEP_APART
+	set_on_floor(isturf(loc))
 
 	if(randomize_colors)
-		glow_color = rgb(rand(0, 255),rand(0, 255),rand(0, 255))
+		set_glow_color(rgb(rand(0, 255),rand(0, 255),rand(0, 255)))
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
 		rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
 		if(mirror_colors)
-			mate().glow_color = color
+			mate().set_glow_color(color)
 			mate().color = glow_color
 		else
-			mate().glow_color = glow_color
+			mate().set_glow_color(glow_color)
 			mate().color = color
 		mate().pair_cube(src)
 
-	update_icon()
+TRACKED(/obj/item/telecube, ready)
+TRACKED(/obj/item/telecube, glow_color)
 
-DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/telecube/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/telecube/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
 
-	if(isturf(loc))
-		glow.plane = PLANE_LIGHTING_ABOVE
-		charge.plane = PLANE_LIGHTING_ABOVE
-	else //So it shows up in inventory looking ok
-		glow.plane = initial(glow.plane)
-		charge.plane = initial(glow.plane)
-
-	if(glow_color != glow.color)
-		glow.color = glow_color
-		charge.color = glow_color
-
-	if(!ready)
-		. += charge
-	else
-		. += glow
+/obj/item/telecube/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	set_on_floor(isturf(loc))
 
 // its mate collapses into an explosion.
 /obj/item/telecube/on_destroy(force)
@@ -104,20 +90,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	..()
 
-/obj/item/telecube/equipped()
-	. = ..()
-	update_icon()
-
-/obj/item/telecube/dropped(mob/user, equipping, slot)
-	. = ..()
-	update_icon()
-
 /obj/item/telecube/proc/pair_cube(obj/item/telecube/M)
 	if(mate())
 		return 0
 	else
 		rel_set(src, nameof(mate), M)
-		update_icon()
 		return 1
 
 /obj/item/telecube/proc/teleport_to_mate(atom/movable/A, areaporting = FALSE)
@@ -183,22 +160,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 	if(!ready)
 		return
 
-	ready = FALSE
-	update_icon()
-	om_after(src, cooldown_time, PROC_REF(ready))
+	set_ready(FALSE)
+	after(src, cooldown_time, PROC_REF(ready))
 	if(mate_too && mate())
 		mate().cooldown(mate_too = FALSE) //No infinite recursion pls
 
 /obj/item/telecube/proc/ready()
-	ready = TRUE
-	update_icon()
+	set_ready(TRUE)
 
 /// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
 /obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
 	animate_out(AM)
-	om_after(src, 0.5 SECONDS, PROC_REF(fade_back_in), AM, T, announce)
+	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
 
 /obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
+	if(QDELETED(AM))
+		return
 	AM.filters -= filter(type="blur", size = 2)
 	if(T)
 		AM.forceMove(T)
@@ -207,7 +184,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 		AM.visible_message(span_alien("\The [AM] fades into existence."))
 
 /obj/item/telecube/proc/clear_blur(atom/movable/AM)
-	AM.filters -= filter(type="blur", size = 0)
+	if(AM)
+		AM.filters -= filter(type="blur", size = 0)
 
 /obj/item/telecube/proc/animate_out(atom/movable/AM)
 	//See atom cloak/uncloak animations for comments
@@ -226,16 +204,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	animate(target, alpha = 255, time = 5) //In
 	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
-	om_after(src, 0.5 SECONDS, PROC_REF(clear_blur), target)
+	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target))
 
 /obj/item/telecube/item_ctrl_click(mob/user)
 	if(Adjacent(user) && teleport_to_mate(user))
 		cooldown(mate_too = FALSE)
 
-DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction_alt)))
-
 /// Old click_alt.
-/obj/item/telecube/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/telecube/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user) && swap_with_mate())
 		cooldown(mate_too = TRUE)
 	return TRUE
@@ -245,10 +222,16 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 		cooldown(mate_too = FALSE)
 	. = ..()
 
-/obj/item/telecube/Bumped(atom/movable/M)
+CAPABILITIES(/obj/item/telecube)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+
+/// Something walked into it (the bump action's notice).
+/obj/item/telecube/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	if(teleport_to_mate(M))
 		cooldown(mate_too = FALSE)
-	. = ..()
 
 // Subtypes
 

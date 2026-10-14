@@ -76,7 +76,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/malfunctioning = 0						// Master var that determines if AI is malfunctioning.
 	var/datum/malf_hardware/hardware = null		// Installed piece of hardware.
 	var/datum/malf_research/research = null		// Malfunction research datum.
-	var/obj/machinery/power/apc/hack = null		// APC that is currently being hacked.
 	var/list/hacked_apcs = null					// List of all hacked APCs
 	var/APU_power = 0							// If set to 1 AI runs on APU power
 	var/hacking = 0								// Set to 1 if AI is hacking APC, cyborg, other AI, or running system override.
@@ -101,109 +100,147 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/list/multicam_screens // REL_LIST (multicam.dm)
 	var/max_multicams = 6
 
-	can_be_antagged = TRUE
+	canmove = 0
+
+CAPABILITIES(/mob/living/silicon/ai)
+	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_kind(can_be_antagged = TRUE, death_message = "gives one shrill beep before falling lifeless."))
+	// Hardlight nom (vore/eating/silicon.dm): the AI's eye is the actor and has to stay put while the hologram engulfs the prey.
+	op("holo_nom", ai(), takes("prey", "from"), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY), then(PROC_REF(holo_nom_done)))
+	op("ai_status_displays", ai(), label("AI Status"), needs(req_self()), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(status_display_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(ai_status_display_chosen)))
+	op("ai_silicon_camera_list", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Camera list"), then(PROC_REF(ai_silicon_camera_list)))
+	// A malfunctioning AI's scripted hack of another silicon: a lap per stage of the script (tree_interdiction.dm). Only the AI's own life keeps it going.
+	op("malf_hack_cyborg", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_cyborg_done)))
+	op("malf_hack_ai", ai(), takes("victim", "laps"), wait(PROC_REF(malf_hack_lap_time), keeps = ALIVE, repeats = PROC_REF(malf_hack_more), after_step = PROC_REF(malf_hack_lap_done)), on_interrupt(PROC_REF(malf_hack_stopped)), then(PROC_REF(malf_hack_ai_done)))
+	every(PROC_REF(track_interval), then(PROC_REF(ai_track_step)), when = nameof(cameraFollow))
+	immune_to(STAT_WEAKENED)
+	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	ref_many(nameof(multicam_screens))
+	remote_interface()
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
+	// a dummy (the announcer) carries no PDA or communicator
+	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(cond_not(nameof(is_dummy)), /obj/item/communicator/integrated))
+	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(cond_not(nameof(is_dummy)), /obj/item/pda/ai))
+	// its radio and laws exist before its parents' init: the welcome message lists the radio's channels, and a malf round shows the laws
+	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated, starts = /obj/item/radio/headset/heads/ai_integrated, early = TRUE)
+	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(start_laws), early = TRUE)
+	owns_one(nameof(announcement), /datum/announcement/priority, starts = /datum/announcement/priority, starts_args = NO_LOC, starts_set = list("title" = "A.I. Announcement", "announcement_type" = "A.I. Announcement", "newscast" = 1))
+	owns_one(nameof(psupply), /obj/machinery/ai_powersupply, starts = /obj/machinery/ai_powersupply)
+	ref_one(nameof(camera), /obj/machinery/camera)
+	owns_one(nameof(hardware), /datum/malf_hardware)
+	ref_one(nameof(master_multicam), /atom/movable/screen/movable/pic_in_pic/ai)
+	ref_one(nameof(holo), /obj/machinery/hologram/holopad)
+	ref_one(nameof(deployed_shell), /mob/living/silicon/robot)
+	ref_one(nameof(brain_at_make), /obj/item/mmi)
+	rolls(nameof(name), PROC_REF(roll_ai_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	derives(nameof(additional_law_channels), PROC_REF(ai_law_channels))
+	derives(nameof(holo_icon), PROC_REF(default_holo_icon))
+	knows(LANGUAGE_ROBOT_TALK)
+	knows(LANGUAGE_GALCOM)
+	knows(LANGUAGE_SOL_COMMON)
+	knows(LANGUAGE_UNATHI)
+	knows(LANGUAGE_SIIK)
+	knows(LANGUAGE_AKHANI)
+	knows(LANGUAGE_SKRELLIAN)
+	knows(LANGUAGE_TRADEBAND)
+	knows(LANGUAGE_GUTTER)
+	knows(LANGUAGE_EAL)
+	knows(LANGUAGE_SCHECHI)
+	knows(LANGUAGE_SIGN)
+	knows(LANGUAGE_ROOTLOCAL)
+	knows(LANGUAGE_TERMINUS)
+	knows(LANGUAGE_ZADDAT)
+	knows(LANGUAGE_BIRDSONG)
+	knows(LANGUAGE_SAGARU)
+	knows(LANGUAGE_CANILUNZT)
+	knows(LANGUAGE_ECUREUILIAN)
+	knows(LANGUAGE_DAEMON)
+	knows(LANGUAGE_ENOCHIAN)
+	knows(LANGUAGE_DRUDAKAR)
+	knows(LANGUAGE_TAVAN)
+	verb_entry(/mob/living/silicon/ai/proc/deploy_to_shell_act, when = cond_config(/datum/config_entry/flag/allow_ai_shells))
+	setup(PROC_REF(verbs_if_installed))
+	setup(PROC_REF(create_eyeobj)) // its eye, named after it; create_eyeobj() gives the rolled name to its PDA, communicator and announcements
+	owns_one(nameof(research), /datum/malf_research)
+	owns_one(nameof(track), /datum/trackable)
+	owns_one(nameof(aiMulti), starts = /obj/item/multitool)
+	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam, starts = /obj/item/camera/siliconcam/ai_camera)
+	op("ai_interaction_card", item(/obj/item/aicard), label("Transfer to card"), then(PROC_REF(ai_interaction_card)))
+	param(nameof(laws), /datum/ai_laws, pos = 2)
+	param(nameof(brain_at_make), pos = 3, keep = FALSE)
+	param(nameof(spawn_safety), pos = 4)
+	op("switchcamera", topic("switchcamera", arg("switchcamera", schema_ref(/obj/machinery/camera), optional = TRUE, among = PROC_REF(topic_cameras))), needs(req_self()), then(PROC_REF(topic_switchcamera)))
+	op("jumptoholopad", topic("jumptoholopad", arg("jumptoholopad", schema_ref(/obj/machinery/hologram/holopad), optional = TRUE, among = TOPIC_IN_WORLD)), needs(req_self()), then(PROC_REF(topic_jumptoholopad)))
+	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS), arg("trackname", schema_text(MAX_NAME_LEN * 2), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_track)))
+	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
+	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
+	op("use_wrench", tool(TOOL_WRENCH), label("Bolt or unbolt"), needs(req(PROC_REF(shell_refusal))), starts(PROC_REF(bolting_started)), begins(PROC_REF(bolting_begins)), wait(4 SECONDS), then(PROC_REF(wrench_act_tool_done)), on_interrupt(PROC_REF(wrench_act_tool_failed)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
-	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
-	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in GLOB.ai_verbs_default)
+		grant(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		grant(src, granted_verb(granted_path), src)
 
 /mob/living/silicon/ai/proc/remove_ai_verbs()
-	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
-	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in GLOB.ai_verbs_default)
+		revoke(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		revoke(src, granted_verb(granted_path), src)
 
-/mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
+/// The brain an AI is made from (its constructor param, read before its parents' init).
+/mob/living/silicon/ai/var/tmp/obj/item/mmi/brain_at_make
+/// Made by AIize(): no brain is needed (its constructor param).
+/mob/living/silicon/ai/var/spawn_safety = FALSE
 
-	own_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
-	announcement.title = "A.I. Announcement"
-	announcement.announcement_type = "A.I. Announcement"
-	announcement.newscast = 1
-
-	var/list/possibleNames = GLOB.ai_names
-
-	var/pickedName = null
-	while(!pickedName)
-		pickedName = pick(GLOB.ai_names)
-		for (var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
-			if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
-				possibleNames -= pickedName
-				pickedName = null
-
-	if(!is_dummy)
-		own_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
-	SetName(pickedName)
-	set_anchored(TRUE)
-	canmove = 0
-	set_density(TRUE)
-
-	if(!is_dummy)
-		own_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
-
-	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
-
-	proc_holder_list = new()
-
-	if(L)
-		if (istype(L, /datum/ai_laws))
-			own_set(src, nameof(laws), L)
-	else
-		own_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
-
-	own_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
+// ALLOW(init/INSTANCE_STATE): an AI made with no brain leaves an empty core instead; one made from a brain takes its mind before its parents' init
+/mob/living/silicon/ai/Initialize(mapload)
 	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
-	rel_set(aiRadio, nameof(aiRadio.myAi), src)
-	additional_law_channels["Binary"] = "#b"
-	additional_law_channels["Holopad"] = ":h"
-
-	if (istype(loc, /turf))
-		add_ai_verbs(src)
-
-	//Languages
-	add_language(LANGUAGE_ROBOT_TALK, 1)
-	add_language(LANGUAGE_GALCOM, 1)
-	add_language(LANGUAGE_SOL_COMMON, 1)
-	add_language(LANGUAGE_UNATHI, 1)
-	add_language(LANGUAGE_SIIK, 1)
-	add_language(LANGUAGE_AKHANI, 1)
-	add_language(LANGUAGE_SKRELLIAN, 1)
-	add_language(LANGUAGE_TRADEBAND, 1)
-	add_language(LANGUAGE_GUTTER, 1)
-	add_language(LANGUAGE_EAL, 1)
-	add_language(LANGUAGE_SCHECHI, 1)
-	add_language(LANGUAGE_SIGN, 1)
-	add_language(LANGUAGE_ROOTLOCAL, 1)
-	add_language(LANGUAGE_TERMINUS, 1)
-	add_language(LANGUAGE_ZADDAT, 1)
-	add_language(LANGUAGE_BIRDSONG, 1)
-	add_language(LANGUAGE_SAGARU, 1)
-	add_language(LANGUAGE_CANILUNZT, 1)
-	add_language(LANGUAGE_ECUREUILIAN, 1)
-	add_language(LANGUAGE_DAEMON, 1)
-	add_language(LANGUAGE_ENOCHIAN, 1)
-	add_language(LANGUAGE_DRUDAKAR, 1)
-	add_language(LANGUAGE_TAVAN, 1)
-
-	if(!safety)//Only used by AIize() to successfully spawn an AI.
-		if (!B)//If there is no player/brain inside.
+	if(!spawn_safety)//Only used by AIize() to successfully spawn an AI.
+		if (!brain_at_make)//If there is no player/brain inside.
 			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
 			return INITIALIZE_HINT_QDEL //Delete AI.
 
-		var/datum/mind_host/host = get_mind_host(B)
+		var/datum/mind_host/host = get_mind_host(brain_at_make)
 		host?.release_mind(src, "AI core activated")
 
 		on_mob_init()
 
-	. = ..()
-	init_id(idcard_type)
+	return ..()
 
-	new /obj/machinery/ai_powersupply(src)
+/// Its laws: those it was made with, else the map's default set (owns_one(starts =), before its parents' init).
+/mob/living/silicon/ai/proc/start_laws(current, mapload)
+	return current || using_map.default_law_type
 
-	if(CONFIG_GET(flag/allow_ai_shells))
-		om_grant(src, GRANT_VERB, /mob/living/silicon/ai/proc/deploy_to_shell_act, verb_source(VERB_SOURCE_CONFIG))
+/// Its name: one of the AI names no other AI holds (rolls(); create_eyeobj() hands it to its PDA, communicator and announcements).
+/mob/living/silicon/ai/proc/roll_ai_name(datum/roller/R)
+	var/list/possibleNames = GLOB.ai_names.Copy()
+	var/list/taken = list()
+	for(var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		taken += A.real_name
+	while(length(possibleNames) > 1)
+		var/picked = R.choose(possibleNames)
+		if(!(picked in taken))
+			return picked
+		possibleNames -= picked //fixing the theoretically possible infinite loop
+	return length(possibleNames) ? possibleNames[1] : name
 
-	create_eyeobj()
-	if(eyeobj)
-		eyeobj.forceMove(src.loc)
+/// The law channels it can state laws on: a silicon's, and binary and the holopads (derives(), once at init).
+/mob/living/silicon/ai/proc/ai_law_channels(target)
+	. = additional_law_channels.Copy()
+	.["Binary"] = "#b"
+	.["Holopad"] = ":h"
+
+/// Its default hologram (derives(), once at init).
+/mob/living/silicon/ai/proc/default_holo_icon(target)
+	return getHologramIcon(icon('icons/mob/AI.dmi', "holo1"))
+
+/// An AI installed on the floor has its verbs; one made inside a card gets them when it is installed (setup()).
+/mob/living/silicon/ai/proc/verbs_if_installed()
+	if(istype(loc, /turf))
+		add_ai_verbs(src)
 
 /mob/living/silicon/ai/proc/on_mob_init()
 	var/init_text = list(span_bold("You are playing the station's AI. The AI cannot move, but can interact with many objects while viewing them (through cameras)."),
@@ -214,11 +251,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	to_chat(src, span_filter_notice("[jointext(init_text, "<br>")]"))
 
 	var/radio_text = ""
-	for(var/i = 1 to common_radio.channels.len)
-		var/channel = common_radio.channels[i]
+	for(var/i = 1 to aiRadio.channels.len)
+		var/channel = aiRadio.channels[i]
 		var/key = get_radio_key_from_channel(channel)
 		radio_text += "[key] - [channel]"
-		if(i != common_radio.channels.len)
+		if(i != aiRadio.channels.len)
 			radio_text += ", "
 
 	to_chat(src,radio_text)
@@ -242,8 +279,6 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiMulti", /obj/item/multitool)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/siliconcam/ai_camera)
 // GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
 
 // the AI's eyes go with it: the active one and any other still linked to it (the eye
@@ -253,7 +288,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	QDEL_NULL(eyeobj)
 	for(var/mob/observer/eye/other as anything in eyes_list())
 		if(!QDELETED(other))
-			qdel(other) // ALLOW(lifecycle): the AI's extra eyes are linked by an OM relation (eye_of), not a declared var
+			ended_with(other, src)
 	destroy_eyeobj()
 	..()
 
@@ -297,7 +332,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 			proto_set(src, nameof(selected_sprite), new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
 		else
 			proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
-	update_icon()
 
 /mob/living/silicon/ai/pointed(atom/A as mob|obj|turf in view())
 	set popup_menu = 0
@@ -314,7 +348,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	// Set ai pda name
 	if(aiPDA)
 		aiPDA.ownjob = JOB_AI
-		aiPDA.owner = pickedName
+		aiPDA.set_owner(pickedName)
 		aiPDA.name = pickedName + " (" + aiPDA.ownjob + ")"
 
 	if(aiCommunicator)
@@ -326,31 +360,39 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 */
 /obj/machinery/ai_powersupply
 	name="Power Supply"
-	active_power_usage=50000 // Station AIs use significant amounts of power. This, when combined with charged SMES should mean AI lasts for 1hr without external power.
 	use_power = USE_POWER_ACTIVE
-	power_channel = EQUIP
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
-/obj/machinery/ai_powersupply/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(powered_ai), loc)
-	if(!istype(powered_ai))
-		return INITIALIZE_HINT_QDEL
-	own_set(powered_ai, nameof(powered_ai.psupply), src)
-	if(istype(powered_ai,/mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
-		forceMove(powered_ai)
-	else
-		forceMove(powered_ai.loc)
+/// It names the AI it powers (that AI's owns_one(starts =)).
+/obj/machinery/ai_powersupply/default_child_backref()
+	return nameof(powered_ai)
 
+/// It exists only for an AI, made inside it (keeps_if()).
+/obj/machinery/ai_powersupply/proc/made_in_an_ai()
+	return istype(loc, /mob/living/silicon/ai)
+
+/// It stands where its AI is (setup()): a nullspace announcer keeps it inside.
+/obj/machinery/ai_powersupply/proc/stand_by_ai()
+	var/mob/living/silicon/ai/ai = loc
+	if(!istype(ai, /mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
+		forceMove(ai.loc)
 	use_power(1) // Just incase we need to wake up the power system.
 
-/obj/machinery/ai_powersupply/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/ai_powersupply)
+	configure(uses_power(active = 50000, channel = EQUIP))
+	keeps_if(PROC_REF(made_in_an_ai))
+	setup(PROC_REF(stand_by_ai))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	ref_one(nameof(powered_ai), /mob/living/silicon/ai)
+
+/obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
 	if(!powered_ai || powered_ai.stat == DEAD)
-		qdel(src)
+		spent(src)
 		return
 	if(powered_ai.psupply != src) // For some reason, the AI has different powersupply object. Delete this one, it's no longer needed.
-		qdel(src)
+		spent(src)
 		return
 	if(powered_ai.APU_power)
 		set_use_power(USE_POWER_OFF)
@@ -369,22 +411,16 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		return
 
 	if (!custom_sprite)
-		om_ask(src, /datum/om/prompt/choice/ai_icon, PROC_REF(ai_icon_chosen), choices = GLOB.ai_icons)
-		return
-	update_icon()
+		open_request(src, /datum/prompt/choice, PROC_REF(ai_icon_chosen), answerer = src, valid = PROC_REF(ai_icon_askable), title = "AI", question = "Select an icon!", choices = GLOB.ai_icons, timeout = 0)
 
 /// Re-checked on the answer: the AI is up, powered and has no custom sprite.
-/datum/om/prompt/choice/ai_icon
-	title = "AI"
-	message = "Select an icon!"
+/mob/living/silicon/ai/proc/ai_icon_askable(datum/request/R)
+	return !(stat || aiRestorePowerRoutine || custom_sprite)
 
-/datum/om/prompt/choice/ai_icon/valid()
-	var/mob/living/silicon/ai/AI = answerer
-	return (AI.stat || AI.aiRestorePowerRoutine || AI.custom_sprite) ? "unable" : null
-
-/mob/living/silicon/ai/proc/ai_icon_chosen(datum/om/prompt/choice/ai_icon/ask)
-	proto_set(src, nameof(selected_sprite), ask.choice)
-	update_icon()
+/mob/living/silicon/ai/proc/ai_icon_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	proto_set(src, nameof(selected_sprite), A.answer.value)
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
@@ -396,21 +432,16 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(!COOLDOWN_FINISHED(src, announcement_cooldown))
 		to_chat(src, span_filter_notice("Please allow one minute to pass between announcements."))
 		return
-	om_ask(src, /datum/om/prompt/text/ai_announcement, PROC_REF(ai_announcement_entered))
+	open_request(src, /datum/prompt/text, PROC_REF(ai_announcement_entered), answerer = src, valid = PROC_REF(ai_announcement_askable), title = "A.I. Announcement", question = "Please write a message to announce to the station crew.", timeout = 0)
 
 /// Re-checked on the answer: off cooldown, with wireless and radio.
-/datum/om/prompt/text/ai_announcement
-	title = "A.I. Announcement"
-	message = "Please write a message to announce to the station crew."
+/mob/living/silicon/ai/proc/ai_announcement_askable(datum/request/R)
+	return COOLDOWN_FINISHED(src, announcement_cooldown) && !check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO)
 
-/datum/om/prompt/text/ai_announcement/valid()
-	var/mob/living/silicon/ai/AI = answerer
-	if(!COOLDOWN_FINISHED(AI, announcement_cooldown) || AI.check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
-		return "unable"
-	return null
-
-/mob/living/silicon/ai/proc/ai_announcement_entered(datum/om/prompt/text/ai_announcement/ask)
-	announcement.Announce(ask.text)
+/mob/living/silicon/ai/proc/ai_announcement_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	announcement.Announce(A.answer.value)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
@@ -419,21 +450,20 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	om_ask(src, /datum/om/prompt/confirm/ai_command, PROC_REF(ai_call_shuttle_confirmed), title = "Confirm Shuttle Call", message = "Are you sure you want to call the shuttle?", answer_on_no = TRUE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ai_call_shuttle_confirmed), answerer = src, valid = PROC_REF(ai_command_askable), title = "Confirm Shuttle Call", question = "Are you sure you want to call the shuttle?", timeout = 0)
 
-/// An AI station command's "are you sure?". Re-checked on the answer: the AI still has wireless.
-/datum/om/prompt/confirm/ai_command
+/// An AI station command's "are you sure?" is re-checked on the answer: the AI still has wireless.
+/mob/living/silicon/ai/proc/ai_command_askable(datum/request/R)
+	return !check_unable(AI_CHECK_WIRELESS)
 
-/datum/om/prompt/confirm/ai_command/valid()
-	var/mob/living/silicon/ai/AI = answerer
-	return AI.check_unable(AI_CHECK_WIRELESS) ? "no wireless" : null
-
-/mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(datum/om/prompt/confirm/ai_command/ask)
-	if(ask.yes)
+/mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
 		call_shuttle_proc(src)
 
 	// hack to display shuttle timer
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()
@@ -443,9 +473,11 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	om_ask(src, /datum/om/prompt/confirm/ai_command, PROC_REF(ai_recall_shuttle_confirmed), title = "Confirm Shuttle Recall", message = "Are you sure you want to recall the shuttle?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(ai_recall_shuttle_confirmed), answerer = src, valid = PROC_REF(ai_command_askable), title = "Confirm Shuttle Recall", question = "Are you sure you want to recall the shuttle?", timeout = 0)
 
-/mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(datum/om/prompt/confirm/ai_command/ask)
+/mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
 	cancel_call_proc(src)
 
 /mob/living/silicon/ai/var/emergency_message_cooldown = 0
@@ -459,24 +491,16 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	if(!COOLDOWN_FINISHED(src, emergency_message_cooldown))
 		to_chat(src, span_warning("Arrays recycling. Please stand by."))
 		return
-	om_ask(src, /datum/om/prompt/text/ai_emergency_message, PROC_REF(ai_emergency_message_entered))
+	open_request(src, /datum/prompt/text, PROC_REF(ai_emergency_message_entered), answerer = src, valid = PROC_REF(ai_emergency_message_askable), title = "To abort, send an empty message.", question = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", timeout = 0)
 
 /// Re-checked on the answer: off cooldown, with wireless.
-/datum/om/prompt/text/ai_emergency_message
-	title = "To abort, send an empty message."
+/mob/living/silicon/ai/proc/ai_emergency_message_askable(datum/request/R)
+	return COOLDOWN_FINISHED(src, emergency_message_cooldown) && !check_unable(AI_CHECK_WIRELESS)
 
-/datum/om/prompt/text/ai_emergency_message/prepare()
-	message = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise."
-	return TRUE
-
-/datum/om/prompt/text/ai_emergency_message/valid()
-	var/mob/living/silicon/ai/AI = answerer
-	if(!COOLDOWN_FINISHED(AI, emergency_message_cooldown) || AI.check_unable(AI_CHECK_WIRELESS))
-		return "unable"
-	return null
-
-/mob/living/silicon/ai/proc/ai_emergency_message_entered(datum/om/prompt/text/ai_emergency_message/ask)
-	var/input = ask.text
+/mob/living/silicon/ai/proc/ai_emergency_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input = A.answer.value
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))
 	log_game("[key_name(src)] has made an IA [using_map.boss_short] announcement: [input]")
@@ -485,41 +509,23 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 /mob/living/silicon/ai/restrained()
 	return 0
 
-DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EMP, PROC_REF(emp_shell_disconnect))
-
-/mob/living/silicon/ai/proc/emp_shell_disconnect(datum/damage_packet/packet)
+/mob/living/silicon/ai/proc/emp_shell_disconnect(datum/act/A)
 	disconnect_shell("Disconnected from remote shell due to ionic interfe%*@$^___")
 	if (prob(30))
 		view_core()
 
-TOPIC_ACTION(/mob/living/silicon/ai, "switchcamera", PROC_REF(topic_switchcamera), TOPIC_REF("switchcamera", /obj/machinery/camera, PROC_REF(topic_cameras)))
-TOPIC_ACTION(/mob/living/silicon/ai, "showalerts", PROC_REF(topic_showalerts))
-TOPIC_ACTION(/mob/living/silicon/ai, "jumptoholopad", PROC_REF(topic_jumptoholopad), TOPIC_REF("jumptoholopad", /obj/machinery/hologram/holopad, TOPIC_IN_WORLD)) //Carn: holopad requests
-TOPIC_ACTION(/mob/living/silicon/ai, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS), TOPIC_TEXT("trackname", MAX_NAME_LEN * 2))
-TOPIC_ACTION(/mob/living/silicon/ai, "trackbot", PROC_REF(topic_trackbot), TOPIC_REF("trackbot", /mob/living/bot, TOPIC_IN_MOBS))
-TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_REF("open", /mob, TOPIC_IN_MOBS))
 
 /// TOPIC_REF source: the camera network.
 /mob/living/silicon/ai/proc/topic_cameras()
 	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
 // These links work only for the AI itself (others still reach the rows every mob has).
-/mob/living/silicon/ai/proc/topic_switchcamera(mob/user, list/args)
-	if(user != src)
-		return
-	switchCamera(args["switchcamera"])
+/mob/living/silicon/ai/proc/topic_switchcamera(datum/act/op/A, href_switchcamera)
+	switchCamera(href_switchcamera)
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_showalerts(mob/user, list/args)
-	if(user != src)
-		return
-	subsystem_alarm_monitor()
-	return TRUE
-
-/mob/living/silicon/ai/proc/topic_jumptoholopad(mob/user, list/args)
-	if(user != src)
-		return
-	var/obj/machinery/hologram/holopad/H = args["jumptoholopad"]
+/mob/living/silicon/ai/proc/topic_jumptoholopad(datum/act/op/A, href_jumptoholopad)
+	var/obj/machinery/hologram/holopad/H = href_jumptoholopad
 	if(stat == CONSCIOUS)
 		if(H)
 			actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
@@ -527,11 +533,9 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			to_chat(src, span_notice("Unable to locate the holopad."))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_track(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/target = args["track"]
-	var/trackname = html_decode(args["trackname"])
+/mob/living/silicon/ai/proc/topic_track(datum/act/op/A, href_track, href_trackname)
+	var/mob/target = href_track
+	var/trackname = html_decode(href_trackname)
 	var/mob/living/carbon/human/H = target
 	if(target && (!istype(H) || trackname == H.get_face_name()))
 		ai_actual_track(target)
@@ -539,20 +543,16 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 		to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [trackname].")]"))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_trackbot(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/living/bot/target = args["trackbot"]
+/mob/living/silicon/ai/proc/topic_trackbot(datum/act/op/A, href_trackbot)
+	var/mob/living/bot/target = href_trackbot
 	if(target)
 		ai_actual_track(target)
 	else
 		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_open_door(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/target = args["open"]
+/mob/living/silicon/ai/proc/topic_open_door(datum/act/op/A, href_open)
+	var/mob/target = href_open
 	if(target)
 		open_nearest_door(target)
 	return TRUE
@@ -568,7 +568,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/reset_perspective(atom/new_eye)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(camera)
-		camera.set_light(0)
+		set_glow(camera, GLOW(0, null, null))
 	if(istype(new_eye,/obj/machinery/camera))
 		rel_set(src, nameof(camera), new_eye)
 	if(new_eye != GLOB.ai_camera_room_landmark)
@@ -580,9 +580,9 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			reset_perspective(eyeobj)
 	if(istype(new_eye,/obj/machinery/camera))
 		if(camera_light_on)
-			new_eye.set_light(AI_CAMERA_LUMINOSITY)
+			set_glow(new_eye, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		else
-			new_eye.set_light(0)
+			set_glow(new_eye, GLOW(0, null, null))
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -656,10 +656,10 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 
 //I am the icon meister. Bow fefore me.	//>fefore
 /mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
-	dummy.regenerate_icons()
+	draw_now(dummy)
 	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
-	qdel(holo_icon)
-	qdel(dummy)
+	spent(holo_icon)
+	spent(dummy)
 	holo_icon = new_holo
 
 /mob/living/silicon/ai/proc/ai_hologram_change()
@@ -670,31 +670,34 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	if(check_unable())
 		return
 
-	om_ask(src, /datum/om/prompt/choice/ai_able, PROC_REF(hologram_change_chosen), title = "Modify Hologram", message = "Would you like to modify your hologram's model, or color?", choices = list("Model", "Color", "Cancel"), buttons = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(hologram_change_chosen), answerer = src, valid = PROC_REF(ai_able_askable), title = "Modify Hologram", question = "Would you like to modify your hologram's model, or color?", choices = list("Model", "Color", "Cancel"), buttons = TRUE, timeout = 0)
 
-/// An AI settings choice. Re-checked on the answer: the AI is able to act (check_unable()).
-/datum/om/prompt/choice/ai_able
+/// An AI settings choice is re-checked on the answer: the AI is able to act (check_unable()).
+/mob/living/silicon/ai/proc/ai_able_askable(datum/request/R)
+	return !check_unable()
 
-/datum/om/prompt/choice/ai_able/valid()
-	var/mob/living/silicon/ai/AI = answerer
-	return AI.check_unable() ? "unable" : null
-
-/mob/living/silicon/ai/proc/hologram_change_chosen(datum/om/prompt/choice/ai_able/ask)
-	switch(ask.choice)
+/mob/living/silicon/ai/proc/hologram_change_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.value)
 		if("Color")
-			om_ask(src, /datum/om/prompt/color, PROC_REF(hologram_color_chosen), title = "Hologram Color", message = "Choose a color:", default = holo_color)
+			open_request(src, /datum/prompt/color, PROC_REF(hologram_color_chosen), answerer = src, title = "Hologram Color", question = "Choose a color:", default = holo_color, timeout = 0)
 		if("Model")
-			om_ask(src, /datum/om/prompt/choice/ai_able, PROC_REF(hologram_model_kind_chosen), title = "Hologram Selection", message = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", choices = list("Crew Member", "Unique", "My Character"), buttons = TRUE)
+			open_request(src, /datum/prompt/choice, PROC_REF(hologram_model_kind_chosen), answerer = src, valid = PROC_REF(ai_able_askable), title = "Hologram Selection", question = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", choices = list("Crew Member", "Unique", "My Character"), buttons = TRUE, timeout = 0)
 
-/mob/living/silicon/ai/proc/hologram_color_chosen(datum/om/prompt/color/ask)
-	holo_color = ask.picked_color
+/mob/living/silicon/ai/proc/hologram_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	holo_color = A.answer.value
 
-/mob/living/silicon/ai/proc/hologram_model_kind_chosen(datum/om/prompt/choice/ai_able/ask)
-	switch(ask.choice)
+/mob/living/silicon/ai/proc/hologram_model_kind_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.value)
 		if("Crew Member") //A seeable crew member (or a dog)
 			var/list/targets = trackable_mobs()
 			if(targets.len)
-				om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_crew_chosen), title = "Hologram Choice", message = "Select a crew member:", choices = targets) //The definition of "crew member" is a little loose...
+				open_request(src, /datum/prompt/choice, PROC_REF(hologram_crew_chosen), answerer = src, title = "Hologram Choice", question = "Select a crew member:", choices = targets, timeout = 0) //The definition of "crew member" is a little loose...
 			else
 				tgui_alert_async(src, "No suitable records found. Aborting.")
 
@@ -703,7 +706,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			var/mob/living/carbon/human/dummy/dummy = new ()
 			//This doesn't include custom_items because that's ... hard.
 			client.prefs.dress_preview_mob(dummy)
-			om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+			after(src, 1 SECOND, PROC_REF(hologram_from_dummy), with = list(dummy)) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 
 		else //A premade from the dmi
 			var/icon_list[] = list(
@@ -733,21 +736,25 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 				"male skrell",
 				"female skrell"
 			)
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_premade_chosen), title = "Hologram Choice", message = "Please select a hologram:", choices = icon_list)
+			open_request(src, /datum/prompt/choice, PROC_REF(hologram_premade_chosen), answerer = src, title = "Hologram Choice", question = "Please select a hologram:", choices = icon_list, timeout = 0)
 
-/mob/living/silicon/ai/proc/hologram_crew_chosen(datum/om/prompt/choice/ask)
-	var/input = ask.choice
+/mob/living/silicon/ai/proc/hologram_crew_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/input = A.answer.value
 	//This is torture, I know. If someone knows a better way...
 	var/list/targets = trackable_mobs()
 	if(!targets[input])
 		return
 	var/new_holo = getHologramIcon(getCompoundIcon(targets[input]))
-	qdel(holo_icon)
+	spent(holo_icon)
 	holo_icon = new_holo
 
-/mob/living/silicon/ai/proc/hologram_premade_chosen(datum/om/prompt/choice/ask)
-	qdel(holo_icon)
-	switch(ask.choice)
+/mob/living/silicon/ai/proc/hologram_premade_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	spent(holo_icon)
+	switch(A.answer.value)
 		if("default")
 			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 		if("floating face")
@@ -811,7 +818,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	to_chat(src, span_filter_notice("Camera lights [camera_light_on ? "activated" : "deactivated"]."))
 	if(!camera_light_on)
 		if(camera)
-			camera.set_light(0)
+			set_glow(camera, GLOW(0, null, null))
 			rel_clear(src, nameof(camera))
 	else
 		lightNearbyCamera()
@@ -825,44 +832,47 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 		if(src.camera)
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && src.camera != camera)
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				if(!camera.light_disabled)
 					rel_set(src, nameof(camera), camera)
-					src.camera.set_light(AI_CAMERA_LUMINOSITY)
+					set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 				else
 					rel_clear(src, nameof(camera))
 			else if(isnull(camera))
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				rel_clear(src, nameof(camera))
 		else
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
 				rel_set(src, nameof(camera), camera)
-				src.camera.set_light(AI_CAMERA_LUMINOSITY)
+				set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
-EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PROC_REF(ai_interaction_card), "Transfer to card"))
-
 /// Old attackby: an intelliCard pulls the AI in.
-/mob/living/silicon/ai/proc/ai_interaction_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+/mob/living/silicon/ai/proc/ai_interaction_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/aicard/card = A.held
 	card.grab_ai(src, user)
 	return TRUE
 
-/mob/living/silicon/ai/wrench_act(mob/user, obj/item/tool)
-	if(user == deployed_shell)
-		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, start_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// Its own deployed shell cannot unbolt the core.
+/mob/living/silicon/ai/proc/shell_refusal(datum/act/op/A)
+	return A.actor == read_once(deployed_shell) ? "the shell's subsystems resist your efforts to tamper with your bolts" : null
 
-/mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
+/mob/living/silicon/ai/proc/bolting_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/mob/living/silicon/ai/proc/bolting_begins(datum/act/op/A)
+	return msg_text(null, "\The [A.actor] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...")
+
+/mob/living/silicon/ai/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	act_message(user, src, others = span_notice("%U% finishes [anchored ? "fastening down" : "unfastening"] %T%!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/mob/living/silicon/ai/proc/wrench_act_tool_failed(mob/user)
-	act_message(user, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
-	return ITEM_INTERACT_BLOCKING
+/mob/living/silicon/ai/proc/wrench_act_tool_failed(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"
@@ -942,7 +952,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 				A = D
 
 		if(istype(A))
-			om_ask(src, /datum/om/prompt/confirm/ai_door_request, PROC_REF(open_door_request_answered), door = A, requester = target)
+			var/datum/prompt/yes_no/ai_door_request/asked = open_request(src, /datum/prompt/yes_no/ai_door_request, PROC_REF(open_door_request_answered), answerer = src, title = "Doorknob_v2a.exe", question = "Do you want to open \the [A] for [target]?", timeout = 0)
+			if(asked)
+				rel_set(asked, nameof(asked.door), A)
+				rel_set(asked, nameof(asked.requester), target)
 		else
 			to_chat(src, span_warning("Unable to locate an airlock near [target]."))
 
@@ -950,55 +963,57 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
 
 /// Someone asks the AI to open a door. The answer proc runs on no too (it reports the denial).
-/datum/om/prompt/confirm/ai_door_request
-	title = "Doorknob_v2a.exe"
-	answer_on_no = TRUE
+/datum/prompt/yes_no/ai_door_request
 	var/obj/machinery/door/airlock/door
 	var/mob/living/requester
 
-/datum/om/prompt/confirm/ai_door_request/prepare()
-	message = "Do you want to open \the [door] for [requester]?"
-	return TRUE
+CAPABILITIES(/datum/prompt/yes_no/ai_door_request)
+	ref_one(nameof(door), /obj/machinery/door/airlock)
+	ref_one(nameof(requester), /mob/living)
 
-/mob/living/silicon/ai/proc/open_door_request_answered(datum/om/prompt/confirm/ai_door_request/ask)
-	var/obj/machinery/door/airlock/A = ask.door
-	var/mob/living/target = ask.requester
-	if(ask.yes && !check_unable(AI_CHECK_WIRELESS))
-		A.silicon_inspect(src)
-		to_chat(src, span_notice("You open \the [A] for [target]."))
+/mob/living/silicon/ai/proc/open_door_request_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/ai_door_request/asked = A.request
+	var/obj/machinery/door/airlock/door = asked.door
+	var/mob/living/target = asked.requester
+	if(!door || !target)
+		return
+	if(A.answer.value && !check_unable(AI_CHECK_WIRELESS))
+		perform_op(src, door, "open_close", null, ORIGIN_MENU, AUTH_REMOTE_ACCESS)
+		to_chat(src, span_notice("You open \the [door] for [target]."))
 	else
 		to_chat(src, span_warning("You deny the request."))
 
-DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
-
 /// A direct blast destroys the core outright; weaker ones go through the silicon ladder.
-/mob/living/silicon/ai/proc/core_blast(datum/damage_packet/packet)
-	if(packet.severity == 1)
-		qdel(src)
-		return DAMAGE_REACTION_BLOCK
+/mob/living/silicon/ai/proc/core_blast(datum/act/hit/explosion/A)
+	if(A.packet.severity != 1)
+		return HOOK_DECLINE
+	destroyed(src, null, "explosion")
+	return TRUE
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/ai/appearance_overlays()
-	. = list()
+
+/mob/living/silicon/ai/draw(datum/look/look)
+	..()
 	if(!selected_sprite)
-		proto_set(src, nameof(selected_sprite), GLOB.default_ai_icon)
-
+		return
+	look.watch(selected_sprite)
 	if(stat == DEAD)
-		icon_state = selected_sprite.dead_icon
-		set_light(3, 1, selected_sprite.dead_light)
+		look.state(selected_sprite.dead_icon)
+		look.glow(3, 1, selected_sprite.dead_light)
 	else if(aiRestorePowerRoutine)
-		icon_state = selected_sprite.nopower_icon
-		set_light(1, 1, selected_sprite.nopower_light)
+		look.state(selected_sprite.nopower_icon)
+		look.glow(1, 1, selected_sprite.nopower_light)
 	else
-		icon_state = selected_sprite.alive_icon
-		set_light(1, 1, selected_sprite.alive_light)
+		look.state(selected_sprite.alive_icon)
+		look.glow(1, 1, selected_sprite.alive_light)
 
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()
 	set name = "Rest"
 	set category = VERB_CAT_IC_GAME
 
-	resting = 0
+	set_resting(0)
 	var/obj/item/rig/rig = src.get_rig()
 	if(rig)
 		rig.force_rest(src)
@@ -1086,14 +1101,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	set category = VERB_CAT_AI_CAMERA_CONTROL
 	drop_new_multicam()
 
-//Special subtype kept around for global announcements
+//Special subtype kept around for global announcements. GLOB.autospeaker is made once at boot (SSradio) and nothing deletes it.
+LIFECYCLE_KEEP_UNLESS_FORCED(/mob/living/silicon/ai/announcer)
+
 /mob/living/silicon/ai/announcer
 	is_dummy = 1
-
-/mob/living/silicon/ai/announcer/Initialize(mapload)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	. = ..()
-	QDEL_NULL(eyeobj)
 
 /// The announcer is in no mob registry.
 /mob/living/silicon/ai/announcer/skips_registry(registry_id)
@@ -1102,11 +1114,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 /mob/living/silicon/ai/announcer
 	life_set = LIFE_SET_DELIST
 
-/datum/om/stage/life/delist/silicon/ai/announcer
-	of = /mob/living/silicon/ai/announcer
-
-/datum/om/stage/life/delist/silicon/ai/announcer/perform(mob/living/silicon/ai/announcer/self, datum/om/frame/life/ctx)
-	qdel(self?.active_eye())
+/mob/living/silicon/ai/announcer/life_delist(datum/seq_frame/life/F)
+	spent(src?.active_eye())
 
 #undef AI_CHECK_WIRELESS
 #undef AI_CHECK_RADIO
@@ -1122,7 +1131,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	add_language(LANGUAGE_DRUDAKAR,		1)
 	add_language(LANGUAGE_TAVAN,		1)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/ai_powersupply/step_start_condition()
 	return TRUE // made when an AI needs power
 
@@ -1131,6 +1140,3 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	hacking = 0
 
 // A registered AI icon, or the AI's private custom icon (copy-on-write).
-/mob/living/silicon/ai/ownership()
-	. = ..()
-	. += proto(nameof(selected_sprite))

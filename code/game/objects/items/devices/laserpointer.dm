@@ -6,7 +6,6 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	icon_state = "pointer"
 	item_state = "pen"
 	var/pointer_icon_state
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
 	var/turf/pointer_loc
 	var/energy = 8
@@ -16,8 +15,6 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	EXPIRY_DECLARE(last_used_time)
 	var/recharge_locked = 0
 	var/obj/item/stock_parts/micro_laser/diode //used for upgrading!
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 /obj/item/laser_pointer/red
@@ -29,43 +26,58 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/purple
 	pointer_icon_state = "purple_laser"
 
-/obj/item/laser_pointer/Initialize(mapload, laser_path)
-	. = ..()
+TYPE_TABLE_DECLARE(/obj/item/laser_pointer, pointer_forced_diode, null)
+
+/// The diode type a pointer is made with (its constructor param), or the type's forced one.
+/obj/item/laser_pointer/var/diode_path
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/laser_pointer/proc/fit_diode(laser_path)
+	var/forced_diode = TYPE_TABLE_GET(src, pointer_forced_diode)
+	if(forced_diode)
+		laser_path = forced_diode
 	if(ispath(laser_path))
-		own_set(src, nameof(diode), new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
+		rel_set(src, nameof(diode), new laser_path(src))
 	else
-		own_set(src, nameof(diode), new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
-	if(!pointer_icon_state)
-		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
+		rel_set(src, nameof(diode), new /obj/item/stock_parts/micro_laser(src))
 
-/obj/item/laser_pointer/upgraded/Initialize(mapload)
-	. = ..(mapload, /obj/item/stock_parts/micro_laser)
+TYPE_TABLE(/obj/item/laser_pointer/upgraded, pointer_forced_diode, /obj/item/stock_parts/micro_laser)
 
-/obj/item/laser_pointer/ultimate/Initialize(mapload)
-	. = ..(mapload, /obj/item/stock_parts/micro_laser)
+TYPE_TABLE(/obj/item/laser_pointer/ultimate, pointer_forced_diode, /obj/item/stock_parts/micro_laser)
 
 /obj/item/laser_pointer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	laser_act(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
+CAPABILITIES(/obj/item/laser_pointer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
+	// The battery trickles back while recharging.
+	every(2 SECONDS, then(PROC_REF(laser_pointer_step)), when = nameof(recharging))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	param(nameof(diode_path), pos = 1, apply = PROC_REF(fit_diode))
+	rolls(nameof(pointer_icon_state), pick_one(list("red_laser", "green_laser", "blue_laser", "purple_laser")), when = cond_not(nameof(pointer_icon_state)))
 
-/obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/laser_pointer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!diode)
-		if(!own_set(src, nameof(src.diode), W, user = user))
+		if(!move_into(src, nameof(src.diode), W, user))
 			return TRUE
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))
 	return TRUE
 
-/obj/item/laser_pointer/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/laser_pointer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!diode)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	own_take(src, nameof(diode))
-	return ITEM_INTERACT_SUCCESS
+	rel_take(src, nameof(diode))
+	return OP_OK
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
 	if(flag)	//we're placing the object on a table or in backpack
@@ -98,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 
 	//human/alien mobs
 	if(ishuman(target))
-		if(user.zone_sel.selecting == "eyes")
+		if(hud_of(user)?.zone_sel?.selecting == "eyes")
 			var/mob/living/carbon/human/H = target
 
 			//20% chance to actually hit the eyes
@@ -129,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 					//Handle the weakness effect afterwards
 					if(severity >= 3)
 						if(prob(severity * diode.rating))
-							H.status_at_least(EFFECT_WEAKENED, max(H.status_units(EFFECT_WEAKENED), severity - 2))
+							H.status_at_least(STAT_WEAKENED, max(H.status_units(STAT_WEAKENED), severity - 2))
 						H.injure(INJURY_BURN, severity - 2, E, src, flags = INJURE_SILENT)
 
 					var/eye_message = span_info("A small, bright dot appears in your vision.")
@@ -155,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		if(prob(effectchance * diode.rating))
 			flick("flash", S.flash_eyes(affect_silicon = TRUE))
 			if (prob(3 * diode.rating))
-				S.status_at_least(EFFECT_WEAKENED, 1)
+				S.status_at_least(STAT_WEAKENED, 1)
 			to_chat(S, span_warning("Your sensors were blinded by a laser!"))
 			outmsg = span_notice("You blind [S] by shining [src] at their sensors.")
 			add_attack_logs(user,S,"Tried disabling using [src]")
@@ -180,14 +192,14 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 				act_message(C, null, MSG_SELF(span_warning("You pounce on the light!")), MSG_OTHERS(span_warning("%U% pounces on the light!")))
 				step_towards(C, targloc)
 				C.lay_down()
-				om_after(C, 1 SECOND, "lay_down")
+				after(C, 1 SECOND, "lay_down")
 			else
 				C.set_dir(get_dir(C,targloc))
 				act_message(C, null, MSG_SELF(span_notice("Your attention is drawn to the mysterious glowing dot.")), MSG_OTHERS(span_notice("%U% watches the light.")))
 
 
 	//laser pointer image
-	icon_state = "[initial(icon_state)]_[pointer_icon_state]"
+	set_icon_state("[initial(icon_state)]_[pointer_icon_state]")
 	var/list/showto = list()
 	for(var/mob/M in viewers(world.view,targloc))
 		if(M.client)
@@ -211,12 +223,12 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			recharge_locked = TRUE
 
 	flick_overlay(I, showto, cooldown)
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 
 /obj/item/laser_pointer/proc/reset_laser_icon()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
-/obj/item/laser_pointer/periodic_step()
+/obj/item/laser_pointer/proc/laser_pointer_step(datum/act/timer/A)
 	if(prob(20 - recharge_locked*5))
 		energy++
 		if(energy >= max_energy)
@@ -228,9 +240,8 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	. = ..()
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
-// The battery trickles back while recharging.
-DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
+/obj/item/laser_pointer/var/recharging = 0
+TRACKED(/obj/item/laser_pointer, recharging)
 
 /// Relation view: pointer loc (reads null once it is gone).
 /obj/item/laser_pointer/proc/pointer_loc() as /turf

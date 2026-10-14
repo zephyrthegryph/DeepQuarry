@@ -7,6 +7,9 @@
 	var/metroids = FALSE
 	var/list/alive_metroids
 
+CAPABILITIES(/datum/event/horde_infestation)
+	owns_many(nameof(alive_metroids))
+
 /datum/event/horde_infestation/setup()
 	announceWhen = rand(announceWhen, announceWhen + 60)
 
@@ -15,7 +18,7 @@
 		var/area/in_area = get_area(temp_vent)
 		if(in_area.flag_check(AREA_FORBID_EVENTS))
 			continue
-		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
+		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
 				rel_add(src, nameof(vents), temp_vent)
 
@@ -44,7 +47,7 @@
 			var/area/in_area = get_area(temp_vent)
 			if(in_area.flag_check(AREA_FORBID_EVENTS))
 				continue
-			if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
+			if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 				if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
 					var/area/A = get_area(temp_vent)
 					if(!(A.flag_check(AREA_FORBID_EVENTS)))
@@ -72,7 +75,7 @@
 				/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
-			own_add(src, nameof(alive_metroids), new spawn_metroids(get_turf(vent)))
+			rel_add(src, nameof(alive_metroids), new spawn_metroids(get_turf(vent)))
 			rel_remove(src, nameof(vents), vent)
 			spawncount--
 		rel_clear(src, nameof(vents))
@@ -89,7 +92,7 @@
 			var/area/metroid_area = get_area(M)
 			if(!metroid_area) //Huh, really?
 				if(!get_turf(M)) //No turf either?
-					qdel(M) //Must have been nullspaced
+					spent(M) //Must have been nullspaced
 				continue
 			area_names |= metroid_area.name
 		if(area_names.len)

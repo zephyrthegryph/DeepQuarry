@@ -11,7 +11,6 @@
 	var/datum/looping_sound/deep_fryer/fry_loop
 	circuit = /obj/item/circuitboard/fryer
 	appliancetype = FRYER
-	active_power_usage = 12 KILOWATTS
 	heating_power = 12 KILOWATTS
 
 	light_y = 15
@@ -20,7 +19,6 @@
 	optimal_temp = 400 + T0C // Increasing this to be 2x Oven to allow for a much higher/realistic frying temperatures. Doesn't really do anything but make heating the fryer take a bit longer.
 	optimal_power = 0.95 // .35 higher than the default to give fryers faster cooking speed.
 
-	idle_power_usage = 3.6 KILOWATTS
 	// Power used to maintain temperature once it's heated.
 	// Going with 25% of the active power. This is a somewhat arbitrary value.
 
@@ -29,31 +27,25 @@
 	max_contents = 2
 	container_type = /obj/item/reagent_containers/cooking_container/fryer
 
-	stat = POWEROFF // Starts turned off
+	starts_off = TRUE
 
 	tgui_id = "CookingFryer"
 
 	var/datum/reagents/oil_reagents/oil
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
+CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
+	configure(uses_power(active = 12 KILOWATTS, idle = 3.6 KILOWATTS))
+	hose_sockets(list(/datum/hose_connector/input/fryer))
+	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer, starts = /datum/looping_sound/deep_fryer)
+	owns_one(nameof(oil), /datum/reagents/oil_reagents, starts = PROC_REF(make_oil))
+	op("fryer_interaction_oil", item(/obj/item), then(PROC_REF(fryer_interaction_oil)))
+	// A grabbed mob shoved in: the victim has to stay in reach of the user for the two seconds.
+	op("fry_mob", ai(), takes("victim"), wait(2 SECONDS), on_interrupt(PROC_REF(cook_mob_stopped)), then(PROC_REF(cook_mob_done)))
+
 ///Reagent subtype for the fryer.
 /datum/reagents/oil_reagents
 	var/optimal_oil = 2500 //Overridden during init of the fryer.
-
-/obj/machinery/appliance/cooker/fryer/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
-
-	own_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
-	oil.optimal_oil = optimal_oil
-	var/variance = rand()*0.15
-	// Fryer is always a little below full, but its usually negligible
-
-	if(prob(20))
-		// Sometimes the fryer will start with much less than full oil, significantly impacting efficiency until filled
-		variance = rand()*0.5
-	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
-	add_hose_connector(/datum/hose_connector/input/fryer)
 
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
@@ -67,9 +59,15 @@
 			message += span_warning(" OVERFILLED")
 		to_chat(user, message)
 
-UI_DATA(/obj/machinery/appliance/cooker/fryer, "merge:ui_data_obj_machinery_appliance_cooker_fryer{reagents:listmap}")
+/obj/machinery/appliance/cooker/fryer/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_machinery_appliance_cooker_fryer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/appliance/cooker/fryer's window data (declared on its UI_DATA row).
+/// /obj/machinery/appliance/cooker/fryer's window data.
 /obj/machinery/appliance/cooker/fryer/proc/ui_data_obj_machinery_appliance_cooker_fryer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 	.["reagents"] = list("name" = oil.get_master_reagent_name(), "volume" = oil.total_volume, "max" = oil.maximum_volume)
@@ -106,35 +104,28 @@ UI_DATA(/obj/machinery/appliance/cooker/fryer, "merge:ui_data_obj_machinery_appl
 
 	cooking_power *= oil_efficiency
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/fryer/appearance_overlays() // We add our own version of the proc to use the special fryer double-lights.
-	. = list()
-	if(!has_stat(MACHINE_STAT_ANY))
-		. += ..()
-		if(cooking == TRUE)
-			icon_state = on_icon
-			if(fry_loop)
-				fry_loop.start(src)
-		else
-			icon_state = off_icon
-			if(fry_loop)
-				fry_loop.stop(src)
-	else
-		icon_state = off_icon
-		if(fry_loop)
-			fry_loop.stop(src)
+/// The fryer shows on while it cooks.
+/obj/machinery/appliance/cooker/fryer/draw(datum/look/look)
+	..()
+	look.state(!has_condition() && cooking == TRUE ? on_icon : off_icon)
 
-	// Special fryer double-lights overlay.
-	var/image/light
-	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
-		light = image(icon, "fryer_light_idle")
-	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
-		light = image(icon, "fryer_light_preheating")
+/// The fryer has its own double-lights, and the cooker's light besides while it is on. // We add our own version of the proc to use the special fryer double-lights.
+/obj/machinery/appliance/cooker/fryer/draw_lights(datum/look/look)
+	if(!has_condition())
+		..()
+	var/light = "fryer_light_off"
+	if(use_power == 1 && !has_condition())
+		light = "fryer_light_idle"
+	else if(use_power == 2 && !has_condition())
+		light = "fryer_light_preheating"
+	look.overlay(look_overlay_image(icon, light, pixel_x = light_x, pixel_y = light_y))
+
+/// The fryer bubbles while it cooks.
+/obj/machinery/appliance/cooker/fryer/loop_sync(datum/act/A)
+	if(!has_condition() && cooking == TRUE)
+		fry_loop?.start(src)
 	else
-		light = image(icon, "fryer_light_off")
-	light.pixel_x = light_x
-	light.pixel_y = light_y
-	. += light
+		fry_loop?.stop(src)
 
 //Fryer gradually infuses any cooked food with oil. Moar calories
 //This causes a slow drop in oil levels, encouraging refill after extended use
@@ -192,7 +183,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 	if(!istype(victim))
 		return
 
-
 	//Removed delay on this action in favour of a cooldown after it
 	//If you can lure someone close to the fryer and grab them then you deserve success.
 	//And a delay on this kind of niche action just ensures it never happens
@@ -201,18 +191,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	fry_loop.start(src)
 
-	om_task_timed(user, 2 SECONDS, victim, src, PROC_REF(cook_mob_done), list(victim, user), on_fail = PROC_REF(cook_mob_stopped))
+	perform_op(user, src, "fry_mob", null, ORIGIN_SYSTEM, with = list("victim" = victim))
 
-/obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped()
+/obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped(datum/act/op/A)
 	set_cooking(FALSE)
-	icon_state = off_icon
+	set_icon_state(off_icon)
 	fry_loop.stop(src)
 
-/obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(mob/living/victim, mob/user)
-	if(!victim || !victim.Adjacent(user))
+/obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/victim = A.arg("victim")
+	if(QDELETED(victim) || !victim.Adjacent(user))
 		to_chat(user, span_danger("Your victim slipped free!"))
 		set_cooking(FALSE)
-		icon_state = off_icon
+		set_icon_state(off_icon)
 		fry_loop.stop(src)
 		return
 
@@ -223,9 +215,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	var/obj/item/organ/external/E
 	var/nopain
-	if(ishuman(victim) && user.zone_sel.selecting != BP_GROIN && user.zone_sel.selecting != BP_TORSO)
+	if(ishuman(victim) && hud_of(user)?.zone_sel?.selecting != BP_GROIN && hud_of(user)?.zone_sel?.selecting != BP_TORSO)
 		var/mob/living/carbon/human/H = victim
-		E = H.get_organ(user.zone_sel.selecting)
+		E = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 		if(!E)
 			nopain = 2
 		else if(E.is_robotic())
@@ -244,7 +236,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 					damage -= (damage*0.5)//IF someone's arm is plunged in, the hand should take most of it
 			victim.injure(INJURY_BURN, damage, E.organ_tag, source = src)
 		else
-			victim.injure(INJURY_BURN, damage, user.zone_sel.selecting, source = src)
+			victim.injure(INJURY_BURN, damage, hud_of(user)?.zone_sel?.selecting, source = src)
 
 		if(!nopain)
 			to_chat(victim, span_danger("Agony consumes you as searing hot oil scorches your [E ? E.name : "flesh"] horribly!"))
@@ -260,10 +252,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	fry_loop.stop()
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, PROC_REF(fryer_interaction_oil)))
-
 /// Old attackby: scooping or pouring oil, else the appliance's own handling.
-/obj/machinery/appliance/cooker/fryer/proc/fryer_interaction_oil(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/appliance/cooker/fryer/proc/fryer_interaction_oil(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers) && !istype(I, /obj/item/reagent_containers/food) && I.reagents)
 		if(istype(I, /obj/item/reagent_containers/glass)) //Scooping stuff out with a glass.
 			if(I.reagents.total_volume <= 0 && oil)
@@ -290,4 +282,16 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/fryer, INTERACT_ITEM(null, P
 				MSG_BLIND(span_notice("You hear something viscous being poured into a metal container.")))
 			return TRUE
 	//If neither of the above returned, then call parent as normal
-	return FALSE
+	return OP_DECLINE
+
+/// The fryer's oil (owns_one(starts =)): a tank a quarter over its optimal fill, filled a little short of it.
+/obj/machinery/appliance/cooker/fryer/proc/make_oil(current)
+	var/datum/reagents/oil_reagents/fill = new(optimal_oil * 1.25, src)
+	fill.optimal_oil = optimal_oil
+	var/variance = rand()*0.15
+	// Fryer is always a little below full, but its usually negligible
+	if(prob(20))
+		// Sometimes the fryer will start with much less than full oil, significantly impacting efficiency until filled
+		variance = rand()*0.5
+	fill.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
+	return fill

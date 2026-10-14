@@ -279,9 +279,9 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 		// Current initializing subsystem is important to know because it might be a problem with
 		// things running pre-assets-initialization.
-		// if(!isnull(Master.current_initializing_subsystem))
-		// 	extra_info = "Info was attempted to be retrieved while [Master.current_initializing_subsystem] was initializing."
-		// else if(!MC_RUNNING())
+		// if(!isnull(Kernel.current_initializing_subsystem))
+		// 	extra_info = "Info was attempted to be retrieved while [Kernel.current_initializing_subsystem] was initializing."
+		// else if(!KERNEL_RUNNING())
 		// 	extra_info = "Info was attempted to be retrieved before the MC started, but not while it was actively initializing a subsystem"
 
 		CRASH("Preference type `[preference_type]` is invalid! [extra_info]")
@@ -295,7 +295,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// compares two pointers to the same now-mutated list and silently no-ops.
 		// Per-read shallow Copy() is bounded by list size (gear_list / body_markings
 		// hold tens of entries) and runs only on the read path, not the hot apply path.
-		var/cached = value_cache[preference_type]
+		var/cached = LAZYACCESS(value_cache, preference_type)
 		if(islist(cached))
 			var/list/L = cached
 			return L.Copy()
@@ -307,14 +307,14 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		if(write_preference(preference_entry, value))
 			// Return the validated value write_preference() cached: pref_deserialize
 			// may have changed the raw default. Copy lists so the caller can mutate freely.
-			var/stored = value_cache[preference_type]
+			var/stored = LAZYACCESS(value_cache, preference_type)
 			if(islist(stored))
 				var/list/L = stored
 				return L.Copy()
 			return stored
 		else
 			CRASH("Couldn't write the default value for [preference_type] (received [value])")
-	value_cache[preference_type] = value
+	LAZYSET(value_cache, preference_type, value)
 	if(islist(value))
 		var/list/L = value
 		return L.Copy()
@@ -325,7 +325,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	return client?.prefs?.read_preference(preference_type)
 
 /// Write a /datum/preference type and return its value directly to the json.
-/// Please use GLOB.character_setup_service.queue_preferences_save(prefs) when you edit multiple at once and set direct_write to WRITE_PREF_MANUAL
+/// Please use SScharacter_setup.queue_preferences_save(prefs) when you edit multiple at once and set direct_write to WRITE_PREF_MANUAL
 /// Additionally, if you want something to be changed IN ROUND and change a pref for THAT CHARACTER'S SAVESLOT, ensure save_to_played_slot = TRUE!
 /mob/proc/write_preference_directly(preference_type, preference_value, write_mode = WRITE_PREF_INSTANT, save_to_played_slot)
 	var/remembered_default
@@ -346,7 +346,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	var/new_value = preference.pref_deserialize(preference_value, src)
 	var/success = preference.write(save_data, new_value)
 	if(success)
-		value_cache[preference.type] = new_value
+		LAZYSET(value_cache, preference.type, new_value)
 	return success
 
 /// Writes a value and saves to disk immediately
@@ -410,10 +410,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		// values, so the caller's mutated list (if any) is independent of the cache — the
 		// cache still holds the pre-mutation reference here, which is exactly what we want
 		// the constraints to see as old_value. No extra copy needed on this side.
-		var/old_value = value_cache[preference.type]
+		var/old_value = LAZYACCESS(value_cache, preference.type)
 
 		LAZYOR(recently_updated_keys, preference.type)
-		value_cache[preference.type] = new_value
+		LAZYSET(value_cache, preference.type, new_value)
 		save_batch_dirty = TRUE
 
 		// invalidate ONLY the editor static_data cache entries that
@@ -457,7 +457,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			// (species_resets_hair, etc.) skip the preview; one rebuild at the
 			// end captures the cumulative new state. update_preview_icon_lazy
 			// renders the south frame synchronously and defers north/east/west
-			// to next tick via om_after — so user-perceived latency on a
+			// to next tick via after() — so user-perceived latency on a
 			// species change is the south-only cost (~250 ms) instead of the
 			// full 4-direction cost (~1 s).
 			update_preview_icon_lazy()
@@ -479,10 +479,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 
 // atomic multi-pref update. Callers (e.g., editor handle_action procs, random
 // character button) wrap a series of update_preference calls in this so disk writes
-// coalesce. Pass an om_callable(src, PROC_REF(my_proc), arg1, arg2, ...).
-/datum/preferences/proc/update_many(list/spec)
+// coalesce. Pass the owner, a PROC_REF on it and its arguments: update_many(src, PROC_REF(my_proc), list(arg1, arg2, ...)).
+/datum/preferences/proc/update_many(datum/owner, handler, list/with = null)
 	begin_update_batch()
-	om_run(spec)
+	holder_call(owner, handler, with)
 	end_update_batch()
 
 /datum/preferences/proc/update_preference_by_type(preference_type, preference_value)

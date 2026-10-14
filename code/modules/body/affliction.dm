@@ -20,7 +20,7 @@
 //   fire_progression_triggers()
 // Subtypes customise ONLY receive_tagged_treatment() and progress().
 /// Owning body. Null while detached (organ in a tray) or unattached.
-OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
+/datum/affliction/var/datum/body/body
 
 /datum/affliction
 	var/name = "affliction"
@@ -195,12 +195,12 @@ OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
 /datum/affliction/proc/cure()
 	if(body)
 		body.remove_affliction(src)
-	qdel(src)
+	spent(src)
 
 // --- Severity -------------------------------------------------------------------
 
 /// The sole runtime boundary for severity changes. Listeners (contracts,
-/// telemetry) hear /datum/om/event/affliction_severity_changed on the owning mob.
+/// telemetry) hear /datum/definition_event/affliction_severity_changed on the owning mob.
 /datum/affliction/proc/set_severity(new_severity)
 	var/old_severity = severity
 	severity = clamp(new_severity, 0, AFFLICTION_SEVERITY_TERMINAL)
@@ -214,7 +214,7 @@ OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
 			dirty |= BODY_DIRTY_FACTORS
 		body.invalidate(dirty)
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/affliction_severity_changed, src, old_severity)
+		PUBLISH_LEGACY(owner, /datum/notice/affliction_severity_changed, src, old_severity)
 	return TRUE
 
 /datum/affliction/proc/adjust_severity(delta)
@@ -578,3 +578,6 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	var/obj/item/picked = pick(candidates)
 	H.drop_from_inventory(picked)
 	to_chat(H, span_warning("Your fingers slip — you drop \the [picked]."))
+
+CAPABILITIES(/datum/affliction)
+	ref_one(nameof(body))

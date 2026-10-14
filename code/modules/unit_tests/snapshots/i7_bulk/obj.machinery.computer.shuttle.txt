@@ -1,0 +1,85 @@
+human|none menu: Authorize (refused: needs a card)
+human|none menu: Climb
+human|none click: nothing
+@obj.machinery.computer robot|none
++0 menu: Authorize (refused: needs a card)
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
++0 menu: Authorize (refused: needs a card)
+human|/obj/item/tool/screwdriver menu: Authorize (refused: needs a card)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use item
+human|/obj/item/tool/screwdriver click: Click: Use item
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
+-menu: Use crowbar
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
+-menu: Use wrench
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
+-menu: Use wirecutters
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
+-menu: Use multitool
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
+-menu: Use welding tool
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
+-menu: Use cable coil
++0 menu: Authorize (refused: needs a card)
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
+-menu: Use steel sheet
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use item
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
+-menu: Use identification card
++0 menu: Authorize
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item
+-menu: Use
++0 menu: Authorize (refused: needs a card)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/gripper
+human|/obj/item/card/emag menu: Authorize
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use item
+human|/obj/item/card/emag click: Click: Use item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shuttle_authorize, shuttle_emag_launch, silicon_hand, use_gripper, use_item

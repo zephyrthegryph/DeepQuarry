@@ -1,0 +1,8 @@
+/atom/proc/attackby(obj/item/I, mob/user)
+/atom/proc/attack_hand(mob/user)
+/atom/proc/click_alt(mob/user)
+/atom/proc/MouseDrop_T(atom/dropping, mob/user)
+/obj/item/proc/attack_self(mob/user)
+/client/verb/attack_self()
+/atom/attackby(obj/item/I, mob/user)
+/obj/item/attack_self(mob/user)

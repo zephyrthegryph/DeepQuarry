@@ -10,7 +10,19 @@
 /mob/living/simple_mob/slime
 	use_modern_ai = TRUE
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/slime/xenobio, "slime_state", /datum/slime_state)
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio)
+	ref_one(nameof(victim), /mob/living)
+	ref_one(nameof(predecessor), /mob/living/simple_mob/slime/xenobio)
+	on_change(nameof(is_adult), ANY, then(PROC_REF(sync_slime_sprites)))
+	on_change(nameof(consuming), ANY, then(PROC_REF(sync_slime_sprites)))
+	owns_one(nameof(slime_state), /datum/slime_state, starts = /datum/slime_state)
+	param(nameof(predecessor), pos = 1, apply = PROC_REF(inherit_made), keep = FALSE)
+	op("wrestle_off", hand(), ungated(), when(req_empty_hand()), stance(I_HELP, I_DISARM, I_HURT), priority(OP_PRIORITY_PART), label("Wrestle it off"), when(PROC_REF(eating_someone)), then(PROC_REF(xenoslime_wrestle_off)))
+	// every slime of a colour shares its mutation table; each is numbered and named for it
+	per_type(nameof(slime_mutation), TYPE_PROC_REF(/datum, per_type_own))
+	rolls(nameof(number), range_of(1, 1000))
+	rolls(nameof(name), PROC_REF(roll_slime_name), from = list(nameof(number)), when = cond_not(nameof(harmless)))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)), when = cond_not(nameof(harmless)))
 
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
@@ -83,7 +95,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 
 /datum/ai_behavior/slime_smart_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/slime/SM = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!SM || !threat || !SM.Adjacent(threat))
 		return null
 	if(!SM.checkClickCooldown())
@@ -110,7 +122,7 @@ TYPE_TABLE(/mob/living/simple_mob/slime, get_ai_target_selectors, list( \
 			my_slime.set_use_stance(I_GRAB)
 		else
 			my_slime.set_use_stance(I_HURT)
-	SM.attack_target(target, SM.input_stance())
+	brain.perform_attack_op(SM, target, "mob_attacks.melee")
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

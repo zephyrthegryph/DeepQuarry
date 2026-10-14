@@ -56,17 +56,17 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	pred.can_be_drop_pred = TRUE
-	pred.food_vore = TRUE
-	prey.can_be_drop_prey = TRUE
-	prey.food_vore = TRUE
+	pred.vore_prefs.can_be_drop_pred = TRUE
+	pred.vore_prefs.food_vore = TRUE
+	prey.vore_prefs.can_be_drop_prey = TRUE
+	prey.vore_prefs.food_vore = TRUE
 	var/obj/item/clothing/mask/chewable/candy/lolli/lolli = new(pred)
 	prey.forceMove(lolli)
-	own_set(lolli, nameof(lolli.victims), list(prey))
+	rel_set(lolli, nameof(lolli.victims), list(prey))
 	lolli.spitout(0)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	TEST_ASSERT_EQUAL(prey.loc, B, "the lollipop's captive should end up in the belly")
-	var/datum/om/relation/slot/prey_slot = dq_path_slot_of(B, prey)
+	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the captive should hold a belly interior slot entry")
 	TEST_ASSERT(B.cycle_token, "the belly should cycle once the captive is inside")
 	B.release_all_contents(TRUE, TRUE)
@@ -79,12 +79,12 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
 	var/obj/belly/B = vore_rate_belly(pair, DM_HOLD)
-	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "a belly's interior is the predator's body temperature")
-	TEST_ASSERT_EQUAL(prey.get_ambient_temperature(), pred.bodytemperature, "the prey's surroundings are the predator's body")
+	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.body_temperature(), "a belly's interior is the predator's body temperature")
+	TEST_ASSERT_EQUAL(prey.get_ambient_temperature(), pred.body_temperature(), "the prey's surroundings are the predator's body")
 	pred.set_bodytemperature(pred.species.heat_level_1 + 5)
-	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.bodytemperature, "the belly follows a feverish predator")
+	TEST_ASSERT_EQUAL(B.get_interior_temperature(), pred.body_temperature(), "the belly follows a feverish predator")
 	var/datum/gas_mixture/air = B.return_air_for_internal_lifeform(prey)
-	TEST_ASSERT(abs(air.return_temperature() - pred.bodytemperature) < 0.01, "belly air should be at the predator's temperature, is [air.return_temperature()]")
+	TEST_ASSERT(abs(air.return_temperature() - pred.body_temperature()) < 0.01, "belly air should be at the predator's temperature, is [air.return_temperature()]")
 	B.release_all_contents(TRUE, TRUE)
 
 /// The emergent thermal metric uses the species' body temperature.

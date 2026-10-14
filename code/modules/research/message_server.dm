@@ -46,7 +46,6 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
@@ -56,8 +55,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/message_server
 
 	var/list/datum/data_pda_msg/pda_msgs
@@ -75,20 +72,18 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = FALSE
 
+CAPABILITIES(/obj/machinery/message_server)
+	configure(uses_power(idle = 10, active = 100))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), STAT_OPERABLE), unpowered = TRUE)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
+	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
+	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
+	op("upgrade", item(/obj/item/circuitboard/message_monitor), priority(OP_PRIORITY_DEFAULT - 1), label("Install memory upgrade"), when(req(PROC_REF(can_upgrade_holds))), then(PROC_REF(interaction_upgrade)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle PDA relay"), then(PROC_REF(interaction_toggle)))
+
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	. = ..()
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
@@ -107,9 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	return newKey
 
 /// Settles its hum while it is on (set_active() starts the step; it sleeps again once settled).
-DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active")
-
-/obj/machinery/message_server/machine_step()
+/obj/machinery/message_server/proc/work_step(datum/act/timer/A)
 	if(active && (!operable()))
 		set_active(0)
 		soundloop.stop()
@@ -118,7 +111,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 	if(!noisy && active)
 		soundloop.start()
 		noisy = TRUE
-	update_icon()
 	return PROCESS_KILL
 
 /obj/machinery/message_server/proc/send_pda_message(recipient = "",sender = "",message = "")
@@ -127,11 +119,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	own_add(src, nameof(pda_msgs), new/datum/data_pda_msg(recipient,sender,message))
+	rel_add(src, nameof(pda_msgs), new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	own_add(src, nameof(rc_msgs), new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
+	rel_add(src, nameof(rc_msgs), new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -143,8 +135,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
 				continue
 			if(Console.newmessagepriority < priority)
-				Console.newmessagepriority = priority
-				Console.update_icon()
+				Console.set_newmessagepriority(priority)
 			switch(priority)
 				if(2)
 					if(!Console.silent)
@@ -156,44 +147,29 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 						play_sfx(Console, SFX_MACHINES_TWOBEEP)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'Message from [sender]'"),,4, runemessage = "beep beep")
 					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
-			Console.set_light(2)
+			set_glow(Console, GLOW(2, null, null))
 
-/obj/machinery/message_server/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/message_server_upgrade,
-		/datum/interaction/machine_hand/ungated/message_server_toggle,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so it works even unpowered/broken.
-/datum/interaction/machine_hand/ungated/message_server_toggle
-	id = "message_server_toggle"
-	name = "Toggle PDA relay"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/message_server/proc/interaction_toggle
-
-/obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/message_server/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	set_active(!active)
 	return TRUE
-
-/// Old attackby: the message-monitor upgrade branch. offered_when falls through to the base attackby otherwise.
-/datum/interaction/machine_item/message_server_upgrade
-	id = "message_server_upgrade"
-	name = "Install memory upgrade"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/circuitboard/message_monitor
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/message_server/proc/can_upgrade, null))
-	effect = /obj/machinery/message_server/proc/interaction_upgrade
 
 /// No side effects: whether this server can currently take the upgrade board.
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
 	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
 
-/obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
-	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
-	user.drop_item()
-	consume(O, user)
+/// Requirement (was REQ_* can_upgrade): the legacy check answers TRUE to pass.
+/obj/machinery/message_server/proc/can_upgrade_holds(datum/act/op/A)
+	var/answer = can_upgrade(A.actor, src, A.held)
+	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
+
+/obj/machinery/message_server/proc/interaction_upgrade(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(!consume(O, user))
+		return TRUE
+	set_spamfilter_limit(spamfilter_limit + (round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)))
 	to_chat(user, span_filter_notice("You install additional memory and processors into message server. Its filtering capabilities been enhanced."))
 	return TRUE
 
@@ -205,7 +181,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 		return "off"
 	return "on"
 
-APPEARANCE_TEMPLATE(/obj/machinery/message_server, "server-{appearance_server_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/message_server/draw(datum/look/look)
+	..()
+	look.state("server-[appearance_server_state()]")
 
 /datum/feedback_variable
 	var/variable
@@ -279,8 +258,6 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	// ALLOW(instance_list): d: blackbox singleton log
 	var/list/messages = list()		//Stores messages of non-standard frequencies
 	var/list/messages_admin
@@ -301,13 +278,17 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/list/datum/feedback_variable/feedback = new() // ALLOW(instance_list): d: blackbox singleton; feedback datums fill it every round
 
 	//Only one can exist in the world!
+
+CAPABILITIES(/obj/machinery/blackbox_recorder)
+	configure(uses_power(idle = 10, active = 100))
+	owns_many(nameof(feedback), /datum/feedback_variable)
 /obj/machinery/blackbox_recorder/Initialize(mapload)
 	. = ..()
 	if(istype(GLOB.blackbox, /obj/machinery/blackbox_recorder))
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
-// ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
+// The blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 // it owns (an owned list): the replacement takes the list over.
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
 	var/turf/T = locate(1,1,2)
@@ -326,8 +307,8 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.msg_service = msg_service
 		// The feedback datums move over one by one (the replacement takes the list over).
 		own_clear(BR, nameof(BR.feedback), OWN_DELETE)
-		for(var/datum/entry as anything in own_take_all(src, nameof(feedback)))
-			own_add(BR, nameof(BR.feedback), entry)
+		for(var/datum/entry as anything in rel_take_all(src, nameof(feedback)))
+			rel_add(BR, nameof(BR.feedback), entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
 	return ..()
@@ -337,7 +318,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		if(FV.get_variable() == variable)
 			return FV
 	var/datum/feedback_variable/FV = new(variable)
-	own_add(src, nameof(feedback), FV)
+	rel_add(src, nameof(feedback), FV)
 	return FV
 
 /obj/machinery/blackbox_recorder/proc/get_round_feedback()
@@ -393,9 +374,9 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/list/rows = list()
 	for(var/datum/feedback_variable/FV in feedback)
 		rows += list(list(FV.get_variable(), FV.get_value(), FV.get_details()))
-	om_io(null, /datum/om/io/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
+	io_job(null, /datum/io_backend/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
 
-/// om_io() callback: writes the blackbox's captured feedback rows under the next round id.
+/// io_job() callback: writes the blackbox's captured feedback rows under the next round id.
 /proc/blackbox_write_feedback_rows(list/result, error, list/rows)
 	if(error)
 		log_sql("Blackbox feedback: round id lookup failed: [error]")
@@ -407,7 +388,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		round_id = text2num(round_id)
 	round_id++
 	for(var/list/row in rows)
-		om_sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
+		sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
 
 // Sanitize inputs to avoid SQL injection attacks. This is not secure. Basic filters like this are pretty easy to bypass. Use the format for arguments used in the above.
 /proc/sql_sanitize_text(text)

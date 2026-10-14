@@ -11,7 +11,7 @@
 /proc/dq_voice_reply(mob/living/who, list/options, mob/listener)
 	if(!who || !length(options))
 		return
-	om_after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), pick(options))
+	after(who, rand(0.5 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
 
 // ---------------------------------------------------------------------------
 // Parrot — repeat-everything mimicry.
@@ -80,7 +80,7 @@
 		return
 	if(!isliving(speaker))
 		return
-	if(!speaker.devourable || !speaker.allowmobvore || !speaker.can_be_drop_prey)
+	if(!speaker.vore_prefs.devourable || !speaker.vore_prefs.allowmobvore || !speaker.vore_prefs.can_be_drop_prey)
 		return
 	if(speaker.z != z)
 		return
@@ -94,7 +94,7 @@
 	if(client || !speaker || !speaker.client)
 		return
 	var/message = multilingual_to_message(message_pieces)
-	if(findtext(message, "psps") && ai_brain && !ai_brain.primary_threat)
+	if(findtext(message, "psps") && ai_brain && !ai_brain.primary_target())
 		ai_brain.set_follow(speaker)
 	if(stat || !say_list || !message || speaker == src)
 		return
@@ -106,7 +106,7 @@
 	if(client || !speaker || !speaker.client)
 		return
 	var/message = multilingual_to_message(message_pieces)
-	if((findtext(message, "psps") || (ai_brain && !ai_brain.primary_threat)) && ai_brain)
+	if((findtext(message, "psps") || (ai_brain && !ai_brain.primary_target())) && ai_brain)
 		ai_brain.set_follow(speaker)
 	if(stat || !say_list || !message || speaker == src)
 		return

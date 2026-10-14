@@ -8,31 +8,34 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 	desc = "The world of janitalia wouldn't be complete without a mop."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
-	force = 3.0
-	throwforce = 10.0
 	throw_speed = 5
 	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
 	flags = NOCONDUCT
-	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
 	///How long it takes to mop a tile.
 	var/mop_time = 4 SECONDS
 
-DECLARE_REAGENTS(/obj/item/mop, 30, null)
+MSG_DEF(mop/cleaning, null, span_warning("%U% begins to clean the floor."))
+MSG_DEF_SELF(mop/dry, "Your mop is dry!")
 
-/obj/item/mop/afterattack(atom/A, mob/user, proximity)
-	if(!proximity) return
-	if(istype(A, /turf) || istype(A, /obj/effect/decal/cleanable) || istype(A, /obj/effect/overlay) || istype(A, /obj/effect/rune))
-		if(reagents.total_volume < 1)
-			user.balloon_alert(user, "your mop is dry!")
-			return
+CAPABILITIES(/obj/item/mop)
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 3.0, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))
+	reagents(30)
+	op("mop", at_target(/turf), at_target(/obj/effect/decal/cleanable), at_target(/obj/effect/overlay), at_target(/obj/effect/rune), begins(MSG(mop/cleaning)), starts(PROC_REF(mop_started)), wait(PROC_REF(mop_duration)), then(PROC_REF(mopped)))
 
-		act_message(user, null, others = span_warning("%U% begins to clean \the [get_turf(A)]."))
+/// A dry mop starts nothing.
+/obj/item/mop/proc/mop_started(datum/act/op/A)
+	if(reagents.total_volume < 1)
+		return /datum/msg/mop/dry
+	return null
 
-		om_task_timed(user, mop_time, target = get_turf(A), receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user))
+/obj/item/mop/proc/mop_duration(datum/act/A)
+	return mop_time
 
-/obj/item/mop/proc/afterattack_timed_done(atom/A, mob/user)
-	var/turf/T = get_turf(A)
+/obj/item/mop/proc/mopped(datum/act/op/A)
+	var/mob/user = A.actor
+	var/turf/T = get_turf(A.target)
 	if(T)
 		T.wash(CLEAN_SCRUB)
 		reagents.trans_to_turf(T, 1, 10)
@@ -45,6 +48,7 @@ DECLARE_REAGENTS(/obj/item/mop, 30, null)
 			"detail" = "Cleaned [T] with [src].",
 		), "sanitation:[REF(T)]:[world.time]", src, cleaner)
 	user.balloon_alert(user, "you have finished mopping!")
+	return OP_OK
 
 // NOTE: the /obj/effect/attackby(mop/soap) no-op override lives in mop_deploy.dm (included later, so it
 // wins under DM's last-include-wins). A duplicate here was silently discarded — and is a hard
@@ -58,11 +62,12 @@ DECLARE_REAGENTS(/obj/item/mop, 30, null)
 	desc = "No stain will go unclean."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "adv_mop"
-	force = 3.5
-	throwforce = 10.5
 	throw_speed = 4
 	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
 	flags = NOCONDUCT
-	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
 	mop_time = 2 SECONDS
+
+CAPABILITIES(/obj/item/mop/advanced)
+	configure(item_thrown(force = 10.5))
+	configure(item_combat(force = 3.5, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))

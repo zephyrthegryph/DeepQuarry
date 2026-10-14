@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Op handlers can answer OP_DECLINE so a click falls through to the next candidate; interact_declare converts falsy-returning handlers"

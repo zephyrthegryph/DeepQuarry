@@ -1,0 +1,4 @@
+#include "maps\virgo_minitest\test_map.dm"
+#include "maps\southern_cross\ok.dm"
+#include "maps\x\test_two.dm" // ALLOW(check_grep): ok
+#include "maps\x\test_three.dm" // ALLOW(check_grep)

@@ -45,9 +45,6 @@
 /// If the incapacitated status effect is being caused by being agressively grabbed
 #define INCAPABLE_GRAB (1<<3)
 
-/// Checks to see if a mob would be incapacitated even while ignoring some types
-/// Does this by inverting the passed in flags and seeing if we're still incapacitated
-#define INCAPACITATED_IGNORING(mob, flags) (mob.incapacitated & ~(flags))
 
 /// Max amounts of fire stacks a mob can get
 #define MAX_FIRE_STACKS 20
@@ -195,3 +192,10 @@
 // #define adjust_static_vision_up_to(duration, up_to) adjust_timed_status_effect(duration, /datum/status_effect/static_vision, up_to)
 // #define set_static_vision(duration) set_timed_status_effect(duration, /datum/status_effect/static_vision)
 // #define set_static_vision_if_lower(duration) set_timed_status_effect(duration, /datum/status_effect/static_vision, TRUE)
+
+/// Deciseconds a fast status effect's sweep (SSstatus_fast) steps by, and the interval of that sweep.
+#define STATUS_EFFECT_FAST_STEP 2
+/// Deciseconds a normal status effect's sweep (SSstatus_normal) steps by, and the interval of that sweep.
+#define STATUS_EFFECT_NORMAL_STEP 10
+/// Deciseconds a priority status effect is told each server tick (SSstatus_priority).
+#define STATUS_EFFECT_PRIORITY_STEP 2

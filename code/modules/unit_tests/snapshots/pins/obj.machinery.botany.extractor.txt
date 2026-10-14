@@ -1,0 +1,18 @@
+@obj.machinery.botany human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery.botany human|/obj/item/tool/screwdriver
+@obj.machinery.botany human|/obj/item/tool/crowbar
+@obj.machinery.botany human|/obj/item/tool/wrench
+@obj.machinery.botany human|/obj/item/tool/wirecutters
+@obj.machinery.botany human|/obj/item/multitool
+@obj.machinery.botany human|/obj/item/weldingtool
+@obj.machinery.botany human|/obj/item/stack/cable_coil
+@obj.machinery.botany human|/obj/item/stack/material/steel
+@obj.machinery.botany human|/obj/item/card/id
+@obj.machinery.botany human|/obj/item
+@obj human|/obj/item/seeds
+@obj.machinery.botany human|/obj/item/storage/part_replacer
+@obj human|/obj/item/disk/botany
+keys: clear_buffer, drag_buckle, eject_disk, eject_packet, get_gene, load_disk, load_seed, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, part_replacement_impl, robot_remote_blocked, scan_genome, silicon_hand, use_crowbar, use_screwdriver, use_wrench

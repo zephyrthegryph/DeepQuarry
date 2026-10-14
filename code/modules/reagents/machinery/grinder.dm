@@ -7,8 +7,6 @@
 	density = FALSE
 	anchored = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/grinder
 	var/obj/item/reagent_containers/beaker = null
 	var/limit = 10
@@ -18,11 +16,20 @@
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_grind = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_grind")
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent_containers/glass/beaker/large)
+/// TRUE for the six seconds a grind runs: a timed hold from grind().
+STAT(/obj/machinery/reagentgrinder, grinding, ANY)
+SOURCE_DEF(grind)
 
-/obj/machinery/reagentgrinder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+CAPABILITIES(/obj/machinery/reagentgrinder)
+	configure(uses_power(idle = 5, active = 100))
+	owns_many(nameof(holdingitems))
+	owns_one(nameof(beaker), /obj/item/reagent_containers, starts = /obj/item/reagent_containers/glass/beaker/large)
+	op("use", item(/obj/item), label("Use"), then(PROC_REF(item_used)))
+	op("replace_beaker", hand(), ungated(), gesture(GESTURE_ALT), label("Replace beaker"), needs(req_adjacent()), then(PROC_REF(beaker_replaced)))
+	op("interact", hand(), ungated(), label("Use"), needs(req(PROC_REF(menu_available), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(radial_choices)), "radial" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "choice"),
+		then(PROC_REF(radial_chosen)))
+	default_parts()
 
 /obj/machinery/reagentgrinder/examine(mob/user)
 	. = ..()
@@ -30,7 +37,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		. += span_warning("You're too far away to examine [src]'s contents and display!")
 		return
 
-	if(om_busy(src))
+	if(grinding)
 		. += span_warning("\The [src] is operating.")
 		return
 
@@ -47,24 +54,15 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)
 				. += span_notice("- [R.volume] units of [R.name].")
 
-APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
-
-/obj/machinery/reagentgrinder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/reagentgrinder_attackby,
-		/datum/interaction/machine_alt/reagentgrinder_replace_beaker,
-		/datum/interaction/machine_hand/ungated/reagentgrinder_interact,
-	)
+/obj/machinery/reagentgrinder/draw(datum/look/look)
 	..()
+	look.state(beaker ? "juicer1" : "juicer0")
 
-/// Old attackby, kept whole: every branch returns without ever calling ..().
-/datum/interaction/machine_item/reagentgrinder_attackby
-	id = "reagentgrinder_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/reagentgrinder/proc/interaction_attackby
-
-/obj/machinery/reagentgrinder/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/// The old attackby, kept whole: every branch is handled.
+/obj/machinery/reagentgrinder/proc/item_used(datum/act/op/A)
+	. = OP_OK
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if (istype(O,/obj/item/reagent_containers/glass) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/glass2) || \
 		istype(O,/obj/item/reagent_containers/food/drinks/shaker))
@@ -72,9 +70,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		if (beaker)
 			return TRUE
 		else
-			if(!own_set(src, nameof(src.beaker), O, user = user))
+			if(!move_into(src, nameof(src.beaker), O, user))
 				return TRUE
-			update_icon()
 			return TRUE
 
 	if(holdingitems && length(holdingitems) >= limit)
@@ -90,7 +87,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			own_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
+			rel_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
 			if(holdingitems && length(holdingitems) >= limit)
 				break
 
@@ -120,90 +117,63 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 
-	if(!own_add(src, nameof(src.holdingitems), O, user = user))
+	if(!move_into(src, nameof(src.holdingitems), O, user))
 		return TRUE
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
-		set_light(l_range = max(1, S.get_amount()/10), l_power = max(1, S.get_amount()/10), l_color = "#8A8A00")
-		om_after(src, 30 SECONDS, PROC_REF(puny_protons))
+		set_glow(src, GLOW(max(1, S.get_amount()/10), max(1, S.get_amount()/10), "#8A8A00"))
+		after(src, 30 SECONDS, PROC_REF(puny_protons))
 	// end
 	return TRUE
 
-/obj/machinery/reagentgrinder/screwdriver_act(mob/user, obj/item/tool)
-	if(!beaker)
-		return ..()
-	return ..()
-
-/obj/machinery/reagentgrinder/crowbar_act(mob/user, obj/item/tool)
-	if(!beaker)
-		return ..()
-	return ..()
-
-/// Old click_alt: `. = ..()` was never checked, so its own logic always ran afterward.
-/datum/interaction/machine_alt/reagentgrinder_replace_beaker
-	id = "reagentgrinder_replace_beaker"
-	name = "Replace beaker"
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/reagentgrinder/proc/interaction_replace_beaker
-
-/obj/machinery/reagentgrinder/proc/interaction_replace_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/// The old click_alt: the beaker comes out to the hand.
+/obj/machinery/reagentgrinder/proc/beaker_replaced(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated() || !Adjacent(user))
-		return TRUE
+		return OP_OK
 	replace_beaker(user)
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/reagentgrinder_interact
-	id = "reagentgrinder_interact"
-	name = "Use"
-	effect = /obj/machinery/reagentgrinder/proc/interaction_use
+/// Not while it grinds; an AI (a remote hand) not while it is unpowered. The old menu opened silently or not at all. (Otherwise, with no power
+/// or broken, the procs fail but the buttons still show.)
+/obj/machinery/reagentgrinder/proc/menu_available(datum/act/op/A)
+	if(grinding)
+		return /datum/msg/req_failed
+	return (!((A.authority & AUTH_REMOTE_ACCESS) && power_lost())) ? null : /datum/msg/req_failed
 
-/obj/machinery/reagentgrinder/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
-
-/obj/machinery/reagentgrinder/interact(mob/user) // The microwave Menu //I am reasonably certain that this is not a microwave
-	if(om_busy(src) || user.incapacitated())
-		return
-
+/// The radial's buttons: eject what it holds, grind it, and an examine for a remote hand.
+/obj/machinery/reagentgrinder/proc/radial_choices(datum/act/op/A)
 	var/list/options = list()
-
 	if(beaker || length(holdingitems))
 		options["eject"] = radial_eject
-
-	if(isAI(user))
-		if(has_stat(NOPOWER))
-			return
+	if(A.authority & AUTH_REMOTE_ACCESS)
 		options["examine"] = radial_examine
-
-	// if there is no power or it's broken, the procs will fail but the buttons will still show
 	if(length(holdingitems))
 		options["grind"] = radial_grind
+	return options
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(radial_option_chosen), choices = options, anchor = src, require_near = !issilicon(user), autopick_single_option = FALSE)
-
-/obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	// post choice verification
-	if(!user || om_busy(src) || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
-		return
-
-	switch(ask.choice)
+/// The old attack_hand (it never called ..()): the radial menu, then what was chosen.
+/obj/machinery/reagentgrinder/proc/radial_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(grinding || user.incapacitated()) // post choice verification
+		return OP_OK
+	switch(A.step_value("choice"))
 		if("eject")
 			eject(user)
 		if("grind")
 			grind(user)
 		if("examine")
 			examine(user)
+	return OP_OK
 
 /obj/machinery/reagentgrinder/proc/eject(mob/user)
 	if(user.incapacitated())
 		return
 	for(var/obj/item/O in holdingitems)
 		O.forceMove(src.loc)
-		own_take_member(src, nameof(holdingitems), O)
-	own_take_all(src, nameof(holdingitems))
+		rel_take(src, nameof(holdingitems), member = O)
+	rel_take_all(src, nameof(holdingitems))
 	if(beaker)
 		replace_beaker(user)
 
@@ -218,7 +188,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		return
 
 	play_sfx(src, SFX_MACHINES_BLENDER)
-	om_hold_busy(src, 6 SECONDS)
+	hold(src, STAT_GRINDING, TRUE, SRC_GRIND, 6 SECONDS)
 
 	// Process.
 	grind_items_to_reagents(holdingitems,beaker.reagents)
@@ -231,12 +201,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			user.put_in_hands(beaker)
 		else
 			beaker.forceMove(drop_location())
-		own_take(src, nameof(beaker))
+		rel_take(src, nameof(beaker))
 	if(new_beaker)
-		own_set(src, nameof(src.beaker), new_beaker, user = user)
-	update_icon()
+		move_into(src, nameof(src.beaker), new_beaker, user)
 	return TRUE
-
-/obj/machinery/reagentgrinder/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)

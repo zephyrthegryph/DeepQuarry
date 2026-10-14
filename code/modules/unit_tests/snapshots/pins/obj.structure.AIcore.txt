@@ -1,0 +1,22 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Anchor frame
++3 click: Click: Anchor frame
+@obj.structure human|/obj/item/tool/wirecutters
+@obj.structure human|/obj/item/multitool
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++0 menu: Dismantle frame
++3 click: Click: Dismantle frame
+@obj.structure human|/obj/item/stack/cable_coil
+@obj.structure human|/obj/item/stack/material/steel
+@obj.structure human|/obj/item/card/id
+@obj.structure human|/obj/item
+@obj.structure human|/obj/item/stack/material
+keys: add_cables, add_panel, ai_core_install, anchor, connect_monitor, dismantle, drag_buckle, melee_hit, remove_board, remove_brain, state_1_2, state_2_1, state_3_2, state_4_3, unanchor

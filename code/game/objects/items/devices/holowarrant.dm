@@ -4,13 +4,10 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "holowarrant"
 	item_state = "flashtool"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
 	var/datum/data/record/warrant/active
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 //look at it
 /obj/item/holowarrant/examine(mob/user)
@@ -22,55 +19,58 @@
 	else
 		. += span_notice("You have to go closer if you want to read it.")
 
-//hit yourself with it
-DECLARE_INTERACTIONS(/obj/item/holowarrant, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// The names on the warrants on file.
+/obj/item/holowarrant/proc/warrant_names(datum/act/A)
+	return warrants_on_file()
 
-/obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_clear(src, nameof(active))
-	var/list/warrants = list()
+/proc/warrants_on_file()
+	READS_FROM() // the records are read when the projector asks
+	. = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-			warrants += W.fields["namewarrant"]
-	if(warrants.len == 0)
-		to_chat(user,span_notice("There are no warrants available"))
-		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(warrant_chosen), choices = warrants, title = "Warrant Selection", message = "Which warrant would you like to load?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			. += W.fields["namewarrant"]
 
-/// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
-/datum/om/prompt/confirm/holowarrant_authorize
-	title = "Warrant authorization"
-	message = "Would you like to authorize this warrant?"
-	answer_on_no = TRUE
-	requires = PROMPT_IN_HAND
-	var/obj/item/card/id/card
-	var/datum/data/record/warrant/warrant
+/obj/item/holowarrant/proc/warrants_exist(datum/act/op/A)
+	return length(warrants_on_file()) > 0
 
-/obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/ask)
+/// The held thing carries the Head of Security's access: the authorization is asked.
+/obj/item/holowarrant/proc/authorizing_card(datum/act/op/A)
+	return carries_access(A.held, ACCESS_HOS)
+
+/// Does `thing` carry an ID with `access`?
+/proc/carries_access(obj/item/thing, access)
+	READS_FROM() // an ID's access is asked when it is swiped
+	var/obj/item/card/id/I = thing?.GetIdCard()
+	return I && (access in I.GetAccess())
+
+/// The warrant picked is loaded (none on file: say so).
+/obj/item/holowarrant/proc/warrant_chosen(datum/act/op/A)
+	rel_clear(src, nameof(active))
+	var/datum/prompt/R = A.answer
+	if(!R)
+		if(!length(warrants_on_file()))
+			to_chat(A.actor, span_notice("There are no warrants available"))
+		return OP_OK
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.fields["namewarrant"] == ask.choice)
+		if(W.fields["namewarrant"] == R.value)
 			rel_set(src, nameof(active), W)
-	update_icon()
+	return OP_OK
 
-/obj/item/holowarrant/proc/authorize_answered(datum/om/prompt/confirm/holowarrant_authorize/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/card/id/I = ask.card
-	if(ask.yes && active() == ask.warrant)
+/// An ID swiped through it: authorized after a yes; without the access it says so; anything else goes on.
+/obj/item/holowarrant/proc/authorize_answered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = A.held?.GetIdCard()
+	if(!I)
+		return OP_DECLINE
+	if(!carries_access(A.held, ACCESS_HOS))
+		to_chat(user, span_warning("You don't have the access to do this!"))
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(R?.value && active())
 		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	act_message(user, src, MSG_SELF(span_notice("You swipe \the [I] through %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes \the [I] through %T%.")))
-
-/obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(active())
-		var/obj/item/card/id/I = W.GetIdCard()
-		if(I && (ACCESS_HOS in I.GetAccess()))
-			om_ask(user, /datum/om/prompt/confirm/holowarrant_authorize, PROC_REF(authorize_answered), subject = W, card = I, warrant = active())
-			return TRUE
-		to_chat(user, span_warning("You don't have the access to do this!"))
-		return TRUE
-	return FALSE
+	return OP_OK
 
 //hit other people with it
 /obj/item/holowarrant/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -82,7 +82,10 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 /obj/item/holowarrant/proc/appearance_active()
 	return active() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_filled:holowarrant}")
+/// The look (the draw sweep: from its template).
+/obj/item/holowarrant/draw(datum/look/look)
+	..()
+	look.state("[appearance_active() ? "holowarrant_filled" : "holowarrant"]")
 
 // show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 
@@ -90,10 +93,8 @@ APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_fille
 	name = "holowarrant devices"
 	desc = "A box of holowarrant displays for security use."
 
-/obj/item/storage/box/holowarrants/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 3)
-		new /obj/item/holowarrant(src) // addition ends
+CAPABILITIES(/obj/item/storage/box/holowarrants)
+	initial_contents(/obj/item/holowarrant, count = 4)
 
 /// Relation view: active (reads null once it is gone).
 /obj/item/holowarrant/proc/active() as /datum/data/record/warrant

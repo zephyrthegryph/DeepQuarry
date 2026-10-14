@@ -9,12 +9,12 @@
 	var/bench_a = 0
 	var/bench_noise = 0
 
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_a, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_noise, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_a)
+TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_noise)
 
 /obj/machinery/dx_deps_bench_legacy/draw(datum/look/look)
 	..()
-	// ALLOW(derived_reads): the undeclared type is the baseline this scenario measures
+	// The undeclared type is the baseline this scenario measures
 	look.state("deps_[bench_a % 4]")
 
 /// The same draw(), with its read declared.
@@ -64,4 +64,4 @@ TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_noise, CHANGE_MACHINE_SETTING
 	metric("exact_read_write_ms", write_rounds(exact, rounds, FALSE), "ms")
 	count_metric("exact_read_refreshes", GLOB.refresh_bench_drained - drained, "refreshes")
 	for(var/obj/machinery/dx_deps_bench_legacy/M as anything in legacy + exact)
-		qdel(M) // ALLOW(lifecycle): the benchmark deletes the machines it made
+		qdel(M)

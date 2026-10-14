@@ -1,0 +1,44 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
++0 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.power human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Secure
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Secure
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Modify
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.power human|/obj/item/stack/cable_coil
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/card/id
++0 menu: Move To Top
++1 menu: Read ID Card (refused: You can't do that.)
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/storage/part_replacer
++0 menu: Empty contents
++1 menu: Move To Top
++3 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
+wires: Zap
+keys: buckle, cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, modify, part_replacement.replace, robot_remote_blocked, silicon_hand

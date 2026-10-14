@@ -1,0 +1,20 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.material human|/obj/item/tool/screwdriver
+-menu: Use screwdriver
+-click: Click: Plate item
++3 click: Click: Repair
+@obj.item.material human|/obj/item/tool/crowbar
+@obj.item.material human|/obj/item/tool/wrench
+@obj.item.material human|/obj/item/tool/wirecutters
+@obj.item.material human|/obj/item/multitool
+@obj.item.material human|/obj/item/weldingtool
+@obj.item.material human|/obj/item/stack/cable_coil
+@obj.item.material human|/obj/item/stack/material/steel
+@obj.item.material human|/obj/item/card/id
+@obj.item.material human|/obj/item/kit
+@obj.item.material human|/obj/item/storage
+@obj.item.material human|/obj/item
+keys: collect_item, compact, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, smash, toggle_digestable

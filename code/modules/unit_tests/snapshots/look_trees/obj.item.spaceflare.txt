@@ -1,0 +1,5 @@
+/obj/item/spaceflare icon: icons/obj/device.dmi
+/obj/item/spaceflare state: bluflare
+/obj/item/spaceflare dir: 2
+/obj/item/spaceflare overlay: icons/obj/device.dmi:bluflare:8:#000000
+

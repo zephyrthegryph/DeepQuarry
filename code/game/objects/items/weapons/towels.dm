@@ -2,35 +2,38 @@
 	name = "towel"
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "towel"
-	slot_flags = SLOT_HEAD | SLOT_BELT | SLOT_OCLOTHING
-	force = 3.0
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("whipped")
-	hitsound = SFX_WEAPONS_TOWELWHIP
 	desc = "A soft cotton towel."
-	drop_sound = SFX_ITEMS_DROP_CLOTH
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 /obj/item/towel/equipped(M, slot)
 	..()
 	switch(slot)
 		if(SLOT_ID_HEAD)
-			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi')
+			set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi'))
 		if(SLOT_ID_SUIT)
-			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi')
+			set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi'))
 		if(SLOT_ID_BELT)
-			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi')
+			set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi'))
 
-DECLARE_INTERACTIONS(/obj/item/towel, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/towel)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_BELT | SLOT_OCLOTHING))
+	configure(item_combat(force = 3.0, attack_verbs = list("whipped")))
+	configure(item_sounds(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
+	op("wipe", in_hand(), label("Towel yourself off"), then(PROC_REF(toweled_off)))
 
-/// Old attack_self.
-/obj/item/towel/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The towel keeps the same wiping effect on its actual actor.
+/obj/item/towel/proc/toweled_off(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
 	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
-	if(user.fire_stacks > 0)
+	if(fire_stacks_of(user) > 0)
 		user.adjust_fire_stacks(-1.5)
-	return TRUE
+	return OP_OK
 
-/obj/item/towel/random/Initialize(mapload)
-	. = ..()
-	color = get_random_colour()
+CAPABILITIES(/obj/item/towel/random)
+	rolls(nameof(color), PROC_REF(roll_color))
+
+/// Rolled before init (rolls()): any colour (get_random_colour()'s distribution).
+/obj/item/towel/random/proc/roll_color(datum/roller/R)
+	return R.hex_colour()
+

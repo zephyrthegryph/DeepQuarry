@@ -1,0 +1,5 @@
+/obj/item/smallDelivery icon: icons/obj/storage_vr.dmi
+/obj/item/smallDelivery state: deliverycrate3
+/obj/item/smallDelivery dir: 2
+/obj/item/smallDelivery overlay: icons/obj/storage_vr.dmi:deliverycrate3:8:#000000
+

@@ -10,10 +10,10 @@
 	var/crushing = TRUE
 	var/admin_spawned = FALSE
 
-MAP_RESOLVER(/obj/effect/falling_effect, GLOBAL_PROC_REF(resolve_falling_effect))
-MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_type")
+CAPABILITIES(/obj/effect/falling_effect)
+	map_resolver(GLOBAL_PROC_REF(resolve_falling_effect), vars = list("admin_spawned", "crushing", "falling_type"))
 
-/// MAP_RESOLVER for falling effects (mapped, or `new` at runtime): drops its falling_type.
+/// The map resolver of falling effects (mapped, or `new` at runtime): drops its falling_type.
 /proc/resolve_falling_effect(atom/loc, path, list/varedits)
 	var/obj/effect/falling_effect/P = path
 	drop_from_sky(get_turf(loc), MAP_VAR(P, varedits, falling_type), MAP_VAR(P, varedits, crushing), MAP_VAR(P, varedits, admin_spawned))
@@ -38,11 +38,11 @@ MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_ty
 	dropped.pixel_x = rand(-150, 150)
 	dropped.pixel_y = 500 // When you think that pixel_z is height but you are wrong
 	dropped.set_density(FALSE)
-	dropped.opacity = FALSE
+	dropped.set_opacity(FALSE)
 	if(admin_spawned)
 		dropped.flags |= ADMIN_SPAWNED
 	animate(dropped, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-	om_after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), crushing)
+	after(dropped, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable,end_fall), with = list(crushing))
 
 /atom/movable/proc/end_fall(crushing = FALSE)
 	if(isliving(src))
@@ -62,7 +62,7 @@ MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_ty
 
 	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
 	set_density(initial(density))
-	opacity = initial(opacity)
+	set_opacity(initial(opacity))
 	plane = initial(plane)
 
 /obj/effect/falling_effect/singularity_act()

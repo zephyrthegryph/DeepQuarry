@@ -20,6 +20,16 @@
 /*
  * Library Public Computer
  */
+CAPABILITIES(/obj/machinery/librarypubliccomp)
+	op("search", ui_act(), then(PROC_REF(ui_act_search)))
+	op("back", ui_act(), then(PROC_REF(ui_act_back)))
+	interface("LibraryVisitor", title = "Library Visitor")
+	without("ui_open")
+	op("settitle", ui_act("settitle"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter a title to search for:"), step = "value"), then(PROC_REF(ui_act_settitle)))
+	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_search_category, fields = list("question" = "Choose a category to search for:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
+	op("setauthor", ui_act("setauthor"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter an author to search for:"), step = "value"), then(PROC_REF(ui_act_setauthor)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+
 /obj/machinery/librarypubliccomp
 	name = "visitor computer"
 	icon = 'icons/obj/library.dmi'
@@ -36,28 +46,23 @@
 
 // TGUI migration. attack_hand opens LibraryVisitor.tsx;
 // filter prompts and search execution move to tgui_act.
-/obj/machinery/librarypubliccomp/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui,
-	)
-	..()
 
-/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui
-	id = "librarypubliccomp_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl
-
-/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/librarypubliccomp, "LibraryVisitor", UI_TITLE("Library Visitor"))
+/obj/machinery/librarypubliccomp/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screenstate"] = screenstate
+	var/list/merged_1 = ui_data_obj_machinery_librarypubliccomp(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/machinery/librarypubliccomp, "screenstate:num", "merge:ui_data_obj_machinery_librarypubliccomp{title:bool,category:bool,author:bool,has_db:unknown,has_query:bool,results:bool}")
-
-/// The computed part of /obj/machinery/librarypubliccomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarypubliccomp's window data.
 /obj/machinery/librarypubliccomp/proc/ui_data_obj_machinery_librarypubliccomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["title"] = title || ""
@@ -68,66 +73,48 @@ UI_DATA_REPLACE(/obj/machinery/librarypubliccomp, "screenstate:num", "merge:ui_d
 	data["results"] = last_results || list()
 	return data
 
-UI_ACT(/obj/machinery/librarypubliccomp, "settitle", ui_act_settitle)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_settitle)
-	var/newtitle = act_ask(usr, action, params, ui, "k79", /datum/om/prompt/text, message = "Enter a title to search for:")
-	if(isnull(newtitle))
-		return
-	if(newtitle)
-		title = newtitle
+/obj/machinery/librarypubliccomp/proc/ui_act_settitle(datum/act/op/A)
+	apply_search_answer("settitle", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "setcategory", ui_act_setcategory)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_setcategory)
-	var/newcategory = act_ask(usr, action, params, ui, "k84", /datum/om/prompt/choice, message = "Choose a category to search for:", title = "Category", choices = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
-	if(isnull(newcategory))
-		return
-	if(!newcategory)
-		newcategory = "Any"
-	category = newcategory
+/obj/machinery/librarypubliccomp/proc/ui_act_setcategory(datum/act/op/A)
+	apply_search_answer("setcategory", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "setauthor", ui_act_setauthor)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_setauthor)
-	var/newauthor = act_ask(usr, action, params, ui, "k90", /datum/om/prompt/text, message = "Enter an author to search for:")
-	if(isnull(newauthor))
-		return
-	if(newauthor)
-		author = newauthor
+/obj/machinery/librarypubliccomp/proc/ui_act_setauthor(datum/act/op/A)
+	apply_search_answer("setauthor", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "search", ui_act_search)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_search)
+/obj/machinery/librarypubliccomp/proc/ui_act_search(datum/act/op/A)
+	var/mob/user = A.actor
 	last_results = list()
 	if(SSdbcore.IsConnected())
 		// category == "Any" means no category filter; both branches use
 		// LIKE parameters so user-supplied title/author cannot inject SQL.
-		// om_io: the results fill in when they arrive.
+		// io_job: the results fill in when they arrive.
 		if(category == "Any")
-			om_sql_view(src, "search",
+			sql_view(src, "search",
 				"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat",
 				list("author_pat" = "%[author]%", "title_pat" = "%[title]%"),
 				PROC_REF(sql_rows_arrived)
 			)
 		else
-			om_sql_view(src, "search",
+			sql_view(src, "search",
 				"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat AND category = :category",
 				list("author_pat" = "%[author]%", "title_pat" = "%[title]%", "category" = category),
 				PROC_REF(sql_rows_arrived)
 			)
 	SQLquery = null // cleared after search — no longer holds interpolated SQL
 	screenstate = 1
-	add_fingerprint(usr)
-	return TRUE
+	add_fingerprint(user)
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarypubliccomp, "back", ui_act_back)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
+/obj/machinery/librarypubliccomp/proc/ui_act_back(datum/act/op/A)
 	screenstate = 0
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	last_results = list()
 	for(var/list/row as anything in rows)
 		last_results += list(list(
@@ -166,9 +153,7 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
 
-	var/static/list/all_books
-
-	var/static/list/base_genre_books
+	var/list/all_books
 
 	// TGUI: TRUE when the admin ghost view is active. Toggles the
 	// External Archive table to show Delete buttons.
@@ -176,36 +161,59 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 	/// The External Archive's rows (refresh_external(): they arrive after it is asked).
 	var/list/external_rows
 
-/obj/machinery/librarycomp/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/librarycomp)
+	per_type(nameof(all_books), PROC_REF(build_all_books))
+	owns_many(nameof(checkouts))
+	op("print_bible", ui_act(), then(PROC_REF(ui_act_print_bible)))
+	op("arccheckout", ui_act(), then(PROC_REF(ui_act_arccheckout)))
+	op("increasetime", ui_act(), then(PROC_REF(ui_act_increasetime)))
+	op("decreasetime", ui_act(), then(PROC_REF(ui_act_decreasetime)))
+	op("checkout", ui_act(), then(PROC_REF(ui_act_checkout)))
+	interface("LibraryComp", title = "Book Inventory Management")
+	without("ui_open")
+	op("switchscreen", ui_act("switchscreen", arg("screen", num())), then(PROC_REF(ui_act_switchscreen)))
+	op("editbook", ui_act("editbook"), asks(/datum/prompt/text/library_catalogue/book, fields = list("question" = "Enter the book's title:"), step = "value"), then(PROC_REF(ui_act_editbook)))
+	op("editmob", ui_act("editmob"), asks(/datum/prompt/text/library_catalogue/recipient, fields = list("question" = "Enter the recipient's name:"), step = "value"), then(PROC_REF(ui_act_editmob)))
+	op("checkin", ui_act("checkin", arg("ref", schema_ref(/datum/borrowbook))), then(PROC_REF(ui_act_checkin)))
+	op("delbook", ui_act("delbook", arg("ref", schema_ref(/obj/item/book))), then(PROC_REF(ui_act_delbook)))
+	op("setauthor", ui_act("setauthor"), asks(/datum/prompt/text/library_catalogue/author, fields = list("question" = "Enter the author's name:"), step = "value"), then(PROC_REF(ui_act_setauthor)))
+	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_catalogue_category, fields = list("question" = "Choose a category:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
+	op("upload", ui_act("upload"), asks(/datum/prompt/choice/library_upload, step = "confirm"), then(PROC_REF(ui_act_upload)))
+	op("targetid", ui_act("targetid", arg("id", num())), then(PROC_REF(ui_act_targetid)))
+	op("delid", ui_act("delid", arg("id", num())), then(PROC_REF(ui_act_delid)))
+	op("orderbyid", ui_act("orderbyid"), asks(/datum/prompt/number/library_order_id, step = "id"), then(PROC_REF(ui_act_orderbyid)))
+	op("sort", ui_act("sort", arg("field", schema_text(4096))), then(PROC_REF(ui_act_sort)))
+	op("hardprint", ui_act("hardprint", arg("path", schema_path(/datum))), then(PROC_REF(ui_act_hardprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("librarycomp_ghost_admin_view", observer(), label("Admin view"), then(PROC_REF(librarycomp_ghost_admin_view)))
+	op("librarycomp_link_scanner", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 1), label("Link scanner"), then(PROC_REF(interaction_link_scanner)))
+	op("librarycomp_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
-	if(!base_genre_books || !base_genre_books.len)
-		base_genre_books = list(
-			/obj/item/book/custom_library/fiction,
-			/obj/item/book/custom_library/nonfiction,
-			/obj/item/book/custom_library/reference,
-			/obj/item/book/custom_library/religious,
-			/obj/item/book/bundle/custom_library/fiction,
-			/obj/item/book/bundle/custom_library/nonfiction,
-			/obj/item/book/bundle/custom_library/reference,
-			/obj/item/book/bundle/custom_library/religious
-			)
+/// The genre books every custom library book descends from: they are not archived themselves.
+TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
+	/obj/item/book/custom_library/fiction,
+	/obj/item/book/custom_library/nonfiction,
+	/obj/item/book/custom_library/reference,
+	/obj/item/book/custom_library/religious,
+	/obj/item/book/bundle/custom_library/fiction,
+	/obj/item/book/bundle/custom_library/nonfiction,
+	/obj/item/book/bundle/custom_library/reference,
+	/obj/item/book/bundle/custom_library/religious))
 
-	if(!length(all_books))
-		// A static archive of plain data rows (name -> row), read from the type defaults: no book is
-		// instantiated and no library computer holds book instances.
-		all_books = list()
-		for(var/path in subtypesof(/obj/item/book/codex/lore))
-			var/obj/item/book/C = path
-			all_books[initial(C.name)] = library_archive_row(path)
-
-		for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
-			var/obj/item/book/B = path
-			all_books[initial(B.title)] = library_archive_row(path)
-
-		for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
-			var/obj/item/book/M = path
-			all_books[initial(M.title)] = library_archive_row(path)
+/// The internal archive (per_type()): plain data rows (name -> row) read from the book types' defaults; no book is instantiated and no library
+/// computer holds book instances.
+/obj/machinery/librarycomp/proc/build_all_books()
+	. = list()
+	var/list/base_genre_books = TYPE_TABLE_GET(src, library_base_genres)
+	for(var/path in subtypesof(/obj/item/book/codex/lore))
+		var/obj/item/book/C = path
+		.[initial(C.name)] = library_archive_row(path)
+	for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
+		var/obj/item/book/B = path
+		.[initial(B.title)] = library_archive_row(path)
+	for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
+		var/obj/item/book/M = path
+		.[initial(M.title)] = library_archive_row(path)
 
 /// One internal-archive row for the UI: plain data from the book type's defaults.
 /obj/machinery/librarycomp/proc/library_archive_row(book_path)
@@ -220,61 +228,37 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
 // move to tgui_data + tgui_act.
-/obj/machinery/librarycomp/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Admin view", PROC_REF(librarycomp_ghost_admin_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/librarycomp_link_scanner,
-		/datum/interaction/machine_hand/ungated/librarycomp_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/librarycomp_link_scanner
-	id = "librarycomp_link_scanner"
-	name = "Link scanner"
-	held_type = /obj/item/barcodescanner
-	effect = /obj/machinery/librarycomp/proc/interaction_link_scanner
-
-/obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/barcodescanner/scanner = held
+/obj/machinery/librarycomp/proc/interaction_link_scanner(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/barcodescanner/scanner = A.held
 	rel_set(scanner, nameof(scanner.computer), src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/librarycomp_open_ui
-	id = "librarycomp_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarycomp/proc/interaction_open_ui_impl
-
-/obj/machinery/librarycomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarycomp/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	is_admin_view = FALSE
 	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/librarycomp, "LibraryComp", UI_TITLE("Book Inventory Management"))
+	return OP_OK
 
 /obj/machinery/librarycomp/tgui_state(mob/user)
 	if(is_admin_view)
 		return GLOB.tgui_always_state
 	return ..()
 
-/// Fetches the External Archive listing (om_io); tgui_data shows it when it arrives.
+/// Fetches the External Archive listing (io_job); tgui_data shows it when it arrives.
 /obj/machinery/librarycomp/proc/refresh_external()
 	if(!SSdbcore.IsConnected())
 		return
 	// sortby is mapped to a fixed column literal at the query site, so ORDER BY
 	// can never be injected even if the whitelist in tgui_act is ever bypassed.
-	om_sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
+	sql_view(src, "external", "SELECT id, author, title, category FROM library ORDER BY [safe_sortby_column()]", PROC_REF(sql_rows_arrived))
 
 /obj/machinery/librarycomp/proc/sql_rows_arrived(list/result, error, key)
-	var/list/rows = om_sql_view_rows(result, error, key, src)
+	var/list/rows = sql_view_rows(result, error, key, src)
 	external_rows = rows
 	SStgui.update_uis(src)
 
@@ -290,12 +274,22 @@ DECLARE_UI(/obj/machinery/librarycomp, "LibraryComp", UI_TITLE("Book Inventory M
 		else
 			return "author"
 
-UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=checkoutperiod:num", "sort_by=sortby:text", "upload_category:text", "merge:ui_data_obj_machinery_librarycomp{emagged:bool,is_admin:bool,buffer_book:bool,buffer_mob:bool,world_time_min:num,has_db:unknown,has_scanner:bool,scanner_cache:list,inventory:list,checkouts:list,internal_archive:list,external_archive:list}")
+/obj/machinery/librarycomp/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screenstate"] = screenstate
+	data["checkout_period"] = checkoutperiod
+	data["sort_by"] = sortby
+	data["upload_category"] = upload_category
+	var/list/merged_1 = ui_data_obj_machinery_librarycomp(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/librarycomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarycomp's window data.
 /obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["emagged"] = !!emagged
+	data["emagged"] = !!emagged()
 	data["is_admin"] = !!is_admin_view
 	data["buffer_book"] = buffer_book || ""
 	data["buffer_mob"] = buffer_mob || ""
@@ -349,191 +343,163 @@ UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=
 	data["external_archive"] = external
 	return data
 
-UI_ACT(/obj/machinery/librarycomp, "switchscreen", ui_act_switchscreen, UI_ARG_NUM("screen"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_switchscreen)
-	screenstate = params["screen"]
+/obj/machinery/librarycomp/proc/ui_act_switchscreen(datum/act/op/A, screen)
+	screenstate = screen
 	if(screenstate == 8)
 		refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "print_bible", ui_act_print_bible)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_print_bible)
+/obj/machinery/librarycomp/proc/ui_act_print_bible(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, print_cooldown))
 		new /obj/item/storage/bible(src.loc)
 		COOLDOWN_START(src, print_cooldown, 6 SECONDS)
 	else
 		for(var/mob/V in hearers(src))
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Bible printer currently unavailable, please wait a moment.\""))
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "arccheckout", ui_act_arccheckout)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_arccheckout)
-	if(emagged)
+/obj/machinery/librarycomp/proc/ui_act_arccheckout(datum/act/op/A)
+	var/mob/user = A.actor
+	if(emagged())
 		arcanecheckout = 1
 		if(arcanecheckout)
 			new /obj/item/book/tome(src.loc)
-			to_chat(usr, span_warning("Your sanity barely endures the seconds spent in the vault's browsing window. The only thing to remind you of this when you stop browsing is a dusty old tome sitting on the desk. You don't really remember printing it."))
-			act_message(usr, null, MSG_SELF(2), \
+			to_chat(user, span_warning("Your sanity barely endures the seconds spent in the vault's browsing window. The only thing to remind you of this when you stop browsing is a dusty old tome sitting on the desk. You don't really remember printing it."))
+			act_message(user, null, MSG_SELF(2), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " stares at the blank screen for a few moments, %THEIR% expression frozen in fear. When %THEY% finally awaken from it, %THEY% look a lot older.")))
 			arcanecheckout = 0
 	screenstate = 0
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "increasetime", ui_act_increasetime)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_increasetime)
+/obj/machinery/librarycomp/proc/ui_act_increasetime(datum/act/op/A)
 	checkoutperiod += 1
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "decreasetime", ui_act_decreasetime)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_decreasetime)
+/obj/machinery/librarycomp/proc/ui_act_decreasetime(datum/act/op/A)
 	checkoutperiod -= 1
 	if(checkoutperiod < 1)
 		checkoutperiod = 1
+	return OP_OK
+
+/obj/machinery/librarycomp/proc/ui_act_editbook(datum/act/op/A)
+	apply_catalogue_answer("editbook", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "editbook", ui_act_editbook)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editbook)
-	var/_answer_k357 = act_ask(usr, action, params, ui, "k357", /datum/om/prompt/text, message = "Enter the book's title:", encode = FALSE)
-	if(isnull(_answer_k357))
-		return
-	buffer_book = sanitizeSafe(_answer_k357)
+/obj/machinery/librarycomp/proc/ui_act_editmob(datum/act/op/A)
+	apply_catalogue_answer("editmob", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "editmob", ui_act_editmob)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editmob)
-	var/_answer_k360 = act_ask(usr, action, params, ui, "k360", /datum/om/prompt/text, message = "Enter the recipient's name:", max_length = MAX_NAME_LEN)
-	if(isnull(_answer_k360))
-		return
-	buffer_mob = _answer_k360
-	return TRUE
-
-UI_ACT(/obj/machinery/librarycomp, "checkout", ui_act_checkout)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkout)
+/obj/machinery/librarycomp/proc/ui_act_checkout(datum/act/op/A)
 	var/datum/borrowbook/b = new
 	b.bookname = sanitizeSafe(buffer_book)
 	b.mobname = sanitize(buffer_mob)
 	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
-	own_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
-	return TRUE
+	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "checkin", ui_act_checkin, UI_ARG_REF("ref", null, /datum/borrowbook))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkin)
-	var/datum/borrowbook/b = params["ref"]
+/obj/machinery/librarycomp/proc/ui_act_checkin(datum/act/op/A, ref)
+	var/datum/borrowbook/b = ref
 	if(b)
-		own_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
+		rel_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "delbook", ui_act_delbook, UI_ARG_REF("ref", null, /obj/item/book))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delbook)
-	var/obj/item/book/b = params["ref"]
+/obj/machinery/librarycomp/proc/ui_act_delbook(datum/act/op/A, ref)
+	var/obj/item/book/b = ref
 	if(b)
 		rel_remove(src, nameof(/obj/machinery/librarycomp::inventory), b)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "setauthor", ui_act_setauthor)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_setauthor)
-	var/newauthor = act_ask(usr, action, params, ui, "k381", /datum/om/prompt/text, message = "Enter the author's name:")
-	if(isnull(newauthor))
-		return
-	if(newauthor && scanner()?.cache())
-		scanner().cache().author = newauthor
+/obj/machinery/librarycomp/proc/ui_act_setauthor(datum/act/op/A)
+	apply_catalogue_answer("setauthor", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "setcategory", ui_act_setcategory)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_setcategory)
-	var/newcategory = act_ask(usr, action, params, ui, "k386", /datum/om/prompt/choice, message = "Choose a category:", title = "Category", choices = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
-	if(isnull(newcategory))
-		return
-	if(newcategory)
-		upload_category = newcategory
+/obj/machinery/librarycomp/proc/ui_act_setcategory(datum/act/op/A)
+	apply_catalogue_answer("setcategory", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "upload", ui_act_upload)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_upload)
+/obj/machinery/librarycomp/proc/ui_act_upload(datum/act/op/A)
+	return library_upload_stage(A.actor, A.step_value("confirm"))
+
+/obj/machinery/librarycomp/proc/library_upload_stage(mob/user, choice)
 	if(!scanner()?.cache())
 		return TRUE
-	var/choice = act_ask(usr, action, params, ui, "k393", /datum/om/prompt/choice/alert, message = "Are you certain you wish to upload this title to the Archive?", title = "Confirmation", choices = list("Confirm", "Abort"))
-	if(isnull(choice))
-		return
 	if(choice != "Confirm")
 		return TRUE
 	if(scanner().cache().unique)
-		tgui_alert_async(usr, "This book has been rejected from the database. Aborting!")
+		tgui_alert_async(user, "This book has been rejected from the database. Aborting!")
 		return TRUE
 	if(!SSdbcore.IsConnected())
-		tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
+		tgui_alert_async(user, "Connection to Archive has been severed. Aborting.")
 		return TRUE
-	// om_io: the uploader hears back when the archive answers.
-	om_io(src, /datum/om/io/sql,
+	// io_job: the uploader hears back when the archive answers.
+	io_job(src, /datum/io_backend/sql,
 		"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
 		list("author" = scanner().cache().author, "title" = scanner().cache().name, "content" = scanner().cache().dat, "category" = upload_category),
-		PROC_REF(upload_done), usr.ckey, "[usr.name]/[usr.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
+		PROC_REF(upload_done), user.ckey, "[user.name]/[user.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "targetid", ui_act_targetid, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
-	var/numeric_id = params["id"]
+/obj/machinery/librarycomp/proc/ui_act_targetid(datum/act/op/A, id)
+	var/mob/user = A.actor
+	return order_library_id(user, id)
+
+/obj/machinery/librarycomp/proc/order_library_id(mob/user, numeric_id)
 	// Validate that the id is a positive integer before querying.
 	if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
 		return TRUE
 	if(!SSdbcore.IsConnected())
-		tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
+		tgui_alert_async(user, "Connection to Archive has been severed. Aborting.")
 		return TRUE
 	if(!COOLDOWN_FINISHED(src, print_cooldown))
 		for(var/mob/V in hearers(src))
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 		return TRUE
-	COOLDOWN_START(src, print_cooldown, 6)
-	om_io(src, /datum/om/io/sql,
+	COOLDOWN_START(src, print_cooldown, 0.6 SECONDS)
+	io_job(src, /datum/io_backend/sql,
 		"SELECT id, author, title, content FROM library WHERE id = :id",
 		list("id" = numeric_id),
 		PROC_REF(print_book_arrived))
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "delid", ui_act_delid, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delid)
-	if(!check_rights(R_ADMIN))
+/obj/machinery/librarycomp/proc/ui_act_delid(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!admin_require(A.actor?.client, R_ADMIN, "ui_act_delid", TRUE))
 		return TRUE
-	var/numeric_id = params["id"]
+	var/numeric_id = id
 	// Validate that the id is a positive integer before deleting.
 	if(!isnum(numeric_id) || numeric_id <= 0 || round(numeric_id) != numeric_id)
 		return TRUE
 	if(!SSdbcore.IsConnected())
-		tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
+		tgui_alert_async(user, "Connection to Archive has been severed. Aborting.")
 		return TRUE
-	om_sql_write("DELETE FROM library WHERE id = :id", list("id" = numeric_id))
-	log_admin("[usr.key] has deleted library book id=[numeric_id]")
+	sql_write("DELETE FROM library WHERE id = :id", list("id" = numeric_id))
+	log_admin("[user.key] has deleted library book id=[numeric_id]")
 	refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "orderbyid", ui_act_orderbyid)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_orderbyid)
-	var/orderid = act_ask(usr, action, params, ui, "k468", /datum/om/prompt/number, message = "Enter your order:")
-	if(isnull(orderid))
-		return
-	if(orderid && isnum(orderid))
-		tgui_act("targetid", list("id" = "[orderid]"), ui, state)
+/obj/machinery/librarycomp/proc/ui_act_orderbyid(datum/act/op/A)
+	var/mob/user = A.actor
+	var/orderid = A.step_value("id")
+	if(isnum(orderid))
+		order_library_id(user, orderid)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "sort", ui_act_sort, UI_ARG_TEXT("field"))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_sort)
-	var/field = params["field"]
+/obj/machinery/librarycomp/proc/ui_act_sort(datum/act/op/A, field_arg)
+	var/field = field_arg
 	if(field in list("author", "title", "category"))
 		sortby = field
 		refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "hardprint", ui_act_hardprint, UI_ARG_PATH("path", /datum))
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_hardprint)
-	var/newpath = params["path"]
+/obj/machinery/librarycomp/proc/ui_act_hardprint(datum/act/op/A, path)
+	var/newpath = path
 	if(!ispath(newpath, /obj/item/book))
 		return TRUE
 	var/obj/item/book/NewBook = new newpath(get_turf(src))
 	NewBook.name = "Book: [NewBook.name]"
 	return TRUE
 
-/// om_io() callback: tells the uploader how the upload went.
+/// io_job() callback: tells the uploader how the upload went.
 /obj/machinery/librarycomp/proc/upload_done(list/result, error, uploader_ckey, log_line)
 	var/client/C = GLOB.directory[uploader_ckey]
 	if(error)
@@ -544,7 +510,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_hardprint)
 	if(C)
 		tgui_alert_async(C.mob, "Upload Complete.")
 
-/// om_io() callback: prints the ordered book, if the archive had it.
+/// io_job() callback: prints the ordered book, if the archive had it.
 /obj/machinery/librarycomp/proc/print_book_arrived(list/result, error)
 	var/list/rows = result?["rows"]
 	if(!length(rows))
@@ -556,28 +522,29 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_hardprint)
 	B.title = book_title
 	B.author = row[2]
 	B.dat = row[4]
-	B.icon_state = "book[rand(1,16)]"
-	B.item_state = B.icon_state
+	B.set_icon_state("book[rand(1,16)]")
+	B.set_item_state(B.icon_state)
 	visible_message("[src]'s printer hums as it produces a completely bound book. How did it do that?")
 
 // admin ghost view routes to LibraryComp.tsx with is_admin_view
 // set; non-admin ghosts fall through to default handling.
 /// Old attack_ghost: admins get the admin view; other ghosts the default.
-/obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!check_rights(R_ADMIN, show_msg = FALSE))
-		return FALSE
+/obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!admin_require(user.client, R_ADMIN, "librarycomp_ghost_admin_view", FALSE))
+		return OP_DECLINE
 	user.set_machine(src)
 	is_admin_view = TRUE
 	screenstate = 8
 	refresh_external()
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
-/obj/machinery/librarycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (src.density && !src.emagged)
+/obj/machinery/librarycomp/proc/on_emag(datum/act/op/A)
+	if (src.density && !src.emagged())
 		set_emagged(1)
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Library Scanner
@@ -591,43 +558,32 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
 	density = TRUE
 	var/tmp/obj/item/book/cache	// Last scanned book
 
-/obj/machinery/libraryscanner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/libraryscanner_insert_book,
-		/datum/interaction/machine_hand/ungated/libraryscanner_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/libraryscanner_insert_book
-	id = "libraryscanner_insert_book"
-	name = "Insert book"
-	held_type = /obj/item/book
-	effect = /obj/machinery/libraryscanner/proc/interaction_insert_book
-
-/obj/machinery/libraryscanner/proc/interaction_insert_book(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/proc/interaction_insert_book(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.drop_item()
 	held.forceMove(src)
 	return TRUE
 
 // TGUI migration. attack_hand opens LibraryScanner.tsx;
 // scan/clear/eject move to tgui_act.
-/datum/interaction/machine_hand/ungated/libraryscanner_open_ui
-	id = "libraryscanner_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui_impl
-
-/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/libraryscanner, "LibraryScanner", UI_TITLE("Scanner"))
+CAPABILITIES(/obj/machinery/libraryscanner)
+	interface("LibraryScanner", title = "Scanner")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("insert_book", item(/obj/item/book), priority(OP_PRIORITY_DEFAULT - 1), label("Insert book"), then(PROC_REF(interaction_insert_book)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
-UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libraryscanner{has_cache:bool,cache_name:text,has_book:bool}")
-
-/// The computed part of /obj/machinery/libraryscanner's window data (declared on its UI_DATA row).
-/obj/machinery/libraryscanner/proc/ui_data_obj_machinery_libraryscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/libraryscanner's window data.
+/obj/machinery/libraryscanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_cache"] = !!cache()
 	data["cache_name"] = cache() ? cache().name : ""
@@ -638,27 +594,24 @@ UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libr
 	data["has_book"] = has_book
 	return data
 
-UI_ACT(/obj/machinery/libraryscanner, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_scan)
+/obj/machinery/libraryscanner/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
-		rel_set(src, nameof(/datum/om/edge::cache), B)
+	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		rel_set(src, nameof(src.cache), B)
 		break
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/libraryscanner, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_clear)
-	rel_clear(src, nameof(/datum/om/edge::cache))
+/obj/machinery/libraryscanner/proc/ui_act_clear(datum/act/op/A)
+	rel_clear(src, nameof(src.cache))
 	return TRUE
 
-UI_ACT(/obj/machinery/libraryscanner, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
+/obj/machinery/libraryscanner/proc/ui_act_eject(datum/act/op/A)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/book/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		B.forceMove(src.loc)
 	return TRUE
-
 
 /*
  * Book binder
@@ -671,46 +624,40 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 	anchored = TRUE
 	density = TRUE
 
-/obj/machinery/bookbinder/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/bookbinder)
+	climb()
+	op("bind", inputs(item(/obj/item/paper), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Bind"), then(PROC_REF(interaction_bind)))
 
-/obj/machinery/bookbinder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/bookbinder_bind,
-	)
-	..()
-
-/datum/interaction/machine_item/bookbinder_bind
-	id = "bookbinder_bind"
-	name = "Bind"
-	held_type = list(/obj/item/paper, /obj/item/paper_bundle)
-	effect = /obj/machinery/bookbinder/proc/interaction_bind
-
-/obj/machinery/bookbinder/proc/interaction_bind(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/bookbinder/proc/interaction_bind(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/paper))
 		user.drop_item()
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		om_after(src, rand(200,400), PROC_REF(bind_paper), held)
+		after(src, rand(20 SECONDS, 40 SECONDS), PROC_REF(bind_paper), with = list(held))
 	else
 		user.drop_item()
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		om_after(src, rand(300,500), PROC_REF(bind_bundle), held)
-	return TRUE
+		after(src, rand(30 SECONDS, 50 SECONDS), PROC_REF(bind_bundle), with = list(held))
+	return OP_OK
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)
+	if(!source_paper)
+		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/b = new(src.loc)
 	b.dat = source_paper.info
 	b.name = "Print Job #" + "[rand(100, 999)]"
-	b.icon_state = "book[rand(1,7)]"
-	qdel(source_paper)
+	b.set_icon_state("book[rand(1,7)]")
+	consumed(source_paper, src)
 
 /obj/machinery/bookbinder/proc/bind_bundle(obj/item/paper_bundle/source_bundle)
+	if(!source_bundle)
+		return
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/bundle/b = new(src.loc)
 	b.pages = source_bundle.pages
@@ -719,8 +666,8 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 	for(var/obj/item/photo/P in contents_of(source_bundle))
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
-	b.icon_state = "book[rand(1,7)]"
-	qdel(source_bundle)
+	b.set_icon_state("book[rand(1,7)]")
+	consumed(source_bundle, src)
 
 /// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
@@ -729,3 +676,70 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 /// Last scanned book (a relation view: null once that is deleted).
 /obj/machinery/libraryscanner/proc/cache() as /obj/item/book
 	return cache
+
+/obj/machinery/librarycomp/proc/apply_catalogue_answer(selected_action, value)
+	switch(selected_action)
+		if("editbook")
+			buffer_book = sanitizeSafe(value)
+		if("editmob")
+			buffer_mob = value
+		if("setauthor")
+			if(value && scanner()?.cache())
+				scanner().cache().author = value
+		if("setcategory")
+			if(value)
+				upload_category = value
+
+/datum/prompt/text/library_catalogue
+	timeout = 0
+
+/datum/prompt/text/library_catalogue/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/library_catalogue/book
+	encode = FALSE
+
+/datum/prompt/text/library_catalogue/recipient
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+
+/datum/prompt/text/library_catalogue/recipient/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/library_catalogue/author
+
+/datum/prompt/choice/library_catalogue_category
+	choices = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion")
+	timeout = 0
+
+/obj/machinery/librarypubliccomp/proc/apply_search_answer(selected_action, value)
+	switch(selected_action)
+		if("settitle")
+			if(value)
+				title = value
+		if("setauthor")
+			if(value)
+				author = value
+		if("setcategory")
+			category = value || "Any"
+
+/datum/prompt/text/library_search_text
+	timeout = 0
+
+/datum/prompt/text/library_search_text/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/library_search_category
+	choices = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion")
+	timeout = 0
+
+/datum/prompt/choice/library_upload
+	question = "Are you certain you wish to upload this title to the Archive?"
+	title = "Confirmation"
+	choices = list("Confirm", "Abort")
+	buttons = TRUE
+	timeout = 0
+
+/datum/prompt/number/library_order_id
+	question = "Enter your order:"
+	timeout = 0

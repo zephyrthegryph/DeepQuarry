@@ -16,7 +16,6 @@
 /obj/item/gun/projectile/automatic/serdy/Initialize(mapload)
 	. = ..()
 	update_transform()
-	update_icon()
 
 /obj/item/gun/projectile/automatic/serdy/update_transform()
 	. = ..()
@@ -44,7 +43,10 @@
 	if(load_method == MAGAZINE)
 		return ammo_magazine ? "" : "-e"
 	return bolt_open ? "-e" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_state)}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/serdy/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_suffix()]")
 
 /obj/item/gun/projectile/automatic/serdy/asval
 	name = "AS-VAL"
@@ -212,13 +214,24 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_sta
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
-	serdy_hunter_verb_scope(user)
+	perform_scope_interaction(user, "serdy_hunter_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
+	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hunter_verb_scope_op)))
+
+/// The serdy_hunter_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_hunter_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)
 
 // AR Variants
 
@@ -456,13 +469,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 	one_handed_penalty = 70
 
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
-	serdy_mosin_verb_scope(user)
+	perform_scope_interaction(user, "serdy_mosin_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
+	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_mosin_verb_scope_op)))
+
+/// The serdy_mosin_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_mosin_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/type901
 	name = "Type 901 Assault rifle"
@@ -522,13 +546,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
-	serdy_awp_verb_scope(user)
+	perform_scope_interaction(user, "serdy_awp_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
+	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_awp_verb_scope_op)))
+
+/// The serdy_awp_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_awp_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
 	name = "Hectate II"
@@ -558,13 +593,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 
 
 /obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
-	serdy_hectate_verb_scope(user)
+	perform_scope_interaction(user, "serdy_hectate_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
+	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hectate_verb_scope_op)))
+
+/// The serdy_hectate_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_hectate_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/memegun
 	name = "Hardbass Special"
@@ -702,7 +748,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 	load_method = SINGLE_CASING | SPEEDLOADER
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY | LOCK_MANUAL_LOCK
 	misc_loading_flags = INTERNAL_MAG_SEPARATE
-	var/semiauto_mode = TRUE
 	w_class = ITEMSIZE_HUGE
 	one_handed_penalty = 50
 
@@ -918,27 +963,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 /*
 /obj/item/gun/projectile/automatic/serdy/kord/var/trigger_reached = FALSE
 
-/datum/om/task/timed/kord_trigger_reached
-	duration = 5 SECONDS
-	complete_proc = /obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done
-	var/atom/A
-	var/adjacent
-	var/params
-
-/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/om/task/timed/kord_trigger_reached/task)
-	var/atom/A = task.A
-	var/mob/living/user = task.actor
-	var/adjacent = task.adjacent
-	var/params = task.params
+/obj/item/gun/projectile/automatic/serdy/kord/proc/trigger_reached_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	trigger_reached = TRUE
-	afteratt(A, user, adjacent, params)
+	afteratt(A.arg("aim"), user, A.arg("adjacent"), A.arg("params"))
 	trigger_reached = FALSE
 
 /obj/item/gun/projectile/automatic/serdy/kord/afteratt(atom/A, mob/living/user, adjacent, params)
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
 		if(!trigger_reached) //Give them a chance to take it back.
-			om_task_start(/datum/om/task/timed/kord_trigger_reached, user, src, receiver = src, A = A, adjacent = adjacent, params = params)
+			// the five-second reach is an op: op("trigger_reach", ai(), takes("aim", "adjacent", "params"), wait(5 SECONDS), then(PROC_REF(trigger_reached_done)))
+			perform_op(user, src, "trigger_reach", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = A, "adjacent" = adjacent, "params" = params))
 			return
 		. = ..() //RIP
 
@@ -978,10 +1014,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 
 		if(deafening) //Very loud, ears go ouch. Should not make you permanently deaf, though.
 			H.ear_damage += 60
-			H.status_adjust(EFFECT_DEAFENED, 80)
+			H.status_adjust(STAT_DEAFENED, 80)
 
 		user.injure(INJURY_PAIN, 150, source = src) //That hurt a lot.
-		user.status_adjust(EFFECT_SLEEPING, 50) //Knocked out
+		user.status_adjust(STAT_SLEEPING, 50) //Knocked out
 		var/recoil_dir = turn(user.dir,180)
 		var/turf/target_turf = get_step(get_step(user,recoil_dir),recoil_dir)
 		user.throw_at(target_turf,3,3) //Yeet
@@ -1130,12 +1166,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/c20r/proc/appearance_mag_state()
-	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
+	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/c20r/draw(datum/look/look)
+	..()
+	look.state("c20r[appearance_mag_state()]")
 
-/obj/item/gun/projectile/automatic/c20r/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/c20r, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/c20r/update_transform()
 	. = ..()
@@ -1147,15 +1184,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_ma
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
+/obj/item/gun/projectile/automatic/sts35/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
-/obj/item/gun/projectile/automatic/sts35/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/sts35, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/sts35/update_transform()
 	. = ..()
@@ -1168,15 +1201,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(
 	icon_expected_width = 64
 
 /* //Dont need it
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/wt550/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
+/obj/item/gun/projectile/automatic/wt550/draw(datum/look/look)
+	..()
+	look.state("wt550[appearance_mag_state()]")
+	look.state(ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e")
+
 */
-/obj/item/gun/projectile/automatic/wt550/Initialize(mapload)
-	. = ..()
-	update_transform()
+TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transform, TRUE)
 
 /obj/item/gun/projectile/automatic/wt550/update_transform()
 	. = ..()
@@ -1188,15 +1219,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/z8/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/gun/projectile/automatic/z8/draw(datum/look/look)
+	..()
 	if(ammo_magazine)
-		icon_state = "carbine-[round(CLAMP(ammo_magazine.stored_ammo.len/2,0,10),2)]"
+		look.state("carbine-[round(CLAMP(ammo_magazine.ammo_count()/2,0,10),2)]")
 	else
-		icon_state = "carbine-e"
-	return .
+		look.state("carbine-e")
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
@@ -1217,7 +1245,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_state)}{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/mini_uzi/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
 	. = ..()
@@ -1259,25 +1290,20 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
 	icon_state = "m1911"
 
-/obj/item/gun/projectile/colt/Initialize(mapload)
-	.=..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/colt/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/colt/draw(datum/look/look)
+	..()
 	if(ammo_magazine)
 		if(unique_reskin)
-			icon = 'icons/obj/gun.dmi'
-			icon_state = unique_reskin
+			look.set_icon('icons/obj/gun.dmi')
+			look.state(unique_reskin)
 		else
-			icon_state = initial(icon_state)
+			look.state(initial(icon_state))
 	else
 		if(unique_reskin)
-			icon = 'icons/obj/gun.dmi'
-			icon_state = "[unique_reskin]-e"
+			look.set_icon('icons/obj/gun.dmi')
+			look.state("[unique_reskin]-e")
 		else
-			icon_state = "[initial(icon_state)]-e"
+			look.state("[initial(icon_state)]-e")
 
 /obj/item/gun/projectile/sec
 	bolt_name="slide"
@@ -1296,6 +1322,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 	bolt_release = "slide release"
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/projectile/deagle)
+	configure(item_combat(force = 14.0))
 
 /obj/item/gun/projectile/gyropistol
 	bolt_name="slide"
@@ -1382,8 +1411,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 	only_open_load = TRUE
 
+CAPABILITIES(/obj/item/gun/projectile/garand)
+	configure(item_worn(slots = SLOT_BACK))
+
 /obj/item/gun/projectile/revolvingrifle
 	manual_chamber = FALSE
+
+CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
+	configure(item_worn(slots = SLOT_BACK))
 
 //shotgun.dm
 /obj/item/gun/projectile/shotgun
@@ -1397,6 +1432,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 	pump_animation = "winchester-pump"
 	var/is64x32 = TRUE
 	var/is_picked_up = FALSE
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/projectile/shotgun/pump/Initialize(mapload)
 	. = ..()
@@ -1455,50 +1494,70 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 	if(sawn_off)
 		P.submunition_spread_max = 100 //More spread when sawn off
 
-/// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
-		. = INTERACTION_HANDLED_PASS
-		if(sawn_off) //Don't do anything if we were already sawed off.
-			return
-		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(loaded.len)
-			var/burstsetting = burst
-			burst = 2
-			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))
-			Fire_userless(user)
-			burst = burstsetting
-			return
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(sawed_off), list(user))	//SHIT IS STEALTHY EYYYYY
-	else
-		return ..()
+MSG_DEF_SELF(doublebarrel/already_short, span_warning("%T% is already shortened!"))
+MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barrel of %T%."))
+MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
 
-/obj/item/gun/projectile/shotgun/doublebarrel/proc/sawed_off(mob/user)
-	icon_state = "sawnshotgun"
-	item_state = "sawnshotgun"
+CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
+	op("saw_off", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Shorten barrel"), when(req(PROC_REF(saw_offered))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), begins(MSG(doublebarrel/saw_begins)), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
+	op("saw_off_loaded", item(/obj/item), priority(OP_PRIORITY_CLAW), label("Shorten barrel"), when(req(PROC_REF(saw_misfires))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), then(PROC_REF(saw_misfire)))
 
+/// The held item cuts metal.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_offered(datum/act/op/A)
+	var/obj/item/held = A.held
+	return (!length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))) ? null : /datum/msg/req_failed
+
+/// The held item cuts metal, but the gun still has a round in it.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfires(datum/act/op/A)
+	var/obj/item/held = A.held
+	return (length(loaded) && (istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))) ? null : /datum/msg/req_failed
+
+/// Nothing to do to a barrel that was already shortened.
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_possible(datum/act/op/A)
+	return (!read_once(sawn_off)) ? null : /datum/msg/req_failed
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_misfire(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
+	var/burstsetting = burst
+	burst = 2
+	act_message_t(user, null, /datum/msg/doublebarrel/saw_misfire)
+	Fire_userless(user)
+	burst = burstsetting
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(sawn_off)
+		return
+	set_icon_state("sawnshotgun")
+	set_item_state("sawnshotgun")
 	desc = "Omar's coming!"
 	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off()
 	sawn_off = TRUE
-	w_class = ITEMSIZE_NORMAL
-	force = 5
-	slot_flags &= ~SLOT_BACK	//you can't sling it on your back
-	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) //but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	set_w_class(ITEMSIZE_NORMAL)
+	set_force(5)
+	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))//you can't sling it on your back
+	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off shotgun"
 	desc += " The barrel seems to be crudely sawn in half."
-	icon_state = "sawnshotgun[shotgun_variant]"
+	set_icon_state("sawnshotgun[shotgun_variant]")
 	icon_expected_width = 32
-	update_icon()
 	update_transform()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn //Default sawn shotgun needs it's old icon path back
 
+CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/sawn)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_combat(force = 5))
+
 /obj/item/gun/projectile/shotgun/doublebarrel/Initialize(mapload)
 	. = ..()
 	update_transform()
-	update_icon()
 
 /obj/item/gun/projectile/shotgun/doublebarrel/update_transform()
 	. = ..()
@@ -1556,6 +1615,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appe
 //shotgun_yw.dm
 /obj/item/gun/projectile/revolvershotgun
 	manual_chamber = FALSE
+
+CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
+	configure(item_worn(slots = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER))
+	configure(item_combat(force = 10))
 
 //sniper.dm
 /obj/item/gun/projectile/heavysniper

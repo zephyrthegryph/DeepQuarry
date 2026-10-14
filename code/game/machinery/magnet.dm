@@ -5,7 +5,6 @@
 // This was created for firing ranges, but I suppose this could have other applications - Doohl
 
 /obj/machinery/magnetic_module
-	step_on_power_change = TRUE
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "floor_magnet-f"
 	name = "Electromagnetic Generator"
@@ -13,7 +12,6 @@
 	plane = PLATING_PLANE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50
 
 	var/freq = 1449		// radio frequency
 	var/electricity_level = 1 // intensity of the magnetic pull
@@ -28,7 +26,7 @@
 	var/max_dist = 20 // absolute value of center_x,y cannot exceed this integer
 
 /// Pulls things toward its center every magnet_delay() while switched on.
-DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process, "on")
+
 
 /obj/machinery/magnetic_module/Initialize(mapload)
 	. = ..()
@@ -36,16 +34,18 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 	hide(!T.is_plating())
 	rel_set(src, nameof(center), T)
 
-	if(GLOB.radio_service)
-		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
+	if(SSradio)
+		SSradio.add_object(src, freq, RADIO_MAGNETS)
 
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	hide_under_floor(src, intact)
 
 // update the icon_state
-APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisibility?-f:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/magnetic_module/draw(datum/look/look)
+	..()
+	look.state("floor_magnet[on ? "" : "0"][invisibility ? "-f" : ""]")
 
 /obj/machinery/magnetic_module/receive_signal(datum/signal/signal)
 	var/command = signal.data["command"]
@@ -104,12 +104,18 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 				if(modifier)	code = modifier
 			if("toggle-power")
 				set_on(!on)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /// Clamps its settings and reconciles its power draw and icon: after every command, and on
 /// every power or break change.
-/obj/machinery/magnetic_module/machine_step()
-	if(has_stat(NOPOWER))
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/magnetic_module)
+	configure(uses_power(idle = 50))
+	every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
+
+/obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
+	if(power_lost())
 		set_on(0)
 
 	// Sanity checks:
@@ -135,14 +141,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	else
 		set_use_power(USE_POWER_OFF)
 
-	update_icon()
 	return PROCESS_KILL
 
 /// The pull's period: stronger fields pull faster.
-/obj/machinery/magnetic_module/proc/magnet_delay()
+/obj/machinery/magnetic_module/proc/magnet_delay(datum/act/timer/A)
 	return (13 - electricity_level) DECISECONDS
 
-/obj/machinery/magnetic_module/proc/magnetic_process() // proc that actually does the pulling
+/obj/machinery/magnetic_module/proc/magnetic_process(datum/act/timer/A) // proc that actually does the pulling
 	rel_set(src, nameof(center), locate(x+center_x, y+center_y, z))
 	if(get_center())
 		for(var/obj/M in orange(magnetic_field, get_center()))
@@ -161,7 +166,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 45
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 0
 	var/list/magnets
@@ -176,9 +180,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/magnetic_module, "floor_magnet{on?:0}{invisib
 	var/datum/radio_frequency/radio_connection
 
 /// TRUE while the magnets are walked along the path.
-OM_FIELD(/obj/machinery/magnetic_controller, path_moving, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/magnetic_controller/var/path_moving = FALSE
+TRACKED(/obj/machinery/magnetic_controller, path_moving)
+/obj/machinery/magnetic_controller/var/path_stopped = FALSE
+TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 /// Walks the magnets one path step every magnet_delay() while moving.
-DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_step, "path_moving")
+/obj/machinery/magnetic_controller/proc/reset_path_repeat(datum/act/A)
+	set_path_stopped(FALSE)
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
@@ -188,34 +196,24 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 			if(M.freq == frequency && M.code == code)
 				rel_add(src, nameof(magnets), M)
 
-	if(GLOB.radio_service)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+	if(SSradio)
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath
 
 /// Autolinks once at Initialize (its one frame) if Initialize found no magnets yet.
-/obj/machinery/magnetic_controller/machine_step()
+/obj/machinery/magnetic_controller/proc/work_step(datum/act/timer/A)
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
 				rel_add(src, nameof(magnets), M)
 	return PROCESS_KILL
 
-/obj/machinery/magnetic_controller/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/magnetic_controller_open,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/magnetic_controller_open
-	id = "magnetic_controller_open"
-	name = "Use"
-	effect = /obj/machinery/magnetic_controller/proc/interaction_open
-
 // structured TGUI MagneticConsole (see
 // code/modules/admin/magnetic_console_panel.dm).
-/obj/machinery/magnetic_controller/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/magnetic_controller/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	user.set_machine(src)
@@ -265,17 +263,15 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 			speed --
 			if(speed <= 0)
 				speed = 1
-		if("setpath")
-			om_ask(user, /datum/om/prompt/text, PROC_REF(magnet_path_entered), message = "Please define a new path!", default = path, max_length = MAX_MESSAGE_LEN, requires = PROMPT_USABLE)
 
 		if("togglemoving")
 			set_path_moving(!path_moving)
 
 	updateUsrDialog(user)
 
-/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newpath = ask.text
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/newpath = A.step_value("path")
 	updateUsrDialog(user)
 	if(newpath && newpath != "")
 		set_path_moving(FALSE) // stop moving
@@ -284,13 +280,14 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 		filter_path() // renders rpath
 
 /// The wait between path steps, by `speed`.
-/obj/machinery/magnetic_controller/proc/magnet_delay()
+/obj/machinery/magnetic_controller/proc/magnet_delay(datum/act/timer/A)
 	return (speed == 10 ? 1 : 12 - speed) DECISECONDS
 
 /// One step of the magnet path: signal the next move.
-/obj/machinery/magnetic_controller/proc/magnet_move_step()
+/obj/machinery/magnetic_controller/proc/magnet_move_step(datum/act/timer/A)
 	if(length(rpath) < 1 || (!operable()))
-		return REPEAT_STOP
+		set_path_stopped(TRUE)
+		return
 
 	if(pathpos > length(rpath)) // if the position is greater than the length, we just loop through the list!
 		pathpos = 1
@@ -301,7 +298,8 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 		// N, S, E, W are directional
 		// C is center
 		// R is random (in magnetic field's bounds)
-		return REPEAT_STOP // stop if the character located is invalid
+		set_path_stopped(TRUE)
+		return // stop if the character located is invalid
 
 	// Prepare the radio signal
 	var/datum/signal/signal = new
@@ -331,7 +329,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 
 		// there doesn't HAVE to be separators but it makes paths syntatically visible
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/magnetic_module/step_start_condition()
 	return TRUE // its power draw
 
@@ -342,3 +340,11 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_controller/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+MSG_DEF_SELF(magnet/path_unavailable, "The magnetic controller is not working.")
+
+/obj/machinery/magnetic_controller/proc/path_prompt_ready(datum/act/op/A)
+	return (A.actor && operable()) ? null : MSG(magnet/path_unavailable)
+
+/obj/machinery/magnetic_controller/proc/path_prompt_default(datum/act/op/A)
+	return path

@@ -116,7 +116,7 @@
 	// Simple Mobs.
 	else if(isanimal(M))
 		var/mob/living/simple_mob/SM = M
-		if(!(SM.mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
+		if(!(kind_of(SM).mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
 			to_chat(user, span_warning("\The [src] only works on slimes and animals."))
 			currently_using = FALSE
 			return ..()
@@ -131,16 +131,46 @@
 
 	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
-	var/_answer_k126 = rerun_ask(user, "k126", PROC_REF(attack), args, /datum/om/prompt/text, message = "Would you like to give \the [M] a name?", title = "Name your new pet", default = M.name, max_length = MAX_NAME_LEN)
-	if(isnull(_answer_k126))
-		return TRUE
-	var/newname = copytext(_answer_k126,1,MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text/slime_docility_name, PROC_REF(docility_name_entered), answerer = user, subject = M, default = M.name, question = "Would you like to give \the [M] a name?")
+	return TRUE
 
+/obj/item/slimepotion/docility/proc/docility_name_entered(datum/act/request/A)
+	if(isnull(A.request.value) || A.request.last_error == "gone")
+		return
+	SStgui.update_uis(src)
+	var/mob/living/M = A.request.subject
+	var/mob/living/user = A.request.answerer
+	if(!A.answer)
+		if(A.request.last_error == "dead")
+			to_chat(user, span_warning("\The [M] is dead!"))
+		else if(A.request.last_error == "no brain")
+			to_chat(user, span_warning("\The [M] is too strongly willed for this to affect them."))
+		return
+	var/newname = copytext(A.answer.value,1,MAX_NAME_LEN)
 	if(newname && !QDELETED(M))
 		M.name = newname
-		M.real_name = newname
+		M.set_real_name(newname)
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+
+/datum/prompt/text/slime_docility_name
+	title = "Name your new pet"
+	max_len = MAX_NAME_LEN
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/slime_docility_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/slime_docility_name/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
+		return "gone"
+	if(!isnull(value))
+		var/mob/living/M = subject
+		if(M.stat == DEAD)
+			return "dead"
+		if(!M.ai_brain)
+			return "no brain"
+	return null
 
 
 // Makes slimes make more extracts.
@@ -222,7 +252,7 @@
 		to_chat(user, span_warning("The agent only works on creatures!"))
 		return ..()
 
-	if(!(M.mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
+	if(!(kind_of(M).mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
 		to_chat(user, span_warning("\The [M] only works on slimes and animals."))
 		return ..()
 	if(M.stat == DEAD)
@@ -265,7 +295,7 @@
 		return ..()
 	var/mob/living/simple_mob/SM = M
 
-	if(!(SM.mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
+	if(!(kind_of(SM).mob_class & (MOB_CLASS_SLIME|MOB_CLASS_ANIMAL))) // So you can't use this on Russians/syndies/hivebots/etc.
 		to_chat(user, span_warning("\The [M] only works on slimes and animals."))
 		return ..()
 	if(SM.stat == DEAD)
@@ -318,18 +348,21 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-// === merged from slimepotions_vr.dm during hard-fork de-suffix (verified no override-order change) ===
-DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/slimepotion)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slimepotion/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/mimic))
+		if(!consume(O, user))
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		var/newtype = src.type
 		new newtype(get_turf(src))
-		consume(O, user)
-	return FALSE
+	return OP_DECLINE
 
 
 /obj/item/slimepotion/infertility/get_mechanics_info(list/additional_information)
@@ -472,10 +505,13 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A potent chemical mix that will mimic effects of other slime-produced agents."
 	icon_state = "potsilver"
 
-EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mimic_interaction_item)))
+CAPABILITIES(/obj/item/slimepotion/mimic)
+	op("mimic_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mimic_interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/mimic/proc/mimic_interaction_item(mob/living/user, mob/living/M, datum/interaction/interaction)
+/obj/item/slimepotion/mimic/proc/mimic_interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/M = A.held
 	if(istype(M, /obj/item/slimepotion/mimic))
 		to_chat(user, span_warning("You apply the mimic to the mimic, resulting a mimic that copies a mimic that copies a mimic that copies a mimic that-"))
 		var/location = get_turf(src)
@@ -483,10 +519,10 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		var/datum/effect/effect/system/grav_pull/s = new /datum/effect/effect/system/grav_pull
 		s.set_up(3, 3, location)
 		s.start()
-		qdel(M)
+		consumed(M, src)
 		consume(src, user)
-		return ITEM_INTERACT_SUCCESS
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/slimepotion/sapience/get_mechanics_info(list/additional_information)
 	return ..(list("The slime or other animal needs to be alive for this to work. The development is not always immediate and may take indeterminate time before effects show.") + additional_information)
@@ -513,11 +549,10 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		return ..()
 
 	to_chat(user, span_notice("You feed \the [xenobio_slime] the agent. It may now eventually develop proper sapience."))
-	xenobio_slime.ghostjoin = 1
+	xenobio_slime.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, xenobio_slime)
 	if(!xenobio_slime.vore_active)
-		om_grant(xenobio_slime, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, xenobio_slime)
-	xenobio_slime.ghostjoin_icon()
+		grant(xenobio_slime, granted_verb(/mob/living/simple_mob/proc/animal_nom), xenobio_slime)
 	log_and_message_admins("used a sapience potion on a simple mob: [xenobio_slime]. [ADMIN_FLW(src)]", user)
 	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)

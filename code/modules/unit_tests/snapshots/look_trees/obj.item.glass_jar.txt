@@ -1,0 +1,13 @@
+/obj/item/glass_jar icon: icons/obj/items.dmi
+/obj/item/glass_jar state: jar
+/obj/item/glass_jar dir: 2
+/obj/item/glass_jar overlay: icons/obj/items.dmi:jar:8:#000000
+/obj/item/glass_jar/fish icon: icons/obj/items.dmi
+/obj/item/glass_jar/fish state: jar
+/obj/item/glass_jar/fish dir: 2
+/obj/item/glass_jar/fish overlay: icons/obj/items.dmi:jar:8:#000000
+/obj/item/glass_jar/fish/plastic icon: icons/obj/items.dmi
+/obj/item/glass_jar/fish/plastic state: jar
+/obj/item/glass_jar/fish/plastic dir: 2
+/obj/item/glass_jar/fish/plastic overlay: icons/obj/items.dmi:jar:8:#000000
+

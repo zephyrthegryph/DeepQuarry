@@ -18,20 +18,22 @@
 	icon_dead = "drone0"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 
 	endurance = 20
 	movement_cooldown = 2
 	melee_attack_delay = 2 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
 
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
+
+CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
 	vore_active = 1
@@ -41,21 +43,21 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = TRUE
 
 //bluenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/bluecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -68,18 +70,19 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/pro
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //rednom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/redcabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -92,18 +95,19 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //yellow
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/yellowcabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -116,18 +120,19 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //orange
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/orangecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -140,18 +145,19 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //purplenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/purplecabold/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -164,18 +170,19 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/p
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //marshmellownom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -197,12 +204,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/om/stage/life/special/vore/candy/bluecabold
-	of = /mob/living/simple_mob/vore/candy/bluecabold
-
-/datum/om/stage/life/special/vore/candy/bluecabold/perform(mob/living/simple_mob/vore/candy/bluecabold/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.buff_aura()
+/mob/living/simple_mob/vore/candy/bluecabold/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/bluecabold/proc/buff_aura()
@@ -231,7 +235,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
@@ -249,12 +253,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 
-/datum/om/stage/life/special/vore/candy/yellowcabold
-	of = /mob/living/simple_mob/vore/candy/yellowcabold
-
-/datum/om/stage/life/special/vore/candy/yellowcabold/perform(mob/living/simple_mob/vore/candy/yellowcabold/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.buff_aura()
+/mob/living/simple_mob/vore/candy/yellowcabold/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/yellowcabold/proc/buff_aura()
@@ -273,12 +274,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/om/stage/life/special/vore/candy/orangecabold
-	of = /mob/living/simple_mob/vore/candy/orangecabold
-
-/datum/om/stage/life/special/vore/candy/orangecabold/perform(mob/living/simple_mob/vore/candy/orangecabold/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.buff_aura()
+/mob/living/simple_mob/vore/candy/orangecabold/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/orangecabold/proc/buff_aura()
@@ -297,12 +295,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/datum/om/stage/life/special/vore/candy/purplecabold
-	of = /mob/living/simple_mob/vore/candy/purplecabold
-
-/datum/om/stage/life/special/vore/candy/purplecabold/perform(mob/living/simple_mob/vore/candy/purplecabold/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.buff_aura()
+/mob/living/simple_mob/vore/candy/purplecabold/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.buff_aura()
 	..()
 
 /mob/living/simple_mob/vore/candy/purplecabold/proc/buff_aura()
@@ -354,7 +349,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	om_after(src, 20, PROC_REF(chargeend), A)
+	after(src, 2 SECONDS, PROC_REF(chargeend), with = list(A), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead
@@ -423,7 +418,6 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	icon_dead = "slainouroboros"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 	icon_state = "ouroboros"
@@ -434,7 +428,6 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 
 	melee_damage_lower = 25
@@ -446,9 +439,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 	special_attack_max_range = 15
 	special_attack_cooldown = 7 SECONDS
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, PROC_REF(shed_critter))
+CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 
-/mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/act/A)
 	if(prob(50))
 		new /obj/random/mob/candycritter (src.loc)
 
@@ -465,7 +461,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
+	after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
 
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_1()
@@ -473,7 +469,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
+	after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_2()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
@@ -481,7 +477,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
+	after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_3()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
@@ -491,7 +487,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to heal!")))
-	om_after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
+	after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_4()
 	mend(TREAT_TISSUE_REPAIR, 35)
@@ -503,7 +499,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_combo(atom/target)
 	var/first = prob(50) ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast
 	var/second = prob(50) ? "critters" : (first == /obj/item/projectile/bullet/cmblast ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast)
-	om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, first, second)
+	after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, first, second), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_shot(atom/target, shot, next_shot)
 	if(shot == "critters")
@@ -514,17 +510,17 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 		var/obj/item/projectile/P = new shot(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
 	if(next_shot)
-		om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, next_shot, null)
+		after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, next_shot, null), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_combo(atom/target)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares to let out a thunderous roar!")))
-	om_after(src, 2.5 SECONDS, PROC_REF(debuff_roar), target)
+	after(src, 2.5 SECONDS, PROC_REF(debuff_roar), with = list(target))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_roar(atom/target)
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(G.throw_range, G.throw_speed, src)
-		G.det_time = grenade_timer
+		G.set_det_time(grenade_timer)
 		G.activate(src)
 	if(prob(25))
 		new /obj/random/mob/candycritter (src.loc)
@@ -532,7 +528,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	else
 		var/obj/item/projectile/P = new /obj/item/projectile/bullet/cmblast(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
-		om_after(P, 0.5, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), target, BP_TORSO, src)
+		after(P, 0.05 SECONDS, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src))
 
 
 /obj/random/mob/candycritter
@@ -544,14 +540,16 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 
 	mob_faction = "candy"
 
-DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
-	/mob/living/simple_mob/vore/candy/purplecabold, \
-	/mob/living/simple_mob/vore/candy/bluecabold, \
-	/mob/living/simple_mob/vore/candy/greencabold, \
-	/mob/living/simple_mob/vore/candy/yellowcabold, \
-	/mob/living/simple_mob/vore/candy/orangecabold, \
-	/mob/living/simple_mob/vore/candy/redcabold, \
-	/mob/living/simple_mob/vore/candy/peppermint))
+CAPABILITIES(/obj/random/mob/candycritter)
+	configure(loot(
+		table = list(
+			/mob/living/simple_mob/vore/candy/purplecabold,
+			/mob/living/simple_mob/vore/candy/bluecabold,
+			/mob/living/simple_mob/vore/candy/greencabold,
+			/mob/living/simple_mob/vore/candy/yellowcabold,
+			/mob/living/simple_mob/vore/candy/orangecabold,
+			/mob/living/simple_mob/vore/candy/redcabold,
+			/mob/living/simple_mob/vore/candy/peppermint)))
 
 /obj/item/projectile/bullet/cmblast
 	use_submunitions = 1
@@ -567,22 +565,26 @@ DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 20
-	armor_penetration = 30
 	speed = 4.0
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/chilled
 	modifier_duration = 6 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/chocosphere)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/canearrow
 	name = "candy cane arrow"
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 15
-	armor_penetration = 40
 	speed = 2.5
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 12 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/canearrow)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/arc/fragmentation/cherrybomb
 	name = "cherry bomb"
@@ -600,7 +602,9 @@ DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "cherry_pit"
 	damage = 25
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/bullet/cherrypit)
+	configure(item_combat(armor_penetration = 30))
 
 //more critters
 //antimelee
@@ -618,19 +622,22 @@ DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
 
 	endurance = 10
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
-	INTERACT_ITEM(null, PROC_REF(peppermint_interaction_item)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
+	op("peppermint_interaction_item", item(/obj/item), then(PROC_REF(peppermint_interaction_item)))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (hit_with_item).
-/mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(O.force)
+/mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(combat_of(O).force)
 		if(prob(80))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% deflects %T% with its shell!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return TRUE
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 	act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 	return TRUE
@@ -657,13 +664,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 	new /obj/random/mob/candycritter (src.loc)
 
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vore/candy/worm)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vore/candy/worm/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/worm/redcabold/load_default_bellies()
@@ -681,18 +689,15 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/togg
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 */
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/proc/toggle_rider_reins) // TGPanel
-
 /mob/living/simple_mob/vore/candy/peppermint/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/peppermint/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 

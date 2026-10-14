@@ -38,7 +38,7 @@
 			if(nozzle().check_blockage())
 				return
 		nozzle().set_use_power(USE_POWER_IDLE)
-		if(nozzle().stat & NOPOWER)//try again
+		if(nozzle().power_lost())//try again
 			nozzle().power_change()
 		if(nozzle().is_on())//if everything is in working order, start booting!
 			COOLDOWN_START(nozzle(), next_on, nozzle().boot_time)
@@ -63,8 +63,6 @@
 	// uncreated_component_parts = list(/obj/item/stock_parts/power/apc/buildable = 1)
 
 	use_power = USE_POWER_OFF
-	power_channel = EQUIP
-	idle_power_usage = 1000
 
 	var/datum/ship_engine/gas_thruster/controller
 	var/thrust_limit = 1		//Value between 1 and 0 to limit the resulting thrust
@@ -77,13 +75,15 @@
 /obj/machinery/atmospherics/unary/engine/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	return 0
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /datum/ship_engine/gas_thruster)
+CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
+	configure(uses_power(channel = EQUIP, idle = 1000))
+	owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster)
 
 /obj/machinery/atmospherics/unary/engine/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)
+	for(var/obj/effect/overmap/visitable/ship/S as anything in shuttles_ships())
 		if(S.check_ownership(src))
 			rel_add(S, nameof(S.engines), controller)
 			if(dir != S.fore_dir)
@@ -94,11 +94,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
 	.+= "Location: [get_area(src)]."
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		.+= list(list("Insufficient power to operate.", "bad"))
 	if(!check_fuel())
 		.+= list(list("Insufficient fuel for a burn.", "bad"))
-	if(has_stat(BROKEN))
+	if(broken_now())
 		.+= list(list("Inoperable engine configuration.", "bad"))
 	if(blockage)
 		.+= list(list("Obstruction of airflow detected.", "bad"))
@@ -109,7 +109,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 /obj/machinery/atmospherics/unary/engine/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/atmospherics/unary/engine/proc/is_on()
@@ -151,8 +151,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 		return 0
 	. = calculate_thrust(removed)
 	play_sfx(src, SFX_MACHINES_THRUSTER, volume = 100 * thrust_limit, extrarange = world.view * 4)
-	if(network)
-		network.mark_dirty()
+	gas_touched(air_contents)
 
 	var/exhaust_dir = reverse_direction(dir)
 	var/turf/T = get_step(src,exhaust_dir)
@@ -172,26 +171,32 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 	//energy cost - thb all of this is to limit the use of back up batteries
 	var/energy_upgrade = CLAMP(total_component_rating_of_type(/obj/item/stock_parts/capacitor), 0.1, 6)
 	charge_per_burn = initial(charge_per_burn) / energy_upgrade
-	change_power_consumption(initial(idle_power_usage) / energy_upgrade, USE_POWER_IDLE)
+	change_power_consumption(power_of_type(type).idle / energy_upgrade, USE_POWER_IDLE)
 
 //Exhaust effect
 /obj/effect/engine_exhaust
 	name = "engine exhaust"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "smoke"
-	light_color = "#ed9200"
 	anchored = TRUE
 
-/obj/effect/engine_exhaust/Initialize(mapload, ndir, flame)
-	. = ..()
-	if(flame)
-		icon_state = "exhaust"
+CAPABILITIES(/obj/effect/engine_exhaust)
+	configure(light_glow(color = "#ed9200"))
+	param(nameof(dir), pos = 1)
+	param(nameof(flame), pos = 2, apply = PROC_REF(ignite))
+
+/// Whether the exhaust is a flame (its constructor param).
+/obj/effect/engine_exhaust/var/flame = FALSE
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/engine_exhaust/proc/ignite(is_flame)
+	if(is_flame)
+		set_icon_state("exhaust")
 		if(isturf(loc))
 			var/turf/T = loc
 			T.hotspot_expose(1000,125)
-		set_light(0.5, 3)
-	set_dir(ndir)
-	expire(20)
+		set_glow(src, GLOW(0.5, 3, null))
+	expire(2 SECONDS)
 
 /obj/item/circuitboard/unary_atmos/engine //why don't we move this elsewhere?
 	name = T_BOARD("gas thruster")
@@ -235,14 +240,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/engine/bigger/burn()
 	. = ..()
 	if(.)
-		icon_state = "engine_on"
-		om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
+		set_icon_state("engine_on")
+		after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /obj/machinery/atmospherics/unary/engine/biggest
 	name = "huge rocket nozzle"
@@ -260,8 +264,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 /obj/machinery/atmospherics/unary/engine/biggest/burn()
 	. = ..()
 	if(.)
-		icon_state = "engine_on"
-		om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
+		set_icon_state("engine_on")
+		after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /obj/machinery/atmospherics/unary/engine/biggest/atmos_init()
 	if(node)
@@ -276,7 +280,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /// Accessor for the nozzle var.

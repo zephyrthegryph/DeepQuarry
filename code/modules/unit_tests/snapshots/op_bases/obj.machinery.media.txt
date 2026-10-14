@@ -1,0 +1,6 @@
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Open controls
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use

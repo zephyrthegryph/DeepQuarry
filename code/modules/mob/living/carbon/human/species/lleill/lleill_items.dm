@@ -31,7 +31,7 @@
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()
-	om_after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
+	after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 
 //Shrinking Glamour (scaling potion)
 
@@ -63,7 +63,7 @@
 /datum/reagent/glamour_scaling/affect_blood(mob/living/carbon/target, removed)
 	if(!(/mob/living/proc/set_size in target.verbs))
 		to_chat(target, span_warning("You feel as though you could change size at any moment."))
-		om_grant(target, GRANT_VERB, /mob/living/proc/set_size, target)
+		grant(target, granted_verb(/mob/living/proc/set_size), target)
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()
@@ -97,7 +97,7 @@
 /datum/reagent/glamour_twinkling/affect_blood(mob/living/carbon/human/target, removed)
 	if(target.species.darksight < 10)
 		to_chat(target, span_warning("You can suddenly see much better than before."))
-		proto_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
+		rel_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
 		target.species.darksight = 10
 	if(target.disabilities & NEARSIGHTED)
 		target.disabilities &= ~NEARSIGHTED
@@ -117,7 +117,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	thing.overlays += coolanimation
-	om_after(src, 1.4 SECOND, PROC_REF(animate_action_finished), thing, coolanimation)
+	after(src, 1.4 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
 
 //Face of Glamour (creates a clone of a target)
 
@@ -128,62 +128,64 @@
 	icon_state = "face"
 	var/mob/living/homunculus // relation: the homunculus we summoned
 
-DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interaction_self)))
+MSG_DEF_SELF(glamour_face/no_targets, span_warning("There are no appropriate targets in range."))
 
-/// Old attack_self.
-/obj/item/glamour_face/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!homunculus)
-		var/list/targets = list()
-		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-			if(M.z != user.z || get_dist(user,M) > 10)
-				continue
-			if(!M.allow_mimicry)
-				continue
-			targets |= M
+/// Old attack_self, as two ops by whether a homunculus exists: none yet, ask whose likeness; one summoned, ask what to do with it (and, to speak, what it says).
+CAPABILITIES(/obj/item/glamour_face)
+	links(/obj/item/glamour_face::homunculus, /mob/living/simple_mob/homunculus::owner)
+	op("self", in_hand(), label("Use"), when(req_is(nameof(homunculus), FALSE)), needs(req(PROC_REF(has_homunculus_targets), because = MSG(glamour_face/no_targets))), asks(/datum/prompt/choice, fields = list("title" = "homunculus", "question" = "Which target do you wish to create a homunculus of?", "choices" = computed(PROC_REF(homunculus_targets_now)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "target"), then(PROC_REF(homunculus_target_chosen)))
+	op("homunculus", in_hand(), label("Use"), when(req_is(nameof(homunculus), TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Actions", "question" = "What would you like to do with your homunculus?", "choices" = list("Recall", "Speak Through", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "action"), asks(/datum/prompt/text, fields = list("title" = "Speak Through", "question" = "What should the homunculus say:", "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "words", when = PROC_REF(speaking_through)), then(PROC_REF(homunculus_action_chosen)))
 
-		if(!targets.len)
-			to_chat(user, span_warning("There are no appropriate targets in range."))
-			return TRUE
+/// The humans near the user who allow mimicry.
+/obj/item/glamour_face/proc/homunculus_targets(mob/user)
+	var/list/targets = list()
+	for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(M.z != user.z || get_dist(user,M) > 10)
+			continue
+		if(!M.vore_prefs.allow_mimicry)
+			continue
+		targets |= M
+	return targets
 
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_target_chosen), message = "Which target do you wish to create a homunculus of?", title = "homunculus", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE)
-		return TRUE
+/obj/item/glamour_face/proc/has_homunculus_targets(datum/act/op/A)
+	return (read_once(length(homunculus_targets(A.actor)) > 0)) ? null : MSG(glamour_face/no_targets) // who stands in range is asked when the question opens
+
+/obj/item/glamour_face/proc/homunculus_targets_now(datum/act/op/A)
+	return homunculus_targets(A.actor)
+
+/obj/item/glamour_face/proc/speaking_through(datum/act/op/A)
+	return A.step_value("action") == "Speak Through"
+
+/obj/item/glamour_face/proc/homunculus_target_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/chosen_target = A.step_value("target")
 	if(homunculus)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_action_chosen), message = "What would you like to do with your homunculus?", title = "Actions", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return TRUE
-
-/obj/item/glamour_face/proc/homunculus_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/mob/living/carbon/human/chosen_target = ask.choice
-	if(homunculus)
-		return
+		return OP_OK
 	if(chosen_target)
 		var/spawnloc = get_turf(user)
 		var/mob/living/simple_mob/homunculus/H = new(spawnloc)
 		H.name = chosen_target.name
 		H.desc = chosen_target.desc
 		H.icon = chosen_target.icon
-		H.icon_state = chosen_target.icon_state
+		H.set_icon_state(chosen_target.icon_state)
 		H.copy_overlays(chosen_target, TRUE)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
 		rel_set(src, nameof(homunculus), H)
 		rel_set(H, nameof(H.owner), src)
+	return OP_OK
 
-/obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/h_action = ask.choice
+/obj/item/glamour_face/proc/homunculus_action_chosen(datum/act/op/A)
+	var/h_action = A.step_value("action")
 	var/mob/living/simple_mob/homunculus/H = homunculus
 	if(!H)
-		return
+		return OP_OK
 	if(h_action == "Recall")
 		act_message(H, null, others = span_infoplain(span_bold("%U%") + " returns to the face."))
-		qdel(H) // the framework clears our homunculus view
-		return
+		spent(H) // the framework clears our homunculus view
+		return OP_OK
 	if(h_action == "Speak Through")
-		om_ask(user, /datum/om/prompt/text, PROC_REF(homunculus_words_entered), message = "What should the homunculus say:", title = "Speak Through", ask_flags = ASK_HELD | ASK_CAPABLE)
-
-/obj/item/glamour_face/proc/homunculus_words_entered(datum/om/prompt/text/ask)
-	var/mob/living/simple_mob/homunculus/H = homunculus
-	H?.say(ask.text)
+		H.say(A.step_value("words"))
+	return OP_OK
 
 
 //Speaking Glamour (universal translator)
@@ -195,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	icon_state = "translator"
 
 /obj/item/universal_translator/glamour/hear_talk(mob/M, list/message_pieces, verb)
-	if(!listening || !istype(M))
+	if(!translation_enabled || !istype(M))
 		return
 
 	//Show the "I heard something" animation.
@@ -207,9 +209,9 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -244,16 +246,18 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	var/connected_mob
 	var/area_name
 
-/obj/structure/glamour_ring/Initialize(mapload)
-	. = ..()
+// It is named after the area it is placed in (rolls(), in its CAPABILITIES).
+/obj/structure/glamour_ring/proc/placed_in(datum/roller/R, target)
+	if(target == "name")
+		return "[area_name] glamour ring"
 	var/area/A = get_area(src)
-	area_name = A.name
-	name = "[area_name] glamour ring"
+	return A?.name
 
-/obj/structure/glamour_ring/proc/ring_left_alone(mob/living/M)
-	to_chat(M, span_warning("You leave the glamour ring alone."))
+MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines of the glamour ring."))
 
 /obj/structure/glamour_ring/proc/ring_broken(mob/living/M)
+	if(loc?.release_refusal(src, M))
+		return
 	var/mob/living/carbon/human/L = connected_mob
 	to_chat(M, span_warning("You have destroyed \the [src]."))
 	src.visible_message(span_infoplain(span_bold("\The [M]") + " has broken apart \the [src]."))
@@ -261,63 +265,81 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
 	if(istype(L) && istype(L.species, /datum/species/lleill))
 		own_take_member(L, nameof(L.teleporters), src)
-	qdel(src)
+	consume(src, M)
 
-DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+/// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.
+CAPABILITIES(/obj/structure/glamour_ring)
+	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), begins(PROC_REF(ring_begins)), wait(PROC_REF(ring_wait)), on_interrupt(PROC_REF(ring_interrupted)), then(PROC_REF(ring_action_chosen)))
+	rolls(nameof(area_name), PROC_REF(placed_in))
+	rolls(nameof(name), PROC_REF(placed_in), from = list(nameof(area_name)))
 
-/// Old attack_hand.
-/obj/structure/glamour_ring/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/glamour_ring/proc/ring_connected(datum/act/op/A)
+	return (read_once(istype(connected_mob, /mob/living/carbon/human))) ? null : /datum/msg/req_silent
 
+/obj/structure/glamour_ring/proc/ring_question(datum/act/op/A)
+	if(A.actor == connected_mob)
+		return "Do you want to destroy the ring, or restore energy?"
+	return "Do you want to destroy the ring, the owner of it may be aware that you have done this?"
+
+TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, owner_choices, list("Yes", "No", "Restore Energy"))
+TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No"))
+
+/obj/structure/glamour_ring/proc/ring_choices(datum/act/op/A)
+	if(A.actor == connected_mob)
+		return TYPE_TABLE_GET(src, owner_choices)
+	return TYPE_TABLE_GET(src, other_choices)
+
+/// How long the chosen action lasts: the break and the draw take 10 seconds; No, no answer, and a draw inside the cooldown take no time (the effect tells why).
+/obj/structure/glamour_ring/proc/ring_wait(datum/act/op/A)
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L))
-		return TRUE
+		return 0
+	switch(A.step_value("action"))
+		if("Yes")
+			return 10 SECONDS
+		if("Restore Energy")
+			var/datum/species/lleill/LL = L.species
+			if(istype(LL) && COOLDOWN_FINISHED(LL, ring_cooldown))
+				return 10 SECONDS
+	return 0
 
-	if(M == L)
-		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	else
-		om_ask(M, /datum/om/prompt/choice, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"), title = "Destroy ring", buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
+/// The line told when the break starts; drawing energy says nothing at the start.
+/obj/structure/glamour_ring/proc/ring_begins(datum/act/op/A)
+	if(A.step_value("action") == "Yes")
+		return /datum/msg/glamour_ring/breaking
+	return null
 
-/obj/structure/glamour_ring/proc/ring_action_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/M = ask.answerer
-	var/m_action = ask.choice
+/// The break or the draw was broken off (the actor moved away); a cancelled question says nothing.
+/obj/structure/glamour_ring/proc/ring_interrupted(datum/act/op/A)
+	var/mob/living/M = A.actor
+	switch(A.step_value("action"))
+		if("Yes")
+			to_chat(M, span_warning("You leave the glamour ring alone."))
+		if("Restore Energy")
+			to_chat(M, span_warning("You stop drawing energy."))
+
+/obj/structure/glamour_ring/proc/ring_action_chosen(datum/act/op/A)
+	var/mob/living/M = A.actor
+	var/m_action = A.step_value("action")
 	var/mob/living/carbon/human/L = connected_mob
-	if(!istype(L) || m_action == "No")
-		return
+	if(!istype(L) || !istype(M) || m_action == "No" || isnull(m_action))
+		return OP_OK
 	var/datum/species/lleill/LL = L.species
 
 	if(m_action == "Yes")
-		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
-		om_task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
-		return
+		ring_broken(M)
+		return OP_OK
 
 	if(m_action == "Restore Energy")
-		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
+		if(!istype(LL) || !COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
-			return
-		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
-		return
-
-/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring
-	duration = 10 SECONDS
-	complete_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done
-	cancel_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed
-	/// The lleill drawing energy (their species is made private before it is changed).
-	var/mob/living/carbon/human/lleill_mob
-
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
-	if(!task.lleill_mob)
-		return
-	var/datum/species/lleill/LL = proto_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
-	if(!istype(LL))
-		return
-	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)
-	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
-
-/obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
-	var/mob/living/M = task.actor
-	to_chat(M, span_warning("You stop drawing energy."))
-	return
+			return OP_OK
+		var/datum/species/lleill/own = rel_private(L, nameof(/mob/living/carbon/human::species)) // per-mob change: never mutate the shared species
+		if(!istype(own))
+			return OP_OK
+		COOLDOWN_START(own, ring_cooldown, 10 MINUTES)
+		own.lleill_energy = min((own.lleill_energy + 75), own.lleill_energy_max)
+	return OP_OK
 
 //Glamour Helm
 
@@ -326,7 +348,9 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 	name = "glamour bubble"
 	icon = 'icons/obj/glamour.dmi'
 	icon_state = "bubble"
-	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD | INFINITE_AIR
+
+CAPABILITIES(/obj/item/clothing/mask/gas/glamour)
+	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD | INFINITE_AIR))
 
 //Glamour Pockets
 
@@ -399,16 +423,16 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		"leopardmander" = /mob/living/simple_mob/vore/leopardmander
 		)
 
-DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(glamour_pick_up)), \
-)
+CAPABILITIES(/obj/item/glamour_unstable)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("glamour_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(glamour_pick_up)))
 
 /// Old attack_self.
-/obj/item/glamour_unstable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/glamour_unstable/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = user
 	if(!istype(M))
-		return TRUE
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_danger("You trigger %T%!")), MSG_OTHERS(span_warning("%U% triggers %T%!")))
 	fx_sparks(get_turf(src), 5)
 	var/effect_choice = rand(1,4)
@@ -416,15 +440,15 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 		if(1) //teleport
 			blink_mob(M)
 		if(2) //mob_tf, uses polymorph potion code
-			if(!M.allow_spontaneous_tf)
-				M.status_adjust(EFFECT_WEAKENED, 50)
+			if(!M.vore_prefs.allow_spontaneous_tf)
+				M.status_adjust(STAT_WEAKENED, 50)
 			else
 				mob_tf(M)
 		if(3)
 			size_change(M)
 		if(4)
 			M.apply_effect(200, IRRADIATE)
-	return TRUE
+	return OP_OK
 
 /obj/item/glamour_unstable/proc/blink_mob(mob/living/L)
 	var/starting_loc = (get_turf(src))
@@ -468,9 +492,10 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	L.resize(new_size, ignore_prefs = FALSE)
 
 /// Picking the unstable glamour up bare-handed may set it off.
-/obj/item/glamour_unstable/proc/glamour_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/glamour_unstable/proc/glamour_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 
 	var/mob/living/M = user
 	if(!istype(M))
@@ -492,4 +517,3 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	if(dq_get_cloaked(src))
 		uncloak()
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " appears as if from thin air."))
-

@@ -36,7 +36,6 @@ In short:
 	GLOB.escape_list = get_area_turfs(locate(/area/hallway/secondary/exit))
 
 	//Separated into separate procs for profiling
-	AreaSet()
 	MiscSet()
 	APCSet()
 	OverlayAndAmbientSet()
@@ -44,15 +43,8 @@ In short:
 
 	GLOB.runedec += 9000	//basically removing the rune cap
 
-/datum/universal_state/hell/proc/AreaSet()
-	for(var/area/A in world)
-		if(!istype(A,/area) || istype(A, /area/space))
-			continue
-
-		A.update_icon()
-
 /datum/universal_state/hell/OverlayAndAmbientSet()
-	om_after(src, 0, PROC_REF(relight_world))
+	after(src, 0, PROC_REF(relight_world))
 
 /datum/universal_state/hell/proc/relight_world()
 	for(var/datum/lighting_corner/L in world)
@@ -67,10 +59,10 @@ In short:
 			new /obj/effect/gateway/active/cult(T)
 
 	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if (!alm.has_stat(BROKEN))
+		if (!alm.broken_now())
 			alm.ex_act(2)
 
 /datum/universal_state/hell/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if (!APC.has_stat(BROKEN) && !APC.is_critical)
-			APC.set_emagged(1)
+		if (!APC.broken_now() && !APC.is_critical)
+			key_set(APC, EMAG_EMAGGED, TRUE)

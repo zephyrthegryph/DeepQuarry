@@ -95,6 +95,9 @@ const PLANET_RELAX: f32 = 0.25;
 /// Pressure differences below this (kPa) do not add bulk flow to the
 /// stiffness (they still flow).
 const STIFF_PRESSURE: f32 = 1.0;
+/// The most faces a cell exchanges through (four planar, up and down): the share of a pair's levelling flow one edge may take in a sub-step
+/// whose length ignored the bulk flow.
+const STABLE_FACES: f32 = 6.0;
 
 /// Cell flags.
 pub mod flags {
@@ -227,6 +230,16 @@ impl GasCell {
 	#[must_use]
 	pub fn temperature_now(&self) -> f32 {
 		temperature_of(&self.moles, self.energy, self.temperature)
+	}
+
+	/// The partial pressure of gas `id` (kPa) from the cached pressure and total: its share of the moles times the pressure.
+	#[must_use]
+	pub fn partial_pressure(&self, id: usize) -> f32 {
+		if self.total > 0.0 {
+			self.moles[id] / self.total * self.pressure
+		} else {
+			0.0
+		}
 	}
 
 	/// The live pressure in `volume` litres.
@@ -382,7 +395,21 @@ impl FieldKind for TurfGas {
 			a.cell.pressure_in(a.capacity),
 			b.cell.pressure_in(b.capacity),
 		);
-		let bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
+		let mut bulk = kernel::pressure_flow(op_a, pa, op_b, pb, N, BULK_CONDUCTANCE, dt);
+		if (pa - pb).abs() <= STIFF_PRESSURE {
+			// Below the threshold the bulk flow is not in the stiffness, so the sub-step is sized for diffusion alone and an
+			// unlimited bulk flow overshoots: the room rang, growing until a difference crossed the threshold. Each edge moves
+			// at most 1/FACES of the moles that would level the pair, so a cell's edges together never overshoot (monotone).
+			let k = dp_dn(&a, pa) + dp_dn(&b, pb);
+			if k > 0.0 {
+				let level = (pa - pb).abs() / k / STABLE_FACES;
+				let moved: f32 = bulk.0[..N].iter().sum::<f32>().abs();
+				if moved > level {
+					let scale = level / moved;
+					bulk = Amounts(bulk.0.map(|v| v * scale));
+				}
+			}
+		}
 		let diffusion = kernel::diffusion(op_a, op_b, DIFFUSION_CONDUCTANCE, dt);
 		bulk + diffusion
 	}
@@ -485,6 +512,22 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	PLASMA: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_PLASMA],
 	CARBON_DIOXIDE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
 	COMPOSITION: Vector(22)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
+	// Partial pressures (kPa) of the gases a breather's lungs and skin react to: what a breather's band watch
+	// (code/modules/mob/living/carbon/breath_watch.dm) follows, so a turf reports only the crossings of the levels
+	// its breathers care about. Appended after COMPOSITION: the channels above keep their ids (CH_GAS_* in DM).
+	O2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN),
+	N2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROGEN),
+	CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
+	PLASMA_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_PLASMA),
+	N2O_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROUS_OXIDE),
+	CH4_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_METHANE),
+	FUEL_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_VOLATILE_FUEL),
+	// Moles of the other gases a simple mob's environment limits name (OXYGEN, PLASMA and CARBON_DIOXIDE above).
+	NITROGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_NITROGEN],
+	METHANE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_METHANE],
+	// A combined band: oxygen and CO2 partial pressures summed. A skin breather (alraune) lives on either, so its
+	// breath fails only when the two together fall under its minimum.
+	O2_CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN) + c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
 }}
 const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 

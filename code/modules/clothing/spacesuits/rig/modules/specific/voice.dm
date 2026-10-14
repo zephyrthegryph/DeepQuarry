@@ -15,51 +15,54 @@
 
 	var/obj/item/voice_changer/voice_holder
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voice_changer)
-
-/obj/item/rig_module/voice/Initialize(mapload)
-	. = ..()
-	voice_holder.active = 0
+CAPABILITIES(/obj/item/rig_module/voice)
+	owns_one(nameof(voice_holder), starts = /obj/item/voice_changer, starts_set = list("active" = 0))
 
 /obj/item/rig_module/voice/installed()
 	..()
 	rel_set(holder, nameof(holder.speech), src)
 
-/obj/item/rig_module/voice/engage()
+/obj/item/rig_module/voice/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
 
-	om_ask(usr, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
+	open_request(src, /datum/prompt/choice/rig_voice, PROC_REF(voice_choice_made), answerer = user)
 	return 1
 
 /// Toggling the voice synthesiser or naming it. Re-checked on the answer: conscious, and still
 /// wearing the suit the module is in.
-/datum/om/prompt/choice/rig_voice
-	message = "Would you like to toggle the synthesiser or set the name?"
+/datum/prompt/choice/rig_voice
+	question = "Would you like to toggle the synthesiser or set the name?"
+	timeout = 0
+	recheck_on_open = TRUE
 	buttons = TRUE
 	choices = list("Enable","Disable","Set Name","Cancel")
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/rig_voice/valid()
-	var/obj/item/rig_module/voice/module = subject
+/datum/prompt/choice/rig_voice/recheck_extra()
+	var/obj/item/rig_module/voice/module = owner
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
-/datum/om/prompt/text/rig_voice_name
+/datum/prompt/text/rig_voice_name
 	title = "Change name"
-	message = "Please enter a new name."
-	max_length = MAX_NAME_LEN
+	question = "Please enter a new name."
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/text/rig_voice_name/valid()
-	var/obj/item/rig_module/voice/module = subject
-	if(!text)
+/datum/prompt/text/rig_voice_name/recheck_extra()
+	var/obj/item/rig_module/voice/module = owner
+	if(!value)
 		return "no name"
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
-/obj/item/rig_module/voice/proc/voice_choice_made(datum/om/prompt/choice/rig_voice/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/rig_module/voice/proc/voice_choice_made(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	switch(context.answer.value)
 		if("Enable")
 			active = 1
 			voice_holder.active = 1
@@ -69,10 +72,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voic
 			voice_holder.active = 0
 			to_chat(user, span_blue("You disable the speech synthesiser."))
 		if("Set Name")
-			om_ask(user, /datum/om/prompt/text/rig_voice_name, PROC_REF(voice_name_entered), default = voice_holder.voice)
+			open_request(src, /datum/prompt/text/rig_voice_name, PROC_REF(voice_name_entered), answerer = user, default = voice_holder.voice)
 
-/obj/item/rig_module/voice/proc/voice_name_entered(datum/om/prompt/text/rig_voice_name/ask)
-	var/mob/user = ask.answerer
-	voice_holder.voice = ask.text
+/obj/item/rig_module/voice/proc/voice_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	voice_holder.voice = A.answer.value
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
 

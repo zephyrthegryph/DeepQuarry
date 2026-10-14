@@ -8,7 +8,6 @@
 	icon_state = "pda"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi')
 
 	//Main variables
@@ -63,6 +62,32 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/pda)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
+	setup(PROC_REF(configure_wrist_slots))
+	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
+	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
+	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
+	owns_one(nameof(pai), /obj/item/paicard)
+	drag_onto(PROC_REF(mousedrop_input))
+	interface("Pda", title = "Personal Data Assistant", state = nameof(GLOB.tgui_inventory_state), forwards = nameof(current_app), pressed = PROC_REF(pda_pressed))
+	without("ui_open")
+	op("Home", ui_act("Home"), then(PROC_REF(ui_act_home)))
+	op("StartProgram", ui_act("StartProgram", arg("program", schema_ref(/datum/data/pda/app))), then(PROC_REF(ui_act_startprogram)))
+	op("Eject", ui_act("Eject"), then(PROC_REF(ui_act_eject)))
+	op("Authenticate", ui_act("Authenticate"), then(PROC_REF(ui_act_authenticate)))
+	op("Retro", ui_act("Retro"), then(PROC_REF(ui_act_retro)))
+	op("TouchSounds", ui_act("TouchSounds"), then(PROC_REF(ui_act_touchsounds)))
+	op("Ringtone", ui_act("Ringtone"), then(PROC_REF(ui_act_ringtone)))
+	op("vv_fakepdapropconvo", topic_in(VV_TOPIC, VV_HK_FAKE_CONVO), needs(req_rights(R_FUN)), then(PROC_REF(vv_topic_fake_convo)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon, not = TRUE)), then(PROC_REF(interaction_alt)))
+	op("pda_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(pda_self)))
+	op("pda_verb_reset", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Reset PDA"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_reset)))
+	op("pda_verb_remove_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove id"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_id)))
+	op("pda_verb_remove_pen", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove pen"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_pen)))
+	op("pda_verb_remove_cartridge", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cartridge"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried(), req(PROC_REF(can_remove_cartridge_holds))), then(PROC_REF(pda_verb_remove_cartridge)))
+
 /obj/item/pda/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -70,21 +95,19 @@
 
 /obj/item/pda/item_ctrl_click(mob/user)
 	if(can_use(user) && !issilicon(user))
-		remove_pen()
+		remove_pen(user)
 		return
 	..()
 
 /// Old click_alt.
-/obj/item/pda/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return TRUE
-
+/obj/item/pda/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if ( can_use(user) )
 		if(id)
-			remove_id()
+			remove_id(user)
 		else
 			to_chat(user, span_notice("This PDA does not have an ID in it."))
-	return TRUE
+	return OP_OK
 
 /obj/item/pda/proc/play_ringtone()
 	var/S
@@ -98,25 +121,47 @@
 		O.show_message(text("[icon2html(src, O.client)] *[ttone]*"))
 
 /obj/item/pda/proc/set_ringtone(mob/user)
-	var/t = rerun_ask(user, "k99", PROC_REF(set_ringtone), args, /datum/om/prompt/text, message = "Please enter new ringtone", title = name, default = ttone)
-	if(isnull(t))
+	open_request(src, /datum/prompt/text/pda_ringtone, PROC_REF(ringtone_answered), answerer = user, title = name, default = ttone)
+
+/datum/prompt/text/pda_ringtone
+	question = "Please enter new ringtone"
+	max_len = MAX_MESSAGE_LEN
+	encode = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/pda_ringtone/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	if(in_range(src, user) && loc == user)
-		if(t)
-			if(item_hidden_uplink(src) && item_hidden_uplink(src).check_trigger(user, lowertext(t), lowertext(lock_code)))
-				to_chat(user, "The PDA softly beeps.")
-				close(user)
-			else
-				t = sanitize(copytext(t, 1, 20))
-				ttone = t
-			return 1
-	else
-		close(user)
+	var/obj/item/pda/device = owner
+	if(!istype(device) || QDELETED(device) || QDELETED(answerer))
+		return "The PDA or user is no longer available."
+	if(!isnull(value) && (!in_range(device, answerer) || device.loc != answerer))
+		return "The PDA is not held by the user."
+
+/obj/item/pda/proc/ringtone_answered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(!A.answer)
+		if(!isnull(A.request.value) && !QDELETED(user))
+			close(user)
+			SStgui.update_uis(src)
+		return
+	apply_ringtone(user, A.answer.value)
+	SStgui.update_uis(src)
+
+/obj/item/pda/proc/apply_ringtone(mob/user, t)
+	if(t)
+		if(item_hidden_uplink(src) && item_hidden_uplink(src).check_trigger(user, lowertext(t), lowertext(lock_code)))
+			to_chat(user, "The PDA softly beeps.")
+			close(user)
+		else
+			t = sanitize(copytext(t, 1, 20))
+			ttone = t
+		return 1
 	return 0
 
 REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
-
-DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 /obj/item/pda/Initialize(mapload)
 	. = ..()
@@ -126,7 +171,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		pdachoice = H.pdachoice
+		pdachoice = H.bio.pdachoice
 	else
 		pdachoice = 1
 
@@ -155,11 +200,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 			)
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-			slot_flags = SLOT_ID | SLOT_BELT | SLOT_GLOVES
-			sprite_sheets = list(
-				SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-			)
 		if(7)
 			icon = 'icons/obj/pda_slider.dmi'
 			model_name = "Slider® Personal Data Assistant"
@@ -186,24 +226,28 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 /obj/item/pda/GetID()
 	return id
 
-/obj/item/pda/MouseDrop(obj/over_object, src_location, over_location)
-	var/mob/M = usr
-	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
-		return attack_self(M)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/pda/proc/mousedrop_input(datum/act/input/A)
+	return drop_with_actor(A.actor, A.over)
+
+/obj/item/pda/proc/drop_with_actor(mob/user, obj/over_object)
+	if((!istype(over_object, /atom/movable/screen)) && can_use(user))
+		return attack_self(user)
 	return
 
 /obj/item/pda/proc/close(mob/user)
 	SStgui.close_uis(src)
 
 /// Old attack_self: open the PDA (or its uplink). Subtypes with special_handling fall through.
-/obj/item/pda/proc/pda_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pda/proc/pda_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(active_uplink_check(user))
-		return TRUE
+		return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/pda/proc/start_program(datum/data/pda/P)
 	if(P && ((P in programs) || (cartridge && (P in cartridge.programs))))
@@ -279,7 +323,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		j = prob(10)
 
 	if(j && detonate) //This kills the PDA
-		qdel(P)
+		destroyed(P, null, "explosion")
 		if(message)
 			message += "It melts in a puddle of plastic."
 		else
@@ -289,37 +333,35 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		message = span_warning("[message]")
 		M.show_message(message, 1)
 
-/obj/item/pda/proc/remove_id()
+/obj/item/pda/proc/remove_id(mob/user)
 	if (id)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.put_in_hands(id)
-			to_chat(usr, span_notice("You remove the ID from the [name]."))
+			to_chat(user, span_notice("You remove the ID from the [name]."))
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		own_take(src, nameof(id))
+		rel_take(src, nameof(id))
 
-/obj/item/pda/proc/remove_pen()
+/obj/item/pda/proc/remove_pen(mob/user)
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
 	if(O)
 		if(istype(loc, /mob))
 			var/mob/M = loc
 			if(M.get_active_hand() == null)
 				M.put_in_hands(O)
-				to_chat(usr, span_notice("You remove \the [O] from \the [src]."))
+				to_chat(user, span_notice("You remove \the [O] from \the [src]."))
 				cut_overlay("pda-pen")
 				return
 		O.forceMove(get_turf(src))
 	else
-		to_chat(usr, span_notice("This PDA does not have a pen in it."))
+		to_chat(user, span_notice("This PDA does not have a pen in it."))
 
 /// Old Reset PDA verb.
-/obj/item/pda/proc/pda_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return
-
+/obj/item/pda/proc/pda_verb_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
 		rel_clear(src, nameof(notifying_programs))
@@ -329,42 +371,39 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		to_chat(user, span_notice("You cannot do this while restrained."))
 
 /// Old Remove id verb.
-/obj/item/pda/proc/pda_verb_remove_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return
-
+/obj/item/pda/proc/pda_verb_remove_id(datum/act/op/A)
+	var/mob/user = A.actor
 	if ( can_use(user) )
 		if(id)
-			remove_id()
+			remove_id(user)
 		else
 			to_chat(user, span_notice("This PDA does not have an ID in it."))
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
 
 /// Old Remove pen verb.
-/obj/item/pda/proc/pda_verb_remove_pen(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return
-
+/obj/item/pda/proc/pda_verb_remove_pen(datum/act/op/A)
+	var/mob/user = A.actor
 	if ( can_use(user) )
-		remove_pen()
+		remove_pen(user)
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
 
 /// Requirement: TRUE, or why the cartridge can't be ejected. Silicons are turned away silently by the verb.
-/obj/item/pda/proc/can_remove_cartridge(mob/user, atom/target, obj/item/held)
-	if(issilicon(user))
-		return TRUE
+/obj/item/pda/proc/can_remove_cartridge_reason(mob/user)
 	if(!can_use(user))
 		return "you cannot do this while restrained"
 	if(isnull(cartridge))
 		return "there's no cartridge to eject"
-	return TRUE
+	return null
 
-/// Old Remove cartridge verb.
-/obj/item/pda/proc/pda_verb_remove_cartridge(mob/user, obj/item/held, datum/interaction/interaction)
-	if(issilicon(user))
-		return
+/// Requirement: the cartridge can be ejected.
+/obj/item/pda/proc/can_remove_cartridge_holds(datum/act/op/A)
+	return can_remove_cartridge_reason(A.actor)
+
+/// Why can_remove_cartridge_holds refuses.
+/obj/item/pda/proc/pda_verb_remove_cartridge(datum/act/op/A)
+	var/mob/user = A.actor
 	cartridge.forceMove(get_turf(src))
 	if(ismob(loc))
 		var/mob/M = loc
@@ -373,7 +412,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		rel_clear(cartridge.radio, nameof(/obj/item/radio/integrated::hostpda))
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
-	own_take(src, nameof(cartridge))
+	rel_take(src, nameof(cartridge))
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
@@ -381,40 +420,33 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 /obj/item/pda/proc/id_check(mob/user, choice)//To check for IDs; 1 for in-pda use, 2 for out of pda use.
 	if(choice == 1)
 		if (id)
-			remove_id()
+			remove_id(user)
 			return 1
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id))
-				own_set(src, nameof(src.id), I, user = user)
+				move_into(src, nameof(src.id), I, user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, nameof(src.id)) // handed back below, not disposed of
-			if(!own_set(src, nameof(src.id), I, user = user))
-				own_set(src, nameof(src.id), old_id)
+			var/obj/old_id = rel_take(src, nameof(src.id)) // handed back below, not disposed of
+			if(!move_into(src, nameof(src.id), I, user))
+				rel_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)
 			return 1
 	return 0
 
 // access to status display signals
-DECLARE_INTERACTIONS(/obj/item/pda, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_SELF(null, PROC_REF(pda_self)), \
-	INTERACT_VERB("Reset PDA", PROC_REF(pda_verb_reset), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove id", PROC_REF(pda_verb_remove_id), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove pen", PROC_REF(pda_verb_remove_pen), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove cartridge", PROC_REF(pda_verb_remove_cartridge), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/pda/proc/can_remove_cartridge)), \
-)
 
 /// Old attackby.
-/obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
+/obj/item/pda/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		if(!own_set(src, nameof(src.cartridge), C, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.cartridge), C, user))
+			return OP_PASS
 		cartridge.update_programs(src)
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
@@ -425,9 +457,9 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		var/obj/item/card/id/idcard = C
 		if(!idcard.registered_name)
 			to_chat(user, span_notice("\The [src] rejects the ID."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!owner)
-			owner = idcard.registered_name
+			set_owner(idcard.registered_name)
 			ownjob = idcard.assignment
 			ownrank = idcard.rank
 			name = "PDA-[owner] ([ownjob])"
@@ -438,10 +470,10 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 				if(id_check(user, 2))
 					to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 					add_overlay("pda-id")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
-		if(!own_set(src, nameof(src.pai), C, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.pai), C, user))
+			return OP_PASS
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))
@@ -449,11 +481,11 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		if(O)
 			to_chat(user, span_notice("There is already a pen in \the [src]."))
 		else
-			user.drop_item(C)
-			C.forceMove(src)
+			if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
+				return OP_PASS
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 			add_overlay("pda-pen")
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M, /mob/living/carbon) && scanmode())
@@ -481,20 +513,16 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
-/obj/item/storage/box/PDAs/Initialize(mapload)
-	. = ..()
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/cartridge/head(src)
+/// Two department cartridges, each rolled on its own.
+/obj/item/storage/box/PDAs/proc/roll_department_cartridges(datum/roller/R)
+	var/static/list/carts = list(/obj/item/cartridge/engineering, /obj/item/cartridge/security, /obj/item/cartridge/medical, /obj/item/cartridge/signal/science, /obj/item/cartridge/quartermaster)
+	return list(R.choose(carts), R.choose(carts))
 
-	var/newcart = pick(	/obj/item/cartridge/engineering,
-						/obj/item/cartridge/security,
-						/obj/item/cartridge/medical,
-						/obj/item/cartridge/signal/science,
-						/obj/item/cartridge/quartermaster)
-	new newcart(src)
+CAPABILITIES(/obj/item/storage/box/PDAs)
+	// two Initialize() overrides ran here (pda.dm and pda_subtypes.dm, the second calling the first): two of each
+	initial_contents(/obj/item/pda, count = 8)
+	initial_contents(/obj/item/cartridge/head, count = 2)
+	initial_contents(PROC_REF(roll_department_cartridges))
 
 // === merged from pda_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/pda
@@ -541,3 +569,22 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// The lastapp this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/lastapp() as /datum/data/pda/app
 	return lastapp
+
+/obj/item/pda/proc/configure_wrist_slots()
+	if(pdachoice != 6)
+		return
+	set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
+	set_sprite_sheets(list(
+		SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
+		SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
+	))
+
+/// The PDA's owner name: a wearer's visible name reads it (MOB_KEY_IDENTITY on whoever carries the PDA).
+/obj/item/pda/proc/set_owner(value)
+	if(TRACKED_UNCHANGED(owner, value))
+		return FALSE
+	owner = value
+	tracked_changed(src, nameof(owner))
+	identity_changed_on_holder()
+	return TRUE
+SETTER(/obj/item/pda, owner)

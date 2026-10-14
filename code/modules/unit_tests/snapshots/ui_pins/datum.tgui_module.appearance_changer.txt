@@ -1,0 +1,577 @@
+initial | base_icon: "Human"
+initial | blood_color: "#A10808"
+initial | blood_reagent: "iron"
+initial | change_eye_color: 128
+initial | change_facial_hair: 32
+initial | change_facial_hair_color: 64
+initial | change_gender: 2
+initial | change_hair: 8
+initial | change_hair_color: 16
+initial | change_misc: 256
+initial | change_race: 1
+initial | change_skin_color: 2
+initial | change_skin_tone: 0
+initial | character_records: []
+initial | digitigrade: 0
+initial | disk: 0
+initial | ears2_color: "#1e1e1e"
+initial | ears_alpha: 255
+initial | ears_color: "#1e1e1e"
+initial | ear_secondary_colors: []
+initial | ear_secondary_style: null
+initial | ear_style: null
+initial | eye_color: "#000000"
+initial | facial_hair_color: "#000000"
+initial | facial_hair_style: "Shaved"
+initial | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+initial | gender: "male"
+initial | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+initial | gender_id: null
+initial | hair_color: "#000000"
+initial | hair_color_grad: "#000000"
+initial | hair_grad: "none"
+initial | hair_style: "Bald"
+initial | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+initial | is_design_console: 0
+initial | markings: []
+initial | name: "Pin Tester"
+initial | offset_override: "Odd"
+initial | saveslot_load: 510
+initial | scale_appearance: "Sharp"
+initial | secondary_ears_alpha: 255
+initial | selected_a_record: 0
+initial | size_scale: "Normal"
+initial | skin_color: "#eeceb3"
+initial | species_name: null
+initial | species_sound: "Human Male"
+initial | species_sounds_female: "Human Female"
+initial | species_sounds_gendered: 1
+initial | species_sounds_male: "Human Male"
+initial | specimen: "Human"
+initial | stock_records: []
+initial | synthetic: "No"
+initial | tail2_color: "#1e1e1e"
+initial | tail3_color: "#1e1e1e"
+initial | tail_alpha: 255
+initial | tail_color: "#1e1e1e"
+initial | tail_style: null
+initial | use_custom_icon: 0
+initial | weight: 137
+initial | wing2_color: "#1e1e1e"
+initial | wing3_color: "#1e1e1e"
+initial | wing_alpha: 255
+initial | wing_color: "#1e1e1e"
+initial | wing_style: null
+custom species name | base_icon: "Human"
+custom species name | blood_color: "#A10808"
+custom species name | blood_reagent: "iron"
+custom species name | change_eye_color: 128
+custom species name | change_facial_hair: 32
+custom species name | change_facial_hair_color: 64
+custom species name | change_gender: 2
+custom species name | change_hair: 8
+custom species name | change_hair_color: 16
+custom species name | change_misc: 256
+custom species name | change_race: 1
+custom species name | change_skin_color: 2
+custom species name | change_skin_tone: 0
+custom species name | character_records: []
+custom species name | digitigrade: 0
+custom species name | disk: 0
+custom species name | ears2_color: "#1e1e1e"
+custom species name | ears_alpha: 255
+custom species name | ears_color: "#1e1e1e"
+custom species name | ear_secondary_colors: []
+custom species name | ear_secondary_style: null
+custom species name | ear_style: null
+custom species name | eye_color: "#000000"
+custom species name | facial_hair_color: "#000000"
+custom species name | facial_hair_style: "Shaved"
+custom species name | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+custom species name | gender: "male"
+custom species name | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+custom species name | gender_id: null
+custom species name | hair_color: "#000000"
+custom species name | hair_color_grad: "#000000"
+custom species name | hair_grad: "none"
+custom species name | hair_style: "Bald"
+custom species name | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+custom species name | is_design_console: 0
+custom species name | markings: []
+custom species name | name: "Pin Tester"
+custom species name | offset_override: "Odd"
+custom species name | saveslot_load: 510
+custom species name | scale_appearance: "Sharp"
+custom species name | secondary_ears_alpha: 255
+custom species name | selected_a_record: 0
+custom species name | size_scale: "Normal"
+custom species name | skin_color: "#eeceb3"
+custom species name | species_name: "Pinfolk"
+custom species name | species_sound: "Human Male"
+custom species name | species_sounds_female: "Human Female"
+custom species name | species_sounds_gendered: 1
+custom species name | species_sounds_male: "Human Male"
+custom species name | specimen: "Human"
+custom species name | stock_records: []
+custom species name | synthetic: "No"
+custom species name | tail2_color: "#1e1e1e"
+custom species name | tail3_color: "#1e1e1e"
+custom species name | tail_alpha: 255
+custom species name | tail_color: "#1e1e1e"
+custom species name | tail_style: null
+custom species name | use_custom_icon: 0
+custom species name | weight: 137
+custom species name | wing2_color: "#1e1e1e"
+custom species name | wing3_color: "#1e1e1e"
+custom species name | wing_alpha: 255
+custom species name | wing_color: "#1e1e1e"
+custom species name | wing_style: null
+size set | base_icon: "Human"
+size set | blood_color: "#A10808"
+size set | blood_reagent: "iron"
+size set | change_eye_color: 128
+size set | change_facial_hair: 32
+size set | change_facial_hair_color: 64
+size set | change_gender: 2
+size set | change_hair: 8
+size set | change_hair_color: 16
+size set | change_misc: 256
+size set | change_race: 1
+size set | change_skin_color: 2
+size set | change_skin_tone: 0
+size set | character_records: []
+size set | digitigrade: 0
+size set | disk: 0
+size set | ears2_color: "#1e1e1e"
+size set | ears_alpha: 255
+size set | ears_color: "#1e1e1e"
+size set | ear_secondary_colors: []
+size set | ear_secondary_style: null
+size set | ear_style: null
+size set | eye_color: "#000000"
+size set | facial_hair_color: "#000000"
+size set | facial_hair_style: "Shaved"
+size set | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+size set | gender: "male"
+size set | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+size set | gender_id: null
+size set | hair_color: "#000000"
+size set | hair_color_grad: "#000000"
+size set | hair_grad: "none"
+size set | hair_style: "Bald"
+size set | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+size set | is_design_console: 0
+size set | markings: []
+size set | name: "Pin Tester"
+size set | offset_override: "Odd"
+size set | saveslot_load: 510
+size set | scale_appearance: "Sharp"
+size set | secondary_ears_alpha: 255
+size set | selected_a_record: 0
+size set | size_scale: "Small"
+size set | skin_color: "#eeceb3"
+size set | species_name: "Pinfolk"
+size set | species_sound: "Human Male"
+size set | species_sounds_female: "Human Female"
+size set | species_sounds_gendered: 1
+size set | species_sounds_male: "Human Male"
+size set | specimen: "Human"
+size set | stock_records: []
+size set | synthetic: "No"
+size set | tail2_color: "#1e1e1e"
+size set | tail3_color: "#1e1e1e"
+size set | tail_alpha: 255
+size set | tail_color: "#1e1e1e"
+size set | tail_style: null
+size set | use_custom_icon: 0
+size set | weight: 137
+size set | wing2_color: "#1e1e1e"
+size set | wing3_color: "#1e1e1e"
+size set | wing_alpha: 255
+size set | wing_color: "#1e1e1e"
+size set | wing_style: null
+species sound | base_icon: "Human"
+species sound | blood_color: "#A10808"
+species sound | blood_reagent: "iron"
+species sound | change_eye_color: 128
+species sound | change_facial_hair: 32
+species sound | change_facial_hair_color: 64
+species sound | change_gender: 2
+species sound | change_hair: 8
+species sound | change_hair_color: 16
+species sound | change_misc: 256
+species sound | change_race: 1
+species sound | change_skin_color: 2
+species sound | change_skin_tone: 0
+species sound | character_records: []
+species sound | digitigrade: 0
+species sound | disk: 0
+species sound | ears2_color: "#1e1e1e"
+species sound | ears_alpha: 255
+species sound | ears_color: "#1e1e1e"
+species sound | ear_secondary_colors: []
+species sound | ear_secondary_style: null
+species sound | ear_style: null
+species sound | eye_color: "#000000"
+species sound | facial_hair_color: "#000000"
+species sound | facial_hair_style: "Shaved"
+species sound | flavor_text: {"general":"","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+species sound | gender: "male"
+species sound | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+species sound | gender_id: null
+species sound | hair_color: "#000000"
+species sound | hair_color_grad: "#000000"
+species sound | hair_grad: "none"
+species sound | hair_style: "Bald"
+species sound | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+species sound | is_design_console: 0
+species sound | markings: []
+species sound | name: "Pin Tester"
+species sound | offset_override: "Odd"
+species sound | saveslot_load: 510
+species sound | scale_appearance: "Sharp"
+species sound | secondary_ears_alpha: 255
+species sound | selected_a_record: 0
+species sound | size_scale: "Small"
+species sound | skin_color: "#eeceb3"
+species sound | species_name: "Pinfolk"
+species sound | species_sound: "Canine"
+species sound | species_sounds_female: "Human Female"
+species sound | species_sounds_gendered: 1
+species sound | species_sounds_male: "Human Male"
+species sound | specimen: "Human"
+species sound | stock_records: []
+species sound | synthetic: "No"
+species sound | tail2_color: "#1e1e1e"
+species sound | tail3_color: "#1e1e1e"
+species sound | tail_alpha: 255
+species sound | tail_color: "#1e1e1e"
+species sound | tail_style: null
+species sound | use_custom_icon: 0
+species sound | weight: 137
+species sound | wing2_color: "#1e1e1e"
+species sound | wing3_color: "#1e1e1e"
+species sound | wing_alpha: 255
+species sound | wing_color: "#1e1e1e"
+species sound | wing_style: null
+general flavor text | base_icon: "Human"
+general flavor text | blood_color: "#A10808"
+general flavor text | blood_reagent: "iron"
+general flavor text | change_eye_color: 128
+general flavor text | change_facial_hair: 32
+general flavor text | change_facial_hair_color: 64
+general flavor text | change_gender: 2
+general flavor text | change_hair: 8
+general flavor text | change_hair_color: 16
+general flavor text | change_misc: 256
+general flavor text | change_race: 1
+general flavor text | change_skin_color: 2
+general flavor text | change_skin_tone: 0
+general flavor text | character_records: []
+general flavor text | digitigrade: 0
+general flavor text | disk: 0
+general flavor text | ears2_color: "#1e1e1e"
+general flavor text | ears_alpha: 255
+general flavor text | ears_color: "#1e1e1e"
+general flavor text | ear_secondary_colors: []
+general flavor text | ear_secondary_style: null
+general flavor text | ear_style: null
+general flavor text | eye_color: "#000000"
+general flavor text | facial_hair_color: "#000000"
+general flavor text | facial_hair_style: "Shaved"
+general flavor text | flavor_text: {"general":"A tidy test subject.","head":"","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+general flavor text | gender: "male"
+general flavor text | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+general flavor text | gender_id: null
+general flavor text | hair_color: "#000000"
+general flavor text | hair_color_grad: "#000000"
+general flavor text | hair_grad: "none"
+general flavor text | hair_style: "Bald"
+general flavor text | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+general flavor text | is_design_console: 0
+general flavor text | markings: []
+general flavor text | name: "Pin Tester"
+general flavor text | offset_override: "Odd"
+general flavor text | saveslot_load: 510
+general flavor text | scale_appearance: "Sharp"
+general flavor text | secondary_ears_alpha: 255
+general flavor text | selected_a_record: 0
+general flavor text | size_scale: "Small"
+general flavor text | skin_color: "#eeceb3"
+general flavor text | species_name: "Pinfolk"
+general flavor text | species_sound: "Canine"
+general flavor text | species_sounds_female: "Human Female"
+general flavor text | species_sounds_gendered: 1
+general flavor text | species_sounds_male: "Human Male"
+general flavor text | specimen: "Human"
+general flavor text | stock_records: []
+general flavor text | synthetic: "No"
+general flavor text | tail2_color: "#1e1e1e"
+general flavor text | tail3_color: "#1e1e1e"
+general flavor text | tail_alpha: 255
+general flavor text | tail_color: "#1e1e1e"
+general flavor text | tail_style: null
+general flavor text | use_custom_icon: 0
+general flavor text | weight: 137
+general flavor text | wing2_color: "#1e1e1e"
+general flavor text | wing3_color: "#1e1e1e"
+general flavor text | wing_alpha: 255
+general flavor text | wing_color: "#1e1e1e"
+general flavor text | wing_style: null
+head flavor text | base_icon: "Human"
+head flavor text | blood_color: "#A10808"
+head flavor text | blood_reagent: "iron"
+head flavor text | change_eye_color: 128
+head flavor text | change_facial_hair: 32
+head flavor text | change_facial_hair_color: 64
+head flavor text | change_gender: 2
+head flavor text | change_hair: 8
+head flavor text | change_hair_color: 16
+head flavor text | change_misc: 256
+head flavor text | change_race: 1
+head flavor text | change_skin_color: 2
+head flavor text | change_skin_tone: 0
+head flavor text | character_records: []
+head flavor text | digitigrade: 0
+head flavor text | disk: 0
+head flavor text | ears2_color: "#1e1e1e"
+head flavor text | ears_alpha: 255
+head flavor text | ears_color: "#1e1e1e"
+head flavor text | ear_secondary_colors: []
+head flavor text | ear_secondary_style: null
+head flavor text | ear_style: null
+head flavor text | eye_color: "#000000"
+head flavor text | facial_hair_color: "#000000"
+head flavor text | facial_hair_style: "Shaved"
+head flavor text | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+head flavor text | gender: "male"
+head flavor text | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+head flavor text | gender_id: null
+head flavor text | hair_color: "#000000"
+head flavor text | hair_color_grad: "#000000"
+head flavor text | hair_grad: "none"
+head flavor text | hair_style: "Bald"
+head flavor text | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+head flavor text | is_design_console: 0
+head flavor text | markings: []
+head flavor text | name: "Pin Tester"
+head flavor text | offset_override: "Odd"
+head flavor text | saveslot_load: 510
+head flavor text | scale_appearance: "Sharp"
+head flavor text | secondary_ears_alpha: 255
+head flavor text | selected_a_record: 0
+head flavor text | size_scale: "Small"
+head flavor text | skin_color: "#eeceb3"
+head flavor text | species_name: "Pinfolk"
+head flavor text | species_sound: "Canine"
+head flavor text | species_sounds_female: "Human Female"
+head flavor text | species_sounds_gendered: 1
+head flavor text | species_sounds_male: "Human Male"
+head flavor text | specimen: "Human"
+head flavor text | stock_records: []
+head flavor text | synthetic: "No"
+head flavor text | tail2_color: "#1e1e1e"
+head flavor text | tail3_color: "#1e1e1e"
+head flavor text | tail_alpha: 255
+head flavor text | tail_color: "#1e1e1e"
+head flavor text | tail_style: null
+head flavor text | use_custom_icon: 0
+head flavor text | weight: 137
+head flavor text | wing2_color: "#1e1e1e"
+head flavor text | wing3_color: "#1e1e1e"
+head flavor text | wing_alpha: 255
+head flavor text | wing_color: "#1e1e1e"
+head flavor text | wing_style: null
+hair colour | base_icon: "Human"
+hair colour | blood_color: "#A10808"
+hair colour | blood_reagent: "iron"
+hair colour | change_eye_color: 128
+hair colour | change_facial_hair: 32
+hair colour | change_facial_hair_color: 64
+hair colour | change_gender: 2
+hair colour | change_hair: 8
+hair colour | change_hair_color: 16
+hair colour | change_misc: 256
+hair colour | change_race: 1
+hair colour | change_skin_color: 2
+hair colour | change_skin_tone: 0
+hair colour | character_records: []
+hair colour | digitigrade: 0
+hair colour | disk: 0
+hair colour | ears2_color: "#1e1e1e"
+hair colour | ears_alpha: 255
+hair colour | ears_color: "#1e1e1e"
+hair colour | ear_secondary_colors: []
+hair colour | ear_secondary_style: null
+hair colour | ear_style: null
+hair colour | eye_color: "#000000"
+hair colour | facial_hair_color: "#000000"
+hair colour | facial_hair_style: "Shaved"
+hair colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+hair colour | gender: "male"
+hair colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+hair colour | gender_id: null
+hair colour | hair_color: "#336699"
+hair colour | hair_color_grad: "#000000"
+hair colour | hair_grad: "none"
+hair colour | hair_style: "Bald"
+hair colour | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+hair colour | is_design_console: 0
+hair colour | markings: []
+hair colour | name: "Pin Tester"
+hair colour | offset_override: "Odd"
+hair colour | saveslot_load: 510
+hair colour | scale_appearance: "Sharp"
+hair colour | secondary_ears_alpha: 255
+hair colour | selected_a_record: 0
+hair colour | size_scale: "Small"
+hair colour | skin_color: "#eeceb3"
+hair colour | species_name: "Pinfolk"
+hair colour | species_sound: "Canine"
+hair colour | species_sounds_female: "Human Female"
+hair colour | species_sounds_gendered: 1
+hair colour | species_sounds_male: "Human Male"
+hair colour | specimen: "Human"
+hair colour | stock_records: []
+hair colour | synthetic: "No"
+hair colour | tail2_color: "#1e1e1e"
+hair colour | tail3_color: "#1e1e1e"
+hair colour | tail_alpha: 255
+hair colour | tail_color: "#1e1e1e"
+hair colour | tail_style: null
+hair colour | use_custom_icon: 0
+hair colour | weight: 137
+hair colour | wing2_color: "#1e1e1e"
+hair colour | wing3_color: "#1e1e1e"
+hair colour | wing_alpha: 255
+hair colour | wing_color: "#1e1e1e"
+hair colour | wing_style: null
+eye colour | base_icon: "Human"
+eye colour | blood_color: "#A10808"
+eye colour | blood_reagent: "iron"
+eye colour | change_eye_color: 128
+eye colour | change_facial_hair: 32
+eye colour | change_facial_hair_color: 64
+eye colour | change_gender: 2
+eye colour | change_hair: 8
+eye colour | change_hair_color: 16
+eye colour | change_misc: 256
+eye colour | change_race: 1
+eye colour | change_skin_color: 2
+eye colour | change_skin_tone: 0
+eye colour | character_records: []
+eye colour | digitigrade: 0
+eye colour | disk: 0
+eye colour | ears2_color: "#1e1e1e"
+eye colour | ears_alpha: 255
+eye colour | ears_color: "#1e1e1e"
+eye colour | ear_secondary_colors: []
+eye colour | ear_secondary_style: null
+eye colour | ear_style: null
+eye colour | eye_color: "#00ff00"
+eye colour | facial_hair_color: "#000000"
+eye colour | facial_hair_style: "Shaved"
+eye colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+eye colour | gender: "male"
+eye colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+eye colour | gender_id: null
+eye colour | hair_color: "#336699"
+eye colour | hair_color_grad: "#000000"
+eye colour | hair_grad: "none"
+eye colour | hair_style: "Bald"
+eye colour | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+eye colour | is_design_console: 0
+eye colour | markings: []
+eye colour | name: "Pin Tester"
+eye colour | offset_override: "Odd"
+eye colour | saveslot_load: 510
+eye colour | scale_appearance: "Sharp"
+eye colour | secondary_ears_alpha: 255
+eye colour | selected_a_record: 0
+eye colour | size_scale: "Small"
+eye colour | skin_color: "#eeceb3"
+eye colour | species_name: "Pinfolk"
+eye colour | species_sound: "Canine"
+eye colour | species_sounds_female: "Human Female"
+eye colour | species_sounds_gendered: 1
+eye colour | species_sounds_male: "Human Male"
+eye colour | specimen: "Human"
+eye colour | stock_records: []
+eye colour | synthetic: "No"
+eye colour | tail2_color: "#1e1e1e"
+eye colour | tail3_color: "#1e1e1e"
+eye colour | tail_alpha: 255
+eye colour | tail_color: "#1e1e1e"
+eye colour | tail_style: null
+eye colour | use_custom_icon: 0
+eye colour | weight: 137
+eye colour | wing2_color: "#1e1e1e"
+eye colour | wing3_color: "#1e1e1e"
+eye colour | wing_alpha: 255
+eye colour | wing_color: "#1e1e1e"
+eye colour | wing_style: null
+skin colour | base_icon: "Human"
+skin colour | blood_color: "#A10808"
+skin colour | blood_reagent: "iron"
+skin colour | change_eye_color: 128
+skin colour | change_facial_hair: 32
+skin colour | change_facial_hair_color: 64
+skin colour | change_gender: 2
+skin colour | change_hair: 8
+skin colour | change_hair_color: 16
+skin colour | change_misc: 256
+skin colour | change_race: 1
+skin colour | change_skin_color: 2
+skin colour | change_skin_tone: 0
+skin colour | character_records: []
+skin colour | digitigrade: 0
+skin colour | disk: 0
+skin colour | ears2_color: "#1e1e1e"
+skin colour | ears_alpha: 255
+skin colour | ears_color: "#1e1e1e"
+skin colour | ear_secondary_colors: []
+skin colour | ear_secondary_style: null
+skin colour | ear_style: null
+skin colour | eye_color: "#00ff00"
+skin colour | facial_hair_color: "#000000"
+skin colour | facial_hair_style: "Shaved"
+skin colour | flavor_text: {"general":"A tidy test subject.","head":"Short hair.","face":"","eyes":"","torso":"","arms":"","hands":"","legs":"","feet":""}
+skin colour | gender: "male"
+skin colour | genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"}]
+skin colour | gender_id: null
+skin colour | hair_color: "#336699"
+skin colour | hair_color_grad: "#000000"
+skin colour | hair_grad: "none"
+skin colour | hair_style: "Bald"
+skin colour | id_genders: [{"gender_name":"Male","gender_key":"male"},{"gender_name":"Female","gender_key":"female"},{"gender_name":"Plural","gender_key":"plural"},{"gender_name":"Neuter","gender_key":"neuter"},{"gender_name":"Herm","gender_key":"herm"}]
+skin colour | is_design_console: 0
+skin colour | markings: []
+skin colour | name: "Pin Tester"
+skin colour | offset_override: "Odd"
+skin colour | saveslot_load: 510
+skin colour | scale_appearance: "Sharp"
+skin colour | secondary_ears_alpha: 255
+skin colour | selected_a_record: 0
+skin colour | size_scale: "Small"
+skin colour | skin_color: "#aa8866"
+skin colour | species_name: "Pinfolk"
+skin colour | species_sound: "Canine"
+skin colour | species_sounds_female: "Human Female"
+skin colour | species_sounds_gendered: 1
+skin colour | species_sounds_male: "Human Male"
+skin colour | specimen: "Human"
+skin colour | stock_records: []
+skin colour | synthetic: "No"
+skin colour | tail2_color: "#1e1e1e"
+skin colour | tail3_color: "#1e1e1e"
+skin colour | tail_alpha: 255
+skin colour | tail_color: "#1e1e1e"
+skin colour | tail_style: null
+skin colour | use_custom_icon: 0
+skin colour | weight: 137
+skin colour | wing2_color: "#1e1e1e"
+skin colour | wing3_color: "#1e1e1e"
+skin colour | wing_alpha: 255
+skin colour | wing_color: "#1e1e1e"
+skin colour | wing_style: null
+

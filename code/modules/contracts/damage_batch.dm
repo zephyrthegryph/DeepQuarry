@@ -23,6 +23,19 @@
 	/// window key -> TRUE once pruned in this batch.
 	var/list/pruned_opportunity_windows
 
+CAPABILITIES(/datum/system/contracts)
+	owns_many(nameof(pending_damage_reports))
+	owns_many(nameof(contracts_by_id), /datum/contract)
+	owns_many(nameof(evidence_by_id), /datum/contract_evidence)
+	ref_many(nameof(offered_contracts), /datum/contract)
+	ref_many(nameof(active_contracts), /datum/contract)
+	ref_many(nameof(grace_contracts), /datum/contract)
+	ref_many(nameof(closed_contracts), /datum/contract)
+	ref_many(nameof(offer_candidates), /datum/contract_offer_candidate)
+	ref_many(nameof(lifecycle_history), /datum/contract_lifecycle_entry)
+	ref_many(nameof(recent_events), /datum/contract_event)
+	ref_many(nameof(opportunity_history), /datum/contract_opportunity_history_entry)
+
 /// One damaged atom's accumulated damage in a batch, with the location facts
 /// the event needs if the atom is gone by the time the batch flushes.
 /datum/contract_damage_report
@@ -73,20 +86,20 @@
 	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
 	if(!report)
 		report = new(source)
-		own_put(src, nameof(pending_damage_reports), key, report)
+		rel_add(src, nameof(pending_damage_reports), report, key)
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 
 /datum/system/contracts/proc/flush_damage_reports()
-	// own_take_all() empties the owned list in place and hands back its values (the reports),
+	// rel_take_all() empties the owned list in place and hands back its values (the reports),
 	// so iterate what it returns, not the var.
-	var/list/reports = own_take_all(src, nameof(pending_damage_reports))
+	var/list/reports = rel_take_all(src, nameof(pending_damage_reports))
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++
 	for(var/datum/contract_damage_report/report as anything in reports)
 		publish_damage_report(report)
-		qdel(report)
+		spent(report)
 	contract_batch_depth--
 
 /datum/system/contracts/proc/publish_damage_report(datum/contract_damage_report/report)

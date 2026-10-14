@@ -1,0 +1,5 @@
+/obj/machinery/beehive icon: icons/obj/beekeeping.dmi
+/obj/machinery/beehive state: beehive
+/obj/machinery/beehive dir: 2
+/obj/machinery/beehive overlay: icons/obj/beekeeping.dmi:beehive:8:#000000
+

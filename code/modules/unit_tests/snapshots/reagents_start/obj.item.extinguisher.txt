@@ -1,0 +1,4 @@
+/obj/item/extinguisher vol=300 holder=/datum/reagents firefoam=300
+/obj/item/extinguisher/mini vol=150 holder=/datum/reagents firefoam=150
+/obj/item/extinguisher/atmo vol=600 holder=/datum/reagents firefoam=600
+

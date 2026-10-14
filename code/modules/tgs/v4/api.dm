@@ -46,6 +46,11 @@
 	var/export_lock = FALSE
 	var/list/last_interop_response
 
+CAPABILITIES(/datum/tgs_api/v4)
+	owns_many(nameof(custom_commands))
+	owns_one(nameof(cached_revision), /datum/tgs_revision_information)
+	owns_many(nameof(cached_test_merges))
+
 /datum/tgs_api/v4/ApiVersion()
 	return new /datum/tgs_version("4.0.0.0")
 
@@ -84,11 +89,11 @@
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		own_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
+		rel_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
-	own_take_all(src, nameof(cached_test_merges))
+	rel_take_all(src, nameof(cached_test_merges))
 	var/list/json = cached_json["testMerges"]
 	for(var/entry in json)
 		var/datum/tgs_revision_information/test_merge/tm = new
@@ -107,7 +112,7 @@
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		own_add(src, nameof(cached_test_merges), tm)
+		rel_add(src, nameof(cached_test_merges), tm)
 
 	return TRUE
 
@@ -181,7 +186,7 @@
 	var/json = json_encode(data)
 
 	while(requesting_new_port && !override_requesting_new_port)
-		sleep(world.tick_lag) // ALLOW(scheduler): vendored TGS
+		sleep(world.tick_lag)
 
 	//we need some port open at this point to facilitate return communication
 	if(!world.port)
@@ -209,7 +214,7 @@
 		requesting_new_port = FALSE
 
 	while(export_lock)
-		sleep(world.tick_lag) // ALLOW(scheduler): vendored TGS
+		sleep(world.tick_lag)
 	export_lock = TRUE
 
 	last_interop_response = null
@@ -217,7 +222,7 @@
 	text2file(json, server_commands_json_path)
 
 	for(var/I = 0; I < EXPORT_TIMEOUT_DS && !last_interop_response; ++I)
-		sleep(world.tick_lag) // ALLOW(scheduler): vendored TGS
+		sleep(world.tick_lag)
 
 	if(!last_interop_response)
 		TGS_ERROR_LOG("Failed to get export result for: [json]")

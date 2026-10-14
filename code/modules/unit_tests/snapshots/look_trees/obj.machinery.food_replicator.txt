@@ -1,0 +1,5 @@
+/obj/machinery/food_replicator icon: icons/obj/machines/food_replicator.dmi
+/obj/machinery/food_replicator state: food_replicator
+/obj/machinery/food_replicator dir: 2
+/obj/machinery/food_replicator overlay: icons/obj/machines/food_replicator.dmi:food_replicator:8:#000000
+

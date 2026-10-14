@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "The maintenance panel capability answers a boolean again, so a closed panel no longer draws its open layer"
+  - bugfix: "Plasteel sheets repair a damaged blast door again"
+  - code_imp: "Normal-tier unit tests: APC fixture, door emag reaction on the engine path, i7 snapshot rows for the door base"

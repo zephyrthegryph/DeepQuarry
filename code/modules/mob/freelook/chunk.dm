@@ -5,6 +5,7 @@
 // A 16x16 grid of the map with a list of turfs that can be seen, are visible and are dimmed.
 // Allows the Eye to stream these chunks and know what it can and cannot see.
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/obfuscation)
 /datum/obfuscation
 	var/icon = 'icons/effects/cameravis.dmi'
 	var/icon_state = "black"
@@ -62,7 +63,7 @@
 	if(visible || update_now)
 		if(!updating)
 			updating = 1
-			om_after(src, UPDATE_BUFFER, PROC_REF(update)) // Batch large changes, such as many doors opening or closing at once
+			after(src, UPDATE_BUFFER, PROC_REF(update)) // Batch large changes, such as many doors opening or closing at once
 	else
 		changed = 1
 

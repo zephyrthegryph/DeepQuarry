@@ -3,12 +3,10 @@
 	desc = "a red pillar candle. Its specially-formulated fuel-oxidizer wax mixture allows continued combustion in airless environments."
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	w_class = ITEMSIZE_TINY
-	light_color = "#E09D37"
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
+
 
 /// 1 (fresh) to 3 (nearly gone) by remaining wax.
 /obj/item/flame/candle/proc/appearance_wax_stage()
@@ -18,61 +16,74 @@
 		return 2
 	return 3
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle, "{icon_type}{appearance_wax_stage}{lit?_lit:}")
+/obj/item/flame/candle/draw(datum/look/look)
+	..()
+	look.state(look_state())
+
+/// The icon state of the candle as it burns.
+/obj/item/flame/candle/proc/look_state()
+	return "[icon_type][appearance_wax_stage()][lit ? "_lit" : ""]"
+
+CAPABILITIES(/obj/item/flame/candle)
+	configure(light_glow(color = "#E09D37"))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	op("snuff", in_hand(), then(PROC_REF(snuffed)))
+	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 
-/// Old attackby.
-/obj/item/flame/candle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter))
-		var/obj/item/flame/lighter/L = W
-		if(L.lit)
-			light()
-	else if(istype(W, /obj/item/flame/match))
-		var/obj/item/flame/match/M = W
-		if(M.lit)
-			light()
-	else if(istype(W, /obj/item/flame/candle))
-		var/obj/item/flame/candle/C = W
-		if(C.lit)
-			light()
-	return INTERACTION_HANDLED_PASS
+/// The held thing is a flame that burns: a lit lighter, match or candle.
+/obj/item/flame/candle/proc/offers_flame(datum/act/op/A)
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/flame/lighter) || istype(W, /obj/item/flame/match) || istype(W, /obj/item/flame/candle))
+		var/obj/item/flame/F = W
+		return (!!F.lit) ? null : /datum/msg/req_failed
+	return /datum/msg/req_failed
 
-/obj/item/flame/candle/welder_act(mob/user, obj/item/W)
+/// A burning flame lights the candle, and the click goes on to the ordinary attack.
+/obj/item/flame/candle/proc/lit_from(datum/act/op/A)
+	light(user = A.actor)
+	return OP_OK
+
+/obj/item/flame/candle/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.isOn())
 		light(span_notice("\The [user] casually lights the [src] with [W]."))
-	return TRUE
+	return OP_OK
 
 
-/obj/item/flame/candle/proc/light(flavor_text = span_notice("\The [usr] lights the [src]."))
+/obj/item/flame/candle/proc/light(flavor_text, mob/user)
 	if(!lit)
+		if(isnull(flavor_text))
+			flavor_text = user ? span_notice("\The [user] lights the [src].") : span_notice("\The [src] lights up.")
 		set_lit(TRUE)
 		visible_message(flavor_text)
-		set_light(CANDLE_LUM)
+		set_glow(src, GLOW(CANDLE_LUM, null, null))
 
-/obj/item/flame/candle/periodic_step()
-	wax--
-	if(!wax)
-		if(istype(src.loc, /mob))
-			src.dropped(src.loc)
-		replace_with(src, /obj/item/trash/candle)
+/obj/item/flame/candle/flame_step(datum/act/timer/A)
+	if(wax > 0)
+		set_wax(wax - 1)
+	if(wax <= 0) // never below zero: a candle set to 0 wax burns out on its next step instead of counting into negatives
+		burn_out()
 		return
-	update_icon()
 	if(istype(loc, /turf)) //start a fire if possible
 		var/turf/T = loc
 		T.hotspot_expose(700, 5)
 
-DECLARE_INTERACTIONS(/obj/item/flame/candle, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// Out of wax: the candle is spent.
+/obj/item/flame/candle/proc/burn_out()
+	if(istype(src.loc, /mob))
+		src.dropped(src.loc)
+	replace_with(src, /obj/item/trash/candle)
 
-/// Old attack_self.
-/obj/item/flame/candle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Using a lit candle in the hand snuffs it.
+/obj/item/flame/candle/proc/snuffed(datum/act/op/A)
 	if(lit)
 		set_lit(FALSE)
-		set_light(0)
-	return TRUE
+		set_glow(src, GLOW(0, null, null))
+	return OP_OK
 
 /obj/item/flame/candle/small
 	name = "small red candle"
@@ -106,14 +117,18 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 	w_class = ITEMSIZE_SMALL
 	wax = 20000
 
+/// The candelabra's cups keep it: out of wax it goes out and shows melted, it is not replaced by a spent candle.
+/obj/item/flame/candle/candelabra/burn_out()
+	set_lit(FALSE)
+	set_glow(src, GLOW(0, null, null))
+
 /obj/item/flame/candle/candelabra/proc/appearance_candelabra_suffix()
-	if(wax == 0)
+	if(wax <= 0)
 		return "_melted"
 	return lit ? "_lit" : ""
 
-APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra{appearance_candelabra_suffix}")
-// Its template reads lit through a proc, so watch it: set_lit() redraws the candelabra too.
-APPEARANCE_WATCH(/obj/item/flame/candle/candelabra, list("lit"))
+/obj/item/flame/candle/candelabra/look_state()
+	return "candelabra[appearance_candelabra_suffix()]"
 
 /obj/item/flame/candle/everburn
 	wax = 99999
@@ -129,10 +144,10 @@ APPEARANCE_WATCH(/obj/item/flame/candle/candelabra, list("lit"))
 	. = ..()
 	light(span_notice("\The [src] mysteriously lights itself!."))
 
-/obj/item/flame/candle/everburn/periodic_step()
-	// The permanent light has no fuel state to advance. Leaving it in SSobj also
+/obj/item/flame/candle/everburn/flame_step(datum/act/timer/A)
+	// The permanent light has no fuel state to advance. Burning its step as a lit candle
 	// exposed its turf as a 700 K hotspot forever, keeping whole atmos regions awake.
-	return PROCESS_KILL
+	return
 
-/obj/item/flame/candle/candelabra/everburn/periodic_step()
-	return PROCESS_KILL
+/obj/item/flame/candle/candelabra/everburn/flame_step(datum/act/timer/A)
+	return

@@ -1,0 +1,39 @@
+@obj.item.reagent_containers human|none
+@obj.item.reagent_containers robot|none
+@obj ai|none
+@obj.item.reagent_containers ghost|none
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+@obj.item.reagent_containers human|/obj/item/multitool
+@obj.item.reagent_containers human|/obj/item/weldingtool
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+@obj.item.reagent_containers human|/obj/item/card/id
+@obj.item.reagent_containers human|/obj/item/kit
+@obj.item.reagent_containers human|/obj/item/storage
+@obj.item.reagent_containers human|/obj/item
+@obj human|/obj/item/material/kitchen/utensil
+human|/obj/item/reagent_containers/food/snacks/meatball menu: Make a burger
+human|/obj/item/reagent_containers/food/snacks/meatball menu: Move To Top
+human|/obj/item/reagent_containers/food/snacks/meatball menu: Rename food
+human|/obj/item/reagent_containers/food/snacks/meatball menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/snacks/meatball click: Click: Make a burger
+human|/obj/item/reagent_containers/food/snacks/cutlet menu: Make a burger
+human|/obj/item/reagent_containers/food/snacks/cutlet menu: Move To Top
+human|/obj/item/reagent_containers/food/snacks/cutlet menu: Rename food
+human|/obj/item/reagent_containers/food/snacks/cutlet menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/snacks/cutlet click: Click: Make a burger
+human|/obj/item/reagent_containers/food/snacks/sausage menu: Make a burger
+human|/obj/item/reagent_containers/food/snacks/sausage menu: Make a hot dog
+human|/obj/item/reagent_containers/food/snacks/sausage menu: Move To Top
+human|/obj/item/reagent_containers/food/snacks/sausage menu: Rename food
+human|/obj/item/reagent_containers/food/snacks/sausage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/snacks/sausage click: Click: Make a hot dog
+@obj human|/obj/item/reagent_containers/food/snacks
+-menu: Add it
+-click: Click: Add it
++0 menu: Make a burger
++4 click: Click: Make a burger
+keys: add_cutlet, add_meatball, add_sausage, blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, start_burger, stuff, toggle_digestable, unwrap

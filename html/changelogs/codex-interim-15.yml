@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrate portal, ability, card, forensic and uplink choices to native requests while preserving current effects."

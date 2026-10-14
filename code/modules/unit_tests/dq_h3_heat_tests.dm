@@ -22,7 +22,7 @@
 
 /// Puts the test floor's air back at room temperature (burning test objects heat it).
 /proc/dq_h3_cool_floor(turf/open/T)
-	T.air?.set_temperature(T20C)
+	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 
 /// wait_for_condition() helper: TRUE once A is warmer than `start`.
 /proc/dq_h3_probe_warmer_than(atom/A, start)
@@ -64,7 +64,7 @@
 	var/datum/gas_mixture/saved = new
 	saved.copy_from(T.air)
 	var/obj/item/paper/late = allocate(/obj/item/paper, T)
-	T.air.set_temperature(ignition + 100)
+	heat_set(T.air, ignition + 100, HEAT_SOURCE_OTHER)
 	late.add_heat(1)
 	T.air.copy_from(saved)
 	TEST_ASSERT(late.resistance_flags & ON_FIRE, "a first heat body above the ignition point lights it")
@@ -144,7 +144,7 @@
 /datum/unit_test/dq_h3_appliance_energy/Run()
 	dq_h3_cool_floor(test_floor())
 	var/obj/machinery/appliance/cooker/oven/oven = allocate(/obj/machinery/appliance/cooker/oven, test_floor())
-	MACHINE_SLEEP(oven)
+	work_stop(oven)
 	oven.set_heating(TRUE)
 	TEST_ASSERT(!isnull(oven.heat_body), "a heating cooker is a heat body")
 	// Isolate it from the room so every joule stays in the oven and its contents.
@@ -213,7 +213,7 @@
 	dq_rx_flush()
 	TEST_ASSERT_EQUAL(doused.burn_ended_by, BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
 	air.copy_from(saved)
-	air.set_temperature(T20C)
+	heat_set(air, T20C, HEAT_SOURCE_OTHER)
 
 // ---- Hotspots heat a tile's items through their heat nodes ----
 
@@ -228,7 +228,7 @@
 
 	T.air.set_moles(/datum/gas/oxygen, 300)
 	T.air.set_moles(/datum/gas/plasma, 100)
-	T.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
+	heat_set(T.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 100, HEAT_SOURCE_OTHER)
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
 	var/obj/effect/hotspot/hotspot = T.active_hotspot
 	TEST_ASSERT(hotspot, "the tile burns")
@@ -246,8 +246,8 @@
 	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
 	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
-		om_callable(null, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
-		om_callable(null, GLOBAL_PROC_REF(vg_world_run_steps), 1),
+		GLOBAL_PROC_REF(dq_h3_probe_warmer_than), list(probe, start),
+		GLOBAL_PROC_REF(vg_world_run_steps), list(1),
 		20,
 	)
 	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")

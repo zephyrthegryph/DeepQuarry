@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Real slot moves now scope while_slotted entries; species grant hands() and their other entries through the relation scope; slot_transfer runs the remove and insert actions (admin authority forces); type-level every(); on_change watches the far var of a relation hop"

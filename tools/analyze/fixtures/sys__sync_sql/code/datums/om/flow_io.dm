@@ -1,0 +1,2 @@
+/proc/wrapper()
+	query.Execute()

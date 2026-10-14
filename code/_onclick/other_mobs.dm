@@ -1,4 +1,20 @@
-// Generic damage proc (slimes and monkeys).
+/// A generic attack (a simple mob's, a xeno's, a bot's, a hulk's smash) on `target`: the hit/generic action (doc/rewrite/final_api.html, section 8).
+/// The one emitter: a type answers it with extend(/datum/act/hit/generic, instead(...)); when nothing takes it over the default generic attack
+/// (attack_generic()) lands with the act's final damage. Returns what the default attack returned, or FALSE when the target took it over.
+/proc/generic_hit(atom/target, mob/user, damage, attack_verb)
+	if(!target || QDELETED(target))
+		return FALSE
+	var/datum/damage_packet/packet = damage_packet(user, user, null, null, DAMAGE_PACKET_SILENT, 0, user ? get_dir(user, target) : 0, null, DAMAGE_ENTRY_GENERIC)
+	var/datum/act/hit/generic/G = ACT_TRY(target, hit_generic, packet, user, damage, attack_verb)
+	if(!G)
+		packet.release()
+		return FALSE
+	damage = ACT_FINAL(G, damage, damage)
+	. = target.attack_generic(user, damage, attack_verb)
+	act_done(G)
+	packet.release()
+
+// Generic damage proc (slimes and monkeys): the default a generic hit lands when no hook takes it over. Reached only through generic_hit().
 /atom/proc/attack_generic(mob/user, damage, attack_verb)
 	if(!damage || !uses_integrity)
 		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
@@ -23,23 +39,19 @@
 	// If the gloves do anything, have them return 1 to stop
 	// normal attack_hand() here.
 	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES) // not typecast specifically enough in defines
-	if(istype(G) && G.Touch(A, 1, stance))
+	if(istype(G) && G.Touch(A, 1, stance, src))
 		return
 
 	A.attack_hand(src)
 
 /**
- * Touched with an empty hand, or a silicon's Use through silicon_use. The
- * type's gates run first (hand_gate()); then the converted handlers (I7):
- * interactions with `entry = INTERACTION_ENTRY_HAND`, most specific type first.
- * Returns TRUE when a gate stopped the touch or an interaction answered it.
+ * Touched with an empty hand, or a silicon's Use through silicon_use: the ops answered it first; what is left is the type's gate (hand_gate()).
+ * Returns TRUE when the gate stopped the touch.
  */
 /atom/proc/attack_hand(mob/user as mob)
 	if(!user)
 		return FALSE
-	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
-		return TRUE
-	return FALSE
+	return hand_gate(user) ? TRUE : FALSE
 
 /**
  * What a touch passes through before the type's own hand interactions: signal
@@ -47,8 +59,10 @@
  * the touch there. Overrides call ..() at the point the old attack_hand did.
  */
 /atom/proc/hand_gate(mob/user)
-	if(om_wants(src, /datum/om/event/before/attack_hand) && om_emit(src, new /datum/om/event/before/attack_hand(user)) == EVENT_VETO)
+	var/datum/act/attack_hand/touch = ACT_TRY(src, attack_hand, user)
+	if(!touch)
 		return TRUE
+	act_done(touch)
 	return FALSE
 
 /mob/proc/has_telegrip()
@@ -68,7 +82,7 @@
 	if((has_mutation(LASER_EYES)) && stance == I_HURT)
 		LaserEyes(A) // moved into a proc below
 
-	else if(istype(G) && G.Touch(A, 0, stance)) // for magic gloves
+	else if(istype(G) && G.Touch(A, 0, stance, src)) // for magic gloves
 		return
 
 	else if(has_telegrip())
@@ -100,7 +114,7 @@
 		return 0
 
 	setClickCooldown(get_attack_speed())
-	A.attack_generic(src,rand(5,6),"bitten")
+	generic_hit(A, src, rand(5,6), "bitten")
 
 /*
 	New Players:

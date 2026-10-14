@@ -13,9 +13,9 @@
 
 	var/climb_time = 2 SECONDS
 
-/obj/structure/ladder/Initialize(mapload)
-	. = ..()
+/obj/structure/ladder/proc/init_connect(datum/act/timer/A)
 	attempt_connection()
+
 
 /obj/structure/ladder/proc/attempt_connection()
 	// The DOWN-allowing ladder links to the UP-allowing one below, wiring BOTH ends:
@@ -27,92 +27,89 @@
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
 				rel_set(src, nameof(target_down), L)
-				L.update_icon()
 				break
-	update_icon()
 
-/obj/structure/ladder/relations()
-	. = ..()
-	. += rel_one(nameof(target_down), back = nameof(/obj/structure/ladder::target_up))
-	. += rel_one(nameof(target_up), back = nameof(/obj/structure/ladder::target_down))
+CAPABILITIES(/obj/structure/ladder)
+	silicon_hand(robots = TRUE)
+	after_init(0, then(PROC_REF(init_connect)))
+	// Climbing it (climbLadder()): the climber stays beside it for the climb time.
+	op("climb_ladder", ai(), needs(req_capable()), takes("target_ladder", "time"), wait(PROC_REF(ladder_climb_time)), then(PROC_REF(climb_done)))
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
+	op("hand", hand(), label("Use"), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
+	op("deconstruct", tool(TOOL_WELDER), label("Deconstruct"), needs(req_welder_lit()), costs(RES_FUEL, 0), begins(PROC_REF(deconstruct_begins)), plays(SFX_ITEMS_WELDER2, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(deconstruct_done)))
+	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(ladder_ghost_climb)))
 
-/obj/structure/ladder/attack_generic(mob/user)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/ladder/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	//Simple Animal
 	if(isanimal(user))
 		attack_hand(user)
 	else
-		return ..()
+		return HOOK_DECLINE
 
-/obj/structure/ladder/welder_act(mob/user, obj/item/C)
-	var/obj/item/weldingtool/WT = C.get_welder()
-	if(WT.remove_fuel(0, user))
-		play_sfx(src, SFX_ITEMS_WELDER2)
-		act_message(user, src, MSG_SELF("You start to deconstruct %T%."), MSG_OTHERS("%U% starts to deconstruct %T%."), MSG_BLIND("You hear welding"))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/ladder/proc/deconstruct_begins(datum/act/op/A)
+	return msg_text("You start to deconstruct %T%.", "%U% starts to deconstruct %T%.", "You hear welding")
 
-/obj/structure/ladder/proc/deconstruct_done(mob/user, obj/item/weldingtool/WT)
-	if(!WT.isOn())
-		return
-	var/obj/structure/ladder_assembly/A
+/obj/structure/ladder/proc/deconstruct_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/ladder_assembly/LA
 	to_chat(user, "You deconstruct \the [src].")
 	if(target_up)
 		target_up.visible_message("\The [target_up] deconstructs from below")
-		A = new /obj/structure/ladder_assembly(target_up.loc)
-		A.state = LADDER_CONSTRUCTION_WELDED
-		A.set_anchored(TRUE)
-		qdel(target_up)
+		LA = new /obj/structure/ladder_assembly(target_up.loc)
+		LA.set_state(LADDER_CONSTRUCTION_WELDED)
+		LA.set_anchored(TRUE)
+		destroyed(target_up, user, "deconstructed")
 	if(target_down)
 		target_down.visible_message("\The [target_down] deconstructs from above")
-		A = new /obj/structure/ladder_assembly(target_down.loc)
-		A.state = LADDER_CONSTRUCTION_WELDED
-		A.set_anchored(TRUE)
-		qdel(target_down)
-	A = new /obj/structure/ladder_assembly(loc)
-	A.state = LADDER_CONSTRUCTION_WRENCHED
-	A.set_anchored(TRUE)
-	qdel(src)
-
-DECLARE_INTERACTIONS(/obj/structure/ladder, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_OBSERVER("Climb", PROC_REF(ladder_ghost_climb)), \
-)
+		LA = new /obj/structure/ladder_assembly(target_down.loc)
+		LA.set_state(LADDER_CONSTRUCTION_WELDED)
+		LA.set_anchored(TRUE)
+		destroyed(target_down, user, "deconstructed")
+	LA = new /obj/structure/ladder_assembly(loc)
+	LA.set_state(LADDER_CONSTRUCTION_WRENCHED)
+	LA.set_anchored(TRUE)
+	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 /// Old attack_hand.
-/obj/structure/ladder/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/ladder/proc/interaction_hand(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.may_climb_ladders(src))
-		return TRUE
+		return OP_OK
 
-	var/obj/structure/ladder/target_ladder = getTargetLadder(M, PROC_REF(interaction_hand), args)
+	var/obj/structure/ladder/target_ladder = getTargetLadder(M, A.step_value("direction"))
 	if(!target_ladder)
-		return TRUE
+		return OP_OK
 	if(!(M.loc == loc) && !M.Move(get_turf(src)))
 		to_chat(M, span_notice("You fail to reach \the [src]."))
-		return TRUE
+		return OP_OK
 
 	climbLadder(M, target_ladder)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: drift up or down the ladder. Never fell through to the default.
-/obj/structure/ladder/proc/ladder_ghost_climb(mob/M, obj/item/held, datum/interaction/interaction)
-	var/target_ladder = getTargetLadder(M, PROC_REF(ladder_ghost_climb), args)
+/obj/structure/ladder/proc/ladder_ghost_climb(datum/act/op/A)
+	var/mob/M = A.actor
+	var/target_ladder = getTargetLadder(M, A.step_value("direction"))
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
+	return OP_OK
+
+/// Whether both of the ladder's ends that exist are standing on turfs.
+/obj/structure/ladder/proc/ladder_complete()
+	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
+		return FALSE
 	return TRUE
 
-/obj/structure/ladder
-	silicon_use = ROBOT_USE_HAND
-
-/// The ladder to climb to. Asking up or down re-runs `caller_proc` with `caller_args` on the answer,
-/// and returns null meanwhile.
-/obj/structure/ladder/proc/getTargetLadder(mob/M, caller_proc, list/caller_args)
-	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
+/// The ladder to climb to, given the answer to the up-or-down question (null when it was not asked).
+/obj/structure/ladder/proc/getTargetLadder(mob/M, direction)
+	if(!ladder_complete())
 		to_chat(M, span_notice("\The [src] is incomplete and can't be climbed."))
 		return
 	if(target_down && target_up)
-		var/direction = rerun_ask(M, "direction", caller_proc, caller_args, /datum/om/prompt/choice/alert, message = "Do you want to go up or down?", title = "Ladder", choices = list("Up", "Down", "Cancel"))
-
 		if(!direction || direction == "Cancel")
 			return
 
@@ -127,16 +124,22 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 	else
 		return target_down || target_up
 
-/mob/proc/may_climb_ladders(ladder)
+/// Why this mob cannot climb the ladder now, or null.
+/mob/proc/climb_refusal(ladder)
 	if(!Adjacent(ladder))
-		to_chat(src, span_warning("You need to be next to \the [ladder] to start climbing."))
-		return FALSE
+		return "You need to be next to \the [ladder] to start climbing."
 	if(incapacitated())
-		to_chat(src, span_warning("You are physically unable to climb \the [ladder]."))
-		return FALSE
-	return TRUE
+		return "You are physically unable to climb \the [ladder]."
+	return null
 
-/mob/observer/dead/may_climb_ladders(ladder)
+/mob/observer/dead/climb_refusal(ladder)
+	return null
+
+/mob/proc/may_climb_ladders(ladder)
+	var/why = climb_refusal(ladder)
+	if(why)
+		to_chat(src, span_warning(why))
+		return FALSE
 	return TRUE
 
 /obj/structure/ladder/proc/climbLadder(mob/M, obj/target_ladder)
@@ -152,14 +155,22 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 		var/mob/living/carbon/human/MS = M
 		climb_modifier = MS.species.climb_mult
 
-	om_task_timed(M, (climb_time * climb_modifier), src, src, PROC_REF(climb_done), list(M, target_ladder))
+	perform_op(M, src, "climb_ladder", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target_ladder" = target_ladder, "time" = climb_time * climb_modifier))
 	return FALSE
 
-/obj/structure/ladder/proc/climb_done(mob/M, obj/target_ladder)
+/// How long the climb takes: the ladder's time scaled by the climber's species.
+/obj/structure/ladder/proc/ladder_climb_time(datum/act/op/A)
+	return A.arg("time")
+
+/obj/structure/ladder/proc/climb_done(datum/act/op/A)
+	var/mob/M = A.actor
+	var/obj/target_ladder = A.arg("target_ladder")
+	if(QDELETED(target_ladder))
+		return
 	var/turf/T = get_turf(target_ladder)
-	for(var/atom/A in turf_contents_of_type(T, /atom))
-		if(!A.CanPass(M, M.loc, 1.5, 0))
-			to_chat(M, span_notice("\The [A] is blocking \the [src]."))
+	for(var/atom/blocker in turf_contents_of_type(T, /atom))
+		if(!blocker.CanPass(M, M.loc, 1.5, 0))
+			to_chat(M, span_notice("\The [blocker] is blocking \the [src]."))
 			return
 	M.forceMove(T) // Fixes adminspawned ladders
 
@@ -174,7 +185,10 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 /obj/structure/ladder/proc/appearance_down()
 	return !!(allowed_directions & DOWN)
 
-APPEARANCE_TEMPLATE(/obj/structure/ladder, "ladder{appearance_up}{appearance_down}")
+/// The look (the draw sweep: from its template).
+/obj/structure/ladder/draw(datum/look/look)
+	..()
+	look.state("ladder[appearance_up()][appearance_down()]")
 
 /obj/structure/ladder/up
 	allowed_directions = UP

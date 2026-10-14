@@ -38,16 +38,18 @@
 
 // C11: one slot for whoever's riding. Riders are spilled onto the pod's drop
 // location when it is destroyed (phase 3).
-/datum/om/relation/slot/transit_pod
+/datum/relation_definition/slot/transit_pod
 	holder = /obj/structure/transit_tube_pod
 	slot_id = CONTAINER_SLOT_TRANSIT_POD
 	name = "riders"
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 
-// When destroyed by explosions, properly handle contents.
-/obj/structure/transit_tube_pod/explosion_contents_severity(severity)
-	return severity
+// When destroyed by explosions, properly handle contents: the riders take the full blast.
+CAPABILITIES(/obj/structure/transit_tube_pod)
+	blast_contents()
+	// The pod carries its own air: one cell of breathable mix, owned by the pod (gas_store()).
+	gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))
 
 /obj/structure/transit_tube_pod/Initialize(mapload)
 	. = ..()
@@ -60,16 +62,24 @@
 	if(tube_dirs == null)
 		init_dirs()
 
-/obj/structure/transit_tube/Bumped(mob/AM as mob|obj)
+CAPABILITIES(/obj/structure/transit_tube)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/transit_tube/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/AM = N.bumper
 	var/obj/structure/transit_tube/T = locate_on(AM.loc, /obj/structure/transit_tube)
 	if(T)
 		to_chat(AM, span_warning("The tube's support pylons block your way."))
-		return ..()
+		return
 	else
 		AM.forceMove(get_turf(src))
 		to_chat(AM, span_info("You slip under the tube."))
 
-/obj/structure/transit_tube/station/Bumped(mob/AM as mob|obj)
+/obj/structure/transit_tube/station/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/AM = N.bumper
 	if(!pod_moving && icon_state == "open" && istype(AM, /mob))
 		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 			if(length(pod.slot_contents(CONTAINER_SLOT_TRANSIT_POD)))
@@ -79,20 +89,10 @@
 				AM.forceMove(pod)
 				return
 
+CAPABILITIES(/obj/structure/transit_tube/station)
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
-/obj/structure/transit_tube/station/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/transit_tube_toggle,
-	)
-	..()
-
-/// Old attack_hand: open/close the pod door.
-/datum/interaction/entry_hand/transit_tube_toggle
-	id = "transit_tube_toggle"
-	name = "Toggle"
-	effect = /obj/structure/transit_tube/station/proc/interaction_toggle
-
-/obj/structure/transit_tube/station/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/transit_tube/station/proc/interaction_toggle(datum/act/op/A)
 	if(!pod_moving)
 		for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 			if(!pod.moving && (pod.dir in directions()))
@@ -105,32 +105,35 @@
 
 /obj/structure/transit_tube/station/proc/open_animation()
 	if(icon_state == "closed")
-		icon_state = "opening"
-		om_after(src, OPEN_DURATION, PROC_REF(finish_animation), "opening", "open")
+		set_icon_state("opening")
+		after(src, OPEN_DURATION, PROC_REF(finish_animation), with = list("opening", "open"))
 
 /obj/structure/transit_tube/station/proc/close_animation()
 	if(icon_state == "open")
-		icon_state = "closing"
-		om_after(src, CLOSE_DURATION, PROC_REF(finish_animation), "closing", "closed")
+		set_icon_state("closing")
+		after(src, CLOSE_DURATION, PROC_REF(finish_animation), with = list("closing", "closed"))
 
 /obj/structure/transit_tube/station/proc/finish_animation(from_state, to_state)
 	if(icon_state == from_state)
-		icon_state = to_state
+		set_icon_state(to_state)
 
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 		if(!pod.moving && (pod.dir in directions()))
-			om_after(src, 5, PROC_REF(launch_close), pod)
+			after(src, 0.5 SECONDS, PROC_REF(launch_close), with = list(pod))
 			return
 
 /// Launching, step 1: close the station around the pod.
 /obj/structure/transit_tube/station/proc/launch_close(obj/structure/transit_tube_pod/pod)
 	pod_moving = 1
 	close_animation()
-	om_after(src, CLOSE_DURATION + 2, PROC_REF(launch_go), pod)
+	after(src, CLOSE_DURATION + 0.2 SECONDS, PROC_REF(launch_go), with = list(pod), keeps_dead = TRUE)
 
 /// Launching, step 2: send the pod on its way.
 /obj/structure/transit_tube/station/proc/launch_go(obj/structure/transit_tube_pod/pod)
+	if(QDELETED(pod))
+		pod_moving = 0
+		return
 	//reverse directions for automated cycling
 	var/turf/next_loc = get_step(loc, pod.dir)
 	var/obj/structure/transit_tube/nexttube
@@ -159,18 +162,19 @@
 
 /obj/structure/transit_tube/station/pod_stopped(obj/structure/transit_tube_pod/pod, from_dir)
 	pod_moving = 1
-	om_after(src, 5, PROC_REF(arrival_open), pod)
+	after(src, 0.5 SECONDS, PROC_REF(arrival_open), with = list(pod), keeps_dead = TRUE)
 
 /// A pod arrived: open the station.
 /obj/structure/transit_tube/station/proc/arrival_open(obj/structure/transit_tube_pod/pod)
 	open_animation()
-	om_after(src, OPEN_DURATION + 2, PROC_REF(arrival_opened), pod)
+	after(src, OPEN_DURATION + 0.2 SECONDS, PROC_REF(arrival_opened), with = list(pod), keeps_dead = TRUE)
 
 /obj/structure/transit_tube/station/proc/arrival_opened(obj/structure/transit_tube_pod/pod)
 	pod_moving = 0
-	pod.mix_air()
+	if(!QDELETED(pod))
+		pod.mix_air()
 	if(automatic_launch_time)
-		om_after(src, automatic_launch_time, PROC_REF(automatic_launch))
+		after(src, automatic_launch_time, PROC_REF(automatic_launch))
 
 /// Relaunches the waiting pod, unless something moved it or closed the station meanwhile.
 /obj/structure/transit_tube/station/proc/automatic_launch()
@@ -241,41 +245,30 @@
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	om_task_start(/datum/om/task/transit_pod, src, null, tube_h = om_handle(current_tube)) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+	travel_next("exit", entity_handle(current_tube), 0, null, 1 TICKS)
 
-/// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
-/// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
-/datum/om/task/transit_pod
-	name = "transit pod travel"
-	steps = list(/obj/structure/transit_tube_pod/proc/travel_step = 0)
-	complete_proc = /obj/structure/transit_tube_pod/proc/travel_ended
-	cancel_proc = /obj/structure/transit_tube_pod/proc/travel_ended
-	/// The tube the pod is in: a handle, since the pod leaves it (a deleted tube is not a failure).
-	var/tube_h
-	var/phase = "exit"
-	var/last_delay = 0
-	var/next_dir
+/// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its enter delay, hop in; out of the tubes,
+/// coast in a line until slowed to a halt. Each stage is a timer on the pod carrying the journey's state (the tube the pod is in as a
+/// handle, since the pod leaves it and a deleted tube is not a failure), and the next stage is armed by the one that ran.
+/obj/structure/transit_tube_pod/proc/travel_next(phase, tube_h, last_delay, next_dir, delay)
+	after(src, max(delay, 1 TICKS), PROC_REF(travel_step), with = list(phase, tube_h, last_delay, next_dir))
 
-/obj/structure/transit_tube_pod/proc/travel_ended(datum/om/task/T)
+/obj/structure/transit_tube_pod/proc/travel_ended()
 	set_density(TRUE)
 	moving = 0
 
-/obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/transit_pod/T)
-	switch(T.phase)
+/obj/structure/transit_tube_pod/proc/travel_step(phase, tube_h, last_delay, next_dir)
+	switch(phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
 			if(!tube)
-				return travel_coast(T)
-			var/next_dir = tube.get_exit(dir)
-			if(!next_dir)
-				return STEP_DONE
+				return travel_coast(last_delay)
+			var/next_exit = tube.get_exit(dir)
+			if(!next_exit)
+				return travel_ended()
 			var/exit_delay = tube.exit_delay(src, dir)
-			T.last_delay += exit_delay
-			T.next_dir = next_dir
-			T.phase = "leave"
-			return STEP_REPEAT(exit_delay)
+			return travel_next("leave", tube_h, last_delay + exit_delay, next_exit, exit_delay)
 		if("leave")
-			var/next_dir = T.next_dir
 			var/turf/next_loc = get_step(loc, next_dir)
 			var/obj/structure/transit_tube/next_tube = null
 			for(var/obj/structure/transit_tube/tube in next_loc)
@@ -285,42 +278,38 @@
 			if(!next_tube)
 				set_dir(next_dir)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
-				return travel_coast(T)
-			T.tube_h = om_handle(next_tube) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
-			T.last_delay = next_tube.enter_delay(src, next_dir)
-			T.phase = "enter"
-			return STEP_REPEAT(T.last_delay)
+				return travel_coast(last_delay)
+			var/enter_delay = next_tube.enter_delay(src, next_dir)
+			return travel_next("enter", entity_handle(next_tube), enter_delay, next_dir, enter_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
+			var/obj/structure/transit_tube/tube = resolve_handle(tube_h)
 			if(!tube)
-				return travel_coast(T)
-			set_dir(T.next_dir)
+				return travel_coast(last_delay)
+			set_dir(next_dir)
 			forceMove(tube.loc) // When moving from one tube to another, skip collision and such.
 			set_density(tube.density)
-			if(tube.should_stop_pod(src, T.next_dir))
+			if(tube.should_stop_pod(src, next_dir))
 				tube.pod_stopped(src, dir)
-				return STEP_DONE
-			T.phase = "exit"
-			return travel_step(T)
+				return travel_ended()
+			return travel_step("exit", tube_h, last_delay, next_dir)
 		if("coast")
 			if(!istype(loc, /turf/space))
-				T.last_delay++
-			if(T.last_delay > 10)
-				return STEP_DONE
+				last_delay++
+			if(last_delay > 10)
+				return travel_ended()
 			if(isturf(loc) && Move(get_step(loc, dir)))
-				return STEP_REPEAT(T.last_delay)
-			return STEP_DONE
-	return STEP_DONE
+				return travel_next("coast", tube_h, last_delay, next_dir, last_delay)
+			return travel_ended()
+	return travel_ended()
 
 // If the pod is no longer in a tube, move in a line until stopped or slowed to a halt.
 //  /turf/inertial_drift appears to only work on mobs, and re-implementing some of the
 //  logic allows a gradual slowdown and eventual stop when passing over non-space turfs.
-/obj/structure/transit_tube_pod/proc/travel_coast(datum/om/task/transit_pod/T)
+/obj/structure/transit_tube_pod/proc/travel_coast(last_delay)
 	set_density(TRUE)
-	if(T.last_delay > 10)
-		return STEP_DONE
-	T.phase = "coast"
-	return STEP_REPEAT(T.last_delay)
+	if(last_delay > 10)
+		return travel_ended()
+	return travel_next("coast", null, last_delay, null, last_delay)
 
 /obj/structure/transit_tube_pod/return_air()
 	return air_contents
@@ -387,7 +376,7 @@
 /obj/structure/transit_tube/proc/init_dirs()
 	if(icon_state == "auto")
 		// Additional delay, for map loading.
-		om_after(src, 1, PROC_REF(init_dirs_automatic))
+		after(src, 0.1 SECONDS, PROC_REF(init_dirs_automatic))
 
 	else
 		tube_dirs = parse_dirs(icon_state)
@@ -448,7 +437,7 @@
 
 /obj/structure/transit_tube/proc/select_automatic_icon_state(directions)
 	if(length(directions) == 2)
-		icon_state = "[dir2text_short(directions[1])]-[dir2text_short(directions[2])]"
+		set_icon_state("[dir2text_short(directions[1])]-[dir2text_short(directions[2])]")
 
 // Look for diagonal directions, generate the decorative corners in each.
 /obj/structure/transit_tube/proc/generate_automatic_corners(directions)
@@ -475,7 +464,7 @@
 			return
 
 	var/obj/structure/transit_tube/tube = new(location)
-	tube.icon_state = state
+	tube.set_icon_state(state)
 	tube.init_dirs()
 
 // Uses a list() to cache return values. Since they should
@@ -554,7 +543,3 @@
 			return "SW"
 	return
 
-/// The pod carries its own air: one cell of breathable mix, owned by the pod (gas_store()).
-/obj/structure/transit_tube_pod/capabilities()
-	. = ..()
-	. += gas_store(nameof(air_contents), CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))

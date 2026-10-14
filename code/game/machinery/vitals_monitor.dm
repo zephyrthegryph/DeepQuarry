@@ -13,31 +13,23 @@
 	icon = 'icons/obj/heartmonitor.dmi'
 	icon_state = "base"
 	anchored = FALSE
-	power_channel = EQUIP
-	idle_power_usage = 10
-	active_power_usage = 100
 
 	var/beep = TRUE
 
 /// The patient on the monitor (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/vitals_monitor/var/mob/living/carbon/human/victim
 /// Tracks its patient while connected to someone.
-DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim")
-
-/obj/machinery/vitals_monitor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/vitals_monitor/examine(mob/user)
 	. = ..()
 	if(victim())
-		if(has_stat(NOPOWER))
+		if(power_lost())
 			. += span_notice("It's unpowered.")
 			return
 		. += span_notice("Vitals of [victim()]:")
 		var/datum/diagnosis/D = victim().diagnose(/datum/diagnostic_profile/vitals_monitor)
 		var/vitals_text = D?.render_vitals_text()
-		qdel(D)
+		spent(D, user)
 		if(vitals_text)
 			. += span_notice(vitals_text)
 
@@ -65,22 +57,23 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		. += span_notice("Breathing: [breathing]")
 
 /// Tracks its patient while it has one (the declaration above).
-/obj/machinery/vitals_monitor/machine_step()
+/obj/machinery/vitals_monitor/proc/work_step(datum/act/timer/A)
 	if(!victim() || QDELETED(victim()))
 		rel_clear(src, nameof(victim))
-		update_icon()
 		set_use_power(USE_POWER_IDLE)
 	if(victim() && !Adjacent(victim()))
 		rel_clear(src, nameof(victim))
-		update_icon()
 		set_use_power(USE_POWER_IDLE)
-	if(victim())
-		update_icon()
 	if(beep && victim() && victim().pulse)
 		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 
-/obj/machinery/vitals_monitor/MouseDrop(over_object, src_location, over_location)
-	if(!CanMouseDrop(over_object))
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/machinery/vitals_monitor/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return TRUE
+
+/obj/machinery/vitals_monitor/proc/drop_patient_with_actor(mob/user, atom/over_object)
+	if(!CanMouseDrop(over_object, user))
 		return
 	if(victim())
 		rel_clear(src, nameof(victim))
@@ -90,52 +83,51 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		set_use_power(USE_POWER_ACTIVE)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/vitals_monitor/appearance_overlays()
-	. = list()
-	if(has_stat(NOPOWER))
-		return .
-	. += "screen"
+/obj/machinery/vitals_monitor/draw(datum/look/look)
+	..()
+	if(power_lost())
+		return
+	look.overlay("screen")
 
 	if(!victim())
-		return .
+		return
 
 	switch(victim().pulse)
 		if(PULSE_NONE)
-			. += "pulse_flatline"
-			. += "pulse_warning"
+			look.overlay("pulse_flatline")
+			look.overlay("pulse_warning")
 		if(PULSE_SLOW, PULSE_NORM,)
-			. += "pulse_normal"
+			look.overlay("pulse_normal")
 		if(PULSE_FAST, PULSE_2FAST)
-			. += "pulse_veryfast"
+			look.overlay("pulse_veryfast")
 		if(PULSE_THREADY)
-			. += "pulse_thready"
-			. += "pulse_warning"
+			look.overlay("pulse_thready")
+			look.overlay("pulse_warning")
 
 	var/obj/item/organ/internal/brain/brain = victim().organ_in(O_BRAIN)
 	if(istype(brain) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		if(victim().injury_load(INJURY_CATEGORY_NEURAL))
-			. += "brain_verybad"
-			. += "brain_warning"
+			look.overlay("brain_verybad")
+			look.overlay("brain_warning")
 		else if(victim().stat == UNCONSCIOUS)
-			. += "brain_bad"
+			look.overlay("brain_bad")
 		else
-			. += "brain_ok"
+			look.overlay("brain_ok")
 	else
-		. += "brain_warning"
+		look.overlay("brain_warning")
 
 	var/obj/item/organ/internal/lungs/lungs = victim().organ_in(O_LUNGS)
 	if(istype(lungs) && victim().stat != DEAD && !(victim().status_flags & FAKEDEATH))
 		switch(breathing_band())
 			if("erratic")
-				. += "breathing_shallow"
-				. += "breathing_warning"
+				look.overlay("breathing_shallow")
+				look.overlay("breathing_warning")
 			if("shallow")
-				. += "breathing_shallow"
+				look.overlay("breathing_shallow")
 			else
-				. += "breathing_normal"
+				look.overlay("breathing_normal")
 	else
-		. += "breathing_warning"
+		look.overlay("breathing_warning")
 
 /// Breathing quality from the patient's oxygen saturation.
 /obj/machinery/vitals_monitor/proc/breathing_band()
@@ -146,12 +138,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/vitals_monitor, TYPE_PROC_REF(/atom, appe
 		return "shallow"
 	return "erratic"
 
-EXTEND_INTERACTIONS(/obj/machinery/vitals_monitor, \
-	INTERACT_VERB("Toggle Monitor Beeping", PROC_REF(vitals_monitor_toggle_beep)), \
-)
+CAPABILITIES(/obj/machinery/vitals_monitor)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
+	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
+	drag_onto(PROC_REF(drop_input))
+	default_parts()
+	ref_one(nameof(victim), /mob/living/carbon/human)
 
 /// Old verb "Toggle Monitor Beeping".
-/obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user))
 		return
 

@@ -1,2 +1,1 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_string_names.py (doc/rewrite/systems.md); shrink-only, target 0
-dx_string_names	code/modules/shuttles/shuttle.dm	return om_set(src, "process_state", new_state)

@@ -498,7 +498,7 @@ fn track_body_coupling(other: u32, coupling: vg_core::entity::EntityId) {
 }
 
 /// Wakes every `SolidCoupling` targeting `cell` (an external turf write).
-fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
+pub(crate) fn wake_cell_couplings(w: &mut vg_core::world::World, cell: u32) {
     let Some(kind) = w.kind_of::<SolidCoupling>() else {
         return;
     };
@@ -557,7 +557,7 @@ pub(crate) fn wake_body_couplings(w: &mut vg_core::world::World, body: u32) {
 /// environment. The coupling's own law re-enters relax mode on its own
 /// next run if the body (now freshly woken, see [`wake_body_couplings`])
 /// is still eligible.
-fn settle_body_if_relaxing(
+pub(crate) fn settle_body_if_relaxing(
     w: &mut vg_core::world::World,
     e: vg_core::entity::EntityId,
     body: &mut HeatBody,
@@ -962,8 +962,28 @@ fn heat_body_temperature(h: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else {
         return Ok(ByondValue::null());
     };
-    let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| b.temperature())))?;
+    let t = with_world(|w| Ok(w.read::<HeatBody>(e).map(|b| body_temperature_now(w, e, &b))))?;
     Ok(t.map_or_else(ByondValue::null, |t| ByondValue::from(t as f32)))
+}
+
+/// A body's temperature now. A relaxing body's stored energy is its analytic
+/// model's anchor (the coupling law sleeps until the model is due, up to
+/// `RELAX_MAX_INTERVAL` later), so its temperature is the model's value at
+/// the world's time, read without settling it.
+fn body_temperature_now(w: &vg_core::world::World, e: vg_core::entity::EntityId, body: &HeatBody) -> f64 {
+    if !body.relax {
+        return body.temperature();
+    }
+    let Some((kind, coupling_e)) = COUPLINGS.with(|c| c.borrow().get(&(e.index(), 0)).copied()) else {
+        return body.temperature();
+    };
+    let conductance = match kind {
+        0 => w.read::<SolidCoupling>(coupling_e).map(|c| c.conductance),
+        1 => w.read::<GasCoupling>(coupling_e).map(|c| c.conductance),
+        2 => w.read::<BodyCoupling>(coupling_e).map(|c| c.conductance),
+        _ => None,
+    };
+    conductance.map_or_else(|| body.temperature(), |g| vg_heat::laws::relax_temperature_at(body, g, w.now()))
 }
 
 #[auxmacros::bind("/proc/heat_body_add")]
@@ -1053,6 +1073,33 @@ fn heat_body_capacity(h: ByondValue, capacity: ByondValue) -> Result<ByondValue>
         Ok(ok)
     })?;
     Ok(ok.into())
+}
+
+/// A body's heat, computed in `f64` before it crosses to DM: `list(temperature
+/// K, latent heat stored in its phase plateau J, energy J)`. The latent heat
+/// stored is `0` below the plateau and all of it above. Null if the body
+/// does not exist.
+#[auxmacros::bind("/proc/heat_body_state")]
+fn heat_body_state(h: ByondValue) -> Result<ByondValue> {
+    let Some(e) = body(&h)? else {
+        return Ok(ByondValue::null());
+    };
+    let row = with_world(|w| {
+        Ok(w.read::<HeatBody>(e).map(|b| {
+            let t = body_temperature_now(w, e, &b);
+            let latent = if b.phase_temperature > 0.0 {
+                (b.energy - b.capacity * b.phase_temperature).clamp(0.0, b.phase_latent)
+            } else {
+                0.0
+            };
+            (t, latent, b.energy)
+        }))
+    })?;
+    match row {
+        #[allow(clippy::cast_possible_truncation)]
+        Some((t, latent, energy)) => crate::world::list([t as f32, latent as f32, energy as f32]),
+        None => Ok(ByondValue::null()),
+    }
 }
 
 #[auxmacros::bind("/proc/heat_body_phase")]
@@ -1422,6 +1469,7 @@ fn heat_constants() -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_reset")]
 fn heat_reset() -> Result<ByondValue> {
     COUPLINGS.with(|c| c.borrow_mut().clear());
+    crate::heat_net::reset();
     Ok(ByondValue::null())
 }
 

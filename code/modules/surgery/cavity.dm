@@ -112,21 +112,9 @@
 		return 0
 	return ..(tool)
 
-/datum/surgical_step/place_item/confirm(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+/datum/surgical_step/place_item/confirm_text(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)
-	if(!placed)
-		return FALSE
-	var/zone = part.organ_tag
-	if(surgery_ask(tool, user, "implant", /datum/om/prompt/choice/alert, message = "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", title = "Confirm Cavity Implant", choices = list("Implant", "Cancel")) != "Implant")
-		return FALSE
-	// The alert may have waited a long time: check everything again.
-	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))
-		return FALSE
-	if(user.get_active_hand() != tool || placed_item(user, tool) != placed || !user.Adjacent(target))
-		return FALSE
-	if(target.get_organ(zone) != part || can_use(user, target, zone, tool) != TRUE)
-		return FALSE
-	return TRUE
+	return placed ? "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?" : null
 
 /datum/surgical_step/place_item/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)
@@ -172,61 +160,90 @@
 	..()
 	if(!length(part.implants))
 		return
-	om_ask(user, /datum/om/prompt/choice/extract_foreign_body, PROC_REF(foreign_body_chosen), title = name, choices = part.implants, subject = target, part = part, tool = tool)
+	open_request(src, /datum/prompt/choice/extract_foreign_body, PROC_REF(foreign_body_chosen), answerer = user, title = name, choices = part.implants, subject = target, part = part, tool = tool)
 
 /// Which embedded object to pull out. Re-checked on the answer: the surgeon is still next to the
 /// patient and able, the part is still theirs, the pick is still in it and the tool still in hand.
-/datum/om/prompt/choice/extract_foreign_body
-	message = "Which embedded object do you wish to remove?"
+/datum/prompt/choice/extract_foreign_body
+	question = "Which embedded object do you wish to remove?"
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	timeout = 0
 	var/obj/item/organ/external/part
 	var/obj/item/tool
 
-/datum/om/prompt/choice/extract_foreign_body/valid()
-	if(!choice || !(choice in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
+CAPABILITIES(/datum/prompt/choice/extract_foreign_body)
+	ref_one(nameof(subject), /mob/living/carbon/human)
+	ref_one(nameof(part), /obj/item/organ/external)
+	ref_one(nameof(tool), /obj/item)
+
+/datum/prompt/choice/extract_foreign_body/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_patient = subject
+	var/obj/item/organ/external/captured_part = part
+	var/obj/item/captured_tool = tool
+	var/datum/request/request = src
+	rel_clear(request, nameof(request.subject))
+	rel_clear(src, nameof(part))
+	rel_clear(src, nameof(tool))
+	rel_set(request, nameof(request.subject), captured_patient)
+	rel_set(src, nameof(part), captured_part)
+	rel_set(src, nameof(tool), captured_tool)
+
+/datum/prompt/choice/extract_foreign_body/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/atom/movable/selected = value
+	if(QDELETED(subject) || QDELETED(part) || QDELETED(tool) || !istype(selected) || QDELETED(selected) || !(selected in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
 		return "lost the grip"
 	return null
 
-/datum/om/prompt/choice/extract_foreign_body/refused(reason)
-	if(answerer && tool && subject && part)
-		to_chat(answerer, span_notice("You draw \the [tool] back out of [subject]'s [part.name]."))
-
-/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/om/prompt/choice/extract_foreign_body/ask)
+/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/act/request/A)
+	var/datum/prompt/choice/extract_foreign_body/ask = A.request
+	if(!A.answer)
+		if(!isnull(ask.value) && !QDELETED(ask.answerer) && !QDELETED(ask.tool) && !QDELETED(ask.subject) && !QDELETED(ask.part))
+			to_chat(ask.answerer, span_notice("You draw \the [ask.tool] back out of [ask.subject]'s [ask.part.name]."))
+		return
 	var/mob/living/user = ask.answerer
 	var/mob/living/carbon/human/target = ask.subject
 	var/obj/item/organ/external/part = ask.part
 	var/obj/item/tool = ask.tool
-	var/atom/movable/removed = ask.choice
+	var/atom/movable/removed = ask.value
 	var/wait = 0
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
 		if(!imp.islegal())
 			to_chat(user, span_notice("\The [imp] is anchored deep; you work it loose carefully..."))
 			wait = duration
-	om_task_start(/datum/om/task/timed/extract_foreign_body, user, target, duration = wait, receiver = src, part = part, removed = removed, tool = tool, max_distance = tool.reach)
+	if(!wait)
+		extract_body(user, target, part, removed)
+		return
+	var/datum/op_result/working = perform_op(user, src, "extract_body", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("target" = target, "part" = part, "removed" = removed, "duration" = wait))
+	if(working.outcome == ACT_REFUSED)
+		to_chat(user, span_warning("\The [removed] slips back out of your grip."))
 
-/// Working a foreign body (`removed`) out of `part`: at once, or slowly for an anchored implant.
-/datum/om/task/timed/extract_foreign_body
-	complete_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_done
-	cancel_proc = /datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped
-	var/obj/item/organ/external/part
-	var/atom/movable/removed
-	var/obj/item/tool
+/// Working a foreign body out of a part slowly, for an anchored implant.
+CAPABILITIES(/datum/surgical_step/treat/extract_foreign_body)
+	op("extract_body", ai(), takes("target", "part", "removed", "duration"), wait(PROC_REF(extract_time)), on_interrupt(PROC_REF(extract_slipped)), then(PROC_REF(extract_done)))
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/om/task/timed/extract_foreign_body/task)
-	to_chat(task.actor, span_warning("\The [task.removed] slips back out of your grip."))
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_time(datum/act/op/A)
+	return A.arg("duration")
 
-/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(datum/om/task/timed/extract_foreign_body/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/obj/item/organ/external/part = task.part
-	var/atom/movable/removed = task.removed
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_slipped(datum/act/op/A)
+	to_chat(A.actor, span_warning("\The [A.arg("removed")] slips back out of your grip."))
+
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_done(datum/act/op/A)
+	extract_body(A.actor, A.arg("target"), A.arg("part"), A.arg("removed"))
+
+/// Pulls the foreign body out of the part.
+/datum/surgical_step/treat/extract_foreign_body/proc/extract_body(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, atom/movable/removed)
 	if(!(removed in part.implants))
 		return
 	rel_remove(part, nameof(part.implants), removed)
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")
-	BITSET(target.hud_updateflag, IMPLOYAL_HUD)
+	target.flag_hud_update(IMPLOYAL_HUD)
 	log_game("SURGERY: [key_name(user)] extracted [removed] ([removed.type]) from [key_name(target)]'s [part]")
 	if(istype(removed, /mob/living/simple_mob/animal/borer))
 		var/mob/living/simple_mob/animal/borer/worm = removed
@@ -237,7 +254,6 @@
 		return
 	removed.forceMove(get_turf(target))
 	removed.add_blood(target)
-	removed.update_icon()
 	to_chat(user, span_notice("You pull \the [removed] out of [target]'s [part.name]."))
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
@@ -257,4 +273,4 @@
 		return
 	user.visible_message(span_danger("Something beeps inside [target]'s [part.name]!"))
 	play_sfx(imp, SFX_ITEMS_COUNTDOWN)
-	om_after(imp, 2.5 SECONDS, TYPE_PROC_REF(/obj/item/implant, activate))
+	after(imp, 2.5 SECONDS, TYPE_PROC_REF(/obj/item/implant, activate))

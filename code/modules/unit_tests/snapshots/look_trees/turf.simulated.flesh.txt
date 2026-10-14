@@ -1,0 +1,5 @@
+/turf/simulated/flesh icon: icons/turf/stomach_vr.dmi
+/turf/simulated/flesh state: flesh
+/turf/simulated/flesh dir: 2
+/turf/simulated/flesh overlay: icons/turf/stomach_vr.dmi:flesh_side:-32767 x3
+

@@ -69,25 +69,24 @@
 		"JOINING THE NAVY? HERE'S 15 EXPERT TIPS FOR AVOIDING BRAIN PARASITES"
 	)
 
-/obj/item/tabloid/Initialize(mapload)
-	. = ..()
-
-	pixel_x = 5-rand(10)
-	pixel_x = 5-rand(10)
-
-	icon_state = pick(icon_states_fast('icons/obj/magazine.dmi')) // ALLOW(decl): random pick
-	headline =   pick(tabloid_headlines)
-	name =       pick(tabloid_publishers)
+/// Rolled before init (rolls()): one of the magazine sheet's covers.
+/obj/item/tabloid/proc/roll_icon_state(datum/roller/R)
+	return R.choose(icon_states_fast('icons/obj/magazine.dmi'))
 
 /obj/item/tabloid/examine(mob/user, distance)
 	. = ..()
 	if(headline)
 		to_chat(user, "The headline screams, \"[headline]\"")
 
-DECLARE_INTERACTIONS(/obj/item/tabloid, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/tabloid)
+	op("read", in_hand(), label("Read tabloid"), then(PROC_REF(tabloid_read_requested)))
+	rolls(nameof(pixel_x), range_of(-5, 5))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(nameof(headline), pick_one(tabloid_headlines))
+	rolls(nameof(name), pick_one(tabloid_publishers))
 
-/// Old attack_self.
-/obj/item/tabloid/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tabloid/proc/tabloid_read_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% leafs idly through %T%."))
 	if(headline)
 		to_chat(user, "Most of it is the usual tabloid garbage, but the headline story, \"[headline]\", holds your attention for awhile.")
@@ -95,4 +94,4 @@ DECLARE_INTERACTIONS(/obj/item/tabloid, INTERACT_USE(null, PROC_REF(interaction_
 			to_chat(user, tabloid_headlines[headline])
 	else
 		to_chat(user, "Most of it is the usual tabloid garbage. You find nothing of interest.")
-	return TRUE
+	return OP_OK

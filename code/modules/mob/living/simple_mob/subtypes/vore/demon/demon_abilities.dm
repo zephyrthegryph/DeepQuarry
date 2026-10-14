@@ -22,8 +22,8 @@
 
 	forceMove(T)
 	var/original_canmove = canmove
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
@@ -32,7 +32,7 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Shifting in
 	if(shifted_out)
@@ -43,16 +43,16 @@
 
 		cut_overlays()
 		alpha = initial(alpha)
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
-		incorporeal_move = initial(incorporeal_move)
+		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
 		force_max_speed = initial(force_max_speed)
 
 		//Cosmetics mostly
 		flick("phasein",src)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-		om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, FALSE) //The duration of the TP animation
+		after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, FALSE)) //The duration of the TP animation
 
 
 	//Shifting out
@@ -60,7 +60,7 @@
 		shifted_out = TRUE
 		shift_state = AB_SHIFT_PASSIVE
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
-		real_name = name
+		set_real_name(name)
 		name = "Something"
 		fully_heal()
 
@@ -69,7 +69,7 @@
 
 		cut_overlays()
 		flick("phaseout",src)
-		om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
+		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
 /mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
 	set name = "Phase Shift"
@@ -94,8 +94,8 @@
 	shift_state = AB_SHIFT_ACTIVE
 	forceMove(T)
 	var/original_canmove = canmove
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 	var/obj/buckled = src?.buckled_to()
 	if(buckled)
 		buckled.unbuckle_mob()
@@ -104,11 +104,11 @@
 		pulledby.stop_pulling()
 	stop_pulling()
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	shifted_out = TRUE
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
-	real_name = name
+	set_real_name(name)
 	name = "Something"
 
 	for(var/obj/belly/B as anything in vore_organs)
@@ -116,8 +116,8 @@
 
 	cut_overlays()
 	flick("phaseout",src)
-	om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
-	om_after(src, 33 SECONDS, PROC_REF(demon_shift_return))
+	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
+	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
 
 /// The temporary phase shift runs out: back into reality.
 /mob/living/simple_mob/vore/demon/proc/demon_shift_return()
@@ -128,36 +128,35 @@
 
 	cut_overlays()
 	alpha = initial(alpha)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
-	incorporeal_move = initial(incorporeal_move)
+	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
 	flick("phasein",src)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-	om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, TRUE) //The duration of the TP animation
+	after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, TRUE)) //The duration of the TP animation
 
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
-	invisibility = INVISIBILITY_LEVEL_TWO
+	set_invisibility(INVISIBILITY_LEVEL_TWO)
 	see_invisible = INVISIBILITY_LEVEL_TWO
-	update_icon()
 	alpha = 127
 
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
-	incorporeal_move = TRUE
+	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	force_max_speed = TRUE
 
-	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
+	after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
 /// Phase-in animation done: maybe grab someone on arrival.
 /mob/living/simple_mob/vore/demon/proc/demon_phased_in(original_canmove, from_temporary)
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
 
 	if(from_temporary)
@@ -171,16 +170,15 @@
 						break
 
 	//Potential phase-in vore
-	if(can_be_drop_pred) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
 			if(can_phase_vore(src, target))
-				vore_selected.nom_atom(target)
-				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+				vore_selected_of(src).nom_atom(target)
+				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
-	update_icon()
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
@@ -270,11 +268,13 @@
 	set desc = "Changes the amount you grow/shrink people."
 	set category = VERB_CAT_ABILITIES_DEMON
 
-	om_ask(src, /datum/om/prompt/number, PROC_REF(sizespell_chosen), title = "Set Size", message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100) //Stolen from sizegun code
+	open_request(src, /datum/prompt/number, PROC_REF(sizespell_chosen), answerer = src, title = "Set Size", question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0) //Stolen from sizegun code
 
-/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/size_select = ask.number
+/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/size_select = A.answer.value
 	if(!size_select)
 		return
 	size_amount = (size_select/100)
@@ -315,23 +315,23 @@
 
 	cut_overlays()
 	alpha = initial(alpha)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
-	incorporeal_move = initial(incorporeal_move)
+	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
-	is_shifting = TRUE
+	set_is_shifting(TRUE)
 
 	//Cosmetics mostly
 	flick("phasein",src)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-	om_after(src, 3 SECONDS, PROC_REF(phase_in_lands), original_canmove) //The duration of the TP animation
+	after(src, 3 SECONDS, PROC_REF(phase_in_lands), with = list(original_canmove)) //The duration of the TP animation
 
 /// The end of the phase-in animation.
 /mob/living/simple_mob/vore/demon/proc/phase_in_lands(original_canmove)
-	is_shifting = FALSE
+	set_is_shifting(FALSE)
 	canmove = original_canmove
 
 	var/turf/NT = get_turf(src)
@@ -345,16 +345,15 @@
 					break
 
 	//Potential phase-in vore
-	if(can_be_drop_pred) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
 			if(can_phase_vore(src, target))
-				vore_selected.nom_atom(target)
-				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+				vore_selected_of(src).nom_atom(target)
+				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
-	update_icon()
 
 	shift_state = AB_SHIFT_NONE
 	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)

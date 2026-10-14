@@ -56,7 +56,7 @@ POOL_DECLARE(/datum/pool_test_item)
 	var/crashed = FALSE
 	try
 		pool_release(item)
-	catch // ALLOW(silent_catch): the test expects this crash
+	catch
 		crashed = TRUE
 	TEST_ASSERT(crashed, "a second release should crash")
 	TEST_ASSERT_EQUAL(pool.double_releases, before + 1, "a double release is counted")
@@ -75,7 +75,7 @@ POOL_DECLARE(/datum/pool_test_item)
 	var/crashed = FALSE
 	try
 		item.touch()
-	catch // ALLOW(silent_catch): the test expects this crash
+	catch
 		crashed = TRUE
 	TEST_ASSERT(crashed, "using a poisoned object should crash")
 	var/datum/pool_test_item/fresh = pool_take(/datum/pool_test_item)
@@ -100,15 +100,15 @@ POOL_DECLARE(/datum/pool_test_item)
 	again.release()
 	pool_set_poison(was_poison)
 
-/// Pool stats appear in om_diagnostics().
+/// Pool stats appear in scheduler_diagnostics().
 /datum/unit_test/dq_pool/diagnostics
 
 /datum/unit_test/dq_pool/diagnostics/Run()
 	var/datum/pool_test_item/item = pool_take(/datum/pool_test_item)
 	item.release()
-	var/list/snapshot = om_diagnostics()
+	var/list/snapshot = scheduler_diagnostics()
 	var/list/pools = snapshot["pools"]
-	TEST_ASSERT(islist(pools), "om_diagnostics() reports pools")
+	TEST_ASSERT(islist(pools), "scheduler_diagnostics() reports pools")
 	var/list/row = pools["[/datum/pool_test_item]"]
 	TEST_ASSERT(islist(row), "each pooled type has a row")
 	TEST_ASSERT(row["taken"] >= 1, "the row counts takes")

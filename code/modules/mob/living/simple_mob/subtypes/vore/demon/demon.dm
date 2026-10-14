@@ -64,7 +64,7 @@
 
 /mob/living/simple_mob/vore/demon/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "You slide down the slick, slippery gullet of the creature. It's warm, and the air is thick. You can feel the doughy walls of the creatures gut push and knead into your form! Slimy juices coat your form stinging against your flesh as they waste no time to start digesting you. The creature's heartbeat and the gurgling of their stomach are all you can hear as your jostled about, treated like nothing but food."
 
@@ -86,20 +86,20 @@
 		return TRUE
 	. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/demon
-	of = /mob/living/simple_mob/vore/demon
+/mob/living/simple_mob/vore/demon/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/demon/perform(mob/living/simple_mob/vore/demon/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/demon/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shifted_out)
-		self.set_density(FALSE)
+	if(src.shifted_out)
+		src.set_density(FALSE)
 
-/datum/om/stage/life/environment/simple_mob/vore/demon
-	of = /mob/living/simple_mob/vore/demon
+/mob/living/simple_mob/vore/demon/life_environment_due()
+	return TRUE
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/om/stage/life/environment/simple_mob/vore/demon/exchange(mob/living/simple_mob/vore/demon/self, datum/gas_mixture/environment)
-	if(self.shifted_out)
+/mob/living/simple_mob/vore/demon/life_environment_exchange(datum/gas_mixture/environment)
+	if(src.shifted_out)
 		return
 	. = ..()
 
@@ -126,21 +126,24 @@
 	laugh()
 	..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_PROJECTILE, PROC_REF(laugh_at_hit))
-DAMAGE_REACTION(/mob/living/simple_mob/vore/demon, DAMAGE_THROWN, PROC_REF(laugh_at_hit))
+CAPABILITIES(/mob/living/simple_mob/vore/demon)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
+	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))
+	op("demon_interaction_laugh", inputs(hand(), item(/obj/item)), ungated(), label("Demon interaction laugh"), then(PROC_REF(demon_interaction_laugh)))
 
-/mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/act/A)
 	laugh()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(demon_interaction_laugh)), \
-	INTERACT_ITEM(null, PROC_REF(demon_interaction_laugh)), \
-)
+/// A thrown thing is the generic hit: the laugh is for this entry alone.
+/mob/living/simple_mob/vore/demon/proc/laugh_at_thrown(datum/act/A)
+	var/datum/notice/hit/N = A
+	if(N.packet.entry == DAMAGE_ENTRY_THROWN)
+		laugh()
 
 /// Old attack_hand / attackby: laugh, then the touch or hit carries on as normal (FALSE).
-/mob/living/simple_mob/vore/demon/proc/demon_interaction_laugh(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/demon/proc/demon_interaction_laugh(datum/act/op/A)
 	laugh()
-	return FALSE
+	return OP_DECLINE
 //This below proc could be improved by 1. add a bool for overriding the check (if we directly call the proc for example)
 //and possibly adding a switch that checks a string given by the above procs so that we can have uniwue sounds if needed
 /mob/living/simple_mob/vore/demon/proc/laugh()
@@ -153,7 +156,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 /mob/living/simple_mob/vore/demon/injure(kind, amount, zone = null, atom/source = null, armor_pen = 0, affliction = null, flags = NONE)
 	if(kind != INJURY_BURN)
 		return ..()
-	if(amount <= 0 || om_has(src, EFFECT_GODMODE))
+	if(amount <= 0 || in_godmode(src))
 		return 0
 	mend(TREAT_TISSUE_REPAIR, amount)
 	mend(TREAT_BURN_CARE, amount)
@@ -169,46 +172,50 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 		to_chat(src, span_warning("There are no alternative apperances selectable!"))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(alt_appearance_chosen), title = "Variant Sprite", message = "Please select which alternate appearance you want to swap to.", choices = alt_demon_appearances)
+	open_request(src, /datum/prompt/choice, PROC_REF(alt_appearance_chosen), answerer = src, title = "Variant Sprite", question = "Please select which alternate appearance you want to swap to.", choices = alt_demon_appearances, timeout = 0)
 
-/mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(datum/om/prompt/choice/ask)
-	var/alternate_selection = ask.choice
+/mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/alternate_selection = A.answer.value
 	alternate_selection = lowertext(alternate_selection)
 
 	//Change the all the icon info.
 	icon = 'icons/mob/demon_vr.dmi' //Mass majority of the sprites use this icon
-	icon_state = "[alternate_selection]"
-	icon_living = "[alternate_selection]"
-	icon_dead = "dead"
-	icon_rest = "[alternate_selection]_rest"
+	set_icon_state("[alternate_selection]")
+	set_icon_living("[alternate_selection]")
+	set_icon_dead("dead")
+	set_icon_rest("[alternate_selection]_rest")
 	vis_height = 47 //Mass majority of sprites use vis_height = 47. If its different, its done below.
 	pixel_x = 0
-	vore_icons = FALSE //No stomach sprites unless specifically specified!
+	set_vore_icons(FALSE) //No stomach sprites unless specifically specified!
 	//This is where we handle the special ones!
 	switch(alternate_selection)
 		if("boxfox")
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 1
 
 		if("wendigo")
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 1
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 
 		//These are the larger variants, so we do some different stuff here!
 		if("brutola")
 			pixel_x = -8
 			vis_height = 64
-			vore_icons = SA_ICON_LIVING | SA_ICON_REST
+			set_vore_icons(SA_ICON_LIVING | SA_ICON_REST)
 			vore_capacity = 2
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 			icon = 'icons/mob/demon_alt.dmi'
 
 		if("ignia")
 			pixel_x = -8
 			vis_height = 64
-			vore_icons = SA_ICON_LIVING
+			set_vore_icons(SA_ICON_LIVING)
 			vore_capacity = 2
-			icon_dead = "[alternate_selection]_dead"
+			set_icon_dead("[alternate_selection]_dead")
 			icon = 'icons/mob/demon_alt.dmi'
-	update_icon()
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/vore/demon, is_shifting)

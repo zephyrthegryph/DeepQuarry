@@ -1,0 +1,3 @@
+/obj/structure/janitorialcart signs=1 +overlay: icons/obj/janitor.dmi:cart_sign1:-32767
+/obj/structure/janitorialcart signs=2 +overlay: icons/obj/janitor.dmi:cart_sign2:-32767
+

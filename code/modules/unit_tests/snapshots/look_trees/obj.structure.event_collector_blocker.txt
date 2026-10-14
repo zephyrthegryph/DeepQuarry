@@ -1,0 +1,13 @@
+/obj/structure/event_collector_blocker icon: icons/obj/general_collector.dmi
+/obj/structure/event_collector_blocker state: blocker_on
+/obj/structure/event_collector_blocker dir: 2
+/obj/structure/event_collector_blocker overlay: icons/obj/general_collector.dmi:blocker_on:8:#000000
+/obj/structure/event_collector_blocker/breaker icon: icons/obj/general_collector.dmi
+/obj/structure/event_collector_blocker/breaker state: blocker_on
+/obj/structure/event_collector_blocker/breaker dir: 2
+/obj/structure/event_collector_blocker/breaker overlay: icons/obj/general_collector.dmi:blocker_on:8:#000000
+/obj/structure/event_collector_blocker/circuit_panel icon: icons/obj/general_collector.dmi
+/obj/structure/event_collector_blocker/circuit_panel state: blocker_on
+/obj/structure/event_collector_blocker/circuit_panel dir: 2
+/obj/structure/event_collector_blocker/circuit_panel overlay: icons/obj/general_collector.dmi:blocker_on:8:#000000
+

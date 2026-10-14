@@ -67,8 +67,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/list/planes_visible
 
+/// The wear and the saved data a NIF is made with (its constructor params).
+/obj/item/nif/var/tmp/wear_at_make
+/obj/item/nif/var/tmp/list/load_data_at_make
+
 //Constructor comes with a free AR HUD
-/obj/item/nif/Initialize(mapload,wear,list/load_data)
+// ALLOW(init/INSTANCE_STATE): a NIF loads its saved data, implants into the human it is made in and takes its starting wear
+/obj/item/nif/Initialize(mapload)
 	. = ..()
 
 	//First one to spawn in the game, make a big icon
@@ -76,7 +81,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		big_icon = new(icon,icon_state = "nif_full")
 
 	//Put loaded data here if we loaded any
-	save_data = islist(load_data) ? load_data.Copy() : list()
+	save_data = islist(load_data_at_make) ? load_data_at_make.Copy() : list()
 	var/saved_examine_msg = save_data["examine_msg"]
 
 	//If it's an empty string, they want it blank. If null, it's never been saved, give default.
@@ -92,27 +97,27 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return INITIALIZE_HINT_QDEL
 
 	//If given wear (like when spawned) then done
-	if(wear)
-		durability = wear
+	if(wear_at_make)
+		set_durability(wear_at_make)
 		wear(0) //Just make it update.
 
 	//Draw me yo.
-	update_icon()
 
 /obj/item/nif/proc/register_human()
-	om_hook(human, /datum/om/event/mob_death, src, PROC_REF(on_human_death))
+	observe(human, /datum/notice/mob_death, src, then(PROC_REF(on_human_death)))
 
 /obj/item/nif/proc/unregister_human()
 	if(!human)
 		return
-	om_unhook(human, /datum/om/event/mob_death, src)
+	unobserve(human, /datum/notice/mob_death, src)
 	rel_clear(src, nameof(human)) // the pair clears human.nif too
 
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
-/obj/item/nif/proc/on_human_death(mob/living/carbon/human/source, datum/om/event/mob_death/event)
-	EVENT_HANDLER
-	om_after(src, 0, PROC_REF(persist_on_death), source)
+/obj/item/nif/proc/on_human_death(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/source = A.target
+	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 
 /obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
 	if(!QDELETED(source))
@@ -136,9 +141,9 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 
 		rel_set(src, nameof(human), H) // the pair sets H.nif too
-		stat = NIF_INSTALLING
-		om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
-		own_set(src, nameof(menu_ref), new /datum/nif_menu(H))
+		set_stat(NIF_INSTALLING)
+		grant(H, granted_verb(/mob/living/carbon/human/proc/set_nif_examine), src)
+		rel_set(src, nameof(menu_ref), new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -163,7 +168,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 		forceMove(parent)
 		rel_add(parent, nameof(parent.implants), src)
-		om_after(src, 1, PROC_REF(quick_install), H)
+		after(src, 0.1 SECONDS, PROC_REF(quick_install), with = list(H))
 		return TRUE
 
 	return FALSE
@@ -181,27 +186,25 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	var/datum/nifsoft/soulcatcher/SC = imp_check(NIF_SOULCATCHER)
 	if(SC) //Clean up stored people, this is dirty but the easiest way.
 		own_clear(SC, nameof(SC.brainmobs), OWN_DELETE)
-	stat = NIF_PREINSTALL
+	set_stat(NIF_PREINSTALL)
 	vis_update()
 	if(H)
-		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/set_nif_examine, src)
-	own_clear(src, nameof(menu_ref), OWN_DELETE)
+		revoke(H, granted_verb(/mob/living/carbon/human/proc/set_nif_examine), src)
+	rel_clear(src, nameof(menu_ref))
 	unregister_human()
 	install_done = null
-	update_icon()
 
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)
 	wear *= (rand(85,115) / 100) //Apparently rand() only takes integers.
-	durability -= wear
+	set_durability(durability - wear)
 
 	if(human)
 		persist_nif_data(human)
 
 	if(durability <= 0)
-		durability = 0	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
-		stat = NIF_TEMPFAIL
-		update_icon()
+		set_durability(0)	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
+		set_stat(NIF_TEMPFAIL)
 
 		if(human)
 			notify("Danger! General system insta#^!($",TRUE)
@@ -209,77 +212,47 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 //Repair update/check proc
 /obj/item/nif/proc/repair(repair = 0)
-	durability = min(durability + repair, initial(durability))
+	set_durability(min(durability + repair, initial(durability)))
 
 	if(human)
 		persist_nif_data(human)
 
 //Attackby proc, for maintenance
-DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
-/// Old attackby.
-/obj/item/nif/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(open == 1 && istype(W,/obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(C.get_amount() < 3)
-			to_chat(user,span_warning("You need at least three coils of wire to add them to \the [src]."))
-			return INTERACTION_HANDLED_PASS
-		if(durability >= initial(durability))
-			to_chat(user,span_notice("There's no damaged wiring that needs replacing!"))
-			open = 3
-			update_icon()
-			return INTERACTION_HANDLED_PASS
-		om_task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+TRACKED(/obj/item/nif, open)
+TRACKED(/obj/item/nif, stat)
 
-/obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
-	if(open == 1 && C.use(3))
-		act_message(user, src, MSG_SELF(span_notice("You replace any burned out wiring in %T%.")), MSG_OTHERS("%U% replaces some wiring in %T%."))
-		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		open = 2
-		update_icon()
+MSG_DEF(nif/rewired, span_notice("You replace any burned out wiring in %T%."), "%U% replaces some wiring in %T%.")
+MSG_DEF(nif/pried_open, span_notice("You unscrew and pry open %T%."), "%U% unscrews and pries open %T%.")
+MSG_DEF(nif/resealed, span_notice("You re-seal %T% for use once more."), "%U% closes up %T%.")
+MSG_DEF(nif/reset, span_notice("You find and repair any faulty circuits in %T%."), "%U% resets several circuits in %T%.")
+MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that needs replacing!"))
 
-/obj/item/nif/proc/pry_open_done(mob/user, obj/item/tool)
-	if(open != 0)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You unscrew and pry open %T%.")), MSG_OTHERS("%U% unscrews and pries open %T%."))
-	playsound(src, tool.usesound, 50, 1)
-	open = 1
-	update_icon()
+/obj/item/nif/proc/needs_rewiring(datum/act/op/A)
+	return open == 1 && durability < initial(durability)
 
-/obj/item/nif/proc/reseal_done(mob/user, obj/item/tool)
-	if(open != 3)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You re-seal %T% for use once more.")), MSG_OTHERS("%U% closes up %T%."))
-	playsound(src, tool.usesound, 50, 1)
-	open = FALSE
+/obj/item/nif/proc/wiring_intact(datum/act/op/A)
+	return open == 1 && durability >= initial(durability)
+
+/obj/item/nif/proc/wiring_checked(datum/act/op/A)
+	set_open(3)
+
+/obj/item/nif/proc/rewire_done(datum/act/op/A)
+	set_open(2)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+
+/obj/item/nif/proc/pry_open_done(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	set_open(1)
+
+/obj/item/nif/proc/reseal_done(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	set_open(FALSE)
 	repair(initial(durability))
-	stat = NIF_PREINSTALL
-	update_icon()
+	set_stat(NIF_PREINSTALL)
 
-/obj/item/nif/proc/reset_circuits_done(mob/user)
-	if(open != 2)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You find and repair any faulty circuits in %T%.")), MSG_OTHERS("%U% resets several circuits in %T%."))
-	open = 3
-	update_icon()
-
-/obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
-	if(open == 0)
-		om_task_timed(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
-		return ITEM_INTERACT_SUCCESS
-	if(open == 3)
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
-
-/obj/item/nif/multitool_act(mob/user, obj/item/tool)
-	if(open != 2)
-		return ITEM_INTERACT_BLOCKING
-	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/item/nif/proc/reset_circuits_done(datum/act/op/A)
+	set_open(3)
 
 //Icon updating
 /// Appearance reader: the icon_state suffix for the open panel or install state.
@@ -293,7 +266,10 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			return "0"
 	return "2"
 
-APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/nif/draw(datum/look/look)
+	..()
+	look.state("nif_[appearance_nif_state()]")
 
 //The (dramatic) install process
 /obj/item/nif/proc/handle_install()
@@ -310,11 +286,11 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 			EXPIRY_SET(src, install_done, 15 MINUTES, CLOCK_WORLD) // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
-			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE)
+			after(src, 5 SECONDS, PROC_REF(notify), with = list("Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE))
 		else
 			notify("You are not an authorized user for this device. Please contact [owner].",TRUE)
 			unimplant(human)
-			stat = NIF_TEMPFAIL
+			set_stat(NIF_TEMPFAIL)
 			return FALSE
 
 	var/percent_done = (world.time - (install_done - (15 MINUTES))) / (15 MINUTES) // 35 minutes down to 15 minutes.
@@ -324,7 +300,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	switch(percent_done) //This is 0.0 to 1.0 kinda percent.
 		//Connecting to optical nerves
 		if(0.0 to 0.1)
-			human.status_set(EFFECT_BLINDED, 5)
+			human.status_set(STAT_BLINDED, 5)
 
 		//Mapping brain
 		if(0.2 to 0.9)
@@ -343,15 +319,15 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 					human.injure(INJURY_PAIN, 35)
 					human.custom_pain(message,35)
 				if(2)
-					human.status_at_least(EFFECT_WEAKENED, 5)
+					human.status_at_least(STAT_WEAKENED, 5)
 					to_chat(human,span_danger("A wave of weakness rolls over you."))
 				/*if(3)
-					human.status_at_least(EFFECT_SLEEPING, 5) //Disabled for being boring
+					human.status_at_least(STAT_SLEEPING, 5) //Disabled for being boring
 					to_chat(human,span_danger("You suddenly black out!"))*/
 
 		//Finishing up
 		if(1.0 to INFINITY)
-			stat = NIF_WORKING
+			set_stat(NIF_WORKING)
 			owner = human.mind.name
 			name = initial(name) + " ([owner])"
 			if(comm)
@@ -372,7 +348,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 		if(NIF_WORKING)
 			//Perform our passive drain
 			if(!use_charge(power_usage))
-				stat = NIF_POWFAIL
+				set_stat(NIF_POWFAIL)
 				vis_update()
 				notify("Insufficient energy!",TRUE)
 				return FALSE
@@ -385,10 +361,10 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 				nifsoft.life(human)
 
 		if(NIF_POWFAIL)
-			if(human && human.nutrition < 100)
+			if(human && nutrition_of(human) < 100)
 				return FALSE
 			else
-				stat = NIF_WORKING
+				set_stat(NIF_WORKING)
 				vis_update()
 				notify("System Reboot Complete.")
 
@@ -422,7 +398,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 		return TRUE
 
 	//Not enough nutrition/charge left.
-	if(!human || human.nutrition < use_charge)
+	if(!human || nutrition_of(human) < use_charge)
 		return FALSE
 
 	//Was enough, reduce and return.
@@ -432,6 +408,26 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 // This operates on a nifsoft *path*, not an instantiation.
 // It tells the nifsoft shop if it's installation will succeed, to prevent it
 // from charging the user for incompatible software.
+MSG_DEF_SELF(nif/tempfail, "Your NIF is not working.")
+MSG_DEF_SELF(nif/already_installed, "That software is already installed in your NIF.")
+MSG_DEF_SELF(nif/not_for_chassis, "That software is not supported on your chassis type.")
+MSG_DEF_SELF(nif/not_for_organics, "That software is not supported in organic life.")
+
+/// Why the NIF cannot take the software (a /datum/msg type), or null. Reads only: a shop asks it before it sells.
+/obj/item/nif/proc/install_refusal(datum/nifsoft/path)
+	if(stat == NIF_TEMPFAIL)
+		return /datum/msg/nif/tempfail
+	if(nifsofts[initial(path.list_pos)])
+		return /datum/msg/nif/already_installed
+	if(human)
+		var/applies_to = initial(path.applies_to)
+		var/synth = HAS_SYNTHETIC_BIOLOGY(human)
+		if(synth && !(applies_to & NIF_SYNTHETIC))
+			return /datum/msg/nif/not_for_chassis
+		if(!synth && !(applies_to & NIF_ORGANIC))
+			return /datum/msg/nif/not_for_organics
+	return null
+
 /obj/item/nif/proc/can_install(datum/nifsoft/path)
 	if(stat == NIF_TEMPFAIL)
 		return FALSE
@@ -470,7 +466,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 			return FALSE
 
 	wear(new_soft.wear)
-	own_put(src, nameof(nifsofts), new_soft.list_pos, new_soft)
+	rel_add(src, nameof(nifsofts), new_soft, new_soft.list_pos)
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)
@@ -481,7 +477,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 //Uninstall a piece of software
 /obj/item/nif/proc/uninstall(datum/nifsoft/old_soft)
 	var/datum/nifsoft/NS
-	if(nifsofts)
+	if(nifsofts && old_soft.list_pos >= 1 && old_soft.list_pos <= length(nifsofts))
 		NS = nifsofts[old_soft.list_pos]
 
 	if(!NS || NS != old_soft)
@@ -696,43 +692,41 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 
 ////////////////////////////////
 // Special Promethean """surgery"""
-/obj/item/nif/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M) || !ishuman(user) || (M == user))
-		return ..()
+/// The op's `when()`: another person with a slime body, the chest aimed at. Anything else is an ordinary hit.
+/obj/item/nif/proc/stuffable(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	var/mob/living/carbon/human/U = A.actor
+	if(!istype(U) || !istype(T) || U == T)
+		return FALSE
+	return read_once(T.species?.is_slime_bodied) && read_once(hud_of(U)?.zone_sel?.selecting) == BP_TORSO
 
-	var/mob/living/carbon/human/U = user
-	var/mob/living/carbon/human/T = M
+/// Requirement: nothing worn on the body to interfere.
+/obj/item/nif/proc/stuff_in_unclothed(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	return (!read_once(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))) ? null : span_warning("Remove any clothing they have on, as it might interfere!")
 
-	if(T.species?.is_slime_bodied && target_zone == BP_TORSO)
-		if(T.get_equipped_item(SLOT_ID_UNIFORM) || T.get_equipped_item(SLOT_ID_SUIT))
-			to_chat(user,span_warning("Remove any clothing they have on, as it might interfere!"))
-			return ITEM_INTERACT_FAILURE
-		var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)
-		if(!eo)
-			to_chat(user,span_warning("They should probably regrow their torso first."))
-			return ITEM_INTERACT_FAILURE
-		act_message(U, src, MSG_SELF(span_notice("You begin installing %T% into [T]'s chest by just stuffing it in.")), \
-			MSG_OTHERS(span_notice("%U% begins installing %T% into [T]'s chest by just stuffing it in.")), \
-			MSG_BLIND("There's a wet SQUISH noise."))
-		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
-		return ITEM_INTERACT_SUCCESS
-	else
-		return ..()
+/// Requirement: the chest is there to stuff it into.
+/obj/item/nif/proc/stuff_in_torso(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	return (!isnull(read_once(T.get_organ(BP_TORSO)))) ? null : span_warning("They should probably regrow their torso first.")
 
-/datum/om/task/timed/nif_stuff_in
-	duration = 20 SECONDS
-	complete_proc = /obj/item/nif/proc/stuff_in_done
-	var/obj/item/organ/external/eo
+/obj/item/nif/proc/stuffing_text(datum/act/op/A)
+	return msg_text(span_notice("You begin installing %I% into %T%'s chest by just stuffing it in."), \
+		span_notice("%U% begins installing %I% into %T%'s chest by just stuffing it in."), \
+		span_notice("There's a wet SQUISH noise."))
 
-/obj/item/nif/proc/stuff_in_done(datum/om/task/timed/nif_stuff_in/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/T = task.target
-	var/obj/item/organ/external/eo = task.eo
+/obj/item/nif/proc/stuff_in_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/T = A.target
+	var/obj/item/organ/external/eo = T.get_organ(BP_TORSO)
+	if(!eo)
+		return OP_FAILED
 	user.unEquip(src)
 	forceMove(eo)
 	rel_add(eo, nameof(eo.implants), src)
 	implant(T)
 	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
+	return OP_OK
 
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"
@@ -744,12 +738,32 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
 		return
 
-	var/new_flavor = rerun_ask(src, "k726", PROC_REF(set_nif_examine), args, /datum/om/prompt/text, message = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max.", title = "Describe NIF", default = nif.examine_msg, max_length = 128)
-	if(isnull(new_flavor))
+	open_request(src, /datum/prompt/text/nif_appearance, PROC_REF(nif_appearance_answered), answerer = src, default = nif.examine_msg)
+
+/datum/prompt/text/nif_appearance
+	question = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max."
+	title = "Describe NIF"
+	max_len = 128
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/nif_appearance/recheck_extra()
+	var/mob/living/carbon/human/user = owner
+	if(!istype(user) || QDELETED(user) || QDELETED(answerer))
+		return "gone"
+	if(!user.nif)
+		return "no NIF"
+
+/mob/living/carbon/human/proc/nif_appearance_answered(datum/act/request/context)
+	if(isnull(context.request.value) || context.request.last_error == "gone")
 		return
-	//They clicked cancel or meanwhile lost their NIF
-	if(!nif || isnull(new_flavor))
-		return //No changes
+	SStgui.update_uis(src)
+	if(context.answer)
+		apply_nif_appearance(context.answer.value)
+	else if(context.request.last_error == "no NIF")
+		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
+
+/mob/living/carbon/human/proc/apply_nif_appearance(new_flavor)
 	//Sanitize or user cleaned it entirely
 	if(!new_flavor)
 		nif.examine_msg = ""
@@ -760,9 +774,3 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
 // The implanted human and its NIF name each other (the NIF lives in an organ's implants).
-/obj/item/nif/relations()
-	. = ..()
-	. += rel_one(nameof(human), back = nameof(/mob/living/carbon/human::nif))
-/mob/living/carbon/human/relations()
-	. = ..()
-	. += rel_one(nameof(nif), back = nameof(/obj/item/nif::human))

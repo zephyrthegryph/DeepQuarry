@@ -32,12 +32,12 @@
 		to_chat(H, span_notice("You feel a tingling sensation in your [part]."))
 		// A ledger move into the limb; the attach hook does the rest.
 		if(E && !(H.organ_in(NewOrgan.organ_tag)) && NewOrgan.replaced(H, E))
-			om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
+			after(H, rand(1 SECONDS, 30 SECONDS), GLOBAL_PROC_REF(to_chat), with = list(H, span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
 
 			expire(1)
 
 		else
-			qdel(NewOrgan)
+			spent(NewOrgan, M)
 			to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
 
 /obj/item/implant/organ/islegal()
@@ -56,24 +56,38 @@
 TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, list(O_AUG_L_FOREARM, O_AUG_R_FOREARM))
 
 
-/obj/item/implant/organ/limbaugment/post_implant(mob/M)
+/obj/item/implant/organ/limbaugment/post_implant(mob/M, mob/user = null)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 
 		var/list/choices = augment_choices(H)
 		if(length(choices) > 1)
-			om_ask(usr, /datum/om/prompt/choice/augment_location, PROC_REF(augment_location_chosen), choices = choices, patient = H)
+			if(user && !QDELETED(user))
+				open_request(src, /datum/prompt/choice/augment_location, PROC_REF(augment_location_chosen), answerer = user, choices = choices, patient = H)
 			return
 		install_augment(H, length(choices) ? choices[1] : null)
 
 /// Where a limb augment goes on `patient`.
-/datum/om/prompt/choice/augment_location
+/datum/prompt/choice/augment_location
+	timeout = 0
 	title = "Choose Location"
-	message = "Choose augment location:"
+	question = "Choose augment location:"
 	var/mob/living/carbon/human/patient
 
-/obj/item/implant/organ/limbaugment/proc/augment_location_chosen(datum/om/prompt/choice/augment_location/ask)
-	install_augment(ask.patient, ask.choice)
+CAPABILITIES(/datum/prompt/choice/augment_location)
+	ref_one(nameof(patient), /mob/living/carbon/human)
+
+/datum/prompt/choice/augment_location/prepare(datum/act/A)
+	..()
+	var/mob/living/carbon/human/captured_patient = patient
+	rel_clear(src, nameof(patient))
+	rel_set(src, nameof(patient), captured_patient)
+
+/obj/item/implant/organ/limbaugment/proc/augment_location_chosen(datum/act/request/A)
+	var/datum/prompt/choice/augment_location/ask = A.request
+	if(!A.answer || QDELETED(ask.answerer) || QDELETED(ask.patient))
+		return
+	install_augment(ask.patient, ask.value)
 
 /obj/item/implant/organ/limbaugment/proc/augment_choices(mob/living/carbon/human/H)
 	. = TYPE_TABLE_COPY(src, limbaugment_targets)
@@ -89,42 +103,42 @@ TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, lis
 	// A ledger move into the limb; the attach hook does the rest. An
 	// incompatible augment is deleted below, which detaches it again.
 	if(istype(E) && !(H.organ_in(NewOrgan.organ_tag)) && NewOrgan.replaced(H, E) && NewOrgan.check_verb_compatability())
-		om_after(H, rand(1 SECONDS, 30 SECONDS), TYPE_PROC_REF(/datum, om_chat), span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone."))
+		after(H, rand(1 SECONDS, 30 SECONDS), GLOBAL_PROC_REF(to_chat), with = list(H, span_alien("You feel a pressure in your [E] as the tingling fades, the lump caused by the implant now gone.")))
 
 		expire(1)
 
 	else
-		qdel(NewOrgan)
+		consumed(NewOrgan, src)
 		to_chat(H, span_warning("You feel a pinching sensation in your [part]. The implant remains."))
 
 /obj/item/implant/organ/limbaugment/proc/setup_augment_slots(mob/living/carbon/human/H, obj/item/organ/internal/augment/armmounted/I, target_choice)
 	if(target_choice)
 		switch(target_choice)
 			if(O_AUG_R_HAND)
-				I.organ_tag = O_AUG_R_HAND
-				I.parent_organ = BP_R_HAND
+				I.set_organ_tag(O_AUG_R_HAND)
+				I.set_parent_organ(BP_R_HAND)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_HAND)
-				I.organ_tag = O_AUG_L_HAND
-				I.parent_organ = BP_L_HAND
+				I.set_organ_tag(O_AUG_L_HAND)
+				I.set_parent_organ(BP_L_HAND)
 				I.target_slot = SLOT_ID_HAND_L
 
 			if(O_AUG_R_FOREARM)
-				I.organ_tag = O_AUG_R_FOREARM
-				I.parent_organ = BP_R_ARM
+				I.set_organ_tag(O_AUG_R_FOREARM)
+				I.set_parent_organ(BP_R_ARM)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_FOREARM)
-				I.organ_tag = O_AUG_L_FOREARM
-				I.parent_organ = BP_L_ARM
+				I.set_organ_tag(O_AUG_L_FOREARM)
+				I.set_parent_organ(BP_L_ARM)
 				I.target_slot = SLOT_ID_HAND_L
 
 			if(O_AUG_R_UPPERARM)
-				I.organ_tag = O_AUG_R_UPPERARM
-				I.parent_organ = BP_R_ARM
+				I.set_organ_tag(O_AUG_R_UPPERARM)
+				I.set_parent_organ(BP_R_ARM)
 				I.target_slot = SLOT_ID_HAND_R
 			if(O_AUG_L_UPPERARM)
-				I.organ_tag = O_AUG_L_UPPERARM
-				I.parent_organ = BP_L_ARM
+				I.set_organ_tag(O_AUG_L_UPPERARM)
+				I.set_parent_organ(BP_L_ARM)
 				I.target_slot = SLOT_ID_HAND_L
 
 		. = H.get_organ(I.parent_organ)

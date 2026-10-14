@@ -22,12 +22,12 @@
 	if(istype(target, /mob/living/carbon/human/dummy))
 		return
 
-	BITSET(target.hud_updateflag, VANTAG_HUD)
+	target.flag_hud_update(VANTAG_HUD)
 	var/want_body_save = preferences.read_preference(/datum/preference/toggle/human/resleeve_scan)
 	var/want_mind_save = preferences.read_preference(/datum/preference/toggle/human/mind_scan)
 	var/resleeve_lock_pref = preferences.read_preference(/datum/preference/toggle/human/resleeve_lock)
 
-	om_after(target, 5 SECONDS, GLOBAL_PROC_REF(_dq_body_backup_after_spawn), target, preferences, want_body_save, want_mind_save, resleeve_lock_pref)
+	after(target, 5 SECONDS, GLOBAL_PROC_REF(_dq_body_backup_after_spawn), with = list(target, preferences, want_body_save, want_mind_save, resleeve_lock_pref))
 
 /proc/_dq_body_backup_after_spawn(mob/living/carbon/human/target, datum/preferences/preferences, want_body_save, want_mind_save, resleeve_lock_pref)
 	if(QDELETED(target) || QDELETED(preferences))
@@ -38,7 +38,7 @@
 			var/datum/transhuman/body_record/BR = new()
 			BR.init_from_mob(target, TRUE, resleeve_lock_pref)
 		if(want_mind_save)
-			var/datum/transcore_db/our_db = GLOB.transcore_service.db_by_key(null)
+			var/datum/transcore_db/our_db = SStranscore.db_by_key(null)
 			if(our_db)
 				our_db.m_backup(target.mind, target.nif, one_time = TRUE)
 	if(resleeve_lock_pref)

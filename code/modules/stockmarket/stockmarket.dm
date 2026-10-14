@@ -1,10 +1,13 @@
-OWN_TIMER(/datum/stockMarket, process_timer)
 
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances
 	var/list/stockBrokers
 	var/list/logs
+
+CAPABILITIES(/datum/stockMarket)
+	owns_many(nameof(logs))
+	owns_many(nameof(stocks))
 
 /datum/stockMarket/New()
 		..()
@@ -13,9 +16,9 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 		schedule_process()
 
 /datum/stockMarket/proc/schedule_process()
-	if(QDELETED(src) || om_timer_slot_pending(src, "process_timer"))
+	if(QDELETED(src) || after_pending(src, "process_timer"))
 		return
-	after_slot(src, "process_timer", 10 SECONDS, PROC_REF(market_tick))
+	after(src, 10 SECONDS, PROC_REF(market_tick), key = "process_timer")
 
 /datum/stockMarket/proc/balanceLog(whose, net)
 	if (!(whose in balances))
@@ -109,7 +112,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
-		own_add(src, nameof(stocks), S)
+		rel_add(src, nameof(stocks), S)
 		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
@@ -126,7 +129,7 @@ OWN_TIMER(/datum/stockMarket, process_timer)
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	own_add(src, nameof(logs), L)
+	rel_add(src, nameof(logs), L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

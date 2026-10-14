@@ -35,29 +35,29 @@
 		alert = new type
 
 	if(new_master)
-		alert.icon_state = "itembased"
+		alert.set_icon_state("itembased")
 		var/image/I = image(icon = new_master.icon, icon_state = new_master.icon_state, dir = SOUTH)
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
 		alert.add_overlay(I)
 		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
-		alert.icon_state = "[initial(alert.icon_state)][severity]"
+		alert.set_icon_state("[initial(alert.icon_state)][severity]")
 		alert.severity = severity
 
-	own_put(src, nameof(alerts), category, alert)
+	rel_add(src, nameof(alerts), alert, category)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 	alert.transform = matrix(32, 6, MATRIX_TRANSLATE)
 	animate(alert, transform = matrix(), time = 2.5, easing = CUBIC_EASING)
 
 	if(alert.timeout)
-		om_after(src, alert.timeout, PROC_REF(alert_timeout), alert, category)
+		after(src, alert.timeout, PROC_REF(alert_timeout), with = list(alert, category))
 		EXPIRY_SET(alert, timeout, alert.timeout - world.tick_lag, CLOCK_WORLD)
 	return alert
 
 /mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)
-	if(alert.timeout && LAZYACCESS(alerts, category) == alert && EXPIRY_EXPIRED(alert, timeout, CLOCK_WORLD))
+	if(alert && alert.timeout && LAZYACCESS(alerts, category) == alert && EXPIRY_EXPIRED(alert, timeout, CLOCK_WORLD))
 		clear_alert(category)
 
 // Proc to clear an existing alert.
@@ -70,7 +70,7 @@
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 		client.screen -= alert
-	qdel(alert)
+	spent(alert)
 
 /atom/movable/screen/alert
 	icon = 'icons/mob/screen_alert.dmi'
@@ -83,11 +83,13 @@
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this
 
-/atom/movable/screen/alert/MouseEntered(location,control,params)
-	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
+CAPABILITIES(/atom/movable/screen/alert)
+	tooltip(PROC_REF(input_tooltip), theme = nameof(alerttooltipstyle))
+	click_on(PROC_REF(alert_click_input))
 
-/atom/movable/screen/alert/MouseExited()
-	closeToolTip(usr, src)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
 //Gas alerts
 /atom/movable/screen/alert/not_enough_oxy
@@ -270,9 +272,16 @@ or something covering your eyes."
 If you're feeling frisky, right click on yourself and select \"Remove embedded object\" to pull the object out."
 	icon_state = "embeddedobject"
 
-/atom/movable/screen/alert/embeddedobject/Click()
-	if(isliving(usr))
-		var/mob/living/carbon/human/M = usr
+CAPABILITIES(/atom/movable/screen/alert/embeddedobject)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/embeddedobject/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/alert/embeddedobject/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/carbon/human/M = user
 		return M.help_shake_act(M)
 
 /atom/movable/screen/alert/asleep
@@ -293,9 +302,16 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	desc = "You're on fire. Stop, drop and roll to put the fire out or move to a vacuum area."
 	icon_state = "fire"
 
-/atom/movable/screen/alert/fire/Click()
-	if(isliving(usr))
-		var/mob/living/L = usr
+CAPABILITIES(/atom/movable/screen/alert/fire)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/fire/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/alert/fire/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/L = user
 		return L.resist()
 
 /atom/movable/screen/alert/irradiated
@@ -387,9 +403,16 @@ so as to remain in compliance with the most up-to-date laws."
 	icon_state = "template"
 	timeout = 300
 
-/atom/movable/screen/alert/notify_cloning/Click()
-	if(!usr || !usr.client) return
-	var/mob/observer/dead/G = usr
+CAPABILITIES(/atom/movable/screen/alert/notify_cloning)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/notify_cloning/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/alert/notify_cloning/click_with_actor(mob/user, location, control, params)
+	if(!user || !user.client) return
+	var/mob/observer/dead/G = user
 	G.reenter_corpse()
 
 //OBJECT-BASED
@@ -406,9 +429,16 @@ so as to remain in compliance with the most up-to-date laws."
 	name = "Legcuffed"
 	desc = "You're legcuffed, which slows you down considerably. Click the alert to free yourself."
 
-/atom/movable/screen/alert/restrained/Click()
-	if(isliving(usr))
-		var/mob/living/L = usr
+CAPABILITIES(/atom/movable/screen/alert/restrained)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/restrained/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/alert/restrained/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/L = user
 		return L.resist()
 
 // TICKETS
@@ -417,13 +447,20 @@ so as to remain in compliance with the most up-to-date laws."
 	desc = "A Administrator would like to chat with you. \
 	Click here to begin."
 
-/atom/movable/screen/alert/open_ticket/Click()
-	if(!usr || !usr.client) return
+CAPABILITIES(/atom/movable/screen/alert/open_ticket)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/alert/open_ticket/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor)
+
+/atom/movable/screen/alert/open_ticket/click_with_actor(mob/user, location, control, params)
+	if(!user || !user.client) return
 
 	// Open a new chat with the user
 	var/datum/ticket_chat/TC = new()
-	rel_set(TC, nameof(TC.T), usr.client.current_ticket())
-	TC.tgui_interact(usr.client.mob)
+	rel_set(TC, nameof(TC.T), user.client.current_ticket())
+	TC.tgui_interact(user.client.mob)
 
 // PRIVATE = only edit, use, or override these if you're editing the system as a whole
 
@@ -466,16 +503,28 @@ so as to remain in compliance with the most up-to-date laws."
 /mob
 	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
 
-/atom/movable/screen/alert/Click(location, control, params)
-	if(!usr || !usr.client)
-		return
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). An inspect or a master
+/// forwards the click; anything else goes on to the native parent (click_vr).
+/atom/movable/screen/alert/proc/alert_click_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(!user || !user.client)
+		return TRUE
+	var/decision = prepare_alert_click(user, A.params)
+	if(decision == TRUE)
+		return TRUE
+	if(istype(decision, /obj))
+		var/obj/master = decision
+		user.client.Click(master, A.native["location"], A.native["control"], A.params)
+		return TRUE
+	return INPUT_FALLTHROUGH
+
+/atom/movable/screen/alert/proc/prepare_alert_click(mob/user, params)
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT)) // screen objects don't do the normal Click() stuff so we'll cheat
-		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
-		return
+		to_chat(user,span_boldnotice(name) + " - " + span_info(desc))
+		return TRUE
 	var/obj/master = master_ref
 	if(master)
-		return usr.client.Click(master, location, control, params)
-	..() // Pass through to click_vr
+		return master
 
 /atom/movable/screen/alert/fat
 	name = "Full"

@@ -15,13 +15,13 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_devices.dmi',
 	)
 
-/obj/item/experi_scanner/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/experi_scanner)
+	after_init(0, then(PROC_REF(attach_handler)))
 
-/obj/item/experi_scanner/LateInitialize()
+/// Its experiment handler, once the techweb exists.
+/obj/item/experi_scanner/proc/attach_handler(datum/act/timer/A)
 	var/static/list/handheld_events = list(
-		/datum/om/event/before/item_pre_attack = TYPE_PROC_REF(/datum/experiment_handler, try_run_handheld_experiment),
+		/datum/act/pre_attack = TYPE_PROC_REF(/datum/experiment_handler, try_run_handheld_experiment),
 	)
 	new /datum/experiment_handler(src, \
 		allowed_experiments = list(/datum/experiment/scanning, /datum/experiment/physical), \

@@ -8,11 +8,9 @@
 //   as their chosen special attack.
 //
 // The I_* values name the four stances a Use can have (help, disarm, grab, harm).
-// Interactions declare one (`/datum/interaction/var/stance`, the INTERACT_*_AS
-// compact shapes): the resolver offers a stance-declared interaction only when
-// it matches the actor's input, so the interaction that runs carries the intent.
-// Effects read `interaction.stance`; code an interaction calls into takes a
-// `stance` argument. Only the input layer reads the mob's state, through
+// Ops declare one (stance()): the engine offers a stance-declared op only when
+// it matches the actor's input, so the op that runs carries the intent. Code an
+// op calls into takes a `stance` argument. Only the input layer reads the mob's state, through
 // /mob/proc/input_stance() (tools/ci/stance_examine_lint.py keeps it there).
 
 /// The Disarm variant of a Use.
@@ -20,7 +18,7 @@
 /// The Grab variant of a Use.
 #define ATTACK_VARIANT_GRAB "grab"
 
-/// Whether a stance is hostile: the resolver ranks hostile interactions by combat mode.
+/// Whether a stance is hostile (harm, disarm).
 #define STANCE_IS_HOSTILE(stance) ((stance) == I_HURT || (stance) == I_DISARM)
 
 /// How far combat mode moves a hostile interaction up (on) or down (off) the resolver's order.

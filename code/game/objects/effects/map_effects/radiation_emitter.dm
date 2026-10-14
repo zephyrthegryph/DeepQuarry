@@ -9,12 +9,12 @@
 	var/active = null
 	var/strength = 50
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/effect/map_effect/radiation_emitter/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/// Radiates only while a client is near (STAT_RELEVANCE, a map effect is proximity tracked): otherwise the every() parks.
+CAPABILITIES(/obj/effect/map_effect/radiation_emitter)
+	every(2 SECONDS, then(PROC_REF(radiation_emitter_step)), when = STAT_RELEVANCE)
+
+/obj/effect/map_effect/radiation_emitter/proc/radiation_emitter_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/effect/map_effect/radiation_emitter/proc/radiate()
 	if(active)
@@ -32,8 +32,6 @@
 	)
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
-
-DECLARE_PERIODIC(/obj/effect/map_effect/radiation_emitter, PERIODIC_SLOW)
 
 /obj/effect/map_effect/radiation_emitter/strong
 	range = 7

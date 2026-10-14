@@ -8,40 +8,61 @@
 	var/mult_icons = 1	//Changes sprite when it translates
 	var/visual = 1		//If you need to see to get the message
 	var/audio = 0		//If you need to hear to get the message
-	var/listening = 0
+	var/translation_enabled = 0
 	var/datum/language/langset_static
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/universal_translator/proc/language_chosen(datum/om/prompt/choice/ask)
-	if(listening)
-		return
-	var/mob/user = ask.answerer
-	langset_static = ask.choice
-	if(langset() && ((langset().flags & NONVERBAL) || (langset().flags & HIVEMIND) || (!langset().machine_understands)))
-		//Nonverbal means no spoken words to translate, so I didn't see the need to remove it.
-		to_chat(user, span_warning("\The [src] cannot output that language."))
-		return
-	listening = 1
+TRACKED(/obj/item/universal_translator, translation_enabled)
+TRACKED(/obj/item/universal_translator, langset_static)
+
+CAPABILITIES(/obj/item/universal_translator)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("enable", in_hand(), label("Enable translator"), when(cond_not(nameof(translation_enabled))),
+		needs(carried(), req(PROC_REF(language_supported))),
+		asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0),
+		then(PROC_REF(language_picked)))
+	op("disable", in_hand(), label("Disable translator"), when(nameof(translation_enabled)), then(PROC_REF(disabled)))
+
+/// Snapshot the asking actor's languages when the actual native request is prepared.
+/datum/prompt/choice/translator_language
+	title = "Language Selection"
+	question = "Translate to which of your languages?"
+
+/datum/prompt/choice/translator_language/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		choices = asking.actor?.languages
+
+/// Before opening a choice there is no answer; the final requirement checks the chosen shared language definition.
+/obj/item/universal_translator/proc/language_supported(datum/act/op/A)
+	if(!A.answer)
+		return null
+	var/datum/prompt/choice/picked = A.answer
+	var/datum/language/language = picked.value // ALLOW(reads): the closed request stores its accepted answer once before this final requirement runs
+	if(!istype(language))
+		return span_warning("\The [src] cannot output that language.")
+	return (!(language.flags & (NONVERBAL | HIVEMIND)) && language.machine_understands) ? null : span_warning("\The [src] cannot output that language.")
+
+/obj/item/universal_translator/proc/language_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	set_langset_static(picked.value)
+	set_translation_enabled(TRUE)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	if(mult_icons)
-		icon_state = "[initial(icon_state)]1"
-	to_chat(user, span_notice("You enable \the [src], translating into [langset().name]."))
+		set_icon_state("[initial(icon_state)]1")
+	to_chat(A.actor, span_notice("You enable \the [src], translating into [langset().name]."))
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/obj/item/universal_translator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!listening) //Turning ON
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(language_chosen), title = "Language Selection", message = "Translate to which of your languages?", choices = user.languages, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	else	//Turning OFF
-		listening = 0
-		registry_leave(REGISTRY_LISTENING_OBJECTS, src)
-		langset_static = null
-		icon_state = "[initial(icon_state)]"
-		to_chat(user, span_notice("You disable \the [src]."))
+/obj/item/universal_translator/proc/disabled(datum/act/op/A)
+	set_translation_enabled(FALSE)
+	registry_leave(REGISTRY_LISTENING_OBJECTS, src)
+	set_langset_static(null)
+	set_icon_state("[initial(icon_state)]")
+	to_chat(A.actor, span_notice("You disable \the [src]."))
+	return OP_OK
 
 /obj/item/universal_translator/hear_talk(mob/M, list/message_pieces, verb)
-	if(!listening || !istype(M))
+	if(!translation_enabled || !istype(M))
 		return
 
 	//Show the "I heard something" animation.
@@ -53,9 +74,9 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient
@@ -92,9 +113,11 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 	desc = "This handy device appears to translate the languages it hears into another language for a user."
 	icon_state = "earpiece"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	visual = 0
 	audio = 1
+
+CAPABILITIES(/obj/item/universal_translator/ear)
+	configure(item_worn(slots = SLOT_EARS))
 
 //////////////Single language translators
 
@@ -107,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/universal_translator, INTERACT_USE(null, PROC_REF
 TYPE_TABLE_DECLARE(/obj/item/universal_translator/limited, translator_languages, list(LANGUAGE_GALCOM))
 
 /obj/item/universal_translator/limited/hear_talk(mob/M, list/message_pieces, verb)
-	if(!listening || !istype(M))
+	if(!translation_enabled || !istype(M))
 		return
 
 	//Handheld or pocket only.
@@ -115,9 +138,9 @@ TYPE_TABLE_DECLARE(/obj/item/universal_translator/limited, translator_languages,
 		return
 
 	var/mob/living/L = loc
-	if(visual && ((L.sdisabilities & BLIND) || L.has_status(EFFECT_BLINDED)))
+	if(visual && ((L.sdisabilities & BLIND) || L.has_status(STAT_BLINDED)))
 		return
-	if(audio && ((L.sdisabilities & DEAF) || L.has_status(EFFECT_DEAFENED)))
+	if(audio && ((L.sdisabilities & DEAF) || L.has_status(STAT_DEAFENED)))
 		return
 
 	// Using two for loops kinda sucks, but I think it's more efficient

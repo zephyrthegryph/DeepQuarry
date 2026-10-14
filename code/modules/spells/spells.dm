@@ -45,8 +45,8 @@
 	rel_set(new_spell_master, nameof(new_spell_master.spell_holder), src)
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
-		new_spell_master.icon_state = spell_base
-	own_add(src, nameof(spell_masters), new_spell_master)
+		new_spell_master.set_icon_state(spell_base)
+	rel_add(src, nameof(spell_masters), new_spell_master)
 	rel_add(src, nameof(spell_list), spell_to_add)
 	if(mind)
 		rel_add(mind, nameof(mind.learned_spells), spell_to_add)
@@ -113,8 +113,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	throwforce = 0
-	force = 0
 	show_examine = FALSE
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
@@ -124,13 +122,16 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
-/obj/item/spell/unrestricted/Initialize(mapload, coreless)
+CAPABILITIES(/obj/item/spell/unrestricted)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+
+/obj/item/spell/unrestricted/Initialize(mapload)
 	. = ..()
 	if(isliving(loc))
 		rel_set(src, nameof(owner), loc)
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
-	update_icon()
 
 /obj/item/spell/unrestricted/run_checks()
 	if(owner_ref())
@@ -176,8 +177,8 @@
 
 /// A shot after its pre-shot delay: on_ranged_cast() again, past the delay.
 /obj/item/spell/unrestricted/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
-	qdel(target_image)
-	if(!owner_ref())
+	spent(target_image, user)
+	if(!user || !owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE
 	on_ranged_cast(hit_atom, user)
@@ -210,8 +211,8 @@
 			if(pre_shot_delay)
 				var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(hit_atom), icon_state = "target")
 				user << target_image
-				user.status_at_least(EFFECT_STUNNED, pre_shot_delay / 10)
-				om_after(src, pre_shot_delay, PROC_REF(delayed_shot), hit_atom, user, target_image)
+				user.status_at_least(STAT_STUNNED, pre_shot_delay / 10)
+				after(src, pre_shot_delay, PROC_REF(delayed_shot), with = list(hit_atom, user, target_image))
 				return FALSE
 			return TRUE // No delay, no need to check.
 	return FALSE
@@ -252,9 +253,10 @@
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/unrestricted/mend)
+	configure(light_glow(color = "#FF5C5C", power = -2))
 
 /obj/item/spell/unrestricted/mend/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))

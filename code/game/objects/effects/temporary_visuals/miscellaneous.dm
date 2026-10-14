@@ -2,7 +2,16 @@
 	desc = "It's a decoy!"
 	duration = 15
 
-/obj/effect/temp_visual/decoy/Initialize(mapload, atom/mimiced_atom, customappearance)
+CAPABILITIES(/obj/effect/temp_visual/decoy)
+	param(nameof(mimiced_atom), pos = 1, keep = FALSE)
+	param(nameof(customappearance), pos = 2, keep = FALSE)
+
+/// What the decoy mimics, or the look it is given (its constructor params, dropped after init).
+/obj/effect/temp_visual/decoy/var/tmp/atom/mimiced_atom
+/obj/effect/temp_visual/decoy/var/tmp/customappearance
+
+// ALLOW(init/INSTANCE_STATE): a decoy takes the look of what it mimics, after its parents' random facing
+/obj/effect/temp_visual/decoy/Initialize(mapload)
 	. = ..()
 	alpha = initial(alpha)
 	if(mimiced_atom)
@@ -13,7 +22,7 @@
 	if(customappearance)
 		appearance = customappearance
 
-/obj/effect/temp_visual/decoy/fading/Initialize(mapload, atom/mimiced_atom)
+/obj/effect/temp_visual/decoy/fading/Initialize(mapload)
 	. = ..()
 	animate(src, alpha = 0, time = duration)
 
@@ -41,10 +50,9 @@
 	plane = PLANE_LIGHTING_ABOVE // So they're visible even in a shootout in maint.
 	duration = 5
 
-/obj/effect/temp_visual/impact_effect/Initialize(mapload, obj/item/projectile/P, x, y)
-	pixel_x = x
-	pixel_y = y
-	return ..()
+CAPABILITIES(/obj/effect/temp_visual/impact_effect)
+	param(nameof(pixel_x), pos = 2)
+	param(nameof(pixel_y), pos = 3)
 
 /obj/effect/temp_visual/impact_effect/red_laser
 	icon_state = "impact_laser"
@@ -72,12 +80,20 @@
 	icon_state = "impact_laser_monochrome"
 	duration = 4
 
-/obj/effect/temp_visual/impact_effect/monochrome_laser/Initialize(mapload, obj/item/projectile/P, x, y)
-	if(P.light_color)
-		color = P.light_color
+CAPABILITIES(/obj/effect/temp_visual/impact_effect/monochrome_laser)
+	param(nameof(hit_by), pos = 1, apply = PROC_REF(take_colour), keep = FALSE)
+
+/// The projectile whose colour the impact takes (its constructor param).
+/obj/effect/temp_visual/impact_effect/monochrome_laser/var/tmp/obj/item/projectile/hit_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/temp_visual/impact_effect/monochrome_laser/proc/take_colour(obj/item/projectile/P)
+	if(!P)
+		return
+	if(glow_of(P).color)
+		color = glow_of(P).color
 	else if(P.color)
 		color = P.color
-	return ..()
 
 /obj/effect/temp_visual/impact_effect/ion
 	icon_state = "shieldsparkles"
@@ -108,10 +124,9 @@
 	icon_state = XENO_CHEM_HEAL
 	duration = 15
 
-/obj/effect/temp_visual/heal/Initialize(mapload)
-	pixel_x = rand(-12, 12)
-	pixel_y = rand(-9, 0)
-	. = ..()
+CAPABILITIES(/obj/effect/temp_visual/heal)
+	rolls(nameof(pixel_x), range_of(-12, 12))
+	rolls(nameof(pixel_y), range_of(-9, 0))
 
 /obj/effect/temp_visual/circle_wave
 	icon = 'icons/effects/64x64.dmi'

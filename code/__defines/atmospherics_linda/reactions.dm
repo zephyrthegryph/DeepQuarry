@@ -32,13 +32,13 @@
 /// The temperature required to sterilize an additional mole of miasma in a reaction tick.
 #define MIASTER_STERILIZATION_RATE_SCALE 20
 /// The amount of energy released when a mole of miasma is sterilized.
-#define MIASTER_STERILIZATION_ENERGY 2e-3
+// MIASTER_STERILIZATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Fire:
 
 // - General:
 /// Amount of heat released per mole of burnt carbon into the tile
-#define FIRE_CARBON_ENERGY_RELEASED 1e5
+// FIRE_CARBON_ENERGY_RELEASED is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // - Plasma:
 /// Minimum temperature to burn plasma
@@ -54,13 +54,13 @@
 /// The divisor for the maximum plasma burn rate. (1/9 of the plasma can burn in one reaction tick.)
 #define PLASMA_BURN_RATE_DELTA 9
 /// Amount of heat released per mole of burnt plasma into the tile
-#define FIRE_PLASMA_ENERGY_RELEASED 3e6
+// FIRE_PLASMA_ENERGY_RELEASED is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // - Hydrogen:
 /// The minimum temperature hydrogen combusts at.
 #define HYDROGEN_MINIMUM_BURN_TEMPERATURE FIRE_MINIMUM_TEMPERATURE_TO_EXIST
 /// The amount of energy released by burning one mole of hydrogen.
-#define FIRE_HYDROGEN_ENERGY_RELEASED 2.8e6
+// FIRE_HYDROGEN_ENERGY_RELEASED is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// Multiplier for hydrogen fire with O2 moles * HYDROGEN_OXYGEN_FULLBURN for the maximum fuel consumption
 #define HYDROGEN_OXYGEN_FULLBURN 10
 /// The divisor for the maximum hydrogen burn rate. (1/2 of the hydrogen can burn in one reaction tick.)
@@ -70,7 +70,7 @@
 /// The minimum temperature tritium combusts at.
 #define TRITIUM_MINIMUM_BURN_TEMPERATURE FIRE_MINIMUM_TEMPERATURE_TO_EXIST
 /// The amount of energy released by burning one mole of tritium.
-#define FIRE_TRITIUM_ENERGY_RELEASED FIRE_HYDROGEN_ENERGY_RELEASED
+// FIRE_TRITIUM_ENERGY_RELEASED is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// Multiplier for TRITIUM fire with O2 moles * TRITIUM_OXYGEN_FULLBURN for the maximum fuel consumption
 #define TRITIUM_OXYGEN_FULLBURN HYDROGEN_OXYGEN_FULLBURN
 /// The divisor for the maximum tritium burn rate. (1/2 of the tritium can burn in one reaction tick.)
@@ -96,7 +96,7 @@
 /// The maximum fraction of the freon in a mix that can combust each reaction tick.
 #define FREON_BURN_RATE_DELTA 4
 /// The amount of heat absorbed per mole of freon burnt.
-#define FIRE_FREON_ENERGY_CONSUMED 3e5
+// FIRE_FREON_ENERGY_CONSUMED is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// The maximum temperature at which freon combustion can form hot ice.
 #define HOT_ICE_FORMATION_MAXIMUM_TEMPERATURE 160
 /// The minimum temperature at which freon combustion can form hot ice.
@@ -110,7 +110,7 @@
 /// The maximum temperature N2O can form from nitrogen and oxygen in the presence of BZ at.
 #define N2O_FORMATION_MAX_TEMPERATURE 250
 /// The amount of energy released when a mole of N2O forms from nitrogen and oxygen in the presence of BZ.
-#define N2O_FORMATION_ENERGY 10000
+// N2O_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The minimum temperature N2O can decompose at.
 #define N2O_DECOMPOSITION_MIN_TEMPERATURE 1400
@@ -125,13 +125,13 @@
 /// The divisor used to normalize the N2O decomp scaling parabola. Basically the value of the apex/nadir of (x - [N2O_DECOMPOSITION_MIN_SCALE_TEMP]) * (x - [N2O_DECOMPOSITION_MAX_SCALE_TEMP]).
 #define N2O_DECOMPOSITION_SCALE_DIVISOR ((-1/4) * ((N2O_DECOMPOSITION_MAX_SCALE_TEMP - N2O_DECOMPOSITION_MIN_SCALE_TEMP)**2))
 /// The amount of energy released when one mole of N2O decomposes into nitrogen and oxygen.
-#define N2O_DECOMPOSITION_ENERGY 200000
+// N2O_DECOMPOSITION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // BZ:
 /// The maximum temperature BZ can form at. Deliberately set lower than the minimum burn temperature for most combustible gases in an attempt to prevent long fuse singlecaps.
 #define BZ_FORMATION_MAX_TEMPERATURE (FIRE_MINIMUM_TEMPERATURE_TO_EXIST - 60) // Yes, someone used this as a bomb timer. I hate players.
 /// The amount of energy 1 mole of BZ forming from N2O and plasma releases.
-#define BZ_FORMATION_ENERGY 80000
+// BZ_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Pluoxium:
 /// The minimum temperature pluoxium can form from carbon dioxide, oxygen, and tritium at.
@@ -141,7 +141,7 @@
 /// The maximum amount of pluoxium that can form from carbon dioxide, oxygen, and tritium per reaction tick.
 #define PLUOXIUM_FORMATION_MAX_RATE 5
 /// The amount of energy one mole of pluoxium forming from carbon dioxide, oxygen, and tritium releases.
-#define PLUOXIUM_FORMATION_ENERGY 250
+// PLUOXIUM_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Nitrium:
 /// The minimum temperature necessary for nitrium to form from tritium, nitrogen, and BZ.
@@ -149,20 +149,20 @@
 /// A scaling divisor for the rate of nitrium formation relative to mix temperature.
 #define NITRIUM_FORMATION_TEMP_DIVISOR (FIRE_MINIMUM_TEMPERATURE_TO_EXIST * 8)
 /// The amount of thermal energy consumed when a mole of nitrium is formed from tritium, nitrogen, and BZ.
-#define NITRIUM_FORMATION_ENERGY 100000
+// NITRIUM_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The maximum temperature nitrium can decompose into nitrogen and hydrogen at.
 #define NITRIUM_DECOMPOSITION_MAX_TEMP (T0C + 70) //Pretty warm, explicitly not fire temps. Time bombs are cool, but not that cool. If it makes you feel any better it's close.
 /// A scaling divisor for the rate of nitrium decomposition relative to mix temperature.
 #define NITRIUM_DECOMPOSITION_TEMP_DIVISOR (FIRE_MINIMUM_TEMPERATURE_TO_EXIST * 8)
 /// The amount of energy released when a mole of nitrium decomposes into nitrogen and hydrogen.
-#define NITRIUM_DECOMPOSITION_ENERGY 30000
+// NITRIUM_DECOMPOSITION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Freon:
 /// The minimum temperature freon can form from plasma, CO2, and BZ at.
 #define FREON_FORMATION_MIN_TEMPERATURE (FIRE_MINIMUM_TEMPERATURE_TO_EXIST + 100)
 /// The amount of energy 2.5 moles of freon forming from plasma, CO2, and BZ consumes.
-#define FREON_FORMATION_ENERGY 100
+// FREON_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // H-Nob:
 /// The maximum temperature hyper-noblium can form from tritium and nitrogen at.
@@ -170,7 +170,7 @@
 /// The maximum temperature hyper-noblium can form from tritium and nitrogen at.
 #define NOBLIUM_FORMATION_MAX_TEMP 15
 /// The amount of energy a single mole of hyper-noblium forming from tritium and nitrogen releases.
-#define NOBLIUM_FORMATION_ENERGY 2e7
+// NOBLIUM_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The number of moles of hyper-noblium required to prevent reactions.
 #define REACTION_OPPRESSION_THRESHOLD 5
@@ -179,10 +179,10 @@
 
 // Halon:
 /// Energy released per mole of BZ consumed during halon formation.
-#define HALON_FORMATION_ENERGY 91232.1
+// HALON_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// How much energy a mole of halon combusting consumes.
-#define HALON_COMBUSTION_ENERGY 2500
+// HALON_COMBUSTION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// The minimum temperature required for halon to combust.
 #define HALON_COMBUSTION_MIN_TEMPERATURE (T0C + 70)
 /// The temperature scale for halon combustion reaction rate.
@@ -198,7 +198,7 @@
 /// The maximum temperature healium can form from BZ and freon at.
 #define HEALIUM_FORMATION_MAX_TEMP 300
 /// The amount of energy three moles of healium forming from BZ and freon releases.
-#define HEALIUM_FORMATION_ENERGY 9000
+// HEALIUM_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Zauker:
 /// The minimum temperature zauker can form from hyper-noblium and nitrium at.
@@ -208,12 +208,12 @@
 /// The temperature scaling factor for zauker formation. At most this many moles of zauker can form per reaction tick per kelvin.
 #define ZAUKER_FORMATION_TEMPERATURE_SCALE 5e-6
 /// The amount of energy half a mole of zauker forming from hypernoblium and nitrium consumes.
-#define ZAUKER_FORMATION_ENERGY 5000
+// ZAUKER_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The maximum number of moles of zauker that can decompose per reaction tick.
 #define ZAUKER_DECOMPOSITION_MAX_RATE 20
 /// The amount of energy a mole of zauker decomposing in the presence of nitrogen releases.
-#define ZAUKER_DECOMPOSITION_ENERGY 460
+// ZAUKER_DECOMPOSITION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 // Proto-Nitrate:
 /// The minimum temperature proto-nitrate can form from pluoxium and hydrogen at.
@@ -223,21 +223,21 @@
 /// The temperature scaling factor for proto-nitrate formation. At most this many moles of zauker can form per reaction tick per kelvin.
 #define PN_FORMATION_TEMPERATURE_SCALE 5e-3
 /// The amount of energy 2.2 moles of proto-nitrate forming from pluoxium and hydrogen releases.
-#define PN_FORMATION_ENERGY 650
+// PN_FORMATION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The amount of hydrogen necessary for proto-nitrate to start converting it to more proto-nitrate.
 #define PN_HYDROGEN_CONVERSION_THRESHOLD 150
 /// The maximum number of moles of hydrogen that can be converted into proto-nitrate in a single reaction tick.
 #define PN_HYDROGEN_CONVERSION_MAX_RATE 5
 /// The amount of energy converting a mole of hydrogen into half a mole of proto-nitrate consumes.
-#define PN_HYDROGEN_CONVERSION_ENERGY 2500
+// PN_HYDROGEN_CONVERSION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 
 /// The minimum temperature proto-nitrate can convert tritium to hydrogen at.
 #define PN_TRITIUM_CONVERSION_MIN_TEMP 150
 /// The maximum temperature proto-nitrate can convert tritium to hydrogen at.
 #define PN_TRITIUM_CONVERSION_MAX_TEMP 340
 /// The amount of energy proto-nitrate converting a mole of tritium into hydrogen releases.
-#define PN_TRITIUM_CONVERSION_ENERGY 10000
+// PN_TRITIUM_CONVERSION_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// The minimum released energy necessary for proto-nitrate to release radiation when converting tritium. (With a reaction vessel volume of [CELL_VOLUME])
 #define PN_TRITIUM_CONVERSION_RAD_RELEASE_THRESHOLD 10000
 /// A scaling factor for the range of the radiation pulses generated when proto-nitrate converts tritium to hydrogen.
@@ -250,7 +250,7 @@
 /// The maximum temperature proto-nitrate can break BZ down at.
 #define PN_BZASE_MAX_TEMP 280
 /// The amount of energy proto-nitrate breaking down a mole of BZ releases.
-#define PN_BZASE_ENERGY 60000
+// PN_BZASE_ENERGY is generated from verdigris/domains/gas/src/reaction_energy.rs (the reaction energy lives in Rust).
 /// The minimum released energy necessary for proto-nitrate to release rads when breaking down BZ (at a mix volume of [CELL_VOLUME]).
 #define PN_BZASE_RAD_RELEASE_THRESHOLD 60000
 /// A scaling factor for the range of the radiation pulses generated when proto-nitrate breaks down BZ.

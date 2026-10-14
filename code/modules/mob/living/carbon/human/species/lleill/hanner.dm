@@ -103,18 +103,21 @@
 
 	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
+CAPABILITIES(/datum/species/shapeshifter/hanner)
+	owns_many(nameof(lleill_ability_datums))
+
 /datum/species/shapeshifter/hanner/New()
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		own_add(src, nameof(lleill_ability_datums), LP)
+		rel_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/shapeshifter/hanner/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		own_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
+		rel_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
-			om_grant(H, GRANT_VERB, P.verbpath, src)
+			grant(H, granted_verb(P.verbpath), src)
 			H.ability_master.add_lleill_ability(
 					object_given = H,
 					verb_given = P.verbpath,
@@ -122,7 +125,7 @@
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
+	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /datum/species/shapeshifter/hanner/add_inherent_verbs(mob/living/carbon/human/H)
 	..()

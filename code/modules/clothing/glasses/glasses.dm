@@ -15,7 +15,6 @@ BLIND     // can't see anything
 	name = DEVELOPER_WARNING_NAME
 	icon = 'icons/inventory/eyes/item.dmi'
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_EYES
 	plane_slots = list(SLOT_ID_EYES)
 	var/vision_flags = 0
 	var/darkness_view = 0//Base human is 2
@@ -26,9 +25,9 @@ BLIND     // can't see anything
 	var/active = 1
 	var/activation_sound = SFX_ITEMS_GOGGLES_CHARGE
 	var/tmp/atom/movable/screen/overlay
+	/// The shared global HUD screen these glasses lay over the view (a /datum/global_hud var name), when overlay holds none of its own.
+	var/hud_overlay
 	var/list/away_planes //Holder for disabled planes
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	resistance_flags = FIRE_PROOF
 
 	sprite_sheets = list(
@@ -52,7 +51,7 @@ BLIND     // can't see anything
 /obj/item/clothing/glasses/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_glasses()
+		changed(src)
 
 /obj/item/clothing/glasses/proc/can_toggle(mob/living/user)
 	if(!toggleable)
@@ -69,8 +68,8 @@ BLIND     // can't see anything
 /obj/item/clothing/glasses/proc/toggle_active(mob/living/user)
 	if(active)
 		active = FALSE
-		icon_state = off_state
-		user.update_inv_glasses()
+		set_icon_state(off_state)
+		changed(src)
 		flash_protection = FLASH_PROTECTION_NONE
 		tint = TINT_NONE
 		away_planes = enables_planes
@@ -78,21 +77,27 @@ BLIND     // can't see anything
 
 	else
 		active = TRUE
-		icon_state = initial(icon_state)
-		user.update_inv_glasses()
+		set_icon_state(initial(icon_state))
+		changed(src)
 		flash_protection = initial(flash_protection)
 		tint = initial(tint)
 		enables_planes = away_planes
 		away_planes = null
 	user.update_mob_action_buttons()
 	user.recalculate_vis()
+	// Tint, flash protection, sight flags and the worn overlay all changed: the sight and HUD reactions read MOB_KEY_VIEW.
+	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(glasses_toggle_self)))
+CAPABILITIES(/obj/item/clothing/glasses)
+	configure(item_worn(slots = SLOT_EYES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
-/obj/item/clothing/glasses/proc/glasses_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/proc/glasses_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(specialty_goggles)
-		return FALSE
+		return OP_DECLINE
 	if(toggleable)
 		if(!can_toggle(user))
 			to_chat(user, span_warning("You don't seem to be able to toggle \the [src] here."))
@@ -102,9 +107,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 				to_chat(user, span_notice("You activate the optical matrix on the [src]."))
 			else
 				to_chat(user, span_notice("You deactivate the optical matrix on the [src]."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/glasses/meson
+	hud_overlay = "meson"
 	name = "optical meson scanner"
 	desc = "Used for seeing walls, floors, and stuff through anything."
 	icon_state = "meson"
@@ -113,10 +119,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	toggleable = 1
 	vision_flags = SEE_TURFS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
-
-/obj/item/clothing/glasses/meson/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.meson)
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -151,27 +153,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	prescription = TRUE
 
 /obj/item/clothing/glasses/science
+	hud_overlay = "science"
 	name = "Science Goggles"
 	desc = "The goggles do nothing!"
 	icon_state = "purple"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
 	actions_types = list(/datum/action/item_action/toggle_goggles)
-	item_flags = AIRTIGHT
 
-/obj/item/clothing/glasses/science/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.science)
+CAPABILITIES(/obj/item/clothing/glasses/science)
+	configure(item_worn(flags = AIRTIGHT))
 
 /obj/item/clothing/glasses/goggles
 	name = "goggles"
 	desc = "Just some plain old goggles."
 	icon_state = "plaingoggles"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	item_flags = AIRTIGHT
-	body_parts_covered = EYES
+
+CAPABILITIES(/obj/item/clothing/glasses/goggles)
+	configure(item_worn(flags = AIRTIGHT, covers = EYES))
 
 /obj/item/clothing/glasses/night
+	hud_overlay = "nvg"
 	name = "night vision goggles"
 	desc = "You can totally see in the dark now!"
 	icon_state = "night"
@@ -187,36 +190,31 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	name = "Alien Optics"
 	flags = PHORONGUARD
 
-TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
 
-/obj/item/clothing/glasses/night/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.nvg)
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
 	desc = "Yarr."
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	var/eye = null
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/eyepatch)
+	configure(item_worn(covers = 0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	op("eyepatch_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatch_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
 	eye = !eye
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 
 /obj/item/clothing/glasses/eyepatchwhite
@@ -224,25 +222,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
 	desc = "A simple eyepatch made of a strip of cloth tied around the head."
 	icon_state = "eyepatch_white"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	var/eye = null
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatchwhite_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
+	configure(item_worn(covers = 0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
+	op("eyepatchwhite_switcheye_verb", menu(), label("Switch Eyepatch"), needs(carried()), then(PROC_REF(eyepatchwhite_switcheye_verb)))
 
 /// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
 	eye = !eye
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 
 /obj/item/clothing/glasses/monocle
@@ -250,9 +247,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	desc = "Such a dapper eyepiece!"
 	icon_state = "monocle"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/glasses/monocle)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/material
+	hud_overlay = "material"
 	name = "optical material scanner"
 	desc = "Very confusing glasses."
 	icon_state = "material"
@@ -262,15 +262,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	vision_flags = SEE_OBJS
 	enables_planes = list(VIS_FULLBRIGHT)
 
-/obj/item/clothing/glasses/material/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.material)
-
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
 	prescription = TRUE
 
 /obj/item/clothing/glasses/graviton
+	hud_overlay = "material"
 	name = "graviton goggles"
 	desc = "The secrets of space travel are.. not quite yours."
 	icon_state = "grav"
@@ -283,17 +280,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	flash_protection = FLASH_PROTECTION_REDUCED
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
 
-/obj/item/clothing/glasses/graviton/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.material)
-
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
 	desc = "Made by Nerd. Co."
 	icon_state = "glasses"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	prescription = TRUE
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/glasses/regular)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/regular/scanners
 	name = "scanning goggles"
@@ -310,7 +305,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	name = "3D glasses"
 	icon_state = "3d"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/glasses/threedglasses)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/artist
 	name = "4-D Glasses"
@@ -323,7 +320,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	desc = "Forest green glasses, like the kind you'd wear when hatching a nasty scheme."
 	icon_state = "gglasses"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/glasses/gglasses)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/regular/rimless
 	name = "prescription rimless glasses"
@@ -345,7 +344,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	name = "thin-rimmed glasses"
 	desc = "Glasses with frames are so last century."
 	icon_state = "glasses_thin"
-
 
 /obj/item/clothing/glasses/sunglasses
 	name = "sunglasses"
@@ -374,18 +372,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	. = ..()
 	. += span_notice("Alt-click to toggle modes.")
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/bigshot, INTERACT_ALT("Toggle AR", PROC_REF(bigshot_ar_alt)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/bigshot)
+	op("bigshot_ar_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle AR"), then(PROC_REF(bigshot_ar_alt)))
 
 /// Old click_alt: toggle the AR mode. It never reached the clothing alt-click.
-/obj/item/clothing/glasses/sunglasses/bigshot/proc/bigshot_ar_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/sunglasses/bigshot/proc/bigshot_ar_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.ar)
 			src.ar = !src.ar
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 			to_chat(user, "You press a small button on \the [src] and deactivate the AR mode.")
 		else
 			src.ar = !src.ar
-			icon_state = "[initial(icon_state)]_fzz"
+			set_icon_state("[initial(icon_state)]_fzz")
 			to_chat(user, "You press a small button on \the [src] and activate the AR mode.")
 		update_clothing_icon()
 	return TRUE
@@ -397,37 +397,42 @@ MATERIAL_MIX(/obj/item/clothing/glasses/welding, list(MAT_STEEL = 1500, MAT_GLAS
 	icon_state = "welding-g"
 	item_state_slots = list(slot_r_hand_str = "welding-g", slot_l_hand_str = "welding-g")
 	actions_types = list(/datum/action/item_action/flip_welding_goggles)
-	item_flags = AIRTIGHT
 	var/up = 0
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
-	INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)), \
-	INTERACT_VERB("Adjust welding goggles", PROC_REF(welding_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/welding)
+	configure(item_worn(flags = AIRTIGHT))
+	op("welding_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_goggles_flip_self)))
+	op("welding_toggle_verb", menu(), label("Adjust welding goggles"), needs(carried()), then(PROC_REF(welding_toggle_verb_op)))
+
+/// The welding_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb_op(datum/act/op/A)
+	welding_toggle_verb(A.actor, A.held)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	welding_toggle_verb(user)
 
 /// Old verb "Adjust welding goggles".
-/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			flags_inv |= HIDEEYES
-			body_parts_covered |= EYES
-			icon_state = initial(icon_state)
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
+			set_body_parts_covered(worn_of(src).covers | (EYES))
+			set_icon_state(initial(icon_state))
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
 			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
-			flags_inv &= ~HIDEEYES
-			body_parts_covered &= ~EYES
-			icon_state = "[initial(icon_state)]up"
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
+			set_body_parts_covered(worn_of(src).covers & (~EYES))
+			set_icon_state("[initial(icon_state)]up")
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
 			to_chat(user, "You push \the [src] up out of your face.")
@@ -446,10 +451,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	icon_state = "blindfold"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	flash_protection = FLASH_PROTECTION_MAJOR
-	body_parts_covered = EYES
 	tint = BLIND
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/blindfold)
+	configure(item_worn(covers = EYES))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 
 /obj/item/clothing/glasses/sunglasses/blindfold/whiteblindfold
 	name = "white blindfold"
@@ -461,8 +467,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	desc = "A thin blindfold to help protect sensitive eyes while still allowing some sight"
 	icon_state = "blindfoldwhite"
 	flash_protection = FLASH_PROTECTION_MODERATE //not as thick, only offers some protection
-	body_parts_covered = EYES
 	tint = TINT_HEAVY
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/thinblindfold)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/sunglasses/blindfold/tape
 	name = "length of tape"
@@ -471,7 +479,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	icon_state = "tape_cross"
 	item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
 	w_class = ITEMSIZE_TINY
-	body_parts_covered = EYES
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/blindfold/tape)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/sunglasses/prescription
 	name = "prescription sunglasses"
@@ -503,6 +513,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	desc = "Flash-resistant goggles with inbuilt combat and security information."
 	icon_state = "swatgoggles"
 
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical)
+	configure(item_worn(flags = AIRTIGHT, covers = EYES))
+
 /obj/item/clothing/glasses/sunglasses/sechud/aviator
 	name = "security HUD aviators"
 	desc = "Modified aviator glasses that can be switch between HUD and flash protection modes."
@@ -514,12 +527,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	activation_sound = SFX_EFFECTS_POP
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERACT_USE("Switch mode", PROC_REF(aviator_mode_self)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/aviator)
+	op("aviator_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(aviator_mode_self)))
+
+TRACKED(/obj/item/clothing/glasses/sunglasses/sechud/aviator, on)
 
 /// Old attack_self.
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/proc/aviator_mode_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(toggleable && !user.incapacitated())
-		on = !on
+		set_on(!on)
 		if(on)
 			flash_protection = FLASH_PROTECTION_NONE
 			enables_planes = away_planes
@@ -530,19 +547,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 			away_planes = enables_planes
 			enables_planes = null
 			to_chat(user, "You switch \the [src] to flash protection mode.")
-		update_icon()
 		user << sound(get_sfx(activation_sound))
 		user.recalculate_vis()
-		user.update_inv_glasses()
+		changed(src)
 		user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/appearance_overlays()
-	. = list()
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = off_state
+		look.state(off_state)
 
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/prescription
 	name = "prescription security HUD aviators"
@@ -556,6 +571,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TY
 	enables_planes = list(VIS_CH_STATUS,VIS_CH_HEALTH)
 
 /obj/item/clothing/glasses/thermal
+	hud_overlay = "thermal"
 	name = "optical thermal scanner"
 	desc = "Thermals in the shape of glasses."
 	icon_state = "thermal"
@@ -566,21 +582,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TY
 	enables_planes = list(VIS_FULLBRIGHT, VIS_CLOAKED)
 	flash_protection = FLASH_PROTECTION_REDUCED
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal_emp_overload))
+CAPABILITIES(/obj/item/clothing/glasses/thermal)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(thermal_emp_overload)))
 
 /// A pulse overloads the scanner and blinds whoever wears it.
-/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/damage_packet/packet)
+/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/act/A)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
 		if(M.get_equipped_item(SLOT_ID_EYES) == src)
-			M.status_at_least(EFFECT_BLINDED, 3)
-			M.status_set(EFFECT_BLURRY, 5)
-			M.status_at_least(EFFECT_NEARSIGHTED, 2)
-
-/obj/item/clothing/glasses/thermal/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.thermal)
+			M.status_at_least(STAT_BLINDED, 3)
+			M.status_set(STAT_BLURRY, 5)
+			M.status_at_least(STAT_NEARSIGHTED, 2)
 
 /obj/item/clothing/glasses/thermal/syndi	//These are now a traitor item, concealed as mesons.	-Pete
 	name = "optical meson scanner"
@@ -602,16 +615,20 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 	actions_types = list(/datum/action/item_action/toggle_monocle)
 	flags = NONE //doesn't protect eyes because it's a monocle, duh
 
-	body_parts_covered = 0
+CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/monocle)
+	configure(item_worn(covers = 0))
+
 
 /obj/item/clothing/glasses/thermal/plain/eyepatch
 	name = "optical thermal eyepatch"
 	desc = "An eyepatch with built-in thermal optics"
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	toggleable = 1
 	actions_types = list(/datum/action/item_action/toggle_eyepatch)
+
+CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/eyepatch)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/thermal/plain/jensen
 	name = "optical thermal implants"
@@ -626,39 +643,43 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	actions_types = list(/datum/action/item_action/adjust_orange_goggles)
 	var/up = 0
-	item_flags = AIRTIGHT
-	body_parts_covered = EYES
 	specialty_goggles = TRUE
 
-TYPE_TABLE(/obj/item/clothing/glasses/aerogelgoggles, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
-	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \
-	INTERACT_VERB("Adjust Orange Goggles", PROC_REF(aerogelgoggles_toggle_verb), REQ_IN_INVENTORY), \
-)
+
+CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = AIRTIGHT, covers = EYES))
+	op("aerogel_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(aerogel_goggles_flip_self)))
+	op("aerogelgoggles_toggle_verb", menu(), label("Adjust Orange Goggles"), needs(carried()), then(PROC_REF(aerogelgoggles_toggle_verb_op)))
+
+/// The aerogelgoggles_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb_op(datum/act/op/A)
+	aerogelgoggles_toggle_verb(A.actor, A.held)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	aerogelgoggles_toggle_verb(user)
 
 /// Old verb "Adjust Orange Goggles".
-/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			flags_inv |= HIDEEYES
-			body_parts_covered |= EYES
-			icon_state = initial(icon_state)
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
+			set_body_parts_covered(worn_of(src).covers | (EYES))
+			set_icon_state(initial(icon_state))
 			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
-			flags_inv &= ~HIDEEYES
-			body_parts_covered &= ~EYES
-			icon_state = "[initial(icon_state)]up"
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
+			set_body_parts_covered(worn_of(src).covers & (~EYES))
+			set_icon_state("[initial(icon_state)]up")
 			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()
 		user.update_mob_action_buttons()
-
 
 /obj/item/clothing/glasses/proc/prescribe(mob/user)
 	prescription = !prescription
@@ -681,69 +702,46 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 	icon_state = "modkit"
 	var/scrip_loaded = 0
 
-/obj/item/glasses_kit/afterattack(target, mob/living/carbon/human/user, proximity)
-	if(!proximity)
-		return
-	if(!istype(user))
-		return
+TRACKED(/obj/item/glasses_kit, scrip_loaded)
 
-	//Too difficult
-	if(target == user)
-		to_chat(user, span_warning("You can't use this on yourself. Get someone to help you."))
-		return
+// Five seconds with the kit on someone's eyes (it builds a prescription) or on a pair of glasses (it applies it). Used on yourself it does nothing.
+CAPABILITIES(/obj/item/glasses_kit)
+	op("prescribe", at_target(/obj/item/clothing/glasses), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply prescription"),
+		needs(req_adjacent(), req_is(nameof(scrip_loaded), 1, because = MSG(glasses_kit/no_prescription))), wait(5 SECONDS), then(PROC_REF(prescribed)))
+	op("measure", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Measure eyes"),
+		needs(req_adjacent(), req(PROC_REF(not_the_user), because = MSG(glasses_kit/on_self))), starts(PROC_REF(measuring_started)), wait(5 SECONDS), then(PROC_REF(measured)))
 
-	//We're applying a prescription
-	if(istype(target,/obj/item/clothing/glasses))
-		var/obj/item/clothing/glasses/G = target
-		if(!scrip_loaded)
-			to_chat(user, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
-			return
+MSG_DEF_SELF(glasses_kit/on_self, span_warning("You can't use this on yourself. Get someone to help you."))
+MSG_DEF_SELF(glasses_kit/no_prescription, span_warning("You need to build a prescription from someone first! Use the kit on someone."))
+MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be covered!"))
 
-		om_task_start(/datum/om/task/timed/glasses_kit/prescribe, user, G, kit = src)
+/// Null-or-reason requirement callback: null allows, a reason refuses.
+/obj/item/glasses_kit/proc/not_the_user(datum/act/op/A)
+	return (A.target != A.actor) ? null : MSG(req_failed)
 
-	//We're getting a prescription
-	else if(ishuman(target))
-		var/mob/living/carbon/human/T = target
-		if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && T.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES))
-			to_chat(user, span_warning("The person's eyes can't be covered!"))
-			return
+/// The measuring is refused (and nothing starts) while the person's eyes are covered; otherwise the person and the room are told.
+/obj/item/glasses_kit/proc/measuring_started(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
+	if(T.get_equipped_item(SLOT_ID_EYES) || (T.get_equipped_item(SLOT_ID_HEAD) && worn_of(T.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEYES))
+		return /datum/msg/glasses_kit/eyes_covered
+	act_message(T, A.actor, MSG_SELF("%T% begins measuring your eyes. Hold still!"), MSG_OTHERS("%T% begins making measurements for prescription lenses for [T]."))
 
-		act_message(T, user, MSG_SELF("%T% begins measuring your eyes. Hold still!"), \
-			MSG_OTHERS("%T% begins making measurements for prescription lenses for [target]."))
-		om_task_start(/datum/om/task/timed/glasses_kit/measure, user, T, kit = src)
+/obj/item/glasses_kit/proc/prescribed(datum/act/op/A)
+	var/obj/item/clothing/glasses/G = A.target
+	if(!scrip_loaded)
+		return OP_REFUSED
+	G.prescribe(A.actor)
+	set_scrip_loaded(0)
+	return OP_OK
 
-	else
-		..()
-
-/// Five seconds with the kit on someone's eyes or on their glasses. The done procs are the
-/// task's own: they read the state (kit, actor, target) as their own vars.
-/datum/om/task/timed/glasses_kit
-	abstract_type = /datum/om/task/timed/glasses_kit
-	duration = 5 SECONDS
-	var/obj/item/glasses_kit/kit
-
-/datum/om/task/timed/glasses_kit/prescribe
-	complete_proc = /datum/om/task/timed/glasses_kit/prescribe/proc/done
-
-/datum/om/task/timed/glasses_kit/prescribe/proc/done()
-	var/obj/item/clothing/glasses/G = target
-	if(!kit.scrip_loaded)
-		return
-	G.prescribe(actor)
-	kit.scrip_loaded = 0
-
-/datum/om/task/timed/glasses_kit/measure
-	complete_proc = /datum/om/task/timed/glasses_kit/measure/proc/done
-
-/datum/om/task/timed/glasses_kit/measure/proc/done()
-	var/mob/living/carbon/human/T = target
+/obj/item/glasses_kit/proc/measured(datum/act/op/A)
+	var/mob/living/carbon/human/T = A.target
 	T.flash_eyes()
-	kit.scrip_loaded = 1
-	act_message(T, null, MSG_SELF(span_warning("Gah, that's bright!")), MSG_OTHERS("[actor] finishes making prescription lenses for %U%."))
+	set_scrip_loaded(1)
+	act_message(T, null, MSG_SELF(span_warning("Gah, that's bright!")), MSG_OTHERS("[A.actor] finishes making prescription lenses for %U%."))
+	return OP_OK
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical
-	item_flags = AIRTIGHT
-	body_parts_covered = EYES
 
 /obj/item/clothing/glasses/graviton/medgravpatch
 	name = "medical graviton eyepatch"
@@ -759,37 +757,38 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 	desc = "Special AR visor designed for security teams, protects your eyes and provides useful data. The red lights provide extra style and intimidation."
 	icon_state = "tacsecvis1"
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM,VIS_AUGMENTED) // CHOMP EDIT Adding AR to the- well, AR visors. :3	flash_protection = FLASH_PROTECTION_MODERATE
-	item_flags = AIRTIGHT
-	body_parts_covered = EYES
 	actions_types = list(/datum/action/item_action/hands_free/change_scanning_pattern)
-	var/static/list/tac_sec_vis_anim = list()
+	var/list/tac_sec_vis_anim
 
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/Initialize(mapload)
-	. = ..()
-	tac_sec_vis_anim = list(
+/// The tac_sec_vis_anim table, one per type (per_type()).
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/build_tac_sec_vis_anim()
+	. = list(
 		"Scanning pattern 1" = image(icon = src.icon, icon_state = "tacsecvis1"),
 		"Scanning pattern 2" = image(icon = src.icon, icon_state = "tacsecvis2"),
 		"Scanning pattern 3" = image(icon = src.icon, icon_state = "tacsecvis3"),
 		"Scanning pattern 4" = image(icon = src.icon, icon_state = "tacsecvis4"),
 		)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis, INTERACT_USE("Scanning pattern", PROC_REF(tactical_sec_vis_pattern_self)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
+	configure(item_worn(flags = AIRTIGHT, covers = EYES))
+	per_type(nameof(tac_sec_vis_anim), PROC_REF(build_tac_sec_vis_anim))
+	op("tactical_sec_vis_pattern_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Scanning pattern"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(tactical_sec_vis_choices)), "radius" = 36, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "pattern"), then(PROC_REF(tactical_sec_vis_pattern_self)))
 
-/// Old attack_self: pick a scanning pattern, after the glasses toggle (the old ..()).
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(mob/user, obj/item/held, datum/interaction/interaction)
-	glasses_toggle_self(user, held, interaction)
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_choices(datum/act/op/A)
+	return tac_sec_vis_anim
+
+/// Old attack_self: the glasses toggle (the old ..()), then the chosen scanning pattern.
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(datum/act/op/A)
+	var/mob/user = A.actor
+	glasses_toggle_self(A)
 	if(!istype(user) || user.incapacitated())
 		return
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(tactical_sec_vis_pattern_chosen), choices = tac_sec_vis_anim, anchor = src, radius = 36, require_near = TRUE)
-
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+	var/choice = A.step_value("pattern")
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
-	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
-		icon_state = options[choice]
-		user.update_inv_glasses()
+	if(choice && options[choice] && !user.incapacitated() && in_range(user, src))
+		set_icon_state(options[choice])
+		changed(src)
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays [choice] ."))
 
@@ -801,15 +800,19 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	icon_state = "tajblind"
 	item_state = "tajblind"
 	prescription = TRUE
-	body_parts_covered = EYES
 	glasses_layer_above = TRUE
+
+CAPABILITIES(/obj/item/clothing/glasses/tajblind)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/hud/health/tajblind
 	name = "lightweight veil"
 	desc = "An Tajaran made veil that allows the user to see while obscuring their eyes. This one has an installed medical HUD."
 	icon_state = "tajblind_med"
 	item_state = "tajblind_med"
-	body_parts_covered = EYES
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/health/tajblind)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/sunglasses/sechud/tajblind
 	name = "sleek veil"
@@ -817,7 +820,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	icon_state = "tajblind_sec"
 	item_state = "tajblind_sec"
 	prescription = TRUE
-	body_parts_covered = EYES
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tajblind)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/meson/prescription/tajblind
 	name = "industrial veil"
@@ -825,7 +830,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	icon_state = "tajblind_meson"
 	item_state = "tajblind_meson"
 	off_state = "tajblind"
-	body_parts_covered = EYES
+
+CAPABILITIES(/obj/item/clothing/glasses/meson/prescription/tajblind)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/material/prescription/tajblind
 	name = "mining veil"
@@ -833,8 +840,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	icon_state = "tajblind_meson"
 	item_state = "tajblind_meson"
 	off_state = "tajblind"
-	body_parts_covered = EYES
 
+CAPABILITIES(/obj/item/clothing/glasses/material/prescription/tajblind)
+	configure(item_worn(covers = EYES))
 
 /obj/item/clothing/glasses/omnihud/visor/tesh
 	name = "AR V-visor"
@@ -842,7 +850,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	icon_state = "AR_visor_tesh"
 	item_state = "AR_visor_tesh"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/eyes/mob_teshari.dmi')
-
 
 /obj/item/clothing/glasses/darksight
 	name = "voidviewer goggles"
@@ -869,4 +876,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 
 /// the overlay this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen
-	return overlay
+	if(overlay)
+		return overlay
+	return hud_overlay ? GLOB.global_hud.vars[hud_overlay] : null
+
+CAPABILITIES(/obj/item/clothing/glasses/night/vox)
+	acceptance("fit", fits(list("Vox")), mode = ACCEPTANCE_REPLACE)

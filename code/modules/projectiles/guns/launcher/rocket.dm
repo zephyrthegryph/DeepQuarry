@@ -6,14 +6,16 @@
 	w_class = ITEMSIZE_HUGE //.
 	throw_speed = 2
 	throw_range = 10
-	force = 5.0
-	slot_flags = 0
 	fire_sound = SFX_WEAPONS_RPG
 
 	release_force = 15
 	throw_distance = 30
 	var/max_rockets = 1
 	var/list/rockets
+
+CAPABILITIES(/obj/item/gun/launcher/rocket)
+	configure(item_worn(slots = 0))
+	configure(item_combat(force = 5.0))
 
 /obj/item/gun/launcher/rocket/examine(mob/user)
 	. = ..()
@@ -23,14 +25,16 @@
 // Loaded rockets sit in the launcher's contents.
 /obj/item/gun/launcher/rocket/ownership()
 	. = ..()
-	. += owns(nameof(rockets), policy = OWN_CONTAINED)
+	. += owns(nameof(rockets), policy = OWN_CONTAINED, is_list = TRUE)
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/rocket/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_PASS
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
-			if(!own_add(src, nameof(src.rockets), I, user = user))
+			if(!move_into(src, nameof(src.rockets), I, user))
 				return
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))

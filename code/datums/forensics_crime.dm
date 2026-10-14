@@ -159,13 +159,13 @@
 	if(M.get_equipped_item(SLOT_ID_SUIT))
 		if(prob(10*item_multiplier))
 			fibertext = "Material from \a [M.get_equipped_item(SLOT_ID_SUIT)]."
-		suit_coverage = M.get_equipped_item(SLOT_ID_SUIT).body_parts_covered
+		suit_coverage = worn_of(M.get_equipped_item(SLOT_ID_SUIT)).covers
 
-	if(M.get_equipped_item(SLOT_ID_UNIFORM) && (M.get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_UNIFORM) && (worn_of(M.get_equipped_item(SLOT_ID_UNIFORM)).covers & ~suit_coverage))
 		if(prob(15*item_multiplier))
 			fibertext = "Fibers from \a [M.get_equipped_item(SLOT_ID_UNIFORM)]."
 
-	if(M.get_equipped_item(SLOT_ID_GLOVES) && (M.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ~suit_coverage))
+	if(M.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(M.get_equipped_item(SLOT_ID_GLOVES)).covers & ~suit_coverage))
 		if(prob(20*item_multiplier))
 			fibertext = "Material from a pair of [M.get_equipped_item(SLOT_ID_GLOVES).name]."
 
@@ -204,6 +204,7 @@
 	LAZYCLEARLIST(suit_fibres)
 
 
+
 //////////////////////////////////////////////////////////////////////////////////////
 // Blood dna
 //////////////////////////////////////////////////////////////////////////////////////
@@ -212,20 +213,21 @@
 /// Adds the mob's bloodtype to a UE keyed list, returns true if the key was not present in the list before.
 /datum/forensics_crime/proc/add_blooddna(datum/dna/dna_data,mob/M)
 	if(!blood_DNA)
-		blood_DNA = list()
+		set_blood_DNA(list())
+	tracked_changed(src, nameof(blood_DNA)) // the keyed list is edited in place below: a bloody look follows it
 	// Special alien handling
 	if(istype(M, /mob/living/carbon/alien))
 		var/fresh = isnull(blood_DNA[XENO_DNA])
-		blood_DNA[XENO_DNA] = "X*"
+		set_blood_DNA_at(XENO_DNA, "X*")
 		return fresh
 	// Simple mob gibbing
 	if(!dna_data)
 		var/fresh = isnull(blood_DNA[NOT_HUMAN_DNA])
-		blood_DNA[NOT_HUMAN_DNA] = DEFAULT_BLOOD_TYPE
+		set_blood_DNA_at(NOT_HUMAN_DNA, DEFAULT_BLOOD_TYPE)
 		return fresh
 	// Standard blood
 	var/fresh = isnull(blood_DNA[dna_data.unique_enzymes])
-	blood_DNA[dna_data.unique_enzymes] = dna_data.b_type
+	set_blood_DNA_at(dna_data.unique_enzymes, dna_data.b_type)
 	return fresh
 #undef XENO_DNA
 #undef NOT_HUMAN_DNA
@@ -233,9 +235,10 @@
 /// Adds the mob's bloodtype to a UE keyed list, returns true if the key was not present in the list before. Uses an organ's dna_data datum instead of a mob's dna datum.
 /datum/forensics_crime/proc/add_blooddna_organ(datum/organ_data/dna_data)
 	if(!blood_DNA)
-		blood_DNA = list()
+		set_blood_DNA(list())
+	tracked_changed(src, nameof(blood_DNA))
 	var/fresh = isnull(blood_DNA[dna_data.unique_enzymes])
-	blood_DNA[dna_data.unique_enzymes] = dna_data.b_type
+	set_blood_DNA_at(dna_data.unique_enzymes, dna_data.b_type)
 	return fresh
 
 /// Returns a list of UE keys with bloodtype values that have contaminated this object. Always returns a list.
@@ -255,16 +258,19 @@
 /datum/forensics_crime/proc/merge_blooddna(datum/forensics_crime/origin, list/raw_list = null)
 	// Copying from a list, blood on a mob's feet is stored as a list outside of forensics data
 	if(raw_list)
-		LAZYOR(blood_DNA,raw_list)
+		include_blood_DNA(raw_list)
+		tracked_changed(src, nameof(blood_DNA))
 		return
 	// Copying from another datums
 	if(!islist(origin?.blood_DNA))
 		return
-	LAZYOR(blood_DNA,origin.blood_DNA)
+	include_blood_DNA(origin.blood_DNA)
+	tracked_changed(src, nameof(blood_DNA))
 
 /// Clears data to default state, wiping all evidence
 /datum/forensics_crime/proc/clear_blooddna()
-	LAZYCLEARLIST(blood_DNA)
+	clear_blood_DNA()
+	tracked_changed(src, nameof(blood_DNA))
 
 
 //////////////////////////////////////////////////////////////////////////////////////

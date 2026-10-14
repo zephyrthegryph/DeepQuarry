@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 0
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_mixer
 	default_max_vol = 240 // Two large beakers of volume
 	var/mixer_angle = 0
@@ -14,7 +12,7 @@
 	var/got_input = FALSE
 
 /obj/machinery/reagent_refinery/mixer/Initialize(mapload)
-	mixer_angle = dir2angle(dir)
+	set_mixer_angle(dir2angle(dir))
 	. = ..()
 	default_apply_parts()
 
@@ -30,80 +28,55 @@
 	if(mixer_angle == dir2angle(dir))
 		refinery_transfer()
 		if(reagents.total_volume <= 0)
-			mixer_angle += mixer_rotation_rate
-			mixer_angle = (360 + mixer_angle) % 360
-			update_icon()
-		got_input = FALSE
+			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+			set_mixer_angle((360 + mixer_angle) % 360)
+		set_got_input(FALSE)
 		return
 
 	// Check if we were filled...
 	if(mixer_angle % 90 != 0) // Not cardinal, keep going
-		got_input = TRUE
+		set_got_input(TRUE)
 	else if(!(locate_within(get_step(src,angle2dir(mixer_angle)), /obj/machinery/reagent_refinery))) // If nothing, keep rotating
-		got_input = TRUE
+		set_got_input(TRUE)
 
 	if(!got_input)
 		return
-	mixer_angle += mixer_rotation_rate
-	mixer_angle = (360 + mixer_angle) % 360
-	update_icon()
-	got_input = FALSE
+	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+	set_mixer_angle((360 + mixer_angle) % 360)
+	set_got_input(FALSE)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/mixer/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
+	..()
 	// GOOBY!
-	if(reagents && reagents.total_volume >= 5)
-		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
-		switch(percent)
+	var/datum/reagents/R = reagents
+	look.watch(R) // its level and colour are tracked on the holder
+	if(R?.total_volume >= 5)
+		var/percent
+		switch((R.total_volume / R.maximum_volume) * 100)
 			if(5 to 20)			percent = 2
 			if(20 to 40) 		percent = 4
 			if(40 to 60)		percent = 6
 			if(60 to 80)		percent = 8
 			if(80 to INFINITY)	percent = 10
-		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(look_overlay_image(icon, "mixer_r_[percent]", color = R.tint, dir = dir), when = !isnull(percent))
 	// Get main dir pipe
-	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
-	. += pipe
+	look.overlay(look_overlay_image(icon, "mixer_cons", dir = dir))
 	if(anchored)
 		if(operable())
-			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
-			. += dot
-		. += update_input_connection_overlays("mixer_intakes")
+			look.overlay("mixer_dot_[got_input ? "on" : "off"]")
+		look.overlay(update_input_connection_overlays(look, "mixer_intakes"))
 	// Get mixer overlay
-	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
-	. += arm
+	look.overlay(look_overlay_image(icon, "mixer_arm", dir = angle2dir(mixer_angle)))
 
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/mixer_use,
-		/datum/interaction/machine_verb/mixer_set_rotation,
-	)
-	..()
-
-/// Old attack_hand: dispatched straight to the set_rotation verb, never called ..().
-/datum/interaction/machine_hand/ungated/mixer_use
-	id = "mixer_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
-
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/mixer_set_rotation
-	id = "mixer_set_rotation"
-	name = "Set Mixer Rotation"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
-
-/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
+	var/mob/user = A.actor
 	if(mixer_rotation_rate > 0)
 		mixer_rotation_rate = -45
 		to_chat(user,span_notice("You set \the [src] to rotate counter clockwise."))
 	else
 		mixer_rotation_rate = 45
 		to_chat(user,span_notice("You set \the [src] to rotate clockwise."))
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/reagent_refinery/mixer/examine(mob/user, infix, suffix)
 	. = ..()
@@ -125,12 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 
 	// If we transfered anything, then inform process() of it!
 	if(.)
-		got_input = TRUE
-		update_icon()
-
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+		set_got_input(TRUE)
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
@@ -141,3 +109,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	if(!(locate_within(get_step(src, angle2dir(mixer_angle)), /obj/machinery/reagent_refinery)))
 		return TRUE
 	return got_input
+
+CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	configure(uses_power(idle = 0, active = 50))
+	without("reagent_refinery_set_transfer_amount")
+	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))
+	op("set_rotation_2", menu(), label("Set Mixer Rotation"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_rotation)))

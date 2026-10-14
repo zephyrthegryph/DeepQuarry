@@ -1,6 +1,6 @@
 /// Returns distilled_reactions_by_reagent so handle_reactions() uses the distilling reaction bucket.
 /datum/reagents/distilling/get_reaction_lookup()
-	return chemistry_service().distilled_reactions_by_reagent
+	return SSchemistry.ready().distilled_reactions_by_reagent
 
 /// Distilling holders do not track belly-reagent state.
 /datum/reagents/distilling/supports_belly_reagents()
@@ -24,6 +24,9 @@
 	var/tmp/datum/native_watch/heat/heat_set_watch
 	/// Levels in the set (payload = index).
 	var/tmp/list/heat_set_levels
+
+CAPABILITIES(/datum/reagents/distilling)
+	owns_one(nameof(heat_set_watch), /datum/native_watch/heat)
 
 
 /datum/reagents/distilling/update_total()
@@ -52,7 +55,7 @@
 	if(heat_set_levels ~= levels && !isnull(heat_set_watch))
 		return
 	if(isnull(heat_set_watch))
-		own_set(src, nameof(heat_set_watch), heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound)))
+		rel_set(src, nameof(heat_set_watch), heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound)))
 		if(isnull(heat_set_watch))
 			return
 	for(var/i in 1 to length(levels))
@@ -62,7 +65,7 @@
 	heat_set_levels = levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()
-	own_clear(src, nameof(heat_set_watch), OWN_DELETE)
+	rel_clear(src, nameof(heat_set_watch))
 	heat_set_levels = null
 
 /// The holder's temperature crossed a reaction bound: react now.

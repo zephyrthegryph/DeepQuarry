@@ -1,0 +1,2 @@
+/obj/machinery/atmospherics/unary/freezer vol=120 holder=/datum/reagents 
+

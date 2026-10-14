@@ -1,5 +1,4 @@
 //Helper object for picking dionaea (and other creatures) up.
-OWN_TIMER(/obj/item/holder, cleanup_timer)
 
 /obj/item/holder
 	name = "holder"
@@ -8,7 +7,6 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	slot_flags = SLOT_HEAD | SLOT_HOLSTER
 	show_messages = 1
 
 	sprite_sheets = list(
@@ -25,11 +23,15 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
-/obj/item/holder/Initialize(mapload, mob/held)
-	. = ..()
+/// The mob a holder is made around (its constructor param): it moves in at init, the holder keeps no reference to the argument.
+/obj/item/holder/var/tmp/mob/held_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/holder/proc/take_held(mob/held)
 	if(!ismob(held))
 		stack_trace("Holder was not passed a mob.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	held.forceMove(src)
 	if(isturf(loc) || isbelly(loc))
 		schedule_cleanup_check()
@@ -91,7 +93,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 		held_mob.update_transform()
 		held_mob.vis_flags = original_vis_flags
 		rel_clear(src, nameof(held_mob))
-		invisibility = INVISIBILITY_ABSTRACT
+		set_invisibility(INVISIBILITY_ABSTRACT)
 		schedule_cleanup_check() // once the move is over
 	..()
 
@@ -115,12 +117,12 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
-	if(!om_timer_slot_pending(src, "cleanup_timer"))
-		after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
+	if(!after_pending(src, "cleanup_timer"))
+		after(src, 0, PROC_REF(cleanup_check), key = "cleanup_timer")
 
 /obj/item/holder/proc/cleanup_check()
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))
-		qdel(src)
+		spent(src)
 
 /// Releases the mob from inside the holder. Calls forceMove() which calls Exited(). Then does cleanup for the client's eye location.
 /obj/item/holder/proc/dump_mob()
@@ -172,8 +174,10 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 
 //Mob specific holders.
 /obj/item/holder/diona
-	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER
 	item_state = "diona"
+
+CAPABILITIES(/obj/item/holder/diona)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER))
 
 /obj/item/holder/drone
 	item_state = "repairbot"
@@ -183,15 +187,15 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 
 /obj/item/holder/pai
 
-/obj/item/holder/pai/Initialize(mapload, mob/held)
-	. = ..()
-	item_state = held.icon_state
+/obj/item/holder/pai/take_held(mob/held)
+	..()
+	if(held)
+		set_item_state(held.icon_state)
 
 /obj/item/holder/mouse
 	name = "mouse"
 	desc = "It's a small rodent."
 	item_state = "mouse_gray"
-	slot_flags = SLOT_EARS | SLOT_HEAD | SLOT_ID
 	w_class = ITEMSIZE_TINY
 
 /obj/item/holder/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
@@ -304,14 +308,17 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 	item_icons = null
 	w_class = ITEMSIZE_SMALL
 
+// ALLOW(init/INSTANCE_STATE): lays down the bird it holds
 /obj/item/holder/bird/Initialize(mapload)
 	. = ..()
 	held_mob?.lay_down()
 
 /obj/item/holder/fish
-	attack_verb = list("fished", "disrespected", "smacked", "smackereled")
-	hitsound = SFX_EFFECTS_SLIME_SQUISH
-	slot_flags = SLOT_HOLSTER
+
+CAPABILITIES(/obj/item/holder/fish)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_combat(attack_verbs = list("fished", "disrespected", "smacked", "smackereled")))
+	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)
 	if(!target)
@@ -321,25 +328,29 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 	if(isliving(target))
 		var/mob/living/L = target
 		if(prob(10))
-			L.status_at_least(EFFECT_STUNNED, 2)
+			L.status_at_least(STAT_STUNNED, 2)
 
-DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_REF(interaction_item)), INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/holder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// A holder struck with itself in harm intent squeezes what it holds (a stance-declared op ahead of holder_use, which passes the input on).
+/obj/item/holder/proc/holder_squeezed(datum/act/op/A)
+	var/mob/user = A.actor
+	if(A.held != src)
+		return OP_DECLINE
 	// ITION: MicroHandCrush
-	if(W == src && interaction.stance == I_HURT)
-		for(var/mob/living/M in contents_of(src))
-			if(user.size_multiplier > M.size_multiplier)
-				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
-				to_chat(user, span_danger("You roughly squeeze [M]!"))
-				to_chat(M, span_danger("You are roughly squeezed by [user]!"))
-				log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
-				M.injure(INJURY_BLUNT, dam, null, user)
+	for(var/mob/living/M in contents_of(src))
+		if(user.size_multiplier > M.size_multiplier)
+			var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
+			to_chat(user, span_danger("You roughly squeeze [M]!"))
+			to_chat(M, span_danger("You are roughly squeezed by [user]!"))
+			log_and_message_admins("[key_name(M)] has been harmsqueezed by [key_name(user)]")
+			M.injure(INJURY_BLUNT, dam, null, user)
 	// ITION: MicroHandCrush END
+	return OP_OK
+
+/// An item used on the holder is passed on to the creatures inside. The input is not used up: the item's afterattack still follows.
+/obj/item/holder/proc/holder_item_used(datum/act/op/A)
 	for(var/mob/M in contents_of(src))
-		M.attackby(W,user)
-	return INTERACTION_HANDLED_PASS
+		M.item_used_on(A.held, A.actor)
+	return OP_OK
 
 //Mob procs and vars for scooping up
 /mob/living/var/holder_type
@@ -394,17 +405,16 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_
 	return H
 
 /obj/item/holder/proc/sync(mob/living/M)
-	dir = 2
+	set_dir(2)
 	overlays.Cut()
 	if(M.item_state)
-		item_state = M.item_state
+		set_item_state(M.item_state)
 	color = M.color
 	name = M.name
 	desc = M.desc
 	overlays |= M.overlays
 
 /obj/item/holder/protoblob
-	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
@@ -415,5 +425,9 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_
 		slot_r_ear_str = 'icons/mob/ears.dmi',
 		slot_l_ear_str = 'icons/mob/ears.dmi')
 
-TYPE_TABLE(/obj/item/holder/protoblob, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))))
 
+
+
+CAPABILITIES(/obj/item/holder/protoblob)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

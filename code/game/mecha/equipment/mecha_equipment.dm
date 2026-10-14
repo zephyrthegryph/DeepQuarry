@@ -5,7 +5,6 @@
 	name = "mecha equipment"
 	icon = 'icons/mecha/mecha_equipment.dmi'
 	icon_state = "mecha_equip"
-	force = 5
 	var/equip_cooldown = 0
 	var/equip_ready = TRUE
 	var/energy_drain = 0
@@ -22,19 +21,19 @@
 	var/step_delay = 0	// Does the component slow/speed up the suit?
 
 /// The mech this is mounted on. A field: equipment declares its periodic work on it.
-OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_EXPLICIT)
+/obj/item/mecha_parts/mecha_equipment/var/obj/mecha/chassis
 
 /// Starts the equipment cooldown (ready again after equip_cooldown). TRUE while it can act on
 /// `target`: the act no longer waits for the cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_cooldown(target=1)
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 	if(target && chassis)
 		return 1
 	return 0
 
 /// The cooldown without waiting for it: ready again after equip_cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/start_cooldown()
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 
 /obj/item/mecha_parts/mecha_equipment/proc/cooldown_over()
 	set_ready_state(TRUE)
@@ -45,7 +44,8 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	. = ..()
 	. += span_notice("[src] will fill [equip_type?"a [equip_type]":"any"] slot.")
 
-/obj/item/mecha_parts/mecha_equipment/proc/add_equip_overlay(obj/mecha/M as obj)
+/// What this equipment adds to the look of the mech it is bolted on (the mech's draw asks each piece).
+/obj/item/mecha_parts/mecha_equipment/proc/equip_look(datum/look/look)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/update_chassis_page()
@@ -108,8 +108,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 					src.chassis?.slot_item(MECHA_SLOT_PILOT)  << sound('sound/mecha/critdestrsyndi.ogg',volume=70)
 				else
 					src.chassis?.slot_item(MECHA_SLOT_PILOT)  << sound('sound/mecha/critdestr.ogg',volume=50)
-	spawn
-		qdel(src)
+	expire(0)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/critfail()
@@ -148,7 +147,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 		return 0
 	return 1
 
-/obj/item/mecha_parts/mecha_equipment/proc/action(atom/target)
+/obj/item/mecha_parts/mecha_equipment/proc/action(atom/target, params, mob/user = null)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/proc/can_attach(obj/mecha/M as obj)
@@ -202,7 +201,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 		rel_add(M, nameof(M.universal_equipment), src)
 	rel_add(M, nameof(M.equipment), src)
 	rel_set(src, nameof(chassis), M)
-	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
+	if(!move_into(M, MECHA_SLOT_EQUIPMENT, src))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
 	if(enable_special_checks(M))
@@ -252,15 +251,18 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	enable_special = FALSE
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment, "detach", PROC_REF(topic_detach))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
+	configure(item_combat(force = 5))
+	ref_one(nameof(chassis))
+	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
 
 // Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
-/obj/item/mecha_parts/mecha_equipment/topic_allowed(mob/user, list/href_list)
-	if(!chassis || !user || user.stat)
-		return FALSE
-	return user == chassis.slot_item(MECHA_SLOT_PILOT)
+/obj/item/mecha_parts/mecha_equipment/topic_usable(datum/act/op/A)
+	if(!chassis || !A.actor || A.actor.stat)
+		return MSG(op/topic_gate)
+	return (A.actor == chassis.slot_item(MECHA_SLOT_PILOT)) ? null : MSG(op/topic_gate)
 
-/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(datum/act/op/A)
 	detach()
 
 /obj/item/mecha_parts/mecha_equipment/proc/set_ready_state(state)

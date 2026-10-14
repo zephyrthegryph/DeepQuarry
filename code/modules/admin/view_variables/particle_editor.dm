@@ -5,9 +5,12 @@
 /datum/particle_editor/New(atom/target)
 	rel_set(src, nameof(target), target)
 
-DECLARE_UI_STATE(/datum/particle_editor, ADMIN_STATE(R_VAREDIT))
-
-DECLARE_UI(/datum/particle_editor, "ParticleEdit")
+CAPABILITIES(/datum/particle_editor)
+	interface("ParticleEdit", rights = R_VAREDIT)
+	op("delete_and_close", ui_act("delete_and_close"), then(PROC_REF(ui_act_delete_and_close)))
+	op("new_type", ui_act("new_type"), asks(/datum/prompt/choice/particle_editor_type, fields = list("choices" = computed(PROC_REF(particle_type_choices))), step = "type"), then(PROC_REF(ui_act_new_type)))
+	op("transform_size", ui_act("transform_size", arg("new_value")), then(PROC_REF(ui_act_transform_size)))
+	op("edit", ui_act("edit", arg("new_value"), arg("var", schema_text(4096)), arg("var_mod", schema_text(4096))), then(PROC_REF(ui_act_edit)))
 
 /datum/particle_editor/ui_assets(mob/user)
 	. = ..()
@@ -100,10 +103,9 @@ DECLARE_UI(/datum/particle_editor, "ParticleEdit")
 		data["drift"] = drift
 	return data
 
-UI_DATA_REPLACE(/datum/particle_editor, "merge:ui_data_datum_particle_editor{target_name:text,particle_data:unknown}")
-
-/// The computed part of /datum/particle_editor's window data (declared on its UI_DATA row).
-/datum/particle_editor/proc/ui_data_datum_particle_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/particle_editor's window data.
+/datum/particle_editor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["target_name"] = target().name
 	if(!target().particles)
@@ -111,28 +113,27 @@ UI_DATA_REPLACE(/datum/particle_editor, "merge:ui_data_datum_particle_editor{tar
 	data["particle_data"] = target().particles.return_ui_representation(user)
 	return data
 
-UI_ACT(/datum/particle_editor, "delete_and_close", ui_act_delete_and_close)
-UI_ACT_PROC(/datum/particle_editor, ui_act_delete_and_close)
-	ui.close()
+/datum/particle_editor/proc/ui_act_delete_and_close(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	ui?.close()
 	target().particles = null
-	rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
+	rel_clear(src, nameof(target))
 	. = FALSE
 
-UI_ACT(/datum/particle_editor, "new_type", ui_act_new_type)
-UI_ACT_PROC(/datum/particle_editor, ui_act_new_type)
-	var/list/types = make_types_fancy(typesof(/particles))
-	var/picked = act_ask(ui.user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = types)
-	var/new_type = types[picked]
-	if(!new_type)
-		return FALSE
-	target().particles = new new_type
-	target().particles.datum_flags |= DF_VAR_EDITED
-	. = TRUE
+/datum/particle_editor/proc/particle_type_choices(datum/act/op/A)
+	return make_types_fancy(typesof(/particles))
 
-UI_ACT(/datum/particle_editor, "transform_size", ui_act_transform_size, UI_ARG_VALUE("new_value"))
-UI_ACT_PROC(/datum/particle_editor, ui_act_transform_size)
+/datum/particle_editor/proc/ui_act_new_type(datum/act/op/A)
+	var/list/types = make_types_fancy(typesof(/particles))
+	var/new_type = types[A.step_value("type")]
+	if(!ispath(new_type, /particles))
+		return
+	return apply_particle_type(new_type)
+
+/datum/particle_editor/proc/ui_act_transform_size(datum/act/op/A, new_value)
 	var/static/list/matrix_size = list("Simple Matrix" = 6, "Complex Matrix" = 12, "Projection Matrix" = 16)
-	var/new_size = matrix_size[params["new_value"]]
+	var/new_size = matrix_size[new_value]
 	if(!new_size)
 		return FALSE
 	. = TRUE
@@ -147,14 +148,16 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_transform_size)
 				target().particles.transform = TRANSFORM_PROJECTION_MATRIX_IDENTITY
 		return
 
-UI_ACT(/datum/particle_editor, "edit", ui_act_edit, UI_ARG_LIST("new_value"), UI_ARG_TEXT("var"), UI_ARG_TEXT("var_mod"))
-UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
+/datum/particle_editor/proc/ui_act_edit(datum/act/op/A, new_value, var_arg, var_mod_arg)
+	var/mob/user = A.actor
+	if(!isnull(new_value) && !islist(new_value))
+		return FALSE
 	var/particles/owner = target().particles
-	var/param_var_name = params["var"]
+	var/param_var_name = var_arg
 	if(!(param_var_name in owner.vars))
 		return FALSE
-	var/var_value = params["new_value"]
-	var/var_mod = params["var_mod"]
+	var/var_value = new_value
+	var/var_mod = var_mod_arg
 	// we can only return arrays from tgui so lets convert it to something usable if needed
 	switch(var_mod)
 		if(P_DATA_GENERATOR)
@@ -172,7 +175,7 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
 		if(P_DATA_ICON_ADD)
 			if(!GLOB.prompt_flow) // the icon questions re-run this action
 				return prompt_flow(src, PROC_REF(tgui_act), args)
-			var_value = pick_and_customize_icon(ui.user, pick_only=TRUE)
+			var_value = pick_and_customize_icon(user, pick_only=TRUE)
 			if(!var_value)
 				return FALSE
 			var/list/new_values = list()
@@ -217,3 +220,13 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/particle_editor/proc/target() as /atom/movable
 	return target
+
+/datum/particle_editor/proc/apply_particle_type(new_type)
+	target().particles = new new_type
+	target().particles.datum_flags |= DF_VAR_EDITED
+	return TRUE
+
+/datum/prompt/choice/particle_editor_type
+	question = "Select a type"
+	title = "Pick Type"
+	timeout = 0

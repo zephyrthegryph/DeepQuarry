@@ -15,10 +15,12 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid
 	name = "rapid hivebot"
 	desc = "A robot with a crude but deadly integrated rifle."
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	player_msg = "You have a <b>rapid fire attack</b>."
 	projectile_dispersion = 7
 	projectile_accuracy = -10
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid)
+	configure(mob_kind(attack_cooldown = 5))
 
 // Shoots deadly lasers.
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser

@@ -31,24 +31,11 @@
 	var/deflect_chance = 10 // Chance to outright stop an attack, just like a normal exosuit.
 	var/has_repair_droid = FALSE // If true, heals 2 damage every tick and gets a repair droid overlay.
 
-/mob/living/simple_mob/mechanical/mecha/Initialize(mapload)
-	if(!pilot_type)
-		name = "autonomous [initial(name)]"
-		desc = "[initial(desc)] It appears to be piloted by a drone intelligence."
-	else
-		say_list_type = /datum/say_list/merc
-
-	if(has_repair_droid)
-		update_icon()
-
-	return ..()
-
 
 /mob/living/simple_mob/mechanical/mecha
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha
-	death_message = "explodes!"
 
 /mob/living/simple_mob/mechanical/mecha/on_death(gibbed)
 	..() // Do everything else first.
@@ -66,21 +53,15 @@
 		new wreckage(loc) // Leave some wreckage.
 
 
-/datum/om/stage/life/special/mechanical/mecha
-	of = /mob/living/simple_mob/mechanical/mecha
-
-/datum/om/stage/life/special/mechanical/mecha/perform(mob/living/simple_mob/mechanical/mecha/self, datum/om/frame/life/ctx)
-	if(self.has_repair_droid)
-		self.mend(TREAT_PLATING_REPAIR, 2)
-		self.mend(TREAT_WIRING_REPAIR, 2)
+/mob/living/simple_mob/mechanical/mecha/life_special(datum/seq_frame/life/F)
+	if(src.has_repair_droid)
+		src.mend(TREAT_PLATING_REPAIR, 2)
+		src.mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/mechanical/mecha/appearance_overlays()
-	. = list()
-	. += ..()
-	if(has_repair_droid)
-		. += image(icon = 'icons/mecha/mecha_equipment.dmi', icon_state = "repair_droid")
+/mob/living/simple_mob/mechanical/mecha/draw(datum/look/look)
+	..()
+	look.overlay("repair_droid", has_repair_droid, 'icons/mecha/mecha_equipment.dmi')
 
 /mob/living/simple_mob/mechanical/mecha/speech_bubble_appearance()
 	return pilot_type ? "" : ..()
@@ -110,19 +91,37 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()
 	var/image/deflect_image = image('icons/effects/effects.dmi', "deflect_static")
 	add_overlay(deflect_image)
-	om_after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), deflect_image)
+	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null, PROC_REF(mecha_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
+	configure(mob_kind(death_message = "explodes!"))
+	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
+	rolls(nameof(name), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
+	rolls(nameof(desc), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
+	rolls(nameof(say_list_type), PROC_REF(crewed_as), when = nameof(pilot_type))
+
+/// A mecha with no pilot is a drone's, and says so; a piloted one talks like a mercenary (rolls()).
+/mob/living/simple_mob/mechanical/mecha/proc/crewed_as(datum/roller/R, target)
+	switch(target)
+		if("name")
+			return "autonomous [initial(name)]"
+		if("desc")
+			return "[initial(desc)] It appears to be piloted by a drone intelligence."
+		if("say_list_type")
+			return /datum/say_list/merc
 
 /// Old attackby: armour deflection.
-/mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(prob(deflect_chance))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% bounces off %T%'s armor!")), item = I)
 		deflect_sprite()
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/mechanical/mecha/ex_act(severity)
 	if(prob(deflect_chance))

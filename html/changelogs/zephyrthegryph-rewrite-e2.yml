@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The part engine and op(): requirements, input bindings, three-source resolution, waits and prompts as workflow steps, resource transactions, explain tooling, and the test driver's click, menu and UI forms"
+  - code_imp: "analyze gen ui_types writes the TypeScript types of a window from its interface() and ui_shape() declarations"

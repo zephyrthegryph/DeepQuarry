@@ -1,0 +1,47 @@
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Use wrench
++5 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/weldingtool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/stack/material/glass
+-menu: Climb
+-menu: Place on wall
+-menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
+keys: add_glass, drag_buckle, item, melee_hit, remove_frame, silicon_use, use, use_wrench

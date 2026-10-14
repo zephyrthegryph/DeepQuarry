@@ -1,3 +1,5 @@
+MSG_DEF_SELF(teleporter/data_card_required, "needs a data card")
+
 //////
 //////  Teleporter computer
 //////
@@ -13,10 +15,15 @@
 							//Setting this to 1 will set locked to null after a player enters the portal and will not allow hand-teles to open portals to that location.
 	var/datum/tgui_module/teleport_control/teleport_control
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /datum/tgui_module/teleport_control)
+CAPABILITIES(/obj/machinery/computer/teleporter)
+	rolls(nameof(id), PROC_REF(roll_id))
+	op("teleporter_computer_insert_card", inputs(item(/obj/item/card/data), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert data card"), needs(req(/obj/item/card/data, because = MSG(teleporter/data_card_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_card)))
+	op("teleporter_computer_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("teleporter_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(teleporter_computer_silicon_use)))
+	op("teleporter_computer_set_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set teleporter ID"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Set teleporter ID", "question" = "ID Tag:", "timeout" = 0), when = PROC_REF(teleporter_can_set_id)), then(PROC_REF(teleporter_id_entered)))
+	owns_one(nameof(teleport_control), /datum/tgui_module/teleport_control, starts = /datum/tgui_module/teleport_control)
 
 /obj/machinery/computer/teleporter/Initialize(mapload)
-	id = "[rand(1000, 9999)]"
 	. = ..()
 	underlays.Cut()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "telecomp-wires")
@@ -42,22 +49,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 		rel_set(teleport_control, nameof(teleport_control.station), station)
 
 
-/obj/machinery/computer/teleporter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/teleporter_computer_insert_card,
-		/datum/interaction/machine_hand/ungated/teleporter_computer_use,
-		/datum/interaction/machine_verb/teleporter_computer_set_id,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(teleporter_computer_silicon_use)))
-	..()
 
-/datum/interaction/machine_item/teleporter_computer_insert_card
-	id = "teleporter_computer_insert_card"
-	name = "Insert data card"
-	held_type = /obj/item/card/data
-	effect = /obj/machinery/computer/teleporter/proc/interaction_insert_card
-
-/obj/machinery/computer/teleporter/proc/interaction_insert_card(mob/user, obj/item/card/data/C, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/interaction_insert_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/data/C = A.held
 	if(!operable() && C.function != "teleporter")
 		attack_hand()
 
@@ -73,12 +68,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 		L = locate("landmark*[C.data]") // use old stype
 
 	if(istype(L, /obj/effect/landmark/) && istype(L.loc, /turf))
+		var/destination_name = C.data
+		if(!consume(C, user))
+			return OP_OK
 		to_chat(user, "You insert the coordinates into the machine.")
 		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
-		user.drop_item()
-		consume(C, user)
 
-		if(C.data == "Clown Land")
+		if(destination_name == "Clown Land")
 			//whoops
 			for(var/mob/O in hearers(src, null))
 				O.show_message(span_warning("Incoming bluespace portal detected, unable to lock in."), 2)
@@ -95,39 +91,29 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 			one_time_use = 1
 
 		add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ai: open the teleporter control UI.
-/obj/machinery/computer/teleporter/proc/teleporter_computer_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/teleporter_computer_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
 	teleport_control.tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/teleporter_computer_use
-	id = "teleporter_computer_use"
-	name = "Use"
-	effect = /obj/machinery/computer/teleporter/proc/interaction_use
 
-/obj/machinery/computer/teleporter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
-		return TRUE
+		return OP_OK
 	teleport_control.tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_verb/teleporter_computer_set_id
-	id = "teleporter_computer_set_id"
-	name = "Set teleporter ID"
-	effect = /obj/machinery/computer/teleporter/proc/interaction_set_id
 
-/obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!operable() || !isliving(user))
-		return TRUE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(teleporter_id_entered), title = "Set teleporter ID", message = "ID Tag:", requires = PROMPT_ADJACENT)
-	return TRUE
-
-/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		id = ask.text
+/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/act/op/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		id = A.answer.value
 	return TRUE
 
 //////
@@ -150,19 +136,27 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 	dir = 4
 	var/accurate = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_hub
 	var/obj/machinery/computer/teleporter/com
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
-	default_apply_parts()
 
 // the teleporter console forgets its hub.
 
-/obj/machinery/teleport/hub/Bumped(M as mob|obj)
+CAPABILITIES(/obj/machinery/teleport/hub)
+	default_parts()
+	configure(uses_power(idle = 10, active = 2000))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("ghost_follow", observer(), label("Follow the link"), then(PROC_REF(hub_ghost_follow)))
+	ref_one(nameof(com), /obj/machinery/computer/teleporter)
+
+/// Something walked into it (the bump action's notice).
+/obj/machinery/teleport/hub/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/M = N.bumper
 	if(icon_state == "tele1")
 		teleport(M)
 		use_power(5000)
@@ -191,11 +185,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 		if(com().one_time_use) //Make one-time-use cards only usable one time!
 			com().one_time_use = 0
-			rel_clear(com().teleport_control, nameof(/datum/cinematic::locked))
+			rel_clear(com().teleport_control, nameof(/datum/tgui_module/teleport_control::locked))
 	else
 		fx_sparks(src, 5)
 		accurate = 1
-		om_after(src, 5 MINUTES, PROC_REF(calibration_lapses)) //Accurate teleporting for 5 minutes
+		after(src, 5 MINUTES, PROC_REF(calibration_lapses)) //Accurate teleporting for 5 minutes
 		for(var/mob/B in hearers(src, null))
 			B.show_message(span_notice("Test fire completed."))
 	return
@@ -211,15 +205,15 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 	COOLDOWN_DECLARE(teleport_cooldown)
 	var/engaged = 0
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2000
 	circuit = /obj/item/circuitboard/teleporter_station
 	var/obj/machinery/teleport/hub/com
 
-/obj/machinery/teleport/station/Initialize(mapload)
-	. = ..()
-	add_overlay("controller-wires")
-	default_apply_parts()
+// A station takes the parts it was built with, and links the hub beside it (the console links both again when it is the one built last).
+CAPABILITIES(/obj/machinery/teleport/station)
+	configure(uses_power(idle = 10, active = 2000))
+	default_parts()
+	finds(nameof(com), /obj/machinery/teleport/hub, near = NEAR_CARDINAL)
+	ref_one(nameof(com), /obj/machinery/teleport/hub)
 
 // the teleporter console forgets its station.
 
@@ -268,13 +262,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 
 /obj/machinery/teleport/station/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
-		icon_state = "controller-p"
+	if(power_lost())
+		set_icon_state("controller-p")
 
 		if(com())
 			com().icon_state = "tele0"
 	else
-		icon_state = "controller"
+		set_icon_state("controller")
 
 /obj/effect/laser/Bump()
 	range--
@@ -295,3 +289,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 /// com (a relation view: it reads null once the target is deleted).
 /obj/machinery/teleport/station/proc/com() as /obj/machinery/teleport/hub
 	return com
+
+/obj/machinery/computer/teleporter/proc/teleporter_can_set_id(datum/act/op/A)
+	return operable() && isliving(A.actor)
+
+/obj/machinery/teleport/station/draw(datum/look/look)
+	..()
+	look.overlay("controller-wires")
+
+/// Its id: a random four-digit number.
+/obj/machinery/computer/teleporter/proc/roll_id(datum/roller/R)
+	return "[R.number(1000, 9999)]"

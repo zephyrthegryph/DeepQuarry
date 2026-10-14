@@ -1,13 +1,23 @@
 // Holowarrant viewer — structured TGUI panel for arrest/search warrants.
 
-DECLARE_UI_STATE(/obj/item/holowarrant, GLOB.tgui_default_state)
+CAPABILITIES(/obj/item/holowarrant)
+	configure(item_thrown(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	interface("Holowarrant", title = "Holographic Warrant", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	ui_shape(loaded = bool(), kind = schema_text(), name = schema_text(), charges = schema_text(), auth = schema_text(), jurisdiction = schema_text(), station = schema_text())
+	ref_one(nameof(active), /datum/data/record/warrant)
+	// hit yourself with it: pick a warrant to load (the loaded one is dropped first)
+	op("load", in_hand(),
+		asks(/datum/prompt/choice, fields = list("title" = "Warrant Selection", "question" = "Which warrant would you like to load?", "choices" = computed(PROC_REF(warrant_names)), "timeout" = 0), when = PROC_REF(warrants_exist)),
+		then(PROC_REF(warrant_chosen)))
+	// an ID with the Head of Security's access authorizes the loaded warrant, after a yes
+	op("authorize", item(/obj/item), when(nameof(active)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Warrant authorization", "question" = "Would you like to authorize this warrant?", "timeout" = 0), when = PROC_REF(authorizing_card)),
+		then(PROC_REF(authorize_answered)))
 
-DECLARE_UI(/obj/item/holowarrant, "Holowarrant", UI_TITLE("Holographic Warrant"))
-
-UI_DATA_REPLACE(/obj/item/holowarrant, "merge:ui_data_obj_item_holowarrant{loaded:bool,kind:text,name:text,charges:text,auth:text,jurisdiction:text,station:text}")
-
-/// The computed part of /obj/item/holowarrant's window data (declared on its UI_DATA row).
-/obj/item/holowarrant/proc/ui_data_obj_item_holowarrant(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/holowarrant's window data.
+/obj/item/holowarrant/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!active())
 		data["loaded"] = FALSE

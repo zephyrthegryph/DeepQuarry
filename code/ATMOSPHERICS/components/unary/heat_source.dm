@@ -1,3 +1,24 @@
+TRACKED(/obj/machinery/atmospherics/unary/heater, pumping)
+TRACKED(/obj/machinery/atmospherics/unary/heater, heating)
+TRACKED(/obj/machinery/atmospherics/unary/heater, set_temperature)
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
+	configure(uses_power(idle = 5))
+	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
+	silicon_ui()
+	reagents(120)
+	// A resistive heater on its pipeline's gas toward the thermostat: one joule of heat per joule drawn.
+	when(nameof(pumping), heat_pump(HEAT_PORT(1), HEAT_AIR, nameof(power_rating), nameof(set_temperature), HEAT_PUMP_HEAT, TRUE))
+	gas_watch(air = nameof(air_contents), changed = PROC_REF(gas_changed))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(service)), when = nameof(heating))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reconsider)))
+	on_change(nameof(set_temperature), ANY, then(PROC_REF(reconsider)))
+	part_replacement()
+	op("toggleStatus", ui_act("toggleStatus"), then(PROC_REF(ui_act_togglestatus)))
+	interface("GasTemperatureSystem")
+	op("setGasTemperature", ui_act("setGasTemperature", arg("temp", num())), then(PROC_REF(ui_act_setgastemperature)))
+	op("setPower", ui_act("setPower", arg("value", num())), then(PROC_REF(ui_act_setpower)))
+
 //TODO: Put this under a common parent type with freezers to cut down on the copypasta
 #define HEATER_PERF_MULT 2.5
 #define REAGENT_COOLING_CONSUMED 0.1
@@ -13,7 +34,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 5			//5 Watts for thermostat related circuitry
 	circuit = /obj/item/circuitboard/unary_atmos/heater
 
 	var/max_temperature = T20C + 680
@@ -25,16 +45,13 @@
 
 	var/set_temperature = T20C	//thermostat
 	var/heating = 0		//mainly for icon updates
+	/// TRUE while it heats: its heater exists exactly while this is set.
+	var/pumping = FALSE
 	var/reagent_cooling = 0
-	gas_dependency_mask = GAS_DEPENDENCY_ALL
-
-DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 
 /obj/machinery/atmospherics/unary/heater/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	add_hose_connector(/datum/hose_connector/input)
-	add_hose_connector(/datum/hose_connector/output)
 
 /obj/machinery/atmospherics/unary/heater/atmos_init()
 	if(node)
@@ -51,78 +68,54 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	if(check_for_obstacles())
 		rel_clear(src, nameof(node))
 
-	if(node)
-		update_icon()
-
-
-/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and heating.
-/obj/machinery/atmospherics/unary/heater/proc/appearance_heater_state()
-	if(!node)
-		return 0
-	return (use_power && heating) ? 2 : 1
-
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/heater, "appearance_heater_state", list(
-	"0" = list(APPEARANCE_ICON_STATE = "heater_0"),
-	"1" = list(APPEARANCE_ICON_STATE = "heater"),
-	"2" = list(APPEARANCE_ICON_STATE = "heater_1"),
-))
-
-
-/obj/machinery/atmospherics/unary/heater/machine_step()
+/// Unconnected, connected and idle, or working.
+/obj/machinery/atmospherics/unary/heater/draw(datum/look/look)
 	..()
-
-	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
-	if(!operable() || !use_power)
-		heating = 0
-		update_icon()
-		register_gas_dependencies()
-		return PROCESS_KILL
-
-	if(network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
-		// A resistive heater turns at most the power it draws into heat.
-		air_contents.add_thermal_energy(min(power_rating * CLAMP(reagent_cooling,REAGENT_COOLING_MINMOD,REAGENT_COOLING_MAXMOD) * HEATER_PERF_MULT * heating_efficiency, power_rating))
-		use_power(power_rating)
-
-		// Process coolant
-		reagents.remove_any(REAGENT_COOLING_CONSUMED)
-
-		heating = 1
-		network.mark_dirty()
+	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+		look.state("heater_0")
 	else
-		heating = 0
-		register_gas_dependencies()
-		update_icon()
-		return PROCESS_KILL
+		look.state((use_power && heating) ? "heater_1" : "heater")
 
-	update_icon()
-	return 1
+/obj/machinery/atmospherics/unary/heater/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(heating))
 
-/// Eligibility rule for waking from gas (unary_base.dm register_gas_dependencies()): the same
-/// test process() makes before it heats anything.
-/obj/machinery/atmospherics/unary/heater/gas_wake_condition()
-	return use_power && operable() && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature
+// ---- its work: woken by its gas, its switch and its thermostat; nothing polls ----
+
+/// Its pipe's gas changed (its gas watch): it looks again whether it has work.
+/obj/machinery/atmospherics/unary/heater/proc/gas_changed(list/observation, index)
+	reconsider()
+
+/// What it does now: the heater (its CAPABILITIES entry) exists while it is switched on and works; it heats while its loop's gas is below the
+/// thermostat.
+/obj/machinery/atmospherics/unary/heater/proc/reconsider(datum/act/A)
+	var/on = !!(operable() && use_power)
+	set_pumping(on)
+	set_heating(on && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
+
+/// One interval of heating: it pays its work and uses up coolant (the heat itself moves in Rust).
+/obj/machinery/atmospherics/unary/heater/proc/service(datum/act/A)
+	reagent_cooling = 1 + (reagents.machine_cooling_power(reagents) / reagents.maximum_volume)
+	use_power(-heat_entries_power(src))
+	reagents.remove_any(REAGENT_COOLING_CONSUMED)
+	reconsider()
 
 /obj/machinery/atmospherics/unary/heater/power_change()
 	. = ..()
 	if(.)
-		// machine_step() sleeps on NOPOWER; a power transition is a dependency change.
-		invalidate_gas_dependencies()
+		reconsider()
 
-/obj/machinery/atmospherics/unary/heater
-	silicon_use = SILICON_USE_UI
+/obj/machinery/atmospherics/unary/heater/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["powerSetting"] = power_setting
+	data["reagentPower"] = reagent_cooling
+	var/list/merged_1 = ui_data_obj_machinery_atmospherics_unary_heater(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/obj/machinery/atmospherics/unary/heater/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/atmospherics/unary/heater, "GasTemperatureSystem")
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/heater, "powerSetting=power_setting:num", "reagentPower=reagent_cooling:num", "merge:ui_data_obj_machinery_atmospherics_unary_heater{on:num,gasPressure:num,gasTemperature:num,minGasTemperature:num,maxGasTemperature:num,targetGasTemperature:num,reagentVolume:num,reagentMaximum:num,gasTemperatureClass:text}")
-
-/// The computed part of /obj/machinery/atmospherics/unary/heater's window data (declared on its UI_DATA row).
+/// /obj/machinery/atmospherics/unary/heater's window data.
 /obj/machinery/atmospherics/unary/heater/proc/ui_data_obj_machinery_atmospherics_unary_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
@@ -144,34 +137,26 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/heater, "powerSetting=power_se
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/unary/heater, "toggleStatus", ui_act_togglestatus)
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_togglestatus)
-	. = TRUE
+/obj/machinery/atmospherics/unary/heater/proc/ui_act_togglestatus(datum/act/op/A)
 	set_use_power(!use_power)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/unary/heater, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setgastemperature)
+/obj/machinery/atmospherics/unary/heater/proc/ui_act_setgastemperature(datum/act/op/A, temp)
+	var/mob/user = A.actor
 	. = TRUE
-	var/amount = params["temp"]
+	var/amount = temp
 	if(amount > 0)
-		set_temperature = min(amount, max_temperature)
+		set_set_temperature(min(amount, max_temperature))
 	else
-		set_temperature = max(amount, 0)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+		set_set_temperature(max(amount, 0))
+	reconsider()
 
-UI_ACT(/obj/machinery/atmospherics/unary/heater, "setPower", ui_act_setpower, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setpower)
+/obj/machinery/atmospherics/unary/heater/proc/ui_act_setpower(datum/act/op/A, value)
+	var/mob/user = A.actor
 	. = TRUE
-	var/new_setting = between(0, params["value"], 100)
+	var/new_setting = between(0, value, 100)
 	set_power_level(new_setting)
-	add_fingerprint(ui.user)
-	if(.)
-		invalidate_gas_dependencies()
+	reconsider()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/heater/RefreshParts()
@@ -182,7 +167,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setpower)
 	cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	bin_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
 
-
 	max_power_rating = initial(max_power_rating) * cap_rating / 2
 	max_temperature = max(initial(max_temperature) - T20C, 0) * ((bin_rating * 4 + cap_rating) / 5) + T20C
 	air_contents.set_volume(max(initial(internal_volume) - 200, 0) + 200 * bin_rating)
@@ -192,6 +176,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setpower)
 /obj/machinery/atmospherics/unary/heater/proc/set_power_level(new_power_setting)
 	power_setting = new_power_setting
 	power_rating = max_power_rating * (power_setting/100)
+	heat_entries_refresh(src)
 
 /obj/machinery/atmospherics/unary/heater/examine(mob/user)
 	. = ..()
@@ -202,7 +187,6 @@ UI_ACT_PROC(/obj/machinery/atmospherics/unary/heater, ui_act_setpower)
 #undef REAGENT_COOLING_MAXMOD
 #undef REAGENT_COOLING_CONSUMED
 #undef HEATER_PERF_MULT
-
 
 /obj/machinery/atmospherics/unary/heater/sauna
 	max_temperature = 331.15

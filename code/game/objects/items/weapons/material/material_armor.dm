@@ -10,12 +10,11 @@
 	var/material_slowdown_modifier = 0
 	var/material_slowdown_multiplier = 0.5
 
-/obj/item/clothing/Initialize(mapload, material_key)
+// ALLOW(init/INSTANCE_STATE): material clothing takes its material after its parents' init
+/obj/item/clothing/Initialize(mapload)
 	. = ..()
-	if(!material_key)
-		material_key = default_material
-	if(material_key) // May still be null if a material was not specified as a default.
-		set_material(material_key)
+	if(default_material) // May still be null if a material was not specified as a default.
+		set_material(default_material)
 
 /obj/item/clothing/get_material()
 	return material
@@ -24,10 +23,10 @@
 /obj/item/clothing/proc/set_material(new_material)
 	material = get_material_by_name(new_material)
 	if(!material)
-		qdel(src)
+		spent(src)
 	else
 		name = "[material.display_name] [initial(name)]"
-		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_color)
 			color = material.icon_colour
@@ -81,6 +80,8 @@
 /obj/item/clothing/proc/shatter()
 	if(!material)
 		return
+	if(loc?.release_refusal(src))
+		return
 	var/turf/T = get_turf(src)
 	T.visible_message(span_danger("\The [src] [material.destruction_desc]!"))
 	if(isliving(loc))
@@ -91,7 +92,7 @@
 			M.embed(S)
 
 	play_sfx(src, SFX_SHATTER)
-	qdel(src)
+	consume(src)
 
 // Might be best to make ablative vests a material armor using a new material to cut down on this copypaste.
 /obj/item/clothing/suit/armor/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -185,7 +186,7 @@
 		set_armor_value("bomb", bomb_armor)
 
 		if(!isnull(material.conductivity))
-			siemens_coefficient = between(0, material.conductivity / 10, 10)
+			set_siemens_coefficient(between(0, material.conductivity / 10, 10))
 		worn_protection_changed()
 
 		var/slowdownModified = between(0, round(material.density / 10, 0.1), 6) // weight renamed to density.
@@ -208,33 +209,39 @@
 	desc = "A thin plate of padded material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_light"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.5 //Subtracted from total slowdown
 	material_slowdown_multiplier = 0.4 //Multiplied by total slowdown
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/light)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/makeshift/heavy //Craftable with 8 material sheets, more slowdown, more armour
 	name = "heavy armor plate"
 	desc = "A thick plate of padded material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_medium"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 1.2
 	material_slowdown_modifier = 0
 	material_slowdown_multiplier = 0.5
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/heavy)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/custom //Not yet craftable, advanced version made with science!
 	name = "custom armor plate"
 	desc = "A composite plate of custom machined material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_tactical"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 1.2
 	material_slowdown_modifier = 0.5
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/custom)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/makeshift/armguards
 	name = "arm guards"
@@ -244,11 +251,13 @@
 	icon_override = 'icons/mob/modular_armor.dmi'
 	icon_state = "armguards_material"
 	gender = PLURAL
-	body_parts_covered = ARMS
 	slot = ACCESSORY_SLOT_ARMOR_A
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.8
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/armguards)
+	configure(item_worn(covers = ARMS))
 
 /obj/item/clothing/accessory/material/makeshift/legguards
 	name = "leg guards"
@@ -258,11 +267,13 @@
 	icon_override = 'icons/mob/modular_armor.dmi'
 	icon_state = "legguards_material"
 	gender = PLURAL
-	body_parts_covered = LEGS
 	slot = ACCESSORY_SLOT_ARMOR_L
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.8
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/legguards)
+	configure(item_worn(covers = LEGS))
 
 /obj/item/clothing/suit/armor/material/makeshift/durasteel
 	default_material = MAT_DURASTEEL
@@ -286,51 +297,54 @@
 	name = "plate insert"
 	desc = "used to craft armor plates for a plate carrier. Trim with a welder for light armor or add a second for heavy armor"
 
-EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_REF(armor_plating_item)))
+CAPABILITIES(/obj/item/material/armor_plating)
+	op("plate_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(armor_plating_item)))
 
 /// Old attackby: wire the plate, or join two plates into makeshift armour.
-/obj/item/material/armor_plating/proc/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/material/armor_plating/proc/armor_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/S = O
 		if(wired)
 			to_chat(user, span_warning("This already has enough wires on it."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(S.use(20))
 			to_chat(user, span_notice("You attach several wires to \the [src].  Now it needs another plate."))
 			wired = TRUE
-			icon_state = "[initial(icon_state)]_wired"
-			return INTERACTION_HANDLED_PASS
+			set_icon_state("[initial(icon_state)]_wired")
+			return OP_PASS
 		else
 			to_chat(user, span_notice("You need more wire for that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(O, /obj/item/material/armor_plating))
 		var/obj/item/material/armor_plating/second_plate = O
 		if(!wired && !second_plate.wired)
 			to_chat(user, span_warning("You need something to hold the two pieces of plating together."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
 		var/obj/item/clothing/suit/armor/material/makeshift/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
-EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null, PROC_REF(armor_insert_item)))
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attackby: make plating inserts for modular armour. The old body ran its parent's first, so this does too.
-/obj/item/material/armor_plating/insert/proc/armor_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = armor_plating_item(user, O, interaction)
+/obj/item/material/armor_plating/insert/armor_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = ..()
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O
 		if(second_plate.material != src.material)
 			to_chat(user, span_warning("Both plates need to be the same type of material."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You bond the two plates together."))
 		user.drop_from_inventory(src)
 		user.drop_from_inventory(second_plate)
@@ -338,7 +352,7 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 		user.put_in_hands(new_armor)
 		consume(second_plate, user)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(O, /obj/item/stack/material))
 		var/obj/item/stack/material/S = O
@@ -349,9 +363,11 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 				var/obj/item/clothing/accessory/material/makeshift/legguards/new_armor = new(null, src.material.name)
 				user.put_in_hands(new_armor)
 				consume(src, user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
-/obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
+/obj/item/material/armor_plating/insert/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/S = tool.get_welder()
 	if(S.remove_fuel(0,user))
 		if(!src || !S.isOn()) return ITEM_INTERACT_SUCCESS
@@ -359,22 +375,26 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 		user.drop_from_inventory(src)
 		var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
-		qdel(src)
-	return ITEM_INTERACT_SUCCESS
+		replace_with(src, new_armor)
+	return OP_OK
 
-/obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/material/armor_plating/insert)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/item/material/armor_plating/insert/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
 	user.drop_from_inventory(src)
 	var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
 	user.put_in_hands(new_armor)
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	replace_with(src, new_armor)
+	return OP_OK
 
 // Used to craft the makeshift helmet
 /obj/item/clothing/head/helmet/bucket
 	name = "bucket"
 	desc = "It's a bucket with a large hole cut into it.  You could wear it on your head and look really stupid."
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
 	icon_state = "bucket"
 	armor_spec = "melee=5"
 
@@ -382,23 +402,29 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 	name = "wooden bucket"
 	icon_state = "woodbucket"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/bucket, INTERACT_INSERT(/obj/item/stack/material, PROC_REF(bucket_helmet_material), "Reinforce"))
+CAPABILITIES(/obj/item/clothing/head/helmet/bucket)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
+	op("bucket_helmet_material", item(/obj/item/stack/material), label("Reinforce"), then(PROC_REF(bucket_helmet_material)))
 
 /// Old attackby: two sheets of material make a makeshift helmet.
-/obj/item/clothing/head/helmet/bucket/proc/bucket_helmet_material(mob/user, obj/item/stack/material/S, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/bucket/proc/bucket_helmet_material(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/S = A.held
 	if(S.use(2))
 		to_chat(user, span_notice("You apply some [S.material.use_name] to \the [src].  Hopefully it'll make the makeshift helmet stronger."))
 		var/obj/item/clothing/head/helmet/material/makeshift/helmet = new(null, S.material.name)
 		user.put_in_hands(helmet)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_warning("You don't have enough material to build a helmet!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/head/helmet/material
 	name = "helmet"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
 	default_material = MAT_STEEL
+
+CAPABILITIES(/obj/item/clothing/head/helmet/material)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
 
 /obj/item/clothing/head/helmet/material/makeshift
 	name = "bucket"

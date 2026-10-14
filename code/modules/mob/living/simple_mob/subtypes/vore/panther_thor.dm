@@ -51,7 +51,7 @@
 /mob/living/simple_mob/vore/aggressive/panther/thor/cloak()
 	if(dq_get_cloaked(src))
 		return
-	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
+	set_alpha_source(SRC_ALPHA_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 
@@ -59,7 +59,7 @@
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)// This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 // Check if cloaking if possible.
@@ -81,12 +81,9 @@
 
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/vore/aggressive/panther/thor
-	of = /mob/living/simple_mob/vore/aggressive/panther/thor
-
-/datum/om/stage/life/special/vore/aggressive/panther/thor/perform(mob/living/simple_mob/vore/aggressive/panther/thor/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/vore/aggressive/panther/thor/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 
 // Applies bonus base damage if dq_get_cloaked(src).
@@ -98,7 +95,8 @@
 
 
 // Force uncloaking if attacked.
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/aggressive/panther/thor, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/vore/aggressive/panther/thor/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()
@@ -106,7 +104,7 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/aggressive/panther/thor, DAMAG
 
 /mob/living/simple_mob/vore/aggressive/panther/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_sound = "Tauric Swallow"
 	B.release_sound = "Pred Escape"
 	B.fancy_vore = 1

@@ -1,0 +1,13 @@
+/obj/item/reagent_containers/hypospray/vial icon: icons/obj/syringe.dmi
+/obj/item/reagent_containers/hypospray/vial state: advhypo
+/obj/item/reagent_containers/hypospray/vial dir: 2
+/obj/item/reagent_containers/hypospray/vial overlay: icons/obj/syringe.dmi:advhypo:8:#000000
+/obj/item/reagent_containers/hypospray/vial/tempest icon: icons/vore/custom_items_vr.dmi
+/obj/item/reagent_containers/hypospray/vial/tempest state: temphypo
+/obj/item/reagent_containers/hypospray/vial/tempest dir: 2
+/obj/item/reagent_containers/hypospray/vial/tempest overlay: icons/vore/custom_items_vr.dmi:temphypo:8:#000000
+/obj/item/reagent_containers/hypospray/vial/kenzie icon: icons/vore/custom_items_vr.dmi
+/obj/item/reagent_containers/hypospray/vial/kenzie state: kenziehypo
+/obj/item/reagent_containers/hypospray/vial/kenzie dir: 2
+/obj/item/reagent_containers/hypospray/vial/kenzie overlay: icons/vore/custom_items_vr.dmi:kenziehypo:8:#000000
+

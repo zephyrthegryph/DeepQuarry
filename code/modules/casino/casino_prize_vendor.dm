@@ -40,7 +40,6 @@
 
 	// Power
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
@@ -58,12 +57,10 @@
 	var/category_implants	 = 1
 	var/category_event		 = 1	//For special events, holidays, etc
 
-/obj/machinery/casino_prize_dispenser/Initialize(mapload)
-	. = ..()
-	power_change()
-
-	item_list = list()
-	item_list["Weapons"] = list(
+/// The prize table, one per dispenser type (per_type()).
+/obj/machinery/casino_prize_dispenser/proc/build_item_list()
+	. = list()
+	.["Weapons"] = list(
 		CASINO_PRIZE("Scepter", /obj/item/scepter, 1, 500, "weapons"),
 		CASINO_PRIZE("Chain of Command", /obj/item/melee/chainofcommand, 1, 250, "weapons"),
 		CASINO_PRIZE("Size Gun", /obj/item/gun/energy/sizegun, 1, 100, "weapons"),
@@ -73,7 +70,7 @@
 		CASINO_PRIZE("Floral Gun", /obj/item/gun/energy/floragun, 1, 250, "weapons"),
 		CASINO_PRIZE("Net Gun", /obj/item/gun/energy/netgun, 1, 500, "weapons"),
 	)
-	item_list["Gear"] = list(
+	.["Gear"] = list(
 		CASINO_PRIZE("Experimental Welder", /obj/item/weldingtool/experimental, 1, 500, "gear"),
 		CASINO_PRIZE("Alien Belt", /obj/item/storage/belt/utility/alien, 1, 500, "gear"),
 		CASINO_PRIZE("Alien Armor", /obj/item/clothing/suit/armor/alien, 1, 1000, "gear"),
@@ -83,7 +80,7 @@
 		CASINO_PRIZE("Bluespace Beaker", /obj/item/reagent_containers/glass/beaker/bluespace, 1, 200, "gear"),
 		CASINO_PRIZE("Cryo Beaker", /obj/item/reagent_containers/glass/beaker/noreact, 1, 200, "gear"),
 	)
-	item_list["Clothing"] = list(
+	.["Clothing"] = list(
 		CASINO_PRIZE("Purple cap", /obj/item/clothing/head/soft/purple/wah, 1, 50, "clothing"),
 		CASINO_PRIZE("Shark mask", /obj/item/clothing/mask/shark, 1, 50, "clothing"),
 		CASINO_PRIZE("Pig mask", /obj/item/clothing/mask/pig, 1, 50, "clothing"),
@@ -110,7 +107,7 @@
 		CASINO_PRIZE("Plague doctor costume", /obj/item/storage/box/casino/costume_plaguedoctor, 1, 100, "clothing"),
 		CASINO_PRIZE("Witch costume", /obj/item/storage/box/casino/costume_cutewitch, 1, 100, "clothing"),
 	)
-	item_list["Miscellaneous"] = list(
+	.["Miscellaneous"] = list(
 		CASINO_PRIZE("Toy sword", /obj/item/toy/sword, 1, 50, "misc"),
 		CASINO_PRIZE("Waterflower", /obj/item/reagent_containers/spray/waterflower, 1, 50, "misc"),
 		CASINO_PRIZE("Horse stick", /obj/item/toy/stickhorse, 1, 50, "misc"),
@@ -146,7 +143,7 @@
 		CASINO_PRIZE("Instrument: Saxophone (warning: spooky)", /obj/item/instrument/saxophone/spectral, 1, 200, "misc"),
 		CASINO_PRIZE("Instrument: Musical Moth (you monster)", /obj/item/instrument/musicalmoth, 1, 100, "misc"),
 	)
-	item_list["Drinks"] = list(
+	.["Drinks"] = list(
 		CASINO_PRIZE("Redeemer's brew", /obj/item/reagent_containers/food/drinks/bottle/redeemersbrew, 1, 50, "drinks"),
 		CASINO_PRIZE("Poison wine", /obj/item/reagent_containers/food/drinks/bottle/pwine, 1, 50, "drinks"),
 		CASINO_PRIZE(REAGENT_PATRON, /obj/item/reagent_containers/food/drinks/bottle/patron, 1, 50, "drinks"),
@@ -157,7 +154,7 @@
 		CASINO_PRIZE("Whiskey bliss", /obj/item/reagent_containers/food/drinks/bottle/specialwhiskey, 1, 50, "drinks"),
 		CASINO_PRIZE("Snaps", /obj/item/reagent_containers/food/drinks/bottle/snaps, 1, 50, "drinks"),
 	)
-	item_list["Pets"] = list(
+	.["Pets"] = list(
 		CASINO_PRIZE("Casino Geese", /obj/item/grenade/spawnergrenade/casino, 1, 200, "pets"),
 		CASINO_PRIZE("Goat", /obj/item/grenade/spawnergrenade/casino/goat, 1, 150, "pets"),
 		CASINO_PRIZE("Armadillo", /obj/item/grenade/spawnergrenade/casino/armadillo, 1, 150, "pets"),
@@ -178,7 +175,7 @@
 		CASINO_PRIZE("Absolute unit of an Otie", /obj/item/grenade/spawnergrenade/casino/otie/chubby, 1, 500, "pets"),
 		CASINO_PRIZE("Zorgoia", /obj/item/grenade/spawnergrenade/casino/zorgoia, 1, 500, "pets"),
 	)
-	item_list["Mechs and Rigs"] = list(
+	.["Mechs and Rigs"] = list(
 		CASINO_PRIZE("Mech:Mining Ripley", /obj/item/grenade/spawnergrenade/casino/gygax/mining, 1, 1000, "mechs"),
 		CASINO_PRIZE("Mech:Firefighter Ripley", /obj/item/grenade/spawnergrenade/casino/gygax/firefighter, 1, 750, "mechs"),
 		CASINO_PRIZE("Mech:Serenity", /obj/item/grenade/spawnergrenade/casino/gygax/serenity, 1, 1500, "mechs"),
@@ -198,7 +195,7 @@
 		CASINO_PRIZE("Rig: Industrial suit control module", /obj/item/rig/industrial, 1, 300, "mechs"),
 		CASINO_PRIZE("Rig: Rescue suit control module", /obj/item/rig/medical, 1, 300, "mechs"),
 	)
-	item_list["Implants and Genemods"] = list(
+	.["Implants and Genemods"] = list(
 		CASINO_PRIZE("Implanter (Remember to get one unless you want to borrow from station!)", /obj/item/implanter, 1, 100, "implants"),
 		CASINO_PRIZE("Implant: Tazer", /obj/item/implantcase/taser, 1, 1000, "implants"),
 		CASINO_PRIZE("Implant: Medkit", /obj/item/implantcase/medkit, 1, 500, "implants"),
@@ -226,33 +223,22 @@
 		CASINO_PRIZE("Genemod: X-ray", /obj/item/dnainjector/set_trait/xray, 1, 1000, "implants"),
 	)
 
-	item_list["Event"] = list(
+	.["Event"] = list(
 	)
 
 /obj/machinery/casino_prize_dispenser/power_change()
 	. = ..()
-	if(has_stat(BROKEN))
-		icon_state = "[initial(icon_state)]-broken"
+	if(broken_now())
+		set_icon_state("[initial(icon_state)]-broken")
 	else
-		if(!has_stat(NOPOWER))
-			icon_state = initial(icon_state)
+		if(!power_lost())
+			set_icon_state(initial(icon_state))
 		else
-			om_after(src, rand(0, 15), TYPE_PROC_REF(/atom, set_icon_state), "[initial(icon_state)]-off")
+			after(src, rand(0 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
 
-/obj/machinery/casino_prize_dispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/casino_prize_dispenser_attackby,
-		/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use,
-	)
-	..()
-
-/datum/interaction/machine_item/casino_prize_dispenser_attackby
-	id = "casino_prize_dispenser_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_attackby
-
-/obj/machinery/casino_prize_dispenser/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/casino_prize_dispenser/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(currently_vending())
 		if(istype(W, /obj/item/spacecasinocash))
 			to_chat(user, span_warning("Please select prize on display with sufficient amount of chips."))
@@ -263,14 +249,10 @@
 	if(istype(W, /obj/item/spacecasinocash))
 		attack_hand(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/ungated/casino_prize_dispenser_use
-	id = "casino_prize_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_use
-
-/obj/machinery/casino_prize_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/casino_prize_dispenser/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
@@ -284,12 +266,10 @@
 
 	if(istype(cashmoney, /obj/item/spacecasinocash))
 		act_message(user, src, others = span_info("%U% inserts some chips into %T%."))
-		cashmoney.worth -= price
+		cashmoney.set_worth(cashmoney.worth - price)
 
 		if(cashmoney.worth <= 0)
 			consume(cashmoney, user)
-		else
-			cashmoney.update_icon()
 	return 1
 
 /obj/machinery/casino_prize_dispenser/ui_assets(mob/user)
@@ -297,10 +277,8 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-UI_DATA_REPLACE(/obj/machinery/casino_prize_dispenser, "merge:ui_data_obj_machinery_casino_prize_dispenser{items:list}")
-
-/// The computed part of /obj/machinery/casino_prize_dispenser's window data (declared on its UI_DATA row).
-/obj/machinery/casino_prize_dispenser/proc/ui_data_obj_machinery_casino_prize_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/casino_prize_dispenser's window data.
+/obj/machinery/casino_prize_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["items"] = list()
@@ -312,31 +290,40 @@ UI_DATA_REPLACE(/obj/machinery/casino_prize_dispenser, "merge:ui_data_obj_machin
 		data["items"][cat] = cat_items
 	return data
 
-DECLARE_UI(/obj/machinery/casino_prize_dispenser, "CasinoPrizeDispenser")
+CAPABILITIES(/obj/machinery/casino_prize_dispenser)
+	per_type(nameof(item_list), PROC_REF(build_item_list))
+	setup(PROC_REF(power_change)) // the dispenser shows its powered or unpowered face from the start, map-loaded too
+	configure(uses_power(idle = 10))
+	interface("CasinoPrizeDispenser")
+	without("ui_open")
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096)), arg("price", num()), arg("restriction", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-/obj/machinery/casino_prize_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/casino_prize_dispenser/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return FALSE
-	if(ui.user.stat || ui.user.restrained())
+	if(user.stat || user.restrained())
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/casino_prize_dispenser, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"), UI_ARG_NUM("price"), UI_ARG_TEXT("restriction"))
-UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
+/obj/machinery/casino_prize_dispenser/proc/ui_act_purchase(datum/act/op/A, cat, name_arg, price_arg, restriction)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
 	var/paid = FALSE
-	var/category = params["cat"]
-	var/restriction_category = params["restriction"]
+	var/category = cat
+	var/restriction_category = restriction
 	var/restriction_check = 0
 	var/item_given = FALSE
-	var/name = params["name"]
+	var/name = name_arg
 	var/datum/data/casino_prize/bi = item_list[category][name]
 	if(!istype(bi))
-		to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+		to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 		return FALSE
-	// Authoritative server-side price; never trust params["price"].
+	// Authoritative server-side price; never trust price_arg.
 	var/price = bi.cost
 	switch(restriction_category)
 		if("weapons")
@@ -358,36 +345,36 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 		if("event")
 			restriction_check = category_event
 		else
-			to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+			to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 			return FALSE
 
 	if(restriction_check < 1)
-		to_chat(ui.user, span_warning("[name] is restricted, this prize can't be bought."))
+		to_chat(user, span_warning("[name] is restricted, this prize can't be bought."))
 		return FALSE
 	if(restriction_check > 1)
 		item_given = TRUE
 
 	if(price <= 0)
-		to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
+		to_chat(user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 		return FALSE
 
 	rel_set(src, nameof(/obj/machinery/casino_prize_dispenser::currently_vending), bi)
 
-	if(istype(ui.user.get_active_hand(), /obj/item/spacecasinocash))
-		var/obj/item/spacecasinocash/cash = ui.user.get_active_hand()
-		paid = pay_with_chips(cash, ui.user, price)
+	if(istype(user.get_active_hand(), /obj/item/spacecasinocash))
+		var/obj/item/spacecasinocash/cash = user.get_active_hand()
+		paid = pay_with_chips(cash, user, price)
 	else
-		to_chat(ui.user, span_warning("Payment failure: Improper payment method, please provide chips."))
+		to_chat(user, span_warning("Payment failure: Improper payment method, please provide chips."))
 		return TRUE // we set this because they shouldn't even be able to get this far, and we want the UI to update.
 	if(paid)
 		if(item_given == TRUE)
-			vend(bi, ui.user)
+			vend(bi, user)
 
 		speak("Thank you for your purchase, your [bi] has been logged.")
-		do_logging(currently_vending(), ui.user, bi)
+		do_logging(currently_vending(), user, bi)
 		. = TRUE
 	else
-		to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
+		to_chat(user, span_warning("Payment failure: unable to process payment."))
 
 /obj/machinery/casino_prize_dispenser/proc/vend(datum/data/casino_prize/bi, mob/user)
 	SStgui.update_uis(src)
@@ -415,7 +402,7 @@ UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
 
 /obj/machinery/casino_prize_dispenser/proc/speak(message)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!message)

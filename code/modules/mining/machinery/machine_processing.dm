@@ -18,7 +18,7 @@
 	var/show_all_ores = FALSE
 
 /// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
-/obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor)
 	. = ..()
 	machine()?.wake_mining()
 
@@ -29,52 +29,57 @@
 		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
-		qdel(src)
+		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/mineral/processing_unit_console/ownership()
-	. = ..()
-	. += owns(nameof(inserted_id), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
+	// The console's window: an ore's setting, when the button names none, is asked in the op (asks()). A named setting is
+	// PROCESS_NONE .. PROCESS_ALLOY (0..3: the defines are file-local, the declaration compiles elsewhere).
+	interface("MiningOreProcessingConsole")
+	without("ui_open")
+	op("toggleSmelting", ui_act("toggleSmelting", arg("ore", schema_text(4096)), arg("set", int(0, 3))),
+		asks(/datum/prompt/choice/ore_processing_setting, fields = list("question" = computed(PROC_REF(ore_setting_question)), "title" = "Process Setting", "choices" = list("Smelting", "Compressing", "Alloying", "Nothing")), step = "setting", when = PROC_REF(ore_setting_unnamed)),
+		then(PROC_REF(ui_act_togglesmelting)))
+	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
+	op("claim", ui_act("claim"), then(PROC_REF(ui_act_claim)))
+	op("insert", ui_act("insert"), then(PROC_REF(ui_act_insert)))
+	op("showAllOres", ui_act(), then(PROC_REF(ui_act_showallores)))
+	op("speed_toggle", ui_act(), then(PROC_REF(ui_act_speed_toggle)))
+	op("power", ui_act(), then(PROC_REF(ui_act_power)))
+	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/processing_console_insert_id,
-		/datum/interaction/machine_hand/processing_console_open_ui,
-	)
-	..()
-
-/// Old attackby: an ID card scanned. `!powered()` silently returned, so it stays in the effect.
-/datum/interaction/machine_item/processing_console_insert_id
-	id = "processing_console_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id
-
-/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
+/obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/I = A.held
 	if(!powered())
 		return TRUE
-	if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
+	if(!inserted_id && move_into(src, nameof(src.inserted_id), I, user))
 		SStgui.update_uis(src)
 	return TRUE
 
-/// Old attack_hand: `if(..()) return; if(!allowed(user)) ...; tgui_interact(user)`.
-/datum/interaction/machine_hand/processing_console_open_ui
-	id = "processing_console_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/mineral/processing_unit_console/proc/lets_in, "access denied"))
-	effect = /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl
-
 /obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+	return allowed(actor) ? null : "access denied"
 
-/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: lets_in returns null to allow, or a refusal reason.
+/obj/machinery/mineral/processing_unit_console/proc/lets_in_holds(datum/act/op/A)
+	return lets_in(A.actor, src, A.held)
+
+/obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/mineral/processing_unit_console, "MiningOreProcessingConsole")
+/// The window data.
+/obj/machinery/mineral/processing_unit_console/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["showAllOres"] = show_all_ores
+	var/list/computed = ui_data_obj_machinery_mineral_processing_unit_console(A.actor, null, null)
+	for(var/key in computed)
+		data[key] = computed[key]
+	return data
 
-UI_DATA(/obj/machinery/mineral/processing_unit_console, "showAllOres=show_all_ores:num", "merge:ui_data_obj_machinery_mineral_processing_unit_console{unclaimedPoints:unknown,has_id:bool,id:list,ores:list,power:num,speed:unknown}")
-
-/// The computed part of /obj/machinery/mineral/processing_unit_console's window data (declared on its UI_DATA row).
+/// The computed part of the window data (ui_data()).
 /obj/machinery/mineral/processing_unit_console/proc/ui_data_obj_machinery_mineral_processing_unit_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["unclaimedPoints"] = machine().points
@@ -104,75 +109,86 @@ UI_DATA(/obj/machinery/mineral/processing_unit_console, "showAllOres=show_all_or
 		)))
 	data["ores"] = ores
 	data["power"] = machine().active
-	data["speed"] = machine().speed_process
+	data["speed"] = machine().high_gear_enabled()
 
 	return data
 
-/obj/machinery/mineral/processing_unit_console/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// The ore button names its setting, or the op asks for it.
+/obj/machinery/mineral/processing_unit_console/proc/ore_setting_unnamed(datum/act/op/A)
+	return isnull(A.args["set"])
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "toggleSmelting", ui_act_togglesmelting, UI_ARG_TEXT("ore"), UI_ARG_TEXT("set"))
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmelting)
-	var/ore = params["ore"]
-	var/new_setting = params["set"]
-	if(new_setting == null)
-		new_setting = act_ask(ui.user, action, params, ui, "setting", /datum/om/prompt/choice, message = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
-		if(!new_setting)
-			return
-		switch(new_setting)
-			if("Nothing") new_setting = PROCESS_NONE
-			if("Smelting") new_setting = PROCESS_SMELT
-			if("Compressing") new_setting = PROCESS_COMPRESS
-			if("Alloying") new_setting = PROCESS_ALLOY
+/obj/machinery/mineral/processing_unit_console/proc/ore_setting_question(datum/act/op/A)
+	return "What setting do you wish to use for processing [A.args["ore"]]?"
+
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_togglesmelting(datum/act/op/A, ore, set_arg)
+	add_fingerprint(A.actor)
+	var/new_setting = set_arg
+	if(isnull(new_setting))
+		switch(A.step_value("setting"))
+			if("Nothing")
+				new_setting = PROCESS_NONE
+			if("Smelting")
+				new_setting = PROCESS_SMELT
+			if("Compressing")
+				new_setting = PROCESS_COMPRESS
+			if("Alloying")
+				new_setting = PROCESS_ALLOY
+			else
+				return TRUE
+	return apply_ore_processing_setting(ore, new_setting)
+
+/datum/prompt/choice/ore_processing_setting
+	timeout = 0
+
+/obj/machinery/mineral/processing_unit_console/proc/apply_ore_processing_setting(ore, new_setting)
 	var/obj/machinery/mineral/processing_unit/unit = machine()
 	LAZYSET(unit.ores_processing, ore, new_setting)
 	. = TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_power)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_power(datum/act/op/A)
+	add_fingerprint(A.actor)
 	machine().set_active(!machine().active)
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "showAllOres", ui_act_showallores)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_showallores)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_showallores(datum/act/op/A)
+	add_fingerprint(A.actor)
 	show_all_ores = !show_all_ores
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "logoff", ui_act_logoff)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_logoff)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_logoff(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	if(!inserted_id)
 		return
-	ui.user.put_in_hands(inserted_id)
-	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
-	. = TRUE
+	user.put_in_hands(inserted_id)
+	rel_take(src, nameof(inserted_id))
+	return TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "claim", ui_act_claim)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_claim)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_claim(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(istype(inserted_id))
 		if(ACCESS_MINING_STATION in inserted_id.GetAccess())
 			var/datum/money_account/account = get_account(inserted_id.associated_account_number)
 			if(account?.credit(machine().points, name, "Processed ore proceeds", name))
 				machine().points = 0
 		else
-			to_chat(ui.user, span_warning("Required access not found."))
-	. = TRUE
+			to_chat(A.actor, span_warning("Required access not found."))
+	return TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "insert", ui_act_insert)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
-	var/obj/item/card/id/I = ui.user.get_active_hand()
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
+	var/obj/item/card/id/I = user.get_active_hand()
 	if(istype(I))
-		own_set(src, nameof(src.inserted_id), I, user = ui.user)
+		move_into(src, nameof(src.inserted_id), I, user)
 	else
-		to_chat(ui.user, span_warning("No valid ID."))
-	. = TRUE
+		to_chat(user, span_warning("No valid ID."))
+	return TRUE
 
-UI_ACT(/obj/machinery/mineral/processing_unit_console, "speed_toggle", ui_act_speed_toggle)
-UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
+/obj/machinery/mineral/processing_unit_console/proc/ui_act_speed_toggle(datum/act/op/A)
+	add_fingerprint(A.actor)
 	machine().toggle_speed()
-	. = TRUE
+	return OP_OK
 
 /**********************Mineral processing unit**************************/
 
@@ -182,7 +198,6 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
 	icon_state = "furnace"
 	density = TRUE
 	anchored = TRUE
-	light_range = 3
 	var/tmp/obj/machinery/mineral/input
 	var/tmp/obj/machinery/mineral/output
 	var/tmp/obj/machinery/mineral/console
@@ -255,15 +270,18 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
 /// Takes in what is on its input plate and smelts while active (declared: switched off it neither
 /// takes in nor smelts, ore waits on the plate); with nothing to make it sleeps until something
 /// arrives (on_input_entered()).
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPELINE, list("active", "!panel_open"))
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/mineral/processing_unit)
+	configure(light_glow(range = 3))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(active), cond_not(nameof(panel_open))), wakes_on = list(nameof(active), nameof(panel_open)))
 
-/obj/machinery/mineral/processing_unit/machine_step()
+/obj/machinery/mineral/processing_unit/proc/work_step(datum/act/timer/timer)
 
 	if (!src.output_marker() || !src.input_marker())
 		return PROCESS_KILL
 
 	if(!powered())
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 
 	var/list/tick_alloys = list()
 
@@ -277,19 +295,24 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPEL
 				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
 
 	for(var/obj/item/ore_chunk/ore_chunk in input_marker().loc) //Special ore chunk item. For conveyor belt. Completely unneeded but keeps asthetics.
-		for(var/ore in ore_chunk.stored_ore)
-			if(ore_chunk.stored_ore[ore] > 0)
-				var/ore_amount = ore_chunk.stored_ore[ore]
+		if(!LAZYLEN(ore_chunk.stored_ore))
+			continue
+		var/list/chunk_ores = ore_chunk.stored_ore.Copy()
+		if(!consume(ore_chunk))
+			continue
+		for(var/ore in chunk_ores)
+			if(chunk_ores[ore] > 0)
+				var/ore_amount = chunk_ores[ore]
 				ores_stored[ore] += ore_amount
 				points += (ore_values[ore]*points_mult*ore_amount)
-				ore_chunk.stored_ore[ore] = 0
-			qdel(ore_chunk)
 
 	for(var/obj/item/ore/O in input_marker().loc)
-		if(!isnull(ores_stored[O.material]))
-			ores_stored[O.material]++
-			points += (ore_values[O.material]*points_mult)
-		qdel(O)
+		var/ore_material = O.material
+		if(!consume(O))
+			continue
+		if(!isnull(ores_stored[ore_material]))
+			ores_stored[ore_material]++
+			points += (ore_values[ore_material]*points_mult)
 
 	//Process our stored ores and spit out sheets.
 	var/sheets = 0

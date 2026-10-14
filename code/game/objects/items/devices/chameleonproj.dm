@@ -2,9 +2,7 @@
 	name = "chameleon projector"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "shield0"
-	slot_flags = SLOT_BELT
 	item_state = "electronic"
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -15,8 +13,13 @@
 	var/saved_icon_state = "cigbutt"
 	var/saved_overlays
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/chameleon)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5.0))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(active_dummy), /obj/effect/dummy/chameleon)
+	op("disguise", in_hand(), label("Toggle chameleon disguise"), then(PROC_REF(projector_activation_requested)))
 
 /obj/item/chameleon/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -29,7 +32,9 @@
 	disrupt()
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
+/obj/item/chameleon/proc/projector_activation_requested(datum/act/op/A)
+	toggle(A.actor)
+	return OP_OK
 
 /obj/item/chameleon/afterattack(atom/target, mob/user, proximity)
 	if(!proximity) return
@@ -47,7 +52,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	if(active_dummy)
 		eject_all()
 		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
-		own_clear(src, nameof(active_dummy), OWN_DELETE)
+		rel_clear(src, nameof(active_dummy))
 		to_chat(user, span_notice("You deactivate the [src]."))
 		var/obj/effect/overlay/T = new /obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -55,13 +60,13 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		T.expire(0.8 SECONDS)
 	else
 		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = -6)
-		var/obj/O = new saved_item(src)
-		if(!O) return
 		if(istype(user.loc, /obj/item/holder)) // This doesn't go well...
 			return
+		var/obj/O = new saved_item(src)
+		if(!O) return
 		var/obj/effect/dummy/chameleon/C = new /obj/effect/dummy/chameleon(user.loc)
 		C.activate(O, user, saved_icon, saved_icon_state, saved_overlays, src)
-		qdel(O)
+		spent(O, user)
 		to_chat(user, span_notice("You activate the [src]."))
 		var/obj/effect/overlay/T = new/obj/effect/overlay(get_turf(src))
 		T.icon = 'icons/effects/effects.dmi'
@@ -73,11 +78,11 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		fx_sparks(src, 5, FALSE)
 		eject_all()
 		if(delete_dummy)
-			own_clear(src, nameof(active_dummy), OWN_DELETE)
+			rel_clear(src, nameof(active_dummy))
 		else
-			own_take(src, nameof(active_dummy)) // the dummy is already being destroyed
+			rel_take(src, nameof(active_dummy)) // the dummy is already being destroyed
 		can_use = 0
-		om_after(src, 5 SECONDS, PROC_REF(allow_use))
+		after(src, 5 SECONDS, PROC_REF(allow_use))
 
 /obj/item/chameleon/proc/allow_use()
 	can_use = 1
@@ -99,32 +104,31 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	name = O.name
 	desc = O.desc
 	icon = new_icon
-	icon_state = new_iconstate
+	set_icon_state(new_iconstate)
 	overlays = new_overlays
 	set_dir(O.dir)
 	M.forceMove(src)
 	rel_set(src, nameof(master), C)
-	own_set(master, nameof(master.active_dummy), src)
+	rel_set(master, nameof(master.active_dummy), src)
 
-EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
-	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \
-	INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)), \
-)
-
-/obj/effect/dummy/chameleon/proc/interaction_disrupt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dummy/chameleon/proc/interaction_disrupt(datum/act/op/A)
 	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
 	return TRUE
 
-DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_EXPLOSION, PROC_REF(chameleon_disrupted))
-DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chameleon_disrupted))
-/// A blast or a round drops the disguise.
-/obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/damage_packet/packet)
+CAPABILITIES(/obj/effect/dummy/chameleon)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(chameleon_disrupted))))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(chameleon_disrupted))))
+	op("disrupt", inputs(item(/obj/item), hand()), label("Disrupt"), then(PROC_REF(interaction_disrupt)))
+	ref_one(nameof(master), /obj/item/chameleon)
+
+/// A blast or a round drops the disguise, and the hit stops there.
+/obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/act/A)
 	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/dummy/chameleon/proc/allow_move()
 	can_move = 1
@@ -134,17 +138,17 @@ DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chamele
 
 	if(can_move)
 		can_move = 0
-		switch(user.bodytemperature)
+		switch(user.body_temperature())
 			if(300 to INFINITY)
-				om_after(src, 1 SECOND, PROC_REF(allow_move))
+				after(src, 1 SECOND, PROC_REF(allow_move))
 			if(295 to 300)
-				om_after(src, 1.3 SECONDS, PROC_REF(allow_move))
+				after(src, 1.3 SECONDS, PROC_REF(allow_move))
 			if(280 to 295)
-				om_after(src, 1.6 SECONDS, PROC_REF(allow_move))
+				after(src, 1.6 SECONDS, PROC_REF(allow_move))
 			if(260 to 280)
-				om_after(src, 2 SECONDS, PROC_REF(allow_move))
+				after(src, 2 SECONDS, PROC_REF(allow_move))
 			else
-				om_after(src, 2.5 SECONDS, PROC_REF(allow_move))
+				after(src, 2.5 SECONDS, PROC_REF(allow_move))
 		step(src, direction)
 	return
 

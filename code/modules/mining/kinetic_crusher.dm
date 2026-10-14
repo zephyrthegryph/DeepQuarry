@@ -5,6 +5,7 @@
 
 /*********************Mining Hammer****************/
 /obj/item/kinetic_crusher
+	conflict_id = CONFLICT_ELEMENT_CRUSHER
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "crusher"
 	item_state = "crusher0"
@@ -15,16 +16,8 @@
 	name = "proto-kinetic crusher"
 	desc = "An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. \
 	While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna."
-	force = 25
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
-	throwforce = 5
 	throw_speed = 4
-	armor_penetration = 10
-	hitsound = SFX_WEAPONS_BLADESLICE
-	attack_verb = list("smashed", "crushed", "cleaved", "chopped", "pulped")
-	sharp = FALSE //crushing damage
-	edge = FALSE
 	embed_chance = FALSE
 	actions_types = list(/datum/action/item_action/toggle_light)
 	var/charged = TRUE
@@ -54,22 +47,25 @@
 
 /obj/item/kinetic_crusher/cyborg //probably give this a unique sprite later
 	desc = "An integrated version of the standard kinetic crusher with a grinded down axe head to dissuade mis-use against crewmen. Deals damage equal to the standard crusher against creatures, however."
-	force = 10 //wouldn't want to give a borg a 20 brute melee weapon unemagged now would we
 	detonation_damage = 60
 	wielded = 1
 
-/obj/item/kinetic_crusher/Initialize(mapload)
-	. = ..()
-	conflict_id = CONFLICT_ELEMENT_CRUSHER
+CAPABILITIES(/obj/item/kinetic_crusher/cyborg)
+	configure(item_combat(force = 10))
 
-DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 
-/obj/item/kinetic_crusher/mark_emagged()
-	emagged = TRUE
-/obj/item/kinetic_crusher/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 25, armor_penetration = 10, attack_verbs = list("smashed", "crushed", "cleaved", "chopped", "pulped"), sharp = FALSE, edge = FALSE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+
+
+/obj/item/kinetic_crusher/proc/on_emag(datum/act/op/A)
 	emagged = TRUE
 	desc = desc + " The destabilizer module occasionally sparks and glows a menacing red."
-	return 1
+	return OP_OK
 
 /obj/item/kinetic_crusher/proc/can_mark(mob/living/victim)
 	if(emagged)
@@ -86,8 +82,8 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 
 /obj/item/kinetic_crusher/examine(mob/living/user)
 	. = ..()
-	. += span_notice("Mark a[emagged ? "nything": " creature"] with the destabilizing force, then hit them in melee to do <b>[force + detonation_damage]</b> damage.")
-	. += span_notice("Does <b>[force + detonation_damage + backstab_bonus]</b> damage if the target is backstabbed, instead of <b>[force + detonation_damage]</b>.")
+	. += span_notice("Mark a[emagged ? "nything": " creature"] with the destabilizing force, then hit them in melee to do <b>[combat_of(src).force + detonation_damage]</b> damage.")
+	. += span_notice("Does <b>[combat_of(src).force + detonation_damage + backstab_bonus]</b> damage if the target is backstabbed, instead of <b>[combat_of(src).force + detonation_damage]</b>.")
 
 /obj/item/kinetic_crusher/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(!wielded && requires_wield)
@@ -110,9 +106,8 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 		rel_set(D, nameof(D.hammer_synced), src)
 		play_sfx(user, SFX_WEAPONS_PLASMA_CUTTER)
 		D.fire()
-		charged = FALSE
-		update_icon()
-		om_after(src, charge_time, PROC_REF(Recharge))
+		set_charged(FALSE)
+		after(src, charge_time, PROC_REF(Recharge))
 		return
 	if(proximity_flag && isliving(target))
 		detonate(target, user)
@@ -144,43 +139,41 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 
 /obj/item/kinetic_crusher/proc/Recharge()
 	if(!charged)
-		charged = TRUE
-		update_icon()
+		set_charged(TRUE)
 		play_sfx(src.loc, SFX_WEAPONS_KENETIC_RELOAD)
 
 /obj/item/kinetic_crusher/ui_action_click(mob/user, actiontype)
-	integ_light_on = !integ_light_on
+	set_integ_light_on(!integ_light_on)
 	play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	update_brightness(user)
-	update_icon()
 
 /obj/item/kinetic_crusher/proc/update_brightness(mob/user = null)
 	if(integ_light_on)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
-DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/kinetic_crusher/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/kinetic_crusher/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(charge_overlay)
 		if(!charged)
-			. += "[icon_state]_uncharged"
+			look.overlay("[drawn_state]_uncharged")
 	if(integ_light_icon)
 		if(integ_light_on)
-			. += "[icon_state]_lit"
+			look.overlay("[drawn_state]_lit")
 
 /obj/item/kinetic_crusher/glaive
 	name = "kinetic glaive"
 	icon_state = "crusher-glaive"
-	force = 20
 	detonation_damage = 20 // 40
 	backstab_bonus = 30 // 60
-	reach = 2
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	requires_wield = FALSE
+
+CAPABILITIES(/obj/item/kinetic_crusher/glaive)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 20, reach = 2))
 
 /obj/item/kinetic_crusher/machete
 	// general purpose. cleaves though
@@ -193,43 +186,43 @@ DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearan
 			)
 	item_state = "c-machete"
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("cleaved", "chopped", "pulped", "stabbed", "skewered")
-	can_cleave = TRUE
 	requires_wield = FALSE
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	// yeah yeah buff but polaris mobs are meatwalls.
-	force = 24
 	detonation_damage = 36 // 60
 	backstab_bonus = 80 // 140
 	thrown_bonus = 20 // 160
 	update_item_state = FALSE
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(attack_verbs = list("cleaved", "chopped", "pulped", "stabbed", "skewered"), can_cleave = TRUE, sharp = TRUE, edge = TRUE, force = 24))
 
 /obj/item/kinetic_crusher/machete/gauntlets
 	// did someone say single target damage
 	name = "\improper proto-kinetic gear"
 	desc = "A pair of scaled-down proto-kinetic crusher destabilizer modules shoved into gauntlets and greaves, used by those who wish to spit in the eyes of God."
-	hitsound = SFX_WEAPONS_RESONATOR_BLAST
 	embed_chance = 0
 	icon_state = "crusher-hands"
 	item_state = "c-gauntlets"
-	attack_verb = list("bashed", "kicked", "punched", "struck", "axe kicked", "uppercut", "cross-punched", "jabbed", "hammerfisted", "roundhouse kicked")
 	integ_light_icon = FALSE
 	w_class = ITEMSIZE_NORMAL
-	can_cleave = FALSE
 	requires_wield = TRUE
-	armor_penetration = 0
-	force = 35
 	detonation_damage = 65 // 100
 	backstab_bonus = 25 // 125
 	var/obj/item/offhand/crushergauntlets/offhand
-	slot_flags = null
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_combat(attack_verbs = list("bashed", "kicked", "punched", "struck", "axe kicked", "uppercut", "cross-punched", "jabbed", "hammerfisted", "roundhouse kicked"), can_cleave = FALSE, armor_penetration = 0, force = 35))
+	configure(item_sounds(hit = SFX_WEAPONS_RESONATOR_BLAST))
+	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	every(1 SECOND, then(PROC_REF(gauntlets_step)), when = nameof(gauntlets_worn))
 
 /// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
-OM_FIELD(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SECOND, "gauntlets_worn")
+/obj/item/kinetic_crusher/machete/gauntlets/var/gauntlets_worn = FALSE
+TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
@@ -240,14 +233,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SEC
 	set_gauntlets_worn(FALSE)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/kinetic_crusher/machete/gauntlets/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/kinetic_crusher/machete/gauntlets/proc/interaction_self(datum/act/op/A)
 	ready_toggle()
 	return TRUE
 
-/obj/item/kinetic_crusher/machete/gauntlets/periodic_step()
+/obj/item/kinetic_crusher/machete/gauntlets/proc/gauntlets_step(datum/act/timer/A)
 	if(wielded) // are we supposed to be wielded
 		if(!offhand) // does our offhand exist
 			ready_toggle(TRUE) // no? well, shit
@@ -272,14 +263,14 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	O.desc = "As much as you'd like to punch things with one hand, [src] is far too unwieldy for that."
 	rel_set(O, nameof(O.linked), src)
 	M.put_in_inactive_hand(O)
-	own_set(src, nameof(offhand), O)
+	rel_set(src, nameof(offhand), O)
 
 /obj/item/kinetic_crusher/machete/gauntlets/proc/unwield(mob/living/M)
 	to_chat(M, span_notice("You unready [src]."))
 	name = "[initial(name)] (unreadied)"
 	wielded = FALSE
 	if(offhand)
-		own_clear(src, nameof(offhand), OWN_DELETE)
+		rel_clear(src, nameof(offhand))
 
 /obj/item/offhand
 	icon = 'icons/obj/weapons.dmi'
@@ -290,6 +281,9 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 /obj/item/offhand/crushergauntlets
 	var/tmp/obj/item/kinetic_crusher/machete/gauntlets/linked
 
+CAPABILITIES(/obj/item/offhand/crushergauntlets)
+	ref_one(nameof(linked))
+
 /obj/item/offhand/crushergauntlets/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(FALSE)
 	if(linked().wielded)
@@ -298,6 +292,9 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 /obj/item/kinetic_crusher/machete/gauntlets/rig
 	name = "\improper mounted proto-kinetic gear"
 	var/tmp/obj/item/rig_module/gauntlets/storing_module
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
+	ref_one(nameof(storing_module))
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig/dropped(mob/user, equipping, slot)
 	. = ..(user)
@@ -326,12 +323,13 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	requires_wield = FALSE
 	charge_overlay = FALSE
 	charge_time = 10 // lowered charge in return for lowered damage
-	force = 18
-	armor_penetration = 50
 	detonation_damage = 27 // 45
 	backstab_bonus = 30 // 75
 	// gimmick mode
 	thrown_bonus = 60 // 135 but you drop your knife because you threw it
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete/dagger)
+	configure(item_combat(force = 18, armor_penetration = 50))
 
 //destablizing force
 /obj/item/projectile/destabilizer
@@ -342,6 +340,9 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	range = 6
 	accuracy = INFINITY	// NO.
 	var/tmp/obj/item/kinetic_crusher/hammer_synced
+
+CAPABILITIES(/obj/item/projectile/destabilizer)
+	ref_one(nameof(hammer_synced))
 
 /obj/item/projectile/destabilizer/on_impact(atom/A)
 	if(ismineralturf(A))

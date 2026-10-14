@@ -34,10 +34,12 @@
 	var/suffer_cloneloss = FALSE
 	var/clone_severity = 5
 
-/obj/structure/ghost_pod/manual/survivor/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/manual/survivor)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/manual/survivor/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/manual/survivor/trigger(mob/user)
 	. = ..()
@@ -65,7 +67,7 @@
 	to_chat(M, span_notice("You are a [occupant_type]!"))
 	H.ckey = M.ckey
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
-	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].")
+	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].", opening_actor)
 
 	var/list/uniform_options
 	var/list/shoe_options
@@ -113,12 +115,12 @@
 
 	H.offer_spawn_rename()
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 
 	if(special_role)
-		var/datum/antagonist/role = GLOB.antag_service.all_antag_types[special_role] //Explicitly NOT an antagonist.
+		var/datum/antagonist/role = antag_all_antag_types()[special_role] //Explicitly NOT an antagonist.
 		if(role)
 			if(role.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [role.role_text].")

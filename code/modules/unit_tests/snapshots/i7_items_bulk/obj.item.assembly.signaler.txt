@@ -1,0 +1,64 @@
+@obj human|none
++2 menu: Threaten to push the button! (refused: You can't do that.)
+@obj robot|none
++3 menu: Threaten to push the button! (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++1 menu: Threaten to push the button! (refused: You can't do that.)
+@obj.item.assembly human|/obj/item/tool/screwdriver
+-click: Click: Use screwdriver
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++6 click: Click: Transfer
+@obj.item.assembly human|/obj/item/tool/crowbar
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+@obj.item.assembly human|/obj/item/tool/wrench
+@obj.item.assembly human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+@obj.item.assembly human|/obj/item/multitool
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+@obj.item.assembly human|/obj/item/weldingtool
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+@obj.item.assembly human|/obj/item/stack/cable_coil
+-click: Click: Use
++2 menu: Threaten to push the button! (refused: You can't do that.)
++4 menu: Transfer
++6 click: Click: Transfer
+@obj.item.assembly human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+@obj.item.assembly human|/obj/item/card/id
+-click: Click: Use
++2 menu: Threaten to push the button! (refused: You can't do that.)
++4 menu: Transfer
++6 click: Click: Transfer
+@obj.item.assembly human|/obj/item/kit
+-click: Click: Customise
++2 menu: Threaten to push the button! (refused: You can't do that.)
++4 menu: Transfer
++6 click: Click: Transfer
+@obj.item.assembly human|/obj/item/storage
+-click: Click: Use
++2 menu: Threaten to push the button! (refused: You can't do that.)
++4 menu: Transfer
++6 click: Click: Transfer
+@obj.item.assembly human|/obj/item
+-click: Click: Use
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
+keys: attach, code, collect_item, deadman_it_effect, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, reset, signal, toggle_digestable, transfer, use, use_screwdriver

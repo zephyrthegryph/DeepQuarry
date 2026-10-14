@@ -1,0 +1,28 @@
+@obj.structure.fence human|none
+@obj.structure.fence robot|none
+@obj.structure ai|none
+@obj.structure.fence ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/tool/wrench
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
++1 menu: Cut through (refused: this section of the fence can't be cut)
++4 click: Click: Cut through
+@obj.structure human|/obj/item/multitool
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/weldingtool
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item/card/id
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+@obj.structure human|/obj/item
++0 menu: Climb (refused: There is no hole in the fence door to climb through.)
+keys: climb.climb, climb.climb_menu, door_hand, door_item, drag_buckle, melee_hit, silicon_hand, use_wirecutter

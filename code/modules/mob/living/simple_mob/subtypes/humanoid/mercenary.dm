@@ -1,6 +1,9 @@
 /mob/living/simple_mob/humanoid/merc/ranged/laser
 	projectiletype = /obj/item/projectile/energy/mob/midlaser
 
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/laser)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
 /mob/living/simple_mob/humanoid/merc
 	armor_spec = "melee=20;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100" //Leave the 150 health value to reflect carbon players, slightly reduced melee armor because fuck it.
 
@@ -9,14 +12,17 @@
 
 //Keeping the bullet lethality without bullet hosing
 /mob/living/simple_mob/humanoid/merc/ranged/smg
-	base_attack_cooldown = 1.5 SECONDS
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/smg)
+	configure(mob_kind(attack_cooldown = 5))
 
 /mob/living/simple_mob/humanoid/merc/ranged/rifle
-	base_attack_cooldown = 2 SECONDS
 	reload_max = 10
 
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle)
+	configure(mob_kind(attack_cooldown = 5))
+
 /mob/living/simple_mob/humanoid/merc/ranged/laser
-	base_attack_cooldown = 2 SECONDS
 
 /mob/living/simple_mob/humanoid/merc/ranged/sniper
 	reload_time = 4 SECONDS
@@ -25,3 +31,10 @@
 /mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor
 	ranged_attack_delay = 1 SECONDS
 	reload_max = 20
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/ranged/suppressor)
+	configure(mob_kind(attack_cooldown = 5))
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc)
+	immune_to_incapacitation()

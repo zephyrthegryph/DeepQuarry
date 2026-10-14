@@ -10,71 +10,54 @@
 	var/obj/item/extinguisher/has_extinguisher
 	var/opened = 0
 
-/obj/structure/extinguisher_cabinet/Initialize(mapload, dir, building = 0)
-	. = ..()
+MSG_DEF_SELF(extinguisher_cabinet/unwrenching, "You start to unwrench the extinguisher cabinet.")
+MSG_DEF_SELF(extinguisher_cabinet/unwrenched, "You unwrench the extinguisher cabinet.")
 
-	if(building)
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
-		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
-	else
-		own_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
-		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
+CAPABILITIES(/obj/structure/extinguisher_cabinet)
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+	// a cyborg's module and gripper do nothing here
+	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_hand)))
+	op("tk", tk(), label("Interaction tk"), then(PROC_REF(interaction_tk)))
+	// the wrench opens or shuts a cabinet that holds an extinguisher, and takes an empty one off the wall
+	op("wrench_toggle", tool(TOOL_WRENCH), label("Use"), wait(0), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(nameof(has_extinguisher)), then(PROC_REF(toggled)))
+	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(cond_not(nameof(has_extinguisher))),
+		begins(MSG(extinguisher_cabinet/unwrenching)), says(MSG(extinguisher_cabinet/unwrenched)), then(PROC_REF(unwrenched)))
+	rolls(ROLL_PIXEL, WALL_OFFSET(27, 27), when = nameof(building))
 
-	update_icon()
+/// A cabinet built on a wall (its constructor param).
+/obj/structure/extinguisher_cabinet/var/building = FALSE
 
-/obj/structure/extinguisher_cabinet/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/extinguisher_cabinet_item,
-		/datum/interaction/entry_hand/extinguisher_cabinet_hand,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_tk)))
-	..()
 
-/// Old attackby: store the extinguisher, or just toggle the cabinet open.
-/datum/interaction/entry_item/extinguisher_cabinet_item
-	id = "extinguisher_cabinet_item"
-	name = "Use"
-	effect = /obj/structure/extinguisher_cabinet/proc/interaction_item
-
-/obj/structure/extinguisher_cabinet/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(isrobot(user))
-		return TRUE
+/// Anything held: an extinguisher goes into an open empty cabinet; anything else opens or shuts it.
+/obj/structure/extinguisher_cabinet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
-			if(!own_set(src, nameof(src.has_extinguisher), O, user = user))
-				return TRUE
-			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
+			if(!move_into(src, nameof(src.has_extinguisher), O, user))
+				return OP_OK
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
-			opened = !opened
+			set_opened(!opened)
 	else
-		opened = !opened
-	update_icon()
-	return TRUE
+		set_opened(!opened)
+	return OP_OK
 
-/obj/structure/extinguisher_cabinet/wrench_act(mob/user, obj/item/O)
-	if(isrobot(user))
-		return TRUE
-	if(has_extinguisher)
-		opened = !opened
-		update_icon()
-		return TRUE
-	use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "You start to unwrench the extinguisher cabinet.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return TRUE
+/// The wrench on a full cabinet: it opens or shuts.
+/obj/structure/extinguisher_cabinet/proc/toggled(datum/act/op/A)
+	set_opened(!opened)
+	return OP_OK
 
-/obj/structure/extinguisher_cabinet/proc/wrench_act_tool_done(mob/user)
-	to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
+/// The wrench's wait ran out on an empty cabinet: it comes off the wall as its frame.
+/obj/structure/extinguisher_cabinet/proc/unwrenched(datum/act/op/A)
 	replace_with(src, /obj/item/frame/extinguisher_cabinet)
+	return OP_OK
 
-/// Old attack_hand: take the extinguisher, or toggle the cabinet open.
-/datum/interaction/entry_hand/extinguisher_cabinet_hand
-	id = "extinguisher_cabinet_hand"
-	name = "Use"
-	effect = /obj/structure/extinguisher_cabinet/proc/interaction_hand
-
-/obj/structure/extinguisher_cabinet/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		return TRUE
+/// A hand takes the extinguisher out, or opens or shuts the cabinet.
+/obj/structure/extinguisher_cabinet/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -82,38 +65,31 @@
 			temp = H.organs_by_name[BP_L_HAND]
 		if(temp && !temp.is_usable())
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return TRUE
+			return OP_OK
 	if(has_extinguisher)
-		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
-		own_take(src, nameof(has_extinguisher))
-		opened = 1
+		rel_take(src, nameof(has_extinguisher))
+		set_opened(1)
 	else
-		opened = !opened
-	update_icon()
-	return TRUE
+		set_opened(!opened)
+	return OP_OK
 
-/// Old attack_tk: pull the extinguisher out at range, or toggle the cabinet.
-/obj/structure/extinguisher_cabinet/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/// Telekinesis pulls the extinguisher out at range, or opens or shuts the cabinet.
+/obj/structure/extinguisher_cabinet/proc/interaction_tk(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_extinguisher)
-		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
-		own_take(src, nameof(has_extinguisher))
-		opened = 1
+		rel_take(src, nameof(has_extinguisher))
+		set_opened(1)
 	else
-		opened = !opened
-	update_icon()
-	return TRUE
+		set_opened(!opened)
+	return OP_OK
 
-/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	if(source != has_extinguisher)
-		return
-	own_take(src, nameof(has_extinguisher))
-	opened = TRUE
-	update_icon()
+/// owns(on_lost =): the extinguisher left the cabinet (taken, or destroyed in it): the cabinet stands open.
+/obj/structure/extinguisher_cabinet/proc/extinguisher_lost(obj/item/extinguisher/E)
+	set_opened(TRUE)
 
 /obj/structure/extinguisher_cabinet/proc/appearance_suffix()
 	if(!has_extinguisher)
@@ -124,7 +100,10 @@
 		return "advanced"
 	return "standard"
 
-APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{opened?:_closed}_{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/structure/extinguisher_cabinet/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][opened ? "" : "_closed"]_[appearance_suffix()]")
 
 /obj/structure/extinguisher_cabinet/old
 	name = "extinguisher cabinet"
@@ -134,4 +113,4 @@ APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{
 
 /obj/structure/extinguisher_cabinet/ownership()
 	. = ..()
-	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED)
+	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED, starts = when(cond_not(nameof(building)), /obj/item/extinguisher), on_lost = PROC_REF(extinguisher_lost))

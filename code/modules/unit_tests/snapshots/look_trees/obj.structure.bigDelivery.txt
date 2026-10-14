@@ -1,0 +1,5 @@
+/obj/structure/bigDelivery icon: icons/obj/storage_vr.dmi
+/obj/structure/bigDelivery state: deliverycloset
+/obj/structure/bigDelivery dir: 2
+/obj/structure/bigDelivery overlay: icons/obj/storage_vr.dmi:deliverycloset:8:#000000
+

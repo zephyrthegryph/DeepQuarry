@@ -10,9 +10,9 @@
 		return
 	var/atom/target = value["value"]
 	var/atom/destination
-	switch(flow_ask(mob, "teleport:how", /datum/om/prompt/choice/alert, message = "Would you like to teleport to a set of a coordinates, or to an atom?", choices = list("coordinates","atom")))
+	switch(flow_ask(mob, "teleport:how", /datum/prompt/choice, question = "Would you like to teleport to a set of a coordinates, or to an atom?", choices = list("coordinates","atom"), buttons = TRUE))
 		if("coordinates")
-			var/coords_text = flow_ask(mob, "teleport:coords", /datum/om/prompt/text, message = "Please input the coordinates, seperated by commas")
+			var/coords_text = flow_ask(mob, "teleport:coords", /datum/prompt/text, question = "Please input the coordinates, seperated by commas")
 			if(isnull(coords_text))
 				return
 			var/list/inputlist = text2numlist(sanitize(coords_text),",")

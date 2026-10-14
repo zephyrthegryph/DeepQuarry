@@ -121,7 +121,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			own_transfer(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
+			rel_move(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O
@@ -131,13 +131,13 @@
 			var/obj/item/gun/projectile/NM = N
 			NM.contents = list()
 			NM.magazine_type = null
-			own_take(NM, nameof(NM.ammo_magazine))
+			rel_take(NM, nameof(NM.ammo_magazine))
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NO = N
 			NO.contents = list()
 			NO.cell_type = null
 
-	qdel(O)
+	consumed(O, src)
 	parts -= cost
 	if(!parts && delete_on_empty)
 		consume(src, user)
@@ -172,11 +172,11 @@
 	icon_state = "joanaria"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "joanariamob"
-	force = 15
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	hitsound = SFX_WEAPONS_BLADESLICE
+
+CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
@@ -212,7 +212,9 @@
 	desc = "Large hammer that looks like it can do a great deal of damage if properly used."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "harmonymjollnir"
-	attack_verb = list("attacked", "hammered", "smashed", "slammed", "crushed")
+
+CAPABILITIES(/obj/item/twohanded/fireaxe/fluff/mjollnir)
+	configure(item_combat(attack_verbs = list("attacked", "hammered", "smashed", "slammed", "crushed")))
 
 //JoanRisu:Joan Risu
 /obj/item/card/id/centcom/station/fluff/joanbadge
@@ -225,14 +227,16 @@
 	special_handling = TRUE
 
 // special_handling: the inherited card "Show" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_SELF("Show", PROC_REF(joanbadge_flash_self)))
+CAPABILITIES(/obj/item/card/id/centcom/station/fluff/joanbadge)
+	op("joanbadge_flash_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Show"), then(PROC_REF(joanbadge_flash_self)))
 
 /// Old attack_self: flash the badge.
-/obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		act_message(user, null, MSG_SELF(span_warning("You display the faded badge.\nIt reads: NT Security.")), \
 			MSG_OTHERS(span_warning("%U% flashes their golden security badge.\nIt reads:NT Security.")))
+	return OP_OK
 
 /obj/item/card/id/centcom/station/fluff/joanbadge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_warning("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
@@ -299,10 +303,12 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "Flag_Nanotrasen_mob"
 
-EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self)))
+CAPABILITIES(/obj/item/flag)
+	op("flag_wave_self", in_hand(), label("Wave"), then(PROC_REF(flag_wave_self)))
 
 /// Old attack_self: wave the banner.
-/obj/item/flag/proc/flag_wave_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flag/proc/flag_wave_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		act_message(user, null, MSG_SELF(span_warning("You wave your Banner around.")), MSG_OTHERS(span_warning("%U% waves their Banner around!")))
 
@@ -345,11 +351,13 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 /obj/item/toy/plushie/mouse/fluff
 	name = "Mouse Plushie"
 	desc = "A plushie of a delightful mouse! What was once considered a vile rodent is now your very best friend."
-	slot_flags = SLOT_HEAD
 	icon_state = "mouse_brown"
 	item_state = "mouse_brown_head"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_items_vr.dmi'
+
+CAPABILITIES(/obj/item/toy/plushie/mouse/fluff)
+	configure(item_worn(slots = SLOT_HEAD))
 
 //zodiacshadow: Nehi Maximus
 /obj/item/radio/headset/fluff/zodiacshadow
@@ -359,8 +367,10 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "nehiphones"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "nehiphones"
+
+CAPABILITIES(/obj/item/radio/headset/fluff/zodiacshadow)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //zodiacshadow: Nehi Maximus
 /obj/item/clothing/accessory/medal/silver/fluff/zodiacshadow
@@ -382,18 +392,20 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	item_state = "holochain_mob"
 
 	flags = NOBLOODY
-	slot_flags = SLOT_BELT
-	force = 10
-	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_PAIN
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")))
 
 //General use
 /obj/item/melee/fluff/holochain/mass
 	desc = "A mass produced version of the original. It has faux leather and an aluminium base, but still stings like the original."
-	force = 8
-	attack_verb = list("flogged", "whipped", "lashed", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain/mass)
+	configure(item_combat(force = 8, attack_verbs = list("flogged", "whipped", "lashed", "flayed")))
 
 // joey4298:Emoticon
 /obj/item/fluff/id_kit_mime
@@ -405,7 +417,7 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 /obj/item/fluff/id_kit_mime/afterattack(obj/O, mob/user as mob)
 	var/new_icon = "mime"
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
-		O.icon_state = new_icon // Changes the icon without changing the access.
+		O.set_icon_state(new_icon) // Changes the icon without changing the access.
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		act_message(user, null, others = span_warning(" %U% reprints their ID."))
 		consume(src, user)
@@ -422,12 +434,15 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	assignment = "CC Medical"
 	can_configure = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SELF("Show or configure", PROC_REF(aronai_card_self)))
+CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
+	without("show")
+	op("show_or_configure", in_hand(), label("Show or configure"), then(PROC_REF(aronai_card_self)))
 
 /// Old attack_self: the card's own "Show" first (as the old ..() did); an unconfigured card takes the user's details.
-/obj/item/card/id/centcom/station/fluff/aronai/proc/aronai_card_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction_show(user, held, interaction))
+/obj/item/card/id/centcom/station/fluff/aronai/proc/aronai_card_self(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	if(show_id_card(user))
 		return
 	if(configured)
 		return
@@ -464,7 +479,9 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "serdy_armor"
 	item_state = "serdy_armor"
-	body_parts_covered = CHEST|LEGS|ARMS //It's a full body suit, minus hands and feet. Arms and legs should be protected, not just the torso. Retains normal security armor values still.
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
+	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 
@@ -478,12 +495,12 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
-	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = SFX_ITEMS_DROP_HELM
+
+CAPABILITIES(/obj/item/clothing/head/serdyhelmet)
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM))
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
@@ -503,34 +520,36 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	name = "purple robes"
 	desc = "Heavy, royal purple robes threaded with silver lining."
 	icon_state = "psyamp"
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	var/unbuttoned = 0
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
-	INTERACT_VERB("Toggle coat buttons", PROC_REF(purp_robes_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
+	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
+	op("purp_robes_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(purp_robes_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
-/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	switch(unbuttoned)
 		if(0)
-			icon_state = "[initial(icon_state)]_open"
+			set_icon_state("[initial(icon_state)]_open")
 			unbuttoned = TRUE
 			to_chat(user, "You unbutton the coat.")
 		if(1)
-			icon_state = "[initial(icon_state)]"
+			set_icon_state("[initial(icon_state)]")
 			unbuttoned = FALSE
 			to_chat(user, "You button up the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/head/fluff/pink_tiara
 	name = "pink tourmaline tiara"
 	desc = "A small, steel tiara with a large, pink tourmaline gem in the center."
 	icon_state = "amp"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/fluff/pink_tiara)
+	configure(item_worn(covers = 0))
 
 //Lots of people are using this now.
 /obj/item/clothing/accessory/collar/khcrystal
@@ -546,7 +565,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
 	item_state = "khlife_overlay"
 	overlay_state = "khlife_overlay"
 
-	slot_flags = SLOT_TIE
 
 	var/mob/owner = null
 	var/client/owner_c = null //They'll be dead when we message them probably.
@@ -560,35 +578,44 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
 // an active crystal finishes its step.
 /obj/item/clothing/accessory/collar/khcrystal/on_destroy(force) //Waitwaitwait
 	if(state == 1)
-		periodic_step() //Nownownow
+		crystal_step(null) //Nownownow
 	..()
 
-/obj/item/clothing/accessory/collar/khcrystal/periodic_step()
+CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
+	configure(item_worn(slots = SLOT_TIE))
+	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
+	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
+
+/// TRUE once the crystal is paired and until it breaks or loses its owner.
+/obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE
+TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
+
+/// Watches its owner every 2 s once paired; a broken crystal or a lost owner stops it.
+/obj/item/clothing/accessory/collar/khcrystal/proc/crystal_step(datum/act/A)
 	check_owner()
 	if((state > 1) || !owner)
-		om_task_periodic_stop(src)
+		set_watching(FALSE)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF("Pair", PROC_REF(khcrystal_pair_self)))
 
 /// Old attack_self: pair the crystal to its user, once. special_collar: the inherited collar tag self-use steps aside.
-/obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(state > 0) //Can't re-pair, one time only, for security reasons.
 		to_chat(user, span_notice("The [name] doesn't do anything."))
-		return
-
+		return OP_OK
 	rel_set(src, nameof(owner), user)	//We are paired to this guy
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_watching(TRUE)
+	return OP_OK
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim
 	if((state == 1) && owner && (owner.stat == DEAD))
 		update_state(2)
 		visible_message(span_warning("The [name] begins flashing red."))
-		om_after(src, 3 SECONDS, PROC_REF(shatter_into_dust))
+		after(src, 3 SECONDS, PROC_REF(shatter_into_dust))
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/shatter_into_dust()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -602,8 +629,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/update_state(tostate)
 	state = tostate
-	icon_state = "[initial(icon_state)][tostate]"
-	update_icon()
+	set_icon_state("[initial(icon_state)][tostate]")
 
 /obj/item/paper/khcrystal_manual
 	name = "VM-LC91-1 manual"
@@ -638,6 +664,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	<p>This device contains antimatter. Please consult all local regulations when travelling to ensure compliance with local laws.</p>"}
 
 /obj/item/storage/box/khcrystal
+	starts_with = list(
+		/obj/item/paper/khcrystal_manual = 1,
+		/obj/item/clothing/accessory/collar/khcrystal = 1,
+	)
 	name = "life crystal case"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "khlifebox"
@@ -647,12 +677,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	max_storage_space = ITEMSIZE_COST_SMALL * 2
 	w_class = ITEMSIZE_SMALL
 
-TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/box/khcrystal/Initialize(mapload)
-	. = ..()
-	new /obj/item/paper/khcrystal_manual(src)
-	new /obj/item/clothing/accessory/collar/khcrystal(src)
+CAPABILITIES(/obj/item/storage/box/khcrystal)
+	configure(storage(accepts = list(
+		/obj/item/paper/khcrystal_manual,
+		/obj/item/clothing/accessory/collar/khcrystal)))
 
 /obj/item/cane/fluff
 	name = "cane"
@@ -661,11 +690,12 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 	icon_state = "browncane"
 	item_icons = list (slot_r_hand_str = 'icons/vore/custom_items_vr.dmi', slot_l_hand_str = 'icons/vore/custom_items_vr.dmi')
 	item_state_slots = list(slot_r_hand_str = "browncane_r", slot_l_hand_str = "browncane_l")
-	force = 5.0
-	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 50)
-	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+
+CAPABILITIES(/obj/item/cane/fluff)
+	configure(item_thrown(force = 7.0))
+	configure(item_combat(force = 5.0, attack_verbs = list("bludgeoned", "whacked", "disciplined", "thrashed")))
 
 /obj/item/cane/fluff/tasald
 	name = "Ornate Walking Cane"
@@ -684,7 +714,7 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 	var/new_desc = "Its a thin screen showing ID information, but it seems to be flickering."
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
 		O.icon = new_icon
-		O.icon_state = new_icon_state // Changes the icon without changing the access.
+		O.set_icon_state(new_icon_state) // Changes the icon without changing the access.
 		O.desc = new_desc
 		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		act_message(user, null, others = span_warning(" %U% reprints their ID."))
@@ -722,8 +752,10 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 	var/ambulance_state = FALSE
 	EXPIRY_DECLARE(ambulance_last_switch)
 
-OM_FIELD(/obj/item/storage/backpack/saddlebag/tempest, ambulance, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SLOW, "ambulance")
+/obj/item/storage/backpack/saddlebag/tempest/var/ambulance = FALSE
+TRACKED(/obj/item/storage/backpack/saddlebag/tempest, ambulance)
+CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
+	every(2 SECONDS, then(PROC_REF(tempest_step)), when = nameof(ambulance))
 
 /obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -737,20 +769,20 @@ DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SL
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
+			changed(src)
 		ambulance_state = FALSE
-		set_light(2, 1, "#FF0000")
+		set_glow(src, GLOW(2, 1, "#FF0000"))
 		soundloop.start()
 	else
 		item_state = "tempestsaddlebag"
 		icon_state = "tempestbag"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
-		set_light(0)
+			changed(src)
+		set_glow(src, GLOW(0, null, null))
 		soundloop.stop()
 
-/obj/item/storage/backpack/saddlebag/tempest/periodic_step()
+/obj/item/storage/backpack/saddlebag/tempest/proc/tempest_step(datum/act/timer/A)
 	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"
@@ -758,8 +790,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SL
 			newlight = "#0000FF"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
-		set_light(2, 1, newlight)
+			changed(src)
+		set_glow(src, GLOW(2, 1, newlight))
 		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 
@@ -776,12 +808,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SL
 	icon_state = "dragor_dot"
 	w_class = ITEMSIZE_SMALL
 
-EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(dragor_dot_self)))
+CAPABILITIES(/obj/item/fluff/dragor_dot)
+	op("dragor_dot_self", in_hand(), then(PROC_REF(dragor_dot_self)))
 
 /// Old attack_self: its owner gains the gender shapeshift verb.
-/obj/item/fluff/dragor_dot/proc/dragor_dot_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/fluff/dragor_dot/proc/dragor_dot_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.ckey == "pontifexminimus")
-		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, user)
+		grant(user, granted_verb(/mob/living/carbon/human/proc/shapeshifter_select_gender), user)
 	else
 		return
 
@@ -815,7 +849,9 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	desc = "The goggles really do nothing this time!"
 	icon_state = "purple"
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
-	item_flags = AIRTIGHT
+
+CAPABILITIES(/obj/item/clothing/glasses/fluff/science_proper)
+	configure(item_worn(flags = AIRTIGHT))
 
 //General use, Verk felt like sharing.
 /obj/item/clothing/glasses/fluff/spiffygogs
@@ -824,10 +860,12 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "spiffygogs"
-	slot_flags = SLOT_EYES | SLOT_EARS
 	item_state_slots = list(slot_r_hand_str = "glasses", slot_l_hand_str = "glasses")
 	toggleable = 1
 	off_state = "spiffygogsup"
+
+CAPABILITIES(/obj/item/clothing/glasses/fluff/spiffygogs)
+	configure(item_worn(slots = SLOT_EYES | SLOT_EARS))
 
 //General use
 /obj/item/clothing/accessory/tronket
@@ -838,8 +876,10 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	icon_state = "tronket"
 	item_state = "tronket"
 	overlay_state = "tronket"
-	slot_flags = SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/tronket)
+	configure(item_worn(slots = SLOT_TIE))
 
 /obj/item/clothing/accessory/flops
 	name = "drop straps"
@@ -849,8 +889,10 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	icon_state = "flops"
 	item_state = "flops"
 	overlay_state = "flops"
-	slot_flags = SLOT_TIE
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/flops)
+	configure(item_worn(slots = SLOT_TIE))
 
 //InterroLouis: Ruda Lizden
 /obj/item/clothing/accessory/badge/holo/detective/ruda
@@ -868,16 +910,16 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 	return ITEM_INTERACT_SUCCESS
 
 // fluff_badge: the inherited badge "Display" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTERACT_SELF("Display", PROC_REF(ruda_badge_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/detective/ruda)
+	op("ruda_badge_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Display"), then(PROC_REF(ruda_badge_self)))
 
 /// Old attack_self: polish or display the badge.
-/obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stored_name)
 		to_chat(user, "You huff along the front of your badge, then rub your sleeve on it to polish it up.")
 		set_name(user.real_name)
-		return
-
+		return OP_OK
 	if(isliving(user))
 		if(stored_name)
 			act_message(user, src, MSG_SELF(span_notice("You display your %T%.\nIt reads: [stored_name], [badge_string].")), \
@@ -885,6 +927,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 		else
 			act_message(user, src, MSG_SELF(span_notice("You display your %T%. It reads: [badge_string].")), \
 				MSG_OTHERS(span_notice("%U% displays their %T%.\nIt reads: [badge_string].")))
+	return OP_OK
 
 /obj/item/card/id/fluff/xennith
 	name = "\improper Amy Lessen's Central Command ID (Xenobiology Director)"
@@ -911,9 +954,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //If so, monkify them.
+			if(!consume(src, user))
+				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
 			H.monkeyize()
-			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
 		to_chat(user, span_warning("You are unable to inject other people."))
@@ -927,10 +971,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //Give them numbing bites.
+			if(!consume(src, user))
+				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
-			var/datum/species/own_species = proto_private(H, nameof(H.species))
+			var/datum/species/own_species = rel_private(H, nameof(H.species))
 			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
-			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
 		to_chat(user, span_warning("You are unable to inject other people."))
@@ -946,8 +991,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 				slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi',
 				)
 
-/obj/item/material/twohanded/fluff/Initialize(mapload)
-	. = ..(mapload," ") //See materials_vr_dmi for more information as to why this is a blank space.
+TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //See materials_vr_dmi for more information as to why this is a blank space.
 
 //jacknoir413:Areax Third
 /obj/item/melee/baton/fluff/stunstaff
@@ -957,12 +1001,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 	item_icons = list(slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 	icon_state = "stunstaff00"
 	var/base_icon = "stunstaff"
-	force = 5
-	sharp = FALSE
-	edge = FALSE
-	throwforce = 7
 	w_class = ITEMSIZE_HUGE
-	attack_verb = list("beaten")
 	lightcolor = "#CC33FF"
 
 	//Two Handed
@@ -970,24 +1009,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 	var/base_name = "stunstaff"
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/cell/device/weapon)
+TRACKED(/obj/item/melee/baton/fluff/stunstaff, wielded)
 
-/obj/item/melee/baton/fluff/stunstaff/Initialize(mapload)
-	. = ..()
-	update_icon()
+CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 5, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
+	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
+	op("stunstaff_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(stunstaff_toggle_self)))
 
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
-		force = 15
+		set_wielded(1)
+		set_force(15)
 		name = "[base_name] (wielded)"
-		update_icon()
 	else
-		wielded = 0
-		force = 8
+		set_wielded(0)
+		set_force(8)
 		name = "[base_name]"
-	update_icon()
 	..()
 
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -997,57 +1036,57 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/baton/fluff/stunstaff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/baton/fluff/stunstaff/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded][status]"
-	item_state = icon_state
+/obj/item/melee/baton/fluff/stunstaff/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded][status]")
+	look.held_state(drawn_state)
 	if(status==1)
-		set_light(2, 2, lightcolor)
+		look.glow(2, 2, lightcolor)
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/baton/fluff/stunstaff/dropped(mob/user, equipping, slot)
 	..()
 	if(wielded)
-		wielded = FALSE
+		set_wielded(FALSE)
 		update_held_icon()
 
 // special_handling: the inherited baton "Toggle" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle", PROC_REF(stunstaff_toggle_self)))
 
 /// Old attack_self: switch the staff on or off.
-/obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bcell && bcell.charge > hitcost)
-		status = !status
+		set_status(!status)
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		if(status == 0)
 			play_sfx(src, SFX_WEAPONS_SABEROFF)
 		else
 			play_sfx(src, SFX_WEAPONS_SABERON)
 	else
-		status = 0
+		set_status(0)
 		to_chat(user, span_warning("[src] is out of charge."))
 	update_held_icon()
 	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/storage/backpack/fluff/stunstaff
+	starts_with = list(
+		/obj/item/melee/baton/fluff/stunstaff = 1,
+	)
 	name = "Electrostaff sheath"
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "holster_stunstaff"
 	desc = "A sturdy synthetic leather sheath with matching belt and rubberized interior."
-	slot_flags = SLOT_BACK
 	item_icons = list(slot_back_str = 'icons/vore/custom_clothes_mob.dmi', slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 
 	w_class = ITEMSIZE_HUGE
 	max_storage_space = 16
 
-TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/baton/fluff/stunstaff)), HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
 
-/obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
-	. = ..()
-	new /obj/item/melee/baton/fluff/stunstaff(src)
+CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE))
 
 /*
  * Awoo Sword
@@ -1058,19 +1097,17 @@ TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY
 	var/active_throwforce
 	var/active_w_class
 	var/active_embed_chance = 0
-	sharp = FALSE
-	edge = FALSE
 
 /obj/item/melee/fluffstuff/proc/activate(mob/living/user)
 	if(active)
 		return
 	active = 1
 	embed_chance = active_embed_chance
-	force = active_force
-	throwforce = active_throwforce
-	sharp = TRUE
-	edge = TRUE
-	w_class = active_w_class
+	set_force(active_force)
+	set_throwforce(active_throwforce)
+	set_sharp(TRUE)
+	set_edge(TRUE)
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
 /obj/item/melee/fluffstuff/proc/deactivate(mob/living/user)
@@ -1079,16 +1116,19 @@ TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
 	embed_chance = initial(embed_chance)
-	force = initial(force)
-	throwforce = initial(throwforce)
-	sharp = initial(sharp)
-	edge = initial(edge)
-	w_class = initial(w_class)
+	set_force(combat_of_type(type).force)
+	set_throwforce(thrown_of_type(type).force)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
+	set_w_class(initial(w_class))
 
-EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(fluffstuff_toggle_self)))
+CAPABILITIES(/obj/item/melee/fluffstuff)
+	configure(item_combat(sharp = FALSE, edge = FALSE))
+	op("fluffstuff_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(fluffstuff_toggle_self)))
 
 /// Old attack_self: activate or deactivate the blade.
-/obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/fluffstuff/proc/fluffstuff_toggle_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
 			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \
@@ -1101,8 +1141,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
 	return
@@ -1112,18 +1151,20 @@ EXTEND_INTERACTIONS(/obj/item/melee/fluffstuff, INTERACT_USE("Toggle", PROC_REF(
 	desc = "A replica of a large, scimitar-like sword with a dull edge. Ceremonial... until it isn't."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "wolfgirlsword"
-	slot_flags = SLOT_BACK | SLOT_OCLOTHING
 	active_force = 15
 	active_throwforce = 7
 	active_w_class = ITEMSIZE_LARGE
-	force = 1
-	throwforce = 1
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
+
+CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
+	configure(item_thrown(force = 1))
+	configure(item_combat(force = 1))
 
 TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
@@ -1137,18 +1178,18 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 		to_chat(user, span_notice("The [src] is now sharpened. It will cut!"))
 
 	..()
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	sharp = TRUE
-	edge = TRUE
-	icon_state = "[active_state]_sharp"
+	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
+	set_sharp(TRUE)
+	set_edge(TRUE)
+	set_icon_state("[active_state]_sharp")
 	injury_kind = INJURY_CUT
 
 /obj/item/melee/fluffstuff/wolfgirlsword/deactivate(mob/living/user)
 	if(active)
 		to_chat(user, span_notice("The [src] grows dull!"))
 	..()
-	attack_verb = list("bapped", "thwapped", "bonked", "whacked")
-	icon_state = initial(icon_state)
+	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
+	set_icon_state(initial(icon_state))
 	injury_kind = initial(injury_kind)
 
 //SilencedMP5A5 - Serdykov Antoz
@@ -1208,7 +1249,8 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	name = "flask of expensive alcohol"
 	desc = "A standard vacuum-flask filled with good and expensive drink."
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor, null, list(REAGENT_ID_PWINE = 60))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/viktor)
+	configure(reagents(add = list(REAGENT_ID_PWINE = 60)))
 
 //RadiantAurora: Tiemli Kroto
 /obj/item/clothing/glasses/welding/tiemgogs
@@ -1231,16 +1273,13 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 	name = "weird necklace"
 	desc = "A necklace with a brilliantly blue crystal encased in protective glass."
 	icon = 'icons/vore/custom_clothes_vr.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	suit_type = "probably not magical"
 	icon_state = "nikkicape"
 	w_class = ITEMSIZE_SMALL // It is after all only a necklace
 	armor_spec = "" // this isn't armor, it's a dorky frickin cape
-	siemens_coefficient = 0.9
 	slowdown = 0
 	offline_slowdown = 0
 	offline_vision_restriction = 0
-	siemens_coefficient = 0.9
 	chest_type = /obj/item/clothing/suit/fluff/nikki
 
 	req_access = list()
@@ -1252,7 +1291,11 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
-EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_INSERT(/obj/item/rig_module, PROC_REF(nikki_rig_module_item), "Install module", REQ_TARGET_STATE(/obj/item/rig/nikki/proc/accepts_module)))
+CAPABILITIES(/obj/item/rig/nikki)
+	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+	configure(item_protection(siemens = 0.9))
+	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 
 /// Requirement: with the panel open, only mounted size guns go in.
 /obj/item/rig/nikki/proc/accepts_module(mob/user, atom/target, obj/item/held)
@@ -1261,8 +1304,14 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_INSERT(/obj/item/rig_module, P
 	return TRUE
 
 /// Old attackby: this thing accepts ONLY mounted sizeguns (the requirement). Accepted modules fall through to the rig's own install.
-/obj/item/rig/nikki/proc/nikki_rig_module_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	return FALSE
+
+/obj/item/rig/nikki/proc/nikki_rig_module_item(datum/act/op/A)
+	var/refusal = accepts_module(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	return OP_DECLINE
 
 TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
 
@@ -1314,14 +1363,13 @@ TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_
 	filling_states = list(15, 30, 50, 60, 80, 100)
 	volume = 60
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, null, list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask)
+	configure(reagents(add = list(REAGENT_ID_TEA = 40, REAGENT_ID_MILK = 20)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/appearance_overlays()
-	. = list()
-	. += ..()
-	name = initial(name)
-	desc = initial(desc)
+/// The flask keeps its own name and description whatever it holds.
+/obj/item/reagent_containers/food/drinks/glass2/fluff/claraflask/draw(datum/look/look)
+	..()
+	look.identity(name = initial(name), desc = initial(desc))
 
 
 // Astra - // Astra
@@ -1342,7 +1390,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/cl
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
-TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette,
+		/obj/item/flame/lighter,
+		/obj/item/trash/cigbutt)))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)
@@ -1351,35 +1404,34 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/fluff/charlotte/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/fluff/charlotte/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(contents_count(src) >= 1)
-			. += "charlottebox[contents.len]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("charlottebox[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/fancy/fluff/charlotte/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
-	update_icon()
+	set_open(TRUE)
 	..()
 
 /obj/item/storage/fancy/fluff/charlotte/close(mob/user as mob)
-	open = FALSE
-	update_icon()
+	set_open(FALSE)
 	..()
 
 //Ashling - Antoinette deKaultieste
 /obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette
 	name = "sawtooth ritual knife"
 	desc = "A mostly decorative knife made from thin ceramic and toothed with large black fangs. Printed on the flat is an eight-armed cross, like an asterisk with an extra stroke, ringed by a calligraphy-style crescent."
-	attack_verb = list("mauled", "bit", "sawed", "butchered")
 	dulled = 1
 	default_material = MAT_GLASS
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette)
+	configure(item_combat(attack_verbs = list("mauled", "bit", "sawed", "butchered")))
 
 //Ashling - Antoinette deKaultieste
 /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette
@@ -1411,9 +1463,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/
 	desc = "This doesn't quite look like what it really is."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "claws"
-	drop_sound = null
-	pickup_sound = null
 	material_total = 0
+
+CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
+	configure(item_sounds(drop = TRAIT_NONE, pickup = TRAIT_NONE))
 
 //Coolcrow420 - Jade Davis
 /obj/item/stamp/fluff/jade_horror
@@ -1463,10 +1516,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/
 	icon_state = "revclaymore"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "revclaymoremob"
-	force = 1
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/sword/fluff/revolver)
+	configure(item_combat(force = 1, sharp = TRUE, edge = TRUE))
 
 //YeCrowbarMan - Lemon Yellow
 /obj/item/toy/plushie/fluff/lemonplush
@@ -1474,7 +1527,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/
 	desc = "A well-worn slime custom-made yellow plushie, extensively hugged and loved. It reeks of lemon."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "lemonplush"
-	attack_verb = list("blorbled", "slimed", "absorbed", "glomped")
+
+CAPABILITIES(/obj/item/toy/plushie/fluff/lemonplush)
+	configure(item_combat(attack_verbs = list("blorbled", "slimed", "absorbed", "glomped")))
 
 //Bricker98:Nettie Stough
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie
@@ -1486,12 +1541,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/
 
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie/install_default_hardware()
 	..()
-	own_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit/small(src))
-	own_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
-	own_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/(src))
-	own_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/advanced(src))
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
-	own_set(src, nameof(battery_module), new/obj/item/computer_hardware/battery_module(src))
+	rel_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit/small(src))
+	rel_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
+	rel_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/(src))
+	rel_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/advanced(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(battery_module), new/obj/item/computer_hardware/battery_module(src))
 	battery_module.charge_to_full()
 
 //Stobarico - Kyu Comet
@@ -1509,44 +1564,62 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "pandorba"
 	pokephrase = "Gecker!"
-	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
-/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(mob/user)
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stored_item)
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))
+CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
+	configure(item_combat(attack_verbs = list("fluffed", "fwomped", "fuwa'd", "squirmshed")))
+	op("mofuorb_search", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Search"), when(req(PROC_REF(search_ready))), claims(), wait(1 SECOND), then(PROC_REF(search_done)))
+	op("mofuorb_hug", in_hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Hug"), then(PROC_REF(mofuorb_hug)))
+	op("mofuorb_poke", in_hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Poke"), then(PROC_REF(mofuorb_poke)))
+	op("mofuorb_strangle", in_hand(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Strangle"), then(PROC_REF(mofuorb_strangle)))
+	op("mofuorb_punch", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Punch"), then(PROC_REF(mofuorb_punch)))
 
 /// Old attack_self: search it, or hug, punch, strangle or poke it.
-/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(stored_item && opened && !om_busy(src))
-		om_task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
-		return
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_hug(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_HELP)
 
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_poke(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_DISARM)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_strangle(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_GRAB)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_punch(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_HURT)
+
+/// Something is stored in the opened plushie to find.
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_ready(datum/act/op/A)
+	return stored_item && read_once(opened) ? null : /datum/msg/req_failed
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze(mob/user, stance)
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
-		return
-	if(interaction.stance == I_HELP)
+		return OP_OK
+	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
-		icon_state = "pandorba"
-	else if (interaction.stance == I_HURT)
+		set_icon_state("pandorba")
+	else if (stance == I_HURT)
 		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
-		icon_state = "pandorba_h"
-	else if (interaction.stance == I_GRAB)
+		set_icon_state("pandorba_h")
+	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), \
 			MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
-		icon_state = "pandorba_g"
+		set_icon_state("pandorba_g")
 	else
 		act_message(user, src, MSG_SELF(span_notice("You poke %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " pokes %T%.")))
-		icon_state = "pandorba_d"
+		set_icon_state("pandorba_d")
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
 	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+	return OP_OK
 
 //Yeehawguvnah - Cephyra
 
@@ -1557,11 +1630,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 
 /obj/item/dice/loaded/ceph/rollDice(mob/user, silent)
 	..()
-	icon_state = "ceph_d6[result]"
+	set_icon_state("ceph_d6[result]")
 
-/obj/item/dice/loaded/ceph/Initialize(mapload)
-	. = ..()
-	icon_state = "ceph_d6[rand(1,sides)]"
+CAPABILITIES(/obj/item/dice/loaded/ceph)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/dice/loaded/ceph/roll_icon_state(datum/roller/R)
+	return "ceph_d6[R.number(1, sides)]"
 
 //abc123: Mira Nesyne
 /obj/item/clothing/accessory/medal/silver/fluff/abc314
@@ -1596,8 +1672,10 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	icon_state = "collar_inactive"
 	icon_root = "collar"
 	item_state = "on_mob_collar"
-	slot_flags = SLOT_MASK | SLOT_OCLOTHING
 	replacementType = /obj/item/remote_scene_tool/tally_doll
+
+CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
+	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
 TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
 
@@ -1610,6 +1688,8 @@ TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(
 	icon = 'icons/vore/custom_remote_scene_tools.dmi'
 	icon_state = "doll_inactive"
 	icon_root = "doll"
-	slot_flags = NONE
 	can_summon = FALSE
 	can_replace = FALSE
+
+CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
+	configure(item_worn(slots = NONE))

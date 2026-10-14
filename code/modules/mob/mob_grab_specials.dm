@@ -1,3 +1,14 @@
+/obj/item/grab
+	/// The limb a hands-on inspection is working on: inspect_organ() sets it before the chain of "inspect_*" ops starts.
+	var/inspect_zone = null
+
+TRACKED(/obj/item/grab, inspect_zone)
+
+/obj/item/grab/proc/inspect_organ_text(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	return msg_text(null, span_notice("%U% starts inspecting [H]'s [E?.name] carefully."))
+
 /obj/item/grab/proc/inspect_organ(mob/living/carbon/human/H, mob/user, target_zone)
 
 	var/obj/item/organ/external/E = H.get_organ(target_zone)
@@ -6,30 +17,27 @@
 		to_chat(user, span_notice("[H] is missing that bodypart."))
 		return
 
-	act_message(user, null, others = span_notice("%U% starts inspecting [src?.grab_target()]'s [E.name] carefully."))
-	om_task_start(/datum/om/task/timed/grab_inspect_organ_grab, user, H, target_zone_arg = target_zone, E = E)
+	set_inspect_zone(target_zone)
+	perform_op(user, src, "inspect_organ", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/obj/item/grab/proc/inspect_organ_grab_failed(datum/om/task/timed/grab_inspect_organ_grab/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_organ_grab_failed(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/target_zone = inspect_zone
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	to_chat(user, span_notice("You must stand still to inspect [E] for wounds."))
 	inspect_bones(H, user, target_zone, E)
 
-/datum/om/task/timed/grab_inspect_organ_grab
-	duration = 1 SECOND
-	complete_proc = /obj/item/grab/proc/inspect_organ_grab_done
-	cancel_proc = /obj/item/grab/proc/inspect_organ_grab_failed
-	var/target_zone_arg
-	var/obj/item/organ/external/E
-
-/obj/item/grab/proc/inspect_organ_grab_done(datum/om/task/timed/grab_inspect_organ_grab/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_organ_grab_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/target_zone = inspect_zone
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	if(length(E.get_wounds()))
 		to_chat(user, span_warning("You find [E.get_wounds_desc()]"))
 	else
@@ -38,24 +46,21 @@
 
 /obj/item/grab/proc/inspect_bones(mob/living/carbon/human/H, mob/user, target_zone, obj/item/organ/external/E)
 	to_chat(user, span_notice("Checking bones now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_bones, user, H, target_zone_arg = target_zone, E = E)
+	perform_op(user, src, "inspect_bones", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/datum/om/task/timed/grab_inspect_bones
-	duration = 2 SECONDS
-	complete_proc = /obj/item/grab/proc/inspect_bones_done
-	cancel_proc = /obj/item/grab/proc/inspect_bones_failed
-	var/target_zone_arg
-	var/obj/item/organ/external/E
+/obj/item/grab/proc/inspect_bones_failed(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	to_chat(A.actor, span_notice("You must stand still to feel [E] for fractures."))
+	inspect_bones_done(A)
 
-/obj/item/grab/proc/inspect_bones_failed(datum/om/task/timed/grab_inspect_bones/task)
-	to_chat(task.actor, span_notice("You must stand still to feel [task.E] for fractures."))
-	inspect_bones_done(task)
-
-/obj/item/grab/proc/inspect_bones_done(datum/om/task/timed/grab_inspect_bones/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_bones_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/target_zone = inspect_zone
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	if(E.nonsolid && E.cannot_break) //boneless!
 		to_chat(user, span_warning("You are unable to feel any bones in the [E.name]!"))
 	else if(E.is_fractured())
@@ -65,26 +70,23 @@
 		to_chat(user, span_notice("The [E.encased ? E.encased : "bones in the [E.name]"] seem to be fine."))
 
 	to_chat(user, span_notice("Checking skin now..."))
-	om_task_start(/datum/om/task/timed/grab_inspect_skin, user, H, target_zone_arg = target_zone, E = E)
+	perform_op(user, src, "inspect_skin", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/grab/proc/inspect_internal_failed(datum/om/task/timed/grab_inspect_internal/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_internal_failed(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	to_chat(user, span_notice("You must stand still to check [H]'s [E.name] for internal injury."))
 
-/datum/om/task/timed/grab_inspect_internal
-	duration = 5 SECONDS
-	complete_proc = /obj/item/grab/proc/inspect_internal_done
-	cancel_proc = /obj/item/grab/proc/inspect_internal_failed
-	var/body_part
-	var/obj/item/organ/external/E
-
-/obj/item/grab/proc/inspect_internal_done(datum/om/task/timed/grab_inspect_internal/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/body_part = task.body_part
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_internal_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/body_part = parse_zone(inspect_zone)
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 
 	///If we have a bad organ down here. Very non-specific. Doctor should ask how badly it hurt.
 	var/bad_organs = 0
@@ -134,35 +136,32 @@
 		var/pain_check = (H.stat && (H.can_feel_pain() || H.synth_cosmetic_pain) && H.factor(BF_ANALGESIA) < 60)
 		if(pain_check) //They can feel pain.
 			to_chat(user, span_danger("[H] jolts when you let go of their [E.name], indicating appendicitis!"))
-			H.custom_pain("You feel pure agony as [src] pushes down on your [E.name]!", 200)
+			H.custom_pain("You feel pure agony as [user] pushes down on your [E.name]!", 200)
 
-/obj/item/grab/proc/inspect_skin_failed(datum/om/task/timed/grab_inspect_skin/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_skin_failed(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/target_zone = inspect_zone
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	to_chat(user, span_notice("You must stand still to check [H]'s skin for abnormalities."))
 	inspect_internal(H, user, target_zone, E)
 
-/datum/om/task/timed/grab_inspect_skin
-	duration = 1 SECOND
-	complete_proc = /obj/item/grab/proc/inspect_skin_done
-	cancel_proc = /obj/item/grab/proc/inspect_skin_failed
-	var/target_zone_arg
-	var/obj/item/organ/external/E
-
-/obj/item/grab/proc/inspect_skin_done(datum/om/task/timed/grab_inspect_skin/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/obj/item/organ/external/E = task.E
+/obj/item/grab/proc/inspect_skin_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = src?.grab_target()
+	var/mob/user = A.actor
+	var/target_zone = inspect_zone
+	var/obj/item/organ/external/E = H?.get_organ(inspect_zone)
+	if(!H || !E)
+		return
 	var/bad = 0
 	// Palpation: the signs a hands-on examination picks up.
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/palpation)
 	for(var/datum/diagnosis_finding/F as anything in D?.findings_of(DIAG_FINDING_SIGN))
 		to_chat(user, span_warning(F.name))
 		bad = 1
-	qdel(D)
+	spent(D)
 	var/saturation = H.body?.oxygenation()
 	if(!isnull(saturation) && saturation < 90)
 		to_chat(user, span_warning("[H]'s skin is unusually pale."))
@@ -193,7 +192,7 @@
 	var/body_part = parse_zone(target_zone)
 	if(body_part == BP_GROIN || body_part == BP_TORSO || body_part == BP_HEAD)
 		to_chat(user, span_notice("Checking for internal injury now..."))
-		om_task_start(/datum/om/task/timed/grab_inspect_internal, user, H, body_part = body_part, E = E)
+		perform_op(user, src, "inspect_internal", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
 
 /obj/item/grab/proc/jointlock(mob/living/carbon/human/target, mob/attacker, target_zone)
@@ -229,7 +228,7 @@
 		to_chat(attacker, span_warning("You require a better grab to do this."))
 		return
 	for(var/obj/item/protection in list(target.get_equipped_item(SLOT_ID_HEAD), target.get_equipped_item(SLOT_ID_MASK), target.get_equipped_item(SLOT_ID_EYES)))
-		if(protection && (protection.body_parts_covered & EYES))
+		if(protection && (worn_of(protection).covers & EYES))
 			to_chat(attacker, span_danger("You're going to need to remove the eye covering first."))
 			return
 	if(!target.has_eyes())
@@ -250,7 +249,7 @@
 	var/damage = 20
 	var/obj/item/clothing/hat = attacker.get_equipped_item(SLOT_ID_HEAD)
 	if(istype(hat))
-		damage += hat.force * 3
+		damage += combat_of(hat).force * 3
 
 	var/armor = target.armor_against(INJURY_BLUNT, BP_HEAD)
 	target.injure(INJURY_BLUNT, damage, BP_HEAD, attacker, flags = INJURE_ARMORED)
@@ -265,7 +264,7 @@
 
 	attacker.drop_from_inventory(src)
 	src.moveToNullspace()
-	qdel(src)
+	spent(src, attacker)
 	return
 
 /obj/item/grab/proc/dislocate(mob/living/carbon/human/target, mob/living/attacker, target_zone)
@@ -289,10 +288,12 @@
 		return
 
 	act_message(attacker, target, others = span_danger("%U% starts forcing %T% to the ground!"))
-	om_task_timed(attacker, 2 SECONDS, target = target, receiver = src, on_done = PROC_REF(pin_down_grab_done), done_args = list(target, attacker))
+	perform_op(attacker, src, "pin_down", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("victim" = target, "from" = target.loc))
 
-/obj/item/grab/proc/pin_down_grab_done(mob/target, mob/attacker)
-	if(!(target))
+/obj/item/grab/proc/pin_down_grab_done(datum/act/op/A)
+	var/mob/target = A.arg("victim")
+	var/mob/attacker = A.actor
+	if(QDELETED(target) || target.loc != A.arg("from"))
 		return
 	note_action()
 	act_message(attacker, target, others = span_danger("%U% forces %T% to the ground!"))
@@ -300,8 +301,8 @@
 
 /obj/item/grab/proc/apply_pinning(mob/target, mob/attacker)
 	force_down = 1
-	target.status_at_least(EFFECT_WEAKENED, 3)
-	target.lying = 1
+	target.status_at_least(STAT_WEAKENED, 3)
+	target.set_lying(1)
 	step_to(attacker, target)
 	attacker.set_dir(EAST) //face the victim
 	target.set_dir(SOUTH) //face up

@@ -85,32 +85,20 @@
 	var/station_id
 	var/uploaded = FALSE
 
-/obj/machinery/generated_station_upload_terminal/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/generated_station_upload,
-	)
-	..()
+CAPABILITIES(/obj/machinery/generated_station_upload_terminal)
+	op("upload", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Upload payload"), needs(req_is(nameof(uploaded), FALSE, because = MSG(generated_station_upload_terminal/uploaded))),
+		begins(MSG(generated_station_upload_terminal/uploading)), wait(5 SECONDS), then(PROC_REF(upload_done)))
 
-/// The old attack_hand: never called ..(), uploaded the control payload.
-/datum/interaction/machine_hand/ungated/generated_station_upload
-	id = "generated_station_upload"
-	name = "Upload payload"
-	also_requires = list(REQ_FIELD_NOT("uploaded", "the payload is already resident"))
-	effect = /obj/machinery/generated_station_upload_terminal/proc/interaction_upload
+MSG_DEF_SELF(generated_station_upload_terminal/uploaded, "the payload is already resident")
+MSG_DEF(generated_station_upload_terminal/uploading, span_notice("You begin uploading the malware payload."), span_notice("%U% begins uploading a control payload."))
 
-/obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \
-		MSG_OTHERS(span_notice("%U% begins uploading a control payload.")))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
-	return TRUE
-
-/obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)
+/obj/machinery/generated_station_upload_terminal/proc/upload_done(datum/act/op/A)
 	if(uploaded)
 		return
 	uploaded = TRUE
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
-	for(var/key in GLOB.expedition_service?.sites)
-		var/datum/expedition_site/candidate = GLOB.expedition_service.sites[key]
+	for(var/key in SSexpedition?.sites)
+		var/datum/expedition_site/candidate = expedition_sites()[key]
 		if(candidate.station_simulation == simulation)
 			candidate.station_director?.set_department_connected("ai-1", FALSE)
 			break

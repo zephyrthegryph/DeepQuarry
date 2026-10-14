@@ -31,18 +31,6 @@
 #define ROUTE_TK (1<<7)
 #define ROUTE_ANY (ROUTE_PHYSICAL | ROUTE_INTERFACE | ROUTE_UI | ROUTE_VERB | ROUTE_SPEECH | ROUTE_MIND | ROUTE_AUTHORITY | ROUTE_TK)
 
-// ---- operation kinds (cap_op(kind =)); also what cap_require(ops =) can name ----
-/// An ordinary use: needs a capable actor.
-#define OP_CONTROL "control"
-/// Changes what the thing is (dismantle, rewire): needs a capable actor.
-#define OP_STRUCTURAL "structural"
-/// A last resort anyone alive can try (an emergency release): the actor-state stage only refuses the dead.
-#define OP_EMERGENCY "emergency"
-
-/// cap_op(using = EMPTY_HAND): the op is meant only with nothing in hand (the input falls through to the item's own
-/// interactions otherwise), and the hand is checked again at commit.
-#define EMPTY_HAND req_empty_hand()
-
 // ---- requirement subjects (req(of =)) ----
 #define OP_ACTOR "actor"
 #define OP_TARGET "target"
@@ -51,6 +39,8 @@
 
 /// The read key of an atom's cap_state bits (req_set / req_clear publish and read it).
 #define OP_KEY_CAP_STATE "cap_state"
+#define OP_KEY_CAP_DATA "cap_data"
+#define OP_KEY_CAP_EXTRAS "cap_extras"
 
 // ---- compartments ----
 /// door = CAP_KEY: the boundary's physical route passes only for an actor with access.
@@ -60,28 +50,31 @@
 #define BAY_INTERIOR "interior"
 #define BAY_CARGO "cargo"
 #define BAY_ENGINE "engine"
-/// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the open cover.
-#define BAY_HATCH "hatch"
 
-// ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
-/// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
-#define CAP_EMAG "emag"
+// ---- physical spaces (code/engine/library/spaces.dm) ----
+/// A maintenance hatch: what sits behind a cover (a cell bay, a frame's board and wiring). Its door is the cover.
+#define SPACE_HATCH "hatch"
+/// Behind a maintenance panel: the wires. Its door is the panel.
+#define SPACE_PANEL "panel"
+/// A cell's own bay inside a hatch (an APC's, which exists only once the electronics are fastened).
+#define SPACE_CELL "cell"
+/// The inside of a container with a door (a locker).
+#define SPACE_INTERIOR "interior"
+/// The entry kinds of the space library.
+#define ENTRY_SPACE "space"
+#define ENTRY_SPACE_SLOT "space_slot"
+#define ENTRY_LATCH "latch"
+#define ENTRY_PROTRUSION "protrusion"
+
+// ---- op keys of the library's lock and emag ops ----
+/// The emag op of a hatch.
+#define LEGACY_CAP_EMAG "emag"
 /// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
-#define CAP_LOCK "toggle_lock"
+#define LEGACY_CAP_LOCK "toggle_lock"
 /// The key of claw_op(): a shredder tearing at a breakable machine.
 #define CAP_CLAW "claw"
 
-// ---- op_ctx check stages, in the order they run ----
-#define OP_STAGE_PROVIDER 1
-#define OP_STAGE_ROUTE 2
-#define OP_STAGE_ACTOR 3
-#define OP_STAGE_TARGET 4
-#define OP_STAGE_CAPS 5
-#define OP_STAGE_NEEDS 6
-#define OP_STAGE_ALL OP_STAGE_NEEDS
-
-// ---- op priorities (cap_op(priority =)): gesture resolution is the bind profile's action list, then this, then
-// declaration order (doc/rewrite/operations_and_actions.md §5) ----
+// ---- op priorities: higher first among the ops one input reaches (doc/rewrite/operations_and_actions.md §5) ----
 /// What a type does when nothing more specific it offers answers (an item's pickup, a mob being hit): the old
 /// INTERACT_*_DEFAULT shapes. The same scale as the resolver's INTERACTION_DEFAULT_PRIORITY.
 #define OP_PRIORITY_DEFAULT -2000

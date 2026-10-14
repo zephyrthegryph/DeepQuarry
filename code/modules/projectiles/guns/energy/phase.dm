@@ -9,11 +9,13 @@
 	icon_state = "phasecarbine"
 	item_state = "phasecarbine"
 	wielded_item_state = "phasecarbine-wielded"
-	slot_flags = SLOT_BACK|SLOT_BELT
 	charge_cost = 160 // Bringing charge cost down for all phase weapons. 15 shots on normal cell
 	projectile_type = /obj/item/projectile/energy/phase
 	one_handed_penalty = 15
 	recoil_mode = 0
+
+CAPABILITIES(/obj/item/gun/energy/locked/phasegun)
+	configure(item_worn(slots = SLOT_BACK|SLOT_BELT))
 
 /obj/item/gun/energy/locked/phasegun/unlocked
 	desc = "The RayZar EW26 Artemis, also known as the 'phase carbine', is a downsized energy-based weapon specifically designed for use against wildlife."
@@ -36,11 +38,13 @@
 	icon_state = "phase"
 	item_state = "taser"	//I don't have an in-hand sprite, taser will be fine
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 160 // Bringing charge cost down for all phase weapons. 15 shots on normal cell
 	projectile_type = /obj/item/projectile/energy/phase/light
 	one_handed_penalty = 0
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/locked/phasegun/pistol)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/energy/locked/phasegun/pistol/unlocked
 	desc = "The RayZar EW15 Apollo, also known as the 'phase pistol', is an energy-based handgun specifically designed for self-defense against aggressive wildlife."
@@ -65,11 +69,13 @@
 	item_state = "phaserifle"
 	wielded_item_state = "phaserifle-wielded"
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	charge_cost = 160 // Bringing charge cost down for all phase weapons. 15 shots on normal cell
 	projectile_type = /obj/item/projectile/energy/phase/heavy
 	accuracy = 15
 	one_handed_penalty = 30
+
+CAPABILITIES(/obj/item/gun/energy/locked/phasegun/rifle)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/locked/phasegun/rifle/unlocked
 	desc = "The RayZar EW31 Orion, also known as the 'phase rifle', is a specialist energy-based weapon intended for use against hostile wildlife."
@@ -84,11 +90,13 @@
 	item_state = "phasecannon"
 	wielded_item_state = "phasecannon-wielded"	//TODO: New Sprites
 	w_class = ITEMSIZE_HUGE		// This thing is big.
-	slot_flags = SLOT_BACK
 	charge_cost = 160 // Bringing charge cost down for all phase weapons. 15 shots on normal cell
 	projectile_type = /obj/item/projectile/energy/phase/heavy/cannon
 	accuracy = 15
 	one_handed_penalty = 65
+
+CAPABILITIES(/obj/item/gun/energy/locked/phasegun/cannon)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/locked/phasegun/cannon/unlocked
 	desc = "The RayZar EW50 Gaia, also known as the 'phase cannon', is a massive energy weapon purpose-built for clearing land. You feel dirty just looking at it."

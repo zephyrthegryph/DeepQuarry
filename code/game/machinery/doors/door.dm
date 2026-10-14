@@ -1,4 +1,9 @@
-OWN_TIMER(/obj/machinery/door, door_timer_token)
+// The door (doc/rewrite/final_api.html, section 16.2; doc/rewrite/conversion_guide.md).
+//
+// What a door is, declared: a machine that works (machine_basics), the doors() capability (two touches, open and close, with the door's own access),
+// the emag, and the base door's own ops: plasteel reinforcement, a welder's repair, a weapon's strike. What a door DOES is its mechanism, below: the
+// animation, the density flip, the tiles, the autoclose timer. Each kind of door adds its own beside its type (bolts and electrification are the
+// airlock's stats, a firedoor opens through a prompt, a blast door answers a button).
 
 /obj/machinery/door
 	announce_damage_bands = TRUE
@@ -16,6 +21,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	var/closed_layer = DOOR_CLOSED_LAYER
 
 	var/visible = 1
+	/// 0: still. 1: mid-swing. -1: emagged open for good (a windoor swings a second time with 1 on an emag).
 	var/operating = 0
 	var/autoclose = 0
 	var/glass = 0
@@ -27,9 +33,6 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
 	var/hitsound = SFX_WEAPONS_SMASH //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
-	EXPIRY_DECLARE(close_door_at) //When to automatically close the door, if possible
-	/// The deadline the `door_timer_token` timer slot was last set for (next_door_deadline()).
-	var/tmp/door_timer_at = 0
 	var/list/autoclose_blockers
 
 	var/anim_length_before_density = 0.3 SECONDS
@@ -39,9 +42,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	dir = EAST
 	var/width = 1
 
-	// turf animation
-	var/atom/movable/overlay/c_animation
-
+	/// Sheets of plasteel fitted so far (0 to 2): welded into place they make the door heat proof.
 	var/reinforcing = 0
 	var/tintable = 0
 	var/icon_tinted
@@ -49,7 +50,41 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 
 	var/update_adjacent_tiles = TRUE
 
-/obj/machinery/door/attack_generic(mob/user, damage)
+TRACKED(/obj/machinery/door, operating)
+TRACKED(/obj/machinery/door, autoclose)
+TRACKED(/obj/machinery/door, normalspeed)
+
+MSG_DEF_SELF(door/already_reinforced, "It is already reinforced.")
+MSG_DEF_SELF(door/repair_first, "It looks broken. Repair it before reinforcing it.")
+MSG_DEF_SELF(door/close_first, "It must be closed first.")
+MSG_DEF_SELF(door/need_more_plasteel, "You will need more plasteel to reinforce it.")
+MSG_DEF_SELF(door/no_damage, "It isn't damaged.")
+MSG_DEF(door/reinforced, "You finish reinforcing %T%.", "%U% finishes reinforcing %T%.")
+MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %T%.")
+MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
+
+CAPABILITIES(/obj/machinery/door)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	machine_basics(null, repair = NONE, frame = NONE)
+	doors()
+	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first))), then(PROC_REF(door_emag))), repeatable = TRUE)
+	op("strike", item(/obj/item), hostile(), when(req_on_origin(ORIGIN_CLICK | ORIGIN_MENU, req_stance(I_HURT))), when(nameof(density)), when(cond_not(req(/obj/item/card))), when(cond_not(req(/obj/item/stack/material/plasteel))), then(PROC_REF(strike_with)))
+	op("reinforce", item(/obj/item/stack/material/plasteel), priority(OP_PRIORITY_PART), then(PROC_REF(add_plasteel)),
+		needs(req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), req(PROC_REF(not_damaged)), req_is(nameof(density), because = MSG(door/close_first))))
+	op("weld_plasteel", tool(TOOL_WELDER), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(1 SECOND), costs(RES_FUEL, 0),
+		needs(req_is(nameof(density), because = MSG(door/close_first)), req_at_least(nameof(reinforcing), 2, because = MSG(door/need_more_plasteel))),
+		then(PROC_REF(plasteel_welded)), says(MSG(door/reinforced)))
+	op("unreinforce", tool(TOOL_CROWBAR), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(remove_plasteel)))
+	op("repair", tool(TOOL_WELDER), when(PROC_REF(repairable)), priority(OP_PRIORITY_PART), wait(PROC_REF(repair_time)),
+		needs(req_is(nameof(density), because = MSG(door/close_first))), fixes(), says(MSG(door/repaired)))
+	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(door_bumped)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(door_blobbed))))
+
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/door/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
@@ -59,7 +94,9 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 		else
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
+	return OP_OK
 
+// ALLOW(init/INSTANCE_STATE): a door's layer, blast resistance and bounds follow whether the map placed it shut or open and how wide it is
 /obj/machinery/door/Initialize(mapload)
 	. = ..()
 	apply_rad_shield_material()
@@ -79,7 +116,6 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 			bound_width = world.icon_size
 			bound_height = width * world.icon_size
 
-	update_icon()
 
 	update_nearby_tiles(need_rebuild=1)
 
@@ -88,69 +124,47 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	. = ..()
 	clear_autoclose_blockers()
 
-// Door deadlines (autoclose here; power and electrification on airlocks) are one om_after() timer on
-// the earliest of them, never a process() poll.
+// ---- the autoclose timer: one keyed after() on the door's clock ----
 
-/// The earliest pending deadline (world.time), or 0 for none. Subtypes add theirs.
-/obj/machinery/door/proc/next_door_deadline()
-	return close_door_at > 0 ? close_door_at : 0
-
-/// Keeps one om_after() timer on next_door_deadline(). Call after changing any deadline.
-/obj/machinery/door/proc/schedule_door_timer()
-	var/deadline = next_door_deadline()
-	if(deadline == door_timer_at && (om_timer_slot_pending(src, "door_timer_token") || !deadline))
-		return
-	if(om_timer_slot_pending(src, "door_timer_token"))
-		om_cancel_timer_slot(src, "door_timer_token")
-	door_timer_at = deadline
-	if(deadline)
-		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
-
-/obj/machinery/door/proc/door_timer_fired()
-	door_timer_at = 0
-	door_deadlines_due()
-	schedule_door_timer()
-
-/// Runs every deadline that has passed. Called from the door's timer wake.
-/obj/machinery/door/proc/door_deadlines_due()
-	if(close_door_at && EXPIRY_EXPIRED(src, close_door_at, CLOCK_WORLD))
-		if(density && !operating)
-			close_door_at = 0
-		else if(autoclose)
-			EXPIRY_SET(src, close_door_at, next_close_wait(), CLOCK_WORLD)
-			close()
-		else
-			close_door_at = 0
-
-/obj/machinery/door/om_sleep_violation()
-	var/deadline = next_door_deadline()
-	if(!deadline)
-		return null
-	if(!om_timer_slot_pending(src, "door_timer_token") || door_timer_at > deadline)
-		return "deadline [deadline] (now [world.time]) has no timer (timer at [door_timer_at])"
-	return null
-
+/// Arms the autoclose `wait` deciseconds from now (a still-pending one is replaced).
 /obj/machinery/door/proc/autoclose_in(wait)
 	clear_autoclose_blockers()
-	EXPIRY_SET(src, close_door_at, wait, CLOCK_WORLD)
-	schedule_door_timer()
+	after(src, max(wait, 0), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_WORLD)
 
+/// Stops waiting to autoclose.
+/obj/machinery/door/proc/autoclose_cancel()
+	cancel_after(src, "autoclose")
+
+/// Is an autoclose pending?
+/obj/machinery/door/proc/autoclose_pending()
+	return after_pending(src, "autoclose")
+
+/// The autoclose came due: a door that is already shut or swinging lets go of it, an autoclosing one tries again after the next wait whatever
+/// this try does, and any other forgets it. Subtypes add what keeps theirs open.
+/obj/machinery/door/proc/autoclose_due()
+	if(density && !operating)
+		return
+	if(!autoclose)
+		return
+	after(src, next_close_wait(), PROC_REF(autoclose_due), key = "autoclose", clock = CLOCK_WORLD)
+	close()
+
+/// Waits for `blocker` to move away (or be deleted) instead of polling: the autoclose is dropped and one is armed at once when it does.
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
 	rel_add(src, nameof(autoclose_blockers), blocker)
-	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
-	close_door_at = 0
-	schedule_door_timer()
+	observe(blocker, /datum/notice/moved, src, then(PROC_REF(on_autoclose_blocker_changed)))
+	observe(blocker, /datum/notice/qdeleting, src, then(PROC_REF(on_autoclose_blocker_changed)))
+	autoclose_cancel()
 
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
-		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
+		unobserve(blocker, /datum/notice/moved, src)
+		unobserve(blocker, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(autoclose_blockers))
 
-/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
-	EVENT_HANDLER
+/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/act/A)
 	clear_autoclose_blockers()
 	autoclose_in(0)
 
@@ -164,21 +178,46 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 		return FALSE
 	return TRUE
 
-/obj/machinery/door/Bumped(atom/AM)
-	. = ..()
+// ---- the bump: something walked into the door (the bump action, on_notice(/datum/notice/bumped)) ----
+
+/// Whether a bump by mob `M` reaches the door's own answer (bumpopen()): the panel is shut, the door is still, `M` has not bumped a door in the last
+/// second (a bump counts once a second: shock spam), a restrained mob may not unless the door is public, and a pest nobody plays never does.
+/// Stamps the second when it gets past the cooldown, as the old Bumped() did.
+/obj/machinery/door/proc/bump_reaches(mob/M)
 	if(panel_is_open(src) || operating)
+		return FALSE
+	if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+		return FALSE //Can bump-open one airlock per second. This is to prevent shock spam.
+	EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
+	return bump_allowed(M)
+
+/// bump_reaches() without the stamp: what a takeover asks before it answers the bump itself (the airlock's shock).
+/obj/machinery/door/proc/bump_reaches_without_stamp(mob/M)
+	if(panel_is_open(src) || operating)
+		return FALSE
+	if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
+		return FALSE
+	return bump_allowed(M)
+
+/// A restrained mob bumps open only a public door; a pest nobody plays bumps nothing open.
+/obj/machinery/door/proc/bump_allowed(mob/M)
+	if(M.restrained() && !check_access(null))
+		return FALSE
+	if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
+		return FALSE
+	return TRUE
+
+/// Something walked into the door: a mob opens it with its access (bumpopen()), a drone or a bot with its card, a mech with its pilot's access, a
+/// wheelchair with whoever pushes it. Subtypes narrow it (a blast door ignores bumps while shut).
+/obj/machinery/door/proc/door_bumped(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
+	if(!AM || panel_is_open(src) || operating)
 		return
 
 	if(ismob(AM))
 		var/mob/M = AM
-		if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND)
-			return	//Can bump-open one airlock per second. This is to prevent shock spam.
-		EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
-		if(M.restrained() && !check_access(null))
-			return
-		else if(has_trait(M, TRAIT_AMBIENT_PEST_MOB) && !(M.ckey))
-			return
-		else
+		if(bump_reaches(M))
 			bumpopen(M)
 		return
 
@@ -231,16 +270,12 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 		return !block_air_zones
 	return !density // Block airflow unless density = FALSE
 
+/// A mob walked into the door: it opens for whoever may, and flashes its denial for whoever may not.
 /obj/machinery/door/proc/bumpopen(mob/user)
 	if(!user)
 		return
 	if(operating)
 		return
-	// ZAS airflow was deleted with the atmos migration; the old guard
-	// suppressed bumpopen briefly after a mob got shoved by an airflow pulse so
-	// they didn't open the door they were tumbling through. LINDA has no airflow
-	// pulses, so the guard is unconditionally pass-through.
-	// if(user.last_airflow > world.time - GLOB.vsc.airflow_delay) return
 	add_fingerprint(user)
 	if(density)
 		if(allowed(user))
@@ -249,224 +284,130 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 			do_animate("deny")
 	return
 
-/obj/machinery/door/bullet_act(obj/item/projectile/Proj)
-	var/damage = Proj.get_structure_damage()
-	. = ..()
-	if(damage && !QDELETED(src))
-		update_icon()
-
-DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_at))
 /// A throw that lands is loud.
-/obj/machinery/door/proc/door_thrown_at(datum/damage_packet/packet)
-	visible_message(span_danger("[name] was hit by [packet.source]."))
+/obj/machinery/door/proc/door_thrown_at(datum/act/A)
+	var/datum/notice/hit/N = A
+	if(N.packet?.entry != DAMAGE_ENTRY_THROWN)
+		return
+	visible_message(span_danger("[name] was hit by [N.packet?.source]."))
 	playsound(src, hitsound, 100, 1)
 
-/obj/machinery/door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/door_strike,
-		/datum/interaction/machine_item/door_use_item,
-		/datum/interaction/machine_hand/door_use,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK(null, PROC_REF(interaction_door_tk)))
-	..()
+/// An EMP may pop the door open (the airlock and the windoor hook it: on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))).
+/obj/machinery/door/proc/door_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	if(prob(20 / max(N.packet?.severity, 1)))
+		open()
 
-/datum/interaction/machine_hand/door_use
-	id = "door_use"
-	name = "Use"
-	effect = /obj/machinery/door/proc/interaction_door_use
+/// A blob reaching a shut door: a broken one gives way, a sound one takes the hit (the hit goes on); an open door is not in its way.
+/obj/machinery/door/proc/door_blobbed(datum/act/A)
+	if(!density)
+		return OP_OK
+	if(broken_now())
+		open(TRUE)
+		return OP_OK
+	return HOOK_DECLINE
 
-/obj/machinery/door/proc/interaction_door_use(mob/user, obj/item/held, datum/interaction/interaction)
-	try_to_activate_door(user)
-	return TRUE
+// ---- strike: a weapon on a closed door (cards open it, plasteel reinforces it) ----
 
-/// Old attack_tk: an ID-locked door ignores telekinesis; otherwise the default telekinetic poke.
-/obj/machinery/door/proc/interaction_door_tk(mob/user, obj/item/held, datum/interaction/interaction)
-	return requiresID() && !allowed(null)
-
-/// Combat mode: strike the closed door with the held item (plasteel still reinforces and cards still open it).
-/datum/interaction/machine_item/door_strike
-	id = "door_strike"
-	name = "Strike"
-	stance = I_HURT
-	effect = /obj/machinery/door/proc/interaction_door_strike
-
-/obj/machinery/door/proc/interaction_door_strike(mob/user, obj/item/W, datum/interaction/interaction)
-	//psa to whoever coded this, there are plenty of objects that need to call attack() on doors without bludgeoning them.
-	if(!density || !istype(W) || istype(W, /obj/item/card))
-		return FALSE
-	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_PLASTEEL)
-		return FALSE
+/obj/machinery/door/proc/strike_with(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	add_fingerprint(user)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		if(W.force < min_force)
+		if(combat_of(W).force < min_force)
 			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 		else
 			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 			playsound(src, hitsound, 100, 1)
 			receive_weapon_hit(W, user, silent = FALSE)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/door_use_item
-	id = "door_use_item"
-	name = "Use"
-	effect = /obj/machinery/door/proc/interaction_door_use_item
+// ---- plasteel: sheets fitted, welded into place, or taken back ----
 
-// NOTE (approximation): the old attackby had a mid-body `if(..()) return` after the
-// plasteel-reinforce branch, gating the weapon-hit branch and try_to_activate_door() on
-// whether the base atom's attackby signal chain intercepted the item. There's no direct way
-// to invoke just that signal check from an interaction effect, so this always falls through
-// past it (as if the signal never intercepted). Flagged for the lead: if any component hooks
-// the attackby signal to intercept items on doors (e.g. a reagent sprayer), this loses that
-// early-return and always proceeds to the weapon-hit / activate-door logic instead.
-/obj/machinery/door/proc/interaction_door_use_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// A door that has taken no damage (reinforcing it is allowed).
+/obj/machinery/door/proc/not_damaged(datum/act/A)
+	return (!broken_now() && get_integrity() >= max_integrity) ? null : MSG(door/repair_first)
+
+/// Fits sheets of plasteel on the door (up to two in all, over as many visits as it takes).
+/obj/machinery/door/proc/add_plasteel(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/stack = A.held
 	add_fingerprint(user)
-
-	if(istype(I, /obj/item/stack/material) && I.get_material_name() == MAT_PLASTEEL)
-		if(heat_proof)
-			to_chat(user, span_warning("\The [src] is already reinforced."))
-			return TRUE
-		if((has_stat(BROKEN)) || (get_integrity() < max_integrity))
-			to_chat(user, span_notice("It looks like \the [src] broken. Repair it before reinforcing it."))
-			return TRUE
-		if(!density)
-			to_chat(user, span_warning("\The [src] must be closed before you can reinforce it."))
-			return TRUE
-
-		var/amount_needed = 2
-
-		var/obj/item/stack/stack = I
-		var/amount_given = amount_needed - reinforcing
-		var/mats_given = stack.get_amount()
-		var/singular_name = stack.singular_name
-		if(reinforcing && amount_given <= 0)
-			to_chat(user, span_warning("You must weld or remove \the plasteel from \the [src] before you can add anything else."))
+	var/amount_needed = 2
+	var/amount_given = amount_needed - reinforcing
+	var/mats_given = stack.get_amount()
+	var/singular_name = stack.singular_name
+	if(reinforcing && amount_given <= 0)
+		to_chat(user, span_warning("You must weld or remove \the plasteel from \the [src] before you can add anything else."))
+	else
+		if(mats_given >= amount_given)
+			if(stack.use(amount_given))
+				set_reinforcing(reinforcing + amount_given)
 		else
-			if(mats_given >= amount_given)
-				if(stack.use(amount_given))
-					reinforcing += amount_given
-			else
-				if(stack.use(mats_given))
-					reinforcing += mats_given
-					amount_given = mats_given
-		if(amount_given)
-			to_chat(user, span_notice("You fit [amount_given] [singular_name]\s on \the [src]."))
-		return TRUE
+			if(stack.use(mats_given))
+				set_reinforcing(reinforcing + mats_given)
+				amount_given = mats_given
+	if(amount_given)
+		to_chat(user, span_notice("You fit [amount_given] [singular_name]\s on \the [src]."))
+	return OP_OK
 
-	try_to_activate_door(user)
-	return TRUE
-
-/obj/machinery/door/crowbar_act(mob/user, obj/item/tool)
-	if(!reinforcing)
-		return ..() // the door's crowbar interactions (an airlock's cap_pry())
-	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
-	reinforcing = 0
-	to_chat(user, span_notice("You remove \the [reinforcing_sheet]."))
-	playsound(src, tool.usesound, 100, 1)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/door/welder_act(mob/user, obj/item/tool)
-	if(reinforcing)
-		if(!density)
-			to_chat(user, span_warning("\The [src] must be closed before you can reinforce it."))
-			return ITEM_INTERACT_BLOCKING
-
-		if(reinforcing < 2)
-			to_chat(user, span_warning("You will need more plasteel to reinforce \the [src]."))
-			return ITEM_INTERACT_BLOCKING
-
-		use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start welding the plasteel into place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-		return ITEM_INTERACT_SUCCESS
-
-	// The door's welder interactions first (an airlock's cap_weld_shut(), offered only where welding it
-	// shut wins over repairing it), then the repair.
-	. = ..()
-	if(.)
-		return
-
-	if(get_integrity() < max_integrity)
-		if(!density)
-			to_chat(user, span_warning("\The [src] must be closed before you can repair it."))
-			return ITEM_INTERACT_BLOCKING
-
-		var/repairtime = max_integrity - get_integrity()
-		use_tool(user, tool, src, delay = repairtime, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to fix dents and repair \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
-		return ITEM_INTERACT_SUCCESS
-	return NONE
-
-/obj/machinery/door/proc/welder_act_tool_done(mob/user)
-	to_chat(user, span_notice("You finish reinforcing \the [src]."))
+/// The welder finished: the door is heat proof and the sheets are spent.
+/obj/machinery/door/proc/plasteel_welded(datum/act/op/A)
 	heat_proof = TRUE
-	update_icon()
-	reinforcing = 0
-/obj/machinery/door/proc/welder_act_tool_done2(mob/user)
-	to_chat(user, span_notice("You finish repairing the damage to \the [src]."))
-	repair_damage(max_integrity)
-	atom_fix()
+	set_reinforcing(0)
+	return OP_OK
 
-/obj/machinery/door/proc/try_to_activate_door(mob/user)
-	add_fingerprint(user)
-	if(operating || isrobot(user))
-		return FALSE //borgs can't attack doors open because it conflicts with their AI-like interaction with them.
-	if(allowed(user) && operable())
-		if(density)
-			open()
-		else
-			close()
-		return TRUE
-	if(density)
-		do_animate("deny")
+/// A crowbar takes the fitted sheets back off.
+/obj/machinery/door/proc/remove_plasteel(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
+	set_reinforcing(0)
+	act_message(user, src, self = span_notice("You remove \the [reinforcing_sheet]."))
+	playsound(src, sounds_of(A.held).use, 100, 1)
+	return OP_OK
 
-	return FALSE
+// ---- repair: a welder, as long as the damage ----
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/door, PROC_REF(on_emag), null)
-/obj/machinery/door/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(density && operable())
-		do_animate("spark")
-		om_after(src, 0.6 SECONDS, PROC_REF(trigger_emag))
-		return TRUE
+/// Damaged, with no sheets fitted: a welder repairs it.
+/obj/machinery/door/proc/repairable(datum/act/A)
+	return !reinforcing && get_integrity() < max_integrity
+
+/// The repair takes as many deciseconds as the door is damaged.
+/obj/machinery/door/proc/repair_time(datum/act/A)
+	return max_integrity - get_integrity()
+
+// ---- the emag ----
+
+/// The emag sparks (a door that is still and working); the door gives way a moment later and stays open for good.
+/obj/machinery/door/proc/door_emag(datum/act/op/A)
+	do_animate("spark")
+	after(src, 0.6 SECONDS, PROC_REF(trigger_emag), key = "emag")
+	return OP_OK
 
 /obj/machinery/door/proc/trigger_emag()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	open()
-	operating = -1
+	set_operating(-1)
 
 /obj/machinery/door/on_update_integrity(old_value, new_value)
 	. = ..()
-	update_icon()
 
 /obj/machinery/door/atom_break(damage_flag)
 	. = ..()
 	if(.)
 		on_broken()
 
-/obj/machinery/door/examine(mob/user)
-	. = ..()
-	if(has_stat(BROKEN) && !cap_of(src, /datum/capability/breakable)) // cap_breakable() says it itself
-		. += "It is broken!"
-
 /// What a door does when it breaks, after the base machinery break.
 /obj/machinery/door/proc/on_broken()
-	for (var/mob/O in viewers(src, null))
-		if ((O.client && !( O.blinded )))
-			O.show_message("[name] breaks!" )
+	visible_message("[name] breaks!")
 
-DAMAGE_REACTION(/obj/machinery/door, DAMAGE_EMP, PROC_REF(door_emp))
-/// An EMP may pop an airlock or windoor open.
-/obj/machinery/door/proc/door_emp(datum/damage_packet/packet)
-	if(prob(20/packet.severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
-		open()
-
-/obj/machinery/door/blob_act(obj/structure/blob/B)
-	if(density) // If it's closed.
-		if(has_stat(BROKEN))
-			open(1)
-		else
-			receive_blob(B)
-
-APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
+/// The look: a shut door shows "door1", an open one "door0" (density is tracked, so a swing redraws it). Subtypes draw their own.
+/obj/machinery/door/draw(datum/look/look)
+	..()
+	look.state("door[density]")
 
 /obj/machinery/door/proc/do_animate(animation)
 	switch(animation)
@@ -489,61 +430,85 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	return
 
+/// A door's density is a stat: shut or open is a hold on it from the door's state, so the served value is the composed one. TRUE when it changed.
+/obj/machinery/door/set_density(new_density)
+	new_density = !!new_density
+	if(density == new_density)
+		return FALSE
+	hold(src, STAT_DENSITY, new_density, SRC_DOOR_STATE, priority = PRIORITY_FORCE)
+	return density == new_density
+
+/// A door's opacity is a stat: the door's state replaces the composed value (an override from SRC_DOOR_STATE), so an open door reads clear whatever its
+/// type's own opacity says. Returns the old opacity when it changed, null when it did not, as /atom/proc/set_opacity() does.
+/obj/machinery/door/set_opacity(new_opacity)
+	new_opacity = !!new_opacity
+	if(new_opacity == opacity)
+		return null
+	. = opacity
+	hold_override(src, STAT_OPACITY, new_opacity, SRC_DOOR_STATE)
+	opacity_light_update(.)
+
 /obj/machinery/door/proc/open(forced = 0)
 	if(!can_open(forced))
 		return
-	operating = 1
+	set_operating(1)
 
 	publish_navigation_change()
 
 	do_animate("opening")
-	icon_state = "door0"
+	set_icon_state("door0")
 	set_opacity(0)
-	om_after(src, anim_length_before_density, PROC_REF(open_internalsetdensity), forced)
+	after(src, anim_length_before_density, PROC_REF(open_internalsetdensity), with = list(forced))
 
 /obj/machinery/door/proc/open_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set_density(FALSE)
 	update_nearby_tiles()
-	om_after(src, anim_length_before_finalize, PROC_REF(open_internalfinish), forced)
+	after(src, anim_length_before_finalize, PROC_REF(open_internalfinish), with = list(forced))
 
 /obj/machinery/door/proc/open_internalfinish(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
 	layer = open_layer
 	explosion_resistance = 0
-	update_icon()
 	set_opacity(0)
-	operating = 0
-
-	/*
-	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc
-	if(las)
-		om_after(las, 5, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src)
-	*/
+	set_operating(0)
 
 	if(autoclose)
 		autoclose_in(next_close_wait())
 	return TRUE
 
-/// How long the door waits open before closing itself: its cap_door_timing(), or the stock timing.
+/// How long the door waits open before closing itself: a moment at high speed, a moment when the air on either side differs by 5 K or more (keeping
+/// the heat in), else the stock wait.
 /obj/machinery/door/proc/next_close_wait()
-	var/static/datum/capability/door_timing/stock = new
-	var/datum/capability/door_timing/T = cap_of(src, /datum/capability/door_timing) || stock
-	return T.wait_for(src)
+	if(!normalspeed)
+		return 0.5 SECONDS
+	var/lowest_temp = T20C
+	var/highest_temp = T0C
+	for(var/D in GLOB.cardinal)
+		var/turf/target = get_step(loc, D)
+		if(!target || target.density)
+			continue
+		var/datum/gas_mixture/airmix = target.return_air()
+		if(!airmix)
+			continue
+		var/airmix_temp = airmix.return_temperature()
+		lowest_temp = min(lowest_temp, airmix_temp)
+		highest_temp = max(highest_temp, airmix_temp)
+	return abs(highest_temp - lowest_temp) >= 5 ? 1.5 SECONDS : 15 SECONDS
 
 /obj/machinery/door/proc/close(forced = 0, ignore_safties = FALSE, crush_damage = DOOR_CRUSH_DAMAGE)
 	if(!can_close(forced))
 		return
 	clear_autoclose_blockers()
-	operating = 1
+	set_operating(1)
 
 	publish_navigation_change()
 
-	close_door_at = 0
+	autoclose_cancel()
 	do_animate("closing")
-	om_after(src, anim_length_before_density, PROC_REF(close_internalsetdensity), forced)
+	after(src, anim_length_before_density, PROC_REF(close_internalsetdensity), with = list(forced))
 
 /obj/machinery/door/proc/close_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
@@ -552,14 +517,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 	explosion_resistance = initial(explosion_resistance)
 	layer = closed_layer
 	update_nearby_tiles()
-	om_after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), forced)
+	after(src, anim_length_before_finalize, PROC_REF(close_internalfinish), with = list(forced))
 
 /obj/machinery/door/proc/close_internalfinish(forced = 0)
 	PROTECTED_PROC(TRUE) //do not touch this or BYOND will devour you
-	update_icon()
 	if(visible && !glass)
 		set_opacity(1)	//caaaaarn!
-	operating = 0
+	set_operating(0)
 
 	// /obj/fire was a ZAS hotspot type, deleted with the LINDA migration.
 	// LINDA tracks hotspots via /obj/effect/hotspot (vendored under
@@ -567,13 +531,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 	// LINDA type so doors still extinguish fire underneath when they close.
 	var/obj/effect/hotspot/hotspot = locate_within(loc, /obj/effect/hotspot)
 	if(hotspot)
-		qdel(hotspot)
-
-	/*
-	var/obj/effect/step_trigger/claymore_laser/las = locate() in loc
-	if(las)
-		om_after(las, 1, TYPE_PROC_REF(/obj/effect/step_trigger/claymore_laser,Trigger), src)
-	*/
+		spent(hotspot)
 
 	return TRUE
 
@@ -641,7 +599,3 @@ APPEARANCE_TEMPLATE(/obj/machinery/door, "door{density}")
 	for(var/obj/machinery/door/D in range(src,range))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))
 			D.toggle()
-
-/// c animation (a relation view: it reads null once the target is deleted).
-/obj/machinery/door/proc/c_animation() as /atom/movable/overlay
-	return c_animation

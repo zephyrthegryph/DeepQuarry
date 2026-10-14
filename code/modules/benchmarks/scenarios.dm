@@ -51,29 +51,31 @@
 	var/list/types = benchmark_type_counts()
 	for(var/kind in types)
 		count_metric("types_[kind]", types[kind], "types")
-	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_seconds", Kernel.initializations_seconds, "s")
 	metric("init_atmos_ms", SSair.init_time_ms, "ms")
 	count_metric("booted_ffi_calls", __verdigris_ffi_calls, "calls")
 	// Per-instance composition lists. Blueprints are per type; an item owns a list only
-	// for an arbitrary mix (material_mix). Override lists are interned and shared.
+	// for an arbitrary mix (its build record's mix). Override lists are interned and shared.
 	var/items = 0
 	var/matter_lists = 0
 	var/matter_entries = 0
 	var/list/matter_owners = list()
 	for(var/obj/item/I in world)
 		items++
-		if(I.material_mix)
+		var/list/mix = material_build_of(I)?.mix
+		if(mix)
 			matter_lists++
-			matter_entries += length(I.material_mix)
+			matter_entries += length(mix)
 			matter_owners["[I.type]"]++
 		CHECK_TICK
 	var/override_refs = 0
 	var/list/override_lists = list()
 	for(var/obj/O in world)
-		if(O.material_overrides)
+		var/list/overrides = material_build_of(O)?.overrides
+		if(overrides)
 			override_refs++
-			if(!(O.material_overrides in override_lists))
-				override_lists += list(O.material_overrides)
+			if(!(overrides in override_lists))
+				override_lists += list(overrides)
 		CHECK_TICK
 	count_metric("items_total", items, "instances")
 	count_metric("item_matter_lists", matter_lists, "lists")
@@ -114,10 +116,25 @@
 /datum/benchmark/idle/Run()
 	wait_for_assets()
 	begin_window()
-	// A few synthetic clicks and queued verbs every tick, so the input latency record (input_p99) has data.
-	wait_seconds_with_input(param("seconds", 60), param("clicks", 2), param("verbs", 2))
+	// Pure wait: no synthetic input, so idle compares like for like with builds from before the input record.
+	// Input latency has its own scenario (`input`).
+	wait_seconds(param("seconds", 60))
 	end_window("idle")
 	mark("idle_end")
+
+/// Input latency on a quiet round: synthetic clicks and queued verbs every tick, so the input record (input_p99,
+/// click/verb waits) has data on a world with no clients. Kept apart from `idle` so idle stays a pure wait.
+/datum/benchmark/input
+	id = "input"
+	description = "Input latency with synthetic clicks and verbs every tick on an idle round"
+	default_scenario = TRUE
+
+/datum/benchmark/input/Run()
+	wait_for_assets()
+	begin_window()
+	wait_seconds_with_input(param("seconds", 30), param("clicks", 2), param("verbs", 2))
+	end_window("input")
+	mark("input_end")
 
 /// Atmospherics baseline: 120 SSair cycles of the mapped station, recording
 /// Rust worker pressure alongside tick cost.
@@ -145,7 +162,7 @@
 	while(SSair.times_fired < start_cycle + cycles)
 		if(REALTIMEOFDAY > deadline)
 			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		maxima["events"] = max(maxima["events"], SSair.gas_events_last)
 		maxima["reactions"] = max(maxima["reactions"], SSair.gas_reactions_last)
 		maxima["visuals"] = max(maxima["visuals"], SSair.gas_visuals_last)
@@ -192,7 +209,7 @@
 			fixture_turf.air.set_moles(gas, 0)
 		if((fixture_turf.x + fixture_turf.y) % 2)
 			fixture_turf.air.set_moles(/datum/gas/oxygen, 500)
-			fixture_turf.air.set_temperature(T20C)
+			heat_set(fixture_turf.air, T20C)
 		fixture_turf.air_update_turf(FALSE, FALSE)
 	count_metric("atmos_large_turfs", length(turfs), "turfs", "none")
 	measure_atmos_cycles("atmos_large", param("cycles", 120))
@@ -216,32 +233,32 @@
 			rel_add(src, nameof(event_turfs), T)
 		var/turf/corner = event_turfs[1]
 		rel_set(src, nameof(event_center), locate(33, 33, corner.z))
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		switch(event_name)
 			if("large_explosion")
-				measure_event(event_name, om_callable(src, PROC_REF(trigger_large_explosion)))
+				measure_event(event_name, PROC_REF(trigger_large_explosion))
 			if("supermatter")
-				measure_event(event_name, om_callable(src, PROC_REF(trigger_supermatter)))
+				measure_event(event_name, PROC_REF(trigger_supermatter))
 			if("mass_fire")
 				for(var/turf/open/T as anything in event_turfs)
 					T.air.set_moles(/datum/gas/oxygen, 300)
 					T.air.set_moles(/datum/gas/plasma, 100)
-					T.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
+					heat_set(T.air, PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
 					T.air_update_turf(FALSE, FALSE)
-				measure_event(event_name, om_callable(src, PROC_REF(trigger_mass_fire)))
+				measure_event(event_name, PROC_REF(trigger_mass_fire))
 			if("decompression")
 				for(var/turf/open/T as anything in event_turfs)
 					T.air.set_moles(/datum/gas/oxygen, 500)
-					T.air.set_temperature(T20C)
+					heat_set(T.air, T20C)
 					T.air_update_turf(FALSE, FALSE)
-				measure_event(event_name, om_callable(src, PROC_REF(trigger_decompression)))
+				measure_event(event_name, PROC_REF(trigger_decompression))
 			else
 				fail("unknown event '[event_name]'")
 
-/datum/benchmark/major_events/proc/measure_event(event_name, list/trigger, atmos_cycles = 60)
+/datum/benchmark/major_events/proc/measure_event(event_name, trigger, atmos_cycles = 60)
 	begin_window()
 	var/start_cycle = SSair.times_fired
-	om_run(trigger)
+	call(src, trigger)()
 	wait_fires(SSair, atmos_cycles - (SSair.times_fired - start_cycle))
 	end_window(event_name)
 
@@ -275,8 +292,8 @@
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		rel_set(src, nameof(generated_site), GLOB.expedition_service.generate_debug_station(seed, diagnostics))
-	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
+		rel_set(src, nameof(generated_site), SSexpedition.generate_debug_station(seed, diagnostics))
+	catch(var/exception/error)
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
 
@@ -290,22 +307,22 @@
 		rel_clear(src, nameof(generated_site))
 		generation_done = FALSE
 		begin_window()
-		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // ALLOW(scheduler): expedition generation yields; harness polls a deadline
+		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
 		var/deadline = REALTIMEOFDAY + 6000
 		while(!generation_done)
 			if(REALTIMEOFDAY > deadline)
 				fail("generation did not finish within 600s on cycle [cycle]")
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+			stoplag()
 		end_window("cycle[cycle]_generate")
 		detail("cycle[cycle]_diagnostics", diagnostics)
 		if(!generated_site())
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
-		GLOB.expedition_service.release_site(generated_site(), "generation benchmark")
+		SSexpedition.release_site(generated_site(), "generation benchmark")
 		rel_clear(src, nameof(generated_site))
 		var/waited = 0
-		while((length(GLOB.expedition_service.teardown_z) || !length(GLOB.expedition_service.free_z)) && waited++ < world.fps * 180)
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		while((length(expedition_teardown_z()) || !length(expedition_free_z())) && waited++ < world.fps * 180)
+			stoplag()
 		if(waited >= world.fps * 180)
 			fail("expedition teardown did not return its z-level to the pool")
 		wait_fires(SSair, 60)
@@ -324,7 +341,7 @@
 /datum/benchmark/sm_soak/Run()
 	wait_for_assets()
 	if(param("profile_types", 0))
-		GLOB.explosion_service.profile_atom_types = TRUE
+		SSexplosions.profile_atom_types = TRUE
 	mark("before")
 	var/blasts = param("blasts", 4)
 	var/list/drains = list()
@@ -436,32 +453,32 @@
 	var/static/log_fn = load_ext(RUST_G, "log_write")
 	var/list/best = list()
 	for(var/round in 1 to rounds)
-		stoplag() // start each round on a fresh tick // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag() // start each round on a fresh tick
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text)
 		best["hash_string_by_name_us"] = min(best["hash_string_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(hash_fn)(RUSTG_HASH_XXH64, text)
 		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "json_is_valid")(json)
 		best["json_is_valid_by_name_us"] = min(best["json_is_valid_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(json_fn)(json)
 		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "log_write")(log_file, text, "false")
 		best["log_write_by_name_us"] = min(best["log_write_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(log_fn)(log_file, text, "false")
@@ -472,9 +489,9 @@
 	if(call_ext(hash_fn)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
-/// Idle mob Life cost with parking off, then on (doc/rewrite/life_on_om.md §5).
-/// Spawns idle mice (every stage has an idle rule, so they park) and humans on a fixture,
-/// then measures the life pipeline with GLOB.om_parking_enabled FALSE and TRUE.
+/// Idle mob Life cost with parking off, then on (doc/rewrite/life_sequences.md §5).
+/// Spawns idle mice (every step has a should_run, so they park) and humans on a fixture,
+/// then measures the Life sequence with GLOB.seq_parking_enabled FALSE and TRUE.
 /datum/benchmark/idle_mobs
 	id = "idle_mobs"
 	description = "Idle mob Life cost with mob hibernation off and on"
@@ -495,11 +512,11 @@
 		mobs += new /mob/living/carbon/human(pick(turfs))
 		CHECK_TICK
 	count_metric("idle_mobs_spawned", length(mobs), "mobs", "none")
-	var/was_enabled = GLOB.om_parking_enabled
+	var/was_enabled = GLOB.seq_parking_enabled
 
-	GLOB.om_parking_enabled = FALSE
+	GLOB.seq_parking_enabled = FALSE
 	for(var/mob/living/L as anything in mobs)
-		om_wake(L, /datum/om/pipeline/life)
+		seq_wake(L, /datum/sequence/life)
 	wait_seconds(LIFE_CYCLE_SECONDS * 2)
 	var/list/before = benchmark_life_totals(mobs)
 	begin_window()
@@ -508,7 +525,7 @@
 	benchmark_life_metrics("hibernation_off", before, mobs)
 	count_metric("hibernation_off_hibernating", benchmark_count_hibernating(mobs), "mobs", "none")
 
-	GLOB.om_parking_enabled = TRUE
+	GLOB.seq_parking_enabled = TRUE
 	wait_seconds(LIFE_CYCLE_SECONDS * 4)
 	before = benchmark_life_totals(mobs)
 	begin_window()
@@ -518,20 +535,19 @@
 	count_metric("hibernation_on_hibernating", benchmark_count_hibernating(mobs), "mobs", "higher")
 	var/list/awake = list()
 	for(var/mob/living/L as anything in mobs)
-		if(!om_pipe_parked(L, /datum/om/pipeline/life))
+		if(!seq_parked(L, /datum/sequence/life))
 			awake["[L.type]"]++
 	detail("hibernation_on_awake_by_type", awake)
 
-	GLOB.om_parking_enabled = was_enabled
+	GLOB.seq_parking_enabled = was_enabled
 	for(var/mob/living/L as anything in mobs)
 		qdel(L)
 		CHECK_TICK
 
-/// The life pipeline's cumulative totals on the live scheduler: ms, frames.
+/// The Life sequence's cumulative totals: its sweep's ms, the frames these mobs ran.
 /proc/benchmark_life_totals(list/mobs)
-	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)
-	var/list/S = GLOB.om_live_sched.stat_for(life.id)
-	return list(S[OM_STAT_MS], om_pipeline_frames(mobs, life))
+	var/datum/sequence/S = sequence_def(/datum/sequence/life)
+	return list(S.work.total_ms, seq_frames(mobs, /datum/sequence/life))
 
 /// Life cost and delivered frames since `before` (benchmark_life_totals()).
 /datum/benchmark/proc/benchmark_life_metrics(prefix, list/before, list/mobs)
@@ -560,11 +576,11 @@
 	M.maxbodytemp = INFINITY
 	M.temperature_range = INFINITY
 
-/// How many of `mobs` are parked in the life pipeline.
+/// How many of `mobs` are parked on the Life sequence.
 /proc/benchmark_count_hibernating(list/mobs)
 	. = 0
 	for(var/mob/living/L as anything in mobs)
-		if(om_pipe_parked(L, /datum/om/pipeline/life))
+		if(seq_parked(L, /datum/sequence/life))
 			.++
 
 /// Radiation: pulses from many sources over a walled fixture full of mobs and
@@ -591,29 +607,29 @@
 		var/mob/living/simple_mob/animal/passive/mouse/white/mouse = new(locate(3 + (i * 11) % 46, 3 + (i * 17) % 46, fixture_z))
 		mouse.ai_brain?.go_sleep()
 	var/rounds = param("rounds", 30)
-	stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+	stoplag()
 	var/cost_before = 0
-	for(var/key in GLOB.radiation_service.profile_source_cost_ms)
-		cost_before += GLOB.radiation_service.profile_source_cost_ms[key]
-	var/pulses_before = GLOB.radiation_service.profile_pulses_completed
+	for(var/key in radiation_profile_source_cost_ms())
+		cost_before += radiation_profile_source_cost_ms()[key]
+	var/pulses_before = radiation_profile_pulses_completed()
 	begin_window()
 	for(var/round in 1 to rounds)
 		for(var/atom/source as anything in sources)
 			radiation_pulse(source, 14, 0.05, 10, 0, 1)
 		var/deadline = REALTIMEOFDAY + 600
-		while(length(GLOB.radiation_service.processing))
+		while(length(radiation_processing()))
 			if(REALTIMEOFDAY > deadline)
 				fail("radiation pulses did not drain within 60s")
-			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+			stoplag()
 	end_window("radiation")
 	var/cost_after = 0
-	for(var/key in GLOB.radiation_service.profile_source_cost_ms)
-		cost_after += GLOB.radiation_service.profile_source_cost_ms[key]
-	var/pulses = GLOB.radiation_service.profile_pulses_completed - pulses_before
+	for(var/key in radiation_profile_source_cost_ms())
+		cost_after += radiation_profile_source_cost_ms()[key]
+	var/pulses = radiation_profile_pulses_completed() - pulses_before
 	count_metric("radiation_pulses", pulses, "pulses", "none")
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
-	detail("radiation_diagnostics", GLOB.radiation_service.performance_diagnostics())
+	detail("radiation_diagnostics", SSradiation.performance_diagnostics())
 
 /// Where the memory outside DM objects goes (init_and_turfs.md §0.4). Counts
 /// unique appearances (atoms' own and their overlay/underlay entries), icons,
@@ -769,3 +785,300 @@
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
+
+/// Compare actual research-console cache allocation before and after lazy-list changes.
+/// Run separately on each revision: bench --scenario=rdconsole_id_cache --arg=consoles=200 --arg=ids=20 --arg=lookups=100.
+/datum/benchmark/rdconsole_id_cache
+	id = "rdconsole_id_cache"
+	description = "Research consoles: untouched ID-cache allocation and actual payload deduplication"
+
+/datum/benchmark/rdconsole_id_cache/Run()
+	var/consoles_n = max(1, param("consoles", 200))
+	var/ids_n = max(1, param("ids", 20))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/consoles = list()
+	var/list/ids = list()
+	for(var/i in 1 to ids_n)
+		ids += "benchmark-id-[i]"
+	var/turf/T = locate(10, 10, 1)
+	mark("before_consoles")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to consoles_n)
+		consoles += new /obj/machinery/computer/rdconsole_tg(T)
+	metric("console_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("console_allocation")
+	mark("untouched_consoles")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			untouched_lists++
+		untouched_entries += length(console.id_cache)
+	count_metric("untouched_id_cache_lists", untouched_lists, "lists")
+	count_metric("untouched_id_cache_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	var/mapping_errors = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		for(var/round in 1 to lookups_n)
+			for(var/i in 1 to ids_n)
+				if(console.compress_id(ids[i]) != i)
+					mapping_errors++
+	metric("deduplication_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("deduplication")
+	mark("populated_consoles")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			populated_lists++
+		populated_entries += length(console.id_cache)
+	count_metric("populated_id_cache_lists", populated_lists, "lists")
+	count_metric("populated_id_cache_entries", populated_entries, "entries")
+	count_metric("deduplication_mapping_errors", mapping_errors, "errors")
+	count_metric("consoles", consoles_n, "consoles")
+	count_metric("distinct_ids_per_console", ids_n, "IDs")
+	count_metric("compression_calls", consoles_n * lookups_n * ids_n, "calls")
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		qdel(console)
+	mark("after_console_cleanup")
+
+/// Actual airlock histories before and after the lazy-list change. Run both revisions with identical parameters.
+/datum/benchmark/airlock_history_lists
+	id = "airlock_history_lists"
+	description = "Actual airlocks: untouched history-list allocation and repeated ambient electrification"
+
+/datum/benchmark/airlock_history_lists/Run()
+	var/doors_n = max(1, param("doors", 200))
+	var/entries_n = max(1, param("entries", 5))
+	var/list/doors = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_airlocks")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to doors_n)
+		var/obj/machinery/door/airlock/door = new(T)
+		doors += door
+	metric("airlock_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("airlock_allocation")
+	mark("untouched_airlocks")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			untouched_lists++
+		untouched_entries += length(door.shockedby)
+	count_metric("untouched_history_lists", untouched_lists, "lists")
+	count_metric("untouched_history_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		for(var/i in 1 to entries_n)
+			door.electrify((2 SECONDS) / (1 SECOND))
+	metric("electrification_history_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("electrification_history")
+	mark("populated_airlocks")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			populated_lists++
+		populated_entries += length(door.shockedby)
+	count_metric("populated_history_lists", populated_lists, "lists")
+	count_metric("populated_history_entries", populated_entries, "entries")
+	count_metric("expected_history_entries", doors_n * entries_n, "entries")
+	count_metric("airlocks", doors_n, "airlocks")
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		qdel(door)
+	mark("after_airlock_cleanup")
+
+/// Actual living mobs and real incoming aim relationships, before/after lazy-list changes.
+/datum/benchmark/aimed_relation_lists
+	id = "aimed_relation_lists"
+	description = "Living mobs: untouched incoming-aim lists and actual aim/cancel relationships"
+
+/datum/benchmark/aimed_relation_lists/Run()
+	var/mobs_n = max(1, param("mobs", 200))
+	var/list/mobs = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_mobs")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		mobs += new /mob/living/carbon/human(T)
+	metric("mob_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("mob_allocation")
+	mark("untouched_mobs")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		if(islist(M.aimed))
+			untouched_lists++
+		untouched_entries += length(M.aimed)
+	count_metric("untouched_aimed_lists", untouched_lists, "lists")
+	count_metric("untouched_aimed_entries", untouched_entries, "entries")
+	var/mob/living/carbon/human/actor = new(T)
+	var/obj/item/binoculars/tool = new(T)
+	var/relationship_errors = 0
+	if(!actor.put_in_active_hand(tool))
+		relationship_errors++
+	rel_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
+	var/obj/aiming_overlay/aim = actor.aiming
+	begin_window()
+	start = REALTIMEOFDAY
+	var/populated_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		aim.aim_at(M, tool)
+		populated_entries += length(M.aimed)
+		if(aim.aiming_at != M || !(aim in M.aimed))
+			relationship_errors++
+		actor.stop_aiming(tool, TRUE)
+		if(length(M.aimed) || aim.aiming_at || aim.aiming_with())
+			relationship_errors++
+	metric("aim_cancel_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("aim_cancel")
+	count_metric("observed_aim_entries", populated_entries, "entries")
+	count_metric("expected_aim_entries", mobs_n, "entries")
+	count_metric("relationship_errors", relationship_errors, "errors")
+	mark("after_aim_cancel")
+	qdel(actor)
+	for(var/mob/living/M as anything in mobs)
+		qdel(M)
+	mark("after_mob_cleanup")
+
+/// Actual cartridges and vendors before/after optional exception-list allocation.
+/datum/benchmark/refill_exception_lists
+	id = "refill_exception_lists"
+	description = "Refill cartridges: unused exception lists and actual vendor compatibility"
+
+/datum/benchmark/refill_exception_lists/Run()
+	var/cartridges_n = max(1, param("cartridges", 200))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/cartridges = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_cartridges")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to cartridges_n)
+		cartridges += new /obj/item/refill_cartridge/multitype/technical(T)
+	metric("cartridge_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("cartridge_allocation")
+	mark("untouched_cartridges")
+	var/unused_lists = 0
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		if(islist(C.refill_exceptions))
+			unused_lists++
+	count_metric("unused_exception_lists", unused_lists, "lists")
+	var/obj/item/refill_cartridge/multitype/clothing/clothing = new(T)
+	var/obj/machinery/vending/tool/tools = new(T)
+	var/obj/machinery/vending/wardrobe/wardrobe = new(T)
+	var/obj/machinery/vending/loadout/gadget/gadget = new(T)
+	var/matching_errors = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		for(var/i in 1 to lookups_n)
+			if(!C.can_refill(tools) || !C.can_refill(gadget) || C.can_refill(wardrobe))
+				matching_errors++
+			if(!clothing.can_refill(wardrobe) || clothing.can_refill(gadget) || clothing.can_refill(tools))
+				matching_errors++
+	metric("vendor_matching_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("vendor_matching")
+	count_metric("matching_errors", matching_errors, "errors")
+	count_metric("clothing_exception_entries", length(clothing.refill_exceptions), "entries")
+	count_metric("cartridges", cartridges_n, "cartridges")
+	count_metric("compatibility_checks", cartridges_n * lookups_n * 6, "checks")
+	qdel(clothing)
+	qdel(tools)
+	qdel(wardrobe)
+	qdel(gadget)
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		qdel(C)
+	mark("after_cartridge_cleanup")
+
+/// Untouched actual guest passes and the public list-alias contract on first read.
+/datum/benchmark/guest_access_lists
+	id = "guest_access_lists"
+	description = "Guest passes: deferred empty access lists and stable access aliases"
+
+/datum/benchmark/guest_access_lists/Run()
+	var/passes_n = max(1, param("passes", 200))
+	var/list/passes = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_passes")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to passes_n)
+		passes += new /obj/item/card/id/guest(T)
+	metric("pass_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("pass_allocation")
+	mark("untouched_passes")
+	var/unused_lists = 0
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		if(islist(P.temp_access))
+			unused_lists++
+	count_metric("untouched_temp_access_lists", unused_lists, "lists")
+	var/alias_errors = 0
+	var/read_lists = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		EXPIRY_SET(P, expiration_time, 1 MINUTE, CLOCK_WORLD)
+		var/list/access = P.GetAccess()
+		if(!islist(access) || !access || length(access))
+			alias_errors++
+		access += ACCESS_ENGINE
+		if(P.GetAccess() != access || !(ACCESS_ENGINE in P.GetAccess()))
+			alias_errors++
+		if(islist(P.temp_access))
+			read_lists++
+	metric("access_alias_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("access_alias")
+	count_metric("read_temp_access_lists", read_lists, "lists")
+	count_metric("access_alias_errors", alias_errors, "errors")
+	mark("after_access_reads")
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		qdel(P)
+	mark("after_pass_cleanup")
+
+/// Actual shadekin variants: distinct constant tables and real ability grants.
+/datum/benchmark/shadekin_ability_tables
+	id = "shadekin_ability_tables"
+	description = "Shadekin variant ability tables and actual source grants"
+
+/datum/benchmark/shadekin_ability_tables/Run()
+	var/mobs_n = max(1, param("mobs", 90))
+	var/list/mobs = list()
+	var/list/tables = list()
+	var/list/variants = list(/datum/shadekin, /datum/shadekin/phase_only, /datum/shadekin/full)
+	var/turf/T = locate(10, 10, 1)
+	var/grant_errors = 0
+	var/granted_entries = 0
+	mark("before_shadekin")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		var/mob/living/carbon/human/H = new(T)
+		mobs += H
+		var/datum/shadekin/SK = H.add_shadekin(variants[((i - 1) % length(variants)) + 1])
+		var/list/ids = SK.ability_capabilities()
+		var/table_seen = FALSE
+		for(var/list/table as anything in tables)
+			if(table ~= ids)
+				table_seen = TRUE
+		if(!table_seen)
+			tables += list(ids)
+		for(var/datum/capability/ability_capability as anything in ids)
+			granted_entries++
+			if(!granted(H, ability_capability))
+				grant_errors++
+	metric("shadekin_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("shadekin_allocation")
+	mark("populated_shadekin")
+	count_metric("distinct_ability_tables", length(tables), "lists")
+	count_metric("actual_granted_entries", granted_entries, "grants")
+	count_metric("grant_errors", grant_errors, "errors")
+	for(var/mob/living/carbon/human/H as anything in mobs)
+		qdel(H)
+	mark("after_shadekin_cleanup")

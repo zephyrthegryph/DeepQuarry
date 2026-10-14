@@ -1,0 +1,6 @@
+/obj/item/integrated_electronics/detailer icon: icons/obj/integrated_electronics/electronic_tools.dmi
+/obj/item/integrated_electronics/detailer state: detailer
+/obj/item/integrated_electronics/detailer dir: 2
+/obj/item/integrated_electronics/detailer overlay: icons/obj/integrated_electronics/electronic_tools.dmi:detailer-color:-32767:#e2e2e2
+/obj/item/integrated_electronics/detailer overlay: icons/obj/integrated_electronics/electronic_tools.dmi:detailer:8:#000000
+

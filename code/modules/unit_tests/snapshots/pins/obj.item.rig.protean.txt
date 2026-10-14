@@ -1,0 +1,114 @@
+@obj.item.rig human|none
+-click: Click: Rig shock hand
++6 menu: Protean rig hand
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++20 click: Click: Protean rig hand
+@obj.item.rig robot|none
+-click: Click: Rig shock hand
++7 menu: Protean rig hand
++8 menu: Remove Assimilated Rig (refused: You can't do that.)
++9 menu: Remove Stored Bag (refused: You can't do that.)
++21 click: Click: Protean rig hand
+@obj ai|none
+@obj.item.rig ghost|none
++5 menu: Remove Assimilated Rig (refused: You can't do that.)
++6 menu: Remove Stored Bag (refused: You can't do that.)
+@obj.item.rig human|/obj/item/tool/screwdriver
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
+@obj.item.rig human|/obj/item/tool/crowbar
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
+@obj.item.rig human|/obj/item/tool/wrench
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
+@obj.item.rig human|/obj/item/tool/wirecutters
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++21 menu: Use wirecutters
+@obj.item.rig human|/obj/item/multitool
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
+@obj.item.rig human|/obj/item/weldingtool
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++21 menu: Use welding tool
+@obj.item.rig human|/obj/item/stack/cable_coil
+-click: Click: Rig item
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++20 menu: Use cable coil
++21 click: Click: Protean rig hand
+@obj.item.rig human|/obj/item/stack/material/steel
+-click: Click: Rig item
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++20 menu: Use steel sheet
++21 click: Click: Protean rig hand
+@obj.item.rig human|/obj/item/card/id
+-click: Click: Rig item
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++20 menu: Use identification card
++21 click: Click: Protean rig hand
+@obj.item.rig human|/obj/item/kit
+-click: Click: Customise
++6 menu: Protean rig hand
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++21 menu: Use item
++22 click: Click: Protean rig hand
+@obj.item.rig human|/obj/item/storage
+-click: Click: Collect
++6 menu: Protean rig hand
++7 menu: Remove Assimilated Rig (refused: You can't do that.)
++8 menu: Remove Stored Bag (refused: You can't do that.)
++21 menu: Use storage
++22 click: Click: Protean rig hand
+@obj human|/obj/item/card/emag
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++21 menu: Use cryptographic sequencer
+@obj.item.rig human|/obj/item
+-click: Click: Rig item
++5 menu: Protean rig hand
++6 menu: Remove Assimilated Rig (refused: You can't do that.)
++7 menu: Remove Stored Bag (refused: You can't do that.)
++20 menu: Use item
++21 click: Click: Protean rig hand
+human|/obj/item/rig_module menu: Configure Voice Synthesiser (refused: You can't do that.)
+human|/obj/item/rig_module menu: Deploy Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Engage Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Install module (refused: The hardsuit already has a module of that class installed.)
+human|/obj/item/rig_module menu: Move To Top
+human|/obj/item/rig_module menu: Open Hardsuit Interface (refused: You can't do that.)
+human|/obj/item/rig_module menu: Protean rig hand
+human|/obj/item/rig_module menu: Remove Assimilated Rig (refused: You can't do that.)
+human|/obj/item/rig_module menu: Remove Stored Bag (refused: You can't do that.)
+human|/obj/item/rig_module menu: Rig item
+human|/obj/item/rig_module menu: Rig shock hand
+human|/obj/item/rig_module menu: Select Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Switch Vision Mode (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Boots (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Chestpiece (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Gauntlets (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Hardsuit (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Module (refused: You can't do that.)
+human|/obj/item/rig_module menu: Toggle Visor (refused: You can't do that.)
+human|/obj/item/rig_module menu: Use hardsuit upgrade
+human|/obj/item/rig_module click: Click: Install module
+wires: AI Override, Interface Lock, Interface Shock, Security, System Control
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, protean_install_module, protean_removebag_verb, protean_removerig_verb, protean_rig_hand, protean_rig_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock, use_crowbar, use_multitool, use_screwdriver, use_welder, use_wirecutter, use_wrench

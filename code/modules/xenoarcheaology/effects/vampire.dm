@@ -31,8 +31,7 @@
 		M.injure(INJURY_BLUNT, searing * 2 / 3, target)
 		to_chat(M, span_critical("The skin on your [parse_zone(target)] feels like it's ripping apart, and a stream of blood flies out."))
 		var/obj/effect/decal/cleanable/blood/splatter/animated/B = new(M.loc)
-		B.basecolor = M.species.get_blood_colour(M)
-		B.color = M.species.get_blood_colour(M)
+		B.set_basecolor(M.species.get_blood_colour(M))
 		//legacy .target reference removed (no equivalent on /datum/ai_brain).
 		B.add_blooddna(M.dna,M)
 		var/blood_to_remove = (rand(10,30))
@@ -79,7 +78,7 @@
 				charges += 1
 				play_sfx(holder, SFX_EFFECTS_SPLAT, extrarange = -3)
 
-			qdel(B)
+			consume(B)
 
 	if(charges >= 10) //Listen, if you have INTENTIONALLY FED THE SPOOKY, SCARY ARTIFACT THAT IS DRAINING YOUR BLOOD, then go ahead and have your spooky reward.
 		charges -= 10

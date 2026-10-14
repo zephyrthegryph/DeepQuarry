@@ -15,7 +15,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 /datum/planet/sif/New()
 	..()
 	GLOB.planet_sif = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/sif(src)) // Cold weather is also nice.
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/sif(src)) // Cold weather is also nice.
 
 // This code is horrible.
 /datum/planet/sif/update_sun()
@@ -94,7 +94,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 // We're gonna pretend there are 32 hours in a Sif day instead of 32.64 for the purposes of not losing sanity.  We lose 38m 24s but the alternative is a path to madness.
 /datum/time/sif
@@ -200,7 +200,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 /*
 /datum/weather/sif/snow/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in GLOB.cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -221,7 +221,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 /*
 /datum/weather/sif/blizzard/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in GLOB.cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -859,7 +859,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 					H.drop_both_hands()
 
 		L.water_act(2)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 
@@ -930,7 +930,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 			return
 
 		L.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 

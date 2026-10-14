@@ -29,14 +29,12 @@
 
 	req_one_access = list(ACCESS_HEADS)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/cryopod/appearance_overlays()
-	. = list()
-	. += ..()
-	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))
-		icon_state = "[initial(icon_state)]-p"
+/obj/machinery/computer/cryopod/draw(datum/look/look)
+	..()
+	if((power_lost()) || (broken_now()))
+		look.state("[initial(icon_state)]-p")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 /obj/machinery/computer/cryopod/robot
 	name = "robotic storage console"
@@ -74,33 +72,23 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, TYPE_PROC_REF(/atom, ap
 	storage_name = "Travel Oversight Control"
 	allow_items = 1
 
-/obj/machinery/computer/cryopod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/cryopod_console_open_ui,
-	)
-	..()
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/cryopod_console_open_ui
-	id = "cryopod_console_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/cryopod, "CryoStorage")
+CAPABILITIES(/obj/machinery/computer/cryopod)
+	interface("CryoStorage")
+	ui_shape(allow_items = bool(), real_name = schema_text(), crew = list_of(schema_text()), items = list_of(schema_text()))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/cryopod/ui_title(mob/user)
 	return storage_name
 
-UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_machinery_computer_cryopod{real_name:text,crew:bool,items:list}")
-
-/// The computed part of /obj/machinery/computer/cryopod's window data (declared on its UI_DATA row).
-/obj/machinery/computer/cryopod/proc/ui_data_obj_machinery_computer_cryopod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/cryopod/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	data["real_name"] = user.real_name
@@ -118,6 +106,7 @@ UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_m
 			*/
 	data["items"] = items
 
+	data["allow_items"] = allow_items
 	return data
 
 /obj/item/circuitboard/cryopodcontrol
@@ -157,11 +146,7 @@ UI_DATA(/obj/machinery/computer/cryopod, "allow_items:num", "merge:ui_data_obj_m
 	density = TRUE
 
 //Cryopods themselves.
-OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
-DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupied")
-
-/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
-/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
+/// The pod holds someone (the occupant slot's link/unlink publishes the slot key on the pod).
 /obj/machinery/cryopod/proc/cryopod_occupied()
 	return slot_item(OCCUPANT_SLOT_CRYOPOD) ? TRUE : FALSE
 
@@ -186,7 +171,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 	var/on_store_visible_message_2 = "into storage."
 	var/announce_channel = "Common"
 	var/allow_occupant_types = list(/mob/living/carbon/human)
-	var/disallow_occupant_types = list()
+	var/list/disallow_occupant_types
 
 	var/time_till_despawn = 60 // Down to 1 minute to reflect respawn times. //Now 6 seconds. Mind the deciseconds.
 	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
@@ -265,18 +250,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 /obj/machinery/cryopod/lifecycle_dematerialize()
 	var/mob/occupant = slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
-		occupant.resting = 1
+		occupant.set_resting(1)
 	..()
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc
 /// became the pod took no heat or damage path either way).
-/datum/om/relation/slot/occupant/cryopod
+/datum/relation_definition/slot/occupant/cryopod
 	holder = /obj/machinery/cryopod
 	slot_id = OCCUPANT_SLOT_CRYOPOD
 	name = "cryopod"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/intercom)
 
 /obj/machinery/cryopod/Initialize(mapload)
 	. = ..()
@@ -315,7 +298,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	return 1
 
 //Lifted from Unity stasis.dm and refactored. ~Zuhayr
-/obj/machinery/cryopod/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/cryopod)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cryopod_occupied))
+	op("cryopod_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put grabbed victim in"), needs(req(PROC_REF(can_take_occupant))), needs(req(PROC_REF(loading_passenger_allowed), silent = TRUE)), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
+	op("cryopod_eject", menu(), label("Eject Pod"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_eject)))
+	op("cryopod_enter", menu(), label("Enter Pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(self_entry_allowed), silent = TRUE), req(PROC_REF(can_enter))), starts(PROC_REF(self_entry_started)), wait(2 SECONDS), then(PROC_REF(interaction_enter)))
+	op("cryopod_drag_in", item(/mob), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put in pod"), needs(req_adjacent(), req_capable(), req(PROC_REF(loading_drag_adjacent), silent = TRUE), req(PROC_REF(loading_passenger_allowed), silent = TRUE), req(PROC_REF(can_take_occupant))), asks(/datum/prompt/yes_no, list("title" = "Cryopod", "question" = "Would you like to enter long-term storage?"), answerer = PROC_REF(loading_passenger), when = PROC_REF(loading_needs_consent), ends_on_no = TRUE), begins(PROC_REF(loading_message)), wait(2 SECONDS), then(PROC_REF(loading_done)))
+	ref_one(nameof(control_computer), /obj/machinery/computer/cryopod)
+
+/obj/machinery/cryopod/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		if(occupant.loc != src)
@@ -338,20 +330,20 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	var/mob/living/silicon/robot/R = to_despawn
 	if(!istype(R)) return ..()
 
-	qdel(R.mmi)
+	rel_clear(R, nameof(R.mmi), OWN_DELETE)
 	for(var/obj/item/I in R.module) // the tools the borg has; metal, glass, guns etc
 		for(var/mob/M in I)
 			despawn_occupant(M)
 		for(var/obj/item/O in I) // the things inside the tools, if anything; mainly for janiborg trash bags
 			O.forceMove(R)
-		qdel(I)
-	qdel(R.module)
+		spent(I)
+	rel_clear(R, nameof(R.module))
 
 	return ..()
 
 /obj/machinery/cryopod/robot/door/gateway/despawn_occupant()
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "off"
+		G.set_icon_state("off")
 	..()
 
 // This function can not be undone; do not call this unless you are sure
@@ -405,7 +397,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			for(var/mob/living/V in W.possessed_voice) // Revert temporary patch
 				// Don't try and despawn, instead just ghost and delete, same as item destruction
 				V.ghostize(0)
-				qdel(V)
+				spent(V)
 		// ition Start
 		if(istype(W, /obj/item/pda))
 			var/obj/item/pda/found_pda = W
@@ -426,11 +418,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			for(var/obj/machinery/computer/cloning/com in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				for(var/datum/dna2/record/R in com.records)
 					if(locate(R.implant) == W)
-						qdel(R)
-						qdel(W)
+						spent(R)
+						spent(W)
 
 		if(!preserve)
-			qdel(W)
+			spent(W)
 		else
 			log_special_item(W,to_despawn)
 			/* We do our own thing.
@@ -442,7 +434,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			*/
 	for(var/obj/structure/B in items)
 		if(istype(B,/obj/structure/bed))
-			qdel(B)
+			spent(B)
 
 	//Update any existing objectives involving this mob.
 	for(var/datum/objective/O in REGISTRY_MEMBERS(REGISTRY_OBJECTIVES))
@@ -451,11 +443,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		if(O.target == to_despawn.mind)
 			if(O.owner && O.owner.current)
 				to_chat(O.owner.current, span_warning("You get the feeling your target is no longer within your reach..."))
-			qdel(O)
+			spent(O)
 
 	// Resleeving.
 	if(to_despawn.mind)
-		GLOB.transcore_service.leave_round(to_despawn)
+		SStranscore.leave_round(to_despawn)
 	// Resleeving.
 
 		// Everything below should only be applicable to a cliented living/carbon/human.
@@ -467,9 +459,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		to_despawn.mind.assigned_role = null
 
 		if(to_despawn.mind.objectives.len)
-			qdel(to_despawn.mind.objectives)
+			rel_clear(to_despawn.mind, nameof(/datum/mind::objectives))
 			to_despawn.mind.special_role = null
-
 
 		// Delete them from datacore.
 
@@ -477,28 +468,28 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 			GLOB.PDA_Manifest.Cut()
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == to_despawn.real_name))
-				qdel(R)
+				spent(R)
 		for(var/datum/data/record/T in GLOB.data_core.security)
 			if((T.fields["name"] == to_despawn.real_name))
-				qdel(T)
+				spent(T)
 		for(var/datum/data/record/G in GLOB.data_core.general)
 			if((G.fields["name"] == to_despawn.real_name))
-				qdel(G)
+				spent(G)
 
 		// Also check the hidden version of each datacore, if they're an offmap role.
 		var/datum/job/J = SSjob.get_job(job)
 		if(J?.offmap_spawn)
 			for(var/datum/data/record/R in GLOB.data_core.hidden_general)
 				if((R.fields["name"] == to_despawn.real_name))
-					qdel(R)
+					spent(R)
 			for(var/datum/data/record/T in GLOB.data_core.hidden_security)
 				if((T.fields["name"] == to_despawn.real_name))
-					qdel(T)
+					spent(T)
 			for(var/datum/data/record/G in GLOB.data_core.hidden_medical)
 				if((G.fields["name"] == to_despawn.real_name))
-					qdel(G)
+					spent(G)
 
-		icon_state = base_icon_state
+		set_icon_state(base_icon_state)
 
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
@@ -531,60 +522,32 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	to_despawn.ckey = null
 
 	// Delete the mob.
-	qdel(to_despawn)
+	spent(to_despawn)
 	set_occupant(null)
 
-/obj/machinery/cryopod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cryopod_insert_grab,
-		/datum/interaction/machine_verb/cryopod_eject,
-		/datum/interaction/machine_verb/cryopod_enter,
-		/datum/interaction/machine_drag/cryopod_drag_in,
-	)
-	..()
-
-/// Old attackby: only a grab was ever handled (no `..()` fallback for anything else).
-/datum/interaction/machine_item/cryopod_insert_grab
-	id = "cryopod_insert_grab"
-	name = "Put grabbed victim in"
-	held_type = /obj/item/grab
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_take_occupant))
-	effect = /obj/machinery/cryopod/proc/interaction_insert_grab
-
 /// Requirement: the pod must be empty.
-/obj/machinery/cryopod/proc/can_take_occupant(mob/user, atom/target, obj/item/held)
-	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+/obj/machinery/cryopod/proc/can_take_occupant(datum/act/op/A)
+	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
-	return TRUE
+	return null
 
-/// Requirement for climbing in: TRUE, or why the user can't.
-/obj/machinery/cryopod/proc/can_enter(mob/user, atom/target, obj/item/held)
+/// Requirement for climbing in: null, or why the user can't.
+/obj/machinery/cryopod/proc/can_enter(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_occupant_allowed(user))
-		return TRUE // the effect declines silently
-	if(slot_item(OCCUPANT_SLOT_CRYOPOD))
+		return null // the effect declines silently
+	if(slot_occupant(OCCUPANT_SLOT_CRYOPOD))
 		return "it's in use"
 	if(isliving(user))
 		var/mob/living/L = user
 		if(L.has_buckled_mobs())
 			return "you have other entities attached to yourself, remove them first"
-	return TRUE
+	return null
 
-/obj/machinery/cryopod/proc/interaction_insert_grab(mob/user, obj/item/grab/grab, datum/interaction/interaction)
-	if(!ismob(grab?.grab_target()))
-		return TRUE
-	go_in(grab?.grab_target(), user)
-	return TRUE
-
-/// Old object verb.
-/datum/interaction/machine_verb/cryopod_eject
-	id = "cryopod_eject"
-	name = "Eject Pod"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/cryopod/proc/interaction_eject
-
-/obj/machinery/cryopod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cryopod/proc/interaction_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	icon_state = base_icon_state
+	set_icon_state(base_icon_state)
 
 	//Eject any items that aren't meant to be in the pod.
 	var/list/items = contents
@@ -603,22 +566,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	name = initial(name)
 	return TRUE
 
-/// Old object verb. A disallowed occupant type is still declined silently in the effect;
-/// the occupied/buckled refusals are can_enter().
-/datum/interaction/machine_verb/cryopod_enter
-	id = "cryopod_enter"
-	name = "Enter Pod"
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/cryopod/proc/can_enter))
-	effect = /obj/machinery/cryopod/proc/interaction_enter
+/obj/machinery/cryopod/proc/self_entry_allowed(datum/act/op/A)
+	return read_once(check_occupant_allowed(A.actor)) ? null : MSG(req_silent)
 
-/obj/machinery/cryopod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!check_occupant_allowed(user))
-		return TRUE
+/obj/machinery/cryopod/proc/self_entry_started(datum/act/op/A)
+	act_message(A.actor, src, others = "%U% [on_enter_visible_message] %T%.")
 
-	act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
-
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_enter_timed_done), done_args = list(user))
-
+/obj/machinery/cryopod/proc/interaction_enter(datum/act/op/A)
+	interaction_enter_timed_done(A.actor)
 	return TRUE
 
 /obj/machinery/cryopod/proc/interaction_enter_timed_done(mob/user)
@@ -631,7 +586,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		return TRUE
 
 	user.stop_pulling()
-	if(!user.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, user, user))
 		return TRUE
 	set_occupant(user)
 	if(isliving(user) && applies_stasis)
@@ -641,7 +596,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		var/atom/movable/_tmp_buck_6 = user?.buckled_to()
 		_tmp_buck_6.forceMove(user.loc)
 
-	icon_state = occupied_icon_state
+	set_icon_state(occupied_icon_state)
 
 	to_chat(user, span_notice("[on_enter_occupant_message]"))
 	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
@@ -650,29 +605,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 	add_fingerprint(user)
 
-/// Old MouseDrop_T: silent guard clauses (no message), so kept inside the effect.
-/datum/interaction/machine_drag/cryopod_drag_in
-	id = "cryopod_drag_in"
-	name = "Put in pod"
-	held_type = /mob
-	effect = /obj/machinery/cryopod/proc/interaction_drag_in
-
-/obj/machinery/cryopod/proc/interaction_drag_in(mob/user, mob/target, datum/interaction/interaction)
-	if(user.stat || user.lying || !Adjacent(user) || !target.Adjacent(user))
-		return TRUE
-	go_in(target, user)
-	return TRUE
-
-/obj/machinery/cryopod/robot/door/gateway/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cryopod/robot/door/gateway/self_entry_started(datum/act/op/A)
 	. = ..()
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "on"
+		G.set_icon_state("on")
 	return .
 
 /obj/machinery/cryopod/robot/door/gateway/go_out(skip_move = FALSE)
 	..(skip_move)
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "off"
+		G.set_icon_state("off")
 
 /obj/machinery/cryopod/proc/go_out(skip_move = FALSE)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -687,7 +629,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		L.set_stasis(null, src)
 	set_occupant(null)
 
-	icon_state = base_icon_state
+	set_icon_state(base_icon_state)
 
 	return
 
@@ -697,42 +639,32 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	if(occupant)
 		name = "[name] ([occupant])"
 
-/obj/machinery/cryopod/proc/go_in(mob/M, mob/user)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	if(!check_occupant_allowed(M))
-		return
-	if(!M)
-		return
-	if(occupant)
-		to_chat(user, span_warning("\The [src] is already occupied."))
-		return
+/// The loader remains the actor; a live passenger answers the consent step.
+/obj/machinery/cryopod/proc/loading_passenger(datum/act/op/A)
+	if(istype(A.held, /obj/item/grab))
+		var/obj/item/grab/G = A.held
+		return G.grab_target()
+	return ismob(A.held) ? A.held : null
 
-	if(M.client)
-		om_ask(M, /datum/om/prompt/confirm/cryo_consent, PROC_REF(storage_consent_answered), loader = user)
-		return
-	finish_go_in(M, user, 1)
+/obj/machinery/cryopod/proc/loading_passenger_allowed(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && !QDELETED(M) && read_once(check_occupant_allowed(M)) ? null : MSG(req_silent)
 
-/datum/om/prompt/confirm/cryo_consent
-	title = "Cryopod"
-	message = "Would you like to enter long-term storage?"
-	requires = PROMPT_ADJACENT
-	var/mob/loader
+/obj/machinery/cryopod/proc/loading_drag_adjacent(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && M.Adjacent(A.actor) ? null : MSG(req_silent)
 
-/obj/machinery/cryopod/proc/storage_consent_answered(datum/om/prompt/confirm/cryo_consent/ask)
-	finish_go_in(ask.answerer, ask.loader, TRUE)
+/obj/machinery/cryopod/proc/loading_needs_consent(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	return M && read_once(M.client)
 
-/obj/machinery/cryopod/proc/finish_go_in(mob/M, mob/user, willing)
-
-	if(willing)
-		if(M == user)
-			act_message(user, src, others = "%U% [on_enter_visible_message] %T%.")
-		else
-			act_message(user, M, others = "%U% starts putting %T% into \the [src].")
-
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
-
+/obj/machinery/cryopod/proc/loading_message(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	if(M == A.actor)
+		return msg_text(null, "%U% [on_enter_visible_message] %T%.")
+	return msg_text(null, "%U% starts putting [M] into %T%.")
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
-	icon_state = occupied_icon_state
+	set_icon_state(occupied_icon_state)
 
 	to_chat(M, span_notice("[on_enter_occupant_message]"))
 	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
@@ -753,12 +685,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	//Despawning occurs when process() is called with an occupant without a client.
 	add_fingerprint(M)
 
-/obj/machinery/cryopod/proc/go_in_timed_done(mob/M, mob/user)
+/obj/machinery/cryopod/proc/loading_done(datum/act/op/A)
+	var/mob/M = loading_passenger(A)
+	var/mob/user = A.actor
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
 		to_chat(user, span_warning("\The [src] is already occupied."))
 		return
-	if(!M.move_into(src, OCCUPANT_SLOT_CRYOPOD, user))
+	if(!move_into(src, OCCUPANT_SLOT_CRYOPOD, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]."))
 		return
 	go_in_finish(M, user)
@@ -836,7 +770,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 	// Log to harrass them later
 	log_game("CRYO [loaded_from_key]/([to_despawn.name]) cryo'd with [item_name] ([item.type])")
-	qdel(item)
+	spent(item)
 
 	if(control_computer() && control_computer().allow_items)
 		var/obj/machinery/computer/cryopod/log_console = control_computer()
@@ -854,7 +788,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 /obj/machinery/cryopod/ownership()
 	. = ..()
-	. += owns(nameof(announce), policy = OWN_CONTAINED)
+	. += owns(nameof(announce), policy = OWN_CONTAINED, starts = /obj/item/radio/intercom)
 
 /// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

@@ -56,22 +56,24 @@
 	desc = "You probably shouldn't be able to see this."
 	stage = 2
 	path = 1
+	icon_state = null // never seen: it goes off as it appears
 
-/obj/item/grenade/chem_grenade/miasma/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+// Its two beakers come filled; it goes off as soon as it exists.
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a
 
-	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30) // ALLOW(decl): fills the grenade's own beakers
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5) // ALLOW(decl): fills the grenade's own beakers
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5) // ALLOW(decl): fills the grenade's own beakers
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5) // ALLOW(decl): fills the grenade's own beakers
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a)
+	configure(reagents(add = list(REAGENT_ID_MIASMA = 30, REAGENT_ID_POTASSIUM = 5)))
 
-	own_add(src, nameof(beakers), B1)
-	own_add(src, nameof(beakers), B2)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b
 
-	icon_state = null // ALLOW(decl): hidden just before it detonates
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5)))
 
+CAPABILITIES(/obj/item/grenade/chem_grenade/miasma)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b))
+	after_init(0, then(PROC_REF(go_off)))
+
+/obj/item/grenade/chem_grenade/miasma/proc/go_off(datum/act/timer/A)
 	detonate()
 
 //Has a chance to play one of the listed sounds when it moves.
@@ -81,22 +83,27 @@
 		play_sfx(src, SFX_H_SOUNDS_HEADCRAB_2)
 
 //Plays the sound every ~4 seconds.
-/datum/om/stage/life/type_post/simple_mob/humanoid/possessed
-	of = /mob/living/simple_mob/humanoid/possessed
+/mob/living/simple_mob/humanoid/possessed/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/humanoid/possessed/perform(mob/living/simple_mob/humanoid/possessed/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/humanoid/possessed/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.idle <= 0 && self.silenced == 0)
-		play_sfx(self, SFX_H_SOUNDS_BREATHING)
-		self.idle = 4
-	self.idle--
+	if(src.idle <= 0 && src.silenced == 0)
+		play_sfx(src, SFX_H_SOUNDS_BREATHING)
+		src.idle = 4
+	src.idle--
 
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
 // the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/on_destroy(force)
+	collapse()
+	..()
+
+/// The collapse: a message, a sound, gibs, remains and a miasma grenade where the suit stood.
+/mob/living/simple_mob/humanoid/possessed/proc/collapse()
 	var/droploc = get_turf(src)
-	play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40) // ALLOW(decl): paired with the random death message
-	act_message(src, null, null, MSG_OTHERS(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.", // ALLOW(decl): random message
+	play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
+	act_message(src, null, null, MSG_OTHERS(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
 	"%U% shudders as some hurt living thing, reeling as screaming servos overcompensate beneath the weight of that debilitating strike - the horrid sounds of shattered metal resonate as the RIG rips itself apart. Limbs flung about in distinctly inhuman motions in a final failed effort at balance before buckling inwards at the joints, hydraulic fluid jettisoned as blood from a severed artery as the long liquidized contents of the suit's ex-pilot spill from its chassis in a thick slurry.",
 	"Hissing atmosphereic valves pop and snap, breaking the ageless seal as the putrid stench of rot and carrion assaults the senses in debilitating waves. The damaged RIG's visor alight with warnings of hazardous atmospheric conditions as a final distorted scream echos from within the damaged chassis. The fetid miasma that breeches through those wheezing seals overtaken by a wet burble and plop as the suit is bathed in the liquid contents of its passenger, blackened flesh fed through those narrow seals as rotten grounds.",
 	"The timeworn suit's seals finally crack open with a hiss - spilling forth a thick fungal mist. The control module ejects from the rig as it loses all control impulses - leaving behind but a pile of bones and the rotten sludge it had been swimming in for heaven knows how long.",
@@ -114,7 +121,6 @@
 	*/
 	new /obj/effect/decal/remains/human(droploc)
 	new /obj/item/grenade/chem_grenade/miasma(droploc)
-	..()
 
 //What about if someone's in it? Well here you go.
 /mob/living/simple_mob/humanoid/possessed/Login()
@@ -150,5 +156,7 @@
 /mob/living/simple_mob/humanoid/possessed/merc/feral	// Special one that moves faster attacks faster. Intended as a special mech pilot
 	desc = "A blood-red hardsuit featuring some fairly illegal technology. Seems to be worn down and damaged but moving with surprising speed!"
 	movement_cooldown 				= 3		//You can try running
-	base_attack_cooldown 			= 3		//You will just die tired
 	melee_miss_chance				= 25	//Not very coordinated though
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/possessed/merc/feral)
+	configure(mob_kind(attack_cooldown = 3))

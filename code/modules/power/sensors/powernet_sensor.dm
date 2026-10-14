@@ -7,8 +7,6 @@
 // may be used in PDAs or similar applications. Second proc, return_reading_data will return list containing needed data.
 // This is used in NanoUI, for example.
 
-OWN_TIMER(/obj/machinery/power/sensor, record_timer)
-
 /obj/machinery/power/sensor
 	name = "Powernet Sensor"
 	desc = "Small machine which transmits data about specific powernet"
@@ -21,11 +19,15 @@ OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 	var/name_tag = "#UNKN#" // ID tag displayed in list of powernet sensors. Each sensor should have it's own tag!
 	var/long_range = 0		// If 1, sensor reading will show on all computers, regardless of Zlevel
 
-	var/list/history = list() // ALLOW(instance_list): M3 power (Rust): sensor code rewritten on master; not edited here
+	var/list/history = list() // ALLOW(instance_list): the sensor's reading history: appended to on every update, always in use
 	var/record_size = 60
 	var/record_interval = 50
 	var/next_record = 0
 	var/is_secret_monitor = FALSE
+
+// The sensor samples its network every record_interval (sensor_step()); the power monitors read its history.
+CAPABILITIES(/obj/machinery/power/sensor)
+	every(PROC_REF(record_delay), then(PROC_REF(sensor_step)))
 
 // Proc: Initialize(mapload)
 // Parameters: None
@@ -39,21 +41,12 @@ OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 	history["demand"] = list()
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PM.power_monitor?.refresh_sensors()
-		MACHINE_WAKE(PM)
 
 // Proc: auto_set_name()
 // Parameters: None
 // Description: Sets name of this sensor according to the ID tag.
 /obj/machinery/power/sensor/proc/auto_set_name()
 	name = "[name_tag] - Powernet Sensor"
-
-// A dying sensor leaves every monitor's grid_sensors view by itself (a relation view); the
-// monitors only need a wake to redraw without it.
-/obj/machinery/power/sensor/on_destroy(force)
-	..()
-	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(PM.power_monitor)
-			MACHINE_WAKE(PM)
 
 // Proc: check_grid_warning()
 // Parameters: None
@@ -65,25 +58,18 @@ OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 			return 1
 	return 0
 
-// Proc: process()
-// Parameters: None
-// Description: This tracks historical usage, for TGUI power monitors
-/obj/machinery/power/sensor/machine_step()
+/// The time between samples.
+/obj/machinery/power/sensor/proc/record_delay(datum/act/A)
+	return record_interval
+
+/// One sample of its network's supply and demand, for the power monitors (unwired, it looks for a cable).
+/obj/machinery/power/sensor/proc/sensor_step(datum/act/timer/A)
 	if(!power_region)
 		set_use_power(USE_POWER_IDLE)
 		connect_to_network()
 	else
 		set_use_power(USE_POWER_ACTIVE)
 		record()
-	if(!om_timer_slot_pending(src, "record_timer"))
-		var/delay = power_region ? max(1, next_record - world.time) : record_interval
-		after_slot(src, "record_timer", delay, PROC_REF(wake_for_record))
-	return PROCESS_KILL
-
-/obj/machinery/power/sensor/proc/wake_for_record()
-	// Sampling is already timer-driven and does not sleep. Do it directly rather
-	// than enrolling every sensor for a one-call wake-and-kill machinery pass.
-	machine_step()
 
 /// What this monitor shows for the grid's load: the mean of the live ledger value and its last few history samples.
 /// The grid keeps no eased copy of its own (power_grid.dm); smoothing what a reading shows is the reader's.
@@ -114,9 +100,19 @@ OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
-UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=record_size:num", "history:list", "merge:ui_data_obj_machinery_power_sensor{interval:num,attached:bool,areas:list}")
+/// The sensor's reading as the power monitor's window shows it (its focus): the sensor has no window of its own.
+/obj/machinery/power/sensor/proc/monitor_data(mob/user)
+	var/list/data = list()
+	data["name"] = name_tag
+	data["stored"] = record_size
+	data["history"] = history
+	var/list/computed = ui_data_obj_machinery_power_sensor(user, null, null)
+	if(islist(computed))
+		for(var/key in computed)
+			data[key] = computed[key]
+	return data
 
-/// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
+/// /obj/machinery/power/sensor's window data.
 /obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -138,7 +134,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 					// APCs. A positional tuple avoids repeating seven JSON field names
 					// per row, cutting Power Monitor bridge traffic substantially.
 					data["areas"] += list(list(
-						A.area().name,
+						A.area.name,
 						cell_charge,
 						DisplayPower(A.channel_load_total()),
 						A.charging,
@@ -211,7 +207,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 
 		// Split to multiple lines to make it more readable
 		for(var/obj/machinery/power/apc/A in L)
-			out += "<tr><td>\The [A.area()]" 															// Add area name
+			out += "<tr><td>\The [A.area]" 															// Add area name
 			out += "<td>[S[A.equipment+1]]<td>[S[A.lighting+1]]<td>[S[A.environ+1]]" 				// Show status of channels
 			if(A.cell)
 				out += "<td>[round(A.cell.percent())]% - [chg[A.charging+1]]"
@@ -269,7 +265,7 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 			// Other info
 			APC_entry["total_load"] = reading_to_text(A.channel_load_total())
 			// Hopefully removes those goddamn \improper s which are screwing up the UI
-			var/N = A.area().name
+			var/N = A.area.name
 			if(findtext(N, "\improper"))
 				N = copytext(N, 3)
 			APC_entry["name"] = N
@@ -291,6 +287,6 @@ UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=recor
 	data["alarm"] = power_problem(power_region) ? 1 : 0
 	return data
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Its declared start condition (started_work(starts =)).
 /obj/machinery/power/sensor/step_start_condition()
 	return TRUE // schedules its history samples

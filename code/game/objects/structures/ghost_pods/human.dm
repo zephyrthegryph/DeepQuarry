@@ -22,10 +22,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/ghost_activated/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/ghost_activated/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/ghost_activated/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()
@@ -100,12 +102,12 @@
 		E.description_antag = "This is a 'disguised' emag, to make your escape from wherever you happen to be trapped."
 		H.equip_to_appropriate_slot(E)
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 
 	if(make_antag)
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[make_antag]
+		var/datum/antagonist/antag = antag_all_antag_types()[make_antag]
 		if(antag)
 			if(antag.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")
@@ -120,7 +122,7 @@
 	H.offer_spawn_rename()
 
 
-	qdel(src)
+	spent(src, M)
 
 // Manual Variant
 // This one lacks the emag option due to the fact someone has to activate it, and they will probably help the person.
@@ -144,10 +146,12 @@
 
 	var/list/clothing_possibilities
 
-/obj/structure/ghost_pod/manual/human/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/ghost_pod/manual/human)
+	after_init(0, then(PROC_REF(init_clothing_setup)))
 
+/obj/structure/ghost_pod/manual/human/proc/init_clothing_setup(datum/act/timer/A)
 	handle_clothing_setup()
+
 
 /obj/structure/ghost_pod/manual/human/proc/handle_clothing_setup()
 	clothing_possibilities = list()
@@ -170,7 +174,7 @@
 		to_chat(M, span_warning("Your intent may not be completely beneficial."))
 	H.ckey = M.ckey
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
-	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].")
+	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].", opening_actor)
 
 	var/list/uniform_options
 	var/list/shoe_options
@@ -218,12 +222,12 @@
 
 	H.offer_spawn_rename()
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 
 	if(make_antag)
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[make_antag]
+		var/datum/antagonist/antag = antag_all_antag_types()[make_antag]
 		if(antag)
 			if(antag.add_antagonist(H.mind, 1, 1, 0, 1, 1))
 				log_admin("\The [src] made [key_name(src)] into a [antag.role_text].")

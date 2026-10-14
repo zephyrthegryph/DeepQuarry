@@ -1,6 +1,4 @@
 #define BP_MAX_ROOM_SIZE 300
-/// Blueprint prompts: the creator is still standing where they started (the prompt's target turf) and able.
-#define BLUEPRINT_PROMPT_REQUIRES list(CHECK(/datum/om/check/in_range, 0), /datum/om/check/not_incapacitated)
 
 // WARNING: ESOTERIC BULLSHIT INSIDE OF THIS FILE.
 // This is a port of /tg/'s blueprints that also have Virgo modifications as well.
@@ -27,7 +25,6 @@
 	name = "area modification item"
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
-	attack_verb = list("attacked", "bapped", "hit")
 	in_use = FALSE
 	preserve_item = 1
 	var/uses_charges = 0 					// If the area editor has limited uses.
@@ -58,35 +55,90 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-DECLARE_INTERACTIONS(/obj/item/areaeditor, \
-	INTERACT_USE("Read", PROC_REF(areaeditor_text)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/areaeditor, charges)
 
-/// Old attackby.
-/obj/item/areaeditor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(uses_charges && (charges < initial_charges) && istype(W, /obj/item/areaeditor)) //Do we have a reason to add charges? And is it something that COULD add charges?
-		var/missing_charges = initial_charges-charges
-		var/obj/item/areaeditor/blueprint = W
-		if(blueprint.station_master) //Master can refill.
-			charges = initial_charges
-			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-			return INTERACTION_HANDLED_PASS
-		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
-			om_ask(user, /datum/om/prompt/number/blueprint_charges, PROC_REF(add_charges), subject = blueprint, title = "[blueprint]", message = "How many charges do you want to add to the [src]?", default = missing_charges, max = blueprint.charges)
-			return INTERACTION_HANDLED_PASS
-		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
-			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
+CAPABILITIES(/obj/item/areaeditor)
+	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
+	// the old attack_self: read it
+	op("read", in_hand(), label("Read"), then(PROC_REF(read_editor)))
+	// another editor tops up a limited one's charges (a master refills it; a limited one gives the number asked)
+	op("add_charges", item(/obj/item/areaeditor), label("Add material"),
+		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(donor_title)), "question" = computed(PROC_REF(charges_question)), "default" = computed(PROC_REF(missing_charges)), "min_value" = 0, "max_value" = computed(PROC_REF(donor_charges)), "timeout" = 0), when = PROC_REF(asks_charges)),
+		then(PROC_REF(interaction_item)))
+	// the old object verbs
+	op("room_colors", menu(), label("Show Room Colors"), needs(carried()), then(PROC_REF(verb_room_colors)))
+	op("area_colors", menu(), label("Show Area Colors"), needs(carried()), then(PROC_REF(verb_area_colors)))
+	op("remove_colors", menu(), label("Remove Area Colors"), needs(carried()), then(PROC_REF(verb_remove_colors)))
+	op("create_area", topic("create_area"), then(PROC_REF(topic_create_area)))
+	op("create_area_whole", topic("create_area_whole"), then(PROC_REF(topic_create_area_whole)))
+
+/obj/item/areaeditor/proc/verb_room_colors(datum/act/op/A)
+	seeRoomColors_effect(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/proc/verb_area_colors(datum/act/op/A)
+	seeAreaColors_effect(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/proc/verb_remove_colors(datum/act/op/A)
+	seeAreaColors_remove_effect(A.actor)
+	return OP_OK
+
+/// The old attack_self: the editor's page (a plain area editor only builds it; the blueprints show theirs).
+/obj/item/areaeditor/proc/read_editor(datum/act/op/A)
+	areaeditor_text(A.actor)
+	return OP_OK
+
+/// The number is asked when this editor is short of charges and the other is a limited one with charges to give.
+/obj/item/areaeditor/proc/asks_charges(datum/act/op/A)
+	var/obj/item/areaeditor/blueprint = A.held
+	return uses_charges && charges < initial_charges && !blueprint.station_master && blueprint.uses_charges && blueprint.charges
+
+/obj/item/areaeditor/proc/donor_title(datum/act/op/A)
+	return "[A.held]"
+
+/obj/item/areaeditor/proc/charges_question(datum/act/op/A)
+	return "How many charges do you want to add to the [src]?"
+
+/obj/item/areaeditor/proc/missing_charges(datum/act/op/A)
+	return initial_charges - charges
+
+/obj/item/areaeditor/proc/donor_charges(datum/act/op/A)
+	var/obj/item/areaeditor/blueprint = A.held
+	return blueprint.charges
+
+/// Old attackby: another editor adds material to a limited one.
+/obj/item/areaeditor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/areaeditor/blueprint = A.held
+	if(!uses_charges || charges >= initial_charges) //Do we have a reason to add charges?
+		return OP_DECLINE
+	if(blueprint.station_master) //Master can refill.
+		set_charges(initial_charges)
+		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
+		return OP_PASS
+	if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
+		to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
+		return OP_PASS
+	var/datum/prompt/R = A.answer
+	if(isnull(R?.value))
+		to_chat(user, span_notice("You decide not to add any more material."))
+		return OP_PASS
+	var/to_add = min(R.value, initial_charges - charges)
+	if(blueprint.charges >= to_add)
+		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
+		blueprint.set_charges(blueprint.charges - to_add)
+		set_charges(charges + to_add)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		charges_not_added(user)
+	return OP_PASS
 
 /// Old attack_self: builds the area editing page, which subtypes add to and show. Convert this to TGUI some time.
-/obj/item/areaeditor/proc/areaeditor_text(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/areaeditor_text(mob/user)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
-	switch(get_area_type())
+	switch(get_area_type(get_area(user)))
 		if(AREA_SPACE)
 			. += "<p>According to the [src.name], you are now in an unclaimed territory.</p>"
 		if(AREA_SPECIAL)
@@ -102,18 +154,18 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, \
 		else
 			. += "Your [src.name] seems like it has enough room for [charges] more edits!"
 
-TOPIC_ACTION(/obj/item/areaeditor, "create_area", PROC_REF(topic_create_area))
-TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_area_whole))
 
 // The editor works only in the active hand of someone able to use it.
-/obj/item/areaeditor/topic_allowed(mob/user, list/href_list)
+/obj/item/areaeditor/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
+	var/mob/user = A.actor
 	if(user.restrained() || user.stat || user.get_active_hand() != src)
-		return FALSE
+		return MSG(op/topic_gate)
 
-/obj/item/areaeditor/proc/topic_create_area(mob/user, list/args)
+/obj/item/areaeditor/proc/topic_create_area(datum/act/op/op_act)
+	var/mob/user = op_act.actor
 	if(in_use)
 		return
 	var/area/A = get_area(user)
@@ -126,7 +178,8 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 	updateUsrDialog(user)
 	return TRUE
 
-/obj/item/areaeditor/proc/topic_create_area_whole(mob/user, list/args)
+/obj/item/areaeditor/proc/topic_create_area_whole(datum/act/op/A)
+	var/mob/user = A.actor
 	if(in_use)
 		return
 	in_use = TRUE
@@ -141,14 +194,18 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 	desc = "A blueprint detailing the various internal wiring of machinery around the station."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
-	attack_verb = list("attacked", "bapped", "hit")
 	preserve_item = 1
 	var/legend = 1
 
-DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(interaction_read_wires)))
+CAPABILITIES(/obj/item/wire_reader)
+	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
+	op("read_wires", in_hand(), label("Read"), then(PROC_REF(interaction_read_wires)))
+	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))
+	op("view_legend", topic("view_legend"), then(PROC_REF(topic_view_legend)))
 
 /// Old attack_self. Convert this to TGUI some time.
-/obj/item/wire_reader/proc/interaction_read_wires(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/wire_reader/proc/interaction_read_wires(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -162,15 +219,15 @@ DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(intera
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-TOPIC_ACTION(/obj/item/wire_reader, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
-TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 
-/obj/item/wire_reader/proc/topic_view_wireset(mob/user, list/args)
-	legend = args["view_wireset"]
+/obj/item/wire_reader/proc/topic_view_wireset(datum/act/op/A, href_view_wireset)
+	var/mob/user = A.actor
+	legend = href_view_wireset
 	attack_self(user)
 	return TRUE
 
-/obj/item/wire_reader/proc/topic_view_legend(mob/user, list/args)
+/obj/item/wire_reader/proc/topic_view_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	legend = TRUE
 	attack_self(user)
 	return TRUE
@@ -178,9 +235,9 @@ TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 /obj/item/wire_reader/proc/view_station_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
 	for(var/wireset in GLOB.wire_color_directory)
-		//if(istype(wireset,/datum/wires/grid_checker))//Uncomment this in if you want the grid checker minigame to not be revealed here.
+		//if(wireset == "Grid Checker")//Uncomment this in if you want the grid checker minigame to not be revealed here.
 		//	continue
-		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[wireset]'>[GLOB.wire_name_directory[wireset]]</a>"
+		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[url_encode(wireset)]'>[GLOB.wire_name_directory[wireset]]</a>"
 	message += "</p>"
 	return message
 
@@ -212,14 +269,16 @@ TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
-EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_REF(interaction_read_blueprints)))
-
 /// Old attack_self: the area editor's page, plus the station and wiring pages, shown.
-/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user, obj/item/held, datum/interaction/interaction)
-	. = areaeditor_text(user, held, interaction)
+/obj/item/areaeditor/blueprints/read_editor(datum/act/op/A)
+	interaction_read_blueprints(A.actor)
+	return OP_OK
+
+/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user)
+	. = areaeditor_text(user)
 	var/area/A = get_area(user)
 	if(!legend)
-		if(get_area_type() == AREA_STATION)
+		if(get_area_type(get_area(user)) == AREA_STATION)
 			. += "<p>According to \the [src], you are now in <b>\"[html_encode(A.name)]\"</b>.</p>"
 			. += "<p><a href='byond://?src=[REF(src)];edit_area=1'>Change area name</a></p>" //You can change the name without charges.
 		if(wire_schematics)
@@ -235,36 +294,41 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "edit_area", PROC_REF(topic_edit_area))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "exit_legend", PROC_REF(topic_exit_legend))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_legend", PROC_REF(topic_view_legend))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
+CAPABILITIES(/obj/item/areaeditor/blueprints)
+	op("edit_area", topic("edit_area"), then(PROC_REF(topic_edit_area)))
+	op("exit_legend", topic("exit_legend"), then(PROC_REF(topic_exit_legend)))
+	op("view_legend", topic("view_legend"), then(PROC_REF(topic_view_legend)))
+	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))
 
-/obj/item/areaeditor/blueprints/proc/topic_edit_area(mob/user, list/args)
-	if(get_area_type()!=AREA_STATION)
+/obj/item/areaeditor/blueprints/proc/topic_edit_area(datum/act/op/A)
+	var/mob/user = A.actor
+	if(get_area_type(get_area(user))!=AREA_STATION)
 		return
 	if(in_use)
 		return
 	in_use = TRUE
-	edit_area()
+	edit_area(user)
 	in_use = FALSE
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_exit_legend(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_exit_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	legend = FALSE
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_view_legend(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_view_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wire_schematics) //No href hacks allow for you, my friend!
 		legend = TRUE
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_view_wireset(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_view_wireset(datum/act/op/A, href_view_wireset)
+	var/mob/user = A.actor
 	if(wire_schematics) //No href hacks allow for you, my friend!
-		legend = args["view_wireset"]
+		legend = href_view_wireset
 	attack_self(user)
 	return TRUE
 
@@ -281,7 +345,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /obj/item/areaeditor/proc/get_area_type(area/A)
 	if(!A)
-		A = get_area(usr)
+		return 0
 	if(A.outdoors)
 		return AREA_SPACE
 
@@ -297,9 +361,9 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 /obj/item/areaeditor/blueprints/proc/view_wire_devices(mob/user)
 	var/message = "<br>You examine the wire legend.<br>"
 	for(var/wireset in GLOB.wire_color_directory)
-		//if(istype(wireset,/datum/wires/grid_checker))//Uncomment this in if you want the grid checker minigame to not be revealed here.
+		//if(wireset == "Grid Checker")//Uncomment this in if you want the grid checker minigame to not be revealed here.
 		//	continue
-		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[wireset]'>[GLOB.wire_name_directory[wireset]]</a>"
+		message += "<br><a href='byond://?src=[REF(src)];view_wireset=[url_encode(wireset)]'>[GLOB.wire_name_directory[wireset]]</a>"
 	message += "</p>"
 	return message
 
@@ -316,42 +380,41 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			return message
 	return ""
 
-/// Moving charges from another blueprint (the subject, still in hand). A cancel says so.
-/datum/om/prompt/number/blueprint_charges
-	requires = PROMPT_IN_HAND
-
-/datum/om/prompt/number/blueprint_charges/cancelled()
-	to_chat(answerer, span_notice("You decide not to add any more material."))
-
-/obj/item/areaeditor/proc/add_charges(datum/om/prompt/number/blueprint_charges/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/areaeditor/blueprint = ask.subject
-	var/to_add = min(ask.number, initial_charges - charges)
-	if(blueprint.charges >= to_add)
-		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
-		blueprint.charges -= to_add
-		charges += to_add
-	else
-		charges_not_added(user)
-
 /obj/item/areaeditor/proc/charges_not_added(mob/user)
 	to_chat(user, span_notice("You decide not to add any more material to the [src]"))
 
-/obj/item/areaeditor/proc/edit_area()
-	var/area/A = get_area(usr)
-	om_ask(usr, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
+/obj/item/areaeditor/proc/edit_area(mob/user)
+	var/area/A = get_area(user)
+	open_request(src, /datum/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), answerer = user, area_to_rename = A)
 
 /// Re-checked on the answer: the blueprint is still in hand.
-/datum/om/prompt/text/blueprint_rename_area
+/datum/prompt/text/blueprint_rename_area
 	title = "Area Creation"
-	message = "New area name"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_IN_HAND
+	question = "New area name"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	timeout = 0
 	var/area/area_to_rename
 
-/obj/item/areaeditor/proc/area_renamed(datum/om/prompt/text/blueprint_rename_area/ask)
+CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
+	ref_one(nameof(area_to_rename), /area)
+
+/datum/prompt/text/blueprint_rename_area/prepare(datum/act/A)
+	..()
+	var/area/captured_area = area_to_rename
+	rel_clear(src, nameof(area_to_rename))
+	rel_set(src, nameof(area_to_rename), captured_area)
+
+/datum/prompt/text/blueprint_rename_area/recheck_extra()
+	return QDELETED(area_to_rename) ? "gone" : null
+
+/obj/item/areaeditor/proc/area_renamed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/blueprint_rename_area/ask = context.answer
 	var/mob/user = ask.answerer
-	var/str = ask.text
+	var/str = ask.value
 	var/area/A = ask.area_to_rename
 	var/prevname = "[A.name]"
 	if(!str || !length(str) || str==prevname) //cancel
@@ -363,9 +426,9 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	rename_area(A, str)
 
 	to_chat(user, span_notice("You rename the '[prevname]' to '[str]'."))
-	log_and_message_admins("has changed the area '[prevname]' title to '[str]'.")
+	log_and_message_admins("has changed the area '[prevname]' title to '[str]'.", user)
 	A.update_areasize()
-	interact()
+	interact(user)
 	return TRUE
 
 //Blueprint Subtypes
@@ -379,16 +442,14 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		return
 	for(var/obj/machinery/alarm/airpanel in area_contents_of_type(area, /obj/machinery/alarm))
 		airpanel.name = replacetext(airpanel.name,oldtitle,title)
-		airpanel.update_area()
 	for(var/obj/machinery/power/apc/apcpanel in area_contents_of_type(area, /obj/machinery/power/apc))
 		apcpanel.name = replacetext(apcpanel.name,oldtitle,title)
 		apcpanel.update_area() //DECIDE IF THIS IS WANTED OR NOT. This can mean that the APC will overwrite the current APC the area being expanded has since areas cant have multiple APCs.
 	for(var/obj/machinery/atmospherics/unary/vent_scrubber/scrubber in area_contents_of_type(area, /obj/machinery/atmospherics/unary/vent_scrubber))
 		scrubber.name = replacetext(scrubber.name,oldtitle,title)
-		scrubber.update_area()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in area_contents_of_type(area, /obj/machinery/atmospherics/unary/vent_pump))
 		vent.name = replacetext(vent.name,oldtitle,title)
-		vent.update_area()
+	area.air_devices_retitled(oldtitle, title)
 	for(var/obj/machinery/door/door in area_contents_of_type(area, /obj/machinery/door))
 		door.name = replacetext(door.name,oldtitle,title)
 	for(var/obj/machinery/firealarm/firepanel in area_contents_of_type(area, /obj/machinery/firealarm))
@@ -464,38 +525,33 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	om_ask_begin(null, creator, /datum/om/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), list(receiver = AO, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs))
+	open_request(AO, /datum/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), answerer = creator, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
 
-/// Blueprint area prompts: the subject is the creator's turf, and they stay on it (BLUEPRINT_PROMPT_REQUIRES).
-/datum/om/prompt/choice/blueprint_expand
-	title = "Area Expansion"
-	message = "Choose an area to expand or make a new area"
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/obj/item/areaeditor/editor
-	var/list/turfs
+/obj/item/areaeditor/proc/create_area_chosen(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_expand/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No choice selected. No adjustments made."))
+		return
+	create_area_chosen_apply(context)
 
-/datum/om/prompt/choice/blueprint_expand/cancelled()
-	to_chat(answerer, span_warning("No choice selected. No adjustments made."))
-
-/// Naming the new area a blueprint makes (the expansion and the whole-room editor).
-/datum/om/prompt/text/blueprint_area_name
-	title = "Blueprint Editing"
-	message = "New area name"
-	max_length = MAX_NAME_LEN
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/obj/item/areaeditor/editor
-	var/list/turfs
-
-/obj/item/areaeditor/proc/create_area_chosen(datum/om/prompt/choice/blueprint_expand/ask)
-	var/area_choice = ask.choices[ask.choice]
+/obj/item/areaeditor/proc/create_area_chosen_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_expand/ask = context.request
+	var/area_choice = ask.choices[ask.value]
 	if(isarea(area_choice))
 		create_area_commit(ask.answerer, src, ask.turfs, area_choice)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, PROC_REF(create_area_named), subject = ask.subject, editor = src, turfs = ask.turfs)
+	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(create_area_named), answerer = ask.answerer, subject = ask.subject, editor = src, turfs = ask.turfs)
 
-/obj/item/areaeditor/proc/create_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+/obj/item/areaeditor/proc/create_area_named(datum/act/request/context)
+	if(!context.answer)
+		return
+	create_area_named_apply(context)
+
+/obj/item/areaeditor/proc/create_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.text
+	var/str = ask.value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -528,10 +584,10 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	if(AO && istype(AO,/obj/item/areaeditor))
 		if(AO.uses_charges)
-			AO.charges -= 1
+			AO.set_charges(AO.charges - (1))
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in GLOB.planet_service.planets)
+	for(var/datum/planet/PL in planets_planets())
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
@@ -592,48 +648,38 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		areas[place.name] = place
 
 	//They can select an area they want to turn their current area into.
-	om_ask(creator, /datum/om/prompt/choice/blueprint_whole_area, PROC_REF(whole_area_chosen), subject = get_turf(creator), choices = areas, turfs = turfs, can_make_new_area = can_make_new_area)
+	open_request(src, /datum/prompt/choice/blueprint_whole_area, PROC_REF(whole_area_chosen), answerer = creator, subject = get_turf(creator), choices = areas, turfs = turfs, can_make_new_area = can_make_new_area)
 
-/datum/om/prompt/choice/blueprint_whole_area
-	title = "Area Expansion"
-	message = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?"
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/list/turfs
-	var/can_make_new_area
+/obj/item/areaeditor/proc/whole_area_chosen(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No changes made."))
+		return
+	whole_area_chosen_apply(context)
 
-/datum/om/prompt/choice/blueprint_whole_area/cancelled()
-	to_chat(answerer, span_warning("No changes made."))
-
-/// The last "are you sure?" before the whole room changes area. No, or a cancel, says so.
-/datum/om/prompt/confirm/blueprint_whole_area
-	title = "READ CAREFULLY"
-	no_first = TRUE
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/list/turfs
-	var/area/chosen_area
-	var/new_name
-
-/datum/om/prompt/confirm/blueprint_whole_area/cancelled()
-	to_chat(answerer, span_warning("No changes made."))
-
-/datum/om/prompt/confirm/blueprint_whole_area/declined()
-	to_chat(answerer, span_warning("No changes made."))
-
-/obj/item/areaeditor/proc/whole_area_chosen(datum/om/prompt/choice/blueprint_whole_area/ask)
+/obj/item/areaeditor/proc/whole_area_chosen_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
 	var/mob/creator = ask.answerer
-	var/area_choice = ask.choices[ask.choice]
+	var/area_choice = ask.choices[ask.value]
 	var/area/oldA = get_area(get_turf(creator))
 	if(isarea(area_choice))
-		om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
+		open_request(src, /datum/prompt/choice/blueprint_whole_confirm, PROC_REF(whole_area_confirmed), answerer = creator, subject = ask.subject, question = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
 		return
 	if(!ask.can_make_new_area && !can_override)
 		to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
 		return
-	om_ask(creator, /datum/om/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), subject = ask.subject, turfs = ask.turfs)
+	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), answerer = creator, subject = ask.subject, turfs = ask.turfs)
 
-/obj/item/areaeditor/proc/whole_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+/obj/item/areaeditor/proc/whole_area_named(datum/act/request/context)
+	if(!context.answer)
+		return
+	whole_area_named_apply(context)
+
+/obj/item/areaeditor/proc/whole_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.text
+	var/str = ask.value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -644,9 +690,18 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			to_chat(creator, span_warning("An area in the world alreay has this name."))
 			return
 	var/area/oldA = get_area(get_turf(creator))
-	om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into a new area named [str]?", turfs = ask.turfs, new_name = str)
+	open_request(src, /datum/prompt/choice/blueprint_whole_confirm, PROC_REF(whole_area_confirmed), answerer = creator, subject = ask.subject, question = "Are you sure you want to change [oldA.name] into a new area named [str]?", turfs = ask.turfs, new_name = str)
 
-/obj/item/areaeditor/proc/whole_area_confirmed(datum/om/prompt/confirm/blueprint_whole_area/ask)
+/obj/item/areaeditor/proc/whole_area_confirmed(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
+	if(!context.answer || ask.value != "Yes")
+		if((isnull(ask.value) || ask.value == "No") && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No changes made."))
+		return
+	whole_area_confirmed_apply(context)
+
+/obj/item/areaeditor/proc/whole_area_confirmed_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
 	var/mob/creator = ask.answerer
 	var/list/turf/turfs = ask.turfs
 	var/area/oldA = get_area(get_turf(creator))
@@ -674,9 +729,9 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	to_chat(creator, span_notice("You have created a new area, named [newA.name]. It is now weather proof, and constructing an APC will allow it to be powered."))
 	message_admins("[key_name(creator, creator.client)] just made a new area called [newA.name] ](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[creator]'>?</A>) at ([creator.x],[creator.y],[creator.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[creator.x];Y=[creator.y];Z=[creator.z]'>JMP</a>)")
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
-	charges -= 5
+	set_charges(charges - (5))
 
-	om_after(src, 5, "interact")
+	after(src, 0.5 SECONDS, "interact")
 	return
 
 /proc/move_turfs_to_area(list/turf/turfs, area/A)
@@ -725,10 +780,10 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 //Nice verbs for the engineer to see where areas start/end.
 
-/obj/item/areaeditor/proc/seeRoomColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeRoomColors_effect(mob/user)
 
 	// If standing somewhere we can expand from, use expand perms, otherwise create
-	var/canOverwrite = (get_area_type() & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
+	var/canOverwrite = (get_area_type(get_area(user)) & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
 	var/res = detect_room_ex(get_turf(user), canOverwrite, visual = 1)
 	if(!istype(res, /list))
 		switch(res)
@@ -749,7 +804,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		LAZYADD(areaColor_turfs, T)
 	to_chat(user, span_notice("The space covered by the new area is highlighted in green."))
 
-/obj/item/areaeditor/proc/seeAreaColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeAreaColors_effect(mob/user)
 
 	// Remove any existing
 	seeAreaColors_remove_effect(user)
@@ -765,7 +820,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			user << image(areaColor, T, "blueprints", TURF_LAYER)
 			LAZYADD(areaColor_turfs, T)
 
-/obj/item/areaeditor/proc/seeAreaColors_remove_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/areaeditor/proc/seeAreaColors_remove_effect(mob/user)
 
 	LAZYCLEARLIST(areaColor_turfs)
 	if(user?.client?.images.len)
@@ -780,24 +835,25 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	var/created_area = 0
 	var/area_cooldown = 0
 
-/// Requirement: one area per paper, and not too often.
-/obj/item/paper/proc/can_create_area(mob/user, atom/target, obj/item/held)
-	if(created_area)
-		return "this paper has already been used to create an area"
-	if(user.stat || !COOLDOWN_FINISHED(src, area_cooldown))
-		return "you recently used this paper to try to create an area, wait one minute before using it again"
-	return TRUE
+TRACKED(/obj/item/paper, created_area)
 
-/obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
+MSG_DEF_SELF(paper/area_made, "This paper has already been used to create an area.")
+
+/// The paper's "Create Area" verb (declared with the paper, paper.dm): one area per paper, and not too often.
+/obj/item/paper/proc/create_area_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!COOLDOWN_FINISHED(src, area_cooldown))
+		to_chat(user, span_warning("You recently used this paper to try to create an area, wait one minute before using it again."))
+		return OP_OK
+	COOLDOWN_START(src, area_cooldown, 60 SECONDS) //Anti spam.
 
 	create_new_area(user)
 	add_fingerprint(user)
-	return
+	return OP_OK
 
 /proc/get_new_area_type(area/A) //1 = can build in. 0 = can not build in.
 	if (!A)
-		A = get_area(usr)
+		return 0
 	if(A.outdoors) //ALWAYS able to build outdoors. This means if it's missed in GLOB.BUILDABLE_AREA_TYPES it's fine.
 		return 1
 
@@ -812,7 +868,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /proc/detect_new_area(turf/first, user) //Heavily simplified version for creating an area yourself.
 	if(!istype(first)) //Not on a turf.
-		to_chat(usr, span_warning("You can not create a room here."))
+		to_chat(user, span_warning("You can not create a room here."))
 		return
 	if(get_new_area_type(first.loc) == 1) //Are they in an area they can build? I tried to do this BUILDABLE_AREA_TYPES[first.loc.type] but it refused.
 		var/list/turf/found = list()
@@ -883,22 +939,45 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_ask_begin(null, creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), list(receiver = creator, subject = get_turf(creator), turfs = turfs))
+	open_request(creator, /datum/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), answerer = creator, subject = get_turf(creator), turfs = turfs)
 
-/datum/om/prompt/text/blueprint_new_area
+/datum/prompt/text/blueprint_new_area
 	title = "Area Name"
-	message = "What would you like to name the area?"
-	max_length = MAX_NAME_LEN
+	question = "What would you like to name the area?"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	encode = FALSE
-	requires = BLUEPRINT_PROMPT_REQUIRES
+	timeout = 0
 	var/list/turfs
 
-/datum/om/prompt/text/blueprint_new_area/cancelled()
-	to_chat(answerer, span_warning("No new area made. Cancelling."))
+/datum/prompt/text/blueprint_new_area/proc/captures_live()
+	return !QDELETED(answerer) && !QDELETED(subject)
 
-/mob/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
+/datum/prompt/text/blueprint_new_area/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/mob/proc/create_new_area_named(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No new area made. Cancelling."))
+		return
+	create_new_area_named_apply(context)
+
+/mob/proc/create_new_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
 	var/mob/creator = src
-	var/str = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	var/str = sanitizeSafe(ask.value, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return
@@ -930,7 +1009,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in GLOB.planet_service.planets)
+	for(var/datum/planet/PL in planets_planets())
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
@@ -939,14 +1018,170 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 #undef BP_MAX_ROOM_SIZE
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/areaeditor, \
-	INTERACT_VERB("Show Room Colors", PROC_REF(seeRoomColors_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Show Area Colors", PROC_REF(seeAreaColors_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove Area Colors", PROC_REF(seeAreaColors_remove_effect), REQ_IN_INVENTORY), \
-)
+/datum/prompt/choice/blueprint_expand
+	title = "Area Expansion"
+	question = "Choose an area to expand or make a new area"
+	timeout = 0
+	var/list/turfs
+	var/tmp/obj/item/areaeditor/editor
+	var/editor_expected = FALSE
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/paper, \
-	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/paper/proc/can_create_area)), \
-)
+CAPABILITIES(/datum/prompt/choice/blueprint_expand)
+	ref_one(nameof(editor), /obj/item/areaeditor)
+
+/datum/prompt/choice/blueprint_expand/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/areaeditor/captured_editor = editor
+	editor_expected = !isnull(captured_editor)
+	rel_clear(src, nameof(editor))
+	rel_set(src, nameof(editor), captured_editor)
+
+/datum/prompt/choice/blueprint_expand/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(editor_expected && QDELETED(editor))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_expand/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/text/blueprint_area_name
+	title = "Blueprint Editing"
+	question = "New area name"
+	timeout = 0
+	var/list/turfs
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	var/tmp/obj/item/areaeditor/editor
+	var/editor_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/blueprint_area_name)
+	ref_one(nameof(editor), /obj/item/areaeditor)
+
+/datum/prompt/text/blueprint_area_name/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/areaeditor/captured_editor = editor
+	editor_expected = !isnull(captured_editor)
+	rel_clear(src, nameof(editor))
+	rel_set(src, nameof(editor), captured_editor)
+
+/datum/prompt/text/blueprint_area_name/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(editor_expected && QDELETED(editor))
+		return FALSE
+	return TRUE
+
+/datum/prompt/text/blueprint_area_name/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_whole_area
+	title = "Area Expansion"
+	question = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?"
+	timeout = 0
+	var/list/turfs
+	var/can_make_new_area
+
+/datum/prompt/choice/blueprint_whole_area/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_whole_area/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_whole_confirm
+	title = "READ CAREFULLY"
+	question = ""
+	timeout = 0
+	var/list/turfs
+	choices = list("No", "Yes")
+	buttons = TRUE
+	var/new_name
+	var/tmp/area/chosen_area
+	var/chosen_area_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm)
+	ref_one(nameof(chosen_area), /area)
+
+/datum/prompt/choice/blueprint_whole_confirm/prepare(datum/act/A)
+	. = ..()
+	var/area/captured_chosen_area = chosen_area
+	chosen_area_expected = !isnull(captured_chosen_area)
+	rel_clear(src, nameof(chosen_area))
+	rel_set(src, nameof(chosen_area), captured_chosen_area)
+
+/datum/prompt/choice/blueprint_whole_confirm/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(chosen_area_expected && QDELETED(chosen_area))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_whole_confirm/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_expand/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/blueprint_area_name/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/blueprint_whole_area/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/blueprint_whole_confirm/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()

@@ -21,7 +21,7 @@
 	var/vote_time = 60 SECONDS
 
 /datum/vote/New(_initiator, _question, list/_choices, _is_custom = FALSE)
-	if(GLOB.vote_service.active_vote)
+	if(SSvote.get_active_vote())
 		CRASH("Attempted to start another vote with one already in progress!")
 
 	if(_initiator)
@@ -37,16 +37,16 @@
 	if(!length(choices))
 		generate_choices()
 
-/datum/vote/proc/start()
+/datum/vote/proc/start(mob/user)
 	var/text = "[capitalize(vote_type_text)] vote started by [initiator]."
 	if(is_custom)
 		vote_type_text = "custom"
 		text += "\n[question]"
-		if(usr)
-			log_admin("[capitalize(vote_type_text)] ([question]) vote started by [key_name(usr)].")
+		if(user)
+			log_admin("[capitalize(vote_type_text)] ([question]) vote started by [key_name(user)].")
 
-	else if(usr)
-		log_admin("[capitalize(vote_type_text)] vote started by [key_name(usr)].")
+	else if(user)
+		log_admin("[capitalize(vote_type_text)] vote started by [key_name(user)].")
 
 	log_vote(text)
 	EXPIRY_STAMP(src, started_time, CLOCK_WORLD)
@@ -121,9 +121,9 @@
 		You have [time/10] seconds to vote."))
 	world << sound('sound/ambience/alarm4.ogg', repeat = 0, wait = 0, volume = 50, channel = 3)
 
-TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 
-/datum/vote/proc/topic_open(mob/user, list/args)
+/datum/vote/proc/topic_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -131,13 +131,12 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	if(remaining() == 0)
 		var/result = calculate_result()
 		handle_result(result)
-		qdel(src)
+		lapsed(src)
 
-// GLOB.vote_service forgets it.
+// SSvote forgets it.
 /datum/vote/lifecycle_dematerialize()
 	..()
-	if(GLOB.vote_service.active_vote == src)
-		rel_clear(GLOB.vote_service, nameof(/datum/world_service/vote::active_vote))
+	SSvote.forget_vote(src)
 
 /datum/vote/proc/handle_result(result)
 	return
@@ -149,13 +148,21 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	UI STUFFS
 */
 
-DECLARE_UI_STATE(/datum/vote, GLOB.tgui_always_state)
+CAPABILITIES(/datum/vote)
+	interface("VotePanel", title = "Vote Panel", state = nameof(GLOB.tgui_always_state))
+	op("vote", ui_act("vote", arg("target", schema_text(4096))), then(PROC_REF(ui_act_vote)))
+	op("vote_open", topic("vote=open"), then(PROC_REF(topic_open)))
 
-DECLARE_UI(/datum/vote, "VotePanel", UI_TITLE("Vote Panel"))
+/datum/vote/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["question"] = question
+	var/list/merged_1 = ui_data_datum_vote(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/datum/vote, "question:text", "merge:ui_data_datum_vote{remaining:unknown,user_vote:unknown,choices:bool,show_counts:bool,counts:list}")
-
-/// The computed part of /datum/vote's window data (declared on its UI_DATA row).
+/// /datum/vote's window data.
 /datum/vote/proc/ui_data_datum_vote(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["remaining"] = remaining()
@@ -182,10 +189,10 @@ UI_DATA_REPLACE(/datum/vote, "question:text", "merge:ui_data_datum_vote{remainin
 
 	return data
 
-UI_ACT(/datum/vote, "vote", ui_act_vote, UI_ARG_TEXT("target"))
-UI_ACT_PROC(/datum/vote, ui_act_vote)
+/datum/vote/proc/ui_act_vote(datum/act/op/A, target)
+	var/mob/user = A.actor
 	. = TRUE
-	if(params["target"] in choices)
-		LAZYSET(voted, ui.user.ckey, params["target"])
+	if(target in choices)
+		LAZYSET(voted, user.ckey, target)
 	else
-		message_admins(span_warning("User [key_name_admin(ui.user)] spoofed a vote in the vote panel!"))
+		message_admins(span_warning("User [key_name_admin(user)] spoofed a vote in the vote panel!"))

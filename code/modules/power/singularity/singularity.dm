@@ -1,7 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
 
-REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
-
 /obj/singularity/
 	name = "gravitational singularity"
 	desc = "A gravitational singularity."
@@ -10,7 +8,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 	anchored = TRUE
 	density = TRUE
 	plane = ABOVE_PLANE
-	light_range = 6
 	unacidable = TRUE //Don't comment this out.
 
 	var/current_size = 1
@@ -31,51 +28,70 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 
 	var/chained = 0//Adminbus chain-grab
 
-DECLARE_PERIODIC(/obj/singularity, PERIODIC_SLOW)
-
-/obj/singularity/Initialize(mapload, starting_energy = 50)
+// ALLOW(init/INSTANCE_STATE): a singularity tells the admins it exists and finds an active beacon to pull toward
+/obj/singularity/Initialize(mapload)
 	//CARN: admin-alert for chuckle-fuckery.
 	admin_investigate_setup()
 	. = ..()
-	energy = starting_energy
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon
 			break
 
-DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_singularity_touch)))
+// The singularity (doc/rewrite/final_api.html section 16): its step every 2 s (singularity_frame(): eat, dissipate, grow or shrink, and from stage
+// two wander, pulse the collectors and maybe an event), the registry it joins, its touch and its bump (whatever meets it is consumed), and what
+// hits do to it: a blast feeds it (or rarely disperses it), a projectile passes through.
+CAPABILITIES(/obj/singularity)
+	configure(light_glow(range = 6))
+	// a singularity is not a surface: nothing swung at it lands
+	without("melee_hit")
+	registry(REGISTRY_SINGULARITIES, when = PROC_REF(counts_as_singularity))
+	every(SINGULARITY_STEP_INTERVAL, then(PROC_REF(singularity_frame)))
+	op("singularity_touch", hand(), when(req_empty_hand()), then(PROC_REF(touched)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
+	param(nameof(energy), pos = 1, default = 50)
 
-/// Old attack_hand: touching it is fatal.
-/obj/singularity/proc/interaction_singularity_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	consume(user)
+/// Whether it is a singularity of its own (an energy ball's orbiting miniballs are not).
+/obj/singularity/proc/counts_as_singularity(datum/act/A)
 	return TRUE
 
-DAMAGE_REACTION(/obj/singularity, DAMAGE_EXPLOSION, PROC_REF(singularity_blast))
-//Will there be an impact? Who knows. Will we see it? No.
-DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+/// Touching it is fatal.
+/obj/singularity/proc/touched(datum/act/op/A)
+	consume(A.actor)
+	return OP_OK
+
+/// Whatever walks or drifts into it is consumed.
+/obj/singularity/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	if(N.bumper && !QDELETED(N.bumper))
+		consume(N.bumper)
 
 /// A blast feeds the singularity, or (rarely, when devastating) disperses it. It takes no damage.
-/obj/singularity/proc/singularity_blast(datum/damage_packet/packet)
+/obj/singularity/proc/singularity_blast(datum/act/hit/explosion/A)
 	if(current_size == STAGE_SUPER)//IT'S UNSTOPPABLE
-		return DAMAGE_REACTION_BLOCK
-	switch(packet.severity)
+		return TRUE
+	switch(A.packet.severity)
 		if(1.0)
 			if(prob(25))
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
-				qdel(src)
+				spent(src)
 			else
 				energy += 50
 		if(2.0 to 3.0)
 			energy += round((rand(20,60)/2),1)
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
+
+/// Will there be an impact? Who knows. Will we see it? No.
+/obj/singularity/proc/projectile_passes(datum/act/hit/projectile/A)
+	return TRUE
 
 /obj/singularity/Bump(atom/A)
 	consume(A)
 
-/obj/singularity/Bumped(atom/A)
-	consume(A)
-
-/obj/singularity/periodic_step()
+/// One step of the singularity (every SINGULARITY_STEP_INTERVAL).
+/obj/singularity/proc/singularity_frame(datum/act/timer/A)
 	eat()
 	dissipate()
 	check_energy()
@@ -121,7 +137,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 			desc = "A gravitational singularity."
 			current_size = STAGE_ONE
 			icon = 'icons/obj/singularity.dmi'
-			icon_state = "singularity_s1"
+			set_icon_state("singularity_s1")
 			pixel_x = 0
 			pixel_y = 0
 			grav_pull = 4
@@ -138,7 +154,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 			desc = "A gravitational singularity."
 			current_size = STAGE_TWO
 			icon = 'icons/effects/96x96.dmi'
-			icon_state = "singularity_s3"
+			set_icon_state("singularity_s3")
 			pixel_x = -32
 			pixel_y = -32
 			grav_pull = 6
@@ -159,7 +175,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 				desc = "A gravitational singularity."
 				current_size = STAGE_THREE
 				icon = 'icons/effects/160x160.dmi'
-				icon_state = "singularity_s5"
+				set_icon_state("singularity_s5")
 				pixel_x = -64
 				pixel_y = -64
 				grav_pull = 8
@@ -180,7 +196,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 				desc = "A gravitational singularity."
 				current_size = STAGE_FOUR
 				icon = 'icons/effects/224x224.dmi'
-				icon_state = "singularity_s7"
+				set_icon_state("singularity_s7")
 				pixel_x = -96
 				pixel_y = -96
 				grav_pull = 10
@@ -200,7 +216,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 			desc = "A gravitational singularity."
 			current_size = STAGE_FIVE
 			icon = 'icons/effects/288x288.dmi'
-			icon_state = "singularity_s9"
+			set_icon_state("singularity_s9")
 			pixel_x = -128
 			pixel_y = -128
 			grav_pull = 10
@@ -218,7 +234,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 			desc = "A gravitational singularity with the properties of supermatter. <b>It has the power to destroy worlds.</b>"
 			current_size = STAGE_SUPER
 			icon = 'icons/effects/352x352.dmi'
-			icon_state = "singularity_s11"//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
+			set_icon_state("singularity_s11")//uh, whoever drew that, you know that black holes are supposed to look dark right? What's this, the clown's singulo?
 			pixel_x = -160
 			pixel_y = -160
 			grav_pull = 16
@@ -240,7 +256,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 /obj/singularity/proc/check_energy()
 	if (energy <= 0)
 		investigate_log("collapsed.", I_SINGULO)
-		qdel(src)
+		spent(src)
 		return 0
 
 	switch (energy) //Some of these numbers might need to be changed up later -Mport.
@@ -290,7 +306,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 
 	if(current_size >= STAGE_FIVE)//The superlarge one does not care about things in its way
 		step(src, movement_dir)
-		om_after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), movement_dir)
+		drift(movement_dir, 1, 0.1 SECONDS)
 		return 1
 	else if(check_turfs_in(movement_dir))
 		last_failed_movement = 0//Reset this because we moved
@@ -407,7 +423,7 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(istype(M, /mob/living/carbon/brain)) //Ignore brains
 			continue
-		if(om_has(M, EFFECT_GODMODE))
+		if(in_godmode(M))
 			return 0	// Cancelled by a component
 		if(M.stat == CONSCIOUS)
 			if (ishuman(M))
@@ -486,5 +502,5 @@ DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage
 		var/gain = (energy/2)
 		var/dist = max((current_size - 2), 1)
 		explosion(src.loc,(dist),(dist*2),(dist*4))
-		om_qdel_after(src, 0)
+		after(src, 0, GLOBAL_PROC_REF(destroyed), with = list(src))
 		return gain

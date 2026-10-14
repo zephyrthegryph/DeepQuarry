@@ -87,7 +87,7 @@
 
 			if (event_type == TGS_EVENT_WATCHDOG_DETACH)
 				detached = TRUE
-				own_take_all(src, nameof(chat_channels)) // https://github.com/tgstation/tgstation-server/issues/1490
+				rel_take_all(src, nameof(chat_channels)) // https://github.com/tgstation/tgstation-server/issues/1490
 
 			return
 
@@ -173,7 +173,7 @@
 				if (event_handler)
 					event_handler.HandleEvent(TGS_EVENT_WATCHDOG_REATTACH, new_version)
 
-				own_set(src, nameof(version), new_version)
+				rel_set(src, nameof(version), new_version)
 
 			var/list/reattach_response = TopicResponse(error_message)
 			reattach_response[DMAPI5_PARAMETER_CUSTOM_COMMANDS] = ListCustomCommands()
@@ -294,5 +294,5 @@
 	return TopicResponse("Unknown command: [command]")
 
 /datum/tgs_api/v5/proc/WorldBroadcast(message)
-	set waitfor = FALSE // ALLOW(scheduler): vendored TGS
+	set waitfor = FALSE
 	TGS_WORLD_ANNOUNCE(message)

@@ -81,7 +81,7 @@
 	if(isnull(heat_body))
 		return
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
-	if(!om_attached(src, /datum/om/behaviour/burning))
+	if(!granted(src, /datum/capability/burning))
 		vg_heat_body_keep(heat_body, FALSE)
 
 /// A hotspot heats everything on its tile through each object's heat node:
@@ -133,20 +133,24 @@
 /// above its heat limit (the overheating rule attaches this and detaches it when it
 /// cools), a thermal damage stream proportional to the excess, OVERHEAT_DAMAGE_PER_KELVIN
 /// per second per kelvin, between OVERHEAT_DAMAGE_MIN and OVERHEAT_DAMAGE_MAX per second.
-/// A shared OM behaviour ticking once a second; it has no state of its own.
-/datum/om/behaviour/overheating
-	every = 1 SECONDS
+/// A capability the overheating rule grants, ticking once a second; it has no state of its own.
+CAPABILITY_TYPE(overheating, CAP_OVERHEATING, /datum/capability/overheating, key = NONE)
+/datum/capability/overheating
 
-/datum/om/behaviour/overheating/on_start(obj/O)
+/datum/capability/overheating/entries()
+	return list(every(1 SECONDS, then(CAP_PROC(overheat_tick))))
+
+/datum/capability/overheating/on_activate(datum/activation/A)
+	var/obj/O = A.holder
 	O.on_overheat()
 
-/datum/om/behaviour/overheating/tick(obj/O, dt)
-	// dt is in seconds.
-	O.overheat_step(dt)
+/datum/capability/overheating/proc/overheat_tick(datum/act/timer/A)
+	var/obj/O = A.holder
+	O.overheat_step(A.dt / (1 SECONDS))
 
 /// TRUE while the object overheats.
 /obj/proc/is_overheating()
-	return om_attached(src, /datum/om/behaviour/overheating)
+	return granted(src, /datum/capability/overheating)
 
 /// One second-scaled step of the overheating damage stream.
 /obj/proc/overheat_step(seconds_per_tick)

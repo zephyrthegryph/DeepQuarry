@@ -1,5 +1,7 @@
 SYSTEM_DEF(ticker)
 	name = "Ticker"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	wait = 2 SECONDS
 	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVEL_SETUP | RUNLEVEL_GAME
@@ -54,7 +56,6 @@ SYSTEM_DEF(ticker)
 
 	EXPIRY_DECLARE(round_start_time)
 	var/list/round_start_events
-	var/list/round_end_events
 	var/mode_result = "undefined"
 	var/end_state = "undefined"
 
@@ -75,20 +76,27 @@ SYSTEM_DEF(ticker)
 	/// world.time of last restart warning.
 	EXPIRY_DECLARE(last_restart_notify)
 
-/// Time left until a scheduled reboot; announce_countdown() counts it down while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/datum/system/ticker, tmp, reboot_countdown_left, 0, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdown, "reboot_countdown_left")
+/// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
+/datum/system/ticker/var/tmp/reboot_countdown_left = 0
+
+/// Sets the time left and arms (or, at zero, cancels) the countdown's next announcement.
+/datum/system/ticker/proc/set_reboot_countdown_left(value)
+	reboot_countdown_left = value
+	if(value > 0)
+		after(src, reboot_countdown_delay(), PROC_REF(announce_countdown), key = "reboot_countdown")
+	else
+		cancel_after(src, "reboot_countdown")
 
 /datum/system/ticker/initialize()
-	lifecycle_decls_init(src) // starts the reboot countdown declaration (a non-atom has no materialize)
+	lifecycle_decls_init(src) // a non-atom has no materialize
 	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 
-/// The round state machine runs every `wait` (it was SSticker's fire()).
+/// The round state machine runs every `wait` (phase K).
 /datum/system/ticker/reactions()
 	. = ..()
-	. += every(2 SECONDS, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_SIMULATION)
+	. += every(2 SECONDS, PROC_REF(round_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_K, lane = LANE_SIMULATION)
 
-/datum/system/ticker/fire(resumed = FALSE)
+/datum/system/ticker/proc/round_step(dt)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
 			EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
@@ -99,7 +107,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				send2chat(new /datum/tgs_message_content("New round starting on [using_map.full_name] ([using_map.name])!"), channel_tag)
 			current_state = GAME_STATE_PREGAME
 
-			fire()
+			round_step(0)
 		if(GAME_STATE_PREGAME)
 			//lobby stats for statpanels
 			if(isnull(timeLeft))
@@ -127,9 +135,9 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 			if(timeLeft <= 0)
 				current_state = GAME_STATE_SETTING_UP
-				Master.SetRunLevel(RUNLEVEL_SETUP)
+				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 				if(start_immediately)
-					fire()
+					round_step(0)
 
 		if(GAME_STATE_SETTING_UP)
 			if(!setup())
@@ -137,42 +145,42 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				current_state = GAME_STATE_STARTUP
 				EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 				timeLeft = null
-				Master.SetRunLevel(RUNLEVEL_LOBBY)
+				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
 
 		if(GAME_STATE_PLAYING)
-			// The mode's own periodic work (latespawn, meteor waves) runs on the slow lane,
-			// started when the round starts (setup()).
+			// The mode's own periodic work (latespawn, meteor waves) runs as the mode's every()
+			// (mode_step), armed by mode_running when the round starts (setup()).
 			if(mode.explosion_in_progress)
 				return // wait until explosion is done.
 
 			if(force_ending)
 				current_state = GAME_STATE_FINISHED
-				om_task_periodic_stop(mode)
+				mode.set_mode_running(FALSE)
 				declare_completion(force_ending)
-				Master.SetRunLevel(RUNLEVEL_POSTGAME)
+				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
 				// Calculate if game and/or mode are finished (Complicated by the continuous_rounds config option)
 				var/game_finished = FALSE
 				var/mode_finished = FALSE
 				if (CONFIG_GET(flag/continuous_rounds)) // Game keeps going after mode ends.
-					game_finished = (GLOB.emergency_shuttle_service.returned() || mode.station_was_nuked)
+					game_finished = (SSemergency_shuttle.returned() || mode.station_was_nuked)
 					mode_finished = ((end_game_state >= END_GAME_MODE_FINISHED) || mode.check_finished()) // Short circuit if already finished.
 				else // Game ends when mode does
-					game_finished = (mode.check_finished() || (GLOB.emergency_shuttle_service.returned() && GLOB.emergency_shuttle_service.evac)) || GLOB.universe_has_ended
+					game_finished = (mode.check_finished() || (SSemergency_shuttle.returned() && SSemergency_shuttle.evac)) || GLOB.universe_has_ended
 					mode_finished = game_finished
 
 				if(game_finished && mode_finished)
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
-					om_task_periodic_stop(mode)
-					Master.SetRunLevel(RUNLEVEL_POSTGAME)
-					declare_completion() // its SQL and TGS chat run off-thread (om_io, send2chat)
+					mode.set_mode_running(FALSE)
+					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
+					declare_completion() // its SQL and TGS chat run off-thread (io_job, send2chat)
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
 					end_game_state = END_GAME_MODE_FINISHED // Only do this cleanup once!
 					mode.cleanup()
 					//call a transfer shuttle vote
 					to_chat(world, span_boldannounce("The round has ended!"))
-					GLOB.vote_service.start_vote(new /datum/vote/crew_transfer)
+					SSvote.start_vote(new /datum/vote/crew_transfer)
 
 		// FIXME: IMPROVE THIS LATER!
 		if(GAME_STATE_FINISHED)
@@ -200,13 +208,14 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	equip_characters()
 
 
-	for(var/list/spec as anything in round_start_events)
-		om_run_async(spec)
+	for(var/list/row as anything in round_start_events)
+		round_start_fire(row)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
 	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
+	SSserver_metrics.round_started()
 
 	// Spawn randomized items
 	spawn_multi_point_items()
@@ -226,14 +235,14 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 		SC.auto_start()
 
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
-	SSdbcore.SetRoundStart() // an om_io write; returns at once
+	SSdbcore.SetRoundStart() // an io_job write; returns at once
 
 	to_chat(world, span_notice(span_bold("Welcome to [station_name()], enjoy your stay!")))
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)
 
 	current_state = GAME_STATE_PLAYING
-	om_task_periodic(mode, PERIODIC_SLOW)
-	Master.SetRunLevel(RUNLEVEL_GAME)
+	mode.set_mode_running(TRUE)
+	Kernel.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn
 	Holiday_Game_Start()
@@ -263,25 +272,26 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		//Deleting Startpoints but we need the ai point to AI-ize people later
 		if (S.name != "AI")
-			qdel(S)
+			spent(S)
 
 	if(CONFIG_GET(flag/sql_enabled))
 		statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
 
 //These callbacks will fire after roundstart key transfer
-/// `spec` is an om_callable() spec.
-/datum/system/ticker/proc/OnRoundstart(list/spec)
+/// Runs `handler` at the start of the round, as after(owner, delay, handler, with = with) does from then on: a PROC_REF on `owner`, or a
+/// GLOBAL_PROC_REF (owner null) called with `with`. Already started: it is scheduled at once.
+/datum/system/ticker/proc/OnRoundstart(datum/owner, handler, list/with = null, delay = 0)
+	var/list/row = list("owner" = owner, "handler" = handler, "with" = with, "delay" = delay)
 	if(!HasRoundStarted())
-		LAZYADD(round_start_events, list(spec))
+		LAZYADD(round_start_events, list(row))
 	else
-		om_run_async(spec)
+		round_start_fire(row)
 
-//These callbacks will fire before roundend report
-/datum/system/ticker/proc/OnRoundend(datum/callback/cb)
-	if(current_state >= GAME_STATE_FINISHED)
-		cb.InvokeAsync()
-	else
-		LAZYADD(round_end_events, cb)
+/datum/system/ticker/proc/round_start_fire(list/row)
+	var/datum/owner = row["owner"]
+	if(owner && QDELETED(owner))
+		return
+	after(owner, row["delay"], row["handler"], with = row["with"])
 
 // Formerly the first half of setup() - The part that chooses the game mode.
 // Returns 0 if failed to pick a mode, otherwise 1
@@ -378,7 +388,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 			// Created their playable character, delete their /mob/new_player
 			if(new_char)
-				qdel(player)
+				replaced_by(player, new_char)
 				if(new_char.client)
 					new_char.client.init_verbs()
 
@@ -390,7 +400,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 /datum/system/ticker/proc/collect_minds()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.mind)
-			minds += player.mind
+			rel_add(src, nameof(minds), player.mind)
 		CHECK_TICK
 
 /datum/system/ticker/proc/equip_characters()
@@ -399,7 +409,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 		if(player && player.mind && player.mind.assigned_role)
 			if(player.mind.assigned_role == JOB_SITE_MANAGER)
 				captainless=0
-			if(!GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1))
+			if(!SSantag.player_is_antag(player.mind, only_offstation_roles = 1))
 				SSjob.equip_rank(player, player.mind.assigned_role, 0)
 				UpdateFactionList(player)
 				// equip_custom_items(player) // Removal
@@ -409,7 +419,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 			if(player.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 				var/obj/item/implant/backup/imp = new(src)
 
-				if(imp.handle_implant(player,player.zone_sel.selecting))
+				if(imp.handle_implant(player,hud_of(player)?.zone_sel?.selecting))
 					imp.post_implant(player)
 		// ition End
 		CHECK_TICK
@@ -432,14 +442,14 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 /// Puts the Master's run level back where the round state says it is (a recreated Master starts at the lobby's).
 /datum/system/ticker/proc/restore_runlevel()
-	if (Master)
+	if (Kernel)
 		switch (current_state)
 			if(GAME_STATE_SETTING_UP)
-				Master.SetRunLevel(RUNLEVEL_SETUP)
+				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 			if(GAME_STATE_PLAYING)
-				Master.SetRunLevel(RUNLEVEL_GAME)
+				Kernel.SetRunLevel(RUNLEVEL_GAME)
 			if(GAME_STATE_FINISHED)
-				Master.SetRunLevel(RUNLEVEL_POSTGAME)
+				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 
 /datum/system/ticker/proc/Reboot(reason, end_string, delay)
 	set waitfor = FALSE // ALLOW(scheduler): UNTIL waits on the round-end sound before arming the reboot timer
@@ -460,13 +470,13 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 	var/start_wait = world.time
 	UNTIL(round_end_sound_sent || ELAPSED_SINCE(src, start_wait, CLOCK_WORLD) > (delay * 2)) //don't wait forever
-	after_slot(src, "reboot_timer", delay - (world.time - start_wait), PROC_REF(reboot_callback), reason, end_string)
+	after(src, delay - (world.time - start_wait), PROC_REF(reboot_callback), key = "reboot_timer", with = list(reason, end_string))
 
 /// The wait before the next countdown step: a minute, or what is left of the last one.
 /datum/system/ticker/proc/reboot_countdown_delay()
 	return min(60 SECONDS, reboot_countdown_left)
 
-/// One countdown step (DECLARE_REPEAT while reboot_countdown_left is set).
+/// One countdown step (re-armed by set_reboot_countdown_left() while time is left).
 /datum/system/ticker/proc/announce_countdown()
 	var/remaining_time = reboot_countdown_left - reboot_countdown_delay()
 	if(remaining_time > 0)
@@ -477,7 +487,6 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	set_reboot_countdown_left(0)
 	if(!delay_end)
 		to_chat(world, span_boldannounce("Rebooting World."))
-	return REPEAT_STOP
 
 /datum/system/ticker/proc/reboot_callback(reason, end_string)
 	if(end_string)
@@ -494,11 +503,11 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
  * * user - the user that cancelled the reboot, may be null
  */
 /datum/system/ticker/proc/cancel_reboot(mob/user)
-	if(!om_timer_slot_pending(src, "reboot_timer"))
+	if(!after_pending(src, "reboot_timer"))
 		to_chat(user, span_warning("There is no pending reboot!"))
 		return FALSE
 	to_chat(world, span_boldannounce("An admin has delayed the round end."))
-	om_cancel_timer_slot(src, "reboot_timer")
+	cancel_after(src, "reboot_timer")
 	set_reboot_countdown_left(0)
 	return TRUE
 
@@ -511,9 +520,10 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	delay_end = !delay_end
 
 	set_reboot_countdown_left(0)
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")
 
-OWN_TIMER(/datum/system/ticker, reboot_timer)
+CAPABILITIES(/datum/system/ticker)
+	ref_many(nameof(minds), /datum/mind)

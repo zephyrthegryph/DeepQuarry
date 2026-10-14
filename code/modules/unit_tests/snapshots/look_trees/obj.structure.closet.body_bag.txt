@@ -1,0 +1,19 @@
+/obj/structure/closet/body_bag icon: icons/obj/closets/bodybag.dmi
+/obj/structure/closet/body_bag state: base
+/obj/structure/closet/body_bag dir: 2
+/obj/structure/closet/body_bag overlay: icons/obj/closets/bodybag.dmi:base:8:#000000
+/obj/structure/closet/body_bag/large icon: icons/obj/closets/bodybag_large.dmi
+/obj/structure/closet/body_bag/large state: base
+/obj/structure/closet/body_bag/large dir: 2
+/obj/structure/closet/body_bag/large overlay: icons/obj/closets/bodybag_large.dmi:base:8:#000000
+/obj/structure/closet/body_bag/cryobag icon: icons/obj/closets/cryobag.dmi
+/obj/structure/closet/body_bag/cryobag state: base
+/obj/structure/closet/body_bag/cryobag dir: 2
+/obj/structure/closet/body_bag/cryobag overlay: icons/obj/closets/cryobag.dmi:base:8:#000000
+/obj/structure/closet/body_bag/cryobag overlay: icons/obj/closets/cryobag.dmi:indicator0:-32767:#00ff00
+/obj/structure/closet/body_bag/cryobag/robobag icon: icons/obj/robobag.dmi
+/obj/structure/closet/body_bag/cryobag/robobag state: base
+/obj/structure/closet/body_bag/cryobag/robobag dir: 2
+/obj/structure/closet/body_bag/cryobag/robobag overlay: icons/obj/robobag.dmi:base:8:#000000
+/obj/structure/closet/body_bag/cryobag/robobag overlay: icons/obj/robobag.dmi:indicator0:-32767:#00ff00
+

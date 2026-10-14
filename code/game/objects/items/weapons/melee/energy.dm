@@ -9,9 +9,6 @@
 	var/active_injury_kind = INJURY_CUT
 	/// Mixed harm of the lit blade (see /obj/item/var/injury_kinds), or null.
 	var/alist/active_injury_kinds
-	sharp = FALSE
-	edge = FALSE
-	armor_penetration = 0
 	flags = NOCONDUCT | NOBLOODY
 	var/lrange = 2
 	var/lpower = 2
@@ -53,41 +50,39 @@
 /obj/item/melee/energy/proc/activate(mob/living/user)
 	if(active)
 		return
-	active = 1
+	set_active(1)
 	if(rainbow)
-		item_state = "[icon_state]_blade_rainbow"
+		set_item_state("[icon_state]_blade_rainbow")
 	else
-		item_state = "[icon_state]_blade"
+		set_item_state("[icon_state]_blade")
 	embed_chance = active_embed_chance
-	force = active_force
-	throwforce = active_throwforce
-	armor_penetration = active_armourpen
-	sharp = TRUE
-	edge = TRUE
+	set_force(active_force)
+	set_throwforce(active_throwforce)
+	set_armor_penetration(active_armourpen)
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	injury_kind = active_injury_kind
 	injury_kinds = active_injury_kinds
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
-	update_icon()
-	set_light(lrange, lpower, lcolor)
+	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 /obj/item/melee/energy/proc/deactivate(mob/living/user)
 	if(!active)
 		return
 	play_sfx(src, SFX_WEAPONS_SABEROFF)
-	item_state = "[icon_state]"
-	active = 0
+	set_item_state("[icon_state]")
+	set_active(0)
 	embed_chance = initial(embed_chance)
-	force = initial(force)
-	throwforce = initial(throwforce)
-	armor_penetration = initial(armor_penetration)
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_force(combat_of_type(type).force)
+	set_throwforce(thrown_of_type(type).force)
+	set_armor_penetration(combat_of_type(type).armor_penetration)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
-	w_class = initial(w_class)
-	update_icon()
-	set_light(0,0)
+	set_w_class(initial(w_class))
+	set_glow(src, GLOW(0, 0, null))
 
 /obj/item/melee/energy/proc/use_charge(cost)
 	if(active)
@@ -108,14 +103,28 @@
 	if(colorable)
 		. += span_notice("Alt-click to recolor it.")
 
-/// Old attack_self. FALSE (special handling) moves on to the next self-use.
-/obj/item/melee/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+TRACKED(/obj/item/melee/energy, colorable)
+TRACKED(/obj/item/melee/energy, active)
+TRACKED(/obj/item/melee/energy, lcolor)
+
+CAPABILITIES(/obj/item/melee/energy)
+	configure(item_combat(sharp = FALSE, edge = FALSE, armor_penetration = 0))
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), label("Recolor"), when(nameof(colorable)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Recolor", "question" = "Are you sure you want to recolor your blade?", "timeout" = 0), step = "sure"),
+		asks(/datum/prompt/color/blade_recolor, fields = list("title" = "Choose Energy Color", "default" = "lcolor"), step = "colour", when = PROC_REF(recolor_confirmed)),
+		then(PROC_REF(blade_recolored)))
+	owns_one(nameof(bcell), /obj/item/cell)
+	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+
+/obj/item/melee/energy/proc/energy_power_requested(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(use_cell)
 		if((!bcell || bcell.charge < hitcost) && !active)
 			to_chat(user, span_notice("\The [src] does not seem to have power."))
-			return TRUE
+			return OP_OK
 
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
@@ -129,11 +138,10 @@
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/energy/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(active && use_cell)
@@ -143,92 +151,68 @@
 			return ITEM_INTERACT_FAILURE
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/melee/energy, \
-	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/melee/energy/proc/can_recolor)), \
-)
 
-/// Old attackby.
-/obj/item/melee/energy/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a cell of its kind goes in (anything else goes on to the hit).
+/obj/item/melee/energy/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
-				if(!own_set(src, nameof(src.bcell), W, user = user))
-					return FALSE
+				if(!move_into(src, nameof(src.bcell), W, user))
+					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in [src]."))
-				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/melee/energy/multitool_act(mob/user, obj/item/tool)
+/obj/item/melee/energy/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!colorable || active)
-		return ..()
-	rainbow = !rainbow
+		return OP_DECLINE
+	set_rainbow(!rainbow)
 	to_chat(user, span_notice("You manipulate the color controller in [src]."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/melee/energy/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/melee/energy/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!use_cell || !bcell)
-		return ..()
-	bcell.update_icon()
+		return OP_DECLINE
 	bcell.forceMove(get_turf(loc))
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/melee/energy/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/appearance_overlays()
-	. = list()
-	. += ..()
-	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-	blade_overlay.color = lcolor
-	color = lcolor
+/// The look: the blade over the hilt, in the blade's colour (white for the rainbow blade).
+/obj/item/melee/energy/draw(datum/look/look)
+	..()
+	var/base = look.state_so_far(src)
 	if(rainbow)
-		blade_overlay = mutable_appearance(icon, "[icon_state]_blade_rainbow")
-		blade_overlay.color = "FFFFFF"
-		color = "FFFFFF"
+		look.set_color("FFFFFF")
+		look.overlay(look_appearance(icon, "[base]_blade_rainbow", color = "FFFFFF"), active)
+	else
+		look.set_color(lcolor)
+		look.overlay(look_appearance(icon, "[base]_blade", color = lcolor), active)
+
+/// The recolour was confirmed: the colour picker is next.
+/obj/item/melee/energy/proc/recolor_confirmed(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["sure"]
+	return !!R?.value
+
+/// Old click_alt: a colourable blade takes the picked colour, after a yes.
+/obj/item/melee/energy/proc/blade_recolored(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["colour"]
+	if(!R)
+		return OP_OK
+	if(R.value)
+		set_lcolor(sanitize_hexcolor(R.value))
 	if(active)
-		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
-
-/// Requirement for recolouring the blade.
-/obj/item/melee/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(!colorable || !in_range(src, user))
-		return TRUE // the effect declines silently
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
-
-/// Old click_alt.
-/obj/item/melee/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!colorable) //checks if is not colorable
-		return TRUE
-	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
-
-/obj/item/melee/energy/proc/ask_blade_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-
-/obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
-	update_icon()
-	if(active)
-		set_light(lrange, lpower, lcolor)
+		set_glow(src, GLOW(lrange, lpower, lcolor))
+	return OP_OK
 
 /*
  * Energy Axe
@@ -245,18 +229,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	active_armourpen = 65
 	active_throwforce = 35
 	active_w_class = ITEMSIZE_HUGE
-	force = 20
-	armor_penetration = 20
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	can_cleave = TRUE
 	active_injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
+
+CAPABILITIES(/obj/item/melee/energy/axe)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 20, armor_penetration = 20, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
 /obj/item/melee/energy/axe/activate(mob/living/user)
 	..()
@@ -272,12 +253,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 	active_force = 35
 	active_throwforce = 20
 	active_armourpen = 30
-	force = 15
 
 	use_cell = TRUE
 	hitcost = 120
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/item/cell/device/weapon)
+CAPABILITIES(/obj/item/melee/energy/axe/charge)
+	configure(item_combat(force = 15))
+
+/obj/item/melee/energy/axe/charge/loaded/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 /*
  * Energy Sword
@@ -291,17 +276,18 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 	active_armourpen = 50
 	active_throwforce = 20
 	active_w_class = ITEMSIZE_HUGE
-	force = 3
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	colorable = TRUE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 	projectile_parry_chance = 65
+
+CAPABILITIES(/obj/item/melee/energy/sword)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 3))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/energy/sword/dropped(mob/user, equipping, slot)
 	..()
@@ -313,13 +299,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 		to_chat(user, span_notice("\The [src] is now energised."))
 
 	..()
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 
 /obj/item/melee/energy/sword/deactivate(mob/living/user)
 	if(active)
 		to_chat(user, span_notice("\The [src] deactivates!"))
 	..()
-	attack_verb = list()
+	set_attack_verb(list())
 
 /obj/item/melee/energy/sword/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(60))
@@ -367,15 +353,15 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 	active_armourpen = 80
 	active_throwforce = 3
 	active_embed_chance = 0
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	armor_penetration = 0
 	flags = NOBLOODY
 	lrange = 2
 	lpower = 2
 	lcolor = "#0000FF"
 	projectile_parry_chance = 30	// It's not specifically designed for cutting and slashing, but it can still, maybe, save your life.
+
+CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier)
+	configure(item_combat(sharp = TRUE, edge = TRUE, armor_penetration = 0))
 
 /obj/item/melee/energy/sword/ionic_rapier/afterattack(atom/movable/AM, mob/living/user, proximity)
 	if(istype(AM, /obj) && proximity && active)
@@ -392,21 +378,23 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(EMP_LIGHT) // A weaker severity is used because this has infinite uses.
 		play_sfx(target, SFX_EFFECTS_EMPULSE)
-		target.injure(INJURY_BURN, force * 3, source = src) // 15 Burn, for 20 total.
+		target.injure(INJURY_BURN, combat_of(src).force * 3, source = src) // 15 Burn, for 20 total.
 		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
-		if(target.mob_class & MOB_CLASS_SYNTHETIC)
+		if(kind_of(target).mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
-			target.injure(INJURY_BURN, force * 6, source = src) // 30 Burn, for 50 total.
+			target.injure(INJURY_BURN, combat_of(src).force * 6, source = src) // 30 Burn, for 50 total.
 
 /obj/item/melee/energy/sword/ionic_rapier/lance
 	name = "zero-point lance"
 	desc = "Designed specifically for disrupting electronics at relatively close range, however it is still capable of dealing some damage to living beings."
 	active_force = 20
 	active_armourpen = 15
-	reach = 2
+
+CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier/lance)
+	configure(item_combat(reach = 2))
 
 /*
  * Charge blade. Uses a cell, and costs energy per strike.
@@ -422,7 +410,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/axe/charge/loaded, "bcell", /obj/it
 
 	hitcost = 75
 
-DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/item/cell/device/weapon)
+/obj/item/melee/energy/sword/charge/loaded/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED, starts = /obj/item/cell/device/weapon)
 
 //Energy Blade (ninja uses this)
 
@@ -432,19 +422,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 	desc = "A concentrated beam of energy in the shape of a blade. Very stylish... and lethal."
 	icon_state = "blade"
 	item_state = "blade"
-	item_flags = DROPDEL | NOSTRIP
-	force = 40 //Normal attacks deal very high damage - about the same as wielded fire axe
-	armor_penetration = 100
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
-	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
 	throw_range = 1
-	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such. //CHOMP Edit
+	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such.
 	flags = NOBLOODY
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/mob/living/creator
 	projectile_parry_chance = 60
 	lcolor = "#00FF00"
@@ -453,18 +436,25 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 /obj/item/melee/energy/blade/Initialize(mapload)
 	. = ..()
 
-	set_light(lrange, lpower, lcolor)
+	set_glow(src, GLOW(lrange, lpower, lcolor))
 
-EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_REF(blade_interaction_self)))
+CAPABILITIES(/obj/item/melee/energy/blade)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	configure(item_thrown(force = 1))
+	configure(item_combat(force = 40, armor_penetration = 100, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
+	without("power") // special_handling: a summoned blade is never toggled, only dismissed
+	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
+	op("dismiss", in_hand(), label("Dismiss energy blade"), then(PROC_REF(blade_dismiss_requested)))
+	ref_one(nameof(creator), /mob/living)
 
-/// Old attack_self (the parent's self-use does nothing for a blade: special handling).
-/obj/item/melee/energy/blade/proc/blade_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.drop_from_inventory(src)
-	expire(1)
+/obj/item/melee/energy/blade/proc/blade_dismiss_requested(datum/act/op/A)
+	A.actor.drop_from_inventory(src)
+	expire(0.1 SECONDS)
+	return OP_OK
 
 /// Goes away once it leaves its creator's hands: checked after it is made, dropped or moved
 /// between hands, never polled.
-/obj/item/melee/energy/blade/proc/check_held()
+/obj/item/melee/energy/blade/proc/check_held(datum/act/A)
 	if(!creator() || loc != creator() || !creator().item_is_in_hands(src))
 		// Tidy up a bit.
 		if(isliving(loc))
@@ -475,7 +465,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 						if(O == src)
 							rel_remove(organ, nameof(organ.implants), src)
 			rel_remove(host, nameof(host.pinned), src)
-			LAZYREMOVE(host.embedded, src)
+			rel_remove(host, nameof(host.embedded), src)
 			host.drop_from_inventory(src)
 		expire(1)
 
@@ -512,15 +502,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	name = "energy spear"
 	desc = "Concentrated energy forming a sharp tip at the end of a long rod."
 	icon_state = "espear"
-	armor_penetration = 0
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	force = 5
-	throwforce = 10
 	throw_speed = 7
 	throw_range = 11
-	reach = 2
 	w_class = ITEMSIZE_LARGE
 	active_force = 25
 	active_armourpen = 75
@@ -530,17 +514,21 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 
 	lcolor = "#800080"
 
+CAPABILITIES(/obj/item/melee/energy/spear)
+	configure(item_thrown(force = 10))
+	configure(item_combat(armor_penetration = 0, sharp = TRUE, edge = TRUE, force = 5, reach = 2))
+
 /obj/item/melee/energy/spear/activate(mob/living/user)
 	if(!active)
 		to_chat(user, span_notice("\The [src] is now energised."))
 	..()
-	attack_verb = list("jabbed", "stabbed", "impaled")
+	set_attack_verb(list("jabbed", "stabbed", "impaled"))
 
 /obj/item/melee/energy/spear/deactivate(mob/living/user)
 	if(active)
 		to_chat(user, span_notice("\The [src] deactivates!"))
 	..()
-	attack_verb = list("whacked", "beat", "slapped", "thonked")
+	set_attack_verb(list("whacked", "beat", "slapped", "thonked"))
 
 /obj/item/melee/energy/spear/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(active && default_parry_check(user, attacker, damage_source) && prob(50))
@@ -570,28 +558,34 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/energy/sword/altevian/appearance_overlays()
-	. = list()
-	. += ..()
-	if(active)
-		icon_state = "[initial(icon_state)]_active"
-	else
-		icon_state = initial(icon_state)
+/obj/item/melee/energy/sword/altevian/draw(datum/look/look)
+	..()
+	look.state(active ? "[initial(icon_state)]_active" : initial(icon_state))
 
 /obj/item/melee/energy/blade/dropped(mob/user, equipping, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
 /obj/item/melee/energy/blade/equipped(mob/user, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
-/obj/item/melee/energy/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED)
-DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
 	return creator
+
+/datum/prompt/color/blade_recolor
+	timeout = 0
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	recheck_on_open = TRUE
+
+/// The original picker delivered raw text to the effect's sanitize_hexcolor call.
+/datum/prompt/color/blade_recolor/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/color/blade_recolor/present(mob/user)
+	var/datum/tgui_color_picker/prompt/picker = new(user, question, title || "Pick a color", default || "#000000", timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(picker, nameof(picker.prompt), src)
+	picker.tgui_interact(user)
+	return picker

@@ -13,21 +13,6 @@
 
 // ---- reasons ----
 
-MSG_DEF_SELF(req_failed, "You can't do that.")
-MSG_DEF_SELF(req_refused, "%DETAIL%")
-MSG_DEF_SELF(req_hand_full, "You need an empty hand for that.")
-MSG_DEF_SELF(req_no_provider, "You have nothing to do that with.")
-MSG_DEF_SELF(req_no_route, "You can't do that that way.")
-MSG_DEF_SELF(req_out_of_reach, "You can't reach it.")
-MSG_DEF_SELF(req_not_capable, "You can't do that right now.")
-MSG_DEF_SELF(req_wrong_item, "That isn't the right thing to use.")
-MSG_DEF_SELF(req_wrong_state, "It isn't in the right state for that.")
-MSG_DEF_SELF(req_no_access, "Access denied.")
-MSG_DEF_SELF(req_wire_cut, "A wire it needs is cut.")
-MSG_DEF_SELF(req_no_part, "It is missing a part.")
-MSG_DEF_SELF(req_forbidden, "Not while things are as they are.")
-MSG_DEF_SELF(req_sealed, "Something in the way stops you.")
-MSG_DEF_SELF(req_cancelled, "You stop.")
 
 /// The player-facing text of reason `reason_type`, with ctx.detail filled where the template asks.
 /proc/req_reason_text(reason_type, datum/op_ctx/ctx)
@@ -44,11 +29,7 @@ MSG_DEF_SELF(req_cancelled, "You stop.")
 // ---- the flyweight ----
 
 /datum/req
-	/// The reason this requirement fails with (a /datum/msg type), unless test() returns another.
-	var/reason = /datum/msg/req_failed
-	/// OP_ACTOR / OP_TARGET / OP_HELD / OP_PROVIDER: whose state this reads.
-	var/of = OP_TARGET
-
+	parent_type = /datum/requirement
 /// null when the requirement holds for ctx, else a /datum/msg reason type.
 /datum/req/proc/test(datum/op_ctx/ctx)
 	return null
@@ -113,7 +94,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	return reason
 
 /// The subject (the held item by default) is of `type` (a path, or a list of paths).
-/proc/req(type, of = OP_HELD)
+/proc/legacy_req(type, of = OP_HELD)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/of_type/R = new
 	R.types = type
@@ -156,7 +137,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /datum/req/state_set/test(datum/op_ctx/ctx)
 	var/atom/A = subject(ctx)
-	if(!istype(A) || (A.cap_state & bits) != bits)
+	if(!istype(A) || (capability_bits(A) & bits) != bits)
 		return reason
 	return null
 
@@ -171,7 +152,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /datum/req/state_clear/test(datum/op_ctx/ctx)
 	var/atom/A = subject(ctx)
-	if(!istype(A) || (A.cap_state & bits))
+	if(!istype(A) || (capability_bits(A) & bits))
 		return reason
 	return null
 
@@ -214,25 +195,6 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/access)
 
-// ---- req_wire ----
-
-/// The target's wire `wire` (a WIRE_* define) is not cut.
-/datum/req/wire
-	reason = /datum/msg/req_wire_cut
-	var/wire
-
-/datum/req/wire/test(datum/op_ctx/ctx)
-	var/atom/A = subject(ctx)
-	var/datum/wires/W = isatom(A) ? wires_of(A) : null
-	if(W?.is_cut(wire))
-		return reason
-	return null
-
-/proc/req_wire(wire)
-	var/datum/req/wire/R = new
-	R.wire = wire
-	return req_intern(R)
-
 // ---- req_part ----
 
 /// The target holds a component of `type` (a stock part, a board, a cell).
@@ -244,7 +206,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	var/atom/A = subject(ctx)
 	if(!istype(A))
 		return reason
-	for(var/atom/movable/M in A.contents)
+	for(var/atom/movable/M in contents_of(A))
 		if(istype(M, part_type))
 			return null
 	return reason
@@ -351,14 +313,14 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 			. += mine
 
 /// Holds when every part does. Takes requirements or lists of them.
-/proc/all_of(...)
+/proc/legacy_all_of(...)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/all/R = new
 	R.parts = req_list(args)
 	return req_intern(R)
 
 /// Holds when any part does; the first reason otherwise.
-/proc/any_of(...)
+/proc/legacy_any_of(...)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/any/R = new
 	R.parts = req_list(args)
@@ -370,18 +332,6 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	var/datum/req/none/R = new
 	R.parts = req_list(args)
 	return req_intern(R)
-
-/// The requirements the old gating arguments mean (behind / blocked_by / locked_by): what a
-/// preset's reads are built from. Null when there are none.
-/proc/req_from_gating(behind = NONE, blocked_by = NONE, locked_by = NONE)
-	var/list/out = list()
-	if(behind)
-		out += req_set(behind)
-	if(blocked_by)
-		out += req_clear(blocked_by)
-	if(locked_by)
-		out += req_clear(locked_by)
-	return length(out) ? out : null
 
 // ---- shared machine contracts ----
 
@@ -399,7 +349,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 		return reason
 	if(istype(A, /obj/machinery))
 		var/obj/machinery/M = A
-		return M.has_stat(BROKEN | MAINT) ? reason : null
+		return (M.broken_now() || M.under_maintenance()) ? reason : null
 	return is_broken(A) ? reason : null
 
 /// The target works (req_working()): shared by every op that needs a working machine.
@@ -419,7 +369,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 	var/atom/A = subject(ctx)
 	return A ? list(list(A, OP_KEY_CAP_STATE)) : null
 
-/proc/req_not_subverted()
+/proc/legacy_req_not_subverted()
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/not_subverted)
 
@@ -469,7 +419,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 MSG_DEF_SELF(req_wrong_stance, "Not like that.")
 
 /// The actor's input is in one of `stances` (I_HELP, I_DISARM, I_GRAB, I_HURT): an op declared for some stances
-/// (cap_op(stance = list(...))) offers this, so another stance falls through to the next op. The input layer's reading of
+/// (an op's stance list) offers this, so another stance falls through to the next op. The input layer's reading of
 /// the stance (mob/input_stance()), as the resolver's stance clauses read it.
 /datum/req/stance
 	reason = /datum/msg/req_wrong_stance
@@ -479,6 +429,21 @@ MSG_DEF_SELF(req_wrong_stance, "Not like that.")
 /datum/req/stance/test(datum/op_ctx/ctx)
 	var/mob/M = ctx.actor
 	return (istype(M) && (M.input_stance() in stances)) ? null : reason
+
+MSG_DEF_SELF(harm_click_only, "That would destroy it. Use harm intent if you mean it.")
+
+/// For an op that destroys what is held or its target: a click must be on harm intent (anything else is refused with MSG(harm_click_only), never
+/// a fall-through to the bare-hand op); a menu pick is deliberate and passes. Use as needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))).
+/atom/proc/harm_click_only(datum/act/op/A)
+	if(A.origin == ORIGIN_MENU)
+		return null
+	var/mob/M = A.actor
+	return (istype(M) && click_stance_of(M) == I_HURT) ? null : MSG(harm_click_only)
+
+/// The stance of the actor's click now. A click is decided once, so nothing subscribes to the combat mode it reads.
+/proc/click_stance_of(mob/M)
+	READS_FROM()
+	return M.input_stance()
 
 /// A stance (I_*) or a list of them.
 /proc/req_stance(stances)

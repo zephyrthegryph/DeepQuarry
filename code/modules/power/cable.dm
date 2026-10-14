@@ -77,7 +77,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/proc/set_engineered_material(material_id)
 	engineered_material_id = material_id
-	if(material_id && !material_overrides)
+	if(material_id && !material_build_view(src).overrides)
 		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), /datum/material_template/cable, SHEET_MATERIAL_AMOUNT)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
@@ -90,11 +90,11 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /// Engineered conductors put their region on the material overlay.
 /obj/structure/cable/proc/power_material_changed()
-	if(!engineered_material_id && !material_custom_assembly)
+	if(!engineered_material_id && !material_assembly_view(src).custom)
 		return
-	GLOB.machine_service.power_material_cables[src] = TRUE
+	rel_add(SSmachines, nameof(SSmachines.power_material_cables), src)
 	if(power_entity)
-		var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[get_power_region()]
+		var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[get_power_region()]
 		overlay?.invalidate_material_cache()
 
 /obj/structure/cable/proc/recover_coil(turf/location, length)
@@ -128,6 +128,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	SSvg.untrack_entity(src, power_entity)
 	power_entity = vg_power_bind_cable(power_entity, power_shape(T))
+	power_topology_edited(src)
 	SSvg.track_entity(src, power_entity)
 
 /// This piece as `vg_power_bind_cable` takes it: `x, y, z, d1, d2, up, down, link`.
@@ -158,6 +159,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!length(bound))
 		return
 	var/list/handles = vg_power_bind_cable_list(entities, shapes)
+	power_topology_edited(/obj/structure/cable)
 	for(var/i in 1 to length(bound))
 		var/obj/structure/cable/C = bound[i]
 		SSvg.untrack_entity(C, C.power_entity)
@@ -207,9 +209,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	var/dash = findtext(icon_state, "-")
 
-	d1 = text2num( copytext( icon_state, 1, dash ) )
+	set_d1(text2num( copytext( icon_state, 1, dash ) ))
 
-	d2 = text2num( copytext( icon_state, dash+1 ) )
+	set_d2(text2num( copytext( icon_state, dash+1 ) ))
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
@@ -218,7 +220,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /// Phase 1 (unbind): the cable leaves its power region and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
-	GLOB.machine_service.power_material_cables -= src
+	rel_remove(SSmachines, nameof(SSmachines.power_material_cables), src)
 	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 
@@ -229,7 +231,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		. += span_warning("[avail > 0 ? "[DisplayPower(avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
-		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
+		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service_of(src)?.temperature() || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
 		if(material?.critical_temperature)
 			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 
@@ -241,18 +243,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(d1)
 		// Using turn will maintain the cable's shape
 		// Taking the difference between current orientation and new one
-		d1 = turn(d1, dir2angle(new_dir) - dir2angle(dir))
-	d2 = turn(d2, dir2angle(new_dir) - dir2angle(dir))
+		set_d1(turn(d1, dir2angle(new_dir) - dir2angle(dir)))
+	set_d2(turn(d2, dir2angle(new_dir) - dir2angle(dir)))
 
 	// Maintain d1 < d2
 	if(d1 > d2)
 		var/temp = d1
-		d1 = d2
-		d2 = temp
+		set_d1(d2)
+		set_d2(temp)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
-	update_icon()
 	if(flags & ATOM_INITIALIZED)
 		power_register()
 
@@ -268,20 +269,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 //If underfloor, hide the cable
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+		hide_under_floor(src, i)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cable/appearance_overlays()
-	. = list()
+/obj/structure/cable/draw(datum/look/look)
+	..()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
 	if(!(flags & ATOM_INITIALIZED))
-		return .
-	icon_state = "[d1]-[d2]"
-	alpha = invisibility ? 127 : 255
+		return
+	look.state("[d1]-[d2]")
+	look.set_alpha(invisibility ? 127 : 255)
 
 // Items usable on a cable :
 //   - Wirecutters : cut it duh !
@@ -289,40 +288,46 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_ov
 //   - Multitool : get the power currently passing through the cable
 //
 
-DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/cable)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
 
 /// Old attackby.
-/obj/structure/cable/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/cable/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = W
 		if(coil.get_amount() < 1)
 			to_chat(user, "Not enough cable")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		coil.cable_join(src, user)
 	else if(!(W.flags & NOCONDUCT))
 		shock(user, 50, 0.7)
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/obj/structure/cable/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/cable/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	var/obj/item/stack/cable_coil/CC
 	if(d1 == UP || d2 == UP)
 		to_chat(user, span_warning("You must cut this cable from above."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(breaker_box())
 		to_chat(user, span_warning("This cable is connected to nearby breaker box. Use breaker box to interact with it."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(shock(user, 50))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if(src.d1)	// 0-X cables are 1 unit, X-X cables are 2 units long
 		CC = recover_coil(T, 2)
@@ -340,17 +345,18 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		if(turf)
 			for(var/obj/structure/cable/c in turf_contents_of_type(turf, /obj/structure/cable))
 				if(c.d1 == UP || c.d2 == UP)
-					qdel(c)
+					destroyed(c, user)
 
 	investigate_log("was cut by [key_name(user, user.client)] in [user.loc.loc]","wires")
 
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	destroyed(src, user)
+	return OP_OK
 
-/obj/structure/cable/multitool_act(mob/user, obj/item/W)
+/obj/structure/cable/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = src.loc
 	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/avail = power_avail(get_power_region())
 	if(avail > 0)
 		to_chat(user, span_warning("[DisplayPower(avail)] in power network."))
@@ -358,7 +364,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		to_chat(user, span_warning("The cable is not powered."))
 	shock(user, 5, 0.2)
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // shock the user with probability prb
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1.0)
@@ -366,7 +372,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		return 0
 	if (electrocute_mob(user, src, src, siemens_coeff))
 		fx_sparks(src, 5)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 
@@ -448,41 +454,39 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	color = COLOR_RED
 	gender = NEUTER
 	desc = "A coil of power cable."
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	slot_flags = SLOT_BELT
 	item_state = "coil"
-	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = /obj/item/stack/cable_coil
 	singular_name = "length"
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 
-/obj/item/stack/cable_coil/Initialize(mapload, length = MAXCOIL, param_color = null, material_id)
+/// The engineered material a coil is made of (its constructor param).
+/obj/item/stack/cable_coil/var/material_id
+
+/// A coil is made full unless its first argument (the stack's amount param) says otherwise.
+/obj/item/stack/cable_coil
+	amount_at_make = MAXCOIL
+
+// ALLOW(init/INSTANCE_STATE): a coil takes its blueprint's effects and its engineered material's name
+/obj/item/stack/cable_coil/Initialize(mapload)
 	. = ..()
 	apply_blueprint_effects()
-	amount = length
-	engineered_material_id = material_id
-	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
-		color = param_color
-	pixel_x = rand(-2,2)
-	pixel_y = rand(-2,2)
-	update_icon()
+	material_engineered_id_set(src, material_id)
 	update_wclass()
-	if(engineered_material_id)
-		var/datum/material/material = get_material_by_name(engineered_material_id)
+	if(material_engineered_id(src))
+		var/datum/material/material = get_material_by_name(material_engineered_id(src))
 		name = "[material?.display_name || "engineered"] cable coil"
 		desc = "A layered power conductor. Its core carries current while its functional layer and jacket govern thermal stability."
 
 /obj/item/stack/cable_coil/examine(mob/user)
 	. = ..()
-	if(engineered_material_id)
-		var/datum/material/material = get_material_by_name(engineered_material_id)
-		. += span_notice("Conductor construction: [material?.display_name || engineered_material_id].")
+	var/engineered_id = material_engineered_id(src)
+	if(engineered_id)
+		var/datum/material/material = get_material_by_name(engineered_id)
+		. += span_notice("Conductor construction: [material?.display_name || engineered_id].")
 
 ///////////////////////////////////
 // General procedures
@@ -492,7 +496,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(A) && stance == I_HELP)
 		var/mob/living/carbon/human/H = A
-		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
+		var/obj/item/organ/external/S = H.organs_by_name[hud_of(user)?.zone_sel?.selecting]
 
 		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()
@@ -523,20 +527,25 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/item/stack/cable_coil/proc/robo_repair_used(mob/living/user, use_amt)
 	use(use_amt)
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/cable_coil/appearance_overlays()
-	. = list()
-	if (!color)
-		color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)
+/// One or two lengths show as a piece, more as a coil.
+/obj/item/stack/cable_coil/look_state()
 	if(amount == 1)
-		icon_state = "coil1"
-		name = "cable piece"
-	else if(amount == 2)
-		icon_state = "coil2"
+		return "coil1"
+	if(amount == 2)
+		return "coil2"
+	return "coil"
+
+/// A piece of cable is named so, a coil keeps its own name.
+/obj/item/stack/cable_coil/proc/update_coil_name()
+	if(amount == 1 || amount == 2)
 		name = "cable piece"
 	else
-		icon_state = "coil"
 		name = initial(name)
+
+/obj/item/stack/cable_coil/set_amount(new_amount, no_limits = FALSE)
+	. = ..()
+	if(!QDELETED(src))
+		update_coil_name()
 
 /obj/item/stack/cable_coil/proc/set_cable_color(selected_color, user)
 	if(!selected_color)
@@ -551,26 +560,39 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil, TYPE_PROC_REF(/atom, appeara
 
 /obj/item/stack/cable_coil/proc/update_wclass()
 	if(amount == 1)
-		w_class = ITEMSIZE_TINY
+		set_w_class(ITEMSIZE_TINY)
 	else
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 
-/obj/item/stack/cable_coil/multitool_act(mob/user, obj/item/W)
-	var/selected_type = rerun_ask(user, "k530", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Pick new colour.", title = "Cable Colour", choices = GLOB.possible_cable_coil_colours)
+/// A multitool recolours the coil to the picked colour.
+/obj/item/stack/cable_coil/proc/multitool_used(datum/act/op/A)
+	var/selected_type = A.step_value("colour")
 	if(isnull(selected_type))
-		return ITEM_INTERACT_BLOCKING
-	set_cable_color(selected_type, user)
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	set_cable_color(selected_type, A.actor)
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
-	INTERACT_VERB("Make Cable Restraints", PROC_REF(cable_coil_make_restraint), REQ_IN_INVENTORY), \
-)
+/obj/item/stack/cable_coil/proc/colour_choices(datum/act/op/A)
+	return GLOB.possible_cable_coil_colours
+
+CAPABILITIES(/obj/item/stack/cable_coil)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
+	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), asks(/datum/prompt/choice, fields = list("question" = "Pick new colour.", "title" = "Cable Colour", "choices" = computed(PROC_REF(colour_choices))), step = "colour"), then(PROC_REF(multitool_used)))
+	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
+	param(nameof(color), pos = 2)
+	param(nameof(material_id), pos = 3)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_ORANGE, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN)), when = cond_not(nameof(color)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /// Old verb "Make Cable Restraints" (an obj verb with no `set src`, so src in usr).
-/obj/item/stack/cable_coil/proc/cable_coil_make_restraint(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/cable_coil/proc/cable_coil_make_restraint(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/M = user
 
-	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(EFFECT_PARALYZED) && ! M.has_status(EFFECT_STUNNED))
+	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(STAT_PARALYZED) && ! M.has_status(STAT_STUNNED))
 		if(!istype(M.loc,/turf)) return
 		if(src.amount <= 14)
 			to_chat(M, span_warning("You need at least 15 lengths to make restraints!"))
@@ -589,18 +611,16 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 /obj/item/stack/cable_coil/transfer_to(obj/item/stack/cable_coil/S)
 	if(!istype(S))
 		return
-	if(engineered_material_id != S.engineered_material_id)
+	if(material_engineered_id(src) != material_engineered_id(S))
 		return
 	..()
 
 /obj/item/stack/cable_coil/use()
 	. = ..()
-	update_icon()
 	return
 
 /obj/item/stack/cable_coil/add()
 	. = ..()
-	update_icon()
 	return
 
 ///////////////////////////////////////////////
@@ -656,25 +676,24 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 		C = new /obj/structure/cable/heavyduty(F)
 	else
 		C = new /obj/structure/cable(F)
-	C.set_engineered_material(engineered_material_id)
+	C.set_engineered_material(material_engineered_id(src))
 	C.copy_material_construction_from(src)
 	C.cableColor(color)
-	C.d1 = d1
-	C.d2 = d2
+	C.set_d1(d1)
+	C.set_d2(d2)
 	C.add_fingerprint(user)
-	C.update_icon()
 	C.power_register()
 
 	use(1)
 	if (C.shock(user, 50))
 		if (prob(50)) //fail
 			C.recover_coil(C.loc, 1)
-			qdel(C)
+			spent(C, user)
 
 // called when cable_coil is click on an installed obj/cable
 // or click on a turf that already contains a "node" cable
 /obj/item/stack/cable_coil/proc/cable_join(obj/structure/cable/C, mob/user)
-	if(C.engineered_material_id && C.engineered_material_id != engineered_material_id)
+	if(C.engineered_material_id && C.engineered_material_id != material_engineered_id(src))
 		to_chat(user, span_warning("The two conductor constructions cannot be spliced without a transition terminal."))
 		return
 	var/turf/U = user.loc
@@ -733,14 +752,13 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 				return
 
 		C.cableColor(color)
-		C.set_engineered_material(engineered_material_id)
+		C.set_engineered_material(material_engineered_id(src))
 		C.copy_material_construction_from(src)
 
-		C.d1 = nd1
-		C.d2 = nd2
+		C.set_d1(nd1)
+		C.set_d2(nd2)
 
 		C.add_fingerprint()
-		C.update_icon()
 		C.power_register()
 
 		use(1)
@@ -748,7 +766,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 		if (C.shock(user, 50))
 			if (prob(50)) //fail
 				C.recover_coil(C.loc, 2)
-				qdel(C)
+				spent(C, user)
 				return
 		return
 
@@ -759,13 +777,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 /obj/item/stack/cable_coil/cut
 	item_state = "coil2"
 
-/obj/item/stack/cable_coil/cut/Initialize(mapload)
-	. = ..()
-	amount = rand(1,2)
-	pixel_x = rand(-2,2)
-	pixel_y = rand(-2,2)
-	update_icon()
-	update_wclass()
+CAPABILITIES(/obj/item/stack/cable_coil/cut)
+	rolls(nameof(amount_at_make), range_of(1, 2)) // a cut piece is one or two lengths
+	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /obj/item/stack/cable_coil/yellow
 	stacktype = /obj/item/stack/cable_coil
@@ -839,16 +853,17 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 	stacktype = /obj/item/stack/cable_coil
 	color = COLOR_BROWN
 
-/obj/item/stack/cable_coil/random/Initialize(mapload)
+/obj/item/stack/cable_coil/random
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)
-	. = ..()
 
-/obj/item/stack/cable_coil/random_belt/Initialize(mapload)
+CAPABILITIES(/obj/item/stack/cable_coil/random)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)))
+
+/obj/item/stack/cable_coil/random_belt
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
-	amount = 30
-	. = ..()
+
+CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)))
 
 //Endless alien cable coil
 
@@ -876,28 +891,22 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 	amount = MAXCOIL
 	max_amount = MAXCOIL
 	color = COLOR_SILVER
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	slot_flags = SLOT_BELT
-	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = null
-	toolspeed = 0.25
 
-/obj/item/stack/cable_coil/alien/Initialize(mapload, length = MAXCOIL, param_color = null)		//There has to be a better way to do this.
+/obj/item/stack/cable_coil/alien/Initialize(mapload)		//There has to be a better way to do this.
 	. = ..()
 	if(embed_chance == -1)		//From /obj/item, don't want to do what the normal cable_coil does
-		if(sharp)
-			embed_chance = force/w_class
+		if(combat_of(src).sharp)
+			embed_chance = combat_of(src).force/w_class
 		else
-			embed_chance = force/(w_class*3)
-	update_icon()
+			embed_chance = combat_of(src).force/(w_class*3)
 
-DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/stack/cable_coil/alien/appearance_overlays()
-	. = list()
-	icon_state = initial(icon_state)
+/// An alien spool always shows its own state.
+/obj/item/stack/cable_coil/alien/look_state()
+	return initial(icon_state)
 
 /obj/item/stack/cable_coil/alien/can_use(used)
 	return 1
@@ -917,18 +926,33 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/cable_coil/alien, TYPE_PROC_REF(/atom, a
 	if(Adjacent(user))
 		. += "It doesn't seem to have a beginning, or an end."
 
-EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Take wire", PROC_REF(alien_coil_hand)))
+// The endless coil's touch replaces the stack's split: it asks how much wire to take.
+CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	configure(item_tooling(speed = 0.25))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
+	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
+	op("split", hand(), ungated(), label("Take wire"), when(req(PROC_REF(alien_coil_inactive))),
+		asks(/datum/prompt/number, step = "wire", fields = list("title" = "Split stacks", "question" = computed(PROC_REF(alien_wire_question)), "default" = 1, "max_value" = computed(PROC_REF(alien_wire_maximum)), "min_value" = 1, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(alien_wire_taken)))
 
-/// Old attack_hand: take wire from the endless coil in the other hand; otherwise fall through to pickup.
-/obj/item/stack/cable_coil/alien/proc/alien_coil_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (user.get_inactive_hand() == src)
-		var/N = rerun_ask(user, "k889", PROC_REF(alien_coil_hand), args, /datum/om/prompt/number, message = "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time.", title = "Split stacks", default = 1, max = amount)
-		if(isnull(N))
-			return TRUE
+/// Only the actual inactive-hand spool supplies the split operation; a floor spool falls through to pickup.
+/obj/item/stack/cable_coil/alien/proc/alien_coil_inactive(datum/act/op/A)
+	return (A.actor?.get_inactive_hand() == src) ? null : MSG(req_failed)
+
+/obj/item/stack/cable_coil/alien/proc/alien_wire_question(datum/act/op/A)
+	return "How many units of wire do you want to take from [src]? You can only take up to [amount] at a time."
+
+/obj/item/stack/cable_coil/alien/proc/alien_wire_maximum(datum/act/op/A)
+	return amount
+
+/// The answered length of wire comes off into the hand.
+/obj/item/stack/cable_coil/alien/proc/alien_wire_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/N = A.step_value("wire")
+	if(N)
 		if(N && N <= amount)
 			var/obj/item/stack/cable_coil/CC = new/obj/item/stack/cable_coil(user.loc)
-			CC.amount = N
-			CC.update_icon()
+			CC.set_amount(N, TRUE)
 			to_chat(user,span_blue("You take [N] units of wire from the [src]."))
 			if (CC)
 				user.put_in_hands(CC)
@@ -936,8 +960,6 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 				CC.add_fingerprint(user)
 				if (src && user.check_current_machine(src))
 					src.interact(user)
-		return TRUE
-	return FALSE
 
 #undef MAXCOIL
 

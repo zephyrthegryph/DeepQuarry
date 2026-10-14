@@ -1,0 +1,5 @@
+/obj/item/transfer_valve icon: icons/obj/assemblies.dmi
+/obj/item/transfer_valve state: valve_1
+/obj/item/transfer_valve dir: 2
+/obj/item/transfer_valve overlay: icons/obj/assemblies.dmi:valve_1:8:#000000
+

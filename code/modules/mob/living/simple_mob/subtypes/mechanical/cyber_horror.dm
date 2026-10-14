@@ -9,7 +9,6 @@
 
 	faction = "synthtide"
 
-
 	endurance = 175
 
 	melee_damage_lower = 5
@@ -19,7 +18,6 @@
 	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	// To promote a more diverse weapon selection.
 	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	say_list_type = /datum/say_list/cyber_horror
 
@@ -32,7 +30,10 @@
 	var/emp_damage = 0
 	var/nanobot_chance = 40
 
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 
 /datum/say_list/cyber_horror
 	speak = list("H@!#$$P M@!$#",
@@ -99,7 +100,6 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 	attack_armor_pen = 50
-	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGMELEE
 	attacktext = list ("sliced", "diced", "lashed", "shredded")
@@ -110,7 +110,6 @@
 
 // You do NOT Want to get in touchy range of this thing.
 	armor_spec = "melee=75;bullet=-10;laser=-25;bio=100;rad=100"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 
 // Leaping is a special attack, so these values determine when leap can happen.
@@ -121,6 +120,10 @@
 // How long the leap telegraphing is.
 	var/leap_warmup = 2 SECOND
 	var/leap_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGLEAP
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 2.5))
 
 /datum/say_list/cyber_horror/ling
 	threaten_sound = 'sound/mob/robots/cyber_horror_changeling.ogg'
@@ -139,25 +142,25 @@
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
 	// For the telegraphing.
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A)
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A), keeps_dead = TRUE)
 
 
 /mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/proc/do_special_attack_1(atom/A)
 
 	// Do the actual leap.
 	// Lets us pass over everything.
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 	// For the throw to complete. It won't hold up the AI SSticker due to waitfor being false.
-	om_after(src, 5, PROC_REF(do_special_attack_2), A)
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(A))
 
 /mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/proc/do_special_attack_2(atom/A)
 
 	// Revert special passage ability.
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 	// Where we landed. This might be different than A's turf.
 	var/turf/T = get_turf(src)
 
@@ -179,7 +182,7 @@
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
@@ -222,14 +225,14 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/cloak()
 	if(dq_get_cloaked(src))
 		return
-	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
+	set_alpha_source(SRC_ALPHA_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/uncloak()
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/proc/can_cloak()
@@ -246,12 +249,9 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/is_cloaked()
 	return dq_get_cloaked(src)
 
-/datum/om/stage/life/special/mechanical/cyber_horror/tajaran
-	of = /mob/living/simple_mob/mechanical/cyber_horror/tajaran
-
-/datum/om/stage/life/special/mechanical/cyber_horror/tajaran/perform(mob/living/simple_mob/mechanical/cyber_horror/tajaran/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/mechanical/cyber_horror/tajaran/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))
@@ -262,13 +262,14 @@
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] tears into you!"))
 			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/mechanical/cyber_horror/tajaran, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/tajaran)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()
@@ -302,10 +303,12 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/mechanical/cyber_horror/tajaran, DA
 	endurance = 50
 	say_list_type = /datum/say_list/cyber_horror/corgi
 
-	base_attack_cooldown = 4
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = SFX_WEAPONS_SMALLLASER
 	movement_sound = SFX_EFFECTS_SERVOSTEP
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/corgi)
+	configure(mob_kind(attack_cooldown = 4))
 
 
 /datum/say_list/cyber_horror/corgi
@@ -326,13 +329,10 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/mechanical/cyber_horror/tajaran, DA
 	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	pass_flags = PASSTABLE
-	mob_swap_flags = 0
-	mob_push_flags = 0
 
 	melee_damage_lower = 2
 	melee_damage_upper = 2
 // Four attacks per second.
-	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
 	attack_sound = SFX_WEAPONS_BITE
 
@@ -342,6 +342,10 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/mechanical/cyber_horror/tajaran, DA
 	var/poison_chance = 75
 	var/poison_per_bite = 3
 	var/poison_type = REAGENT_ID_MINDBREAKER
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror/cat_cyber_horror)
+	configure(mob_kind(attack_cooldown = 2.5))
+	configure(mob_movement(swap = 0, push = 0))
 
 /datum/say_list/cyber_horror/cat
 	threaten_sound = 'sound/mob/robots/cyber_horror_cat.ogg'

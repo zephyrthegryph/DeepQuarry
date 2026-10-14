@@ -12,12 +12,13 @@
 	icon_state = "blackservice"
 	item_state = "blackservice"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	body_parts_covered = UPPER_TORSO|ARMS
 	armor_spec = ""
-	siemens_coefficient = 0.9
-	flags_inv = HIDEHOLSTER
 	valid_accessory_slots = (ACCESSORY_SLOT_ARMBAND|ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_INSIGNIA|ACCESSORY_SLOT_RANK|ACCESSORY_SLOT_DEPT)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/solgov/service)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/service, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))))
 
@@ -184,11 +185,13 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/service, suit_storage_spec, li
 	desc = "A uniform dress jacket, fancy."
 	icon_state = "sgdress_xpl"
 	item_state = "sgdress_xpl"
-	body_parts_covered = UPPER_TORSO|ARMS
 	armor_spec = ""
-	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/solgov/dress)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/dress, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 /obj/item/clothing/suit/storage/solgov/dress/sifguard/chief
@@ -241,10 +244,12 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/solgov/dress, suit_storage_spec, list
 	item_state = "blackdress"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	body_parts_covered = UPPER_TORSO|ARMS
 	armor_spec = ""
-	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
+
+CAPABILITIES(/obj/item/clothing/suit/dress/solgov)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/dress/solgov, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 
@@ -319,7 +324,9 @@ TYPE_TABLE(/obj/item/clothing/suit/dress/solgov, suit_storage_spec, list(HOLD_ON
 	desc = "A black synthleather jacket. The acronym 'EIO' of the Emergent Intelligence Oversight is stenciled onto the back in gold lettering."
 	icon_state = "marshal_jacket"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/eio_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //SAARE Mercenaries
 
@@ -351,10 +358,12 @@ TYPE_TABLE(/obj/item/clothing/suit/dress/solgov, suit_storage_spec, list(HOLD_ON
 	item_state = "terrandress"
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_override = 'icons/inventory/suit/mob.dmi'
-	body_parts_covered = UPPER_TORSO|ARMS
 	armor_spec = ""
-	siemens_coefficient = 0.9
 	valid_accessory_slots = (ACCESSORY_SLOT_MEDAL|ACCESSORY_SLOT_RANK)
+
+CAPABILITIES(/obj/item/clothing/suit/dress/saare)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
+	configure(item_protection(siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/dress/saare, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/beret))))
 

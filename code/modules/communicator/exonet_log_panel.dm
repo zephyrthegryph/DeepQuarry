@@ -3,6 +3,18 @@
 /mob/observer/dead
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
+CAPABILITIES(/mob/observer/dead)
+	// a ghost acts only as an observer: its clicks and menu picks reach the observer() ops of what it looks at, nothing else (no hands, no interface)
+	provides(AFF_OBSERVE)
+	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
+	ref_one(nameof(visualnet), /datum/visualnet/ghost)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
+	op("observer_tome_manifest", item(/obj/item/book/tome), label("Manifest"), then(PROC_REF(observer_tome_manifest)))
+	drag_onto(PROC_REF(drop_input))
+	param(nameof(admin_ghosted), pos = 1)
+	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_track)))
+	op("reenter", topic("reenter"), then(PROC_REF(topic_reenter)))
+
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host
 
@@ -15,19 +27,17 @@
 	if(host()?.dq_exonet_log_panel_cache == src)
 		host().dq_exonet_log_panel_cache = null
 
-DECLARE_UI_STATE(/datum/exonet_log_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/exonet_log_panel, "ExonetLog", UI_TITLE("Exonet Message Log"))
+CAPABILITIES(/datum/exonet_log_panel)
+	interface("ExonetLog", title = "Exonet Message Log", state = nameof(GLOB.tgui_always_state))
+	ui_shape(lines = any)
 
 /datum/exonet_log_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host() || user != host())
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{lines:unknown}")
-
-/// The computed part of /datum/exonet_log_panel's window data (declared on its UI_DATA row).
-/datum/exonet_log_panel/proc/ui_data_datum_exonet_log_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/exonet_log_panel's window data.
+/datum/exonet_log_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["lines"] = host() ? (host().exonet_messages ? host().exonet_messages.Copy() : list()) : list()
 	return data
@@ -38,7 +48,7 @@ UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{l
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)
-		own_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
+		rel_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
 

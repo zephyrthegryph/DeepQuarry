@@ -3,9 +3,9 @@
 	var/static/list/dates
 	var/static/list/testmerges
 
-DECLARE_UI_STATE(/datum/changelog, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/changelog, "Changelog")
+CAPABILITIES(/datum/changelog)
+	interface("Changelog", state = nameof(GLOB.tgui_always_state))
+	op("get_month", ui_act("get_month", arg("date", schema_text(4096))), then(PROC_REF(ui_act_get_month)))
 
 /datum/changelog/ui_prepare(mob/user, datum/tgui/ui)
 	if(isnull(dates))
@@ -15,12 +15,13 @@ DECLARE_UI(/datum/changelog, "Changelog")
 
 	return TRUE
 
-UI_ACT(/datum/changelog, "get_month", ui_act_get_month, UI_ARG_TEXT("date"))
-UI_ACT_PROC(/datum/changelog, ui_act_get_month)
-	var/datum/asset/changelog_item/changelog_item = changelog_items[params["date"]]
+/datum/changelog/proc/ui_act_get_month(datum/act/op/A, date)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	var/datum/asset/changelog_item/changelog_item = changelog_items[date]
 	if (!changelog_item)
-		changelog_item = new /datum/asset/changelog_item(params["date"])
-		changelog_items[params["date"]] = changelog_item
+		changelog_item = new /datum/asset/changelog_item(date)
+		changelog_items[date] = changelog_item
 	return ui.send_asset(changelog_item)
 
 /datum/changelog/tgui_static_data()

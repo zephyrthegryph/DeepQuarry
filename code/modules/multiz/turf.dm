@@ -63,13 +63,14 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 /turf/simulated/open/Initialize(mapload)
 	. = ..()
 	ASSERT(HasBelow(z))
-	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
-	return INITIALIZE_HINT_LATELOAD
 
-/turf/simulated/open/LateInitialize()
-	. = ..()
+/turf/simulated/open/runtime_after_init()
+	return TRUE
+
+/// Shows the level below, once it exists.
+/turf/simulated/open/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(FALSE)
-	update_icon()
 
 /turf/simulated/open/Entered(atom/movable/mover, atom/oldloc)
 	..()
@@ -92,39 +93,49 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 			depth += 1
 		. += "It is about [depth] levels deep."
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/open, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/open/appearance_overlays()
-	. = list()
-	. += update_icon_edge()
-	. += GLOB.openspace_backdrop_one_for_all //Special grey square for projecting backdrop darkness filter on it.
+/// The edges of the stronger turfs around it (edge_spill, kept by the adjacency index) and the backdrop.
+/turf/simulated/open/draw(datum/look/look)
+	..()
+	for(var/image/spill_image as anything in edge_spill)
+		look.overlay(spill_image)
+	look.overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
+
+/turf/simulated/open/edges_changed(mask)
+	..()
+	var/list/spill = edge_spill_overlays()
+	if(!same_images(edge_spill, spill))
+		set_edge_spill(spill)
 
 // Straight copy from space.
-EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_space_build)))
+CAPABILITIES(/turf/simulated/open)
+	op("open_space_build", item(/obj/item), label("Build"), then(PROC_REF(open_space_build)))
 
 /// Old attackby, a straight copy from space: rods build a lattice, tiles plate it, cable is laid.
-/turf/simulated/open/proc/open_space_build(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/open/proc/open_space_build(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ReplaceWithLattice()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
-			qdel(L)
+				return OP_PASS
+			spent(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
 
@@ -132,8 +143,8 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 	if(istype(C, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/coil = C
 		coil.turf_place(src, user)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 //Most things use is_plating to test if there is a cover tile on top (like regular floors)
 /turf/simulated/open/is_plating()
@@ -163,13 +174,17 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 // /turf/simulated/floor/glass/setup_broken_states()
 //	return list("glass-damaged1", "glass-damaged2", "glass-damaged3")
 
-/turf/simulated/floor/glass/Initialize(mapload)
-	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
+/// No base sprite: the smooth overlays are the floor (the normal icon would show behind them).
+/turf/simulated/floor/glass/draw(datum/look/look)
 	..()
-	return INITIALIZE_HINT_LATELOAD
+	look.state("")
 
-/turf/simulated/floor/glass/LateInitialize()
-	. = ..()
+/turf/simulated/floor/glass/runtime_after_init()
+	return TRUE
+
+/// Shows the level below and blends with the glass around it, once that exists.
+/turf/simulated/floor/glass/sim_after_init(datum/act/timer/A)
+	..()
 	make_z_transparent(TRUE)
 	blend_icons()
 
@@ -185,7 +200,7 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 			new_junction |= direction
 
 	if(!(new_junction & (NORTH|SOUTH)) || !(new_junction & (EAST|WEST)))
-		icon_state = "[base_icon_state]-[new_junction]"
+		set_icon_state("[base_icon_state]-[new_junction]")
 		return
 
 	if(new_junction & NORTH)
@@ -210,7 +225,7 @@ EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_s
 			if(istype(T, type))
 				new_junction |= (1<<5)
 
-	icon_state = "[base_icon_state]-[new_junction]"
+	set_icon_state("[base_icon_state]-[new_junction]")
 
 /turf/simulated/floor/glass/reinforced
 	name = "reinforced glass floor"

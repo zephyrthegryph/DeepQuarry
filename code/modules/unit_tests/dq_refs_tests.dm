@@ -1,7 +1,7 @@
 // Migration track 1c (doc/rewrite/lifecycle.md LC-refs): /datum/weakref is
 // gone. Live links are relations (code/datums/om/library.dm, read through
 // the accessor macros in code/__defines/om.dm); "remember who it was" refs
-// are OM handles (om_handle()/om_resolve()). One test per relation added, plus
+// are OM handles (entity_handle()/resolve_handle()). One test per relation added, plus
 // the handle behaviour weakrefs used to provide.
 
 // ---------------------------------------------------------------- handles
@@ -12,27 +12,27 @@
 
 /datum/unit_test/dq_refs_handle_is_weak/Run()
 	var/h = dq_refs_dropped_handle()
-	TEST_ASSERT(om_is_handle(h), "the datum got a handle")
+	TEST_ASSERT(is_entity_handle(h), "the datum got a handle")
 	// Resolving a handle whose target BYOND collected without qdel() is the
 	// misuse the detector reports; this test builds that case on purpose, so
 	// capture the report and check it fired instead of failing the run.
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
-	var/resolved = om_resolve(h)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", capture)
+	var/resolved = resolve_handle(h)
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT_NULL(resolved, "a collected datum's handle resolves to null")
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "HANDLE TARGET COLLECTED WITHOUT QDEL"), "the collected target was reported: [json_encode(capture)]")
 	var/datum/E = new
-	TEST_ASSERT_NULL(om_resolve(h), "a new datum never answers an old handle")
-	TEST_ASSERT(om_handle(E) != h, "and gets a handle of its own")
+	TEST_ASSERT_NULL(resolve_handle(h), "a new datum never answers an old handle")
+	TEST_ASSERT(entity_handle(E) != h, "and gets a handle of its own")
 
 /// A handle to a datum nothing else references: it resolves while the datum
 /// is live, then BYOND collects the datum when this proc returns. (A helper,
 /// because TEST_ASSERT_* keeps its operands in locals.)
 /proc/dq_refs_dropped_handle()
 	var/datum/D = new
-	. = om_handle(D)
-	if(om_resolve(.) != D)
+	. = entity_handle(D)
+	if(resolve_handle(.) != D)
 		return null
 
 /// QDEL_IN past the GC filter queue defers through a handle: it still deletes
@@ -41,9 +41,9 @@
 
 /datum/unit_test/dq_refs_qdel_handle/Run()
 	var/obj/item/I = allocate(/obj/item/tape_roll)
-	qdel_handle(om_handle(I))
+	qdel_handle(entity_handle(I))
 	TEST_ASSERT(QDELETED(I), "qdel_handle() deletes what the handle names")
-	qdel_handle(om_handle(I)) // a deleted datum has no handle: a no-op
+	qdel_handle(entity_handle(I)) // a deleted datum has no handle: a no-op
 	qdel_handle("junk")
 
 /// IC refs: a reference on a circuit pin round-trips, and no sanitized string
@@ -57,7 +57,7 @@
 	TEST_ASSERT_EQUAL(ic_ref_resolve(r), I, "an IC ref resolves to its datum")
 	var/forged = sanitizeSafe(r, MAX_MESSAGE_LEN, 0, 0)
 	TEST_ASSERT(!ic_is_ref(forged), "sanitized pin text is never an IC ref")
-	TEST_ASSERT(!ic_is_ref(om_handle(I)), "a bare handle is not an IC ref")
+	TEST_ASSERT(!ic_is_ref(entity_handle(I)), "a bare handle is not an IC ref")
 	qdel(I)
 	TEST_ASSERT_NULL(ic_ref_resolve(r), "an IC ref to a deleted datum resolves to null")
 
@@ -72,7 +72,7 @@
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	var/obj/item/radio/stranger = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/receiver/RX = allocate(/obj/machinery/telecomms/receiver)
-	TEST_ASSERT(istype(om_link(R, RX, /datum/om/relation/bluespace_tx_to), /datum/om/edge), "linking the radio should succeed")
+	rel_set(R, nameof(R.bs_tx_receiver), RX)
 	TEST_ASSERT_EQUAL(R?.bs_tx_target(), RX, "radio?.bs_tx_target() is the receiver")
 	TEST_ASSERT(R in RX?.bs_tx_radios(), "the radio is in receiver?.bs_tx_radios()")
 
@@ -95,7 +95,7 @@
 /datum/unit_test/dq_refs_bluespace_rx_link/Run()
 	var/obj/item/radio/R = allocate(/obj/item/radio)
 	var/obj/machinery/telecomms/broadcaster/TX = allocate(/obj/machinery/telecomms/broadcaster)
-	om_link(R, TX, /datum/om/relation/bluespace_rx_from)
+	rel_set(R, nameof(R.bs_rx_broadcaster), TX)
 	TEST_ASSERT_EQUAL(R?.bs_rx_source(), TX, "radio?.bs_rx_source() is the broadcaster")
 	TEST_ASSERT(R in TX?.bs_rx_radios(), "the radio is in broadcaster?.bs_rx_radios()")
 	qdel(R)
@@ -119,13 +119,12 @@
 	var/obj/item/gripper/G = allocate(/obj/item/gripper/dq_test) // the accessor is declared on the gripper
 	var/obj/item/A = allocate(/obj/item/tape_roll)
 	var/obj/item/B = allocate(/obj/item/tape_roll)
-	om_link(G, A, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(G?.gripper_held(), A, "GRIPPER_HELD is the wrapped item")
-	om_link(G, B, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(G?.gripper_held(), B, "wrapping another item replaces the first")
-	TEST_ASSERT_NULL(dq_test_find_edge(G, A, /datum/om/relation/gripper_holding), "no edge is left to the first item")
+	rel_set(G, nameof(/obj/item/gripper::held_item), A)
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), A, "the wrapped item is held")
+	rel_set(G, nameof(/obj/item/gripper::held_item), B)
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), B, "wrapping another item replaces the first")
 	qdel(B)
-	TEST_ASSERT_NULL(G?.gripper_held(), "the wrapped item being deleted clears the hold")
+	TEST_ASSERT_NULL(G.get_wrapped_item(), "the wrapped item being deleted clears the hold")
 
 // ---------------------------------------------------------------- UAV
 
@@ -139,15 +138,15 @@
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
 	U.add_master(H)
 	U.add_master(H2)
-	TEST_ASSERT(H in U?.uav_masters(), "add_master() makes the mob a master")
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 2, "a UAV can have several masters")
+	TEST_ASSERT(H in U.masters, "add_master() makes the mob a master")
+	TEST_ASSERT_EQUAL(length(U.masters), 2, "a UAV can have several masters")
 	U.set_state(1) // UAV_ON (undefined outside uav.dm)
 	TEST_ASSERT(U.relaymove(H, NORTH), "a master's movement is taken by the UAV")
 	TEST_ASSERT(!U.relaymove(allocate(/mob/living/carbon/human), NORTH), "a stranger's is not")
 	qdel(H)
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 1, "a deleted master is dropped")
+	TEST_ASSERT_EQUAL(length(U.masters), 1, "a deleted master is dropped")
 	U.clear_masters()
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 0, "clear_masters() drops every master")
+	TEST_ASSERT_EQUAL(length(U.masters), 0, "clear_masters() drops every master")
 	U.set_state(0) // UAV_OFF
 
 // ---------------------------------------------------------------- stasis source
@@ -231,3 +230,66 @@
 	TEST_ASSERT(registry_has(REGISTRY_MONEY_ACCOUNTS, A), "registry_join() lists it")
 	qdel(A)
 	TEST_ASSERT(!registry_has(REGISTRY_MONEY_ACCOUNTS, A), "deleting it drops it")
+
+// ---------------------------------------------------------------- shared particle holders
+
+/// A shared particle holder is qdel'd when its last user leaves: an item that shows one and is qdel'd
+/// frees it (removing its particles), the pool forgets the key, and no handle to it is left to resolve a collected target.
+/datum/unit_test/dq_shared_particles_user_qdel_frees_holder
+
+/datum/unit_test/dq_shared_particles_user_qdel_frees_holder/Run()
+	var/key = "dq_test_particles_single"
+	var/obj/item/user = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/holder = user.add_shared_particles(/particles/smoke, key)
+	TEST_ASSERT(holder in user.vis_contents, "the user shows the holder")
+	user.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(holder), "the holder was qdel'd when its only user left")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	TEST_ASSERT(!(holder in user.vis_contents), "the user no longer shows the holder")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
+
+/// Two users sharing one holder (pool_size 1): the first removal keeps it, the second frees it.
+/datum/unit_test/dq_shared_particles_two_users_share_holder
+
+/datum/unit_test/dq_shared_particles_two_users_share_holder/Run()
+	var/key = "dq_test_particles_shared"
+	var/obj/item/first = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/obj/item/second = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/holder = first.add_shared_particles(/particles/smoke, key, NONE, 1)
+	var/obj/effect/abstract/shared_particle_holder/other = second.add_shared_particles(/particles/smoke, key, NONE, 1)
+	TEST_ASSERT(holder == other, "the second user got the same holder")
+	first.remove_shared_particles(key)
+	TEST_ASSERT(!QDELETED(holder), "the holder survives while one user remains")
+	TEST_ASSERT(holder in second.vis_contents, "the remaining user still shows it")
+	TEST_ASSERT(GLOB.shared_particles[key], "the pool keeps the key")
+	second.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(holder), "the second removal frees the holder")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")
+
+/// Users of one pool on separate holders (pool_size above 1): removing one user frees only its own holder.
+/datum/unit_test/dq_shared_particles_pooled_holders_free_individually
+
+/datum/unit_test/dq_shared_particles_pooled_holders_free_individually/Run()
+	var/key = "dq_test_particles_pooled"
+	var/obj/item/first = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/obj/item/second = allocate(/obj/item, run_loc_floor_bottom_left)
+	var/list/capture = list()
+	set_global("dq_lifecycle_report_capture", capture)
+	var/obj/effect/abstract/shared_particle_holder/a = first.add_shared_particles(/particles/smoke, key)
+	var/obj/effect/abstract/shared_particle_holder/b = second.add_shared_particles(/particles/smoke, key)
+	TEST_ASSERT(a != b, "each user below the pool size got its own holder")
+	first.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(a), "the leaving user's holder was freed, not dropped")
+	TEST_ASSERT(!QDELETED(b), "the other holder is untouched")
+	second.remove_shared_particles(key)
+	TEST_ASSERT(QDELETED(b), "the last user frees the last holder")
+	TEST_ASSERT(!GLOB.shared_particles[key], "the pool forgot the key")
+	set_global("dq_lifecycle_report_capture", null)
+	TEST_ASSERT(!length(capture), "no lifecycle report fired: [json_encode(capture)]")

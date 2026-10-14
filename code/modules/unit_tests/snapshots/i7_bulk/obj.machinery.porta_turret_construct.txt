@@ -1,0 +1,47 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Dismantle
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Dismantle
+human|/obj/item/tool/wrench menu: Build frame bolted
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Build frame bolted
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/multitool
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/card/id
++0 menu: Move To Top
++1 menu: Read ID Card (refused: You can't do that.)
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/gun/energy menu: Give DNA (refused: You can't do that.)
+human|/obj/item/gun/energy menu: Move To Top
+human|/obj/item/gun/energy menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/gun/energy menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/gun/energy menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/gun/energy click: nothing
+@obj human|/obj/item/assembly/prox_sensor
+@obj human|/obj/item/pen
+keys: construction.build:turret_frame_armed, construction.build:turret_frame_armoured, construction.build:turret_frame_bolted, construction.build:turret_frame_done, construction.build:turret_frame_plated, construction.build:turret_frame_secured, construction.build:turret_frame_sensing, construction.build:turret_frame_shut, construction.dismantle, construction.undo:turret_frame_armed, construction.undo:turret_frame_armoured, construction.undo:turret_frame_bolted, construction.undo:turret_frame_done, construction.undo:turret_frame_plated, construction.undo:turret_frame_secured, construction.undo:turret_frame_sensing, construction.undo:turret_frame_shut, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, rename, robot_remote_blocked, silicon_hand

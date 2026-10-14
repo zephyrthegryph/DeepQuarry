@@ -8,7 +8,6 @@
 	desc = "A large gas-powered cannon."
 	icon_state = "pneumatic"
 	item_state = "pneumatic"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_HUGE
 	fire_sound_text = "a loud whoosh of moving air"
 	fire_delay = 50
@@ -27,7 +26,13 @@
 														// analyzer with a force_divisor of 10 hit with a damage multiplier of 3000+.
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/item/storage)
+CAPABILITIES(/obj/item/gun/launcher/pneumatic)
+	configure(item_worn(slots = SLOT_BELT))
+	owns_one(nameof(item_storage), starts = /obj/item/storage)
+	op("pneumatic_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("pneumatic_verb_set_pressure", menu(), label("Set Valve Pressure"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Percentage of tank used per shot:", "title" = computed(PROC_REF(pressure_title)), "choices" = nameof(possible_pressure_amounts), "timeout" = 0), step = "pressure"),
+		then(PROC_REF(pneumatic_verb_set_pressure)))
 
 /obj/item/gun/launcher/pneumatic/Initialize(mapload)
 	. = ..()
@@ -36,14 +41,18 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
+/// The pressure question's title.
+/obj/item/gun/launcher/pneumatic/proc/pressure_title(datum/act/op/A)
+	return "[src]"
+
 /// Old Set Valve Pressure verb.
-/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "k42", PROC_REF(pneumatic_verb_set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
-	if(isnull(N))
-		return
-	if (N)
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(datum/act/op/A)
+	var/mob/user = A.actor
+	var/N = A.step_value("pressure")
+	if(N)
 		pressure_setting = N
 		to_chat(user, "You dial the pressure valve to [pressure_setting]%.")
+	return OP_OK
 
 /obj/item/gun/launcher/pneumatic/proc/eject_tank(mob/user) //Remove the tank.
 	if(!tank())
@@ -53,7 +62,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
 	user.put_in_hands(tank())
 	rel_clear(src, nameof(tank))
-	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
 	if(contents_count(item_storage) > 0)
@@ -65,35 +73,33 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_VERB("Set Valve Pressure", PROC_REF(pneumatic_verb_set_pressure), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_hand.
-/obj/item/gun/launcher/pneumatic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.get_inactive_hand() == src)
-		unload_hopper(user)
+/obj/item/gun/launcher/pneumatic/proc/interaction_hand(datum/act/op/A)
+	if(A.actor.get_inactive_hand() == src)
+		unload_hopper(A.actor)
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/pneumatic/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/pneumatic/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!tank() && istype(W,/obj/item/tank))
-		user.drop_from_inventory(W, src)
+		if(!own_bring_in(src, nameof(tank), W, null, user, TRUE, null, FALSE))
+			return OP_PASS
 		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
-		update_icon()
 	else if(istype(W))
 		item_storage.try_insert(W, user)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/pneumatic/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/pneumatic/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	eject_tank(user)
 
 /obj/item/gun/launcher/pneumatic/consume_next_projectile(mob/user=null)
@@ -143,23 +149,17 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		var/turf/T = get_turf(src.loc)
 		if(T)
 			T.assume_air(removed)
-		qdel(removed)
+		spent(removed)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/launcher/pneumatic/appearance_overlays()
-	. = list()
+/obj/item/gun/launcher/pneumatic/draw(datum/look/look)
+	..()
 	if(tank())
-		icon_state = "pneumatic-tank"
-		item_state = "pneumatic-tank"
+		look.state("pneumatic-tank")
+		look.held_state("pneumatic-tank")
 	else
-		icon_state = "pneumatic"
-		item_state = "pneumatic"
-
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		M.update_inv_r_hand()
-		M.update_inv_l_hand()
+		look.state("pneumatic")
+		look.held_state("pneumatic")
 
 //Constructable pneumatic cannon.
 
@@ -171,7 +171,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, a
 
 	var/buildstate = 0
 
-APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic{buildstate}")
+TRACKED(/obj/item/cannonframe, buildstate)
+
+/// The look (the draw sweep: from its template).
+/obj/item/cannonframe/draw(datum/look/look)
+	..()
+	look.state("pneumatic[buildstate]")
 
 /obj/item/cannonframe/examine(mob/user)
 	. = ..()
@@ -187,63 +192,33 @@ APPEARANCE_TEMPLATE(/obj/item/cannonframe, "pneumatic{buildstate}")
 		if(5)
 			. += "It has a transfer valve installed."
 
-/obj/item/cannonframe/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/T = tool.get_welder()
-	if(buildstate == 1)
-		if(T.remove_fuel(0,user))
-			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
-			to_chat(user, span_notice("You weld the pipe into place."))
-			buildstate++
-			update_icon()
-	if(buildstate == 3)
-		if(T.remove_fuel(0,user))
-			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
-			to_chat(user, span_notice("You weld the metal chassis together."))
-			buildstate++
-			update_icon()
-	if(buildstate == 5)
-		if(T.remove_fuel(0,user))
-			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 100, 1)
-			to_chat(user, span_notice("You weld the valve into place."))
-			replace_with(src, /obj/item/gun/launcher/pneumatic)
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(cannon_frame/pipe, "You secure the piping inside the frame.")
+MSG_DEF_SELF(cannon_frame/pipe_welded, "You weld the pipe into place.")
+MSG_DEF_SELF(cannon_frame/chassis, "You assemble a chassis around the cannon frame.")
+MSG_DEF_SELF(cannon_frame/chassis_welded, "You weld the metal chassis together.")
+MSG_DEF_SELF(cannon_frame/valve, "You install the transfer valve and connect it to the piping.")
+MSG_DEF_SELF(cannon_frame/valve_welded, "You weld the valve into place.")
 
-DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/cannonframe)
+	// a pipe, welded; a steel chassis, welded; a transfer valve, welded into the cannon
+	stages(nameof(buildstate),
+		stage_step(0, 1, item(/obj/item/pipe), label("Secure the piping"), consumes(), wait(0), says(MSG(cannon_frame/pipe))),
+		stage_step(1, 2, lit_welder(fuel = 0), label("Weld the pipe"), wait(0), says(MSG(cannon_frame/pipe_welded)), then(PROC_REF(tool_sounds))),
+		stage_step(2, 3, stack(/obj/item/stack/material/steel, 5), label("Assemble the chassis"), wait(0), says(MSG(cannon_frame/chassis))),
+		stage_step(3, 4, lit_welder(fuel = 0), label("Weld the chassis"), wait(0), says(MSG(cannon_frame/chassis_welded)), then(PROC_REF(tool_sounds))),
+		stage_step(4, 5, item(/obj/item/transfer_valve), label("Install the transfer valve"), consumes(), wait(0), says(MSG(cannon_frame/valve))))
+	op("finish", lit_welder(fuel = 0), label("Weld the valve"), when(req_stage(nameof(buildstate), 5)), wait(0), says(MSG(cannon_frame/valve_welded)), then(PROC_REF(finished)))
 
-/// Old attackby.
-/obj/item/cannonframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/pipe))
-		if(buildstate == 0)
-			consume(W, user)
-			to_chat(user, span_notice("You secure the piping inside the frame."))
-			buildstate++
-			update_icon()
-			return INTERACTION_HANDLED_PASS
-	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
-		if(buildstate == 2)
-			var/obj/item/stack/material/M = W
-			if(M.use(5))
-				to_chat(user, span_notice("You assemble a chassis around the cannon frame."))
-				buildstate++
-				update_icon()
-			else
-				to_chat(user, span_notice("You need at least five metal sheets to complete this task."))
-			return INTERACTION_HANDLED_PASS
-	else if(istype(W,/obj/item/transfer_valve))
-		if(buildstate == 4)
-			consume(W, user)
-			to_chat(user, span_notice("You install the transfer valve and connect it to the piping."))
-			buildstate++
-			update_icon()
-			return INTERACTION_HANDLED_PASS
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/obj/item/cannonframe/proc/tool_sounds(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 100, 1)
+	return OP_OK
+
+/// The valve welded in, the frame is a pneumatic cannon.
+/obj/item/cannonframe/proc/finished(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 100, 1)
+	replace_with(src, /obj/item/gun/launcher/pneumatic)
+	return OP_OK
 
 /// Tank of gas for use in firing the cannon. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
 	return tank
-

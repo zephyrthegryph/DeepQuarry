@@ -8,8 +8,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/telesci_pad
-	idle_power_usage = 200
-	active_power_usage = 5000
 	var/efficiency
 
 // This board declares no req_components, so its default parts are declared
@@ -28,43 +26,37 @@
 	gen[circuit] = 1
 	return gen
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/telepad/Initialize(mapload)
 	. = ..()
-	own_take_all(src, nameof(component_parts))
+	rel_take_all(src, nameof(component_parts))
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/telepad/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
 	efficiency = E
 
-/obj/machinery/telepad/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/telepad_part_replacement,
-	)
-	..()
-
 /**
  * Old attackby: fingerprinted on any item, then tried a part replacement,
  * falling through to the base attackby (the signal, etc.) otherwise. The
  * fingerprint applies even when the item isn't a part replacer, so this
- * can't reuse the shared /datum/interaction/machine_item/part_replacement.
+ * can't reuse the shared part_replacement() op.
  */
-/datum/interaction/machine_item/telepad_part_replacement
-	id = "telepad_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item
-	effect = /obj/machinery/telepad/proc/interaction_part_replacement_impl
+/obj/machinery/telepad/proc/interaction_part_replacement_impl(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
-/obj/machinery/telepad/proc/interaction_part_replacement_impl(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	return default_part_replacement(user, W) ? TRUE : FALSE
+CAPABILITIES(/obj/machinery/telepad)
+	configure(uses_power(idle = 200, active = 5000))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("part_replacement_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
 
-/obj/machinery/telepad/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/telepad/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connectable), src)
 	to_chat(user, span_warning("You save the data in the [multitool.name]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

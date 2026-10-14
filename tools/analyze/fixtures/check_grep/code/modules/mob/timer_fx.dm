@@ -1,0 +1,11 @@
+/proc/timer_fx(M)
+	M.timer = om_after(M, 1, PROC_REF(x))
+	return om_after(M, 1, PROC_REF(x))
+	var/t = om_after(M, 1, PROC_REF(x))
+	foo(om_after(M))
+	x = om_after_unique(M)
+	L = list(om_after(M, 1))
+	LAZYSET(om_after(1))
+	return foo_om_after(M)
+	x = om_afterwards(M)
+	x = om_after_replace(M) // ALLOW(check_grep): ok

@@ -74,6 +74,9 @@
 
 	var/list/symptoms // A list of symptoms that this job might have when we roll a dormant diseas.
 
+CAPABILITIES(/datum/job)
+	owns_many(nameof(symptoms))
+
 /datum/job/New()
 	. = ..()
 	department_accounts = department_accounts || departments_managed
@@ -199,17 +202,17 @@
 	return message
 
 /datum/job/proc/get_job_icon()
-	if(!SSjob.job_icon_cache[title])
+	if(!job_job_icon_cache()[title])
 		var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin("#job_icon")
 		dress_mannequin(mannequin)
-		mannequin.dir = SOUTH
-		mannequin.ImmediateOverlayUpdate()
+		mannequin.set_dir(SOUTH)
+		draw_now(mannequin)
 		var/icon/preview_icon = getFlatIcon(mannequin)
 
 		preview_icon.Scale(preview_icon.Width() * 2, preview_icon.Height() * 2) // Scaling here to prevent blurring in the browser.
 		SSjob.job_icon_cache[title] = preview_icon
 
-	return SSjob.job_icon_cache[title]
+	return job_job_icon_cache()[title]
 
 /datum/job/proc/dress_mannequin(mob/living/carbon/human/dummy/mannequin/mannequin)
 	mannequin.delete_inventory(TRUE)

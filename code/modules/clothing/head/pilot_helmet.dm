@@ -10,9 +10,6 @@
 		)
 	flags = THICKMATERIAL
 	armor_spec = "melee=20;bullet=10;laser=10;energy=5;bomb=10"
-	flags_inv = HIDEEARS
-	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 
 	var/tmp/obj/machinery/computer/shuttle_control/web/shuttle_comp
@@ -22,70 +19,47 @@
 	var/last_status
 	resistance_flags = FIRE_PROOF
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/head/pilot, "pilot_hud", /atom/movable/screen)
+CAPABILITIES(/obj/item/clothing/head/pilot)
+	configure(item_worn(hides = HIDEEARS))
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
+	owns_one(nameof(pilot_hud), starts = /atom/movable/screen/pilot_hud)
+	derives(nameof(images), PROC_REF(build_hud_images))
+	derives(nameof(raw_images), PROC_REF(build_raw_images))
+	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
 
-/obj/item/clothing/head/pilot/Initialize(mapload)
-	. = ..()
+/// The helmet's HUD layers over its screen, by name: the bars and boxes stay hidden until the shuttle flies (update_hud()).
+/obj/item/clothing/head/pilot/proc/build_hud_images()
+	. = list()
+	.["top_bar"] = pilot_hud_image("top_bar", 145)
+	.["topdots"] = pilot_hud_image("top_dots", 200)
+	.["top_words"] = pilot_hud_image("words_discon", 200)
+	.["charging"] = pilot_hud_image("", 200)
+	.["left_bar"] = pilot_hud_image("left_bar", 0)
+	.["right_bar"] = pilot_hud_image("right_bar", 0)
+	.["flyboxes"] = pilot_hud_image("flyboxes", 0)
+	.["horizon"] = pilot_hud_image("horizon", 0)
 
-	images = list()
-	raw_images = list()
-
-	pilot_hud.screen_loc = "1,1"
-	pilot_hud.icon = 'icons/obj/piloting_overlay.dmi'
-	pilot_hud.icon_state = "dimmer"
-	pilot_hud.layer = SCREEN_LAYER
-	pilot_hud.plane = PLANE_FULLSCREEN
-	pilot_hud.mouse_opacity = 0
-	pilot_hud.alpha = 0
-
-	var/image/I
-	I = image(pilot_hud.icon,pilot_hud,"top_bar",layer=SCREEN_LAYER+1)
+/obj/item/clothing/head/pilot/proc/pilot_hud_image(state, alpha)
+	var/image/I = image(pilot_hud.icon, pilot_hud, state, layer = SCREEN_LAYER + 1)
 	I.appearance_flags = RESET_ALPHA
-	I.alpha = 145
-	images["top_bar"] = I
-	raw_images += I
+	I.alpha = alpha
+	return I
 
-	I = image(pilot_hud.icon,pilot_hud,"top_dots",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["topdots"] = I
-	raw_images += I
+/// The same layers as a plain list, in order (the wearer's client shows them).
+/obj/item/clothing/head/pilot/proc/build_raw_images()
+	. = list()
+	for(var/key in images)
+		. += images[key]
 
-	I = image(pilot_hud.icon,pilot_hud,"words_discon",layer=SCREEN_LAYER+1) //words_standby, words_flying, words_spool, words_discon
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["top_words"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 200
-	images["charging"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"left_bar",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["left_bar"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"right_bar",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["right_bar"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"flyboxes",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["flyboxes"] = I
-	raw_images += I
-
-	I = image(pilot_hud.icon,pilot_hud,"horizon",layer=SCREEN_LAYER+1)
-	I.appearance_flags = RESET_ALPHA
-	I.alpha = 0
-	images["horizon"] = I
-	raw_images += I
+/// The helmet's screen: a dimmer the HUD layers sit on.
+/atom/movable/screen/pilot_hud
+	screen_loc = "1,1"
+	icon = 'icons/obj/piloting_overlay.dmi'
+	icon_state = "dimmer"
+	layer = SCREEN_LAYER
+	plane = PLANE_FULLSCREEN
+	mouse_opacity = 0
+	alpha = 0
 
 /obj/item/clothing/head/pilot/proc/update_hud(status)
 	if(last_status == status)
@@ -153,18 +127,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/head/pilot, "pilot_hud", /atom/movable/
 		I.icon_state = ""
 		animate(pilot_hud,alpha=0,time=3 SECONDS)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
-	INTERACT_VERB("Alter HUD color", PROC_REF(pilot_hud_colors_verb), REQ_IN_INVENTORY), \
-)
-
 /// Old verb "Alter HUD color".
-/obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/color, PROC_REF(hud_color_picked), answerer = user, title = "HUD Color", question = "Pick a color!", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/ask)
+/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
 	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 		var/image/I = images[img]
-		I.color = ask.picked_color
+		I.color = A.answer.value
 
 
 // its HUD images are detached.
@@ -192,15 +165,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot/alt, INTERACT_USE("Toggle visor", PROC_REF(pilot_alt_visor_self)))
+CAPABILITIES(/obj/item/clothing/head/pilot/alt)
+	op("pilot_alt_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(pilot_alt_visor_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/pilot/alt/proc/pilot_alt_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/pilot/alt/proc/pilot_alt_visor_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the visor on the pilot helmet.")
 	else
-		src.icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
 	update_clothing_icon() //so our mob-overlays update
 
@@ -210,23 +185,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot/alt, INTERACT_USE("Toggle viso
 	desc = "Standard pilot gear. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot1"
 	armor_spec = "melee=20;bullet=10;laser=10;energy=5;bomb=10"
-	flags_inv = HIDEEARS
-	min_cold_protection_temperature = HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor", PROC_REF(pilot_vr_visor_self)))
+CAPABILITIES(/obj/item/clothing/head/pilot_vr)
+	configure(item_worn(hides = HIDEEARS))
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
+	op("pilot_vr_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(pilot_vr_visor_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/pilot_vr/proc/pilot_vr_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/pilot_vr/proc/pilot_vr_visor_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
-		src.icon_state = "[icon_state]up"
+		set_icon_state("[icon_state]up")
 		to_chat(user, "You raise the visor on the pilot helmet.")
 	else
-		src.icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You lower the visor on the pilot helmet.")
 	update_clothing_icon() //so our mob-overlays update
 

@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /datum/planet/thor/New()
 	..()
 	GLOB.planet_thor = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/thor(src))
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/thor(src))
 
 /datum/planet/thor/update_sun()
 	..()
@@ -91,7 +91,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 //todo, remove snow and other weathers, this is copypastad from v4
 /datum/weather_holder/thor
@@ -203,7 +203,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /*
 /datum/weather/thor/snow/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -237,7 +237,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /*
 /datum/weather/thor/blizzard/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -672,7 +672,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 					H.drop_both_hands()
 
 		L.water_act(2)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 
@@ -741,7 +741,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 			return
 
 		L.injure(INJURY_BLUNT, damage, target_zone, flags = INJURE_ARMORED)
-		L.status_at_least(EFFECT_WEAKENED, 3)
+		L.status_at_least(STAT_WEAKENED, 3)
 		if(show_message)
 			to_chat(L, effect_message)
 
@@ -766,7 +766,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
 	. = ..()
 	set_stored_charge(0)
-	RCon = TRUE
-	input_level = input_level_max
-	output_level = output_level_max
-	input_attempt = TRUE
+	set_RCon(TRUE)
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
+	set_input_attempt(TRUE)

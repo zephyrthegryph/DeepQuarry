@@ -18,25 +18,33 @@
 	)
 	var/disposals = FALSE
 
-// TODO - Its about time to make this NanoUI don't we think?
-/obj/machinery/pipedispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/pipedispenser_return,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
 
 /obj/machinery/pipedispenser/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-DECLARE_UI(/obj/machinery/pipedispenser, "PipeDispenser")
+CAPABILITIES(/obj/machinery/pipedispenser)
+	interface("PipeDispenser")
+	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
+	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref")), then(PROC_REF(ui_act_dispense_pipe)))
+	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
+	op("put_back", item(/obj/item/pipe), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
+	op("put_back_meter", item(/obj/item/pipe_meter), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
+	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(PROC_REF(anchor_wait)), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
-UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_pipedispenser{disposals:num,p_layer:unknown,pipe_layers:list,categories:list}")
+MSG_DEF(pipedispenser/put_back, "You put %I% back in %T%.", "%U% puts %I% back in %T%.")
+MSG_DEF(pipedispenser/fastened, "You have fastened %T%. Now it can dispense pipes.", "%U% fastens %T%.")
+MSG_DEF(pipedispenser/unfastened, "You have unfastened %T%. Now it can be pulled somewhere else.", "%U% unfastens %T%.")
 
-/// The computed part of /obj/machinery/pipedispenser's window data (declared on its UI_DATA row).
-/obj/machinery/pipedispenser/proc/ui_data_obj_machinery_pipedispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
+
+/// The dispenser answers someone next to it who can move and act, and only while it is bolted down.
+/obj/machinery/pipedispenser/proc/dispenser_usable(datum/act/op/A)
+	var/mob/user = A.actor
+	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use) // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
+
+/obj/machinery/pipedispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"disposals" = disposals,
 		"p_layer" = p_layer,
@@ -68,28 +76,21 @@ UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_piped
 
 	return data
 
-/obj/machinery/pipedispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(unwrenched || !ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
-		return FALSE
-	return TRUE
 
-UI_ACT(/obj/machinery/pipedispenser, "p_layer", ui_act_p_layer, UI_ARG_NUM("p_layer"))
-UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_p_layer)
+/obj/machinery/pipedispenser/proc/ui_act_p_layer(datum/act/op/A, raw_p_layer)
 	. = TRUE
-	p_layer = params["p_layer"]
+	p_layer = raw_p_layer
 
-UI_ACT(/obj/machinery/pipedispenser, "dispense_pipe", ui_act_dispense_pipe, UI_ARG_VALUE("bent"), UI_ARG_REF("ref", null, /datum/pipe_recipe))
-UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
+/obj/machinery/pipedispenser/proc/ui_act_dispense_pipe(datum/act/op/A, bent, raw_ref)
+	var/mob/user = A.actor
 	. = TRUE
 	if(COOLDOWN_FINISHED(src, wait))
-		var/datum/pipe_recipe/recipe = params["ref"]
+		var/datum/pipe_recipe/recipe = ui_ref(raw_ref, null, /datum/pipe_recipe)
 		if(!istype(recipe))
 			return
 
 		var/target_dir = NORTH
-		if(params["bent"])
+		if(bent)
 			target_dir = NORTHEAST
 
 		var/obj/created_object = null
@@ -106,50 +107,36 @@ UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
 		else if(istype(recipe, /datum/pipe_recipe/meter))
 			created_object = new recipe.pipe_type(loc)
 		else
-			log_runtime(EXCEPTION("Warning: [ui.user] attempted to spawn pipe recipe type by ref [params["ref"]] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
+			log_runtime(EXCEPTION("Warning: [user] attempted to spawn pipe recipe type by ref [ui_ref(raw_ref, null, /datum/pipe_recipe)] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
 			return
 
-		created_object.add_fingerprint(ui.user)
-		COOLDOWN_START(src, wait, 15)
+		created_object.add_fingerprint(user)
+		COOLDOWN_START(src, wait, 1.5 SECONDS)
 
 
-/datum/interaction/machine_item/pipedispenser_return
-	id = "pipedispenser_return"
-	name = "Put back"
-	held_type = /obj/item
-	effect = /obj/machinery/pipedispenser/proc/interaction_return
+/obj/machinery/pipedispenser/proc/put_back(datum/act/op/A)
+	var/mob/user = A.actor
+	user.drop_item()
+	consume(A.held, user)
+	return OP_OK
 
-/obj/machinery/pipedispenser/proc/interaction_return(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	if (istype(W, /obj/item/pipe) || istype(W, /obj/item/pipe_meter))
-		to_chat(user, span_notice("You put [W] back in [src]."))
-		user.drop_item()
-		consume(W, user)
-		return TRUE
-	return FALSE
+/// Bolting it down is quicker than unbolting it.
+/obj/machinery/pipedispenser/proc/anchor_wait(datum/act/A)
+	return unwrenched ? 2 SECONDS : 4 SECONDS
 
-/obj/machinery/pipedispenser/wrench_act(mob/user, obj/item/tool)
-	var/delay = unwrenched ? 2 SECONDS : 4 SECONDS
-	use_tool(user, tool, src, delay = delay, volume = 50, start_self = "You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/pipedispenser/proc/anchor_message(datum/act/A)
+	return unwrenched ? /datum/msg/pipedispenser/unfastened : /datum/msg/pipedispenser/fastened
 
-/obj/machinery/pipedispenser/proc/wrench_act_tool_done(mob/user)
-	unwrenched = !unwrenched
+/obj/machinery/pipedispenser/proc/anchor_toggled(datum/act/op/A)
+	set_unwrenched(!unwrenched)
 	set_anchored(!unwrenched)
 	if(unwrenched)
-		stat_add(MAINT)
-		act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%. Now it can be pulled somewhere else.")), \
-			MSG_OTHERS(span_notice("%U% unfastens %T%.")), \
-			MSG_BLIND("You hear ratchet."))
-		if(user.check_current_machine(src))
-			SStgui.close_uis(src)
+		set_maintenance(TRUE)
+		SStgui.close_uis(src)
 	else
-		stat_remove(MAINT)
-		act_message(user, src, MSG_SELF(span_notice("You have fastened %T%. Now it can dispense pipes.")), \
-			MSG_OTHERS(span_notice("%U% fastens %T%.")), \
-			MSG_BLIND("You hear ratchet."))
+		set_maintenance(FALSE)
 		power_change()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/pipedispenser/disposal
 	name = "Disposal Pipe Dispenser"
@@ -160,33 +147,22 @@ UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
 	anchored = TRUE
 	disposals = TRUE
 
-//Allow you to drag-drop disposal pipes into it
-/obj/machinery/pipedispenser/disposal/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_drag/pipedispenser_disposal_return,
-	)
-	..()
+MSG_DEF(pipedispenser/shoved_back, "You shove %I% back in %T%.", "%U% shoves %I% back in %T%.")
 
-/datum/interaction/machine_drag/pipedispenser_disposal_return
-	id = "pipedispenser_disposal_return"
-	name = "Put back"
-	held_type = /obj/structure/disposalconstruct
-	effect = /obj/machinery/pipedispenser/disposal/proc/interaction_disposal_return
+/// Disposal pipes are dragged back into it.
+CAPABILITIES(/obj/machinery/pipedispenser/disposal)
+	op("shove_back", item(/obj/structure/disposalconstruct), gesture(GESTURE_DRAG), label("Put back"), wait(0),
+		needs(req(PROC_REF(loose_and_near), because = MSG(op/not_available))), says(MSG(pipedispenser/shoved_back)), then(PROC_REF(shoved_back)))
 
-/obj/machinery/pipedispenser/disposal/proc/interaction_disposal_return(mob/user, atom/movable/dropping, datum/interaction/interaction)
-	var/obj/structure/disposalconstruct/pipe = dropping
-	if(!user.canmove || user.stat || user.restrained())
-		return TRUE
+/// The dragger can act, and the loose pipe and the dragger are both beside it.
+/obj/machinery/pipedispenser/disposal/proc/loose_and_near(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/disposalconstruct/pipe = A.held
+	return (istype(pipe) && !pipe.anchored && user.canmove && !user.stat && !user.restrained() && get_dist(user, src) <= 1 && get_dist(src, pipe) <= 1) ? null : MSG(op/not_available) // ALLOW(reads): read when the pipe is dragged, never from a cached menu
 
-	if (!istype(pipe) || get_dist(user, src) > 1 || get_dist(src,pipe) > 1 )
-		return TRUE
-
-	if (pipe.anchored)
-		return TRUE
-
-	to_chat(user, span_notice("You shove [pipe] back in [src]."))
-	consume(pipe, user)
-	return TRUE
+/obj/machinery/pipedispenser/disposal/proc/shoved_back(datum/act/op/A)
+	consume(A.held, A.actor)
+	return OP_OK
 
 // adding a pipe dispensers that spawn unhooked from the ground
 /obj/machinery/pipedispenser/orderable

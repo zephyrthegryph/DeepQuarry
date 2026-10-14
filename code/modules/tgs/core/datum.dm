@@ -6,18 +6,25 @@ TGS_DEFINE_AND_SET_GLOBAL(tgs, null)
 
 	var/list/warned_deprecated_command_runs
 
+CAPABILITIES(/datum/tgs_api)
+	owns_one(nameof(version), /datum/tgs_version)
+	owns_one(nameof(event_handler), /datum/tgs_event_handler)
+
+CAPABILITIES(/datum/tgs_chat_user)
+	owns_one(nameof(channel), /datum/tgs_chat_channel)
+
 /datum/tgs_api/New(datum/tgs_event_handler/event_handler, datum/tgs_version/version, datum/tgs_http_handler/http_handler)
 	..()
-	own_set(src, nameof(event_handler), event_handler)
-	own_set(src, nameof(version), version)
+	rel_set(src, nameof(event_handler), event_handler)
+	rel_set(src, nameof(version), version)
 
 /datum/tgs_api/proc/TerminateWorld()
 	while(TRUE)
 		TGS_DEBUG_LOG("About to terminate world. Tick: [world.time], sleep_offline: [world.sleep_offline]")
 		world.sleep_offline = FALSE // https://www.byond.com/forum/post/2894866
-		del(world) // ALLOW(scheduler): vendored TGS: del(world)
+		del(world)
 		world.sleep_offline = FALSE // just in case, this is BYOND after all...
-		sleep(world.tick_lag) // ALLOW(scheduler): vendored TGS
+		sleep(world.tick_lag)
 		TGS_DEBUG_LOG("BYOND DIDN'T TERMINATE THE WORLD!!! TICK IS: [world.time], sleep_offline: [world.sleep_offline]")
 
 /datum/tgs_api/latest

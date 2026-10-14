@@ -1,0 +1,10 @@
+/obj/effect/blob icon: icons/mob/blob.dmi
+/obj/effect/blob state: blob
+/obj/effect/blob dir: 2
+/obj/effect/blob/core icon: icons/mob/blob.dmi
+/obj/effect/blob/core state: blob_core
+/obj/effect/blob/core dir: 2
+/obj/effect/blob/shield icon: icons/mob/blob.dmi
+/obj/effect/blob/shield state: blob_idle
+/obj/effect/blob/shield dir: 2
+

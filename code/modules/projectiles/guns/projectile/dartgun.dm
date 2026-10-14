@@ -7,10 +7,9 @@
 
 	muzzle_type = null
 
-/obj/item/projectile/bullet/chemdart/Initialize(mapload)
-	. = ..()
-	create_reagents(reagent_amount)
-	rel_set(reagents, nameof(reagents.my_atom), src)
+CAPABILITIES(/obj/item/projectile/bullet/chemdart)
+	reagents(nameof(reagent_amount))
+
 
 /obj/item/ammo_casing/chemdart
 	name = "chemical dart"
@@ -59,7 +58,6 @@
 	var/list/beakers //All containers inside the gun.
 	var/list/mixing //Containers being used for mixing.
 	var/max_beakers = 3
-	var/dart_reagent_amount = 15
 	var/container_type = /obj/item/reagent_containers/glass/beaker
 	var/list/starting_chems = null
 	special_weapon_handling = TRUE
@@ -67,20 +65,16 @@
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
 /obj/item/gun/projectile/dartgun/ownership()
 	. = ..()
-	. += owns(nameof(beakers), policy = OWN_CONTAINED)
+	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE, starts = PROC_REF(make_beakers))
 
-/obj/item/gun/projectile/dartgun/relations()
-	. = ..()
-	. += rel_many(nameof(mixing))
 
-/obj/item/gun/projectile/dartgun/Initialize(mapload)
-	. = ..()
-	if(starting_chems)
-		for(var/chem in starting_chems)
-			var/obj/B = new container_type(src)
-			B.reagents.add_reagent(chem, 60)
-			own_add(src, nameof(beakers), B)
-	update_icon()
+/// The starting beakers (owns(starts =)): one of each starting chem.
+/obj/item/gun/projectile/dartgun/proc/make_beakers(current)
+	. = list()
+	for(var/chem in starting_chems)
+		var/obj/B = new container_type(src)
+		B.reagents.add_reagent(chem, 60)
+		. += B
 
 /// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.
 /obj/item/gun/projectile/dartgun/proc/appearance_suffix()
@@ -89,7 +83,10 @@
 	if(!track_magazine)
 		return ""
 	return "-[min(length(ammo_magazine.stored_ammo), default_magazine_casing_count)]"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/dartgun/draw(datum/look/look)
+	..()
+	look.state("[base_state][appearance_suffix()]")
 
 /obj/item/gun/projectile/dartgun/consume_next_projectile()
 	. = ..()
@@ -107,20 +104,22 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_s
 					. += span_notice("[R.volume] units of [R.name]")
 
 /// Old attackby.
-/obj/item/gun/projectile/dartgun/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/dartgun/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!istype(I, container_type))
 			to_chat(user, span_blue("[I] doesn't seem to fit into [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(length(beakers) >= max_beakers)
 			to_chat(user, span_blue("[src] already has [max_beakers] beakers in it - another one isn't going to fit!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/reagent_containers/glass/beaker/B = I
-		if(!own_add(src, nameof(src.beakers), B, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.beakers), B, user))
+			return OP_PASS
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
-		return 1
+		return OP_OK
 	return ..()
 
 //fills the given dart with reagents
@@ -131,10 +130,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_s
 			B.reagents.trans_to_obj(dart, mix_amount)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/dartgun/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/dartgun/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	// structured TGUI Dartgun (see
 	// code/modules/admin/dartgun_panel.dm).
 	user.set_machine(src)
@@ -200,7 +200,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_s
 	allowed_magazines = list(/obj/item/ammo_magazine/chemdart)
 	auto_eject = 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun/tranq, "tranqgun")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/dartgun/tranq/draw(datum/look/look)
+	..()
+	look.state("tranqgun")
 
 // This is to allow xenobio to activate slime cores via remote.
 /obj/item/projectile/bullet/chemdart/on_hit(atom/target, blocked = 0, def_zone = null)

@@ -13,47 +13,50 @@
 	var/mode
 	var/obj/item/clothing/glasses/glasses
 
+CAPABILITIES(/datum/rig_vision)
+	owns_one(nameof(glasses), /obj/item/clothing/glasses)
+
 /datum/rig_vision/nvg
 	mode = "night vision"
 
 /datum/rig_vision/nvg/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/night)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/night)
 
 /datum/rig_vision/thermal
 	mode = "thermal scanner"
 
 /datum/rig_vision/thermal/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/thermal)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/thermal)
 
 /datum/rig_vision/meson
 	mode = "meson scanner"
 
 /datum/rig_vision/meson/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/meson)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/meson)
 
 /datum/rig_vision/graviton
 	mode = "graviton scanner"
 
 /datum/rig_vision/graviton/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/graviton)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/graviton)
 
 /datum/rig_vision/sechud
 	mode = "security HUD"
 
 /datum/rig_vision/sechud/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/security)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/security)
 
 /datum/rig_vision/medhud
 	mode = "medical HUD"
 
 /datum/rig_vision/medhud/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/health)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/health)
 
 /datum/rig_vision/material
 	mode = "material scanner"
 
 /datum/rig_vision/material/New()
-	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/material)
+	rel_set(src, nameof(glasses), new /obj/item/clothing/glasses/material)
 
 /obj/item/rig_module/vision
 
@@ -81,6 +84,9 @@
 		)
 
 	var/vision_index
+
+CAPABILITIES(/obj/item/rig_module/vision)
+	owns_many(nameof(vision_modes))
 
 /obj/item/rig_module/vision/multi
 
@@ -208,7 +214,7 @@
 	rel_set(holder, nameof(holder.visor), src)
 
 
-/obj/item/rig_module/vision/engage()
+/obj/item/rig_module/vision/engage(atom/target, notify_ai, mob/user)
 
 	if(!..() || !vision_modes)
 		return FALSE
@@ -229,11 +235,11 @@
 		to_chat(holder.wearer(), span_blue("Your sensors only have one mode."))
 	return TRUE
 
-/obj/item/rig_module/vision/activate()
+/obj/item/rig_module/vision/activate(skip_engage = 0, mob/user)
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 
-/obj/item/rig_module/vision/deactivate()
+/obj/item/rig_module/vision/deactivate(forced = FALSE, mob/user)
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 
@@ -246,9 +252,9 @@
 	vision_index = 1
 	// vision_modes starts as a list of types; it becomes the module's owned instances.
 	var/list/mode_types = vision_modes.Copy()
-	own_clear(src, nameof(vision_modes)) // the type list holds no children yet: this only empties it
+	rel_clear(src, nameof(vision_modes)) // the type list holds no children yet: this only empties it
 	for(var/vision_mode in mode_types)
-		var/datum/rig_vision/vision_datum = own_add(src, nameof(vision_modes), new vision_mode)
+		var/datum/rig_vision/vision_datum = rel_add(src, nameof(vision_modes), new vision_mode)
 		if(!vision)
 			rel_set(src, nameof(vision), vision_datum)
 

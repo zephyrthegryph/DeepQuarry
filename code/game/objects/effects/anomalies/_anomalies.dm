@@ -5,7 +5,6 @@
 	icon_state = "vortex"
 	density = FALSE
 	anchored = TRUE
-	light_range = 3
 
 	var/obj/item/assembly/signaler/anomaly/anomaly_core = /obj/item/assembly/signaler/anomaly
 	var/area/impact_area
@@ -23,7 +22,31 @@
 	var/datum/anomaly_stats/stats
 	var/danger_mult = 1
 
-/obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
+	// An anomaly acts only while a player is near (the proximity tracker, code/controllers/subsystems/proximity.dm).
+	proximity_tracked = TRUE
+
+CAPABILITIES(/obj/effect/anomaly)
+	configure(light_glow(range = 3))
+	after_init(nameof(lifespan), then(PROC_REF(lifespan_over)))
+	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
+	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly, starts = PROC_REF(make_core))
+	owns_one(nameof(stats), /datum/anomaly_stats)
+	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
+	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
+	op("buffer_anomaly", item(/obj/item/anomaly_scanner), label("Scan"), when(req(PROC_REF(has_stats))), wait(1 SECOND), then(PROC_REF(anomaly_buffered)))
+	param(nameof(lifespan), pos = 1)
+	param(nameof(drops_core), pos = 2)
+
+/// Whether the anomaly leaves its core (its constructor param).
+/obj/effect/anomaly/var/drops_core = TRUE
+
+/// The stability a draw shows; the draw hears when it changes.
+/obj/effect/anomaly/proc/look_stability(datum/look/look)
+	look.watch(stats)
+	return stats?.stability
+
+// ALLOW(init/INSTANCE_STATE): an anomaly needs an area, makes its core with a random frequency and code, and counts down its lifespan
+/obj/effect/anomaly/Initialize(mapload)
 	. = ..()
 
 	impact_area = get_area(src)
@@ -31,17 +54,11 @@
 	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
 
-	if(!drops_core)
-		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
-
 	if(anomaly_core)
-		own_set(src, nameof(anomaly_core), new anomaly_core(src))
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
 
-	if(new_lifespan)
-		lifespan = new_lifespan
 	EXPIRY_SET(src, death_time, lifespan, CLOCK_WORLD)
 
 	if(countdown_colour)
@@ -50,25 +67,19 @@
 	if(immortal)
 		return
 	countdown.start()
-	om_after(src, lifespan, PROC_REF(lifespan_over))
 
 /// The anomaly's lifespan ended (its timer): it detonates whether or not anyone is near.
-/obj/effect/anomaly/proc/lifespan_over()
+/obj/effect/anomaly/proc/lifespan_over(datum/act/A)
 	if(immortal || QDELETED(src))
 		return
 	if(loc)
 		detonate()
-	qdel(src)
+	consume(src)
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/effect/anomaly/periodic_step(delta)
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
-	anomalyEffect(delta / (1 SECONDS)) // the periodic lane passes deciseconds
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/effect/anomaly/proc/anomaly_step(datum/act/timer/A)
+	anomalyEffect(2) // seconds per step: the every() interval
 	anomalyPulse()
-
-DECLARE_DEFAULT_CHILD(/obj/effect/anomaly, "countdown", /obj/effect/countdown/anomaly)
-DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)
 	if(prob(move_chance) && !locate_within(get_turf(src), /obj/effect/suspension_field))
@@ -95,7 +106,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 
 /obj/effect/anomaly/ex_act(strength)
 	if(strength <= 1)
-		qdel(src)
+		consume(src)
 		return TRUE
 	return FALSE
 
@@ -103,44 +114,42 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	new /obj/effect/effect/smoke(loc)
 	if(!isnull(anomaly_core))
 		anomaly_core.forceMove(get_turf(src))
-		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
-	qdel(src)
+		rel_clear(src, nameof(anomaly_core)) // still the type path here, or a core made early
+	consume(src)
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
 	immortal = TRUE
 	name = (has_core ? "stable " : "hollow ") + name
 	if(!has_core)
-		own_clear(src, nameof(anomaly_core), OWN_DELETE)
+		rel_clear(src, nameof(anomaly_core))
 	if(anchor)
 		move_chance = 0
 	if(!stats && add_stats)
-		own_set(src, nameof(stats), new /datum/anomaly_stats)
+		rel_set(src, nameof(stats), new /datum/anomaly_stats)
 		rel_set(stats, nameof(stats.attached_anomaly), src)
 		stats.calculate_points()
 		set_density(TRUE)
 	return
 
-EXTEND_INTERACTIONS(/obj/effect/anomaly, \
-	INTERACT_ITEM(null, PROC_REF(interaction_scan_anomaly)), \
-)
-
 /// Old attackby: analyzers read a stabilized core's frequency; anomaly scanners buffer the anomaly.
-/obj/effect/anomaly/proc/interaction_scan_anomaly(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/anomaly/proc/interaction_scan_anomaly(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/I = held
 	if(istype(I, /obj/item/analyzer) || (istype(I, /obj/item/anomaly_scanner) && !stats))
 		if(anomaly_core)
 			to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(anomaly_core.frequency)], code [anomaly_core.code]."))
 			return TRUE
-	if(istype(I, /obj/item/anomaly_scanner) && stats)
-		var/obj/item/anomaly_scanner/scanner = I
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
-		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
+/// A scanner buffers an anomaly that has stats.
+/obj/effect/anomaly/proc/has_stats(datum/act/op/A)
+	return (!!stats) ? null : MSG(req_failed)
+
+/obj/effect/anomaly/proc/anomaly_buffered(datum/act/op/A)
+	var/obj/item/anomaly_scanner/scanner = A.held
 	rel_set(scanner, nameof(scanner.buffered_anomaly), src)
-	scanner.tgui_interact(user)
-	return TRUE
+	scanner.tgui_interact(A.actor)
 
 /obj/effect/anomaly/bullet_act(obj/item/projectile/proj)
 	if(stats && istype(stats.modifier, /datum/anomaly_modifiers/reflective) && prob(stats.severity/1.5))
@@ -189,3 +198,8 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 /// The impact area (an area: a plain var).
 /obj/effect/anomaly/proc/impact_area() as /area
 	return impact_area
+
+/// The core (owns_one(starts =)): the type in anomaly_core, made only when the anomaly drops one.
+/obj/effect/anomaly/proc/make_core(current)
+	if(drops_core && ispath(current))
+		return current

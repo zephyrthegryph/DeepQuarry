@@ -11,9 +11,14 @@
 	var/datum/species/species
 	var/released = 0
 
+CAPABILITIES(/datum/own_test_holder)
+	owns_one(nameof(child))
+	owns_many(nameof(children))
+	owns_many(nameof(values))
+
 /datum/own_test_holder/ownership()
 	. = ..()
-	. += proto(nameof(species))
+	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/own_test_holder/relations()
 	. = ..()
@@ -34,6 +39,9 @@
 /datum/own_test_child
 	var/label = "child"
 	var/datum/own_test_child/grandchild
+
+CAPABILITIES(/datum/own_test_child)
+	owns_one(nameof(grandchild))
 
 /datum/own_test_partner
 	var/datum/own_test_holder/holder
@@ -60,31 +68,31 @@
 
 /datum/unit_test/ownership_own_accessors/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, nameof(H.child), A)
-	TEST_ASSERT_EQUAL(H.child, A, "own_set writes the var")
+	rel_set(H, nameof(H.child), A)
+	TEST_ASSERT_EQUAL(H.child, A, "rel_set writes the var")
 	TEST_ASSERT_EQUAL(owner_of(A), H, "the owner is stamped on the child")
 	TEST_ASSERT_EQUAL(owner_slot_of(A), "child", "the owner's var is stamped on the child")
 	var/datum/own_test_child/B = new
-	own_set(H, nameof(H.child), B)
-	TEST_ASSERT(QDELETED(A), "own_set destroys the value it replaces (DELETE policy)")
+	rel_set(H, nameof(H.child), B)
+	TEST_ASSERT(QDELETED(A), "rel_set destroys the value it replaces (DELETE policy)")
 	TEST_ASSERT(H.released >= 1, "the owned-child release hook ran")
-	var/datum/own_test_child/taken = own_take(H, nameof(H.child))
+	var/datum/own_test_child/taken = rel_take(H, nameof(H.child))
 	TEST_ASSERT_EQUAL(taken, B, "own_take returns the value")
 	TEST_ASSERT(isnull(H.child) && isnull(owner_of(B)), "own_take detaches and unstamps")
-	own_add(H, nameof(H.children), B)
-	own_put(H, nameof(H.values), "a", new /datum/own_test_child)
-	TEST_ASSERT(B in H.children, "own_add adds to the owned list")
+	rel_add(H, nameof(H.children), B)
+	rel_add(H, nameof(H.values), new /datum/own_test_child, "a")
+	TEST_ASSERT(B in H.children, "rel_add adds to the owned list")
 	var/datum/own_test_holder/H2 = new
-	own_transfer(H, nameof(H.children), H2, nameof(H2.child), B)
+	rel_move(H, nameof(H.children), H2, nameof(H2.child), B)
 	TEST_ASSERT_EQUAL(H2.child, B, "own_transfer moves a list member into another owner's var")
 	TEST_ASSERT_EQUAL(owner_of(B), H2, "the move restamps the owner")
 	TEST_ASSERT(!length(H.children), "the source list no longer holds it")
 	TEST_ASSERT(!length(capture), "no reports for legal moves: [json_encode(capture)]")
 	// Double ownership is refused.
-	own_set(H, nameof(H.child), B)
+	rel_set(H, nameof(H.child), B)
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "already owned"), "adopting a value another holder owns is reported: [json_encode(capture)]")
 	TEST_ASSERT_EQUAL(owner_of(B), H2, "the refused adoption leaves the owner alone")
 	capture.Cut()
@@ -95,21 +103,21 @@
 	qdel(H)
 	TEST_ASSERT(QDELETED(B) && QDELETED(V), "destroying the owner deletes its owned values")
 	qdel(H2)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(!length(capture), "no reports: [json_encode(capture)]")
 
 /datum/unit_test/ownership_phase8_reset
 
 /datum/unit_test/ownership_phase8_reset/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
-	own_set(H, nameof(H.child), new /datum/own_test_child)
+	rel_set(H, nameof(H.child), new /datum/own_test_child)
 	dq_lifecycle_clear_links(H) // phase 4
 	var/datum/own_test_child/late = new
-	H.child = late // ALLOW(ownership): the test re-sets an owned var after phase 4
+	H.child = late
 	own_scrub(H) // phase 8
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(QDELETED(late), "phase 8 deletes a value re-set during teardown")
 	TEST_ASSERT(length(capture) && findtext(capture[1], "re-set during teardown"), "and reports it: [json_encode(capture)]")
 	qdel(H)
@@ -119,14 +127,14 @@
 /datum/unit_test/ownership_orphan_audit/Run()
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, nameof(H.child), A)
-	H.child = null // ALLOW(ownership): the test drops an owned value without the accessors
+	rel_set(H, nameof(H.child), A)
+	H.child = null
 	var/list/lines = own_audit(quiet = TRUE)
 	var/found = FALSE
 	for(var/line in lines)
 		if(findtext(line, "orphan") && findtext(line, "/datum/own_test_child"))
 			found = TRUE
-	TEST_ASSERT(found, "the audit finds a value dropped without own_take/own_set: [json_encode(lines)]")
+	TEST_ASSERT(found, "the audit finds a value dropped without own_take/rel_set: [json_encode(lines)]")
 	qdel(A)
 	qdel(H)
 
@@ -134,7 +142,7 @@
 
 /datum/unit_test/ownership_relation_views/Run()
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/T = new
 	rel_set(H, nameof(H.view), T)
@@ -171,7 +179,7 @@
 	rel_set(H3, nameof(H3.view), dying)
 	dying.gc_destroyed = null
 	TEST_ASSERT(isnull(H3.view), "a link to an entity being destroyed is refused")
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	qdel(dying)
 	qdel(H3)
 	qdel(P1)
@@ -201,12 +209,12 @@
 	var/cleared = rel_drop_z(fake_z)
 	TEST_ASSERT(isnull(H.view) && cleared == 1, "releasing the z-level clears views naming its turfs ([cleared])")
 	// A turf handle carries the z-level's generation.
-	var/h = om_handle(T)
-	TEST_ASSERT_EQUAL(om_resolve(h), T, "a turf handle resolves on a live z-level")
-	om_z_generation_bump(T.z)
-	TEST_ASSERT(isnull(om_resolve(h)), "a turf handle stops resolving once its z-level generation moves on")
+	var/h = entity_handle(T)
+	TEST_ASSERT_EQUAL(resolve_handle(h), T, "a turf handle resolves on a live z-level")
+	relation_z_generation_bump(T.z)
+	TEST_ASSERT(isnull(resolve_handle(h)), "a turf handle stops resolving once its z-level generation moves on")
 	GLOB.om_z_generations[T.z]-- // the test map's z-level was not really released
-	TEST_ASSERT_EQUAL(om_resolve(h), T, "and resolves again once the generation is back")
+	TEST_ASSERT_EQUAL(resolve_handle(h), T, "and resolves again once the generation is back")
 	qdel(H)
 
 /datum/unit_test/ownership_proto
@@ -215,13 +223,13 @@
 	var/datum/own_test_holder/H = new
 	var/datum/species/proto = GLOB.all_species[SPECIES_HUMAN]
 	proto_set(H, nameof(H.species), proto)
-	TEST_ASSERT(!proto_is_private(H, nameof(H.species)), "a registered prototype is shared")
-	var/datum/species/mine = proto_private(H, nameof(H.species))
-	TEST_ASSERT(mine != proto && proto_is_private(H, nameof(H.species)), "proto_private makes an owned private copy")
-	TEST_ASSERT(proto_private(H, nameof(H.species)) == mine, "and returns the same copy afterwards")
+	TEST_ASSERT(!rel_is_private(H, nameof(H.species)), "a registered prototype is shared")
+	var/datum/species/mine = rel_private(H, nameof(H.species))
+	TEST_ASSERT(mine != proto && rel_is_private(H, nameof(H.species)), "proto_private makes an owned private copy")
+	TEST_ASSERT(rel_private(H, nameof(H.species)) == mine, "and returns the same copy afterwards")
 	proto_set(H, nameof(H.species), proto)
 	TEST_ASSERT(QDELETED(mine), "proto_set deletes the private copy it replaces")
-	var/datum/species/second = proto_private(H, nameof(H.species))
+	var/datum/species/second = rel_private(H, nameof(H.species))
 	qdel(H)
 	TEST_ASSERT(QDELETED(second) && !QDELETED(proto), "teardown deletes private copies only")
 
@@ -235,12 +243,12 @@
 	qdel(S)
 	TEST_ASSERT(!QDELETED(S), "a registered instance refuses an unforced qdel()")
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	var/datum/own_test_holder/H = new
 	shared_set(H, nameof(H.view), copy)
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(length(capture) && findtext(capture[1], "not a registered instance"), "shared_set refuses an unregistered value: [json_encode(capture)]")
-	H.view = null // ALLOW(ownership): test cleanup of a deliberately wrong write
+	H.view = null
 	qdel(copy)
 	qdel(H)
 
@@ -250,8 +258,8 @@
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	A.label = "original"
-	own_set(A, nameof(A.grandchild), new /datum/own_test_child)
-	own_set(H, nameof(H.child), A)
+	rel_set(A, nameof(A.grandchild), new /datum/own_test_child)
+	rel_set(H, nameof(H.child), A)
 	var/datum/own_test_holder/H2 = new
 	var/datum/own_test_child/C = entity_clone(A, H2, "child")
 	TEST_ASSERT(C && C != A, "entity_clone makes a new entity")
@@ -266,31 +274,31 @@
 
 /datum/unit_test/ownership_deep_capture/Run()
 	var/datum/own_test_child/A = new
-	var/list/capture = om_capture_args(list(list("nested" = list(A)), 3))
+	var/list/capture = capture_args(list(list("nested" = list(A)), 3))
 	TEST_ASSERT(capture, "a nested datum is captured")
 	var/list/captured = capture[1]
 	TEST_ASSERT(!findtext(json_encode(captured), "\[0x"), "no reference survives in the capture")
 	var/list/copy = captured.Copy()
-	TEST_ASSERT(om_resolve_captured(copy, capture[2]), "it resolves while the datum lives")
+	TEST_ASSERT(resolve_captured(copy, capture[2]), "it resolves while the datum lives")
 	var/list/outer = copy[1]
 	var/list/inner = outer["nested"]
 	TEST_ASSERT_EQUAL(inner[1], A, "back to the datum")
 	qdel(A)
 	copy = captured.Copy()
-	TEST_ASSERT(!om_resolve_captured(copy, capture[2]), "and refuses once it is gone")
+	TEST_ASSERT(!resolve_captured(copy, capture[2]), "and refuses once it is gone")
 	var/list/reports = list()
-	GLOB.dq_lifecycle_report_capture = reports
+	set_global("dq_lifecycle_report_capture", reports)
 	var/datum/own_test_child/K = new
 	var/list/keyed = list()
 	keyed[K] = 1
-	TEST_ASSERT(isnull(om_capture_args(list(keyed))), "a datum used as an assoc key is refused")
-	GLOB.dq_lifecycle_report_capture = null
+	TEST_ASSERT(isnull(capture_args(list(keyed))), "a datum used as an assoc key is refused")
+	set_global("dq_lifecycle_report_capture", null)
 	qdel(K)
 	var/datum/own_test_child/B = new
-	var/list/spec = om_callable(B, TYPE_PROC_REF(/datum/own_test_child, test_label), "x")
-	TEST_ASSERT_EQUAL(om_run(spec, "y"), "childxy", "om_run runs a callable with stored and extra args")
+	var/list/spec = deferred_call(B, TYPE_PROC_REF(/datum/own_test_child, test_label), "x")
+	TEST_ASSERT_EQUAL(deferred_run(spec, "y"), "childxy", "deferred_run runs a callable with stored and extra args")
 	qdel(B)
-	TEST_ASSERT(isnull(om_run(spec, "y")), "a callable whose target is gone is dropped")
+	TEST_ASSERT(isnull(deferred_run(spec, "y")), "a callable whose target is gone is dropped")
 
 /datum/own_test_child/proc/test_label(a, b)
 	return "[label][a][b]"
@@ -315,26 +323,26 @@
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	rel_set(H, nameof(H.view), A)
-	var/h = om_handle(A)
-	var/id = om_handle_park(A)
+	var/h = entity_handle(A)
+	var/id = entity_handle_park(A)
 	qdel(A)
 	TEST_ASSERT(isnull(H.view), "the view clears when the collapsed thing goes")
-	TEST_ASSERT(isnull(om_resolve(h)), "a parked handle resolves to nothing")
+	TEST_ASSERT(isnull(resolve_handle(h)), "a parked handle resolves to nothing")
 	var/datum/own_test_child/B = new
-	om_handle_unpark(B, id)
-	TEST_ASSERT_EQUAL(om_resolve(h), B, "the re-materialized thing takes over the old handle")
+	entity_handle_unpark(B, id)
+	TEST_ASSERT_EQUAL(resolve_handle(h), B, "the re-materialized thing takes over the old handle")
 	TEST_ASSERT_EQUAL(H.view, B, "and the dormant view re-links to it")
 	// replace_with forwarding.
 	var/datum/own_test_child/C = new
-	om_handle_forward(B, C)
-	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward re-points views to the successor")
-	TEST_ASSERT_EQUAL(om_resolve(h), C, "and hands it the handle slot")
+	rel_forward_identity(B, C)
+	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity re-points views to the successor")
+	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and hands it the handle slot")
 	// A successor of another family (an airlock torn down into an assembly) is a new thing:
 	// the views and handle stay with the original and end with it.
 	var/datum/own_test_holder/other = new
-	om_handle_forward(C, other)
-	TEST_ASSERT_EQUAL(H.view, C, "om_handle_forward leaves views on the original for a successor of another family")
-	TEST_ASSERT_EQUAL(om_resolve(h), C, "and keeps the handle slot")
+	rel_forward_identity(C, other)
+	TEST_ASSERT_EQUAL(H.view, C, "rel_forward_identity leaves views on the original for a successor of another family")
+	TEST_ASSERT_EQUAL(resolve_handle(h), C, "and keeps the handle slot")
 	qdel(other)
 	qdel(B)
 	qdel(C)
@@ -355,34 +363,7 @@
 /// Makes an entity nothing owns or references except its own record (a pending timer).
 /proc/own_rec_audit_make_dropped()
 	var/datum/own_test_child/A = new
-	om_after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
-
-/datum/own_test_field_holder
-OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, null, CHANGE_MACHINE_SETTINGS)
-
-/datum/unit_test/ownership_framework_writes_raise_fields
-
-/datum/unit_test/ownership_framework_writes_raise_fields/Run()
-	var/datum/own_test_field_holder/H = new
-	var/datum/own_test_child/T = new
-	var/datum/om/scheduler/sched = om_scheduler()
-	om_rec_of(H)
-	H.om_listen |= CHANGE_MACHINE_SETTINGS
-	sched.test_raises = list()
-	rel_set(H, nameof(H.watched), T)
-	TEST_ASSERT(own_test_raised(sched, H), "a relation write to a declared field raises its channel")
-	sched.test_raises = list()
-	qdel(T)
-	TEST_ASSERT(isnull(H.watched), "the view cleared when its target died")
-	TEST_ASSERT(own_test_raised(sched, H), "the automatic clear of a declared field raises its channel, as the setter would")
-	sched.test_raises = null
-	qdel(H)
-
-/proc/own_test_raised(datum/om/scheduler/sched, datum/E)
-	for(var/list/raise as anything in sched.test_raises)
-		if(raise[1] == E && (raise[2] & CHANGE_MACHINE_SETTINGS))
-			return TRUE
-	return FALSE
+	after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
 
 // ---- ownership() / relations() entries: policies, rel_link pairs, hooks, watch ----
 
@@ -421,7 +402,7 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 /datum/own_test_watch_target
 	var/power_level = 0
 	var/label = "x"
-TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
+TRACKED(/datum/own_test_watch_target, power_level)
 
 /datum/own_test_watch_holder
 	var/datum/own_test_watch_target/watched
@@ -530,26 +511,44 @@ TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
 /datum/unit_test/ownership_keep_policy/Run()
 	var/datum/own_test_keep_holder/H = new
 	var/datum/own_test_child/C = new
-	own_set(H, nameof(H.kept), C)
+	rel_set(H, nameof(H.kept), C)
 	TEST_ASSERT_EQUAL(owner_of(C), H, "an OWN_KEEP value is owned while its holder lives")
 	qdel(H)
 	TEST_ASSERT(!QDELETED(C), "OWN_KEEP: the value outlives its holder")
 	TEST_ASSERT(isnull(owner_of(C)), "OWN_KEEP: the value is released at teardown")
 	qdel(C)
 
-/// A slot capability owns its var: the type declares nothing in ownership().
+/// A capability owns its var: the type declares nothing in ownership().
 /obj/cap_fixture/own_slot_holder
-	var/obj/item/cell/cell
+	var/datum/gas_mixture/air_contents
 
-/obj/cap_fixture/own_slot_holder/capabilities()
-	. = ..()
-	. += cap_slot(nameof(cell), /obj/item/cell)
+CAPABILITY(/obj/cap_fixture/own_slot_holder, gas_store(nameof(air_contents), 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE)))
 
 /datum/unit_test/ownership_capability_owned
 
 /datum/unit_test/ownership_capability_owned/Run()
 	var/obj/cap_fixture/own_slot_holder/H = allocate(/obj/cap_fixture/own_slot_holder)
-	var/list/entry = own_table_of(H).entries[nameof(H.cell)]
-	TEST_ASSERT_NOTNULL(entry, "the slot capability's owned() declares its var in the holder's table")
-	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the slot var is owned")
-	TEST_ASSERT_EQUAL(entry[OWNE_ARG], OWN_CONTAINED, "the slot var is owned CONTAINED")
+	var/list/entry = own_table_of(H).entries[nameof(H.air_contents)]
+	TEST_ASSERT_NOTNULL(entry, "the gas store capability's owned() declares its var in the holder's table")
+	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the store var is owned")
+
+/// A chem smoke system is thrown away after start(): no timer of its clouds keeps it alive as an unreferenced datum (the audit's
+/// "dropped with a rec" finding), and its reagent holder ends with it.
+/datum/unit_test/ownership_chem_smoke_not_dropped
+
+/datum/unit_test/ownership_chem_smoke_not_dropped/Run()
+	test_driver_begin()
+	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker)
+	B.reagents.add_reagent(REAGENT_ID_WATER, 10)
+	var/datum/effect/effect/system/smoke_spread/chem/S = new
+	var/obj/holder = S.chemholder
+	S.set_up(B.reagents, 5, 0, run_loc_floor_bottom_left)
+	S.start()
+	S = null
+	test_time(1)
+	var/list/lines = own_audit(quiet = TRUE)
+	for(var/line in lines)
+		TEST_ASSERT(!findtext(line, "smoke_spread"), "the finished smoke system is not left behind: [line]")
+	TEST_ASSERT(QDELETED(holder), "the reagent holder ended with the system")
+	test_time(400) // the clouds fade and expire
+	test_driver_end()

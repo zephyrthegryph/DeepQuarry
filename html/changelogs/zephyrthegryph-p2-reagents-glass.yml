@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Beakers, buckets, kettles, bottles, vials, mugs and paint cans run on the reagent container capability: lid, set transfer amount, pour, tap, splash, drink, feed, label, dip, and the bucket's and paint can's own uses."
+  - bugfix: "Writing an empty label on a glass container clears the label instead of leaving its name as \"beaker ()\"."
+  - bugfix: "A hostile click that splashes a container over a floor or an object empties it (a splash used to leave a random part behind)."
+  - code_imp: "A held item is no longer offered the empty-hand touches of its target, and an op can be done at a turf."

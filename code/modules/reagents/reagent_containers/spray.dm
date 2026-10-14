@@ -7,9 +7,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	item_state = "cleaner"
 	center_of_mass_x = 16
 	center_of_mass_y = 10
-	flags = OPENCONTAINER|NOBLUDGEON
-	slot_flags = SLOT_BELT
-	throwforce = 3
+	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 10
@@ -19,68 +17,65 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	var/spray_size = 3
 	var/static/list/spray_sizes = list(1,3)
 	volume = 250
-	transfer_amount_verb = FALSE
 
-/obj/item/reagent_containers/spray/afterattack(atom/A as mob|obj, mob/user as mob, proximity)
-	if(istype(A, /obj/item/storage) || istype(A, /obj/structure/table) || istype(A, /obj/structure/closet) || istype(A, /obj/item/reagent_containers) || istype(A, /obj/structure/sink) || istype(A, /obj/structure/janitorialcart))
-		return
+// A spray bottle sprays one amount at what it is clicked on, near or far (a puff of it at the floor and at the air, a splash over a dense thing next to
+// the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
+// closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
+CAPABILITIES(/obj/item/reagent_containers/spray)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
+	reagent_container(
+		volume = nameof(volume),
+		spray = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		taps = list(/obj/structure/reagent_dispensers),
+		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart))
+	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied)))
+	examine_line(PROC_REF(units_left))
+	extend("reagent_container.spray", reach(REACH_ANY), then(PROC_REF(spray_logged)))
 
-	if(istype(A, /datum/spell))
-		return
+MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 
-	if(proximity)
-		if(standard_dispenser_refill(user, A))
-			return
-
-	if(reagents.total_volume < amount_per_transfer_from_this)
-		balloon_alert(user, "\the [src] is empty!")
-		return
-
-	Spray_at(A, user, proximity)
-
-	user.setClickCooldown(4)
-
-	if(reagents.has_reagent(REAGENT_ID_SACID))
-		log_and_message_admins("fired sulphuric acid from \a [src].", user)
-	if(reagents.has_reagent(REAGENT_ID_PACID))
-		log_and_message_admins("fired Polyacid from \a [src].", user)
-	if(reagents.has_reagent(REAGENT_ID_LUBE))
-		log_and_message_admins("fired Space lube from \a [src].", user)
-	return
-
-/obj/item/reagent_containers/spray/proc/Spray_at(atom/A as mob|obj, mob/user, proximity)
+/// What a spray makes of one amount aimed at `target`: a splash over a dense thing next to the sprayer, else a puff of it travelling to the target.
+/obj/item/reagent_containers/spray/reagent_spray_at(atom/target, mob/user, amount)
 	play_sfx(src, SFX_EFFECTS_SPRAY2, 0.5)
-	if (A.density && proximity)
-		act_message(user, A, others = "%U% sprays %T% with [src].")
-		reagents.splash(A, amount_per_transfer_from_this)
+	if(target.density && user?.Adjacent(target))
+		act_message(user, target, others = "%U% sprays %T% with [src].")
+		reagents.splash(target, amount, user = user)
 	else
 		var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
-		var/turf/my_target = get_turf(A)
-		D.create_reagents(amount_per_transfer_from_this)
-		if(!src)
-			return
-		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		var/turf/my_target = get_turf(target)
+		D.create_reagents(amount)
+		reagents.trans_to_obj(D, amount, user = user)
 		D.set_color()
-		D.set_up(my_target, spray_size, 10)
-	return
+		D.set_up(my_target, spray_size, 1 SECOND, user)
 
-/obj/item/reagent_containers/spray/examine(mob/user)
-	. = ..()
-	if(loc == user)
-		. += "[round(reagents.total_volume)] units left."
+/// A spray of a few reagents is told to the admins.
+/obj/item/reagent_containers/spray/proc/spray_logged(datum/act/op/A)
+	if(reagents.has_reagent(REAGENT_ID_SACID))
+		log_and_message_admins("fired sulphuric acid from \a [src].", A.actor)
+	if(reagents.has_reagent(REAGENT_ID_PACID))
+		log_and_message_admins("fired Polyacid from \a [src].", A.actor)
+	if(reagents.has_reagent(REAGENT_ID_LUBE))
+		log_and_message_admins("fired Space lube from \a [src].", A.actor)
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spray Bottle", PROC_REF(spray_verb_empty), REQ_IN_INVENTORY))
+/// How much is left, to whoever holds it.
+/obj/item/reagent_containers/spray/proc/units_left(datum/act/op/A)
+	if(loc != A.actor)
+		return null
+	return "[round(reagents.total_volume)] units left."
 
-/// Old Empty Spray Bottle verb.
-/obj/item/reagent_containers/spray/proc/spray_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(spray_verb_empty), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to empty that?", title = "Empty Bottle:", choices = list("Yes", "No"))
-	if(isnull(_answer_a1))
-		return
-	if (_answer_a1 != "Yes")
-		return
-	if(isturf(user.loc))
-		balloon_alert(user, "emptied \the [src] onto the floor.")
-		reagents.splash(user.loc, reagents.total_volume)
+/// The Empty verb: the whole bottle onto the floor under whoever does it.
+/obj/item/reagent_containers/spray/proc/emptied(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!isturf(user.loc))
+		return OP_REFUSED
+	balloon_alert(user, "emptied \the [src] onto the floor.")
+	reagents.splash(user.loc, reagents.total_volume, user = user)
+	return OP_OK
 
 //space cleaner
 /obj/item/reagent_containers/spray/cleaner
@@ -92,17 +87,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spr
 	desc = "BLAM!-brand non-foaming space cleaner!"
 	volume = 50
 
-/obj/item/reagent_containers/spray/cleaner/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CLEANER, volume)
+CAPABILITIES(/obj/item/reagent_containers/spray/cleaner)
+	configure(reagents(add = list(REAGENT_ID_CLEANER = nameof(volume))))
 
 /obj/item/reagent_containers/spray/sterilizine
 	name = REAGENT_ID_STERILIZINE
 	desc = "Great for hiding incriminating bloodstains and sterilizing scalpels."
 
-/obj/item/reagent_containers/spray/sterilizine/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_STERILIZINE, volume)
+CAPABILITIES(/obj/item/reagent_containers/spray/sterilizine)
+	configure(reagents(add = list(REAGENT_ID_STERILIZINE = nameof(volume))))
 
 /obj/item/reagent_containers/spray/pepper
 	name = "pepperspray"
@@ -116,26 +109,22 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spr
 	volume = 40
 	var/safety = TRUE
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/spray/pepper, null, list(REAGENT_ID_CONDENSEDCAPSAICIN = 40))
+// The pepper spray has a safety, worked in hand: while it is on nothing comes out. It is loaded with 40 units of condensed capsaicin.
+CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
+	configure(reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
+	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
+	examine_line(PROC_REF(safety_text))
+	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on))))
 
-/obj/item/reagent_containers/spray/pepper/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "The safety is [safety ? "on" : "off"]."
+/obj/item/reagent_containers/spray/pepper/proc/safety_toggled(datum/act/op/A)
+	balloon_alert(A.actor, "safety [safety ? "on" : "off"].")
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("Toggle safety", PROC_REF(pepper_self)))
-
-/// Old attack_self.
-/obj/item/reagent_containers/spray/pepper/proc/pepper_self(mob/user, obj/item/held, datum/interaction/interaction)
-	safety = !safety
-	balloon_alert(user, "safety [safety ? "on" : "off"].")
-	return TRUE
-
-/obj/item/reagent_containers/spray/pepper/Spray_at(atom/A as mob|obj, mob/user)
-	if(safety)
-		to_chat(user, span_warning("The safety is on!"))
-		return
-	. = ..()
+/// Whoever is next to it can see its safety.
+/obj/item/reagent_containers/spray/pepper/proc/safety_text(datum/act/op/A)
+	if(!Adjacent(A.actor))
+		return null
+	return "The safety is [safety ? "on" : "off"]."
 
 /obj/item/reagent_containers/spray/waterflower
 	name = "water flower"
@@ -146,10 +135,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 	amount_per_transfer_from_this = 1
 	max_transfer_amount = null
 	volume = 10
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAGENT_ID_WATER = 10))
+CAPABILITIES(/obj/item/reagent_containers/spray/waterflower)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	configure(reagent_container(starts = list(REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/spray/chemsprayer
 	name = "chem sprayer"
@@ -160,15 +149,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	center_of_mass_x = 16
 	center_of_mass_y = 16
-	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
 	max_transfer_amount = null
 	volume = 600
 
-/obj/item/reagent_containers/spray/chemsprayer/Spray_at(atom/A as mob|obj, mob/user)
+CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
+	configure(item_thrown(force = 3))
+
+/// Three puffs in a click: at the target and to each side of it.
+/obj/item/reagent_containers/spray/chemsprayer/reagent_spray_at(atom/target, mob/user, amount)
 	play_sfx(src, SFX_EFFECTS_SPRAY3, volume = rand(50,1))
-	var/direction = get_dir(src, A)
-	var/turf/T = get_turf(A)
+	var/direction = get_dir(src, target)
+	var/turf/T = get_turf(target)
 	var/turf/T1 = get_step(T,turn(direction, 90))
 	var/turf/T2 = get_step(T,turn(direction, -90))
 	var/list/the_targets = list(T, T1, T2)
@@ -180,10 +172,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 		D.create_reagents(amount_per_transfer_from_this)
 		if(!src)
 			return
-		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.set_color()
-		D.set_up(my_target, rand(6, 8), 2)
-	return
+		D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 
 /obj/item/reagent_containers/spray/plantbgone
 	name = REAGENT_PLANTBGONE
@@ -193,7 +184,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 	item_state = "plantbgone"
 	volume = 100
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/spray/plantbgone, null, list(REAGENT_ID_PLANTBGONE = 100))
+CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
+	configure(reagent_container(starts = list(REAGENT_ID_PLANTBGONE = 100)))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed
 	name = "hose nozzle"
@@ -209,52 +201,42 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/plantbgone, null, list(REAGE
 	var/heavy_spray = FALSE
 	var/spray_particles = 3
 
-	var/icon/hose_overlay
-
-
-/obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-	add_hose_connector(/datum/hose_connector/input)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_hose))
-
-/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(atom/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/spray/chemsprayer/hosed, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/spray/chemsprayer/hosed/appearance_overlays()
-	. = list()
-	. += ..()
-
-
-	if(!hose_overlay)
-		hose_overlay = new/icon(icon, "[icon_state]+hose")
-
+/// The hose, while one is attached.
+/obj/item/reagent_containers/spray/chemsprayer/hosed/draw(datum/look/look)
+	. = ..()
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
+		look.watch(HC)
+		look.watch(HC.hose())
 		if(HC.get_pairing())
-			. += hose_overlay
+			look.overlay("[icon_state]+hose")
 			break
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERACT_ALT("Turn dial", PROC_REF(hosed_alt)))
+// The dial is turned by an alt-click (1, 2, 3 streams of a heavy spray), and a control-click, held, switches between the light spray and the heavy one.
+CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(update_hose)))
+	hose_sockets(list(/datum/hose_connector/input))
+	op("dial", hand(), answers(INTENT_TOGGLE), label("Turn dial"), then(PROC_REF(dial_turned)))
+	op("heavy", in_hand(), gesture(GESTURE_CTRL), label("Switch the spray"), then(PROC_REF(spray_switched)))
 
-/// Old click_alt (never called its parent: no transfer-amount prompt, no default alt-click).
-/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/hosed_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/dial_turned(datum/act/op/A)
 	if(++spray_particles > 3) spray_particles = 1
 
-	balloon_alert(user, "dial turned to [spray_particles].")
-	return TRUE
+	balloon_alert(A.actor, "dial turned to [spray_particles].")
+	return OP_OK
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/item_ctrl_click(mob/user)
-	if(loc != get_turf(src))
-		heavy_spray = !heavy_spray
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/spray_switched(datum/act/op/A)
+	heavy_spray = !heavy_spray
+	return OP_OK
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/Spray_at(atom/A as mob|obj, mob/user)
-	update_icon()
-
-	var/direction = get_dir(src, A)
-	var/turf/T = get_turf(A)
+/obj/item/reagent_containers/spray/chemsprayer/hosed/reagent_spray_at(atom/target, mob/user, amount)
+	var/direction = get_dir(src, target)
+	var/turf/T = get_turf(target)
 	var/turf/T1 = get_step(T,turn(direction, 90))
 	var/turf/T2 = get_step(T,turn(direction, -90))
 	var/list/the_targets = list(T, T1, T2)
@@ -272,9 +254,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 			D.create_reagents(amount_per_transfer_from_this)
 			if(!src)
 				return
-			reagents.trans_to_obj(D, amount_per_transfer_from_this)
+			reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 			D.set_color()
-			D.set_up(my_target, rand(6, 8), 2)
+			D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 		return
 
 	else
@@ -290,9 +272,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 			else
 				my_target = pick(the_targets)
 			W.create_reagents(amount_per_transfer_from_this)
-			reagents.trans_to_obj(W, amount_per_transfer_from_this)
+			reagents.trans_to_obj(W, amount_per_transfer_from_this, user = user)
 			W.set_color()
-			W.set_up(my_target)
+			W.set_up(my_target, user = user)
 
 		return
 
@@ -305,4 +287,5 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 	max_transfer_amount = null
 	volume = 80
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/spray/windowsealant, null, list(REAGENT_ID_SILICATE = 80))
+CAPABILITIES(/obj/item/reagent_containers/spray/windowsealant)
+	configure(reagent_container(starts = list(REAGENT_ID_SILICATE = 80)))

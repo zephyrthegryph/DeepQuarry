@@ -22,22 +22,24 @@
 			fire_sound		= SFX_WEAPONS_PULSE3
 		))
 
-DECLARE_VERB(/obj/item/gun/energy/sizegun, /obj/item/gun/energy/sizegun/proc/select_size)
-DECLARE_VERB(/obj/item/gun/energy/sizegun, /obj/item/gun/energy/sizegun/proc/spin_dial)
+CAPABILITIES(/obj/item/gun/energy/sizegun)
+	verb_entry(/obj/item/gun/energy/sizegun/proc/select_size)
+	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
-/obj/item/gun/energy/sizegun/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/sizegun/gun_operate(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
-	select_size(user)
+	if(. == OP_OK)
+		return OP_OK
+	select_size(A.actor)
 
 /obj/item/gun/energy/sizegun/proc/spin_dial()
 	set name = "Spin Size Dial"
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	size_set_to = (rand(25,200)) /100
+	set_size_set_to((rand(25,200)) /100)
 	act_message(usr, null, MSG_SELF(span_notice("You spin the dial to a random value!")), \
 		MSG_OTHERS(span_warning("%U% spins the size dial to a random value!")))
 
@@ -52,37 +54,37 @@ DECLARE_VERB(/obj/item/gun/energy/sizegun, /obj/item/gun/energy/sizegun/proc/spi
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	var/size_select = rerun_ask(user, "a1", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), (1-600%) in dormitory areas.", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-	if(isnull(size_select))
+	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (25-200%), (1-600%) in dormitory areas.", default = size_set_to * 100)
+
+/obj/item/gun/energy/sizegun/proc/size_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	size_selected_apply(context.request.answerer, context.answer.value)
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/sizegun/proc/size_selected_apply(mob/user, size_select)
 	if(!size_select)
 		return //cancelled
 	//We do valid resize testing in actual firings because people move after setting these things.
 	//Just a basic clamp here to the valid ranges.
-	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-	to_chat(usr, span_notice("You set the size to [size_select]%"))
+	set_size_set_to(clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS))
+	to_chat(user, span_notice("You set the size to [size_select]%"))
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
-		to_chat(usr, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
+		to_chat(user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/sizegun/appearance_overlays()
-	. = list()
-	var/grow_mode = "shrink"
-	if(size_set_to > 1)
-		grow_mode = "grow"
+
+/// The look: shrink or grow by the set size, with the charge step; the hands follow the mode.
+/obj/item/gun/energy/sizegun/draw_charge_state(datum/look/look)
+	var/grow_mode = size_set_to > 1 ? "grow" : "shrink"
 	if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
-
+		var/ratio = power_supply.maxcharge > 0 ? power_supply.charge / power_supply.maxcharge : 0
 		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
 			ratio = max(round(ratio, 0.25) * 100, 25)
-
-		icon_state = "[initial_icon_state]-[grow_mode][ratio]"
-		item_state = "[initial_icon_state]-[grow_mode]"
-
-	update_held_icon()
+		look.state("[initial_icon_state]-[grow_mode][ratio]")
+		look.held_state("[initial_icon_state]-[grow_mode]")
 
 /obj/item/gun/energy/sizegun/examine(mob/user)
 	. = ..()
@@ -132,13 +134,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
-	var/size_select = rerun_ask(user, "a2", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (1-600%)", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-	if(isnull(size_select))
+	open_request(src, /datum/prompt/number/sizegun_size, PROC_REF(size_selected), answerer = user, question = "Put the desired size (1-600%)", default = size_set_to * 100)
+
+/obj/item/gun/energy/sizegun/admin/size_selected(datum/act/request/context)
+	if(!context.answer)
 		return
+	size_selected_apply(context.request.answerer, context.answer.value)
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/sizegun/admin/size_selected_apply(mob/user, size_select)
 	if(!size_select)
 		return //cancelled
-	size_set_to = clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-	to_chat(usr, span_notice("You set the size to [size_select]%"))
+	set_size_set_to(clamp((size_select / 100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS))
+	to_chat(user, span_notice("You set the size to [size_select]%"))
 
 /obj/item/gun/energy/sizegun/afterattack(atom/A, mob/living/user, adjacent, params)
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
@@ -147,7 +155,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		if(prob(50))
 			to_chat(user, span_notice("\The [src] backfires and consumes its entire charge!"))
 			Fire(user, user)
-			power_supply.charge = 0
+			power_supply.set_charge(0)
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M?.hud_used.update_ammo_hud(M, src)
@@ -162,7 +170,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		if(prob(50))
 			to_chat(user, span_notice("\The [src] backfires and consumes its entire charge!"))
 			Fire(user, user)
-			power_supply.charge = 0
+			power_supply.set_charge(0)
 			var/mob/living/M = loc // TGMC Ammo HUD
 			if(istype(M)) // TGMC Ammo HUD
 				M?.hud_used.update_ammo_hud(M, src)
@@ -173,7 +181,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		return ..()
 
 
-/obj/item/gun/energy/sizegun/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/gun/energy/sizegun/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(backfire)
 		to_chat(user, span_warning("You repair the damage to \the [src]."))
 		backfire = FALSE
@@ -182,7 +191,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		to_chat(user, span_warning("You snip a wire on \the [src], making it less reliable."))
 		backfire = TRUE
 		name = "unstable size gun"
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/gun/energy/sizegun/backfire
 	name = "unstable size gun"
@@ -219,7 +228,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 				return
 		if(!M.resize(set_size, uncapped = M.has_large_resize_bounds(), ignore_prefs = ignoring_prefs, allow_stripping = TRUE))
 			to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
 		return
 	return 1
 
@@ -239,7 +247,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		M.resize(set_size, uncapped = TRUE, ignore_prefs = TRUE) // Always ignores prefs, caution is advisable
 
 		to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
 		return
 	return 1
 
@@ -256,3 +263,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
+
+/datum/prompt/number/sizegun_size
+	title = "Set Size"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/sizegun_size/recheck_extra()
+	var/mob/user = answerer
+	return !istype(user) || QDELETED(user) ? "gone" : null
+
+/datum/prompt/number/sizegun_size/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default || 0, RESIZE_MAXIMUM_DORMS * 100, RESIZE_MINIMUM_DORMS * 100, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box

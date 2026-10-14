@@ -30,7 +30,6 @@
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node))
 
-	update_icon()
 
 	..()
 
@@ -40,12 +39,11 @@
 	if(node)
 		node.update_underlays()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/cap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/cap/appearance_overlays()
-	. = list()
-	alpha = 255
+/obj/machinery/atmospherics/pipe/cap/draw(datum/look/look)
+	..()
+	look.alpha = 255
 
-	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]")
+	look.overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]"))
 
 /obj/machinery/atmospherics/pipe/cap/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src, dir))
@@ -55,7 +53,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/cap, TYPE_PROC_REF(/ato
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level == 1 && !T.is_plating()) hide(1)
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/cap/can_unwrench()
 	return 1

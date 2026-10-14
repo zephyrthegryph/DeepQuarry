@@ -47,7 +47,6 @@
 
 	nom_mob = TRUE
 
-	can_be_drop_prey = FALSE
 	species_sounds = "Canine" // Argue about whether it should have canine or feline later
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
@@ -64,22 +63,21 @@
 	The Va'aen has been hunted to near extinction by poachers due to its secretions' unusual healing properties, and its beautiful hide; encountering one has become very rare."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/leopardmander/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1 // 2 on Downstream
-	plane_holder.set_vis(VIS_CH_HEALTH_VR, 1)
-	plane_holder.set_vis(VIS_CH_ID, 1)
-	plane_holder.set_vis(VIS_CH_STATUS_R, 1)
-	plane_holder.set_vis(VIS_CH_BACKUP, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_ID, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP, 1)
 
-/mob/living/simple_mob/vore/leopardmander/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
 
 /mob/living/simple_mob/vore/leopardmander/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
@@ -116,7 +114,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/t
 
 	B = new /obj/belly(src)
 
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"
 	//Not going to change the default sounds. Personally I think the non-fancy sounds work good as enterance nom sounds and the fancy ones are better for transfer sounds. -Reo
@@ -178,7 +176,8 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/t
 
 	set_glow_toggle(!glow_toggle)
 
-DECLARE_VERB(/mob/living/simple_mob/vore/leopardmander/exotic, /mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
+CAPABILITIES(/mob/living/simple_mob/vore/leopardmander/exotic)
+	verb_entry(/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
 
 /mob/living/simple_mob/vore/leopardmander/exotic/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
@@ -215,7 +214,7 @@ DECLARE_VERB(/mob/living/simple_mob/vore/leopardmander/exotic, /mob/living/simpl
 	B.transferlocation = "maw"
 
 	B = new /obj/belly(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"
@@ -240,7 +239,12 @@ DECLARE_VERB(/mob/living/simple_mob/vore/leopardmander/exotic, /mob/living/simpl
 	B.escapechance = 75
 
 /obj/random/mob/leopardmander
-DECLARE_LOOT(/obj/random/mob/leopardmander, LOOT_TABLE(\
-	/mob/living/simple_mob/vore/leopardmander = 89, \
-	/mob/living/simple_mob/vore/leopardmander/blue = 10, \
-	/mob/living/simple_mob/vore/leopardmander/exotic = 1))
+CAPABILITIES(/obj/random/mob/leopardmander)
+	configure(loot(
+		table = list(
+			/mob/living/simple_mob/vore/leopardmander = 89,
+			/mob/living/simple_mob/vore/leopardmander/blue = 10,
+			/mob/living/simple_mob/vore/leopardmander/exotic = 1)))
+
+/mob/living/simple_mob/vore/leopardmander/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

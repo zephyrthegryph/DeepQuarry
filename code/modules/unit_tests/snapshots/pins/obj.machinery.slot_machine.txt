@@ -1,0 +1,27 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Insert chip
+human|/obj/item/tool/screwdriver click: Click: Insert chip
+human|/obj/item/tool/crowbar menu: Insert chip
+human|/obj/item/tool/crowbar click: Click: Insert chip
+human|/obj/item/tool/wrench menu: Insert chip
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Insert chip
+human|/obj/item/tool/wirecutters click: Click: Insert chip
+human|/obj/item/multitool menu: Insert chip
+human|/obj/item/multitool click: Click: Insert chip
+human|/obj/item/weldingtool menu: Insert chip
+human|/obj/item/weldingtool click: Click: Insert chip
+human|/obj/item/stack/cable_coil menu: Insert chip
+human|/obj/item/stack/cable_coil click: Click: Insert chip
+human|/obj/item/stack/material/steel menu: Insert chip
+human|/obj/item/stack/material/steel click: Click: Insert chip
+human|/obj/item/card/id menu: Insert chip
+human|/obj/item/card/id click: Click: Insert chip
+human|/obj/item menu: Insert chip
+human|/obj/item click: Click: Insert chip
+keys: attackby, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wrench

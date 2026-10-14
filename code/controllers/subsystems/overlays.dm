@@ -1,16 +1,22 @@
-SUBSYSTEM_DEF(overlays)
+SYSTEM_DEF(overlays)
 	name = "Overlay"
-	flags = SS_NO_FIRE|SS_NO_INIT
+	init_stage = INITSTAGE_MAIN
 	var/list/stats
 
-/datum/controller/subsystem/overlays/PreInit()
+/datum/system/overlays/preinit()
 	stats = list()
 
-/datum/controller/subsystem/overlays/Shutdown()
+/// Adds one timed call of an overlay proc to the per-type table the shutdown log renders.
+/datum/system/overlays/proc/log_stat(entryname, ms)
+	var/list/entry = stats[entryname] || (stats[entryname] = new /list(STAT_ENTRY_LENGTH))
+	entry[STAT_ENTRY_TIME] += ms
+	var/incr_amount = min(1, 2**round((entry[STAT_ENTRY_COUNT] || 0)/SHORT_REAL_LIMIT))
+	if(incr_amount == 1 || prob(100/incr_amount))
+		entry[STAT_ENTRY_COUNT] += incr_amount
+
+/datum/system/overlays/on_shutdown()
 	WRITE_LOG("[GLOB.log_directory]-overlay.log", render_stats(stats))
 
-/datum/controller/subsystem/overlays/Recover()
-	stats = SSoverlays.stats
 
 /// Converts an overlay list into text for debug printing
 /// Of note: overlays aren't actually mutable appearances, they're just appearances
@@ -37,10 +43,12 @@ SUBSYSTEM_DEF(overlays)
 	iconbro.icon = icon
 	return iconbro.appearance
 
-/atom/proc/build_appearance_list(list/build_overlays)
+/// `merge_priority` puts the atom's priority overlays (the generic emissive blocker) in the list: an add does it only when the atom has no
+/// overlays left (a wipe took the blocker), so the blocker is drawn once, not once more after every redraw.
+/atom/proc/build_appearance_list(list/build_overlays, merge_priority = TRUE)
 	if (!islist(build_overlays))
 		build_overlays = list(build_overlays)
-	if(priority_overlays)
+	if(priority_overlays && merge_priority)
 		var/list/prio_overlay_temp
 		if(!islist(priority_overlays))
 			prio_overlay_temp = list(priority_overlays)
@@ -68,8 +76,11 @@ SUBSYSTEM_DEF(overlays)
 	if(priority)
 		priority_overlays = null
 	overlays = null
+	if(!priority && priority_overlays) // a wipe keeps the generic blocker: it is drawn once, here, and adds no longer bring it back
+		var/list/kept = islist(priority_overlays) ? priority_overlays : list(priority_overlays)
+		overlays += build_appearance_list(kept.Copy(), FALSE)
 	STAT_STOP_STOPWATCH
-	STAT_LOG_ENTRY(SSoverlays.stats, type)
+	SSoverlays.log_stat(type, STAT_TIME)
 
 /atom/proc/cut_overlay(list/remove_overlays, priority)
 	if(!overlays)
@@ -82,9 +93,9 @@ SUBSYSTEM_DEF(overlays)
 			priority_overlays = null
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays -= build_appearance_list(remove_overlays)
+	overlays -= build_appearance_list(remove_overlays, FALSE) // cutting a layer never takes the generic blocker with it
 	STAT_STOP_STOPWATCH
-	STAT_LOG_ENTRY(SSoverlays.stats, type)
+	SSoverlays.log_stat(type, STAT_TIME)
 
 /atom/proc/add_overlay(list/add_overlays, priority)
 	if(!overlays)
@@ -102,10 +113,10 @@ SUBSYSTEM_DEF(overlays)
 			else
 				priority_overlays = list(priority_overlays) + add_overlays
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays += build_appearance_list(add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
+	overlays += build_appearance_list(add_overlays, !length(overlays)) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)
 	STAT_STOP_STOPWATCH
-	STAT_LOG_ENTRY(SSoverlays.stats, type)
+	SSoverlays.log_stat(type, STAT_TIME)
 
 /atom/proc/copy_overlays(atom/other, cut_old) //copys our_overlays from another atom
 	if(!other)
@@ -122,12 +133,12 @@ SUBSYSTEM_DEF(overlays)
 			overlays = null
 		VALIDATE_OVERLAY_LIMIT(src)
 		STAT_STOP_STOPWATCH
-		STAT_LOG_ENTRY(SSoverlays.stats, type)
+		SSoverlays.log_stat(type, STAT_TIME)
 	else if(cached_other)
 		overlays += cached_other
 		VALIDATE_OVERLAY_LIMIT(src)
 		STAT_STOP_STOPWATCH
-		STAT_LOG_ENTRY(SSoverlays.stats, type)
+		SSoverlays.log_stat(type, STAT_TIME)
 
 //TODO: Better solution for these?
 /image/proc/add_overlay(x)

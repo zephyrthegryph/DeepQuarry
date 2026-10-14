@@ -11,6 +11,8 @@
 	level = 1
 
 	var/configuring = 0
+	/// The volume each of its four port mixtures is made with.
+	var/port_volume = 200
 
 	var/tag_north = ATM_NONE
 	var/tag_south = ATM_NONE
@@ -22,10 +24,15 @@
 	var/overlays_error[2]
 	var/underlays_current[4]
 
-	/// The device's four ports, in GLOB.cardinal order (owned: own_add in Initialize()).
+	/// The device's four ports, in GLOB.cardinal order (owned: rel_add in Initialize()).
 	var/list/datum/omni_port/ports
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
+
+CAPABILITIES(/obj/machinery/atmospherics/omni)
+	owns_many(nameof(ports), /datum/omni_port)
+	pipe_device_switch()
+	pipe_device_unwrench()
+
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
@@ -43,23 +50,26 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 				new_port.mode = tag_west
 		if(new_port.mode > 0)
 			initialize_directions |= d
-		own_add(src, nameof(ports), new_port)
+		rel_add(src, nameof(ports), new_port)
 
 	build_icons()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/omni/appearance_overlays()
-	. = list()
-	if(has_stat(NOPOWER))
-		. += overlays_off
+/obj/machinery/atmospherics/omni/draw(datum/look/look)
+	..()
+	look.state("base")
+	var/list/shown
+	if(power_lost())
+		shown = overlays_off
 	else if(error_check())
-		. += overlays_error
+		shown = overlays_error
 	else
-		. += use_power ? (overlays_on) : (overlays_off)
+		shown = use_power ? overlays_on : overlays_off
+	for(var/image in shown)
+		look.overlay(image)
 
-	underlays = underlays_current
-
-	return .
+/obj/machinery/atmospherics/omni/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(overlays_on), nameof(overlays_off), nameof(overlays_error))
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
@@ -74,37 +84,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 	. = ..()
 	rust_device_dirty()
 
-/obj/machinery/atmospherics/omni/wrench_act(mob/user, obj/item/W)
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/omni/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + "unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-
-/obj/machinery/atmospherics/omni/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/omni_open_ui,
-	)
-	..()
-
-/// Open the omni device's interface: the old `if(..()) return; add_fingerprint(user); tgui_interact(user)`.
-/datum/interaction/machine_hand/omni_open_ui
-	id = "omni_open_ui"
-	name = "Use"
-	effect = /obj/machinery/atmospherics/omni/proc/interaction_open_ui_impl
-
-/obj/machinery/atmospherics/omni/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
-
 /obj/machinery/atmospherics/omni/proc/build_icons()
 	var/core_icon = null
 	if(istype(src, /obj/machinery/atmospherics/omni/mixer))
@@ -116,11 +95,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 
 	//directional icons are layers 1-4, with the core icon on layer 5
 	if(core_icon)
-		overlays_off[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_on[5] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow")
+		set_overlays_off_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_on_at(5, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon + "_glow"))
 
-		overlays_error[1] = GLOB.icon_manager.get_atmos_icon("omni", , , core_icon)
-		overlays_error[2] = GLOB.icon_manager.get_atmos_icon("omni", , , "error")
+		set_overlays_error_at(1, GLOB.icon_manager.get_atmos_icon("omni", , , core_icon))
+		set_overlays_error_at(2, GLOB.icon_manager.get_atmos_icon("omni", , , "error"))
 
 /obj/machinery/atmospherics/omni/proc/update_port_icons()
 	for(var/datum/omni_port/P in ports)
@@ -145,14 +124,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 					underlays_current[ref_layer] = port_icons["pipe_icon"]
 				else
 					underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = port_icons["off_icon"]
-				overlays_on[ref_layer] = port_icons["on_icon"]
+				set_overlays_off_at(ref_layer, port_icons["off_icon"])
+				set_overlays_on_at(ref_layer, port_icons["on_icon"])
 			else
 				underlays_current[ref_layer] = null
-				overlays_off[ref_layer] = null
-				overlays_on[ref_layer] = null
+				set_overlays_off_at(ref_layer, null)
+				set_overlays_on_at(ref_layer, null)
 
-	update_icon()
+	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
 
 /obj/machinery/atmospherics/omni/proc/select_port_icons(datum/omni_port/P)
 	if(!istype(P))
@@ -275,23 +254,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 
 	return null
 
-// Keybinds for EVEEERYTHING
-/obj/machinery/atmospherics/omni/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(allowed(user))
-		set_use_power(!use_power)
-		wake_for_state_change()
-		update_icon()
-		add_fingerprint(user)
-		if(use_power)
-			configuring = 0
-			to_chat(user, span_notice("You toggle the [name] on."))
+/// The switch: running ends configuring, and the Rust group is pushed again.
+/obj/machinery/atmospherics/omni/toggle_power()
+	..()
+	if(use_power)
+		set_configuring(0)
+	wake_for_state_change()
 
-		else
-			to_chat(user, span_notice("You toggle the [name] off."))
-
-	else
-		to_chat(user, span_warning("Access denied."))
+/// An omni device comes off its pipes whether it runs or not (only its gas holds it).
+/obj/machinery/atmospherics/omni/pipe_device_idle(datum/act/A)
+	return null
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.

@@ -31,13 +31,10 @@ MATERIAL_MIX(/obj/item/assembly/igniter, list(MAT_STEEL = 500, MAT_GLASS = 50))
 
 
 /// Overrides assembly's interaction_self(): activate instead of opening the UI.
-/obj/item/assembly/igniter/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
+/obj/item/assembly/igniter/interaction_self(datum/act/op/A)
 	activate()
-	add_fingerprint(user)
-	return TRUE
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/item/assembly/igniter/is_hot()
 	return TRUE

@@ -1,5 +1,5 @@
 // The ONLY place cap_state bits are allocated (doc/rewrite/dx_conventions.md §2, review L1 / review 2 C2).
-// /atom/var/cap_state holds one bit per boolean capability state. DM bitwise math is safe to 24 bits.
+// Capability runtime state holds one bit per boolean capability state. DM bitwise math is safe to 24 bits.
 // tools/ci/cap_bits_lint.py fails CI if a CAP_* bit is defined anywhere else, two share a value, or one
 // reaches 1<<24. Take the next free bit here; never reuse a retired one in the same release.
 
@@ -13,14 +13,9 @@
 #define CAP_BROKEN (1<<3)
 /// emag(): emagged.
 #define CAP_EMAGGED (1<<4)
-/// wires(): exposed without a panel (types whose wires sit behind their own hatch).
-#define CAP_WIRES_EXPOSED (1<<5)
+// (1<<5): retired (the legacy wires capability's CAP_WIRES_EXPOSED).
 /// Door weld_shut(): welded shut.
 #define CAP_WELDED (1<<6)
-/// Door bolts(): bolted.
-#define CAP_BOLTED (1<<7)
-/// reagent_container(): the lid is open.
-#define CAP_LID_OPEN (1<<8)
 /// smokable(): lit.
 #define CAP_LIT (1<<9)
 /// two_handed(): wielded.
@@ -32,5 +27,4 @@
 /// cover(removable = TRUE): the cover is knocked off (APC).
 #define CAP_COVER_REMOVED (1<<14)
 /// Door emergency_access(): emergency access on.
-#define CAP_EMERGENCY_ACCESS (1<<15)
 // Free: 16 .. 23.

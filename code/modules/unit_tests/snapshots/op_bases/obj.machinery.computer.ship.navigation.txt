@@ -1,0 +1,13 @@
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none menu: Emote Beyond (refused: too far away)
+ghost|none menu: View
+ghost|none click: Click: View
+human|none menu: Climb
+human|none menu: Emote Beyond
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none menu: Emote Beyond
+robot|none menu: Use
+robot|none click: Click: Use

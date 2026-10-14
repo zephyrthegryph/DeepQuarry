@@ -17,35 +17,41 @@
 	// Consume everything in our turf
 	for(var/atom/movable/A in turf_contents_of_type(src, /atom/movable))
 		if(isliving(A))
-			qdel(A)
+			spent(A)
 			continue
 		if(istype(A,/mob)) // Observers, AI cameras.
 			continue
-		qdel(A)
+		spent(A)
 
 /turf/unsimulated/wall/supermatter/attack_generic(mob/user as mob)
 	return attack_hand(user)
 
-EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch", PROC_REF(supermatter_wall_robot)), 	INTERACT_SILICON("Examine", PROC_REF(supermatter_wall_examine)), 	INTERACT_OBSERVER("Examine", PROC_REF(supermatter_wall_examine)), \
-	INTERACT_HAND_UNGATED("Touch", PROC_REF(supermatter_wall_hand)), \
-	INTERACT_ITEM("Touch with", PROC_REF(supermatter_wall_item)), \
-)
+CAPABILITIES(/turf/unsimulated/wall/supermatter)
+	op("supermatter_wall_robot", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_robot)))
+	op("supermatter_wall_silicon_examine", remote(), priority(OP_PRIORITY_DEFAULT - 2), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
+	op("supermatter_wall_ghost_examine", observer(), label("Examine"), then(PROC_REF(supermatter_wall_examine)))
+	// The item op is declared first: a held item answers before the bare-hand touch (which would dust the player), and a click that is not on harm intent is refused.
+	op("supermatter_wall_item", item(/obj/item), needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))), priority(OP_PRIORITY_DEFAULT - 1), label("Touch with"), then(PROC_REF(supermatter_wall_item)))
+	op("supermatter_wall_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(supermatter_wall_hand)))
 
 /// Old attack_robot: a cyborg touches it only from next to it.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_robot(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_robot(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		attack_hand(user)
 	else
 		to_chat(user, span_warning("What the fuck are you doing?"))
-	return TRUE
+	return OP_OK
 
 /// Old attack_ai and attack_ghost (/vg/: don't let ghosts fuck with this): just examine it.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_examine(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_examine(datum/act/op/A)
+	var/mob/user = A.actor
 	user.examinate(src)
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_danger("You reach out and touch %T%. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\"")), \
 		MSG_OTHERS(span_warning("%U% reaches out and touches %T%... And then blinks out of existance.")), \
 		MSG_BLIND(span_warning("You hear an unearthly noise.")))
@@ -53,10 +59,12 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 
 	Consume(user)
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a harm-intent touch with an item turns the item to dust; any other click with an item leaves it alone.
+/turf/unsimulated/wall/supermatter/proc/supermatter_wall_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	act_message(user, src, MSG_SELF(span_danger("You touch %I% to %T% when everything suddenly goes silent.\"") + "\n" + span_notice("%I% flashes into dust as you flinch away from %T%.")), \
 		MSG_OTHERS(span_warning("%U% touches \a [W] to %T% as a silence fills the room...")), \
 		MSG_BLIND(span_warning("Everything suddenly goes silent.")), \
@@ -66,7 +74,7 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 
 	user.drop_from_inventory(W)
 	Consume(W)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 
 /turf/unsimulated/wall/supermatter/Bumped(atom/AM as mob|obj)
@@ -88,6 +96,6 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 	if(istype(user,/mob/observer))
 		return
 
-	qdel(user)
+	consumed(user, src)
 
 

@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated legacy clothing, research, character settings and admin questions to native requests."
+  - bugfix: "Accepted stock loans now retain proper ownership and are cleaned up with their stock."

@@ -5,6 +5,7 @@
 	icon_state = "human_male"
 	density = TRUE
 	anchored = TRUE
+	sealable = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 	closet_appearance = null
 	// The statue starts at the encased mob's remaining wellness (vitality * endurance) + 100
@@ -15,11 +16,20 @@
 	var/original_int = 100
 	var/timer = 240 //eventually the person will be freed
 
-/obj/structure/closet/statue/Initialize(mapload, mob/living/L)
+/// The sprite of the encased mob's shape ("human_female", "monkey", "corgi"), or null for the mapped one.
+/obj/structure/closet/statue/var/statue_shape
+
+/// How long after init the petrification wears off (after_init()).
+/obj/structure/closet/statue/var/release_delay = 0
+
+/// The mob turned to stone (its constructor param, dropped after init).
+/obj/structure/closet/statue/var/tmp/mob/living/statue_of
+
+// ALLOW(init/INSTANCE_STATE): a statue holds the mob it petrifies, shielded from harm, until it releases them
+/obj/structure/closet/statue/Initialize(mapload)
 	. = ..()
-	var/found_target = FALSE
+	var/mob/living/L = statue_of
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
-		found_target = TRUE
 		if(L?.buckled_to())
 			var/atom/movable/_tmp_buck_9 = L?.buckled_to()
 			_tmp_buck_9.unbuckle_mob(L, TRUE)
@@ -29,31 +39,36 @@
 		max_integrity = L.get_endurance() + 100
 		original_int = L.vitality() * L.get_endurance() + 100
 		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
-		om_hook(L, /datum/om/event/before/living_injure, src, PROC_REF(stasis_block_injury))
+		observe(L, /datum/act/injure, src, instead(when(PROC_REF(stasis_holds))))
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
-				icon_state = "human_female"
+				statue_shape = "human_female"
 		else if(L.isMonkey())
 			name = "statue of a monkey"
-			icon_state = "monkey"
+			statue_shape = "monkey"
 		else if(iscorgi(L))
 			name = "statue of a corgi"
-			icon_state = "corgi"
+			statue_shape = "corgi"
 			desc = "If it takes forever, I will wait for you..."
 
-	if(!found_target) //meaning if the statue didn't find a valid target
-		return INITIALIZE_HINT_QDEL
 
-	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
+/// A statue is made around a human, a monkey or a corgi (keeps_if()); without one it is discarded.
+/obj/structure/closet/statue/proc/has_subject()
+	var/mob/living/L = statue_of
+	return L && (ishuman(L) || L.isMonkey() || iscorgi(L))
+
+/// The old countdown, one step per 2 s (derives(), at init; read by its after_init()).
+/obj/structure/closet/statue/proc/timer_delay()
+	return timer * 2 SECONDS
 
 /// The petrification wears off (its timer): the statue frees whoever is inside.
-/obj/structure/closet/statue/proc/release()
+/obj/structure/closet/statue/proc/release(datum/act/A)
 	if(QDELETED(src))
 		return
 	timer = 0
 	dump_contents()
-	qdel(src)
+	consume(src)
 
 /obj/structure/closet/statue/dump_contents()
 	latent_materialize_all()
@@ -64,7 +79,7 @@
 	for(var/mob/living/M in slot_contents())
 		M.forceMove(loc) // Might be in a belly
 		M.set_sdisabilities(M.sdisabilities & (~MUTE))
-		om_unhook(M, /datum/om/event/before/living_injure, src)
+		unobserve(M, /datum/act/injure, src)
 		if(get_integrity() < original_int) //any new damage the statue incurred is transfered to the mob
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
@@ -77,10 +92,9 @@
 	..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
-/obj/structure/closet/statue/proc/stasis_block_injury(mob/living/source, datum/om/event/before/living_injure/event)
-	EVENT_HANDLER
-	if(source.loc == src)
-		return COMPONENT_CANCEL_INJURY
+/obj/structure/closet/statue/proc/stasis_holds(datum/act/injure/hit)
+	var/mob/living/victim = hit.target
+	return victim.loc == src
 
 /obj/structure/closet/statue/open()
 	return
@@ -102,35 +116,41 @@
 		for(var/mob/M in slot_contents())
 			shatter(M)
 
-/obj/structure/closet/statue/explosion_contents_severity(severity)
-	return severity
-
-/// Overrides closet's interaction_item(): a statue takes weapon hits instead of storing items.
-/obj/structure/closet/statue/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	user.do_attack_animation(src)
-	act_message(user, src, others = span_danger("%U% strikes %T% with [I]."))
-	receive_weapon_hit(I, user)
-	return TRUE
-
-/// Overrides closet's interaction_drag(): nothing goes into a statue.
-/obj/structure/closet/statue/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
-
 /obj/structure/closet/statue/relaymove()
 	return
 
-/// Overrides closet's interaction_hand(): a statue doesn't open.
-/obj/structure/closet/statue/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+// A statue is a closet that never opens: nothing goes into it, the hand does nothing, and anything held strikes it (it takes weapon hits instead of storing items).
+CAPABILITIES(/obj/structure/closet/statue)
+	when(nameof(release_delay), after_init(nameof(release_delay), then(PROC_REF(release))))
+	configure(blast_contents(shield = 0)) // stone holds nothing back from the one petrified inside
+	without("door")
+	without("stuff")
+	without("stuff_grab")
+	without("set_down")
+	without("empty_basket")
+	without("melee_hit")
+	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
+	param(nameof(statue_of), pos = 1, keep = FALSE)
+	keeps_if(PROC_REF(has_subject))
+	derives(nameof(release_delay), PROC_REF(timer_delay))
 
-/obj/structure/closet/statue/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	return
+/// A held thing strikes the statue.
+/obj/structure/closet/statue/proc/statue_struck(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	user.do_attack_animation(src)
+	act_message(user, src, others = span_danger("%U% strikes %T% with [I]."))
+	receive_weapon_hit(I, user)
+	return OP_OK
 
-APPEARANCE_NONE(/obj/structure/closet/statue)
+/// A statue keeps its mapped sprite (the encased mob's shape), with none of a closet's door states.
+/obj/structure/closet/statue/closet_look(datum/look/look)
+	if(statue_shape)
+		look.state(statue_shape)
 
 /obj/structure/closet/statue/proc/shatter(mob/user as mob)
 	if (user)
 		user.dust()
 	dump_contents()
 	visible_message(span_warning("[src] shatters!."))
-	qdel(src)
+	consume(src)

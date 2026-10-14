@@ -7,17 +7,24 @@
 	icon = 'icons/obj/defibrillator.dmi'
 	icon_state = "defibunit"
 	item_state = "defibunit"
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
 
 	var/paddle_path = /obj/item/shockpaddles/linked
 	var/obj/item/cell/bcell = null
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/defib_kit)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	owns_one(nameof(bcell), /obj/item/cell, starts = nameof(bcell))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Load"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(drop_input))
 
 /obj/item/defib_kit/get_cell()
 	return bcell
@@ -25,9 +32,6 @@
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
 	make_tethered(paddle_path)
 	. = ..()
-	update_icon()
-
-DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc
@@ -35,80 +39,81 @@ DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
-DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/defib_kit/appearance_overlays()
-	. = list()
-
+/obj/item/defib_kit/draw(datum/look/look)
+	..()
+	var/stem = initial(icon_state)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
+	look.watch(paddles) // the paddles come out of the kit and go back in
 	if(paddles && paddles.loc == src)
-		. += "[initial(icon_state)]-paddles"
+		look.overlay("[stem]-paddles")
 	if(bcell && paddles)
 		if(bcell.check_charge(paddles.chargecost))
 			if(paddles.combat)
-				. += "[initial(icon_state)]-combat"
+				look.overlay("[stem]-combat")
 			else if(!paddles.safety)
-				. += "[initial(icon_state)]-emagged"
+				look.overlay("[stem]-emagged")
 			else
-				. += "[initial(icon_state)]-powered"
+				look.overlay("[stem]-powered")
 
 		var/ratio = CEILING(bcell.percent()/25, 1) * 25
-		. += "[initial(icon_state)]-charge[ratio]"
+		look.overlay("[stem]-charge[ratio]")
 	else
-		. += "[initial(icon_state)]-nocell"
-
-DECLARE_INTERACTIONS(/obj/item/defib_kit, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM("Load", PROC_REF(interaction_item)), \
-)
+		look.overlay("[stem]-nocell")
 
 /// Old attack_hand: let the tether swap the paddles into hand before falling through to pickup.
-/obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/defib_kit/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	// See important note in code/datums/behaviours/tethered_item.dm
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/defib_kit/MouseDrop()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/defib_kit/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
+
+/obj/item/defib_kit/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
 
-/obj/item/defib_kit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/defib_kit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(bcell)
 			to_chat(user, span_notice("\The [src] already has a cell."))
 		else
-			if(!own_set(src, nameof(src.bcell), W, user = user))
+			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			update_icon()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/defib_kit/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/defib_kit/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bcell)
-		return ITEM_INTERACT_BLOCKING
-	bcell.update_icon()
+		return OP_OK
 	bcell.forceMove(get_turf(loc))
 	user.put_in_any_hand_if_possible(bcell)
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
-/obj/item/defib_kit/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer on the kit works its paddles (their own emag, by key); the kit pays the card when they took it.
+/obj/item/defib_kit/proc/on_emag(datum/act/op/A)
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
-	if(paddles)
-		. = emag_target(paddles, remaining_charges, user, emag_source)
-		update_icon()
-	return
+	if(!paddles)
+		return OP_DECLINE
+	var/used = emag_target(paddles, 1, A.actor, A.held)
+	return (used != EMAG_DECLINED && used > 0) ? OP_OK : OP_DECLINE
 
 //checks that the base unit is in the correct slot to be used
 /obj/item/defib_kit/proc/slot_check()
@@ -137,7 +142,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
 	icon_state = "defibcompact"
 	item_state = "defibcompact"
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/defib_kit/compact)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/defib_kit/compact/loaded
 	bcell = /obj/item/cell/high
@@ -164,10 +171,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
 	icon_state = "defibpaddles"
 	item_state = "defibpaddles"
 	gender = PLURAL
-	force = 2
-	throwforce = 6
 	w_class = ITEMSIZE_LARGE
-	item_flags = NOSTRIP
 
 	var/safety = 1 //if you can zap people with the paddles on harm mode
 	var/combat = 0 //If it can be used to revive people wearing thick clothing (e.g. spacesuits)
@@ -180,33 +184,40 @@ DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
 	var/wielded = 0
 	var/cooldown = 0
 
-/obj/item/shockpaddles/proc/set_cooldown(delay)
-	cooldown = 1
-	update_icon()
+TRACKED(/obj/item/shockpaddles, safety)
+TRACKED(/obj/item/shockpaddles, cooldown)
+TRACKED(/obj/item/shockpaddles, wielded)
+TRACKED(/obj/item/shockpaddles, combat)
+TRACKED(/obj/item/shockpaddles, chargecost)
 
-	om_after(src, delay, PROC_REF(recharged))
+/obj/item/shockpaddles/proc/start_cooldown(delay)
+	set_cooldown(1)
+
+	after(src, delay, PROC_REF(recharged))
 
 /obj/item/shockpaddles/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && M.item_is_in_hands(src) && !M.hands_are_full())
-		wielded = 1
+		set_wielded(1)
 		name = "[initial(name)] (wielded)"
 	else
-		wielded = 0
+		set_wielded(0)
 		name = initial(name)
-	update_icon()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/shockpaddles/appearance_overlays()
-	. = list()
-	icon_state = "defibpaddles[wielded]"
-	item_state = "defibpaddles[wielded]"
+/obj/item/shockpaddles/draw(datum/look/look)
+	..()
+	// the type's own paddles (defib or jumper cables), without the wielded digit a robot's mapped state carries
+	var/stem = initial(icon_state)
+	if(copytext(stem, -1) == "0" || copytext(stem, -1) == "1")
+		stem = copytext(stem, 1, -1)
+	look.state("[stem][wielded]")
+	look.held_state("[stem][wielded]")
 	if(cooldown)
-		icon_state = "defibpaddles[wielded]_cooldown"
+		look.state("[stem][wielded]_cooldown")
 
 /obj/item/shockpaddles/proc/can_use(mob/user, mob/M)
-	if(om_busy(src))
+	if(op_claimed(src))
 		return 0
 	if(!check_charge(chargecost))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
@@ -284,7 +295,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 /obj/item/shockpaddles/proc/check_contact(mob/living/carbon/human/H)
 	if(!combat)
 		for(var/obj/item/clothing/cloth in list(H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM)))
-			if((cloth.body_parts_covered & UPPER_TORSO) && (cloth.item_flags & THICKMATERIAL))
+			if((worn_of(cloth).covers & UPPER_TORSO) && (worn_of(cloth).flags & THICKMATERIAL))
 				return FALSE
 	return TRUE
 
@@ -351,7 +362,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 
 	return ..()
 
-// The revive chain: each timed action claims the paddles (om_busy()) while it runs.
+// The revive chain: each timed op claims the paddles (op_claimed()) while it runs; the placing op starts the charging op when it ends.
 /obj/item/shockpaddles/proc/do_revive(mob/living/carbon/human/H, mob/user)
 	var/mob/observer/dead/ghost = H.get_ghost()
 	if(ghost)
@@ -359,10 +370,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	act_message(user, src, MSG_SELF(span_warning("You begin to place %T% on [H]'s chest...")), MSG_OTHERS(span_warning("%U% begins to place %T% on [H]'s chest.")))
-	om_task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
+	perform_op(user, src, "revive_place", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = get_turf(H)))
 	return TRUE
 
-/obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
+/// The patient walked off (or is gone) while the paddles were being placed or charged: the work ends.
+/obj/item/shockpaddles/proc/patient_left(mob/living/carbon/human/H, turf/spot)
+	return QDELETED(H) || get_turf(H) != spot
+
+/obj/item/shockpaddles/proc/do_revive_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 	act_message(user, src, MSG_SELF(span_warning("You place %T% on [H]'s chest.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " places %T% on [H]'s chest.")))
 	play_sfx(src, SFX_MACHINES_DEFIB_CHARGE)
 
@@ -370,33 +389,36 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 	if(error)
 		make_announcement(error, "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	if(check_blood_level(H))
 		make_announcement("buzzes, \"Warning - Patient is in hypovolemic shock.\"", "warning") //also includes heart damage
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_revive_charged, user, H, receiver = src, duration = chargetime / output_envelope, output_envelope = output_envelope, busy = src)
+	perform_op(user, src, "revive_charge", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = A.arg("spot"), "envelope" = output_envelope))
+	return OP_OK
 
-/datum/om/task/timed/shockpaddles_do_revive_charged
-	complete_proc = /obj/item/shockpaddles/proc/do_revive_charged
-	var/output_envelope
+/// How long the charge takes: the base charge time shortened by the output envelope.
+/obj/item/shockpaddles/proc/charge_wait(datum/act/op/A)
+	return chargetime / A.arg("envelope")
 
-/obj/item/shockpaddles/proc/do_revive_charged(datum/om/task/timed/shockpaddles_do_revive_charged/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/output_envelope = task.output_envelope
+/obj/item/shockpaddles/proc/do_revive_charged(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/output_envelope = A.arg("envelope")
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	act_message(H, null, others = span_warning("%U%'s body convulses a bit."))
 	play_sfx(src, SFX_BODYFALL)
 	play_sfx(src, SFX_MACHINES_DEFIB_ZAP)
-	set_cooldown(cooldowntime)
+	start_cooldown(cooldowntime)
 
 	// A living patient in a shockable rhythm: cardiovert, no resurrection involved.
 	if(H.stat != DEAD)
@@ -408,26 +430,26 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 			make_announcement("buzzes, \"Conversion failed. Continue CPR.\"", "warning")
 			play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
 		add_attack_logs(user, H, "Cardioverted using [name]")
-		return
+		return OP_OK
 
 	var/error = can_revive(H)
 	if(error)
 		make_announcement(error, "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
 	if(has_trait(H, TRAIT_UNLUCKY) && prob(5))
 		make_announcement("buzzes, \"Unknown error occurred. Please try again.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	// A fibrillating corpse needs its rhythm converted to come back.
 	var/datum/affliction/cardiac_arrhythmia/rhythm = H.cardiac_arrhythmia()
 	if(rhythm && !rhythm.is_perfusing() && !H.defibrillate_heart())
 		make_announcement("buzzes, \"Resuscitation failed - rhythm did not convert. Continue CPR.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	// Flush synthetic system faults (a no-op on organic parts).
 	H.mend(TREAT_SYSTEM_RESTORE, H.injury_load(INJURY_CATEGORY_TOXIC))
@@ -436,7 +458,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 	if(revived != TRUE)
 		make_announcement("buzzes, \"Resuscitation failed - [revived]. Further attempts futile without treatment.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	make_announcement("pings, \"Resuscitation successful.\"", "notice")
 	play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS)
@@ -461,30 +483,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_electrocute, user, H, receiver = src, duration = chargetime / output_envelope, target_zone_arg = target_zone, output_envelope = output_envelope, busy = src)
+	perform_op(user, src, "electrocute", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "spot" = get_turf(H), "zone" = target_zone, "envelope" = output_envelope))
 	return TRUE
 
-/datum/om/task/timed/shockpaddles_do_electrocute
-	complete_proc = /obj/item/shockpaddles/proc/do_electrocute_timed_done
-	var/target_zone_arg
-	var/output_envelope
-
-/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/om/task/timed/shockpaddles_do_electrocute/task)
-	var/mob/living/carbon/human/H = task.target
-	var/mob/user = task.actor
-	var/target_zone = task.target_zone_arg
-	var/output_envelope = task.output_envelope
+/obj/item/shockpaddles/proc/do_electrocute_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/target_zone = A.arg("zone")
+	var/output_envelope = A.arg("envelope")
+	if(patient_left(H, A.arg("spot")))
+		return OP_REFUSED
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
 		play_sfx(src, SFX_MACHINES_DEFIB_FAILED)
-		return
+		return OP_FAILED
 
 	act_message(user, src, MSG_SELF(span_warning("You shock [H] with %T%!")), MSG_OTHERS(span_danger(span_italics("%U% shocks [H] with %T%!"))))
 	play_sfx(src, SFX_MACHINES_DEFIB_ZAP, 2)
 	play_sfx(src, SFX_WEAPONS_EGLOVES, 2)
-	set_cooldown(cooldowntime)
+	start_cooldown(cooldowntime)
 
 	H.stun_effect_act(2, 120, target_zone, electric = TRUE)
 	var/burn_damage = H.electrocute_act(burn_damage_amt*2, src, def_zone = target_zone)
@@ -492,6 +511,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 		H.emote("scream")
 
 	add_attack_logs(user,H,"Shocked using [name]")
+	return OP_OK
 
 /// Revive the patient through return_from_death(). Returns TRUE, or the refusal reason.
 /obj/item/shockpaddles/proc/make_alive(mob/living/carbon/human/M)
@@ -501,14 +521,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 		return
 
 	M.emote("gasp")
-	M.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	M.status_at_least(STAT_WEAKENED, rand(10,25))
 	apply_brain_damage(M)
 	M.injure(INJURY_PAIN, 40, BP_TORSO, src) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
 	// s Start: Defib pain
 	var/datum/xenochimera/xc = M.get_xenochimera_state()
 	if(xc) // Only do the following to Xenochimera. Handwave this however you want, this is to balance defibs on an alien race.
 		M.injure(INJURY_PAIN, 220, BP_TORSO, src) // This hurts a LOT, stacks on top of the previous halloss.
-		xc.feral += 100 // If they somehow weren't already feral, force them feral by increasing ferality var directly, to avoid any messy checks. handle_feralness() will immediately set our feral properly according to halloss anyhow.
+		xc.set_feral(xc.feral + 100) // If they somehow weren't already feral, force them feral by increasing ferality var directly, to avoid any messy checks. handle_feralness() will immediately set our feral properly according to halloss anyhow.
 	// s End
 	// SSgame_master.adjust_danger(-20) // We don't use SSgame_master yet.
 
@@ -530,32 +550,39 @@ DECLARE_APPEARANCE_PROC(/obj/item/shockpaddles, TYPE_PROC_REF(/atom, appearance_
 /obj/item/shockpaddles/proc/make_announcement(message, msg_class)
 	audible_message(span_bold(span_info("\The [src]") + " [message]"), span_info("\The [src] vibrates slightly."), runemessage = "buzz")
 
-DECLARE_EMAG_REPEATABLE(/obj/item/shockpaddles, PROC_REF(on_emag), null)
-/obj/item/shockpaddles/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/shockpaddles/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(safety)
-		safety = 0
+		set_safety(0)
 		to_chat(user, span_warning("You silently disable \the [src]'s safety protocols with the cryptographic sequencer."))
-		update_icon()
-		return 1
+		return OP_OK
 	else
-		safety = 1
+		set_safety(1)
 		to_chat(user, span_notice("You silently enable \the [src]'s safety protocols with the cryptographic sequencer."))
-		update_icon()
-		return 1
+		return OP_OK
 
-DAMAGE_REACTION(/obj/item/shockpaddles, DAMAGE_EMP, PROC_REF(paddles_emp))
+CAPABILITIES(/obj/item/shockpaddles)
+	configure(item_worn(flags = NOSTRIP))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 2))
+	// The revive chain and the shock, started by do_revive() / do_electrocute() with the patient: each claims the paddles while it runs.
+	op("revive_place", ai(), takes("patient", "spot"), claims(CLAIM_TARGET), wait(3 SECONDS), then(PROC_REF(do_revive_timed_done)))
+	op("revive_charge", ai(), takes("patient", "spot", "envelope"), claims(CLAIM_TARGET), wait(PROC_REF(charge_wait)), then(PROC_REF(do_revive_charged)))
+	op("electrocute", ai(), takes("patient", "spot", "zone", "envelope"), claims(CLAIM_TARGET), wait(PROC_REF(charge_wait)), then(PROC_REF(do_electrocute_timed_done)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(paddles_emp)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
 /// An EMP scrambles the safety.
-/obj/item/shockpaddles/proc/paddles_emp(datum/damage_packet/packet)
+/obj/item/shockpaddles/proc/paddles_emp(datum/act/A)
 	var/new_safety = rand(0, 1)
 	if(safety != new_safety)
-		safety = new_safety
+		set_safety(new_safety)
 		if(safety)
 			make_announcement("beeps, \"Safety protocols enabled!\"", "notice")
 			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYON)
 		else
 			make_announcement("beeps, \"Safety protocols disabled!\"", "warning")
 			play_sfx(src, SFX_MACHINES_DEFIB_SAFETYOFF)
-		update_icon()
 
 /obj/item/shockpaddles/robot
 	name = "defibrillator paddles"
@@ -618,8 +645,10 @@ DAMAGE_REACTION(/obj/item/shockpaddles, DAMAGE_EMP, PROC_REF(paddles_emp))
 	var/active = null
 
 /// Reactor overload ticks left after an EMP; it irradiates the area while nonzero.
-OM_FIELD(/obj/item/shockpaddles/standalone, fail_counter, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_counter")
+/obj/item/shockpaddles/standalone/var/fail_counter = 0
+TRACKED(/obj/item/shockpaddles/standalone, fail_counter)
+CAPABILITIES(/obj/item/shockpaddles/standalone)
+	every(2 SECONDS, then(PROC_REF(standalone_step)), when = nameof(fail_counter))
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1
@@ -634,7 +663,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_c
 	)
 	return 1
 
-/obj/item/shockpaddles/standalone/periodic_step()
+/obj/item/shockpaddles/standalone/proc/standalone_step(datum/act/timer/A)
 	radiation_pulse(
 		src,
 		max_range = 5,
@@ -644,10 +673,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_c
 	)
 	set_fail_counter(max(fail_counter - 1, 0))
 
-/obj/item/shockpaddles/standalone/paddles_emp(datum/damage_packet/packet)
-	. = ..()
+/obj/item/shockpaddles/standalone/paddles_emp(datum/act/A)
+	..()
+	var/datum/notice/hit/emp/N = A
 	var/new_fail = 0
-	switch(packet.severity)
+	switch(N.packet.severity)
 		if(1)
 			new_fail = max(fail_counter, 20)
 			visible_message("\The [src]'s reactor overloads!")
@@ -699,8 +729,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_c
 
 /obj/item/shockpaddles/proc/recharged()
 	if(cooldown)
-		cooldown = 0
-		update_icon()
+		set_cooldown(0)
 
 		make_announcement("beeps, \"Unit is re-energized.\"", "notice")
 		play_sfx(src, SFX_MACHINES_DEFIB_READY)

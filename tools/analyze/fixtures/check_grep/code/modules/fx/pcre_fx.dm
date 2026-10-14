@@ -1,0 +1,17 @@
+/proc/pcre_fx(user)
+	for(var/obj/O as anything in range(3))
+	for(var/atom/A as anything in view(2))
+	for(var/mob/M as anything in orange(1))
+	for(var/mob/N as anything in list(1))
+	for(var/obj/P as anything in oview(2)) // ALLOW(check_grep): ok
+	to_chat(user)
+	to_chat(user, "x")
+	to_chat(foo(a, b))
+	to_chat(user) // ALLOW(check_grep): ok
+	addtimer(CALLBACK(x), 5, TIMER_OVERRIDE)
+	addtimer(CALLBACK(x), 5, TIMER_OVERRIDE | TIMER_UNIQUE)
+	addtimer(CALLBACK(x), 5)
+	publish_reactive_dependency(x)
+	om_world_publish(a, "k")
+	om_world_publish(a, KEY)
+	wake_reactive_machine(m)

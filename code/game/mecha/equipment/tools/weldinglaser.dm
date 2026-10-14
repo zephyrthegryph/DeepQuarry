@@ -25,7 +25,7 @@
 
 	if(enable_special)
 		range = MECH_MELEE|RANGED
-		my_tool.reach = 7
+		my_tool.set_reach(7)
 	else
 		range = MECH_MELEE
-		my_tool.reach = 1
+		my_tool.set_reach(1)

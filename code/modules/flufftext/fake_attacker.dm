@@ -15,7 +15,7 @@
 	for(var/client/C in clients)
 		live_clients++
 	if(!live_clients)
-		qdel(src)
+		ended_with(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
 	if(!(newdir in GLOB.cardinal))
@@ -47,7 +47,6 @@
 	..()
 	clear_every_clients_images()
 	qdel_all_images()
-	rel_clear(src, nameof(clients))
 
 /obj/effect/fake_attacker/proc/create_images_from(atom/clone)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -149,30 +148,37 @@
 	VAR_PROTECTED/mob/living/target = null
 	var/requires_hallucinating = TRUE // Mob will qdel if the target is not hallucinating if this is true
 
-DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/fake_attacker/human)
+	every(2 SECONDS, then(PROC_REF(fake_attacker_human_step)))
+	param(nameof(haunting), pos = 1, keep = FALSE)
+	param(nameof(clone_appearance_from), pos = 2, apply = PROC_REF(haunt), keep = FALSE)
 
-/obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
-	. = ..()
-	set_target(targeting_mob)
-	create_images_from(clone_appearance_from)
-	append_client(targeting_mob.client)
-	name = clone_appearance_from.name
+/// Who the fake attacker haunts and whose look it takes (its constructor params, dropped once set up).
+/obj/effect/fake_attacker/human/var/tmp/mob/haunting
+/obj/effect/fake_attacker/human/var/tmp/atom/clone_appearance_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/fake_attacker/human/proc/haunt(atom/clone_from)
+	set_target(haunting)
+	create_images_from(clone_from)
+	append_client(haunting.client)
+	name = clone_from.name
 	// Usually we want to face our target for maximum spooky effect
-	set_dir(get_dir(src,targeting_mob))
+	set_dir(get_dir(src, haunting))
 
-/obj/effect/fake_attacker/human/periodic_step()
+/obj/effect/fake_attacker/human/proc/fake_attacker_human_step(datum/act/timer/A)
 	// check if valid
 	var/mob/living/M = QDELETED(target) ? null : target
 	if(!M)
-		qdel(src)
+		consume(src)
 		return null
 	if(requires_hallucinating)
 		if(!ishuman(M))
-			qdel(src)
+			consume(src)
 			return null
 		var/mob/living/carbon/human/H = M
-		if(!H.has_status(EFFECT_HALLUCINATING))
-			qdel(src)
+		if(!H.has_status(STAT_HALLUCINATING))
+			consume(src)
 			return null
 
 	return M
@@ -183,7 +189,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/obj/effect/fake_attacker/human/attacker/periodic_step()
+/obj/effect/fake_attacker/human/attacker/fake_attacker_human_step(datum/act/timer/A)
 	var/mob/living/M = ..()
 
 	if(get_dist(src,M) > 1)
@@ -203,7 +209,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 /obj/effect/fake_attacker/human/fleeing
 	VAR_PRIVATE/flee = FALSE
 
-/obj/effect/fake_attacker/human/fleeing/periodic_step()
+/obj/effect/fake_attacker/human/fleeing/fake_attacker_human_step(datum/act/timer/A)
 	var/mob/living/M = ..()
 	set_dir(get_dir(src,M))
 
@@ -212,8 +218,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 		step_away(src,M)
 
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
-		qdel(src)
+		spent(src)
 
-/obj/effect/fake_attacker/relations()
-	. = ..()
-	. += rel_many(nameof(clients))
+CAPABILITIES(/obj/effect/fake_attacker)
+	ref_many(nameof(clients))

@@ -1,16 +1,24 @@
 /datum/tgui_module/atmos_control
 	name = "Atmospherics Control"
-	tgui_id = "AtmosControl"
 	/// A private access-check object (owned: built in New).
 	var/obj/access
 	var/emagged = 0
 	var/ui_ref
 	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
 	var/list/monitored_alarms
+	/// The panel of the alarm last opened from it (/datum/air_alarm_remote).
+	var/datum/air_alarm_remote/remote_panel
+
+CAPABILITIES(/datum/tgui_module/atmos_control)
+	owns_one(nameof(access), /obj)
+	owns_one(nameof(remote_panel), /datum/air_alarm_remote)
+	interface("AtmosControl")
+	op("alarm", ui_act("alarm", arg("alarm", schema_ref(/obj/machinery/alarm))), then(PROC_REF(ui_act_alarm)))
+	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
-	own_set(src, nameof(access), new /obj())
+	rel_set(src, nameof(access), new /obj())
 	access.req_access = req_access
 	access.req_one_access = req_one_access
 
@@ -27,29 +35,28 @@
 /datum/tgui_module/atmos_control/proc/alarm_sources()
 	return LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)
 
-UI_ACT(/datum/tgui_module/atmos_control, "alarm", ui_act_alarm, UI_ARG_REF("alarm", "proc:alarm_sources", /obj/machinery/alarm))
-UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_alarm)
-	if(ui_ref)
-		var/obj/machinery/alarm/alarm = params["alarm"]
-		if(alarm)
-			var/datum/tgui_state/TS = generate_state(alarm)
-			alarm.tgui_interact(ui.user, parent_ui = ui_ref, custom_state = TS)
-	return 1
+/// The alarm button: the alarm's window opens as this console's panel of it (its buttons go to the alarm, past its lock for whoever the console
+/// lets in).
+/datum/tgui_module/atmos_control/proc/ui_act_alarm(datum/act/op/A, obj/machinery/alarm/alarm)
+	if(!(alarm in alarm_sources()))
+		return OP_OK
+	rel_set(src, nameof(remote_panel), new /datum/air_alarm_remote(src, alarm))
+	remote_panel.tgui_interact(A.actor, parent_ui = ui_ref)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/atmos_control, "setZLevel", ui_act_setzlevel, UI_ARG_NUM("mapZLevel"))
-UI_ACT_PROC(/datum/tgui_module/atmos_control, ui_act_setzlevel)
-	ui.set_map_z_level(params["mapZLevel"])
+/datum/tgui_module/atmos_control/proc/ui_act_setzlevel(datum/act/op/A, mapZLevel)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
+	ui?.set_map_z_level(mapZLevel)
 	return TRUE
 
 /datum/tgui_module/atmos_control/ui_assets(mob/user)
 	. = ..()
 	. += get_asset_datum(/datum/asset/simple/holo_nanomap)
 
-DECLARE_UI(/datum/tgui_module/atmos_control, UI_FROM_VAR("tgui_id"), UI_AUTOUPDATE)
-
 /datum/tgui_module/atmos_control/ui_opening(mob/user, datum/tgui/ui)
 	..()
 	ui_ref = ui
+	ui.set_autoupdate(TRUE)
 
 /datum/tgui_module/atmos_control/tgui_static_data(mob/user)
 	. = ..()
@@ -67,16 +74,14 @@ DECLARE_UI(/datum/tgui_module/atmos_control, UI_FROM_VAR("tgui_id"), UI_AUTOUPDA
 		alarms[++alarms.len] = list(
 			"name" = sanitize(alarm.name),
 			"ref"= "\ref[alarm]",
-			"danger" = max(alarm.danger_level, alarm.alarm_area_ref().atmosalm),
+			"danger" = max(alarm.danger_level, alarm.alarm_area?.atmosalm),
 			"x" = alarm.x,
 			"y" = alarm.y,
 			"z" = alarm.z)
 	.["alarms"] = alarms
 
-UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_module_atmos_control{map_levels:list}")
-
-/// The computed part of /datum/tgui_module/atmos_control's window data (declared on its UI_DATA row).
-/datum/tgui_module/atmos_control/proc/ui_data_datum_tgui_module_atmos_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/atmos_control/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
 	var/z = get_z(user)
@@ -89,40 +94,9 @@ UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_modu
 	. = ..()
 	ui_ref = null
 
-/datum/tgui_module/atmos_control/proc/generate_state(air_alarm)
-	var/datum/tgui_state/air_alarm_remote/state = new()
-	rel_set(state, nameof(state.atmos_control), src)
-	rel_set(state, nameof(state.air_alarm), air_alarm)
-	return state
-
-/datum/tgui_state/air_alarm_remote
-	var/tmp/datum/tgui_module/atmos_control/atmos_control
-	var/tmp/obj/machinery/alarm/air_alarm
-
-/datum/tgui_state/air_alarm_remote/can_use_topic(src_object, mob/user)
-	if(!atmos_control().ui_ref)
-		qdel(src)
-		return STATUS_CLOSE
-	if(has_access(user))
-		return STATUS_INTERACTIVE
-	return STATUS_UPDATE
-
-/datum/tgui_state/air_alarm_remote/proc/has_access(mob/user)
-	return user && (isAI(user) || atmos_control().access.allowed(user) || atmos_control().emagged || air_alarm().rcon_setting == RCON_YES || (air_alarm().alarm_area_ref().atmosalm && air_alarm().rcon_setting == RCON_AUTO) || (ACCESS_CE in user.GetAccess()))
-
 /datum/tgui_module/atmos_control/ntos
 	ntos = TRUE
 
 /datum/tgui_module/atmos_control/robot
-DECLARE_UI_STATE(/datum/tgui_module/atmos_control/robot, GLOB.tgui_self_state)
-
-
-/// The atmos_control this refers to (a relation view: null once that is deleted).
-/datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control
-	return atmos_control
-
-/// The air_alarm this refers to (a relation view: null once that is deleted).
-/datum/tgui_state/air_alarm_remote/proc/air_alarm() as /obj/machinery/alarm
-	return air_alarm
-
-/// Alarms shown by this UI, rebuilt when it opens.
+CAPABILITIES(/datum/tgui_module/atmos_control/robot)
+	interface("AtmosControl", state = nameof(GLOB.tgui_self_state))

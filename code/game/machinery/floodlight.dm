@@ -13,20 +13,27 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
-DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
+TRACKED(/obj/machinery/floodlight, open)
 
-/obj/machinery/floodlight/Initialize(mapload)
-	. = ..()
-	make_climbable()
-	make_rotatable()
+CAPABILITIES(/obj/machinery/floodlight)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	climb()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use item"), then(PROC_REF(interaction_item)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("floodlight_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(floodlight_silicon_use)))
+	rotatable()
 
 /obj/machinery/floodlight/proc/appearance_battery()
 	return (open && cell) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_battery?b:}0{on}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/floodlight/draw(datum/look/look)
+	..()
+	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
 
-/obj/machinery/floodlight/machine_step()
+/obj/machinery/floodlight/proc/work_step(datum/act/timer/A)
 	if(!cell || (cell.charge < (use * CELLRATE)))
 		turn_off(1)
 		return PROCESS_KILL
@@ -37,7 +44,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	if((cell.percent() < 10) && prob(5))
 		set_light_range(brightness_on/2)
 		set_light_power(brightness_on/4)
-		om_after(src, 20, PROC_REF(flicker_restore))
+		after(src, 2 SECONDS, PROC_REF(flicker_restore))
 
 /obj/machinery/floodlight/proc/flicker_restore()
 	if(on)
@@ -56,7 +63,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)
-	update_icon()
 	if(loud)
 		visible_message("\The [src] turns on.")
 	return 1
@@ -64,13 +70,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 /obj/machinery/floodlight/proc/turn_off(loud = 0)
 	set_on(0)
 	set_light_on(FALSE)
-	update_icon()
 	if(loud)
 		visible_message("\The [src] shuts down.")
 
 /// Old attack_ai: a cyborg next to it uses it by hand; otherwise it's switched remotely.
-/obj/machinery/floodlight/proc/floodlight_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user) && Adjacent(user))
+/obj/machinery/floodlight/proc/floodlight_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(A.authority & AUTH_REMOTE_ACCESS) && Adjacent(user)) // a cyborg beside it uses it by hand
 		attack_hand(user)
 		return TRUE
 
@@ -81,21 +87,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 	return TRUE
 
-/obj/machinery/floodlight/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/floodlight_item,
-		/datum/interaction/machine_hand/ungated/floodlight_use,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle", PROC_REF(floodlight_silicon_use)))
-	..()
-
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/floodlight_use
-	id = "floodlight_use"
-	name = "Use"
-	effect = /obj/machinery/floodlight/proc/interaction_use
-
-/obj/machinery/floodlight/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floodlight/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open && cell)
 		if(ishuman(user))
 			if(!user.get_active_hand())
@@ -105,13 +98,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 			cell.forceMove(src.loc)
 
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		set_on(0)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		to_chat(user, "You remove the power cell")
-		update_icon()
 		return TRUE
 
 	if(on)
@@ -120,48 +111,42 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 		if(!turn_on(1))
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 
-	update_icon()
 	return TRUE
 
 /**
  * Old attackby: never called `..()`, and `update_icon()` ran regardless of the item type
  * (outside the `istype` check), so it's a single interaction for any item, not just cells.
  */
-/datum/interaction/machine_item/floodlight_item
-	id = "floodlight_item"
-	name = "Use item"
-	held_type = /obj/item
-	effect = /obj/machinery/floodlight/proc/interaction_item
-
-/obj/machinery/floodlight/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/floodlight/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(open)
 			if(cell)
 				to_chat(user, "There is a power cell already installed.")
 			else
-				if(!own_set(src, nameof(src.cell), W, user = user))
+				if(!move_into(src, nameof(src.cell), W, user))
 					return TRUE
 				to_chat(user, "You insert the power cell.")
-	update_icon()
 	return TRUE
 
-/obj/machinery/floodlight/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/floodlight/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	unlocked = !unlocked
 	to_chat(user, "You [unlocked ? "unscrew" : "screw"] the battery panel [unlocked ? "" : "in place"].")
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floodlight/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/floodlight/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!unlocked)
-		return ITEM_INTERACT_BLOCKING
-	open = !open
+		return OP_OK
+	set_open(!open)
 	if(!open)
 		overlays = null
 	to_chat(user, "You [open ? "remove" : "crowbar"] the battery panel[open ? "" : " in place"].")
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/floodlight/starts_on
 	icon_state = "flood01"
@@ -171,10 +156,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	turn_on()
 
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
 /obj/machinery/floodlight/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell)

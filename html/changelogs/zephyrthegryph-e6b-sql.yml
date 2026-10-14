@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Removed the legacy /datum/db_query API (NewQuery, Execute, the query pump): reads in prompt flows use flow_select(), boot and shutdown queries use db_query_now(), writes use sql_write()."

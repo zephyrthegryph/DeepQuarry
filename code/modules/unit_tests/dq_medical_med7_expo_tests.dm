@@ -17,13 +17,13 @@
 
 /datum/unit_test/dq_med7_b2_tag_gates/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagent/proto = chemistry_service().chemical_reagents[REAGENT_ID_BICARIDINE]
+	var/datum/reagent/proto = SSchemistry.ready().chemical_reagents[REAGENT_ID_BICARIDINE]
 	TEST_ASSERT(proto.acts_on_body(H), "setup: bicaridine acts on a healthy human")
 	H.bloodstr.add_reagent(REAGENT_ID_BICARIDINE, 10)
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
 	TEST_ASSERT(H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] > 0, "setup: bicaridine repairs tissue")
 	var/old_allergens = H.species.medallergens
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.medallergens |= proto.medallergen_type
 	H.body.invalidate(BODY_DIRTY_TREATMENT)
 	var/allergic_level = H.body.treatment_levels()?[TREAT_TISSUE_REPAIR] || 0
@@ -85,17 +85,17 @@
 
 /datum/unit_test/dq_med7_b15_reagent_heat_scaled/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagent/R = chemistry_service().chemical_reagents[REAGENT_ID_CAPSAICIN]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_CAPSAICIN]
 	H.set_bodytemperature(BODYTEMP_NORMAL)
 	TEST_ASSERT(abs(R.warm_body(H, 10, REM) - 10) < 0.01, "REM units give the full shift")
 	TEST_ASSERT(abs(R.warm_body(H, 10, REM / 2) - 5) < 0.01, "half the metabolism gives half the shift")
 	H.set_bodytemperature(BODYTEMP_NORMAL + 3)
 	R.drive_body_temperature(H, BODYTEMP_NORMAL, 10, REM)
-	TEST_ASSERT(abs(H.bodytemperature - BODYTEMP_NORMAL) < 0.01, "a drive stops at its target")
-	var/datum/reagent/lepo = chemistry_service().chemical_reagents[REAGENT_ID_LEPORAZINE]
+	TEST_ASSERT(abs(H.body_temperature() - BODYTEMP_NORMAL) < 0.01, "a drive stops at its target")
+	var/datum/reagent/lepo = SSchemistry.ready().chemical_reagents[REAGENT_ID_LEPORAZINE]
 	H.set_bodytemperature(BODYTEMP_NORMAL - 20)
 	lepo.affect_blood(H, null, REM)
-	TEST_ASSERT_EQUAL(H.bodytemperature, BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
+	TEST_ASSERT_EQUAL(H.body_temperature(), BODYTEMP_NORMAL - 20, "leporazine has no direct write on top of its tag")
 
 /// C16: a fever is a raised set point (BF_TEMPERATURE), not a per-tick temperature write.
 /datum/unit_test/dq_med7_c16_fever_is_setpoint
@@ -107,9 +107,9 @@
 	var/datum/affliction/A = H.body.afflict(/datum/affliction/sepsis, null, 100)
 	TEST_ASSERT_NOTNULL(A, "setup: sepsis placed")
 	H.set_bodytemperature(BODYTEMP_NORMAL)
-	var/temp_before = H.bodytemperature
+	var/temp_before = H.body_temperature()
 	A.tick()
-	TEST_ASSERT_EQUAL(H.bodytemperature, temp_before, "the affliction's tick does not write body temperature")
+	TEST_ASSERT_EQUAL(H.body_temperature(), temp_before, "the affliction's tick does not write body temperature")
 	H.body.invalidate(BODY_DIRTY_FACTORS)
 	TEST_ASSERT(H.thermal_setpoint() > base + 1, "sepsis raises the thermoregulation set point")
 
@@ -135,7 +135,7 @@
 
 /datum/unit_test/dq_med7_p2d6_daxon_data/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagent/respiro = chemistry_service().chemical_reagents[REAGENT_ID_RESPIRODAXON]
+	var/datum/reagent/respiro = SSchemistry.ready().chemical_reagents[REAGENT_ID_RESPIRODAXON]
 	TEST_ASSERT(O_LUNGS in TYPE_TABLE_GET(respiro, daxon_organs), "respirodaxon targets the lungs")
 	TEST_ASSERT(REAGENT_ID_GASTIRODAXON in TYPE_TABLE_GET(respiro, daxon_partners), "gastirodaxon is its partner")
 	H.losebreath = 8

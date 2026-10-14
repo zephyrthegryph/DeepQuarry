@@ -1,0 +1,16 @@
+/// The Set Valve Pressure menu entry asks for a pressure and the answer changes the setting.
+/datum/unit_test/interim_pneumatic_pressure_borrowed_capture/Run()
+	test_driver_begin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode()
+	var/obj/item/gun/launcher/pneumatic/gun = allocate(/obj/item/gun/launcher/pneumatic, T)
+	TEST_ASSERT(user.put_in_hands(gun), "the actor holds the gun")
+	TEST_ASSERT_EQUAL(gun.pressure_setting, 10, "the actual gun starts at its canonical pressure setting")
+	TEST_ASSERT((50 in gun.possible_pressure_amounts) && (25 in gun.possible_pressure_amounts), "both actual selected pressures belong to the production choices")
+	test_menu(user, gun, "pneumatic_verb_set_pressure")
+	TEST_ASSERT_NOTNULL(SSrequests.open_for(user), "the actual pressure entry opens a request")
+	test_answer(user, 50)
+	TEST_ASSERT_EQUAL(gun.pressure_setting, 50, "the real accepted choice changes pressure")
+	TEST_ASSERT_NULL(SSrequests.open_for(user), "the request completes")
+	test_driver_end()

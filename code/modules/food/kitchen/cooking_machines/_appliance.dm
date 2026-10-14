@@ -9,10 +9,10 @@
 	var/appliancetype = 0
 	density = TRUE
 	anchored = TRUE
+	/// Starts with its switch off.
+	var/starts_off = FALSE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5			// Power used when turned on, but not processing anything
-	active_power_usage = 1000		// Power used when turned on and actively cooking something
 
 	var/cooking_power = 0			// Effectiveness/speed at cooking
 	var/cooking_coeff = 0			// Optimal power * proximity to optimal temp; used to calc. cooking power.
@@ -38,27 +38,50 @@
 	var/combine_first = FALSE // If TRUE, this appliance will do combination cooking before checking recipes
 	var/food_safety = FALSE	// If true, the appliance automatically ejects food instead of burning it
 
-
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_power = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_power")
 	var/static/radial_safety = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_safety")
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
+CAPABILITIES(/obj/machinery/appliance)
+	configure(uses_power(idle = 5, active = 1000))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
+	owns_many(nameof(cooking_objs))
+	// the AI's ctrl-click switches it on or off over its link
+	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle power"),
+		wait(0), then(PROC_REF(remote_power)))
+	interface(null, window_var = nameof(tgui_id))
+	without("ui_open")
+	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
+	op("toggle_safety", ui_act("toggle_safety"), then(PROC_REF(ui_act_toggle_safety)))
+	op("change_output", ui_act("change_output", arg("value")), then(PROC_REF(ui_act_change_output)))
+	op("slot", ui_act("slot", arg("slot", num())), then(PROC_REF(ui_act_slot)))
+	op("remove_menu", ui_act("remove_menu"), then(PROC_REF(ui_act_remove_menu)))
+	op("appliance_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds))), then(PROC_REF(appliance_interaction_item)))
+	op("appliance_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(appliance_interaction_hand)))
+	op("appliance_toggle_power_effect", menu(), label("Toggle Power"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_toggle_power_verb_holds))), then(PROC_REF(appliance_toggle_power_effect)))
+	default_parts()
+	on_change(nameof(cooking), ANY, then(PROC_REF(loop_sync)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(loop_sync)))
+	on_change(STAT_SWITCHED_ON, ANY, then(PROC_REF(loop_sync)))
+
 /// Whether or not the machine is currently operating (cooking its contents).
-OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
+/obj/machinery/appliance/var/cooking = FALSE
 
-/obj/machinery/appliance/Initialize(mapload)
-	. = ..()
-
-	default_apply_parts()
+/// The machine's running sound follows what it is doing: a type with a loop of its own syncs it here.
+/obj/machinery/appliance/proc/loop_sync(datum/act/A)
+	return
 
 // cooking food and its containers go with the machine.
+/// A cooker that starts with its switch off is made so at initialization (machinery Initialize()).
+/obj/machinery/appliance/starts_switched_off()
+	return starts_off
+
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
-		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
+		destroyed(CI.container(), src)//Food is fragile, it probably doesnt survive the destruction of the machine
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		ended_with(CI, src)
 	..()
 
 /obj/machinery/appliance/examine(mob/user)
@@ -126,13 +149,8 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	else
 		return span_danger("It is burning!")
 
-/// Appearance reader: powered and holding something to cook.
-/obj/machinery/appliance/proc/appearance_cooking()
-	return !has_stat(MACHINE_STAT_ANY) && length(cooking_objs)
-
-APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off_icon}")
-
-/obj/machinery/appliance/proc/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_toggle_power_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	attempt_toggle_power(user)
 
@@ -151,24 +169,22 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		to_chat(user, span_warning("You can't reach [src] from here!"))
 		return
 
-	if (has_stat(POWEROFF))//Its turned off
-		stat_remove(POWEROFF)
+	if (switched_off())//Its turned off
+		set_switched_on(TRUE)
 		set_use_power(1)
 		act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 
 	else //Its on, turn it off
-		stat_add(POWEROFF)
+		set_switched_on(FALSE)
 		set_use_power(0)
 		act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 		set_cooking(FALSE) // Stop cooking here, too, just in case.
 
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
-	update_icon()
 
-/obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
-	if(!isAI(user))
-		return FALSE
-	attempt_toggle_power(user)
+/obj/machinery/appliance/proc/remote_power(datum/act/op/A)
+	attempt_toggle_power(A.actor)
+	return OP_OK
 
 /obj/machinery/appliance/proc/choose_output(mob/user, new_output)
 	if (!user.IsAdvancedToolUser())
@@ -237,30 +253,34 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance, \
-	INTERACT_ITEM(null, PROC_REF(appliance_interaction_item), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_take_item)), \
-	INTERACT_HAND(null, PROC_REF(appliance_interaction_hand)), \
-	INTERACT_VERB("Toggle Power", PROC_REF(appliance_toggle_power_effect), REQ_TARGET_STATE(/obj/machinery/appliance/proc/can_toggle_power_verb)), \
-)
+/// Requirement: the appliance accepts the held item, or returns its refusal.
+/obj/machinery/appliance/proc/can_take_item_holds(datum/act/op/A)
+	return can_take_item(A.actor, src, A.held)
+
+/// Requirement: the appliance power toggle returns null to allow, or a reason.
+/obj/machinery/appliance/proc/can_toggle_power_verb_holds(datum/act/op/A)
+	return can_toggle_power_verb(A.actor, src, A.held)
 
 /// Requirement: the appliance works.
 /obj/machinery/appliance/proc/can_take_item(mob/user, atom/target, obj/item/held)
-	if(!cook_type || has_stat(BROKEN))
+	if(!cook_type || broken_now())
 		return "\The [src] is not working"
-	return TRUE
+	return null
 
-/// Requirement: TRUE, or why the power verb is refused (subtypes add their own conditions).
+/// Requirement: null, or why the power verb is refused (subtypes add their own conditions).
 /obj/machinery/appliance/proc/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
-	return TRUE
+	return null
 
 /// Old subtype attackby: part replacement first, then the appliance's own item handling.
-/obj/machinery/appliance/proc/appliance_interaction_part_replace(mob/user, obj/item/O, datum/interaction/interaction)
-	if(default_part_replacement(user, O))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/machinery/appliance/proc/appliance_interaction_part_replace(datum/act/op/A)
+	if(default_part_replacement(A.actor, A.held))
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attackby.
-/obj/machinery/appliance/proc/appliance_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/ToCook = I
 
 	if(istype(I, /obj/item/gripper))
@@ -270,29 +290,27 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			var/result = can_insert(wrap, user)
 			if(!result)
 				default_part_replacement(user, I)
-				return TRUE
+				return OP_OK
 			add_content(wrap, user)
-			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		attack_hand(user)
-		return TRUE
+		return OP_OK
 
 	var/result = can_insert(I, user)
 	if(!result)
 		default_part_replacement(user, I)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(result == 2)
 		var/obj/item/grab/G = I
 		if (G && istype(G) && G?.grab_target())
 			cook_mob(G?.grab_target(), user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	//From here we can start cooking food
 	add_content(ToCook, user)
-	update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 //Override for container mechanics
 /obj/machinery/appliance/proc/add_content(obj/item/I, mob/user)
@@ -304,7 +322,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		own_add(src, nameof(cooking_objs), CI)
+		rel_add(src, nameof(cooking_objs), CI)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
@@ -405,7 +423,11 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 	return TRUE
 
-/obj/machinery/appliance/machine_step()
+/// Whether its step has work: an appliance steps while it cooks (a cooker also while it keeps its heat).
+/obj/machinery/appliance/proc/needs_step(datum/act/A)
+	return cooking
+
+/obj/machinery/appliance/proc/work_step(datum/act/timer/A)
 	if(cooking_power <= 0 || !cooking)
 		return PROCESS_KILL
 	var/all_done_cooking = TRUE
@@ -415,7 +437,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			all_done_cooking = FALSE
 	if(all_done_cooking)
 		set_cooking(FALSE)
-		update_icon()
 		return PROCESS_KILL
 
 /obj/machinery/appliance/proc/predict_cooking(datum/cooking_item/CI)
@@ -556,16 +577,16 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
 		if (I)
-			qdel(I)
-			CI.container().food_items--
+			consumed(I, src)
+			CI.container().set_food_items(CI.container().food_items - 1)
 		if(S && !QDELETED(S)) //Incase I = S up there.
-			qdel(S)
-			CI.container().food_items--
+			consumed(S, src)
+			CI.container().set_food_items(CI.container().food_items - 1)
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
 
 	var/obj/item/reagent_containers/food/snacks/result = new cook_path(CI.container())
-	CI.container().food_items++
+	CI.container().set_food_items(CI.container().food_items + 1)
 	buffer.trans_to_holder(result.reagents, buffer.total_volume)	//trans_to doesn't handle food items well, so
 																	//just call trans_to_holder instead
 
@@ -597,7 +618,9 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		result.name = "[pop(words)] [result.name]"
 
 	//This proc sets the size of the output result
-	result.update_icon()
+	if(istype(result, /obj/item/reagent_containers/food/snacks/variable))
+		var/obj/item/reagent_containers/food/snacks/variable/sized = result
+		sized.settle_size()
 	return result
 
 //Helper proc for standard modification cooking
@@ -647,21 +670,28 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			break
 
 /// Old attack_hand.
-/obj/machinery/appliance/proc/appliance_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/proc/appliance_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_id)
 		tgui_interact(user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
-DECLARE_UI(/obj/machinery/appliance, UI_FROM_VAR("tgui_id"))
+/obj/machinery/appliance/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["safety"] = food_safety
+	data["selected_option"] = selected_option
+	var/list/merged_1 = ui_data_obj_machinery_appliance(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merge:ui_data_obj_machinery_appliance{on:bool,containersRemovable:unknown,output_options:bool,our_contents:list}")
-
-/// The computed part of /obj/machinery/appliance's window data (declared on its UI_DATA row).
+/// /obj/machinery/appliance's window data.
 /obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["on"] = !has_stat(POWEROFF)
+	data["on"] = !switched_off()
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["output_options"] = (output_options || list())
 
@@ -685,40 +715,40 @@ UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merg
 
 	return data
 
-UI_ACT(/obj/machinery/appliance, "toggle_power", ui_act_toggle_power)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_power)
-	attempt_toggle_power(ui.user)
+/obj/machinery/appliance/proc/ui_act_toggle_power(datum/act/op/A)
+	var/mob/user = A.actor
+	attempt_toggle_power(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "toggle_safety", ui_act_toggle_safety)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_safety)
-	toggle_safety(ui.user)
+/obj/machinery/appliance/proc/ui_act_toggle_safety(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_safety(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "change_output", ui_act_change_output, UI_ARG_VALUE("value"))
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_change_output)
-	choose_output(ui.user, params["value"])
+/obj/machinery/appliance/proc/ui_act_change_output(datum/act/op/A, value)
+	var/mob/user = A.actor
+	choose_output(user, value)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "slot", ui_act_slot, UI_ARG_NUM("slot"))
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_slot)
-	var/slot = params["slot"]
-	var/obj/item/I = ui.user.get_active_hand()
+/obj/machinery/appliance/proc/ui_act_slot(datum/act/op/A, slot_arg)
+	var/mob/user = A.actor
+	var/slot = slot_arg
+	var/obj/item/I = user.get_active_hand()
 	if(slot <= LAZYLEN(cooking_objs)) // Inserting
 		var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
 
 		if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
-			attackby(I, ui.user)
-		else if(istype(CI) && can_remove_items(ui.user))
-			eject(CI, ui.user)
+			attackby(I, user)
+		else if(istype(CI) && can_remove_items(user))
+			eject(CI, user)
 		return TRUE
 	if(istype(I)) // Why do hard work when we can just make them smack us?
-		attackby(I, ui.user)
+		attackby(I, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/appliance, "remove_menu", ui_act_remove_menu)
-UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
-	removal_menu(ui.user)
+/obj/machinery/appliance/proc/ui_act_remove_menu(datum/act/op/A)
+	var/mob/user = A.actor
+	removal_menu(user)
 	return TRUE
 
 /obj/machinery/appliance/proc/removal_menu(mob/user)
@@ -728,13 +758,12 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 			if (CI.container())
 				menuoptions[CI.container().label(menuoptions.len)] = CI
 
-		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
+		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)
 			var/datum/cooking_item/CI = menuoptions[selection]
 			eject(CI, user)
-			update_icon()
 		return TRUE
 	return FALSE
 
@@ -771,17 +800,16 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	if (delete)
 		own_take_member(src, nameof(cooking_objs), CI)
-		qdel(CI)
+		spent(CI, user)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside
 
 	if(user)
 		act_message(user, src, others = span_notice("%U% removes %I% from %T%."), item = thing)
 		if(cook_container)
-			cook_container.food_items--
+			cook_container.set_food_items(cook_container.food_items - 1)
 			if(!LAZYLEN(cook_container.food_items)) //Empty.
-				cook_container.food_items = 0
-			cook_container.update_icon()
+				cook_container.set_food_items(0)
 	else
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it automatically ejects its contents!"))
 		if(cooked_sound)
@@ -828,7 +856,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
 	if (!istype(H) || !H.held_mob)
-		qdel(H)
+		spent(H)
 		return null
 	var/mob/living/victim = H.held_mob
 	if (victim.stat != DEAD)
@@ -837,7 +865,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 	victim.calculate_composition()
 
 	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container())
-	result.w_class = victim.mob_size
+	result.set_w_class(victim.mob_size)
 	result.reagents.add_reagent(victim.composition_reagent, victim.composition_reagent_quantity)
 
 	if (victim.reagents)
@@ -856,9 +884,9 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 
 	// all done, now delete the old objects
 	rel_clear(H, nameof(H.held_mob))
-	qdel(victim)
+	consumed(victim, src)
 	victim = null
-	qdel(H)
+	spent(H)
 	H = null
 
 	return result
@@ -903,7 +931,7 @@ UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module) - get_part_count(/obj/item/stock_parts/scanning_module)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 
-	active_power_usage = initial(active_power_usage) - scan_rating * 25
+	set_active_power_usage(power_of_type(type).active - scan_rating * 25)
 	heating_power = initial(heating_power) + cap_rating * 25
 	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.

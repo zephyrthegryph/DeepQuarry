@@ -5,10 +5,11 @@
 	icon_state = "Empty"
 	appearance_flags = 0
 	anchored = TRUE
+	req_access = list(ACCESS_BAR)
 	var/cult = 0
 
 /obj/structure/sign/double/barsign/proc/get_valid_states(initial=1)
-	. = icon_states_fast(icon)
+	. = icon_states_fast(icon).Copy()
 	. -= "On"
 	. -= "Nar-sie Bistro"
 	. -= "Empty"
@@ -27,38 +28,29 @@
 		else
 			. += "It says '[icon_state]'"
 
-/obj/structure/sign/double/barsign/Initialize(mapload)
-	. = ..()
-	icon_state = pick(get_valid_states())
+MSG_DEF_SELF(barsign/cult, "The sign doesn't respond.")
 
-/obj/structure/sign/double/barsign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/barsign_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/sign/double/barsign)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	// an ID with bar access changes the face (the sign's req_access); a cult sign is past changing
+	op("change_sign", inputs(item(/obj/item/card/id), item(/obj/item/pda)), label("Use"),
+		needs(req_is(nameof(cult), FALSE, because = MSG(barsign/cult)), req_credential_in_hand(list(/obj/item/card/id, /obj/item/pda))),
+		asks(/datum/prompt/choice, fields = list("title" = "Bar Sign Choice", "question" = "What would you like to change the barsign to?", "choices" = computed(PROC_REF(sign_choices)), "timeout" = 0)),
+		then(PROC_REF(sign_chosen)))
 
-/obj/structure/sign/double/barsign/proc/sign_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	if(cult)
-		return
-	icon_state = ask.choice
-	to_chat(user, span_notice("You change the barsign."))
+/// Rolled before init (rolls()): the sign starts on any of its valid faces.
+/obj/structure/sign/double/barsign/proc/roll_icon_state(datum/roller/R)
+	return R.choose(get_valid_states())
 
-/// Old attackby: change the sign with an ID card that has bar access.
-/datum/interaction/entry_item/barsign_item
-	id = "barsign_item"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/sign/double/barsign/proc/barsign_not_cult, null))
-	effect = /obj/structure/sign/double/barsign/proc/interaction_item
+/// The faces the sign can be set to.
+/obj/structure/sign/double/barsign/proc/sign_choices(datum/act/A)
+	return get_valid_states(0)
 
-/obj/structure/sign/double/barsign/proc/barsign_not_cult(mob/actor, atom/target, obj/item/held)
-	return !cult
-
-/obj/structure/sign/double/barsign/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	var/obj/item/card/id/card = I.GetID()
-	if(istype(card))
-		if(ACCESS_BAR in card.GetAccess())
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(sign_chosen), choices = get_valid_states(0), title = "Bar Sign Choice", message = "What would you like to change the barsign to?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-		else
-			to_chat(user, span_warning("Access denied."))
-	return TRUE
+/// The chosen face goes up.
+/obj/structure/sign/double/barsign/proc/sign_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value || cult)
+		return OP_OK
+	set_icon_state(R.value)
+	to_chat(A.actor, span_notice("You change the barsign."))
+	return OP_OK

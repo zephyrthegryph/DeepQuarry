@@ -24,7 +24,35 @@
 	// 1: The "Best" scan available
 	var/scan_mode = 1
 
-	light_color = "#315ab4"
+
+CAPABILITIES(/obj/machinery/computer/cloning)
+	configure(light_glow(color = "#315ab4"))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(autoprocess), wakes_on = list(nameof(autoprocess)))
+	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
+	owns_many(nameof(records))
+	interface("CloningConsole", title = "Cloning Console")
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("autoprocess", ui_act("autoprocess", arg("on", num())), then(PROC_REF(ui_act_autoprocess)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("view_rec", ui_act("view_rec", arg("ref")), then(PROC_REF(ui_act_view_rec)))
+	// deleting a record asks first, in the window (the old boolean modal), and needs the ID in hand when answered
+	op("del_rec", ui_act("del_rec"), needs(req(PROC_REF(has_active_record), silent = TRUE)),
+		asks(/datum/prompt/yes_no, fields = list("question" = "Please confirm that you want to delete the record by holding your ID and pressing Delete:", "yes_text" = "Delete", "no_text" = "Cancel", "inline" = TRUE, "timeout" = 0), step = "confirm"),
+		then(PROC_REF(ui_act_del_rec)))
+	op("disk", ui_act("disk", arg("option", schema_text(4096))), then(PROC_REF(ui_act_disk)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("selectpod", ui_act("selectpod", arg("ref")), then(PROC_REF(ui_act_selectpod)))
+	op("clone", ui_act("clone", arg("ref")), then(PROC_REF(ui_act_clone)))
+	op("menu", ui_act("menu", arg("num", num(1, 2))), then(PROC_REF(ui_act_menu)))
+	op("toggle_mode", ui_act("toggle_mode"), then(PROC_REF(ui_act_toggle_mode)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("cloning_console_interaction_item", item(/obj/item), then(PROC_REF(cloning_console_interaction_item)))
+	op("cloning_console_interaction_hand", hand(), then(PROC_REF(cloning_console_interaction_hand)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(scanner), /obj/machinery/dna_scannernew)
+	ref_one(nameof(active_BR), /datum/transhuman/body_record)
+	ref_one(nameof(selected_pod), /obj/machinery/clonepod)
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
@@ -40,16 +68,15 @@
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
-OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autoprocess")
-
+/obj/machinery/computer/cloning/var/autoprocess = 0
+TRACKED(/obj/machinery/computer/cloning, autoprocess)
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
 	releasecloner()
 	..()
 
-/obj/machinery/computer/cloning/machine_step()
-	if(!scanner() || !length(pods) || has_stat(NOPOWER))
+/obj/machinery/computer/cloning/proc/work_step(datum/act/timer/A)
+	if(!scanner() || !length(pods) || power_lost())
 		return
 
 	if(scanner().get_occupant() && can_autoprocess())
@@ -100,35 +127,35 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autop
 			rel_add(src, nameof(pods), P)
 			P.name = "[initial(P.name)] #[num++]"
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
-	INTERACT_ITEM(null, PROC_REF(cloning_console_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cloning_console_interaction_hand)), \
-)
-
 /// Old attackby.
-/obj/machinery/computer/cloning/proc/cloning_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/disk/body_record)) //Traitgenes Storing the entire body record
-		return FALSE
+		return OP_DECLINE
 	if(!diskette)
-		if(!own_set(src, nameof(src.diskette), W, user = user))
-			return FALSE
+		if(!move_into(src, nameof(src.diskette), W, user))
+			return OP_DECLINE
 		to_chat(user, "You insert [W].")
 		SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/computer/cloning/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/computer/cloning/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool, /obj/item/multitool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
 		rel_add(src, nameof(pods), pod)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	if(!operable())
@@ -143,19 +170,21 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 		get_asset_datum(/datum/asset/simple/cloning)
 	)
 
-DECLARE_UI(/obj/machinery/computer/cloning, "CloningConsole", UI_TITLE("Cloning Console"))
-
 /obj/machinery/computer/cloning/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
 		return FALSE
 
 	return TRUE
 
-UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autoprocess:num", "scan_mode:num", "temp:text", "scantemp", "disk=diskette", "merge:ui_data_obj_machinery_computer_cloning{scanner:text,numberofpods:num,pods:list,can_brainscan:unknown,autoallowed:num,occupant:unknown,locked:unknown,selected_pod:text,records:list,podready:num,modal:unknown}")
-
-/// The computed part of /obj/machinery/computer/cloning's window data (declared on its UI_DATA row).
-/obj/machinery/computer/cloning/proc/ui_data_obj_machinery_computer_cloning(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/cloning/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["menu"] = menu
+	data["loading"] = loading
+	data["autoprocess"] = autoprocess
+	data["scan_mode"] = scan_mode
+	data["temp"] = temp
+	data["scantemp"] = scantemp
+	data["disk"] = diskette
 	data["scanner"] = sanitize("[scanner()]")
 
 	var/canpodautoprocess = 0
@@ -171,7 +200,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autopro
 			var/status = "idle"
 			if(pod.mess)
 				status = "mess"
-			else if(occupant && !pod.has_stat(NOPOWER))
+			else if(occupant && !pod.power_lost())
 				status = "cloning"
 			tempods.Add(list(list(
 				"pod" = "\ref[pod]",
@@ -207,27 +236,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autopro
 
 	return data
 
-
-/obj/machinery/computer/cloning/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
-	. = TRUE
-	if(id == "del_rec" && active_BR())
-		var/obj/item/card/id/C = user.get_active_hand()
-		if(!istype(C) && !istype(C, /obj/item/pda))
-			set_temp("ID not in hand.", "danger")
-			return
-		if(check_access(C))
-			var/datum/transhuman/body_record/doomed = active_BR()
-			if(doomed in records)
-				own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
-			else
-				qdel(doomed)
-			set_temp("Record deleted.", "success")
-			menu = MENU_RECORDS
-		else
-			set_temp("Access denied.", "danger")
-
-UI_ACT(/obj/machinery/computer/cloning, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_scan)
+/obj/machinery/computer/cloning/proc/ui_act_scan(datum/act/op/A)
 	. = TRUE
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 	if(!scanner() || !scanner_occupant || loading)
@@ -235,34 +244,31 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_scan)
 	set_scan_temp("Scanner ready.", "good")
 	loading = TRUE
 
-	om_after(src, 2 SECONDS, PROC_REF(delayed_scan), scanner_occupant)
-	add_fingerprint(ui.user)
+	after(src, 2 SECONDS, PROC_REF(delayed_scan), with = list(scanner_occupant))
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "autoprocess", ui_act_autoprocess, UI_ARG_NUM("on"))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_autoprocess)
+/obj/machinery/computer/cloning/proc/ui_act_autoprocess(datum/act/op/A, on)
 	. = TRUE
-	set_autoprocess(params["on"] > 0)
-	add_fingerprint(ui.user)
+	set_autoprocess(on > 0)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_lock)
+/obj/machinery/computer/cloning/proc/ui_act_lock(datum/act/op/A)
 	. = TRUE
 	var/mob/living/carbon/human/scanner_occupant = scanner()?.get_occupant()
 	if(isnull(scanner()) || !scanner_occupant) //No locking an open scanner.
 		return
 	scanner().locked = !scanner().locked
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "view_rec", ui_act_view_rec, UI_ARG_REF("ref", null, /datum/transhuman/body_record))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_view_rec)
+/obj/machinery/computer/cloning/proc/ui_act_view_rec(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/record = params["ref"]
+	var/datum/transhuman/body_record/record = ui_ref(ref, null, /datum/transhuman/body_record)
 	if(!record)
 		return
 	rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), record)
 	if(istype(active_BR(), /datum/transhuman/body_record))
 		if(isnull(active_BR().ckey))
-			qdel(active_BR())
+			spent(active_BR())
 			set_temp("Error: Record corrupt.", "danger")
 		else
 			var/obj/item/implant/health/H = null
@@ -275,26 +281,42 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_view_rec)
 				unidentity = active_BR().mydna.dna.GetUniIdentity(),
 				strucenzymes = active_BR().mydna.dna.GetStrucEnzymes(),
 			)
-			tgui_modal_message(src, action, "", null, payload)
+			tgui_modal_message(src, "view_rec", "", null, payload)
 	else
 		rel_clear(src, nameof(/obj/machinery/computer/cloning::active_BR))
 		set_temp("Error: Record missing.", "danger")
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "del_rec", ui_act_del_rec)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_del_rec)
-	. = TRUE
-	if(!active_BR())
-		return
-	tgui_modal_boolean(src, action, "Please confirm that you want to delete the record by holding your ID and pressing Delete:", yes_text = "Delete", no_text = "Cancel")
-	add_fingerprint(ui.user)
+/obj/machinery/computer/cloning/proc/has_active_record(datum/act/op/A)
+	return (!QDELETED(active_BR)) ? null : MSG(req_failed) // ALLOW(reads): the selected record is read when the button is pressed and again when it is answered, never cached
 
-UI_ACT(/obj/machinery/computer/cloning, "disk", ui_act_disk, UI_ARG_TEXT("option"))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
+/// The record is deleted when the confirmation is answered with Delete by someone holding an ID with access.
+/obj/machinery/computer/cloning/proc/ui_act_del_rec(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	if(!length(params["option"]))
+	add_fingerprint(user)
+	if(!A.step_value("confirm") || !active_BR())
 		return
-	switch(params["option"])
+	var/obj/item/card/id/C = user.get_active_hand()
+	if(!istype(C) && !istype(C, /obj/item/pda))
+		set_temp("ID not in hand.", "danger")
+		return
+	if(check_access(C))
+		var/datum/transhuman/body_record/doomed = active_BR()
+		if(doomed in records)
+			rel_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
+		else
+			spent(doomed)
+		set_temp("Record deleted.", "success")
+		menu = MENU_RECORDS
+	else
+		set_temp("Access denied.", "danger")
+
+/obj/machinery/computer/cloning/proc/ui_act_disk(datum/act/op/A, option)
+	. = TRUE
+	if(!length(option))
+		return
+	switch(option)
 		if("load")
 			if(isnull(diskette) || isnull(diskette.stored)) // Traitgenes Storing the entire body record
 				set_temp("Error: The disk's data could not be read.", "danger")
@@ -304,7 +326,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				menu = MENU_MAIN
 				return
 
-			own_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
+			rel_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
 			rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), loaded_BR) // Traitgenes Storing the entire body record
 			set_temp("Successfully loaded from disk.", "success")
 		if("save")
@@ -312,35 +334,32 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				set_temp("Error: The data could not be saved.", "danger")
 				return
 
-			own_set(diskette, nameof(/datum/stored_item::stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
+			rel_set(diskette, nameof(diskette.stored), new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
 			diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
 			set_temp("Successfully saved to disk.", "success")
 		if("eject")
 			if(!isnull(diskette))
 				diskette.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/machinery/computer/cloning::diskette))
-	add_fingerprint(ui.user)
+				rel_take(src, nameof(/obj/machinery/computer/cloning::diskette))
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_refresh)
+/obj/machinery/computer/cloning/proc/ui_act_refresh(datum/act/op/A)
 	. = TRUE
 	SStgui.update_uis(src)
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "selectpod", ui_act_selectpod, UI_ARG_REF("ref", null, /obj/machinery/clonepod))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_selectpod)
+/obj/machinery/computer/cloning/proc/ui_act_selectpod(datum/act/op/A, ref)
 	. = TRUE
-	var/obj/machinery/clonepod/selected = params["ref"]
+	var/obj/machinery/clonepod/selected = ui_ref(ref, null, /obj/machinery/clonepod)
 	if(!selected)
 		return
 	if(istype(selected) && (selected in pods))
 		rel_set(src, nameof(/obj/machinery/computer/cloning::selected_pod), selected)
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "clone", ui_act_clone, UI_ARG_REF("ref", null, /datum/transhuman/body_record))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_clone)
+/obj/machinery/computer/cloning/proc/ui_act_clone(datum/act/op/A, ref)
 	. = TRUE
-	var/datum/transhuman/body_record/C = params["ref"]
+	var/datum/transhuman/body_record/C = ui_ref(ref, null, /datum/transhuman/body_record)
 	if(!C)
 		return
 	//Look for that player! They better be dead!
@@ -373,16 +392,14 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_clone)
 					set_temp("Error: Initialisation failure.", "danger")
 	else
 		set_temp("Error: Data corruption.", "danger")
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "menu", ui_act_menu, UI_ARG_NUM("num", MENU_MAIN, MENU_RECORDS))
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_menu)
+/obj/machinery/computer/cloning/proc/ui_act_menu(datum/act/op/A, num_arg)
 	. = TRUE
-	menu = params["num"]
-	add_fingerprint(ui.user)
+	menu = num_arg
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "toggle_mode", ui_act_toggle_mode)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_toggle_mode)
+/obj/machinery/computer/cloning/proc/ui_act_toggle_mode(datum/act/op/A)
 	. = TRUE
 	if(loading)
 		return
@@ -390,27 +407,25 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_toggle_mode)
 		scan_mode = !scan_mode
 	else
 		scan_mode = FALSE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_eject)
+/obj/machinery/computer/cloning/proc/ui_act_eject(datum/act/op/A)
 	. = TRUE
-	if(ui.user.incapacitated() || !scanner() || loading)
+	if(A.actor.incapacitated() || !scanner() || loading)
 		return
-	scanner().eject_occupant(ui.user)
-	scanner().add_fingerprint(ui.user)
-	add_fingerprint(ui.user)
+	scanner().eject_occupant(A.actor)
+	scanner().add_fingerprint(A.actor)
+	add_fingerprint(A.actor)
 
-UI_ACT(/obj/machinery/computer/cloning, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
+/obj/machinery/computer/cloning/proc/ui_act_cleartemp(datum/act/op/A)
 	. = TRUE
 	temp = null
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
-	if(scanner().stat & (NOPOWER|BROKEN))
+	if((scanner().power_lost() || scanner().broken_now()))
 		return
 	if(scan_brain && !can_brainscan())
 		return
@@ -473,7 +488,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
 		BR.mydna.mind = "\ref[subject.mind]"
 
-	own_add(src, nameof(records), BR)
+	rel_add(src, nameof(records), BR)
 	set_scan_temp("Subject successfully scanned.", "good")
 	SStgui.update_uis(src)
 
@@ -527,7 +542,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
 	loading = FALSE
 	SStgui.update_uis(src)
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/computer/cloning/step_start_condition()
 	return autoprocess
 

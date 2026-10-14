@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "The analyzer builds locally with an incremental dev-fast profile (about 10 s per edit instead of about 2 minutes); CI and the push gate keep release"

@@ -8,9 +8,12 @@
 	var/endurance_adult = 200
 	var/power_charge = 0 // Disarm attacks can shock someone if high/lucky enough.
 	var/mob/living/victim = null // the person the metroid is currently feeding on
+	var/consuming = FALSE // whether it is latched on and feeding (tracked, so a change redraws)
 	var/amount_grown = 0 // controls how long the metroid has been overfed, if 10, grows or reproduces
 	var/number = 0 // This is used to make the metroid semi-unique for indentification.
 	var/harmless = FALSE // Set to true when pacified. Makes the metroid harmless, not get hungry, and not be able to grow/reproduce.
+
+TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 
 // it lets go of its victim.
 /mob/living/simple_mob/metroid/juvenile/on_destroy(force)
@@ -18,13 +21,10 @@
 		stop_consumption() // Unbuckle us from our victim.
 	..()
 
-/datum/om/stage/life/special/metroid/juvenile
-	of = /mob/living/simple_mob/metroid/juvenile
-
-/datum/om/stage/life/special/metroid/juvenile/perform(mob/living/simple_mob/metroid/juvenile/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		if(self.victim)
-			self.handle_consumption()
+/mob/living/simple_mob/metroid/juvenile/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		if(src.victim)
+			src.handle_consumption()
 
 	..()
 
@@ -46,21 +46,21 @@
 		return
 
 	if(is_queen)
-		status_set(EFFECT_PARALYZED, 7998)
+		status_set(STAT_PARALYZED, 7998)
 		play_sfx(src, SFX_METROID_METROIDGROW)
 		act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay an egg.")))
-		om_after(src, 5 SECONDS, PROC_REF(lay_egg))
+		after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
-	if(nutrition >= evo_point && !src?.buckled_to() && vore_fullness == 0 && !victim)
+	if(nutrition_of(src) >= evo_point && !src?.buckled_to() && vore_fullness == 0 && !victim)
 		if(next == "/mob/living/simple_mob/metroid/juvenile/queen" && GLOB.queen_amount > 0)
 			to_chat(src, span_warning("There is already a queen."))
 			return
 		play_sfx(src, SFX_METROID_METROIDGROW)
-		status_set(EFFECT_PARALYZED, 7998)
-		om_after(src, 5 SECONDS, PROC_REF(expand_troid))
+		status_set(STAT_PARALYZED, 7998)
+		after(src, 5 SECONDS, PROC_REF(expand_troid))
 
-	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
+	if(nutrition_of(src) >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition_of(src) gets too high!
 		release_vore_contents()
 		rel_clear(src, nameof(prey_excludes))
 		stop_consumption()
@@ -69,12 +69,14 @@
 		to_chat(src, span_warning("I am not ready to evolve yet..."))
 
 /mob/living/simple_mob/metroid/juvenile/proc/expand_troid()
+	if(loc?.release_refusal(src))
+		return
 	var/mob/living/L
 	L = new next(get_turf(src)) //Next is a variable defined by metTypes.dm that just points to the next metroid in the evolutionary stage.
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-	qdel(src)
+	global.consume(src)
 
 // Code for metroids attacking other things.
 // metroid attacks change based on intent.
@@ -95,13 +97,13 @@
 					power_charge = max(0, power_charge - 3)
 					act_message(L, src, MSG_SELF(span_danger("%T% has shocked you!")), MSG_OTHERS(span_danger("%T% has shocked %U%!")))
 					play_sfx(src, SFX_WEAPONS_EGLOVES, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 4)
-					L.status_at_least(EFFECT_STUNNED, 4)
+					L.status_at_least(STAT_WEAKENED, 4)
+					L.status_at_least(STAT_STUNNED, 4)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_23 = L?.buckled_to()
 						_tmp_buck_23.unbuckle_mob() // To prevent an exploit where being src?.buckled_to() prevents metroids from jumping on you.
-					L.status_at_least(EFFECT_STUTTERING, stun_power)
+					L.status_at_least(STAT_STUTTERING, stun_power)
 
 					fx_sparks(L, 5)
 
@@ -112,7 +114,7 @@
 				else if(prob(20)) // Try to do a regular disarm attack.
 					act_message(L, src, MSG_SELF(span_danger("%T% has pounced at you!")), MSG_OTHERS(span_danger("%T% has pounced at %U%!")))
 					play_sfx(src, SFX_WEAPONS_THUDSWOOSH, 1.5, extrarange = 0)
-					L.status_at_least(EFFECT_WEAKENED, 2)
+					L.status_at_least(STAT_WEAKENED, 2)
 					do_attack_animation(L)
 					if(L?.buckled_to())
 						var/atom/movable/_tmp_buck_24 = L?.buckled_to()
@@ -140,11 +142,14 @@
 		consume(L, 5)
 
 //Code to remove metroid from someone
-EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGATED(null, PROC_REF(metroid_juvenile_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile)
+	ref_one(nameof(victim), /mob/living)
+	op("metroid_juvenile_hand", hand(), ungated(), then(PROC_REF(metroid_juvenile_interaction_hand)))
 
 /// Old attack_hand: wrestle it off its victim.
-/mob/living/simple_mob/metroid/juvenile/proc/metroid_juvenile_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/metroid/juvenile/proc/metroid_juvenile_interaction_hand(datum/act/op/A)
+	var/mob/living/L = A.actor
+	. = OP_OK
 	if(victim) // Are we eating someone?
 		var/fail_odds = 30
 		if(victim == L) // Harder to get the metroid off if it's you that is being eatten.
@@ -161,10 +166,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 			step_away(src, L)
 
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/metroid/juvenile/proc/lay_egg()
 	new /obj/effect/metroid/egg(loc, src)
 	adjust_nutrition(-500)
-	status_set(EFFECT_PARALYZED, 0)
+	status_set(STAT_PARALYZED, 0)
 

@@ -1,0 +1,5 @@
+/obj/structure/auto_flesh_door icon: icons/turf/stomach_vr.dmi
+/obj/structure/auto_flesh_door state: flesh-closed
+/obj/structure/auto_flesh_door dir: 2
+/obj/structure/auto_flesh_door overlay: icons/turf/stomach_vr.dmi:flesh-closed:8:#000000
+

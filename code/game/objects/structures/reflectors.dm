@@ -22,12 +22,19 @@
 	var/can_decon = TRUE
 	var/list/has_projectiles // Lazy: caught beam damage, angle text -> summed damage (numbers; the beams themselves are deleted on catch)
 	var/bullet_act_in_progress = FALSE
+	/// Has it caught a beam it has yet to re-fire? The every() below runs while it has.
+	var/refiring = FALSE
 
-DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "reflector_base")))
+TRACKED(/obj/structure/reflector, refiring)
+TRACKED(/obj/structure/reflector, finished)
+
+/// The look (the draw sweep: from its layers).
+/obj/structure/reflector/draw(datum/look/look)
+	..()
+	look.state("reflector_base")
 
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()
-	allowed_projectile_typecache = typecacheof(allowed_projectile_typecache)
 	if(deflector_icon_state)
 		deflector_overlay = image(icon, deflector_icon_state)
 		add_overlay(deflector_overlay)
@@ -36,10 +43,6 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 		setAngle(dir2angle(dir))
 	else
 		setAngle(rotation_angle)
-
-	if(admin)
-		can_rotate = FALSE
-		resistance_flags |= BOMB_PROOF
 
 /obj/structure/reflector/examine(mob/user)
 	. = ..()
@@ -51,14 +54,14 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 			else
 				. += span_notice("Use screwdriver to unlock the rotation.")
 
-/// Re-fires what it caught, on the reflector lane (PERIODIC_REFLECTORS, 0.5 s; was SSreflector).
+/// Re-fires what it caught, every 0.5 s while `refiring`.
 /// It starts when it catches a beam and parks once it has fired.
-/obj/structure/reflector/periodic_step(delta)
+/obj/structure/reflector/proc/reflector_step(datum/act/A)
 	if(bullet_act_in_progress) // a hit is mid-resolution: fire on the next step instead of waiting here
 		return
 	Fire()
 	if(!LAZYLEN(has_projectiles))
-		return PROCESS_KILL
+		set_refiring(FALSE)
 
 /obj/structure/reflector/proc/Fire()
 	UNTIL(!bullet_act_in_progress)
@@ -85,8 +88,8 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	var/caught_damage = P.damage
 	LAZYINITLIST(has_projectiles)
 	has_projectiles[angle_key] += caught_damage
-	om_task_periodic(src, PERIODIC_REFLECTORS)
-	qdel(P)
+	set_refiring(TRUE)
+	spent(P)
 
 /obj/structure/reflector/set_dir(new_dir)
 	return ..(NORTH)
@@ -112,62 +115,47 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	P.ignore_source_check = TRUE
 	return 2
 
-/obj/structure/reflector/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/reflector_item,
-		/datum/interaction/entry_alt/reflector_alt,
-	)
-	..()
+/// The projectiles it reflects, as a typecache (derives(), at init).
+/obj/structure/reflector/proc/projectile_typecache()
+	return typecacheof(allowed_projectile_typecache)
 
-/// Old attackby: lock rotation, dismantle/weld, or finish the frame with material.
-/datum/interaction/entry_item/reflector_item
-	id = "reflector_item"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_not_admin, null))
-	effect = /obj/structure/reflector/proc/interaction_item
+/// An admin reflector cannot be turned (derives(), at init).
+/obj/structure/reflector/proc/turns_unless_admin()
+	return admin ? FALSE : can_rotate
 
-/obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
-	return !admin
+/// Nor blown up (derives(), at init).
+/obj/structure/reflector/proc/admin_resistance()
+	return admin ? (resistance_flags | BOMB_PROOF) : resistance_flags
 
-/obj/structure/reflector/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+CAPABILITIES(/obj/structure/reflector)
+	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
+	op("dismantle", tool(TOOL_WRENCH), label("Dismantle"), when(PROC_REF(can_be_deconstructed)), needs(req(PROC_REF(not_anchored), because = MSG(reflector/unweld_first))),
+		begins(MSG(reflector/dismantling)), wait(2 SECONDS), then(PROC_REF(dismantled)))
+	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(req(PROC_REF(not_anchored))), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
+	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
+	derives(nameof(allowed_projectile_typecache), PROC_REF(projectile_typecache))
+	derives(nameof(can_rotate), PROC_REF(turns_unless_admin))
+	derives(nameof(resistance_flags), PROC_REF(admin_resistance))
+
+/obj/structure/reflector/proc/reflector_not_admin(datum/act/op/A)
+	return admin ? /datum/msg/req_failed : null
+
+/obj/structure/reflector/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		can_rotate = !can_rotate
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
-		playsound(W, W.usesound, 50, 1)
+		playsound(W, sounds_of(W).use, 50, 1)
 		return TRUE
 
-	if(W.has_tool_quality(TOOL_WRENCH) && can_decon)
-		if(anchored)
-			to_chat(user, span_warning("Unweld [src] from the floor first!"))
-			return TRUE
-		act_message(user, src, MSG_SELF(span_notice("You start to dismantle %T%...")), MSG_OTHERS(span_notice("%U% starts to dismantle %T%.")))
-
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	else if(W.get_welder())
-		var/obj/item/weldingtool/I = W.get_welder()
-		if(!anchored)
-			if(!I.get_fuel())
-				to_chat(user, span_warning("You require fuel to weld the [src]!"))
-				return TRUE
-
-			act_message(user, src, MSG_SELF(span_notice("You start to weld %T% to the floor...")), \
-				MSG_OTHERS(span_notice("%U% starts to weld %T% to the floor.")), \
-				MSG_BLIND(span_hear("You hear welding.")))
-
-			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
-			return TRUE
-		else
-			if(!I.remove_fuel(1,user))
-				return TRUE
-
-			act_message(user, src, MSG_SELF(span_notice("You start to cut %T% free from the floor...")), \
-				MSG_OTHERS(span_notice("%U% starts to cut %T% free from the floor.")), \
-				MSG_BLIND(span_hear("You hear welding.")))
-			set_anchored(FALSE)
-			to_chat(user, span_notice("You cut [src] free from the floor."))
+	if(W.get_welder() || (W.has_tool_quality(TOOL_WRENCH) && can_decon))
+		return TRUE
 
 	//Finishing the frame
-	else if(istype(W, /obj/item/stack/material))
+	if(istype(W, /obj/item/stack/material))
 		if(finished)
 			return TRUE
 		var/obj/item/stack/material/S = W
@@ -188,53 +176,58 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 				replace_with(src, /obj/structure/reflector/box)
 	return TRUE
 
-/obj/structure/reflector/proc/attackby_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
+MSG_DEF(reflector/unweld_first, span_warning("Unweld the reflector from the floor first!"), null)
+MSG_DEF(reflector/dismantling, span_notice("You start to dismantle %T%..."), span_notice("%U% starts to dismantle %T%."))
+MSG_DEF(reflector/welding_down, span_notice("You start to weld %T% to the floor..."), span_notice("%U% starts to weld %T% to the floor."))
+
+/// A wrench takes it apart only when it can be deconstructed (a fixed property of the type).
+/obj/structure/reflector/proc/can_be_deconstructed(datum/act/op/A)
+	return !!read_once(can_decon)
+
+/obj/structure/reflector/proc/not_anchored(datum/act/op/A)
+	return (!anchored) ? null : /datum/msg/reflector/unweld_first
+
+/obj/structure/reflector/proc/dismantled(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You dismantle %T%...")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
 	if(buildstackamount)
 		new buildstacktype(drop_location(), buildstackamount)
 	replace_with(src, framebuildstacktype, framebuildstackamount)
-/obj/structure/reflector/proc/attackby_timed_done2(mob/user, obj/item/weldingtool/I)
-	if(!I.remove_fuel(1,user))
-		to_chat(user, span_warning("You require fuel to weld the [src]!"))
-		return
+
+/obj/structure/reflector/proc/welded_down(datum/act/op/A)
 	set_anchored(TRUE)
-	act_message(user, src, MSG_SELF(span_notice("You weld %T% to the floor...")), \
-		MSG_OTHERS(span_notice("%U% welds %T% to the floor.")), \
-		MSG_BLIND(span_hear("You hear welding.")))
+	act_message(A.actor, src, MSG_SELF(span_notice("You weld %T% to the floor...")), 		MSG_OTHERS(span_notice("%U% welds %T% to the floor.")), 		MSG_BLIND(span_hear("You hear welding.")))
+
+/obj/structure/reflector/proc/cut_free(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You start to cut %T% free from the floor...")), 		MSG_OTHERS(span_notice("%U% starts to cut %T% free from the floor.")), 		MSG_BLIND(span_hear("You hear welding.")))
+	set_anchored(FALSE)
+	to_chat(A.actor, span_notice("You cut [src] free from the floor."))
 
 /obj/structure/reflector/proc/rotate(mob/user)
 	if (!can_rotate || admin)
 		to_chat(user, span_warning("The rotation is locked!"))
 		return FALSE
-	om_ask(user, /datum/om/prompt/number/reflector_angle, PROC_REF(angle_entered), default = rotation_angle)
+	open_request(src, /datum/prompt/number, PROC_REF(angle_entered), valid = PROC_REF(angle_valid), answerer = user, title = "Reflector Angle", question = "Input a new angle for primary reflection face.", min_value = -360, max_value = 360, default = rotation_angle, timeout = 0)
 	return TRUE
 
-/// Re-checked: the reflector is still usable and its rotation unlocked.
-/datum/om/prompt/number/reflector_angle
-	title = "Reflector Angle"
-	message = "Input a new angle for primary reflection face."
-	max = 360
-	min = -360
-	requires = PROMPT_USABLE
+/// Re-checked: the person is still next to the reflector and able, and its rotation unlocked.
+/obj/structure/reflector/proc/angle_valid(datum/request/R)
+	return can_rotate && !admin && answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-/datum/om/prompt/number/reflector_angle/valid()
-	var/obj/structure/reflector/R = subject
-	return (R.can_rotate && !R.admin) ? null : "rotation locked"
-
-/obj/structure/reflector/proc/angle_entered(datum/om/prompt/number/reflector_angle/ask)
-	setAngle(SIMPLIFY_DEGREES(ask.number))
-
-/// Old click_alt: rotate the finished reflector.
-/datum/interaction/entry_alt/reflector_alt
-	id = "reflector_alt"
-	name = "Rotate"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_finished, null))
-	effect = /obj/structure/reflector/proc/interaction_alt
+/obj/structure/reflector/proc/angle_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	setAngle(SIMPLIFY_DEGREES(A.answer.value))
 
 /obj/structure/reflector/proc/reflector_finished(mob/actor, atom/target, obj/item/held)
 	return !!finished
 
-/obj/structure/reflector/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* reflector_finished): the legacy check answers TRUE to pass.
+/obj/structure/reflector/proc/reflector_finished_holds(datum/act/op/A)
+	var/answer = reflector_finished(A.actor, src, A.held)
+	return (!istext(answer) && !!answer) ? null : MSG(req_failed)
+
+/obj/structure/reflector/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!CanUseTopic(user))
 		return TRUE
 	rotate(user)
@@ -360,5 +353,5 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 
 /obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
 	. = ..()
-	src.air_contents.set_temperature(2.72)
+	heat_set(src.air_contents, 2.72)
 

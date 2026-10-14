@@ -3,16 +3,15 @@
 	var/list/dispense_reagents
 	var/process_tick = 0
 
-OM_FIELD(/obj/machinery/chemical_dispenser, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/chemical_dispenser/var/_recharge_reagents = TRUE
+TRACKED(/obj/machinery/chemical_dispenser, _recharge_reagents)
 /// Recharges its cartridges while it recharges at all and is operable; with nothing short it sleeps.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, list("_recharge_reagents", "operable"))
-
-/obj/machinery/chemical_dispenser/machine_step()
+/obj/machinery/chemical_dispenser/proc/work_step(datum/act/timer/A)
 	if(--process_tick <= 0)
 		process_tick = 15
 		. = 0
 		for(var/id in dispense_reagents)
-			var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 			if(!R)
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
 				LAZYREMOVE(dispense_reagents, id)
@@ -32,7 +31,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, 
 	if(!_recharge_reagents)
 		return FALSE
 	for(var/id in dispense_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = R ? cartridges[R.name] : null
 		if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 			return TRUE
@@ -41,7 +40,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, 
 /obj/machinery/chemical_dispenser/power_change()
 	. = ..()
 	if(. && operable() && needs_recharge())
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/chemical_dispenser
 	dispense_reagents = list(

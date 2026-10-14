@@ -11,15 +11,13 @@
 /datum/unit_test/dq_p1_b10_slow_addiction_threshold
 
 /datum/unit_test/dq_p1_b10_slow_addiction_threshold/Run()
-	var/old_config = CONFIG_GET(flag/can_addict_during_round)
-	CONFIG_SET(flag/can_addict_during_round, TRUE)
+	set_config(/datum/config_entry/flag/can_addict_during_round, TRUE)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bloodstr.add_reagent(REAGENT_ID_TRAMADOL, 5)
 	// Past the normal threshold (-1000) but well short of the slow one (-1750).
 	H.set_addiction_buildup(REAGENT_ID_TRAMADOL, -1200)
 	H.process_addictions()
 	TEST_ASSERT(H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL) <= 0, "tramadol (ADDICT_SLOW) must not addict at the normal threshold, counter is [H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL)]")
-	CONFIG_SET(flag/can_addict_during_round, old_config)
 
 /// B9: the advanced trauma kit spends one charge per wound it treats.
 /datum/unit_test/dq_p1_b9_trauma_kit_charges
@@ -42,14 +40,14 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/medic = allocate(/mob/living/carbon/human)
 	dq_give_zone_sel(medic)
-	medic.zone_sel.selecting = BP_TORSO
+	hud_of(medic)?.zone_sel.set_selecting(BP_TORSO)
 	var/obj/item/stack/medical/advanced/ointment/kit = allocate(/obj/item/stack/medical/advanced/ointment)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
-	torso.open = 1
+	torso.set_open(1)
 	var/before = kit.get_amount()
 	TEST_ASSERT_EQUAL(kit.attack(H, medic), ITEM_INTERACT_FAILURE, "a burn kit on a cut-open limb must fail")
 	TEST_ASSERT_EQUAL(kit.get_amount(), before, "no charge is spent on an open limb")
-	torso.open = 0
+	torso.set_open(0)
 
 /// B22: a stab never forces a negative amount in.
 /datum/unit_test/dq_p1_b22_syringe_stab_amount
@@ -66,31 +64,31 @@
 
 /datum/unit_test/dq_p1_b5_claridyl_one_side_effect/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagent/claridyl/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_CLARIDYL]
+	var/datum/reagent/claridyl/R = SSchemistry.chemical_reagents[REAGENT_ID_CLARIDYL]
 	R.claridyl_side_effect(H, 4) // dizziness only
-	TEST_ASSERT(H.has_status(EFFECT_DIZZY), "side effect 4 is dizziness")
-	TEST_ASSERT(!H.has_status(EFFECT_WEAKENED), "one roll must not also weaken")
-	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "one roll must not also stun")
-	TEST_ASSERT(!H.has_status(EFFECT_PARALYZED), "one roll must not also paralyse")
+	TEST_ASSERT(H.has_status(STAT_DIZZY), "side effect 4 is dizziness")
+	TEST_ASSERT(!H.has_status(STAT_WEAKENED), "one roll must not also weaken")
+	TEST_ASSERT(!H.has_status(STAT_STUNNED), "one roll must not also stun")
+	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "one roll must not also paralyse")
 
 /// B7: Hannoa's sedation bands are reachable, and it treats by mechanism.
 /datum/unit_test/dq_p1_b7_hannoa_bands
 
 /datum/unit_test/dq_p1_b7_hannoa_bands/Run()
-	var/datum/reagent/hannoa/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_HANNOA]
+	var/datum/reagent/hannoa/R = SSchemistry.chemical_reagents[REAGENT_ID_HANNOA]
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	R.hannoa_sedation(H, 3)
-	TEST_ASSERT(H.has_status(EFFECT_BLURRY), "a dose of 3 blurs vision")
+	TEST_ASSERT(H.has_status(STAT_BLURRY), "a dose of 3 blurs vision")
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
 	R.hannoa_sedation(H2, 10)
-	TEST_ASSERT(H2.has_status(EFFECT_DROWSY), "a dose of 10 makes the patient drowsy")
+	TEST_ASSERT(H2.has_status(STAT_DROWSY), "a dose of 10 makes the patient drowsy")
 	TEST_ASSERT(R.treatment_tags?[TREAT_HEMOSTATIC] && R.treatment_tags?[TREAT_TISSUE_REPAIR], "Hannoa declares its clotting and tissue repair tags")
 
 /// B8: Eden leaves the body.
 /datum/unit_test/dq_p1_b8_eden_metabolises
 
 /datum/unit_test/dq_p1_b8_eden_metabolises/Run()
-	var/datum/reagent/eden/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_EDEN]
+	var/datum/reagent/eden/R = SSchemistry.chemical_reagents[REAGENT_ID_EDEN]
 	TEST_ASSERT(R.metabolism > 0, "Eden must metabolise (metabolism [R.metabolism])")
 
 /// B16: Malish-Qualem never divides by a zero healing strength.
@@ -99,13 +97,13 @@
 /datum/unit_test/dq_p1_b16_malish_qualem_zero_strength/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/old_heal = H.species.chem_strength_heal
-	proto_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
+	rel_private(H, nameof(H.species)) // write on the mob's private species copy, never the registered one
 	H.species.chem_strength_heal = 0
 	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 5)
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	liver.transplant_data = list()
 	liver.can_reject = !initial(liver.can_reject)
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_MALISHQUALEM]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_MALISHQUALEM]
 	R.affect_blood(H, IS_SKRELL, 0.1)
 	H.species.chem_strength_heal = old_heal
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_TOXIC) < 100, "the rejection toxin is bounded and per unit (load [H.injury_load(INJURY_CATEGORY_TOXIC)])")
@@ -128,9 +126,9 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
 	var/weight = H.weight
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_LIPOSTIPO]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
-	TEST_ASSERT(H.nutrition > 100, "the weight-gain drug must add nutrition, got [H.nutrition]")
+	TEST_ASSERT(nutrition_of(H) > 100, "the weight-gain drug must add nutrition_of(src), got [nutrition_of(H)]")
 	TEST_ASSERT(abs((H.weight - weight) - 0.3) < 0.001, "0.2u adds 0.3 weight, got [H.weight - weight]")
 
 /// B3: drawing into a container that holds another donor's blood is refused.
@@ -168,23 +166,23 @@
 /datum/unit_test/dq_p1_b18_drink_nutrition/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
-	var/datum/reagent/drink/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_ORANGEJUICE]
+	var/datum/reagent/drink/R = SSchemistry.chemical_reagents[REAGENT_ID_ORANGEJUICE]
 	var/removed = 1
 	var/expected = 100 + R.nutriment_factor * removed * H.species.organic_food_coeff
 	if(!(H.species.allergens & R.allergen_type) && !(H.species.medallergens & R.medallergen_type))
 		expected += (R.nutrition + H.food_preference(R.allergen_type)) * removed
 	R.affect_ingest(H, null, removed)
-	TEST_ASSERT(abs(H.nutrition - expected) < 0.01, "a drink adds [expected - 100] nutrition, got [H.nutrition - 100]")
+	TEST_ASSERT(abs(nutrition_of(H) - expected) < 0.01, "a drink adds [expected - 100] nutrition_of(src), got [nutrition_of(H) - 100]")
 
 /// B19: a species table overrides only the factors it names.
 /datum/unit_test/dq_p1_b19_species_factor_merge
 
 /datum/unit_test/dq_p1_b19_species_factor_merge/Run()
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_DEXALIN]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_DEXALIN]
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
 	TEST_ASSERT(merged?[BF_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
 	TEST_ASSERT(merged?[BF_ANALGESIA], "and get their own analgesia")
-	var/datum/reagent/bloodburn = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_BLOODBURN]
+	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
 	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 
 /// B12: a cold drink cools a hot body toward the target and never heats it.
@@ -335,9 +333,21 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	var/datum/affliction/A = new /datum/affliction/synthetic/coolant_leak(arm)
-	own_add(arm, nameof(arm.detached_afflictions), A)
+	var/datum/affliction/B = new /datum/affliction/synthetic/thermal_runaway(arm)
+	var/datum/affliction/custom/compatible = new(arm)
+	rel_add(arm, nameof(arm.detached_afflictions), A)
+	rel_add(arm, nameof(arm.detached_afflictions), B)
+	rel_add(arm, nameof(arm.detached_afflictions), compatible)
+	TEST_ASSERT(!A.can_afflict(H.body, arm) && !B.can_afflict(H.body, arm), "both adjacent synthetic faults must actually reject the organic arm")
+	TEST_ASSERT(compatible.can_afflict(H.body, arm), "the real custom affliction must be compatible with the same arm")
 	H.body.attach_part(arm)
+	TEST_ASSERT(QDELETED(A) && QDELETED(B), "both exact adjacent rejected records must be disposed")
 	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/coolant_leak), "a coolant leak can't be carried onto an organic arm")
+	TEST_ASSERT(!H.body.has_affliction(/datum/affliction/synthetic/thermal_runaway), "thermal runaway can't be carried onto an organic arm")
+	TEST_ASSERT(!QDELETED(compatible), "the exact compatible record must survive both rejected neighbors")
+	TEST_ASSERT_EQUAL(H.body.find_affliction(/datum/affliction/custom, arm), compatible, "the body's index must adopt the exact compatible original")
+	TEST_ASSERT_EQUAL(owner_of(compatible), H.body, "the adopted original must be owned by the actual body")
+	TEST_ASSERT(!LAZYLEN(arm.detached_afflictions), "all original records must leave the carried index")
 
 /// D7: the scanner labels by robotic level, not a status bit.
 /datum/unit_test/dq_p1_d7_scanner_assisted_label
@@ -399,9 +409,9 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/datum/affliction/surgical_incision/I = H.body.afflict(/datum/affliction/surgical_incision, torso)
 	I.open_to(SURGERY_DEPTH_CLOSED + 1)
-	TEST_ASSERT(H.caculate_bloodloss_and_bleed(FALSE, torso) > 0, "an open, unclamped site bleeds")
+	TEST_ASSERT(H.blood_loss_rate(torso) > 0, "an open, unclamped site bleeds")
 	I.clamped = TRUE
-	TEST_ASSERT_EQUAL(H.caculate_bloodloss_and_bleed(FALSE, torso), 0, "a clamped site does not")
+	TEST_ASSERT_EQUAL(H.blood_loss_rate(torso), 0, "a clamped site does not")
 	I.close_site()
 
 /// D21: the nymph takes the body through set_species(), keeping its organs.
@@ -420,9 +430,7 @@
 /datum/unit_test/dq_p1_d22_pain_messages/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_BLUNT, 10.5, BP_L_ARM)
-	var/datum/om/stage/life/pain/stage = new
-	stage.perform(H, null) // must not runtime
-	qdel(stage)
+	H.pain_step() // must not runtime
 
 /// A5: replacing a borg's cell deletes the old one instead of orphaning it.
 /datum/unit_test/dq_p1_a5_borg_cell_replacement
@@ -472,5 +480,4 @@
 	// P2-D8: skin breathing is the alraune breath profile, taken by the breathing stage.
 	var/datum/breath_profile/skin/P = H.breath_profile()
 	TEST_ASSERT(istype(P), "an alraune breathes through its skin")
-	var/datum/om/stage/life/breathing/carbon/breathing = om_stage_for(H, /datum/om/stage/life/breathing)
-	P.take_breath(H, breathing) // must not runtime on a null loc
+	P.take_breath(H) // must not runtime on a null loc

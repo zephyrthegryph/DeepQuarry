@@ -1,0 +1,9 @@
+/obj/machinery/mineral/equipment_vendor icon: icons/obj/vending.dmi
+/obj/machinery/mineral/equipment_vendor state: minevend
+/obj/machinery/mineral/equipment_vendor dir: 2
+/obj/machinery/mineral/equipment_vendor overlay: icons/obj/vending.dmi:minevend:8:#000000
+/obj/machinery/mineral/equipment_vendor/survey icon: icons/obj/machines/mining_machines.dmi
+/obj/machinery/mineral/equipment_vendor/survey state: exploration
+/obj/machinery/mineral/equipment_vendor/survey dir: 2
+/obj/machinery/mineral/equipment_vendor/survey overlay: icons/obj/machines/mining_machines.dmi:exploration:8:#000000
+

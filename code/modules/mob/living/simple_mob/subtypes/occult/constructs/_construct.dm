@@ -12,7 +12,6 @@
 	icon_living = "shade"
 	icon_dead = "shade_dead"
 
-	mob_class = MOB_CLASS_DEMONIC
 	biology = BIOLOGY_SYNTHETIC // Runed-metal shells: repaired by artificers, immune to poison and suffocation.
 
 	ui_icons = 'icons/mob/screen1_construct.dmi'
@@ -23,9 +22,6 @@
 	response_disarm = "flailed at"
 	response_harm   = "punched"
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_CULT)
 
@@ -48,7 +44,6 @@
 
 	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
-	can_be_antagged = TRUE
 	faction = FACTION_CULT
 
 	supernatural = TRUE
@@ -56,7 +51,6 @@
 	var/construct_type = "shade"
 	var/list/construct_spells = list() // ALLOW(instance_list): d: per-mob construct_spells, sized at creation and filled in place; mobs are few
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/construct/place_spell_in_hand(path)
@@ -64,6 +58,7 @@
 		return 0
 
 	var/obj/item/spell/construct/S = new path(src)
+	var/hands_blocked = FALSE
 
 	//No hands needed for innate casts.
 	if(S.cast_methods & CAST_INNATE)
@@ -81,36 +76,34 @@
 				l_spell.on_combine_cast(S, src)
 		else //Welp
 			to_chat(src, span_warning("You require a free manipulator to use this power."))
-			return 0
+			hands_blocked = TRUE
 
-	if(S.run_checks())
+	if(!hands_blocked && S.run_checks())
 		put_in_hands(S)
 		return 1
 	else
-		qdel(S)
+		spent(S)
 		return 0
 
 /mob/living/simple_mob/construct/cultify()
 	return
 
+// Each construct is numbered.
+CAPABILITIES(/mob/living/simple_mob/construct)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
+	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+
+// A construct learns its spells into its spell bar at init
 /mob/living/simple_mob/construct/Initialize(mapload)
 	. = ..()
-	name = text("[initial(name)] ([rand(1, 1000)])")
-	real_name = name
 	for(var/spell in construct_spells)
 		src.add_spell(new spell, "const_spell_ready")
-	update_icon()
-
-/*
-/mob/living/simple_mob/construct/update_icon()
-	..()
-	if(do_glow)
-		add_glow()
-*/
 
 /mob/living/simple_mob/construct
 	delete_on_death = TRUE
-	death_message = "collapses in a shattered heap."
 
 /mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)
@@ -148,7 +141,7 @@
 	var/image/eye_glow = image(icon,"glow-[icon_state]")
 	eye_glow.plane = PLANE_LIGHTING_ABOVE
 	add_overlay(eye_glow)
-	set_light(2, -2, l_color = "#FFFFFF")
+	set_glow(src, GLOW(2, -2, "#FFFFFF"))
 
 /mob/living/simple_mob/construct/proc/remove_glow()
 	cut_overlays()

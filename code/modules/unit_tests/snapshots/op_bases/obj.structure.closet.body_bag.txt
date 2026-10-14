@@ -1,0 +1,4 @@
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Remove injector (refused: It has no injector in it.)
+human|/obj/item/tool/screwdriver menu: Toggle Open
+human|/obj/item/tool/screwdriver click: Click: Remove injector

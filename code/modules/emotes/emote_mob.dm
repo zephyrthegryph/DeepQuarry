@@ -11,7 +11,7 @@
 
 #define EMOTE_REFRESH_SPAM_COOLDOWN (5 SECONDS)
 /mob/living/can_emote(emote_type)
-	return (..() && !(has_status(EFFECT_MUTED) && emote_type == AUDIBLE_MESSAGE))
+	return (..() && !(has_status(STAT_MUTED) && emote_type == AUDIBLE_MESSAGE))
 
 /mob/proc/emote(act, m_type, message)
 	set waitfor = FALSE // ALLOW(scheduler): waits on a prompt (custom emote tgui_input_text/tgui_alert)
@@ -56,14 +56,14 @@
 
 		if(act == "custom")
 			if(!message)
-				var/_answer_k59 = rerun_ask(src, "k59", PROC_REF(emote), args, /datum/om/prompt/text, message = "Choose an emote to display.", encode = FALSE)
+				var/_answer_k59 = rerun_ask(src, "k59", PROC_REF(emote), args, /datum/prompt/text, question = "Choose an emote to display.", encode = FALSE)
 				if(isnull(_answer_k59))
 					return
 				message = sanitize_or_reflect(_answer_k59, src) // Reflect too long messages, within reason
 			if(!message)
 				return
 			if (!m_type)
-				var/_answer_k63 = rerun_ask(src, "k63", PROC_REF(emote), args, /datum/om/prompt/choice/alert, message = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"))
+				var/_answer_k63 = rerun_ask(src, "k63", PROC_REF(emote), args, /datum/prompt/choice, question = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(_answer_k63))
 					return
 				if(_answer_k63 != "Yes")
@@ -116,7 +116,8 @@
 	use_emote.do_emote(src, message)
 	for (var/obj/item/implant/I in contents_of(src))
 		if (I.implanted)
-			I.trigger(act, src)
+			// Preserve the initiating classification across emote effect callbacks.
+			I.trigger(act, src, involuntary ? null : src)
 
 #undef EMOTE_REFRESH_SPAM_COOLDOWN
 

@@ -24,15 +24,3 @@
 
 /datum/computer_file/data/text
 	filetype = "TXT"
-
-/// Mapping tool - creates a named modular computer file in a computer's storage on late initialize.
-/// Use this to do things like automatic records and blackboxes. Alternative for paper records.
-/// Values can be in the editor for each map or as a subtype.
-/// This is an obj because raw atoms can't be placed in DM or third-party mapping tools.
-///obj/effect/computer_file_creator
-
-///obj/effect/computer_file_creator/Initialize(mapload)
-//	. = ..()
-//	return INITIALIZE_HINT_LATELOAD
-
-///obj/effect/computer_file_creator/LateInitialize()

@@ -27,7 +27,7 @@
 
 /atom/movable/screen/popup/proc/close_popup()
 	holder()?.screen -= src
-	qdel(src)
+	consume(src)
 
 /atom/movable/screen/popup/proc/check_click_spot(click_x, click_y)
 	if((click_x <= close_button_x_end) && (click_x >= close_button_x_start))
@@ -66,9 +66,12 @@
 	close_button_y_start = 86
 	close_button_y_end = 94
 
-/atom/movable/screen/popup/default/Initialize(mapload)
-	icon_state = "popup[rand(1,10)]"
-	. = ..()
+CAPABILITIES(/atom/movable/screen/popup/default)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/atom/movable/screen/popup/default/proc/roll_icon_state(datum/roller/R)
+	return "popup[R.number(1, 10)]"
 
 /// The client this popup is shown to (a relation view: null once that is deleted).
 /atom/movable/screen/popup/proc/holder() as /client

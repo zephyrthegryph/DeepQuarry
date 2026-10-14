@@ -2,66 +2,188 @@
 	if(!potential_prey || !istype(potential_prey))		// Did our prey cease to exist?
 		return
 	// Are we cool with this prey spawning in at all? The pred answers, then the prey confirms.
-	om_flow_start(/datum/om/flow/inbelly_spawn, src, null, prey = potential_prey, prey_name = potential_prey.prefs.read_preference(/datum/preference/name/real_name))
+	var/datum/inbelly_spawn_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.prey_ckey = potential_prey.ckey
+	review.prey_name = potential_prey.prefs.read_preference(/datum/preference/name/real_name)
+	review.start()
 
 /// A ghost asks to spawn in a belly: the pred (actor) accepts, picks the belly, confirms a digest
 /// belly, picks absorbed or not and confirms; then the prey confirms. A no or a cancel at any
 /// step tells both sides, by the step it stopped at.
-/datum/om/flow/inbelly_spawn
-	name = "inbelly spawn"
-	/// The ghost's client: held by ckey between steps.
-	var/client/prey
+/datum/inbelly_spawn_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/actor
+	/// Same identity lookup as the old flow's parked client, without retaining a client.
+	var/prey_ckey
 	var/prey_name
 	var/obj/belly/belly
+	var/belly_selected = FALSE
 	var/absorbed = FALSE
-	/// The step waiting for an answer, for ended()'s messages.
 	var/stage
 
-/datum/om/flow/inbelly_spawn/start()
-	stage = "accept"
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(accepted), title = "Inbelly Spawning", message = "[prey_name] wants to spawn in one of your bellies. Do you accept?")
+CAPABILITIES(/datum/inbelly_spawn_review)
+	ref_one(nameof(actor), /mob/living)
+	ref_one(nameof(belly), /obj/belly)
 
-/datum/om/flow/inbelly_spawn/proc/accepted()
-	var/mob/living/pred = actor
-	// Let them know so that they don't spam it.
+/datum/prompt/yes_no/inbelly_spawn
+	title = "Inbelly Spawning"
+	timeout = 0
+	var/accept_no = FALSE
+
+/datum/prompt/yes_no/inbelly_spawn/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/inbelly_spawn_review/review = owner
+	// Most old No answers stopped before the flow's captured-state recheck.
+	return value == FALSE && !accept_no ? null : review.why_not()
+
+/datum/prompt/choice/inbelly_spawn
+	timeout = 0
+
+/datum/prompt/choice/inbelly_spawn/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/selected = value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/inbelly_spawn_review/review = owner
+	return review.why_not()
+
+/datum/inbelly_spawn_review/proc/prey_client()
+	RETURN_TYPE(/client)
+	return GLOB.directory[prey_ckey]
+
+/datum/inbelly_spawn_review/proc/why_not()
+	return QDELETED(actor) || !prey_client() || (belly_selected && QDELETED(belly)) ? "gone" : null
+
+/datum/inbelly_spawn_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	run_step(PROC_REF(start_step))
+
+/datum/inbelly_spawn_review/proc/run_step(step, datum/act/request/A)
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("inbelly spawn step [step]: [result.error]")
+		stopped("error")
+
+/datum/inbelly_spawn_review/proc/stopped(reason)
+	notify_stopped(reason)
+	retire()
+
+/datum/inbelly_spawn_review/proc/failed_answer(datum/request/R)
+	if(QDELETED(actor) || (R.answerer_expected && QDELETED(R.answerer)))
+		stopped("gone")
+		return
+	stopped(isnull(R.value) ? "cancelled" : R.last_error)
+
+/datum/inbelly_spawn_review/proc/start_step()
+	stage = "accept"
+	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(accepted), answerer = actor, asker = actor, question = "[prey_name] wants to spawn in one of your bellies. Do you accept?")
+
+/datum/inbelly_spawn_review/proc/accepted(datum/act/request/A)
+	run_step(PROC_REF(accepted_step), A)
+
+/datum/inbelly_spawn_review/proc/accepted_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	if(A.request.value == FALSE)
+		stopped("declined")
+		return
+	var/client/prey = prey_client()
 	to_chat(prey, span_notice("Predator agreed to your request. Wait a bit while they choose a belly."))
 	stage = "belly"
-	om_ask(pred, /datum/om/prompt/choice, PROC_REF(belly_picked), title = "Belly Choice", message = "Choose Target Belly", choices = pred.vore_organs)
+	open_request(src, /datum/prompt/choice/inbelly_spawn, PROC_REF(belly_picked), answerer = actor, asker = actor, title = "Belly Choice", question = "Choose Target Belly", choices = actor.vore_organs)
 
-/datum/om/flow/inbelly_spawn/proc/belly_picked(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(belly), ask.choice)
-	// Extra caution never hurts
+/datum/inbelly_spawn_review/proc/belly_picked(datum/act/request/A)
+	run_step(PROC_REF(belly_picked_step), A)
+
+/datum/inbelly_spawn_review/proc/belly_picked_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	rel_set(src, nameof(belly), A.request.value)
+	if(QDELETED(belly))
+		stopped("gone")
+		return
+	belly_selected = TRUE
 	if(belly.digest_mode == DM_DIGEST)
 		stage = "digest"
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_absorbed), title = "Inbelly Spawning", message = "[belly] is currently set to Digest. Are you sure you want to spawn prey there?")
+		open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(digest_confirmed), answerer = actor, asker = actor, question = "[belly] is currently set to Digest. Are you sure you want to spawn prey there?")
 		return
 	ask_absorbed()
 
-/datum/om/flow/inbelly_spawn/proc/ask_absorbed()
+/datum/inbelly_spawn_review/proc/digest_confirmed(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	if(A.request.value == FALSE)
+		stopped("declined")
+		return
+	run_step(PROC_REF(ask_absorbed))
+
+/datum/inbelly_spawn_review/proc/ask_absorbed()
 	stage = "absorbed"
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(absorbed_picked), title = "Inbelly Spawning", message = "Do you want them to start absorbed?", answer_on_no = TRUE, cancel_answer = "No")
+	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(absorbed_picked), answerer = actor, asker = actor, question = "Do you want them to start absorbed?", accept_no = TRUE)
 
-/datum/om/flow/inbelly_spawn/proc/absorbed_picked(datum/om/prompt/confirm/ask)
-	absorbed = ask.yes
-	// Final confirmation for pred
+/datum/inbelly_spawn_review/proc/absorbed_picked(datum/act/request/A)
+	run_step(PROC_REF(absorbed_picked_step), A)
+
+/datum/inbelly_spawn_review/proc/absorbed_picked_step(datum/act/request/A)
+	if(!A.answer)
+		// Old cancel_answer No was delivered and resumed with a live captured-state check.
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || why_not())
+			stopped("gone")
+			return
+	absorbed = A.answer ? A.request.value : FALSE
 	stage = "sure"
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(pred_sure), title = "Inbelly Spawning", message = "Are you certain that you want [prey_name] spawned in your [belly][absorbed ? ", absorbed" : ""]?")
+	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(pred_sure), answerer = actor, asker = actor, question = "Are you certain that you want [prey_name] spawned in your [belly][absorbed ? ", absorbed" : ""]?")
 
-/datum/om/flow/inbelly_spawn/proc/pred_sure()
-	// And final confirmation for prey
+/datum/inbelly_spawn_review/proc/pred_sure(datum/act/request/A)
+	run_step(PROC_REF(pred_sure_step), A)
+
+/datum/inbelly_spawn_review/proc/pred_sure_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	if(A.request.value == FALSE)
+		stopped("declined")
+		return
 	to_chat(actor, span_notice("Waiting for prey's confirmation..."))
 	stage = "prey"
-	om_ask(prey, /datum/om/prompt/confirm, PROC_REF(prey_sure), title = "Inbelly Spawning", message = "Are you certain that you to spawn in [actor]'s [belly][absorbed ? ", absorbed" : ""]?")
+	var/client/prey = prey_client()
+	// The old prompt normalized the client to its current mob, and ended with no question if absent.
+	if(!prey.mob)
+		retire()
+		return
+	open_request(src, /datum/prompt/yes_no/inbelly_spawn, PROC_REF(prey_sure), answerer = prey.mob, asker = actor, question = "Are you certain that you to spawn in [actor]'s [belly][absorbed ? ", absorbed" : ""]?")
 
-/datum/om/flow/inbelly_spawn/proc/prey_sure()
-	//Now we finally spawn them in!
+/datum/inbelly_spawn_review/proc/prey_sure(datum/act/request/A)
+	run_step(PROC_REF(prey_sure_step), A)
+
+/datum/inbelly_spawn_review/proc/prey_sure_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	if(A.request.value == FALSE)
+		stopped("declined")
+		return
+	var/client/prey = prey_client()
 	if(!is_alien_whitelisted(prey, GLOB.all_species[prey.prefs.read_preference(/datum/preference/choiced/species)]))
 		to_chat(prey, span_notice("You are not whitelisted to play as currently selected character."))
 		to_chat(actor, span_notice("Prey accepted the confirmation, but something went wrong with spawning their character."))
+		retire()
 		return
 	inbelly_spawn(prey, actor, belly, absorbed)
+	retire()
 
-/datum/om/flow/inbelly_spawn/ended(reason)
+/datum/inbelly_spawn_review/proc/notify_stopped(reason)
+	var/client/prey = prey_client()
 	if(reason == "gone")
 		return
 	switch(stage)
@@ -101,7 +223,7 @@
 	new_character.initialize_vessel()
 	new_character.key = player_key
 	if(new_character.mind)
-		var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(new_character.mind.special_role)
+		var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(new_character.mind)
 			antag_data.place_mob(new_character)
@@ -130,9 +252,8 @@
 		if(def_lang)
 			new_character.default_language = def_lang
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 
@@ -147,10 +268,17 @@
 	return new_character			// incase its ever needed
 
 /mob/living/proc/soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(soulcatcher_spawn_prompt), args, /datum/om/prompt/choice/alert, message = "[prey.name] wants to join into your Soulcatcher.", title = "Soulcatcher Request", choices = list("Deny", "Allow"), timeout = 1 MINUTES)
-	if(isnull(_answer_a1))
+	open_request(src, /datum/prompt/choice/soulcatcher_admission, PROC_REF(soulcatcher_spawn_prompt_answered), answerer = src, subject = prey, req_time = req_time, question = "[prey.name] wants to join into your Soulcatcher.")
+
+/mob/living/proc/soulcatcher_spawn_prompt_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_a1 != "Allow")
+	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
+	soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
+	SStgui.update_uis(src)
+
+/mob/living/proc/soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
@@ -172,10 +300,17 @@
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
 
 /mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt(mob/observer/dead/prey, req_time)
-	var/_answer_a2 = rerun_ask(src, "a2", PROC_REF(nif_soulcatcher_spawn_prompt), args, /datum/om/prompt/choice/alert, message = "[prey.name] wants to join into your Soulcatcher.", title = "Soulcatcher Request", choices = list("Deny", "Allow"), timeout = 1 MINUTES)
-	if(isnull(_answer_a2))
+	open_request(src, /datum/prompt/choice/soulcatcher_admission, PROC_REF(nif_soulcatcher_spawn_prompt_answered), answerer = src, subject = prey, req_time = req_time, question = "[prey.name] wants to join into your Soulcatcher.")
+
+/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	if(_answer_a2 != "Allow")
+	var/datum/prompt/choice/soulcatcher_admission/ask = context.answer
+	nif_soulcatcher_spawn_prompt_apply(context.request.subject, ask.req_time, ask.value)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/nif_soulcatcher_spawn_prompt_apply(mob/observer/dead/prey, req_time, selected)
+	if(selected != "Allow")
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
@@ -201,3 +336,16 @@
 		prey.mind.active = TRUE
 
 		SC.catch_mob(prey) //This will result in the prey being deleted so...
+
+/datum/prompt/choice/soulcatcher_admission
+	title = "Soulcatcher Request"
+	choices = list("Deny", "Allow")
+	buttons = TRUE
+	timeout = 1 MINUTES
+	recheck_on_open = TRUE
+	var/req_time
+
+/datum/prompt/choice/soulcatcher_admission/recheck_extra()
+	var/mob/living/recipient = owner
+	var/mob/observer/dead/prey = subject
+	return !istype(recipient) || QDELETED(recipient) || !istype(prey) || QDELETED(prey) ? "gone" : null

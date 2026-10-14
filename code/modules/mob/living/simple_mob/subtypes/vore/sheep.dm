@@ -41,18 +41,19 @@
 	vore_active = 1
 	vore_icons = SA_ICON_LIVING
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/sheep)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/sheep/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/sheep/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a final few gulps, the sheep finishes swallowing you down into its hot, dark guts… The wool on the outside is doing you no favors with its insulation. The toasty organic flesh kneads and grinds around you with the stank of wet grass. The sheep seems to have already forgotten about you as it lets out a soft BAAH like belch and carries on doing nothing. "
 	B.own_emote_lists()
@@ -83,39 +84,29 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/proc/toggle_ri
 //If you just update icon_living it should still work with vore states and dying, you'll just need to make and label the sprites appropriately.
 //Make sure you un-comment the variables above too.
 
-//Add INTERACT_ITEM_PEACEFUL("Shear", PROC_REF(sheep_interaction_shear)) to the sheep's EXTEND_INTERACTIONS above when re-enabling.
-/mob/living/simple_mob/vore/sheep/proc/sheep_interaction_shear(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!istype(O, /obj/item/material/knife) && !O.has_tool_quality(TOOL_WIRECUTTER))
-		return FALSE
-	if(!harvestable_wool)
-		return FALSE
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
-	return TRUE
+//Add op("shear", item(/obj/item), stance(I_HELP), when(PROC_REF(sheep_shearable)), label("Shear"), wait(3 SECONDS), then(PROC_REF(shear_done))) to the sheep's CAPABILITIES block when re-enabling.
+/mob/living/simple_mob/vore/sheep/proc/sheep_shearable(datum/act/op/A)
+	var/obj/item/O = A.held
+	return harvestable_wool && (istype(O, /obj/item/material/knife) || O.has_tool_quality(TOOL_WIRECUTTER))
 
-/mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
+/mob/living/simple_mob/vore/sheep/proc/shear_done(datum/act/op/A)
 	if(!harvestable_wool)
 		return
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = O)
 	new /obj/item/stack/material/fur/wool(get_turf(user))
 	harvestable_wool = FALSE
-	update_icon()
 
 
-/datum/om/stage/life/type_post/simple_mob/vore/sheep
-	of = /mob/living/simple_mob/vore/sheep
+/mob/living/simple_mob/vore/sheep/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/sheep/perform(mob/living/simple_mob/vore/sheep/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/sheep/life_type_post(datum/seq_frame/life/F)
 	..()
 	if(!harvestable_wool)
 		wool_growth ++
 		return
 	if(wool_growth >= 200)
 		harvestable_wool = TRUE
-
-/mob/living/simple_mob/vore/sheep/update_icon()
-	if(harvestable_wool)
-		icon_living = "sheep"
-	else
-		icon_living = "sheep_bald"
-	return ..()
 */

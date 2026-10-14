@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "held_verb() gives an item a verb only while it is carried; the polychromic wallet uses it"

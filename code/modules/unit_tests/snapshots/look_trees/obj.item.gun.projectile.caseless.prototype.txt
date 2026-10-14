@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/caseless/prototype icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/caseless/prototype state: caseless-empty
+/obj/item/gun/projectile/caseless/prototype dir: 2
+/obj/item/gun/projectile/caseless/prototype overlay: icons/obj/gun.dmi:caseless-empty:8:#000000
+/obj/item/gun/projectile/caseless/prototype/loaded icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/caseless/prototype/loaded state: caseless
+/obj/item/gun/projectile/caseless/prototype/loaded dir: 2
+/obj/item/gun/projectile/caseless/prototype/loaded overlay: icons/obj/gun.dmi:caseless:8:#000000
+

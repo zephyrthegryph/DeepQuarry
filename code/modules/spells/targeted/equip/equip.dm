@@ -9,7 +9,10 @@
 
 	var/delete_old = 1 //if the item previously in the slot is deleted - otherwise, it's dropped
 
-/datum/spell/targeted/equip_item/cast(list/targets, mob/user = usr)
+CAPABILITIES(/datum/spell/targeted/equip_item)
+	owns_many(nameof(summoned_items))
+
+/datum/spell/targeted/equip_item/cast(list/targets, mob/user)
 	..()
 	for(var/mob/living/L in targets)
 		for(var/slot_id in equipped_summons)
@@ -20,15 +23,15 @@
 			if(old_item)
 				L.remove_from_mob(old_item)
 				if(delete_old)
-					qdel(old_item)
+					spent(old_item, user)
 				else
 					old_item.forceMove(L.loc)
 
 			if(duration)
-				own_add(src, nameof(summoned_items), new_item) // the spell made it and disposes of it when the spell runs out
+				rel_add(src, nameof(summoned_items), new_item) // the spell made it and disposes of it when the spell runs out
 
 	if(duration)
-		om_after(src, duration, PROC_REF(unsummon_items))
+		after(src, duration, PROC_REF(unsummon_items))
 
 /datum/spell/targeted/equip_item/proc/unsummon_items()
 	for(var/obj/item/to_remove in summoned_items)

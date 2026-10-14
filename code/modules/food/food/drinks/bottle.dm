@@ -6,7 +6,6 @@
 	amount_per_transfer_from_this = 10
 	volume = 100
 	item_state = "broken_beer" //Generic held-item sprite until unique ones are made.
-	force = 6
 	var/smash_duration = 5 //Directly relates to the 'weaken' duration. Lowered by armor (i.e. helmets)
 	var/isGlass = 1 //Whether the 'bottle' is made of glass or not so that milk cartons dont shatter when someone gets hit by it
 
@@ -21,15 +20,15 @@
 	. = ..()
 	if(isGlass)
 		unacidable = TRUE
-		drop_sound = SFX_ITEMS_DROP_BOTTLE
-		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
+		set_drop_sound(SFX_ITEMS_DROP_BOTTLE)
+		set_pickup_sound(SFX_ITEMS_PICKUP_BOTTLE)
 
 /obj/item/reagent_containers/food/drinks/bottle/ownership()
 	. = ..()
 	. += owns(nameof(rag), policy = OWN_SPILL)
 
 //when thrown on impact, bottles smash and spill their contents
-/obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)
+/obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, then = null, datum/then_owner = null, list/then_with = null)
 	. = ..()
 	if(istype(thrower) && thrower.combat_mode)
 		violent_throw = TRUE
@@ -68,7 +67,7 @@
 	var/obj/item/broken_bottle/B = new /obj/item/broken_bottle(newloc)
 	if(prob(33))
 		new/obj/item/material/shard(newloc) // Create a glass shard at the target's location!
-	B.icon_state = src.icon_state
+	B.set_icon_state(src.icon_state)
 
 	var/icon/I = new('icons/obj/drinks.dmi', src.icon_state)
 	I.Blend(B.broken_outline, ICON_OVERLAY, rand(5), 1)
@@ -83,90 +82,89 @@
 	play_sfx(src, SFX_SHATTER)
 	src.transfer_fingerprints_to(B)
 
-	qdel(src)
+	replace_with(src, B)
 	return B
 
-/obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// The dense things next to the actor the bottle can be smashed on.
+/obj/item/reagent_containers/food/drinks/bottle/proc/smash_choices(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/things_to_smash_on = list()
-	for(var/atom/A in range (1, user))
-		if(A.density && user.Adjacent(A) && !istype(A, /mob))
-			things_to_smash_on += A
+	for(var/atom/T in range (1, user))
+		if(T.density && user.Adjacent(T) && !istype(T, /mob))
+			things_to_smash_on += T
+	return things_to_smash_on
 
-	var/atom/choice = rerun_ask(user, "k104", PROC_REF(smash_bottle_effect), args, /datum/om/prompt/choice, message = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
-	if(isnull(choice))
-		return
+/obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/choice = A.step_value("target")
 	if(!choice)
-		return
+		return OP_DECLINE
 	if(!(choice.density && user.Adjacent(choice)))
 		to_chat(user, span_warning("You must stay close to your target! You moved away from \the [choice]"))
-		return
+		return OP_DECLINE
 
 	user.put_in_hands(src.smash(user.loc, choice))
 	act_message(user, src, others = span_danger("%U% smashed %T% on \the [choice]!"))
 	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
-	INTERACT_SELF(null, PROC_REF(bottle_self)), \
-	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
-	INTERACT_VERB("Smash Bottle", PROC_REF(smash_bottle_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Spin The Bottle", PROC_REF(spin_bottle_effect), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle)), \
-)
+// A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
+	configure(item_combat(force = 6))
+	without("open")
+	op("bottle_self", in_hand(), then(PROC_REF(bottle_self)))
+	op("bottle_item", item(/obj/item), then(PROC_REF(bottle_item)))
+	op("smash", menu(), label("Smash Bottle"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = computed(PROC_REF(smash_choices)), "timeout" = 0), step = "target"),
+		then(PROC_REF(smash_bottle_effect)))
+	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
 
-/// Requirement: the bottle lies on the floor (observers and the unconscious are ignored silently by the effect).
-/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle(mob/user, atom/target, obj/item/held)
-	if(isobserver(user) || user.stat)
-		return TRUE
-	if(!isturf(loc))
-		return "\The [src] needs to be on the floor to spin"
-	return TRUE
-
-/// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby. A decline falls to the drinks handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!rag && istype(W, /obj/item/reagent_containers/glass/rag))
 		insert_rag(W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(rag && istype(W, /obj/item/flame))
-		rag.attackby(W, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		rag.light_with(W, user)
+		return OP_PASS
+	return OP_DECLINE
 
-/// Old attack_self: pull the rag out, else open the bottle (the drinks self-use, forced past special_handling).
-/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: pull the rag out, else open the bottle (forced past special_handling).
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(rag)
 		remove_rag(user)
-	else
-		drinks_self(user, held, interaction, TRUE)
-	return TRUE
+	else if(!is_open_container())
+		open(user)
+	return OP_OK
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
-	if(own_set(src, nameof(src.rag), R, user = user))
+	if(move_into(src, nameof(src.rag), R, user))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
-		flags &= ~OPENCONTAINER
-		update_icon()
+		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
-	own_take(src, nameof(rag))
-	flags |= (initial(flags) & OPENCONTAINER)
-	update_icon()
+	rel_take(src, nameof(rag))
+	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, open_at_start)
 
 /obj/item/reagent_containers/food/drinks/bottle/open(mob/user)
 	if(rag) return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/drinks/bottle/appearance_overlays()
-	. = list()
-	underlays.Cut()
+/// The rag stuffed in the neck shows under the bottle, and burns while it is lit.
+/obj/item/reagent_containers/food/drinks/bottle/draw(datum/look/look)
+	..()
 	if(rag)
-		var/underlay_image = image(icon='icons/obj/drinks.dmi', icon_state=rag.rag_lit? "[rag_underlay]_lit" : rag_underlay)
-		underlays += underlay_image
-		set_light(rag.light_range, rag.light_power, rag.light_color)
+		look.watch(rag)
+		look.underlay(look_image('icons/obj/drinks.dmi', rag.rag_lit ? "[rag_underlay]_lit" : rag_underlay))
+		look.glow(glow_of(rag).range, glow_of(rag).power, glow_of(rag).color)
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
 /obj/item/reagent_containers/food/drinks/bottle/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	var/blocked = ..()
@@ -179,7 +177,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	// You are going to knock someone out for longer if they are not wearing a helmet.
 	var/weaken_duration = 0
 	if(blocked < 100)
-		weaken_duration = smash_duration + min(0, force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
+		weaken_duration = smash_duration + min(0, combat_of(src).force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
 
 	if(hit_zone == "head" && istype(target, /mob/living/carbon/))
 		act_message(user, src, others = span_danger("%U% smashes %T% over [target]'s head!"))
@@ -197,15 +195,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	var/obj/item/broken_bottle/B = smash(target.loc, target)
 	user.put_in_active_hand(B)
 
-/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isobserver(user) || user.stat)
-		return
+		return OP_DECLINE
+	if(!isturf(loc))
+		to_chat(user, span_warning("\The [src] needs to be on the floor to spin"))
+		return OP_DECLINE
 
 	var/spin_rotation = (rand(0,359))
 	act_message(user, src, MSG_SELF(span_notice("You spin %T%!")), MSG_OTHERS(span_warning("%U% spins %T%!")))
 	SpinAnimation(3,10)
-	om_after(src, 3 SECONDS, PROC_REF(finish_spin), spin_rotation)
+	after(src, 3 SECONDS, PROC_REF(finish_spin), with = list(spin_rotation))
+	return OP_OK
 
 //Keeping this here for now, I'll ask if I should keep it here.
 /obj/item/broken_bottle
@@ -213,17 +215,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	desc = "A bottle with a sharp broken bottom."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "broken_bottle"
-	force = 10
-	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
 	item_state = "beer"
 	flags = NOCONDUCT
-	attack_verb = list("stabbed", "slashed", "attacked")
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
+
+CAPABILITIES(/obj/item/broken_bottle)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 10, attack_verbs = list("stabbed", "slashed", "attacked"), sharp = TRUE, edge = FALSE))
 
 /obj/item/broken_bottle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	play_sfx(src, SFX_WEAPONS_BLADESLICE)
@@ -236,7 +237,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	center_of_mass_x = 16
 	center_of_mass_y = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/gin, null, list(REAGENT_ID_GIN = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/gin)
+	configure(reagents(add = list(REAGENT_ID_GIN = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/whiskey
 	name = "Uncle Git's Special Reserve"
@@ -245,7 +247,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/gin, null, list
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/whiskey, null, list(REAGENT_ID_WHISKEY = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/whiskey)
+	configure(reagents(add = list(REAGENT_ID_WHISKEY = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/specialwhiskey
 	name = REAGENT_SPECIALWHISKEY
@@ -254,7 +257,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/whiskey, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey, null, list(REAGENT_ID_SPECIALWHISKEY = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey)
+	configure(reagents(add = list(REAGENT_ID_SPECIALWHISKEY = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/vodka
 	name = "Tunguska Triple Distilled"
@@ -263,7 +267,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/specialwhiskey,
 	center_of_mass_x = 17
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/vodka, null, list(REAGENT_ID_VODKA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vodka)
+	configure(reagents(add = list(REAGENT_ID_VODKA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/tequila
 	name = "Caccavo Guaranteed Quality Tequilla"
@@ -272,7 +277,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/vodka, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/tequila, null, list(REAGENT_ID_TEQUILA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/tequila)
+	configure(reagents(add = list(REAGENT_ID_TEQUILA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/bottleofnothing
 	name = "Bottle of Nothing"
@@ -281,7 +287,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/tequila, null, 
 	center_of_mass_x = 17
 	center_of_mass_y = 5
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/bottleofnothing, null, list(REAGENT_ID_NOTHING = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/bottleofnothing)
+	configure(reagents(add = list(REAGENT_ID_NOTHING = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/patron
 	name = "Wrapp Artiste Patron"
@@ -290,7 +297,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/bottleofnothing
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/patron, null, list(REAGENT_ID_PATRON = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/patron)
+	configure(reagents(add = list(REAGENT_ID_PATRON = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/rum
 	name = "Captain Pete's Cuban Spiced Rum"
@@ -299,7 +307,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/patron, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/rum, null, list(REAGENT_ID_RUM = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/rum)
+	configure(reagents(add = list(REAGENT_ID_RUM = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/holywater
 	name = "Flask of Holy Water"
@@ -308,7 +317,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/rum, null, list
 	center_of_mass_x = 17
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/holywater, null, list(REAGENT_ID_HOLYWATER = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/holywater)
+	configure(reagents(add = list(REAGENT_ID_HOLYWATER = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/vermouth
 	name = "Goldeneye Vermouth"
@@ -317,7 +327,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/holywater, null
 	center_of_mass_x = 17
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/vermouth, null, list(REAGENT_ID_VERMOUTH = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/vermouth)
+	configure(reagents(add = list(REAGENT_ID_VERMOUTH = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/kahlua
 	name = "Robert Robust's Coffee Liqueur"
@@ -326,7 +337,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/vermouth, null,
 	center_of_mass_x = 17
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/kahlua, null, list(REAGENT_ID_KAHLUA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/kahlua)
+	configure(reagents(add = list(REAGENT_ID_KAHLUA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/goldschlager
 	name = "College Girl Goldschlager"
@@ -335,7 +347,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/kahlua, null, l
 	center_of_mass_x = 15
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/goldschlager, null, list(REAGENT_ID_GOLDSCHLAGER = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/goldschlager)
+	configure(reagents(add = list(REAGENT_ID_GOLDSCHLAGER = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/cognac
 	name = "Chateau De Baton Premium Cognac"
@@ -344,7 +357,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/goldschlager, n
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cognac, null, list(REAGENT_ID_COGNAC = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cognac)
+	configure(reagents(add = list(REAGENT_ID_COGNAC = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/absinthe
 	name = "Jailbreaker Verte"
@@ -353,7 +367,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cognac, null, l
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/absinthe, null, list(REAGENT_ID_ABSINTHE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/absinthe)
+	configure(reagents(add = list(REAGENT_ID_ABSINTHE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/melonliquor //MODIFIED ON 04/21/2021
 	name = "Emeraldine Melon Liqueur"
@@ -362,7 +377,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/absinthe, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/melonliquor, null, list(REAGENT_ID_MELONLIQUOR = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/melonliquor)
+	configure(reagents(add = list(REAGENT_ID_MELONLIQUOR = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/bluecuracao //MODIFIED ON 04/21/2021
 	name = "Miss Blue Curacao"
@@ -371,7 +387,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/melonliquor, nu
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/bluecuracao, null, list(REAGENT_ID_BLUECURACAO = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/bluecuracao)
+	configure(reagents(add = list(REAGENT_ID_BLUECURACAO = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/redeemersbrew
 	name = REAGENT_UNATHILIQUOR
@@ -380,7 +397,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/bluecuracao, nu
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/redeemersbrew, null, list(REAGENT_ID_UNATHILIQUOR = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/redeemersbrew)
+	configure(reagents(add = list(REAGENT_ID_UNATHILIQUOR = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/peppermintschnapps
 	name = "Dr. Bone's Peppermint Schnapps"
@@ -389,7 +407,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/redeemersbrew, 
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/peppermintschnapps, null, list(REAGENT_ID_SCHNAPPSPEP = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/peppermintschnapps)
+	configure(reagents(add = list(REAGENT_ID_SCHNAPPSPEP = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/peachschnapps
 	name = "Dr. Bone's Peach Schnapps"
@@ -398,7 +417,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/peppermintschna
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/peachschnapps, null, list(REAGENT_ID_SCHNAPPSPEA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/peachschnapps)
+	configure(reagents(add = list(REAGENT_ID_SCHNAPPSPEA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/lemonadeschnapps
 	name = "Dr. Bone's Lemonade Schnapps"
@@ -407,7 +427,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/peachschnapps, 
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/lemonadeschnapps, null, list(REAGENT_ID_SCHNAPPSLEM = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/lemonadeschnapps)
+	configure(reagents(add = list(REAGENT_ID_SCHNAPPSLEM = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/jager
 	name = "Schusskonig"
@@ -416,7 +437,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/lemonadeschnapp
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/jager, null, list(REAGENT_ID_JAGER = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/jager)
+	configure(reagents(add = list(REAGENT_ID_JAGER = 100)))
 
 /////////////////////////WINES/////////////////////////
 
@@ -427,7 +449,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/jager, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/wine, null, list(REAGENT_ID_REDWINE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/wine)
+	configure(reagents(add = list(REAGENT_ID_REDWINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/whitewine
 	name = "Doublebeard Bearded Special White"
@@ -436,7 +459,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/wine, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/whitewine, null, list(REAGENT_ID_WHITEWINE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/whitewine)
+	configure(reagents(add = list(REAGENT_ID_WHITEWINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/carnoth //anagram of 'ntcahors' where the bottle sprite originated from
 	name = "NanoTrasen Carnoth Red"
@@ -445,7 +469,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/whitewine, null
 	center_of_mass_x = 16
 	center_of_mass_y = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/carnoth, null, list(REAGENT_ID_CARNOTH = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/carnoth)
+	configure(reagents(add = list(REAGENT_ID_CARNOTH = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/pwine
 	name = "Warlock's Velvet"
@@ -454,7 +479,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/carnoth, null, 
 	center_of_mass_x = 16
 	center_of_mass_y = 4
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/pwine, null, list(REAGENT_ID_PWINE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/pwine)
+	configure(reagents(add = list(REAGENT_ID_PWINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/champagne
 	name = "Gilthari Luxury Champagne"
@@ -463,7 +489,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/pwine, null, li
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/champagne, null, list(REAGENT_ID_CHAMPAGNE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/champagne)
+	configure(reagents(add = list(REAGENT_ID_CHAMPAGNE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/sake
 	name = "Mono-No-Aware Luxury Sake"
@@ -472,7 +499,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/champagne, null
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/sake, null, list(REAGENT_ID_SAKE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/sake)
+	configure(reagents(add = list(REAGENT_ID_SAKE = 100)))
 
 //////////////////////////JUICES AND STUFF///////////////////////
 
@@ -483,7 +511,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/sake, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cola, null, list(REAGENT_ID_COLA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cola)
+	configure(reagents(add = list(REAGENT_ID_COLA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/decaf_cola
 	name = "\improper two-liter Space Cola Free"
@@ -492,7 +521,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cola, null, lis
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/decaf_cola, null, list(REAGENT_ID_DECAFCOLA = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/decaf_cola)
+	configure(reagents(add = list(REAGENT_ID_DECAFCOLA = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/space_up
 	name = "\improper two-liter Space-Up"
@@ -501,7 +531,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/decaf_cola, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/space_up, null, list(REAGENT_ID_SPACEUP = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/space_up)
+	configure(reagents(add = list(REAGENT_ID_SPACEUP = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/space_mountain_wind
 	name = "\improper two-liter Space Mountain Wind"
@@ -510,7 +541,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/space_up, null,
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/space_mountain_wind, null, list(REAGENT_ID_SPACEMOUNTAINWIND = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/space_mountain_wind)
+	configure(reagents(add = list(REAGENT_ID_SPACEMOUNTAINWIND = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/dr_gibb
 	name = "\improper two-liter Dr. Gibb"
@@ -519,7 +551,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/space_mountain_
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/dr_gibb, null, list(REAGENT_ID_DRGIBB = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/dr_gibb)
+	configure(reagents(add = list(REAGENT_ID_DRGIBB = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/orangejuice
 	name = "Orange Juice"
@@ -530,7 +563,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/dr_gibb, null, 
 	center_of_mass_y = 7
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/orangejuice, null, list(REAGENT_ID_ORANGEJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/orangejuice)
+	configure(reagents(add = list(REAGENT_ID_ORANGEJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/applejuice
 	name = REAGENT_APPLEJUICE
@@ -541,7 +575,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/orangejuice, nu
 	center_of_mass_y = 7
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/applejuice, null, list(REAGENT_ID_APPLEJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/applejuice)
+	configure(reagents(add = list(REAGENT_ID_APPLEJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/milk
 	name = "Large Milk Carton"
@@ -552,7 +587,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/applejuice, nul
 	center_of_mass_y = 9
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/milk, null, list(REAGENT_ID_MILK = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/milk)
+	configure(reagents(add = list(REAGENT_ID_MILK = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/cream
 	name = "Milk Cream"
@@ -563,7 +599,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/milk, null, lis
 	center_of_mass_y = 8
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cream, null, list(REAGENT_ID_CREAM = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/cream)
+	configure(reagents(add = list(REAGENT_ID_CREAM = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/tomatojuice
 	name = REAGENT_TOMATOJUICE
@@ -574,7 +611,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/cream, null, li
 	center_of_mass_y = 8
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/tomatojuice, null, list(REAGENT_ID_TOMATOJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/tomatojuice)
+	configure(reagents(add = list(REAGENT_ID_TOMATOJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/limejuice
 	name = REAGENT_LIMEJUICE
@@ -585,7 +623,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/tomatojuice, nu
 	center_of_mass_y = 8
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/limejuice, null, list(REAGENT_ID_LIMEJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/limejuice)
+	configure(reagents(add = list(REAGENT_ID_LIMEJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/lemonjuice
 	name = REAGENT_LEMONJUICE
@@ -596,7 +635,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/limejuice, null
 	center_of_mass_y = 8
 	isGlass = 0
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/lemonjuice, null, list(REAGENT_ID_LEMONJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/lemonjuice)
+	configure(reagents(add = list(REAGENT_ID_LEMONJUICE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/grenadine
 	name = "Briar Rose Grenadine Syrup"
@@ -605,7 +645,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/lemonjuice, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/grenadine, null, list(REAGENT_ID_GRENADINE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/grenadine)
+	configure(reagents(add = list(REAGENT_ID_GRENADINE = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/grapejuice
 	name = "Special Blend Grapejuice"
@@ -614,14 +655,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/grenadine, null
 	center_of_mass_x = 16
 	center_of_mass_y = 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/grapejuice, null, list(REAGENT_ID_GRAPEJUICE = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/grapejuice)
+	configure(reagents(add = list(REAGENT_ID_GRAPEJUICE = 100)))
 
 //////////////////////////SMALL BOTTLES///////////////////////
 
 /obj/item/reagent_containers/food/drinks/bottle/small
 	volume = 50
 	smash_duration = 1
-	flags = NONE //starts closed
+	open_at_start = FALSE //starts closed
 	rag_underlay = "rag_small"
 
 /obj/item/reagent_containers/food/drinks/bottle/small/beer
@@ -632,7 +674,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/grapejuice, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 12
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/beer, null, list(REAGENT_ID_BEER = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/beer)
+	configure(reagents(add = list(REAGENT_ID_BEER = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/beer/silverdragon
 	name = "Silver Dragon pilsner"
@@ -652,7 +695,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/beer, nul
 	description_fluff = "Lite-Speed is Spacer Beer's light brand, and despite being widely considered inferior in every regard, it's still pretty cheap. The lower alcohol content also appeals to some Skrell, for whom full-strength beer is too strong."
 	icon_state = "beerlite"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/litebeer, null, list(REAGENT_ID_LITEBEER = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/litebeer)
+	configure(reagents(add = list(REAGENT_ID_LITEBEER = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/cider
 	name = "Crisp's Cider"
@@ -661,7 +705,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/litebeer,
 	center_of_mass_x = 16
 	center_of_mass_y = 12
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/cider, null, list(REAGENT_ID_CIDER = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/cider)
+	configure(reagents(add = list(REAGENT_ID_CIDER = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/ale
 	name = "\improper Magm-Ale"
@@ -671,7 +716,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/cider, nu
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/ale, null, list(REAGENT_ID_ALE = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/ale)
+	configure(reagents(add = list(REAGENT_ID_ALE = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper
 	name = "Hushed Whisper IPA"
@@ -679,7 +725,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/ale, null
 	description_fluff = "Named for one of history's most infamous pirates, Qar’raqel, who ruled over Natuna before suffering a mysterious fate. This ale is brewed on Sif by a small company... Owned by Centauri Provisions."
 	icon_state = "alebottle2"
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper, null, list(REAGENT_ID_ALE = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper)
+	configure(reagents(add = list(REAGENT_ID_ALE = 50)))
 
 //////////////////////////SMALL BOTTLED SODA///////////////////////
 
@@ -690,7 +737,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/ale/hushe
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/cola, null, list(REAGENT_ID_COLA = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/cola)
+	configure(reagents(add = list(REAGENT_ID_COLA = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/space_up
 	name = REAGENT_SPACEUP
@@ -699,7 +747,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/cola, nul
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/space_up, null, list(REAGENT_ID_SPACEUP = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/space_up)
+	configure(reagents(add = list(REAGENT_ID_SPACEUP = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/space_mountain_wind
 	name = "Space Mountain Wind"
@@ -708,7 +757,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/space_up,
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/space_mountain_wind, null, list(REAGENT_ID_SPACEMOUNTAINWIND = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/space_mountain_wind)
+	configure(reagents(add = list(REAGENT_ID_SPACEMOUNTAINWIND = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb
 	name = REAGENT_DRGIBB
@@ -717,7 +767,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/space_mou
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb, null, list(REAGENT_ID_DRGIBB = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb)
+	configure(reagents(add = list(REAGENT_ID_DRGIBB = 50)))
 
 /obj/item/reagent_containers/food/drinks/bottle/snaps
 	name = REAGENT_SNAPS
@@ -727,7 +778,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/small/dr_gibb, 
 	center_of_mass_x = 17
 	center_of_mass_y= 3
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/snaps, null, list(REAGENT_ID_SNAPS = 100))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle/snaps)
+	configure(reagents(add = list(REAGENT_ID_SNAPS = 100)))
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/finish_spin(spin_rotation)
 	icon_rotation = spin_rotation

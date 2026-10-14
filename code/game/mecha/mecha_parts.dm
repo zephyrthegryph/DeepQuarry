@@ -9,25 +9,29 @@
 	icon = 'icons/mecha/mech_construct.dmi'
 	icon_state = "blank"
 	w_class = ITEMSIZE_HUGE
+	/// A chassis: its /datum/mecha_blueprint (code/game/mecha/mecha_construction_paths.dm).
+	var/blueprint
 
 
 /obj/item/mecha_parts/chassis
 	name="Mecha Chassis"
 	icon_state = "backbone"
-	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
-	var/construction_state = "p0"
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/mecha_parts/chassis)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/mecha_parts/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mecha_parts/chassis/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 /////////// Ripley
 
 /obj/item/mecha_parts/chassis/ripley
 	name = "Ripley Chassis"
-	construction_graph = /datum/construction_graph/mecha/ripley
+	blueprint = /datum/mecha_blueprint/ripley
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/ripley)
+	mecha_chassis(/datum/mecha_blueprint/ripley)
 
 /obj/item/mecha_parts/part/ripley_torso
 	name="Ripley Torso"
@@ -58,7 +62,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/gygax
 	name = "Gygax Chassis"
-	construction_graph = /datum/construction_graph/mecha/gygax
+	blueprint = /datum/mecha_blueprint/gygax
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/gygax)
+	mecha_chassis(/datum/mecha_blueprint/gygax)
 
 /obj/item/mecha_parts/part/gygax_torso
 	name="Gygax Torso"
@@ -96,13 +103,19 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/serenity
 	name = "Serenity Chassis"
-	construction_graph = /datum/construction_graph/mecha/serenity
+	blueprint = /datum/mecha_blueprint/serenity
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/serenity)
+	mecha_chassis(/datum/mecha_blueprint/serenity)
 
 //////////// Durand
 
 /obj/item/mecha_parts/chassis/durand
 	name = "Durand Chassis"
-	construction_graph = /datum/construction_graph/mecha/durand
+	blueprint = /datum/mecha_blueprint/durand
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/durand)
+	mecha_chassis(/datum/mecha_blueprint/durand)
 
 /obj/item/mecha_parts/part/durand_torso
 	name="Durand Torso"
@@ -136,7 +149,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/firefighter
 	name = "Firefighter Chassis"
-	construction_graph = /datum/construction_graph/mecha/firefighter
+	blueprint = /datum/mecha_blueprint/firefighter
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/firefighter)
+	mecha_chassis(/datum/mecha_blueprint/firefighter)
 /*
 /obj/item/mecha_parts/part/firefighter_torso
 	name="Ripley-on-Fire Torso"
@@ -163,7 +179,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/phazon
 	name = "Phazon Chassis"
-	construction_graph = /datum/construction_graph/mecha/phazon
+	blueprint = /datum/mecha_blueprint/phazon
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/phazon)
+	mecha_chassis(/datum/mecha_blueprint/phazon)
 
 /obj/item/mecha_parts/part/phazon_torso
 	name="Phazon Torso"
@@ -194,7 +213,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/odysseus
 	name = "Odysseus Chassis"
-	construction_graph = /datum/construction_graph/mecha/odysseus
+	blueprint = /datum/mecha_blueprint/odysseus
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/odysseus)
+	mecha_chassis(/datum/mecha_blueprint/odysseus)
 
 /obj/item/mecha_parts/part/odysseus_head
 	name="Odysseus Head"
@@ -235,7 +257,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 
 /obj/item/mecha_parts/chassis/janus
 	name = "Janus Chassis"
-	construction_graph = /datum/construction_graph/mecha/janus
+	blueprint = /datum/mecha_blueprint/janus
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/janus)
+	mecha_chassis(/datum/mecha_blueprint/janus)
 
 /obj/item/mecha_parts/part/janus_torso
 	name="Imperion Torso"
@@ -270,13 +295,12 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 /obj/item/mecha_parts/fighter/chassis
 	name="Fighter Chassis"
 	icon_state = "backbone"
-	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
-	var/construction_state = "p0"
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/mecha_parts/fighter/chassis)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/mecha_parts/fighter/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mecha_parts/fighter/chassis/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 
@@ -285,7 +309,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATE
 /obj/item/mecha_parts/fighter/chassis/pinnace
 	name = "\improper Pinnace Chassis"
 	icon_state = "pinnace_chassis"
-	construction_graph = /datum/construction_graph/mecha/fighter/pinnace
+	blueprint = /datum/mecha_blueprint/fighter/pinnace
+
+CAPABILITIES(/obj/item/mecha_parts/fighter/chassis/pinnace)
+	mecha_chassis(/datum/mecha_blueprint/fighter/pinnace)
 
 /obj/item/mecha_parts/fighter/part/pinnace_core
 	name="\improper Pinnace Core"
@@ -320,7 +347,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATE
 /obj/item/mecha_parts/fighter/chassis/baron
 	name = "\improper Baron Chassis"
 	icon_state = "baron_chassis"
-	construction_graph = /datum/construction_graph/mecha/fighter/baron
+	blueprint = /datum/mecha_blueprint/fighter/baron
+
+CAPABILITIES(/obj/item/mecha_parts/fighter/chassis/baron)
+	mecha_chassis(/datum/mecha_blueprint/fighter/baron)
 
 
 /obj/item/mecha_parts/fighter/part/baron_core
@@ -356,7 +386,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATE
 	name = "Scarab Chassis"
 	icon = 'icons/mecha/mech_construct_ch.dmi'
 	icon_state = "scarab_chassis"
-	construction_graph = /datum/construction_graph/mecha/scarab
+	blueprint = /datum/mecha_blueprint/scarab
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/scarab)
+	mecha_chassis(/datum/mecha_blueprint/scarab)
 
 /obj/item/mecha_parts/part/scarab_torso
 	name="Scarab Torso"
@@ -397,7 +430,10 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATE
 
 /obj/item/mecha_parts/chassis/hades
 	name = "Hades Chassis"
-	construction_graph = /datum/construction_graph/mecha/hades
+	blueprint = /datum/mecha_blueprint/hades
+
+CAPABILITIES(/obj/item/mecha_parts/chassis/hades)
+	mecha_chassis(/datum/mecha_blueprint/hades)
 
 /obj/item/mecha_parts/part/hades_torso
 	name="Hades Torso"
@@ -431,3 +467,6 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATE
 
 /obj/item/circuitboard/mecha/hades/main
 	name = "stange control circuit"
+
+/// A chassis: which of its blueprint's parts are on, one bit per part. Tracked: the chassis draws a "+o" overlay for each.
+/obj/item/mecha_parts/var/parts_mask = 0

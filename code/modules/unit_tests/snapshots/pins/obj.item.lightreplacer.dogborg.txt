@@ -1,0 +1,37 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Fill from box
++4 click: Click: Fill from box
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material/glass menu: Add glass
+human|/obj/item/stack/material/glass menu: Move To Top
+human|/obj/item/stack/material/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/glass click: Click: Add glass
+human|/obj/item/stack/material/cyborg/glass menu: Add glass
+human|/obj/item/stack/material/cyborg/glass menu: Move To Top
+human|/obj/item/stack/material/cyborg/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/cyborg/glass click: Click: Add glass
+@obj human|/obj/item/light
+-menu: Insert bulb (refused: There is a bulb in it already.)
+-click: Click: Insert bulb
++0 menu: Add light
++2 menu: Shatter
++4 click: Click: Add light
+keys: add_glass, add_light, choose, collect_item, colour, drag_buckle, emag.subvert, emag.use, fabricate, fill_from_box, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_colour, pick_up_item, replace, toggle_digestable

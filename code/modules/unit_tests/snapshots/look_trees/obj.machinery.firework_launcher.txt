@@ -1,0 +1,5 @@
+/obj/machinery/firework_launcher icon: icons/obj/machines/firework_launcher.dmi
+/obj/machinery/firework_launcher state: launcher01
+/obj/machinery/firework_launcher dir: 2
+/obj/machinery/firework_launcher overlay: icons/obj/machines/firework_launcher.dmi:launcher01:8:#000000
+

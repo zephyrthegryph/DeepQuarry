@@ -405,7 +405,7 @@
 /area/expoutpost/stationshuttle)
 "aba" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "exp_sling_station_door";
@@ -418,7 +418,7 @@
 /area/expoutpost/stationshuttle)
 "abb" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "exp_sling_hatch";

@@ -1,0 +1,11 @@
+/obj/refs/proc/setup()
+	own_set(src, "owned_a", new /obj/x)
+	own_add(x.y, nameof(owned_b), new /obj/x)
+	own_put(src, nameof(/obj/x::owned_c), 1)
+	own_transfer(src, nameof(src.owned_d), z)
+	own_move(src, "owned_e", z)
+	own_take(src, "not_owned_f")
+	own_clear(src, "not_owned_g")
+	own_set(
+		src, "multiline_h", 1)
+	// own_set(src, "commented_ref", x)

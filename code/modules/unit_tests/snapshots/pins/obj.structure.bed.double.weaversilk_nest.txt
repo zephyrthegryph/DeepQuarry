@@ -1,0 +1,61 @@
+human|none menu: Tear down
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none click: nothing
+robot|none menu: Tear down
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
+robot|none click: nothing
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Dismantle
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Dismantle
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Remove padding (refused: It has no padding to remove.)
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Remove padding
+@obj.structure human|/obj/item/multitool
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/weldingtool
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/stack/cable_coil
+-click: Click: Use
++1 menu: Pad (refused: You cannot pad that with that.)
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Pad (refused: You cannot pad that with that.)
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/card/id
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/stack
++2 menu: Tear down
++4 menu: Use
+@obj human|/obj/item/disk
++1 menu: Tear down
++4 menu: Use
+@obj human|/obj/item/toy/plushie
++1 menu: Tear down
++4 menu: Use
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tear_down, tuck_disk, tuck_plushie, unpad, weaversilk_nest_interaction_item

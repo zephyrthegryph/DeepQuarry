@@ -38,7 +38,6 @@
 	faction = FACTION_CARP
 	endurance = 25
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	vore_active = TRUE
@@ -49,7 +48,6 @@
 
 	melee_damage_lower = 7 // About 14 DPS.
 	melee_damage_upper = 7
-	base_attack_cooldown = 10 // One attack a second.
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("bitten")
@@ -84,13 +82,17 @@
 	var/static/list/carp_colors_rare = list(\
 	"silver" = "#fdfbf3", \
 	)
-	can_be_drop_prey = FALSE
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(attack_cooldown = 15))
+	swarming()
+
+// A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet
 /mob/living/simple_mob/animal/space/carp/Initialize(mapload)
 	. = ..()
 	carp_randomify(rarechance)
-	update_icons()
-	enable_swarming()
 
 // This is so carps can swarm
 /mob/living/simple_mob/animal/space/carp/CanPass(atom/movable/mover, turf/target)
@@ -151,7 +153,7 @@
 
 /mob/living/simple_mob/animal/space/carp/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "The toothy jaws of the space carp gnash down around your body while its throat opens up to suck you inside. The vicious attack is too swift for you to stop it. You're dragged down its short esophagus, then dumped into its muscular digestive system. Your body curls tight in the cramped confines of its slimy stomach; pushing aside a caustic mixture of other unrecognizable detritus. You realize the soupy chime consists of past explorers who went missing long ago. If you can't push your way back up to freedom, your fate will be the same."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -259,7 +261,7 @@
 
 /mob/living/simple_mob/animal/space/carp/large/huge/vorny/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You've been swallowed whole and alive by a massive white carp! The stomach around you is oppressively tight, squeezing and grinding wrinkled walls across your body, making it hard to make any movement at all. The chamber is flooded with fluids that completely overwhelm you."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -281,16 +283,16 @@
 	icon_living = "holo4"
 	icon_dead = "holo4"
 	alpha = 127
+	// Hologram lighting, lit from the start (applied when it materializes).
+	light_on = TRUE
 	icon_gib = null
 	meat_amount = 0
 	meat_type = null
 	vore_icons = FALSE
 
-	mob_class = MOB_CLASS_PHOTONIC // Xeno-taser won't work on this as its not a 'real' carp.
-
-/mob/living/simple_mob/animal/space/carp/holographic/Initialize(mapload)
-	set_light(2) // Hologram lighting.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
+	configure(light_glow(range = 2))
 
 // Presumably the holodeck emag code requires this.
 // Pass TRUE to make safe. Pass FALSE to make unsafe.
@@ -302,7 +304,7 @@
 // Called on death.
 /mob/living/simple_mob/animal/space/carp/holographic/proc/derez()
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
-	qdel(src)
+	spent(src)
 
 /mob/living/simple_mob/animal/space/carp/holographic/gib()
 	derez() // Holograms can't gib.
@@ -361,16 +363,16 @@
 		kaboom()
 	return ..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/animal/space/carp/puffer, DAMAGE_EXPLOSION, PROC_REF(blast_kaboom)) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_kaboom)))) // explode? YOU BETTER BELIEVE THAT'S AN EXPLODE
 
-/mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/damage_packet/packet)
+/mob/living/simple_mob/animal/space/carp/puffer/proc/blast_kaboom(datum/act/A)
 	kaboom()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 
 // === merged from carp_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/space/carp
-	base_attack_cooldown = 15
 
 
 // === merged from carp_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -382,17 +384,10 @@ DAMAGE_REACTION(/mob/living/simple_mob/animal/space/carp/puffer, DAMAGE_EXPLOSIO
 
 	var/body_color
 
-/mob/living/simple_mob/animal/space/carp/station/Initialize(mapload)
-	.=..()
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/station)
+	rolls(nameof(body_color), pick_one(list("green", "red", "orange", "yellow", "blue")))
+	rolls(nameof(color), PROC_REF(roll_station_colour), from = list(nameof(body_color)))
 
-	body_color = pick(list("green","red","orange","yellow","blue"))
-	if(body_color == "green")
-		color = "#660066"
-	if(body_color == "red")
-		color = "#FF0000"
-	if(body_color == "orange")
-		color = "#FF6600"
-	if(body_color == "yellow")
-		color = "#FFFF00"
-	if(body_color == "blue")
-		color = "#0099CC"
+/// Its colour follows its body colour (rolls()).
+/mob/living/simple_mob/animal/space/carp/station/proc/roll_station_colour(datum/roller/R)
+	return list("green" = "#660066", "red" = "#FF0000", "orange" = "#FF6600", "yellow" = "#FFFF00", "blue" = "#0099CC")[body_color]

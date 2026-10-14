@@ -16,8 +16,6 @@
  * * round_value - whether the inputted number is rounded down into an integer.
  */
 /proc/tgui_input_number(mob/user, message, title = "Number Input", default = 0, max_value = INFINITY, min_value = 0, timeout = 0, round_value = TRUE, ui_state = GLOB.tgui_always_state)
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user
@@ -37,7 +35,7 @@
 	number_input.wait()
 	if (number_input)
 		. = number_input.entry
-		qdel(number_input)
+		spent(number_input, user)
 
 /**
  * # tgui_input_number
@@ -80,7 +78,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 	/// Checks for empty numbers - bank accounts, etc.
 	if(max_value == 0)
 		src.min_value = 0
@@ -98,9 +96,12 @@
  */
 /datum/tgui_input_number/proc/wait()
 	while (!entry && !closed && !QDELETED(src))
-		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
+		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_input_number, "NumberInputModal")
+CAPABILITIES(/datum/tgui_input_number)
+	interface("NumberInputModal")
+	op("submit", ui_act("submit", arg("entry", num())), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_input_number/tgui_close(mob/user)
 	. = ..()
@@ -121,31 +122,28 @@ DECLARE_UI(/datum/tgui_input_number, "NumberInputModal")
 	data["round_value"] = round_value
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_input_number, "merge:ui_data_datum_tgui_input_number{timeout:num}")
-
-/// The computed part of /datum/tgui_input_number's window data (declared on its UI_DATA row).
-/datum/tgui_input_number/proc/ui_data_datum_tgui_input_number(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/tgui_input_number's window data.
+/datum/tgui_input_number/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_input_number, "submit", ui_act_submit, UI_ARG_NUM("entry"))
-UI_ACT_PROC(/datum/tgui_input_number, ui_act_submit)
-	if(!isnum(params["entry"]))
-		CRASH("A non number was input into tgui input number by [ui.user]")
-	var/choice = round_value ? round(params["entry"]) : params["entry"]
+/datum/tgui_input_number/proc/ui_act_submit(datum/act/op/A, entry)
+	var/mob/user = A.actor
+	if(!isnum(entry))
+		CRASH("A non number was input into tgui input number by [user]")
+	var/choice = round_value ? round(entry) : entry
 	if(choice > max_value)
-		CRASH("A number greater than the max value was input into tgui input number by [ui.user]")
+		CRASH("A number greater than the max value was input into tgui input number by [user]")
 	if(choice < min_value)
-		CRASH("A number less than the min value was input into tgui input number by [ui.user]")
+		CRASH("A number less than the min value was input into tgui input number by [user]")
 	set_entry(choice)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_number, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_input_number, ui_act_cancel)
+/datum/tgui_input_number/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE

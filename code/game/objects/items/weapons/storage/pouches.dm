@@ -5,9 +5,6 @@
 	name = "storage pouch (medium)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access."
 	icon = 'icons/inventory/pockets/item.dmi'
-	slot_flags = SLOT_POCKET
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 	icon_state = "medium_generic"
 	max_storage_space = INVENTORY_POUCH_SPACE
@@ -18,7 +15,15 @@
 	/// Set while a delayed move is retried after its delay.
 	var/tmp/stall_passed = FALSE
 
-TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+// A slow pouch takes what is put into it after a wait: the wait is this op's (a progress bar, and walking away cancels it), run by stall_insertion().
+CAPABILITIES(/obj/item/storage/pouch)
+	configure(item_worn(slots = SLOT_POCKET))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	configure(storage(max_size = ITEMSIZE_NORMAL))
+	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert)))
+	// A slow pouch gives an item up after a wait too; the item and the place it goes to come from the storage hook that started it.
+	op("remove_delayed", ai(), takes("item", "new_location"), wait(PROC_REF(remove_wait)), then(PROC_REF(stalled_remove)))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -27,13 +32,18 @@ TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMA
 
 	if(!insert_delay || stall_passed)
 		return TRUE //Now we're allowed to put the item in the pouch
-	om_task_timed(user, insert_delay, target = src, receiver = src, on_done = PROC_REF(stalled_insert), done_args = list(W, user))
+	perform_op(user, src, "insert_delayed", W, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return FALSE // the delay runs first; stalled_insert() retries the move
 
-/obj/item/storage/pouch/proc/stalled_insert(obj/item/W, mob/user)
+/// How long the delayed insertion waits.
+/obj/item/storage/pouch/proc/insert_wait(datum/act/op/A)
+	return insert_delay
+
+/obj/item/storage/pouch/proc/stalled_insert(datum/act/op/A)
 	stall_passed = TRUE
-	insert_item(W, user)
+	insert_item(A.held, A.actor)
 	stall_passed = FALSE
+	return OP_OK
 
 /obj/item/storage/pouch/stall_removal(obj/item/W, mob/user, atom/new_location)
 	// No delay if you have the pouch in your hands
@@ -41,7 +51,7 @@ TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMA
 		return TRUE // Skip delay
 
 	if(remove_delay && !stall_passed)
-		om_task_start(/datum/om/task/timed/pouch_stalled_remove, user, src, receiver = src, duration = remove_delay, W = W, new_location = new_location)
+		perform_op(user, src, "remove_delayed", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item" = W, "new_location" = new_location))
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -49,18 +59,18 @@ TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMA
 
 	return FALSE //Item was somehow already removed
 
-/datum/om/task/timed/pouch_stalled_remove
-	complete_proc = /obj/item/storage/pouch/proc/stalled_remove
-	var/obj/item/W
-	var/atom/new_location
+/// How long the delayed removal waits.
+/obj/item/storage/pouch/proc/remove_wait(datum/act/op/A)
+	return remove_delay
 
-/obj/item/storage/pouch/proc/stalled_remove(datum/om/task/timed/pouch_stalled_remove/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
-	var/atom/new_location = task.new_location
+/obj/item/storage/pouch/proc/stalled_remove(datum/act/op/A)
+	var/obj/item/W = A.arg("item")
+	if(QDELETED(W))
+		return OP_REFUSED
 	stall_passed = TRUE
-	remove_from_storage(W, new_location, user)
+	remove_from_storage(W, A.arg("new_location"), A.actor)
 	stall_passed = FALSE
+	return OP_OK
 
 /obj/item/storage/pouch/pocket_description(mob/haver, mob/examiner)
 	return "[src]"
@@ -85,7 +95,14 @@ TYPE_TABLE(/obj/item/storage/pouch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMA
 	icon_state = "ammo"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-TYPE_TABLE(/obj/item/storage/pouch/ammo, hold_spec, list(HOLD_ONLY(list(/obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/pouch/ammo)
+	configure(storage(accepts = list(
+		/obj/item/ammo_magazine,
+		/obj/item/ammo_casing,
+		/obj/item/cell/device,
+		/obj/item/grenade,
+		/obj/item/plastique)))
 
 /obj/item/storage/pouch/eng_tool
 	name = "storage pouch (tools)"
@@ -93,38 +110,39 @@ TYPE_TABLE(/obj/item/storage/pouch/ammo, hold_spec, list(HOLD_ONLY(list(/obj/ite
 	icon_state = "engineering_tool"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-TYPE_TABLE(/obj/item/storage/pouch/eng_tool, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/weldingtool, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/tool/transforming/jawsoflife, \
-		/obj/item/multitool, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/t_scanner, \
-		/obj/item/analyzer, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/gloves, \
-		/obj/item/pda, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/radio/headset, \
-		/obj/item/robotanalyzer, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/tape_roll, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/shovel/spade, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/geiger \
-	) /* make it the same as the tool-belt why was it not like this to start with wtf */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/pouch/eng_tool)
+	configure(storage(accepts = list(
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/weldingtool,
+		/obj/item/tool/wirecutters,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/tool/transforming/jawsoflife,
+		/obj/item/multitool,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/t_scanner,
+		/obj/item/analyzer,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/gloves,
+		/obj/item/pda,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/radio/headset,
+		/obj/item/robotanalyzer,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/extinguisher/mini,
+		/obj/item/tape_roll,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/shovel/spade,
+		/obj/item/stack/nanopaste,
+		/obj/item/geiger)))
 
 /obj/item/storage/pouch/eng_supply
 	name = "storage pouch (supplies)"
@@ -132,17 +150,18 @@ TYPE_TABLE(/obj/item/storage/pouch/eng_tool, hold_spec, list(HOLD_ONLY(list( \
 	icon_state = "engineering_supply"
 	max_storage_space = INVENTORY_POUCH_SPACE
 
-TYPE_TABLE(/obj/item/storage/pouch/eng_supply, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/taperoll, \
-		/obj/item/extinguisher, \
-		/obj/item/tape_roll, \
-		/obj/item/stack/material/steel, \
-		/obj/item/stack/material/glass, \
-		/obj/item/lightreplacer, \
-		/obj/item/cell \
-	) /* makes it actually useful lmao, adds sheets and cells as well as light replacers and lets you take any extinguisher that fits */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/pouch/eng_supply)
+	configure(storage(accepts = list(
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/taperoll,
+		/obj/item/extinguisher,
+		/obj/item/tape_roll,
+		/obj/item/stack/material/steel,
+		/obj/item/stack/material/glass,
+		/obj/item/lightreplacer,
+		/obj/item/cell)))
 
 /obj/item/storage/pouch/eng_parts
 	name = "storage pouch (parts)"
@@ -155,11 +174,12 @@ TYPE_TABLE(/obj/item/storage/pouch/eng_supply, hold_spec, list(HOLD_ONLY(list( \
 	allow_quick_empty = TRUE
 	collection_mode = TRUE
 
-TYPE_TABLE(/obj/item/storage/pouch/eng_parts, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/stock_parts, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/circuitboard \
-	)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/pouch/eng_parts)
+	configure(storage(accepts = list(
+		/obj/item/stock_parts,
+		/obj/item/stack/cable_coil,
+		/obj/item/circuitboard)))
 
 /obj/item/storage/pouch/eng_parts/borg
 	name = "parts storage unit"
@@ -174,32 +194,33 @@ TYPE_TABLE(/obj/item/storage/pouch/eng_parts, hold_spec, list(HOLD_ONLY(list( \
 	max_storage_space = ITEMSIZE_COST_SMALL*3 // makes it slightly smaller since its a lot of stuff with pocket access
 	remove_delay = 5 // .5 second delay, get the medical things faster because there is no reason to use this otherwise. still gotta stop moving to take things out.
 
-TYPE_TABLE(/obj/item/storage/pouch/medical, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/healthanalyzer, \
-		/obj/item/dnainjector, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/storage/pill_bottle, \
-		/obj/item/stack/medical, \
-		/obj/item/reagent_containers/hypospray, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/syringe_cartridge, \
-		/obj/item/clothing/gloves/sterile, \
-		/obj/item/sleevemate, \
-		/obj/item/bodybag, \
-		/obj/item/clothing/mask/surgical, \
-		/obj/item/soap, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/taperoll/medical, \
-		/obj/item/storage/box/freezer, \
-		/obj/item/clothing/mask/chewable/candy/lolli, \
-		/obj/item/extrapolator, \
-		/obj/item/gene_scanner, \
-	) /* added a bunch of misc medical stuff */), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/pouch/medical)
+	configure(storage(accepts = list(
+		/obj/item/healthanalyzer,
+		/obj/item/dnainjector,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/pill,
+		/obj/item/reagent_containers/syringe,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/storage/pill_bottle,
+		/obj/item/stack/medical,
+		/obj/item/reagent_containers/hypospray,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/syringe_cartridge,
+		/obj/item/clothing/gloves/sterile,
+		/obj/item/sleevemate,
+		/obj/item/bodybag,
+		/obj/item/clothing/mask/surgical,
+		/obj/item/soap,
+		/obj/item/stack/nanopaste,
+		/obj/item/taperoll/medical,
+		/obj/item/storage/box/freezer,
+		/obj/item/clothing/mask/chewable/candy/lolli,
+		/obj/item/extrapolator,
+		/obj/item/gene_scanner)))
 
 /obj/item/storage/pouch/flares
 	name = "storage pouch (flares)"
@@ -208,18 +229,18 @@ TYPE_TABLE(/obj/item/storage/pouch/medical, hold_spec, list(HOLD_ONLY(list( \
 	storage_slots = 14 // Full box of flares.
 	remove_delay = 0 // Quick access to light sources.
 
-TYPE_TABLE(/obj/item/storage/pouch/flares, hold_spec, list(HOLD_ONLY(list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/pouch/flares)
+	configure(storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)))
+
 /obj/item/storage/pouch/flares/full_flare
 	starts_with = list(/obj/item/flashlight/flare = 14) // Full box of flares.
 /obj/item/storage/pouch/flares/full_glow
 	starts_with = list(/obj/item/flashlight/glowstick = 14) // Full box of glowsticks.
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/flares/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "flare_[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
-	. += ..()
+/obj/item/storage/pouch/flares/draw(datum/look/look)
+	. = ..()
+	if(held_count())
+		look.overlay("flare_[held_count()]")
 
 /obj/item/storage/pouch/holster
 	name = "storage pouch (holster)"
@@ -228,18 +249,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, TYPE_PROC_REF(/atom, app
 	storage_slots = 1
 	remove_delay = 0
 
-TYPE_TABLE(/obj/item/storage/pouch/holster, hold_spec, list(HOLD_ONLY(list(/obj/item/gun)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/pouch/holster)
+	configure(storage(accepts = list(/obj/item/gun)))
+
 /obj/item/storage/pouch/holster/full_stunrevolver
 	starts_with = list(/obj/item/gun/energy/stunrevolver)
 /obj/item/storage/pouch/holster/full_taser
 	starts_with = list(/obj/item/gun/energy/taser)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/holster/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "pistol_layer"
-	. += ..()
+/obj/item/storage/pouch/holster/draw(datum/look/look)
+	. = ..()
+	look.overlay("pistol_layer", when = held_count())
 
 /obj/item/storage/pouch/baton
 	name = "storage pouch (melee)"
@@ -248,16 +268,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, TYPE_PROC_REF(/atom, ap
 	storage_slots = 1
 	remove_delay = 0
 
-TYPE_TABLE(/obj/item/storage/pouch/baton, hold_spec, list(HOLD_ONLY(list(/obj/item/melee, /obj/item/material, /obj/item/tool/wrench)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/pouch/baton)
+	configure(storage(accepts = list(
+		/obj/item/melee,
+		/obj/item/material,
+		/obj/item/tool/wrench)))
+
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/baton/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "baton_layer"
-	. += ..()
+/obj/item/storage/pouch/baton/draw(datum/look/look)
+	. = ..()
+	look.overlay("baton_layer", when = held_count())
 
 /obj/item/storage/pouch/holding
 	name = "storage pouch of holding"

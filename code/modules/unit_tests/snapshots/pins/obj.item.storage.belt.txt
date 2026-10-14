@@ -1,0 +1,36 @@
+@obj.item.storage human|none
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage robot|none
++4 menu: Switch Belt Layer (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++1 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/tool/screwdriver
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/tool/crowbar
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/tool/wrench
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/tool/wirecutters
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/multitool
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/weldingtool
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/stack/cable_coil
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/stack/material/steel
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/card/id
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/kit
++4 menu: Switch Belt Layer (refused: You can't do that.)
+@obj.item.storage human|/obj/item/storage
+-click: Click: Put in
++4 menu: Switch Belt Layer (refused: You can't do that.)
++6 click: Click: Collect
+@obj.item.storage human|/obj/item
++3 menu: Switch Belt Layer (refused: You can't do that.)
+@obj human|/obj/item/lightreplacer
++3 menu: Switch Belt Layer (refused: You can't do that.)
+keys: collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, layer, move_to_top, pick_up_item, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

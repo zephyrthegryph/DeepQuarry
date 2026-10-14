@@ -25,13 +25,21 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	// Pixel stuff centers Narsie.
 	pixel_x = -236
 	pixel_y = -256
-	light_range = 1
-	light_color = "#3e0000"
 
 	current_size = 12
 	consume_range = 12 // How many tiles out do we eat.
 	var/announce=1
 	var/cause_hell = 1
+
+CAPABILITIES(/obj/singularity/narsie/large)
+	configure(light_glow(range = 1, color = "#3e0000"))
+	when(nameof(calls_evac), after_init(10 SECONDS, then(PROC_REF(call_evac_after_init))))
+
+/// The first Nar-Sie to rise calls the evacuation (after_init()).
+/obj/singularity/narsie/large/var/calls_evac = FALSE
+
+/obj/singularity/narsie/large/proc/call_evac_after_init(datum/act/A)
+	narsie_call_evac()
 
 /obj/singularity/narsie/large/Initialize(mapload)
 	. = ..()
@@ -46,9 +54,10 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		om_after(src, 10 SECONDS, /proc/narsie_call_evac)
+		calls_evac = TRUE // the first Nar-Sie calls the evacuation ten seconds on (after_init())
 
-/obj/singularity/narsie/periodic_step()
+/// Nar-Sie's step (the singularity's every()): it eats, hunts a cultist and moves.
+/obj/singularity/narsie/singularity_frame(datum/act/timer/A)
 	eat()
 
 	if (!target || prob(5))
@@ -66,7 +75,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/mezzer()
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(M.stat == CONSCIOUS)
-			if(om_has(M, EFFECT_GODMODE))
+			if(in_godmode(M))
 				return 0	// Cancelled by a component
 			if(!iscultist(M))
 				to_chat(M, span_danger("You feel your sanity crumble away in an instant as you gaze upon [src.name]..."))
@@ -77,14 +86,17 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		qdel(A)
+		consumed(A, src)
 
-/obj/singularity/narsie/large/Bumped(atom/A)
-	if(!cause_hell) return
+/// What runs into the large one is walled in or broken (with hell coming), not consumed.
+/obj/singularity/narsie/large/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
+	if(!cause_hell || !A) return
 	if(isturf(A))
 		narsiewall(A)
 	else if(istype(A, /obj/structure/cult))
-		qdel(A)
+		consumed(A, src)
 
 /obj/singularity/narsie/move(force_move = 0)
 	if(!move_self)
@@ -99,7 +111,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		movement_dir = get_dir(src,target)
 
 	step(src, movement_dir)
-	om_after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), movement_dir)
+	drift(movement_dir, 1, 0.1 SECONDS)
 	return 1
 
 /obj/singularity/narsie/large/move(force_move = 0)
@@ -114,7 +126,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(target && prob(60))
 		movement_dir = get_dir(src,target)
 	large_step(movement_dir)
-	om_after(src, 1 SECOND, PROC_REF(large_step), movement_dir)
+	after(src, 1 SECOND, PROC_REF(large_step), with = list(movement_dir))
 	return 1
 
 /obj/singularity/narsie/large/proc/large_step(movement_dir)
@@ -129,16 +141,16 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		if(T.icon_state != "cult-narsie")
 			T.desc = "something that goes beyond your understanding went this way."
 			T.icon = 'icons/turf/flooring/cult.dmi'
-			T.icon_state = "cult-narsie"
-			T.set_light(1)
+			T.set_icon_state("cult-narsie")
+			set_glow(T, GLOW(1, null, null))
 
 /obj/singularity/narsie/proc/narsiewall(turf/T)
 	T.desc = "An opening has been made on that wall, but who can say if what you seek truly lies on the other side?"
 	T.icon = 'icons/turf/walls.dmi'
-	T.icon_state = "cult-narsie"
-	T.opacity = 0
+	T.set_icon_state("cult-narsie")
+	T.set_opacity(0)
 	T.set_density(FALSE)
-	set_light(1)
+	set_glow(src, GLOW(1, null, null))
 
 /obj/singularity/narsie/large/consume(const/atom/A) //Has its own consume proc because it doesn't need energy and I don't want BoHs to explode it. --NEO
 //NEW BEHAVIOUR
@@ -154,7 +166,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/) && (get_dist(A, src) <= 7))
 		var/mob/M = A
 
-		if(om_has(M, EFFECT_GODMODE))
+		if(in_godmode(M))
 			return 0	// Cancelled by a component
 
 		M.cultify()
@@ -186,16 +198,16 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/living/))
 		var/mob/living/C2 = A
 
-		if(om_has(C2, EFFECT_GODMODE))
+		if(in_godmode(C2))
 			return 0	// Cancelled by a component
 
 		C2.dust() // Changed from gib(), just for less lag.
 
 	else if (istype(A, /obj/))
-		qdel(A)
+		spent(A)
 
 		if (A)
-			qdel(A)
+			spent(A)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
@@ -218,16 +230,16 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if (istype(A, /mob/living/))
 		var/mob/living/C2 = A
 
-		if(om_has(C2, EFFECT_GODMODE))
+		if(in_godmode(C2))
 			return 0	// Cancelled by a component
 
 		C2.dust() // Changed from gib(), just for less lag.
 
 	else if (istype(A, /obj/))
-		qdel(A)
+		consumed(A, src)
 
 		if (A)
-			qdel(A)
+			consumed(A, src)
 	else if (isturf(A))
 		var/dist = get_dist(A, src)
 
@@ -304,17 +316,17 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/on_capture()
 	chained = 1
 	move_self = 0
-	icon_state ="narsie-small-chains"
+	set_icon_state("narsie-small-chains")
 
 /obj/singularity/narsie/on_release()
 	chained = 0
 	move_self = 1
-	icon_state ="narsie-small"
+	set_icon_state("narsie-small")
 
 /obj/singularity/narsie/large/on_capture()
 	chained = 1
 	move_self = 0
-	icon_state ="narsie-chains"
+	set_icon_state("narsie-chains")
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))//removing the client image of nar-sie while it is chained
 		if(M.client)
 			M.see_narsie(src)
@@ -322,7 +334,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 /obj/singularity/narsie/large/on_release()
 	chained = 0
 	move_self = 1
-	icon_state ="narsie"
+	set_icon_state("narsie")
 
 /obj/singularity/narsie/cultify()
 	return
@@ -339,10 +351,10 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 /obj/singularity/narsie/proc/narsie_spawn_animation()
 	icon = 'icons/obj/narsie_spawn_anim.dmi'
-	dir = SOUTH
+	set_dir(SOUTH)
 	move_self = 0
 	flick("narsie_spawn_anim",src)
-	om_after(src, 1.1 SECONDS, PROC_REF(after_animation))
+	after(src, 1.1 SECONDS, PROC_REF(after_animation))
 
 /obj/singularity/narsie/proc/after_animation()
 	move_self = 1
@@ -350,6 +362,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 /// Nar-Sie has come: the evacuation shuttle is called and cannot be recalled.
 /proc/narsie_call_evac()
-	if(GLOB.emergency_shuttle_service)
-		GLOB.emergency_shuttle_service.call_evac()
-		GLOB.emergency_shuttle_service.launch_time = 0	// Cannot recall
+	if(SSemergency_shuttle)
+		SSemergency_shuttle.call_evac()
+		SSemergency_shuttle.launch_time = 0	// Cannot recall

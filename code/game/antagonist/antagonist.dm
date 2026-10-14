@@ -72,7 +72,7 @@
 	var/allow_latejoin = 0					//Determines whether or not the game mode will allow for the template to spawn try_latespawn
 
 	// ID card stuff.
-	var/default_access = list()
+	var/list/default_access
 	var/id_type = /obj/item/card/id
 
 	var/antag_text = "You are an antagonist! Within the rules, \
@@ -84,6 +84,13 @@
 
 	var/can_hear_aooc = TRUE		// If FALSE, the antag can neither speak nor hear AOOC. If TRUE, they can at least hear it.
 	var/can_speak_aooc = TRUE		// If TRUE, the antag can freely spean in AOOC.
+
+// The antagonist templates are built once by SSantag and live for the round: nothing deletes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/antagonist)
+
+CAPABILITIES(/datum/antagonist)
+	owns_many(nameof(global_objectives), /datum/objective)
+	ref_one(nameof(leader))
 
 /datum/antagonist/New()
 	..()
@@ -107,7 +114,7 @@
 
 	// Prune restricted status. Broke it up for readability.
 	// Note that this is done before jobs are handed out.
-	candidates = SSticker.mode.get_players_for_role(role_type, id, ghosts_only)
+	candidates = ticker_mode().get_players_for_role(role_type, id, ghosts_only)
 	for(var/datum/mind/player in candidates)
 		if(ghosts_only && !isobserver(player.current))
 			candidates -= player
@@ -124,7 +131,7 @@
 		else if(!can_become_antag(player))
 			candidates -= player
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They are blacklisted for this role! They have been removed from the draft.")
-		else if(GLOB.antag_service.player_is_antag(player))
+		else if(SSantag.player_is_antag(player))
 			candidates -= player
 			log_game("[key_name(player)] is not eligible to become a [role_text]: They are already an antagonist! They have been removed from the draft.")
 
@@ -143,10 +150,10 @@
 		if(players && players.len)
 			player = pick(players)
 	if(!istype(player))
-		message_admins("[uppertext(SSticker.mode.name)]: Failed to find a candidate for [role_text].")
+		message_admins("[uppertext(ticker_mode().name)]: Failed to find a candidate for [role_text].")
 		return 0
 	to_chat(player.current, span_danger(span_italics("You have been selected this round as an antagonist!")))
-	message_admins("[uppertext(SSticker.mode.name)]: Selected [player] as a [role_text].")
+	message_admins("[uppertext(ticker_mode().name)]: Selected [player] as a [role_text].")
 	if(isobserver(player.current))
 		create_default(player.current)
 	else

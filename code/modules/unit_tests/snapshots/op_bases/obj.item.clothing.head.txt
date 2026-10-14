@@ -1,0 +1,12 @@
+ai|none menu: Equip (refused: not possible right now)
+ai|none menu: Wear hat
+ai|none click: Click: Wear hat
+robot|none menu: Alternate use
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Pick up hat
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Use
+robot|none menu: Wear hat
+robot|none click: Click: Pick up hat

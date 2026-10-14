@@ -1,6 +1,6 @@
 /proc/wormhole_event(set_duration = 5 MINUTES, wormhole_duration_modifier = 1)
 	// Deferred: collecting the turfs walks the world. The global owner: a round event.
-	om_after(null, 0, /proc/wormhole_event_start, set_duration, wormhole_duration_modifier)
+	after(null, 0, GLOBAL_PROC_REF(wormhole_event_start), with = list(set_duration, wormhole_duration_modifier))
 
 /proc/wormhole_event_start(set_duration, wormhole_duration_modifier)
 // Only allowing these to go to the station
@@ -19,11 +19,11 @@
 				continue
 	// Chance to end up in a belly. Fun (:
 	for(var/mob/living/mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(mob.can_be_drop_pred && isfloor(mob.loc))
+		if(mob.vore_prefs.can_be_drop_pred && isfloor(mob.loc))
 			var/turf/simulated/floor/T = get_turf(mob.loc)
 			if(!T.block_tele)
-				if(mob.vore_selected)
-					exits += mob.vore_selected
+				if(vore_selected_of(mob))
+					exits += vore_selected_of(mob)
 				else if(length(mob.vore_organs))
 					exits += pick(mob.vore_organs)
 
@@ -69,7 +69,7 @@
 			var/atom/exit = pick(exits)
 			if( !exit || !istype(exit) )	continue	//sanity
 
-			om_after(null, delay, /proc/create_wormhole, enter, exit, wormhole_min_duration, wormhole_max_duration)
+			after(null, delay, GLOBAL_PROC_REF(create_wormhole), with = list(enter, exit, wormhole_min_duration, wormhole_max_duration))
 			delay += sleep_duration
 
 //maybe this proc can even be used as an admin tool for teleporting players without ruining immulsions?
@@ -79,7 +79,7 @@
 	P.creator = null
 	P.icon = 'icons/obj/objects.dmi'
 	P.failchance = 0
-	P.icon_state = "bhole3" // Better icon as well
+	P.set_icon_state("bhole3") // Better icon as well
 	P.name = "wormhole"
 	P.event = TRUE
 	P.expire(rand(min_duration,max_duration))

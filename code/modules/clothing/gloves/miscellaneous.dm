@@ -9,54 +9,54 @@
 	name = "cyborg gloves"
 	icon_state = "black"
 	item_state = "r_hands"
-	siemens_coefficient = 1.0
+
+CAPABILITIES(/obj/item/clothing/gloves/cyborg)
+	configure(item_protection(siemens = 1.0))
 
 /obj/item/clothing/gloves/forensic
 	desc = "Specially made gloves for forensic technicians. The luminescent threads woven into the material stand out under scrutiny."
 	name = "forensic gloves"
 	icon_state = "forensic"
 	item_state = "black"
-	permeability_coefficient = 0.05
 
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/forensic)
+	configure(item_protection(permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/swat
 	desc = "These tactical gloves are somewhat fire and impact-resistant."
 	name = "\improper SWAT Gloves"
 	icon_state = "swat"
 	item_state = "swat"
-	siemens_coefficient = 0.50
-	permeability_coefficient = 0.05
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	armor_spec = "melee=15;bullet=10;laser=10;energy=10;bomb=5" // Now protective.
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/swat)
+	configure(item_protection(siemens = 0.50, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat // Combined effect of SWAT gloves and insulated gloves, with better protective stats.
 	desc = "These military-grade tactical gloves protect the user from electrical shocks, fire, high-velocity impacts and varying temperatures." // Updated description.
 	name = "combat gloves"
 	icon_state = "swat"
 	item_state = "swat"
-	siemens_coefficient = 0
-	permeability_coefficient = 0.05
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	armor_spec = "melee=20;bullet=15;laser=15;energy=15;bomb=10" // Now protective.
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/gloves/combat)
+	configure(item_protection(siemens = 0, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/sterile
 	name = "sterile gloves"
 	desc = "Sterile gloves."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	siemens_coefficient = 1.0 //thin latex gloves, much more conductive than fabric gloves (basically a capacitor for AC)
-	permeability_coefficient = 0.01
 	germ_level = 0
 	fingerprint_chance = 25
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+
+CAPABILITIES(/obj/item/clothing/gloves/sterile)
+	configure(item_protection(siemens = 1.0, permeability = 0.01))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 //TODO: Make inflating gloves a thing
 /*/obj/item/clothing/gloves/sterile/proc/Inflate(/mob/living/carbon/human/user)
@@ -78,10 +78,10 @@
 	name = "botanist's leather gloves"
 	icon_state = "leather"
 	item_state_slots = list(slot_r_hand_str = "lightbrown", slot_l_hand_str = "lightbrown")
-	permeability_coefficient = 0.05
-	siemens_coefficient = 0.75 //thick work gloves
-	drop_sound = SFX_ITEMS_DROP_LEATHER
-	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
+
+CAPABILITIES(/obj/item/clothing/gloves/botanic_leather)
+	configure(item_protection(permeability = 0.05, siemens = 0.75))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_LEATHER, pickup = SFX_ITEMS_PICKUP_LEATHER))
 
 /obj/item/clothing/gloves/duty
 	desc = "These brown duty gloves are made from a durable synthetic."
@@ -89,21 +89,21 @@
 	icon_state = "work"
 	item_state = "wgloves"
 	armor_spec = "melee=10;bullet=10;laser=10;energy=5"
+
+CAPABILITIES(/obj/item/clothing/gloves/duty)
+	configure(item_protection(cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = HANDS, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 // If they resist lasers and energy they should help inulate against heat and cold.
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = HANDS
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 /obj/item/clothing/gloves/tactical
 	desc = "These brown tactical gloves are made from a durable synthetic, and have hardened knuckles."
 	name = "tactical gloves"
 	icon_state = "work"
 	item_state = "wgloves"
-	force = 5
 	punch_force = 3
-	siemens_coefficient = 0.75
-	permeability_coefficient = 0.05
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
+
+CAPABILITIES(/obj/item/clothing/gloves/tactical)
+	configure(item_combat(force = 5))
+	configure(item_protection(siemens = 0.75, permeability = 0.05))
 
 /obj/item/clothing/gloves/vox
 	desc = "These bizarre gauntlets seem to be fitted for... bird claws?"
@@ -111,17 +111,16 @@
 	icon_state = "gloves-vox"
 	item_state = "gloves-vox"
 	flags = PHORONGUARD
-	siemens_coefficient = 0
-	permeability_coefficient = 0.05
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	armor_spec = "melee=20;bullet=15;laser=10;energy=10;bomb=5;bio=30;rad=30" // gently bumped up Heavy engineering gloves value for protection //
 
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	resistance_flags = FIRE_PROOF
 
-TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
+CAPABILITIES(/obj/item/clothing/gloves/vox)
+	acceptance("fit", fits(list("Vox")), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+
+
 
 /obj/item/clothing/gloves/ranger
 	var/glovecolor = "white"
@@ -131,11 +130,11 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon = 'icons/obj/clothing/ranger.dmi'
 	icon_state = "ranger_gloves"
 
+// ALLOW(init/INSTANCE_STATE): its name and sprite follow the glove colour it was given
 /obj/item/clothing/gloves/ranger/Initialize(mapload)
 	. = ..()
 	if(icon_state == "ranger_gloves")
 		name = "[glovecolor] ranger gloves"
-		icon_state = "[glovecolor]_ranger_gloves"
 
 /obj/item/clothing/gloves/ranger/black
 	glovecolor = "black"
@@ -161,31 +160,31 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon_state = "waterwings"
 
 
-// ??? Somehow wedding rigs were attributed to me from 9 years ago but is not upstream and is only on here, yet there's no chomp edits?
 /obj/item/clothing/gloves/weddingring
 	name = "golden wedding ring"
 	desc = "For showing your devotion to another person. It has a golden glimmer to it."
 	icon_state = "wedring_g"
 	item_state = "wedring_g"
 	var/partnername = ""
-	body_parts_covered = null
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+TRACKED(/obj/item/clothing/gloves/weddingring, partnername)
 
-/// Old attack_self: set the engraving.
-/obj/item/clothing/gloves/weddingring/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(wedding_ring_engrave_self), args, /datum/om/prompt/text, message = "Would you like to change the holoengraving on the ring?", title = "Name your betrothed", default = "Bae", max_length = MAX_NAME_LEN)
-	if(isnull(_answer_a1))
-		return TRUE
-	partnername = _answer_a1
+CAPABILITIES(/obj/item/clothing/gloves/weddingring)
+	configure(item_worn(covers = TRAIT_NONE))
+	op("engrave", in_hand(), label("Engrave"),
+		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
+
+/obj/item/clothing/gloves/weddingring/proc/engraving_picked(datum/act/op/A)
+	var/datum/prompt/text/picked = A.answer
+	set_partnername(picked.value)
 	name = "[initial(name)] - [partnername]"
+	return OP_OK
 
 /obj/item/clothing/gloves/weddingring/silver
 	name = "silver wedding ring"
 	icon_state = "wedring_s"
 	item_state = "wedring_s"
-// ???
 
 /obj/item/clothing/gloves/color
 	name = "gloves"
@@ -199,11 +198,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave
 	name = "knight gauntlets"
 	icon_state = "black"
 	item_state = "black"
-	siemens_coefficient = 2
-	permeability_coefficient = 0.05
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	armor_spec = "melee=80;bullet=50;laser=10"
+
+CAPABILITIES(/obj/item/clothing/gloves/combat/knight)
+	configure(item_protection(siemens = 2, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat/knight/brown
 	desc = "ye olde armored gauntlets"
@@ -217,11 +215,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave
 	name = "knight gauntlets"
 	icon_state = "black"
 	item_state = "black"
-	siemens_coefficient = 2
-	permeability_coefficient = 0.05
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 	armor_spec = ""
+
+CAPABILITIES(/obj/item/clothing/gloves/combat/knight_costume)
+	configure(item_protection(siemens = 2, permeability = 0.05, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/combat/knight_costume/brown
 	desc = "ye olde armored gauntlets"
@@ -234,8 +231,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave
 	name = "heavy-duty engineering gloves"
 	icon_state = "heavy_engi"
 	item_state = "heavy_engi"
-	siemens_coefficient = 0
-	permeability_coefficient = 0.05
 	flags = THICKMATERIAL
 	armor_spec = "melee=10;bullet=10;laser=10;energy=5;bio=30;rad=30"
 	sprite_sheets = list(
@@ -243,12 +238,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/hands/mob_werebeast.dmi')
 
-	heat_protection = HANDS|ARMS
-	cold_protection = HANDS|ARMS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
+CAPABILITIES(/obj/item/clothing/gloves/heavy_engineer)
+	configure(item_protection(siemens = 0, permeability = 0.05, heat_parts = HANDS|ARMS, cold_parts = HANDS|ARMS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+
 
 /obj/item/clothing/gloves/black/bloodletter
 	desc = "A pair of ordinary looking black gloves. On closer examination, they seem somewhat well-made, with an almost metallic sheen to them."
 	description_fluff = "A prohibited concealed weapon, the Melee Grip Reinforcement system is the product of the military applications of nanotechnology. The striking face of the glove hardens in response to impact, producing monofilament blades from the knuckles to greatly enhance the wearer's close-combat lethality."
 	special_attack_type = /datum/unarmed_attack/hardclaws
+
+/// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
+/obj/item/clothing/gloves/ranger/draw(datum/look/look)
+	..()
+	if(look.state_so_far(src) == "ranger_gloves")
+		look.state("[glovecolor]_ranger_gloves")

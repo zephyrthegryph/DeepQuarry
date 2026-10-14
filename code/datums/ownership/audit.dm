@@ -1,4 +1,4 @@
-// Orphan audit (doc/rewrite/ownership.md §1.5).
+// Orphan audit (doc/rewrite/ownership.md Â§1.5).
 //
 // Two findings:
 //   - orphan: an entity stamped as owned whose owner no longer names it (or is dying);
@@ -42,16 +42,16 @@
 		else if(QDELETED(H))
 			. += "orphan: [D.type] is still owned by [H.type].[D.own_slot], which was destroyed[own_audit_owner_note(D, H)]"
 		else if(!own_names(H, D.own_slot, D))
-			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without own_set/own_take)[own_audit_owner_note(D, H)]"
+			. += "orphan: [D.type] is stamped as owned by [H.type].[D.own_slot], which no longer holds it (overwritten or dropped without _own_set/own_take)[own_audit_owner_note(D, H)]"
 			own_unstamp(D)
 	stamped = null
-	for(var/datum/om/rec/rec as anything in recs)
+	for(var/datum/scheduler_record/rec as anything in recs)
 		if(rec.torn_down || !rec.owner)
 			continue
 		if(own_audit_rec_dropped(rec))
 			var/owner_type = rec.owner.type
 			. += "dropped with a rec: [owner_type] is referenced only by its own OM record ([length(rec.timers) / OM_TIMER_STRIDE] timer\s); tearing it down"
-			om_teardown_rest(rec.owner)
+			entity_teardown_rest(rec.owner)
 	if(!quiet)
 		for(var/line in .)
 			OWN_REPORT("AUDIT: [line]")
@@ -63,13 +63,13 @@
 	for(var/datum/thing) // every live datum
 		if(thing.own_holder_ref)
 			stamped += thing
-		else if(istype(thing, /datum/om/rec))
+		else if(istype(thing, /datum/scheduler_record))
 			recs += thing
 	return list(stamped, recs)
 
 /// TRUE when rec's owner is referenced by nothing but its own record: unowned, not in the world,
 /// not a registered singleton, and refcount() accounted for by the record's internal references.
-/proc/own_audit_rec_dropped(datum/om/rec/rec)
+/proc/own_audit_rec_dropped(datum/scheduler_record/rec)
 	var/datum/O = rec.owner
 	if(QDELETED(O) || is_registered(O) || owner_of(O))
 		return FALSE
@@ -77,20 +77,18 @@
 		var/atom/A = O
 		if(A.loc || isturf(A) || isarea(A))
 			return FALSE
-	if(istype(O, /datum/controller) || istype(O, /datum/om))
+	if(istype(O, /datum/controller) || istype(O, /datum/core_definition))
 		return FALSE
-	// An entity fading out on its own (om_qdel_after(): a pending self-delete) is on its way out,
+	// An entity fading out on its own (expire(): a pending self-delete) is on its way out,
 	// not dropped.
-	var/list/timers = rec.timers
-	for(var/i in 1 to length(timers) step OM_TIMER_STRIDE)
-		if(timers[i + 2] == /datum/proc/om_qdel_self)
-			return FALSE
+	if(after_pending(O, "lifecycle_lifetime_timer"))
+		return FALSE
 	var/internal = 1 // rec.owner
 	for(var/name in rec.vars)
 		if(name == "owner" || name == "vars")
 			continue
 		internal += state_count_refs_in(rec.vars[name], O, 0)
-	for(var/datum/om/edge/edge as anything in rec.edges)
+	for(var/datum/relation_edge/edge as anything in rec.edges)
 		if(edge.source == O)
 			internal++
 		if(edge.target == O)
@@ -106,8 +104,8 @@
 		var/datum/own_audit_probe/probe = new
 		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
 		// references to it (its deadline) are part of the measured overhead.
-		om_after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
-		var/datum/om/rec/rec = om_rec_of(probe)
+		after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
+		var/datum/scheduler_record/rec = scheduler_record_of(probe)
 		var/internal = 1
 		for(var/name in rec.vars)
 			if(name == "owner" || name == "vars")
@@ -115,8 +113,8 @@
 			internal += state_count_refs_in(rec.vars[name], probe, 0)
 		// `probe` here stands in for the audit loop's own variable.
 		overhead = refcount(probe) - internal - 1
-		om_teardown_rest(probe)
-		qdel(probe) // ALLOW(lifecycle): the audit disposes of its own probe
+		entity_teardown_rest(probe)
+		spent(probe)
 	return overhead
 
 /datum/own_audit_probe
@@ -128,7 +126,7 @@
 /proc/own_audit_periodic()
 	// Re-armed first: each finding is reported as a runtime (OWN_REPORT), which unwinds this proc,
 	// and a finding must not end the periodic audit for the rest of the run.
-	om_after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
+	after(timer_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
 	var/list/lines = own_audit()
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 

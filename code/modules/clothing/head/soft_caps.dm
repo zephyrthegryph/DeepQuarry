@@ -4,29 +4,35 @@
 	icon_state = "cargosoft"
 	item_state_slots = list(slot_r_hand_str = "cargosoft", slot_l_hand_str = "cargosoft")
 	var/flipped = 0
-	siemens_coefficient = 0.9
-	body_parts_covered = 0
 	special_handling = TRUE
 
 /obj/item/clothing/head/soft/dropped(mob/user, equipping, slot)
 	if(equipping)
 		return ..()
-	icon_state = initial(icon_state)
-	flipped = FALSE
+	set_icon_state(initial(icon_state))
+	set_flipped(FALSE)
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/soft, INTERACT_USE("Flip", PROC_REF(soft_cap_flip_self)))
+TRACKED(/obj/item/clothing/head/soft, flipped)
+
+CAPABILITIES(/obj/item/clothing/head/soft)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 0.9))
+	op("flip", in_hand(), label("Flip"), then(PROC_REF(soft_cap_flip_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/soft/proc/soft_cap_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
-	flipped = !flipped
+/obj/item/clothing/head/soft/proc/soft_cap_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
+	set_flipped(!flipped)
 	if(flipped)
-		icon_state = "[icon_state]_flipped"
+		set_icon_state("[icon_state]_flipped")
 		to_chat(user, "You flip the hat backwards.")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		to_chat(user, "You flip the hat back in normal position.")
 	update_clothing_icon()	//so our mob-overlays update
+	return OP_OK
+
 
 /obj/item/clothing/head/soft/red
 	name = "red cap"

@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Floors, walls, water, rock and flesh turfs are drawn from tracked state; the adjacency index keeps each turf's edge, corner and connection masks and recomputes them when a neighbour's flooring, density or material changes"
+  - bugfix: "A thermite coating on a wall is drawn again (a second wall draw hid it), and an opened wall always shows its material's open sprite"
+  - bugfix: "A water tile draws its water sprite once however often it redraws; underwater tiles share one water layer instead of making a new one each redraw"
+  - bugfix: "Rock walls drawn before their neighbours exist no longer throw an error"
+  - code_imp: "Floors, walls and water no longer call update_icon() or appearance_notify_neighbours(); the floor's decals, damage, scorch and the wall's material, reinforcement, construction stage and damage step are tracked"

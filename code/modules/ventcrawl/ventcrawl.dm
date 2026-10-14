@@ -1,7 +1,5 @@
 /mob/living/var/list/icon/pipes_shown = list()
-/mob/living/var/last_played_vent
 /mob/living/var/is_ventcrawling = FALSE
-/mob/var/next_play_vent = 0
 
 /mob/living/proc/can_ventcrawl()
 	if(!client)
@@ -100,7 +98,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	var/atom/pipe
 	var/list/pipes = list()
 	for(var/obj/machinery/atmospherics/unary/U in range(1))
-		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !U.welded)
+		if(is_type_in_list(U, GLOB.ventcrawl_machinery) && Adjacent(U) && !is_welded(U))
 			pipes |= U
 	if(!pipes || !pipes.len)
 		to_chat(src, "There are no pipes that you can ventcrawl into within range!")
@@ -108,7 +106,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/om/prompt/choice, message = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
+		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/prompt/choice, question = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
 		if(!(pipe in pipes))
 			return
 	if(canmove && pipe)
@@ -119,8 +117,12 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 /mob/living/var/ventcrawl_layer = 3
 
-/mob/living/proc/ventcrawl_in_done(obj/machinery/atmospherics/unary/vent_found)
-	if(!can_ventcrawl())
+/mob/living/proc/ventcrawl_time(datum/act/op/A)
+	return A.arg("time")
+
+/mob/living/proc/ventcrawl_in_done(datum/act/op/A)
+	var/obj/machinery/atmospherics/unary/vent_found = A.arg("vent")
+	if(QDELETED(vent_found) || !can_ventcrawl())
 		return
 
 	act_message(src, null, MSG_SELF(span_infoplain("You climb into the ventilation system.")), \
@@ -130,7 +132,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 	add_ventcrawl(vent_found)
 
 /mob/living/proc/handle_ventcrawl(atom/clicked_on)
-	if(!can_ventcrawl() || om_busy(src))
+	if(!can_ventcrawl() || op_claimed(src))
 		return
 
 	var/obj/machinery/atmospherics/unary/vent_found
@@ -181,7 +183,7 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 			// Handle animation delay
 			fade_towards(vent_found, vent_crawl_time)
-			om_task_timed(src, vent_crawl_time, src, src, PROC_REF(ventcrawl_in_done), list(vent_found), busy = src)
+			perform_op(src, src, "ventcrawl_in", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("vent" = vent_found, "time" = vent_crawl_time))
 		else
 			to_chat(src, "This vent is not connected to anything.")
 

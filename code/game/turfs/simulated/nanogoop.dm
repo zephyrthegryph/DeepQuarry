@@ -40,59 +40,91 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(get_area(tolink) == get_area(src))
 			rel_set(src, nameof(linkedsmes), tolink)
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
-	INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)), \
-	INTERACT_SILICON("Interface", PROC_REF(nanites_silicon_interface)), \
-)
+CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
+	ref_one(nameof(moblink), /mob/living)
+	ref_one(nameof(linkedsmes), /obj/machinery/power/smes)
+	op("nanites_hand", hand(), ungated(), label("Interface"), when(req(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))
+	// Taking the pool over (or letting go of it) is three seconds of the interfacing actor (nanite_interface_chosen).
+	op("nanites_interface_on", ai(), takes("choice"), wait(3 SECONDS), then(PROC_REF(nanites_interface_on_done)))
+	op("nanites_interface_off", ai(), wait(3 SECONDS), then(PROC_REF(nanites_interface_off_done)))
+	op("nanites_ai", remote(), label("Interface"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(req(PROC_REF(ai_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("from_ai" = TRUE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("from_ai" = TRUE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_ai_chosen)))
 
-/// Old attack_hand: a protean may interface with the pool; the turf's own touch always follows.
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: a protean (a human with a NIF) may interface with the pool while nobody else holds it.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_ok(datum/act/op/A)
+	return (read_once(hand_interface_open(A.actor))) ? null : MSG(req_failed) // who holds the goop and who stands where is asked when the click is made
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_open(mob/living/user)
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
-	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
+	if(target_present() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
 		return FALSE
-	if(ishuman(user))
-		if(smes || isAI(nutrienttarget))
-			return FALSE
-		var/mob/living/carbon/human/checker = user
-		if(checker.nif)//Proteans have NIFS
-			om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return FALSE
+	if(!ishuman(user))
+		return FALSE
+	if(smes || istype(nutrienttarget, /mob/living/silicon/ai)) // the goop's holder, not who asks
+		return FALSE
+	var/mob/living/carbon/human/checker = user
+	return !!checker.nif //Proteans have NIFS
+
+/// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
+/// attack_hand (silicon_hand(robots = TRUE)), so they fall through to the hand op.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_ok(datum/act/op/A)
+	return (read_once(ai_interface_open(A.actor))) ? null : MSG(req_failed) // who holds the goop and who stands near it is asked when the click is made
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_open(mob/user)
+	var/mob/living/nutrienttarget = moblink
+	if(target_present())
+		if(istype(nutrienttarget, /mob/living/silicon/ai) && user != nutrienttarget)//first come first serve, for AI
+			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
+				return FALSE
+	return TRUE
+
+/// The second question is asked only when the first answer was On.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/state_is_on(datum/act/op/A)
+	return A.step_value("state") == "On"
 
 /// Interfacing with nanite goop: on or off, then (on) what it recycles. A person must stay next
 /// to it (ask_flags set at the call); an AI answers from anywhere (`from_ai`).
-/datum/om/prompt/choice/nanite_state
+/datum/prompt/choice/nanite_state
 	title = "Desired state"
+	timeout = 0
 	choices = list("On", "Off")
 	var/from_ai = FALSE
 
-/datum/om/prompt/choice/nanite_state/prepare()
-	message = "Do you wish interface with \the [subject]"
-	return TRUE
+/datum/prompt/choice/nanite_state/prepare(datum/act/A)
+	. = ..()
+	question = "Do you wish interface with \the [subject]"
 
-/datum/om/prompt/choice/nanite_targets
+/datum/prompt/choice/nanite_targets
 	title = "Desired targets"
+	timeout = 0
 	choices = list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics")
 	var/from_ai = FALSE
 
-/datum/om/prompt/choice/nanite_targets/prepare()
-	message = "Which entities do you wish for \the [subject] to recycle?"
-	return TRUE
+/datum/prompt/choice/nanite_targets/prepare(datum/act/A)
+	. = ..()
+	question = "Which entities do you wish for \the [subject] to recycle?"
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/om/prompt/choice/nanite_state/ask)
-	if(ask.choice == "On")
-		om_ask(ask.answerer, /datum/om/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), ask_flags = ask.ask_flags, from_ai = ask.from_ai)
+/datum/prompt/choice/nanite_state/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, ask.choice)
-	else
-		nanite_interface_chosen(ask.answerer, ask.choice)
+	return QDELETED(answerer) ? "gone" : null
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/om/prompt/choice/nanite_targets/ask)
-	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, "On", ask.choice)
-	else
-		nanite_interface_chosen(ask.answerer, "On", ask.choice)
+/datum/prompt/choice/nanite_targets/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(answerer) ? "gone" : null
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand_chosen(datum/act/op/A)
+	check_target() // a goop whose holder is gone turns itself off before it is taken over
+	nanite_interface_chosen(A.actor, A.step_value("state"), A.step_value("targets"))
+	return OP_OK
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_ai_chosen(datum/act/op/A)
+	check_target()
+	nanite_ai_interface_chosen(A.actor, A.step_value("state"), A.step_value("targets"))
+	return OP_OK
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, state, targets)
 	switch(state)
@@ -104,11 +136,19 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			else
 				to_chat(checker, span_warning("You realize there is no way for the simplistic [src] to ignore your form, if you set it to recycle."))
 			act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-			om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(interface_on), list(checker, targets))
+			perform_op(checker, src, "nanites_interface_on", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("choice" = targets))
 		if("Off")
 			if(active)
 				act_message(checker, src, MSG_SELF(span_warning("You begin to interface with %T%.")), MSG_OTHERS(span_warning("%U% inspects %T%")))
-				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
+				perform_op(checker, src, "nanites_interface_off", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_interface_off_done(datum/act/op/A)
+	toggle_all(FALSE)
+	return OP_OK
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_interface_on_done(datum/act/op/A)
+	interface_on(A.actor, A.arg("choice"))
+	return OP_OK
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
 	rel_set(src, nameof(moblink), user)
@@ -128,19 +168,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if("Only Organics")
 			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE)
-
-/// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
-/// attack_hand (ROBOT_USE_HAND), so they fall through to that default here too.
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_silicon_interface(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		return FALSE
-	var/mob/living/nutrienttarget = moblink
-	if(check_target())
-		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
-			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
-				return FALSE
-	om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), from_ai = TRUE)
-	return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, state, choice2)
 	switch(state)
@@ -200,7 +227,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		return TRUE
 	if(isliving(AM))
 		var/mob/living/targetmob = AM
-		if(targetmob.unacidable || !targetmob.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
+		if(targetmob.unacidable || !targetmob.vore_prefs.digestable || targetmob?.buckled_to() || dq_get_hovering(targetmob) || targetmob.throwing || targetmob.is_incorporeal())
 			return FALSE
 		if(isrobot(targetmob))
 			if(!digest_robot)
@@ -220,7 +247,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				return TRUE
 		return TRUE
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
+/// The one who holds the goop while still in the area (or an AI on its SMES), or FALSE. Pure: the requirements ask it.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/target_present()
+	READS_FROM() // where the owner and the goop stand now
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
 	if(nutrienttarget)
@@ -230,8 +259,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			if(get_area(nutrienttarget))
 				if(get_area(nutrienttarget) == get_area(src))
 					return nutrienttarget
-	toggle_all(FALSE)
 	return FALSE
+
+/// target_present(); a goop whose holder is gone turns itself off.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
+	. = target_present()
+	if(!.)
+		toggle_all(FALSE)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/digest_stuff(atom/movable/AM)	//copypasting the entire proc because we use an SMES instead of a linked mob
 	. = FALSE
@@ -263,14 +297,14 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				if(istype(targetitem, /obj/item/implant/backup) || istype(targetitem, /obj/item/nif))
 					continue
 				targetcarbon.drop_from_inventory(targetitem)
-			var/how_much = targetcarbon.mob_size + targetcarbon.nutrition
+			var/how_much = targetcarbon.mob_size + nutrition_of(targetcarbon)
 			if(!targetcarbon.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			nutrients += how_much
 			targetcarbon.mind?.vore_death = TRUE
 			GLOB.prey_digested_roundstat++
 			targetcarbon.ghostize() //prevent runtimes
-			qdel(targetcarbon)	//glorp
+			dissolved(targetcarbon, src)	//glorp
 			return
 		targetcarbon.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetcarbon.size_multiplier) * targetcarbon.get_digestion_nutrition_modifier()
@@ -287,11 +321,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if(targetmob.stat == DEAD)
 			targetmob.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			targetmob.release_vore_contents()
-			var/how_much = targetmob.mob_size + targetmob.nutrition
+			var/how_much = targetmob.mob_size + nutrition_of(targetmob)
 			if(!targetmob.ckey)
 				how_much = how_much / 10	//Braindead mobs are worth less
 			nutrients += how_much
-			qdel(targetmob) //gloop
+			dissolved(targetmob, src) //gloop
 			return
 		targetmob.injure(INJURY_DIGESTION, damage, null, src)
 		var/how_much = (damage * targetmob.size_multiplier) * targetmob.get_digestion_nutrition_modifier()
@@ -310,7 +344,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if(ishuman(nutrienttarget))
 			var/mob/living/carbon/human/targetcarbon = nutrienttarget
 			if(HAS_SYNTHETIC_BIOLOGY(targetcarbon))
-				targetcarbon.set_nutrition(targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
+				targetcarbon.set_nutrition(nutrition_of(targetcarbon)+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
 				return
 	if(isrobot(nutrienttarget))
 		var/mob/living/silicon/robot/targetrobot = nutrienttarget
@@ -340,20 +374,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		footstep = FOOTSTEP_PLATING
 		barefootstep = FOOTSTEP_HARD_BAREFOOT
 		clawfootstep = FOOTSTEP_HARD_CLAW
-		water_state = "goo_inactive"
+		set_water_state("goo_inactive")
 		digesting = FALSE
 		digest_synth = FALSE
 		digest_robot = FALSE
 		active = FALSE
 		for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
-			R.icon_modifier = "inactive_"
-			R.icon_state = "inactive_railing0"
-		for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
-			R.update_icon()
+			R.set_icon_modifier("inactive_")
 		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
-			stairs.icon_state = "stair_hazard"
-			stairs.update_icon()
-		update_icon()
+			stairs.set_icon_state("stair_hazard")
 		return
 	name = "nanite goop."
 	desc = "A deep pool of pulsating, possibly deadly nanite goop."
@@ -362,22 +391,17 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	footstep = FOOTSTEP_WATER
 	barefootstep = FOOTSTEP_WATER
 	clawfootstep = FOOTSTEP_WATER
-	water_state = "goo_active"
+	set_water_state("goo_active")
 	digesting = digest
 	digest_synth = synth
 	digest_robot = robot
 	active = TRUE
 	for(var/obj/structure/railing/overhang/hazard/nanite/R in turf_contents_of_type(src, /obj/structure/railing/overhang/hazard/nanite))
-		R.icon_modifier = "active_"
-		R.icon_state = "active_railing0"
-	for(var/obj/structure/railing/overhang/hazard/nanite/R in range(src, 1))
-		R.update_icon()
+		R.set_icon_modifier("active_")
 	for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 		depth = 1
 		movement_cost = 8
-		stairs.icon_state = "stair_hazard_nanite"
-		stairs.update_icon()
+		stairs.set_icon_state("stair_hazard_nanite")
 	for(var/atom/AM in turf_contents_of_type(src, /atom))
 		Entered(AM)
-	update_icon()
 

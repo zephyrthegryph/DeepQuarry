@@ -1,6 +1,3 @@
-/// Raises CHANGE_METEORS when a meteor appears or goes away (point defense watches it).
-GLOBAL_DATUM_INIT(meteor_watch, /datum, new)
-
 GLOBAL_VAR_INIT(meteor_wave_delay, 625) //minimum wait between waves in tenths of seconds
 //set to at least 100 unless you want evarr ruining every round
 
@@ -138,12 +135,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/Initialize(mapload)
 	. = ..()
 	z_original = z
-	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	SpinAnimation()
 
 /obj/effect/meteor/Move()
 	if(z != z_original || loc == dest)
-		qdel(src)
+		spent(src)
 		return
 
 	. = ..() //process movement...
@@ -156,9 +152,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	if(prob(10) && !istype(T, /turf/space)) //randomly takes a 'hit' from ramming
 		get_hit()
 
-// the meteor count changes for whoever watches the storm.
 /obj/effect/meteor/on_destroy(force)
-	changed(GLOB.meteor_watch, CHANGE_METEORS)
 	..()
 
 /obj/effect/meteor/Bump(atom/A)
@@ -209,16 +203,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/proc/die(explode = TRUE)
 	make_debris()
 	meteor_effect(explode)
-	qdel(src)
+	spent(src)
 
-EXTEND_INTERACTIONS(/obj/effect/meteor, \
-	INTERACT_INSERT(/obj/item/pickaxe, PROC_REF(interaction_mine_meteor), "Break up"), \
-)
+CAPABILITIES(/obj/effect/meteor)
+	op("mine_meteor", item(/obj/item/pickaxe), label("Break up"), then(PROC_REF(interaction_mine_meteor)))
 
 /// Old attackby: a pickaxe breaks the meteor up.
-/obj/effect/meteor/proc/interaction_mine_meteor(mob/user, obj/item/held, datum/interaction/interaction)
-	qdel(src)
-	return INTERACTION_HANDLED_PASS
+/obj/effect/meteor/proc/interaction_mine_meteor(datum/act/op/A)
+	destroyed(src)
+	return OP_PASS
 
 /obj/effect/meteor/bullet_act(obj/item/projectile/Proj)
 	if(Proj.excavation_amount)

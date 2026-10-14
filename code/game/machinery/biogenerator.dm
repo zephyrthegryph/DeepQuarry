@@ -23,7 +23,6 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/biogenerator
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
 	var/processing = 0
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/points = 0
@@ -55,30 +54,22 @@
 	src.reagent_amt = amt
 	src.cost = cost
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_containers/glass/bottle)
-
-/obj/machinery/biogenerator/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(1000)
-	own_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-
-	default_apply_parts()
-
-	item_list = list()
-	item_list["Food Items"] = list(
+/// The item_list table, one per type (per_type()).
+/obj/machinery/biogenerator/proc/build_item_list()
+	. = list()
+	.["Food Items"] = list(
 		BIOGEN_REAGENT("Milk", REAGENT_ID_MILK, 50, 2), //2 for each 1u
 		BIOGEN_REAGENT("Cream", REAGENT_ID_CREAM, 50, 3), //3 for each 1u
 		BIOGEN_ITEM("Slab of meat", /obj/item/reagent_containers/food/snacks/meat, 5, 50),
 		BIOGEN_ITEM("Algae Sheets", /obj/item/stack/material/algae, 50, 100),
 	)
-	item_list["Cooking Ingredients"] = list(
+	.["Cooking Ingredients"] = list(
 		BIOGEN_REAGENT("Universal Enzyme", REAGENT_ID_ENZYME, 50, 3),
 		BIOGEN_ITEM("Nutri-spread", /obj/item/reagent_containers/food/snacks/spreads, 5, 30),
 		BIOGEN_REAGENT("Salt", REAGENT_ID_SODIUMCHLORIDE, 50, 2),
 		BIOGEN_REAGENT("Soy Sauce", REAGENT_ID_SOYSAUCE, 50, 3),
 	)
-	item_list["Gardening Nutrients"] = list(
+	.["Gardening Nutrients"] = list(
 		BIOGEN_ITEM("E-Z-Nutrient", /obj/item/reagent_containers/glass/bottle/eznutrient, 5, 30),
 		BIOGEN_ITEM("Left 4 Zed", /obj/item/reagent_containers/glass/bottle/left4zed, 5, 50),
 		BIOGEN_ITEM("Robust Harvest", /obj/item/reagent_containers/glass/bottle/robustharvest, 5, 50),
@@ -86,11 +77,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 		BIOGEN_ITEM("Mutagen", /obj/item/reagent_containers/glass/bottle/mutagen, 15, 50),
 		BIOGEN_ITEM("Plant-B-Gone", /obj/item/reagent_containers/spray/plantbgone, 5, 50),
 	)
-	item_list["Exotic Seeds"] = list(
+	.["Exotic Seeds"] = list(
 		BIOGEN_ITEM("Mystery seed pack", /obj/item/seeds/random, 5, 150),
 		BIOGEN_ITEM("Kudzu seed pack", /obj/item/seeds/kudzuseed, 5, 100),
 	)
-	item_list["Leather Products"] = list(
+	.["Leather Products"] = list(
 		BIOGEN_ITEM("Wallet", /obj/item/storage/wallet, 1, 100),
 		BIOGEN_ITEM("Botanical gloves", /obj/item/clothing/gloves/botanic_leather, 1, 250),
 		BIOGEN_ITEM("Plant bag", /obj/item/storage/bag/plants, 1, 320),
@@ -125,36 +116,48 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 
 	return static_data
 
-UI_DATA(/obj/machinery/biogenerator, "build_eff:num", "points:num", "processing:num", "merge:ui_data_obj_machinery_biogenerator{beaker:bool}")
-
-/// The computed part of /obj/machinery/biogenerator's window data (declared on its UI_DATA row).
-/obj/machinery/biogenerator/proc/ui_data_obj_machinery_biogenerator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/biogenerator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["beaker"] = !!beaker
 
+	data["build_eff"] = build_eff
+	data["points"] = points
+	data["processing"] = processing
 	return data
 
-DECLARE_UI(/obj/machinery/biogenerator, "Biogenerator")
+TRACKED(/obj/machinery/biogenerator, processing)
+TRACKED(/obj/machinery/biogenerator, points)
 
-UI_ACT(/obj/machinery/biogenerator, "activate", ui_act_activate)
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_activate)
-	activate(ui.user)
+CAPABILITIES(/obj/machinery/biogenerator)
+	reagents(1000)
+	default_parts()
+	per_type(nameof(item_list), PROC_REF(build_item_list))
+	configure(uses_power(idle = 40))
+	interface("Biogenerator")
+	op("activate", ui_act("activate"), then(PROC_REF(ui_act_activate)))
+	op("detach", ui_act("detach"), then(PROC_REF(ui_act_detach)))
+	op("purchase", ui_act("purchase", arg("amount", num()), arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_insert)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+
+/obj/machinery/biogenerator/proc/ui_act_activate(datum/act/op/A)
+	var/mob/user = A.actor
+	activate(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/biogenerator, "detach", ui_act_detach)
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_detach)
+/obj/machinery/biogenerator/proc/ui_act_detach(datum/act/op/A)
 	if(beaker)
 		beaker.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
-		update_icon()
+		rel_take(src, nameof(/obj/machinery/biogenerator::beaker))
 	return TRUE
 
-UI_ACT(/obj/machinery/biogenerator, "purchase", ui_act_purchase, UI_ARG_NUM("amount"), UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
-	var/category = params["cat"] // meow
-	var/name = params["name"]
-	var/amount = params["amount"]
+/obj/machinery/biogenerator/proc/ui_act_purchase(datum/act/op/A, raw_amount, cat, raw_name)
+	var/mob/user = A.actor
+	var/category = cat // meow
+	var/name = raw_name
+	var/amount = raw_amount
 
 	if(!(category in item_list) || !(name in item_list[category]) || !isnum(amount)) // Not trying something that's not in the list, are you?
 		return FALSE
@@ -173,13 +176,13 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 		if(cost < 1) //No going below 1 cost.
 			cost = 1
 		if(cost * amount > points)
-			to_chat(ui.user, span_danger("Insufficient biomass."))
+			to_chat(user, span_danger("Insufficient biomass."))
 			return FALSE
 		var/amt_to_actually_dispense = round(min(beaker.reagents.get_free_space(), amount))
 		if(amt_to_actually_dispense <= 0)
-			to_chat(ui.user, span_danger("The loaded beaker is full!"))
+			to_chat(user, span_danger("The loaded beaker is full!"))
 			return FALSE
-		points -= cost * amt_to_actually_dispense
+		set_points(points - cost * amt_to_actually_dispense)
 		beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		return FALSE
@@ -189,10 +192,10 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 
 	var/cost = round(bi.cost / build_eff)
 	if(cost > points)
-		to_chat(ui.user, span_danger("Insufficient biomass."))
+		to_chat(user, span_danger("Insufficient biomass."))
 		return FALSE
 
-	points -= cost * amount
+	set_points(points - cost * amount)
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, amount)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
@@ -203,49 +206,37 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 	return TRUE
 
-/obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
-	update_icon()
-
 /obj/machinery/biogenerator/proc/appearance_state()
 	if(!beaker)
 		return "empty"
 	return processing ? "work" : "stand"
 
-APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
-
-/obj/machinery/biogenerator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/biogenerator_insert,
-		/datum/interaction/machine_hand/ungated/biogenerator_use,
-	)
+/// The look (the draw sweep: from its template).
+/obj/machinery/biogenerator/draw(datum/look/look)
 	..()
+	look.state("biogen-[appearance_state()]")
 
-/// The old attackby: insert a beaker, bulk-insert a plant bag, or insert one grown item.
-/datum/interaction/machine_item/biogenerator_insert
-	id = "biogenerator_insert"
-	name = "Insert"
-	held_type = /obj/item
-	effect = /obj/machinery/biogenerator/proc/interaction_insert
-
-/obj/machinery/biogenerator/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/biogenerator/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(beaker)
 			to_chat(user, span_notice("\The [src] is already loaded."))
 		else
-			own_set(src, nameof(src.beaker), O, user = user)
+			move_into(src, nameof(src.beaker), O, user)
 	else if(processing)
 		to_chat(user, span_notice("\The [src] is currently processing."))
 	else if(istype(O, /obj/item/storage/bag/plants))
 		var/i = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): materialized above
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
 		else
 			for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(O))
-				G.forceMove(src)
+				if(!own_bring_in(src, nameof(contents), G, null, user, TRUE, null, FALSE))
+					continue
 				i++
 				if(i >= 10)
 					to_chat(user, span_notice("You fill \the [src] to its capacity."))
@@ -259,25 +250,19 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 	else
 		var/i = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): materialized above
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			i++
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is full! Activate it."))
 		else
-			user.remove_from_mob(O)
-			O.forceMove(src)
+			if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user, span_notice("You put \the [O] in \the [src]"))
-	update_icon()
 	return TRUE
 
-/// The old attack_hand: never called ..(), just checked BROKEN then opened the UI.
-/datum/interaction/machine_hand/ungated/biogenerator_use
-	id = "biogenerator_use"
-	name = "Use"
-	effect = /obj/machinery/biogenerator/proc/interaction_use
-
-/obj/machinery/biogenerator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(BROKEN))
+/obj/machinery/biogenerator/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
+	if(broken_now())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -285,34 +270,32 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 /obj/machinery/biogenerator/proc/activate(mob/user)
 	if(user.stat)
 		return
-	if(has_stat(MACHINE_STAT_ANY)) //NOPOWER etc
+	if(has_condition()) //NOPOWER etc
 		return
 	if(processing)
 		to_chat(user, span_notice("The biogenerator is in the process of working."))
 		return
 	var/S = 0
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/reagent_containers/food/snacks/grown/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		S += 5
 		if(I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) < 0.1)
-			points += 1
-		else points += I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 10 * eat_eff
+			set_points(points + 1)
+		else
+			set_points(points + I.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 10 * eat_eff)
 		consume(I)
 	if(!S)
 		to_chat(user, span_warning("Error: No growns inside. Please insert growns."))
 		return
 
-	processing = 1
-	update_icon()
+	set_processing(1)
 	play_sfx(src, SFX_MACHINES_BLENDER, 0.8)
 	use_power(S * 30)
-	om_after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
+	after(src, (S * (0.1 SECONDS) + 1.5 SECONDS) / eat_eff, PROC_REF(finish_processing))
 
 /obj/machinery/biogenerator/proc/finish_processing()
-	processing = 0
-	SStgui.update_uis(src)
+	set_processing(0)
 	play_sfx(src, SFX_MACHINES_BIOGENERATOR_END)
-	update_icon()
 
 /obj/machinery/biogenerator/RefreshParts()
 	..()
@@ -327,4 +310,4 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 
 /obj/machinery/biogenerator/ownership()
 	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(beaker), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle)

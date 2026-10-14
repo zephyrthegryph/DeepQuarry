@@ -115,12 +115,12 @@
 				created_atom.icon = file(spawn_params["selected_atom_icon"])
 
 			if(spawn_params["selected_atom_icon_state"])
-				created_atom.icon_state = spawn_params["selected_atom_icon_state"]
+				created_atom.set_icon_state(spawn_params["selected_atom_icon_state"])
 
 		if(spawn_params["atom_icon_size"])
 			if(ismob(created_atom))
 				var/mob/living/created_mob = created_atom
-				created_mob.size_multiplier = spawn_params["atom_icon_size"] / 100
+				created_mob.set_size_multiplier(spawn_params["atom_icon_size"] / 100)
 
 		if(atom_dir)
 			created_atom.set_dir(atom_dir)
@@ -129,7 +129,7 @@
 			created_atom.name = atom_name
 			if(ismob(created_atom))
 				var/mob/created_mob = created_atom
-				created_mob.real_name = atom_name
+				created_mob.set_real_name(atom_name)
 
 		if((where_target_type == WHERE_MOB_HAND || where_target_type == WHERE_TARGETED_MOB_HAND) && isliving(target) && isitem(created_atom))
 			var/mob/living/living_target = target

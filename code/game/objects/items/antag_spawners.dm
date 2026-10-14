@@ -5,6 +5,9 @@
 	var/searching = FALSE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 
+CAPABILITIES(/obj/item/antag_spawner)
+	owns_one(nameof(Q), /datum/ghost_query)
+
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
 
@@ -18,19 +21,19 @@
 		return // Already searching.
 	searching = TRUE
 
-	own_set(src, nameof(Q), new ghost_query_type())
-	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+	rel_set(src, nameof(Q), new ghost_query_type())
+	observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 	Q.query()
 
-/obj/item/antag_spawner/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
-	EVENT_HANDLER
+/obj/item/antag_spawner/proc/get_winner(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len)
 		var/mob/observer/dead/D = Q.candidates[1]
 		spawn_antag(D.client, get_turf(src))
 	else
 		reset_search()
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
+	rel_clear(src, nameof(Q)) //get rid of the query
 	return
 
 /obj/item/antag_spawner/proc/reset_search()
@@ -44,22 +47,24 @@
 	icon_state = "oldshieldoff"
 	ghost_query_type = /datum/ghost_query/apprentice
 
-DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
+	op("activate", in_hand(), then(PROC_REF(activated)))
 
-/// Old attack_self.
-/obj/item/antag_spawner/technomancer_apprentice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The original held activation feedback and its downstream behavior.
+/obj/item/antag_spawner/technomancer_apprentice/proc/activated(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to your apprentice."))
 	request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/antag_spawner/technomancer_apprentice/request_player()
-	icon_state = "oldshieldon"
+	set_icon_state("oldshieldon")
 	..()
 
 /obj/item/antag_spawner/technomancer_apprentice/reset_search()
 	..()
 	if(!used)
-		icon_state = "oldshieldoff"
+		set_icon_state("oldshieldoff")
 		visible_message(span_warning("The teleporter failed to find the apprentice.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/technomancer_apprentice/spawn_antag(client/C, turf/T)
@@ -73,16 +78,17 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_U
 	of your own. You also have a catalog, to purchase your own functions and equipment as you see fit.")))
 	to_chat(H, span_infoplain(span_bold("It would be wise to speak to your master, and learn what their plans are for today.")))
 
-	om_after(src, 0.1 SECONDS, PROC_REF(finish_technomancer_spawn), H)
+	after(src, 0.1 SECONDS, PROC_REF(finish_technomancer_spawn), with = list(H), keeps_dead = TRUE)
 
 /obj/item/antag_spawner/technomancer_apprentice/proc/finish_technomancer_spawn(mob/living/carbon/human/H)
-	GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
-	equip_antag(H)
+	if(!QDELETED(H))
+		GLOB.technomancers.add_antagonist(H.mind, 0, 1, 0, 0, 0)
+		equip_antag(H)
 	used = 1
 	consume(src, H)
 
 /obj/item/antag_spawner/technomancer_apprentice/equip_antag(mob/technomancer_mob)
-	var/datum/antagonist/technomancer/antag_datum = GLOB.antag_service.all_antag_types[MODE_TECHNOMANCER]
+	var/datum/antagonist/technomancer/antag_datum = antag_all_antag_types()[MODE_TECHNOMANCER]
 	antag_datum.equip_apprentice(technomancer_mob)
 
 /obj/item/antag_spawner/syndicate_drone
@@ -93,22 +99,24 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_U
 	ghost_query_type = /datum/ghost_query/syndicate_drone
 	var/drone_type = null
 
-DECLARE_INTERACTIONS(/obj/item/antag_spawner/syndicate_drone, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
+	op("activate", in_hand(), then(PROC_REF(activated)))
 
-/// Old attack_self.
-/obj/item/antag_spawner/syndicate_drone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The original held activation feedback and its downstream behavior.
+/obj/item/antag_spawner/syndicate_drone/proc/activated(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to an available unit."))
 	request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/antag_spawner/syndicate_drone/request_player()
-	icon_state = "oldshieldon"
+	set_icon_state("oldshieldon")
 	..()
 
 /obj/item/antag_spawner/syndicate_drone/reset_search()
 	..()
 	if(!used)
-		icon_state = "oldshieldoff"
+		set_icon_state("oldshieldoff")
 		visible_message(span_warning("The teleporter failed to find any available.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/syndicate_drone/spawn_antag(client/C, turf/T)
@@ -122,10 +130,11 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/syndicate_drone, INTERACT_USE(null,
 
 	R.key = C.key
 
-	om_after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), R)
+	after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), with = list(R), keeps_dead = TRUE)
 
 /obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
-	GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
+	if(!QDELETED(R))
+		GLOB.mercs.add_antagonist(R.mind, FALSE, TRUE, FALSE, FALSE, FALSE)
 	consume(src, R)
 
 /obj/item/antag_spawner/syndicate_drone/protector

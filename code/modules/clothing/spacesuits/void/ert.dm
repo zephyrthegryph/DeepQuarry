@@ -5,110 +5,63 @@
 	item_state = "ertsuit"
 	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
 	slowdown = 0.5
-	siemens_coefficient = 0.5
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15* ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX, SPECIES_TESHARI, SPECIES_ALTEVIAN), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
+
+
+
 
 /obj/item/clothing/suit/space/void/responseteam/command
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/command // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-C Emergency Response Team Commander Suit"
 
-/obj/item/clothing/suit/space/void/responseteam/command/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/command) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/medical
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/medical // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-M Emergency Medical Response Suit"
 	icon_state = "ertsuit_m"
 	item_state = "ertsuit_m"
 
-/obj/item/clothing/suit/space/void/responseteam/medical/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/medical) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/engineer
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/engineer // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-E Emergency Engineering Response Suit"
 	icon_state = "ertsuit_e"
 	item_state = "ertsuit_e"
 
-/obj/item/clothing/suit/space/void/responseteam/engineer/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/engineer) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/security
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/security // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-S Emergency Security Response Suit"
 	icon_state = "ertsuit_s"
 	item_state = "ertsuit_s"
 
-/obj/item/clothing/suit/space/void/responseteam/security/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/security) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/janitor
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/janitor // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-J Emergency Cleanup Response Suit"
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
 	slowdown = 0 //light armor means no slowdown
-	item_flags = NOSLIP //INBUILT NANOGALOSHES
 
-/obj/item/clothing/suit/space/void/responseteam/janitor/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
+	configure(item_worn(flags = NOSLIP))
 
 
-// Overrides the voidsuit screwdriver so people can't remove the helmet.
-/obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool)
-	if(!isliving(user))
-		return ITEM_INTERACT_BLOCKING
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return ITEM_INTERACT_SUCCESS
-	if(boots || tank || cooler)
-		var/choice = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(boots,tank,cooler))
-		if(isnull(choice))
-			return ITEM_INTERACT_BLOCKING
-		if(!choice) return ITEM_INTERACT_SUCCESS
+// Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.
+/obj/item/clothing/suit/space/void/responseteam/has_removable_component(datum/act/op/A)
+	return (!!(boots || tank || cooler)) ? null : MSG(void/nothing_installed)
 
-		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-			tank.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(tank))
-		else if(choice == cooler)
-			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-			cooler.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(cooler))
-		else if(choice == boots)
-			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-			boots.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			own_take(src, nameof(boots))
-	else
-		to_chat(user, "\The [src] does not have anything installed.")
-	return ITEM_INTERACT_SUCCESS
-
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
-
-/// Old attackby: no modifying it while worn.
-/obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
-
-	if(!isliving(user))
-		return INTERACTION_HANDLED_PASS
-
-	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return FALSE
-
-	return FALSE
+/obj/item/clothing/suit/space/void/responseteam/removable_components(datum/act/A)
+	var/list/choices = list()
+	for(var/obj/item/I in list(boots, tank, cooler))
+		choices += I
+	return choices
 
 
 /obj/item/clothing/head/helmet/space/void/responseteam
@@ -117,24 +70,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 	icon_state = "erthelmet"
 	item_state = "erthelmet"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.5
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
 	var/away_planes = null
 	plane_slots = list(SLOT_ID_HEAD)
 	var/hud_active = 1
 	var/activation_sound = SFX_ITEMS_NIF_CLICK
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15* ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/responseteam, \
-	INTERACT_VERB("Toggle Mark 7 Suit HUD", PROC_REF(responseteam_toggle_verb), REQ_IN_INVENTORY), \
-)
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX, SPECIES_TESHARI, SPECIES_ALTEVIAN), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
+	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
 
 /// Old verb "Toggle Mark 7 Suit HUD".
-/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/space/void/responseteam/proc/responseteam_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.hud_active)
 			away_planes = enables_planes

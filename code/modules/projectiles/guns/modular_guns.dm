@@ -12,9 +12,8 @@
 	var/laser_rating = 0 //How good are the lasers inside of us?
 	var/manipulator_rating = 0 //How good are the manipulators inside us?
 	var/assembled = 1 //Are we closed up?
-	var/max_burst_size = 5 //Don't let our maximum burst size get too high.
 	var/list/guncomponents //Generate our list of components.
-	var/accepted_components = list(
+	var/static/list/accepted_components = list(
 		/obj/item/stock_parts/capacitor/,
 		/obj/item/stock_parts/capacitor,
 		/obj/item/stock_parts/capacitor,
@@ -31,13 +30,10 @@
 // Fitted parts sit in the gun's contents.
 /obj/item/gun/energy/modular/ownership()
 	. = ..()
-	. += owns(nameof(guncomponents), policy = OWN_CONTAINED)
+	. += owns(nameof(guncomponents), policy = OWN_CONTAINED, is_list = TRUE, starts = list(/obj/item/stock_parts/capacitor, /obj/item/stock_parts/micro_laser, /obj/item/stock_parts/manipulator))
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 	CheckParts()
 	FireModeModify()
 
@@ -54,26 +50,37 @@
 		manipulator_rating += MA.rating
 	FireModeModify()
 
-/obj/item/gun/energy/modular/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/energy/modular/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	to_chat(user, span_notice("You [assembled ? "disassemble" : "assemble"] the gun."))
 	assembled = !assembled
-	playsound(src, tool.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, 1)
+	return OP_OK
 
-/obj/item/gun/energy/modular/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/gun/energy/modular)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/item/gun/energy/modular/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(assembled == 1)
 		to_chat(user, span_warning("Disassemble the [src] first!"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
-		playsound(src, tool.usesound, 50, 1)
-		own_take_member(src, nameof(guncomponents), I)
+		playsound(src, sounds_of(tool).use, 50, 1)
+		rel_take(src, nameof(guncomponents), I)
 		I.forceMove(get_turf(src))
 		CheckParts()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby: the parent's first, then fitting a component.
-/obj/item/gun/energy/modular/gun_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/gun/energy/modular/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	//Someone's attacking us, and it's not anything we have a special case for (i.e. a tool)
 	. = ..()
 	if(assembled) // can't put anything in
@@ -87,7 +94,7 @@
 	if(istype(O, /obj/item/stock_parts/capacitor) && capacitor_rating == 5)
 		to_chat(user, span_warning("You can't add any more capacitors!"))
 		return
-	if(!own_add(src, nameof(src.guncomponents), O, user = user))
+	if(!move_into(src, nameof(src.guncomponents), O, user))
 		return
 	to_chat(user, span_notice("You add a component to the [src]"))
 	CheckParts()
@@ -127,24 +134,17 @@
 		chargecost = 100
 		chargecost_lethal = 200
 
-	own_clear(src, nameof(firemodes), OWN_DELETE)
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
+	rel_clear(src, nameof(firemodes))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
 
-/obj/item/gun/energy/modular/load_ammo(obj/item/C, mob/user)
-	if(istype(C, cell_type))
-		if(self_recharge || battery_lock)
-			to_chat(user, span_notice("[src] does not have a battery port."))
-			return
-		var/obj/item/cell/P = C
-		if(power_supply)
-			to_chat(user, span_notice("[src] already has a power cell."))
-		else
-			act_message(user, src, MSG_SELF(span_notice("You start to insert [P] into %T%.")), MSG_OTHERS("%U% is reloading %T%."))
-			om_task_timed(user, 1 SECOND, src, src, PROC_REF(cell_inserted), list(user, P))
-		return
+/obj/item/gun/energy/modular/cell_fits(obj/item/cell/P)
+	return istype(P, cell_type)
+
+/obj/item/gun/energy/modular/cell_load_time(datum/act/op/A)
+	return 1 SECOND
 
 /obj/item/gun/energy/modular/pistol
 	name = "modular pistol"

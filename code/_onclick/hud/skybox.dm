@@ -40,7 +40,7 @@
 	if(T)
 		if(rebuild)
 			skybox.cut_overlays()
-			skybox.add_overlay(skybox_service().get_skybox(T.z))
+			skybox.add_overlay(SSskybox.ready().get_skybox(T.z))
 			screen |= skybox
 		skybox.screen_loc = "CENTER:[(world.maxx>>1) - T.x],CENTER:[(world.maxy>>1) - T.y]"
 

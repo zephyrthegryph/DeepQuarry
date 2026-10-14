@@ -7,6 +7,7 @@
 	icon_state = "dark"
 	can_dirty = FALSE
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this tile glows
 /turf/simulated/floor/weird_things/dark/Initialize(mapload)
 	. = ..()
 	if(prob(5))
@@ -29,12 +30,12 @@
 				act_message(L, null, MSG_SELF("Your body gives off a faint, sparking, haze..."), MSG_OTHERS("%U%'s body gives off a faint, sparking, haze..."), runemessage = "gives off a faint, sparking haze")
 		var/datum/shadekin/comp = L.get_shadekin_state()
 		if(comp)
-			comp.dark_energy += 10
+			comp.set_dark_energy(comp.dark_energy + 10)
 			if(prob(10))
 				to_chat(L, span_notice("You can feel the energy flowing into you!"))
 		else if(prob(0.25))
 			to_chat(L, span_danger("The darkness seethes under your feet..."))
-			L.status_adjust(EFFECT_HALLUCINATING, 50)
+			L.status_adjust(STAT_HALLUCINATING, 50)
 
 /turf/simulated/floor/weird_things/dark/proc/add_glow()
 	var/choice = "overlay-[rand(1,6)]"

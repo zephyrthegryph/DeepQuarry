@@ -1,6 +1,4 @@
 /obj/machinery/atmospherics/tvalve
-	// A manual valve: the AI can't turn it (digital valves set SILICON_USE_HAND).
-	silicon_use = NONE
 	icon = 'icons/atmos/tvalve.dmi'
 	icon_state = "map_tvalve0"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -13,7 +11,7 @@
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|WEST
 
-	state = 0 // 0 = go straight, 1 = go to side
+	var/state = 0 // 0 = go straight, 1 = go to side
 
 	var/mirrored = FALSE
 	var/tee = FALSE // Note: Tee not actually supported for T-valves: no sprites
@@ -29,10 +27,13 @@
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/tvalve/appearance_overlays()
-	. = list()
-	icon_state = "tvalve[mirrored ? "m" : ""][state]"
+/obj/machinery/atmospherics/tvalve/draw(datum/look/look)
+	..()
+	look.state("tvalve[mirrored ? "m" : ""][state]")
+
+/obj/machinery/atmospherics/tvalve/derived()
+	. = ..()
+	. += drawn_from(nameof(state))
 
 /// The wheel-turning animation, played when the toggle starts (the state follows a second later).
 /obj/machinery/atmospherics/tvalve/proc/animate_toggle()
@@ -79,24 +80,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom,
 
 	return 1
 
-/obj/machinery/atmospherics/tvalve/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/tvalve_toggle,
-	)
-	..()
+CAPABILITIES(/obj/machinery/atmospherics/tvalve)
+	ref_one(nameof(node3))
+	without("silicon_hand") // a manual valve: silicons can't turn it (digital valves declare their own)
+	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
+	pipe_device_unwrench()
 
-/// Toggle between straight-through and side flow.
-/datum/interaction/machine_hand/ungated/tvalve_toggle
-	id = "tvalve_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/atmospherics/tvalve/proc/interaction_toggle
+/// A three-way valve never runs: it comes off whenever its gas lets it.
+/obj/machinery/atmospherics/tvalve/pipe_device_idle(datum/act/A)
+	return null
 
-/obj/machinery/atmospherics/tvalve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/// The wheel turns: the valve moves a second later.
+/obj/machinery/atmospherics/tvalve/proc/wheel_turned(datum/act/op/A)
 	animate_toggle()
-	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
-	return TRUE
+	after(src, 1 SECOND, PROC_REF(finish_toggle))
+	return OP_OK
 
 /// The switch, a second after the wheel is turned.
 /obj/machinery/atmospherics/tvalve/proc/finish_toggle()
@@ -122,7 +120,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom,
 	STANDARD_ATMOS_CHOOSE_NODE(2, node_connects[2])
 	STANDARD_ATMOS_CHOOSE_NODE(3, node_connects[3])
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/tvalve/return_network(obj/machinery/atmospherics/reference)
@@ -168,7 +165,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom,
 	return null
 
 /obj/machinery/atmospherics/tvalve/digital		// can be controlled by AI
-	silicon_use = SILICON_USE_HAND
 	name = "digital switching valve"
 	desc = "A digitally controlled valve."
 	icon = 'icons/atmos/digital_tvalve.dmi'
@@ -182,47 +178,27 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve, TYPE_PROC_REF(/atom,
 	icon_state = "map_tvalve1"
 	state = 1
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/tvalve/digital/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!powered())
-		icon_state = "tvalve[mirrored ? "m" : ""]nopower"
-
-/obj/machinery/atmospherics/tvalve/digital/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/tvalve_toggle_digital,
-	)
+/obj/machinery/atmospherics/tvalve/digital/draw(datum/look/look)
 	..()
+	if(power_lost())
+		look.state("tvalve[mirrored ? "m" : ""]nopower")
 
-/// Toggle, gated on power and access.
-/datum/interaction/machine_hand/ungated/tvalve_toggle_digital
-	id = "tvalve_toggle_digital"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/tvalve/digital/proc/lets_in, "access denied"))
-	effect = /obj/machinery/atmospherics/tvalve/digital/proc/interaction_toggle_digital
+/// A digital three-way valve turns for someone its access lets in, while it has power.
+CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	silicon_hand()
+	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
 
-/obj/machinery/atmospherics/tvalve/digital/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
-/obj/machinery/atmospherics/tvalve/digital/proc/interaction_toggle_digital(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!powered())
-		return TRUE
-	return interaction_toggle(user, held, interaction)
+/obj/machinery/atmospherics/tvalve/digital/proc/has_power(datum/act/A)
+	return (!power_lost()) ? null : MSG(valve/unpowered)
 
 //Radio remote control
 
 /obj/machinery/atmospherics/tvalve/digital/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
-
-/obj/machinery/atmospherics/tvalve/digital/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/tvalve/digital/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id))
@@ -243,20 +219,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_RE
 			else
 				go_to_side()
 
-/obj/machinery/atmospherics/tvalve/wrench_act(mob/user, obj/item/W)
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/tvalve/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
-
 /obj/machinery/atmospherics/tvalve/mirrored
 	icon_state = "map_tvalvem0"
 	mirrored = TRUE
@@ -274,3 +236,5 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/tvalve/digital, TYPE_PROC_RE
 	state = 1
 
 
+
+TRACKED(/obj/machinery/atmospherics/tvalve, state)

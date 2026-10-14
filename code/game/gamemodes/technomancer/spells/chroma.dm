@@ -14,9 +14,13 @@
 	aspect = ASPECT_LIGHT
 	var/color_to_use = "#FFFFFF"
 
-/obj/item/spell/chroma/Initialize(mapload, coreless)
-	. = ..()
-	set_light(6, 5, l_color = color_to_use)
+
+CAPABILITIES(/obj/item/spell/chroma)
+	look_glow(PROC_REF(chroma_glow))
+
+/// The spell's light, in the colour picked for it.
+/obj/item/spell/chroma/proc/chroma_glow(datum/act/A)
+	return GLOW(6, 5, color_to_use)
 
 /obj/effect/temporary_effect/chroma
 	name = "chroma"
@@ -24,9 +28,16 @@
 	invisibility = INVISIBILITY_ABSTRACT
 	time_to_die = 2 MINUTES //Despawn after this time, if set.
 
-/obj/effect/temporary_effect/chroma/Initialize(mapload, new_color = "#FFFFFF")
-	. = ..()
-	set_light(6, 5, l_color = new_color)
+CAPABILITIES(/obj/effect/temporary_effect/chroma)
+	param(nameof(chroma_color), pos = 1)
+	look_glow(PROC_REF(chroma_glow))
+
+/// The glow's colour (its constructor param).
+/obj/effect/temporary_effect/chroma/var/chroma_color = "#FFFFFF"
+
+/// The light the spell left, in its colour.
+/obj/effect/temporary_effect/chroma/proc/chroma_glow(datum/act/A)
+	return GLOW(6, 5, chroma_color)
 
 /obj/item/spell/chroma/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)
@@ -36,10 +47,11 @@
 		consume(src, user)
 
 /obj/item/spell/chroma/on_use_cast(mob/user)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(chroma_color_picked), title = "Color selection", message = "Choose the color you want your light to be.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/color, PROC_REF(chroma_color_picked), answerer = user, title = "Color selection", question = "Choose the color you want your light to be.", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/spell/chroma/proc/chroma_color_picked(datum/om/prompt/color/ask)
-	var/new_color = ask.picked_color
+/obj/item/spell/chroma/proc/chroma_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_color = A.answer.value
 	if(new_color)
-		color_to_use = new_color
-		set_light(6, 5, l_color = new_color)
+		set_color_to_use(new_color)

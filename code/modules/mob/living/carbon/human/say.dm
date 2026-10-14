@@ -1,7 +1,8 @@
 /mob/living/carbon/human/GetAltName()
-	var/list/name_data = list(null)
-	if(OM_EMIT(src, /datum/om/event/before/human_get_alt_name, name_data) & COMPONENT_ALT_NAME_CHANGED)
-		return name_data[1]
+	var/datum/act/name_alt/alt = ACT_TRY(src, name_alt)
+	if(!alt)
+		return ACT_REPLY
+	act_cancel(alt)
 
 	if(absorbed && isbelly(loc))
 		var/obj/belly/B = loc
@@ -94,13 +95,11 @@
 	return ..()
 
 /mob/living/carbon/human/GetVoice()
-	// Allow components to override voice (e.g., shadekin phase hiding).
-	// Only allocate the signal payload list when a handler is actually registered
-	// (GetVoice runs every Life() tick per human; the list(null) alloc is otherwise wasted).
-	if(om_wants(src, /datum/om/event/before/human_get_voice))
-		var/list/voice_data = list(null)
-		if(OM_EMIT(src, /datum/om/event/before/human_get_voice, voice_data) & COMPONENT_VOICE_CHANGED)
-			return voice_data[1]
+	// A hook on the mob may speak for it (shadekin phase hiding): the voice it answers replaces the rest. Nothing is allocated when nothing hooks it.
+	var/datum/act/name_voice/voice = ACT_TRY(src, name_voice)
+	if(!voice)
+		return ACT_REPLY
+	act_cancel(voice)
 
 	// Normal voice determination logic
 	var/voice_sub
@@ -137,22 +136,25 @@
 			return formatted_name
 	return real_name
 
+/// A voice forced on the speaker (a symptom); unset for nearly everyone.
+sparse(/mob/living/carbon/human, special_voice, type = text)
+
 /mob/living/carbon/human/proc/SetSpecialVoice(new_voice)
 	if(new_voice)
-		special_voice = new_voice
+		sparse_set(src, special_voice, new_voice)
 	return
 
 /mob/living/carbon/human/proc/UnsetSpecialVoice()
-	special_voice = ""
+	sparse_set(src, special_voice, null)
 	return
 
 /mob/living/carbon/human/proc/GetSpecialVoice()
-	return special_voice
+	return sparse_get_or(src, special_voice, "")
 
 /mob/living/carbon/human/handle_speech_problems(list/message_data)
-	if(has_status(EFFECT_MUTED) || (sdisabilities & MUTE) || is_paralyzed())
+	if(has_status(STAT_MUTED) || (sdisabilities & MUTE) || is_paralyzed())
 		// MUTE shouldn't suppress noise language (audible say emotes), consistent with * emotes bypassing mute in say().
-		if((sdisabilities & MUTE) && !has_status(EFFECT_MUTED) && !is_paralyzed())
+		if((sdisabilities & MUTE) && !has_status(STAT_MUTED) && !is_paralyzed())
 			var/list/pieces = message_data[1]
 			if(islist(pieces) && LAZYLEN(pieces))
 				var/datum/multilingual_say_piece/first = pieces[1]
@@ -170,7 +172,7 @@
 				message_data[2] = "HIIII EVERYPONY"
 			return 1
 
-	if(factor(BF_PENALTY_SCALE) < 1 || (status_units(EFFECT_JITTERY) >= 100 && !has_status(EFFECT_STUTTERING))) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
+	if(factor(BF_PENALTY_SCALE) < 1 || (status_units(STAT_JITTERY) >= 100 && !has_status(STAT_STUTTERING))) // motor mouth, check for stuttering so anxiety doesn't do hyperzine text
 		// Despite trying to url/html decode these, byond is just being bad and I dunno.
 		var/static/regex/speedboost_initial = new (@"&[a-z]{2,5};|&#\d{2};","g")
 		// Not herestring because bad vs code syntax highlight panics at apostrophe

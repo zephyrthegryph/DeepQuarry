@@ -126,6 +126,9 @@
 
 	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
+CAPABILITIES(/datum/species/lleill)
+	owns_many(nameof(lleill_ability_datums))
+
 // Shapeshifters have some behaviour that doesn't play well with this species so I have taken the main parts needed for here.
 
 TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component", "valid_transform_species"))
@@ -135,57 +138,57 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 
 /datum/species/lleill/get_icobase(mob/living/carbon/human/H, get_deform)
 	if(!H) return ..(null, get_deform)
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.type == src.type) return ..(H, get_deform)
 	return S.get_icobase(H,get_deform)
 
 /datum/species/lleill/get_race_key(mob/living/carbon/human/H)
-	return "[..()]-[GLOB.wrapped_species_by_ref["\ref[H]"]]"
+	return "[..()]-[H?.wrapped_bodytype()]"
 
 /datum/species/lleill/get_bodytype(mob/living/carbon/human/H)
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!H || !S) return ..()
 	if(S.type == src.type) return ..(H)
 	return S.get_bodytype(H)
 
 /datum/species/lleill/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_blood_mask(H)
 
 /datum/species/lleill/get_damage_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_damage_mask(H)
 
 /datum/species/lleill/get_damage_overlays(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_damage_overlays(H)
 
 /datum/species/lleill/get_tail(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail(H)
 
 /datum/species/lleill/get_tail_animation(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail_animation(H)
 
 /datum/species/lleill/get_tail_hair(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail_hair(H)
@@ -194,14 +197,14 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		own_add(src, nameof(lleill_ability_datums), LP)
+		rel_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/lleill/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		own_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
+		rel_set(H, nameof(H.ability_master), new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
-			om_grant(H, GRANT_VERB, P.verbpath, src)
+			grant(H, granted_verb(P.verbpath), src)
 			H.ability_master.add_lleill_ability(
 					object_given = H,
 					verb_given = P.verbpath,
@@ -209,30 +212,44 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
+	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /mob/living/carbon/human/proc/show_lleill_display()
-	if(lleill_display)
-		lleill_display.invisibility = INVISIBILITY_NONE
-		lleill_display.icon_state = "lleill-4"
+	if(hud_used?.lleill_display)
+		hud_used?.lleill_display?.invisibility = INVISIBILITY_NONE
+		hud_used?.lleill_display?.icon_state = "lleill-4"
 
 /datum/species/proc/update_lleill_hud(mob/living/carbon/human/H)
 	var/relative_energy = lleill_energy_max ? ((lleill_energy/lleill_energy_max)*100) : 0
-	if(H.lleill_display)
-		H.lleill_display.invisibility = INVISIBILITY_NONE
+	if(hud_of(H)?.lleill_display)
+		hud_of(H)?.lleill_display?.invisibility = INVISIBILITY_NONE
 		switch(relative_energy)
 			if(0 to 24)
-				H.lleill_display.icon_state = "lleill-0"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-0"
 			if(25 to 49)
-				H.lleill_display.icon_state = "lleill-1"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-1"
 			if(50 to 74)
-				H.lleill_display.icon_state = "lleill-2"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-2"
 			if(75 to 99)
-				H.lleill_display.icon_state = "lleill-3"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-3"
 			if(100 to INFINITY)
-				H.lleill_display.icon_state = "lleill-4"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-4"
 	return
 
 /datum/species/lleill/add_inherent_verbs(mob/living/carbon/human/H)
 	..()
 	add_lleill_abilities(H)
+
+/datum/species/lleill/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	. = ..()
+	if(!H)
+		return
+	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()
+	. += list(list(form, nameof(form.bodytype)))
+	var/list/visited = seen ? seen.Copy() : list()
+	if(src in visited)
+		return
+	visited += src
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
+	if(S && !(S in visited))
+		. += S.acceptance_bodytype_reads(H, visited)

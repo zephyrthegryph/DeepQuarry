@@ -4,8 +4,6 @@
 	icon = 'icons/obj/guns/ghost_beam.dmi'
 	icon_state = "ghost_beam"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/grab_range = 5 // How many tiles away it can grab. Changing this also changes the box size.
 	/// Stops multiple grabbs if set to TRUE
 	/// The entity we are currently grabbing.
@@ -24,9 +22,12 @@
 	// Make it so it searches in an AOE and grabs thing.
 
 /obj/item/ghost_catcher/proc/appearance_busy()
-	return om_busy(src) ? TRUE : FALSE
+	return op_claimed(src) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_busy?_active:}")
+/// The look (the draw sweep: from its template).
+/obj/item/ghost_catcher/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_active" : ""]")
 
 /obj/item/ghost_catcher/update_held_icon()
 	var/mob/living/M = loc
@@ -51,7 +52,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 
 	if(isturf(target) && (!target.incorporeal_grab()))
 		var/turf/T = target
-		if(!om_busy(src))
+		if(!op_claimed(src))
 			for(var/mob/entity in range(1, T)) //We'll let you grab things ON the tile or AROUND the tile you click on.
 				if(entity.incorporeal_grab())
 					target = entity
@@ -87,7 +88,7 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 		return
 
 	// Things that invalidate the scan immediately.
-	if(om_busy(src))
+	if(op_claimed(src))
 		to_chat(user, span_warning("\The [src] is already grabbing an entity!"))
 		return
 
@@ -112,34 +113,24 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	rel_set(src, nameof(grabbed_entity), target)
 	if(isliving(target))
 		var/mob/living/target_mob = target
-		target_mob.status_at_least(EFFECT_WEAKENED, 3)
-		target_mob.status_at_least(EFFECT_STUNNED, 3)
+		target_mob.status_at_least(STAT_WEAKENED, 3)
+		target_mob.status_at_least(STAT_STUNNED, 3)
 		to_chat(target, span_danger("You feel yourself weakened from the [src]'s beam!"))
 
 	// The delay, and test for if the scan succeeds or not. The grab claims the catcher
-	// (om_busy()) until it ends; the effects travel in a list (the beam ends itself).
+	// (op_claimed()) until it ends; the effects travel in a list (the beam ends itself).
 	var/list/effects = list(scan_beam, filter, box_segments)
-	var/started = om_task_start(/datum/om/task/timed/ghost_grab, user, target, receiver = src, max_distance = grab_range, effects = effects, busy = src)
-	if(istext(started))
+	var/datum/op_result/started = perform_op(user, src, "grab", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("subject" = target, "effects" = effects))
+	if(!started || started.outcome == ACT_REFUSED)
 		grab_ended(target, user, effects)
 		return
-	update_icon()
 
-/// Holding a ghost in the beam, up to a minute; the catcher is busy until it ends.
-/datum/om/task/timed/ghost_grab
-	duration = 60 SECONDS
-	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
-	complete_proc = /obj/item/ghost_catcher/proc/grab_timed_out
-	cancel_proc = /obj/item/ghost_catcher/proc/grab_broken
-	/// The beam, the filter and the box: not held (the beam ends itself).
-	var/list/effects
-
-/obj/item/ghost_catcher/proc/grab_broken(datum/om/task/timed/ghost_grab/task)
-	grab_ended(task.target, task.actor, task.effects)
+/// The grab was cut short (the catcher put down, the user down): the effects end.
+/obj/item/ghost_catcher/proc/grab_broken(datum/act/op/A)
+	grab_ended(A.arg("subject"), A.actor, A.arg("effects"))
 
 /// The grab is over (broken or done): clean up the effects and start the cooldown.
 /obj/item/ghost_catcher/proc/grab_ended(atom/target, mob/user, list/effects)
-	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))
 		scan_beam.End()
@@ -150,14 +141,22 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	rel_clear(src, nameof(grabbed_entity))
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
-/obj/item/ghost_catcher/proc/grab_timed_out(datum/om/task/timed/ghost_grab/task)
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	var/list/effects = task.effects
+/obj/item/ghost_catcher/proc/grab_timed_out(datum/act/op/A)
+	var/atom/target = A.arg("subject")
+	var/mob/user = A.actor
+	var/list/effects = A.arg("effects")
 	to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
 	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#330099", 3)
 	grab_ended(target, user, effects)
+	return OP_OK
+
+CAPABILITIES(/obj/item/ghost_catcher)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
+	// Holding a ghost in the beam, up to a minute; the catcher is claimed (busy) until it ends. The user may walk about while it lasts.
+	op("grab", ai(), takes("subject", "effects"), claims(CLAIM_TARGET), wait(60 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(grab_broken)), then(PROC_REF(grab_timed_out)))
+	ref_one(nameof(grabbed_entity), /atom/movable)
 
 /atom/proc/incorporeal_grab(mob/user)
 	if(is_incorporeal())
@@ -175,10 +174,8 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	name = "proton pack"
 	desc = "A complex backpack that houses a miniature antimatter reactor to power a spectral capture device."
 	icon = 'icons/obj/technomancer.dmi'
-	default_worn_icon = 'icons/inventory/back/mob.dmi'
 	icon_state = "technomancer_core"
 	item_state = "proton_pack"
-	slot_flags = SLOT_BACK
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
@@ -188,21 +185,30 @@ APPEARANCE_TEMPLATE(/obj/item/ghost_catcher, "{initial(icon_state)}{appearance_b
 	make_tethered(who_ya_gunna_call)
 	. = ..()
 
-DECLARE_INTERACTIONS(/obj/item/proton_pack, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/proton_pack)
+	configure(item_worn(worn_icon = 'icons/inventory/back/mob.dmi', slots = SLOT_BACK))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	drag_onto(PROC_REF(drop_input))
 
 /// Old attack_hand.
-/obj/item/proton_pack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proton_pack/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	// See important note in code/datums/behaviours/tethered_item.dm
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/proton_pack/MouseDrop()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/proton_pack/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
+
+/obj/item/proton_pack/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)

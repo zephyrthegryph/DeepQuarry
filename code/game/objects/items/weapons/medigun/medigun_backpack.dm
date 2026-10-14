@@ -6,9 +6,6 @@
 	icon_override = 'icons/obj/borkmedigun.dmi'
 	icon_state = "mg-backpack"
 	item_state = "mg-backpack-onmob"
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = TRUE
 	w_class = ITEMSIZE_HUGE
 	unacidable = TRUE
@@ -36,6 +33,33 @@
 	var/sbintier = 1
 	var/gridstatus = 0
 	var/chargecap = 1000
+
+
+CAPABILITIES(/obj/item/medigun_backpack)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
+	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
+	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
+	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
+	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
+	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
+	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module, starts = nameof(smodule))
+	owns_one(nameof(bcell), starts = nameof(bcell), starts_set = list("charge" = 0)) // starts empty
+	interface("Medigun")
+	without("ui_open")
+	op("celleject", ui_act("celleject"), then(PROC_REF(ui_act_celleject)))
+	op("cancel_healing", ui_act("cancel_healing"), then(PROC_REF(ui_act_cancel_healing)))
+	op("toggle_maintenance", ui_act("toggle_maintenance"), then(PROC_REF(ui_act_toggle_maintenance)))
+	op("rem_smodule", ui_act("rem_smodule"), then(PROC_REF(ui_act_rem_smodule)))
+	op("rem_mani", ui_act("rem_mani"), then(PROC_REF(ui_act_rem_mani)))
+	op("rem_laser", ui_act("rem_laser"), then(PROC_REF(ui_act_rem_laser)))
+	op("rem_cap", ui_act("rem_cap"), then(PROC_REF(ui_act_rem_cap)))
+	op("rem_bin", ui_act("rem_bin"), then(PROC_REF(ui_act_rem_bin)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(medigun_backpack_emp)))
+	drag_onto(PROC_REF(drop_input))
 
 //backpack item
 /obj/item/medigun_backpack/cmo
@@ -91,11 +115,11 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/proc/drain_tank(tank, amount)
 	switch(tank)
 		if(MEDIGUN_TANK_BRUTE)
-			brutecharge = max(0, brutecharge - amount)
+			set_brutecharge(max(0, brutecharge - amount))
 		if(MEDIGUN_TANK_BURN)
-			burncharge = max(0, burncharge - amount)
+			set_burncharge(max(0, burncharge - amount))
 		if(MEDIGUN_TANK_TOX)
-			toxcharge = max(0, toxcharge - amount)
+			set_toxcharge(max(0, toxcharge - amount))
 
 /// Mend what `H`'s automated triage demands from the tanks' tags, up to
 /// `strength` per tank this cycle. Returns the total amount treated.
@@ -149,56 +173,47 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		modifier = brutevol
 	if(modifier > (tankmax - brutecharge))
 		modifier = tankmax - brutecharge
-	brutevol -= modifier
-	brutecharge += modifier
+	set_brutevol(brutevol - modifier)
+	set_brutecharge(brutecharge + modifier)
 
 /obj/item/medigun_backpack/proc/adjust_burnvol(modifier)
 	if(modifier > burnvol)
 		modifier = burnvol
 	if(modifier > (tankmax - burncharge))
 		modifier = tankmax - burncharge
-	burnvol -= modifier
-	burncharge += modifier
+	set_burnvol(burnvol - modifier)
+	set_burncharge(burncharge + modifier)
 
 /obj/item/medigun_backpack/proc/adjust_toxvol(modifier)
 	if(modifier > toxvol)
 		modifier = toxvol
 	if(modifier > (tankmax - toxcharge))
 		modifier = tankmax - toxcharge
-	toxvol -= modifier
-	toxcharge += modifier
+	set_toxvol(toxvol - modifier)
+	set_toxcharge(toxcharge + modifier)
 
-/obj/item/medigun_backpack/periodic_step()
+/obj/item/medigun_backpack/proc/medigun_backpack_step(datum/act/timer/A)
 	if(!bcell)
 		return
 
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
 	if(bcell.charge >= 10)
-		var/icon_needs_update = FALSE
 		if(brutecharge < tankmax && brutevol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_brutevol(smaniptier * 2)
-			icon_needs_update = TRUE
 		if(burncharge < tankmax && burnvol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_burnvol(smaniptier * 2)
-			icon_needs_update = TRUE
 		if(toxcharge < tankmax && toxvol > 0 && (bcell.checked_use(smaniptier * 2)))
 			adjust_toxvol(smaniptier * 2)
-			icon_needs_update = TRUE
 		//Alien tier
 		if(sbintier >= 5 && medigun.busy == MEDIGUN_IDLE && (bcell.charge >= 10))
 			if(brutevol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				brutevol ++
+				set_brutevol(brutevol + 1)
 			if(burnvol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				burnvol ++
+				set_burnvol(burnvol + 1)
 			if(toxvol < chemcap && (bcell.checked_use(10)))
-				icon_needs_update = TRUE
-				toxvol ++
+				set_toxvol(toxvol + 1)
 
-		if(icon_needs_update)
-			update_icon()
 
 	if(scapacitor.get_rating() >= 5)
 		if(apc_charge())
@@ -215,7 +230,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	if(missing > 0)
 		if(ccell && ccell.checked_use(missing))
 			bcell.give(missing)
-			update_icon()
 			return
 
 		if(ismob(loc))
@@ -225,57 +239,52 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 /obj/item/medigun_backpack/get_cell()
 	return bcell
 
-DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/medigun_backpack/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/medigun_backpack/draw(datum/look/look)
+	..()
 	if((bcell.percent() <= 5 ))
-		. += image('icons/obj/borkmedigun.dmi', "no_battery")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "no_battery"))
 	else if((bcell.percent() <= 25 && bcell.percent() > 5))
-		. += image('icons/obj/borkmedigun.dmi', "low_battery")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "low_battery"))
 
 	if(brutevol <= 0 && brutecharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "red")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "red"))
 	else if(brutecharge <= 0 && brutevol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "redstrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "redstrike-blink"))
 
 	if(toxvol <= 0 && toxcharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "green")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "green"))
 	else if(toxcharge <= 0 && toxvol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "greenstrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "greenstrike-blink"))
 
 	if(burnvol <= 0 && burncharge > 0)
-		. += image('icons/obj/borkmedigun.dmi', "orange")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "orange"))
 	else if(burncharge <= 0 && burnvol <= 0)
-		. += image('icons/obj/borkmedigun.dmi', "orangestrike-blink")
+		look.overlay(image('icons/obj/borkmedigun.dmi', "orangestrike-blink"))
 
 /obj/item/medigun_backpack/proc/replace_icon(inhand)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(inhand)
-		icon_state = "mg-backpack-deployed"
-		item_state = "mg-backpack-deployed-onmob"
+		set_icon_state("mg-backpack-deployed")
+		set_item_state("mg-backpack-deployed-onmob")
 		if(is_twohanded())
-			medigun.icon_state = "medblaster"
+			medigun.set_icon_state("medblaster")
 			medigun.base_icon_state = "medblaster"
 			medigun.wielded_item_state = "medblaster-wielded"
-			medigun.update_icon()
 		else
-			medigun.icon_state = "medblaster_cmo"
+			medigun.set_icon_state("medblaster_cmo")
 			medigun.base_icon_state = "medblaster_cmo"
 			medigun.wielded_item_state = ""
-			medigun.update_icon()
 	else if(is_twohanded())
-		icon_state = "mg-backpack"
-		item_state = "mg-backpack-onmob"
-		medigun.icon_state = "medblaster"
+		set_icon_state("mg-backpack")
+		set_item_state("mg-backpack-onmob")
+		medigun.set_icon_state("medblaster")
 		medigun.base_icon_state = "medblaster"
 	else
-		icon_state = "mg-backpack_cmo"
-		item_state = "mg-backpack_cmo-onmob"
-		medigun.icon_state = "medblaster_cmo"
+		set_icon_state("mg-backpack_cmo")
+		set_item_state("mg-backpack_cmo-onmob")
+		medigun.set_icon_state("medblaster_cmo")
 		medigun.base_icon_state = "medblaster_cmo"
 
-	update_icon()
 
 /obj/item/medigun_backpack/Initialize(mapload)
 	make_tethered(medigun_path)
@@ -286,186 +295,170 @@ DECLARE_APPEARANCE_PROC(/obj/item/medigun_backpack, TYPE_PROC_REF(/atom, appeara
 
 	if(!is_twohanded())
 		medigun.beam_range = 4
-		medigun.icon_state = "medblaster_cmo"
+		medigun.set_icon_state("medblaster_cmo")
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
-		medigun.update_icon()
-	if(bcell) // declared default: starts empty
-		bcell.charge = 0
-	update_icon()
 
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, sbin, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, scapacitor, CHANGE_EXPLICIT)
-/// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("smanipulator", "scapacitor", "sbin"))
-
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "bcell", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smodule", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smanipulator", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "scapacitor", null)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "slaser", null)
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
 
-DAMAGE_REACTION(/obj/item/medigun_backpack, DAMAGE_EMP, PROC_REF(medigun_backpack_emp))
 /// The pulse reaches the cell.
-/obj/item/medigun_backpack/proc/medigun_backpack_emp(datum/damage_packet/packet)
+/obj/item/medigun_backpack/proc/medigun_backpack_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(bcell)
 		bcell.emp_act(packet.severity)
 
-DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/medigun_backpack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/medigun_backpack/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	// See important note in code/datums/behaviours/tethered_item.dm
 	if(tether_swap(user))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/medigun_backpack/MouseDrop()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/medigun_backpack/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
+
+/obj/item/medigun_backpack/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
 /// Old attackby.
-/obj/item/medigun_backpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/medigun_backpack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(refill_reagent(W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
 	if(W.has_tool_quality(TOOL_CROWBAR) && maintenance)
 		if(smodule )
 			smodule.forceMove(get_turf(loc))
-			own_take(src, nameof(smodule))
+			rel_take(src, nameof(smodule))
 
 		if(smanipulator)
 			smanipulator.forceMove(get_turf(loc))
-			own_take(src, nameof(smanipulator))
+			rel_take(src, nameof(smanipulator))
 			smaniptier = 0
 
 		if(slaser)
 			slaser.forceMove(get_turf(loc))
-			own_take(src, nameof(slaser))
+			rel_take(src, nameof(slaser))
 
 		if(scapacitor)
 			scapacitor.forceMove(get_turf(loc))
-			own_take(src, nameof(scapacitor))
+			rel_take(src, nameof(scapacitor))
 
 		if(sbin)
 			sbin.forceMove(get_turf(loc))
-			own_take(src, nameof(sbin))
+			rel_take(src, nameof(sbin))
 			sbintier = 0
 
 		to_chat(user, span_notice("You remove the Components from \the [src]."))
-		update_icon()
 		return TRUE
 
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(!maintenance)
 			maintenance = TRUE
 			to_chat(user, span_notice("You open the maintenance hatch on \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		maintenance = FALSE
 		to_chat(user, span_notice("You close the maintenance hatch on \the [src]."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W, /obj/item/cell))
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
-		if(!own_set(src, nameof(src.ccell), W, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.ccell), W, user))
+			return OP_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(maintenance)
 		if(istype(W, /obj/item/stock_parts/scanning_module))
 			if(smodule)
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
-				if(!own_set(src, nameof(src.smodule), W, user = user))
-					return INTERACTION_HANDLED_PASS
+				if(!move_into(src, nameof(src.smodule), W, user))
+					return OP_PASS
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
-				update_icon()
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/manipulator))
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
-				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.smanipulator), W, user = user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
+			if(!move_into(src, nameof(src.smanipulator), W, user))
+				return OP_PASS
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/micro_laser))
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
-				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.slaser), W, user = user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
+			if(!move_into(src, nameof(src.slaser), W, user))
+				return OP_PASS
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/capacitor))
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
-				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.scapacitor), W, user = user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
+			if(!move_into(src, nameof(src.scapacitor), W, user))
+				return OP_PASS
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
-				bcell.maxcharge = 1000
+				bcell.set_maxcharge(1000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 2)
 				chargecap = 2000
-				bcell.maxcharge = 2000
+				bcell.set_maxcharge(2000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 3)
 				chargecap = 3000
-				bcell.maxcharge = 3000
+				bcell.set_maxcharge(3000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 4)
 				chargecap = 4000
-				bcell.maxcharge = 4000
+				bcell.set_maxcharge(4000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 			else if(scaptier == 5)
 				chargecap = 5000
-				bcell.maxcharge = 5000
+				bcell.set_maxcharge(5000)
 				if(bcell.charge > chargecap)
-					bcell.charge = chargecap
+					bcell.set_charge(chargecap)
 
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/stock_parts/matter_bin))
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
-				return INTERACTION_HANDLED_PASS
-			if(!own_set(src, nameof(src.sbin), W, user = user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
+			if(!move_into(src, nameof(src.sbin), W, user))
+				return OP_PASS
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300
@@ -474,28 +467,27 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				chemcap = 60*(sbintier)
 				tankmax = 30*sbintier
 			if(brutecharge > chemcap)
-				brutecharge = chemcap
+				set_brutecharge(chemcap)
 			if(burncharge > chemcap)
-				burncharge = chemcap
+				set_burncharge(chemcap)
 			if(toxcharge > chemcap)
-				toxcharge = chemcap
+				set_toxcharge(chemcap)
 			if(brutecharge > tankmax)
-				brutecharge = tankmax
+				set_brutecharge(tankmax)
 			if(burncharge > tankmax)
-				burncharge = tankmax
+				set_burncharge(tankmax)
 			if(toxcharge > tankmax)
-				toxcharge = tankmax
+				set_toxcharge(tankmax)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
-			update_icon()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/medigun_backpack/proc/refill_reagent(obj/item/container, mob/user)
 	. = FALSE
 	if(!maintenance && (istype(container, /obj/item/reagent_containers/glass/beaker) || istype(container, /obj/item/reagent_containers/glass/bottle)))
 
-		if(!(container.flags & OPENCONTAINER))
+		if(!container.is_open_container())
 			to_chat(user, span_warning("You need to open the [container] first!"))
 			return
 
@@ -531,19 +523,18 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 
 				switch(R.id)
 					if(REAGENT_ID_BICARIDINE)
-						brutevol += totransfer
+						set_brutevol(brutevol + totransfer)
 					if(REAGENT_ID_ANTITOXIN)
-						toxvol += totransfer
+						set_toxvol(toxvol + totransfer)
 					if(REAGENT_ID_KELOTANE)
-						burnvol += totransfer
+						set_burnvol(burnvol + totransfer)
 					if(REAGENT_ID_DERMALINE)
-						burnvol += totransfer
+						set_burnvol(burnvol + totransfer)
 				if(totransfer > 0)
 					if(R.id != "tricordrazine")
 						to_chat(user, span_notice("You add [totransfer / modifier] units of [R.name] to the [src]. \n The [src] stores [round(totransfer)] U of [name]."))
 					container.reagents.remove_reagent(R.id, totransfer / modifier)
 					play_sfx(src, SFX_WEAPONS_EMPTY)
-				update_icon()
 				. = TRUE
 	return
 
@@ -569,5 +560,4 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/ownership()
 	. = ..()
 	. += owns(nameof(ccell), policy = OWN_CONTAINED)
-	. += owns(nameof(sbin), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)
+	. += owns(nameof(sbin), policy = OWN_CONTAINED, starts = nameof(sbin))

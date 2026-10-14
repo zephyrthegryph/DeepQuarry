@@ -20,8 +20,6 @@
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 400)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	// last scan results for TGUI. Replaces the legacy `temp`
 	// HTML blob with structured data.
 	var/list/last_beacons = null
@@ -30,19 +28,21 @@
 
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
-DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/locator)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("controls", in_hand(), label("Open locator"), then(PROC_REF(locator_controls_opened)))
+	interface("Locator", title = "Persistent Signal Locator")
+	without("ui_open")
+	op("freq", ui_act("freq", arg("delta", num())), then(PROC_REF(ui_act_freq)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 
-/// Old attack_self.
-/obj/item/locator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/item/locator/proc/locator_controls_opened(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
-DECLARE_UI(/obj/item/locator, "Locator", UI_TITLE("Persistent Signal Locator"))
-
-UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:text,has_scan:bool,location:bool,beacons:bool,implants:bool}")
-
-/// The computed part of /obj/item/locator's window data (declared on its UI_DATA row).
-/obj/item/locator/proc/ui_data_obj_item_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/locator's window data.
+/obj/item/locator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["frequency"] = format_frequency(frequency)
 	data["has_scan"] = !!last_location
@@ -60,32 +60,34 @@ UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:tex
 		return "weak"
 	return "very weak"
 
-/obj/item/locator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/turf/current_location = get_turf(usr)
-	if(usr.stat || usr.restrained())
+/obj/item/locator/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/turf/current_location = get_turf(user)
+	if(user.stat || user.restrained())
 		return FALSE
 	if(!current_location || current_location.z == 3)
-		to_chat(usr, "The [src] is malfunctioning.")
+		to_chat(user, "The [src] is malfunctioning.")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/locator, "freq", ui_act_freq, UI_ARG_NUM("delta"))
-UI_ACT_PROC(/obj/item/locator, ui_act_freq)
-	frequency += params["delta"]
+/obj/item/locator/proc/ui_act_freq(datum/act/op/A, delta)
+	if(!ui_gate(A))
+		return FALSE
+	frequency += delta
 	frequency = sanitize_frequency(frequency)
 	return TRUE
 
-UI_ACT(/obj/item/locator, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/locator, ui_act_clear)
+/obj/item/locator/proc/ui_act_clear(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	last_beacons = null
 	last_implants = null
 	last_location = null
 	return TRUE
 
-UI_ACT(/obj/item/locator, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/item/locator, ui_act_refresh)
+/obj/item/locator/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/turf/sr = get_turf(src)
 	if(!sr)
 		return TRUE
@@ -132,24 +134,31 @@ UI_ACT_PROC(/obj/item/locator, ui_act_refresh)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "hand_tele"
 	item_state = "electronic"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 10000)
 	preserve_item = 1
 
-DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/hand_tele/proc/can_open_portal)))
+CAPABILITIES(/obj/item/hand_tele)
+	configure(item_thrown(force = 5))
+	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
+	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal))),
+		asks(/datum/prompt/choice, fields = list("title" = "Hand Teleporter", "question" = "Please select a teleporter to lock in on.", "choices" = computed(PROC_REF(teleporter_choices)), "timeout" = 0)),
+		then(PROC_REF(teleporter_chosen)))
 
 /// Requirement: it won't work off-station or on a teleport-blocked turf.
-/obj/item/hand_tele/proc/can_open_portal(mob/user, atom/target, obj/item/held)
-	var/turf/current_location = get_turf(user)//What turf is the user on?
-	if(!current_location || (current_location.z in using_map.admin_levels) || current_location.block_tele)
-		return "it's malfunctioning"
-	return TRUE
+/obj/item/hand_tele/proc/can_open_portal(datum/act/op/A)
+	return (hand_tele_works_at(get_turf(A.actor))) ? null : MSG(hand_tele/malfunctioning)
 
-/// Old attack_self.
-/obj/item/hand_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/proc/hand_tele_works_at(turf/current_location)
+	READS_FROM() // where the actor stands is asked when the button is pressed
+	return current_location && !(current_location.z in using_map.admin_levels) && !current_location.block_tele
+
+MSG_DEF_SELF(hand_tele/malfunctioning, "It's malfunctioning.")
+
+/// The teleporters this one can lock in on, by name (and a random spot nearby, which is dangerous).
+/obj/item/hand_tele/proc/teleporter_choices(datum/act/A)
 	var/list/L = list(  )
 	for(var/obj/machinery/teleport/hub/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/obj/machinery/computer/teleporter/com
@@ -175,19 +184,22 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 		turfs += T
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(teleporter_chosen), title = "Hand Teleporter", message = "Please select a teleporter to lock in on.", choices = L, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return TRUE
+	return L
 
-/obj/item/hand_tele/proc/teleporter_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/list/L = ask.choices
-	var/t1 = ask.choice
+/// Old attack_self: a portal opens to the chosen destination (three at most at once).
+/obj/item/hand_tele/proc/teleporter_chosen(datum/act/op/A)
+	var/datum/prompt/choice/prompt = A.answer
+	if(!prompt)
+		return OP_OK
+	var/mob/user = A.actor
+	var/list/L = prompt.choices
+	var/t1 = prompt.value
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++
 	if(count >= 3)
 		user.show_message(span_notice("\The [src] is recharging!"))
-		return
+		return OP_OK
 	var/T = L[t1]
 	for(var/mob/O in hearers(user, null))
 		O.show_message(span_notice("Locked In."), 2)
@@ -196,4 +208,5 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 	NEWP.creator = src
 	NEWP.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)
-	return
+	return OP_OK
+

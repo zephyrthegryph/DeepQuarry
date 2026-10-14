@@ -7,6 +7,11 @@
 	var/datum/geosample/geologic_data
 	var/material
 
+CAPABILITIES(/obj/item/ore)
+	owns_one(nameof(geologic_data), /datum/geosample)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
 /obj/item/ore/archeology_debris
 	name = "rocky debris"
 	desc = "Leftover rocky debris from digging."
@@ -35,7 +40,9 @@
 	name = ORE_SAND
 	icon_state = "ore_glass"
 	material = ORE_SAND
-	slot_flags = SLOT_HOLSTER
+
+CAPABILITIES(/obj/item/ore/glass)
+	configure(item_worn(slots = SLOT_HOLSTER))
 
 // POCKET SAND!
 /obj/item/ore/glass/throw_impact(atom/hit_atom)
@@ -43,9 +50,9 @@
 	var/mob/living/carbon/human/H = hit_atom
 	if(istype(H) && H.has_eyes() && prob(85))
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
-		H.status_at_least(EFFECT_BLINDED, 5)
-		H.status_adjust(EFFECT_BLURRY, 10)
-		om_after(src, 1, PROC_REF(scatter_if_dropped))
+		H.status_at_least(STAT_BLINDED, 5)
+		H.status_adjust(STAT_BLURRY, 10)
+		after(src, 0.1 SECONDS, PROC_REF(scatter_if_dropped))
 
 
 /obj/item/ore/phoron
@@ -89,9 +96,9 @@
 	var/mob/living/carbon/human/H = hit_atom
 	if(istype(H) && H.has_eyes() && prob(85))
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
-		H.status_at_least(EFFECT_BLINDED, 10)
-		H.status_adjust(EFFECT_BLURRY, 15)
-		om_after(src, 1, PROC_REF(scatter_if_dropped))
+		H.status_at_least(STAT_BLINDED, 10)
+		H.status_adjust(STAT_BLURRY, 15)
+		after(src, 0.1 SECONDS, PROC_REF(scatter_if_dropped))
 
 /obj/item/ore/lead
 	name = "lead glance"
@@ -159,20 +166,16 @@
 	icon_state = "slag"
 	material = null
 
-/obj/item/ore/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
-
-DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/ore/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/ore/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/core_sampler))
 		var/obj/item/core_sampler/C = W
 		C.sample_item(src, user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/ore/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M.handle_eat_minerals(src, user))
@@ -233,5 +236,4 @@ DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /// Sand thrown in someone's eyes is gone once it lands.
 /obj/item/ore/proc/scatter_if_dropped()
 	if(isturf(loc))
-		qdel(src)
-
+		consume(src)

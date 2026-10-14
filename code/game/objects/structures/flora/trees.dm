@@ -14,10 +14,14 @@
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.
 
-/obj/structure/flora/tree/Initialize(mapload)
-	icon_state = choose_icon_state()
 
-	return ..()
+TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
+
+/// Rolled before init: the tree's look (a winter tree one of six, a pine one of three).
+/obj/structure/flora/tree/roll_icon_state(datum/roller/R)
+	if(TYPE_TABLE_GET(src, winter_icon_suffix))
+		return "[base_state][R.number(1, 6)]"
+	return choose_icon_state(R)
 
 /obj/structure/flora/tree/update_transform()
 	var/matrix/M = matrix()
@@ -26,7 +30,7 @@
 	animate(src, transform = M, time = 10)
 
 // Override this for special icons.
-/obj/structure/flora/tree/proc/choose_icon_state()
+/obj/structure/flora/tree/proc/choose_icon_state(datum/roller/R)
 	return icon_state
 
 /obj/structure/flora/tree/can_harvest(obj/item/I)
@@ -35,45 +39,35 @@
 		. = TRUE
 	return .
 
-// Trees harvest through flora's own interaction_item() (called directly, by inheritance)
-// when the item qualifies; otherwise the tree fully replaces it with its own hit/dig logic.
-/obj/structure/flora/tree/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/tree_item,
-		/datum/interaction/entry_hand/ungated/tree_hand,
-	)
+// Trees harvest through flora's own interaction_item() when the item qualifies; otherwise the tree replaces it with its own hit and dig.
+CAPABILITIES(/obj/structure/flora/tree)
+	without("item")
+	without("uproot")
+	op("dig_stump", item(/obj/item/shovel), label("Dig up the stump"), when(nameof(is_stump)), priority(OP_PRIORITY_PART), wait(5 SECONDS), then(PROC_REF(chop_done)))
+	op("tree_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_hit)))
+	op("search_sticks", hand(), ungated(), label("Search for sticks"), needs(req(PROC_REF(has_sticks), because = MSG(tree/no_sticks))), begins(MSG(tree/searching_sticks)), wait(5 SECONDS), then(PROC_REF(sticks_found)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
-/// Old attack_hand: search the tree for loose sticks (survival_action.dm).
-/datum/interaction/entry_hand/ungated/tree_hand
-	id = "tree_hand"
-	name = "Search for sticks"
-	effect = /obj/structure/flora/tree/proc/interaction_search_sticks
-
-/// Old attackby: harvest (delegates to flora's own harvest logic), dig up a stump, or take a hit.
-/datum/interaction/entry_item/tree_item
-	id = "tree_item"
-	name = "Use"
-	effect = /obj/structure/flora/tree/proc/interaction_hit
-
-/obj/structure/flora/tree/proc/interaction_hit(mob/living/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: harvest (flora's own harvest), dig up a stump, or take a hit.
+/obj/structure/flora/tree/proc/interaction_hit(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(can_harvest(W))
-		return interaction_item(user, W, interaction)
+		return interaction_item(A)
 
 	if(is_stump)
-		if(istype(W,/obj/item/shovel))
-			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
-		return TRUE
+		return OP_OK
 
 	act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
 
-	var/damage_to_do = W.force
-	if(!W.sharp && !W.edge)
+	var/damage_to_do = combat_of(W).force
+	if(!combat_of(W).sharp && !combat_of(W).edge)
 		damage_to_do = round(damage_to_do / 4)
 	if(damage_to_do > 0)
-		if(W.sharp && W.edge)
+		if(combat_of(W).sharp && combat_of(W).edge)
 			play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 		else
-			playsound(src, W.hitsound, 50, 1)
+			playsound(src, sounds_of(W).hit, 50, 1)
 		if(damage_to_do > 5 && !indestructable)
 			adjust_health(-damage_to_do)
 		else
@@ -82,11 +76,11 @@
 	hit_animation()
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
-	return TRUE
+	return OP_OK
 
-/obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = W)
-	qdel(src)
+/obj/structure/flora/tree/proc/chop_done(datum/act/op/A)
+	act_message(A.actor, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = A.held)
+	consume(src, A.actor)
 
 // Shakes the tree slightly, more or less stolen from lockers.
 /obj/structure/flora/tree/proc/hit_animation()
@@ -125,8 +119,7 @@
 		return
 
 	if(product && product_amount) // Make wooden logs.
-		var/obj/item/stack/material/M = new product(get_turf(src), product_amount)
-		M.update_icon()
+		new product(get_turf(src), product_amount)
 	visible_message(span_danger("\The [src] is felled!"))
 	stump()
 
@@ -135,17 +128,17 @@
 	if(is_stump)
 		return
 
-	is_stump = TRUE
+	set_is_stump(TRUE)
 	set_density(FALSE)
-	icon_state = "[base_state]_stump"
+	set_icon_state("[base_state]_stump")
 	cut_overlays() // For the Sif tree and other future glowy trees.
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
-DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast))
+
 /// A blast tears into the tree through its own health, ruining some of the wood.
-/obj/structure/flora/tree/proc/tree_blast(datum/damage_packet/packet)
-	adjust_health(-(max_integrity / packet.severity), TRUE)
-	return DAMAGE_REACTION_BLOCK
+/obj/structure/flora/tree/proc/tree_blast(datum/act/hit/explosion/A)
+	adjust_health(-(max_integrity / A.packet.severity), TRUE)
+	return TRUE
 
 /obj/structure/flora/tree/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -173,8 +166,8 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	product = /obj/item/stack/material/log
 	shake_animation_degrees = 3
 
-/obj/structure/flora/tree/pine/choose_icon_state()
-	return "[base_state]_[rand(1, 3)]"
+/obj/structure/flora/tree/pine/choose_icon_state(datum/roller/R)
+	return "[base_state]_[R.number(1, 3)]"
 
 // ition Start 15/2/20 TFF - Holodeck variation trees, drop no wood.
 /obj/structure/flora/tree/pine/holo
@@ -195,37 +188,37 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	var/gift_type = /obj/item/a_gift
 	var/list/ckeys_that_took
 
-/obj/structure/flora/tree/pine/xmas/presents/choose_icon_state()
+TRACKED(/obj/structure/flora/tree/pine/xmas/presents, ckeys_that_took)
+
+CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
+	op("take_present", hand(), label("Take a present"), priority(OP_PRIORITY_NORMAL + 1), needs(req(PROC_REF(can_take_present), because = MSG(xmas_presents/none_left))), then(PROC_REF(interaction_hand)))
+
+/obj/structure/flora/tree/pine/xmas/presents/choose_icon_state(datum/roller/R)
 	return "pinepresents"
 
-/obj/structure/flora/tree/pine/xmas/presents/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/xmas_presents_hand,
-	)
-	..()
+/// Requirement: one present per player.
+/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(datum/act/op/A)
+	return (!read_once(present_taken(A.actor))) ? null : MSG(xmas_presents/none_left) // a player's key is fixed while it plays
+
+/// Has `user`'s player already taken a present from this tree?
+/obj/structure/flora/tree/pine/xmas/presents/proc/present_taken(mob/user)
+	return user.ckey && LAZYACCESS(ckeys_that_took, user.ckey)
+
+MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on.")
 
 /// Old attack_hand: take a present, once per ckey.
-/datum/interaction/entry_hand/xmas_presents_hand
-	id = "xmas_presents_hand"
-	name = "Take a present"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present))
-	effect = /obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand
-
-/// Requirement: one present per player.
-/obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(mob/living/user, atom/target, obj/item/held)
-	if(user.ckey && LAZYACCESS(ckeys_that_took, user.ckey))
-		return "there are no presents with your name on"
-	return TRUE
-
-/obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/flora/tree/pine/xmas/presents/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!user.ckey)
-		return TRUE
+		return OP_OK
 
 	to_chat(user, span_notice("After a bit of rummaging, you locate a gift with your name on it!"))
-	LAZYSET(ckeys_that_took, user.ckey, TRUE)
+	var/list/takers = ckeys_that_took ? ckeys_that_took.Copy() : list()
+	takers[user.ckey] = TRUE
+	set_ckeys_that_took(takers)
 	var/obj/item/G = new gift_type(src)
 	user.put_in_hands(G)
-	return TRUE
+	return OP_OK
 
 // Palm trees
 
@@ -238,8 +231,8 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	max_integrity = 200
 	pixel_x = 0
 
-/obj/structure/flora/tree/palm/choose_icon_state()
-	return "[base_state][rand(1, 2)]"
+/obj/structure/flora/tree/palm/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 2)]"
 
 
 // Dead trees
@@ -252,8 +245,8 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	product_amount = 5
 	max_integrity = 200
 
-/obj/structure/flora/tree/dead/choose_icon_state()
-	return "[base_state]_[rand(1, 6)]"
+/obj/structure/flora/tree/dead/choose_icon_state(datum/roller/R)
+	return "[base_state]_[R.number(1, 6)]"
 
 // ition Start 15/2/20 TFF - Holodeck variation trees, drop no wood.
 /obj/structure/flora/tree/dead/holo
@@ -272,8 +265,8 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	max_integrity = 400
 	pixel_x = -32
 
-/obj/structure/flora/tree/jungle_small/choose_icon_state()
-	return "[base_state][rand(1, 6)]"
+/obj/structure/flora/tree/jungle_small/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 6)]"
 
 // Big jungle trees
 
@@ -288,8 +281,8 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/jungle/choose_icon_state()
-	return "[base_state][rand(1, 6)]"
+/obj/structure/flora/tree/jungle/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 6)]"
 
 // Winter Trees
 
@@ -304,9 +297,7 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/winter/Initialize(mapload)
-	. = ..()
-	icon_state = "[base_state][rand(1, 6)]"
+TYPE_TABLE(/obj/structure/flora/tree/winter, winter_icon_suffix, TRUE)
 
 
 /obj/structure/flora/tree/winter1
@@ -320,9 +311,7 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/winter1/Initialize(mapload)
-	. = ..()
-	icon_state = "[base_state][rand(1, 6)]"
+TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 
 // Sif trees
 
@@ -358,19 +347,14 @@ DAMAGE_REACTION(/obj/structure/flora/tree, DAMAGE_EXPLOSION, PROC_REF(tree_blast
 
 	var/light_shift = 0
 
-/obj/structure/flora/tree/sif/choose_icon_state()
-	light_shift = rand(0, 5)
+/obj/structure/flora/tree/sif/choose_icon_state(datum/roller/R)
+	set_light_shift(R.number(0, 5))
 	return "[base_state][light_shift]"
 
-/obj/structure/flora/tree/sif/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/flora/tree/sif, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/flora/tree/sif/appearance_overlays()
-	. = list()
+/obj/structure/flora/tree/sif/draw(datum/look/look)
+	..()
 	var/bulbs = (5 - light_shift)
 	if(bulbs > 0)
-		set_light(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
-		. += mutable_appearance(icon, "[base_state][bulbs]_glow")
-		. += emissive_appearance(icon, "[base_state][bulbs]_glow")
+		look.glow(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
+		look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
+		look.overlay(emissive_appearance(icon, "[base_state][bulbs]_glow"))

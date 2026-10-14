@@ -1,0 +1,466 @@
+/****************************************************
+			   ORGAN DEFINES
+****************************************************/
+
+//Make sure that w_class is set as if the parent mob was medium sized! This is because w_class is adjusted automatically for mob_size in New()
+
+/obj/item/organ/external/chest
+	name = "upper body"
+	organ_tag = BP_TORSO
+	icon_name = "torso"
+	max_damage = 100
+	min_broken_damage = 60 // Increase all min_broken_damage (Ribs should take more force to break)
+	w_class = ITEMSIZE_HUGE
+	body_part = UPPER_TORSO
+	vital = TRUE
+	amputation_point = "spine"
+	joint = "neck"
+	dislocated = -1
+	gendered_icon = 1
+	cannot_amputate = 1
+	parent_organ = null
+	encased = "ribcage"
+	organ_rel_size = 70
+	base_miss_chance = 10
+
+/obj/item/organ/external/chest/robotize(company, skip_prosthetics = 0, keep_organs = 0)
+	if(..() && owner)
+		if(!is_nanoform())
+			// Give them fancy new organs (each takes its place in its limb).
+			new /obj/item/organ/internal/cell(owner)
+			new /obj/item/organ/internal/voicebox/robot(owner)
+			new /obj/item/organ/internal/heart/machine(owner)
+			new /obj/item/organ/internal/stomach/machine(owner)
+			new /obj/item/organ/internal/robotic/heatsink(owner)
+			new /obj/item/organ/internal/robotic/diagnostic(owner)
+
+		var/datum/robolimb/R = GLOB.all_robolimbs[model] // company should be set in parent by now
+		if(!R)
+			log_runtime("A torso was robotize() but has no model that can be found: [model]. May affect FBPs.")
+		rel_set(owner, nameof(owner.synthetic), R)
+	return FALSE
+
+
+/obj/item/organ/external/chest/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for CHEST
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+
+/obj/item/organ/external/groin
+	name = "lower body"
+	organ_tag = BP_GROIN
+	icon_name = "groin"
+	max_damage = 100
+	min_broken_damage = 50 // Increase all min_broken_damage
+	w_class = ITEMSIZE_LARGE
+	body_part = LOWER_TORSO
+	vital = TRUE
+	parent_organ = BP_TORSO
+	amputation_point = "lumbar"
+	joint = "hip"
+	dislocated = -1
+	gendered_icon = 1
+	cannot_amputate = 1
+	organ_rel_size = 30
+
+/obj/item/organ/external/groin/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for GROIN
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+
+/obj/item/organ/external/arm
+	organ_tag = BP_L_ARM
+	name = "left arm"
+	icon_name = "l_arm"
+	max_damage = 80
+	min_broken_damage = 40 // Flat doubling of all min_broken_damage
+	w_class = ITEMSIZE_NORMAL
+	body_part = ARM_LEFT
+	parent_organ = BP_TORSO
+	joint = "left elbow"
+	amputation_point = "left shoulder"
+	can_grasp = 1
+
+CAPABILITIES(/obj/item/organ/external/arm)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 7))
+
+/obj/item/organ/external/arm/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for ARM
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+			if(organ_tag == BP_L_ARM) //Specific level 2 'feature
+				owner.drop_l_hand()
+			else if(organ_tag == BP_R_ARM)
+				owner.drop_r_hand()
+
+/obj/item/organ/external/arm/right
+	organ_tag = BP_R_ARM
+	name = "right arm"
+	icon_name = "r_arm"
+	body_part = ARM_RIGHT
+	joint = "right elbow"
+	amputation_point = "right shoulder"
+
+/obj/item/organ/external/leg
+	organ_tag = BP_L_LEG
+	name = "left leg"
+	icon_name = "l_leg"
+	max_damage = 80
+	min_broken_damage = 40 // Increase all min_broken_damage
+	w_class = ITEMSIZE_NORMAL
+	body_part = LEG_LEFT
+	icon_position = LEFT
+	parent_organ = BP_GROIN
+	joint = "left knee"
+	amputation_point = "left hip"
+	can_stand = 1
+
+CAPABILITIES(/obj/item/organ/external/leg)
+	configure(item_thrown(force = 12))
+	configure(item_combat(force = 10))
+
+/obj/item/organ/external/leg/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for LEG
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+			owner.status_at_least(STAT_WEAKENED, 5)
+
+/obj/item/organ/external/leg/is_usable() // We only do legs, otherwise the stance_damage will be 8 instead of 4, meaning crutches do nothing as they only negate 4
+	if(is_organic() && owner.sdisabilities & SPINE)
+		return FALSE
+	. = ..()
+
+/obj/item/organ/external/leg/organ_can_feel_pain()
+	if(!is_robotic() && owner.sdisabilities & SPINE)
+		return FALSE
+	. = ..()
+
+/obj/item/organ/external/leg/right
+	organ_tag = BP_R_LEG
+	name = "right leg"
+	icon_name = "r_leg"
+	body_part = LEG_RIGHT
+	icon_position = RIGHT
+	joint = "right knee"
+	amputation_point = "right hip"
+
+/obj/item/organ/external/foot
+	organ_tag = BP_L_FOOT
+	name = "left foot"
+	icon_name = "l_foot"
+	max_damage = 50
+	min_broken_damage = 30 // Increase all min_broken_damage
+	w_class = ITEMSIZE_SMALL
+	body_part = FOOT_LEFT
+	icon_position = LEFT
+	parent_organ = BP_L_LEG
+	joint = "left ankle"
+	amputation_point = "left ankle"
+	can_stand = 1
+
+CAPABILITIES(/obj/item/organ/external/foot)
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 3))
+
+/obj/item/organ/external/foot/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_SHOES))
+
+/obj/item/organ/external/foot/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for FOOT
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+			owner.status_at_least(STAT_WEAKENED, 5)
+
+/obj/item/organ/external/foot/organ_can_feel_pain()
+	if(!is_robotic() && owner.sdisabilities & SPINE)
+		return FALSE
+	. = ..()
+
+/obj/item/organ/external/foot/right
+	organ_tag = BP_R_FOOT
+	name = "right foot"
+	icon_name = "r_foot"
+	body_part = FOOT_RIGHT
+	icon_position = RIGHT
+	parent_organ = BP_R_LEG
+	joint = "right ankle"
+	amputation_point = "right ankle"
+
+/obj/item/organ/external/hand
+	organ_tag = BP_L_HAND
+	name = "left hand"
+	icon_name = "l_hand"
+	max_damage = 50
+	min_broken_damage = 30 // Increase all min_broken_damage
+	w_class = ITEMSIZE_SMALL
+	body_part = HAND_LEFT
+	parent_organ = BP_L_ARM
+	joint = "left wrist"
+	amputation_point = "left wrist"
+	can_grasp = 1
+	organ_rel_size = 10
+	base_miss_chance = 50
+
+CAPABILITIES(/obj/item/organ/external/hand)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 3))
+
+/obj/item/organ/external/hand/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_GLOVES))
+
+/obj/item/organ/external/hand/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for HAND
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+			if(organ_tag == BP_L_HAND) //Specific level 2 'feature
+				owner.drop_l_hand()
+			else if(organ_tag == BP_R_HAND)
+				owner.drop_r_hand()
+
+/obj/item/organ/external/hand/right
+	organ_tag = BP_R_HAND
+	name = "right hand"
+	icon_name = "r_hand"
+	body_part = HAND_RIGHT
+	parent_organ = BP_R_ARM
+	joint = "right wrist"
+	amputation_point = "right wrist"
+
+/obj/item/organ/external/head
+	organ_tag = BP_HEAD
+	icon_name = "head"
+	name = "head"
+	max_damage = 75
+	min_broken_damage = 50 // Increase all min_broken_damage
+	w_class = ITEMSIZE_NORMAL
+	body_part = HEAD
+	vital = TRUE
+	parent_organ = BP_TORSO
+	joint = "jaw"
+	amputation_point = "neck"
+	gendered_icon = 1
+	cannot_gib = TRUE
+	encased = "skull"
+	base_miss_chance = 40
+	var/can_intake_reagents = 1
+	var/head_offset = 0
+	var/eye_icon = "eyes_s"
+	var/eye_icon_location = 'icons/mob/human_face.dmi'
+	var/eye_icon_override = FALSE		// if true, we dont reset our icon back to default
+	var/eyes_over_markings = FALSE
+
+/obj/item/organ/external/head/Initialize(mapload)
+	if(CONFIG_GET(flag/allow_headgibs))
+		cannot_gib = FALSE
+	return ..()
+
+/obj/item/organ/external/head/robotize(company, skip_prosthetics, keep_organs)
+	. = ..(company, skip_prosthetics, 1)
+	if(model)
+		var/datum/robolimb/robohead = GLOB.all_robolimbs[model]
+		if(robohead?.monitor_styles && robohead?.monitor_icon)
+			LAZYDISTINCTADD(organ_verbs, /mob/living/carbon/human/proc/setmonitor_state)
+		else
+			LAZYREMOVE(organ_verbs, /mob/living/carbon/human/proc/setmonitor_state)
+		handle_organ_mod_special()
+
+/obj/item/organ/external/head/drop_worn(mob/living/carbon/human/victim)
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EYES))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_HEAD))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EAR_L))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_EAR_R))
+	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_MASK))
+
+/obj/item/organ/external/head/removed()
+	var/mob/living/carbon/human/victim = owner
+	if(iscarbon(victim))
+		name = "[victim.real_name]'s head"
+	get_icon()
+	return ..()
+
+/obj/item/organ/external/head/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation, projectile)
+	. = ..(brute, burn, sharp, edge, used_weapon, forbidden_limbs, permutation, projectile)
+	if (!disfigured)
+		if (get_trauma() > 40)
+			if (prob(50))
+				disfigure("brute")
+		if (get_burn() > 40)
+			disfigure("burn")
+
+/obj/item/organ/external/head/handle_germ_effects(cycles)
+	. = ..() //Should return an infection level
+	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
+
+	//Staph infection symptoms for HEAD
+	if (. >= 1)
+		if(prob(.))
+			owner.custom_pain("An alarming [pick("ache","pulse","throb")] radiates through your [name]!",0)
+	if (. >= 2)
+		if(prob(.))
+			owner.custom_pain("Your [name] burns like it's on fire!",15)
+			owner.status_adjust(STAT_BLURRY, 20) //Specific level 2 'feature
+
+// A plushie or another head held to a head kisses it.
+CAPABILITIES(/obj/item/organ/external/head)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 3))
+	op("kiss_plushie", item(/obj/item/toy/plushie), label("Kiss"), then(PROC_REF(head_kissed)))
+	op("kiss_head", item(/obj/item/organ/external/head), label("Kiss"), then(PROC_REF(head_kissed)))
+
+/obj/item/organ/external/head/proc/head_kissed(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You make %I% kiss %T%!.")), MSG_OTHERS(span_notice("%U% makes %I% kiss %T%!.")), item = A.held)
+
+/obj/item/organ/external/head/get_icon(skeletal, can_apply_transparency = TRUE)
+	..()
+
+	//The overlays are not drawn on the mob, they are used for if the head is removed and becomes an item
+	cut_overlays()
+
+	//Every 'addon' below requires information from species
+	if(!iscarbon(owner) || !owner.species)
+		return
+
+	var/icon/eyecon
+
+	//Eye color/icon
+	var/should_have_eyes = owner.should_have_organ(O_EYES)
+	var/has_eye_sprites = owner.species.appearance_flags & HAS_EYE_COLOR
+	if((should_have_eyes || has_eye_sprites) && eye_icon)
+		var/obj/item/organ/internal/eyes/eyes = owner.organ_in(O_EYES)
+		var/icon/eyes_icon = new/icon(eye_icon_location, eye_icon)
+		//Do we have a special eye icon with its own coloration? Remove
+		if(!findtext(eye_icon, regex("-colored")))
+			//Should have eyes
+			if(should_have_eyes)
+				//And we have them
+				if(eyes)
+					if(has_eye_sprites)
+						eyes_icon.Blend(eyes.eye_rgb(), ICON_ADD)
+				//They're gone!
+				else
+					eyes_icon.Blend(rgb(128,0,0), ICON_ADD)
+			//We have weird other-sorts of eyes (as we're not supposed to have eye organ, but we have HAS_EYE_COLOR species)
+			else
+				eyes_icon.Blend(owner.looks.eyes_color, ICON_ADD)
+
+
+		// allow rendering of eyes over markings.
+		if(eyes_over_markings)
+			eyecon = eyes_icon
+		else
+			add_overlay(eyes_icon)
+			mob_icon.Blend(eyes_icon, ICON_OVERLAY)
+			icon_cache_key += "[eye_icon]"
+
+	//Lip color/icon
+	if(owner.looks.lip_style && (data.get_species_appearance_flags() & HAS_LIPS))
+		var/icon/lip_icon = new/icon('icons/mob/human_face.dmi', "lips_[owner.looks.lip_style]_s")
+		add_overlay(lip_icon)
+		mob_icon.Blend(lip_icon, ICON_OVERLAY)
+
+	//Head markings
+	for(var/M in markings)
+		if (!markings[M]["on"])
+			continue
+		var/datum/sprite_accessory/marking/mark_style = markings[M]["datum"]
+		var/icon/mark_s = new/icon("icon" = mark_style.icon, "icon_state" = "[mark_style.icon_state]-[organ_tag]")
+		mark_s.Blend(markings[M]["color"], mark_style.color_blend_mode)
+		add_overlay(mark_s) //So when it's not on your body, it has icons
+		mob_icon.Blend(mark_s, ICON_OVERLAY) //So when it's on your body, it has icons
+		icon_cache_key += "[M][markings[M]["color"]]"
+
+	if(eyes_over_markings && eyecon) // toggle to render eyes above markings.
+		add_overlay(eyecon)
+		mob_icon.Blend(eyecon, ICON_OVERLAY)
+		icon_cache_key += "[eye_icon]"
+
+	add_overlay(get_hair_icon())
+
+	if (transparent && can_apply_transparency) // transparent instead of nonsolid
+		mob_icon += rgb(,,,180) //do it here so any markings become transparent as well
+
+	return mob_icon
+
+/obj/item/organ/external/head/skrell
+	eye_icon = "skrell_eyes_s"
+
+/obj/item/organ/external/head/teshari
+	eye_icon = "eyes_seromi"
+
+/obj/item/organ/external/head/no_eyes
+	eye_icon = "blank_eyes"
+
+
+// === merged from standard_vr.dm during hard-fork de-suffix (verified no override-order change) ===
+//For custom heads with custom parts since the base code is restricted to a single icon file.
+
+/obj/item/organ/external/head/blank_vr				// Unused for now. Might be at some point.
+	eye_icon_location = 'icons/mob/human_face_vr.dmi'
+	eye_icon = "blank_eyes"
+
+/obj/item/organ/external/head/sergal
+	eye_icon_location = 'icons/mob/human_face_vr.dmi'
+	eye_icon = "eyes_sergal"
+
+/obj/item/organ/external/head/werebeast
+	eye_icon_location = 'icons/mob/werebeast_face_vr.dmi'
+	eye_icon = "werebeast_eyes"
+	head_offset = 6
+
+/obj/item/organ/external/head/shadekin
+	cannot_gib = 1
+	cannot_amputate = 1
+
+	eye_icon_location = 'icons/mob/human_face_vr.dmi'
+	eye_icon = "eyes_shadekin"
+
+	//yw edit
+/obj/item/organ/external/head/vr/grey
+	eye_icon_location = 'icons/mob/human_face_yw.dmi'
+	eye_icon = "eyes_grey"
+	//yw edit

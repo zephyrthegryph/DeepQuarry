@@ -9,7 +9,6 @@
 	requires_ntnet = FALSE
 	available_on_ntnet = FALSE
 	available_on_syndinet = TRUE
-	tgui_id = "NtosRevelation"
 	var/armed = 0
 
 /datum/computer_file/program/revelation/run_program(mob/living/user)
@@ -18,37 +17,40 @@
 		activate()
 
 /datum/computer_file/program/revelation/proc/activate()
-	if(!computer())
+	var/obj/item/modular_computer/target = computer()
+	if(!target)
 		return
 
-	computer().visible_message(span_notice("\The [computer()]'s screen brightly flashes and loud electrical buzzing is heard."))
-	computer().set_enabled(FALSE)
-	computer().last_power_usage = 0
-	computer().update_icon()
-	fx_sparks(computer().loc, 10)
+	target.visible_message(span_notice("\The [target]'s screen brightly flashes and loud electrical buzzing is heard."))
+	target.set_enabled(FALSE)
+	target.last_power_usage = 0
+	fx_sparks(target.loc, 10)
 
-	if(computer().hard_drive)
-		qdel(computer().hard_drive)
+	if(target.hard_drive)
+		rel_clear(target, nameof(target.hard_drive))
 
-	if(computer().battery_module && prob(25))
-		qdel(computer().battery_module)
+	if(target.battery_module && prob(25))
+		rel_clear(target, nameof(target.battery_module))
 
-	if(computer().tesla_link && prob(50))
-		qdel(computer().tesla_link)
+	if(target.tesla_link && prob(50))
+		rel_clear(target, nameof(target.tesla_link))
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_arm", ui_act_prg_arm)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_arm)
+CAPABILITIES(/datum/computer_file/program/revelation)
+	op("PRG_arm", ui_act(), then(PROC_REF(ui_act_prg_arm)))
+	op("PRG_activate", ui_act(), then(PROC_REF(ui_act_prg_activate)))
+	interface("NtosRevelation")
+	op("PRG_obfuscate", ui_act("PRG_obfuscate", arg("new_name", schema_text(4096))), then(PROC_REF(ui_act_prg_obfuscate)))
+
+/datum/computer_file/program/revelation/proc/ui_act_prg_arm(datum/act/op/A)
 	armed = !armed
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_activate", ui_act_prg_activate)
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_activate)
+/datum/computer_file/program/revelation/proc/ui_act_prg_activate(datum/act/op/A)
 	activate()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/revelation, "PRG_obfuscate", ui_act_prg_obfuscate, UI_ARG_TEXT("new_name"))
-UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)
-	var/newname = params["new_name"]
+/datum/computer_file/program/revelation/proc/ui_act_prg_obfuscate(datum/act/op/A, new_name)
+	var/newname = new_name
 	if(!newname)
 		return
 	filedesc = newname
@@ -59,11 +61,8 @@ UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)
 	temp.armed = armed
 	return temp
 
-UI_DATA_REPLACE(/datum/computer_file/program/revelation, "armed:num", "merge:ui_data_datum_computer_file_program_revelation{}")
-
-/// The computed part of /datum/computer_file/program/revelation's window data (declared on its UI_DATA row).
-/datum/computer_file/program/revelation/proc/ui_data_datum_computer_file_program_revelation(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/computer_file/program/revelation/ui_data(datum/act/eval/A)
 	var/list/data = get_header_data()
-
+	data["armed"] = armed
 
 	return data

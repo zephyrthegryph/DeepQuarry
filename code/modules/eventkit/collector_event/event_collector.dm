@@ -49,9 +49,14 @@
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
 
-/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD(/obj/structure/event_collector, awaiting_next_recipe, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/event_collector, PERIODIC_SLOW, "awaiting_next_recipe")
+/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (its every()).
+/obj/structure/event_collector/var/awaiting_next_recipe = FALSE
+TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
+CAPABILITIES(/obj/structure/event_collector)
+	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	// Putting the item in (interaction_item() checks it and starts this): the user keeps the item and stays for step_insertion_time.
+	op("insert", ai(), takes("stored_index"), wait(PROC_REF(insert_time)), on_interrupt(PROC_REF(insert_gave_up)), then(PROC_REF(insert_done)))
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -96,9 +101,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	if(type_to_spawn_on_complete)
 		new type_to_spawn_on_complete(get_turf(loc))
 
-	current_step = 0
+	set_current_step(0)
 
-	update_icon()
 
 
 /obj/structure/event_collector/proc/recipe_failed() //called when reset by an admin assuming they want it to be
@@ -123,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		message_admins("\[EVENT\] Event Collection object [src] has started a recipe! If it's in sequence, the next one is [next_item] ")
 
 /// Works on its recipe every 2 s while one is running (start_recipe_process()); otherwise it sleeps.
-/obj/structure/event_collector/periodic_step()
+/obj/structure/event_collector/proc/event_collector_step(datum/act/timer/A)
 	var/blockers = get_blockers()
 	if(blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )
@@ -170,8 +174,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 			//following's for debug, comment out if ur happy with it
 		//. += "There are uhhhh this many things blocking: [blocker_count]."
 
-DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/event_collector/proc/can_take_item)))
-
 /// Requirement: TRUE, or why the collector won't take an item now.
 /obj/structure/event_collector/proc/can_take_item(mob/user, atom/target, obj/item/held)
 	if(blocker_insertion_impedement_threshold > 0 && (get_blockers() > blocker_insertion_impedement_threshold))
@@ -180,14 +182,26 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		return "it's not ready to take another item yet"
 	return TRUE
 
+/// Requirement: the collector takes an item now.
+/obj/structure/event_collector/proc/can_take_item_holds(datum/act/op/A)
+	var/answer = can_take_item(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
 /// Old attackby.
-/obj/structure/event_collector/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/event_collector/proc/interaction_item(datum/act/op/A)
+	var/refusal = can_take_item(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(active_recipe.len > 0) //do we have something active at all
 		var/stored_index = -1 //shortcut
 		if(need_recipe_in_order) //can we put this in?
 			if(!(istype(O,active_recipe[1]))) //if we need the recipe in order, check the first thing in the list
 				to_chat(user,span_warning("That's not the next object in the recipe!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				stored_index = 1
 		else
@@ -198,28 +212,24 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 					stored_index = ind
 					break;
 			if(!found)
-				return;
+				return OP_DECLINE
 
 		//put it in
 		act_message(user, src, others = "%U% begins to [pick(step_initiation_verbs)] %I% into %T%", item = O)
 		//wait a second or two
-		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
-	return INTERACTION_HANDLED_PASS
+		perform_op(user, src, "insert", O, ORIGIN_SYSTEM, with = list("stored_index" = stored_index))
+	return OP_PASS
 
-/obj/structure/event_collector/proc/insert_gave_up(datum/om/task/timed/event_collector_insert/task)
-	var/mob/user = task.actor
-	act_message(user, null, others = "%U% gives up!") //shitty, change later
+/obj/structure/event_collector/proc/insert_time(datum/act/op/A)
+	return step_insertion_time
 
-/datum/om/task/timed/event_collector_insert
-	complete_proc = /obj/structure/event_collector/proc/insert_done
-	cancel_proc = /obj/structure/event_collector/proc/insert_gave_up
-	var/obj/item/O
-	var/stored_index
+/obj/structure/event_collector/proc/insert_gave_up(datum/act/op/A)
+	act_message(A.actor, null, others = "%U% gives up!") //shitty, change later
 
-/obj/structure/event_collector/proc/insert_done(datum/om/task/timed/event_collector_insert/task)
-	var/obj/item/O = task.O
-	var/mob/user = task.actor
-	var/stored_index = task.stored_index
+/obj/structure/event_collector/proc/insert_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	var/mob/user = A.actor
+	var/stored_index = A.arg("stored_index")
 	if(stored_index > length(active_recipe))
 		return
 	act_message(user, src, others = "%U% [pick(step_insertion_verbs)] %I% into %T%!", item = O)
@@ -240,8 +250,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		jiggle_animation(0.1)
 		if(active_recipe.len == 0)
 			start_recipe_process()
-		current_step += 1
-		update_icon()
+		set_current_step(current_step + 1)
 		post_recipe_complete(user)
 		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
 

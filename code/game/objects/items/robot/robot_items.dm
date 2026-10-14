@@ -67,7 +67,9 @@
 	icon_state = "healthhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/med, "hud", /obj/item/clothing/glasses/hud/health)
+/obj/item/borg/sight/hud/med/ownership()
+	. = ..()
+	. += owns(nameof(hud), policy = OWN_CONTAINED, starts = /obj/item/clothing/glasses/hud/health)
 
 
 /obj/item/borg/sight/hud/sec
@@ -75,7 +77,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/med, "hud", /obj/item/clothing/gl
 	icon_state = "securityhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/sec, "hud", /obj/item/clothing/glasses/hud/security)
+/obj/item/borg/sight/hud/sec/ownership()
+	. = ..()
+	. += owns(nameof(hud), policy = OWN_CONTAINED, starts = /obj/item/clothing/glasses/hud/security)
 
 /obj/item/borg/sight/hud/ownership()
 	. = ..()

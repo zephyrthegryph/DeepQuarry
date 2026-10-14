@@ -10,31 +10,40 @@
 	var/deploying
 	var/deployed
 
-/obj/structure/droppod_door/Initialize(mapload, autoopen)
-	. = ..()
-	if(autoopen)
-		om_after(src, 10 SECONDS, PROC_REF(deploy))
+/// A door that opens by itself after landing (its constructor param).
+/obj/structure/droppod_door/var/autoopen = FALSE
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/droppod_door/proc/arm_autoopen(opens)
+	if(opens)
+		after(src, 10 SECONDS, PROC_REF(deploy))
 
 /// Old attack_ai: an adjacent silicon opens it as by hand.
-/obj/structure/droppod_door/proc/droppod_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/droppod_door/proc/droppod_door_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.Adjacent(src))
 		attack_hand(user)
 	return TRUE
 
-/obj/structure/droppod_door/attack_generic(mob/user)
-	attack_hand(user)
+CAPABILITIES(/obj/structure/droppod_door)
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	param(nameof(autoopen), pos = 1, apply = PROC_REF(arm_autoopen))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("droppod_door_silicon_use", remote(), label("Open"), then(PROC_REF(droppod_door_silicon_use)))
 
-DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_SILICON("Open", PROC_REF(droppod_door_silicon_use)), \
-)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/droppod_door/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	attack_hand(user)
+	return OP_OK
 
 /// Old attack_hand.
-/obj/structure/droppod_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/droppod_door/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(deploying) return TRUE
 	deploying = TRUE
 	to_chat(user, span_danger("You prime the explosive bolts. Better get clear!"))
-	om_after(src, 3 SECONDS, PROC_REF(deploy))
+	after(src, 3 SECONDS, PROC_REF(deploy))
 	return TRUE
 
 /obj/structure/droppod_door/proc/deploy()
@@ -55,20 +64,20 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	// Overwrite turfs.
 	var/turf/origin = get_turf(src)
 	origin.ChangeTurf(/turf/simulated/floor/reinforced)
-	origin.set_light(0) // Forcing updates
+	set_glow(origin, GLOW(0, null, null)) // Forcing updates
 	var/turf/T = get_step(origin, src.dir)
 	T.ChangeTurf(/turf/simulated/floor/reinforced)
-	T.set_light(0) // Forcing updates
+	set_glow(T, GLOW(0, null, null)) // Forcing updates
 
 	// Destroy turf contents.
 	for(var/obj/O in turf_contents_of_type(origin, /obj))
 		if(!O.simulated)
 			continue
-		qdel(O) //crunch
+		spent(O) //crunch
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(!O.simulated)
 			continue
-		qdel(O) //crunch
+		spent(O) //crunch
 
 	// Hurl the mobs away.
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
@@ -79,10 +88,10 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	// Create a decorative ramp bottom and flatten out our current ramp.
 	set_density(FALSE)
 	set_opacity(0)
-	icon_state = "ramptop"
+	set_icon_state("ramptop")
 	var/obj/structure/droppod_door/door_bottom = new(T)
 	door_bottom.deployed = TRUE
 	door_bottom.set_density(FALSE)
 	door_bottom.set_opacity(0)
-	door_bottom.dir = src.dir
-	door_bottom.icon_state = "rampbottom"
+	door_bottom.set_dir(src.dir)
+	door_bottom.set_icon_state("rampbottom")

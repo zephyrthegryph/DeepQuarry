@@ -84,28 +84,38 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 	if(iscultist(user))
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
-EXTEND_INTERACTIONS(/obj/effect/rune, \
-	INTERACT_INSERT(/obj/item/book/tome, PROC_REF(interaction_erase_rune), "Erase rune"), \
-	INTERACT_INSERT(/obj/item/nullrod, PROC_REF(interaction_nullrod_rune), "Disrupt rune"), \
-	INTERACT_HAND("Invoke", PROC_REF(interaction_invoke_rune)), \
-)
+CAPABILITIES(/obj/effect/rune)
+	ref_one(nameof(manifest_user))
+	ref_one(nameof(manifest_dummy))
+	op("erase_rune", item(/obj/item/book/tome), label("Erase rune"), then(PROC_REF(interaction_erase_rune)))
+	op("nullrod_rune", item(/obj/item/nullrod), label("Disrupt rune"), then(PROC_REF(interaction_nullrod_rune)))
+	op("invoke_rune", hand(), label("Invoke"), then(PROC_REF(interaction_invoke_rune)))
+	every(3 SECONDS, then(PROC_REF(manifest_tick)), when = nameof(manifesting))
 
 /// Old attackby: a cultist's tome undoes the rune.
-/obj/effect/rune/proc/interaction_erase_rune(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/rune/proc/interaction_erase_rune(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!iscultist(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, "You retrace your steps, carefully undoing the lines of the rune.")
-	qdel(src)
-	return INTERACTION_HANDLED_PASS
+	consume(src, user)
+	return OP_PASS
 
 /// Old attackby: a null rod disrupts the rune.
-/obj/effect/rune/proc/interaction_nullrod_rune(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/rune/proc/interaction_nullrod_rune(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You disrupt the vile magic with the deadening field of the null rod!"))
-	qdel(src)
-	return INTERACTION_HANDLED_PASS
+	consume(src, user)
+	return OP_PASS
 
-/// Old attack_hand: speak the rune's words.
-/obj/effect/rune/proc/interaction_invoke_rune(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand, as an op: speak the rune's words. The touch is used up whatever the rune does.
+/obj/effect/rune/proc/interaction_invoke_rune(datum/act/op/A)
+	var/mob/living/user = A.actor
+	invoke_rune_words(user)
+	return OP_OK
+
+/// Speaks the rune's words.
+/obj/effect/rune/proc/invoke_rune_words(mob/living/user)
 	. = TRUE
 	if(!iscultist(user))
 		to_chat(user, "You can't mouth the arcane scratchings without fumbling over them.")
@@ -318,10 +328,14 @@ EXTEND_INTERACTIONS(/obj/effect/rune, \
 	return ITEM_INTERACT_SUCCESS
 
 
-EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interaction_tome)))
+CAPABILITIES(/obj/item/book/tome)
+	op("tome", in_hand(), label("Read"), then(PROC_REF(interaction_tome)))
+	// The five seconds of drawing a rune (begin_drawing).
+	op("scribe", ai(), takes("english", "chosen_rune", "destination"), wait(5 SECONDS), then(PROC_REF(rune_drawn)))
 
 /// Old attack_self.
-/obj/item/book/tome/proc/interaction_tome(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/tome/proc/interaction_tome(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
@@ -341,19 +355,22 @@ EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interacti
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(tome_menu_chosen), title = "Tome", message = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(tome_menu_chosen), answerer = user, title = "Tome", question = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 			return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
 		return
 
-/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/book/tome/proc/tome_menu_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.value)
 		if("Read it")
 			// structured TGUI AdminReport.
-			dq_admin_report_html(ask.asker, "Arcane Tome", "[tomedat]")
+			dq_admin_report_html(user, "Arcane Tome", "[tomedat]")
 		if("Scribe a rune")
-			tome_scribe(ask.asker)
+			tome_scribe(user)
 
 /obj/item/book/tome/proc/tome_scribe(mob/living/user)
 	if(user.get_active_hand() != src)
@@ -362,18 +379,24 @@ EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interacti
 	for (var/entry in words)
 		if (words[entry] != entry)
 			english += list(words[entry] = entry)
-	om_flow_start(/datum/om/flow/tome_scribe, user, src, english = english)
+	var/list/scribewords = list("none")
+	var/list/dictionary = GLOB.tome_rune_dictionary
+	for (var/entry in dictionary)
+		var/list/required = dictionary[entry]
+		if (length(english & required) == required.len)
+			scribewords += entry
+	open_request(src, /datum/prompt/choice/tome_rune, PROC_REF(rune_picked), answerer = user, subject = src, english = english, choices = scribewords)
 
-/// Scribing a rune: pick the rune (and a destination word for teleports), cut a finger, draw for
-/// five seconds, and the rune appears. Every step after the first re-checks `requires`: the
-/// tome is still in the cultist's hands and they can act.
-/datum/om/flow/tome_scribe
-	name = "tome scribe"
-	requires = list(/datum/om/check/in_hands, /datum/om/check/not_incapacitated)
+/// Scribing a rune: pick the rune (and a destination word for teleports), cut a finger, draw for five seconds, and the rune appears. Every
+/// answer re-checks that the tome is still in the cultist's hands and they can act.
+/datum/prompt/choice/tome_rune
+	question = "Choose a rune to scribe."
+	timeout = 0
+	ask_flags = ASK_HELD | ASK_CAPABLE
 	/// English word -> the round's rune word, for the words this tome knows.
 	var/list/english
+	/// The rune a destination word is asked for.
 	var/chosen_rune
-	var/destination
 
 /// The words each rune needs.
 GLOBAL_LIST_INIT(tome_rune_dictionary, list(
@@ -403,39 +426,38 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	"teleport other" = list("travel","other")
 ))
 
-/datum/om/flow/tome_scribe/start()
-	var/list/scribewords = list("none")
-	var/list/dictionary = GLOB.tome_rune_dictionary
-	for (var/entry in dictionary)
-		var/list/required = dictionary[entry]
-		if (length(english & required) == required.len)
-			scribewords += entry
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(rune_picked), message = "Choose a rune to scribe.", choices = scribewords)
-
-/datum/om/flow/tome_scribe/proc/rune_picked(datum/om/prompt/choice/ask)
-	chosen_rune = ask.choice
+/obj/item/book/tome/proc/rune_picked(datum/act/request/A)
+	var/datum/prompt/choice/tome_rune/asked = A.answer
+	if(!asked)
+		return
+	var/mob/living/user = asked.answerer
+	var/chosen_rune = asked.value
 	if (chosen_rune == "none")
-		to_chat(actor, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
+		to_chat(user, span_notice("You decide against scribing a rune, perhaps you should take this time to study your notes."))
 		return
 	if(chosen_rune == "teleport" || chosen_rune == "teleport other")
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(destination_picked), message = "Choose a destination word", choices = english)
+		open_request(src, /datum/prompt/choice/tome_rune, PROC_REF(destination_picked), answerer = user, subject = src, english = asked.english, chosen_rune = chosen_rune, question = "Choose a destination word", choices = asked.english)
 		return
-	begin_drawing()
+	begin_drawing(user, asked.english, chosen_rune, null)
 
-/datum/om/flow/tome_scribe/proc/destination_picked(datum/om/prompt/choice/ask)
-	destination = ask.choice
-	begin_drawing()
+/obj/item/book/tome/proc/destination_picked(datum/act/request/A)
+	var/datum/prompt/choice/tome_rune/asked = A.answer
+	if(!asked)
+		return
+	begin_drawing(asked.answerer, asked.english, asked.chosen_rune, asked.value)
 
-/datum/om/flow/tome_scribe/proc/begin_drawing()
-	var/mob/living/user = actor
-	for (var/mob/V in viewers(target))
+/obj/item/book/tome/proc/begin_drawing(mob/living/user, list/english, chosen_rune, destination)
+	for (var/mob/V in viewers(src))
 		V.show_message(span_danger("\The [user] slices open a finger and begins to chant and paint symbols on the floor."), 3, span_danger("You hear chanting."), 2)
 	to_chat(user, span_danger("You slice open one of your fingers and begin drawing a rune on the floor whilst chanting the ritual that binds your life essence with the dark arcane energies flowing through the surrounding world."))
-	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, target) // 0.1 to 1.0 damage
-	wait(5 SECONDS, PROC_REF(drawn))
+	user.injure(INJURY_CUT, (rand(9)+1)/10, user.hand ? BP_L_HAND : BP_R_HAND, src) // 0.1 to 1.0 damage
+	perform_op(user, src, "scribe", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("english" = english, "chosen_rune" = chosen_rune, "destination" = destination))
 
-/datum/om/flow/tome_scribe/proc/drawn()
-	var/mob/living/user = actor
+/obj/item/book/tome/proc/rune_drawn(datum/act/op/T)
+	var/mob/living/user = T.actor
+	var/list/english = T.arg("english")
+	var/chosen_rune = T.arg("chosen_rune")
+	var/destination = T.arg("destination")
 	var/list/required = GLOB.tome_rune_dictionary[chosen_rune]
 	if(destination)
 		required = required + destination
@@ -450,6 +472,7 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	var/mob/living/carbon/human/H = user
 	if(istype(H))
 		R.add_blooddna(H.dna, H)
+	return OP_OK
 
 /obj/item/book/tome/examine(mob/user)
 	. = ..()
@@ -465,10 +488,12 @@ GLOBAL_LIST_INIT(tome_rune_dictionary, list(
 	w_class = ITEMSIZE_SMALL
 	occult_tier = 2
 	var/cultistsonly = 1
-EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PROC_REF(interaction_imbued)))
+CAPABILITIES(/obj/item/book/tome/imbued)
+	op("imbued", in_hand(), label("Scribe a rune"), then(PROC_REF(interaction_imbued)))
 
 /// Old attack_self: the admin tome scribes working runes at once. Its parent's self-use did nothing at this tier.
-/obj/item/book/tome/imbued/proc/interaction_imbued(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/tome/imbued/proc/interaction_imbued(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.cultistsonly && !iscultist(user))
 		return
 	if(!GLOB.cultwords["travel"])
@@ -477,22 +502,28 @@ EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PR
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 		var/static/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		om_ask(user, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), message = "Choose a rune to scribe", choices = runes)
+		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), answerer = user, question = "Choose a rune to scribe", choices = runes)
 
 /// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
-/datum/om/prompt/choice/imbued_rune
+/datum/prompt/choice/imbued_rune
 	title = "Rune Scribing"
 	timeout = 30 SECONDS
 	var/rune
 
-/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/om/prompt/choice/imbued_rune/ask)
-	if(ask.choice == "teleport" || ask.choice == "itemport")
-		om_ask(ask.answerer, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), message = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.choice)
+/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	imbued_rune_chosen(ask.answerer, ask.choice)
+	var/datum/prompt/choice/imbued_rune/ask = A.answer
+	if(ask.value == "teleport" || ask.value == "itemport")
+		open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), answerer = ask.answerer, question = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.value)
+		return
+	imbued_rune_chosen(ask.answerer, ask.value)
 
-/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/om/prompt/choice/imbued_rune/ask)
-	imbued_rune_chosen(ask.answerer, ask.rune, ask.choice)
+/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/imbued_rune/ask = A.answer
+	imbued_rune_chosen(ask.answerer, ask.rune, ask.value)
 
 /obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune
@@ -650,5 +681,5 @@ EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PR
 /obj/effect/rune/wash(clean_types)
 	. = ..()
 	if (. || (clean_types & CLEAN_TYPE_RUNES))
-		qdel(src)
+		consume(src)
 		return TRUE

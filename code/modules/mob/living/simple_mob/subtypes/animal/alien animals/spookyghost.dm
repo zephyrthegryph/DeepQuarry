@@ -19,7 +19,6 @@
 	icon_living = "space_ghost"
 	icon_dead = "space_ghost_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
@@ -67,13 +66,17 @@
 	reload_count = 0
 	reload_time = 7 SECONDS
 
-	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
 
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)
 	var/mob/living/L = A
-	if(L.status_units(EFFECT_HALLUCINATING) <= 100)
-		L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
+	if(L.status_units(STAT_HALLUCINATING) <= 100)
+		L.status_adjust(STAT_HALLUCINATING, rand(1,10))
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/shoot(atom/A) //We're shooting ghosts at people and need them to have the same faction as their parent, okay?
 	if(!projectiletype)
@@ -95,7 +98,6 @@
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost
 	delete_on_death = TRUE
-	death_message = "fades away!"
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/on_death(gibbed)
 	. = ..()
@@ -110,7 +112,6 @@
 	icon_state = "spookyghost-1"
 	icon_living = "spookyghost-1"
 	icon_dead = "space_ghost_dead"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	faction = FACTION_SPACE_GHOST
@@ -147,15 +148,8 @@
 	vore_active = 0
 
 
-/mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
-	. = ..()
-	icon_living = "spookyghost-[rand(1,2)]"
-	icon_state = icon_living // ALLOW(decl): random pick
-	update_icon()
-
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 	delete_on_death = TRUE
-	death_message = "fades away!"
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/on_death(gibbed)
 	. = ..()
@@ -163,18 +157,27 @@
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/apply_melee_effects(atom/A)
 	var/mob/living/L = A
 	if(L && istype(L))
-		if(L.status_units(EFFECT_HALLUCINATING) <= 100)
-			L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
+		if(L.status_units(STAT_HALLUCINATING) <= 100)
+			L.status_adjust(STAT_HALLUCINATING, rand(1,10))
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost
-	of = /mob/living/simple_mob/vore/alienanimals/spooky_ghost
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/spooky_ghost/perform(mob/living/simple_mob/vore/alienanimals/spooky_ghost/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/turf/T = get_turf(self)
+	var/turf/T = get_turf(src)
 	if(!T)
 		return
 	if(T.get_lumcount() >= 0.5)
-		self.injure(INJURY_BURN, 1, source = T) // Light sears it.
+		src.injure(INJURY_BURN, 1, source = T) // Light sears it.
 
-DECLARE_START_TIMER(/mob/living/simple_mob/vore/alienanimals/spooky_ghost, 35 SECONDS, PROC_REF(death))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
+	configure(mob_movement(hovering = TRUE))
+	configure(mob_kind(death_message = "fades away!"))
+	after_init(35 SECONDS, then(PROC_REF(fade_out)))
+	rolls(nameof(icon_living), pick_one(list("spookyghost-1", "spookyghost-2")))
+	look_from(nameof(icon_living), state = "*")
+
+/// A summoned ghost lasts 35 seconds.
+/mob/living/simple_mob/vore/alienanimals/spooky_ghost/proc/fade_out(datum/act/A)
+	death()

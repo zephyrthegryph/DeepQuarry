@@ -36,15 +36,22 @@
 // ---- The emission behaviour ------------------------------------------------
 //. The magnitudes live on the item;
 // the light is set once, and an item that irradiates or poisons carries the
-// shared material_emission behaviour, which ticks every 2 s while attached.
+// material_emission capability, which ticks every 2 s while granted.
 
 /obj/item
 	var/mat_luminescence = 0
 	var/mat_radioactivity = 0
 	var/mat_toxicity = 0
 
-/datum/om/behaviour/material_emission
-	every = 2 SECONDS
+CAPABILITY_TYPE(material_emission, CAP_MATERIAL_EMISSION, /datum/capability/material_emission, key = NONE)
+/datum/capability/material_emission
+
+/datum/capability/material_emission/entries()
+	return list(every(2 SECONDS, then(CAP_PROC(emission_tick))))
+
+/datum/capability/material_emission/proc/emission_tick(datum/act/timer/A)
+	var/obj/item/I = A.holder
+	I.material_emission_step()
 
 /obj/item/proc/configure_material_behaviors(_lum = 0, _rad = 0, _tox = 0, colour = null)
 	var/old_luminescence = mat_luminescence
@@ -54,20 +61,17 @@
 	if(mat_luminescence > 0)
 		var/range = clamp(mat_luminescence / 20, 0.5, 4)
 		var/power = clamp(mat_luminescence / 30, 0.3, 2)
-		set_light(range, power, colour)
+		set_glow(src, GLOW(range, power, colour))
 	else if(old_luminescence > 0)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	if(mat_radioactivity > 0 || mat_toxicity > 0)
-		om_attach(src, /datum/om/behaviour/material_emission)
+		grant(src, /datum/capability/material_emission, src)
 	else
-		om_detach(src, /datum/om/behaviour/material_emission)
+		revoke(src, /datum/capability/material_emission, src)
 
 /// TRUE while the item's material irradiates or poisons.
 /obj/item/proc/material_emitting()
-	return om_attached(src, /datum/om/behaviour/material_emission)
-
-/datum/om/behaviour/material_emission/tick(obj/item/I, dt)
-	I.material_emission_step()
+	return granted(src, /datum/capability/material_emission)
 
 /obj/item/proc/material_emission_step()
 	var/obj/item/I = src

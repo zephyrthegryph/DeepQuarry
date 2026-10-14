@@ -72,8 +72,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
 	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
-	/// om_watch_entity_key()s of the batch's material services, disarmed as one set at the end.
-	var/list/material_service_watch_keys = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> TRUE once one object's destroy effects played there.
 	var/list/effect_turfs = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> list of /datum/destroy_effects_data whose apply_after() runs once at the end.
@@ -166,20 +164,19 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		if(SSair)
 			SSair.rust_pipe_topology_dirty = TRUE
 			// An explosion's bulk resolve commits once itself when it ends.
-			if(!GLOB.explosion_service.is_bulk_resolving())
+			if(!SSexplosions.is_bulk_resolving())
 				// Directly: rust_commit_pending_pipenets() would defer to this batch again.
 				SSair.rust_pipe_topology_dirty = FALSE
 				SSair.rust_apply_pipe_commit()
 	if(length(batch.unbind_power_nodes))
 		vg_power_unbind_node_list(batch.unbind_power_nodes)
+		power_topology_edited(/datum/destroy_batch)
 	if(length(batch.release_heat_bodies))
 		vg_heat_body_release_list(batch.release_heat_bodies)
 	if(length(batch.unbind_movers))
 		SSvg.unregister_many(batch.unbind_movers)
 	if(length(batch.unbind_entities))
 		vg_entity_unbind_list(batch.unbind_entities)
-	if(length(batch.material_service_watch_keys))
-		om_watch_disarm_keys(batch.material_service_watch_keys)
 	for(var/datum/registry/registry as anything in batch.registry_leaves)
 		registry.remove_many(batch.registry_leaves[registry])
 	for(var/turf/T as anything in batch.after_effects)
@@ -218,6 +215,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		batch.unbind_power_nodes += entity
 		return
 	vg_power_unbind_node(entity)
+	power_topology_edited(owner)
 
 /// Removes pipe port `port` of `owner` (its gas to `mixture_handle`, 0:
 /// discarded) and frees the port datum. Returns TRUE when the batch queued

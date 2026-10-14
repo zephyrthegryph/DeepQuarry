@@ -20,14 +20,14 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/proc/find_target()
 	var/list/possible_targets = list()
-	for(var/datum/mind/possible_target in SSticker.minds)
+	for(var/datum/mind/possible_target in ticker_minds())
 		if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != 2))
 			possible_targets += possible_target
 	if(possible_targets.len > 0)
 		rel_set(src, nameof(target), pick(possible_targets))
 
 /datum/objective/proc/find_target_by_role(role, role_type=0)//Option sets either to check assigned role or special role. Default to assigned.
-	for(var/datum/mind/possible_target in SSticker.minds)
+	for(var/datum/mind/possible_target in ticker_minds())
 		if((possible_target != owner) && ishuman(possible_target.current) && ((role_type ? possible_target.special_role : possible_target.assigned_role) == role) )
 			rel_set(src, nameof(target), possible_target)
 			break
@@ -205,7 +205,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/hijack/check_completion()
 	if(!owner.current || owner.current.stat)
 		return 0
-	if(!GLOB.emergency_shuttle_service.returned())
+	if(!SSemergency_shuttle.returned())
 		return 0
 	if(issilicon(owner.current))
 		return 0
@@ -225,7 +225,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/block/check_completion()
 	if(!istype(owner.current, /mob/living/silicon))
 		return 0
-	if(!GLOB.emergency_shuttle_service.returned())
+	if(!SSemergency_shuttle.returned())
 		return 0
 	if(!owner.current)
 		return 0
@@ -243,7 +243,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Do not allow anyone to escape the station.  Only allow the shuttle to be called when everyone is dead and your story is the only one left."
 
 /datum/objective/silence/check_completion()
-	if(!GLOB.emergency_shuttle_service.returned())
+	if(!SSemergency_shuttle.returned())
 		return 0
 
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -266,7 +266,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		return 0
 	if(isbrain(owner.current))
 		return 0
-	if(!GLOB.emergency_shuttle_service.returned())
+	if(!SSemergency_shuttle.returned())
 		return 0
 	if(!owner.current || owner.current.stat ==2)
 		return 0
@@ -540,11 +540,11 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	target_amount = rand (lowbound,highbound)
 	if (SSticker)
 		var/n_p = 1 //autowin
-		if (SSticker.current_state == GAME_STATE_SETTING_UP)
+		if (ticker_current_state() == GAME_STATE_SETTING_UP)
 			for(var/mob/new_player/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(P.client && P.ready && P.mind!=owner)
 					n_p ++
-		else if (SSticker.current_state == GAME_STATE_PLAYING)
+		else if (ticker_current_state() == GAME_STATE_PLAYING)
 			for(var/mob/living/carbon/human/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				var/datum/changeling/comp = P.get_changeling_state()
 				if(P.client && !(comp) && P.mind!=owner)
@@ -577,7 +577,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/list/possible_targets = list()
 	var/list/priority_targets = list()
 
-	for(var/datum/mind/possible_target in SSticker.minds)
+	for(var/datum/mind/possible_target in ticker_minds())
 		if(possible_target != owner && ishuman(possible_target.current) && (possible_target.current.stat != 2) && (!possible_target.special_role))
 			possible_targets += possible_target
 			for(var/role in roles)
@@ -610,39 +610,42 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	else
 		return 0
 
+/// The type the raiders are to steal (a path, so not the objective's mind target).
+/datum/objective/heist/loot/var/loot_path
+
 /datum/objective/heist/loot/choose_target()
 	var/loot = "an object"
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, nameof(target), /obj/structure/particle_accelerator)
+			loot_path = /obj/structure/particle_accelerator
 			target_amount = 6
 			loot = "a complete particle accelerator"
 		if(2)
-			rel_set(src, nameof(target), /obj/machinery/the_singularitygen)
+			loot_path = /obj/machinery/the_singularitygen
 			target_amount = 1
 			loot = "a gravitational generator"
 		if(3)
-			rel_set(src, nameof(target), /obj/machinery/power/emitter)
+			loot_path = /obj/machinery/power/emitter
 			target_amount = 4
 			loot = "four emitters"
 		if(4)
-			rel_set(src, nameof(target), /obj/machinery/nuclearbomb)
+			loot_path = /obj/machinery/nuclearbomb
 			target_amount = 1
 			loot = "a nuclear bomb"
 		if(5)
-			rel_set(src, nameof(target), /obj/item/gun)
+			loot_path = /obj/item/gun
 			target_amount = 6
 			loot = "six guns"
 		if(6)
-			rel_set(src, nameof(target), /obj/item/gun/energy)
+			loot_path = /obj/item/gun/energy
 			target_amount = 4
 			loot = "four energy guns"
 		if(7)
-			rel_set(src, nameof(target), /obj/item/gun/energy/laser)
+			loot_path = /obj/item/gun/energy/laser
 			target_amount = 2
 			loot = "two laser guns"
 		if(8)
-			rel_set(src, nameof(target), /obj/item/gun/energy/ionrifle)
+			loot_path = /obj/item/gun/energy/ionrifle
 			target_amount = 1
 			loot = "an ion gun"
 
@@ -652,47 +655,50 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	var/total_amount = 0
 
 	for(var/obj/O in locate(/area/shuttle/skipjack)) // Shuttle area pathname
-		if(istype(O,target)) total_amount++
+		if(istype(O, loot_path)) total_amount++
 		for(var/obj/I in contents_of(O))
-			if(istype(I,target)) total_amount++
+			if(istype(I, loot_path)) total_amount++
 		if(total_amount >= target_amount) return 1
 
 	for(var/datum/mind/raider in GLOB.raiders.current_antagonists)
 		if(raider.current)
 			for(var/obj/O in raider.current.get_contents())
-				if(istype(O,target)) total_amount++
+				if(istype(O, loot_path)) total_amount++
 				if(total_amount >= target_amount) return 1
 
 	return 0
 
+/// The material the raiders are to ransack (its name, so not the objective's mind target).
+/datum/objective/heist/salvage/var/material_name
+
 /datum/objective/heist/salvage/choose_target()
 	switch(rand(1,8))
 		if(1)
-			rel_set(src, nameof(target), MAT_STEEL)
+			material_name = MAT_STEEL
 			target_amount = 300
 		if(2)
-			rel_set(src, nameof(target), MAT_GLASS)
+			material_name = MAT_GLASS
 			target_amount = 200
 		if(3)
-			rel_set(src, nameof(target), MAT_PLASTEEL)
+			material_name = MAT_PLASTEEL
 			target_amount = 100
 		if(4)
-			rel_set(src, nameof(target), MAT_PHORON)
+			material_name = MAT_PHORON
 			target_amount = 100
 		if(5)
-			rel_set(src, nameof(target), MAT_SILVER)
+			material_name = MAT_SILVER
 			target_amount = 50
 		if(6)
-			rel_set(src, nameof(target), MAT_GOLD)
+			material_name = MAT_GOLD
 			target_amount = 20
 		if(7)
-			rel_set(src, nameof(target), MAT_URANIUM)
+			material_name = MAT_URANIUM
 			target_amount = 20
 		if(8)
-			rel_set(src, nameof(target), MAT_DIAMOND)
+			material_name = MAT_DIAMOND
 			target_amount = 20
 
-	explanation_text = "Ransack the station and escape with [target_amount] [target]."
+	explanation_text = "Ransack the station and escape with [target_amount] [material_name]."
 
 /datum/objective/heist/salvage/check_completion()
 
@@ -702,12 +708,12 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 		var/obj/item/stack/material/S
 		if(istype(O,/obj/item/stack/material))
-			if(O.name == target)
+			if(O.name == material_name)
 				S = O
 				total_amount += S.get_amount()
 		for(var/obj/I in contents_of(O))
 			if(istype(I,/obj/item/stack/material))
-				if(I.name == target)
+				if(I.name == material_name)
 					S = I
 					total_amount += S.get_amount()
 
@@ -715,7 +721,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		if(raider.current)
 			for(var/obj/item/O in raider.current.get_contents())
 				if(istype(O,/obj/item/stack/material))
-					if(O.name == target)
+					if(O.name == material_name)
 						var/obj/item/stack/material/S = O
 						total_amount += S.get_amount()
 
@@ -754,7 +760,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/ninja_highlander/check_completion()
 	if(owner)
-		for(var/datum/mind/ninja in GLOB.antag_service.get_antags("ninja"))
+		for(var/datum/mind/ninja in SSantag.get_antags("ninja"))
 			if(ninja != owner)
 				if(ninja.current.stat < 2) return 0
 		return 1
@@ -838,7 +844,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	return rval
 
 // The mind owns its objectives (mind.objectives, OWN); owner is the one-sided back view.
-/datum/objective/relations()
-	. = ..()
-	. += rel_one(nameof(owner))
-// Minds live for the round; the objective only reads its target.
+CAPABILITIES(/datum/objective)
+	ref_one(nameof(owner))
+	ref_one(nameof(target))

@@ -1,0 +1,29 @@
+@obj.machinery.computer human|none
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
+-click: Click: Use item
++1 menu: Set ident tag
++3 click: Click: Set ident tag
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
+@obj.machinery.computer human|/obj/item
+-menu: Use
+@obj human|/obj/item/gripper
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, set_tag, silicon_hand, use, use_gripper, use_item

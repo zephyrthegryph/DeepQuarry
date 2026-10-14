@@ -9,6 +9,7 @@
 	var/image/turf_image
 	var/list/decals
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it was placed on and waits in nullspace
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
@@ -20,9 +21,9 @@
 	var/obj/landed_holder/new_holder = new(null)
 	T.lighting_clear_overlay()
 	new_holder.turf_type = T.type
-	new_holder.dir = T.dir
+	new_holder.set_dir(T.dir)
 	new_holder.icon = T.icon
-	new_holder.icon_state =  T.icon_state
+	new_holder.set_icon_state(T.icon_state)
 	new_holder.copy_overlays(T, TRUE)
 	new_holder.underlays = T.underlays.Copy()
 	new_holder.decals = T.decals ? T.decals.Copy() : null
@@ -31,11 +32,11 @@
 	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf().type,,1)
 	my_turf().lighting_clear_overlay()
 	new_dest.set_dir(my_turf().dir)
-	new_dest.icon_state = my_turf().icon_state
+	new_dest.set_icon_state(my_turf().icon_state)
 	new_dest.icon = my_turf().icon
 	new_dest.copy_overlays(my_turf(), TRUE)
 	new_dest.underlays = my_turf().underlays.Copy()
-	new_dest.decals = my_turf().decals
+	new_dest.set_decals(my_turf().decals)
 	//Shuttle specific stuff
 	new_dest.interior_corner = my_turf().interior_corner
 	new_dest.takes_underlays = my_turf().takes_underlays
@@ -46,7 +47,7 @@
 
 	// Associate the holder with the new turf.
 	rel_set(new_holder, nameof(new_holder.my_turf), new_dest)
-	own_set(new_dest, nameof(new_dest.landed_holder_ref), new_holder)
+	rel_set(new_dest, nameof(new_dest.landed_holder_ref), new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
@@ -61,11 +62,11 @@
 		new_source = my_turf().ChangeTurf(turf_type,,1)
 		new_source.lighting_clear_overlay()
 		new_source.set_dir(dir)
-		new_source.icon_state = icon_state
+		new_source.set_icon_state(icon_state)
 		new_source.icon = icon
 		new_source.copy_overlays(src, TRUE)
 		new_source.underlays = underlays.Copy()
-		new_source.decals = decals
+		new_source.set_decals(decals)
 		new_source.lighting_build_overlay()
 	else
 		new_source = my_turf().ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf()),,1)
@@ -91,6 +92,9 @@
 	rad_insulation = RAD_MEDIUM_INSULATION
 	rad_shield_material = MAT_TITANIUM
 	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
+
+CAPABILITIES(/turf/simulated/shuttle)
+	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 
 /turf/simulated/shuttle/Initialize(mapload)
 	. = ..()
@@ -142,12 +146,13 @@
 			us.underlays = list(landed_on)
 			appearance = us
 
-		spawn
-			if(istype(src, /turf/simulated/shuttle))
-				update_breaklights() // Update only if this coordinate is still a shuttle turf.
+		after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 		return
 
-	if(!under)
+	if(!under && !join_flags)
+		// Not joined at an angle: there is no diagonal to look opposite, and turn(0, ...) would pick a random direction.
+		under = get_base_turf_by_area(src)
+	else if(!under)
 		var/turf/T1
 		var/turf/T2
 		var/turf/T3
@@ -187,9 +192,7 @@
 
 	appearance = us
 
-	spawn
-		if(istype(src, /turf/simulated/shuttle))
-			update_breaklights() // Update only if this coordinate is still a shuttle turf.
+	after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 
 	return under
 
@@ -218,15 +221,20 @@
 
 /turf/simulated/shuttle/floor/alien
 	icon_state = "alienpod1"
-	light_range = 3
-	light_power = 0.6
-	light_color = "#66ffff" // Bright cyan.
 	light_on = TRUE
 	block_tele = TRUE
 
+CAPABILITIES(/turf/simulated/shuttle/floor/alien)
+	configure(light_glow(range = 3, power = 0.6, color = "#66ffff"))
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/turf/simulated/shuttle/floor/alien/proc/roll_look(datum/roller/R)
+	return "alienpod[R.number(1, 9)]"
+
+// ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
 /turf/simulated/shuttle/floor/alien/Initialize(mapload)
 	. = ..()
-	icon_state = "alienpod[rand(1, 9)]"
 	update_light()
 
 /turf/simulated/shuttle/floor/alienplating
@@ -253,9 +261,10 @@
 	takes_underlays = 1
 	blocks_air = 1 //I'd make these unsimulated but it just fucks with so much stuff so many other places.
 
-/turf/simulated/shuttle/plating/carry/Initialize(mapload)
-	. = ..()
-	icon_state = "carry_ingame"
+/// In game the carry turf shows its in-game sprite ("carry" is the map marker).
+/turf/simulated/shuttle/plating/carry/draw(datum/look/look)
+	..()
+	look.state("carry_ingame")
 
 /turf/simulated/shuttle/plating/airless/carry
 	name = "airless carry turf"
@@ -264,9 +273,10 @@
 	takes_underlays = 1
 	blocks_air = 1
 
-/turf/simulated/shuttle/plating/airless/carry/Initialize(mapload)
-	. = ..()
-	icon_state = "carry_ingame"
+/// In game the carry turf shows its in-game sprite ("carry" is the map marker).
+/turf/simulated/shuttle/plating/airless/carry/draw(datum/look/look)
+	..()
+	look.state("carry_ingame")
 
 /turf/simulated/shuttle/plating/skipjack //Skipjack plating
 	oxygen = 0
@@ -311,12 +321,11 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
-	. = ..()
-	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
+CAPABILITIES(/turf/simulated/floor/tiled/material/uranium)
+	on_notice(/datum/notice/atom_propagate_rad_pulse, then(PROC_REF(radiate)))
 
-/turf/simulated/floor/tiled/material/uranium/proc/radiate()
-	EVENT_HANDLER
+/turf/simulated/floor/tiled/material/uranium/proc/radiate(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))
@@ -384,7 +393,8 @@
 	icon = 'icons/turf/stomach_vr.dmi'
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/floor/flesh)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/floor/flesh
 	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
@@ -396,39 +406,42 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_P
 /turf/simulated/floor/flock/Crossed(atom/movable/AM)
 	. = ..()
 	if(isliving(AM))
-		icon_state = "floor-on"
-		set_light(3,3,"#26c5a9")
-		om_after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
+		set_icon_state("floor-on")
+		set_glow(src, GLOW(3, 3, "#26c5a9"))
+		after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
-EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM("Build", PROC_REF(carry_plating_item)))
+CAPABILITIES(/turf/simulated/shuttle/plating/airless/carry)
+	op("carry_plating_item", item(/obj/item), label("Build"), then(PROC_REF(carry_plating_item)))
 
 /// Old attackby: rods build a lattice, floor tiles plate it. This is gross.
-/turf/simulated/shuttle/plating/airless/carry/proc/carry_plating_item(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/shuttle/plating/airless/carry/proc/carry_plating_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/C = A.held
 	if (istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			new/obj/structure/lattice(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if (istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
-			qdel(L)
+				return OP_PASS
+			spent(L)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /turf/simulated/shuttle/plating/airless/carry/is_solid_structure()
 	return locate(/obj/structure/lattice, src)
@@ -446,8 +459,8 @@ EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM
 	icon = 'icons/goonstation/turf/meatland.dmi'
 
 /turf/simulated/floor/flock/proc/crossing_glow_off()
-	icon_state = "floor"
-	set_light(0,0,"#ffffff")
+	set_icon_state("floor")
+	set_glow(src, GLOW(0, 0, "#ffffff"))
 
 
 /// My turf (a relation view).

@@ -1,0 +1,12 @@
+/datum/unit_test/interim_rdconsole_id_cache/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/computer/rdconsole_tg/first = allocate(/obj/machinery/computer/rdconsole_tg, T)
+	var/obj/machinery/computer/rdconsole_tg/second = allocate(/obj/machinery/computer/rdconsole_tg, T)
+	var/first_id = first.compress_id("interim-first")
+	var/second_id = first.compress_id("interim-second")
+	TEST_ASSERT(first_id > 0 && second_id > 0, "compression allocates usable positive payload IDs")
+	TEST_ASSERT(first_id != second_id, "distinct payload IDs receive distinct compressed IDs")
+	TEST_ASSERT_EQUAL(first.compress_id("interim-first"), first_id, "repeated compression keeps its original payload ID")
+	TEST_ASSERT_EQUAL(first.compress_id("interim-second"), second_id, "deduplication preserves the second payload ID too")
+	TEST_ASSERT_EQUAL(second.compress_id("interim-second"), first_id, "another console owns an independent compression sequence")
+	TEST_ASSERT_EQUAL(first.compress_id("interim-first"), first_id, "another console's compression cannot mutate the first mapping")

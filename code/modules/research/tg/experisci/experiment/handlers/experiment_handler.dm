@@ -4,8 +4,18 @@
  * The owned state datum for interacting with experiments from a connected techweb (was the
  * experiment_handler component). It is generic and works on any movable holding it in its
  * `experiment_handler` var; create it with `new /datum/experiment_handler(holder, ...)`.
- * It hooks the holder's events with om_hook().
+ * It observes the holder's events and actions with observe().
  */
+CAPABILITIES(/datum/experiment_handler)
+	// Scanning the target for the selected experiment with a handheld handler: a second of holding still.
+	op("handheld_scan", ai(), takes("scan_target", "scanner"), wait(1 SECOND), then(PROC_REF(run_handheld_experiment)))
+	op("clear_server", ui_act(), then(PROC_REF(ui_act_clear_server)))
+	op("clear_experiment", ui_act(), then(PROC_REF(ui_act_clear_experiment)))
+	interface("ExperimentConfigure")
+	op("select_server", ui_act("select_server", arg("ref", schema_ref(/datum/techweb))), then(PROC_REF(ui_act_select_server)))
+	op("select_experiment", ui_act("select_experiment", arg("ref", schema_ref(/datum/experiment))), then(PROC_REF(ui_act_select_experiment)))
+	op("start_experiment_callback", ui_act("start_experiment_callback"), then(PROC_REF(ui_act_start_experiment_callback)))
+
 /datum/experiment_handler
 	/// The movable this handler belongs to.
 	var/atom/movable/owner
@@ -21,8 +31,8 @@
 	var/disallowed_traits
 	/// Additional configuration flags for how the experiment_handler operates
 	var/config_flags
-	/// Callback that, when supplied, can be called from the UI
-	var/list/start_experiment_spec // an om_callable() spec, run with the selected experiment
+	/// When supplied, a UI button runs it: a PROC_REF on the owner, called as owner.start_experiment(selected experiment) (holder_call())
+	var/start_experiment
 
 /// The experiment handler of this movable, if it has one. Owned: deleted with it.
 /// Not saved: the holder's Initialize() makes a fresh handler; the selected experiment is session state.
@@ -38,7 +48,7 @@
  * * config_mode - The define that determines how the experiment_handler should display the configuration UI
  * * disallowed_traits - Flags that control what experiment traits are blacklisted by this experiment handler
  * * config_flags - Flags that control the operational behaviour of the experiment handler, see experiment defines
- * * start_experiment_spec - When provided (an om_callable() spec) adds a UI button to use it to the start the experiment
+ * * start_experiment - When provided (a PROC_REF on the owner) adds a UI button to use it to the start the experiment
  * * experiment_events - list(event path = handler proc ref) hooked on the owner
  */
 /datum/experiment_handler/New(atom/movable/new_owner,
@@ -47,35 +57,39 @@
 	config_mode = EXPERIMENT_CONFIG_ATTACKSELF,
 	disallowed_traits = null,
 	config_flags = null,
-	list/start_experiment_spec = null,
+	start_experiment = null,
 	list/experiment_events
 )
 	. = ..()
 	if(!ismovable(new_owner))
 		log_runtime("experiment_handler: created for a non-movable ([new_owner]); discarded")
-		qdel(src)
+		spent(src)
 		return
-	// The owner adopts us; its previous handler is deleted by own_set().
-	rel_set(src, nameof(/datum/action_group::owner), new_owner)
-	own_set(new_owner, nameof(/atom/movable::experiment_handler), src)
+	// The owner adopts us; its previous handler is deleted by rel_set().
+	rel_set(src, nameof(/datum/experiment_handler::owner), new_owner)
+	rel_set(new_owner, nameof(/atom/movable::experiment_handler), src)
 
 	src.allowed_experiments = allowed_experiments
 	src.blacklisted_experiments = blacklisted_experiments
 	src.disallowed_traits = disallowed_traits
 	src.config_flags = config_flags
-	src.start_experiment_spec = start_experiment_spec
+	src.start_experiment = start_experiment
 
 	for(var/event_path in experiment_events)
-		om_hook(owner, event_path, src, experiment_events[event_path])
+		if(ispath(event_path, /datum/notice))
+			observe(owner, event_path, src, then(experiment_events[event_path]))
+		else
+			// An action (the handheld scanner's pre_attack) can be taken over: the handler answers HOOK_DECLINE to let it go on.
+			observe(owner, event_path, src, instead(then(experiment_events[event_path])))
 
 	// Determine UI display mode
 	switch(config_mode)
 		if(EXPERIMENT_CONFIG_ATTACKSELF)
-			om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_config_event))
+			observe(owner, /datum/notice/attack_self, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_ALTCLICK)
-			om_hook(owner, /datum/om/event/before/click_alt, src, PROC_REF(on_config_event))
+			observe(owner, /datum/notice/click_alt, src, then(PROC_REF(on_config_event)))
 		if(EXPERIMENT_CONFIG_UI)
-			om_hook(owner, /datum/om/event/ui_act, src, PROC_REF(ui_handle_experiment))
+			observe(owner, /datum/notice/ui_act, src, then(PROC_REF(ui_handle_experiment)))
 
 	// Auto connect to the first visible techweb (useful for always active handlers)
 	// Note this won't work at the moment for non-machines that have been included
@@ -92,14 +106,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on attack to try and run an experiment (When using a handheld handler)
  */
-/datum/experiment_handler/proc/try_run_handheld_experiment(datum/source, datum/om/event/before/item_pre_attack/event)
-	EVENT_HANDLER
-	var/atom/target = event.target
-	var/mob/user = event.user
+/datum/experiment_handler/proc/try_run_handheld_experiment(datum/act/pre_attack/swing)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/atom/target = swing.target_
+	var/mob/user = swing.user
+	var/datum/source = swing.target
 	if (!should_run_handheld_experiment(source, target, user))
-		return
+		return HOOK_DECLINE
 	try_run_handheld_experiment_async(source, target, user)
-	return COMPONENT_CANCEL_ATTACK_CHAIN
+	return TRUE
 
 /**
  * Checks that an experiment can be run using the provided target, used for preventing the cancellation of the attack chain inappropriately
@@ -129,18 +144,18 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
-	om_task_start(/datum/om/task/timed/handheld_experiment, user, target, duration = ((config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) ? 0 : 1 SECOND), receiver = src, scanner = source)
+	if(config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION)
+		handheld_experiment_scanned(source, target, user)
+		return
+	perform_op(user, src, "handheld_scan", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("scan_target" = target, "scanner" = source))
 
-/// Scanning the target for the selected experiment with a handheld handler (`scanner`).
-/datum/om/task/timed/handheld_experiment
-	complete_proc = /datum/experiment_handler/proc/run_handheld_experiment
-	var/datum/scanner
+/// The scan finished (after the wait).
+/datum/experiment_handler/proc/run_handheld_experiment(datum/act/op/A)
+	handheld_experiment_scanned(A.arg("scanner"), A.arg("scan_target"), A.actor)
 
-/datum/experiment_handler/proc/run_handheld_experiment(datum/om/task/timed/handheld_experiment/task)
-	var/datum/source = task.scanner
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	if(action_experiment(source, target))
+/// Scanning the target for the selected experiment with a handheld handler (`source`).
+/datum/experiment_handler/proc/handheld_experiment_scanned(datum/source, atom/target, mob/user)
+	if(action_experiment(source, target, user))
 		play_sfx(user, SFX_MACHINES_PING, 0.5)
 		to_chat(user, span_notice("You scan [target]."))
 	else if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
@@ -150,8 +165,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on destructive scans to try and run a destructive analyzer experiment.
  */
-/datum/experiment_handler/proc/try_run_destructive_experiment(obj/source, datum/om/event/machinery_destructive_scan/event)
-	EVENT_HANDLER
+/datum/experiment_handler/proc/try_run_destructive_experiment(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/source = N.target
+	var/datum/notice/machinery_destructive_scan/event = N
 	var/atom/scan_target = event.scanned_atoms
 
 	if(action_experiment(source, scan_target))
@@ -161,14 +178,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on to RD server to try and run a spectral experiment.
  */
-/datum/experiment_handler/proc/try_run_spectral_experiment(obj/source, datum/om/event/event)
-	EVENT_HANDLER
+/datum/experiment_handler/proc/try_run_spectral_experiment(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/source = N.target
 	var/atom/scan_target
-	if(istype(event, /datum/om/event/world_ghost_captured))
-		var/datum/om/event/world_ghost_captured/ghost_event = event
+	if(istype(N, /datum/notice/world_ghost_captured))
+		var/datum/notice/world_ghost_captured/ghost_event = N
 		scan_target = ghost_event.passing_entity
-	else if(istype(event, /datum/om/event/world_wight_captured))
-		var/datum/om/event/world_wight_captured/wight_event = event
+	else if(istype(N, /datum/notice/world_wight_captured))
+		var/datum/notice/world_wight_captured/wight_event = N
 		scan_target = wight_event.shadow_wight
 
 	if(action_experiment(source, scan_target))
@@ -178,20 +196,13 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hooks on doppler array scans to try and run a explosive experiment.
  */
-/datum/experiment_handler/proc/try_run_ordinance_experiment(obj/source, datum/om/event/machinery_explosion_detected/event)
-	EVENT_HANDLER
+/datum/experiment_handler/proc/try_run_ordinance_experiment(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/source = N.target
+	var/datum/notice/machinery_explosion_detected/event = N
 
 	if(action_experiment(source, event.epicenter, event.devastation_range, event.heavy_impact_range, event.light_impact_range, event.seconds_taken))
 		play_sfx(source, SFX_MACHINES_PING, 0.5)
-
-/// Hooks on a successful autopsy experiment
-/datum/experiment_handler/proc/try_run_autopsy_experiment(obj/source, datum/om/event/autopsy_performed/event)
-	EVENT_HANDLER
-	var/mob/living/target = event.target
-
-	if (action_experiment(source, target))
-		play_sfx(source, SFX_MACHINES_PING, 0.5)
-		source.atom_say("New unique autopsy successfully catalogued.")
 
 
 /**
@@ -244,11 +255,12 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /**
  * Hook for handling UI interaction via signals
  */
-/datum/experiment_handler/proc/ui_handle_experiment(datum/source, datum/om/event/ui_act/event)
-	EVENT_HANDLER
+/datum/experiment_handler/proc/ui_handle_experiment(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/ui_act/event = N
 	switch(event.action)
 		if("open_experiments")
-			configure_experiment(null, usr)
+			configure_experiment(null, event.usr_)
 
 /**
  * Attempts to show the user the experiment configuration panel
@@ -256,14 +268,15 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  * Arguments:
  * * user - The user to show the experiment configuration panel to
  */
-/datum/experiment_handler/proc/on_config_event(datum/source, datum/om/event/event)
-	EVENT_HANDLER
+/datum/experiment_handler/proc/on_config_event(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = N.target
 	var/mob/user
-	if(istype(event, /datum/om/event/before/attack_self))
-		var/datum/om/event/before/attack_self/self_event = event
+	if(istype(N, /datum/notice/attack_self))
+		var/datum/notice/attack_self/self_event = N
 		user = self_event.user
-	else if(istype(event, /datum/om/event/before/click_alt))
-		var/datum/om/event/before/click_alt/alt_event = event
+	else if(istype(N, /datum/notice/click_alt))
+		var/datum/notice/click_alt/alt_event = N
 		user = alt_event.mob
 	configure_experiment(source, user)
 
@@ -349,8 +362,6 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	// Finally, check against the allowed experiment types
 	return is_type_in_list(experiment, allowed_experiments)
 
-DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
-
 /datum/experiment_handler/ui_title(mob/user)
 	var/atom/parent_atom = owner
 	return "[parent_atom ? "[parent_atom.name] | " : ""]Experiment Configuration"
@@ -362,21 +373,19 @@ DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
 		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
 		.["theme"] = owner_robot.get_ui_theme()
 
-UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handler{always_active:num,has_start_callback:bool,techwebs:list,experiments:list}")
-
-/// The computed part of /datum/experiment_handler's window data (declared on its UI_DATA row).
-/datum/experiment_handler/proc/ui_data_datum_experiment_handler(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/experiment_handler's window data.
+/datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
-		"has_start_callback" = !isnull(start_experiment_spec),
+		"has_start_callback" = !isnull(start_experiment),
 	)
 	.["techwebs"] = list()
-	for (var/datum/techweb/techwebs as anything in GLOB.research_service.techwebs)
+	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
 		if(!length(techwebs.techweb_servers)) //no servers, we don't care
 			if(techwebs == linked_web()) //disconnect if OUR techweb lost their servers.
 				unlink_techweb()
 			continue
-		if(!length(GLOB.research_service.find_valid_servers(get_turf(owner), techwebs)))
+		if(!length(SSresearch.find_valid_servers(get_turf(owner), techwebs)))
 			continue
 		var/list/data = list(
 			web_id = techwebs.id,
@@ -402,37 +411,37 @@ UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handl
 			)
 			.["experiments"] += list(data)
 
-UI_ACT(/datum/experiment_handler, "select_server", ui_act_select_server, UI_ARG_REF("ref", null, /datum/techweb))
-UI_ACT_PROC(/datum/experiment_handler, ui_act_select_server)
+/datum/experiment_handler/proc/ui_act_select_server(datum/act/op/A, ref)
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
-	var/datum/techweb/new_techweb = params["ref"]
+	var/datum/techweb/new_techweb = ref
 	if (new_techweb)
 		link_techweb(new_techweb)
 		return
 
-UI_ACT(/datum/experiment_handler, "clear_server", ui_act_clear_server)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_server)
-	. = TRUE
+/datum/experiment_handler/proc/ui_act_clear_server(datum/act/op/A)
 	unlink_techweb()
+	return OP_OK
 
-UI_ACT(/datum/experiment_handler, "select_experiment", ui_act_select_experiment, UI_ARG_REF("ref", null, /datum/experiment))
-UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
+/datum/experiment_handler/proc/ui_act_select_experiment(datum/act/op/A, ref)
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
 	// Don't allow selection for always actives (no concept of active)
 	if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
 		return
-	var/datum/experiment/experiment = params["ref"]
+	var/datum/experiment/experiment = ref
 	if (experiment)
 		link_experiment(experiment)
 
-UI_ACT(/datum/experiment_handler, "clear_experiment", ui_act_clear_experiment)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_experiment)
-	. = TRUE
+/datum/experiment_handler/proc/ui_act_clear_experiment(datum/act/op/A)
 	unlink_experiment()
+	return OP_OK
 
-UI_ACT(/datum/experiment_handler, "start_experiment_callback", ui_act_start_experiment_callback)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_start_experiment_callback)
-	om_run(start_experiment_spec, selected_experiment())
+/datum/experiment_handler/proc/ui_act_start_experiment_callback(datum/act/op/A)
+	if(start_experiment && !QDELETED(owner))
+		holder_call(owner, start_experiment, list(selected_experiment()))
 
 
 /// the selected_experiment this refers to (a relation view: null once it is deleted).

@@ -16,11 +16,11 @@
 	factors = alist(BF_SLOWDOWN = -1.0, BF_ACCURACY = -50, BF_EVASION = 30, BF_MELEE_DAMAGE = 0.75, BF_SIEMENS = 1.5)
 
 /datum/body_effect/underwater_stealth/on_start(mob/living/L)
-	L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
+	L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
 	return
 
 /datum/body_effect/underwater_stealth/on_end(mob/living/L, expired)
-	L.clear_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH)
+	L.clear_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH)
 	return
 
 /datum/body_effect/underwater_stealth/on_tick(mob/living/L)
@@ -33,9 +33,9 @@
 			L.end_body_effect(type, FALSE)
 			return
 		if(water_floor.depth > 1)
-			L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
+			L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
 		else
-			L.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 65/255)
+			L.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 65/255)
 	else
 		L.end_body_effect(type, FALSE)
 
@@ -75,11 +75,11 @@
 // Per-application state: the handle of the generator projecting the shield.
 
 /datum/body_effect/shield_projection/on_start(mob/living/L)
-	om_hook(L, /datum/om/event/living_shield_injury, src, PROC_REF(on_holder_injure))
+	observe(L, /datum/notice/living_shield_injury, src, then(PROC_REF(on_holder_injure)))
 	on_check(L)
 
 /datum/body_effect/shield_projection/on_end(mob/living/L, expired)
-	om_unhook(L, /datum/om/event/living_shield_injury, src)
+	unobserve(L, /datum/notice/living_shield_injury, src)
 
 /// The generator worn on the back, belt or suit storage (only humans wear them), or null.
 /datum/body_effect/shield_projection/proc/find_generator(mob/living/L)
@@ -105,7 +105,6 @@
 		return
 	if(L.body_effect_state(type) != G.effect_color)
 		L.set_body_effect_state(type, G.effect_color)
-		L.update_modifier_visuals()
 
 /datum/body_effect/shield_projection/overlay_color(mob/living/L)
 	var/obj/item/personal_shield_generator/G = generator_of(L)
@@ -124,8 +123,10 @@
 		var/mult = empty + (resist_full[key] - empty) * efficiency
 		. = isnull(.) ? mult : . * mult
 
-/datum/body_effect/shield_projection/proc/on_holder_injure(mob/living/source, datum/om/event/living_shield_injury/event)
-	EVENT_HANDLER
+/datum/body_effect/shield_projection/proc/on_holder_injure(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/source = A.target
+	var/datum/notice/living_shield_injury/event = A
 	var/kind = event.kind
 	var/list/amount_ref = event.amount_ref
 	var/mult = resistance(source, injury_category(kind))

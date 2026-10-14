@@ -15,20 +15,44 @@
 	equip_cooldown = 10
 	required_type = list(/obj/mecha/medical)
 
-DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
-/// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
-OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, list("chassis", "processed_reagents"))
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PERIODIC_FAST, "synthesizing")
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	reagents(nameof(max_volume))
+	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
+	interface("MechaSyringeGun")
+	without("ui_open")
+	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
+	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
+	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
+	op("toggle_mode", topic("toggle_mode"), then(PROC_REF(topic_toggle_mode)))
+	op("show_reagents", topic("show_reagents"), then(PROC_REF(topic_show_reagents)))
+	op("topic_purge_reagent", topic("purge_reagent", arg("purge_reagent", schema_text(64), optional = TRUE)), then(PROC_REF(topic_purge_reagent)))
+	op("topic_purge_all", topic("purge_all"), then(PROC_REF(topic_purge_all)))
+	every(0.2 SECONDS, then(PROC_REF(syringe_gun_step)), when = nameof(synthesizing))
 
-/// Derived field: mounted with reagents selected for synthesis.
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesizing()
-	return chassis && length(processed_reagents)
+/// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/list/processed_reagents = null
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, processed_reagents)
+
+/// Mounted with reagents selected for synthesis: the every() runs while it holds. Refreshed when the mounting or the selection changes, and
+/// cleared when a step stops the processing (the old sweep dropped the gun until one of those changed).
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/var/synthesizing = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing)
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesis_wanted()
+	return (chassis && length(processed_reagents)) ? TRUE : FALSE
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/attach(obj/mecha/M as obj)
+	. = ..()
+	set_synthesizing(synthesis_wanted())
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach(atom/moveto=null)
+	. = ..()
+	set_synthesizing(synthesis_wanted())
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
-	own_take_all(src, nameof(syringes))
+	rel_take_all(src, nameof(syringes))
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	set_processed_reagents(list())
 
@@ -69,7 +93,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 	reagents.trans_to_obj(S, min(S.volume, reagents.total_volume))
 	own_take_member(src, nameof(syringes), S)
 	S.icon = 'icons/obj/chemical.dmi'
-	S.icon_state = "syringeproj"
+	S.set_icon_state("syringeproj")
 	play_sfx(src, SFX_ITEMS_SYRINGEPROJ)
 	src.mecha_log_message("Launched [S] from [src], targeting [target].")
 	S.mech_syringe_flight(trg, 6) // the syringe's own clock: it flies on if the gun is deleted
@@ -78,36 +102,39 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 
 
 // The legacy reagent-selection form is gone (MechaSyringeGun.tsx selects via tgui_act).
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "toggle_mode", PROC_REF(topic_toggle_mode))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "show_reagents", PROC_REF(topic_show_reagents))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", PROC_REF(topic_purge_reagent), TOPIC_TEXT("purge_reagent", 64))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", PROC_REF(topic_purge_all))
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(datum/act/op/A)
 	mode = !mode
 	update_equip_info()
 
 // TGUI: structured reagent management UI (MechaSyringeGun.tsx).
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(mob/user, list/args)
-	var/reagent = args["purge_reagent"]
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(datum/act/op/A, href_purge_reagent)
+	var/reagent = href_purge_reagent
 	if(reagent)
 		reagents.del_reagent(reagent)
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(datum/act/op/A)
 	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
-DECLARE_UI(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "MechaSyringeGun")
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_title(mob/user)
 	return "[name] Reagents"
 
-UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "synth_speed:num", "merge:ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun{total_volume:unknown,max_volume:unknown,known_reagents:list,current_reagents:list}")
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["synth_speed"] = synth_speed
+	var/list/merged_1 = ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun's window data (declared on its UI_DATA row).
+/// /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun's window data.
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_data_obj_item_mecha_parts_mecha_equipment_tool_syringe_gun(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["total_volume"] = round(reagents?.total_volume || 0, 0.001)
@@ -132,9 +159,10 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "synth_s
 	data["current_reagents"] = current
 	return data
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "select_reagents", ui_act_select_reagents, UI_ARG_LIST("reagents"))
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_select_reagents)
-	var/list/picks = params["reagents"]
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_select_reagents(datum/act/op/A, reagents)
+	if(!isnull(reagents) && !islist(reagents))
+		return FALSE
+	var/list/picks = reagents
 	var/list/selected = list()
 	var/m = 0
 	for(var/reagent_id in picks)
@@ -144,19 +172,18 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_selec
 			selected += reagent_id
 			m++
 	set_processed_reagents(selected)
+	set_synthesizing(synthesis_wanted())
 	if(processed_reagents.len)
 		occupant_message("Reagent processing started.")
 		src.mecha_log_message("Reagent processing started.")
 	return TRUE
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", ui_act_purge_reagent, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_reagent)
-	if(params["id"])
-		reagents.del_reagent(params["id"])
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_reagent(datum/act/op/A, id)
+	if(id)
+		reagents.del_reagent(id)
 	return TRUE
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", ui_act_purge_all)
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_all)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/ui_act_purge_all(datum/act/op/A)
 	reagents.clear_reagents()
 	return TRUE
 
@@ -284,11 +311,14 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 	update_equip_info()
 	return
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/syringe_gun_step(datum/act/timer/A)
+	if(!chassis) // synthesizing is only set while mounted
+		return
 	if(!processed_reagents.len || reagents.total_volume >= reagents.maximum_volume || !chassis.has_charge(energy_drain))
 		occupant_message(span_warning("Reagent processing stopped."))
 		src.mecha_log_message("Reagent processing stopped.")
-		return PROCESS_KILL
+		set_synthesizing(FALSE)
+		return
 	var/amount = synth_speed / processed_reagents.len
 	for(var/reagent in processed_reagents)
 		reagents.add_reagent(reagent,amount)
@@ -308,8 +338,6 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 
 	var/enabled = FALSE
 
-	var/icon/drone_overlay
-
 	var/max_distance = 3
 
 	/// Only patients whose field triage demand for one of the drone's tags is
@@ -325,13 +353,16 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 
 	equip_type = EQUIP_HULL
 
-/// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/crisis_drone, PERIODIC_SLOW, list("chassis", "!jammed"))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
+	owns_one(nameof(MyBeam), /datum/beam)
+	ref_one(nameof(Target))
+	op("toggle_drone", topic("toggle_drone"), then(PROC_REF(topic_toggle_drone)))
+	every(2 SECONDS, then(PROC_REF(crisis_drone_step)), when = cond_not(nameof(jammed)))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/Initialize(mapload)
-	. = ..()
-	drone_overlay = new(src.icon, icon_state = droid_state)
+/// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/var/jammed = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed)
+TRACKED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, enabled)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/detach(atom/moveto=null)
 	shut_down()
@@ -359,7 +390,9 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		TREAT_ANALGESIC = 0.2, \
 	))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/periodic_step()	// Will continually try to find the patient most urgently in need of what the drone treats, and try to heal them.
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/crisis_drone_step(datum/act/timer/A)	// Will continually try to find the patient most urgently in need of what the drone treats, and try to heal them.
+	if(!chassis) // the drone only works mounted
+		return
 	if(chassis && enabled && chassis.has_charge(energy_drain) && (chassis?.slot_item(MECHA_SLOT_PILOT) || enable_special))
 		var/target_urgency = 0
 
@@ -380,15 +413,15 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target()))
-			own_clear(src, nameof(MyBeam), OWN_DELETE)
+			rel_clear(src, nameof(MyBeam))
 
 		if(Target)
 			if(MyBeam && MyBeam.target() != Target)
-				own_clear(src, nameof(MyBeam), OWN_DELETE)
+				rel_clear(src, nameof(MyBeam))
 
 			if(valid_target(Target))
 				if(!MyBeam)
-					own_set(src, nameof(MyBeam), chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
+					rel_set(src, nameof(MyBeam), chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 				heal_target(Target)
 
 	else
@@ -430,7 +463,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 	if(!isnull(Target))
 		rel_clear(src, nameof(Target))
 	if(MyBeam)
-		own_clear(src, nameof(MyBeam), OWN_DELETE)
+		rel_clear(src, nameof(MyBeam))
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/unique_patient_checks(mob/living/L)	// Anything special for subtypes. Does it only work on Robots? Fleshies? A species?
 	. = TRUE
@@ -449,14 +482,14 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		if(ishuman(L) && bone_heal)
 			var/mob/living/carbon/human/H = L
 
-			if(H.bad_external_organs.len)
-				for(var/obj/item/organ/external/E in H.bad_external_organs)
+			if(length(H.damaged_limbs()))
+				for(var/obj/item/organ/external/E in H.damaged_limbs())
 					if(prob(bone_heal))
 						E.mend_fracture()
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/toggle_drone()
 	if(chassis)
-		enabled = !enabled
+		set_enabled(!enabled)
 		if(enabled)
 			set_ready_state(FALSE)
 			src.mecha_log_message("Activated.")
@@ -464,15 +497,13 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 			set_ready_state(TRUE)
 			src.mecha_log_message("Deactivated.")
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/add_equip_overlay(obj/mecha/M as obj)
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/equip_look(datum/look/look)
 	..()
-	if(enabled)
-		M.add_overlay(drone_overlay)
-	return
+	look.watch(src)
+	look.overlay(droid_state, enabled, icon)
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "toggle_drone", PROC_REF(topic_toggle_drone))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(datum/act/op/A)
 	toggle_drone()
 	return
 
@@ -516,25 +547,23 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 	if(steps_left <= 0)
 		return
 	if(!step_towards(src, trg))
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		icon = initial(icon)
-		update_icon()
 		return
 	var/list/mobs = list()
 	for(var/mob/living/carbon/M in contents_of(loc))
 		mobs += M
 	var/mob/living/carbon/M = safepick(mobs)
 	if(M)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		icon = initial(icon)
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_BLOOD)
 		M.injure(INJURY_PIERCE, 2, null, src)
 		visible_message(span_attack("[M] was hit by the syringe!"))
 		return
 	if(loc == trg)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		icon = initial(icon)
-		update_icon()
 		return
-	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
+	after(src, 0.1 SECONDS, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
 

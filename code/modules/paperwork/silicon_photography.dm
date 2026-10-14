@@ -6,6 +6,9 @@
 	var/photos_taken = 0
 	var/list/obj/item/photo/aipictures
 
+CAPABILITIES(/obj/item/camera/siliconcam)
+	owns_many(nameof(aipictures), /obj/item/photo)
+
 /obj/item/camera/siliconcam/ai_camera //camera AI can take pictures with
 	name = "AI photo camera"
 
@@ -17,7 +20,7 @@
 
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	own_add(src, nameof(src.aipictures), p, into = TRUE)
+	move_into(src, nameof(src.aipictures), p)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
 
@@ -43,7 +46,7 @@
 		return
 	for(var/obj/item/photo/t in cam.aipictures)
 		nametemp += t.name
-	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/om/prompt/choice, message = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
+	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/prompt/choice, question = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
 	if(isnull(_answer_k50))
 		return
 	find = _answer_k50
@@ -55,24 +58,75 @@
 			return q
 
 /obj/item/camera/siliconcam/proc/viewpictures(mob/user)
-	var/obj/item/photo/selection = selectpicture(user)
-
-	if(!selection)
-		return
-
-	selection.show(user)
-
-	if(selection.desc)
-		to_chat(user,selection.desc)
+	open_album_choice(user, null, "view")
 
 /obj/item/camera/siliconcam/proc/deletepicture(mob/user, obj/item/camera/siliconcam/cam)
-	var/selection = selectpicture(user, cam)
+	open_album_choice(user, cam, "delete")
 
+/obj/item/camera/siliconcam/proc/open_album_choice(mob/user, obj/item/camera/siliconcam/cam, album_action)
+	var/obj/item/camera/siliconcam/source_cam = cam || getsource(user)
+	if(!length(source_cam.aipictures))
+		to_chat(user, span_userdanger("No images saved"))
+		return
+	var/list/names = list()
+	for(var/obj/item/photo/photo in source_cam.aipictures)
+		names += photo.name
+	open_request(src, /datum/prompt/choice/silicon_album, PROC_REF(album_choice_entered), answerer = user, subject = cam, choices = names, album_action = album_action, captured = list("explicit_camera" = !isnull(cam)))
+
+/obj/item/camera/siliconcam/proc/album_choice_entered(datum/act/request/A)
+	var/datum/prompt/choice/silicon_album/ask = A.request
+	if(!A.answer)
+		if(ask.last_error == "not local")
+			to_chat(ask.answerer, span_warning("Only local images can be deleted."))
+		return
+	var/mob/user = ask.answerer
+	var/obj/item/camera/siliconcam/source_cam = ask.album_source()
+	if(!length(source_cam.aipictures))
+		to_chat(user, span_userdanger("No images saved"))
+		return
+	var/obj/item/photo/selection = ask.selected_picture()
 	if(!selection)
 		return
+	if(ask.album_action == "view")
+		selection.show(user)
+		if(selection.desc)
+			to_chat(user, selection.desc)
+	else if(consume(selection, user))
+		to_chat(user, span_unconscious("Local image deleted"))
 
-	own_remove(src, nameof(aipictures), selection)
-	to_chat(user, span_unconscious("Local image deleted"))
+/datum/prompt/choice/silicon_album
+	question = "Select image (numbered in order taken)"
+	title = "Picture Choice"
+	timeout = 0
+	recheck_on_open = TRUE
+	var/album_action
+
+/datum/prompt/choice/silicon_album/proc/album_source()
+	if(captured["explicit_camera"])
+		return subject
+	var/obj/item/camera/siliconcam/camera = owner
+	return camera.getsource(answerer)
+
+/datum/prompt/choice/silicon_album/proc/selected_picture()
+	if(!value)
+		return null
+	var/obj/item/camera/siliconcam/source_cam = album_source()
+	for(var/obj/item/photo/photo in source_cam.aipictures)
+		if(photo.name == value)
+			return photo
+	return null
+
+/datum/prompt/choice/silicon_album/recheck_extra()
+	var/obj/item/camera/siliconcam/camera = owner
+	if(QDELETED(camera) || QDELETED(answerer))
+		return "gone"
+	if(captured["explicit_camera"] && QDELETED(subject))
+		return "gone"
+	if(album_action == "delete")
+		var/obj/item/photo/selected = selected_picture()
+		if(selected && !(selected in camera.aipictures))
+			return "not local"
+	return null
 
 /obj/item/camera/siliconcam/ai_camera/can_capture_turf(turf/T, mob/user)
 	var/mob/living/silicon/ai = user

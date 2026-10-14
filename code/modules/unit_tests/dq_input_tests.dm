@@ -309,59 +309,55 @@
 	last_handler = handler
 	rel_set(src, nameof(last_user), user)
 
-/// Each kind of Use the router can reach, declared as interactions that record which one ran.
-DECLARE_INTERACTIONS(/obj/dq_input_probe, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(probe_hand)), \
-	INTERACT_OBSERVER(null, PROC_REF(probe_ghost)), \
-	INTERACT_ROBOT(null, PROC_REF(probe_robot)), \
-	INTERACT_SILICON(null, PROC_REF(probe_ai)), \
-	INTERACT_TK(null, PROC_REF(probe_tk)), \
-	INTERACT_ALT(null, PROC_REF(probe_alt)), \
-	INTERACT_DRAG(null, PROC_REF(probe_drag)), \
-)
+/// Each kind of Use the router can reach, declared as ops that record which one ran.
+CAPABILITIES(/obj/dq_input_probe)
+	op("probe_hand", hand(), ungated(), then(PROC_REF(probe_hand)))
+	op("probe_ghost", observer(), then(PROC_REF(probe_ghost)))
+	op("probe_remote", remote(), then(PROC_REF(probe_ai)))
+	op("probe_tk", tk(), then(PROC_REF(probe_tk)))
+	op("probe_alt", inputs(hand(), remote(), observer()), gesture(GESTURE_ALT), then(PROC_REF(probe_alt)))
+	op("probe_drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(probe_drag)))
 
-/obj/dq_input_probe/proc/probe_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_hand", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_hand(datum/act/op/A)
+	note("attack_hand", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_ghost(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_ghost", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_ghost(datum/act/op/A)
+	note("attack_ghost", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_robot(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_robot", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_ai(datum/act/op/A)
+	note("attack_ai", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_ai(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_ai", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_tk(datum/act/op/A)
+	note("attack_tk", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_tk(mob/user, obj/item/held, datum/interaction/interaction)
-	note("attack_tk", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_alt(datum/act/op/A)
+	note("click_alt", A.actor)
+	return OP_OK
 
-/obj/dq_input_probe/proc/probe_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	note("click_alt", user)
-	return TRUE
-
-/obj/dq_input_probe/proc/probe_drag(mob/user, obj/item/held, datum/interaction/interaction)
-	note("MouseDrop_T", user)
-	return TRUE
+/obj/dq_input_probe/proc/probe_drag(datum/act/op/A)
+	note("MouseDrop_T", A.actor)
+	return OP_OK
 
 /obj/item/dq_input_probe_item
 	var/mob/self_used_by
 
-DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(probe_self)))
+CAPABILITIES(/obj/item/dq_input_probe_item)
+	op("probe_self", in_hand(), then(PROC_REF(probe_self)))
 
-/obj/item/dq_input_probe_item/proc/probe_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_set(src, nameof(self_used_by), user)
+/obj/item/dq_input_probe_item/proc/probe_self(datum/act/op/A)
+	rel_set(src, nameof(self_used_by), A.actor)
+	return OP_OK
 
 /// Clicks through the router as a mob; returns the handler the probe saw for that mob.
 /datum/unit_test/proc/dq_route(mob/user, obj/dq_input_probe/probe, params)
 	probe.last_handler = null
 	rel_clear(probe, nameof(probe.last_user))
-	user.next_click = 0
-	GLOB.input_router.route_click(user, probe, params)
+	cooldown_set_end(user, next_click, 0)
+	input_submit(new /datum/input_event/click(user, probe, null, null, params))
 	return probe.last_user == user ? probe.last_handler : null
 
 /// Each mob kind gets its adapter, and Use and Alternate reach today's handlers.
@@ -380,8 +376,8 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	TEST_ASSERT_EQUAL(R.input_adapter(), INPUT_ADAPTER(robot), "cyborgs use the robot adapter")
 	TEST_ASSERT_EQUAL(R.keybind_profile(), KEYBIND_PROFILE_ROBOT, "cyborgs get the robot keybinding profile")
-	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1"), "attack_robot", "a cyborg's Use with no module reaches attack_robot")
-	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt through silicon_alternate")
+	TEST_ASSERT(dq_route(R, probe, "left=1") in list("attack_hand", "attack_ai"), "a cyborg's Use with no module reaches the hand op or the remote op its interface provides")
+	TEST_ASSERT_EQUAL(dq_route(R, probe, "left=1;alt=1"), "click_alt", "a cyborg's Alternate reaches click_alt")
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(ghost.input_adapter(), INPUT_ADAPTER(ghost), "ghosts use the ghost adapter")
@@ -393,7 +389,7 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 	TEST_ASSERT_EQUAL(AI.input_adapter(), INPUT_ADAPTER(ai), "the AI uses the AI adapter")
 	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1"), "attack_ai", "the AI's Use reaches attack_ai")
-	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt through silicon_alternate")
+	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt")
 	AI.control_disabled = TRUE
 	TEST_ASSERT_NULL(dq_route(AI, probe, "left=1"), "an AI with control disabled does nothing")
 
@@ -405,17 +401,54 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	var/obj/dq_input_probe/probe = allocate(/obj/dq_input_probe, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 
-	var/datum/input_adapter/telekinesis/telekinesis = INPUT_ADAPTER(telekinesis)
-	telekinesis.use(H, probe)
-	TEST_ASSERT_EQUAL(probe.last_handler, "attack_tk", "the telekinesis adapter's Use runs the INTERACT_TK")
+	var/turf/away = locate(T.x + 3, T.y, T.z)
+	TEST_ASSERT_NOTNULL(away, "a turf three tiles away")
+	var/obj/dq_input_probe/far = allocate(/obj/dq_input_probe, away)
+	H.add_mutation(TK)
+	TEST_ASSERT_EQUAL(dq_route(H, far, "left=1"), "attack_tk", "a telekinetic actor's Use on what no hand reaches runs the tk op")
+	H.remove_mutation(TK)
 
 	var/obj/item/dq_input_probe_item/item = allocate(/obj/item/dq_input_probe_item, T)
 	TEST_ASSERT(H.put_in_active_hand(item), "the human should hold the probe item")
-	H.next_click = 0
-	GLOB.input_router.route_click(H, item, "left=1")
+	cooldown_set_end(H, next_click, 0)
+	input_submit(new /datum/input_event/click(H, item, null, null, "left=1"))
 	TEST_ASSERT_EQUAL(item.self_used_by, H, "clicking the held item is Self-use, which runs attack_self")
 
 	H.drop_from_inventory(item, T)
 	probe.last_handler = null
 	GLOB.input_router.route_drag(H, item, probe)
 	TEST_ASSERT_EQUAL(probe.last_handler, "MouseDrop_T", "dragging onto an atom reaches MouseDrop_T")
+
+/// apply_keybindings() creates each macro by naming it as winset()'s control with a parent: the null-control
+/// "id.parent=" form only edits controls that exist, so it never made the macros and every key beeped.
+/datum/unit_test/dq_keybinding_winset_creates_macros
+
+/datum/unit_test/dq_keybinding_winset_creates_macros/Run()
+	var/list/macros = keybinding_macros(KEYBIND_PROFILE_DEFAULT, null)
+	TEST_ASSERT(length(macros) > 50, "the default profile has its macros")
+	var/list/calls = keybinding_winset_calls(macros, length(macros) + 2)
+	TEST_ASSERT_EQUAL(length(calls), length(macros) + 3, "two detaches, one call per macro and the window settings")
+	var/list/created = list()
+	var/list/detached = list()
+	var/list/window
+	for(var/list/call_args as anything in calls)
+		var/list/params = params2list(call_args[2])
+		if(isnull(call_args[1]))
+			window = params
+			continue
+		TEST_ASSERT(findtext(call_args[1], KEYBIND_MACRO_PREFIX) == 1, "macro call [call_args[1]] names its own element")
+		TEST_ASSERT(!findtext(call_args[2], "[call_args[1]]."), "macro call [call_args[1]] sets its own params, not dotted ones")
+		if(params["parent"] == "none")
+			detached += call_args[1]
+			continue
+		TEST_ASSERT_EQUAL(params["parent"], KEYBIND_MACRO_SET, "[call_args[1]] goes into the skin's macro set")
+		created["[params["name"]]"] = params["command"]
+	TEST_ASSERT_EQUAL(jointext(detached, ","), "[KEYBIND_MACRO_PREFIX][length(macros) + 1],[KEYBIND_MACRO_PREFIX][length(macros) + 2]", "elements past the new count are detached")
+	TEST_ASSERT_EQUAL(created["W"], "KeyDown W", "W moves")
+	TEST_ASSERT_EQUAL(created["W+UP"], "KeyUp W", "releasing W stops")
+	TEST_ASSERT_EQUAL(created["X"], ".northeast", "X swaps hands")
+	TEST_ASSERT_EQUAL(created["T"], "Say-verb", "T says")
+	TEST_ASSERT_EQUAL(length(created), length(macros), "every macro is created")
+	TEST_ASSERT_NOTNULL(window, "the window settings are written")
+	TEST_ASSERT_EQUAL(window["mainwindow.macro"], KEYBIND_MACRO_SET, "the main window uses the macro set")
+	TEST_ASSERT_EQUAL(window["mapwindow.map.focus"], "true", "the map takes keyboard focus")

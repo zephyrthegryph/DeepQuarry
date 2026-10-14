@@ -1,0 +1,21 @@
+@obj.machinery.reagent_refinery human|none
++0 menu: Climb
+@obj.machinery.reagent_refinery robot|none
+-menu: Set transfer amount
+@obj.machinery ai|none
+@obj.machinery.reagent_refinery ghost|none
+-menu: Set transfer amount (refused: You can't reach that.)
+@obj.machinery.reagent_refinery human|/obj/item/tool/screwdriver
+@obj.machinery.reagent_refinery human|/obj/item/tool/crowbar
+@obj.machinery.reagent_refinery human|/obj/item/tool/wrench
+@obj.machinery.reagent_refinery human|/obj/item/tool/wirecutters
+@obj.machinery.reagent_refinery human|/obj/item/multitool
+@obj.machinery.reagent_refinery human|/obj/item/weldingtool
+@obj.machinery.reagent_refinery human|/obj/item/stack/cable_coil
+@obj.machinery.reagent_refinery human|/obj/item/stack/material/steel
+@obj.machinery.reagent_refinery human|/obj/item/card/id
+@obj.machinery.reagent_refinery human|/obj/item
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
+@obj human|/obj/item/reagent_containers/food/drinks/glass2
+@obj human|/obj/item/reagent_containers/food/drinks/shaker
+keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench

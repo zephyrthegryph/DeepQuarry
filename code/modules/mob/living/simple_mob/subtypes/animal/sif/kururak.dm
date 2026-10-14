@@ -43,7 +43,6 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	attack_armor_pen = 40
-	base_attack_cooldown = 2 SECONDS
 	attacktext = list("gouged", "bit", "cut", "clawed", "whipped")
 
 	organ_names = /datum/decl/mob_organ_names/kururak
@@ -70,7 +69,7 @@
 
 /mob/living/simple_mob/animal/sif/kururak/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Blue innards of a sleek creature surround you in an overwhelmingly tight pressure. Walls, coated in slick, reflective mucus reflect \
 		light from the pool of teal stomach juices, flashing you from random angles. The texture of the surroundings is only mildly soft, it feels \
@@ -93,13 +92,15 @@
 	endurance = 250
 	instinct = 50
 
-/mob/living/simple_mob/animal/sif/kururak/Initialize(mapload)
-	. = ..()
-	if(!instinct)
-		if(prob(20))
-			instinct = rand(6, 10)
-			return
-		instinct = rand(0, 5)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+	rolls(nameof(instinct), PROC_REF(roll_instinct))
+	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.
+	op("rend_hatch", ai(), takes("mech"), wait(1 SECOND), then(PROC_REF(rending_strike_kururak_done)))
+
+/// Rolled before init (rolls()): one in five is a natural leader.
+/mob/living/simple_mob/animal/sif/kururak/proc/roll_instinct(datum/roller/R)
+	return R.chance(20) ? R.number(6, 10) : R.number(0, 5)
 
 /mob/living/simple_mob/animal/sif/kururak/IIsAlly(mob/living/L)
 	. = ..()
@@ -110,20 +111,17 @@
 			var/mob/living/carbon/human/H = L
 			if(H.get_active_hand())
 				var/obj/item/I = H.get_active_hand()
-				if(I.force <= 1.25 * melee_damage_upper)
+				if(combat_of(I).force <= 1.25 * melee_damage_upper)
 					return TRUE
 		else if(isanimal(L))
 			var/mob/living/simple_mob/S = L
 			if(S.melee_damage_upper > 1.5 * melee_damage_upper)
 				return TRUE
 
-/datum/om/stage/life/special/animal/sif/kururak
-	of = /mob/living/simple_mob/animal/sif/kururak
-
-/datum/om/stage/life/special/animal/sif/kururak/perform(mob/living/simple_mob/animal/sif/kururak/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/kururak/life_special(datum/seq_frame/life/F)
 	..()
-	if(self.client)
-		self.pack_gauge()
+	if(src.client)
+		src.pack_gauge()
 
 /mob/living/simple_mob/animal/sif/kururak/apply_melee_effects(atom/A)	// Only gains instinct.
 	instinct += rand(1, 2)
@@ -174,13 +172,21 @@
 			choices["radial"] = get_turf(src)
 
 		// A cancel (optional) flashes everyone around, as the tails flare either way.
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(tail_flash_chosen), title = "Target Choice", message = "What do we wish to flash?", choices = choices, ask_flags = ASK_CONSCIOUS, optional = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(tail_flash_chosen), answerer = src, title = "Target Choice", question = "What do we wish to flash?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	tail_flash_now(A)
 
-/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/om/prompt/choice/ask)
-	var/atom/A = ask.choice
-	tail_flash_now(isatom(A) ? A : null)
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/act/request/A)
+	var/datum/request/R = A.request
+	// An explicit close still flares the tails; a failed conscious recheck does not.
+	if(!A.answer && (R.outcome != REQ_CANCELLED || !isnull(R.value)))
+		return
+	var/target = A.answer ? A.answer.value : null
+	if(isdatum(target))
+		var/datum/target_datum = target
+		if(QDELETED(target_datum))
+			return
+	tail_flash_now(isatom(target) ? target : null)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
 	act_message(src, null, null, MSG_OTHERS(span_alien("%U% flares its tails!")))
@@ -197,7 +203,7 @@
 						flash_strength *= H.species.flash_mod
 						if(flash_strength > 0)
 							to_chat(H, span_alien("You are disoriented by \the [src]!"))
-							H.status_at_least(EFFECT_BLURRY, flash_strength + 5)
+							H.status_at_least(STAT_BLURRY, flash_strength + 5)
 							H.flash_eyes()
 							H.injure(INJURY_BURN, flash_strength * H.species.flash_burn/5, BP_HEAD, src)
 
@@ -213,11 +219,11 @@
 							flashfail = TRUE
 				if(!flashfail)
 					to_chat(R, span_alien("Your optics are scrambled by \the [src]!"))
-					R.status_at_least(EFFECT_CONFUSED, 10)
+					R.status_at_least(STAT_CONFUSED, 10)
 					R.flash_eyes()
 
 		else
-			L.status_at_least(EFFECT_CONFUSED, 10)
+			L.status_at_least(STAT_CONFUSED, 10)
 			L.flash_eyes()
 
 	else
@@ -246,9 +252,13 @@
 	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
 
-/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/om/prompt/choice/ask)
-	var/atom/A = ask.choice
-	rending_strike(A)
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/atom/target = A.answer.value
+	if(QDELETED(target))
+		return
+	rending_strike(target)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike(atom/A)
 	if(stat)
@@ -269,7 +279,7 @@
 			to_chat(src, span_warning("There are no viable targets within range..."))
 			return
 
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(rending_strike_chosen), title = "Target Choice", message = "What do we wish to strike?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(rending_strike_chosen), answerer = src, title = "Target Choice", question = "What do we wish to strike?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 
 	if(!A) return
@@ -295,12 +305,15 @@
 		M.take_damage(damage_to_apply)
 		if(prob(3))
 			act_message(src, M, null, MSG_OTHERS(span_critical("%U% begins digging its claws into %T%'s hatch!")))
-			om_task_timed(src, 1 SECOND, target = M, receiver = src, on_done = PROC_REF(rending_strike_kururak_done), done_args = list(M))
+			perform_op(src, src, "rend_hatch", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("mech" = M))
 
 	else
-		A.attack_generic(src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
+		generic_hit(A, src, damage_to_apply, "rakes its claws against")	// Well it's not a mob, and it's not a mech.
 
-/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(obj/mecha/M)
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_kururak_done(datum/act/op/A)
+	var/obj/mecha/M = A.arg("mech")
+	if(QDELETED(M) || !Adjacent(M))
+		return
 	act_message(src, M, null, MSG_OTHERS(span_critical("%U% rips %T%'s access hatch open, dragging [M?.slot_item(MECHA_SLOT_PILOT)] out!")))
 	M.go_out()
 
@@ -346,10 +359,12 @@
 	else
 		remove_body_effect(/datum/body_effect/ace)
 
-/mob/living/simple_mob/animal/sif/kururak/hibernate/Initialize(mapload)
-	. = ..()
-	lay_down()
-	instinct = 0
+/// Found asleep, with no instinct of its own.
+/mob/living/simple_mob/animal/sif/kururak/hibernate
+	resting = TRUE
+
+/mob/living/simple_mob/animal/sif/kururak/hibernate/roll_instinct(datum/roller/R)
+	return 0
 
 /*
  * Kururak AI

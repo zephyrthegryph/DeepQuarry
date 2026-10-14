@@ -58,7 +58,6 @@
 	mount_offset_y = 30
 
 
-	allow_mind_transfer = TRUE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/deathclaw
@@ -69,20 +68,21 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/deathclaw, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/deathclaw, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/deathclaw/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The giant mutant of a lizard finishes stuffing you into its jaws and down its ravenously clenching gullet with a worrying ease and efficiency. An assortment of slick, slimy noises assault your senses for a few gulp-filled moments... before you spill out into the apex predator's swelteringly hot stomach, its walls already possessively grinding into your body."
 

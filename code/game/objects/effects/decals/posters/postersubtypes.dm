@@ -5,10 +5,10 @@
 	icon_state = "rolled_poster_nt"
 	poster_type = /obj/structure/sign/poster/nanotrasen
 
-/obj/item/poster/nanotrasen/Initialize(mapload, datum/decl/poster/P = null)
-	if(!ispath(poster_decl) && !ispath(P) && !istype(P))
+/obj/item/poster/nanotrasen/choose_design(P)
+	if(!ispath(poster_decl) && !ispath(P) && !istype(P, /datum/decl/poster))
 		poster_decl = get_poster_decl(/datum/decl/poster/nanotrasen, FALSE, null)
-	return ..()
+	..()
 
 /obj/structure/sign/poster/nanotrasen // placed wall object
 	roll_type = /obj/item/poster/nanotrasen
@@ -23,9 +23,10 @@
 	poster_type = /obj/structure/sign/poster/custom
 
 /// Verb to change a custom poster's design
-/obj/item/poster/custom/proc/select_poster_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/poster/custom/proc/select_poster_effect(datum/act/op/A)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	var/list/options = list()
@@ -33,19 +34,21 @@
 	for(var/option in posters)
 		options[posters[option].name] = posters[option]
 
-	om_ask(M, /datum/om/prompt/choice, PROC_REF(poster_chosen), choices = options, title = "Customize Poster", message = "Choose a poster!", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(poster_chosen), answerer = M, choices = options, title = "Customize Poster", question = "Choose a poster!", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/poster/custom/proc/poster_chosen(datum/om/prompt/choice/ask)
-	if(ask.choices[ask.choice])
-		poster_decl = ask.choices[ask.choice]
+/obj/item/poster/custom/proc/poster_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	if(ask.choices[ask.value])
+		poster_decl = ask.choices[ask.value]
 		name = "rolled-up poly-poster - [poster_decl.name]"
-		to_chat(ask.answerer, "The poster is now: [ask.choice].")
+		to_chat(ask.answerer, "The poster is now: [ask.value].")
 
 // Wall object
 /obj/structure/sign/poster/custom // placed wall object
 	roll_type = /obj/item/poster/custom
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/poster/custom, \
-	INTERACT_VERB("Set Poster type", PROC_REF(select_poster_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/poster/custom)
+	op("select_poster_effect", menu(), label("Set Poster type"), needs(carried()), then(PROC_REF(select_poster_effect)))

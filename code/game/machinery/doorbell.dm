@@ -6,57 +6,50 @@
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
 	icon_state = "dbchime-standby"
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 200
 	anchored = TRUE
 	flags = WALL_ITEM
 	var/id_tag = null
 	var/chime_sound = SFX_MACHINES_DOORBELL
 
-/obj/machinery/doorbell_chime/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/machinery/doorbell_chime/proc/chime()
 	if(!operable())
 		return
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	playsound(src, chime_sound, 75)
-	icon_state = "dbchime-active"
-	set_light(2, 0.5, "#33FF33")
+	set_icon_state("dbchime-active")
+	set_glow(src, GLOW(2, 0.5, "#33FF33"))
 	visible_message("\The [src]'s light flashes.")
-	om_after(src, 3 SECONDS, PROC_REF(chime_end))
+	after(src, 3 SECONDS, PROC_REF(chime_end))
 
 /obj/machinery/doorbell_chime/proc/chime_end()
-	set_light(0)
-	update_icon()
+	set_glow(src, GLOW(0, null, null))
 
-APPEARANCE_TEMPLATE(/obj/machinery/doorbell_chime, "dbchime-{id_tag?standby:red}")
-DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("dbchime-open"))))
-
-/obj/machinery/doorbell_chime/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/doorbell_chime_fingerprint,
-		/datum/interaction/machine_item/part_replacement,
-	)
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/doorbell_chime/draw(datum/look/look)
 	..()
+	look.state("dbchime-[id_tag ? "standby" : "red"]")
+	if(panel_open == 1)
+		look.overlay("dbchime-open")
 
-/// Old attackby: added a fingerprint for any item before trying the part replacer.
-/datum/interaction/machine_item/doorbell_chime_fingerprint
-	id = "doorbell_chime_fingerprint"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
+MSG_DEF_SELF(doorbell/needs_item, "needs an item")
 
-/obj/machinery/doorbell_chime/multitool_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/machinery/doorbell_chime)
+	configure(uses_power(idle = 10, active = 200))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+
+/obj/machinery/doorbell_chime/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	if(multitool.connectable() && istype(multitool.connectable(), /obj/machinery/button/doorbell))
 		var/obj/machinery/button/doorbell/button = multitool.connectable()
 		keyed_set_id(src, nameof(id_tag), button.id) // joins the button's keyed chimes
 		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 ////////////////////DOORBELL CHIME CONSTRUCTION///////////////////////////////////////
 // We want these to be constructable so more chimes can be added in departments.
@@ -90,30 +83,36 @@ DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(
 	use_power = USE_POWER_OFF
 	flags = WALL_ITEM
 
-/obj/machinery/button/doorbell/Initialize(mapload, dir, building = FALSE)
+CAPABILITIES(/obj/machinery/button/doorbell)
+	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
+	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
+	extend("button_press", priority(OP_PRIORITY_DEFAULT - 3))
+	op("doorbell_press", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Press"), then(PROC_REF(interaction_press_impl)))
+	op("doorbell_rename", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), needs(req(/obj/item, because = MSG(doorbell/needs_item)), req_adjacent(), req_capable()),
+		asks(/datum/prompt/text/doorbell_label, fields = list("question" = computed(PROC_REF(rename_question)), "title" = computed(PROC_REF(rename_title)), "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), when = PROC_REF(rename_possible)), then(PROC_REF(rename_fingerprint)), then(PROC_REF(doorbell_named)))
+	param(nameof(dir), pos = 1, overrides = TRUE)
+	param(nameof(building), pos = 2)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(wrench_used)), wait(1.5 SECONDS), then(PROC_REF(wrench_act_timed_done)))
+
+/// A doorbell built on a wall (its constructor param).
+/obj/machinery/button/doorbell/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a built doorbell sits on its wall, and every doorbell takes an id
+/obj/machinery/button/doorbell/Initialize(mapload)
 	. = ..()
 	if(building)
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -32 : 32)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	if (!id)
 		assign_uid()
-		id = num2text(uid)
-	update_icon()
+		set_id(num2text(uid))
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:off}")
-
-/obj/machinery/button/doorbell/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/doorbell_press,
-		/datum/interaction/machine_item/doorbell_rename,
-	)
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/doorbell/draw(datum/look/look)
 	..()
+	look.state("doorbell-[operable() ? "standby" : "off"]")
 
-/// Old attack_hand: press the button, chime the linked chimes.
-/datum/interaction/machine_hand/doorbell_press
-	id = "doorbell_press"
-	name = "Press"
-	effect = /obj/machinery/button/doorbell/proc/interaction_press_impl
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
@@ -124,7 +123,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 	. = ..()
 	. += rel_key(nameof(id_tag))
 
-/obj/machinery/button/doorbell/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/doorbell/proc/interaction_press_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	use_power(5)
 	flick("doorbell-active", src)
@@ -133,40 +133,47 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 		M.chime()
 	return TRUE
 
-/// Old attackby: fingerprint any item, and rename with a pen when the panel is open.
-/datum/interaction/machine_item/doorbell_rename
-	id = "doorbell_rename"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /obj/machinery/button/doorbell/proc/interaction_rename
+/obj/machinery/button/doorbell/proc/rename_fingerprint(datum/act/op/A)
+	if(istype(A.answer, /datum/prompt/text/doorbell_label))
+		return OP_OK
+	add_fingerprint(A.actor)
+	return OP_OK
 
-/obj/machinery/button/doorbell/proc/interaction_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(panel_open && istype(held, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text, PROC_REF(doorbell_named), message = "Enter the name for \the [src].", title = name, default = initial(name), max_length = MAX_NAME_LEN, encode = FALSE, requires = PROMPT_ADJACENT)
-	return TRUE
+/obj/machinery/button/doorbell/proc/rename_possible(datum/act/op/A)
+	return panel_open && istype(A.held, /obj/item/pen)
 
-/obj/machinery/button/doorbell/proc/doorbell_named(datum/om/prompt/text/ask)
-	var/t = ask.text
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/obj/machinery/button/doorbell/proc/rename_question(datum/act/op/A)
+	return "Enter the name for \the [src]."
+
+/obj/machinery/button/doorbell/proc/rename_default(datum/act/op/A)
+	return initial(name)
+
+/obj/machinery/button/doorbell/proc/doorbell_named(datum/act/op/A)
+	if(!A.answer)
+		return OP_OK
+	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
 	if(t && panel_open)
 		name = t
+	return OP_OK
 
-/obj/machinery/button/doorbell/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/button/doorbell/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/M = tool
 	rel_set(M, nameof(M.connectable), src)
 	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/button/doorbell/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
 	play_sfx(src, SFX_ITEMS_RATCHET)
-	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/button/doorbell/proc/wrench_act_timed_done(mob/user)
+/obj/machinery/button/doorbell/proc/wrench_act_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(src))
 		return
 	to_chat(user, span_notice("You unwrench \the [src]."))
@@ -184,3 +191,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 	refund_amt = 4
 	refund_type = /obj/item/stack/material/wood
 	build_machine_type = /obj/machinery/button/doorbell
+
+/obj/machinery/button/doorbell/proc/rename_title(datum/act/op/A)
+	return name
+
+/// Opening the rename records the touch even when the visitor cancels the question.
+/datum/prompt/text/doorbell_label/prepare(datum/act/A)
+	..()
+	var/obj/machinery/button/doorbell/bell = A?.holder
+	if(istype(bell))
+		bell.add_fingerprint(answerer)

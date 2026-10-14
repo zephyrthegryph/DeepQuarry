@@ -1,0 +1,6 @@
+/obj/a/ownership()
+	. += owns(nameof(z))
+/obj/a/capabilities()
+	. += cap_slot(nameof(z), /x)
+OWN(a)
+own_set(src, "x", I)

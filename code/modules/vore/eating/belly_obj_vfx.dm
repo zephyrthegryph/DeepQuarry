@@ -11,12 +11,12 @@
 		return
 	if(living_prey.previewing_belly && living_prey.previewing_belly != src)
 		return
-	if(living_prey.previewing_belly == src && living_prey.vore_selected != src)
+	if(living_prey.previewing_belly == src && vore_selected_of(living_prey) != src)
 		rel_clear(living_prey, nameof(living_prey.previewing_belly))
 		living_prey.belly_overlay_tgui?.hide()
 		return
 	var/datum/belly_overlay_tgui/dq_overlay = get_belly_overlay_tgui(living_prey)
-	if(!living_prey.show_vore_fx || !belly_fullscreen)
+	if(!living_prey.vore_prefs.show_vore_fx || !belly_fullscreen)
 		dq_overlay?.hide()
 		check_hud_disable(living_prey)
 		return

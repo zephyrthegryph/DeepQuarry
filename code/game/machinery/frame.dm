@@ -33,8 +33,8 @@ GLOBAL_LIST(construction_frame_floor)
 	if(!istype(source))
 		return value
 	var/datum/frame/frame_types/copy = new source.type
-	copy.icon_override = source.icon_override
-	copy.name = source.name
+	copy.set_icon_override(source.icon_override)
+	copy.set_name(source.name)
 	copy.frame_size = source.frame_size
 	copy.frame_class = source.frame_class
 	copy.circuit = source.circuit
@@ -312,6 +312,17 @@ GLOBAL_LIST(construction_frame_floor)
 	var/list/req_components = null
 	var/list/req_component_names = null
 
+CAPABILITIES(/obj/structure/frame)
+	rotatable()
+	construction(native_frame_graph())
+	owns_many(nameof(components))
+	climb()
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+	param(nameof(type_at_make), pos = 3)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(type_at_make), /datum/frame/frame_types)
+
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
 	anchored = TRUE
@@ -332,16 +343,18 @@ GLOBAL_LIST(construction_frame_floor)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/frame/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/obj/structure/frame, state)
+
+/// What the frame shows: its frame type's sprite (from the type's own icon when it has one) at the build state it has reached.
+/obj/structure/frame/draw(datum/look/look)
+	..()
+	look.watch(frame_type)
 	if(frame_type.icon_override)
-		icon = frame_type.icon_override
-	icon_state = frame_type.get_icon_state(state)
+		look.set_icon(frame_type.icon_override)
+	look.state(frame_type.get_icon_state(state))
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
-	own_take_all(src, nameof(components))
+	rel_take_all(src, nameof(components))
 	req_components = circuit.req_components.Copy()
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]
@@ -350,14 +363,16 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 		var/obj/ct = ct_path
 		req_component_names[ct_path] = initial(ct.name)
 
-/obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
+/// Whether the frame is being placed, and its frame type (its constructor params).
+/obj/structure/frame/var/building = FALSE
+/obj/structure/frame/var/datum/frame/frame_types/type_at_make
+
+// ALLOW(init/INSTANCE_STATE): a placed frame takes its frame type's offsets and circuit, and a machine or computer frame is dense
+/obj/structure/frame/Initialize(mapload)
 	. = ..()
 	if(building)
-		own_set(src, nameof(frame_type), frame_type_copy(type))
-		state = FRAME_PLACED
-
-		if(dir)
-			set_dir(dir)
+		rel_set(src, nameof(frame_type), frame_type_copy(type_at_make))
+		set_state(FRAME_PLACED)
 
 		if(frame_type.x_offset)
 			pixel_x = (dir & 3)? 0 : (dir == EAST ? -frame_type.x_offset : frame_type.x_offset)
@@ -367,7 +382,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			own_set(src, nameof(circuit), new frame_type.circuit(src))
+			rel_set(src, nameof(circuit), new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
 		set_density(TRUE)
@@ -375,21 +390,19 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		set_density(TRUE)
 
-	update_icon()
-
-	make_climbable()
-	make_rotatable()
+	seed_native_frame_graph()
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.
-DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/frame/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/structure/frame/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	// A construction tool with no step here does nothing (it used to stop at its *_act hook).
 	for(var/quality in list(TOOL_SCREWDRIVER, TOOL_CROWBAR, TOOL_WRENCH, TOOL_WIRECUTTER, TOOL_WELDER))
 		if(P.has_tool_quality(quality))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(P, /obj/item/stack/cable_coil) && state == FRAME_WIRED && frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/I in req_components)
 			if(istype(P, I) && (req_components[I] > 0))
@@ -398,15 +411,13 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				if(CP.get_amount() > 1)
 					var/camt = min(CP.get_amount(), req_components[I]) // amount of cable to take, idealy amount required, but limited by amount provided
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
-					CC.update_icon()
 					CP.use(camt)
-					own_add(src, nameof(components), CC)
+					rel_add(src, nameof(components), CC)
 					req_components[I] -= camt
 					update_desc()
 					break
-				user.drop_item()
-				P.forceMove(src)
-				own_move(P, src, nameof(components))
+				if(!move_into(src, nameof(components), P, user))
+					break
 				req_components[I]--
 				update_desc()
 				break
@@ -420,8 +431,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				else
 					install_part(user,P)
 
-	update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)
 	var/installed_part = FALSE
@@ -435,19 +445,14 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 			if(ST.get_amount() > 1)
 				var/camt = min(ST.get_amount(), req_components[I]) // amount of stack to take, idealy amount required, but limited by amount provided
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
-				NS.update_icon()
 				ST.use(camt)
-				own_add(src, nameof(components), NS)
+				rel_add(src, nameof(components), NS)
 				req_components[I] -= camt
 				break
 
-		if(istype(P.loc,/obj/item/storage))
-			var/obj/item/storage/holder = P.loc
-			holder.remove_from_storage(P, src)
-		else
-			user.drop_item()
-			P.forceMove(src)
-		own_move(P, src, nameof(components))
+		if(!move_into(src, nameof(components), P, user))
+			installed_part = FALSE
+			break
 		req_components[I]--
 		break
 

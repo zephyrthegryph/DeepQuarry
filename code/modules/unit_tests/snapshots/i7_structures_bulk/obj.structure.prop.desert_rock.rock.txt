@@ -1,0 +1,55 @@
+@obj.structure.prop.desert_rock human|none
+@obj.structure.prop.desert_rock robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.prop human|/obj/item/tool/screwdriver
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/tool/crowbar
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/tool/wrench
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/tool/wirecutters
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/multitool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/weldingtool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/stack/cable_coil
+-menu: Toggle
+-click: Click: Toggle
++3 menu: Push
++5 click: Click: Push
+@obj.structure.prop human|/obj/item/stack/material/steel
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+@obj.structure.prop human|/obj/item/card/id
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++5 click: Click: Push
+@obj.structure.prop human|/obj/item
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Push
++4 click: Click: Push
+keys: drag_buckle, melee_hit, message, push

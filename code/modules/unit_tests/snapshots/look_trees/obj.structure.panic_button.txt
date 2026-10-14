@@ -1,0 +1,5 @@
+/obj/structure/panic_button icon: icons/obj/objects_vr.dmi
+/obj/structure/panic_button state: panicbutton
+/obj/structure/panic_button dir: 2
+/obj/structure/panic_button overlay: icons/obj/objects_vr.dmi:panicbutton:8:#000000
+

@@ -14,17 +14,16 @@
 
 	var/is_raining = FALSE
 
-/obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
+CAPABILITIES(/obj/effect/anomaly/weather)
+	when(nameof(telegraph_delay), after_init(nameof(telegraph_delay), then(PROC_REF(start_weather_after_init))))
+	owns_one(nameof(selected_weather), /datum/anomalous_weather, starts = PROC_REF(make_weather))
+
+/obj/effect/anomaly/weather/Initialize(mapload)
 	. = ..()
 
 	LAZYADD(affected_areas, impact_area())
 
-	if(selected_weather)
-		own_set(src, nameof(selected_weather), new selected_weather)
-	else
-		pick_weather()
-
-	var/telegraph = lifespan / telegraph_percent
+	telegraph_delay = lifespan / telegraph_percent // the weather starts once telegraphed (after_init())
 
 	for(var/spread_dir in GLOB.alldirs)
 		var/area/nearby = find_adjacent_impacted_area(spread_dir)
@@ -44,7 +43,6 @@
 
 	apply_wibbly_filters(src)
 
-	om_after(src, telegraph, PROC_REF(start_weather))
 
 /obj/effect/anomaly/weather/proc/add_turfs(list/turf/to_add)
 	for(var/turf/turf in to_add)
@@ -68,8 +66,9 @@
 	return ..()
 
 /obj/effect/anomaly/weather/detonate()
-	new /obj/effect/effect/smoke/bad/burntfood(loc) // OOoooOooh spooky cloud... Doesn't do ANYTHING
-	qdel(src)
+	var/atom/smoke_location = loc
+	if(consume(src))
+		new /obj/effect/effect/smoke/bad/burntfood(smoke_location) // OOoooOooh spooky cloud... Doesn't do ANYTHING
 
 /obj/effect/anomaly/weather/anomalyEffect(seconds_per_tick)
 	..()
@@ -94,7 +93,13 @@
 	if(!new_weather_path)
 		new_weather_path = pick(subtypesof(/datum/anomalous_weather))
 
-	own_set(src, nameof(selected_weather), new new_weather_path)
+	rel_set(src, nameof(selected_weather), new new_weather_path)
+
+/// How long after init the telegraphed weather starts (after_init()).
+/obj/effect/anomaly/weather/var/telegraph_delay = 0
+
+/obj/effect/anomaly/weather/proc/start_weather_after_init(datum/act/A)
+	start_weather()
 
 /obj/effect/anomaly/weather/proc/start_weather()
 	if(QDELETED(src))
@@ -142,7 +147,7 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain) // disposes of the old weather
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain) // disposes of the old weather
 			update_reagent(REAGENT_ID_WATER)
 			add_turfs(circleviewturfs(src, 3))
 			start_weather()
@@ -150,7 +155,7 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain)
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain)
 			update_reagent(pick(REAGENT_ID_WATER, REAGENT_ID_ICE, REAGENT_ID_ORANGEJUICE))
 			add_turfs(circlerangeturfs(src, 4))
 			start_weather()
@@ -158,9 +163,9 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
 
-			var/reagent_id = pick(chemistry_service().chemical_reagents)
+			var/reagent_id = pick(SSchemistry.ready().chemical_reagents)
 			if(reagent_id in GLOB.obtainable_chemical_blacklist)
 				update_reagent(REAGENT_ID_WATER) // You get WATER.
 			else
@@ -188,4 +193,7 @@
 /obj/effect/anomaly/weather/hail
 	selected_weather = /datum/anomalous_weather/hail
 
-
+/// The weather (owns_one(starts =)): the type set in selected_weather, else any.
+/obj/effect/anomaly/weather/proc/make_weather(current)
+	var/weather_path = ispath(current) ? current : pick(subtypesof(/datum/anomalous_weather))
+	return new weather_path

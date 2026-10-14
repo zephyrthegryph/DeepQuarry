@@ -105,7 +105,7 @@
 		if(extra_classes)
 			classes += extra_classes
 
-		.["class"] = flow_ask(mob, "[key]:class", /datum/om/prompt/choice, message = "What kind of data?", title = "Variable Type", choices = classes, default = default_class, cancel_answer = allow_finish ? "finish" : null)
+		.["class"] = flow_ask(mob, "[key]:class", /datum/prompt/choice, question = "What kind of data?", title = "Variable Type", choices = classes, default = default_class, cancel_answer = allow_finish ? "finish" : null)
 		if(.["class"] == "finish")
 			return
 		if(holder && holder.marked_datum() && .["class"] == markstring)
@@ -118,36 +118,36 @@
 
 	switch(.["class"])
 		if(VV_TEXT)
-			.["value"] = flow_ask(mob, "[key]:text", /datum/om/prompt/text, message = "Enter new text:", title = "Text", default = current_value)
+			.["value"] = flow_ask(mob, "[key]:text", /datum/prompt/text, question = "Enter new text:", title = "Text", default = current_value)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 		if(VV_MESSAGE)
-			.["value"] = flow_ask(mob, "[key]:text", /datum/om/prompt/text, message = "Enter new text:", title = "Text", default = current_value, multiline = TRUE, max_length = MAX_TGUI_INPUT)
+			.["value"] = flow_ask(mob, "[key]:text", /datum/prompt/text, question = "Enter new text:", title = "Text", default = current_value, multiline = TRUE, max_len = MAX_TGUI_INPUT, name_text = ((MAX_TGUI_INPUT) <= MAX_NAME_LEN))
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_NUM)
-			.["value"] = flow_ask(mob, "[key]:num", /datum/om/prompt/number, message = "Enter new number:", title = "Num", default = current_value, max = INFINITY, min = -INFINITY, round_entry = FALSE)
+			.["value"] = flow_ask(mob, "[key]:num", /datum/prompt/number, question = "Enter new number:", title = "Num", default = current_value, max_value = INFINITY, min_value = -INFINITY, round_entry = FALSE)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_BITFIELD)
-			.["value"] = flow_ask(mob, "[key]:bits", /datum/om/prompt/bitfield, title = "Editing bitfield: [var_name]", bitfield = var_name, default = current_value)
+			.["value"] = flow_ask(mob, "[key]:bits", /datum/prompt/bitfield, title = "Editing bitfield: [var_name]", bitfield = var_name, default = current_value)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_ATOM_TYPE)
-			.["value"] = pick_closest_path(FALSE, key = "[key]:path")
+			.["value"] = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_DATUM_TYPE)
-			.["value"] = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			.["value"] = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -160,52 +160,52 @@
 			.["value"] = type
 
 		if(VV_ATOM_REFERENCE)
-			var/type = pick_closest_path(FALSE, key = "[key]:path")
+			var/type = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = flow_ask(mob, "[key]:ref", /datum/om/prompt/choice, message = "Select reference:", title = "Reference", choices = things, default = current_value)
+			var/value = flow_ask(mob, "[key]:ref", /datum/prompt/choice, question = "Select reference:", title = "Reference", choices = things, default = current_value)
 			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_DATUM_REFERENCE)
-			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = flow_ask(mob, "[key]:ref", /datum/om/prompt/choice, message = "Select reference:", title = "Reference", choices = things, default = current_value)
+			var/value = flow_ask(mob, "[key]:ref", /datum/prompt/choice, question = "Select reference:", title = "Reference", choices = things, default = current_value)
 			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_MOB_REFERENCE)
-			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)), "[key]:path")
+			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)), "[key]:path", mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
 				return
 			var/list/things = vv_reference_list(type, subtypes)
-			var/value = flow_ask(mob, "[key]:ref", /datum/om/prompt/choice, message = "Select reference:", title = "Reference", choices = things, default = current_value)
+			var/value = flow_ask(mob, "[key]:ref", /datum/prompt/choice, question = "Select reference:", title = "Reference", choices = things, default = current_value)
 			if(!value || !things[value])
 				.["class"] = null
 				return
 			.["value"] = things[value]
 
 		if(VV_CLIENT)
-			.["value"] = flow_ask(mob, "[key]:client", /datum/om/prompt/choice, message = "Select reference:", title = "Reference", choices = GLOB.clients, default = current_value)
+			.["value"] = flow_ask(mob, "[key]:client", /datum/prompt/choice, question = "Select reference:", title = "Reference", choices = GLOB.clients, default = current_value)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_FILE)
-			.["value"] = input(usr, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
+			.["value"] = input(mob, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -241,7 +241,7 @@
 				return
 
 		if(VV_NEW_ATOM)
-			var/type = pick_closest_path(FALSE, key = "[key]:path")
+			var/type = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			if(!type)
 				.["class"] = null
 				return
@@ -251,7 +251,7 @@
 			.["value"] = newguy
 
 		if(VV_NEW_DATUM)
-			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			if(!type)
 				.["class"] = null
 				return
@@ -275,7 +275,7 @@
 			.["type"] = /list
 			var/list/value = list()
 
-			var/expectation = flow_ask(mob, "[key]:populate", /datum/om/prompt/choice/alert, message = "Would you like to populate the list", title = "Populate List?", choices = list("Yes", "No"))
+			var/expectation = flow_ask(mob, "[key]:populate", /datum/prompt/choice, question = "Would you like to populate the list", title = "Populate List?", choices = list("Yes", "No"), buttons = TRUE)
 			if(isnull(expectation))
 				.["class"] = null
 				return
@@ -296,20 +296,20 @@
 			.["value"] = value
 
 		if(VV_TEXT_LOCATE)
-			var/ref = flow_ask(mob, "[key]:locate", /datum/om/prompt/text, message = "Enter reference:", title = "Reference")
+			var/ref = flow_ask(mob, "[key]:locate", /datum/prompt/text, question = "Enter reference:", title = "Reference")
 			if(!ref)
 				.["class"] = null
 				return
 			var/datum/D = locate(ref)
 			if(!D)
-				tgui_alert_async(usr,"Invalid ref!")
+				tgui_alert_async(mob,"Invalid ref!")
 				.["class"] = null
 				return
 			.["type"] = D.type
 			.["value"] = D
 
 		if(VV_COLOR)
-			.["value"] = flow_ask(mob, "[key]:color", /datum/om/prompt/color, message = "Enter new color:", title = "Color", default = current_value)
+			.["value"] = flow_ask(mob, "[key]:color", /datum/prompt/color, question = "Enter new color:", title = "Color", default = current_value)
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -319,7 +319,7 @@
 
 /// A type typed in by path; one that doesn't exist is refused (type it again from the start).
 /client/proc/vv_ask_type(current_value, key)
-	var/type = flow_ask(mob, "[key]:type", /datum/om/prompt/text, message = "Enter type:", title = "Type", default = current_value)
+	var/type = flow_ask(mob, "[key]:type", /datum/prompt/text, question = "Enter type:", title = "Type", default = current_value)
 	if(!type)
 		return
 	type = text2path(type)

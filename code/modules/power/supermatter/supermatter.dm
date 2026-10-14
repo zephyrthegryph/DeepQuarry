@@ -1,5 +1,4 @@
 #define NITROGEN_RETARDATION_FACTOR 0.15	//Higher == N2 slows reaction more
-#define THERMAL_RELEASE_MODIFIER 10000		//Higher == more heat released during reaction
 #define PHORON_RELEASE_MODIFIER 1500		//Higher == less phoron released by reaction
 #define OXYGEN_RELEASE_MODIFIER 15000		//Higher == less oxygen released at high temperature/power
 #define REACTION_POWER_MODIFIER 1.1			//Higher == more overall power
@@ -59,7 +58,6 @@
 	// damage (projectiles, hotspots, explosions, machinery fall-apart) must never
 	// destroy it as though it were an ordinary machine.
 	resistance_flags = INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ACID_PROOF
-	light_range = 4
 
 	var/gasefficency = 0.25
 
@@ -79,7 +77,6 @@
 	///Are we exploding? (Chompers Edit)
 	var/final_countdown = FALSE
 
-	light_color = "#8A8A00"
 	var/warning_color = "#B8B800"
 	var/emergency_color = "#D9D900"
 
@@ -123,13 +120,30 @@
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
 
+// The crystal (doc/rewrite/final_api.html section 16): its reaction runs every machine service interval while it sits on a turf (sm_step(); in a
+// crate or an exosuit it waits), whatever touches it is consumed (the touch ops and the bump), and silicons read its monitor window from afar. Its
+// exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
+// exhales and its device energy, Rust settles the heat.
+CAPABILITIES(/obj/machinery/power/supermatter)
+	configure(light_glow(range = 4, color = "#8A8A00"))
+	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))
+	interface("AiSupermatter", input = remote())
+	ui_shape(detonating = num(), integrity_percentage = num(), ambient_temp = num(), ambient_pressure = num())
+	op("touch", hand(), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
+	op("touch_item", item(/obj/item), label("Touch"), ungated(), wait(0), then(PROC_REF(touched_with)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
-	own_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
+
+/// Its hum: the calm loop, playing from the start.
+/obj/machinery/power/supermatter/proc/make_soundloop(datum/act/A)
+	return new /datum/looping_sound/supermatter(list(src), TRUE)
 
 // an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/on_destroy(force)
@@ -195,9 +209,9 @@
 	exploded = 1
 	// Looping Alarms. We want to stop the alarm here.
 	if(stationcrystal) // Are we an on-station crystal?
-		om_after(null, 10 SECONDS, GLOBAL_PROC_REF(reset_sm_alarms))
+		after(null, 10 SECONDS, GLOBAL_PROC_REF(reset_sm_alarms))
 
-	om_after(src, pull_time, PROC_REF(explode_effects))
+	after(src, pull_time, PROC_REF(explode_effects))
 
 /obj/machinery/power/supermatter/proc/explode_effects()
 	var/turf/TS = get_turf(src)		// The turf supermatter is on. SM being in a locker, exosuit, or other container shouldn't block it's effects that way.
@@ -232,7 +246,7 @@
 		if(!(TM.z in affected_z))
 			continue
 
-		mob.status_at_least(EFFECT_WEAKENED, DETONATION_MOB_CONCUSSION)
+		mob.status_at_least(STAT_WEAKENED, DETONATION_MOB_CONCUSSION)
 		to_chat(mob, span_danger("An invisible force slams you against the ground!"))
 
 	// Effect 2: Z-level wide electrical pulse
@@ -268,16 +282,16 @@
 	delamination_delete = TRUE
 	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
 	// explosion may replace the turf.
-	om_after(null, 5, /proc/leave_broken_supermatter, TS)
-	qdel(src)
+	after(null, 0.5 SECONDS, GLOBAL_PROC_REF(leave_broken_supermatter), with = list(TS))
+	destroyed(src)
 
 /proc/leave_broken_supermatter(turf/TS)
 	new /obj/item/broken_sm(TS)
 
 //Changes color and luminosity of the light to these values if they were not already set
 /obj/machinery/power/supermatter/proc/shift_light(lum, clr)
-	if(lum != light_range || clr != light_color)
-		set_light(lum, l_color = clr)
+	if(lum != glow_of(src).range || clr != glow_of(src).color)
+		set_glow(src, GLOW(lum, null, clr))
 
 // Supermatter reports integrity as 0-100% of its meltdown threshold; this overrides the
 // atom get_integrity() (the SM is not damaged through the atom_integrity system).
@@ -344,15 +358,13 @@
 			GLOB.global_announcer.autosay(alert_msg, "Supermatter Monitor")
 			public_alert = FALSE
 
-/obj/machinery/power/supermatter/machine_step()
-
+/// One step of the crystal (every MACHINE_SERVICE_INTERVAL): warnings and the countdown, the anomalies, its sound, then the reaction with a share
+/// of the air around it (power, damage and exhaust), the hallucinations and the radiation, and the radiation loss. Off a turf (a crate, an
+/// exosuit) it does nothing until it is back on one.
+/obj/machinery/power/supermatter/proc/sm_step(datum/act/timer/A)
 	var/turf/L = loc
-
-	if(isnull(L))		// We have a null turf...something is wrong, stop processing this entity.
-		return PROCESS_KILL
-
-	if(!istype(L)) 	//We are in a crate or somewhere that isn't turf, if we return to turf resume processing but for now.
-		return  //Yeah just stop.
+	if(!istype(L))
+		return
 
 	if(damage > explosion_point)
 		if(!exploded)
@@ -366,7 +378,7 @@
 		if(!istype(L, /turf/space) && (world.timeofday - lastwarning) >= WARNING_DELAY * 10)
 			announce_warning()
 	else
-		shift_light(4,initial(light_color))
+		shift_light(4,glow_of_type(type).color)
 
 	if(damage < warning_point && !safe_warned && (world.timeofday - lastwarning) >= WARNING_DELAY * 10) // In case our safe announcement was not sent, we send it latest now
 		announce_warning()
@@ -423,7 +435,7 @@
 		damage += max((power - 15*POWER_FACTOR)/10, 0)
 	else if (grav_pulling) //If supermatter is detonating, remove all air from the zone
 		var/datum/gas_mixture/drained = env.remove(xgm_total_moles(env)) // total_moles is a proc in LINDA, use xgm_total_moles helper
-		qdel(drained)
+		spent(drained)
 	else
 		damage_archived = damage
 
@@ -438,11 +450,11 @@
 		if (oxygen > 0.8)
 			//If chain reacting at oxygen == 1, we want the power at 800 K to stabilize at a power level of 400
 			equilibrium_power = 400
-			icon_state = "[base_icon_state]_glow"
+			set_icon_state("[base_icon_state]_glow")
 		else
 			//If chain reacting at oxygen == 1, we want the power at 800 K to stabilize at a power level of 250
 			equilibrium_power = 250
-			icon_state = base_icon_state
+			set_icon_state(base_icon_state)
 
 		temp_factor = ( (equilibrium_power/DECAY_FACTOR)**3 )/800
 		power = max( (removed.return_temperature() * temp_factor) * oxygen + power, 0)
@@ -452,28 +464,23 @@
 
 		var/device_energy = power * REACTION_POWER_MODIFIER
 
-		//Release reaction gasses
-		var/heat_capacity = removed.heat_capacity()
-		// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
-		removed.adjust_gas(GAS_PHORON, max(device_energy / PHORON_RELEASE_MODIFIER, 0))
-		removed.adjust_gas(GAS_O2, max((device_energy + removed.return_temperature() - T0C) / OXYGEN_RELEASE_MODIFIER, 0))
-
-		var/thermal_power = THERMAL_RELEASE_MODIFIER * device_energy
-		if (debug)
-			var/heat_capacity_new = removed.heat_capacity()
-			visible_message("[src]: Releasing [round(thermal_power)] W.")
-			visible_message("[src]: Releasing additional [round((heat_capacity_new - heat_capacity)*removed.return_temperature())] W with exhaust gasses.")
-
-		removed.add_thermal_energy(thermal_power)
-		removed.set_temperature(between(0, removed.return_temperature(), 10000))
+		// The exhaust: phoron and oxygen, and SUPERMATTER_THERMAL_RELEASE J per unit of device energy (Rust settles the temperature), capped at
+		// 10000 K.
+		var/released = gas_react(removed, GAS_REACTION_SUPERMATTER, max(device_energy, 0), list(
+			/datum/gas/plasma = max(device_energy / PHORON_RELEASE_MODIFIER, 0),
+			/datum/gas/oxygen = max((device_energy + removed.return_temperature() - T0C) / OXYGEN_RELEASE_MODIFIER, 0)))
+		if(debug)
+			visible_message("[src]: Releasing [round(released)] J.")
+		if(removed.return_temperature() > 10000)
+			heat_set(removed, 10000, HEAT_SOURCE_REACTION)
 
 		env.merge(removed)
 
-	qdel(removed)
+	spent(removed)
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
 		if(!istype(l.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
-			l.status_set(EFFECT_HALLUCINATING, max(0, min(200, l.status_units(EFFECT_HALLUCINATING) + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) ))
+			l.status_set(STAT_HALLUCINATING, max(0, min(200, l.status_units(STAT_HALLUCINATING) + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) ))
 
 	// At a power mult of 0.025 for range, this means a 1000power SM (about normal) will reach 25 tiles and be putting off rad pulses of 500. With 0 protection, you have a 10% chance of getting hit.
 	radiation_pulse(
@@ -508,9 +515,11 @@
 			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
 		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
 
-	return 1
-
-DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1" = list(APPEARANCE_OVERLAYS = list("causality_field"))))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/power/supermatter/draw(datum/look/look)
+	..()
+	if(final_countdown == 1)
+		look.overlay("causality_field")
 
 /obj/machinery/power/supermatter/proc/countdown()
 	if(!final_countdown)
@@ -525,8 +534,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 
 	if(final_countdown) // We're already doing it go away
 		return
-	final_countdown = TRUE
-	update_icon()
+	set_final_countdown(TRUE)
 
 	var/speaking = "[emergency_alert] The supermatter has reached critical integrity failure. Emergency causality destabilization field has been activated."
 	GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
@@ -539,14 +547,13 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 		return
 	if(damage < explosion_point) // Cutting it a bit close there engineers
 		GLOB.global_announcer.autosay("[safe_alert] Failsafe has been disengaged.", "Supermatter Monitor")
-		final_countdown = FALSE
-		update_icon()
+		set_final_countdown(FALSE)
 		return
 	// A message once every 5 seconds until the final 5 seconds which count down individualy
 	if((i % 50) == 0 || i <= 50)
 		var/speaking = i > 50 ? "[DisplayTimeText(i, TRUE)] remain before causality stabilization." : "[i*0.1]..."
 		GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
-	om_after(src, 1 SECOND, PROC_REF(countdown_tick), i - 10)
+	after(src, 1 SECOND, PROC_REF(countdown_tick), with = list(i - 10))
 
 /obj/machinery/power/supermatter/bullet_act(obj/item/projectile/Proj)
 	var/turf/L = loc
@@ -567,52 +574,20 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 		log_game("SUPERMATTER([x],[y],[z]) Hit by \"[Proj.name]\". +[added_energy] Energy, +[added_damage] Damage.")
 	return 0
 
-/// Old attack_robot: an adjacent cyborg touches it (!); otherwise it opens the monitor.
-/obj/machinery/power/supermatter/proc/supermatter_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(Adjacent(user))
-		attack_hand(user)
-	else
-		tgui_interact(user)
-	return TRUE
-
-/obj/machinery/power/supermatter
-	silicon_use = SILICON_USE_UI
-
-/obj/machinery/power/supermatter/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_ROBOT("Use", PROC_REF(supermatter_robot_use)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/supermatter_touch_item,
-		/datum/interaction/machine_hand/ungated/supermatter_touch,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/supermatter_touch
-	id = "supermatter_touch"
-	name = "Touch"
-	effect = /obj/machinery/power/supermatter/proc/interaction_touch
-
-/obj/machinery/power/supermatter/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
+/// A hand (or a cyborg's empty touch) on the crystal: whoever touched it is consumed.
+/obj/machinery/power/supermatter/proc/touched(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_danger("You reach out and touch %T%. Everything starts burning and all you can hear is ringing. Your last thought is \"That was not a wise decision.\"")), \
 		MSG_OTHERS(span_warning("%U% reaches out and touches %T%, inducing a resonance... %Their% body starts to glow and bursts into flames before flashing into ash.")), \
 		MSG_BLIND(span_warning("You hear an uneartly ringing, then what sounds like a shrilling kettle as you are washed with a wave of heat.")))
 
 	Consume(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/power/supermatter, "AiSupermatter")
+	return OP_OK
 
 // This is purely informational UI that may be accessed by AIs or robots
-UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num", "merge:ui_data_obj_machinery_power_supermatter{integrity_percentage:num,ambient_temp:num,ambient_pressure:num}")
-
-/// The computed part of /obj/machinery/power/supermatter's window data (declared on its UI_DATA row).
-/obj/machinery/power/supermatter/proc/ui_data_obj_machinery_power_supermatter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/power/supermatter/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
+	data["detonating"] = grav_pulling
 	data["integrity_percentage"] = round(get_integrity())
 	var/datum/gas_mixture/env = null
 	if(!istype(src.loc, /turf/space))
@@ -627,14 +602,10 @@ UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num",
 
 	return data
 
-/// Old attackby: never called ..(), so the whole thing stays in the effect.
-/datum/interaction/machine_item/supermatter_touch_item
-	id = "supermatter_touch_item"
-	name = "Touch"
-	held_type = /obj/item
-	effect = /obj/machinery/power/supermatter/proc/interaction_touch_item
-
-/obj/machinery/power/supermatter/proc/interaction_touch_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Anything held to the crystal is consumed, and the hand that held it is irradiated.
+/obj/machinery/power/supermatter/proc/touched_with(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	act_message(user, src, MSG_SELF(span_danger("You touch %I% to %T% when everything suddenly goes silent.\"") + "\n" + span_notice("%I% flashes into dust as you flinch away from %T%.")), \
 		MSG_OTHERS(span_warning("%U% touches \a [W] to %T% as a silence fills the room...")), \
 		MSG_BLIND(span_warning("Everything suddenly goes silent.")), \
@@ -646,10 +617,13 @@ UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num",
 	if(isliving(user))
 		var/mob/living/L = user
 		L.apply_effect(150, IRRADIATE)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/power/supermatter/Bumped(atom/AM as mob|obj)
-	if(istype(AM, /obj/effect))
+/// Whatever walks or drifts into the crystal is consumed (effects pass through).
+/obj/machinery/power/supermatter/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
+	if(!AM || QDELETED(AM) || istype(AM, /obj/effect))
 		return
 	if(isliving(AM))
 		var/mob/living/M = AM
@@ -667,7 +641,7 @@ UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num",
 		user.dust()
 		power += 200
 	else
-		qdel(user)
+		consumed(user)
 
 	power += 200
 
@@ -771,7 +745,6 @@ UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num",
 #undef DAMAGE_RATE_LIMIT
 
 #undef NITROGEN_RETARDATION_FACTOR
-#undef THERMAL_RELEASE_MODIFIER
 #undef PHORON_RELEASE_MODIFIER
 #undef OXYGEN_RELEASE_MODIFIER
 #undef REACTION_POWER_MODIFIER
@@ -793,7 +766,3 @@ UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num",
 
 #undef SUPERMATTER_COUNTDOWN_TIME
 #undef SUPERMATTER_ACCENT_SOUND_COOLDOWN
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/supermatter/step_start_condition()
-	return isturf(loc)

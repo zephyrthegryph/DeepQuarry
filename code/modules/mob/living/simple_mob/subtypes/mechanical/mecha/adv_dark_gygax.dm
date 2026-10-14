@@ -92,6 +92,9 @@
 	projectilesound = SFX_WEAPONS_WAVE
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
+	owns_one(nameof(energy_ball), /obj/effect/overlay/energy_ball)
+
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
@@ -128,7 +131,7 @@
 	shock_resist = 1
 
 	// Make the energy ball. This is purely visual since the tesla ball is hyper-deadly.
-	own_set(src, nameof(energy_ball), new /obj/effect/overlay/energy_ball(loc))
+	rel_set(src, nameof(energy_ball), new /obj/effect/overlay/energy_ball(loc))
 	energy_ball.adjust_scale(0.5)
 	energy_ball.orbit(src, 32, TRUE, 1 SECOND)
 
@@ -142,7 +145,7 @@
 /// One second of the charging energy ball (10 pulses), then the discharge.
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_pulse(i, old_shock_resist)
 	energy_ball.adjust_scale(0.5 + (i/10))
-	energy_ball.set_light(i/2, i/2, "#0000FF")
+	set_glow(energy_ball, GLOW(i/2, i/2, "#0000FF"))
 	for(var/thing in range(3, src))
 		// This is stupid because mechs are stupid and not mobs.
 		if(isliving(thing))
@@ -161,9 +164,9 @@
 			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
 
 	if(i < 10)
-		om_after(src, 1 SECOND, PROC_REF(energy_ball_pulse), i + 1, old_shock_resist)
+		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), with = list(i + 1, old_shock_resist))
 		return
-	om_after(src, 1 SECOND, PROC_REF(energy_ball_discharge), old_shock_resist)
+	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
 
@@ -181,9 +184,9 @@
 
 	// Get rid of our energy ball.
 	energy_ball.stop_orbit()
-	qdel(energy_ball)
+	rel_clear(src, nameof(energy_ball))
 
-	om_after(src, 1 SECOND, PROC_REF(energy_ball_done), old_shock_resist)
+	after(src, 1 SECOND, PROC_REF(energy_ball_done), with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_done(old_shock_resist)
 	// Resist resistance to old value.
@@ -230,13 +233,13 @@
 	desc = "It's sucking everything in!"
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "bhole3"
-	light_range = 4
-	light_power = 5
-	light_color = "#2ECCFA"
 	pulses_remaining = 10
 	pulse_delay = 0.5 SECONDS
 	var/pull_radius = 3
 	var/pull_strength = STAGE_THREE
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/microsingulo)
+	configure(light_glow(range = 4, power = 5, color = "#2ECCFA"))
 
 /obj/effect/temporary_effect/pulse/microsingulo/on_pulse()
 	for(var/atom/A in range(pull_radius, src))

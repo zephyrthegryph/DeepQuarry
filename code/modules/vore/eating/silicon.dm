@@ -43,7 +43,7 @@
 		to_chat(src, span_vwarning("There's no one in range to eat."))
 		return
 
-	var/mob/living/prey = rerun_ask(src, "a1", VERB_REF(holo_nom), args, /datum/om/prompt/choice, message = "Select a mob to eat", title = "Holonoms", choices = possible_prey)
+	var/mob/living/prey = rerun_ask(src, "a1", VERB_REF(holo_nom), args, /datum/prompt/choice, question = "Select a mob to eat", title = "Holonoms", choices = possible_prey)
 	if(isnull(prey))
 		return
 	if(!prey)
@@ -55,9 +55,12 @@
 
 	hologram.visible_message("[hologram] starts engulfing [prey] in hardlight holograms!")
 	to_chat(src, span_vnotice("You begin engulfing [prey] in hardlight holograms.")) //Can't be part of the above, because the above is from the hologram.
-	om_task_timed(eyeobj, 5 SECONDS, prey, src, PROC_REF(holo_nom_done), list(prey))
+	perform_op(eyeobj, src, "holo_nom", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("prey" = prey, "from" = prey.loc))
 
-/mob/living/silicon/ai/proc/holo_nom_done(mob/living/prey)
+/mob/living/silicon/ai/proc/holo_nom_done(datum/act/op/A)
+	var/mob/living/prey = A.arg("prey")
+	if(QDELETED(prey) || prey.loc != A.arg("from"))
+		return
 	//Didn't move and still projecting and effect exists and no other bellied people
 	if(holo && LAZYACCESS(holo.masters, src))
 		feed_grabbed_to_self(src, prey)
@@ -74,16 +77,21 @@
 			. += span_deptradio("OOC Notes:") + "<a href='byond://?src=\ref[master];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[master];print_ooc_notes_chat=1'>\[Print\]</a>"
 
 // Allow dissipating ai holograms by attacking them
-EXTEND_INTERACTIONS(/obj/effect/overlay/aiholo, 	INTERACT_HAND_UNGATED_AS(I_HURT, "Dissipate", PROC_REF(aiholo_dissipate_hand)), 	INTERACT_ITEM_AS(I_HURT, "Dissipate", PROC_REF(aiholo_dissipate_item)), )
+CAPABILITIES(/obj/effect/overlay/aiholo)
+	op("aiholo_dissipate_hand", hand(), ungated(), stance(I_HURT), label("Dissipate"), then(PROC_REF(aiholo_dissipate_hand)))
+	op("aiholo_dissipate_item", item(/obj/item), stance(I_HURT), label("Dissipate"), then(PROC_REF(aiholo_dissipate_item)))
 
 /// Old attack_hand: a harmful touch dissipates the hologram, then the touch goes on.
-/obj/effect/overlay/aiholo/proc/aiholo_dissipate_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/overlay/aiholo/proc/aiholo_dissipate_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	to_chat(user, span_attack("You dissipate [src]."))
 	master?.holo?.clear_holo(master)
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: a harmful hit dissipates the hologram, then the hit goes on.
-/obj/effect/overlay/aiholo/proc/aiholo_dissipate_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/effect/overlay/aiholo/proc/aiholo_dissipate_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	to_chat(user, span_attack("You dissipate [src] with [I]."))
 	master?.holo?.clear_holo(master)
-	return FALSE
+	return OP_DECLINE

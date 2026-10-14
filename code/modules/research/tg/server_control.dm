@@ -17,41 +17,33 @@
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
 		stored_research_static = connected_web
 
-/obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rdservercontrol_connect_techweb,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
-/// The old attackby: never called ..(), connected a techweb via a multitool buffer.
-/datum/interaction/machine_item/rdservercontrol_connect_techweb
-	id = "rdservercontrol_connect_techweb"
-	name = "Connect techweb"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb
-
-/obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer()) && istype(tool.buffer(), /datum/techweb))
 			stored_research_static = tool.buffer()
 			balloon_alert(user, "techweb connected")
-	return TRUE
+	return OP_OK
 
-DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/rdservercontrol/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/rdservercontrol/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(TRUE)
 	play_sfx(src, SFX_SPARKS, 1.5)
 	balloon_alert(user, "console emagged")
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/machinery/computer/rdservercontrol, "ServerControl")
+CAPABILITIES(/obj/machinery/computer/rdservercontrol)
+	interface("ServerControl")
+	without("ui_open")
+	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))
+	op("lock_console", ui_act("lock_console", arg("selected_console", schema_ref(/obj/machinery/computer/rdconsole_tg))), then(PROC_REF(ui_act_lock_console)))
+	op("connect_techweb", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Connect techweb"), then(PROC_REF(interaction_connect_techweb)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-UI_DATA_REPLACE(/obj/machinery/computer/rdservercontrol, "merge:ui_data_obj_machinery_computer_rdservercontrol{server_connected:bool,logs:list,servers:list,consoles:list}")
-
-/// The computed part of /obj/machinery/computer/rdservercontrol's window data (declared on its UI_DATA row).
-/obj/machinery/computer/rdservercontrol/proc/ui_data_obj_machinery_computer_rdservercontrol(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/computer/rdservercontrol's window data.
+/obj/machinery/computer/rdservercontrol/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["server_connected"] = !!stored_research()
@@ -77,26 +69,32 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdservercontrol, "merge:ui_data_obj_mach
 
 	return data
 
-/obj/machinery/computer/rdservercontrol/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!allowed(usr) && !emagged)
-		balloon_alert(usr, "access denied!")
+/obj/machinery/computer/rdservercontrol/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!allowed(user) && !emagged())
+		balloon_alert(user, "access denied!")
 		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdservercontrol, "lockdown_server", ui_act_lockdown_server, UI_ARG_REF("selected_server", "proc:ui_source_stored_research_techweb_servers", /obj/machinery/rnd/server))
-UI_ACT_PROC(/obj/machinery/computer/rdservercontrol, ui_act_lockdown_server)
-	var/obj/machinery/rnd/server/server_selected = params["selected_server"]
+/obj/machinery/computer/rdservercontrol/proc/ui_act_lockdown_server(datum/act/op/A, selected_server)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(selected_server) && !(selected_server in ui_source_stored_research_techweb_servers()))
+		return FALSE
+	var/obj/machinery/rnd/server/server_selected = selected_server
 	if(!server_selected)
 		return FALSE
-	server_selected.toggle_disable(usr)
+	server_selected.toggle_disable(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdservercontrol, "lock_console", ui_act_lock_console, UI_ARG_REF("selected_console", "proc:ui_source_stored_research_consoles_accessing", /obj/machinery/computer/rdconsole_tg))
-UI_ACT_PROC(/obj/machinery/computer/rdservercontrol, ui_act_lock_console)
-	var/obj/machinery/computer/rdconsole_tg/console_selected = params["selected_console"]
+/obj/machinery/computer/rdservercontrol/proc/ui_act_lock_console(datum/act/op/A, selected_console)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(selected_console) && !(selected_console in ui_source_stored_research_consoles_accessing()))
+		return FALSE
+	var/obj/machinery/computer/rdconsole_tg/console_selected = selected_console
 	if(!console_selected)
 		return FALSE
 	console_selected.set_locked(!console_selected.locked)

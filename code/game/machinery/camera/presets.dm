@@ -117,9 +117,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 
 // EMP
 
-/obj/machinery/camera/emp_proof/Initialize(mapload)
-	. = ..()
-	upgradeEmpProof()
+TYPE_TABLE(/obj/machinery/camera/emp_proof, camera_initial_emp_proof, TRUE)
 
 // X-RAY
 
@@ -138,15 +136,11 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 /obj/machinery/camera/xray/research
 	network = list(NETWORK_RESEARCH)
 
-/obj/machinery/camera/xray/Initialize(mapload)
-	. = ..()
-	upgradeXRay()
+TYPE_TABLE(/obj/machinery/camera/xray, camera_initial_xray, TRUE)
 
 // MOTION
 
-/obj/machinery/camera/motion/Initialize(mapload)
-	. = ..()
-	upgradeMotion()
+TYPE_TABLE(/obj/machinery/camera/motion, camera_initial_motion, TRUE)
 
 /obj/machinery/camera/motion/engineering_outpost
 	network = list(NETWORK_ENGINEERING_OUTPOST)
@@ -165,17 +159,16 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 /obj/machinery/camera/all/command
 	network = list(NETWORK_COMMAND)
 
-/obj/machinery/camera/all/Initialize(mapload)
-	. = ..()
-	upgradeEmpProof()
-	upgradeXRay()
-	upgradeMotion()
+TYPE_TABLE(/obj/machinery/camera/all, camera_initial_emp_proof, TRUE)
+TYPE_TABLE(/obj/machinery/camera/all, camera_initial_xray, TRUE)
+TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 
 // AUTONAME
 /obj/machinery/camera/autoname
 	/// Area name -> how many autonamed cameras have been numbered there (numbers only, no camera refs).
 	var/static/list/by_area
 
+// ALLOW(init/INSTANCE_STATE): its camera tag numbers it within the area it is placed in
 /obj/machinery/camera/autoname/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
@@ -213,19 +206,19 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 // UPGRADE PROCS
 
 /obj/machinery/camera/proc/upgradeEmpProof()
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/stack/material/osmium(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/stack/material/osmium(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeXRay()
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/stock_parts/scanning_module(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/stock_parts/scanning_module(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeMotion()
 	if(!isturf(loc))
 		return //nooooo
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/assembly/prox_sensor(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/assembly/prox_sensor(assembly))
 	setPowerUsage()
 	sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	update_coverage()
@@ -236,4 +229,4 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 		mult++
 	if (isMotion())
 		mult++
-	update_active_power_usage(mult * initial(active_power_usage))
+	update_active_power_usage(mult * power_of_type(type).active)

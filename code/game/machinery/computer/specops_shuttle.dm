@@ -15,15 +15,18 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	name = "special operations shuttle control console"
 	icon_keyboard = "security_key"
 	icon_screen = "syndishuttle"
-	light_color = "#00ffff"
 	req_access = list(ACCESS_CENT_SPECOPS)
 	var/temp = null
 	var/hacked = 0
 	var/allowedtocall = 0
 	EXPIRY_DECLARE(specops_shuttle_timereset)
 
-/proc/specops_return()
-	var/obj/item/radio/intercom/announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+/proc/specops_release_announcer(obj/item/radio/intercom/announcer)
+	if(!SSshuttles.release_specops_announcer(announcer))
+		spent(announcer)
+
+/proc/specops_return(mob/user)
+	var/obj/item/radio/intercom/announcer = SSshuttles.hold_specops_announcer(new /obj/item/radio/intercom(null)) // The countdown radio speaks as A.L.I.C.E.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 	var/message_tracker[] = list(0,1,2,3,5,10,30,45)//Create a a list with potential time values.
@@ -31,10 +34,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	if(announcer)
 		announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 
-	specops_countdown(message_tracker, announcer, /proc/specops_return_arrive)
+	specops_countdown(message_tracker, announcer, GLOBAL_PROC_REF(specops_return_arrive), user)
 
 /// Arrival half of the countdown (runs when it hits zero).
-/proc/specops_return_arrive(obj/item/radio/intercom/announcer)
+/proc/specops_return_arrive(obj/item/radio/intercom/announcer, mob/user)
 	GLOB.specops_shuttle_moving_to_station = 0
 	GLOB.specops_shuttle_moving_to_centcom = 0
 
@@ -58,7 +61,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
-			qdel(T)
+			spent(T, user)
 
 	for(var/mob/living/carbon/bug in area_contents_of_type(end_location, /mob/living/carbon)) // If someone somehow is still in the shuttle's docking area...
 		bug.gib()
@@ -77,10 +80,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
-	qdel(announcer)
+	specops_release_announcer(announcer)
 
-/proc/specops_process()
-	var/obj/item/radio/intercom/announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+/proc/specops_process(mob/user)
+	var/obj/item/radio/intercom/announcer = SSshuttles.hold_specops_announcer(new /obj/item/radio/intercom(null)) // The countdown radio speaks as A.L.I.C.E.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 	var/message_tracker[] = list(0,1,2,3,5,10,30,45)//Create a a list with potential time values.
@@ -90,10 +93,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 //		message = "ARMORED SQUAD TAKE YOUR POSITION ON GRAVITY LAUNCH PAD"
 //		announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 
-	specops_countdown(message_tracker, announcer, /proc/specops_launch)
+	specops_countdown(message_tracker, announcer, GLOBAL_PROC_REF(specops_launch), user)
 
 /// Arrival half of the countdown (runs when it hits zero).
-/proc/specops_launch(obj/item/radio/intercom/announcer)
+/proc/specops_launch(obj/item/radio/intercom/announcer, mob/user)
 	GLOB.specops_shuttle_moving_to_station = 0
 	GLOB.specops_shuttle_moving_to_centcom = 0
 
@@ -101,7 +104,8 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	if (GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom) return
 
 	if (!specops_can_move())
-		to_chat(usr, span_warning("The Special Operations shuttle is unable to leave."))
+		to_chat(user, span_warning("The Special Operations shuttle is unable to leave."))
+		specops_release_announcer(announcer)
 		return
 
 	launch_mauraders() // the Marauder launchpad (shuttle_specops.dm)
@@ -124,7 +128,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
-			qdel(T)
+			spent(T, user)
 
 	start_location.move_contents_to(end_location)
 
@@ -135,17 +139,17 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
-	qdel(announcer)
+	specops_release_announcer(announcer)
 
 /// Counts the shuttle timer down in half-second steps, announcing on the way,
-/// then calls `done_proc(announcer)`.
-/proc/specops_countdown(list/message_tracker, obj/item/radio/intercom/announcer, done_proc)
+/// then calls `done_proc(announcer, user)`.
+/proc/specops_countdown(list/message_tracker, obj/item/radio/intercom/announcer, done_proc, mob/user)
 	var/ticksleft = GLOB.specops_shuttle_time - world.timeofday
 	if(ticksleft <= 0)
-		call(done_proc)(announcer)
+		call(done_proc)(announcer, user)
 		return
 	if(ticksleft > 1e5)
-		GLOB.specops_shuttle_time = world.timeofday + 10	// midnight rollover
+		GLOB.specops_shuttle_time = world.timeofday + 1 SECOND	// midnight rollover
 	GLOB.specops_shuttle_timeleft = (ticksleft / 10)
 	//All this does is announce the time before launch.
 	if(announcer)
@@ -156,7 +160,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 				message = "\"ALERT: TAKEOFF\""
 			announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 			message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
-	om_after(null, 5, /proc/specops_countdown, message_tracker, announcer, done_proc)
+	after(null, 0.5 SECONDS, GLOBAL_PROC_REF(specops_countdown), with = list(message_tracker, announcer, done_proc, user), keeps_dead = TRUE)
 
 /proc/specops_can_move()
 	if(GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)
@@ -166,9 +170,10 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 			return 0
 	return 1
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/specops_shuttle, PROC_REF(on_emag), null)
-/obj/machinery/computer/specops_shuttle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/specops_shuttle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("The electronic systems in this console are far too advanced for your primitive hacking peripherals."))
+	return OP_DECLINE
 
 // structured TGUI Specops Shuttle (see
 // code/modules/admin/specops_shuttle_panel.dm).
@@ -193,7 +198,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/specops_shuttle, PROC_REF(on_ema
 
 	GLOB.specops_shuttle_moving_to_centcom = 1
 	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-	specops_return()
+	specops_return(user)
 
 /obj/machinery/computer/specops_shuttle/proc/specops_send_to_station(mob/user)
 	if(GLOB.specops_shuttle_at_station || GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)
@@ -215,7 +220,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/specops_shuttle, PROC_REF(on_ema
 	GLOB.specops_shuttle_moving_to_station = 1
 
 	GLOB.specops_shuttle_time = world.timeofday + SPECOPS_MOVETIME
-	specops_process()
+	specops_process(user)
 
 #undef SPECOPS_MOVETIME
 #undef SPECOPS_STATION_AREATYPE

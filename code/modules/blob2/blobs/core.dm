@@ -20,6 +20,14 @@
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 	var/tmp/client/controller	//Whoever is set to be controlling the blob. Used when the blob is created.
 
+CAPABILITIES(/obj/structure/blob/core)
+	after_init(0, then(PROC_REF(make_overmind_after_init)))
+	every(2 SECONDS, then(PROC_REF(core_step)))
+	owns_one(nameof(Q), /datum/ghost_query)
+	param(nameof(controller), pos = 1, overrides = TRUE)
+	param(nameof(point_rate), pos = 2)
+	param(nameof(placed_at_make), pos = 3)
+
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
 	ai_controlled = FALSE
@@ -98,41 +106,47 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
-DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
+/obj/structure/blob/core
+	/// FALSE when it was placed by an overmind or came with one: then it makes none after init.
+	var/tmp/make_overmind = TRUE
 
-/obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
+/// A core placed by its player rather than spawned (its constructor param).
+/obj/structure/blob/core/var/placed_at_make = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a core shows itself at once, and a placed core or one with an overmind makes none of its own
+/obj/structure/blob/core/Initialize(mapload)
 	. = ..()
-	update_icon() //so it atleast appears
-	point_rate = new_rate
-	rel_set(src, nameof(controller), new_overmind)
 
-	if(!placed && !overmind)
-		return INITIALIZE_HINT_LATELOAD
+	if(placed_at_make || overmind)
+		make_overmind = FALSE
+	// The blob type is rolled here, in the init that made the core, not later when its overmind is made after init: a roll
+	// that late draws from whatever the RNG has moved to by then, so the same seed gave a different colour.
+	if(make_overmind && ai_controlled && !desired_blob_type)
+		desired_blob_type = isnull(difficulty_threshold) ? pick(subtypesof(/datum/blob_type)) : get_random_blob_type()
 
-/obj/structure/blob/core/LateInitialize()
+/// A core spawned without an overmind (not placed by one) makes its own.
+/obj/structure/blob/core/proc/make_overmind_after_init(datum/act/timer/A)
+	if(!make_overmind)
+		return
 	create_overmind(controller())
-	if(overmind)
-		update_icon()
 
 // leaves a core chunk; its overmind dies with it.
 /obj/structure/blob/core/on_destroy(force)
 	..()
 	new /obj/item/blobcore_chunk(get_turf(src), overmind?.blob_type)
 	if(overmind)
-		qdel(overmind)
+		var/mob/observer/blob/dying = overmind
+		ended_with(dying, src)
+		consume(dying)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/blob/core/appearance_overlays()
-	. = list()
-	color = null
-	var/mutable_appearance/blob_overlay = mutable_appearance('icons/mob/blob.dmi', "blob")
-	if(overmind)
-		blob_overlay.color = overmind.blob_type.color
-		name = "[overmind.blob_type.name] [base_name]"
-	. += blob_overlay
-	. += "blob_core_overlay"
+/// A core draws no colour of its own: the blob body under it is tinted by its overmind, and the core overlay sits on top.
+/obj/structure/blob/core/look_parts(datum/look/look)
+	look.overlay(look_appearance('icons/mob/blob.dmi', "blob", color = look_tint))
+	if(look_title)
+		look.identity(name = "[look_title] [base_name]")
+	look.overlay("blob_core_overlay")
 
-/obj/structure/blob/core/periodic_step()
+/obj/structure/blob/core/proc/core_step(datum/act/timer/A)
 	if(QDELETED(src))
 		return
 	if(!overmind)
@@ -161,18 +175,18 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		rel_set(src, nameof(overmind), B)
 		rel_set(B, nameof(B.blob_core), src)
 		B.ai_controlled = TRUE
-		update_icon()
+		sync_overmind_look()
 		return TRUE
 
 	COOLDOWN_START(src, overmind_get_delay, 15 SECONDS) //if this fails, we'll try again in 15 seconds
 
 	if(overmind)
-		qdel(overmind)
+		replaced_by(overmind)
 
 	var/client/C = null
 	if(!new_overmind)
-		own_set(src, nameof(Q), new /datum/ghost_query/blob())
-		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+		rel_set(src, nameof(Q), new /datum/ghost_query/blob())
+		observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 		Q.query()
 
 	else
@@ -180,15 +194,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		overmind_creation(C)
 	rel_clear(src, nameof(controller)) //Controller has been set. Let's null it now.
 
-/obj/structure/blob/core/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
-	EVENT_HANDLER
+/obj/structure/blob/core/proc/get_winner(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		var/client/C
 		C = D.client
 		overmind_creation(C)
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)
@@ -198,14 +212,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		B.key = new_overmind.key
 		rel_set(B, nameof(B.blob_core), src)
 		rel_set(src, nameof(overmind), B)
-		update_icon()
+		sync_overmind_look()
 		if(B.mind && !B.mind.special_role)
 			B.mind.special_role = "Blob Overmind"
 		return TRUE
 	return FALSE
 
 /obj/structure/blob/core/proc/get_random_blob_type()
-	if(!difficulty_threshold)
+	if(isnull(difficulty_threshold)) // BLOB_DIFFICULTY_EASY is 0: a truthiness test returned no type for the easy core
 		return
 	var/list/valid_types = list()
 	for(var/datum/blob_type/BT as anything in subtypesof(/datum/blob_type))

@@ -1,0 +1,2 @@
+human|none menu: Punch
+human|none click: nothing

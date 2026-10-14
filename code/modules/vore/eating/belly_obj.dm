@@ -280,14 +280,26 @@
 		if(!(var_name in customized))
 			. += var_name
 
-DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellies
+CAPABILITIES(/obj/belly)
+	// The mob's selected belly: a sparse link, not a var on /mob (vore_selected_of()).
+	links(LINK_END(/mob, LK_VORE_SELECTED), LINK_END(/obj/belly, LK_VORE_SELECTED_BY), sparse = TRUE, b_many = TRUE)
+	// a belly is an organ of its owner, never a thing on the floor to hit
+	without("melee_hit")
+	reagents(300) // So we can have some liquids in bellies
+	// The prey works its way out, started by start_escape() from relay_resist() / relay_absorbed_resist(). A prey that is out cold goes on with the
+	// default escape (STAY only); the rolled and the absorbed escapes also end if the prey is not conscious, as the old timed actions did.
+	op("belly_escape", ai(), wait(PROC_REF(escape_time), keeps = STAY), on_interrupt(PROC_REF(escape_interrupted)), then(PROC_REF(default_escape_done)))
+	op("belly_escape_rolled", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(chance_escape_done)))
+	op("belly_escape_absorbed", ai(), wait(PROC_REF(escape_time), keeps = STAY | ALIVE), then(PROC_REF(absorbed_escape_done)))
 
+// ALLOW(init/INSTANCE_STATE): binds to the mob it is made inside
 /obj/belly/Initialize(mapload)
+	belly_share_lists() // before anything reads the list vars
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
 		rel_set(src, nameof(owner), loc)
-		own_add(owner, nameof(owner.vore_organs), src)
+		rel_add(owner, nameof(owner.vore_organs), src)
 		belly_reschedule()
 
 // The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.
@@ -369,7 +381,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		var/mob/living/L = thing
 		startfx.Add(L)
 		startfx.Add(get_belly_surrounding(L.contents))
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 	if(istype(thing,/obj/item))
 		var/obj/item/I = thing
 		startfx.Add(get_belly_surrounding(I.contents))
@@ -399,11 +411,11 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(living_mob.ai_brain)
 			living_mob.ai_brain.go_sleep()
 		if(reagents.total_volume >= 5)
-			if(digest_mode == DM_DIGEST && living_mob.digestable)
+			if(digest_mode == DM_DIGEST && living_mob.vore_prefs.digestable)
 				reagents.splash_mob(living_mob, reagents.total_volume * 0.1, FALSE)
 			to_chat(living_mob, span_vwarning(span_bold("You splash into a pool of [reagent_name]!")))
 	if(!isliving(thing) && count_items_for_sprite) // If this is enabled also update fullness for non-living things
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 
 // Called whenever an atom leaves this belly
 /obj/belly/Exited(atom/movable/thing, atom/OldLoc)
@@ -416,7 +428,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	if(isbelly(thing.loc))
 		var/obj/belly/NB = thing.loc
 		if(count_items_for_sprite && !NB.count_items_for_sprite)
-			owner.handle_belly_update()
+			PUBLISH(owner, belly_change)
 		return
 
 	// Remove vorefx from all those indirectly viewing as well
@@ -425,7 +437,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		var/mob/living/L = thing
 		endfx.Add(L)
 		endfx.Add(get_belly_surrounding(L.contents))
-		owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 	if(istype(thing,/obj/item))
 		var/obj/item/I = thing
 		endfx.Add(get_belly_surrounding(I.contents))
@@ -443,9 +455,9 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	// End of indirect vorefx changes
 	if(isitem(thing) && !isbelly(thing.loc)) // Digest stage effects. Don't bother adding overlays to stuff that won't make it back out.
 		if(count_items_for_sprite) // If this is enabled also update fullness for non-living things
-			owner.handle_belly_update() // This is run whenever a belly's contents are changed.
+			PUBLISH(owner, belly_change) // This is run whenever a belly's contents are changed.
 		var/obj/item/I = thing
-		if(I.gurgled)
+		if(I.gurgled && !I.stains_in_look())
 			I.cut_overlay(GLOB.gurgled_overlays[I.gurgled_color]) //No double-overlay for worn items.
 			I.add_overlay(GLOB.gurgled_overlays[I.gurgled_color])
 		if(I.d_mult < 1)
@@ -481,7 +493,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(isliving(AM))
 			var/mob/living/L = AM
 			if(L.stat)
-				L.status_set(EFFECT_SLEEPING, min(L.status_units(EFFECT_SLEEPING),20))
+				L.status_set(STAT_SLEEPING, min(L.status_units(STAT_SLEEPING),20))
 			if(L.absorbed && !include_absorbed)
 				continue
 		count += release_specific_contents(AM, silent = TRUE)
@@ -493,7 +505,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	var/privacy_range = world.view
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
-			if(owner.eating_privacy_global)
+			if(owner.vore_prefs.eating_privacy_global)
 				privacy_range = 1
 		if("subtle")
 			privacy_range = 1
@@ -537,7 +549,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 	if(isliving(M))
 		var/mob/living/slip = M
-		COOLDOWN_START(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
+		cooldown_start(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	belly_release_to(M, drop_location())
 	rel_remove(src, nameof(items_preserved), M)
@@ -553,7 +565,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(ML.forced_psay)
 			ML.forced_psay = FALSE
 		if(ML.absorbed)
-			ML.absorbed = FALSE
+			ML.set_absorbed(FALSE)
 			handle_absorb_langs(ML, owner)
 			if(ishuman(M) && ishuman(OW))
 				var/mob/living/carbon/human/Prey = M
@@ -568,13 +580,13 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	if(isliving(M))
 		var/mob/living/ML = M
 		if(ML.stat)
-			ML.status_set(EFFECT_SLEEPING, min(ML.status_units(EFFECT_SLEEPING),20))
+			ML.status_set(STAT_SLEEPING, min(ML.status_units(STAT_SLEEPING),20))
 
 	//Determines privacy
 	var/privacy_range = world.view
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
-			if(owner.eating_privacy_global)
+			if(owner.vore_prefs.eating_privacy_global)
 				privacy_range = 1
 		if("subtle")
 			privacy_range = 1
@@ -596,7 +608,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			playsound(src, soundfile, vol = sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
 
 	if(!owner.ckey && escape_stun)
-		owner.status_at_least(EFFECT_WEAKENED, escape_stun)
+		owner.status_at_least(STAT_WEAKENED, escape_stun)
 
 	return 1
 
@@ -652,7 +664,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	// Reverts TF on death. This fixes a bug with posibrains or similar, and also makes reforming easier.
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
 		M.return_player_to_tf_holder("digested in [src]")
-		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
+		release(M.tf_mob_holder, STAT_SUSPENDED, M.tf_mob_holder)
 		M.tf_mob_holder.forceMove(M.loc)
 		M.tf_mob_holder.forceMove(M.loc)
 		own_clear(M.tf_mob_holder, nameof(/mob::vore_organs), OWN_DELETE)
@@ -716,19 +728,19 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			M.reagents.del_reagent(REAGENT_ID_ETHANOL)
 			M.reagents.trans_to_holder(Pred.ingested, M.reagents.total_volume, 0.5, TRUE)
 
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 	//Incase they have the loop going, let's double check to stop it.
 	M.stop_sound_channel(CHANNEL_PREYLOOP)
 	//Don't let glows stick
 	M.set_glow_toggle(FALSE)
-	M.set_light(0)
+	set_glow(M, GLOW(0, null, null))
 	// Delete the digested mob
 	// Changed qdel to a forceMove to allow reforming, and... handled robots special.
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		if(R.mmi && R.mind && get_mind_host(R.mmi))
-			if((R.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
+			if((R.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.forceMove(src)
@@ -737,39 +749,39 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(R, nameof(R.mmi))
+				rel_take(R, nameof(R.mmi))
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 		if(R.shell) // Let the standard procedure for shells handle this.
-			qdel(R)
+			dissolved(R, M)
 			return
 
 	if(istype(hasMMI))
-		own_set(hasMMI, nameof(hasMMI.body_backup), M)
-		om_suspend(M, M)
+		rel_set(hasMMI, nameof(hasMMI.body_backup), M)
+		hold(M, STAT_SUSPENDED, TRUE, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
-			own_set(G, nameof(G.body_backup), M)
-			om_suspend(M, M)
+			rel_set(G, nameof(G.body_backup), M)
+			hold(M, STAT_SUSPENDED, TRUE, M)
 			slot_remove(M, G)
 		else
-			qdel(M)
-	owner.handle_belly_update()
+			dissolved(M, src)
+	PUBLISH(owner, belly_change)
 
 // Handle a mob being absorbed
 /obj/belly/proc/absorb_living(mob/living/M)
-	M.absorbed = TRUE
+	M.set_absorbed(TRUE)
 	if(M.ckey)
 		handle_absorb_langs(M, owner)
 		GLOB.prey_absorbed_roundstat++
 
 	to_chat(M, span_vnotice("[belly_format_string(absorb_messages_prey, M, use_absorbed_count = TRUE)]"))
 	to_chat(owner, span_vnotice("[belly_format_string(absorb_messages_owner, M, use_absorbed_count = TRUE)]"))
-	if(M.noisy) //Mute drained absorbee hunger if enabled.
-		M.noisy = FALSE
+	if(M.vore_prefs.noisy) //Mute drained absorbee hunger if enabled.
+		M.vore_prefs.noisy = FALSE
 
 	if(ishuman(M) && ishuman(owner))
 		var/mob/living/carbon/human/Prey = M
@@ -809,7 +821,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 	//Update owner
 	owner.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 	// Finally, if they're to be sent to a special pudge belly, send them there
 	if(transferlocation_absorb)
 		var/obj/belly/dest_belly
@@ -826,7 +838,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 // Handle a mob being unabsorbed
 /obj/belly/proc/unabsorb_living(mob/living/M)
-	M.absorbed = FALSE
+	M.set_absorbed(FALSE)
 	handle_absorb_langs(M, owner)
 	to_chat(M, span_vnotice(belly_format_string(unabsorb_messages_prey, M, use_absorbed_count = TRUE)))
 	to_chat(owner, span_vnotice(belly_format_string(unabsorb_messages_owner, M, use_absorbed_count = TRUE)))
@@ -836,7 +848,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 	//Update owner
 	owner.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 /////////////////////////////////////////////////////////////////////////
 /obj/belly/proc/handle_absorb_langs()
@@ -922,7 +934,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	owner.updateVRPanel()
 	for(var/mob/living/M in contents)
 		M.updateVRPanel()
-	owner.handle_belly_update()
+	PUBLISH(owner, belly_change)
 
 //Autotransfer belly lookup
 /obj/belly/proc/compile_autotransfer_bellies()
@@ -1010,11 +1022,11 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			if(blacklist & autotransfer_flags_list["Digestable Creatures"])
 				if(isliving(prey))
 					var/mob/living/L = prey
-					if(L.digestable) return FALSE
+					if(L.vore_prefs.digestable) return FALSE
 			if(blacklist & autotransfer_flags_list["Absorbable Creatures"])
 				if(isliving(prey))
 					var/mob/living/L = prey
-					if(L.absorbable) return FALSE
+					if(L.vore_prefs.absorbable) return FALSE
 			if(blacklist & autotransfer_flags_list["Full Health"])
 				if(isliving(prey))
 					var/mob/living/L = prey
@@ -1043,11 +1055,11 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(whitelist & autotransfer_flags_list["Digestable Creatures"])
 			if(isliving(prey))
 				var/mob/living/L = prey
-				if(L.digestable) return TRUE
+				if(L.vore_prefs.digestable) return TRUE
 		if(whitelist & autotransfer_flags_list["Absorbable Creatures"])
 			if(isliving(prey))
 				var/mob/living/L = prey
-				if(L.absorbable) return TRUE
+				if(L.vore_prefs.absorbable) return TRUE
 		if(whitelist & autotransfer_flags_list["Full Health"])
 			if(isliving(prey))
 				var/mob/living/L = prey
@@ -1168,19 +1180,19 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		for(var/obj/item/debris_pack/digested/D in contents)
 			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)
-				D.w_class = O.w_class
+				D.set_w_class(O.w_class)
 			if(O.possessed_voice && O.possessed_voice.len)
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
-					qdel(V)
-				own_take_all(O, nameof(O.possessed_voice))
+					replaced_by(V)
+				rel_take_all(O, nameof(O.possessed_voice))
 			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
 				D.inhabit_item(V, null, V.tf_mob_holder)
-				qdel(V)
-			own_take_all(O, nameof(O.possessed_voice))
+				replaced_by(V)
+			rel_take_all(O, nameof(O.possessed_voice))
 	return TRUE
 
 /obj/belly/proc/owner_adjust_nutrition(amount = 0)
@@ -1202,15 +1214,6 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	color = "#664330"
 	w_class = ITEMSIZE_SMALL
 	var/stored_nutrition = 0
-
-/obj/item/reagent_containers/food/rawnutrition/standard_feed_mob(mob/user, mob/target)
-	if(isliving(target))
-		var/mob/living/L = target
-		L.adjust_nutrition(stored_nutrition)
-		stored_nutrition = 0
-		consume(src, user)
-		return
-	.=..()
 
 // Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
 /obj/belly/proc/update_belly_surrounding()
@@ -1260,7 +1263,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
 	return ownegg
 
-/// om_after() target: a temporary digest mode wears off.
+/// after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
 	digest_mode = mode
 
@@ -1269,4 +1272,4 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 
 /// A digesting belly numbs prey who opted out of digestion pain.
 /obj/belly/numbs_pain_of(mob/living/occupant)
-	return !occupant.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)
+	return !occupant.vore_prefs.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)

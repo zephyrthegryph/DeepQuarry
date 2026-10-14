@@ -89,8 +89,6 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset
 	var/_abstract = /datum/asset
-	var/cached_serialized_url_mappings
-	var/cached_serialized_url_mappings_transport_type
 
 	/// Whether or not this asset should be loaded in the "early assets" SS
 	var/early = FALSE
@@ -110,30 +108,22 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/ensure_ready()
 	return src
 
-/// Stub to hook into if your asset is having its generation queued by GLOB.asset_loading_service
+/// Stub to hook into if your asset is having its generation queued by SSasset_loading
 /datum/asset/proc/queued_generation()
-	CRASH("[type] inserted into GLOB.asset_loading_service despite not implementing /proc/queued_generation")
+	CRASH("[type] inserted into SSasset_loading despite not implementing /proc/queued_generation")
 
 /datum/asset/proc/get_url_mappings()
 	return list()
 
+/// The serialized URL mappings of an asset type for one transport type (a tgui message): regenerating an asset drops them all.
+DECLARE_SHARED_CACHE(asset_url_mappings, GLOBAL_PROC_REF(build_asset_url_mappings), SC_EXPLICIT)
+
+/proc/build_asset_url_mappings(datum/asset/asset)
+	return TGUI_CREATE_MESSAGE("asset/mappings", asset.get_url_mappings())
+
 /// Returns a cached tgui message of URL mappings
 /datum/asset/proc/get_serialized_url_mappings()
-	if (isnull(cached_serialized_url_mappings) || cached_serialized_url_mappings_transport_type != SSassets.transport.type)
-		cached_serialized_url_mappings = TGUI_CREATE_MESSAGE("asset/mappings", get_url_mappings())
-		cached_serialized_url_mappings_transport_type = SSassets.transport.type
-		om_rec_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
-
-	return cached_serialized_url_mappings
-
-/// The serialized URL mappings (and the transport they were built for) are declared
-/// caches: regenerating the asset raises CHANGE_EXPLICIT and the object-model core nulls them.
-/datum/asset/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["cached_serialized_url_mappings"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["cached_serialized_url_mappings_transport_type"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
+	return CACHED_KEY(asset_url_mappings, "[type]|[SSassets.transport.type]", src)
 
 /datum/asset/proc/register()
 	return
@@ -149,7 +139,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(asset_url_mappings)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -170,7 +160,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	/// list of assets for this datum in the form of:
 	/// asset_filename = asset_file. At runtime the asset_file will be
 	/// converted into a asset_cache datum.
-	var/assets = list()
+	var/assets
 	/// Set to true to have this asset also be sent via the legacy browse_rsc
 	/// system when cdn transports are enabled?
 	var/legacy = FALSE
@@ -190,7 +180,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		assets[asset_name] = ACI
 
 /datum/asset/simple/send(client)
-	. = SSassets.transport.send_assets(client, assets)
+	. = SSassets.transport.send_assets(client, assets || list())
 
 /datum/asset/simple/get_url_mappings()
 	. = list()
@@ -298,7 +288,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		fdel("[SPRITESHEET_DIR][name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	changed(src, CHANGE_EXPLICIT)
+	INVALIDATE_SHARED_CACHE(asset_url_mappings)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE
@@ -323,7 +313,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	if(should_load_immediately())
 		realize_spritesheets(yield = FALSE)
 	else
-		GLOB.asset_loading_service.queue_asset(src)
+		SSasset_loading.queue_asset(src)
 
 /datum/asset/spritesheet/proc/realize_spritesheets(yield)
 	if(fully_generated)
@@ -356,7 +346,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		write_to_cache()
 	fully_generated = TRUE
 	// If we were ever in there, remove ourselves
-	GLOB.asset_loading_service.dequeue_asset(src)
+	SSasset_loading.dequeue_asset(src)
 
 /datum/asset/spritesheet/queued_generation()
 	realize_spritesheets(yield = TRUE)
@@ -496,7 +486,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset/spritesheet/proc/write_to_cache()
 	for (var/size_id in sizes)
-		var/datum/asset_cache_item/temp = SSassets.cache["[name]_[size_id].png"]
+		var/datum/asset_cache_item/temp = assets_cache()["[name]_[size_id].png"]
 		fcopy(temp.resource, "[ASSET_CROSS_ROUND_CACHE_DIRECTORY]/spritesheet.[name]_[size_id].png")
 
 	generating_cache = TRUE
@@ -685,11 +675,11 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset/simple/namespaced/register()
 	if(legacy)
-		if(length(parents)) assets |= parents
+		if(length(parents)) LAZYOR(assets, parents)
 	var/list/hashlist = list()
 	var/list/created_items = list()
 
-	var/list/sorted_assets = sortList(assets)
+	var/list/sorted_assets = sortList(assets || list())
 	for(var/asset_name in sorted_assets)
 		var/datum/asset_cache_item/ACI = new(asset_name, sorted_assets[asset_name], prehashed_asset_hash(asset_name))
 		if (!istype(ACI) || !ACI.hash)

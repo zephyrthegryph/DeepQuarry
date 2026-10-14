@@ -1,3 +1,15 @@
+CAPABILITIES(/datum/error_viewer)
+	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
+	op("back", ui_act(), then(PROC_REF(ui_act_back)))
+	interface("ErrorViewer", title = "Error Viewer", rights = R_ADMIN|R_DEBUG)
+	op("set_mode", ui_act("set_mode", arg("mode", schema_text(4096))), then(PROC_REF(ui_act_set_mode)))
+	op("navigate", ui_act("navigate", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_navigate)))
+	op("vv_usr", ui_act("vv_usr"), then(PROC_REF(ui_act_vv_usr)))
+	op("pp_usr", ui_act("pp_usr"), then(PROC_REF(ui_act_pp_usr)))
+	op("follow_usr", ui_act("follow_usr"), then(PROC_REF(ui_act_follow_usr)))
+	op("vv_usr_loc", ui_act("vv_usr_loc"), then(PROC_REF(ui_act_vv_usr_loc)))
+	op("jmp_usr_loc", ui_act("jmp_usr_loc"), then(PROC_REF(ui_act_jmp_usr_loc)))
+
 // Error viewer — structured TGUI replacement for the legacy browse_to HTML chain.
 
 /datum/error_viewer
@@ -11,10 +23,6 @@
 	if(!user)
 		return
 	tgui_interact(user.mob)
-
-DECLARE_UI_STATE(/datum/error_viewer, ADMIN_STATE(R_ADMIN|R_DEBUG))
-
-DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 
 /datum/error_viewer/ui_opening(mob/user, datum/tgui/ui)
 	ensure_back_pointer()
@@ -35,9 +43,16 @@ DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 		return null
 	return "[REF(EV)]"
 
-UI_DATA_REPLACE(/datum/error_viewer, "title=name:text", "merge:ui_data_datum_error_viewer{view_kind:text,back_ref:unknown,linear:bool,total_runtimes:unknown,total_skipped:unknown}")
+/datum/error_viewer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	var/list/merged_1 = ui_data_datum_error_viewer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/error_viewer's window data (declared on its UI_DATA row).
+/// /datum/error_viewer's window data.
 /datum/error_viewer/proc/ui_data_datum_error_viewer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "unknown"
@@ -47,9 +62,15 @@ UI_DATA_REPLACE(/datum/error_viewer, "title=name:text", "merge:ui_data_datum_err
 	data["total_skipped"] = GLOB.total_runtimes_skipped
 	return data
 
-UI_DATA(/datum/error_viewer/error_cache, "merge:ui_data_datum_error_viewer_error_cache{view_kind:text,items:list}")
+/datum/error_viewer/error_cache/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_datum_error_viewer_error_cache(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/error_viewer/error_cache's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_cache's window data.
 /datum/error_viewer/error_cache/proc/ui_data_datum_error_viewer_error_cache(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "cache"
@@ -73,9 +94,15 @@ UI_DATA(/datum/error_viewer/error_cache, "merge:ui_data_datum_error_viewer_error
 	data["items"] = items
 	return data
 
-UI_DATA(/datum/error_viewer/error_source, "merge:ui_data_datum_error_viewer_error_source{view_kind:text,items:list}")
+/datum/error_viewer/error_source/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_datum_error_viewer_error_source(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/error_viewer/error_source's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_source's window data.
 /datum/error_viewer/error_source/proc/ui_data_datum_error_viewer_error_source(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "source"
@@ -89,9 +116,16 @@ UI_DATA(/datum/error_viewer/error_source, "merge:ui_data_datum_error_viewer_erro
 	data["items"] = items
 	return data
 
-UI_DATA(/datum/error_viewer/error_entry, "desc:text", "merge:ui_data_datum_error_viewer_error_entry{view_kind:text,usr_ref:bool,usr_loc_ref:text,usr_loc_x:num,usr_loc_y:num,usr_loc_z:num}")
+/datum/error_viewer/error_entry/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["desc"] = desc
+	var/list/merged_1 = ui_data_datum_error_viewer_error_entry(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/error_viewer/error_entry's window data (declared on its UI_DATA row).
+/// /datum/error_viewer/error_entry's window data.
 /datum/error_viewer/error_entry/proc/ui_data_datum_error_viewer_error_entry(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "entry"
@@ -103,72 +137,69 @@ UI_DATA(/datum/error_viewer/error_entry, "desc:text", "merge:ui_data_datum_error
 		data["usr_loc_z"] = usr_loc().z
 	return data
 
-UI_ACT(/datum/error_viewer, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/error_viewer, ui_act_refresh)
+/datum/error_viewer/proc/ui_act_refresh(datum/act/op/A)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/datum/error_viewer/proc/ui_act_set_mode(datum/act/op/A, mode)
+	dq_linear = "[mode]" == "linear"
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "set_mode", ui_act_set_mode, UI_ARG_TEXT("mode"))
-UI_ACT_PROC(/datum/error_viewer, ui_act_set_mode)
-	dq_linear = "[params["mode"]]" == "linear"
-	SStgui.update_uis(src)
-	return TRUE
-
-UI_ACT(/datum/error_viewer, "navigate", ui_act_navigate, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/error_viewer, ui_act_navigate)
-	var/ref = "[params["ref"]]"
+/datum/error_viewer/proc/ui_act_navigate(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	var/ref = "[ref_arg]"
 	var/datum/error_viewer/EV = locate(ref)
 	if(istype(EV))
 		rel_set(EV, nameof(/datum/error_viewer::dq_back_to), src)
 		EV.dq_linear = dq_linear
-		EV.tgui_interact(ui.user)
+		EV.tgui_interact(user)
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "back", ui_act_back)
-UI_ACT_PROC(/datum/error_viewer, ui_act_back)
+/datum/error_viewer/proc/ui_act_back(datum/act/op/A)
 	if(dq_back_to())
-		dq_back_to().tgui_interact(ui.user)
-	return TRUE
+		dq_back_to().tgui_interact(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/error_viewer, "vv_usr", ui_act_vv_usr)
-UI_ACT_PROC(/datum/error_viewer, ui_act_vv_usr)
+/datum/error_viewer/proc/ui_act_vv_usr(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /datum/error_viewer/error_entry))
 		var/datum/error_viewer/error_entry/E = src
 		if(E.usr_ref)
-			ui.user.client?.vv_topic(list("Vars" = E.usr_ref), TRUE)
+			user.client?.vv_topic(list("Vars" = E.usr_ref), TRUE)
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "pp_usr", ui_act_pp_usr)
-UI_ACT_PROC(/datum/error_viewer, ui_act_pp_usr)
+/datum/error_viewer/proc/ui_act_pp_usr(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /datum/error_viewer/error_entry))
 		var/datum/error_viewer/error_entry/E = src
 		if(E.usr_ref)
-			ui.user.client?.admin_datum()?.topic_internal(ui.user, list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
+			user.client?.admin_datum()?.topic_internal(user, list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "follow_usr", ui_act_follow_usr)
-UI_ACT_PROC(/datum/error_viewer, ui_act_follow_usr)
+/datum/error_viewer/proc/ui_act_follow_usr(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /datum/error_viewer/error_entry))
 		var/datum/error_viewer/error_entry/E = src
 		if(E.usr_ref)
-			ui.user.client?.admin_datum()?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
+			user.client?.admin_datum()?.topic_internal(user, list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "vv_usr_loc", ui_act_vv_usr_loc)
-UI_ACT_PROC(/datum/error_viewer, ui_act_vv_usr_loc)
+/datum/error_viewer/proc/ui_act_vv_usr_loc(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /datum/error_viewer/error_entry))
 		var/datum/error_viewer/error_entry/E = src
 		if(E.usr_loc())
 			var/ref = "[REF(E.usr_loc())]"
-			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
+			user.client?.vv_topic(list("Vars" = ref), TRUE)
 	return TRUE
 
-UI_ACT(/datum/error_viewer, "jmp_usr_loc", ui_act_jmp_usr_loc)
-UI_ACT_PROC(/datum/error_viewer, ui_act_jmp_usr_loc)
+/datum/error_viewer/proc/ui_act_jmp_usr_loc(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /datum/error_viewer/error_entry))
 		var/datum/error_viewer/error_entry/E = src
 		if(E.usr_loc())
-			ui.user.client?.admin_datum()?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
+			user.client?.admin_datum()?.topic_internal(user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
 	return TRUE
 
 /// The dq_back_to this refers to (a relation view: null once that is deleted).

@@ -11,7 +11,6 @@
 	slowdown = 0.5
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
-	siemens_coefficient = 0.3
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 	helm_type = /obj/item/clothing/head/helmet/space/rig/merc
 
@@ -26,9 +25,13 @@
 		/obj/item/rig_module/fabricator/energy_net
 		)
 
+CAPABILITIES(/obj/item/rig/merc)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.3))
+
 //Has most of the modules removed
 
-TYPE_TABLE(/obj/item/rig/merc, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT))))
+
 /obj/item/rig/merc/empty
 	initial_modules = list(
 		/obj/item/rig_module/ai_container,

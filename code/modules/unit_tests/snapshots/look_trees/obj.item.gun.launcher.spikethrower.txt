@@ -1,0 +1,5 @@
+/obj/item/gun/launcher/spikethrower icon: icons/obj/gun.dmi
+/obj/item/gun/launcher/spikethrower state: spikethrower5
+/obj/item/gun/launcher/spikethrower dir: 2
+/obj/item/gun/launcher/spikethrower overlay: icons/obj/gun.dmi:spikethrower5:8:#000000
+

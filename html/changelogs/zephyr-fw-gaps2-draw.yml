@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Appearance providers converted to draw(look) with tracked vars and setter writers (appearance_draw codemod)"

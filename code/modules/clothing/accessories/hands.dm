@@ -3,19 +3,19 @@
 	desc = "A pair of brass knuckles. Generally used to enhance the user's punches."
 	icon_state = "knuckledusters"
 	slot = ACCESSORY_SLOT_RING
-	slot_flags = SLOT_GLOVES
 	MATERIAL_BULK(MAT_STEEL, 500)
-	attack_verb = list("punched", "beaten", "struck")
-	siemens_coefficient = 1
-	force = 10	//base punch strength is 5
 	punch_force = 5	//added to base punch strength when added as a glove accessory
 	icon = 'icons/inventory/hands/item.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
 		)
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
+
+CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
+	configure(item_worn(slots = SLOT_GLOVES))
+	configure(item_combat(attack_verbs = list("punched", "beaten", "struck"), force = 10))
+	configure(item_protection(siemens = 1))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 //bracelets
 
@@ -25,45 +25,47 @@
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "bracelet"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_GLOVES | SLOT_TIE
 	slot = ACCESSORY_SLOT_WRIST
+
+CAPABILITIES(/obj/item/clothing/accessory/bracelet)
+	configure(item_worn(slots = SLOT_GLOVES | SLOT_TIE))
 
 /obj/item/clothing/accessory/bracelet/friendship
 	name = "friendship bracelet"
 	desc = "A beautiful friendship bracelet in all the colors of the rainbow."
 	icon_state = "friendbracelet"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
-	INTERACT_VERB("Dedicate Bracelet", PROC_REF(friendship_dedicate_bracelet_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
+	op("friendship_dedicate_bracelet_verb", menu(), label("Dedicate Bracelet"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "a1"), then(PROC_REF(friendship_dedicate_bracelet_verb)))
 
-/// Old verb "Dedicate Bracelet".
-/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedicate_bracelet_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/// Old verb "Dedicate Bracelet": the answer is who the bracelet is dedicated to.
+/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedicate_bracelet_verb(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.mind)
-		return 0
-
-	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(friendship_dedicate_bracelet_verb), list(user), /datum/om/prompt/text, message = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_length = MAX_NAME_LEN, encode = FALSE)
+		return
+	var/_answer_a1 = A.step_value("a1")
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
 
-	if(src && input && !M.stat && in_range(M,src))
+	if(input && !M.stat && in_range(M,src))
 		desc = "A beautiful friendship bracelet in all the colors of the rainbow. It's dedicated to [input]."
 		to_chat(M, "You dedicate the bracelet to [input], remembering the times you've had together.")
-		return 1
-
 
 /obj/item/clothing/accessory/bracelet/material
 	icon_state = "materialbracelet"
 	material_slowdown_multiplier = 0
 	slowdown = 0
 
-/obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
+TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
+
+// ALLOW(init/INSTANCE_STATE): a material bracelet is named and coloured for its material (or the type's forced one)
+/obj/item/clothing/accessory/bracelet/material/Initialize(mapload)
+	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
+	if(forced_material)
+		default_material = forced_material
 	. = ..()
-	if(!new_material)
-		new_material = MAT_STEEL
-	material = get_material_by_name(new_material)
+	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
 	name = "[material.display_name] bracelet"
@@ -73,32 +75,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 /obj/item/clothing/accessory/bracelet/material/get_material()
 	return material
 
-/obj/item/clothing/accessory/bracelet/material/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/wood, bracelet_forced_material, MAT_WOOD)
 
-/obj/item/clothing/accessory/bracelet/material/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/plastic, bracelet_forced_material, MAT_PLASTIC)
 
-/obj/item/clothing/accessory/bracelet/material/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/iron, bracelet_forced_material, MAT_IRON)
 
-/obj/item/clothing/accessory/bracelet/material/steel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/steel, bracelet_forced_material, MAT_STEEL)
 
-/obj/item/clothing/accessory/bracelet/material/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/silver, bracelet_forced_material, MAT_SILVER)
 
-/obj/item/clothing/accessory/bracelet/material/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/gold, bracelet_forced_material, MAT_GOLD)
 
-/obj/item/clothing/accessory/bracelet/material/platinum/Initialize(mapload)
-	. = ..(mapload, MAT_PLATINUM)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/platinum, bracelet_forced_material, MAT_PLATINUM)
 
-/obj/item/clothing/accessory/bracelet/material/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/phoron, bracelet_forced_material, MAT_PHORON)
 
-/obj/item/clothing/accessory/bracelet/material/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/glass, bracelet_forced_material, MAT_GLASS)
 
 //wristbands
 
@@ -108,8 +101,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "wristband"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_GLOVES  | SLOT_TIE
 	slot = ACCESSORY_SLOT_WRIST
+
+CAPABILITIES(/obj/item/clothing/accessory/wristband)
+	configure(item_worn(slots = SLOT_GLOVES  | SLOT_TIE))
 
 /obj/item/clothing/accessory/wristband/spiked
 	name = "wristband (spiked)"

@@ -15,11 +15,13 @@ cp config/example/* config/
 mkdir -p data/spritesheets
 
 # Compile a copy of the codebase, and print errors as Github Actions annotations.
-# TEST_BUILD=0 compiles the production build (live map) instead of the test world.
+# TEST_BUILD=0 compiles the production build (live map) instead of the test world, exactly as
+# `tools/build/build.sh dm` ships it: no CIBUILDING, which defines UNIT_TESTS (_compile_options.dm)
+# and would hide test-only code that leaks outside its #if defined(UNIT_TESTS) guard.
 if [ "${TEST_BUILD:-1}" = "1" ]; then
   tools/build/build.sh --ci dm -DCIBUILDING -DCITESTING ${EXTRA_ARGS}
 else
-  tools/build/build.sh --ci dm -DCIBUILDING ${EXTRA_ARGS}
+  tools/build/build.sh --ci dm ${EXTRA_ARGS}
 fi
 exitVal=$?
 

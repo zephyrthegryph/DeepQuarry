@@ -2,9 +2,11 @@
 	name = "chrome manipulation suit"
 	desc = "It's a very shiny and somewhat protective suit, built to help carry cores on the user's back."
 	icon_state = "technomancer"
-	body_parts_covered = CHEST|ARMS|LEGS|FEET|HANDS
 	armor_spec = "melee=50;bullet=20;laser=30;energy=30;bomb=10;rad=40"
-	siemens_coefficient = 0.75
+
+CAPABILITIES(/obj/item/clothing/suit/technomancer)
+	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
+	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS))))
 
@@ -14,7 +16,9 @@ TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ON
 	There is also a healthy amount of insulation underneath."
 	icon_state = "initiate"
 	armor_spec = "melee=10;bullet=5;laser=5"
-	siemens_coefficient = 0.3
+
+CAPABILITIES(/obj/item/clothing/under/technomancer)
+	configure(item_protection(siemens = 0.3))
 
 /obj/item/clothing/under/technomancer/apprentice
 	name = "apprentice's jumpsuit"
@@ -33,7 +37,9 @@ TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ON
 	desc = "It's a somewhat silly looking blue pointed hat."
 	icon_state = "initiate"
 	armor_spec = "melee=10;bullet=5;laser=5"
-	siemens_coefficient = 0.3
+
+CAPABILITIES(/obj/item/clothing/head/technomancer)
+	configure(item_protection(siemens = 0.3))
 
 /obj/item/clothing/head/technomancer/apprentice
 	name = "apprentice's hat"

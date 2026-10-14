@@ -22,33 +22,30 @@ MRE Stuff
 	)
 	special_handling = TRUE
 
-TYPE_TABLE(/obj/item/storage/mre, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/mre/examine(mob/user)
 	. = ..()
 	. += meal_desc
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/mre/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/mre, opened)
+
+/obj/item/storage/mre/draw(datum/look/look)
+	. = ..()
 	if(opened)
-		icon_state = "[initial(icon_state)][opened]"
-	. += ..()
+		look.state("[initial(icon_state)][opened]")
 
-EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
+CAPABILITIES(/obj/item/storage/mre)
+	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open)))
 
-/// Old attack_self: after the storage's own self-use, tear it open.
-/obj/item/storage/mre/proc/interaction_tear_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
-	open(user)
-	return TRUE
+/// Used in hand: it is torn open and shows what is inside.
+/obj/item/storage/mre/proc/tear_open(datum/act/op/A)
+	open(A.actor)
+	return OP_OK
 
 /obj/item/storage/mre/open(mob/user)
 	if(!opened)
 		to_chat(user, span_notice("You tear open the bag, breaking the vacuum seal."))
-		opened = 1
-		update_icon()
+		set_opened(1)
 	. = ..()
 
 /obj/item/storage/mre/menu2
@@ -233,29 +230,26 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 	starts_with = list(/obj/item/reagent_containers/food/snacks/slice/meatpizza/filled)
 	special_handling = TRUE
 
-TYPE_TABLE(/obj/item/storage/mrebag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mrebag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/mrebag/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/mrebag, opened)
+
+/obj/item/storage/mrebag/draw(datum/look/look)
+	. = ..()
 	if(opened)
-		icon_state = "[initial(icon_state)][opened]"
-	. += ..()
+		look.state("[initial(icon_state)][opened]")
 
-EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
+CAPABILITIES(/obj/item/storage/mrebag)
+	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open)))
 
-/// Old attack_self: after the storage's own self-use, tear it open.
-/obj/item/storage/mrebag/proc/interaction_tear_open(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
-	open(user)
-	return TRUE
+/// Used in hand: it is torn open and shows what is inside.
+/obj/item/storage/mrebag/proc/tear_open(datum/act/op/A)
+	open(A.actor)
+	return OP_OK
 
 /obj/item/storage/mrebag/open(mob/user)
 	if(!opened && !isobserver(user))
 		to_chat(user, span_notice("The pouch heats up as you break the vacuum seal."))
-		opened = 1
-		update_icon()
+		set_opened(1)
 	. = ..()
 
 /obj/item/storage/mrebag/menu2
@@ -317,7 +311,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	foldable = null
 	var/isopened = 0
 
-TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
+
+CAPABILITIES(/obj/item/storage/box/tgmc_mre)
+	configure(storage(max_size = 0))
 
 /obj/item/storage/box/tgmc_mre/Initialize(mapload)
 	. = ..()
@@ -337,22 +333,25 @@ TYPE_TABLE(/obj/item/storage/box/tgmc_mre, hold_spec, list(HOLD_MAX_SIZE(0)))
 	new /obj/item/reagent_containers/food/snacks/tgmc_mre_component(src, desert)
 	new /obj/random/mre/drink(src)
 
-/obj/item/storage/box/tgmc_mre/remove_from_storage()
+/obj/item/storage/box/tgmc_mre/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
 	if(. && !length(slot_contents(CONTAINER_SLOT_STORAGE)) && !gc_destroyed)
 		// Eaten empty, it leaves its wrapper as trash. (A plain delete of the box does not:
 		// that dropped a wrapper for every MRE any cleanup or test ever removed.)
 		var/turf/T = get_turf(src)
-		if(T)
+		if(consume(src, user) && T)
 			new /obj/item/trash/tgmc_mre(T)
-		qdel(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/tgmc_mre/appearance_overlays()
-	. = list()
-	if(!isopened)
-		isopened = 1
-		icon_state = "tgmc_mre_opened"
+
+/// The first thing that moves in or out opens the wrapper.
+/obj/item/storage/box/tgmc_mre/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	set_isopened(1)
+	return ..()
+
+/obj/item/storage/box/tgmc_mre/draw(datum/look/look)
+	. = ..()
+	if(isopened)
+		look.state("tgmc_mre_opened")
 
 // The sneaky food-looks-like-a-package items
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component
@@ -366,9 +365,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, app
 	/// The one reagent the flavour adds (a per-instance pick, so not a declaration).
 	var/seasoning
 
-/obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload, newflavor)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/tgmc_mre_component)
+	param(nameof(flavor_at_make), pos = 1, apply = PROC_REF(pack_flavor))
+
+/// The flavour a component is made as (its constructor param).
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/var/flavor_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/proc/pack_flavor(newflavor)
 	determinetype(newflavor)
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."
+
+// ALLOW(init/INSTANCE_STATE): a component is seasoned once its parents made its reagents
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload)
 	. = ..()
 	if(seasoning)
 		reagents.add_reagent(seasoning, 1) // ALLOW(decl): state picked in determinetype()
@@ -386,19 +395,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, app
 
 	switch(newflavor)
 		if("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")
-			icon_state = "tgmcmre_entree"
+			set_icon_state("tgmcmre_entree")
 			nutriment_amt = 5
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("meatballs", "cheese spread", "beef turnover", "mashed potatoes")
-			icon_state = "tgmcmre_side"
+			set_icon_state("tgmcmre_side")
 			nutriment_amt = 3
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("biscuit", "pretzels", "peanuts", "cracker")
-			icon_state = "tgmcmre_snack"
+			set_icon_state("tgmcmre_snack")
 			nutriment_amt = 2
 			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("spiced apples", "chocolate brownie", "sugar cookie", "choco bar")
-			icon_state = "tgmcmre_dessert"
+			set_icon_state("tgmcmre_dessert")
 			nutriment_amt = 2
 			seasoning = REAGENT_ID_SUGAR
 

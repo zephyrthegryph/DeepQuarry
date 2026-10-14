@@ -19,7 +19,7 @@
 	if(holder)
 		rel_set(src, nameof(location), get_turf(holder))
 	for(var/i = 0, i < number, i++)
-		om_after(src, i * 25, PROC_REF(do_pull))
+		after(src, i * 25, PROC_REF(do_pull))
 
 /datum/effect/effect/system/grav_pull/proc/do_pull()
 	// Let's just make this one loop.

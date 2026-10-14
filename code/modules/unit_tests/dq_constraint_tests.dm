@@ -28,8 +28,12 @@
 	var/atom/movable/A
 	try
 		A = new path(T)
-	catch // ALLOW(silent_catch): a type that cannot be constructed here is skipped by the probe
+	catch
 		return null
+	var/obj/item/hand/cards = A
+	if(istype(cards) && !length(cards.cards))
+		// A hand with no cards is gone at its first draw; the legacy fixture held one that stayed, so give it a card to keep.
+		cards.add_cards(new /datum/playingcard())
 	if(QDELETED(A) || A.loc != T)
 		return null
 	return A
@@ -52,7 +56,17 @@
 /proc/dq_parity_gained_suit_storage(obj/item/W)
 	if(dq_parity_fixture()["suit"]["[W.type]"])
 		return FALSE
-	return dq_constraint(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
+	return dq_constraint_present(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
+
+/// Holder/item cells the legacy fixture recorded as taken whose refusal is a documented intended change
+/// (doc/rewrite/intended_changes.md): the legacy check lived in the click handler, outside can_be_inserted().
+/proc/dq_parity_intended_refusal(holder_name, item_type)
+	var/static/list/intended = list(
+		// "A crayon the box will not take says the general refusal": the mime and rainbow crayons are refuses of the crayon box.
+		"/obj/item/storage/fancy/crayons" = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow),
+	)
+	var/list/types = intended[holder_name]
+	return types && (item_type in types)
 
 /datum/unit_test/dq_constraint_parity
 	abstract_type = /datum/unit_test/dq_constraint_parity
@@ -99,6 +113,8 @@
 				continue
 			cells++
 			var/expected = dq_parity_hex_bit(hex, i)
+			if(dq_parity_intended_refusal(holder_name, I.type))
+				expected = 0
 			var/actual = call(src, check)(holder, I) ? 1 : 0
 			if(actual != expected)
 				mismatch("[holder_name] [expected ? "took" : "refused"] [I.type] before, now [actual ? "takes" : "refuses"] it")
@@ -115,10 +131,9 @@
 	return I != S && !S.insert_refusal(I, null)
 
 /datum/unit_test/dq_constraint_parity/proc/suit_storage_takes(obj/item/suit, obj/item/I)
-	var/datum/predicate/P = dq_constraint(suit, CONSTRAINT_SUIT_STORAGE)
-	if(!P)
+	if(!dq_constraint_present(suit, CONSTRAINT_SUIT_STORAGE))
 		return FALSE
-	return istype(I, /obj/item/pda) || istype(I, /obj/item/pen) || P.check(null, I, null)
+	return istype(I, /obj/item/pda) || istype(I, /obj/item/pen) || isnull(dq_constraint_refusal(suit, CONSTRAINT_SUIT_STORAGE, I, null))
 
 /datum/unit_test/dq_constraint_parity/proc/holster_takes(obj/item/holster, obj/item/I)
 	return !dq_constraint_refusal(holster, CONSTRAINT_HOLD, I, null)
@@ -139,7 +154,7 @@
 		var/obj/item/W = dq_parity_make(path, T)
 		if(!W)
 			continue
-		if(dq_constraint(W, CONSTRAINT_SUIT_STORAGE))
+		if(dq_constraint_present(W, CONSTRAINT_SUIT_STORAGE))
 			TEST_FAIL("[path] has suit storage now; it had none")
 		qdel(W)
 		CHECK_TICK
@@ -308,8 +323,8 @@
 	TEST_ASSERT(findtext(too_big, "too big"), "box refusing a toolbox should say it's too big, said [too_big]")
 	TEST_ASSERT_NULL(toolbox.insert_refusal(wrench, null), "toolbox taking a wrench")
 
-	// The same answer through a C1 slot declaring the holder's constraint.
-	var/datum/om/relation/slot/dq_test_hold/def = dq_slot_def(/datum/om/relation/slot/dq_test_hold)
+	// The same answer through the storage slot: its refusal is the storage capability's.
+	var/datum/relation_definition/slot/storage/def = dq_slot_def(/datum/relation_definition/slot/storage)
 	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
@@ -321,14 +336,10 @@
 	new /obj/item/pen(fitted)
 	fitted.make_exact_fit()
 	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
-	TEST_ASSERT_NOTNULL(dq_constraint_refusal(fitted, CONSTRAINT_HOLD, paper, null), "exact-fit box refuses paper")
+	TEST_ASSERT_NOTNULL(fitted.insert_refusal(paper, null), "exact-fit box refuses paper")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
-	TEST_ASSERT_NULL(dq_constraint_refusal(fitted, CONSTRAINT_HOLD, pen, null), "exact-fit box takes another pen")
-	TEST_ASSERT_NULL(dq_constraint_refusal(box, CONSTRAINT_HOLD, paper, null), "a plain box still takes paper")
-
-/datum/om/relation/slot/dq_test_hold
-	slot_id = "dq_test_hold"
-	holder_constraint = CONSTRAINT_HOLD
+	TEST_ASSERT(!findtext(fitted.insert_refusal(pen, null), "take that"), "exact-fit box takes another pen as far as its type goes (it is full)")
+	TEST_ASSERT_NULL(box.insert_refusal(paper, null), "a plain box still takes paper")
 
 /datum/unit_test/dq_constraint_equip_reasons/Run()
 	var/turf/T = run_loc_floor_bottom_left

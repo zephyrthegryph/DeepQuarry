@@ -18,21 +18,15 @@
 	max_integrity = 300
 	integrity_failure = 0.5 // Stops working below 150 integrity.
 
-DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/console, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/modular_computer/console/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/modular_computer/console/draw(datum/look/look)
+	..()
 	// Connecty
 	if(initial(icon_state) == "console")
 		var/append_string = ""
-		var/left = turn(dir, -90)
-		var/right = turn(dir, 90)
-		var/turf/L = get_step(src, left)
-		var/turf/R = get_step(src, right)
-		var/obj/item/modular_computer/console/LC = locate_on(L, /obj/item/modular_computer/console)
-		var/obj/item/modular_computer/console/RC = locate_on(R, /obj/item/modular_computer/console)
+		var/obj/item/modular_computer/console/LC = look.neighbour(src, turn(dir, -90), /obj/item/modular_computer/console)
+		var/obj/item/modular_computer/console/RC = look.neighbour(src, turn(dir, 90), /obj/item/modular_computer/console)
 		if(LC && LC.dir == dir && initial(LC.icon_state) == "console")
 			append_string += "_L"
 		if(RC && RC.dir == dir && initial(RC.icon_state) == "console")
 			append_string += "_R"
-		icon_state = "console[append_string]"
+		look.state("console[append_string]")

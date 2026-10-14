@@ -10,6 +10,9 @@
 /datum/node/expression/op/binary
 	var/datum/node/expression/exp2
 
+CAPABILITIES(/datum/node/expression/op/binary)
+	owns_one(nameof(exp2), /datum/node/expression)
+
 ////////// Comparison Operators //////////
 /*
 	Class: Equal

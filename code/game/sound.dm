@@ -1,5 +1,5 @@
 /proc/playsound(atom/source, soundin, vol as num, vary, extrarange as num, falloff, is_global, frequency = null, channel = 0, pressure_affected = TRUE, ignore_walls = TRUE, preference = null, volume_channel = null)
-	if(Master.current_runlevel < RUNLEVEL_LOBBY)
+	if(Kernel.current_runlevel < RUNLEVEL_LOBBY)
 		return
 
 	var/turf/turf_source = get_turf(source)
@@ -8,7 +8,7 @@
 	var/area/area_source = turf_source.loc
 
 	//allocate a channel if necessary now so its the same for everyone
-	channel = channel || sound_service().random_available_channel()
+	channel = channel || SSsounds.ready().random_available_channel()
 
 	var/maxdistance = (world.view + extrarange) * 2 // 3 to 2
 	var/source_z = turf_source.z
@@ -41,7 +41,7 @@
 			if(!S)
 				S = sound(get_sfx(soundin))
 			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
-			GLOB.motiontracker_service.ping(source,vol) // Nearly everything pings this, the quieter the less likely
+			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
 /// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
 /// Mirrors playsound()'s listener rules, minus soundproofing and walls.
@@ -75,7 +75,7 @@
 	return TRUE
 
 /mob/proc/playsound_local(turf/turf_source, soundin, vol as num, vary, frequency, falloff, is_global, channel = 0, pressure_affected = TRUE, sound/S, preference, volume_channel = null)
-	if(!client || has_status(EFFECT_DEAFENED))
+	if(!client || has_status(STAT_DEAFENED))
 		return
 
 	if(!check_sound_preference(preference))
@@ -85,7 +85,7 @@
 		S = sound(get_sfx(soundin))
 
 	S.wait = 0 //No queue
-	S.channel = channel || sound_service().random_available_channel()
+	S.channel = channel || SSsounds.ready().random_available_channel()
 
 	// I'm not sure if you can modify S.volume, but I'd rather not try to find out what
 	// horrible things lurk in BYOND's internals, so we're just gonna do vol *=
@@ -172,7 +172,7 @@
 /client/proc/playtitlemusic()
 	if(!SSticker || !SSmedia_tracks.lobby_tracks.len || !media)	return
 	if(prefs?.read_preference(/datum/preference/toggle/play_lobby_music))
-		var/datum/track/T = pick(SSmedia_tracks.lobby_tracks)
+		var/datum/track/T = pick(media_tracks_lobby_tracks())
 		media.push_music(T.url, world.time, 0.35)
 		to_chat(src,span_notice("Lobby music: " + span_bold("[T.title]") + " by " + span_bold("[T.artist]") + "."))
 
@@ -257,7 +257,7 @@ GLOBAL_LIST_INIT(species_sound_map, list(
 	var/pref_species = pref.read_preference(/datum/preference/choiced/species)
 	var/datum/species/valid = GLOB.all_species[pref_species]
 	if(valid.selects_bodytype == SELECTS_BODYTYPE_CUSTOM || valid.selects_bodytype == SELECTS_BODYTYPE_SHAPESHIFTER) // Custom species or xenochimera handling here
-		valid = coalesce(GLOB.all_species[pref.read_preference(/datum/preference/text/human/custom_base)], GLOB.all_species[pref_species]) // migrated pref
+		valid = GLOB.all_species[pref.read_preference(/datum/preference/text/human/custom_base)] || GLOB.all_species[pref_species] // migrated pref
 	// Now we start getting our sounds.
 	var/id_gender = pref.read_preference(/datum/preference/choiced/gender/identifying)
 	if(valid.gender_specific_species_sounds) // Do we have gender-specific sounds?

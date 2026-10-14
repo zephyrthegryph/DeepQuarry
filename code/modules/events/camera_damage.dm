@@ -17,9 +17,9 @@
 			if(prob(2*severity))
 				cam.take_damage(cam.max_integrity * (1 - cam.integrity_failure) + DAMAGE_PRECISION, BRUTE, MELEE)
 			else
-				cam.wires.cut_wire(WIRE_MAIN_POWER1)
+				wires_cut(cam, WIRE_MAIN_POWER1)
 				if(prob(5*severity))
-					cam.wires.cut_wire(WIRE_CAM_ALARM)
+					wires_cut(cam, WIRE_CAM_ALARM)
 
 /datum/event/camera_damage/proc/acquire_random_camera(remaining_attempts = 5)
 	if(!REGISTRY_COUNT(REGISTRY_CAMERAS))

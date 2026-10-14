@@ -21,7 +21,7 @@
 		return
 	COOLDOWN_START(src, glitch_cooldown, GLITCH_DURATION + GLITCH_REMOVAL_DURATION)
 	apply_wibbly_filters(src)
-	om_after(src, GLITCH_DURATION, GLOBAL_PROC_REF(remove_wibbly_filters), src, GLITCH_REMOVAL_DURATION)
+	after(src, GLITCH_DURATION, GLOBAL_PROC_REF(remove_wibbly_filters), with = list(src, GLITCH_REMOVAL_DURATION))
 
 #undef GLITCH_DURATION
 #undef GLITCH_REMOVAL_DURATION

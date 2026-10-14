@@ -12,108 +12,120 @@
 	Touching with Disarm will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	siemens_coefficient = 0.5 // Not perfect, but slightly more protective than nothing.
-	permeability_coefficient = 0.01
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
-/// Pickpocketing is one flow: a second's rummage, then by the touch's stance either opening their bag
-/// (help) or swapping a pocket (disarm: left, grab: right) as take-theirs, give-yours.
-/datum/om/flow/pickpocket
-	name = "pickpocket"
-	/// The stance of the touch that started it (I_HELP, I_DISARM, I_GRAB or I_HURT).
-	var/stance = I_HURT
-	/// The pocket being swapped (slot id and equip slot).
-	var/slot_id
-	var/slot
-	/// What was taken from them, and the user's own pocket item being slipped in.
-	var/obj/item/took
-	var/obj/item/theirs
-	var/obj/item/mine
-	/// TRUE while giving: an interrupted give still keeps what was taken.
-	var/giving = FALSE
+// Pickpocketing is a chain of waits run as one op: a second's rummage, then by the touch's stance either opening their bag (help) or swapping a
+// pocket (disarm: left, grab: right) as take-theirs, give-yours. The gloves hold the op; the person touched is its "victim". Each lap's end acts
+// (pickpocket_phase_done) and names the next wait, if any, in the op's arguments: phase ("rummage", "open", "take" or "give"), wait, slot_id,
+// slot, took, theirs and mine.
+CAPABILITIES(/obj/item/clothing/gloves/sterile/thieves)
+	configure(item_protection(siemens = 0.5, permeability = 0.01))
+	op("pickpocket", ai(), takes("victim", "stance", "victim_loc"), wait(PROC_REF(pickpocket_wait), keeps = STAY | ALIVE, repeats = PROC_REF(pickpocket_more), after_step = PROC_REF(pickpocket_phase_done)), on_interrupt(PROC_REF(pickpocket_interrupted)), then(PROC_REF(pickpocket_finished)))
 
-/datum/om/flow/pickpocket/start()
-	wait(1 SECOND, PROC_REF(rummaged))
+/// The chain ended; every stage acted as its lap ended.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_finished(datum/act/op/A)
+	return OP_OK
 
-/datum/om/flow/pickpocket/proc/rummaged()
-	var/mob/living/carbon/human/user = actor
-	var/mob/living/carbon/human/victim = target
-	if(stance != I_HURT && (turn(victim.dir, 180) == get_dir(user, victim)))
-		to_chat(victim, span_warning("[user] rifles in your pockets!"))
-	if(stance == I_HELP)
-		if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
-			slot_id = SLOT_ID_BACK
-			wait(3 SECONDS, PROC_REF(open_storage), progress = FALSE)
-		else if(istype(victim.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
-			slot_id = SLOT_ID_BELT
-			wait(5 SECONDS, PROC_REF(open_storage))
+/// How long the current wait of the chain is: a second for the rummage and the swaps, longer for opening a belt.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_wait(datum/act/op/A)
+	return A.arg("wait") || 1 SECOND
+
+/// Another wait follows when the lap that ended named one.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_more(datum/act/op/A)
+	return !!A.arg("more")
+
+/// The next wait of the chain, with this one's state.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_next(datum/act/op/A, next, wait)
+	LAZYSET(A.args, "phase", next)
+	LAZYSET(A.args, "wait", wait)
+	LAZYSET(A.args, "more", TRUE)
+
+/// The wait that just ended did its work, and the chain goes on or stops. The person touched stepping off or going ends the chain like the user moving.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_phase_done(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	var/mob/living/carbon/human/victim = A.arg("victim")
+	LAZYSET(A.args, "more", FALSE)
+	if(QDELETED(victim) || victim.loc != A.arg("victim_loc"))
+		pickpocket_interrupted(A)
 		return
-	if(stance == I_DISARM)
-		slot_id = SLOT_ID_POCKET_L
-		slot = SLOT_ID_POCKET_L
-	else if(stance == I_GRAB)
-		slot_id = SLOT_ID_POCKET_R
-		slot = SLOT_ID_POCKET_R
-	else
-		return
-	rel_set(src, nameof(theirs), victim.get_equipped_item(slot_id))
-	if(istype(theirs))
-		wait(1 SECOND, PROC_REF(take))
-	else
-		rel_clear(src, nameof(theirs))
-		give()
-
-/datum/om/flow/pickpocket/proc/open_storage()
-	var/mob/living/carbon/human/victim = target
-	var/obj/item/storage/S = victim.get_equipped_item(slot_id)
-	if(istype(S))
-		S.open(actor)
-
-/datum/om/flow/pickpocket/proc/take()
-	var/mob/living/carbon/human/victim = target
-	if(victim.get_equipped_item(slot_id) != theirs)
-		return
-	victim.drop_from_inventory(theirs)
-	rel_set(src, nameof(took), theirs)
-	rel_clear(src, nameof(theirs))
-	give()
+	var/stance = A.arg("stance") || I_HURT
+	var/slot_id = A.arg("slot_id")
+	switch(A.arg("phase") || "rummage")
+		if("rummage")
+			if(stance != I_HURT && (turn(victim.dir, 180) == get_dir(user, victim)))
+				to_chat(victim, span_warning("[user] rifles in your pockets!"))
+			if(stance == I_HELP)
+				if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
+					LAZYSET(A.args, "slot_id", SLOT_ID_BACK)
+					pickpocket_next(A, "open", 3 SECONDS)
+				else if(istype(victim.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
+					LAZYSET(A.args, "slot_id", SLOT_ID_BELT)
+					pickpocket_next(A, "open", 5 SECONDS)
+				return
+			if(stance == I_DISARM)
+				slot_id = SLOT_ID_POCKET_L
+			else if(stance == I_GRAB)
+				slot_id = SLOT_ID_POCKET_R
+			else
+				return
+			LAZYSET(A.args, "slot_id", slot_id)
+			LAZYSET(A.args, "slot", slot_id)
+			var/obj/item/pocketed = victim.get_equipped_item(slot_id)
+			if(istype(pocketed))
+				LAZYSET(A.args, "theirs", pocketed)
+				pickpocket_next(A, "take", 1 SECOND)
+			else
+				pickpocket_give(A)
+		if("open")
+			var/obj/item/storage/S = victim.get_equipped_item(slot_id)
+			if(istype(S))
+				S.open(user)
+		if("take")
+			var/obj/item/theirs = A.arg("theirs")
+			if(victim.get_equipped_item(slot_id) != theirs)
+				return
+			victim.drop_from_inventory(theirs)
+			LAZYSET(A.args, "took", theirs)
+			LAZYSET(A.args, "theirs", null)
+			pickpocket_give(A)
+		if("give")
+			pickpocket_swapped(A, TRUE)
 
 /// Slipping your own pocket item into theirs: a second of holding still.
-/datum/om/flow/pickpocket/proc/give()
-	var/mob/living/carbon/human/user = actor
-	rel_set(src, nameof(mine), user.get_equipped_item(slot_id))
-	if(!istype(mine))
-		rel_clear(src, nameof(mine))
-		swapped(FALSE)
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_give(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	var/obj/item/own_pocket = user.get_equipped_item(A.arg("slot_id"))
+	if(!istype(own_pocket))
+		pickpocket_swapped(A, FALSE)
 		return
-	giving = TRUE
-	wait(1 SECOND, PROC_REF(gave))
+	LAZYSET(A.args, "mine", own_pocket)
+	pickpocket_next(A, "give", 1 SECOND)
 
-/datum/om/flow/pickpocket/proc/gave()
-	swapped(TRUE)
+/// An interrupted give still keeps what was taken.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_interrupted(datum/act/op/A)
+	if(A.arg("phase") == "give")
+		pickpocket_swapped(A, FALSE)
 
-/datum/om/flow/pickpocket/ended(reason)
-	if(giving)
-		swapped(FALSE)
-
-/datum/om/flow/pickpocket/proc/swapped(gave)
-	var/mob/living/carbon/human/user = actor
-	var/mob/living/carbon/human/victim = target
-	giving = FALSE
-	if(!user)
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_swapped(datum/act/op/A, gave)
+	var/mob/living/carbon/human/user = A.actor
+	var/mob/living/carbon/human/victim = A.arg("victim")
+	var/obj/item/mine = A.arg("mine")
+	var/obj/item/took = A.arg("took")
+	var/slot = A.arg("slot")
+	if(!user || QDELETED(user))
 		return
 	// Taking something leaves the user's own pocket item in bluespace: it drops.
 	if(mine && (gave || took))
 		user.drop_from_inventory(mine)
-	if(took)
+	if(took && !QDELETED(took))
 		user.equip_to_slot(took, slot)
-	if(gave && victim)
+	if(gave && victim && !QDELETED(victim))
 		victim.equip_to_slot(mine, slot)
 
-/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT)
-	if(proximity && ishuman(usr) && ishuman(A))
-		om_flow_start(/datum/om/flow/pickpocket, usr, A, stance = stance)
+/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+	if(proximity && ishuman(user) && ishuman(A))
+		perform_op(user, src, "pickpocket", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = A, "stance" = stance, "victim_loc" = A.loc))
 		return 1
 	return 0
 
@@ -132,11 +144,12 @@
 /obj/item/clothing/gloves/ring/buzzer/get_cell()
 	return battery
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery_type")
+CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer)
+	owns_one(nameof(battery), starts = nameof(battery_type))
 
-/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT)
-	if(proximity && istype(usr, /mob/living/carbon/human))
-		return zap(usr, A, proximity, stance)
+/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+	if(proximity && istype(user, /mob/living/carbon/human))
+		return zap(user, A, proximity, stance)
 	return 0
 
 /obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity, stance = I_HURT)
@@ -170,6 +183,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery
 		return 0
 
 	H.emote("gasp")
-	H.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	H.status_at_least(STAT_WEAKENED, rand(10,25))
 
 	battery.emp_act(1)

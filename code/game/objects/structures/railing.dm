@@ -17,7 +17,6 @@
 	var/broken = FALSE
 	max_integrity = 70
 	var/interactable = FALSE
-	var/check = 0
 	var/icon_modifier = ""
 
 /obj/structure/railing/grey
@@ -26,15 +25,31 @@
 	icon_modifier = "grey_"
 	icon_state = "grey_railing0"
 
-/obj/structure/railing/Initialize(mapload, constructed = 0)
+/// A railing a player built (its constructor param).
+/obj/structure/railing/var/constructed = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a railing turns, a player-built one starts loose, and an anchored one joins its neighbours
+/obj/structure/railing/Initialize(mapload)
 	. = ..()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
-	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
 	make_rotatable()
-	if(src.anchored)
-		update_icon()
+
+CAPABILITIES(/obj/structure/railing)
+	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
+	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
+	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
+	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
+	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
+	param(nameof(constructed), pos = 1)
+
+/// A railing that is not anchored breaks under whoever climbed it.
+/obj/structure/railing/proc/climbed_over(mob/living/climber)
+	if(!anchored)
+		take_damage(9999, BRUTE, MELEE)
 
 DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 
@@ -58,122 +73,93 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 	return ..()
 
-/obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
-	check = 0
-	var/Rturn = turn(src.dir, -90)
-	var/Lturn = turn(src.dir, 90)
+/// The sides of this railing that join a neighbour (a bitmask of 1, 2, 4, 16, 32 and 64): anchored railings on its tile turned along it, beside it and diagonally ahead.
+/// The draw hears of each of them (a railing arriving, leaving, turning or being fastened) and of the tiles they stand on.
+/obj/structure/railing/proc/joined_sides(datum/look/look)
+	. = 0
+	var/Rturn = turn(dir, -90)
+	var/Lturn = turn(dir, 90)
 
-	for(var/obj/structure/railing/R in src.loc)
-		if ((R.dir == Lturn) && R.anchored)
-			check |= 32
-			if (UpdateNeighbors)
-				R.update_icon()
-		if ((R.dir == Rturn) && R.anchored)
-			check |= 2
-			if (UpdateNeighbors)
-				R.update_icon()
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, 0, /obj/structure/railing))
+		if(R.anchored && R.dir == Lturn)
+			. |= 32
+		if(R.anchored && R.dir == Rturn)
+			. |= 2
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Lturn, /obj/structure/railing))
+		if(R.anchored && R.dir == dir)
+			. |= 16
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Rturn, /obj/structure/railing))
+		if(R.anchored && R.dir == dir)
+			. |= 1
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Lturn + dir, /obj/structure/railing))
+		if(R.anchored && R.dir == Rturn)
+			. |= 64
+	for(var/obj/structure/railing/R as anything in look.neighbours(src, Rturn + dir, /obj/structure/railing))
+		if(R.anchored && R.dir == Lturn)
+			. |= 4
 
-	for (var/obj/structure/railing/R in get_step(src, Lturn))
-		if ((R.dir == src.dir) && R.anchored)
-			check |= 16
-			if (UpdateNeighbors)
-				R.update_icon()
-	for (var/obj/structure/railing/R in get_step(src, Rturn))
-		if ((R.dir == src.dir) && R.anchored)
-			check |= 1
-			if (UpdateNeighbors)
-				R.update_icon()
-
-	for (var/obj/structure/railing/R in get_step(src, (Lturn + src.dir)))
-		if ((R.dir == Rturn) && R.anchored)
-			check |= 64
-			if (UpdateNeighbors)
-				R.update_icon()
-	for (var/obj/structure/railing/R in get_step(src, (Rturn + src.dir)))
-		if ((R.dir == Lturn) && R.anchored)
-			check |= 4
-			if (UpdateNeighbors)
-				R.update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/obj/structure/railing/appearance_overlays()
-	. = list()
-	NeighborsCheck(FALSE)
-	// Railings beside and across from us join with ours: tell them when we move, turn or anchor.
-	appearance_notify_neighbours("[anchored]|[dir]|[x],[y],[z]", /obj/structure/railing)
-	//layer = (dir == SOUTH) ? FLY_LAYER : initial(layer) // wtf does this even do
-	if (!check || !anchored)//|| !anchored
-		icon_state = "[icon_modifier]railing0"
-	else
-		icon_state = "[icon_modifier]railing1"
-		if (check & 32)
-			. += image(icon, src, "[icon_modifier]corneroverlay")
-		if ((check & 16) || !(check & 32) || (check & 64))
-			. += image(icon, src, "[icon_modifier]frontoverlay_l")
-		if (!(check & 2) || (check & 1) || (check & 4))
-			. += image(icon, src, "[icon_modifier]frontoverlay_r")
-			if(check & 4)
-				switch (src.dir)
-					if (NORTH)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = 32)
-					if (SOUTH)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_x = -32)
-					if (EAST)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = -32)
-					if (WEST)
-						. += image(icon, src, "[icon_modifier]mcorneroverlay", pixel_y = 32)
+/obj/structure/railing/draw(datum/look/look)
+	..()
+	var/check = joined_sides(look)
+	if (!check || !anchored)
+		look.state("[icon_modifier]railing0")
+		return
+	look.state("[icon_modifier]railing1")
+	if (check & 32)
+		look.overlay(look_overlay_image(icon, "[icon_modifier]corneroverlay"))
+	if ((check & 16) || !(check & 32) || (check & 64))
+		look.overlay(look_overlay_image(icon, "[icon_modifier]frontoverlay_l"))
+	if (!(check & 2) || (check & 1) || (check & 4))
+		look.overlay(look_overlay_image(icon, "[icon_modifier]frontoverlay_r"))
+		if(check & 4)
+			switch (dir)
+				if (NORTH)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_x = 32))
+				if (SOUTH)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_x = -32))
+				if (EAST)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_y = -32))
+				if (WEST)
+					look.overlay(look_overlay_image(icon, "[icon_modifier]mcorneroverlay", pixel_y = 32))
 
 /obj/structure/railing/handle_rotation_verbs(angle, mob/user)
 	if(!can_touch(user))
 		return FALSE
-	. = ..()
-	if(.)
-		update_icon()
+	return ..()
 
-/obj/structure/railing/proc/railing_flip_effect(mob/user, obj/item/held, datum/interaction/interaction) // This will help push railing to remote places, such as open space turfs
-
+/// The old Flip Railing verb: this will help push railing to remote places, such as open space turfs.
+/obj/structure/railing/proc/railing_flip_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated())
-		return 0
+		return OP_OK
 
 	if (!can_touch(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
-		return
+		return OP_OK
 
 	if(anchored)
 		to_chat(user, "It is fastened to the floor therefore you can't flip it!")
-		return 0
+		return OP_OK
 
 	var/obj/occupied = can_climb_neighbor_turf(src)
 	if(occupied)
 		to_chat(user, "You can't flip \the [src] because there's \a [occupied] in the way.")
-		return 0
+		return OP_OK
 
 	src.forceMove(get_step(src, src.dir))
 	set_dir(turn(dir, 180))
-	update_icon()
-	return
-
-/obj/structure/railing/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/railing_item/harm,
-		/datum/interaction/entry_item/railing_item,
-	)
-	var/static/list/flip_spec = INTERACT_VERB("Flip Railing", PROC_REF(railing_flip_effect))
-	into += dq_interaction_from_spec(/obj/structure/railing, flip_spec)
-	..()
-
-/// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.
-/datum/interaction/entry_item/railing_item
-	id = "railing_item"
-	name = "Use"
-	effect = /obj/structure/railing/proc/interaction_item
+	return OP_OK
 
 /// Combat mode: a weak grab slams the victim's face against the railing.
-/datum/interaction/entry_item/railing_item/harm
-	id = "railing_item_harm"
-	name = "Slam"
-	stance = I_HURT
+/obj/structure/railing/proc/interaction_slam(datum/act/op/A)
+	return railing_item_used(A, TRUE)
 
-/obj/structure/railing/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: slam/throw a grabbed mob over the railing, or take a weapon hit.
+/obj/structure/railing/proc/interaction_item(datum/act/op/A)
+	return railing_item_used(A, FALSE)
+
+/obj/structure/railing/proc/railing_item_used(datum/act/op/A, harm)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Handle combat-mode grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -182,69 +168,64 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 			var/obj/occupied = can_climb_turf(src)
 			if(occupied)
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
-				return TRUE
+				return OP_OK
 			if (G.state < 2)
-				if(interaction.stance == I_HURT)
-					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
+				if(harm)
+					if (prob(15))	M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
 					visible_message(span_danger("[G?.grab_assailant()] slams [M]'s face against \the [src]!"))
 					play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
-					return TRUE
+					return OP_OK
 			else
 				if (get_turf(M) == get_turf(src))
 					M.forceMove(get_step(src, src.dir))
 				else
 					M.forceMove(get_turf(src))
-				M.status_at_least(EFFECT_WEAKENED, 5)
+				M.status_at_least(STAT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] throws [M] over \the [src]!"))
 			consume(W, user)
-			return TRUE
+			return OP_OK
 
 	else
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 		receive_weapon_hit(W, user)
 		user.setClickCooldown(user.get_attack_speed(W))
 
-	return TRUE
+	return OP_OK
 
-/obj/structure/railing/wrench_act(mob/user, obj/item/W)
-	if(anchored)
-		return TRUE
-	playsound(src, W.usesound, 50, 1)
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+/// A wrench only takes a loose railing apart.
+/obj/structure/railing/proc/loose(datum/act/op/A)
+	return (!anchored) ? null : MSG(req_failed)
 
-/obj/structure/railing/proc/wrench_act_timed_done(mob/user)
+/obj/structure/railing/proc/wrench_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
-/obj/structure/railing/welder_act(mob/user, obj/item/W)
-	if(get_integrity() >= max_integrity)
-		return TRUE
-	var/obj/item/weldingtool/F = W.get_welder()
-	if(F.welding)
-		playsound(src, F.usesound, 50, 1)
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
-	return TRUE
+/obj/structure/railing/proc/damaged(datum/act/op/A)
+	return (get_integrity_damage() > 0) ? null : MSG(req_failed)
 
-/obj/structure/railing/proc/welder_act_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
+/obj/structure/railing/proc/welder_sound(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, 1)
+
+/obj/structure/railing/proc/welder_act_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You repair some damage to %T%.")), 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 
-/obj/structure/railing/screwdriver_act(mob/user, obj/item/W)
-	act_message(user, src, others = span_info(span_bold("%U%") + " begins [anchored ? "unscrewing" : "fastening"] %T%."))
-	playsound(src, W.usesound, 75, 1)
-	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return TRUE
+MSG_DEF(railing/unscrewing, null, span_info(span_bold("%U%") + " begins unscrewing %T%."))
+MSG_DEF(railing/fastening, null, span_info(span_bold("%U%") + " begins fastening %T%."))
 
-/obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)
+/obj/structure/railing/proc/screwdriver_begins(datum/act/op/A)
+	return anchored ? /datum/msg/railing/unscrewing : /datum/msg/railing/fastening
+
+/obj/structure/railing/proc/screwdriver_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You have [anchored ? "fastened \the [src] to" : "unfastened \the [src] from"] the floor."))
-	update_icon()
 
 /obj/structure/railing/overhang/hazard
 	name = "hazardous ledge"

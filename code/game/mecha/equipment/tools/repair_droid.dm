@@ -6,30 +6,24 @@
 	energy_drain = 100
 	range = 0
 	var/health_boost = 2
-	var/icon/droid_overlay
 	var/static/list/repairable_damage = list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH)
 
 	step_delay = 1
 
 	equip_type = EQUIP_HULL
 
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/repair_droid, PERIODIC_SLOW, list("repairing", "chassis"))
+/obj/item/mecha_parts/mecha_equipment/repair_droid/var/repairing = FALSE
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/add_equip_overlay(obj/mecha/M as obj)
-	..()
-	if(!droid_overlay)
-		droid_overlay = new(src.icon, icon_state = "repair_droid")
-	M.add_overlay(droid_overlay)
-	return
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
+	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))
+	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/destroy()
-	chassis.cut_overlay(droid_overlay)
+/obj/item/mecha_parts/mecha_equipment/repair_droid/equip_look(datum/look/look)
 	..()
-	return
+	look.watch(src)
+	look.overlay(repairing ? "repair_droid_a" : "repair_droid", icon = icon)
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/detach()
-	chassis.cut_overlay(droid_overlay)
 	set_repairing(FALSE)
 	..()
 	return
@@ -39,24 +33,21 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/repair_droid, P
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
 
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs", PROC_REF(topic_toggle_repairs))
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(mob/user, list/args)
-	chassis.cut_overlay(droid_overlay)
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(datum/act/op/A)
 	if(repairing)
-		droid_overlay = new(src.icon, icon_state = "repair_droid")
 		set_repairing(FALSE)
 		src.mecha_log_message("Deactivated.")
 		set_ready_state(TRUE)
 	else
-		droid_overlay = new(src.icon, icon_state = "repair_droid_a")
 		src.mecha_log_message("Activated.")
 		set_repairing(TRUE)
-	chassis.add_overlay(droid_overlay)
 	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/repair_droid_step(datum/act/timer/A)
+	if(!chassis) // the droid only works mounted
+		return
 	var/repaired = 0
 	var/effective_boost = health_boost
 	if(mech_body_plan().has_affliction(chassis, MECHA_INT_SHORT_CIRCUIT))
@@ -96,7 +87,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs
 		else
 			set_ready_state(TRUE)
 			set_repairing(FALSE)
-			return PROCESS_KILL
+			return
 	else
 		set_ready_state(TRUE)
 	return

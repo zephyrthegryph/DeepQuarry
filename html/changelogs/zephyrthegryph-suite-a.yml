@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The pAI spritesheet is built after the pAI system registers its chassis, which cleared the boot runtime"
+  - bugfix: "Vent scrubbers redraw when their power state changes"
+  - bugfix: "An op chain or decline stops when the op that ran used up the held item or the target"
+  - bugfix: "Cult column disassembly no longer clashes with the girder secure op"
+  - code_imp: "Focused test runs find unit tests that declare only run_om()"

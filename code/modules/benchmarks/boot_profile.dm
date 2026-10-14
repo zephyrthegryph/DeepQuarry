@@ -1,7 +1,7 @@
 // Boot and bulk-destroy profiling (doc/rewrite/init_and_turfs.md).
 //
 // boot_profile: per-subsystem init times, and with -DBENCHMARK_DEEP_PROFILE
-// the per-type cost of Initialize(), materialize and LateInitialize() across
+// the per-type cost of Initialize(), materialize and the after_init() pass across
 // the whole boot. With --profile the BYOND proc profiler runs from the
 // Profiler subsystem's init (before map load) and its dump covers boot.
 //
@@ -16,23 +16,23 @@
 
 // ---- Deep-profile instrumentation state (only touched with -DBENCHMARK_DEEP_PROFILE) ----
 
-/// Timing frames for nested InitAtom()/LateInitialize() calls. Initialize()
+/// Timing frames for nested InitAtom()/after_init() calls. Initialize()
 /// often creates and initializes other atoms, so each frame subtracts its
 /// children to report self time.
 /datum/benchmark_init_stats
 	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us, max_self_us)
-	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/by_type = list()
 	var/depth = 0
 	/// child microseconds accumulated per depth
-	var/list/child_us = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/child_us = list()
 	/// qdel frames: child ms per depth and child ms at the last phase boundary
 	var/qdel_depth = 0
-	var/list/qdel_child_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
-	var/list/qdel_phase_mark_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_child_ms = list()
+	var/list/qdel_phase_mark_ms = list()
 	/// LIFECYCLE_PHASE_* id -> exclusive ms (children's time subtracted)
-	var/list/phase_self_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/phase_self_ms = list()
 	/// type -> list(qdels, self ms)
-	var/list/qdel_by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_by_type = list()
 
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
@@ -47,22 +47,14 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /proc/benchmark_mark_seconds(seconds)
 	// Keyed by subsystem type text: a deferred call's arguments may not hold datum assoc keys.
 	var/list/fired = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		fired["[S.type]"] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		fired["[S.type]"] = S.times_fired
 	// A mark a second, on timers (nothing sleeps).
-	om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), list(fired), 1, seconds)
+	after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), with = list(list(fired), 1, seconds))
 
 /proc/benchmark_mark_second(list/fired_box, i, seconds)
 	var/list/fired = fired_box[1]
 	var/list/names = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		var/key = "[S.type]"
-		var/delta = S.times_fired - fired[key]
-		if(delta > 0)
-			names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
-		fired[key] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		var/key = "[S.type]"
 		var/delta = S.times_fired - fired[key]
@@ -71,7 +63,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		fired[key] = S.times_fired
 	benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
 	if(i < seconds)
-		om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), fired_box, i + 1, seconds)
+		after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), with = list(fired_box, i + 1, seconds))
 
 /proc/benchmark_rust_mark(name)
 	var/list/heap = vg_verdigris_allocator_diagnostics()
@@ -212,7 +204,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		return null
 	try
 		return json_decode(text)
-	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+	catch
 		return null
 
 /// Summarises a proc profile: the top procs by self and by total time.
@@ -247,7 +239,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 
 /datum/benchmark/boot_profile
 	id = "boot_profile"
-	description = "Per-subsystem init time; per-type Initialize/materialize/LateInitialize cost (deep profile)"
+	description = "Per-subsystem init time; per-type Initialize/materialize/after_init cost (deep profile)"
 
 /datum/benchmark/boot_profile/Run()
 	// Read the boot profile before anything else runs.
@@ -255,7 +247,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		detail("boot_proc_profile", benchmark_profile_summary(benchmark_proc_profile(), 150))
 		SSprofiler.DumpFile(allow_yield = FALSE)
 		world.Profile(PROFILE_CLEAR)
-	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_seconds", Kernel.initializations_seconds, "s")
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")
@@ -384,15 +376,15 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	explosion(center, devastation, devastation * 2, devastation * 3, 0, FALSE, 0)
 	// Resolve: explosions idle, then lighting queues empty.
 	var/deadline = REALTIMEOFDAY + 3000
-	while(GLOB.explosion_service.awake || GLOB.explosion_service.pending_blast_count())
+	while(explosions_awake() || SSexplosions.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/resolved_at = REALTIMEOFDAY
 	while(length(SSlighting.sources_queue) || length(SSlighting.corners_queue) || length(SSlighting.objects_queue))
 		if(REALTIMEOFDAY > deadline)
 			fail("lighting did not settle within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/lit_at = REALTIMEOFDAY
 	wait_fires(SSair, 3)
 	var/list/profile
@@ -404,7 +396,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	metric("explosion_resolve_wall_ms", (resolved_at - started) * 100, "ms")
 	metric("explosion_lighting_settle_wall_ms", (lit_at - resolved_at) * 100, "ms")
-	var/list/diagnostics = GLOB.explosion_service.performance_diagnostics()
+	var/list/diagnostics = SSexplosions.performance_diagnostics()
 	detail("explosion_epoch", diagnostics)
 	metric("explosion_prepare_ms", diagnostics["epoch_prepare_ms"], "ms")
 	metric("explosion_turf_resolve_ms", diagnostics["epoch_resolve_ms"], "ms")

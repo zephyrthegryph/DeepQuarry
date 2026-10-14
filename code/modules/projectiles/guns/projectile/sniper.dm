@@ -7,8 +7,6 @@
 	icon_state = "heavysniper"
 	wielded_item_state = "heavysniper-wielded"
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
-	slot_flags = SLOT_BACK
 	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "14.5mm"
 	recoil = 5 //extra kickback
@@ -23,15 +21,19 @@
 	bolt_open = 0
 	special_weapon_handling = TRUE
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/heavysniper/draw(datum/look/look)
+	..()
+	look.state("heavysniper[bolt_open ? "-open" : ""]")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/heavysniper/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/heavysniper/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	bolt_open = !bolt_open
+	set_bolt_open(!bolt_open)
 	if(bolt_open)
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
@@ -42,9 +44,8 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 			to_chat(user, span_notice("You work the bolt open."))
 	else
 		to_chat(user, span_notice("You work the bolt closed."))
-		bolt_open = 0
+		set_bolt_open(0)
 	add_fingerprint(user)
-	update_icon()
 
 /obj/item/gun/projectile/heavysniper/special_check(mob/user)
 	if(bolt_open)
@@ -63,13 +64,26 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 	..()
 
 /obj/item/gun/projectile/heavysniper/ui_action_click(mob/user, actiontype)
-	heavysniper_verb_scope(user)
+	perform_scope_interaction(user, "heavysniper_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Scope", PROC_REF(heavysniper_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/heavysniper)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
+
+/// The heavysniper_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	heavysniper_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)
 
 ////////////// Dragunov Sniper Rifle //////////////
 
@@ -80,8 +94,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	item_state = "SVD"
 	wielded_item_state = "heavysniper-wielded" //Placeholder
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
-	slot_flags = SLOT_BACK // Needs a sprite.
 	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "7.62mm"
 	load_method = MAGAZINE
@@ -92,13 +104,29 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	magazine_type = /obj/item/ammo_magazine/m762svd
 	allowed_magazines = list(/obj/item/ammo_magazine/m762svd)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/SVD, "SVD{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/SVD/draw(datum/look/look)
+	..()
+	look.state("SVD[ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
-	svd_verb_scope(user)
+	perform_scope_interaction(user, "svd_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PROC_REF(svd_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/SVD)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))
+
+/// The svd_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/SVD/proc/svd_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	svd_verb_scope(A.actor, A.held)
+	return OP_OK
 
 /// Old Use Scope verb.
-/obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+/obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held)
+	toggle_scope(2.0, user)

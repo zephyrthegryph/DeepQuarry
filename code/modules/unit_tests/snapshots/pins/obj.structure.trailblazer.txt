@@ -1,0 +1,30 @@
+human|none menu: Climb
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Climb
+robot|none menu: Use
+robot|none click: Click: Use
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Climb
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Climb
+@obj.structure human|/obj/item/tool/wrench
++0 menu: Climb
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Climb
+@obj.structure human|/obj/item/multitool
++0 menu: Climb
+@obj.structure human|/obj/item/weldingtool
++0 menu: Climb
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Climb
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Climb
+@obj.structure human|/obj/item/card/id
++0 menu: Climb
+@obj.structure human|/obj/item
++0 menu: Climb
+keys: climb.climb, climb.climb_menu, drag_buckle, hand, melee_hit

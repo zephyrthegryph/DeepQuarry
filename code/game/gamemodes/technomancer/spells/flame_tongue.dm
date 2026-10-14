@@ -14,11 +14,12 @@
 	aspect = ASPECT_FIRE
 	var/obj/item/weldingtool/spell/welder = null
 
-DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingtool/spell)
+CAPABILITIES(/obj/item/spell/flame_tongue)
+	owns_one(nameof(welder), starts = /obj/item/weldingtool/spell)
+	look_glow(GLOW(3, 2, "#FF6A00"))
 
-/obj/item/spell/flame_tongue/Initialize(mapload, coreless)
+/obj/item/spell/flame_tongue/Initialize(mapload)
 	. = ..()
-	set_light(3, 2, l_color = "#FF6A00")
 	visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
 	welder.setWelding(1)
 
@@ -27,8 +28,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingt
 	name = "flame"
 	eye_safety_modifier = 3
 
-/obj/item/weldingtool/spell/periodic_step()
-	return
+/// The spell welder never burns or regenerates fuel.
+/obj/item/weldingtool/spell/burner_active(datum/act/A)
+	return FALSE
 
 //Needed to make the spell welder have infinite fuel.  Don't worry, it uses energy instead.
 /obj/item/weldingtool/spell/remove_fuel()
@@ -57,6 +59,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingt
 		if(welder && user && (welder.loc == user))
 			welder.forceMove(src)
 		else
-			own_take(src, nameof(welder))
+			rel_take(src, nameof(welder))
 			consume(src, user)
 			return

@@ -44,7 +44,7 @@
 	hud_state = "const_floor"
 
 /datum/spell/aoe_turf/conjure/floor/conjure_animation(atom/movable/overlay/animation, turf/target)
-	animation.icon_state = "cultfloor"
+	animation.set_icon_state("cultfloor")
 	flick("cultfloor",animation)
 	animation.expire(1 SECOND)
 
@@ -62,7 +62,7 @@
 	hud_state = "const_wall"
 
 /datum/spell/aoe_turf/conjure/wall/conjure_animation(atom/movable/overlay/animation, turf/target)
-	animation.icon_state = "cultwall"
+	animation.set_icon_state("cultwall")
 	flick("cultwall",animation)
 	animation.expire(1 SECOND)
 
@@ -108,12 +108,12 @@
 
 	hud_state = "const_pylon"
 
-/datum/spell/aoe_turf/conjure/pylon/cast(list/targets)
+/datum/spell/aoe_turf/conjure/pylon/cast(list/targets, mob/user)
 	..()
 	var/turf/spawn_place = pick(targets)
 	for(var/obj/structure/cult/pylon/P in turf_contents_of_type(spawn_place, /obj/structure/cult/pylon))
 		if(P.isbroken)
-			P.repair(usr)
+			P.repair(user)
 		continue
 	return
 
@@ -165,9 +165,10 @@
 	name = "Juggerwall"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "m_shield_cult"
-	light_color = "#B40000"
-	light_range = 2
 	invisibility = INVISIBILITY_NONE
+
+CAPABILITIES(/obj/effect/forcefield/cult)
+	configure(light_glow(color = "#B40000", range = 2))
 
 /obj/effect/forcefield/cult/cultify()
 	return
@@ -194,10 +195,10 @@
 		for(var/obj/machinery/door/door in contents_of(T))
 			if(istype(door,/obj/machinery/door/airlock))
 				var/obj/machinery/door/airlock/AL = door
-				cap_set(AL, CAP_BOLTED | CAP_WELDED, FALSE) //The spirits of the damned care not for your locks, or your welding tools.
+				AL.unbolt_unweld() //The spirits of the damned care not for your locks, or your welding tools.
 			else if(istype(door, /obj/machinery/door/firedoor))
 				var/obj/machinery/door/firedoor/FD = door
-				FD.blocked = 0
+				FD.set_blocked(0)
 			door.open(1)
 	return
 
@@ -220,13 +221,13 @@
 	hud_state = "const_shift"
 
 /datum/spell/targeted/ethereal_jaunt/shift/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "phase_shift"
-	animation.dir = target.dir
+	animation.set_icon_state("phase_shift")
+	animation.set_dir(target.dir)
 	flick("phase_shift",animation)
 
 /datum/spell/targeted/ethereal_jaunt/shift/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "phase_shift2"
-	animation.dir = target.dir
+	animation.set_icon_state("phase_shift2")
+	animation.set_dir(target.dir)
 	flick("phase_shift2",animation)
 
 /datum/spell/targeted/ethereal_jaunt/shift/jaunt_steam(mobloc)
@@ -425,10 +426,9 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	throwforce = 0
-	force = 0
 	show_examine = FALSE
 	core = null
+	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Used for combining spells. Pretty much any cult spell is unholy.
 	toggled = 0					// Mainly used for overlays.
@@ -436,8 +436,13 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
+CAPABILITIES(/obj/item/spell/construct)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+
+// ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
-	. = ..(mapload, TRUE)
+	. = ..()
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 
@@ -524,33 +529,38 @@
 		return TRUE
 
 	var/turf/T = get_turf(hit_atom)
-	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
-
-	T.add_overlay(target_image)
-	om_task_start(/datum/om/task/timed/construct_shot, user, src, duration = pre_shot_delay, aimed_at = hit_atom, marked = T, marker = target_image)
+	var/obj/effect/overlay/spell_target/marker = new(T)
+	perform_op(user, src, "charge_shot", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("aimed_at" = hit_atom, "marker" = marker))
 	return FALSE
+
+/// The mark on the tile a construct's shot is charging at.
+/obj/effect/overlay/spell_target
+	name = "target"
+	icon = 'icons/obj/spells.dmi'
+	icon_state = "target"
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
 /// A construct's charged shot: the target turf is marked while it charges, then it fires.
-/datum/om/task/timed/construct_shot
-	complete_proc = /obj/item/spell/construct/projectile/proc/shot_charged
-	cancel_proc = /obj/item/spell/construct/projectile/proc/shot_unmark
-	var/atom/aimed_at
-	var/turf/marked
-	var/image/marker
+CAPABILITIES(/obj/item/spell/construct/projectile)
+	op("charge_shot", ai(), takes("aimed_at", "marker"), wait(PROC_REF(shot_time)), on_interrupt(PROC_REF(shot_unmark)), then(PROC_REF(shot_charged)))
 
-/obj/item/spell/construct/projectile/proc/shot_unmark(datum/om/task/timed/construct_shot/task)
-	task.marked?.cut_overlay(task.marker)
-	qdel(task.marker)
+/obj/item/spell/construct/projectile/proc/shot_time(datum/act/op/A)
+	return pre_shot_delay
 
-/obj/item/spell/construct/projectile/proc/shot_charged(datum/om/task/timed/construct_shot/task)
-	shot_unmark(task)
-	if(!task.aimed_at)
-		return
+/obj/item/spell/construct/projectile/proc/shot_unmark(datum/act/op/A)
+	spent(A.arg("marker"))
+
+/obj/item/spell/construct/projectile/proc/shot_charged(datum/act/op/A)
+	shot_unmark(A)
+	var/atom/aimed_at = A.arg("aimed_at")
+	if(!aimed_at)
+		return OP_REFUSED
 	shot_ready = TRUE
-	on_ranged_cast(task.aimed_at, task.actor)
+	on_ranged_cast(aimed_at, A.actor)
 	shot_ready = FALSE
+	return OP_OK
 
 /obj/item/spell/construct/spawner
 	name = "spawner template"
@@ -584,23 +594,25 @@
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
-	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
 
 	muzzle_type = /obj/effect/projectile/muzzle/inversion
 	tracer_type = /obj/effect/projectile/tracer/inversion
 	impact_type = /obj/effect/projectile/impact/inversion
+
+CAPABILITIES(/obj/item/projectile/beam/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/energy/inversion
 	name = "inversion blast"
 	icon = 'icons/obj/projectiles_impact.dmi'
 	icon_state = "impact_invert"
 	damage = 30
-	armor_penetration = 60
 	color = "#ffffff"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+CAPABILITIES(/obj/item/projectile/energy/inversion)
+	configure(item_combat(armor_penetration = 60))
 
 //Harvester Pain Orb
 
@@ -625,12 +637,12 @@
 	desc = "A portal to some hellish place. Its screams wrack your body with pain.."
 	icon_state = "red_static_sphere"
 	time_to_die = null
-	light_range = 4
-	light_power = 5
-	light_color = "#FF0000"
 	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/agonizing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#FF0000"))
 
 /obj/effect/temporary_effect/pulse/agonizing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
@@ -648,9 +660,10 @@
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/construct/mend_occult)
+	configure(light_glow(color = "#FF5C5C", power = -2))
 
 /obj/item/spell/construct/mend_occult/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
@@ -665,8 +678,6 @@
 	icon_state = "toggled_old"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
 	cooldown = 15
 
@@ -679,7 +690,7 @@
 		var/mob/living/L = hit_atom
 		act_message(user, L, others = span_danger("%U% [attack_message] %T%, sending them flying!"))
 		play_sfx(src, SFX_PUNCH)
-		L.status_at_least(EFFECT_WEAKENED, 2)
+		L.status_at_least(STAT_WEAKENED, 2)
 		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
 		var/throwdir = get_dir(src, L)
 		L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
@@ -689,27 +700,31 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		om_task_start(/datum/om/task/timed/slam_slam_wall, user, src, duration = windup, W = W, attack_message = attack_message)
+		perform_op(user, src, "slam_wall", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("wall" = W, "attack_message" = attack_message, "windup" = windup))
 		return
 	consume(src, user)
 
-/obj/item/spell/construct/slam/proc/slam_lowered(datum/om/task/timed/slam_slam_wall/task)
-	var/mob/living/user = task.actor
+CAPABILITIES(/obj/item/spell/construct/slam)
+	configure(light_glow(color = "#FF5C5C", power = -2))
+	op("slam_wall", ai(), takes("wall", "attack_message", "windup"), wait(PROC_REF(slam_windup)), on_interrupt(PROC_REF(slam_lowered)), then(PROC_REF(slam_wall)))
+
+/obj/item/spell/construct/slam/proc/slam_windup(datum/act/op/A)
+	return A.arg("windup")
+
+/obj/item/spell/construct/slam/proc/slam_lowered(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, null, others = span_bold("%U%") + " lowers its fist.")
 
-/datum/om/task/timed/slam_slam_wall
-	complete_proc = /obj/item/spell/construct/slam/proc/slam_wall
-	cancel_proc = /obj/item/spell/construct/slam/proc/slam_lowered
-	var/turf/simulated/wall/W
-	var/attack_message
-
-/obj/item/spell/construct/slam/proc/slam_wall(datum/om/task/timed/slam_slam_wall/task)
-	var/mob/living/user = task.actor
-	var/turf/simulated/wall/W = task.W
-	var/attack_message = task.attack_message
+/obj/item/spell/construct/slam/proc/slam_wall(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/turf/simulated/wall/W = A.arg("wall")
+	var/attack_message = A.arg("attack_message")
+	if(QDELETED(W))
+		return OP_REFUSED
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
-	qdel(src)
+	spent(src)
+	return OP_OK
 
 
 ////////////////////////////
@@ -738,14 +753,14 @@
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 20
-	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
 	to_chat(M, span_danger("You hear a loud roar."))
@@ -753,14 +768,14 @@
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
-		M.status_at_least(EFFECT_CONFUSED, 150)
+		M.status_at_least(STAT_CONFUSED, 150)
 	else if (ear_safety > 1)
-		M.status_at_least(EFFECT_CONFUSED, 30)
+		M.status_at_least(STAT_CONFUSED, 30)
 	else if (!ear_safety)
-		M.status_at_least(EFFECT_STUNNED, 10)
-		M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(STAT_STUNNED, 10)
+		M.status_at_least(STAT_WEAKENED, 2)
 		M.set_ear_damage(M.ear_damage + (rand(1, 10)))
-		M.status_at_least(EFFECT_DEAFENED, 15)
+		M.status_at_least(STAT_DEAFENED, 15)
 		// M.deaf_loop.start() // used Downstream
 	if (M.ear_damage >= 15)
 		to_chat(M, span_danger("Your ears start to ring badly!"))
@@ -800,19 +815,19 @@
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
 	mob_bonus_damage = 45
-	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
 	impact_type = /obj/effect/projectile/impact/lightning
 
+CAPABILITIES(/obj/item/projectile/beam/banishment)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
+
 /obj/item/projectile/beam/banishment/proc/banish(mob/living/simple_mob/construct)
 	if(construct)
-		construct.status_at_least(EFFECT_STUNNED, 10)
-		construct.status_at_least(EFFECT_WEAKENED, 2)
+		construct.status_at_least(STAT_STUNNED, 10)
+		construct.status_at_least(STAT_WEAKENED, 2)
 	else
 		return
 
@@ -848,21 +863,21 @@
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 5
 	injury_kind = INJURY_BLUNT
-	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
 	impact_type = /obj/effect/projectile/impact/tungsten
 
+CAPABILITIES(/obj/item/projectile/beam/force_beam)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
+
 /obj/item/projectile/beam/force_beam/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))
 		var/mob/living/L = target
 		if(prob(40) && !blocked)
-			L.status_at_least(EFFECT_STUNNED, 1)
-			L.status_at_least(EFFECT_CONFUSED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
+			L.status_at_least(STAT_CONFUSED, 1)
 
 
 ///Deacon Healing Sphere
@@ -897,12 +912,12 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "blue_static_sphere"
 	time_to_die = null
-	light_range = 4
-	light_power = 5
-	light_color = "#64B4E6"
 	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/soothing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#64B4E6"))
 
 /obj/effect/temporary_effect/pulse/soothing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
@@ -949,9 +964,10 @@
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#64B4E6"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/construct/mend_purity)
+	configure(light_glow(color = "#64B4E6", power = -2))
 
 /obj/item/spell/construct/mend_purity/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
@@ -994,7 +1010,7 @@
 				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
 				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
-			for(var/obj/item/organ/E in H.bad_external_organs)
+			for(var/obj/item/organ/E in H.damaged_limbs())
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()

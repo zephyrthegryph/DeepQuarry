@@ -16,8 +16,6 @@
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = 0
 	movement_cooldown = 0.75 //roughly a bit faster than a person
@@ -30,7 +28,6 @@
 	melee_damage_upper = 1
 	attacktext = list("nips", "bumps", "scratches")
 
-	vore_taste = "sand"
 
 	min_oxy = 16 //Require atleast 16kPA oxygen
 	minbodytemp = 223		//Below -50 Degrees Celcius
@@ -48,43 +45,42 @@
 	var/obj/item/clothing/head/hat = null // The hat the armadillo may be wearing.
 
 //Hat simulator stolen from slime code.
-/mob/living/simple_mob/animal/passive/armadillo/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "sand"))
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("armadillo_item", item(/obj/item), then(PROC_REF(armadillo_interaction_item)))
+	op("armadillo_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(armadillo_interaction_hand_grab)))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
-	. = list()
-	. += ..()
+/// The grab-stance input of armadillo_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand_grab(datum/act/op/A)
+	return armadillo_interaction_hand(A, I_GRAB)
 
-	// Hat simulator.
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7 // Smol
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/passive/armadillo/draw(datum/look/look)
+	..()
+	look.hat(hat, -7) // Smol
 
 // Clicked on by empty hand.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
-	INTERACT_ITEM(null, PROC_REF(armadillo_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(armadillo_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
-/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction.stance == I_GRAB && hat)
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	if(stance == I_GRAB && hat)
 		remove_hat(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 /// Old attackby: hat simulator.
-/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Hat simulator
 /mob/living/simple_mob/animal/passive/armadillo/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
@@ -95,44 +91,40 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 		to_chat(user, span_warning("\The [src] is already wearing \a [hat]."))
 		return
 	else
-		if(!own_set(src, nameof(src.hat), new_hat, user = user))
+		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/remove_hat(mob/living/user)
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-		update_icon()
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /obj/item/holder/armadillo
-	default_worn_icon = 'icons/mob/head.dmi'
 	//item_state = "armadillo_rest" //Commented here as a reminder that holders will always set the item_state to icon_rest. You cannot override it like this.
+
+CAPABILITIES(/obj/item/holder/armadillo)
+	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
 /mob/living/simple_mob/animal/passive/armadillo/torta
 	name = "Torta"
 	desc = "A small, armored mammal. It seems to be territorial and protective of the dorms."
 
-/mob/living/simple_mob/animal/passive/armadillo/torta/Initialize(mapload)
-	. = ..()
-	if(hat)
-		update_icon()
-
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")
 	emote_see = list("rolls in place", "shuffles", "scritches at something")
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/armadillo/torta, "hat", /obj/item/clothing/head/sombrero)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo/torta)
+	owns_one(nameof(hat), starts = /obj/item/clothing/head/sombrero, on_destroy = ON_DESTROY_SPILL)
+

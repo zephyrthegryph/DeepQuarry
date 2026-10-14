@@ -44,13 +44,16 @@
 	/// field -> minimum number of distinct values
 	var/list/diversity_targets
 
+CAPABILITIES(/datum/contract_opportunity_signal)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_opportunity_signal/New(_id, _event_type, _target = 1, _value_field = null)
 	. = ..()
 	id = _id
 	event_type = _event_type
 	target = _target
 	value_field = _value_field
-	own_set(src, nameof(filter), new /datum/contract_event_filter)
+	rel_set(src, nameof(filter), new /datum/contract_event_filter)
 	diversity_targets = list()
 
 
@@ -106,8 +109,13 @@
 	EXPIRY_DECLARE(last_event_at)
 	var/latched = FALSE
 	var/list/facts_by_signal
+	/// Owns the records indexed by facts_by_signal; the nested maps retain their lookup order.
+	var/list/observations
 	/// The last event that revised this window during an open batch (a relation; damage_batch.dm).
 	var/datum/contract_event/batch_event
+
+CAPABILITIES(/datum/contract_opportunity_window)
+	owns_many(nameof(observations), /datum/contract_opportunity_observation)
 
 /datum/contract_opportunity_window/New(_key, _bucket, datum/contract_opportunity_rule/rule)
 	. = ..()
@@ -124,7 +132,7 @@
 	for(var/signal_id in facts_by_signal)
 		var/list/facts = facts_by_signal[signal_id]
 		for(var/fact_key in facts)
-			qdel(facts[fact_key])
+			rel_remove(src, nameof(observations), facts[fact_key])
 	..()
 
 /datum/contract_opportunity_window/proc/prune(datum/contract_opportunity_rule/rule)
@@ -136,7 +144,7 @@
 			if(observation.occurred_at >= cutoff)
 				continue
 			facts -= fact_key
-			qdel(observation)
+			rel_remove(src, nameof(observations), observation)
 
 /datum/contract_opportunity_window/proc/revise(datum/contract_opportunity_signal/signal, datum/contract_event/event)
 	var/stable_fact_id = event.fact_id || event.occurrence_id
@@ -151,11 +159,11 @@
 		if(event.fact_revision <= 0)
 			return FALSE
 		facts -= fact_key
-		qdel(previous)
+		rel_remove(src, nameof(observations), previous)
 	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
-	facts[fact_key] = new /datum/contract_opportunity_observation(fact_key, event, signal)
+	facts[fact_key] = rel_add(src, nameof(observations), new /datum/contract_opportunity_observation(fact_key, event, signal))
 	while(length(facts) > CONTRACT_OPPORTUNITY_FACT_LIMIT)
 		var/oldest_key
 		var/oldest_time = INFINITY
@@ -166,7 +174,7 @@
 				oldest_time = candidate.occurred_at
 		var/datum/contract_opportunity_observation/expired = facts[oldest_key]
 		facts -= oldest_key
-		qdel(expired)
+		rel_remove(src, nameof(observations), expired)
 	return TRUE
 
 /datum/contract_opportunity_window/proc/signal_snapshot(datum/contract_opportunity_signal/signal)
@@ -228,9 +236,12 @@
 	/// event field -> offer-context field
 	var/list/context_fields
 
+CAPABILITIES(/datum/contract_opportunity_rule)
+	owns_many(nameof(signals))
+
 /datum/contract_opportunity_rule/New()
 	. = ..()
-	own_take_all(src, nameof(signals))
+	rel_take_all(src, nameof(signals))
 	context_fields = list()
 	configure()
 
@@ -240,13 +251,13 @@
 
 /datum/contract_opportunity_rule/proc/add_signal(datum/contract_opportunity_signal/signal)
 	if(!signal?.id || !signal.event_type)
-		qdel(signal)
+		spent(signal)
 		return null
 	for(var/datum/contract_opportunity_signal/existing in signals)
 		if(existing.id == signal.id)
-			qdel(signal)
+			spent(signal)
 			return null
-	own_add(src, nameof(signals), signal)
+	rel_add(src, nameof(signals), signal)
 	return signal
 
 /datum/contract_opportunity_rule/proc/forward_context(event_field, context_field = null)
@@ -331,19 +342,19 @@
 	opportunity_rules_by_event = list()
 	opportunity_windows = list()
 	opportunity_cooldowns = list()
-	opportunity_history = list()
+	rel_clear(src, nameof(opportunity_history))
 	for(var/rule_type as anything in subtypesof(/datum/contract_opportunity_rule))
 		if(is_abstract(rule_type))
 			continue
 		var/datum/contract_opportunity_rule/rule = new rule_type
 		if(!rule.id || !length(rule.signals) || opportunity_rules[rule.id])
-			qdel(rule)
+			spent(rule)
 			continue
 		if(rule.definition_id && !definitions[rule.definition_id])
 			stack_trace("Opportunity rule [rule.id] targets missing contract definition [rule.definition_id].")
-			qdel(rule)
+			spent(rule)
 			continue
-		opportunity_rules[rule.id] = rule
+		opportunity_rules[rule.id] = rule // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
 			LAZYINITLIST(opportunity_rules_by_event[signal.event_type])
 			opportunity_rules_by_event[signal.event_type] |= rule
@@ -352,7 +363,7 @@
 	// Machinery initialization and pregame setup can legitimately publish
 	// transient state. They are useful to active contracts in tests, but must
 	// never manufacture live-round opportunities.
-	if(!contract_unit_test_mode() && (!SSticker || SSticker.current_state < GAME_STATE_PLAYING))
+	if(!contract_unit_test_mode() && (!SSticker || ticker_current_state() < GAME_STATE_PLAYING))
 		return FALSE
 	var/list/rules = opportunity_rules_by_event?[event?.event_type]
 	if(!length(rules))
@@ -366,7 +377,7 @@
 		var/datum/contract_opportunity_window/window = opportunity_windows[window_key]
 		if(!window)
 			window = new(window_key, bucket, rule)
-			opportunity_windows[window_key] = window
+			opportunity_windows[window_key] = window // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 		// A batch (damage_batch.dm) prunes each window once and evaluates it
 		// once, when the batch ends, with its last event.
 		var/batching = contract_batch_depth > 0
@@ -413,11 +424,11 @@
 	opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + rule.cooldown
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
-	opportunity_history += history_entry
+	rel_add(src, nameof(opportunity_history), history_entry)
 	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
 		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
-		opportunity_history.Cut(1, 2)
-		qdel(expired)
+		rel_remove(src, nameof(opportunity_history), expired)
+		lapsed(expired)
 
 /datum/system/contracts/proc/withdraw_unaccepted_opportunity(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, reason)
 	var/offer_key = "opportunity:[rule.id]:[window.bucket]"

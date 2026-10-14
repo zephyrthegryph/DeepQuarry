@@ -5,11 +5,7 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "rcd"
 	item_state = "rcd"
-	drop_sound = SFX_ITEMS_DROP_GUN
-	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	flags = NOBLUDGEON
-	force = 10
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -40,8 +36,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 /obj/item/rcd/proc/consume_resources(amount)
 	if(!can_afford(amount))
 		return FALSE
-	stored_matter -= amount
-	update_icon()
+	set_stored_matter(stored_matter - amount)
 	return TRUE
 
 // Useful for testing before actually paying (e.g. before a timed action).
@@ -61,7 +56,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 // Used to call rcd_act() on the atom hit.
 /obj/item/rcd/proc/use_rcd(atom/A, mob/living/user)
-	if(!allow_concurrent_building && om_busy(src)) // an operation in progress claims the RCD
+	if(!allow_concurrent_building && op_claimed(src)) // an operation in progress claims the RCD
 		to_chat(user, span_warning("\The [src] is busy finishing its current operation, be patient."))
 		return FALSE
 
@@ -81,7 +76,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	play_sfx(src, SFX_MACHINES_CLICK)
 
 	var/output_envelope = power_output_envelope(rcd_results[RCD_VALUE_COST])
-	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed / output_envelope
+	var/true_delay = rcd_results[RCD_VALUE_DELAY] * tooling_of(src).speed / output_envelope
 
 	var/datum/beam/rcd_beam = null
 	if(ranged)
@@ -91,23 +86,16 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 
 	perform_effect(A, true_delay)
-	var/started = om_task_start(/datum/om/task/timed/rcd_build, user, A, duration = true_delay, receiver = src, rcd_results = rcd_results, output_envelope = output_envelope, beam = rcd_beam, busy = (allow_concurrent_building ? null : src))
-	if(istext(started))
+	var/datum/op_result/started = perform_op(user, src, allow_concurrent_building ? "build_concurrent" : "build", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("target" = A, "delay" = true_delay, "rcd_results" = rcd_results, "output_envelope" = output_envelope, "beam" = rcd_beam))
+	if(!started || (started.outcome & ACT_REFUSED))
 		use_rcd_interrupted(A, rcd_beam)
 	return FALSE
 
-/// An RCD operation on the target: its beam shows while it runs.
-/datum/om/task/timed/rcd_build
-	complete_proc = /obj/item/rcd/proc/use_rcd_timed_done
-	cancel_proc = /obj/item/rcd/proc/use_rcd_cancelled
-	unheld = list("beam")
-	var/list/rcd_results
-	var/output_envelope
-	/// Ends itself.
-	var/datum/beam/beam
+/obj/item/rcd/proc/build_delay(datum/act/op/A)
+	return A.arg("delay")
 
-/obj/item/rcd/proc/use_rcd_cancelled(datum/om/task/timed/rcd_build/task)
-	use_rcd_interrupted(task.target, task.beam)
+/obj/item/rcd/proc/use_rcd_cancelled(datum/act/op/A)
+	use_rcd_interrupted(A.arg("target"), A.arg("beam"))
 
 /// The operation stopped (they moved, or it never started): kill the beam and the effect.
 /obj/item/rcd/proc/use_rcd_interrupted(atom/A, datum/beam/rcd_beam)
@@ -116,32 +104,33 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	if(A)
 		cleanup_effect(A)
 
-/obj/item/rcd/proc/use_rcd_timed_done(datum/om/task/timed/rcd_build/task)
-	var/atom/A = task.target
-	var/mob/living/user = task.actor
-	var/list/rcd_results = task.rcd_results
-	var/output_envelope = task.output_envelope
-	var/datum/beam/rcd_beam = task.beam
+/obj/item/rcd/proc/use_rcd_timed_done(datum/act/op/op_act)
+	var/atom/A = op_act.arg("target")
+	var/mob/living/user = op_act.actor
+	var/list/rcd_results = op_act.arg("rcd_results")
+	var/output_envelope = op_act.arg("output_envelope")
+	var/datum/beam/rcd_beam = op_act.arg("beam")
 	if(!QDELETED(rcd_beam))
 		rcd_beam.End()
+	if(QDELETED(A)) // the target went while the work ran
+		return OP_FAILED
 	// Doing another check in case we lost matter during the delay for whatever reason.
 	if(!can_afford(rcd_results[RCD_VALUE_COST] * output_envelope))
 		to_chat(user, span_warning("\The [src] lacks the required material to finish the operation."))
 		cleanup_effect(A)
-		return FALSE
+		return OP_FAILED
 	if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 		consume_resources(rcd_results[RCD_VALUE_COST] * output_envelope)
 		record_enhanced_output(rcd_results[RCD_VALUE_COST], output_envelope)
 		play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 		cleanup_effect(A)
-		return TRUE
+		return OP_OK
+	return OP_FAILED
 
 // RCD variants.
 
 // This one starts full.
-/obj/item/rcd/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+TYPE_TABLE(/obj/item/rcd/loaded, rcd_start_loaded, TRUE)
 
 // This one makes cooler walls by using an alternative material.
 /obj/item/rcd/shipwright
@@ -150,9 +139,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	used in the construction of hulls for starships. Reload with compressed matter cartridges."
 	material_to_use = MAT_STEELHULL
 
-/obj/item/rcd/shipwright/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+TYPE_TABLE(/obj/item/rcd/shipwright/loaded, rcd_start_loaded, TRUE)
 
 /obj/item/rcd/advanced
 	name = "advanced rapid construction device"
@@ -160,12 +147,12 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	Reload with compressed matter cartridges."
 	icon_state = "adv_rcd"
 	ranged = TRUE
-	toolspeed = 0.5 // Twice as fast.
 	max_stored_matter = RCD_MAX_CAPACITY * 3 // Three times capacity.
 
-/obj/item/rcd/advanced/loaded/Initialize(mapload)
-	stored_matter = max_stored_matter
-	return ..()
+CAPABILITIES(/obj/item/rcd/advanced)
+	configure(item_tooling(speed = 0.5))
+
+TYPE_TABLE(/obj/item/rcd/advanced/loaded, rcd_start_loaded, TRUE)
 
 // Electric RCDs.
 // Currently just a base for the mounted RCDs.
@@ -179,10 +166,8 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	var/make_cell = TRUE // If false, initialize() won't spawn a cell for this.
 	var/electric_cost_coefficent = 83.33 // Higher numbers make it less efficent. 86.3... means it should matche the standard RCD capacity on a 10k cell.
 
-/obj/item/rcd/electric/Initialize(mapload)
-	if(make_cell)
-		own_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
-	return ..()
+CAPABILITIES(/obj/item/rcd/electric)
+	owns_one(nameof(cell), /obj/item/cell, starts = when(nameof(make_cell), /obj/item/cell/high))
 
 
 /obj/item/rcd/electric/get_cell()
@@ -242,14 +227,18 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	can_remove_rwalls = TRUE
 	desc = "A device used to rapidly build and deconstruct. It runs directly off of electricity, drawing directly from your cell."
 	electric_cost_coefficent = 41.66 // Twice as efficent, out of pity.
-	toolspeed = 0.5 // Twice as fast, since borg versions typically have this.
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/borg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/rcd/electric/mounted/borg/swarm
 	can_remove_rwalls = FALSE
 	name = "Rapid Assimilation Device"
 	ranged = TRUE
-	toolspeed = 0.7
 	material_to_use = MAT_STEELHULL
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/borg/swarm)
+	configure(item_tooling(speed = 0.7))
 
 /obj/item/rcd/electric/mounted/borg/lesser
 	can_remove_rwalls = FALSE
@@ -260,7 +249,9 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 // RCDs for Mechs.
 /obj/item/rcd/electric/mounted/mecha
 	ranged = TRUE
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/mecha)
+	configure(item_tooling(speed = 0.5))
 
 // Infinite use RCD for debugging/adminbuse.
 /obj/item/rcd/debug
@@ -271,7 +262,6 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	ranged = TRUE
 	can_remove_rwalls = TRUE
 	allow_concurrent_building = TRUE
-	toolspeed = 0.25 // Four times as fast.
 
 /obj/item/rcd/debug/can_afford(amount)
 	return TRUE
@@ -279,12 +269,15 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 /obj/item/rcd/debug/consume_resources(amount)
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/rcd/debug, INTERACT_INSERT(/obj/item/rcd_ammo, PROC_REF(debug_rcd_refuse_ammo), "Load"))
+CAPABILITIES(/obj/item/rcd/debug)
+	configure(item_tooling(speed = 0.25))
+	op("debug_rcd_refuse_ammo", item(/obj/item/rcd_ammo), label("Load"), then(PROC_REF(debug_rcd_refuse_ammo)))
 
 /// Old attackby: refuses cartridges; anything else falls through to the RCD's loading.
-/obj/item/rcd/debug/proc/debug_rcd_refuse_ammo(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rcd/debug/proc/debug_rcd_refuse_ammo(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("\The [src] makes its own material, no need to add more."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/rcd/debug/display_resources()
 	return "It has UNLIMITED POWER!"
@@ -315,13 +308,27 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	var/ammostate
 	var/list/effects
 
 	var/static/image/radial_image_airlock = image(icon = 'icons/mob/radial.dmi', icon_state = "airlock")
 	var/static/image/radial_image_decon = image(icon= 'icons/mob/radial.dmi', icon_state = "delete")
 	var/static/image/radial_image_grillewind = image(icon = 'icons/mob/radial.dmi', icon_state = "grillewindow")
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
+
+CAPABILITIES(/obj/item/rcd)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+	owns_many(nameof(effects))
+	// An operation on the target: its beam shows while it runs. The RCD is claimed meanwhile (the concurrent kind is not).
+	op("build", ai(), claims(CLAIM_TARGET), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
+	op("build_concurrent", ai(), takes("target", "delay", "rcd_results", "output_envelope", "beam"), wait(PROC_REF(build_delay), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(use_rcd_cancelled)), then(PROC_REF(use_rcd_timed_done)))
+	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
+	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
+	op("close", topic("close"), then(PROC_REF(topic_close)))
+	op("access", topic("access", arg("access", schema_text(16), optional = TRUE)), then(PROC_REF(topic_access)))
+	derives(nameof(stored_matter), PROC_REF(starting_matter))
 
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo
@@ -335,26 +342,36 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 
-/obj/item/rcd/Initialize(mapload)
-	. = ..()
-	update_icon()
+TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_start_loaded, FALSE)
 
-/// Stored matter as a percentage of capacity (the charge overlay level).
-/obj/item/rcd/proc/appearance_matter_percent()
-	return max_stored_matter ? (stored_matter / max_stored_matter) * 100 : 0
+/// A loaded RCD starts full (derives(), at init).
+/obj/item/rcd/proc/starting_matter()
+	return TYPE_TABLE_GET(src, rcd_start_loaded) ? max_stored_matter : stored_matter
 
-/obj/item/rcd/proc/appearance_matter_empty()
-	return !round((stored_matter / max_stored_matter) * 10, 1)
+TRACKED(/obj/item/rcd, max_stored_matter)
 
-APPEARANCE_TEMPLATE(/obj/item/rcd, "{initial(icon_state)}{appearance_matter_empty?_empty:}")
-APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_state)}_charge%d")
+/// The charge level shown, 0..10, by how full the matter store is.
+/obj/item/rcd/proc/matter_level()
+	return max_stored_matter ? clamp(round((stored_matter / max_stored_matter) * 10, 1), 0, 10) : 0
+
+/// Whether the look shows the matter store (an electric RCD runs off a cell and draws none).
+/obj/item/rcd/proc/shows_matter()
+	return TRUE
+
+/obj/item/rcd/draw(datum/look/look)
+	..()
+	if(!shows_matter())
+		return
+	var/level = matter_level()
+	look.state("[initial(icon_state)][level ? "" : "_empty"]")
+	look.overlay("[initial(icon_state)]_charge[level]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	own_put(src, nameof(effects), A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
+	rel_add(src, nameof(effects), new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]), A)
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		own_put(src, nameof(effects), A, null) // drops the key and disposes of (deletes) the owned effect
+		rel_add(src, nameof(effects), null, A) // drops the key and disposes of (deletes) the owned effect
 
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))
@@ -380,7 +397,8 @@ APPEARANCE_LEVEL(/obj/item/rcd, "appearance_matter_percent", 10, "{initial(icon_
 	return TRUE
 
 //////////////////
-APPEARANCE_NONE(/obj/item/rcd/electric)
+/obj/item/rcd/electric/shows_matter()
+	return FALSE
 
 /obj/item/rcd/shipwright
 	icon_state = "swrcd"
@@ -407,32 +425,40 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
-/obj/effect/constructing_effect/Initialize(mapload, rcd_delay, rcd_status)
-	. = ..()
-	start_animation(rcd_delay, rcd_status)
+CAPABILITIES(/obj/effect/constructing_effect)
+	param(nameof(rcd_delay), pos = 1)
+	param(nameof(rcd_status), pos = 2, apply = PROC_REF(animate_build))
+
+/// The build's delay and status (its constructor params).
+/obj/effect/constructing_effect/var/rcd_delay
+/obj/effect/constructing_effect/var/rcd_status
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/constructing_effect/proc/animate_build(status)
+	start_animation(rcd_delay, status)
 
 /// Plays the construction animation for `delay` (shorter states for faster work), then the end animation.
 /obj/effect/constructing_effect/proc/start_animation(delay, status)
-	icon_state = "rcd"
-	if (delay < 10)
-		icon_state += "_shortest"
-	else if (delay < 20)
-		icon_state += "_shorter"
-	else if (delay < 37)
-		icon_state += "_short"
+	set_icon_state("rcd")
+	if (delay < 1 SECOND)
+		set_icon_state(icon_state + ("_shortest"))
+	else if (delay < 2 SECONDS)
+		set_icon_state(icon_state + ("_shorter"))
+	else if (delay < 3.7 SECONDS)
+		set_icon_state(icon_state + ("_short"))
 	if (status == RCD_DECONSTRUCT)
-		icon_state += "_reverse"
-	om_after(src, delay, PROC_REF(end_animation), status)
+		set_icon_state(icon_state + ("_reverse"))
+	after(src, delay, PROC_REF(end_animation), with = list(status))
 
 /obj/effect/constructing_effect/proc/end_animation(status)
 	if (status == RCD_DECONSTRUCT)
-		icon_state = "rcd_end_reverse"
+		set_icon_state("rcd_end_reverse")
 	else
-		icon_state = "rcd_end"
-	om_after(src, 15, PROC_REF(end))
+		set_icon_state("rcd_end")
+	after(src, 1.5 SECONDS, PROC_REF(end))
 
 /obj/effect/constructing_effect/proc/end()
-	qdel(src)
+	consume(src)
 // end
 
 /// The index of `mode` in this RCD's modes, or 0 when it has no such mode.

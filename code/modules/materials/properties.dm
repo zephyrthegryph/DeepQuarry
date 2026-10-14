@@ -22,7 +22,7 @@
 	return max(ONE_ATMOSPHERE, effective_strength * max(wall_thickness_mm, 0.1) / max(radius_mm, 1) * fracture_factor * ONE_ATMOSPHERE)
 
 /datum/material/proc/corrosion_rate(reagent_id, temperature = T20C)
-	var/datum/reagent/chemical = chemistry_service().chemical_reagents[reagent_id]
+	var/datum/reagent/chemical = SSchemistry.ready().chemical_reagents[reagent_id]
 	var/aggression = chemical?.material_corrosivity || 0
 	var/temperature_factor = max(0.25, 1 + (temperature - T20C) / 300)
 	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)
@@ -44,4 +44,4 @@
 	var/attenuation = max(0, M.radiation_resistance + M.density / 8) * max(thickness_mm, 0) / 100
 	return clamp(2.718281828 ** (-attenuation), 0, 1)
 
-DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)

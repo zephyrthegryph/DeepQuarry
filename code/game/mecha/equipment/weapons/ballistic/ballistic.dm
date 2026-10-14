@@ -16,8 +16,9 @@
 	src.mecha_log_message("Rearmed [src.name].")
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic, "rearm", PROC_REF(topic_rearm))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic)
+	op("rearm", topic("rearm"), then(PROC_REF(topic_rearm)))
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/topic_rearm(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/proc/topic_rearm(datum/act/op/A)
 	src.rearm()
 	return

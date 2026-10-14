@@ -22,7 +22,7 @@
 	suit_overlay_active =   "stealth_active"
 	suit_overlay_inactive = "stealth_inactive"
 
-/obj/item/rig_module/stealth_field/activate()
+/obj/item/rig_module/stealth_field/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return 0
@@ -36,7 +36,7 @@
 
 	act_message(H, null, others = "%U% vanishes into thin air!")
 
-/obj/item/rig_module/stealth_field/deactivate()
+/obj/item/rig_module/stealth_field/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return 0

@@ -1,0 +1,29 @@
+@obj.item.storage human|none
+@obj.item.storage robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.storage human|/obj/item/tool/screwdriver
+@obj.item.storage human|/obj/item/tool/crowbar
+@obj.item.storage human|/obj/item/tool/wrench
+@obj.item.storage human|/obj/item/tool/wirecutters
+@obj.item.storage human|/obj/item/multitool
+@obj.item.storage human|/obj/item/weldingtool
+@obj.item.storage human|/obj/item/stack/cable_coil
+@obj.item.storage human|/obj/item/stack/material/steel
+@obj.item.storage human|/obj/item/card/id
+-click: Click: Put in
++3 menu: Toggle (refused: Access denied.)
++5 click: Click: Toggle
+@obj.item.storage human|/obj/item/kit
+@obj.item.storage human|/obj/item/storage
+@obj.item.storage human|/obj/item
+@obj human|/obj/item/lightreplacer
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Put in
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+@obj human|/obj/item/melee/energy/blade
++2 menu: Put in
+keys: collect_item, drag_buckle, emag.subvert, emag.use, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lock.toggle, locked_click, move_to_top, pick_up_item, slice, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

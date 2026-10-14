@@ -1,0 +1,2 @@
+/world/IsBanned()
+	query.Execute()

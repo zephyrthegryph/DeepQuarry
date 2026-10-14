@@ -18,65 +18,48 @@
 	//2 = authenticate
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
+
+MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 
 /// Old attack_ai: refuse silicons.
-/obj/machinery/keycard_auth/proc/keycard_auth_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_warning("A firewall prevents you from interfacing with this device!"))
-	return TRUE
+/obj/machinery/keycard_auth/proc/keycard_auth_silicon_refuse(datum/act/op/A)
+	to_chat(A.actor, span_warning("A firewall prevents you from interfacing with this device!"))
+	return OP_OK
 
-/obj/machinery/keycard_auth/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_BLOCKING
+/obj/machinery/keycard_auth/proc/screwdriver_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
+/obj/machinery/keycard_auth/proc/screwdriver_begins(datum/act/op/A)
+	return msg_text("You begin removing the faceplate from the [src]", null)
+
+/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You remove the faceplate from the [src]")
-	var/obj/structure/frame/A = new /obj/structure/frame(loc)
+	var/obj/structure/frame/frame = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	own_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
-	board.forceMove(A)
-	own_move(board, A, nameof(A.circuit)) // the board goes from this machine to the frame
-	A.need_circuit = FALSE
-	A.pixel_x = pixel_x
-	A.pixel_y = pixel_y
-	A.set_dir(dir)
-	A.set_anchored(TRUE)
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	board.forceMove(frame)
+	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame
+	frame.need_circuit = FALSE
+	frame.pixel_x = pixel_x
+	frame.pixel_y = pixel_y
+	frame.set_dir(dir)
+	frame.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(C, /obj/item/circuitboard))
-			C.forceMove(A)
+			C.forceMove(frame)
 			continue
 		C.forceMove(loc)
-	own_transfer(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
-	A.state = FRAME_WIRED
-	A.update_icon()
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/keycard_auth/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(keycard_auth_silicon_refuse)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/keycard_auth_swipe,
-		/datum/interaction/machine_hand/ungated/keycard_auth_open_ui,
-	)
-	..()
+	rel_move(src, nameof(forensic_data), frame, nameof(frame.forensic_data)) //carry crime data over.
+	frame.set_state(FRAME_WIRED)
+	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 /// Old attackby never called ..(): every item is swallowed by this, id cards checked for access.
-/datum/interaction/machine_item/keycard_auth_swipe
-	id = "keycard_auth_swipe"
-	name = "Swipe"
-	held_type = /obj/item
-	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
-	also_requires = list(REQ_BECAUSE(REQ_FIELD("operable"), "this device is not powered"))
-
-/obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
-
+/obj/machinery/keycard_auth/proc/interaction_swipe(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/card/id))
 		var/obj/item/card/id/ID = W
 		if(ACCESS_KEYCARD_AUTH in ID.GetAccess())
@@ -88,67 +71,94 @@
 			else if(screen == 2)
 				rel_set(src, nameof(event_triggered_by), user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
-	return TRUE
+	return OP_OK
 
 /obj/machinery/keycard_auth/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
-		icon_state = "auth_off"
+	if(power_lost())
+		set_icon_state("auth_off")
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
 // Topic event/reset actions move to tgui_act.
-/datum/interaction/machine_hand/ungated/keycard_auth_open_ui
-	id = "keycard_auth_open_ui"
-	name = "Use"
-	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/keycard_auth/proc/can_open_panel))
-
 /// Requirement: TRUE, or why the panel can't be opened. Non-dexterous users fall through in the effect.
 /obj/machinery/keycard_auth/proc/can_open_panel(mob/user, atom/target, obj/item/held)
 	if(user.stat || !operable())
 		return "this device is not powered"
-	if(user.IsAdvancedToolUser() && om_busy(src))
+	if(user.IsAdvancedToolUser() && work_busy(src))
 		return "this device is busy"
 	return TRUE
 
-/obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the panel can be opened.
+/obj/machinery/keycard_auth/proc/can_open_panel_holds(datum/act/op/A)
+	var/answer = can_open_panel(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_open_panel_holds refuses: the check's own text.
+/// Requirement: the device is powered.
+/obj/machinery/keycard_auth/proc/swipe_powered(datum/act/op/A)
+	return (operable()) ? null : MSG(keycard_auth/unpowered)
+
+/obj/machinery/keycard_auth/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
-		return FALSE
+		return OP_DECLINE
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI(/obj/machinery/keycard_auth, "KeycardAuth", UI_TITLE("Keycard Authentication"))
+CAPABILITIES(/obj/machinery/keycard_auth)
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
+	interface("KeycardAuth", title = "Keycard Authentication")
+	without("ui_open")
+	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
+	op("keycard_auth_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(keycard_auth_silicon_refuse)))
+	op("keycard_auth_swipe", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Swipe"), needs(req(PROC_REF(swipe_powered))), then(PROC_REF(interaction_swipe)))
+	op("keycard_auth_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), needs(req(PROC_REF(can_open_panel_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
-UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_data_obj_machinery_keycard_auth{ert_admin_only:num}")
+/obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["screen"] = screen
+	data["event"] = event
+	var/list/merged_1 = ui_data_obj_machinery_keycard_auth(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/keycard_auth's window data (declared on its UI_DATA row).
+/// /obj/machinery/keycard_auth's window data.
 /obj/machinery/keycard_auth/proc/ui_data_obj_machinery_keycard_auth(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
 	return data
 
-/obj/machinery/keycard_auth/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
+/obj/machinery/keycard_auth/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(work_busy(src))
+		to_chat(user, "This device is busy.")
 		return FALSE
-	if(om_busy(src))
-		to_chat(usr, "This device is busy.")
-		return FALSE
-	if(usr.stat || !operable())
-		to_chat(usr, "This device is without power.")
+	if(user.stat || !operable())
+		to_chat(user, "This device is without power.")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_TEXT("event"))
-UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_triggerevent)
-	event = params["event"]
+/obj/machinery/keycard_auth/proc/ui_act_triggerevent(datum/act/op/A, event_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	event = event_arg
 	screen = 2
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/keycard_auth, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
+/obj/machinery/keycard_auth/proc/ui_act_reset(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	reset()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 /obj/machinery/keycard_auth/proc/reset()
@@ -157,18 +167,18 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 	screen = 1
 	confirmed = 0
 	rel_clear(src, nameof(event_source))
-	icon_state = "auth_off"
+	set_icon_state("auth_off")
 	rel_clear(src, nameof(event_triggered_by))
 	rel_clear(src, nameof(event_confirmed_by))
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
-	icon_state = "auth_on"
+	set_icon_state("auth_on")
 	for(var/obj/machinery/keycard_auth/KA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(KA == src) continue
 		KA.reset()
 		KA.receive_request(src)
 
-	om_after(src, confirm_delay, PROC_REF(request_window_closed), user)
+	after(src, confirm_delay, PROC_REF(request_window_closed), with = list(user))
 
 /// The confirmation window is over: fire the event if someone confirmed it.
 /obj/machinery/keycard_auth/proc/request_window_closed(mob/user)
@@ -184,14 +194,14 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 		return
 	rel_set(src, nameof(event_source), source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
-	om_release_busy(src, "new request")
+	release_busy(src, PROC_REF(receive_window_closed))
 	set_active(1)
-	icon_state = "auth_on"
-	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
+	set_icon_state("auth_on")
+	hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	rel_clear(src, nameof(event_source))
-	icon_state = "auth_off"
+	set_icon_state("auth_off")
 	set_active(0)
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)
@@ -215,7 +225,7 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 
 /obj/machinery/keycard_auth/proc/is_ert_blocked()
 	if(CONFIG_GET(flag/ert_admin_call_only)) return 1
-	return SSticker.mode && SSticker.mode.ert_disabled
+	return ticker_mode() && ticker_mode().ert_disabled
 
 GLOBAL_VAR_INIT(maint_all_access, FALSE)
 

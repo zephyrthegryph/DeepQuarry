@@ -1,0 +1,5 @@
+/obj/machinery/reagent_refinery/pipe icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/pipe state: pipe
+/obj/machinery/reagent_refinery/pipe dir: 2
+/obj/machinery/reagent_refinery/pipe overlay: icons/obj/machines/refinery_machines.dmi:pipe:8:#000000
+

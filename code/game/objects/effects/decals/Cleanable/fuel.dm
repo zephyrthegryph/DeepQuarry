@@ -9,13 +9,20 @@
 	generic_filth = TRUE
 	persistent = FALSE
 
-/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload, amt=1, nologs=1)
+CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
+	param(nameof(amount), pos = 1, overrides = TRUE)
+	param(nameof(quiet_spill), pos = 2)
+
+/// A spill that tells no admins (its constructor param).
+/obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
+
+// ALLOW(init/INSTANCE_STATE): spilled fuel joins the fuel already on its tile, or spreads
+/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload)
 	if(!isturf(loc))
 		return INITIALIZE_HINT_QDEL
-	if(!nologs)
+	if(!quiet_spill)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
-	src.amount = amt
 
 	var/has_spread = 0
 	//Be absorbed by any other liquid fuel in the tile.
@@ -53,8 +60,11 @@
 	icon_state = "mustard"
 	anchored = FALSE
 
-/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload, amt = 1, d = 0)
-	set_dir(d) //Setting this direction means you won't get torched by your own flamethrower.
+CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
+	param(nameof(dir), pos = 2, overrides = TRUE)
+
+// ALLOW(init/INSTANCE_STATE): flamethrower fuel ignites its tile
+/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/T = loc
 		T.hotspot_expose((T20C*2) + 380,500) //Ignite the fuel.
@@ -64,7 +74,7 @@
 	//The spread for flamethrower fuel is much more precise, to create a wide fire pattern.
 	if(amount <= 0.1)
 		if(amount < 0.025) //Hopefully stops fuel spreading into unburnable puddles.
-			qdel(src)
+			consume(src)
 		return
 	var/turf/simulated/S = loc
 	if(!istype(S)) return
@@ -78,7 +88,7 @@
 			if(new_pool_amount > 0.1)
 				var/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/F = new(O, new_pool_amount, d)
 				if(F.amount < 0.025) //Safety.
-					qdel(F)
+					consume(F)
 					return
 			O.hotspot_expose((T20C*2) + 380,500) //Light flamethrower fuel on fire immediately.
 

@@ -37,19 +37,19 @@
 	for(var/obj/item/clothing/C in contents_of(src))
 		if(item_is_in_hands(C))
 			continue
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			coverage += list(organs_by_name[BP_HEAD])
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			coverage += list(organs_by_name[BP_TORSO])
-		if(C.body_parts_covered & LOWER_TORSO)
+		if(worn_of(C).covers & LOWER_TORSO)
 			coverage += list(organs_by_name[BP_GROIN])
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			coverage += list(organs_by_name[BP_L_LEG], organs_by_name[BP_R_LEG])
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			coverage += list(organs_by_name[BP_R_ARM], organs_by_name[BP_L_ARM])
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			coverage += list(organs_by_name[BP_L_FOOT], organs_by_name[BP_R_FOOT])
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			coverage += list(organs_by_name[BP_L_HAND], organs_by_name[BP_R_HAND])
 	return coverage
 
@@ -118,13 +118,13 @@
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 
 	//Look at their head
-	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)))
+	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)))
 		if(H && H.robotic == ORGAN_ROBOT) //Exactly robotic, not higher as lifelike is higher
 			return 1
 
 	//Look at their torso
-	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)))
-		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)))
+	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT)))
+		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(worn_of(get_equipped_item(SLOT_ID_UNIFORM)).covers & UPPER_TORSO)))
 			if(T && T.robotic == ORGAN_ROBOT)
 				return 1
 
@@ -149,28 +149,29 @@
 	return FBP_NONE
 
 /mob/living/carbon/human/make_hud_overlays()
-	own_put(src, nameof(hud_list), HEALTH_HUD, gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH))
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH), HEALTH_HUD)
 	if(HAS_SYNTHETIC_BIOLOGY(src))
-		own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS))
-		own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE))
+		rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS), STATUS_HUD)
+		rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE), LIFE_HUD)
 	else
-		own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS))
-		own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_LIFE))
-	own_put(src, nameof(hud_list), ID_HUD, gen_hud_image(using_map.id_hud_icons, src, "hudunknown", plane = PLANE_CH_ID))
-	own_put(src, nameof(hud_list), WANTED_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_WANTED))
-	own_put(src, nameof(hud_list), IMPLOYAL_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPLOYAL))
-	own_put(src, nameof(hud_list), IMPCHEM_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPCHEM))
-	own_put(src, nameof(hud_list), IMPTRACK_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPTRACK))
-	own_put(src, nameof(hud_list), SPECIALROLE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_SPECIAL))
-	own_put(src, nameof(hud_list), STATUS_HUD_OOC, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS_OOC))
-	own_put(src, nameof(hud_list), HEALTH_VR_HUD, gen_hud_image(GLOB.ingame_hud_med_vr, src, "100", plane = PLANE_CH_HEALTH_VR))
-	own_put(src, nameof(hud_list), STATUS_R_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R))
-	own_put(src, nameof(hud_list), BACKUP_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP))
-	own_put(src, nameof(hud_list), VANTAG_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG))
+		rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS), STATUS_HUD)
+		rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_LIFE), LIFE_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(using_map.id_hud_icons, src, "hudunknown", plane = PLANE_CH_ID), ID_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_WANTED), WANTED_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPLOYAL), IMPLOYAL_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPCHEM), IMPCHEM_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPTRACK), IMPTRACK_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_SPECIAL), SPECIALROLE_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS_OOC), STATUS_HUD_OOC)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_med_vr, src, "100", plane = PLANE_CH_HEALTH_VR), HEALTH_VR_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R), STATUS_R_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP), BACKUP_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG), VANTAG_HUD)
 	add_overlay(hud_list)
 
 /mob/living/carbon/human/recalculate_vis()
-	if(!vis_enabled || !plane_holder)
+	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight and HUD reactions re-read it
+	if(!hud_used?.vis_enabled || !hud_used?.plane_holder)
 		return
 
 	//These things are allowed to add vision flags.
@@ -206,22 +207,22 @@
 	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
 		compiled_vis += VIS_SOULCATCHER
 
-	if(!compiled_vis.len && !vis_enabled.len)
+	if(!compiled_vis.len && !hud_used?.vis_enabled?.len)
 		return //Nothin' doin'.
 
-	var/list/oddities = vis_enabled ^ compiled_vis
+	var/list/oddities = hud_used?.vis_enabled ^ compiled_vis
 	if(!oddities.len)
 		return //Same thing in both lists!
 
-	var/list/to_enable = oddities - vis_enabled
+	var/list/to_enable = oddities - hud_used?.vis_enabled
 	var/list/to_disable = oddities - compiled_vis
 
 	for(var/vis in to_enable)
-		plane_holder.set_vis(vis,TRUE)
-		vis_enabled += vis
+		hud_used?.plane_holder?.set_vis(vis,TRUE)
+		hud_used?.vis_enabled += vis
 	for(var/vis in to_disable)
-		plane_holder.set_vis(vis,FALSE)
-		vis_enabled -= vis
+		hud_used?.plane_holder?.set_vis(vis,FALSE)
+		hud_used?.vis_enabled -= vis
 
 /mob/living/carbon/human/get_restraining_bolt()
 	var/obj/item/implant/restrainingbolt/RB
@@ -252,12 +253,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/BP in mark_datum.body_parts)
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O && (mark_datum.name in O.markings))
-			LAZYREMOVE(O.markings, mark_datum.name)
+			O.remove_markings(mark_datum.name)
 			successful = TRUE
 	if (successful)
 		markings_len -= 1
 		update_dna()
-		update_icons_body()
 		return TRUE
 	return FALSE
 
@@ -269,11 +269,10 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
 			success = TRUE
-			LAZYSET(O.markings, mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
+			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
 	if (success)
 		markings_len += 1
 		update_dna()
-		update_icons_body()
 	return success
 
 /mob/living/carbon/human/proc/change_priority_of_marking(datum/sprite_accessory/marking/mark_datum, move_down, swap = TRUE) //move_down should be true/false
@@ -294,13 +293,14 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 				success = TRUE
 				change_priority_marking_to_priority(change_from + change, change_from)
 			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, markings_len)
+			tracked_changed(O, nameof(O.markings))
 			if ((move_down && index == O.markings.len) || (!move_down && index == 1))
 				continue
 			if (O.markings[O.markings[index + change]]["priority"] == change_from)
 				moveElement(O.markings, index, index+(move_down ? 2 : -1))
+				tracked_changed(O, nameof(O.markings))
 	if (success)
 		update_dna()
-		update_icons_body()
 	return TRUE
 
 /mob/living/carbon/human/proc/change_priority_marking_to_priority(priority, to_priority)
@@ -308,6 +308,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		for (var/marking in O.markings)
 			if (O.markings[marking]["priority"] == priority)
 				O.markings[marking]["priority"] = to_priority
+				tracked_changed(O, nameof(O.markings))
 
 /mob/living/carbon/human/proc/change_marking_color(datum/sprite_accessory/marking/mark_datum, mark_color = "#000000")
 	if (!mark_datum)
@@ -318,26 +319,27 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		if(O && LAZYACCESS(O.markings, mark_datum.name) && O.markings[mark_datum.name]["color"] != mark_color)
 			success = TRUE
 			O.markings[mark_datum.name]["color"] = mark_color
+			tracked_changed(O, nameof(O.markings))
 	if (success)
 		update_dna()
-		update_icons_body()
 	return success
 
 /mob/living/carbon/human/proc/get_prioritised_markings()
 	var/list/markings = list()
 	var/list/priorities = list()
 	for(var/obj/item/organ/external/O in organs)
+		var/limb_tag = O.organ_tag
 		if(O.markings?.len)
 			for (var/marking in O.markings)
 				var/priority = num2text(O.markings[marking]["priority"])
 				if (markings[priority])
 					if (markings[priority][marking])
-						markings[priority][marking] |= list(O.organ_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))
+						markings[priority][marking] |= list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))
 					else
-						markings[priority] |= list("[marking]" = list(O.organ_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))) //yes I know technically you could have a limb that was attached that has the same marking as another limb with a different color but I'm too tired
+						markings[priority] |= list("[marking]" = list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"]))) //yes I know technically you could have a limb that was attached that has the same marking as another limb with a different color but I'm too tired
 				else
 					priorities |= O.markings[marking]["priority"]
-					markings[priority] = list("[marking]" = list(O.organ_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"])))
+					markings[priority] = list("[marking]" = list(limb_tag = list("on" = O.markings[marking]["on"], "color" = O.markings[marking]["color"])))
 	var/list/sorted = list()
 	while (priorities.len > 0)
 		var/priority = min(priorities)
@@ -388,11 +390,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		options = new /datum/human_transform_options
 	if(options.copy_name)
 		name = character.name
-		nickname = character.nickname
+		bio.nickname = character.bio.nickname
 	gender = character.gender
 	identifying_gender = character.identifying_gender
 
-	copy_colours_from(character)
+	record_copy(looks, character.looks)
 	if(options.apply_bloodtype)
 		dna?.b_type = character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE
 	copy_appendages_from(character)
@@ -404,103 +406,54 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/N in character.organs_by_name)
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
-		O.markings = I.markings?.Copy()
+		O.set_markings(I.markings?.Copy())
 	markings_len = character.markings_len
 
 	if(options.copy_flavour)
-		flavor_texts = character.flavor_texts?.Copy()
+		bio.flavor_texts = character.bio.flavor_texts?.Copy()
 
 	copy_physique_from(character)
 	if(species)
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species?.blood_color = character.species?.blood_color
 
 	dna?.base_species = bodytype
-	species?.base_species = bodytype
+	species?.set_base_species(bodytype)
 	species?.vanity_base_fit = bodytype
 	if(istype(species, /datum/species/shapeshifter))
-		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
+		set_wrapped_bodytype(bodytype)
 
 	custom_species	= character.custom_species
-	custom_say		= character.custom_say
-	custom_ask		= character.custom_ask
-	custom_whisper	= character.custom_whisper
-	custom_exclaim	= character.custom_exclaim
-
-	digitigrade = character.digitigrade
+	bio.custom_say = character.bio.custom_say
+	bio.custom_ask = character.bio.custom_ask
+	bio.custom_whisper = character.bio.custom_whisper
+	bio.custom_exclaim = character.bio.custom_exclaim
 
 	dna?.ResetUIFrom(src)
 	force_update_limbs()
-	regenerate_icons()
-
-/// Eye, hair, gradient, skin and synthetic colours.
-/mob/living/carbon/human/proc/copy_colours_from(mob/living/carbon/human/character)
-	r_eyes = character.r_eyes
-	g_eyes = character.g_eyes
-	b_eyes = character.b_eyes
-	h_style = character.h_style
-	r_hair = character.r_hair
-	g_hair = character.g_hair
-	b_hair = character.b_hair
-	r_grad = character.r_grad
-	g_grad = character.g_grad
-	b_grad = character.b_grad
-	f_style = character.f_style
-	r_facial = character.r_facial
-	g_facial = character.g_facial
-	b_facial = character.b_facial
-	r_skin = character.r_skin
-	g_skin = character.g_skin
-	b_skin = character.b_skin
-	s_tone = character.s_tone
-	grad_style = character.grad_style
-	synth_color = character.synth_color
-	r_synth = character.r_synth
-	g_synth = character.g_synth
-	b_synth = character.b_synth
-	synth_markings = character.synth_markings
-
 
 /// Ears, tail and wings with their colours.
 /mob/living/carbon/human/proc/copy_appendages_from(mob/living/carbon/human/character)
-	ear_style = character.ear_style
-	r_ears = character.r_ears
-	b_ears = character.b_ears
-	g_ears = character.g_ears
-	r_ears2 = character.r_ears2
-	b_ears2 = character.b_ears2
-	g_ears2 = character.g_ears2
-	r_ears3 = character.r_ears3
-	b_ears3 = character.b_ears3
-	g_ears3 = character.g_ears3
-	a_ears = character.a_ears
+	rel_set(src, nameof(ear_style), character.ear_style)
+	looks.set_ears_color(character.looks.ears_color)
+	looks.set_ears_color2(character.looks.ears_color2)
+	looks.set_ears_color3(character.looks.ears_color3)
+	looks.set_ears_alpha(character.looks.ears_alpha)
 
-	ear_secondary_style = character.ear_secondary_style
-	ear_secondary_colors = character.ear_secondary_colors
+	rel_set(src, nameof(ear_secondary_style), character.ear_secondary_style)
+	set_ear_secondary_colors(character.ear_secondary_colors)
 
-	tail_style = character.tail_style
-	r_tail = character.r_tail
-	b_tail = character.b_tail
-	g_tail = character.g_tail
-	r_tail2 = character.r_tail2
-	b_tail2 = character.b_tail2
-	g_tail2 = character.g_tail2
-	r_tail3 = character.r_tail3
-	b_tail3 = character.b_tail3
-	g_tail3 = character.g_tail3
-	a_tail = character.a_tail
+	rel_set(src, nameof(tail_style), character.tail_style)
+	looks.set_tail_color(character.looks.tail_color)
+	looks.set_tail_color2(character.looks.tail_color2)
+	looks.set_tail_color3(character.looks.tail_color3)
+	looks.set_tail_alpha(character.looks.tail_alpha)
 
-	wing_style = character.wing_style
-	r_wing = character.r_wing
-	b_wing = character.b_wing
-	g_wing = character.g_wing
-	r_wing2 = character.r_wing2
-	b_wing2 = character.b_wing2
-	g_wing2 = character.g_wing2
-	r_wing3 = character.r_wing3
-	b_wing3 = character.b_wing3
-	g_wing3 = character.g_wing3
-	a_wing = character.a_wing
+	rel_set(src, nameof(wing_style), character.wing_style)
+	looks.set_wing_color(character.looks.wing_color)
+	looks.set_wing_color2(character.looks.wing_color2)
+	looks.set_wing_color3(character.looks.wing_color3)
+	looks.set_wing_alpha(character.looks.wing_alpha)
 
 /// Robotize our limbs to match `character`'s: its prosthetic models, else the DSI body for
 /// `bodytype`. Parents go before children so a limb is never robotized under an organic parent.
@@ -531,11 +484,11 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	weight			= character.weight
 	weight_gain		= character.weight_gain
 	weight_loss		= character.weight_loss
-	fuzzy				= character.fuzzy
+	set_fuzzy(character.fuzzy)
 	offset_override	= character.offset_override
 	voice_freq		= character.voice_freq
 	if (species && character.species)
-		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod
 		species.icon_scale_x = character.species.icon_scale_x
 		species.icon_scale_y = character.species.icon_scale_y

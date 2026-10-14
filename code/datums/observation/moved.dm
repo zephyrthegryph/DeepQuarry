@@ -18,10 +18,10 @@
 	var/old_loc = loc
 	. = ..()
 	if(. && !loc)
-		OM_EMIT(src, /datum/om/event/movable_attempted_move, old_loc, null)
+		PUBLISH_LEGACY(src, /datum/notice/movable_attempted_move, old_loc, null)
 
 /atom/movable/forceMove(atom/destination, direction, movetime) // pass movetime through
 	var/old_loc = loc
 	. = ..()
 	if(. && !loc)
-		OM_EMIT(src, /datum/om/event/movable_attempted_move, old_loc, null)
+		PUBLISH_LEGACY(src, /datum/notice/movable_attempted_move, old_loc, null)

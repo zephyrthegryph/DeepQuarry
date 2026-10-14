@@ -3,15 +3,14 @@
 	desc = "Should anything ever go wrong..."
 	icon = 'icons/obj/radio.dmi'
 	icon_state = "red_phone"
-	force = 3.0
-	throwforce = 2.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("called", "rang")
-	hitsound = SFX_WEAPONS_RING
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/phone)
+	configure(item_thrown(force = 2.0))
+	configure(item_combat(force = 3.0, attack_verbs = list("called", "rang")))
+	configure(item_sounds(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/rsp
 	name = "\improper Rapid-Seed-Producer (RSP)"
@@ -24,8 +23,9 @@
 	var/stored_matter = 0
 	var/mode = 1
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/rsp)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/bikehorn
 	name = "bike horn"
@@ -33,31 +33,29 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "bike_horn"
 	item_state = "bike_horn"
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_HOLSTER
 	throw_speed = 3
 	throw_range = 15
-	attack_verb = list("HONKED")
 	var/honk_sound = SFX_ITEMS_BIKEHORN
 	var/cooldown = 0
 	var/honk_text = FALSE
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn_self)))
+CAPABILITIES(/obj/item/bikehorn)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_thrown(force = 3))
+	configure(item_combat(attack_verbs = list("HONKED")))
+	op("honk", in_hand(), label("Honk"), when(cond_not(nameof(special_handling))), then(PROC_REF(honked)))
 
-/// Old attack_self: honk. Subtypes with special_handling fall through.
-/obj/item/bikehorn/proc/bikehorn_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/obj/item/bikehorn/proc/honked(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 2 SECONDS)
-		playsound(src, honk_sound, 50, 1)
-		add_fingerprint(user)
+		play_sfx(src, honk_sound, volume = 50, vary = TRUE)
+		add_fingerprint(A.actor)
 		if(honk_text)
 			audible_message(span_maroon("[honk_text]"))
-	return TRUE
+	return OP_OK
 
 /obj/item/bikehorn/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -70,17 +68,20 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	desc = "A tube... of cardboard."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "c_tube"
-	throwforce = 1
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 5
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/c_tube)
+	configure(item_thrown(force = 1))
+
 /obj/item/disk
 	name = "disk"
 	icon = 'icons/obj/discs_vr.dmi'
-	drop_sound = SFX_ITEMS_DROP_DISK
-	pickup_sound =  SFX_ITEMS_PICKUP_DISK
+
+CAPABILITIES(/obj/item/disk)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 
 /obj/item/disk/nuclear
 	name = "nuclear authentication disk"
@@ -110,15 +111,16 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	var/uses = 4.0
 	var/selfdestruct = 0.0
 	var/traitor_frequency = 0.0
-	slot_flags = SLOT_BELT
 	item_state = "radio"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 100)
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+
+CAPABILITIES(/obj/item/SWF_uplink)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/staff
 	name = "wizards staff"
@@ -129,12 +131,13 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("bludgeoned", "whacked", "disciplined")
+
+CAPABILITIES(/obj/item/staff)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0, attack_verbs = list("bludgeoned", "whacked", "disciplined")))
 
 /obj/item/staff/broom
 	name = "broom"
@@ -154,11 +157,13 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "stick"
 	item_state = "cane"
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/staff/stick)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0))
 
 /obj/item/module
 	icon = 'icons/obj/module.dmi'
@@ -166,8 +171,9 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	item_state = "std_mod"
 	w_class = ITEMSIZE_SMALL
 	var/mtype = 1						// 1=electronic 2=hardware
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
+
+CAPABILITIES(/obj/item/module)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 /obj/item/module/card_reader
 	name = "card reader module"
@@ -208,42 +214,45 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interaction_self)))
+MSG_DEF_SELF(camera_bug/none, "No bugged functioning cameras found.")
 
-/// Old attack_self.
-/obj/item/camera_bug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(in_use)
-		return TRUE
+/// Using it asks which bugged camera to watch (the old attack_self).
+CAPABILITIES(/obj/item/camera_bug)
+	op("use", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(has_bugged_cameras), because = MSG(camera_bug/none))), asks(/datum/prompt/choice, fields = list("question" = "Select the camera to observe", "title" = "Select Camera", "choices" = computed(PROC_REF(camera_choices)), "timeout" = 0), step = "k232"), then(PROC_REF(interaction_self)))
 
-	var/list/cameras = new/list()
+/// The functioning bugged cameras.
+/obj/item/camera_bug/proc/bugged_cameras()
+	var/list/cameras = list()
 	for (var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if (C.bugged && C.status)
 			cameras.Add(C)
-	if (length(cameras) == 0)
-		to_chat(user, span_warning("No bugged functioning cameras found."))
-		return TRUE
+	return cameras
 
-	var/list/friendly_cameras = new/list()
+/// Requirement: some bugged camera works.
+/obj/item/camera_bug/proc/has_bugged_cameras(datum/act/op/A)
+	return (length(bugged_cameras()) > 0) ? null : MSG(camera_bug/none)
 
-	for (var/obj/machinery/camera/C in cameras)
+/// The question's choices: the c_tags of the bugged cameras.
+/obj/item/camera_bug/proc/camera_choices(datum/act/op/A)
+	var/list/friendly_cameras = list()
+	for (var/obj/machinery/camera/C in bugged_cameras())
 		friendly_cameras.Add(C.c_tag)
+	return friendly_cameras
 
-	in_use = TRUE
-	var/target = rerun_ask(user, "k232", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Select the camera to observe", title = "Select Camera", choices = friendly_cameras)
-	if(isnull(target))
-		return TRUE
-	in_use = FALSE
-
+/// Old attack_self, after the camera is chosen.
+/obj/item/camera_bug/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/target = A.step_value("k232")
 	if (!target)
-		return TRUE
-	for (var/obj/machinery/camera/C in cameras)
+		return OP_OK
+	for (var/obj/machinery/camera/C in bugged_cameras())
 		if (C.c_tag == target)
 			target = C
 			break
-	if (user.stat == 2) return TRUE
+	if (user.stat == 2) return OP_OK
 
 	user.begin_remote_view(/datum/remote_view/item_zoom, target, null, /datum/remote_view_config/camera_standard, src, 0, FALSE)
-	return TRUE
+	return OP_OK
 
 /obj/item/pai_cable
 	desc = "A flexible coated cable with a universal jack on one end."
@@ -262,13 +271,12 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/stock_parts.dmi'
 	w_class = ITEMSIZE_SMALL
 	var/rating = 1
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
-/obj/item/stock_parts/Initialize(mapload)
-	. = ..()
-	src.pixel_x = rand(-5.0, 5)
-	src.pixel_y = rand(-5.0, 5)
+CAPABILITIES(/obj/item/stock_parts)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	rolls(nameof(pixel_x), range_of(-5.0, 5))
+	rolls(nameof(pixel_y), range_of(-5.0, 5))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/stock_parts/get_rating()
 	return rating
@@ -290,7 +298,8 @@ MATERIAL_MIX(/obj/item/stock_parts/capacitor, list(MAT_STEEL = 50,MAT_GLASS = 50
 	var/max_charge = 1000
 
 /// Stored charge; read by its holder's derived fields as "capacitor.charge" (magnetic guns).
-OM_FIELD(/obj/item/stock_parts/capacitor, charge, 0, CHANGE_EXPLICIT)
+/obj/item/stock_parts/capacitor/var/charge = 0
+TRACKED(/obj/item/stock_parts/capacitor, charge)
 
 /obj/item/stock_parts/capacitor/Initialize(mapload)
 	. = ..()
@@ -414,37 +423,58 @@ MATERIAL_MIX(/obj/item/stock_parts/motor, list(MAT_STEEL = 60, MAT_GLASS = 10))
 	desc = "this qdels itself lol! if you're reading this you're codediving or Someone fucked up"
 
 // Five of each part: one set rolled five times.
-MAP_RESOLVER(/obj/effect/spawner/parts, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/effect/spawner/parts)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
 
 /obj/effect/spawner/parts/t1
 	name = "basic parts bundle"
 	desc = "5 of each T1 part, no more and no less."
 
-DECLARE_LOOT(/obj/effect/spawner/parts/t1, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
+CAPABILITIES(/obj/effect/spawner/parts/t1)
+	loot(
+		table = list(
+			loot_set(1, list(/obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser))),
+		count = 5)
 
 /obj/effect/spawner/parts/t2
 	name = "advanced parts bundle"
 	desc = "5 of each T2 part, no more and no less."
 
-DECLARE_LOOT(/obj/effect/spawner/parts/t2, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
+CAPABILITIES(/obj/effect/spawner/parts/t2)
+	loot(
+		table = list(
+			loot_set(1, list(/obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser))),
+		count = 5)
 
 /obj/effect/spawner/parts/t3
 	name = "super parts bundle"
 	desc = "5 of each T3 part, no more and no less."
 
-DECLARE_LOOT(/obj/effect/spawner/parts/t3, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
+CAPABILITIES(/obj/effect/spawner/parts/t3)
+	loot(
+		table = list(
+			loot_set(1, list(/obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser))),
+		count = 5)
 
 /obj/effect/spawner/parts/t4
 	name = "hyper parts bundle"
 	desc = "5 of each T4 part, no more and no less."
 
-DECLARE_LOOT(/obj/effect/spawner/parts/t4, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
+CAPABILITIES(/obj/effect/spawner/parts/t4)
+	loot(
+		table = list(
+			loot_set(1, list(/obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser))),
+		count = 5)
 
 /obj/effect/spawner/parts/t5
 	name = "omni parts bundle"
 	desc = "5 of each T5 part, no more and no less."
 
-DECLARE_LOOT(/obj/effect/spawner/parts/t5, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
+CAPABILITIES(/obj/effect/spawner/parts/t5)
+	loot(
+		table = list(
+			loot_set(1, list(/obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser))),
+		count = 5)
 
 /// The machine this cable is jacked into (a relation view).
 /obj/item/pai_cable/proc/machine() as /obj/machinery

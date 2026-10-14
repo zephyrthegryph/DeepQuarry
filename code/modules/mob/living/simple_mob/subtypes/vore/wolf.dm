@@ -20,6 +20,7 @@
 	response_harm = "hits"
 
 	movement_cooldown = 1.5
+	faction = FACTION_WOLF // wolves hunt in packs (combat_ai/factions/factions.dm); the dogs below stay with the station's pets
 
 	harm_intent_damage = 5
 	melee_damage_lower = 5
@@ -32,20 +33,21 @@
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/wolf)
 
-	allow_mind_transfer = TRUE
 	vore_active = TRUE
 	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 	species_sounds = "Canine"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
+CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+
 /mob/living/simple_mob/animal/vore/wolf/load_default_bellies()
 	. = ..()
 
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_sound = "Tauric Swallow"
 	B.release_sound = "Pred Escape"
 	B.fancy_vore = 1
@@ -110,20 +112,22 @@
 	buckle_lying = FALSE
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple_mob/proc/pick_color)
+CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
 
 /mob/living/simple_mob/vore/wolf/direwolf/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/wolf/direwolf/dog
 	name = "large dog"
 	desc = "The biggest and goodest dog around."
 	tt_desc = "Canis maxdirus familiaris"
+	faction = FACTION_NEUTRAL
 	icon_dead = "diredog-dead"
 	icon_living = "diredog"
 	icon_state = "diredog"
@@ -140,6 +144,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple
 /mob/living/simple_mob/vore/wolf/direwolf/sec
 	name = "dire guard wolf"
 	desc = "The biggest and baddest guard wolf around."
+	faction = FACTION_NEUTRAL
 	icon_dead = "direwolfs-dead"
 	icon_living = "direwolfs"
 	icon_state = "direwolfs"

@@ -1,0 +1,44 @@
+@obj human|none
++0 menu: Eat Entity
++3 menu: Relase Entity
+@obj robot|none
++0 menu: Eat Entity
++4 menu: Relase Entity
+@obj ai|none
+@obj.item ghost|none
++0 menu: Eat Entity (refused: You can't reach that.)
++2 menu: Relase Entity (refused: You can't reach that.)
+@obj human|/obj/item/tool/screwdriver
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/tool/crowbar
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/tool/wrench
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/tool/wirecutters
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/multitool
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/weldingtool
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/stack/cable_coil
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/stack/material/steel
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/card/id
++0 menu: Eat Entity
++2 menu: Relase Entity
+@obj human|/obj/item/kit
++1 menu: Eat Entity
++3 menu: Relase Entity
+@obj human|/obj/item/storage
++1 menu: Eat Entity
++3 menu: Relase Entity
+keys: break_out, collect_item, deactivate, deploy, drag_buckle, free_occupant, gen_silicon_item_silicon_equip_module, ghost_trap_hidden_vore_effect, kit_customize, kit_customize_last, move_to_top, pick_up_item, release_occupant_effect, self, toggle_digestable

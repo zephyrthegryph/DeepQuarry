@@ -1,0 +1,9 @@
+/obj/structure/safe icon: icons/obj/structures.dmi
+/obj/structure/safe state: safe
+/obj/structure/safe dir: 2
+/obj/structure/safe overlay: icons/obj/structures.dmi:safe:8:#000000
+/obj/structure/safe/floor icon: icons/obj/structures.dmi
+/obj/structure/safe/floor state: floorsafe
+/obj/structure/safe/floor dir: 2
+/obj/structure/safe/floor overlay: icons/obj/structures.dmi:floorsafe:8:#000000
+

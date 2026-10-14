@@ -13,8 +13,8 @@ REGISTRY_TYPE(/datum/planet, GLOBAL_PROC_REF(registry_planet))
 REGISTRY_TYPE(/datum/asset, GLOBAL_PROC_REF(registry_asset))
 REGISTRY_TYPE(/datum/log_category, GLOBAL_PROC_REF(registry_log_category))
 REGISTRY_TYPE(/datum/decl, GLOBAL_PROC_REF(registry_decl))
-REGISTRY_TYPE(/datum/om/decl, GLOBAL_PROC_REF(registry_om_decl))
-REGISTRY_TYPE(/datum/om/stage, GLOBAL_PROC_REF(registry_om_stage))
+REGISTRY_TYPE(/datum/definition_decl, GLOBAL_PROC_REF(registry_om_decl))
+REGISTRY_TYPE(/datum/work_stage, GLOBAL_PROC_REF(registry_om_stage))
 REGISTRY_TYPE(/datum/material, GLOBAL_PROC_REF(registry_material))
 REGISTRY_TYPE(/datum/body_effect, GLOBAL_PROC_REF(registry_body_effect))
 REGISTRY_TYPE(/datum/body_factor_def, GLOBAL_PROC_REF(registry_body_factor_def))
@@ -57,16 +57,16 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 ))
 
 /proc/registry_controller(datum/controller/D)
-	if(D == Master || D == Failsafe || D == config || D == GLOB)
+	if(D == Kernel || D == config || D == GLOB)
 		return D
-	return (Master && (D in Master.subsystems)) ? D : null
+	return null
 
 /proc/registry_ntnet(datum/D)
 	return GLOB.ntnet_global
 
 /proc/registry_transcore_db(datum/transcore_db/D)
-	for(var/key in GLOB.transcore_service?.databases)
-		if(GLOB.transcore_service.databases[key] == D)
+	for(var/key in SStranscore?.databases)
+		if(transcore_databases()[key] == D)
 			return D
 	return null
 
@@ -79,10 +79,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /// Only the round's techwebs (science, admin, autounlock) are registered; a disk's or a
 /// console's scratch web is owned by its holder.
 /proc/registry_techweb(datum/techweb/D)
-	return (D in GLOB.research_service?.techwebs) ? D : null
+	return (D in SSresearch?.techwebs) ? D : null
 
 /proc/registry_planet(datum/D)
-	return (D in GLOB.planet_service?.planets) ? D : null
+	return (D in SSplanets?.planets) ? D : null
 
 /proc/registry_asset(datum/D)
 	return GLOB.asset_datums[D.type]
@@ -94,10 +94,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GET_DECL(D.type)
 
 /proc/registry_om_decl(datum/D)
-	return (D in om_registry().decls) ? D : null
+	return (D in definition_registry().decls) ? D : null
 
 /proc/registry_om_stage(datum/D)
-	return om_registry().stage_by_type[D.type]
+	return definition_registry().stage_by_type[D.type]
 
 /proc/registry_material(datum/material/D)
 	return GLOB.name_to_material[D.name]
@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GLOB.uplink?.items_assoc[D.type]
 
 /proc/registry_supply_pack(datum/supply_pack/D)
-	return GLOB.supply_service?.supply_pack[D.name]
+	return SSsupply?.supply_pack[D.name]
 
 /proc/registry_category_collection(datum/D)
 	return (D == GLOB.global_underwear || D == GLOB.catalogue_data) ? D : null
@@ -165,7 +165,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return D.category_static?.items_by_name[D.name]
 
 /proc/registry_instrument(datum/instrument/D)
-	return GLOB.instrument_service?.instrument_data[D.id]
+	return SSinstruments?.instrument_data[D.id]
 
 /proc/registry_map_template(datum/map_template/D)
 	return (SSmapping?.map_templates[D.name] == D || (D in SSmapping?.shelter_templates)) ? D : null
@@ -177,10 +177,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return (D in GLOB.weighted_randomevent_locations) ? D : null
 
 /proc/registry_reagent(datum/reagent/D)
-	return chemistry_service()?.chemical_reagents[D.id]
+	return SSchemistry.ready()?.chemical_reagents[D.id]
 
 /proc/registry_seed(datum/seed/D)
-	return GLOB.plant_service?.seeds[D.name]
+	return SSplants?.seeds[D.name]
 
 /proc/registry_robot_sprite(datum/D)
 	return (D in SSrobot_sprites?.all_cyborg_sprites) ? D : null
@@ -202,7 +202,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /proc/registry_enum_decls()
 	return GLOB.decls_repository?.fetched_decls
 /proc/registry_enum_reagents()
-	return chemistry_service()?.chemical_reagents
+	return SSchemistry.ready()?.chemical_reagents
 /proc/registry_enum_jobs()
 	return SSjob?.type_occupations
 /proc/registry_enum_ores()

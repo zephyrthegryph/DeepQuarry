@@ -22,6 +22,14 @@
 	anchored = TRUE
 	unacidable = TRUE
 
+CAPABILITIES(/obj/structure/morgue)
+	silicon_hand(adjacent = TRUE)
+	blast_contents()
+	owns_one(nameof(connected), /obj/structure/m_tray)
+	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("label", item(/obj/item/pen), label("Use"), asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(label_question)), "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(label_entered)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
 
 /obj/structure/morgue/proc/get_occupants()
 	rel_clear(src, nameof(occupants))
@@ -33,112 +41,84 @@
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
-		src.icon_state = "morgue0"
+		set_icon_state("morgue0")
 	else
 		if (contents_count(src))
-			src.icon_state = "morgue2"
+			set_icon_state("morgue2")
 			get_occupants()
 			for (var/mob/living/carbon/human/H in occupants)
 				if(HAS_SYNTHETIC_BIOLOGY(H) || H.suiciding || !H.ckey || !H.client || (H.has_mutation(NOCLONE)) || (H.species && H.species.flags & NO_SLEEVE))
-					src.icon_state = "morgue2"
+					set_icon_state("morgue2")
 					break
 				else
-					src.icon_state = "morgue3"
+					set_icon_state("morgue3")
 					if(broadcast)
 						GLOB.global_announcer.autosay("[src] was able to establish a mental interface with occupant.", "[src]", "Medical")
 		else
-			src.icon_state = "morgue1"
+			set_icon_state("morgue1")
 	return
-
-/obj/structure/morgue/explosion_contents_severity(severity)
-	return severity
 
 /obj/structure/morgue/atom_destruction(damage_flag)
 	for(var/atom/movable/A as anything in contents)
 		A.forceMove(loc)
 	return ..()
 
-/obj/structure/morgue
-	silicon_use = ROBOT_USE_HAND_ADJACENT
-
-/obj/structure/morgue/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/morgue_hand,
-		/datum/interaction/entry_item/morgue_item,
-	)
-	..()
-
-/// Old attack_hand: open/close the tray.
-/datum/interaction/entry_hand/morgue_hand
-	id = "morgue_hand"
-	name = "Use"
-	effect = /obj/structure/morgue/proc/interaction_hand
-
-/obj/structure/morgue/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: pull the tray out, or push it back in.
+/obj/structure/morgue/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (src.connected)
 		close()
 	else
 		open()
 	src.add_fingerprint(user)
 	update()
-	return TRUE
+	return OP_OK
 
 /obj/structure/morgue/proc/close()
 	for(var/atom/movable/A as mob|obj in src.connected.loc)
 		if (!( A.anchored ))
 			A.forceMove(src)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_clear(src, nameof(connected), OWN_DELETE)
+	rel_clear(src, nameof(connected))
 
 /obj/structure/morgue/proc/open()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
+	rel_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, src.dir)
 	if (T.contents.Find(src.connected))
-		src.icon_state = "morgue0"
+		set_icon_state("morgue0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "morguet"
 		src.connected.set_dir(src.dir)
 	else
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 
 
-/// Old attackby: relabel with a pen.
-/datum/interaction/entry_item/morgue_item
-	id = "morgue_item"
-	name = "Use"
-	effect = /obj/structure/morgue/proc/interaction_item
+/// Old attackby: a held thing leaves a print and does nothing else (a pen relabels it: the "label" op).
+/obj/structure/morgue/proc/interaction_item(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-/obj/structure/morgue/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
-	if (istype(P, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text/morgue_label, PROC_REF(label_entered), subject = P, morgue = src)
-	src.add_fingerprint(user)
-	return TRUE
+/// The question a pen asks: the morgue's own name as the title.
+/obj/structure/morgue/proc/label_question(datum/act/A)
+	return "What would you like the label to be?"
 
-/// Relabelling a morgue or crematorium with a pen (the subject, held throughout); still in range of it.
-/datum/om/prompt/text/morgue_label
-	name_text = TRUE
-	message = "What would you like the label to be?"
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/structure/morgue/morgue
-
-/datum/om/prompt/text/morgue_label/prepare()
-	title = "[morgue.name]"
-	return TRUE
-
-/datum/om/prompt/text/morgue_label/valid()
-	return (in_range(morgue, answerer) || morgue.loc == answerer) ? null : "too far away"
-
-/obj/structure/morgue/proc/label_entered(datum/om/prompt/text/morgue_label/ask)
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// A pen relabels it (the pen held throughout, still beside it).
+/obj/structure/morgue/proc/label_entered(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/t = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Morgue- '[]'", t)
 	else
 		src.name = "Morgue"
+	return OP_OK
 
 /obj/structure/morgue/relaymove(mob/user as mob)
 	if (user.stat)
@@ -162,53 +142,42 @@
 
 // The morgue owns its tray (implicit OWN, deleted with it); the tray names its morgue (one-sided REL).
 
-/obj/structure/m_tray
-	silicon_use = ROBOT_USE_HAND_ADJACENT
+CAPABILITIES(/obj/structure/m_tray)
+	ref_one(nameof(connected))
+	silicon_hand(adjacent = TRUE)
+	op("push_in", hand(), label("Push in"), then(PROC_REF(interaction_hand)))
+	op("place", item(/atom/movable), gesture(GESTURE_DRAG), label("Place on tray"), then(PROC_REF(interaction_drag)))
 
-/obj/structure/m_tray/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/m_tray_hand,
-		/datum/interaction/entry_drag/m_tray_drag,
-	)
-	..()
-
-/// Old attack_hand: push the tray back in.
-/datum/interaction/entry_hand/m_tray_hand
-	id = "m_tray_hand"
-	name = "Push in"
-	effect = /obj/structure/m_tray/proc/interaction_hand
-
-/obj/structure/m_tray/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: push the tray (and what lies on it) back into its morgue.
+/obj/structure/m_tray/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (src.connected)
-		for(var/atom/movable/A as mob|obj in src.loc)
-			if (!( A.anchored ))
-				A.forceMove(src.connected)
+		for(var/atom/movable/AM as mob|obj in src.loc)
+			if (!( AM.anchored ))
+				AM.forceMove(src.connected)
 			//Foreach goto(26)
 		var/obj/structure/morgue/M = connected
 		add_fingerprint(user)
 		own_clear(M, nameof(M.connected), OWN_DELETE) // the morgue owns this tray: deletes src
 		M.update()
-	return TRUE
+	return OP_OK
 
-/// Old MouseDrop_T: slide a body (or body bag) onto the tray.
-/datum/interaction/entry_drag/m_tray_drag
-	id = "m_tray_drag"
-	name = "Place on tray"
-	effect = /obj/structure/m_tray/proc/interaction_drag
-
-/obj/structure/m_tray/proc/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+/// Old MouseDrop_T: a body or a body bag dragged onto the tray is laid on it.
+/obj/structure/m_tray/proc/interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/O = A.held
 	if ((!( istype(O, /atom/movable) ) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src) || user.contents.Find(O)))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if (!ismob(O) && !istype(O, /obj/structure/closet/body_bag))
-		return INTERACTION_HANDLED_PASS
-	if (!ismob(user) || user.stat || user.lying || user.has_status(EFFECT_STUNNED))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	if (!ismob(user) || user.stat || user.lying || user.has_status(STAT_STUNNED))
+		return OP_PASS
 	O.forceMove(src.loc)
 	if (user != O)
 		for(var/mob/B in viewers(user, 3))
 			if ((B.client && !( B.blinded )))
 				to_chat(B, span_warning("\The [user] stuffs [O] into [src]!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /*
  * Crematorium
@@ -225,94 +194,83 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	var/id = 1
 	var/locked = 0
 
+TRACKED(/obj/structure/morgue/crematorium, cremating)
+
+// the crematorium's own Use replaces the morgue's (its tray is a crematorium tray, and it is locked while it burns)
+CAPABILITIES(/obj/structure/morgue/crematorium)
+	without("use")
+	op("crema_use", hand(), label("Use"), needs(req_is(nameof(cremating), FALSE, because = MSG(crematorium/locked))), then(PROC_REF(interaction_crema_hand)))
+
+MSG_DEF_SELF(crematorium/locked, "It's locked.")
+
 /obj/structure/morgue/crematorium/update()
 	if (src.connected)
-		src.icon_state = "crema0"
+		set_icon_state("crema0")
 	else
 		if (contents_count(src))
-			src.icon_state = "crema2"
+			set_icon_state("crema2")
 		else
-			src.icon_state = "crema1"
+			set_icon_state("crema1")
 	return
 
-// Crematorium's Use and label overrides fully replace morgue's (the original overrides
-// never called ..() into it either), so it declares its own interactions.
-/obj/structure/morgue/crematorium/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/crematorium_hand,
-		/datum/interaction/entry_item/crematorium_item,
-	)
-
-/// Old attack_hand: open/close the crematorium tray.
-/datum/interaction/entry_hand/crematorium_hand
-	id = "crematorium_hand"
-	name = "Use"
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("cremating"), "it's locked"))
-	effect = /obj/structure/morgue/crematorium/proc/interaction_crema_hand
-
-/obj/structure/morgue/crematorium/proc/interaction_crema_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: pull the crematorium tray out or push it in (not while it burns).
+/obj/structure/morgue/crematorium/proc/interaction_crema_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if ((src.connected) && (src.locked == 0))
-		for(var/atom/movable/A as mob|obj in src.connected.loc)
-			if (!( A.anchored ))
-				A.forceMove(src)
+		for(var/atom/movable/AM as mob|obj in src.connected.loc)
+			if (!( AM.anchored ))
+				AM.forceMove(src)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 	else if (src.locked == 0)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+		rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 		rel_set(connected, nameof(connected.connected), src)
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
 		var/turf/T = get_step(src, dir)
 		if (T.contents.Find(src.connected))
-			src.icon_state = "crema0"
-			for(var/atom/movable/A as mob|obj in contents_of(src))
-				A.forceMove(src.connected.loc)
+			set_icon_state("crema0")
+			for(var/atom/movable/AM as mob|obj in contents_of(src))
+				AM.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
 		else
-			own_clear(src, nameof(connected), OWN_DELETE)
+			rel_clear(src, nameof(connected))
 	src.add_fingerprint(user)
 	update()
-	return TRUE
+	return OP_OK
 
-/// Old attackby: relabel with a pen.
-/datum/interaction/entry_item/crematorium_item
-	id = "crematorium_item"
-	name = "Use"
-	effect = /obj/structure/morgue/crematorium/proc/interaction_crema_item
-
-/obj/structure/morgue/crematorium/proc/interaction_crema_item(mob/user, obj/item/P, datum/interaction/interaction)
-	if (istype(P, /obj/item/pen))
-		om_ask(user, /datum/om/prompt/text/morgue_label, PROC_REF(label_entered), subject = P, morgue = src)
-	src.add_fingerprint(user)
-	return TRUE
-
-/obj/structure/morgue/crematorium/label_entered(datum/om/prompt/text/morgue_label/ask)
-	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/obj/structure/morgue/crematorium/label_entered(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/t = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Crematorium- '[]'", t)
 	else
 		src.name = "Crematorium"
+	return OP_OK
 
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)
 		return
-	own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+	rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, EAST)
 	if (T.contents.Find(src.connected))
-		src.icon_state = "crema0"
+		set_icon_state("crema0")
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
 	else
-		own_clear(src, nameof(connected), OWN_DELETE)
+		rel_clear(src, nameof(connected))
 	return
 
 /obj/structure/morgue/crematorium/proc/cremation_done()
-	cremating = 0
+	set_cremating(0)
 	locked = 0
 	play_sfx(src, SFX_MACHINES_DING)
 
@@ -333,7 +291,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		for (var/mob/M in viewers(src))
 			to_chat(M, span_warning("You hear a roar as the crematorium activates."))
 
-		cremating = 1
+		set_cremating(1)
 		locked = 1
 
 		for(var/mob/living/M in contents)
@@ -353,7 +311,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
+		after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return
 
 /*
@@ -373,28 +331,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	req_access = list(ACCESS_CREMATORIUM)
 	id = 1
 
-/obj/machinery/button/crematorium/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/crematorium_button_trigger,
-	)
-	..()
+CAPABILITIES(/obj/machinery/button/crematorium)
+	op("trigger", hand(), label("Trigger"), needs(req_access()), then(PROC_REF(interaction_trigger)))
 
-/datum/interaction/machine_hand/crematorium_button_trigger
-	id = "crematorium_button_trigger"
-	name = "Trigger"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/button/crematorium/proc/allows_access, "access denied"))
-	effect = /obj/machinery/button/crematorium/proc/interaction_trigger
-
-/obj/machinery/button/crematorium/proc/allows_access(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
-/obj/machinery/button/crematorium/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: light every crematorium with this button's id (crematorium access only).
+/obj/machinery/button/crematorium/proc/interaction_trigger(datum/act/op/A)
+	var/mob/user = A.actor
 	for (var/obj/structure/morgue/crematorium/C in REGISTRY_MEMBERS(REGISTRY_CREMATORIUMS))
 		if (C.id == id)
 			if (!C.cremating)
 				C.cremate(null, user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/morgue/crematorium/vr
 	var/static/list/allowed_items = list(/obj/item/organ,
@@ -429,7 +376,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		for (var/mob/M in viewers(src))
 			M.show_message(span_warning("You hear a roar as the crematorium activates."), 1)
 
-		cremating = 1
+		set_cremating(1)
 		locked = 1
 
 		for(var/mob/living/M in contents)
@@ -449,5 +396,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
+		after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return

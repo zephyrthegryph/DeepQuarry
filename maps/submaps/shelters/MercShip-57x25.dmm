@@ -276,7 +276,7 @@
 /area/survivalpod/superpose/MercShip)
 "dC" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "hacked autolathe"
 	},
 /turf/simulated/floor/tiled/techfloor,
@@ -419,7 +419,7 @@
 /area/survivalpod/superpose/MercShip)
 "fK" = (
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
@@ -1376,7 +1376,7 @@
 /area/survivalpod/superpose/MercShip)
 "tj" = (
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;

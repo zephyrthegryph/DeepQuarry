@@ -6,7 +6,6 @@
 	icon_override = 'icons/mob/vacpack.dmi'
 	icon_state = "sucker_drop"
 	item_state = "sucker"
-	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
 	/// Where sucked-up things go (a relation view: the belly, sleeper or trash bag we feed).
 	var/atom/movable/output_dest
@@ -32,16 +31,36 @@ TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
 			"output destination" = 9 \
 			))
 
-DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/vac_attachment)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	ref_one(nameof(output_dest), /atom/movable)
+	// the old attack_self: with no output yet, set one; otherwise pick a power level or the output
+	op("settings", in_hand(), label("Settings"),
+		asks(/datum/prompt/choice, fields = list("title" = "Vac Settings", "question" = computed(PROC_REF(settings_question)), "choices" = computed(PROC_REF(settings_choices)), "timeout" = 0), when = PROC_REF(has_output)),
+		then(PROC_REF(setting_chosen)))
+	// the old object verb
+	op("sprites", menu(), label("Toggle Vac-Pack Sprites"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("title" = "Vac-Pack Visibility Options", "question" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "timeout" = 0)),
+		then(PROC_REF(visibility_chosen)))
+	ref_one(nameof(vac_owner), /mob/living)
 
-/obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/vac_attachment/proc/has_output(datum/act/op/A)
+	return !!output_dest
+
+/obj/item/vac_attachment/proc/settings_question(datum/act/A)
+	return "Set your [suckverb] attachment's power level or output mode."
+
+/obj/item/vac_attachment/proc/settings_choices(datum/act/A)
+	return TYPE_TABLE_GET(src, vac_attachment_settings)
+
+/obj/item/vac_attachment/proc/setting_chosen(datum/act/op/A)
 	if(!output_dest)
-		apply_setting(user, "output destination")
-		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = TYPE_TABLE_GET(src, vac_attachment_settings), ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/vac_attachment/proc/setting_chosen(datum/om/prompt/choice/ask)
-	apply_setting(ask.answerer, ask.choice)
+		apply_setting(A.actor, "output destination")
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		apply_setting(A.actor, R.value)
+	return OP_OK
 
 /obj/item/vac_attachment/proc/apply_setting(mob/user, set_input)
 	if(set_input == "output destination")
@@ -51,16 +70,18 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		var/vac_options = list("Vore Belly", "Trash Bag") //Dont show option for borg belly if the user isnt even a borg. QOL!
 		if(isrobot(user))
 			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(output_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(output_chosen), answerer = user, title = "Vac Settings", question = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 	vac_power = TYPE_TABLE_GET(src, vac_attachment_settings)[set_input]
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
-/obj/item/vac_attachment/proc/output_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/vac_attachment/proc/output_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	switch(A.answer.value)
 		if("Borg Belly")
-			if(isrobot(user))
+			if(istype(user, /mob/living/silicon/robot))
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/dogborg/sleeper/S in M.modules)
@@ -69,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 						return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
-			if(isrobot(user))
+			if(istype(user, /mob/living/silicon/robot))
 				var/mob/living/silicon/robot/R = user
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/storage/bag/trash/T in M.modules)
@@ -82,8 +103,8 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
-			if(user.vore_selected)
-				rel_set(src, nameof(output_dest), user.vore_selected)
+			if(vore_selected_of(user))
+				rel_set(src, nameof(output_dest), vore_selected_of(user))
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)
@@ -100,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(istype(output_atom, /obj/item/storage/bag/trash))
 		if(get_turf(output_atom) != get_turf(user))
 			vac_power = 0
-			icon_state = "sucker-0"
+			set_icon_state("sucker-0")
 			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Trash bag not found. Shutting down."))
 			return
@@ -126,7 +147,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			if(vac_owner && user != vac_owner)
 				return
 			vac_power = 0
-			icon_state = "sucker-0"
+			set_icon_state("sucker-0")
 			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Target destination not found. Shutting down."))
 			return
@@ -148,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				I.singularity_pull(target, STAGE_THREE)
 				suckables += I
 			for(var/mob/living/L in oview(pull_range, target))
-				if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey || L == attachment_holder)
 					continue
 				L.singularity_pull(target, STAGE_THREE)
 				suckables += L
@@ -161,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 					continue
 				suckables += I
 			for(var/mob/living/L in target)
-				if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey || L == attachment_holder)
 					continue
 				if(L.size_multiplier < 0.5 || vac_power >= 6)
 					suckables += L
@@ -210,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				if(suckanim)
 					if(vac_conga < 100)
 						vac_conga += 3
-					om_after(src, 0.3 SECONDS + vac_conga, PROC_REF(prepare_sucking), F, user, target)
+					after(src, 0.3 SECONDS + vac_conga, PROC_REF(prepare_sucking), with = list(F, user, target))
 				else if(is_allowed_suck(target, user, output_atom))
 					handle_consumption(F, user, auto_setting)
 			if(vac_conga > 0)
@@ -243,19 +264,19 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				I.SpinAnimation(5,1)
-			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), I, user, auto_setting)
+			after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(I, user, auto_setting))
 			return
 
 	if(istype(target,/obj/effect/decal/cleanable))
 		playsound(src, sucksound, auto_setting * 20, 1, -1)
 		act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
-		qdel(target)
+		consumed(target, src)
 		return
 
 	if(isliving(target))
 		var/mob/living/L = target
 		var/valid_to_suck = FALSE
-		if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey)
+		if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey)
 			return
 		if(vac_power >= 3)
 			if(L.size_multiplier > 0.5 || has_trait(L, TRAIT_AMBIENT_PEST_MOB))
@@ -269,9 +290,11 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				L.SpinAnimation(5,1)
-			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
+			after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(L, user, auto_setting))
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
+	if(QDELETED(target) || QDELETED(user))
+		return
 	var/atom/movable/output_atom = output_dest
 
 	if(vac_owner) //Embedded vacs have special handling.
@@ -284,9 +307,11 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(!is_allowed_suck(target, user, output_atom)) //cancel if you're not allowed
 		return
 	target.SpinAnimation(5,1)
-	om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), target, user, target_turf)
+	after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(target, user, target_turf))
 
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
+	if(QDELETED(target) || QDELETED(user))
+		return
 	if(target_turf && target.loc != target_turf)
 		return
 	var/atom/movable/output_atom = output_dest
@@ -302,8 +327,8 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		return
 	if(isitem(target))
 		var/obj/item/target_item = target
-		if(target_item.drop_sound)
-			playsound(src, target_item.drop_sound, vac_power * 5, 1, -1)
+		if(sounds_of(target_item).drop)
+			playsound(src, sounds_of(target_item).drop, vac_power * 5, 1, -1)
 	play_sfx(src, SFX_RAKSHASA_CORROSION3, volume = auto_setting * 15)
 	if(isbelly(output_atom))
 		var/obj/belly/output_belly = output_atom
@@ -327,12 +352,12 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 					return TRUE
 	if(isliving(target)) //quick prefs test. Better safe than sorry
 		var/mob/living/caneat = target
-		if(caneat.devourable && caneat.can_be_drop_prey)
+		if(caneat.vore_prefs.devourable && caneat.vore_prefs.can_be_drop_prey)
 			if(istype(output_atom, /obj/item/storage))//check if a mob holder's gonna fit there!
 				var/obj/item/storage/target_storage = output_atom
 				var/total_storage_space = ITEMSIZE_COST_SMALL
 				target_storage.latent_materialize_all() // a walk needs real things (C5)
-				for(var/obj/item/thing in contents_of(target_storage)) // ALLOW(latent): materialized above
+				for(var/obj/item/thing in contents_of(target_storage)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 					total_storage_space += thing.get_storage_cost()
 				if(total_storage_space > target_storage.max_storage_space)
 					return FALSE
@@ -347,31 +372,30 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/vac_attachment/pickup(mob/user)
 	.=..()
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
 /obj/item/vac_attachment/equipped()
 	.=..()
-	icon_state = "sucker-[vac_power]"
+	set_icon_state("sucker-[vac_power]")
 
 /obj/item/vac_attachment/dropped(mob/user, equipping, slot)
 	. = ..()
-	icon_state = "sucker_drop"
+	set_icon_state("sucker_drop")
 
-/obj/item/vac_attachment/proc/hide_pack_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(visibility_chosen), title = "Vac-Pack Visibility Options", message = "Vac-Pack Visibility Options", choices = list("Show Pack", "Show Tube", "Hidden"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/vac_attachment/proc/visibility_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/vac_attachment/proc/visibility_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
+	var/mob/user = A.actor
+	switch(R.value)
 		if("Show Pack")
-			item_state = "sucker"
+			set_item_state("sucker")
 		if("Show Tube")
-			item_state = "sucker_nobag"
+			set_item_state("sucker_nobag")
 		if("Hidden")
-			item_state = null
-	user.update_inv_r_hand()
-	user.update_inv_l_hand()
+			set_item_state(null)
+	changed(src)
+	return OP_OK
 
 /obj/item/storage/Entered(atom/movable/thing, atom/OldLoc) //Holder the mob so they don't get stuck in trashbags etc.
 	. = ..()
@@ -410,10 +434,5 @@ TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
 
 /obj/effect/vac_visual/proc/ready(effect_time)
 	expire(effect_time)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
-	INTERACT_VERB("Toggle Vac-Pack Sprites", PROC_REF(hide_pack_effect), REQ_IN_INVENTORY), \
-)
 
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.

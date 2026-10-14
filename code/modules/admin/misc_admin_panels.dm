@@ -21,19 +21,17 @@
 	rel_set(src, nameof(source), src_mind)
 	rel_set(src, nameof(recipient), recipient_mob)
 
-DECLARE_UI_STATE(/datum/mind_memory_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/mind_memory_panel, "MindMemory", UI_TITLE("Memory"))
+CAPABILITIES(/datum/mind_memory_panel)
+	interface("MindMemory", title = "Memory", state = nameof(GLOB.tgui_always_state))
+	ui_shape(name = any, memory = bool(), ambitions = bool(), objectives = list_of())
 
 /datum/mind_memory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(user != recipient())
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/mind_memory_panel, "merge:ui_data_datum_mind_memory_panel{name:unknown,memory:bool,ambitions:bool,objectives:list}")
-
-/// The computed part of /datum/mind_memory_panel's window data (declared on its UI_DATA row).
-/datum/mind_memory_panel/proc/ui_data_datum_mind_memory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/mind_memory_panel's window data.
+/datum/mind_memory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!source())
 		return data
@@ -64,14 +62,17 @@ UI_DATA_REPLACE(/datum/mind_memory_panel, "merge:ui_data_datum_mind_memory_panel
 	..()
 	rel_set(src, nameof(holder), owner_holder)
 
-DECLARE_UI_STATE(/datum/tag_menu_panel, ADMIN_STATE(R_ADMIN))
+CAPABILITIES(/datum/tag_menu_panel)
+	interface("TagMenu", title = "Tag Menu", rights = R_ADMIN)
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("untag", ui_act("untag", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_untag)))
+	op("mark", ui_act("mark", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_mark)))
+	op("vv", ui_act("vv", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_vv)))
+	op("pp", ui_act("pp", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_pp)))
+	op("follow", ui_act("follow", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_follow)))
 
-DECLARE_UI(/datum/tag_menu_panel, "TagMenu", UI_TITLE("Tag Menu"))
-
-UI_DATA_REPLACE(/datum/tag_menu_panel, "merge:ui_data_datum_tag_menu_panel{entries:list}")
-
-/// The computed part of /datum/tag_menu_panel's window data (declared on its UI_DATA row).
-/datum/tag_menu_panel/proc/ui_data_datum_tag_menu_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/tag_menu_panel's window data.
+/datum/tag_menu_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())
 		return data
@@ -101,48 +102,54 @@ UI_DATA_REPLACE(/datum/tag_menu_panel, "merge:ui_data_datum_tag_menu_panel{entri
 	data["entries"] = rows
 	return data
 
-/datum/tag_menu_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/tag_menu_panel/proc/ui_gate(datum/act/op/A)
 	if(!holder())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_refresh)
-	SStgui.update_uis(src)
+/datum/tag_menu_panel/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "untag", ui_act_untag, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_untag)
-	var/ref = "[params["ref"]]"
-	holder().topic_internal(ui.user, list("_src_" = "holder", "del_tag" = ref))
-	SStgui.update_uis(src)
+/datum/tag_menu_panel/proc/ui_act_untag(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	holder().topic_internal(user, list("_src_" = "holder", "del_tag" = ref))
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "mark", ui_act_mark, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_mark)
-	var/ref = "[params["ref"]]"
-	holder().topic_internal(ui.user, list("_src_" = "holder", "mark_datum" = ref))
-	SStgui.update_uis(src)
+/datum/tag_menu_panel/proc/ui_act_mark(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	holder().topic_internal(user, list("_src_" = "holder", "mark_datum" = ref))
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "vv", ui_act_vv, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_vv)
-	var/ref = "[params["ref"]]"
-	ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
+/datum/tag_menu_panel/proc/ui_act_vv(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	user.client?.vv_topic(list("Vars" = ref), TRUE)
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "pp", ui_act_pp, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_pp)
-	var/ref = "[params["ref"]]"
-	holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))
+/datum/tag_menu_panel/proc/ui_act_pp(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	holder().topic_internal(user, list("_src_" = "holder", "playerpanel" = ref))
 	return TRUE
 
-UI_ACT(/datum/tag_menu_panel, "follow", ui_act_follow, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/datum/tag_menu_panel, ui_act_follow)
-	var/ref = "[params["ref"]]"
-	holder().topic_internal(ui.user, list("_src_" = "holder", "adminobs" = ref))
+/datum/tag_menu_panel/proc/ui_act_follow(datum/act/op/A, ref_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/ref = "[ref_arg]"
+	holder().topic_internal(user, list("_src_" = "holder", "adminobs" = ref))
 	return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
@@ -154,14 +161,12 @@ UI_ACT_PROC(/datum/tag_menu_panel, ui_act_follow)
 	..()
 	addresses = addr || list()
 
-DECLARE_UI_STATE(/datum/dq_torban_panel, ADMIN_STATE(R_ADMIN|R_SERVER))
+CAPABILITIES(/datum/dq_torban_panel)
+	interface("TorbanList", title = "Torban", rights = R_ADMIN|R_SERVER)
+	ui_shape(addresses = bool())
 
-DECLARE_UI(/datum/dq_torban_panel, "TorbanList", UI_TITLE("Torban"))
-
-UI_DATA_REPLACE(/datum/dq_torban_panel, "merge:ui_data_datum_dq_torban_panel{addresses:bool}")
-
-/// The computed part of /datum/dq_torban_panel's window data (declared on its UI_DATA row).
-/datum/dq_torban_panel/proc/ui_data_datum_dq_torban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/dq_torban_panel's window data.
+/datum/dq_torban_panel/ui_data(datum/act/eval/A)
 	return list("addresses" = addresses || list())
 
 // ---- Admin Investigate log viewer ----------------------------------------
@@ -175,17 +180,15 @@ UI_DATA_REPLACE(/datum/dq_torban_panel, "merge:ui_data_datum_dq_torban_panel{add
 	subject = subj
 	log_text = text
 
-DECLARE_UI_STATE(/datum/dq_investigate_panel, ADMIN_STATE(R_ADMIN|R_MOD|R_SERVER))
-
-DECLARE_UI(/datum/dq_investigate_panel, "InvestigateLog")
+CAPABILITIES(/datum/dq_investigate_panel)
+	interface("InvestigateLog", rights = R_ADMIN|R_MOD|R_SERVER)
+	ui_shape(subject = schema_text(), log_text = schema_text())
 
 /datum/dq_investigate_panel/ui_title(mob/user)
 	return "Investigate: [subject]"
 
-UI_DATA_REPLACE(/datum/dq_investigate_panel, "merge:ui_data_datum_dq_investigate_panel{subject:text,log_text:text}")
-
-/// The computed part of /datum/dq_investigate_panel's window data (declared on its UI_DATA row).
-/datum/dq_investigate_panel/proc/ui_data_datum_dq_investigate_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/dq_investigate_panel's window data.
+/datum/dq_investigate_panel/ui_data(datum/act/eval/A)
 	return list(
 		"subject" = subject,
 		"log_text" = log_text,
@@ -203,20 +206,25 @@ UI_DATA_REPLACE(/datum/dq_investigate_panel, "merge:ui_data_datum_dq_investigate
 	var/tmp/datum/admins/holder
 	var/list/shown_rows
 
+TRACKED(/datum/unban_panel, shown_rows)
+
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
 	rel_set(src, nameof(holder), owner_holder)
 
-DECLARE_UI_STATE(/datum/unban_panel, ADMIN_STATE(R_ADMIN))
-
-DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
+CAPABILITIES(/datum/unban_panel)
+	interface("UnbanPanel", title = "Unban", rights = R_ADMIN)
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("unban", ui_act("unban", arg("key_id", schema_text(4096))), then(PROC_REF(ui_act_unban)))
+	op("edit", ui_act("edit", arg("key_id", schema_text(4096))), then(PROC_REF(ui_act_edit)))
 
 /datum/unban_panel/ui_opening(mob/user, datum/tgui/ui)
 	snapshot_bans()
 
 /datum/unban_panel/proc/snapshot_bans()
-	shown_rows = list()
+	var/list/rows = list()
 	if(!GLOB.banlist)
+		set_shown_rows(rows)
 		return
 	// GLOB.banlist is a shared savefile cursor — record the prior cd
 	// and restore it after the snapshot so concurrent ban operations
@@ -241,7 +249,7 @@ DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
 				expiry = "[raw_min] Minutes"
 		else
 			expiry = "Permaban"
-		shown_rows += list(list(
+		rows += list(list(
 			"key_id" = "[key][id]",
 			"key" = "[key]",
 			"id" = "[id]",
@@ -251,11 +259,10 @@ DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
 			"expiry" = "[expiry]",
 		))
 	GLOB.banlist.cd = prior_cd
+	set_shown_rows(rows)
 
-UI_DATA_REPLACE(/datum/unban_panel, "merge:ui_data_datum_unban_panel{bans:bool,count:num}")
-
-/// The computed part of /datum/unban_panel's window data (declared on its UI_DATA row).
-/datum/unban_panel/proc/ui_data_datum_unban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/unban_panel's window data.
+/datum/unban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())
 		return data
@@ -263,49 +270,50 @@ UI_DATA_REPLACE(/datum/unban_panel, "merge:ui_data_datum_unban_panel{bans:bool,c
 	data["count"] = length(shown_rows)
 	return data
 
-/datum/unban_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/unban_panel/proc/ui_gate(datum/act/op/A)
 	if(!holder())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/unban_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/unban_panel, ui_act_refresh)
+/datum/unban_panel/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/unban_panel, "unban", ui_act_unban, UI_ARG_TEXT("key_id"))
-UI_ACT_PROC(/datum/unban_panel, ui_act_unban)
-	var/key_id = "[params["key_id"]]"
-	holder().topic_internal(ui.user, list("unbanf" = key_id))
+/datum/unban_panel/proc/ui_act_unban(datum/act/op/A, key_id_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/key_id = "[key_id_arg]"
+	holder().topic_internal(user, list("unbanf" = key_id))
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/unban_panel, "edit", ui_act_edit, UI_ARG_TEXT("key_id"))
-UI_ACT_PROC(/datum/unban_panel, ui_act_edit)
-	var/key_id = "[params["key_id"]]"
-	holder().topic_internal(ui.user, list("unbane" = key_id))
+/datum/unban_panel/proc/ui_act_edit(datum/act/op/A, key_id_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/key_id = "[key_id_arg]"
+	holder().topic_internal(user, list("unbane" = key_id))
 	snapshot_bans()
-	SStgui.update_uis(src)
 	return TRUE
 
 // (newbanjob unjobbanpanel was dead code — file not in DME; no panel here.)
 
 // ---- Job-Ban Panel (admin) ----------------------------------------------
 
+/// Open panels: "holder-target" key -> the panel's entity_handle (a panel deleted elsewhere stops resolving).
 GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
 	if(!owner()?.mob || !target)
 		return
 	var/key = "[REF(src)]-[REF(target)]"
-	var/datum/jobban_panel/panel = LAZYACCESS(GLOB.dq_jobban_panels, key)
+	var/datum/jobban_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_jobban_panels, key))
 	if(!panel)
 		panel = new(src, target)
-		GLOB.dq_jobban_panels[key] = panel
+		GLOB.dq_jobban_panels[key] = entity_handle(panel)
 	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel
@@ -323,9 +331,11 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(holder() && target())
 		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
 
-DECLARE_UI_STATE(/datum/jobban_panel, ADMIN_STATE(R_ADMIN|R_MOD))
-
-DECLARE_UI(/datum/jobban_panel, "JobBanPanel")
+CAPABILITIES(/datum/jobban_panel)
+	interface("JobBanPanel", rights = R_ADMIN|R_MOD)
+	op("toggle_job", ui_act("toggle_job", arg("title", schema_text(4096))), then(PROC_REF(ui_act_toggle_job)))
+	op("toggle_dept", ui_act("toggle_dept", arg("bantype", schema_text(4096))), then(PROC_REF(ui_act_toggle_dept)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 
 /datum/jobban_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!holder() || !target())
@@ -391,10 +401,8 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		"jobs" = jobs,
 	)
 
-UI_DATA_REPLACE(/datum/jobban_panel, "merge:ui_data_datum_jobban_panel{target_name:text,target_ref:text,departments:list}")
-
-/// The computed part of /datum/jobban_panel's window data (declared on its UI_DATA row).
-/datum/jobban_panel/proc/ui_data_datum_jobban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/jobban_panel's window data.
+/datum/jobban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!target())
 		return data
@@ -433,8 +441,8 @@ UI_DATA_REPLACE(/datum/jobban_panel, "merge:ui_data_datum_jobban_panel{target_na
 	// Antagonist block — driven by the antag service, not by SSjob department.
 	var/list/antag_jobs = list()
 	var/dept_antag_ban = !!jobban_isbanned(target(), JOB_SYNDICATE)
-	for(var/antag_type in GLOB.antag_service.all_antag_types)
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
+	for(var/antag_type in antag_all_antag_types())
+		var/datum/antagonist/antag = antag_all_antag_types()[antag_type]
 		if(!antag || !antag.bantype)
 			continue
 		antag_jobs += list(list(
@@ -469,31 +477,31 @@ UI_DATA_REPLACE(/datum/jobban_panel, "merge:ui_data_datum_jobban_panel{target_na
 	data["departments"] = departments
 	return data
 
-/datum/jobban_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/jobban_panel/proc/ui_gate(datum/act/op/A)
 	if(!holder() || !target())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/jobban_panel, "toggle_job", ui_act_toggle_job, UI_ARG_TEXT("title"))
-UI_ACT_PROC(/datum/jobban_panel, ui_act_toggle_job)
-	var/title = "[params["title"]]"
+/datum/jobban_panel/proc/ui_act_toggle_job(datum/act/op/A, title_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/title = "[title_arg]"
 	// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-	holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
-	SStgui.update_uis(src)
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
 	return TRUE
 
-UI_ACT(/datum/jobban_panel, "toggle_dept", ui_act_toggle_dept, UI_ARG_TEXT("bantype"))
-UI_ACT_PROC(/datum/jobban_panel, ui_act_toggle_dept)
-	var/bantype = "[params["bantype"]]"
-	holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
-	SStgui.update_uis(src)
+/datum/jobban_panel/proc/ui_act_toggle_dept(datum/act/op/A, bantype_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/bantype = "[bantype_arg]"
+	holder().topic_internal(user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
 	return TRUE
 
-UI_ACT(/datum/jobban_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/jobban_panel, ui_act_refresh)
-	SStgui.update_uis(src)
+/datum/jobban_panel/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	return TRUE
 
 // ---- Vending log viewer --------------------------------------------------
@@ -509,17 +517,15 @@ UI_ACT_PROC(/datum/jobban_panel, ui_act_refresh)
 	user_name = viewer_name
 	entries = log_entries || list()
 
-DECLARE_UI_STATE(/datum/dq_vending_log_panel, GLOB.tgui_default_state)
-
-DECLARE_UI(/datum/dq_vending_log_panel, "VendingLog")
+CAPABILITIES(/datum/dq_vending_log_panel)
+	interface("VendingLog", state = nameof(GLOB.tgui_default_state))
+	ui_shape(machine_name = schema_text(), user_name = schema_text(), entries = list_of())
 
 /datum/dq_vending_log_panel/ui_title(mob/user)
 	return "[machine_name] Vending Log"
 
-UI_DATA_REPLACE(/datum/dq_vending_log_panel, "merge:ui_data_datum_dq_vending_log_panel{machine_name:text,user_name:text,entries:list}")
-
-/// The computed part of /datum/dq_vending_log_panel's window data (declared on its UI_DATA row).
-/datum/dq_vending_log_panel/proc/ui_data_datum_dq_vending_log_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/dq_vending_log_panel's window data.
+/datum/dq_vending_log_panel/ui_data(datum/act/eval/A)
 	return list(
 		"machine_name" = machine_name,
 		"user_name" = user_name,
@@ -538,62 +544,78 @@ UI_DATA_REPLACE(/datum/dq_vending_log_panel, "merge:ui_data_datum_dq_vending_log
 	var/list/books
 	var/error_msg = ""
 
+TRACKED(/datum/dq_delete_book_panel, books)
+TRACKED(/datum/dq_delete_book_panel, error_msg)
+
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()
 	rel_set(src, nameof(our_comp), comp)
-	books = book_rows || list()
-	error_msg = error || ""
+	set_books(book_rows || list())
+	set_error_msg(error || "")
 
-DECLARE_UI_STATE(/datum/dq_delete_book_panel, ADMIN_STATE(R_ADMIN))
+CAPABILITIES(/datum/dq_delete_book_panel)
+	interface("DeleteBookPanel", title = "Delete Book", rights = R_ADMIN)
+	op("sort", ui_act("sort", arg("by", schema_text(4096))), then(PROC_REF(ui_act_sort)))
+	op("order_by_id", ui_act("order_by_id"), then(PROC_REF(ui_act_order_by_id)))
+	op("delete", ui_act("delete", arg("id", schema_text(4096))), then(PROC_REF(ui_act_delete)))
 
-DECLARE_UI(/datum/dq_delete_book_panel, "DeleteBookPanel", UI_TITLE("Delete Book"))
-
-UI_DATA_REPLACE(/datum/dq_delete_book_panel, "merge:ui_data_datum_dq_delete_book_panel{books:list,error:text,sort_by:text}")
-
-/// The computed part of /datum/dq_delete_book_panel's window data (declared on its UI_DATA row).
-/datum/dq_delete_book_panel/proc/ui_data_datum_dq_delete_book_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/dq_delete_book_panel's window data.
+/datum/dq_delete_book_panel/ui_data(datum/act/eval/A)
 	return list(
 		"books" = books,
 		"error" = error_msg,
 		"sort_by" = our_comp() ? our_comp().sortby : "",
 	)
 
-/datum/dq_delete_book_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/dq_delete_book_panel/proc/ui_gate(datum/act/op/A)
 	if(!our_comp())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "sort", ui_act_sort, UI_ARG_TEXT("by"))
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_sort)
-	var/by = "[params["by"]]"
+/datum/dq_delete_book_panel/proc/ui_act_sort(datum/act/op/A, by_arg)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
+	var/by = "[by_arg]"
 	our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "order_by_id", ui_act_order_by_id)
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_order_by_id)
+/datum/dq_delete_book_panel/proc/ui_act_order_by_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	our_comp().tgui_act("orderbyid", list(), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/dq_delete_book_panel, "delete", ui_act_delete, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_delete)
-	var/id = "[params["id"]]"
+/datum/dq_delete_book_panel/proc/ui_act_delete(datum/act/op/A, id_arg)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
+	var/id = "[id_arg]"
 	our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
-	SStgui.update_uis(src)
 	return TRUE
 
 // ---- Syndicate beacon (Virgo) --------------------------------------------
 
-DECLARE_UI_STATE(/obj/machinery/syndicate_beacon/virgo, GLOB.tgui_default_state)
+CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
+	interface("SyndicateBeacon", title = "Ominous Beacon", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("transfer_supplies", ui_act("transfer_supplies", arg("mob_ref", schema_ref(/mob))), then(PROC_REF(ui_act_transfer_supplies)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-DECLARE_UI(/obj/machinery/syndicate_beacon/virgo, "SyndicateBeacon", UI_TITLE("Ominous Beacon"))
+/obj/machinery/syndicate_beacon/virgo/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["charges"] = charges
+	var/list/merged_1 = ui_data_obj_machinery_syndicate_beacon_virgo(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/machinery/syndicate_beacon/virgo, "charges:num", "merge:ui_data_obj_machinery_syndicate_beacon_virgo{temp:bool,selfdestructing:bool,recognized:bool,connection_severed:bool,user_ref:text,user_name:text,honorific:text}")
-
-/// The computed part of /obj/machinery/syndicate_beacon/virgo's window data (declared on its UI_DATA row).
+/// /obj/machinery/syndicate_beacon/virgo's window data.
 /obj/machinery/syndicate_beacon/virgo/proc/ui_data_obj_machinery_syndicate_beacon_virgo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["temp"] = temptext || ""
@@ -615,29 +637,22 @@ UI_DATA_REPLACE(/obj/machinery/syndicate_beacon/virgo, "charges:num", "merge:ui_
 		data["honorific"] = ""
 	return data
 
-UI_ACT(/obj/machinery/syndicate_beacon/virgo, "transfer_supplies", ui_act_transfer_supplies, UI_ARG_REF("mob_ref", "proc:ui_source_registry_members_registry_mobs", /mob))
-UI_ACT_PROC(/obj/machinery/syndicate_beacon/virgo, ui_act_transfer_supplies)
-	var/mob/M = params["mob_ref"]
-	betraitor(ui.user, M)
-	SStgui.update_uis(src)
+/obj/machinery/syndicate_beacon/virgo/proc/ui_act_transfer_supplies(datum/act/op/A, mob_ref)
+	var/mob/user = A.actor
+	if(!isnull(mob_ref) && !(mob_ref in ui_source_registry_members_registry_mobs()))
+		return FALSE
+	if(isnull(mob_ref))
+		return FALSE
+	var/mob/M = mob_ref
+	betraitor(user, M)
 	return TRUE
 
 /// The list the UI_ARG_REF rows resolve refs in.
 /obj/machinery/syndicate_beacon/virgo/proc/ui_source_registry_members_registry_mobs()
 	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
-/obj/machinery/syndicate_beacon/virgo/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/syndicate_beacon_virgo_use
-	id = "syndicate_beacon_virgo_use"
-	name = "Use"
-	effect = /obj/machinery/syndicate_beacon/virgo/proc/interaction_use
-
-/obj/machinery/syndicate_beacon/virgo/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/syndicate_beacon/virgo/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

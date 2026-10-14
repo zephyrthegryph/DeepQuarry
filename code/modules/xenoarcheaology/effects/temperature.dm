@@ -29,10 +29,10 @@
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
 			if(temp_change == HOT && env_temperature < target_temp)
 				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+				heat_set(env, max(env_temperature + temp_coef*10, 0), HEAT_SOURCE_OTHER)
 			else if(temp_change == COLD && env_temperature > target_temp)
 				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env_temperature - temp_coef, 0))
+				heat_set(env, max(env_temperature - temp_coef, 0), HEAT_SOURCE_OTHER)
 
 /datum/artifact_effect/temperature/DoEffectAura()
 	var/atom/holder = get_master_holder()
@@ -43,10 +43,10 @@
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
 			if(temp_change == HOT && env_temperature < target_temp)
 				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+				heat_set(env, max(env_temperature + temp_coef*10, 0), HEAT_SOURCE_OTHER)
 			else if(temp_change == COLD && env_temperature > target_temp)
 				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env_temperature - temp_coef, 0))
+				heat_set(env, max(env_temperature - temp_coef, 0), HEAT_SOURCE_OTHER)
 
 /datum/artifact_effect/temperature/DoEffectPulse() //Same as aura. Could probably be increased to be stronger with effect_range but eh, we don't want people to insta freeze/fry theirselves.
 	var/atom/holder = get_master_holder()
@@ -57,10 +57,10 @@
 			var/temp_coef = 1 //The closer they are, the harder it is to cause a change.
 			if(temp_change == HOT && env_temperature < target_temp)
 				temp_coef = ((target_temp)/(env_temperature+1)) //TT = 300. ET = 250. TC = ~1 || TT = 3000. ET = 300 TT = 10. We multiply by 10 below to speed it up.
-				env.set_temperature(max(env_temperature + temp_coef*10, 0))
+				heat_set(env, max(env_temperature + temp_coef*10, 0), HEAT_SOURCE_OTHER)
 			else if(temp_change == COLD && env_temperature > target_temp)
 				temp_coef = (env_temperature/(target_temp+1)) //ET = 300, TT = 25. TC = 12. Next: ET=288 TT = 25, TC = 11.52. ETC.
-				env.set_temperature(max(env_temperature - temp_coef, 0))
+				heat_set(env, max(env_temperature - temp_coef, 0), HEAT_SOURCE_OTHER)
 
 #undef COLD
 #undef HOT

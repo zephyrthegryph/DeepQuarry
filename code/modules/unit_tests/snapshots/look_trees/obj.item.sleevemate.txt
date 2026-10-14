@@ -1,0 +1,5 @@
+/obj/item/sleevemate icon: icons/obj/device_alt.dmi
+/obj/item/sleevemate state: sleevemate
+/obj/item/sleevemate dir: 2
+/obj/item/sleevemate overlay: icons/obj/device_alt.dmi:sleevemate:8:#000000
+

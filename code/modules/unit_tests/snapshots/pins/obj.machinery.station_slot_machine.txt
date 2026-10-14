@@ -1,0 +1,27 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Insert cash
+human|/obj/item/tool/screwdriver click: Click: Insert cash
+human|/obj/item/tool/crowbar menu: Insert cash
+human|/obj/item/tool/crowbar click: Click: Insert cash
+human|/obj/item/tool/wrench menu: Insert cash
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Insert cash
+human|/obj/item/tool/wirecutters click: Click: Insert cash
+human|/obj/item/multitool menu: Insert cash
+human|/obj/item/multitool click: Click: Insert cash
+human|/obj/item/weldingtool menu: Insert cash
+human|/obj/item/weldingtool click: Click: Insert cash
+human|/obj/item/stack/cable_coil menu: Insert cash
+human|/obj/item/stack/cable_coil click: Click: Insert cash
+human|/obj/item/stack/material/steel menu: Insert cash
+human|/obj/item/stack/material/steel click: Click: Insert cash
+human|/obj/item/card/id menu: Insert cash
+human|/obj/item/card/id click: Click: Insert cash
+human|/obj/item menu: Insert cash
+human|/obj/item click: Click: Insert cash
+keys: attackby, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wrench

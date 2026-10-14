@@ -9,10 +9,10 @@
 		var/mob/holder = player.current
 		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current)))
 		player.transfer_to(player.current)
-		if(holder) qdel(holder)
+		if(holder) spent(holder)
 	rel_set(player, nameof(player.original_character), player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
-		om_after(src, 3, PROC_REF(deferred_set_appearance), player)
+		after(src, 0.3 SECONDS, PROC_REF(deferred_set_appearance), with = list(player))
 	return player.current
 
 /datum/antagonist/proc/deferred_set_appearance(datum/mind/player)
@@ -29,7 +29,7 @@
 		return
 	for(var/image/I in recipient.current.client.images)
 		if(I.icon_state == antag_indicator || (faction_indicator && I.icon_state == faction_indicator))
-			qdel(I)
+			spent(I)
 
 /datum/antagonist/proc/get_indicator(datum/mind/recipient, datum/mind/other)
 	if(!antag_indicator || !other.current || !recipient.current)
@@ -79,15 +79,15 @@
 			if(antag.current && antag.current.client)
 				for(var/image/I in antag.current.client.images)
 					if(I.loc == player.current)
-						qdel(I)
+						spent(I)
 
 /datum/antagonist/proc/update_current_antag_max()
 	cur_max = hard_cap
-	if(SSticker && SSticker.mode)
-		if(SSticker.mode.antag_tags && (id in SSticker.mode.antag_tags))
+	if(SSticker && ticker_mode())
+		if(ticker_mode().antag_tags && (id in ticker_mode().antag_tags))
 			cur_max = hard_cap_round
 
-	if(SSticker.mode.antag_scaling_coeff)
+	if(ticker_mode().antag_scaling_coeff)
 
 		var/count = 0
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -96,4 +96,4 @@
 
 		// Minimum: initial_spawn_target
 		// Maximum: hard_cap or hard_cap_round
-		cur_max = max(initial_spawn_target,min(round(count/SSticker.mode.antag_scaling_coeff),cur_max))
+		cur_max = max(initial_spawn_target,min(round(count/ticker_mode().antag_scaling_coeff),cur_max))

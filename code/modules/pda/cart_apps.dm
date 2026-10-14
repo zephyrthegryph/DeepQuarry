@@ -12,29 +12,43 @@
 		"message1" = message1 ? message1 : "(none)",
 		"message2" = message2 ? message2 : "(none)")
 
-UI_ACT(/datum/data/pda/app/status_display, "Status", ui_act_status, UI_ARG_VALUE("alert"), UI_ARG_TEXT("statdisp"))
-UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
-	switch(params["statdisp"])
+CAPABILITIES(/datum/data/pda/app/status_display)
+	op("Status", ui_act("Status", arg("alert"), arg("statdisp", schema_text(4096))), asks(/datum/prompt/text, fields = list("question" = "Line 1", "title" = "Enter Message Text", "default" = computed(PROC_REF(status_line1_default)), "timeout" = 0), step = "k26", when = PROC_REF(status_sets_line1)), asks(/datum/prompt/text, fields = list("question" = "Line 2", "title" = "Enter Message Text", "default" = computed(PROC_REF(status_line2_default)), "timeout" = 0), step = "k28", when = PROC_REF(status_sets_line2)), then(PROC_REF(ui_act_status)))
+
+/datum/data/pda/app/status_display/proc/ui_act_status(datum/act/op/A, alert, statdisp)
+	switch(statdisp)
 		if("message")
 			post_status("message", message1, message2)
 		if("alert")
-			post_status("alert", params["alert"])
+			post_status("alert", alert)
 		if("setmsg1")
-			var/_answer_k26 = act_ask(ui.user, action, params, ui, "k26", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = message1)
+			var/_answer_k26 = A.step_value("k26")
 			if(isnull(_answer_k26))
 				return
 			message1 = _answer_k26
 		if("setmsg2")
-			var/_answer_k28 = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = message2)
+			var/_answer_k28 = A.step_value("k28")
 			if(isnull(_answer_k28))
 				return
 			message2 = _answer_k28
 		else
-			post_status(params["statdisp"])
+			post_status(statdisp)
 	return TRUE
 
+/datum/data/pda/app/status_display/proc/status_sets_line1(datum/act/op/A)
+	return A.args["statdisp"] == "setmsg1"
+
+/datum/data/pda/app/status_display/proc/status_sets_line2(datum/act/op/A)
+	return A.args["statdisp"] == "setmsg2"
+
+/datum/data/pda/app/status_display/proc/status_line1_default(datum/act/op/A)
+	return message1
+
+/datum/data/pda/app/status_display/proc/status_line2_default(datum/act/op/A)
+	return message2
+
 /datum/data/pda/app/status_display/proc/post_status(command, data1, data2)
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
 	if(!frequency)
 		return
 
@@ -78,35 +92,37 @@ UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
 		return pda().cartridge.radio
 	return null
 
-UI_ACT(/datum/data/pda/app/signaller, "signal", ui_act_signal)
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_signal)
+CAPABILITIES(/datum/data/pda/app/signaller)
+	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
+	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("code", int(1, 100))), then(PROC_REF(ui_act_code)))
+	op("reset", ui_act("reset", arg("reset", schema_text(16))), then(PROC_REF(ui_act_reset)))
+/datum/data/pda/app/signaller/proc/ui_act_signal(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/radio/integrated/signal/R = signal_radio()
-	R?.send_signal("ACTIVATE")
+	R?.send_signal("ACTIVATE", user)
 
-UI_ACT(/datum/data/pda/app/signaller, "freq", ui_act_freq, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_freq)
+/datum/data/pda/app/signaller/proc/ui_act_freq(datum/act/op/A, freq)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R)
 		return
-	var/frequency = unformat_frequency(params["freq"])
+	var/frequency = unformat_frequency(freq)
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	R.set_frequency(frequency)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/signaller, "code", ui_act_code, UI_ARG_INT("code", 1, 100))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_code)
+/datum/data/pda/app/signaller/proc/ui_act_code(datum/act/op/A, code)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
-	if(!R || isnull(params["code"]))
+	if(!R || isnull(code))
 		return
-	R.code = params["code"]
+	R.code = code
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/signaller, "reset", ui_act_reset, UI_ARG_TEXT("reset", 16))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
+/datum/data/pda/app/signaller/proc/ui_act_reset(datum/act/op/A, reset)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R)
 		return
-	if(params["reset"] == "freq")
+	if(reset == "freq")
 		R.set_frequency(initial(R.frequency))
 	else
 		R.code = initial(R.code)
@@ -120,23 +136,23 @@ UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
 
 	var/datum/tgui_module/power_monitor/power_monitor
 
+CAPABILITIES(/datum/data/pda/app/power)
+	interface(null, forwards = nameof(power_monitor)) // every other action is the embedded power monitor's
+	without("ui_open")
+	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor)
+
 /datum/data/pda/app/power/New()
-	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor(src))
+	rel_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor(src))
 	. = ..()
 
 
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))
 
-UI_ACT(/datum/data/pda/app/power, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/power, ui_act_back)
+/datum/data/pda/app/power/proc/ui_act_back(datum/act/op/A)
 	power_monitor.active_sensor = null
-	return TRUE
-
-/// Every other action is the embedded power monitor's.
-UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
-/datum/data/pda/app/power/proc/ui_forward_to_monitor(mob/user, action)
-	return power_monitor
+	return OP_OK
 
 /datum/data/pda/app/crew_records
 	var/tmp/datum/data/record/general_records
@@ -156,18 +172,22 @@ UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
 		data["records"] = null
 		return null
 
-UI_ACT(/datum/data/pda/app/crew_records, "Records", ui_act_records, UI_ARG_REF("target", null, /datum/data/record))
-UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
-	var/datum/data/record/R = params["target"]
+CAPABILITIES(/datum/data/pda/app/crew_records)
+	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+	op("Records", ui_act("Records", arg("target", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_records)))
+
+/datum/data/pda/app/crew_records/proc/ui_act_records(datum/act/op/A, target)
+	if(isnull(target))
+		return FALSE
+	var/datum/data/record/R = target
 	if(R && (R in GLOB.data_core.general))
 		load_records(R)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/crew_records, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
+/datum/data/pda/app/crew_records/proc/ui_act_back(datum/act/op/A)
 	rel_clear(src, nameof(/datum/data/pda/app/crew_records::general_records))
 	has_back = 0
-	return TRUE
+	return OP_OK
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
 	rel_set(src, nameof(general_records), R)
@@ -231,14 +251,14 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 
 /datum/data/pda/app/supply/update_ui(mob/user, list/data)
 	var/supplyData[0]
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	if (shuttle)
 		supplyData["shuttle_moving"] = shuttle.has_arrive_time()
 		supplyData["shuttle_eta"] = shuttle.eta_minutes()
 		supplyData["shuttle_loc"] = shuttle.at_station() ? "Station" : "Dock"
 	var/supplyOrderCount = 0
 	var/supplyOrderData[0]
-	for(var/datum/supply_order/SO as anything in GLOB.supply_service.shoppinglist)
+	for(var/datum/supply_order/SO as anything in supply_shoppinglist())
 
 		supplyOrderCount++
 		supplyOrderData[++supplyOrderData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.supply_pack_of().name), "ApprovedBy" = SO.approved_by, "Comment" = html_encode(SO.comment))
@@ -248,7 +268,7 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 
 	var/requestCount = 0
 	var/requestData[0]
-	for(var/datum/supply_order/SO as anything in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/SO as anything in supply_order_history())
 		if(SO.status != SUP_ORDER_REQUESTED)
 			continue
 

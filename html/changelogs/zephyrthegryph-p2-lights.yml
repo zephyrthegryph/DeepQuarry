@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Light fixtures, bulbs, fixture frames, light switches, the light replacer and the light painter on the engine forms"
+  - bugfix: "Opening a light fixture leaves a wired frame; the cell in a frame survives closing it; a lit bulb is too hot for a bare hand; a broken bulb put in a fixture leaves it dark"

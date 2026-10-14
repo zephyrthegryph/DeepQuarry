@@ -8,7 +8,7 @@
 // Each entry is either:
 //   - a real implementation bridging to a CHOMP-side equivalent
 //     (record_feedback → feedback_add_details, wet_floor → CHOMP wet_floor,
-//      analyze_gases, fire_nuclear_particle → GLOB.radiation_service.irradiate)
+//      analyze_gases, fire_nuclear_particle → SSradiation.irradiate)
 //   - a real base no-op for a /tg/ hook that subtypes override
 //     (process_atmos, apply_fire_protection)
 //   - a var/list scaffold (multiz_levels, z_list, electrolyzer_reactions)
@@ -17,27 +17,18 @@
 // restored in code/ATMOSPHERICS/ and code/game/machinery/atmoalter/ — do not
 // add machinery declarations here.
 
-// === /tg/ subsystem flags ===
-/datum/controller/subsystem
-	var/ss_flags = 0
-
-
-
-
 // === /tg/ SSblackbox telemetry — wired to CHOMP's feedback_add_details ===
-/datum/controller/subsystem/blackbox
-	// Feedback-recording compat shim only — no fire() body, so flag SS_NO_FIRE
-	// to keep the MC from adding it to the processing list (and warning each boot).
-	flags = SS_NO_FIRE | SS_NO_INIT
+SYSTEM_DEF(blackbox)
+	name = "Blackbox"
+	// Feedback-recording compat shim only: no periodic work, nothing to boot.
 	var/sealed = FALSE
 
-/datum/controller/subsystem/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)
+/datum/system/blackbox/proc/record_feedback(key_type, key_name, increment_by = 1, data = null)
 	if(!GLOB.blackbox)
 		return
 	var/value = !isnull(data) ? "[data]" : "[increment_by]"
 	feedback_add_details(key_name, "[key_type]:[value]")
 
-GLOBAL_REAL(SSblackbox, /datum/controller/subsystem/blackbox) = new()
 
 
 // === /tg/ globals SSair expects ===
@@ -76,9 +67,9 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === SSmapping multi-z helpers (CHOMP doesn't expose these as GLOB lists) ===
 /datum/system/mapping
-	var/list/z_list = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
+	var/list/z_list = list() // subsystem singleton; one entry per z-level
 	var/max_plane_offset = 0
-	var/list/multiz_levels = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
+	var/list/multiz_levels = list() // subsystem singleton; one entry per z-level
 
 
 // === Per-z-level metadata ===
@@ -120,13 +111,10 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 
 // === /tg/ smoothing junction stubs ===
 /atom/proc/setDir(new_dir)
-	dir = new_dir
-
-/atom
-	var/tmp/smoothing_junction = 0
+	set_dir(new_dir)
 
 /atom/proc/set_smoothed_icon_state(new_junction)
-	smoothing_junction = new_junction
+	return
 
 
 // SSair admin TGUI procs override the fork's tgui_state/tgui_interact/tgui_data/
@@ -305,8 +293,8 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 	return TRUE
 
 /turf/proc/fire_nuclear_particle()
-	if(GLOB.radiation_service)
-		GLOB.radiation_service.irradiate(src, 50)
+	if(SSradiation)
+		SSradiation.irradiate(src, 50)
 	return
 
 /proc/isgroundlessturf(turf/T)
@@ -328,7 +316,7 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 	for(var/mob/living/carbon/human/H in range(range, center))
 		if(H.species && (H.species.flags & (NO_POISON | IS_PLANT | NO_HALLUCINATION)))
 			continue
-		H.status_at_least(EFFECT_HALLUCINATING, (hallucination_amount || 10))
+		H.status_at_least(STAT_HALLUCINATING, (hallucination_amount || 10))
 	return
 
 // /tg/'s vendored reactions reference foam types in this tree

@@ -13,9 +13,14 @@
 
 // The game mode owns this panel (tgui_game_mode_panel); target_mode is a plain relation back.
 
-DECLARE_UI_STATE(/datum/game_mode_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
-
-DECLARE_UI(/datum/game_mode_panel, "GameModePanel", UI_TITLE("Edit Game Mode"))
+CAPABILITIES(/datum/game_mode_panel)
+	interface("GameModePanel", title = "Edit Game Mode", rights = R_ADMIN|R_EVENT)
+	op("toggle", ui_act("toggle", arg("key", schema_text(4096))), then(PROC_REF(ui_act_toggle)))
+	op("set", ui_act("set", arg("key", schema_text(4096))), then(PROC_REF(ui_act_set)))
+	op("debug_antag", ui_act("debug_antag", arg("id", schema_text(4096))), then(PROC_REF(ui_act_debug_antag)))
+	op("remove_antag_type", ui_act("remove_antag_type", arg("id", schema_text(4096))), then(PROC_REF(ui_act_remove_antag_type)))
+	op("add_antag_type", ui_act("add_antag_type"), then(PROC_REF(ui_act_add_antag_type)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 
 /datum/game_mode_panel/ui_opening(mob/user, datum/tgui/ui)
 	recompute_antag_caps()
@@ -28,12 +33,10 @@ DECLARE_UI(/datum/game_mode_panel, "GameModePanel", UI_TITLE("Edit Game Mode"))
 
 /datum/game_mode_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src, user)
 
-UI_DATA_REPLACE(/datum/game_mode_panel, "merge:ui_data_datum_game_mode_panel{alive:bool,mode_name:text,config_tag:unknown,ert_enabled:bool,respawn_allowed:bool,shuttle_delay:num,shuttle_auto_recall:bool,event_modifier_moderate:unknown,event_modifier_major:unknown,autotraitor:bool,antag_scaling_coeff:num,core_antag_tags:list,antag_templates:list}")
-
-/// The computed part of /datum/game_mode_panel's window data (declared on its UI_DATA row).
-/datum/game_mode_panel/proc/ui_data_datum_game_mode_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/game_mode_panel's window data.
+/datum/game_mode_panel/ui_data(datum/act/eval/A)
 	if(!target_mode)
 		return list("alive" = FALSE)
 	var/list/data = list("alive" = TRUE)
@@ -65,50 +68,59 @@ UI_DATA_REPLACE(/datum/game_mode_panel, "merge:ui_data_datum_game_mode_panel{ali
 	data["antag_templates"] = antag_templates
 	return data
 
-/datum/game_mode_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!target_mode || !check_rights(R_ADMIN|R_EVENT))
+/datum/game_mode_panel/proc/ui_gate(datum/act/op/A)
+	if(!target_mode || !admin_can(A.actor?.client, R_ADMIN|R_EVENT))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "toggle", ui_act_toggle, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_toggle)
+/datum/game_mode_panel/proc/ui_act_toggle(datum/act/op/A, key_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	// Forward to the existing /game_mode Topic handler.
-	var/key = "[params["key"]]"
-	topic_dispatch(target_mode, ui.user, list("toggle" = key))
+	var/key = "[key_arg]"
+	topic_dispatch(target_mode, user, list("toggle" = key))
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "set", ui_act_set, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_set)
-	var/key = "[params["key"]]"
-	topic_dispatch(target_mode, ui.user, list("set" = key))
+/datum/game_mode_panel/proc/ui_act_set(datum/act/op/A, key_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/key = "[key_arg]"
+	topic_dispatch(target_mode, user, list("set" = key))
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "debug_antag", ui_act_debug_antag, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_debug_antag)
-	var/id = "[params["id"]]"
-	topic_dispatch(target_mode, ui.user, list("debug_antag" = id))
+/datum/game_mode_panel/proc/ui_act_debug_antag(datum/act/op/A, id_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/id = "[id_arg]"
+	topic_dispatch(target_mode, user, list("debug_antag" = id))
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "remove_antag_type", ui_act_remove_antag_type, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_remove_antag_type)
-	var/id = "[params["id"]]"
-	topic_dispatch(target_mode, ui.user, list("remove_antag_type" = id))
+/datum/game_mode_panel/proc/ui_act_remove_antag_type(datum/act/op/A, id_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/id = "[id_arg]"
+	topic_dispatch(target_mode, user, list("remove_antag_type" = id))
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "add_antag_type", ui_act_add_antag_type)
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_add_antag_type)
-	topic_dispatch(target_mode, ui.user, list("add_antag_type" = "1"))
+/datum/game_mode_panel/proc/ui_act_add_antag_type(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	topic_dispatch(target_mode, user, list("add_antag_type" = "1"))
 	recompute_antag_caps()
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/game_mode_panel, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/game_mode_panel, ui_act_refresh)
+/datum/game_mode_panel/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	recompute_antag_caps()
 	SStgui.update_uis(src)
 	return TRUE
@@ -116,10 +128,19 @@ UI_ACT_PROC(/datum/game_mode_panel, ui_act_refresh)
 /datum/game_mode
 	var/datum/game_mode_panel/tgui_game_mode_panel
 
+CAPABILITIES(/datum/game_mode)
+	every(2 SECONDS, then(PROC_REF(mode_step)), when = nameof(mode_running))
+	owns_one(nameof(tgui_game_mode_panel), /datum/game_mode_panel)
+	op("toggle", topic("toggle", arg("toggle", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_toggle)))
+	op("set", topic("set", arg("set", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/number/game_mode_option, fields = list("question" = computed(PROC_REF(game_mode_option_question)), "window_max" = computed(PROC_REF(game_mode_option_max))), step = "value"), then(PROC_REF(topic_set)))
+	op("debug_antag", topic("debug_antag", arg("debug_antag", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_debug_antag)))
+	op("remove_antag_type", topic("remove_antag_type", arg("remove_antag_type", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_remove_antag_type)))
+	op("add_antag_type", topic("add_antag_type"), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/choice, fields = list("title" = "Select Antag Type", "question" = "Which type do you wish to add?", "choices" = computed(PROC_REF(antag_type_choices)), "rights" = R_ADMIN|R_SERVER, "timeout" = 0), step = "type"), then(PROC_REF(topic_add_antag_type)))
+
 /proc/open_game_mode_panel(mob/user)
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !ticker_mode())
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
-	if(!SSticker.mode.tgui_game_mode_panel)
-		own_set(SSticker.mode, nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(SSticker.mode))
-	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)
+	if(!ticker_mode().tgui_game_mode_panel)
+		rel_set(ticker_mode(), nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(ticker_mode()))
+	ticker_mode().tgui_game_mode_panel.tgui_interact(user)

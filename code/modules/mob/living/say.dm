@@ -107,11 +107,11 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			verb = pick("yells","roars","hollers")
 			whispering = 0
 			. = 1
-		if(has_status(EFFECT_SLURRING))
+		if(has_status(STAT_SLURRING))
 			S.message = slur(S.message)
 			verb = pick("slobbers","slurs")
 			. = 1
-		if(has_status(EFFECT_STUTTERING))
+		if(has_status(STAT_STUTTERING))
 			S.message = stutter(S.message)
 			verb = pick("stammers","stutters")
 			. = 1
@@ -307,14 +307,14 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	//You'll still stammer if injured or slur if drunk, but it won't have those specific words
 	var/ending = copytext(message, length(message))
 
-	if(custom_whisper && whispering)
-		verb = "[custom_whisper]"
-	else if(custom_exclaim && ending=="!")
-		verb = "[custom_exclaim]"
-	else if(custom_ask && ending=="?")
-		verb = "[custom_ask]"
-	else if(custom_say)
-		verb = "[custom_say]"
+	if(bio.custom_whisper && whispering)
+		verb = "[bio.custom_whisper]"
+	else if(bio.custom_exclaim && ending=="!")
+		verb = "[bio.custom_exclaim]"
+	else if(bio.custom_ask && ending=="?")
+		verb = "[bio.custom_ask]"
+	else if(bio.custom_say)
+		verb = "[bio.custom_say]"
 
 	//Handle nonverbal languages here
 	for(var/datum/multilingual_say_piece/S in message_pieces)
@@ -410,7 +410,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	// Remove the speech images later. The global owner: the images must leave the clients'
 	// screens even if the speaker is deleted first.
-	om_after(null, 3 SECONDS, /proc/remove_speech_images, images_to_clients)
+	queue_speech_images(images_to_clients)
 
 	//Log the message to file
 	if(message_mode)
@@ -458,7 +458,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break
-		om_after(src, total_delay, PROC_REF(blooper), extrarange, volume, bloop_preference)
+		after(src, total_delay, PROC_REF(blooper), with = list(extrarange, volume, bloop_preference))
 		total_delay += rand(\
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE), \
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE) + DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE)) TICKS
@@ -501,18 +501,41 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /obj/effect/speech_bubble
 	var/mob/parent
 
+CAPABILITIES(/obj/effect/speech_bubble)
+	ref_one(nameof(parent), /mob)
+
 /mob/proc/GetVoice()
 	return name
 
 /mob/proc/speech_bubble_appearance()
 	return "normal"
 
-/// Takes speech bubble images off the clients they were shown to, then deletes them.
-/proc/remove_speech_images(list/images_to_clients)
+/// Keeps generated images alive independently of the speaker until their global cleanup.
+/datum/timer_owner/var/list/pending_speech_images
+
+CAPABILITIES(/datum/timer_owner)
+	owns_many(nameof(pending_speech_images))
+
+/// Capture images as positional values; retain them through their weak timer arguments.
+/proc/queue_speech_images(list/images_to_clients)
+	var/datum/timer_owner/owner = timer_global_owner()
+	var/list/speech_image_pairs = list()
 	for(var/image/I as anything in images_to_clients)
-		var/list/clients_from_image = images_to_clients[I]
+		rel_add(owner, nameof(owner.pending_speech_images), I)
+		speech_image_pairs += list(list(I, images_to_clients[I]))
+	var/timer_id = after(null, 3 SECONDS, GLOBAL_PROC_REF(remove_speech_images), with = list(speech_image_pairs))
+	if(!timer_id)
+		remove_speech_images(speech_image_pairs)
+	return timer_id
+
+/// Takes speech bubble images off the clients they were shown to, then releases and deletes them.
+/proc/remove_speech_images(list/speech_image_pairs)
+	for(var/list/pair as anything in speech_image_pairs)
+		var/image/I = pair[1]
+		var/list/clients_from_image = pair[2]
 		for(var/client/C as anything in clients_from_image)
 			if(C) //Could have disconnected after message sent, before removing bubble.
 				C.images -= I
-		qdel(I)
+		own_take_member(timer_global_owner(), nameof(/datum/timer_owner::pending_speech_images), I)
+		spent(I)
 

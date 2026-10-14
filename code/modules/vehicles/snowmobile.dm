@@ -25,15 +25,20 @@
 	icon_state = "sno_keys"
 	w_class = ITEMSIZE_TINY
 
-/obj/vehicle/train/engine/quadbike/snowmobile/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike/snowmobile, "riding_datum", "riding_datum_type")
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/engine/quadbike/snowmobile/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
-/obj/vehicle/train/engine/quadbike/snowmobile/built/Initialize(mapload)
-	dir = 2 //To match the under construction frame
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/snowmobile)
+	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
+	op("snowmobile_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Buckle"), then(PROC_REF(interaction_snowmobile_drag)))
+	op("snowmobile_hand", hand(), then(PROC_REF(interaction_snowmobile_hand)))
+
+/obj/vehicle/train/engine/quadbike/snowmobile/built
+	dir = SOUTH // to match the under-construction frame
 
 /obj/vehicle/train/engine/quadbike/snowmobile/get_turf_speeds(atom/prev_loc)
 	// Same speed if turf type doesn't change
@@ -57,14 +62,13 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike/snowmobile, "riding_dat
 	return
 
 //Required for the riding datum to behave:
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike/snowmobile, \
-	INTERACT_DRAG("Buckle", PROC_REF(interaction_snowmobile_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_snowmobile_hand)))
 
 /// Old MouseDrop_T: mobs buckle/unbuckle through the riding datum; anything else falls to the train's load.
-/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(!ismob(C))
-		return FALSE
+		return OP_DECLINE
 	if(C in src?.buckled_mob_list())
 		user_unbuckle_mob(C, user)
 	else
@@ -72,7 +76,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike/snowmobile, \
 	return TRUE
 
 /// Old attack_hand: buckle yourself on, or off (replaces the train climb/unload).
-/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")

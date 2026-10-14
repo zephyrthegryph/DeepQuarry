@@ -73,3 +73,6 @@
 /// Accessor for the victim var.
 /datum/event2/event/surprise_carp/proc/victim() as /mob/living
 	return victim
+
+CAPABILITIES(/datum/event2/event/surprise_carp)
+	ref_one(nameof(victim))

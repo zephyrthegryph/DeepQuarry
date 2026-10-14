@@ -53,8 +53,7 @@
 
 /obj/machinery/atmospherics/pipe/zpipe/hide(i)
 	if(istype(loc, /turf/simulated))
-		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+		hide_under_floor(src, i)
 
 /obj/machinery/atmospherics/pipe/zpipe/check_pressure(pressure)
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -77,7 +76,7 @@
 	var/datum/effect/effect/system/smoke_spread/smoke = new
 	smoke.set_up(1,0, src.loc, 0)
 	smoke.start()
-	qdel(src) // NOT qdel.
+	destroyed(src, null, "explosion") // NOT qdel.
 
 /obj/machinery/atmospherics/pipe/zpipe/proc/normalize_dir()
 	if(dir == (NORTH|SOUTH))
@@ -88,21 +87,20 @@
 /obj/machinery/atmospherics/pipe/zpipe/pipeline_expansion()
 	return list(node1, node2)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/zpipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/zpipe/appearance_overlays()
-	. = list()
-	color = pipe_color
-	return .
+/obj/machinery/atmospherics/pipe/zpipe/draw(datum/look/look)
+	..()
+	look.color = pipe_color
+	return
 
 /obj/machinery/atmospherics/pipe/zpipe/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			spent(parent)
 		rel_clear(src, nameof(node1))
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
-			qdel(parent)
+			spent(parent)
 		rel_clear(src, nameof(node2))
 
 	return null

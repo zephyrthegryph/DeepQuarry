@@ -58,4 +58,4 @@
 
 		if(R)
 			log_game("Manifest malfunction event is now deleting [R.fields["name"]]'s [record_class_to_delete] record.")
-			qdel(R)
+			spent(R)

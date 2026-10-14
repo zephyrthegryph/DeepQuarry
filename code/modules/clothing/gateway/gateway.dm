@@ -4,26 +4,21 @@
 	desc = "A pointy pixelated-looking hat, 0s and 1s dancing off the fabric"
 	icon_state = "redwizard"
 	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
-	siemens_coefficient = 0.1
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/vrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/vrwizard
 	name = "wizard robes"
 	desc = "A silky robe with 0s and 1s flying off the seams."
 	icon_state = "redwizard"
 	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
-	siemens_coefficient = 0.1
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-TYPE_TABLE(/obj/item/clothing/suit/vrwizard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs))))
+CAPABILITIES(/obj/item/clothing/suit/vrwizard)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+
 
 /obj/item/clothing/head/darkvrwizard
 	name = "wizard hat"
@@ -31,28 +26,23 @@ TYPE_TABLE(/obj/item/clothing/suit/vrwizard, suit_storage_spec, list(HOLD_ONLY(l
 	icon_state = "redwizard"
 	color = "#660066"
 	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
-	siemens_coefficient = 0.1
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/darkvrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/darkvrwizard
 	name = "wizard robes"
 	desc = "Robes holding the most attack and defense."
 	icon_state = "psyamp"
 	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
-	siemens_coefficient = 0.1
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/darkvrwizard)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Candy section
 
-TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword))))
+
 /obj/item/clothing/head/psy_crown/candycrown/get_mechanics_info(list/additional_information)
 	return ..(list("It will occasionally give a momentary buff to offensive capabilities.") + additional_information)
 
@@ -76,17 +66,16 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 	desc = "A strange pair of gloves."
 	icon_state = "regen"
 	item_state = "graygloves"
-	siemens_coefficient = 0
 	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 
 /// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
 /// clear when the wearer is destroyed counts too) it declares the feeding work.
-OM_FIELD(/obj/item/clothing/gloves/stamina, worn_on_hands, FALSE, CHANGE_EXPLICIT)
-OM_FIELD_VIEW_OF(/obj/item/clothing/gloves/stamina, wearer, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/clothing/gloves/stamina, feeding_wearer, list("wearer", "worn_on_hands"))
-/obj/item/clothing/gloves/stamina/proc/feeding_wearer()
-	return wearer && worn_on_hands
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feeding_wearer")
+/obj/item/clothing/gloves/stamina/var/worn_on_hands = FALSE
+TRACKED(/obj/item/clothing/gloves/stamina, worn_on_hands)
+
+CAPABILITIES(/obj/item/clothing/gloves/stamina)
+	configure(item_protection(siemens = 0))
+	every(2 SECONDS, then(PROC_REF(stamina_step)), when = nameof(worn_on_hands))
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
 	..()
@@ -106,12 +95,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feedin
 			H.custom_pain("Your hands feel strange",1)
 	..()
 
-/// Works every 2 s while worn on the hands (declared on feeding_wearer); taken off, it sleeps.
-/obj/item/clothing/gloves/stamina/periodic_step()
+/// Works every 2 s while worn on the hands (the every() in its capabilities); taken off, it sleeps.
+/obj/item/clothing/gloves/stamina/proc/stamina_step(datum/act/timer/A)
 	var/mob/living/carbon/human/H = wearer
 	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
-	H.set_nutrition(max(H.nutrition + 8, 0))
+	H.set_nutrition(max(nutrition_of(H) + 8, 0))
 
 /obj/item/clothing/suit/armor/buffvest
 	name = "candy armor"
@@ -129,8 +118,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/gloves/stamina, PERIODIC_SLOW, "feedin
 	var/brainloss_cost = 0
 
 /// TRUE while worn in the suit slot by a sentient mob.
-OM_FIELD(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "worn_by_sentient")
+/obj/item/clothing/suit/armor/buffvest/var/worn_by_sentient = FALSE
+TRACKED(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient)
+CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
+	every(2 SECONDS, then(PROC_REF(buffvest_step)), when = nameof(worn_by_sentient))
 
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
@@ -157,7 +148,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "w
 			if(flavor_drop)
 				to_chat(H, span_info(flavor_drop))
 
-/obj/item/clothing/suit/armor/buffvest/periodic_step()
+/obj/item/clothing/suit/armor/buffvest/proc/buffvest_step(datum/act/timer/A)
 	if(isliving(loc))
 		var/mob/living/L = loc
 		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
@@ -172,16 +163,20 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "w
 	desc = "A strange set of armor made of rocky plates"
 	icon_state = "alien_tank"
 	slowdown = 0
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=25;bio=25;rad=25" //Should be good enough to mimic the old '12% reduction'.
 	block_chance = 12
+
+CAPABILITIES(/obj/item/clothing/suit/armor/alien/vistor)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/tesla/vistor
 	name = "zapping suit"
 	desc = "A strange set of armor crackling with lighting"
 	slowdown = 0
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=60;bullet=60;laser=60;energy=60"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tesla/vistor)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/reactive/vistor
 	name = "vibrating suit"
@@ -196,11 +191,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "w
 	icon_state = "armor"
 	blood_overlay_type = "armor"
 	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=50;bio=100;rad=75"
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/armor/protectionbubble)
+	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //scrap section which is on hold till I get foes
 

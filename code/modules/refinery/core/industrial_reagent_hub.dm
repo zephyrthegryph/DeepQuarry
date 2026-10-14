@@ -5,23 +5,19 @@
 	density = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_OFF // Does not require power for pipes
-	idle_power_usage = 0
-	active_power_usage = 0
 	circuit = /obj/item/circuitboard/industrial_reagent_hub
 	default_max_vol = 0
 
-/obj/machinery/reagent_refinery/hub/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
+CAPABILITIES(/obj/machinery/reagent_refinery/hub)
+	configure(uses_power(idle = 0, active = 0))
+	without(CAP_REAGENTS) // a hub holds nothing: it moves a tanker's load
+	after_init(0, then(PROC_REF(apply_default_parts)))
 
 /obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	if (amount_per_transfer_from_this <= 0)
@@ -34,36 +30,13 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/hub/appearance_overlays()
-	. = list()
-	var/turf/T = get_step(get_turf(src),dir)
-	var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
-	var/intake = FALSE
-	if(other && other.anchored)// Waste processors do not connect to anything as outgoing
-		if(istype(other,/obj/machinery/reagent_refinery/splitter))
-			if(GLOB.reverse_dir[dir] in list(turn(other.dir,90),turn(other.dir,-90)))
-				intake = TRUE
-		else if(!istype(other,/obj/machinery/reagent_refinery/waste_processor))
-			// weird handling for side connections... Otherwise, anything pointing into use gets connected back!
-			if(istype(other,/obj/machinery/reagent_refinery/filter))
-				var/obj/machinery/reagent_refinery/filter/filt = other
-				var/check_dir = 0
-				if(filt.get_filter_side() == 1)
-					check_dir = turn(filt.dir, 270)
-				else
-					check_dir = turn(filt.dir, 90)
-				if(check_dir == GLOB.reverse_dir[dir])
-					intake = TRUE
-			if(other.dir == GLOB.reverse_dir[dir])
-				intake = TRUE
-	// Get main dir pipe
-	if(intake)
-		var/image/pipe = image(icon, icon_state = "hub_intakes", dir = dir)
-		. += pipe
-	else
-		var/image/pipe = image(icon, icon_state = "hub_cons", dir = dir)
-		. += pipe
+/// The hub's pipe shows whether the machine it faces feeds into it (intake) or the hub feeds that machine. The neighbour is looked for ahead and
+/// watched: it appearing, leaving, turning or being unanchored redraws the hub.
+/obj/machinery/reagent_refinery/hub/draw(datum/look/look)
+	..()
+	var/obj/machinery/reagent_refinery/other = look.neighbour(src, dir, /obj/machinery/reagent_refinery)
+	var/intake = other?.anchored && other.hub_intake(GLOB.reverse_dir[dir])
+	look.overlay(look_overlay_image(icon, intake ? "hub_intakes" : "hub_cons", dir = dir))
 
 /obj/machinery/reagent_refinery/hub/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	if(istype(origin_machine,/obj/machinery/reagent_refinery/hub)) // Hubs cannot send into other hubs
@@ -95,4 +68,4 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom
 /obj/machinery/reagent_refinery/hub/Crossed(atom/movable/AM)
 	. = ..()
 	if(istype(AM, /obj/vehicle/train/trolley_tank))
-		MACHINE_WAKE(src)
+		work_start(src)

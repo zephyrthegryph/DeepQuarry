@@ -26,3 +26,6 @@
 
 //this all needs a refactor to tg storage but for now...
 #define MAX_STORAGE_REACH 2		//maximum you can reach down to grab things from storage.
+
+/// The key a storage publishes whenever what it holds changes (a move in or out of its slot): what a condition about its contents reads.
+#define STORAGE_CONTENTS_KEY "storage_contents"

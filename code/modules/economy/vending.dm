@@ -1,10 +1,40 @@
 ///
 ///		A vending machine
 ///
-
+// A vending machine is declared (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md): ONE CAPABILITIES list says what it is: a machine
+// with a service panel and the wires behind it, an emag that shorts out its product lock, a bolted base that turns while unbolted, a coin slot, a
+// stock of product records, a window and the buttons in it, the ops that take things in (a coin, stock, a refill cartridge) and show what it keeps
+// (the log), and the frame of timed work it runs while it has any. A purchase is one op: its requirements say who may buy what (the lock, the
+// stock, the coin, the means to pay), a PIN is asked when the customer's account wants one, and the price is a RES_CREDITS cost reserved after the
+// last answer and spent only once the product is on its way (code/modules/economy/credits_resource.dm), so a refused or interrupted purchase costs
+// nothing and the machine is never left waiting on a payment. The imperative parts below are its own: the product records, the vend itself, the
+// conditions and effects the list names, and the look.
+//
+// What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, NOPOWER, ...) read through machine_basics()'s one
+// bridge contribution, set_use_power(), and the circuit board.
 //
 //	ALL THE VENDING MACHINES ARE IN vending_machines.dm now!
 //
+
+MSG_DEF_SELF(vending/busy, "It is busy!")
+MSG_DEF_SELF(vending/denied, "Access denied.")
+MSG_DEF_SELF(vending/panel_open, "It cannot dispense products while its service panel is open!")
+MSG_DEF_SELF(vending/unavailable, "That is not available.")
+MSG_DEF_SELF(vending/no_account, "Vendor account offline. Unable to process transaction.")
+MSG_DEF_SELF(vending/no_payment, "Payment failure: you have no ID or other method of payment.")
+MSG_DEF_SELF(vending/payment_failed, "Payment failure: unable to process payment.")
+MSG_DEF_SELF(vending/lawed, "Lawed unit recognized.  Lawed units cannot complete this transaction.  Purchase canceled.")
+MSG_DEF_SELF(vending/no_coin_slot, "It has no coin slot.")
+MSG_DEF_SELF(vending/no_coin, "There is no coin in this machine.")
+MSG_DEF_SELF(vending/no_refill_port, "It does not have a refill port.")
+MSG_DEF_SELF(vending/unsecured, "You cannot refill it while it is not secured.")
+MSG_DEF_SELF(vending/wrong_cartridge, "That cartridge does not fit it.")
+MSG_DEF_SELF(vending/refilled, "You refill %T% using %I%.")
+MSG_DEF_SELF(vending/fake_coin, "%I% doesn't fit into the coin slot on %T%.")
+MSG_DEF_SELF(vending/stocked, "You insert %I% in the product receptor.")
+MSG_DEF_SELF(vending/need_coin, "You need to insert a coin to get this item.")
+MSG_DEF_SELF(vending/log_denied, "You do not have the required access to view the vending logs for this machine.")
+MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T%'s product lock.")
 
 /obj/machinery/vending
 	name = "Vendomat"
@@ -18,14 +48,15 @@
 
 	// Power
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
 	active = 1 //No sales pitches if off!
-	var/vend_ready = 1 //Are we ready to vend?? Is it time??
+	/// Are we ready to vend?? Is it time??
+	var/vend_ready = TRUE
 	var/vend_delay = 10 //How long does it take to vend?
-	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
+	/// Bitmask of cats we're currently showing
+	var/categories = CAT_NORMAL
 	var/tmp/datum/stored_item/vending_product/currently_vending	// What we're requesting payment for right now
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
@@ -49,7 +80,7 @@
 	var/refillable = TRUE
 
 	// List of vending_product items available.
-	var/list/product_records = list() // ALLOW(instance_list): d: the vendor's live stock records (C9 turns these into slots)
+	var/list/product_records = list() // ALLOW(instance_list): the vendor's live stock records: edited in place per machine and always filled
 
 	// Variables used to initialize advertising
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons
@@ -62,51 +93,103 @@
 	var/vend_reply //Thank you for shopping!
 	COOLDOWN_DECLARE(reply_cooldown)
 	COOLDOWN_DECLARE(slogan_cooldown) //When did we last pitch?
-	var/slogan_delay = 6000 //How long until we can pitch again?
+	var/slogan_delay = 10 MINUTES //How long until we can pitch again?
 
 	// Things that can go wrong
 	var/shoot_inventory_chance = 1
 
-	var/scan_id = 1
 	var/obj/item/coin/coin
+
+	/// Stop spouting those godawful pitches!
+	var/shut_up = TRUE
 
 	var/list/log // Lazy: purchase log entries.
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
 	var/has_logs = 0 //defaults to 0, set to anything else for vendor to have logs
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
 
-/// Stop spouting those godawful pitches!
-OM_FIELD(/obj/machinery/vending, shut_up, TRUE, CHANGE_MACHINE_SETTINGS)
-/// Shock customers like an airlock: steps left (-1 for permanently, from a cut wire).
-OM_FIELD(/obj/machinery/vending, seconds_electrified, 0, CHANGE_MACHINE_SETTINGS)
-/// Fire items at customers! We're broken!
-OM_FIELD(/obj/machinery/vending, shoot_inventory, 0, CHANGE_MACHINE_SETTINGS)
-/// Active with something time-dependent to do: electrified, shooting inventory, or advertising.
-/// slogan_list is filled once in Initialize() and never changes afterwards, so it is not an input.
-OM_DERIVE_FIELD(/obj/machinery/vending, vend_has_timed_work, list("active", "seconds_electrified", "shoot_inventory", "shut_up"))
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/vending, MACHINE_PIPELINE, list("operable", "vend_has_timed_work"))
+// What the window shows and what the machine's timed work reads.
+TRACKED(/obj/machinery/vending, shut_up)
+/// Shocks its customers like an airlock: the shock wire cut (until mended) or pulsed (30 s), an event; live only while operable (shock_live()).
+STAT(/obj/machinery/vending, electrified, TOP, base = 0)
+/// Does it check the customer's ID for the product lock (the ID scan wire pulsed turns it off; cut, it scans for good: id_scan()).
+STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
+/// Fire items at customers! The throw wire cut, a pulse, a brand intelligence (item_throw()).
+STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
-/obj/machinery/vending/proc/vend_has_timed_work()
-	return active && (seconds_electrified > 0 || shoot_inventory || (!shut_up && length(slogan_list)))
+CAPABILITIES(/obj/machinery/vending)
+	configure(uses_power(idle = 10))
+	machine_basics(repair = NONE)
+	panel()
+	extend("panel.open", wait(0))
+	wires(name = "Vending machine", count = 4, emp = FALSE, status_lines = PROC_REF(wire_lights))
+	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
+	item_throw(stat = STAT_SHOOT_INVENTORY)
+	shock_wire(stat = STAT_ELECTRIFIED)
+	id_scan(stat = STAT_SCAN_ID, pulse_value = FALSE)
+	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
+	emag(say = MSG(vending/shorted), repeatable = TRUE)
+	anchor()
+	extend("anchor.toggle", wait(2 SECONDS), needs(req_closed(SPACE_PANEL)))
+	rotatable()
+	extend(CAP_ROTATABLE, when(nameof(can_rotate)))
+	owns_one(nameof(coin), /obj/item/coin)
+	owns_many(nameof(product_records), /datum/stored_item/vending_product)
+	ref_one(nameof(currently_vending), /datum/stored_item/vending_product)
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vending_blast_malfunction)))
+	on_change(nameof(coin), ANY, then(PROC_REF(coin_changed)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(timed_work_frame)), when = cond_all(STAT_OPERABLE, PROC_REF(timed_work_wanted)))
+	after_init(0, then(PROC_REF(slogans_start)))
 
+	section(window, "The vendor's window and the buttons in it")
+	interface("Vending")
+	extend("ui_open", when(PROC_REF(bare_touch)), needs(req_on_authority(AUTH_PHYSICAL), req_operable()), then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
+	extend(TAG_UI, needs(req_operable(), req(PROC_REF(customer_capable))))
+	op("vend", ui_act(arg("vend")),
+		needs(
+			req(PROC_REF(vend_listed)),
+			req(PROC_REF(vend_idle)),
+			req(PROC_REF(vend_shut)),
+			req(PROC_REF(vend_access_for_actor)),
+			req(PROC_REF(vend_in_stock)),
+			req(PROC_REF(vend_coin_ready)),
+			req(PROC_REF(vend_payment_refusal))),
+		asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)),
+		costs(RES_CREDITS, PROC_REF(vend_price)),
+		then(PROC_REF(vend_started)), logs(LOG_GAME))
+	on_op("vend", then(PROC_REF(vend_turned_away)), outcome = ACT_REFUSED)
+	op("remove_coin", ui_act(), needs(req_full(nameof(coin), because = MSG(vending/no_coin)), req_on_authority(AUTH_PHYSICAL)), take_out(nameof(coin)))
+	op("toggle_voice", ui_act(), at(SPACE_PANEL), toggles(nameof(shut_up)))
+
+	section(intake, "What it takes in, and the log")
+	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_operable(), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin)))
+	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), needs(req(PROC_REF(never))))
+	op("refill", item(/obj/item/refill_cartridge),
+		needs(req_closed(SPACE_PANEL), req_operable(), req(PROC_REF(refill_port)), req(PROC_REF(refill_secured)), req(PROC_REF(cartridge_fits))),
+		then(PROC_REF(refilled)), says(MSG(vending/refilled)), consumes())
+	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
+	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
+	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
+	op("check_logs", hand(), when(nameof(has_logs)), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")),
+		needs(req(PROC_REF(log_access_ok))), then(PROC_REF(check_logs_op)))
+
+/// The timed work is wanted (with the vendor working): it is switched on, and is shooting its stock or has slogans to pitch.
+/obj/machinery/vending/proc/timed_work_wanted(datum/act/A)
+	return active && (shoot_inventory || (!shut_up && length(slogan_list)))
+
+// ALLOW(init/INSTANCE_STATE): the vendor's slogans and ads are split from its type's strings once, and its stock records are built from its product lists
 /obj/machinery/vending/Initialize(mapload)
 	. = ..()
 	if(product_slogans)
 		LAZYADD(slogan_list, splittext(product_slogans, ";"))
-
-		// So not all machines speak at the exact same time.
-		// The first time this machine says something will be at slogantime + this random value,
-		// so if slogantime is 10 minutes, it will say it at somewhere between 10 and 20 minutes after the machine is crated.
-		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
-
 	if(product_ads)
 		LAZYADD(ads_list, splittext(product_ads, ";"))
-
 	build_inventory()
-	power_change()
 
-	if(can_rotate) // If we can't change directions, don't bother.
-		make_rotatable()
+/// So not all machines speak at the exact same time: the first pitch comes at the slogan delay plus up to as much again after the vendor is made.
+/obj/machinery/vending/proc/slogans_start(datum/act/timer/A)
+	if(length(slogan_list))
+		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
 GLOBAL_LIST_EMPTY(vending_products)
 /**
@@ -130,12 +213,12 @@ GLOBAL_LIST_EMPTY(vending_products)
 			var/list/spec = dq_resolve_spawn_value(current_list[1][entry])
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry)
 
-			product.price = (entry in prices) ? prices[entry] : 0
-			product.amount = spec["count"] || 1
+			product.set_price((entry in prices) ? prices[entry] : 0)
+			product.set_amount(spec["count"] || 1)
 			product.variant = spec["variant"]
-			product.category = category
+			product.set_category(category)
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
@@ -196,170 +279,127 @@ GLOBAL_LIST_EMPTY(vending_products)
 		for(var/datum/stored_item/R as anything in product_records)
 			R.forget(thing)
 
-
-DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast_malfunction))
-
 /// A light blast can jolt the vendor into malfunctioning.
-/obj/machinery/vending/proc/vending_blast_malfunction(datum/damage_packet/packet)
-	if(packet.severity == 3 && prob(25))
+/obj/machinery/vending/proc/vending_blast_malfunction(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	if(N.packet?.severity == 3 && prob(25))
 		malfunction()
 
-/obj/machinery/vending/capabilities()
-	. = ..()
-	// The panel, wires, broken and dark parts are drawn by draw() in this vendor's own states ("[base]-panel",
-	// "[base]-broken", "[base]-off"), which hides the standard parts the capabilities name.
-	. += cap_panel()
-	. += cap_wires(/datum/wires/vending)
-	. += cap_emag(say = "You short out %T%'s product lock.", mode = EMAG_REPEATABLE)
-	. += cap_anchor(delay = 2 SECONDS, needs_floor = FALSE, needs = req_clear(PANEL))
-	. += cap_breakable(repair_tool = NONE)
-	. += cap_power()
-	// An ID card or cash held to the machine opens it, as the old attackby did.
-	. += cap_use_on("Use", /obj/item, PROC_REF(open_window), needs = PROC_REF(wants_hand_dispatch), works_broken = TRUE, works_unpowered = TRUE)
-	. += cap_use_on("Refill", /obj/item/refill_cartridge, PROC_REF(refill_from), needs = PROC_REF(refill_ok), blocked_by = PANEL)
-	. += cap_use_on("Insert coin", /obj/item/fake_coin, PROC_REF(reject_fake_coin), needs = PROC_REF(has_premium_slot), else_say = "it has no coin slot", works_broken = TRUE, works_unpowered = TRUE)
-	. += cap_slot(nameof(coin), /obj/item/coin, needs = PROC_REF(has_premium_slot), else_say = "it has no coin slot", eject_via = SLOT_VIA_NONE, ui_key = null)
-	. += cap_insert("Stock", /obj/item, PROC_REF(stock_item), works_broken = TRUE)
-	. += cap_hand("Use", PROC_REF(open_window), works_broken = TRUE, works_unpowered = TRUE)
-	. += cap_hand("Check vending logs", PROC_REF(check_logs), works_broken = TRUE, works_unpowered = TRUE)
+// ---- the coin slot ----
 
-/// No side effects: whether an item held to the machine would open it (an ID or cash).
-/obj/machinery/vending/proc/wants_hand_dispatch(mob/user, obj/item/held)
+/// A coin went in or came out (or was swallowed): the premium products are shown while there is one.
+/obj/machinery/vending/proc/coin_changed(datum/act/A)
+	if(coin)
+		set_categories(categories | CAT_COIN)
+	else
+		set_categories(categories & ~CAT_COIN)
+
+/// A requirement that never holds: the op exists only to refuse with its reason (a fake coin does not fit the slot, and is kept).
+/obj/machinery/vending/proc/never(datum/act/A)
+	return MSG(vending/fake_coin)
+
+// ---- stocking and refilling ----
+
+/// The held item is a thing this vendor stocks: it matches a record by type and name.
+/obj/machinery/vending/proc/stockable(datum/act/op/A)
+	return !isnull(stock_record_for(A.held))
+
+/obj/machinery/vending/proc/stock_record_for(obj/item/held)
+	if(!istype(held))
+		return null
+	for(var/datum/stored_item/vending_product/R in product_records)
+		if(istype(held, R.item_path) && (held.name == R.item_name)) // ALLOW(reads): a record's type and name are fixed when the vendor is built; asked when an item is offered, never cached
+			return R
+	return null
+
+/// The item goes into the product receptor.
+/obj/machinery/vending/proc/stocked(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
+	var/datum/stored_item/vending_product/R = stock_record_for(W)
+	if(!R || !user?.unEquip(W))
+		return OP_REFUSED
+	R.add_product(W)
+	if(has_logs)
+		do_logging(R, user)
+	return OP_OK
+
+/// The refill port is there.
+/obj/machinery/vending/proc/refill_port(datum/act/A)
+	return (refillable) ? null : MSG(vending/no_refill_port)
+
+/// The machine is bolted down.
+/obj/machinery/vending/proc/refill_secured(datum/act/A)
+	return (anchored) ? null : MSG(vending/unsecured)
+
+/// The cartridge in hand is made for this kind of vendor.
+/obj/machinery/vending/proc/cartridge_fits(datum/act/op/A)
+	var/obj/item/refill_cartridge/cart = A.held
+	return (istype(cart) && cart.can_refill(src)) ? null : MSG(vending/wrong_cartridge)
+
+/// The cartridge refills every product.
+/obj/machinery/vending/proc/refilled(datum/act/op/A)
+	refill_inventory()
+	return OP_OK
+
+// ---- paying ----
+
+/// Where a vendor's sales are paid: the vendors' department account.
+/obj/machinery/vending/credits_payee(datum/act/op/A)
+	return GLOB.vendor_account
+
+/// What a sale is called on the customer's statement.
+/obj/machinery/vending/credits_purpose(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args?["vend"])
+	return "Purchase of [R?.item_name]"
+
+// ---- the window and the touch ----
+
+/// A touch that is shocked: an electrified vendor shocks whoever touches it, and a shock that lands opens nothing.
+/obj/machinery/vending/proc/shock_guard(datum/act/op/A)
+	if(shock_live(src) && shock(A.actor, 100))
+		return OP_REFUSED
+	return OP_OK
+
+/// With the panel open the wires window opens beside the vendor's own.
+/obj/machinery/vending/proc/open_wires_beside_the_window(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
+
+/// The touch is a bare hand (a hand with something in it is for the item's own use).
+/obj/machinery/vending/proc/bare_touch(datum/act/op/A)
+	return isnull(A.held) // ALLOW(handlers): a matching condition of an op is asked in the op's own context (held item, arguments), which the engine passes
+
+/// An ID or cash held to the machine opens it (anything else it is given is for stocking).
+/obj/machinery/vending/proc/item_opens_window(datum/act/op/A)
+	var/obj/item/held = A.held
 	return !!(held.GetID() || istype(held, /obj/item/spacecash))
 
-/// No side effects.
-/obj/machinery/vending/proc/has_premium_slot(mob/user, obj/item/held)
-	return has_premium
+/// The customer can use a window (awake, not restrained).
+/obj/machinery/vending/proc/customer_capable(datum/act/op/A)
+	var/mob/user = A.actor
+	return (user.stat == CONSCIOUS && !user.restrained()) ? null : MSG(op/failed)
 
-/// No side effects: the refill port is there, and the machine is bolted down.
-/obj/machinery/vending/proc/refill_ok(mob/user, obj/item/held)
-	if(!refillable)
-		return "it does not have a refill port"
-	if(!anchored)
-		return "you cannot refill it while it is not secured"
-	return TRUE
+/// The card the actor carries has the log access.
+/obj/machinery/vending/proc/log_access_ok(datum/act/op/A)
+	var/obj/item/card/id/card = A.actor?.GetIdCard()
+	return (!!card && (req_log_access in card.GetAccess())) ? null : MSG(vending/log_denied)
 
-/obj/machinery/vending/proc/refill_from(mob/user, obj/item/refill_cartridge/held)
-	if(!held.can_refill(src))
-		return refuse(user, "You cannot refill [src] with [held].")
-	to_chat(user, span_notice("You refill [src] using [held]."))
-	consume(held, user)
-	refill_inventory()
-	return TRUE
-
-/// Fake coins are rejected when we take real coins.
-/obj/machinery/vending/proc/reject_fake_coin(mob/user, obj/item/held)
-	to_chat(user, span_notice("\The [held] doesn't fit into the coin slot on \the [src]."))
-	return refuse(user, null)
-
-/// The coin slot's hooks: a coin unlocks the premium products.
-/obj/machinery/vending/slot_inserted(slot, obj/item/item, mob/user)
-	if(slot == nameof(coin))
-		categories |= CAT_COIN
-
-/obj/machinery/vending/slot_ejected(slot, obj/item/item, mob/user)
-	if(slot == nameof(coin))
-		categories &= ~CAT_COIN
-
-/// The final "anything else" branch: restock a matching product, else decline so the click falls on.
-/obj/machinery/vending/proc/stock_item(mob/user, obj/item/held)
-	for(var/datum/stored_item/vending_product/R in product_records)
-		if(istype(held, R.item_path) && (held.name == R.item_name))
-			stock(held, R, user)
-			return TRUE
-	return FALSE
-
-/**
- *  Receive payment with cashmoney.
- *
- *  user is the mob who gets the change.
- */
-/obj/machinery/vending/proc/pay_with_cash(obj/item/spacecash/cashmoney, mob/user)
-	if(currently_vending().price > cashmoney.worth)
-
-		// This is not a status display message, since it's something the character
-		// themselves is meant to see BEFORE putting the money in
-		to_chat(user, "[icon2html(cashmoney, user.client)] " + span_warning("That is not enough money."))
-		return 0
-
-	if(istype(cashmoney, /obj/item/spacecash))
-
-		act_message(user, src, others = span_info("%U% inserts some cash into %T%."))
-		cashmoney.worth -= currently_vending().price
-
-		if(cashmoney.worth <= 0)
-			consume(cashmoney, user)
-		else
-			cashmoney.update_icon()
-
-	// Vending machines have no idea who paid with cash
-	credit_purchase("(cash)")
-	return 1
-
-/**
- * Scan a chargecard and deduct payment from it.
- *
- * Takes payment for whatever is the currently_vending item. Returns 1 if
- * successful, 0 if failed.
- */
-/obj/machinery/vending/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
-	act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = wallet)
-	play_sfx(src, SFX_MACHINES_ID_SWIPE)
-	if(currently_vending().price > wallet.worth)
-		to_chat(user, span_warning("Insufficient funds on chargecard."))
-		return 0
-	else
-		wallet.worth -= currently_vending().price
-		credit_purchase("[wallet.owner_name] (chargecard)")
-		return 1
-
-/**
- * Scan a card and attempt to transfer payment from associated account.
- *
- * Takes payment for whatever is the currently_vending item. Returns 1 if
- * successful, 0 if failed
- */
-/obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M, pin)
-	visible_message(span_info("[M] swipes a card through [src]."))
-	play_sfx(src, SFX_MACHINES_ID_SWIPE)
-	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending().item_name]", currently_vending().price, GLOB.vendor_account, pin))
-		return FALSE
-	return 1
-
-/**
- *  Add money for current purchase to the vendor account.
- *
- *  Called after the money has already been taken from the customer.
- */
-/obj/machinery/vending/proc/credit_purchase(target as text)
-	GLOB.vendor_account.credit(currently_vending().price, target, "Purchase of [currently_vending().item_name]", name)
-
-/// The Use entries' handler: the window, and with the panel open the wires, unless the shock gets you.
-/obj/machinery/vending/proc/open_window(mob/user, obj/item/held)
-	if(!operable())
-		return refuse(user, null)
-	if(seconds_electrified != 0 && shock(user, 100))
-		return refuse(user, null)
-	wires_of(src).Interact(user)
-	tgui_interact(user)
-	return TRUE
-
-/obj/machinery/vending/proc/check_logs(mob/user)
-	show_log(user)
-	return TRUE
+/// The log button (a vendor that keeps a log, someone with its access): the log panel opens.
+/obj/machinery/vending/proc/check_logs_op(datum/act/op/A)
+	var/datum/dq_vending_log_panel/panel = new(name, A.actor.name, log)
+	panel.tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/vending/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-/obj/machinery/vending
-	tgui_id = "Vending"
-
-/// The computed window data: products of the shown categories, the coin, the panel and the customer.
-/obj/machinery/vending/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	var/list/data = .
+/// The window's data: products of the shown categories, the coin, the panel and the customer.
+/obj/machinery/vending/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/data = list()
 	var/list/listed_products = list()
 
 	data["chargesMoney"] = has_prices ? TRUE : FALSE
@@ -385,7 +425,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	data["coin"] = coin ? coin.name : FALSE
 	data["actively_vending"] = currently_vending()?.item_name
 
-	if(panel_is_open(src))
+	if(panel_open(src))
 		data["panel"] = 1
 		data["speaker"] = shut_up ? 0 : 1
 	else
@@ -402,167 +442,130 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 			data["userMoney"] = S.worth
 			data["guestNotice"] = "Accepting [S.initial_name]. You have: [S.worth]₮."
 		else if(istype(C))
-			var/datum/money_account/A = get_account(C.associated_account_number)
-			if(istype(A))
+			var/datum/money_account/account = get_account(C.associated_account_number)
+			if(istype(account))
 				data["user"] = list(
-					"name" = A.owner_name,
+					"name" = account.owner_name,
 					"job" = C.rank ? C.rank : "No Job",
 				)
-				data["userMoney"] = A.money
+				data["userMoney"] = account.money
 			else
 				data["guestNotice"] = "Unlinked ID detected. Present cash to pay."
+	return data
 
-/// The type-wide gate: it has to be working and the customer able to use it.
-/obj/machinery/vending/ui_allowed(mob/user, action)
-	if(!..())
-		return FALSE
-	return operable() && !user.stat && !user.restrained()
+// ---- vending ----
 
-/obj/machinery/vending/ui_logged()
-	return list("vend" = LOG_GAME)
+/// The customer's ID gets them the product (or nothing is checked: an emagged vendor, a cut scanner wire, no access requirement).
+/obj/machinery/vending/proc/vend_access_ok(mob/user)
+	return allowed(user) || emag_emagged(src) || !scan_id
 
-/obj/machinery/vending/proc/act_remove_coin(mob/user)
-	if(issilicon(user))
-		return refuse(user, null)
-	if(!coin)
-		return refuse(user, "There is no coin in this machine.")
-	slot_eject(nameof(coin), user)
-	return TRUE
+/// The product list entry the window key names, or null for a key that is not a listed product.
+/obj/machinery/vending/proc/vend_record_of(key)
+	var/number = ui_number(key, round_to = 1)
+	if(isnull(number) || number < 1 || number > length(product_records))
+		return null
+	var/datum/stored_item/vending_product/R = product_records[number]
+	if(!(R.category & categories))
+		return null
+	return R
 
-/// Why `user` can't start a purchase right now (text, for them), or null. A denied ID flicks and
-/// beeps, as it always did.
-/obj/machinery/vending/proc/vend_refusal(mob/user)
-	if(!vend_ready)
-		return "[src] is busy!"
-	if(!allowed(user) && !is_emagged(src) && scan_id)
-		flick("[icon_state]-deny", src)
-		play_sfx(src, SFX_MACHINES_DENIEDBEEP)
-		return "Access denied." //Unless emagged of course
-	if(panel_is_open(src))
-		return "[src] cannot dispense products while its service panel is open!"
+/// needs: the key names a product that is listed now.
+/obj/machinery/vending/proc/vend_listed(datum/act/op/A)
+	return (!isnull(vend_record_of(A.args["vend"]))) ? null : MSG(vending/unavailable)
+
+/// needs: nothing is being vended.
+/obj/machinery/vending/proc/vend_idle(datum/act/op/A)
+	return (vend_ready) ? null : MSG(vending/busy)
+
+/// needs: the service panel is shut.
+/obj/machinery/vending/proc/vend_shut(datum/act/op/A)
+	return (!panel_open(src)) ? null : MSG(vending/panel_open)
+
+/// needs: the customer is let buy (ID access, an emagged vendor, a cut scanner wire, or no access requirement).
+/obj/machinery/vending/proc/vend_access_for_actor(datum/act/op/A)
+	return (!!A.actor && vend_access_ok(A.actor)) ? null : MSG(vending/denied)
+
+/// needs: the product is on the shelf.
+/obj/machinery/vending/proc/vend_in_stock(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	return (R?.get_amount() > 0) ? null : MSG(vending/unavailable)
+
+/// needs: a premium product has a coin in the slot.
+/obj/machinery/vending/proc/vend_coin_ready(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	return (!R || !(R.category & CAT_COIN) || !isnull(coin)) ? null : MSG(vending/need_coin)
+
+/// The price of the chosen product (RES_CREDITS: what the customer pays at the commit).
+/obj/machinery/vending/proc/vend_price(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	return R ? max(R.price, 0) : 0
+
+/// needs: a product that costs money can be paid for here: no law-bound unit buys, the vendor account is up, and the customer has cash or a card.
+/// Why the customer cannot pay for the product, or null (a free product needs nothing).
+/obj/machinery/vending/proc/vend_payment_refusal(datum/act/op/A)
+	if(vend_price(A) <= 0)
+		return null
+	if(issilicon(A.actor)) // ALLOW(silicon_entry): a law-bound unit may not buy: the rule is about what the buyer is, not how the button was pressed
+		return /datum/msg/vending/lawed
+	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
+		return /datum/msg/vending/no_account
+	if(!credits_source(A.actor))
+		return /datum/msg/vending/no_payment
 	return null
 
-/obj/machinery/vending/proc/act_vend(mob/user, vend)
-	var/key = ui_number(vend, round_to = 1)
-	if(isnull(key) || key < 1 || key > length(product_records))
-		return refuse(user, null)
-	var/datum/stored_item/vending_product/R = product_records[key]
-	if(!(R.category & categories))
-		return refuse(user, null)
-	var/refusal = vend_refusal(user)
-	if(refusal)
-		return refuse(user, refusal)
-	if(!can_buy(R, user))
-		return refuse(user, null)
+/// The card's account is protected by a PIN, the product costs money and no cash is held: the customer is asked for it.
+/obj/machinery/vending/proc/pin_wanted(datum/act/op/A)
+	var/datum/stored_item/vending_product/R = vend_record_of(A.args["vend"])
+	if(!R || R.price <= 0 || !isnull(vend_access_for_actor(A)))
+		return FALSE
+	return customer_pays_by_pin_card(A.actor)
 
-	if(R.price <= 0)
-		vend(R, user)
-		return TRUE
-
-	if(issilicon(user)) //If the item is not free, provide feedback if a synth is trying to buy something.
-		to_chat(user, span_danger("Lawed unit recognized.  Lawed units cannot complete this transaction.  Purchase canceled."))
-		return refuse(user, null)
+/// A human whose active hand holds no cash and whose card is of an account that wants its PIN. What the customer holds and wears is legacy mob state
+/// and the account registry is a registry: both are read when a purchase is chosen, never cached by a menu.
+/proc/customer_pays_by_pin_card(mob/user)
+	READS_FROM()
 	if(!ishuman(user))
-		return refuse(user, null)
+		return FALSE
 	var/mob/living/carbon/human/H = user
-
-	// Card payments ask for the PIN first, and the vendor may have moved on by the time it is answered.
-	var/pin
-	if(!istype(H.get_active_hand(), /obj/item/spacecash))
-		var/obj/item/card/id/pin_card = H.GetIdCard()
-		if(istype(pin_card) && id_card_needs_pin(pin_card))
-			pin = ask_number(H, "Enter pin code", title = "Vendor transaction")
-			if(isnull(pin))
-				return refuse(user, null)
-			refusal = vend_refusal(user)
-			if(refusal)
-				return refuse(user, refusal)
-			if(!can_buy(R, user))
-				return refuse(user, null)
-
-	vend_ready = FALSE // From this point onwards, vendor is locked to performing this transaction only, until it is resolved.
-
-	var/obj/item/card/id/C = H.GetIdCard()
-
-	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-		flick("[icon_state]-deny", src)
-		vend_ready = TRUE
-		return refuse(user, "Vendor account offline. Unable to process transaction.")
-
-	rel_set(src, nameof(currently_vending), R)
-
-	var/paid = FALSE
-
 	if(istype(H.get_active_hand(), /obj/item/spacecash))
-		var/obj/item/spacecash/cash = H.get_active_hand()
-		paid = pay_with_cash(cash, H)
-	else if(istype(H.get_active_hand(), /obj/item/spacecash/ewallet))
-		var/obj/item/spacecash/ewallet/wallet = H.get_active_hand()
-		paid = pay_with_ewallet(wallet, H)
-	else if(istype(C, /obj/item/card))
-		paid = pay_with_card(C, H, pin)
-	else
-		vend_ready = TRUE
+		return FALSE
+	var/obj/item/card/id/pin_card = H.GetIdCard()
+	return istype(pin_card) && id_card_needs_pin(pin_card)
+
+/// The purchase is allowed and its price reserved (it is spent when this returns): the product is on its way.
+/obj/machinery/vending/proc/vend_started(datum/act/op/A, vend)
+	start_vend(vend_record_of(vend), A.actor)
+	return OP_OK
+
+/// A purchase that was turned away for the lock or the payment: the screen flashes its refusal, and the lock beeps.
+/obj/machinery/vending/proc/vend_turned_away(datum/act/notice/A)
+	if(A.refusal in list(/datum/msg/vending/denied, /datum/msg/vending/no_account, /datum/msg/vending/no_payment))
 		flick("[icon_state]-deny", src)
-		return refuse(user, "Payment failure: you have no ID or other method of payment.")
-	if(!paid)
-		vend_ready = TRUE
-		return refuse(user, "Payment failure: unable to process payment.")
-	vend(currently_vending(), H) // vend will handle vend_ready
-	return TRUE
+		if(A.refusal == /datum/msg/vending/denied)
+			play_sfx(src, SFX_MACHINES_DENIEDBEEP)
 
-/obj/machinery/vending/proc/act_toggle_voice(mob/user)
-	if(!panel_is_open(src))
-		return refuse(user, null)
-	set_shut_up(!shut_up)
-	return TRUE
-
-/obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
-	if(!allowed(user) && !is_emagged(src) && scan_id)
-		to_chat(user, span_warning("Access denied."))	//Unless emagged of course
-		flick("[icon_state]-deny",src)
-		play_sfx(src, SFX_MACHINES_DENIEDBEEP)
-		return FALSE
-	if(R.get_amount() < 1)
-		return FALSE
-	return TRUE
-
-/obj/machinery/vending/proc/vend(datum/stored_item/vending_product/R, mob/user)
-	if(!can_buy(R, user))
-		return
-
-	if(!R.get_amount())
-		to_chat(user, span_warning("[src] has ran out of that product."))
-		vend_ready = TRUE
-		return
-
-	vend_ready = FALSE //One thing at a time!!
-
+/// One product goes out: the machine is busy until it lands, a premium product swallows the coin, the vendor thanks the customer.
+/obj/machinery/vending/proc/start_vend(datum/stored_item/vending_product/R, mob/user)
+	set_vend_ready(FALSE) // One thing at a time!!
+	rel_set(src, nameof(currently_vending), R)
 	if(R.category & CAT_COIN)
-		if(!coin)
-			to_chat(user, span_notice("You need to insert a coin to get this item."))
-			vend_ready = TRUE
-			return
-		if(coin.string_attached)
-			if(prob(50))
-				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
-			else
-				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				consume(coin, user)
-				own_take(src, nameof(coin))
-				categories &= ~CAT_COIN
-		else
-			consume(coin)
-			own_take(src, nameof(coin))
-			categories &= ~CAT_COIN
-
+		swallow_coin(user)
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
-
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
-	after(src, vend_delay, PROC_REF(finish_vend), R, user)
+	after(src, vend_delay, PROC_REF(finish_vend), key = "vend", with = list(R, user), keeps_dead = TRUE)
+
+/// A premium vend takes the coin (half the time a coin on a string is pulled back out first).
+/obj/machinery/vending/proc/swallow_coin(mob/user)
+	if(coin.string_attached && prob(50))
+		to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
+		return
+	if(coin.string_attached)
+		to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
+	consume(coin, user)
+	rel_take(src, nameof(coin))
 
 /obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
 	if(R && R.get_product(get_turf(src)))
@@ -572,25 +575,25 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 /// machine still resets (vend_ready) either way.
 /obj/machinery/vending/proc/finish_vend(datum/stored_item/vending_product/R, mob/user)
 	if(!R)
-		vend_ready = 1
+		set_vend_ready(TRUE)
 		rel_clear(src, nameof(currently_vending))
 		return
 	if(user && has_trait(user, TRAIT_UNLUCKY) && prob(10))
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
-		vend_ready = 1
+		set_vend_ready(TRUE)
 		rel_clear(src, nameof(currently_vending))
 		return
 	R.get_product(get_turf(src))
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), R)
+		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R))
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++
 
-	vend_ready = 1
+	set_vend_ready(TRUE)
 	rel_clear(src, nameof(currently_vending))
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
@@ -608,40 +611,10 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		list_item += R.item_name
 		LAZYADD(log, list(list_item))
 
-/obj/machinery/vending/proc/show_log(mob/user as mob)
-	if(user.GetIdCard())
-		var/obj/item/card/id/tempid = user.GetIdCard()
-		if(req_log_access in tempid.GetAccess())
-			// Vending Log now opens a structured TGUI panel.
-			var/datum/dq_vending_log_panel/panel = new(name, user.name, log)
-			panel.tgui_interact(user)
-	else
-		to_chat(user,span_warning("You do not have the required access to view the vending logs for this machine."))
+// ---- timed work: electrified, shooting stock, pitching ----
 
-/**
- * Add item to the machine
- *
- * Checks if item is vendable in this machine should be performed before
- * calling. W is the item being inserted, R is the associated vending_product entry.
- */
-/obj/machinery/vending/proc/stock(obj/item/W, datum/stored_item/vending_product/R, mob/user)
-	if(!user.unEquip(W))
-		return
-
-	to_chat(user, span_notice("You insert \the [W] in the product receptor."))
-	R.add_product(W)
-	if(has_logs)
-		do_logging(R, user)
-
-/obj/machinery/vending/machine_step()
-	// Normal silent vendors have no time-dependent state. Hacked vendors and
-	// explicitly enabled advertisers wake through their mutation paths below.
-	if(seconds_electrified <= 0 && !shoot_inventory && (shut_up || !length(slogan_list)))
-		return PROCESS_KILL
-
-	if(seconds_electrified > 0)
-		set_seconds_electrified(seconds_electrified - 1)
-
+/// One frame of the machine's own work (every() runs it only while timed_work_wanted() holds): it pitches, it shoots.
+/obj/machinery/vending/proc/timed_work_frame(datum/act/timer/A)
 	//Pitch to the people!  Really sell it!
 	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
@@ -651,10 +624,8 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	if(shoot_inventory && prob(shoot_inventory_chance))
 		throw_item()
 
-	return
-
 /obj/machinery/vending/proc/speak(message)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!message)
@@ -663,12 +634,6 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	for(var/mob/O in hearers(src, null))
 		O.show_message(span_npc_say(span_name("\The [src]") + " beeps, \"[message]\""),2)
 	return
-
-/obj/machinery/vending/power_change()
-	. = ..()
-	// machine_step() sleeps on NOPOWER; resume timed work on restore.
-	if(!has_stat(BROKEN) && !has_stat(NOPOWER) && vend_has_timed_work())
-		MACHINE_WAKE(src)
 
 /// Broken and dark states replace the vendor's face; an open panel lays its own state over it.
 /obj/machinery/vending/draw(datum/look/look)
@@ -679,13 +644,13 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	look.hide(LOOK_BROKEN)
 	look.hide(LOOK_DARK)
 	var/base = initial(icon_state)
-	if(is_broken(src))
+	if(broken_now())
 		look.state("[base]-broken")
-	else if(!cap_powered())
+	else if(power_lost())
 		look.state("[base]-off")
-	look.overlay("[base]-panel", when = panel_is_open(src))
+	look.overlay("[base]-panel", when = panel_open(src))
 
-//Oh no we're malfunctioning!  Dump out some product and break.
+/// A malfunction dumps the stock of the first shelf onto the floor and breaks the vendor (one shelf, as it always has).
 /obj/machinery/vending/proc/malfunction()
 	for(var/datum/stored_item/vending_product/R in product_records)
 		while(R.get_amount()>0)
@@ -701,6 +666,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	var/mob/living/target = locate_in_list(view(7,src), /mob/living)
 	if(forced_target && isliving(forced_target))
 		target = forced_target
+
 	if(!target)
 		return 0
 
@@ -724,3 +690,34 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 /// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
 	return currently_vending
+
+// ---- the wires ----
+
+/// The vendor is told to shoot its stock, or to stop (the brand intelligence event): a hold of its own beside the throw wire's.
+/obj/machinery/vending/proc/set_shoot_inventory(on)
+	if(on)
+		hold(src, STAT_SHOOT_INVENTORY, null, SRC_ROUND_EVENT)
+	else
+		release(src, STAT_SHOOT_INVENTORY, SRC_ROUND_EVENT)
+
+/obj/machinery/vending/proc/wire_lights()
+	return list(
+		"The orange light is [shock_live(src) ? "on" : "off"].",
+		"The red light is [shoot_inventory ? "off" : "blinking"].",
+		"The green light is [(categories & CAT_HIDDEN) ? "on" : "off"].",
+		"A [scan_id ? "purple" : "yellow"] light is on.")
+
+/// Reaching into a live vendor's wires shocks a carbon toucher instead.
+/obj/machinery/vending/proc/wire_touch_shocks(datum/act/A)
+	var/datum/act/touch_wires/T = A
+	if(iscarbon(T.user) && shock_live(src) && shock(T.user, 100))
+		return OP_REFUSED
+	return HOOK_DECLINE
+
+/// The contraband wire cut hides the contraband again (mending does not show it).
+/obj/machinery/vending/proc/contraband_wire_cut(datum/act/A)
+	set_categories(categories & ~CAT_HIDDEN)
+
+/// The contraband wire pulsed shows or hides the contraband.
+/obj/machinery/vending/proc/contraband_wire_pulsed(datum/act/A)
+	set_categories(categories ^ CAT_HIDDEN)

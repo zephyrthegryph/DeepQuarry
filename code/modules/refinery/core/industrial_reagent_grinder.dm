@@ -5,46 +5,25 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 300
 	circuit = /obj/item/circuitboard/industrial_reagent_grinder
-	var/static/limit = 50
+	var/const/limit = 50
 	VAR_PRIVATE/list/holdingitems = list()
-
-/obj/machinery/reagent_refinery/grinder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/grinder/ownership()
 	. = ..()
-	. += owns(nameof(holdingitems), policy = OWN_SPILL)
+	. += owns(nameof(holdingitems), policy = OWN_SPILL, is_list = TRUE)
 
-/obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
-	// Old attackby tried the parent's attackby FIRST, only falling to its own
-	// logic when the parent declined: the parent's own interactions come
-	// before this type's, the reverse of the usual override-chain order.
-	..()
-	into += list(
-		/datum/interaction/machine_item/grinder_insert,
-	)
-
-/// Old attackby: insert grindables when the parent attackby didn't handle it.
-/datum/interaction/machine_item/grinder_insert
-	id = "grinder_insert"
-	name = "Insert"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/reagent_refinery/grinder/proc/interaction_insert
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/reagent_refinery/grinder/proc/has_room))
+/// Requirement: has_room returns null to allow, or a refusal reason.
+/obj/machinery/reagent_refinery/grinder/proc/has_room_holds(datum/act/op/A)
+	return has_room(A.actor, src, A.held)
 
 /// Requirement: the grinder holds at most `limit` items.
 /obj/machinery/reagent_refinery/grinder/proc/has_room(mob/user, atom/target, obj/item/held)
-	return length(holdingitems) >= limit ? "the machine cannot hold any more items" : TRUE
+	return length(holdingitems) >= limit ? "the machine cannot hold any more items" : null
 
-/obj/machinery/reagent_refinery/grinder/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/grinder/proc/interaction_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	// Botany/Chemistry gameplay
 	if(istype(O,/obj/item/storage/bag))
 		var/failed = 1
@@ -52,19 +31,19 @@
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			own_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
+			rel_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
 			if(holdingitems && holdingitems.len >= limit)
 				break
 
 		if(failed)
 			to_chat(user, "Nothing in \the [O] is usable.")
-			return TRUE
+			return OP_OK
 
 		if(!contents_count(O))
 			to_chat(user, "You empty \the [O] into \the [src].")
 		else
 			to_chat(user, "You fill \the [src] from \the [O].")
-		return TRUE
+		return OP_OK
 
 	// Borgos!
 	if(istype(O,/obj/item/gripper))
@@ -72,23 +51,22 @@
 		var/obj/item/wrapped = B.get_wrapped_item()
 		if(!wrapped)
 			to_chat(user, "\The [B] is not holding anything.")
-			return TRUE
+			return OP_OK
 		else
 			var/B_held = wrapped
 			to_chat(user, "You use \the [B] to load \the [src] with \the [B_held].")
-		return TRUE
+		return OP_OK
 
 	// Needs to be sheet, ore, or grindable reagent containing things
 	if(LAZYLEN(O.tool_qualities)) // Stops messages about the wrench being unsuitable to grind
-		return TRUE
+		return OP_OK
 	if(!GLOB.sheet_reagents[O.type] && !GLOB.ore_reagents[O.type] && (!O.reagents || !O.reagents.total_volume))
 		to_chat(user, "\The [O] is not suitable for blending.")
-		return TRUE
+		return OP_OK
 
-	if(!own_add(src, nameof(src.holdingitems), O, user = user))
-		return TRUE
-	update_icon()
-	return TRUE
+	if(!move_into(src, nameof(src.holdingitems), O, user))
+		return OP_OK
+	return OP_OK
 
 /obj/machinery/reagent_refinery/grinder/refinery_step()
 	if(!anchored)
@@ -105,7 +83,7 @@
 			if(!T)
 				continue
 			var/obj/machinery/conveyor/C = locate_on(T, /obj/machinery/conveyor)
-			if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
+			if(C && !C.has_condition() && C.operating && C.dir == GLOB.reverse_dir[D] && contents_count(T) > 1) // If an operating conveyor points into us... Check if it's moving anything
 				var/obj/item/I = pick(T.contents - list(C))
 				if(istype(I) && conveyor_load(I))
 					break
@@ -115,22 +93,19 @@
 		play_sfx(src, SFX_ITEMS_POSTER_BEING_CREATED)
 		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
 		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
-		if(holdingitems.len == 0)
-			update_icon()
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/grinder/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/grinder/draw(datum/look/look)
+	..()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
-	. += pipe
+	look.overlay(pipe)
 	if(!operable() || !anchored)
-		icon_state = "grinder_off"
+		look.state("grinder_off")
 	else
-		icon_state = "grinder_on"
+		look.state("grinder_on")
 		var/image/dot = image(icon, icon_state = "grinder_dot_[length(holdingitems) ? "on" : "off" ]")
-		. += dot
+		look.overlay(dot)
 
 /obj/machinery/reagent_refinery/grinder/proc/conveyor_load(atom/movable/AM as mob|obj)
 	if(!AM || QDELETED(AM))
@@ -141,7 +116,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 		return FALSE
 	if(!GLOB.sheet_reagents[AM.type] && !GLOB.ore_reagents[AM.type] && (!AM.reagents || !AM.reagents.total_volume))
 		return FALSE
-	own_add(src, nameof(src.holdingitems), AM, into = TRUE)
+	move_into(src, nameof(src.holdingitems), AM)
 	return TRUE
 
 /obj/machinery/reagent_refinery/grinder/examine(mob/user, infix, suffix)
@@ -154,16 +129,18 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 	// Grinder forbids input
 	return 0
 
-/obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
-
 /// Busy while it holds items to grind or an operating conveyor feeds it.
 /obj/machinery/reagent_refinery/grinder/refinery_busy()
 	if(length(holdingitems))
 		return TRUE
 	for(var/D in GLOB.cardinal)
 		var/obj/machinery/conveyor/C = locate_within(get_step(src, D), /obj/machinery/conveyor)
-		if(C && !C.has_stat(MACHINE_STAT_ANY) && C.operating && C.dir == GLOB.reverse_dir[D])
+		if(C && !C.has_condition() && C.operating && C.dir == GLOB.reverse_dir[D])
 			return TRUE
 	return FALSE
+
+CAPABILITIES(/obj/machinery/reagent_refinery/grinder)
+	configure(uses_power(idle = 5, active = 300))
+	after_init(0, then(PROC_REF(apply_default_parts)))
+	without("reagent_refinery_set_transfer_amount")
+	op("grinder_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), needs(req(PROC_REF(has_room_holds))), then(PROC_REF(interaction_insert)))

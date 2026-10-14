@@ -10,10 +10,12 @@
 	desc = "Made from grapes grown in the champagne asteroid belt, the bubbly liquid inside is softly glowing.  Suitable for christening boats, not so much for drinking."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "champagne"
-	attack_verb = list("attacked", "bonked", "hit")
 	var/min_name_len = 4		// Refuse if shuttle tag is shorter than this.
 	var/max_name_len = 32		// Refuse if shuttle tag is longer than this.
 	var/max_area_turfs = 256	// Refuse if area has more than this many turfs.
+
+CAPABILITIES(/obj/item/champagne)
+	configure(item_combat(attack_verbs = list("attacked", "bonked", "hit")))
 
 /obj/item/champagne/afterattack(atom/A, mob/user, proximity)
 	if(!proximity)
@@ -27,7 +29,7 @@
 		return
 
 	act_message(user, src, others = span_notice("%U% lifts %T% bottle over [comp]!"))
-	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/om/prompt/text, message = "Choose a name for the shuttle", title = "New Shuttle Name")
+	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/prompt/text, question = "Choose a name for the shuttle", title = "New Shuttle Name")
 	if(isnull(shuttle_name))
 		return TRUE
 	if(!shuttle_name || QDELETED(src) || QDELETED(comp) || comp.shuttle_tag || user.incapacitated())
@@ -37,7 +39,7 @@
 	if(length(shuttle_name) < min_name_len || length(shuttle_name) > max_name_len)
 		to_chat(user, span_warning("Name length must be between [min_name_len] and [max_name_len]."))
 		return
-	if(shuttle_name in SSshuttles.shuttles)
+	if(shuttle_name in shuttles_shuttles())
 		to_chat(user, span_warning("Invalid name: Already in use."))
 		return
 
@@ -45,7 +47,7 @@
 	if(!my_area || istype(my_area, /area/space))
 		to_chat(user, span_warning("[comp] must be in a valid area to become a shuttle."))
 		return
-	if(my_area in SSshuttles.shuttle_areas)
+	if(my_area in shuttles_shuttle_areas())
 		to_chat(user, span_warning("[comp] is already in a shuttle."))
 		return
 	// Count turfs in the area
@@ -61,7 +63,7 @@
 		MSG_OTHERS(span_notice("%U% smashes %T% on [comp]")), \
 		MSG_BLIND(span_notice("You hear glass shattering")))
 	log_and_message_admins("Created a new shuttle [S.name]. [ADMIN_JMP(comp_turf)]", user)
-	om_after(comp_turf, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), 'sound/voice/Serithi/shuttlehere.ogg', 75, 0)
+	after(comp_turf, 1 SECOND, GLOBAL_PROC_REF(playsound), with = list(comp_turf, 'sound/voice/Serithi/shuttlehere.ogg', 75, 0))
 	consume(src, user)
 
 	return TRUE
@@ -99,10 +101,9 @@
 /obj/effect/shuttle_landmark/automatic/champagne
 	flags = SLANDMARK_FLAG_ZERO_G // Don't auto-set
 
-/obj/effect/shuttle_landmark/automatic/champagne/Initialize(mapload, base_area, base_turf)
-	src.base_turf = base_turf
-	src.base_area = base_area
-	. = ..()
+CAPABILITIES(/obj/effect/shuttle_landmark/automatic/champagne)
+	param(nameof(base_area), pos = 1)
+	param(nameof(base_turf), pos = 2)
 
 //
 // Landable ship dynamically created at runtime by champagne bottle.
@@ -110,7 +111,7 @@
 /obj/effect/overmap/visitable/ship/landable/champagne
 	desc = "Newly minted space faring vessel."
 
-/obj/effect/overmap/visitable/ship/landable/champagne/Initialize(mapload, _name, _shuttle)
-	src.name = _name
-	src.shuttle = _shuttle
-	. = ..()
+CAPABILITIES(/obj/effect/overmap/visitable/ship/landable/champagne)
+	param(nameof(name), pos = 1)
+	param(nameof(shuttle), pos = 2)
+

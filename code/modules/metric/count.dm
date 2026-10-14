@@ -59,7 +59,7 @@
 /datum/metric/proc/get_all_antags(cutoff = 75)
 	. = list()
 	for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(L.mind && GLOB.antag_service.player_is_antag(L.mind) && assess_player_activity(L) >= cutoff)
+		if(L.mind && SSantag.player_is_antag(L.mind) && assess_player_activity(L) >= cutoff)
 			. += L
 
 /datum/metric/proc/count_all_antags(cutoff = 75)

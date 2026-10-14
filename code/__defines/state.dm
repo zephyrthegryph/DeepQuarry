@@ -10,6 +10,8 @@
 #define STATE_KEY_SLOT "slot"
 /// Latent entries of a holder (C5): list(list("type", "count", "slot", "state"), ...).
 #define STATE_KEY_LATENT "latent"
+/// An /obj's state that is not a saved var (its cap_data records): name = encoded value, from /obj/state_extra().
+#define STATE_KEY_EXTRA "extra"
 
 /// Wrapper keys for encoded values that JSON cannot hold as they are.
 /// A single-key list with one of these keys is a wrapped value; keys of
@@ -42,3 +44,9 @@
 #define STATE_VERSION_DEFAULT 1
 /// The version legacy (pre-L1) flat blobs are read as.
 #define STATE_VERSION_LEGACY 0
+
+// Inherited type policy keys: independent of per-instance state and prototype allocation.
+#define TYPE_META_LATENT_SAFE "latent_safe"
+#define TYPE_META_LATENT_CONTENTS "latent_contents"
+#define TYPE_META_LATENT_IDLE_DELAY "latent_idle_delay"
+#define TYPE_META_SLOT_HOOKS "has_slot_hooks"

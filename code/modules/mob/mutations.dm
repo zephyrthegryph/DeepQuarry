@@ -7,6 +7,7 @@
  * capabilities) only has to touch this file.
  */
 
+
 /// Returns TRUE if this mob currently has the given mutation.
 /mob/proc/has_mutation(mut)
 	return mut && LAZYFIND(mutations, mut) ? TRUE : FALSE
@@ -16,17 +17,23 @@
 /mob/proc/add_mutation(mut)
 	if(!mut)
 		return
-	LAZYADD(mutations, mut)
+	add_mutations(mut)
+	tracked_changed(src, nameof(mutations)) // a list edited in place: the look and other readers follow it
 	update_mutation_immunities(mut)
-	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
+	if(mut == TK)
+		tk_refresh()
 
 /// Removes every occurrence of the given mutation from this mob.
 /mob/proc/remove_mutation(mut)
 	if(!mut)
 		return
-	LAZYREMOVE(mutations, mut)
+	remove_mutations(mut)
+	tracked_changed(src, nameof(mutations))
 	update_mutation_immunities(mut)
-	changed(src, CHANGE_MOB_CONDITIONS)
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
+	if(mut == TK)
+		tk_refresh()
 
 /// Returns the number of mutations currently active on this mob.
 /mob/proc/mutation_count()

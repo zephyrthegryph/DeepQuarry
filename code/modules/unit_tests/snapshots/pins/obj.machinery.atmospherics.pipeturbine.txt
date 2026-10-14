@@ -1,0 +1,79 @@
+human|none menu: Climb
+human|none menu: Rotate Clockwise
+human|none menu: Rotate Counter Clockwise
+human|none menu: Turn Around
+human|none click: nothing
+@obj.machinery robot|none
++1 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench menu: Wrench
+human|/obj/item/tool/wrench click: Click: Wrench
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/multitool
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool click: nothing
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel click: nothing
+@obj.machinery human|/obj/item/card/id
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/stack/material menu: Climb
+human|/obj/item/stack/material menu: Rotate Clockwise
+human|/obj/item/stack/material menu: Rotate Counter Clockwise
+human|/obj/item/stack/material menu: Turn Around
+human|/obj/item/stack/material click: nothing
+human|/obj/item/pipe_painter menu: Climb
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Rotate Clockwise
+human|/obj/item/pipe_painter menu: Rotate Counter Clockwise
+human|/obj/item/pipe_painter menu: Turn Around
+human|/obj/item/pipe_painter click: Click: Painter
+keys: anchor, climb.climb, climb.climb_menu, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand

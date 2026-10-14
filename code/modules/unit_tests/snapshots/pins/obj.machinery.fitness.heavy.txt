@@ -1,0 +1,42 @@
+human|none menu: Heavy fitness safety hand
+human|none menu: Work out
+human|none click: Click: Heavy fitness safety hand
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Heavy fitness safety hand
++3 menu: Work out
++4 click: Click: Heavy fitness safety hand
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Heavy fitness safety hand
+human|/obj/item/tool/screwdriver menu: Work out
+human|/obj/item/tool/screwdriver click: Click: Heavy fitness safety hand
+human|/obj/item/tool/crowbar menu: Heavy fitness safety hand
+human|/obj/item/tool/crowbar menu: Work out
+human|/obj/item/tool/crowbar click: Click: Heavy fitness safety hand
+human|/obj/item/tool/wrench menu: Heavy fitness safety hand
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Work out
+human|/obj/item/tool/wrench click: Click: Heavy fitness safety hand
+human|/obj/item/tool/wirecutters menu: Heavy fitness safety hand
+human|/obj/item/tool/wirecutters menu: Work out
+human|/obj/item/tool/wirecutters click: Click: Heavy fitness safety hand
+human|/obj/item/multitool menu: Heavy fitness safety hand
+human|/obj/item/multitool menu: Work out
+human|/obj/item/multitool click: Click: Heavy fitness safety hand
+human|/obj/item/weldingtool menu: Heavy fitness safety hand
+human|/obj/item/weldingtool menu: Work out
+human|/obj/item/weldingtool click: Click: Heavy fitness safety hand
+human|/obj/item/stack/cable_coil menu: Heavy fitness safety hand
+human|/obj/item/stack/cable_coil menu: Work out
+human|/obj/item/stack/cable_coil click: Click: Heavy fitness safety hand
+human|/obj/item/stack/material/steel menu: Heavy fitness safety hand
+human|/obj/item/stack/material/steel menu: Work out
+human|/obj/item/stack/material/steel click: Click: Heavy fitness safety hand
+human|/obj/item/card/id menu: Heavy fitness safety hand
+human|/obj/item/card/id menu: Work out
+human|/obj/item/card/id click: Click: Heavy fitness safety hand
+human|/obj/item menu: Heavy fitness safety hand
+human|/obj/item menu: Work out
+human|/obj/item click: Click: Heavy fitness safety hand
+keys: drag_buckle, fitness_workout_hand, heavy_fitness_safety_hand, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wrench

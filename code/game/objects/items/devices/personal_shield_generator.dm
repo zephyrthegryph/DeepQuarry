@@ -18,9 +18,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit" //Placeholder
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_HUGE //It's a giant shield generator!!!
 	unacidable = TRUE
@@ -37,6 +34,29 @@
 	var/has_weapon = 1										// Backpack units generally have weapons.
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
+CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
+	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
+	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
+	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_generator_emp)))
+	drag_onto(PROC_REF(drop_input))
+	// the screwdriver takes the cell out; a built-in shield cell asks first, because taking it out destroys it
+	op("remove_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(cond_not(req(PROC_REF(cell_builtin)))), then(PROC_REF(screwdriver_used)))
+	op("destroy_cell", tool(TOOL_SCREWDRIVER), wait(0), label("Remove cell"), when(req(PROC_REF(cell_builtin))), needs(req(PROC_REF(cell_builtin), because = MSG(shield_generator/no_cell))),
+		asks(/datum/prompt/choice, fields = list("title" = "Selection List", "question" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "choices" = list("Cancel", "Remove"), "buttons" = TRUE, "timeout" = 0)),
+		then(PROC_REF(destroy_cell_answered)))
+	op("recolor", tool(TOOL_MULTITOOL), wait(0), label("Set the shield colour"),
+		asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the shield to!", "default" = "effect_color", "timeout" = 0)),
+		then(PROC_REF(shield_color_chosen)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("toggle_shield_effect", menu(), label("Toggle Shield"), needs(carried()), then(PROC_REF(toggle_shield_effect_op)))
+	op("weapon_toggle_effect", menu(), label("Toggle Gun"), needs(carried(), req(PROC_REF(pred_has_weapon_holds))), then(PROC_REF(weapon_toggle_effect_op)))
+
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
 
@@ -44,22 +64,22 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			own_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): constructor arguments
+			rel_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 		else
-			own_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
-			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
-	update_icon()
+			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 
 /// If the shield gen is active; it drains power while it is.
-OM_FIELD(/obj/item/personal_shield_generator, shield_active, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/personal_shield_generator, PERIODIC_SLOW, "shield_active")
-DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
+/obj/item/personal_shield_generator/var/shield_active = 0
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/draw(datum/look/look)
+	..()
+	look.state("shieldpack_basic[shield_active ? "_on" : ""]")
 
 /obj/item/personal_shield_generator/examine(mob/user)
 	. = ..()
@@ -78,10 +98,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		if(bcell.rigged)
 			. += "A red flashing 'WARNING' is visible on the display, noting that the cell is unstable and requires replacement."
 
-DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield_generator_emp))
-/// An EMP on a running shield may burn or corrupt its cell.
-/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/damage_packet/packet)
-	var/severity = packet.severity
+/// An EMP on a running shield may burn or corrupt its cell (on_notice in its CAPABILITIES).
+/obj/item/personal_shield_generator/proc/shield_generator_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	if(bcell && shield_active)
 		switch(severity)
 			if(1) //Point blank EMP shots have a good chance of burning the cell charge.
@@ -98,7 +118,6 @@ DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield
 						else //It won't blow up unless you turn it back on again. Upside of using non-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL CRITICALLY DAMAGED. REPLACE CELL IMMEDIATELY.'"))
-						update_icon()
 			else
 				if(prob(25))
 					bcell.emp_act(severity)
@@ -106,33 +125,51 @@ DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield
 /obj/item/personal_shield_generator/ui_action_click(mob/user, actiontype)
 	toggle_shield_effect(user)
 
-DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// The toggle_shield_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/personal_shield_generator/proc/toggle_shield_effect_op(datum/act/op/A)
+	toggle_shield_effect(A.actor, A.held)
+	return OP_OK
 
-/obj/item/personal_shield_generator/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* pred_has_weapon): the legacy check answers TRUE to pass.
+/obj/item/personal_shield_generator/proc/pred_has_weapon_holds(datum/act/op/A)
+	return has_weapon ? null : "it has no gun"
+
+/// Why pred_has_weapon_holds refuses: the legacy check's text, else the clause's own reason.
+/// The weapon_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/personal_shield_generator/proc/weapon_toggle_effect_op(datum/act/op/A)
+	weapon_toggle_effect(A.actor, A.held)
+	return OP_OK
+
+/obj/item/personal_shield_generator/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loc == user)
 		toggle_shield_effect(user)
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/personal_shield_generator/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	weapon_toggle_effect(user)
 	return TRUE
 
-/obj/item/personal_shield_generator/MouseDrop()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). The worn pack is dragged into its wearer's hands.
+/obj/item/personal_shield_generator/proc/drop_input(datum/act/input/A)
+	drag_backpack_with_actor(A.actor)
+	return TRUE
+
+/obj/item/personal_shield_generator/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
-/obj/item/personal_shield_generator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W == active_weapon)
 		reattach_gun(user)
 	else if(istype(W, /obj/item/cell))
@@ -141,69 +178,58 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		else if(!istype(W, /obj/item/cell/device/weapon)) //Weapon cells only!
 			to_chat(user, span_notice("This cell will not fit in the device."))
 		else
-			if(!own_set(src, nameof(src.bcell), W, user = user))
+			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			if(active_weapon)
 				rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			update_icon()
 
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
-/obj/item/personal_shield_generator/screwdriver_act(mob/user, obj/item/tool)
+/// A built-in shield cell (not the parry one): taking it out destroys it.
+/obj/item/personal_shield_generator/proc/cell_builtin(datum/act/A)
+	return (istype(bcell, /obj/item/cell/device/shield_generator) && !istype(bcell, /obj/item/cell/device/shield_generator/parry)) ? null : MSG(shield_generator/no_cell)
+
+/// The screwdriver takes an ordinary cell out; the parry cell stays.
+/obj/item/personal_shield_generator/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bcell)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(istype(bcell, /obj/item/cell/device/shield_generator/parry))
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
-		return ITEM_INTERACT_BLOCKING
-	if(istype(bcell, /obj/item/cell/device/shield_generator))
-		om_ask(user, /datum/om/prompt/confirm/shield_cell_destroy, PROC_REF(destroy_cell_answered))
-		return ITEM_INTERACT_BLOCKING
-	bcell.update_icon()
+		return OP_OK
 	bcell.forceMove(get_turf(src))
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	if(active_weapon)
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/// Removing a built-in cell destroys it. Re-checked on the answer: still next to it, and the cell is still a removable built-in one.
-/datum/om/prompt/confirm/shield_cell_destroy
-	title = "Selection List"
-	message = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?"
-	yes_text = "Remove"
-	no_text = "Cancel"
-	no_first = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
-/datum/om/prompt/confirm/shield_cell_destroy/valid()
-	var/obj/item/personal_shield_generator/gen = subject
-	if(!istype(gen.bcell, /obj/item/cell/device/shield_generator) || istype(gen.bcell, /obj/item/cell/device/shield_generator/parry))
-		return "no removable cell"
-	return null
-
-/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
-	var/mob/user = ask.answerer
+/// "Remove": the built-in cell comes out and is destroyed (re-checked on the answer: still a built-in one, still beside it).
+/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value != "Remove")
+		return OP_OK
+	var/mob/user = A.actor
 	fx_sparks(src, 5)
-	own_clear(src, nameof(bcell), OWN_DELETE)
+	rel_clear(src, nameof(bcell))
 	if(active_weapon)
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(shield_color_chosen), message = "Choose a color to set the shield to!", default = effect_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		effect_color = ask.picked_color
+/// The multitool sets the shield's colour.
+/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		effect_color = R.value
+	return OP_OK
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)
@@ -214,11 +240,11 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 //Gun stuff
 
-/obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held)
 
-	if(!COOLDOWN_FINISHED(user, last_special))
+	if(!cooldown_ready(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 10) //No spamming!
+	cooldown_start(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!bcell || !bcell.check_charge(generator_hit_cost) || !bcell.check_charge(generator_active_cost))
 		to_chat(user, span_warning("You require a charged cell to do this!"))
@@ -238,15 +264,14 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			to_chat(user, span_warning("You activate the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection) //Just to make sure they aren't using two at once!
 			user.apply_body_effect(modifier_type)
-			user.update_modifier_visuals() //Forces coloration to WORK.
+			changed(src)
 			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
-	update_icon()
 
-/obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Make this work on Alt-Click
+/obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held) //Make this work on Alt-Click
 
-	if(!COOLDOWN_FINISHED(user, last_special))
+	if(!cooldown_ready(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 10) //No spamming!
+	cooldown_start(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!active_weapon)
 		to_chat(user, span_warning("The gun is missing!"))
@@ -265,9 +290,8 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	else
 		if(!user.put_in_hands(active_weapon)) //Detach the gun into the user's hands
 			to_chat(user, span_warning("You need a free hand to hold the gun!"))
-		update_icon() //success
 
-/obj/item/personal_shield_generator/periodic_step()
+/obj/item/personal_shield_generator/proc/personal_shield_generator_step(datum/act/timer/A)
 	if(!bcell) //They removed the battery midway.
 		if(ishuman(loc)) //We on someone? Tell them it turned off.
 			var/mob/living/carbon/human/user = loc
@@ -289,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 				rel_clear(active_weapon, nameof(active_weapon.power_supply))
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
-			own_take(src, nameof(bcell))
+			rel_take(src, nameof(bcell))
 			set_shield_active(0)
 			return
 
@@ -302,7 +326,6 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-		update_icon()
 		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
 
@@ -338,7 +361,6 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	else
 		active_weapon.forceMove(src)
 
-	update_icon()
 
 //The gun
 
@@ -364,10 +386,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	var/wielded = 0
 	var/cooldown = 0
 
-/obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
+// ALLOW(init/INSTANCE_STATE): the generator's gun draws from its generator's cell, in place of the one its parents made
+/obj/item/gun/energy/gun/generator/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(linked_generator), shield_gen)
-	rel_set(src, nameof(power_supply), shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
+	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))
@@ -406,13 +428,18 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit"
 	w_class = ITEMSIZE_LARGE //No putting these in backpacks!
-	slot_flags = SLOT_BELT
 	has_weapon = 0 //No gun with the belt!
+
+CAPABILITIES(/obj/item/personal_shield_generator/belt)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/personal_shield_generator/belt/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/draw(datum/look/look)
+	..()
+	look.state("shieldpack_basic[shield_active ? "_on" : ""]")
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
 	modifier_type = /datum/body_effect/shield_projection/bruteburn
@@ -436,7 +463,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{
 /obj/item/personal_shield_generator/belt/mining/upgraded/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack_mining{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/mining/draw(datum/look/look)
+	..()
+	look.state("shieldpack_mining[shield_active ? "_on" : ""]")
 
 /obj/item/borg/upgrade/shield_upgrade
 	name = "mining PSG upgrade disk."
@@ -446,18 +476,21 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 	icon_state = "modkit"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/personal_shield_generator/belt/mining/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/borg/upgrade/shield_upgrade, PROC_REF(interaction_upgrade), "Upgrade"))
-	..()
+CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
+	op("upgrade", item(/obj/item/borg/upgrade/shield_upgrade), label("Upgrade"), then(PROC_REF(interaction_upgrade)))
 
-/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(mob/user, obj/item/borg/upgrade/shield_upgrade/W, datum/interaction/interaction)
+/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/borg/upgrade/shield_upgrade/W = A.held
 	if(modifier_type == /datum/body_effect/shield_projection/mining/strong)
 		to_chat(user, span_warning("This shield generator is already upgraded!"))
 		return TRUE
+	var/upgrade_name = "[W]"
+	if(!consume(W, user))
+		return TRUE
 	modifier_type = /datum/body_effect/shield_projection/mining/strong
 	upgraded = TRUE
-	to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
-	consume(W, user)
+	to_chat(user, span_notice("You upgrade the [src] with the [upgrade_name]!"))
 	return TRUE
 
 //Security belts
@@ -470,7 +503,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 /obj/item/personal_shield_generator/belt/security/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpack_security{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/security/draw(datum/look/look)
+	..()
+	look.state("shieldpack_security[shield_active ? "_on" : ""]")
 
 //PvE focused belt
 /obj/item/personal_shield_generator/belt/melee
@@ -536,7 +572,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpa
 /obj/item/personal_shield_generator/security/strong/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_security{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/security/draw(datum/look/look)
+	..()
+	look.state("shieldpack_security[shield_active ? "_on" : ""]")
 
 //Power cells.
 /obj/item/cell/device/shield_generator //The base power cell the shield gen comes with.
@@ -566,16 +605,11 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 	return linked_generator
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
-/obj/item/gun/energy/gun/generator/relations()
-	. = ..()
-	. += rel_one(nameof(power_supply))
+CAPABILITIES(/obj/item/gun/energy/gun/generator)
+	ref_one(nameof(power_supply))
+	param(nameof(linked_generator), pos = 1)
+	ref_one(nameof(linked_generator), /obj/item/personal_shield_generator)
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \
-	INTERACT_VERB("Toggle Shield", PROC_REF(toggle_shield_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Gun", PROC_REF(weapon_toggle_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/personal_shield_generator/proc/pred_has_weapon, "it has no gun")), \
-)
 
 /// Requirement for "Toggle Gun" (old: the verb was removed from generators without a weapon).
-/obj/item/personal_shield_generator/proc/pred_has_weapon(mob/actor, atom/target, obj/item/held)
-	return has_weapon

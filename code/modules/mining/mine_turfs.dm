@@ -1,4 +1,6 @@
-GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in code/game/turfs/simulated/dungeon/wall.dm (outside scope)
+/// What the adjacency index keeps of the four sides of a rock or sand tile: one bit per cardinal direction in each of three bytes.
+#define ROCK_EDGE_SPACE_SHIFT 4
+#define ROCK_EDGE_DENSE_SHIFT 8
 
 /**********************Mineral deposits**************************/
 /turf/unsimulated/mineral
@@ -81,6 +83,17 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 
 	turf_resource_types = TURF_HAS_MINERALS
 
+CAPABILITIES(/turf/simulated/mineral)
+	owns_one(nameof(artifact_find), /datum/artifact_find)
+	owns_one(nameof(geologic_data), /datum/geosample)
+	owns_many(nameof(finds))
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
+	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
+	// The timed parts mineral_item() starts with the held tool: the user stays, keeps the tool and the rock stays in reach.
+	op("mineral_dig_hole", ai(), wait(PROC_REF(dig_hole_time)), then(PROC_REF(dig_hole_done)))
+	op("mineral_measure", ai(), wait(1.5 SECONDS), then(PROC_REF(measure_done)))
+	op("mineral_pick", ai(), wait(PROC_REF(pick_time)), then(PROC_REF(pick_done)))
+
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
 	clear_ore_effects()
 	. = ..()
@@ -109,7 +122,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(!density && !opacity)
 		return FALSE
 	set_density(FALSE)
-	opacity = 0
+	set_opacity(0)
 	blocks_air = 0
 	can_build_into_floor = TRUE
 	// under LINDA, a turf with blocks_air=0 but air=null trips
@@ -128,7 +141,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && opacity)
 		return FALSE
 	set_density(TRUE)
-	opacity = 1
+	set_opacity(1)
 	blocks_air = 1
 	can_build_into_floor = FALSE
 	// re-walling a carved mineral: drop the air mixture so we don't
@@ -141,30 +154,12 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 
 /turf/simulated/mineral/proc/update_general()
 	recalculate_directional_opacity()
-	if(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
+	if(SSticker && round_game_state() == GAME_STATE_PLAYING)
 		reconsider_lights()
 		if(SSair)
 			SSair.mark_for_update(src)
 
-/turf/simulated/mineral/proc/get_cached_border(cache_id, direction, icon_file, icon_state, offset = 32)
-	//Cache miss
-	if(!GLOB.mining_overlay_cache["[cache_id]_[direction]"])
-		var/image/new_cached_image = image(icon_state, dir = direction, layer = ABOVE_TURF_LAYER)
-		switch(direction)
-			if(NORTH)
-				new_cached_image.pixel_y = offset
-			if(SOUTH)
-				new_cached_image.pixel_y = -offset
-			if(EAST)
-				new_cached_image.pixel_x = offset
-			if(WEST)
-				new_cached_image.pixel_x = -offset
-		GLOB.mining_overlay_cache["[cache_id]_[direction]"] = new_cached_image
-		return new_cached_image
-
-	//Cache hit
-	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
-
+// ALLOW(init/INSTANCE_STATE): rolls its ore and its rock detail per tile
 /turf/simulated/mineral/Initialize(mapload)
 	. = ..()
 	if(pregen_substrate)
@@ -178,68 +173,64 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	else if (turf_resource_types & TURF_HAS_ORE)
 		make_ore()
 	if(prob(20))
-		overlay_detail = "asteroid[rand(0,9)]"
-	update_icon()
-	if(density && mineral())
-		. = INITIALIZE_HINT_LATELOAD
+		set_overlay_detail("asteroid[rand(0,9)]")
 	if(random_icon)
 		dir = pick(GLOB.alldirs)
-		. = INITIALIZE_HINT_LATELOAD
 
-/turf/simulated/mineral/LateInitialize()
+/// Rock made during the round spreads its ore too, unless it is the generator's blank substrate (the carver owns that).
+/turf/simulated/mineral/runtime_after_init()
+	return !pregen_substrate
+
+/// Ore spreads to the rock around it, once that exists. Rock takes no planet sunlight (no ..()).
+/turf/simulated/mineral/sim_after_init(datum/act/timer/A)
 	if(density && mineral())
 		MineralSpread()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
-/turf/simulated/mineral/appearance_overlays()
-	. = list()
-
-	//We are a wall (why does this system work like this??)
+/// The rock draws its sprite, a lip toward each open side and the archaeology marks; the sand draws its dug mark, its edge against space and the rock
+/// around it, and its detail. Which sides are open, space or rock is kept by the adjacency index (rock_edges, code/game/turfs/turf_edges.dm).
+/turf/simulated/mineral/draw(datum/look/look)
+	..()
 	if(density)
-		if(mineral())
-			name = "[mineral().display_name] deposit"
-		else
-			name = "rock"
-
-		icon = rock_icon_path
-		icon_state = rock_icon_state
-
-		//Apply overlays if we should have borders
+		look.identity(name = mineral() ? "[mineral().display_name] deposit" : "rock")
+		look.set_icon(rock_icon_path)
+		look.state(rock_icon_state)
 		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src,direction)
-			if(T && !T.density)
-				. += get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state)
+			if(rock_edges & direction)
+				look.overlay(CACHED_KEY(rock_border_overlays, "[rock_side_icon_state]_[direction]_32", rock_side_icon_state, direction, 32))
+		look.overlay(archaeo_overlay, archaeo_overlay)
+		look.overlay(excav_overlay, excav_overlay)
+		return
+	look.identity(name = floor_name)
+	look.set_icon(sand_icon_path)
+	look.state(sand_icon_state)
+	look.overlay("dug_overlay", !!sand_dug) // a null condition would take the default, TRUE
+	for(var/direction in GLOB.cardinal)
+		if(rock_edges & (direction << ROCK_EDGE_SPACE_SHIFT))
+			look.overlay(CACHED_KEY(rock_border_overlays, "asteroid_edge_[direction]_0", "asteroid_edge", direction, 0))
+		else if(rock_edges & (direction << ROCK_EDGE_DENSE_SHIFT))
+			look.overlay(CACHED_KEY(rock_border_overlays, "[rock_side_icon_state]_[direction]_32", rock_side_icon_state, direction, 32))
+	look.overlay(overlay_detail, icon = overlay_detail_icon_path)
 
-			if(archaeo_overlay)
-				. += archaeo_overlay
+/// The sides of this tile that are open (a neighbour that is not dense), that face open space (not the cracked asteroid) and that face rock, written by
+/// the adjacency index.
+/turf/simulated/mineral/var/rock_edges = 0
 
-			if(excav_overlay)
-				. += excav_overlay
+/turf/simulated/mineral/edges_changed(mask)
+	..()
+	var/edges = 0
+	for(var/direction in GLOB.cardinal)
+		var/turf/T = get_step(src, direction)
+		if(!T)
+			continue
+		if(!T.density)
+			edges |= direction
+		if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
+			edges |= direction << ROCK_EDGE_SPACE_SHIFT
+		else if(T.density)
+			edges |= direction << ROCK_EDGE_DENSE_SHIFT
+	set_rock_edges(edges)
+	log_edge_trace("[type] at [x],[y],[z]: rock edges [rock_edges]")
 
-	//We are a sand floor
-	else
-		name = floor_name
-		icon = sand_icon_path
-		icon_state = sand_icon_state
-
-		if(sand_dug)
-			. += "dug_overlay"
-
-		//Apply overlays if there's space
-		for(var/direction in GLOB.cardinal)
-			var/turf/T = get_step(src, direction)
-			if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
-				. += get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0)
-			//Or any time
-			else
-				if(T?.density)
-					. += get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state)
-
-		if(overlay_detail)
-			. += overlay_detail_icon_path
-
-	// Neighbouring rock, sand and walls draw edges against us: tell them when we change.
-	appearance_notify_neighbours("[type]|[density]", /turf/simulated)
 
 /// Rock is drilled out by a blast rather than losing integrity.
 // ALLOW(sys_entry_override): the blast sink of rock: it is drilled out (GetDrilled) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it
@@ -258,7 +249,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 			GetDrilled()
 
 	if(severity <= 2) // Now to expose the ore lying under the sand.
-		om_after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
+		after(src, 0.1 SECONDS, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
 
 /// After a blast: the ore lying under the sand spills out.
 /turf/simulated/mineral/proc/expose_ore()
@@ -281,7 +272,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 		if(finds && finds.len)
 			var/datum/find/F = finds[1]
 			if(newDepth > F.excavation_required) // Digging too deep with something as clumsy or random as a blaster will destroy artefacts
-				own_remove(src, nameof(finds), finds[1])
+				rel_remove(src, nameof(finds), finds[1])
 				if(prob(50))
 					artifact_debris()
 
@@ -317,7 +308,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 			if(prob(mineral().spread_chance))
 				var/turf/simulated/mineral/target_turf = get_step(src, trydir)
 				if(istype(target_turf) && target_turf.density && !target_turf.mineral())
-					target_turf.mineral_static = mineral()
+					target_turf.set_mineral_static(mineral())
 					target_turf.UpdateMineral()
 					target_turf.MineralSpread()
 
@@ -326,13 +317,19 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 	clear_ore_effects()
 	if(mineral())
 		new /obj/effect/mineral(src)
-	update_icon()
+
+MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
+
+/// Requirement: the actor can use tools.
+/turf/simulated/mineral/proc/actor_dexterous_holds(datum/act/op/A)
+	return (!!A.actor.IsAdvancedToolUser()) ? null : MSG(mineral/clumsy)
 
 //Not even going to touch this pile of spaghetti
-EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(mineral_item), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "you don't have the dexterity to do this")))
 
 /// Old attackby: digging, excavation, sampling and scanning; anything else touches the rock.
-/turf/simulated/mineral/proc/mineral_item(mob/user, obj/item/W, datum/interaction/interaction)
+/turf/simulated/mineral/proc/mineral_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!density)
 		var/valid_tool = 0
 		var/digspeed = 40
@@ -341,7 +338,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			var/obj/item/shovel/S = W
 			if(S.grave_mode)
 				shovel_dig_grave(user, S)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			valid_tool = 1
 			digspeed = S.digspeed
 
@@ -354,32 +351,32 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		if(valid_tool)
 			if (sand_dug)
 				to_chat(user, span_warning("This area has already been dug."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/turf/T = user.loc
 			if (!(istype(T)))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			to_chat(user, span_notice("You start digging."))
 			play_sfx(user, SFX_EFFECTS_RUSTLE1)
 
-			om_task_timed(user, digspeed, src, src, PROC_REF(dig_hole_done), list(user))
+			perform_op(user, src, "mineral_dig_hole", W, ORIGIN_SYSTEM)
 
 		else if(istype(W,/obj/item/storage/bag/fossils))
 			var/obj/item/storage/bag/fossils/S = W
 			if(S.collection_mode)
 				for(var/obj/item/fossil/F in contents)
 					F.attackby(W,user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 		else if(istype(W, /obj/item/stack/tile/floor))
 			var/obj/item/stack/tile/floor/S = W
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ChangeTurf(/turf/simulated/floor)
 			S.use(1)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 
 	else
@@ -388,20 +385,20 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			geologic_data.UpdateNearbyArtifactInfo(src)
 			var/obj/item/core_sampler/C = W
 			C.sample_item(src, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if (istype(W, /obj/item/depth_scanner))
 			var/obj/item/depth_scanner/C = W
 			C.scan_atom(user, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
 			act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
 				item = P)
-			om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+			perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
+			return OP_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
 			var/obj/item/xenoarch_multi_tool/C = W
@@ -411,17 +408,17 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					item = C)
-				om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+				perform_op(user, src, "mineral_measure", W, ORIGIN_SYSTEM)
+			return OP_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
 			if(!istype(user.loc, /turf))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/obj/item/melee/shock_maul/S = W
 			if(!S.wielded)
 				to_chat(user, span_warning("\The [W] must be wielded in two hands to be used for mining!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/newDepth = excavation_level + S.excavation_amount // Used commonly below
 
@@ -446,26 +443,26 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					GetDrilled(0)
 				else
 					excavate_turf()
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			excavation_level += S.excavation_amount
 			update_archeo_overlays(S.excavation_amount)
-			own_set(src, nameof(geologic_data), new /datum/geosample(src))
+			rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 			//drop some rocks
 			next_rock += S.excavation_amount
 			while(next_rock > 50)
 				next_rock -= 50
 				var/obj/item/ore/archeology_debris/O = new(src)
 				geologic_data.UpdateNearbyArtifactInfo(src)
-				own_set(O, nameof(O.geologic_data), geologic_data.copy())
+				rel_set(O, nameof(O.geologic_data), geologic_data.copy())
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/obj/item/pickaxe/P = W
 			if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			COOLDOWN_START(src, dig_cooldown, P.digspeed)
 
 			playsound(user, P.drill_sound, 20, 1)
@@ -479,23 +476,42 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					fail_message = ". <b>[pick("There is a crunching noise","[W] collides with some different rock","Part of the rock face crumbles away","Something breaks under [W]")]</b>"
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
-			om_task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
-			return INTERACTION_HANDLED_PASS
+			perform_op(user, src, "mineral_pick", W, ORIGIN_SYSTEM)
+			return OP_PASS
 
-	return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS
+	return attack_hand(user) ? OP_OK : OP_PASS
 
-/turf/simulated/mineral/proc/dig_hole_done(mob/user)
+/// How long the dig takes: the shovel's or the pickaxe's speed (forty when it is neither).
+/turf/simulated/mineral/proc/dig_hole_time(datum/act/op/A)
+	if(istype(A.held, /obj/item/shovel))
+		var/obj/item/shovel/S = A.held
+		return S.digspeed
+	if(istype(A.held, /obj/item/pickaxe))
+		var/obj/item/pickaxe/P = A.held
+		return P.digspeed
+	return 40
+
+/turf/simulated/mineral/proc/dig_hole_done(datum/act/op/A)
 	if(sand_dug)
 		return
-	to_chat(user, span_notice("You dug a hole."))
+	to_chat(A.actor, span_notice("You dug a hole."))
 	GetDrilled()
 
-/turf/simulated/mineral/proc/measure_done(mob/user)
-	to_chat(user, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
+/turf/simulated/mineral/proc/measure_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("\The [src] has been excavated to a depth of [excavation_level]cm."))
 
-/turf/simulated/mineral/proc/pick_done(mob/user, obj/item/pickaxe/P)
-	if(!density)
+/// How long the pick takes: the pickaxe's dig speed.
+/turf/simulated/mineral/proc/pick_time(datum/act/op/A)
+	if(istype(A.held, /obj/item/pickaxe))
+		var/obj/item/pickaxe/P = A.held
+		return P.digspeed
+	return 40
+
+/turf/simulated/mineral/proc/pick_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!density || !istype(A.held, /obj/item/pickaxe))
 		return
+	var/obj/item/pickaxe/P = A.held
 	var/newDepth = excavation_level + P.excavation_amount
 	if(finds && finds.len)
 		var/datum/find/F = finds[1]
@@ -515,14 +531,14 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 	excavation_level += P.excavation_amount
 	update_archeo_overlays(P.excavation_amount)
-	own_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 	//drop some rocks
 	next_rock += P.excavation_amount
 	while(next_rock > 50)
 		next_rock -= 50
 		var/obj/item/ore/archeology_debris/O = new(src)
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, nameof(O.geologic_data), geologic_data.copy())
+		rel_set(O, nameof(O.geologic_data), geologic_data.copy())
 
 //THIS IS THE 'YOU HIT AN ARTIFACT AND ARE GOING TOO DEEP' PROC. This is NOT the 'you destroyed the turf' proc. For that, look at 'GetDrilled'
 /turf/simulated/mineral/proc/wreckfinds(destroy = FALSE)
@@ -531,23 +547,18 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 						//Technically you CAN KEEP RUNNING INTO THE TILE but like, you're wasting so much time at that point. Just buy a pick set from the mining vendor.
 			excavate_find(prob(1), finds[1]) //1 in 100 chance of digging it out
 	else //destructive methods will always destroy finds, no bowls menacing with spikes for you
-		own_remove(src, nameof(finds), finds[1])
+		rel_remove(src, nameof(finds), finds[1])
 		artifact_debris()
 
 /turf/simulated/mineral/proc/update_archeo_overlays(excavation_amount = 0)
-	var/updateIcon = 0
-
 	//archaeo overlays
 	if(!archaeo_overlay && finds && finds.len)
 		var/datum/find/F = finds[1]
 		if(F.excavation_required <= excavation_level + F.view_range)
-			cut_overlay(archaeo_overlay)
-			archaeo_overlay = "overlay_archaeo[rand(1,3)]"
-			add_overlay(archaeo_overlay)
+			set_archaeo_overlay("overlay_archaeo[rand(1,3)]")
 
 	else if(archaeo_overlay && (!finds || !finds.len))
-		cut_overlay(archaeo_overlay)
-		archaeo_overlay = null
+		set_archaeo_overlay(null)
 
 	//there's got to be a better way to do this
 	var/update_excav_overlay = 0
@@ -566,28 +577,23 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		var/excav_quadrant = round(excavation_level / 25) + 1
 		if(excav_quadrant > 5)
 			excav_quadrant = 5
-		cut_overlay(excav_overlay)
-		excav_overlay = "overlay_excv[excav_quadrant]_[rand(1,3)]"
-		add_overlay(excav_overlay)
-
-	if(updateIcon)
-		update_icon()
+		set_excav_overlay("overlay_excv[excav_quadrant]_[rand(1,3)]")
 
 /turf/simulated/mineral/proc/clear_ore_effects()
 	turf_resource_types &= ~(TURF_HAS_ORE | TURF_HAS_RARE_ORE)
 	for(var/obj/effect/mineral/M in contents)
-		qdel(M)
+		consume(M)
 
 /turf/simulated/mineral/proc/DropMineral()
 	if(!mineral())
 		return
 	clear_ore_effects()
-	own_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 	var/new_ore_path = mineral().ore
 	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
-		own_set(O, nameof(O.geologic_data), geologic_data.copy())
+		rel_set(O, nameof(O.geologic_data), geologic_data.copy())
 	return O
 
 /turf/simulated/mineral/proc/excavate_turf()
@@ -596,7 +602,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		//boulder with an artifact inside
 		B = new(src)
 		// The boulder takes the find over from this turf (the turf is drilled away next).
-		own_transfer(src, nameof(artifact_find), B, nameof(B.artifact_find_static))
+		rel_move(src, nameof(artifact_find), B, nameof(B.artifact_find_static))
 
 	if(B)
 		GetDrilled(0)
@@ -608,10 +614,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 	if(!density)
 		if(!sand_dug)
-			sand_dug = 1
+			set_sand_dug(1)
 			for(var/i=0;i<5;i++)
 				new/obj/item/ore/glass(src)
-			update_icon()
 		return
 
 	if (mineral() && mineral().result_amount)
@@ -631,11 +636,11 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		for(var/mob/living/M in range(src, 5)) //Let's only hit people nearby us.
 			to_chat(M, span_danger("[pick("A high-pitched [pick("keening","wailing","whistle")]","A rumbling noise like [pick("thunder","heavy machinery")]")] somehow penetrates your mind before fading away!"))
 			if(pain)
-				flick("pain",M.pain)
+				flick("hud_used?.pain",hud_of(M)?.pain)
 			M.flash_eyes()
 			if(prob(50))
-				M.status_at_least(EFFECT_STUNNED, 5)
-			M.status_adjust(EFFECT_JITTERY, 50) //SHAKY this used to be 1000(seizure) but I toned it to 50 to be less aggressive.
+				M.status_at_least(STAT_STUNNED, 5)
+			M.status_adjust(STAT_JITTERY, 50) //SHAKY this used to be 1000(seizure) but I toned it to 50 to be less aggressive.
 		if(prob(25))
 			excavate_find(prob(25), finds[1])
 		if(prob(2))
@@ -646,12 +651,11 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		new /obj/structure/closet/crate/secure/loot(src)
 
 	make_floor()
-	update_icon()
 
 /turf/simulated/mineral/proc/excavate_find(is_clean = 0, datum/find/F)
 	//with skill and luck, players can cleanly extract finds
 	//otherwise, they come out inside a chunk of rock
-	own_set(src, nameof(geologic_data), new /datum/geosample(src))
+	rel_set(src, nameof(geologic_data), new /datum/geosample(src))
 	var/obj/item/X
 	if(is_clean)
 		X = new /obj/item/archaeological_find(src, F.find_type)
@@ -659,7 +663,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		X = new /obj/item/strangerock(src, F.find_type)
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		var/obj/item/strangerock/SR = X
-		own_set(SR, nameof(SR.geologic_data), geologic_data.copy())
+		rel_set(SR, nameof(SR.geologic_data), geologic_data.copy())
 
 	//some find types delete the /obj/item/archaeological_find and replace it with something else, this handles when that happens
 	//yuck
@@ -675,9 +679,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		if(!S)
 			if(X)
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))
-				qdel(X)
+				consume(X)
 
-	own_remove(src, nameof(finds), F)
+	rel_remove(src, nameof(finds), F)
 
 /turf/simulated/mineral/proc/artifact_debris(severity = 0)
 	//cael's patented random limited drop componentized loot system!
@@ -715,9 +719,8 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		mineral_name = pickweight(list(ORE_MARBLE = 3, ORE_QUARTZ = 10, ORE_COPPER = 20, ORE_TIN = 15, ORE_BAUXITE = 15, ORE_URANIUM = 10, ORE_PLATINUM = 10, ORE_HEMATITE = 70, ORE_RUTILE = 15, ORE_CARBON = 70, ORE_DIAMOND = 2, ORE_GOLD = 10, ORE_SILVER = 10, ORE_PHORON = 20, ORE_LEAD = 3, ORE_VOPAL = 1, ORE_VERDANTIUM = 1, ORE_PAINITE = 1))
 
 	if(mineral_name && (mineral_name in GLOB.ore_data))
-		mineral_static = GLOB.ore_data[mineral_name]
+		set_mineral_static(GLOB.ore_data[mineral_name])
 		UpdateMineral()
-	update_icon()
 
 // V5 turfs
 

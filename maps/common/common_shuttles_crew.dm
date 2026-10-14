@@ -114,7 +114,7 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	return TRUE
 
 /obj/machinery/status_display/shuttle_display/proc/get_my_shuttle() //Links the displays to their shuttles. Must be called after the shuttle datums exist.
-	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/datum/shuttle/autodock/shuttle = shuttles_shuttles()[shuttle_tag]
 	if(!shuttle)
 		log_mapping("Shuttle display could not find its shuttle!")
 	else

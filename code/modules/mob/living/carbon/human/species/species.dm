@@ -395,25 +395,27 @@
 
 /// Rebuilds unarmed_attacks from unarmed_types. Call it on a mob's private copy
 /// (proto_private(H, "species")), never on the registered species.
+// What a human's look reads off its species (the species is the human's own copy, changed with these setters).
+
 /datum/species/proc/update_attack_types()
-	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
+	rel_clear(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 /datum/species/New()
 	share_type_tables()
 	if(hud_type)
-		own_set(src, nameof(hud), new hud_type())
+		rel_set(src, nameof(hud), new hud_type())
 	else
-		own_set(src, nameof(hud), new /datum/hud_data())
+		rel_set(src, nameof(hud), new /datum/hud_data())
 
 	//If the species has eyes, they are the default vision organ
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	own_take_all(src, nameof(unarmed_attacks))
+	rel_take_all(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 	update_sort_hint()
 
@@ -455,7 +457,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		var/parent_tag = initial(limb_path.parent_organ)
 		if(parent_tag && limbs[parent_tag])
 			limbs[parent_tag]["has_children"] = limbs[parent_tag]["has_children"] + 1
-	has_limbs = limbs
+	set_has_limbs(limbs)
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -507,7 +509,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 	box.calibrate_size()
 
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(box, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(box, SLOT_ID_IN_BACKPACK)
@@ -519,16 +521,15 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /// its parent's slot (code/modules/body/parts/), so no list is written here.
 /datum/species/proc/create_organs(mob/living/carbon/human/H) //Handles creation of mob organs.
 
-	H.mob_size = mob_size
+	H.set_mob_size(mob_size)
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
-		qdel(old_root)
+		replaced_by(old_root, H)
 	// Parts left over outside the tree (loose after a refused placement).
 	for(var/obj/item/organ/stray as anything in H.organs?.Copy())
-		qdel(stray)
+		replaced_by(stray, H)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
-		qdel(stray)
-	rel_clear(H, nameof(H.bad_external_organs))
+		replaced_by(stray, H)
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()
@@ -593,31 +594,31 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && ishuman(target)) // No need to test this for now if they don't have the trait
 		var/mob/living/carbon/human/M = target
 		if(M.get_equipped_item(SLOT_ID_HEAD))
-			if((M.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
+			if((worn_of(M.get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || (worn_of(M.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) // Need to check both because a lot of items set one or the other, rather than both as you'd expect
 				covered_mouth = TRUE
 		if(M.get_equipped_item(SLOT_ID_MASK))
-			if((M.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) || (M.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEFACE))
+			if((worn_of(M.get_equipped_item(SLOT_ID_MASK)).covers & FACE) || (worn_of(M.get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE))
 				covered_mouth = TRUE
 	if(target.is_muzzled())
 		covered_mouth = TRUE
 
-	if(H.zone_sel.selecting == BP_HEAD)
+	if(hud_of(H)?.zone_sel?.selecting == BP_HEAD)
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent head patting!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
-	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_R_HAND || hud_of(H)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
-	else if(H.zone_sel.selecting == "mouth")
+	else if(hud_of(H)?.zone_sel?.selecting == "mouth")
 		if((target.touch_reaction_flags & SPECIES_TRAIT_PATTING_DEFENCE) && !covered_mouth)
 			act_message(H, target, MSG_SELF(span_warning("%T% reflexively bites your hand!")), \
 				MSG_OTHERS(span_warning("%T% reflexively bites the hand of %U% to prevent nose booping!")))
 			H.injure(INJURY_PIERCE, 1, H.hand ? BP_L_HAND : BP_R_HAND, target) // Bitten
 		else
 			act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
-	else if(H.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_GROIN)
 		H.vore_bellyrub(target)
 	else
 		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \
@@ -626,20 +627,20 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /datum/species/proc/remove_inherent_verbs(mob/living/carbon/human/H)
 	if(inherent_verbs)
 		for(var/verb_path in inherent_verbs)
-			om_revoke(H, GRANT_VERB, verb_path, src)
+			revoke(H, granted_verb(verb_path), src)
 	return
 
 /datum/species/proc/add_inherent_verbs(mob/living/carbon/human/H)
 	if(inherent_verbs)
 		for(var/verb_path in inherent_verbs)
-			om_grant(H, GRANT_VERB, verb_path, src)
+			grant(H, granted_verb(verb_path), src)
 	return
 
 /datum/species/proc/handle_post_spawn(mob/living/carbon/human/H) //Handles anything not already covered by basic species assignment.
 	add_inherent_verbs(H)
-	H.mob_bump_flag = bump_flag
-	H.mob_swap_flags = swap_flags
-	H.mob_push_flags = push_flags
+	H.set_mob_bump_flag(bump_flag)
+	H.set_mob_swap_flags(swap_flags)
+	H.set_mob_push_flags(push_flags)
 	H.pass_flags = pass_flags
 
 /datum/species/proc/handle_death(mob/living/carbon/human/H) //Handles any species-specific death events (such as dionaea nymph spawns).
@@ -700,7 +701,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /datum/species/proc/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat == CONSCIOUS && H.ai_brain)
 		if(H.resting)
-			H.resting = FALSE
+			H.set_resting(FALSE)
 			H.update_canmove()
 	return
 
@@ -714,7 +715,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 // Impliments different trails for species depending on if they're wearing shoes.
 /datum/species/proc/get_move_trail(mob/living/carbon/human/H)
-	if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+	if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 		return /obj/effect/decal/cleanable/blood/tracks/footprints
 	else
 		return move_trail
@@ -763,7 +764,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			landing.visible_message(span_infoplain(span_bold("\The [H]") + " 's fall is cushioned by \The [landing]."))
 			play_sfx(H, SFX_RUSTLE, extrarange = 0)
 		if(!soft_landing)
-			H.status_at_least(EFFECT_WEAKENED, 10)
+			H.status_at_least(STAT_WEAKENED, 10)
 		return TRUE*/
 	//end edit
 	if(istype(landing, /turf/simulated/floor/water))
@@ -791,7 +792,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			play_sfx(H, SFX_EFFECTS_METEORIMPACT, volume = 75, extrarange = 3)
 			for(var/i = 1 to 10)
 				H.injure(INJURY_BLUNT, rand((0), (10)), null, landing)
-			H.status_at_least(EFFECT_WEAKENED, 20)
+			H.status_at_least(STAT_WEAKENED, 20)
 			if(istype(landing, /turf/simulated/floor) && prob(50))
 				var/turf/simulated/floor/our_crash = landing
 				our_crash.break_tile()
@@ -823,19 +824,19 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		if(!targetHead)
 			return // don't bother if target mob has no head for whatever reason
 
-		targetHead.eye_icon = baseHead.eye_icon
+		targetHead.set_eye_icon(baseHead.eye_icon)
 		targetHead.eye_icon_location = baseHead.eye_icon_location
 
 		if(!QDELETED(baseHead) && baseHead)
-			qdel(baseHead)
+			spent(baseHead, H)
 	return
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
-	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
+	rel_clear(src, nameof(unarmed_attacks))
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 /// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
 /// /datum/shadekin and /datum/xenochimera.
@@ -900,9 +901,9 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	ASSERT(src)
 	ASSERT(istype(H))
 	var/datum/species/new_copy = new src.type()
-	new_copy.race_key = race_key
+	new_copy.set_race_key(race_key)
 	if (selects_bodytype && custom_base)
-		new_copy.base_species = custom_base
+		new_copy.set_base_species(custom_base)
 		if(selects_bodytype == SELECTS_BODYTYPE_CUSTOM || selects_bodytype == SELECTS_BODYTYPE_ZORREN) //If race selects a bodytype, retrieve the custom_base species and copy needed variables.
 			var/datum/species/S = GLOB.all_species[custom_base]
 			S.copy_variables(new_copy, copy_vars)
@@ -912,10 +913,10 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 	// The copy's own table first: its has_limbs may be a table interned per type (the registered
 	// species' own list), which must never be written.
-	new_copy.has_limbs = new_copy.has_limbs?.Copy() || list()
+	new_copy.set_has_limbs(new_copy.has_limbs?.Copy() || list())
 	for(var/organ in has_limbs) //Copy important organ data generated by species.
 		var/list/organ_data = has_limbs[organ]
-		new_copy.has_limbs[organ] = organ_data.Copy()
+		new_copy.set_has_limbs_at(organ, organ_data.Copy())
 
 	new_copy.traits = traits
 	//If you had traits, apply them
@@ -928,7 +929,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	// copy it replaces (often src itself, still read below) is deleted.
 	proto_set(H, nameof(H.species), new_copy)
 	H.invalidate_factors()
-	H.icon_state = new_copy.get_bodytype()
+	H.set_icon_state(new_copy.get_bodytype())
 
 	if(new_copy.holder_type)
 		H.holder_type = new_copy.holder_type
@@ -975,7 +976,17 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			if(species_list_holds_owned(L))
 				continue
 			value = L.Copy()
-		copy.vars[var_name] = value // ALLOW(api): species copy
+		if(var_name == nameof(name))
+			copy.set_name(value)
+			continue
+		if(var_name == nameof(base_species))
+			copy.set_base_species(value)
+			continue
+		var/datum/species/event1/event_copy = copy
+		if(istype(event_copy) && var_name == nameof(event_copy.use_bodyshape))
+			event_copy.set_use_bodyshape(value)
+			continue
+		copy.vars[var_name] = value // ALLOW(api): a species copy writes every species var by name, which is what copying one means
 	return copy
 
 /datum/species/proc/copy_variables(datum/species/S, list/whitelist)
@@ -983,6 +994,16 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	//Makes thorough copy of species datum.
 	for(var/i in whitelist)
 		if(S.vars[i] != vars[i] && !islist(vars[i])) //If vars are same, no point in copying.
+			if(i == nameof(name))
+				S.set_name(vars[i])
+				continue
+			if(i == nameof(base_species))
+				S.set_base_species(vars[i])
+				continue
+			var/datum/species/event1/event_copy = S
+			if(istype(event_copy) && i == nameof(event_copy.use_bodyshape))
+				event_copy.set_use_bodyshape(vars[i])
+				continue
 			S.vars[i] = vars[i] // ALLOW(api): species copy and shared-list interning
 
 /datum/species/get_bodytype()
@@ -992,9 +1013,9 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	// Determine the actual vore_belly_default_variant, if the base species in the VORE tab is set
 	switch (base_species)
 		if("Teshari")
-			vore_belly_default_variant = "T"
+			set_vore_belly_default_variant("T")
 		if("Unathi")
-			vore_belly_default_variant = "L"
+			set_vore_belly_default_variant("L")
 
 /// Returns a list of names for all allergy types, null if no allergies are present
 /proc/assembly_allergy_list(allergens, med_allergens)
@@ -1050,3 +1071,19 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	return null
 
 // An icon file and a trail type path.
+
+// Dynamic species copy/trait assignments route only native acceptance fields.
+// TRUE means the key was handled, including an unchanged setter value.
+/datum/species/proc/set_acceptance_shape_field(field, value)
+	if(field == nameof(name))
+		set_name(value)
+		return TRUE
+	if(field == nameof(base_species))
+		set_base_species(value)
+		return TRUE
+	var/datum/species/event1/E = src
+	if(istype(E) && field == nameof(E.use_bodyshape))
+		E.set_use_bodyshape(value)
+		return TRUE
+	return FALSE
+

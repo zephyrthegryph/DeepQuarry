@@ -11,9 +11,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 
-/obj/effect/env_message/Initialize(mapload)
-	.=..()
-
 /obj/effect/env_message/examine(mob/user)
 	. = ..()
 	for(var/tckey in message_list)
@@ -26,7 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 /obj/effect/env_message/proc/remove_message(tckey)
 	LAZYREMOVE(message_list, tckey)
 	if(!length(message_list))
-		qdel(src)
+		consume(src)
 	else
 		update_message()
 
@@ -39,11 +36,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 		if(!(count == length(message_list)))
 			combined_message += "<br><br>"
 
-/obj/effect/env_message/MouseEntered(location, control, params)
-	if(usr)
-		openToolTip(user = usr, tip_src = src, params = params, title = null, content = combined_message)
+CAPABILITIES(/obj/effect/env_message)
+	tooltip(PROC_REF(env_message_tooltip))
 
-	..()
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): the message, untitled.
+/obj/effect/env_message/proc/env_message_tooltip(mob/user)
+	return list(null, combined_message)
 
 /obj/effect/env_message/MouseDown()
 	closeToolTip(usr, src) //No reason not to, really
@@ -65,10 +63,17 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	set desc = "Create an ooc message in the environment for other players to see."
 	set category = VERB_CAT_OOC_GAME
 
+	return environment_create_stage(list())
+
+/mob/living/proc/environment_create_stage(list/environment_answers)
+
 	if(!istype(src) || !get_turf(src) || !src.ckey)
 		return
 
-	var/new_message = rerun_ask(src, "k74", VERB_REF(create_env_message), args, /datum/om/prompt/text, message = "Type in your message. It will be displayed to players who hover over the spot where you are right now. If you already have a message somewhere, it will be removed in the process. Please refrain from abusive or deceptive messages, but otherwise, feel free to be creative!", title = "Env Message")
+	if(!("k74" in environment_answers))
+		open_request(src, /datum/prompt/text/environment_message_review, PROC_REF(environment_create_answered), answerer = src, environment_answers = environment_answers, environment_key = "k74", question = "Type in your message. It will be displayed to players who hover over the spot where you are right now. If you already have a message somewhere, it will be removed in the process. Please refrain from abusive or deceptive messages, but otherwise, feel free to be creative!", title = "Env Message")
+		return
+	var/new_message = environment_answers["k74"]
 	if(isnull(new_message))
 		return
 
@@ -92,6 +97,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	set desc = "Remove your current env message."
 	set category = VERB_CAT_OOC_GAME
 
+	return environment_remove_stage(list())
+
+/mob/living/proc/environment_remove_stage(list/environment_answers)
+
 	if(!istype(src) || !src.ckey)
 		return
 
@@ -100,17 +109,23 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	var/obj/effect/env_message/EM = locate_within(ourturf, /obj/effect/env_message)
 
 	if(EM)
-		var/answer = rerun_ask(src, "k104", VERB_REF(remove_env_message), args, /datum/om/prompt/choice/alert, message = "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", title = "Env Message", choices = list("Yes", "Only My Message", "No"))
+		if(!("k104" in environment_answers))
+			open_request(src, /datum/prompt/choice/environment_message_review, PROC_REF(environment_remove_answered), answerer = src, environment_answers = environment_answers, environment_key = "k104", question = "Do you want to remove this env message? (Note: Selecting 'Yes' will remove other players' messages on this tyle too. Please don't remove other players' messages for no reason. Use 'Only My Message' to remove yours only.)", title = "Env Message", choices = list("Yes", "Only My Message", "No"), buttons = TRUE)
+			return
+		var/answer = environment_answers["k104"]
 		if(isnull(answer))
 			return
 		if(answer == "Yes")
 			if(!(src.ckey in EM.message_list) || length(EM.message_list) > 1)
 				log_game("[key_name(src)] deleted an Env Message that contained other players' entries at ([EM.x], [EM.y], [EM.z])")
-			qdel(EM)
+			spent(EM)
 		else if(answer == "Only My Message")
 			clear_env_message(src.ckey)
 	else
-		var/answer = rerun_ask(src, "k112", VERB_REF(remove_env_message), args, /datum/om/prompt/choice/alert, message = "Do you want to remove your env message?", title = "Env Message", choices = list("Yes", "No"))
+		if(!("k112" in environment_answers))
+			open_request(src, /datum/prompt/choice/environment_message_review, PROC_REF(environment_remove_answered), answerer = src, environment_answers = environment_answers, environment_key = "k112", question = "Do you want to remove your env message?", title = "Env Message", choices = list("Yes", "No"), buttons = TRUE)
+			return
+		var/answer = environment_answers["k112"]
 		if(isnull(answer))
 			return
 		if(answer == "Yes")
@@ -124,6 +139,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 	icon_state = "env_message_red"
 
 ADMIN_VERB(create_gm_message, R_FUN, "Map Message - Create", "Create an ooc message in the environment for other players to see.", ADMIN_CATEGORY_FUN_EVENT_KIT)
+	return gm_environment_create_stage(user, list())
+
+/datum/admin_verb/create_gm_message/proc/gm_environment_create_stage(client/user, list/environment_answers)
+	if(!user || !user.mob || QDELETED(user.mob))
+		return
 	var/mob/user_mob = user.mob
 	if(isnewplayer(user_mob))
 		to_chat(user, span_warning("You must spawn or observe to place messages."))
@@ -132,7 +152,10 @@ ADMIN_VERB(create_gm_message, R_FUN, "Map Message - Create", "Create an ooc mess
 	if(!get_turf(user_mob))
 		return
 
-	var/new_message = verb_ask(user, "k132", args, /datum/om/prompt/text, message = "Type in your message. It will be displayed to players who hover over the spot where you are right now.", title = "Env Message")
+	if(!("k132" in environment_answers))
+		open_request(src, /datum/prompt/text/environment_message_review, PROC_REF(gm_environment_create_answered), answerer = user.mob, environment_answers = environment_answers, environment_key = "k132", rights = R_FUN, question = "Type in your message. It will be displayed to players who hover over the spot where you are right now.", title = "Env Message")
+		return
+	var/new_message = environment_answers["k132"]
 	if(isnull(new_message))
 		return
 
@@ -150,6 +173,9 @@ ADMIN_VERB(create_gm_message, R_FUN, "Map Message - Create", "Create an ooc mess
 	log_game("[key_name(user)] created an Env Message: [new_message] at ([new_env_message.x], [new_env_message.y], [new_env_message.z])")
 
 ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map message.", ADMIN_CATEGORY_FUN_EVENT_KIT)
+	return gm_environment_remove_stage(user, list())
+
+/datum/admin_verb/remove_gm_message/proc/gm_environment_remove_stage(client/user, list/environment_answers)
 	var/list/all_map_messages = list()
 	for(var/obj/effect/env_message/available_message in world)
 		all_map_messages |= available_message.combined_message
@@ -158,7 +184,12 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 		to_chat(user, span_warning("There are no map or env messages."))
 		return
 
-	var/mob/chosen_message = verb_ask(user, "k156", args, /datum/om/prompt/choice, message = "Which message do you want to remove?", title = "Make contact", choices = all_map_messages)
+	if(!("k156" in environment_answers))
+		if(!user || !user.mob || QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/environment_message_review, PROC_REF(gm_environment_remove_answered), answerer = user.mob, environment_answers = environment_answers, environment_key = "k156", rights = R_FUN, question = "Which message do you want to remove?", title = "Make contact", choices = all_map_messages)
+		return
+	var/mob/chosen_message = environment_answers["k156"]
 	if(isnull(chosen_message))
 		return
 	if(!chosen_message)
@@ -167,4 +198,88 @@ ADMIN_VERB(remove_gm_message, R_FUN, "Map Message - Remove", "Remove any env/map
 	for(var/obj/effect/env_message/env_message in world)
 		if(env_message.combined_message == chosen_message)
 			log_game("[key_name(user)] deleted an Env Message that contained other players' entries at ([env_message.x], [env_message.y], [env_message.z])")
-			qdel(env_message)
+			spent(env_message, user)
+
+/mob/living/proc/environment_create_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/environment_message_review/ask = context.answer
+	var/list/environment_answers = ask.environment_answers.Copy()
+	environment_answers[ask.environment_key] = ask.value
+	environment_create_stage(environment_answers)
+	SStgui.update_uis(src)
+
+/mob/living/proc/environment_remove_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/environment_message_review/ask = context.answer
+	var/list/environment_answers = ask.environment_answers.Copy()
+	environment_answers[ask.environment_key] = ask.value
+	environment_remove_stage(environment_answers)
+	SStgui.update_uis(src)
+
+/datum/admin_verb/create_gm_message/proc/gm_environment_create_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/environment_message_review/ask = context.answer
+	var/list/environment_answers = ask.environment_answers.Copy()
+	environment_answers[ask.environment_key] = ask.value
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(environment_message_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	return gm_environment_create_stage(user, environment_answers)
+
+/datum/admin_verb/remove_gm_message/proc/gm_environment_remove_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/environment_message_review/ask = context.answer
+	var/list/environment_answers = ask.environment_answers.Copy()
+	environment_answers[ask.environment_key] = ask.value
+	var/client/user = context.request.answerer?.client
+	if(!user)
+		return
+	if(environment_message_advanced_call(context.request.answerer))
+		message_admins("PERMISSION ELEVATION: [key_name_admin(user)] attempted to dynamically invoke admin verb '[src.type]'.")
+		return
+	if(debug_only)
+		log_admin("DEBUG VERB: [key_name(user)] invoked '[name]' ([src.type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, category, "[src.type]", user.ckey, name, null)
+	return gm_environment_remove_stage(user, environment_answers)
+
+/proc/environment_message_advanced_call(mob/actor)
+#ifdef TESTING
+	return FALSE
+#else
+	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == actor?.client?.ckey) || (GLOB.AdminProcCallHandler && actor == GLOB.AdminProcCallHandler)
+#endif
+
+/datum/prompt/text/environment_message_review
+	timeout = 0
+	recheck_on_open = TRUE
+	var/list/environment_answers
+	var/environment_key
+
+/datum/prompt/text/environment_message_review/recheck_extra()
+	var/mob/admin = answerer
+	if(rights && !admin_can(admin?.client, 0))
+		return "no admin rights"
+
+/datum/prompt/text/environment_message_review/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/environment_message_review
+	timeout = 0
+	recheck_on_open = TRUE
+	var/list/environment_answers
+	var/environment_key
+
+/datum/prompt/choice/environment_message_review/recheck_extra()
+	var/mob/admin = answerer
+	if(rights && !admin_can(admin?.client, 0))
+		return "no admin rights"

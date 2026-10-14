@@ -4,7 +4,7 @@
 // read through get_trauma() / get_burn(). Located injuries reach the limb
 // through receive_injury() (from the humanoid plan, i.e. injure()); nothing
 // else writes limb damage. apply_wound_damage() and heal_wound_damage() are
-// body-internal: code outside code/modules/body and code/modules/organs uses
+// body-internal: code outside code/modules/body uses
 // injure() / mend() (enforced by tools/ci/check_grep.sh).
 //
 // When a limb or organ leaves the body its afflictions travel with it
@@ -13,6 +13,8 @@
 /obj/item/organ
 	/// Afflictions carried while this organ is outside a body.
 	var/list/detached_afflictions
+
+// The organ's CAPABILITIES block (organ.dm) runs its loose clock and owns its detached afflictions.
 
 /obj/item/organ/external
 	/// Cached sum of non-internal physical wound damage. Read via get_trauma().
@@ -75,7 +77,7 @@
 		owner.body.add_affliction(W, src)
 	else
 		rel_set(W, nameof(W.location), src)
-		own_add(src, nameof(detached_afflictions), W)
+		rel_add(src, nameof(detached_afflictions), W)
 	W.sync()
 	integrity_dirty = TRUE
 
@@ -83,9 +85,9 @@
 /obj/item/organ/external/proc/remove_wound(datum/affliction/wound/W)
 	if(W.body)
 		W.body.remove_affliction(W)
-	own_take_member(src, nameof(detached_afflictions), W)
 	integrity_dirty = TRUE
-	qdel(W)
+	if(!rel_remove(src, nameof(detached_afflictions), W))
+		spent(W)
 
 /// Apply a located injury to this limb. Returns the amount applied.
 /// Organic limbs grow cuts/punctures/bruises/burns; synthetic limbs dents,
@@ -105,10 +107,10 @@
 	var/before = get_trauma() + get_burn()
 	if(flags & INJURE_CONTINUOUS)
 		var/wound_kind = burn ? BURN : (sharp ? (edge ? CUT : PIERCE) : BRUISE)
-		if(accumulate_wound_damage(wound_kind, amount))
-			owner?.UpdateDamageIcon()
-	else if(apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE)))
-		owner?.UpdateDamageIcon()
+		accumulate_wound_damage(wound_kind, amount)
+	else
+		apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE))
+	update_damage_state() // the wound shows on the body at once, not at the next body clock cycle
 	return max(0, get_trauma() + get_burn() - before)
 
 /// Continuous harm (INJURE_CONTINUOUS): `amount` of `wound_kind` (CUT, PIERCE,
@@ -119,7 +121,7 @@
 /// excess becomes shock, as in apply_wound_damage(). Returns the amount the
 /// wounds took.
 /obj/item/organ/external/proc/accumulate_wound_damage(wound_kind, amount)
-	if(amount <= 0 || (owner && om_has(owner, EFFECT_GODMODE)))
+	if(amount <= 0 || (owner && in_godmode(owner)))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	var/inflict = amount
@@ -161,29 +163,28 @@
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
 		rel_set(A, nameof(A.location), O)
-		own_add(O, nameof(O.detached_afflictions), A)
+		rel_add(O, nameof(O.detached_afflictions), A)
 
 /// The organ joined this body: adopt what it carries. Called only by
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.
 /datum/body/proc/attach_part(obj/item/organ/O)
-	for(var/datum/affliction/A as anything in O.detached_afflictions)
+	for(var/datum/affliction/A as anything in O.detached_afflictions?.Copy())
 		// C23: a carried affliction that can't exist on this body (plan or the part's biology
 		// here) is dropped, not smuggled in past can_afflict().
 		if(!A.can_afflict(src, O))
-			qdel(A)
+			own_remove(O, nameof(O.detached_afflictions), A)
 			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1
-	own_take_all(O, nameof(O.detached_afflictions))
+	rel_take_all(O, nameof(O.detached_afflictions))
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
 
 /// Offline tick for afflictions riding a detached organ.
 /obj/item/organ/proc/tick_detached_afflictions()
-	for(var/datum/affliction/A as anything in detached_afflictions)
+	for(var/datum/affliction/A as anything in detached_afflictions?.Copy())
 		A.tick_offline()
 		if(A.severity <= 0 && !istype(A, /datum/affliction/load))
-			own_take_member(src, nameof(detached_afflictions), A)
-			qdel(A)
+			rel_remove(src, nameof(detached_afflictions), A)
 
 /// Afflictions located on this organ, whether it's in a body or detached.
 /obj/item/organ/proc/afflictions_here()

@@ -1,0 +1,33 @@
+@mob human|none
+@mob robot|none
+@mob ai|none
+@mob ghost|none
+@mob.living human|/obj/item/tool/screwdriver
+@mob.living human|/obj/item/tool/crowbar
+@mob.living human|/obj/item/tool/wrench
+@mob.living human|/obj/item/tool/wirecutters
+@mob.living human|/obj/item/multitool
+@mob.living human|/obj/item/weldingtool
+@mob.living.simple_mob human|/obj/item/stack/cable_coil
+@mob.living.simple_mob human|/obj/item/stack/material/steel
+@mob.living.simple_mob human|/obj/item/card/id
+@mob.living.simple_mob human|/obj/item
+human|/obj/item/pen menu: Disarm
+human|/obj/item/pen menu: Grab
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Hold with
+human|/obj/item/pen menu: Nutrition heal
+human|/obj/item/pen menu: Shove with
+human|/obj/item/pen menu: Use
+human|/obj/item/pen menu: Use on
+human|/obj/item/pen click: Click: Use
+human|/obj/item/flashlight/pen menu: Disarm
+human|/obj/item/flashlight/pen menu: Grab
+human|/obj/item/flashlight/pen menu: Hit
+human|/obj/item/flashlight/pen menu: Hold with
+human|/obj/item/flashlight/pen menu: Nutrition heal
+human|/obj/item/flashlight/pen menu: Shove with
+human|/obj/item/flashlight/pen menu: Use
+human|/obj/item/flashlight/pen menu: Use on
+human|/obj/item/flashlight/pen click: Click: Use
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, name_with_pen, name_with_penlight, nutrition_heal, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

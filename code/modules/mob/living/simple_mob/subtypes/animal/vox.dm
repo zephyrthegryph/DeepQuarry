@@ -36,7 +36,6 @@
 
 /mob/living/simple_mob/vox/armalis
 	delete_on_death = TRUE
-	death_message = DEATHGASP_NO_MESSAGE
 
 /mob/living/simple_mob/vox/armalis/on_death(gibbed)
 	. = ..()
@@ -65,38 +64,78 @@
 	Q.throw_at(target,10,30)
 	quills--
 
-	om_after(src, 10 SECONDS, PROC_REF(regrow_quill))
+	after(src, 10 SECONDS, PROC_REF(regrow_quill))
 
 /mob/living/simple_mob/vox/armalis/verb/message_mob()
 	set category = VERB_CAT_ALIEN
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	om_ask_sequence(/datum/om/flow/ask_sequence/armalis_commune, src, null, steps = list(/datum/om/prompt/choice/armalis_commune_target, /datum/om/prompt/text/armalis_commune_text), on_done = PROC_REF(message_mob_answered))
+	var/datum/armalis_commune_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.start()
 
-/datum/om/flow/ask_sequence/armalis_commune
-	/// The chosen mob's getmobs() name.
+/datum/armalis_commune_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/simple_mob/vox/armalis/actor
+	/// The chosen mob's getmobs() name, resolved again after the text is entered.
 	var/recipient
-	var/message_text
 
-/datum/om/prompt/choice/armalis_commune_target
-	key = "recipient"
+CAPABILITIES(/datum/armalis_commune_review)
+	ref_one(nameof(actor), /mob/living/simple_mob/vox/armalis)
+
+/datum/prompt/choice/armalis_commune_target
+	timeout = 0
 	title = "Speak to creature"
-	message = "Select a creature!"
+	question = "Select a creature!"
 
-/datum/om/prompt/choice/armalis_commune_target/prepare()
+/datum/prompt/choice/armalis_commune_target/prepare(datum/act/A)
 	choices = getmobs()
-	return TRUE
+	return ..()
 
-/datum/om/prompt/text/armalis_commune_text
-	key = "message_text"
+/datum/prompt/text/armalis_commune_text
+	timeout = 0
 	title = "Speak to creature"
-	message = "What would you like to say?"
+	question = "What would you like to say?"
 
-/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(datum/om/flow/ask_sequence/armalis_commune/seq)
-	var/text = seq.message_text
+/datum/armalis_commune_review/proc/start()
+	if(QDELETED(actor))
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("[type] start_step: [result.error]")
+		retire()
+
+/datum/armalis_commune_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/armalis_commune_target, PROC_REF(recipient_entered), answerer = actor, asker = actor)
+
+/datum/armalis_commune_review/proc/run_step(step, datum/act/request/A)
+	if(!A.answer || QDELETED(actor))
+		retire()
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Armalis commune step [step]: [result.error]")
+		retire()
+
+/datum/armalis_commune_review/proc/recipient_entered(datum/act/request/A)
+	run_step(PROC_REF(recipient_step), A)
+
+/datum/armalis_commune_review/proc/recipient_step(datum/act/request/A)
+	recipient = A.answer.value
+	open_request(src, /datum/prompt/text/armalis_commune_text, PROC_REF(text_entered), answerer = actor, asker = actor)
+
+/datum/armalis_commune_review/proc/text_entered(datum/act/request/A)
+	run_step(PROC_REF(text_step), A)
+
+/datum/armalis_commune_review/proc/text_step(datum/act/request/A)
+	actor.message_mob_answered(recipient, A.answer.value)
+	retire()
+
+/mob/living/simple_mob/vox/armalis/proc/message_mob_answered(recipient, text)
 	var/list/targets = getmobs()
-	var/mob/M = targets[seq.recipient]
+	var/mob/M = targets[recipient]
 	if(!M)
 		return
 
@@ -117,11 +156,16 @@
 	set name = "Shriek"
 	set desc = "Give voice to a psychic shriek."
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC_REF(armalis_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
+	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))
+	immune_to_incapacitation()
 
 /// Old attackby: armour/amp fitting, and its own weapon resistance (never reaches the normal attack).
-/mob/living/simple_mob/vox/armalis/proc/armalis_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vox/armalis/proc/armalis_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O,/obj/item/vox/armalis_armour))
 		user.drop_item(O)
 		armour = O
@@ -137,10 +181,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC
 		regenerate_icons()
 		return
 
-	base_attack_cooldown = 5
-	if(O.force)
-		if(O.force >= 25)
-			var/damage = O.force
+	set_base_attack_cooldown(5)
+	if(combat_of(O).force)
+		if(combat_of(O).force >= 25)
+			var/damage = combat_of(O).force
 			if (O.injury_kind == INJURY_PAIN)
 				damage = 0
 			injure(O.injury_kind, damage, null, O)
@@ -188,3 +232,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC
 /mob/living/simple_mob/vox/armalis/proc/regrow_quill()
 	to_chat(src, span_warning("You feel a fresh quill slide into place."))
 	quills++
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).

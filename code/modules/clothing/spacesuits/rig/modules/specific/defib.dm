@@ -9,21 +9,20 @@
 	engage_string = "Toggle Mode"
 
 /obj/item/shockpaddles/standalone/rig
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "mounted defib"
 	desc = "Rig mounted defib. How are you seeing this? Stop that."
 	wielded = 1
 
-/obj/item/shockpaddles/standalone/rig/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	. = ..()
-
 /obj/item/shockpaddles/standalone/rig/checked_use(charge_amt)
 	return 1
 
-DECLARE_INTERACTIONS(/obj/item/shockpaddles/standalone/rig, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/shockpaddles/standalone/rig)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/shockpaddles/standalone/rig/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shockpaddles/standalone/rig/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	use_on_synthetic = !use_on_synthetic
-	to_chat(usr, span_notice("You switch the [src] to [use_on_synthetic ? "FBP" : "organic"] compatibility."))
+	to_chat(user, span_notice("You switch the [src] to [use_on_synthetic ? "FBP" : "organic"] compatibility."))
 	return TRUE

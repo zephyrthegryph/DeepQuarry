@@ -68,7 +68,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 
 	//The dangerous health effects.
-	unfortunate_soul.set_nutrition(max(0, unfortunate_soul.nutrition - 5)) //Your nutrition is being sapped faster than usual.
+	unfortunate_soul.set_nutrition(max(0, nutrition_of(unfortunate_soul) - 5)) //Your nutrition_of(src) is being sapped faster than usual.
 	if(unfortunate_soul.life_tick % 100 == 0)// Once every 100 ticks, we mutate some organs.
 		choose_organs(unfortunate_soul)
 		become_drippy(unfortunate_soul)
@@ -83,7 +83,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		unfortunate_soul.endurance = max(10, unfortunate_soul.endurance - 1) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
 
 	//The mental effects.
-	unfortunate_soul.fear = min(100, unfortunate_soul.fear + 2) //Fear is increased by 1, but never above 100. You're in a scary place.
+	unfortunate_soul.status_set(STAT_FEAR, min(100, unfortunate_soul.status_units(STAT_FEAR) + 2)) //Fear is increased by 1, but never above 100. You're in a scary place.
 	if(unfortunate_soul.life_tick % 20 == 0)
 		var/obj/item/organ/O = (length(unfortunate_soul.internal_organ_list()) ? pick(unfortunate_soul.internal_organ_list()) : null)
 		if(O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.
@@ -92,8 +92,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			"You can feel your [O] squirming inside of you, trying to get out...", "Your [O] is trying to escape...", \
 			"Your [O] itches.", "Your [O] is crawling around inside of you.")
 			to_chat(unfortunate_soul, span_cult(spooky_message))
-		unfortunate_soul.status_adjust(EFFECT_DIZZY, 5)
-		unfortunate_soul.status_set(EFFECT_STUTTERING, min(100, unfortunate_soul.status_units(EFFECT_STUTTERING) + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
+		unfortunate_soul.status_adjust(STAT_DIZZY, 5)
+		unfortunate_soul.status_set(STAT_STUTTERING, min(100, unfortunate_soul.status_units(STAT_STUTTERING) + 10)) //Stuttering is increased by 1, but never above 100. You're in a scary place.
 	return
 
 /datum/body_effect/redspace_drain/proc/choose_organs(mob/living/carbon/human/unfortunate_soul, organs_to_replace)
@@ -151,7 +151,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/eyes/new_organ = new /obj/item/organ/internal/eyes/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	replaced_by(O, new_organ)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -162,7 +162,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/heart/new_organ = new /obj/item/organ/internal/heart/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	replaced_by(O, new_organ)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -173,7 +173,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/lungs/new_organ = new /obj/item/organ/internal/lungs/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -184,7 +184,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/liver/new_organ = new /obj/item/organ/internal/liver/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -195,7 +195,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/kidneys/new_organ = new /obj/item/organ/internal/kidneys/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -206,7 +206,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/appendix/new_organ = new /obj/item/organ/internal/appendix/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -217,7 +217,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/voicebox/new_organ = new /obj/item/organ/internal/voicebox/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -228,7 +228,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/spleen/new_organ = new /obj/item/organ/internal/spleen/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -239,7 +239,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/stomach/new_organ = new /obj/item/organ/internal/stomach/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -250,7 +250,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/organ_spot = O.parent_organ
 	var/obj/item/organ/internal/intestine/new_organ = new /obj/item/organ/internal/intestine/horror()
 	O.removed(unfortunate_soul)
-	qdel(O)
+	spent(O)
 	new_organ.replaced(unfortunate_soul,unfortunate_soul.get_organ(organ_spot))
 	var/random_name = pick("pulsating", "quivering", "throbbing", "crawling", "oozing", "melting", "gushing", "dripping", "twitching", "slimy", "gooey")
 	new_organ.name = "[random_name] [initial(new_organ.name)]"
@@ -300,14 +300,14 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 /datum/body_effect/redsight/on_start(mob/living/L)
 	L.see_invisible = 60
-	L.see_invisible_default = 60
-	L.vis_enabled += VIS_GHOSTS
+	L.set_see_invisible_default(60)
+	hud_of(L)?.vis_enabled += VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/redsight/on_end(mob/living/L, expired)
-	L.see_invisible_default = initial(L.see_invisible_default)
+	L.set_see_invisible_default(initial(L.see_invisible_default))
 	L.see_invisible = L.see_invisible_default
-	L.vis_enabled -= VIS_GHOSTS
+	hud_of(L)?.vis_enabled -= VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/redsight/can_apply(mob/living/L)
@@ -399,10 +399,10 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/obj/item/organ/external/chest/torso = unfortunate_soul.get_organ(BP_TORSO)
 	// Ledger moves from the head's organ slot into the torso's, within the body.
 	if(brain && torso && unfortunate_soul.should_have_organ(O_BRAIN))
-		brain.parent_organ = BP_TORSO //Move the brain to the torso.
+		brain.set_parent_organ(BP_TORSO) //Move the brain to the torso.
 		brain.place_into(torso, SLOT_ID_PART_ORGANS)
 	if(eyes && torso && unfortunate_soul.should_have_organ(O_EYES))
-		eyes.parent_organ = BP_TORSO //Move the eyes to the torso.
+		eyes.set_parent_organ(BP_TORSO) //Move the eyes to the torso.
 		eyes.place_into(torso, SLOT_ID_PART_ORGANS)
 	for(var/obj/item/organ/external/head/ex_organ in unfortunate_soul.organs)
 		ex_organ.cannot_break = TRUE
@@ -434,7 +434,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		handle_death(unfortunate_soul, state)
 		return
 
-	if(!state.armor_deployed && (unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
+	if(!state.armor_deployed && (unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || unfortunate_soul.vitality() < 0.75))
 		if(assume_battle_stance(unfortunate_soul, state))
 			unfortunate_soul.mend(TREAT_ANALGESIC, 200) //WAKE UP SAMURI
 			unfortunate_soul.reagents.add_reagent(REAGENT_ID_ADRENALINE, 5)
@@ -452,7 +452,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(state.armor_deployed && COOLDOWN_FINISHED(state, armor_expire_cooldown)) //Time ran out.
 
 		//Are we still in panic mode?
-		if(unfortunate_soul.has_status(EFFECT_STUNNED) || unfortunate_soul.has_status(EFFECT_WEAKENED) || unfortunate_soul.has_status(EFFECT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
+		if(unfortunate_soul.has_status(STAT_STUNNED) || unfortunate_soul.has_status(STAT_WEAKENED) || unfortunate_soul.has_status(STAT_PARALYZED) || (unfortunate_soul.vitality() < 0.75))
 			return
 		else
 			equip_flesh_armor(unfortunate_soul, /obj/item/clothing/suit/space/changeling/armored, /obj/item/clothing/head/helmet/space/changeling/armored, /obj/item/clothing/shoes/magboots/changeling/armored, /obj/item/clothing/gloves/combat/changeling)
@@ -531,7 +531,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	//Circulate chems.
 	for(var/i in 1 to 5)
 		unfortunate_soul.process_chemicals()
-	unfortunate_soul.process_organs()
+	unfortunate_soul.organs_advance(1)
 
 	//Slowly come back from the dead.
 	unfortunate_soul.mend(TREAT_TISSUE_REPAIR, 2)
@@ -548,7 +548,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		if(I.status & ORGAN_DEAD && (I.damage < I.is_broken()) && (I.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			I.restore_status()
 
-	for(var/obj/item/organ/external/limb in unfortunate_soul.bad_external_organs)
+	for(var/obj/item/organ/external/limb in unfortunate_soul.damaged_limbs())
 		limb.germ_level = max(0, limb.germ_level - 25)
 		if(limb.status & ORGAN_DEAD && (limb.damage < limb.is_broken()) && (limb.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			limb.set_status(0)
@@ -584,7 +584,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Awaken!
 	unfortunate_soul.emote("gasp")
-	unfortunate_soul.status_at_least(EFFECT_WEAKENED, rand(10,25))
+	unfortunate_soul.status_at_least(STAT_WEAKENED, rand(10,25))
 	COOLDOWN_START(state, revival_cooldown_until, revival_cooldown)
 
 //Returns TRUE If we succeeded. FALSE if we failed.
@@ -612,7 +612,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 /datum/body_effect/redspace_corruption/proc/deploy_armblade(mob/living/carbon/human/unfortunate_soul)
 	var/obj/item/melee/changeling/arm_blade/blade = new /obj/item/melee/changeling/arm_blade(unfortunate_soul)
 	if(!unfortunate_soul.put_in_hands(blade))
-		qdel(blade) //failed, sad.
+		spent(blade) //failed, sad.
 
 //shamelessly stolen from changeling/armor.dm
 /datum/body_effect/redspace_corruption/proc/equip_flesh_armor(mob/living/carbon/human/unfortunate_soul, armor_type, helmet_type, boot_type, glove_type)
@@ -632,11 +632,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 			M.slot_clear(SLOT_ID_SHOES)
 		if(istype(M.get_equipped_item(SLOT_ID_GLOVES), glove_type))
 			M.slot_clear(SLOT_ID_GLOVES)
-		M.update_inv_wear_suit()
-		M.update_inv_head()
-		M.update_hair()
-		M.update_inv_shoes()
-		M.update_inv_gloves()
 		return TRUE
 
 	var/obj/item/clothing/suit/A = new armor_type(M)
@@ -660,11 +655,6 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	M.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 
 	play_sfx(M, SFX_EFFECTS_BLOBATTACK)
-	M.update_inv_wear_suit()
-	M.update_inv_head()
-	M.update_hair()
-	M.update_inv_shoes()
-	M.update_inv_gloves()
 	return TRUE
 
 ///Equips armor and melee weapon. If we succeed, returns TRUE. FALSE if we fail.

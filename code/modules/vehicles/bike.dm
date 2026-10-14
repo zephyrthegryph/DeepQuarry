@@ -26,45 +26,49 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion
 	var/kickstand = 1
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "ion", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/vehicle/bike)
+	owns_one(nameof(ion), starts = /datum/effect/effect/system/ion_trail_follow)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
+	op("bike_kickstand_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle kickstand"), then(PROC_REF(interaction_bike_kickstand)))
+	op("bike_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), then(PROC_REF(interaction_bike_drag)))
+	op("bike_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction bike hand"), then(PROC_REF(interaction_bike_hand)))
+	op("bike_toggle_engine", menu(), label("Toggle Engine"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_toggle_engine)))
+	op("bike_kickstand", menu(), label("Toggle Kickstand"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_kickstand)))
+
+/obj/vehicle/bike/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /obj/vehicle/bike/Initialize(mapload)
 	. = ..()
 	ion.set_up(src)
 	turn_off()
-	icon_state = "[bike_icon]_off"
-	update_icon()
 
-/obj/vehicle/bike/built/Initialize(mapload)
+/// A frame the builder fits a cell to: it starts without the factory cell.
+/obj/vehicle/bike/built/ownership()
 	. = ..()
-	own_clear(src, nameof(cell), OWN_DELETE)
+	. += no_starts(nameof(cell))
 
-/obj/vehicle/bike/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/bike/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
 
-EXTEND_INTERACTIONS(/obj/vehicle/bike, \
-	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \
-	INTERACT_ALT("Toggle kickstand", PROC_REF(interaction_bike_kickstand)), \
-	INTERACT_DRAG("Load", PROC_REF(interaction_bike_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)), \
-	INTERACT_VERB("Toggle Engine", PROC_REF(bike_toggle_engine), REQ_REACH(0)), \
-	INTERACT_VERB("Toggle Kickstand", PROC_REF(bike_kickstand), REQ_REACH(0)), \
-)
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/bike/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 /// A vehicle's paint colour (multitool, panel open). Re-checked on the answer: the painter is
 /// still next to it and able. Shared by the bike, the quad and its trailer.
-/datum/om/prompt/color/vehicle_paint
+/datum/prompt/color/vehicle_paint
 	title = "Paint Color"
-	message = "Please select paint color."
+	question = "Please select paint color."
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	timeout = 0
 
-/obj/vehicle/proc/vehicle_paint_picked(datum/om/prompt/color/vehicle_paint/ask)
-	if(!ask.picked_color)
+/obj/vehicle/proc/vehicle_paint_picked(datum/act/op/A)
+	var/picked = A.step_value("colour")
+	if(isnull(picked))
 		return
-	paint_color = ask.picked_color
-	update_icon()
+	set_paint_color(picked)
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)
@@ -73,7 +77,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return ..()
 
 /// Old verb "Toggle Engine".
-/obj/vehicle/bike/proc/bike_toggle_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/bike_toggle_engine(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_proc(user)
 
 /obj/vehicle/bike/proc/toggle_proc(mob/user)
@@ -93,14 +98,16 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return CLICK_ACTION_SUCCESS
 
 /// Old click_alt: toggle the kickstand when adjacent.
-/obj/vehicle/bike/proc/interaction_bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_kickstand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
-	bike_kickstand(user)
-	return TRUE
+		return OP_DECLINE
+	bike_kickstand(A)
+	return OP_OK
 
 /// Old verb "Toggle Kickstand".
-/obj/vehicle/bike/proc/bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/bike_kickstand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
@@ -128,19 +135,22 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	return ..(M, user)
 
 /// Old MouseDrop_T: load the dropped atom onto the bike.
-/obj/vehicle/bike/proc/interaction_bike_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(!load(C, user))
 		to_chat(user, span_warning(" You were unable to load \the [C] onto \the [src]."))
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand: buckle yourself on, or off.
-/obj/vehicle/bike/proc/interaction_bike_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
 	else if(!load && load(user, user))
 		to_chat(user, "You buckle yourself to \the [src].")
-	return TRUE
+	return OP_OK
 
 /obj/vehicle/bike/relaymove(mob/user, direction)
 	if(user != load || !on)
@@ -175,7 +185,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	ion.start()
 	set_anchored(TRUE)
 
-	update_icon()
 
 	var/mob/pulledby = src?.pulled_by_mob()
 	if(pulledby)
@@ -186,7 +195,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	ion.stop()
 	set_anchored(kickstand)
 
-	update_icon()
 
 	..()
 
@@ -197,78 +205,12 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/bike, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/bike/appearance_overlays()
-	. = list()
-
-	if(custom_icon)
-		if(on)
-			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_a", src.layer)
-			bodypaint.color = paint_color
-			. += bodypaint
-
-			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
-			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
-			overmob.plane = MOB_PLANE
-			overmob_color.plane = MOB_PLANE
-			overmob_color.color = paint_color
-			. += overmob
-			. += overmob_color
-			if(open)
-				icon_state = "[bike_icon]_on-open"
-			else
-				icon_state = "[bike_icon]_on"
-		else
-			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_a", src.layer)
-			bodypaint.color = paint_color
-			. += bodypaint
-
-			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
-			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
-			overmob.plane = MOB_PLANE
-			overmob_color.plane = MOB_PLANE
-			overmob_color.color = paint_color
-			. += overmob
-			. += overmob_color
-			if(open)
-				icon_state = "[bike_icon]_off-open"
-			else
-				icon_state = "[bike_icon]_off"
-		. += ..()
-		return .
-
-	if(on)
-		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_on_a", src.layer)
-		bodypaint.color = paint_color
-		. += bodypaint
-
-		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
-		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
-		overmob.plane = MOB_PLANE
-		overmob_color.plane = MOB_PLANE
-		overmob_color.color = paint_color
-		. += overmob
-		. += overmob_color
-		if(open)
-			icon_state = "[bike_icon]_on-open"
-		else
-			icon_state = "[bike_icon]_on"
-	else
-		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_off_a", src.layer)
-		bodypaint.color = paint_color
-		. += bodypaint
-
-		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
-		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
-		overmob.plane = MOB_PLANE
-		overmob_color.plane = MOB_PLANE
-		overmob_color.color = paint_color
-		. += overmob
-		. += overmob_color
-		if(open)
-			icon_state = "[bike_icon]_off-open"
-		else
-			icon_state = "[bike_icon]_off"
-
-	. += ..()
+/obj/vehicle/bike/draw(datum/look/look)
+	..()
+	var/paint_icon = custom_icon ? 'icons/obj/custom_items_vehicle.dmi' : 'icons/obj/bike.dmi'
+	var/power_state = on ? "on" : "off"
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay", layer = MOB_LAYER + 1, plane = MOB_PLANE))
+	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_overlay_a", layer = MOB_LAYER + 1, plane = MOB_PLANE, color = paint_color))
+	look.state("[bike_icon]_[power_state][open ? "-open" : ""]")
 

@@ -1,0 +1,10 @@
+/obj/machinery/portable_atmospherics/hydroponics icon: icons/obj/hydroponics_machines.dmi
+/obj/machinery/portable_atmospherics/hydroponics state: hydrotray3
+/obj/machinery/portable_atmospherics/hydroponics dir: 2
+/obj/machinery/portable_atmospherics/hydroponics overlay: icons/obj/hydroponics_machines.dmi:hydrotray3:8:#000000
+/obj/machinery/portable_atmospherics/hydroponics/soil icon: icons/obj/hydroponics_machines.dmi
+/obj/machinery/portable_atmospherics/hydroponics/soil state: soil
+/obj/machinery/portable_atmospherics/hydroponics/soil dir: 2
+/obj/machinery/portable_atmospherics/hydroponics/soil overlay: icons/obj/hydroponics_machines.dmi:soil:8:#000000
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible runtime: Cannot execute null.get trait().
+

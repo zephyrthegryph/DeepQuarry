@@ -45,23 +45,24 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 
-APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "{base_icon}_{block_amount?off:on}")
+/// The look (the draw sweep: from its template).
+/obj/structure/event_collector_blocker/draw(datum/look/look)
+	..()
+	look.state("[base_icon]_[block_amount ? "off" : "on"]")
 
 /obj/structure/event_collector_blocker/proc/induce_failure(intensity = -1) //progress to remove from the machine
 	if(intensity == -1)
 		intensity = default_block_amount
 
-	block_amount = intensity
+	set_block_amount(intensity)
 	if(tools_to_fix)
 		active_repair_steps = list()
 		for(var/i in 1 to 4)
 			active_repair_steps += pick(list(TOOL_CROWBAR,TOOL_MULTITOOL,TOOL_SCREWDRIVER,TOOL_WRENCH,TOOL_CABLE_COIL,TOOL_WELDER)) //todo, make this a different list on the obj "Possible failures" or whatever.
-	update_icon();
 
 /obj/structure/event_collector_blocker/proc/fix()
-	block_amount = 0
+	set_block_amount(0)
 	active_repair_steps = list()
-	update_icon();
 
 /obj/structure/event_collector_blocker/examine(mob/user, infix, suffix)
 	. = ..()
@@ -79,29 +80,25 @@ APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "{base_icon}_{block_
 /obj/structure/event_collector_blocker/proc/get_repair_message(mob/user)
 	return "[user] repairs \the [src]!"
 
-DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/event_collector_blocker)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// One repair step (interaction_item() checks the tool and starts this): the user keeps the tool and stays two seconds.
+	op("repair_step", ai(), takes("step_count"), wait(2 SECONDS), then(PROC_REF(repair_step_done)))
 
 /// Old attack_hand.
-/obj/structure/event_collector_blocker/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/event_collector_blocker/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!tools_to_fix && block_amount > 0)
 		user.visible_message(get_repair_message(user)) //swap this with a message var, or just change it to be suitable
 		fix()
-	return FALSE
+	return OP_DECLINE
 
 
-/datum/om/task/timed/event_collector_blocker_repair_step
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/event_collector_blocker/proc/repair_step_done
-	var/obj/item/O
-	var/step_count
-
-/obj/structure/event_collector_blocker/proc/repair_step_done(datum/om/task/timed/event_collector_blocker_repair_step/task)
-	var/obj/item/O = task.O
-	var/mob/user = task.actor
-	var/step_count = task.step_count
+/obj/structure/event_collector_blocker/proc/repair_step_done(datum/act/op/A)
+	var/obj/item/O = A.held
+	var/mob/user = A.actor
+	var/step_count = A.arg("step_count")
 	if(active_repair_steps.len != step_count)
 		return
 	post_repair_handling(O,active_repair_steps[active_repair_steps.len],user)
@@ -111,15 +108,17 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
 		fix()
 
 /// Old attackby.
-/obj/structure/event_collector_blocker/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/event_collector_blocker/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(tools_to_fix)
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
-				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return INTERACTION_HANDLED_PASS
-				om_task_start(/datum/om/task/timed/event_collector_blocker_repair_step, user, src, O = O, step_count = active_repair_steps.len)
+				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return OP_PASS
+				perform_op(user, src, "repair_step", O, ORIGIN_SYSTEM, with = list("step_count" = active_repair_steps.len))
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/event_collector_blocker/proc/pre_repair_handling(obj/item/O,toolType,mob/user) //can we use this tool?
 	switch(toolType)
@@ -152,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
 			var/obj/item/weldingtool/welder = O.get_welder()
 			if(welder)
 				welder.remove_fuel(5,user)
-				playsound(src, welder.usesound, 50, 1)
+				playsound(src, sounds_of(welder).use, 50, 1)
 
 		if(TOOL_CABLE_COIL)
 			var/obj/item/stack/cable_coil/coil = O

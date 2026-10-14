@@ -33,11 +33,13 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 1 SECOND
 	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("sliced", "snapped", "gnawed")
 
 	say_list_type = /datum/say_list/siffet
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/siffet)
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/siffet
 	speak = list("Yap!", "Heh!", "Huff.")

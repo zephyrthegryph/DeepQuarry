@@ -23,8 +23,10 @@
 	icon_state = "large"
 	anchored = TRUE
 
-/obj/effect/meteor_falling/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/meteor_falling)
+	after_init(0, then(PROC_REF(start_falling)))
+
+/obj/effect/meteor_falling/proc/start_falling(datum/act/timer/A)
 	SpinAnimation()
 	meteor_fall()
 
@@ -52,7 +54,7 @@
 	new /obj/structure/meteorite(current)
 
 	var/datum/planet/impacted
-	for(var/datum/planet/P in GLOB.planet_service.planets)
+	for(var/datum/planet/P in planets_planets())
 		if(current.z in P.expected_z_levels)
 			impacted = P
 			break
@@ -66,9 +68,9 @@
 			if(L.client)
 				to_chat(L, span_danger("The ground lurches beneath you!"))
 				shake_camera(L, 6, 1)
-				if(!L.has_status(EFFECT_DEAFENED))
+				if(!L.has_status(STAT_DEAFENED))
 					L << 'sound/effects/explosionfar.ogg'
-	qdel(src)
+	spent(src)
 
 /obj/structure/meteorite
 	resistance_flags = BOMB_PROOF
@@ -78,40 +80,42 @@
 	icon_state = "large"
 	density = TRUE
 
+CAPABILITIES(/obj/structure/meteorite)
+	initial_contents(PROC_REF(roll_contents))
+	climb()
+	op("item", item(/obj/item/pickaxe), label("Use"), begins(PROC_REF(break_apart_text)), wait(PROC_REF(break_apart_time)), then(PROC_REF(break_apart_done)))
+
+// ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/Initialize(mapload)
 	. = ..()
 	icon = turn(icon, 90)
-	switch(rand(1,100))
-		if(1 to 60)
-			for(var/i=1 to rand(12,36))
-				new /obj/item/ore/iron(src)
-		if(61 to 90)
-			for(var/i=1 to rand(8,24))
-				new /obj/item/ore/silver(src)
-				new /obj/item/ore/gold(src)
-				new /obj/item/ore/osmium(src)
-				new /obj/item/ore/diamond(src)
-		if(91 to 100)
-			new /obj/machinery/artifact(src)
-	make_climbable()
 
-/obj/structure/meteorite/proc/break_apart_done(mob/M)
+/// What it holds: mostly iron ore, sometimes a mix of precious ores, now and then an artifact.
+/obj/structure/meteorite/proc/roll_contents(datum/roller/R)
+	var/roll = R.number(1, 100)
+	if(roll <= 60)
+		return list(/obj/item/ore/iron = R.number(12, 36))
+	if(roll <= 90)
+		var/n = R.number(8, 24)
+		return list(/obj/item/ore/silver = n, /obj/item/ore/gold = n, /obj/item/ore/osmium = n, /obj/item/ore/diamond = n)
+	return /obj/machinery/artifact
+
+/obj/structure/meteorite/proc/break_apart_done(datum/act/op/A)
+	var/mob/M = A.actor
 	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))
 	for(var/obj/O in contents_of(src))
 		O.forceMove(get_turf(src))
-	qdel(src)
+	destroyed(src, M, BRUTE)
 
-DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/// The lines of the start name what the pickaxe does.
+/obj/structure/meteorite/proc/break_apart_text(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return msg_text(span_warning("You start [P.drill_verb] %T%."), span_warning("%U% starts [P.drill_verb] %T%."))
 
-/// Old attackby.
-/obj/structure/meteorite/proc/interaction_item(mob/M, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/pickaxe))
-		var/obj/item/pickaxe/P = I
-		act_message(M, src, MSG_SELF(span_warning("You start [P.drill_verb] %T%.")), MSG_OTHERS(span_warning("%U% starts [P.drill_verb] %T%.")))
-
-		om_task_timed(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+/// Three times the pickaxe's dig time.
+/obj/structure/meteorite/proc/break_apart_time(datum/act/op/A)
+	var/obj/item/pickaxe/P = A.held
+	return P.digspeed * 3
 
 /// Accessor for the strike_target var.
 /datum/event/meteor_strike/proc/strike_target() as /turf

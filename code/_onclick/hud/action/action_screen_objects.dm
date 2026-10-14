@@ -40,18 +40,24 @@
 
 	return TRUE
 
-/atom/movable/screen/movable/action_button/Click(location,control,params)
-	if(!can_use(usr))
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/movable/action_button/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/movable/action_button/click_with_actor(mob/user, location, control, params)
+	if(!user)
+		return
+	if(!can_use(user))
 		return
 
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud.position_action(src, SCRN_OBJ_DEFAULT)
 		return TRUE
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return
-	usr.setClickCooldown(1)
+	user.setClickCooldown(0.1 SECONDS)
 	var/trigger_flags
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION
@@ -60,9 +66,8 @@
 
 // Entered and Exited won't fire while you're dragging something, because you're still "holding" it
 // Very much byond logic, but I want nice behavior, so we fake it with drag
-/atom/movable/screen/movable/action_button/MouseDrag(atom/over_object, src_location, over_location, src_control, over_control, params)
-	. = ..()
-	if(!can_use(usr))
+/atom/movable/screen/movable/action_button/proc/drag_with_actor(mob/user, atom/over_object, over_location, over_control, params)
+	if(!can_use(user))
 		return
 	if(over_object == last_hovored)
 		return
@@ -72,7 +77,7 @@
 		old_object = last_hovored
 	else // If there is no current ref, we assume it was us. We also treat this as our "first go" location.
 		old_object = src
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud?.generate_landings(src)
 
 	if(old_object)
@@ -84,43 +89,59 @@
 		rel_clear(src, nameof(last_hovored))
 	over_object?.MouseEntered(over_location, over_control, params)
 
-/atom/movable/screen/movable/action_button/MouseEntered(location, control, params)
-	. = ..()
-	if(!QDELETED(src))
-		openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
+CAPABILITIES(/atom/movable/screen/movable/action_button)
+	tooltip(PROC_REF(input_tooltip), theme = nameof(actiontooltipstyle))
+	click_on(PROC_REF(click_input))
+	drag_onto(PROC_REF(action_drop_input))
+	drag_over(PROC_REF(action_drag_input))
 
-/atom/movable/screen/movable/action_button/MouseExited(location, control, params)
-	closeToolTip(usr, src)
-	return ..()
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/movable/action_button/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
-/atom/movable/screen/movable/action_button/MouseDrop(over_object)
+/// The native drop's actor (drag_onto(), code/engine/lifeforms/input.dm): onto another button or the palette it is handled there; anywhere
+/// else the button moves to the drop and its hud records the new position.
+/atom/movable/screen/movable/action_button/proc/action_drop_input(datum/act/input/A)
+	var/mob/user = A.actor
+	var/datum/hud/our_hud = user?.hud_used
+	if(drop_with_actor(user, A.over))
+		return TRUE
+	move_to_drop(A.params, user)
+	our_hud?.position_action(src, screen_loc)
+	save_position()
+	return TRUE
+
+/// The native drag's actor while the button is dragged (drag_over()): the hover feedback over what it would be dropped on.
+/atom/movable/screen/movable/action_button/proc/action_drag_input(datum/act/input/A)
+	drag_with_actor(A.actor, A.over, A.native?["over_location"], A.native?["over_control"], A.params)
+	return INPUT_FALLTHROUGH
+
+/atom/movable/screen/movable/action_button/proc/drop_with_actor(mob/user, atom/over_object)
 	rel_clear(src, nameof(last_hovored))
-	if(!can_use(usr))
-		return
-	var/datum/hud/our_hud = usr.hud_used
+	if(!can_use(user))
+		return TRUE
+	var/datum/hud/our_hud = user.hud_used
 	if(over_object == src)
 		our_hud.hide_landings()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/action_landing))
 		var/atom/movable/screen/action_landing/reserve = over_object
 		reserve.hit_by(src)
 		our_hud.hide_landings()
 		save_position()
-		return
+		return TRUE
 
 	our_hud.hide_landings()
 	if(istype(over_object, /atom/movable/screen/button_palette) || istype(over_object, /atom/movable/screen/palette_scroll))
 		our_hud.position_action(src, SCRN_OBJ_IN_PALETTE)
 		save_position()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/movable/action_button))
 		var/atom/movable/screen/movable/action_button/button = over_object
 		our_hud.position_action_relative(src, button)
 		save_position()
-		return
-	. = ..()
-	our_hud.position_action(src, screen_loc)
-	save_position()
+		return TRUE
+	return FALSE
 
 /atom/movable/screen/movable/action_button/proc/save_position()
 	var/mob/user = our_hud().mymob()
@@ -212,8 +233,8 @@
 		if(!action.show_to_observers)
 			continue
 		action.GiveAction(src)
-	om_hook(take_from, /datum/om/event/mob_granted_action, src, PROC_REF(on_observing_action_granted))
-	om_hook(take_from, /datum/om/event/mob_removed_action, src, PROC_REF(on_observing_action_removed))
+	global.observe(take_from, /datum/notice/mob_granted_action, src, then(PROC_REF(on_observing_action_granted)))
+	global.observe(take_from, /datum/notice/mob_removed_action, src, then(PROC_REF(on_observing_action_removed)))
 
 /**
  * Hide another mob's action buttons from this mob
@@ -223,22 +244,25 @@
 /mob/proc/hide_other_mob_action_buttons(mob/take_from)
 	for(var/datum/action/action as anything in take_from.actions)
 		action.HideFrom(src)
-	om_unhook(take_from, list(/datum/om/event/mob_granted_action, /datum/om/event/mob_removed_action), src)
+	unobserve(take_from, /datum/notice/mob_granted_action, src)
+	unobserve(take_from, /datum/notice/mob_removed_action, src)
 
-/// Hook for /datum/om/event/mob_granted_action - If we're viewing another mob's action buttons,
+/// Hook for /datum/definition_event/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
-/mob/proc/on_observing_action_granted(mob/living/source, datum/om/event/mob_granted_action/event)
-	EVENT_HANDLER
+/mob/proc/on_observing_action_granted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/mob_granted_action/event = A
 	var/datum/action/action = event.action
 
 	if(!action.show_to_observers)
 		return
 	action.GiveAction(src)
 
-/// Hook for /datum/om/event/mob_removed_action - If we're viewing another mob's action buttons,
+/// Hook for /datum/definition_event/mob_removed_action - If we're viewing another mob's action buttons,
 /// we need to update with any removed buttons from the mob.
-/mob/proc/on_observing_action_removed(mob/living/source, datum/om/event/mob_removed_action/event)
-	EVENT_HANDLER
+/mob/proc/on_observing_action_removed(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/mob_removed_action/event = A
 	var/datum/action/action = event.action
 
 	action.HideFrom(src)
@@ -277,18 +301,9 @@
 		viewer.client.screen |= src
 
 
-/atom/movable/screen/button_palette/MouseEntered(location, control, params)
-	. = ..()
-	if(QDELETED(src))
-		return
-	show_tooltip(params)
-
-/atom/movable/screen/button_palette/MouseExited()
-	closeToolTip(usr, src)
-	return ..()
-
-/atom/movable/screen/button_palette/proc/show_tooltip(params)
-	openToolTip(usr, src, params, title = name, content = desc)
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm): opened on enter, closed on exit.
+/atom/movable/screen/button_palette/proc/palette_tooltip(mob/user)
+	return list(name, desc)
 
 GLOBAL_LIST_INIT(palette_added_matrix, list(0.4,0.5,0.2,0, 0,1.4,0,0, 0,0.4,0.6,0, 0,0,0,1, 0,0,0,0))
 GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,0, 0,0,0,1, 0,0,0,0))
@@ -300,10 +315,10 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	color_for_now(GLOB.palette_removed_matrix)
 
 /atom/movable/screen/button_palette/proc/color_for_now(list/color)
-	if(om_timer_slot_pending(src, "color_timer_id"))
+	if(after_pending(src, "color_timer_id"))
 		return
 	add_atom_colour(color, TEMPORARY_COLOUR_PRIORITY) //We unfortunately cannot animate matrix colors. Curse you lummy it would be ~~non~~trivial to interpolate between the two valuessssssssss
-	after_slot(src, "color_timer_id", 2 SECONDS, PROC_REF(remove_color), color)
+	after(src, 2 SECONDS, PROC_REF(remove_color), key = "color_timer_id", with = list(color))
 
 /atom/movable/screen/button_palette/proc/remove_color(list/to_remove)
 	remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, to_remove)
@@ -315,28 +330,38 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 		return TRUE
 	return TRUE
 
-/atom/movable/screen/button_palette/Click(location, control, params)
-	if(!can_use(usr))
+CAPABILITIES(/atom/movable/screen/button_palette)
+	click_on(PROC_REF(click_input))
+	tooltip(PROC_REF(palette_tooltip))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/button_palette/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/button_palette/click_with_actor(mob/user, location, control, params)
+	if(!can_use(user))
 		return
 
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
+		for(var/datum/action/action as anything in user.actions) // Reset action positions to default
 			for(var/atom/movable/screen/movable/action_button/button as anything in action.viewers)
 				var/datum/hud/hud = button.our_hud
 				hud?.position_action(button, SCRN_OBJ_DEFAULT)
-		to_chat(usr, span_notice("Action button positions have been reset."))
+		to_chat(user, span_notice("Action button positions have been reset."))
 		return TRUE
 
 	set_expanded(!expanded)
 
-/atom/movable/screen/button_palette/proc/clicked_while_open(datum/source, datum/om/event/client_click/event)
-	EVENT_HANDLER
-	var/atom/target = event.target
+/atom/movable/screen/button_palette/proc/clicked_while_open(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
+	var/datum/notice/client_click/event = A
+	var/atom/target = event.target_
 	if(istype(target, /atom/movable/screen/movable/action_button) || istype(target, /atom/movable/screen/palette_scroll) || target == src) // If you're clicking on an action button, or us, you can live
 		return
 	set_expanded(FALSE)
 	if(source)
-		om_unhook(source, /datum/om/event/client_click, src)
+		unobserve(source, /datum/notice/client_click, src)
 
 /atom/movable/screen/button_palette/proc/set_expanded(new_expanded)
 	var/datum/action_group/our_group = our_hud().palette_actions
@@ -349,16 +374,17 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	our_group.refresh_actions()
 	update_name()
 
-	if(!usr.client)
+	var/mob/viewer = our_hud().mymob()
+	if(!viewer?.client)
 		return
 
 	// Clients cannot be hooked: client clicks are emitted on the client's mob.
 	if(expanded)
-		om_hook(usr, /datum/om/event/client_click, src, PROC_REF(clicked_while_open))
+		observe(viewer, /datum/notice/client_click, src, then(PROC_REF(clicked_while_open)))
 	else
-		om_unhook(usr, /datum/om/event/client_click, src)
+		unobserve(viewer, /datum/notice/client_click, src)
 
-	closeToolTip(usr, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
+	closeToolTip(viewer, src) //Our tooltips are now invalid, can't seem to update them in one frame, so here, just close them
 
 /atom/movable/screen/palette_scroll
 	icon = 'icons/hud/screen_gen.dmi'
@@ -390,15 +416,12 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 		return
 	our_hud().palette_actions.scroll(scroll_direction)
 
-/atom/movable/screen/palette_scroll/MouseEntered(location, control, params)
-	. = ..()
-	if(QDELETED(src))
-		return
-	openToolTip(usr, src, params, title = name, content = desc)
+CAPABILITIES(/atom/movable/screen/palette_scroll)
+	tooltip(PROC_REF(input_tooltip))
 
-/atom/movable/screen/palette_scroll/MouseExited()
-	closeToolTip(usr, src)
-	return ..()
+/// The tooltip the hovering mob sees (tooltip(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/palette_scroll/proc/input_tooltip(mob/user)
+	return list(name, desc)
 
 /atom/movable/screen/palette_scroll/down
 	name = "Scroll Down"
@@ -470,5 +493,3 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 /atom/movable/screen/action_landing/proc/owner() as /datum/action_group
 	return owner
 
-
-OWN_TIMER(/atom/movable/screen/button_palette, color_timer_id)

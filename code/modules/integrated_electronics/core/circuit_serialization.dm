@@ -314,10 +314,10 @@
 	if(assembly_data["d"])  // "d" for desc
 		assembly.desc = assembly_data["d"]
 	if(assembly_data["c"])  // "c" for color
-		assembly.detail_color = assembly_data["c"]
+		assembly.set_detail_color(assembly_data["c"])
 
 	// Open assembly for component insertion
-	assembly.opened = TRUE
+	assembly.set_opened(TRUE)
 
 	return assembly
 

@@ -15,11 +15,10 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	return null
 
 
-/obj/item/radio/beacon/proc/alter_signal_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/beacon/proc/alter_signal_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/t = A.step_value("beacon_signal")
 	// The old verb took the text as its argument; ask for it instead.
-	var/t = rerun_ask(user, "beacon_signal", PROC_REF(alter_signal_effect), args, /datum/om/prompt/text, message = "Enter the beacon's new signal code.", title = "Alter Beacon's Signal", default = code, max_length = MAX_NAME_LEN)
-	if(isnull(t))
-		return
 	if(loc != user)
 		return
 	if ((user.canmove && !( user.restrained() )))
@@ -35,18 +34,19 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	desc = "A label on it reads: <i>Activate to have a singularity beacon teleported to your location</i>."
 	beacon = TRUE
 
-/obj/item/radio/beacon/syndicate/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/beacon/syndicate/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(.)
 		return TRUE
 	if(user)
+		var/turf/sound_origin = get_turf(src)
+		if(!consume(src, user))
+			return TRUE
 		to_chat(user, span_notice("Locked In"))
 		new /obj/machinery/power/singularity_beacon/syndicate( user.loc )
-		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = 1)
-		consume(src, user)
+		play_sfx(sound_origin, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = 1)
 	return
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/radio/beacon, \
-	INTERACT_VERB("Alter Beacon's Signal", PROC_REF(alter_signal_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/radio/beacon)
+	op("alter_signal_effect", menu(), label("Alter Beacon's Signal"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Enter the beacon's new signal code.", "title" = "Alter Beacon's Signal", "default" = nameof(code), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "beacon_signal"), then(PROC_REF(alter_signal_effect)))

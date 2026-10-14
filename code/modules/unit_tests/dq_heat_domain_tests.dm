@@ -5,7 +5,7 @@
 /// Makes `T` an isolated solid cell (no air coupling) at `temperature`.
 /proc/heat_test_solid(turf/T, capacity, conductivity, temperature, emissivity = THERMAL_EMISSIVITY_DEFAULT)
 	vg_heat_set_turf(T, HEAT_CELL_SOLID, capacity, conductivity, emissivity, temperature, FALSE)
-	T.set_temperature(temperature)
+	heat_set_solid(T, temperature)
 
 /// A floor with air whose east neighbour is also a floor, for heat tests (the
 /// test map has no unit-test landmarks).
@@ -48,7 +48,7 @@
 /// Gives `T` its own heat cell back, at room temperature.
 /proc/heat_test_restore(turf/T)
 	T.update_heat_cell()
-	T.set_temperature(T20C)
+	heat_set_solid(T, T20C)
 
 /datum/unit_test/dq_heat_hot_wall_conducts_to_its_neighbour
 
@@ -56,6 +56,15 @@
 	var/turf/hot = heat_test_turf()
 	var/turf/cold = get_step(hot, EAST)
 	TEST_ASSERT_NOTNULL(cold, "no turf east of the test corner")
+	// The pair's other neighbours are floors that hold more heat than either cell (FLOOR_HEAT_CAPACITY): insulate them for the run so
+	// the pair's own conduction is what is measured.
+	var/list/others = list()
+	for(var/turf/T as anything in list(hot, cold))
+		for(var/direction in GLOB.cardinal)
+			var/turf/N = get_step(T, direction)
+			if(N && N != hot && N != cold && !(N in others))
+				others += N
+				heat_test_solid(N, 10000, 0, T20C)
 	heat_test_solid(hot, 10000, 0.05, 500)
 	heat_test_solid(cold, 10000, 0.05, 300)
 	vg_world_run_steps(20)
@@ -63,6 +72,8 @@
 	var/cold_after = cold.get_temperature()
 	heat_test_restore(hot)
 	heat_test_restore(cold)
+	for(var/turf/N as anything in others)
+		heat_test_restore(N)
 	vg_world_run_steps(1)
 	TEST_ASSERT(hot_after < 480, "the hot cell did not cool ([hot_after] K)")
 	TEST_ASSERT(cold_after > 320, "the cold neighbour did not warm ([cold_after] K)")
@@ -103,10 +114,45 @@
 	vg_world_run_steps(60)
 	var/later = I.get_temperature()
 	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
-	TEST_ASSERT(later > ambient, "the body passed its surroundings ([later] K < [ambient] K)")
+	// The surroundings are live room air and drift over the 60 steps (a loaded or shared world moved it by
+	// several kelvin); the body must relax toward them but not pass either end of that drift.
+	var/ambient_now = I.get_ambient_temperature()
+	var/floor_temp = min(ambient, ambient_now)
+	TEST_ASSERT(later > floor_temp, "the body passed its surroundings ([later] K < [floor_temp] K; ambient [ambient] K at the start, [ambient_now] K now)")
 	I.release_heat_body()
 	TEST_ASSERT_NULL(I.heat_body, "release kept the handle")
 	TEST_ASSERT(abs(I.get_temperature() - I.get_ambient_temperature()) < 0.01, "a released item does not read its surroundings")
+
+/// A body coupled to a reservoir (a planet turf's air, or any air holding
+/// RELAX_CAPACITY_RATIO times its capacity) relaxes on the analytic model, whose
+/// coupling law sleeps until the model is due: up to RELAX_MAX_INTERVAL, which 60
+/// steps of the base step only just reach. Its temperature must read the model's
+/// value now, not the energy it was anchored with: the read used to stay exactly at
+/// the start for the whole 60 steps.
+/datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature
+
+/datum/unit_test/dq_heat_body_on_a_reservoir_reads_its_relaxed_temperature/Run()
+	var/turf/simulated/floor/T = heat_test_turf()
+	TEST_ASSERT_NOTNULL(T, "no floor to test on")
+	// A planet turf's gas cell is a reservoir (verdigris/ffi/src/gas/mod.rs register_turf()).
+	T.planetary_atmos = TRUE
+	T.update_air_ref(0)
+	defer_cleanup(null, GLOBAL_PROC_REF(heat_test_unplanet), T)
+	var/obj/item/I = allocate(/obj/item/tool/wrench, T)
+	var/list/properties = I.thermal_properties()
+	I.add_heat(properties[THERMAL_CAPACITY] * 50)
+	var/start = I.get_temperature()
+	vg_world_run_steps(60)
+	var/later = I.get_temperature()
+	TEST_ASSERT(later < start - 0.5, "the body did not relax ([start] K -> [later] K)")
+	TEST_ASSERT(later > I.get_ambient_temperature() - 1, "the body passed its surroundings ([later] K)")
+	I.release_heat_body()
+
+/// Makes a heat test turf an ordinary floor cell again.
+/proc/heat_test_unplanet(turf/simulated/floor/T)
+	T.planetary_atmos = FALSE
+	T.update_air_ref(0)
+	heat_test_restore(T)
 
 /datum/heat_test_subscriber
 	var/wakes = 0

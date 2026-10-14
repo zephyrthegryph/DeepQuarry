@@ -32,6 +32,9 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 	/// Path → /datum/perk singleton. Populated at init.
 	var/list/perks
 
+CAPABILITIES(/datum/perk_tree)
+	owns_many(nameof(perks))
+
 // ─── Body trees (one per category, named the same as the category) ──────────────────
 
 /datum/perk_tree/body
@@ -219,4 +222,4 @@ GLOBAL_LIST_INIT(all_perks, init_perks())
 		if(!P.category)
 			P.category = T.category
 		.[path] = P
-		own_put(T, nameof(T.perks), path, P)
+		rel_add(T, nameof(T.perks), P, path)

@@ -8,17 +8,19 @@
 
 #define COMM_MSGLEN_MINIMUM 6
 #define COMM_CCMSGLEN_MINIMUM 20
+/// How long into the round before the emergency shuttle can be called.
+#define SHUTTLE_CALL_GRACE (10 MINUTES)
+/// How long into the round before a shift-change shuttle can be called.
+#define SHIFT_CHANGE_GRACE (90 MINUTES)
 
 /datum/tgui_module/communications
 	name = "Command & Communications"
-	tgui_id = "CommunicationsConsole"
-
-	var/emagged = FALSE
 
 	var/current_viewing_message_id = 0
 	var/current_viewing_message = null
 
-	var/authenticated = COMM_AUTHENTICATION_NONE
+	/// Who is logged in, and how far (REF(user) -> COMM_AUTHENTICATION_*): a login is the person's, not the console's.
+	var/list/logins
 	var/menu_state = COMM_SCREEN_MAIN
 	var/ai_menu_state = COMM_SCREEN_MAIN
 	var/aicurrmsg
@@ -39,10 +41,106 @@
 
 	var/list/req_access = list() // ALLOW(instance_list): d: access list; an empty list and null differ for access checks
 
+CAPABILITIES(/datum/tgui_module/communications)
+	owns_one(nameof(crew_announcement), /datum/announcement/priority, starts = PROC_REF(make_announcement))
+	interface("CommunicationsConsole")
+	// The console works only near the station; after login, every button but the login one needs a login.
+	extend(TAG_UI, needs(req(PROC_REF(ui_in_contact))))
+	op("auth", ui_act("auth"), needs(req(PROC_REF(ui_is_human))), then(PROC_REF(ui_act_auth)))
+	op("main", ui_act("main"), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_main)))
+	op("newalertlevel", ui_act("newalertlevel", arg("level", num())), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_newalertlevel)))
+	op("announce", ui_act("announce"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain)), req(PROC_REF(announce_ready))), asks(/datum/prompt/text, fields = list("title" = "Priority Announcement", "question" = "Please write a message to announce to the station crew.", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT)), then(PROC_REF(ui_act_announce)))
+	op("callshuttle", ui_act("callshuttle"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?")), then(PROC_REF(ui_act_callshuttle)))
+	op("cancelshuttle", ui_act("cancelshuttle"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_not_silicon))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to recall the shuttle?")), then(PROC_REF(ui_act_cancelshuttle)))
+	op("messagelist", ui_act("messagelist", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_messagelist)))
+	op("delmessage", ui_act("delmessage", arg("msgid", num())), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(message_deletable))), asks(/datum/prompt/yes_no, fields = list("title" = "Confirm", "question" = "Are you sure you wish to delete this message?")), then(PROC_REF(ui_act_delmessage)))
+	extend("delmessage", then(PROC_REF(ui_select_message), early = TRUE))
+	extend("newalertlevel", needs(req_actor_kind(list(/mob/living/silicon/ai, /mob/living/silicon/robot), not = TRUE, because = MSG(communications/no_alert_level))))
+	op("status", ui_act("status"), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_status)))
+	op("setstat", ui_act("setstat", arg("statdisp", enum(list("blank", "time", "shuttle", "message")))), needs(req(PROC_REF(ui_logged_in))), then(PROC_REF(ui_act_setstat)))
+	op("setmsg1", ui_act("setmsg1"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 1", "default" = computed(PROC_REF(msg1_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg1)))
+	op("setmsg2", ui_act("setmsg2"), needs(req(PROC_REF(ui_logged_in))), asks(/datum/prompt/text, fields = list("title" = "Enter Message Text", "question" = "Line 2", "default" = computed(PROC_REF(msg2_default)), "max_len" = 40)), then(PROC_REF(ui_act_setmsg2)))
+	op("MessageCentCom", ui_act("MessageCentCom"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain)), req(PROC_REF(centcom_ready))), asks(/datum/prompt/text, fields = list("title" = "Central Command Quantum Messaging", "question" = computed(PROC_REF(centcom_question)), "multiline" = TRUE)), then(PROC_REF(ui_act_messagecentcom)))
+	op("MessageSyndicate", ui_act("MessageSyndicate"), needs(req(PROC_REF(ui_logged_in)), req(PROC_REF(ui_captain_emagged)), req(PROC_REF(centcom_ready))), asks(/datum/prompt/text, fields = list("title" = "To abort, send an empty message.", "question" = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.")), then(PROC_REF(ui_act_messagesyndicate)))
+	op("RestoreBackup", ui_act("RestoreBackup"), needs(req(PROC_REF(ui_logged_in))), says(MSG(communications/backup_restored)), then(PROC_REF(ui_act_restorebackup)))
+
+/// The console reaches the person: they are on a level the station's contact range covers.
+/datum/tgui_module/communications/proc/ui_in_contact(datum/act/op/A)
+	return (!using_map || (get_z(A.actor) in using_map.contact_levels)) ? null : MSG(communications/out_of_range)
+
+MSG_DEF_SELF(communications/out_of_range, "Unable to establish a connection: You're too far away from the station!")
+MSG_DEF_SELF(communications/access_denied, "Access denied.")
+MSG_DEF_SELF(communications/no_alert_level, "Firewalls prevent you from changing the alert level.")
+MSG_DEF_SELF(communications/no_recall, "Firewalls prevent you from recalling the shuttle.")
+MSG_DEF_SELF(communications/announce_cooldown, "Please allow at least one minute to pass between announcements.")
+MSG_DEF_SELF(communications/arrays_recycling, "Arrays recycling. Please stand by.")
+MSG_DEF_SELF(communications/cannot_delete, "That message cannot be deleted here.")
+MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
+
+/// A module is a plain datum: its declared starting occupants (the announcement) are made here.
 /datum/tgui_module/communications/New(host)
 	. = ..()
-	own_set(src, nameof(crew_announcement), new /datum/announcement/priority())
-	crew_announcement.newscast = TRUE
+	lifecycle_decls_init(src)
+
+/// The priority announcement the console makes (a newscast as well).
+/datum/tgui_module/communications/proc/make_announcement(datum/act/A)
+	var/datum/announcement/priority/P = new
+	P.newscast = TRUE
+	return P
+
+/// The routing circuits are scrambled: the console's host was emagged (a modular program cannot be).
+/datum/tgui_module/communications/proc/routing_scrambled()
+	var/obj/machinery/computer/communications/C = host()
+	return istype(C) && !!emag_emagged(C)
+
+/// Logs `user` in at `level` (COMM_AUTHENTICATION_NONE logs them out).
+/datum/tgui_module/communications/proc/set_login(mob/user, level)
+	if(level)
+		LAZYSET(logins, REF(user), level)
+	else
+		LAZYREMOVE(logins, REF(user))
+
+/// needs: the message named is one this console may delete (a modular program's own copy; the station's list is kept).
+/datum/tgui_module/communications/proc/message_deletable(datum/act/op/A)
+	var/datum/comm_message_listener/l = obtain_message_listener()
+	return (l != GLOB.global_message_listener && !!message_by_id(A.args["msgid"])) ? null : MSG(communications/cannot_delete)
+
+/// The message of that id in this console's list, or null.
+/datum/tgui_module/communications/proc/message_by_id(msgid)
+	var/datum/comm_message_listener/l = obtain_message_listener()
+	for(var/list/m in l.messages)
+		if(m["id"] == msgid)
+			return m
+
+/datum/tgui_module/communications/proc/msg1_default(datum/act/op/A)
+	return stat_msg1
+
+/datum/tgui_module/communications/proc/msg2_default(datum/act/op/A)
+	return stat_msg2
+
+/datum/tgui_module/communications/proc/ui_is_human(datum/act/op/A)
+	return (ishuman(A.actor)) ? null : MSG(communications/access_denied)
+
+/datum/tgui_module/communications/proc/ui_logged_in(datum/act/op/A)
+	return (is_authenticated(A.actor, FALSE)) ? null : MSG(communications/access_denied)
+
+/datum/tgui_module/communications/proc/ui_captain(datum/act/op/A)
+	return (is_authenticated(A.actor, FALSE) == COMM_AUTHENTICATION_MAX) ? null : /datum/msg/req_silent
+
+/datum/tgui_module/communications/proc/ui_captain_emagged(datum/act/op/A)
+	return routing_scrambled() ? ui_captain(A) : /datum/msg/req_silent
+
+/datum/tgui_module/communications/proc/ui_not_silicon(datum/act/op/A)
+	return (A.authority & AUTH_REMOTE_ACCESS) ? MSG(communications/no_recall) : null
+
+/datum/tgui_module/communications/proc/announce_ready(datum/act/op/A)
+	return (COOLDOWN_FINISHED(src, message_cooldown)) ? null : MSG(communications/announce_cooldown)
+
+/datum/tgui_module/communications/proc/centcom_ready(datum/act/op/A)
+	return (COOLDOWN_FINISHED(src, centcomm_message_cooldown)) ? null : MSG(communications/arrays_recycling)
+
+/datum/tgui_module/communications/proc/centcom_question(datum/act/op/A)
+	return "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise."
 
 /datum/tgui_module/communications/ui_prepare(mob/user, datum/tgui/ui)
 	if(using_map && !(get_z(user) in using_map.contact_levels))
@@ -50,19 +148,14 @@
 		return FALSE
 	return ..()
 
+/// How far `user` is logged in: an admin ghost as the captain; anyone else as far as their own login went.
 /datum/tgui_module/communications/proc/is_authenticated(mob/user, message = TRUE)
-	if(authenticated == COMM_AUTHENTICATION_MAX)
+	if(is_admin_ghost(user))
 		return COMM_AUTHENTICATION_MAX
-	else if(isobserver(user))
-		var/mob/observer/dead/D = user
-		if(D.can_admin_interact())
-			return COMM_AUTHENTICATION_MAX
-	else if(authenticated)
-		return COMM_AUTHENTICATION_MIN
-	else
-		if(message)
-			to_chat(user, span_warning("Access denied."))
-		return COMM_AUTHENTICATION_NONE
+	var/level = LAZYACCESS(logins, REF(user)) || COMM_AUTHENTICATION_NONE
+	if(!level && message)
+		to_chat(user, span_warning("Access denied."))
+	return level
 
 /datum/tgui_module/communications/proc/change_security_level(mob/user, new_level)
 	if(!COOLDOWN_FINISHED(src, level_change_cooldown))
@@ -93,12 +186,13 @@
 		COOLDOWN_START(src, level_change_cooldown, 2 MINUTES) // 2 minute cd on station alert changing.
 	tmp_alertlevel = 0
 
-UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=current_viewing_message_id:num", "message_current=current_viewing_message", "merge:ui_data_datum_tgui_module_communications{is_ai:bool,menu_state:unknown,authenticated:unknown,authmax:bool,boss_short:text,stat_display:list,security_level:num,security_level_color:text,str_security_level:text,levels:list,messages:list,message_deletion_allowed:bool,msg_cooldown:num,cc_cooldown:num,esc_callable:bool,esc_recallable:bool,esc_status:unknown}")
-
-/// The computed part of /datum/tgui_module/communications's window data (declared on its UI_DATA row).
-/datum/tgui_module/communications/proc/ui_data_datum_tgui_module_communications(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/communications/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	data["is_ai"]         = isAI(user) || isrobot(user)
+	data["emagged"] = routing_scrambled()
+	data["message_current_id"] = current_viewing_message_id
+	data["message_current"] = current_viewing_message
+	data["is_ai"]         = !!(A.authority & AUTH_REMOTE_ACCESS)
 	data["menu_state"]    = data["is_ai"] ? ai_menu_state : menu_state
 	data["authenticated"] = is_authenticated(user, 0)
 	data["authmax"] = data["authenticated"] == COMM_AUTHENTICATION_MAX ? TRUE : FALSE
@@ -148,15 +242,15 @@ UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=cu
 	data["message_deletion_allowed"] = l != GLOB.global_message_listener
 
 	// data["lastCallLoc"]     = SSshuttle.emergencyLastCallLoc ? strip_improper(SSshuttle.emergencyLastCallLoc.name) : null
-	data["msg_cooldown"] = message_cooldown ? (round((message_cooldown - world.time) / 10)) : 0
-	data["cc_cooldown"] = centcomm_message_cooldown ? (round((centcomm_message_cooldown - world.time) / 10)) : 0
+	data["msg_cooldown"] = round(COOLDOWN_TIMELEFT(src, message_cooldown) / (1 SECOND))
+	data["cc_cooldown"] = round(COOLDOWN_TIMELEFT(src, centcomm_message_cooldown) / (1 SECOND))
 
-	data["esc_callable"] = GLOB.emergency_shuttle_service.location() && !GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
-	data["esc_recallable"] = GLOB.emergency_shuttle_service.location() && GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
+	data["esc_callable"] = SSemergency_shuttle.location() && !SSemergency_shuttle.online() ? TRUE : FALSE
+	data["esc_recallable"] = SSemergency_shuttle.location() && SSemergency_shuttle.online() ? TRUE : FALSE
 	data["esc_status"] = FALSE
-	if(GLOB.emergency_shuttle_service.has_eta())
-		var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
-		data["esc_status"] = GLOB.emergency_shuttle_service.online() ? "ETA:" : "RECALLING:"
+	if(SSemergency_shuttle.has_eta())
+		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
+		data["esc_status"] = SSemergency_shuttle.online() ? "ETA:" : "RECALLING:"
 		data["esc_status"] += " [timeleft / 60 % 60]:[add_zero(num2text(timeleft % 60), 2)]"
 	return data
 
@@ -181,7 +275,7 @@ UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=cu
 	return GLOB.global_message_listener
 
 /proc/post_status(atom/source, command, data1, data2, mob/user = null)
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(DISPLAY_FREQ)
 
 	if(!frequency)
 		return
@@ -201,224 +295,174 @@ UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=cu
 
 	frequency.post_signal(null, status_signal)
 
-/datum/tgui_module/communications/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(using_map && !(get_z(ui.user) in using_map.contact_levels))
-		to_chat(ui.user, span_danger("Unable to establish a connection: You're too far away from the station!"))
-		return FALSE
-	if(action == "auth")
-		if(!ishuman(ui.user))
-			to_chat(ui.user, span_warning("Access denied."))
-			return FALSE
-		// Logout function.
-		if(authenticated != COMM_AUTHENTICATION_NONE)
-			authenticated = COMM_AUTHENTICATION_NONE
-			crew_announcement.announcer = null
-			setMenuState(ui.user, COMM_SCREEN_MAIN)
-			return FALSE
-		// Login function.
-		if(check_access(ui.user, ACCESS_HEADS))
-			authenticated = COMM_AUTHENTICATION_MIN
-		if(check_access(ui.user, ACCESS_CAPTAIN))
-			authenticated = COMM_AUTHENTICATION_MAX
-			var/obj/item/card/id = ui.user.GetIdCard()
-			if(istype(id))
-				crew_announcement.announcer = GetNameAndAssignmentFromId(id)
-		if(authenticated == COMM_AUTHENTICATION_NONE)
-			to_chat(ui.user, span_warning("You need to wear your ID."))
-	// All functions below this point require authentication.
-	if(!is_authenticated(ui.user))
-		return FALSE
+/// The login button: logs in (a head of staff, or the captain with an ID) or, when logged in, out.
+/datum/tgui_module/communications/proc/ui_act_auth(datum/act/op/A)
+	var/mob/user = A.actor
+	// Logout function.
+	if(LAZYACCESS(logins, REF(user)))
+		set_login(user, COMM_AUTHENTICATION_NONE)
+		setMenuState(user, COMM_SCREEN_MAIN)
+		return TRUE
+	// Login function.
+	var/level = COMM_AUTHENTICATION_NONE
+	if(check_access(user, ACCESS_HEADS))
+		level = COMM_AUTHENTICATION_MIN
+	if(check_access(user, ACCESS_CAPTAIN))
+		level = COMM_AUTHENTICATION_MAX
+	set_login(user, level)
+	if(level == COMM_AUTHENTICATION_NONE)
+		to_chat(user, span_warning("You need to wear your ID."))
 	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "main", ui_act_main)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_main)
+/datum/tgui_module/communications/proc/ui_act_main(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	setMenuState(ui.user, COMM_SCREEN_MAIN)
+	setMenuState(user, COMM_SCREEN_MAIN)
 
-UI_ACT(/datum/tgui_module/communications, "newalertlevel", ui_act_newalertlevel, UI_ARG_NUM("level"))
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_newalertlevel)
+/datum/tgui_module/communications/proc/ui_act_newalertlevel(datum/act/op/A, level)
+	var/mob/user = A.actor
 	. = TRUE
-	if(isAI(ui.user) || isrobot(ui.user))
-		to_chat(ui.user, span_warning("Firewalls prevent you from changing the alert level."))
-		return
-	else if(isobserver(ui.user))
-		var/mob/observer/dead/D = ui.user
+	if(isobserver(user))
+		var/mob/observer/dead/D = user
 		if(D.can_admin_interact())
-			change_security_level(ui.user, params["level"])
+			change_security_level(user, level)
 			return TRUE
-	else if(!ishuman(ui.user))
-		to_chat(ui.user, span_warning("Security measures prevent you from changing the alert level."))
+	else if(!ishuman(user))
+		to_chat(user, span_warning("Security measures prevent you from changing the alert level."))
 		return
 
-	if(is_authenticated(ui.user))
-		change_security_level(ui.user, params["level"])
+	if(is_authenticated(user))
+		change_security_level(user, level)
 	else
-		to_chat(ui.user, span_warning("You are not authorized to do this."))
-	setMenuState(ui.user, COMM_SCREEN_MAIN)
+		to_chat(user, span_warning("You are not authorized to do this."))
+	setMenuState(user, COMM_SCREEN_MAIN)
 
-UI_ACT(/datum/tgui_module/communications, "announce", ui_act_announce)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_announce)
-	. = TRUE
-	if(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX)
-		if(!COOLDOWN_FINISHED(src, message_cooldown))
-			to_chat(ui.user, span_warning("Please allow at least one minute to pass between announcements."))
-			return
-		var/input = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Please write a message to announce to the station crew.", title = "Priority Announcement", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-		if(isnull(input))
-			return
-		if(!input || !COOLDOWN_FINISHED(src, message_cooldown) || ui.status != STATUS_INTERACTIVE || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
-			return
-		if(length(input) < COMM_MSGLEN_MINIMUM)
-			to_chat(ui.user, span_warning("Message '[input]' is too short. [COMM_MSGLEN_MINIMUM] character minimum."))
-			return
-		crew_announcement.Announce(input)
-		COOLDOWN_START(src, message_cooldown, 600) //One minute
+/datum/tgui_module/communications/proc/ui_act_announce(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/P = A.answer
+	var/input = P?.value
+	if(!input)
+		return TRUE
+	if(length(input) < COMM_MSGLEN_MINIMUM)
+		to_chat(user, span_warning("Message '[input]' is too short. [COMM_MSGLEN_MINIMUM] character minimum."))
+		return TRUE
+	var/obj/item/card/id/id = user.GetIdCard()
+	crew_announcement.announcer = istype(id) ? GetNameAndAssignmentFromId(id) : null
+	crew_announcement.Announce(input)
+	COOLDOWN_START(src, message_cooldown, 60 SECONDS)
+	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "callshuttle", ui_act_callshuttle)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_callshuttle)
-	. = TRUE
-	if(!is_authenticated(ui.user))
-		return
+/datum/tgui_module/communications/proc/ui_act_callshuttle(datum/act/op/A)
+	var/mob/user = A.actor
+	call_shuttle_proc(user)
+	if(SSemergency_shuttle.online())
+		post_status(src, "shuttle", user = user)
+	setMenuState(user, COMM_SCREEN_MAIN)
+	return TRUE
 
-	// Add confirmation message
-	var/response = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?", title = "Confirm", choices = list("Yes", "No"))
-	if(isnull(response))
-		return
+/datum/tgui_module/communications/proc/ui_act_cancelshuttle(datum/act/op/A)
+	var/mob/user = A.actor
+	cancel_call_proc(user)
+	setMenuState(user, COMM_SCREEN_MAIN)
+	return TRUE
 
-	if(response == "Yes")
-		call_shuttle_proc(ui.user)
-		if(GLOB.emergency_shuttle_service.online())
-			post_status(src, "shuttle", user = ui.user)
-		setMenuState(ui.user, COMM_SCREEN_MAIN)
-
-UI_ACT(/datum/tgui_module/communications, "cancelshuttle", ui_act_cancelshuttle)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_cancelshuttle)
-	. = TRUE
-	if(isAI(ui.user) || isrobot(ui.user))
-		to_chat(ui.user, span_warning("Firewalls prevent you from recalling the shuttle."))
-		return
-	var/response = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you wish to recall the shuttle?", title = "Confirm", choices = list("Yes", "No"))
-	if(isnull(response))
-		return
-	if(response == "Yes")
-		cancel_call_proc(ui.user)
-	setMenuState(ui.user, COMM_SCREEN_MAIN)
-
-UI_ACT(/datum/tgui_module/communications, "messagelist", ui_act_messagelist, UI_ARG_NUM("msgid"))
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_messagelist)
+/datum/tgui_module/communications/proc/ui_act_messagelist(datum/act/op/A, msgid)
+	var/mob/user = A.actor
 	. = TRUE
 	current_viewing_message = null
 	current_viewing_message_id = null
-	if(params["msgid"])
-		setCurrentMessage(ui.user, params["msgid"])
-	setMenuState(ui.user, COMM_SCREEN_MESSAGES)
+	if(msgid)
+		setCurrentMessage(user, msgid)
+	setMenuState(user, COMM_SCREEN_MESSAGES)
 
-UI_ACT(/datum/tgui_module/communications, "delmessage", ui_act_delmessage, UI_ARG_NUM("msgid"))
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_delmessage)
-	. = TRUE
+/// The delete button names the message before it asks, so the window shows which one is in question.
+/datum/tgui_module/communications/proc/ui_select_message(datum/act/op/A)
+	var/msgid = A.args["msgid"]
+	if(msgid)
+		setCurrentMessage(A.actor, msgid)
+	return OP_OK
+
+/// The message the button named (by its id, as pressed: another selection while the question was open does not change which) is deleted.
+/datum/tgui_module/communications/proc/ui_act_delmessage(datum/act/op/A, msgid)
 	var/datum/comm_message_listener/l = obtain_message_listener()
-	if(params["msgid"])
-		setCurrentMessage(ui.user, params["msgid"])
-	var/response = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you wish to delete this message?", title = "Confirm", choices = list("Yes", "No"))
-	if(isnull(response))
-		return
-	if(response == "Yes")
-		if(current_viewing_message)
-			if(l != GLOB.global_message_listener)
-				l.Remove(current_viewing_message)
-			current_viewing_message = null
-		setMenuState(ui.user, COMM_SCREEN_MESSAGES)
+	var/list/m = message_by_id(msgid)
+	if(m)
+		l.Remove(m)
+	if(current_viewing_message_id == msgid)
+		current_viewing_message = null
+	setMenuState(A.actor, COMM_SCREEN_MESSAGES)
+	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "status", ui_act_status)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_status)
+/datum/tgui_module/communications/proc/ui_act_status(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	setMenuState(ui.user, COMM_SCREEN_STAT)
+	setMenuState(user, COMM_SCREEN_STAT)
 
 // Status display stuff
 
-UI_ACT(/datum/tgui_module/communications, "setstat", ui_act_setstat, UI_ARG_VALUE("alert"), UI_ARG_TEXT("statdisp"))
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_setstat)
-	. = TRUE
-	display_type = params["statdisp"]
-	switch(display_type)
-		if("message")
-			post_status(src, "message", stat_msg1, stat_msg2, user = ui.user)
-		if("alert")
-			post_status(src, "alert", params["alert"], user = ui.user)
-		else
-			post_status(src, params["statdisp"], user = ui.user)
+/// The status displays show one of the presets: blank, the time, the shuttle's ETA, or the console's two lines.
+/datum/tgui_module/communications/proc/ui_act_setstat(datum/act/op/A, statdisp)
+	display_type = statdisp
+	if(statdisp == "message")
+		post_status(src, "message", stat_msg1, stat_msg2, user = A.actor)
+	else
+		post_status(src, statdisp, user = A.actor)
+	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "setmsg1", ui_act_setmsg1)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_setmsg1)
-	. = TRUE
-	var/_answer_a5 = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = stat_msg1, max_length = 40)
-	if(isnull(_answer_a5))
-		return
-	stat_msg1 = reject_bad_text(_answer_a5, 40)
-	setMenuState(ui.user, COMM_SCREEN_STAT)
+/datum/tgui_module/communications/proc/ui_act_setmsg1(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	stat_msg1 = reject_bad_text(P?.value, 40)
+	setMenuState(A.actor, COMM_SCREEN_STAT)
+	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "setmsg2", ui_act_setmsg2)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_setmsg2)
-	. = TRUE
-	var/_answer_a6 = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = stat_msg2, max_length = 40)
-	if(isnull(_answer_a6))
-		return
-	stat_msg2 = reject_bad_text(_answer_a6, 40)
-	setMenuState(ui.user, COMM_SCREEN_STAT)
+/datum/tgui_module/communications/proc/ui_act_setmsg2(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	stat_msg2 = reject_bad_text(P?.value, 40)
+	setMenuState(A.actor, COMM_SCREEN_STAT)
+	return TRUE
+
 
 // OMG CENTCOMM LETTERHEAD
 
-UI_ACT(/datum/tgui_module/communications, "MessageCentCom", ui_act_messagecentcom)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_messagecentcom)
-	. = TRUE
-	if(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX)
-		if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
-			to_chat(ui.user, span_warning("Arrays recycling. Please stand by."))
-			return
-		var/input = act_ask(ui.user, action, params, ui, "a7", /datum/om/prompt/text, message = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", title = "Central Command Quantum Messaging", multiline = TRUE)
-		if(isnull(input))
-			return
-		if(!input || ui.status != STATUS_INTERACTIVE || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
-			return
+/datum/tgui_module/communications/proc/ui_act_messagecentcom(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/P = A.answer
+	var/input = P?.value
+	if(input)
 		if(length(input) < COMM_CCMSGLEN_MINIMUM)
-			to_chat(ui.user, span_warning("Message '[input]' is too short. [COMM_CCMSGLEN_MINIMUM] character minimum."))
-			return
-		CentCom_announce(input, ui.user)
-		to_chat(ui.user, span_blue("Message transmitted."))
-		log_game("[key_name(ui.user)] has made an IA [using_map.boss_short] announcement: [input]")
-		COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
-	setMenuState(ui.user, COMM_SCREEN_MAIN)
+			to_chat(user, span_warning("Message '[input]' is too short. [COMM_CCMSGLEN_MINIMUM] character minimum."))
+		else
+			CentCom_announce(input, user)
+			to_chat(user, span_blue("Message transmitted."))
+			log_game("[key_name(user)] has made an IA [using_map.boss_short] announcement: [input]")
+			COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
+	setMenuState(user, COMM_SCREEN_MAIN)
+	return TRUE
+
 
 // OMG SYNDICATE ...LETTERHEAD
 
-UI_ACT(/datum/tgui_module/communications, "MessageSyndicate", ui_act_messagesyndicate)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_messagesyndicate)
-	. = TRUE
-	if((is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX) && (emagged))
-		if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
-			to_chat(ui.user, "Arrays recycling.  Please stand by.")
-			return
-		var/input = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/text, message = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", title = "To abort, send an empty message.")
-		if(isnull(input))
-			return
-		if(!input || ui.status != STATUS_INTERACTIVE || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
-			return
+/datum/tgui_module/communications/proc/ui_act_messagesyndicate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/P = A.answer
+	var/input = P?.value
+	if(input)
 		if(length(input) < COMM_CCMSGLEN_MINIMUM)
-			to_chat(ui.user, span_warning("Message '[input]' is too short. [COMM_CCMSGLEN_MINIMUM] character minimum."))
-			return
-		Syndicate_announce(input, ui.user)
-		to_chat(ui.user, span_blue("Message transmitted."))
-		log_game("[key_name(ui.user)] has made an illegal announcement: [input]")
-		COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
+			to_chat(user, span_warning("Message '[input]' is too short. [COMM_CCMSGLEN_MINIMUM] character minimum."))
+		else
+			Syndicate_announce(input, user)
+			to_chat(user, span_blue("Message transmitted."))
+			log_game("[key_name(user)] has made an illegal announcement: [input]")
+			COOLDOWN_START(src, centcomm_message_cooldown, 30 SECONDS) // 30 seconds
+	return TRUE
 
-UI_ACT(/datum/tgui_module/communications, "RestoreBackup", ui_act_restorebackup)
-UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
-	. = TRUE
-	to_chat(ui.user, "Backup routing data restored!")
-	emagged = FALSE
-	setMenuState(ui.user, COMM_SCREEN_MAIN)
+/// The backup routing is restored: the console's scrambled circuits work again (and it can be emagged again).
+/datum/tgui_module/communications/proc/ui_act_restorebackup(datum/act/op/A)
+	var/obj/machinery/computer/communications/C = host()
+	if(istype(C))
+		key_set(C, EMAG_EMAGGED, FALSE)
+	setMenuState(A.actor, COMM_SCREEN_MAIN)
+	return TRUE
 
 /datum/tgui_module/communications/ntos
 	ntos = TRUE
@@ -429,7 +473,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		PS.allowedtocall = !(PS.allowedtocall)
 
 /proc/call_shuttle_proc(mob/user)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
 	if(!GLOB.universe.OnShuttleCall(user))
@@ -440,27 +484,28 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 		return
 
-	if(GLOB.emergency_shuttle_service.deny_shuttle)
+	if(emergency_shuttle_deny_shuttle())
 		to_chat(user, "The emergency shuttle may not be sent at this time. Please try again later.")
 		return
 
-	if(world.time < 6000) // Ten minute grace period to let the game get going without lolmetagaming. -- TLE
-		to_chat(user, "The emergency shuttle is refueling. Please wait another [round((6000-world.time)/600)] minute\s before trying again.")
+	var/into_round = ELAPSED(SSticker, round_start_time, CLOCK_WORLD)
+	if(into_round < SHUTTLE_CALL_GRACE) // a grace period to let the round get going
+		to_chat(user, "The emergency shuttle is refueling. Please wait another [round((SHUTTLE_CALL_GRACE - into_round) / (1 MINUTE))] minute\s before trying again.")
 		return
 
-	if(GLOB.emergency_shuttle_service.going_to_centcom())
+	if(SSemergency_shuttle.going_to_centcom())
 		to_chat(user, "The emergency shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		to_chat(user, "The emergency shuttle is already on its way.")
 		return
 
-	if(SSticker.mode.name == "blob")
+	if(ticker_mode().name == "blob")
 		to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 		return
 
-	GLOB.emergency_shuttle_service.call_evac()
+	SSemergency_shuttle.call_evac()
 	log_game("[key_name(user)] has called the shuttle.")
 	message_admins("[key_name_admin(user)] has called the shuttle.", 1)
 	admin_chat_message(message = "Emergency evac beginning! Called by [key_name(user)]!", color = "#CC2222")
@@ -468,20 +513,20 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 	return
 
 /proc/init_shift_change(mob/user, force = 0)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
-	if(GLOB.emergency_shuttle_service.going_to_centcom())
+	if(SSemergency_shuttle.going_to_centcom())
 		to_chat(user, "The shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		to_chat(user, "The shuttle is already on its way.")
 		return
 
 	// if force is 0, some things may stop the shuttle call
 	if(!force)
-		if(GLOB.emergency_shuttle_service.deny_shuttle)
+		if(emergency_shuttle_deny_shuttle())
 			to_chat(user, "[using_map.boss_short] does not currently have a shuttle available in your sector. Please try again later.")
 			return
 
@@ -489,24 +534,25 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 			to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 			return
 
-		if(world.time < 54000) // 30 minute grace period to let the game get going
-			to_chat(user, "The shuttle is refueling. Please wait another [round((54000-world.time)/60)] minutes before trying again.")
+		var/into_round = ELAPSED(SSticker, round_start_time, CLOCK_WORLD)
+		if(into_round < SHIFT_CHANGE_GRACE) // a grace period to let the round get going
+			to_chat(user, "The shuttle is refueling. Please wait another [round((SHIFT_CHANGE_GRACE - into_round) / (1 MINUTE))] minutes before trying again.")
 			return
 
-		if(SSticker.mode.auto_recall_shuttle)
+		if(ticker_mode().auto_recall_shuttle)
 			//New version pretends to call the shuttle but cause the shuttle to return after a random duration.
-			GLOB.emergency_shuttle_service.auto_recall = TRUE
+			SSemergency_shuttle.auto_recall = TRUE
 
-		if(SSticker.mode.name == "blob" || SSticker.mode.name == "epidemic")
+		if(ticker_mode().name == "blob" || ticker_mode().name == "epidemic")
 			to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 			return
 
-	GLOB.emergency_shuttle_service.call_transfer()
+	SSemergency_shuttle.call_transfer()
 
 	//delay events in case of an autotransfer
 	if (isnull(user))
-		GLOB.event_service.delay_events(EVENT_LEVEL_MODERATE, 9000) //15 minutes
-		GLOB.event_service.delay_events(EVENT_LEVEL_MAJOR, 9000)
+		SSevents.delay_events(EVENT_LEVEL_MODERATE, 15 MINUTES)
+		SSevents.delay_events(EVENT_LEVEL_MAJOR, 15 MINUTES)
 
 	log_game("[user? key_name(user) : "Autotransfer"] has called the shuttle.")
 	message_admins("[user? key_name_admin(user) : "Autotransfer"] has called the shuttle.", 1)
@@ -515,20 +561,20 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 	return
 
 /proc/cancel_call_proc(mob/user)
-	if (!( SSticker ) || !GLOB.emergency_shuttle_service.can_recall())
+	if (!( SSticker ) || !SSemergency_shuttle.can_recall())
 		return
-	if((SSticker.mode.name == "blob")||(SSticker.mode.name == "Meteor"))
+	if((ticker_mode().name == "blob")||(ticker_mode().name == "Meteor"))
 		return
 
-	if(!GLOB.emergency_shuttle_service.going_to_centcom()) //check that shuttle isn't already heading to CentCom
-		GLOB.emergency_shuttle_service.recall()
+	if(!SSemergency_shuttle.going_to_centcom()) //check that shuttle isn't already heading to CentCom
+		SSemergency_shuttle.recall()
 		log_game("[key_name(user)] has recalled the shuttle.")
 		message_admins("[key_name_admin(user)] has recalled the shuttle.", 1)
 	return
 
 /proc/is_relay_online()
 	for(var/obj/machinery/telecomms/relay/M in world)
-		if(!M.has_stat(MACHINE_STAT_ANY))
+		if(!M.has_condition())
 			return 1
 	return 0
 
@@ -542,4 +588,5 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 
 #undef COMM_MSGLEN_MINIMUM
 #undef COMM_CCMSGLEN_MINIMUM
-
+#undef SHUTTLE_CALL_GRACE
+#undef SHIFT_CHANGE_GRACE

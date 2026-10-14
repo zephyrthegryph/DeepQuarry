@@ -23,47 +23,48 @@
 	var/power_cost = 950                                       // Cost per fire, should consume almost an entire basic cell.
 	var/power_per_tick                                         // Capacitor charge per process(). Updated based on capacitor rating.
 
-	var/state = 0
 
 /// Currently installed powercell.
-OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/cell, cell, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/var/obj/item/cell/cell
 /// Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.
-OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
+
+CAPABILITIES(/obj/item/gun/magnetic)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
+	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
+	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
+	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
-/// Swapping parts goes through own_set()/own_take() (and a destroyed part is cleared by the
+/// Swapping parts goes through rel_set()/own_take() (and a destroyed part is cleared by the
 /// ownership framework), all of which raise the part fields; the capacitor's charge is a cross-entity
 /// input (max_charge is fixed at the part's Initialize).
-OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, list("cell", "capacitor", "capacitor.charge"))
 /obj/item/gun/magnetic/proc/capacitor_unsettled()
 	return capacitor && (cell ? capacitor.charge < capacitor.max_charge : capacitor.charge)
-DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettled")
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "cell", "cell")
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
+/// The gate of the magnetic gun's step: polled, the capacitor's charge is another entity's state.
+/obj/item/gun/magnetic/proc/steps_now(datum/act/A)
+	return capacitor || cell
 
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()
 	// So you can have some spawn with components
-	if(ispath(capacitor))
-		own_set(src, nameof(capacitor), new capacitor(src))
+	if(capacitor) // made from the declared starting type: it starts charged
 		capacitor.set_charge(capacitor.max_charge)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
-
-	update_icon()
-
 
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
 /// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled
 /// (declared on capacitor_unsettled); firing drains the capacitor, which restarts it.
-/obj/item/gun/magnetic/periodic_step()
+/obj/item/gun/magnetic/proc/magnetic_step(datum/act/timer/A)
 	if(!capacitor_unsettled())
-		update_state()
-		return PROCESS_KILL // it charged (or bled) itself settled
+		return // it charged (or bled) itself settled
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))
@@ -71,9 +72,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 		else
 			capacitor.use(capacitor.charge * 0.05)
 
-	update_state() // May update icon, only if things changed.
-
-/obj/item/gun/magnetic/proc/update_state()
+/// The indicator flags (ICON_*) of the gun's parts and charge, read by its look and its examine.
+/obj/item/gun/magnetic/proc/magnetic_flags()
 	var/newstate = 0
 
 	// Parts or lack thereof
@@ -95,33 +95,18 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	if(loaded)
 		newstate |= ICON_LOADED
 
-	// Only update if the state has changed
-	var/needs_update = FALSE
-	if(state != newstate)
-		needs_update = TRUE
+	return newstate
 
-	state = newstate
-
-	if(needs_update)
-		update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/magnetic/appearance_overlays()
-	. = list()
-	if(state & ICON_CELL)
-		. += "[icon_state]_cell"
-	if(state & ICON_CAP)
-		. += "[icon_state]_capacitor"
-	if(state & ICON_BAD)
-		. += "[icon_state]_red"
-	if(state & ICON_CHARGE)
-		. += "[icon_state]_amber"
-	if(state & ICON_READY)
-		. += "[icon_state]_green"
-	if(state & ICON_LOADED)
-		. += "[icon_state]_loaded"
-
-	. += ..()
+/obj/item/gun/magnetic/draw(datum/look/look)
+	..()
+	var/flags = magnetic_flags()
+	var/base = initial(icon_state)
+	look.overlay("[base]_cell", when = flags & ICON_CELL)
+	look.overlay("[base]_capacitor", when = flags & ICON_CAP)
+	look.overlay("[base]_red", when = flags & ICON_BAD)
+	look.overlay("[base]_amber", when = flags & ICON_CHARGE)
+	look.overlay("[base]_green", when = flags & ICON_READY)
+	look.overlay("[base]_loaded", when = flags & ICON_LOADED)
 
 /obj/item/gun/magnetic/proc/show_ammo()
 	var/list/ammotext = list()
@@ -140,52 +125,55 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		if(capacitor)
 			. += span_notice("The installed [capacitor.name] has a charge level of [round((capacitor.charge/capacitor.max_charge)*100)]%.")
 
-		if(state & ICON_BAD)
+		var/flags = magnetic_flags()
+		if(flags & ICON_BAD)
 			. += span_notice("The capacitor charge indicator is blinking [span_red("red")]. Maybe you should check the cell or capacitor.")
 		else
-			if(state & ICON_CHARGE)
+			if(flags & ICON_CHARGE)
 				. += span_notice("The capacitor charge indicator is [span_orange("amber")].")
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
-/obj/item/gun/magnetic/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/magnetic/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!removable_components)
-		return NONE
+		return OP_DECLINE
 	if(!capacitor)
 		to_chat(user, span_warning("\The [src] has no capacitor installed."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
-	playsound(src, tool.usesound, 50, 1)
-	own_take(src, nameof(capacitor))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, 1)
+	rel_take(src, nameof(capacitor))
+	return OP_OK
 
 /// Old attackby.
-/obj/item/gun/magnetic/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/magnetic/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
+	. = OP_PASS
 	if(removable_components)
 		if(istype(thing, /obj/item/cell))
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
-			if(!own_set(src, nameof(src.cell), thing, user = user))
+			if(!move_into(src, nameof(src.cell), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
-			update_icon()
 			return
 
 		if(istype(thing, /obj/item/stock_parts/capacitor))
 			if(capacitor)
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
-			if(!own_set(src, nameof(src.capacitor), thing, user = user))
+			if(!move_into(src, nameof(src.capacitor), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = capacitor)
-			update_icon()
 			return
 
 	if(istype(thing, load_type))
@@ -198,46 +186,43 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		// specific ammo types may exist down the track.
 		var/obj/item/stack/ammo = thing
 		if(!istype(ammo))
-			if(!own_set(src, nameof(src.loaded), thing, user = user))
+			if(!move_into(src, nameof(src.loaded), thing, user))
 				return
 		else
-			own_set(src, nameof(loaded), new load_type(src, 1))
+			rel_set(src, nameof(loaded), new load_type(src, 1))
 			ammo.use(1)
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-		update_icon()
 		return
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/item/gun/magnetic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/magnetic/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		var/obj/item/removing
 
 		if(loaded)
 			removing = loaded
-			own_take(src, nameof(loaded))
+			rel_take(src, nameof(loaded))
 		else if(cell && removable_components)
 			removing = cell
-			own_take(src, nameof(cell))
+			rel_take(src, nameof(cell))
 
 		if(removing)
 			removing.forceMove(get_turf(src))
 			user.put_in_hands(removing)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			update_icon()
 			return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gun/magnetic/proc/check_ammo()
 	return loaded
 
 /obj/item/gun/magnetic/proc/use_ammo()
-	own_clear(src, nameof(loaded), OWN_DELETE)
+	rel_clear(src, nameof(loaded))
 
 /obj/item/gun/magnetic/consume_next_projectile()
 
@@ -246,16 +231,15 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
-		om_after(src, 3, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
+		after(src, 0.3 SECONDS, PROC_REF(unreliable_explode)) // So that it will still fire - considered modifying Fire() to return a value but burst fire makes that annoying.
 
 	return new projectile_type(src)
 
 /obj/item/gun/magnetic/fuelrod
 	name = "Fuel-Rod Cannon"
-	cell = /obj/item/cell/high // the declared default child (DECLARE_DEFAULT_CHILD on /obj/item/gun/magnetic)
+	cell = /obj/item/cell/high // the declared default child (owns_one starts on /obj/item/gun/magnetic)
 	capacitor = /obj/item/stock_parts/capacitor
 	desc = "A bulky weapon designed to fire reactor core fuel rods at absurd velocities... who thought this was a good idea?!"
 	description_antag = "This device is capable of firing reactor fuel assemblies, acquired from a R-UST fuel compressor and an appropriate fueltype. Be warned, Supermatter rods may have unforseen consequences."
@@ -292,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 				if(MAT_SUPERMATTER)
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod/supermatter
 					visible_message(span_danger("The barrel of \the [src] glows a blinding white!"))
-					om_after(src, 5, PROC_REF(fuelrod_collapse))
+					after(src, 0.5 SECONDS, PROC_REF(fuelrod_collapse))
 				if("blitz")
 					var/max_range = 6																// -- Polymorph
 					var/banglet = 0
@@ -306,17 +290,16 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 						blitzed(get_turf(src), M, max_range, banglet)
 					new/obj/effect/effect/sparks(src.loc)
 					new/obj/effect/effect/smoke/illumination(loc, 5, 30, 30, "#FFFFFF")
-					om_qdel_after(src, 2)
+					expire(0.2 SECONDS)
 				if("blitzu")
 					visible_message(span_critical("\The [src] explodes in a blinding white light with a deafening bang!"))
 					explosion(get_turf(src),1,2,4,6)
-					qdel(src)
+					destroyed(src, null, "explosion")
 					return
 				else
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)
 	else
@@ -342,35 +325,35 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		bang_effectiveness = H.species.sound_mod
 	if(eye_safety < 1 && get_dist(M, T) <= round(max_range * 0.7 * flash_effectiveness))
 		M.flash_eyes()
-		M.status_at_least(EFFECT_CONFUSED, 2 * flash_effectiveness)
-		M.status_at_least(EFFECT_WEAKENED, 5 * flash_effectiveness)
+		M.status_at_least(STAT_CONFUSED, 2 * flash_effectiveness)
+		M.status_at_least(STAT_WEAKENED, 5 * flash_effectiveness)
 
 	//Now applying sound
 	if((get_dist(M, T) <= round(max_range * 0.3 * bang_effectiveness) || src.loc == M.loc || src.loc == M))
 		if(ear_safety > 0)
-			M.status_at_least(EFFECT_CONFUSED, 2)
-			M.status_at_least(EFFECT_WEAKENED, 1)
+			M.status_at_least(STAT_CONFUSED, 2)
+			M.status_at_least(STAT_WEAKENED, 1)
 		else
-			M.status_at_least(EFFECT_CONFUSED, 10)
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_CONFUSED, 10)
+			M.status_at_least(STAT_WEAKENED, 3)
 			if ((prob(14) || (M == src.loc && prob(70))))
 				M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 			else
 				M.set_ear_damage(M.ear_damage + (rand(0, 5)))
-				M.status_at_least(EFFECT_DEAFENED, 15)
+				M.status_at_least(STAT_DEAFENED, 15)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(get_dist(M, T) <= round(max_range * 0.5 * bang_effectiveness))
 		if(!ear_safety)
-			M.status_at_least(EFFECT_CONFUSED, 8)
+			M.status_at_least(STAT_CONFUSED, 8)
 			M.set_ear_damage(M.ear_damage + (rand(0, 3)))
-			M.status_at_least(EFFECT_DEAFENED, 10)
+			M.status_at_least(STAT_DEAFENED, 10)
 			M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(!ear_safety && get_dist(M, T) <= (max_range * 0.7 * bang_effectiveness))
-		M.status_at_least(EFFECT_CONFUSED, 4)
+		M.status_at_least(STAT_CONFUSED, 4)
 		M.set_ear_damage(M.ear_damage + (rand(0, 1)))
-		M.status_at_least(EFFECT_DEAFENED, 5)
+		M.status_at_least(STAT_DEAFENED, 5)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 
 	//This really should be in mob not every check
@@ -401,23 +384,23 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 /obj/item/gun/magnetic/proc/unreliable_explode()
 	visible_message(span_danger("\The [src] explodes with the force of the shot!"))
 	explosion(get_turf(src), -1, 0, 2)
-	qdel(src)
+	destroyed(src, null, "explosion")
 
 /// A supermatter rod's aftermath: the acceleration chamber collapses, the power supply
 /// overloads, and the gun blows.
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_collapse()
 	visible_message(span_danger("\The [src] begins to rattle, its acceleration chamber collapsing in on itself!"))
-	removable_components = FALSE
-	om_after(src, 15, PROC_REF(fuelrod_overload))
+	set_removable_components(FALSE)
+	after(src, 1.5 SECONDS, PROC_REF(fuelrod_overload))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_overload()
 	audible_message(span_critical("\The [src]'s power supply begins to overload as the device crumples!"), runemessage = "VWRRRRRRRR")
 	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.2)
 	var/turf/T = get_turf(src)
 	fx_sparks(T, 2)
-	om_after(src, 15, PROC_REF(fuelrod_blows))
+	after(src, 1.5 SECONDS, PROC_REF(fuelrod_blows))
 
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_blows()
 	visible_message(span_critical("\The [src] explodes in a blinding white light!"))
 	explosion(src.loc, -1, 1, 2, 3)
-	qdel(src)
+	destroyed(src, null, "explosion")

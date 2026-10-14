@@ -17,16 +17,26 @@
 
 	var/datum/material/material
 
-/obj/structure/gravemarker/Initialize(mapload, material_name)
-	. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+CAPABILITIES(/obj/structure/gravemarker)
+	climb()
+	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
+		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
+		then(PROC_REF(carved)))
+	op("use_wrench", tool(TOOL_WRENCH), begins(PROC_REF(wrench_begins)), wait(PROC_REF(wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
+	param(nameof(marker_material), pos = 1, apply = PROC_REF(build_of))
+
+/// The marker's material (its constructor param).
+/obj/structure/gravemarker/var/marker_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/gravemarker/proc/build_of(material_name)
+	material = get_material_by_name("[material_name || MAT_WOOD]")
 	if(!material)
 		stack_trace("Material of type: [material_name] does not exist.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material.icon_colour
-	make_climbable()
 	make_rotatable()
 
 /obj/structure/gravemarker/examine(mob/user)
@@ -50,70 +60,47 @@
 		return !density
 	return TRUE
 
-/obj/structure/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	om_ask(user, /datum/om/prompt/text/grave_carving, PROC_REF(grave_name_chosen), tool = W)
-	return TRUE
+/// The name and the epitaph are asked, then carved.
+/obj/structure/gravemarker/proc/name_question(datum/act/A)
+	return "Who is \the [src.name] for?"
 
-/// Carving a gravemarker: the name, then the epitaph. Re-checked: next to the marker, the tool still in the active hand.
-/datum/om/prompt/text/grave_carving
-	title = "Gravestone Naming"
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/tool
-	/// Set on the epitaph step: the name answered first.
-	var/carved_name
-	var/epitaph_step = FALSE
+/obj/structure/gravemarker/proc/epitaph_question(datum/act/A)
+	return "What message should \the [src.name] have?"
 
-/datum/om/prompt/text/grave_carving/prepare()
-	if(epitaph_step)
-		title = "Epitaph Carving"
-		message = "What message should \the [subject] have?"
-	else
-		message = "Who is \the [subject] for?"
-	return TRUE
-
-/datum/om/prompt/text/grave_carving/valid()
-	return answerer.get_active_hand() == tool ? null : "not holding the tool"
-
-/obj/structure/gravemarker/proc/grave_name_chosen(datum/om/prompt/text/grave_carving/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/grave_carving, PROC_REF(carvings_chosen), tool = ask.tool, carved_name = ask.text, epitaph_step = TRUE)
-
-/obj/structure/gravemarker/proc/carvings_chosen(datum/om/prompt/text/grave_carving/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.tool
-	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// The answers are carved in.
+/obj/structure/gravemarker/proc/carved(datum/act/op/A)
+	var/datum/prompt/name_answer = A.step_answer("name")
+	var/datum/prompt/epitaph_answer = A.step_answer("epitaph")
+	var/carving_1 = sanitizeSafe(name_answer?.value, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(epitaph_answer?.value, MAX_NAME_LEN)
+	if(!carving_1 && !carving_2)
+		return OP_OK
+	act_message(A.actor, null, MSG_SELF("You carve your message into \the [src.name]."), MSG_OTHERS("%U% carves something into \the [src.name]."))
 	if(carving_1)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
+		grave_name += carving_1
 	if(carving_2)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, volume = 0, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
+		epitaph += carving_2
+	return OP_OK
 
-/obj/structure/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
-	act_message(user, null, MSG_SELF("You carve your message into \the [src.name]."), MSG_OTHERS("%U% carves something into \the [src.name]."))
-	grave_name += carving_1
-	update_icon()
-/obj/structure/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
-	act_message(user, null, MSG_SELF("You carve your message into \the [src.name]."), MSG_OTHERS("%U% carves something into \the [src.name]."))
-	epitaph += carving_2
-	update_icon()
+/obj/structure/gravemarker/proc/wrench_begins(datum/act/op/A)
+	return msg_text("You start taking down \the [src.name].", "[A.actor] starts taking down \the [src.name].")
 
-/obj/structure/gravemarker/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, start_self = "You start taking down \the [src.name].", start_others = "[user] starts taking down \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return TRUE
+/obj/structure/gravemarker/proc/wrench_duration(datum/act/op/A)
+	return material.hardness
 
-/obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
+/obj/structure/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, MSG_SELF("You take down \the [src.name]."), MSG_OTHERS("%U% takes down \the [src.name]."))
-	dismantle()
+	dismantle(user)
 
 /obj/structure/gravemarker/atom_destruction(damage_flag)
 	visible_message(span_danger("\The [src] falls apart!"))
 	dismantle()
 	return ..()
 
-/obj/structure/gravemarker/proc/dismantle()
+/obj/structure/gravemarker/proc/dismantle(mob/user)
 	material.place_dismantled_product(get_turf(src))
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/structure/gravemarker/ghosts_can_use_rotate_verbs()

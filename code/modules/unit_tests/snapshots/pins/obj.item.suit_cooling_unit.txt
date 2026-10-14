@@ -1,0 +1,23 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++2 menu: Use screwdriver
++3 click: Click: Use screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj human|/obj/item/cell
+-click: nothing
++0 menu: Insert cell
++3 click: Click: Insert cell
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable, use_screwdriver

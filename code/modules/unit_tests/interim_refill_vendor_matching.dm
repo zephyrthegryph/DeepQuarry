@@ -1,0 +1,15 @@
+/// Real multi-vendor cartridges preserve type matching and explicit exceptions.
+/datum/unit_test/interim_refill_vendor_matching/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/refill_cartridge/multitype/technical/technical = allocate(/obj/item/refill_cartridge/multitype/technical, T)
+	var/obj/item/refill_cartridge/multitype/clothing/clothing = allocate(/obj/item/refill_cartridge/multitype/clothing, T)
+	var/obj/machinery/vending/tool/tools = allocate(/obj/machinery/vending/tool, T)
+	var/obj/machinery/vending/wardrobe/wardrobe = allocate(/obj/machinery/vending/wardrobe, T)
+	var/obj/machinery/vending/loadout/gadget/gadget = allocate(/obj/machinery/vending/loadout/gadget, T)
+	TEST_ASSERT(technical.can_refill(tools), "technical cartridges match the actual tool vendor")
+	TEST_ASSERT(technical.can_refill(gadget), "technical cartridges match the actual gadget vendor")
+	TEST_ASSERT(!technical.can_refill(wardrobe), "technical cartridges reject an unrelated wardrobe")
+	TEST_ASSERT(clothing.can_refill(wardrobe), "clothing cartridges match the actual wardrobe")
+	TEST_ASSERT(!clothing.can_refill(gadget), "the clothing exception excludes a gadget despite its loadout ancestry")
+	TEST_ASSERT(!clothing.can_refill(tools), "clothing cartridges reject an unrelated tool vendor")
+	TEST_ASSERT(technical.can_refill(gadget), "one cartridge's exception never changes another cartridge's matching")

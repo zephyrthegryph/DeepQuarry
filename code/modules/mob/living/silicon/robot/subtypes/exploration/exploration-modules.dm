@@ -24,15 +24,15 @@
 
 /obj/item/robot_module/robot/exploration/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	own_add(src, nameof(modules), new /obj/item/dogborg/sleeper/exploration(src))
-	own_add(src, nameof(modules), new /obj/item/cataloguer(src))
-	own_add(src, nameof(modules), new /obj/item/gun/energy/robotic/flare(src))
-	own_add(src, nameof(modules), new /obj/item/dogborg/pounce(src))
-	own_add(src, nameof(modules), new /obj/item/melee/robotic/blade/explotailspear(src))
-	own_add(src, nameof(modules), new /obj/item/gun/energy/robotic/smallmedigun(src))
-	own_add(src, nameof(modules), new /obj/item/shield_projector/line/exploborg(src))
-	own_add(src, nameof(modules), new /obj/item/roller_holder(src))
-	own_add(src, nameof(modules), new /obj/item/self_repair_system(src))
+	rel_add(src, nameof(modules), new /obj/item/dogborg/sleeper/exploration(src))
+	rel_add(src, nameof(modules), new /obj/item/cataloguer(src))
+	rel_add(src, nameof(modules), new /obj/item/gun/energy/robotic/flare(src))
+	rel_add(src, nameof(modules), new /obj/item/dogborg/pounce(src))
+	rel_add(src, nameof(modules), new /obj/item/melee/robotic/blade/explotailspear(src))
+	rel_add(src, nameof(modules), new /obj/item/gun/energy/robotic/smallmedigun(src))
+	rel_add(src, nameof(modules), new /obj/item/shield_projector/line/exploborg(src))
+	rel_add(src, nameof(modules), new /obj/item/roller_holder(src))
+	rel_add(src, nameof(modules), new /obj/item/self_repair_system(src))
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.name = "\improper Synthetic Exploration ID"
@@ -40,4 +40,4 @@
 	robot_id.reset_icon()
 	robot_id.forceMove(src)
 
-	own_add(src, nameof(emag), new /obj/item/melee/robotic/jaws/big/explojaws(src))
+	rel_add(src, nameof(emag), new /obj/item/melee/robotic/jaws/big/explojaws(src))

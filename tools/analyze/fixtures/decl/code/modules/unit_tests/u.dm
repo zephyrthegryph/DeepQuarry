@@ -1,0 +1,8 @@
+/obj/ut/proc/setup()
+	own_set(src, "ut_owned", 1)
+/obj/ut/Initialize(mapload)
+	create_reagents(100)
+	add_overlay("x")
+/obj/ut/on_destroy(force)
+	visible_message("exempt")
+	qdel(ut_owned)

@@ -47,11 +47,9 @@
 	special_attack_max_range = 4
 	special_attack_cooldown = 30 SECONDS
 
-	devourable = FALSE
 
 	say_list_type = /datum/say_list/gryphon
 
-	can_be_drop_prey = FALSE
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
@@ -76,7 +74,7 @@
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("You get pushed around the creature's maw, that tongue pressing you against the roof of its mouth and humming as it savors your taste",
@@ -105,7 +103,7 @@
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -113,39 +111,41 @@
 	to_chat(L, span_danger("\The [src] is looking right at you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/gryphon/proc/do_special_attack_1(mob/living/L)
 
-	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!L || L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/gryphon/proc/do_special_attack_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
-	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(L && Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/gryphon)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/gryphon/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /datum/say_list/gryphon

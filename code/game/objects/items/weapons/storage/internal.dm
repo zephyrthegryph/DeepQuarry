@@ -3,7 +3,10 @@
 /obj/item/storage/internal
 	preserve_item = 1
 	var/obj/item/master_item
-	item_flags = ABSTRACT
+
+CAPABILITIES(/obj/item/storage/internal)
+	configure(item_worn(flags = ABSTRACT))
+	ref_one(nameof(master_item), /obj/item)
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
@@ -11,8 +14,6 @@
 	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name
-
-EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)))
 
 /// Internal storage is part of its owner and is never worn on its own.
 TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))

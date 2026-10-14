@@ -1,0 +1,2 @@
+/mob/hiddendir
+	loc = T

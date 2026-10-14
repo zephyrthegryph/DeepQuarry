@@ -1,0 +1,2 @@
+/obj/smole
+	x = health

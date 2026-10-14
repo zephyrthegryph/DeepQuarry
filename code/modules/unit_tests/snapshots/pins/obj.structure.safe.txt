@@ -1,0 +1,28 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+robot|none menu: Open controls
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none click: Click: Open controls
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Open controls
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Open controls
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Open controls
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Open controls
+@obj.structure human|/obj/item/multitool
++1 menu: Open controls
+@obj.structure human|/obj/item/weldingtool
++1 menu: Open controls
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Open controls
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Open controls
+@obj.structure human|/obj/item/card/id
++1 menu: Open controls
+@obj.structure human|/obj/item
++1 menu: Open controls
+keys: decrement, drag_buckle, increment, item, melee_hit, open, retrieve, ui_open

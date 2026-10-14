@@ -89,7 +89,7 @@
 //Only called once.
 /datum/event/proc/start()
 	if(has_skybox_image)
-		skybox_service().rebuild_skyboxes(affecting_z)
+		SSskybox.ready().rebuild_skyboxes(affecting_z)
 	return
 
 //Called when the tick is equal to the announceWhen variable.
@@ -113,7 +113,7 @@
 //Only called once.
 /datum/event/proc/end()
 	if(has_skybox_image)
-		skybox_service().rebuild_skyboxes(affecting_z)
+		SSskybox.ready().rebuild_skyboxes(affecting_z)
 	return
 
 //Returns the latest point of event processing.
@@ -122,8 +122,8 @@
 
 //Do not override this proc, instead use the appropiate procs.
 //This proc will handle the calls to the appropiate procs.
-/// One event step every 2 s while the event is active (DECLARE_PERIODIC_WHILE on event_active).
-/datum/event/periodic_step()
+/// One event step every 2 s while the event is active (the every() in reactions(), gated on event_active).
+/datum/event/proc/event_step(dt)
 	if(!processing_active)
 		return
 	if(activeFor > startWhen && activeFor < endWhen)
@@ -163,7 +163,7 @@
 
 	EXPIRY_STAMP(src, endedAt, CLOCK_WORLD)
 	if(!external_use)
-		GLOB.event_service.event_complete(src)
+		SSevents.event_complete(src)
 
 //Called during building of skybox to get overlays
 /datum/event/proc/get_skybox_image()
@@ -172,9 +172,13 @@
 REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 
 /// TRUE from New() until the event service completes it: one event step every 2 s while set
-/// (DECLARE_PERIODIC_WHILE). Events made with external_use never step on their own.
-OM_FIELD_TYPED(/datum/event, tmp, event_active, FALSE, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/event, PERIODIC_SLOW, "event_active")
+/// (the every() below). Events made with external_use never step on their own.
+/datum/event/var/tmp/event_active = FALSE
+TRACKED(/datum/event, event_active)
+
+/datum/event/reactions()
+	. = ..()
+	. += every(2 SECONDS, PROC_REF(event_step), when = nameof(event_active))
 
 /datum/event/New(datum/event_meta/EM, external_use = FALSE)
 	// event needs to be responsible for this, as stuff like APLUs currently make their own events for curious reasons

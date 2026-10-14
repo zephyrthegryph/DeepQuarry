@@ -8,8 +8,6 @@
 	icon_state = "mass_driver"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/mass_driver
 
 	var/power = 1.0
@@ -22,31 +20,20 @@
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/mass_driver/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+/obj/machinery/mass_driver/proc/id_title(datum/act/A)
+	return "[src] ID]"
 
-/obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/number/mass_driver_id, PROC_REF(driver_id_entered), message = "[src] has an id of \"[id]\". What would you like it to be?", title = "[src] ID]", default = id)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/mass_driver/proc/id_question(datum/act/A)
+	return "[src] has an id of \"[id]\". What would you like it to be?"
 
-/datum/om/prompt/number/mass_driver_id
-	max = 9999
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/number/mass_driver_id/cancelled()
-	to_chat(answerer, "No input found please hang up and try your call again.")
-
-/obj/machinery/mass_driver/proc/driver_id_entered(datum/om/prompt/number/mass_driver_id/ask)
-	var/mob/user = ask.answerer
-	var/new_id = ask.number
+/// The multitool's answer: the driver's new id (the keyed buttons and consoles follow it).
+/obj/machinery/mass_driver/proc/driver_id_entered(datum/act/op/A)
+	var/new_id = A.answer?.value
 	if(!new_id)
-		to_chat(user, "No input found please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
+		to_chat(A.actor, "No input found please hang up and try your call again.")
+		return OP_OK
 	keyed_set_id(src, nameof(id), new_id) // re-links the keyed buttons and consoles
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/mass_driver/proc/drive(amount)
 	if(!operable())
@@ -66,9 +53,18 @@
 	flick("mass_driver1", src)
 	return
 
-DAMAGE_REACTION(/obj/machinery/mass_driver, DAMAGE_EMP, PROC_REF(mass_driver_emp))
+CAPABILITIES(/obj/machinery/mass_driver)
+	configure(uses_power(idle = 2, active = 50))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
+	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(id_title)), "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_value" = 9999, "timeout" = 0)),
+		then(PROC_REF(driver_id_entered)))
+	default_parts()
+
 /// An EMP fires the driver.
-/obj/machinery/mass_driver/proc/mass_driver_emp(datum/damage_packet/packet)
+/obj/machinery/mass_driver/proc/mass_driver_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	drive()
+	return HOOK_DECLINE

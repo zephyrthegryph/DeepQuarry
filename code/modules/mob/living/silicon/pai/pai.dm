@@ -3,15 +3,11 @@
 	icon = 'icons/mob/pai.dmi'
 	icon_state = "pai-repairbot"
 
-	emote_type = 2		// pAIs emotes are heard, not seen, so they can be seen through a container (eg. person)
 	pass_flags = 1
 	mob_size = MOB_SMALL
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	holder_type = /obj/item/holder/pai
 
-	can_pull_size = ITEMSIZE_SMALL
-	can_pull_mobs = MOB_PULL_SMALLER
 
 	idcard_type = /obj/item/card/id
 	var/idaccessible = 0
@@ -80,14 +76,11 @@
 
 	var/eye_glow = TRUE
 	var/hide_glow = FALSE
-	var/image/eye_layer = null		// Holds the eye overlay.
 	var/eye_color = "#00ff0d"
 	var/icon/holo_icon_south
 	var/icon/holo_icon_north
 	var/icon/holo_icon_east
 	var/icon/holo_icon_west
-	var/holo_icon_dimension_X = 32
-	var/holo_icon_dimension_Y = 32
 
 	//These vars keep track of whether you have the related software, used for easily updating the UI
 	var/soft_ut = FALSE	//universal translator
@@ -104,22 +97,70 @@
 	vore_capacity = 1
 	vore_capacity_ex = list("stomach" = 1)
 
+CAPABILITIES(/mob/living/silicon/pai)
+	ref_one(nameof(current), /obj/machinery/camera)
+	ref_one(nameof(card), /obj/item/paicard)
+	ref_one(nameof(radio), /obj/item/radio/borg/pai)
+	ref_one(nameof(cable), /obj/item/pai_cable)
+	ref_one(nameof(medicalActive1), /datum/data/record)
+	ref_one(nameof(medicalActive2), /datum/data/record)
+	ref_one(nameof(securityActive1), /datum/data/record)
+	ref_one(nameof(securityActive2), /datum/data/record)
+	configure(mob_movement(softfall = TRUE))
+	configure(mob_kind(death_message = "fizzles out and clatters to the floor...", emote_type = 2))
+	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
+	ref_one(nameof(hackdoor))
+	every(1 SECOND, then(PROC_REF(hack_tick)), when = nameof(hackdoor))
+	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)
+	owns_one(nameof(sradio), starts = /obj/item/radio/integrated/signal)
+	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
+	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
+	owns_one(nameof(pda), starts = PROC_REF(start_pda))
+	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
+	derives(nameof(software), PROC_REF(default_software))
+	//Default languages without universal translator software
+	knows(LANGUAGE_SOL_COMMON)
+	knows(LANGUAGE_TRADEBAND)
+	knows(LANGUAGE_GUTTER)
+	knows(LANGUAGE_EAL)
+	knows(LANGUAGE_TERMINUS)
+	knows(LANGUAGE_SIGN)
+	op("pai_access", item(/obj/item), label("Use"), when(req(PROC_REF(swipe_modifies_access))), asks(/datum/prompt/choice, fields = list("title" = "Access Modify", "question" = computed(PROC_REF(access_question)), "choices" = list("Add Access", "Remove Access", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "access"), then(PROC_REF(access_modify_chosen)))
+	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
+	op("pai_hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(pai_item_hit)))
+	interface("pAIInterface", title = "pAI Software Interface", state = nameof(GLOB.tgui_self_state))
+	op("software", ui_act("software", arg("software", schema_text(4096))), then(PROC_REF(ui_act_software)))
+	op("purchase", ui_act("purchase", arg("purchase", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("image", ui_act("image", arg("image", num())), then(PROC_REF(ui_act_image)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
+	verb_entry(/mob/living/silicon/pai/proc/choose_chassis)
+	verb_entry(/mob/living/silicon/pai/proc/choose_verbs)
+	verb_entry(/mob/proc/dominate_predator)
+	verb_entry(/mob/living/proc/dominate_prey)
+	verb_entry(/mob/living/proc/set_size)
+	verb_entry(/mob/living/proc/shred_limb)
+	verb_entry(/mob/living/proc/toggle_trash_catching)
+	verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE) // no gun support, and it shouldn't use guns anyway
+	op("pai_pat_help", hand(), ungated(), stance(I_HELP), label("Pat"), then(PROC_REF(pai_interaction_pat)))
+	op("pai_boop_disarm", hand(), ungated(), stance(I_DISARM), label("Boop shut"), then(PROC_REF(pai_interaction_boop)))
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_chassis)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_verbs)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/proc/dominate_predator)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/dominate_prey)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/set_size)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/shred_limb)
-DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/toggle_trash_catching)
-DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun support, and it shouldn't use guns anyway
+
+/// Its PDA: the personal assistant's, in its name, messenger on (owns_one(starts =)).
+/mob/living/silicon/pai/proc/start_pda(current, mapload)
+	var/obj/item/pda/ai/pai/P = new /obj/item/pda/ai/pai(src)
+	P.ownjob = "Personal Assistant"
+	P.set_owner("[src]")
+	P.name = P.owner + " (" + P.ownjob + ")"
+	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
+	if(M)
+		M.toff = FALSE
+	return P
 
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
-
 	if(istype(loc, /obj/item/paicard))
 		rel_set(src, nameof(card), loc)
 	else
@@ -129,33 +170,16 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 
 	if(card)
 		if(!card.radio)
-			own_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
+			rel_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
 		rel_set(src, nameof(radio), card.radio)
 
-	//Default languages without universal translator software
-	add_language(LANGUAGE_SOL_COMMON, 1)
-	add_language(LANGUAGE_TRADEBAND, 1)
-	add_language(LANGUAGE_GUTTER, 1)
-	add_language(LANGUAGE_EAL, 1)
-	add_language(LANGUAGE_TERMINUS, 1)
-	add_language(LANGUAGE_SIGN, 1)
-
-	//PDA
-	pda.ownjob = "Personal Assistant"
-	pda.owner = text("[]", src)
-	pda.name = pda.owner + " (" + pda.ownjob + ")"
-
-	var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger)
-	if(M)
-		M.toff = FALSE
-
 	if(chassis_name != PAI_DEFAULT_CHASSIS) // For subtypes that override base chassis( like the syndi pet pai )
-		internal_set_chassis( GLOB.pai_service.chassis_data(chassis_name))
+		internal_set_chassis( SSpai.chassis_data(chassis_name))
 
 /mob/living/silicon/pai/Login()
 	. = ..()
 	if(!holo_icon_south)
-		COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
+		cooldown_start(src, last_special, 10 SECONDS) //Let's give get_character_icon time to work
 		get_character_icon()
 
 	// Meta Info for pAI
@@ -177,21 +201,20 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 	var/datum/preferences/pref = cli.prefs
 
 	SetName(pref.read_preference(/datum/preference/text/pai_name))
-	flavor_text = pref.read_preference(/datum/preference/text/pai_description)
+	bio.flavor_text = pref.read_preference(/datum/preference/text/pai_description)
 	change_chassis(pref.read_preference(/datum/preference/text/pai_chassis))
 	gender = pref.read_preference(/datum/preference/choiced/gender/biological) // Cannot use identifying yet due to byond limits
-	eye_color = pref.read_preference(/datum/preference/color/pai_eye_color)
+	set_eye_color(pref.read_preference(/datum/preference/color/pai_eye_color))
 	card.screen_color = eye_color
 	card.setEmotion(GLOB.pai_emotions[pref.read_preference(/datum/preference/text/pai_emotion)])
 
-	update_icon()
 	return TRUE
 
 // `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
 // the radio). The cable is ours (implicit OWN, deleted with us); records belong to the datacore.
-/// The airlock being hacked. A relation view: the brute-force runs every second while it is set.
-OM_FIELD_VIEW(/mob/living/silicon/pai, obj/machinery/door, hackdoor, CHANGE_MOB_CONDITIONS)
-DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
+/// The airlock being hacked. A relation view: the brute-force runs every second while it is set (its every() in
+/// CAPABILITIES(/mob/living/silicon/pai)).
+/mob/living/silicon/pai/var/obj/machinery/door/hackdoor = null
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)
@@ -223,12 +246,12 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 
 /// Change pai sprite and offsets based upon the selected chassis id
 /mob/living/silicon/pai/proc/change_chassis(new_chassis)
-	if(!(new_chassis in GLOB.pai_service.get_chassis_list()))
+	if(!(new_chassis in SSpai.get_chassis_list()))
 		new_chassis = PAI_DEFAULT_CHASSIS
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(new_chassis)
+	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(new_chassis)
 	if(chassis_data.emagged && !src.card.emagged)
 		return
-	chassis_name = new_chassis
+	set_chassis_name(new_chassis)
 
 	// Get icon data setup
 	if(chassis_data.holo_projector)
@@ -246,8 +269,9 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 	if(!holo_icon_south)
 		get_character_icon()
+	else
+		fit_holo_projection()
 
-	update_icon()
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
 	post_chassis_change(chassis_data)
 
@@ -260,15 +284,12 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 	var/oursize = size_multiplier
 	resize(1, FALSE, TRUE, TRUE, FALSE)
 
-	icon = chassis_data.sprite_icon
-	icon_state = chassis_data.sprite_icon_state
 	pixel_x = chassis_data.pixel_x
 	default_pixel_x = pixel_x
 	pixel_y = chassis_data.pixel_y
 	default_pixel_y = pixel_y
 	vis_height = chassis_data.vis_height
 
-	update_icon()
 	resize(oursize, FALSE, TRUE, TRUE, FALSE)	//And then back again now that we're sure the vis_height is correct.
 	post_chassis_change(chassis_data)
 
@@ -289,60 +310,54 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 	vore_capacity_ex = list("stomach" = vore_capacity)
 
 	// Emergency eject if you change to a smaller belly
-	if(vore_fullness > vore_capacity && vore_selected)
-		vore_selected.release_all_contents(TRUE)
+	if(vore_fullness > vore_capacity && vore_selected_of(src))
+		vore_selected_of(src).release_all_contents(TRUE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Click interactions
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
-	INTERACT_ITEM(null, PROC_REF(pai_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pat", PROC_REF(pai_interaction_pat)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Boop shut", PROC_REF(pai_interaction_boop)))
 
-/// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk.
-/mob/living/silicon/pai/proc/pai_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	var/obj/item/card/id/ID = W.GetID()
-	if(ID)
-		if (idaccessible == 1)
-			om_ask(user, /datum/om/prompt/choice/pai_access, PROC_REF(access_modify_chosen), card = W)
-			return TRUE
-		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
-			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
-			return TRUE
-	if(W.force)
+/// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk. An ID swiped over a pAI that accepts access changes asks add or
+/// remove (the answer is checked again when it arrives); one it does not accept is told so; any other item hits.
+MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifcations at this time."))
+
+/// The held item is, or holds, an ID and this pAI accepts access changes.
+/mob/living/silicon/pai/proc/swipe_modifies_access(datum/act/op/A)
+	var/obj/item/W = A.held
+	return (W?.GetID() && idaccessible == 1) ? null : /datum/msg/req_failed
+
+/// An ID card swiped over a pAI that does not accept access changes.
+/mob/living/silicon/pai/proc/swipe_refused(datum/act/op/A)
+	var/obj/item/W = A.held
+	return (W?.GetID() && idaccessible == 0) ? null : /datum/msg/req_failed
+
+/mob/living/silicon/pai/proc/access_question(datum/act/A)
+	return "Do you wish to add access to [src] or remove access from [src]?"
+
+/mob/living/silicon/pai/proc/access_closed(datum/act/op/A)
+	to_chat(A.actor, span_notice("[src] is not accepting access modifcations at this time."))
+	return OP_OK
+
+/// Anything else used on a pAI: a hit with a weapon, else a harmless bonk.
+/mob/living/silicon/pai/proc/pai_item_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(combat_of(W).force)
 		act_message(src, null, others = span_danger("[user.name] attacks %U% with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		act_message(src, null, others = span_warning("[user.name] bonks %U% harmlessly with [W]."))
-	om_after(src, 1, PROC_REF(close_up_unless_dead))
-	return TRUE
+	after(src, 0.1 SECONDS, PROC_REF(close_up_unless_dead))
+	return OP_OK
 
-/// Swiping an ID over a pAI. Re-checked on the answer: next to the pAI and able, it still
-/// accepts access changes, and the card (still an ID) is still held.
-/datum/om/prompt/choice/pai_access
-	title = "Access Modify"
-	buttons = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/card
-
-/datum/om/prompt/choice/pai_access/prepare()
-	message = "Do you wish to add access to [subject] or remove access from [subject]?"
-	choices = list("Add Access", "Remove Access", "Cancel")
-	return TRUE
-
-/datum/om/prompt/choice/pai_access/valid()
-	var/mob/living/silicon/pai/P = subject
-	if(!card.GetID() || P.idaccessible != 1 || !(card in answerer.get_all_held_items()))
-		return "can't modify access"
-	return null
-
-/mob/living/silicon/pai/proc/access_modify_chosen(datum/om/prompt/choice/pai_access/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.card
-	var/obj/item/card/id/ID = W.GetID()
-	switch(ask.choice)
+/mob/living/silicon/pai/proc/access_modify_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/obj/item/card/id/ID = W?.GetID()
+	if(!ID || idaccessible != 1)
+		return OP_OK
+	switch(A.step_value("access"))
 		if("Add Access")
 			idcard.access |= ID.GetAccess()
 			to_chat(user, span_notice("You add the access from the [W] to [src]."))
@@ -352,20 +367,22 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 			to_chat(user, span_notice("You remove the access from [src]."))
 			to_chat(src, span_warning("\The [user] swipes the [W] over you, removing access codes from you."))
 		else
-			return
+			return OP_OK
 	if(radio)
 		radio.recalculateChannels()
 
 /// Old attack_hand, help: pat it. (Grab and harm reach the gate and the default touch.)
-/mob/living/silicon/pai/proc/pai_interaction_pat(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/pai/proc/pai_interaction_pat(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% pats %T%."))
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand, disarm: boop it shut.
-/mob/living/silicon/pai/proc/pai_interaction_boop(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/pai/proc/pai_interaction_boop(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% boops %T% on the head."))
 	close_up()
-	return TRUE
+	return OP_OK
 
 /mob/living/silicon/pai/UnarmedAttack(atom/A, proximity_flag, stance = I_HURT)
 	. = ..()
@@ -423,9 +440,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	if(!istype(H))
 		return
 
-	H.icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
+	H.set_icon_state(SSpai.chassis_data(chassis_name).sprite_icon_state)
 	return H
 
 /mob/living/silicon/pai/Moved(atom/oldloc, direct, forced, movetime)
@@ -443,8 +458,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 
 /// Something's probably attacking us! The more damage it is doing, the more
 /// likely it is to damage something important in the card.
-/mob/living/silicon/pai/proc/on_injured(datum/source, datum/om/event/living_injured/event)
-	EVENT_HANDLER
+/mob/living/silicon/pai/proc/on_injured(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/amount = event.applied
 	var/category = injury_category(kind)
@@ -458,10 +474,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		return 0
 	..()
 
-DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
-
-/mob/living/silicon/pai/proc/emp_scramble(datum/damage_packet/packet)
-	var/severity = packet.severity
+/mob/living/silicon/pai/proc/emp_scramble(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	// Silence for 2 minutes
 	// 20% chance to damage critical components
 	// 50% chance to damage a non critical component
@@ -505,7 +520,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 /// Fully heals a pai, used when a pai is repaired
 /mob/living/silicon/pai/proc/full_restore()
 	fully_heal()
-	om_after(src, 5 SECONDS, PROC_REF(restore_delay_start))
+	after(src, 5 SECONDS, PROC_REF(restore_delay_start))
 
 /mob/living/silicon/pai/proc/restore_delay_start()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -513,7 +528,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 	card.setEmotion(16)
 	if(stat == DEAD)
 		return_from_death("pAI restored", card, REVIVE_IGNORE_WINDOW)
-	om_after(src, 1 SECONDS, PROC_REF(restore_delay_end))
+	after(src, 1 SECONDS, PROC_REF(restore_delay_end))
 
 /mob/living/silicon/pai/proc/restore_delay_end()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -532,14 +547,13 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 	// Pass lying down or getting up to our pet human, if we're in a rig.
 	if(istype(src.loc,/obj/item/paicard))
-		resting = 0
+		set_resting(0)
 		var/obj/item/rig/rig = src.get_rig()
 		if(istype(rig))
 			rig.force_rest(src)
 			return
 	else
-		resting = !resting
-		update_icon()
+		set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 
 	canmove = !resting
@@ -555,25 +569,34 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
 	play_sfx(src, SFX_MACHINES_CLICK)
-	own_clear(src, nameof(cable), OWN_DELETE)
+	rel_clear(src, nameof(cable))
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/pai/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/mob/living/silicon/pai, eye_color)
 
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
+/mob/living/silicon/pai/draw(datum/look/look)
+	..()
+	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
+	look.watch(chassis_data)
 	if(chassis_data.holo_projector)
-		icon_state = null
-		icon = holo_icon_south
-		add_eyes()
-		return .
-
-	update_fullness()
+		// The projection has no state of its own; the eyes come from the file that fits its size.
+		look.set_icon(holo_icon_south)
+		look.state("")
+		if(holo_icon_south)
+			var/holo_eyes_icon = 'icons/mob/pai.dmi'
+			var/wide = holo_icon_south.Width() > 32
+			var/tall = holo_icon_south.Height() > 32
+			if(wide && tall)
+				holo_eyes_icon = 'icons/mob/pai64x64.dmi'
+			else if(wide)
+				holo_eyes_icon = 'icons/mob/pai64x32.dmi'
+			else if(tall)
+				holo_eyes_icon = 'icons/mob/pai32x64.dmi'
+			look.overlay(pai_eyes_image(holo_eyes_icon, chassis_data.holo_eyes_icon_state))
+		return
 
 	// Don't get a vore belly size if we have no belly size set!
 	var/belly_size = CLAMP(vore_fullness, 0, chassis_data.belly_states)
@@ -582,53 +605,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	var/fullness_extension = ""
 	if(belly_size > 1) // Multibelly support
 		fullness_extension = "_[belly_size]"
-	icon_state = "[chassis_data.sprite_icon_state][resting && chassis_data.can_rest ? "_rest" : ""][belly_size ? "_full[fullness_extension]" : ""]"
+	var/chassis_state = "[chassis_data.sprite_icon_state][resting && chassis_data.can_rest ? "_rest" : ""][belly_size ? "_full[fullness_extension]" : ""]"
+	look.set_icon(chassis_data.sprite_icon)
+	look.state(chassis_state)
+	if(chassis_data.has_eye_sprites)
+		look.overlay(pai_eyes_image(chassis_data.sprite_icon, "[chassis_state]-eyes"))
 
-	add_eyes()
+/// The eye overlay: tinted with the eye colour, glowing above the lighting unless hidden or switched off.
+/mob/living/silicon/pai/proc/pai_eyes_image(eyes_icon, eyes_state)
+	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 
-/// Applies the eye overlay if the chassis has it
-/mob/living/silicon/pai/proc/add_eyes()
-	remove_eyes()
-
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
-	if(chassis_data.holo_projector)
-		// Special eyes that are based on holoprojection of your character's icon size
-		if(holo_icon_south.Width() > 32)
-			holo_icon_dimension_X = 64
-			pixel_x = -16
-			default_pixel_x = -16
-		// Get height too
-		if(holo_icon_south.Height() > 32)
-			holo_icon_dimension_Y = 64
-			vis_height = 64
-		// Set eyes
-		if(holo_icon_dimension_X == 32 && holo_icon_dimension_Y == 32)
-			eye_layer = image('icons/mob/pai.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 32 && holo_icon_dimension_Y == 64)
-			eye_layer = image('icons/mob/pai32x64.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 64 && holo_icon_dimension_Y == 32)
-			eye_layer = image('icons/mob/pai64x32.dmi', chassis_data.holo_eyes_icon_state)
-		else if(holo_icon_dimension_X == 64 && holo_icon_dimension_Y == 64)
-			eye_layer = image('icons/mob/pai64x64.dmi', chassis_data.holo_eyes_icon_state)
-	else if(chassis_data.has_eye_sprites)
-		// Default eye handling
-		eye_layer = image(icon, "[icon_state]-eyes")
-	else
-		// No eyes, so don't bother setting icon stuff
+/// A projection wider or taller than one tile moves the mob and its height to fit it (once, when the projection changes).
+/mob/living/silicon/pai/proc/fit_holo_projection()
+	if(!holo_icon_south || !SSpai.chassis_data(chassis_name).holo_projector)
 		return
-	eye_layer.appearance_flags = appearance_flags
-	eye_layer.color = eye_color
-	if(eye_glow && !hide_glow)
-		eye_layer.plane = PLANE_LIGHTING_ABOVE
-	add_overlay(eye_layer)
-
-/// Removes the eye overlay if it has one
-/mob/living/silicon/pai/proc/remove_eyes()
-	if(!eye_layer)
-		return
-	cut_overlay(eye_layer)
-	qdel(eye_layer)
-	eye_layer = null
+	if(holo_icon_south.Width() > 32)
+		pixel_x = -16
+		default_pixel_x = -16
+	if(holo_icon_south.Height() > 32)
+		vis_height = 64
 
 /// Gets icons for all four directions based on the character slot currently loaded
 /mob/living/silicon/pai/proc/get_character_icon()
@@ -636,35 +631,38 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	var/mob/living/carbon/human/dummy/dummy = new ()
 	//This doesn't include custom_items because that's ... hard.
 	client.prefs.dress_preview_mob(dummy)
-	om_after(src, 1 SECOND, PROC_REF(character_icon_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+	after(src, 1 SECOND, PROC_REF(character_icon_from_dummy), with = list(dummy)) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 	return TRUE
 
 /mob/living/silicon/pai/proc/character_icon_from_dummy(mob/living/carbon/human/dummy/dummy)
-	dummy.regenerate_icons()
+	draw_now(dummy)
 
 	var/icon/new_holo = getCompoundIcon(dummy)
 
 	dummy.set_dir(NORTH)
+	draw_now(dummy)
 	var/icon/new_holo_north = getCompoundIcon(dummy)
 	dummy.set_dir(EAST)
+	draw_now(dummy)
 	var/icon/new_holo_east = getCompoundIcon(dummy)
 	dummy.set_dir(WEST)
+	draw_now(dummy)
 	var/icon/new_holo_west = getCompoundIcon(dummy)
 
-	qdel(holo_icon_south)
-	qdel(holo_icon_north)
-	qdel(holo_icon_east)
-	qdel(holo_icon_west)
-	qdel(dummy)
-	holo_icon_south = new_holo
+	spent(holo_icon_south)
+	spent(holo_icon_north)
+	spent(holo_icon_east)
+	spent(holo_icon_west)
+	spent(dummy)
+	set_holo_icon_south(new_holo)
 	holo_icon_north = new_holo_north
 	holo_icon_east = new_holo_east
 	holo_icon_west = new_holo_west
-	update_icon()
+	fit_holo_projection()
 
 /mob/living/silicon/pai/set_dir(new_dir)
 	. = ..()
-	if(. && GLOB.pai_service.chassis_data(chassis_name).holo_projector)
+	if(. && SSpai.chassis_data(chassis_name).holo_projector)
 		switch(dir)
 			if(SOUTH)
 				icon = holo_icon_south
@@ -681,7 +679,3 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	if(stat != DEAD)
 		close_up()
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "sradio", /obj/item/radio/integrated/signal)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "communicator", /obj/item/communicator/integrated)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pai_ui_chassis", /datum/tgui_module/pai_chassis)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pda", /obj/item/pda/ai/pai)

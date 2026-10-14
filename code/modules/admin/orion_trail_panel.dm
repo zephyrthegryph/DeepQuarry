@@ -6,7 +6,7 @@
 // components. Events still embed their own HTML for now (the
 // per-event handlers each emit ad-hoc buttons that haven't been
 // unpacked); HtmlRenderer + forwardTopic relays their links to the
-// arcade's TOPIC_ACTION rows. The typed buttons call orion_* procs.
+// arcade's topic bindings. The typed buttons call orion_* procs.
 
 // arcade.dm #undefs the ORION_STATUS_* macros at end-of-file, so
 // re-shadow the integer values here for use in our panel.
@@ -20,21 +20,11 @@
 #define ORION_SCREEN_GAMEOVER   "gameover"
 
 
-/obj/machinery/computer/arcade/orion_trail/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/orion_trail_use,
-	)
-	..()
-
 // structured TGUI Orion Trail; the upstream attack_hand's
 // game-over side effects (death, ignite_mob etc. when emagged) still
 // run here, then the panel opens.
-/datum/interaction/machine_hand/orion_trail_use
-	id = "orion_trail_use"
-	name = "Use"
-	effect = /obj/machinery/computer/arcade/orion_trail/proc/interaction_use
-
-/obj/machinery/computer/arcade/orion_trail/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/arcade/orion_trail/proc/interaction_use(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(fuel <= 0 || food <= 0 || settlers.len == 0)
 		gameStatus = ORION_STATUS_GAMEOVER
 		event = null
@@ -42,7 +32,7 @@
 
 	if(gameStatus == ORION_STATUS_GAMEOVER)
 		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
-		if(emagged)
+		if(emagged())
 			if(food <= 0)
 				user.set_nutrition(0)
 				to_chat(user, span_danger(span_large("Your body instantly contracts to that of one who has not eaten in months. Agonizing cramps seize you as you fall to the floor.")))
@@ -60,14 +50,8 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/computer/arcade/orion_trail, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/computer/arcade/orion_trail, "OrionTrail", UI_TITLE("The Orion Trail"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/arcade/orion_trail, "merge:ui_data_obj_machinery_computer_arcade_orion_trail{screen:text,reasons:list,event_html:unknown,turn:num,stop_name:unknown,stop_blurb:unknown,crew:list,food:num,fuel:num,engine:num,hull:num,electronics:num,at_blackhole:bool}")
-
-/// The computed part of /obj/machinery/computer/arcade/orion_trail's window data (declared on its UI_DATA row).
-/obj/machinery/computer/arcade/orion_trail/proc/ui_data_obj_machinery_computer_arcade_orion_trail(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/computer/arcade/orion_trail's window data.
+/obj/machinery/computer/arcade/orion_trail/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(gameStatus == ORION_STATUS_GAMEOVER)
 		data["screen"] = ORION_SCREEN_GAMEOVER
@@ -100,47 +84,70 @@ UI_DATA_REPLACE(/obj/machinery/computer/arcade/orion_trail, "merge:ui_data_obj_m
 	data["screen"] = ORION_SCREEN_START
 	return data
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "menu", ui_act_menu)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_menu)
-	orion_menu(ui.user)
-	SStgui.update_uis(src)
-	return TRUE
+CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	per_type(nameof(stops), PROC_REF(build_stops))
+	per_type(nameof(stopblurbs), PROC_REF(build_stopblurbs))
+	op("href_slow", topic("slow"), then(PROC_REF(topic_orion_slow)))
+	op("href_useengine", topic("useengine"), then(PROC_REF(topic_orion_useengine)))
+	op("href_useelec", topic("useelec"), then(PROC_REF(topic_orion_useelec)))
+	op("href_usehull", topic("usehull"), then(PROC_REF(topic_orion_usehull)))
+	op("href_wait", topic("wait"), then(PROC_REF(topic_orion_wait)))
+	op("href_keepspeed", topic("keepspeed"), then(PROC_REF(topic_orion_keepspeed)))
+	op("href_holedeath", topic("holedeath"), then(PROC_REF(topic_orion_holedeath)))
+	op("href_eventclose", topic("eventclose"), then(PROC_REF(topic_orion_eventclose)))
+	op("href_buycrew", topic("buycrew"), then(PROC_REF(topic_orion_buycrew)))
+	op("href_sellcrew", topic("sellcrew"), then(PROC_REF(topic_orion_sellcrew)))
+	op("href_leave_spaceport", topic("leave_spaceport"), then(PROC_REF(topic_orion_leave_spaceport)))
+	op("href_raid_spaceport", topic("raid_spaceport"), then(PROC_REF(topic_orion_raid_spaceport)))
+	op("href_buyparts", topic("buyparts", arg("buyparts", num(), optional = TRUE)), then(PROC_REF(topic_orion_buyparts)))
+	op("href_trade", topic("trade", arg("trade", num(), optional = TRUE)), then(PROC_REF(topic_orion_trade)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+	op("menu", ui_act(), then(PROC_REF(native_orion_ui_menu)))
+	op("new_game", ui_act(), then(PROC_REF(native_orion_ui_new_game)))
+	op("continue", ui_act(), then(PROC_REF(native_orion_ui_continue)))
+	op("blackhole_continue", ui_act(), then(PROC_REF(native_orion_ui_blackhole_continue)))
+	op("blackhole_around", ui_act(), then(PROC_REF(native_orion_ui_blackhole_around)))
+	op("killcrew", inputs(ui_act(), topic("killcrew")), then(PROC_REF(native_orion_ui_killcrew)))
+	op("close", inputs(ui_act(), topic("close")), then(PROC_REF(native_orion_ui_close)))
+	interface("OrionTrail", title = "The Orion Trail", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	ui_shape(screen = schema_text(), reasons = list_of(), event_html = any, turn = num(), stop_name = any, stop_blurb = any, crew = list_of(), food = num(), fuel = num(), engine = num(), hull = num(), electronics = num(), at_blackhole = bool())
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "new_game", ui_act_new_game)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_new_game)
-	orion_newgame(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_menu(datum/act/op/A)
+	orion_menu(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "continue", ui_act_continue)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_continue)
-	orion_continue(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_new_game(datum/act/op/A)
+	orion_newgame(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_continue", ui_act_blackhole_continue)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_continue)
-	orion_blackhole(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_continue(datum/act/op/A)
+	orion_continue(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_around", ui_act_blackhole_around)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_around)
-	orion_pastblack(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_continue(datum/act/op/A)
+	orion_blackhole(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "killcrew", ui_act_killcrew)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_killcrew)
-	orion_killcrew(ui.user)
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_blackhole_around(datum/act/op/A)
+	orion_pastblack(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/arcade/orion_trail, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_close)
-	ui.user?.unset_machine()
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_killcrew(datum/act/op/A)
+	orion_killcrew(A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
+
+/obj/machinery/computer/arcade/orion_trail/proc/native_orion_ui_close(datum/act/op/A)
+	A.actor?.unset_machine()
 	SStgui.close_uis(src)
-	return TRUE
+	return OP_OK
 
 
 #undef ORION_STATUS_START

@@ -3,7 +3,6 @@
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	desc = "A thick wall of writhing tendrils."
-	light_range = 2
 	density = FALSE // This is false because blob mob AI's walk_to() proc appears to never attempt to move onto dense objects even if allowed by CanPass().
 	opacity = FALSE
 	anchored = TRUE
@@ -16,31 +15,51 @@
 	var/mob/observer/blob/overmind = null
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
+	/// The name and colour of the overmind's blob type, copied here by sync_overmind_look() (the look reads only this blob's own state).
+	var/look_title
+	var/look_tint
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
-/obj/structure/blob/Initialize(mapload, new_overmind)
-	if(new_overmind)
-		rel_set(src, nameof(overmind), new_overmind)
+CAPABILITIES(/obj/structure/blob)
+	configure(light_glow(range = 2))
+	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
+	ref_one(nameof(overmind))
+	param(nameof(overmind), pos = 1)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(blob_on_emp)))
+
+// ALLOW(init/INSTANCE_STATE): a blob takes its overmind's faction, faces a random way and consumes its tile before its parents' init
+/obj/structure/blob/Initialize(mapload)
+	if(overmind)
 		faction = overmind.blob_type.faction
-	set_dir(pick(GLOB.cardinal))
 	consume_tile()
+	sync_overmind_look()
 	. = ..()
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/blob/appearance_overlays() //Updates color based on overmind color if we have an overmind.
-	. = list()
-	if(overmind)
-		name = "[overmind.blob_type.name] [base_name]" // This is in update_icon() because inert blobs can turn into other blobs with magic if another blob core claims it with pulsing.
-		color = overmind.blob_type.color
-		set_light(3, 3, color)
+
+/// What the overmind gives the look: its blob type's name and colour, copied here so the look reads only this blob's own state. Called wherever the overmind
+/// or its type changes (inert blobs turn into other blobs with magic if another blob core claims one with pulsing).
+/obj/structure/blob/proc/sync_overmind_look()
+	set_look_title(overmind ? overmind.blob_type.name : null)
+	set_look_tint(overmind ? overmind.blob_type.color : null)
+
+/// A blob takes its overmind's name, colour and glow; with none it is inert.
+/obj/structure/blob/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/obj/structure/blob/proc/look_parts(datum/look/look)
+	if(look_title)
+		look.identity(name = "[look_title] [base_name]")
+		look.set_color(look_tint)
+		look.glow(3, 3, look_tint)
 	else
-		name = "inert [base_name]"
-		color = null
-		set_light(0)
+		look.identity(name = "inert [base_name]")
+		look.glow(GLOW_OFF)
 
 /obj/structure/blob/update_transform()
 	var/matrix/M = matrix()
@@ -75,10 +94,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 		return overmind.blob_type.effect_desc
 	return ..()
 
-DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 
 /// A live blob's type reacts to a pulse.
-/obj/structure/blob/proc/blob_on_emp(datum/damage_packet/packet)
+/obj/structure/blob/proc/blob_on_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!overmind)
 		return
 	overmind.blob_type.on_emp(src, packet.severity)
@@ -89,7 +109,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
 			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
-		update_icon()
+		sync_overmind_look()
 		EXPIRY_SET(src, pulse_timestamp, 1 SECOND, CLOCK_WORLD)
 		if(overmind)
 			faction = overmind.blob_type.faction
@@ -115,7 +135,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 
 		if(!B.overmind && !istype(B, /obj/structure/blob/core) && prob(30))
 			rel_set(B, nameof(B.overmind), pulsing_overmind) //reclaim unclaimed, non-core blobs.
-			B.update_icon()
+			B.sync_overmind_look()
 
 		var/distance = get_dist(get_turf(src), get_turf(B))
 		var/expand_probablity = max(50 / (max(distance, 1)), 1)
@@ -132,7 +152,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 				var/obj/structure/blob/newB = B.expand(null, null, !expanded) //expansion falls off with range but is faster near the blob causing the expansion
 				if(newB)
 					if(expanded)
-						qdel(newB)
+						spent(newB)
 					expanded = TRUE
 
 		if(distance <= pulse_range)
@@ -142,7 +162,6 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 /obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
 	set_density(initial(density))
 	forceMove(T)
-	update_icon()
 	if(overmind && expand_reaction)
 		overmind.blob_type.on_expand(origin, src, T, overmind)
 
@@ -185,16 +204,17 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 			rel_set(B, nameof(B.overmind), controller)
 		else
 			rel_set(B, nameof(B.overmind), overmind)
+		B.sync_overmind_look()
 		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
-			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)
+			after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), with = list(T, src, expand_reaction))
 			return B
 
 		else
 			blob_attack_animation(T, controller)
 			T.blob_act(src) //if we can't move in hit the turf again
-			qdel(B) //we should never get to this point, since we checked before moving in. destroy the blob so we don't have two blobs on one tile
+			spent(B) //we should never get to this point, since we checked before moving in. destroy the blob so we don't have two blobs on one tile
 			return null
 	else
 		blob_attack_animation(T, controller) //if we can't, animate that we attacked
@@ -229,7 +249,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 	var/obj/structure/blob/B = new type(src.loc, controller)
 	if(controller)
 		rel_set(B, nameof(B.overmind), controller)
-	B.update_icon()
+	B.sync_overmind_look()
 	B.set_dir(dir)
 	replace_with(src, B)
 	return B
@@ -248,13 +268,9 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 
 	adjust_integrity(-damage)
 
-DECLARE_INTERACTIONS(/obj/structure/blob, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/blob/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/blob/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		H.setClickCooldown(H.get_attack_speed())
@@ -313,15 +329,17 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 		adjust_integrity(-real_damage)
 
 	else
-		attack_generic(M, rand(1,10), "bashed")
+		generic_hit(src, M, rand(1,10), "bashed")
 	return TRUE
 
 /// Old attackby.
-/obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/blob/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	switch(W.obj_damage_type())
 		if(BURN)
 			if(overmind)
@@ -346,7 +364,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Packet sink for the adapters with nothing blob-specific to say (fire,
 /// explosions, shocks): each kind is scaled by the blob type's brute or burn
@@ -418,7 +436,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 			else
 				faction = B.faction
 				rel_set(src, nameof(overmind), B.overmind)
-				update_icon()
+				sync_overmind_look()
 				return
 
 			adjust_integrity(-1 * damage)
@@ -434,10 +452,6 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	if(amount < 0)
 		return take_damage(-amount, BRUTE, null, FALSE)
 	return 0
-
-/obj/structure/blob/on_update_integrity(old_value, new_value)
-	. = ..()
-	update_icon()
 
 /// Integrity depletion: the blob type gets its death hook, and no debris is left.
 /obj/structure/blob/handle_deconstruct(disassembled = TRUE)
@@ -457,16 +471,6 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	alpha = 140
 	mouse_opacity = 0
 
-DAMAGE_REACTION(/obj/structure/grille, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_qdel))
-
 /turf/simulated/wall/blob_act(obj/structure/blob/B)
 	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)
 
-// Every blob names its overmind (a one-sided view); only resource blobs pair with its
-// resource_blobs list (resource.dm).
-/obj/structure/blob/relations()
-	. = ..()
-	. += rel_one(nameof(overmind))
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(resource_blobs), back = nameof(/obj/structure/blob/resource::overmind))

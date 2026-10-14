@@ -24,7 +24,7 @@
 /datum/slime_state/New(mob/living/simple_mob/slime/xenobio/owner)
 	if(!owner)
 		stack_trace("slime_state instantiated with no owner")
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), owner)
 	..()
@@ -38,8 +38,8 @@
 		return FALSE
 	if(rabid)
 		return TRUE
-	if(holder().ai_brain?.primary_threat)
-		var/mob/threat = holder().ai_brain.primary_threat
+	if(holder().ai_brain?.primary_target())
+		var/mob/threat = holder().ai_brain.primary_target()
 		if(ishuman(threat))
 			var/mob/living/carbon/human/H = threat
 			if(istype(H.species, /datum/species/monkey))
@@ -144,7 +144,7 @@
 		if(!can_command(speaker))
 			dq_delayed_say(holder(), "No...", speaker)
 			return
-		om_after(holder(), rand(1 SECOND, 2 SECONDS), /proc/slime_obeys_squish, holder())
+		after(holder(), rand(1 SECOND, 2 SECONDS), GLOBAL_PROC_REF(slime_obeys_squish), with = list(holder()))
 
 	if(findtext(message, "stop") || findtext(message, "halt") || findtext(message, "cease"))
 		if(holder().victim)
@@ -154,7 +154,7 @@
 			dq_delayed_say(holder(), "Fine...", speaker)
 			adjust_discipline(1, TRUE)
 			holder().stop_consumption()
-		if(holder().ai_brain?.primary_threat)
+		if(holder().ai_brain?.primary_target())
 			if(!can_command(speaker) || !is_justified_to_discipline())
 				dq_delayed_say(holder(), "No...", speaker)
 				return
@@ -170,7 +170,7 @@
 				dq_delayed_say(holder(), "No... I'll keep following \the [leader]...", speaker)
 
 /proc/dq_delayed_say(mob/living/speaker, message, mob/listener)
-	om_after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), message)
+	after(speaker, rand(0.5 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/mob, say), with = list(message))
 
 /proc/slime_obeys_squish(mob/living/simple_mob/slime/holder)
 	if(QDELETED(holder) || holder.stat >= UNCONSCIOUS)

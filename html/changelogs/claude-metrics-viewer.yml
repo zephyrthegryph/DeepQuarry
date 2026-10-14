@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - server: "Server metrics: tick usage, MC subsystem, world service, OM lane and behaviour cost, players, staff, runtimes and tick overruns are recorded to the database every 10 seconds (METRICS_ENABLED, SQL/metrics_schema.sql)."
+  - admin: "New Admin Viewer verbs (Debug > Investigate) open a staff web viewer, in a game window or your browser: per-round performance breakdowns with outliers flagged against recent rounds, server stalls, grouped runtimes, overruns, tickets and admin verb use, and unit-test and benchmark history."
+  - admin: "Every admin verb use and every ticket state change is now recorded."
+  - server: "The localhost diagnostic topics (mcdiag, mcprof_*, ...) can require a key (DIAG_TOPIC_KEY)."

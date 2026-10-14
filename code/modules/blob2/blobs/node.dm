@@ -10,24 +10,17 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 
-DECLARE_PERIODIC(/obj/structure/blob/node, PERIODIC_SLOW)
+CAPABILITIES(/obj/structure/blob/node)
+	every(2 SECONDS, then(PROC_REF(node_step)))
 
-/obj/structure/blob/node/Initialize(mapload, new_overmind)
-	. = ..()
-	update_icon()
+/// A node draws no colour of its own: the blob body under it is tinted by its overmind, and the node overlay sits on top.
+/obj/structure/blob/node/look_parts(datum/look/look)
+	look.overlay(look_appearance('icons/mob/blob.dmi', "blob", color = look_tint))
+	if(look_title)
+		look.identity(name = "[look_title] [base_name]")
+	look.overlay("blob_node_overlay")
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob/node, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/blob/node/appearance_overlays()
-	. = list()
-	color = null
-	var/mutable_appearance/blob_overlay = mutable_appearance('icons/mob/blob.dmi', "blob")
-	if(overmind)
-		name = "[overmind.blob_type.name] [base_name]"
-		blob_overlay.color = overmind.blob_type.color
-	. += blob_overlay
-	. += "blob_node_overlay"
-
-/obj/structure/blob/node/periodic_step()
+/obj/structure/blob/node/proc/node_step(datum/act/timer/A)
 	if(overmind) // This check is so that if the core is killed, the nodes stop.
 		pulse_area(overmind, 10, BLOB_NODE_PULSE_RANGE, BLOB_NODE_EXPAND_RANGE)
 

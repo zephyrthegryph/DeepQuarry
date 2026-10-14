@@ -44,11 +44,11 @@
 	I.variant = v
 	I.apply_variant()
 
-// Base hooks. Override apply_variant() on each consolidated type to apply
-// the variant's overrides to the item. The default implementation does
-// nothing so non-consolidated items can ignore this.
+// Base hooks. A consolidated type declares its table with variants(nameof(variant), PROC_REF(x)) (code/engine/lifeforms/variants.dm),
+// applied at preinit; apply_variant() applies it again when a loadout tweak sets the key after creation. A type whose table is not
+// a row of vars (the crayons') overrides apply_variant() instead.
 /obj/item
 	var/variant
 
 /obj/item/proc/apply_variant()
-	return
+	variant_apply(src)

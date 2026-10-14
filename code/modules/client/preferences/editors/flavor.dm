@@ -32,8 +32,7 @@ GLOBAL_LIST_INIT(dq_flavor_zones, list("general", "head", "face", "eyes", "torso
 		"robot_modules" = GLOB.robot_module_types,
 	)
 
-UI_ACT(/datum/preference_editor/flavor, "set_flavor", ui_act_set_flavor, UI_ARG_TEXT("text"), UI_ARG_VALUE("zone"))
-UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_flavor)
+/datum/preference_editor/flavor/proc/ui_act_set_flavor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	// Whitelist zone against the static list — a forged Topic could otherwise write
 	// arbitrary assoc-list keys into the savefile.
 	var/zone = params["zone"]
@@ -47,8 +46,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_flavor)
 	preferences.update_preference_by_type(/datum/preference/flavor_texts, flavor)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/flavor, "set_robot_flavor", ui_act_set_robot_flavor, UI_ARG_TEXT("module"), UI_ARG_TEXT("text"))
-UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_robot_flavor)
+/datum/preference_editor/flavor/proc/ui_act_set_robot_flavor(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/module = params["module"]
 	// "Default" is the explicit fallback slot that the React side ships for the
 	// generic case; everything else must be a known module type.
@@ -61,3 +59,21 @@ UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_robot_flavor)
 	robot_flavor[module] = text
 	preferences.update_preference_by_type(/datum/preference/flavour_texts_robot, robot_flavor)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/flavor's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/flavor/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_flavor")
+			typed = payload_args(src, params, list("text" = schema_text(4096), "zone" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_flavor(user, typed, preferences, null, action)
+		if("set_robot_flavor")
+			typed = payload_args(src, params, list("module" = schema_text(4096), "text" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_robot_flavor(user, typed, preferences, null, action)
+	return ..()

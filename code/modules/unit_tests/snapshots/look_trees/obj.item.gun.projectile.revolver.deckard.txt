@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/revolver/deckard icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/revolver/deckard state: deckard-loaded
+/obj/item/gun/projectile/revolver/deckard dir: 2
+/obj/item/gun/projectile/revolver/deckard overlay: icons/obj/gun.dmi:deckard-loaded:8:#000000
+/obj/item/gun/projectile/revolver/deckard/emp icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/revolver/deckard/emp state: deckard-loaded
+/obj/item/gun/projectile/revolver/deckard/emp dir: 2
+/obj/item/gun/projectile/revolver/deckard/emp overlay: icons/obj/gun.dmi:deckard-loaded:8:#000000
+

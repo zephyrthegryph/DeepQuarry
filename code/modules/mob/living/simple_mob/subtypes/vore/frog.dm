@@ -29,7 +29,6 @@
 	icon = 'icons/mob/vore.dmi'
 
 	movement_cooldown = 0.5 //fast as fucc boie.
-	can_be_drop_pred = 1 //They can tongue vore.
 
 	meat_amount = 4
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -43,20 +42,30 @@
 	special_attack_max_range = 5
 	special_attack_cooldown = 100
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
-// Pepe is love, not hate.
-/mob/living/simple_mob/vore/aggressive/frog/Initialize(mapload)
-	. = ..()
-	if(rand(1,1000000) == 1)
-		name = "rare Pepe"
-		desc = "You found a rare Pepe. Screenshot for good luck."
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/frog)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+	rolls(nameof(rare), PROC_REF(roll_rare))
+	rolls(nameof(name), PROC_REF(roll_rare_name), from = list(nameof(rare)))
+	rolls(nameof(desc), PROC_REF(roll_rare_desc), from = list(nameof(rare)))
+
+/// A one-in-a-million frog (rolled).
+/mob/living/simple_mob/vore/aggressive/frog/var/rare = FALSE
+
+/// Rolled before init (rolls()): one frog in a million.
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare(datum/roller/R)
+	return R.number(1, 1000000) == 1
+
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare_name(datum/roller/R)
+	return rare ? "rare Pepe" : name
+
+/mob/living/simple_mob/vore/aggressive/frog/proc/roll_rare_desc(datum/roller/R)
+	return rare ? "You found a rare Pepe. Screenshot for good luck." : desc
 
 /mob/living/simple_mob/vore/aggressive/frog/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	om_after(src, 20, PROC_REF(chargeend), A)
+	after(src, 2 SECONDS, PROC_REF(chargeend), with = list(A), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/frog/proc/chargeend(atom/A)
 	if(stat) //you are dead

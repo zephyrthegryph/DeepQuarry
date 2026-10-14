@@ -1,0 +1,92 @@
+human|none menu: Open controls
+human|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|none menu: Turn Around (refused: It is fastened to the floor!)
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++2 menu: Rotate Clockwise (refused: It is fastened to the floor!)
++3 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
++4 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+ghost|none menu: Rotate Clockwise (refused: It is fastened to the floor!)
+ghost|none menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+ghost|none menu: Turn Around (refused: It is fastened to the floor!)
+ghost|none menu: View
+ghost|none click: Click: View
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Remove cartridge
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item click: Click: Open controls
+@obj human|/obj/item/reagent_containers/chem_disp_cartridge
+-menu: Move To Top
+-menu: Open or close the lid
+-menu: Set Cartridge Label
+-menu: Set transfer amount
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Ui open
++1 menu: Open controls
+@obj human|/obj/item/reagent_containers/chem_canister
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Ui open
++0 menu: Open controls
+human|/obj/item/reagent_containers menu: Open controls
+human|/obj/item/reagent_containers menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/reagent_containers click: Click: Open controls
+keys: add_cartridge, amount, cancel_recording, clear_recipes, dispense, dispense_recipe, drag_buckle, ejectBeaker, import_config, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, record_recipe, refill_cartridge, remove, remove_cartridge, remove_recipe, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, save_recording, set_container, silicon_hand, ui_observe, ui_open

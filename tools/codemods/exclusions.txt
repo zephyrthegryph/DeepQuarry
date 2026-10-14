@@ -1,0 +1,12 @@
+# Types the items/structures codemods leave for a hand conversion: the mechanical shape would land a form a live lint
+# rejects in the converted handler. One line per site: <codemod> <type> <reason>. Codemods: tool_act (the lineage root
+# type and quality, /type/quality), interact (tools/dx/codemods/interact_declare.py), lower (interaction_datums.py).
+#
+# A question opened from the handler (open_request): the op asks it instead (asks()), by hand.
+# The handler asks who the actor is (isrobot): the op's binding or a requirement says it, by hand.
+# The legacy requirement reads state the generated reads cannot follow (loc, untracked vars): the requirement is
+# rewritten on tracked state by hand.
+# Lowering would move a silicon spec or a guarded legacy handler under a lint it is baselined against; the
+# interaction codemod cannot convert them yet (INTERACT_SILICON, INTERACT_OBSERVER, a related replacer).
+# Second pass (after the test-caller and key fixes reached more types).
+# A question opened from the emag handler: asks() on the op, by hand.

@@ -1,0 +1,39 @@
+ai|none menu: Open controls
+ai|none menu: Use
+ai|none click: Click: Open controls
+human|/obj/item menu: Embedded controller open ui
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Embedded controller open ui
+human|/obj/item/card/id menu: Embedded controller open ui
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Embedded controller open ui
+human|/obj/item/stack/cable_coil menu: Embedded controller open ui
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Embedded controller open ui
+human|/obj/item/stack/material/steel menu: Embedded controller open ui
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Embedded controller open ui
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Embedded controller open ui
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Embedded controller open ui
+human|/obj/item/tool/screwdriver menu: Embedded controller open ui
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Embedded controller open ui
+human|/obj/item/tool/wirecutters menu: Embedded controller open ui
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Embedded controller open ui
+human|/obj/item/tool/wrench menu: Embedded controller open ui
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Embedded controller open ui
+human|/obj/item/weldingtool menu: Embedded controller open ui
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Embedded controller open ui
+human|none menu: Embedded controller open ui
+human|none menu: Open controls
+human|none click: Click: Embedded controller open ui
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Embedded controller open ui
+robot|none menu: Open controls
+robot|none menu: Use
+robot|none click: Click: Embedded controller open ui

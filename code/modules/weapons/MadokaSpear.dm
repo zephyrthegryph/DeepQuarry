@@ -23,21 +23,17 @@
 	var/unwieldsound = null
 	var/base_icon
 
+TRACKED(/obj/item/oldtwohanded, wielded)
+
 /obj/item/oldtwohanded/proc/unwield()
-	wielded = 0
-	force = initial(force)
+	set_wielded(0)
+	set_force(combat_of_type(type).force)
 	name = "[initial(name)]"
-	update_icon()
 
 /obj/item/oldtwohanded/proc/wield()
-	wielded = 1
-	force = force_wielded
+	set_wielded(1)
+	set_force(force_wielded)
 	name = "[initial(name)] (Wielded)"
-	update_icon()
-
-/obj/item/oldtwohanded/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
 
@@ -53,19 +49,21 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 			O.unwield()
 	return	unwield()
 
-DECLARE_APPEARANCE_PROC(/obj/item/oldtwohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/oldtwohanded/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded]"
-	item_state = icon_state
+/obj/item/oldtwohanded/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded]")
+	look.held_state(drawn_state)
 
 /obj/item/oldtwohanded/pickup(mob/user)
 	unwield()
 
-DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/oldtwohanded)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/oldtwohanded/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/oldtwohanded/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(wielded) //Trying to unwield it
 		unwield()
@@ -93,8 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 
 	if(istype(user,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	return TRUE
 
@@ -105,12 +102,15 @@ DECLARE_INTERACTIONS(/obj/item/oldtwohanded, INTERACT_USE(null, PROC_REF(interac
 	name = "offhand"
 
 /obj/item/oldtwohanded/offhand/unwield()
-	qdel(src)
+	spent(src)
 
 /obj/item/oldtwohanded/offhand/wield()
-	qdel(src)
+	spent(src)
 
-APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
+/// Shows the mapped sprite, none of the parent's states.
+/obj/item/oldtwohanded/offhand/draw(datum/look/look)
+	..()
+	look.state(null)
 
 //spears, bay edition
 /obj/item/oldtwohanded/spear
@@ -118,14 +118,13 @@ APPEARANCE_NONE(/obj/item/oldtwohanded/offhand)
 	base_icon = "spearglass"
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
-	force = 14
 	w_class = 4.0
-	slot_flags = SLOT_BACK
 	force_wielded = 22 // Was 13, Buffed - RR
-	throwforce = 20
 	throw_speed = 3
-	edge = 0
-	sharp = 1
 	injury_kind = INJURY_PIERCE
-	hitsound = SFX_WEAPONS_BLADESLICE
-	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
+
+CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 20))
+	configure(item_combat(force = 14, edge = 0, sharp = 1, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored")))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

@@ -40,12 +40,8 @@
 		if(I.owner == target)
 			.[I.name] = I
 
-/datum/surgical_step/organ/extract/choose_target(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	var/list/choices = removable_organs(target, part)
-	if(!length(choices))
-		return null
-	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to remove?", title = name, choices = choices)
-	return choice ? choices[choice] : null
+/datum/surgical_step/organ/extract/target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	return removable_organs(target, part)
 
 /datum/surgical_step/organ/extract/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/I = work_target
@@ -93,7 +89,7 @@
 	if(!istype(O) || target.organ_in(O.organ_tag))
 		return
 	if(istype(O, /obj/item/organ/internal/malignant))
-		O.parent_organ = part.organ_tag
+		O.set_parent_organ(part.organ_tag)
 	user.remove_from_mob(O)
 	O.replaced(target, part)
 	log_game("SURGERY: [key_name(user)] implanted [O] ([O.type]) into [key_name(target)] [part], carrying [length(O.afflictions_here())] afflictions")
@@ -125,17 +121,11 @@
 			return TRUE
 	return FALSE
 
-/datum/surgical_step/organ/reconnect/choose_target(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	var/list/choices = list()
+/datum/surgical_step/organ/reconnect/target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	. = list()
 	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.status & ORGAN_CUT_AWAY)
-			choices[I.name] = I
-	if(!length(choices))
-		return null
-	if(length(choices) == 1)
-		return choices[choices[1]]
-	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to reattach?", title = name, choices = choices)
-	return choice ? choices[choice] : null
+			.[I.name] = I
 
 /datum/surgical_step/organ/reconnect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/I = work_target
@@ -218,13 +208,13 @@
 
 /datum/surgical_step/organ/install_nymph/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/holder/diona/N = tool
-	new /obj/item/organ/internal/brain/cephalon(target, 1) // takes the brain slot in its limb
+	new /obj/item/organ/internal/brain/cephalon(target) // takes the brain slot in its limb
 	var/mob/living/carbon/alien/diona/D = N.held_mob
 	user.drop_from_inventory(tool)
 	if(D?.mind)
 		D.mind.transfer_to(target)
 		target.languages |= D.languages
-	qdel(D)
+	spent(D, user)
 	// D21: through set_species() (languages, verbs, components, factors, body invalidation),
 	// keeping the host body's organs.
 	target.set_species(SPECIES_DIONA, keep_organs = TRUE)
@@ -239,49 +229,48 @@
 		if(required && !QDELETED(src))
 			new_form_name_chosen(real_name)
 		return
-	om_ask(src, /datum/om/prompt/text/new_form_name, PROC_REF(new_form_name_entered), default = name, required = required, attempt = attempt)
+	open_request(src, /datum/prompt/text/new_form_name, PROC_REF(new_form_name_entered), answerer = src, default = name, required = required, attempt = attempt)
 
 /// The name a synthetic body's new occupant picks. A cancel is another go (see new_form_name_declined()).
-/datum/om/prompt/text/new_form_name
+/datum/prompt/text/new_form_name
 	name_text = TRUE
+	timeout = 0
 	title = "New Name"
-	message = "Pick a name for your new form!"
+	question = "Pick a name for your new form!"
 	var/required = FALSE
 	var/attempt = 1
 
-/datum/om/prompt/text/new_form_name/cancelled()
-	var/mob/living/carbon/human/H = answerer
-	if(istype(H))
-		H.new_form_name_declined(required, attempt)
-
 /// Confirms the sanitised name. No or a cancel is another go.
-/datum/om/prompt/confirm/new_form_name
+/datum/prompt/choice/new_form_name
 	title = "Confirmation"
-	yes_text = "Ok"
-	no_text = "Cancel"
-	no_first = TRUE
-	answer_on_no = TRUE
+	buttons = TRUE
+	timeout = 0
 	var/clean_name
 	var/required = FALSE
 	var/attempt = 1
 
-/datum/om/prompt/confirm/new_form_name/prepare()
-	message = "New name will be '[clean_name]', ok?"
-	return TRUE
+/datum/prompt/choice/new_form_name/prepare(datum/act/A)
+	..()
+	var/static/list/confirmation = list("Cancel", "Ok")
+	choices = confirmation
+	question = "New name will be '[clean_name]', ok?"
 
-/datum/om/prompt/confirm/new_form_name/cancelled()
-	var/mob/living/carbon/human/H = answerer
-	if(istype(H))
-		H.new_form_name_declined(required, attempt)
-
-/mob/living/carbon/human/proc/new_form_name_entered(datum/om/prompt/text/new_form_name/ask)
-	var/clean_name = sanitizeName(ask.text, allow_numbers = TRUE)
+/mob/living/carbon/human/proc/new_form_name_entered(datum/act/request/A)
+	var/datum/prompt/text/new_form_name/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.value))
+			new_form_name_declined(ask.required, ask.attempt)
+		return
+	var/clean_name = sanitizeName(ask.value, allow_numbers = TRUE)
 	if(!clean_name)
 		return
-	om_ask(src, /datum/om/prompt/confirm/new_form_name, PROC_REF(new_form_name_answered), clean_name = clean_name, required = ask.required, attempt = ask.attempt)
+	open_request(src, /datum/prompt/choice/new_form_name, PROC_REF(new_form_name_answered), answerer = src, clean_name = clean_name, required = ask.required, attempt = ask.attempt)
 
-/mob/living/carbon/human/proc/new_form_name_answered(datum/om/prompt/confirm/new_form_name/ask)
-	if(ask.yes)
+/mob/living/carbon/human/proc/new_form_name_answered(datum/act/request/A)
+	var/datum/prompt/choice/new_form_name/ask = A.request
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
+		return
+	if(A.answer && ask.value == "Ok")
 		new_form_name_chosen(ask.clean_name)
 		return
 	new_form_name_declined(ask.required, ask.attempt)
@@ -298,4 +287,4 @@
 	if(!new_name)
 		return
 	name = sanitizeName(new_name, allow_numbers = TRUE)
-	real_name = name
+	set_real_name(name)

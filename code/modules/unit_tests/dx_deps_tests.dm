@@ -16,9 +16,9 @@
 	var/should_run_calls = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_laser, energy, CHANGE_ITEM_CHARGE)
-TRACKED(/obj/cap_fixture/dx_deps_laser, pointing, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_laser, energy)
+TRACKED(/obj/cap_fixture/dx_deps_laser, pointing)
+TRACKED(/obj/cap_fixture/dx_deps_laser, spare)
 
 /obj/cap_fixture/dx_deps_laser/derived()
 	. = ..()
@@ -41,7 +41,7 @@ TRACKED(/obj/cap_fixture/dx_deps_laser, spare, CHANGE_EFFECTS)
 	var/tier = 0
 	var/draw_calls = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_legacy, tier)
 
 /obj/cap_fixture/dx_deps_legacy/draw(datum/look/look)
 	..()
@@ -53,8 +53,8 @@ TRACKED(/obj/cap_fixture/dx_deps_legacy, tier, CHANGE_EFFECTS)
 	var/glow = FALSE
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_source, glow, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_source, glow)
+TRACKED(/obj/cap_fixture/dx_deps_source, other)
 
 /// draw() reads the source's glow through the declared REL view `source`.
 /obj/cap_fixture/dx_deps_watcher
@@ -107,8 +107,8 @@ TRACKED(/obj/cap_fixture/dx_deps_source, other, CHANGE_EFFECTS)
 /obj/cap_fixture/dx_deps_derive/relations()
 	. = ..()
 	. += rel_one(nameof(feed))
-TRACKED(/obj/cap_fixture/dx_deps_derive, a, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_derive, a)
+TRACKED(/obj/cap_fixture/dx_deps_derive, b)
 
 /obj/cap_fixture/dx_deps_derive/derived()
 	. = ..()
@@ -157,8 +157,8 @@ TRACKED(/obj/cap_fixture/dx_deps_derive, b, CHANGE_EFFECTS)
 	var/tier = 0
 	var/lie = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_writer, tier, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_writer, tier)
+TRACKED(/obj/cap_fixture/dx_deps_writer, lie)
 
 /obj/cap_fixture/dx_deps_writer/derived()
 	. = ..()
@@ -167,7 +167,7 @@ TRACKED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
 /obj/cap_fixture/dx_deps_writer/draw(datum/look/look)
 	..()
 	look.state("written")
-	set_lie(lie + 1)
+	set_lie(vars[nameof(lie)] + 1) // read by name: the generated draw reads must not see it, so the write is a plain output write
 
 /// draw() reads `shade`, which derived() forgot.
 /obj/cap_fixture/dx_deps_sloppy
@@ -175,8 +175,8 @@ TRACKED(/obj/cap_fixture/dx_deps_writer, lie, CHANGE_EFFECTS)
 	var/shade = 0
 	var/other = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, shade, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_sloppy, shade)
+TRACKED(/obj/cap_fixture/dx_deps_sloppy, other)
 
 /obj/cap_fixture/dx_deps_sloppy/derived()
 	. = ..()
@@ -184,7 +184,7 @@ TRACKED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_deps_sloppy/draw(datum/look/look)
 	..()
-	look.state(shade ? "shaded" : "plain")
+	look.state(vars[nameof(shade)] ? "shaded" : "plain") // read by name: the generated draw reads must not see it (the undeclared read this fixture is for)
 
 /// push_to_rust() reads target and mode.
 /obj/cap_fixture/dx_deps_pusher
@@ -193,9 +193,9 @@ TRACKED(/obj/cap_fixture/dx_deps_sloppy, other, CHANGE_EFFECTS)
 	var/noise = 0
 	var/pushes = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_pusher, target, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, mode, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, target)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, mode)
+TRACKED(/obj/cap_fixture/dx_deps_pusher, noise)
 
 /obj/cap_fixture/dx_deps_pusher/derived()
 	. = ..()
@@ -218,12 +218,12 @@ TRACKED(/obj/cap_fixture/dx_deps_pusher, noise, CHANGE_EFFECTS)
 	var/gadget = FALSE
 	var/spare = 0
 
-TRACKED(/obj/cap_fixture/dx_deps_cap, gadget, CHANGE_EFFECTS)
-TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
+TRACKED(/obj/cap_fixture/dx_deps_cap, gadget)
+TRACKED(/obj/cap_fixture/dx_deps_cap, spare)
 
-/obj/cap_fixture/dx_deps_cap/capabilities()
-	. = ..()
-	. += new /datum/capability/dx_deps_reads
+/obj/cap_fixture/dx_deps_cap/declared_capabilities(list/into)
+	..()
+	into += new /datum/capability/dx_deps_reads
 
 /// An empty runs_while() makes the type exact: only what it (or its capabilities) reads re-derives.
 /obj/cap_fixture/dx_deps_cap/derived()
@@ -236,18 +236,18 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 /datum/unit_test/dx_deps_should_run_wake/Run()
 	var/obj/cap_fixture/dx_deps_laser/F = allocate(/obj/cap_fixture/dx_deps_laser)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "a full pointer does not recharge")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer does not recharge")
 	var/draws = F.draw_calls
 	var/checks = F.should_run_calls
 	F.set_energy(3)
 	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_RUN | DEP_UI, "energy is read by should_run() and the UI only")
 	refresh_flush()
-	TEST_ASSERT(om_task_periodic_running(F), "the drop woke the recharge")
+	TEST_ASSERT((!isnull(F.periodic_pipe)), "the drop woke the recharge")
 	TEST_ASSERT_EQUAL(F.should_run_calls, checks + 1, "should_run() re-checked once")
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "draw() was not re-run for an energy change")
 	F.set_energy(8)
 	refresh_flush()
-	TEST_ASSERT(!om_task_periodic_running(F), "a full pointer parks again")
+	TEST_ASSERT(!(!isnull(F.periodic_pipe)), "a full pointer parks again")
 	// A change that reaches only draw().
 	checks = F.should_run_calls
 	F.set_pointing(TRUE)
@@ -269,8 +269,8 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 	refresh_flush()
 	TEST_ASSERT_EQUAL(F.draw_calls, draws, "no draw")
 	TEST_ASSERT_EQUAL(F.should_run_calls, checks, "no should_run()")
-	changed(F)
-	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain changed() still re-derives everything")
+	state_changed(F)
+	TEST_ASSERT_EQUAL(F.refresh_queued, DEP_ALL, "a plain state_changed() still re-derives everything")
 	refresh_flush()
 	var/legacy_draws = L.draw_calls
 	L.set_tier(2)
@@ -372,10 +372,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// A hop through a plain var is refused at init with a clear error.
 /datum/unit_test/dx_deps_refuse_plain_hop/Run()
-	GLOB.derived_error_expected = TRUE
+	set_global("derived_error_expected", TRUE)
 	GLOB.derived_errors.Cut()
 	allocate(/obj/cap_fixture/dx_deps_plainhop)
-	GLOB.derived_error_expected = FALSE
+	set_global("derived_error_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_errors) > 0, "the hop was refused")
 	TEST_ASSERT(findtext(GLOB.derived_errors[1], "not a declared relation"), "and says why: [GLOB.derived_errors[1]]")
 	GLOB.derived_errors.Cut()
@@ -426,17 +426,21 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 
 /// Outputs must not write state: a tracked write inside draw() is reported.
 /datum/unit_test/dx_deps_output_writes_state/Run()
-	GLOB.derived_write_expected = TRUE
-	GLOB.refresh_self_mark_expected = TRUE
+	set_global("derived_write_expected", TRUE)
+	set_global("refresh_self_mark_expected", TRUE)
 	GLOB.derived_write_violations.Cut()
-	allocate(/obj/cap_fixture/dx_deps_writer)
-	refresh_flush()
-	GLOB.derived_write_expected = FALSE
-	GLOB.refresh_self_mark_expected = FALSE
+	var/obj/cap_fixture/dx_deps_writer/F = allocate(/obj/cap_fixture/dx_deps_writer)
+	// One drain, not refresh_flush(): draw() reads and writes lie, so the fixture re-marks itself on every pass, which flush reports as a
+	// runaway after its pass cap. One pass is enough for the write detector, and the re-mark waits for the next drain (as in dx_review_self_mark).
+	refresh_drain(null)
+	set_global("derived_write_expected", FALSE)
+	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_write_violations) > 0, "the write was reported")
 	TEST_ASSERT(findtext(GLOB.derived_write_violations[1], "lie"), "and names the var: [GLOB.derived_write_violations[1]]")
 	GLOB.derived_write_violations.Cut()
 	GLOB.refresh_self_marks.Cut()
+	F.refresh_queued = FALSE
+	GLOB.refresh_queue -= F
 
 /// The drift audit finds a look that no longer matches and names the undeclared read behind it.
 /datum/unit_test/dx_deps_drift_names_read/Run()
@@ -445,10 +449,10 @@ TRACKED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_EFFECTS)
 	F.set_shade(1)
 	TEST_ASSERT_EQUAL(F.refresh_queued, 0, "shade is declared nowhere: the change is dropped")
 	refresh_flush()
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	GLOB.refresh_drift.Cut()
 	var/found = refresh_check_drift(F)
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 	TEST_ASSERT(found, "the audit saw the stale look")
 	TEST_ASSERT(length(GLOB.refresh_drift) > 0 && findtext(GLOB.refresh_drift[1], "shade"), "and named the likely undeclared read: [length(GLOB.refresh_drift) ? GLOB.refresh_drift[1] : "no report"]")
 	GLOB.refresh_drift.Cut()

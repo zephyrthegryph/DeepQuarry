@@ -6,32 +6,34 @@
 	icon_state = "blank"
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
-	slot_flags = SLOT_HOLSTER
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
 	var/potency = -1
 	special_handling = TRUE
 
-/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, planttype)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
+	param(nameof(plantname), pos = 1)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	configure(reagents(contents_from = PROC_REF(seed_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(seed_nutriment_taste))))
+	op("grown_squash", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Squash"), then(PROC_REF(grown_squash)))
+	op("grown_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Grown self"), then(PROC_REF(grown_self)))
+	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
+
+// ALLOW(init/INSTANCE_STATE): produce takes its seed's name, trash, look and chemicals
+/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
 	. = ..()
 
 	if(!dried_type)
 		dried_type = type
 
-	pixel_x = rand(-5.0, 5)
-	pixel_y = rand(-5.0, 5)
-
-	if(planttype)
-		plantname = planttype
-
 	if(!plantname)
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
 		return INITIALIZE_HINT_QDEL
 
-	proto_set(src, nameof(seed_static), GLOB.plant_service.seeds[plantname])
+	proto_set(src, nameof(seed_static), SSplants.seeds[plantname])
 
 	if(!seed())
 		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
@@ -40,34 +42,46 @@
 	name = "[seed().seed_name]"
 	trash = seed().get_trash_type()
 
-	update_icon()
-
 	potency = seed().get_trait(TRAIT_POTENCY)
 
 	if(seed().chems)
-		for(var/rid in seed().chems)
-			var/list/reagent_data = seed().chems[rid]
-			if(reagent_data && LAZYLEN(reagent_data))
-				var/rtotal = reagent_data[1]
-				var/list/data = list()
-				if(LAZYLEN(reagent_data) > 1 && potency > 0)
-					rtotal += round(potency/reagent_data[2])
-				if(rid == REAGENT_ID_NUTRIMENT)
-					data[seed().seed_name] = max(1,rtotal)
-				if(rid != REAGENT_ID_GLAMOUR_INVIS)
-					reagents.add_reagent(rid,max(1,rtotal),data)
 		update_desc()
 		if(reagents.total_volume > 0)
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 		if(seed().get_trait(TRAIT_STINGS))
-			force = 1
+			set_force(1)
+
+/// The seed's chemicals at its potency (reagents(contents_from =)); glamour is never put in. Null for produce with no known plant.
+/obj/item/reagent_containers/food/snacks/grown/proc/seed_contents()
+	var/datum/seed/S = plantname ? SSplants.seeds[plantname] : null
+	if(!S?.chems)
+		return
+	var/plant_potency = S.get_trait(TRAIT_POTENCY)
+	. = list()
+	for(var/rid in S.chems)
+		var/list/reagent_data = S.chems[rid]
+		if(!LAZYLEN(reagent_data) || rid == REAGENT_ID_GLAMOUR_INVIS)
+			continue
+		var/rtotal = reagent_data[1]
+		if(LAZYLEN(reagent_data) > 1 && plant_potency > 0)
+			rtotal += round(plant_potency/reagent_data[2])
+		.[rid] = max(1, rtotal)
+
+/// The taste of the produce's nutriment: the plant's name, as strong as its nutriment.
+/obj/item/reagent_containers/food/snacks/grown/proc/seed_nutriment_taste()
+	var/datum/seed/S = plantname ? SSplants.seeds[plantname] : null
+	var/list/contents = seed_contents()
+	if(!S || !contents?[REAGENT_ID_NUTRIMENT])
+		return list()
+	. = list()
+	.[S.seed_name] = contents[REAGENT_ID_NUTRIMENT]
 
 /obj/item/reagent_containers/food/snacks/grown/proc/update_desc()
 	if(!seed())
 		return
 
-	if(GLOB.plant_service.product_descs["[seed().uid]"])
-		desc = GLOB.plant_service.product_descs["[seed().uid]"]
+	if(SSplants.product_descs["[seed().uid]"])
+		desc = SSplants.product_descs["[seed().uid]"]
 	else
 		var/list/descriptors = list()
 		if(reagents.has_reagent(REAGENT_ID_SUGAR) || reagents.has_reagent(REAGENT_ID_CHERRYJELLY) || reagents.has_reagent(REAGENT_ID_HONEY) || reagents.has_reagent(REAGENT_ID_BERRYJUICE))
@@ -119,18 +133,22 @@
 			desc += " mushroom"
 		else
 			desc += " fruit"
-		GLOB.plant_service.product_descs["[seed().uid]"] = desc
+		SSplants.product_descs["[seed().uid]"] = desc
 	desc += ". Delicious! Probably."
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/food/snacks/grown/appearance_overlays()
-	. = list()
-	if(!seed() || !GLOB.plant_service?.plant_icon_cache)
-		return .
+/// The fruit of its seed: the shape in the colour of the product, and the leaves in the colour of the plant.
+/obj/item/reagent_containers/food/snacks/grown/draw(datum/look/look)
+	..()
+	if(!seed() || !SSplants?.plant_icon_cache)
+		return
+	look.overlay(fruit_icon())
+
+/// The drawn fruit of its seed, shared by every fruit of the same product and colours.
+/obj/item/reagent_containers/food/snacks/grown/proc/fruit_icon()
 	var/image/plant_icon
 	var/icon_key = "fruit-[seed().get_trait(TRAIT_PRODUCT_ICON)]-[seed().get_trait(TRAIT_PRODUCT_COLOUR)]-[seed().get_trait(TRAIT_PLANT_COLOUR)]"
-	if(GLOB.plant_service.plant_icon_cache[icon_key])
-		plant_icon = GLOB.plant_service.plant_icon_cache[icon_key]
+	if(SSplants.plant_icon_cache[icon_key])
+		plant_icon = SSplants.plant_icon_cache[icon_key]
 	else
 		plant_icon = image('icons/obj/hydroponics_products.dmi',"blank")
 		var/image/fruit_base = image('icons/obj/hydroponics_products.dmi',"[seed().get_trait(TRAIT_PRODUCT_ICON)]-product")
@@ -140,8 +158,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			var/image/fruit_leaves = image('icons/obj/hydroponics_products.dmi',"[seed().get_trait(TRAIT_PRODUCT_ICON)]-leaf")
 			fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
 			plant_icon.add_overlay(fruit_leaves)
-		GLOB.plant_service.plant_icon_cache[icon_key] = plant_icon
-	. += plant_icon
+		SSplants.plant_icon_cache[icon_key] = plant_icon
+	return plant_icon
 
 /obj/item/reagent_containers/food/snacks/grown/Crossed(mob/living/M)
 	if(M.is_incorporeal())
@@ -154,31 +172,27 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)
+				if(H.get_equipped_item(SLOT_ID_SHOES) && worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP)
 					return
 
 			M.stop_pulling()
 			to_chat(M, span_notice("You slipped on the [name]!"))
 			play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
-			M.status_at_least(EFFECT_STUNNED, 8)
-			M.status_at_least(EFFECT_WEAKENED, 5)
+			M.status_at_least(STAT_STUNNED, 8)
+			M.status_at_least(STAT_WEAKENED, 5)
 			seed().thrown_at(src,M)
-			qdel(src)
+			destroyed(src, M, BRUTE)
 			return
 
 /obj/item/reagent_containers/food/snacks/grown/throw_impact(atom/hit_atom)
 	if(seed()) seed().thrown_at(src,hit_atom)
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
-	INTERACT_SELF_AS(I_HURT, "Squash", PROC_REF(grown_squash)), \
-	INTERACT_SELF(null, PROC_REF(grown_self)), \
-	INTERACT_ITEM(null, PROC_REF(grown_item)), \
-)
-
 /// Old attackby, merged with the snacks.dm potato/sunflower override its ..() reached.
 /// FALSE falls to the snack handling, as the old chain did.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 
 	if(seed())
 		if(seed().get_trait(TRAIT_PRODUCES_POWER) && istype(W, /obj/item/stack/cable_coil))
@@ -189,21 +203,21 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				var/obj/item/cell/potato/pocell = new /obj/item/cell/potato(get_turf(user))
 				if(src.loc == user && ishuman(user))
 					user.put_in_hands(pocell)
-				pocell.maxcharge = src.potency * 200
-				pocell.charge = pocell.maxcharge
+				pocell.set_maxcharge(src.potency * 200)
+				pocell.set_charge(pocell.maxcharge)
 				consume(src, user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
-		if(W.sharp)
+		if(combat_of(W).sharp)
 
 			if(seed().kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
 				replace_with(src, /obj/item/clothing/head/pumpkinhead)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			if(seed().chems)
 
-				if(W.sharp && W.edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
+				if(combat_of(W).sharp && combat_of(W).edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
 					user.show_message(span_notice("You make planks out of \the [src]!"), 1)
 					play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 					var/flesh_colour = seed().get_trait(TRAIT_FLESH_COLOUR)
@@ -219,33 +233,35 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 							G.attackby(NG, user)
 						to_chat(user, span_filter_notice("You add the newly-formed wood to the stack. It now contains [NG.get_amount()] planks."))
 					consume(src, user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().kitchen_tag == PLANT_SUNFLOWERS)
-					new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
+					var/turf/product_turf = get_turf(src)
+					if(!consume(src, user))
+						return OP_PASS
+					new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 					to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-					consume(src, user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().kitchen_tag == PLANT_POTATO || !isnull(seed().chems[REAGENT_ID_POTATOJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/rawsticks)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_CARROTJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/carrotfries)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_PINEAPPLEJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into rings."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/pineapple_ring)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_SOYMILK]))
 					to_chat(user, span_filter_notice("You roughly chop up \the [src]."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/soydope)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().get_trait(TRAIT_FLESH_COLOUR))
 					to_chat(user, span_filter_notice("You slice up \the [src]."))
@@ -256,20 +272,22 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 						if(reagents_to_transfer)
 							reagents.trans_to_obj(F,reagents_to_transfer)
 					consume(src, user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 	// potato + knife = raw sticks
 	if(seed() && seed().kitchen_tag == PLANT_POTATO && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the potato."))
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(seed() && seed().kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
+		var/turf/product_turf = get_turf(src)
+		if(!consume(src, user))
+			return OP_PASS
+		new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 		to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/reagent_containers/food/snacks/grown/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
@@ -288,26 +306,28 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 			consume(src, user)
 
 /// Old attack_self in combat mode: squash it on yourself.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_squash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_squash(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!seed())
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(user.loc,/turf/space))
-		return FALSE
+		return OP_DECLINE
 
 	act_message(user, src, others = span_danger("%U% squashes %T%!"))
 	seed().thrown_at(src,user)
 	if(!QDELETED(src))
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!seed())
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(user.loc,/turf/space))
-		return FALSE
+		return OP_DECLINE
 
 	if(seed().kitchen_tag == PLANT_GRASS)
 		user.show_message(span_notice("You make a grass tile out of \the [src]!"), 1)
@@ -324,7 +344,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				NG.attackby(G, user)
 			to_chat(user, "You add the newly-formed grass to the stack. It now contains [G.get_amount()] tiles.")
 		consume(src, user)
-		return TRUE
+		return OP_OK
 
 	if(seed().kitchen_tag == PLANT_CARPET)
 		user.show_message(span_notice("You shape some carpet squares out of \the [src] fibers!"), 1)
@@ -338,15 +358,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				NG.attackby(G, user)
 			to_chat(user, span_filter_notice("You add the newly-formed carpet to the stack. It now contains [G.get_amount()] tiles."))
 		consume(src, user)
-		return TRUE
+		return OP_OK
 
 	if(seed().get_trait(TRAIT_SPREAD) > 0)
 		to_chat(user, span_notice("You plant the [src.name]."))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed())
 		GLOB.seed_planted_shift_roundstat++
 		consume(src, user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/reagent_containers/food/snacks/grown/pickup(mob/user)
 	..()
@@ -385,23 +405,31 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	I.color = fruit_colour
 	return I
 
-/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload, datum/seed/S)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
+	param(nameof(slice_seed), pos = 1)
+
+/// The seed of the fruit the slice was cut from (its constructor param).
+/obj/item/reagent_containers/food/snacks/fruit_slice/var/datum/seed/slice_seed
+
+// ALLOW(init/INSTANCE_STATE): a slice takes its fruit's name and colours
+/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
 	. = ..()
 	// Need to go through and make a general image caching controller. Todo.
+	var/datum/seed/S = slice_seed
 	if(!istype(S))
 		return INITIALIZE_HINT_QDEL
 
 	name = "[S.seed_name] slice"
 	desc = "A slice of \a [S.seed_name]. Tasty, probably."
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+	set_drop_sound(SFX_ITEMS_DROP_HERB)
+	set_pickup_sound(SFX_ITEMS_PICKUP_HERB)
 
 	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)
 	if(!flesh_colour) flesh_colour = rind_colour
 	// ALLOW(decl): the colours are the seed's traits, per instance, not a declarable state var
 	add_overlay(CACHED_KEY(fruit_icon, "rind-[rind_colour]", icon, "fruit_rind", rind_colour))
-	// ALLOW(decl): as above
+	// ALLOW(decl): the colours are the seed's traits, per instance, like the overlay above
 	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
 
 /// The seed (PROTO): a registered line, or this holder's own private copy.
@@ -410,4 +438,4 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 
 /obj/item/reagent_containers/food/snacks/grown/ownership()
 	. = ..()
-	. += proto(nameof(seed_static))
+	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

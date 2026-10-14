@@ -2,7 +2,9 @@
 	name = "hood"
 	desc = "A generic hood."
 	icon_state = "chaplain_hood" //just default to this, whatever. default_hood never existed.
-	flags_inv = HIDEEARS | BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood)
+	configure(item_worn(hides = HIDEEARS | BLOCKHAIR))
 
 // Winter coats
 /obj/item/clothing/head/hood/winter
@@ -10,7 +12,9 @@
 	name = "winter hood"
 	desc = "A hood attached to a heavy winter jacket."
 	icon_state = "winterhood"
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hood/winter/captain
 	name = "site manager's winter hood"
@@ -148,10 +152,10 @@
 	name = "brassy winter hood"
 	desc = "A brass-plated winter hood that glows softly, hinting at its divinity."
 	icon_state = "winterhood_ratvar"
-	light_range = 3
-	light_power = 1
-	light_color = "#B18B25" //clockwork slab background top color
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/ratvar)
+	configure(light_glow(range = 3, power = 1, color = "#B18B25"))
 
 /obj/item/clothing/head/hood/winter/narsie
 	name = "runed winter hood"
@@ -179,9 +183,10 @@
 	desc = "An armoured hood for exploring harsh environments."
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35"
+
+CAPABILITIES(/obj/item/clothing/head/hood/explorer)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.9))
 
 // Costumes
 /obj/item/clothing/head/hood/carp_hood
@@ -189,7 +194,9 @@
 	desc = "A hood attached to a carp costume."
 	icon_state = "carp_casual"
 	item_state_slots = list(slot_r_hand_str = "carp_casual", slot_l_hand_str = "carp_casual") //Does not exist -S2-
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE	//Space carp like space, so you should too
+
+CAPABILITIES(/obj/item/clothing/head/hood/carp_hood)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hood/ian_hood
 	name = "corgi hood"
@@ -224,7 +231,9 @@
 	name  = "maroon cloak hood"
 	desc = "A hood attached to a maroon cloak."
 	icon_state = "maroon_cloakhood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood/cloak)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 /obj/item/clothing/head/hood/cloak/winter
 	name = "winter cloak hood"
@@ -250,22 +259,30 @@
 /obj/item/clothing/head/hood/galahad
 	name = "galahad hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/head/hood/galahad)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/lancelot
 	name = "lancelot hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/head/hood/lancelot)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/head/hood/robin
 	name = "robin hood"
 	armor_spec = "melee=80;bullet=10;laser=10"
-	siemens_coefficient = 3
+
+CAPABILITIES(/obj/item/clothing/head/hood/robin)
+	configure(item_protection(siemens = 3))
 
 /obj/item/clothing/head/hood/chain
 	name = "robin hood"
 	armor_spec = "melee=60;bullet=10;laser=10"
-	siemens_coefficient = 3
+
+CAPABILITIES(/obj/item/clothing/head/hood/chain)
+	configure(item_protection(siemens = 3))
 
 // Costume Versions Here
 /obj/item/clothing/head/hood/galahad_costume
@@ -287,8 +304,10 @@
 	name = "Refreshed Talon winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/inventory/head/mob.dmi'
 	icon_state = "winterhoodr_talon"
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/talon/refreshed)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
 
 // Centcom Winter Hood
 /obj/item/clothing/head/hood/winter/centcom
@@ -310,14 +329,18 @@
 	name = "Hotdog suit hood"
 	desc = "The hood of a hotdog suit, attached to said hotdog suit." //Honestly i just don't know how to force the costume to hide hats.
 	icon_state = "hotdog_hood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood_vr/hotdog_hood)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 // Turnip suit hood
 /obj/item/clothing/head/hood_vr/turnip_hood
 	name = "Turnip suit hood"
 	desc = "The hood of a hotdog suit, attached to said hotdog suit. Most cooks cut this part off and throw it in the garbage"
 	icon_state = "turnip_hood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood_vr/turnip_hood)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 //Better hoodies hood
 /obj/item/clothing/head/hood/toggleable
@@ -325,16 +348,16 @@
 	desc = "This hood is so special that you weren't even supposed to lay eyes on it! Tell a developer!"
 	var/open = FALSE
 
+TRACKED(/obj/item/clothing/head/hood/toggleable, open)
+
 /obj/item/clothing/head/hood/toggleable/colorable
 	name = "hoodie hood"
 	desc = "It's the hood part of a hoodie. What kind of hoodie would it be without one? A poser, obviously."
 	icon_state = "choodie"
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/hood/toggleable/colorable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/head/hood/toggleable/colorable/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "[initial(icon_state)][open ? "_open" : ""]"
+/obj/item/clothing/head/hood/toggleable/colorable/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][open ? "_open" : ""]")
 
 /obj/item/clothing/head/hood/winter/snowsuit
 	name = "hood"

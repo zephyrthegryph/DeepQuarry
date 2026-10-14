@@ -15,27 +15,31 @@
 	tag_secure = 1
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "toggle_override")
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_port, "airlock_program", /datum/embedded_program/airlock/docking)
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock/docking_port)
+	owns_one(nameof(program), /datum/embedded_program, starts = PROC_REF(make_docking_program))
+	owns_one(nameof(airlock_program), starts = /datum/embedded_program/airlock/docking)
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	ref_one(nameof(docking_program), /datum/embedded_program/docking/airlock)
 
+// ALLOW(init/INSTANCE_STATE): its docking program is made from the program tag and name the map set
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
-	// The port owns its running program (program); docking_program is a typed view of it.
-	own_set(src, nameof(program), new/datum/embedded_program/docking/airlock(src, airlock_program))
+	// The port owns its running program (program, owns_one(starts =)); docking_program is a typed view of it.
 	rel_set(src, nameof(docking_program), program)
 	if(display_name)
 		docking_program.display_name = display_name
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/datum/embedded_program/docking/airlock/docking_program = program
 	var/code = docking_program.docking_codes
 	code = code ? stars(code) : "N/A"
 	to_chat(user, "[tool]'s screen displays '[code]'")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/airlock/docking_port, "merge:ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port{chamber_pressure:num,exterior_status:unknown,interior_status:unknown,processing:unknown,docking_status:unknown,airlock_disabled:bool,override_enabled:num,docking_codes:unknown,name:unknown,internalTemplateName:text}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/airlock/docking_port's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/embedded_controller/radio/airlock/docking_port/ui_data(datum/act/eval/A)
 	var/datum/embedded_program/docking/airlock/docking_program = program
 	var/datum/embedded_program/airlock/docking/airlock_program = docking_program.airlock_program
 
@@ -134,3 +138,11 @@ UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/airlock/docking_port, "
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
 		..(target)
 
+/// The running program (owns_one(starts =)): docking over the airlock program the map set.
+/// `program` is declared on the base type, so its starting occupant is made before airlock_program's: make the airlock program here first
+/// (own_init_starts() then leaves the filled var alone).
+/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/make_docking_program(current)
+	if(!isdatum(airlock_program))
+		var/airlock_type = ispath(airlock_program) ? airlock_program : /datum/embedded_program/airlock/docking
+		rel_set(src, nameof(airlock_program), new airlock_type(src))
+	return new /datum/embedded_program/docking/airlock(src, airlock_program)

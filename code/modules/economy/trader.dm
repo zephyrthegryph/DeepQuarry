@@ -33,17 +33,19 @@
 			var/t = pickweight(start_products || list())
 			var/i = new t(src)
 			LAZYREMOVE(start_products, t)
-			own_add(src, nameof(products), i)
+			rel_add(src, nameof(products), i)
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
-			own_add(src, nameof(products), p)
+			rel_add(src, nameof(products), p)
 			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()
 
-DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_trader_hand), REQ_TARGET_STATE(/obj/trader/proc/can_trade)), 	INTERACT_ITEM(null, PROC_REF(interaction_trader_item)))
+CAPABILITIES(/obj/trader)
+	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
+	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))
 
 /// Requirement: TRUE, or why no trade can start.
 /obj/trader/proc/can_trade(mob/living/user, atom/target, obj/item/held)
@@ -54,7 +56,14 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 	return TRUE
 
 /// Old attack_hand: start a trade with one customer at a time.
-/obj/trader/proc/interaction_trader_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+
+/obj/trader/proc/interaction_trader_hand(datum/act/op/A)
+	var/refusal = can_trade(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/living/user = A.actor
 	trading = TRUE
 	switch(accepts)
 		if("coin")
@@ -65,7 +74,10 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			if(welcome_accepts_name == "curious coins")
 				welcome_accepts_name = "a kind of item"
 	// One customer at a time: any way the questions end frees the trader.
-	om_flow_start(/datum/om/flow/trader_trade, user, src)
+	var/datum/trader_review/review = new
+	rel_set(review, nameof(review.actor), user)
+	rel_set(review, nameof(review.trader), src)
+	review.start()
 	return TRUE
 
 /obj/trader/proc/trade_price(obj/item)
@@ -74,35 +86,97 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 /// A customer (actor) trading with a trader (target): whether to trade, which product, a price
 /// confirmation, then the change. The customer stays next to the trader throughout, and any way
 /// the questions end frees the trader.
-/datum/om/flow/trader_trade
-	name = "trader trade"
-	requires = PROMPT_ADJACENT
+/datum/trader_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/actor
+	var/obj/trader/trader
 	var/obj/product
-	/// The step waiting for an answer, for ended()'s messages.
+	var/product_selected = FALSE
+	/// The step waiting for an answer, for the old ending messages.
 	var/stage
 
-/datum/om/flow/trader_trade/start()
-	var/obj/trader/trader = target
-	stage = "ask"
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(asked), buttons = TRUE, title = "[trader]", message = "[trader.welcome_msg][trader.welcome_accepts_name][trader.welcome_msg_finish]", choices = list("Yes","No","Return banked funds"), timeout = 10 SECONDS)
+CAPABILITIES(/datum/trader_review)
+	ref_one(nameof(actor), /mob/living)
+	ref_one(nameof(trader), /obj/trader)
+	ref_one(nameof(product), /obj)
 
-/datum/om/flow/trader_trade/ended(reason)
-	if(stage == "change") // the trade is done; the trader is already free
+/datum/prompt/choice/trader_review
+	timeout = 0
+
+/datum/prompt/choice/trader_review/recheck_extra()
+	. = ..()
+	if(.)
 		return
-	var/obj/trader/trader = target
-	if(trader)
-		trader.trading = FALSE
-	if(stage == "confirm" && reason == "declined")
-		to_chat(actor, span_notice("You decided not to."))
-	else if(reason != "cancelled" && reason != "declined" && reason != "gone")
-		to_chat(actor, span_notice("You aren't close enough."))
+	var/datum/selected = value
+	if(isdatum(selected) && QDELETED(selected))
+		return "gone"
+	var/datum/trader_review/review = owner
+	return review.why_not()
 
-/datum/om/flow/trader_trade/proc/asked(datum/om/prompt/choice/ask)
-	var/obj/trader/trader = target
-	if(ask.choice == "Return banked funds")
+/datum/prompt/yes_no/trader_review
+	timeout = 0
+
+/datum/prompt/yes_no/trader_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/trader_review/review = owner
+	// A No ended the old confirmation before the flow's late permission checks.
+	return value == FALSE ? null : review.why_not()
+
+/datum/trader_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(trader) || (product_selected && QDELETED(product)))
+		return "gone"
+	if(!actor.Adjacent(trader))
+		return "too far away"
+	return actor.incapacitated() ? "not able to" : null
+
+/datum/trader_review/proc/start()
+	// Initial refusal did not run ended(), including its busy-state cleanup.
+	if(why_not())
+		retire()
+		return
+	run_step(PROC_REF(start_step))
+
+/datum/trader_review/proc/run_step(step, datum/act/request/A)
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("trader trade step [step]: [result.error]")
+		var/datum/result/ending = safe_call(PROC_REF(stopped), "error")
+		if(!ending.ok)
+			stack_trace("trader trade ended(error): [ending.error]")
+			retire()
+
+/datum/trader_review/proc/stopped(reason)
+	if(stage != "change")
+		if(!QDELETED(trader))
+			trader.trading = FALSE
+		if(stage == "confirm" && reason == "declined")
+			to_chat(actor, span_notice("You decided not to."))
+		else if(reason != "cancelled" && reason != "declined" && reason != "gone")
+			to_chat(actor, span_notice("You aren't close enough."))
+	retire()
+
+/datum/trader_review/proc/failed_answer(datum/request/R)
+	stopped(isnull(R.value) ? "cancelled" : R.last_error)
+
+/datum/trader_review/proc/start_step()
+	stage = "ask"
+	open_request(src, /datum/prompt/choice/trader_review, PROC_REF(asked), answerer = actor, buttons = TRUE, title = "[trader]", question = "[trader.welcome_msg][trader.welcome_accepts_name][trader.welcome_msg_finish]", choices = list("Yes","No","Return banked funds"), timeout = 10 SECONDS)
+
+/datum/trader_review/proc/asked(datum/act/request/A)
+	run_step(PROC_REF(asked_step), A)
+
+/datum/trader_review/proc/asked_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	var/choice = A.request.value
+	if(choice == "Return banked funds")
 		trader.return_funds()
-	if(ask.choice != "Yes")
+	if(choice != "Yes")
 		trader.trading = FALSE
+		retire()
 		return
 	if(length(trader.interact_sound) > 0)
 		if(ELAPSED_SINCE(src, trader.sound_lastplayed, CLOCK_WORLD) > trader.sound_cooldown)
@@ -110,34 +184,57 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
 			EXPIRY_STAMP(trader, sound_lastplayed, CLOCK_WORLD)
 	stage = "product"
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(product_picked), title = "Trader", message = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
+	open_request(src, /datum/prompt/choice/trader_review, PROC_REF(product_picked), answerer = actor, title = "Trader", question = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
 
-/datum/om/flow/trader_trade/proc/product_picked(datum/om/prompt/choice/ask)
-	var/obj/trader/trader = target
-	rel_set(src, nameof(product), ask.choice)
+/datum/trader_review/proc/product_picked(datum/act/request/A)
+	run_step(PROC_REF(product_picked_step), A)
+
+/datum/trader_review/proc/product_picked_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	rel_set(src, nameof(product), A.request.value)
+	if(QDELETED(product))
+		stopped("gone")
+		return
+	product_selected = TRUE
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
 		trader.trading = FALSE
+		retire()
 		return
 	var/p = trader.trade_price(product)
 	if(p <= 0)
-		trade()
+		trade_step()
 		return
 	stage = "confirm"
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(trade), title = "Confirm", message = "Are you sure? This costs [p].")
+	open_request(src, /datum/prompt/yes_no/trader_review, PROC_REF(trade), answerer = actor, title = "Confirm", question = "Are you sure? This costs [p].")
 
-/datum/om/flow/trader_trade/proc/trade()
-	var/obj/trader/trader = target
+/datum/trader_review/proc/trade(datum/act/request/A)
+	run_step(PROC_REF(trade_answered_step), A)
+
+/datum/trader_review/proc/trade_answered_step(datum/act/request/A)
+	if(A.answer && A.request.value == FALSE)
+		stopped("declined")
+		return
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	trade_step()
+
+/datum/trader_review/proc/trade_step()
 	var/mob/user = actor
 	trader.trading = FALSE
 	var/obj/input = product
 	if(!istype(input) || !(input in trader.products))
+		retire()
 		return
 	var/t = input.type
 	var/p = trader.trade_price(input)
 	// The bank can have been drained while they chose.
 	if(p > 0 && trader.get_value(trader.accepts) < p)
 		to_chat(user, span_warning("You haven't provided enough funds!"))
+		retire()
 		return
 	if(t in trader.multiple)
 		trader.multiple[t] -= 1
@@ -147,24 +244,33 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			for(var/obj/d in trader.products)
 				if(istype(d, temp))
 					d.forceMove(get_turf(trader.loc))
-					qdel(d)
+					spent(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
 	own_take_member(trader, nameof(trader.products), input) // no-op once it left our contents
 	trader.deduct_value(p)
 	rel_clear(src, nameof(product))
+	product_selected = FALSE
 	stage = "change"
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(change_answered), buttons = TRUE, title = "[trader]", message = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
+	open_request(src, /datum/prompt/choice/trader_review, PROC_REF(change_answered), answerer = user, buttons = TRUE, title = "[trader]", question = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
 
-/datum/om/flow/trader_trade/proc/change_answered(datum/om/prompt/choice/ask)
-	var/obj/trader/trader = target
-	if(ask.choice == "I want my change")
+/datum/trader_review/proc/change_answered(datum/act/request/A)
+	run_step(PROC_REF(change_answered_step), A)
+
+/datum/trader_review/proc/change_answered_step(datum/act/request/A)
+	if(!A.answer)
+		failed_answer(A.request)
+		return
+	if(A.request.value == "I want my change")
 		trader.return_funds()
 	else
 		to_chat(actor, span_notice("You decided leave your change banked."))
+	retire()
 
 /// Old attackby (ran ..() first): bank coins, cash or items; the base item handling still follows.
-/obj/trader/proc/interaction_trader_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/trader/proc/interaction_trader_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	switch(accepts)
 		if("coin")
 			if(istype(O, /obj/item/aliencoin))
@@ -178,11 +284,10 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 				for(var/obj/item/spacecash/c in bank)
 					var/loadsamoney = w.worth
 					consume(w, user)
-					c.worth += loadsamoney
-					c.update_icon()
+					c.set_worth(c.worth + loadsamoney)
 					loadsamoney = null
 					act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
 				rel_add(src, nameof(bank), w)
@@ -193,7 +298,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 				O.forceMove(src.contents)
 				rel_add(src, nameof(bank), O)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/trader/proc/get_value(kind)
 	var/value = 0
@@ -225,11 +330,10 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			for(var/obj/c in bank)
 				if(istype(c, /obj/item/spacecash))
 					var/obj/item/spacecash/a = c
-					a.worth -= amount
-					a.update_icon()
+					a.set_worth(a.worth - amount)
 					if(a.worth <= 0)
 						rel_remove(src, nameof(bank), a)
-						qdel(a)
+						spent(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
 			// and spin forever (DoS). Also stop if the bank runs out of matching items.
@@ -241,7 +345,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 				for(var/obj/c in bank)
 					if(istype(c, accepted_itemtype))
 						c.forceMove(get_turf(loc))
-						qdel(c)
+						spent(c)
 						v -= accepted_item_worth
 						removed_any = TRUE
 						if(v <= 0)
@@ -291,7 +395,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 	if(pt.len > 0)
 		var/obj/dt = pick(pt)
 		forceMove(get_turf(dt))
-		dir = dt.dir
+		set_dir(dt.dir)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 	else
 		log_and_message_admins("[src] tried to move itself but its target pick list was empty, so it was not moved. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)

@@ -1,0 +1,25 @@
+@obj.item.personal_shield_generator human|none
+@obj.item.personal_shield_generator robot|none
+@obj ai|none
+@obj.item.personal_shield_generator ghost|none
+@obj.item.personal_shield_generator human|/obj/item/tool/screwdriver
+@obj.item.personal_shield_generator human|/obj/item/tool/crowbar
+@obj.item.personal_shield_generator human|/obj/item/tool/wrench
+@obj.item.personal_shield_generator human|/obj/item/tool/wirecutters
+@obj.item.personal_shield_generator human|/obj/item/multitool
+@obj.item.personal_shield_generator human|/obj/item/weldingtool
+@obj.item.personal_shield_generator human|/obj/item/stack/cable_coil
+@obj.item.personal_shield_generator human|/obj/item/stack/material/steel
+@obj.item.personal_shield_generator human|/obj/item/card/id
+@obj.item.personal_shield_generator human|/obj/item/kit
+@obj.item.personal_shield_generator human|/obj/item/storage
+@obj.item.personal_shield_generator human|/obj/item
+human|/obj/item/borg/upgrade/shield_upgrade menu: Alternate use
+human|/obj/item/borg/upgrade/shield_upgrade menu: Move To Top
+human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Gun (refused: You can't do that.)
+human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Shield (refused: You can't do that.)
+human|/obj/item/borg/upgrade/shield_upgrade menu: Upgrade
+human|/obj/item/borg/upgrade/shield_upgrade menu: Use
+human|/obj/item/borg/upgrade/shield_upgrade click: Click: Upgrade
+keys: alt, collect_item, destroy_cell, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, upgrade, weapon_toggle_effect

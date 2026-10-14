@@ -6,10 +6,19 @@
 		shovel_dig_grave(user, our_shovel)
 		return
 
-	// Loot and garden digging
-	use_tool(user, our_shovel, src, delay = 3 SECONDS, volume = 0, start_self = "\The [user] begins digging into \the [src] with \the [our_shovel].", receiver = src, on_done = PROC_REF(handle_turf_dig_tool_done), done_args = list(user, our_shovel))
+	// Loot and garden digging is the turf's "dig" op (a shovel not in grave mode).
 
-/turf/proc/handle_turf_dig_tool_done(mob/user, obj/item/shovel/our_shovel)
+/// A diggable floor takes a shovel that is not digging a grave.
+/turf/proc/diggable_by(datum/act/op/A)
+	var/obj/item/shovel/our_shovel = A.held
+	return istype(our_shovel) && !our_shovel.grave_mode && read_once((flags & TURF_CAN_DIG_SHOVEL) && !density)
+
+/turf/proc/dig_begins(datum/act/op/A)
+	return msg_text("\The [A.actor] begins digging into \the [src] with \the [A.held].")
+
+/turf/proc/handle_turf_dig_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/shovel/our_shovel = A.held
 	if(shovel_can_cultivate() && !(locate_within(src, /obj/machinery/portable_atmospherics/hydroponics/soil)) && !(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = new(src)
 		user.visible_message(span_notice("\The [src] digs \a [soil] into \the [src]."))
@@ -36,14 +45,18 @@
 		return
 	// Make a grave
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
-	var/delay = (5 SECONDS * our_shovel.toolspeed)
+	var/delay = (5 SECONDS * tooling_of(our_shovel).speed)
 	user.setClickCooldown(delay)
-	om_task_timed(user, delay, src, src, PROC_REF(grave_dug), list(user))
+	perform_op(user, src, "dig_grave", our_shovel, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("delay" = delay))
 
-/turf/proc/grave_dug(mob/user)
+/turf/proc/grave_time(datum/act/op/A)
+	return A.arg("delay")
+
+/turf/proc/grave_dug(datum/act/op/A)
 	if(!(locate_within(src, /obj/structure/closet/grave/dirthole)))
 		new /obj/structure/closet/grave/dirthole(src)
-	to_chat(user, span_notice("You dug up a hole!"))
+	to_chat(A.actor, span_notice("You dug up a hole!"))
+	return OP_OK
 
 /// If a turf has any loot when dug with a shovel
 /turf/proc/get_dig_loot_type(mob/user, obj/item/W)

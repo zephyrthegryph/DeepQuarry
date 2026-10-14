@@ -47,11 +47,11 @@
 
 				H.mend(TREAT_TISSUE_REPAIR, 40)
 				H.mend(TREAT_BURN_CARE, 40)
-				om_after(src, 10 SECONDS, PROC_REF(resurrect_finish), H, user)
+				after(src, 10 SECONDS, PROC_REF(resurrect_finish), with = list(H, user))
 
 /obj/item/spell/resurrect/proc/resurrect_finish(mob/living/carbon/human/H, mob/living/user)
 	//Note that if whatever killed them in the first place wasn't fixed, they're likely to die again.
-	if(H.client && H.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW) == TRUE)
+	if(!QDELETED(H) && H.client && H.return_from_death("technomancer resurrection", src, REVIVE_IGNORE_WINDOW) == TRUE)
 		visible_message(span_danger("\The [H]'s eyes open!"))
 		to_chat(user, span_notice("It's alive!"))
 		adjust_instability(50)

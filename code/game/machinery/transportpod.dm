@@ -1,3 +1,8 @@
+// The ballistic transportation pod: one person climbs in, confirms, and the pod launches them to a random point of the station, blowing a hole on
+// arrival. ONE CAPABILITIES list says what it is: an occupant pod (occupant_pod(): the drag, the menu's "Move Inside" and "Eject", the occupant
+// moving out), the launch question asked of whoever gets in, and the launch itself while the occupant's answer stands. Walking into it climbs in
+// (the bump action's notice).
+
 /obj/machinery/transportpod
 	name = "Ballistic Transportation Pod"
 	desc = "A fast transit ballistic pod used to get from one place to the next. Batteries not included!"
@@ -8,113 +13,68 @@
 	anchored = TRUE
 	use_power = USE_POWER_OFF
 
-
 	var/xc = list(137, 209, 163, 110, 95, 60, 129, 201) // List of x values on the map to go to.
 	var/yc = list(134, 99, 169, 120, 96, 122, 189, 219) // List of y values on the map to go to.
 
 	var/limit_x = 3
 	var/limit_y = 3
+	/// TRUE from the occupant's confirmation until the pod launches.
+	var/in_transit = FALSE
 
-/// TRUE from the occupant's confirmation until the pod launches.
-OM_FIELD(/obj/machinery/transportpod, in_transit, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transit")
+TRACKED(/obj/machinery/transportpod, in_transit)
 
-/// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/transportpod
-	holder = /obj/machinery/transportpod
-	slot_id = OCCUPANT_SLOT_TRANSPORTPOD
-	name = "transport pod"
+CAPABILITIES(/obj/machinery/transportpod)
+	occupant_pod(OCCUPANT_SLOT_TRANSPORTPOD)
+	on_notice(/datum/notice/pod_entered, then(PROC_REF(ask_to_launch)))
+	on_notice(/datum/notice/bumped, then(PROC_REF(walked_into)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(launch)), when = nameof(in_transit))
 
-/// Launches once an occupant confirms (in_transit, the declaration above).
-/obj/machinery/transportpod/machine_step()
+/obj/machinery/transportpod/draw(datum/look/look)
+	..()
+	look.state(occupant_of(src) ? "borg_pod_closed" : "borg_pod_opened")
+
+/// Whoever got in (by any path) is asked to confirm the launch.
+/obj/machinery/transportpod/proc/ask_to_launch(datum/act/A)
+	var/datum/notice/pod_entered/N = A
+	open_request(src, /datum/prompt/yes_no, PROC_REF(launch_answered), answerer = N.occupant, title = "Transport Pod", question = "Are you sure you're ready to launch?", ask_flags = ASK_INSIDE, timeout = 0)
+
+/obj/machinery/transportpod/proc/launch_answered(datum/act/request/A)
+	if(A.answer && A.answer.value)
+		set_in_transit(TRUE)
+		playsound(src, HYPERSPACE_WARMUP)
+	else
+		occupant_eject(src)
+	return 1
+
+/// The occupant confirmed: the pod picks a destination, clears its landing site and flies.
+/obj/machinery/transportpod/proc/launch(datum/act/timer/A)
 	set_in_transit(FALSE)
-	if(!src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD)) // they got out before launch
+	if(!occupant_of(src)) // they got out before launch
 		return
 	var/locNum = rand(1, 8) //pick a random location
 	var/turf/L = locate(xc[locNum], yc[locNum], 1) // Pairs the X and Y to get an actual location.
 	limit_x = xc[locNum]+1
 	limit_y = yc[locNum]+1
 	build()
-	om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
+	after(src, 2 SECONDS, PROC_REF(arrive), with = list(L), keeps_dead = TRUE) //Give explosion time so the pod itself doesn't go boom
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
-	src.forceMove(L)
+	if(L)
+		src.forceMove(L)
 	play_sfx(src, SFX_EFFECTS_EXPLOSION, volume = 0)
-	om_after(src, 2, PROC_REF(arrive_unload))
+	after(src, 0.2 SECONDS, PROC_REF(arrive_unload))
 
 /obj/machinery/transportpod/proc/arrive_unload()
-	go_out()
-	om_after(src, 2, TYPE_PROC_REF(/datum, om_qdel_self))
+	occupant_eject(src)
+	expire(0.2 SECONDS)
 
-/obj/machinery/transportpod/relaymove(mob/user as mob)
-	if(user.stat)
+/// Someone walked into the pod: they climb in (aint no sleepy people getting in here).
+/obj/machinery/transportpod/proc/walked_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/living/O = N.bumper
+	if(!istype(O) || O.incapacitated())
 		return
-	go_out()
-	return
-
-/obj/machinery/transportpod/proc/appearance_occupied()
-	return src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD) ? 1 : 0
-
-APPEARANCE_TEMPLATE(/obj/machinery/transportpod, "borg_pod_{appearance_occupied?closed:opened}")
-
-/obj/machinery/transportpod/Bumped(mob/living/O)
-	go_in(O)
-
-/obj/machinery/transportpod/proc/go_in(mob/living/carbon/human/O)
-	if(src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD))
-		return
-
-	if(O.incapacitated()) //aint no sleepy people getting in here
-		return
-
-	add_fingerprint(O)
-	if(!O.move_into(src, OCCUPANT_SLOT_TRANSPORTPOD))
-		return
-	update_icon()
-	om_ask(O, /datum/om/prompt/confirm, PROC_REF(launch_answered), title = "Transport Pod", message = "Are you sure you're ready to launch?", requires = list(/datum/om/check/inside_target), answer_on_no = TRUE, cancel_answer = "No")
-	return 1
-
-/obj/machinery/transportpod/proc/launch_answered(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		set_in_transit(TRUE)
-		playsound(src, HYPERSPACE_WARMUP)
-	else
-		go_out()
-	return 1
-
-/obj/machinery/transportpod/proc/go_out()
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_TRANSPORTPOD)
-	if(!occupant)
-		return
-	slot_remove(occupant, src.loc)
-	update_icon()
-
-/obj/machinery/transportpod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/transportpod_eject,
-		/datum/interaction/machine_verb/transportpod_enter,
-	)
-	..()
-
-/datum/interaction/machine_verb/transportpod_eject
-	id = "transportpod_eject"
-	name = "Eject Pod"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/transportpod/proc/interaction_eject
-
-/obj/machinery/transportpod/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	go_out()
-	add_fingerprint(user)
-	return TRUE
-
-/datum/interaction/machine_verb/transportpod_enter
-	id = "transportpod_enter"
-	name = "Enter Pod"
-	effect = /obj/machinery/transportpod/proc/interaction_enter
-
-/obj/machinery/transportpod/proc/interaction_enter(mob/user, obj/item/held, datum/interaction/interaction)
-	go_in(user)
-	return TRUE
+	occupant_enter(src, O, O)
 
 /obj/machinery/transportpod/proc/build()
 	for(var/x = limit_x-2, x <= limit_x, x++)

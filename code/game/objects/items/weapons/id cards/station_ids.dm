@@ -10,7 +10,6 @@
 
 	var/list/access = list() // ALLOW(instance_list): d: ID access; an empty list and null differ for access checks
 	var/registered_name = "Unknown" // The name registered_name on the card
-	slot_flags = SLOT_ID | SLOT_EARS
 
 	var/age = "\[UNSET\]"
 	var/species = "\[UNSET\]"
@@ -39,9 +38,18 @@
 /obj/item/card/id/proc/prevent_tracking()
 	return 0
 
-DECLARE_UI_STATE(/obj/item/card/id, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/card/id, "IDCard")
+CAPABILITIES(/obj/item/card/id)
+	configure(item_worn(slots = SLOT_ID | SLOT_EARS))
+	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
+	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
+	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
+	ui_shape(registered_name = schema_text(), sex = schema_text(), species = schema_text(), age = num(), assignment = schema_text(), fingerprint_hash = schema_text(), blood_type = schema_text(), dna_hash = schema_text(), photo_front = any)
+	// the old attack_self: flash the card (an unconfigured card has nothing to show)
+	op("show", in_hand(), label("Show"), then(PROC_REF(interaction_show)))
+	// the old object verb
+	op("read", menu(), label("Read ID Card"), needs(carried()), then(PROC_REF(verb_read)))
+	derives(nameof(access), PROC_REF(starting_access))
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"
@@ -53,7 +61,7 @@ DECLARE_UI(/obj/item/card/id, "IDCard")
 
 /mob/proc/set_id_info(obj/item/card/id/id_card)
 	id_card.age = 0
-	id_card.registered_name		= real_name
+	id_card.set_registered_name(real_name)
 	id_card.sex 				= capitalize(gender)
 	id_card.species				= SPECIES_HUMAN
 	id_card.set_id_photo(src)
@@ -66,7 +74,7 @@ DECLARE_UI(/obj/item/card/id, "IDCard")
 
 /mob/living/carbon/human/set_id_info(obj/item/card/id/id_card)
 	..()
-	id_card.age = age
+	id_card.age = bio.age
 	if(species.name == SPECIES_HANNER)
 		id_card.species = "[custom_species ? "[custom_species]" : species.name]"
 	else
@@ -76,15 +84,26 @@ DECLARE_UI(/obj/item/card/id, "IDCard")
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
 	set_chardirectory_photo(id_card.front)
 
-UI_DATA_REPLACE(/obj/item/card/id, "registered_name:text", "sex:text", "species:text", "age:num", "assignment:text", "fingerprint_hash:text", "blood_type:text", "dna_hash:text", "photo_front=front")
+/obj/item/card/id/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["registered_name"] = registered_name
+	data["sex"] = sex
+	data["species"] = species
+	data["age"] = age
+	data["assignment"] = assignment
+	data["fingerprint_hash"] = fingerprint_hash
+	data["blood_type"] = blood_type
+	data["dna_hash"] = dna_hash
+	data["photo_front"] = front
+	return data
 
-DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interaction_show)))
+/// Old attack_self: flash the card.
+/obj/item/card/id/proc/interaction_show(datum/act/op/A)
+	return show_id_card(A.actor) ? OP_OK : OP_DECLINE
 
-/// Old attack_self: flash the card. Specially handled cards leave it to their own self-use.
-/obj/item/card/id/proc/interaction_show(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	return show_id_card(user)
+/obj/item/card/id/proc/verb_read(datum/act/op/A)
+	id_read_effect(A.actor)
+	return OP_OK
 
 /// Flashes the card to everyone around, once it is configured. TRUE when shown.
 /obj/item/card/id/proc/show_id_card(mob/user)
@@ -102,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 /obj/item/card/id/GetID()
 	return src
 
-/obj/item/card/id/proc/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/proc/id_read_effect(mob/user)
 
 	to_chat(user, "[icon2html(src, user.client)] [src.name]: The current assignment on the card is [src.assignment].")
 	to_chat(user, "The blood type on the card is [blood_type].")
@@ -116,11 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 
 	return ..()
 
-/obj/item/card/id/Initialize(mapload)
-	. = ..()
+/// The access it starts with (derives(), at init): its rank's job's, else what it was given. A special card answers its own.
+/obj/item/card/id/proc/starting_access()
 	var/datum/job/J = SSjob.get_job(rank)
-	if(J)
-		access = J.get_access()
+	return J ? J.get_access() : access
 
 /obj/item/card/id/silver
 	name = "identification card"
@@ -155,9 +173,8 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	item_state = "idgreen"
 	assignment = "Synthetic"
 
-/obj/item/card/id/synthetic/Initialize(mapload)
-	. = ..()
-	access = SSaccess.get_all_station_access().Copy() + ACCESS_SYNTH
+/obj/item/card/id/synthetic/starting_access()
+	return SSaccess.get_all_station_access().Copy() + ACCESS_SYNTH
 
 /obj/item/card/id/lost
 	name = "\improper Unknown ID"
@@ -165,9 +182,9 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	icon_state = "id-robot-n"
 	assignment = "Lost"
 
-/obj/item/card/id/lost/Initialize(mapload)
+/obj/item/card/id/lost/starting_access()
 	. = ..()
-	access += ACCESS_LOST
+	. += ACCESS_LOST
 
 /obj/item/card/id/platform
 	name = "\improper Support Platform ID"
@@ -188,13 +205,11 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	registered_name = "Central Command"
 	assignment = "General"
 
-/obj/item/card/id/centcom/Initialize(mapload)
-	. = ..()
-	access = SSaccess.get_all_centcom_access().Copy()
+/obj/item/card/id/centcom/starting_access()
+	return SSaccess.get_all_centcom_access().Copy()
 
-/obj/item/card/id/centcom/station/Initialize(mapload)
-	. = ..()
-	access |= SSaccess.get_all_station_access()
+/obj/item/card/id/centcom/station/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
 /obj/item/card/id/centcom/ert
 	name = "\improper " + JOB_EMERGENCY_RESPONSE_TEAM + "ID"
@@ -202,9 +217,8 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	icon_state = "ert-id"
 	rank = JOB_EMERGENCY_RESPONSE_TEAM
 
-/obj/item/card/id/centcom/ert/Initialize(mapload)
-	. = ..()
-	access |= SSaccess.get_all_station_access()
+/obj/item/card/id/centcom/ert/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
 // Department-flavor IDs
 /obj/item/card/id/medical
@@ -329,17 +343,23 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	var/polymorphic_type = 0
 	var/base_icon_state
 
-EXTEND_INTERACTIONS(/obj/item/card/id/event, \
-	INTERACT_USE("Configure", PROC_REF(interaction_configure)), \
-	INTERACT_ITEM("Copy access", PROC_REF(interaction_copy_access)), \
-)
+TRACKED(/obj/item/card/id/event, accessset)
+
+CAPABILITIES(/obj/item/card/id/event)
+	// the old attack_self: a configured card is flashed; an unconfigured one takes its holder's details
+	without("show")
+	op("configure", in_hand(), label("Configure"), then(PROC_REF(interaction_configure)))
+	// another ID's access is copied once (then the card's ordinary item handling goes on)
+	op("copy_access", item(/obj/item/card/id), label("Copy access"), then(PROC_REF(interaction_copy_access)))
 
 /// Old attack_self: a configured card is flashed; an unconfigured one takes its holder's details.
-/obj/item/card/id/event/proc/interaction_configure(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/event/proc/interaction_configure(datum/act/op/A)
+	var/mob/user = A.actor
 	if(configured)
-		return interaction_show(user, held, interaction)
+		show_id_card(user)
+		return OP_OK
 	if(polymorphic_type == 1)
-		icon_state = user.job
+		set_icon_state(user.job)
 		base_icon_state = user.job
 	else if(polymorphic_type == 2)
 		var/static/list/jobs_to_icon = list( //ITG only has a few kinds of icons so we have to group them up!
@@ -388,9 +408,9 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 
 		if(!guess)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
-			return
+			return OP_OK
 		else
-			icon_state = guess
+			set_icon_state(guess)
 			base_icon_state = guess
 
 	if(!preset_rank)
@@ -414,18 +434,22 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 
 	configured = TRUE
 	to_chat(user, span_notice("Card settings set."))
+	return OP_OK
 
 /// Old attackby: copy another card's access once; the base item handling follows.
-/obj/item/card/id/event/proc/interaction_copy_access(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/card/id/event/proc/interaction_copy_access(datum/act/op/A)
+	copy_access_from(A.actor, A.held)
+	return OP_DECLINE
+
+/obj/item/card/id/event/proc/copy_access_from(mob/user, obj/item/I)
 	if(istype(I, /obj/item/card/id) && !accessset)
 		var/obj/item/card/id/O = I
-		access |= O.GetAccess()
+		include_access(O.GetAccess())
 		desc = I.desc
 		rank = O.rank
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
 		consume(I, user)
-		accessset = 1
-	return FALSE
+		set_accessset(1)
 
 /obj/item/card/id/event/accessset
 	accessset = 1
@@ -563,7 +587,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 	var/gimmeicon = icon
 	. = ..()
 	icon = gimmeicon
-	icon_state = base_icon_state + "_digested"
+	set_icon_state(base_icon_state + "_digested")
 
 /obj/item/card/id/event/polymorphic/altcard
 	icon = 'icons/obj/card_alt.dmi'
@@ -573,18 +597,22 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 	desc = "An ID card typically used by contractors."
 	polymorphic_type = 1
 
-EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy access", PROC_REF(interaction_itg_copy_access)))
+CAPABILITIES(/obj/item/card/id/event/polymorphic/itg)
+	without("copy_access")
+	op("itg_copy_access", item(/obj/item/card/id), label("Copy access"), then(PROC_REF(interaction_itg_copy_access)))
 
 /// Old attackby: ITG cards refuse command and clown access; otherwise the event card's copy, then the ITG description.
-/obj/item/card/id/event/polymorphic/itg/proc/interaction_itg_copy_access(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/card/id) && !accessset)
+/obj/item/card/id/event/polymorphic/itg/proc/interaction_itg_copy_access(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(!accessset)
 		var/obj/item/card/id/O = I
 		var/static/list/itgdont = list(JOB_SITE_MANAGER, JOB_HEAD_OF_PERSONNEL, JOB_COMMAND_SECRETARY, JOB_HEAD_OF_SECURITY, JOB_CHIEF_ENGINEER, JOB_CHIEF_MEDICAL_OFFICER, JOB_RESEARCH_DIRECTOR, JOB_CLOWN, JOB_MIME, JOB_TALON_CAPTAIN) //If you're in as one of these you probably aren't representing ITG
 		if(O.rank in itgdont)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
-			return INTERACTION_HANDLED_PASS
-	interaction_copy_access(user, I, interaction)
-	. = INTERACTION_HANDLED_PASS
+			return OP_PASS
+	copy_access_from(user, I)
+	. = OP_PASS
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 
 
@@ -596,7 +624,12 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 	polymorphic_type = 2
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/card/id, \
-	INTERACT_VERB("Read ID Card", PROC_REF(id_read_effect), REQ_IN_INVENTORY), \
-)
+/// The name on the card: a wearer's visible name reads it (MOB_KEY_IDENTITY on whoever carries the card).
+/obj/item/card/id/proc/set_registered_name(value)
+	if(TRACKED_UNCHANGED(registered_name, value))
+		return FALSE
+	registered_name = value
+	tracked_changed(src, nameof(registered_name))
+	identity_changed_on_holder()
+	return TRUE
+SETTER(/obj/item/card/id, registered_name)

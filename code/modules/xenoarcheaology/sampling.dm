@@ -5,15 +5,19 @@
 	icon_state = "sliver1"
 	randpixel = 8
 	w_class = ITEMSIZE_TINY
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
-/obj/item/rocksliver/Initialize(mapload)
-	. = ..()
-	icon_state = "sliver[rand(1, 3)]"
-	randpixel_xy()
+CAPABILITIES(/obj/item/rocksliver)
+	configure(item_combat(sharp = TRUE))
+	owns_one(nameof(geological_data_static), /datum/geosample)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/rocksliver/proc/roll_icon_state(datum/roller/R)
+	return "sliver[R.number(1, 3)]"
 
 /datum/geosample
 	var/age = 0
@@ -87,15 +91,15 @@
 		artifact_distance = rand()
 		artifact_id = container.artifact_find.artifact_id
 	else
-		if(GLOB.xenoarch_service) //Sanity check due to runtimes ~Z
-			for(var/turf/simulated/mineral/T in GLOB.xenoarch_service.artifact_spawning_turfs)
+		if(SSxenoarch) //Sanity check due to runtimes ~Z
+			for(var/turf/simulated/mineral/T in SSxenoarch.artifact_spawning_turfs)
 				if(T.artifact_find)
 					var/cur_dist = get_dist(container, T) * 2
 					if( (artifact_distance < 0 || cur_dist < artifact_distance))
 						artifact_distance = cur_dist + rand() * 2 - 1
 						artifact_id = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), T)
 
 /obj/item/core_sampler
 	name = "core sampler"
@@ -108,8 +112,12 @@
 	var/sampled_turf = ""
 	var/num_stored_bags = 10
 	var/obj/item/evidencebag/filled_bag
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/core_sampler)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(filled_bag), /obj/item/evidencebag)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/core_sampler/examine(mob/user)
 	. = ..()
@@ -117,11 +125,13 @@
 		. += span_notice("Used to extract geological core samples - this one is [sampled_turf ? "full" : "empty"], and has [num_stored_bags] bag[num_stored_bags != 1 ? "s" : ""] remaining.")
 
 /// Old attackby.
-/obj/item/core_sampler/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/core_sampler/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/evidencebag))
 		if(contents_count(I))
 			to_chat(user, span_warning("\The [I] is full."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(num_stored_bags < 10)
 			consume(I, user)
 			num_stored_bags += 1
@@ -129,8 +139,8 @@
 		else
 			to_chat(user, span_warning("\The [src] can not fit any more bags."))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/core_sampler/proc/sample_item(item_to_sample, mob/user)
 	var/datum/geosample/geo_data
@@ -150,35 +160,31 @@
 			to_chat(user, span_warning("The core sampler is out of sample bags."))
 		else
 			//create a new sample bag which we'll fill with rock samples
-			own_set(src, nameof(filled_bag), new /obj/item/evidencebag(src))
+			rel_set(src, nameof(filled_bag), new /obj/item/evidencebag(src))
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
-			icon_state = "sampler1"
+			set_icon_state("sampler1")
 			--num_stored_bags
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			own_set(R, nameof(R.geological_data_static), geo_data.copy())
+			rel_set(R, nameof(R.geological_data_static), geo_data.copy())
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
 			var/image/I = image("icon"=R, "layer"=FLOAT_LAYER)
 			add_overlay(I)
 			add_overlay("evidence")
-			filled_bag.w_class = ITEMSIZE_TINY
+			filled_bag.set_w_class(ITEMSIZE_TINY)
 
 			to_chat(user, span_notice("You take a core sample of the [item_to_sample]."))
 	else
 		to_chat(user, span_warning("You are unable to take a sample of [item_to_sample]."))
 
-DECLARE_INTERACTIONS(/obj/item/core_sampler, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/core_sampler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/core_sampler/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(filled_bag)
 		to_chat(user, span_notice("You eject the full sample bag."))
 		var/success = 0
@@ -187,8 +193,8 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 			success = M.put_in_inactive_hand(filled_bag)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
-		own_take(src, nameof(filled_bag))
-		icon_state = "sampler0"
+		rel_take(src, nameof(filled_bag))
+		set_icon_state("sampler0")
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
 

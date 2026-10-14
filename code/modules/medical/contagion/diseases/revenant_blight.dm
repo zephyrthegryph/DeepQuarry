@@ -25,14 +25,14 @@
 	danger = DISEASE_HARMFUL
 	var/stagedamage = 0
 	var/finalstage = 0
-	var/list/original_hair_colour
+	var/original_hair_colour
 
 /datum/affliction/contagion/revblight/cure(add_resistance = FALSE)
 	if(host)
 		host.remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, "#1d2953")
 		if(original_hair_colour)
 			var/mob/living/carbon/human/human = host
-			human.change_hair_color(original_hair_colour[1], original_hair_colour[2], original_hair_colour[3])
+			human.change_hair_color(original_hair_colour)
 		to_chat(host, span_notice("You feel better"))
 		var/datum/affliction/blight = host.find_affliction(/datum/affliction/spectral_blight)
 		blight?.cure()
@@ -49,7 +49,7 @@
 			return FALSE
 		if(SPT_PROB(1.5 * stage, seconds_per_tick))
 			to_chat(host, span_danger("You suddenly feel [pick("sick and tired", "disoriented", "tired and confused", "nauseated", "faint", "dizzy")]..."))
-			host.status_at_least(EFFECT_CONFUSED, 10)
+			host.status_at_least(STAT_CONFUSED, 10)
 			new /obj/effect/temp_visual/revenant(host.loc)
 		if(stagedamage < stage)
 			stagedamage++
@@ -73,8 +73,8 @@
 				new /obj/effect/temp_visual/revenant(host.loc)
 				if(ishuman(host))
 					var/mob/living/carbon/human/human = host
-					original_hair_colour = list(human.r_hair, human.g_hair, human.b_hair)
-					human.change_hair_color(255, 255, 255)
+					original_hair_colour = human.looks.hair_color
+					human.change_hair_color(rgb(255, 255, 255))
 				host.visible_message(span_warning("[host] looks terrifyingly gaunt..."), span_danger("You suddenly feel like your skin is <i>wrong</i>..."))
 				host.add_atom_colour("#1d2953", TEMPORARY_COLOUR_PRIORITY)
-				om_after(src, 10 SECONDS, PROC_REF(cure))
+				after(src, 10 SECONDS, PROC_REF(cure))

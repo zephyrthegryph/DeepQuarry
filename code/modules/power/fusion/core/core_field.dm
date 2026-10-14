@@ -10,7 +10,6 @@
 	alpha = 50
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	light_color = "#cc7700"
 
 	var/size = 1
 	var/energy = 0
@@ -42,88 +41,51 @@
 	var/light_max_range = 5
 	var/light_max_power = 5
 
-	var/last_range
-	var/last_power
+	// lit at its minimum from the start (static light vars, applied when it materializes)
+	light_on = TRUE
+	var/last_range = 2
+	var/last_power = 3
 
-/obj/effect/fusion_em_field/Initialize(mapload, obj/machinery/power/fusion_core/new_owned_core)
-	. = ..()
+// The core owns its field (fusion_core/Startup()); the field names its core back and owns the catchers that take particles into it.
+CAPABILITIES(/obj/effect/fusion_em_field)
+	configure(light_glow(color = "#cc7700", range = 2, power = 3))
+	owns_many(nameof(particle_catchers))
+	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
+	param(nameof(owned_core), pos = 1)
+	derives(nameof(id_tag), PROC_REF(core_tag), from = list(nameof(owned_core)))
+	keeps_if(PROC_REF(has_core))
+	// the gimmicky things that handle field collisions, laid out around the core
+	spawns_many(nameof(particle_catchers), /obj/effect/fusion_particle_catcher, at = PROC_REF(catcher_layout), back = nameof(/obj/effect/fusion_particle_catcher::parent), each = PROC_REF(catcher_placed), only_if = nameof(owned_core))
 
-	set_light(light_min_range,light_min_power)
-	last_range = light_min_range
-	last_power = light_min_power
+/// The catchers around the core (spawns_many()): list(dx, dy, size).
+TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
+	list(0, 0, 1),
+	list(-1, 0, 3), list(1, 0, 3), list(0, 1, 3), list(0, -1, 3),
+	list(-2, 0, 5), list(2, 0, 5), list(0, 2, 5), list(0, -2, 5),
+	list(-3, 0, 7), list(3, 0, 7), list(0, 3, 7), list(0, -3, 7)))
 
-	rel_set(src, nameof(owned_core), new_owned_core)
-	if(!owned_core)
-		return INITIALIZE_HINT_QDEL
-	id_tag = owned_core.id_tag
-	//create the gimmicky things to handle field collisions
-	var/obj/effect/fusion_particle_catcher/catcher
+/// The layout table (spawns_many(at =)).
+/obj/effect/fusion_em_field/proc/catcher_layout()
+	return TYPE_TABLE_GET(src, fusion_catcher_layout)
 
-	catcher = new (locate(src.x,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(1)
-	own_add(src, nameof(particle_catchers), catcher)
+/// A catcher laid out around the core takes its size from its offset (spawns_many(each =)).
+/obj/effect/fusion_em_field/proc/catcher_placed(obj/effect/fusion_particle_catcher/catcher, list/offset)
+	catcher.SetSize(offset[3])
 
-	catcher = new (locate(src.x-1,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x+1,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+1,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-1,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	own_add(src, nameof(particle_catchers), catcher)
+/// A field lives on its core (keeps_if()): a condition.
+/obj/effect/fusion_em_field/proc/has_core()
+	return !!owned_core
 
-	catcher = new (locate(src.x-2,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x+2,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+2,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-2,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	own_add(src, nameof(particle_catchers), catcher)
+/// The field answers to its core's id tag (derives()).
+/obj/effect/fusion_em_field/proc/core_tag()
+	return owned_core?.id_tag
 
-	catcher = new (locate(src.x-3,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	own_add(src, nameof(particle_catchers), catcher)
-
-	// Idle traps do not scan their surroundings. Field creation is the dependency
-	// that wakes only traps close enough to use it.
-	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
-		MACHINE_WAKE(trap)
-	catcher = new (locate(src.x+3,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+3,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	own_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-3,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	own_add(src, nameof(particle_catchers), catcher)
-
-/obj/effect/fusion_em_field/periodic_step()
+/// The field's reaction (its core's step runs it): it takes fuel gas from the room, reacts, pays its heat to the grid (FUSION_ENERGY_PER_K W
+/// per K), loses 1% of its heat to radiation, checks its stability and radiates.
+/obj/effect/fusion_em_field/proc/field_react()
 	//make sure the field generator is still intact
 	if(!owned_core || QDELETED(owned_core))
-		qdel(src)
+		spent(src)
 		return
 
 	// Take some gas up from our environment.
@@ -182,7 +144,7 @@
 		use_power = light_min_power + CEILING((light_max_power-light_min_power)*temp_mod, 1)
 
 	if(last_range != use_range || last_power != use_power)
-		set_light(use_range,use_power)
+		set_glow(src, GLOW(use_range, use_power, null))
 		last_range = use_range
 		last_power = use_power
 
@@ -244,7 +206,7 @@
 					var/lost_plasma = (plasma_temperature*percent_unstable)
 					radiation += lost_plasma
 					if(flare)
-						om_after(src, 1, PROC_REF(emflare))
+						after(src, 0.1 SECONDS, PROC_REF(emflare))
 					if(fuel_loss)
 						for(var/particle in dormant_reactant_quantities)
 							var/lost_fuel = dormant_reactant_quantities[particle]*percent_unstable
@@ -293,7 +255,7 @@
 		var/datum/gas_mixture/plasma = new
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-		plasma.set_temperature(plasma_temperature/2)
+		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		T.assume_air(plasma)
 		// A field that never heated (plasma_temperature 0) ignites nothing; hotspot_expose() refuses
@@ -359,7 +321,7 @@
 		if(1)
 			size = 1
 			icon = 'icons/obj/machines/power/fusion.dmi'
-			icon_state = "emfield_s1"
+			set_icon_state("emfield_s1")
 			pixel_x = 0
 			pixel_y = 0
 			//
@@ -367,7 +329,7 @@
 		if(3)
 			size = 3
 			icon = 'icons/effects/96x96.dmi'
-			icon_state = "emfield_s3"
+			set_icon_state("emfield_s3")
 			pixel_x = -32 * PIXEL_MULTIPLIER
 			pixel_y = -32 * PIXEL_MULTIPLIER
 			//
@@ -375,7 +337,7 @@
 		if(5)
 			size = 5
 			icon = 'icons/effects/160x160.dmi'
-			icon_state = "emfield_s5"
+			set_icon_state("emfield_s5")
 			pixel_x = -64 * PIXEL_MULTIPLIER
 			pixel_y = -64 * PIXEL_MULTIPLIER
 			//
@@ -383,7 +345,7 @@
 		if(7)
 			size = 7
 			icon = 'icons/effects/224x224.dmi'
-			icon_state = "emfield_s7"
+			set_icon_state("emfield_s7")
 			pixel_x = -96 * PIXEL_MULTIPLIER
 			pixel_y = -96 * PIXEL_MULTIPLIER
 			//
@@ -504,11 +466,6 @@
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
 
-// The core owns its field (own_set in fusion_core/Startup()); the field names its core back.
-/obj/effect/fusion_em_field/relations()
-	. = ..()
-	. += rel_one(nameof(owned_core))
-
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)
 	RadiateAll()
@@ -516,7 +473,6 @@
 
 /obj/effect/fusion_em_field/bullet_act(obj/item/projectile/Proj)
 	AddEnergy(Proj.damage)
-	update_icon()
 	return 0
 //All procs below this point are called in _core.dm, starting at line 41.
 //Stability monitoring. Gives radio annoucements if field stability is below 80%
@@ -548,48 +504,48 @@
 	if(owned_core && owned_core.loc)
 		var/datum/gas_mixture/environment = owned_core.loc.return_air()
 		if(environment && environment.return_temperature() < (T0C+FUSION_MAX_ENVIRO_HEAT))
-			environment.add_thermal_energy(plasma_temperature*5000)
+			heat_add(environment, plasma_temperature*5000, HEAT_SOURCE_DEVICE)
 			check_instability()
 
 //Temperature changes depending on color.
 /obj/effect/fusion_em_field/proc/temp_color()
 	if(plasma_temperature > 60000) //high ultraviolet - magenta
-		light_color = "#cc005f"
+		set_light_color("#cc005f")
 		light_max_range = 25
 		light_max_power = 10
 	else if(plasma_temperature > 12000) //ultraviolet - blue
-		light_color = "#1b00cc"
+		set_light_color("#1b00cc")
 		light_max_range = 20
 		light_max_power = 10
 	else if(plasma_temperature > 8000) //nearing ultraviolet - cyan
-		light_color = "#00cccc"
+		set_light_color("#00cccc")
 		light_max_range = 15
 		light_max_power = 10
 	else if(plasma_temperature > 4000) // green
-		light_color = "#1ab705"
+		set_light_color("#1ab705")
 		light_max_range = 10
 		light_max_power = 10
 	else if(plasma_temperature <= 4000) //orange
-		light_color = "#cc7700"
+		set_light_color("#cc7700")
 		light_max_range = 5
 		light_max_power = 5
 	return
 //moved the flare to a proc for various reasons. Called on line 225.
 /obj/effect/fusion_em_field/proc/emflare()
 		radiation += plasma_temperature/2
-		light_color = "#ff0000"
+		set_light_color("#ff0000")
 		light_max_power = 30
 		light_min_power = 30
 		light_min_range = 30
 		light_max_range = 30
 		visible_message(span_danger("\The [src] flares to eye-searing brightness!"))
-		om_after(src, 6 SECONDS, PROC_REF(temp_color))
+		after(src, 6 SECONDS, PROC_REF(temp_color))
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade
 
 /obj/effect/fusion_em_field/proc/Rupture()
 	visible_message(span_danger("\The [src] shudders like a dying animal before flaring to eye-searing brightness and rupturing!"))
-	set_light(15, 15, "#CCCCFF")
+	set_glow(src, GLOW(15, 15, "#CCCCFF"))
 	empulse(get_turf(src), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	GLOB.global_announcer.autosay("WARNING: FIELD RUPTURE IMMINENT!", "Containment Monitor")
 	RadiateAll()
@@ -602,20 +558,20 @@
 	empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	// Six more blasts over ten seconds, on the core's clock: the field is gone by then.
 	for(var/delay in list(25, 50, 75, 85, 95, 105))
-		om_after(owned_core, delay, /proc/fusion_rupture_blast, things_in_range)
+		after(owned_core, delay, GLOBAL_PROC_REF(fusion_rupture_blast), with = list(things_in_range))
 	return
 
 /obj/effect/fusion_em_field/proc/MRC() //spews electromagnetic pulses in an area around the core.
 	visible_message(span_danger("\The [src] glows an extremely bright pink and flares out of existance!"))
 	GLOB.global_announcer.autosay("Warning! Magnetic Resonance Cascade detected! Brace for electronic system distruption.", "Field Stability Monitor")
-	set_light(15, 15, "#ff00d8")
+	set_glow(src, GLOW(15, 15, "#ff00d8"))
 	var/list/things_in_range = range(15, owned_core)
 	var/list/turfs_in_range = list()
 	for (var/turf/T in things_in_range)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
-		om_after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, things_in_range) // the core's clock: the field is gone by then
-	qdel(src)
+		after(owned_core, 20 SECONDS, GLOBAL_PROC_REF(fusion_cascade_pulse), with = list(things_in_range)) // the core's clock: the field is gone by then
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/QuantumFluxCascade() //spews hot phoron and oxygen in a radius around the RUST. Will probably set fire to things
@@ -630,12 +586,12 @@
 			var/datum/gas_mixture/plasma = new
 			plasma.adjust_gas(GAS_O2, (size*100), 0)
 			plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-			plasma.set_temperature(plasma_temperature/2)
+			heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 			// plasma.update_values() removed; no-op under LINDA.
 			TT.assume_air(plasma)
 			TT.hotspot_expose(plasma_temperature)
 			plasma = null
-	qdel(src)
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/MagneticQuench() //standard hard shutdown. dumps hot oxygen/phoron into the core's area and releases an EMP in the area around the core.
@@ -646,18 +602,18 @@
 		var/datum/gas_mixture/plasma = new
 		plasma.adjust_gas(GAS_O2, (size*100), 0)
 		plasma.adjust_gas(GAS_PHORON, (size*100), 0)
-		plasma.set_temperature(plasma_temperature/2)
+		heat_set(plasma, plasma_temperature/2, HEAT_SOURCE_DEVICE)
 		// plasma.update_values() removed; no-op under LINDA.
 		TT.assume_air(plasma)
 		TT.hotspot_expose(plasma_temperature)
 		plasma = null
 	owned_core.Shutdown()
-	qdel(src)
+	spent(src)
 	return
 
 /obj/effect/fusion_em_field/proc/BluespaceQuenchEvent() //!!FUN!! causes a number of explosions in an area around the core. Will likely destory or heavily damage the reactor.
 	visible_message(span_danger("\The [src] shudders like a dying animal before flaring to eye-searing brightness and rupturing!"))
-	set_light(15, 15, "#CCCCFF")
+	set_glow(src, GLOW(15, 15, "#CCCCFF"))
 	empulse(get_turf(src), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	GLOB.global_announcer.autosay("WARNING: FIELD RUPTURE IMMINENT!", "Containment Monitor")
 	RadiateAll()
@@ -669,7 +625,7 @@
 		explosion(pick(things_in_range), -1, 5, 5, 5)
 		empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	owned_core.Shutdown()
-	qdel(src)
+	spent(src)
 	return
 
 #undef FUSION_ENERGY_PER_K

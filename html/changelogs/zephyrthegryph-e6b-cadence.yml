@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The input drain and held-key loop park while idle, the profiler runs at its configured interval, and the sharded test worlds each write holomaps to their own directory"

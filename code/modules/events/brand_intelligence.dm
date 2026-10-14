@@ -68,7 +68,6 @@
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending
 	return originMachine
 
-/datum/event/brand_intelligence/relations()
-	. = ..()
-	. += rel_many(nameof(vendingMachines))
-	. += rel_many(nameof(infectedVendingMachines))
+CAPABILITIES(/datum/event/brand_intelligence)
+	ref_many(nameof(vendingMachines))
+	ref_many(nameof(infectedVendingMachines))

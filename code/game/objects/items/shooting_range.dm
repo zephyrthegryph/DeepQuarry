@@ -15,16 +15,6 @@
 			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
 	return ..()
 
-// the stake it was pinned to forgets it and blocks again.
-/obj/item/target/on_destroy(force)
-	// if a target is deleted and associated with a stake, force stake to forget
-	for(var/obj/structure/target_stake/T in view(3,src))
-		if(T.pinned_target == src)
-			rel_clear(T, nameof(T.pinned_target)) // the view clears anyway; the stake still blocks again
-			T.set_density(TRUE)
-			break
-	..()
-
 /obj/item/target/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	// After target moves, check for nearby stakes. If associated, move to target
@@ -37,45 +27,51 @@
 	// a stake's density to 0 meaning it can't be pushed anymore. Instead of pushing
 	// the stake now, we have to push the target.
 
-/obj/item/target/welder_act(mob/user, obj/item/W)
+/obj/item/target/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
 		cut_overlays()
 		to_chat(user, "You slice off [src]'s uneven chunks of aluminum and scorch marks.")
-	return TRUE
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/target)
+	op("unpin", hand(), when(req(PROC_REF(is_pinned))), then(PROC_REF(unpinned)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
-/// Old attack_hand.
-/obj/item/target/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	// taking pinned targets off!
-	var/obj/structure/target_stake/stake
+/// The stake this target is pinned to, if one is near.
+/obj/item/target/proc/pinning_stake()
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
-			stake = T
-			break
+			return T
+	return null
 
-	if(stake)
-		if(stake.pinned_target)
-			stake.set_density(TRUE)
-			set_density(FALSE)
-			layer = OBJ_LAYER
+/// An empty hand takes a pinned target off its stake; a free target is picked up as any item.
+/obj/item/target/proc/is_pinned(datum/act/op/A)
+	return (!!pinning_stake()) ? null : /datum/msg/req_failed
 
-			forceMove(user.loc)
-			if(ishuman(user))
-				if(!user.get_active_hand())
-					user.put_in_hands(src)
-					to_chat(user, "You take the target out of the stake.")
-			else
-				src.forceMove(get_turf(user))
-				to_chat(user, "You take the target out of the stake.")
+/// Taking pinned targets off.
+/obj/item/target/proc/unpinned(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/structure/target_stake/stake = pinning_stake()
+	if(!stake)
+		return OP_REFUSED
+	stake.set_density(TRUE)
+	set_density(FALSE)
+	layer = OBJ_LAYER
 
-			rel_clear(stake, nameof(stake.pinned_target))
-			return TRUE
-
+	forceMove(user.loc)
+	if(ishuman(user))
+		if(!user.get_active_hand())
+			user.put_in_hands(src)
+			to_chat(user, "You take the target out of the stake.")
 	else
-		return FALSE
-	return TRUE
+		src.forceMove(get_turf(user))
+		to_chat(user, "You take the target out of the stake.")
+
+	rel_clear(stake, nameof(stake.pinned_target))
+	return OP_OK
 
 /obj/item/target/syndicate
 	icon_state = "target_s"
@@ -108,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 		bmark.pixel_x = p_x
 		bmark.pixel_y = p_y
 		bmark.icon = 'icons/effects/effects.dmi'
-		bmark.icon_state = "scorch"
+		bmark.set_icon_state("scorch")
 
 		if(decaltype == 1)
 			// Energy weapons are hot. they scorch!
@@ -118,15 +114,15 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 			bmark.pixel_y--
 
 			if(Proj.damage >= 20 || istype(Proj, /obj/item/projectile/beam/practice))
-				bmark.icon_state = "scorch"
+				bmark.set_icon_state("scorch")
 				bmark.set_dir(pick(NORTH,SOUTH,EAST,WEST)) // random scorch design
 
 			else
-				bmark.icon_state = "light_scorch"
+				bmark.set_icon_state("light_scorch")
 		else
 
 			// Bullets are hard. They make dents!
-			bmark.icon_state = "dent"
+			bmark.set_icon_state("dent")
 
 		if(Proj.damage >= 10 && length(bulletholes) <= 35) // maximum of 35 bullet holes
 			if(decaltype == 2) // bullet

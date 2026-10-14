@@ -16,6 +16,7 @@
 extern crate self as vg_core;
 
 pub mod activity;
+pub mod adjacency;
 pub mod alloc;
 pub mod arena;
 pub mod bitset;

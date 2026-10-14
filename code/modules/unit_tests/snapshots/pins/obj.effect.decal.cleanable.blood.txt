@@ -1,0 +1,32 @@
+human|none menu: Touch blood
+human|none click: Click: Touch blood
+robot|none menu: Touch blood
+robot|none click: Click: Touch blood
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Touch blood
+human|/obj/item/tool/screwdriver click: Click: Touch blood
+human|/obj/item/tool/crowbar menu: Touch blood
+human|/obj/item/tool/crowbar click: Click: Touch blood
+human|/obj/item/tool/wrench menu: Touch blood
+human|/obj/item/tool/wrench click: Click: Touch blood
+human|/obj/item/tool/wirecutters menu: Touch blood
+human|/obj/item/tool/wirecutters click: Click: Touch blood
+human|/obj/item/multitool menu: Touch blood
+human|/obj/item/multitool click: Click: Touch blood
+human|/obj/item/weldingtool menu: Touch blood
+human|/obj/item/weldingtool click: Click: Touch blood
+human|/obj/item/stack/cable_coil menu: Touch blood
+human|/obj/item/stack/cable_coil click: Click: Touch blood
+human|/obj/item/stack/material/steel menu: Touch blood
+human|/obj/item/stack/material/steel click: Click: Touch blood
+human|/obj/item/card/id menu: Touch blood
+human|/obj/item/card/id click: Click: Touch blood
+@obj human|/obj/item/mop_deploy
++1 menu: Mop
++2 menu: Touch blood
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Scrub out
+human|/obj/item/soap menu: Touch blood
+human|/obj/item/soap click: Click: Scrub out
+keys: drag_buckle, pass_insert, pass_insert_2, touch_blood

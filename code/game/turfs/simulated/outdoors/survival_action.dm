@@ -1,49 +1,59 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATED_AS(I_HELP, "Dig", PROC_REF(newdirt_hand)))
+CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
+	rolls(nameof(flooring_override), pick_one(list("dirt0" = 150, "dirt1" = 25, "dirt2" = 25, "dirt3" = 25, "dirt4" = 25, "dirt5" = 10, "dirt6" = 10, "dirt7" = 3, "dirt8" = 3, "dirt9" = 1)))
+	op("newdirt_hand", hand(), ungated(), stance(I_HELP), label("Dig"), then(PROC_REF(newdirt_hand)))
+	op("loosen_rocks", ai(), wait(5 SECONDS), then(PROC_REF(loosen_rocks_done)))
+	op("pile_up", ai(), wait(5 SECONDS), then(PROC_REF(pile_done)))
 
 /// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Outside combat mode only (the interaction's stance); pulling or out of reach, the turf's own touch.
-/turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user?.pulling_target())
-		return FALSE
+		return OP_DECLINE
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	if(icon_state in GLOB.has_rocks)
 		act_message(user, src, MSG_SELF("You loosen rocks from %T%..."), MSG_OTHERS("%U% loosens rocks from %T%..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
+		perform_op(user, src, "loosen_rocks", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return TRUE
 	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return TRUE
 	else
-		om_ask(user, /datum/om/prompt/confirm/build_growplot, PROC_REF(growplot_answered))
+		open_request(src, /datum/prompt/yes_no/build_growplot, PROC_REF(growplot_answered), answerer = user)
 	return TRUE
 
 /// Re-checked: next to the dirt, and it's still clear.
-/datum/om/prompt/confirm/build_growplot
+/datum/prompt/yes_no/build_growplot
 	title = "Build growplot?"
-	message = "Do you want to build a growplot out of the dirt?"
+	question = "Do you want to build a growplot out of the dirt?"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/confirm/build_growplot/valid()
-	return locate_on(subject, /obj) ? "not clear" : null
+/datum/prompt/yes_no/build_growplot/recheck_extra()
+	return locate_on(owner, /obj) ? "not clear" : null
 
-/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/om/prompt/confirm/build_growplot/ask)
-	var/mob/user = ask.answerer
-	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
-	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
-
-/turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
-	if(!(icon_state in GLOB.has_rocks))
+/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
 		return
+	var/mob/user = A.request.answerer
+	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
+	perform_op(user, src, "pile_up", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+
+/turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done(datum/act/op/A)
+	if(!(icon_state in GLOB.has_rocks))
+		return OP_REFUSED
 	var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
 	R.pixel_x = rand(-6,6)
 	R.pixel_y = rand(-6,6)
-	icon_state = "dirt0"
+	set_icon_state("dirt0")
+	return OP_OK
 
-/turf/simulated/floor/outdoors/newdirt/proc/pile_done()
+/turf/simulated/floor/outdoors/newdirt/proc/pile_done(datum/act/op/A)
 	if(!locate_on(src, /obj))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil(src)
+	return OP_OK
 
 /turf/simulated/floor/outdoors/newdirt/get_dig_loot_type(mob/user, obj/item/W)
 	if(prob(5))
@@ -73,19 +83,18 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATE
 /obj/structure/flora/tree
 	var/sticks = TRUE
 
-/obj/structure/flora/tree/proc/sticks_found(mob/user)
+
+/obj/structure/flora/tree/proc/sticks_found(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!sticks)
 		return
 	var/obj/item/stack/material/stick/S = new(get_turf(user), rand(1,3))
 	S.pixel_x = rand(-6,6)
 	S.pixel_y = rand(-6,6)
-	sticks = FALSE
+	set_sticks(FALSE)
 
-/// Old attack_hand: search for loose sticks (tree_hand, trees.dm).
-/obj/structure/flora/tree/proc/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
-	if(sticks)
-		act_message(user, src, MSG_SELF("You search %T% for loose sticks..."), MSG_OTHERS("%U% searches %T% for loose sticks..."))
-		om_task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
-	else
-		to_chat(user, span_notice("You don't see any loose sticks..."))
-	return TRUE
+MSG_DEF(tree/searching_sticks, "You search %T% for loose sticks...", "%U% searches %T% for loose sticks...")
+MSG_DEF_SELF(tree/no_sticks, span_notice("You don't see any loose sticks..."))
+
+/obj/structure/flora/tree/proc/has_sticks(datum/act/op/A)
+	return (sticks) ? null : MSG(tree/no_sticks)

@@ -38,10 +38,13 @@
 	var/list/utility_requirements
 	var/list/variant_options
 
+CAPABILITIES(/datum/generated_room_feature)
+	owns_many(nameof(constraints))
+
 /datum/generated_room_feature/New()
 	..()
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	utility_requirements = TYPE_TABLE_GET(src, build_utility_requirements)
 	variant_options = build_variant_options()
 
@@ -269,11 +272,14 @@ TYPE_TABLE(/datum/generated_room_feature/operating_computer, build_utility_requi
 	/// Maximum walking distance between fixtures in one activity module.
 	var/cohesion_radius = 5
 
+CAPABILITIES(/datum/generated_room_feature_group)
+	owns_many(nameof(constraints))
+
 /datum/generated_room_feature_group/New()
 	..()
 	feature_types = TYPE_TABLE_GET(src, build_group_feature_types)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 
 
 TYPE_TABLE_DECLARE(/datum/generated_room_feature_group, build_group_feature_types, list())
@@ -444,12 +450,16 @@ TYPE_TABLE(/datum/generated_room_feature_group/cargo_workstation, build_group_fe
 	var/list/constraints
 	var/list/occupied_offsets
 
+CAPABILITIES(/datum/generated_room_fragment)
+	owns_many(nameof(constraints))
+	owns_many(nameof(sockets))
+
 /datum/generated_room_fragment/New()
 	..()
 	for(var/datum/generated_room_fragment_socket/built_socket in build_sockets())
-		own_add(src, nameof(sockets), built_socket)
+		rel_add(src, nameof(sockets), built_socket)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	occupied_offsets = TYPE_TABLE_GET(src, build_occupied_offsets)
 
 
@@ -485,7 +495,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 			existing[movable] = TRUE
 	var/datum/map_template/template = new(template_path, "generated room fragment [id]", TRUE)
 	if(template.width != width || template.height != height)
-		qdel(template)
+		spent(template)
 		return FALSE
 	template.load(origin)
 	var/created = FALSE
@@ -495,9 +505,9 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 				continue
 			owner.register_furnishing(movable)
 			if(istype(movable, /obj/machinery/door))
-				own_add(owner, nameof(owner.doors), movable)
+				rel_add(owner, nameof(owner.doors), movable)
 			created = TRUE
-	qdel(template)
+	spent(template)
 	return created
 
 /datum/generated_room_fragment/reception_corner
@@ -541,7 +551,7 @@ TYPE_TABLE(/datum/generated_room_fragment/reception_corner, build_occupied_offse
 	var/obj/machinery/door/window/access = new(access_turf)
 	access.set_dir(EAST)
 	owner.register_furnishing(access)
-	own_add(owner, nameof(owner.doors), access)
+	rel_add(owner, nameof(owner.doors), access)
 	return TRUE
 
 /datum/generated_room_fragment/reception_corner/build_constraints()
@@ -793,6 +803,10 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 	var/list/variant_options
 	var/datum/generated_room_style/room_style
 
+CAPABILITIES(/datum/generated_room_definition)
+	owns_one(nameof(room_style), /datum/generated_room_style)
+	owns_many(nameof(constraints))
+
 /datum/generated_room_definition/New()
 	..()
 	required_features = TYPE_TABLE_GET(src, build_required_features)
@@ -800,9 +814,9 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 	optional_groups = TYPE_TABLE_GET(src, build_optional_groups)
 	fragment_options = TYPE_TABLE_GET(src, build_fragment_options)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	variant_options = TYPE_TABLE_GET(src, build_variant_options)
-	own_set(src, nameof(room_style), build_room_style())
+	rel_set(src, nameof(room_style), build_room_style())
 
 
 TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_required_features, list())
@@ -869,10 +883,10 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 					var/datum/generated_room_feature/motif_feature = new motif_type
 					if(motif_feature.atom_type == required_feature.atom_type)
 						plan.feature_types -= required_type
-					qdel(motif_feature)
-				qdel(required_feature)
-			qdel(motif)
-		qdel(fragment_prng)
+					spent(motif_feature)
+				spent(required_feature)
+			spent(motif)
+		spent(fragment_prng)
 	var/list/matches = list()
 	var/total_weight = 0
 	for(var/variant_type in variant_options)
@@ -881,11 +895,11 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 			matches += variant
 			total_weight += variant.weight
 		else
-			qdel(variant)
+			spent(variant)
 	if(total_weight)
 		var/datum/generated_station_prng/prng = new(seed)
 		var/roll = prng.next_range(1, total_weight)
-		qdel(prng)
+		spent(prng)
 		for(var/datum/generated_room_variant/variant in matches)
 			roll -= variant.weight
 			if(roll > 0)
@@ -899,7 +913,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_variant_options, list
 	if(length(optional_groups) && !cohesive_fragment)
 		var/datum/generated_station_prng/optional_prng = new(seed + 7919)
 		plan.group_types |= optional_groups[optional_prng.next_range(1, length(optional_groups))]
-		qdel(optional_prng)
+		spent(optional_prng)
 	return plan
 
 /datum/generated_room_definition/surgery
@@ -1275,21 +1289,21 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 	own_clear(fallback, nameof(fallback.room_style), OWN_DELETE)
 	switch(department_id)
 		if("command")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/command)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/command)
 		if("ai")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/ai/support)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/ai/support)
 		if("security")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/security)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/security)
 		if("medical")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/medical)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/medical)
 		if("engineering")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/engineering)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/engineering)
 		if("logistics")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/cargo)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/cargo)
 		if("docking")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/docking)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/docking)
 		else
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style)
 	fallback.density_min = 0.2
 	fallback.density_max = 0.5
 	switch("[department_id]/[role]")
@@ -1400,7 +1414,7 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 				var/datum/generated_room_feature_group/group = new group_type
 				if(length(group.feature_types))
 					compact_features |= group.feature_types[1]
-				qdel(group)
+				spent(group)
 				if(length(compact_features) >= 2)
 					break
 	compact.required_features = compact_features
@@ -1423,7 +1437,7 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 		return null
 	var/list/signature_features = generated_room_compact_authored_features(department_id, role)
 	if(!length(signature_features))
-		qdel(micro)
+		spent(micro)
 		return null
 	micro.id = "[department_id]-micro-[role]"
 	micro.name = "Micro [capitalize(replacetext(role, "-", " "))]"

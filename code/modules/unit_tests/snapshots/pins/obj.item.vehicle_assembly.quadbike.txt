@@ -1,0 +1,25 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj human|/obj/item/stack/material/plastic
+-click: nothing
++0 menu: Build wheeled (refused: You don't have enough for that.)
++3 click: Click: Build wheeled
+@obj human|/obj/item/stock_parts/console_screen
+@obj human|/obj/item/stock_parts/spring
+@obj human|/obj/item/cell
+@obj human|/obj/item/stock_parts/motor
+@obj human|/obj/item/stack/material/plasteel
+keys: collect_item, construction.build:quadbike_controlled, construction.build:quadbike_finished, construction.build:quadbike_finished.screwdriver, construction.build:quadbike_lit, construction.build:quadbike_motored, construction.build:quadbike_powered, construction.build:quadbike_reinforced, construction.build:quadbike_trailered, construction.build:quadbike_wheeled, construction.build:quadbike_wired, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

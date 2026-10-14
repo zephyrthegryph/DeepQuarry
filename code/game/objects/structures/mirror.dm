@@ -12,51 +12,43 @@
 	var/glass = 1
 	var/datum/tgui_module/appearance_changer/mirror/M
 
-/obj/structure/mirror/Initialize(mapload, dir, building = 0)
+TRACKED(/obj/structure/mirror, glass)
+
+CAPABILITIES(/obj/structure/mirror)
+	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror, starts = /datum/tgui_module/appearance_changer/mirror, starts_args = list(null))
+	op("remove_frame", tool(TOOL_WRENCH), label("Unfasten the frame"), when(cond_not(nameof(glass))), starts(PROC_REF(frame_started)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("use_wrench", tool(TOOL_WRENCH), when(nameof(glass)), wait(0), then(PROC_REF(wrench_used)))
+	op("use", hand(), label("Use"), then(PROC_REF(mirror_open_ui)))
+	op("silicon_use", remote(), label("Use"), needs(req_adjacent()), then(PROC_REF(mirror_open_ui)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("add_glass", stack(/obj/item/stack/material/glass, 2), label("Add glass"), when(req(PROC_REF(frame_empty))), begins(MSG(mirror/adding_glass)), wait(2 SECONDS), then(PROC_REF(glass_added)))
+	param(nameof(dir), pos = 1)
+	param(nameof(building), pos = 2)
+	rolls(ROLL_PIXEL, WALL_OFFSET(28, 30), when = nameof(building))
+
+/// A mirror built on a wall (its constructor param).
+/obj/structure/mirror/var/building = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a mirror makes its appearance changer, and a built one is an empty frame on its wall
+/obj/structure/mirror/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)
-		glass = 0
+		set_glass(0)
 		icon_state = "mirror_frame"
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -28 : 28)
-		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
 
 
-/obj/structure/mirror/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/mirror_open_ui,
-		/datum/interaction/entry_item/mirror_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(mirror_silicon_use)))
-	..()
-
-/// Old attack_hand: open the appearance changer.
-/datum/interaction/entry_hand/mirror_open_ui
-	id = "mirror_open_ui"
-	name = "Use"
-	effect = /obj/structure/mirror/proc/mirror_open_ui
-
-/obj/structure/mirror/proc/mirror_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!glass) return TRUE
-	if(shattered)	return TRUE
-
-	M.tgui_interact(user)
-	return TRUE
-
-/// Old attack_ai: a silicon next to it opens the appearance changer.
-/obj/structure/mirror/proc/mirror_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!glass) return TRUE
-	if(shattered)	return TRUE
-	if(!Adjacent(user)) return TRUE
-
-	M.tgui_interact(user)
-	return TRUE
+/// A hand, or a silicon beside it: the appearance changer, while the glass is whole.
+/obj/structure/mirror/proc/mirror_open_ui(datum/act/op/A)
+	if(!glass || shattered)
+		return OP_OK
+	M.tgui_interact(A.actor)
+	return OP_OK
 
 /obj/structure/mirror/proc/shatter()
 	if(!glass) return
 	if(shattered)	return
 	shattered = 1
-	icon_state = "mirror_broke"
+	set_icon_state("mirror_broke")
 	play_sfx(src, SFX_SHATTER)
 	desc = "Oh no, seven years of bad luck!"
 
@@ -69,62 +61,58 @@
 			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 	..()
 
-/// Old attackby: re-glaze with two sheets of glass, or smash it.
-/datum/interaction/entry_item/mirror_item
-	id = "mirror_item"
-	name = "Use"
-	effect = /obj/structure/mirror/proc/interaction_item
-
-/obj/structure/mirror/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/stack/material/glass))
-		if(!glass)
-			var/obj/item/stack/material/glass/G = I
-			if (G.get_amount() < 2)
-				to_chat(user, span_warning("You need two sheets of glass to add them to the frame."))
-				return TRUE
-			to_chat(user, span_notice("You start to add the glass to the frame."))
-			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, G))
-			return TRUE
+/obj/structure/mirror/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(istype(I, /obj/item/stack/material/glass) && !glass)
+		return OP_OK // too few sheets to add the glass (add_glass takes two)
 
 	if(shattered && glass)
 		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
-		return TRUE
+		return OP_OK
 
-	if(prob(I.force * 2))
+	if(prob(combat_of(I).force * 2))
 		act_message(user, src, others = span_warning("%U% smashes %T% with [I]!"))
 		if(glass)
 			shatter()
 	else
 		act_message(user, src, others = span_warning("%U% hits %T% with [I]!"))
 		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 70)
-	return TRUE
+	return OP_OK
 
-/obj/structure/mirror/proc/attackby_timed_done(mob/user, obj/item/stack/material/glass/G)
-	if (G.use(2))
-		shattered = 0
-		glass = 1
-		icon_state = "mirror"
-		to_chat(user, span_notice("You add the glass to the frame."))
+MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the frame."))
 
-/obj/structure/mirror/wrench_act(mob/user, obj/item/I)
-	if(!glass)
-		use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-		return TRUE
+/// A frame without glass takes it.
+/obj/structure/mirror/proc/frame_empty(datum/act/op/A)
+	return (!glass) ? null : MSG(req_failed)
+
+/obj/structure/mirror/proc/glass_added(datum/act/op/A)
+	shattered = 0
+	set_glass(1)
+	set_icon_state("mirror")
+	to_chat(A.actor, span_notice("You add the glass to the frame."))
+
+/obj/structure/mirror/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(shattered)
 		to_chat(user, span_notice("The broken glass falls out."))
-		icon_state = "mirror_frame"
-		glass = FALSE
+		set_icon_state("mirror_frame")
+		set_glass(FALSE)
 		new /obj/item/material/shard(loc)
-		return TRUE
-	playsound(src, I.usesound, 50, 1)
+		return OP_OK
+	playsound(src, sounds_of(I).use, 50, 1)
 	to_chat(user, span_notice("You remove the glass."))
-	glass = FALSE
-	icon_state = "mirror_frame"
+	set_glass(FALSE)
+	set_icon_state("mirror_frame")
 	new /obj/item/stack/material/glass(loc, 2)
-	return TRUE
+	return OP_OK
 
-/obj/structure/mirror/proc/wrench_act_tool_done(mob/user)
-	to_chat(user, span_notice("You unfasten the frame."))
+/obj/structure/mirror/proc/frame_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/mirror/proc/wrench_act_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You unfasten the frame."))
 	replace_with(src, /obj/item/frame/mirror)
 
 /obj/structure/mirror/attack_generic(mob/user, damage)
@@ -150,28 +138,31 @@
 	shattered = 1
 
 /// Overrides mirror's mirror_open_ui(): raiders may become Vox here, then the mirror opens as usual.
-/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/mirror/raider/mirror_open_ui(mob/living/carbon/human/user, obj/item/held)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
-			om_ask(user, /datum/om/prompt/confirm, PROC_REF(become_vox_answered), title = "Become Vox?", message = "Do you wish to become a true Vox of the Shoal? This is not reversible.", no_first = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/yes_no, PROC_REF(become_vox_answered), answerer = user, title = "Become Vox?", question = "Do you wish to become a true Vox of the Shoal? This is not reversible.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 	return ..()
 
-/obj/structure/mirror/raider/proc/become_vox_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/carbon/human/user = ask.answerer
+/obj/structure/mirror/raider/proc/become_vox_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/mob/living/carbon/human/user = A.request.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
 	vox.gender = user.gender
 	GLOB.raiders.equip(vox)
 	if(user.mind)
 		user.mind.transfer_to(vox)
-	om_ask(vox, /datum/om/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), receiver = vox, title = "Name change", message = "Enter a name, or leave blank for the default name.", default = "", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
-	qdel(user)
+	open_request(vox, /datum/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), answerer = vox, title = "Name change", question = "Enter a name, or leave blank for the default name.", default = "", max_len = MAX_NAME_LEN, name_text = TRUE, encode = FALSE, timeout = 0)
+	spent(user)
 
-/mob/living/carbon/human/proc/raider_vox_named(datum/om/prompt/text/ask)
+/// The new vox is named: a closed window is the blank name, which is the default one.
+/mob/living/carbon/human/proc/raider_vox_named(datum/act/request/A)
 	var/mob/living/carbon/human/vox = src
-	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	var/newname = sanitizeSafe(A.answer ? A.answer.value : "", MAX_NAME_LEN)
 	if(!newname || newname == "")
 		var/datum/language/L = GLOB.all_languages[vox.species.default_language]
 		newname = L.get_random_name()
-	vox.real_name = newname
+	vox.set_real_name(newname)
 	vox.name = vox.real_name
 	GLOB.raiders.update_access(vox)

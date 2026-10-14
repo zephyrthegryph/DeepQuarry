@@ -78,3 +78,29 @@ TYPE_TABLE(/datum/faction_data/predator, get_relationships, list( \
 TYPE_TABLE(/datum/faction_data/cult, get_relationships, list( \
 	FACTION_CULT = DQ_DISPOSITION_ALLY, \
 ))
+
+// Pack animals (pack_join_radius, doc/rewrite/ai_packs.md B7): wolves, spiders and xenomorphs fight in packs; every other faction forms none.
+// A pack never mixes factions, so a faction's own key is its packmates. Spiders and xenomorphs behave toward everyone else as the unregistered
+// default always made them (neutral in the table, hostile on sight to strangers); wolves keep the neutral-faction animals as allies, as their old
+// FACTION_NEUTRAL did.
+/datum/faction_data/spiders
+	faction_key = FACTION_SPIDERS
+	default_disposition = DQ_DISPOSITION_NEUTRAL
+	player_disposition = DQ_DISPOSITION_NEUTRAL
+	pack_join_radius = 5
+
+/datum/faction_data/xeno
+	faction_key = FACTION_XENO
+	default_disposition = DQ_DISPOSITION_NEUTRAL
+	player_disposition = DQ_DISPOSITION_NEUTRAL
+	pack_join_radius = 5
+
+/datum/faction_data/wolves
+	faction_key = FACTION_WOLF
+	default_disposition = DQ_DISPOSITION_NEUTRAL
+	player_disposition = DQ_DISPOSITION_NEUTRAL
+	pack_join_radius = 5
+
+TYPE_TABLE(/datum/faction_data/wolves, get_relationships, list( \
+	FACTION_NEUTRAL = DQ_DISPOSITION_ALLY, \
+))

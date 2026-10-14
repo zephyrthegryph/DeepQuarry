@@ -22,6 +22,14 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 	return ..()
 
 /obj/item/mecha_parts/mecha_equipment/weapon/proc/burst_fire(obj/item/projectile/P, atom/target, params)
+	if(QDELETED(P))
+		return
+	var/atom/movable/pilot
+	if(!QDELETED(chassis))
+		pilot = chassis.slot_item(MECHA_SLOT_PILOT)
+	if(QDELETED(pilot))
+		spent(P)
+		return
 	Fire(P, target, params)
 
 /obj/item/mecha_parts/mecha_equipment/weapon/action(atom/target, params)
@@ -55,7 +63,7 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 		var/P = new projectile(projectile_turf)
 		if(i > 1 && fire_cooldown)
 			// Later shots of the burst follow fire_cooldown apart.
-			om_after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), P, target, params)
+			after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), with = list(P, target, params))
 		else
 			Fire(P, target, params)
 		if(i == 1)
@@ -98,5 +106,5 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 		if(H.species)
 			P.accuracy += H.species.gun_accuracy_mod
 			P.dispersion = max(P.dispersion + H.species.gun_accuracy_dispersion_mod, 0)
-		if(H.fear > 30)
+		if(H.status_units(STAT_FEAR) > 30)
 			P.accuracy -= 35

@@ -6,12 +6,39 @@
 	var/obj/machinery/atmospherics/pipe/target
 	var/list/pipes_on_turf
 	anchored = TRUE
-	power_channel = ENVIRON
 	var/frequency = 0
 	var/id
 	var/open = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 15
+	/// The mixture it reads (its pipe's, or a turf meter's turf's): what its gas watch is on.
+	var/datum/gas_mixture/watched_air
+	/// What the needle shows (an icon state of meter.dmi) and the kPa it last sent, so a change below the display's resolution is not a change.
+	var/needle = "meterX"
+	var/sent_kpa
+
+TRACKED(/obj/machinery/meter, open)
+TRACKED(/obj/machinery/meter, id)
+
+MSG_DEF(meter/unfastened, "You have unfastened %T%.", "%U% unfastens %T%.")
+MSG_DEF_SELF(meter/panel_opened, "You open the maintenance panel.")
+MSG_DEF_SELF(meter/panel_closed, "You close the maintenance panel.")
+MSG_DEF_SELF(meter/no_pipe, "There is no pipe here to watch.")
+MSG_DEF_SELF(meter/panel_shut, "Its maintenance panel is shut.")
+
+CAPABILITIES(/obj/machinery/meter)
+	configure(uses_power(channel = ENVIRON, idle = 15))
+	gas_watch(air = nameof(watched_air), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_PRESSURE)
+	on_change(nameof(needle), ANY, then(PROC_REF(needle_moved)))
+	examine_line(PROC_REF(gauge_text))
+	op("read", hand(), label("Read the gauge"), wait(0), then(PROC_REF(read_gauge)))
+	extend("read", inputs(remote()))
+	op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS), says(MSG(meter/unfastened)), then(PROC_REF(unfastened)))
+	op("panel", tool(TOOL_SCREWDRIVER), wait(0), toggles(nameof(open)), says(PROC_REF(panel_message)))
+	op("set_id", tool(TOOL_MULTITOOL), wait(0), when(nameof(open)), needs(req(PROC_REF(panel_open_now))),
+		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(id_question)), "default" = nameof(id), "max_len" = MAX_NAME_LEN)),
+		then(PROC_REF(id_entered)))
+	op("retarget", tool(TOOL_MULTITOOL), wait(0), when(cond_not(nameof(open))), needs(req(PROC_REF(pipe_here), because = MSG(meter/no_pipe))), then(PROC_REF(retargeted)))
+	ref_one(nameof(target))
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()
@@ -21,19 +48,20 @@
 /// pipe target: when the pipe is destroyed the meter comes off as an item.
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
+		unobserve(target_ref(), /datum/notice/qdeleting, src)
 	rel_set(src, nameof(target), new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
+		observe(target_ref(), /datum/notice/qdeleting, src, then(PROC_REF(on_target_deleted)))
+	refresh()
 
-/obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/obj/machinery/meter/proc/on_target_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	rel_clear(src, nameof(target))
 	if(QDELETED(src))
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
 	transfer_fingerprints_to(PM)
-	qdel(src)
+	replace_with(src, PM)
 
 /obj/machinery/meter/proc/select_target()
 	var/obj/machinery/atmospherics/pipe/P
@@ -44,26 +72,59 @@
 		P = locate_within(loc, /obj/machinery/atmospherics/pipe)
 	return P
 
-/// A meter wakes only when what it shows or broadcasts would change: local meters when their
-/// discrete needle sprite changes, radio meters when the sprite or the rounded kPa they send
-/// changes (a value watch on current_display_signature()). Pressure noise below the display's
-/// resolution never wakes it.
-/obj/machinery/meter/proc/register_gas_dependency()
+// ---- what it shows: the gas watch moves the needle; nothing polls ----
+
+/// The pipe's gas changed (its gas watch).
+/obj/machinery/meter/proc/gas_changed(list/observation, index)
+	refresh()
+
+/// Reads its gas again: the needle, and a radio meter's report when the kPa it sends changed. Follows the pipe to a new mixture (a rebuilt network).
+/obj/machinery/meter/proc/refresh()
 	var/datum/gas_mixture/environment = target_ref()?.return_air()
-	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(current_display_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+	if(environment != watched_air)
+		atmos_air_set(src, nameof(watched_air), environment)
+	if(!target_ref() || !environment)
+		set_needle("meterX")
+		return
+	if(!operable())
+		set_needle("meter0")
+		return
+	set_needle(pressure_icon_state(environment))
+	var/kpa = round(environment.return_pressure())
+	if(frequency && kpa != sent_kpa)
+		sent_kpa = kpa
+		broadcast(kpa)
 
-/obj/machinery/meter/proc/current_display_signature()
-	var/datum/gas_mixture/environment = target_ref()?.return_air()
-	if(!frequency || !environment)
-		return pressure_icon_state(environment)
-	return "[pressure_icon_state(environment)]|[round(environment.return_pressure())]"
+/obj/machinery/meter/power_change()
+	. = ..()
+	if(.)
+		refresh()
 
-/obj/machinery/meter/proc/unregister_gas_dependency()
-	om_watch_disarm(src, "gas")
+/obj/machinery/meter/proc/needle_moved(datum/act/A)
 
-/obj/machinery/meter/proc/wake_from_gas()
-	unregister_gas_dependency()
-	MACHINE_WAKE(src)
+/obj/machinery/meter/draw(datum/look/look)
+	..()
+	look.state(needle)
+
+/obj/machinery/meter/derived()
+	. = ..()
+	. += drawn_from(nameof(needle))
+
+/// Sends what it reads to its frequency.
+/obj/machinery/meter/proc/broadcast(kpa)
+	var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
+	if(!radio_connection)
+		return
+	var/datum/signal/signal = new
+	rel_set(signal, nameof(signal.source), src)
+	signal.transmission_method = TRANSMISSION_RADIO
+	signal.data = list(
+		"tag" = id,
+		"device" = "AM",
+		"pressure" = kpa,
+		"sigtype" = "status"
+	)
+	radio_connection.post_signal(src, signal)
 
 /obj/machinery/meter/proc/current_pressure_icon_state()
 	return pressure_icon_state(target_ref()?.return_air())
@@ -85,131 +146,74 @@
 		return "meter3_[val]"
 	return "meter4"
 
-/obj/machinery/meter/machine_step()
-	if(!target_ref())
-		icon_state = "meterX"
-		return PROCESS_KILL
-
+/// What the gauge says to someone near enough to read it.
+/obj/machinery/meter/proc/gauge_text(datum/act/eval/A)
+	var/mob/user = A.actor
+	if(user && get_dist(get_turf(user.client?.eye || user), src) > 3 && !isobserver(user)) // an AI reads it through its eye
+		return span_warning("You are too far away to read it.")
 	if(!operable())
-		icon_state = "meter0"
-		return PROCESS_KILL
-
+		return span_warning("The display is off.")
+	if(!target_ref())
+		return "The connect error light is blinking."
 	var/datum/gas_mixture/environment = target_ref().return_air()
 	if(!environment)
-		icon_state = "meterX"
-		return PROCESS_KILL
+		return "The sensor error light is blinking."
+	var/environment_temperature = environment.return_temperature()
+	return "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment_temperature,0.01)]K ([round(environment_temperature-T0C,0.01)]&deg;C)"
 
-	var/env_pressure = environment.return_pressure()
-	icon_state = pressure_icon_state(environment)
+/// A hand (or an AI) reads the gauge.
+/obj/machinery/meter/proc/read_gauge(datum/act/op/A)
+	var/mob/user = A.actor
+	user.examinate(src)
+	return OP_OK
 
-	if(frequency)
-		var/datum/radio_frequency/radio_connection = GLOB.radio_service.return_frequency(frequency)
-
-		if(!radio_connection)
-			register_gas_dependency()
-			return PROCESS_KILL
-
-		var/datum/signal/signal = new
-		rel_set(signal, nameof(signal.source), src)
-		signal.transmission_method = TRANSMISSION_RADIO
-		signal.data = list(
-			"tag" = id,
-			"device" = "AM",
-			"pressure" = round(env_pressure),
-			"sigtype" = "status"
-		)
-		radio_connection.post_signal(src, signal)
-	register_gas_dependency()
-	return PROCESS_KILL
-
-/obj/machinery/meter/examine(mob/user)
-	. = ..()
-
-	if(get_dist(user, src) > 3 && !(isAI(user) || isobserver(user)))
-		. += span_warning("You are too far away to read it.")
-
-	else if(!operable())
-		. += span_warning("The display is off.")
-
-	else if(target_ref())
-		var/datum/gas_mixture/environment = target_ref().return_air()
-		if(environment)
-			var/environment_temperature = environment.return_temperature()
-			. += "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment_temperature,0.01)]K ([round(environment_temperature-T0C,0.01)]&deg;C)"
-		else
-			. += "The sensor error light is blinking."
-	else
-		. += "The connect error light is blinking."
-
-/obj/machinery/meter/Click()
-
-	if(ishuman(usr) || isAI(usr)) // ghosts can call ..() for examine
-		var/mob/living/L = usr
-		if(!L.get_active_hand() || !L.Adjacent(src))
-			usr.examinate(src)
-			return 1
-
-	return ..()
-
-/obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
+/obj/machinery/meter/proc/unfastened(datum/act/op/A)
 	replace_with(src, /obj/item/pipe_meter)
+	return OP_OK
 
-/obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You have [open ? "closed" : "opened"] the maintenance panel for [src]."))
-	open = !open
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/meter/proc/panel_message(datum/act/A)
+	return open ? /datum/msg/meter/panel_opened : /datum/msg/meter/panel_closed
 
-/obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
-	if(open)
-		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
-		return ITEM_INTERACT_SUCCESS
+/obj/machinery/meter/proc/id_question(datum/act/A)
+	return "Please insert an ID tag for [src], example 'exhaust_pipe'."
+
+/// The tag is set, and a multitool keeps the meter in its buffer.
+/obj/machinery/meter/proc/id_entered(datum/act/op/A)
+	var/datum/prompt/text/answer = A.answer
+	set_id(answer.value)
+	var/obj/item/multitool/multitool = A.held?.get_multitool()
+	if(multitool)
+		rel_set(multitool, nameof(multitool.connectable), src)
+	return OP_OK
+
+/// Its panel is open (asked again when the tag is answered).
+/obj/machinery/meter/proc/panel_open_now(datum/act/A)
+	return (open) ? null : MSG(meter/panel_shut)
+
+/obj/machinery/meter/proc/pipe_here(datum/act/A)
+	return (!!locate_within(loc, /obj/machinery/atmospherics/pipe)) ? null : MSG(meter/no_pipe)
+
+/// The multitool moves the meter to the next pipe on its tile.
+/obj/machinery/meter/proc/retargeted(datum/act/op/A)
 	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
 		rel_add(src, nameof(pipes_on_turf), pipe)
-	if(!length(pipes_on_turf))
-		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))
 	rel_remove(src, nameof(pipes_on_turf), target_ref())
 	rel_add(src, nameof(pipes_on_turf), target_ref())
-	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
-	return ITEM_INTERACT_SUCCESS
-
-/datum/om/prompt/text/meter_id
-	title = "Set ID Tag"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_ADJACENT
-	var/obj/item/tool
-
-/datum/om/prompt/text/meter_id/valid()
-	var/obj/machinery/meter/M = subject
-	return M.open ? null : "closed"
-
-/obj/machinery/meter/proc/meter_id_entered(datum/om/prompt/text/meter_id/ask)
-	id = ask.text
-	var/obj/item/multitool/multitool = ask.tool.get_multitool()
-	if(multitool)
-		rel_set(multitool, nameof(multitool.connectable), src)
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_notice("Pipe meter set to monitor \the [target_ref()]."))
+	return OP_OK
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
 
 /obj/machinery/meter/turf/select_target()
 	return loc
 
-/obj/machinery/meter/turf/tool_interaction(mob/user, obj/item/tool, list/modifiers, secondary = FALSE)
-	return ITEM_INTERACT_BLOCKING
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/meter/arm_wakes()
-	..()
-	register_gas_dependency()
+/// A turf meter is fixed in its floor: no tool works it.
+CAPABILITIES(/obj/machinery/meter/turf)
+	without("unwrench")
+	without("panel")
+	without("set_id")
+	without("retarget")
 
 /// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/meter/proc/target_ref() as /obj/machinery/atmospherics/pipe

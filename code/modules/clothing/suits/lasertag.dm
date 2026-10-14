@@ -11,8 +11,6 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_suits.dmi', slot_r_hand_str = 'icons/mob/items/righthand_suits.dmi')
 	item_state_slots = list(slot_r_hand_str = "tdomni", slot_l_hand_str = "tdomni")
 	blood_overlay_type = "armor"
-	body_parts_covered = UPPER_TORSO
-	siemens_coefficient = 3.0
 	description_fluff = "Laser tag armor can have its health and 'healing' time adjusted. Additionally, DonkSoft brand darts are compatible with laser tag vests, proving a projectile based alternative!"
 	description_antag = "Laser tag armor can be emagged, causing the user to not only have a heart attack when eliminated, but also take massive damage based on the amount of 'lives' the vest had."
 
@@ -30,14 +28,12 @@
 
 TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag))))
 
-DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 
-/obj/item/clothing/suit/lasertag/mark_emagged()
-	emagged = TRUE
-/obj/item/clothing/suit/lasertag/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/clothing/suit/lasertag/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	emagged = TRUE
 	to_chat(user, span_warning("You disable the safeties on the lasertag vest."))
-	return TRUE
+	return OP_OK
 
 
 /obj/item/clothing/suit/lasertag/examine(mob/user)
@@ -45,22 +41,30 @@ DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 	. += "It currently has [lasertag_health] hits out of [lasertag_max_health] remaining!"
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
-	INTERACT_VERB("Adjust Suit Health", PROC_REF(lasertag_adjust_health_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Adjust Healing Timer", PROC_REF(lasertag_adjust_heal_time_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/lasertag)
+	configure(item_worn(covers = UPPER_TORSO))
+	configure(item_protection(siemens = 3.0))
+	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
+	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
+	every(2 SECONDS, then(PROC_REF(lasertag_step)), when = nameof(tag_worn))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /// Old verb "Adjust Suit Health".
-/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		adjust_health_proc(user)
 
 /obj/item/clothing/suit/lasertag/proc/adjust_health_proc(mob/living/user)
 	var/max_health = 10
 	var/min_health = 1
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(adjust_health_proc), args, /datum/om/prompt/number, message = "Select Suit Health (Between 1 and 10)", title = "Tag Health", default = lasertag_max_health, max = max_health, min = min_health)
-	if(isnull(_answer_a1))
-		return
+	open_request(src, /datum/prompt/number/lasertag_setting, PROC_REF(tag_setting_entered), answerer = user, question = "Select Suit Health (Between 1 and 10)", title = "Tag Health", default = lasertag_max_health, min_value = min_health, max_value = max_health, healing_timer = FALSE)
+
+/obj/item/clothing/suit/lasertag/proc/apply_health_setting(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/max_health = 10
+	var/min_health = 1
+	var/_answer_a1 = A.answer.value
 	var/new_health = _answer_a1 //If you need to go above 10, ask admins.
 	if(isnull(new_health))
 		return null
@@ -75,16 +79,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	act_message(user, src, MSG_SELF(span_notice("Set %T%'s allowed shots to [lasertag_max_health], fully healing the vest!")))
 
 /// Old verb "Adjust Healing Timer".
-/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/lasertag/proc/lasertag_adjust_heal_time_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		adjust_heal_time_proc(user)
 
 /obj/item/clothing/suit/lasertag/proc/adjust_heal_time_proc(mob/living/user)
 	var/max_heal_time = 60
 	var/min_heal_time = 0
-	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(adjust_heal_time_proc), args, /datum/om/prompt/number, message = "Select Heal Timer (Between 0(off) to 60 seconds)", title = "Heal Timer", default = time_to_heal*0.1, max = max_heal_time, min = min_heal_time)
-	if(isnull(_answer_a2))
-		return
+	open_request(src, /datum/prompt/number/lasertag_setting, PROC_REF(tag_setting_entered), answerer = user, question = "Select Heal Timer (Between 0(off) to 60 seconds)", title = "Heal Timer", default = time_to_heal / (1 SECOND), min_value = min_heal_time, max_value = max_heal_time, healing_timer = TRUE)
+
+/obj/item/clothing/suit/lasertag/proc/apply_healing_setting(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/max_heal_time = 60
+	var/min_heal_time = 0
+	var/_answer_a2 = A.answer.value
 	var/new_heal_timer = _answer_a2 //If you need to go above 10, ask admins.
 	if(isnull(new_heal_timer))
 		return null
@@ -94,15 +103,50 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/lasertag, \
 	if(!Adjacent(user))
 		to_chat(user, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
 		return null
-	time_to_heal = (new_heal_timer*10)
+	time_to_heal = new_heal_timer SECONDS
 	if(time_to_heal)
 		user.visible_message(span_notice("[src]'s heal speed has been set to [new_heal_timer] seconds!"))
 	else
 		user.visible_message(span_notice("[src]'s healing function has been turned off!"))
 
+/datum/prompt/number/lasertag_setting
+	timeout = 0
+	step = 1
+	var/healing_timer = FALSE
+
+/datum/prompt/number/lasertag_setting/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/lasertag_setting/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/item/clothing/suit/lasertag/suit = owner
+	if(!suit.Adjacent(answerer))
+		return "not adjacent to the suit"
+	return null
+
+/obj/item/clothing/suit/lasertag/proc/tag_setting_entered(datum/act/request/A)
+	var/datum/prompt/number/lasertag_setting/request = A.request
+	if(QDELETED(request.answerer))
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
+			if(!Adjacent(request.answerer))
+				to_chat(request.answerer, span_danger("You must be adjacent to the suit to adjust its healing timer!"))
+			SStgui.update_uis(src)
+		return
+	var/datum/result/result = safe_call(request.healing_timer ? PROC_REF(apply_healing_setting) : PROC_REF(apply_health_setting), A)
+	if(!result.ok)
+		stack_trace("Lasertag setting request: [result.error]")
+	SStgui.update_uis(src)
+
 /// TRUE from equipped() until dropped(): it heals over time while worn.
-OM_FIELD(/obj/item/clothing/suit/lasertag, tag_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_worn")
+/obj/item/clothing/suit/lasertag/var/tag_worn = FALSE
+TRACKED(/obj/item/clothing/suit/lasertag, tag_worn)
 
 /obj/item/clothing/suit/lasertag/dropped(mob/user, equipping, slot)
 	..()
@@ -114,7 +158,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_wor
 	..()
 	set_tag_worn(TRUE)
 
-/obj/item/clothing/suit/lasertag/periodic_step()
+/obj/item/clothing/suit/lasertag/proc/lasertag_step(datum/act/timer/A)
 	if(lasertag_health >= lasertag_max_health) //If we're at or above max health(due to admemes), no need to process.
 		return
 	if(!time_to_heal) //We have healing disabled.
@@ -145,8 +189,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/lasertag, PERIODIC_SLOW, "tag_wor
 
 			act_message(src, wearer, others = span_boldwarning("%U% beeps as its health is fully depleted! %T% is down!"))
 			to_chat(wearer, span_large(span_danger("You're out!"))) //People KEEP MISSING THAT THEY'RE OUT, SO NOW THEY WON'T.
-			wearer.status_at_least(EFFECT_STUNNED, 5)
-			wearer.status_at_least(EFFECT_WEAKENED, 5)
+			wearer.status_at_least(STAT_STUNNED, 5)
+			wearer.status_at_least(STAT_WEAKENED, 5)
 			// The thing just to drop the ball if hit
 			if(emagged)
 				to_chat(wearer, span_bolddanger(span_massive("OH GOD! YOUR HEART!"))) //this is the last thing you see before you (presumably) die.

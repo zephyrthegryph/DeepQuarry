@@ -48,7 +48,7 @@
 
 	var/block_tele = FALSE      // If true, most forms of teleporting to or from this turf tile will fail.
 	var/can_build_into_floor = FALSE // Used for things like RCDs (and maybe lattices/floor tiles in the future), to see if a floor should replace it.
-	var/list/dangerous_objects // List of 'dangerous' objs that the turf holds that can cause something bad to happen when stepped on, used for AI mobs.
+	var/list/dangerous_objects // List of handles (entity_handle) of the 'dangerous' objs that the turf holds that can cause something bad to happen when stepped on, used for AI mobs.
 	var/tmp/changing_turf
 
 	var/blocks_nonghost_incorporeal = FALSE
@@ -103,6 +103,7 @@
 	barefootstep = FOOTSTEP_LAVA
 	clawfootstep = FOOTSTEP_LAVA
 
+// ALLOW(init/FRAMEWORK): the turf base of the init chain runs its per-instance setup
 /turf/Initialize(mapload)
 	. = ..()
 	turf_instance_setup()
@@ -170,14 +171,28 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 /turf/proc/is_solid_structure()
 	return 1
 
-DECLARE_INTERACTIONS(/turf, \
-	INTERACT_ITEM(null, PROC_REF(turf_item)), \
-	INTERACT_HAND_UNGATED("Touch", PROC_REF(turf_hand)), \
-	INTERACT_DRAG("Crawl", PROC_REF(turf_drag)), \
-)
+CAPABILITIES(/turf)
+	silicon_hand(robots = TRUE, tier = OP_PRIORITY_DEFAULT - 100) // a cyborg's empty-gripper Use of a turf is the hand's
+	ref_many(nameof(opacity_sources))
+	op("dig", item(/obj/item/shovel), priority(OP_PRIORITY_DEFAULT - 9), label("Dig"), when(PROC_REF(diggable_by)), begins(PROC_REF(dig_begins)), wait(3 SECONDS), then(PROC_REF(handle_turf_dig_tool_done)))
+	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
+	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 10), label("Touch"), then(PROC_REF(turf_touch_op)))
+	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 10), label("Crawl"), then(PROC_REF(turf_drag)))
+	// A lying mob crawling onto the tile with something in tow (turf_drag), and a vandal carving a message (graffiti_entered).
+	op("crawl_drag", ai(), takes("thing", "from"), wait(PROC_REF(crawl_drag_time)), then(PROC_REF(crawl_drag_done)))
+	op("dig_grave", ai(), takes("delay"), wait(PROC_REF(grave_time)), then(PROC_REF(grave_dug)))
+	op("graffiti", ai(), takes("message", "click_parameters"), wait(PROC_REF(graffiti_time)), then(PROC_REF(graffiti_done)))
 
-/// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither.
-/turf/proc/turf_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// The touch op: the old attack_hand.
+/turf/proc/turf_touch_op(datum/act/op/A)
+	return turf_hand(A.actor, null) ? OP_OK : OP_DECLINE
+
+/// The item op: the old attackby.
+/turf/proc/turf_item_op(datum/act/op/A)
+	return turf_item(A.actor, A.held) ? OP_OK : OP_DECLINE
+
+/// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither. (Also called by name by what touches a tile for another.)
+/turf/proc/turf_hand(mob/user, obj/item/held)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
 	if(!user?.pulling_target())
 		var/obj/machinery/door/airlock/AL = locate_on(src, /obj/machinery/door/airlock)
@@ -207,7 +222,7 @@ DECLARE_INTERACTIONS(/turf, \
 	return 1
 
 /// Old attackby: dig the tile with a shovel; a pickup-mode bag collects the tile. Otherwise falls through.
-/turf/proc/turf_item(mob/user, obj/item/W, datum/interaction/interaction)
+/turf/proc/turf_item(mob/user, obj/item/W)
 	// Check if this turf can be dug up, check initial because we remove the flag when we've exhausted all loot, but still want to keep dig functionality
 	if((flags & TURF_CAN_DIG_SHOVEL) && !density && istype(W, /obj/item/shovel))
 		handle_turf_dig(user, W)
@@ -220,7 +235,6 @@ DECLARE_INTERACTIONS(/turf, \
 	return FALSE
 
 /turf
-	silicon_use = ROBOT_USE_HAND
 
 // Hits a mob on the tile.
 /turf/proc/attack_tile(obj/item/W, mob/living/user)
@@ -236,7 +250,7 @@ DECLARE_INTERACTIONS(/turf, \
 		viable_targets += L
 
 	if(!viable_targets.len) // No valid targets on this tile.
-		if(W.can_cleave)
+		if(combat_of(W).can_cleave)
 			success = W.cleave(user, src)
 	else
 		var/mob/living/victim = pick(viable_targets)
@@ -251,34 +265,43 @@ DECLARE_INTERACTIONS(/turf, \
 	return success
 
 /// Old MouseDrop_T: a lying mob crawls, dragging something along onto the tile.
-/turf/proc/turf_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+/turf/proc/turf_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/O = A.held
 	var/turf/T = get_turf(user)
-	var/area/A = T.loc
-	if((istype(A) && !(A.get_gravity())) || (istype(T,/turf/space)))
-		return FALSE
+	var/area/area = T.loc
+	if((istype(area) && !(area.get_gravity())) || (istype(T,/turf/space)))
+		return OP_DECLINE
 	if(istype(O, /atom/movable/screen))
-		return FALSE
-	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
-		return FALSE
+		return OP_DECLINE
+	if(user.restrained() || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || (!user.lying && !istype(user, /mob/living/silicon/robot)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
+		return OP_DECLINE
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
-		return FALSE
+		return OP_DECLINE
 	if(!isturf(O.loc) || !isturf(user.loc))
-		return FALSE
+		return OP_DECLINE
 	if(isanimal(user) && O != user)
-		return FALSE
-	om_task_timed(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
-	return TRUE
+		return OP_DECLINE
+	perform_op(user, src, "crawl_drag", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("thing" = O, "from" = O.loc))
+	return OP_OK
 
-/turf/proc/crawl_drag_done(atom/movable/O, mob/user)
-	if(user.stat)
-		return
+/turf/proc/crawl_drag_time(datum/act/op/A)
+	return 25 + (5 * A.actor.status_units(STAT_WEAKENED))
+
+/turf/proc/crawl_drag_done(datum/act/op/A)
+	var/atom/movable/O = A.arg("thing")
+	var/mob/user = A.actor
+	// the dragged thing must still be where it was picked up
+	if(QDELETED(O) || O.loc != A.arg("from") || user.stat)
+		return OP_REFUSED
 	step_towards(O, src)
 	if(ismob(O))
 		// The wiggle is one chained animation; the transform settles once it has played.
 		animate(O, transform = turn(O.transform, 20), time = 2)
 		animate(transform = turn(O.transform, -20), time = 4)
 		animate(transform = O.transform, time = 2)
-		om_after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
+		after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
+	return OP_OK
 
 /turf/CanPass(atom/movable/mover, turf/target)
 	if(!target)
@@ -395,7 +418,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		om_after(source, 2, TYPE_PROC_REF(/atom/movable, om_step), turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
+		source.drift(turn(source.last_move, 180), 1, 0.2 SECONDS) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)
@@ -406,9 +429,14 @@ DECLARE_INTERACTIONS(/turf, \
 /turf/proc/can_engrave()
 	return FALSE
 
+/// A requirement of the Graffiti ops: the actor holds something sharp and this surface takes engraving.
+/turf/proc/engraved_by_held(datum/act/op/A)
+	var/obj/item/tool = A.held
+	return (tool && combat_of(tool).sharp && can_engrave()) ? null : /datum/msg/req_failed
+
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
-	if(!tool || !tool.sharp || !can_engrave())
+	if(!tool || !combat_of(tool).sharp || !can_engrave())
 		return FALSE
 
 	if(jobban_isbanned(vandal, JOB_GRAFFITI))
@@ -422,38 +450,48 @@ DECLARE_INTERACTIONS(/turf, \
 		to_chat(vandal, span_warning("There's too much graffiti here to add more."))
 		return FALSE
 
-	om_ask(vandal, /datum/om/prompt/text/graffiti, PROC_REF(graffiti_entered), subject = tool, wall = src, click_parameters = click_parameters)
+	open_request(src, /datum/prompt/text/graffiti, PROC_REF(graffiti_entered), answerer = vandal, subject = tool, click_parameters = click_parameters)
 	return TRUE
 
 /// Engraving with a tool (the subject, held throughout) next to the turf.
-/datum/om/prompt/text/graffiti
+/datum/prompt/text/graffiti
 	title = "Graffiti"
-	message = "Enter a message to engrave."
+	question = "Enter a message to engrave."
 	default = ""
-	max_length = MAX_MESSAGE_LEN
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	recheck_on_open = TRUE
 	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/turf/wall
 	var/click_parameters
 
-/datum/om/prompt/text/graffiti/valid()
-	return wall.Adjacent(answerer) ? null : "too far away"
+/datum/prompt/text/graffiti/normalize(given)
+	return istext(given) ? given : null
 
-/turf/proc/graffiti_entered(datum/om/prompt/text/graffiti/ask)
+/datum/prompt/text/graffiti/recheck_extra()
+	var/mob/vandal = answerer
+	var/turf/wall = owner
+	var/obj/item/tool = subject
+	if(!istype(vandal) || QDELETED(vandal) || !istype(wall) || QDELETED(wall) || !istype(tool) || QDELETED(tool))
+		return "gone"
+	return wall.Adjacent(vandal) ? null : "too far away"
+
+/turf/proc/graffiti_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/graffiti/ask = context.answer
 	var/mob/vandal = ask.answerer
-	var/message = ask.text
+	var/message = ask.value
 	act_message(vandal, src, others = span_warning("%U% begins carving something into %T%."))
-	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
+	perform_op(vandal, src, "graffiti", ask.subject, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("message" = message, "click_parameters" = ask.click_parameters))
 	return TRUE
 
-/datum/om/task/timed/turf_graffiti
-	complete_proc = /turf/proc/graffiti_done
-	var/message
-	var/click_parameters
+/turf/proc/graffiti_time(datum/act/op/A)
+	return max(2 SECONDS, length(A.arg("message")))
 
-/turf/proc/graffiti_done(datum/om/task/timed/turf_graffiti/task)
-	var/mob/vandal = task.actor
-	var/message = task.message
-	var/click_parameters = task.click_parameters
+/turf/proc/graffiti_done(datum/act/op/A)
+	var/mob/vandal = A.actor
+	var/message = A.arg("message")
+	var/click_parameters = A.arg("click_parameters")
 	act_message(vandal, src, others = span_danger("%U% carves some graffiti into %T%."))
 	var/obj/effect/decal/writing/graffiti = new(src)
 	graffiti.message = message
@@ -473,12 +511,14 @@ DECLARE_INTERACTIONS(/turf, \
 
 	if(lowertext(message) == "elbereth")
 		to_chat(vandal, span_notice("You feel much safer."))
+	return OP_OK
 
 // Returns false if stepping into a tile would cause harm (e.g. open space while unable to fly, water tile while a slime, lava, etc).
 /turf/proc/is_safe_to_enter(mob/living/L)
 	if(LAZYLEN(dangerous_objects))
-		for(var/obj/O in dangerous_objects)
-			if(!O.is_safe_to_step(L))
+		for(var/danger_handle in dangerous_objects)
+			var/obj/O = resolve_handle(danger_handle)
+			if(O && !O.is_safe_to_step(L)) // a deleted object stops resolving
 				return FALSE
 	return TRUE
 
@@ -487,13 +527,13 @@ DECLARE_INTERACTIONS(/turf, \
 /turf/proc/register_dangerous_object(obj/O)
 	if(!istype(O))
 		return FALSE
-	LAZYADD(dangerous_objects, O)
+	LAZYDISTINCTADD(dangerous_objects, entity_handle(O))
 
 // Similar to above, for when the dangerous object stops being dangerous/gets deleted/moved/etc.
 /turf/proc/unregister_dangerous_object(obj/O)
 	if(!istype(O))
 		return FALSE
-	LAZYREMOVE(dangerous_objects, O)
+	LAZYREMOVE(dangerous_objects, entity_handle_of(O))
 	UNSETEMPTY(dangerous_objects) // This nulls the list var if it's empty.
 
 /turf/occult_act(mob/living/user)
@@ -523,15 +563,15 @@ DECLARE_INTERACTIONS(/turf, \
 	if(!V)
 		return
 	if(toxvomit == VOMIT_PURPLE)
-		V.icon_state = "vomitpurp_1"
+		V.set_icon_state("vomitpurp_1")
 		V.random_icon_states = list("vomitpurp_1", "vomitpurp_2", "vomitpurp_3", "vomitpurp_4")
 	else if (toxvomit == VOMIT_TOXIC)
-		V.icon_state = "vomittox_1"
+		V.set_icon_state("vomittox_1")
 		V.random_icon_states = list("vomittox_1", "vomittox_2", "vomittox_3", "vomittox_4")
 	else if (toxvomit == VOMIT_NANITE)
 		V.name = "metallic slurry"
 		V.desc = "A puddle of metallic slury that looks vaguely like very fine sand. It almost seems like it's moving..."
-		V.icon_state = "vomitnanite_1"
+		V.set_icon_state("vomitnanite_1")
 		V.random_icon_states = list("vomitnanite_1", "vomitnanite_2", "vomitnanite_3", "vomitnanite_4")
 	if(purge && ishuman(M))
 		var/mob/living/carbon/human/H = M

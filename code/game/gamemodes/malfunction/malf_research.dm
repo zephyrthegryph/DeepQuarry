@@ -8,6 +8,12 @@
 	var/mob/living/silicon/ai/owner			// AI which owns this research datum.
 	var/datum/malf_research_ability/focus_static	// Currently researched item (a relation view into available_abilities)
 
+CAPABILITIES(/datum/malf_research)
+	ref_one(nameof(owner))
+	ref_one(nameof(focus_static))
+	owns_many(nameof(available_abilities))
+	owns_many(nameof(unlocked_abilities))
+
 /datum/malf_research/New()
 	setup_abilities()
 	EXPIRY_STAMP(src, last_tick, CLOCK_WORLD)
@@ -17,12 +23,12 @@
 // Parameters: 	None
 // Description: Sets up basic abilities for AI Malfunction gamemode.
 /datum/malf_research/proc/setup_abilities()
-	own_clear(src, nameof(available_abilities), OWN_DELETE)
-	own_clear(src, nameof(unlocked_abilities), OWN_DELETE)
+	rel_clear(src, nameof(available_abilities))
+	rel_clear(src, nameof(unlocked_abilities))
 
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/networking/basic_hack())
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/interdiction/recall_shuttle())
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/manipulation/electrical_pulse())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/networking/basic_hack())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/interdiction/recall_shuttle())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/manipulation/electrical_pulse())
 
 
 // Proc:		finish_research()
@@ -32,9 +38,9 @@
 	if(!get_focus())
 		return
 	to_chat(owner_ref(), span_bold("Research Completed") + ": [get_focus().name]")
-	om_grant(owner_ref(), GRANT_VERB, get_focus().ability, get_focus())
+	grant(owner_ref(), granted_verb(get_focus().ability), get_focus())
 	var/datum/malf_research_ability/done = get_focus()
-	own_transfer(src, nameof(available_abilities), src, nameof(unlocked_abilities), done)
+	rel_move(src, nameof(available_abilities), src, nameof(unlocked_abilities), done)
 	if(done.next)
 		own_move(done.next, src, nameof(available_abilities))
 	rel_clear(src, nameof(focus_static))

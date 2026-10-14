@@ -18,7 +18,7 @@
 	if(!has_buckled_mobs() && !M?.buckled_to() && !M.anchored && (issmall(M) || prob(round(seed().get_trait(TRAIT_POTENCY)/3))))
 		//wait a tick for the Entered() proc that called HasProximity() to finish (and thus the moving animation),
 		//so we don't appear to teleport from two tiles away when moving into a turf adjacent to vines.
-		om_after(src, 1, PROC_REF(entangle), M)
+		after(src, 0.1 SECONDS, PROC_REF(entangle), with = list(M))
 
 /obj/effect/plant/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -73,7 +73,7 @@
 				unbuckle()
 		else
 			user.setClickCooldown(user.get_attack_speed())
-			health -= rand(1,5)
+			set_health(health - rand(1,5))
 			var/text = pick("rip","tear","pull", "bite", "tug")
 			act_message(user, src, MSG_SELF(span_warning("You [text] at %T%.")), \
 				MSG_OTHERS(span_warning("%U% [text]s at %T%.")), \
@@ -86,7 +86,7 @@
 	if(has_buckled_mobs())
 		return
 
-	if(victim?.buckled_to() || victim.anchored)
+	if(!victim || victim.buckled_to() || victim.anchored)
 		return
 
 	//grabbing people
@@ -94,7 +94,7 @@
 		var/can_grab = 1
 		if(ishuman(victim))
 			var/mob/living/carbon/human/H = victim
-			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(H.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				can_grab = 0
 		if(can_grab)
 			src.visible_message(span_danger("Tendrils lash out from \the [src] and drag \the [victim] in!"))
@@ -102,5 +102,5 @@
 			buckle_mob(victim)
 			victim.set_dir(pick(GLOB.cardinal))
 			to_chat(victim, span_danger("Tendrils [pick("wind", "tangle", "tighten")] around you!"))
-			victim.status_at_least(EFFECT_WEAKENED, 0.5)
+			victim.status_at_least(STAT_WEAKENED, 0.5)
 			seed().do_thorns(victim,src)

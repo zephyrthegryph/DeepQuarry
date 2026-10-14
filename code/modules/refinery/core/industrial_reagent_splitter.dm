@@ -4,24 +4,20 @@
 	icon_state = "splitter"
 	density = TRUE
 	anchored = TRUE
-	idle_power_usage = 0
-	active_power_usage = 0
 	circuit = /obj/item/circuitboard/industrial_reagent_splitter
 	default_max_vol = 60 // smoll
 
-/obj/machinery/reagent_refinery/splitter/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
-	make_climbable()
+CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
+	configure(uses_power(idle = 0, active = 0))
+	after_init(0, then(PROC_REF(apply_default_parts)))
+	without("reagent_refinery_set_transfer_amount")
+	climb()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	splitter_transfer()
@@ -45,7 +41,7 @@
 		return 0
 
 	// Dynamically set by reagent amount, we always want half
-	amount_per_transfer_from_this = reagents.total_volume / target_list.len
+	set_amount_per_transfer_from_this(reagents.total_volume / target_list.len)
 	if(amount_per_transfer_from_this < 0.5)
 		return 0
 
@@ -68,6 +64,6 @@
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SPLITTEROUTPUT|REFINERY_TUTORIAL_INPUT, .)
 
-/obj/machinery/reagent_refinery/splitter/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+/// A splitter feeds a hub from either side.
+/obj/machinery/reagent_refinery/splitter/hub_intake(back)
+	return back in list(turn(dir, 90), turn(dir, -90))

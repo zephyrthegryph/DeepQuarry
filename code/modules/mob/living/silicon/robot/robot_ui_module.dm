@@ -1,12 +1,16 @@
 // Robot module selection
 /datum/tgui_module/robot_ui_module
 	name = "Robot Module Configurator"
-	tgui_id = "RobotChoose"
 	var/selected_module
 	var/new_name
 	var/datum/robot_sprite/sprite_datum
 
-DECLARE_UI_STATE(/datum/tgui_module/robot_ui_module, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/robot_ui_module)
+	interface("RobotChoose", state = nameof(GLOB.tgui_self_state))
+	op("pick_module", ui_act("pick_module", arg("value", schema_text(4096))), then(PROC_REF(ui_act_pick_module)))
+	op("pick_icon", ui_act("pick_icon", arg("value", schema_text(4096))), then(PROC_REF(ui_act_pick_icon)))
+	op("rename", ui_act("rename", arg("value", schema_text(4096))), then(PROC_REF(ui_act_rename)))
+	op("confirm", ui_act("confirm"), then(PROC_REF(ui_act_confirm)))
 
 /datum/tgui_module/robot_ui_module/tgui_close(mob/user)
 	. = ..()
@@ -14,7 +18,7 @@ DECLARE_UI_STATE(/datum/tgui_module/robot_ui_module, GLOB.tgui_self_state)
 		var/mob/living/silicon/robot/R = user
 		R.selecting_module = FALSE
 	if(!QDELETED(src))
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/robot_ui_module/ui_opening(mob/user, datum/tgui/ui)
 	..()
@@ -64,10 +68,7 @@ DECLARE_UI_STATE(/datum/tgui_module/robot_ui_module, GLOB.tgui_self_state)
 
 	return data
 
-UI_DATA(/datum/tgui_module/robot_ui_module, "merge:ui_data_datum_tgui_module_robot_ui_module{currentName:text,isDefaultName:bool,selected_module:unknown,possible_sprites:list,sprite_datum:unknown,sprite_datum_class:text,sprite_datum_size:num}")
-
-/// The computed part of /datum/tgui_module/robot_ui_module's window data (declared on its UI_DATA row).
-/datum/tgui_module/robot_ui_module/proc/ui_data_datum_tgui_module_robot_ui_module(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/robot_ui_module/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
@@ -107,12 +108,11 @@ UI_DATA(/datum/tgui_module/robot_ui_module, "merge:ui_data_datum_tgui_module_rob
 
 	return data
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "pick_module", ui_act_pick_module, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_module)
+/datum/tgui_module/robot_ui_module/proc/ui_act_pick_module(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
 	if(R.module)
 		return FALSE
-	var/new_module = params["value"]
+	var/new_module = value
 	if(!(new_module in GLOB.robot_modules))
 		return FALSE
 	if(!is_borg_whitelisted(R, new_module))
@@ -128,10 +128,9 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_module)
 		sprite_datum = new_datum
 	return TRUE
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_icon)
+/datum/tgui_module/robot_ui_module/proc/ui_act_pick_icon(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
-	var/sprite = params["value"]
+	var/sprite = value
 	if(!sprite)
 		return FALSE
 	var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
@@ -141,17 +140,15 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_icon)
 			break
 	return TRUE
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "rename", ui_act_rename, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_rename)
+/datum/tgui_module/robot_ui_module/proc/ui_act_rename(datum/act/op/A, value)
 	var/mob/living/silicon/robot/R = host()
-	var/name = params["value"]
+	var/name = value
 	if(name)
 		new_name = sanitizeSafe(name, MAX_NAME_LEN)
 		R.sprite_name = new_name
 	return TRUE
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "confirm", ui_act_confirm)
-UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_confirm)
+/datum/tgui_module/robot_ui_module/proc/ui_act_confirm(datum/act/op/A)
 	var/mob/living/silicon/robot/R = host()
 	if(!sprite_datum || !selected_module)
 		return TRUE
@@ -165,16 +162,16 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_confirm)
 /mob/living/silicon/robot/proc/apply_name(new_name)
 	if(!custom_name)
 		if (new_name)
-			custom_name = new_name
+			set_custom_name(new_name)
 			sprite_name = new_name
 
 /mob/living/silicon/robot/proc/apply_module(datum/robot_sprite/new_datum, new_module)
 	icon_selected = TRUE
 	var/module_type = GLOB.robot_modules[new_module]
 	if(modtype != new_module || !module)
-		own_clear(src, nameof(module), OWN_DELETE)
+		rel_clear(src, nameof(module))
 		modtype = new_module
-		own_set(src, nameof(module), new module_type(src))
+		rel_set(src, nameof(module), new module_type(src))
 		feedback_inc("cyborg_[lowertext(new_module)]",1)
 	updatename()
 	hud_used.update_robot_modules_display()
@@ -182,20 +179,18 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_confirm)
 	robotact?.update_static_data_for_all_viewers()
 	proto_set(src, nameof(sprite_datum), new_datum)
 	if(!istype(src,/mob/living/silicon/robot/drone))
-		sprite_type = sprite_datum.name
+		set_sprite_type(sprite_datum.name)
 
 /mob/living/silicon/robot/proc/transform_module()
 	resize(size_multiplier, animate = FALSE) //Gets the size down to a normal size.
 	transform_with_anim()
 	var/tempheight = vis_height
-	update_icon()
 	// This is bad but I dunno other way to 'reset' our resize offset based on vis_height changes other than resizing to normal and back.
 	if(tempheight != vis_height)
 		var/tempsize = size_multiplier
 		resize(1)
 		resize(tempsize)
-	if(hands)
+	if(hud_used?.hands)
 		update_hud()
 	sprite_datum.do_equipment_glamour(module)
 	to_chat(src, span_filter_notice("Your icon has been set. You now require a module reset to change it."))
-

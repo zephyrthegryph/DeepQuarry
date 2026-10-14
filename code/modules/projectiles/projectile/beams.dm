@@ -10,10 +10,6 @@
 	hitscan = 1
 	embed_chance = 0
 	invisibility = INVISIBILITY_BADMIN	//beam projectiles are invisible as they are rendered by the effect engine
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FF0D00"
-	hitsound = SFX_WEAPONS_SEAR
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser
@@ -22,6 +18,10 @@
 
 	hud_state = "laser"
 	hud_state_empty = "battery_empty"
+
+CAPABILITIES(/obj/item/projectile/beam)
+	configure(light_glow(range = 2, power = 0.5, color = "#FF0D00"))
+	configure(item_sounds(hit = SFX_WEAPONS_SEAR))
 
 /obj/item/projectile/beam/practice
 	name = "laser"
@@ -39,20 +39,24 @@
 
 /obj/item/projectile/beam/weaklaser/blue
 	icon_state = "bluelaser"
-	light_color = "#0066FF"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_blue
 	tracer_type = /obj/effect/projectile/tracer/laser_blue
 	impact_type = /obj/effect/projectile/impact/laser_blue
 
+CAPABILITIES(/obj/item/projectile/beam/weaklaser/blue)
+	configure(light_glow(color = "#0066FF"))
+
 /obj/item/projectile/beam/weaklaser/ion
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
+
+CAPABILITIES(/obj/item/projectile/beam/weaklaser/ion)
+	configure(light_glow(color = "#00CCFF"))
 
 /obj/item/projectile/beam/smalllaser
 	damage = 25
@@ -61,41 +65,50 @@
 /obj/item/projectile/beam/smalllaser/ion
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
+CAPABILITIES(/obj/item/projectile/beam/smalllaser/ion)
+	configure(light_glow(color = "#00CCFF"))
+
 /obj/item/projectile/beam/burstlaser
 	damage = 30
-	armor_penetration = 10
 	hud_state = "laser"
+
+CAPABILITIES(/obj/item/projectile/beam/burstlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/burstlaser/ion
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
+CAPABILITIES(/obj/item/projectile/beam/burstlaser/ion)
+	configure(light_glow(color = "#00CCFF"))
+
 /obj/item/projectile/beam/midlaser
 	damage = 40
-	armor_penetration = 10
 	hud_state = "laser"
+
+CAPABILITIES(/obj/item/projectile/beam/midlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/midlaser/ion
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
+CAPABILITIES(/obj/item/projectile/beam/midlaser/ion)
+	configure(light_glow(color = "#00CCFF"))
+
 /obj/item/projectile/beam/mininglaser
 	name = "pulsating laser"
 	damage = 10
-	armor_penetration = 20
 	fire_sound = SFX_WEAPONS_ELUGER
 
 	excavation_amount = 100
@@ -104,26 +117,28 @@
 	tracer_type = /obj/effect/projectile/tracer/emitter
 	impact_type = /obj/effect/projectile/impact/emitter
 
+CAPABILITIES(/obj/item/projectile/beam/mininglaser)
+	configure(item_combat(armor_penetration = 20))
+
 /obj/item/projectile/beam/heavylaser
 	name = "heavy laser"
 	icon_state = "heavylaser"
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	damage = 60
-	armor_penetration = 30
-	light_range = 3
-	light_power = 1
-	light_color = "#FF0D00"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_heavy
 	tracer_type = /obj/effect/projectile/tracer/laser_heavy
 	impact_type = /obj/effect/projectile/impact/laser_heavy
 	hud_state = "laser_overcharge"
 
+CAPABILITIES(/obj/item/projectile/beam/heavylaser)
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 30))
+
 /obj/item/projectile/beam/heavylaser/fakeemitter
 	name = "emitter beam"
 	icon_state = "emitter"
 	fire_sound = SFX_WEAPONS_EMITTER
-	light_color = "#00CC33"
 	excavation_amount = 140	// 2 shots to dig a standard rock turf. Superior due to being a mounted tool beam, to make it actually viable.
 	hud_state = "laser_overcharge"
 
@@ -131,71 +146,87 @@
 	tracer_type = /obj/effect/projectile/tracer/emitter
 	impact_type = /obj/effect/projectile/impact/emitter
 
+CAPABILITIES(/obj/item/projectile/beam/heavylaser/fakeemitter)
+	configure(light_glow(color = "#00CC33"))
+
 /obj/item/projectile/beam/heavylaser/ion
 	injury_kind = INJURY_ELECTRIC
 	emp_on_hit = TRUE
-	light_color = "#00CCFF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_em
 	tracer_type = /obj/effect/projectile/tracer/laser_em
 	impact_type = /obj/effect/projectile/impact/laser_em
 
+CAPABILITIES(/obj/item/projectile/beam/heavylaser/ion)
+	configure(light_glow(color = "#00CCFF"))
+
 /obj/item/projectile/beam/heavylaser/cannon
 	damage = 80
-	armor_penetration = 50
-	light_color = "#FF0D00"
 	hud_state = "laser_overcharge"
+
+CAPABILITIES(/obj/item/projectile/beam/heavylaser/cannon)
+	configure(light_glow(color = "#FF0D00"))
+	configure(light_glow(color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/beam/xray
 	name = "xray beam"
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 25
-	armor_penetration = 50
-	light_color = "#00CC33"
 	hud_state = "laser_sniper"
 
 	muzzle_type = /obj/effect/projectile/muzzle/xray
 	tracer_type = /obj/effect/projectile/tracer/xray
 	impact_type = /obj/effect/projectile/impact/xray
+
+CAPABILITIES(/obj/item/projectile/beam/xray)
+	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/beam/gamma
 	name = "gamma beam"
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 12
-	armor_penetration = 90
 	irradiate = 20
-	light_color = "#00CC33"
 	hud_state = "laser_sniper"
 
 	muzzle_type = /obj/effect/projectile/muzzle/xray
 	tracer_type = /obj/effect/projectile/tracer/xray
 	impact_type = /obj/effect/projectile/impact/xray
 
+CAPABILITIES(/obj/item/projectile/beam/gamma)
+	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 90))
+
 /obj/item/projectile/beam/cyan
 	name = "cyan beam"
 	icon_state = "cyan"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 40
-	light_color = "#00C6FF"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
 
+CAPABILITIES(/obj/item/projectile/beam/cyan)
+	configure(light_glow(color = "#00C6FF"))
+
 /obj/item/projectile/beam/pulse
 	name = "pulse"
 	icon_state = "u_laser"
 	fire_sound=SFX_WEAPONS_GAUSS_SHOOT // Needs a more meaty sound than what pulse.ogg currently is; this will be a placeholder for now.
 	damage = 100	//Badmin toy, don't care
-	armor_penetration = 100
-	light_color = "#0066FF"
 	hud_state = "pulse"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_pulse
 	tracer_type = /obj/effect/projectile/tracer/laser_pulse
 	impact_type = /obj/effect/projectile/impact/laser_pulse
+
+CAPABILITIES(/obj/item/projectile/beam/pulse)
+	configure(light_glow(color = "#0066FF"))
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/beam/pulse/on_hit(atom/target, blocked = 0)
 	if(isturf(target))
@@ -207,13 +238,15 @@
 	icon_state = "emitter"
 	fire_sound = SFX_WEAPONS_EMITTER
 	damage = 0 // The actual damage is computed in /code/modules/power/singularity/emitter.dm
-	light_color = "#00CC33"
 	excavation_amount = 70 // 3 shots to mine a turf
 	hud_state = "laser_overcharge"
 
 	muzzle_type = /obj/effect/projectile/muzzle/emitter
 	tracer_type = /obj/effect/projectile/tracer/emitter
 	impact_type = /obj/effect/projectile/impact/emitter
+
+CAPABILITIES(/obj/item/projectile/beam/emitter)
+	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/lasertag
 	name = "lasertag beam"
@@ -235,23 +268,26 @@
 
 /obj/item/projectile/beam/lasertag/blue
 	icon_state = "bluelaser"
-	light_color = "#0066FF"
 	hud_state = "monkey"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_blue
 	tracer_type = /obj/effect/projectile/tracer/laser_blue
 	impact_type = /obj/effect/projectile/impact/laser_blue
 	allowed_suits = list(/obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni)
 
+CAPABILITIES(/obj/item/projectile/beam/lasertag/blue)
+	configure(light_glow(color = "#0066FF"))
+
 
 /obj/item/projectile/beam/lasertag/red
 	icon_state = "laser"
-	light_color = "#FF0D00"
 	hud_state = "monkey"
 	allowed_suits = list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/omni)
 
+CAPABILITIES(/obj/item/projectile/beam/lasertag/red)
+	configure(light_glow(color = "#FF0D00"))
+
 /obj/item/projectile/beam/lasertag/omni//A laser tag bolt that stuns EVERYONE
 	icon_state = "omnilaser"
-	light_color = "#AA24AF"
 	hud_state = "monkey"
 	allowed_suits = list(/obj/item/clothing/suit/lasertag)
 
@@ -259,18 +295,23 @@
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
 
+CAPABILITIES(/obj/item/projectile/beam/lasertag/omni)
+	configure(light_glow(color = "#AA24AF"))
+
 /obj/item/projectile/beam/sniper
 	name = "sniper beam"
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	damage = 50
-	armor_penetration = 10
-	light_color = "#00CC33"
 	hud_state = "laser_sniper"
 
 	muzzle_type = /obj/effect/projectile/muzzle/xray
 	tracer_type = /obj/effect/projectile/tracer/xray
 	impact_type = /obj/effect/projectile/impact/xray
+
+CAPABILITIES(/obj/item/projectile/beam/sniper)
+	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/stun
 	name = "stun beam"
@@ -280,8 +321,7 @@
 	taser_effect = 1
 	agony = 35
 	injury_kind = INJURY_PAIN
-	light_color = "#FFFFFF"
-	hitsound = SFX_WEAPONS_ZAPBANG
+
 
 
 	combustion = FALSE
@@ -291,6 +331,10 @@
 	impact_type = /obj/effect/projectile/impact/stun
 
 	hud_state = "taser" // TGMC Ammo HUD port
+
+CAPABILITIES(/obj/item/projectile/beam/stun)
+	configure(light_glow(color = "#FFFFFF"))
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/stun/weak
 	name = "weak stun beam"
@@ -322,19 +366,23 @@
 /obj/item/projectile/beam/stun/kin21
 	name = "kinh21 stun beam"
 	icon_state = "omnilaser"
-	light_color = "#0000FF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
 	hud_state = "laser_disabler"
 
+CAPABILITIES(/obj/item/projectile/beam/stun/kin21)
+	configure(light_glow(color = "#0000FF"))
+
 /obj/item/projectile/beam/stun/blue
 	icon_state = "bluelaser"
-	light_color = "#0066FF"
 	muzzle_type = /obj/effect/projectile/muzzle/laser_blue
 	tracer_type = /obj/effect/projectile/tracer/laser_blue
 	impact_type = /obj/effect/projectile/impact/laser_blue
 	hud_state = "laser_disabler"
+
+CAPABILITIES(/obj/item/projectile/beam/stun/blue)
+	configure(light_glow(color = "#0066FF"))
 
 /obj/item/projectile/beam/disable
 	name = "disabler beam"
@@ -343,12 +391,14 @@
 	taser_effect = 1
 	agony = 100 //One shot stuns for the time being until adjustments are fully made.
 	injury_kind = INJURY_PAIN
-	light_color = "#00CECE"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/disable)
+	configure(light_glow(color = "#00CECE"))
 
 /obj/item/projectile/beam/shock
 	name = "shock beam"
@@ -362,8 +412,10 @@
 	damage = 30
 	agony = 15
 	eyeblur = 2
-	hitsound = SFX_WEAPONS_ZAPBANG
 	hud_state = "taser"
+
+CAPABILITIES(/obj/item/projectile/beam/shock)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/shock/weak
 	damage = 5
@@ -379,8 +431,6 @@
 	icon_state = "laser"
 	damage = 15
 	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
-	sharp = FALSE //"Wide" spectrum beam
-	light_color = COLOR_GOLD
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -388,14 +438,16 @@
 	tracer_type = /obj/effect/projectile/tracer/pointdefense
 	impact_type = /obj/effect/projectile/impact/pointdefense
 
+CAPABILITIES(/obj/item/projectile/beam/pointdefense)
+	configure(light_glow(color = COLOR_GOLD))
+	configure(item_combat(sharp = FALSE))
+
 // a physical/projectile coil-gun type pointdefense
 /obj/item/projectile/beam/coildefense
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
 	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
-	sharp = FALSE //"Wide" spectrum beam
-	light_color = "#FFFFFF"
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -403,48 +455,61 @@
 	tracer_type = /obj/effect/projectile/tracer/coildefense
 	impact_type = /obj/effect/projectile/impact/coildefense
 
+CAPABILITIES(/obj/item/projectile/beam/coildefense)
+	configure(light_glow(color = "#FFFFFF"))
+	configure(item_combat(sharp = FALSE))
+
 
 /obj/item/projectile/beam/precursor // added Precursor beam
 	name = "precursor beam"
 	icon_state = "alien beam"
 	fire_sound = SFX_WEAPONS_MEDIUMLASER
-	light_color = "#FF0099"
 
 	muzzle_type = /obj/effect/projectile/muzzle/precursor
 	tracer_type = /obj/effect/projectile/tracer/precursor
 	impact_type = /obj/effect/projectile/impact/precursor
 	hud_state = "plasma_rifle"
 	damage = 48
-	armor_penetration = 10
+
+CAPABILITIES(/obj/item/projectile/beam/precursor)
+	configure(light_glow(color = "#FF0099"))
+	configure(light_glow(color = "#FF0099"))
+	configure(item_combat(armor_penetration = 10))
 /obj/item/projectile/beam/eluger
 	name = "laser beam"
 	icon_state = "xray"
-	light_color = "#00FF00"
 	muzzle_type = /obj/effect/projectile/muzzle/xray
 	tracer_type = /obj/effect/projectile/tracer/xray
 	impact_type = /obj/effect/projectile/impact/xray
 	hud_state = "laser"
 
+CAPABILITIES(/obj/item/projectile/beam/eluger)
+	configure(light_glow(color = "#00FF00"))
+
 /obj/item/projectile/beam/imperial
 	name = "laser beam"
 	fire_sound = SFX_WEAPONS_MANDALORIAN
 	icon_state = "darkb"
-	light_color = "#8837A3"
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
 	hud_state = "plasma_rifle_blast"
 
+CAPABILITIES(/obj/item/projectile/beam/imperial)
+	configure(light_glow(color = "#8837A3"))
+
 /obj/item/projectile/beam/rainbow
 	name = "rainbow"
 	fire_sound = SFX_WEAPONS_SPARKLE
 	icon_state = "rainbow"
-	light_color = "#ffffff"
 	muzzle_type = /obj/effect/projectile/muzzle/rainbow
 	tracer_type = /obj/effect/projectile/tracer/rainbow
 	impact_type = /obj/effect/projectile/impact/rainbow
 	hud_state = "laser"
 	damage = 20
+
+CAPABILITIES(/obj/item/projectile/beam/rainbow)
+	configure(light_glow(color = "#ffffff"))
 
 /obj/item/projectile/beam/rainbow/non_lethal
 	damage = 0
@@ -455,7 +520,6 @@
 	name = "rainbow"
 	fire_sound = SFX_WEAPONS_SPARKLE
 	icon_state = "rainbow"
-	light_color = "#ffffff"
 	muzzle_type = /obj/effect/projectile/muzzle/rainbow
 	tracer_type = /obj/effect/projectile/tracer/rainbow
 	impact_type = /obj/effect/projectile/impact/rainbow
@@ -463,10 +527,13 @@
 	damage = 0
 	nodamage = TRUE
 
+CAPABILITIES(/obj/item/projectile/beam/sparkledog)
+	configure(light_glow(color = "#ffffff"))
+
 /obj/item/projectile/beam/sparkledog/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
-		M.status_at_least(EFFECT_DRUGGED, 20)
+		M.status_at_least(STAT_DRUGGED, 20)
 		if(M.is_injured())
 			to_chat(target, span_notice("As the beam strikes you, you feel a little healthier!"))
 			M.mend(TREAT_TISSUE_REPAIR, 5)
@@ -480,9 +547,7 @@
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	sharp = FALSE //"Wide" spectrum beam
 	injury_kind = INJURY_ELECTRIC
-	light_color = COLOR_GOLD
 	hud_state = "monkey"
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -494,9 +559,7 @@
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	sharp = FALSE //"Wide" spectrum beam
 	injury_kind = INJURY_ELECTRIC
-	light_color = "#FFFFFF"
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -513,7 +576,6 @@
 	nodamage = 1
 	agony = 5
 	injury_kind = INJURY_PAIN
-	light_color = "#00CC33"
 	hud_state = "flame_green"
 	hud_state_empty = "flame_empty"
 
@@ -522,6 +584,9 @@
 	muzzle_type = /obj/effect/projectile/muzzle/xray
 	tracer_type = /obj/effect/projectile/tracer/xray
 	impact_type = /obj/effect/projectile/impact/xray
+
+CAPABILITIES(/obj/item/projectile/beam/energy_net)
+	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/energy_net/on_hit(atom/netted)
 	do_net(netted)
@@ -537,7 +602,6 @@
 /obj/item/projectile/beam/energy_net/shrink
 	name = "compactor energy net projection"
 	icon_state = "omnilaser"
-	light_color = "#00CC33"
 	hud_state = "flame_blue"
 	hud_state_empty = "flame_empty"
 
@@ -546,6 +610,9 @@
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/energy_net/shrink)
+	configure(light_glow(color = "#00CC33"))
 
 //
 // Healing Beam
@@ -556,7 +623,6 @@
 	damage = 0 //stops it damaging walls
 	nodamage = TRUE
 	no_attack_log = TRUE
-	light_color = "#80F5FF"
 	hud_state = "laser_disabler"
 	combustion = FALSE
 
@@ -564,16 +630,19 @@
 	tracer_type = /obj/effect/projectile/tracer/medigun
 	impact_type = /obj/effect/projectile/impact/medigun
 
+CAPABILITIES(/obj/item/projectile/beam/medigun)
+	configure(light_glow(color = "#80F5FF"))
+
 /obj/item/projectile/beam/medigun/on_hit(atom/target, blocked = 0)
 	if(ishuman(target))
 		var/mob/living/carbon/human/M = target
 		if(M.is_injured())
 			var/obj/effect/overlay/pulse = new /obj/effect/overlay(get_turf(M))
 			pulse.icon = 'icons/effects/effects.dmi'
-			pulse.icon_state = XENO_CHEM_HEAL
+			pulse.set_icon_state(XENO_CHEM_HEAL)
 			pulse.name = XENO_CHEM_HEAL
 			pulse.set_anchored(TRUE)
-			om_qdel_after(pulse, 2 SECONDS)
+			pulse.expire(2 SECONDS)
 			to_chat(target, span_notice("As the beam strikes you, your injuries close up!"))
 			M.mend(TREAT_TISSUE_REPAIR, 15)
 			M.mend(TREAT_BURN_CARE, 15)
@@ -592,7 +661,6 @@
 	mob_bonus_damage = 20
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "phaser"
-	light_color = "#F18F12"
 	muzzle_type = /obj/effect/projectile/muzzle/phaser
 	tracer_type = /obj/effect/projectile/tracer/phaser
 	impact_type = /obj/effect/projectile/impact/phaser
@@ -603,8 +671,6 @@
 	damage = 10
 	mob_bonus_damage = 10
 	icon_state = "phaser_light"
-	light_range = 1.5
-	light_power = 0.3
 	muzzle_type = /obj/effect/projectile/muzzle/phaser/light
 	tracer_type = /obj/effect/projectile/tracer/phaser/light
 	impact_type = /obj/effect/projectile/impact/phaser/light
@@ -614,8 +680,6 @@
 	damage = 30
 	mob_bonus_damage = 30
 	icon_state = "phaser_heavy"
-	light_range = 3
-	light_power = 1
 	muzzle_type = /obj/effect/projectile/muzzle/phaser/heavy
 	tracer_type = /obj/effect/projectile/tracer/phaser/heavy
 	impact_type = /obj/effect/projectile/impact/phaser/heavy
@@ -629,56 +693,62 @@
 /obj/effect/projectile/tracer/phaser
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "phaser_tracer"
-	light_color = "#F18F12"
-	light_range = 2
-	light_power = 0.5
+
+CAPABILITIES(/obj/effect/projectile/tracer/phaser)
+	configure(light_glow(color = "#F18F12", range = 2, power = 0.5))
 
 /obj/effect/projectile/tracer/phaser/heavy
 	icon_state = "phaser_heavy_tracer"
-	light_range = 3
-	light_power = 1
+
+CAPABILITIES(/obj/effect/projectile/tracer/phaser/heavy)
+	configure(light_glow(range = 3, power = 1))
 
 /obj/effect/projectile/tracer/phaser/light
 	icon_state = "phaser_light_tracer"
-	light_range = 1.5
-	light_power = 0.3
+
+CAPABILITIES(/obj/effect/projectile/tracer/phaser/light)
+	configure(light_glow(range = 1.5, power = 0.3))
 
 /obj/effect/projectile/muzzle/phaser
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "phaser_muzzle"
-	light_color = "#F18F12"
-	light_range = 2
-	light_power = 0.5
+
+CAPABILITIES(/obj/effect/projectile/muzzle/phaser)
+	configure(light_glow(color = "#F18F12", range = 2, power = 0.5))
 
 /obj/effect/projectile/muzzle/phaser/heavy
 	icon_state = "phaser_heavy_muzzle"
-	light_range = 3
-	light_power = 1
+
+CAPABILITIES(/obj/effect/projectile/muzzle/phaser/heavy)
+	configure(light_glow(range = 3, power = 1))
 
 /obj/effect/projectile/muzzle/phaser/light
 	icon_state = "phaser_light_muzzle"
-	light_range = 1.5
-	light_power = 0.3
+
+CAPABILITIES(/obj/effect/projectile/muzzle/phaser/light)
+	configure(light_glow(range = 1.5, power = 0.3))
 
 /obj/effect/projectile/impact/phaser
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "phaser_impact"
-	light_color = "#F18F12"
-	light_range = 2
-	light_power = 0.5
+
+CAPABILITIES(/obj/effect/projectile/impact/phaser)
+	configure(light_glow(color = "#F18F12", range = 2, power = 0.5))
 
 /obj/effect/projectile/impact/phaser/heavy
 	icon_state = "phaser_heavy_impact"
-	light_range = 3
-	light_power = 1
+
+CAPABILITIES(/obj/effect/projectile/impact/phaser/heavy)
+	configure(light_glow(range = 3, power = 1))
 
 /obj/effect/projectile/impact/phaser/light
 	icon_state = "phaser_light_impact"
-	light_range = 1.5
-	light_power = 0.3
+
+CAPABILITIES(/obj/effect/projectile/impact/phaser/light)
+	configure(light_glow(range = 1.5, power = 0.3))
 
 /obj/effect/projectile/muzzle/vepr
 	icon_state = "vepr_muzzle"
-	light_color = "#FF6A00"
-	light_range = 3
-	light_power = 1
+
+CAPABILITIES(/obj/effect/projectile/muzzle/vepr)
+	configure(light_glow(color = "#FF6A00", range = 3, power = 1))

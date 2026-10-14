@@ -1,25 +1,22 @@
 /obj/item/weldpack
 	name = "Welding kit"
 	desc = "A heavy-duty, portable welding fluid carrier."
-	slot_flags = SLOT_BACK
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "welderpack"
 	w_class = ITEMSIZE_LARGE
 	var/max_fuel = 350
 	var/obj/item/nozzle = null //Attached welder, or other spray device.
 	var/nozzle_type = /obj/item/weldingtool/tubefed
-	var/nozzle_attached = 0
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
+	var/nozzle_attached = 1
 
-/obj/item/weldpack/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
-	own_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	own_set(src, nameof(nozzle), new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
-	nozzle_attached = 1
+CAPABILITIES(/obj/item/weldpack)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	owns_one(nameof(nozzle), /obj/item, starts = nameof(nozzle_type))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(mousedrop_input))
+	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel))) // lotsa refills
 
 
 /obj/item/weldpack/dropped(mob/user, equipping, slot)
@@ -50,7 +47,9 @@
 	nozzle_attached = 1
 
 /// Old attackby.
-/obj/item/weldpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/weldpack/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/weldingtool/T = W.get_welder()
 	if(T && !(W == nozzle))
 		if(T.welding && prob(50))
@@ -60,36 +59,32 @@
 			explosion(get_turf(src),-1,0,2)
 			if(src)
 				consume(src, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else if(T.status)
 			if(T.welding)
 				to_chat(user, span_danger("That was close!"))
 			src.reagents.trans_to_obj(T, T.max_fuel)
 			to_chat(user, span_notice("Welder refilled!"))
 			play_sfx(src, SFX_EFFECTS_REFILL)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(nozzle)
 		if(nozzle == W)
 			if(!user.unEquip(W))
 				to_chat(user, span_notice("\The [W] seems to be stuck to your hand."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(!nozzle_attached)
 				return_nozzle()
 				to_chat(user, span_notice("You attach \the [W] to the [src]."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		else
 			to_chat(user, span_notice("The [src] already has a nozzle!"))
 	else
 		to_chat(user, span_warning("The tank scoffs at your insolence. It only provides services to welders."))
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/weldpack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/item/weldpack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/weldpack/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ishuman(user))
 		var/mob/living/carbon/human/wearer = user
 		if(wearer.get_equipped_item(SLOT_ID_BACK) == src)
@@ -99,9 +94,9 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 			else
 				to_chat(user, span_notice("\The [src] does not have a nozzle attached!"))
 		else
-			return FALSE
+			return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/weldpack/afterattack(obj/O as obj, mob/user as mob, proximity)
@@ -116,35 +111,41 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 		to_chat(user, span_warning("The pack is already full!"))
 		return
 
-/obj/item/weldpack/MouseDrop(obj/over_object as obj) //This is terrifying.
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/weldpack/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/weldpack/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
 /obj/item/weldpack/examine(mob/user)
 	. = ..()
@@ -153,13 +154,15 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 /obj/item/weldpack/survival
 	name = "emergency welding kit"
 	desc = "A heavy-duty, portable welding fluid carrier."
-	slot_flags = SLOT_BACK
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "welderpack-e"
 	item_state = "welderpack"
 	w_class = ITEMSIZE_LARGE
 	max_fuel = 100
 	nozzle_type = /obj/item/weldingtool/tubefed/survival
+
+CAPABILITIES(/obj/item/weldpack/survival)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/weldpack
 	sprite_sheets = list(

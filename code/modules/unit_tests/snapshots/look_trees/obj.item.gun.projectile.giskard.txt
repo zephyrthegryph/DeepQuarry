@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/giskard icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/giskard state: giskardcivil
+/obj/item/gun/projectile/giskard dir: 2
+/obj/item/gun/projectile/giskard overlay: icons/obj/gun.dmi:giskardcivil:8:#000000
+/obj/item/gun/projectile/giskard/olivaw icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/giskard/olivaw state: olivawcivil
+/obj/item/gun/projectile/giskard/olivaw dir: 2
+/obj/item/gun/projectile/giskard/olivaw overlay: icons/obj/gun.dmi:olivawcivil:8:#000000
+

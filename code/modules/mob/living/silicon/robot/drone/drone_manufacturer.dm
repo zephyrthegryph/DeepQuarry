@@ -12,8 +12,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 5000
 
 	var/fabricator_tag = "Upper Level"
 	var/drone_progress = 0
@@ -39,10 +37,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 
 /obj/machinery/drone_fabricator/power_change()
 	. = ..()
-	if (has_stat(NOPOWER))
-		icon_state = "drone_fab_nopower"
+	if (power_lost())
+		set_icon_state("drone_fab_nopower")
 
-/obj/machinery/drone_fabricator/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/drone_fabricator)
+	configure(uses_power(idle = 20, active = 5000))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
+/obj/machinery/drone_fabricator/proc/work_step(datum/act/timer/A)
 	// Readiness is a timestamp, not continuous simulation. The old implementation
 	// polled forever after reaching 100% and was the single most expensive idle
 	// machine in destructive-round profiles.
@@ -50,14 +53,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 	return PROCESS_KILL
 
 /obj/machinery/drone_fabricator/proc/update_drone_progress()
-	if(SSticker.current_state < GAME_STATE_PLAYING || !produce_drones)
+	if(ticker_current_state() < GAME_STATE_PLAYING || !produce_drones)
 		return drone_progress
-	if(has_stat(NOPOWER))
-		icon_state = "drone_fab_nopower"
+	if(power_lost())
+		set_icon_state("drone_fab_nopower")
 		return drone_progress
 	var/was_ready = drone_progress >= 100
 	drone_progress = clamp(round(((world.time - time_last_drone) / CONFIG_GET(number/drone_build_time)) * 100), 0, 100)
-	icon_state = drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active"
+	set_icon_state(drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active")
 	if(!was_ready && drone_progress >= 100)
 		visible_message("\The [src] voices a strident beep, indicating a drone chassis is prepared.")
 	return drone_progress
@@ -71,7 +74,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 /obj/machinery/drone_fabricator/proc/create_drone(client/player)
 	update_drone_progress()
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!produce_drones || !CONFIG_GET(flag/allow_drone_spawn) || count_drones() >= CONFIG_GET(number/max_maint_drones))
@@ -85,7 +88,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 	drone_progress = 0
 
 	EXPIRY_STAMP(src, time_last_drone, CLOCK_WORLD)
-	MACHINE_WAKE(src)
+	work_start(src)
 
 	var/mob/living/silicon/robot/drone/new_drone = new drone_type(get_turf(src))
 	if(player)
@@ -95,6 +98,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 
 	return new_drone
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/drone_fabricator/step_start_condition()
 	return TRUE // its readiness timestamp

@@ -4,17 +4,11 @@
 	icon = 'icons/obj/storage.dmi'
 	name = "Money bag"
 	icon_state = "moneybag"
-	force = 10.0
-	throwforce = 2.0
 	w_class = ITEMSIZE_LARGE
 
-DECLARE_INTERACTIONS(/obj/item/moneybag, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/moneybag/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/moneybag/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	// structured TGUI Moneybag (see
 	// code/modules/admin/moneybag_panel.dm).
 	tgui_interact(user)
@@ -45,30 +39,27 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 	return counts
 
 /// Old attackby.
-/obj/item/moneybag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/moneybag/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/coin))
 		var/obj/item/coin/C = W
+		if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
+			return OP_PASS
 		to_chat(user, span_blue("You add the [C.name] into the bag."))
-		user.drop_item()
-		C.forceMove(src)
 	if (istype(W, /obj/item/moneybag))
 		var/obj/item/moneybag/C = W
 		for (var/obj/O in contents_of(C))
 			O.forceMove(src)
 		to_chat(user, span_blue("You empty the [C.name] into the bag."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 
 /obj/item/moneybag/vault
 
-/obj/item/moneybag/vault/Initialize(mapload)
-	. = ..()
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/silver(src)
-	new /obj/item/coin/gold(src)
-	new /obj/item/coin/gold(src)
+CAPABILITIES(/obj/item/moneybag/vault)
+	initial_contents(/obj/item/coin/silver, count = 4)
+	initial_contents(/obj/item/coin/gold, count = 2)
 
 /// Takes one coin of material `coin_type` out of the bag.
 /obj/item/moneybag/proc/moneybag_remove_coin(mob/living/user, coin_type)

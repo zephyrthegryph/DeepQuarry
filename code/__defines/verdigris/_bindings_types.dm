@@ -834,14 +834,15 @@
 #define VG_APC_FIELD_LONGTERMPOWER 13
 #define VG_APC_FIELD_AUTOFLAG 14
 #define VG_APC_FIELD_ALARM 15
-#define VG_APC_FIELD_STATIC_LOAD 16
-#define VG_APC_FIELD_ONEOFF 17
-#define VG_APC_FIELD_POLICY_FULL_ABOVE_PCT 18
-#define VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT 19
-#define VG_APC_FIELD_POLICY_FULL_ALLOW 20
-#define VG_APC_FIELD_POLICY_PARTIAL_ALLOW 21
-#define VG_APC_FIELD_POLICY_MIN_ALLOW 22
-#define VG_APC_FIELD_POLICY_NEUTRAL_ALLOW 23
+#define VG_APC_FIELD_REPORTED 16
+#define VG_APC_FIELD_STATIC_LOAD 17
+#define VG_APC_FIELD_ONEOFF 18
+#define VG_APC_FIELD_POLICY_FULL_ABOVE_PCT 19
+#define VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT 20
+#define VG_APC_FIELD_POLICY_FULL_ALLOW 21
+#define VG_APC_FIELD_POLICY_PARTIAL_ALLOW 22
+#define VG_APC_FIELD_POLICY_MIN_ALLOW 23
+#define VG_APC_FIELD_POLICY_NEUTRAL_ALLOW 24
 
 /obj/machinery/power/apc
 	vg_power = VG_POWER_APC
@@ -986,6 +987,10 @@
 /obj/machinery/power/apc/proc/get_alarm()
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ALARM, 0)
 
+/// unitless, read-only (state).
+/obj/machinery/power/apc/proc/get_reported()
+	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_REPORTED, 0)
+
 /// Take reconciliation (power_apc_charge): adds `delta` to what Rust holds now;
 /// returns the part of a removal that was not there.
 /obj/machinery/power/apc/proc/adjust_charge(delta)
@@ -993,6 +998,12 @@
 
 /obj/machinery/power/apc/vg_bind_power(entity)
 	return vg_component_bind(entity, VG_KIND_APC, list(VG_APC_FIELD_ACTIVE, init_active, VG_APC_FIELD_HAS_CELL, init_has_cell, VG_APC_FIELD_FAILED, init_failed, VG_APC_FIELD_SHORTED_OR_GRID_CHECK, init_shorted_or_grid_check, VG_APC_FIELD_OPERATING, init_operating, VG_APC_FIELD_CHARGEMODE, init_chargemode, VG_APC_FIELD_CHARGELEVEL, init_chargelevel, VG_APC_FIELD_CAPACITY, init_capacity, VG_APC_FIELD_RATE, init_rate, VG_APC_FIELD_POLICY_FULL_ABOVE_PCT, init_policy_full_above_pct, VG_APC_FIELD_POLICY_PARTIAL_BELOW_PCT, init_policy_partial_below_pct))
+
+#define VG_APC_EVENT_REPORT 0
+
+/// Generated no-op default. Override to react to the event.
+/obj/machinery/power/apc/proc/on_apc_report(equipment, lighting, environ, charging, alarm, status, charge)
+	return
 
 // ---- Smes (power kind 4, owner main; verdigris/domains/power/src/components.rs) ----
 
@@ -1006,6 +1017,9 @@
 #define VG_SMES_FIELD_CAPACITY 4
 #define VG_SMES_FIELD_RATE 5
 #define VG_SMES_FIELD_CHARGE 6
+#define VG_SMES_FIELD_OUTPUT_USED 7
+#define VG_SMES_FIELD_INPUT_USED 8
+#define VG_SMES_FIELD_INPUT_AVAILABLE 9
 
 /obj/machinery/power/smes
 	vg_power = VG_POWER_SMES
@@ -1058,6 +1072,18 @@
 /// J, read-only (state).
 /obj/machinery/power/smes/proc/get_charge()
 	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_output_used()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_OUTPUT_USED, 0) // W
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_input_used()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_USED, 0) // W
+
+/// W, read-only (state).
+/obj/machinery/power/smes/proc/get_input_available()
+	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_INPUT_AVAILABLE, 0) // W
 
 /// Take reconciliation (power_smes_charge): adds `delta` to what Rust holds now;
 /// returns the part of a removal that was not there.
@@ -1204,6 +1230,12 @@
 			if(mover && mover.vg_entity == entity)
 				var/obj/machinery/atmospherics/binary/pump/target = mover
 				target.on_pump_starved()
+			return TRUE
+		if(66304)
+			var/atom/movable/mover = SSvg.entity_lookup(entity)
+			if(mover && mover.vg_entity == entity)
+				var/obj/machinery/power/apc/target = mover
+				target.on_apc_report(flat[p + 0], flat[p + 1], flat[p + 2], flat[p + 3], flat[p + 4], flat[p + 5], flat[p + 6])
 			return TRUE
 		if(0)
 			SSvg.on_gas_cell_reaction_ready(flat[p + 0], flat[p + 1])

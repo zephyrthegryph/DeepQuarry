@@ -1,0 +1,57 @@
+@obj.machinery human|none
++0 menu: Climb
+@obj.machinery robot|none
++1 menu: Climb
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Toggle
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Climb
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/multitool
++0 menu: Climb
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Climb
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.power human|/obj/item/stack/cable_coil
++0 menu: Climb
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Climb
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Toggle
+@obj.machinery human|/obj/item
++0 menu: Climb
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.power human|/obj/item/pda
+-menu: Rotate Clockwise
+-menu: Rotate Counter Clockwise
+-menu: Turn Around
+@obj human|/obj/item/tank/phoron
+keys: anchor.toggle, cable_place, climb.climb, climb.climb_menu, drag_buckle, eject, load, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, toggle

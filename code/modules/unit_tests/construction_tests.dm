@@ -1,15 +1,15 @@
-/// Every mech/fighter/micro-mech construction graph (roadmap I5) has a valid `result`.
+/// Every mech/fighter/micro-mech blueprint has a valid `result`.
 /datum/unit_test/mech_construction/Run()
 	var/failed = FALSE
-	for(var/datum/construction_graph/mecha/path as anything in subtypesof(/datum/construction_graph/mecha))
+	for(var/datum/mecha_blueprint/path as anything in subtypesof(/datum/mecha_blueprint))
 		if(!initial(path.id))
 			continue
-		var/datum/construction_graph/mecha/graph = GLOB.construction_graphs[path]
-		if(!graph || !graph.result || !ispath(graph.result))
-			TEST_NOTICE(src, "[path]: Mech Construction - Had invalid result \"[graph?.result]\", must be a path.")
+		var/datum/mecha_blueprint/blueprint = mecha_blueprint_of(path)
+		if(!blueprint || !blueprint.result || !ispath(blueprint.result))
+			TEST_NOTICE(src, "[path]: Mech Construction - Had invalid result \"[blueprint?.result]\", must be a path.")
 			failed = TRUE
 	if(failed)
-		TEST_FAIL("Mech Construction - A construction graph had incorrect data.")
+		TEST_FAIL("Mech Construction - A mecha blueprint had incorrect data.")
 
 /datum/unit_test/all_machine_circuits_must_be_printable/Run()
 	// get a list of all construction frames that automatically populate their circuitboard, we don't need to test for these
@@ -30,8 +30,8 @@
 
 	// Check all circuits that are need has a techweb design
 	all_circuitboard_machines -= prepopulated_circuits
-	for(var/id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[id]
+	for(var/id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[id]
 		if(!(design.build_path in subtypesof(/obj/item/circuitboard)))
 			continue
 		all_circuitboard_machines -= design.build_path
@@ -61,6 +61,12 @@
 		if((machine_path in typesof(/obj/machinery/airlock_sensor)) || (machine_path in typesof(/obj/machinery/embedded_controller/radio/airlock))) // Snowflake multi-type airlock board
 			continue
 		if(machine_path == /obj/machinery/power/smes) // Ignore this snowflake basetype that isn't constructable
+			continue
+		if(machine_path == /obj/machinery/power/smes/p2_test) // The plain unit of the SMES behaviour tests: a fixture no board builds
+			continue
+		if((machine_path in typesof(/obj/machinery/dq_default_parts_probe)) || (machine_path in typesof(/obj/machinery/dq_default_parts_probe_plain))) // The default-parts test fixtures borrow a real board
+			continue
+		if(machine_path == /obj/machinery/computer/mfc_probe) // The plain console of the console behaviour tests: a fixture with a borrowed board
 			continue
 		if(!machine_path.circuit)
 			continue

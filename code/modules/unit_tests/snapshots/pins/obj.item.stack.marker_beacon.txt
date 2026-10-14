@@ -1,0 +1,33 @@
+@obj.item.stack human|none
++0 menu: Color
+@obj.item.stack robot|none
++0 menu: Color
+@obj ai|none
+@obj.item ghost|none
+@obj.item.stack human|/obj/item/tool/screwdriver
++0 menu: Color
+@obj.item.stack human|/obj/item/tool/crowbar
++0 menu: Color
+@obj.item.stack human|/obj/item/tool/wrench
++0 menu: Color
+@obj.item.stack human|/obj/item/tool/wirecutters
++0 menu: Color
+@obj.item.stack human|/obj/item/multitool
++0 menu: Color
+@obj.item.stack human|/obj/item/weldingtool
+-menu: Use
++0 menu: Color
+@obj.item.stack human|/obj/item/stack/cable_coil
++0 menu: Color
+@obj.item.stack human|/obj/item/stack/material/steel
++0 menu: Color
+@obj.item.stack human|/obj/item/card/id
++0 menu: Color
+@obj.item.stack human|/obj/item/kit
++0 menu: Color
+@obj.item.stack human|/obj/item/storage
++1 menu: Color
+@obj human|/obj/item/gripper
+@obj human|/obj/item/stack
++0 menu: Color
+keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, place, recolor, split, toggle_digestable

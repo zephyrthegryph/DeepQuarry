@@ -1,8 +1,11 @@
-// Floor decals: map markers painted onto the floor under them at map time (MAP_RESOLVER,
+// Floor decals: map markers painted onto the floor under them at map time (map_resolver(),
 // code/__defines/map_resolvers.dm). They never become atoms; the turf keeps the image in its
 // decals list (so it re-applies them after cutting overlays). Use them rather than distinct
 // icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
 GLOBAL_LIST_EMPTY(floor_decals)
+
+/// The decals of a floor are a tracked list that is replaced, never changed in place: a floor draws them, and writing a new list publishes it.
+TRACKED(/turf, decals)
 
 /obj/effect/floor_decal
 	name = "floor decal"
@@ -10,9 +13,10 @@ GLOBAL_LIST_EMPTY(floor_decals)
 	plane = DECAL_PLANE
 	layer = DECAL_LAYER
 
-MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
+CAPABILITIES(/obj/effect/floor_decal)
+	map_resolver(GLOBAL_PROC_REF(resolve_floor_decal))
 
-/// MAP_RESOLVER for floor decals: adds the decal's image (from its type and the map's var edits)
+/// The map resolver of floor decals: adds the decal's image (from its type and the map's var edits)
 /// to the floor's decals.
 /proc/resolve_floor_decal(atom/loc, path, list/varedits)
 	var/obj/effect/floor_decal/P = path
@@ -27,8 +31,7 @@ MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 		edits["dir"] = dir
 	if(colour)
 		edits["color"] = colour
-	var/obj/effect/floor_decal/P = path
-	return call(initial(P.map_resolver))(T, path, edits)
+	return call(map_resolver_proc(path))(T, path, edits)
 
 /// Adds one decal image to floor `T` (shared per look), remembered in T.decals.
 /proc/floor_decal_apply(turf/T, icon, icon_state, dir, color, alpha, layer = MAPPER_DECAL_LAYER, extra_key = "")
@@ -42,20 +45,21 @@ MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 		I.color = color
 		I.alpha = alpha
 		GLOB.floor_decals[cache_key] = I
-	LAZYADD(T.decals, I) // Add to its decals list (so it remembers to re-apply after it cuts overlays)
-	T.add_overlay(I) // Add to its current overlays too.
+	T.set_decals(T.decals ? T.decals + I : list(I)) // remembered, so the floor's draw shows it
+	if(!istype(T, /turf/simulated/floor)) // a tile that does not draw its decals gets it as an overlay too
+		T.add_overlay(I) // Add to its current overlays too.
 
 /obj/effect/floor_decal/reset
 	name = "reset marker"
 
-MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_reset))
+CAPABILITIES(/obj/effect/floor_decal/reset)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_reset)))
 
-/// MAP_RESOLVER for the reset marker: clears the floor's decals.
+/// The map resolver of the reset marker: clears the floor's decals.
 /proc/resolve_floor_decal_reset(atom/loc, path, list/varedits)
 	var/turf/T = get_turf(loc)
 	if(T && length(T.decals))
-		T.decals.Cut()
-		T.update_icon()
+		T.set_decals(null)
 	return TRUE
 
 /obj/effect/floor_decal/corner
@@ -648,9 +652,10 @@ MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_
 	name = "random asteroid rubble"
 	icon_state = "asteroid0"
 
-MAP_RESOLVER(/obj/effect/floor_decal/asteroid, GLOBAL_PROC_REF(resolve_floor_decal_asteroid))
+CAPABILITIES(/obj/effect/floor_decal/asteroid)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_floor_decal_asteroid)))
 
-/// MAP_RESOLVER for asteroid rubble: one of ten rubble states.
+/// The map resolver of asteroid rubble: one of ten rubble states.
 /proc/resolve_floor_decal_asteroid(atom/loc, path, list/varedits)
 	var/obj/effect/floor_decal/P = path
 	floor_decal_apply(get_turf(loc), MAP_VAR(P, varedits, icon), "asteroid[rand(0,9)]", \

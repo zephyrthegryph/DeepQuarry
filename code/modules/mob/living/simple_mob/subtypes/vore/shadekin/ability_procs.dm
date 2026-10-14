@@ -1,5 +1,5 @@
 // Phase shifting is the shared shadekin_phase_shift ability
-// (code/datums/entity_state/species/shadekin/powers/phase_shift.dm); this type
+// (code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm); this type
 // doesn't need its own version of it.
 
 /mob/living/simple_mob/shadekin/UnarmedAttack()

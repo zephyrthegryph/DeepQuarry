@@ -46,26 +46,33 @@
 			used_radios += my_headset
 
 // Clicked on while holding an object.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
-	INTERACT_ITEM(null, PROC_REF(parrot_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take headset", PROC_REF(parrot_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot)
+	op("parrot_item", item(/obj/item), then(PROC_REF(parrot_interaction_item)))
+	op("parrot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take headset"), then(PROC_REF(parrot_interaction_hand_grab)))
+
+/// The grab-stance input of parrot_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand_grab(datum/act/op/A)
+	return parrot_interaction_hand(A, I_GRAB)
 
 /// Old attackby: give a headset.
-/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/radio/headset))
 		give_headset(I, user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Clicked on by empty hand.
 /// Old attack_hand: grab the headset off.
-/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction.stance == I_GRAB && my_headset)
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	if(stance == I_GRAB && my_headset)
 		remove_headset(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/give_headset(obj/item/radio/headset/new_headset, mob/living/user)
@@ -76,7 +83,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		to_chat(user, span_warning("\The [src] is already wearing \a [my_headset]."))
 		return
 	else
-		if(!own_set(src, nameof(src.my_headset), new_headset, user = user))
+		if(!move_into(src, nameof(src.my_headset), new_headset, user))
 			return
 		to_chat(user, span_warning("You place \a [new_headset] on \the [src]. You monster."))
 		to_chat(src, span_notice("\The [user] gives you \a [new_headset]. You should put it to good use immediately."))
@@ -87,7 +94,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		to_chat(user, span_warning("\The [src] doesn't have a headset to remove, thankfully."))
 	else
 		ISay("BAWWWWWK LEAVE THE HEADSET BAWKKKKK!")
-		var/obj/item/radio/headset/old_headset = own_take(src, nameof(my_headset))
+		var/obj/item/radio/headset/old_headset = rel_take(src, nameof(my_headset))
 		old_headset.forceMove(get_turf(src))
 		user.put_in_hands(old_headset)
 		to_chat(user, span_notice("You take away \the [src]'s [old_headset.name]. Finally."))
@@ -97,8 +104,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	. = ..()
 	if(my_headset)
 		. += "It is wearing \a [my_headset]."
-
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", null)
 
 // Subtypes.
 
@@ -136,13 +141,22 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 	icon_dead = "eclectus-dead"
 	tt_desc = "E Eclectus roratus"
 
-/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/Initialize(mapload)
-	gender = pick(MALE, FEMALE)
-	if(gender == FEMALE)
-		icon_state = "eclectusf" // ALLOW(decl): random gender
-		icon_rest = "eclectusf-held"
-		icon_dead = "eclectusf-dead"
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot/eclectus)
+	rolls(nameof(gender), pick_one(list(MALE, FEMALE)))
+	rolls(nameof(icon_state), PROC_REF(roll_gendered_look), from = list(nameof(gender)))
+	rolls(nameof(icon_living), PROC_REF(roll_gendered_look), from = list(nameof(gender)))
+	rolls(nameof(icon_rest), PROC_REF(roll_gendered_rest), from = list(nameof(gender)))
+	rolls(nameof(icon_dead), PROC_REF(roll_gendered_dead), from = list(nameof(gender)))
+
+/// Rolled before init (rolls()): a female eclectus has her own sprites.
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_look(datum/roller/R)
+	return gender == FEMALE ? "eclectusf" : icon_state
+
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_rest(datum/roller/R)
+	return gender == FEMALE ? "eclectusf-held" : icon_rest
+
+/mob/living/simple_mob/animal/passive/bird/parrot/eclectus/proc/roll_gendered_dead(datum/roller/R)
+	return gender == FEMALE ? "eclectusf-dead" : icon_dead
 
 /mob/living/simple_mob/animal/passive/bird/parrot/grey_parrot
 	name = "grey parrot"
@@ -247,4 +261,4 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // The worn headset sits in the parrot's contents.
 /mob/living/simple_mob/animal/passive/bird/parrot/ownership()
 	. = ..()
-	. += owns(nameof(my_headset), policy = OWN_CONTAINED)
+	. += owns(nameof(my_headset), policy = OWN_CONTAINED, starts = nameof(my_headset))

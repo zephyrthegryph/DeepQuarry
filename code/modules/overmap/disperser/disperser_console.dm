@@ -112,7 +112,16 @@
 	if(B)
 		return B
 
-DECLARE_UI(/obj/machinery/computer/ship/disperser, "OvermapDisperser")
+// The disperser window: one op per button; a setting's number is asked in its op (asks()) and applied by the handler.
+CAPABILITIES(/obj/machinery/computer/ship/disperser)
+	interface("OvermapDisperser")
+	without("ui_open")
+	op("choose", ui_act("choose", arg("dir", num())), then(PROC_REF(ui_act_choose)))
+	op("calibration", ui_act("calibration", arg("calibration", num())), asks(/datum/prompt/number/disperser_setting/calibration, step = "value"), then(PROC_REF(ui_act_calibration)))
+	op("skill_calibration", ui_act("skill_calibration"), then(PROC_REF(ui_act_skill_calibration)))
+	op("strength", ui_act("strength"), asks(/datum/prompt/number/disperser_setting/strength, step = "value"), then(PROC_REF(ui_act_strength)))
+	op("range", ui_act("range"), asks(/datum/prompt/number/disperser_setting/range, step = "value"), then(PROC_REF(ui_act_range)))
+	op(BURN, ui_act(BURN), then(PROC_REF(ui_act_burn)))
 
 /obj/machinery/computer/ship/disperser/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())
@@ -124,10 +133,8 @@ DECLARE_UI(/obj/machinery/computer/ship/disperser, "OvermapDisperser")
 /obj/machinery/computer/ship/disperser/ui_title(mob/user)
 	return "[linked().name] ORB control"
 
-UI_DATA_REPLACE(/obj/machinery/computer/ship/disperser, "merge:ui_data_obj_machinery_computer_ship_disperser{faillink:bool,calibration:list,overmapdir:num,cal_accuracy:unknown,strength:num,range:num,next_shot:num,nopower:bool,skill:bool,chargeload:text}")
-
-/// The computed part of /obj/machinery/computer/ship/disperser's window data (declared on its UI_DATA row).
-/obj/machinery/computer/ship/disperser/proc/ui_data_obj_machinery_computer_ship_disperser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window data.
+/obj/machinery/computer/ship/disperser/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["faillink"] = FALSE
 	data["calibration"] = null
@@ -161,71 +168,62 @@ UI_DATA_REPLACE(/obj/machinery/computer/ship/disperser, "merge:ui_data_obj_machi
 
 	return data
 
-/obj/machinery/computer/ship/disperser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/// The console's guard: it works a linked ship.
+/obj/machinery/computer/ship/disperser/ui_gate(datum/act/op/A)
 	if(!..())
 		return FALSE
-	if(!linked())
+	return !!linked()
+
+/obj/machinery/computer/ship/disperser/proc/ui_act_choose(datum/act/op/A, dir)
+	if(!ui_gate(A))
 		return FALSE
+	overmapdir = sanitize_integer(dir, 0, 9, 0)
+	reset_calibration()
+	terminal_typed(A.actor)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/disperser, "choose", ui_act_choose, UI_ARG_NUM("dir"))
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_choose)
-	overmapdir = sanitize_integer(params["dir"], 0, 9, 0)
-	reset_calibration()
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+/obj/machinery/computer/ship/disperser/proc/ui_act_calibration(datum/act/op/A, calibration_index)
+	if(!ui_gate(A))
+		return FALSE
+	var/calnum = sanitize_integer(calibration_index, 0, caldigit)
+	calibration[calnum + 1] = sanitize_integer(A.step_value("value"), 0, 9, 0)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/disperser, "calibration", ui_act_calibration, UI_ARG_NUM("calibration"))
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_calibration)
-	var/input = act_ask(ui.user, action, params, ui, "k177", /datum/om/prompt/number, message = "0-9", title = "disperser calibration", default = 0, max = 9)
-	if(isnull(input))
-		return
-	if(!isnull(input)) //can be zero so we explicitly check for null
-		var/calnum = sanitize_integer(params["calibration"], 0, caldigit)//sanitiiiiize
-		calibration[calnum + 1] = sanitize_integer(input, 0, 9, 0)//must add 1 because js indexes from 0
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
-
-UI_ACT(/obj/machinery/computer/ship/disperser, "skill_calibration", ui_act_skill_calibration)
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_skill_calibration)
+/obj/machinery/computer/ship/disperser/proc/ui_act_skill_calibration(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	for(var/i = 1 to 2)
 		calibration[i] = calexpected[i]
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/disperser, "strength", ui_act_strength)
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_strength)
-	var/input = act_ask(ui.user, action, params, ui, "k189", /datum/om/prompt/number, message = "1-5", title = "disperser strength", default = 1, max = 5, min = 1)
-	if(isnull(input))
-		return
-	if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		strength = sanitize_integer(input, 1, 5, 1)
+/obj/machinery/computer/ship/disperser/proc/ui_act_strength(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/value = A.step_value("value")
+	if(value)
+		strength = sanitize_integer(value, 1, 5, 1)
 		middle().update_idle_power_usage(strength * range * 100)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/disperser, "range", ui_act_range)
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_range)
-	var/input = act_ask(ui.user, action, params, ui, "k196", /datum/om/prompt/number, message = "1-5", title = "disperser radius", default = 1, max = 5, min = 1)
-	if(isnull(input))
-		return
-	if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-		range = sanitize_integer(input, 1, 5, 1)
+/obj/machinery/computer/ship/disperser/proc/ui_act_range(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/value = A.step_value("value")
+	if(value)
+		range = sanitize_integer(value, 1, 5, 1)
 		middle().update_idle_power_usage(strength * range * 100)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+	terminal_typed(A.actor)
+	return TRUE
 
-UI_ACT(/obj/machinery/computer/ship/disperser, BURN, ui_act_burn)
-UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_burn)
-	fire(ui.user)
-	. = TRUE
-	if(. && !issilicon(ui.user))
-		play_sfx(src, SFX_TERMINAL_TYPE)
+/obj/machinery/computer/ship/disperser/proc/ui_act_burn(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	fire(A.actor)
+	terminal_typed(A.actor)
+	return TRUE
 
 /// Accessor for the middle var.
 /obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle
@@ -238,3 +236,36 @@ UI_ACT_PROC(/obj/machinery/computer/ship/disperser, ui_act_burn)
 /// Accessor for the front var.
 /obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
 	return front
+
+/datum/prompt/number/disperser_setting
+	timeout = 0
+	var/display_min = 0
+	var/display_max = 9
+
+/datum/prompt/number/disperser_setting/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/disperser_setting/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title, default, display_max, display_min, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/disperser_setting/calibration
+	question = "0-9"
+	title = "disperser calibration"
+	default = 0
+
+/datum/prompt/number/disperser_setting/strength
+	question = "1-5"
+	title = "disperser strength"
+	default = 1
+	display_min = 1
+	display_max = 5
+
+/datum/prompt/number/disperser_setting/range
+	question = "1-5"
+	title = "disperser radius"
+	default = 1
+	display_min = 1
+	display_max = 5

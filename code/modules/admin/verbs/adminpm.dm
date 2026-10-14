@@ -18,7 +18,13 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 				targets["[T.mob.real_name](as [T.mob.name]) - [T]"] = T
 		else
 			targets["(No Mob) - [T]"] = T
-	var/target = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "To whom shall we send a message?", title = "Admin PM", choices = sortList(targets))
+	var/target
+	var/datum/request/resumed = length(args) > 1 ? args[2] : null
+	if(istype(resumed, /datum/prompt/choice/admin_pm_panel_selection) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(pm_panel_selection_answered))
+		target = resumed.value
+	else
+		open_request(src, /datum/prompt/choice/admin_pm_panel_selection, PROC_REF(pm_panel_selection_answered), answerer = user.mob, question = "To whom shall we send a message?", title = "Admin PM", choices = sortList(targets))
+		return
 	if(isnull(target))
 		return
 	if(!target) //Admin canceled
@@ -46,45 +52,43 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	if(T)
 		message_admins(span_pm("[key_name_admin(src)] has started replying to [key_name(C, 0, 0)]'s admin help."))
-	om_ask(src, /datum/om/prompt/text/admin_pm/ahelp_reply, PROC_REF(ahelp_reply_entered), whom = C, ticket = T)
+	open_request(src, /datum/prompt/text/admin_pm, PROC_REF(ahelp_reply_entered), answerer = mob, title = "Private message to [key_name(C, 0, 0)]", whom_ckey = C.ckey, ticket = T)
 
-/// Writing an admin PM to `whom` (a client).
-/datum/om/prompt/text/admin_pm
-	message = "Message:"
+/// Writing an admin PM to `whom_ckey`'s client (by ckey: a client is gone when it disconnects).
+/datum/prompt/text/admin_pm
+	question = "Message:"
 	multiline = TRUE
 	encode = FALSE
-	var/client/whom
+	timeout = 0
+	var/whom_ckey
 	var/datum/ticket/ticket
 
-/datum/om/prompt/text/admin_pm/prepare()
-	title = "Private message to [key_name(whom, 0, 0)]"
-	return TRUE
-
-/// Replying to an adminhelp: a cancel is announced to the other admins.
-/datum/om/prompt/text/admin_pm/ahelp_reply
-
-/datum/om/prompt/text/admin_pm/ahelp_reply/cancelled()
-	answerer?.client?.ahelp_reply_cancelled(whom)
-
 /// A popup admin PM's reply, on the recipient; the sender is looked up by ckey when it arrives.
-/datum/om/prompt/text/admin_pm_popup
+/datum/prompt/text/admin_pm_popup
 	multiline = TRUE
+	timeout = 0
 	var/sender_ckey
 
 /client/proc/ahelp_reply_cancelled(client/whom)
 	message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(whom, 0, 0)]'s admin help."))
 
-/client/proc/ahelp_reply_entered(datum/om/prompt/text/admin_pm/ahelp_reply/ask)
-	if (!ask.text)
-		ahelp_reply_cancelled(ask.whom)
+/// Replying to an adminhelp: a cancel is announced to the other admins.
+/client/proc/ahelp_reply_entered(datum/act/request/A)
+	var/datum/prompt/text/admin_pm/asked = A.request
+	var/client/whom = GLOB.directory[asked.whom_ckey]
+	if(!A.answer || !asked.value)
+		ahelp_reply_cancelled(whom)
 		return
-	cmd_admin_pm(ask.whom, ask.text, ask.ticket)
+	cmd_admin_pm(whom, asked.value, asked.ticket)
 
 //takes input from cmd_admin_pm_context, cmd_admin_pm_panel or /client/Topic and sends them a PM.
 //Fetching a message if needed. src is the sender and C is the target client
 /// A popup PM's reply (on the recipient): to the sender, or an adminhelp if they left.
-/client/proc/admin_pm_popup_replied(datum/om/prompt/text/admin_pm_popup/ask)
-	var/reply = ask.text
+/client/proc/admin_pm_popup_replied(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_pm_popup/ask = A.answer
+	var/reply = ask.value
 	if(!reply)
 		return
 	var/client/sender = GLOB.directory[ask.sender_ckey]
@@ -93,15 +97,19 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	else
 		adminhelp(reply)													//sender has left, adminhelp instead
 
-/client/proc/admin_pm_entered(datum/om/prompt/text/admin_pm/ask)
-	if(ask.text)
-		cmd_admin_pm(ask.whom, ask.text, ask.ticket)
+/client/proc/admin_pm_entered(datum/act/request/A)
+	var/datum/prompt/text/admin_pm/asked = A.answer
+	if(asked?.value)
+		cmd_admin_pm(GLOB.directory[asked.whom_ckey], asked.value, asked.ticket)
 
 /// Shows this client a popup admin PM they can reply to (the answer runs on this client).
 /client/proc/ask_admin_pm_popup(msg, sender_key, sender_ckey)
-	om_ask(src, /datum/om/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), message = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
+	var/mob/answering_user = mob
+	if(!answering_user)
+		return
+	open_request(src, /datum/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), answerer = answering_user, question = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
 
-/client/proc/cmd_admin_pm(whom, msg, datum/ticket/T)
+/client/proc/cmd_admin_pm(whom, msg, datum/ticket/T, mob/token_actor)
 	if(prefs.muted & MUTE_ADMINHELP)
 		to_chat(src, span_admin_pm_warning("Error: Admin-PM: You are unable to use admin PM-s (muted)."))
 		return
@@ -123,11 +131,13 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
-		om_ask(src, /datum/om/prompt/text/admin_pm, PROC_REF(admin_pm_entered), whom = recipient, ticket = T)
+		if(!recipient)
+			return
+		open_request(src, /datum/prompt/text/admin_pm, PROC_REF(admin_pm_entered), answerer = mob, title = "Private message to [key_name(recipient, 0, 0)]", whom_ckey = recipient.ckey, ticket = T)
 		return
 
 	//clean the message if it's not sent by a high-rank admin
-	if(!check_rights(R_SERVER|R_DEBUG, FALSE))//no sending html to the poor bots
+	if(!admin_require(src, R_SERVER|R_DEBUG, "cmd_admin_pm", FALSE))//no sending html to the poor bots
 		msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
 	if(!msg)
 		return
@@ -150,9 +160,9 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	var/rawmsg = msg
 
-	var/keywordparsedmsg = keywords_lookup(msg)
+	var/keywordparsedmsg = keywords_lookup(msg, FALSE, token_actor)
 
-	if(recipient.holder)
+	if(admin_can(recipient, 0))
 		if(holder)	//both are admins
 			to_chat(recipient, span_admin_pm_warning("Admin PM from-" + span_bold("[key_name(src, recipient, 1)]") + ": [keywordparsedmsg]"))
 			to_chat(src, span_admin_pm_notice("Admin PM to-" + span_bold("[key_name(recipient, src, 1)]") + ": [keywordparsedmsg]"))
@@ -176,7 +186,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	else
 		if(holder)	//sender is an admin but recipient is not. Do BIG RED TEXT
 			if(!recipient.current_ticket())
-				new /datum/ticket(msg, recipient, TRUE, 1)
+				new /datum/ticket(msg, recipient, TRUE, 1, mob, token_actor)
 
 			to_chat(recipient, span_admin_pm_warning(span_huge(span_bold("-- Administrator private message --"))))
 			to_chat(recipient, span_admin_pm_warning("Admin PM from-" + span_bold("[key_name(src, recipient, 0)]") + ": [msg]"))
@@ -204,3 +214,28 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 			continue
 		if(X.key!=key && X.key!=recipient.key)	//check client/X is an admin and isn't the sender or recipient
 			to_chat(X, span_admin_pm_notice(span_bold("PM: [key_name(src, X, 0)]-&gt;[key_name(recipient, X, 0)]:") + " [keywordparsedmsg]"))
+
+/datum/prompt/choice/admin_pm_panel_selection
+	timeout = 0
+	rights = R_ADMIN|R_MOD|R_SERVER|R_EVENT
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_pm_panel_selection/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_pm_panel_selection/refusal(given)
+	return null
+
+/datum/prompt/choice/admin_pm_panel_selection/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/cmd_admin_pm_panel/proc/pm_panel_selection_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

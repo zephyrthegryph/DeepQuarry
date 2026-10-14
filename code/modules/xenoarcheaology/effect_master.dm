@@ -30,6 +30,25 @@
 
 /// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
 /atom/var/datum/artifact_master/artifact_master
+
+CAPABILITIES(/atom)
+	light_glow(range = 0, power = 1, color = COLOR_WHITE) // the light it casts while light_on: a type trait (code/modules/lighting/glow.dm)
+	ref_many(nameof(light_sources))
+	owns_one(nameof(artifact_master), /datum/artifact_master)
+	owns_one(nameof(forensic_data), /datum/forensics_crime)
+	owns_one(nameof(light), /datum/light_source)
+	owns_one(nameof(reagents), /datum/reagents)
+	owns_one(nameof(rx_node), /datum/dq_rx_node)
+	owns_many(nameof(alt_appearances_owned))
+	op("statpanel_item_click", topic("statpanel_item_click", arg("statpanel_item_click", schema_text(8), optional = TRUE), arg("statpanel_item_shiftclick", schema_text(8), optional = TRUE), arg("statpanel_item_ctrlclick", schema_text(8), optional = TRUE), arg("statpanel_item_altclick", schema_text(8), optional = TRUE)), then(PROC_REF(topic_statpanel_click)))
+	op("vv_explode", topic_in(VV_TOPIC, VV_HK_TRIGGER_EXPLOSION), then(PROC_REF(vv_topic_explosion)))
+	op("vv_empulse", topic_in(VV_TOPIC, VV_HK_TRIGGER_EMP), then(PROC_REF(vv_topic_emp)))
+	op("vv_atom_transform", topic_in(VV_TOPIC, VV_HK_MODIFY_TRANSFORM), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_modify_transform)))
+	op("vv_atom_spin", topic_in(VV_TOPIC, VV_HK_SPIN_ANIMATION), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_spin_animation)))
+	op("vv_stop_animations", topic_in(VV_TOPIC, VV_HK_STOP_ALL_ANIMATIONS), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/yes_no, fields = list("title" = "Stop Animating", "question" = "Are you sure?", "rights" = R_VAREDIT, "timeout" = 0), step = "sure"), then(PROC_REF(vv_topic_stop_animations)))
+	op("vv_auto_rename", topic_in(VV_TOPIC, VV_HK_AUTO_RENAME), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/text, fields = list("title" = "Automatic Rename", "question" = "What do you want to rename this to?", "rights" = R_VAREDIT, "timeout" = 0), step = "name"), then(PROC_REF(vv_topic_auto_rename)))
+	op("vv_edit_filters", topic_in(VV_TOPIC, VV_HK_EDIT_FILTERS), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_filters)))
+	op("vv_test_matrixes", topic_in(VV_TOPIC, VV_HK_TEST_MATRIXES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_test_matrixes)))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master
@@ -46,20 +65,22 @@
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
-/// The anomalous atom this state belongs to (a relation view); the master runs its effects while it has one.
-OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
+/// The anomalous atom this state belongs to (a relation view); the master runs its effects (every 2 s) while it has one: the gate is the relation var, so the every() polls.
+/datum/artifact_master/var/tmp/atom/holder
+CAPABILITIES(/datum/artifact_master)
+	ref_one(nameof(holder))
+	owns_many(nameof(my_effects))
+	every(2 SECONDS, then(PROC_REF(master_step)), when = nameof(holder))
 
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
 	if(!istype(new_holder) || new_holder.artifact_master)
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
-	own_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
+	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
 
-	own_take_all(src, nameof(my_effects))
-	lifecycle_decls_init(src) // a non-atom: starts the holder declaration
+	rel_take_all(src, nameof(my_effects))
 
 	do_setup()
 	return
@@ -81,19 +102,19 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 /datum/artifact_master/proc/DoRegistry()
 	var/atom/H = holder()
-	om_hook(H, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
-	om_hook(H, /datum/om/event/before/atom_ex_act, src, PROC_REF(on_exact))
-	om_hook(H, /datum/om/event/before/atom_bullet_act, src, PROC_REF(on_bullet))
-	om_hook(H, /datum/om/event/before/attack_hand, src, PROC_REF(on_attack_hand))
-	om_hook(H, /datum/om/event/before/movable_bump, src, PROC_REF(on_bump))
-	om_hook(H, /datum/om/event/atom_bumped, src, PROC_REF(on_bumped))
-	om_hook(H, /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(H, /datum/om/event/reagent_expose_obj, src, PROC_REF(on_reagent))
+	observe(H, /datum/notice/attacked_by, src, then(PROC_REF(on_attackby)))
+	observe(H, /datum/act/explode, src, instead(then(PROC_REF(on_exact))))
+	observe(H, /datum/act/shoot, src, instead(then(PROC_REF(on_bullet))))
+	observe(H, /datum/notice/hand_attacked, src, then(PROC_REF(on_attack_hand)))
+	observe(H, /datum/notice/movable_bump, src, then(PROC_REF(on_bump)))
+	observe(H, /datum/notice/atom_bumped, src, then(PROC_REF(on_bumped)))
+	observe(H, /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(H, /datum/notice/reagent_expose_obj, src, then(PROC_REF(on_reagent)))
 
 /datum/artifact_master/proc/do_unregister()
 	var/atom/H = holder()
 	if(H)
-		om_unhook(H, null, src)
+		unobserve(H, null, src)
 
 /datum/artifact_master/proc/get_active_effects()
 	var/list/active_effects = list()
@@ -111,25 +132,23 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	return effects
 
 /datum/artifact_master/proc/add_effect()
-	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
+	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/prompt/choice, question = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
 	if(isnull(effect_type))
 		return
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
-		if(istype(holder(), my_effect.req_type))
-			own_add(src, nameof(my_effects), my_effect)
-
-		else
+		rel_add(src, nameof(my_effects), my_effect)
+		if(!istype(holder(), my_effect.req_type))
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
-			qdel(my_effect)
+			rel_remove(src, nameof(my_effects), my_effect)
 
 /datum/artifact_master/proc/remove_effect()
-	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/om/prompt/choice, message = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
+	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/prompt/choice, question = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
 	if(isnull(to_remove_effect))
 		return
 
 	if(to_remove_effect)
-		own_remove(src, nameof(my_effects), to_remove_effect)
+		rel_remove(src, nameof(my_effects), to_remove_effect)
 
 // its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
 /datum/artifact_master/on_destroy(force)
@@ -140,8 +159,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(LAZYLEN(make_effects))
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
-			if(istype(holder(), new_effect.req_type))
-				own_add(src, nameof(my_effects), new_effect)
+			rel_add(src, nameof(my_effects), new_effect)
+			if(!istype(holder(), new_effect.req_type))
+				rel_remove(src, nameof(my_effects), new_effect)
 
 	else
 		generate_effects()
@@ -179,19 +199,19 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
+			rel_add(src, nameof(my_effects), AE)
 			if(istype(holder(), AE.req_type))
-				own_add(src, nameof(my_effects), AE)
 				effect_generation_chance -= 30
 			else
 				rel_set(AE, nameof(AE.master), src)
-				qdel(AE)
+				rel_remove(src, nameof(my_effects), AE)
 			continue
 
 		// Probabilistic pass: halve the chance, then roll.
 		effect_generation_chance /= 2
 
 		if(prob(effect_generation_chance))
-			own_add(src, nameof(my_effects), new chosen_path(src))
+			rel_add(src, nameof(my_effects), new chosen_path(src))
 
 		effect_generation_chance = round(effect_generation_chance)
 
@@ -207,9 +227,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
  * Trigger code.
  */
 
-/datum/artifact_master/proc/on_exact(datum/source, datum/om/event/before/atom_ex_act/event)
-	EVENT_HANDLER
-	var/severity = event.severity
+/datum/artifact_master/proc/on_exact(datum/act/explode/blast)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/severity = blast.severity
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		switch(severity)
@@ -227,13 +247,13 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 					triggered = TRUE
 
 	if(triggered)
-		return COMPONENT_IGNORE_EXPLOSION
+		return TRUE
 
-	return
+	return HOOK_DECLINE
 
-/datum/artifact_master/proc/on_bullet(datum/source, datum/om/event/before/atom_bullet_act/event)
-	EVENT_HANDLER
-	var/obj/item/projectile/P = event.projectile
+/datum/artifact_master/proc/on_bullet(datum/act/shoot/round)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/obj/item/projectile/P = round.projectile
 	var/triggered = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(istype(P,/obj/item/projectile/bullet))
@@ -249,18 +269,19 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 				triggered = TRUE
 
 	if(triggered)
-		return COMPONENT_CANCEL_ATTACK_CHAIN
+		return TRUE
 
-	return
+	return HOOK_DECLINE
 
-/datum/artifact_master/proc/on_bump(datum/source, datum/om/event/before/movable_bump/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_bump(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/movable_bump/event = N
 	var/atom/bumped = event.atom
 	var/warn = FALSE
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(bumped))
 			var/obj/item/bumped_item = bumped
-			if(bumped_item.throwforce >= 10)
+			if(thrown_of(bumped_item).force >= 10)
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 
@@ -277,8 +298,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(warn && isliving(bumped))
 		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
 
-/datum/artifact_master/proc/on_bumped(datum/source, datum/om/event/atom_bumped/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_bumped(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/atom_bumped/event = A
 	bumped_by(event.bumped)
 
 /// Something bumped (or is pulling) the holder.
@@ -288,7 +310,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(M))
 			var/obj/item/bumped_item = M
-			if(bumped_item.throwforce >= 10)
+			if(thrown_of(bumped_item).force >= 10)
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 
@@ -305,8 +327,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(warn && isliving(M))
 		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
 
-/datum/artifact_master/proc/on_attack_hand(datum/source, datum/om/event/before/attack_hand/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_attack_hand(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/hand_attacked/event = N
 	var/mob/living/user = event.user
 	if(!istype(user))
 		return
@@ -334,8 +357,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	else
 		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
 
-/datum/artifact_master/proc/on_attackby(datum/source, datum/om/event/before/attackby/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_attackby(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/attacked_by/event = N
 	var/obj/item/W = event.item
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
@@ -382,11 +406,12 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 
 		//Otherwise, let's see if we were hit with something with enough force to activate us.
 		else
-			if (my_effect.trigger == TRIGGER_FORCE && W.force >= 10)
+			if (my_effect.trigger == TRIGGER_FORCE && combat_of(W).force >= 10)
 				my_effect.ToggleActivate()
 
-/datum/artifact_master/proc/on_reagent(datum/source, datum/om/event/reagent_expose_obj/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_reagent(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/reagent_expose_obj/event = A
 	//A strange bug here is that, when a reagent is splashed on an artifact, it calls this proc twice.
 	//Why? I have no clue. I only accidentally stumbled upon it during debugging!
 	//I left one of the debug logs commented out so others can confirm this.
@@ -407,18 +432,17 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 			if(my_effect.trigger == TRIGGER_TOXIN)
 				my_effect.ToggleActivate()
 
-/datum/artifact_master/proc/on_moved(datum/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/datum/artifact_master/proc/on_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)
 			my_effect.UpdateMove()
 
-/datum/artifact_master/periodic_step()
+/datum/artifact_master/proc/master_step(datum/act/timer/A)
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
-		om_task_periodic_stop(src)
 		if(!QDELETED(src))
-			qdel(src)
-			return
+			ended_with(src)
+		return
 
 	var/turf/L = holder().loc
 	if(!istype(L) && !isliving(L)) 	// We're inside a non-mob container or on null turf, either way stop processing effects
@@ -476,3 +500,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /datum/artifact_master/proc/holder() as /atom
 	return holder
 
+/// Preserve the old containment-ledger delete position between forensics and light.
+/atom/ownership_field_disposed(var_name)
+	if(var_name == nameof(forensic_data))
+		clear_containment_ledger()

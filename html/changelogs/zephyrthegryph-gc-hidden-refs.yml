@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The GC sweep test counts references in a proc of its own and judges every subject against zero; the per-family baselines, the dropped cat and the throwaway last mob are gone, and the sweep also checks that deleted holders leave GLOB.latency_sweep_holders"

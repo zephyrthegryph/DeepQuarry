@@ -2,21 +2,21 @@
 /obj/machinery/door/airlock
 	var/id_tag
 	var/frequency
-	var/shockedby = list()
+	var/list/shockedby
 	var/datum/radio_frequency/radio_connection
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
+	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
+	var/cur_command
 
-/// The command the door is currently attempting to complete; command_step() retries it while set.
-OM_FIELD(/obj/machinery/door/airlock, cur_command, null, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command")
+TRACKED(/obj/machinery/door/airlock, cur_command)
 
-/obj/machinery/door/airlock/proc/command_step()
-	if (arePowerSystemsOn())
+/obj/machinery/door/airlock/proc/command_step(datum/act/A)
+	if (power_systems_on())
 		execute_current_command()
 
 /obj/machinery/door/airlock/receive_signal(datum/signal/signal)
-	if (!arePowerSystemsOn()) return //no power
+	if (!power_systems_on()) return //no power
 
 	if(!signal || signal.encryption) return
 
@@ -40,11 +40,13 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 /obj/machinery/door/airlock/proc/check_completion(do_lock, delayed_status)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	// The command's own swing finishes this same moment (its last frame and this check are due together, and
+	// may run in either order), so the bolts drop even mid-swing: refused for `operating`, the command stayed
+	// pending, the door autoclosed and the command reopened it, forever.
 	if(do_lock)
-		lock()
+		set_bolted(src, TRUE, TRUE)
 	if(delayed_status)
-		// ALLOW(sys_om_after_rearm): one-shot deferral, not a loop: the re-armed call passes no args, so delayed_status is FALSE there and it never re-arms.
-		om_after(src, 0.2 SECONDS, PROC_REF(check_completion))
+		after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
 	var/completed_command = cur_command
 	if(command_completed(completed_command))
@@ -55,28 +57,28 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	switch(command)
 		if("open")
 			open()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("close")
 			close()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("unlock")
-			unlock()
+			set_bolted(src, FALSE)
 			check_completion()
 
 		if("lock")
 			check_completion(TRUE)
 
 		if("secure_open")
-			unlock()
+			set_bolted(src, FALSE)
 
-			om_after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
+			after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
 
 		if("secure_close")
-			unlock()
+			set_bolted(src, FALSE)
 			close()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE, 0.2 SECONDS)
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), with = list(TRUE, 0.2 SECONDS))
 
 		if("update")
 			check_completion(delayed_status = TRUE)
@@ -85,7 +87,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	open()
-	om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE)
+	after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), with = list(TRUE))
 
 /obj/machinery/door/airlock/proc/command_completed(command)
 	switch(command)
@@ -139,23 +141,15 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	. = ..()
 	if(!forced) send_status()
 
-/obj/machinery/door/airlock/Bumped(atom/AM)
-	..(AM)
-	if(istype(AM, /obj/mecha))
-		var/obj/mecha/mecha = AM
-		if(density && radio_connection() && mecha?.slot_item(MECHA_SLOT_PILOT) && (src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
-			send_status(1)
-	return
-
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	rel_clear(src, nameof(radio_connection))
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -166,7 +160,6 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	desc = "Sends atmospheric readings to a nearby controller."
 
 	anchored = TRUE
-	power_channel = ENVIRON
 	circuit = /obj/item/circuitboard/airlock_cycling
 
 	var/id_tag
@@ -180,42 +173,27 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	var/alert = 0
 	var/previousPressure
 
-/// Wakes only when process() would transmit something new: it sends pressure rounded to 0.1 kPa,
-/// so a change that leaves that reading identical cannot affect an airlock controller or icon.
-/obj/machinery/airlock_sensor/proc/register_gas_dependencies()
-	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+TRACKED(/obj/machinery/airlock_sensor, alert)
 
-/obj/machinery/airlock_sensor/proc/gas_wake_condition()
-	var/datum/gas_mixture/environment = return_air()
-	return on && environment && round(environment.return_pressure(), 0.1) != previousPressure
+// ---- what an airlock sensor is, declared ----
+//
+// It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes: it waits on a gas
+// watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
-/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "gas")
+CAPABILITIES(/obj/machinery/airlock_sensor)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(channel = ENVIRON))
+	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
+	multitool_settings(list(
+		list("Master Tag", "master_tag", "text", 30),
+		list("ID Tag", "id_tag", "text", 30),
+		list("Frequency", "frequency", "frequency"),
+		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior.")))
+	op("cycle", hand(), label("Use"), wait(0), then(PROC_REF(cycle_asked)))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
 
-/obj/machinery/airlock_sensor/proc/wake_from_gas()
-	unregister_gas_dependencies()
-	MACHINE_WAKE(src)
-
-APPEARANCE_TEMPLATE(/obj/machinery/airlock_sensor, "airlock_sensor_{on?@appearance_mode:off}")
-DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "airlock_sensor_open")))
-
-/obj/machinery/airlock_sensor/proc/appearance_mode()
-	return alert ? "alert" : "standby"
-
-/obj/machinery/airlock_sensor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/airlock_sensor_cycle,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/airlock_sensor_cycle
-	id = "airlock_sensor_cycle"
-	name = "Use"
-	effect = /obj/machinery/airlock_sensor/proc/interaction_cycle
-
-/obj/machinery/airlock_sensor/proc/interaction_cycle(mob/user, obj/item/held, datum/interaction/interaction)
+/// A hand on the sensor asks the controller to cycle.
+/obj/machinery/airlock_sensor/proc/cycle_asked(datum/act/op/A)
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
 	signal.data["tag"] = master_tag
@@ -223,41 +201,77 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 
 	radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 	flick("airlock_sensor_cycle", src)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/airlock_sensor/machine_step()
-	if(on)
-		// return_air() is now guaranteed non-null (empty vacuum mix on airless
-		// tiles) — see /turf/open/return_air. A sensor on a vacuum dock tile
-		// correctly reports 0 pressure instead of runtiming.
-		var/datum/gas_mixture/air_sample = return_air()
-		var/pressure = round(air_sample.return_pressure(),0.1)
+/// Waits for the air: one gas watch on the mixture here, woken only when the reading (to a tenth of a kilopascal) would be new, so a change that leaves
+/// it identical cannot affect a controller or the icon.
+/obj/machinery/airlock_sensor/proc/register_gas_dependencies()
+	gas_watch_arm(src)
 
-		if(abs(pressure - previousPressure) > 0.001 || previousPressure == null)
-			var/datum/signal/signal = new
-			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.data["tag"] = id_tag
-			signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
-			signal.data["pressure"] = num2text(pressure)
+/obj/machinery/airlock_sensor/proc/pressure_heard(list/observation, observation_index)
+	if(gas_wake_condition())
+		SSmachines.gas_woken_last++
+		gas_dependency_wake_count++
+		wake_from_gas()
 
-			radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+/obj/machinery/airlock_sensor/proc/gas_wake_condition()
+	var/datum/gas_mixture/environment = return_air()
+	return on && environment && round(environment.return_pressure(), 0.1) != previousPressure
 
-			previousPressure = pressure
+/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies()
+	var/datum/cap_data/gas_watch/data = gas_watch_data(src)
+	if(data)
+		rel_clear(data, nameof(data.watch))
+		data.armed_id = null
 
-			alert = (pressure < ONE_ATMOSPHERE*0.8)
+/// The reading changed: it is read and sent, and the sensor waits again.
+/obj/machinery/airlock_sensor/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	sample_pressure()
 
-			update_icon()
-	GLOB.machine_service.hibernate_airlock_sensor(src)
-	return PROCESS_KILL
+/// A sensor on the map reads once when the world is up and then waits.
+/obj/machinery/airlock_sensor/on_materialize()
+	. = ..()
+	sample_pressure()
+
+/// Reads the pressure here: a reading that differs from the last (to a tenth of a kilopascal) is sent to the controller, and below 80% of an
+/// atmosphere the sensor shows its alert.
+/obj/machinery/airlock_sensor/proc/sample_pressure()
+	if(!on)
+		unregister_gas_dependencies()
+		return
+	// return_air() is guaranteed non-null (empty vacuum mix on airless tiles): a sensor on a vacuum dock tile reports 0 pressure.
+	var/datum/gas_mixture/air_sample = return_air()
+	var/pressure = round(air_sample.return_pressure(), 0.1)
+
+	if(abs(pressure - previousPressure) > 0.001 || previousPressure == null)
+		var/datum/signal/signal = new
+		signal.transmission_method = TRANSMISSION_RADIO //radio signal
+		signal.data["tag"] = id_tag
+		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+		signal.data["pressure"] = num2text(pressure)
+
+		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+
+		previousPressure = pressure
+
+		set_alert(pressure < ONE_ATMOSPHERE*0.8)
+	register_gas_dependencies()
+
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/airlock_sensor/draw(datum/look/look)
+	..()
+	look.state("airlock_sensor_[on ? appearance_mode() : "off"]")
+	if(panel_open == 1)
+		look.state("airlock_sensor_open")
+
+/obj/machinery/airlock_sensor/proc/appearance_mode()
+	return alert ? "alert" : "standby"
 
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
-
-/obj/machinery/airlock_sensor/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/examine(mob/user, infix, suffix)
 	. = ..()
@@ -268,23 +282,6 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 		. += "It has a command of \"[command]\"."
 		if(panel_open)
 			. += "It's panel is open."
-
-/obj/machinery/airlock_sensor/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(config_chosen), message = "What would you like to configure?", title = "[src] Configuration", choices = list("Master Tag", "ID Tag", "Frequency", "Command", "None"), requires = PROMPT_ADJACENT, buttons = TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/airlock_sensor/proc/config_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
-	switch(choice)
-		if("Master Tag")
-			ask_text_var(user, "master_tag", "The current master tag is \"[master_tag]\", what would you like it to be?", "[src] Master Tag", 30)
-		if("ID Tag")
-			ask_text_var(user, "id_tag", "The current id tag is \"[id_tag]\", what would you like it to be?", "[src] ID Tag", 30)
-		if("Frequency")
-			ask_frequency(user, frequency)
-		if("Command")
-			ask_text_var(user, "command", "The current command is \"[command]\", what would you like it to be? Valid options include: cycle, cycle_interior, cycle_exterior.", "[src] command", MAX_TGUI_INPUT)
 
 /obj/machinery/airlock_sensor/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -310,7 +307,6 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 	name = "access button"
 
 	anchored = TRUE
-	power_channel = ENVIRON
 	circuit = /obj/item/circuitboard/airlock_cycling
 
 	var/master_tag
@@ -321,8 +317,52 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 
 	on = 1
 
-APPEARANCE_TEMPLATE(/obj/machinery/access_button, "access_button_{on?standby:off}")
-DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "access_button_open")))
+// ---- what an access button is, declared ----
+//
+// A button that asks an airlock controller to run its command (the master tag and the command it is set to) for whoever has access: a hand
+// presses it, so does an ID or a PDA swiped on it. A multitool sets its tag, its frequency and its command.
+
+MSG_DEF_SELF(access_button/denied, "Access Denied")
+
+CAPABILITIES(/obj/machinery/access_button)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(channel = ENVIRON))
+	multitool_settings(list(
+		list("Tag", "master_tag", "text", 30),
+		list("Frequency", "frequency", "frequency"),
+		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'.")))
+	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req(PROC_REF(button_allows))), then(PROC_REF(pressed)))
+	on_op("press", then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
+
+/// Whoever has access presses it.
+/obj/machinery/access_button/proc/button_allows(datum/act/op/A)
+	return (allowed(A.actor)) ? null : MSG(access_button/denied)
+
+/// The press: its signal goes to the controller.
+/obj/machinery/access_button/proc/pressed(datum/act/op/A)
+	add_fingerprint(A.actor)
+	if(radio_connection())
+		var/datum/signal/signal = new
+		signal.transmission_method = TRANSMISSION_RADIO //radio signal
+		signal.data["tag"] = master_tag
+		signal.data["command"] = command
+
+		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+	flash_cycle()
+	return OP_OK
+
+/// The button blinks, pressed or refused.
+/obj/machinery/access_button/proc/flash_cycle(datum/act/A)
+	flick("access_button_cycle", src)
+	return OP_OK
+
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/access_button/draw(datum/look/look)
+	..()
+	look.state("access_button_[on ? "standby" : "off"]")
+	if(panel_open == 1)
+		look.state("access_button_open")
 
 /obj/machinery/access_button/examine(mob/user, infix, suffix)
 	. = ..()
@@ -333,70 +373,13 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 		if(panel_open)
 			. += "It's panel is open."
 
-/obj/machinery/access_button/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/access_button_swipe,
-		/datum/interaction/machine_hand/ungated/access_button_use,
-	)
-	..()
-
-/// Old attackby: swiping an ID or PDA is treated as an attack_hand.
-/datum/interaction/machine_item/access_button_swipe
-	id = "access_button_swipe"
-	name = "Swipe"
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	effect = /obj/machinery/access_button/proc/interaction_swipe
-
-/obj/machinery/access_button/proc/interaction_swipe(mob/user, obj/item/I, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
-
-/obj/machinery/access_button/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), message = "What would you like to change?", title = "[src] Settings", choices = list("Tag", "Frequency", "Command", "None"), requires = PROMPT_ADJACENT, buttons = TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/access_button/proc/setting_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
-	switch(choice)
-		if("Tag")
-			ask_text_var(user, "master_tag", "[src] has an master tag of \"[master_tag]\". What would you like it to be?", "[src] ID", 30)
-		if("Frequency")
-			ask_frequency(user, frequency)
-		if("Command")
-			ask_text_var(user, "command", "[src] has a command of \"[command]\". Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interion', and 'cycle_exterior' '", "[src] command", MAX_TGUI_INPUT)
-
-/datum/interaction/machine_hand/ungated/access_button_use
-	id = "access_button_use"
-	name = "Use"
-	effect = /obj/machinery/access_button/proc/interaction_use
-
-/obj/machinery/access_button/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access Denied"))
-
-	else if(radio_connection())
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.data["tag"] = master_tag
-		signal.data["command"] = command
-
-		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
-	flick("access_button_cycle", src)
-	return TRUE
-
 /obj/machinery/access_button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
-
-/obj/machinery/access_button/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/airlock_interior
 	frequency = AIRLOCK_FREQ
@@ -405,11 +388,6 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 /obj/machinery/access_button/airlock_exterior
 	frequency = AIRLOCK_FREQ
 	command = "cycle_exterior"
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/airlock_sensor/arm_wakes()
-	..()
-	register_gas_dependencies()
 
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/radio_connection() as /datum/radio_frequency

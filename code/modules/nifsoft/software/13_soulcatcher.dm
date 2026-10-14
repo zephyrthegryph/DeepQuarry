@@ -13,6 +13,9 @@
 	var/list/brainmobs
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 
+CAPABILITIES(/datum/nifsoft/soulcatcher)
+	owns_many(nameof(brainmobs))
+
 /datum/nifsoft/soulcatcher/New()
 	..()
 	load_settings()
@@ -21,7 +24,7 @@
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))
 		show_settings(nif().human)
-		om_after(src, 0, PROC_REF(deactivate))
+		after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/soulcatcher/deactivate(force = FALSE)
 	if((. = ..()))
@@ -34,14 +37,14 @@
 	if((. = ..()))
 		//nif.set_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)	//Only required on install if the flag is in the default setting_flags list defined few lines above.
 		if(nif()?.human)
-			om_grant(nif().human, GRANT_VERB, /mob/proc/nsay, src)
-			om_grant(nif().human, GRANT_VERB, /mob/proc/nme, src)
+			grant(nif().human, granted_verb(/mob/proc/nsay), src)
+			grant(nif().human, granted_verb(/mob/proc/nme), src)
 
 /datum/nifsoft/soulcatcher/uninstall()
-	own_clear(src, nameof(brainmobs), OWN_DELETE)
+	rel_clear(src, nameof(brainmobs))
 	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
-		om_revoke(nif().human, GRANT_VERB, /mob/proc/nsay, src)
-		om_revoke(nif().human, GRANT_VERB, /mob/proc/nme, src)
+		revoke(nif().human, granted_verb(/mob/proc/nsay), src)
+		revoke(nif().human, granted_verb(/mob/proc/nme), src)
 
 /datum/nifsoft/soulcatcher/proc/save_settings()
 	if(!nif())
@@ -135,6 +138,9 @@
 	sender.log_message("NME (NIF:[nif().human.real_name]): [message]", LOG_EMOTE, color="#ff00c8")
 
 /datum/nifsoft/soulcatcher/proc/show_settings(mob/living/carbon/human/H)
+	return soul_settings_stage(H, list())
+
+/datum/nifsoft/soulcatcher/proc/soul_settings_stage(mob/living/carbon/human/H, list/soul_answers, mob/living/carbon/brain/caught_soul/selected_soul)
 	var/settings_list = list(
 	"Catching You \[[setting_flags & NIF_SC_CATCHING_ME ? "Enabled" : "Disabled"]\]" = NIF_SC_CATCHING_ME,
 	"Catching Prey \[[setting_flags & NIF_SC_CATCHING_OTHERS ? "Enabled" : "Disabled"]\]" = NIF_SC_CATCHING_OTHERS,
@@ -144,14 +150,20 @@
 	"AR Projecting \[[setting_flags & NIF_SC_PROJECTING ? "Enabled" : "Disabled"]\]" = NIF_SC_PROJECTING,
 	"Design Inside",
 	"Erase Contents")
-	var/choice = rerun_ask(nif().human, "k150", PROC_REF(show_settings), args, /datum/om/prompt/choice, message = "Select a setting to modify:", title = "Soulcatcher NIFSoft", choices = settings_list)
+	if(!("k150" in soul_answers))
+		open_request(src, /datum/prompt/choice/soulcatcher_settings, PROC_REF(soul_settings_answered), answerer = nif().human, settings_operator = H, selected_soul = selected_soul, soul_answers = soul_answers, soul_key = "k150", question = "Select a setting to modify:", title = "Soulcatcher NIFSoft", choices = settings_list)
+		return
+	var/choice = soul_answers["k150"]
 	if(isnull(choice))
 		return
 	if(choice in settings_list)
 		switch(choice)
 
 			if("Design Inside")
-				var/new_flavor = rerun_ask(nif().human, "k155", PROC_REF(show_settings), args, /datum/om/prompt/text, message = "Type what the prey sees after being 'caught'. This will be printed after an intro ending with: \"Around you, you see...\" to the prey. If you already have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", title = "VR Environment", default = html_decode(inside_flavor), max_length = MAX_MESSAGE_LEN*2, multiline = TRUE)
+				if(!("k155" in soul_answers))
+					open_request(src, /datum/prompt/text/soulcatcher_settings, PROC_REF(soul_settings_answered), answerer = nif().human, settings_operator = H, selected_soul = selected_soul, soul_answers = soul_answers, soul_key = "k155", question = "Type what the prey sees after being 'caught'. This will be printed after an intro ending with: \"Around you, you see...\" to the prey. If you already have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", title = "VR Environment", default = html_decode(inside_flavor), max_len = MAX_MESSAGE_LEN*2, multiline = TRUE)
+					return
+				var/new_flavor = soul_answers["k155"]
 				if(isnull(new_flavor))
 					return
 				inside_flavor = new_flavor
@@ -162,15 +174,21 @@
 				return TRUE
 
 			if("Erase Contents")
-				var/mob/living/carbon/brain/caught_soul/brainpick = rerun_ask(nif().human, "k164", PROC_REF(show_settings), args, /datum/om/prompt/choice, message = "Select a mind to delete:", title = "Erase Mind", choices = brainmobs)
+				if(!("k164" in soul_answers))
+					open_request(src, /datum/prompt/choice/soulcatcher_settings, PROC_REF(soul_settings_answered), answerer = nif().human, settings_operator = H, selected_soul = selected_soul, soul_answers = soul_answers, soul_key = "k164", question = "Select a mind to delete:", title = "Erase Mind", choices = brainmobs)
+					return
+				var/mob/living/carbon/brain/caught_soul/brainpick = selected_soul
 				if(isnull(brainpick))
 					return
 
-				var/warning = rerun_ask(nif().human, "k166", PROC_REF(show_settings), args, /datum/om/prompt/choice/alert, message = "Are you SURE you want to erase \"[brainpick]\"?", title = "Erase Mind", choices = list("CANCEL","DELETE"))
+				if(!("k166" in soul_answers))
+					open_request(src, /datum/prompt/choice/soulcatcher_settings, PROC_REF(soul_settings_answered), answerer = nif().human, settings_operator = H, selected_soul = selected_soul, soul_answers = soul_answers, soul_key = "k166", question = "Are you SURE you want to erase \"[brainpick]\"?", title = "Erase Mind", choices = list("CANCEL","DELETE"), buttons = TRUE)
+					return
+				var/warning = soul_answers["k166"]
 				if(isnull(warning))
 					return
 				if(warning == "DELETE")
-					own_remove(src, nameof(brainmobs), brainpick)
+					rel_remove(src, nameof(brainmobs), brainpick)
 				return TRUE
 
 			//Must just be a flag without special handling then.
@@ -227,21 +245,21 @@
 //Complex version for catching in-round characters
 /datum/nifsoft/soulcatcher/proc/catch_mob(mob/M)
 	if(!M.mind)	return
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
 	rel_set(brainmob, nameof(brainmob.nif), nif())
 	rel_set(brainmob, nameof(brainmob.soulcatcher), src)
 	rel_set(brainmob, nameof(brainmob.container), src)
-	brainmob.status_set(EFFECT_MUTED, 0)
+	brainmob.status_set(STAT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, nameof(brainmobs), brainmob)
+	rel_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
 	brainmob.name = brainmob.mind.name
-	brainmob.real_name = brainmob.mind.name
+	brainmob.set_real_name(brainmob.mind.name)
 
 	//If we caught our owner, special settings.
 	if(M == nif().human)
@@ -251,12 +269,12 @@
 
 	//If they have these values, apply them
 	if(ishuman(M))
-		GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+		SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
 		brainmob.transient = TRUE
-		qdel(M) //Bye ghost
+		spent(M) //Bye ghost
 
 	//Give them a flavortext message
 	var/message = span_notice("Your vision fades in a haze of static, before returning.") + "\n\
@@ -279,7 +297,6 @@
 /mob/living/carbon/brain/caught_soul
 	name = "recorded mind"
 	desc = "A mind recorded and being played on digital hardware."
-	use_me = 1
 	var/ext_deaf = FALSE		//Forbidden from 'ear' access on host
 	var/ext_blind = FALSE		//Forbidden from 'eye' access on host
 	var/parent_mob = FALSE		//If we've captured our owner
@@ -291,10 +308,13 @@
 	var/tmp/datum/nifsoft/soulcatcher/soulcatcher
 	var/identifying_gender
 
+CAPABILITIES(/mob/living/carbon/brain/caught_soul)
+	configure(mob_kind(use_me = 1))
+
 /mob/living/carbon/brain/caught_soul/Login()
 	..()
-	plane_holder.set_vis(VIS_AUGMENTED, TRUE)
-	plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
+	hud_used?.plane_holder?.set_vis(VIS_AUGMENTED, TRUE)
+	hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE)
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
 // the soulcatcher is told the mind unloaded.
@@ -306,53 +326,50 @@
 		reenter_soulcatcher()
 	..()
 
-/datum/om/stage/life/type_pre/carbon/brain/caught_soul
-	of = /mob/living/carbon/brain/caught_soul
-
-/datum/om/stage/life/type_pre/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
-	if(!self.mind || !self.key)
-		qdel(self)
-		return ctx.abort()
+/mob/living/carbon/brain/caught_soul/life_type_pre(datum/seq_frame/life/F)
+	if(!src.mind || !src.key)
+		spent(src)
+		return F.abort()
 	return ..()
 
-/datum/om/stage/life/type_post/carbon/brain/caught_soul
-	of = /mob/living/carbon/brain/caught_soul
+/mob/living/carbon/brain/caught_soul/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
+/mob/living/carbon/brain/caught_soul/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
-		GLOB.transcore_service.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+	if(!src.parent_mob && !src.transient &&(src.life_tick % 150 == 0) && src.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
+		SStranscore.m_backup(src.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
-	self.life_tick++
+	src.life_tick++
 
-	if(!self.client)
-		if(++self.client_missing == 300)
-			qdel(self)
+	if(!src.client)
+		if(++src.client_missing == 300)
+			spent(src)
 		return
 	else
-		self.client_missing = 0
+		src.client_missing = 0
 
-	if(self.parent_mob) return
+	if(src.parent_mob) return
 
 	//If they're blinded
-	if(self.soulcatcher()) // needs it's own handling to allow vore_fx
-		if(self.ext_blind)
-			self.status_set(EFFECT_BLINDED, 5)
-			self.client.screen.Remove(GLOB.global_hud.whitense)
-			self.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
+	if(src.soulcatcher()) // needs it's own handling to allow vore_fx
+		if(src.ext_blind)
+			src.status_set(STAT_BLINDED, 5)
+			src.client.screen.Remove(GLOB.global_hud.whitense)
+			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
-			self.status_set(EFFECT_BLINDED, 0)
-			self.clear_fullscreens()
-			self.client.screen.Add(GLOB.global_hud.whitense)
+			src.status_set(STAT_BLINDED, 0)
+			src.clear_fullscreens()
+			src.client.screen.Add(GLOB.global_hud.whitense)
 
 	//If they're deaf
-	if(self.ext_deaf)
-		self.status_set(EFFECT_DEAFENED, 5)
-		self.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
+	if(src.ext_deaf)
+		src.status_set(STAT_DEAFENED, 5)
+		src.deaf_loop.start(skip_start_sound = TRUE) // CHOMPEnable: Ear Ringing/Deafness
 	else
-		self.status_set(EFFECT_DEAFENED, 0)
-		self.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
+		src.status_set(STAT_DEAFENED, 0)
+		src.deaf_loop.stop() // CHOMPEnable: Ear Ringing/Deafness
 
 /mob/living/carbon/brain/caught_soul/hear_say()
 	if(ext_deaf || !client)
@@ -380,23 +397,23 @@
 
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().say_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	if (act == "me")
-		if(has_status(EFFECT_MUTED))
+		if(has_status(STAT_MUTED))
 			return
 		if (src.client)
 			if (client.prefs.muted & MUTE_IC)
@@ -412,7 +429,7 @@
 
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(has_status(EFFECT_MUTED)) return FALSE
+	if(has_status(STAT_MUTED)) return FALSE
 	soulcatcher().emote_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/resist()
@@ -430,32 +447,37 @@
 	icon_state = "beacon"
 	var/tmp/mob/living/parent_human
 
-/mob/observer/eye/ar_soul/Initialize(mapload, human)
+CAPABILITIES(/mob/observer/eye/ar_soul)
+	param(nameof(parent_human), pos = 1)
+	after_init(0, then(PROC_REF(dress_as_owner)))
+
+// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob and follows its owner's body
+/mob/observer/eye/ar_soul/Initialize(mapload)
 	. = ..()
 	var/mob/brainmob = loc
 	if(!istype(brainmob) || !brainmob.client)
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	rel_set(src, nameof(parent_human), human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name
-	real_name = brainmob.real_name	//And the OTHER name
+	set_real_name(brainmob.real_name) //And the OTHER name
 
 	forceMove(get_turf(parent_human()))
 	dq_add_recursive_move(parent_human())
-	om_hook(parent_human(), /datum/om/event/movable_attempted_move, src, PROC_REF(human_moved))
+	global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
 
-	//Time to play dressup
-	if(brainmob.client.prefs)
-		var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
-		mannequin.delete_inventory(TRUE)
-		brainmob.client.prefs.dress_preview_mob(mannequin)
-		mannequin.regenerate_icons()
-
-		var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
-		icon = new_icon
+/// Time to play dressup: the soul wears its brain mob's character as a hologram.
+/mob/observer/eye/ar_soul/proc/dress_as_owner(datum/act/A)
+	var/mob/brainmob = eye_looker
+	if(QDELETED(brainmob) || !brainmob.client?.prefs)
+		return
+	var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
+	mannequin.delete_inventory(TRUE)
+	brainmob.client.prefs.dress_preview_mob(mannequin)
+	draw_now(mannequin)
+	icon = getHologramIcon(getCompoundIcon(mannequin))
 
 /mob/observer/eye/ar_soul/EyeMove(n, direct)
 	var/initial = initial(sprint)
@@ -478,8 +500,8 @@
 		sprint = initial
 	return 1
 
-/mob/observer/eye/ar_soul/proc/human_moved(datum/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/mob/observer/eye/ar_soul/proc/human_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!can_see(parent_human(),src))
 		forceMove(get_turf(parent_human()))
 
@@ -536,6 +558,9 @@
 	to_chat(src, span_warning("You must be a humanoid with a NIF implanted to use that."))
 
 /mob/living/carbon/human/nsay_act(message as text)
+	return nif_say_stage(message)
+
+/mob/living/carbon/human/proc/nif_say_stage(message, prompted = FALSE)
 	if(stat != CONSCIOUS)
 		to_chat(src,span_warning("You can't use NSay while unconscious."))
 		return
@@ -550,10 +575,9 @@
 		to_chat(src,span_warning("You need a loaded mind to use NSay."))
 		return
 	if(!message)
-		var/_answer_k560 = rerun_ask(src, "k560", PROC_REF(nsay_act), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
-		if(isnull(_answer_k560))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(nif_say_answered), answerer = src, question = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
 			return ITEM_INTERACT_BLOCKING
-		message = _answer_k560
 	if(message)
 		var/sane_message = sanitize(message)
 		SC.say_into(sane_message,src)
@@ -569,6 +593,9 @@
 	to_chat(src, span_warning("You must be a humanoid with a NIF implanted to use that."))
 
 /mob/living/carbon/human/nme_act(message as message)
+	return nif_emote_stage(message)
+
+/mob/living/carbon/human/proc/nif_emote_stage(message, prompted = FALSE)
 	if(stat != CONSCIOUS)
 		to_chat(src,span_warning("You can't use NMe while unconscious."))
 		return
@@ -584,10 +611,9 @@
 		return
 
 	if(!message)
-		var/_answer_k591 = rerun_ask(src, "k591", PROC_REF(nme_act), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
-		if(isnull(_answer_k591))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(nif_emote_answered), answerer = src, question = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
 			return ITEM_INTERACT_BLOCKING
-		message = _answer_k591
 	if(message)
 		var/sane_message = sanitize(message)
 		SC.emote_into(sane_message,src)
@@ -644,11 +670,13 @@
 	set desc = "Speak into the NIF's Soulcatcher (circumventing AR speaking)."
 	set category = VERB_CAT_SOULCATCHER
 
+	return nif_brain_say_stage(message)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_say_stage(message, prompted = FALSE)
 	if(!message)
-		var/_answer_k649 = rerun_ask(src, "k649", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
-		if(isnull(_answer_k649))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(nif_brain_say_answered), answerer = src, question = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
 			return
-		message = _answer_k649
 	if(message)
 		var/sane_message = sanitize(message)
 		soulcatcher().say_into(sane_message,src,null)
@@ -658,11 +686,13 @@
 	set desc = "Emote into the NIF's Soulcatcher (circumventing AR speaking)."
 	set category = VERB_CAT_SOULCATCHER
 
+	return nif_brain_emote_stage(message)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_emote_stage(message, prompted = FALSE)
 	if(!message)
-		var/_answer_k660 = rerun_ask(src, "k660", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
-		if(isnull(_answer_k660))
+		if(!prompted)
+			open_request(src, /datum/prompt/text/soulcatcher_speech, PROC_REF(nif_brain_emote_answered), answerer = src, question = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
 			return
-		message = _answer_k660
 	if(message)
 		var/sane_message = sanitize(message)
 		soulcatcher().emote_into(sane_message,src,null)
@@ -678,3 +708,127 @@
 /// LC-refs: the nif this refers to -- a relation view: null once it is deleted.
 /mob/living/carbon/brain/caught_soul/proc/nif() as /obj/item/nif
 	return nif
+
+/mob/living/carbon/human/proc/nif_say_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = nif_say_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/nif_say_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return nif_say_stage(ask.value, TRUE)
+
+/mob/living/carbon/human/proc/nif_emote_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = nif_emote_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/nif_emote_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return nif_emote_stage(ask.value, TRUE)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_say_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = nif_brain_say_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_say_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return nif_brain_say_stage(ask.value, TRUE)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_emote_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = nif_brain_emote_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/brain/caught_soul/proc/nif_brain_emote_apply(datum/act/request/A)
+	var/datum/prompt/text/soulcatcher_speech/ask = A.answer
+	return nif_brain_emote_stage(ask.value, TRUE)
+
+/datum/prompt/text/soulcatcher_speech
+	timeout = 0
+
+/datum/nifsoft/soulcatcher/proc/soul_settings_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = soul_settings_apply(A)
+	SStgui.update_uis(src)
+
+/datum/nifsoft/soulcatcher/proc/soul_settings_apply(datum/act/request/A)
+	if(istype(A.answer, /datum/prompt/choice/soulcatcher_settings))
+		var/datum/prompt/choice/soulcatcher_settings/ask = A.answer
+		if(ask.soul_key == "k164")
+			var/mob/living/carbon/brain/caught_soul/chosen = ask.value
+			rel_set(ask, nameof(ask.selected_soul), chosen)
+			ask.soul_answers[ask.soul_key] = TRUE
+		else
+			ask.soul_answers[ask.soul_key] = ask.value
+		return soul_settings_stage(ask.settings_operator, ask.soul_answers, ask.selected_soul)
+	if(istype(A.answer, /datum/prompt/text/soulcatcher_settings))
+		var/datum/prompt/text/soulcatcher_settings/ask = A.answer
+		ask.soul_answers[ask.soul_key] = ask.value
+		return soul_settings_stage(ask.settings_operator, ask.soul_answers, ask.selected_soul)
+
+/datum/prompt/text/soulcatcher_settings
+	timeout = 0
+	var/mob/living/carbon/human/settings_operator
+	var/settings_operator_expected = FALSE
+	var/mob/living/carbon/brain/caught_soul/selected_soul
+	var/list/soul_answers
+	var/soul_key
+
+CAPABILITIES(/datum/prompt/text/soulcatcher_settings)
+	ref_one(nameof(settings_operator), /mob/living/carbon/human)
+	ref_one(nameof(selected_soul), /mob/living/carbon/brain/caught_soul)
+
+/datum/prompt/text/soulcatcher_settings/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/carbon/human/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/mob/living/carbon/brain/caught_soul/captured_soul = selected_soul
+	rel_clear(src, nameof(selected_soul))
+	if(captured_soul && !QDELETED(captured_soul))
+		rel_set(src, nameof(selected_soul), captured_soul)
+
+/datum/prompt/text/soulcatcher_settings/recheck_extra()
+	if(settings_operator_expected && QDELETED(settings_operator))
+		return "gone"
+
+/datum/prompt/choice/soulcatcher_settings
+	timeout = 0
+	var/mob/living/carbon/human/settings_operator
+	var/settings_operator_expected = FALSE
+	var/mob/living/carbon/brain/caught_soul/selected_soul
+	var/list/soul_answers
+	var/soul_key
+
+CAPABILITIES(/datum/prompt/choice/soulcatcher_settings)
+	ref_one(nameof(settings_operator), /mob/living/carbon/human)
+	ref_one(nameof(selected_soul), /mob/living/carbon/brain/caught_soul)
+
+/datum/prompt/choice/soulcatcher_settings/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/carbon/human/captured_operator = settings_operator
+	settings_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(settings_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(settings_operator), captured_operator)
+	var/mob/living/carbon/brain/caught_soul/captured_soul = selected_soul
+	rel_clear(src, nameof(selected_soul))
+	if(captured_soul && !QDELETED(captured_soul))
+		rel_set(src, nameof(selected_soul), captured_soul)
+
+/datum/prompt/choice/soulcatcher_settings/recheck_extra()
+	if(settings_operator_expected && QDELETED(settings_operator))
+		return "gone"
+	if(!isnull(value) && soul_key == "k164")
+		var/mob/living/carbon/brain/caught_soul/chosen = value
+		if(!istype(chosen) || QDELETED(chosen))
+			return "gone"

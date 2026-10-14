@@ -1,14 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
-/proc/dopage(source, target)
-	var/href_list
-	var/href
-	href_list = params2list("src=\ref[source]&[target]=1")
-	href = "src=\ref[source];[target]=1"
-	source:temphtml = null
-	source:Topic(href, href_list)
-	return null
-
 /proc/is_on_same_plane_or_station(z1, z2)
 	if(z1 == z2)
 		return 1
@@ -27,7 +18,9 @@
 	return max_z
 
 /proc/get_area(atom/A)
+	READS_FROM(A) // area lookup follows the supplied atom location
 	RETURN_TYPE(/area)
+	READS_FROM() // where a thing stands is asked when a choice is made, never cached
 	if(isarea(A))
 		return A
 	var/turf/T = get_turf(A)
@@ -51,6 +44,7 @@
 	return 0
 
 /proc/in_range(source, user)
+	READS_FROM() // positions are asked when a choice is made, never cached
 	if(get_dist(source, user) <= 1)
 		return 1
 
@@ -76,6 +70,7 @@
 	return !isStationLevel(level)
 
 /proc/isPlayerLevel(level)
+	READS_FROM() // the map's level list, no entity state
 	return level in using_map.player_levels
 
 /proc/isAdminLevel(level)
@@ -84,9 +79,11 @@
 /proc/isNotAdminLevel(level)
 	return !isAdminLevel(level)
 
-/proc/circlerange(center=usr,radius=3)
+/proc/circlerange(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -98,9 +95,11 @@
 
 	return turfs
 
-/proc/circleview(center=usr,radius=3)
+/proc/circleview(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/atoms = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -128,9 +127,11 @@
 
 	return dist
 
-/proc/circlerangeturfs(center=usr,radius=3)
+/proc/circlerangeturfs(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -141,9 +142,11 @@
 			turfs += T
 	return turfs
 
-/proc/circleviewturfs(center=usr,radius=3)		//Is there even a diffrence between this proc and circlerangeturfs()?
+/proc/circleviewturfs(atom/center,radius=3)		//Is there even a diffrence between this proc and circlerangeturfs()?
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -242,11 +245,6 @@
 /mob/living/silicon/robot/can_hear_radio(list/hearturfs)
 	var/turf/T = get_turf(src)
 	var/obj/item/radio/borg/R = hearturfs[T] // this should be an assoc list of turf-to-radio
-
-	// We heard it on our own radio? We use power for that.
-	if(istype(R) && R.myborg() == src)
-		if(!use_component(ROBOT_SLOT_RADIO))
-			return FALSE // Sorry, couldn't hear
 
 	return R // radio, true, false, what's the difference
 
@@ -348,7 +346,7 @@
 /proc/flick_overlay(image/I, list/show_to, duration, gc_after)
 	for(var/client/C in show_to)
 		C.images += I
-	om_after(null, duration, /proc/flick_overlay_end, I, show_to, gc_after) // the global owner: clients own no entity
+	after(null, duration, GLOBAL_PROC_REF(flick_overlay_end), with = list(I, show_to, gc_after)) // the global owner: clients own no entity
 
 /proc/flick_overlay_view(image/I, atom/target, duration, gc_after) //wrapper for the above, flicks to everyone who can see the target atom
 	var/list/viewing = list()
@@ -383,7 +381,7 @@
 	// I hate /area
 	var/atom/movable/lies_to_children = src
 	lies_to_children.vis_contents += visual
-	om_after_realtime(duration, GLOBAL_PROC_REF(qdel), visual)
+	after(duration, GLOBAL_PROC_REF(qdel), visual, clock = CLOCK_WORLD)
 	return visual
 
 /area/flick_overlay_view_atom(mutable_appearance/display, duration)
@@ -466,7 +464,7 @@
 	for(var/client/C in group)
 		C.screen += O
 	if(delay)
-		om_after(null, delay, /proc/remove_screen_from_group, O, group) // the global owner: clients own no entity
+		after(null, delay, GLOBAL_PROC_REF(remove_screen_from_group), with = list(O, group)) // the global owner: clients own no entity
 
 /datum/projectile_data
 	var/src_x
@@ -781,7 +779,7 @@
 
 /proc/flick_overlay_end(image/I, list/show_to, gc_after)
 	if(gc_after)
-		qdel(I)
+		lapsed(I)
 	for(var/client/C in show_to)
 		C.images -= I
 

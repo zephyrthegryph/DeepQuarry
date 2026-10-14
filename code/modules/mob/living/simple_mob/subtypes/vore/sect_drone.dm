@@ -82,22 +82,25 @@
 
 	say_list_type = /datum/say_list/sect_drone
 
-	allow_mind_transfer = TRUE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_drone, /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color)
+TRACKED(/mob/living/simple_mob/vore/sect_drone, custom_eye_color)
+
+CAPABILITIES(/mob/living/simple_mob/vore/sect_drone)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	verb_entry(/mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color, login = TRUE)
 
 /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color()
 	set name = "Set Glow Color"
 	set desc = "Customize your eyes and abdomen glow color."
 	set category = VERB_CAT_ABILITIES_SECT_DRONE
 
-	om_ask(src, /datum/om/prompt/color, PROC_REF(abdomen_color_picked), title = "Glow Color", message = "Please select color.", default = custom_eye_color)
+	open_request(src, /datum/prompt/color, PROC_REF(abdomen_color_picked), answerer = src, title = "Glow Color", question = "Please select color.", default = custom_eye_color, timeout = 0)
 
-/mob/living/simple_mob/vore/sect_drone/proc/abdomen_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		custom_eye_color = ask.picked_color
-		remove_eyes()
-		add_eyes()
+/mob/living/simple_mob/vore/sect_drone/proc/abdomen_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		set_custom_eye_color(A.answer.value)
 
 /datum/say_list/sect_drone
 	say_got_target = list("chitters threateningly!")

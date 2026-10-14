@@ -2,7 +2,15 @@
 	set name = "Smite"
 	set desc = "Abuse a player with various 'special treatments' from a list."
 	set category = VERB_CAT_FUN_DO_NOT
-	if(!check_rights(R_FUN))
+	// Only this client's actual ended request carries the original target and answers.
+	var/list/smite_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/client_smite) && resumed.owner == src && resumed.subject == target && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(smite_answered))
+			var/list/previous = resumed.captured["answers"]
+			smite_answers = previous.Copy()
+			smite_answers[resumed.step_name] = resumed.value
+	if(!admin_require(src, R_FUN, "smite", TRUE))
 		return
 
 	if(!istype(target))
@@ -12,13 +20,17 @@
 								SMITE_SHADEKIN_ATTACK,SMITE_SHADEKIN_NOMF,SMITE_AD_SPAM,SMITE_REDSPACE_ABDUCT,SMITE_AUTOSAVE,SMITE_AUTOSAVE_WIDE,SMITE_SPICEREQUEST,SMITE_PEPPERNADE,SMITE_TERROR,
 								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //pie, spicy air and hot dog
 
-	var/smite_choice = client_ask("a1", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of SMITE for [target]", title = "SMITE Type Choice", choices = smite_types)
+	var/question_a1 = "Select the type of SMITE for [target]"
+	if(!("a1" in smite_answers))
+		open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a1", question = question_a1, title = "SMITE Type Choice", choices = smite_types)
+		return
+	var/smite_choice = smite_answers["a1"]
 	if(isnull(smite_choice))
 		return
 	if(!smite_choice)
 		return
 
-	if(length(om_answers) <= 1) // Once: later questions of a smite re-run this.
+	if(length(smite_answers) <= 1) // Once: later questions of a smite re-run this.
 		log_and_message_admins("has used SMITE ([smite_choice]) on [key_name(target)].", src)
 		feedback_add_details("admin_verb","SMITE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -66,7 +78,7 @@
 
 			var/mob/living/simple_mob/shadekin/red/shadekin = new(Ts)
 			//Abuse of shadekin
-			shadekin.real_name = shadekin.name
+			shadekin.set_real_name(shadekin.name)
 			shadekin.init_vore(TRUE)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin))
@@ -74,11 +86,9 @@
 			shadekin.ai_brain?.set_hostile(FALSE)
 			if(shadekin.ai_brain)
 				shadekin.ai_brain.mauling = TRUE
-			om_run_frame_now(shadekin, /datum/om/pipeline/life)
+			seq_run_frame_now(shadekin, /datum/sequence/life)
 			//Remove when done
-			spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
-				if(shadekin)
-					shadekin.death()
+			after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
 		if(SMITE_SHADEKIN_NOMF)
 			var/static/list/kin_types = list(
@@ -101,7 +111,11 @@
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = client_ask("a2", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of shadekin for [target] nomf", title = "Shadekin Type Choice", choices = kin_types)
+			var/question_a2 = "Select the type of shadekin for [target] nomf"
+			if(!("a2" in smite_answers))
+				open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a2", question = question_a2, title = "Shadekin Type Choice", choices = kin_types)
+				return
+			var/kin_type = smite_answers["a2"]
 			if(isnull(kin_type))
 				return
 			if(!kin_type || !target)
@@ -110,7 +124,11 @@
 
 			kin_type = kin_types[kin_type]
 
-			var/myself = client_ask("a3", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice/alert, message = "Control the shadekin yourself or delete pred and prey after?", title = "Control Shadekin?", choices = list("Control","Cancel","Delete"))
+			var/question_a3 = "Control the shadekin yourself or delete pred and prey after?"
+			if(!("a3" in smite_answers))
+				open_request(src, /datum/prompt/choice/client_smite, PROC_REF(smite_answered), answerer = mob, subject = target, captured = list("answers" = smite_answers.Copy()), step_name = "a3", question = question_a3, title = "Control Shadekin?", choices = list("Control","Cancel","Delete"), buttons = TRUE)
+				return
+			var/myself = smite_answers["a3"]
 			if(isnull(myself))
 				return
 			if(!myself || myself == "Cancel" || !target)
@@ -124,15 +142,15 @@
 			//Begin abuse
 			target.transforming = TRUE //Cheap hack to stop them from moving
 			var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
-			shadekin.real_name = shadekin.name
+			shadekin.set_real_name(shadekin.name)
 			shadekin.init_vore(TRUE)
-			shadekin.can_be_drop_pred = TRUE
-			shadekin.dir = SOUTH
+			shadekin.vore_prefs.can_be_drop_pred = TRUE
+			shadekin.set_dir(SOUTH)
 			shadekin.ability_flags |= 0x1
 			shadekin.phase_out(get_turf(shadekin)) //Homf
 			var/datum/shadekin/smite_SK = shadekin.get_shadekin_state()
 			if(smite_SK)
-				smite_SK.dark_energy = initial(smite_SK.dark_energy)
+				smite_SK.set_dark_energy(initial(smite_SK.dark_energy))
 			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 			shadekin_smite_step(shadekin, target, myself == "Control" ? ckey : null, 1)
 
@@ -152,7 +170,7 @@
 
 		if(SMITE_TERROR)
 			if(ishuman(target))
-				target.fear = 200
+				target.status_set(STAT_FEAR, 200)
 
 		if(SMITE_PEPPERNADE)
 			var/obj/item/grenade/chem_grenade/teargas/grenade = new /obj/item/grenade/chem_grenade/teargas
@@ -168,15 +186,15 @@
 		if(SMITE_PIE)
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
 			play_sfx(target, SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
-			target.status_at_least(EFFECT_WEAKENED, 1)
+			target.status_at_least(STAT_WEAKENED, 1)
 			act_message(target, null, others = span_danger("%U% is struck by pie!"))
 
 		if(SMITE_SPICE)
 			to_chat(target, span_warning("Spice spice baby!"))
-			target.status_at_least(EFFECT_BLURRY, 25)
-			target.status_at_least(EFFECT_BLINDED, 10)
-			target.status_at_least(EFFECT_STUNNED, 5)
-			target.status_at_least(EFFECT_WEAKENED, 5)
+			target.status_at_least(STAT_BLURRY, 25)
+			target.status_at_least(STAT_BLINDED, 10)
+			target.status_at_least(STAT_STUNNED, 5)
+			target.status_at_least(STAT_WEAKENED, 5)
 			play_sfx(target, SFX_EFFECTS_SPRAY2, extrarange = get_rand_frequency(), falloff = 5)
 
 		if(SMITE_HOTDOG)
@@ -188,8 +206,7 @@
 	if(!istype(target))
 		return
 
-	var/real_user = user ? user : usr
-	var/user_name = real_user ? key_name(real_user) : "Remotely (Discord)"
+	var/user_name = user ? key_name(user) : "Remotely (Discord)"
 
 	to_chat(target,"You've been hit by bluespace artillery!")
 	log_and_message_admins("has been hit by Bluespace Artillery fired by [user_name]", target)
@@ -207,9 +224,9 @@
 		target.gib()
 	else
 		target.injure(INJURY_BLUNT, max(99, target.get_endurance() * target.vitality() - 1), flags = INJURE_IGNORE_RESISTANCE)
-		target.status_at_least(EFFECT_STUNNED, 20)
-		target.status_at_least(EFFECT_WEAKENED, 20)
-		target.status_set(EFFECT_STUTTERING, 20)
+		target.status_at_least(STAT_STUNNED, 20)
+		target.status_at_least(STAT_WEAKENED, 20)
+		target.status_set(STAT_STUTTERING, 20)
 
 GLOBAL_VAR(redspace_abduction_z)
 
@@ -241,13 +258,13 @@ GLOBAL_VAR(redspace_abduction_z)
 
 	var/size_of_square = 26
 	var/halfbox = round(size_of_square*0.5)
-	target.transforming = TRUE
+	target.set_transforming(TRUE)
 	to_chat(target,span_danger("You feel a strange tug, deep inside. You're frozen in momentarily..."))
 	to_chat(user,span_notice("Beginning vis_contents copy to abduction site, player mob is frozen."))
-	om_after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), target, user, size_of_square, halfbox)
+	after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), with = list(target, user, size_of_square, halfbox))
 
 /// redspace_abduction() a second after the target freezes.
-/proc/redspace_abduction_copy(mob/living/target, client/user, size_of_square, halfbox)
+/proc/redspace_abduction_copy(mob/living/target, user, size_of_square, halfbox)
 	//Lower left corner of a working box
 	var/llc_x = max(0,halfbox-target.x) + min(target.x+halfbox, world.maxx) - size_of_square
 	var/llc_y = max(0,halfbox-target.y) + min(target.y+halfbox, world.maxy) - size_of_square
@@ -259,8 +276,8 @@ GLOBAL_VAR(redspace_abduction_z)
 			var/turf/T_dest = locate(x,y,GLOB.redspace_abduction_z)
 			T_dest.vis_contents.Cut()
 			T_dest.vis_contents += T_src
-			T_dest.density = T_src.density
-			T_dest.opacity = T_src.opacity
+			T_dest.set_density(T_src.density)
+			T_dest.set_opacity(T_src.opacity)
 			CHECK_TICK
 
 	//Feather the edges
@@ -268,39 +285,45 @@ GLOBAL_VAR(redspace_abduction_z)
 		for(var/y = llc_y to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x+size_of_square-1 to llc_x+size_of_square) //Right
 		for(var/y = llc_y to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x to llc_x+size_of_square) //Top
 		for(var/y = llc_y+size_of_square-1 to llc_y+size_of_square)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	for(var/x = llc_x to llc_x+size_of_square) //Bottom
 		for(var/y = llc_y to llc_y+1)
 			if(prob(50))
 				var/turf/T = locate(x,y,GLOB.redspace_abduction_z)
-				T.density = FALSE
-				T.opacity = FALSE
+				T.set_density(FALSE)
+				T.set_opacity(FALSE)
 				T.vis_contents.Cut()
 
 	target.forceMove(locate(target.x,target.y,GLOB.redspace_abduction_z))
 	to_chat(target,span_danger("The tug relaxes, but everything around you looks... slightly off."))
-	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
+	var/client/acting_client
+	if(ismob(user))
+		var/mob/actor = user
+		acting_client = actor.client
+	else if(isclient(user))
+		acting_client = user
+	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(acting_client, R_HOLDER))])"))
 
-	target.transforming = FALSE
+	target.set_transforming(FALSE)
 
 /proc/fake_autosave(mob/living/target, client/user, wide)
 	if(!istype(target) || !target.client)
@@ -335,54 +358,77 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.name = "Autosaving..."
 	loader.desc = "A disc icon that represents your game autosaving. Please wait."
 	loader.icon = 'icons/obj/discs_vr.dmi'
-	loader.icon_state = "quicksave"
+	loader.set_icon_state("quicksave")
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader
 
-	spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
-		if(target)
-			to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
-			if(target.client)
-				target.client.screen -= loader
+	after(target, 10 SECONDS, GLOBAL_PROC_REF(smite_autosave_complete), with = list(target, loader))
+
+/// The autosave smite's second half: tell the victim it finished and take the disc off their screen.
+/proc/smite_autosave_complete(mob/target, atom/movable/screen/loader)
+	if(!target)
+		return
+	to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
+	if(target.client)
+		target.client.screen -= loader
+
+#define SHADEKIN_SMITE_STEP_PAUSE (1 SECOND)
+#define SHADEKIN_SMITE_BELCH_PAUSE (2 SECONDS)
+#define SHADEKIN_SMITE_RELEASE (8 SECONDS)
 
 /// The shadekin smite's show, a step per timer: turn, turn, turn, belch, then phase back in and
 /// either hand the shadekin to `controller_ckey` or take both away.
 /proc/shadekin_smite_step(mob/living/simple_mob/shadekin/shadekin, mob/living/target, controller_ckey, step)
 	if(QDELETED(shadekin))
 		if(target)
-			target.transforming = FALSE
+			target.set_transforming(FALSE)
 		return
+	if(step == 1 && target)
+		// The target's release does not ride on the shadekin's timers: if it dies mid-show they are dropped, and this one still frees the target.
+		after(target, SHADEKIN_SMITE_RELEASE, GLOBAL_PROC_REF(shadekin_smite_release), key = "shadekin_smite_release", with = list(target))
+		// The shadekin dying frees the target at once; the timer is the fallback for any other way the show ends.
+		observe(shadekin, /datum/notice/mob_death, target, then(TYPE_PROC_REF(/mob/living, shadekin_smite_died)))
 	switch(step)
 		if(2)
-			shadekin.dir = WEST
+			shadekin.set_dir(WEST)
 		if(3)
-			shadekin.dir = EAST
+			shadekin.set_dir(EAST)
 		if(4)
-			shadekin.dir = SOUTH
+			shadekin.set_dir(SOUTH)
 		if(5)
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 		if(6)
 			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_state())
 			if(target)
-				target.transforming = FALSE //Undo cheap hack
+				target.set_transforming(FALSE) //Undo cheap hack
 			if(controller_ckey) //Put admin in mob
 				shadekin.ckey = controller_ckey
 			else //Permakin'd
 				if(target)
 					to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))
 					target.ghostize()
-					qdel(target)
-				qdel(shadekin)
+					spent(target)
+				spent(shadekin)
 			return
-	om_after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), shadekin, target, controller_ckey, step + 1)
+	var/next_delay = (step == 5) ? SHADEKIN_SMITE_BELCH_PAUSE : SHADEKIN_SMITE_STEP_PAUSE
+	after(shadekin, next_delay, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
+
+/// The shadekin smite's safety net: whatever became of the shadekin, the target moves again.
+/proc/shadekin_smite_release(mob/living/target)
+	target.set_transforming(FALSE)
+
+/// The shadekin the smite made died mid-show: the target it was carrying moves again now, and the fallback timer is spent.
+/mob/living/proc/shadekin_smite_died(datum/act/notice/A)
+	set_transforming(FALSE)
+	cancel_after(src, "shadekin_smite_release")
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)
 	play_sfx(target, SFX_EFFECTS_WHISTLE, extrarange = get_rand_frequency())
-	om_after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), target)
+	after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), with = list(target))
 
 /proc/hotdog_smite_dress(mob/living/target)
-	target.status_at_least(EFFECT_STUNNED, 10)
+	target.status_at_least(STAT_STUNNED, 10)
 	if(!ishuman(target))
 		return
 	var/mob/living/carbon/human/H = target
@@ -394,5 +440,29 @@ GLOBAL_VAR(redspace_abduction_z)
 	var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
 	H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, 0, 0, 1)
 	H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD, 0, 0, 1)
-	om_qdel_after(suit, 5 SECONDS)
-	om_qdel_after(hood, 5 SECONDS)
+	suit.expire(5 SECONDS)
+	hood.expire(5 SECONDS)
+
+/datum/prompt/choice/client_smite
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/client_smite/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	var/mob/living/carbon/human/original_target = subject
+	if(!istype(original_target) || QDELETED(original_target))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/client_smite/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/client_smite/refusal(given)
+	return null
+
+/client/proc/smite_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	world.push_usr(A.request.answerer, new /datum/callback(src, PROC_REF(smite)), A.request.subject, A.answer)

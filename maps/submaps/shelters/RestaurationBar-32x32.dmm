@@ -578,7 +578,7 @@
 /area/survivalpod/superpose/RestaurationBar)
 "lZ" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /obj/fiftyspawner/glass,
 /obj/fiftyspawner/glass,

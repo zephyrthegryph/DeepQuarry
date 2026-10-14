@@ -1,0 +1,13 @@
+/obj/item/t_scanner icon: icons/obj/device.dmi
+/obj/item/t_scanner state: t-ray0
+/obj/item/t_scanner dir: 2
+/obj/item/t_scanner overlay: icons/obj/device.dmi:t-ray0:8:#000000
+/obj/item/t_scanner/upgraded icon: icons/obj/device.dmi
+/obj/item/t_scanner/upgraded state: t-ray0
+/obj/item/t_scanner/upgraded dir: 2
+/obj/item/t_scanner/upgraded overlay: icons/obj/device.dmi:t-ray0:8:#000000
+/obj/item/t_scanner/advanced icon: icons/obj/device.dmi
+/obj/item/t_scanner/advanced state: t-ray0
+/obj/item/t_scanner/advanced dir: 2
+/obj/item/t_scanner/advanced overlay: icons/obj/device.dmi:t-ray0:8:#000000
+

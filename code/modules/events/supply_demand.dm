@@ -10,6 +10,9 @@
 	startWhen = 2
 	endWhen = 1800 // Aproximately 1 hour in master controller ticks, refined by end_time
 
+CAPABILITIES(/datum/event/supply_demand)
+	owns_many(nameof(required_items))
+
 REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/setup()
@@ -68,7 +71,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 	// Also announce over main comms so people know to look
 	GLOB.command_announcement.Announce("An order for the [using_map.facility_type] to deliver supplies to [command_name()] has been delivered to all supply Request Consoles", my_department, ANNOUNCER_MSG_SUPPLYORDER)
-	om_hook(OM_WORLD, /datum/om/event/world_supply_shuttle_depart, src, PROC_REF(handle_supply_demand_sell_shuttle))
+	observe(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src, then(PROC_REF(handle_supply_demand_sell_shuttle)))
 
 /datum/event/supply_demand/tick()
 	if(length(required_items) == 0)
@@ -76,11 +79,11 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/end()
 	registry_leave(REGISTRY_DEMAND_EVENTS, src)
-	om_unhook(OM_WORLD, /datum/om/event/world_supply_shuttle_depart, src)
+	unobserve(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src)
 	// Check if the crew succeeded or failed!
 	if(length(required_items) == 0)
 		// Success!
-		GLOB.supply_service.adjust_budget(GLOB.supply_service.export_revenue(100 * severity), "Supply demand windfall")
+		SSsupply.adjust_budget(SSsupply.export_revenue(100 * severity), "Supply demand windfall")
 		var/msg = "Great work! With those items you delivered our inventory levels all match up. "
 		msg += "[capitalize(pick(GLOB.first_names_female))] from accounting will have nothing to complain about. "
 		msg += "I think you'll find a little something in your supply account."
@@ -95,10 +98,11 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		post_comm_message("'[my_department] Mission Summary'", message)
 
 /**
- * Event handler for when the shuttle emits /datum/om/event/world_supply_shuttle_depart
+ * Event handler for when the shuttle emits /datum/definition_event/world_supply_shuttle_depart
  */
-/datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/source, datum/om/event/world_supply_shuttle_depart/event)
-	EVENT_HANDLER
+/datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_supply_shuttle_depart/event = A
 	var/list/area/supply_shuttle_areas = event.supply_shuttle_areas
 	for(var/datum/event/supply_demand/E in REGISTRY_MEMBERS(REGISTRY_DEMAND_EVENTS))
 		// I don't think multiple supply shuttles have ever been used, but retaining support regardless...
@@ -206,7 +210,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 			qty_need -= amount_to_take
 		else
 			qty_need -= 1
-			qdel(I)
+			consumed(I)
 		return 1
 
 //
@@ -245,6 +249,9 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 /datum/supply_demand_order/gas
 	name = "gas mixture"
 	var/datum/gas_mixture/mixture
+
+CAPABILITIES(/datum/supply_demand_order/gas)
+	owns_one(nameof(mixture), /datum/gas_mixture)
 
 /datum/supply_demand_order/gas/describe()
 	var/pressure = mixture.return_pressure()
@@ -285,34 +292,34 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		types -= R // Don't pick the same thing twice
 		var/chosen_path = initial(R.result)
 		var/chosen_qty = rand(1, 5)
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
 	// Checking if they show up in health analyzer is good huristic for it being a drug
 	var/list/medicineReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/CR in chemistry_service().chemical_reactions)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[initial(CR.result)]
+	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
 		if(R && R.scannable)
 			medicineReagents += R
 	for(var/i in 1 to differentTypes)
 		var/datum/reagent/R = pick(medicineReagents)
 		medicineReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
 	var/list/drinkReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/drinks/CR in chemistry_service().chemical_reactions)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[initial(CR.result)]
+	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.ready().chemical_reactions)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
 		if(istype(R, /datum/reagent/drink) || istype(R, /datum/reagent/ethanol))
 			drinkReagents += R
 	for(var/i in 1 to differentTypes)
 		var/datum/reagent/R = pick(drinkReagents)
 		drinkReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_robotics_items(differentTypes)
@@ -325,12 +332,12 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	for(var/i in 1 to differentTypes)
 		var/T = pick(types)
 		types -= T // Don't pick the same thing twice
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(rand(1, 2), T))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(rand(1, 2), T))
 	return
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
 	var/datum/gas_mixture/mixture = new
-	mixture.set_temperature(T20C)
+	heat_set(mixture, T20C)
 	var/unpickedTypes = GLOB.gas_data.gases.Copy()
 	unpickedTypes -= GAS_VOLATILE_FUEL // Don't do that one
 	for(var/i in 1 to differentTypes)
@@ -341,8 +348,8 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
-	own_set(O, nameof(O.mixture), mixture)
-	own_add(src, nameof(required_items), O)
+	rel_set(O, nameof(O.mixture), mixture)
+	rel_add(src, nameof(required_items), O)
 	return
 
 /datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
@@ -352,6 +359,6 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		types -= A // Don't pick the same thing twice
 		var/chosen_path = initial(A.product)
 		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 

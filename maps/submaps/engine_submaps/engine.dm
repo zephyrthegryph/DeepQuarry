@@ -5,8 +5,8 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/landmark/engine_loader)
 /obj/effect/landmark/engine_loader/Initialize(mapload)
-	if(SSmapping.engine_loader)
-		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(SSmapping.engine_loader)]")
+	if(mapping_engine_loader())
+		WARNING("Duplicate engine_loader landmarks: [log_info_line(src)] and [log_info_line(mapping_engine_loader())]")
 		delete_me = TRUE
 	SSmapping.engine_loader = src
 	return ..()
@@ -26,5 +26,5 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark/engine_loader)
 			for(var/turf/T in turfs_to_clean)
 				for(var/atom/movable/AM in T)
 					++deleted_atoms
-					qdel(AM)
+					spent(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)

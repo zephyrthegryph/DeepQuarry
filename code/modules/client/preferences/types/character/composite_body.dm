@@ -69,7 +69,7 @@
 	// where it lands in examine, character_directory, etc. Cheap insurance.
 	for(var/zone in list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
 		var/t = value[zone]
-		LAZYSET(target.flavor_texts, zone, istext(t) ? strip_html_simple(t) : null)
+		LAZYSET(target.bio.flavor_texts, zone, istext(t) ? strip_html_simple(t) : null)
 /datum/preference/flavor_texts/apply_to_living(mob/living/target, value)
 	return
 /datum/preference/flavor_texts/apply_to_silicon(mob/living/silicon/target, value)
@@ -133,7 +133,7 @@
 	return islist(value)
 
 /datum/preference/ear_secondary_colors/apply_to_human(mob/living/carbon/human/target, value)
-	target.ear_secondary_colors = SANITIZE_LIST(value)
+	target.set_ear_secondary_colors(SANITIZE_LIST(value))
 /datum/preference/ear_secondary_colors/apply_to_living(mob/living/target, value)
 	return
 /datum/preference/ear_secondary_colors/apply_to_silicon(mob/living/silicon/target, value)

@@ -8,8 +8,6 @@
 	var/obj/item/stack/tile/T
 	var/list/work_modes = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor)
-
 /obj/machinery/floorlayer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 
@@ -23,80 +21,69 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 		if(work_modes["collect"])
 			CollectTiles(old_turf())
 
-
 	rel_set(src, nameof(old_turf), loc)
 
-/obj/machinery/floorlayer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/floorlayer_toggle,
-		/datum/interaction/machine_item/floorlayer_load_tile,
-	)
-	..()
+CAPABILITIES(/obj/machinery/floorlayer)
+	op("floorlayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("floorlayer_load_tile", item(/obj/item/stack/tile), priority(OP_PRIORITY_DEFAULT - 1), label("Load tile"), then(PROC_REF(interaction_load_tile)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set work mode"),
+		asks(/datum/prompt/choice, fields = list("title" = "Mode", "question" = "Choose work mode", "choices" = nameof(work_modes), "timeout" = 0)),
+		then(PROC_REF(work_mode_chosen)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove tiles"),
+		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose remove tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
+		then(PROC_REF(tile_removal_chosen)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose tile type"),
+		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
+		then(PROC_REF(tile_type_chosen)))
 
-/// Old attack_hand: never called ..(), so it works without power.
-/datum/interaction/machine_hand/ungated/floorlayer_toggle
-	id = "floorlayer_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/floorlayer/proc/interaction_toggle
 
-/obj/machinery/floorlayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floorlayer/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	set_on(!on)
 	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
-	return TRUE
+	return OP_OK
 
-/// Old attackby: load a tile stack.
-/datum/interaction/machine_item/floorlayer_load_tile
-	id = "floorlayer_load_tile"
-	name = "Load tile"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/tile
-	effect = /obj/machinery/floorlayer/proc/interaction_load_tile
-
-/obj/machinery/floorlayer/proc/interaction_load_tile(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/floorlayer/proc/interaction_load_tile(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+		return OP_OK
 	to_chat(user, span_notice("\The [W] successfully loaded."))
-	user.drop_item(W)
 	TakeTile(W)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(work_mode_chosen), message = "Choose work mode", title = "Mode", choices = work_modes, requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/floorlayer/proc/work_mode_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/selected_mode = ask.choice
+/// The wrench's answer: a work mode switched on or off.
+/obj/machinery/floorlayer/proc/work_mode_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/selected_mode = A.answer?.value
+	if(!(selected_mode in work_modes))
+		return OP_OK
 	work_modes[selected_mode] = !work_modes[selected_mode]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
 		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
-	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_notice("\The [src] is empty."))
-		return ITEM_INTERACT_BLOCKING
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_removal_chosen), message = "Choose remove tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
+/// The tiles inside, offered by the crowbar's and the screwdriver's questions (read when the question opens).
+/obj/machinery/floorlayer/proc/tile_choices(datum/act/A)
+	return contents.Copy()
 
-/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/stack/tile/selected = ask.choice
-	if(selected.loc != src)
-		return
-	if(selected)
-		to_chat(user, span_notice("You remove [selected] from \the [src]."))
-		selected.forceMove(loc)
-		own_take(src, nameof(T))
-	return ITEM_INTERACT_SUCCESS
+/// The crowbar's answer: those tiles come out.
+/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/tile/selected = A.answer?.value
+	if(!istype(selected) || selected.loc != src)
+		return OP_OK
+	to_chat(user, span_notice("You remove [selected] from \the [src]."))
+	selected.forceMove(loc)
+	rel_take(src, nameof(T))
+	return OP_OK
 
-/obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_type_chosen), message = "Choose tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
-	var/obj/item/stack/tile/selected = ask.choice
-	if(selected.loc == src)
-		own_set(src, nameof(T), selected)
+/// The screwdriver's answer: the tiles it lays next.
+/obj/machinery/floorlayer/proc/tile_type_chosen(datum/act/op/A)
+	var/obj/item/stack/tile/selected = A.answer?.value
+	if(istype(selected) && selected.loc == src)
+		rel_set(src, nameof(T), selected)
+	return OP_OK
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
@@ -118,16 +105,17 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
-		own_set(src, nameof(T), tile)
+	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		rel_set(src, nameof(T), tile)
 		return 1
 	return 0
 
 /obj/machinery/floorlayer/proc/SortStacks()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): materialized above
-		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): materialized above
-			tile2.transfer_to(tile1)
+	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+			if(tile2 != tile1)
+				tile2.transfer_to(tile1)
 
 /obj/machinery/floorlayer/proc/layFloor(turf/w_turf)
 	if(!T)
@@ -138,7 +126,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
 	if(!T)
-		own_set(src, nameof(src.T), tile, into = TRUE)
+		move_into(src, nameof(src.T), tile)
 	else
 		tile.forceMove(src)
 
@@ -150,7 +138,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 
 /obj/machinery/floorlayer/ownership()
 	. = ..()
-	. += owns(nameof(T), policy = OWN_CONTAINED)
+	. += owns(nameof(T), policy = OWN_CONTAINED, starts = /obj/item/stack/tile/floor)
 
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf

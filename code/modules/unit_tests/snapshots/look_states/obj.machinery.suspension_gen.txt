@@ -1,0 +1,3 @@
+/obj/machinery/suspension_gen panel_open=1 +overlay: icons/obj/xenoarchaeology.dmi:suspension_panel:-32767
+/obj/machinery/suspension_gen panel_open=2 +overlay: icons/obj/xenoarchaeology.dmi:suspension_panel:-32767
+

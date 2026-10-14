@@ -1,5 +1,5 @@
 // L3: the verbs that replace direct qdel() call sites (roadmap L track,
-// doc/rewrite/lifecycle.md §5). `qdel()` remains the engine underneath every
+// doc/rewrite/lifecycle.md Â§5). `qdel()` remains the engine underneath every
 // one of these; what they add is the checked, declarative intent a hand
 // `qdel(x)` site doesn't carry (was this removal allowed? does something get
 // carried over? is this timed or death-driven?), so the destroy transaction
@@ -16,7 +16,8 @@
 /proc/consume(atom/movable/item, mob/actor)
 	if(!item || QDELETED(item))
 		return FALSE
-	if(dq_ledger_removal_refusal(item, actor))
+	var/atom/source = item.loc
+	if(source?.release_refusal(item, actor))
 		return FALSE
 	// Held or worn: take it off the mob the way drop_from_inventory() did at
 	// the call sites this replaces, so dropped() hooks, hand HUD and slowdown
@@ -24,8 +25,11 @@
 	// from inside the transaction).
 	if(ismob(item.loc) && isitem(item))
 		var/mob/holder = item.loc
-		holder.drop_from_inventory(item)
-	qdel(item)
+		if(holder.inventory_slot_id(item))
+			holder.drop_from_inventory(item)
+			if(item.loc == holder)
+				return FALSE
+	ending_qdel(item, END_CONSUMED, actor)
 	return TRUE
 
 // ---- replace_with() ----
@@ -59,11 +63,11 @@
 		var/atom/movable/built = path
 		if(QDELETED(built))
 			return null
-		original.lifecycle_successor = built
-		om_handle_forward(original, built)
-		qdel(original)
+		original.set_containment_successor(built)
+		rel_forward_identity(original, built)
+		ending_qdel(original, END_REPLACED, built)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
-			built.move_into(holder, slot_id)
+			move_into(holder, slot_id, built)
 		return built
 	// arglist() can't be combined with a positional arg in the same call, so
 	// the loc goes into the same list as the rest of the constructor args.
@@ -71,15 +75,15 @@
 	var/atom/movable/successor = new path(arglist(ctor_args))
 	if(QDELETED(successor))
 		return null
-	original.lifecycle_successor = successor
-	om_handle_forward(original, successor)
-	qdel(original)
+	original.set_containment_successor(successor)
+	rel_forward_identity(original, successor)
+	ending_qdel(original, END_REPLACED, successor)
 	// Into the slot only once the original has left it: a one-item slot (a
 	// hand) would refuse the successor while the original still filled it.
 	// Best effort: the slot may refuse the successor (different accepts
 	// predicate) -- it still exists on the turf either way.
 	if(slot_id && !QDELETED(holder) && !QDELETED(successor))
-		successor.move_into(holder, slot_id)
+		move_into(holder, slot_id, successor)
 	return successor
 
 // ---- lifetime / expire() ----
@@ -102,16 +106,16 @@
 /// deleting it first cancels the timer instead of leaving a queued strong
 /// reference behind -- the hard-delete trap QDEL_IN() works around with a
 /// handle. expire(null) only disarms (a ghost whose player came back).
-/atom/movable/proc/expire(after)
-	if(om_timer_slot_pending(src, "lifecycle_lifetime_timer"))
-		om_cancel_timer_slot(src, "lifecycle_lifetime_timer")
+/datum/proc/expire(after)
+	if(after_pending(src, "lifecycle_lifetime_timer"))
+		cancel_after(src, "lifecycle_lifetime_timer")
 	if(isnull(after) || QDELETED(src))
 		return
-	after_slot(src, "lifecycle_lifetime_timer", max(after, 0), PROC_REF(lifecycle_expire_now))
+	after(src, max(after, 0), PROC_REF(lifecycle_expire_now), key = "lifecycle_lifetime_timer")
 
-/atom/movable/proc/lifecycle_expire_now()
+/datum/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)
-	qdel(src)
+	ending_qdel(src, END_EXPIRED)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)
@@ -124,7 +128,7 @@
 /// many were deleted.
 /atom/proc/slot_clear(slot_id)
 	. = 0
-	// DELETE never materializes a latent entry (lifecycle.md §3): drop them
+	// DELETE never materializes a latent entry (lifecycle.md Â§3): drop them
 	// as data.
 	if(has_latent())
 		var/datum/ledger/L = dq_ledger(src)
@@ -153,7 +157,7 @@
 	var/atom/drop = drop_location()
 	var/list/defs = isnull(slot_id) ? L.defs : list(L.def_by_id(slot_id))
 	. = 0
-	for(var/datum/om/relation/slot/def as anything in defs)
+	for(var/datum/relation_definition/slot/def as anything in defs)
 		if(!def)
 			continue
 		var/list/slot_things = L.slots[def.slot_id]
@@ -167,7 +171,7 @@
 /// own declared drop_policy) to one thing, through the same forced-move
 /// machinery the destroy transaction's contents phase uses (L1,
 /// code/datums/containment/lifecycle.dm).
-/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, policy, atom/drop)
+/proc/dq_lifecycle_apply_policy_now(atom/movable/holder, datum/relation_definition/slot/def, atom/movable/thing, policy, atom/drop)
 	var/flags = LEDGER_MOVE_FORCED
 	if(policy == SLOT_DROP_DELETE)
 		qdel(thing)
@@ -192,8 +196,8 @@
 
 /// The sealed death pipeline (/mob/proc/death(), code/modules/mob/death.dm)
 /// calls this as its final hook, after on_death() and every listener, so all
-/// subtype remains and messages are already out (doc/rewrite/lifecycle.md §5,
-/// §7). A no-op unless delete_on_death is set; skipped if the mob was revived
+/// subtype remains and messages are already out (doc/rewrite/lifecycle.md Â§5,
+/// Â§7). A no-op unless delete_on_death is set; skipped if the mob was revived
 /// or deleted (gibbed) along the way.
 /mob/living/proc/lifecycle_on_death_finalized()
 	if(delete_on_death && stat == DEAD && !QDELETED(src))
@@ -201,8 +205,8 @@
 
 // ---- destroy_effects (declared, phase 6) ----
 
-/// Declared destruction effects (L3, doc/rewrite/lifecycle.md §2 phase 6,
-/// §5): message, sound, debris and neighbour update, applied by
+/// Declared destruction effects (L3, doc/rewrite/lifecycle.md Â§2 phase 6,
+/// Â§5): message, sound, debris and neighbour update, applied by
 /// phase 6 of destroy_transaction() (transaction.dm) instead of a hand `visible_message()`/`playsound()`/
 /// `new debris()` block in Destroy(). A type overrides destroy_effects()
 /// (transaction.dm) to return one, built once as a proc-local static (same
@@ -218,11 +222,9 @@
 	var/sound_volume = 50
 	/// Debris type spawned at the same turf, or null.
 	var/debris_type
-	/// Whether atoms on the same turf get update_icon() afterwards.
-	var/update_neighbors = FALSE
 	/// After the atom has left its turf (apply_after()): atoms of this type
-	/// within neighbor_range re-smooth -- structures update_connections() --
-	/// and update_icon(). Walls, grilles, railings, lattices.
+	/// within neighbor_range re-smooth -- structures update_connections().
+	/// Walls, grilles, railings, lattices.
 	var/neighbor_type
 	var/neighbor_range = 1
 	/// Whether neighbour structures also re-run update_connections().
@@ -287,9 +289,6 @@
 	for(var/path in debris)
 		for(var/i in 1 to max(1, debris[path]))
 			new path(T)
-	if(update_neighbors)
-		for(var/atom/movable/AM in contents_of(T))
-			AM.update_icon()
 	return T
 
 /// After Destroy(): neighbours that smooth against the atom see it gone.
@@ -302,6 +301,3 @@
 		if(neighbor_reconnect && isstructure(N))
 			var/obj/structure/S = N
 			S.update_connections()
-		N.update_icon()
-
-OWN_TIMER(/atom/movable, lifecycle_lifetime_timer)

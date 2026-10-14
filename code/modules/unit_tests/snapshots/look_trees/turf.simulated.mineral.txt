@@ -1,0 +1,81 @@
+/turf/simulated/mineral icon: icons/turf/walls.dmi
+/turf/simulated/mineral state: rock
+/turf/simulated/mineral dir: 2
+/turf/simulated/mineral overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/cave icon: icons/turf/walls.dmi
+/turf/simulated/mineral/cave state: rock
+/turf/simulated/mineral/cave dir: 2
+/turf/simulated/mineral/cave overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/ignore_mapgen icon: icons/turf/walls.dmi
+/turf/simulated/mineral/ignore_mapgen state: rock
+/turf/simulated/mineral/ignore_mapgen dir: 2
+/turf/simulated/mineral/ignore_mapgen overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/ignore_mapgen/cave icon: icons/turf/walls.dmi
+/turf/simulated/mineral/ignore_mapgen/cave state: rock
+/turf/simulated/mineral/ignore_mapgen/cave dir: 2
+/turf/simulated/mineral/ignore_mapgen/cave overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/ignore_mapgen/virgo2 icon: icons/turf/walls.dmi
+/turf/simulated/mineral/ignore_mapgen/virgo2 state: rock
+/turf/simulated/mineral/ignore_mapgen/virgo2 dir: 2
+/turf/simulated/mineral/ignore_mapgen/virgo2 color: #eacd7c
+/turf/simulated/mineral/ignore_mapgen/virgo2 overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/floor icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor state: asteroid
+/turf/simulated/mineral/floor dir: 2
+/turf/simulated/mineral/floor overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/cave icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/cave state: asteroid
+/turf/simulated/mineral/floor/cave dir: 2
+/turf/simulated/mineral/floor/cave overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/ignore_mapgen icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/ignore_mapgen state: asteroid
+/turf/simulated/mineral/floor/ignore_mapgen dir: 2
+/turf/simulated/mineral/floor/ignore_mapgen overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/ignore_mapgen/cave icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/ignore_mapgen/cave state: asteroid
+/turf/simulated/mineral/floor/ignore_mapgen/cave dir: 2
+/turf/simulated/mineral/floor/ignore_mapgen/cave overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/ignore_mapgen/virgo2 icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/ignore_mapgen/virgo2 state: asteroid
+/turf/simulated/mineral/floor/ignore_mapgen/virgo2 dir: 2
+/turf/simulated/mineral/floor/ignore_mapgen/virgo2 color: #eacd7c
+/turf/simulated/mineral/floor/ignore_mapgen/virgo2 overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/vacuum icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/vacuum state: asteroid
+/turf/simulated/mineral/floor/vacuum dir: 2
+/turf/simulated/mineral/floor/vacuum overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/virgo3b icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/virgo3b state: asteroid
+/turf/simulated/mineral/floor/virgo3b dir: 2
+/turf/simulated/mineral/floor/virgo3b overlay: :rock_side:-32767
+/turf/simulated/mineral/floor/virgo2 icon: icons/turf/flooring/asteroid.dmi
+/turf/simulated/mineral/floor/virgo2 state: asteroid
+/turf/simulated/mineral/floor/virgo2 dir: 2
+/turf/simulated/mineral/floor/virgo2 color: #eacd7c
+/turf/simulated/mineral/floor/virgo2 overlay: :rock_side:-32767
+/turf/simulated/mineral/ignore_cavegen icon: icons/turf/walls.dmi
+/turf/simulated/mineral/ignore_cavegen state: rock
+/turf/simulated/mineral/ignore_cavegen dir: 2
+/turf/simulated/mineral/ignore_cavegen overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/ignore_cavegen/virgo3c icon: icons/turf/walls.dmi
+/turf/simulated/mineral/ignore_cavegen/virgo3c state: rock
+/turf/simulated/mineral/ignore_cavegen/virgo3c dir: 2
+/turf/simulated/mineral/ignore_cavegen/virgo3c overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/vacuum icon: icons/turf/walls.dmi
+/turf/simulated/mineral/vacuum state: rock
+/turf/simulated/mineral/vacuum dir: 2
+/turf/simulated/mineral/vacuum overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/virgo3c icon: icons/turf/walls.dmi
+/turf/simulated/mineral/virgo3c state: rock
+/turf/simulated/mineral/virgo3c dir: 2
+/turf/simulated/mineral/virgo3c overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/virgo3b icon: icons/turf/walls.dmi
+/turf/simulated/mineral/virgo3b state: rock
+/turf/simulated/mineral/virgo3b dir: 2
+/turf/simulated/mineral/virgo3b overlay: :rock_side:-32767 x3
+/turf/simulated/mineral/virgo2 icon: icons/turf/walls.dmi
+/turf/simulated/mineral/virgo2 state: rock
+/turf/simulated/mineral/virgo2 dir: 2
+/turf/simulated/mineral/virgo2 color: #eacd7c
+/turf/simulated/mineral/virgo2 overlay: :rock_side:-32767 x3
+

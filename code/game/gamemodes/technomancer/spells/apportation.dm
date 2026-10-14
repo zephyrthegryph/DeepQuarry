@@ -51,15 +51,15 @@
 			L.throw_at(get_step(get_turf(src),get_turf(L)), 4, 1, src)
 			user.drop_item(src)
 			src.moveToNullspace()
-			om_after(src, 1 SECOND, PROC_REF(finish_apportation_grab), user, L)
+			after(src, 1 SECOND, PROC_REF(finish_apportation_grab), with = list(user, L), keeps_dead = TRUE)
 
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)
-	if(!user.Adjacent(L))
+	if(QDELETED(user) || QDELETED(L) || !user.Adjacent(L))
 		to_chat(user, span_warning("\The [L] is out of your reach."))
 		consume(src, user)
 		return
 
-	L.status_at_least(EFFECT_WEAKENED, 3)
+	L.status_at_least(STAT_WEAKENED, 3)
 	act_message(user, L, others = span_warning(span_bold("%U%") + " seizes %T%!"))
 
 	var/obj/item/grab/G = new(user, L)
@@ -67,6 +67,6 @@
 	user.put_in_hands(G)
 
 	G.state = GRAB_PASSIVE
-	G.icon_state = "grabbed1"
+	G.set_icon_state("grabbed1")
 	G.synch()
 	consume(src, user)

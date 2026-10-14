@@ -1,4 +1,4 @@
-/datum/construction_graph/mecha/micro/polecat
+/datum/mecha_blueprint/micro/polecat
 	id = "mecha_micro_polecat"
 	result = /obj/mecha/micro/sec/polecat
 	icon_finished = 'icons/mecha/mech_construction_vr.dmi'
@@ -28,7 +28,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "polecat1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "polecat0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/micro/gopher
+/datum/mecha_blueprint/micro/gopher
 	id = "mecha_micro_gopher"
 	result = /obj/mecha/micro/utility/gopher
 	icon_finished = 'icons/mecha/mech_construction_vr.dmi'
@@ -52,7 +52,7 @@
 		list("key" = TOOL_WRENCH, "backkey" = TOOL_CROWBAR, "desc" = "The hydraulic systems are disconnected.", "fwd_self" = "You connect {HOLDER} hydraulic systems.", "fwd_others" = "{USER} connects {HOLDER} hydraulic systems", "fwd_icon" = "gopher1", "fwd_span" = TRUE, "back_self" = "You disconnect {HOLDER} hydraulic systems.", "back_others" = "{USER} disconnects {HOLDER} hydraulic systems.", "back_icon" = "gopher0", "back_span" = TRUE, "refund_type" = null, "refund_amt" = null)
 		)
 
-/datum/construction_graph/mecha/micro/weasel
+/datum/mecha_blueprint/micro/weasel
 	id = "mecha_micro_weasel"
 	result = /obj/mecha/micro/sec/weasel
 	icon_finished = 'icons/mecha/mech_construction_vr.dmi'

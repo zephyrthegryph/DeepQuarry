@@ -26,11 +26,11 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(pred.vore_selected, "[pred] has no vore_selected")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
 
-	pred.vore_selected.nom_atom(prey)
+	vore_selected_of(pred).nom_atom(prey)
 
-	TEST_ASSERT(prey.loc == pred.vore_selected, "Prey not inside predator belly")
+	TEST_ASSERT(prey.loc == vore_selected_of(pred), "Prey not inside predator belly")
 
 	var/start_oxy = prey.oxygen_debt()
 	_vore_test_run_cycles(pred, prey, 10)
@@ -48,11 +48,11 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(pred.vore_selected, "[pred] has no vore_selected")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
 
-	pred.vore_selected.nom_atom(prey)
+	vore_selected_of(pred).nom_atom(prey)
 
-	TEST_ASSERT(prey.loc == pred.vore_selected, "Prey not inside predator belly")
+	TEST_ASSERT(prey.loc == vore_selected_of(pred), "Prey not inside predator belly")
 
 	var/empty_z = using_map.get_empty_zlevel()
 	TEST_ASSERT(empty_z, "Failed to get empty z-level")
@@ -83,13 +83,13 @@
 	TEST_ASSERT(pred && prey, "Failed to create test mobs")
 
 	pred.init_vore(TRUE)
-	TEST_ASSERT(pred.vore_selected, "[pred] has no vore_selected")
+	TEST_ASSERT(vore_selected_of(pred), "[pred] has no vore_selected_of(src)")
 
-	pred.vore_selected.nom_atom(prey)
+	vore_selected_of(pred).nom_atom(prey)
 
-	TEST_ASSERT(prey.loc == pred.vore_selected, "Prey not inside predator belly")
+	TEST_ASSERT(prey.loc == vore_selected_of(pred), "Prey not inside predator belly")
 
-	pred.vore_selected.digest_mode = DM_DIGEST
+	vore_selected_of(pred).digest_mode = DM_DIGEST
 
 	var/start_damage = _vore_test_total_injury(prey)
 	_vore_test_run_cycles(pred, prey, 10)
@@ -117,7 +117,7 @@
 /// The calls are the same ones the Life pipeline and the belly_cycle deadline make each cycle.
 /proc/_vore_test_run_cycles(mob/living/pred, mob/living/prey, cycles)
 	for(var/i in 1 to cycles)
-		om_run_frame_now(pred, /datum/om/pipeline/life)
-		om_run_frame_now(prey, /datum/om/pipeline/life)
+		seq_run_frame_now(pred, /datum/sequence/life)
+		seq_run_frame_now(prey, /datum/sequence/life)
 		for(var/obj/belly/B as anything in pred.vore_organs)
 			B.belly_cycle(BELLY_BASELINE_TICK / (1 SECONDS))

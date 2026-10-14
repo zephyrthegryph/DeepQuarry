@@ -16,19 +16,15 @@
 	var/icon_vend = "minevend-vend"
 	circuit = /obj/item/circuitboard/mining_equipment_vendor
 	var/obj/item/card/id/inserted_id
-	var/list/prize_list //Generated during Initialize
+	var/list/prize_list // per_type(): one table per vendor type, built by build_prize_list()
+	/// Entries an admin added to this one vendor (new_prize()): name -> /datum/data/mining_equipment, shown under "Extra".
+	var/list/extra_prizes
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
 /obj/machinery/mineral/equipment_vendor/ownership()
 	. = ..()
 	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
-// prize entries are nested per category.
-/obj/machinery/mineral/equipment_vendor/on_destroy(force)
-	for(var/key, value in prize_list)
-		var/list/item_list = value
-		QDEL_LIST_ASSOC_VAL(item_list)
-	..()
 
 /datum/data/mining_equipment
 	var/equipment_name = "generic"
@@ -40,12 +36,10 @@
 	src.equipment_path = path
 	src.cost = cost
 
-/obj/machinery/mineral/equipment_vendor/Initialize(mapload)
-	. = ..()
-	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
-	// record, freed in on_destroy()). Rebuilt per vendor type here.
-	prize_list = list()
-	prize_list["Gear"] = list(
+/obj/machinery/mineral/equipment_vendor/proc/build_prize_list()
+	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost record), one table per vendor type.
+	. = list()
+	.["Gear"] = list(
 		EQUIPMENT("Brown Webbing",								/obj/item/clothing/accessory/storage/brown_vest,			500),
 		EQUIPMENT("Defense Equipment - Plasteel Machete",		/obj/item/material/knife/machete,							500),
 		EQUIPMENT("Defense Equipment - Razor Drone Deployer",	/obj/item/grenade/spawnergrenade/manhacks/station/locked,	1000),
@@ -76,7 +70,7 @@
 		EQUIPMENT("Advanced Ore Scanner",						/obj/item/mining_scanner/advanced,							500),
 		EQUIPMENT("Exotic Sample Container",					/obj/item/storage/sample_container,							100),
 	)
-	prize_list["Consumables"] = list(
+	.["Consumables"] = list(
 		EQUIPMENT("1 Marker Beacon",		/obj/item/stack/marker_beacon,													1),
 		EQUIPMENT("10 Marker Beacons",		/obj/item/stack/marker_beacon/ten,												10),
 		EQUIPMENT("30 Marker Beacons",		/obj/item/stack/marker_beacon/thirty,											30),
@@ -91,7 +85,7 @@
 		EQUIPMENT("Oxy Medipen",			/obj/item/reagent_containers/hypospray/autoinjector/oxy,						250),
 		EQUIPMENT("Trauma Medipen",			/obj/item/reagent_containers/hypospray/autoinjector/trauma,						250),
 	)
-	prize_list["Kinetic Accelerator"] = list(
+	.["Kinetic Accelerator"] = list(
 		EQUIPMENT("Kinetic Accelerator",		/obj/item/gun/energy/kinetic_accelerator,									900),
 		EQUIPMENT("KA AoE Damage",				/obj/item/borg/upgrade/modkit/aoe/mobs,										2000),
 		EQUIPMENT("KA Damage Increase",			/obj/item/borg/upgrade/modkit/damage,										1000),
@@ -106,7 +100,7 @@
 		EQUIPMENT("KA White Tracer Rounds",		/obj/item/borg/upgrade/modkit/tracer,										125),
 		EQUIPMENT("Premium Kinetic Accelerator",/obj/item/gun/energy/kinetic_accelerator/premiumka,							12000),
 	)
-	prize_list["Digging Tools"] = list(
+	.["Digging Tools"] = list(
 		EQUIPMENT("Resonator",									/obj/item/resonator,										900),
 		EQUIPMENT("Silver Pickaxe",								/obj/item/pickaxe/silver,									1200),
 		EQUIPMENT("Diamond Pickaxe",							/obj/item/pickaxe/diamond,									2000),
@@ -118,7 +112,7 @@
 		EQUIPMENT("Industrial Equipment - Phoron Bore",			/obj/item/gun/magnetic/matfed/phoronbore/loaded,			3000),
 		EQUIPMENT("Industrial Equipment - Inducer",				/obj/item/inducer,											3500),
 	)
-	prize_list["Hardsuit"] = list(
+	.["Hardsuit"] = list(
 		EQUIPMENT("Hardsuit - Cheap Control Module",		/obj/item/rig/industrial/vendor,								2000),
 		EQUIPMENT("Hardsuit - Premium Control Module",		/obj/item/rig/industrial,										5000),
 		EQUIPMENT("Hardsuit - Drill",						/obj/item/rig_module/device/drill,								2500),
@@ -134,7 +128,7 @@
 		EQUIPMENT("Hardsuit - Smoke Bomb Deployer",			/obj/item/rig_module/grenade_launcher/smoke,					2000),
 		EQUIPMENT("Hardsuit - Proto-Kinetic Gauntlets",		/obj/item/rig_module/gauntlets,									2000),
 	)
-	prize_list["Shelter Capsules"] = list(
+	.["Shelter Capsules"] = list(
 		EQUIPMENT("Shelter Capsule - Shelter (5x5)",				/obj/item/survivalcapsule,									500),
 		EQUIPMENT("Shelter Capsule - Pocket Dorm (5x5)",			/obj/item/survivalcapsule/pocketdorm,						500),
 		EQUIPMENT("Shelter Capsule - Kitchen (7x7)",				/obj/item/survivalcapsule/kitchen,							3100),
@@ -148,7 +142,7 @@
 		EQUIPMENT("Shelter Capsule - Deluxe Cabin (11x11)",			/obj/item/survivalcapsule/luxurycabin,						10000),
 		EQUIPMENT("Shelter Capsule - Cafe (11x11)",					/obj/item/survivalcapsule/cafe,								10000),
 	)
-	prize_list["Miscellaneous"] = list(
+	.["Miscellaneous"] = list(
 		EQUIPMENT(REAGENT_ABSINTHE,				/obj/item/reagent_containers/food/drinks/bottle/absinthe,					125),
 		EQUIPMENT("Cigar",						/obj/item/clothing/mask/smokable/cigarette/cigar/havana,					150),
 		EQUIPMENT("Digital Tablet - Standard",	/obj/item/modular_computer/tablet/preset/custom_loadout/standard,			500),
@@ -161,41 +155,29 @@
 		EQUIPMENT("Umbrella",					/obj/item/melee/umbrella/random,											200),
 		EQUIPMENT(REAGENT_WHISKEY,				/obj/item/reagent_containers/food/drinks/bottle/whiskey,					125),
 	)
-	prize_list["Extra"] = list() // Used in child vendors
+	.["Extra"] = list() // Used in child vendors
 
 /obj/machinery/mineral/equipment_vendor/power_change()
 	. = ..()
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/mineral/equipment_vendor/appearance_overlays()
-	. = list()
-	if(panel_open)
-		. += "[initial(icon_state)]-panel"
-
-	if(has_stat(BROKEN))
-		icon_state = "[initial(icon_state)]-broken"
-	else if(powered())
-		icon_state = initial(icon_state)
-	else
-		icon_state = "[initial(icon_state)]-off"
-
-/obj/machinery/mineral/equipment_vendor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/equipment_vendor_voucher,
-		/datum/interaction/machine_item/equipment_vendor_insert_id,
-		/datum/interaction/machine_hand/open_ui,
-	)
+/obj/machinery/mineral/equipment_vendor/draw(datum/look/look)
 	..()
+	if(panel_open)
+		look.overlay("[initial(icon_state)]-panel")
 
-UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mineral_equipment_vendor{has_id:bool,id:list}")
+	if(broken_now())
+		look.state("[initial(icon_state)]-broken")
+	else if(powered())
+		look.state(initial(icon_state))
+	else
+		look.state("[initial(icon_state)]-off")
 
-/// The computed part of /obj/machinery/mineral/equipment_vendor's window data (declared on its UI_DATA row).
-/obj/machinery/mineral/equipment_vendor/proc/ui_data_obj_machinery_mineral_equipment_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/mineral/equipment_vendor's window data.
+/obj/machinery/mineral/equipment_vendor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	// ID
@@ -224,10 +206,14 @@ UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mi
 
 	// Available items - in static data because we don't wanna compute this list every time! It hardly changes.
 	static_data["items"] = list()
-	for(var/cat in prize_list)
+	var/list/categories = prize_list.Copy()
+	if(LAZYLEN(extra_prizes))
+		categories |= "Extra"
+	for(var/cat in categories)
 		var/list/cat_items = list()
-		for(var/prize_name in prize_list[cat])
-			var/datum/data/mining_equipment/prize = prize_list[cat][prize_name]
+		var/list/prizes = prizes_in(cat)
+		for(var/prize_name in prizes)
+			var/datum/data/mining_equipment/prize = prizes[prize_name]
 			cat_items[prize_name] = list("name" = prize_name, "price" = prize.cost)
 		static_data["items"][cat] = cat_items
 
@@ -239,7 +225,19 @@ UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mi
 		dirty_items = TRUE
 	return ..()
 
-DECLARE_UI(/obj/machinery/mineral/equipment_vendor, "MiningVendor")
+CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
+	per_type(nameof(prize_list), PROC_REF(build_prize_list))
+	owns_many(nameof(extra_prizes))
+	interface("MiningVendor")
+	without("ui_open")
+	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vendor_blast_sparks)))
 
 /obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -248,34 +246,35 @@ DECLARE_UI(/obj/machinery/mineral/equipment_vendor, "MiningVendor")
 		dirty_items = FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/mineral/equipment_vendor, "logoff", ui_act_logoff)
-UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_logoff)
+/obj/machinery/mineral/equipment_vendor/proc/ui_act_logoff(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!inserted_id)
 		return
-	ui.user.put_in_hands(inserted_id)
-	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
+	user.put_in_hands(inserted_id)
+	rel_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	add_fingerprint()
 
-UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
+/obj/machinery/mineral/equipment_vendor/proc/ui_act_purchase(datum/act/op/A, cat, name_arg)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!inserted_id)
 		flick(icon_deny, src)
 		return
-	var/category = params["cat"] // meow
-	var/name = params["name"]
-	if(!(category in prize_list) || !(name in prize_list[category])) // Not trying something that's not in the list, are you?
+	var/category = cat // meow
+	var/name = name_arg
+	var/list/prizes = prizes_in(category)
+	if(!(name in prizes)) // Not trying something that's not in the list, are you?
 		flick(icon_deny, src)
 		return
-	var/datum/data/mining_equipment/prize = prize_list[category][name]
+	var/datum/data/mining_equipment/prize = prizes[name]
 	if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
-		to_chat(ui.user, span_danger("You have insufficient Thalers."))
+		to_chat(user, span_danger("You have insufficient Thalers."))
 		flick(icon_deny, src)
 		return
 
 	if(!remove_points(inserted_id, prize.cost))
-		to_chat(ui.user, span_danger("The account transaction was declined."))
+		to_chat(user, span_danger("The account transaction was declined."))
 		flick(icon_deny, src)
 		return
 	var/obj/item/I = new prize.equipment_path(loc)
@@ -284,43 +283,33 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 	flick(icon_vend, src)
 	add_fingerprint()
 
-/// Old attackby: a mining voucher redeems its selection.
-/datum/interaction/machine_item/equipment_vendor_voucher
-	id = "equipment_vendor_voucher"
-	name = "Redeem voucher"
-	held_type = /obj/item/mining_voucher
-	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_voucher
-
-/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/mineral/equipment_vendor/proc/interaction_voucher(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!powered())
 		return TRUE
 	redeem_voucher(I, user)
 	return TRUE
 
-/// Old attackby: insert an ID card.
-/datum/interaction/machine_item/equipment_vendor_insert_id
-	id = "equipment_vendor_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id
-
-/obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!powered())
 		return TRUE
-	else if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
+	else if(!inserted_id && move_into(src, nameof(src.inserted_id), I, user))
 		tgui_interact(user)
 	return TRUE
 
-/obj/machinery/mineral/equipment_vendor/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/mineral/equipment_vendor/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/mineral/equipment_vendor/crowbar_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/mineral/equipment_vendor/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		own_take(src, nameof(inserted_id))
+		rel_take(src, nameof(inserted_id))
 	. = ..()
 
 /**
@@ -332,7 +321,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
  */
 /obj/machinery/mineral/equipment_vendor/proc/redeem_voucher(obj/item/mining_voucher/voucher, mob/redeemer)
 	to_chat(redeemer, span_notice("You insert your voucher into the machine!"))
-	var/selection = rerun_ask(redeemer, "k346", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your equipment.", title = "Mining Voucher Redemption", choices = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"))
+	var/selection = rerun_ask(redeemer, "k346", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your equipment.", title = "Mining Voucher Redemption", choices = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"))
 	if(isnull(selection))
 		return
 	var/drop_location = drop_location()
@@ -350,7 +339,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 	switch(selection)
 
 		if("Kinetic Accelerator + KA Addon") //1250-2100 points worth
-			var/_answer_k362 = rerun_ask(redeemer, "k362", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your addon", title = "Mining Voucher Redemption", choices = list("Cooldown", "Range","Holster"))
+			var/_answer_k362 = rerun_ask(redeemer, "k362", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your addon", title = "Mining Voucher Redemption", choices = list("Cooldown", "Range","Holster"))
 			if(isnull(_answer_k362))
 				return
 			var/addon_selection = _answer_k362 //Just the basics. Nothing too crazy.
@@ -358,6 +347,8 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 				return
 			if(!addon_selection)
 				to_chat(redeemer, span_warning("You must select an addon."))
+				return
+			if(!consume(voucher, redeemer))
 				return
 			new /obj/item/gun/energy/kinetic_accelerator(drop_location)
 			switch(addon_selection)
@@ -369,11 +360,13 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 					new /obj/item/clothing/accessory/holster/waist/kinetic_accelerator(drop_location)
 
 		if("Resonator + Advanced Ore Scanner") //1400 points worth
+			if(!consume(voucher, redeemer))
+				return
 			new /obj/item/resonator(drop_location)
 			new /obj/item/mining_scanner/advanced(drop_location)
 
 		if("Survival Pistol & Machete + Survival Addon") // ~3000-3500 points worth.
-			var/_answer_k383 = rerun_ask(redeemer, "k383", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your survival addon", title = "Mining Voucher Redemption", choices = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens"))
+			var/_answer_k383 = rerun_ask(redeemer, "k383", PROC_REF(redeem_voucher), args, /datum/prompt/choice, question = "Pick your survival addon", title = "Mining Voucher Redemption", choices = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens"))
 			if(isnull(_answer_k383))
 				return
 			var/addon_selection = _answer_k383 //Just the basics. Nothing too crazy.
@@ -381,6 +374,8 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 				return
 			if(!addon_selection)
 				to_chat(redeemer, span_warning("You must select an addon."))
+				return
+			if(!consume(voucher, redeemer))
 				return
 			new /obj/item/gun/energy/locked/phasegun/pistol(drop_location) //1500
 			new /obj/item/material/knife/machete(drop_location) //1000
@@ -400,9 +395,10 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 					new /obj/item/reagent_containers/hypospray/autoinjector/oxy(medbox)
 					new /obj/item/reagent_containers/hypospray/autoinjector/trauma(medbox)
 		if("1000 Points") //1000 points
+			if(!consume(voucher, redeemer))
+				return
 			var/obj/item/card/mining_point_card/new_card = new(drop_location)
 			new_card.mine_points = 1000
-	consume(voucher, redeemer)
 
 /obj/machinery/mineral/equipment_vendor/proc/new_prize(name, path, cost) // Generic proc for adding new entries. Good for abusing for FUN and PROFIT.
 	if(!cost)
@@ -411,22 +407,19 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	// Entries live in the "Extra" category (prize_list is category -> name -> entry).
-	if(!prize_list)
-		prize_list = list()
-	var/list/extra = prize_list["Extra"]
-	if(!islist(extra))
-		extra = list()
-		prize_list["Extra"] = extra
-	var/datum/data/mining_equipment/old_entry = extra[name]
-	if(old_entry)
-		qdel(old_entry) // ALLOW(lifecycle): the vendor's own catalogue entry, replaced by the new one below
-	extra[name] = new /datum/data/mining_equipment(name, path, cost)
+	// prize_list is the type's shared per_type() table: this vendor's own entries go in extra_prizes, shown under "Extra".
+	rel_add(src, nameof(extra_prizes), new /datum/data/mining_equipment(name, path, cost), key = name) // a name already listed is replaced
 	dirty_items = TRUE
 
-DAMAGE_REACTION(/obj/machinery/mineral/equipment_vendor, DAMAGE_EXPLOSION, PROC_REF(vendor_blast_sparks))
+/// The prizes of `category` this vendor offers: its type's table, and its own extra entries under "Extra".
+/obj/machinery/mineral/equipment_vendor/proc/prizes_in(category)
+	var/list/listed = prize_list[category]
+	if(category == "Extra" && LAZYLEN(extra_prizes))
+		return (listed || list()) + extra_prizes
+	return listed
+
 
 /// A blast throws sparks off the vendor.
-/obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/damage_packet/packet)
+/obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/act/A)
 	fx_sparks(src, 5)
 

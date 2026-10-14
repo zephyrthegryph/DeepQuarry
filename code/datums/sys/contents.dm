@@ -5,7 +5,7 @@
 /// ledger has nothing real in its slots. The read for tgui_data()/examine(); slot_item() is for
 /// actions.
 /atom/proc/slot_item_real(slot_id)
-	var/datum/ledger/L = ledger
+	var/datum/ledger/L = containment_ledger()
 	if(!L)
 		return null
 	var/list/things = L.slots[slot_id || L.default_id]

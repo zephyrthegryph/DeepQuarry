@@ -1,0 +1,7 @@
+human|none menu: Toggle
+human|none menu: Use
+human|none click: Click: Toggle
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Toggle
+robot|none menu: Use
+robot|none click: Click: Toggle

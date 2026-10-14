@@ -16,20 +16,25 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-APPEARANCE_TEMPLATE(/obj/machinery/transhuman/autoresleever, "autoresleever{appearance_faulty?-o:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/transhuman/autoresleever/draw(datum/look/look)
+	..()
+	look.state("autoresleever[appearance_faulty() ? "-o" : ""]")
 
 /obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
-	return has_stat(BROKEN | MAINT | EMPED)
+	return (broken_now() || under_maintenance() || emp_held())
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
-	INTERACT_OBSERVER("Respawn", PROC_REF(autoresleever_interaction_ghost)), \
-	INTERACT_ITEM(null, PROC_REF(autoresleever_interaction_item)), \
-)
+CAPABILITIES(/obj/machinery/transhuman/autoresleever)
+	op("autoresleever_interaction_ghost", observer(), label("Respawn"), then(PROC_REF(autoresleever_interaction_ghost)))
+	op("autoresleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(autoresleever_interaction_item)))
 
 /// Old attack_ghost.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	update_icon()
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(datum/act/op/A)
+	autoresleever_ghost_use(A.actor)
+	return OP_OK
+
+/// The ghost's respawn flow; it asks its questions by re-running itself with the same arguments.
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_ghost_use(mob/observer/dead/user)
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
 		return
@@ -46,13 +51,13 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
-		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"))
+		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k54))
 			return
 		if(_answer_k54 == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_interaction_ghost), args, /datum/om/prompt/choice/alert, message = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"))
+		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k57))
 			return
 		if(_answer_k57 == "Yes")
@@ -61,26 +66,25 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		to_chat(user, span_warning("You need to have been spawned in order to respawn here."))
 
 /// Old attackby: let's not let people mess with this.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
-	update_icon()
-	return INTERACTION_HANDLED_PASS
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(datum/act/op/A)
+	return OP_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
-	if(has_stat(BROKEN | MAINT | EMPED)) // Let it still work when power is just off, it has it's own backup reserve or something.
+	if((broken_now() || under_maintenance() || emp_held())) // Let it still work when power is just off, it has it's own backup reserve or something.
 		to_chat(ghost, span_warning("This machine is not functioning..."))
 		return
 	if(!isobserver(ghost))
 		return
 	var/mob/living/body = ghost.mind?.current
-	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && om_value_of(body, EFFECT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
+	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && stat_value(body, STAT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
-			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"))
+			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"), buttons = TRUE)
 			if(isnull(_answer_k78))
 				return
 			if(_answer_k78 != "Yes")
 				return
 			if(istype(ghost.mind.current.loc, /obj/item/mmi))
-				qdel(ghost.mind.current.loc)
+				spent(ghost.mind.current.loc)
 		else
 			to_chat(ghost, span_warning("Your body is still alive, you cannot be resleeved."))
 			return
@@ -124,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 
 	var/slot = ghost.client.prefs.default_slot
-	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"))
+	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/prompt/choice, question = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"), buttons = TRUE)
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
@@ -206,7 +210,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(new_character.mind)
 		new_character.mind.loaded_from_ckey = picked_ckey
 		new_character.mind.loaded_from_slot = picked_slot
-		var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(new_character.mind.special_role)
+		var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(new_character.mind)
 			antag_data.place_mob(new_character)
@@ -215,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 	apply_resleeve_languages(new_character, ghost, ghost_client)
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 	return new_character
 
 /// The character's whitelisted languages, custom language keys and preferred language.
@@ -247,7 +251,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 			new_character.mind.role_alt_title = SSjob.get_player_alt_title(new_character, charjob)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 
@@ -256,30 +259,32 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 	var/obj/item/implant/backup/imp = new(src)
 
-	if(imp.handle_implant(new_character,new_character.zone_sel.selecting))
+	if(imp.handle_implant(new_character,hud_of(new_character)?.zone_sel?.selecting))
 		imp.post_implant(new_character)
 
-	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(new_character.mind.name)
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(new_character.mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
 		if(ELAPSED(record, last_notification, CLOCK_WORLD) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", HAS_SYNTHETIC_BIOLOGY(new_character) ? "Science" : "Medical")
 		if(record.nif_path)
-			om_after(new_character, 0, /proc/resleeve_restore_nif, new_character, record) //Wait a moment for nif to do its thing if there is one
+			after(new_character, 0, GLOBAL_PROC_REF(resleeve_restore_nif), with = list(new_character, record)) //Wait a moment for nif to do its thing if there is one
 
 	if(!new_character.dna)
 		CRASH("[new_character] just came out of an autosleever and has no DNA! Species: [new_character.species] as mob: [new_character.type]. NIF Status: [new_character.nif]")
 
 /// Restores a resleeved body's backed-up NIF, then (a moment later, once a new NIF is in) its software.
 /proc/resleeve_restore_nif(mob/living/carbon/human/new_character, datum/transhuman/mind_record/record)
+	if(!new_character || !record)
+		return
 	var/obj/item/nif/nif = new_character.nif
 	if(!nif)
 		nif = new record.nif_path(new_character,null,record.nif_savedata)
-	om_after(nif, 0, /proc/install_nif_software, nif, record.nif_software, record.nif_durability)
+	after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, record.nif_software, record.nif_durability))
 
 /// Installs `software` (NIFsoft types) in the NIF, then restores its durability if given.
 /proc/install_nif_software(obj/item/nif/nif, list/software, durability)
 	for(var/path in software)
 		new path(nif)
 	if(!isnull(durability))
-		nif.durability = durability
+		nif.set_durability(durability)

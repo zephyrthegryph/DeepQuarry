@@ -8,8 +8,6 @@
 	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "pulse"
 	item_state = null	//so the human update icon uses the icon_state instead.
-	slot_flags = SLOT_BELT|SLOT_BACK
-	force = 10
 	projectile_type = /obj/item/projectile/beam
 	charge_cost = 120
 	fire_delay = 8
@@ -21,6 +19,10 @@
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, fire_delay=null, charge_cost = 120),
 		list(mode_name="DESTROY", projectile_type=/obj/item/projectile/beam/pulse, fire_delay=null, charge_cost = 240),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/pulse_rifle)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/pulse_rifle/mounted
 	self_recharge = 1
@@ -39,10 +41,11 @@
 	special_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/energy/pulse_rifle/destroyer/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/pulse_rifle/destroyer/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	to_chat(user, span_warning("[src.name] has three settings, and they are all DESTROY."))
 
 /*
@@ -73,10 +76,12 @@
 	tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard \
 	firing mechanisms.The Grasshopper remains one of the smallest production laser pistols ever produced that is still capable of causing significant \
 	damage to organic tissue."
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	icon_state = "pulsepistol"
 	charge_cost = 480
 	w_class = ITEMSIZE_NORMAL //.
+
+CAPABILITIES(/obj/item/gun/energy/pulse_rifle/compact)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/energy/pulse_rifle/compact/admin
 	name = "\improper LP4 Mantis Deluxe"

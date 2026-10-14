@@ -38,26 +38,53 @@
 	///Var for attack_self chain
 	var/special_weapon_handling = FALSE
 
-/obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
+CAPABILITIES(/obj/item/gun/projectile)
+	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+	ref_one(nameof(chambered))
+	owns_many(nameof(loaded), starts = PROC_REF(make_loaded))
+	param(nameof(starts_loaded), pos = 1)
+	op("gun_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload"), then(PROC_REF(gun_hand)))
+	// Working the bolt of a manual-chambered gun.
+	op("bolt_work", ai(), takes("stance"), wait(0.4 SECONDS), then(PROC_REF(bolt_handle)))
+	// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
+	op("feed_rounds", ai(), wait(PROC_REF(feed_time), repeats = PROC_REF(feed_more), after_step = PROC_REF(feed_round)), on_interrupt(PROC_REF(feed_ended)), then(PROC_REF(feed_ended)))
+	// A round slid into the chamber by hand.
+	op("chamber_round", ai(), takes("duration", "message"), wait(PROC_REF(chamber_time)), then(PROC_REF(chamber_round)))
+
+TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
+
+/// Whether the gun starts loaded (its constructor param).
+/obj/item/gun/projectile/var/starts_loaded = TRUE
+
+// ALLOW(init/INSTANCE_STATE): a projectile gun loads its starting rounds or magazine (some randomly short) and takes its transform
+/obj/item/gun/projectile/Initialize(mapload)
 	. = ..()
 	if(starts_loaded)
-		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
-			for(var/i in 1 to max_shells)
-				own_add(src, nameof(loaded), new ammo_type(src))
-			if(random_start_ammo)
-				for(var/i in 1 to rand(0, max_shells))
-					if(!length(loaded))
-						break
-					own_remove(src, nameof(loaded), loaded[1])
-		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			own_set(src, nameof(ammo_magazine), new magazine_type(src))
+		if(ammo_magazine && (load_method & MAGAZINE))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
 				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
 					own_remove(ammo_magazine, nameof(ammo_magazine.stored_ammo), ammo_magazine.stored_ammo[1])
 
-	update_icon()
+	if(TYPE_TABLE_GET(src, projectile_initial_transform))
+		update_transform()
+
+/// The starting rounds (owns_many(starts =)): a full load of loose rounds for a gun loaded by hand, some randomly short.
+/obj/item/gun/projectile/proc/make_loaded(current)
+	if(!starts_loaded || !ispath(ammo_type) || !(load_method & (SINGLE_CASING|SPEEDLOADER)))
+		return
+	var/count = max_shells
+	if(random_start_ammo)
+		count -= rand(0, max_shells)
+	if(count > 0)
+		. = list()
+		.[ammo_type] = count
+
+/// The starting magazine (owns(starts =)) of a gun that takes one.
+/obj/item/gun/projectile/proc/make_magazine(current)
+	if(starts_loaded && ispath(magazine_type) && (load_method & MAGAZINE))
+		return magazine_type
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
@@ -102,16 +129,16 @@
 	switch(handle_casings)
 		if(EJECT_CASINGS) //eject casing onto ground.
 			if(chambered.caseless)
-				qdel(chambered)
+				consume(chambered)
 				return
 			else
 				chambered.forceMove(get_turf(src))
 				play_sfx(src, SFX_CASING_SOUND)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
-				own_add(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
+				rel_add(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
 			else
-				own_add(src, nameof(loaded), chambered)
+				rel_add(src, nameof(loaded), chambered)
 
 	if(handle_casings != HOLD_CASINGS)
 		rel_clear(src, nameof(chambered))
@@ -130,8 +157,7 @@
 		user.put_in_hands(ammo_magazine)
 		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-		ammo_magazine.update_icon()
-		own_take(src, nameof(ammo_magazine))
+		rel_take(src, nameof(ammo_magazine))
 		user.hud_used?.update_ammo_hud(user, src)
 	else if(length(loaded))
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
@@ -142,7 +168,7 @@
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				own_take_all(src, nameof(loaded))
+				rel_take_all(src, nameof(loaded))
 			if(count)
 				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
@@ -153,36 +179,37 @@
 		user.hud_used?.update_ammo_hud(user, src)
 	else
 		to_chat(user, span_warning("[src] is empty."))
-	update_icon()
 	user.hud_used?.update_ammo_hud(user, src)
 
 /// Old attackby: the parent's first, then loading.
-/obj/item/gun/projectile/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
+/obj/item/gun/projectile/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	. = ..()
-	load_ammo(A, user)
+	load_ammo(held, user)
 
 /// Old attack_self.
-/obj/item/gun/projectile/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(special_weapon_handling && !callback)
-		return FALSE
+		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		om_task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, interaction?.stance)) // Gun Rework
+		perform_op(user, src, "bolt_work", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("stance" = (A.key == "gun_self_hurt" ? I_HURT : I_HELP))) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
 		unload_ammo(user)
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PROC_REF(gun_hand)))
-
 /// Old attack_hand: unload from the off hand. Subtypes override it with ..(); FALSE goes on to pickup.
-/obj/item/gun/projectile/proc/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/proc/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user, allow_dump=0)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
@@ -192,9 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			MSG_OTHERS("[ammo_magazine] falls out and clatters on the floor!"))
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
-		ammo_magazine.update_icon()
-		own_take(src, nameof(ammo_magazine))
-		update_icon() //make sure to do this after unsetting ammo_magazine
+		rel_take(src, nameof(ammo_magazine))
 		user.hud_used?.update_ammo_hud(user, src)
 
 /obj/item/gun/projectile/examine(mob/user)
@@ -212,7 +237,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		bullets += 1
 	return bullets
-
 
 // TGMC Ammo HUD Insertion
 /obj/item/gun/projectile/has_ammo_counter()
@@ -314,7 +338,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		flick(fire_anim, src)
 
 	if(muzzle_flash)
-		set_light(muzzle_flash)
+		set_glow(src, GLOW(muzzle_flash, null, null))
 
 	if(one_handed_penalty)
 		if(!src.is_held_twohanded(user))
@@ -342,7 +366,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 	if(recoil)
 		shake_camera(user, recoil+1, recoil)
-	update_icon()
 
 	if(chambered)
 		chambered.expend()
@@ -351,10 +374,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		bolt_toggle()
 
 /// Works the bolt; `stance` I_HURT slaps the release (flavour).
-/obj/item/gun/projectile/proc/bolt_handle(mob/user, stance)
+/obj/item/gun/projectile/proc/bolt_handle(datum/act/op/A)
+	var/mob/user = A.actor
+	var/stance = A.arg("stance")
 	var/previous_chambered = chambered
 	var/result = bolt_toggle(TRUE)
-	update_icon()
 	if(!result)
 		to_chat(user,span_notice("Nothing happens."))
 	else
@@ -408,7 +432,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(auto_loading_type)
 			var/able_to_lock = (CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK) && manual))
 			if(CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
-				bolt_open = TRUE
+				set_bolt_open(TRUE)
 				var/ejected = process_chambered()
 				var/output = BOLT_OPENED
 				if(ejected) output |= BOLT_CASING_EJECTED
@@ -423,14 +447,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			else
 				if(!manual)
 					visible_message(src,span_notice("The [src] fires its last round, causing the [bolt_name] to lock."))
-				bolt_open = TRUE
+				set_bolt_open(TRUE)
 				bolt_locked = TRUE
 				var/ejected = process_chambered()
 				var/output = BOLT_OPENED | BOLT_LOCKED
 				if(ejected) output |= BOLT_CASING_EJECTED
 				return output
 		else
-			bolt_open = TRUE
+			set_bolt_open(TRUE)
 			var/ejected = process_chambered()
 
 			var/output = BOLT_OPENED
@@ -448,22 +472,22 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 					else
 						return BOLT_NOEVENT
 				else
-					bolt_open = FALSE
+					set_bolt_open(FALSE)
 					return BOLT_CLOSED
 			else if(bolt_locked)
 				var/chambering = FALSE
 				if(!chambered)
 					chambering = chamber_bullet()
 				bolt_locked = FALSE
-				bolt_open = FALSE
+				set_bolt_open(FALSE)
 				var/output = BOLT_CLOSED | BOLT_UNLOCKED
 				if(chambering) output |= BOLT_CASING_CHAMBERED
 				return output
 			else
-				bolt_open = FALSE
+				set_bolt_open(FALSE)
 				return BOLT_CLOSED
 		else
-			bolt_open = FALSE
+			set_bolt_open(FALSE)
 			var/output = BOLT_CLOSED
 			var/chambering = chamber_bullet()
 			if(chambering) output |= BOLT_CASING_CHAMBERED
@@ -507,7 +531,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	H.make_rounds_real()
 	to_chat(user, span_notice("You start feeding rounds into \the [src]."))
 	if(can_feed_from(H))
-		om_task_start(/datum/om/task/timed/feed_rounds, user, src, handful = H)
+		var/datum/op_result/feeding = perform_op(user, src, "feed_rounds", H, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+		if(feeding.outcome == ACT_REFUSED)
+			feed_done(H, user, 0)
 		return
 	feed_done(H, user, 0)
 
@@ -518,43 +544,35 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	return rd.caliber == caliber
 
-/// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
-/datum/om/task/timed/feed_rounds
-	steps = list(/obj/item/gun/projectile/proc/feed_round = 0)
-	complete_proc = /obj/item/gun/projectile/proc/feed_ended
-	cancel_proc = /obj/item/gun/projectile/proc/feed_ended
-	var/obj/item/ammo_magazine/handful/handful
-	var/count = 0
-	var/waited = FALSE
+/obj/item/gun/projectile/proc/feed_time(datum/act/op/A)
+	return reload_time
 
-/obj/item/gun/projectile/proc/feed_round(datum/om/task/timed/feed_rounds/task)
-	if(!task.waited)
-		task.waited = TRUE
-		return STEP_REPEAT(reload_time)
-	// re-validate after the wait; the stack may have shrunk or moved.
-	var/obj/item/ammo_magazine/handful/H = task.handful
+/// Another round follows while the handful's next one fits and there is room for it.
+/obj/item/gun/projectile/proc/feed_more(datum/act/op/A)
+	var/obj/item/ammo_magazine/handful/H = A.held
+	return read_once(can_feed_from(H))
+
+/// One round fed per lap; re-validated after the wait, the handful may have shrunk or moved.
+/obj/item/gun/projectile/proc/feed_round(datum/act/op/A)
+	var/obj/item/ammo_magazine/handful/H = A.held
 	if(!can_feed_from(H))
-		return STEP_DONE
+		return
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	rd.forceMove(src)
-	own_transfer(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
+	rel_move(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
-	H.update_icon()
-	var/mob/user = task.actor
+	var/mob/user = A.actor
 	user.hud_used?.update_ammo_hud(user, src)
-	task.count++
-	return can_feed_from(H) ? STEP_REPEAT(reload_time) : STEP_DONE
 
-/obj/item/gun/projectile/proc/feed_ended(datum/om/task/timed/feed_rounds/task)
-	feed_done(task.handful, task.actor, task.count)
+/obj/item/gun/projectile/proc/feed_ended(datum/act/op/A)
+	feed_done(A.held, A.actor, A.laps())
 
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
 	if(count && user)
 		act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% feeds [count] round\s into %T%."))
 	if(H && !QDELETED(H) && !length(H.stored_ammo))
 		consume(H, user)
-	update_icon()
 
 // Attempts to load A into src, depending on the type of thing being loaded and the load_method.
 // Handles magazine/speedloader/single-casing/storage bulk loads, including the manual-chamber
@@ -582,7 +600,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 					to_chat(user, span_warning("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine."))
 					return
-				if(!own_set(src, nameof(src.ammo_magazine), AM, user = user))
+				if(!move_into(src, nameof(src.ammo_magazine), AM, user))
 					return
 				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
@@ -603,13 +621,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 						break
 					if(C.caliber == caliber)
 						C.forceMove(src)
-						own_transfer(AM, nameof(AM.stored_ammo), src, nameof(loaded), C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+						rel_move(AM, nameof(AM.stored_ammo), src, nameof(loaded), C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
 					play_sfx(src, SFX_WEAPONS_EMPTY)
 					user.hud_used?.update_ammo_hud(user, src)
-		AM.update_icon()
 	else if(istype(A, /obj/item/ammo_casing))
 		var/obj/item/ammo_casing/C = A
 		if(caliber != C.caliber)
@@ -619,10 +636,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(!CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
 					if(!chambered)
 						if(bolt_open)
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 0.5 SECONDS, C = C, message = "[user] slides \the [C] into the [src]'s chamber.")
+							chamber_by_hand(user, C, 0.5 SECONDS, "[user] slides \the [C] into the [src]'s chamber.")
 							return
 						else if(!(CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK))))
-							om_task_start(/datum/om/task/timed/projectile_chamber_round, user, src, duration = 1.5 SECONDS, C = C, message = "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
+							chamber_by_hand(user, C, 1.5 SECONDS, "[user] holds open \the [src]'s [bolt_name] and slides [C] into the chamber before letting the bolt close again.")
 							return
 						else
 							to_chat(user,span_warning("Open the bolt first before chambering a round!"))
@@ -642,7 +659,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			to_chat(user, span_warning("[src] is full."))
 			return
 
-		if(!own_add(src, nameof(src.loaded), C, user = user))
+		if(!move_into(src, nameof(src.loaded), C, user))
 			return
 		moveElement(loaded, length(loaded), 1) //to the head of the list
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
@@ -657,15 +674,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		to_chat(user, span_notice("You start loading \the [src]."))
 		var/list/rounds = list()
 		storage.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/ammo_casing/ammo in contents_of(storage)) // ALLOW(latent): materialized above
+		for(var/obj/item/ammo_casing/ammo in contents_of(storage)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			if(caliber == ammo.caliber)
 				rounds += ammo
-		om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
+		after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
-	update_icon()
 
 /// Loads the next matching round from a box, one a second.
 /obj/item/gun/projectile/proc/load_from_storage(mob/user, list/rounds)
+	if(QDELETED(user))
+		return
 	var/obj/item/ammo_casing/ammo
 	while(length(rounds) && !ammo)
 		ammo = rounds[1]
@@ -675,23 +693,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(!ammo)
 		return
 	load_ammo(ammo, user)
-	user.hud_used.update_ammo_hud(user, src)
+	user.hud_used?.update_ammo_hud(user, src)
 	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
-	// ALLOW(sys_om_after_rearm): a finite sequence, not a loop over state: each run consumes one round from `rounds` (cut in place, so the list is the counter) and it ends when the list or the magazine runs out
-	om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
+	after(src, 1 SECOND, PROC_REF(load_from_storage), with = list(user, rounds))
 
-/datum/om/task/timed/projectile_chamber_round
-	complete_proc = /obj/item/gun/projectile/proc/chamber_round
-	var/obj/item/ammo_casing/C
-	var/message
+/// Slides the casing into the chamber by hand: the wait is the time the way of doing it takes.
+/obj/item/gun/projectile/proc/chamber_by_hand(mob/user, obj/item/ammo_casing/C, duration, message)
+	perform_op(user, src, "chamber_round", C, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("duration" = duration, "message" = message))
+
+/obj/item/gun/projectile/proc/chamber_time(datum/act/op/A)
+	return A.arg("duration")
 
 /// A round slid into the chamber by hand.
-/obj/item/gun/projectile/proc/chamber_round(datum/om/task/timed/projectile_chamber_round/task)
-	var/mob/user = task.actor
-	var/obj/item/ammo_casing/C = task.C
-	var/message = task.message
+/obj/item/gun/projectile/proc/chamber_round(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/ammo_casing/C = A.held
+	var/message = A.arg("message")
 	if(chambered)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You slide %I% into %T%'s chamber.")), MSG_OTHERS(span_notice(message)), item = C)
@@ -699,7 +718,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)
-	update_icon()
 
 /obj/item/gun/projectile/special_check(mob/user)
 	if(..())
@@ -728,10 +746,4 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 /obj/item/gun/projectile/ownership()
 	. = ..()
-	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
-
-/obj/item/gun/projectile/relations()
-	. = ..()
-	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
-	. += rel_one(nameof(chambered))
-
+	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED, starts = PROC_REF(make_magazine))

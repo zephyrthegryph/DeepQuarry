@@ -1,0 +1,25 @@
+@obj.item.reagent_containers human|none
+@obj.item.reagent_containers robot|none
+@obj ai|none
+@obj.item.reagent_containers ghost|none
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+@obj.item.reagent_containers human|/obj/item/multitool
+@obj.item.reagent_containers human|/obj/item/weldingtool
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+@obj.item.reagent_containers human|/obj/item/card/id
+@obj.item.reagent_containers human|/obj/item/kit
+@obj.item.reagent_containers human|/obj/item/storage
+@obj.item.reagent_containers human|/obj/item
+@obj human|/obj/item/material/kitchen/utensil
+@obj human|/obj/item/reagent_containers/food/snacks
+human|/obj/item/reagent_containers/food/snacks/slice/bread menu: Add it
+human|/obj/item/reagent_containers/food/snacks/slice/bread menu: Close it
+human|/obj/item/reagent_containers/food/snacks/slice/bread menu: Move To Top
+human|/obj/item/reagent_containers/food/snacks/slice/bread menu: Rename food
+human|/obj/item/reagent_containers/food/snacks/slice/bread menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/food/snacks/slice/bread click: Click: Close it
+keys: add, blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, stuff, toggle_digestable, top, unwrap

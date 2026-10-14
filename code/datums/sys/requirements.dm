@@ -7,7 +7,7 @@
 // the declaration gave one.
 
 /// Compiles the section-6 clauses. Returns a node, or null after reporting an error.
-/datum/predicate_compiler/proc/compile_requirement(list/clause, negate)
+/datum/predicate_compiler/compile_requirement(list/clause, negate)
 	switch(clause[1])
 		if(PRED_OP_FIELD)
 			// field, name, mode, value[, reason]

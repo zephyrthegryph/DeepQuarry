@@ -39,7 +39,7 @@
 	accepted_item.charges++
 	return 1
 
-/obj/item/rig_module/cleaner_launcher/engage(atom/target)
+/obj/item/rig_module/cleaner_launcher/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0

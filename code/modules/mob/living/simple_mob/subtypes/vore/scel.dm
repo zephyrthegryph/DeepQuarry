@@ -55,15 +55,6 @@
 		"scel_green"
 	)
 
-	allow_mind_transfer = TRUE
-
-/mob/living/simple_mob/vore/scel/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		icon_living = pick(skins)
-		icon_rest = "[icon_living]-rest"
-		icon_dead = "[icon_living]-dead"
-		update_icon()
 
 /mob/living/simple_mob/vore/scel
 
@@ -80,24 +71,27 @@
 	vore_default_mode = DM_SELECT
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/glow_toggle)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/glow_color)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/long_vore)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lunge)
+CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/proc/glow_toggle, login = TRUE)
+	verb_entry(/mob/living/proc/glow_color, login = TRUE)
+	verb_entry(/mob/living/proc/long_vore, login = TRUE)
+	verb_entry(/mob/living/proc/target_lunge, login = TRUE)
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*-rest", dead = "*-dead", only_if = nameof(random_skin))
 
 /mob/living/simple_mob/vore/scel/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/scel/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The strange beast pounces atop of you, pinning you with it's hefty weight, the greedy stomach sloshing atop you before it looms closer, with that maw stretching almost impossibly wide and easily enveloping your body. The jaws of the scel are solid and fleshy, preventing any movement. Immediately you are embraced into the tight pull of oily black flesh, and you are rapidly dragged down into the humid, more malleable depths of the creature! Splashing down into a thick, ominously bubbling sludge, you fall into place as food among the remnants of previous meals. As you settle, you are completely hidden away inside of it's serpentine body, left to complete darkness and the sounds of squelching bodily functions. Movement is not difficult as the flesh around you is easily pushed back, but it quickly snaps back into place to keep you constrained. Slowly, the neon liquid that you could see from the outside of the creature begins to seep into the chamber. With that hefty stomach bloated with yet another meal, a lazy burp signals its meal complete. Leaving you to simmer in its depths as it continues its prowling..."
 	B.vore_sound = "Tauric Swallow"
@@ -159,7 +153,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lun
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -167,31 +161,31 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/scel, /mob/living/proc/target_lun
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(lunge_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(lunge_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/scel/proc/lunge_1(mob/living/L)
 
-	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!L || L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(lunge_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(lunge_2), with = list(L), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/scel/proc/lunge_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
-	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(L && Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/scel/proc/tongue(atom/A)
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/appendage(get_turf(src))

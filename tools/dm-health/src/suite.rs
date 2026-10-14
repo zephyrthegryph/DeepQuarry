@@ -12,9 +12,6 @@ struct CheckResult {
     duration_ms: u128,
 }
 
-// The ratcheted rewrite lints (tools/ci/check_ratchets.sh), the Rust core
-// consolidation check and the Verdigris fmt/clippy/tests run as their own
-// workflow steps (.github/workflows/run_linters.yml), so they are not repeated here.
 const CHECKS: &[(&str, &str)] = &[
     ("DM health bridge", "dotnet build tools/dm-health/opendream-bridge/OpenDreamBridge.csproj -c Release -p:OpenDreamDir=\"$PWD/DMCompiler_linux-x64\" && mkdir -p tools/dm-health/target && dotnet tools/dm-health/opendream-bridge/bin/Release/net10.0/OpenDreamBridge.dll deepquarry.dme tools/dm-health/target/deepquarry.ast.jsonl \"$PWD/DMCompiler_linux-x64\" --reuse-if-current"),
     ("DM health tests", "cargo test --manifest-path tools/dm-health/Cargo.toml"),
@@ -32,7 +29,22 @@ const CHECKS: &[(&str, &str)] = &[
     ("changelogs", "bash tools/ci/check_changelogs.sh"),
     ("miscellaneous", "bash tools/ci/check_misc.sh"),
     ("signals", "bash tools/ci/check_signals.sh"),
+    ("state schema", "python3 tools/ci/state_schema_lint.py"),
+    ("containment", "python3 tools/ci/containment_lint.py"),
+    ("latent walks", "python3 tools/ci/latent_lint.py"),
+    ("lifecycle", "python3 tools/ci/lifecycle_lint.py"),
+    ("instance lists", "python3 tools/ci/instance_list_lint.py"),
+    ("deadlines", "python3 tools/ci/check_deadline_polling.py"),
+    ("breakpoints", "python3 tools/ci/breakpoint_lint.py"),
+    ("registries", "python3 tools/ci/registry_lint.py"),
+    ("actor forwarding", "python3 tools/ci/actor_forwarding_lint.py"),
+    ("generated object model bindings", "python tools/object_model/ui_bindings.py --check && python tools/object_model/stat_definitions.py --check && python tools/object_model/declaration_census.py && python -m unittest discover -s tools/object_model -p 'test_*.py'"),
+    ("Rust core consolidation", "python3 tools/ci/check_rust_core_consolidation.py"),
     ("TGUI", "tools/build/build.sh --ci lint tgui-test"),
+    ("Verdigris fmt", "cd verdigris && cargo fmt --all --check"),
+    // The host-buildable crates exclude vendored vg-gas and the byondapi-only vg-ffi.
+    ("Verdigris clippy", "cd verdigris && cargo clippy --package verdigris --package vg-core --package vg-layout --package vg-heat --package vg-power --all-targets -- -D warnings"),
+    ("Verdigris tests", "cd verdigris && cargo test"),
     ("Nanomap", "tools/github-actions/nanomap-renderer-invoker.sh --testing"),
 ];
 

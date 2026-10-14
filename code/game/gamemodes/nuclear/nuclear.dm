@@ -22,7 +22,7 @@
 //delete all nuke disks not on a station zlevel
 /datum/game_mode/nuclear/proc/check_nuke_disks()
 	for(var/obj/item/disk/nuclear/N in REGISTRY_MEMBERS(REGISTRY_NUKE_DISKS))
-		if(isNotStationLevel(N.z)) qdel(N)
+		if(isNotStationLevel(N.z)) spent(N)
 
 //checks if L has a nuke disk on their person
 /datum/game_mode/nuclear/proc/check_mob(mob/living/L)
@@ -40,7 +40,7 @@
 		if(!is_type_in_list(disk_area, GLOB.centcom_areas))
 			disk_rescued = 0
 			break
-	var/crew_evacuated = (GLOB.emergency_shuttle_service.returned())
+	var/crew_evacuated = (SSemergency_shuttle.returned())
 
 	if(!disk_rescued &&  station_was_nuked && !syndies_didnt_escape)
 		feedback_set_details("round_end_result","win - syndicate nuke")

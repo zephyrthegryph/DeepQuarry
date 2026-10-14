@@ -8,12 +8,6 @@
 #define MEDBOT_PANIC_ENDING	90
 #define MEDBOT_PANIC_END	100
 
-#define MEDBOT_MIN_INJECTION 5
-#define MEDBOT_MAX_INJECTION 15
-/// Urgency ranks (_dq_band_rank) the treatment threshold can be set to.
-#define MEDBOT_MIN_URGENCY 1
-#define MEDBOT_MAX_URGENCY 4
-
 /mob/living/bot/medbot
 	name = "Medibot"
 	desc = "A little medical robot. He looks somewhat underwhelmed."
@@ -137,7 +131,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(!istype(H))
 		return
 
-	if(om_busy(src))
+	if(bot_busy())
 		return
 
 	var/t = confirmTarget(H)
@@ -148,7 +142,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
-	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
+	bot_work(3 SECONDS, H, PROC_REF(injected), t)
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
 		rel_clear(src, nameof(target))
@@ -177,7 +171,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 				say(message)
 				playsound(src, possible_messages[message], 50, 0)
 
-/mob/living/bot/medbot/proc/UnarmedAttack_medbot_done(mob/living/carbon/human/H, t)
+/mob/living/bot/medbot/proc/injected(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/t = work_arg
 	if(!emagged && use_beaker && reagent_glass?.reagents.has_reagent(t))
 		reagent_glass.reagents.trans_id_to(H, t, injection_amount)
 	else
@@ -199,49 +195,71 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	cut_overlays()
 	if(skin)
 		add_overlay("medskin_[skin]")
-	if(om_busy(src))
-		icon_state = "medibots"
+	if(bot_busy())
+		set_icon_state("medibots")
 	else
-		icon_state = "medibot[on]"
+		set_icon_state("medibot[on]")
 
-EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
-	INTERACT_INSERT(/obj/item/reagent_containers/glass, PROC_REF(medbot_interaction_item), "Insert beaker", REQ_FIELD_NOT("locked", "the panel is locked"), REQ_FIELD_NOT("reagent_glass")), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Right or open controls", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Open controls", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Open controls", PROC_REF(medbot_interaction_hand)))
 
-/// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
-/mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(istype(H) && interaction.stance == I_DISARM && !is_tipped)
-		act_message(H, src, MSG_SELF(span_warning("You begin tipping over %T%...")), MSG_OTHERS(span_danger("%U% begins tipping over %T%.")))
+MSG_DEF(medbot/tipping, span_warning("You begin tipping over %T%..."), span_danger("%U% begins tipping over %T%."))
+MSG_DEF(medbot/righting, span_notice("You begin righting %T%..."), span_notice("%U% begins righting %T%."))
 
-		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
-			COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
-			var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
-			var/message = pick(messagevoice)
-			say(message)
-			playsound(src, messagevoice[message], 70, FALSE)
 
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
+/mob/living/bot/medbot/proc/can_tip(datum/act/op/A)
+	return !is_tipped
 
-	else if(istype(H) && interaction.stance == I_HELP && is_tipped)
-		act_message(H, src, MSG_SELF(span_notice("You begin righting %T%...")), MSG_OTHERS(span_notice("%U% begins righting %T%.")))
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
-	else
-		tgui_interact(H)
+/mob/living/bot/medbot/proc/can_right(datum/act/op/A)
+	return is_tipped
 
-/mob/living/bot/medbot/proc/attack_hand_medbot_done(mob/living/carbon/human/H)
-	tip_over(H)
-/mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
-	set_right(H)
+/// The shove begins: the bot says its piece.
+/mob/living/bot/medbot/proc/pleads(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
+		COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
+		var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
+		var/message = pick(messagevoice)
+		say(message)
+		playsound(src, messagevoice[message], 70, FALSE)
 
-UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_medbot{beaker:bool,beaker_total:num,beaker_max:num,min_urgency:num,urgency_bands:list,injection_amount_min:num,injection_amount:num,injection_amount_max:num,use_beaker:num,declare_treatment:num,vocal:num}")
+/// The shove has run its three seconds: the bot goes over.
+/mob/living/bot/medbot/proc/tipped_over(datum/act/op/A)
+	tip_over(A.actor)
 
-/// The computed part of /mob/living/bot/medbot's window data (declared on its UI_DATA row).
-/mob/living/bot/medbot/proc/ui_data_mob_living_bot_medbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/mob/living/bot/medbot/proc/righted(datum/act/op/A)
+	set_right(A.actor)
+
+/// The touch that tips or rights nothing opens the controls.
+/mob/living/bot/medbot/proc/open_controls(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
+
+MSG_DEF_SELF(medbot/panel_locked, "the panel is locked")
+MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
+
+// The hand ops above open the controls (or tip the bot), so the window's own open op answers the menu and a remote user only.
+CAPABILITIES(/mob/living/bot/medbot)
+	interface("Medbot", input = menu())
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("adj_urgency", ui_act("adj_urgency", arg("val", num())), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_urgency)))
+	op("adj_inject", ui_act("adj_inject", arg("val", num(MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_adj_inject)))
+	op("use_beaker", ui_act("use_beaker"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_use_beaker)))
+	op("eject", ui_act("eject"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_eject)))
+	op("togglevoice", ui_act("togglevoice"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_togglevoice)))
+	op("declaretreatment", ui_act("declaretreatment"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_declaretreatment)))
+	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
+	op("medbot_tip", hand(), ungated(), stance(I_DISARM), label("Tip over"), when(PROC_REF(can_tip)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/tipping)), starts(PROC_REF(pleads)), wait(3 SECONDS), then(PROC_REF(tipped_over)))
+	op("medbot_right", hand(), ungated(), stance(I_HELP), label("Set right"), when(PROC_REF(can_right)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/righting)), wait(3 SECONDS), then(PROC_REF(righted)))
+	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_hurt", hand(), ungated(), stance(I_HURT), label("Open controls"), then(PROC_REF(open_controls)))
+
+/// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/medbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
 	data["beaker"] = FALSE
 	if(reagent_glass)
 		data["beaker"] = TRUE
@@ -255,7 +273,7 @@ UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_da
 	data["use_beaker"] = null
 	data["declare_treatment"] = null
 	data["vocal"] = null
-	if(!locked || issilicon(user))
+	if(settings_unlocked(A))
 		data["min_urgency"] = min_urgency
 		data["injection_amount"] = injection_amount
 		data["use_beaker"] = use_beaker
@@ -263,82 +281,57 @@ UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_da
 		data["vocal"] = vocal
 	return data
 
-DECLARE_UI(/mob/living/bot/medbot, "Medbot")
-
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
-/mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/bot/medbot/proc/medbot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 
-	if(!own_set(src, nameof(src.reagent_glass), O, user = user))
-		return TRUE
+	if(!move_into(src, nameof(src.reagent_glass), O, user))
+		return OP_OK
 	to_chat(user, span_notice("You insert [O]."))
-	return TRUE
+	return OP_OK
 
-/mob/living/bot/medbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/medbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_power)
+/mob/living/bot/medbot/proc/ui_act_power(datum/act/op/A)
 	. = TRUE
-	if(!access_scanner.allowed(ui.user))
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
 	else
 		turn_on()
 
-UI_ACT(/mob/living/bot/medbot, "adj_urgency", ui_act_adj_urgency, UI_ARG_NUM("val"))
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_urgency)
+/mob/living/bot/medbot/proc/ui_act_adj_urgency(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
-	var/rank = params["val"]
+	var/rank = val
 	if(isnull(rank))
 		return FALSE
 	min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "adj_inject", ui_act_adj_inject, UI_ARG_NUM("val", MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_inject)
+/mob/living/bot/medbot/proc/ui_act_adj_inject(datum/act/op/A, val)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
-	injection_amount = params["val"]
+	injection_amount = val
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "use_beaker", ui_act_use_beaker)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_use_beaker)
+/mob/living/bot/medbot/proc/ui_act_use_beaker(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
 	use_beaker = !use_beaker
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "eject", ui_act_eject)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_eject)
+/mob/living/bot/medbot/proc/ui_act_eject(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
-		own_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
+		rel_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "togglevoice", ui_act_togglevoice)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_togglevoice)
+/mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
 	vocal = !vocal
 	. = TRUE
 
-UI_ACT(/mob/living/bot/medbot, "declaretreatment", ui_act_declaretreatment)
-UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
+/mob/living/bot/medbot/proc/ui_act_declaretreatment(datum/act/op/A)
 	. = TRUE
-	if(locked && !issilicon(ui.user))
-		return TRUE
 	declare_treatment = !declare_treatment
 	. = TRUE
 
@@ -350,15 +343,15 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
 		rel_clear(src, nameof(target))
-		om_release_busy(src, "emagged")
+		bot_stop_work()
 		emagged = 1
-		on = 1
+		set_on(1)
 		update_icons()
 		. = 1
 	rel_add(src, nameof(ignore_list), user)
 
 /mob/living/bot/medbot/explode()
-	on = 0
+	set_on(0)
 	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 
@@ -370,7 +363,7 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		own_take(src, nameof(reagent_glass))
+		rel_take(src, nameof(reagent_glass))
 
 	if(emagged && prob(25))
 		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
@@ -388,7 +381,7 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 /mob/living/bot/medbot/proc/tip_over(mob/user)
 	play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 	act_message(user, src, MSG_SELF(span_danger("You tip %T% over!")), MSG_OTHERS(span_danger("%U% tips over %T%!")))
-	is_tipped = TRUE
+	set_is_tipped(TRUE)
 	tipper_name = user.name
 	var/matrix/mat = transform
 	transform = mat.Turn(180)
@@ -412,7 +405,7 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 		say(message)
 		playsound(src, messagevoice[message], 70)
 	tipped_status = MEDBOT_PANIC_NONE
-	is_tipped = FALSE
+	set_is_tipped(FALSE)
 	transform = matrix()
 
 // if someone tipped us over, check whether we should ask for help or just right ourselves eventually
@@ -490,37 +483,41 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 
 /* Construction */
 
-EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", PROC_REF(interaction_medbot_arm)))
+MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.")
 
-/// Old attackby: a robot arm on an empty kit starts a medibot; anything else goes on to the storage.
-/obj/item/storage/firstaid/proc/interaction_medbot_arm(mob/user, obj/item/S, datum/interaction/interaction)
-	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
-	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
-	var/is_robotic_organ = FALSE
-	if(istype(S, /obj/item/organ/external/arm))
-		var/obj/item/organ/external/arm/organ_arm = S
-		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
+// A robot arm (a part, or a robotic arm organ) on an empty kit starts a medibot; on a kit with things in it the kit is to be emptied first; anything
+// else goes on to the storage.
+CAPABILITIES(/obj/item/storage/firstaid)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)),
+		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
+		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(icon_variety))
 
-	if(!is_robot_arm && !is_robotic_organ)
-		return FALSE
+/// A robot arm part, or an arm organ that is robotic.
+/obj/item/storage/firstaid/proc/arm_is_robotic(datum/act/op/A)
+	var/obj/item/S = A.held
+	if(istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm))
+		return null
+	var/obj/item/organ/external/arm/organ_arm = S
+	return (istype(organ_arm) && organ_arm.robotic == ORGAN_ROBOT) ? null : /datum/msg/req_failed
 
-	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_notice("You need to empty [src] out first."))
-		return INTERACTION_HANDLED_PASS
-
-	var/obj/item/firstaid_arm_assembly/A = new /obj/item/firstaid_arm_assembly
+/obj/item/storage/firstaid/proc/add_robot_arm(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/S = A.held
+	var/obj/item/firstaid_arm_assembly/assembly = new /obj/item/firstaid_arm_assembly
 	if(istype(src, /obj/item/storage/firstaid/fire))
-		A.skin = "ointment"
+		assembly.set_skin("ointment")
 	else if(istype(src, /obj/item/storage/firstaid/toxin))
-		A.skin = "tox"
+		assembly.set_skin("tox")
 	else if(istype(src, /obj/item/storage/firstaid/o2))
-		A.skin = "o2"
+		assembly.set_skin("o2")
 
 	consume(S, user)
-	user.put_in_hands(A)
+	user.put_in_hands(assembly)
 	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/firstaid_arm_assembly
 	name = "first aid/robot arm assembly"
@@ -532,12 +529,24 @@ EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", P
 	var/skin = null //Same as medbot, set to tox or ointment for the respective kits.
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_APPEARANCE(/obj/item/firstaid_arm_assembly, "skin", list("ointment" = list(APPEARANCE_OVERLAYS = list("kit_skin_ointment")), "tox" = list(APPEARANCE_OVERLAYS = list("kit_skin_tox")), "o2" = list(APPEARANCE_OVERLAYS = list("kit_skin_o2"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/firstaid_arm_assembly/draw(datum/look/look)
+	..()
+	switch("[skin]")
+		if("ointment")
+			look.overlay("kit_skin_ointment")
+		if("tox")
+			look.overlay("kit_skin_tox")
+		if("o2")
+			look.overlay("kit_skin_o2")
 
-DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/firstaid_arm_assembly)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/firstaid_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/firstaid_arm_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		ask_name_var(user)
 	else
@@ -561,7 +570,7 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 					S.skin = skin
 					S.name = created_name
 					consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Undefine these.
 #undef MEDBOT_PANIC_NONE
@@ -571,11 +580,6 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_PANIC_FUCK
 #undef MEDBOT_PANIC_ENDING
 #undef MEDBOT_PANIC_END
-
-#undef MEDBOT_MIN_INJECTION
-#undef MEDBOT_MAX_INJECTION
-#undef MEDBOT_MIN_URGENCY
-#undef MEDBOT_MAX_URGENCY
 
 /mob/living/bot/medbot/ownership()
 	. = ..()

@@ -1,0 +1,11 @@
+/obj/item/assembly_holder icon: icons/obj/assemblies/new_assemblies.dmi
+/obj/item/assembly_holder state: holder
+/obj/item/assembly_holder dir: 2
+/obj/item/assembly_holder overlay: icons/obj/assemblies/new_assemblies.dmi:holder:8:#000000
+/obj/item/assembly_holder/timer_igniter icon: icons/obj/assemblies/new_assemblies.dmi
+/obj/item/assembly_holder/timer_igniter state: holder
+/obj/item/assembly_holder/timer_igniter dir: 2
+/obj/item/assembly_holder/timer_igniter overlay: icons/obj/assemblies/new_assemblies.dmi:holder:8:#000000
+/obj/item/assembly_holder/timer_igniter overlay: icons/obj/assemblies/new_assemblies.dmi:igniter_right:-32767
+/obj/item/assembly_holder/timer_igniter overlay: icons/obj/assemblies/new_assemblies.dmi:timer_left:-32767
+

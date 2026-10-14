@@ -1,0 +1,60 @@
+human|none menu: Empty Gibber
+human|none menu: Start gibbing
+human|none click: Click: Start gibbing
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Empty Gibber
++2 menu: Start gibbing
++4 click: Click: Start gibbing
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Empty Gibber (refused: You can't reach that.)
+human|/obj/item/tool/screwdriver menu: Empty Gibber
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Start gibbing
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Empty Gibber
+human|/obj/item/tool/crowbar menu: Start gibbing
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+human|/obj/item/tool/wrench menu: Empty Gibber
+human|/obj/item/tool/wrench menu: Start gibbing
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Unsecure
+human|/obj/item/tool/wirecutters menu: Empty Gibber
+human|/obj/item/tool/wirecutters menu: Start gibbing
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Empty Gibber
+human|/obj/item/multitool menu: Start gibbing
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Empty Gibber
+human|/obj/item/weldingtool menu: Start gibbing
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Empty Gibber
+human|/obj/item/stack/cable_coil menu: Start gibbing
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Empty Gibber
+human|/obj/item/stack/material/steel menu: Start gibbing
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Empty Gibber
+human|/obj/item/card/id menu: Start gibbing
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Empty Gibber
+human|/obj/item menu: Start gibbing
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+@obj.machinery human|/obj/item/card/emag
+-menu: Climb
+-menu: Use cryptographic sequencer
++0 menu: Empty Gibber
++1 menu: Start gibbing
+keys: drag_buckle, emag.subvert, emag.use, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

@@ -4,35 +4,41 @@
 	icon_state = "meep"
 	item_state = "meep"
 	fire_delay = 8
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	MATERIAL_BULK(MAT_STEEL, 1000)
 	projectile_type = /obj/item/projectile/beam/meeplaser
 	charge_cost = 400
+
+CAPABILITIES(/obj/item/gun/energy/altevian)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/altevian/large
 	name = "Proto-Reactive Beam Thruster"
 	desc = "The main energy rifle that the Altevian Hegemony uses for its military operations."
 	icon_state = "altevian-pdw"
 	item_state = "altevian-pdw"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/meeplaser/strong
 	charge_cost = 200
+
+CAPABILITIES(/obj/item/gun/energy/altevian/large)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 
 /obj/item/projectile/beam/meeplaser
 	name = "meep beam"
 	icon_state = "meep"
 	damage = 25
-	light_color = "#77A6E1"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/meeplaser
 	tracer_type = /obj/effect/projectile/tracer/meeplaser
 	impact_type = /obj/effect/projectile/impact/meeplaser
+
+CAPABILITIES(/obj/item/projectile/beam/meeplaser)
+	configure(light_glow(color = "#77A6E1"))
 
 /obj/item/projectile/beam/meeplaser/strong
 	name = "repeater beam"
@@ -40,21 +46,21 @@
 
 /obj/effect/projectile/muzzle/meeplaser
 	icon_state = "muzzle_meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/tracer/meeplaser
 	icon_state = "meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/tracer/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/impact/meeplaser
 	icon_state = "impact_meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/impact/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/item/gun/energy/ratminer
 	name = "Altevian Repulsion Mineral Slicer"
@@ -65,13 +71,15 @@
 	icon_state = "altevian-miner"
 	item_state = "altevian-miner"
 	fire_delay = 12
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/scatter/ratminer
 	charge_cost = 400
 	fire_sound = SFX_WEAPONS_LASER3
+
+CAPABILITIES(/obj/item/gun/energy/ratminer)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/projectile/scatter/ratminer
 	spread_submunition_damage = FALSE
@@ -89,12 +97,14 @@
 	name = "slicer beam"
 	icon_state = "ratmining"
 	damage = 20
-	light_color = "#77A6E1"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/ratminer
 	tracer_type = /obj/effect/projectile/tracer/ratminer
 	impact_type = /obj/effect/projectile/impact/ratminer
+
+CAPABILITIES(/obj/item/projectile/beam/ratminer)
+	configure(light_glow(color = "#77A6E1"))
 
 /obj/item/projectile/beam/ratminer/on_range()
 	strike_thing()
@@ -128,18 +138,18 @@
 
 /obj/effect/projectile/muzzle/ratminer
 	icon_state = "muzzle_ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/tracer/ratminer
 	icon_state = "ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/tracer/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/impact/ratminer
 	icon_state = "impact_ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/impact/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))

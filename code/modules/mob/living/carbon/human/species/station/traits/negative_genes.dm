@@ -12,7 +12,7 @@
 
 	activation_message="You get a headache."
 	primitive_expression_messages=list("shudders and twitches.")
-	added_behaviour_path = /datum/om/behaviour/disability/epilepsy
+	added_capability = /datum/capability/disability/epilepsy
 
 /datum/trait/negative/disability_cough
 	name = "Coughing Fits"
@@ -24,7 +24,7 @@
 	hidden = FALSE
 
 	activation_message="You start coughing."
-	added_behaviour_path = /datum/om/behaviour/disability/coughing
+	added_capability = /datum/capability/disability/coughing
 
 /datum/trait/negative/disability_clumsy
 	name = "Clumsy"
@@ -50,7 +50,7 @@
 
 	activation_message="You twitch."
 	primitive_expression_messages=list("twitches and chitters.")
-	added_behaviour_path = /datum/om/behaviour/disability/coprolalia
+	added_capability = /datum/capability/disability/coprolalia
 
 /datum/trait/negative/disability_mute
 	name = "Mute"
@@ -87,7 +87,7 @@
 
 /datum/trait/negative/disability_deaf/apply(datum/species/S,mob/living/carbon/human/H)
 	. = ..()
-	H.status_set(EFFECT_DEAFENED, 1)
+	H.status_set(STAT_DEAFENED, 1)
 	/* //Not used here, used downstream.
 	if(H.stat != DEAD)
 		H.deaf_loop.start(skip_start_sound = TRUE) // Ear Ringing/Deafness
@@ -95,7 +95,7 @@
 
 /datum/trait/negative/disability_deaf/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	H.status_set(EFFECT_DEAFENED, 0)
+	H.status_set(STAT_DEAFENED, 0)
 	/* //Not used here, used downstream.
 	H.deaf_loop.stop()
 	*/
@@ -138,7 +138,7 @@
 
 	activation_message="You feel sore..."
 	primitive_expression_messages=list("shudders.","gasps.","chokes.")
-	added_behaviour_path = /datum/om/behaviour/disability/rotting
+	added_capability = /datum/capability/disability/rotting
 	excludes = list(/datum/trait/positive/stable_genetics)
 	banned_species	= list(/datum/species/protean, /datum/species/shapeshifter/promethean)
 
@@ -153,7 +153,7 @@
 
 	activation_message="You feel bloated..."
 	primitive_expression_messages=list("shudders.","gasps.","chokes.")
-	added_behaviour_path = /datum/om/behaviour/disability/gibbing
+	added_capability = /datum/capability/disability/gibbing
 
 /datum/trait/negative/disability_damagedspine
 	name = "Lumbar Impairment"

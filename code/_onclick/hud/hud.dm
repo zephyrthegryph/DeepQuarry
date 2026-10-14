@@ -4,22 +4,8 @@
 	Uses the same visual objects for all players.
 */
 GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
-GLOBAL_LIST_INIT(global_huds, list(
-		GLOB.global_hud.druggy,
-		GLOB.global_hud.blurry,
-		GLOB.global_hud.whitense,
-		GLOB.global_hud.heavy_whitense,
-		GLOB.global_hud.vimpaired,
-		GLOB.global_hud.darkMask,
-		GLOB.global_hud.centermarker,
-		GLOB.global_hud.nvg,
-		GLOB.global_hud.thermal,
-		GLOB.global_hud.meson,
-		GLOB.global_hud.science,
-		GLOB.global_hud.material,
-		GLOB.global_hud.holomap
-))
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/global_hud)
 /datum/global_hud
 	var/atom/movable/screen/druggy
 	var/atom/movable/screen/blurry
@@ -36,12 +22,26 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/atom/movable/screen/material
 	var/atom/movable/screen/holomap
 
+CAPABILITIES(/datum/global_hud)
+	owns_one(nameof(blurry), /atom/movable/screen)
+	owns_one(nameof(centermarker), /atom/movable/screen)
+	owns_one(nameof(darksight), /atom/movable/screen)
+	owns_one(nameof(druggy), /atom/movable/screen)
+	owns_one(nameof(heavy_whitense), /atom/movable/screen)
+	owns_one(nameof(holomap), /atom/movable/screen)
+	owns_one(nameof(material), /atom/movable/screen)
+	owns_one(nameof(meson), /atom/movable/screen)
+	owns_one(nameof(nvg), /atom/movable/screen)
+	owns_one(nameof(science), /atom/movable/screen)
+	owns_one(nameof(thermal), /atom/movable/screen)
+	owns_one(nameof(whitense), /atom/movable/screen)
+
 /datum/global_hud/proc/setup_overlay(icon_state)
 	var/atom/movable/screen/screen = new /atom/movable/screen()
 	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
 	screen.screen_loc = "SOUTHWEST to NORTHEAST" // Will tile up to the whole screen, scaling beyond 15x15 if needed.
 	screen.icon = 'icons/obj/hud_tiled_vr.dmi'
-	screen.icon_state = icon_state
+	screen.set_icon_state(icon_state)
 	screen.layer = SCREEN_LAYER
 	screen.plane = PLANE_FULLSCREEN
 	screen.mouse_opacity = 0
@@ -55,48 +55,48 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /datum/global_hud/New()
 	//420erryday psychedellic colours screen overlay for when you are high
-	own_set(src, nameof(druggy), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(druggy), new /atom/movable/screen/global_screen())
 	druggy.icon_state = "druggy"
 
 	//that white blurry effect you get when you eyes are damaged
-	own_set(src, nameof(blurry), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(blurry), new /atom/movable/screen/global_screen())
 	blurry.icon_state = "blurry"
 
 	//static overlay effect for cameras and the like
-	own_set(src, nameof(whitense), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(whitense), new /atom/movable/screen/global_screen())
 	whitense.icon = 'icons/effects/static.dmi'
 	whitense.icon_state = "1 light"
 
 	//static overlay effect for cameras and the like
-	own_set(src, nameof(heavy_whitense), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(heavy_whitense), new /atom/movable/screen/global_screen())
 	heavy_whitense.icon = 'icons/effects/static.dmi'
 	heavy_whitense.icon_state = "1 heavy"
 
 	//darksight 'hanger' for attached icons
-	own_set(src, nameof(darksight), new /atom/movable/screen())
+	rel_set(src, nameof(darksight), new /atom/movable/screen())
 	darksight.icon = null
 	darksight.screen_loc = "1,1"
 	darksight.plane = PLANE_LIGHTING
 
 	//Marks the center of the screen, for things like ventcrawl
-	own_set(src, nameof(centermarker), new /atom/movable/screen())
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
 	//Marks the center of the screen, for things like ventcrawl
-	own_set(src, nameof(centermarker), new /atom/movable/screen())
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
-	own_set(src, nameof(nvg), setup_overlay("nvg_hud"))
-	own_set(src, nameof(thermal), setup_overlay("thermal_hud"))
-	own_set(src, nameof(meson), setup_overlay("meson_hud"))
-	own_set(src, nameof(science), setup_overlay("science_hud"))
-	own_set(src, nameof(material), setup_overlay("material_hud"))
+	rel_set(src, nameof(nvg), setup_overlay("nvg_hud"))
+	rel_set(src, nameof(thermal), setup_overlay("thermal_hud"))
+	rel_set(src, nameof(meson), setup_overlay("meson_hud"))
+	rel_set(src, nameof(science), setup_overlay("science_hud"))
+	rel_set(src, nameof(material), setup_overlay("material_hud"))
 
-	own_set(src, nameof(holomap), new /atom/movable/screen())
+	rel_set(src, nameof(holomap), new /atom/movable/screen())
 	holomap.name = "holomap"
 	holomap.icon = null
 	holomap.screen_loc = ui_holomap
@@ -140,18 +140,18 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 	for(i = 1, i <= 4, i++)
 		O = vimpaired[i]
-		O.icon_state = "dither50"
+		O.set_icon_state("dither50")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 0
 
 		O = darkMask[i]
-		O.icon_state = "dither50"
+		O.set_icon_state("dither50")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 0
 
 	for(i = 5, i <= 8, i++)
 		O = darkMask[i]
-		O.icon_state = "black"
+		O.set_icon_state("black")
 		O.plane = PLANE_FULLSCREEN
 		O.mouse_opacity = 2
 
@@ -170,8 +170,34 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/hotkey_ui_hidden = 0	//This is to hide the buttons that can be used via hotkeys. (hotkeybuttons list of buttons)
 
 	var/atom/movable/screen/lingchemdisplay
-	var/atom/movable/screen/wiz_instability_display
-	var/atom/movable/screen/wiz_energy_display
+	var/atom/movable/screen/wizard/instability/wiz_instability_display
+	var/atom/movable/screen/wizard/energy/wiz_energy_display
+	// The mob's own screen elements (moved off /mob, base_vars lane B): built by the mob's create_mob_hud(), gone with the hud.
+	var/atom/movable/screen/hands
+	var/atom/movable/screen/pullin
+	var/atom/movable/screen/internals
+	var/atom/movable/screen/healths
+	var/atom/movable/screen/throw_icon
+	var/atom/movable/screen/pain
+	var/atom/movable/screen/gun/item/item_use_icon
+	var/atom/movable/screen/gun/radio/radio_use_icon
+	var/atom/movable/screen/gun/move/gun_move_icon
+	var/atom/movable/screen/gun/mode/gun_setting_icon
+	var/atom/movable/screen/ling/chems/ling_chem_display
+	var/atom/movable/screen/borer/chems/borer_chem_display
+	var/atom/movable/screen/autowhisper_display
+	var/atom/movable/screen/zone_sel/zone_sel
+	var/atom/movable/screen/shadekin/shadekin_display
+	var/atom/movable/screen/lleill/lleill_display
+	var/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display
+	/// The client's plane masters and what the mob sees through them; rebuilt by recalculate_vis() on login.
+	var/datum/plane_holder/plane_holder
+	/// Vision planes that should be graphically visible (their VIS_ indexes).
+	var/list/vis_enabled
+	/// Atom planes that are logically visible/interactable (actual plane numbers).
+	var/list/planes_visible
+	/// The darksight overlay (a client image) that eases the mob's eyes into the dark; made by /mob/living/Login().
+	var/image/dsoverlay
 	var/atom/movable/screen/blobpwrdisplay
 	var/atom/movable/screen/blobhealthdisplay
 	var/atom/movable/screen/r_hand_hud_object
@@ -209,11 +235,46 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 	var/list/minihuds
 
+CAPABILITIES(/datum/hud)
+	ref_one(nameof(mymob), /mob)
+	hud_element(nameof(hands), /atom/movable/screen)
+	hud_element(nameof(pullin), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(internals), /atom/movable/screen)
+	hud_element(nameof(healths), /atom/movable/screen)
+	hud_element(nameof(throw_icon), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(pain), /atom/movable/screen)
+	hud_element(nameof(item_use_icon), /atom/movable/screen/gun/item)
+	hud_element(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
+	hud_element(nameof(gun_move_icon), /atom/movable/screen/gun/move)
+	hud_element(nameof(gun_setting_icon), /atom/movable/screen/gun/mode)
+	hud_element(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
+	hud_element(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
+	hud_element(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
+	hud_element(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
+	hud_element(nameof(autowhisper_display), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(zone_sel), /atom/movable/screen/zone_sel)
+	hud_element(nameof(shadekin_display), /atom/movable/screen/shadekin)
+	hud_element(nameof(lleill_display), /atom/movable/screen/lleill)
+	hud_element(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
+	hud_element(nameof(plane_holder), /datum/plane_holder)
+	owns_one(nameof(control_vtec), /atom/movable/screen)
+	owns_one(nameof(listed_actions), /datum/action_group/listed)
+	owns_one(nameof(palette_actions), /datum/action_group/palette)
+	owns_one(nameof(palette_down), /atom/movable/screen/palette_scroll/down)
+	owns_one(nameof(palette_up), /atom/movable/screen/palette_scroll/up)
+	owns_one(nameof(toggle_palette), /atom/movable/screen/button_palette)
+	owns_many(nameof(adding))
+	owns_many(nameof(ammo_hud_list), /atom/movable/screen/ammo)
+	owns_many(nameof(extra_screens))
+	owns_many(nameof(hotkeybuttons), /atom/movable/screen)
+	owns_many(nameof(other))
+	owns_many(nameof(other_important))
+
 /datum/hud/New(mob/owner)
 	rel_set(src, nameof(mymob), owner)
 	// The mob owns its hud (hud_used); a replaced hud is deleted.
 	if(owner)
-		own_set(owner, nameof(/mob::hud_used), src)
+		rel_set(owner, nameof(/mob::hud_used), src)
 	instantiate()
 	..()
 
@@ -309,9 +370,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(!ismob(mymob()))
 		return 0
 
-	own_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
-	own_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
-	own_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
+	rel_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
+	rel_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
+	rel_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
 	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
@@ -334,8 +395,14 @@ GLOBAL_LIST_INIT(global_huds, list(
 	HUD.ui_alpha = read_preference(/datum/preference/numeric/ui_style_alpha)
 	set_hud_used(HUD)
 
+/// The client HUD of a mob, or null: a mob has one only while a client is logged in (built by Login(), dropped by Logout()).
+/// Read its elements with hud_of(M)?.x.
+/proc/hud_of(mob/M) as /datum/hud
+	READS_FROM(M)
+	return ismob(M) ? M.hud_used : null
+
 /mob/proc/set_hud_used(datum/hud/new_hud)
-	own_set(src, nameof(hud_used), new_hud)
+	rel_set(src, nameof(hud_used), new_hud)
 	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
@@ -350,11 +417,11 @@ GLOBAL_LIST_INIT(global_huds, list(
 	hud_used.ui_color = UI_style_color_new
 
 	var/list/icons = hud_used.adding + hud_used.other + hud_used.hotkeybuttons + hud_used.other_important
-	icons.Add(zone_sel)
-	icons.Add(gun_setting_icon)
-	icons.Add(item_use_icon)
-	icons.Add(gun_move_icon)
-	icons.Add(radio_use_icon)
+	icons.Add(hud_used?.zone_sel)
+	icons.Add(hud_used?.gun_setting_icon)
+	icons.Add(hud_used?.item_use_icon)
+	icons.Add(hud_used?.gun_move_icon)
+	icons.Add(hud_used?.radio_use_icon)
 
 	var/icon/ic
 
@@ -432,16 +499,16 @@ GLOBAL_LIST_INIT(global_huds, list(
 			client.screen += hud_used.other_important
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client.screen += hud_used.hotkeybuttons
-		if(healths)
-			client.screen |= healths
-		if(internals)
-			client.screen |= internals
-		if(gun_setting_icon)
-			client.screen |= gun_setting_icon
+		if(hud_used?.healths)
+			client.screen |= hud_used?.healths
+		if(hud_used?.internals)
+			client.screen |= hud_used?.internals
+		if(hud_used?.gun_setting_icon)
+			client.screen |= hud_used?.gun_setting_icon
 
 		if(hud_used?.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
-		client.screen += zone_sel				//This one is a special snowflake
+		client.screen += hud_used?.zone_sel				//This one is a special snowflake
 		client.screen += hud_used.toggle_palette
 
 	hud_used.hidden_inventory_update()
@@ -465,12 +532,12 @@ GLOBAL_LIST_INIT(global_huds, list(
 				client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 				hud_used.combat_mode_button.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
 		else
-			client.screen -= healths
-			client.screen -= internals
-			client.screen -= gun_setting_icon
+			client.screen -= hud_used?.healths
+			client.screen -= hud_used?.internals
+			client.screen -= hud_used?.gun_setting_icon
 
 		//These ones are not a part of 'adding', 'other' or 'hotkeybuttons' but we want them gone.
-		client.screen -= zone_sel	//zone_sel is a mob variable for some reason.
+		client.screen -= hud_used?.zone_sel	//zone_sel is a mob variable for some reason.
 
 //Similar to button_pressed_F12() but keeps zone_sel, gun_setting_icon, and healths.
 /mob/proc/toggle_zoom_hud()
@@ -491,7 +558,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 			client.screen -= hud_used.other
 		if(hud_used.hotkeybuttons)
 			client.screen -= hud_used.hotkeybuttons
-		client.screen -= internals
+		client.screen -= hud_used?.internals
 		if(hud_used.combat_mode_button)
 			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 	else
@@ -502,8 +569,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 			client.screen += hud_used.other
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client.screen += hud_used.hotkeybuttons
-		if(internals)
-			client.screen |= internals
+		if(hud_used?.internals)
+			client.screen |= hud_used?.internals
 		if(hud_used.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
@@ -521,20 +588,20 @@ GLOBAL_LIST_INIT(global_huds, list(
 	..()
 
 	var/list/hud_elements = list()
-	own_set(src, nameof(shadekin_display), new /atom/movable/screen/shadekin())
-	shadekin_display.screen_loc = ui_shadekin_display
-	shadekin_display.icon_state = "shadekin"
-	hud_elements |= shadekin_display
+	rel_set(hud_used, nameof(/datum/hud::shadekin_display), new /atom/movable/screen/shadekin())
+	hud_used?.shadekin_display?.screen_loc = ui_shadekin_display
+	hud_used?.shadekin_display?.icon_state = "shadekin"
+	hud_elements |= hud_used?.shadekin_display
 
-	own_set(src, nameof(xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
-	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
-	xenochimera_danger_display.icon_state = "danger00"
-	hud_elements |= xenochimera_danger_display
+	rel_set(hud_used, nameof(/datum/hud::xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
+	hud_used?.xenochimera_danger_display?.screen_loc = ui_xenochimera_danger_display
+	hud_used?.xenochimera_danger_display?.icon_state = "danger00"
+	hud_elements |= hud_used?.xenochimera_danger_display
 
-	own_set(src, nameof(lleill_display), new /atom/movable/screen/lleill())
-	lleill_display.screen_loc = ui_lleill_display
-	lleill_display.icon_state = "lleill"
-	hud_elements |= lleill_display
+	rel_set(hud_used, nameof(/datum/hud::lleill_display), new /atom/movable/screen/lleill())
+	hud_used?.lleill_display?.screen_loc = ui_lleill_display
+	hud_used?.lleill_display?.icon_state = "lleill"
+	hud_elements |= hud_used?.lleill_display
 
 	if(client)
 		client.screen = list()
@@ -551,7 +618,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	own_add(src, nameof(ammo_hud_list), ammo_hud)
+	rel_add(src, nameof(ammo_hud_list), ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	rel_set(ammo_hud, nameof(ammo_hud.our_gun), G)
 	ammo_hud.add_hud(user, G)
@@ -564,7 +631,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 		return
 	rel_clear(ammo_hud, nameof(ammo_hud.our_gun))
 	ammo_hud.remove_hud(user, G)
-	own_remove(src, nameof(ammo_hud_list), ammo_hud)
+	rel_remove(src, nameof(ammo_hud_list), ammo_hud)
 	var/i = 1
 	for(var/atom/movable/screen/ammo/other as anything in ammo_hud_list)
 		ammo_hud = other

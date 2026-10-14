@@ -27,14 +27,9 @@
 
 	var/randomize_location = TRUE
 
-/mob/living/simple_mob/animal/passive/fish/Initialize(mapload)
-	. = ..()
-
-	if(!default_pixel_x && randomize_location)
-		default_pixel_x = rand(-12, 12)
-
-	if(!default_pixel_y && randomize_location)
-		default_pixel_y = rand(-6, 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
+	rolls(nameof(default_pixel_x), range_of(-12, 12), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_x))))
+	rolls(nameof(default_pixel_y), range_of(-6, 10), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_y))))
 
 // Makes the AI unable to willingly go on land.
 /mob/living/simple_mob/animal/passive/fish/IMove(turf/newloc, safety = TRUE)
@@ -43,21 +38,21 @@
 	return MOVEMENT_FAILED // Don't leave the water!
 
 
-/datum/om/stage/life/breathing/simple_mob/animal/passive/fish
-	of = /mob/living/simple_mob/animal/passive/fish
+/mob/living/simple_mob/animal/passive/fish/life_breathing_due()
+	return TRUE
 
 /// Take damage if we are not in water.
-/datum/om/stage/life/breathing/simple_mob/animal/passive/fish/perform(mob/living/simple_mob/animal/passive/fish/self, datum/om/frame/life/ctx)
-	if(istype(self.loc, /obj/item/glass_jar/fish))
-		var/obj/item/glass_jar/fish/F = self.loc
-		if(F.filled)
+/mob/living/simple_mob/animal/passive/fish/life_breathing(datum/seq_frame/life/F)
+	if(istype(src.loc, /obj/item/glass_jar/fish))
+		var/obj/item/glass_jar/fish/jar = src.loc
+		if(jar.filled)
 			return
 
-	var/turf/T = get_turf(self)
+	var/turf/T = get_turf(src)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			om_after(self, 0, TYPE_PROC_REF(/mob/living, say), pick("Blub", "Glub", "Burble"))
-		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
+			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
+		src.add_oxygen_debt(src.unsuitable_atoms_damage, T)
 
 // Subtypes.
 /mob/living/simple_mob/animal/passive/fish/bass
@@ -168,33 +163,24 @@
 	var/dorsal_color = "#FFFFFF"
 	var/belly_color = "#FFFFFF"
 
-	var/image/dorsal_image
-	var/image/belly_image
 
-/mob/living/simple_mob/animal/passive/fish/icebass/Initialize(mapload)
-	. = ..()
-	dorsal_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	belly_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	update_icon()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
+	rolls(nameof(dorsal_color), PROC_REF(roll_colour))
+	rolls(nameof(belly_color), PROC_REF(roll_colour))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/fish/icebass/appearance_overlays()
-	. = list()
-	. += ..()
+/// A colour in its own channel ranges (rolls()).
+/mob/living/simple_mob/animal/passive/fish/icebass/proc/roll_colour(datum/roller/R)
+	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
-	if(!dorsal_image)
-		dorsal_image = image(icon, "[icon_state]_mask-body")
-	if(!belly_image)
-		belly_image = image(icon, "[icon_state]_mask-belly")
+TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, dorsal_color)
+TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, belly_color)
 
-	dorsal_image.icon_state = "[icon_state]_mask-body"
-	belly_image.icon_state = "[icon_state]_mask-belly"
-
-	dorsal_image.color = dorsal_color
-	belly_image.color = belly_color
-
-	. += dorsal_image
-	. += belly_image
+/// The tinted dorsal and belly masks over the fish.
+/mob/living/simple_mob/animal/passive/fish/icebass/draw(datum/look/look)
+	..()
+	var/state = look.state_so_far(src)
+	look.overlay(look_overlay_image(icon, "[state]_mask-body", color = dorsal_color))
+	look.overlay(look_overlay_image(icon, "[state]_mask-belly", color = belly_color))
 
 /datum/category_item/catalogue/fauna/rockfish
 	name = "Sivian Fauna - Rock Puffer"
@@ -235,27 +221,21 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/icebass, TYPE
 
 	var/head_color = "#FFFFFF"
 
-	var/image/head_image
-
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
-/mob/living/simple_mob/animal/passive/fish/rockfish/Initialize(mapload)
-	. = ..()
-	head_color = rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue))
-	update_icon()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
+	rolls(nameof(head_color), PROC_REF(roll_colour))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/fish/rockfish, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/fish/rockfish/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!head_image)
-		head_image = image(icon, "[icon_state]_mask")
+/// A colour in its own channel ranges (rolls()).
+/mob/living/simple_mob/animal/passive/fish/rockfish/proc/roll_colour(datum/roller/R)
+	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
-	head_image.icon_state = "[icon_state]_mask"
+TRACKED(/mob/living/simple_mob/animal/passive/fish/rockfish, head_color)
 
-	head_image.color = head_color
-
-	. += head_image
+/// The tinted head mask over the fish.
+/mob/living/simple_mob/animal/passive/fish/rockfish/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]_mask", color = head_color))
 
 /datum/category_item/catalogue/fauna/solarfish
 	name = "Sivian Fauna - Solar Fin"
@@ -324,36 +304,54 @@ TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "
 	endurance = 50
 	meat_amount = 0
 
-DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
+	reagents(60, starts = list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
+	op("koi_poisonous_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(koi_poisonous_interaction_hand_help)))
+	op("koi_poisonous_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(koi_poisonous_interaction_hand_hurt)))
+	op("koi_poisonous_hand_disarm", hand(), stance(I_DISARM), label("Shove"), then(PROC_REF(koi_poisonous_interaction_hand_disarm)))
+	op("koi_poisonous_hand_grab", hand(), stance(I_GRAB), label("Grab"), then(PROC_REF(koi_poisonous_interaction_hand_grab)))
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous
-	of = /mob/living/simple_mob/animal/passive/fish/koi/poisonous
+/// The help-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_help(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_HELP)
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous/perform(mob/living/simple_mob/animal/passive/fish/koi/poisonous/self, datum/om/frame/life/ctx)
+/// The hurt-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_hurt(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_disarm(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_grab(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_GRAB)
+
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(isbelly(self.loc) && prob(10))
-		var/obj/belly/B = self.loc
-		self.sting(B.owner)
+	if(isbelly(src.loc) && prob(10))
+		var/obj/belly/B = src.loc
+		src.sting(B.owner)
 
 /// Flops away from M, up to `steps` tiles, 0.3 s apart.
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_flee(mob/living/M, steps)
+	if(!M)
+		return
 	var/turf/T = get_step_away(src, M)
 	if(!T || !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		return
 	Move(T)
 	if(steps > 1)
-		om_after(src, 3, PROC_REF(koi_flee), M, steps - 1)
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
-	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(koi_poisonous_interaction_hand)))
+		after(src, 0.3 SECONDS, PROC_REF(koi_flee), with = list(M, steps - 1))
 
 /// Old attack_hand: the normal touch, then the koi flails and stings.
-/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	unarmed_touch(L, interaction.stance)
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	unarmed_touch(L, stance)
 	if(isliving(L) && Adjacent(L))
 		var/mob/living/M = L
 		act_message(src, M, null, MSG_OTHERS(span_warning("%U%[is_dead()?"'s corpse":""] flails at %T%!")))

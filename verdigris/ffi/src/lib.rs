@@ -6,12 +6,15 @@
 //! generated: see `tools/build/lib/verdigris_bindings.ts`.
 
 mod abi;
+mod adjacency;
 pub mod allocator;
 mod bulk;
+mod chem;
 pub mod entity;
 pub mod frame;
 mod gas;
 mod heat;
+mod heat_net;
 mod heat_regulator;
 mod jobs;
 mod layout;

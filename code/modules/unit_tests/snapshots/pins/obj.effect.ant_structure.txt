@@ -1,0 +1,29 @@
+@obj.effect human|none
+@obj.effect robot|none
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Interaction hit ant structure
+human|/obj/item/tool/screwdriver click: Click: Interaction hit ant structure
+human|/obj/item/tool/crowbar menu: Interaction hit ant structure
+human|/obj/item/tool/crowbar click: Click: Interaction hit ant structure
+human|/obj/item/tool/wrench menu: Interaction hit ant structure
+human|/obj/item/tool/wrench click: Click: Interaction hit ant structure
+human|/obj/item/tool/wirecutters menu: Interaction hit ant structure
+human|/obj/item/tool/wirecutters click: Click: Interaction hit ant structure
+human|/obj/item/multitool menu: Interaction hit ant structure
+human|/obj/item/multitool click: Click: Interaction hit ant structure
+human|/obj/item/weldingtool menu: Interaction hit ant structure
+human|/obj/item/weldingtool click: Click: Interaction hit ant structure
+human|/obj/item/stack/cable_coil menu: Interaction hit ant structure
+human|/obj/item/stack/cable_coil click: Click: Interaction hit ant structure
+human|/obj/item/stack/material/steel menu: Interaction hit ant structure
+human|/obj/item/stack/material/steel click: Click: Interaction hit ant structure
+human|/obj/item/card/id menu: Interaction hit ant structure
+human|/obj/item/card/id click: Click: Interaction hit ant structure
+@obj human|/obj/item/mop_deploy
++1 menu: Interaction hit ant structure
+@obj human|/obj/item/soap
++2 menu: Interaction hit ant structure
+human|/obj/item menu: Interaction hit ant structure
+human|/obj/item click: Click: Interaction hit ant structure
+keys: drag_buckle, hit_ant_structure, pass_insert, pass_insert_2

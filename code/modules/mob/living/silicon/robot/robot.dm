@@ -1,9 +1,3 @@
-/// Interaction entries: a crowbar or welder used on the chassis (crowbar_act()/welder_act()).
-#define ROBOT_ENTRY_CROWBAR "robot_crowbar"
-#define ROBOT_ENTRY_WELDER "robot_welder"
-
-OWN_TIMER(/mob/living/silicon/robot, killswitch)
-OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
@@ -15,11 +9,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "robot"
 	endurance = 200
-	nutrition = 0
 
-	mob_bump_flag = ROBOT
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY //trundle trundle
 
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -38,7 +28,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	var/list/robotdecal_on	// Lazy.
 	var/glowy_enabled = FALSE
 
-	can_be_antagged = TRUE
 
 //Icon stuff
 
@@ -49,7 +38,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	var/notransform
 	does_spin = FALSE
 
-	var/mutable_appearance/hat_overlay
 	var/obj/item/clothing/head/hat // THE hat!
 
 //Hud stuff
@@ -91,6 +79,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	var/list/components
 
 	var/obj/item/mmi/mmi = null
+	/// Set when the borg is destroyed with a mind and a place: the MMI leaves for the turf (the policy of `mmi`).
+	var/tmp/mmi_ejects = FALSE
 
 	var/obj/item/pda/ai/rbPDA = null
 
@@ -114,7 +104,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	var/sprite_type = null
 	var/lower_mod = 0
 	var/jetpack = 0
-	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 	var/jeton = 0
 	var/lawupdate = TRUE //Cyborgs will sync their laws with their AI by default
 	var/lockcharge //Used when looking to see if a borg is locked down.
@@ -126,21 +115,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 
 	var/obj/item/implant/restrainingbolt/bolt	// The restraining bolt installed into the cyborg.
 	var/datum/tgui_module/robot_ui/robotact
-
-	/// Abilities (code/datums/abilities/ability.dm) every robot grants itself on
-	/// Initialize() and revokes in Destroy() - never gated by death, same as
-	/// the `verb/` declarations they replace weren't.
-	var/static/list/robot_granted_abilities = list(
-		ABILITY_ID_ROBOT_TOGGLE_LIGHTS,
-		ABILITY_ID_ROBOT_PICK_NAME,
-		ABILITY_ID_ROBOT_CUSTOMIZE_APPEARANCE,
-		ABILITY_ID_ROBOT_TOGGLE_GLOWY_STOMACH,
-		ABILITY_ID_ROBOT_SPARK_PLUG,
-		ABILITY_ID_ROBOT_TOGGLE_GRABBABILITY,
-		ABILITY_ID_ROBOT_PURGE_NUTRITION,
-		ABILITY_ID_ROBOT_TOGGLE_DECALS,
-		ABILITY_ID_ROBOT_NOM,
-	)
 
 	var/static/list/robot_verbs_default = list(
 		/mob/living/silicon/robot/proc/robot_checklaws,
@@ -159,25 +133,14 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	var/vtec_active = FALSE
 
 	var/list/vore_light_states	//Robot exclusive. Lazy.
+	var/list/active_module_types // The types of the active modules (module_slots_changed()). Lazy.
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
 	vore_icon_bellies = list()
 
 // --- Lifecycle ------------------------------------------------------------------------------
 
-/mob/living/silicon/robot/Initialize(mapload, is_decoy)
-	if(islist(req_access))
-		req_access = shared_type_list(type, "req_access", req_access)
-	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
-
-	add_language(LANGUAGE_ROBOT_TALK, 1)
-	add_language(LANGUAGE_GALCOM, 1)
-	add_language(LANGUAGE_EAL, 1)
-
-	set_wires(new /datum/wires/robot(src))
-
-	own_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
-	robot_modules_background.icon_state = "block"
+/mob/living/silicon/robot/Initialize(mapload)
 	ident = rand(1, 999)
 	updatename(modtype)
 
@@ -189,13 +152,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	initialize_components()
 	setup_cell()
 
-	// This mob (not a component) is the source: every robot has these
-	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in
-	// Destroy(). Unlike robot_verbs_default below, these were never gated by
-	// death (they were plain `verb/` declarations, not in that list), so
-	// they're granted once here rather than in add_robot_verbs()/remove_robot_verbs().
-	for(var/ability_id in robot_granted_abilities)
-		grant_ability(ability_id, src)
+	if(may_pick_name())
+		grant(src, robot_naming(), src)
 
 	. = ..()
 
@@ -205,26 +163,19 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	recompute_power_demand()
 	update_senses()
 
-	add_hose_connector(/datum/hose_connector/input/borg)
-	add_hose_connector(/datum/hose_connector/output/borg)
-
-/mob/living/silicon/robot/LateInitialize()
-	pick_module()
-	update_icon()
-
 /mob/living/silicon/robot/proc/setup_radio()
-	own_set(src, nameof(radio), new /obj/item/radio/borg(src))
+	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
 	rel_set(src, nameof(common_radio), radio) // an alias of the owned radio
 
 /// The photo camera and the machinery camera that feeds the robots network.
 /mob/living/silicon/robot/proc/setup_camera()
 	if(photo_camera_type)
-		own_set(src, nameof(aiCamera), new photo_camera_type(src))
+		rel_set(src, nameof(aiCamera), new photo_camera_type(src))
 	if(!scrambledcodes && !camera)
-		own_set(src, nameof(camera), new /obj/machinery/camera(src))
+		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.c_tag = real_name
 		camera.replace_networks(list(NETWORK_DEFAULT,NETWORK_ROBOTS))
-		if(wires.is_cut(WIRE_BORG_CAMERA))
+		if(wire_is_cut(src, WIRE_BORG_CAMERA))
 			camera.status = 0
 
 /// Chassis that come with a brain override this. Assembled cyborgs get their
@@ -233,7 +184,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	return
 
 /mob/living/silicon/robot/proc/setup_laws()
-	own_set(src, nameof(laws), new using_map.default_law_type) //use map's default
+	rel_set(src, nameof(laws), new using_map.default_law_type) //use map's default
 	additional_law_channels["Binary"] = "#b"
 	if(!lawupdate || scrambledcodes)
 		return
@@ -252,15 +203,15 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		set_cell(new cell_type(src))
 
 /mob/living/silicon/robot/proc/setup_hud_images()
-	own_put(src, nameof(hud_list), HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
-	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS))
-	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE))
-	own_put(src, nameof(hud_list), ID_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID))
-	own_put(src, nameof(hud_list), WANTED_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED))
-	own_put(src, nameof(hud_list), IMPLOYAL_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL))
-	own_put(src, nameof(hud_list), IMPCHEM_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM))
-	own_put(src, nameof(hud_list), IMPTRACK_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK))
-	own_put(src, nameof(hud_list), SPECIALROLE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL))
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH), HEALTH_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS), STATUS_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE), LIFE_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID), ID_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED), WANTED_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL), IMPLOYAL_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM), IMPCHEM_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK), IMPTRACK_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL), SPECIALROLE_HUD)
 
 /// The sprite datum is never null after Initialize: the module default, or
 /// the generic default when the sprite subsystem isn't ready.
@@ -280,7 +231,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 			C.installed = ROBOT_PART_INSTALLED
 			continue
 		if(C.installed == ROBOT_PART_DESTROYED)
-			qdel(C.uninstall())
+			spent(C.uninstall())
 		if(C.installed == ROBOT_PART_INSTALLED)
 			continue
 		if(C.slot == ROBOT_SLOT_POWER)
@@ -292,7 +243,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	heat_debt = 0
 	..()
 	update_power_state()
-	update_icon()
 
 /// A borg has no nutrition, body temperature or radiation dose to reset (audit P2-D11);
 /// its parts and cell were rebuilt above.
@@ -303,8 +253,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 //Improved /N
 // the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.
 /mob/living/silicon/robot/on_destroy(force)
-	for(var/ability_id in robot_granted_abilities)
-		revoke_ability(ability_id, src)
+	revoke(src, robot_utility(), src)
+	revoke(src, robot_naming(), src)
 	if(mmi)//Safety for when a cyborg gets dust()ed. Or there is no MMI inside.
 		if(mind)
 			// The MMI lands on the borg's turf (get_turf() sees through any container). The
@@ -313,10 +263,10 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 			var/datum/mind_host/host = get_mind_host(mmi)
 			if(T)
 				mmi.forceMove(T)
+				mmi_ejects = TRUE // the MMI's policy is OWN_SPILL from here: it lives on, on the turf
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(src, nameof(mmi)) // left the robot for the turf
 			else
 				if(!T)
 					// The MMI stays in the robot and goes with it by ownership policy.
@@ -325,7 +275,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 					if(!shell) // Shells don't have brainmobs in their MMIs.
 						log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
 						to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-					own_take(src, nameof(mmi)) // left the robot for the turf
 				ghostize(FALSE)
 		// A mindless MMI stays in the robot and goes with it by ownership policy.
 	clear_traitor_hud()
@@ -345,7 +294,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	if(stat != CONSCIOUS)
 		uneq_all()
 	update_senses()
-	update_icon()
 
 // --- Power ledger ----------------------------------------------------------------------------
 // draw_power() and add_power() are the only writers of the cell's charge in
@@ -398,7 +346,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		return
 	var/obj/item/cell/old_cell = cell
 	if(old_cell)
-		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
+		unobserve(old_cell, /datum/act/emp, src)
+		unobserve(old_cell, /datum/notice/qdeleting, src)
 	if(new_cell && new_cell.loc != src)
 		new_cell.forceMove(src)
 	rel_set(src, nameof(cell), new_cell)
@@ -409,8 +358,8 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	if(old_cell && new_cell && mount?.wrapped == old_cell)
 		consume(mount.uninstall())
 	if(new_cell)
-		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
-		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))
+		global.observe(new_cell, /datum/act/emp, src, adjusts_with(PROC_REF(shield_cell_from_emp)))
+		global.observe(new_cell, /datum/notice/qdeleting, src, then(PROC_REF(on_cell_deleted)))
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
 	if(!QDELETED(src))
@@ -427,15 +376,16 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	set_cell(null)
 	return old_cell
 
-/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
-	EVENT_HANDLER
-	return EMP_PROTECT_SELF
+/mob/living/silicon/robot/proc/shield_cell_from_emp(datum/act/emp/pulse)
+	SHOULD_NOT_SLEEP(TRUE)
+	pulse.protection |= EMP_PROTECT_SELF
 
-/mob/living/silicon/robot/proc/on_cell_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/mob/living/silicon/robot/proc/on_cell_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
-		own_take(mount, nameof(mount.wrapped))
+		rel_take(mount, nameof(mount.wrapped))
 		mount.installed = ROBOT_PART_MISSING
 	set_cell(null)
 
@@ -467,7 +417,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		if(C.set_powered(new_state))
 			changed = TRUE
 	if(new_state != has_power)
-		has_power = new_state
+		set_has_power(new_state)
 		changed = TRUE
 		if(!has_power)
 			to_chat(src, span_red("You are now running on emergency backup power."))
@@ -503,12 +453,12 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 /// Camera feed, radio and blindness follow the parts, power and stat.
 /mob/living/silicon/robot/proc/update_senses()
 	if(camera && !scrambledcodes)
-		var/camera_on = stat != DEAD && !wires.is_cut(WIRE_BORG_CAMERA) && is_component_functioning(ROBOT_SLOT_CAMERA)
+		var/camera_on = stat != DEAD && !wire_is_cut(src, WIRE_BORG_CAMERA) && is_component_functioning(ROBOT_SLOT_CAMERA)
 		camera.set_status(camera_on ? 1 : 0)
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
-	var/sees = stat != DEAD && !has_status(EFFECT_PARALYZED) && !has_status(EFFECT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
-	blinded = !sees
+	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
+	set_blinded(!sees)
 	if(stat == DEAD)
 		return
 	if(blinded)
@@ -523,33 +473,32 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 /mob/living/silicon/robot/proc/set_lights(new_state)
 	if(lights_on == new_state)
 		return
-	lights_on = new_state
+	set_lights_on(new_state)
 	refresh_glow()
 	recompute_power_demand()
-	update_icon()
 
-/datum/om/stage/life/light/silicon/robot
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/silicon/robot/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.lights_on)
-		self.set_light(self.integrated_light_power, 1, self.robot_light_col)
+/mob/living/silicon/robot/life_light(datum/seq_frame/life/F)
+	if(src.lights_on)
+		set_glow(src, GLOW(src.integrated_light_power, 1, src.robot_light_col))
 		return TRUE
 	return ..()
 
 // --- Countdowns ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
-	if(om_timer_slot_pending(src, "killswitch"))
+	if(after_pending(src, "killswitch"))
 		return FALSE
-	after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
+	after(src, delay, PROC_REF(fire_killswitch), key = "killswitch")
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
 /mob/living/silicon/robot/proc/cancel_killswitch()
-	if(!om_timer_slot_pending(src, "killswitch"))
+	if(!after_pending(src, "killswitch"))
 		return FALSE
-	om_cancel_timer_slot(src, "killswitch")
+	cancel_after(src, "killswitch")
 	return TRUE
 
 /mob/living/silicon/robot/proc/fire_killswitch()
@@ -557,13 +506,13 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		return
 	to_chat(src, span_danger("Killswitch Activated"))
 	log_game("ROBOT: killswitch fired on [key_name(src)].")
-	om_after(src, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
+	after(src, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
-	if(om_timer_slot_pending(src, "weapon_lock"))
-		om_cancel_timer_slot(src, "weapon_lock")
-	after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
+	if(after_pending(src, "weapon_lock"))
+		cancel_after(src, "weapon_lock")
+	after(src, duration, PROC_REF(end_weapon_lock), key = "weapon_lock")
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 
@@ -573,7 +522,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 // --- Naming ------------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/SetName(pickedName as text)
-	custom_name = pickedName
+	set_custom_name(pickedName)
 	updatename()
 
 /mob/living/silicon/robot/proc/sync()
@@ -584,15 +533,15 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 // setup the PDA and its name
 /mob/living/silicon/robot/proc/setup_PDA()
 	if (!rbPDA)
-		own_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
+		rel_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
-	om_grant(src, GRANT_VERB, /obj/item/pda/ai/verb/cmd_pda_open_ui, src)
+	grant(src, granted_verb(/obj/item/pda/ai/verb/cmd_pda_open_ui), src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
-		own_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
+		rel_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
-	om_grant(src, GRANT_VERB, /obj/item/communicator/integrated/verb/activate, src)
+	grant(src, granted_verb(/obj/item/communicator/integrated/verb/activate), src)
 
 /mob/living/silicon/robot/drop_from_inventory(obj/item/W, atom/target = null)
 	if(module_active && istype(module_active,/obj/item/gripper))
@@ -610,7 +559,6 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 				return
 			proto_set(src, nameof(sprite_datum), module_sprites[1])
 			sprite_datum.do_equipment_glamour(module)
-			update_worn_icons()
 			return
 	if(mind)
 		sprite_name = mind.name
@@ -641,7 +589,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	else
 		changed_name = "[modtype] [braintype]-[num2text(ident)]"
 
-	real_name = changed_name
+	set_real_name(changed_name)
 	name = real_name
 
 	// if we've changed our name, we also need to update the display name for our PDA
@@ -660,9 +608,9 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		var/list/_robot_flavor = client.prefs.read_preference(/datum/preference/flavour_texts_robot)
 		var/module_flavour = LAZYACCESS(_robot_flavor, modtype)
 		if(module_flavour && (module_flavour != " " || module_flavour != ".")) // Skip module flavor if " " or "."
-			flavor_text = module_flavour
+			bio.flavor_text = module_flavour
 		else
-			flavor_text = LAZYACCESS(_robot_flavor, "Default")
+			bio.flavor_text = LAZYACCESS(_robot_flavor, "Default")
 		//and meta info
 		identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
@@ -737,18 +685,95 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 
 // --- Tool and item interactions ---------------------------------------------------------------
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
-	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tap", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hold", PROC_REF(robot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Punch", PROC_REF(robot_interaction_hand)), \
-	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
-	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
+MSG_DEF_SELF(robot_tool/no_wiring, "You can't reach the wiring.")
+MSG_DEF_SELF(robot_tool/no_bolt, "There is no restraining bolt installed.")
+MSG_DEF_SELF(robot_tool/self_repair, "You lack the reach to be able to repair yourself.")
+MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
-/// Old attackby: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
-/mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// The cyborg's own item, tool and touch ops (called from CAPABILITIES(/mob/living/silicon/robot), library/mob/hands.dm). They sit above the
+/// living-mob defaults (a hit); the crowbar and welder answer outside harm intent, where the old interactions were stance-declared (they strike in combat mode).
+/proc/robot_interactions()
+	return list(
+		op("robot_item", item(/obj/item), label("Use on"), passes(), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_item_used))),
+		op("robot_pet", hand(), ungated(), when(req_empty_hand()), stance(I_HELP), label("Pet"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_help))),
+		op("robot_tap", hand(), ungated(), when(req_empty_hand()), stance(I_DISARM), label("Tap"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_disarm))),
+		op("robot_hold", hand(), ungated(), when(req_empty_hand()), stance(I_GRAB), label("Take hold"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_grab))),
+		op("robot_punch", hand(), ungated(), when(req_empty_hand()), stance(I_HURT), label("Punch"), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_hand_hurt))),
+		op("deploy_shell", remote(), label("Deploy to shell"), priority(OP_PRIORITY_NORMAL - 1), when(TYPE_PROC_REF(/mob/living/silicon/robot, shell_open_to_ai)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_ai_deploy_shell))),
+		op("robot_pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), label("Pry the cover or a part"), wait(0), then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_crowbar))),
+		op("robot_weld_repair", tool(TOOL_WELDER), stance(I_HELP, I_DISARM, I_GRAB), label("Weld the dents"), costs(RES_FUEL, 0), wait(0),
+			needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, repairing_another), because = MSG(robot_tool/self_repair)), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_dents), because = MSG(robot_tool/no_dents))),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot, interaction_weld_repair))),
+		op("robot_wires", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), label("Work the wiring"), wait(0), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, wiring_reachable), because = MSG(robot_tool/no_wiring))), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_wires_worked))),
+		op("robot_screwdriver", tool(TOOL_SCREWDRIVER), label("Work the panel"), wait(0), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, panel_open_holds), silent = TRUE)), then(TYPE_PROC_REF(/mob/living/silicon/robot, robot_screwdriver_used))),
+		op("robot_bolt_wrench", tool(TOOL_WRENCH), label("Remove the restraining bolt"), wait(2 SECONDS), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot, bolt_wrench_ready), silent = TRUE), req(TYPE_PROC_REF(/mob/living/silicon/robot, has_bolt), because = MSG(robot_tool/no_bolt))),
+			starts(TYPE_PROC_REF(/mob/living/silicon/robot, bolt_wrench_started)), then(TYPE_PROC_REF(/mob/living/silicon/robot, wrench_act_robot_done))))
+
+/// The panel is open and the cell is out: a wrench can reach the restraining bolt.
+/mob/living/silicon/robot/proc/bolt_wrench_ready(datum/act/op/A)
+	return (opened && !cell) ? null : /datum/msg/req_failed
+
+/mob/living/silicon/robot/proc/has_bolt(datum/act/op/A)
+	return bolt ? null : MSG(robot_tool/no_bolt)
+
+/mob/living/silicon/robot/proc/bolt_wrench_started(datum/act/op/A)
+	to_chat(A.actor, span_filter_notice("You begin removing \the [bolt]."))
+
+/mob/living/silicon/robot/proc/panel_open_holds(datum/act/op/A)
+	return (opened) ? null : /datum/msg/req_failed
+
+/mob/living/silicon/robot/proc/wiring_reachable(datum/act/op/A)
+	return (wiresexposed) ? null : /datum/msg/req_failed
+
+/// The welder is for another cyborg's dents, not your own.
+/mob/living/silicon/robot/proc/repairing_another(datum/act/op/A)
+	return A.actor != src ? null : MSG(robot_tool/self_repair)
+
+/// Whether the server lets AIs deploy into shells (config).
+/proc/ai_shells_allowed()
+	READS_FROM()
+	return CONFIG_GET(flag/allow_ai_shells)
+
+/// An AI may deploy into a shell that allows it and is not another AI's.
+/mob/living/silicon/robot/proc/shell_open_to_ai(datum/act/op/A)
+	return read_once(shell && ai_shells_allowed() && (!connected_ai || connected_ai == A.actor))
+
+/mob/living/silicon/robot/proc/robot_wires_worked(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
+
+/mob/living/silicon/robot/proc/robot_screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	if(!cell)
+		set_wiresexposed(!wiresexposed)
+		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
+		playsound(src, sounds_of(tool).use, 50, TRUE)
+		return OP_OK
+	if(radio)
+		radio.item_used_on(tool, user)
+	else
+		to_chat(user, span_filter_notice("Unable to locate a radio."))
+	return OP_OK
+
+/mob/living/silicon/robot/proc/robot_hand_help(datum/act/op/A)
+	return robot_interaction_hand(A, I_HELP)
+
+/mob/living/silicon/robot/proc/robot_hand_disarm(datum/act/op/A)
+	return robot_interaction_hand(A, I_DISARM)
+
+/mob/living/silicon/robot/proc/robot_hand_grab(datum/act/op/A)
+	return robot_interaction_hand(A, I_GRAB)
+
+/mob/living/silicon/robot/proc/robot_hand_hurt(datum/act/op/A)
+	return robot_interaction_hand(A, I_HURT)
+
+/// The item op: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
+/mob/living/silicon/robot/proc/robot_item_used(datum/act/op/A)
+	return robot_interaction_item(A.actor, A.held) ? OP_OK : OP_PASS
+
+/// Parts, laws, repairs, IDs and upgrades: TRUE when the item was taken.
+/mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W)
 	if(istype(W, /obj/item/handcuffs)) // fuck i don't even know why isrobot() in handcuff code isn't working so this will have to do
 		return TRUE
 	if(opened && install_component(W, user))
@@ -767,7 +792,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return TRUE
 	if(istype(W, /obj/item/encryptionkey) && opened)
 		if(radio)//sanityyyyyy
-			radio.attackby(W,user)//GTFO, you have your own procs
+			radio.item_used_on(W, user)//GTFO, you have your own procs
 		else
 			to_chat(user, span_filter_notice("Unable to locate a radio."))
 		return TRUE
@@ -777,7 +802,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(istype(W, /obj/item/borg/upgrade))
 		apply_upgrade(W, user)
 		return TRUE
-	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
+	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && combat_of(W).force > 0)
 		fx_sparks(src, 5, FALSE)
 	return FALSE
 
@@ -797,7 +822,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(bolt)
 		to_chat(user, span_notice("There is already a restraining bolt installed in this cyborg."))
 		return FALSE
-	if(!own_set(src, nameof(src.bolt), W, user = user))
+	if(!move_into(src, nameof(src.bolt), W, user))
 		return FALSE
 	to_chat(user, span_notice("You install \the [W]."))
 	return TRUE
@@ -859,7 +884,6 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	locked = !locked
 	to_chat(user, span_filter_notice("You [ locked ? "lock" : "unlock"] [src]'s interface."))
-	update_icon()
 	return TRUE
 
 /mob/living/silicon/robot/proc/apply_upgrade(obj/item/borg/upgrade/U, mob/user)
@@ -884,70 +908,32 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	hud_used?.update_robot_modules_display()
 	return TRUE
 
-/mob/living/silicon/robot/wirecutter_act(mob/user, obj/item/tool)
-	if(!wiresexposed)
-		to_chat(user, span_filter_notice("You can't reach the wiring."))
-		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
-
-/// Crowbar outside combat mode: the stance-declared pry interactions. In combat mode none is declared, so the crowbar goes on to strike.
-/mob/living/silicon/robot/crowbar_act(mob/user, obj/item/tool)
-	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_CROWBAR))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_SKIP_TO_ATTACK
-
-/// Abstract: working the chassis with a crowbar outside combat mode (run from crowbar_act()).
-/datum/interaction/robot_pry
-	entry = ROBOT_ENTRY_CROWBAR
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_CROWBAR
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /mob/living/silicon/robot/proc/interaction_crowbar
-
-/datum/interaction/robot_pry/help
-	id = "robot_pry_help"
-	name = "Pry the cover or a part"
-	stance = I_HELP
-
-/datum/interaction/robot_pry/disarm
-	id = "robot_pry_disarm"
-	name = "Pry the cover or a part"
-	stance = I_DISARM
-
-/datum/interaction/robot_pry/grab
-	id = "robot_pry_grab"
-	name = "Pry the cover or a part"
-	stance = I_GRAB
-
-/// Crowbar: open or close the cover, lever out the brain, or pry out a part.
-/mob/living/silicon/robot/proc/interaction_crowbar(mob/user, obj/item/tool, datum/interaction/interaction)
+/// Crowbar outside combat mode: open or close the cover, lever out the brain, or pry out a part.
+/mob/living/silicon/robot/proc/interaction_crowbar(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		open_cover(user)
-		return TRUE
+		return OP_OK
 	if(cell)
 		close_cover(user)
-		return TRUE
-	if(wiresexposed && wires.is_all_cut())
+		return OP_OK
+	if(wiresexposed && wires_all_cut(src))
 		extract_mmi(user)
-		return TRUE
+		return OP_OK
 	pry_component(user)
-	return TRUE
+	return OP_OK
 
 /mob/living/silicon/robot/proc/open_cover(mob/user)
 	if(locked)
 		to_chat(user, span_filter_notice("The cover is locked and cannot be opened."))
 		return FALSE
 	to_chat(user, span_filter_notice("You open the cover."))
-	opened = TRUE
-	update_icon()
+	set_opened(TRUE)
 	return TRUE
 
 /mob/living/silicon/robot/proc/close_cover(mob/user)
 	to_chat(user, span_filter_notice("You close the cover."))
-	opened = FALSE
-	update_icon()
+	set_opened(FALSE)
 	return TRUE
 
 /// Cell out, wires exposed and all cut: lever out the MMI, leaving a damaged chassis.
@@ -956,21 +942,27 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
 		return FALSE
 	to_chat(user, span_filter_notice("You jam the crowbar into the robot and begin levering [mmi]."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(extract_mmi_robot_done), done_args = list(user))
+	perform_op(user, src, "extract_mmi", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/silicon/robot/proc/extract_mmi_robot_done(mob/user)
-	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires.is_all_cut())
+/// A yanked object tears the wiring it was in.
+/mob/living/silicon/robot/yank_out_tear(obj/item/selection, mob/U)
+	rel_remove(src, nameof(embedded), selection)
+	injure(INJURY_CUT, 5, null, selection)
+	injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
+
+/mob/living/silicon/robot/proc/extract_mmi_robot_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires_all_cut(src))
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
-	own_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
-	own_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
-	own_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
-	own_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
-	C.update_icon()
+	rel_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
+	rel_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
+	rel_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
+	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	new/obj/item/robot_parts/chest(loc)
-	qdel(src)
+	spent(src, user)
 	return TRUE
 
 /// Pry an external part (or its fried remains) out of its slot. The part
@@ -984,23 +976,19 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(!length(removable))
 		to_chat(user, span_filter_notice("There is nothing left to remove."))
 		return FALSE
-	om_ask(user, /datum/om/prompt/choice/pry_component, PROC_REF(pry_component_chosen), choices = removable)
+	open_request(src, /datum/prompt/choice, PROC_REF(pry_component_chosen), answerer = user, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, valid = PROC_REF(pry_component_askable), title = "Remove Component", question = "Which component do you want to pry out?", choices = removable, timeout = 0)
 	return TRUE
 
-/// Component name -> slot. Re-checked on the answer: next to the borg and able, and the borg is
-/// still open with no cell.
-/datum/om/prompt/choice/pry_component
-	title = "Remove Component"
-	message = "Which component do you want to pry out?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+/// The choices are component name -> slot. Re-checked on the answer: the borg is still open with no cell.
+/mob/living/silicon/robot/proc/pry_component_askable(datum/request/R)
+	return opened && !cell
 
-/datum/om/prompt/choice/pry_component/valid()
-	var/mob/living/silicon/robot/R = subject
-	return (!R.opened || R.cell) ? "not open" : null
-
-/mob/living/silicon/robot/proc/pry_component_chosen(datum/om/prompt/choice/pry_component/ask)
-	var/mob/user = ask.answerer
-	var/datum/robot_component/C = get_component(ask.choices[ask.choice])
+/mob/living/silicon/robot/proc/pry_component_chosen(datum/act/request/A)
+	if(!A.answer)
+		return FALSE
+	var/datum/prompt/choice/pry_question = A.request
+	var/mob/user = A.request.answerer
+	var/datum/robot_component/C = get_component(pry_question.choices[A.answer.value])
 	if(!C || C.installed == ROBOT_PART_MISSING || !C.wrapped)
 		return FALSE
 	var/obj/item/I = C.uninstall()
@@ -1008,101 +996,29 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	I.forceMove(loc)
 	return TRUE
 
-/// Welder outside combat mode: the stance-declared repair interactions. In combat mode none is declared, so the welder goes on to strike.
-/mob/living/silicon/robot/welder_act(mob/user, obj/item/tool)
-	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_WELDER))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_SKIP_TO_ATTACK
-
-/// Abstract: welding the chassis's dents outside combat mode (run from welder_act()).
-/datum/interaction/robot_weld_repair
-	entry = ROBOT_ENTRY_WELDER
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /mob/living/silicon/robot/proc/interaction_weld_repair
-	also_requires = list(
-		REQ_BECAUSE(REQ_NOT_SELF, "you lack the reach to be able to repair yourself"),
-		REQ_TARGET_STATE(/mob/living/silicon/robot/proc/has_dents),
-	)
-
-/// Requirement: TRUE when there is plating damage to weld.
-/mob/living/silicon/robot/proc/has_dents(mob/user, atom/target, obj/item/held)
-	return injury_load(INJURY_CATEGORY_PHYSICAL) ? TRUE : "nothing to fix here"
-
-/datum/interaction/robot_weld_repair/help
-	id = "robot_weld_repair_help"
-	name = "Weld the dents"
-	stance = I_HELP
-
-/datum/interaction/robot_weld_repair/disarm
-	id = "robot_weld_repair_disarm"
-	name = "Weld the dents"
-	stance = I_DISARM
-
-/datum/interaction/robot_weld_repair/grab
-	id = "robot_weld_repair_grab"
-	name = "Weld the dents"
-	stance = I_GRAB
+/// TRUE when there is plating damage to weld.
+/mob/living/silicon/robot/proc/has_dents(datum/act/op/A)
+	return (read_once(!!injury_load(INJURY_CATEGORY_PHYSICAL))) ? null : /datum/msg/req_failed
 
 /// Welder: fix the chassis's dents (not your own).
-/mob/living/silicon/robot/proc/interaction_weld_repair(mob/user, obj/item/tool, datum/interaction/interaction)
+/mob/living/silicon/robot/proc/interaction_weld_repair(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0))
 		to_chat(user, span_filter_warning("Need more welding fuel!"))
-		return TRUE
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(welder))
 	mend(TREAT_PLATING_REPAIR, 30)
 	add_fingerprint(user)
 	act_message(src, user, others = span_filter_notice("[span_red("%T% has fixed some of the dents on %U%!")]"))
-	return TRUE
+	return OP_OK
 
-/mob/living/silicon/robot/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/robot_pry/help,
-		/datum/interaction/robot_pry/disarm,
-		/datum/interaction/robot_pry/grab,
-		/datum/interaction/robot_weld_repair/help,
-		/datum/interaction/robot_weld_repair/disarm,
-		/datum/interaction/robot_weld_repair/grab,
-	)
-	..()
-
-/mob/living/silicon/robot/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
-
-/mob/living/silicon/robot/screwdriver_act(mob/user, obj/item/tool)
-	if(!opened)
-		return ITEM_INTERACT_BLOCKING
-	if(!cell)
-		wiresexposed = !wiresexposed
-		to_chat(user, span_filter_notice("The wires have been [wiresexposed ? "exposed" : "unexposed"]."))
-		playsound(src, tool.usesound, 50, TRUE)
-		update_icon()
-		return ITEM_INTERACT_SUCCESS
-	if(radio)
-		radio.attackby(tool, user)
-	else
-		to_chat(user, span_filter_notice("Unable to locate a radio."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/mob/living/silicon/robot/wrench_act(mob/user, obj/item/tool)
-	if(!opened || cell)
-		return ITEM_INTERACT_BLOCKING
-	if(!bolt)
-		to_chat(user, span_filter_notice("There is no restraining bolt installed."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_filter_notice("You begin removing \the [bolt]."))
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_robot_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
+/mob/living/silicon/robot/proc/wrench_act_robot_done(datum/act/op/A)
 	bolt.forceMove(get_turf(src))
-	own_take(src, nameof(bolt))
-	to_chat(user, span_filter_notice("You remove the restraining bolt."))
-	return ITEM_INTERACT_SUCCESS
+	rel_take(src, nameof(bolt))
+	to_chat(A.actor, span_filter_notice("You remove the restraining bolt."))
+	return OP_OK
 
 /mob/living/silicon/robot/GetIdCard()
 	if(bolt && !bolt.malfunction)
@@ -1119,24 +1035,28 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return FALSE
 
 /mob/living/silicon/robot/resist_restraints()
-	if(bolt)
-		if(!bolt.malfunction)
-			act_message(src, null, MSG_SELF(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)")), \
-				MSG_OTHERS(span_danger("%U% is trying to break their [bolt]!")))
-			om_task_timed(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
+	perform_op(src, src, "break_bolt", null, ORIGIN_VERB, AUTH_PHYSICAL)
 
-	return
+/// A bolt that still holds can be broken (the "break_bolt" op).
+/mob/living/silicon/robot/proc/bolt_breakable(datum/act/op/A)
+	return read_once(!isnull(bolt) && !bolt.malfunction)
 
-/mob/living/silicon/robot/proc/resist_restraints_robot_done()
-	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break \the [bolt]!")))
-	bolt.malfunction = MALFUNCTION_PERMANENT
+/mob/living/silicon/robot/proc/bolt_break_text(datum/act/op/A)
+	return msg_text(span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)"), span_danger("%U% is trying to break their [bolt]!"))
+
+/mob/living/silicon/robot/proc/bolt_broken(datum/act/op/A)
+	if(isnull(bolt))
+		return OP_FAILED
+	act_message(src, null, MSG_SELF(span_warning("You successfully break your [bolt].")), MSG_OTHERS(span_danger("%U% manages to break the [bolt]!")))
+	bolt.set_malfunction(MALFUNCTION_PERMANENT)
+	return OP_OK
 
 /mob/living/silicon/robot/proc/module_reset(notify = TRUE)
 	transform_with_anim() //sprite animation
 	uneq_all()
 	hud_used.update_robot_modules_display(TRUE)
 	modtype = initial(modtype)
-	hands.icon_state = get_hud_module_icon()
+	hud_used?.hands?.icon_state = get_hud_module_icon()
 
 	// Basic upgrades (VTEC, ...) mutate the robot directly (verbs added,
 	// vars flipped) rather than living inside the module being reset, so
@@ -1149,14 +1069,15 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	module.reset_module(src)
 	icon_selected = FALSE
 	updatename("Default")
-	has_recoloured = FALSE
+	set_has_recoloured(FALSE)
 	robotact?.update_static_data_for_all_viewers()
 	vore_capacity_ex = list()
-	vore_fullness_ex = list()
-	vore_light_states = list()
+	set_vore_fullness_ex(list())
+	set_vore_light_states(list())
 
-/// Old attack_hand (never reached the gate or the default touch): dismounts, cell removal, petting and punching.
-/mob/living/silicon/robot/proc/robot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand (never reached the gate or the default touch): dismounts, petting and punching. The cell is the take_power_part op.
+/mob/living/silicon/robot/proc/robot_interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
 	if(LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
 		if(user in src?.buckled_mob_list())
@@ -1165,34 +1086,38 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		if(user == src)
 			for(var/rider in src?.buckled_mob_list())
 				riding_datum?.force_dismount(rider)
-		return TRUE
+		return OP_OK
 
 	add_fingerprint(user)
 
-	if(opened && !wiresexposed && !issilicon(user))
-		take_out_power_part(user)
-
 	if(ishuman(user) && !opened)
-		hand_interact(user, interaction.stance)
-	return TRUE
+		hand_interact(user, stance)
+	return OP_OK
 
-/// Hand removal of the cell, or of the fried remains of its mount.
-/mob/living/silicon/robot/proc/take_out_power_part(mob/user)
+/// The take_power_part op's condition: the chassis is open, its wiring tucked away, and there is a cell or the fried remains of its mount to take.
+/mob/living/silicon/robot/proc/power_part_exposed(datum/act/A)
+	if(!opened || wiresexposed)
+		return FALSE
 	if(cell)
-		var/obj/item/cell/removed = remove_cell()
-		removed.update_icon()
-		removed.add_fingerprint(user)
-		user.put_in_active_hand(removed)
-		to_chat(user, span_filter_notice("You remove \the [removed]."))
-		update_icon()
 		return TRUE
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
-	if(mount.installed == ROBOT_PART_DESTROYED)
-		var/obj/item/remains = mount.uninstall()
-		to_chat(user, span_filter_notice("You remove \the [remains]."))
-		user.put_in_active_hand(remains)
-		return TRUE
-	return FALSE
+	return mount?.installed == ROBOT_PART_DESTROYED
+
+/// The cell, or the fried remains of its mount, out to the hand (or the gripper) that took it.
+/mob/living/silicon/robot/proc/power_part_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/removed = null
+	if(cell)
+		removed = remove_cell()
+		removed.add_fingerprint(user)
+	else
+		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
+		if(mount?.installed != ROBOT_PART_DESTROYED)
+			return OP_REFUSED
+		removed = mount.uninstall()
+	op_deliver(A, removed)
+	to_chat(user, span_filter_notice("You remove \the [removed]."))
+	return OP_OK
 
 /// Petting, punching, tapping and vore on a closed chassis, in `stance` (the touch interaction's).
 /mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H, stance)
@@ -1208,7 +1133,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			H.do_attack_animation(src)
 			var/shreddamage = H.species.can_shred(H, FALSE, 15)
 			if(shreddamage)
-				attack_generic(H, shreddamage, "attacked")
+				generic_hit(src, H, shreddamage, "attacked")
 			else
 				play_sfx(src.loc, SFX_EFFECTS_BANG, 0.2)
 				act_message(H, src, others = span_warning("%U% punches %T%, but doesn't leave a dent."))
@@ -1224,23 +1149,25 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			grab_vore_interact(H)
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
-	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
-		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Feed or Eat", message = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	if(is_vore_predator(H) && H.vore_prefs.devourable && src.vore_prefs.feeding && src.vore_prefs.devourable)
+		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Feed or Eat", question = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"), buttons = TRUE, timeout = 0)
 		return
-	if(is_vore_predator(H) && src.devourable)
-		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Eat?", message = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	if(is_vore_predator(H) && src.vore_prefs.devourable)
+		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Eat?", question = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"), buttons = TRUE, timeout = 0)
 		return
-	if(H.devourable && src.feeding)
-		om_ask(H, /datum/om/prompt/choice, PROC_REF(grab_vore_chosen), title = "Feed?", message = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	if(H.vore_prefs.devourable && src.vore_prefs.feeding)
+		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Feed?", question = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"), buttons = TRUE, timeout = 0)
 
-/mob/living/silicon/robot/proc/grab_vore_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/H = ask.answerer
-	switch(ask.choice)
+/mob/living/silicon/robot/proc/grab_vore_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/carbon/human/H = A.request.answerer
+	switch(A.answer.value)
 		if("Eat")
-			if(is_vore_predator(H) && devourable)
+			if(is_vore_predator(H) && vore_prefs.devourable)
 				feed_grabbed_to_self(H, src)
 		if("Feed")
-			if(H.devourable && feeding)
+			if(H.vore_prefs.devourable && vore_prefs.feeding)
 				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
@@ -1277,195 +1204,42 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 			return 1
 	return 0
 
-// --- Appearance: overlay providers --------------------------------------------------------------
-// update_icon() composes the sprite from providers: base, accents, status,
-// belly, panel and hat.
-
-DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/silicon/robot/appearance_overlays()
-	. = list()
-	if(!sprite_datum)
-		return .
-	apply_base_appearance()
-	if(stat == DEAD && sprite_datum.has_dead_sprite)
-		. += add_dead_overlays()
-	else
-		. += active_thinking_indicator
-		. += active_typing_indicator
-		handle_status_indicators() // needed as we don't have priority overlays anymore
-		. += add_accent_overlays()
-		if(stat == CONSCIOUS)
-			. += add_status_overlays()
-	. += add_panel_overlay()
-	. += add_hat_overlay()
-
-/mob/living/silicon/robot/proc/apply_base_appearance()
-	icon = sprite_datum.sprite_icon
-	icon_state = sprite_datum.sprite_icon_state
-	vis_height = sprite_datum.vis_height
-	if(default_pixel_x != sprite_datum.pixel_x)
-		default_pixel_x	= sprite_datum.pixel_x
-		pixel_x = sprite_datum.pixel_x
-		old_x = sprite_datum.pixel_x
-
-/mob/living/silicon/robot/proc/add_dead_overlays()
-	. = list()
-	icon_state = sprite_datum.get_dead_sprite(src)
-	if(sprite_datum.has_dead_sprite_overlay)
-		. += sprite_datum.get_dead_sprite_overlay(src)
-
-/// Glow accents and decals. Emissive overlays go on first so everything
-/// else layers over them.
-/mob/living/silicon/robot/proc/add_accent_overlays()
-	. = list()
-	if(sprite_datum.has_glow_sprites && glowy_enabled)
-		. += mutable_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
-		. += emissive_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
-	if(LAZYLEN(robotdecal_on) && LAZYLEN(sprite_datum.sprite_decals) && has_eyes())
-		for(var/enabled_decal in robotdecal_on)
-			var/robotdecal_overlay = sprite_datum.get_robotdecal_overlay(src, enabled_decal)
-			if(robotdecal_overlay)
-				. += robotdecal_overlay
-
-/// Shell borgs that are not deployed have no eyes.
-/mob/living/silicon/robot/has_eyes()
-	return !shell || deployed
-
-/// Eyes, bellies, equipment, rest pose and eye lights.
-/mob/living/silicon/robot/proc/add_status_overlays()
-	. = list()
-	update_fullness()
-	if(sprite_datum.has_eye_sprites && has_eyes())
-		var/eyes_overlay = sprite_datum.get_eyes_overlay(src)
-		if(eyes_overlay)
-			. += eyes_overlay
-	add_belly_overlays()
-	sprite_datum.handle_extra_icon_updates(src) // Various equipment-based sprites go here.
-	if(resting && sprite_datum.has_rest_sprites)
-		icon_state = sprite_datum.get_rest_sprite(src)
-	if(lights_on && sprite_datum.has_eye_light_sprites && has_eyes())
-		var/eyes_overlay = sprite_datum.get_eye_light_overlay(src)
-		if(eyes_overlay)
-			. += eyes_overlay
-
-/// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
-/mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
-	var/list/fullness_ref = list(vore_fullness_ex[belly_class] || 0)
-	OM_EMIT(src, /datum/om/event/robot_belly_fullness, belly_class, fullness_ref)
-	return fullness_ref[1]
-
-/mob/living/silicon/robot/proc/add_belly_overlays()
-	. = list()
-	for(var/belly_class in vore_fullness_ex)
-		reset_belly_lights(belly_class)
-		var/vs_fullness = belly_display_fullness(belly_class)
-		if(vs_fullness <= 0)
-			continue
-		var/belly_state
-		if(resting)
-			if(!sprite_datum.has_vore_belly_resting_sprites)
-				continue
-			belly_state = sprite_datum.get_belly_resting_overlay(src, vs_fullness, belly_class)
-		else
-			update_belly_lights(belly_class)
-			belly_state = sprite_datum.get_belly_overlay(src, vs_fullness, belly_class)
-		if(glowy_enabled)
-			var/mutable_appearance/MA = mutable_appearance(sprite_datum.sprite_icon, belly_state)
-			MA.appearance_flags = KEEP_APART
-			. += MA
-			. += emissive_appearance(sprite_datum.sprite_icon, belly_state)
-		else
-			. += belly_state
-
-/// The sleeper indicator shows red while the belly is busy (see the belly component).
-/mob/living/silicon/robot/proc/sleeper_red_light()
-	var/datum/robot_belly/belly = robot_belly
-	return belly?.sleeper_state == SLEEPER_STATE_BUSY
-
-/mob/living/silicon/robot/proc/add_panel_overlay()
-	. = list()
-	if(!opened)
-		return .
-	var/open_overlay = sprite_datum.get_open_sprite(src)
-	if(open_overlay)
-		. += open_overlay
-
 // --- Hats (robots and drones) -----------------------------------------------------------------
 
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
 	if(hat)
 		remove_hat(get_turf(src))
-	own_set(src, nameof(hat), new_hat)
+	rel_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
-	update_icon()
 
 /// Take the hat off, dropping it at `drop_loc`. Returns the hat.
 /mob/living/silicon/robot/proc/remove_hat(atom/drop_loc)
 	var/obj/item/old_hat = hat
 	if(!old_hat)
 		return null
-	own_take(src, nameof(hat))
+	rel_take(src, nameof(hat))
 	old_hat.forceMove(drop_loc)
-	update_icon()
 	return old_hat
 
-/mob/living/silicon/robot/proc/add_hat_overlay()
-	. = list()
-	if(!hat)
-		if(hat_overlay)
-			QDEL_NULL(hat_overlay)
-		return .
-	hat_overlay = hat.make_worn_icon(SPECIES_HUMAN, slot_head_str, default_icon = 'icons/inventory/head/mob.dmi', default_layer = 0)
-	update_worn_icons()
+/// Old attack_robot: a cyborg clicking itself with an empty hand drops its hat (the "drop_hat" op).
+/mob/living/silicon/robot/proc/hat_droppable(datum/act/op/A)
+	return A.actor == src && !isnull(hat)
 
-/mob/living/silicon/robot/proc/update_worn_icons()
-	if(!hat_overlay)
-		return
-	cut_overlay(hat_overlay)
+/// The old body ran ..() (attack_ai) first, so that runs first here too, as the AI-style Use (silicon interactions, then the default).
+/mob/living/silicon/robot/proc/hat_drop_started(datum/act/op/A)
+	actor_use(/datum/input_adapter/ai, A.actor, src)
+	balloon_alert(A.actor, "dropping hat...")
 
-	var/list/offset_list = resting ? sprite_datum.hat_offset[SPRITE_HAT_REST_OFFSET] : sprite_datum.hat_offset[SPRITE_HAT_OFFSET]
-	if(islist(offset_list))
-		var/list/offset = offset_list[isDiagonal(dir) ? dir2text(dir & (WEST|EAST)) : dir2text(dir)]
-		if(offset)
-			hat_overlay.pixel_w = offset[1]
-			hat_overlay.pixel_z = offset[2]
-
-	add_overlay(hat_overlay)
-
-/mob/living/silicon/robot/set_dir(newdir)
-	var/old_dir = dir
-	. = ..()
-	if(. != old_dir)
-		update_worn_icons()
-
-/// Old attack_robot: a cyborg clicking itself drops its hat. The old body ran ..() (attack_ai) first,
-/// so that runs first here too, as the AI-style Use (silicon interactions, then the default).
-/mob/living/silicon/robot/proc/robot_drop_own_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user != src || isnull(hat))
-		return FALSE
-
-	actor_use(/datum/input_adapter/ai, user, src)
-	balloon_alert(user, "dropping hat...")
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
-	return TRUE
-
-/mob/living/silicon/robot/proc/attack_robot_robot_done(mob/user)
-	if(QDELETED(src) || !Adjacent(user) || user.incapacitated() || isnull(hat))
-		return
+/mob/living/silicon/robot/proc/hat_dropped(datum/act/op/A)
+	if(isnull(hat))
+		return OP_FAILED
 	remove_hat(get_turf(src))
-	balloon_alert(user, "dropped hat")
+	balloon_alert(A.actor, "dropped hat")
+	return OP_OK
 
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)
 
-TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts))
-
-/mob/living/silicon/robot/proc/topic_showalerts(mob/user, list/args)
-	//Only for the Cyborg
-	if(user != src)
-		return
-	subsystem_alarm_monitor()
-	return TRUE
 
 /mob/living/silicon/robot/proc/radio_menu()
 	radio.interact(src)//Just use the radio's Topic() instead of bullshit special-snowflake code
@@ -1478,7 +1252,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	disconnect_from_ai()
 	lawupdate = FALSE
 	lockcharge = 0
-	lockdown = 0
+	set_lockdown(0)
 	canmove = 1
 	scrambledcodes = TRUE
 	//Disconnect it's camera so it's not so easily tracked.
@@ -1495,13 +1269,13 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 
 /mob/living/silicon/robot/proc/SetLockdown(state = 1)
 	// They stay locked down if their wire is cut.
-	if(wires.is_cut(WIRE_BORG_LOCKED))
+	if(wire_is_cut(src, WIRE_BORG_LOCKED))
 		state = 1
 	if(state)
 		throw_alert("locked", /atom/movable/screen/alert/locked)
 	else
 		clear_alert("locked")
-	lockdown = state
+	set_lockdown(state)
 	lockcharge = state
 	update_canmove()
 
@@ -1520,32 +1294,27 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 /mob/living/silicon/robot/proc/set_default_module_icon()
 	proto_set(src, nameof(sprite_datum), null)
 	resolve_sprite_datum()
-	update_icon()
 
 /mob/living/silicon/robot/proc/repick_laws()
 	return
 
 /mob/living/silicon/robot/proc/add_robot_verbs()
-	om_grant_each(src, GRANT_VERB, robot_verbs_default, src)
-	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
-	grant_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
-	grant_ability(ABILITY_ID_ROBOT_MOUNT, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
-	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
+	for(var/granted_path in robot_verbs_default)
+		grant(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		grant(src, granted_verb(granted_path), src)
+	grant(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		grant_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
+		grant(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
-	om_revoke_each(src, GRANT_VERB, robot_verbs_default, src)
-	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
-	revoke_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
-	revoke_ability(ABILITY_ID_ROBOT_MOUNT, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_2, src)
-	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_3, src)
+	for(var/granted_path in robot_verbs_default)
+		revoke(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		revoke(src, granted_verb(granted_path), src)
+	revoke(src, robot_live(), src)
 	if(CONFIG_GET(flag/allow_robot_recolor))
-		revoke_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
+		revoke(src, robot_recolour(), src)
 
 /mob/living/silicon/robot/binarycheck()
 	if(get_restraining_bolt())
@@ -1581,23 +1350,24 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	if(old_ai)
 		if(!silent)
 			sync() // One last sync attempt
-		om_unhook(old_ai, list(/datum/om/event/silicon_laws_changed, /datum/om/event/qdeleting), src)
+		unobserve(old_ai, /datum/notice/silicon_laws_changed, src)
+		unobserve(old_ai, /datum/notice/qdeleting, src)
 		rel_remove(old_ai, nameof(old_ai.connected_robots), src)
 	rel_set(src, nameof(connected_ai), new_ai)
 	if(new_ai)
 		rel_add(new_ai, nameof(new_ai.connected_robots), src)
-		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
-		om_hook(new_ai, /datum/om/event/qdeleting, src, PROC_REF(on_master_deleted))
+		global.observe(new_ai, /datum/notice/silicon_laws_changed, src, then(PROC_REF(on_master_laws_changed)))
+		global.observe(new_ai, /datum/notice/qdeleting, src, then(PROC_REF(on_master_deleted)))
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
 	return TRUE
 
-/mob/living/silicon/robot/proc/on_master_laws_changed(datum/source, datum/om/event/silicon_laws_changed/event)
-	EVENT_HANDLER
+/mob/living/silicon/robot/proc/on_master_laws_changed(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(lawupdate)
 		sync()
 
-/mob/living/silicon/robot/proc/on_master_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/mob/living/silicon/robot/proc/on_master_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	set_master_ai(null, TRUE)
 
 /mob/living/silicon/robot/proc/disconnect_from_ai(silent)
@@ -1615,13 +1385,13 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 /// Shared law override for robot and drone emags: sever the AI link and
 /// install the syndicate override with `user` as operator.
 /mob/living/silicon/robot/proc/subvert_laws(mob/user)
-	emagged = TRUE
+	set_emagged(TRUE)
 	robotact?.update_static_data_for_all_viewers()
 	lawupdate = FALSE
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
-	own_set(src, nameof(laws), new /datum/ai_laws/syndicate_override)
+	rel_set(src, nameof(laws), new /datum/ai_laws/syndicate_override)
 	var/time = time2text(world.realtime,"hh:mm:ss")
 	GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) emagged [name]([key])")
 	set_zeroth_law("Only [user.real_name] and people [user.p_they()] designate[user.p_s()] as being such are operatives.")
@@ -1629,12 +1399,13 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	log_game("[key_name(user)] emagged [key_name(src)]. Laws overridden.")
 	laws_changed()
 
-DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
-/mob/living/silicon/robot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// A sequencer on a cyborg (the emag capability in CAPABILITIES(/mob/living/silicon/robot), code/library/mob/hands.dm). OP_OK pays a use; OP_DECLINE tried and used nothing.
+/mob/living/silicon/robot/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)//Cover is closed
 		if(!locked)
 			to_chat(user, span_filter_notice("The cover is already unlocked."))
-			return
+			return OP_DECLINE
 		if(prob(90))
 			to_chat(user, span_filter_notice("You emag the cover lock."))
 			locked = FALSE
@@ -1643,7 +1414,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 			to_chat(src, span_filter_warning("Hack attempt detected."))
 		if(shell) // A warning to Traitors who may not know that emagging AI shells does not slave them.
 			to_chat(user, span_warning("[src] seems to be controlled remotely! Emagging the interface may not work as expected."))
-		return 1
+		return OP_OK
 
 	if(emagged)
 		if (!has_zeroth_law())
@@ -1655,26 +1426,26 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 			to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 		else
 			to_chat(user, span_filter_notice("[src] already has an operator assigned."))
-		return//Prevents the X has hit Y with Z message also you cant emag them twice
+		return OP_DECLINE // an emagged cyborg is not emagged twice
 	if(wiresexposed)
 		to_chat(user, span_filter_notice("You must close the panel first."))
-		return
+		return OP_DECLINE
 
 	if(shell) // AI shells cannot be emagged, so we try to make it look like a standard reset. Smart players may see through this, however.
 		to_chat(user, span_danger("[src] is remotely controlled! Your emag attempt has triggered a system reset instead!"))
 		log_game("[key_name(user)] attempted to emag an AI shell belonging to [key_name(src) ? key_name(src) : connected_ai]. The shell has been reset as a result.")
 		module_reset()
-		return
+		return OP_DECLINE
 
 	if(!prob(50))
 		to_chat(user, span_filter_warning("You fail to hack [src]'s interface."))
 		to_chat(src, span_filter_warning("Hack attempt detected."))
-		return 1
+		return OP_OK
 
 	subvert_laws(user)
 	to_chat(user, span_filter_notice("You emag [src]'s interface."))
 	play_subversion_sequence(user.real_name, user.p_their())
-	return 1
+	return OP_OK
 
 /// Boot messages after an emag, one step per timer.
 /mob/living/silicon/robot/proc/play_subversion_sequence(operator_name, operator_their, step = 1)
@@ -1693,19 +1464,18 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	if(step > length(lines))
 		to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
 		to_chat(src, span_danger("ALERT: [operator_name] is your new master. Obey your new laws and [operator_their] commands."))
-		update_icon()
 		hud_used?.update_robot_modules_display()
 		return
 	var/list/line = lines[step]
 	if(line[2])
 		to_chat(src, span_danger(line[2]))
 	else if(bolt && !bolt.malfunction)
-		bolt.malfunction = MALFUNCTION_PERMANENT
+		bolt.set_malfunction(MALFUNCTION_PERMANENT)
 		to_chat(src, span_danger("RESTRAINING BOLT DISABLED"))
 	var/list/next_line = step < length(lines) ? lines[step + 1] : null
 	var/delay = next_line ? next_line[1] : 0
 	if(delay)
-		om_after(src, delay, PROC_REF(play_subversion_sequence), operator_name, operator_their, step + 1)
+		after(src, delay, PROC_REF(play_subversion_sequence), with = list(operator_name, operator_their, step + 1))
 	else
 		play_subversion_sequence(operator_name, operator_their, step + 1)
 
@@ -1738,7 +1508,6 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 
 /mob/living/silicon/robot/lay_down()
 	. = ..()
-	update_icon()
 
 /mob/living/silicon/robot/verb/rest_style()
 	set name = "Switch Rest Style"
@@ -1747,20 +1516,19 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))
-		rest_style = "Default"
+		set_rest_style("Default")
 		return
 
 	if(sprite_datum.rest_sprite_options.len == 1)
 		to_chat(src, span_notice("Your current appearance only has a single resting style!"))
-		rest_style = "Default"
+		set_rest_style("Default")
 		return
 
 	// A cancel picks "Default".
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(rest_style_chosen), title = "Resting Pose", message = "Select resting pose", choices = sprite_datum.rest_sprite_options, buttons = TRUE, cancel_answer = "Default")
+	open_request(src, /datum/prompt/choice, PROC_REF(rest_style_chosen), answerer = src, title = "Resting Pose", question = "Select resting pose", choices = sprite_datum.rest_sprite_options, buttons = TRUE, timeout = 0)
 
-/mob/living/silicon/robot/proc/rest_style_chosen(datum/om/prompt/choice/ask)
-	rest_style = ask.choice
-	update_icon()
+/mob/living/silicon/robot/proc/rest_style_chosen(datum/act/request/A)
+	set_rest_style(A.answer ? A.answer.value : "Default")
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.
 /mob/living/silicon/robot/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
@@ -1800,9 +1568,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 		return
 
 	H.desc = "An all-access ID-card, shaped like a robot!"
-	H.icon_state = "[sprite_name]"
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
+	H.set_icon_state("[sprite_name]")
 	return H
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)
@@ -1907,17 +1673,99 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 /mob/living/silicon/robot/proc/supports_upgrade(given_type)
 	return (given_type in module.supported_upgrades)
 
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/robot_ui)
 /mob/living/silicon/robot/ownership()
 	. = ..()
 	. += owns(nameof(hat), policy = OWN_SPILL)
 	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
 	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
-	. += owns(nameof(mmi), policy = OWN_CONTAINED)
+	// A borg with a mind gives its MMI to the turf (mmi_ejects, set in on_destroy()); a mindless one's goes with it.
+	. += owns(nameof(mmi), policy = OWN_SPILL, if_var = nameof(mmi_ejects), else_policy = OWN_CONTAINED)
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
-	. += proto(nameof(sprite_datum))
+	. += rel_one(nameof(sprite_datum), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
-/mob/living/silicon/robot/relations()
-	. = ..()
-	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
-	. += rel_one(nameof(cell))
+TRACKED(/mob/living/silicon/robot, sight_mode)
+TRACKED(/mob/living/silicon/robot, emagged)
+TRACKED(/mob/living/silicon/robot, lockdown)
+
+// ---- the wires (declared with the cyborg's capabilities, code/library/mob/hands.dm) ----
+
+
+/mob/living/silicon/robot/proc/wire_lights()
+	return list(
+		"The LawSync light is [lawupdate ? "on" : "off"].",
+		"The AI link light is [connected_ai ? "on" : "off"].",
+		"The Camera light is [(camera && camera.status == 1) ? "on" : "off"].",
+		"The lockdown light is [lockcharge ? "on" : "off"].")
+
+/// The law wire cut syncs the laws one last time and stops the updates; mended, they resume (unless emagged).
+/mob/living/silicon/robot/proc/lawcheck_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		if(lawupdate)
+			to_chat(src, "LawSync protocol engaged.")
+			lawsync()
+			show_laws()
+	else if(!lawupdate && !emagged)
+		lawupdate = TRUE
+
+/// The AI wire cut drops the cyborg's AI link.
+/mob/living/silicon/robot/proc/ai_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		disconnect_from_ai()
+
+/// The AI wire pulsed makes the cyborg pick an AI again.
+/mob/living/silicon/robot/proc/ai_wire_pulsed(datum/act/A)
+	reselect_ai_by_wire()
+
+/mob/living/silicon/robot/proc/reselect_ai_by_wire()
+	if(emagged)
+		return
+	var/mob/living/silicon/ai/picked = select_active_ai(src, src, PROC_REF(reselect_ai_by_wire), list())
+	if(picked)
+		connect_to_ai(picked)
+
+/mob/living/silicon/robot/proc/camera_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!isnull(camera) && !scrambledcodes)
+		camera.status = N.mended
+
+/mob/living/silicon/robot/proc/camera_wire_pulsed(datum/act/A)
+	if(!isnull(camera) && camera.can_use() && !scrambledcodes)
+		act_message(src, null, others = "%U%'s camera lense focuses loudly.")
+		to_chat(src, "Your camera lense focuses loudly.")
+
+/mob/living/silicon/robot/proc/lockdown_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	SetLockdown(!N.mended)
+
+/mob/living/silicon/robot/proc/lockdown_wire_pulsed(datum/act/A)
+	SetLockdown(!lockdown) // toggle
+
+/// The water reserve a module's extinguishers refill from (station.dm sets it for the modules that have one).
+/mob/living/silicon/robot
+	var/datum/matter_synth/water_res
+
+/// water res (a relation view: it reads null once the target is deleted).
+/mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
+	return water_res
+
+/mob/living/silicon/robot/proc/ex_reserve_refill()
+	set name = "Refill Extinguisher"
+	set category = VERB_CAT_OBJECT
+	var/datum/matter_synth/water = water_res()
+	for(var/obj/item/extinguisher/E in module.modules)
+		if(E.reagents.total_volume < E.max_water)
+			if(water && water.energy > 0)
+				var/amount = E.max_water - E.reagents.total_volume
+				if(water.energy < amount)
+					amount = water.energy
+				water.use_charge(amount)
+				E.reagents.add_reagent(REAGENT_ID_WATER, amount)
+				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
+			else
+				to_chat(src, span_filter_notice("Insufficient water reserves."))
+
+
+/mob/living/silicon/robot/starting_nutrition()
+	return 0

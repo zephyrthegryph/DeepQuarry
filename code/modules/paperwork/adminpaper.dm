@@ -18,7 +18,7 @@
 	var/footer = null
 	var/footerOn = FALSE
 
-/obj/item/paper/admin/Initialize(mapload, text, title)
+/obj/item/paper/admin/Initialize(mapload)
 	. = ..()
 	generateInteractions()
 
@@ -76,21 +76,43 @@
 // full TGUI migration. AdminPaper.tsx renders the
 // segment-based body + structured admin controls; tgui_act handles
 // the admin actions. No more byond:// hrefs, no more admin_fax_links HTML.
-/obj/item/paper/admin/proc/adminbrowse()
+/obj/item/paper/admin/proc/adminbrowse(mob/user)
 	generateFooter()
 	tgui_view = "write"
 	// Closing the logo question opens the fax without a header.
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
+	open_request(src, /datum/prompt/choice, PROC_REF(header_logo_chosen), answerer = user, timeout = 0, title = "Fax Logo", question = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), rights = R_ADMIN|R_EVENT)
 
-/obj/item/paper/admin/proc/header_logo_chosen(datum/om/prompt/choice/ask)
-	generateHeader(ask.choice)
+/obj/item/paper/admin/proc/header_logo_chosen(datum/act/request/A)
+	var/datum/request/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer && !(ask.outcome == REQ_CANCELLED && isnull(ask.value)))
+		return
+	generateHeader(A.answer ? ask.value : "")
 	tgui_interact(ask.answerer)
 
-DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
+CAPABILITIES(/obj/item/paper/admin)
+	op("penmode", ui_act("penmode"), then(PROC_REF(admin_paper_penmode)))
+	op("clear", ui_act("clear"), then(PROC_REF(admin_paper_clear)))
+	op("toggleheader", ui_act("toggleheader"), then(PROC_REF(admin_paper_toggleheader)))
+	op("togglefooter", ui_act("togglefooter"), then(PROC_REF(admin_paper_togglefooter)))
+	interface("AdminPaper")
+	without("ui_open")
+	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
+	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
+	op("confirm", ui_act("confirm"), asks(/datum/prompt/choice/admin_paper_send, step = "send"), then(PROC_REF(ui_act_confirm)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
-UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_item_paper_admin{segments:unknown,stamps:bool,header_html:bool,footer_html:bool,header_on:bool,footer_on:bool,is_crayon:bool}")
+/obj/item/paper/admin/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	var/list/merged_1 = ui_data_obj_item_paper_admin(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/paper/admin's window data (declared on its UI_DATA row).
+/// /obj/item/paper/admin's window data.
 /obj/item/paper/admin/proc/ui_data_obj_item_paper_admin(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["segments"] = get_segments()
@@ -102,73 +124,73 @@ UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_ite
 	data["is_crayon"] = !!isCrayon
 	return data
 
-UI_ACT(/obj/item/paper/admin, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
-UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_field)
-	. = ..()
-	if(.)
-		return
-	admin_write("[params["id"]]", usr)
+/obj/item/paper/admin/ui_act_write_field(datum/act/op/A, id)
+	var/mob/user = A.actor
+	admin_write("[id]", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "write_end", ui_act_write_end)
-UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
-	. = ..()
-	if(.)
-		return
-	admin_write("end", usr)
+/obj/item/paper/admin/ui_act_write_end(datum/act/op/A)
+	var/mob/user = A.actor
+	admin_write("end", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
-	switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
-		if("Yes")
-			if(headerOn)
-				info = header + info
-			if(footerOn)
-				info += footer
-			updateinfolinks()
-			SStgui.close_uis(src)
-			admindatum().faxCallback(src, destination())
+/obj/item/paper/admin/proc/ui_act_confirm(datum/act/op/A)
+	apply_send_confirmation(A.step_value("send"))
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "penmode", ui_act_penmode)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_penmode)
+/obj/item/paper/admin/proc/apply_send_confirmation(selected)
+	if(selected == "Yes")
+		if(headerOn)
+			set_info(header + info)
+		if(footerOn)
+			set_info(info + (footer))
+		updateinfolinks()
+		SStgui.close_uis(src)
+		admindatum().faxCallback(src, destination())
+	return TRUE
+
+/obj/item/paper/admin/proc/admin_paper_penmode(datum/act/op/A)
 	isCrayon = !isCrayon
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "cancel", ui_act_cancel)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
+/obj/item/paper/admin/proc/ui_act_cancel(datum/act/op/A)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_clear)
+/obj/item/paper/admin/proc/admin_paper_clear(datum/act/op/A)
 	clearpaper()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "toggleheader", ui_act_toggleheader)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_toggleheader)
+/obj/item/paper/admin/proc/admin_paper_toggleheader(datum/act/op/A)
 	headerOn = !headerOn
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "togglefooter", ui_act_togglefooter)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
+/obj/item/paper/admin/proc/admin_paper_togglefooter(datum/act/op/A)
 	footerOn = !footerOn
-	return TRUE
+	return OP_OK
 
 // Admin variant uses no pen/range checks (admins fax from anywhere) and
 // always pencode-parses with the chosen crayon flag.
 /obj/item/paper/admin/proc/admin_write(id, mob/user)
+	return admin_write_stage(id, user, list())
+
+/obj/item/paper/admin/proc/admin_write_stage(id, mob/user, list/write_answers)
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
 	// The answers re-run this write.
-	var/t = rerun_ask(user, "text", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = free_space, multiline = TRUE)
+	if(!("text" in write_answers))
+		open_request(src, /datum/prompt/text/admin_paper_write_review, PROC_REF(admin_write_answered), answerer = user, write_operator = user, write_id = id, write_answers = write_answers, write_key = "text", question = "Enter what you want to write:", title = "Write", max_len = free_space, multiline = TRUE, name_text = (free_space <= MAX_NAME_LEN))
+		return
+	var/t = write_answers["text"]
 	if(!t)
 		return
 	if(findtext(t, "\[sign\]"))
-		var/signature = rerun_ask(user, "signature", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter the name you wish to sign the paper with", title = "Signature")
+		if(!("signature" in write_answers))
+			open_request(src, /datum/prompt/text/admin_paper_write_review, PROC_REF(admin_write_answered), answerer = user, write_operator = user, write_id = id, write_answers = write_answers, write_key = "signature", question = "Enter the name you wish to sign the paper with", title = "Signature")
+			return
+		var/signature = write_answers["signature"]
 		if(isnull(signature))
 			return
 		admin_signature = signature
@@ -182,10 +204,9 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
 	if(id != "end")
 		addtofield(text2num(id), t)
 	else
-		info += t
+		set_info(info + (t))
 		updateinfolinks()
 	update_space(t)
-	update_icon()
 
 /obj/item/paper/admin/proc/updateDisplay()
 	SStgui.update_uis(src)
@@ -205,3 +226,44 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
 /// The destination this refers to (a relation view: null once that is deleted).
 /obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
 	return destination
+
+/obj/item/paper/admin/proc/admin_write_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = admin_write_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/paper/admin/proc/admin_write_apply(datum/act/request/A)
+	var/datum/prompt/text/admin_paper_write_review/ask = A.answer
+	ask.write_answers[ask.write_key] = ask.value
+	return admin_write_stage(ask.write_id, ask.write_operator, ask.write_answers)
+
+/datum/prompt/text/admin_paper_write_review
+	timeout = 0
+	var/mob/write_operator
+	var/write_operator_expected = FALSE
+	var/write_id
+	var/list/write_answers
+	var/write_key
+
+CAPABILITIES(/datum/prompt/text/admin_paper_write_review)
+	ref_one(nameof(write_operator), /mob)
+
+/datum/prompt/text/admin_paper_write_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = write_operator
+	write_operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(write_operator))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(write_operator), captured_operator)
+
+/datum/prompt/text/admin_paper_write_review/recheck_extra()
+	if(write_operator_expected && QDELETED(write_operator))
+		return "gone"
+
+/datum/prompt/choice/admin_paper_send
+	question = "Are you sure you want to send the fax as is?"
+	title = "Send Fax"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0

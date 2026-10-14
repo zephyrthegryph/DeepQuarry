@@ -76,9 +76,9 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 			if(FA.z in using_map.contact_levels)
 				FA.on_alert_changed(newlevel)
 		for(var/obj/machinery/holoposter/HP as anything in REGISTRY_MEMBERS(REGISTRY_HOLOPOSTERS))
-			HP.update_icon()
+			HP.security_changed()
 
-		// GLOB.nightshift_service.check_nightshift(TRUE) // disabling this for now as we do not use the nightshift currently.
+		// SSnightshift.check_nightshift(TRUE) // disabling this for now as we do not use the nightshift currently.
 
 		admin_chat_message(message = "Security level is now: [uppertext(get_security_level())]", color = "#CC2222")
 

@@ -17,28 +17,36 @@
 	var/dries = 1
 	var/slips = 0
 
-/obj/effect/effect/foam/Initialize(mapload, ismetal = 0)
-	. = ..()
-	// icon_state = "[ismetal? "m" : ""]foam" // Removal
-	metal = ismetal
-	play_sfx(src, SFX_EFFECTS_BUBBLES2)
-	if(dries)
-		om_after(src, 3 + metal * 3, PROC_REF(post_spread))
-		om_after(src, 12 SECONDS, PROC_REF(pre_harden))
-		om_after(src, 15 SECONDS, PROC_REF(harden))
+CAPABILITIES(/obj/effect/effect/foam)
+	when(nameof(dries), after_init(15 SECONDS, then(PROC_REF(harden))))
+	when(nameof(dries), after_init(12 SECONDS, then(PROC_REF(pre_harden))))
+	param(nameof(metal), pos = 1)
+	when(nameof(dries), after_init(nameof(spread_delay), then(PROC_REF(post_spread))))
+	derives(nameof(spread_delay), PROC_REF(metal_spread_delay))
 
-/obj/effect/effect/foam/proc/post_spread()
+// ALLOW(init/INSTANCE_STATE): foam bubbles, spreads and, when it dries, hardens on timers from its creation
+/obj/effect/effect/foam/Initialize(mapload)
+	. = ..()
+	play_sfx(src, SFX_EFFECTS_BUBBLES2)
+
+/// How long after init it spreads (after_init()).
+/obj/effect/effect/foam/var/spread_delay = 3
+
+/// Metal foam spreads slower (derives(), at init; read by its after_init()).
+/obj/effect/effect/foam/proc/metal_spread_delay()
+	return 3 + metal * 3
+
+/obj/effect/effect/foam/proc/post_spread(datum/act/A)
 	periodic_step()
 	checkReagents()
 
-/obj/effect/effect/foam/proc/pre_harden()
+/obj/effect/effect/foam/proc/pre_harden(datum/act/A)
 	return
 
-/obj/effect/effect/foam/proc/harden()
+/obj/effect/effect/foam/proc/harden(datum/act/A)
 	if(metal)
 		var/obj/structure/foamedmetal/M = new(src.loc)
-		M.metal = metal
-		M.update_icon()
+		M.set_metal(metal)
 	flick("[icon_state]-disolve", src)
 	expire(5)
 
@@ -148,48 +156,57 @@
 	. = ..()
 	update_nearby_tiles(1)
 
-DECLARE_APPEARANCE(/obj/structure/foamedmetal, "metal", list("1" = list(APPEARANCE_ICON_STATE = "metalfoam"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "ironfoam")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/foamedmetal/draw(datum/look/look)
+	..()
+	switch("[metal]")
+		if("1")
+			look.state("metalfoam")
+		else
+			look.state("ironfoam")
 
 /obj/structure/foamedmetal/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/test))
 		return
 	else if(metal == 1 || prob(50))
-		qdel(src)
+		consume(src)
 
-DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/foamedmetal)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/foamedmetal/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/foamedmetal/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if ((user.has_mutation(HULK)) || (prob(75 - metal * 25)))
 		act_message(user, null, MSG_SELF(span_notice("You smash through the metal foam wall.")), \
 			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")))
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_notice("You hit the metal foam but bounce off it."))
 	return TRUE
 
 /// Old attackby.
-/obj/structure/foamedmetal/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/foamedmetal/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/grabbed = G?.grab_target()
 		grabbed.forceMove(src.loc)
 		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
 		consume(I, user)
-		qdel(src)
-		return INTERACTION_HANDLED_PASS
+		consume(src, user)
+		return OP_PASS
 
-	if(prob(I.force * 20 - metal * 25))
+	if(prob(combat_of(I).force * 20 - metal * 25))
 		act_message(user, null, MSG_SELF(span_notice("You smash through the foamed metal with %I%.")), \
 			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")), \
 			item = I)
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"
@@ -199,11 +216,14 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 	dries = FALSE // We do this ourselves
 	slips = FALSE
 
-/obj/effect/effect/foam/firefighting/Initialize(mapload)
-	. = ..()
-	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
+CAPABILITIES(/obj/effect/effect/foam/firefighting)
+	after_init(PROC_REF(foam_lifetime), then(PROC_REF(dissolve)))
 
-/obj/effect/effect/foam/firefighting/proc/dissolve()
+/// How long it lasts: the old lifetime, one per 2 s step.
+/obj/effect/effect/foam/firefighting/proc/foam_lifetime(datum/act/timer/A)
+	return (lifetime + 1) * 2 SECONDS
+
+/obj/effect/effect/foam/firefighting/proc/dissolve(datum/act/timer/A)
 	flick("[icon_state]-disolve", src)
 	expire(5)
 

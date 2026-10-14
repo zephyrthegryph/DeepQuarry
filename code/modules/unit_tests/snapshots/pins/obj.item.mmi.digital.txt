@@ -1,0 +1,76 @@
+@obj human|none
++2 menu: Toggle Brain Radio (refused: You can't do that.)
+@obj robot|none
++3 menu: Toggle Brain Radio (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++1 menu: Toggle Brain Radio (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/kit
++1 menu: Interaction pass
++3 menu: Toggle Brain Radio (refused: You can't do that.)
++5 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Interaction pass
++3 menu: Toggle Brain Radio (refused: You can't do that.)
++5 menu: Use
++6 click: Click: Use
+@obj human|/obj/item
+-menu: Alternate use
++0 menu: Interaction pass
++2 menu: Toggle Brain Radio (refused: You can't do that.)
+keys: collect_item, digital_mmi_self, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, mmi_self, mmi_verb_toggle_radio, move_to_top, pass, pick_up_item, toggle_digestable

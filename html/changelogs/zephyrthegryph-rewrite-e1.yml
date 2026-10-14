@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Declarations engine (E1): CAPABILITIES lists compiled per type into interned tables, capability definitions with selectors and stacking, scoped activation (grant, revoke, granted, one attach and teardown path), the rel_* write verbs over the ownership store with LIST_STATE, value schemas, state graphs; analyze gen declare_ids and declare write the ids, constructors and declared_entries from the markers"

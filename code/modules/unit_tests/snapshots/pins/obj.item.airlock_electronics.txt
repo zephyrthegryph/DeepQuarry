@@ -1,0 +1,23 @@
+@obj human|none
+@obj robot|none
+-click: Click: Pick up
++2 menu: Open controls
++5 click: Click: Open controls
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+keys: access, access_all, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, login, logout, move_to_top, one_access, pick_up_item, toggle_digestable, ui_open

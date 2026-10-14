@@ -1,0 +1,5 @@
+/obj/machinery/reagent_refinery/pump icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/pump state: pump
+/obj/machinery/reagent_refinery/pump dir: 2
+/obj/machinery/reagent_refinery/pump overlay: icons/obj/machines/refinery_machines.dmi:pump:8:#000000
+

@@ -1,0 +1,32 @@
+human|none menu: Touch mucus
+human|none click: Click: Touch mucus
+robot|none menu: Touch mucus
+robot|none click: Click: Touch mucus
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Touch mucus
+human|/obj/item/tool/screwdriver click: Click: Touch mucus
+human|/obj/item/tool/crowbar menu: Touch mucus
+human|/obj/item/tool/crowbar click: Click: Touch mucus
+human|/obj/item/tool/wrench menu: Touch mucus
+human|/obj/item/tool/wrench click: Click: Touch mucus
+human|/obj/item/tool/wirecutters menu: Touch mucus
+human|/obj/item/tool/wirecutters click: Click: Touch mucus
+human|/obj/item/multitool menu: Touch mucus
+human|/obj/item/multitool click: Click: Touch mucus
+human|/obj/item/weldingtool menu: Touch mucus
+human|/obj/item/weldingtool click: Click: Touch mucus
+human|/obj/item/stack/cable_coil menu: Touch mucus
+human|/obj/item/stack/cable_coil click: Click: Touch mucus
+human|/obj/item/stack/material/steel menu: Touch mucus
+human|/obj/item/stack/material/steel click: Click: Touch mucus
+human|/obj/item/card/id menu: Touch mucus
+human|/obj/item/card/id click: Click: Touch mucus
+@obj human|/obj/item/mop_deploy
++1 menu: Mop
++2 menu: Touch mucus
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Scrub out
+human|/obj/item/soap menu: Touch mucus
+human|/obj/item/soap click: Click: Scrub out
+keys: drag_buckle, pass_insert, pass_insert_2, touch_mucus

@@ -7,13 +7,16 @@
 
 	effect_color = "#8cd448"
 
+CAPABILITIES(/datum/artifact_effect/gaia)
+	owns_many(nameof(my_glitterflies))
+
 /datum/artifact_effect/gaia/proc/age_plantlife(obj/machinery/portable_atmospherics/hydroponics/Tray = null)
 	if(istype(Tray) && Tray.seed)
-		Tray.health += rand(1,3) * HYDRO_SPEED_MULTIPLIER
-		Tray.age += 1
+		Tray.set_health(Tray.health + rand(1,3) * HYDRO_SPEED_MULTIPLIER)
+		Tray.set_age(Tray.age + 1)
 
 		if(Tray.health > 0 && Tray.dead)
-			Tray.dead = FALSE
+			Tray.set_dead(FALSE)
 
 		Tray.check_health()
 
@@ -21,7 +24,7 @@
 			if((Tray.age > Tray.seed.get_trait(TRAIT_MATURATION)) && \
 			((Tray.age - Tray.lastproduce) > Tray.seed.get_trait(TRAIT_PRODUCTION)) && \
 			(!Tray.harvest && !Tray.dead))
-				Tray.harvest = 1
+				Tray.set_harvest(1)
 				Tray.lastproduce = Tray.age
 
 	else if(istype(Tray, /obj/effect/plant))
@@ -29,7 +32,6 @@
 		Tray = P.plant
 		if(Tray)
 			age_plantlife(Tray)
-			P.update_icon()
 
 /datum/artifact_effect/gaia/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()
@@ -39,7 +41,7 @@
 		if(prob(30))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -53,7 +55,7 @@
 		if(prob(2))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -67,7 +69,7 @@
 		if(prob(10))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -82,6 +84,6 @@
 
 	for(var/mob/living/L in my_glitterflies)
 		if(L.stat == DEAD)
-			own_take_member(src, nameof(my_glitterflies), L)
+			rel_take(src, nameof(my_glitterflies), L)
 
 		rel_set(L.ai_brain, nameof(/datum/ai_brain::home_turf), get_turf(holder))

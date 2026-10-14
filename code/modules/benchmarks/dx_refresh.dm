@@ -7,10 +7,6 @@
 	periodic_cadence = CADENCE_SECOND
 	var/bench_level = 0
 
-/obj/machinery/dx_bench_drawer/capabilities()
-	. = ..()
-	. += machine_basics(board = null)
-
 /obj/machinery/dx_bench_drawer/should_run()
 	return TRUE
 
@@ -35,14 +31,14 @@
 	refresh_flush()
 	begin_window()
 	var/drains_before = GLOB.refresh_bench_drained
-	sleep(20 SECONDS) // ALLOW(scheduler): a benchmark's fixed steady-state measurement window
+	sleep(20 SECONDS)
 	end_window("steady")
 	count_metric("refreshes_per_second", (GLOB.refresh_bench_drained - drains_before) / 20, "refreshes/s", "none")
 	begin_window()
 	var/start = REALTIMEOFDAY
 	for(var/repeat in 1 to 5)
 		for(var/obj/machinery/dx_bench_drawer/M as anything in made)
-			changed(M)
+			state_changed(M)
 	refresh_flush()
 	metric("burst_ms", REALTIMEOFDAY - start, "ms")
 	end_window("burst")

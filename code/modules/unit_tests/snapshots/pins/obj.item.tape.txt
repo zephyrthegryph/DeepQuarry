@@ -1,0 +1,83 @@
+@obj human|none
+-click: Click: Pick up
++0 menu: Break
++1 menu: Lift
++5 click: Click: Lift
+@obj robot|none
+-click: Click: Pick up
++0 menu: Break
++2 menu: Lift
++6 click: Click: Lift
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use screwdriver
++5 click: Click: Refrain
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use crowbar
++5 click: Click: Refrain
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use wrench
++5 click: Click: Refrain
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use wirecutters
++5 click: Click: Refrain
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use multitool
++5 click: Click: Refrain
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use welding tool
++5 click: Click: Refrain
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use cable coil
++5 click: Click: Refrain
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use steel sheet
++5 click: Click: Refrain
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Break
++1 menu: Lift
++4 menu: Use identification card
++5 click: Click: Refrain
+@obj human|/obj/item/kit
++0 menu: Break
++2 menu: Lift
++5 menu: Use item
+@obj human|/obj/item/storage
+-click: Click: Collect
++0 menu: Break
++2 menu: Lift
++5 menu: Use storage
++6 click: Click: Refrain
+human|/obj/item menu: Break
+human|/obj/item menu: Lift
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Refrain
+keys: break, break_with, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lift, move_to_top, pick_up_item, refrain, toggle_digestable

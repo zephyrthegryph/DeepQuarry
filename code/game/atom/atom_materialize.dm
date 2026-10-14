@@ -7,7 +7,7 @@
 // live atom: global lists, radio and network joins, processing and reactor
 // subscriptions, global signal registrations, lighting and radiation updates.
 // SSatoms.InitAtom() runs it right after Initialize() (and after an immediate
-// LateInitialize()), so creation in the world, map load and a latent entry
+// after_init()), so creation in the world, map load and a latent entry
 // becoming real all go through it.
 //
 // on_dematerialize() is its exact inverse. /atom/Destroy() runs it, and a
@@ -20,7 +20,7 @@
 
 /// While positive, SSatoms.InitAtom() initializes atoms without materializing
 /// them. Only the sandbox helpers below change it.
-/datum/controller/subsystem/atoms
+/datum/system/atoms
 	var/materialize_suppressed = 0
 
 /// Enter the live world. Does nothing if already materialized.
@@ -33,12 +33,8 @@
 		return FALSE
 	flags |= ATOM_MATERIALIZED
 	on_materialize()
-	// A refresh raised while it was latent (appearance_queue()) runs now that it is live.
-	if(appearance_queued == APPEARANCE_PENDING_LATENT)
-		appearance_queued = FALSE
-		appearance_queue(src)
 	// A ledger built while sandboxed skipped the latency sweep; join it now.
-	if(ledger && latent_contents)
+	if(containment_ledger() && latent_contents_enabled())
 		dq_latency_sweep_register(src)
 	if(ismovable(src))
 		for(var/atom/movable/content as anything in contents)
@@ -58,10 +54,6 @@
 				content.dematerialize()
 	flags &= ~ATOM_MATERIALIZED
 	on_dematerialize()
-	// The inverse of materialize(): a refresh it had queued waits again until it is live.
-	if(appearance_queued == TRUE && ismovable(src))
-		GLOB.appearance_queue -= src
-		appearance_queued = APPEARANCE_PENDING_LATENT
 	dq_latency_sweep_unregister(src) // left the live world: no longer a sweep candidate
 	return TRUE
 
@@ -78,7 +70,7 @@
 		dq_rules_on_materialize(src)
 	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
 	if(table & TYPE_TABLE_HAS_OM)
-		om_start(src)
+		entity_start(src)
 	// Declared registries, service members, binds, behaviours, periodic work, timers
 	// (code/datums/lifecycle/declarations.dm), after the core joins above.
 	if(table & TYPE_TABLE_HAS_DECLS)
@@ -101,7 +93,7 @@
 	if(rule_binding)
 		dq_rules_on_dematerialize(src)
 	if(om_rec)
-		om_teardown_rest(src)
+		entity_teardown_rest(src)
 
 /// Creates `path` at `loc` and runs its Initialize() without materializing it.
 /// Extra arguments go to Initialize(). The result is a sandboxed object: it has

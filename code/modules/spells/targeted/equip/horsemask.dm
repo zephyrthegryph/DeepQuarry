@@ -21,7 +21,7 @@
 	..()
 	equipped_summons = list("[SLOT_ID_MASK]" = /obj/item/clothing/mask/horsehead)
 
-/datum/spell/targeted/equip_item/horsemask/cast(list/targets, mob/user = usr)
+/datum/spell/targeted/equip_item/horsemask/cast(list/targets, mob/user)
 	..()
 	for(var/mob/living/target in targets)
 		act_message(target, null, MSG_SELF(span_danger("Your face burns up, and shortly after the fire you realise you have the face of a horse!")), \
@@ -30,11 +30,11 @@
 
 /datum/spell/targeted/equip_item/horsemask/summon_item(new_type)
 	var/obj/item/new_item = new new_type
-	new_item.canremove = FALSE		//curses!
+	new_item.set_canremove(FALSE) //curses!
 	new_item.unacidable = TRUE
 	if(istype(new_item, /obj/item/clothing/mask/horsehead))
 		var/obj/item/clothing/mask/horsehead/magichead = new_item
-		magichead.flags_inv = null	//so you can still see their face
+		magichead.set_flags_inv(null)//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		magichead.say_verbs = list("neighs", "whinnys", "snorts")
 		magichead.say_messages = list("NEEEEIGH", "KEECHOOOW", "WHIIIINNNY", "NEEEEEEIGHHHH", "KEECHOOOWWW")

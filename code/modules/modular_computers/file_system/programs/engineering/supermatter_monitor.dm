@@ -21,6 +21,4 @@
 	if(last_status != new_status)
 		last_status = new_status
 		ui_header = "smmon_[last_status].gif"
-		program_icon_state = "smmon_[last_status]"
-		if(istype(computer(), /obj/item/modular_computer))
-			computer().update_icon()
+		set_program_icon_state("smmon_[last_status]")

@@ -17,7 +17,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 
 /mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
-	publish_mob_chunk(src)
+	publish_mob_chunk(src, FALSE)
 	if(client)
 		stack_trace("Mob with client has been deleted.")
 
@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	unset_machine()
 	clear_fullscreen()
-	// The screen objects are ours (own_set by the HUD setup) and go in teardown.
+	// The screen objects are ours (rel_set by the HUD setup) and go in teardown.
 	if(client)
 		client.screen = list()
 	if(mind && mind.current == src)
@@ -37,8 +37,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	// our bellies go with us (the mob owns them)
-	own_clear(src, nameof(vore_organs), OWN_DELETE)
+	// Our bellies go with us through the declared ownership policy.
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
@@ -48,25 +47,25 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW
 
 /mob/Initialize(mapload)
-	OM_EMIT_WORLD(/datum/om/event/world_mob_created, src)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	lastarea = get_area(src)
-	if(speak_emote)
-		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
-	if(shouldnt_see)
-		shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
 	set_focus(src) // Key Handling
-	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
-	publish_mob_chunk(src)
+	// after ..(): a rolled size_multiplier or icon scale (rolls()) is in place by then
+	update_transform() // Some mobs may start bigger or smaller than normal.
+	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
+#ifdef UNIT_TESTS
+	test_chat_note(src, msg) // a test mob has no client: the driver keeps what it would have been shown
+#endif
 
 	if(!client && !teleop)	return
 
 	if (type)
-		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(EFFECT_PARALYZED)) )//Vision related
+		if((type & VISIBLE_MESSAGE) && (is_blind() || has_status(STAT_PARALYZED)) )//Vision related
 			if (!( alt ))
 				return
 			else
@@ -81,7 +80,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				if ((type & VISIBLE_MESSAGE) && (sdisabilities & BLIND))
 					return
 	// Added voice muffling for Issue 41.
-	if(stat == UNCONSCIOUS || has_status(EFFECT_SLEEPING))
+	if(stat == UNCONSCIOUS || has_status(STAT_SLEEPING))
 		to_chat(src, span_filter_notice(span_italics("... You can almost hear someone talking ...")))
 	else
 		if(teleop)
@@ -115,6 +114,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 // used for petrification machines
 /proc/get_ultimate_mob(atom/source)
+	READS_FROM(source)
 	var/mob/ultimate_mob
 	var/atom/to_check = source.loc
 	var/n = 0
@@ -176,10 +176,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return ((sdisabilities & BLIND) || blinded || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_deaf()
-	return ((sdisabilities & DEAF) || has_status(EFFECT_DEAFENED) || incapacitated(INCAPACITATION_KNOCKOUT))
+	return ((sdisabilities & DEAF) || has_status(STAT_DEAFENED) || incapacitated(INCAPACITATION_KNOCKOUT))
 
 /mob/proc/is_paralyzed()
-	return status_units(EFFECT_PARALYZED)
+	return status_units(STAT_PARALYZED)
 
 /mob/proc/is_physically_disabled()
 	return incapacitated(INCAPACITATION_DISABLED)
@@ -188,13 +188,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	return incapacitated(INCAPACITATION_KNOCKDOWN)
 
 /mob/proc/incapacitated(incapacitation_flags = INCAPACITATION_DEFAULT)
-	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(EFFECT_STUNNED))
+	if((incapacitation_flags & INCAPACITATION_STUNNED) && has_status(STAT_STUNNED))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (has_status(EFFECT_WEAKENED) || resting))
+	if((incapacitation_flags & INCAPACITATION_FORCELYING) && (has_status(STAT_WEAKENED) || resting))
 		return 1
 
-	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || has_status(EFFECT_SLEEPING)))
+	if((incapacitation_flags & INCAPACITATION_KNOCKOUT) && (stat || has_status(STAT_SLEEPING)))
 		return 1
 
 	if((incapacitation_flags & INCAPACITATION_RESTRAINED) && restrained())
@@ -261,7 +261,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			client.perspective = EYE_PERSPECTIVE
 			client.set_eye(loc)
 	/// Signal sent after the eye has been successfully updated, with the client existing.
-	OM_EMIT(src, /datum/om/event/mob_reset_perspective)
+	PUBLISH_LEGACY(src, /datum/notice/mob_reset_perspective)
 	return TRUE
 
 /// Reapplies remote views based on object type and flags. Returns true if the view was assigned.
@@ -333,19 +333,24 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	om_ask(src, /datum/om/prompt/text, PROC_REF(flavor_text_entered), title = "Flavor Text", message = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(bio.flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/mob/proc/flavor_text_entered(datum/om/prompt/text/ask)
-	flavor_text = ask.text
+/mob/proc/flavor_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return flavor_text_apply(A.answer.value)
+
+/mob/proc/flavor_text_apply(new_text)
+	bio.flavor_text = new_text
 
 /mob/proc/warn_flavor_changed()
-	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
+	if(bio.flavor_text && bio.flavor_text != "") // don't spam people that don't use it!
 		to_chat(src, span_filter_notice("<h2 class='alert'>OOC Warning:</h2>"))
 		to_chat(src, span_filter_notice(span_warning("Your flavor text is likely out of date! <a href='byond://?src=\ref[src];flavor_change=1'>Change</a>")))
 
 /mob/proc/print_flavor_text()
-	if (flavor_text && flavor_text != "")
-		var/msg = replacetext(flavor_text, "\n", " ")
+	if (bio.flavor_text && bio.flavor_text != "")
+		var/msg = replacetext(bio.flavor_text, "\n", " ")
 		if(length(msg) <= 40)
 			return span_notice("[msg]")
 		else
@@ -355,7 +360,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	// Try to figure out what time to use
 
 	// Special cases, can never respawn
-	if(SSticker?.mode?.deny_respawn)
+	if(ticker_mode()?.deny_respawn)
 		time = -1
 	else if(!CONFIG_GET(flag/abandon_allowed))
 		time = -1
@@ -363,7 +368,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		time = -1
 
 	// Special case for observing before game start
-	else if(SSticker?.current_state <= GAME_STATE_SETTING_UP)
+	else if(round_game_state() <= GAME_STATE_SETTING_UP)
 		time = 1 MINUTE
 
 	// Wasn't given a time, use the config time
@@ -398,38 +403,39 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	// Final chance to abort "respawning"
 	if(mind && timeofdeath) // They had spawned before
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob, PROC_REF(abandon_mob_confirmed))
+		open_request(src, /datum/prompt/choice/abandon_mob, PROC_REF(abandon_mob_confirmed), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
 /// Leaving for the lobby: only while still dead.
-/datum/om/prompt/confirm/abandon_mob
+/datum/prompt/choice/abandon_mob
 	title = "Confirmation"
-	message = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
-	yes_text = "Yes, leave"
-	no_text = "No, wait"
-	no_first = TRUE
+	question = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
+	choices = list("No, wait", "Yes, leave")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/abandon_mob/valid()
+/datum/prompt/choice/abandon_mob/recheck_extra()
 	return answerer.stat == DEAD ? null : "not dead"
 
 /// Quitting the round on the way out; no still returns to the lobby.
-/datum/om/prompt/confirm/abandon_mob/quit_round
+/datum/prompt/choice/abandon_mob/quit_round
 	title = "Quit This Round"
-	message = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
-	yes_text = "Quit Round"
-	no_text = "No"
-	no_first = FALSE
-	answer_on_no = TRUE
+	question = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
+	choices = list("Quit Round", "No")
 
-/mob/proc/abandon_mob_confirmed(datum/om/prompt/confirm/abandon_mob/ask)
+/mob/proc/abandon_mob_confirmed(datum/act/request/A)
+	if(A.answer?.value != "Yes, leave")
+		return
 	if(mind?.assigned_role)
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered))
+		open_request(src, /datum/prompt/choice/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
-/mob/proc/abandon_mob_quit_answered(datum/om/prompt/confirm/abandon_mob/quit_round/ask)
-	abandon_mob_finish(ask.yes)
+/mob/proc/abandon_mob_quit_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	abandon_mob_finish(A.answer.value == "Quit Round")
 
 /// Leaves the body for the lobby; `quit_round` also frees the job and removes the records.
 /mob/proc/abandon_mob_finish(quit_round)
@@ -439,11 +445,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			if(O.target == mind)
 				if(O.owner && O.owner.current)
 					to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
-				qdel(O)
+				spent(O)
 
 		//Resleeving cleanup
 		if(mind)
-			GLOB.transcore_service.leave_round(src)
+			SStranscore.leave_round(src)
 
 		//Job slot cleanup
 		var/job = mind.assigned_role
@@ -453,7 +459,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		if(length(mind.objectives))
 			// each dying objective leaves mind.objectives on its own (works for the OWN or pair declaration)
 			for(var/datum/objective/O as anything in mind.objectives.Copy())
-				qdel(O)
+				spent(O)
 			mind.special_role = null
 
 		//Cut the PDA manifest (ugh)
@@ -461,13 +467,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 			GLOB.PDA_Manifest.Cut()
 		for(var/datum/data/record/R in GLOB.data_core.medical)
 			if((R.fields["name"] == real_name))
-				qdel(R)
+				spent(R)
 		for(var/datum/data/record/T in GLOB.data_core.security)
 			if((T.fields["name"] == real_name))
-				qdel(T)
+				spent(T)
 		for(var/datum/data/record/G in GLOB.data_core.general)
 			if((G.fields["name"] == real_name))
-				qdel(G)
+				spent(G)
 
 		//This removes them from being 'active' list on join screen
 		mind.assigned_role = null
@@ -489,7 +495,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	var/mob/new_player/M = new /mob/new_player()
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
-		qdel(M)
+		spent(M)
 		M.key = null
 		return
 
@@ -531,20 +537,27 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	targets += observe_list_format(REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 	targets += getmobs()
 	targets += observe_list_format(sort_names(REGISTRY_MEMBERS(REGISTRY_MECHAS)))
-	targets += observe_list_format(SSshuttles.ships)
+	targets += observe_list_format(shuttles_ships().Copy())
 
 	client.perspective = EYE_PERSPECTIVE
 
 	var/ok = "[is_admin ? "Admin Observe" : "Observe"]"
-	om_ask(src, /datum/om/prompt/choice/observe_target, PROC_REF(observe_target_chosen), message = "Select something to [ok]:", choices = targets, is_admin = is_admin)
+	open_request(src, /datum/prompt/choice/observe_target, PROC_REF(observe_target_chosen), answerer = src, question = "Select something to [ok]:", choices = targets, is_admin = is_admin)
 
-/datum/om/prompt/choice/observe_target
+/datum/prompt/choice/observe_target
 	title = "Select Target"
+	timeout = 0
 	var/is_admin = FALSE
 
-/mob/proc/observe_target_chosen(datum/om/prompt/choice/observe_target/ask)
+/mob/proc/observe_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return observe_target_apply(A)
+
+/mob/proc/observe_target_apply(datum/act/request/A)
+	var/datum/prompt/choice/observe_target/ask = A.answer
 	var/is_admin = ask.is_admin
-	var/mob/mob_eye = ask.choices[ask.choice]
+	var/mob/mob_eye = ask.choices[ask.value]
 
 	if(client && mob_eye)
 		begin_remote_view(/datum/remote_view, mob_eye)
@@ -558,11 +571,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set category = VERB_CAT_OOC_GAME
 	reset_perspective()
 
-TOPIC_ACTION(/mob, "flavor_more", PROC_REF(topic_flavor_more))
-TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
-/mob/proc/topic_flavor_more(mob/user, list/args)
-	var/examine_text = splittext(flavor_text, "||")
+/mob/proc/topic_flavor_more(datum/act/op/A)
+	var/mob/user = A.actor
+	var/examine_text = splittext(bio.flavor_text, "||")
 	var/index = 0
 	var/rendered_text = ""
 	for(var/part in examine_text)
@@ -576,9 +588,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	dq_admin_report_html(user, "[name]", examine_text)
 	return TRUE
 
-/mob/proc/topic_flavor_change(mob/user, list/args)
-	if(user != src) // only your own flavor text
-		return
+/mob/proc/topic_flavor_change(datum/act/op/A, href_flavor_change)
 	update_flavor_text()
 	return TRUE
 
@@ -602,10 +612,8 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			act_message(src, H, MSG_SELF(span_notice("You let go of %T%.")), MSG_OTHERS(span_warning("%U% lets go of %T%.")), exclude = list(H))
 			if(!H.stat)
 				to_chat(H, span_warning("\The [src] lets go of you."))
-		// The pulling relation's on_unlink() (code/datums/om/library.dm)
-		// clears the pull HUD icon; PULLING()/PULLED_BY() (om.dm) are pure
-		// graph reads, with no stored field left to clear.
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		// pull_released() clears the pull HUD icon.
+		link_break(src, LK_PULLING, pulling)
 
 /mob/proc/start_pulling(atom/movable/AM)
 
@@ -622,15 +630,15 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	var/mob/M = AM
 	if(ismob(AM))
 
-		if(!can_pull_mobs || !can_pull_size)
+		if(!movement_of(src).pull_mobs || !movement_of(src).pull_size)
 			to_chat(src, span_warning("They won't budge!"))
 			return
 
-		if((mob_size < M.mob_size) && (can_pull_mobs != MOB_PULL_LARGER))
+		if((mob_size < M.mob_size) && (movement_of(src).pull_mobs != MOB_PULL_LARGER))
 			to_chat(src, span_warning("[M] is too large for you to move!"))
 			return
 
-		if((mob_size == M.mob_size) && (can_pull_mobs == MOB_PULL_SMALLER))
+		if((mob_size == M.mob_size) && (movement_of(src).pull_mobs == MOB_PULL_SMALLER))
 			to_chat(src, span_warning("[M] is too heavy for you to move!"))
 			return
 
@@ -642,26 +650,26 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			// Only start pulling when nobody else has a grab on them
 			. = 1
 			for(var/obj/item/grab/G in M?.grabbed_by_list())
-				if(G?.grab_assailant() != usr)
+				if(G?.grab_assailant() != src)
 					. = 0
 				else
-					qdel(G)
+					spent(G)
 			if(!.)
 				to_chat(src, span_warning("Somebody has a grip on them!"))
 				return
 
 		if(!iscarbon(src))
-			M.LAssailant = null
+			rel_clear(M, nameof(M.LAssailant))
 		else
-			M.LAssailant = usr
+			rel_set(M, nameof(M.LAssailant), src)
 
-		if(M.no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
+		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
 			return
 
 	else if(isobj(AM))
 		var/obj/I = AM
-		if(!can_pull_size || can_pull_size < I.w_class)
+		if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 			to_chat(src, span_warning("It won't budge!"))
 			return
 
@@ -672,11 +680,8 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 		if(pulling_old == AM)
 			return
 
-	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
-	// icon and the status channel as its on_link() side effects; PULLING()/
-	// PULLED_BY() (om.dm) are pure graph reads, nothing to set here.
-	// target_single means it also drops AM's previous puller, if any.
-	if(!istype(om_link(src, AM, /datum/om/relation/pulling), /datum/om/edge))
+	// pull_link() raises the pull HUD icon and the status channel. The pair takes one puller per pulled, so it also drops AM's previous puller, if any.
+	if(!pull_link(AM))
 		return
 
 	if(ishuman(AM))
@@ -695,6 +700,34 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			to_chat(src, span_danger(span_large("Pulling \the [H] in their current condition could easily worsen their injuries.")))
 
 // We have pulled something before, so we should be able to safely continue pulling it. This proc is only for portals!
+/// src pulls AM (a mob, or a wheelchair pulling its pusher): the pull link (LK_PULLING / LK_PULLED_BY) and what pulling does to the puller's HUD and the pulled's
+/// momentum. FALSE when the link was refused.
+/atom/movable/proc/pull_link(atom/movable/AM)
+	if(!link_make(src, LK_PULLING, AM))
+		return FALSE
+	if(ismob(src))
+		var/mob/M = src
+		PUBLISH_CHANGE(M, MOB_KEY_STATUS)
+		if(hud_of(M)?.pullin)
+			hud_of(M)?.pullin?.icon_state = "pull1"
+	if(ismob(AM))
+		var/mob/pulled = AM
+		pulled.inertia_dir = 0
+	return TRUE
+
+/// links(holds_while) of the pull pair: it stands while the two are within a tile of each other.
+/atom/movable/proc/link_stays_in_pull_range(atom/movable/pulled)
+	return link_in_range(pulled, 1)
+
+/// The pull link broke: the puller's HUD icon drops.
+/atom/movable/proc/pull_released(atom/movable/was_pulled)
+	if(!ismob(src))
+		return
+	var/mob/M = src
+	PUBLISH_CHANGE(M, MOB_KEY_STATUS)
+	if(hud_of(M)?.pullin)
+		hud_of(M)?.pullin?.icon_state = "pull0"
+
 /mob/proc/continue_pulling(atom/movable/AM)
 
 	if ( !AM || src==AM || !isturf(loc) )	//if there's no person pulling OR the person is pulling themself OR the object being pulled is inside something: abort!
@@ -703,12 +736,10 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	if (AM.anchored)
 		return
 
-	// The pulling relation (code/datums/om/library.dm) raises the pull HUD
-	// icon as its on_link() side effect, but only the first
-	// time this source/target pair links -- re-affirm the inertia reset
+	// pull_link() raises the pull HUD icon only the first time this pair links -- re-affirm the inertia reset
 	// unconditionally here since continue_pulling() exists specifically for
 	// discontinuous jumps (portals, multi-z, redgates) where it matters every time.
-	om_link(src, AM, /datum/om/relation/pulling)
+	pull_link(AM)
 	if(ismob(AM))
 		var/mob/pulled = AM
 		pulled.inertia_dir = 0
@@ -808,17 +839,17 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 /mob/proc/Resting(amount)
 	facing_dir = null
-	resting = max(max(resting,amount),0)
+	set_resting(max(max(resting,amount),0))
 	update_canmove()
 	return
 
 /mob/proc/SetResting(amount)
-	resting = max(amount,0)
+	set_resting(max(amount,0))
 	update_canmove()
 	return
 
 /mob/proc/AdjustResting(amount)
-	resting = max(resting + amount,0)
+	set_resting(max(resting + amount,0))
 	update_canmove()
 	return
 
@@ -832,7 +863,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	return ""
 
 /mob/proc/flash_weak_pain()
-	flick("weak_pain",pain)
+	flick("weak_pain",hud_used?.pain)
 
 /mob/proc/get_visible_implants(class = 0)
 	var/list/visible_implants = list()
@@ -844,16 +875,14 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 /mob/proc/embedded_needs_process()
 	return (LAZYLEN(embedded) > 0)
 
-/datum/om/task/timed/mob_yank_out
-	duration = 3 SECONDS
-	complete_proc = /mob/proc/yank_out_done
-	var/obj/item/selection
-	var/self
+/// What pulling an embedded object out costs the body it was in (a human's limb and blood, a robot's wiring); `U` is the one pulling.
+/mob/proc/yank_out_tear(obj/item/selection, mob/U)
+	return
 
-/mob/proc/yank_out_done(datum/om/task/timed/mob_yank_out/task)
-	var/mob/U = task.actor
-	var/obj/item/selection = task.selection
-	var/self = task.self
+/mob/proc/yank_out_done(datum/act/op/A)
+	var/mob/U = A.actor
+	var/obj/item/selection = A.arg("selection")
+	var/self = A.arg("self")
 	var/mob/S = src
 	var/list/valid_objects
 	if(!selection || !S || !U)
@@ -867,37 +896,10 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			MSG_OTHERS(span_boldwarning("%T% rips [selection] out of %U%'s body.")))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
-		om_revoke(src, GRANT_VERB, /mob/proc/yank_out_object, src) // embed() grants it
+		revoke(src, granted_verb(/mob/proc/yank_out_object), src) // embed() grants it
 		clear_alert("embeddedobject")
 
-	if(ishuman(src))
-		var/mob/living/carbon/human/H = src
-		var/obj/item/organ/external/affected
-
-		for(var/obj/item/organ/external/organ in H.organs) //Grab the organ holding the implant.
-			for(var/obj/item/O in organ.implants)
-				if(O == selection)
-					affected = organ
-
-		rel_remove(affected, nameof(affected.implants), selection)
-		H.adjust_shock(20, "implant extraction")
-		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
-
-		if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
-			affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
-			affected.update_damages()
-			H.process_organs(TRUE) //Force an update so we start processing the internal bleeding.
-			H.custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
-
-		if (ishuman(U))
-			var/mob/living/carbon/human/human_user = U
-			human_user.bloody_hands(H)
-
-	else if(issilicon(src))
-		var/mob/living/silicon/robot/R = src
-		LAZYREMOVE(R.embedded, selection)
-		R.injure(INJURY_CUT, 5, null, selection)
-		R.injure(INJURY_ELECTRIC, 10, null, selection) // Torn wiring shorts out.
+	yank_out_tear(selection, U)
 
 	selection.forceMove(get_turf(src))
 	U.put_in_hands(selection)
@@ -943,18 +945,31 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
 		return
 
-	om_ask(U, /datum/om/prompt/choice/yank_object, PROC_REF(yank_object_chosen), choices = valid_objects, self = self)
+	open_request(src, /datum/prompt/choice/yank_object, PROC_REF(yank_object_chosen), answerer = U, choices = valid_objects, self = self)
 
 /// Which embedded object to pull out: the answerer must still be next to the body.
-/datum/om/prompt/choice/yank_object
+/datum/prompt/choice/yank_object
 	title = "Embedded objects"
-	message = "What do you want to yank out?"
-	requires = PROMPT_ADJACENT
+	question = "What do you want to yank out?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	var/self
 
-/mob/proc/yank_object_chosen(datum/om/prompt/choice/yank_object/ask)
+/datum/prompt/choice/yank_object/recheck_extra()
+	if(!isnull(value))
+		var/obj/item/selected = value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+
+/mob/proc/yank_object_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return yank_object_apply(A)
+
+/mob/proc/yank_object_apply(datum/act/request/A)
+	var/datum/prompt/choice/yank_object/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/selection = ask.choice
+	var/obj/item/selection = ask.value
 	var/self = ask.self
 	var/mob/S = src
 	if(!(selection in get_visible_implants(0)))
@@ -964,7 +979,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	else
 		to_chat(U, span_warning("You attempt to get a good grip on [selection] in [S]'s body."))
 
-	om_task_start(/datum/om/task/timed/mob_yank_out, U, src, receiver = src, selection = selection, self = self)
+	perform_op(U, src, "yank_out", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("selection" = selection, "self" = self))
 
 //Check for brain worms in head.
 /mob/proc/has_brain_worms()
@@ -975,16 +990,6 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 	return 0
 
-// Please always use this proc, never just set the var directly.
-/// A mob's stat is a declared field: set_stat() is its setter and raises CHANGE_MOB_STAT on a real
-/// change (a strain's spread lane reads "host.stat").
-OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
-
-/mob/proc/set_stat(new_stat)
-	. = (stat != new_stat)
-	stat = new_stat
-	if(.)
-		changed(src, CHANGE_MOB_STAT)
 
 /mob/verb/face_direction()
 
@@ -1043,7 +1048,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	if(pixel_y <= (default_pixel_y + 16))
 		pixel_y++
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shiftsouth()
 	set hidden = TRUE
@@ -1051,7 +1056,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	if(pixel_y >= (default_pixel_y - 16))
 		pixel_y--
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shiftwest()
 	set hidden = TRUE
@@ -1059,7 +1064,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	if(pixel_x >= (default_pixel_x - 16))
 		pixel_x--
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shifteast()
 	set hidden = TRUE
@@ -1067,7 +1072,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	if(pixel_x <= (default_pixel_x + 16))
 		pixel_x++
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/planeup()
 	set hidden = TRUE
@@ -1080,7 +1085,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	plane += 1		//Increase the plane
 	if(plane == MOB_PLANE)	//Return to normal
 		layer = MOB_LAYER
-	is_shifted = TRUE
+	set_is_shifted(TRUE)
 
 /mob/verb/planedown()
 	set hidden = TRUE
@@ -1093,7 +1098,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	plane -= 1		//Decrease the plane
 	if(plane == MOB_PLANE)	//Return to normal
 		layer = MOB_LAYER
-	is_shifted = TRUE
+	set_is_shifted(TRUE)
 
 // End VOREstation edit
 
@@ -1121,13 +1126,13 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 
 /mob/proc/throw_mode_off()
 	in_throw_mode = 0
-	if(throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
-		throw_icon.icon_state = "act_throw_off"
+	if(hud_used?.throw_icon && !issilicon(src)) //in case we don't have the HUD and we use the hotkey. Silicon use this for something else. Do not overwrite their HUD icon
+		hud_used?.throw_icon?.icon_state = "act_throw_off"
 
 /mob/proc/throw_mode_on()
 	in_throw_mode = 1
-	if(throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
-		throw_icon.icon_state = "act_throw_on"
+	if(hud_used?.throw_icon && !issilicon(src)) // Silicon use this for something else. Do not overwrite their HUD icon
+		hud_used?.throw_icon?.icon_state = "act_throw_on"
 
 /mob/verb/spacebar_throw_on()
 	set name = ".throwon"
@@ -1146,12 +1151,11 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		rel_add(src, nameof(exploit_addons), I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
-		exploit_record += exploitmsg
+		bio.exploit_record = bio.exploit_record + (exploitmsg)
 
 /client/proc/check_has_body_select()
-	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
+	return mob && mob.hud_used && istype(hud_of(mob)?.zone_sel, /atom/movable/screen/zone_sel)
 
 /client/verb/body_toggle_head()
 	set name = "body-toggle-head"
@@ -1191,8 +1195,8 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 /client/proc/toggle_zone_sel(list/zones)
 	if(!check_has_body_select())
 		return
-	var/atom/movable/screen/zone_sel/selector = mob.zone_sel
-	selector.set_selected_zone(next_in_list(mob.zone_sel.selecting,zones))
+	var/atom/movable/screen/zone_sel/selector = hud_of(mob)?.zone_sel
+	selector.set_selected_zone(next_in_list(hud_of(mob)?.zone_sel?.selecting,zones))
 
 // This handles setting the client's color variable, which makes everything look a specific color.
 // This proc is here so it can be called without needing to check if the client exists, or if the client relogs.
@@ -1210,7 +1214,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	if(!T || !A)
 		return null
 	if(T.is_outdoors()) // check weather
-		var/datum/planet/P = LAZYACCESS(GLOB.planet_service.z_to_planet, T.z)
+		var/datum/planet/P = LAZYACCESS(SSplanets.z_to_planet, T.z)
 		var/weather_tint = P?.weather_holder.current_weather.get_color_tint()
 		if(weather_tint) // But not if the weather has no blending!
 			return weather_tint
@@ -1230,11 +1234,16 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	return TRUE
 
-/mob/MouseEntered(location, control, params)
-	if(usr != src && will_show_tooltip())
-		if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
-			openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
-	. = ..()
+/// The native mouse-over's actor (hover(), code/engine/lifeforms/input.dm): a hovered mob shows its nametag tooltip.
+/mob/proc/hover_input(datum/act/input/A)
+	if(A.entered)
+		show_mob_hover_tip(A.actor, A.params)
+	return INPUT_FALLTHROUGH
+
+/mob/proc/show_mob_hover_tip(mob/user, params)
+	if(user != src && will_show_tooltip())
+		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
+			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 /mob/MouseDown()
 	closeToolTip(usr, src) //No reason not to, really
@@ -1336,144 +1345,130 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	VV_DROPDOWN_OPTION(VV_HK_DIRECT_CONTROL, "Assume Direct Control")
 
 /// A variable-edit choice needing +SPAWN.
-/datum/om/prompt/choice/vv_spawn
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/prompt/choice/vv_spawn
+	timeout = 0
+	rights = R_SPAWN
+
+/datum/prompt/choice/vv_spawn/recheck_extra()
+	if(isdatum(value))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"
 
 /// A variable-edit choice needing +DEBUG.
-/datum/om/prompt/choice/vv_debug
-	requires = PROMPT_ADMIN(R_DEBUG)
+/datum/prompt/choice/vv_debug
+	timeout = 0
+	rights = R_DEBUG
 
-/datum/om/prompt/text/vv_ai_faction
-	key = "faction"
+/datum/prompt/text/vv_ai_faction
 	title = "AI faction"
-	message = "Please input AI faction"
+	question = "Please input AI faction"
 	default = "neutral"
+	timeout = 0
+	rights = R_HOLDER
+	recheck_on_open = TRUE
 
-/datum/om/prompt/choice/vv_ai_stance
-	key = "stance"
+/datum/prompt/choice/vv_ai_stance
 	title = "AI combat mode"
-	message = "Please choose AI combat mode"
+	question = "Please choose AI combat mode"
 	choices = list(I_HURT, I_HELP)
+	timeout = 0
+	rights = R_HOLDER
+	recheck_on_open = TRUE
 
-/datum/om/prompt/confirm/vv_ai_wake
-	key = "wake"
+/datum/prompt/choice/vv_ai_wake
 	title = "Wake mob?"
-	message = "Make mob wake up? This is needed for carbon mobs."
-	answer_on_no = TRUE
+	question = "Make mob wake up? This is needed for carbon mobs."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_HOLDER
+	recheck_on_open = TRUE
 
-/mob/proc/vv_language_added(datum/om/prompt/choice/vv_spawn/ask)
-	var/mob/user = ask.answerer
-	var/new_language = ask.choice
+/mob/proc/vv_language_added_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_language = A.step_value("language")
 	if(add_language(new_language))
 		to_chat(user, "Added [new_language] to [src].")
 		return
 	to_chat(user, "Mob already knows that language.")
 
-/mob/proc/vv_language_removed(datum/om/prompt/choice/vv_spawn/ask)
-	var/mob/user = ask.answerer
-	var/datum/language/rem_language = ask.choice
+/mob/proc/vv_language_removed_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/language/rem_language = A.step_value("language")
 	if(remove_language(rem_language.name))
 		to_chat(user, "Removed [rem_language] from [src].")
 		return
 	to_chat(user, "Mob doesn't know that language.")
 
-/mob/proc/vv_verb_added(datum/om/prompt/choice/vv_debug/ask)
-	var/verb = ask.choice
+/mob/proc/vv_verb_added_apply(datum/act/op/A)
+	var/verb = A.step_value("verb")
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
-		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
-		om_grant(src, GRANT_VERB, verb, verb_source(VERB_SOURCE_ADMIN))
+		revoke(src, granted_verb(verb, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
+		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_verb_removed(datum/om/prompt/choice/vv_debug/ask)
+/mob/proc/vv_verb_removed_apply(datum/act/op/A)
+	var/verb_name = A.step_value("verb")
 	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
-	om_revoke(src, GRANT_VERB, ask.choice, verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.choice, verb_source(VERB_SOURCE_ADMIN))
+	revoke(src, granted_verb(verb_name), verb_source(VERB_SOURCE_ADMIN))
+	grant(src, granted_verb(verb_name, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_organ_added(datum/om/prompt/choice/vv_spawn/ask)
-	var/mob/user = ask.answerer
-	var/new_organ = ask.choice
+/mob/proc/vv_organ_added_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_organ = A.step_value("organ")
 	var/mob/living/carbon/M = src
 	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
 
-/mob/proc/vv_organ_removed(datum/om/prompt/choice/vv_spawn/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/organ/rem_organ = ask.choice
+/mob/proc/vv_organ_removed_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/rem_organ = A.step_value("organ")
 	var/mob/living/carbon/M = src
 	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")
 	rem_organ.removed()
-	qdel(rem_organ)
+	spent(rem_organ, src)
 
-/// A VV AI brain setup: the answers of the vv_ai_* prompts.
-/datum/om/flow/ask_sequence/vv_ai_setup
-	var/faction
-	var/stance
-	var/wake
 
-/mob/proc/vv_ai_configured(datum/om/flow/ask_sequence/vv_ai_setup/seq)
-	var/mob/living/L = src
-	if(!istype(L) || !L.ai_brain)
-		return
-	L.faction = seq.faction
-	if(seq.stance)
-		L.set_use_stance(seq.stance)
-	if(seq.wake)
-		L.status_adjust(EFFECT_SLEEPING, -100)
-
-VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
-VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS_FULL, PROC_REF(vv_topic_regen_icons_full))
-VV_TOPIC_ACTION(/mob, VV_HK_PLAYER_PANEL, PROC_REF(vv_topic_player_panel))
-VV_TOPIC_ACTION(/mob, VV_HK_GODMODE, PROC_REF(vv_topic_godmode), TOPIC_RIGHTS(R_ADMIN))
-VV_TOPIC_ACTION(/mob, VV_HK_ADDLANGUAGE, PROC_REF(vv_topic_add_language), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVELANGUAGE, PROC_REF(vv_topic_remove_language), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob, VV_HK_ADDVERB, PROC_REF(vv_topic_add_verb), TOPIC_RIGHTS(R_DEBUG))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVEVERB, PROC_REF(vv_topic_remove_verb), TOPIC_RIGHTS(R_DEBUG))
-VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_ADDORGAN, PROC_REF(vv_topic_add_organ), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_REMOVEORGAN, PROC_REF(vv_topic_remove_organ), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living, VV_HK_GIVE_AI, PROC_REF(vv_topic_give_ai), TOPIC_RIGHTS(R_HOLDER))
-VV_TOPIC_ACTION(/mob, VV_HK_GIVE_SPELL, PROC_REF(vv_topic_give_spell))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVE_SPELL, PROC_REF(vv_topic_remove_spell))
-VV_TOPIC_ACTION(/mob, VV_HK_GIVE_MODIFIER, PROC_REF(vv_topic_give_modifier))
-VV_TOPIC_ACTION(/mob, VV_HK_GIB, PROC_REF(vv_topic_gib))
-VV_TOPIC_ACTION(/mob, VV_HK_BUILDMODE, PROC_REF(vv_topic_buildmode), TOPIC_RIGHTS(R_BUILDMODE))
-VV_TOPIC_ACTION(/mob, VV_HK_DROP_ALL, PROC_REF(vv_topic_drop_all))
-VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
-
-/mob/proc/vv_topic_regen_icons(mob/user, list/args)
+/mob/proc/vv_topic_regen_icons(datum/act/op/A)
 	regenerate_icons()
 	return TRUE
 
-/mob/proc/vv_topic_regen_icons_full(mob/user, list/args)
+/mob/proc/vv_topic_regen_icons_full(datum/act/op/A)
 	cut_overlays()
 	regenerate_icons()
 	return TRUE
 
-/mob/proc/vv_topic_player_panel(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, src)
+/mob/proc/vv_topic_player_panel(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, src)
+	return TRUE
 
-/mob/proc/vv_topic_godmode(mob/user, list/args)
+/mob/proc/vv_topic_godmode(datum/act/op/A)
+	var/mob/user = A.actor
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/cmd_admin_godmode, src)
 	return TRUE
 
-/mob/proc/vv_topic_add_language(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_added), title = "Language", message = "Please choose a language to add.", choices = GLOB.all_languages)
-	return TRUE
+/// The choices of the VV language questions.
+/mob/proc/vv_language_choices(datum/act/op/A)
+	return GLOB.all_languages
 
-/mob/proc/vv_topic_remove_language(mob/user, list/args)
-	if(!languages.len)
-		to_chat(user, "This mob knows no languages.")
-		return
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), title = "Language", message = "Please choose a language to remove.", choices = languages)
-	return TRUE
+/mob/proc/vv_known_language_choices(datum/act/op/A)
+	return languages
 
-/mob/proc/vv_topic_add_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_added), title = "Verbs", message = "Select a verb!", choices = vv_addable_verbs(src))
-	return TRUE
+
+
+/// The choices of the VV verb questions.
+/mob/proc/vv_verb_choices(datum/act/op/A)
+	return vv_addable_verbs(src)
+
+/mob/proc/vv_current_verb_choices(datum/act/op/A)
+	return verbs
 
 /// The verbs VV can add to `H` (a global proc: typesof(/mob/proc) inside a /mob proc is a cross-reference loop).
 /proc/vv_addable_verbs(mob/H)
@@ -1497,50 +1492,67 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 
 	return possibleverbs
 
-/mob/proc/vv_topic_remove_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), title = "Verbs", message = "Please choose a verb to remove.", choices = verbs)
-	return TRUE
+/// The choices of the VV organ questions.
+/mob/living/carbon/proc/vv_organ_type_choices(datum/act/op/A)
+	return subtypesof(/obj/item/organ)
 
-/mob/living/carbon/proc/vv_topic_add_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), title = "Organ", message = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
-	return TRUE
+/mob/living/carbon/proc/vv_organ_choices(datum/act/op/A)
+	return internal_organ_list()
 
-/mob/living/carbon/proc/vv_topic_remove_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = internal_organ_list())
-	return TRUE
+MSG_DEF_SELF(vv/player_mob, "This cannot be used on player mobs!")
+MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 
-/mob/living/proc/vv_topic_give_ai(mob/user, list/args)
-	if(client || teleop)
-		to_chat(user, span_warning("This cannot be used on player mobs!"))
-		return
+/// Requirement: nobody drives the mob by remote control (its teleop is a relation view: null once that is gone).
+/mob/proc/vv_not_remote_driven(datum/act/op/A)
+	return (!teleop) ? null : MSG(vv/player_mob)
 
+/// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
+/mob/living/proc/vv_topic_give_ai(datum/act/op/A)
 	if(ai_brain)	//Cleaning up the original ai
-		own_clear(src, nameof(ai_brain), OWN_DELETE)
+		rel_clear(src, nameof(ai_brain))
 	initialize_ai_brain()
-	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
+	if(!ai_brain)
+		return
+	faction = A.step_value("faction")
+	var/stance = A.step_value("stance")
+	if(stance)
+		set_use_stance(stance)
+	if(A.step_value("wake") == "Yes")
+		status_adjust(STAT_SLEEPING, -100)
+
+/mob/proc/vv_topic_give_spell(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/give_spell, src)
 	return TRUE
 
-/mob/proc/vv_topic_give_spell(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/give_spell, src)
+/mob/proc/vv_topic_remove_spell(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/remove_spell, src)
+	return TRUE
 
-/mob/proc/vv_topic_remove_spell(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/remove_spell, src)
+/mob/proc/vv_topic_give_modifier(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_give_modifier, src)
+	return TRUE
 
-/mob/proc/vv_topic_give_modifier(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_give_modifier, src)
+/mob/proc/vv_topic_gib(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/gib_them, src)
+	return TRUE
 
-/mob/proc/vv_topic_gib(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/gib_them, src)
-
-/mob/proc/vv_topic_buildmode(mob/user, list/args)
+/mob/proc/vv_topic_buildmode(datum/act/op/A)
 	togglebuildmode(src)
 	return TRUE
 
-/mob/proc/vv_topic_drop_all(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/drop_everything, src)
+/mob/proc/vv_topic_drop_all(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/drop_everything, src)
+	return TRUE
 
-/mob/proc/vv_topic_direct_control(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/cmd_assume_direct_control, src)
+/mob/proc/vv_topic_direct_control(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/cmd_assume_direct_control, src)
+	return TRUE
 
 
 /**
@@ -1552,9 +1564,6 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
 
-// === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item
 	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later

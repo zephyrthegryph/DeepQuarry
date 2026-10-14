@@ -10,13 +10,9 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "multitool"
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	drop_sound = SFX_ITEMS_DROP_MULTITOOL
-	pickup_sound = SFX_ITEMS_PICKUP_MULTITOOL
 
 
 	var/mode_index = 1
@@ -27,45 +23,68 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/obj/machinery/clonepod/connecting //same for cryopod linkage
 	var/obj/machinery/connectable	//Used to connect machinery.
 	var/ref_wiring //An IC ref (ic_ref()) for integrated circuitry. This is now the Omnitool.
-	toolspeed = 1
 	tool_qualities = list(TOOL_MULTITOOL)
 
 	var/uplink = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/multitool, uplink)
 
-/obj/item/multitool/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(uplink)
-		return
+CAPABILITIES(/obj/item/multitool)
+	configure(item_tooling(speed = 1))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_MULTITOOL, pickup = SFX_ITEMS_PICKUP_MULTITOOL))
+	ref_one(nameof(selected_io), /datum/integrated_io)
+	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu
+	op("menu", in_hand(), when(cond_not(nameof(uplink))),
+		asks(/datum/prompt/choice, fields = list("title" = "Multitool Menu", "question" = computed(PROC_REF(menu_question)), "choices" = list("Switch Mode", "Clear Buffers", "Cancel"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(no_wired_connection)),
+		then(PROC_REF(menu_chosen)))
+	// an uplink multitool opens its hidden uplink instead
+	op("uplink", in_hand(), when(nameof(uplink)), then(PROC_REF(open_uplink)))
+	op("recalibrate", at_target(/mob/living/carbon/human), stance(I_HELP), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Recalibrate"),
+		needs(req_adjacent(), req(PROC_REF(calibratable), silent = TRUE)), begins(PROC_REF(recalibrate_text)), wait(4 SECONDS), then(PROC_REF(attack_timed_done)))
+	ref_one(nameof(buffer), /obj/machinery/telecomms)
+	ref_one(nameof(connecting), /obj/machinery/clonepod)
+	ref_one(nameof(connectable), /obj/machinery)
 
+/obj/item/multitool/proc/open_uplink(datum/act/op/A)
+	item_hidden_uplink(src)?.trigger(A.actor)
+	return OP_OK
+
+/obj/item/multitool/proc/menu_question(datum/act/A)
+	return "What do you want to do with \the [src]?"
+
+/// No wired connection is held: the menu is asked.
+/obj/item/multitool/proc/no_wired_connection(datum/act/op/A)
+	return !selected_io
+
+/// Old attack_self: clear the wired connection, or what the menu picked.
+/obj/item/multitool/proc/menu_chosen(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
-		update_icon()
-		return
-
-	update_icon()
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(menu_chosen), message = "What do you want to do with \the [src]?", title = "Multitool Menu", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/multitool/proc/menu_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	switch(R.value)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
 			rel_clear(src, nameof(buffer))
 			rel_clear(src, nameof(connecting))
 			rel_clear(src, nameof(connectable))
-			ref_wiring = null
-			accepting_refs = 0
+			set_ref_wiring(null)
+			set_accepting_refs(0)
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)
-				accepting_refs = 1
+				set_accepting_refs(1)
 		if("Switch Mode")
 			mode_switch(user)
 		else
 			to_chat(user,span_notice("You lower \the [src]."))
-			return
+			return OP_OK
 
-	update_icon()
+	return OP_OK
 
 /obj/item/multitool/proc/mode_switch(mob/living/user)
 	if(mode_index + 1 > modes.len) mode_index = 1
@@ -76,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	toolmode = modes[mode_index]
 	to_chat(user,span_notice("\The [src] is now set to [toolmode]."))
 
-	accepting_refs = (toolmode == MULTITOOL_MODE_INTCIRCUITS)
+	set_accepting_refs((toolmode == MULTITOOL_MODE_INTCIRCUITS))
 
 	return
 
@@ -98,47 +117,47 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "multitool"
-	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/multitool/alien)
+	configure(item_tooling(speed = 0.1))
 
 // Alien multitool only has those icon states
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/alien/appearance_overlays()
-	. = list()
+/obj/item/multitool/alien/look_parts(datum/look/look)
 	if(accepting_refs)
-		icon_state = "multitool_ref_scan"
-		return .
-	icon_state = "multitool"
+		look.state("multitool_ref_scan")
+		return
+	look.state("multitool")
 
 /// Recalibrating a synthetic body part: actuator misalignment responds to
 /// TREAT_CALIBRATION, and a pass over the head also runs a system restore
 /// for processor corruption. Only synthetic parts respond — the body gates
 /// treatment by the part's biology.
-/obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(!ishuman(M) || stance != I_HELP)
-		return ..()
-	var/mob/living/carbon/human/H = M
-	var/obj/item/organ/external/E = H.get_organ(target_zone)
-	if(!E || !(H.body.biology_of(E) & treatment_tag_biology(TREAT_CALIBRATION)))
-		return ..()
-	act_message(user, src, MSG_SELF(span_notice("You start recalibrating [H]'s [E.name].")), \
-		MSG_OTHERS(span_notice("%U% plugs %T% into a diagnostic port on [H]'s [E.name] and starts recalibrating.")))
-	om_task_start(/datum/om/task/timed/multitool_attack, user, H, receiver = src, E = E)
-	return TRUE
+/obj/item/multitool/proc/aimed_limb(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return read_once(H.get_organ(read_once(hud_of(A.actor)?.zone_sel?.selecting)))
 
-/datum/om/task/timed/multitool_attack
-	duration = 4 SECONDS
-	complete_proc = /obj/item/multitool/proc/attack_timed_done
-	var/obj/item/organ/external/E
+/// Requirement: the aimed limb exists and its biology responds to calibration.
+/obj/item/multitool/proc/calibratable(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	return (!!E && !!(read_once(H.body.biology_of(E)) & treatment_tag_biology(TREAT_CALIBRATION))) ? null : MSG(req_failed)
 
-/obj/item/multitool/proc/attack_timed_done(datum/om/task/timed/multitool_attack/task)
-	var/mob/living/user = task.actor
-	var/mob/living/carbon/human/H = task.target
-	var/obj/item/organ/external/E = task.E
+/obj/item/multitool/proc/recalibrate_text(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	return msg_text(span_notice("You start recalibrating [H]'s [E?.name]."), span_notice("%U% plugs %I% into a diagnostic port on [H]'s [E?.name] and starts recalibrating."))
+
+/obj/item/multitool/proc/attack_timed_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/carbon/human/H = A.target
+	var/obj/item/organ/external/E = aimed_limb(A)
+	if(!E)
+		return OP_REFUSED
 	var/treated = H.mend(TREAT_CALIBRATION, 30, E.organ_tag)
 	if(E.organ_tag == BP_HEAD)
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)
 	to_chat(user, treated ? span_notice("Calibration offsets corrected.") : span_notice("Everything already reads within tolerance."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/multitool/get_multitool()
 	return src

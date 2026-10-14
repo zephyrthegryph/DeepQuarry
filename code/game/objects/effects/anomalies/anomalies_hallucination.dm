@@ -17,7 +17,7 @@
 	///Do we spawn misleading decoys?
 	var/spawn_decoys = TRUE
 
-/obj/effect/anomaly/hallucination/Initialize(mapload, new_lifespan)
+/obj/effect/anomaly/hallucination/Initialize(mapload)
 	. = ..()
 	apply_wibbly_filters(src)
 	generate_decoys()
@@ -36,10 +36,10 @@
 	for(var/mob/living/carbon/human/hallucinator in viewers(5, src))
 		var/susceptibility = GetAnomalySusceptibility(hallucinator)
 		if(prob(susceptibility * 100))
-			hallucinator.status_adjust(EFFECT_HALLUCINATING, 10)
+			hallucinator.status_adjust(STAT_HALLUCINATING, 10)
 			if(prob(20))
 				to_chat(hallucinator, pick(messages))
-				hallucinator.status_at_least(EFFECT_CONFUSED, 10)
+				hallucinator.status_at_least(STAT_CONFUSED, 10)
 			if(prob(10))
 				to_chat(hallucinator, span_danger("Your nose bleeds!"))
 				hallucinator.drip(1)
@@ -50,10 +50,10 @@
 
 	for(var/mob/living/carbon/human/hallucinator in viewers(10, src))
 		to_chat(hallucinator, pick(messages))
-		hallucinator.status_adjust(EFFECT_HALLUCINATING, 25)
+		hallucinator.status_adjust(STAT_HALLUCINATING, 25)
 		to_chat(hallucinator, span_danger("Your nose bleeds!"))
 		hallucinator.drip(1)
-		hallucinator.status_at_least(EFFECT_CONFUSED, 15)
+		hallucinator.status_at_least(STAT_CONFUSED, 15)
 
 /obj/effect/anomaly/hallucination/proc/generate_decoys()
 	if(!spawn_decoys)
@@ -67,42 +67,24 @@
 	anomaly_core = null
 	var/report_text
 
-/obj/effect/anomaly/hallucination/decoy/Initialize(mapload, new_lifespan)
-	. = ..()
-	report_text = pick(
-		"[src]'s unstable field is fluctuating along frequency 9999999.99999, code 9999999.99999. No, no, that can't be right?",
-		"It doesn't detect anything. It awaits an input, as if you're pointing it towards nothing at all. What?",
-		"The interface displays [pick("a bad memory from your past", "the frequency numbers in a language you cannot read", "the first 15 digits of Pi", "yourself, from behind, angled at a 3/4ths isometric perspective")]. What the hell?",
-		"Nothing happens?",
-		"It reports that you are a [pick("moron", "idiot", "cretin", "lowlife", "worthless denthead", "gump")]. Huh?",
-		"It tells you to try again, because you're doing it all wrong. What?",
-		"It occurs to you that the anomaly you're scanning isn't actually there.",
-		"It's not working. You activate %TOOL% again. Still broken. You activate %TOOL%. You activate %TOOL%. Why isn't this working??",
-		"Something happens. You can't tell what. The interface on %TOOL% remains blank.",
-		"What are you even trying to accomplish here? Did you really think that was going to work?",
-		"Someone behind you whispers the frequency code to you, but you can't quite hear them. The interface on %TOOL% remains blank.",
-		"For a brief moment, you see yourself traversing a frozen forest, before snapping back to reality. The interface on %TOOL% remains blank.",
-		"Nothing interesting happens. Are you sure you're actually using it on anything?",
-		"For a moment you can feel your skin falling off, then blink as the sensation vanishes. What the hell did that mean?",
-		"The interface reports that you are a complete failure, and have screwed everything up again. Great work.",
-		"You realize that the formatting of this message is completely wrong, and get confused. Now why would that be?",
-		"%TOOL% stares back at you. It looks dissapointed, its screen practically saying 'You missed the anomaly, you dolt. There's nothing there!'",
-		"Nothing. Weird, maybe %TOOL% must be broken or something?",
-		"You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. Why isn't it working??",
-	)
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what a scan of the decoy reports.
+/obj/effect/anomaly/hallucination/decoy/proc/roll_report_text(datum/roller/R)
+	return R.choose(list("[src]'s unstable field is fluctuating along frequency 9999999.99999, code 9999999.99999. No, no, that can't be right?", "It doesn't detect anything. It awaits an input, as if you're pointing it towards nothing at all. What?", "The interface displays [R.choose(list("a bad memory from your past", "the frequency numbers in a language you cannot read", "the first 15 digits of Pi", "yourself, from behind, angled at a 3/4ths isometric perspective"))]. What the hell?", "Nothing happens?", "It reports that you are a [R.choose(list("moron", "idiot", "cretin", "lowlife", "worthless denthead", "gump"))]. Huh?", "It tells you to try again, because you're doing it all wrong. What?", "It occurs to you that the anomaly you're scanning isn't actually there.", "It's not working. You activate %TOOL% again. Still broken. You activate %TOOL%. You activate %TOOL%. Why isn't this working??", "Something happens. You can't tell what. The interface on %TOOL% remains blank.", "What are you even trying to accomplish here? Did you really think that was going to work?", "Someone behind you whispers the frequency code to you, but you can't quite hear them. The interface on %TOOL% remains blank.", "For a brief moment, you see yourself traversing a frozen forest, before snapping back to reality. The interface on %TOOL% remains blank.", "Nothing interesting happens. Are you sure you're actually using it on anything?", "For a moment you can feel your skin falling off, then blink as the sensation vanishes. What the hell did that mean?", "The interface reports that you are a complete failure, and have screwed everything up again. Great work.", "You realize that the formatting of this message is completely wrong, and get confused. Now why would that be?", "%TOOL% stares back at you. It looks dissapointed, its screen practically saying 'You missed the anomaly, you dolt. There's nothing there!'", "Nothing. Weird, maybe %TOOL% must be broken or something?", "You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. You activate %TOOL%. Why isn't it working??",))
 
 /obj/effect/anomaly/hallucination/decoy/anomalyEffect(seconds_per_tick)
 	if(SPT_PROB(move_chance, seconds_per_tick))
 		move_anomaly()
 
-EXTEND_INTERACTIONS(/obj/effect/anomaly/hallucination/decoy, \
-	INTERACT_INSERT(/obj/item/analyzer, PROC_REF(interaction_decoy_analyze), null), \
-)
+CAPABILITIES(/obj/effect/anomaly/hallucination/decoy)
+	op("decoy_analyze", item(/obj/item/analyzer), then(PROC_REF(interaction_decoy_analyze)))
+	rolls(nameof(report_text), PROC_REF(roll_report_text))
 
 /// Old attackby: an analyzer on a decoy gives a nonsense reading, then the normal handling carries on.
-/obj/effect/anomaly/hallucination/decoy/proc/interaction_decoy_analyze(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/anomaly/hallucination/decoy/proc/interaction_decoy_analyze(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	to_chat(user, span_notice("You activate \the [held]. [replacetext(report_text, "%TOOL%", "[held]")]"))
-	return FALSE
+	return OP_DECLINE
 
 /obj/effect/anomaly/hallucination/decoy/detonate()
 	fx_sparks(src, 3)

@@ -15,10 +15,12 @@
 /mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege
 	projectiletype = /obj/item/projectile/arc //Polaris, don't make the same mob twice.
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege)
+	configure(mob_movement(hovering = TRUE))
+
 /mob/living/simple_mob/mechanical/hivebot/tyr //not a hivebot but stealing the 'oil puddle on death' thing
 	icon = 'icons/mob/hivebot.dmi'
 	pass_flags = PASSTABLE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	movement_cooldown = 1
 	faction = FACTION_TYR
 	melee_damage_lower = 12
@@ -48,9 +50,11 @@
 
 /obj/item/projectile/energy/spikeenergy_ball/boss
 	damage = 40
-	armor_penetration = 60
 	speed = 10
 	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/spikeenergy_ball/boss)
+	configure(item_combat(armor_penetration = 60))
 
 
 /mob/living/simple_mob/mechanical/hivebot/eclipse

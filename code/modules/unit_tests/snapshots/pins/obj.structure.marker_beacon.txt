@@ -1,0 +1,54 @@
+human|none menu: Color
+human|none menu: Pick up
+human|none click: Click: Pick up
+robot|none menu: Color
+robot|none menu: Pick up
+robot|none click: Click: Pick up
+@obj.structure ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Color
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver click: Click: Pick up
+human|/obj/item/tool/crowbar menu: Color
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar click: Click: Pick up
+human|/obj/item/tool/wrench menu: Color
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench click: Click: Pick up
+human|/obj/item/tool/wirecutters menu: Color
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters click: Click: Pick up
+human|/obj/item/multitool menu: Color
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool click: Click: Pick up
+human|/obj/item/weldingtool menu: Color
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool click: Click: Pick up
+human|/obj/item/stack/cable_coil menu: Color
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Pick up
+human|/obj/item/stack/cable_coil click: Click: Pick up
+human|/obj/item/stack/material/steel menu: Color
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel click: Click: Pick up
+human|/obj/item/card/id menu: Color
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id click: Click: Pick up
+human|/obj/item menu: Color
+human|/obj/item menu: Hit
+human|/obj/item menu: Pick up
+human|/obj/item click: Click: Pick up
+human|/obj/item/stack/marker_beacon menu: Color
+human|/obj/item/stack/marker_beacon menu: Hit
+human|/obj/item/stack/marker_beacon menu: Pick up
+human|/obj/item/stack/marker_beacon menu: Pick up into
+human|/obj/item/stack/marker_beacon click: Click: Pick up into
+keys: drag_buckle, melee_hit, pick_up, pick_up_into, recolor

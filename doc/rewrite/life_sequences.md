@@ -21,7 +21,7 @@ the shared graph validator and the spread sweep.
 
 `/datum/sequence` is a definition (one per type, `sequence_def()`): `interval`, `step` (fixed step in seconds, 0 for
 variable), `max_catchup`, `clock` (`CLOCK_BIO` for Life), `lane`, `runlevels`, `park_after`, `min_relevance`,
-`wake_all`, `table_proc`, `frame_type`, `profile_stride`, and the procs `anchors()`, `conditions()`, `admit(E)`.
+`wake_all`, `wake_keys`, `table_proc`, `frame_type`, `profile_stride`, and the procs `anchors()`, `conditions()`, `admit(E)`.
 
 One work item per sequence, `/datum/work_item/sequence` (phase P, the sequence's lane, clock and run levels), sweeps
 the sequence's **membership**. Its sweep is spread over the interval like a cadence's (`run_item_spread()`), so a
@@ -42,7 +42,7 @@ composed like `reactions()`:
 /mob/living/life_steps()
 	. = ..()
 	. += seq_step(PROC_REF(life_breathing), after = LIFE_INPUT, when = list("placed", "alive"),
-		reads = list(CHANGE_MOB_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due),
+		reads = list(MOB_KEY_LOC, nameof(losebreath)), should_run = PROC_REF(life_breathing_due),
 		rewake = BREATH_STEADY_RESAMPLE, woken_by = "Moved; equipping internals")
 ```
 
@@ -90,7 +90,7 @@ every run (FALSE: the step sleeps) and **before** a woken step runs (FALSE: back
 predicate with one polarity, as `work_item.runnable()`. Contract: cheap, read-only, correct for an entity that isn't
 running (the audit asks it of sleeping steps).
 
-A step's `reads` are `publish_change()` keys (text; `native()` specs give their keys) and change channels (numbers).
+A step's `reads` are `publish_change()` keys (text; `native()` specs give their keys): the mob's `MOB_KEY_*` facts, the names of tracked vars, `nameof(/mob::stat)`. Mob Life reads no change channel any more (the `CHANGE_MOB_*` names are banned); the only channel left on a sequence is `wake_all = CHANGE_EXPLICIT`, the catch-all the dispatched-call mark raises, and `wake_keys` (the stat key, `MOB_KEY_CLIENT`) wake every step.
 Wakes:
 
 - **Keys.** A table registers its keys with `READERS` on the entity's type (`seq_register_reads()`), so TRACKED
@@ -134,12 +134,12 @@ pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `ad
   `park_after` frames in a row with every step asleep it leaves (`member_leave`, O(1) swap-remove) and joins the
   sequence's parked list (the audit's sample); a wake rejoins. Its execution token goes with it, so it comes back
   with one interval, not a catch-up.
-- **Relevance.** Below `min_relevance` (`om_observe()`) a member is out of the sweep; `CHANGE_RELEVANCE` puts it back
+- **Relevance.** Below `min_relevance` (`om_observe()`) a member is out of the sweep; `SEQ_KEY_RELEVANCE`, published when the member's relevance stat moves, puts it back
   unless it is parked. Life: `RELEVANCE_NEAR` (a low-priority mob on a z-level with no living player).
 - **Time.** A member's elapsed time is read on the sequence's clock (`work_clock_now()`): with `CLOCK_BIO` stasis
   stretches the frames (at rate 0.1 a frame every ten cycles, at 0 none). Outside its run levels nothing runs and
   nothing accumulates; resuming is not a catch-up.
-- **Missed-wake audit.** `seq_audit()` runs with the pipeline audit (`kernel.run_audits()`: same interval, the
+- **Missed-wake audit.** `seq_audit()` runs with the pipeline audit (SSbehaviours' `audit_step` work item: same interval, the
   `OM_PIPELINE_AUDIT` config flag, the "Toggle Pipeline Audit" verb, always on in test builds). A sleeping step whose
   `should_run()` holds, with its conditions passing and no rewake pending, is a missed wake: it logs
   `MOB_HIBERNATE_AUDIT: MISSED WAKE ...`, fails the unit test run, and wakes the step. Test builds snapshot a step's
@@ -230,3 +230,26 @@ it is out of the sweep); it is left as a known gap. What was done to get here: t
 (`/datum/work_item/sequence/sweep()`, a new `work_item.sweep()` hook in `run_item()`), the execution token lives on
 the member's state, `admit()` is asked only with `admit_guard`, the frame end is inline, and the sweep's frame is
 reset once per pass.
+
+## 9. S3 as built (rewrite/om-life, L1 of om_retirement.md)
+
+- Every Life stage is a proc on its mob type; `life_steps.dm` declares them (`tools/dx/codemods/life_stage_steps.py`
+  wrote it, with derived `after =` edges checked against every plan the pipeline could build). Trait stages are
+  contributed steps (`life_steps()` on the trait state, `seq_extra_add()`). The pipeline, its frame and the edge
+  generator are deleted; `kernel_sequence_life_order` went with them (the tables are the order now).
+- **Stasis**: the sequence runs on `CLOCK_WORLD`; `begin()` advances the body's stasis counter and biology steps skip a
+  paused frame (`when = "!in_stasis"`), as the pipeline did.
+- **Pre-check**: event-driven steps (run once per wake, no state says there is work) are `seq_step(..., once = TRUE)`.
+- **Suspension**: `admit()` skips a suspended mob (`admit_guard`).
+- **Rewakes**: one timer per member (`seq:<idx>:rewake`) for its soonest step due time (`state.rewake_at`), on its own
+  clock. Per-step keyed world-clock timers all landed on the global owner's single list and dominated a 512-human bench.
+- **Dispatch**: `typed_dispatch` sequences call steps through `run_step()`/`ask_step()`; Life's are a generated switch
+  (`life_dispatch.dm`, `tools/dx/life_dispatch_gen.py`). A by-name `call()` on a human costs ~15-20 us (its proc table);
+  the switch ~1.4 us.
+- **Bench gate**: `life_sequence` now pins the pipeline's cost against a reference runner (section 8's gate without the
+  pipeline). `life_sweep` (real mobs, same machine, back to back): h512 kernel 327 ms/s for 2563 frames against the
+  pipeline's 373-392 ms/s for 2286-2517; mix 104 against 142-171 ms/s.
+- **After the stat moves** (relevance, suspension and the bio clock are stats; trait disabilities, shakes and the mob
+  repeats are every(); October 6 2026): `life_sequence` ratios awake 0.81/0.78, mixed 0.85/0.88 (runner/scheduled), idle
+  0.99/1.26 (the known idle gap above: `life_sequence_gate_failures` 1, the idle scheduled path, as at S0's 1.47).
+  `life_sweep`: h512 149.8 ms/s for 3413 frames, mix 33.4 ms/s (the body migration also took its stages out of Life).

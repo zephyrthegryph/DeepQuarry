@@ -50,8 +50,7 @@
 	. = ..()
 	var/obj/item/organ/external/E = location
 	if(istype(E))
-		E.open = SURGERY_DEPTH_CLOSED
-		E.owner?.update_surgery()
+		E.set_open(SURGERY_DEPTH_CLOSED)
 
 /// Open (or re-open) the site to `new_depth`. `site_sterility` is the
 /// cleanliness of the surface; the site keeps the dirtiest it has seen.
@@ -66,8 +65,7 @@
 	set_severity(depth * INCISION_SEVERITY_PER_DEPTH)
 	var/obj/item/organ/external/E = location
 	if(istype(E))
-		E.open = depth
-		E.owner?.update_surgery()
+		E.set_open(depth)
 
 /// Does the open site bleed? Organic parts of bodies with blood, unclamped.
 /datum/affliction/surgical_incision/proc/is_bleeding()
@@ -148,6 +146,7 @@
 
 /// This limb's open surgical site, if any.
 /obj/item/organ/external/proc/get_incision()
+	RETURN_TYPE(/datum/affliction/surgical_incision)
 	for(var/datum/affliction/surgical_incision/I in afflictions_here())
 		return I
 	return null

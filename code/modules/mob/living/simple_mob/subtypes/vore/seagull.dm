@@ -49,11 +49,11 @@
 	emote_hear = list("screams!","chirps.")
 	emote_see = list("pecks at the ground","looks around hungrily")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/seagull, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/seagull/appearance_overlays()
-	. = list()
-	. += ..()
+CAPABILITIES(/mob/living/simple_mob/vore/seagull)
+	on_change(nameof(vore_fullness), ANY, then(PROC_REF(fullness_changed)))
 
+/// A full gull is slow: past two fullness steps it drags its feet, and speeds up again when it empties.
+/mob/living/simple_mob/vore/seagull/proc/fullness_changed(datum/act/A)
 	if(vore_fullness >= 2)
 		movement_cooldown = 10
 	else if(movement_cooldown == 10)

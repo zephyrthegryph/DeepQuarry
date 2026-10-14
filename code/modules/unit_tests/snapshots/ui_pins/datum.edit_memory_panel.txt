@@ -1,0 +1,81 @@
+initial | alive: 1
+initial | ambitions: ""
+initial | antag_blocks: []
+initial | assigned_role: "Assistant"
+initial | key: "dqpinkey"
+initial | memory: ""
+initial | name: "Pin Mind"
+initial | objectives: []
+initial | real_name: null
+initial | synced: 0
+role_set | alive: 1
+role_set | ambitions: ""
+role_set | antag_blocks: []
+role_set | assigned_role: "Captain"
+role_set | key: "dqpinkey"
+role_set | memory: ""
+role_set | name: "Pin Mind"
+role_set | objectives: []
+role_set | real_name: null
+role_set | synced: 0
+memory_set | alive: 1
+memory_set | ambitions: ""
+memory_set | antag_blocks: []
+memory_set | assigned_role: "Captain"
+memory_set | key: "dqpinkey"
+memory_set | memory: "Pin memory text"
+memory_set | name: "Pin Mind"
+memory_set | objectives: []
+memory_set | real_name: null
+memory_set | synced: 0
+ambitions_set | alive: 1
+ambitions_set | ambitions: "Pin ambition"
+ambitions_set | antag_blocks: []
+ambitions_set | assigned_role: "Captain"
+ambitions_set | key: "dqpinkey"
+ambitions_set | memory: "Pin memory text"
+ambitions_set | name: "Pin Mind"
+ambitions_set | objectives: []
+ambitions_set | real_name: null
+ambitions_set | synced: 0
+objective_added | alive: 1
+objective_added | ambitions: "Pin ambition"
+objective_added | antag_blocks: []
+objective_added | assigned_role: "Captain"
+objective_added | key: "dqpinkey"
+objective_added | memory: "Pin memory text"
+objective_added | name: "Pin Mind"
+objective_added | objectives: [{"ref":"[ref]","num":1,"text":"Pin objective one","completed":0}]
+objective_added | real_name: null
+objective_added | synced: 0
+objective_completed | alive: 1
+objective_completed | ambitions: "Pin ambition"
+objective_completed | antag_blocks: []
+objective_completed | assigned_role: "Captain"
+objective_completed | key: "dqpinkey"
+objective_completed | memory: "Pin memory text"
+objective_completed | name: "Pin Mind"
+objective_completed | objectives: [{"ref":"[ref]","num":1,"text":"Pin objective one","completed":1},{"ref":"[ref]","num":2,"text":"Pin objective two","completed":0}]
+objective_completed | real_name: null
+objective_completed | synced: 0
+objective_deleted | alive: 1
+objective_deleted | ambitions: "Pin ambition"
+objective_deleted | antag_blocks: []
+objective_deleted | assigned_role: "Captain"
+objective_deleted | key: "dqpinkey"
+objective_deleted | memory: "Pin memory text"
+objective_deleted | name: "Pin Mind"
+objective_deleted | objectives: [{"ref":"[ref]","num":1,"text":"Pin objective two","completed":0}]
+objective_deleted | real_name: null
+objective_deleted | synced: 0
+antags_refreshed | alive: 1
+antags_refreshed | ambitions: "Pin ambition"
+antags_refreshed | antag_blocks: [{"id":"borer","role_text":"Cortical Borer","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"xeno","role_text":"Genaprawn","is_antagonist":0,"has_locations":0,"extra_html":"<a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;move_to_spawn=[ref]'>[put in host]</a>"},{"id":"deathsquad","role_text":"Death Commando","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"commando","role_text":"Syndicate Commando","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"ert","role_text":"Emergency Responder","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"mercenary","role_text":"Mercenary","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"ninja","role_text":"Ninja","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"raider","role_text":"Raider","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"Shipwreck Survivor","role_text":"Shipwreck Survivor","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"traitor","role_text":"Traitor","is_antagonist":0,"has_locations":0,"extra_html":"<a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;common=crystals'>[set crystals]</a><a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;spawn_uplink=[ref]'>[spawn uplink]</a>"},{"id":"technomancer","role_text":"Technomancer","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"trader","role_text":"Trader","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"wizard","role_text":"Space Wizard","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"changeling","role_text":"Changeling","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"cultist","role_text":"Cultist","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"Event Character","role_text":"Event Character","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"highlander","role_text":"Highlander","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"infiltrator","role_text":"Infiltrator","is_antagonist":0,"has_locations":0,"extra_html":"<a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;common=crystals'>[set crystals]</a><a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;spawn_uplink=[ref]'>[spawn uplink]</a>"},{"id":"autotraitor","role_text":"Traitor","is_antagonist":0,"has_locations":0,"extra_html":"<a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;common=crystals'>[set crystals]</a><a href='byond://?src=[ref];admin_token=855532351037031100110015866709063510;spawn_uplink=[ref]'>[spawn uplink]</a>"},{"id":"loyalist","role_text":"Head Loyalist","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"renegade","role_text":"Renegade","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"revolutionary","role_text":"Head Revolutionary","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"malf","role_text":"Rampant AI","is_antagonist":0,"has_locations":1,"extra_html":""},{"id":"stowaway","role_text":"Stowaway","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"thug","role_text":"Thug","is_antagonist":0,"has_locations":0,"extra_html":""},{"id":"contract_operative","role_text":"Contract Operative","is_antagonist":0,"has_locations":0,"extra_html":""}]
+antags_refreshed | assigned_role: "Captain"
+antags_refreshed | key: "dqpinkey"
+antags_refreshed | memory: "Pin memory text"
+antags_refreshed | name: "Pin Mind"
+antags_refreshed | objectives: [{"ref":"[ref]","num":1,"text":"Pin objective two","completed":0}]
+antags_refreshed | real_name: null
+antags_refreshed | synced: 0
+

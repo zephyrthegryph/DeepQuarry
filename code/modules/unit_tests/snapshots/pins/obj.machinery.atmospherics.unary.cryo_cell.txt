@@ -1,0 +1,55 @@
+human|none menu: Move Inside (refused: The cell is not correctly connected to its pipe network!)
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Move Inside (refused: It is not designed for that organism.)
++2 menu: Open controls
++4 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
++0 menu: Move Inside (refused: You can't do that right now.)
+human|/obj/item/tool/screwdriver menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/stack/material menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/stack/material menu: Open controls
+human|/obj/item/stack/material click: Click: Open controls
+@obj.machinery.atmospherics.unary human|/obj/item/pipe_painter
++0 menu: Move Inside (refused: There is nobody to put in.)
++1 menu: Open controls
+human|/obj/item/reagent_containers/glass menu: Insert
+human|/obj/item/reagent_containers/glass menu: Move Inside (refused: There is nobody to put in.)
+human|/obj/item/reagent_containers/glass menu: Open controls
+human|/obj/item/reagent_containers/glass click: Click: Insert
+keys: beaker_bay.beaker.eject, beaker_bay.beaker.insert, drag_buckle, ejectOccupant, fit_material, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, painter, power_toggle, robot_remote_blocked, silicon_hand, switchOff, switchOn, ui_open

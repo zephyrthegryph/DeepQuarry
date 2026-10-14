@@ -1,10 +1,9 @@
 /mob/living/proc/get_visible_name()
-	// Only allocate the event payload list when a handler is actually hooked.
-	// This proc runs every Life() tick per human; the list(null) alloc is otherwise wasted.
-	if(om_wants(src, /datum/om/event/before/human_get_visible_name))
-		var/list/name_data = list(null)
-		if(OM_EMIT(src, /datum/om/event/before/human_get_visible_name, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
-			return name_data[1]
+	// A hook on the mob may name it (shadekin phase hiding); nothing is allocated when nothing hooks it.
+	var/datum/act/name_visible/shown = ACT_TRY(src, name_visible)
+	if(!shown)
+		return ACT_REPLY
+	act_cancel(shown)
 
 	if(real_name)
 		return real_name
@@ -20,19 +19,19 @@
 	// without qdel(), so the identity's handle then reported a collected target.
 	for(var/datum/soul_link/S as anything in owned_soul_links?.Copy())
 		S.owner_died(FALSE)
-		qdel(S) // If the owner is destroy()'d, the soullink is destroy()'d.
+		rel_remove(src, nameof(owned_soul_links), S) // The owner retires its soul link after the death callback.
 	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
-	if(nest) //Ew.
-		if(istype(nest, /obj/structure/prop/nest))
-			var/obj/structure/prop/nest/N = nest
+	if(nest_of(src)) //Ew.
+		if(istype(nest_of(src), /obj/structure/prop/nest))
+			var/obj/structure/prop/nest/N = nest_of(src)
 			N.remove_creature(src)
 		// a blob spore leaves its factory's spores through the pair's teardown
-		if(istype(nest, /obj/structure/mob_spawner))
-			var/obj/structure/mob_spawner/S = nest
+		if(istype(nest_of(src), /obj/structure/mob_spawner))
+			var/obj/structure/mob_spawner/S = nest_of(src)
 			S.get_death_report(src)
-		nest = null
+		set_nest(src, null)
 	// BUCKLED(src) is already null here: the buckled_to relation
 	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
 	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the
@@ -49,15 +48,14 @@
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
-	own_clear(src, nameof(hud_list), OWN_DELETE)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
 		if(isdatum(OR))
-			qdel(OR)
+			ended_with(OR, src)
 	for(var/OR in internal_organ_list())
 		if(isdatum(OR))
-			qdel(OR)
+			ended_with(OR, src)
 
 	GLOB.cultnet.updateVisibility(src, 0)
 	..()
@@ -90,22 +88,28 @@
 	set name = "Succumb to death"
 	set category = VERB_CAT_IC_GAME
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_ask_again), title = "Confirm wish to succumb", message = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", no_first = TRUE)
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_ask_again), answerer = src, choices = list("No", "Yes"), title = "Confirm wish to succumb", question = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?")
 
 /// One of the two succumb confirmations. A no or a cancel keeps the mob alive.
-/datum/om/prompt/confirm/succumb
+/datum/prompt/choice/succumb
+	timeout = 0
+	buttons = TRUE
 
-/datum/om/prompt/confirm/succumb/declined()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/datum/om/prompt/confirm/succumb/cancelled()
-	to_chat(answerer, span_blue("You chose to live another day."))
-
-/mob/living/proc/succumb_ask_again(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_ask_again(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	//Swapped answers to protect from accidental double clicks.
-	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_answered), title = "Are you sure?", message = "Pressing this buttom will really kill you, no going back")
+	open_request(src, /datum/prompt/choice/succumb, PROC_REF(succumb_answered), answerer = src, choices = list("Yes", "No"), title = "Are you sure?", question = "Pressing this buttom will really kill you, no going back")
 
-/mob/living/proc/succumb_answered(datum/om/prompt/confirm/succumb/ask)
+/mob/living/proc/succumb_answered(datum/act/request/A)
+	var/datum/prompt/choice/succumb/ask = A.request
+	if(!A.answer || ask.value != "Yes")
+		if(A.answer || (ask.outcome == REQ_CANCELLED && isnull(ask.value)))
+			to_chat(src, span_blue("You chose to live another day."))
+		return
 	if (is_critical() && stat != DEAD)
 		src.death()
 		to_chat(src, span_blue("You have given up life and succumbed to death."))
@@ -143,8 +147,7 @@
 		if (src.has_mutation(COLD_RESISTANCE)) //fireproof
 			return 0
 		// Electrical burns spread across the whole body.
-		if(injure(INJURY_ELECTRIC, burn_amount))
-			UpdateDamageIcon()
+		injure(INJURY_ELECTRIC, burn_amount)
 		return 1
 	else if(isAI(src))
 		return 0
@@ -238,14 +241,14 @@
 
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED))
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
 		ai_brain.go_wake()
 
-	OM_EMIT(src, /datum/om/event/human_dna_finalized)
-	OM_EMIT(src, /datum/om/event/living_aheal)
+	PUBLISH_LEGACY(src, /datum/notice/human_dna_finalized)
+	PUBLISH_LEGACY(src, /datum/notice/living_aheal)
 
 /mob/living/proc/rejuvenate()
 	if(reagents)
@@ -253,9 +256,9 @@
 
 	// shut down various types of badness
 	fully_heal()
-	status_set(EFFECT_PARALYZED, 0)
-	status_set(EFFECT_STUNNED, 0)
-	status_set(EFFECT_WEAKENED, 0)
+	status_set(STAT_PARALYZED, 0)
+	status_set(STAT_STUNNED, 0)
+	status_set(STAT_WEAKENED, 0)
 
 	// undo various death related conveniences
 	sight = initial(sight)
@@ -266,16 +269,16 @@
 	rejuvenate_physiology()
 	set_sdisabilities(0)
 	disabilities = 0
-	resting = FALSE
+	set_resting(FALSE)
 
 	for(var/datum/affliction/contagion/D as anything in get_contagions())
 		D.cure(FALSE)
 
 	// fix blindness and deafness
-	blinded = 0
-	status_set(EFFECT_BLINDED, 0)
-	status_set(EFFECT_BLURRY, 0)
-	status_set(EFFECT_DEAFENED, 0)
+	set_blinded(0)
+	status_set(STAT_BLINDED, 0)
+	status_set(STAT_BLURRY, 0)
+	status_set(STAT_DEAFENED, 0)
 	set_ear_damage(0)
 
 	// fix all of our organs
@@ -290,9 +293,9 @@
 	// make the icons look correct
 	regenerate_icons()
 
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	reload_fullscreen()
@@ -333,10 +336,10 @@
 	set name = "Resist"
 	set category = VERB_CAT_IC_GAME
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
-		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (cooldown_ready(src, resist_cooldown)))
+		cooldown_start(src, resist_cooldown, RESIST_COOLDOWN)
 		resist_grab()
-		if(!has_status(EFFECT_WEAKENED))
+		if(!has_status(STAT_WEAKENED))
 			process_resist()
 		else if(absorbed && isbelly(loc))			// Allow absorbed resistance
 			var/obj/belly/B = loc
@@ -360,7 +363,7 @@
 		return TRUE
 
 	else if(canmove)
-		if(on_fire)
+		if(stat_value(src, STAT_ON_FIRE))
 			resist_fire() //stop, drop, and roll
 		else
 			resist_restraints()
@@ -392,7 +395,7 @@
 	set name = "Rest"
 	set category = VERB_CAT_IC_GAME
 
-	resting = !resting
+	set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 	update_canmove()
 
@@ -400,7 +403,7 @@
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(override_blindness_check || !(disabilities & BLIND))
 		overlay_fullscreen("flash", type)
-		om_after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), "flash", 25)
+		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -446,8 +449,8 @@
 
 	//check for nuke disks
 	if(client && stat != DEAD) //if they are clientless and dead don't bother, the parent will treat them as any other container
-		if(SSticker && istype(SSticker.mode, /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
-			var/datum/game_mode/nuclear/G = SSticker.mode
+		if(SSticker && istype(ticker_mode(), /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
+			var/datum/game_mode/nuclear/G = ticker_mode()
 			if(G.check_mob(src))
 				if(x <= TRANSITIONEDGE)
 					inertia_dir = 4
@@ -466,25 +469,28 @@
 /mob/living/adjustEarDamage(damage, deaf)
 	set_ear_damage(max(0, ear_damage + damage))
 	if(deaf)
-		status_adjust(EFFECT_DEAFENED, deaf)
+		status_adjust(STAT_DEAFENED, deaf)
 
 //pass a negative argument to skip one of the variable
 /mob/living/setEarDamage(damage, deaf)
 	if(damage >= 0)
 		set_ear_damage(damage)
 	if(deaf >= 0)
-		status_set(EFFECT_DEAFENED, deaf)
+		status_set(STAT_DEAFENED, deaf)
+
+/// Set while a vomit is on its way (between the first wave of nausea and puke_recovered()).
+sparse(/mob/living, vomiting, type = bool)
 
 /mob/living/proc/vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
-	if(!lastpuke)
-		lastpuke = TRUE
+	if(!sparse_get(src, vomiting))
+		sparse_set(src, vomiting, TRUE)
 		to_chat(src, span_warning("You feel nauseous..."))
-		om_after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), span_warning("You feel like you're about to throw up!"))
-		om_after(src, 25 SECONDS, PROC_REF(do_vomit), lost_nutrition, blood, stun, distance, message, toxic, purge)
+		after(src, 15 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(src, span_warning("You feel like you're about to throw up!")))
+		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
-/// om_after() target: able to vomit again.
+/// after() target: able to vomit again.
 /mob/living/proc/puke_recovered()
-	lastpuke = FALSE
+	sparse_set(src, vomiting, null)
 
 /mob/living/proc/do_vomit(lost_nutrition = 10, blood = FALSE, stun = 5, distance = 1, message = TRUE, toxic = VOMIT_TOXIC, purge = FALSE)
 
@@ -496,16 +502,16 @@
 		var/antiemetic = H.factor(BF_ANTIEMETIC)
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
-				om_after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
+				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
 			return FALSE
 
-	if(nutrition < 100 && !blood)
+	if(nutrition_of(src) < 100 && !blood)
 		if(message)
 			act_message(src, null, MSG_SELF(span_userdanger("You try to throw up, but there's nothing in your stomach!")), \
 				MSG_OTHERS(span_warning("%U% dry heaves!")))
 
 		if(stun)
-			status_at_least(EFFECT_STUNNED, stun)
+			status_at_least(STAT_STUNNED, stun)
 		return TRUE
 
 	var/obj/vomit_goal = get_active_hand()
@@ -548,7 +554,7 @@
 				blood = TRUE
 
 	if(stun)
-		status_at_least(EFFECT_STUNNED, stun)
+		status_at_least(STAT_STUNNED, stun)
 
 	// Vomiting while unconscious: the patient aspirates it.
 	if(ishuman(src) && stat != CONSCIOUS && !HAS_SYNTHETIC_BIOLOGY(src))
@@ -581,7 +587,7 @@
 				T.add_vomit_floor(src, vomit_type, purge)
 			T = get_step(T, dir)
 
-	om_after(src, 10 SECONDS, PROC_REF(puke_recovered))
+	after(src, 10 SECONDS, PROC_REF(puke_recovered))
 
 	return TRUE
 
@@ -603,20 +609,20 @@
 
 /mob/living/update_canmove()
 	if(!resting && cannot_stand() && can_stand_overridden())
-		lying = FALSE
+		set_lying(FALSE)
 		canmove = TRUE
 	else
 		var/obj/buckled = src?.buckled_to()
 		if(istype(buckled, /obj/vehicle))
 			var/obj/vehicle/V = buckled
 			if(is_physically_disabled())
-				lying = FALSE
+				set_lying(FALSE)
 				canmove = TRUE
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y - 5
 			else
 				if(buckled.buckle_lying != -1)
-					lying = buckled.buckle_lying
+					set_lying(buckled.buckle_lying)
 				canmove = TRUE
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y
@@ -625,13 +631,13 @@
 			canmove = TRUE //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
 			if(istype(buckled))
 				if(buckled.buckle_lying != -1)
-					lying = buckled.buckle_lying
+					set_lying(buckled.buckle_lying)
 					canmove = buckled.buckle_movable
 				if(buckled.buckle_movable)
 					set_anchored(FALSE)
 					canmove = TRUE
 		else
-			lying = incapacitated(INCAPACITATION_KNOCKDOWN)
+			set_lying(incapacitated(INCAPACITATION_KNOCKDOWN))
 			// Prone is not immobile. Voluntary rest and conscious knockdown use
 			// movement_delay()'s crawl penalties; knockout, stun, paralysis, and
 			// aggressive grabs are rejected below.
@@ -641,12 +647,11 @@
 		canmove = FALSE
 
 	if(is_paralyzed())
-		lying = TRUE
+		set_lying(TRUE)
 		canmove = FALSE
 
 	if(lying)
 		set_density(FALSE)
-		update_water() // Submerges the mob.
 		stop_pulling()
 
 		if(!passtable_crawl_checked)
@@ -681,7 +686,7 @@
 					riding_datum.force_dismount(L)
 				else
 					unbuckle_mob(L)
-				L.status_at_least(EFFECT_STUNNED, 5)
+				L.status_at_least(STAT_STUNNED, 5)
 
 	return canmove
 
@@ -694,8 +699,6 @@
 /mob/living/proc/update_modifier_visuals()
 	return
 
-/mob/living/proc/update_water() // Involves overlays for humans.  Maybe we'll get submerged sprites for borgs in the future?
-	return
 
 /mob/living/proc/can_feel_pain(check_organ)
 	if(HAS_SYNTHETIC_BIOLOGY(src))
@@ -775,8 +778,8 @@
 		animate(client, color = null, time = 10)
 
 /mob/living/swap_hand()
-	changed(src, CHANGE_MOB_HANDS)
-	src.hand = !( src.hand )
+	set_hand(!hand)
+	op_keep_poke(src, OP_KEEP_HAND)
 	if(hud_used?.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use
 			hud_used.l_hand_hud_object.icon_state = "l_hand_active"
@@ -883,15 +886,15 @@
 	return TRUE
 
 /mob/living/get_sound_env(spot, pressure_factor)
-	if (has_status(EFFECT_HALLUCINATING))
+	if (has_status(STAT_HALLUCINATING))
 		return SOUND_ENVIRONMENT_PSYCHOTIC
-	else if (has_status(EFFECT_DRUGGED))
+	else if (has_status(STAT_DRUGGED))
 		return SOUND_ENVIRONMENT_DRUGGED
-	else if (has_status(EFFECT_DROWSY))
+	else if (has_status(STAT_DROWSY))
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (has_status(EFFECT_CONFUSED))
+	else if (has_status(STAT_CONFUSED))
 		return SOUND_ENVIRONMENT_DIZZY
-	else if (has_status(EFFECT_SLEEPING))
+	else if (has_status(STAT_SLEEPING))
 		return SOUND_ENVIRONMENT_UNDERWATER
 	else
 		return ..()
@@ -899,7 +902,7 @@
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
 	if(I)
-		own_put(src, nameof(hud_list), cache_index, I) // the mob owns its HUD images; a replaced one is deleted
+		rel_add(src, nameof(hud_list), I, cache_index) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 
@@ -914,10 +917,10 @@
 	return
 
 /mob/living/proc/has_vision()
-	return !(has_status(EFFECT_BLINDED) || (disabilities & BLIND) || stat || blinded)
+	return !(has_status(STAT_BLINDED) || (disabilities & BLIND) || stat || blinded)
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
-	return makes_dirt
+	return movement_of(src).makes_dirt
 
 /// Affected by airborne agents (smoke, choking): a breathing, non-synthetic body (P2-S7: breathes()).
 /mob/living/proc/needs_to_breathe()
@@ -928,18 +931,52 @@
 /mob/living/proc/adjust_nutrition(amount)
 	if(!amount || !isnum(amount))
 		return 0
-	var/old = nutrition
-	nutrition = between(0, nutrition + amount, max_nutrition)
-	return nutrition - old
+	return set_nutrition(nutrition_of(src) + amount)
 
-/// Set nutrition to `value`, clamped to [0, max_nutrition].
+/// Set nutrition to `value`, clamped to [0, max_nutrition]: nutrition's only writer. It lives in the body's metabolism and publishes
+/// MOB_KEY_NUTRITION (the HUD and anything reading nutrition_of() follow). Returns the change.
 /mob/living/proc/set_nutrition(value)
-	if(!isnum(value))
+	if(!isnum(value) || !body)
 		return 0
-	return adjust_nutrition(value - nutrition)
+	value = between(0, value, max_nutrition)
+	var/old = body.food_energy
+	if(old == value)
+		return 0
+	body.food_energy = value
+	PUBLISH_CHANGE(src, MOB_KEY_NUTRITION)
+	return value - old
+
+/// A living mob's nutrition (its body's metabolism); 0 for anything else or before the body exists.
+READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
+/proc/nutrition_of(mob/living/L)
+	READS_FROM(L)
+	return isliving(L) ? (L.body?.food_energy || 0) : 0
+
+/// How fast the mob's body burns nutrition.
+/proc/hunger_rate_of(mob/living/L)
+	READS_FROM(L)
+	return isliving(L) && L.body ? L.body.hunger_rate : DEFAULT_HUNGER_FACTOR
+
+/// Sets how fast the mob's body burns nutrition (a species' hunger factor). Nothing before the body exists.
+/proc/set_hunger_rate(mob/living/L, rate)
+	if(L?.body)
+		L.body.hunger_rate = rate
+
+/// The nutrition a new body of this mob type starts with.
+/mob/living/proc/starting_nutrition()
+	return 400
+
+/// Marks the HUD-list entry `index` (ID_HUD, HEALTH_HUD, ...) stale: the HUD reaction redraws it (MOB_KEY_HUD_FLAGS).
+/// The only producer of hud_updateflag bits (the HUD clears them as it draws).
+/mob/living/proc/flag_hud_update(index)
+	var/bit = 1 << index
+	if(hud_updateflag & bit)
+		return
+	hud_updateflag |= bit
+	PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /mob/living/proc/nutrition_percent()
-	return 100 * nutrition / max_nutrition
+	return 100 * nutrition_of(src) / max_nutrition
 
 /mob/living/vv_get_header()
 	. = ..()
@@ -960,14 +997,14 @@
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/choice = flow_ask(C.mob, "body_injure_kind", /datum/om/prompt/choice, message = "Injury kind", title = "Injure [src]", choices = kinds)
+			var/choice = flow_ask(C.mob, "body_injure_kind", /datum/prompt/choice, question = "Injury kind", title = "Injure [src]", choices = kinds)
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/om/prompt/number, message = "How much [choice]?", title = "Injure [src]", default = 10, min = 0, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_injure_amount", /datum/prompt/number, question = "How much [choice]?", title = "Injure [src]", default = 10, min_value = 0, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			var/static/list/zones = list("whole body") + BP_ALL
-			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/om/prompt/choice, message = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
+			var/zone = flow_ask(C.mob, "body_injure_zone", /datum/prompt/choice, question = "Where? (systemic kinds ignore this)", title = "Injure [src]", choices = zones, default = "whole body")
 			if(!zone || QDELETED(src))
 				return null
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
@@ -977,10 +1014,10 @@
 			var/list/tags = list()
 			for(var/tag in names)
 				tags[names[tag]] = tag
-			var/choice = flow_ask(C.mob, "body_mend_tag", /datum/om/prompt/choice, message = "Treatment tag", title = "Mend [src]", choices = tags)
+			var/choice = flow_ask(C.mob, "body_mend_tag", /datum/prompt/choice, question = "Treatment tag", title = "Mend [src]", choices = tags)
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = flow_ask(C.mob, "body_mend_amount", /datum/om/prompt/number, message = "How much [choice]?", title = "Mend [src]", default = 10, min = 0, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_mend_amount", /datum/prompt/number, question = "How much [choice]?", title = "Mend [src]", default = 10, min_value = 0, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			var/treated = mend(tags[choice], amount)
@@ -989,11 +1026,11 @@
 			var/list/affliction_types = list()
 			for(var/path in subtypesof(/datum/affliction))
 				affliction_types["[path]"] = path
-			var/affliction_name = flow_ask(C.mob, "body_afflict_type", /datum/om/prompt/choice, message = "Affliction", title = "Afflict [src]", choices = affliction_types)
+			var/affliction_name = flow_ask(C.mob, "body_afflict_type", /datum/prompt/choice, question = "Affliction", title = "Afflict [src]", choices = affliction_types)
 			var/affliction_type = affliction_types[affliction_name]
 			if(!affliction_type || QDELETED(src) || !body)
 				return null
-			var/severity = flow_ask(C.mob, "body_afflict_severity", /datum/om/prompt/number, message = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max = AFFLICTION_SEVERITY_TERMINAL, min = 0, round_entry = FALSE)
+			var/severity = flow_ask(C.mob, "body_afflict_severity", /datum/prompt/number, question = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", title = "Afflict [src]", default = 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_entry = FALSE)
 			if(isnull(severity) || QDELETED(src) || !body)
 				return null
 			var/datum/affliction/A = body.afflict(affliction_type, null, severity)
@@ -1008,7 +1045,7 @@
 			if(!length(choices))
 				to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
 				return null
-			var/choice = flow_ask(C.mob, "body_cure", /datum/om/prompt/choice, message = "Remove which affliction?", title = "Cure [src]", choices = choices)
+			var/choice = flow_ask(C.mob, "body_cure", /datum/prompt/choice, question = "Remove which affliction?", title = "Cure [src]", choices = choices)
 			var/datum/affliction/A = choices[choice]
 			if(!A || QDELETED(src) || A.owner != src)
 				return null
@@ -1016,7 +1053,7 @@
 			A.cure()
 			return "removed affliction [removed]"
 		if("oxygen")
-			var/amount = flow_ask(C.mob, "body_oxygen", /datum/om/prompt/number, message = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min = -INFINITY, round_entry = FALSE)
+			var/amount = flow_ask(C.mob, "body_oxygen", /datum/prompt/number, question = "Oxygen debt to add (negative pays it down)", title = "Oxygen debt of [src]", default = 0, min_value = -INFINITY, round_entry = FALSE)
 			if(!amount || QDELETED(src))
 				return null
 			if(amount > 0)
@@ -1037,7 +1074,7 @@
 // Tries to turn off things that let you see through walls, like mesons.
 // Each mob does vision a bit differently so this is just for inheritence and also so overrided procs can make the vision apply instantly if they call `..()`.
 /mob/living/proc/disable_spoiler_vision()
-	refresh_vision()
+	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // the sight reaction re-reads it
 
 /**
  * Small helper datum to manage the character setup HUD icon (was
@@ -1047,12 +1084,16 @@
 	var/mob/living/owner
 	var/atom/movable/screen/character_setup/screen_icon
 
+CAPABILITIES(/datum/character_setup_button)
+	ref_one(nameof(owner), /mob/living)
+	ref_one(nameof(screen_icon), /atom/movable/screen/character_setup)
+
 /mob/living/var/datum/character_setup_button/character_setup_button
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
 
@@ -1068,11 +1109,12 @@
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		own_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
+		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
-/datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
-	EVENT_HANDLER
+/datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/character_setup_button/proc/create_mob_button(mob/user)
@@ -1081,9 +1123,9 @@
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/character_setup/button = new
-		own_add(HUD, nameof(HUD.other_important), button)
+		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(character_setup_click)))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1095,8 +1137,9 @@
 		screen_icon.screen_loc = ui_ai_pda_send
 	user.client?.screen += screen_icon
 
-/datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
-	EVENT_HANDLER
+/datum/character_setup_button/proc/character_setup_click(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/click/event = A
 	var/mob/clicker = event.user
 	if(clicker?.client?.prefs)
 		INVOKE_ASYNC(clicker.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), clicker) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)
@@ -1135,7 +1178,6 @@
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	life_update_relevance()
 	// Brain creation is handled by the combat AI integration's
 	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
@@ -1145,38 +1187,35 @@
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		own_clear(src, nameof(hud_list), OWN_DELETE)
+		rel_clear(src, nameof(hud_list))
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
-	//I'll just hang my coat up over here
-	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-	dsma.alpha = 0
-	dsma.plane = PLANE_LIGHTING
-	dsma.blend_mode = BLEND_ADD
-	dsoverlay.appearance = dsma
+/// Its burning loop, with one of the extinguish sounds at random (owns_one(starts =)).
+/mob/living/proc/start_fire_loop(current, mapload)
+	var/datum/looping_sound/mob/on_fire/loop = new /datum/looping_sound/mob/on_fire(src, FALSE)
+	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
+		if(prob(30))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
+		else if(prob(20))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
+		else
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+	return loop
 
-	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
+/// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
+/mob/living/proc/roll_numbered_name(datum/roller/R)
+	return "[name] ([R.number(1, 1000)])"
 
-	own_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	own_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	// stunnedloop = new(list(src), FALSE)
-	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
-		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-			if(prob(30))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-			else if(prob(20))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-			else
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+/// rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name))): the real name follows the (rolled) name.
+/mob/living/proc/roll_real_name(datum/roller/R)
+	return name
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 
-// === merged from living_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /mob/living/Check_Shoegrip()
-	if(flying)
+	if(stat_value(src, STAT_FLYING))
 		return 1
 	..()
 
@@ -1186,25 +1225,40 @@
 	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
 
 	if(src.client)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(custom_say_verb_chosen), title = "Select Verb", message = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE)
+		open_request(src, /datum/prompt/choice, PROC_REF(custom_say_verb_chosen), answerer = src, title = "Select Verb", question = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE, timeout = 0)
 
-/// A custom speech verb. `say_var` is the mob var it sets.
-/datum/om/prompt/text/custom_say
+/// A custom speech verb; the selector is one of the four speech fields below.
+/datum/prompt/text/custom_say
+	timeout = 0
 	var/say_var
 
-/mob/living/proc/custom_say_verb_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/mob/living/proc/custom_say_verb_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	switch(A.answer.value)
 		if("Say")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Say", message = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Say", question = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Whisper", message = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Whisper", question = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
 		if("Ask (?)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Ask", message = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Ask", question = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
 		if("Exclaim/Shout/Yell (!)")
-			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Exclaim", message = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
+			open_request(src, /datum/prompt/text/custom_say, PROC_REF(custom_say_entered), answerer = src, title = "Custom Exclaim", question = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
 
-/mob/living/proc/custom_say_entered(datum/om/prompt/text/custom_say/ask)
-	vars[ask.say_var] = lowertext(ask.text)
+/mob/living/proc/custom_say_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/custom_say/ask = A.request
+	var/custom_verb = lowertext(ask.value)
+	switch(ask.say_var)
+		if("custom_say")
+			bio.custom_say = custom_verb
+		if("custom_whisper")
+			bio.custom_whisper = custom_verb
+		if("custom_ask")
+			bio.custom_ask = custom_verb
+		if("custom_exclaim")
+			bio.custom_exclaim = custom_verb
 
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"
@@ -1247,24 +1301,26 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
 	var/list/F = metainfo_field(field)
 	var/message = F[3] ? "Enter any information you'd like others to see relating to your [F[3]] roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty." : "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!"
-	om_ask(src, /datum/om/prompt/text/metainfo, PROC_REF(metainfo_entered), message = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
+	open_request(src, /datum/prompt/text/metainfo, PROC_REF(metainfo_entered), answerer = src, question = message, default = html_decode(identity().vars[F[1]]), field = field, reopen = reopen, chain = chain)
 
 /// One OOC note field. A cancel skips to the next field of the chain.
-/datum/om/prompt/text/metainfo
+/datum/prompt/text/metainfo
+	timeout = 0
 	title = "Game Preference"
 	multiline = TRUE
 	var/field
 	var/reopen = TRUE
 	var/list/chain
 
-/datum/om/prompt/text/metainfo/cancelled()
-	var/mob/living/L = answerer
-	L?.metainfo_skipped(src)
-
-/mob/living/proc/metainfo_entered(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_entered(datum/act/request/A)
+	var/datum/prompt/text/metainfo/ask = A.request
+	if(!A.answer)
+		if(ask.outcome == REQ_CANCELLED && isnull(ask.value))
+			metainfo_skipped(ask)
+		return
 	var/field = ask.field
 	var/list/F = metainfo_field(field)
-	var/new_metadata = strip_html_simple(ask.text)
+	var/new_metadata = strip_html_simple(ask.value)
 	if(new_metadata && CanUseTopic(src))
 		if(F[3] && new_metadata == "!clear")
 			new_metadata = ""
@@ -1277,7 +1333,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	metainfo_skipped(ask)
 
 /// Asks the next field of the chain, if any.
-/mob/living/proc/metainfo_skipped(datum/om/prompt/text/metainfo/ask)
+/mob/living/proc/metainfo_skipped(datum/prompt/text/metainfo/ask)
 	var/list/chain = ask.chain
 	if(!length(chain))
 		return
@@ -1349,10 +1405,12 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 
 	if(usr != src)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(custom_link_entered), title = "Custom Link", message = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_length = 100)
+	open_request(src, /datum/prompt/text, PROC_REF(custom_link_entered), answerer = src, title = "Custom Link", question = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_len = 100, timeout = 0)
 
-/mob/living/proc/custom_link_entered(datum/om/prompt/text/ask)
-	var/new_link = strip_html_simple(ask.text)
+/mob/living/proc/custom_link_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_link = strip_html_simple(A.answer.value)
 	if(new_link && CanUseTopic(src))
 		if(length(new_link) > 100)
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
@@ -1368,17 +1426,22 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	var/static/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
+	open_request(src, /datum/prompt/choice, PROC_REF(voice_freq_preset_chosen), answerer = src, title = "Voice Frequency", question = "What would you like to set your voice frequency to?", choices = preset_voice_freqs, timeout = 0)
 
-/mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choices[ask.choice]
+/mob/living/proc/voice_freq_preset_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/choice = ask.choices[ask.value]
 	if(choice == 1)
-		om_ask(src, /datum/om/prompt/number, PROC_REF(voice_freq_entered), title = "Custom Voice Frequency", message = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max = MAX_VOICE_FREQ, min = MIN_VOICE_FREQ)
+		open_request(src, /datum/prompt/number, PROC_REF(voice_freq_entered), answerer = src, title = "Custom Voice Frequency", question = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max_value = MAX_VOICE_FREQ, min_value = MIN_VOICE_FREQ, timeout = 0)
 		return
 	apply_voice_freq(choice)
 
-/mob/living/proc/voice_freq_entered(datum/om/prompt/number/ask)
-	apply_voice_freq(ask.number)
+/mob/living/proc/voice_freq_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_voice_freq(A.answer.value)
 
 /mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
@@ -1391,20 +1454,24 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set desc = "Sets your voice style!"
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
-	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = sound_service().talk_sound_map)
+	var/list/sound_choices = SSsounds.ready().talk_sound_sets()
+	// The original empty list opened nothing and did not reset the voice.
+	if(length(sound_choices))
+		open_request(src, /datum/prompt/choice/voice_type, PROC_REF(voice_type_chosen), answerer = src, choices = sound_choices)
 
 /// A cancel resets the voice to the default sounds.
-/datum/om/prompt/choice/voice_type
+/datum/prompt/choice/voice_type
+	timeout = 0
 	title = "Voice Sounds"
-	message = "Which set of sounds would you like to use for your character's speech sounds?"
+	question = "Which set of sounds would you like to use for your character's speech sounds?"
 
-/datum/om/prompt/choice/voice_type/cancelled()
-	var/mob/living/L = answerer
-	if(L)
-		L.voice_sounds_list = DEFAULT_TALK_SOUNDS
-
-/mob/living/proc/voice_type_chosen(datum/om/prompt/choice/voice_type/ask)
-	voice_sounds_list = get_talk_sound(ask.choice)
+/mob/living/proc/voice_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
+			voice_sounds_list = DEFAULT_TALK_SOUNDS
+		return
+	voice_sounds_list = get_talk_sound(A.answer.value)
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)
@@ -1425,19 +1492,20 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 /mob/living/proc/set_metainfo_private_notes(mob/user)
 	if(user != src)
 		return
-	om_ask(src, /datum/om/prompt/text, PROC_REF(private_notes_entered), title = "Private Notes", message = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(private_notes_entered), answerer = src, title = "Private Notes", question = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE, timeout = 0)
 
-/mob/living/proc/private_notes_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_metadata = ask.text
+/mob/living/proc/private_notes_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_metadata = A.answer.value
 	if(new_metadata && CanUseTopic(src))
 		private_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)
 
-/// om_after() target: the mob's AI picks up where it paused.
+/// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
 
-DECLARE_BEHAVIOUR(/mob/living, /datum/om/behaviour/spontaneous_vore)

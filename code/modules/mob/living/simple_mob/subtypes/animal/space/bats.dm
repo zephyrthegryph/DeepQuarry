@@ -37,13 +37,15 @@
 
 	var/scare_chance = 15
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/animal/space/bats/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(scare_chance))
-			L.status_at_least(EFFECT_STUNNED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% scares %T%!")))
 
 // Spookiest of bats

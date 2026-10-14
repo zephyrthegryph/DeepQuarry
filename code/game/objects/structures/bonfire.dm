@@ -18,31 +18,54 @@
 	var/heating_power = 80000
 	resistance_flags = FIRE_PROOF
 
-OM_FIELD(/obj/structure/bonfire, burning, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
+/obj/structure/bonfire/var/burning = FALSE
+TRACKED(/obj/structure/bonfire, burning)
+CAPABILITIES(/obj/structure/bonfire)
+	slot(CONTAINER_SLOT_FUEL)
+	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
+	param(nameof(fuel_material), pos = 1, apply = PROC_REF(build_of))
+	op("build", item(/obj/item/stack/rods), label("Use"), when(cond_not(nameof(can_buckle))), when(cond_not(nameof(grill))),
+		asks(/datum/prompt/choice, fields = list("title" = "Bonfire", "question" = "What would you like to construct?", "choices" = list("Stake", "Grill"), "timeout" = 0)),
+		then(PROC_REF(construction_chosen)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("dismantle", hand(), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(req_empty_hand()), when(req(PROC_REF(ready_to_dismantle))),
+		needs(req(PROC_REF(not_burning))), begins(MSG(bonfire/dismantling)), wait(5 SECONDS), then(PROC_REF(dismantle_done)))
 
-/obj/structure/bonfire/Initialize(mapload, material_name)
-	. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+MSG_DEF(bonfire/dismantling, "You start dismantling %T%.", "%U% starts dismantling %T%.")
+MSG_DEF_SELF(bonfire/still_burning, span_warning("%T% is still burning. Extinguish it first if you want to dismantle it."))
+
+TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
+
+/// The fuel's material (its constructor param, or the type's forced one).
+/obj/structure/bonfire/var/fuel_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/bonfire/proc/build_of(material_name)
+	var/forced_material = TYPE_TABLE_GET(src, forced_bonfire_material)
+	if(forced_material)
+		material_name = forced_material
+	material = get_material_by_name("[material_name || MAT_WOOD]")
 	if(!material)
 		stack_trace("Material of type: [material_name] does not exist.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	color = material.icon_colour
 
 // Blue wood.
-/obj/structure/bonfire/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
-/obj/structure/bonfire/permanent/Initialize(mapload, material_name)
-	. = ..()
+CAPABILITIES(/obj/structure/bonfire/permanent)
+	after_init(0, then(PROC_REF(init_ignite)))
+
+/obj/structure/bonfire/permanent/proc/init_ignite(datum/act/timer/A)
 	ignite()
 
-/obj/structure/bonfire/permanent/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+
+TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
 // ition Start
+
 /obj/structure/bonfire/examine(mob/user)
 	. = ..()
 	var/X = get_fuel_amount()
@@ -53,39 +76,28 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 		. += "[src] has a makeshift stake built in it, perfect for witches and space templars."
 // ition end
 
-/obj/structure/bonfire/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/bonfire_item,
-		/datum/interaction/entry_hand/bonfire_hand,
-	)
-	..()
-
-/// Old attackby: build a stake or grill from rods, add wood/logs as fuel, or ignite with a hot item.
-/datum/interaction/entry_item/bonfire_item
-	id = "bonfire_item"
-	name = "Use"
-	effect = /obj/structure/bonfire/proc/interaction_item
-
-/obj/structure/bonfire/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(construction_chosen), subject = W, title = "Bonfire", message = "What would you like to construct?", choices = list("Stake","Grill"), ask_flags = ASK_HELD | ASK_CAPABLE)
-		return TRUE
-	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
+/// Old attackby: add wood or logs as fuel, or ignite it with a hot item.
+/obj/structure/bonfire/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
 	else if(W.is_hot())
 		ignite()
-	return TRUE
+	return OP_OK
 
-/obj/structure/bonfire/proc/construction_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/stack/rods/R = ask.subject
-	if(can_buckle || grill)
-		return
-	switch(ask.choice)
+/// Old attackby with rods: build a stake or a grill into it (the rods held throughout).
+/obj/structure/bonfire/proc/construction_chosen(datum/act/op/A)
+	var/datum/prompt/P = A.answer
+	if(!P)
+		return OP_OK
+	var/mob/user = A.actor
+	var/obj/item/stack/rods/R = A.held
+	switch(P.value)
 		if("Stake")
 			R.use(1)
-			can_buckle = TRUE
+			set_can_buckle(TRUE)
 			buckle_require_restraints = TRUE
 			to_chat(user, span_notice("You add a rod to \the [src]."))
 			var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")
@@ -94,44 +106,39 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 			underlays += rod_underlay
 		if("Grill")
 			R.use(1)
-			grill = TRUE
+			set_grill(TRUE)
 			to_chat(user, span_notice("You add a grill to \the [src]."))
-			update_icon()
+	return OP_OK
 
-/// Old attack_hand: take out fuel, or dismantle if it's empty. The buckle unbuckle check now
-/// runs earlier, in hand_gate() (code/game/objects/buckling.dm), before this interaction is tried.
-/datum/interaction/entry_hand/bonfire_hand
-	id = "bonfire_hand"
-	name = "Use"
-	effect = /obj/structure/bonfire/proc/interaction_hand
+/// Old attack_hand: take the fuel out (an empty bonfire is taken apart by the dismantle op).
+/obj/structure/bonfire/proc/interaction_hand(datum/act/op/A)
+	remove_fuel(A.actor)
+	return OP_OK
 
-/obj/structure/bonfire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(get_fuel_amount())
-		remove_fuel(user)
-	else
-		dismantle(user)
-	return TRUE
+/// An empty bonfire can be taken apart (what lies in it is fixed while the click is decided).
+/obj/structure/bonfire/proc/ready_to_dismantle(datum/act/op/A)
+	return read_once(get_fuel_amount()) ? MSG(req_failed) : null
 
+/obj/structure/bonfire/permanent/ready_to_dismantle(datum/act/op/A)
+	return null
 
-/obj/structure/bonfire/proc/dismantle(mob/user)
-	if(!burning)
-		act_message(user, src, MSG_SELF("You start dismantling %T%."), MSG_OTHERS("%U% starts dismantling %T%."))
-		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(dismantle_timed_done), done_args = list(user))
-	else
-		to_chat(user, span_warning("\The [src] is still burning. Extinguish it first if you want to dismantle it."))
+/obj/structure/bonfire/proc/not_burning(datum/act/op/A)
+	return (!burning) ? null : MSG(bonfire/still_burning)
 
-/obj/structure/bonfire/proc/dismantle_timed_done(mob/user)
+/obj/structure/bonfire/proc/dismantle_done(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/i = 1 to 5)
 		material.place_dismantled_product(get_turf(src))
 	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
-	qdel(src)
+	consume(src, user)
+	return OP_OK
 
 /obj/structure/bonfire/proc/get_fuel_amount()
 	var/F = 0
-	for(var/A in contents)
-		if(istype(A, /obj/item/stack/material/wood))
+	for(var/kind in slot_kinds(CONTAINER_SLOT_FUEL, /obj/item/stack/material))
+		if(ispath(kind, /obj/item/stack/material/wood))
 			F += 0.5
-		if(istype(A, /obj/item/stack/material/log))
+		if(ispath(kind, /obj/item/stack/material/log))
 			F += 1.0
 	return F
 
@@ -143,10 +150,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		update_icon()
-
-/obj/structure/bonfire/permanent/remove_fuel(mob/user)
-	dismantle(user)
 
 /obj/structure/bonfire/proc/add_fuel(atom/movable/new_fuel, mob/user)
 	if(get_fuel_amount() >= 10)
@@ -156,9 +159,8 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 		var/obj/item/stack/F = new_fuel
 		var/obj/item/stack/S = F.split(1)
 		if(S)
-			S.forceMove(src)
+			move_into(src, null, S, user)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			update_icon()
 			return TRUE
 		return FALSE
 	else
@@ -176,13 +178,11 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 	return FALSE
 
@@ -200,13 +200,11 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 	. = ..()
 	if(burning)
 		set_burning(FALSE)
-		update_icon()
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		set_burning(TRUE)
-		update_icon()
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -224,39 +222,27 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bonfire/appearance_overlays()
-	. = list()
+/obj/structure/bonfire/draw(datum/look/look)
+	..()
 	if(burning)
+		var/fuel = get_fuel_amount()
 		var/state
-		switch(get_fuel_amount())
+		switch(fuel)
 			if(0 to 4.5)
 				state = "bonfire_warm"
 			if(4.6 to 10)
 				state = "bonfire_hot"
-		var/image/I = image(icon, state)
-		I.appearance_flags = RESET_COLOR
-		. += I
-
-		if(has_buckled_mobs() && get_fuel_amount() >= 5)
-			I = image(icon, "bonfire_intense")
-			I.pixel_y = 13
-			I.layer = MOB_LAYER + 0.1
-			I.appearance_flags = RESET_COLOR
-			. += I
-
-		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.overlay(look_appearance(icon, state, appearance_flags = RESET_COLOR))
+		if(has_buckled_mobs() && fuel >= 5)
+			look.overlay(look_overlay_image(icon, "bonfire_intense", layer = MOB_LAYER + 0.1, pixel_y = 13, appearance_flags = RESET_COLOR))
+		var/light_strength = max(fuel / 2, 2)
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
-		set_light(0)
-
+		look.glow(GLOW_OFF)
 	if(grill)
-		var/image/grille_image = image(icon, "bonfire_grill")
-		grille_image.appearance_flags = RESET_COLOR
-		. += grille_image
+		look.overlay(look_appearance(icon, "bonfire_grill", appearance_flags = RESET_COLOR))
 
-
-/obj/structure/bonfire/periodic_step()
+/obj/structure/bonfire/proc/bonfire_step(datum/act/timer/A)
 	if(!check_oxygen())
 		extinguish()
 		return
@@ -280,7 +266,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 					if(heat_transfer > 0)
 						heat_transfer = min(heat_transfer , heating_power)
 
-						removed.add_thermal_energy(heat_transfer)
+						heat_add(removed, heat_transfer, HEAT_SOURCE_FIRE)
 
 				for(var/mob/living/L in view(3, src))
 					L.apply_body_effect(/datum/body_effect/endothermic, 10 SECONDS, null, TRUE)
@@ -307,7 +293,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 		M.pixel_y += 13
 	else // Just unbuckled someone
 		M.pixel_y -= 13
-	update_icon()
 
 /obj/structure/fireplace //more like a space heater than a bonfire. A cozier alternative to both.
 	name = "fireplace"
@@ -321,23 +306,17 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
 
-OM_FIELD(/obj/structure/fireplace, burning, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
+/obj/structure/fireplace/var/burning = FALSE
+TRACKED(/obj/structure/fireplace, burning)
+CAPABILITIES(/obj/structure/fireplace)
+	slot(CONTAINER_SLOT_FUEL)
+	every(2 SECONDS, then(PROC_REF(fireplace_step)), when = nameof(burning))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
-/obj/structure/fireplace/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/fireplace_item,
-		/datum/interaction/entry_hand/fireplace_hand,
-	)
-	..()
-
-/// Old attackby: add wood/logs as fuel, or ignite with a hot item.
-/datum/interaction/entry_item/fireplace_item
-	id = "fireplace_item"
-	name = "Use"
-	effect = /obj/structure/fireplace/proc/interaction_item
-
-/obj/structure/fireplace/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fireplace/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
@@ -345,23 +324,18 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 		ignite()
 	return TRUE
 
-/// Old attack_hand: take out fuel.
-/datum/interaction/entry_hand/fireplace_hand
-	id = "fireplace_hand"
-	name = "Use"
-	effect = /obj/structure/fireplace/proc/interaction_hand
-
-/obj/structure/fireplace/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fireplace/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_fuel_amount())
 		remove_fuel(user)
 	return TRUE
 
 /obj/structure/fireplace/proc/get_fuel_amount()
 	var/F = 0
-	for(var/A in contents)
-		if(istype(A, /obj/item/stack/material/wood))
+	for(var/kind in slot_kinds(CONTAINER_SLOT_FUEL, /obj/item/stack/material))
+		if(ispath(kind, /obj/item/stack/material/wood))
 			F += 0.5
-		if(istype(A, /obj/item/stack/material/log))
+		if(ispath(kind, /obj/item/stack/material/log))
 			F += 1.0
 	return F
 
@@ -370,7 +344,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		update_icon()
 
 /obj/structure/fireplace/proc/add_fuel(atom/movable/new_fuel, mob/user)
 	if(get_fuel_amount() >= 10)
@@ -380,9 +353,8 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 		var/obj/item/stack/F = new_fuel
 		var/obj/item/stack/S = F.split(1)
 		if(S)
-			S.forceMove(src)
+			move_into(src, null, S, user)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			update_icon()
 			return TRUE
 		return FALSE
 	else
@@ -397,13 +369,11 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
 		return TRUE
 	return FALSE
 
@@ -417,13 +387,11 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 	. = ..()
 	if(burning)
 		set_burning(FALSE)
-		update_icon()
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/fireplace/proc/ignite()
 	if(!burning && get_fuel_amount())
 		set_burning(TRUE)
-		update_icon()
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/fireplace/proc/burn_bonfire()
@@ -436,33 +404,37 @@ DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
 			var/obj/O = A
 			O.fire_act(1000, 500)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fireplace/appearance_overlays()
-	. = list()
+/obj/structure/fireplace/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/structure/fireplace/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
 	if(burning)
 		var/state
 		switch(get_fuel_amount())
 			if(0 to 1)
-				state = "[icon_state]_fire0"
+				state = "[drawn_state]_fire0"
 			if(2 to 4)
-				state = "[icon_state]_fire1"
+				state = "[drawn_state]_fire1"
 			if(4 to 6)
-				state = "[icon_state]_fire2"
+				state = "[drawn_state]_fire2"
 			if(6 to 8)
-				state = "[icon_state]_fire3"
+				state = "[drawn_state]_fire3"
 			if(8 to 10)
-				state = "[icon_state]_fire4"
-		. += mutable_appearance(icon, state)
-		. += emissive_appearance(icon, state)
-		. += mutable_appearance(icon, "[icon_state]_glow")
-		. += emissive_appearance(icon, "[icon_state]_glow")
+				state = "[drawn_state]_fire4"
+		look.overlay(mutable_appearance(icon, state))
+		look.overlay(emissive_appearance(icon, state))
+		look.overlay(mutable_appearance(icon, "[drawn_state]_glow"))
+		look.overlay(emissive_appearance(icon, "[drawn_state]_glow"))
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
-		set_light(0)
+		look.glow(GLOW_OFF)
 
-/obj/structure/fireplace/periodic_step()
+/obj/structure/fireplace/proc/fireplace_step(datum/act/timer/A)
 	if(!check_oxygen())
 		extinguish()
 		return
@@ -484,7 +456,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearanc
 					if(heat_transfer > 0)
 						heat_transfer = min(heat_transfer , heating_power)
 
-						removed.add_thermal_energy(heat_transfer)
+						heat_add(removed, heat_transfer, HEAT_SOURCE_FIRE)
 
 				env.merge(removed)
 
@@ -504,13 +476,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearanc
 	density = TRUE
 	anchored = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/fireplace/barrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/fireplace/barrel/appearance_overlays()
-	. = list()
+/obj/structure/fireplace/barrel/look_parts(datum/look/look)
 	if(burning)
-		icon_state = "[initial(icon_state)]1"
+		look.state("[initial(icon_state)]1")
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
-		icon_state = initial(icon_state)
-		set_light(0)
+		look.state(initial(icon_state))
+		look.glow(GLOW_OFF)

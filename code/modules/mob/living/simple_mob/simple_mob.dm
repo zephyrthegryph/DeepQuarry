@@ -1,7 +1,12 @@
+
 // Reorganized and somewhat cleaned up.
 // AI code has been made into a datum, inside the AI module folder.
 
 /mob/living/simple_mob
+	// footsteps (footstep() in its CAPABILITIES)
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
@@ -9,25 +14,20 @@
 
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
-	mob_bump_flag = HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
-	digest_leave_remains = TRUE
 
 	var/tt_desc = null //Tooltip description
 
 	//Settings for played mobs
 	var/show_stat_health = 1		// Does the percentage health show in the stat panel for the mob
+	var/draws_life_state = TRUE		// FALSE: the type keeps its mapped icon_state and its base draw adds no life state, hands, fullness, pounce or eyes
 	var/has_hands = 0				// Set to 1 to enable the use of hands and the hands hud
 	var/humanoid_hands = 0			// Can a player in this mob use things like guns or AI cards?
 	var/hand_form = "hands"			// Used in IsHumanoidToolUser. 'Your X are not fit-'.
 	var/list/hud_gears				// Slots to show on the hud (typically none)
 	var/ui_icons					// Icon file path to use for the HUD, otherwise generic icons are used
-	var/r_hand_sprite				// If they have hands,
-	var/l_hand_sprite				// they could use some icons.
 	var/player_msg					// Message to print to players about 'how' to play this mob on login.
 
 	//Mob icon/appearance settings
@@ -35,12 +35,8 @@
 	var/icon_dead = ""				// The iconstate if we're dead, required
 	var/icon_gib = "generic_gib"	// The iconstate for being gibbed, optional. Defaults to a generic gib animation.
 	var/icon_rest = null			// The iconstate for resting, optional
-	var/image/modifier_overlay = null // Holds overlays from modifiers.
-	var/image/eye_layer = null		// Holds the eye overlay.
 	var/has_eye_glow = FALSE		// If true, adds an overlay over the lighting plane for [icon_state]-eyes.
 	var/custom_eye_color = null
-	attack_icon = 'icons/effects/effects.dmi' //Just the default, played like the weapon attack anim
-	attack_icon_state = "slash" //Just the default
 
 	//Mob talking settings
 	universal_speak = 0				// Can all mobs in the entire universe understand this one?
@@ -169,64 +165,79 @@
 	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
+
+CAPABILITIES(/mob/living/simple_mob)
+	ref_one(nameof(movement_target), /obj)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
+	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
+	ref_many(nameof(prey_excludes))
+	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
+	mob_attacks()
+	ref_many(nameof(tamers))
+	owns_one(nameof(myid), /obj/item/card/id, starts = PROC_REF(start_id))
+	// per-subtype constant tables: every instance of a type shares one list (a subtype that changes its attacktext copies it first)
+	per_type(nameof(attacktext), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(friendly), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(loot_list), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(myid_access), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(organ_names), PROC_REF(organ_names_decl))
+	knows(nameof(has_langs), default = TRUE)
+	// a mob with no living state of its own wears its type's icon state (it would turn invisible otherwise)
+	derives(nameof(icon_living), PROC_REF(default_icon_living))
+	verb_entry(/mob/living/simple_mob/proc/ColorMate, when = cond_config(/datum/config_entry/flag/allow_simple_mob_recolor))
+	footstep()
+	owns_one(nameof(mob_radio), /obj/item/radio/headset)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))
+	on_notice(/datum/notice/hit, then(PROC_REF(thrown_reaction_sound)))
+	verb_entry(/mob/verb/observe, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/animal_nom, when = nameof(vore_active)) // useable before the vorgans initialise
+	verb_entry(/mob/living/proc/shred_limb, when = nameof(vore_active))
+	op("nutrition_heal", menu(button = "Nutrition Heal"), needs(req(PROC_REF(hungry_enough_to_heal))),
+		asks(/datum/prompt/number/animal_nutrition_heal, fields = list("question" = computed(PROC_REF(nutrition_heal_question))), ends_on_no = TRUE, step = "amount"),
+		wait(PROC_REF(nutrition_heal_time)), then(PROC_REF(nutrition_heal_done)))
+	verb_entry(/mob/living/simple_mob/proc/use_headset) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/use_pda) // TGPanel
+	verb_entry(/mob/living/simple_mob/proc/pick_size, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/pick_color, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_name, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_desc, login = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/set_gender, login = TRUE)
+	// a ghost becomes a ghost-joinable mob after a yes (the old attack_ghost; a mob nobody may join is not offered)
+	op("ghost_join", observer(), label("Inhabit"), when(nameof(ghostjoin)), needs(req(PROC_REF(can_ghost_join))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Become Mob", "question" = computed(PROC_REF(ghost_join_question)), "timeout" = 20 SECONDS), keeps = TARGET_PRESENT),
+		then(PROC_REF(reply_ghost_join)))
+
 // Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
-DECLARE_VERB_HIDE(/mob/living/simple_mob, /mob/verb/observe)
-DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/simple_mob/proc/animal_nom, "vore_active") // useable before the vorgans initialise
-DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/proc/shred_limb, "vore_active")
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/nutrition_heal)
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_headset) // TGPanel
-DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGPanel
 
-/mob/living/simple_mob/Initialize(mapload)
-	// Per-subtype constant tables: share one list across every instance of
-	// this type instead of allocating a fresh copy per mob. attacktext can
-	// be a single string on some subtypes, so only intern the list form;
-	// subtypes that mutate their attacktext list (e.g. synx) copy it first.
-	if(islist(attacktext))
-		attacktext = shared_type_list(type, "attacktext", attacktext)
-	if(islist(friendly))
-		friendly = shared_type_list(type, "friendly", friendly)
-	if(islist(loot_list))
-		loot_list = shared_type_list(type, "loot_list", loot_list)
-	if(islist(myid_access))
-		myid_access = shared_type_list(type, "myid_access", myid_access)
+/// Its ID card, when its type gives it one (owns_one(starts =)), with the type's access.
+/mob/living/simple_mob/proc/start_id(current, mapload)
+	if(!ID_provided)
+		return null
+	var/obj/item/card/id/card = new /obj/item/card/id(src)
+	card.set_access(id_access())
+	return card
 
-	if(ID_provided)
-		own_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
-		myid.access = myid_access ? myid_access.Copy() : list()
+/// The access its ID card starts with: the type's myid_access (a subtype may add to it).
+/mob/living/simple_mob/proc/id_access()
+	return myid_access ? myid_access.Copy() : list()
 
-	for(var/L in has_langs)
-		languages |= GLOB.all_languages[L]
-	if(languages.len)
-		default_language = languages[1]
+/// Its organ names' shared decl (per_type()).
+/mob/living/simple_mob/proc/organ_names_decl(var_name)
+	return organ_names ? GET_DECL(organ_names) : null
 
-	if(has_eye_glow)
-		add_eyes()
-
-	if(organ_names)
-		organ_names = GET_DECL(organ_names)
-
-	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, verb_source(VERB_SOURCE_CONFIG))
-
-	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
-
-	return ..()
-
+/// Its living state, or its type's icon state when it has none (derives(), once at init, after the rolls).
+/mob/living/simple_mob/proc/default_icon_living()
+	return icon_living || initial(icon_state)
 
 // eye glow comes off and belly contents are released.
 /mob/living/simple_mob/on_destroy(force)
-	if(has_eye_glow)
-		remove_eyes()
 	release_vore_contents()
 	..()
 
 //Client attached
-DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_size)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_color)
 
 /mob/living/simple_mob/Login()
 	. = ..()
@@ -234,7 +245,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	if(vore_active && !voremob_loaded)
 		init_vore(TRUE)
 	if(hasthermals)
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/hunting_vision, src) //So that maint preds can see prey through walls, to make it easier to find them.
+		grant(src, granted_verb(/mob/living/simple_mob/proc/hunting_vision), src) //So that maint preds can see prey through walls, to make it easier to find them.
 
 /mob/living/simple_mob/proc/pick_size()
 	set name = "Pick Size"
@@ -243,15 +254,17 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	if(picked_size)
 		to_chat(src, span_notice("You have already picked a size! If you picked the wrong size, ask an admin to change your picked_size variable to 0."))
 		return
-	if(!resizable)
+	if(!vore_prefs.resizable)
 		to_chat(src, span_warning("You are immune to resizing!"))
 		return
 
 	var/nagmessage = "Pick a size between [RESIZE_MINIMUM * 100] to [RESIZE_MAXIMUM * 100]%. (Only usable once!)"
-	om_ask(src, /datum/om/prompt/number, PROC_REF(size_picked), title = "Pick a Size", message = nagmessage, default = size_multiplier*100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
+	open_request(src, /datum/prompt/number, PROC_REF(size_picked), answerer = src, title = "Pick a Size", question = nagmessage, default = size_multiplier*100, max_value = RESIZE_MAXIMUM * 100, min_value = RESIZE_MINIMUM * 100, timeout = 0)
 
-/mob/living/simple_mob/proc/size_picked(datum/om/prompt/number/ask)
-	var/new_size = ask.number
+/mob/living/simple_mob/proc/size_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_size = A.answer.value
 	if(!picked_size && size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		picked_size = TRUE
@@ -263,13 +276,14 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(color_picked), answerer = usr, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/proc/color_picked(datum/om/prompt/color/ask)
+/mob/living/simple_mob/proc/color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(!picked_color)
-		color = ask.picked_color
+		color = A.answer.value
 	picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/SelfMove(turf/n, direct, movetime)
 	var/turf/old_turf = get_turf(src)
@@ -303,12 +317,12 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)
-	if(T && T.movement_cost && !(dq_get_hovering(src) || flying || is_incorporeal())) // Flying mobs ignore turf-based slowdown. Aquatic mobs ignore water slowdown, and can gain bonus speed in it.
+	if(T && T.movement_cost && !(dq_get_hovering(src) || stat_value(src, STAT_FLYING) || is_incorporeal())) // Flying mobs ignore turf-based slowdown. Aquatic mobs ignore water slowdown, and can gain bonus speed in it.
 		if(istype(T,/turf/simulated/floor/water) && aquatic_movement)
 			. -= aquatic_movement - 1
 		else
 			. += T.movement_cost
-		if(flying)
+		if(stat_value(src, STAT_FLYING))
 			adjust_nutrition(-0.5)
 
 	if(purge)//Purged creatures will move more slowly. The more time before their purge stops, the slower they'll move.
@@ -334,14 +348,6 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	. += ""
 	. += "Health: [round(vitality() * 100)]%"
 
-/mob/living/simple_mob/lay_down()
-	..()
-	if(resting && icon_rest)
-		icon_state = icon_rest
-	else
-		icon_state = icon_living
-	update_icon()
-
 /mob/living/simple_mob/proc/chase_target(ticker)
 	if(QDELETED(movement_target))
 		rel_clear(src, nameof(movement_target))
@@ -349,7 +355,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
 		step_to(src,movement_target,1)
-		om_after(src, 3, PROC_REF(chase_target), ++ticker)
+		after(src, 0.3 SECONDS, PROC_REF(chase_target), with = list(++ticker))
 		return
 
 	face_atom(movement_target)
@@ -370,14 +376,14 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 	return verb
 
 /mob/living/simple_mob/is_sentient()
-	return mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
+	return kind_of(src).mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
 
 /mob/living/simple_mob/get_nametag_desc(mob/user)
 	return span_italics("[tt_desc]")
 
 /mob/living/simple_mob/make_hud_overlays()
-	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE))
-	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE))
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ai_0", plane = PLANE_BUILDMODE), STATUS_HUD)
+	rel_add(src, nameof(hud_list), gen_hud_image(GLOB.buildmode_hud, src, "ais_1", plane = PLANE_BUILDMODE), LIFE_HUD)
 	add_overlay(hud_list)
 
 //Makes it so that simplemobs can understand galcomm without being able to speak it.
@@ -413,7 +419,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		return
 
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Animal Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
+	open_request(src, /datum/prompt/colormatrix, null, answerer = src, title = "Animal Recolor", question = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 
 //Thermal vision adding
 
@@ -426,7 +432,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		to_chat(src, "You can sense other creatures by focusing carefully on your surroundings.")
 		sight |= SEE_MOBS
 		COOLDOWN_START(src, hunting_cooldown, 5 MINUTES)
-		om_after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
+		after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
 	else if(COOLDOWN_TIMELEFT(src, hunting_cooldown))
 		to_chat(src, "You must wait for a while before using this again.")
 
@@ -455,14 +461,12 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		to_chat(src,span_warning("This simplemob has no vore sprite."))
 	else if(isnull(vore_icons_cache))
 		vore_icons_cache = vore_icons
-		vore_icons = 0
+		set_vore_icons(0)
 		to_chat(src,span_warning("Vore sprite disabled."))
 	else
-		vore_icons = vore_icons_cache
+		set_vore_icons(vore_icons_cache)
 		vore_icons_cache = null
 		to_chat(src,span_warning("Vore sprite enabled."))
-
-	update_icon()
 
 /// Simple mob slip logic, should be overriden if you want the simple mob to slip under certain conditions
 /mob/living/simple_mob/proc/animal_slip(wet_level, dirtslip)
@@ -471,7 +475,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 // === merged from simple_mob_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob
 	melee_attack_delay = 1
-	base_attack_cooldown = 10
 	melee_miss_chance = 25
 
 	var/temperature_range = 40			// How close will they get to environmental temperature before their body stops changing its heat
@@ -516,8 +519,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
 	does_spin = FALSE
-	can_be_drop_pred = TRUE				// Mobs are pred by default.
-	can_be_drop_prey = TRUE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob
@@ -534,34 +535,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(myid)
 		return myid
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/appearance_overlays()
-	. = list()
-	. += ..()
-	if(vore_active)
-		var/voremob_awake = FALSE
-		if(icon_state == icon_living)
-			voremob_awake = TRUE
-		update_fullness()
-		if(!vore_fullness)
-			update_transform()
-			return .
-		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
-			icon_state = "[icon_living]-[vore_fullness]"
-		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
-			icon_state = "[icon_dead]-[vore_fullness]"
-		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
-			icon_state = "[icon_rest]-[vore_fullness]"
-		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
-			remove_eyes()
-			add_eyes()
-	update_transform()
-	. += add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.
-
-/mob/living/simple_mob/regenerate_icons()
-	..()
-	update_icon()
-
 /mob/living/simple_mob/proc/will_eat(mob/living/M)
 	if(client) //You do this yourself, dick!
 		// ai_log("vr/wont eat [M] because we're player-controlled", 3) // AI TEMPORARY REMOVAL
@@ -574,10 +547,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		return 0
 	if(M.is_incorporeal()) // No eating the phased ones
 		return 0
-	if(vore_ignores_undigestable && !M.digestable) //Don't eat people with nogurgle prefs
+	if(vore_ignores_undigestable && !M.vore_prefs.digestable) //Don't eat people with nogurgle prefs
 		// ai_log("vr/wont eat [M] because I am picky", 3) // AI TEMPORARY REMOVAL
 		return 0
-	if(!M.allowmobvore || !M.devourable) // Don't eat people who don't want to be ate by mobs
+	if(!M.vore_prefs.allowmobvore || !M.vore_prefs.devourable) // Don't eat people who don't want to be ate by mobs
 		// ai_log("vr/wont eat [M] because they don't allow mob vore", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(LAZYFIND(prey_excludes, M)) // They're excluded
@@ -631,8 +604,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 20 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.status_adjust(EFFECT_STUNNED, 2)
+		M.status_at_least(STAT_WEAKENED, 5)
+		M.status_adjust(STAT_STUNNED, 2)
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
@@ -652,7 +625,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	ai_busy_begin() // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
-	update_icon()
 
 	if(.)
 		// If we succesfully ate them, lose the target
@@ -668,36 +640,35 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 // Make sure you don't call ..() on this one, otherwise you duplicate work.
 /mob/living/simple_mob/init_vore(force)
 	if(force)
-		vore_active = TRUE
+		set_vore_active(TRUE)
 		voremob_loaded = TRUE
 	if(!vore_active || no_vore || !voremob_loaded)
 		return
 
-	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
+	enable_slosh() // Sloshy element
 
 	if(!soulgem)
-		own_set(src, nameof(soulgem), new /obj/soulgem(src))
+		rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	// Since they have bellies, add verbs to toggle settings on them.
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_digestion, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_fancygurgle, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/nutrition_heal, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/eat_trash, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/toggle_digestion), src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/toggle_fancygurgle), src)
+	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
+	grant(src, granted_verb(/mob/living/simple_mob/proc/animal_nom), src)
+	grant(src, granted_verb(/mob/living/proc/shred_limb), src)
+	grant(src, granted_verb(/mob/living/proc/eat_trash), src)
+	grant(src, granted_verb(/mob/living/proc/toggle_trash_catching), src)
 
 	if(LAZYLEN(vore_organs))
 		return
 
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	load_default_bellies()
 
 /mob/living/simple_mob/proc/load_default_bellies()
 	//A much more detailed version of the default /living implementation
 	var/obj/belly/B = new /obj/belly(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
@@ -738,7 +709,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
 		"The stomach glorps and gurgles as it tries to work you into slop.")
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	B.belly_fullscreen = "a_tumby"
 	B.belly_fullscreen_color = "#823232"
 	B.belly_fullscreen_color2 = "#823232"
@@ -754,12 +725,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		if(!faction_bump_vore && faction == tmob.faction)
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
-			tmob.status_at_least(EFFECT_WEAKENED, 5)
+			tmob.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
-		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
+		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after(); no timer or task form can wait on it until ops land (wait())
 			animal_nom(tmob)
-			update_icon()
+			// The nom took seconds: the pred may have been deleted (or died into a belly) meanwhile.
+			if(QDELETED(src))
+				return
 			ai_busy_end()
 		return TRUE
 	return FALSE
@@ -881,7 +854,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Select a target to pounce at."
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, "Your legs need some more rest.")
 		return
 
@@ -894,41 +867,43 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(leap_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/simple_mob/proc/leap_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/T = ask.choice
+/mob/living/simple_mob/proc/leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/T = A.answer.value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 10)
-	status_flags |= LEAPING
+	cooldown_start(src, last_special, 1 SECOND)
+	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
 	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
-	om_after(src, 5, PROC_REF(leap_land), T)
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!Adjacent(T))
+	if(!T || !Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.status_at_least(EFFECT_WEAKENED, 3)
+			H.status_at_least(STAT_WEAKENED, 3)
 			return
 	var/armor_block = T.armor_against(INJURY_PAIN)
 	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)
@@ -949,7 +924,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	var/spit_projectile = null // what our spit projectile is. Can be anything
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 
 /mob/living/simple_mob/RangedAttack(atom/A)
 	if(!isnull(spit_projectile) && spitting)
@@ -984,6 +958,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 // Example:
 // /mob/living/simple_mob/my_mob/update_transforms()
 // 		update_transform_horizontal()
+
+/// A creature rolled to a random icon scale keeps its proportions: rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x))).
+/mob/living/simple_mob/proc/roll_same_scale(datum/roller/R)
+	return icon_scale_x
 
 /mob/living/simple_mob/proc/update_transform_horizontal()
 	// First, get the correct size.

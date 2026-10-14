@@ -2,7 +2,7 @@
 	required_count = 1
 	required_traits_desc = "a size bigger than 125% or smaller than 75%"
 
-/datum/experiment/scanning/people/big_or_smol/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler)
+/datum/experiment/scanning/people/big_or_smol/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler, mob/user)
 	. = ..()
 	if(!.)
 		return
@@ -14,7 +14,7 @@
 	required_count = 3
 	required_traits_desc = "Our newly and improvised Medi-Gun needs field testing! Surely, there has to be someone who's gotten a few bruises or scratches here or there."
 
-/datum/experiment/scanning/people/hurt_medigun/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler)
+/datum/experiment/scanning/people/hurt_medigun/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler, mob/user)
 	. = ..()
 	if(!.)
 		return

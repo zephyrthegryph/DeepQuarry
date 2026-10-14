@@ -12,21 +12,50 @@
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
 	datum_flags |= DF_VAR_EDITED
+	// A trait field (VV lists `@kind.field`; SDQL may name the old var): the holder's own copy of its trait block, through set_trait().
+	if(!(var_name in vars))
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(!trait_field)
+			return FALSE
+		set_trait(src, trait_field[1], trait_field[2], var_value)
+		return TRUE
 	// A var with a registered setter is edited through it, so everything that reacts to the change
 	// reacts to an admin's edit too (dx_conventions.md §1).
 	// Only a registered setter (TRACKED or SETTER): a proc merely named set_<x> may be a verb or take
 	// other arguments.
-	if(hascall(src, "__setter_[var_name]"))
+	if(hascall(src, "__setter_[var_name]") || (istype(src, /datum/record) && hascall(src, "set_[var_name]")))
 		call(src, "set_[var_name]")(var_value)
 		return TRUE
-	vars[var_name] = var_value // ALLOW(api): VV: admins edit any var by name
-	changed(src)
+	// A built-in the engine publishes from its own choke point is edited through it: a move is a move (Moved() tells whatever reads loc), a turn is
+	// set_dir(). A raw write would change the var and tell nobody.
+	if(ismovable(src))
+		var/atom/movable/mover = src
+		if(var_name == NAMEOF(mover, loc))
+			if(isnull(var_value))
+				return !!mover.moveToNullspace()
+			if(!isatom(var_value))
+				return FALSE
+			return !!mover.forceMove(var_value)
+	if(isatom(src))
+		var/atom/turner = src
+		if(var_name == NAMEOF(turner, dir))
+			turner.set_dir(var_value)
+			return TRUE
+	// Any other var, and a stat's name, go through vars_write(): a stat as an admin override hold (released by releasing its source), a schema var
+	// clamped or refused, a plain var written and published to whatever reads it, its outputs re-derived (code/engine/stats/vars_write.dm).
+	if(!vars_write(src, var_name, var_value, SRC_VV))
+		return FALSE
+	refresh_dispatched(src) // an admin's edit of a var nothing declares publishes to nobody: the outputs re-derive anyway
 	return TRUE
 
 /datum/proc/vv_get_var(var_name)
 	switch(var_name)
 		if (NAMEOF(src, vars))
 			return debug_variable(var_name, list(), 0, src)
+	if(!(var_name in vars))
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(trait_field)
+			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src)
 	return debug_variable(var_name, vars[var_name], 0, src)
 
 /**
@@ -48,8 +77,8 @@
 	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach OM Behaviour")
 	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach OM Behaviour")
 
-// The dropdown's "high level" actions (admin heal, set species, ...) are VV_TOPIC_ACTION rows on
-// the type (code/__defines/vv.dm); the low level ones are the admin client's rows in
+// The dropdown's "high level" actions (admin heal, set species, ...) are topic_in(VV_TOPIC, key) ops on
+// the type (code/__defines/vv.dm); the low level ones are the admin holder's ops in
 // admin/view_variables/topic_basic.dm, in case the type's own code runtimes.
 
 /datum/proc/vv_get_header()

@@ -26,16 +26,16 @@
 	. = ..()
 	. += ""
 
-	. += "Game Mode: [SSticker.hide_mode ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
+	. += "Game Mode: [ticker_hide_mode() ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
 
 	// if(GLOB.vote_service.mode)
 	// 	. += "Vote: [capitalize(GLOB.vote_service.mode)] Time Left: [GLOB.vote_service.time_remaining] s"
 
-	if(SSticker.current_state == GAME_STATE_STARTUP)
+	if(ticker_current_state() == GAME_STATE_STARTUP)
 		. += "Time To Start: Server Initializing"
 
-	else if(SSticker.current_state == GAME_STATE_PREGAME)
-		. += "Time To Start: [round(SSticker.timeLeft / 10, 1)][GLOB.round_progressing ? "" : " (DELAYED)"]"
+	else if(ticker_current_state() == GAME_STATE_PREGAME)
+		. += "Time To Start: [round(ticker_timeLeft() / 10, 1)][GLOB.round_progressing ? "" : " (DELAYED)"]"
 		. += "Players: [totalPlayers]"
 		. += "Players Ready: [totalPlayersReady]"
 		totalPlayers = 0
@@ -63,7 +63,7 @@
 	var/savefile/F = client.get_server_news()
 	if(F)
 		//client.prefs.lastnews = md5(F["body"]) //Chomp REMOVE
-		//GLOB.character_setup_service.queue_preferences_save(client.prefs) //Chomp REMOVE
+		//SScharacter_setup.queue_preferences_save(client.prefs) //Chomp REMOVE
 		// start - handle reads correctly
 		var/title
 		F["title"] >> title
@@ -131,8 +131,8 @@
 			return 0
 	return 1
 
-/mob/new_player/proc/AttemptLateSpawn(rank)
-	if (src != usr)
+/mob/new_player/proc/AttemptLateSpawn(rank, mob/user)
+	if (src != user)
 		return 0
 	return do_late_spawn(rank)
 
@@ -143,7 +143,7 @@
 		return 0
 	if(spawning || QDELETED(src))
 		return 0
-	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
+	if(!SSticker || ticker_current_state() != GAME_STATE_PLAYING)
 		to_chat(src, span_red("The round is either not ready, or has already finished..."))
 		return 0
 	if(!CONFIG_GET(flag/enter_allowed))
@@ -180,7 +180,7 @@
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
 			rel_set(cryst, nameof(cryst.bound_mob), new cryst.spawn_mob_type(cryst))
-			cryst.spawn_mob_type = null
+			cryst.set_spawn_mob_type(null)
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
 			if(vorgans)
@@ -191,8 +191,7 @@
 				//Something went wrong, but lets try to do as much as we can.
 				cryst.bound_mob.capture_caught = TRUE
 				cryst.persist_storable = FALSE
-			cryst.update_icon()
-			qdel(src)
+			spent(src)
 			return
 
 	SSjob.assign_role(src, rank, 1)
@@ -216,10 +215,10 @@
 		character = character.AIize(move = FALSE) // Dupe of code in /datum/system/ticker/proc/create_characters() for non-latespawn, unify?
 
 		AnnounceCyborg(character, rank, "has been transferred to the empty core in \the [character.loc.loc]")
-		SSticker.mode.latespawn(character)
+		ticker_mode().latespawn(character)
 
-		qdel(C) //Deletes empty core (really?)
-		qdel(src) //Deletes new_player
+		spent(C) //Deletes empty core (really?)
+		spent(src) //Deletes new_player
 		return
 
 	// Equip our custom items only AFTER deploying to spawn points eh?
@@ -232,27 +231,27 @@
 		var/atom/movable/_tmp_buck_33 = character?.buckled_to()
 		_tmp_buck_33.set_dir(character.dir)
 
-	SSticker.mode.latespawn(character)
+	ticker_mode().latespawn(character)
 
 	if(rank == JOB_OUTSIDER)
 		log_and_message_admins("has joined the round as non-crew. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
-			SSticker.minds += character.mind
+			rel_add(SSticker, nameof(SSticker.minds), character.mind)
 	else if(rank == JOB_ANOMALY)
 		log_and_message_admins("has joined the round as anomaly. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[T.x];Y=[T.y];Z=[T.z]'>JMP</a>)",character)
 		if(!(J.mob_type & JOB_SILICON))
-			SSticker.minds += character.mind
+			rel_add(SSticker, nameof(SSticker.minds), character.mind)
 	else if(J.mob_type & JOB_SILICON)
 		AnnounceCyborg(character, rank, join_message, announce_channel, character.z)
 	else
 		AnnounceArrival(character, rank, join_message, announce_channel, character.z)
 		GLOB.data_core.manifest_inject(character)
-		SSticker.minds += character.mind//Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
+		rel_add(SSticker, nameof(SSticker.minds), character.mind) //Cyborgs and AIs handle this in the transform proc.	//TODO!!!!! ~Carn
 	if(ishuman(character))
 		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 			var/obj/item/implant/backup/imp = new(src)
 
-			if(imp.handle_implant(character,character.zone_sel.selecting))
+			if(imp.handle_implant(character,hud_of(character)?.zone_sel?.selecting))
 				imp.post_implant(character)
 	var/gut = join_props["voreny"]
 	var/start_absorbed = join_props["absorb"]
@@ -263,7 +262,6 @@
 		var/mob/living/carrier = join_props["carrier"]
 		cryst.capture(character, carrier)
 		character.forceMove(cryst)
-		cryst.update_icon()
 	else if(itemtf)
 		character.tf_into(itemtf, TRUE, itemtf.name)
 	else if(prey)
@@ -272,25 +270,25 @@
 		for(var/obj/belly/B in character.vore_organs)
 			if(B.name == gut)
 				gut_to_enter = B
-				rel_set(character, nameof(character.vore_selected), B) // a pointer at one of vore_organs
+				set_vore_selected(character, B) // a pointer at one of vore_organs
 		var/datum/effect/effect/system/teleport_greyscale/tele = new /datum/effect/effect/system/teleport_greyscale()
 		tele.set_up("#00FFFF", get_turf(prey))
 		tele.start()
 		character.forceMove(get_turf(prey))
 		if(start_absorbed)
-			prey.absorbed = 1
+			prey.set_absorbed(1)
 		prey.forceMove(gut_to_enter)
 	else
 		if(gut)
 			if(start_absorbed)
-				character.absorbed = 1
+				character.set_absorbed(1)
 			character.forceMove(gut)
 
 	character.client.init_verbs()
-	qdel(src) // Delete new_player mob
+	spent(src) // Delete new_player mob
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)
-	if (SSticker.current_state == GAME_STATE_PLAYING)
+	if (ticker_current_state() == GAME_STATE_PLAYING)
 		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title
@@ -299,7 +297,7 @@
 
 /mob/new_player/proc/LateChoices()
 	if(!late_choices_dialog)
-		own_set(src, nameof(late_choices_dialog), new /datum/tgui_module/late_choices(src))
+		rel_set(src, nameof(late_choices_dialog), new /datum/tgui_module/late_choices(src))
 	late_choices_dialog.tgui_interact(src)
 
 /mob/new_player/proc/create_character(turf/T)
@@ -369,11 +367,10 @@
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()
-	new_character.update_icons_body()
 	new_character.update_transform()
 
 	new_character.key = key		//Manually transfer the key to log them in
@@ -382,7 +379,7 @@
 
 /mob/new_player/proc/ViewManifest()
 	if(!manifest_dialog)
-		own_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
+		rel_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
 /mob/new_player/Move()
@@ -461,7 +458,7 @@
 		to_chat(src,span_warning("You have not set your scale yet. Do this on the VORE tab in character setup."))
 
 	//Can they play?
-	if(!is_alien_whitelisted(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !check_rights(R_ADMIN, 0))
+	if(!is_alien_whitelisted(src.client,GLOB.all_species[client?.prefs?.read_preference(/datum/preference/choiced/species)]) && !admin_require(client, R_ADMIN, "spawn_checks_vr", 0))
 		pass = FALSE
 		to_chat(src,span_warning("You are not allowed to spawn in as this species."))
 
@@ -508,7 +505,7 @@
 			to_chat(src, span_warning("Some of your traits are not usable by your character type (synthetic traits on organic, or vice versa)."))
 	// start
 	if(J.camp_protection && round_duration_in_ds < CONFIG_GET(number/job_camp_time_limit))
-		if(length(SSjob.restricted_keys))
+		if(length(job_restricted_keys()))
 			var/list/check = LAZYACCESS(SSjob.restricted_keys, J.title)
 			if(client.ckey in check)
 				to_chat(src, span_danger("[J.title] is not presently selectable because you played as it last round. It will become available to you in [round((CONFIG_GET(number/job_camp_time_limit) - round_duration_in_ds) / 600)] minutes, if slots remain open."))

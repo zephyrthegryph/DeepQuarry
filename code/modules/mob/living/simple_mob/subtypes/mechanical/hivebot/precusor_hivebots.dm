@@ -16,12 +16,15 @@
 	loot_list = list(/obj/item/prop/alien/junk = 20
 			)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields", /obj/item/shield_projector/rectangle/automatic/hivebot_drone)
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/hivebot_drone)
 
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/machinegun
 	projectiletype = /obj/item/projectile/bullet/hivebot
-	base_attack_cooldown = 0 // Extremly rapid fire with rather weak bullets.
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor/machinegun)
+	configure(mob_kind(attack_cooldown = 0))
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/laser
 	projectiletype = /obj/item/projectile/energy/mob/precursor
@@ -35,9 +38,11 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/hivebot/precusor, "shiel
 /obj/item/projectile/arc/blue_energy/precusor
 	name = "energy missile"
 	icon_state = "force_missile"
-	armor_penetration = 10
 	damage = 50 // Mimics the precusor laser damage and armor peircing with a tad more damage because of the lobbying style.
 	color = "#A020F0"
+
+CAPABILITIES(/obj/item/projectile/arc/blue_energy/precusor)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/shield_projector/rectangle/automatic/hivebot_drone
 	max_integrity = 100 //Old 50

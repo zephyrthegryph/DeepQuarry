@@ -40,9 +40,9 @@
 
 /datum/round_status_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(GLOB.antag_service.all_antag_types)
-		for(var/antag_type in GLOB.antag_service.all_antag_types)
-			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
+	if(antag_all_antag_types())
+		for(var/antag_type in antag_all_antag_types())
+			var/datum/antagonist/A = antag_all_antag_types()[antag_type]
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
@@ -50,33 +50,30 @@
 
 /datum/round_status_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
-	qdel(src)
+	spent(src, user)
 
-// ALLOW(sys_tgui_data_override): the foundation UI form (migration_guide A7), as the APC's and the vendor's
+// ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor
 /datum/round_status_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
-	.["mode_name"] = SSticker?.mode?.name || "(none)"
+	.["mode_name"] = ticker_mode()?.name || "(none)"
 	.["round_duration"] = roundduration2text()
 	.["delay_end"] = !!SSticker?.delay_end
 
 	var/list/shuttle_data = list()
-	if(!GLOB.emergency_shuttle_service.online())
+	if(!SSemergency_shuttle.online())
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
-	// ALLOW(sys_dx_untracked_read): another system's state; the window refreshes on its own actions and on reopen, as before (no autoupdate)
-	else if(GLOB.emergency_shuttle_service.wait_for_launch)
+	else if(emergency_shuttle_wait_for_launch())
 		shuttle_data["state"] = SHUTTLE_STATE_COUNTING_DOWN
-		var/timeleft = GLOB.emergency_shuttle_service.estimate_launch_time()
+		var/timeleft = SSemergency_shuttle.estimate_launch_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
-	// ALLOW(sys_dx_untracked_read): another system's state, read when the window refreshes
-	else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
+	else if(SSemergency_shuttle.shuttle.has_arrive_time())
 		shuttle_data["state"] = SHUTTLE_STATE_ARRIVING
-		var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
+		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
-		shuttle_data["can_recall"] = GLOB.emergency_shuttle_service.can_call() || GLOB.emergency_shuttle_service.can_recall()
-	// ALLOW(sys_dx_untracked_read): another system's state, read when the window refreshes
-	else if(GLOB.emergency_shuttle_service.shuttle.moving_status == SHUTTLE_WARMUP)
+		shuttle_data["can_recall"] = SSemergency_shuttle.can_call() || SSemergency_shuttle.can_recall()
+	else if(SSemergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP)
 		shuttle_data["state"] = SHUTTLE_STATE_WARMUP
 	else
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
@@ -98,12 +95,12 @@
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:call_shuttle"))
 		return FALSE
-	if(SSticker?.mode?.name == "blob")
+	if(ticker_mode()?.name == "blob")
 		return refuse(user, "You can't call the shuttle during blob!")
-	if(!SSticker || !GLOB.emergency_shuttle_service.location())
+	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
-	if(GLOB.emergency_shuttle_service.can_call())
-		GLOB.emergency_shuttle_service.call_evac()
+	if(SSemergency_shuttle.can_call())
+		SSemergency_shuttle.call_evac()
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("called the Emergency Shuttle to the station.", user)
 	return TRUE
@@ -111,10 +108,10 @@
 /datum/round_status_panel/proc/act_recall_shuttle(mob/user)
 	if(!admin_require(user.client, R_ADMIN|R_EVENT, "round_status_panel:recall_shuttle"))
 		return FALSE
-	if(!SSticker || !GLOB.emergency_shuttle_service.location())
+	if(!SSticker || !SSemergency_shuttle.location())
 		return FALSE
-	if(GLOB.emergency_shuttle_service.can_recall())
-		GLOB.emergency_shuttle_service.recall()
+	if(SSemergency_shuttle.can_recall())
+		SSemergency_shuttle.recall()
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("sent the Emergency Shuttle back.", user)
 	return TRUE
@@ -122,18 +119,18 @@
 /datum/round_status_panel/proc/act_edit_shuttle_time(mob/user)
 	if(!admin_require(user.client, R_SERVER, "round_status_panel:edit_shuttle_time"))
 		return FALSE
-	if(GLOB.emergency_shuttle_service.wait_for_launch)
-		var/new_time_left = ask_number(user, "Enter new shuttle launch countdown (seconds):", 0, INFINITY, "Edit Shuttle Launch Time", GLOB.emergency_shuttle_service.estimate_launch_time())
+	if(emergency_shuttle_wait_for_launch())
+		var/new_time_left = ask_number(user, "Enter new shuttle launch countdown (seconds):", 0, INFINITY, "Edit Shuttle Launch Time", SSemergency_shuttle.estimate_launch_time())
 		if(isnull(new_time_left))
 			return FALSE
-		EXPIRY_SET(GLOB.emergency_shuttle_service, launch_time, (new_time_left * 10), CLOCK_WORLD)
+		EXPIRY_SET(SSemergency_shuttle, launch_time, (new_time_left * 10), CLOCK_WORLD)
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's launch time to [new_time_left] seconds.", user)
-	else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
-		var/new_time_left = ask_number(user, "Enter new shuttle arrival time (seconds):", 0, INFINITY, "Edit Shuttle Arrival Time", GLOB.emergency_shuttle_service.estimate_arrival_time())
+	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+		var/new_time_left = ask_number(user, "Enter new shuttle arrival time (seconds):", 0, INFINITY, "Edit Shuttle Arrival Time", SSemergency_shuttle.estimate_arrival_time())
 		if(isnull(new_time_left))
 			return FALSE
-		EXPIRY_SET(GLOB.emergency_shuttle_service.shuttle, arrive_time, (new_time_left * 10), CLOCK_WORLD)
+		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left * 10), CLOCK_WORLD)
 		// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
 		log_and_message_admins("edited the Emergency Shuttle's arrival time to [new_time_left] seconds.", user)
 	else
@@ -143,9 +140,9 @@
 /datum/round_status_panel/proc/act_toggle_delay_end(mob/user)
 	if(!admin_require(user.client, R_SERVER, "round_status_panel:toggle_delay_end"))
 		return FALSE
-	SSticker.delay_end = !SSticker.delay_end
+	SSticker.delay_end = !ticker_delay_end()
 	// ALLOW(sys_dx_manual_fingerprint_log): the admin broadcast names the outcome; the dispatcher records only the action, and on every TRUE return
-	log_and_message_admins("[SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].", user)
+	log_and_message_admins("[ticker_delay_end() ? "delayed the round end" : "has made the round end normally"].", user)
 	return TRUE
 
 // Antag-row actions: PP / PM / TP for an antagonist's mob.
@@ -166,7 +163,7 @@
 	var/mob/M = ui_ref(ref, null, /mob)
 	if(!M)
 		return TRUE
-	if(!SSticker || !SSticker.mode)
+	if(!SSticker || !ticker_mode())
 		return refuse(user, "The game hasn't started yet!")
 	if(user.client)
 		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, M)
@@ -177,11 +174,11 @@
 	var/datum/round_status_panel/round_status_panel
 
 /datum/admins/proc/open_round_status_panel(mob/user)
-	if(!(SSticker && SSticker.current_state >= GAME_STATE_PLAYING))
+	if(!(SSticker && round_game_state() >= GAME_STATE_PLAYING))
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		own_set(src, nameof(round_status_panel), new /datum/round_status_panel(src))
+		rel_set(src, nameof(round_status_panel), new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

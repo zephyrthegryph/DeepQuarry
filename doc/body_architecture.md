@@ -97,7 +97,7 @@ Limb and organ damage procs are **body-internal**:
 `limb.apply_wound_damage()`, `limb.heal_wound_damage()` (detached limbs
 only), `organ.apply_lesion_damage()`, `organ.restore_lesions()` (detached
 organs only) and `organ.bench_damage()` (a loose organ). Outside
-`code/modules/body` and `code/modules/organs` code calls `injure()` /
+`code/modules/body` code calls `injure()` /
 `mend()`; `tools/ci/check_grep.sh` ("organ damage outside the body") enforces
 it. `/obj/item/organ/take_damage()` is the item-integrity proc and does
 nothing to organs. There are no organ pre-damage signals.
@@ -326,8 +326,9 @@ MMI'd brain keeps its lesions, so damage and treatment carry on.
   stages, autoheal). Limb integrity (`get_trauma()` / `get_burn()`) is the sum
   of its wounds, cached on change. Wounds override `receive_tagged_treatment`
   (hemostatics run down the bleed; every other mechanism heals wound damage,
-  continuous treatment at `continuous_scale`) and `progress()` (none: autoheal
-  lives in the limb's `update_wounds()`).
+  continuous treatment at `continuous_scale`) and `progress()` (none: autoheal,
+  bleeding and the bleed clock are rates on the body clock,
+  `code/modules/body/body_clock.dm`).
 - `/datum/affliction/lesion/*` — located on an internal organ
   (`code/modules/medical/conditions/lesions.dm`): contusion, laceration,
   perforation (hollow organs), necrosis, ischemic_injury, toxic_injury;
@@ -628,6 +629,19 @@ no debt it does nothing. Debt crossing each `PHYSIOLOGY_DEBT_LOG_BAND`, every
 support gained or lost, and every explicit debt are logged to the runtime log
 (`PHYSIOLOGY:`).
 
+## 10a. Clocks: what runs over time
+
+Nothing in the body counts Life ticks. Each periodic concern is one `every()` on the human, gated by a boolean stat the
+body holds only while there is work, and it integrates over the elapsed time (at most one step):
+
+| Clock | Gate | Work |
+|---|---|---|
+| body clock (`body_clock.dm`) | `STAT_BODY_CLOCK_ACTIVE` | wound autoheal, bleed timers, external and arterial bleeding, blood refill, pallor |
+| organ clock (`body_clock.dm`) | `STAT_ORGANS_ACTIVE` | each organ's `organ_tick(cycles)`; germs on limbs |
+| limb checks (`limb_state.dm`) | `STAT_LIMB_TROUBLE` | stance collapse, grip loss, malfunctions, broken-bone jolts; the stance itself is derived on change |
+| pain messages (`pain.dm`) | `STAT_PAIN_FELT` | `pain_step()` |
+| loose organs (`parts/attach.dm`) | `STAT_TICKS_LOOSE` on the organ | `organ_tick(1)` every 2 s |
+
 ## 11. Surgery
 
 `code/modules/surgery/`. A procedure is access (incise, retract, saw, pry;
@@ -641,7 +655,9 @@ A fracture is the `untreated_fracture` affliction on the limb: `fracture()`
 afflicts it, `E.is_fractured()` asks for it, and set-bone's
 `TREAT_BONE_SETTING` mends it. There is no broken-bone status flag.
 
-Every healing step is a treatment: a `/datum/surgical_step` names
+Each step is an op `surgery_<step>` on the patient (`surgery_ops.dm`): its state checks are the op's `when()`, the
+organ choice and drastic-step confirmation are `asks()`, the patient is `claims()`ed while the step waits, and the roll
+happens in `then()`. Every healing step is a treatment: a `/datum/surgical_step` names
 `treatments` (TREAT_* -> amount) and a `scope` (the limb, the limb and its
 organs, or one chosen organ) and delivers them through `mend()`. A step offers
 itself only when an affliction in scope responds to its mechanism, so a

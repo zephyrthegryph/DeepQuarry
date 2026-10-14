@@ -1,21 +1,18 @@
-
 // the Area Power Controller (APC), formerly Power Distribution Unit (PDU)
 // one per area, needs wire connection to power network through a terminal
 //
 // All APC #defines live in code/__defines/apc.dm.
 //
-// M3: the distributor (channels, cell charging, load shedding) runs in Rust
+// The distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
 // push_to_rust() sends its settings (generated: it runs once per frame after any state it
-// reads changed), and power_poll() applies what Rust reports (channels, charging, status,
+// reads changed), and on_apc_report() applies what Rust reports when it changes (channels, charging, status,
 // alarm, the cell charge).
 //
-// Foundation (doc/rewrite/foundation.md): the APC is declared, not scripted. Its type vars name what
-// it is built from (machine_board, machine_wires, req_access); capabilities() composes bundles (wall
-// machine, maintenance hatch, cell bay, power channels, power-system membership), a construction
-// ladder (board, cable, fastener) and a few ops; relations() its links; reactions() only what it hears
-// (a hit, a slash); draw() its look. Its Rust pushes, redraws and window refreshes are generated from what
-// push_to_rust(), draw() and tgui_data() read.
+// The APC is declared (doc/rewrite/final_api.html section 16.1, doc/rewrite/conversion_guide.md): ONE CAPABILITIES list says what it is: a wall machine
+// with a build ladder, a maintenance hatch (cover, panel, wires, ID lock, emag), a cell bay, its membership of the power system, its terminal and
+// its hacker links, its window and the buttons in it. The imperative parts below are its own: the Rust push, the power report, the channel and
+// area bookkeeping, and the conditions and effects the declarations name.
 
 /obj/machinery/power/apc/critical
 	is_critical = 1
@@ -41,10 +38,6 @@
 /obj/machinery/power/apc/angled/hidden
 	alarms_hidden = TRUE
 
-/obj/machinery/power/apc/angled/wall_mount_orient(offset)
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 24 : -24)
-	pixel_y = (dir & 3) ? (dir == 1 ? 20 : -20) : 0
-
 /obj/machinery/power/apc/hyper/graveyard
 	req_access = list(ACCESS_LOST)
 	alarms_hidden = TRUE
@@ -62,17 +55,11 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	clicksound = SFX_SWITCH
-	machine_board = /obj/item/module/power_control
-	machine_wires = /datum/wires/apc
-	emag_msg = "You emag the APC interface."
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	integrity_failure = 0.5
-	/// The ID lock is engaged by default (maps clear it with cap_state).
-	cap_state = CAP_LOCKED
-	tgui_id = "APC"
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
 	var/tmp/area/area
@@ -82,32 +69,31 @@
 	/// 0.0005 means cellcharge is capped to ~0.05% per second.
 	var/chargelevel = 0.0005
 	var/start_charge = 90           // initial cell charge %
+	/// The starting cell: a mapper or a subtype changes it here, and only here.
 	var/cell_type = /obj/item/cell/apc
 
 	// ── physical state ──────────────────────────────────────────────────────
-	// Cover, wire panel, ID lock and emag are capability state (cap_state): cover_is_open(),
-	// cover_removed(), panel_is_open(), is_locked(), is_emagged(). How far the frame is built (board, cable,
-	// fastener) is the construction ladder's: built_past(src, "frame" / "board" / "wired").
-	var/shorted = 0
+	// Cover, wire panel, ID lock and emag are capability state keys (COVER_OPEN, PANEL_OPEN, LOCK_LOCKED, EMAG_EMAGGED), read through cover_open(),
+	// cover_removed(), panel_open(), lock_locked() and emag_emagged(). How far the frame is built (board, cable, fastener) is the build graph's:
+	// built(src, STAGE_APC_BOARD) and the stages after it.
+	/// The ID lock is engaged when the APC is made (a map clears it for the APCs it leaves open).
+	var/lock_at_start = TRUE
 	var/grid_check = FALSE
 	/// The cover lock (UI "Cover Lock"): the cover can't be pried open while the cell holds charge.
 	var/coverlocked = 1
-	var/aidisabled = 0
 	var/obj/machinery/power/terminal/terminal = null
 	var/mob/living/silicon/ai/hacker = null // Malf AI that has full control of this APC.
-	power_region = 0                 // set by connect_to_network() (the APC IS a network node now, step 3)
-	var/debug = 0
+	power_region = 0                 // set by connect_to_network() (the APC is a network node)
 	var/beenhit = 0                 // hit counter, used for Alien claws
 	/// Emergency lighting is switched off for the area (the UI toggle): the area's lights read it through their area.
 	var/emergency_lights = FALSE
 	var/is_critical = 0
-	/// An EMP / power failure is on (timed_set() ends it: time_left(src, nameof(power_failed))).
-	var/power_failed = FALSE
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
-	/// The station's night shift asks for night lighting here (the night-shift service's command).
-	var/nightshift_lights = FALSE
 	/// NIGHTSHIFT_AUTO / _NEVER / _ALWAYS (the UI setting).
 	var/nightshift_setting = NIGHTSHIFT_AUTO
+	/// The station's night reaches this APC (on a station level, outside a shuttle): set where it is placed and when its area changes
+	/// (init(), update_area()), so the night lighting stat reads a tracked var and caches.
+	var/station_night = FALSE
 
 	/// The power alarm is raised (as Rust last reported).
 	var/power_alarm_raised = FALSE
@@ -115,6 +101,9 @@
 	var/power_event_count = 0
 	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
 	var/tmp/pushed_cell_ref
+	/// The standing load (equipment, lighting, environment watts) Rust was last sent for this APC's area, or null when it must be sent again (a new
+	/// node, a rebind): power_flush_areas() compares it with the area's demand every step.
+	var/tmp/list/pushed_demand
 
 	// ── channel state ────────────────────────────────────────────────────────
 	// Rust reports these after every power step; push_to_rust() sends edits.
@@ -124,242 +113,316 @@
 	var/operating = 1
 	var/charging    = 0
 	var/chargemode  = 1
-	var/chargecount = 0
-	var/longtermpower = 10
 	var/main_status = APC_EXTERNAL_POWER_NOTCONNECTED
 	/// Monotonic revision for correction-aware contract power telemetry.
 	var/contract_power_revision = 0
 
-TRACKED(/obj/machinery/power/apc, shorted, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, operating, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, chargemode, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, grid_check, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, nightshift_lights, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, nightshift_setting, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/power/apc, emergency_lights, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/apc, operating)
+TRACKED(/obj/machinery/power/apc, chargemode)
+TRACKED(/obj/machinery/power/apc, grid_check)
+TRACKED(/obj/machinery/power/apc, main_status)
+TRACKED(/obj/machinery/power/apc, coverlocked)
+TRACKED(/obj/machinery/power/apc, emergency_lights)
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Capabilities
-// ─────────────────────────────────────────────────────────────────────────────
+/// The APC distributes power now: it works (STAT_OPERABLE: not broken, its electronics fastened, no pulse or power failure holding it down).
+/// What Rust and the area read; the breaker, the short and the grid check are their own settings beside it.
+STAT(/obj/machinery/power/apc, supplying, ALL)
+/// The power wires short it: cut, until mended; pulsed, for two minutes (power_wires()).
+STAT(/obj/machinery/power/apc, shorted, ANY)
+/// The AI control wire locks the AI out: cut, until mended; pulsed, for a second (ai_control()).
+STAT(/obj/machinery/power/apc, aidisabled, ANY)
+/// An event's power failure (energy_fail(): the electrical fault, the supermatter's shutdown): a timed hold on STAT_OPERABLE beside the
+/// pulse's own (emp_disable(), source SRC_EMP). The reboot button and a reboot release both.
+SOURCE_DEF(power_failure)
 
-/obj/machinery/power/apc/capabilities()
-	. = ..()
-	// A wall machine that isn't dismantled into a machine frame (its ladder cuts it from the wall), has no
-	// repair step (a new cover does) and no dark sprite (draw() says its own).
-	. += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
-	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
-	. += power_channels()
-	. += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
-	. += cap_construction(
-		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
-		stage("frame", desc = "It's just an empty metal frame."),
-		// The power control board goes in (a new APC boots) and comes out by hand.
-		build_insert(/obj/item/module/power_control, name = "board", desc = "The electronics are installed, but not wired.", on_enter = PROC_REF(board_seated)),
-		// Ten cable lengths make the terminal (the floor plating must be off); wirecutters cut it out again.
-		build_wire(10, name = "wired", desc = "The frame is wired and the electronics are in, but not fastened.", needs = PROC_REF(floor_exposed), undo_needs = PROC_REF(floor_exposed), on_enter = PROC_REF(terminal_wired), on_leave = PROC_REF(terminal_cut)),
-		// A screwdriver secures the electronics (the APC works), with the cell out both ways.
-		build_fasten(TOOL_SCREWDRIVER, name = "secured", needs = PROC_REF(cell_out), else_say = "remove the power cell first", undo_needs = PROC_REF(cell_out), undo_else_say = "remove the power cell first", on_enter = PROC_REF(electronics_secured), on_leave = PROC_REF(electronics_unsecured)),
-	)
-	. += apc_ops()
-	// What the lock and the emag additionally need (the hatch declared their ops; refine() edits one in place).
-	. += cap_require(CAP_LOCK, needs = list(req_not_subverted(), req_wire(WIRE_IDSCAN), req_working()))
-	. += cap_require(CAP_EMAG, needs = list(req_not_subverted(), req_working()))
-	. += refine(CAP_EMAG, delay = 0.6 SECONDS, effect = PROC_REF(on_emag))
+STAGE_DEF(apc, frame)
+STAGE_DEF(apc, board)
+STAGE_DEF(apc, wired)
+STAGE_DEF(apc, secured)
 
-/// The APC's own ops: the interface, a new cover, the multitool reset.
-/obj/machinery/power/apc/proc/apc_ops()
-	. = list()
-	// An empty hand or a silicon's touch. With the cover open a hand takes the cell out first: the cell bay's hand eject
-	// ("eject_cell") answers the same click at OP_PRIORITY_TAKE_OUT, and the board's hand step at the ladder's priority,
-	// both above this op's; a shredder's claws are the claw op's (OP_PRIORITY_CLAW). Nothing here hides the interface.
-	. += cap_control("Open interface", PROC_REF(open_interface), using = EMPTY_HAND, needs = req_working(), key = "open_interface")
-	. += cap_op("Replace damaged cover", PROC_REF(replace_cover), using = /obj/item/frame/apc, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cover_replaceable), start_msg = /datum/msg/start/apc/replace_cover, kind = OP_STRUCTURAL, key = "replace_cover")
-	. += cap_op("Reset", PROC_REF(reset_apc), using = TOOL_MULTITOOL, at = BAY_HATCH, delay = 5 SECONDS, needs = PROC_REF(cell_out_for_reset), offered = req_proc(TYPE_PROC_REF(/atom, is_subverted)), start_msg = /datum/msg/start/apc/reset, kind = OP_STRUCTURAL, key = "reset_apc")
+MSG_DEF_SELF(stage/apc/frame, "It's just an empty metal frame.")
+MSG_DEF_SELF(stage/apc/board, "The electronics are installed, but not wired.")
+MSG_DEF_SELF(stage/apc/wired, "The frame is wired and the electronics are in, but not fastened.")
+MSG_DEF_SELF(stage/apc/secured, "It is finished.")
 
-MSG_DEF(start/apc/replace_cover, "You begin to replace the damaged APC cover...", "%U% begins replacing the damaged APC cover with a new one.")
-MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to the APC and begins resetting it.")
+MSG_DEF_SELF(apc/cover_locked, "The cover is locked and cannot be opened.")
+MSG_DEF_SELF(apc/cover_broken, "It's broken.")
+MSG_DEF_SELF(apc/board_first, "Take the power control board out first.")
+MSG_DEF_SELF(apc/floor_blocks, "You must remove the floor plating in front of the APC first.")
+MSG_DEF_SELF(apc/cell_first, "Remove the power cell first.")
+MSG_DEF_SELF(apc/needs_electronics, "You need to install the wiring and electronics first.")
+MSG_DEF_SELF(apc/ai_disabled, "The AI control for this APC has been disabled!")
+MSG_DEF_SELF(apc/unresponsive, "The panel is unresponsive.")
+MSG_DEF_SELF(apc/flashing_error, "The panel is flashing an error.")
+MSG_DEF_SELF(apc/power_failure, "Its output has failed and it is rebooting.")
+MSG_DEF_SELF(apc/unfinished, "Its electronics are not fastened.")
+MSG_DEF(apc/emagged, "You emag the APC interface.", "")
+MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.", "%U% has replaced the damaged APC cover with a new one.")
+MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
-/obj/machinery/power/apc/relations()
-	. = ..()
-	// The cell the APC starts with is its cell_type (a map or subtype override picks another; null: none).
-	. += rel_one(nameof(cell), /obj/item/cell, kind = RELK_OWNED, policy = OWN_SPILL, starts = nameof(cell_type))
-	. += rel_one(nameof(terminal), /obj/machinery/power/terminal, kind = RELK_PAIRED, back = nameof(/obj/machinery/power/terminal::master))
-	. += rel_one(nameof(hacker), /mob/living/silicon/ai, back = nameof(/mob/living/silicon/ai::hacked_apcs))
+CAPABILITIES(/obj/machinery/power/apc)
+	blast_contents()
+	after_init(0, then(PROC_REF(apply_power_after_init)))
+	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE, area_power = FALSE)
+	configure(construction_graph(start = STAGE_APC_SECURED))
+	maintenance_hatch(
+		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
+		// The panel opens only with the cover shut, but the cover can open over an open panel: `reach` keeps the wires out of reach then.
+		wires = wires(name = "APC", count = 4, by_hand = TRUE, emp = FALSE, reach = cond_not(COVER_OPEN), status_lines = PROC_REF(wire_lights)),
+		lock_wire = WIRE_IDSCAN,
+		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
+		emag_say = MSG(apc/emagged),
+		panel_needs_cover_closed = TRUE,
+		starts_locked = nameof(lock_at_start))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL)
+	space(SPACE_CELL, inside = SPACE_HATCH, from_stage = STAGE_APC_SECURED, missing = MSG(apc/needs_electronics))
+	cell_bay(nameof(cell), at = SPACE_CELL, fits = size_is(ITEMSIZE_NORMAL))
+	powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
+	subversion_reset(list(tool(TOOL_MULTITOOL), at(SPACE_HATCH)), done = MSG(apc/reset_done))
+	membership(joins = REGISTRY_APCS)
+	emp_disable(PROC_REF(emp_outage), extends = TRUE)
+	contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished))
+	contributes(STAT_SUPPLYING, STAT_OPERABLE)
+	links(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master)
+	links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)
+	links(/obj/machinery/power/apc::area, /area::apc)
+	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
+	contributes_to(nameof(area), STAT_LIGHTS_EMERGENCY_OFF, nameof(emergency_lights))
+	// the same rule as the wires' reach above: an open cover over the open panel keeps the signaller off the wires
+	op("wires_signaler", item(/obj/item/assembly/signaler), label("Reach the wires"), at(SPACE_PANEL), when(cond_not(COVER_OPEN)), wait(0),
+		then(PROC_REF(signaler_at_the_wires)))
+	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
+	// the wires: the hatch's lock brings the ID scan wire (a pulse opens it for thirty seconds); these bring the rest
+	power_wires(stat = STAT_SHORTED, count = 2, pulse_lasts = 2 MINUTES, shock = 50, shock_hands_only = TRUE)
+	ai_control(stat = STAT_AIDISABLED, pulse_lasts = 1 SECOND)
+	on_notice(/datum/notice/attacked_by, then(PROC_REF(apc_struck)))
+	on_notice(/datum/notice/slashed, then(PROC_REF(apc_slashed)))
+	on_change(nameof(cell), ANY, then(PROC_REF(cell_changed)))
+	on_change(nameof(supplying), ANY, then(PROC_REF(supply_changed)))
+	on_change(nameof(operating), ANY, then(PROC_REF(supply_changed)))
+	examine_line(PROC_REF(fault_lights_text))
 
-/mob/living/silicon/ai/relations()
-	. = ..()
-	. += rel_many(nameof(hacked_apcs), back = nameof(/obj/machinery/power/apc::hacker))
+	/// The APC's window and the buttons in it. The ID lock and the overload are a silicon's; every button answers only while the window is usable
+	/// (ui_usable()), and the nightshift setting is the one a locked panel leaves to anyone.
+	section(controls, "The APC's window and the buttons in it")
+	interface("APC")
+	op("breaker", ui_act(), toggles(nameof(operating)), logs(LOG_GAME))
+	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME))
+	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME))
+	op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))),
+		then(PROC_REF(ui_set_channel)))
+	op("nightshift", ui_act(arg("nightshift", int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), cooldown(1 SECOND),
+		then(PROC_REF(ui_set_nightshift)), logs(LOG_GAME))
+	op("emergency_lighting", ui_act(), toggles(nameof(emergency_lights)), logs(LOG_GAME))
+	op("reboot", ui_act(), then(PROC_REF(ui_reboot)), logs(LOG_GAME))
+	op("overload", ui_act(), needs(req_silicon_or_admin()),
+		then(PROC_REF(ui_overload)), logs(LOG_GAME))
+	op("lock", ui_act(), needs(req_silicon_or_admin(), req_not_subverted(), req_operable()),
+		toggles(LOCK_LOCKED), logs(LOG_GAME))
+	extend("ui_open", needs(req_operable()))
+	extend(TAG_UI, needs(req_window_usable(remote = PROC_REF(remote_control_allowed), remote_because = MSG(apc/ai_disabled))))
+	extend("nightshift", drop = "lock")
+	// a silicon's ctrl-click throws the breaker over its link, under the same rules as the window's button
+	extend("breaker", binds(remote()), gesture(GESTURE_CTRL))
 
-/// Only what the APC hears: a swing at it, a shredder's claws and a newly seated cell. (Its pushes to Rust, its
-/// redraws and its window refreshes are generated from what push_to_rust(), draw() and tgui_data() read.)
-/obj/machinery/power/apc/reactions()
-	. = ..()
-	. += on_notice(/datum/notice/hit, PROC_REF(on_hit))
-	. += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
-	. += on_change(list(nameof(cell)), PROC_REF(cell_changed))
+	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
+	section(cover_rules, "The latch on the APC's cover")
+	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))
+	param(nameof(build_dir), pos = 1, overrides = TRUE)
+	param(nameof(building), pos = 2)
+
+/// The angled APC's sprite sits closer to the wall.
+CAPABILITIES(/obj/machinery/power/apc/angled)
+	configure(wall_mount(offset = 24, offset_ns = 20))
+
+/// The build ladder of an APC: an empty frame, the board, ten lengths of cable (the floor plating off) and a screwdriver. The ledger refunds the board
+/// and the cable; the welder takes the frame down into its item, or into scrap when it is ruined. A global bundle names holder procs by type.
+/proc/apc_frame()
+	return construction(start(STAGE_APC_FRAME),
+		stage(STAGE_APC_BOARD, item(/obj/item/module/power_control), put_in(SLOT_CONSTRUCTION),
+			then(TYPE_PROC_REF(/obj/machinery/power/apc, board_seated)), protrudes(because = MSG(apc/board_first))),
+		stage(STAGE_APC_WIRED, stack(/obj/item/stack/cable_coil, 10),
+			needs(req(TYPE_PROC_REF(/obj/machinery/power/apc, floor_exposed), because = MSG(apc/floor_blocks))),
+			then(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_wired)),
+			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)), protrudes(because = MSG(apc/board_first)),
+			undo = list(tool(TOOL_WIRECUTTER))),
+		// No cell can be in before this stage (SPACE_CELL exists from it): only the undo needs the bay empty.
+		stage(STAGE_APC_SECURED, tool(TOOL_SCREWDRIVER),
+			undo = list(tool(TOOL_SCREWDRIVER), needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))))),
+		dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/apc),
+			needs(req_not(req_built(STAGE_APC_BOARD), because = MSG(apc/board_first))),
+			ruined(TYPE_PROC_REF(/obj/machinery/power/apc, frame_ruined), becomes(/obj/item/stack/material/steel))),
+		at(SPACE_HATCH))
 
 
-// ---- the hatch and the frame ----
+// ---- the hatch: the latch on the cover ----
 
-/// maintenance_hatch(cover_holds =): why the cover can't move now, or null.
-/obj/machinery/power/apc/proc/cover_holds(mob/user, obj/item/held)
-	if(cover_is_open(src))
-		return board_unfastened() ? "take the power control board out first" : null
-	if(is_broken(src))
-		return "it's broken"
-	if(coverlocked && !has_stat(MAINT) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
-		return "the cover is locked and cannot be opened"
+/// The cover's latch holds: the APC is broken, or the cover lock keeps a charged cell in.
+/obj/machinery/power/apc/proc/cover_latched(datum/act/A)
+	return !isnull(cover_latch_reason(A))
+
+/// Why the latch holds the cover shut, or null: broken, or the cover lock over a charged cell.
+/obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
+	if(broken_now())
+		return /datum/msg/apc/cover_broken
+	if(coverlocked && built(src, STAGE_APC_SECURED) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
+		return /datum/msg/apc/cover_locked
 	return null
 
-/// The board is in (the ladder is past its bare frame) but not secured (its last stage): the cover can't close on it.
-/// built_past() is strict (a later stage than the named one), so this holds on "board" and "wired" alike.
-/obj/machinery/power/apc/proc/board_unfastened()
-	return built_past(src, "frame") && ladder_of(src)?.state_of(src) != "secured"
-
-/// A ruined frame (broken, emagged, its cover gone) comes apart into scrap, not a reusable frame.
-/obj/machinery/power/apc/proc/frame_ruined()
-	return is_emagged(src) || has_stat(BROKEN) || cover_removed(src)
+/// The new cover is on (the repair step of the cover has made it whole): the APC boots again.
+/obj/machinery/power/apc/proc/cover_replaced(datum/act/op/A)
+	reboot()
+	return OP_OK
 
 // ---- the ladder's hooks ----
 
+/// A ruined frame (broken, emagged, its cover gone) comes apart into scrap, not a reusable frame.
+/obj/machinery/power/apc/proc/frame_ruined(datum/act/A)
+	return emag_emagged(src) || broken_now() || cover_removed(src)
+
 /// needs: the floor plating in front of the frame is off.
-/obj/machinery/power/apc/proc/floor_exposed(mob/user, obj/item/held)
+/obj/machinery/power/apc/proc/floor_exposed(datum/act/A)
 	var/turf/T = loc
-	if(istype(T) && !T.is_plating())
-		return "you must remove the floor plating in front of the APC first"
-	return TRUE
+	return (!istype(T) || T.is_plating()) ? null : MSG(apc/floor_blocks)
 
-/// needs (the cell bay): the electronics are in and secured.
-/obj/machinery/power/apc/proc/cell_bay_ready(mob/user, obj/item/held)
-	return has_stat(MAINT) ? "You need to install the wiring and electronics first." : TRUE
-
-/// needs: the power cell is out.
-/obj/machinery/power/apc/proc/cell_out(mob/user, obj/item/held)
-	return !cell
-
-/// The board went in: the frame boots.
-/obj/machinery/power/apc/proc/board_seated(mob/user, obj/item/held, before)
+/// The power control board went in: the frame boots.
+/obj/machinery/power/apc/proc/board_seated(datum/act/op/A)
 	reboot()
-	return TRUE
+	return OP_OK
 
 /// The cable went in: the terminal is made and joins the network (with a chance of a shock from the live cable).
-/obj/machinery/power/apc/proc/terminal_wired(mob/user, obj/item/held, before)
+/obj/machinery/power/apc/proc/terminal_wired(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = loc
 	var/obj/structure/cable/N = istype(T) ? T.get_cable_node() : null
 	if(user && prob(50) && electrocute_mob(user, N, N))
 		fx_sparks(src, 5)
 	make_terminal()
 	terminal.connect_to_network()
-	return TRUE
+	return OP_OK
 
 /// The wirecutters took the cable back out (with a chance of a shock): the terminal goes.
-/obj/machinery/power/apc/proc/terminal_cut(mob/user, obj/item/held, after)
-	if(after != "board") // a step forward, not an undo
-		return TRUE
+/obj/machinery/power/apc/proc/terminal_cut(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user && terminal && prob(50) && electrocute_mob(user, terminal.power_region, terminal))
 		fx_sparks(src, 5)
 	if(terminal)
-		qdel(terminal)
-	return TRUE
+		spent(terminal)
+	return OP_OK
 
-/// The electronics were fastened: the APC is finished.
-/obj/machinery/power/apc/proc/electronics_secured(mob/user, obj/item/held, before)
-	stat_remove(MAINT)
-	changed(src)
-	return TRUE
+/// STAT_OPERABLE: the build is finished (its last stage, the electronics fastened). An unfinished frame does not run. built() stands for the
+/// construction graph's key, which every stage change publishes, so the stat caches.
+/obj/machinery/power/apc/proc/electronics_fastened(datum/act/A)
+	return built(src, STAGE_APC_SECURED)
 
-/// The electronics were unfastened.
-/obj/machinery/power/apc/proc/electronics_unsecured(mob/user, obj/item/held, after)
-	if(after == "wired")
-		stat_add(MAINT)
-		changed(src)
-	return TRUE
+/// STAT_OPERABLE's reading of the machine core's bits, for the APC: only BROKEN. The APC is its area's supply, so the area going dark (NOPOWER)
+/// does not stop it; its unfinished frame is the build graph's (electronics_fastened()), its outages are holds (emp_disable(), energy_fail()).
 
-// ---- ops ----
+// ---- the controls ----
 
-/// The touch: the interface window (the wires with the panel open).
-/obj/machinery/power/apc/proc/open_interface(mob/user)
-	interact(user)
-	return TRUE
+/// The charge switch went over: with charging off the charging flag drops at once.
+/obj/machinery/power/apc/proc/chargemode_applied(datum/act/op/A)
+	if(!chargemode)
+		set_charging(0)
+	return OP_OK
 
-/obj/machinery/power/apc/proc/cover_replaceable(mob/user, obj/item/held)
-	if(!has_stat(BROKEN))
-		return "it isn't broken"
-	if(cell)
-		return "you need to remove the power cell first"
-	return TRUE
+/// The channel buttons (UI args arrive typed and validated).
+/obj/machinery/power/apc/proc/ui_set_channel(datum/act/op/A, channel, mode)
+	set_channel_mode(channel, mode)
+	return OP_OK
 
-/obj/machinery/power/apc/proc/replace_cover(mob/user, obj/item/held)
-	act_message(user, src, self = "You replace the damaged APC cover with a new one.", others = span_notice("%U% has replaced the damaged APC cover with a new one."))
-	consume(held, user)
-	atom_fix()
-	reboot()
-	cap_set(src, CAP_COVER_REMOVED, FALSE)
-	return TRUE
+/// The night lighting breaker.
+/obj/machinery/power/apc/proc/ui_set_nightshift(datum/act/op/A, nightshift)
+	set_nightshift_setting(nightshift)
+	return OP_OK
+
+/// The reboot button: the failure ends (a pulse's outage and an event's power failure alike).
+/obj/machinery/power/apc/proc/ui_reboot(datum/act/op/A)
+	end_power_failure()
+	return OP_OK
+
+/obj/machinery/power/apc/proc/ui_overload(datum/act/op/A)
+	overload_lighting()
+	return OP_OK
+
+/// A silicon may work the window over its link: the AI-control wire lets silicons in, or it is the AI that hacked the APC (or one of that AI's
+/// cyborgs). req_window_usable() asks it (code/library/access/window_access.dm).
+/obj/machinery/power/apc/proc/remote_control_allowed(datum/act/op/A)
+	if(!aidisabled)
+		return TRUE
+	var/mob/user = A.actor
+	return hacker && user && user.silicon_master() == hacker
+
+// ---- the emag and the subversion reset ----
+
+/// The emag op's effect, after its wait: sparks (and the ID lock lets go, which the op's own sets() does).
+/obj/machinery/power/apc/proc/emag_sparks(datum/act/op/A)
+	flick("sparks", src)
+	return OP_OK
 
 /// Emagged, or taken over by a malfunctioning AI (req_not_subverted() and the reset op read it).
 /obj/machinery/power/apc/is_subverted()
 	return hacker || ..()
 
-/obj/machinery/power/apc/proc/cell_out_for_reset(mob/user, obj/item/held)
-	return cell ? "you need to remove the power cell first" : TRUE
-
-/obj/machinery/power/apc/proc/reset_apc(mob/user, obj/item/held)
-	act_message(user, src, self = "You finish resetting the APC.", others = span_notice("%U% resets the APC with a beep from %I%."), item = held)
+/// subversion_reset's work: the APC boots clean (reboot() clears the emag and the hacker).
+/obj/machinery/power/apc/reset_subversion(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_CHIME, 0.5)
 	reboot()
-	return TRUE
-
-// ---- the emag ----
-
-/// The emag op's effect (refine(CAP_EMAG, effect =)): sparks, and the ID lock lets go.
-/obj/machinery/power/apc/proc/on_emag(mob/user, obj/item/card/emag/card)
-	flick("sparks", src)
-	set_locked(FALSE)
-	return TRUE
+	return OP_OK
 
 // ---- what it hears ----
 
-/// A swing at it that nothing declared answered. A silicon's touch or a hand on the open wire panel with a
-/// signaller is the interface; a heavy hit on a broken APC may knock its cover off.
-/obj/machinery/power/apc/proc/on_hit(datum/notice/hit/N)
-	var/mob/user = N.attacker
+/// An item used on it that no op answered (the attackby action's notice): a hard swing at a broken APC may knock its cover off. A silicon's
+/// module opens the window instead (the interface's remote() binding answers that click before any swing).
+/obj/machinery/power/apc/proc/apc_struck(datum/act/A)
+	var/datum/notice/attacked_by/N = A
+	var/mob/user = N.user
 	var/obj/item/held = N.item
-	if(issilicon(user) || (panel_is_open(src) && !cover_is_open(src) && istype(held, /obj/item/assembly/signaler)))
-		interact(user)
+	if(!istype(held) || !user || istype(user, /mob/living/silicon))
 		return
-	if(has_stat(BROKEN) && !cover_is_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
+	if(broken_now() && !cover_open(src) && combat_of(held).force >= 5 && held.w_class >= ITEMSIZE_SMALL)
 		act_message(user, src, self = span_danger("You hit %T% with %I%!"), others = span_danger("%T% has been hit with %I% by %U%!"), blind = "You hear a bang!", item = held)
 		if(prob(20))
-			cap_set(src, CAP_COVER_OPEN | CAP_COVER_REMOVED, TRUE)
+			key_set(src, COVER_OPEN, TRUE)
+			key_set(src, COVER_REMOVED, TRUE)
 			act_message(user, src, self = span_danger("You knock down the APC cover with %I%!"), others = span_danger("The APC cover was knocked down with %I% by %U%!"), blind = "You hear a bang!", item = held)
 
-/// Claws at it (the claw op, which only a shredder gets): a few slashes spring the cover, then the wires are shredded.
-/obj/machinery/power/apc/proc/on_slashed(datum/notice/slashed/N)
-	if(beenhit >= pick(3, 4) && !panel_is_open(src))
-		cap_set(src, CAP_PANEL_OPEN, TRUE)
+/// A signaller held to the open wire panel: the wire window, where it can be attached to a wire.
+/obj/machinery/power/apc/proc/signaler_at_the_wires(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
+
+// ---- the wires ----
+
+/// The lights under the APC's wires.
+/obj/machinery/power/apc/proc/wire_lights()
+	return list(
+		"The APC is [lock_locked(src) ? "" : "un"]locked.",
+		shorted ? "The APCs power has been shorted." : "The APC is working properly!",
+		"The 'AI control allowed' light is [aidisabled ? "off" : "on"].")
+
+/// Claws at it (the slash, which only a shredder gets): a few slashes spring the cover, then the wires are shredded.
+/obj/machinery/power/apc/proc/apc_slashed(datum/act/A)
+	if(beenhit >= pick(3, 4) && !panel_open(src))
+		key_set(src, PANEL_OPEN, TRUE)
 		visible_message(span_warning("The [name]'s cover flies open, exposing the wires!"))
-	else if(panel_is_open(src) && wires_of(src).cut_all())
+	else if(panel_open(src) && wires_cut_all(src))
 		visible_message(span_warning("The [name]'s wires are shredded!"))
 	else
 		beenhit += 1
 
-/obj/machinery/power/apc/interact(mob/user)
-	if(!user)
-		return
-	if(panel_is_open(src) && !isAI(user))
-		wires_of(src).Interact(user)
-		return
-	return tgui_interact(user)
+/// emp_disable()'s outage for a pulse of `severity`: eight to twelve minutes over the severity; a critical APC shrugs most of it off.
+/obj/machinery/power/apc/proc/emp_outage(severity)
+	var/outage = rand(8 MINUTES, 12 MINUTES) / max(severity, 1)
+	return round(is_critical ? outage / CRITICAL_APC_EMP_PROTECTION : outage)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Powernet integration
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/connect_to_network(bind_now = TRUE)
-	// Override: the APC's own vg_entity is the network node (rust_architecture.md
-	// step 3: ApcTick is a row law over Apc + InRegion<Cables>), placed at the
+	// Override: the APC's own vg_entity is the network node (rust_architecture.md:
+	// ApcTick is a row law over Apc + InRegion<Cables>), placed at the
 	// terminal's cell -- the terminal object itself is a construction/visual
 	// anchor only, not separately bound.
 	if(!terminal)
@@ -368,21 +431,22 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 		terminal.connect_to_network(bind_now)
 		if(vg_entity)
 			vg_power_bind_machine(vg_entity, terminal.x, terminal.y, terminal.z)
+			power_node_at = null // bound at the terminal, not where power_send_node() would put it
+			power_topology_edited(src)
 			if(bind_now)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 	seat_cell_charge(TRUE)
-	area()?.power_loads_changed() // the new node takes the area's static loads
+	pushed_demand = null // the new node takes the area's standing load at the next power step
+	area?.power_loads_changed()
 	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
-	wake_for_power_dependency()
 	if(drain_check)
 		return 1
 
 	// Fully draining an APC cell would break charging; reset charging state.
-	charging = 0
-	changed(src)
+	set_charging(0)
 
 	var/drained_energy = 0
 
@@ -401,28 +465,32 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
+/// The facing and whether it is built by hand (its constructor params).
+/obj/machinery/power/apc/var/build_dir
+/obj/machinery/power/apc/var/building = FALSE
 
-/obj/machinery/power/apc/Initialize(mapload, ndir, building)
+// ALLOW(init/INSTANCE_STATE): a hand-built APC starts as a bare frame on its builder's wall; a mapped one starts up
+/obj/machinery/power/apc/Initialize(mapload)
 	if(building)
 		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)
 	. = ..()
-	// The wall mount (cap_wall_mount) offsets it into the wall; a built APC faces its builder's way.
+	// The wall mount offsets it into the wall; a built APC faces its builder's way and starts at the bare frame.
 	if(building)
-		set_dir(ndir)
-		area = get_area(src)
-		rel_set(area(), nameof(/area::apc), src)
-		cap_set(src, CAP_COVER_OPEN, TRUE)
+		set_dir(build_dir)
+		rel_set(src, nameof(area), get_area(src)) // paired: the area's apc is this APC
+		key_set(src, COVER_OPEN, TRUE)
+		graph_place(src, STAGE_APC_FRAME)
 		set_operating(0)
-		name = "[area().name] APC"
-		stat_add(MAINT)
+		name = "[area.name] APC"
 		return
 
 	init()
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/power/apc/LateInitialize()
-	update()
+/// Sets its area's power from what it supplies, once the area's machines exist.
+/obj/machinery/power/apc/proc/apply_power_after_init(datum/act/timer/A)
+	if(building)
+		update_station_night() // a hand-built APC skips init(): it reads the station's night where it was placed
+	apply_area_power()
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()
@@ -434,47 +502,49 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/on_destroy(force)
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
-	changed(src, CHANGE_MACHINE_MODE)
-	apply_area_power()
-	if(area())
-		rel_clear(area(), nameof(/area::apc))
-		area().power_light  = 0
-		area().power_equip  = 0
-		area().power_environ = 0
-		area().power_change()
+	var/area/served = area
+	if(served)
+		rel_set(src, nameof(area), null) // paired: the area no longer names this APC
+		served.set_channels(FALSE, FALSE, FALSE)
+	if(terminal)
+		terminal.expire(0) // the terminal goes with the APC it serves
 	..()
-
-/// Something about the APC changed (settings, cell, damage): the push to Rust follows (generated).
-/obj/machinery/power/apc/proc/wake_for_power_dependency()
-	changed(src, CHANGE_MACHINE_MODE)
 
 /// The APC is not a network node: its terminal is.
 /obj/machinery/power/apc/disconnect_from_network()
 	return FALSE
 
+/// A placed APC (its terminal made by init()) joins the grid as its own node at the terminal's cell once its entity is bound, which also
+/// seats its cell's charge in the power domain (connect_to_network()). Nothing else connects a mapped APC: without this its node never
+/// joined a region and Rust ran it on a cell it was never given (0 J), so every area on the map stayed dark. A frame built by hand has no
+/// terminal until its cable goes in (terminal_wired() connects it then).
 /obj/machinery/power/apc/power_autoconnect()
-	return
+	if(terminal && isturf(loc))
+		connect_to_network(FALSE)
 
 /// Sends this APC's settings and cell state to the Rust power domain (generated accessors,
 /// verdigris/domains/power/src/components.rs). The framework runs it once per frame after any state it
 /// reads changed (the generated rust_push reads), so no caller pushes by hand. The cell is authoritative
 /// for capacity; Rust's `charge` field is authoritative for charge (a law drains/fills it), and
-/// power_poll() reads it back. It writes nothing: a newly seated cell is cell_changed()'s, the area's static loads
+/// on_apc_report() brings it back. It writes nothing: a newly seated cell is cell_changed()'s, the area's static loads
 /// are the area's (its apc relation) and connect_to_network()'s.
 /obj/machinery/power/apc/push_to_rust()
 	if(QDELETED(src) || !vg_entity)
 		return
-	native_write(src, NATIVE_APC_ACTIVE, area()?.requires_power && !has_stat(BROKEN | MAINT) && !power_failed ? 1 : 0)
+	native_write(src, NATIVE_APC_ACTIVE, area?.requires_power && supplying ? 1 : 0)
 	native_write(src, NATIVE_APC_HAS_CELL, cell ? 1 : 0)
-	native_write(src, NATIVE_APC_FAILED, power_failed ? 1 : 0)
+	native_write(src, NATIVE_APC_FAILED, supplying ? 0 : 1)
 	native_write(src, NATIVE_APC_SHORTED_OR_GRID_CHECK, shorted || grid_check ? 1 : 0)
 	native_write(src, NATIVE_APC_OPERATING, operating)
 	native_write(src, NATIVE_APC_CHARGEMODE, chargemode)
 	native_write(src, NATIVE_APC_CHARGELEVEL, chargelevel)
 	native_write(src, NATIVE_APC_CAPACITY, cell ? cell.maxcharge : 0)
+	native_write(src, NATIVE_APC_CHANNELS, equipment, POWER_CHANNEL_EQUIPMENT)
+	native_write(src, NATIVE_APC_CHANNELS, lighting, POWER_CHANNEL_LIGHTING)
+	native_write(src, NATIVE_APC_CHANNELS, environ, POWER_CHANNEL_ENVIRON)
 
-/// A cell went in or out (the cell relation changed): a newly seated cell's charge becomes Rust's.
-/obj/machinery/power/apc/proc/cell_changed(list/keys)
+/// A cell went in or out (the cell var changed): a newly seated cell's charge becomes Rust's.
+/obj/machinery/power/apc/proc/cell_changed(datum/act/A)
 	seat_cell_charge()
 
 /// Makes the seated cell's charge Rust's Apc.charge, once per cell (`force`: again, as after a fresh bind), as a
@@ -489,32 +559,35 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(cell)
 		adjust_charge(cell.charge - get_charge())
 
-/// Reads back what Rust's `ApcTick` did this step (verdigris/domains/power/src/laws.rs):
-/// channels, charging, the cell charge, and the load it served.
-/obj/machinery/power/apc/proc/power_poll()
-	if(!vg_entity)
+/// Sets the seated cell's charge from outside the power step (an event that drains or refills every APC): the cell and Rust's Apc.charge both
+/// take it, as a conserved delta, so the next poll does not put the old charge back.
+/obj/machinery/power/apc/proc/set_cell_charge(amount)
+	if(!cell)
 		return
-	var/charge_changed = FALSE
-	if(cell)
-		var/new_charge = get_charge()
-		charge_changed = new_charge != cell.charge
-		cell.charge = new_charge
-	var/new_equipment = get_channels(0)
-	var/new_lighting = get_channels(1)
-	var/new_environ = get_channels(2)
-	var/new_charging = get_charging()
-	power_refresh_network()
-	var/new_status = !power_region ? APC_EXTERNAL_POWER_NOTCONNECTED : (power_avail(power_region) > 0 && power_netexcess(power_region) < 0 ? APC_EXTERNAL_POWER_NOENERGY : (power_avail(power_region) > 0 ? APC_EXTERNAL_POWER_GOOD : APC_EXTERNAL_POWER_NOTCONNECTED))
-	var/shown_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ || new_charging != charging || new_status != main_status
-	equipment = new_equipment
-	lighting = new_lighting
-	environ = new_environ
-	charging = new_charging
-	main_status = new_status
-	var/alarm = !!get_alarm()
-	// Counts polls that saw Rust change something (tests: a settled APC hears nothing).
-	if(shown_changed || charge_changed || alarm != power_alarm_raised)
-		power_event_count++
+	sync_cell_charge() // the delta is against what Rust holds, not the last reported percent
+	var/before = cell.charge
+	cell.set_charge(clamp(amount, 0, cell.maxcharge))
+	if(vg_entity && pushed_cell_ref == REF(cell))
+		adjust_charge(cell.charge - before)
+
+/// Rust's `ApcTick` reports what this APC shows (verdigris/domains/power/src/laws.rs, ApcEvent::Report): it is sent only when a channel, the
+/// charging lamp, the alarm or the external status changed, or the cell charge crossed a whole percent, and the frame's outbox delivers it.
+/// Nothing polls the APC: a settled one hears nothing. A channel change repowers the area (apply_area_power()), which its machines' has_power
+/// stats read.
+/obj/machinery/power/apc/on_apc_report(new_equipment, new_lighting, new_environ, new_charging, alarm, new_status, charge)
+	if(QDELETED(src))
+		return
+	if(cell && pushed_cell_ref == REF(cell))
+		cell.set_charge(clamp(charge, 0, cell.maxcharge))
+	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
+	var/shown_changed = channels_changed || new_charging != charging || new_status != main_status || !!alarm != power_alarm_raised
+	set_equipment(new_equipment)
+	set_lighting(new_lighting)
+	set_environ(new_environ)
+	set_charging(new_charging)
+	set_main_status(new_status)
+	power_event_count++ // reports heard (tests: a settled APC hears nothing)
+	alarm = !!alarm
 	if(alarm != power_alarm_raised)
 		power_alarm_raised = alarm
 		if(alarm)
@@ -522,56 +595,75 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	if(shown_changed)
-		changed(src)
+		log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge]")
+	if(channels_changed)
 		apply_area_power()
+
+/// The exact charge Rust holds now, into the seated cell (the report carries it only at whole-percent crossings): for a reader that needs it
+/// exact, such as a cell about to leave the APC.
+/obj/machinery/power/apc/proc/sync_cell_charge()
+	if(cell && vg_entity && pushed_cell_ref == REF(cell))
+		cell.set_charge(get_charge())
 
 // APCs are pixel-shifted so they need a full refresh when dir changes.
 /obj/machinery/power/apc/set_dir(new_dir)
 	..()
-	wall_mount_orient()
+	wall_mount_orient(src)
 	if(terminal)
 		terminal.disconnect_from_network()
 		terminal.set_dir(dir)       // Terminal has same dir as master.
 		terminal.connect_to_network()
 	return
 
-/// A power failure for `duration` machine service ticks (an EMP, an overload): the output stops until
-/// it runs out or someone reboots it. A longer failure already running is kept.
+/// An event's power failure for `duration` machine service ticks (the electrical fault, the supermatter's shutdown): the APC is held out of
+/// operation until it runs out or someone reboots it. A longer failure already running is kept (the hold never shortens).
 /obj/machinery/power/apc/proc/energy_fail(duration)
-	timed_set(src, nameof(power_failed), TRUE, for_time = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1), keep_longer = TRUE)
+	var/lasts = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1 TICK)
+	if(lasts <= 0)
+		return
+	log_world("APC_POWER_FAILURE: [src] ([area]) fails for [lasts / (1 SECOND)] s")
+	hold(src, STAT_OPERABLE, FALSE, SRC_POWER_FAILURE, lasts, reason = /datum/msg/apc/power_failure)
 
-/// power_failed's setter (timed_set() writes and reverts through it): Rust and the area hear it.
-/obj/machinery/power/apc/proc/set_power_failed(value)
-	value = !!value
-	if(power_failed == value)
-		return FALSE
-	power_failed = value
-	changed(src)
-	update()
-	return TRUE
-SETTER(/obj/machinery/power/apc, power_failed)
+/// The failure ends now (the reboot button, a reboot): a pulse's outage and an event's power failure alike.
+/obj/machinery/power/apc/proc/end_power_failure()
+	release(src, STAT_OPERABLE, SRC_POWER_FAILURE)
+	release(src, STAT_OPERABLE, SRC_EMP)
+
+/// Time left on the failure that holds the APC down (deciseconds; 0 when none): the longer of a pulse's outage and an event's failure.
+/obj/machinery/power/apc/proc/failure_left()
+	return max(emp_disabled_left(src), hold_left(src, STAT_OPERABLE, SRC_POWER_FAILURE) || 0)
+
+/// The output is down for a failure (a pulse or an event), as opposed to broken or unfinished: what the bluescreen shows. Its holds settle
+/// STAT_OPERABLE and so `supplying` in the same step, which is what marks the look: the proc stands for that stat's key.
+READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
+/obj/machinery/power/apc/proc/power_failing()
+	return failure_left() > 0
+
+/// Not supplying for its own build: broken, or its electronics not fastened (the maintenance lights behind an open cover). Read through
+/// `supplying`, which the build stage settles, so the look is marked when it changes.
+/obj/machinery/power/apc/proc/out_of_order()
+	return broken_now() || (!supplying && !power_failing())
+
+/// STAT_SUPPLYING or the breaker changed (a failure began or ended, it broke, its build was finished or undone, the breaker went over): the area
+/// follows.
+/obj/machinery/power/apc/proc/supply_changed(datum/act/A)
+	apply_area_power()
 
 /obj/machinery/power/apc/proc/make_terminal()
 	rel_set(src, nameof(terminal), new /obj/machinery/power/terminal(loc)) // paired: the terminal's master is this APC
 	terminal.set_dir(dir)
 
 /obj/machinery/power/apc/proc/init()
-	ladder_set_stage(src, "secured") // installed and secured
 	if(cell) // made at init by its relation (starts = nameof(cell_type))
-		cell.charge = start_charge * cell.maxcharge / 100.0
+		cell.set_charge(start_charge * cell.maxcharge / 100.0)
 
 	var/area/A = loc.loc
+	rel_set(src, nameof(area), (isarea(A) && !areastring) ? A : get_area_name(areastring)) // paired: the area's apc is this APC
+	name = "\improper [area.name] APC"
 
-	if(isarea(A) && !areastring)
-		area = A
-		name = "\improper [area().name] APC"
-	else
-		area = get_area_name(areastring)
-		name = "\improper [area().name] APC"
-	rel_set(area(), nameof(/area::apc), src)
-
-	if(istype(area(), /area/submap))
+	if(istype(area, /area/submap))
 		alarms_hidden = TRUE
+	update_station_night()
 
 	make_terminal()
 
@@ -579,17 +671,17 @@ SETTER(/obj/machinery/power/apc, power_failed)
 // Examine and look
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// The panel's fault lights (the capabilities say the rest: cover, wire panel, lock, broken, cell; the
-/// ladder how far the frame is built).
-/obj/machinery/power/apc/examine(mob/user)
-	. = ..()
-	if(!Adjacent(user) || has_stat(BROKEN))
-		return
-	if(!cover_is_open(src) && !panel_is_open(src))
-		if((is_locked(src) && is_emagged(src)) || hacker)
-			. += "The panel is unresponsive."
-		else if(is_emagged(src))
-			. += "The panel is flashing an error."
+/// The panel's fault lights, to someone beside a working APC with its cover and panel shut (the capabilities say the rest: cover, wire panel,
+/// lock, broken, cell; the build graph how far the frame is built): unresponsive when hacked or locked while emagged, else an error while emagged.
+/obj/machinery/power/apc/proc/fault_lights_text(datum/act/eval/A)
+	var/mob/viewer = A.actor
+	if(!viewer || !Adjacent(viewer) || broken_now() || cover_open(src) || panel_open(src))
+		return null
+	if((lock_locked(src) && emag_emagged(src)) || hacker)
+		return reason_text(/datum/msg/apc/unresponsive)
+	if(emag_emagged(src))
+		return reason_text(/datum/msg/apc/flashing_error)
+	return null
 
 /// The APC's own supply keeps its screen up whatever its area's power does.
 /obj/machinery/power/apc/cap_powered()
@@ -598,36 +690,40 @@ SETTER(/obj/machinery/power/apc, power_failed)
 /// Not the normal display (is_lit() reads it): subverted, failed or unsecured, or its cover or panel open (the
 /// screen and its indicators are behind them).
 /obj/machinery/power/apc/screen_override()
-	return has_stat(BROKEN | MAINT) || is_subverted() || power_failed || cover_is_open(src) || panel_is_open(src)
+	return !supplying || is_subverted() || cover_open(src) || panel_open(src)
+
+/// is_lit() for the APC, whose own supply keeps its screen up (cap_powered()): whole and showing its normal display (screen_override(), read
+/// through the APC's own keys so its draw caches).
+/obj/machinery/power/apc/proc/screen_lit()
+	return !broken_now() && supplying && !emag_emagged(src) && !cover_open(src) && !panel_open(src)
 
 /// The screen shows the fault bluescreen (subverted or failed, with the cover and panel shut).
 /obj/machinery/power/apc/proc/apc_bluescreen()
-	return !cover_is_open(src) && !panel_is_open(src) && (is_emagged(src) || hacker || power_failed)
+	return !cover_open(src) && !panel_open(src) && (emag_emagged(src) || hacker || power_failing())
 
-// The library draws the cover, wire panel, wires, broken, the emagged screen, the lock lamp and the cell behind
-// an open cover, and power_channels() the channel glows; the APC adds the bluescreen under everything (a hack or
-// failure, which the emag part does not know), the coverless frame, the charge lamp and its light.
+// The library draws the cover, wire panel, wires, broken, the emagged screen and lock lamp of the hatch, and the cell behind an open
+// cover; the APC adds the bluescreen under everything (a hack or failure, which the emag part does not know), the coverless
+// frame, the channel glows, the charge lamp and its light.
 /obj/machinery/power/apc/draw(datum/look/look)
 	look.part("emagged", apc_bluescreen()) // hacked, failed or emagged: the bluescreen, under the rest
 	..()
 	look.variant("cover-removed", when = cover_removed(src))
 	look.variant("cell", when = cover_removed(src) && cell)
-	look.part("maintenance", cover_is_open(src) && !cover_removed(src) && has_stat(MAINT | BROKEN))
+	look.part("maintenance", cover_open(src) && !cover_removed(src) && out_of_order())
+	if(screen_lit() && operating)
+		for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
+			var/mode = channel_mode(channel)
+			look.part("channel-[channel]", "[mode]") // a text value: mode 0 is a state too
+			look.glow("channel-[channel]", "[mode]")
 	if(apc_bluescreen())
-		look.light(2, 0.25, "#0000FF")
-	else if(is_lit(src))
+		look.glow(2, 0.25, "#0000FF")
+	else if(screen_lit())
 		look.glow("charge", "[charging]")
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
-		look.light(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
+		look.glow(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
 
-/obj/machinery/power/apc/power_channels_lit()
-	return is_lit(src) && operating
-
-// ─────────────────────────────────────────────────────────────────────────────
-// power_channels() holder interface
-// ─────────────────────────────────────────────────────────────────────────────
-
-/obj/machinery/power/apc/power_channel_mode(channel)
+/// One channel's mode (POWERCHAN_*), as the channel var holds it.
+/obj/machinery/power/apc/proc/channel_mode(channel)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
 			return equipment
@@ -637,149 +733,72 @@ SETTER(/obj/machinery/power/apc, power_failed)
 			return environ
 	return POWERCHAN_OFF
 
-/obj/machinery/power/apc/set_power_channel_mode(channel, mode)
+/// One channel's mode (POWERCHAN_*): the setting, the Rust copy and the area's power follow.
+/obj/machinery/power/apc/proc/set_channel_mode(channel, mode)
 	var/value = setsubsystem(mode)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
-			equipment = value
+			set_equipment(value)
 		if(POWER_CHANNEL_LIGHTING)
-			lighting = value
+			set_lighting(value)
 		if(POWER_CHANNEL_ENVIRON)
-			environ = value
+			set_environ(value)
 		else
 			return FALSE
-	if(vg_entity)
-		native_write(src, NATIVE_APC_CHANNELS, value, channel)
-	update()
-	return TRUE
-
-/obj/machinery/power/apc/power_channel_load(channel)
-	return channel_load(channel)
-
-/obj/machinery/power/apc/power_breaker()
-	return operating
-
-/obj/machinery/power/apc/set_power_breaker(on)
-	set_operating(on ? 1 : 0)
-	update()
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift()
-	return nightshift_setting
-
-/obj/machinery/power/apc/set_power_nightshift(mode)
-	set_nightshift_setting(mode)
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift_lit()
-	return nightshift_lights
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TGUI (dx_conventions.md §5): tgui_id, tgui_data() and act_<action>; power_channels() owns
-// channel / breaker / nightshift and their data (data["caps"]["power"]).
-// ─────────────────────────────────────────────────────────────────────────────
-
-/obj/machinery/power/apc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["locked"] = is_locked(src)
-	data["normallyLocked"] = is_locked(src)
-	data["emagged"] = is_emagged(src)
-	data["externalPower"] = main_status
-	data["powerCellStatus"] = cell_charge_percent(src)
-	data["chargeMode"] = chargemode
-	data["chargingStatus"] = charging
-	data["totalLoad"] = round(channel_load_total())
-	data["totalCharging"] = 0
-	data["failTime"] = CEILING(time_left(src, nameof(power_failed)) / (1 SECOND), 1)
-	data["gridCheck"] = grid_check
-	data["coverLocked"] = coverlocked
-	data["siliconUser"] = user && (siliconaccess(user) || (isobserver(user) && is_admin(user)))
-	data["emergencyLights"] = !emergency_lights
-	return data
-
-/obj/machinery/power/apc/proc/report()
-	return "[area().name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
-
-/// Silicons and admin ghosts work a locked APC (and anyone the night lighting).
-/obj/machinery/power/apc/proc/lock_exempt(mob/user)
-	if(!user)
-		return FALSE
-	if(siliconaccess(user))
-		return TRUE
-	if(isobserver(user))
-		var/mob/observer/dead/D = user
-		return D.can_admin_interact()
-	return FALSE
-
-/obj/machinery/power/apc/ui_allowed(mob/user, action)
-	wake_for_power_dependency()
-	if(!can_use(user, TRUE))
-		return FALSE
-	return !is_locked(src) || lock_exempt(user) || action == "nightshift"
-
-/obj/machinery/power/apc/ui_logged()
-	return GLOB.apc_ui_logged
-
-GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
-
-/obj/machinery/power/apc/proc/act_lock(mob/user)
-	if(!lock_exempt(user))
-		return refuse(user, null)
-	var/why = is_subverted() ? /datum/msg/req_subverted : (has_stat(BROKEN | MAINT) ? /datum/msg/req_not_working : null)
-	if(why)
-		return refuse(user, req_reason_text(why))
-	set_locked(!is_locked(src))
-	return TRUE
-
-/obj/machinery/power/apc/proc/act_cover(mob/user)
-	coverlocked = !coverlocked
-	return TRUE
-
-/obj/machinery/power/apc/proc/act_charge(mob/user)
-	set_chargemode(!chargemode)
-	if(!chargemode)
-		charging = 0
-	return TRUE
-
-/obj/machinery/power/apc/proc/act_reboot(mob/user)
-	timed_cancel(src, nameof(power_failed))
-	set_power_failed(FALSE)
-	return TRUE
-
-/// Switches the area's emergency lighting: the lights read it through their area and redraw themselves.
-/obj/machinery/power/apc/proc/act_emergency_lighting(mob/user)
-	set_emergency_lights(!emergency_lights)
-	return TRUE
-
-/obj/machinery/power/apc/proc/act_overload(mob/user)
-	if(!lock_exempt(user))
-		return refuse(user, null)
-	overload_lighting()
-	return TRUE
-
-// update() — the push to Rust follows (generated); push channel state to the area now.
-/obj/machinery/power/apc/proc/update()
-	changed(src)
 	apply_area_power()
+	return TRUE
 
-/// Pushes the channel state to the area; fires area.power_change() (the
-/// machinery power signals) only when a channel changed.
+// ─────────────────────────────────────────────────────────────────────────────
+// The window (doc/rewrite/final_api.html section 13): ui_data() is its data; its buttons are the ops of the list above
+// ─────────────────────────────────────────────────────────────────────────────
+
+/obj/machinery/power/apc/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
+	var/list/channels = list()
+	var/static/list/channel_titles = list("Equipment", "Lighting", "Environment")
+	for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
+		channels += list(list(
+			"title" = channel_titles[channel + 1],
+			"powerLoad" = round(channel_load(channel)),
+			"status" = channel_mode(channel),
+			"topicParams" = list(
+				"auto" = list("channel" = channel, "mode" = POWERCHAN_ON_AUTO),
+				"on" = list("channel" = channel, "mode" = POWERCHAN_ON),
+				"off" = list("channel" = channel, "mode" = POWERCHAN_OFF_AUTO),
+			),
+		))
+	return list(
+		"locked" = lock_locked(src),
+		"emagged" = emag_emagged(src),
+		"externalPower" = main_status,
+		"powerCellStatus" = cell_charge_percent(src),
+		"chargeMode" = chargemode,
+		"chargingStatus" = charging,
+		"totalLoad" = round(channel_load_total()),
+		"failTime" = CEILING(failure_left() / (1 SECOND), 1),
+		"gridCheck" = grid_check,
+		"coverLocked" = coverlocked,
+		"siliconUser" = user && (((A.authority & AUTH_REMOTE_ACCESS) && user.remote_link_allows(src)) || (isobserver(user) && is_admin(user))),
+		"emergencyLights" = !emergency_lights,
+		"powerChannels" = channels,
+		"isOperating" = operating,
+		"nightshiftLights" = area?.lights_nightshift,
+		"nightshiftSetting" = nightshift_setting)
+
+/// Pushes the channel state to the area; fires area.power_change() (the machinery power signals) only when a channel changed. The push to
+/// Rust is push_to_rust()'s (generated: it follows the state it reads).
 /obj/machinery/power/apc/proc/apply_area_power()
-	if(!area())
+	if(!area)
 		return
 	var/new_power_light = FALSE
 	var/new_power_equip = FALSE
 	var/new_power_environ = FALSE
-	if(operating && !shorted && !grid_check && !power_failed)
+	if(operating && !shorted && !grid_check && supplying)
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
-	if(area().power_light == new_power_light && area().power_equip == new_power_equip && area().power_environ == new_power_environ)
+	if(!area.set_channels(new_power_equip, new_power_light, new_power_environ))
 		return
-	area().power_light = new_power_light
-	area().power_equip = new_power_equip
-	area().power_environ = new_power_environ
-	area().power_change()
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -794,50 +813,8 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 				"cell_percent" = cell ? cell.percent() : 0,
 				"load" = channel_load_total(),
 			),
-			"detail" = "[area()] electrical service reports [powered_channels]/3 powered channels.",
+			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[REF(src)]:[contract_power_revision]", src)
-
-/obj/machinery/power/apc/proc/can_use(mob/user, loud = 0)
-	if(!user.client)
-		return 0
-	if(isobserver(user) && is_admin(user))
-		return 1
-	if(user.stat)
-		return 0
-	if(!operable())
-		return 0
-	if(!user.IsAdvancedToolUser())
-		return 0
-	if(user.restrained())
-		to_chat(user, span_warning("Your hands must be free to use [src]."))
-		return 0
-	if(user.lying)
-		to_chat(user, span_warning("You must stand to use [src]!"))
-		return 0
-	if(istype(user, /mob/living/silicon))
-		var/permit = 0
-		var/mob/living/silicon/ai/AI = user
-		var/mob/living/silicon/robot/robot = user
-		if(hacker)
-			if(hacker == AI)
-				permit = 1
-			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker)
-				permit = 1
-		if(aidisabled && !permit)
-			if(!loud)
-				to_chat(user, span_danger("\The AI control for [src] has been disabled!"))
-			return 0
-	else
-		if(!in_range(src, user) || !istype(loc, /turf))
-			return 0
-	var/mob/living/carbon/human/H = user
-	if(istype(H) && prob(H.injury_load(INJURY_CATEGORY_NEURAL)))
-		to_chat(user, span_danger("You momentarily forget how to use [src]."))
-		return 0
-	return 1
-
-/obj/machinery/power/apc/proc/toggle_breaker()
-	set_power_breaker(!operating)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)
@@ -863,7 +840,7 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 		return 0
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Legacy passthrough procs — kept for external call-site compatibility
+// Channel state machine
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// autoset() — the channel state machine (Rust runs the same table).
@@ -890,38 +867,9 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 	else
 		return POWERCHAN_OFF
 
-/// Channel settings changed outside the UI (wires, hacking): send them.
-/obj/machinery/power/apc/proc/update_channels()
-	changed(src)
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Damage / destruction
 // ─────────────────────────────────────────────────────────────────────────────
-
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EMP, PROC_REF(apc_emp_fail))
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_wake))
-DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wires))
-
-/// A blob tears the wiring out instead of damaging the frame.
-/obj/machinery/power/apc/proc/apc_blob_rip_wires(datum/damage_packet/packet)
-	wires_of(src).cut_all()
-	cap_set(src, CAP_PANEL_OPEN, TRUE)
-	return DAMAGE_REACTION_BLOCK
-
-/// A pulse knocks the output out for a while (critical APCs resist it).
-/obj/machinery/power/apc/proc/apc_emp_fail(datum/damage_packet/packet)
-	wake_for_power_dependency()
-	if(is_critical)
-		energy_fail(rand(240, 360) / packet.severity / CRITICAL_APC_EMP_PROTECTION)
-	else
-		energy_fail(rand(240, 360) / packet.severity)
-
-/// A blast wakes the power pipeline before the damage lands.
-/obj/machinery/power/apc/proc/apc_blast_wake(datum/damage_packet/packet)
-	wake_for_power_dependency()
-
-/obj/machinery/power/apc/explosion_contents_severity(severity)
-	return severity
 
 /obj/machinery/power/apc/atom_break(damage_flag)
 	. = ..()
@@ -929,38 +877,22 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		return
 	visible_message(span_warning("[src]'s screen flickers suddenly, then explodes in a rain of sparks and small debris!"))
 	set_operating(0)
-	update()
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
 		rel_clear(src, nameof(terminal)) // paired: leaves the terminal's master too
-	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
 	if(!operating || shorted || grid_check)
 		return
 	if(cell && cell.charge >= 20)
-		cell.use(20)
+		set_cell_charge(cell.charge - 20) // the cell and the power domain's charge together
 		// One light a tick, each on its own clock.
 		var/delay = 0
 		for(var/obj/machinery/light/L as anything in area_lights())
 			if(prob(chance))
-				rx_after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break), key = "surge_break")
+				after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break), key = "surge_break")
 			delay++
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Lock / emag state (the machinery fields map onto cap_state)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/obj/machinery/power/apc/set_locked(state)
-	. = cap_set(src, CAP_LOCKED, state)
-	if(.)
-		changed(src, CHANGE_MACHINE_SETTINGS)
-
-/obj/machinery/power/apc/set_emagged(state)
-	. = cap_set(src, CAP_EMAGGED, state)
-	if(.)
-		changed(src, CHANGE_MACHINE_SETTINGS)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI malfunction
@@ -970,7 +902,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
 	rel_set(src, nameof(hacker), A) // two-sided: lists us in A.hacked_apcs
-	set_locked(1)
+	key_set(src, LOCK_LOCKED, TRUE)
 	return 1
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -979,29 +911,23 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 
 /obj/machinery/power/apc/proc/reboot()
 	// Reset distribution state.
-	lighting = POWERCHAN_ON_AUTO
-	equipment = POWERCHAN_ON_AUTO
-	environ = POWERCHAN_ON_AUTO
-	if(vg_entity)
-		native_write(src, NATIVE_APC_CHANNELS, equipment, 0)
-		native_write(src, NATIVE_APC_CHANNELS, lighting, 1)
-		native_write(src, NATIVE_APC_CHANNELS, environ, 2)
-	charging = 0
-	chargecount = 0
-	longtermpower = 10
-	main_status = APC_EXTERNAL_POWER_NOTCONNECTED
+	set_lighting(POWERCHAN_ON_AUTO)
+	set_equipment(POWERCHAN_ON_AUTO)
+	set_environ(POWERCHAN_ON_AUTO)
+	set_charging(0)
+	set_main_status(APC_EXTERNAL_POWER_NOTCONNECTED)
 
 	// Breaker off; chargemode in default state; all channels on auto.
 	set_operating(0)
 	set_chargemode(1)
-	timed_cancel(src, nameof(power_failed))
-	set_power_failed(FALSE)
+	end_power_failure()
 	GLOB.power_alarm.clearAlarm(loc, src)
+	power_alarm_raised = FALSE
 
 	// Clear malf AI ownership.
 	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
-	set_emagged(FALSE)
-	update()
+	key_set(src, EMAG_EMAGGED, FALSE)
+	apply_area_power()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Overload / grid check / nightshift / area update
@@ -1016,13 +942,13 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 		for(var/obj/machinery/light/L as anything in area_lights())
 			L.flicker(rand(20, 30))
 	if(prob(25))
-		set_emagged(1)
-		set_locked(0)
+		key_set(src, EMAG_EMAGGED, TRUE)
+		key_set(src, LOCK_LOCKED, FALSE)
 	if(prob(25))
 		if(cell)
 			cell.corrupt()
 	if(prob(10))
-		for(var/obj/machinery/computer/comp as anything in area_members(area(), POWER_ROLE_COMPUTER))
+		for(var/obj/machinery/computer/comp as anything in area_consoles(area))
 			comp.ex_act(3)
 	if(prob(5))
 		atom_break()
@@ -1031,27 +957,31 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	if(is_critical)
 		return
 	set_grid_check(TRUE)
-	rx_after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", handler_args = list(FALSE))
+	after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
 
-// The grid checker suspends (or releases) this APC: the setter is TRACKED, so Rust (rust_push), the window and the machine
-// pipeline (CHANGE_MACHINE_SETTINGS) hear it.
+/// STAT_LIGHTS_NIGHTSHIFT of its area (section 16.11): the UI setting, and on "automatic" the station's night (the night-shift system's flag,
+/// read through its accessor) for an APC the station's night reaches (station_night).
+/obj/machinery/power/apc/proc/wants_night_lights(datum/act/A)
+	switch(nightshift_setting)
+		if(NIGHTSHIFT_ALWAYS)
+			return TRUE
+		if(NIGHTSHIFT_AUTO)
+			return station_night && night_shift_active()
+	return FALSE
 
-/// The night shift asks for night lighting (the service's command): only the tracked state changes; the area's
-/// lights read lights_nightshift through their area and redraw themselves.
-/obj/machinery/power/apc/proc/set_nightshift(on, automated)
-	if(automated && istype(area(), /area/shuttle))
-		return
-	set_nightshift_lights(!!on)
+/// Whether the station's night reaches the APC where it stands: a station level, outside a shuttle. Run where it is placed and when the
+/// blueprints change its area (an APC never moves between levels).
+/obj/machinery/power/apc/proc/update_station_night()
+	set_station_night((z in using_map.station_levels) && !istype(area, /area/shuttle))
 
+/// The blueprints redrew the areas: the APC serves the area it now stands in.
 /obj/machinery/power/apc/proc/update_area()
 	var/area/NA = get_area(src)
-	if(NA != area())
-		if(area().apc == src)
-			rel_clear(area(), nameof(/area::apc))
-		rel_set(NA, nameof(/area::apc), src)
-		area = NA
-		name = "[area().name] APC"
-	update()
+	if(NA != area)
+		rel_set(src, nameof(area), NA) // paired: the old area lets go, the new one names this APC
+		name = "[area.name] APC"
+		update_station_night()
+	apply_area_power()
 
 /obj/machinery/power/apc/get_cell()
 	return cell
@@ -1064,10 +994,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 /obj/machinery/power/apc/proc/channel_load_total()
 	return channel_load(0) + channel_load(1) + channel_load(2)
 
-/// The lights of the area this APC powers: its MEMBER relations of role POWER_ROLE_LIGHTING (a copy, the loops yield).
+/// The lights of the area this APC powers (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
-	return area_members(area(), POWER_ROLE_LIGHTING)
+	return area ? area.lights_here() : list()
 
-/// The area this APC powers (a plain area var).
-/obj/machinery/power/apc/proc/area() as /area
-	return area

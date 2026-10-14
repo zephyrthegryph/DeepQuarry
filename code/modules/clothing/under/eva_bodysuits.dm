@@ -22,9 +22,11 @@
 	name = "security undersuit"
 	desc = "A reinforced undersuit, intended for wearing under a voidsuit or other EVA equipment. This one is specifically made for those in Security, and has slight protective capabilities against simple melee attacks."
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	icon_state = "bodysuit_sec"
 	item_state = "bodysuit_sec"
+
+CAPABILITIES(/obj/item/clothing/under/undersuit/sec)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/undersuit/sec/hos
 	name = "security command undersuit"
@@ -73,13 +75,17 @@
 	name = "alternate undersuit, sleeveless"
 	desc = "A skin-tight synthetic bodysuit designed for comfort and mobility underneath hardsuits and voidsuits. This one is designed to stop at the mid-bicep, allowing total freedom to the wearer's forearms."
 	item_state = "altbodysuit_sleeveless"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/undersuit/alt/sleeveless)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/undersuit/alt/no_sleeves
 	name = "alternate undersuit, no sleeves"
 	desc = "A skin-tight synthetic bodysuit designed for comfort and mobility underneath hardsuits and voidsuits. This one cuts off at the shoulder, allowing total freedom to the wearer's arms."
 	item_state = "altbodysuit_nosleeves"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/undersuit/alt/no_sleeves)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/undersuit/alt/fem
 	name = "alternate undersuit, feminine"

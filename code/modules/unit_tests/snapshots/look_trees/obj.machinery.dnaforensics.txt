@@ -1,0 +1,5 @@
+/obj/machinery/dnaforensics icon: icons/obj/forensics.dmi
+/obj/machinery/dnaforensics state: dnaopen
+/obj/machinery/dnaforensics dir: 2
+/obj/machinery/dnaforensics overlay: icons/obj/forensics.dmi:dnaopen:8:#000000
+

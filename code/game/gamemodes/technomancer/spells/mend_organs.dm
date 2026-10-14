@@ -14,7 +14,9 @@
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_BIOMED
-	light_color = "#FF5C5C"
+
+CAPABILITIES(/obj/item/spell/mend_organs)
+	configure(light_glow(color = "#FF5C5C"))
 
 /obj/item/spell/mend_organs/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
@@ -42,7 +44,7 @@
 					continue
 				H.mend(TREAT_BURN_CARE, heal_power / 4, O)
 
-			for(var/obj/item/organ/E in H.bad_external_organs) // Fix bones
+			for(var/obj/item/organ/E in H.damaged_limbs()) // Fix bones
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()

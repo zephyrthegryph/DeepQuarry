@@ -8,14 +8,11 @@
 	item_state = "laser" //placeholder
 
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = null
 	fire_sound = SFX_WEAPONS_GUNSHOT_LIGHT
 	load_method = MAGAZINE
-	force = 3
 	recoil = 2
 	auto_eject = 1
 	auto_eject_sound = SFX_WEAPONS_SMG_EMPTY_ALARM
-	hitsound = null
 	caliber = "s762"
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762)
@@ -25,9 +22,13 @@
 	list(mode_name="scythe", icon_state="crestrose",item_state = "crestrose",force=15),
 	)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/fluff/crestrose)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_combat(force = 3))
+	configure(item_sounds(hit = TRAIT_NONE))
+
 /obj/item/gun/projectile/automatic/fluff/crestrose/switch_firemodes(mob/user)
 	if(..())
-		update_icon()
 		update_held_icon()
 
 

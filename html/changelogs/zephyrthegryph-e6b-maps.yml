@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The map loader runs as a chunked job() with a synchronous boot drive; POI, expedition, shelter and admin loads no longer sleep."

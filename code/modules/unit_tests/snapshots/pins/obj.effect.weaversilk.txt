@@ -1,0 +1,43 @@
+@obj.effect human|none
++0 menu: Tear down
+@obj.effect robot|none
++0 menu: Tear down
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Interaction hit weaversilk
+human|/obj/item/tool/screwdriver menu: Tear down
+human|/obj/item/tool/screwdriver click: Click: Interaction hit weaversilk
+human|/obj/item/tool/crowbar menu: Interaction hit weaversilk
+human|/obj/item/tool/crowbar menu: Tear down
+human|/obj/item/tool/crowbar click: Click: Interaction hit weaversilk
+human|/obj/item/tool/wrench menu: Interaction hit weaversilk
+human|/obj/item/tool/wrench menu: Tear down
+human|/obj/item/tool/wrench click: Click: Interaction hit weaversilk
+human|/obj/item/tool/wirecutters menu: Interaction hit weaversilk
+human|/obj/item/tool/wirecutters menu: Tear down
+human|/obj/item/tool/wirecutters click: Click: Interaction hit weaversilk
+human|/obj/item/multitool menu: Interaction hit weaversilk
+human|/obj/item/multitool menu: Tear down
+human|/obj/item/multitool click: Click: Interaction hit weaversilk
+human|/obj/item/weldingtool menu: Interaction hit weaversilk
+human|/obj/item/weldingtool menu: Tear down
+human|/obj/item/weldingtool click: Click: Interaction hit weaversilk
+human|/obj/item/stack/cable_coil menu: Interaction hit weaversilk
+human|/obj/item/stack/cable_coil menu: Tear down
+human|/obj/item/stack/cable_coil click: Click: Interaction hit weaversilk
+human|/obj/item/stack/material/steel menu: Interaction hit weaversilk
+human|/obj/item/stack/material/steel menu: Tear down
+human|/obj/item/stack/material/steel click: Click: Interaction hit weaversilk
+human|/obj/item/card/id menu: Interaction hit weaversilk
+human|/obj/item/card/id menu: Tear down
+human|/obj/item/card/id click: Click: Interaction hit weaversilk
+@obj human|/obj/item/mop_deploy
++1 menu: Interaction hit weaversilk
++2 menu: Tear down
+@obj human|/obj/item/soap
++2 menu: Interaction hit weaversilk
++3 menu: Tear down
+human|/obj/item menu: Interaction hit weaversilk
+human|/obj/item menu: Tear down
+human|/obj/item click: Click: Interaction hit weaversilk
+keys: drag_buckle, hit_weaversilk, pass_insert, pass_insert_2, tear_weaversilk

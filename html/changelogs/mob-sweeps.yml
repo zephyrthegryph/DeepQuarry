@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mob interactions (simple mobs, bots, pAI, think-tank, grippers, shadekin portals, glamour items, flesh doors) converted from DECLARE_INTERACTIONS/EXTEND_INTERACTIONS to ops in CAPABILITIES blocks"
+  - refactor: "Flesh door cycle converted from DECLARE_PERIODIC to an every() that runs while a client is near"

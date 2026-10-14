@@ -226,7 +226,7 @@ export const IdentificationComputerAccessModification = (props: {
                 </Table.Cell>
                 <Table.Cell>
                   <Button
-                    onClick={() => act('assign', { assign_target: 'Custom' })}
+                    onClick={() => act('assign_custom')}
                   >
                     Custom
                   </Button>

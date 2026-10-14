@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Unified custom operation requirements and their refusal reasons, retaining existing machinery behavior."

@@ -3,14 +3,15 @@
 	desc = "A rod of pure obsidian, its very presence disrupts and dampens the powers of paranormal phenomenae."
 	icon_state = "nullrod"
 	item_state = "nullrod"
-	slot_flags = SLOT_BELT
-	force = 15
 	throw_speed = 1
 	throw_range = 4
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/nullrod)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 15))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/nullrod/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 
@@ -26,7 +27,7 @@
 	if(CLUMSY_HARM_CHANCE(user))
 		to_chat(user, span_danger("The rod slips out of your hand and hits your head."))
 		user.injure(INJURY_BLUNT, 10, source = src)
-		user.status_at_least(EFFECT_PARALYZED, 20)
+		user.status_at_least(STAT_PARALYZED, 20)
 		return ITEM_INTERACT_SUCCESS
 
 	if(M.stat != DEAD)
@@ -74,10 +75,12 @@
 	desc = "It's a net made of green energy."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "energynet"
-	throwforce = 0
-	force = 0
 	var/net_type = /obj/effect/energy_net
-	item_flags = DROPDEL
+
+CAPABILITIES(/obj/item/energy_net)
+	configure(item_worn(flags = DROPDEL))
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 
 /obj/item/energy_net/throw_impact(atom/hit_atom)
 	..()
@@ -85,7 +88,7 @@
 	var/mob/living/M = hit_atom
 
 	if(!istype(M) || locate_within(M.loc, /obj/effect/energy_net))
-		qdel(src)
+		consume(src)
 		return 0
 
 	var/turf/T = get_turf(M)
@@ -93,7 +96,8 @@
 		var/obj/effect/energy_net/net = new net_type(T)
 		if(net.buckle_mob(M))
 			T.visible_message("[M] was caught in an energy net!")
-		qdel(src)
+		if(consume(src))
+			return
 
 	// If we miss or hit an obstacle, we still want to delete the net.
 	expire(1 SECOND)
@@ -115,11 +119,14 @@
 
 	var/escape_time = 8 SECONDS
 
-DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+CAPABILITIES(/obj/effect/energy_net)
+	after_init(2 SECONDS, then(PROC_REF(check_empty))) // a net that caught nobody goes away
+	// Tearing at the net takes escape_time; being stunned does not stop it, and the buckled mob comes from the unbuckle hook.
+	op("tear", ai(), takes("victim"), wait(PROC_REF(tear_time), keeps = HELD | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_timed_done)))
 
-/obj/effect/energy_net/proc/check_empty()
+/obj/effect/energy_net/proc/check_empty(datum/act/A)
 	if(!has_buckled_mobs())
-		qdel(src)
+		consume(src)
 
 // netted mobs are told they're free.
 /obj/effect/energy_net/lifecycle_prerelease()
@@ -132,22 +139,26 @@ DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) //
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())
 	act_message(user, src, others = span_danger("%U% begins to tear at %T%!"))
-	om_task_timed(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_timed_done), done_args = list(buckled_mob, user))
+	perform_op(user, src, "tear", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = buckled_mob))
 
-/obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(mob/living/buckled_mob, mob/user)
+/obj/effect/energy_net/proc/tear_time(datum/act/op/A)
+	return escape_time
+
+/obj/effect/energy_net/proc/user_unbuckle_mob_timed_done(datum/act/op/A)
 	if(!has_buckled_mobs())
-		return
-	act_message(user, src, others = span_danger("%U% manages to tear %T% apart!"))
-	unbuckle_mob(buckled_mob)
+		return OP_FAILED
+	act_message(A.actor, src, others = span_danger("%U% manages to tear %T% apart!"))
+	unbuckle_mob(A.arg("victim"))
+	return OP_OK
 
 /obj/effect/energy_net/post_buckle_mob(mob/living/M)
 	if(M?.buckled_to() == src) //Just src?.buckled_to() someone
 		..()
 		layer = M.layer+1
-		M.can_pull_size = 0
+		M.set_can_pull_size(0)
 	else //Just unbuckled someone
-		M.can_pull_size = initial(M.can_pull_size)
-		qdel(src)
+		M.set_can_pull_size(movement_of_type(M.type).pull_size)
+		consume(src)
 
 /obj/item/energy_net/shrink
 	name = "compactor energy net"

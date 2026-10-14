@@ -21,11 +21,12 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 	controller_vars["vars"] = null
 	gvars_datum_in_built_vars = controller_vars + list(NAMEOF(src, gvars_datum_protected_varlist), NAMEOF(src, gvars_datum_in_built_vars), NAMEOF(src, gvars_datum_init_order))
 
-	om_qdel_after(exclude_these, 0) //signal logging isn't ready
-
 	Initialize()
 
-// ALLOW(lifecycle): protected GLOB holder; never runs the parent chain (admin var-edit exploit).
+	// Disposal arms the scheduler, so finish global initialization before it can build the registry.
+	exclude_these.expire(0) //signal logging isn't ready
+
+// Protected GLOB holder; never runs the parent chain (admin var-edit exploit).
 /datum/controller/global_vars/Destroy(force)
 	// This is done to prevent an exploit where admins can get around protected vars
 	SHOULD_CALL_PARENT(FALSE)
@@ -40,6 +41,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 		return FALSE
 	return ..()
 
+// ALLOW(init/FRAMEWORK): the global vars controller runs every global's init proc here
 /datum/controller/global_vars/Initialize()
 	gvars_datum_init_order = list()
 	gvars_datum_protected_varlist = list(NAMEOF(src, gvars_datum_protected_varlist) = TRUE)

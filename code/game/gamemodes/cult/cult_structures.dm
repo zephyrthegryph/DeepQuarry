@@ -20,38 +20,43 @@
 	name = "Pylon"
 	desc = "A floating crystal that hums with an unearthly energy."
 	icon_state = "pylon"
-	light_range = 5
-	light_color = "#3e0000"
-	var/obj/item/wepon
-
 	var/shatter_message = "The pylon shatters!"
 	var/impact_sound = SFX_EFFECTS_GLASSHIT
 	var/shatter_sound = SFX_EFFECTS_GLASSBR3
 
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)
+	proximity_tracked = TRUE
 
-OM_FIELD(/obj/structure/cult/pylon, isbroken, FALSE, CHANGE_EXPLICIT)
-/// Surges near players while intact; a broken pylon does nothing until repaired.
-DECLARE_PERIODIC_WHILE(/obj/structure/cult/pylon, PERIODIC_SLOW, "!isbroken")
-
-DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/obj/structure/cult/pylon/var/isbroken = FALSE
+TRACKED(/obj/structure/cult/pylon, isbroken)
+CAPABILITIES(/obj/structure/cult/pylon)
+	configure(light_glow(range = 5, color = "#3e0000"))
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	/// Surges near players while intact; a broken pylon does nothing until repaired.
+	every(2 SECONDS, then(PROC_REF(pylon_step)), when = cond_all(cond_not(nameof(isbroken)), STAT_RELEVANCE))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/cult/pylon/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/cult/pylon/proc/interaction_hand(datum/act/op/A)
+	var/mob/M = A.actor
 	attackpylon(M, 5)
 	return TRUE
 
-/obj/structure/cult/pylon/attack_generic(mob/user, damage)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/cult/pylon/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	var/damage = A.damage
 	attackpylon(user, damage)
+	return OP_OK
 
 /// Old attackby.
-/obj/structure/cult/pylon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	attackpylon(user, W.force)
-	return INTERACTION_HANDLED_PASS
+/obj/structure/cult/pylon/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	attackpylon(user, combat_of(W).force)
+	return OP_PASS
 
 /obj/structure/cult/pylon/take_damage(damage)
 	pylonhit(damage)
@@ -66,8 +71,8 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/proc/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -79,15 +84,15 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)
 	else
 		if(prob(damage * 2))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)
@@ -97,18 +102,16 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 		to_chat(user, "You repair \the [src].")
 		set_isbroken(FALSE)
 		set_density(TRUE)
-		icon_state = initial(icon_state)
-		set_light(5)
+		set_icon_state(initial(icon_state))
+		set_glow(src, GLOW(5, null, null))
 
 // Returns 1 if the pylon does something special.
 /obj/structure/cult/pylon/proc/pylon_unique()
 	COOLDOWN_START(src, activation_cooldown_until, activation_cooldown)
 	return 0
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/cult/pylon/periodic_step()
-	if(!mob_near(world.view, TRUE))
-		return sleep_until_mob_near(world.view, TRUE)
+/// Acts only while a client is near (STAT_RELEVANCE, the proximity tracker); otherwise the every() parks until one comes near.
+/obj/structure/cult/pylon/proc/pylon_step(datum/act/timer/A)
 	if(COOLDOWN_FINISHED(src, activation_cooldown_until) && pylon_unique())
 		flick("[initial(icon_state)]-surge",src)
 
@@ -131,8 +134,6 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	var/spawnable = null
 
 /obj/effect/gateway/active
-	light_range=5
-	light_color="#ff0000"
 	spawnable=list(
 		/mob/living/simple_mob/animal/space/bats,
 		/mob/living/simple_mob/creature,
@@ -140,26 +141,31 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	)
 
 /obj/effect/gateway/active/cult
-	light_range=5
-	light_color="#ff0000"
 	spawnable=list(
 		/mob/living/simple_mob/animal/space/bats/cult,
 		/mob/living/simple_mob/creature/cult,
 		/mob/living/simple_mob/faithless/cult
 	)
 
+CAPABILITIES(/obj/effect/gateway/active/cult)
+	configure(light_glow(range = 5, color = "#ff0000"))
+
 /obj/effect/gateway/active/cult/cultify()
 	return
 
-/obj/effect/gateway/active/Initialize(mapload)
-	. = ..()
-	om_after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
+CAPABILITIES(/obj/effect/gateway/active)
+	configure(light_glow(range = 5, color = "#ff0000"))
+	after_init(PROC_REF(open_delay), then(PROC_REF(spawn_and_qdel)))
 
-/obj/effect/gateway/active/proc/spawn_and_qdel()
+/// An open gateway lets something through after 30 to 60 seconds.
+/obj/effect/gateway/active/proc/open_delay(datum/act/timer/A)
+	return rand(30, 60) SECONDS
+
+/obj/effect/gateway/active/proc/spawn_and_qdel(datum/act/timer/A)
 	if(LAZYLEN(spawnable))
 		var/t = pick(spawnable)
 		new t(get_turf(src))
-	qdel(src)
+	consume(src)
 
 /obj/effect/gateway/active/Crossed(atom/A)
 	if(A.is_incorporeal())
@@ -170,7 +176,3 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	var/mob/living/M = A
 
 	to_chat(M, span_danger("Walking into \the [src] is probably a bad idea, you think."))
-
-/// Wepon (a relation view).
-/obj/structure/cult/pylon/proc/wepon() as /obj/item
-	return wepon

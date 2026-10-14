@@ -8,7 +8,7 @@ Aoe turf spells have two useful flags: IGNOREDENSE and IGNORESPACE. These are ex
 	spell_flags = IGNOREDENSE
 	var/inner_radius = -1 //for all your ring spell needs
 
-/datum/spell/aoe_turf/choose_targets(mob/user = usr)
+/datum/spell/aoe_turf/choose_targets(mob/user)
 	var/list/targets = list()
 
 	for(var/turf/target in view_or_range(range, holder(), selection_type))

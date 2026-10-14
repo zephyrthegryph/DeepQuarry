@@ -7,8 +7,11 @@
 	self_recharge = TRUE
 	charge_amount = 150
 
-/obj/item/cell/spike/periodic_step()
-	..()
+// Beside its self-charge, the spike cell arcs to conductive things around it every two seconds, full or not.
+CAPABILITIES(/obj/item/cell/spike)
+	every(2 SECONDS, then(PROC_REF(spike_step)))
+
+/obj/item/cell/spike/proc/spike_step(datum/act/timer/A)
 
 	var/turf/Center = get_turf(src)
 
@@ -69,4 +72,4 @@
 		if(prob(10))
 			C4.explode(get_turf(src))
 		else
-			qdel(C4)
+			spent(C4)

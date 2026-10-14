@@ -89,8 +89,8 @@
 /turf/simulated/floor/wood/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/sif
@@ -103,8 +103,8 @@
 /turf/simulated/floor/wood/sif/broken
 	icon_state = "sifwood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/sif/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/sif/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 
@@ -116,8 +116,8 @@
 /turf/simulated/floor/wood/alt/broken
 	icon_state = "wood-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/alt/tile
@@ -127,8 +127,8 @@
 /turf/simulated/floor/wood/alt/tile/broken
 	icon_state = "wood_tile-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/tile/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/tile/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 /turf/simulated/floor/wood/alt/panel
@@ -143,8 +143,8 @@
 /turf/simulated/floor/wood/alt/parquet/broken
 	icon_state = "wood_parquet-broken0" // This gets changed when spawned.
 
-/turf/simulated/floor/wood/alt/parquet/broken/LateInitialize()
-	. = ..()
+/turf/simulated/floor/wood/alt/parquet/broken/sim_after_init(datum/act/timer/A)
+	..()
 	break_tile()
 
 
@@ -377,26 +377,27 @@
 	initial_flooring = /datum/decl/flooring/snow
 	var/list/crossed_dirs
 
+TRACKED(/turf/simulated/floor/snow, crossed_dirs)
 
 // TODO: Move foortprints to a datum-component signal so they can actually be applied to other turf types, like sand, or mud
 /turf/simulated/floor/snow/Entered(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		if(dq_get_hovering(L) || L.flying) // Flying things shouldn't make footprints.
-			if(L.flying)
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
+			if(stat_value(L, STAT_FLYING))
 				L.adjust_nutrition(-0.5)
 			return ..()
 		var/mdir = "[A.dir]"
-		LAZYSET(crossed_dirs, mdir, 1)
-		update_icon()
+		if(LAZYACCESS(crossed_dirs, mdir) != 1)
+			var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
+			footprints[mdir] = 1
+			set_crossed_dirs(footprints)
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/floor/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/floor/snow/appearance_overlays()
-	. = list()
-	. += ..()
+/turf/simulated/floor/snow/draw(datum/look/look)
+	..()
 	for(var/d in crossed_dirs)
-		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
+		look.overlay(look_overlay_image('icons/turf/outdoors.dmi', "snow_footprints", dir = text2num(d)))
 
 //**** Here ends snow ****
 

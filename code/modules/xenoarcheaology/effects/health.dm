@@ -57,9 +57,9 @@
 				C.injure(INJURY_NEURAL, rand(1,5) * weakness)
 				C.apply_effect(25 * weakness, IRRADIATE)
 				C.adjust_nutrition(-50 * weakness)
-				C.adjust_nutrition(-(min(50 * weakness, C.nutrition)))
-				C.status_adjust(EFFECT_DIZZY, 6 * weakness)
-				C.status_adjust(EFFECT_WEAKENED, 6 * weakness)
+				C.adjust_nutrition(-(min(50 * weakness, nutrition_of(C))))
+				C.status_adjust(STAT_DIZZY, 6 * weakness)
+				C.status_adjust(STAT_WEAKENED, 6 * weakness)
 			return 1
 
 /datum/artifact_effect/health/DoEffectAura()

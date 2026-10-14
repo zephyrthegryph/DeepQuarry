@@ -2,23 +2,12 @@
 #define MAX_TICKS_TO_MAKE_UP 3 //how many missed ticks will we attempt to make up for this run.
 
 // A throw in flight (fold wave F3; SSthrowing is gone). Each /datum/thrownthing runs on the
-// continuous throwing lane (PERIODIC_THROWING, code/datums/om/periodic.dm): throw_at() starts it,
-// periodic_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
-
-/// A throw in flight -> the movable being thrown (which holds it as `throwing`). Read with
-/// throw_subject(). Deleting the movable deletes the throw; the unlink clears its `throwing`.
-/datum/om/relation/throw_of
-	name = "throw"
-	source_single = TRUE
-	target_single = TRUE
-	on_target_delete = OM_END_DELETE_OTHER
-
-/datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
-	if(target.throwing == source)
-		rel_clear(target, nameof(target.throwing))
+// throw_steps system (code/controllers/subsystems/tick_members.dm): throw_at() starts it,
+// throw_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
 
 /datum/thrownthing
+	/// The movable being thrown (which holds this throw as `throwing`). Deleting the movable deletes the throw. Read with throw_subject().
+	var/atom/movable/subject
 	///The original intended target of the throw (a relation view).
 	var/atom/initial_target
 	///The turf that the target was on, if it's not a turf itself (a relation view).
@@ -57,8 +46,10 @@
 	var/gentle = FALSE
 	///How many tiles that need to be moved in order to travel to the target.
 	var/diagonal_error
-	///If a thrown thing has a callback, it can be invoked here within thrownthing. Owned: it goes with the throw.
-	var/list/callback // om_callable() spec run when the throw lands
+	///When the throw lands, then_owner.then(then_with...) runs: a PROC_REF on then_owner. Nothing runs when then_owner is gone.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
 	///Mainly exists for things that would freeze a thrown object in place, like a timestop'd tile. Or a Tractor Beam.
 	var/paused = FALSE
 	///How long an object has been paused for, to be added to the travel time.
@@ -68,10 +59,18 @@
 	/// If our thrownthing has been blocked
 	var/blocked = FALSE
 
-/datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, callback, target_zone)
+CAPABILITIES(/datum/thrownthing)
+	ref_one(nameof(subject), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(then_owner))
+
+/// The movable this throw carries, or null.
+/datum/thrownthing/proc/throw_subject() as /atom/movable
+	return subject
+
+/datum/thrownthing/New(atom/movable/thrownthing, atom/target, init_dir, maxrange, speed, mob/thrower, diagonals_first, force, gentle, then, datum/then_owner, list/then_with, target_zone)
 	. = ..()
-	om_link(src, thrownthing, /datum/om/relation/throw_of)
-	om_hook(thrownthing, /datum/om/event/before/living_turf_collision, src, PROC_REF(hit_atom))
+	rel_set(src, nameof(subject), thrownthing)
+	observe(thrownthing, /datum/notice/living_turf_collision, src, then(PROC_REF(hit_atom)))
 	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
 	rel_set(src, nameof(target_turf), target_turf)
@@ -85,10 +84,13 @@
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
-	src.callback = callback
+	src.then = then
+	if(then_owner)
+		rel_set(src, nameof(then_owner), then_owner)
+	src.then_with = then_with
 	src.target_zone = target_zone
 	if(!QDELETED(thrower) && ismob(thrower))
-		src.target_zone = thrower.zone_sel ? thrower.zone_sel.selecting : null
+		src.target_zone = hud_of(thrower)?.zone_sel ? hud_of(thrower)?.zone_sel?.selecting : null
 
 	dist_x = abs(target.x - thrownthing.x)
 	dist_y = abs(target.y - thrownthing.y)
@@ -114,10 +116,12 @@
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
-	om_task_periodic_stop(src)
+	if(!QDELETED(subject))
+		unobserve(subject, /datum/notice/living_turf_collision, src)
+	SSthrow_steps.kernel_leave(src)
 
 /// One server tick of flight on the throwing lane (was SSthrowing.fire()).
-/datum/thrownthing/periodic_step(delta)
+/datum/thrownthing/proc/throw_step()
 	if(QDELETED(src) || QDELETED(throw_subject()))
 		return PROCESS_KILL
 	tick()
@@ -214,16 +218,17 @@
 	if(t_target && !QDELETED(thrownthing))
 		thrownthing.throw_impact(t_target, src)
 
-	if (callback)
-		om_run(callback)
+	if(then && !QDELETED(then_owner))
+		holder_call(then_owner, then, then_with)
 
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()
 
-	qdel(src)
+	spent(src)
 
-/datum/thrownthing/proc/hit_atom(datum/source, datum/om/event/before/living_turf_collision/event)
-	EVENT_HANDLER
+/datum/thrownthing/proc/hit_atom(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = N.target
 	var/atom/A = source
 	finalize(hit=TRUE, t_target=A)
 

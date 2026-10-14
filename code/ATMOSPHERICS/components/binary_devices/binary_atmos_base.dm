@@ -5,18 +5,12 @@
 
 	var/datum/gas_mixture/air1
 	var/datum/gas_mixture/air2
+	/// The volumes its two port mixtures are made with (a subtype's pump or gate sets its own).
+	var/air1_volume = 200
+	var/air2_volume = 200
 
 	var/datum/pipe_network/network1
 	var/datum/pipe_network/network2
-
-/obj/machinery/atmospherics/binary/Initialize(mapload)
-	. = ..()
-
-	atmos_air_set(src, nameof(air1), new /datum/gas_mixture)
-	atmos_air_set(src, nameof(air2), new /datum/gas_mixture)
-
-	air1.set_volume(200)
-	air2.set_volume(200)
 
 /obj/machinery/atmospherics/binary/init_dir()
 	switch(dir)
@@ -43,7 +37,6 @@
 	STANDARD_ATMOS_CHOOSE_NODE(1, node1_connect)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node2_connect)
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/binary/return_network(obj/machinery/atmospherics/reference)
@@ -94,14 +87,14 @@
 		rust_release_network_wrapper(network2)
 		rel_clear(src, nameof(node2))
 
-	update_icon()
 	update_underlays()
 
 	return null
 
 
 
-/obj/machinery/atmospherics/binary/ownership()
-	. = ..()
-	. += proto(nameof(air1))
-	. += proto(nameof(air2))
+CAPABILITIES(/obj/machinery/atmospherics/binary)
+	gas_port(nameof(air1), volume = nameof(air1_volume))
+	gas_port(nameof(air2), volume = nameof(air2_volume))
+	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY)

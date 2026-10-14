@@ -88,6 +88,7 @@
 	var/verified_amount = 0
 	var/verified_item_count = 0
 	var/list/verified_item_types
+	/// Handles (entity_handle) of the scanned items; a deleted item stops resolving.
 	var/list/verified_items
 	/// Closed accounting periods are final evidence and cannot be refunded.
 	var/settled = FALSE
@@ -114,12 +115,12 @@
 		"refunded" = state == SERVICE_INVOICE_REFUNDED,
 		"refund_time" = refund_time,
 		"refund_by" = refund_by,
-		"refundable" = state == SERVICE_INVOICE_PAID && !settled && accounting_period == GLOB.supply_service.service_accounting_period,
+		"refundable" = state == SERVICE_INVOICE_PAID && !settled && accounting_period == SSsupply.service_accounting_period,
 		"verified_amount" = verified_amount,
 		"verified_item_count" = verified_item_count,
 	)
 
-/datum/world_service/supply/proc/create_service_invoice(datum/money_account/customer, datum/money_account/provider, terminal_id, list/items, list/prices, list/result, staff_account_number, staff_name, customer_name_override, payment_method = "ID account", list/verified_sale_items)
+/datum/system/supply/proc/create_service_invoice(datum/money_account/customer, datum/money_account/provider, terminal_id, list/items, list/prices, list/result, staff_account_number, staff_name, customer_name_override, payment_method = "ID account", list/verified_sale_items)
 	if(!provider || !result || (!customer && !customer_name_override))
 		return
 	var/canonical_total = service_ticket_total(items, prices)
@@ -152,19 +153,20 @@
 	// ordinary retail/stock-handling role, so any real scanned item is eligible.
 	var/list/remaining_by_name = items?.Copy() || list()
 	var/remaining_personal_payment = max(0, invoice.personal)
-	for(var/obj/sale_item as anything in verified_sale_items)
-		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
+	for(var/sale_handle in verified_sale_items)
+		var/obj/sale_item = resolve_handle(sale_handle)
+		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
 			continue
 		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && sale_item.economic_department != provider.department_id)
 			continue
-		var/scanned_value = verified_sale_items[sale_item]
+		var/scanned_value = verified_sale_items[sale_handle]
 		if(!isnum(scanned_value) || scanned_value <= 0)
 			continue
 		var/credited_value = min(round(scanned_value), remaining_personal_payment)
 		if(credited_value <= 0)
 			continue
 		sale_item.economic_sale_invoice_id = invoice.id
-		invoice.verified_items += sale_item
+		invoice.verified_items += entity_handle(sale_item)
 		invoice.verified_item_types["[sale_item.type]"] = TRUE
 		invoice.verified_amount += credited_value
 		invoice.verified_item_count++
@@ -173,7 +175,7 @@
 			new /datum/economic_adoption(sale_item, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
 		remaining_personal_payment -= credited_value
 		remaining_by_name[sale_item.name]--
-	own_add(src, nameof(service_invoices), invoice)
+	rel_add(src, nameof(service_invoices), invoice)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = customer?.account_number,
 		"actor_name" = invoice.customer_name,
@@ -204,7 +206,7 @@
 		notify_service_invoice(invoice, "Service invoice #[invoice.id] was charged to your account.")
 	return invoice
 
-/datum/world_service/supply/proc/create_service_external_invoice(datum/money_account/provider, terminal_id, list/items, list/prices, customer_name, amount, payment_method, list/verified_sale_items)
+/datum/system/supply/proc/create_service_external_invoice(datum/money_account/provider, terminal_id, list/items, list/prices, customer_name, amount, payment_method, list/verified_sale_items)
 	var/list/result = list(
 		"total" = amount,
 		"subsidy" = 0,
@@ -215,7 +217,7 @@
 	)
 	return create_service_invoice(null, provider, terminal_id, items, prices, result, 0, null, customer_name, payment_method, verified_sale_items)
 
-/datum/world_service/supply/proc/service_invoice_rows(account_number = 0, provider_department)
+/datum/system/supply/proc/service_invoice_rows(account_number = 0, provider_department)
 	var/list/rows = list()
 	for(var/index = length(service_invoices), index >= 1, index--)
 		var/datum/service_invoice/invoice = service_invoices[index]
@@ -226,19 +228,19 @@
 		rows.Add(list(invoice.as_row()))
 	return rows
 
-/datum/world_service/supply/proc/get_service_invoice(invoice_id)
+/datum/system/supply/proc/get_service_invoice(invoice_id)
 	for(var/datum/service_invoice/invoice in service_invoices)
 		if(invoice.id == invoice_id)
 			return invoice
 
-/datum/world_service/supply/proc/notify_service_invoice(datum/service_invoice/invoice, message)
+/datum/system/supply/proc/notify_service_invoice(datum/service_invoice/invoice, message)
 	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(device.id?.associated_account_number != invoice.customer_account_number)
 			continue
 		var/datum/data/pda/app/service_receipts/app = device.find_program(/datum/data/pda/app/service_receipts)
 		app?.notify(message)
 
-/datum/world_service/supply/proc/refund_service_invoice(datum/service_invoice/invoice, datum/money_account/provider, machine_id, mob/user)
+/datum/system/supply/proc/refund_service_invoice(datum/service_invoice/invoice, datum/money_account/provider, machine_id, mob/user)
 	if(!invoice || invoice.state != SERVICE_INVOICE_PAID || invoice.settled || invoice.accounting_period != service_accounting_period || !provider || invoice.provider_account_number != provider.account_number || !service_refund_authorized(user, provider))
 		return FALSE
 	var/datum/money_account/customer = invoice.customer_account_number ? get_account(invoice.customer_account_number) : null
@@ -275,14 +277,15 @@
 	invoice.refund_by = user?.real_name || "Service staff"
 	invoice.refund_accounting_period = service_accounting_period
 	invoice.contract_revision++
-	for(var/obj/sale_item as anything in invoice.verified_items)
-		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
+	for(var/sale_handle in invoice.verified_items)
+		var/obj/sale_item = resolve_handle(sale_handle)
+		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
 			continue
 		sale_item.economic_sale_invoice_id = 0
 		if(isitem(sale_item))
 			var/obj/item/sold_item = sale_item
 			if(sold_item.economic_adoption)
-				qdel(sold_item.economic_adoption)
+				spent(sold_item.economic_adoption, user)
 	record_currency_refund(invoice.amount, FALSE)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = invoice.customer_account_number,
@@ -324,28 +327,30 @@
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()
 	if(!istype(new_parent) || !_invoice_id || !_customer_account || !_customer_department || !_provider_department || _value <= 0)
-		qdel(src)
+		spent(src)
 		return
 	if(new_parent.economic_adoption)
 		// Unique: the existing adoption record is kept.
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(parent), new_parent)
-	own_set(new_parent, nameof(new_parent.economic_adoption), src)
+	rel_set(new_parent, nameof(new_parent.economic_adoption), src)
 	invoice_id = _invoice_id
 	customer_account = _customer_account
 	customer_department = _customer_department
 	provider_department = _provider_department
 	value = _value
-	om_hook(parent, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
-	om_hook(parent, /datum/om/event/item_attack, src, PROC_REF(on_attack))
+	observe(parent, /datum/notice/attack_self, src, then(PROC_REF(on_attack_self)))
+	observe(parent, /datum/notice/item_attack, src, then(PROC_REF(on_attack)))
 
-/datum/economic_adoption/proc/on_attack_self(obj/item/source, datum/om/event/before/attack_self/event)
-	EVENT_HANDLER
+/datum/economic_adoption/proc/on_attack_self(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/attack_self/event = N
 	record_use(event.user)
 
-/datum/economic_adoption/proc/on_attack(obj/item/source, datum/om/event/item_attack/event)
-	EVENT_HANDLER
+/datum/economic_adoption/proc/on_attack(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/item_attack/event = A
 	record_use(event.user)
 
 /datum/economic_adoption/proc/record_use(mob/user)
@@ -376,7 +381,7 @@
 		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
 	), "equipment-adoption:[REF(item)]:[active ? 1 : 2]", item, user)
 
-/datum/world_service/supply/proc/service_invoice_summary(department, accounting_period = 0)
+/datum/system/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(
 		"invoice_count" = 0,
 		"refund_count" = 0,
@@ -419,7 +424,7 @@
 /// accounting period. Cash/E-wallet sales lack stable customer identity and do
 /// not count. Each invoice and customer is capped so a single fabricated price
 /// cannot satisfy a market-participation contract.
-/datum/world_service/supply/proc/service_contract_period_metrics(department, accounting_period, staff_account_number = 0)
+/datum/system/supply/proc/service_contract_period_metrics(department, accounting_period, staff_account_number = 0)
 	var/list/customer_sales = list()
 	var/list/customer_tips = list()
 	var/list/verified_types = list()
@@ -460,7 +465,7 @@
 		"verified_type_count" = length(verified_types),
 	)
 
-/datum/world_service/supply/proc/settle_service_contract_period(accounting_period)
+/datum/system/supply/proc/settle_service_contract_period(accounting_period)
 	var/list/departments = list()
 	var/list/staff_by_department = list()
 	for(var/datum/service_invoice/invoice in service_invoices)
@@ -510,10 +515,10 @@
 				"detail" = "Closed staff service ledger for accounting period [accounting_period]",
 			), "service-period:[accounting_period]:[department]:staff:[staff_account]")
 
-/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_ask
-/// (`proc_name` with `proc_args` runs again on the answer). Returns the tip, or null while waiting or
+/// Asks the customer to confirm a service purchase and pick a tip through the payment replay.
+/// The accepted callback resumes its original scan arguments. Returns the tip, or null while waiting or
 /// when declined.
-/proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/proc_args, key = "tip")
+/proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/answers, obj/item/card/id/payer_card, obj/item/card_holder, key = "tip")
 	var/ten_percent = round(quote["total"] * 0.1)
 	var/twenty_percent = round(quote["total"] * 0.2)
 	var/available = max(0, customer.money - quote["personal"])
@@ -522,7 +527,10 @@
 		options += "Confirm + [ten_percent] Th tip"
 	if(twenty_percent > 0 && twenty_percent <= available && twenty_percent != ten_percent)
 		options += "Confirm + [twenty_percent] Th tip"
-	var/choice = rerun_ask_on(asker, user, key, proc_name, proc_args, /datum/om/prompt/choice/alert, message = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
+	if(!(key in answers))
+		open_request(asker, /datum/prompt/choice/service_checkout_tip, proc_name, answerer = user, payer_card = payer_card, card_holder = card_holder, operator = user, answers = answers, answer_key = key, question = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
+		return null
+	var/choice = answers[key]
 	if(choice == "Confirm - no tip")
 		return 0
 	if(choice == "Confirm + [ten_percent] Th tip")
@@ -547,7 +555,7 @@
 	var/datum/money_account/staff_account = get_account(staff_account_number)
 	var/staff_tip = 0
 	if(tip && staff_account && !staff_account.suspended && staff_account != customer)
-		staff_tip = round(tip * GLOB.supply_service.service_tip_staff_share)
+		staff_tip = round(tip * SSsupply.service_tip_staff_share)
 	var/service_tip = tip - staff_tip
 	if(tip && !customer.debit(tip, "Service gratuity", purpose, terminal_id, FALSE))
 		return
@@ -558,7 +566,86 @@
 	result["tip"] = tip
 	result["staff_tip"] = staff_tip
 	result["service_tip"] = service_tip
-	return GLOB.supply_service.create_service_invoice(customer, provider, terminal_id, items, prices, result, staff_account_number, staff_name, null, "ID account", verified_sale_items)
+	return SSsupply.create_service_invoice(customer, provider, terminal_id, items, prices, result, staff_account_number, staff_name, null, "ID account", verified_sale_items)
 
 #undef SERVICE_INVOICE_PAID
 #undef SERVICE_INVOICE_REFUNDED
+
+/datum/prompt/number/service_checkout_pin
+	timeout = 0
+	title = "Transaction"
+	question = "Enter PIN"
+	var/obj/item/card/id/payer_card
+	var/obj/item/card_holder
+	var/mob/operator
+	var/payer_card_expected = FALSE
+	var/card_holder_expected = FALSE
+	var/operator_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/number/service_checkout_pin)
+	ref_one(nameof(payer_card), /obj/item/card/id)
+	ref_one(nameof(card_holder), /obj/item)
+	ref_one(nameof(operator), /mob)
+
+/datum/prompt/number/service_checkout_pin/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/card/id/captured_card = payer_card
+	var/obj/item/captured_holder = card_holder
+	var/mob/captured_operator = operator
+	payer_card_expected = !isnull(captured_card)
+	card_holder_expected = !isnull(captured_holder)
+	operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(payer_card))
+	rel_clear(src, nameof(card_holder))
+	rel_clear(src, nameof(operator))
+	if(captured_card && !QDELETED(captured_card))
+		rel_set(src, nameof(payer_card), captured_card)
+	if(captured_holder && !QDELETED(captured_holder))
+		rel_set(src, nameof(card_holder), captured_holder)
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+
+/datum/prompt/number/service_checkout_pin/recheck_extra()
+	if((payer_card_expected && QDELETED(payer_card)) || (card_holder_expected && QDELETED(card_holder)) || (operator_expected && QDELETED(operator)))
+		return "gone"
+
+/datum/prompt/choice/service_checkout_tip
+	timeout = 0
+	buttons = TRUE
+	var/obj/item/card/id/payer_card
+	var/obj/item/card_holder
+	var/mob/operator
+	var/payer_card_expected = FALSE
+	var/card_holder_expected = FALSE
+	var/operator_expected = FALSE
+	var/list/answers
+	var/answer_key
+
+CAPABILITIES(/datum/prompt/choice/service_checkout_tip)
+	ref_one(nameof(payer_card), /obj/item/card/id)
+	ref_one(nameof(card_holder), /obj/item)
+	ref_one(nameof(operator), /mob)
+
+/datum/prompt/choice/service_checkout_tip/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/card/id/captured_card = payer_card
+	var/obj/item/captured_holder = card_holder
+	var/mob/captured_operator = operator
+	payer_card_expected = !isnull(captured_card)
+	card_holder_expected = !isnull(captured_holder)
+	operator_expected = !isnull(captured_operator)
+	rel_clear(src, nameof(payer_card))
+	rel_clear(src, nameof(card_holder))
+	rel_clear(src, nameof(operator))
+	if(captured_card && !QDELETED(captured_card))
+		rel_set(src, nameof(payer_card), captured_card)
+	if(captured_holder && !QDELETED(captured_holder))
+		rel_set(src, nameof(card_holder), captured_holder)
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(operator), captured_operator)
+
+/datum/prompt/choice/service_checkout_tip/recheck_extra()
+	if((payer_card_expected && QDELETED(payer_card)) || (card_holder_expected && QDELETED(card_holder)) || (operator_expected && QDELETED(operator)))
+		return "gone"

@@ -40,7 +40,7 @@
 	var/obj/machinery/atmospherics/unary/vent_pump/vent_found
 	var/list/found_vents = list()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/v in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!v.welded && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
+		if(!is_welded(v) && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
 			found_vents.Add(v)
 	if(found_vents.len)
 		vent_found = pick(found_vents)
@@ -57,7 +57,7 @@
 		to_chat(host, span_info("You are now a mouse. Try to avoid interaction with players, and do not give hints away that you are more than a simple rodent."))
 
 /datum/tgui_module/ghost_spawn_menu/proc/become_drone(mob/observer/dead/user, fabricator)
-	if(SSticker.current_state < GAME_STATE_PLAYING)
+	if(round_game_state() < GAME_STATE_PLAYING)
 		to_chat(user, span_danger("The game hasn't started yet!"))
 		return
 
@@ -98,7 +98,7 @@
 
 	if(!chosen_fabricator)
 		return
-	if(chosen_fabricator.has_stat(NOPOWER) || !chosen_fabricator.produce_drones)
+	if(chosen_fabricator.power_lost() || !chosen_fabricator.produce_drones)
 		return
 	if(chosen_fabricator.drone_progress < 100)
 		return
@@ -143,7 +143,7 @@
 
 	var/req_time = world.time
 	nif.notify("Transient mindstate detected, analyzing...")
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), user, req_time)
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), with = list(user, req_time))
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_vore_spawn(mob/observer/dead/user, selected_player)
 	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
@@ -165,7 +165,7 @@
 
 	var/req_time = world.time
 	gem.notify_holder("Transient mindstate detected, analyzing...")
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), user, req_time)
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), with = list(user, req_time))
 
 /datum/tgui_module/ghost_spawn_menu/proc/vore_belly_spawn(mob/observer/dead/user, selected_player)
 	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
@@ -176,7 +176,7 @@
 
 	to_chat(user, span_notice("Inbelly spawn request sent to predator."))
 	to_chat(target, span_notice("Incoming belly spawn request."))
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, inbelly_spawn_prompt), user.client) // Hand reins over to them
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, inbelly_spawn_prompt), with = list(user.client)) // Hand reins over to them
 
 /datum/tgui_module/ghost_spawn_menu/proc/join_corgi(mob/observer/dead/user)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))

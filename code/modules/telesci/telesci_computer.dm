@@ -30,9 +30,27 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
+CAPABILITIES(/obj/machinery/computer/telescience)
+	after_init(0, then(PROC_REF(calibrate_and_stock)))
+	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(last_tele_data), /datum/projectile_data)
+	interface("TelesciConsole")
+	without("ui_open")
+	op("setrotation", ui_act("setrotation", arg("val", num())), then(PROC_REF(ui_act_setrotation)))
+	op("setdistance", ui_act("setdistance", arg("val", num())), then(PROC_REF(ui_act_setdistance)))
+	op("setz", ui_act("setz", arg("setz", num())), then(PROC_REF(ui_act_setz)))
+	op("ejectGPS", ui_act("ejectGPS"), then(PROC_REF(ui_act_ejectgps)))
+	op("setMemory", ui_act("setMemory"), then(PROC_REF(ui_act_setmemory)))
+	op("send", ui_act("send"), then(PROC_REF(ui_act_send)))
+	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
+	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds))), then(PROC_REF(interaction_insert_crystal)))
+	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
+
 /obj/machinery/computer/telescience/ownership()
 	. = ..()
-	. += owns(nameof(inserted_gps), policy = OWN_SPILL)
 	. += owns(nameof(crystals), policy = OWN_SPILL)
 
 // its crystals are ejected.
@@ -45,34 +63,26 @@
 	if(Adjacent(user))
 		. += "There are [length(crystals) ? length(crystals) : "no"] bluespace crystal\s in the crystal slots."
 
-/obj/machinery/computer/telescience/Initialize(mapload)
-	. = ..()
+/obj/machinery/computer/telescience/proc/calibrate_and_stock(datum/act/timer/A)
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		own_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
-
-/obj/machinery/computer/telescience/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/telescience_insert_crystal,
-		/datum/interaction/machine_item/telescience_insert_gps,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Old attackby: the bluespace crystal branch.
-/datum/interaction/machine_item/telescience_insert_crystal
-	id = "telescience_insert_crystal"
-	name = "Insert crystal"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/bluespace_crystal
-	effect = /obj/machinery/computer/telescience/proc/interaction_insert_crystal
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/computer/telescience/proc/has_crystal_slot))
+		rel_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /// Requirement: a free crystal slot.
 /obj/machinery/computer/telescience/proc/has_crystal_slot(mob/user, atom/target, obj/item/held)
 	return length(crystals) >= max_crystals ? "there are not enough crystal slots" : TRUE
 
-/obj/machinery/computer/telescience/proc/interaction_insert_crystal(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* has_crystal_slot): the legacy check answers TRUE to pass.
+/obj/machinery/computer/telescience/proc/has_crystal_slot_holds(datum/act/op/A)
+	var/answer = has_crystal_slot(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why has_crystal_slot_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/telescience/proc/interaction_insert_crystal(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!user.unEquip(W))
 		return TRUE
 	W.forceMove(src)
@@ -80,39 +90,31 @@
 	act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s crystal slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s crystal slot."))
 	return TRUE
 
-/// Old attackby: the GPS branch.
-/datum/interaction/machine_item/telescience_insert_gps
-	id = "telescience_insert_gps"
-	name = "Insert GPS"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/gps
-	effect = /obj/machinery/computer/telescience/proc/interaction_insert_gps
-
-/obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/telescience/proc/interaction_insert_gps(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!inserted_gps)
-		if(!own_set(src, nameof(src.inserted_gps), W, user = user))
+		if(!move_into(src, nameof(src.inserted_gps), W, user))
 			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
 	return TRUE
 
-/obj/machinery/computer/telescience/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/computer/telescience/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	rel_set(src, nameof(telepad), multitool.connectable())
 	rel_clear(multitool, nameof(multitool.connectable))
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)
 
-DECLARE_UI(/obj/machinery/computer/telescience, "TelesciConsole")
-
-UI_DATA_REPLACE(/obj/machinery/computer/telescience, "merge:ui_data_obj_machinery_computer_telescience{noTelepad:num,insertedGps:unknown,rotation:num,currentZ:num,cooldown:num,crystalCount:num,maxCrystals:num,maxPossibleDistance:num,maxAllowedDistance:unknown,distance:num,tempMsg:text,sectorOptions:unknown,lastTeleData:list}")
-
-/// The computed part of /obj/machinery/computer/telescience's window data (declared on its UI_DATA row).
-/obj/machinery/computer/telescience/proc/ui_data_obj_machinery_computer_telescience(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/computer/telescience's window data.
+/obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!telepad())
 		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
@@ -146,41 +148,44 @@ UI_DATA_REPLACE(/obj/machinery/computer/telescience, "merge:ui_data_obj_machiner
 
 	return data
 
-/obj/machinery/computer/telescience/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/telescience/proc/ui_gate(datum/act/op/A)
 	if(!telepad() || telepad().panel_open)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setrotation", ui_act_setrotation, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setrotation)
-	rotation = CLAMP(params["val"], -900, 900)
+/obj/machinery/computer/telescience/proc/ui_act_setrotation(datum/act/op/A, val)
+	if(!ui_gate(A))
+		return FALSE
+	rotation = CLAMP(val, -900, 900)
 	rotation = round(rotation, 0.01)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setdistance", ui_act_setdistance, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setdistance)
-	distance = CLAMP(params["val"], 1, get_max_allowed_distance())
+/obj/machinery/computer/telescience/proc/ui_act_setdistance(datum/act/op/A, val)
+	if(!ui_gate(A))
+		return FALSE
+	distance = CLAMP(val, 1, get_max_allowed_distance())
 	distance = FLOOR(distance, 1)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setz", ui_act_setz, UI_ARG_NUM("setz"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setz)
-	var/new_z = params["setz"]
+/obj/machinery/computer/telescience/proc/ui_act_setz(datum/act/op/A, setz)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_z = setz
 	if(new_z in using_map.player_levels)
 		z_co = new_z
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "ejectGPS", ui_act_ejectgps)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_ejectgps)
+/obj/machinery/computer/telescience/proc/ui_act_ejectgps(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
-		own_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
+		rel_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setMemory", ui_act_setmemory)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setmemory)
+/obj/machinery/computer/telescience/proc/ui_act_setmemory(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(last_target() && inserted_gps)
 		// TODO - What was this even supposed to do??
 		//inserted_gps.locked_location = last_target
@@ -189,27 +194,33 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setmemory)
 		temp_msg = "Function Deprecated. No action taken."
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "send", ui_act_send)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_send)
+/obj/machinery/computer/telescience/proc/ui_act_send(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	sending = 1
-	teleport(ui.user)
+	teleport(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "receive", ui_act_receive)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_receive)
+/obj/machinery/computer/telescience/proc/ui_act_receive(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	sending = 0
-	teleport(ui.user)
+	teleport(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "recal", ui_act_recal)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_recal)
+/obj/machinery/computer/telescience/proc/ui_act_recal(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	recalibrate()
 	sparks()
 	temp_msg = "NOTICE: Calibration successful."
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
+/obj/machinery/computer/telescience/proc/ui_act_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	eject()
 	temp_msg = "NOTICE: Bluespace crystals ejected."
 	return TRUE
@@ -266,7 +277,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
-		own_set(src, nameof(last_tele_data), proj_data)
+		rel_set(src, nameof(last_tele_data), proj_data)
 
 		var/trueX = proj_data.dest_x
 		var/trueY = proj_data.dest_y
@@ -287,7 +298,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 			teleporting = 1
 			temp_msg = "Powering up bluespace crystals. Please wait."
 
-		om_after(src, spawn_time, PROC_REF(finish_teleport), user, trueDistance, spawn_time, target, trueX, trueY) // in deciseconds
+		after(src, spawn_time, PROC_REF(finish_teleport), with = list(user, trueDistance, spawn_time, target, trueX, trueY)) // in deciseconds
 
 /obj/machinery/computer/telescience/proc/teleport(mob/user)
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown))
@@ -317,7 +328,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I as anything in own_take_all(src, nameof(crystals)))
+	for(var/obj/item/I as anything in rel_take_all(src, nameof(crystals)))
 		I.forceMove(src.loc)
 	distance = 0
 
@@ -411,8 +422,8 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 		sent_atoms += ROI
 		do_teleport(ROI, dest)
 	// Either works for the experiment scan, so fire signals on both
-	OM_EMIT(src, /datum/om/event/telesci_teleport, sent_atoms, target, sending)
-	OM_EMIT(telepad(), /datum/om/event/telesci_teleport, sent_atoms, target, sending)
+	PUBLISH_LEGACY(src, /datum/notice/telesci_teleport, sent_atoms, target, sending)
+	PUBLISH_LEGACY(telepad(), /datum/notice/telesci_teleport, sent_atoms, target, sending)
 
 	if (!dd_hassuffix(log_msg, ", "))
 		log_msg += "nothing"

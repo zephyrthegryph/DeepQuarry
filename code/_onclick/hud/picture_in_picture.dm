@@ -15,10 +15,17 @@
 
 	var/mutable_appearance/standard_background
 
+CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
+	owns_one(nameof(button_expand), /atom/movable/screen/component_button)
+	owns_one(nameof(button_pop), /atom/movable/screen/component_button)
+	owns_one(nameof(button_shrink), /atom/movable/screen/component_button)
+	owns_one(nameof(button_x), /atom/movable/screen/component_button)
+	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg, starts = /atom/movable/screen/map_view_tg, starts_args = NO_LOC)
+
+// ALLOW(init/INSTANCE_STATE): its map view is made per window and named after this instance
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()
-	own_set(src, nameof(popup_screen), new /atom/movable/screen/map_view_tg)
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
@@ -28,16 +35,16 @@
 		unshow_to(C)
 	..()
 
-/atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params)
+/atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
-		usr.client?.close_popup("camera-[REF(src)]")
-		qdel(src)
+		user?.client?.close_popup("camera-[REF(src)]")
+		spent(src, user)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)
 	else if(component == button_shrink)
 		set_view_size(width-1, height-1)
 	else if(component == button_pop)
-		pop_to_screen()
+		pop_to_screen(user)
 
 /atom/movable/screen/movable/pic_in_pic/proc/make_backgrounds()
 	standard_background = new /mutable_appearance()
@@ -62,7 +69,7 @@
 	add_overlay(move_tab)
 
 	if(!button_x)
-		own_set(src, nameof(button_x), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_x), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "close"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -75,7 +82,7 @@
 	vis_contents += button_x
 
 	if(!button_expand)
-		own_set(src, nameof(button_expand), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_expand), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "expand"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -88,7 +95,7 @@
 	vis_contents += button_expand
 
 	if(!button_shrink)
-		own_set(src, nameof(button_shrink), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_shrink), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "shrink"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -101,7 +108,7 @@
 	vis_contents += button_shrink
 
 	if(!button_pop)
-		own_set(src, nameof(button_pop), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_pop), make(/atom/movable/screen/component_button, at = null, parent = src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "pop"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -168,17 +175,21 @@
 		LAZYREMOVE(shown_to, C)
 		C.screen -= src
 
-/atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen()
-	if(usr.client.screen_maps["camera-[REF(src)]_map"])
+/atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen(mob/user)
+	if(!user?.client)
 		return
-	usr.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
-	popup_screen.display_to(usr)
-	om_hook(usr, /datum/om/event/popup_cleared, src, PROC_REF(on_popup_clear))
+	if(user.client.screen_maps["camera-[REF(src)]_map"])
+		return
+	user.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
+	popup_screen.display_to(user)
+	observe(user, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))
 
-/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(mob/source, datum/om/event/popup_cleared/event)
-	EVENT_HANDLER
+/atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/source = A.target
+	var/datum/notice/popup_cleared/event = A
 	if(event.window_id == "camera-[REF(src)]")
-		om_unhook(source, /datum/om/event/popup_cleared, src)
+		unobserve(source, /datum/notice/popup_cleared, src)
 		popup_screen.hide_from(source)
 
 /// The atom this view is centred on (a relation view: null once that is deleted).

@@ -27,13 +27,13 @@
 	var/delivered = cell.use(100)
 	TEST_ASSERT_EQUAL(delivered, 100, "The requested charge must reach the load")
 	TEST_ASSERT(before - cell.charge >= delivered, "Conductor losses must never multiply stored energy")
-	TEST_ASSERT(abs((before - cell.charge - delivered) / CELLRATE - cell.material_service.loss_joules) < 0.01, "Undelivered cell energy must be accounted as heat")
+	TEST_ASSERT(abs((before - cell.charge - delivered) / CELLRATE - material_service_of(cell).loss_joules) < 0.01, "Undelivered cell energy must be accounted as heat")
 	qdel(cell)
 
 /datum/unit_test/dq_material_design_costs_every_role
 
 /datum/unit_test/dq_material_design_costs_every_role/Run()
-	var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id("basic_cell")
+	var/datum/design_techweb/design = SSresearch.techweb_design_by_id("basic_cell")
 	TEST_ASSERT(istype(design), "The ordinary cell design must receive a multipart blueprint")
 	var/list/choices = list(
 		MATERIAL_ROLE_CONDUCTOR = MAT_SILVER,
@@ -71,8 +71,8 @@
 /datum/unit_test/dq_material_blueprint_covers_catalogue/Run()
 	var/eligible = 0
 	var/covered = 0
-	for(var/design_id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id]
+	for(var/design_id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
 		if(!length(design.standard_material_costs))
 			continue
 		eligible++
@@ -112,20 +112,20 @@
 
 /datum/unit_test/dq_material_duplicate_catalogue_removed/Run()
 	for(var/removed_id in list("material_knife", "material_power_cell", "material_pipe", "material_capacitor"))
-		TEST_ASSERT(!GLOB.research_service.techweb_designs[removed_id], "Duplicate special recipe [removed_id] must stay deleted")
+		TEST_ASSERT(!SSresearch.techweb_designs[removed_id], "Duplicate special recipe [removed_id] must stay deleted")
 	for(var/ordinary_id in list("basic_cell", "crowbar", "scalpel"))
-		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(ordinary_id)
+		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(ordinary_id)
 		TEST_ASSERT(design?.material_template, "Ordinary recipe [ordinary_id] must provide construction customization")
-	var/datum/design_techweb/capacitor = GLOB.research_service.techweb_design_by_id("basic_capacitor")
+	var/datum/design_techweb/capacitor = SSresearch.techweb_design_by_id("basic_capacitor")
 	TEST_ASSERT(material_template_singleton(capacitor.material_template).roles[MATERIAL_ROLE_DIELECTRIC], "A capacitor must expose a dielectric, not a generic machine component")
-	var/datum/design_techweb/magazine = GLOB.research_service.techweb_design_by_id("pistol_mag_9mm")
+	var/datum/design_techweb/magazine = SSresearch.techweb_design_by_id("pistol_mag_9mm")
 	TEST_ASSERT(material_template_singleton(magazine.material_template).roles[MATERIAL_ROLE_FEED] && material_template_singleton(magazine.material_template).roles[MATERIAL_ROLE_SPRING], "A magazine must expose its feed mechanism and spring, not projectile parts")
 	for(var/simple_id in list("kitchen_knife", "fork", "spoon", "plastic_knife", "plastic_fork", "plastic_spoon", "spring", "gear"))
-		var/datum/design_techweb/simple_design = GLOB.research_service.techweb_design_by_id(simple_id)
+		var/datum/design_techweb/simple_design = SSresearch.techweb_design_by_id(simple_id)
 		TEST_ASSERT_EQUAL(length(material_template_singleton(simple_design.material_template).roles), 1, "Simple formed product [simple_id] must have exactly one selectable material")
 		TEST_ASSERT(material_template_singleton(simple_design.material_template).roles[MATERIAL_ROLE_BODY], "Simple formed product [simple_id] must expose that choice as its material")
 	for(var/electronic_id in list("multitool", "atmosanalyzer", "medical_analyzer"))
-		var/datum/design_techweb/electronic = GLOB.research_service.techweb_design_by_id(electronic_id)
+		var/datum/design_techweb/electronic = SSresearch.techweb_design_by_id(electronic_id)
 		TEST_ASSERT_EQUAL(length(material_template_singleton(electronic.material_template).roles), 1, "Generic electronic [electronic_id] must expose only its casing")
 		TEST_ASSERT(material_template_singleton(electronic.material_template).roles[MATERIAL_ROLE_STRUCTURE], "Generic electronic [electronic_id] must label its choice as casing")
 
@@ -154,7 +154,7 @@
 			var/obj/item/changed = new(run_loc_floor_bottom_left)
 			TEST_ASSERT(baseline.apply_material_construction(defaults, slots.type, slots_total), "Baseline [application]/[role] must construct")
 			TEST_ASSERT(changed.apply_material_construction(variant, slots.type, slots_total), "Variant [application]/[role] must construct")
-			var/changed_physics = baseline.max_integrity != changed.max_integrity || baseline.throw_speed != changed.throw_speed || baseline.throw_range != changed.throw_range || baseline.siemens_coefficient != changed.siemens_coefficient || baseline.material_effective_density != changed.material_effective_density
+			var/changed_physics = baseline.max_integrity != changed.max_integrity || baseline.throw_speed != changed.throw_speed || baseline.throw_range != changed.throw_range || protection_of(baseline).siemens != protection_of(changed).siemens || material_build_view(baseline).effective_density != material_build_view(changed).effective_density
 			TEST_ASSERT(changed_physics, "Changing [application]'s [role] must alter a live physical property")
 			qdel(baseline)
 			qdel(changed)
@@ -185,11 +185,15 @@
 	)
 	var/obj/item/pipe/fitting = new(test_turf, /obj/machinery/atmospherics/pipe/simple, NORTH)
 	TEST_ASSERT(fitting.apply_material_construction(choices, slots.type, slots_total), "A pipe fitting must accept a complete pressure assembly")
+	// build_pipe() hands the fitting's construction over (copy_material_construction_from()) and then connects the
+	// pipe; a lone pipe has no neighbour to join and deletes itself, and its material records go with it, so the
+	// hand-over is read from a pipe that is not connected.
 	var/obj/machinery/atmospherics/pipe/simple/installed = new(test_turf)
-	fitting.build_pipe(installed)
+	installed.copy_material_construction_from(fitting)
 	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_STRUCTURE)?.name, MAT_DIAMOND, "Installation must preserve the load-bearing pipe shell")
 	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_LINER)?.name, MAT_GLASS, "Installation must preserve the gas-contact liner")
 	TEST_ASSERT_EQUAL(installed.material_for_role(MATERIAL_ROLE_INSULATION)?.name, MAT_PLASTIC, "Installation must preserve pipe insulation")
+	fitting.build_pipe(new /obj/machinery/atmospherics/pipe/simple(test_turf))
 	qdel(fitting)
 	qdel(installed)
 
@@ -233,7 +237,7 @@
 	var/slots_total = SHEET_MATERIAL_AMOUNT
 	part.apply_material_construction(list(MATERIAL_ROLE_DIELECTRIC = MAT_DIAMOND), slots.type, slots_total)
 	own_clear(machine, nameof(machine.component_parts), OWN_DELETE)
-	own_add(machine, nameof(machine.component_parts), part)
+	rel_add(machine, nameof(machine.component_parts), part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
 	TEST_ASSERT(length(machine.material_component_manifest), "Machine material composition must remain inspectable after the frame is consumed")
 	TEST_ASSERT(machine.material_emp_resistance > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
@@ -245,9 +249,9 @@
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/obj/machinery/portable_atmospherics/canister/vessel = new(test_turf)
 	var/datum/gas_mixture/outside = new(2500)
-	vessel.air_contents.set_temperature(600)
+	heat_set(vessel.air_contents, 600, HEAT_SOURCE_OTHER)
 	vessel.air_contents.adjust_moles(/datum/gas/oxygen, 100)
-	outside.set_temperature(300)
+	heat_set(outside, 300, HEAT_SOURCE_OTHER)
 	outside.adjust_moles(/datum/gas/oxygen, 100)
 	var/energy_before = vessel.air_contents.thermal_energy() + outside.thermal_energy()
 	TEST_ASSERT(vessel.process_material_environment(vessel.air_contents, outside, 1, vessel.maximum_pressure, MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS), "A temperature differential must keep the environmental model active")
@@ -269,8 +273,8 @@
 	clean_outside.adjust_moles(/datum/gas/nitrogen, 100)
 	vessel.air_contents.adjust_moles(/datum/gas/plasma, 100)
 	vessel.process_material_environment(vessel.air_contents, clean_outside, 5, vessel.maximum_pressure, MATERIAL_CANISTER_REFERENCE_RADIUS, MATERIAL_CANISTER_REFERENCE_THICKNESS, FALSE)
-	TEST_ASSERT(vessel.material_environment_liner_integrity < 100, "Corrosive contents must attack the wetted liner")
-	TEST_ASSERT_EQUAL(vessel.material_environment_exterior_integrity, 100, "Clean ambient air must not attack an inert exterior")
+	TEST_ASSERT(material_assembly_view(vessel).liner_integrity < 100, "Corrosive contents must attack the wetted liner")
+	TEST_ASSERT_EQUAL(material_assembly_view(vessel).exterior_integrity, 100, "Clean ambient air must not attack an inert exterior")
 	qdel(clean_outside)
 	qdel(vessel)
 
@@ -290,7 +294,7 @@
 	for(var/obj/infrastructure as anything in objects)
 		TEST_ASSERT(infrastructure.material_for_role(MATERIAL_ROLE_STRUCTURE) || infrastructure.material_for_role(MATERIAL_ROLE_CONDUCTOR), "[infrastructure.type] must initialize with a physical material assembly")
 		if(infrastructure.type == /obj/machinery)
-			TEST_ASSERT(!infrastructure.material_service, "Ordinary legacy machinery must not enter continuous material exposure merely because it has default parts")
+			TEST_ASSERT(!material_service_of(infrastructure), "Ordinary legacy machinery must not enter continuous material exposure merely because it has default parts")
 		qdel(infrastructure)
 
 /datum/unit_test/dq_material_hot_steel_loses_pressure_capacity
@@ -310,18 +314,18 @@
 	var/obj/vessel = new(run_loc_floor_bottom_left)
 	var/datum/gas_mixture/internal = new(CELL_VOLUME)
 	var/datum/gas_mixture/external = new(CELL_VOLUME)
-	internal.set_temperature(T20C)
-	external.set_temperature(T20C)
+	heat_set(internal, T20C, HEAT_SOURCE_OTHER)
+	heat_set(external, T20C, HEAT_SOURCE_OTHER)
 	internal.adjust_moles(/datum/gas/nitrogen, 850 * CELL_VOLUME / (R_IDEAL_GAS_EQUATION * T20C))
 	vessel.process_material_environment(internal, external, 120, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
-	TEST_ASSERT_EQUAL(vessel.material_environment_fatigue, 0, "Pressure inside the continuous operating envelope accumulated permanent fatigue")
+	TEST_ASSERT_EQUAL(material_assembly_view(vessel).fatigue, 0, "Pressure inside the continuous operating envelope accumulated permanent fatigue")
 	internal.adjust_moles(/datum/gas/nitrogen, 100 * CELL_VOLUME / (R_IDEAL_GAS_EQUATION * T20C))
 	vessel.process_material_environment(internal, external, 60, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
-	TEST_ASSERT(vessel.material_environment_fatigue > 0, "Sustained pressure above the fatigue threshold produced no wear")
-	var/fatigue_before_recovery = vessel.material_environment_fatigue
+	TEST_ASSERT(material_assembly_view(vessel).fatigue > 0, "Sustained pressure above the fatigue threshold produced no wear")
+	var/fatigue_before_recovery = material_assembly_view(vessel).fatigue
 	internal.remove_ratio(0.5)
 	vessel.process_material_environment(internal, external, 10, 1000, MATERIAL_PIPE_REFERENCE_RADIUS, MATERIAL_PIPE_REFERENCE_THICKNESS)
-	TEST_ASSERT(vessel.material_environment_fatigue < fatigue_before_recovery, "Returning below the recovery threshold did not relieve recent pressure fatigue")
+	TEST_ASSERT(material_assembly_view(vessel).fatigue < fatigue_before_recovery, "Returning below the recovery threshold did not relieve recent pressure fatigue")
 	qdel(internal)
 	qdel(external)
 	qdel(vessel)
@@ -330,9 +334,9 @@
 
 /datum/unit_test/dq_material_cell_delivery_and_rebuild/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
-	cell.material_discharge_limit = 10
+	cell.set_material_discharge_limit(10)
 	cell.material_discharge_credit = 10
-	cell.material_discharge_updated = world.time
+	cell.set_material_discharge_updated(world.time)
 	var/before = cell.charge
 	TEST_ASSERT(!cell.checked_use(20), "An action requiring more than the conductor can deliver must fail")
 	TEST_ASSERT_EQUAL(cell.charge, before, "Failed all-or-nothing requests must consume no charge")
@@ -356,15 +360,15 @@
 	var/obj/item/reagent_containers/glass/beaker/vessel = new(test_turf)
 	vessel.apply_material_construction(list(MATERIAL_ROLE_LINER = MAT_WOOD), material_template_path_for_application(MATERIAL_APPLICATION_CONTAINER), 2000)
 	vessel.reagents.add_reagent(REAGENT_ID_SACID, 10)
-	var/datum/material_service/service = vessel.material_service
+	var/datum/material_service/service = material_service_of(vessel)
 	service.contents_changed()
-	var/before = vessel.material_environment_liner_integrity
+	var/before = material_assembly_view(vessel).liner_integrity
 	service.contents_changed()
 	service.contents_changed()
-	TEST_ASSERT_EQUAL(vessel.material_environment_liner_integrity, before, "Repeated observations must not advance corrosion")
+	TEST_ASSERT_EQUAL(material_assembly_view(vessel).liner_integrity, before, "Repeated observations must not advance corrosion")
 	service.chemical_last_update = world.time - 10 SECONDS
 	service.settle_chemical()
-	TEST_ASSERT(vessel.material_environment_liner_integrity < before, "Unchanged acid must corrode over elapsed time")
+	TEST_ASSERT(material_assembly_view(vessel).liner_integrity < before, "Unchanged acid must corrode over elapsed time")
 	var/cold_rate = service.chemical_rate
 	service.add_heat(service.thermal_mass() * 300)
 	TEST_ASSERT(service.chemical_rate > cold_rate * 1.9, "Heating unchanged chemicals must invalidate the cached corrosion rate immediately")
@@ -406,13 +410,15 @@
 
 /datum/unit_test/dq_material_thermal_buffer_conserves_energy/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
-	var/datum/material_service/service = cell.material_service
-	var/before = service.temperature * service.thermal_mass() + service.buffer_energy
+	var/datum/material_service/service = material_service_of(cell)
+	// The heat lives in Rust (f64) and reaches DM as f32: compare to a millionth of the energy the assembly holds.
+	var/before = service.temperature() * service.thermal_mass() + service.buffer_energy()
+	var/tolerance = max(0.01, abs(before) * 0.000001)
 	service.add_heat(12000)
-	var/after = service.temperature * service.thermal_mass() + service.buffer_energy
-	TEST_ASSERT(abs(after - before - 12000) < 0.01, "Heating must add exactly the supplied energy")
+	var/after = service.temperature() * service.thermal_mass() + service.buffer_energy()
+	TEST_ASSERT(abs(after - before - 12000) < tolerance, "Heating must add exactly the supplied energy ([after - before] J)")
 	service.add_heat(-12000)
-	TEST_ASSERT(abs(service.temperature * service.thermal_mass() + service.buffer_energy - before) < 0.01, "Cooling must remove exactly the supplied energy")
+	TEST_ASSERT(abs(service.temperature() * service.thermal_mass() + service.buffer_energy() - before) < tolerance, "Cooling must remove exactly the supplied energy")
 	qdel(cell)
 
 /datum/unit_test/dq_material_pump_parts_change_operation
@@ -451,18 +457,19 @@
 	var/datum/material/conductor_type = /datum/material/engineering_test_conductor
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
-	var/datum/material_service/service = cell.material_service
-	TEST_ASSERT_EQUAL(service.buffer_energy, 50000, "Room-temperature cryogenic stock must require cooling, not arrive with free cold capacity")
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
-	TEST_ASSERT(abs(service.temperature - 240) < 0.01 && service.buffer_energy == 0, "Actual removed heat must cool and recharge the phase buffer")
-	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature, 5)
-	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature, 50)
+	var/datum/material_service/service = material_service_of(cell)
+	TEST_ASSERT_EQUAL(service.buffer_energy(), 50000, "Room-temperature cryogenic stock must require cooling, not arrive with free cold capacity")
+	service.add_heat(-(service.temperature() - 240) * service.thermal_mass() - service.buffer_energy())
+	TEST_ASSERT(abs(service.temperature() - 240) < 0.01 && service.buffer_energy() == 0, "Actual removed heat must cool and recharge the phase buffer")
+	var/cold = cell.construction_electrical_resistance(1, 1, service.temperature(), 5)
+	var/quenched = cell.construction_electrical_resistance(1, 1, service.temperature(), 50)
 	TEST_ASSERT(quenched > cold * 100, "Exceeding critical current must quench the conductor even while cold")
 	service.add_heat(10 * service.thermal_mass() + 25000)
-	TEST_ASSERT(abs(service.temperature - 250) < 0.01 && abs(service.buffer_energy - 25000) < 0.01, "The finite buffer must hold temperature while absorbing real operating heat")
-	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature, 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
+	// The heat crosses from Rust as f32: a buffer within a tenth of a millikelvin's worth of the assembly's heat is exact.
+	TEST_ASSERT(abs(service.temperature() - 250) < 0.01 && abs(service.buffer_energy() - 25000) < max(0.01, service.thermal_mass() * 0.0001), "The finite buffer must hold temperature while absorbing real operating heat ([service.temperature()] K, [service.buffer_energy()] J buffered)")
+	TEST_ASSERT(cell.construction_electrical_resistance(1, 1, service.temperature(), 5) <= cold, "A suitable phase plateau must preserve superconducting operation")
 	service.add_heat(25000 + 20 * service.thermal_mass())
-	TEST_ASSERT(service.temperature > 260 && cell.construction_electrical_resistance(1, 1, service.temperature, 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
+	TEST_ASSERT(service.temperature() > 260 && cell.construction_electrical_resistance(1, 1, service.temperature(), 5) > cold * 100, "Exhausted cooling must expose the thermal limit")
 	qdel(cell)
 
 /datum/unit_test/dq_superconducting_cell_automatic_envelope
@@ -472,15 +479,15 @@
 	var/datum/material/conductor_type = /datum/material/engineering_test_conductor
 	var/datum/material/buffer_type = /datum/material/engineering_test_buffer
 	cell.apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = initial(conductor_type.name), MATERIAL_ROLE_THERMAL = initial(buffer_type.name)), material_template_path_for_application(MATERIAL_APPLICATION_CELL), 2000)
-	var/datum/material_service/service = cell.material_service
-	service.add_heat(-(service.temperature - 240) * service.thermal_mass() - service.buffer_energy)
+	var/datum/material_service/service = material_service_of(cell)
+	service.add_heat(-(service.temperature() - 240) * service.thermal_mass() - service.buffer_energy())
 	var/envelope = cell.material_output_envelope(10)
 	TEST_ASSERT(envelope > 1, "A physically cold superconductor must automatically expose enhanced output")
 	var/charge_before = cell.charge
 	TEST_ASSERT(cell.checked_use(10 * envelope), "The enhanced envelope must still debit real stored energy")
 	cell.material_record_enhanced_output(10, envelope)
 	TEST_ASSERT(cell.charge < charge_before - 10, "Enhanced output must cost more energy than an ordinary action")
-	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy, 0))
+	service.add_heat((initial(conductor_type.critical_temperature) + 1 - service.temperature()) * service.thermal_mass() + max(initial(buffer_type.phase_change_capacity) - service.buffer_energy(), 0))
 	TEST_ASSERT_EQUAL(cell.material_output_envelope(10), 1, "A hot or quenched conductor must fall back to ordinary device output")
 	qdel(cell)
 
@@ -496,13 +503,13 @@
 	var/turf/destination = get_step(start, EAST) || get_step(start, WEST)
 	TEST_ASSERT(start && destination && start != destination, "Movement coverage requires two real map turfs")
 	var/obj/item/cell/cell = new(start)
-	var/datum/material_service/service = cell.material_service
+	var/datum/material_service/service = material_service_of(cell)
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
-	for(var/subscribed_id in service.mixture_ids)
-		TEST_ASSERT(om_watch_armed(service, "gas[subscribed_id]"), "Material subscriptions must use the coalesced mixture registry")
+	TEST_ASSERT_EQUAL(length(service.gas_watches), length(service.mixture_ids), "Material subscriptions must be one native gas watch per watched mixture")
+	var/list/watches = service.gas_watches.Copy()
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
-	om_cancel_after(service, /datum/om/behaviour/material_service)
+	cancel_after(service, "material_service")
 	service.timer = FALSE
 	service.active = FALSE
 	service.last_update = world.time - 10 MINUTES
@@ -511,22 +518,22 @@
 	var/first_due = service.next_update
 	for(var/i in 1 to 1000)
 		service.environment_changed(FALSE)
-	TEST_ASSERT(om_deadline_pending(service, /datum/om/behaviour/material_service), "A changed environment must queue exposure work")
+	TEST_ASSERT(after_pending(service, "material_service"), "A changed environment must queue exposure work")
 	TEST_ASSERT(service.next_update <= first_due || !first_due, "Repeated gas publications must coalesce into one queued exposure, not push it back")
 	cell.forceMove(destination)
 	service.rebind()
 	var/list/ids = service.mixture_ids.Copy()
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
-	TEST_ASSERT(!om_deadline_pending(service, /datum/om/behaviour/material_service), "Deleting an assembly must remove its queued exposure work")
-	for(var/id in ids)
-		TEST_ASSERT(!GLOB.om_gas_watches_by_mixture["[id]"], "Deleted assemblies must release mixture subscriptions")
+	TEST_ASSERT(!after_pending(service, "material_service"), "Deleting an assembly must remove its queued exposure work")
+	for(var/datum/native_watch/gas/W as anything in watches)
+		TEST_ASSERT(QDELETED(W) || !W.handle, "Deleted assemblies must release mixture subscriptions")
 
 /datum/unit_test/dq_material_gas_publication_filtering
 
 /datum/unit_test/dq_material_gas_publication_filtering/Run()
 	var/obj/machinery/machine = new(run_loc_floor_bottom_left)
-	TEST_ASSERT(!machine.material_service, "An idle ordinary machine must not allocate material exposure state")
+	TEST_ASSERT(!material_service_of(machine), "An idle ordinary machine must not allocate material exposure state")
 	var/datum/material_service/service = machine.enable_material_service()
 	TEST_ASSERT(service, "Explicit diagnostic monitoring must expose material service state")
 	TEST_ASSERT(!(service.gas_dependency_interest_mask() & GAS_DEPENDENCY_PRESSURE), "An ordinary housing must not subscribe to irrelevant turf pressure churn")
@@ -552,21 +559,21 @@
 /datum/unit_test/dq_material_service_due_heap
 
 /datum/unit_test/dq_material_service_due_heap/Run()
-	// Exposure work is one core deadline per service (om_after): scheduling again only ever moves
+	// Exposure work is one core deadline per service (after()): scheduling again only ever moves
 	// it earlier, and deleting the assembly cancels it.
 	var/obj/item/cell/a = new(run_loc_floor_bottom_left)
-	var/datum/material_service/a_service = a.material_service
-	om_cancel_after(a_service, /datum/om/behaviour/material_service)
+	var/datum/material_service/a_service = material_service_of(a)
+	cancel_after(a_service, "material_service")
 	a_service.timer = FALSE
 	a_service.schedule(10 SECONDS)
-	TEST_ASSERT(om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Scheduling must queue one exposure deadline")
+	TEST_ASSERT(after_pending(a_service, "material_service"), "Scheduling must queue one exposure deadline")
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "The deadline is when it was asked for")
 	a_service.schedule(20 SECONDS)
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 10 SECONDS, "A later request must not push an earlier deadline back")
 	a_service.schedule(1 SECOND)
 	TEST_ASSERT_EQUAL(a_service.next_update, world.time + 1 SECOND, "An accelerated environmental event must move the deadline earlier")
 	qdel(a)
-	TEST_ASSERT(!om_deadline_pending(a_service, /datum/om/behaviour/material_service), "Deleting a queued assembly must leave no deadline")
+	TEST_ASSERT(!after_pending(a_service, "material_service"), "Deleting a queued assembly must leave no deadline")
 
 /datum/unit_test/dq_material_corrosion_interval_invariance
 
@@ -580,7 +587,7 @@
 	for(var/index in 1 to 10)
 		a.process_material_environment(a.air_contents, null, 1, 0, 1, 1, FALSE)
 	b.process_material_environment(b.air_contents, null, 10, 0, 1, 1, FALSE)
-	TEST_ASSERT(abs(a.material_environment_liner_integrity - b.material_environment_liner_integrity) < 0.001, "Corrosion must depend on duration rather than tick count")
+	TEST_ASSERT(abs(material_assembly_view(a).liner_integrity - material_assembly_view(b).liner_integrity) < 0.001, "Corrosion must depend on duration rather than tick count")
 	qdel(a)
 	qdel(b)
 
@@ -591,12 +598,12 @@
 	pump.enable_material_service()
 	pump.air1.adjust_moles(/datum/gas/nitrogen, 100)
 	pump.air2.adjust_moles(/datum/gas/nitrogen, 200)
-	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.temperature * pump.material_service.thermal_mass() + pump.material_service.buffer_energy
+	var/before = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature() * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy()
 	var/input = pump_gas(pump, pump.air1, pump.air2, 1, 7500)
 	TEST_ASSERT(input > 0, "Pumping into higher pressure must require positive input energy")
-	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + pump.material_service.temperature * pump.material_service.thermal_mass() + pump.material_service.buffer_energy
+	var/after = pump.air1.thermal_energy() + pump.air2.thermal_energy() + material_service_of(pump).temperature() * material_service_of(pump).thermal_mass() + material_service_of(pump).buffer_energy()
 	TEST_ASSERT(abs(after - before - input) < max(1, input * 0.001), "Delivered compression work plus shell losses must equal paid pump energy")
-	TEST_ASSERT(abs(pump.material_service.input_joules - pump.material_service.output_joules - pump.material_service.loss_joules) < 0.01, "The pump operating ledger must close")
+	TEST_ASSERT(abs(material_service_of(pump).input_joules - material_service_of(pump).output_joules - material_service_of(pump).loss_joules) < 0.01, "The pump operating ledger must close")
 	qdel(pump)
 
 /datum/unit_test/dq_material_emitter_energy_conservation
@@ -610,7 +617,7 @@
 	TEST_ASSERT(test_turf, "A real beam test requires an in-bounds clear firing lane")
 	var/obj/machinery/target = new(get_step(test_turf, NORTH))
 	target.set_density(TRUE)
-	target.max_integrity = 10000
+	target.set_max_integrity(10000)
 	target.update_integrity(10000)
 	var/obj/machinery/power/emitter/emitter = new(test_turf)
 	emitter.set_dir(NORTH)
@@ -621,11 +628,11 @@
 	TEST_ASSERT(abs(emitter.emitter_output_limit() - 1) < 0.001, "Default glass and copper must support the emitter's rated output")
 	emitter.material_last_charge = world.time - 10 SECONDS
 	emitter.charge_emitter()
-	var/datum/material_service/service = emitter.material_service
+	var/datum/material_service/service = material_service_of(emitter)
 	TEST_ASSERT(service.input_joules > 0 && emitter.material_stored_energy > 0, "A real network draw must charge the emitter reservoir")
 	COOLDOWN_RESET(emitter, shot_cooldown)
-	emitter.machine_step()
-	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stat=[emitter.stat], stored=[emitter.material_stored_energy], rating=[emitter.active_power_usage], efficiency=[emitter.emitter_efficiency()], time=[world.time], cooldown=[emitter.shot_cooldown], delay=[emitter.fire_delay])")
+	emitter.emitter_step(null)
+	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stored=[emitter.material_stored_energy], rating=[power_of(emitter).active], efficiency=[emitter.emitter_efficiency()], time=[world.time], cooldown=[emitter.shot_cooldown], delay=[emitter.fire_delay])")
 	TEST_ASSERT(abs(service.input_joules - emitter.material_beam_joules - service.loss_joules - emitter.material_stored_energy) < 1, "Input must equal beam energy plus heat plus remaining stored energy")
 	TEST_ASSERT(target.get_integrity() < target.max_integrity, "The accounted beam must physically hit its target")
 	for(var/obj/item/projectile/beam/emitter/beam in range(2, emitter))
@@ -674,7 +681,7 @@
 	var/obj/item/stack/material/steel/stock = allocate(/obj/item/stack/material/steel, test_turf, 2)
 	stock.forceMove(furnace)
 	own_clear(furnace, nameof(furnace.feedstock), OWN_DELETE)
-	own_add(furnace, nameof(furnace.feedstock), stock)
+	rel_add(furnace, nameof(furnace.feedstock), stock)
 	furnace.finish_firing()
 	own(furnace.output_stock())
 	var/datum/material_batch/output = furnace.output_stock() ? furnace.output_stock().physical_batch() : null
@@ -689,19 +696,19 @@
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
 	var/datum/material_batch/batch = new
 	batch.add_material(MAT_STEEL, 6)
-	batch.temperature = 900
+	material_batch_set_temperature(batch, 900)
 	var/obj/item/stack/material/processed_alloy/stock = processed_spawn_stack(test_turf, batch, 6)
 	var/material_name = stock.material.name
 	var/obj/item/stack/material/processed_alloy/split_stock = stock.split(2)
 	TEST_ASSERT(split_stock, "processed stock could not be split through ordinary stack handling")
 	TEST_ASSERT_EQUAL(split_stock.material.name, material_name, "split stock lost its processed alloy definition")
-	TEST_ASSERT_EQUAL(split_stock.physical_batch().temperature, 900, "split stock lost its physical temperature")
+	TEST_ASSERT(abs(material_batch_temperature(split_stock.physical_batch()) - 900) < 0.01, "split stock lost its physical temperature")
 	TEST_ASSERT_EQUAL(split_stock.physical_batch().amount, 2, "split stock retained the wrong quantity state")
 	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 4, "source stock retained the wrong quantity state")
-	split_stock.physical_batch().temperature = 300
+	material_batch_set_temperature(split_stock.physical_batch(), 300)
 	TEST_ASSERT_EQUAL(split_stock.transfer_to(stock, 2), 2, "compatible processed stocks could not merge")
 	TEST_ASSERT_EQUAL(stock.physical_batch().amount, 6, "merged stock did not conserve quantity")
-	TEST_ASSERT(abs(stock.physical_batch().temperature - 700) < 0.1, "merged stock did not conserve thermal energy")
+	TEST_ASSERT(abs(material_batch_temperature(stock.physical_batch()) - 700) < 0.1, "merged stock did not conserve thermal energy")
 	qdel(stock)
 	qdel(batch)
 
@@ -713,7 +720,7 @@
 	var/obj/item/stack/material/steel/stock = new(test_turf, 4)
 	stock.forceMove(furnace)
 	own_clear(furnace, nameof(furnace.feedstock), OWN_DELETE)
-	own_add(furnace, nameof(furnace.feedstock), stock)
+	rel_add(furnace, nameof(furnace.feedstock), stock)
 	furnace.finish_firing()
 	TEST_ASSERT(furnace.output_stock(), "raw stock firing did not produce recoverable processed stock")
 	var/datum/material_batch/output = furnace.output_stock().physical_batch()
@@ -759,7 +766,7 @@
 	var/obj/machinery/material_furnace/furnace = new(test_turf)
 	stock.forceMove(furnace)
 	own_clear(furnace, nameof(furnace.feedstock), OWN_DELETE)
-	own_add(furnace, nameof(furnace.feedstock), stock)
+	rel_add(furnace, nameof(furnace.feedstock), stock)
 	furnace.finish_firing()
 	TEST_ASSERT(furnace.output_stock(), "furnace failed to return heat-treated stock")
 	var/datum/material/processed_alloy/output_material = furnace.output_stock().material
@@ -769,7 +776,7 @@
 	var/datum/material_batch/forge_sample = output_batch.copy_batch()
 	TEST_ASSERT(forge_sample.apply_process(MATERIAL_PROCESS_FORGE), "hot furnace output could not be forged without fictitious anvil heating")
 	TEST_ASSERT(output_batch.apply_process(MATERIAL_PROCESS_QUENCH), "hot solution-treated furnace output could not be physically quenched")
-	TEST_ASSERT_EQUAL(output_batch.temperature, T20C, "quenching did not cool the workpiece")
+	TEST_ASSERT(abs(material_batch_temperature(output_batch) - T20C) < 0.01, "quenching did not cool the workpiece")
 	qdel(forge_sample)
 	qdel(batch)
 	qdel(furnace)
@@ -834,12 +841,12 @@
 	var/obj/structure/cable/start = new(locate(2, 2, 1))
 	var/obj/structure/cable/middle = new(locate(3, 2, 1))
 	var/obj/structure/cable/end = new(locate(4, 2, 1))
-	start.d1 = 0
-	start.d2 = EAST
-	middle.d1 = EAST
-	middle.d2 = WEST
-	end.d1 = 0
-	end.d2 = WEST
+	start.set_d1(0)
+	start.set_d2(EAST)
+	middle.set_d1(EAST)
+	middle.set_d2(WEST)
+	end.set_d1(0)
+	end.set_d2(WEST)
 	net.add_cable(start)
 	net.add_cable(middle)
 	net.add_cable(end)
@@ -855,7 +862,7 @@
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
 	graph.deposit_losses(12000)
 	for(var/obj/structure/cable/cable as anything in net.cables)
-		TEST_ASSERT(!cable.material_service, "Normally loaded station cable must not enter per-object material exposure")
+		TEST_ASSERT(!material_service_of(cable), "Normally loaded station cable must not enter per-object material exposure")
 		cable.set_engineered_material(MAT_COPPER)
 	net.rebuild_material_cache()
 	graph = net.material_graph
@@ -867,11 +874,11 @@
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
 		cable.enable_material_service()
-		before += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
+		before += material_service_of(cable).temperature() * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy()
 	graph.deposit_losses(12000)
 	var/after = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
-		after += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
+		after += material_service_of(cable).temperature() * material_service_of(cable).thermal_mass() + material_service_of(cable).buffer_energy()
 	TEST_ASSERT(abs(after - before - 12000) < 2, "Paid loss must become exactly that much heat across the real cable run")
 	TEST_ASSERT(!graph.resistance_dirty && length(graph.dirty_edges) == 1, "Heating a cable run must invalidate that run without requesting a full network resistance scan")
 	graph.resolve_loads(sources, alist())

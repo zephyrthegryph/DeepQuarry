@@ -19,8 +19,16 @@
 #define CONTAINER_SLOT_DISPOSAL "disposal"
 /// A vehicle cage's one vehicle (C11).
 #define CONTAINER_SLOT_VEHICLE_CAGE "vehicle"
+/// The wood and logs a bonfire or a fireplace burns.
+#define CONTAINER_SLOT_FUEL "fuel"
 /// A transit tube pod's rider(s) (C11).
 #define CONTAINER_SLOT_TRANSIT_POD "transit_pod"
+/// What a glass jar or tank holds: coins, a creature or a spiderling.
+#define CONTAINER_SLOT_JAR "jar"
+/// The creature a fishing or butterfly net holds.
+#define CONTAINER_SLOT_NET "net"
+/// The hidden uplink an uplink-carrying item (radio, multitool, headset, implant) holds; item_hidden_uplink() reads it.
+#define SLOT_HIDDEN_UPLINK "hidden_uplink"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.
@@ -41,6 +49,10 @@
 #define OCCUPANT_SLOT_SLEEPER "sleeper_occupant"
 /// The sealed occupant slot of a cryo tube.
 #define OCCUPANT_SLOT_CRYO "cryo_occupant"
+/// The change key an occupant slot publishes on its holder when someone gets in or out (read through occupant_of()).
+#define OCCUPANT_KEY "occupant"
+/// Published on a holder whenever a thing enters or leaves any of its slots (the ledger's note_enter/note_exit/reslot); slot_occupancy() reads it.
+#define SLOT_OCCUPANCY_KEY "slot_occupancy"
 /// The sealed occupant slot of an advanced medical body scanner.
 #define OCCUPANT_SLOT_BODY_SCANNER "body_scanner_occupant"
 /// The sealed occupant slot of a cloning pod.
@@ -57,6 +69,8 @@
 #define OCCUPANT_SLOT_TYR_PROP "tyr_prop_occupant"
 /// The sealed occupant slot of a suit cycler.
 #define OCCUPANT_SLOT_SUIT_CYCLER "suit_cycler_occupant"
+/// The occupant pod test fixtures' slot (code/modules/unit_tests/dq_medpod_library_tests.dm).
+#define OCCUPANT_SLOT_TEST_FIXTURE "test_fixture_occupant"
 /// A mecha's sealed pilot slot.
 #define MECHA_SLOT_PILOT "mecha_pilot"
 /// A mecha's external hardpoint slot for attached equipment.
@@ -101,7 +115,7 @@
 /// Module slot `n` (1-3), computed.
 #define SLOT_ID_MODULE(n) "module_[n]"
 
-// ---- Body slot roles (/datum/om/relation/slot/body/var/roles) ----
+// ---- Body slot roles (/datum/relation_definition/slot/body/var/roles) ----
 /// Worn: its item's worn_factors apply (not hands, pockets or restraints).
 #define BODY_SLOT_WORN (1<<0)
 /// Its clothing's armour covers the body parts in body_parts_covered.
@@ -154,7 +168,7 @@
 /// Delete them with the holder (recursively, children first -- L1 phase 3).
 #define SLOT_DROP_DELETE 2
 /// A declared resolver (doc/rewrite/lifecycle.md §3's TRANSFER(resolver))
-/// picks the destination: /datum/om/relation/slot/proc/drop_resolver(). The default
+/// picks the destination: /datum/relation_definition/slot/proc/drop_resolver(). The default
 /// resolver is today's behaviour (the holder's own container's default
 /// slot, else spill); override it for anything else -- occupant ejection,
 /// mind transfer, mecha equipment to the mech's turf.
@@ -167,11 +181,11 @@
 #define SLOT_DROP_HOLDER 4
 /// Contents fold into latent entries on a declared successor instead of
 /// staying real (doc/rewrite/lifecycle.md §3's TO_LATENT): debris, wreckage.
-/// /datum/om/relation/slot/proc/latent_successor(holder) names it.
+/// /datum/relation_definition/slot/proc/latent_successor(holder) names it.
 #define SLOT_DROP_TO_LATENT 5
 /// Moves into a slot of replace_with()'s successor (doc/rewrite/lifecycle.md
 /// §3's KEEP_WITH(slot)); falls back to SPILL when nothing is replacing the
-/// holder. /datum/om/relation/slot/proc/keep_with_slot() names the destination slot.
+/// holder. /datum/relation_definition/slot/proc/keep_with_slot() names the destination slot.
 #define SLOT_DROP_KEEP_WITH 6
 
 // ---- Entry records (the ledger's per-thing list) ----

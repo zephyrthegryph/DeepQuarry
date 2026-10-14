@@ -1,68 +1,128 @@
 /**
- * The Menu action (doc/rewrite/interactions.md §7): a tgui context panel
- * listing what the player can do to a target, what they can't and why, and the
- * keys that reach each. It replaces BYOND's native right-click verb popup, so
- * it also lists the target's legacy verbs and the basic mob actions the popup
- * used to offer (examine, pull, point).
+ * The Menu action (doc/rewrite/interactions.md §7): a context popup listing the
+ * target's ops: what the player can do, and what they can't and why. It replaces
+ * BYOND's native right-click verb popup, so it also lists the target's legacy
+ * verbs and the basic mob actions the popup used to offer (examine, pull, point).
+ *
+ * Like the native popup it opens at the cursor: it renders in the map's own
+ * BROWSER element (INTERACTION_MENU_CONTROL, a mapwindow child like the hover
+ * tooltip, created by winset on first use), which InteractionMenu.tsx sizes to its rows and places at the
+ * clicked pixel. It is never a separate window. The ui stays open on that element
+ * and is hidden rather than closed (a dedicated element's tgui window is reused,
+ * as the tooltip's is); picking a row, Escape, the close button or the next click
+ * on the map hides it.
  */
+#define INTERACTION_MENU_CONTROL "mapwindow.interaction_menu"
+
 /datum/interaction_menu
 	/// The client using the menu: a one-sided back view (the client owns the menu).
 	var/client/owner
 	/// What the menu lists interactions for: a relation view.
 	var/atom/target
+	/// The map element the menu renders in (owned).
+	var/datum/tgui_window/menu_window
+	/// Is the popup showing?
+	var/visible = FALSE
+	/// The click params of the click that opened it: the cursor position it opens at.
+	var/cursor_params = ""
+	/// Bumped on every open, so the page re-places itself even on the same target.
+	var/revision = 0
 
 /datum/interaction_menu/New(client/owner)
 	rel_set(src, nameof(owner), owner)
+	// The element is made here, the first time this player opens the menu, not shipped in the skin: a skin element
+	// in the map pane is laid out with the lobby's title screen too.
+	winset(owner, "interaction_menu", list2params(list("parent" = "mapwindow", "type" = "browser", "pos" = "0,0", "size" = "8x8", "anchor1" = "none", "anchor2" = "none", "is-visible" = "false", "inner-background-color" = "#00000000")))
+	rel_set(src, nameof(menu_window), new /datum/tgui_window(owner, INTERACTION_MENU_CONTROL))
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 
-/// Opens the Menu for `target`. Returns TRUE if it opened.
-/proc/open_interaction_menu(mob/user, atom/target)
+/// Opens the Menu for `target` at the cursor of the click `params` (none: the top left of the map). Returns TRUE if it opened.
+/proc/open_interaction_menu(mob/user, atom/target, params)
 	if(!user?.client || !target)
 		return FALSE
 	var/client/player = user.client
 	if(!player.interaction_menu)
-		own_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
-	rel_set(player.interaction_menu, nameof(/datum/accessory_stat_modifier::target), target)
+		rel_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
+	var/datum/interaction_menu/menu = player.interaction_menu
+	rel_set(menu, nameof(/datum/interaction_menu::target), target)
+	menu.visible = TRUE
+	menu.cursor_params = istext(params) ? params : ""
+	menu.revision++
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
-	player.interaction_menu.tgui_interact(user)
+	menu.tgui_interact(user)
 	return TRUE
 
 /datum/interaction_menu/proc/target()
 	return QDELETED(target) ? null : target
 
-DECLARE_UI_STATE(/datum/interaction_menu, GLOB.tgui_always_state)
+/// Hides the popup (the page stays loaded for the next open).
+/datum/interaction_menu/proc/hide()
+	visible = FALSE
+	if(owner())
+		// The popup took keyboard focus (for Escape); hand it back to the map, where the key macros live.
+		winset(owner(), null, list2params(list("[INTERACTION_MENU_CONTROL].is-visible" = "false", "mapwindow.map.focus" = "true")))
+	SStgui.update_uis(src)
 
-DECLARE_UI(/datum/interaction_menu, "InteractionMenu")
+/// Renders in the map's menu element, not a pooled popup window.
+/datum/interaction_menu/ui_window(mob/user)
+	return menu_window
 
-UI_DATA_REPLACE(/datum/interaction_menu, "merge:ui_data_datum_interaction_menu{}")
+// Our window (owned) is closed client-side whenever it leaves us.
+/datum/interaction_menu/on_owned_release(var_name, datum/child)
+	if(var_name == "menu_window")
+		var/datum/tgui_window/window = child
+		window.close()
+	return ..()
 
-/// The computed part of /datum/interaction_menu's window data (declared on its UI_DATA row).
-/datum/interaction_menu/proc/ui_data_datum_interaction_menu(mob/user, datum/tgui/ui, datum/tgui_state/state)
+CAPABILITIES(/datum/interaction_menu)
+	owns_one(nameof(menu_window), /datum/tgui_window)
+	interface("InteractionMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE)
+	op("run", ui_act("run", arg("id", schema_text(4096))), then(PROC_REF(ui_act_run)))
+	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
+	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+
+/// /datum/interaction_menu's window data.
+/datum/interaction_menu/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/atom/target = target()
+	var/list/view_size = getviewsize(owner()?.view || world.view)
+	var/list/placement = list(
+		"visible" = visible && target ? TRUE : FALSE,
+		"control" = INTERACTION_MENU_CONTROL,
+		"cursor_params" = cursor_params,
+		"view_w" = view_size[1],
+		"view_h" = view_size[2],
+		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
+		"revision" = revision,
+	)
 	if(!target)
-		return list("target" = null)
-	return interaction_menu_data(user, target)
+		placement["target"] = null
+		return placement
+	return interaction_menu_data(user, target) + placement
 
-/// The Menu's contents for `user` looking at `target`. Split out so tests can read it.
+/// The Menu's contents for `user` looking at `target`: the target's ops (op_menu(): enabled ones as available, the rest
+/// as blocked with the reason), its legacy verbs and the basic mob actions. Split out so tests can read it.
 /proc/interaction_menu_data(mob/user, atom/target)
-	var/datum/interaction_resolution/resolution = interactions_for(user, target, user.get_active_hand())
+	var/obj/item/held = user.get_active_hand()
 	var/list/available = list()
-	for(var/datum/interaction/interaction as anything in resolution.available)
-		available += list(list(
-			"id" = interaction.id,
-			"name" = interaction.display_name(user, target),
-			"category" = interaction.category,
-			"keys" = interaction_keys(user.client, resolution, interaction),
-		))
 	var/list/blocked = list()
-	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		blocked += list(list(
-			"id" = interaction.id,
-			"name" = interaction.display_name(user, target),
-			"category" = interaction.category,
-			"reason" = resolution.blocked[interaction],
-		))
+	for(var/list/row as anything in op_menu(user, target, held))
+		if(row["enabled"])
+			available += list(list(
+				"id" = row["key"],
+				"name" = row["label"],
+				"category" = null,
+				"keys" = list(),
+			))
+		else
+			blocked += list(list(
+				"id" = row["key"],
+				"name" = row["label"],
+				"category" = null,
+				"reason" = row["reason"],
+			))
 	var/list/verb_names = list()
 	for(var/procpath/target_verb as anything in target.verbs)
 		if(!target_verb || target_verb.hidden || !istext(target_verb.name) || copytext(target_verb.name, 1, 2) == ".")
@@ -85,25 +145,28 @@ UI_DATA_REPLACE(/datum/interaction_menu, "merge:ui_data_datum_interaction_menu{}
 	if(target != user && isliving(user))
 		. += list(list("id" = INPUT_ACTION_POINT, "name" = "Point at"))
 
-/datum/interaction_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/interaction_menu/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	var/atom/target = target()
 	if(!user || !target)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "run", ui_act_run, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_run)
+/datum/interaction_menu/proc/ui_act_run(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
-	ui.close()
-	run_chosen_interaction(user, target, params["id"])
+	hide()
+	run_chosen_op(user, target, id)
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "action", ui_act_action, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
+/datum/interaction_menu/proc/ui_act_action(datum/act/op/A, id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
-	var/action_id = params["id"]
+	var/action_id = id
 	var/valid = FALSE
 	for(var/list/entry as anything in interaction_menu_actions(user, target))
 		if(entry["id"] == action_id)
@@ -111,27 +174,40 @@ UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
 			break
 	if(!valid)
 		return
-	ui.close()
+	hide()
 	var/datum/input_adapter/adapter = user.input_adapter()
 	var/handler = adapter.handler_for(action_id)
 	if(handler)
 		call(user, handler)(target, "")
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "verb", ui_act_verb, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_verb)
+/datum/interaction_menu/proc/ui_act_verb(datum/act/op/A, name)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
-	var/verb_name = params["name"]
+	var/verb_name = name
 	if(!interaction_menu_can_reach(user, target))
 		to_chat(user, span_warning("You are too far from \the [target]."))
 		return
 	for(var/procpath/target_verb as anything in target.verbs)
 		if(target_verb?.name != verb_name || target_verb.hidden)
 			continue
-		ui.close()
+		hide()
 		log_input("Input: [key_name(user)] used the verb [verb_name] on [target] ([target.type]) from the interaction menu.")
 		call(target, target_verb)()
 		return TRUE
+
+/datum/interaction_menu/proc/ui_act_close(datum/act/op/A)
+	hide()
+	return TRUE
+
+/// Runs the op `key` of `target` chosen in the Menu (ORIGIN_MENU), with what the user holds. TRUE when it ran or started.
+/proc/run_chosen_op(mob/user, atom/target, key)
+	if(!user || !target || !istext(key))
+		return FALSE
+	var/datum/op_result/result = perform_op(user, target, key, user.get_active_hand(), ORIGIN_MENU)
+	return result && result.outcome != ACT_REFUSED
 
 /// Whether a legacy verb on `target` can be run from the Menu: the popup offered verbs on things in reach.
 /proc/interaction_menu_can_reach(mob/user, atom/target)
@@ -155,3 +231,4 @@ UI_ACT_PROC(/datum/interaction_menu, ui_act_verb)
 /datum/interaction_menu/proc/owner() as /client
 	return owner
 
+#undef INTERACTION_MENU_CONTROL

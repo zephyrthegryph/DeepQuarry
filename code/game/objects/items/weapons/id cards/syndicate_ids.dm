@@ -12,15 +12,18 @@
 /obj/item/card/id/syndicate/state_exclude()
 	return ..() + list("agentcard_module", "registered_user")
 
-/obj/item/card/id/syndicate/Initialize(mapload)
-	. = ..()
-	access = GLOB.syndicate_access.Copy()
+/obj/item/card/id/syndicate/starting_access()
+	return GLOB.syndicate_access.Copy()
 
-/obj/item/card/id/syndicate/station_access/Initialize(mapload)
-	. = ..() // Same as the normal Syndicate id, only already has all station access
-	access |= SSaccess.get_all_station_access()
+/// Same as the normal Syndicate id, only already has all station access.
+/obj/item/card/id/syndicate/station_access/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
-DECLARE_DEFAULT_CHILD(/obj/item/card/id/syndicate, "agentcard_module", /datum/tgui_module/agentcard)
+CAPABILITIES(/obj/item/card/id/syndicate)
+	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)
+	without("show") // its own self-use edits or shows the card
+	op("agent_card", in_hand(), label("Edit or show"), then(PROC_REF(interaction_agent_card)))
+	ref_one(nameof(registered_user), /mob)
 
 // the card's registered user is unset.
 /obj/item/card/id/syndicate/on_destroy(force)
@@ -34,39 +37,42 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/id/syndicate, "agentcard_module", /datum/tg
 	if(!proximity) return
 	if(istype(O, /obj/item/card/id))
 		var/obj/item/card/id/I = O
-		src.access |= I.GetAccess()
-		if(GLOB.antag_service.player_is_antag(user.mind) || registered_user() == user)
+		include_access(I.GetAccess())
+		if(SSantag.player_is_antag(user.mind) || registered_user() == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
 /// Edit or show an agent ID. Re-checked on the answer: still carried by its registered owner.
-/datum/om/prompt/choice/agent_id_mode
+/datum/prompt/choice/agent_id_mode
 	title = "Show or Edit?"
-	message = "Would you like to edit the ID, or show it?"
+	question = "Would you like to edit the ID, or show it?"
+	timeout = 0
+	recheck_on_open = TRUE
 	choices = list("Edit", "Show")
 	buttons = TRUE
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/datum/om/prompt/choice/agent_id_mode/valid()
-	var/obj/item/card/id/syndicate/card = subject
+/datum/prompt/choice/agent_id_mode/recheck_extra()
+	var/obj/item/card/id/syndicate/card = owner
 	return card.registered_user() == answerer ? null : "not the owner"
 
-/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/om/prompt/choice/agent_id_mode/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	switch(context.answer.value)
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")
 			show_id_card(user)
 
-EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PROC_REF(interaction_agent_card)))
-
 /// Old attack_self: the card registers its first user, who can then edit or show it.
-/obj/item/card/id/syndicate/proc/interaction_agent_card(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/syndicate/proc/interaction_agent_card(datum/act/op/A)
+	var/mob/user = A.actor
 	// We use the fact that registered_name is not unset should the owner be vaporized, to ensure the id doesn't magically become unlocked.
 	if(!registered_user() && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
 	if(registered_user() == user)
-		om_ask(user, /datum/om/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen))
+		open_request(src, /datum/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen), answerer = user)
 		return
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)

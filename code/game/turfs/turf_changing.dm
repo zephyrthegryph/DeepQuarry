@@ -6,19 +6,17 @@
 /turf/proc/RemoveLattice()
 	var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 	if(L)
-		qdel(L)
+		spent(L)
 
 // Called after turf replaces old one
 /turf/proc/post_change()
 	levelupdate()
 
-	var/turf/simulated/open/above = GetAbove(src)
-	if(istype(above))
-		above.update_icon()
-
+	// The edges around this turf, and the 'ceiling-less' gap of the tile below, read the new turf.
+	turf_edges_refresh(src)
 	var/turf/simulated/below = GetBelow(src)
 	if(istype(below))
-		below.update_icon() // To add or remove the 'ceiling-less' overlay.
+		below.edges_refresh()
 
 // Under LINDA, a turf is "simulated" if it's /turf/simulated. Stub returns simulated-ness.
 /proc/has_valid_atmos_zone(turf/simulated/T)
@@ -64,7 +62,7 @@
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
 	if(istype(simself) && simself.shandler)
-		old_shandler = own_take(simself, nameof(simself.shandler)) // survives the turf's qdel below
+		old_shandler = rel_take(simself, nameof(simself.shandler)) // survives the turf's qdel below
 
 	var/turf/Ab = GetAbove(src)
 	if(Ab)
@@ -79,18 +77,22 @@
 
 	// Listeners may append callbacks; each is invoked with the new turf.
 	var/list/post_change_callbacks
-	if(om_wants(src, /datum/om/event/turf_change))
+	if(WANTS(src, /datum/notice/turf_change))
 		post_change_callbacks = list()
-		OM_EMIT(src, /datum/om/event/turf_change, N, null, NONE, post_change_callbacks)
+		PUBLISH_LEGACY(src, /datum/notice/turf_change, N, null, NONE, post_change_callbacks)
 
 	cut_overlays(TRUE)
 	unmake_z_transparent()
 	changing_turf = TRUE
-	qdel(src)
+	replaced_by(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )
+	// Each row is list(owner, PROC_REF, with): after(owner, 0, PROC_REF, with = with + the new turf) (a handler appends its row, see /datum/notice/turf_change).
 	for(var/list/post_change as anything in post_change_callbacks)
-		om_run_async(post_change, W)
+		var/list/row_with = post_change[3]
+		var/list/post_with = row_with ? row_with.Copy() : list()
+		post_with += W
+		after(post_change[1], 0, post_change[2], with = post_with)
 	var/turf/open/new_open_turf = W
 	if(old_air && istype(new_open_turf) && new_open_turf.air)
 		new_open_turf.air.copy_from(old_air)
@@ -105,31 +107,38 @@
 	W.lighting_corners_initialised = old_lighting_corners_initialized
 	var/turf/simulated/W_sim = W
 	if(istype(W_sim) && old_shandler)
-		own_set(W_sim, nameof(W_sim.shandler), old_shandler)
+		rel_set(W_sim, nameof(W_sim.shandler), old_shandler)
 		rel_set(old_shandler, nameof(old_shandler.holder), W)
 	else
 		if(old_shandler) // the new turf can't hold one
-			qdel(old_shandler)
-		if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
-			own_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
+			ended_with(old_shandler, src)
+		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
+			rel_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 
 	if(tell_universe)
 		GLOB.universe.OnTurfChange(W)
 
+	// The ground changed under whoever stands here or on the turf above: their falling and gravity follow it.
+	for(var/mob/living/L in W)
+		PUBLISH_CHANGE(L, MOB_KEY_GROUND)
+	var/turf/above = GetAbove(W)
+	if(above)
+		for(var/mob/living/L in above)
+			PUBLISH_CHANGE(L, MOB_KEY_GROUND)
+
 	if(SSair)
 		SSair.mark_for_update(W)
 
-	var/defer_explosion_appearance = GLOB.explosion_service.is_bulk_resolving()
+	var/defer_explosion_appearance = SSexplosions.is_bulk_resolving()
 	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
 		for(var/turf/space/S in range(W, 1))
 			S.update_starlight()
 	if(defer_explosion_appearance)
-		GLOB.explosion_service.defer_turf_update(W)
+		SSexplosions.defer_turf_update(W)
 	else
 		W.levelupdate()
-		W.update_icon()
 		W.post_change()
 	. =  W
 
@@ -192,7 +201,7 @@
 
 	if(old_shandler) old_shandler.holder_change()
 	if(preserve_outdoors)
-		outdoors = old_outdoors
+		set_outdoors(old_outdoors)
 
 /turf/proc/finalize_explosion_deferred_change(update_appearance = TRUE)
 	levelupdate()
@@ -207,7 +216,6 @@
 /turf/proc/finalize_explosion_deferred_appearance()
 	// The subsystem already deduplicated the complete one-tile neighborhood, so
 	// do not recursively update the same nine turfs for every changed floor.
-	update_icon()
 	if(CONFIG_GET(number/starlight))
 		if(istype(src, /turf/space))
 			var/turf/space/S = src

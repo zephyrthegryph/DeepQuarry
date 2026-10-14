@@ -52,7 +52,7 @@
 /datum/accessory_stat_modifier/proc/apply(obj/item/clothing/clothing)
 	if(!istype(clothing))
 		return
-	clothing.force += force_delta
+	clothing.set_force(combat_of(clothing).force + (force_delta))
 	clothing.slowdown += slowdown_delta
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta)))
@@ -65,7 +65,7 @@
 /datum/accessory_stat_modifier/proc/revert(obj/item/clothing/clothing)
 	if(!istype(clothing))
 		return
-	clothing.force -= force_delta
+	clothing.set_force(combat_of(clothing).force - (force_delta))
 	clothing.slowdown -= slowdown_delta
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))
@@ -76,6 +76,9 @@
 	/// Owned flat list of every applied /datum/accessory_stat_modifier. Each one carries its
 	/// registry_key ("[accessory]:[clothing]" ref strings) so remove_modifiers() can find its set.
 	var/list/active_modifiers
+
+CAPABILITIES(/datum/accessory_slot_registry)
+	owns_many(nameof(active_modifiers))
 
 /*
  * proc/register_slot(slot_flag, slot_name)
@@ -163,7 +166,7 @@
 		if(mod.registry_key != key)
 			continue
 		mod.revert(clothing)
-		own_remove(src, nameof(active_modifiers), mod)
+		rel_remove(src, nameof(active_modifiers), mod)
 
 // remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/on_destroy(force)

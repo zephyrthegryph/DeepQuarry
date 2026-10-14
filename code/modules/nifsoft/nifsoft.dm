@@ -52,7 +52,7 @@
 
 	rel_set(src, nameof(nif), nif_load)
 	if(!install(nif()))
-		qdel(src)
+		spent(src)
 
 //Destructor cleans up the software and nif reference
 // installed software uninstalls.
@@ -77,7 +77,7 @@
 		. = nif().uninstall(src)
 		rel_clear(src, nameof(nif))
 	if(!QDESTROYING(src))
-		qdel(src)
+		spent(src)
 
 //Called every life() tick on a mob on active implants
 /datum/nifsoft/proc/life(mob/living/carbon/human/human)
@@ -112,6 +112,7 @@
 			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
+				PUBLISH_CHANGE(H, MOB_KEY_VIEW) // the soft's sight flags and darkness view are read by life_vision()
 
 	return nif_result
 
@@ -140,13 +141,9 @@
 			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
+				PUBLISH_CHANGE(H, MOB_KEY_VIEW)
 
 	return nif_result
-
-//Called when an implant expires
-/datum/nifsoft/proc/expire()
-	uninstall()
-	return
 
 //Called when installed from a disk
 /datum/nifsoft/proc/disk_install(mob/living/carbon/human/target,mob/living/carbon/human/user)
@@ -172,7 +169,7 @@
 	for(var/P in software)
 		new P(nif_load)
 
-	qdel(src)
+	spent(src)
 
 //Clean self up
 
@@ -194,44 +191,42 @@
 	var/datum/nifsoft/stored_organic = null
 	var/datum/nifsoft/stored_synthetic = null
 
-/obj/item/disk/nifsoft/afterattack(A, mob/user, flag, params)
-	if(!in_range(user, A))
-		return
+MSG_DEF(nifsoft/uploading_other, span_notice("You begin uploading %I% into %T%."), span_warning("%U% begins uploading %I% into %T%!"))
+MSG_DEF_SELF(nifsoft/uploading_self, span_notice("You upload %I% into your NIF."))
 
-	if(!ishuman(user) || !ishuman(A))
-		return
+CAPABILITIES(/obj/item/disk/nifsoft)
+	op("upload", at_target(/mob/living/carbon/human), when(req_actor_kind(/mob/living/carbon/human)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Upload"),
+		needs(req_adjacent(), req(PROC_REF(upload_ready))),
+		begins(PROC_REF(upload_begins)), starts(PROC_REF(upload_started)), wait(PROC_REF(upload_time)), on_interrupt(PROC_REF(upload_failed)), then(PROC_REF(upload_done)))
 
-	var/mob/living/carbon/human/Ht = A
-	var/mob/living/carbon/human/Hu = user
+/// Requirement: the target has a NIF that is up and running (what a click decides on).
+/obj/item/disk/nifsoft/proc/upload_ready(datum/act/op/A)
+	var/mob/living/carbon/human/Ht = A.target
+	return (read_once(Ht.nif?.stat) == NIF_WORKING) ? null : span_warning("Either they don't have a NIF, or the uploader can't connect.")
 
-	if(!Ht.nif || Ht.nif.stat != NIF_WORKING)
-		to_chat(user,span_warning("Either they don't have a NIF, or the uploader can't connect."))
-		return
+/obj/item/disk/nifsoft/proc/upload_begins(datum/act/op/A)
+	return A.actor == A.target ? MSG(nifsoft/uploading_self) : MSG(nifsoft/uploading_other)
 
+/// A second into your own NIF, ten into someone else's.
+/obj/item/disk/nifsoft/proc/upload_time(datum/act/op/A)
+	return A.actor == A.target ? 1 SECONDS : 10 SECONDS
+
+/// Plays the item animation upon using on a valid target.
+/obj/item/disk/nifsoft/proc/upload_started(datum/act/op/A)
+	set_icon_state("[initial(icon_state)]-animate")
+
+/obj/item/disk/nifsoft/proc/upload_failed(datum/act/op/A)
+	set_icon_state("[initial(icon_state)]")	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state
+
+/obj/item/disk/nifsoft/proc/upload_done(datum/act/op/A)
+	var/mob/living/carbon/human/Ht = A.target
 	var/extra = extra_params()
-	if(A == user)
-		to_chat(user,span_notice("You upload [src] into your NIF."))
-	else
-		act_message(Ht, Hu, MSG_SELF(span_danger("%T% is uploading [src] into you!")), MSG_OTHERS(span_warning("%T% begins uploading [src] into %U%!")))
-
-	icon_state = "[initial(icon_state)]-animate"	//makes it play the item animation upon using on a valid target
-	update_icon()
-
-	om_task_timed(Hu, A == user ? 1 SECONDS : 10 SECONDS, Ht, src, PROC_REF(upload_done), list(Ht, extra), on_fail = PROC_REF(upload_failed))
-
-/obj/item/disk/nifsoft/proc/upload_failed()
-	icon_state = "[initial(icon_state)]"	//If it fails to apply to a valid target and doesn't get deleted, reset its icon state
-	update_icon()
-
-/obj/item/disk/nifsoft/proc/upload_done(mob/living/carbon/human/Ht, extra)
-	if(!Ht.nif || Ht.nif.stat != NIF_WORKING)
-		upload_failed()
-		return
 	if(HAS_SYNTHETIC_BIOLOGY(Ht))
 		new stored_synthetic(Ht.nif,extra)
 	else
 		new stored_organic(Ht.nif,extra)
-	qdel(src)
+	spent(src)
+	return OP_OK
 
 //So disks can pass fancier stuff.
 /obj/item/disk/nifsoft/proc/extra_params()
@@ -251,25 +246,27 @@
 	stored_synthetic = /datum/nifsoft/compliance
 	var/laws
 
-/obj/item/disk/nifsoft/compliance/afterattack(A, mob/user, flag, params)
-	if(!ishuman(A))
-		return
-	if(!laws)
-		to_chat(user,span_warning("You haven't set any laws yet. Use the disk in-hand first."))
-		return
-	..(A,user,flag,params)
+TRACKED(/obj/item/disk/nifsoft/compliance, laws)
 
-DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// A compliance disk with no laws set uploads nothing.
+/obj/item/disk/nifsoft/compliance/upload_ready(datum/act/op/A)
+	if(!laws)
+		return span_warning("You haven't set any laws yet. Use the disk in-hand first.")
+	return ..()
+
+CAPABILITIES(/obj/item/disk/nifsoft/compliance)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/text, fields = list("question" = "Please Input Laws", "title" = "Compliance Laws", "default" = computed(PROC_REF(laws_default)), "max_len" = 2048, "multiline" = TRUE), step = "laws"), then(PROC_REF(interaction_self)))
+
+/obj/item/disk/nifsoft/compliance/proc/laws_default(datum/act/op/A)
+	return laws
 
 /// Old attack_self.
-/obj/item/disk/nifsoft/compliance/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/newlaws = rerun_ask(user, "k271", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Please Input Laws", title = "Compliance Laws", default = laws, max_length = 2048, multiline = TRUE)
-	if(isnull(newlaws))
-		return TRUE
+/obj/item/disk/nifsoft/compliance/proc/interaction_self(datum/act/op/A)
+	var/newlaws = A.step_value("laws")
 	if(newlaws)
-		to_chat(user,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
-		laws = newlaws
-	return TRUE
+		to_chat(A.actor,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
+		set_laws(newlaws)
+	return OP_OK
 
 /obj/item/disk/nifsoft/compliance/extra_params()
 	return laws
@@ -295,10 +292,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_sec"
 
-/obj/item/storage/box/nifsofts_security/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/security(src)
+/obj/item/storage/box/nifsofts_security
+	starts_with = list(
+		/obj/item/disk/nifsoft/security = 8,
+	)
 
 // Engineering Disk //
 /obj/item/disk/nifsoft/engineering
@@ -321,10 +318,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_eng"
 
-/obj/item/storage/box/nifsofts_engineering/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/engineering(src)
+/obj/item/storage/box/nifsofts_engineering
+	starts_with = list(
+		/obj/item/disk/nifsoft/engineering = 8,
+	)
 
 // Medical Disk //
 /obj/item/disk/nifsoft/medical
@@ -346,10 +343,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_med"
 
-/obj/item/storage/box/nifsofts_medical/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/medical(src)
+/obj/item/storage/box/nifsofts_medical
+	starts_with = list(
+		/obj/item/disk/nifsoft/medical = 8,
+	)
 
 // Mining Disk //
 /obj/item/disk/nifsoft/mining
@@ -375,10 +372,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_mining"
 
-/obj/item/storage/box/nifsofts_mining/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/mining(src)
+/obj/item/storage/box/nifsofts_mining
+	starts_with = list(
+		/obj/item/disk/nifsoft/mining = 8,
+	)
 
 // Pilot Disk //
 /obj/item/disk/nifsoft/pilot
@@ -404,10 +401,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes_vr.dmi'
 	icon_state = "nifsoft_kit_pilot"
 
-/obj/item/storage/box/nifsofts_pilot/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/pilot(src)
+/obj/item/storage/box/nifsofts_pilot
+	starts_with = list(
+		/obj/item/disk/nifsoft/pilot = 8,
+	)
 
 // Mass Alteration Disk //
 /obj/item/disk/nifsoft/sizechange
@@ -427,10 +424,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	icon = 'icons/obj/boxes.dmi'
 	icon_state = "nifsoft_kit_mining"
 
-/obj/item/storage/box/nifsofts_sizechange/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/nifsoft/sizechange(src)
+/obj/item/storage/box/nifsofts_sizechange
+	starts_with = list(
+		/obj/item/disk/nifsoft/sizechange = 8,
+	)
 
 /// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif

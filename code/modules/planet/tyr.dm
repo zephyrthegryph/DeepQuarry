@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 /datum/planet/tyr/New()
 	..()
 	GLOB.planet_tyr = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/tyr(src))
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/tyr(src))
 
 /datum/planet/tyr/update_sun()
 	..()
@@ -91,7 +91,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 0.1 SECONDS, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 //Ooooh weathers
 /datum/weather_holder/tyr

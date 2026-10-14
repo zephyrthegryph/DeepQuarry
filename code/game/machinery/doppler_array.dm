@@ -14,7 +14,7 @@
 /obj/machinery/doppler_array/Initialize(mapload)
 	//Explosive analysis
 	var/static/list/explosive_events = list(
-		/datum/om/event/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
+		/datum/notice/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
 	)
 	new /datum/experiment_handler(src, \
 		config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
@@ -23,25 +23,31 @@
 		experiment_events = explosive_events, \
 	)
 	. = ..()
-	om_hook(OM_WORLD, /datum/om/event/world_explosion, src, PROC_REF(sense_explosion))
+	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
-DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
+MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
 
-/obj/machinery/doppler_array/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+CAPABILITIES(/obj/machinery/doppler_array)
+	interface("DopplerArray")
+	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
+	op("part_replacement_impl", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(doppler/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
+
+/obj/machinery/doppler_array/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["explosions"] = length(detected_explosions) ? detected_explosions : null;
+	data["explosions"] = length(detected_explosions) ? detected_explosions : null
 	return data
 
-/obj/machinery/doppler_array/proc/sense_explosion(datum/source, datum/om/event/world_explosion/event)
-	EVENT_HANDLER
+/obj/machinery/doppler_array/proc/sense_explosion(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/world_explosion/event = A
 	var/turf/epicenter = event.epicenter
 	var/devastation_range = event.devastation_range
 	var/heavy_impact_range = event.heavy_impact_range
 	var/light_impact_range = event.light_impact_range
 	var/seconds_taken = event.took
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	var/x0 = epicenter.x
@@ -53,7 +59,7 @@ DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 	if(our_turf.Distance(epicenter) > 100)
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
-	OM_EMIT(src, /datum/om/event/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
+	PUBLISH_LEGACY(src, /datum/notice/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 	LAZYINITLIST(detected_explosions); detected_explosions += list(
 		list(
 			"index" = length(detected_explosions),
@@ -67,29 +73,19 @@ DECLARE_UI(/obj/machinery/doppler_array, "DopplerArray")
 			"seconds_taken" = seconds_taken,
 		)
 	)
-	update_static_data_for_all_viewers()
+	SStgui.update_uis(src)
 
 /obj/machinery/doppler_array/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
-		icon_state = initial(icon_state)
+	if(!power_lost())
+		set_icon_state(initial(icon_state))
 	else
-		icon_state = "[initial(icon_state)]_off"
+		set_icon_state("[initial(icon_state)]_off")
 
-/obj/machinery/doppler_array/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/doppler_part_replacement,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/doppler_part_replacement
-	id = "doppler_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/doppler_array/proc/interaction_part_replacement_impl
-
-/obj/machinery/doppler_array/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/doppler_array/proc/interaction_part_replacement_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	add_fingerprint(user)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+	if(default_part_replacement(user, held))
+		return OP_OK
+	return OP_DECLINE

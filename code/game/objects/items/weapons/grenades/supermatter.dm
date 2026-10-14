@@ -4,22 +4,26 @@
 	item_state = "emergency_engi"
 	arm_sound = SFX_EFFECTS_3
 	EXPIRY_DECLARE(implode_at)
+	/// TRUE from detonation: the slow step pulls everything in until the grenade implodes.
+	var/tmp/imploding = FALSE
+TRACKED(/obj/item/grenade/supermatter, imploding)
+
+CAPABILITIES(/obj/item/grenade/supermatter)
+	every(2 SECONDS, then(PROC_REF(pull_step)), when = nameof(imploding))
 
 /obj/item/grenade/supermatter/detonate()
 	..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_imploding(TRUE)
 	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
-	om_after(src, 10 SECONDS, PROC_REF(implode))
-	update_icon()
+	after(src, 10 SECONDS, PROC_REF(implode))
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
-DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/grenade/supermatter/appearance_overlays()
-	. = list()
+/obj/item/grenade/supermatter/draw(datum/look/look)
+	..()
 	if(implode_at)
-		. += image(icon = 'icons/rust.dmi', icon_state = "emfield_s1")
+		look.overlay(image(icon = 'icons/rust.dmi', icon_state = "emfield_s1"))
 
-/obj/item/grenade/supermatter/periodic_step()
+/obj/item/grenade/supermatter/proc/pull_step(datum/act/A)
 	if(!isturf(loc))
 		if(ismob(loc))
 			var/mob/M = loc
@@ -28,7 +32,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appe
 	play_sfx(src, SFX_EFFECTS_SUPERMATTER, 2, vary = FALSE)
 	supermatter_pull(src, world.view, STAGE_THREE)
 
-/// om_after() callback from detonate(): the pull ends in the implosion.
+/// after() callback from detonate(): the pull ends in the implosion.
 /obj/item/grenade/supermatter/proc/implode()
 	explosion(loc, 1, 3, 5, 4)
-	qdel(src)
+	spent(src)

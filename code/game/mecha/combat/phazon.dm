@@ -39,13 +39,10 @@ TYPE_TABLE(/obj/mecha/combat/phazon, mecha_starting_components, list( \
 
 TYPE_TABLE_DECLARE(/obj/mecha/combat/phazon, phazon_damage_absorption, list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7))
 
-/obj/mecha/combat/phazon/equipped/Initialize(mapload)
-	starting_equipment = list(
-		/obj/item/mecha_parts/mecha_equipment/tool/rcd,
-		/obj/item/mecha_parts/mecha_equipment/gravcatapult
-		)
-	. = ..()
-	return
+TYPE_TABLE(/obj/mecha/combat/phazon/equipped, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/rcd, \
+		/obj/item/mecha_parts/mecha_equipment/gravcatapult \
+		))
 
 /* Leaving this until we are really sure we don't need it for reference.
 /obj/mecha/combat/phazon/proc/phase_recharged()
@@ -55,10 +52,10 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/phazon, phazon_damage_absorption, list("bru
 	if(phasing && get_charge()>=phasing_energy_drain)
 		if(can_phase)
 			can_phase = FALSE
-			flick("[initial_icon]-phase", src)
+			flick("[mecha_base_state()]-phase", src)
 			src.loc = get_step(src,src.dir)
 			src.use_power(phasing_energy_drain)
-			om_after(src, step_in*3, PROC_REF(phase_recharged))
+			after(src, step_in*3, PROC_REF(phase_recharged))
 	else
 		. = ..()
 	return
@@ -133,7 +130,7 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 		src.visible_message(span_alien("The [src.name] absorbs the incoming projectile's force, negating it!"))
 		src.log_append_to_last("Armor negated.")
 		return TRUE
-	else if((Proj.damage && !Proj.nodamage) && istype(Proj, /obj/item/projectile/beam) && prob(max(1, (50 - round((Proj.damage / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["laser"])) * (1 - (Proj.armor_penetration / 100)))))	// Base 50% chance to deflect a beam,lowered by half the beam's damage scaled to laser absorption, then multiplied by the remaining percent of non-penetrated armor, with a minimum chance of 1%.
+	else if((Proj.damage && !Proj.nodamage) && istype(Proj, /obj/item/projectile/beam) && prob(max(1, (50 - round((Proj.damage / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["laser"])) * (1 - (combat_of(Proj).armor_penetration / 100)))))	// Base 50% chance to deflect a beam,lowered by half the beam's damage scaled to laser absorption, then multiplied by the remaining percent of non-penetrated armor, with a minimum chance of 1%.
 		src.occupant_message(span_alien("The armor reflects the incoming beam, negating it!"))
 		src.visible_message(span_alien("The [src.name] reflects the incoming beam, negating it!"))
 		src.log_append_to_last("Armor reflected.")
@@ -142,7 +139,7 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 	return ..()
 
 /obj/mecha/combat/phazon/janus/dynattackby(obj/item/W as obj, mob/user as mob)
-	if(prob(max(1, (50 - round((W.force / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["brute"])) * (1 - (W.armor_penetration / 100)))))
+	if(prob(max(1, (50 - round((combat_of(W).force / 2) * TYPE_TABLE_GET(src, phazon_damage_absorption)["brute"])) * (1 - (combat_of(W).armor_penetration / 100)))))
 		src.occupant_message(span_alien("The armor absorbs the incoming attack's force, negating it!"))
 		src.visible_message(span_alien("The [src.name] absorbs the incoming attack's force, negating it!"))
 		src.log_append_to_last("Armor absorbed.")
@@ -151,10 +148,12 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 	..()
 
 /obj/mecha/combat/phazon/janus/query_damtype()
-	om_ask(src?.slot_item(MECHA_SLOT_PILOT), /datum/om/prompt/choice, PROC_REF(janus_damtype_chosen), title = "Damage Type", message = "Gauntlet Phase Emitter Mode", choices = list("Force","Energy","Stun"), buttons = TRUE, requires = list(/datum/om/check/inside_target))
+	open_request(src, /datum/prompt/choice, PROC_REF(janus_damtype_chosen), answerer = src?.slot_item(MECHA_SLOT_PILOT), title = "Damage Type", question = "Gauntlet Phase Emitter Mode", choices = list("Force","Energy","Stun"), buttons = TRUE, ask_flags = ASK_INSIDE, timeout = 0)
 
-/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/om/prompt/choice/ask)
-	var/new_damtype = ask.choice
+/obj/mecha/combat/phazon/janus/proc/janus_damtype_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_damtype = A.answer.value
 	switch(new_damtype)
 		if("Force")
 			melee_injury_kind = INJURY_BLUNT
@@ -167,10 +166,11 @@ TYPE_TABLE(/obj/mecha/combat/phazon/janus, phazon_damage_absorption, list("brute
 
 //Meant for random spawns.
 /obj/mecha/combat/phazon/old
+	max_integrity = 150 // just slightly worse
 	desc = "An exosuit which can only be described as 'WTF?'. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/phazon/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 150	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))

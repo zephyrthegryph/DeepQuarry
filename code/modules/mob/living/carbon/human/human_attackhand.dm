@@ -63,14 +63,14 @@
 	// Should this all be in Touch()?
 	if(istype(H) && has_hands)
 		if(H.get_accuracy_penalty() && H != src)	//Should only trigger if they're not aiming well
-			var/hit_zone = get_zone_with_miss_chance(H.zone_sel.selecting, src, H.get_accuracy_penalty(), attacker = H)
+			var/hit_zone = get_zone_with_miss_chance(hud_of(H)?.zone_sel?.selecting, src, H.get_accuracy_penalty(), attacker = H)
 			if(!hit_zone)
 				H.do_attack_animation(src)
 				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 				act_message(src, H, others = span_filter_combat("[span_red(span_bold("%T% reaches for %U%, but misses!"))]"))
 				return FALSE
 
-		if(H != src && check_shields(0, null, H, H.zone_sel.selecting, H.name))
+		if(H != src && check_shields(0, null, H, hud_of(H)?.zone_sel?.selecting, H.name))
 			H.do_attack_animation(src)
 			return FALSE
 
@@ -104,7 +104,10 @@
 /// This condenses them and makes it less of a cluster.
 
 ///Help Intent
-/mob/living/carbon/human/proc/cpr_done(mob/living/carbon/human/H)
+MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
+
+/mob/living/carbon/human/proc/cpr_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
 	act_message(H, src, others = span_danger("%U% performs CPR on %T%!"))
 	to_chat(H, span_warning("Repeat at least every 7 seconds."))
 	perform_cpr(H)
@@ -116,41 +119,39 @@
 		return FALSE
 	if(!has_hands) //This is here so if you WANT to do special code for 'if we don't have hands, do stuff' it can be done here!
 		return FALSE
-	if(istype(M) && attempt_to_scoop(M, H) && !on_fire)
+	if(istype(M) && attempt_to_scoop(M, H) && !stat_value(src, STAT_ON_FIRE))
 		return FALSE;
 
 	// Abdominal thrusts on a choking patient (aim at the chest).
-	if(istype(H) && H != src && !on_fire && H.zone_sel?.selecting == BP_TORSO && stat != DEAD)
+	if(istype(H) && H != src && !stat_value(src, STAT_ON_FIRE) && hud_of(H)?.zone_sel?.selecting == BP_TORSO && stat != DEAD)
 		var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
 		if(choke)
 			perform_heimlich(H, choke)
 			return TRUE
 
 	//todo: make this whole CPR check into it's own individual proc instead of hogging up attack_hand_help_intent
-	if((istype(H) && has_trait(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !on_fire && H != src) //Only humans can do CPR.
+	if((istype(H) && has_trait(src, TRAIT_CRITICAL_CONDITION) || stat == DEAD) && !stat_value(src, STAT_ON_FIRE) && H != src) //Only humans can do CPR.
 		if(!H.check_has_mouth())
 			to_chat(H, span_danger("You don't have a mouth, you cannot perform CPR!"))
 			return FALSE
 		if(!check_has_mouth())
 			to_chat(H, span_danger("They don't have a mouth, you cannot perform CPR!"))
 			return FALSE
-		if((H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove your mask!"))
 			return FALSE
-		if((get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 
-		if (!COOLDOWN_FINISHED(src, cpr_time))
+		if (!cooldown_ready(src, cpr_time))
 			return FALSE
 
-		COOLDOWN_START(src, cpr_time, 3 SECONDS)
+		cooldown_start(src, cpr_time, 3 SECONDS)
 
-		act_message(H, src, others = span_danger("%U% is trying to perform CPR on %T%!"))
+		perform_op(H, src, "cpr", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(cpr_done), done_args = list(H))
-
-	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
+	else if(!(M == src && apply_pressure(M, hud_of(M)?.zone_sel?.selecting)))
 		help_shake_act(M)
 	return TRUE
 
@@ -169,16 +170,16 @@
 		get_equipped_item(SLOT_ID_UNIFORM).add_fingerprint(M)
 
 	if(M.lying && (M.loc == src.loc)) //If we are on the ground and they're on top of us, we don't have enough space to push them! Also antispam.
-		if(!COOLDOWN_FINISHED(src, push_lying_cooldown))
+		if(!cooldown_ready(src, push_lying_cooldown))
 			return
 		act_message(M, src, others = span_warning("%U% struggles under %T%!"))
-		COOLDOWN_START(src, push_lying_cooldown, 6 SECONDS)
-		COOLDOWN_START(src, disarm_cooldown, 3 SECONDS)
+		cooldown_start(src, push_lying_cooldown, 6 SECONDS)
+		cooldown_start(src, disarm_cooldown, 3 SECONDS)
 		return
 
 	add_attack_logs(H,src,"Disarmed")
 
-	var/obj/item/organ/external/affecting = get_organ(ran_zone(M.zone_sel.selecting))
+	var/obj/item/organ/external/affecting = get_organ(ran_zone(hud_of(M)?.zone_sel?.selecting))
 
 	var/list/holding = list(get_active_hand() = 40, get_inactive_hand() = 20)
 
@@ -193,7 +194,7 @@
 				act_message(src, null, others = span_danger("%U%'s [W] goes off during the struggle!"))
 				return W.afterattack(target,src)
 
-	if(COOLDOWN_TIMELEFT(src, disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
+	if(cooldown_left(src, disarm_cooldown)) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
 		if(M.lying)
 			act_message(src, M, others = span_filter_combat("[span_red(span_bold("%T% attempted to sweep %U% to the floor!"))]"))
 		else
@@ -201,8 +202,8 @@
 		return
 
 	var/randn = rand(1, 100)
-	COOLDOWN_START(src, push_lying_cooldown, 6 SECONDS)
-	COOLDOWN_START(src, disarm_cooldown, 3 SECONDS)
+	cooldown_start(src, push_lying_cooldown, 6 SECONDS)
+	cooldown_start(src, disarm_cooldown, 3 SECONDS)
 	// We ARE wearing shoes OR
 	// We as a species CAN be slipped when barefoot
 	// And also 1 in 4 because rngesus
@@ -269,30 +270,29 @@
 
 	M.do_attack_animation(src)
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-	act_message(M, src, others = span_warning("%U% has grabbed %T% [(M.zone_sel.selecting == BP_L_HAND || M.zone_sel.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
+	act_message(M, src, others = span_warning("%U% has grabbed %T% [(hud_of(M)?.zone_sel?.selecting == BP_L_HAND || hud_of(M)?.zone_sel?.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
 //Harm Intent
 /mob/living/carbon/human/proc/attack_hand_harm_intent(mob/living/carbon/human/H, mob/living/M as mob, has_hands)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//As a note: This intentionally doesn't immediately return if has_hands is false. This is because you can attack with kicks/bites!
-	if(has_hands && M.zone_sel.selecting == "mouth" && get_equipped_item(SLOT_ID_MASK) && istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade))
+	if(has_hands && hud_of(M)?.zone_sel?.selecting == "mouth" && get_equipped_item(SLOT_ID_MASK) && istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade))
 		var/obj/item/grenade/G = get_equipped_item(SLOT_ID_MASK)
 		if(!G.active)
 			act_message(M, src, others = span_danger("%U% pulls the pin from %T%'s [G.name]!"))
 			G.activate(M)
-			update_inv_wear_mask()
 		else
 			to_chat(M, span_warning("\The [G] is already primed! Run!"))
 		return
 
 	if(has_hands && !istype(H))
-		attack_generic(H,rand(1,3),"punched")
+		generic_hit(src, H, rand(1,3), "punched")
 		return
 
 	var/rand_damage = rand(1, 5)
 	var/block = 0
 	var/accurate = 0
-	var/hit_zone = H.zone_sel.selecting
+	var/hit_zone = hud_of(H)?.zone_sel?.selecting
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
 
 	if(!affecting || affecting.is_stump())
@@ -450,16 +450,16 @@
 
 //Used to attack a joint through grabbing
 /mob/living/carbon/human/proc/grab_joint(mob/living/user, def_zone)
-	var/has_grab = 0
+	var/obj/item/grab/neck_grab = null
 	for(var/obj/item/grab/G in list(user.get_equipped_item(SLOT_ID_HAND_L), user.get_equipped_item(SLOT_ID_HAND_R)))
 		if(G?.grab_target() == src && G.state == GRAB_NECK)
-			has_grab = 1
+			neck_grab = G
 			break
 
-	if(!has_grab)
+	if(!neck_grab)
 		return FALSE
 
-	if(!def_zone) def_zone = user.zone_sel.selecting
+	if(!def_zone) def_zone = hud_of(user)?.zone_sel?.selecting
 	var/target_zone = check_zone(def_zone)
 	if(!target_zone)
 		return FALSE
@@ -467,11 +467,20 @@
 	if(!organ || organ.dislocated > 0 || organ.dislocated == -1) //don't use is_dislocated() here, that checks parent
 		return FALSE
 
-	act_message(user, src, others = span_warning("%U% begins to dislocate %T%'s [organ.joint]!"))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_joint_human_done), done_args = list(organ))
+	neck_grab.set_inspect_zone(organ.organ_tag) // the grab carries the limb to the op
+	perform_op(user, src, "joint_dislocate", neck_grab, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/carbon/human/proc/grab_joint_human_done(obj/item/organ/external/organ)
+/mob/living/carbon/human/proc/joint_dislocate_text(datum/act/op/A)
+	var/obj/item/grab/neck_grab = A.held
+	var/obj/item/organ/external/organ = get_organ(neck_grab?.inspect_zone)
+	return msg_text(null, span_warning("%U% begins to dislocate %T%'s [organ?.joint]!"))
+
+/mob/living/carbon/human/proc/grab_joint_human_done(datum/act/op/A)
+	var/obj/item/grab/neck_grab = A.held
+	var/obj/item/organ/external/organ = get_organ(neck_grab?.inspect_zone)
+	if(!organ)
+		return FALSE
 	organ.dislocate(1)
 	act_message(src, null, others = span_danger("%U%'s [organ.joint] [pick("gives way","caves in","crumbles","collapses")]!"))
 	return TRUE
@@ -501,45 +510,43 @@
 
 /*
 	We want to ensure that a mob may only apply pressure to one organ of one mob at any given time. Currently this is done mostly implicitly through
-	the behaviour of timed actions (om_task_timed) and the fact that applying pressure to someone else requires a grab:
+	the behaviour of timed actions (an op with wait()) and the fact that applying pressure to someone else requires a grab:
 	If you are applying pressure to yourself and attempt to grab someone else, you'll change what you are holding in your active hand which will stop do_mob()
 	If you are applying pressure to another and attempt to apply pressure to yourself, you'll have to switch to an empty hand which will also stop do_mob()
 	Changing targeted zones should also stop do_mob(), preventing you from applying pressure to more than one body part at once.
 */
 /mob/living/carbon/human/proc/apply_pressure(mob/living/user, target_zone)
-	var/obj/item/organ/external/organ = get_organ(target_zone)
-	if(!organ || !(organ.status & ORGAN_BLEEDING) || (organ.is_robotic()))
-		return FALSE
+	// apply pressure as long as they stay still and keep grabbing (the "apply_pressure" op holds); false when it could not start
+	var/datum/op_result/started = perform_op(user, src, "apply_pressure", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("zone" = target_zone, "hand" = user.held_for_ops()))
+	return started.outcome != ACT_REFUSED
 
+MSG_DEF_SELF(human/pressure_taken, span_warning("Someone is already applying pressure there."))
+
+/// The pressure starts: a limb that cannot be pressed (not bleeding, robotic) says nothing, one that someone is pressing already says so; otherwise the
+/// limb is marked, and everyone sees it begin.
+/mob/living/carbon/human/proc/pressure_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/external/organ = get_organ(A.arg("zone"))
+	if(!organ || !(organ.status & ORGAN_BLEEDING) || organ.is_robotic())
+		return MSG(req_silent)
 	if(organ.applied_pressure)
-		var/message = span_warning("Someone is already applying pressure to [user == src ? "your [organ.name]" : "[src]'s [organ.name]"].")
-		to_chat(user,message)
-		return FALSE
-
+		return MSG(human/pressure_taken)
 	if(user == src)
 		act_message(user, null, MSG_SELF(span_filter_notice("You start applying pressure to your [organ.name]!")), \
 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %THEIR% [organ.name]!")))
 	else
 		act_message(user, src, MSG_SELF(span_filter_notice("You start applying pressure to %T%'s [organ.name]!")), 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %T%'s [organ.name]!")))
 	rel_set(organ, nameof(organ.applied_pressure), user)
+	log_game("apply_pressure: [key_name(user)] holds pressure on [src]'s [organ.name]")
 
-	//apply pressure as long as they stay still and keep grabbing
-	//This USED to have a 'target_zone' check that never actually worked so whatever.
-	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
-	//You're already locking yourself down when you do so.
-	om_task_start(/datum/om/task/timed/apply_pressure, user, organ, receiver = src)
-	return TRUE
+/// Switching what the user holds lets go (the old do_mob() check on the active hand: pressing yourself and then grabbing someone else, or the other way).
+/mob/living/carbon/human/proc/pressure_hand_changed(datum/act/op/A)
+	return A.actor?.held_for_ops() != A.arg("hand")
 
-/// Pressure on a bleeding organ (the target), held until the user lets go or moves.
-/datum/om/task/timed/apply_pressure
-	duration = INFINITY
-	hidden = TRUE
-	complete_proc = /mob/living/carbon/human/proc/pressure_released
-	cancel_proc = /mob/living/carbon/human/proc/pressure_released
-
-/mob/living/carbon/human/proc/pressure_released(datum/om/task/timed/apply_pressure/task)
-	var/mob/living/user = task.actor
-	var/obj/item/organ/external/organ = task.target
+/// The pressure ends: released, the hand changed, or the user moved.
+/mob/living/carbon/human/proc/pressure_released(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/organ/external/organ = get_organ(A.arg("zone"))
 	if(!organ)
 		return
 	rel_clear(organ, nameof(organ.applied_pressure))
@@ -622,7 +629,7 @@
 		var/obj/item/organ/internal/lungs/lungs = organ_in(O_LUNGS)
 		if(lungs)
 			emote("gasp")
-		status_at_least(EFFECT_WEAKENED, rand(10,25))
+		status_at_least(STAT_WEAKENED, rand(10,25))
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
 		// Same defib-window brain damage as a defibrillator (brain.revival_brain_damage()).
@@ -643,12 +650,14 @@
 
 /// Abdominal thrusts to dislodge an airway obstruction.
 /mob/living/carbon/human/proc/perform_heimlich(mob/living/carbon/human/rescuer, datum/affliction/airway_obstruction/choke)
-	act_message(rescuer, src, others = span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
-	om_task_timed(rescuer, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(perform_heimlich_human_done), done_args = list(choke))
+	perform_op(rescuer, src, "heimlich", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 
-/mob/living/carbon/human/proc/perform_heimlich_human_done(datum/affliction/airway_obstruction/choke)
-	if(QDELETED(choke) || choke.body != body)
+MSG_DEF(heimlich/begin, null, span_danger("%U% wraps %THEIR% arms around %T% and thrusts hard under the ribs!"))
+
+/mob/living/carbon/human/proc/perform_heimlich_human_done(datum/act/op/A)
+	var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
+	if(QDELETED(choke))
 		return FALSE
 	choke.receive_tagged_treatment(TREAT_AIRWAY, rand(20, 45))
 	if(QDELETED(choke))

@@ -14,7 +14,6 @@
 	var/base_state = "mflash"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
 
 /obj/machinery/flasher/portable //Portable version of the flasher. Only flashes when anchored
 	name = "portable flasher"
@@ -25,11 +24,12 @@
 	base_state = "pflash"
 	density = TRUE
 
-/obj/machinery/flasher/portable/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/machinery/flasher/portable)
+	after_init(0, then(PROC_REF(arm_proximity)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 
-/obj/machinery/flasher/portable/LateInitialize()
+/// An anchored flasher senses proximity from the start.
+/obj/machinery/flasher/portable/proc/arm_proximity(datum/act/timer/A)
 	// Map start flashers enable proximity sensing
 	if(anchored)
 		add_overlay("[base_state]-s")
@@ -37,24 +37,24 @@
 
 /obj/machinery/flasher/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
-		icon_state = "[base_state]1"
+	if(!power_lost())
+		set_icon_state("[base_state]1")
 	else
-		icon_state = "[base_state]1-p"
+		set_icon_state("[base_state]1-p")
 
 //Don't want to render prison breaks impossible
-/obj/machinery/flasher/wirecutter_act(mob/user, obj/item/tool)
+/obj/machinery/flasher/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	disable = !disable
 	act_message(user, src, MSG_SELF(span_warning("You [disable ? "disconnect" : "connect"] %T%'s flashbulb!")), \
 		MSG_OTHERS(span_warning("%U% has [disable ? "disconnected" : "connected"] %T%'s flashbulb!")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 //Let the AI trigger them directly.
-EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(flasher_silicon_trigger)))
 
 /// Old attack_ai: the AI triggers it directly while it is anchored.
-/obj/machinery/flasher/proc/flasher_silicon_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/flasher/proc/flasher_silicon_trigger(datum/act/op/A)
 	if(anchored)
 		flash()
 	return TRUE
@@ -96,15 +96,22 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 			if(!O.blinded && isliving(O))
 				var/mob/living/L = O
 				L.flash_eyes()
-		O.status_at_least(EFFECT_WEAKENED, flash_time)
+		O.status_at_least(STAT_WEAKENED, flash_time)
 
-DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
+CAPABILITIES(/obj/machinery/flasher)
+	configure(uses_power(idle = 2))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(flasher_emp))))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
+	op("flasher_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Flash"), then(PROC_REF(flasher_silicon_trigger)))
+
 /// An EMP may set the flasher off.
-/obj/machinery/flasher/proc/flasher_emp(datum/damage_packet/packet)
+/obj/machinery/flasher/proc/flasher_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	if(prob(75/packet.severity))
 		flash()
+	return HOOK_DECLINE
 
 /obj/machinery/flasher/portable/HasProximity(turf/T, WF, oldloc)
 	if(isnull(WF))
@@ -122,7 +129,8 @@ DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
 		if(M.m_intent != I_WALK)
 			flash()
 
-/obj/machinery/flasher/portable/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/flasher/portable/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	set_anchored(!anchored)
 	if(!anchored)
@@ -133,23 +141,14 @@ DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
 		user.show_message(span_warning("[src] is now secured."))
 		add_overlay("[base_state]-s")
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/button/flasher
 	name = "flasher button"
 	desc = "A remote control switch for a mounted flasher."
 
-/obj/machinery/button/flasher/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/flasher_button_trigger,
-	)
-	..()
-
-/// Old attack_hand: trigger the linked flashers.
-/datum/interaction/machine_hand/flasher_button_trigger
-	id = "flasher_button_trigger"
-	name = "Press"
-	effect = /obj/machinery/button/flasher/proc/interaction_trigger
+CAPABILITIES(/obj/machinery/button/flasher)
+	op("trigger", hand(), priority(OP_PRIORITY_DEFAULT), label("Press"), then(PROC_REF(interaction_trigger)))
 
 /// Flashers sharing our id (keyed: linked when either end materializes).
 /obj/machinery/button/flasher/var/list/obj/machinery/flasher/controlled_flashers
@@ -160,22 +159,23 @@ DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
 	. = ..()
 	. += rel_key(nameof(id))
 
-/obj/machinery/button/flasher/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/flasher/proc/interaction_trigger(datum/act/op/A)
 	use_power(5)
 
 	if(active)
 		return TRUE
 
 	set_active(TRUE)
-	icon_state = "launcheract"
+	set_icon_state("launcheract")
 
 	for(var/obj/machinery/flasher/M as anything in controlled_flashers)
 		M.flash()
 
-	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
+	if(!after_pending(src, "finish_trigger"))
+		after(src, 5 SECONDS, PROC_REF(finish_trigger), key = "finish_trigger")
 	return TRUE
 
 /obj/machinery/button/flasher/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)
-	icon_state = "launcherbtt"
+	set_icon_state("launcherbtt")
 	set_active(FALSE)

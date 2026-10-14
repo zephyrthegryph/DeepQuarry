@@ -67,10 +67,10 @@
 			if(prob(1))
 				to_chat(host, span_danger("You feel sick."))
 			if(prob(5))
-				if(host.nutrition > 10)
+				if(nutrition_of(host) > 10)
 					host.emote("vomit")
 				else
 					to_chat(host, span_danger("Your stomach lurches painfully"))
 					act_message(host, null, others = span_danger("%U% gags and retches!"))
-					host.status_at_least(EFFECT_STUNNED, rand(4, 8))
-					host.status_at_least(EFFECT_WEAKENED, rand(4, 8))
+					host.status_at_least(STAT_STUNNED, rand(4, 8))
+					host.status_at_least(STAT_WEAKENED, rand(4, 8))

@@ -6,13 +6,13 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "bolt"
 	item_state = "bolt"
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
-	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/arrow)
+	configure(item_thrown(force = 8))
+	configure(item_combat(sharp = TRUE, edge = FALSE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
 	return
@@ -20,16 +20,16 @@
 /obj/item/spike
 	name = "alloy spike"
 	desc = "It's about a foot of weird silver metal with a wicked point."
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "metal-rod"
 	item_state = "bolt"
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/spike)
+	configure(item_thrown(force = 5))
+	configure(item_combat(sharp = TRUE, edge = FALSE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/quill
 	name = "alien quill"
@@ -37,7 +37,9 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "quill"
 	item_state = "quill"
-	throwforce = 5
+
+CAPABILITIES(/obj/item/arrow/quill)
+	configure(item_thrown(force = 5))
 
 /obj/item/arrow/rod
 	name = "metal rod"
@@ -45,11 +47,11 @@
 	icon_state = "metal-rod"
 
 /obj/item/arrow/rod/removed(mob/user)
-	if(throwforce == 15) // The rod has been superheated - we don't want it to be useable when removed from the bow.
+	if(thrown_of(src).force == 15) // The rod has been superheated - we don't want it to be useable when removed from the bow.
 		to_chat(user , "[src] shatters into a scattering of overstressed metal shards as it leaves the crossbow.")
 		var/obj/item/material/shard/shrapnel/S = new()
 		S.forceMove(get_turf(src))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/gun/launcher/crossbow
 	name = "powered crossbow"
@@ -60,7 +62,6 @@
 	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
-	slot_flags = SLOT_BACK
 
 	var/obj/item/bolt
 	var/tension = 0                         // Current draw on the bow.
@@ -74,6 +75,13 @@
 	var/is_bow = FALSE
 	special_handling = TRUE
 
+// Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
+// losing the bolt ends it with the notches drawn so far, and the string relaxes.
+CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	configure(item_worn(slots = SLOT_BACK))
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
+
 /obj/item/gun/launcher/crossbow/update_release_force()
 	release_force = tension*release_speed
 
@@ -84,30 +92,29 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
-	own_take(src, nameof(bolt))
-	tension = 0
-	update_icon()
+	rel_take(src, nameof(bolt))
+	set_tension(0)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/gun_operate(datum/act/op/A, callback)
+	var/mob/living/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(is_bow)
-		return FALSE
+		return OP_DECLINE
 	if(tension)
 		if(bolt)
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string and remove [bolt]."), \
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
-			var/obj/item/arrow/A = bolt
-			own_take(src, nameof(bolt))
-			A.removed(user)
+			var/obj/item/arrow/removed_arrow = bolt
+			rel_take(src, nameof(bolt))
+			removed_arrow.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
-		tension = 0
-		update_icon()
+		set_tension(0)
 	else
 		draw_string(user)
 
@@ -122,37 +129,38 @@
 
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), MSG_OTHERS("%U% begins to draw back the string of %T%."))
-	tension = 1
-	draw_step(user)
+	set_tension(1)
+	// crossbow strings don't just magically pull back on their own: one notch of tension every 2.5 seconds up to max_tension
+	var/datum/op_result/drawing = perform_op(user, src, "draw_string", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
+	if(drawing.outcome == ACT_REFUSED)
+		set_tension(0)
 
-/// One notch of tension every 2.5 seconds (a timed action each) up to max_tension.
-//crossbow strings don't just magically pull back on their own.
-/obj/item/gun/launcher/crossbow/proc/draw_step(mob/user)
-	if(!(bolt && tension && loc == current_user))
-		return
-	om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
+/// The bolt is nocked and the string is drawn at all (the crossbow is the op's held item: leaving the hands that drew it stops the draw).
+/obj/item/gun/launcher/crossbow/proc/draw_holds(datum/act/op/A)
+	return bolt && tension ? null : MSG(req_silent)
 
-/obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
-	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \
+/// Another notch follows while the string is short of its maximum tension.
+/obj/item/gun/launcher/crossbow/proc/draw_more(datum/act/op/A)
+	return tension < max_tension
+
+/obj/item/gun/launcher/crossbow/proc/draw_relaxed(datum/act/op/A)
+	if(!tension)
+		return // fired or relaxed already: nothing left to let go of
+	act_message(A.actor, src, others = "%U% stops drawing and relaxes the string of %T%.", \
 		blind = span_warning("You stop drawing back and relax the string of %T%."))
-	tension = 0
-	update_icon()
+	set_tension(0)
 
-/obj/item/gun/launcher/crossbow/proc/draw_notch(mob/user)
-	//double check that the user hasn't removed the bolt in the meantime
-	if(!(bolt && tension && loc == current_user))
-		return
-
-	tension++
-	update_icon()
+/// One notch drawn.
+/obj/item/gun/launcher/crossbow/proc/draw_notch(datum/act/op/A)
+	var/mob/user = A.actor
+	set_tension(tension + 1)
 
 	if(tension >= max_tension)
-		tension = max_tension
+		set_tension(max_tension)
 		to_chat(user, "[src] clunks as you draw the string to its maximum tension!")
 		return
 
 	act_message(user, src, MSG_SELF(span_notice("You continue drawing back the string of %T%!")), MSG_OTHERS("%U% draws back the string of %T%!"))
-	draw_step(user)
 
 /obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
 
@@ -160,34 +168,37 @@
 		return
 
 
-/obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/launcher/crossbow/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(cell())
 		var/obj/item/C = cell()
 		C.forceMove(get_turf(user))
 		to_chat(user, span_notice("You jimmy [cell()] out of [src] with [tool]."))
-		playsound(src, tool.usesound, 50, 1)
+		playsound(src, sounds_of(tool).use, 50, 1)
 		rel_clear(src, nameof(cell))
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby.
-/obj/item/gun/launcher/crossbow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/crossbow/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
-			if(!own_set(src, nameof(src.bolt), W, user = user))
+			if(!move_into(src, nameof(src.bolt), W, user))
 				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
-			update_icon()
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
 			if (R.use(1))
-				own_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
+				rel_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
-				update_icon()
 				act_message(user, src, MSG_SELF("You jam [bolt] into %T%."), MSG_OTHERS("%U% jams [bolt] into %T%."))
 				superheat_rod(user)
 			return
@@ -208,11 +219,11 @@
 /obj/item/gun/launcher/crossbow/proc/superheat_rod(mob/user)
 	if(!user || !cell() || !bolt) return
 	if(cell().charge < 500) return
-	if(bolt.throwforce >= 15) return
+	if(thrown_of(bolt).force >= 15) return
 	if(!istype(bolt,/obj/item/arrow/rod)) return
 
 	to_chat(user, span_notice("[bolt] plinks and crackles as it begins to glow red-hot."))
-	bolt.throwforce = 15
+	bolt.set_throwforce(15)
 	bolt.icon_state = "metal-rod-superheated"
 	cell().use(500)
 
@@ -223,7 +234,10 @@
 	if(bolt)
 		return "-nocked"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/crossbow/draw(datum/look/look)
+	..()
+	look.state("crossbow[appearance_draw_suffix()]")
 
 
 // Crossbow construction.
@@ -235,7 +249,12 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_s
 
 	var/buildstate = 0
 
-APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
+TRACKED(/obj/item/crossbowframe, buildstate)
+
+/// The look (the draw sweep: from its template).
+/obj/item/crossbowframe/draw(datum/look/look)
+	..()
+	look.state("crossbowframe[buildstate]")
 
 /obj/item/crossbowframe/examine(mob/user)
 	. = ..()
@@ -251,69 +270,32 @@ APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
 		if(5)
 			. += "It has a steel cable loosely strung across the lath."
 
-/obj/item/crossbowframe/screwdriver_act(mob/user, obj/item/tool)
-	if(buildstate == 5)
-		to_chat(user, span_notice("You secure the crossbow's various parts."))
-		playsound(src, tool.usesound, 50, 1)
-		replace_with(src, /obj/item/gun/launcher/crossbow)
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(crossbow_frame/rods, "You assemble a backbone of rods around the wooden stock.")
+MSG_DEF_SELF(crossbow_frame/welded, "You weld the rods into place.")
+MSG_DEF_SELF(crossbow_frame/mount, "You wire a crude cell mount into the top of the crossbow.")
+MSG_DEF_SELF(crossbow_frame/lath, "You assemble and install a heavy plastic lath onto the crossbow.")
+MSG_DEF_SELF(crossbow_frame/strung, "You string a steel cable across the crossbow's lath.")
+MSG_DEF_SELF(crossbow_frame/secured, "You secure the crossbow's various parts.")
 
-/obj/item/crossbowframe/welder_act(mob/user, obj/item/tool)
-	if(buildstate == 1)
-		var/obj/item/weldingtool/T = tool.get_welder()
-		if(T.remove_fuel(0,user))
-			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 50, 1)
-			to_chat(user, span_notice("You weld the rods into place."))
-		buildstate++
-		update_icon()
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/item/crossbowframe)
+	// the stock, rods, a welded backbone, a cell mount, a plastic lath, the string; the screwdriver finishes it
+	stages(nameof(buildstate),
+		stage_step(0, 1, stack(/obj/item/stack/rods, 3), label("Assemble the rod backbone"), wait(0), says(MSG(crossbow_frame/rods))),
+		stage_step(1, 2, lit_welder(fuel = 0), label("Weld the rods"), wait(0), says(MSG(crossbow_frame/welded)), then(PROC_REF(tool_sounds))),
+		stage_step(2, 3, stack(/obj/item/stack/cable_coil, 5), label("Wire a cell mount"), wait(0), says(MSG(crossbow_frame/mount))),
+		stage_step(3, 4, stack(/obj/item/stack/material/plastic, 3), label("Install a plastic lath"), wait(0), says(MSG(crossbow_frame/lath))),
+		stage_step(4, 5, stack(/obj/item/stack/cable_coil, 5), label("String the cable"), wait(0), says(MSG(crossbow_frame/strung))))
+	op("finish", tool(TOOL_SCREWDRIVER), label("Secure the parts"), when(req_stage(nameof(buildstate), 5)), wait(0), says(MSG(crossbow_frame/secured)), then(PROC_REF(finished)))
 
-DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/obj/item/crossbowframe/proc/tool_sounds(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	return OP_OK
 
-/// Old attackby.
-/obj/item/crossbowframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack/rods))
-		if(buildstate == 0)
-			var/obj/item/stack/rods/R = W
-			if(R.use(3))
-				to_chat(user, span_notice("You assemble a backbone of rods around the wooden stock."))
-				buildstate++
-				update_icon()
-			else
-				to_chat(user, span_notice("You need at least three rods to complete this task."))
-			return INTERACTION_HANDLED_PASS
-	else if(istype(W, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(buildstate == 2)
-			if(C.use(5))
-				to_chat(user, span_notice("You wire a crude cell mount into the top of the crossbow."))
-				buildstate++
-				update_icon()
-			else
-				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
-		else if(buildstate == 4)
-			if(C.use(5))
-				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
-				buildstate++
-				update_icon()
-			else
-				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
-	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_PLASTIC)
-		if(buildstate == 3)
-			var/obj/item/stack/material/P = W
-			if(P.use(3))
-				to_chat(user, span_notice("You assemble and install a heavy plastic lath onto the crossbow."))
-				buildstate++
-				update_icon()
-			else
-				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
-			return INTERACTION_HANDLED_PASS
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// Secured, the frame is a crossbow.
+/obj/item/crossbowframe/proc/finished(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	replace_with(src, /obj/item/gun/launcher/crossbow)
+	return OP_OK
 
 /// Used for firing superheated rods. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell

@@ -67,10 +67,10 @@ Bonus
 			if(3, 4)
 				if(M.stat != DEAD)
 					to_chat(M, span_boldwarning("Your eyes burn!"))
-				M.status_set(EFFECT_BLURRY, 20)
+				M.status_set(STAT_BLURRY, 20)
 				M.injure(INJURY_BLUNT, 1, eyes)
 			else
-				M.status_adjust(EFFECT_BLURRY, 20)
+				M.status_adjust(STAT_BLURRY, 20)
 				M.injure(INJURY_BLUNT, 5, eyes)
 				if(eyes.damage >= 10)
 					M.disabilities |= NEARSIGHTED

@@ -1,0 +1,83 @@
+human|none menu: Hug
+human|none menu: Poke
+human|none menu: Punch
+human|none menu: Strangle
+human|none click: Click: Hug
+robot|none menu: Hug
+robot|none menu: Poke
+robot|none menu: Punch
+robot|none menu: Strangle
+robot|none click: Click: Hug
+@obj.structure ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Hug
+human|/obj/item/tool/screwdriver menu: Poke
+human|/obj/item/tool/screwdriver menu: Punch
+human|/obj/item/tool/screwdriver menu: Strangle
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Item
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Hug
+human|/obj/item/tool/crowbar menu: Poke
+human|/obj/item/tool/crowbar menu: Punch
+human|/obj/item/tool/crowbar menu: Strangle
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Item
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Hug
+human|/obj/item/tool/wrench menu: Poke
+human|/obj/item/tool/wrench menu: Punch
+human|/obj/item/tool/wrench menu: Strangle
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Item
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Hug
+human|/obj/item/tool/wirecutters menu: Poke
+human|/obj/item/tool/wirecutters menu: Punch
+human|/obj/item/tool/wirecutters menu: Strangle
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Item
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Hug
+human|/obj/item/multitool menu: Poke
+human|/obj/item/multitool menu: Punch
+human|/obj/item/multitool menu: Strangle
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Item
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Hug
+human|/obj/item/weldingtool menu: Poke
+human|/obj/item/weldingtool menu: Punch
+human|/obj/item/weldingtool menu: Strangle
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Item
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Hug
+human|/obj/item/stack/cable_coil menu: Poke
+human|/obj/item/stack/cable_coil menu: Punch
+human|/obj/item/stack/cable_coil menu: Strangle
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Item
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Hug
+human|/obj/item/stack/material/steel menu: Poke
+human|/obj/item/stack/material/steel menu: Punch
+human|/obj/item/stack/material/steel menu: Strangle
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Item
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Hug
+human|/obj/item/card/id menu: Poke
+human|/obj/item/card/id menu: Punch
+human|/obj/item/card/id menu: Strangle
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Item
+human|/obj/item menu: Hit
+human|/obj/item menu: Hug
+human|/obj/item menu: Poke
+human|/obj/item menu: Punch
+human|/obj/item menu: Strangle
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Item
+keys: drag_buckle, find_inside, hug, item, melee_hit, poke, punch, strangle

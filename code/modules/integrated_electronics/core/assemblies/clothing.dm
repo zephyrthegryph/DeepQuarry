@@ -12,15 +12,20 @@
 	max_complexity = IC_COMPLEXITY_BASE
 	var/tmp/obj/item/clothing/clothing
 
+CAPABILITIES(/obj/item/electronic_assembly/clothing)
+	ref_one(nameof(clothing), /obj/item/clothing)
+
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
-DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/electronic_assembly/clothing/appearance_overlays()
-	. = list()
-	. += ..()
-	clothing().icon_state = icon_state
-	// We don't need to update the mob sprite since it won't (and shouldn't) actually get changed.
+/obj/item/electronic_assembly/clothing/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(sync_clothing_state), look.state_so_far(src))
+
+/// The worn clothing shows the assembly's sprite state. The mob sprite is not updated since it won't (and shouldn't) change.
+/obj/item/electronic_assembly/clothing/proc/sync_clothing_state(shown)
+	if(clothing())
+		clothing().icon_state = shown
 
 // This is 'small' relative to the size of regular clothing assemblies.
 /obj/item/electronic_assembly/clothing/small
@@ -41,6 +46,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	var/obj/item/electronic_assembly/clothing/IC = null
 	/// A relation view of the action circuit inside IC (IC's contents own it). This gets pulsed when someone clicks the button on the hud.
 	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
+
+CAPABILITIES(/obj/item/clothing)
+	ref_one(nameof(master_rig), /obj/item/rig)
+	configure(item_protection(siemens = 0.9))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
+	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)
+	owns_many(nameof(accessories))
+	verb_entry(/obj/item/clothing/proc/change_color, when = nameof(polychromic))
+	drag_onto(PROC_REF(mousedrop_input))
+	param(nameof(default_material), pos = 1)
+	op("clothing_accessory_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_item)))
+	op("clothing_accessory_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_accessory_hand)))
+	op("clothing_remove_accessory_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 3), label("Alternate use"), then(PROC_REF(clothing_remove_accessory_alt)))
+	op("clothing_circuit_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), then(PROC_REF(clothing_circuit_self)))
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()
@@ -64,23 +83,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	return IC.attackby(I, user)
 
 /// Old attack_self: work the integrated circuit. FALSE when there is none, so self-use falls through.
-/obj/item/clothing/proc/clothing_circuit_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_circuit_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(helmet_handling)
-		return FALSE
+		return OP_DECLINE
 	if(IC)
 		if(IC.opened)
 			IC.attack_self(user)
 		else
 			action_circuit.do_work()
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
-	own_set(src, nameof(IC), new new_type(src))
+	rel_set(src, nameof(IC), new new_type(src))
 	rel_set(IC, nameof(IC.clothing), src)
 	IC.name = name
 

@@ -241,4 +241,4 @@
 
 /obj/machinery/telecomms/relay/onTransitZ(oldz, newz)
 	. = ..()
-	listening_level = newz
+	set_listening_level(newz)

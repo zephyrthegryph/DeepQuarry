@@ -6,7 +6,7 @@
 	almost anything into a trash can.
 */
 
-/atom/proc/CanMouseDrop(atom/over, mob/user = usr)
+/atom/proc/CanMouseDrop(atom/over, mob/user)
 	if(!user || !over)
 		return FALSE
 	if(user.incapacitated())
@@ -17,17 +17,6 @@
 
 // /atom/MouseDrop routes through the input router as the Drag action (router.dm).
 
-/// Something dragged onto this. Converted handlers (I7) are interactions with entry = INTERACTION_ENTRY_DRAG, `held` being the dragged atom.
+/// Something dragged onto this: the ops answered it first (the dragged atom is the held one); a type overrides this for what no op takes.
 /atom/proc/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	var/list/outcome = list()
-	var/saved_params = dq_interaction_set_click_params(user, params)
-	var/datum/interaction/answered
-	try
-		answered = run_interaction_entry(user, src, dropping, INTERACTION_ENTRY_DRAG, outcome)
-	catch(var/exception/error)
-		dq_interaction_set_click_params(user, saved_params)
-		throw error
-	dq_interaction_set_click_params(user, saved_params)
-	if(!answered || (INTERACTION_TRY_PASS in outcome))
-		return FALSE
-	return answered.consumes_input
+	return FALSE

@@ -6,7 +6,6 @@
 	icon_state = "technomancer_core"
 	item_state = "technomancer_core"
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BACK
 	unacidable = TRUE
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'
@@ -32,9 +31,16 @@
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
+CAPABILITIES(/obj/item/technomancer_core)
+	configure(item_worn(slots = SLOT_BACK))
+	ref_one(nameof(wearer))
+	owns_many(nameof(spells))
+	owns_many(nameof(summoned_mobs))
+	op("technomancer_core_toggle_lock_effect", menu(), label("Toggle Core Lock"), needs(carried()), then(PROC_REF(technomancer_core_toggle_lock_effect)))
+	every(2 SECONDS, then(PROC_REF(technomancer_core_step)), when = nameof(wearer))
+
 /// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
-OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
+/obj/item/technomancer_core/var/mob/living/wearer
 
 // its summons are dismissed with it.
 /obj/item/technomancer_core/on_destroy(force)
@@ -50,10 +56,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 // Removes the spell buttons from the HUD.
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
-	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
-		wearer.ability_master.remove_ability(A)
+	// The inventory equip path calls dropped() before an unworn core has its first wearer.
+	if(wearer)
+		for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
+			wearer.ability_master.remove_ability(A)
 	rel_clear(src, nameof(wearer))
-	canremove = TRUE
+	set_canremove(TRUE)
 	..()
 
 // 'pay_energy' is too vague of a name for a proc at the mob level.
@@ -77,10 +85,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	energy = min(energy + amount, max_energy)
 	return 1
 
-/// Regenerates energy and charges upkeep every 2 s while worn (declared on `wearer`); unworn, it
-/// sleeps. A wearer that is destroyed is cleared by the ownership framework, which raises the field's
-/// channel, so the declaration stops the work without a guard here.
-/obj/item/technomancer_core/periodic_step()
+/// Regenerates energy and charges upkeep every 2 s while worn (every() gated on `wearer`); unworn, the run is skipped.
+/// A wearer that is destroyed is cleared by the ownership framework, so the gate fails without a guard here.
+/obj/item/technomancer_core/proc/technomancer_core_step(datum/act/timer/A)
 	var/old_energy = energy
 	regenerate()
 	pay_dues()
@@ -91,7 +98,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		if(!(GLOB.technomancers.is_antagonist(wearer.mind)) && !universal) // In case someone tries to wear a stolen core. // Add universal cores
 			wearer.adjust_instability(20)
 	if(!wearer || wearer.stat == DEAD) // Unlock if we're dead or not worn.
-		canremove = TRUE
+		set_canremove(TRUE)
 
 /obj/item/technomancer_core/proc/regenerate()
 	energy = min(max(energy + regen_rate, 0), max_energy)
@@ -118,15 +125,15 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				own_take_member(src, nameof(summoned_mobs), L) // detached; fade_away deletes it
-				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
+				rel_take(src, nameof(summoned_mobs), L) // detached; fade_away deletes it
+				after(L, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
-	own_clear(src, nameof(summoned_mobs), OWN_DELETE)
+	rel_clear(src, nameof(summoned_mobs))
 	for(var/mob/living/ward in wards_in_use)
 		LAZYREMOVE(wards_in_use, ward)
-		qdel(ward)
+		spent(ward)
 
 // This is what is clicked on to place a spell in the user's hands.
 /obj/spellbutton
@@ -135,19 +142,30 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	var/obj/item/technomancer_core/core = null
 	var/ability_icon_state = null
 
-/obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A button belongs to the core it is made in.
+/obj/spellbutton/proc/join_core(icon_state_given)
 	rel_set(src, nameof(core), loc)
-	if(!path || !ispath(path) || !istype(core))
-		message_admins("ERROR: /obj/spellbutton/Initialize() was not given a proper path or not placed into the right location!")
-		return INITIALIZE_HINT_QDEL
-	src.name = new_name
-	src.spellpath = path
-	src.ability_icon_state = new_icon_state
+	if(!spellpath || !ispath(spellpath) || !istype(core))
+		message_admins("ERROR: /obj/spellbutton was not given a proper path or not placed into the right location!")
+		spent(src)
 
-/obj/spellbutton/Click()
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+CAPABILITIES(/obj/spellbutton)
+	ref_one(nameof(core))
+	// a spell button is an interface object, not a body
+	without("melee_hit")
+	click_on(PROC_REF(click_input))
+	param(nameof(spellpath), pos = 1)
+	param(nameof(name), pos = 2)
+	param(nameof(ability_icon_state), pos = 3, apply = PROC_REF(join_core))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/spellbutton/proc/click_input(datum/act/input/A)
+	create_spell_with_actor(A.actor)
+	return TRUE
+
+/obj/spellbutton/proc/create_spell_with_actor(mob/user)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
 		H.place_spell_in_hand(spellpath)
 
 /obj/spellbutton/DblClick()
@@ -178,7 +196,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	own_add(src, nameof(spells), spell)
+	rel_add(src, nameof(spells), spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 
@@ -189,12 +207,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
 				wearer.ability_master.remove_ability(A)
-		qdel(spell_to_remove)
+		spent(spell_to_remove)
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		own_take_member(src, nameof(spells), spell)
-		qdel(spell)
+		rel_remove(src, nameof(spells), spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)
 	for(var/obj/spellbutton/spell in spells)
@@ -206,12 +223,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	if(client && hud_used)
 		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/technomancer_core)) //I reckon there's a better way of doing this.
 			var/obj/item/technomancer_core/core = get_equipped_item(SLOT_ID_BACK)
-			wiz_energy_display.invisibility = INVISIBILITY_NONE
+			hud_used?.wiz_energy_display?.invisibility = INVISIBILITY_NONE
 			var/ratio = core.energy / core.max_energy
 			ratio = max(round(ratio, 0.05) * 100, 5)
-			wiz_energy_display.icon_state = "wiz_energy[ratio]"
+			hud_used?.wiz_energy_display?.icon_state = "wiz_energy[ratio]"
 		else
-			wiz_energy_display.invisibility = INVISIBILITY_ABSTRACT
+			hud_used?.wiz_energy_display?.invisibility = INVISIBILITY_ABSTRACT
 
 //Resonance Aperture
 
@@ -337,9 +354,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	regen_rate = 100 //250 seconds to full
 	instability_modifier = 0.75
 
-/obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/technomancer_core/proc/technomancer_core_toggle_lock_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
-	canremove = !canremove
+	set_canremove(!canremove)
 	to_chat(user, span_notice("You [canremove ? "de" : ""]activate the locking mechanism on \the [src]."))
 
 // For the adminbuse!
@@ -363,7 +381,4 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	expire(30)
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/technomancer_core, \
-	INTERACT_VERB("Toggle Core Lock", PROC_REF(technomancer_core_toggle_lock_effect), REQ_IN_INVENTORY), \
-)
 

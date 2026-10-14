@@ -1,7 +1,7 @@
 /// Adds the item to searchables and to_image (if needed)
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
-	om_hook(index, /datum/om/event/qdeleting, src, PROC_REF(on_searchable_deleted))
-	own_add(src, nameof(searchables), index)
+	observe(index, /datum/notice/qdeleting, src, then(PROC_REF(on_searchable_deleted)))
+	rel_add(src, nameof(searchables), index)
 	if(isnull(index.icon))
 		rel_add(src, nameof(to_image), index)
 
@@ -37,13 +37,13 @@
 	window?.send_update()
 
 	if(length(to_image))
-		om_task_periodic(src, PERIODIC_LOOT_ICONS) // icon generation (was SSlooting): misc.dm process_images()
+		set_imaging(TRUE) // icon generation (was SSlooting): misc.dm process_images()
 
 
 /// For: Resetting to empty. Ignores the searchable qdel event
 /datum/lootpanel/proc/reset_contents()
 	for(var/datum/search_object/index as anything in searchables)
 		if(!QDELETED(index))
-			om_unhook(index, /datum/om/event/qdeleting, src)
+			unobserve(index, /datum/notice/qdeleting, src)
 	// the search objects are ours: deleting them also empties to_image (a relation list)
-	own_clear(src, nameof(searchables), OWN_DELETE)
+	rel_clear(src, nameof(searchables))

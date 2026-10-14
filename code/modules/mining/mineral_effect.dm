@@ -9,6 +9,7 @@
 	var/image/scanner_image
 	var/ore_reagent	// Reagent from pumping water near this ore.
 
+// ALLOW(init/INSTANCE_STATE): takes its name and sprite from the ore of the rock it sits in
 /obj/effect/mineral/Initialize(mapload)
 	. = ..()
 	var/turf/simulated/mineral/min_turf = loc
@@ -21,7 +22,6 @@
 	ore_key = M.name
 	if(M.reagent)
 		ore_reagent = M.reagent
-	icon_state = "rock_[ore_key]"
 	layer = min_turf.layer+0.1
 
 /obj/effect/mineral/proc/get_scan_overlay()
@@ -33,3 +33,8 @@
 			to_chat(world, "No ore data for [src]!")
 	return scanner_image
 
+/// The deposit shows its ore.
+/obj/effect/mineral/draw(datum/look/look)
+	..()
+	if(ore_key)
+		look.state("rock_[ore_key]")

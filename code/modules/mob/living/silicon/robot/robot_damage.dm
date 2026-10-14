@@ -33,8 +33,9 @@
 
 /// Combat shielding absorbs a percentage of physical and thermal injury
 /// directly into the cell.
-/mob/living/silicon/robot/proc/absorb_injury_with_shield(datum/source, datum/om/event/living_shield_injury/event)
-	EVENT_HANDLER
+/mob/living/silicon/robot/proc/absorb_injury_with_shield(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/living_shield_injury/event = A
 	var/kind = event.kind
 	var/list/amount_ref = event.amount_ref
 	var/category = injury_category(kind)
@@ -58,7 +59,7 @@
 /// The cell is shielded from content recursion (set_cell()) and drained here
 /// through the ledger instead.
 /mob/living/silicon/robot/emp_act(severity, recursive)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return EMP_PROTECT_SELF
 	. = ..()
 	if(. & EMP_PROTECT_SELF)

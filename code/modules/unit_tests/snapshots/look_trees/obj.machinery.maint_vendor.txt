@@ -1,0 +1,7 @@
+/obj/machinery/maint_vendor icon: code/modules/maint_recycler/icons/maint_vendor.dmi
+/obj/machinery/maint_vendor state: default
+/obj/machinery/maint_vendor dir: 2
+/obj/machinery/maint_vendor overlay: code/modules/maint_recycler/icons/maint_vendor.dmi:default:8:#000000
+/obj/machinery/maint_vendor overlay: code/modules/maint_recycler/icons/maint_vendor.dmi:passiveGlow:-32767
+/obj/machinery/maint_vendor overlay: code/modules/maint_recycler/icons/maint_vendor.dmi:passiveGlow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+

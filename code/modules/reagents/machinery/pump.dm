@@ -11,7 +11,6 @@
 	icon_state = "pump"
 
 	circuit = /obj/item/circuitboard/fluidpump
-	active_power_usage = 200 * CELLRATE
 
 	var/obj/item/cell/cell = null
 	var/reagents_per_cycle = 5
@@ -19,26 +18,33 @@
 	var/unlocked = 0
 	var/open = 0
 
-DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /// Pumps every machine frame while on (set_pump_on()).
-DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
+CAPABILITIES(/obj/machinery/pump)
+	configure(uses_power(active = 200 * CELLRATE))
+	default_parts()
+	hose_sockets(list(/datum/hose_connector/output))
+	silicon_hand()
+	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
+		needs(req(PROC_REF(battery_panel_open)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
+		then(PROC_REF(cell_inserted)))
+	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
+	op("silicon_toggle", remote(), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))
+	reagents(200)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
+	climb()
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 
-	add_hose_connector(/datum/hose_connector/output)
-
 	RefreshParts()
-	update_icon()
-
-	make_climbable()
-
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
-	active_power_usage = initial(active_power_usage) / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator)))
+	set_active_power_usage(power_of_type(type).active / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator))))
 	reagents_per_cycle = initial(reagents_per_cycle) * pump_power
 
 	var/bin_size = get_part_rating(/obj/item/stock_parts/matter_bin)
@@ -46,34 +52,29 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	own_set(src, nameof(reagents), R)
+	rel_set(src, nameof(reagents), R)
 
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/pump/appearance_overlays()
-	. = list()
-	. += ..()
-	. += "[icon_state]-tank"
-	if(!(cell?.check_charge(active_power_usage)))
-		. += "[icon_state]-lowpower"
-
+/// The tank, its liquid, the cell and the panel, drawn over the running or idle body.
+/obj/machinery/pump/draw(datum/look/look)
+	..()
+	look.watch(cell)
+	look.watch(reagents)
+	var/base = initial(icon_state)
+	look.overlay("[base]-tank")
+	look.overlay("[base]-lowpower", !(cell?.check_charge(power_of(src).active)))
 	if(reagents.total_volume >= 1)
-		var/image/I = image(icon, "[icon_state]-volume")
-		I.color = reagents.get_color()
-		. += I
-	. += "[icon_state]-glass"
-
+		look.overlay(look_overlay_image(icon, "[base]-volume", color = reagents.get_color()))
+	look.overlay("[base]-glass")
 	if(open)
-		. += "[icon_state]-open"
-		if(istype(cell))
-			. += "[icon_state]-cell"
-
-	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
+		look.overlay("[base]-open")
+		look.overlay("[base]-cell", istype(cell))
+	look.state("[base][on ? "-running" : ""]")
 
 /// Pumps every machine frame; runs while on (declared).
-/obj/machinery/pump/machine_step()
-	if(!anchored || !(cell?.use(active_power_usage)))
+/obj/machinery/pump/proc/work_step(datum/act/timer/A)
+	if(!anchored || !(cell?.use(power_of(src).active)))
 		set_pump_on(FALSE)
 		return
 
@@ -81,9 +82,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	if(!istype(T))
 		return
 	T.pump_reagents(reagents, reagents_per_cycle)
-	update_icon()
 
-	OM_EMIT(src, /datum/om/event/hose_forcepump)
+	if(notice_wanted(src, /datum/notice/hose_forcepump))
+		notice_publish(src, notice_take(/datum/notice/hose_forcepump))
 
 // Sets the power state, if possible.
 // Returns TRUE/FALSE on power state changing
@@ -93,7 +94,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	if(target == on)
 		return FALSE
 
-	if(!on && (!(cell?.check_charge(active_power_usage)) || !anchored))
+	if(!on && (!(cell?.check_charge(power_of(src).active)) || !anchored))
 		return FALSE
 
 	set_on(!on)
@@ -105,74 +106,49 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 		visible_message(message)
 	return TRUE
 
-/obj/machinery/pump
-	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
-
 /// Old attack_ai: the AI toggles the pump. Cyborgs never reached it (ROBOT_USE_HAND sends
 /// their Use to attack_hand), so they fall through to that default.
-/obj/machinery/pump/proc/pump_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		return FALSE
+/obj/machinery/pump/proc/pump_silicon_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!set_pump_on(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 
-/obj/machinery/pump/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Toggle", PROC_REF(pump_silicon_toggle)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/pump_insert_cell,
-		/datum/interaction/machine_hand/ungated/pump_use,
-	)
-	..()
+MSG_DEF_SELF(pump/panel_screwed, "The battery panel is screwed shut.")
+MSG_DEF_SELF(pump/panel_watertight, "The battery panel is watertight and cannot be opened without a crowbar.")
+MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
-/// Old attackby: insert a power cell into the open battery panel.
-/datum/interaction/machine_item/pump_insert_cell
-	id = "pump_insert_cell"
-	name = "Insert power cell"
-	held_type = /obj/item/cell
-	effect = /obj/machinery/pump/proc/interaction_insert_cell
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/pump/proc/can_take_cell))
+/// The battery panel is open.
+/obj/machinery/pump/proc/battery_panel_open(datum/act/op/A)
+	return open ? null : (unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight))
 
-/// Requirement: TRUE, or why a cell can't go in now.
-/obj/machinery/pump/proc/can_take_cell(mob/user, atom/target, obj/item/held)
-	if(!open)
-		return unlocked ? "the battery panel is screwed shut" : "the battery panel is watertight and cannot be opened without a crowbar"
-	if(istype(cell))
-		return "there is a power cell already installed"
-	return TRUE
+/// No cell is installed.
+/obj/machinery/pump/proc/no_cell(datum/act/op/A)
+	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the
  * panel was closed or already held a cell; those calls only ran after a successful insert.
  */
-/obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
-	user.drop_from_inventory(W, src)
+/obj/machinery/pump/proc/cell_inserted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/W = A.held
 	materialize_parts()
-	W.move_into(src, CONTAINER_SLOT_INTERNALS)
-	own_move(W, src, nameof(component_parts)) // the cell is a part; `cell` views it (RefreshParts())
+	if(!move_into(src, nameof(component_parts), W, user, ledger_slot = CONTAINER_SLOT_INTERNALS))
+		return TRUE
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
-	update_icon()
 	return TRUE
 
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/pump_use
-	id = "pump_use"
-	name = "Use"
-	effect = /obj/machinery/pump/proc/interaction_use
-
-/obj/machinery/pump/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// The old attack_hand (it never called ..(): no gate): the open panel gives up its cell, else the pump is switched.
+/obj/machinery/pump/proc/touched(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open && istype(cell))
 		var/obj/item/cell/removed = cell
-		own_take_member(src, nameof(component_parts), removed)
+		rel_take(src, nameof(component_parts), member = removed)
 		rel_clear(src, nameof(cell))
 		user.put_in_hands(removed)
 		removed.add_fingerprint(user)
-		removed.update_icon()
 		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE
@@ -181,27 +157,28 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 
-/obj/machinery/pump/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
-	unlocked = !unlocked
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	set_unlocked(!unlocked)
+	return OP_OK
 
-/obj/machinery/pump/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!unlocked)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, open ? span_notice("You crowbar the battery panel in place.") : span_notice("You remove the battery panel."))
-	open = !open
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	set_open(!open)
+	return OP_OK
 
-/obj/machinery/pump/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/pump/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(on)
 		to_chat(user, span_notice("\The [src] is active. Turn it off before trying to move it!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 /turf/proc/pump_reagents()
 	return

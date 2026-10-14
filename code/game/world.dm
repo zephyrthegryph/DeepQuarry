@@ -40,9 +40,9 @@ GLOBAL_VAR(restart_counter)
  *     - world.init_byond_tracy()
  *     - (Start native profiling)
  *     - world.init_debugger()
- *     - Master =>
+ *     - Kernel.preboot() =>
  *       - config *unloaded
- *       - (all subsystems) PreInit()
+ *       - (all systems) preinit()
  *       - GLOB =>
  *         - make_datum_reference_lists()
  *   - (/static variable inits, reverse declaration order)
@@ -57,16 +57,16 @@ GLOBAL_VAR(restart_counter)
  *     - world.SetupLogs()
  *     - load_admins()
  *     - ...
- *   - Master.Initialize() =>
- *     - (all subsystems) Initialize()
- *     - Master.StartProcessing() =>
- *       - Master.Loop() =>
- *         - Failsafe
+ *   - Kernel.boot_systems() =>
+ *     - (all systems, in dependency order) initialize()
+ *     - Kernel.StartProcessing() =>
+ *       - Kernel.loop() =>
+ *         - the watchdog
  *   - world.RunUnattendedFunctions()
  *
  * Now listen up because I want to make something clear:
- * If something is not in this list it should almost definitely be handled by a subsystem Initialize()ing
- * If whatever it is that needs doing doesn't fit in a subsystem you probably aren't trying hard enough tbhfam
+ * If something is not in this list it should almost definitely be handled by a system initialize()ing
+ * If whatever it is that needs doing doesn't fit in a system you probably aren't trying hard enough tbhfam
  *
  * GOT IT MEMORIZED?
  * - Dominion/Cyberboss
@@ -85,7 +85,7 @@ GLOBAL_VAR(restart_counter)
  * SO HELP ME GOD IF I FIND ABSTRACTION LAYERS OVER THIS!
  */
 /world/proc/Genesis(tracy_initialized = FALSE)
-	RETURN_TYPE(/datum/controller/master)
+	RETURN_TYPE(/datum/controller/kernel)
 
 	if(!tracy_initialized)
 		Tracy = new
@@ -112,14 +112,17 @@ GLOBAL_VAR(restart_counter)
 	// Write everything to this log file until we get to SetupLogs() later
 	_initialize_log_files("data/logs/config_error.[GUID()].log")
 
-	// Init the debugger first so we can debug Master
+	// Init the debugger first so we can debug the kernel
 	Debugger = new
 
 	// Create the logger
 	logger = new
 
 	// THAT'S IT, WE'RE DONE, THE. FUCKING. END.
-	Master = new
+	// The kernel exists from here on. Its live work (the cadence and sequence sweeps) registers when world/New opens
+	// registration: the static variable inits those registrations read run between this and world/New.
+	Kernel = new /datum/controller/kernel
+	Kernel.preboot()
 
 /**
  * World creation
@@ -142,13 +145,22 @@ GLOBAL_VAR(restart_counter)
  * world/New() (You are here)
  * Once world/New() returns, client's can connect.
  * 1 second sleep
- * Master Controller initialization.
+ * Kernel initialization.
  * Subsystem initialization.
  * Non-compiled-in maps are maploaded, all atoms are new()ed
  * All atoms in both compiled and uncompiled maps are initialized()
  */
 /world/New()
 	log_world("World loaded at [time_stamp()]!")
+#ifdef UNIT_TESTS
+	// `-params boot_profile=1` (DQ_WORLD_PARAMS): the harness stamps launch_tod (deciseconds since midnight UTC) when it spawns DreamDaemon, so this line is the
+	// time the .dmb/.rsc load, global initialisation and the compiled map took before any DM code could log.
+	var/boot_launch_tod = text2num(world.params?["launch_tod"] || "0")
+	if(boot_launch_tod)
+		log_world("Boot timing: world/New reached [round((world.timeofday - boot_launch_tod) / 10, 0.1)]s after DreamDaemon was spawned (world.time [world.time]).")
+#endif
+	Kernel.registration_open = TRUE
+	kernel()
 
 	// Verdigris (Rust FFI) bring-up and version handshake. Init must come before
 	// cleanup so the panic hook catches any failure inside cleanup itself. A DLL
@@ -204,6 +216,8 @@ GLOBAL_VAR(restart_counter)
 
 	config.Load(params[OVERRIDE_CONFIG_DIRECTORY_PARAMETER])
 
+	staleness_configure()
+
 	ConfigLoaded()
 
 	if(NO_INIT_PARAMETER in params)
@@ -245,14 +259,14 @@ GLOBAL_VAR(restart_counter)
 #endif
 
 #ifdef BENCHMARK
-	benchmark_rust_mark("world: before Master init")
+	benchmark_rust_mark("world: before kernel boot")
 #endif
-	Master.Initialize(10, FALSE, TRUE)
+	Kernel.boot_systems(10, TRUE)
 
 	RunUnattendedFunctions()
 
-	//so we aren't adding to the round-start lag; the download itself is an om_io job
-	om_after(null, 5 MINUTES, /proc/ToRban_autoupdate_if_enabled)
+	//so we aren't adding to the round-start lag; the download itself is an io_job job
+	after(null, 5 MINUTES, GLOBAL_PROC_REF(ToRban_autoupdate_if_enabled))
 
 	return
 
@@ -261,7 +275,7 @@ GLOBAL_VAR(restart_counter)
 	TgsNew(new /datum/tgs_event_handler/impl, TGS_SECURITY_TRUSTED)
 	GLOB.revdata.load_tgs_info()
 
-/// Runs after config is loaded but before Master is initialized
+/// Runs after config is loaded but before the systems boot
 /world/proc/ConfigLoaded()
 	// Everything in here is prioritized in a very specific way.
 	// If you need to add to it, ask yourself hard if what your adding is in the right spot
@@ -278,7 +292,7 @@ GLOBAL_VAR(restart_counter)
 		GLOB.restart_counter = text2num(trim(file2text(RESTART_COUNTER_PATH)))
 		fdel(RESTART_COUNTER_PATH)
 
-/// Runs after the call to Master.Initialize, but before the delay kicks in. Used to turn the world execution into some single function then exit
+/// Runs after the call to Kernel.boot_systems, but before the delay kicks in. Used to turn the world execution into some single function then exit
 /world/proc/RunUnattendedFunctions()
 	#ifdef UNIT_TESTS
 	HandleTestRun()
@@ -288,22 +302,16 @@ GLOBAL_VAR(restart_counter)
 	setup_autowiki()
 	#endif
 
-	#ifdef UI_TYPES_DUMP
-	// tools/build/lib/ui_types.ts: dump the declared UI tables, then stop.
-	ui_types_dump()
-	// ALLOW(lifecycle): the dump boot ends the world once its file is written, as the autowiki boot does.
-	qdel(world)
-	#endif
 
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
-	Master.sleep_offline_after_initializations = FALSE
+	Kernel.sleep_offline_after_initializations = FALSE
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)
 	var/after_start
 #ifdef UNIT_TESTS
 	dq_test_shard_init()
-	after_start = GLOBAL_PROC_REF(RunUnitTests)
+	after_start = GLOBAL_PROC_REF(start_unit_tests)
 #else
 	after_start = GLOBAL_PROC_REF(force_end_round)
 #endif
@@ -314,11 +322,15 @@ GLOBAL_VAR(restart_counter)
 	// after 2 s; a test that only passes after the longer settle should wait
 	// for what it needs itself (see doc/testing.md).
 	if(unit_test_is_focused_run())
-		start_delay = 2 SECONDS
+		start_delay = 1 SECONDS
+		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
+		if(unit_test_is_boot_only_run())
+			start_delay = 0
+		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
 #endif
-	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
+	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 
-/// om_after() target: ends the round now (a test-harness run with no tests compiled in).
+/// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
 	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 
@@ -373,38 +385,25 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	TGS_TOPIC
 	log_topic("\"[T]\", from:[addr], master:[master], key:[key]")
 
+	// The localhost diagnostic probes below answer only to 127.0.0.1, and also need key=<DIAG_TOPIC_KEY> when that's set.
+	var/diag = diag_topic_command(T, addr)
+
 	// Opt-in MC liveness probe for hung-server triage; localhost only.
-	if (T == "mcdiag" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "mcdiag")
 		var/list/d = list(
 			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline, // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 			"kernel_ticks" = kernel().ticks, "kernel_last_tick" = kernel().last_tick, "kernel_phase_faults" = kernel().phase_faults,
-			"mc_iteration" = Master?.iteration, "mc_last_run" = Master?.last_run, "mc_sleep_delta" = Master?.sleep_delta,
-			"mc_processing" = Master?.processing, "mc_runlevel" = Master?.current_runlevel, "mc_init_stage" = Master?.init_stage_completed,
-			"mc_tickdrift" = Master?.tickdrift, "failsafe_lasttick" = Failsafe?.lasttick,
-			"ticker_state" = SSticker?.current_state, "ticker_last_fire" = SSticker?.last_fire, "profiler_next_fire" = SSprofiler?.next_fire,
+			"mc_iteration" = Kernel?.iteration, "mc_last_run" = Kernel?.last_run, "mc_sleep_delta" = Kernel?.sleep_delta,
+			"mc_processing" = Kernel?.processing, "mc_runlevel" = Kernel?.current_runlevel, "mc_init_stage" = Kernel?.init_stage_completed,
+			"mc_tickdrift" = Kernel?.tickdrift, "watchdog_lasttick" = Kernel?.watchdog?.lasttick,
+			"ticker_state" = round_game_state(), "ticker_last_fire" = SSticker?.last_fire, "profiler_last_sample" = SSprofiler?.last_fire,
 		)
 		return json_encode(d)
-	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
-	// many of them the step stage's idle rule would settle (watch armed / no work).
-	if (T == "omsteps" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		var/list/active_by_type = list()
-		var/list/settleable_by_type = list()
-		var/active = 0
-		for(var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			if(!M.step_active || !om_attached(M, /datum/om/pipeline/machine))
-				continue
-			active++
-			var/type_key = "[M.type]"
-			active_by_type[type_key] = (active_by_type[type_key] || 0) + 1
-			if(om_watch_armed(M) || !M.step_has_work())
-				settleable_by_type[type_key] = (settleable_by_type[type_key] || 0) + 1
-		return json_encode(list("active" = active, "active_by_type" = active_by_type, "settleable_by_type" = settleable_by_type))
-
 	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
 	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
-	if (T == "omdeadlines" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		var/datum/om/scheduler/sched = om_scheduler()
-		var/datum/om/registry/reg = om_registry()
+	if (diag == "omdeadlines")
+		var/datum/time_scheduler/sched = time_scheduler()
+		var/datum/definition_registry/reg = definition_registry()
 		var/total = 0
 		var/live = 0
 		var/max_bucket = 0
@@ -415,10 +414,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			total += n
 			max_bucket = max(max_bucket, n)
 			for(var/i in 1 to length(L) step 4)
-				var/datum/om/rec/rec = L[i]
+				var/datum/scheduler_record/rec = L[i]
 				var/dl_key = L[i + 1]
 				var/bid = dl_key % OM_DL_SUB
-				var/datum/om/behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
+				var/datum/scheduled_behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
 				var/bname = B ? "[B.type]" : "bid [bid]"
 				var/is_live = FALSE
 				if(rec && !rec.torn_down && rec.deadlines)
@@ -434,11 +433,10 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				by_behaviour["[bname][is_live ? "" : " (stale)"]"] = (by_behaviour["[bname][is_live ? "" : " (stale)"]"] || 0) + 1
 		return json_encode(list("total" = total, "live" = live, "stale" = total - live, "max_bucket" = max_bucket, "by_owner" = by_owner, "by_behaviour" = by_behaviour))
 
-	// Localhost-only census of light source updates by source atom type since the last call
-	// (SSlighting.fire()), top 40; the call resets the counts.
-	if (T == "lightcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		var/list/census = GLOB.lighting_update_census.Copy()
-		GLOB.lighting_update_census.Cut()
+	// Localhost-only census of light source updates by source atom type (SSlighting.fire()) since the churn
+	// metrics last took them (every metrics sample, or never with metrics off), top 40.
+	if (diag == "lightcensus")
+		var/list/census = GLOB.churn_census.lights.Copy()
 		var/list/rows = list()
 		for(var/source_type in census)
 			rows["[source_type]"] = census[source_type]
@@ -448,7 +446,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		return json_encode(list("world_time" = world.time, "queued" = length(SSlighting.sources_queue), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 
 	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
-	if (T == "qdelcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "qdelcensus")
 		var/list/rows = list()
 		for(var/path in SSgarbage.items)
 			var/datum/qdel_item/item = SSgarbage.items[path]
@@ -461,15 +459,15 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
 	// sendmaps profile; mcprof_dump writes both as JSON into the round log dir (logged with their
 	// paths) and returns the top 40 procs by real time as JSON; mcprof_stop ends collection.
-	if ((T == "mcprof_start" || T == "mcprof_dump" || T == "mcprof_stop") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		if(T == "mcprof_start")
+	if (diag == "mcprof_start" || diag == "mcprof_dump" || diag == "mcprof_stop")
+		if(diag == "mcprof_start")
 			world.Profile(PROFILE_CLEAR)
 			world.Profile(PROFILE_CLEAR, type = "sendmaps")
 			world.Profile(PROFILE_START)
 			world.Profile(PROFILE_START, type = "sendmaps")
 			log_runtime("MCPROF: started at [world.time]")
 			return "started"
-		if(T == "mcprof_stop")
+		if(diag == "mcprof_stop")
 			world.Profile(PROFILE_STOP)
 			world.Profile(PROFILE_STOP, type = "sendmaps")
 			log_runtime("MCPROF: stopped at [world.time]")
@@ -673,37 +671,56 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 #ifdef UNIT_TESTS
 		if(GLOB.failed_any_test)
 			LAZYADD(fail_reasons, "Unit Tests failed!")
+		if(GLOB.boot_unclean)
+			LAZYADD(fail_reasons, GLOB.boot_unclean)
 #endif
 		if(!GLOB.log_directory)
 			LAZYADD(fail_reasons, "Missing GLOB.log_directory!")
 	else
 		fail_reasons = list("Missing GLOB!")
+	log_world("Finishing the test run: writing the result markers ([fail_reasons ? "failed" : "clean"]).")
 	if(!fail_reasons)
 		text2file("Success!", "[GLOB.log_directory]/clean_run.lk")
 	else
 		log_world("Test run failed!\n[fail_reasons.Join("\n")]")
+	// The marker the build's watchdog waits for (tools/build/lib/byond.ts, watchdogCleanFile): written for a failed run too, so a
+	// daemon that lingers after the world is done is killed within seconds, while a world still writing its logs on a busy machine
+	// is given time to finish before it is declared unclean.
+	if(GLOB && GLOB.log_directory)
+		text2file(fail_reasons ? "Failed" : "Finished", "[GLOB.log_directory]/finished_run.lk")
+		log_world("Result markers written (finished_run.lk).")
 	// Shut down once Reboot() has returned (the MC is already down, so this is a world tick
 	// callback, not a timer): deleting the world from inside Reboot() leaves byond in a bad way.
-	world_next_tick(om_callable(null, GLOBAL_PROC_REF(world_finish_test_shutdown)))
+	world_next_tick(GLOBAL_PROC_REF(world_finish_test_shutdown))
 
 /proc/world_finish_test_shutdown()
-	qdel(world) //shut it down
+	log_world("Test world: shutting down the world.")
+	spent(world) //shut it down
 
 /// Callbacks run at the start of the next world tick (/world/Tick()), in order. For world procs
 /// whose follow-up must run after they return, including after the MC has shut down.
 GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
-/// `spec` is an om_callable() spec.
-/proc/world_next_tick(list/spec)
-	GLOB.world_next_tick_callbacks += list(spec)
+/// `handler` is a GLOBAL_PROC_REF taking no arguments.
+/proc/world_next_tick(handler)
+	GLOB.world_next_tick_callbacks += handler
 
+/// The last DM code of every tick: the MC and every sleeping proc due this tick have run, the map send
+/// has not. The tick frame (metrics_capture.dm) splits the tick's time at the MC here.
 /world/Tick()
-	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
+	if(!GLOB)
 		return
+	var/datum/tick_frame/frame = GLOB.tick_frame
+	frame?.frame_end(TICK_USAGE)
+	if(!length(GLOB.world_next_tick_callbacks))
+		return
+	var/started = TICK_USAGE
 	var/list/due = GLOB.world_next_tick_callbacks
 	GLOB.world_next_tick_callbacks = list()
-	for(var/list/spec as anything in due)
-		om_run_async(spec)
+	for(var/handler in due)
+		call(handler)()
+	if(frame)
+		frame.callbacks += max(TICK_USAGE - started, 0)
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff
@@ -715,7 +732,8 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 		else
 			to_chat(world, span_boldannounce("Rebooting world immediately due to host request"))
 	else
-		Master.Shutdown()	//run SS shutdowns
+		log_world("Reboot: shutting the kernel down.")
+		Kernel.shutdown_kernel()	//run the systems' shutdowns
 		for(var/client/C in GLOB.clients)
 			if(CONFIG_GET(string/server))	//if you set a server location in config.txt, it sends you there instead of trying to reconnect to the same world address. -- NeoFite
 				C << link("byond://[CONFIG_GET(string/server)]")
@@ -919,3 +937,16 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 /proc/cmp_mcprof_real(list/a, list/b)
 	return b["real"] - a["real"]
+
+/// The diagnostic probe a world/Topic call asks for ("mcdiag", "omsteps", ...), or null unless it
+/// comes from localhost and, when DIAG_TOPIC_KEY is set, carries key=<it>.
+/proc/diag_topic_command(T, addr)
+	if(addr != "127.0.0.1" && findtext(addr, "127.0.0.1:") != 1)
+		return null
+	var/list/topic_params = params2list(T)
+	if(!length(topic_params))
+		return null
+	var/required_key = config?.entries ? CONFIG_GET(string/diag_topic_key) : null
+	if(required_key && topic_params["key"] != required_key)
+		return null
+	return topic_params[1]

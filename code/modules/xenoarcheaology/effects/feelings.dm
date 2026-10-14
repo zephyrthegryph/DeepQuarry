@@ -102,9 +102,9 @@
 					to_chat(H, span_red("[pick(messages)]"))
 
 			if(prob(50))
-				H.status_adjust(EFFECT_DIZZY, rand(3,5))
+				H.status_adjust(STAT_DIZZY, rand(3,5))
 				if(feeling_type == CANNIBAL_FEELING)
-					H.set_nutrition(H.nutrition / 1.5)
+					H.set_nutrition(nutrition_of(H) / 1.5)
 
 /datum/artifact_effect/feelings/DoEffectAura()
 	var/atom/holder = get_master_holder()
@@ -118,9 +118,9 @@
 					to_chat(H, span_red("<font size='[num2text(rand(1,5))]'> " + span_bold("[pick(drastic_messages)]") + " </font>"))
 
 				if(prob(10))
-					H.status_adjust(EFFECT_DIZZY, rand(3,5))
+					H.status_adjust(STAT_DIZZY, rand(3,5))
 					if(feeling_type == CANNIBAL_FEELING)
-						H.set_nutrition(H.nutrition / 2)
+						H.set_nutrition(nutrition_of(H) / 2)
 		return 1
 
 /datum/artifact_effect/feelings/DoEffectPulse()
@@ -135,11 +135,11 @@
 					to_chat(H, span_red("[pick(messages)]"))
 
 			if(prob(50))
-				H.status_adjust(EFFECT_DIZZY, rand(3,5))
+				H.status_adjust(STAT_DIZZY, rand(3,5))
 			else if(prob(25))
-				H.status_adjust(EFFECT_DIZZY, rand(5,15))
+				H.status_adjust(STAT_DIZZY, rand(5,15))
 				if(feeling_type == CANNIBAL_FEELING)
-					H.set_nutrition(H.nutrition / 4)
+					H.set_nutrition(nutrition_of(H) / 4)
 		return 1
 
 #undef GOOD_FEELING

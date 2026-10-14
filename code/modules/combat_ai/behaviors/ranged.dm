@@ -19,7 +19,7 @@
 
 /datum/ai_behavior/ranged_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	var/dist = get_dist(owner, threat)
@@ -38,7 +38,8 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
-	SM.shoot_target(target)
+	if(!brain.perform_attack_op(SM, target, "mob_attacks.shoot"))
+		return DQ_BEHAVIOR_FAILED
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
@@ -60,7 +61,7 @@
 		return null
 	var/obj/item/gun/G = source
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	if(!owner.checkClickCooldown())
@@ -85,8 +86,6 @@
 	var/obj/item/gun/G = source
 	if(!owner || !istype(G))
 		return DQ_BEHAVIOR_FAILED
-	// Use the gun's existing fire pipeline. Pointblank when adjacent.
-	var/pointblank = owner.Adjacent(target)
-	G.Fire(target, owner, null, pointblank, FALSE)
+	brain.perform_attack_op(owner, target, "mob_attacks.fire", G)
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE

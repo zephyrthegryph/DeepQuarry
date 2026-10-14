@@ -32,16 +32,13 @@
 /obj/machinery/atmospherics/pipe/vent/pipeline_expansion()
 	return list(node1)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/vent/appearance_overlays()
-	. = list()
+/obj/machinery/atmospherics/pipe/vent/draw(datum/look/look)
+	..()
 	if(node1)
-		icon_state = "intact"
-
-		set_dir(get_dir(src, node1))
-
+		look.state("intact")
+		look.set_dir(get_dir(src, node1))
 	else
-		icon_state = "exposed"
+		look.state("exposed")
 
 /obj/machinery/atmospherics/pipe/vent/atmos_init()
 	var/connect_direction = dir
@@ -51,7 +48,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/at
 			rel_set(src, nameof(node1), target)
 			break
 
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/vent/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
@@ -59,13 +55,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, TYPE_PROC_REF(/at
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node1))
 
-	update_icon()
 
 	return null
 
 /obj/machinery/atmospherics/pipe/vent/hide(i) //to make the little pipe section invisible, the icon changes.
 	if(node1)
-		icon_state = "[i == 1 && istype(loc, /turf/simulated) ? "h" : "" ]intact"
+		set_icon_state("[i == 1 && istype(loc, /turf/simulated) ? "h" : "" ]intact")
 		set_dir(get_dir(src, node1))
 	else
-		icon_state = "exposed"
+		set_icon_state("exposed")

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Holds are released when their source is deleted (outlives_source = TRUE opts out); timers drop the call when a datum argument was deleted (keeps_dead = TRUE opts out); a ghost's read-only window shows its buttons disabled and ui_data sees A.observer."

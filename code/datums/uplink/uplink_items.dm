@@ -1,9 +1,13 @@
 GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink
-	var/list/items_assoc
+	var/list/datum/uplink_item/items_assoc
 	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/uplink_category/categories
+
+CAPABILITIES(/datum/uplink)
+	owns_many(nameof(categories), /datum/uplink_category)
+	owns_many(nameof(items))
 
 
 /datum/uplink/New(type)
@@ -11,14 +15,14 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	// The uplink owns its categories (a sorted list) and its items (built at boot); items_assoc and
 	// each category's items are plain indexes into uplink.items.
 	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
-		own_add(src, nameof(categories), category)
+		rel_add(src, nameof(categories), category)
 
 	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
-			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
+			spent(item)
 			continue
 
-		own_add(src, nameof(items), item)
+		rel_add(src, nameof(items), item)
 		items_assoc[item.type] = item
 
 		for(var/datum/uplink_category/category in categories)
@@ -49,6 +53,10 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink_item/proc/buy(obj/item/uplink/U, mob/user)
 	var/extra_args = extra_args(user, args)
+	return buy_prepared(U, user, extra_args)
+
+/// Runs the unchanged purchase tail after an entry has collected its extra arguments.
+/datum/uplink_item/proc/buy_prepared(obj/item/uplink/U, mob/user, extra_args)
 	if(!extra_args)
 		return
 
@@ -208,7 +216,3 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	return bought_items
 
 
-/// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
-/datum/uplink/ownership()
-	. = ..()
-	. += shares(nameof(items_assoc))

@@ -1,5 +1,5 @@
 /*	This code is responsible for the examine tab.  When someone examines something, it shows the examined object's generated
-	mechanics (its declared interactions, from the resolver, and its properties: get_mechanics_info()), description_fluff
+	mechanics (its properties: get_mechanics_info()), description_fluff
 	and description_antag in a new tab. There is no hand-written help text: it could drift from what the code does.
 
 	In this file, some atom and mob stuff is defined here.  It is defined here instead of in the normal files, to keep the whole system self-contained.
@@ -14,8 +14,8 @@
 /**
  * Generated mechanics text: what the atom's properties mean in play (a weapon's
  * damage, armour ratings, a gun's fire modes). Types add lines generated from
- * their vars; what can be *done* with the atom comes from its declared
- * interactions instead (interaction_examine_lines(), screentips).
+ * their vars; what can be *done* with the atom is its ops (the Menu,
+ * screentips).
  * `additional_information` is extra lines from a subtype, listed first.
  */
 /atom/proc/get_mechanics_info(list/additional_information)
@@ -42,8 +42,8 @@
 	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
 
 /mob/living/get_description_fluff()
-	if(flavor_text) //Get flavor text for the green text.
-		return flavor_text
+	if(bio.flavor_text) //Get flavor text for the green text.
+		return bio.flavor_text
 	else //No flavor text?  Try for hardcoded fluff instead.
 		return ..()
 
@@ -60,17 +60,13 @@
 	var/mechanics = A.get_mechanics_info()
 	if(mechanics)
 		info += mechanics
-	if(mob)
-		var/list/interaction_lines = interaction_examine_lines(mob, A)
-		if(interaction_lines)
-			info += interaction_lines
 	description_holders["info"] = jointext(info, "<br>")
 	description_holders["fluff"] = A.get_description_fluff()
 	description_holders["antag"] = (update_antag_info)? A.get_description_antag() : ""
 	description_holders["interactions"] = A.get_description_interaction()
 
 	description_holders["name"] = "[A.name]"
-	description_holders["icon"] = A
+	description_holders["icon"] = entity_handle(A) // a handle: a deleted atom stops resolving instead of being kept by the client
 	description_holders["desc"] = A.desc
 
 //override examinate verb to update description holders when things are examined
@@ -92,12 +88,6 @@
 	if(!results || !results.len)
 		results = list("You were unable to examine that. Tell a developer!")
 
-	var/list/interaction_lines = interaction_examine_lines(src, A)
-	if(interaction_lines)
-		results += interaction_lines
-	var/list/construction_lines = construction_examine_lines(src, A)
-	if(construction_lines)
-		results += construction_lines
 	results += embedded_info(src, A)
 
 	var/final_string = span_infoplain("[jointext(results, "<br>")]")
@@ -131,7 +121,7 @@
 			index++
 		if(isliving(A)) //ehhh
 			var/mob/living/B = A
-			if(B.flavor_text)
+			if(B.bio.flavor_text)
 				title = "🔍 | Flavor Text"
 
 		. += span_details(title, rendered_text)
@@ -159,7 +149,7 @@
 	if(client)
 		var/is_antag = antag_check()
 		client.update_description_holders(A, is_antag)
-		GLOB.statpanels_service.set_examine_tab(client)
+		SSstatpanels.set_examine_tab(client)
 
 
 
@@ -169,6 +159,9 @@
 	set category = VERB_CAT_IC_GAME
 	set popup_menu = FALSE
 
+	return mob_examine_stage(FALSE)
+
+/mob/proc/mob_examine_stage(answered, atom/selected)
 	if((is_blind(src) || src.stat) && !isobserver(src))
 		to_chat(src, span_notice("Something is there but you can't see it."))
 		return 1
@@ -181,7 +174,7 @@
 			for(var/obj/cam in view(world.view, my_turf))
 				if(istype(cam, /obj/machinery/camera))
 					var/obj/machinery/camera/mycam = cam
-					if(!mycam.has_stat(MACHINE_STAT_ANY))
+					if(!mycam.has_condition())
 						foundcam = TRUE
 			if(!foundcam)
 				continue
@@ -226,10 +219,11 @@
 	if(E.len == 1)
 		B = pick(E)
 	else
-		var/_answer_k218 = rerun_ask(src, "k218", VERB_REF(mob_examine), args, /datum/om/prompt/choice, message = "What would you like to examine?", title = "Examine", choices = E)
-		if(isnull(_answer_k218))
+		if(!answered)
+			open_request(src, /datum/prompt/choice/mob_examine_selection, PROC_REF(mob_examine_selected), answerer = src, choices = E)
 			return
-		B = _answer_k218
+		B = selected
+
 	if(!B)
 		return
 	if(!isbelly(loc) && !istype(loc, /obj/item/holder) && !isAI(src))
@@ -240,3 +234,22 @@
 		results = list("You were unable to examine that. Tell a developer!")
 	to_chat(src, jointext(results, "<br>"))
 	update_examine_panel(B)
+
+/mob/proc/mob_examine_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	mob_examine_stage(TRUE, A.answer.value)
+
+/datum/prompt/choice/mob_examine_selection
+	question = "What would you like to examine?"
+	title = "Examine"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/mob_examine_selection/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	var/atom/selected = value
+	if(!isnull(selected) && QDELETED(selected))
+		return "gone"
+	return null

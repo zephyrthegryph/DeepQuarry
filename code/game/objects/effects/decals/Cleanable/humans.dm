@@ -1,4 +1,4 @@
-#define DRYING_TIME 5 * 60*10                        //for 1 unit of depth in puddle (amount var)
+#define DRYING_TIME 5 MINUTES                        //for 1 unit of depth in puddle (amount var)
 
 /obj/effect/decal/cleanable/blood
 	name = "blood"
@@ -20,27 +20,39 @@
 	generic_filth = TRUE
 	persistent = FALSE
 	var/delete_me = FALSE
+	/// Dried up (dry()): drawn darker, under its dried name.
+	var/dried = FALSE
+
+
+/// The colour of the blood when wet ("rainbow" is a random one, chosen here). A change is drawn.
+/obj/effect/decal/cleanable/blood/proc/set_basecolor(value)
+	if(value == "rainbow")
+		value = get_random_colour(1)
+	if(basecolor == value)
+		return FALSE
+	basecolor = value
+	tracked_changed(src, nameof(basecolor))
+	return TRUE
+SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 
 /obj/effect/decal/cleanable/blood/reveal_blood()
 	if(!dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
-		basecolor = COLOR_LUMINOL
-		update_icon()
+		set_basecolor(COLOR_LUMINOL)
 
 /obj/effect/decal/cleanable/blood/wash(clean_types)
 	. = ..()
 	dq_set_fluorescent(src, 0)
 	if(invisibility != INVISIBILITY_MAXIMUM)
-		invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		amount = 0
 
-/obj/effect/decal/cleanable/blood/Initialize(mapload, _age)
+/obj/effect/decal/cleanable/blood/Initialize(mapload)
 	. = ..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
-	update_icon()
 	if(!mapload)
-		om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
+		dry_delay = DRYING_TIME * (amount+1) // fresh blood dries (after_init()); mapped blood is dry already
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
 	if(src.type == /obj/effect/decal/cleanable/blood)
@@ -51,31 +63,37 @@
 					if(!(B.flags & ATOM_INITIALIZED))
 						B.delete_me = TRUE
 					else
-						qdel(B)
+						consume(B)
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/appearance_overlays()
-	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-	. = list()
-	color = basecolor
+/// The colour it is drawn with: its blood, or white for a decal whose picture carries its own colours; darker once it has dried.
+/obj/effect/decal/cleanable/blood/proc/shown_color()
+	return dried ? adjust_brightness(wet_color(), -50) : wet_color()
 
-	if(basecolor == SYNTH_BLOOD_COLOUR)
-		name = "oil"
-		desc = "It's quite oily."
+/// The colour of the decal while it is wet.
+/obj/effect/decal/cleanable/blood/proc/wet_color()
+	return basecolor
+
+/// A dried decal goes by its dried name, whatever it was.
+/obj/effect/decal/cleanable/blood/proc/dried_look(datum/look/look)
+	if(dried)
+		look.identity(name = dryname, desc = drydesc)
+
+/obj/effect/decal/cleanable/blood/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	if(dried)
+		dried_look(look)
+	else if(basecolor == SYNTH_BLOOD_COLOUR)
+		look.identity(name = "oil", desc = "It's quite oily.")
 	else if(synthblood)
-		name = "synthetic blood"
-		desc = "It's quite greasy."
-	else
-		name = initial(name)
-		desc = initial(desc)
-	. += add_janitor_hud_overlay()
+		look.identity(name = "synthetic blood", desc = "It's quite greasy.")
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
 		return
 	if(!istype(perp))
 		return
-	if(perp.flying || dq_get_hovering(perp) || perp.is_floating) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
+	if(stat_value(perp, STAT_FLYING) || dq_get_hovering(perp) || perp.is_floating) //if the perp isn't on the ground, they shouldn't be affected by the stuff on the floor.
 		return
 	if(amount < 1)
 		return
@@ -90,7 +108,6 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 		if(istype(S))
 			dq_set_blood_color(S, basecolor)
 			S.track_blood = max(amount,S.track_blood)
-			S.update_icon() // Cut previous overlays
 			if(!S.blood_overlay)
 				S.generate_blood_overlay()
 			if(!forensic_data?.has_blooddna())
@@ -100,14 +117,14 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 				S.blood_overlay.color = basecolor
 				S.add_overlay(S.blood_overlay)
 			transfer_blooddna_to(S)
-			perp.update_inv_shoes()
+			changed(src)
 
 	else if (hasfeet)//Or feet
-		perp.feet_blood_color = basecolor
+		perp.set_feet_blood_color(basecolor)
 		perp.track_blood = max(amount,perp.track_blood)
 		LAZYINITLIST(perp.feet_blood_DNA)
-		perp.feet_blood_DNA |= init_forensic_data().get_blooddna().Copy()
-		perp.update_bloodied()
+		perp.set_feet_blood_DNA(perp.feet_blood_DNA | (init_forensic_data().get_blooddna().Copy()))
+		changed(src)
 	else if (perp?.buckled_to() && istype(perp?.buckled_to(), /obj/structure/bed/chair/wheelchair))
 		var/obj/structure/bed/chair/wheelchair/W = perp?.buckled_to()
 		W.bloodiness = 4
@@ -119,37 +136,42 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 
 	amount--
 
+/// How long after init fresh blood dries, or 0 for mapped blood (after_init()).
+/obj/effect/decal/cleanable/blood/var/dry_delay = 0
+
+/obj/effect/decal/cleanable/blood/proc/dry_after_init(datum/act/A)
+	dry()
+
 /obj/effect/decal/cleanable/blood/proc/dry()
-	name = dryname
-	desc = drydesc
-	color = adjust_brightness(color, -50)
+	set_dried(TRUE)
 	amount = 0
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_blood)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	when(nameof(dry_delay), after_init(nameof(dry_delay), then(PROC_REF(dry_after_init))))
+	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))
 
 /// Old attack_hand: bare hands pick up some of the blood (and any touch-spread disease).
-/obj/effect/decal/cleanable/blood/proc/interaction_touch_blood(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/effect/decal/cleanable/blood/proc/interaction_touch_blood(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if (amount && istype(user))
 		add_fingerprint(user)
 
 		if (user.get_equipped_item(SLOT_ID_GLOVES))
-			return
+			return OP_OK
 		var/taken = rand(1,amount)
 		amount -= taken
 		to_chat(user, span_notice("You get some of \the [src] on your hands."))
 		transfer_blooddna_to(user)
 		user.bloody_hands += taken
-		user.hand_blood_color = basecolor
-		user.update_inv_gloves(1)
-		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, user)
+		user.set_hand_blood_color(basecolor)
+		changed(src)
+		grant(user, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), user)
 
 	if(viruses)
 		for(var/datum/affliction/contagion/D in viruses)
 			if(D.IsSpreadByTouch())
 				user.expose_contagion(D, BP_R_HAND)
+	return OP_OK
 
 /obj/effect/decal/cleanable/blood/splatter
 		random_icon_states = list("mgibbl1", "mgibbl2", "mgibbl3", "mgibbl4", "mgibbl5")
@@ -177,14 +199,13 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	amount = 0
 	var/message
 
-/obj/effect/decal/cleanable/blood/writing/Initialize(mapload)
-	. = ..()
-	if(length(random_icon_states))
-		for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
-			LAZYREMOVE(random_icon_states, W.icon_state)
-		icon_state = DEFAULTPICK(random_icon_states, null)
-	else
-		icon_state = "writing1"
+/// Rolled before init: a writing sprite no other writing on the tile shows yet (all taken: the first).
+/obj/effect/decal/cleanable/blood/writing/roll_icon_state(datum/roller/R)
+	var/list/free = random_icon_states.Copy()
+	for(var/obj/effect/decal/cleanable/blood/writing/W in contents_of(loc))
+		if(W != src)
+			free -= W.icon_state
+	return length(free) ? R.choose(free) : "writing1"
 
 /obj/effect/decal/cleanable/blood/writing/examine(mob/user)
 	. = ..()
@@ -201,22 +222,23 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6")
 	var/fleshcolor = "#FFFFFF"
 
-DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/decal/cleanable/blood/gibs/appearance_overlays()
-	. = list()
+/// The colour of the flesh in the gibs (an empty or "rainbow" one is a random colour, chosen here). A change is drawn.
+/obj/effect/decal/cleanable/blood/gibs/proc/set_fleshcolor(value)
+	if(!value || value == "rainbow")
+		value = get_random_colour(1)
+	if(fleshcolor == value)
+		return FALSE
+	fleshcolor = value
+	tracked_changed(src, nameof(fleshcolor))
+	return TRUE
+SETTER(/obj/effect/decal/cleanable/blood/gibs, fleshcolor)
 
-	var/image/giblets = new(base_icon, "[icon_state]_flesh", dir)
-	if(!fleshcolor || fleshcolor == "rainbow")
-		fleshcolor = get_random_colour(1)
-	giblets.color = fleshcolor
-
-	var/icon/blood = new(base_icon,"[icon_state]",dir)
-	if(basecolor == "rainbow") basecolor = get_random_colour(1)
-	blood.Blend(basecolor,ICON_MULTIPLY)
-
-	icon = blood
-	. += giblets
-	. += add_janitor_hud_overlay()
+/// The gibs are the blood's own picture (tinted by the blood) with the flesh over it in its own colour.
+/obj/effect/decal/cleanable/blood/gibs/cleanable_look(datum/look/look)
+	look.set_color(shown_color())
+	dried_look(look)
+	look.overlay(look_overlay_image(base_icon, "[look.state_so_far(src)]_flesh", dir = dir, color = fleshcolor, appearance_flags = RESET_COLOR))
+	janitor_hud(look)
 
 /obj/effect/decal/cleanable/blood/gibs/up
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6","gibup1","gibup1","gibup1")
@@ -237,7 +259,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	streak_async(directions)
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_async(list/directions)
-	om_after(src, 3, PROC_REF(streak_step), pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4))
+	after(src, 0.3 SECONDS, PROC_REF(streak_step), with = list(pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4)))
 
 /// One streak step every 0.3 s: splatter behind (after the first), slide on.
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_step(direction, i, steps)
@@ -246,12 +268,11 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	if (step_to(src, get_step(src, direction), 0))
 		return
 	if (i + 1 < steps)
-		om_after(src, 3, PROC_REF(streak_step), direction, i + 1, steps)
+		after(src, 0.3 SECONDS, PROC_REF(streak_step), with = list(direction, i + 1, steps))
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_splat()
 	var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)
-	b.basecolor = src.basecolor
-	b.update_icon()
+	b.set_basecolor(basecolor)
 
 /obj/effect/decal/cleanable/mucus
 	name = "mucus"
@@ -267,9 +288,12 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	var/sampled = FALSE
 
 //This version should be used for admin spawns and pre-mapped virus vectors (e.g. in PoIs), this version does not dry
-/obj/effect/decal/cleanable/mucus/mapped/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(viruses), new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
+CAPABILITIES(/obj/effect/decal/cleanable/mucus/mapped)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_mapped_virus))
+
+/// Mapped mucus carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/mucus/mapped/proc/make_mapped_virus(current)
+	return list(new /datum/affliction/contagion/engineered/random(rand(3, 6), 9, 4, infected = src))
 
 /obj/effect/decal/cleanable/mucus/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -282,22 +306,22 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 				continue
 			perp.expose_contagion(D, BP_R_FOOT)
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/mucus, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/mucus)
+	op("touch_mucus", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_contagion)))
 
 /// Old mucus/vomit attack_hand: touching it can pass on its contagious diseases.
-/obj/effect/decal/cleanable/proc/interaction_touch_contagion(mob/living/carbon/human/perp, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/cleanable/proc/interaction_touch_contagion(datum/act/op/A)
+	var/mob/living/carbon/human/perp = A.actor
 	if(perp.is_incorporeal())
-		return TRUE
+		return OP_OK
 	if(!istype(perp))
-		return TRUE
+		return OP_OK
 	if(viruses)
 		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
 			perp.expose_contagion(D, BP_R_HAND)
-	return TRUE
+	return OP_OK
 
 /obj/effect/decal/cleanable/vomit/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -310,9 +334,8 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/mucus, \
 				continue
 			perp.expose_contagion(D, BP_R_FOOT)
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/vomit, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/vomit)
+	op("touch_vomit", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_contagion)))
 
 /obj/effect/decal/cleanable/mucus/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()

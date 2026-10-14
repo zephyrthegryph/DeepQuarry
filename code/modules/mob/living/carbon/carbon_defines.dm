@@ -6,10 +6,7 @@
 
 	var/life_tick = 0      // The amount of life ticks that have processed on this mob.
 
-	// total amount of wounds on mob, used to spread out healing and the like over all wounds
-	var/number_wounds = 0
 	/// Zones a surgical step is currently being performed on (lazy).
-	var/list/surgery_zones_in_progress
 	//Active emote/pose
 	var/pose = null
 	var/pose_move = FALSE
@@ -17,7 +14,6 @@
 	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 	var/datum/reagents/metabolism/ingested/ingested = null
 	var/datum/reagents/metabolism/touch/touching = null
-	var/toxin_gut = FALSE
 
 	var/pulse = PULSE_NORM	//current pulse level
 
@@ -28,8 +24,6 @@
 
 	//these two help govern taste. The first is the last time a taste message was shown to the plaer.
 	//the second is the message in question.
-	COOLDOWN_DECLARE(taste_cooldown)
-	COOLDOWN_DECLARE(taste_repeat_cooldown)
 	var/last_taste_text = ""
 
 
@@ -41,4 +35,7 @@
 // owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
 /mob/living/carbon/ownership()
 	. = ..()
-	. += proto(nameof(species))
+	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+
+/// The pulse level: the heartbeat step reads it.
+TRACKED(/mob/living/carbon, pulse)

@@ -7,13 +7,21 @@
 	var/list/datum/alarm/alarms
 	var/list/listeners				// A list of all objects interested in alarm changes.
 
+CAPABILITIES(/datum/alarm_handler)
+	owns_many(nameof(alarms))
+	every(2 SECONDS, then(PROC_REF(expire_step)), when = nameof(expiring))
+
+/// TRUE while any alarm is up (a raised alarm sets it); with none left it parks.
+/datum/alarm_handler/var/tmp/expiring = FALSE
+TRACKED(/datum/alarm_handler, expiring)
+
 /// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
-/datum/alarm_handler/periodic_step()
+/datum/alarm_handler/proc/expire_step(datum/act/tick)
 	for(var/datum/alarm/A in alarms)
 		A.alarm_tick()
 		check_alarm_cleared(A)
 	if(!length(alarms))
-		return PROCESS_KILL
+		set_expiring(FALSE)
 
 
 /datum/alarm_handler/proc/triggerAlarm(atom/origin, atom/source, duration = 0, severity = 1, hidden = 0)
@@ -31,11 +39,11 @@
 	else
 		existing = new/datum/alarm(origin, source, duration, severity, hidden)
 		new_alarm = 1
-		own_add(src, nameof(alarms), existing)
+		rel_add(src, nameof(alarms), existing)
 
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_expiring(TRUE)
 	if(new_alarm)
-		own_set(src, nameof(alarms), dd_sortedObjectList(alarms))
+		rel_set(src, nameof(alarms), dd_sortedObjectList(alarms))
 		on_alarm_change(existing, ALARM_RAISED)
 
 	return new_alarm
@@ -85,7 +93,7 @@
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && ELAPSED_SINCE(src, alarm.end_time, CLOCK_WORLD) > 0) || !length(alarm.sources))
 		on_alarm_change(alarm, ALARM_CLEARED)
-		own_remove(src, nameof(alarms), alarm) // destroys it
+		rel_remove(src, nameof(alarms), alarm) // destroys it
 		return 1
 	return 0
 

@@ -29,7 +29,7 @@ GLOBAL_LIST_INIT(generated_station_rust_room_role_table_default, list("reception
 		"security_tier" = prng.next_range(1, 3),
 		"size_class" = width * height < 3600 ? "compact" : (width * height > 6400 ? "large" : "standard"),
 	)
-	qdel(prng)
+	spent(prng)
 	return metadata
 
 /// Builds the authoritative fixture registry without stringifying type paths.
@@ -49,9 +49,9 @@ GLOBAL_LIST_INIT(generated_station_rust_room_role_table_default, list("reception
 					var/datum/generated_room_feature/feature = new feature_type
 					if(feature.id && feature.atom_type)
 						registry[feature.id] = feature.atom_type
-					qdel(feature)
-				qdel(fragment)
-			qdel(definition)
+					spent(feature)
+				spent(fragment)
+			spent(definition)
 	QDEL_LIST(catalog)
 	return registry
 
@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 						"icon_file" = "[initial(preview_atom_type.icon)]",
 						"icon_state" = "[initial(preview_atom_type.icon_state)]",
 					))
-					qdel(feature)
+					spent(feature)
 				fragments += list(list(
 					"id" = fragment.id,
 					"width" = fragment.width,
@@ -166,7 +166,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 					"occupied_offsets" = fragment.occupied_offsets.Copy(),
 					"features" = features,
 				))
-				qdel(fragment)
+				spent(fragment)
 			rooms += list(list(
 				"id" = "[department.id]-[role]",
 				"department_id" = department.id,
@@ -232,7 +232,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				"aesthetic_id" = definition.room_style.aesthetic_id,
 				"fragments" = list(),
 			))
-			qdel(definition)
+			spent(definition)
 	var/list/settings = list(
 		"hull_thickness" = 1,
 		"corridor_width" = 2,
@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 	spec.layout_archetype = metadata["layout_archetype"]
 	spec.layout_aesthetic_score = metadata["aesthetic_score"]
 	for(var/datum/generated_station_department_definition/catalog_definition in generated_station_department_catalog())
-		own_add(spec, nameof(spec.department_definitions), catalog_definition)
+		rel_add(spec, nameof(spec.department_definitions), catalog_definition)
 	var/list/definitions = list()
 	for(var/datum/generated_station_department_definition/definition in spec.department_definitions)
 		definitions[definition.id] = definition
@@ -371,7 +371,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		department.desired_area = row["desired_area"]
 		department.layout_node_id = row["node_id"]
 		departments[id] = department
-		own_add(spec, nameof(spec.departments), department)
+		rel_add(spec, nameof(spec.departments), department)
 	var/list/nodes = list()
 	for(var/list/row in node_rows)
 		if(!islist(row))
@@ -388,7 +388,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		node.frontage_spine_vertical = !!row["frontage_spine_vertical"]
 		node.frontage_spine_coordinate = row["frontage_spine_coordinate"]
 		nodes[id] = node
-		own_add(spec, nameof(spec.layout_nodes), node)
+		rel_add(spec, nameof(spec.layout_nodes), node)
 	var/list/rooms = list()
 	for(var/list/row in room_rows)
 		if(!islist(row))
@@ -409,10 +409,10 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				room_definition = generated_compact_room_definition_for(room_department.definition().id, row["role"])
 			else if(row["definition_id"] == "[room_department.definition().id]-micro-[row["role"]]")
 				room_definition = generated_micro_room_definition_for(room_department.definition().id, row["role"])
-			qdel(full_definition)
+			spent(full_definition)
 		var/list/allowed_roles = room_department ? generated_station_rust_room_roles(room_department.definition().id) : list()
 		var/valid_room_definition = room_definition && (row["role"] in allowed_roles) && room_definition.id == row["definition_id"]
-		qdel(room_definition)
+		spent(room_definition)
 		if(!istext(id) || !length(id))
 			return generated_station_rust_decode_failure(spec, errors, "Room record has no valid ID.")
 		if(rooms[id])
@@ -428,13 +428,13 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		room.rust_room_id = row["rust_room_id"]
 		room.frontage_x = row["frontage_x"]; room.frontage_y = row["frontage_y"]
 		rooms[id] = room
-		own_add(node, nameof(node.room_program), room)
+		rel_add(node, nameof(node.room_program), room)
 	var/list/tile_classes = list()
 	var/list/tile_owners = list()
 	var/list/tile_zones = list()
 	var/list/tile_flags = list()
 	if(!generated_station_rust_decode_tiles(spec, tile_rows, nodes, rooms, errors, tile_classes, tile_owners, tile_zones, tile_flags))
-		qdel(spec)
+		spent(spec)
 		return null
 	var/list/door_ids = list()
 	var/list/door_coordinates = list()
@@ -456,7 +456,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			if(!node || tile_classes[key] != "maintenance_floor" || !istext(row["from_zone"]) || !length(row["from_zone"]) || !istext(row["to_zone"]) || !length(row["to_zone"]))
 				return generated_station_rust_decode_failure(spec, errors, "Maintenance door has invalid ownership or zone metadata.")
 			var/datum/generated_station_maintenance_door/maintenance_door = new(direction, node.id, row["from_zone"], row["to_zone"])
-			own_put(spec, nameof(spec.maintenance_doors), "[x],[y]", maintenance_door)
+			rel_add(spec, nameof(spec.maintenance_doors), maintenance_door, "[x],[y]")
 			continue
 		if(!node)
 			return generated_station_rust_decode_failure(spec, errors, "Door references an unknown node owner.")
@@ -474,16 +474,16 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		var/datum/generated_station_door_socket/socket = new(x, y, direction, row["kind"], row["from_zone"], row["to_zone"])
 		var/datum/generated_station_room_allocation/room = from_room
 		if(room)
-			own_add(room, nameof(room.door_sockets), socket)
+			rel_add(room, nameof(room.door_sockets), socket)
 		else
 			var/assigned_vestibule = FALSE
 			for(var/datum/generated_station_eva_vestibule/vestibule in node.eva_vestibules)
 				if(vestibule.id == row["from_zone"] || vestibule.id == row["to_zone"])
-					own_add(vestibule, nameof(vestibule.door_sockets), socket)
+					rel_add(vestibule, nameof(vestibule.door_sockets), socket)
 					assigned_vestibule = TRUE
 					break
 			if(!assigned_vestibule)
-				own_add(node, nameof(node.frontage_sockets), socket)
+				rel_add(node, nameof(node.frontage_sockets), socket)
 	var/list/edge_ids = list()
 	for(var/list/row in edge_rows)
 		var/edge_kind = islist(row) ? generated_station_rust_edge_kind(row["kind"]) : 0
@@ -498,19 +498,19 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			if(!islist(point) || length(point) != 2 || !generated_station_rust_integer(point[1], 1, width) || !generated_station_rust_integer(point[2], 1, height))
 				return generated_station_rust_decode_failure(spec, errors, "Edge contains an invalid path coordinate.")
 			edge.path += list(list(point[1], point[2]))
-		own_add(spec, nameof(spec.layout_edges), edge)
+		rel_add(spec, nameof(spec.layout_edges), edge)
 	if(!generated_station_rust_decode_content(spec, rooms, content_room_rows, fixture_rows, network_rows, root["content_quality"], errors))
-		qdel(spec)
+		spent(spec)
 		return null
 	var/datum/generated_station_validation_result/validation = spec.validate()
 	if(!validation.is_valid())
 		for(var/datum/generated_station_validation_issue/issue in validation.issues)
 			if(issue.severity == GENERATED_STATION_ISSUE_ERROR)
 				errors += "[issue.code]@[issue.subject_id]: [issue.message]"
-		qdel(validation)
-		qdel(spec)
+		spent(validation)
+		spent(spec)
 		return null
-	qdel(validation)
+	spent(validation)
 	return spec
 
 /proc/generated_station_rust_content_direction(value)
@@ -585,12 +585,12 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		fixture.blocks_movement = !!row["blocks_movement"]
 		for(var/list/access_point in row["required_access"])
 			if(!generated_station_rust_content_point_valid(access_point, spec.grid_width, spec.grid_height))
-				qdel(fixture)
+				spent(fixture)
 				errors += "Rust fixture [row["id"]] has invalid access coordinates."
 				return FALSE
 			fixture.required_access["[access_point["x"] + 1],[access_point["y"] + 1]"] = TRUE
 		fixture_ids_seen["[fixture.id]"] = TRUE
-		own_add(spec, nameof(spec.fixture_blueprint), fixture)
+		rel_add(spec, nameof(spec.fixture_blueprint), fixture)
 	for(var/list/row in network_rows)
 		if(!islist(row) || !istext(row["id"]) || !length(row["id"]) || !istext(row["kind"]) || !length(row["kind"]) || !islist(row["backbone"]) || !islist(row["endpoint_fixture_ids"]))
 			errors += "Rust content blueprint contains an invalid network record."
@@ -600,17 +600,17 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		network.kind = row["kind"]
 		for(var/list/point in row["backbone"])
 			if(!generated_station_rust_content_point_valid(point, spec.grid_width, spec.grid_height))
-				qdel(network)
+				spent(network)
 				errors += "Rust network [row["id"]] has invalid backbone coordinates."
 				return FALSE
 			network.backbone += list(list(point["x"] + 1, point["y"] + 1))
 		for(var/fixture_id in row["endpoint_fixture_ids"])
 			if(!fixture_ids_seen["[fixture_id]"])
-				qdel(network)
+				spent(network)
 				errors += "Rust network [row["id"]] references an unknown endpoint fixture."
 				return FALSE
 			network.endpoint_fixture_ids += fixture_id
-		own_add(spec, nameof(spec.network_blueprint), network)
+		rel_add(spec, nameof(spec.network_blueprint), network)
 	spec.content_quality = islist(quality) ? quality.Copy() : list()
 	return TRUE
 
@@ -689,7 +689,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 					target = new
 					target.id = vestibule_id
 					target.department_node_id = node.id
-					own_add(node, nameof(node.eva_vestibules), target)
+					rel_add(node, nameof(node.eva_vestibules), target)
 				target.tiles[key] = TRUE
 			else if(room)
 				if(room.department_node_id != node.id || run["zone"] != room.id)
@@ -706,7 +706,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 
 /proc/generated_station_rust_decode_failure(datum/generated_station_spec/spec, list/errors, message)
 	errors += message
-	qdel(spec)
+	spent(spec)
 	return null
 
 #undef GENERATED_STATION_RUST_SCHEMA

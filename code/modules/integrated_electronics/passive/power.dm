@@ -83,7 +83,7 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/proc/test_validity(mob/living/carbon/human/host)
-	if(!host || HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || host.nutrition <= 10)
+	if(!host || HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || nutrition_of(host) <= 10)
 		return FALSE // Robots and dead people don't have a metabolism.
 	return TRUE
 
@@ -95,7 +95,7 @@
 			host = implant_assembly.implant().imp_in()
 	if(host && test_validity(host))
 		assembly().give_power(10)
-		host.set_nutrition(max(host.nutrition - DEFAULT_HUNGER_FACTOR, 0))
+		host.set_nutrition(max(nutrition_of(host) - DEFAULT_HUNGER_FACTOR, 0))
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/synthetic
 	name = "internal energy siphon"
@@ -105,7 +105,7 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/synthetic/test_validity(mob/living/carbon/human/host)
-	if(!host || !HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || host.nutrition <= 10)
+	if(!host || !HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || nutrition_of(host) <= 10)
 		return FALSE // This time we don't want a metabolism.
 	return TRUE
 
@@ -137,7 +137,8 @@
 	var/volume = 60
 	var/static/list/fuel = list(REAGENT_ID_PHORON = 50000, REAGENT_ID_SLIMEJELLY = 25000, REAGENT_ID_FUEL = 15000, REAGENT_ID_CARBON = 10000, REAGENT_ID_ETHANOL= 10000, REAGENT_ID_NUTRIMENT = 8000, REAGENT_ID_BLOOD = 5000)
 
-DECLARE_REAGENTS(/obj/item/integrated_circuit/passive/power/chemical_cell, "volume", null)
+CAPABILITIES(/obj/item/integrated_circuit/passive/power/chemical_cell)
+	reagents(nameof(volume))
 
 /obj/item/integrated_circuit/passive/power/chemical_cell/interact(mob/user)
 	set_pin_data(IC_OUTPUT, 2, ic_ref(src))
@@ -201,7 +202,8 @@ DECLARE_REAGENTS(/obj/item/integrated_circuit/passive/power/chemical_cell, "volu
 	var/obj/machinery/power/circuit_io/IO = null // Dummy power machine to move energy in/out without a bunch of code duplication.
 	var/throughput = 10000 // Give/take up to 10kW.
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/passive/power/powernet, "IO", /obj/machinery/power/circuit_io)
+CAPABILITIES(/obj/item/integrated_circuit/passive/power/powernet)
+	owns_one(nameof(IO), starts = /obj/machinery/power/circuit_io)
 
 
 /obj/item/integrated_circuit/passive/power/powernet/on_anchored()

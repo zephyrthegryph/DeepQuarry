@@ -8,19 +8,15 @@
 	var/watched = 0
 	var/quiet = 0
 	var/level = 0
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/crossings = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/seen_ops = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/notes = list()
 	var/republish = FALSE
 
-TRACKED(/datum/rx_fx, watched, CHANGE_EXPLICIT)
-TRACKED(/datum/rx_fx, quiet, CHANGE_EXPLICIT)
-TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
+TRACKED(/datum/rx_fx, watched)
+TRACKED(/datum/rx_fx, quiet)
+TRACKED(/datum/rx_fx, level)
 
 /datum/rx_fx/reactions()
 	. = ..()
@@ -61,7 +57,6 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 
 /// A listener for observe().
 /datum/rx_fx_listener
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/got = list()
 
 /datum/rx_fx_listener/proc/heard_quiet(datum/source, list/keys)
@@ -114,9 +109,9 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 	F.republish = TRUE
 	TEST_ASSERT(WANTS(F, /datum/notice/rx_fx), "the type wants its notice")
 	TEST_ASSERT(!WANTS(F, /datum/notice/rx_fx_other), "and not one it doesn't listen for")
-	PUBLISH(F, /datum/notice/rx_fx, 1)
-	PUBLISH(F, /datum/notice/rx_fx, 3)
-	PUBLISH(F, /datum/notice/rx_fx_other)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 1)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 3)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx_other)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2,3,3", "1 first, its two republishes next (2 then 3), then the second 3: none merged")
 	var/datum/notice/rx_fx/N = take_notice(/datum/notice/rx_fx, 7)
 	TEST_ASSERT_EQUAL(N.mark, 7, "a notice is filled by take_notice")
@@ -154,7 +149,7 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 	TEST_ASSERT(isnull(rx_before_op(F, "another_op", null, "deny")), "another op key is not matched")
 
 /// A read moving to another band delivers (band, previous); the first sight is a baseline. The reaction is urgent:
-/// the kernel delivers it (request_urgent), so each crossing is run from the U phase here.
+/// the kernel delivers it (kernel_urgent), so each crossing is run from the U phase here.
 /datum/unit_test/dx_reactions_cross/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
 	F.set_level(5)
@@ -178,11 +173,11 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 /// The one timer: a keyed timer is a TIMER relation, replaced by the same key and cancelled by key.
 /datum/unit_test/dx_reactions_after_keyed/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
-	var/first = rx_after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), "settle", CLOCK_OWN, list("a"))
+	var/first = after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("a"))
 	TEST_ASSERT(first, "scheduled")
 	TEST_ASSERT(after_pending(F, "settle"), "pending")
 	TEST_ASSERT(rx_ledger_has(F, RELK_TIMER, "settle"), "a TIMER relation")
-	rx_after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), "settle", CLOCK_OWN, list("b"))
+	after(F, 100, TYPE_PROC_REF(/datum/rx_fx, did_op), key = "settle", with = list("b"))
 	TEST_ASSERT_EQUAL(length(rx_ledger_sources(F, RELK_TIMER, "settle")), 1, "the same key replaced it: one pending")
 	TEST_ASSERT(cancel_after(F, "settle"), "cancelled")
 	TEST_ASSERT(!after_pending(F, "settle"), "not pending")
@@ -198,6 +193,6 @@ TRACKED(/datum/rx_fx, level, CHANGE_EXPLICIT)
 	TEST_ASSERT_EQUAL(ref.entry[OWNE_ARG], RELS_PLAIN, "a plain one")
 	TEST_ASSERT_EQUAL(paired.entry[OWNE_ARG], RELS_PAIR, "PAIRED with a back is a pair")
 	TEST_ASSERT_EQUAL(owned.entry[OWNE_KIND], OWNK_OWN, "OWNED is an ownership entry")
-	var/datum/om/event/E = new
+	var/datum/definition_event/E = new
 	TEST_ASSERT(!E.coalesce, "an event is an occurrence: not coalesced by default")
 	TEST_ASSERT(!E.skip_in_bulk, "and not dropped in bulk by default")

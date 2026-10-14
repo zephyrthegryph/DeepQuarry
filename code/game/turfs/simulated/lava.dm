@@ -5,9 +5,6 @@
 	icon = 'icons/turf/outdoors.dmi'
 	icon_state = "lava"
 	edge_blending_priority = -1
-	light_range = 2
-	light_power = 0.75
-	light_color = LIGHT_COLOR_LAVA
 	light_on = TRUE
 	movement_cost = 2
 	can_build_into_floor = TRUE
@@ -17,6 +14,11 @@
 	flags = TURF_ACID_IMMUNE
 	var/datum/looping_sound/lava/soundloop
 
+CAPABILITIES(/turf/simulated/floor/lava)
+	configure(light_glow(range = 2, power = 0.75, color = LIGHT_COLOR_LAVA))
+	owns_one(nameof(soundloop), /datum/looping_sound/lava, starts = /datum/looping_sound/lava)
+	every(2 SECONDS, then(PROC_REF(lava_step)), when = nameof(burning))
+
 /turf/simulated/floor/lava/outdoors
 	outdoors = OUTDOORS_YES
 
@@ -24,11 +26,9 @@
 /turf/simulated/floor/lava/Initialize(mapload)
 	if(!is_outdoors())
 		name = "magma"
-	update_icon()
 	update_light()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
+	. = ..()
 	soundloop.start()
-	return ..()
 
 
 /turf/simulated/floor/lava/make_outdoors()
@@ -39,10 +39,10 @@
 	..()
 	name = "magma"
 
-/turf/simulated/floor/lava/make_plating(place_product, defer_icon_update)
+/turf/simulated/floor/lava/make_plating(place_product)
 	return
 
-/turf/simulated/floor/lava/set_flooring(datum/decl/flooring/newflooring, initializing)
+/turf/simulated/floor/lava/install_flooring(datum/decl/flooring/newflooring, initializing)
 	if(newflooring?.type == initial_flooring)
 		return ..()
 	return
@@ -50,17 +50,22 @@
 /turf/simulated/floor/lava
 	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
 
+/// TRUE while something is burning in it: the slow step re-checks the contents until nothing is left to burn.
+/turf/simulated/floor/lava/var/tmp/burning = FALSE
+TRACKED(/turf/simulated/floor/lava, burning)
+
 /turf/simulated/floor/lava/Entered(atom/movable/AM)
 	if(burn_stuff(AM))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_burning(TRUE)
 
 /turf/simulated/floor/lava/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(burn_stuff(source))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_burning(TRUE)
 
-/turf/simulated/floor/lava/periodic_step()
+/// One slow step: burns what is in it; nothing left to burn parks the work.
+/turf/simulated/floor/lava/proc/lava_step(datum/act/A)
 	if(!burn_stuff())
-		return PROCESS_KILL
+		set_burning(FALSE)
 
 /turf/simulated/floor/lava/proc/is_safe()
 	//if anything matching this typecache is found in the lava, we don't burn things

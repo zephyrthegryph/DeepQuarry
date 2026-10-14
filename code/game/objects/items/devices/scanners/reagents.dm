@@ -6,15 +6,16 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "spectrometer"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	var/details = 0
 	var/recent_fail = 0
+
+CAPABILITIES(/obj/item/reagent_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/item/reagent_scanner/afterattack(obj/O, mob/living/user, proximity)
 	if(!proximity || user.stat || !istype(O))
@@ -23,7 +24,7 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		return
 
 	if(!isnull(O.reagents))
-		if(!(O.flags & OPENCONTAINER) && !istype(O,/obj/machinery/reagent_refinery)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
+		if(!O.is_open_container() && !istype(O,/obj/machinery/reagent_refinery)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
 			to_chat(user, span_warning("\The [O] is sealed, and cannot be scanned by \the [src] until unsealed."))
 			return
 

@@ -7,8 +7,7 @@
 	var/worth = 250 // Pricey... Should be hard-ish to obtain.
 	special_handling = TRUE
 
-/obj/item/assembly/signaler/anomaly/Initialize(mapload)
-	. = ..()
+/obj/item/assembly/signaler/anomaly/proc/register_sellable(datum/act/timer/A)
 	if(worth)
 		make_sellable(/datum/sellable)
 
@@ -24,31 +23,33 @@
 	return FALSE
 
 
-EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
-	INTERACT_INSERT(/obj/item/analyzer, PROC_REF(anomaly_analyze), "Analyze"), \
-	INTERACT_INSERT(/obj/item/anomaly_scanner, PROC_REF(anomaly_scan), "Scan"), \
-	INTERACT_INSERT(/obj/item/anomaly_releaser, PROC_REF(anomaly_interaction_item), "Release"), \
-)
+CAPABILITIES(/obj/item/assembly/signaler/anomaly)
+	after_init(0, then(PROC_REF(register_sellable)))
+	op("anomaly_analyze", item(/obj/item/analyzer), label("Analyze"), then(PROC_REF(anomaly_analyze)))
+	op("anomaly_scan", item(/obj/item/anomaly_scanner), label("Scan"), then(PROC_REF(anomaly_scan)))
+	op("anomaly_interaction_item", item(/obj/item/anomaly_releaser), label("Release"), needs(req(PROC_REF(releaser_fresh), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(release_done)))
 
 /// Old attackby's analyzer branch: read the field's frequency and code.
-/obj/item/assembly/signaler/anomaly/proc/anomaly_analyze(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/signaler/anomaly/proc/anomaly_analyze(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(frequency)], code [code]."))
 	return TRUE
 
 /// Old attackby's anomaly scanner branch.
-/obj/item/assembly/signaler/anomaly/proc/anomaly_scan(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/signaler/anomaly/proc/anomaly_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Sealed anomalous energies detected. Use of a releaser will unleash these energies."))
 	return TRUE
 
-/// Old attackby's releaser branch: unleash the sealed anomaly.
-/obj/item/assembly/signaler/anomaly/proc/anomaly_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	var/obj/item/anomaly_releaser/releaser = W
-	if(releaser.used)
-		return INTERACTION_HANDLED_PASS
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
-	return TRUE
+/// The releaser in hand has not been used up.
+/obj/item/assembly/signaler/anomaly/proc/releaser_fresh(datum/act/op/A)
+	var/obj/item/anomaly_releaser/releaser = A.held
+	return (istype(releaser) && !releaser.used) ? null : /datum/msg/req_silent
 
-/obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)
+/// Unleash the sealed anomaly.
+/obj/item/assembly/signaler/anomaly/proc/release_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/anomaly_releaser/releaser = A.held
 	if(!anomaly_type || releaser.used)
 		return
 
@@ -58,8 +59,8 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
 	anomaly.stabilize(releaser.will_anchor, releaser.has_core, releaser.gives_stats)
 
 	if(!releaser.infinite)
-		releaser.icon_state = releaser.used_icon_state
-		releaser.used = TRUE
+		releaser.set_icon_state(releaser.used_icon_state)
+		releaser.set_used(TRUE)
 		releaser.name = "used " + releaser.name
 		consume(src, user)
 
@@ -79,8 +80,8 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
 
 	var/source = null
 	if(connected())
-		var/datum/wires/wires = connected()
-		source = wires.holder
+		var/datum/cap_data/wires/wiring = connected()
+		source = wiring.owner
 	tesla_zap(source ? source : src, 2, 1000, FALSE, TRUE, 1)
 
 /obj/item/assembly/signaler/anomaly/bluespace
@@ -170,7 +171,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
 		if(nearby_living.is_blind())
 			continue
 
-		nearby_living.status_adjust(EFFECT_HALLUCINATING, 25)
+		nearby_living.status_adjust(STAT_HALLUCINATING, 25)
 
 /obj/item/assembly/signaler/anomaly/pyro
 	name = "\improper pyroclastic anomaly core"
@@ -207,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
 	if(!length(possible_targets))
 		return
 	var/turf/target = pick(possible_targets)
-	om_after(src, 1 SECONDS, GLOBAL_PROC_REF(lightning_strike), target)
+	after(src, 1 SECONDS, GLOBAL_PROC_REF(lightning_strike), with = list(target))
 
 /obj/item/assembly/signaler/anomaly/dust
 	name = "\improper dust anomaly core"
@@ -228,16 +229,18 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, \
 		if(!person.has_lungs())
 			continue
 		person.emote(prob(50) ? "cough" : "sneeze")
-		person.status_at_least(EFFECT_WEAKENED, 2)
+		person.status_at_least(STAT_WEAKENED, 2)
 		person.body?.add_restriction(src, BF_GAS_EXCHANGE, 0.3, 15 SECONDS) // dust coats the lungs
 		if(prob(15))
-			person.status_at_least(EFFECT_STUNNED, 2)
+			person.status_at_least(STAT_STUNNED, 2)
 			to_chat(person, span_danger(pick("You have a coughing fit!", "You can't stop coughing!")))
-			om_after(src, 3 SECONDS, PROC_REF(extraCough), person)
+			after(src, 3 SECONDS, PROC_REF(extraCough), with = list(person))
 
 /obj/item/assembly/signaler/anomaly/dust/proc/extraCough(mob/living/coughing)
+	if(QDELETED(coughing))
+		return
 	coughing.emote("cough")
-	om_after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), "cough")
+	after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 /*
 /obj/item/assembly/signaler/anomaly/ectoplasm
 	name = "\improper ectoplasm anomaly core"

@@ -1,0 +1,5 @@
+/obj/item/reagent_containers/glass/rag icon: icons/obj/toy.dmi
+/obj/item/reagent_containers/glass/rag state: rag
+/obj/item/reagent_containers/glass/rag dir: 2
+/obj/item/reagent_containers/glass/rag overlay: icons/obj/toy.dmi:rag:8:#000000
+

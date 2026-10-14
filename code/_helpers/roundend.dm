@@ -1,9 +1,5 @@
 /datum/system/ticker/proc/declare_completion(was_forced = END_ROUND_AS_NORMAL)
 
-	for(var/datum/callback/roundend_callbacks as anything in round_end_events)
-		roundend_callbacks.InvokeAsync()
-	LAZYCLEARLIST(round_end_events)
-
 	to_chat(world, span_filter_system("<BR><BR><BR><H1>The round has ended.</H1>"))
 	log_game("The round has ended.")
 	for(var/channel_tag in CONFIG_GET(str_list/channel_announce_end_game))
@@ -14,7 +10,7 @@
 		if(Player.mind && !isnewplayer(Player))
 			if(Player.stat != DEAD)
 				var/turf/playerTurf = get_turf(Player)
-				if(GLOB.emergency_shuttle_service.departed && GLOB.emergency_shuttle_service.evac)
+				if(emergency_shuttle_departed() && SSemergency_shuttle.evac)
 					if(isNotAdminLevel(playerTurf.z))
 						to_chat(Player, span_filter_system(span_blue(span_bold("You survived the round, but remained on [station_name()] as [Player.real_name]."))))
 					else
@@ -78,7 +74,7 @@
 	RoundTrivia()
 
 	//Ask the event manager to print round end information
-	GLOB.event_service.RoundEnd()
+	SSevents.RoundEnd()
 
 	//Print a list of antagonists to the server log
 	var/list/total_antagonists = list()
@@ -108,7 +104,7 @@
 	if(unit_test_is_focused_run())
 		report_delay = 0
 	#endif
-	om_after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
+	after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
 
 /datum/system/ticker/proc/standard_reboot()
 	if(ready_for_reboot)

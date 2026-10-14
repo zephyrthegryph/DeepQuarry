@@ -4,6 +4,9 @@
 // is the source of truth for per-line diff context.
 
 /obj/machinery/atmospherics/trinary/atmos_filter
+	air3_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air2_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air1_volume = ATMOS_DEFAULT_VOLUME_FILTER
 	icon = 'icons/atmos/filter.dmi'
 	icon_state = "map"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -15,7 +18,6 @@
 	desc = "Filters one type of gas from an input, and pushes it out the side."
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 7500	//This also doubles as a measure of how powerful the filter is, in Watts. 7500 W ~ 10 HP
 
 	var/temp = null // -- TLE
@@ -38,34 +40,19 @@
 	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
-/obj/machinery/atmospherics/trinary/atmos_filter/Initialize(mapload)
+/obj/machinery/atmospherics/trinary/atmos_filter/draw(datum/look/look)
+	..()
+	var/prefix = mirrored ? "m" : "" // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
+	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
+
+/obj/machinery/atmospherics/trinary/atmos_filter/derived()
 	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air3.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	if(frequency)
-		set_frequency(frequency)
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/trinary/atmos_filter/appearance_overlays()
-	. = list()
-	if(mirrored)
-		icon_state = "m"
-	else
-		icon_state = ""
-
-	if(!powered())
-		icon_state += "off"
-	else if(node2 && node3 && node1)
-		icon_state += use_power ? "on" : "off"
-	else
-		icon_state += "off"
+	. += drawn_from(nameof(use_power))
 
 /// The gases the filter takes out of the input, by its setting.
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/filtered_gas_ids()
@@ -100,7 +87,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	for(var/gas_id in filtered_gas_ids())
 		mask |= (1 << GAS_IDX(gas_id))
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
 	rust_set_budget_leg("filtered", 1, 2, RUST_FLOW_FILTER, mask, RUST_ROLE_OUTPUT, 0, set_flow_rate, available_power, efficiency)
 	rust_set_budget_leg("clean", 1, 3, RUST_FLOW_FILTER, 0, RUST_ROLE_CLEAN, 0, set_flow_rate, available_power, efficiency)
 
@@ -118,35 +105,25 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	if(index == 3)
 		rust_device_dirty()
 
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, set_flow_rate)
+TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 
 /// The Rust group is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/trinary/atmos_filter/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(filter_type))
 
-/obj/machinery/atmospherics/trinary/atmos_filter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/atmos_filter_use,
-	)
-	..()
+/// The window's data.
+/obj/machinery/atmospherics/trinary/atmos_filter/ui_data(datum/act/eval/A)
+	. = list()
+	.["on"] = use_power
+	.["rate"] = set_flow_rate
+	var/list/part = ui_data_part_atmos_filter(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-/datum/interaction/machine_hand/atmos_filter_use
-	id = "atmos_filter_use"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in, "access denied"))
-	effect = /atom/proc/interaction_open_ui
-
-/obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
-DECLARE_UI(/obj/machinery/atmospherics/trinary/atmos_filter, "AtmosFilter")
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/atmos_filter, "on=use_power", "rate=set_flow_rate:num", "merge:ui_data_obj_machinery_atmospherics_trinary_atmos_filter{max_rate:unknown,last_flow_rate:num,filter_types:list}")
-
-/// The computed part of /obj/machinery/atmospherics/trinary/atmos_filter's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_data_obj_machinery_atmospherics_trinary_atmos_filter(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_data_part_atmos_filter(datum/act/eval/A)
 	var/list/data = list()
 
 	data["max_rate"] = air1.return_volume()
@@ -163,15 +140,19 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/atmos_filter, "on=use_power"
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_power)
-	set_use_power(!use_power)
-	add_fingerprint(ui.user)
-	update_icon()
+CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(idle = 150))
+	pipe_device_window("AtmosFilter")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("rate", ui_act("rate", arg("rate")), then(PROC_REF(ui_act_rate)))
+	op("filter", ui_act("filter", arg("filterset", num())), then(PROC_REF(ui_act_filter)))
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "rate", ui_act_rate, UI_ARG_VALUE("rate"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_rate)
-	var/rate = params["rate"]
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_power(datum/act/op/A)
+	toggle_power()
+	return OP_OK
+
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_rate(datum/act/op/A, rate)
 	if(rate == "max")
 		rate = air1.return_volume()
 		. = TRUE
@@ -179,15 +160,10 @@ UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_rate)
 		. = TRUE
 	if(.)
 		set_set_flow_rate(clamp(rate, 0, air1.return_volume()))
-	add_fingerprint(ui.user)
-	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "filter", ui_act_filter, UI_ARG_NUM("filterset"))
-UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_filter)
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_act_filter(datum/act/op/A, filterset)
 	. = TRUE
-	set_filter_type(params["filterset"])
-	add_fingerprint(ui.user)
-	update_icon()
+	set_filter_type(filterset)
 
 //
 // Mirrored Orientation - Flips the output dir to opposite side from normal.

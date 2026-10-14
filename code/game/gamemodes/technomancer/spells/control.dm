@@ -25,7 +25,7 @@
 
 //This unfortunately is gonna be rather messy due to the various mobtypes involved.
 /obj/item/spell/control/proc/select(mob/living/L)
-	if(!(L.mob_class & allowed_mob_classes))
+	if(!(kind_of(L).mob_class & allowed_mob_classes))
 		return FALSE
 
 	if(!(L.ai_brain != null))
@@ -39,6 +39,7 @@
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
 		rel_add(SM, nameof(SM.friends), src.owner_ref())
+	brain.ally_by_effect(src, owner_ref()) // the spell is the source: the standing goes with it
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
@@ -58,6 +59,7 @@
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
 		rel_remove(SM, nameof(SM.friends), owner_ref())
+	unstanding(L, owner_ref(), src)
 
 	L.cut_overlay(control_overlay, TRUE)
 	rel_remove(src, nameof(controlled_mobs), L)
@@ -88,9 +90,15 @@
 
 /obj/item/spell/control/on_use_cast(mob/living/user)
 	if(length(controlled_mobs) != 0)
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_control_answered), title = "Release Control?", message = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", no_first = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(release_control_answered), answerer = user, subject = src, title = "Release Control?", question = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", choices = list("No", "Yes"), buttons = TRUE)
 
-/obj/item/spell/control/proc/release_control_answered(datum/om/prompt/confirm/ask)
+/obj/item/spell/control/proc/release_control_answered(datum/act/request/A)
+	if(!A.answer || A.answer.value != "Yes")
+		return
+	return release_control_answered_apply(A)
+
+/obj/item/spell/control/proc/release_control_answered_apply(datum/act/request/A)
+	var/datum/prompt/choice/technomancer_carried/ask = A.answer
 	for(var/mob/living/L in controlled_mobs)
 		deselect(L)
 	to_chat(ask.answerer, span_notice("You've released control of all entities you had in control."))
@@ -103,7 +111,7 @@
 			trying to use it on yourself, perhaps you're an exception?  Regardless, nothing happens."))
 			return 0
 
-		if(L.mob_class & allowed_mob_classes)
+		if(kind_of(L).mob_class & allowed_mob_classes)
 			if(!(L in controlled_mobs)) //Selecting
 				if(L.client)
 					to_chat(user, span_danger("\The [L] seems to resist you!"))

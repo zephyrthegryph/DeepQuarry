@@ -10,60 +10,36 @@
 	max_transfer_amount = 5
 	min_transfer_amount = 1
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	volume = 5
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
-/obj/item/reagent_containers/dropper/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 2)
-		if(reagents && reagents.reagent_list.len)
-			. += span_notice("It contains [reagents.total_volume] units of liquid.")
-		else
-			. += span_notice("It is empty.")
+// A dropper is a sealed container of its volume that draws from open containers and tanks while it is empty and squirts what it holds into open
+// containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it
+// moves is set from 1 to its largest. What it holds is told to two tiles.
+CAPABILITIES(/obj/item/reagent_containers/dropper)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount),
+		examine_range = 2)
+	needle(
+		draws_from = list(/obj/structure/reagent_dispensers),
+		fills = list(/obj/item/reagent_containers/food, /obj/item/clothing/mask/smokable/cigarette))
+	op("squirt", at_target(/mob/living), label("Squirt into eyes"), begins(MSG(dropper/begin)), wait(2 SECONDS),
+		needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))),
+		then(PROC_REF(squirted)))
 
-/obj/item/reagent_containers/dropper/afterattack(obj/target, mob/user, proximity)
-	if(!target.reagents || !proximity) return
+MSG_DEF_SELF(dropper/empty, "The dropper is empty.")
+MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!")
 
-	if(reagents.total_volume)
-
-		if(!target.reagents.get_free_space())
-			to_chat(user, span_notice("[target] is full."))
-			return
-
-		if(!target.is_open_container() && !ismob(target) && !istype(target, /obj/item/reagent_containers/food) && !istype(target, /obj/item/clothing/mask/smokable/cigarette)) //You can inject humans and food but you cant remove the shit.
-			to_chat(user, span_notice("You cannot directly fill this object."))
-			return
-
-		var/trans = 0
-
-		if(ismob(target))
-
-			var/time = 20 //2/3rds the time of a syringe
-			act_message(user, target, others = span_warning("%U% is trying to squirt something into %T%'s eyes!"))
-			om_task_timed(user, time, target, src, PROC_REF(squirt_done), list(user, target))
-			return
-
-		else
-			trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
-			to_chat(user, span_notice("You transfer [trans] units of the solution."))
-
-	else // Taking from something
-
-		if(!target.is_open_container() && !istype(target,/obj/structure/reagent_dispensers))
-			to_chat(user, span_notice("You cannot directly remove reagents from [target]."))
-			return
-
-		if(!target.reagents || !target.reagents.total_volume)
-			to_chat(user, span_notice("[target] is empty."))
-			return
-
-		var/trans = target.reagents.trans_to_obj(src, amount_per_transfer_from_this)
-
-		to_chat(user, span_notice("You fill the dropper with [trans] units of the solution."))
-
-	return
+/// The squirt: into the eyes of the person it was aimed at.
+/obj/item/reagent_containers/dropper/proc/squirted(datum/act/op/A)
+	squirt_done(A.actor, A.target)
+	return OP_OK
 
 /obj/item/reagent_containers/dropper/proc/squirt_done(mob/user, mob/target)
 	if(!reagents.total_volume)
@@ -74,17 +50,17 @@
 
 		var/obj/item/safe_thing = null
 		if(victim.get_equipped_item(SLOT_ID_MASK))
-			if (victim.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
+			if (worn_of(victim.get_equipped_item(SLOT_ID_MASK)).covers & EYES)
 				safe_thing = victim.get_equipped_item(SLOT_ID_MASK)
 		if(victim.get_equipped_item(SLOT_ID_HEAD))
-			if (victim.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
+			if (worn_of(victim.get_equipped_item(SLOT_ID_HEAD)).covers & EYES)
 				safe_thing = victim.get_equipped_item(SLOT_ID_HEAD)
 		if(victim.get_equipped_item(SLOT_ID_EYES))
 			if (!safe_thing)
 				safe_thing = victim.get_equipped_item(SLOT_ID_EYES)
 
 		if(safe_thing)
-			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30)
+			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30, user = user)
 			act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
 				MSG_OTHERS(span_warning("%U% tries to squirt something into %T%'s eyes, but fails!")))
 			return
@@ -97,14 +73,15 @@
 	act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
 		MSG_OTHERS(span_warning("%U% squirts something into %T%'s eyes!")))
 
-/obj/item/reagent_containers/dropper/on_reagent_change()
-	update_icon()
-
 /// Appearance reader: TRUE while the dropper holds reagents.
 /obj/item/reagent_containers/dropper/proc/appearance_filled()
 	return reagents?.total_volume ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/dropper, "dropper{appearance_filled?1:0}")
+/// The look (the draw sweep: from its template).
+/obj/item/reagent_containers/dropper/draw(datum/look/look)
+	..()
+	look.watch(reagents)
+	look.state("dropper[appearance_filled() ? "1" : "0"]")
 
 /obj/item/reagent_containers/dropper/industrial
 	name = "Industrial Dropper"

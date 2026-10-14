@@ -1,0 +1,56 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Pick up
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Pick up
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Pick up
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Pick up
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Pick up
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Pick up
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Pick up
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Pick up
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Pick up
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Pick up
+@obj.item.toy human|/obj/item/kit
+-menu: Name Plushie (refused: You can't do that.)
+-menu: Use item
++2 menu: Pick up
+@obj.item.toy human|/obj/item/storage
+-menu: Name Plushie (refused: You can't do that.)
+-menu: Use storage
+-click: Click: Item
++2 menu: Pick up
++4 click: Click: Pick up
+human|/obj/item/toy/mecha menu: Battle
+human|/obj/item/toy/mecha menu: Move To Top
+human|/obj/item/toy/mecha menu: Pick up
+human|/obj/item/toy/mecha menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/toy/mecha click: Click: Battle
+keys: battle, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up, pick_up_item, play, play_tk, toggle_digestable

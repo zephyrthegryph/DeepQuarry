@@ -4,7 +4,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "flash"
 	item_state = "flashtool"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
@@ -42,44 +41,49 @@
 
 	var/cell_type = /obj/item/cell/device
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
+CAPABILITIES(/obj/item/flash)
+	configure(item_thrown(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(power_supply), starts = nameof(cell_type))
+	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Repair the bulb"), when(nameof(broken)), begins(PROC_REF(repair_begins)), wait(PROC_REF(repair_time)), then(PROC_REF(screwdriver_act_tool_done)), on_interrupt(PROC_REF(screwdriver_act_tool_failed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(flash_emp)))
 
-/obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
-	if(!broken)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
-	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/om/task/timed/tool_job/flash_repair)
-	return ITEM_INTERACT_SUCCESS
+/obj/item/flash/proc/repair_begins(datum/act/op/A)
+	return msg_text(null, span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
 
-/obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
+/// Forty seconds to a minute of fiddling with the bulb.
+/obj/item/flash/proc/repair_time(datum/act/op/A)
+	return 40 SECONDS + rand(0, 20 SECONDS)
+
+/obj/item/flash/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!(can_repair))
-		return
+		return OP_OK
 	if(prob(30))
 		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
-		broken = FALSE
-		update_icon()
-	playsound(src, tool.usesound, 50, 1)
+		set_broken(FALSE)
+	playsound(src, sounds_of(tool).use, 50, 1)
 
-/obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
+/obj/item/flash/proc/screwdriver_act_tool_failed(datum/act/op/A)
+	act_message(A.actor, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/flash/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/flash, broken)
+
+/obj/item/flash/draw(datum/look/look)
+	..()
 	var/obj/item/cell/battery = power_supply
 
 	if(use_external_power)
 		battery = get_external_power_supply()
 
 	if(broken || !battery || battery.charge < charge_cost)
-		icon_state = "[base_icon]burnt"
+		look.state("[base_icon]burnt")
 	else
-		icon_state = "[base_icon]"
-	return .
+		look.state("[base_icon]")
 
 /obj/item/flash/get_cell()
 	return power_supply
@@ -125,7 +129,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 
 	COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 	times_used = max(0,round(times_used)) //sanity
-	update_icon()
 
 // Returns true if the device can flash.
 /obj/item/flash/proc/check_capacitor(mob/user)
@@ -139,30 +142,25 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 	if(times_used <= max_flashes && battery && battery.charge >= charge_cost)
 		COOLDOWN_START(src, use_cooldown, 10 SECONDS)
 		if(one_use)
-			broken = TRUE
+			set_broken(TRUE)
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			update_icon()
 			return TRUE
 		if(prob( max(0, times_used - safe_flashes) * 2 + (times_used >= safe_flashes)) && can_break)	//if you use it 10 times in a minute it has a 30% chance to break.
-			broken = TRUE
+			set_broken(TRUE)
 			if(user)
 				to_chat(user, span_warning("The bulb has burnt out!"))
-			update_icon()
 			return FALSE
 		else
 			times_used++
-			update_icon()
 			return TRUE
 	else if(!charge_only)	//can only use it 10 times a minute, unless it runs purely on charge.
 		if(user)
-			update_icon()
 			to_chat(user, span_warning(span_italics("click")))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 1.6)
 		return FALSE
 	else if(battery && battery.checked_use(charge_cost + (round(charge_cost / 4) * max(0, times_used - max_flashes)))) // Using over your maximum flashes starts taking more charge per added flash.
 		times_used++
-		update_icon()
 		return TRUE
 
 //attack_as_weapon
@@ -191,7 +189,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
-		animation.icon_state = "blank"
+		animation.set_icon_state("blank")
 		animation.icon = 'icons/mob/mob.dmi'
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
@@ -245,15 +243,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 					if(shield.active)
 						shield.adjust_flash_count(R, 1)
 						return FALSE
-		target.status_at_least(EFFECT_WEAKENED, rand(5,10))
+		target.status_at_least(STAT_WEAKENED, rand(5,10))
 		return TRUE
 	else
 		return FALSE
 
 	//Now do all the actual effects.
-	target.status_at_least(EFFECT_CONFUSED, flash_strength + 5)
-	target.status_at_least(EFFECT_BLINDED, flash_strength)
-	target.status_at_least(EFFECT_BLURRY, flash_strength + 5)
+	target.status_at_least(STAT_CONFUSED, flash_strength + 5)
+	target.status_at_least(STAT_BLINDED, flash_strength)
+	target.status_at_least(STAT_BLURRY, flash_strength + 5)
 	target.flash_eyes()
 	target.injure(INJURY_PAIN, halloss_per_flash * (flash_strength / 5), BP_HEAD, src) // Should take two flashes to stun.
 	if(flash_burn)
@@ -261,9 +259,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flash, TYPE_PROC_REF(/atom, appearance_overlay
 	return TRUE
 
 
-DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction_self)))
-
-/obj/item/flash/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flash/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(!istype(user) || !clown_check(user)) 	return
 
 	user.setClickCooldown(user.get_attack_speed(src))
@@ -279,10 +276,10 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 
 	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
-	if(user && isrobot(user))
+	if(istype(user, /mob/living/silicon/robot))
 		var/atom/movable/overlay/animation = new(user.loc)
 		animation.layer = user.layer + 1
-		animation.icon_state = "blank"
+		animation.set_icon_state("blank")
 		animation.icon = 'icons/mob/mob.dmi'
 		rel_set(animation, nameof(animation.master), user)
 		flick("blspell", animation)
@@ -296,9 +293,8 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 
 	return
 
-DAMAGE_REACTION(/obj/item/flash, DAMAGE_EMP, PROC_REF(flash_emp))
 /// An EMP sets a working flash off in its holder's face.
-/obj/item/flash/proc/flash_emp(datum/damage_packet/packet)
+/obj/item/flash/proc/flash_emp(datum/act/A)
 	if(broken)
 		return
 	flash_recharge()

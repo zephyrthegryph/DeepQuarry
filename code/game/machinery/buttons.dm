@@ -8,38 +8,23 @@
 	active = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
+
+TRACKED(/obj/machinery/button, id)
 
 /obj/machinery/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/button/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/button_press,
-		/datum/interaction/machine_item/button_press_item,
-	)
-	..()
+MSG_DEF_SELF(button/needs_item, "needs an item")
 
-/// Old attack_hand: `if(..()) return 1; playsound(...)`.
-/datum/interaction/machine_hand/button_press
-	id = "button_press"
-	name = "Press"
-	effect = /obj/machinery/button/proc/interaction_press
+CAPABILITIES(/obj/machinery/button)
+	configure(uses_power(idle = 2, active = 4))
+	op("button_press", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), then(PROC_REF(interaction_press)))
+	op("button_press_item", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), needs(req(/obj/item, because = MSG(button/needs_item)), req_adjacent(), req_capable()), when(PROC_REF(local_item_press)), then(TYPE_PROC_REF(/atom, op_as_touch)))
 
-/// Old attackby: any item presses the button (`return attack_hand(user)`).
-/datum/interaction/machine_item/button_press_item
-	id = "button_press_item"
-	name = "Press"
-	category = INTERACTION_CAT_TOGGLE
-	held_type = /obj/item
-	effect = /atom/proc/interaction_as_touch
+/obj/machinery/button/proc/local_item_press(datum/act/op/A)
+	return !istype(src, /obj/machinery/button/remote)
 
-/// Remote buttons declare their own item interactions.
-/datum/interaction/machine_item/button_press_item/applies_to(atom/target)
-	return !istype(target, /obj/machinery/button/remote)
-
-/obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/proc/interaction_press(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	return TRUE
 
@@ -67,41 +52,20 @@
 	///What spawner is linked with this spawner
 	var/link = "MOBSPAWN"
 
-/obj/machinery/button/mob_spawner_button/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/mob_spawner_button_spawn,
-	)
-	..()
+CAPABILITIES(/obj/machinery/button/mob_spawner_button)
+	op("spawn_mob", hand(), ungated(), priority(OP_PRIORITY_DEFAULT), label("Spawn mob"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(spawn_options)), "title" = "Mob spawn", "question" = "Which Mob do you want to spawn?", "timeout" = 0), step = "mob"),
+		asks(/datum/prompt/choice, fields = list("title" = "Faction", "question" = "Do you want the mob's faction to remain the same or be passive?", "choices" = list("Normal", "Neutral"), "buttons" = TRUE), step = "faction"), then(PROC_REF(spawn_choices_made)))
+	ref_one(nameof(mobspawned), /mob/living/simple_mob)
 
-/// Old attack_hand, which never called ..() (ungated: no machinery hand gate).
-/datum/interaction/machine_hand/ungated/mob_spawner_button_spawn
-	id = "mob_spawner_button_spawn"
-	name = "Spawn mob"
-	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
+/obj/machinery/button/mob_spawner_button/proc/spawn_options(datum/act/op/A)
+	return GLOB.vr_mob_spawner_options
 
-/obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(spawn_mob_chosen), choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", message = "Which Mob do you want to spawn?", requires = PROMPT_ADJACENT)
-	return TRUE
-
-/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/om/prompt/choice/ask)
-	var/mobtype = GLOB.vr_mob_spawner_options[ask.choice]
-	if(!mobtype)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/confirm/mob_spawner_faction, PROC_REF(spawn_choices_made), mobtype = mobtype)
-
-/datum/om/prompt/confirm/mob_spawner_faction
-	title = "Faction"
-	message = "Do you want the mob's faction to remain the same or be passive?"
-	yes_text = "Neutral"
-	no_text = "Normal"
-	no_first = TRUE
-	answer_on_no = TRUE
-	requires = PROMPT_ADJACENT
-	var/mobtype
-
-/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/om/prompt/confirm/mob_spawner_faction/ask)
-	var/neutral = ask.yes
-	var/mobtype = ask.mobtype
+/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/act/op/A)
+	var/mobtype = GLOB.vr_mob_spawner_options[A.step_value("mob")]
+	if(!mobtype || isnull(A.step_value("faction")))
+		return OP_OK
+	var/neutral = A.step_value("faction") == "Neutral"
 	var/mob/living/simple_mob/old_mob = mobspawned()
 	rel_clear(src, nameof(mobspawned))
 	QDEL_NULL(old_mob)
@@ -118,9 +82,19 @@
 /obj/machinery/button/mob_spawner_button/second
 	link = "MOBSPAWNSECOND"
 
-/obj/machinery/button/remote/noemag/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(usr, span_warning("The cryptographic sequencer seems to do nothing."))
-	return 0
+MSG_DEF_SELF(button/no_emag, "The cryptographic sequencer seems to do nothing.")
+
+// A button no sequencer works: it says so and the card keeps its use.
+CAPABILITIES(/obj/machinery/button/remote/noemag)
+	without(CAP_EMAG)
+	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
+		needs(req(PROC_REF(sequencer_welcome))), then(PROC_REF(press_nothing)))
+
+/obj/machinery/button/remote/noemag/proc/sequencer_welcome(datum/act/A)
+	return (FALSE) ? null : MSG(button/no_emag)
+
+/obj/machinery/button/remote/noemag/proc/press_nothing(datum/act/op/A)
+	return OP_OK
 
 /// mobspawned (a relation view: it reads null once the target is deleted).
 /obj/machinery/button/mob_spawner_button/proc/mobspawned() as /mob/living/simple_mob

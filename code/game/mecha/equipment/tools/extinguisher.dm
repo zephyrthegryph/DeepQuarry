@@ -11,20 +11,18 @@
 	var/spray_amount = 5	//units of liquid per particle. 5 is enough to wet the floor - it's a big fire extinguisher, so should be fine
 	var/max_water = 1000
 
-/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/Initialize(mapload)
-	. = ..()
-	create_reagents(max_water)
-	rel_set(reagents, nameof(reagents.my_atom), src)
-	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/extinguisher)
+	reagents(nameof(max_water), starts = list(REAGENT_ID_FIREFOAM = nameof(max_water)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/action(atom/target) //copypasted from extinguisher. TODO: Rewrite from scratch.
+
+/obj/item/mecha_parts/mecha_equipment/tool/extinguisher/action(atom/target, params, mob/user = null) //copypasted from extinguisher. TODO: Rewrite from scratch.
 	if(!action_checks(target) || get_dist(chassis, target)>3) return
 	if(get_dist(chassis, target)>2) return
 	set_ready_state(FALSE)
 	if(do_after_cooldown(target))
 		if( istype(target, /obj/structure/reagent_dispensers) && get_dist(chassis,target) <= 1)
 			var/obj/o = target
-			var/amount = o.reagents.trans_to_obj(src, 200)
+			var/amount = o.reagents.trans_to_obj(src, 200, user = user)
 			occupant_message(span_notice("[amount] units transferred into internal tank."))
 			play_sfx(src, SFX_EFFECTS_REFILL)
 			return
@@ -57,9 +55,9 @@
 			W.create_reagents(10)
 			if(!W || !src)
 				continue
-			reagents.trans_to_obj(W, spray_amount)
+			reagents.trans_to_obj(W, spray_amount, user = user)
 			W.set_color()
-			W.set_up(my_target)
+			W.set_up(my_target, user = user)
 		return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/extinguisher/get_equip_info()

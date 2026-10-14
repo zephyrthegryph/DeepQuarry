@@ -206,9 +206,9 @@
 
 /datum/trait/positive/winged_flight/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/proc/flying_toggle, src)
-	om_grant(H, GRANT_VERB, /mob/living/proc/flying_vore_toggle, src)
-	om_grant(H, GRANT_VERB, /mob/living/proc/start_wings_hovering, src)
+	grant(H, granted_verb(/mob/living/proc/flying_toggle), src)
+	grant(H, granted_verb(/mob/living/proc/flying_vore_toggle), src)
+	grant(H, granted_verb(/mob/living/proc/start_wings_hovering), src)
 
 /datum/trait/positive/soft_landing
 	name = "Soft Landing"
@@ -225,7 +225,7 @@
 
 /datum/trait/positive/antiseptic_saliva/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/lick_wounds, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/lick_wounds), src)
 
 /datum/trait/positive/traceur
 	name = "Traceur"
@@ -256,7 +256,7 @@
 	..()
 	var/datum/trait_state/weaver/W = H.get_trait_state(added_component_path)
 	if(S.get_bodytype() == SPECIES_VASILISSAN)
-		W.silk_reserve = 500
+		W.set_silk_reserve(500)
 		W.silk_max_reserve = 1000
 	if(trait_prefs)
 		W.silk_production = trait_prefs["silk_production"]
@@ -274,8 +274,8 @@
 
 /datum/trait/positive/aquatic/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/water_stealth, src)
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/underwater_devour, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/water_stealth), src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/underwater_devour), src)
 
 /datum/trait/positive/aquatic/plus
 	name = "Aquatic 2"
@@ -296,7 +296,7 @@
 
 /datum/trait/positive/cocoon_tf/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/enter_cocoon), src)
 
 /* // We already have our own version of this trait.
 /datum/trait/positive/linguist
@@ -410,14 +410,14 @@
 	..()
 	if(trait_prefs?["pass_table"] || !trait_prefs)
 		H.pass_flags |= PASSTABLE
-	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src)
+	grant(H, granted_verb(/mob/living/proc/toggle_pass_table), src)
 
 // Traitgenes All genetraits need an unapply proc if they do anything special
 /datum/trait/positive/table_passer/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
 	if (H.pass_flags & PASSTABLE)
 		H.pass_flags ^= PASSTABLE
-	om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src) // a species that has it inherently (Teshari) keeps it: that grant is the species\'
+	revoke(H, granted_verb(/mob/living/proc/toggle_pass_table), src) // a species that has it inherently (Teshari) keeps it: that grant is the species\'
 
 /datum/trait/positive/photosynth
 	name = "Photosynthesis"
@@ -473,12 +473,12 @@
 /datum/trait/positive/vibration_sense/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
 	H.motiontracker_subscribe()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/sonar_ping, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/sonar_ping), src)
 
 /datum/trait/positive/vibration_sense/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
 	H.motiontracker_unsubscribe()
-	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/sonar_ping, src)
+	revoke(H, granted_verb(/mob/living/carbon/human/proc/sonar_ping), src)
 
 /datum/trait/positive/stable_genetics
 	name = "Stable Genetics"
@@ -659,8 +659,8 @@
 
 /datum/trait/positive/heavyweight/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	H.mob_size = MOB_LARGE
-	H.mob_bump_flag = HEAVY
+	H.set_mob_size(MOB_LARGE)
+	H.set_mob_bump_flag(HEAVY)
 
 /datum/trait/positive/grappling_expert
 	name = "Grappling Expert"
@@ -673,7 +673,7 @@
 	desc = "You are able to clean messes just by walking over them, and gain nutrition from doing so!"
 	cost = 1
 	excludes = list(/datum/trait/negative/slipperydirt)
-	added_behaviour_path = /datum/om/behaviour/absorbent
+	added_capability = /datum/capability/absorbent
 
 /datum/trait/positive/adrenaline_rush
 	name = "Adrenaline Rush"
@@ -720,25 +720,25 @@
 
 /datum/body_effect/adrenaline/on_start(mob/living/L)
 	var/original_length = L.body_effect_remaining(type)
-	var/list/original_values = list("stun" = L.current_pain()*1.5, "weaken" = L.status_units(EFFECT_WEAKENED)*1.5, "paralyze" = L.status_units(EFFECT_PARALYZED)*1.5, "stutter" = L.status_units(EFFECT_STUTTERING)*1.5, "eye_blur" = L.status_units(EFFECT_BLURRY)*1.5, "drowsy" = L.status_units(EFFECT_DROWSY)*1.5, "agony" = L.current_pain()*1.5, "confuse" = L.status_units(EFFECT_CONFUSED)*1.5)
+	var/list/original_values = list("stun" = L.current_pain()*1.5, "weaken" = L.status_units(STAT_WEAKENED)*1.5, "paralyze" = L.status_units(STAT_PARALYZED)*1.5, "stutter" = L.status_units(STAT_STUTTERING)*1.5, "eye_blur" = L.status_units(STAT_BLURRY)*1.5, "drowsy" = L.status_units(STAT_DROWSY)*1.5, "agony" = L.current_pain()*1.5, "confuse" = L.status_units(STAT_CONFUSED)*1.5)
 	L.set_body_effect_state(type, list(original_length, original_values))
 
 /datum/body_effect/adrenaline/on_tick(mob/living/L)
 	L.mend(TREAT_ANALGESIC, 100)
-	L.status_set(EFFECT_WEAKENED, 0)
-	L.status_set(EFFECT_PARALYZED, 0)
-	L.status_set(EFFECT_STUTTERING, 0)
-	L.status_set(EFFECT_BLURRY, 0)
-	L.status_set(EFFECT_DROWSY, 0)
-	L.status_set(EFFECT_CONFUSED, 0)
-	L.status_set(EFFECT_STUNNED, 0)
+	L.status_set(STAT_WEAKENED, 0)
+	L.status_set(STAT_PARALYZED, 0)
+	L.status_set(STAT_STUTTERING, 0)
+	L.status_set(STAT_BLURRY, 0)
+	L.status_set(STAT_DROWSY, 0)
+	L.status_set(STAT_CONFUSED, 0)
+	L.status_set(STAT_STUNNED, 0)
 
 /datum/body_effect/adrenaline/on_end(mob/living/L, expired)	//Your time is up, time to suffer the consequences.
 	var/list/state = L.body_effect_state(type)
 	var/original_length = state?[1] || 0
 	var/list/original_values = state?[2] || list()
 	L.apply_effects(original_values["stun"] + 30,original_values["weaken"] + 20,original_values["paralyze"] + 15,0,original_values["stutter"] + 40,original_values["eye_blur"] + 20,original_values["drowsy"] + 75,original_values["agony"])
-	L.status_at_least(EFFECT_CONFUSED, original_values["confused"])
+	L.status_at_least(STAT_CONFUSED, original_values["confused"])
 	L.apply_body_effect(/datum/body_effect/adrenaline_recovery,original_length*17.5)
 
 /datum/body_effect/adrenaline_recovery
@@ -757,7 +757,7 @@
 
 /datum/trait/positive/insect_sting/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/proc/insect_sting, src)
+	grant(H, granted_verb(/mob/living/proc/insect_sting), src)
 
 /datum/trait/positive/burn_resist_plus // Equivalent to Burn Weakness Major, cannot be taken at the same time.
 	name = "Burn Resist, Major"
@@ -845,7 +845,7 @@
 
 /datum/trait/positive/bloodsucker_plus/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/bloodsuck, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/bloodsuck), src)
 
 /datum/trait/positive/toxin_gut
 	name ="Robust Gut"
@@ -878,7 +878,7 @@
 	var/obj/item/organ/internal/breathy = H.organ_in(O_LUNGS)
 	if(!breathy)
 		return
-	qdel(breathy) // deleting it detaches it
+	replaced_by(breathy, H) // deleting it detaches it
 
 /datum/trait/positive/light_breather
 	name ="Light Breather"
@@ -957,8 +957,8 @@
 
 /datum/trait/positive/shapeshifting/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/innate_shapeshifting, src)
-	om_grant(H, GRANT_VERB, /mob/living/proc/name_change_verb, src)
+	grant(H, granted_verb(/mob/living/carbon/human/proc/innate_shapeshifting), src)
+	grant(H, granted_verb(/mob/living/proc/name_change_verb), src)
 
 
 // === merged from positive_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

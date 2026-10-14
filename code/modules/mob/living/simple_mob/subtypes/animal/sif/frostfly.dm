@@ -43,7 +43,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 10
-	base_attack_cooldown = 1.5 SECONDS
 	attacktext = list("nipped", "bit", "pinched")
 
 	organ_names = /datum/decl/mob_organ_names/frostfly
@@ -63,11 +62,7 @@
 /mob/living/simple_mob/animal/sif/frostfly/get_cold_protection()
 	return 1	// It literally produces a cryogenic mist inside itself. Cold doesn't bother it.
 
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/hide)
-
-/mob/living/simple_mob/animal/sif/frostfly/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/animal/sif/frostfly/proc/frostfly_pest_ready(datum/act/timer/A)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 
@@ -87,14 +82,11 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/hide)
 	threaten_sound = 'sound/effects/refill.ogg'
 	stand_down_sound = 'sound/effects/sparks5.ogg'
 
-/datum/om/stage/life/special/animal/sif/frostfly
-	of = /mob/living/simple_mob/animal/sif/frostfly
-
-/datum/om/stage/life/special/animal/sif/frostfly/perform(mob/living/simple_mob/animal/sif/frostfly/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/frostfly/life_special(datum/seq_frame/life/F)
 	..()
 
-	if(self.energy < self.max_energy)
-		self.energy++
+	if(src.energy < src.max_energy)
+		src.energy++
 
 /mob/living/simple_mob/animal/sif/frostfly/get_status_tab_items()
 	. = ..()
@@ -124,4 +116,10 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/hide)
 /datum/decl/mob_organ_names/frostfly
 TYPE_TABLE(/datum/decl/mob_organ_names/frostfly, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs"))
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", /datum/effect/effect/system/smoke_spread/frost)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/frostfly)
+	configure(mob_kind(attack_cooldown = 1.5 SECONDS))
+	after_init(0, then(PROC_REF(frostfly_pest_ready)))
+	owns_one(nameof(smoke_special), starts = /datum/effect/effect/system/smoke_spread/frost)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+

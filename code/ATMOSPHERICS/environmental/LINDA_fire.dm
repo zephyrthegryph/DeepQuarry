@@ -68,9 +68,6 @@
 	plane = ABOVE_GAME_PLANE
 	blend_mode = BLEND_ADD
 	light_system = OVERLAY_LIGHT
-	light_range = LIGHT_RANGE_FIRE
-	light_power = 1
-	light_color = LIGHT_COLOR_FIRE
 
 	/// base sprite used for our icon states when smoothing
 	/// BAAAASICALY the same as icon_state but is helpful to avoid duplicated work
@@ -93,9 +90,22 @@
 	///the group of hotspots we are a part of
 	var/datum/hot_group/our_hot_group
 
-/obj/effect/hotspot/Initialize(mapload, starting_volume, starting_temperature)
+CAPABILITIES(/obj/effect/hotspot)
+	configure(light_glow(range = LIGHT_RANGE_FIRE, power = 1, color = LIGHT_COLOR_FIRE))
+	links(/obj/effect/hotspot::our_hot_group, /datum/hot_group::spot_list, b_many = TRUE)
+	param(nameof(starting_volume), pos = 1)
+	param(nameof(starting_temperature), pos = 2)
+
+/// The fire's starting volume and temperature (its constructor params).
+/// Every live hotspot (counts, the admin panel): a registry, so a deleted fire leaves it on its own.
+REGISTRY_MEMBERSHIP(/obj/effect/hotspot, REGISTRY_HOTSPOTS)
+
+/obj/effect/hotspot/var/starting_volume
+/obj/effect/hotspot/var/starting_temperature
+
+// ALLOW(init/INSTANCE_STATE): a hotspot joins a hot group, exposes its turf, and faces a random way
+/obj/effect/hotspot/Initialize(mapload)
 	. = ..()
-	SSair.hotspots += src
 	if(!isnull(starting_volume))
 		volume = starting_volume
 	if(!isnull(starting_temperature))
@@ -140,9 +150,6 @@
 	update_color()
 
 /obj/effect/hotspot/set_smoothed_icon_state(new_junction)
-
-	smoothing_junction = new_junction
-
 	update_color()
 
 /**
@@ -171,8 +178,8 @@
 			return FALSE
 		// When we are spawned from a deletion signal from our previous hotspot, this can happen
 		if(!QDELETED(location.active_hotspot))
-			qdel(location.active_hotspot)
-	own_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
+			own_clear(location, nameof(location.active_hotspot), OWN_DELETE)
+	rel_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
 
 	bypassing = !just_spawned && (volume > CELL_VOLUME*0.95)
 
@@ -184,7 +191,7 @@
 		var/datum/gas_mixture/affected = location.air.remove_ratio(volume/location.air.return_volume())
 		if(affected) //in case volume is 0
 			reference = affected // Our color and volume will depend on this small sparked gasmix
-			affected.set_temperature(temperature)
+			heat_set(affected, temperature, HEAT_SOURCE_FIRE)
 			affected.react(src)
 			location.assume_air(affected)
 
@@ -288,7 +295,7 @@
 
 	var/turf/open/location = loc
 	if(!istype(location))
-		qdel(src)
+		destroyed(src)
 		return
 
 	// Excited groups live in the Rust arena now; there's no DM group to poke a
@@ -300,16 +307,16 @@
 		cold_fire = TRUE
 
 	if((temperature < FIRE_MINIMUM_TEMPERATURE_TO_EXIST && !cold_fire) || (volume <= 1))
-		qdel(src)
+		destroyed(src)
 		return
 
 	//Not enough / nothing to burn. One batched read covers every fuel and oxidiser check.
 	if(!location.air)
-		qdel(src)
+		destroyed(src)
 		return
 	var/list/readings = read_gas_mixtures(list(location.air))
 	if((INSUFFICIENT(GAS_ID_PLASMA) && INSUFFICIENT(GAS_ID_TRITIUM) && INSUFFICIENT(GAS_ID_HYDROGEN) && INSUFFICIENT(GAS_ID_FREON)) || INSUFFICIENT(GAS_ID_OXYGEN))
-		qdel(src)
+		destroyed(src)
 		return
 
 	perform_exposure()
@@ -347,14 +354,13 @@
 	if(fire_stage == stage)
 		return
 	fire_stage = stage
-	icon_state = stage
-	dir = pick(GLOB.cardinals)
+	set_icon_state(stage)
+	set_dir(pick(GLOB.cardinals))
 	update_color()
 
 // a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/lifecycle_dematerialize()
 	..()
-	SSair.hotspots -= src
 
 /obj/effect/hotspot/on_destroy(force)
 	var/turf/open/cur_turf = loc
@@ -408,11 +414,15 @@
 	var/drop_off_dist
 	COOLDOWN_DECLARE(update_sound_center)
 
+CAPABILITIES(/datum/hot_group)
+	ref_one(nameof(current_sound_loc))
+	owns_one(nameof(sound), /datum/looping_sound/fire)
+
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	rel_remove(src, nameof(spot_list), target)
 	if(!length(spot_list))
-		qdel(src)
+		spent(src)
 		return
 
 /datum/hot_group/proc/add_to_group(obj/effect/hotspot/target)
@@ -437,7 +447,7 @@
 	// Two-sided: re-pointing a hotspot moves it between the groups' spot_lists.
 	for(var/obj/effect/hotspot/reference as anything in sacrificial_group.spot_list?.Copy())
 		rel_set(reference, nameof(reference.our_hot_group), saving_group)
-	qdel(sacrificial_group)
+	consumed(sacrificial_group, src)
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
 		update_sound()
 		COOLDOWN_START(src, update_sound_center, 5 SECONDS)
@@ -474,21 +484,13 @@
 			rel_set(sound, nameof(sound.parent), sound_turf)
 			rel_set(src, nameof(current_sound_loc), sound_turf)
 		return
-	own_set(src, nameof(sound), new /datum/looping_sound/fire(sound_turf, TRUE))
+	rel_set(src, nameof(sound), new /datum/looping_sound/fire(sound_turf, TRUE))
 	sound.falloff_distance = drop_off_dist
 	sound.extra_range = drop_off_dist
 	rel_set(src, nameof(current_sound_loc), sound_turf)
 
 #undef MIN_SIZE_SOUND
 #undef INSUFFICIENT
-
-/obj/effect/hotspot/relations()
-	. = ..()
-	. += rel_one(nameof(our_hot_group), back = nameof(/datum/hot_group::spot_list))
-/datum/hot_group/relations()
-	. = ..()
-	. += rel_many(nameof(spot_list), back = nameof(/obj/effect/hotspot::our_hot_group))
-	. += rel_one(nameof(current_sound_loc))
 
 // ---------------------------------------------------------------- the hotspot pipeline
 
@@ -501,7 +503,7 @@
 
 /// The run levels the burn steps in.
 /obj/effect/hotspot/proc/burn_ready()
-	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Master.current_runlevel - 1)))
+	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
 
 /// The kernel work item's handler: one burn step.
 /obj/effect/hotspot/proc/burn_tick(dt)

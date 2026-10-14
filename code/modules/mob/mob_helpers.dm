@@ -6,6 +6,7 @@
 	return 0
 
 /proc/issmall(A)
+	READS_FROM(A)
 	if(A && isliving(A))
 		var/mob/living/L = A
 		return L.mob_size <= MOB_SMALL
@@ -41,7 +42,7 @@
 /proc/isdeaf(A)
 	if(istype(A, /mob))
 		var/mob/M = A
-		return (M.sdisabilities & DEAF) || M.has_status(EFFECT_DEAFENED)
+		return (M.sdisabilities & DEAF) || M.has_status(STAT_DEAFENED)
 	return 0
 
 /mob/proc/get_ear_protection()
@@ -49,6 +50,10 @@
 
 /mob/proc/break_cloak()
 	return
+
+/// A round hit the mob: a cloak it wears breaks (the hit notice's handler of every cloaked mob type).
+/mob/proc/hit_breaks_cloak(datum/act/A)
+	break_cloak()
 
 /mob/proc/is_cloaked()
 	return FALSE
@@ -75,6 +80,7 @@
 	return SUIT_SENSOR_OFF
 
 /proc/is_admin(mob/user)
+	READS_FROM() // a client's rights are read when a control is used, never cached
 	return check_rights_for(user.client, R_ADMIN|R_EVENT) != 0
 
 /**
@@ -637,31 +643,32 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 
 //Recalculates what planes this mob can see using their plane_holder, for humans this is checking slots, for others, could be whatever.
 /mob/proc/recalculate_vis()
-	if(!plane_holder || !vis_enabled)
+	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight reaction re-reads it
+	if(!hud_used?.plane_holder || !hud_used?.vis_enabled)
 		return
 	var/stomach_vision = client?.prefs.read_preference(/datum/preference/toggle/tummy_sprites)
-	if(stomach_vision && !(VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,TRUE)
-		vis_enabled += VIS_CH_STOMACH
-	else if(!stomach_vision && (VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,FALSE)
-		vis_enabled -= VIS_CH_STOMACH
+	if(stomach_vision && !(VIS_CH_STOMACH in hud_used?.vis_enabled))
+		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,TRUE)
+		hud_used?.vis_enabled += VIS_CH_STOMACH
+	else if(!stomach_vision && (VIS_CH_STOMACH in hud_used?.vis_enabled))
+		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,FALSE)
+		hud_used?.vis_enabled -= VIS_CH_STOMACH
 
 	if(vantag_hud)
-		if(!(VIS_CH_VANTAG in vis_enabled))
-			plane_holder.set_vis(VIS_CH_VANTAG,TRUE)
-			vis_enabled += VIS_CH_VANTAG
+		if(!(VIS_CH_VANTAG in hud_used?.vis_enabled))
+			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,TRUE)
+			hud_used?.vis_enabled += VIS_CH_VANTAG
 	else
-		if(VIS_CH_VANTAG in vis_enabled)
-			plane_holder.set_vis(VIS_CH_VANTAG,FALSE)
-			vis_enabled -= VIS_CH_VANTAG
+		if(VIS_CH_VANTAG in hud_used?.vis_enabled)
+			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,FALSE)
+			hud_used?.vis_enabled -= VIS_CH_VANTAG
 
 	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
-		plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
-		vis_enabled += VIS_SOULCATCHER
+		hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE)
+		hud_used?.vis_enabled += VIS_SOULCATCHER
 	else
-		plane_holder.set_vis(VIS_SOULCATCHER, FALSE)
-		vis_enabled -= VIS_SOULCATCHER
+		hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, FALSE)
+		hud_used?.vis_enabled -= VIS_SOULCATCHER
 	return
 
 //Icon is used to occlude things like huds from the faulty byond context menu.
@@ -684,17 +691,22 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		var/area/A = get_area(spot)
 		return A.sound_env
 
+/// The slots on the toggled ("other") inventory bar: hidden_inventory_update() shows and hides exactly these.
+GLOBAL_LIST_INIT(hud_toggled_slots, list(SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_GLOVES, SLOT_ID_EYES, SLOT_ID_UNIFORM, SLOT_ID_SUIT, SLOT_ID_MASK))
+
 /mob/proc/position_hud_item(obj/item/item, slot)
 	if(!istype(hud_used) || !slot || !LAZYLEN(hud_used.slot_info))
 		return
 
+	// Slot ids are text ("head", "pocket_r"): an ordering test on them compares spellings, not the bar a slot sits in, and
+	// showed a hat, gloves, glasses, a mask or headsets equipped while the bar was folded (the job outfit, on joining).
 	//They may have hidden their entire hud but the hands
-	if(!hud_used.hud_shown && slot > SLOT_ID_HAND_R)
+	if(!hud_used.hud_shown && slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)
 		item.screen_loc = null
 		return
 
 	//They may have hidden the icons in the bottom left with the hide button
-	if(!hud_used.inventory_shown && slot > SLOT_ID_POCKET_R)
+	if(!hud_used.inventory_shown && (slot in GLOB.hud_toggled_slots))
 		item.screen_loc = null
 		return
 
@@ -774,10 +786,12 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Toggle the ability to see stomachs or not"
 
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(stomach_vision_chosen), title = "Visible Tummy?", message = "Would you like to see visible stomachs?", answer_on_no = TRUE)
+	open_request(src, /datum/prompt/yes_no, PROC_REF(stomach_vision_chosen), answerer = src, title = "Visible Tummy?", question = "Would you like to see visible stomachs?", timeout = 0)
 
-/mob/proc/stomach_vision_chosen(datum/om/prompt/confirm/ask)
-	if(ask.yes)
+/mob/proc/stomach_vision_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
 		client?.prefs.write_preference_by_type(/datum/preference/toggle/tummy_sprites,TRUE) //Simple! Easy!
 		to_chat(src, "You can now see stomachs!")
 	else
@@ -785,3 +799,7 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		to_chat(src, "You will no longer see stomachs!")
 	recalculate_vis()
 
+
+/// Nearsighted for good (the disability) or for a while (STAT_NEARSIGHTED: a flash, a sting).
+/mob/proc/is_nearsighted()
+	return (disabilities & NEARSIGHTED) || has_status(STAT_NEARSIGHTED)

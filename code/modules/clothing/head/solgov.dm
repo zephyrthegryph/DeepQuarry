@@ -59,15 +59,19 @@
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	siemens_coefficient = 0.9
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/utility)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/utility/fleet
 	name = "fleet utility cover"
 	desc = "A navy blue utility cover bearing the crest of a USDF Fleet."
 	icon_state = "navyutility"
 	armor_spec = "energy=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/head/utility/fleet)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/utility/army
 	name = "marine utility cover"
@@ -96,8 +100,10 @@
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	siemens_coefficient = 0.9
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/service)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/service/sifguard
 	name = "\improper NDF peaked cap"
@@ -155,8 +161,10 @@
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	siemens_coefficient = 0.9
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/dress)
+	configure(item_worn(covers = 0))
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/dress/fleet/garrison
 	name = "fleet garrison cap"
@@ -365,7 +373,9 @@
 	item_state_slots = list(
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/almach)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/terran/navy/service
 	name = "Ares service cover"

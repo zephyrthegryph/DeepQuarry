@@ -28,10 +28,7 @@
 	projectile_dispersion = 0
 	armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100" // Simple mob immunuties plus minour armor
 
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
 	pass_flags = PASSTABLE //mostly for the melee mobs.
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	min_oxy = 0
 	max_oxy = 0
@@ -66,7 +63,6 @@
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
 	unacidable = TRUE
-	devourable = FALSE
 
 	movement_cooldown = 0
 
@@ -105,7 +101,6 @@
 		)
 
 
-	var/expirmental
 
 /datum/category_item/catalogue/fauna/astralcollective
 	name = "Astral Collective"
@@ -113,10 +108,17 @@
 	things that seem abnormal."
 	value = CATALOGUER_REWARD_EASY
 
-/mob/living/simple_mob/humanoid/astral_collective/Initialize(mapload)
-	. = ..()
-	expirmental = rand(1,4)
-	expirmentresult()
+/// The body effect its experiment gave it (rolls()).
+/mob/living/simple_mob/humanoid/astral_collective/var/experiment_effect
+
+/// The swift ones came out smaller, the titans bigger (rolls()).
+/mob/living/simple_mob/humanoid/astral_collective/proc/experiment_size(datum/roller/R)
+	switch(experiment_effect)
+		if(/datum/body_effect/astralcollect_swift)
+			return size_multiplier - 0.4
+		if(/datum/body_effect/astralcollect_titan)
+			return size_multiplier + 0.5
+	return size_multiplier
 
 /datum/body_effect/astralcollect_swift
 	stacks = MODIFIER_STACK_FORBID
@@ -159,19 +161,6 @@
 	mob_overlay_state = "redspace_aura"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 0.6)
 
-/mob/living/simple_mob/humanoid/astral_collective/proc/expirmentresult()
-	switch(expirmental)
-		if(1)
-			apply_body_effect(/datum/body_effect/astralcollect_swift, null, src)
-			size_multiplier -= 0.4
-		if(2)
-			apply_body_effect(/datum/body_effect/astralcollect_regen, null, src)
-		if(3)
-			apply_body_effect(/datum/body_effect/astralcollect_titan, null, src)
-			size_multiplier += 0.5
-		if(4)
-			apply_body_effect(/datum/body_effect/astralcollect_mistake, null, src)
-
 /mob/living/simple_mob/humanoid/astral_collective/purity
 	name = "Astral Collective Purity"
 	desc = "A strange living bioweapon"
@@ -192,7 +181,7 @@
 	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 2))
 		if(M.get_ear_protection() == 0)
-			M.status_at_least(EFFECT_CONFUSED, 10)
+			M.status_at_least(STAT_CONFUSED, 10)
 
 
 //the basic ranged mobs
@@ -207,14 +196,14 @@
 	projectiletype = /obj/item/projectile/energy/astral_collective/basic
 
 /mob/living/simple_mob/humanoid/astral_collective/ranged/do_special_attack(atom/A, stance)
-	switch(expirmental)
-		if(1)
+	switch(experiment_effect)
+		if(/datum/body_effect/astralcollect_swift)
 			burn_beam(A)
-		if(2)
+		if(/datum/body_effect/astralcollect_regen)
 			heal_beam(A)
-		if(3)
+		if(/datum/body_effect/astralcollect_titan)
 			brute_beam(A)
-		if(4)
+		if(/datum/body_effect/astralcollect_mistake)
 			mend(TREAT_TISSUE_REPAIR, 40)
 			mend(TREAT_BURN_CARE, 40)
 
@@ -361,18 +350,18 @@
 	icon_state = "blade_tosser"
 	icon_living = "blade_tosser"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, INTERACT_ITEM(null, PROC_REF(astral_dagger_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
+	op("astral_dagger_item", item(/obj/item), then(PROC_REF(astral_dagger_interaction_item)))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(blink_when_shot)))
 
 /// Old attackby: may teleport, then the normal attack.
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/astral_dagger_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/astral_dagger_interaction_item(datum/act/op/A)
+	. = OP_OK
 	if(prob(50))
 		teleport_attack(src)
-	return FALSE
+	return OP_DECLINE
 
-DAMAGE_REACTION(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, DAMAGE_PROJECTILE, PROC_REF(blink_when_shot))
-
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/blink_when_shot(datum/damage_packet/packet)
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/blink_when_shot(datum/act/A)
 	if(prob(50))
 		teleport_attack(src)
 
@@ -392,7 +381,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, D
 	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 3))
 		if(M.get_ear_protection() == 0)
-			M.status_at_least(EFFECT_STUNNED, 0.5)
+			M.status_at_least(STAT_STUNNED, 0.5)
 
 //The mind is the science branch. Their goal is to limit or disable your options
 /mob/living/simple_mob/humanoid/astral_collective/mind
@@ -406,25 +395,28 @@ DAMAGE_REACTION(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, D
 	special_attack_cooldown = 10 SECONDS
 
 //Gravity shield. Hit it with melee, and a sudden gravity surge may tear your weapon to the ground
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity, INTERACT_ITEM(null, PROC_REF(astral_gravity_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
+	op("astral_gravity_item", item(/obj/item), then(PROC_REF(astral_gravity_interaction_item)))
 
 /// Old attackby: may pull the weapon to the ground.
-/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/astral_gravity_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
-	if(O.force)
+/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/astral_gravity_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
+	if(combat_of(O).force)
 		if(prob(30))
 			visible_message(span_boldwarning(span_orange("[O] is pulled to the ground!.")))
 			user.drop_item()
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7)) //despite the attack range being 6 we do 7 so folks don't wander in then get confused why they are getting hit by it
 		Beam(L, icon_state = "chain", time = 1.5 SECONDS, maxdistance = 6)
-	om_after(src, 2.5 SECONDS, PROC_REF(super_move), A)
+	after(src, 2.5 SECONDS, PROC_REF(super_move), with = list(A))
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/super_move(atom/target)
 	if(!target)
@@ -459,7 +451,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/do_special_attack(atom/A, stance)
 	barrier_health ++
-	icon_state = "clock_cat_shield"
+	set_icon_state("clock_cat_shield")
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)
@@ -470,7 +462,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		if(barrier_health == 0)
-			icon_state = "clock_cat"
+			set_icon_state("clock_cat")
 		return
 	else
 		..()
@@ -485,12 +477,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 
-/datum/om/stage/life/special/humanoid/astral_collective/soul/shield_projector
-	of = /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector
-
-/datum/om/stage/life/special/humanoid/astral_collective/soul/shield_projector/perform(mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.protection_aura()
+/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.protection_aura()
 	..()
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/proc/protection_aura()
@@ -498,3 +487,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 		if(L.stat == DEAD || !IIsAlly(L))
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/astralcollect_church, null, src)
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
+	configure(mob_movement(softfall = TRUE))
+	immune_to_incapacitation()
+	rolls(nameof(experiment_effect), pick_one(list(/datum/body_effect/astralcollect_swift, /datum/body_effect/astralcollect_regen, /datum/body_effect/astralcollect_titan, /datum/body_effect/astralcollect_mistake)))
+	rolls(nameof(size_multiplier), PROC_REF(experiment_size), from = list(nameof(experiment_effect)))
+	body_effect(nameof(experiment_effect))

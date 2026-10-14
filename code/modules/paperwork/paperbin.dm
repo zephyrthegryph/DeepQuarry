@@ -8,7 +8,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
 			)
 	item_state = "sheet-metal"
-	throwforce = 1
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 3
 	throw_range = 7
@@ -16,13 +15,15 @@
 	layer = OBJ_LAYER - 0.1
 	var/amount = 30					//How much paper is in the bin.
 	var/list/papers	//List of papers put in the bin for reference.
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 
-/obj/item/paper_bin/MouseDrop(mob/user)
-	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
-		if(!isanimal(user))
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/paper_bin/proc/mousedrop_input(datum/act/input/A)
+	return pickup_with_actor(A.actor, A.over)
+
+/obj/item/paper_bin/proc/pickup_with_actor(mob/user, mob/destination)
+	if(user && user == destination && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
+		if(ishuman(user))
 			if( !user.get_active_hand() )		//if active hand is empty
 				var/mob/living/carbon/human/H = user
 				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -38,34 +39,47 @@
 
 	return
 
-DECLARE_INTERACTIONS(/obj/item/paper_bin, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/paper_bin)
+	configure(item_thrown(force = 1))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper
+	op("take_paper", hand(), ungated(), needs(req(PROC_REF(hand_usable))),
+		asks(/datum/prompt/choice, fields = list("question" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k52", when = PROC_REF(no_custom_paper)),
+		then(PROC_REF(interaction_hand)))
+	op("put_paper", item(/obj/item/paper), then(PROC_REF(interaction_item)))
+	drag_onto(PROC_REF(mousedrop_input))
+
+/// The actor's using hand, when it is a limb that cannot be used (the old attack_hand refused it).
+/obj/item/paper_bin/proc/unusable_hand(mob/user)
+	var/mob/living/carbon/human/H = user
+	if(!istype(H))
+		return null
+	var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
+	if (H.hand)
+		temp = H.organs_by_name[BP_L_HAND]
+	return (temp && !temp.is_usable()) ? temp : null
+
+/obj/item/paper_bin/proc/hand_usable(datum/act/op/A)
+	var/obj/item/organ/external/temp = unusable_hand(A.actor)
+	if(isnull(temp))
+		return null
+	return "You try to move your [temp.name], but cannot!"
+
+/// The paper question is asked only when there is no custom paper on top.
+/obj/item/paper_bin/proc/no_custom_paper(datum/act/op/A)
+	return !length(papers)
 
 /// Old attack_hand.
-/obj/item/paper_bin/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
-		if (H.hand)
-			temp = H.organs_by_name[BP_L_HAND]
-		if(temp && !temp.is_usable())
-			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return TRUE
+/obj/item/paper_bin/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/response = ""
 	if(!length(papers) > 0)
-		var/_answer_k52 = rerun_ask(user, "k52", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "Do you take regular paper, or Carbon copy paper?", title = "Paper type request", choices = list("Regular", "Carbon-Copy", "Cancel"))
-		if(isnull(_answer_k52))
-			return TRUE
-		response = _answer_k52
+		response = A.step_value("k52")
 		if (response != "Regular" && response != "Carbon-Copy")
 			add_fingerprint(user)
 			return TRUE
 	if(amount >= 1)
-		amount--
-		if(amount==0)
-			update_icon()
+		set_amount(amount - 1)
 
 		var/obj/item/paper/P
 		if(length(papers) > 0) //If there's any custom paper on the stack, use that instead of creating a new paper.
@@ -76,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 				P = new /obj/item/paper
 				if(GLOB.Holiday == "April Fool's Day")
 					if(prob(30))
-						P.info = span_red(span_bold("<font face=\"[P.crayonfont]\">HONK HONK HONK HONK HONK HONK HONK<br>HOOOOOOOOOOOOOOOOOOOOOONK<br>APRIL FOOLS</font>"))
+						P.set_info(span_red(span_bold("<font face=\"[P.crayonfont]\">HONK HONK HONK HONK HONK HONK HONK<br>HOOOOOOOOOOOOOOOOOOOOOONK<br>APRIL FOOLS</font>")))
 						P.rigged = 1
 						P.updateinfolinks()
 			else if (response == "Carbon-Copy")
@@ -92,18 +106,16 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 	return TRUE
 
 
-/// Old attackby.
-/obj/item/paper_bin/proc/interaction_item(mob/user, obj/item/paper/i, datum/interaction/interaction)
-	if(!istype(i))
-		return INTERACTION_HANDLED_PASS
-
-	user.drop_item()
-	i.forceMove(src)
+/// Old attackby: a paper goes in the bin (the click goes on).
+/obj/item/paper_bin/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/paper/i = A.held
+	if(!own_bring_in(src, nameof(papers), i, null, user, TRUE, null, FALSE))
+		return OP_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
-	update_icon()
-	amount++
-	return INTERACTION_HANDLED_PASS
+	set_amount(amount + 1)
+	return OP_PASS
 
 
 /obj/item/paper_bin/examine(mob/user)
@@ -114,4 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 		else
 			. += span_notice("There are no papers in the bin.")
 
-APPEARANCE_TEMPLATE(/obj/item/paper_bin, "paper_bin{amount?1:0}")
+/// The look (the draw sweep: from its template).
+/obj/item/paper_bin/draw(datum/look/look)
+	..()
+	look.state("paper_bin[amount ? "1" : "0"]")

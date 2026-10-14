@@ -1,0 +1,19 @@
+@obj.machinery.button human|none
+@obj.machinery.button robot|none
+@obj.machinery.button.remote ai|none
+@obj.machinery.button.remote ghost|none
+@obj.machinery.button human|/obj/item/tool/screwdriver
+@obj.machinery.button human|/obj/item/tool/crowbar
+@obj.machinery.button human|/obj/item/tool/wrench
+@obj.machinery.button human|/obj/item/tool/wirecutters
+@obj.machinery.button human|/obj/item/multitool
+@obj.machinery.button human|/obj/item/weldingtool
+@obj.machinery.button human|/obj/item/stack/cable_coil
+@obj.machinery.button human|/obj/item/stack/material/steel
+@obj.machinery.button human|/obj/item/card/id
+@obj.machinery.button human|/obj/item
+human|/obj/item/card/emag menu: Emag refused (refused: The cryptographic sequencer seems to do nothing.)
+human|/obj/item/card/emag menu: Press
+human|/obj/item/card/emag menu: Toggle
+human|/obj/item/card/emag click: Click: Emag refused
+keys: button_press, button_press_item, drag_buckle, emag_refused, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, press_hand, press_item, press_silicon, robot_remote_blocked, silicon_hand, silicon_pressed

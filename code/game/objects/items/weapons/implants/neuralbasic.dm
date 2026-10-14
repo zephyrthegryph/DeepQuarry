@@ -7,8 +7,12 @@
 	var/robotic_brain = FALSE
 
 /// TRUE while it assists a brain and watches for it being ripped out; a meltdown ends it.
-OM_FIELD(/obj/item/implant/neural, monitoring_brain, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brain")
+/obj/item/implant/neural/var/monitoring_brain = FALSE
+TRACKED(/obj/item/implant/neural, monitoring_brain)
+CAPABILITIES(/obj/item/implant/neural)
+	every(2 SECONDS, then(PROC_REF(neural_step)), when = nameof(monitoring_brain))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(neural_implant_emp))))
+	ref_one(nameof(my_brain), /obj/item/organ/internal/brain)
 
 /obj/item/implant/neural/post_implant(mob/source)
 	if(ishuman(source))
@@ -29,7 +33,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/implant/neural, PERIODIC_SLOW, "monitoring_brai
 		to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
 	..()
 
-/obj/item/implant/neural/periodic_step()
+/obj/item/implant/neural/proc/neural_step(datum/act/timer/A)
 	if(my_brain() && part)
 		if(my_brain().loc != part.loc)
 			to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
@@ -52,12 +56,12 @@ circuitry. Resulting faults can cause damage to the host's brain.<HR>
 Implant Specifics:<BR>"}
 	return dat
 
-DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_emp))
 /// An EMP makes the implant malfunction and hurt the brain it sits in.
-/obj/item/implant/neural/proc/neural_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/neural/proc/neural_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!my_brain() || malfunction)
-		return
-	malfunction = MALFUNCTION_TEMPORARY
+		return HOOK_DECLINE
+	set_malfunction(MALFUNCTION_TEMPORARY)
 
 	var/delay = 10 //Don't let it just get emped twice in a second to kill someone.
 	var/brain_location = my_brain().owner.organs_by_name[my_brain().parent_organ]
@@ -90,7 +94,8 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 				if(!robotic_brain)
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
-	om_after(src, delay, PROC_REF(malfunction_recover))
+	after(src, delay, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 /obj/item/implant/neural/meltdown()
 	..()
@@ -101,8 +106,8 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 			H = my_brain().owner
 			if(robotic_brain)
 				to_chat(H, span_critical("WARNING. Fault dete-ct-- in the \the [src]."))
-			H.status_at_least(EFFECT_CONFUSED, 30)
-			H.status_adjust(EFFECT_BLINDED, 5)
+			H.status_at_least(STAT_CONFUSED, 30)
+			H.status_adjust(STAT_BLINDED, 5)
 		my_brain().owner?.injure(INJURY_NEURAL, 15, my_brain(), src)
 		rel_clear(src, nameof(my_brain))
 	return

@@ -114,7 +114,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	for(var/obj/item/storage/wallet/W in contents_of(player))
 		for(var/obj/item/card/id/id in contents_of(W))
 			id.name = "[player.real_name]'s Passport"
-			id.registered_name = player.real_name
+			id.set_registered_name(player.real_name)
 			W.name = "[initial(W.name)] ([id.name])"
 
 /datum/antagonist/raider/create_global_objectives()
@@ -124,7 +124,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	var/i = 1
 	var/max_objectives = pick(2,2,2,2,3,3,3,4)
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	while(i<= max_objectives)
 		var/list/goals = list("kidnap","loot","salvage")
 		var/goal = pick(goals)
@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		own_add(src, nameof(global_objectives), O)
+		rel_add(src, nameof(global_objectives), O)
 
 		i++
 
-	own_add(src, nameof(global_objectives), new /datum/objective/heist/preserve_crew)
+	rel_add(src, nameof(global_objectives), new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()
@@ -251,13 +251,13 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		var/obj/item/secondary = new /obj/item/gun/projectile/pirate(T)
 		if(!HAS_TAG(primary, TAG_HOLSTERABLE))
 			holster = new new_holster(T)
-			own_set(holster, nameof(holster.holstered), secondary, into = TRUE)
+			move_into(holster, nameof(holster.holstered), secondary)
 		else
 			player.equip_to_slot_or_del(secondary, SLOT_ID_BELT)
 
 	if(HAS_TAG(primary, TAG_HOLSTERABLE))
 		holster = new new_holster(T)
-		own_set(holster, nameof(holster.holstered), primary, into = TRUE)
+		move_into(holster, nameof(holster.holstered), primary)
 	else if(!player.get_equipped_item(SLOT_ID_BELT) && HAS_TAG(primary, TAG_WEAR_BELT))
 		player.equip_to_slot_or_del(primary, SLOT_ID_BELT)
 	else if(!player.get_equipped_item(SLOT_ID_BACK) && HAS_TAG(primary, TAG_WEAR_BACK))
@@ -312,7 +312,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	player.equip_to_slot_or_del(new /obj/item/flashlight(player), SLOT_ID_POCKET_R)
 
 	rel_set(player, nameof(player.internal), locate_within(player, /obj/item/tank))
-	if(istype(player.internal,/obj/item/tank) && player.internals)
-		player.internals.icon_state = "internal1"
+	if(istype(player.internal,/obj/item/tank) && hud_of(player)?.internals)
+		hud_of(player)?.internals?.icon_state = "internal1"
 
 	return 1

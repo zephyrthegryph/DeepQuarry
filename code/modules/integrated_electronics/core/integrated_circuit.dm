@@ -31,6 +31,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/any_examine(mob/user)
 	return
 
+// ALLOW(init/FRAMEWORK): the circuit base builds its pins from the defaults its type declares
 /obj/item/integrated_circuit/Initialize(mapload)
 	. = ..()
 	displayed_name = name
@@ -44,44 +45,104 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	return
 
 
-DAMAGE_REACTION(/obj/item/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_emp_scramble))
 
 /// A pulse scrambles every pin.
-/obj/item/integrated_circuit/proc/circuit_emp_scramble(datum/damage_packet/packet)
+/obj/item/integrated_circuit/proc/circuit_emp_scramble(datum/act/A)
 	for(var/datum/integrated_io/io in inputs + outputs + activators)
 		io.scramble()
 
 /obj/item/integrated_circuit/proc/check_interactivity(mob/user)
 	return tgui_status(user, GLOB.tgui_physical_state) == STATUS_INTERACTIVE
 
-EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit", PROC_REF(integrated_circuit_verb_rename), REQ_IN_INVENTORY))
+/// The Rename Circuit menu entry.
+/obj/item/integrated_circuit/proc/circuit_rename_op(datum/act/op/A)
+	integrated_circuit_verb_rename(A.actor)
+	return OP_OK
 
 /// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
-/obj/item/integrated_circuit/proc/integrated_circuit_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/proc/integrated_circuit_verb_rename(mob/user)
 	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k80 = rerun_ask(M, "k80", PROC_REF(integrated_circuit_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the circuit?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k80))
+	if(!ismob(M) || QDELETED(M))
 		return
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, question = "What do you want to name the circuit?", default = name)
+
+/obj/item/integrated_circuit/proc/rename_entered(datum/act/request/A)
+	var/datum/prompt/text/electronics_rename/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.value))
+			SStgui.update_uis(src)
+		return
+	apply_rename(A)
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/proc/apply_rename(datum/act/request/A)
+	var/mob/M = A.request.answerer
+	if(!check_interactivity(M))
+		return
+	var/_answer_k80 = A.answer.value
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
 	if(src && input && assembly().check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input
 
-DECLARE_UI_STATE(/obj/item/integrated_circuit, GLOB.tgui_physical_state)
+/datum/prompt/text/electronics_rename
+	title = "Rename"
+	timeout = 0
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	encode = FALSE
+	multiline = FALSE
+	var/obj/item/captured_item
+	var/item_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/electronics_rename)
+	ref_one(nameof(captured_item), /obj/item)
+
+/datum/prompt/text/electronics_rename/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	rel_clear(src, nameof(captured_item))
+	rel_set(src, nameof(captured_item), item)
+
+/datum/prompt/text/electronics_rename/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item))
+
+/datum/prompt/text/electronics_rename/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
 
 /obj/item/integrated_circuit/tgui_host(mob/user)
 	if(istype(loc, /obj/item/electronic_assembly))
-		return loc.tgui_host()
+		var/obj/item/electronic_assembly/host = loc
+		return host.tgui_host()
 	return ..()
 
-DECLARE_UI(/obj/item/integrated_circuit, "ICCircuit")
+/obj/item/integrated_circuit/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["name"] = name
+	data["desc"] = desc
+	data["displayed_name"] = displayed_name
+	data["removable"] = removable
+	data["complexity"] = complexity
+	data["power_draw_idle"] = power_draw_idle
+	data["power_draw_per_use"] = power_draw_per_use
+	data["extended_desc"] = extended_desc
+	var/list/merged_1 = ui_data_obj_item_integrated_circuit(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:text", "removable", "complexity:num", "power_draw_idle:num", "power_draw_per_use:num", "extended_desc:text", "merge:ui_data_obj_item_integrated_circuit{ref:text,inputs:list,outputs:list,activators:list}")
-
-/// The computed part of /obj/item/integrated_circuit's window data (declared on its UI_DATA row).
+/// /obj/item/integrated_circuit's window data.
 /obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -136,78 +197,81 @@ UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:
 	for(var/datum/integrated_io/pin as anything in all_pins())
 		. |= pin.linked
 
-UI_ACT(/obj/item/integrated_circuit, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_rename)
+/obj/item/integrated_circuit/proc/ui_act_rename(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	integrated_circuit_verb_rename(ui.user)
+	integrated_circuit_verb_rename(user)
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "wire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_name", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_data", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT(/obj/item/integrated_circuit, "pin_unwire", ui_act_wire, UI_ARG_REF("link", "proc:all_linked_pins", /datum/integrated_io), UI_ARG_REF("pin", "proc:all_pins", /datum/integrated_io))
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_wire)
+/obj/item/integrated_circuit/proc/ui_act_wire(datum/act/op/A, link, pin_arg)
+	var/mob/user = A.actor
+	var/action = A.window_action()
+	if(!isnull(link) && !(link in all_linked_pins()))
+		return FALSE
+	if(!isnull(pin_arg) && !(pin_arg in all_pins()))
+		return FALSE
 	. = TRUE
-	var/datum/integrated_io/pin = params["pin"]
-	var/datum/integrated_io/linked = params["link"]
-	var/obj/item/held_item = ui.user.get_active_hand()
+	var/datum/integrated_io/pin = pin_arg
+	var/datum/integrated_io/linked = link
+	var/obj/item/held_item = user.get_active_hand()
 	if(!pin || !(linked in pin.linked))
 		linked = null
 	var/obj/item/multitool/M = held_item?.get_multitool()
 	if(M && allow_multitool)
 		switch(action)
 			if("pin_name")
-				M.wire(pin, ui.user)
+				M.wire(pin, user)
 			if("pin_data")
 				var/datum/integrated_io/io = pin
-				io.ask_for_pin_data(ui.user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
+				io.ask_for_pin_data(user, held_item) // The pins themselves will determine how to ask for data, and will validate the data.
 			if("pin_unwire")
-				M.unwire(pin, linked, ui.user)
+				M.unwire(pin, linked, user)
 
 	else if(istype(held_item, /obj/item/integrated_electronics/wirer))
 		var/obj/item/integrated_electronics/wirer/wirer = held_item
 		if(linked)
-			wirer.wire(linked, ui.user)
+			wirer.wire(linked, user)
 		else if(pin)
-			wirer.wire(pin, ui.user)
+			wirer.wire(pin, user)
 
 	else if(istype(held_item, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/debugger = held_item
 		if(pin)
-			debugger.write_data(pin, ui.user)
+			debugger.write_data(pin, user)
 	else
-		to_chat(ui.user, span_warning("You can't do a whole lot without the proper tools."))
+		to_chat(user, span_warning("You can't do a whole lot without the proper tools."))
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_scan)
+/obj/item/integrated_circuit/proc/ui_act_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	var/obj/item/held_item = ui.user.get_active_hand()
+	var/obj/item/held_item = user.get_active_hand()
 	if(istype(held_item, /obj/item/integrated_electronics/debugger))
 		var/obj/item/integrated_electronics/debugger/D = held_item
 		if(D.accepting_refs)
-			D.afterattack(src, ui.user, TRUE)
+			D.afterattack(src, user, TRUE)
 		else
-			to_chat(ui.user, span_warning("The Debugger's 'ref scanner' needs to be on."))
+			to_chat(user, span_warning("The Debugger's 'ref scanner' needs to be on."))
 	else
-		to_chat(ui.user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
+		to_chat(user, span_warning("You need a multitool/debugger set to 'ref' mode to do that."))
 	return
 
-UI_ACT(/obj/item/integrated_circuit, "examine", ui_act_examine, UI_ARG_REF("ref", null, /obj/item/integrated_circuit))
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_examine)
+/obj/item/integrated_circuit/proc/ui_act_examine(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	. = TRUE
-	var/obj/item/integrated_circuit/examined = params["ref"]
+	var/obj/item/integrated_circuit/examined = ref
 	if(istype(examined) && (examined.loc == loc))
 		if(ui.parent_ui())
-			examined.tgui_interact(ui.user, null, ui.parent_ui())
+			examined.tgui_interact(user, null, ui.parent_ui())
 		else
-			examined.tgui_interact(ui.user)
+			examined.tgui_interact(user)
 	return FALSE
 
-UI_ACT(/obj/item/integrated_circuit, "remove", ui_act_remove)
-UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_remove)
+/obj/item/integrated_circuit/proc/ui_act_remove(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	remove(ui.user)
+	remove(user)
 	return
 
 /obj/item/integrated_circuit/proc/remove(mob/user)

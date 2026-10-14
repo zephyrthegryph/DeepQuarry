@@ -3,45 +3,44 @@
 	desc = "It prints security citations!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "sec_ticket_printer"
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
-	COOLDOWN_DECLARE(print_cooldown_until)
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
 
-DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/ticket_printer)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("print", in_hand(), label("Print ticket"), cooldown(print_cooldown), needs(carried()),
+		asks(/datum/prompt/text, keeps = 0, step = "recipient", fields = list("timeout" = 0, "title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)),
+		asks(/datum/prompt/text/ticket_printer_details, fields = list("timeout" = 0), keeps = 0, step = "details", when = PROC_REF(has_recipient)),
+		then(PROC_REF(ticket_printed)))
 
-/obj/item/ticket_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(COOLDOWN_FINISHED(src, print_cooldown_until))
-		print_a_ticket(user)
-	else
-		to_chat(user, span_warning("\The [src] is not ready to print another ticket yet."))
+/obj/item/ticket_printer/proc/has_recipient(datum/act/op/A)
+	var/datum/prompt/text/recipient = A.step_answer("recipient")
+	return !!recipient?.value
 
-/obj/item/ticket_printer/proc/print_a_ticket(mob/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(ticket_named), title = "Name", message = "The Name of the person you are issuing the ticket to.", max_length = 100, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/// What the ticket is for, carrying the name already given.
-/datum/om/prompt/text/ticket_details
+/datum/prompt/text/ticket_printer_details
 	title = "Ticket Details"
-	message = "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)"
-	max_length = 200
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/ticket_name
+	max_len = 200
 
-/obj/item/ticket_printer/proc/ticket_named(datum/om/prompt/text/ask)
-	if(!ask.text)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/text/ticket_details, PROC_REF(ticket_written), ticket_name = ask.text, message = ticket_details_prompt())
+/datum/prompt/text/ticket_printer_details/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/ticket_printer/printer = asking.holder // ALLOW(check_grep): the operation holder is the printer providing its ticket question, not an admin credential
+		if(istype(printer))
+			question = printer.ticket_details_prompt()
 
-/// The details question's text (the permit printer asks it differently).
+/// The permit printer retains its distinct question through this existing override.
 /obj/item/ticket_printer/proc/ticket_details_prompt()
-	return initial(/datum/om/prompt/text/ticket_details::message)
+	return "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)"
 
-/obj/item/ticket_printer/proc/ticket_written(datum/om/prompt/text/ticket_details/ask)
-	if(!ask.ticket_name || !ask.text)
-		return
-	print_ticket_paper(ask.answerer, ask.ticket_name, ask.text)
+/obj/item/ticket_printer/proc/ticket_printed(datum/act/op/A)
+	var/datum/prompt/text/recipient = A.step_answer("recipient")
+	var/datum/prompt/text/details = A.step_answer("details")
+	if(!recipient?.value || !details?.value)
+		return OP_REFUSED
+	print_ticket_paper(A.actor, recipient.value, details.value)
+	return OP_OK
 
 /obj/item/ticket_printer/proc/print_ticket_paper(mob/user, ticket_name, details)
 
@@ -51,13 +50,12 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 
 	var/obj/item/paper/sec_ticket/p = new /obj/item/paper/sec_ticket(our_turf)
 
-	p.info = final
+	p.set_info(final)
 	p.name = "Security Citation: [ticket_name]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
 	GLOB.security_printer_tickets |= details
 	log_and_message_admins("has issued '[ticket_name]' a security citation: \"[details]\"", user)
-	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
 
 /obj/item/paper/sec_ticket
 	name = "Security Citation"
@@ -65,17 +63,9 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "sec_ticket"
 
-/obj/item/paper/sec_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// ALLOW(decl): restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "sec_ticket" // ALLOW(decl): see above
-
-DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/sec_ticket/appearance_overlays()
-		. = list()
-		icon = icon
-		icon_state = icon_state
+/// A ticket keeps the state its creation gave it.
+/obj/item/paper/sec_ticket/look_parts(datum/look/look)
+	return
 
 
 /obj/item/ticket_printer/train
@@ -95,12 +85,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, TYPE_PROC_REF(/atom, appeara
 
 	var/obj/item/paper/permit_ticket/p = new /obj/item/paper/permit_ticket(our_turf)
 
-	p.info = final
+	p.set_info(final)
 	p.name = "Permit Ticket: [ticket_name]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 
 	log_and_message_admins("has issued '[ticket_name]' a permit ticket: \"[details]\"", user)
-	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
 
 /obj/item/paper/permit_ticket
 	name = "Permit Ticket"
@@ -108,14 +97,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, TYPE_PROC_REF(/atom, appeara
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "permit_ticket"
 
-/obj/item/paper/permit_ticket/Initialize(mapload, text, title)
-	. = ..()
-	// ALLOW(decl): restores the type's icon after the paper base's own update_icon()
-	icon = 'icons/obj/bureaucracy.dmi'
-	icon_state = "permit_ticket" // ALLOW(decl): see above
-
-DECLARE_APPEARANCE_PROC(/obj/item/paper/permit_ticket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/permit_ticket/appearance_overlays()
-		. = list()
-		icon = icon
-		icon_state = icon_state
+/// A ticket keeps the state its creation gave it.
+/obj/item/paper/permit_ticket/look_parts(datum/look/look)
+	return

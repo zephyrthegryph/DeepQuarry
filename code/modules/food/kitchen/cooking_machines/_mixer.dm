@@ -9,12 +9,15 @@ fundamental differences
 
 /obj/machinery/appliance/mixer
 	max_contents = 1
-	stat = POWEROFF
+	starts_off = TRUE
 	cooking_coeff = 0.75 // Original value 0.4
-	active_power_usage = 3000
-	idle_power_usage = 50
 	var/datum/looping_sound/mixer/mixer_loop
 	tgui_id = "KitchenMixer"
+
+CAPABILITIES(/obj/machinery/appliance/mixer)
+	configure(uses_power(active = 3000, idle = 50))
+	owns_many(nameof(cooking_objs), starts = PROC_REF(make_cooking_objs))
+	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer, starts = /datum/looping_sound/mixer)
 
 /obj/machinery/appliance/mixer/examine(mob/user)
 	. = ..()
@@ -23,13 +26,10 @@ fundamental differences
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	set_cooking(FALSE)
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
-
-	own_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
 
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen
@@ -57,7 +57,7 @@ fundamental differences
 	return 0
 
 /obj/machinery/appliance/mixer/can_remove_items(mob/user, show_warning = TRUE)
-	if(has_stat(MACHINE_STAT_ANY))
+	if(has_condition())
 		return 1
 	else
 		if(show_warning)
@@ -77,46 +77,49 @@ fundamental differences
 				for (var/obj/item/I in CI.container())
 					menuoptions[I.name] = I
 
-		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
+		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/prompt/choice, question = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)
 			var/obj/item/I = menuoptions[selection]
 			if (!user || !user.put_in_hands(I))
 				I.forceMove(get_turf(src))
-			update_icon()
 		return 1
 	return 0
 
-UI_DATA(/obj/machinery/appliance/mixer, "icon_used=off_icon:text")
+/obj/machinery/appliance/mixer/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["icon_used"] = off_icon
+	return data
 
 /// Requirement: something in the bowl to mix.
+/// Mixer power requirement: reject empty contents, otherwise inherit the null success.
 /obj/machinery/appliance/mixer/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	if(!CI.container().check_contents())
 		return "there's nothing in it, add ingredients before turning [src] on"
 	return ..()
 
-/obj/machinery/appliance/mixer/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/mixer/appliance_toggle_power_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 
-	if(has_stat(POWEROFF))//Its turned off
-		stat_remove(POWEROFF)
+	if(switched_off())//Its turned off
+		set_switched_on(TRUE)
 		if(user)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 			get_cooking_work(CI)
 			set_use_power(2)
 	else //Its on, turn it off
-		stat_add(POWEROFF)
+		set_switched_on(FALSE)
 		set_use_power(0)
 		if(user)
 			act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
-	update_icon()
 
 /obj/machinery/appliance/mixer/can_insert(obj/item/I, mob/user)
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		to_chat(user, span_warning(",You can't add items while \the [src] is running. Wait for it to finish or turn the power off to abort."))
 		return 0
 	else
@@ -124,27 +127,29 @@ UI_DATA(/obj/machinery/appliance/mixer, "icon_used=off_icon:text")
 
 /obj/machinery/appliance/mixer/finish_cooking(datum/cooking_item/CI)
 	..()
-	stat_add(POWEROFF)
+	set_switched_on(FALSE)
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	set_use_power(0)
 	CI.reset()
-	update_icon()
 
-APPEARANCE_NONE(/obj/machinery/appliance/mixer)
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/mixer/appearance_overlays()
-	. = list()
-	if (!has_stat(MACHINE_STAT_ANY))
-		icon_state = on_icon
-		if(mixer_loop)
-			mixer_loop.start(src)
+/// A mixer shows on while it is on.
+/obj/machinery/appliance/mixer/draw(datum/look/look)
+	..()
+	look.state(has_condition() ? off_icon : on_icon)
+
+/// The mixer turns while it is on.
+/obj/machinery/appliance/mixer/loop_sync(datum/act/A)
+	if(!has_condition())
+		mixer_loop?.start(src)
 	else
-		icon_state = off_icon
-		if(mixer_loop)
-			mixer_loop.stop(src)
+		mixer_loop?.stop(src)
 
-/obj/machinery/appliance/mixer/machine_step()
-	if(has_stat(MACHINE_STAT_ANY) || !cooking || !length(cooking_objs))
+/obj/machinery/appliance/mixer/work_step(datum/act/timer/A)
+	if(has_condition() || !cooking || !length(cooking_objs))
 		return PROCESS_KILL
 	for(var/i in cooking_objs)
 		do_cooking_tick(i)
+
+/// The mixer's one cooking slot (owns_many(starts =)).
+/obj/machinery/appliance/mixer/proc/make_cooking_objs(current)
+	return list(new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))

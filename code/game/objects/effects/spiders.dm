@@ -9,40 +9,31 @@
 	max_integrity = 10
 
 //similar to weeds, but only barfed out by nurses manually
-EXTEND_INTERACTIONS(/obj/effect/spider, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_web)), \
-)
+/obj/effect/spider/melee_scale()
+	return 0.25
 
-/// Old attackby: any item hits the web (afterattack still follows, as before).
-/obj/effect/spider/proc/interaction_hit_web(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/W = held
-	user.setClickCooldown(user.get_attack_speed(W))
+/obj/effect/spider/melee_passes()
+	return TRUE
 
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, others = span_warning("%U% has been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
-	else
-		act_message(src, user, others = span_warning("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
+CAPABILITIES(/obj/effect/spider)
+	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
-	receive_weapon_hit(W, user, W.force / 4)
-	return INTERACTION_HANDLED_PASS
-
-/obj/effect/spider/welder_act(mob/user, obj/item/tool)
+/obj/effect/spider/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
-
-EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
-	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
-)
+	return OP_OK
 
 /// Old attack_hand: try to stomp the spiderling.
-/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(datum/act/op/A)
+	var/mob/living/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	if(prob(20))
@@ -50,12 +41,13 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 		var/list/nearby = oview(2, src)
 		if(length(nearby))
 			walk_to(src, pick(nearby), 2)
-			return
+			return OP_OK
 	act_message(user, src, others = span_warning("%U% stomps %T% dead!"))
 	die()
+	return OP_OK
 
 /obj/effect/spider/proc/die()
-	qdel(src)
+	consume(src)
 
 /obj/effect/spider/atom_destruction(damage_flag)
 	die()
@@ -64,10 +56,12 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/stickyweb
 	icon_state = "stickyweb1"
 
-/obj/effect/spider/stickyweb/Initialize(mapload)
-	if(prob(50))
-		icon_state = "stickyweb2"
-	return ..()
+CAPABILITIES(/obj/effect/spider/stickyweb)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/spider/stickyweb/proc/roll_icon_state(datum/roller/R)
+	return R.chance(50) ? "stickyweb2" : icon_state
 
 /obj/effect/spider/stickyweb/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /mob/living/simple_mob/animal/giant_spider))
@@ -90,12 +84,24 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
-/obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
-	pixel_x = rand(3,-3)
-	pixel_y = rand(3,-3)
-	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
-	. = ..()
+CAPABILITIES(/obj/effect/spider/eggcluster)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(3))
+	after_init(PROC_REF(hatch_delay), then(PROC_REF(hatch_due)))
+	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
+
+/// What laid the eggs (its constructor param): they take its light and colour.
+/obj/effect/spider/eggcluster/var/tmp/atom/laid_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/spider/eggcluster/proc/take_parent_look(atom/parent)
 	get_light_and_color(parent)
+
+/// after_init(): the hatch delay, from the cluster's steps.
+/obj/effect/spider/eggcluster/proc/hatch_delay(datum/act/A)
+	return egg_hatch_steps() * 2 SECONDS
+
+/obj/effect/spider/eggcluster/proc/hatch_due(datum/act/timer/A)
+	hatch()
 
 // leaves the implant list of the limb it was laid in.
 
@@ -115,7 +121,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 			if(O)
 				rel_add(O, nameof(O.implants), spiderling)
 			spiderling.faction = faction
-		qdel(src)
+		consume(src)
 
 /obj/effect/spider/eggcluster/small
 	spiders_min = 2
@@ -158,16 +164,26 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
 			/mob/living/simple_mob/animal/giant_spider/ion))
 
-/obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
-	. = ..()
-	pixel_x = rand(6,-6)
-	pixel_y = rand(6,-6)
-	//50% chance to grow up
-	if(amount_grown != -1 && prob(50))
-		amount_grown = 1
+/// What laid the spiderling (its constructor param): it takes its light and colour.
+/obj/effect/spider/spiderling/var/tmp/atom/laid_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/spider/spiderling/proc/take_parent_look(atom/parent)
 	get_light_and_color(parent)
 
-DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
+/// Rolled before init (rolls()): half the spiderlings will grow up.
+/obj/effect/spider/spiderling/proc/roll_grown(datum/roller/R)
+	if(amount_grown != -1 && R.chance(50))
+		return 1
+	return amount_grown
+
+CAPABILITIES(/obj/effect/spider/spiderling)
+	ref_one(nameof(entry_vent))
+	every(2 SECONDS, then(PROC_REF(spiderling_step)))
+	op("stomp", hand(), label("Stomp"), then(PROC_REF(interaction_stomp_spiderling)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(6))
+	rolls(nameof(amount_grown), PROC_REF(roll_grown))
+	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -180,7 +196,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	..()
 
-/obj/effect/spider/spiderling/periodic_step()
+/obj/effect/spider/spiderling/proc/spiderling_step(datum/act/timer/A)
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
@@ -212,30 +228,30 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	else if(prob(1))
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " skitters."))
 
-	if(amount_grown >= 0)
+	if(amount_grown >= 0 && !istype(loc, /obj/item/glass_jar)) // no growing inside jars
 		amount_grown += rand(0,2)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	om_after(src, rand(20,60), PROC_REF(vent_crawl_enter), entry, exit_vent)
+	after(src, rand(2 SECONDS,6 SECONDS), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	forceMove(exit_vent)
 	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
-	om_after(src, travel_time, PROC_REF(vent_crawl_midway), entry, exit_vent, travel_time)
+	after(src, travel_time, PROC_REF(vent_crawl_midway), with = list(entry, exit_vent, travel_time), keeps_dead = TRUE)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
-	if(!exit_vent || exit_vent.welded)
+	if(!exit_vent || is_welded(exit_vent))
 		forceMove(entry)
 		rel_clear(src, nameof(entry_vent))
 		return
 
 	if(prob(50))
 		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
-		GLOB.motiontracker_service.ping(src,10)
-	om_after(src, travel_time, PROC_REF(vent_crawl_exit), entry, exit_vent)
+		SSmotiontracker.ping(src,10)
+	after(src, travel_time, PROC_REF(vent_crawl_exit), with = list(entry, exit_vent), keeps_dead = TRUE)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	if(!exit_vent || exit_vent.welded)
+	if(!exit_vent || is_welded(exit_vent))
 		forceMove(entry)
 		rel_clear(src, nameof(entry_vent))
 		return
@@ -254,11 +270,11 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 				walk_to(src, target_atom, 5)
 				if(prob(25))
 					src.visible_message(span_notice("\The [src] skitters[pick(" away"," around","")]."))
-				GLOB.motiontracker_service.ping(src,10)
+				SSmotiontracker.ping(src,10)
 		else if(amount_grown < 75 && prob(5))
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
-				if(!v.welded)
+				if(!is_welded(v))
 					rel_set(src, nameof(entry_vent), v)
 					walk_to(src, entry_vent(), 5)
 					break
@@ -267,7 +283,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
-				om_after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
+				after(GS, 0.2 SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted
@@ -282,12 +298,13 @@ TYPE_TABLE(/obj/effect/spider/spiderling/stunted, spiderling_grow_as, list(/mob/
 /obj/effect/spider/spiderling/princess
 	name = "royal spiderling"
 	desc = "There's a special aura about this one."
+	amount_grown = 50
 
 TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/nurse/queen))
 
-/obj/effect/spider/spiderling/princess/Initialize(mapload, atom/parent)
-	. = ..()
-	amount_grown = 50
+/// A royal spiderling starts half grown (its roll keeps it).
+/obj/effect/spider/spiderling/princess/roll_grown(datum/roller/R)
+	return amount_grown
 
 /obj/effect/decal/cleanable/spiderling_remains
 	name = "spiderling remains"
@@ -301,16 +318,12 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 	icon_state = "cocoon1"
 	max_integrity = 15
 
-/obj/effect/spider/cocoon/Initialize(mapload)
-	. = ..()
-	icon_state = pick("cocoon1","cocoon2","cocoon3")
-
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
-/obj/effect/spider/cocoon/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/spider/cocoon)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	rolls(nameof(icon_state), pick_one(list("cocoon1", "cocoon2", "cocoon3")))
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

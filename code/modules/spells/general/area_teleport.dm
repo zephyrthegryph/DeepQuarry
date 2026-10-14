@@ -19,14 +19,14 @@
 
 	hud_state = "wiz_tele"
 
-/datum/spell/area_teleport/before_cast()
+/datum/spell/area_teleport/before_cast(list/targets, mob/user)
 	return
 
 /datum/spell/area_teleport/choose_targets(mob/user)
 	var/A = null
 
 	if(!randomise_selection)
-		A = cast_ask(user, "area", /datum/om/prompt/choice, message = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs)
+		A = cast_ask(user, "area", /datum/prompt/choice, question = "Area to teleport to", title = "Teleport", choices = GLOB.teleportlocs)
 		if(!A)
 			return list()
 	else
@@ -83,6 +83,7 @@
 /datum/spell/area_teleport/invocation(mob/user, area/chosenarea)
 	if(!istype(chosenarea))
 		return //can't have that, can we
+	invocation = initial(invocation)
 	if(!invocation_area || !chosenarea)
 		..()
 	else

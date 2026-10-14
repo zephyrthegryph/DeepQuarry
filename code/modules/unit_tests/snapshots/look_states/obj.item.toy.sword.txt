@@ -1,0 +1,5 @@
+/obj/item/toy/sword active=1 +overlay: icons/obj/weapons.dmi:esword_blade:-32767
+/obj/item/toy/sword active=2 +overlay: icons/obj/weapons.dmi:esword_blade:-32767
+/obj/item/toy/sword/interim_holder_appearance active=1 +overlay: icons/obj/weapons.dmi:esword_blade:-32767
+/obj/item/toy/sword/interim_holder_appearance active=2 +overlay: icons/obj/weapons.dmi:esword_blade:-32767
+

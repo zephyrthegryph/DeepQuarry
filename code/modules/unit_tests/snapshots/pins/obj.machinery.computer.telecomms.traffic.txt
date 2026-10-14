@@ -1,0 +1,52 @@
+@obj.machinery.computer human|none
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Use item
+@obj.machinery.computer.telecomms human|/obj/item
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Ui open
++1 menu: Use
+@obj human|/obj/item/gripper
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
+keys: clear_temp, climb.climb, climb.climb_menu, disconnect, drag_buckle, edit_code, emag.subvert, emag.use, flush_buffer, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, main_menu, melee_hit, open_ui_impl, refresh, robot_remote_blocked, scan, set_network, silicon_hand, toggle_run, use_gripper, use_item, view_server

@@ -1,0 +1,14 @@
+@datum human|none
+@datum robot|none
+@datum ai|none
+@datum ghost|none
+@datum human|/obj/item/tool/screwdriver
+@datum human|/obj/item/tool/crowbar
+@datum human|/obj/item/tool/wrench
+@datum human|/obj/item/tool/wirecutters
+@datum human|/obj/item/multitool
+@datum human|/obj/item/weldingtool
+@datum human|/obj/item/stack/cable_coil
+@datum human|/obj/item/stack/material/steel
+@datum human|/obj/item/card/id
+keys: add_inherent_law, add_ion_law, add_supplied_law, add_zeroth_law, change_inherent_law, change_ion_law, change_supplied_law, change_supplied_law_position, change_zeroth_law, delete_law, edit_law, law_channel, notify_laws, pc_exit, pc_minimize, pc_shutdown, state_law, state_laws, state_law_set, transfer_laws, ui_open

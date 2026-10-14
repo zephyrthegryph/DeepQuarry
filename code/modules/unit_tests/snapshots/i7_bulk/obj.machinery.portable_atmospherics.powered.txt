@@ -1,0 +1,49 @@
+human|none click: nothing
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj.machinery.portable_atmospherics ghost|none
+-menu: Climb (refused: You can't climb right now.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove power cell (refused: There is no power cell installed.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Remove power cell
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+@obj.machinery.portable_atmospherics human|/obj/item/tool/wrench
+-menu: Climb
+-menu: Open controls
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+@obj.machinery.portable_atmospherics human|/obj/item/weldingtool
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+@obj.machinery.portable_atmospherics human|/obj/item/stack/material/steel
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
+@obj human|/obj/item/tank
+-menu: Climb
+-menu: Open controls
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Insert power cell
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Insert power cell
+keys: cell_in, cell_out, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, robot_remote_blocked, silicon_hand, tank_bay.holding.insert

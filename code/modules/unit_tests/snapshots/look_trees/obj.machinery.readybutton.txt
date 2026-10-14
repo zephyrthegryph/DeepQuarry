@@ -1,0 +1,5 @@
+/obj/machinery/readybutton icon: icons/obj/monitors.dmi
+/obj/machinery/readybutton state: auth_off
+/obj/machinery/readybutton dir: 2
+/obj/machinery/readybutton overlay: icons/obj/monitors.dmi:auth_off:8:#000000
+

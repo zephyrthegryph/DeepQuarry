@@ -1,21 +1,21 @@
 // This holds all the code needed to manage and use a SQLite database.
 // It is merely a file sitting inside the data directory, as opposed to a full fledged DB service,
 // however this makes it a lot easier to test, and it is natively supported by BYOND.
-SUBSYSTEM_DEF(sqlite)
+SYSTEM_DEF(sqlite)
 	name = "SQLite"
-	dependencies = list(
-		/datum/controller/subsystem/dbcore
+	init_stage = INITSTAGE_MAIN
+	needs = list(
+		/datum/system/dbcore
 	)
-	flags = SS_NO_FIRE
 	var/database/sqlite_db = null
 
-/datum/controller/subsystem/sqlite/Initialize()
+/datum/system/sqlite/initialize()
 	connect()
 	if(sqlite_db)
 		init_schema(sqlite_db)
-	return SS_INIT_SUCCESS
+	return
 
-/datum/controller/subsystem/sqlite/proc/connect()
+/datum/system/sqlite/proc/connect()
 	if(!CONFIG_GET(flag/sqlite_enabled))
 		return
 
@@ -30,7 +30,7 @@ SUBSYSTEM_DEF(sqlite)
 		log_sql("Sqlite database connected.")
 
 // Makes the tables, if they do not already exist in the sqlite file.
-/datum/controller/subsystem/sqlite/proc/init_schema(database/sqlite_object)
+/datum/system/sqlite/proc/init_schema(database/sqlite_object)
 	// Feedback table.
 	// Note that this is for direct feedback from players using the in-game feedback system and NOT for stat tracking.
 	// Player ckeys are not stored in this table as a unique key due to a config option to hash the keys to encourage more honest feedback.
@@ -64,7 +64,7 @@ SUBSYSTEM_DEF(sqlite)
 // General error checking for SQLite.
 // Returns true if something went wrong. Also writes a log.
 // The desc parameter should be unique for each call, to make it easier to track down where the error occured.
-/datum/controller/subsystem/sqlite/proc/sqlite_check_for_errors(database/query/query_used, desc)
+/datum/system/sqlite/proc/sqlite_check_for_errors(database/query/query_used, desc)
 	if(query_used && query_used.ErrorMsg())
 		log_sql("SQLite Error: [desc] : [query_used.ErrorMsg()]")
 		return TRUE
@@ -77,7 +77,7 @@ SUBSYSTEM_DEF(sqlite)
 
 // Inserts data into the feedback table in a painless manner.
 // Returns TRUE if no issues happened, FALSE otherwise.
-/datum/controller/subsystem/sqlite/proc/insert_feedback(author, topic, content, database/sqlite_object)
+/datum/system/sqlite/proc/insert_feedback(author, topic, content, database/sqlite_object)
 	if(!author || !topic || !content)
 		CRASH("One or more parameters was invalid.")
 
@@ -105,7 +105,7 @@ SUBSYSTEM_DEF(sqlite)
 	query.Execute(sqlite_object)
 	return !sqlite_check_for_errors(query, "Insert Feedback")
 
-/datum/controller/subsystem/sqlite/proc/can_submit_feedback(client/C)
+/datum/system/sqlite/proc/can_submit_feedback(client/C)
 	if(!CONFIG_GET(flag/sqlite_enabled))
 		return FALSE
 	if(CONFIG_GET(number/sqlite_feedback_min_age) && !is_old_enough(C))
@@ -115,14 +115,14 @@ SUBSYSTEM_DEF(sqlite)
 	return TRUE
 
 // Returns TRUE if the player is 'old' enough, according to the config.
-/datum/controller/subsystem/sqlite/proc/is_old_enough(client/C)
+/datum/system/sqlite/proc/is_old_enough(client/C)
 	if(!isnum(C.player_age) || C.player_age < CONFIG_GET(number/sqlite_feedback_min_age)) // loaded by the login gate
 		return FALSE
 	return TRUE
 
 
 // Returns how many days someone has to wait, to submit more feedback, or 0 if they can do so right now.
-/datum/controller/subsystem/sqlite/proc/get_feedback_cooldown(player_ckey, cooldown, database/sqlite_object)
+/datum/system/sqlite/proc/get_feedback_cooldown(player_ckey, cooldown, database/sqlite_object)
 	player_ckey = sql_sanitize_text(ckey(lowertext(player_ckey)))
 	var/potential_hashed_ckey = sql_sanitize_text(md5(player_ckey + SSsqlite.get_feedback_pepper()))
 
@@ -170,7 +170,7 @@ SUBSYSTEM_DEF(sqlite)
 // If the file is properly protected, it can only be viewed/copied by sys-admins generating a log, which is much more conspicious than accessing/copying a DB.
 // This stops mods/admins/etc from guessing the author by shoving names in an MD5 hasher until they pick the right one.
 // Don't use this for things needing actual security.
-/datum/controller/subsystem/sqlite/proc/get_feedback_pepper()
+/datum/system/sqlite/proc/get_feedback_pepper()
 	var/pepper_file = world.file2list("config/sqlite_feedback_pepper.txt")
 	var/pepper = null
 	for(var/line in pepper_file)
@@ -185,5 +185,5 @@ SUBSYSTEM_DEF(sqlite)
 			break
 	return pepper
 
-/datum/controller/subsystem/sqlite/CanProcCall(procname)
+/datum/system/sqlite/CanProcCall(procname)
 	return procname != "get_feedback_pepper"

@@ -8,19 +8,24 @@
 	w_class = ITEMSIZE_NORMAL
 	flags = WALL_ITEM
 
-/obj/structure/sign/screwdriver_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/structure/sign)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/obj/structure/sign/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(istype(src, /obj/structure/sign/scenery) || istype(src, /obj/structure/sign/double))
-		return ..()
-	playsound(src, tool.usesound, 50, 1)
+		return OP_DECLINE
+	playsound(src, sounds_of(tool).use, 50, 1)
 	unfasten(user)
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/proc/unfasten(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You unfasten %T%.")), MSG_OTHERS(span_notice("%U% unfastens %T%.")))
 	var/obj/item/sign/S = new(src.loc)
 	S.name = name
 	S.desc = desc
-	S.icon_state = icon_state
+	S.set_icon_state(icon_state)
 	S.sign_state = icon_state
 	S.original_type = type
 	replace_with(src, S)
@@ -33,45 +38,45 @@
 	var/sign_state = ""
 	var/original_type
 
-/obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
-	if(isturf(user.loc))
-		om_ask(user, /datum/om/prompt/choice/sign_direction, PROC_REF(direction_chosen), subject = tool)
-		return TRUE
-	return ..()
+CAPABILITIES(/obj/item/sign)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Fasten"), wait(0),
+		asks(/datum/prompt/choice, fields = list("title" = "Select direction.", "question" = "In which direction?", "choices" = list("North", "East", "South", "West", "Cancel"), "timeout" = 0)),
+		then(PROC_REF(direction_chosen)))
 
-/// Fastening a sign: the screwdriver (the subject) stays in hand, the fastener on a turf.
-/datum/om/prompt/choice/sign_direction
-	title = "Select direction."
-	message = "In which direction?"
-	choices = list("North", "East", "South", "West", "Cancel")
-	ask_flags = ASK_HELD | ASK_CAPABLE
-
-/datum/om/prompt/choice/sign_direction/valid()
-	return isturf(answerer.loc) ? null : "not on a turf"
-
-/obj/item/sign/proc/direction_chosen(datum/om/prompt/choice/sign_direction/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/tool = ask.subject
-	var/direction = ask.choice
-	if(direction == "Cancel") return
-	var/target_type = original_type || /obj/structure/sign
-	var/obj/structure/sign/S = new target_type(user.loc)
-	switch(direction)
+/// Fastening the sign to the wall the answer names: the fastener stands on a turf, the sign leaves the hand (the screwdriver stays in the other).
+/obj/item/sign/proc/direction_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	var/datum/prompt/R = A.answer
+	var/offset_x = 0
+	var/offset_y = 0
+	switch(R?.value)
 		if("North")
-			S.pixel_y = 32
+			offset_y = 32
 		if("East")
-			S.pixel_x = 32
+			offset_x = 32
 		if("South")
-			S.pixel_y = -32
+			offset_y = -32
 		if("West")
-			S.pixel_x = -32
-		else return
-	S.name = name
-	S.desc = desc
-	S.icon_state = sign_state
+			offset_x = -32
+		else
+			return OP_OK
+	if(!isturf(user.loc) || !isnull(loc?.release_refusal(src, user)))
+		return OP_OK
+	var/target_type = original_type || /obj/structure/sign
+	var/restored_name = name
+	var/restored_desc = desc
+	var/restored_state = sign_state
+	if(!consume(src, user))
+		return OP_OK
+	var/obj/structure/sign/S = new target_type(user.loc)
+	S.pixel_x = offset_x
+	S.pixel_y = offset_y
+	S.name = restored_name
+	S.desc = restored_desc
+	S.set_icon_state(restored_state)
 	to_chat(user, "You fasten \the [S] with your [tool].")
-	qdel(src)
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/scenery/map
 	name = "station map"
@@ -142,9 +147,12 @@
 	name = "\improper WARNING"
 	icon_state = "securearea"
 
-/obj/structure/sign/warning/Initialize(mapload)
-	. = ..()
-	desc = "A warning sign which reads '[name]'."
+CAPABILITIES(/obj/structure/sign/warning)
+	derives(nameof(desc), PROC_REF(warning_desc))
+
+/// A warning sign reads its name (derives(), at init).
+/obj/structure/sign/warning/proc/warning_desc()
+	return "A warning sign which reads '[name]'."
 
 /obj/structure/sign/warning/airlock
 	name = "\improper EXTERNAL AIRLOCK"
@@ -199,9 +207,8 @@
 	name = "\improper LETHAL TURRETS"
 	icon_state = "turrets"
 
-/obj/structure/sign/warning/lethal_turrets/Initialize(mapload)
-	. = ..()
-	desc += " Enter at own risk!."
+/obj/structure/sign/warning/lethal_turrets/warning_desc()
+	return ..() + " Enter at own risk!."
 
 /obj/structure/sign/warning/mail_delivery
 	name = "\improper MAIL DELIVERY"
@@ -367,13 +374,6 @@
 	icon = 'icons/obj/decals_directions.dmi'
 	//TODO: set up overlay systems, inc. interactions (e.g. vines clear w/ plantbgone or fire, snow can be brushed off or melted, and so on)
 
-//disabled this proc, it serves no purpose except to overwrite the description that already exists. may have been intended for making your own signs?
-//seems to defeat the point of having a generic directional sign that mappers could edit and use in POIs? left it here in case something breaks.
-/*
-/obj/structure/sign/directions/Initialize(mapload)
-	. = ..()
-	desc = "A direction sign, pointing out the way to \the [src]."
-*/
 
 //Also floor/level/deck signs in the same vein. Naming conventions!
 /obj/structure/sign/levels
@@ -1598,13 +1598,13 @@
 		if(WEST)
 			P.pixel_x = -32
 
-	P.dir = placement_dir
+	P.set_dir(placement_dir)
 	if(flag_size)
-		P.icon_state = "[flag_path]_l"
+		P.set_icon_state("[flag_path]_l")
 		var/obj/structure/sign/flag/P2 = new(user.loc)
 		rel_set(P, nameof(P.linked_flag), P2)
-		P2.icon_state = "[flag_path]_r"
-		P2.dir = P.dir
+		P2.set_icon_state("[flag_path]_r")
+		P2.set_dir(P.dir)
 		switch(P2.dir)
 			if(NORTH)
 				P2.pixel_y = P.pixel_y
@@ -1623,20 +1623,27 @@
 		P2.description_fluff = description_fluff
 		P2.flagtype = type
 	else
-		P.icon_state = "[flag_path]"
+		P.set_icon_state("[flag_path]")
 	P.name = name
 	P.desc = desc
 	P.description_fluff = description_fluff
 	P.flagtype = type
 	consume(src, user)
 
-/obj/structure/sign/flag/relations()
-	. = ..()
-	. += rel_one(nameof(linked_flag), back = nameof(/obj/structure/sign/flag::linked_flag))
+MSG_DEF(flag/burning, "You start to burn %T% down!", "%U% starts to burn %T% down!")
+MSG_DEF(flag/burnt, "You burn %T% down!", "%U% burns %T% down!")
 
-DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_blast))
+CAPABILITIES(/obj/structure/sign/flag)
+	links(/obj/structure/sign/flag::linked_flag, /obj/structure/sign/flag::linked_flag)
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(flag_blast)))
+	op("rip", hand(), label("Rip down"),
+		asks(/datum/prompt/yes_no, fields = list("title" = "You think...", "question" = computed(PROC_REF(rip_question)), "timeout" = 0)),
+		then(PROC_REF(rip_answered)))
+	op("burn", inputs(item(/obj/item/flame/lighter), tool(TOOL_WELDER)), label("Burn"), wait(2 SECONDS), costs(RES_FUEL, 0), begins(MSG(flag/burning)),
+		says(MSG(flag/burnt)), then(PROC_REF(burnt_down)))
+
 /// A flag that survives a blast is torn.
-/obj/structure/sign/flag/proc/flag_blast(datum/damage_packet/packet)
+/obj/structure/sign/flag/proc/flag_blast(datum/act/A)
 	rip()
 
 /obj/structure/sign/flag/unfasten(mob/user)
@@ -1649,41 +1656,24 @@ DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_
 		act_message(user, src, MSG_SELF(span_notice("You unfasten the tattered remains of %T%.")), \
 			MSG_OTHERS(span_notice("%U% unfastens the tattered remnants of %T%.")))
 	if(linked_flag)
-		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
-	qdel(src)
+		spent(linked_flag, user) //otherwise you're going to get weird duping nonsense
+	consume(src, user)
 
-/obj/structure/sign/flag/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/sign_flag_rip,
-		/datum/interaction/entry_item/sign_flag_item,
-	)
-	..()
+/// The rip's question names the flag.
+/obj/structure/sign/flag/proc/rip_question(datum/act/A)
+	return "Do you want to rip \the [src] from its place?"
 
-/// Old attack_hand: rip the flag from its place.
-/datum/interaction/entry_hand/sign_flag_rip
-	id = "sign_flag_rip"
-	name = "Rip down"
-	effect = /obj/structure/sign/flag/proc/interaction_rip
-
-/obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/confirm/flag_rip, PROC_REF(rip_answered))
-	return TRUE
-
-/datum/om/prompt/confirm/flag_rip
-	title = "You think..."
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-
-/datum/om/prompt/confirm/flag_rip/prepare()
-	message = "Do you want to rip \the [subject] from its place?"
-	return TRUE
-
-/obj/structure/sign/flag/proc/rip_answered(datum/om/prompt/confirm/flag_rip/ask)
-	var/mob/user = ask.answerer
+/// A hand rips the flag from its place, once the actor says yes.
+/obj/structure/sign/flag/proc/rip_answered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
+	var/mob/user = A.actor
 	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!" ))
 	play_sfx(src.loc, SFX_ITEMS_POSTER_RIPPED)
 	add_fingerprint(user)
 	rip()
-	return TRUE
+	return OP_OK
 
 /obj/structure/sign/flag/proc/rip(rip_linked = TRUE)
 	var/icon/I = new('icons/obj/flags.dmi', icon_state)
@@ -1696,26 +1686,15 @@ DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_
 	if(linked_flag && rip_linked)
 		linked_flag.rip(FALSE) //Prevents an infinite ripping loop
 
-/// Old attackby: burn the flag down.
-/datum/interaction/entry_item/sign_flag_item
-	id = "sign_flag_item"
-	name = "Burn"
-	effect = /obj/structure/sign/flag/proc/interaction_item
-
-/obj/structure/sign/flag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
-		act_message(user, src, others = span_warning("%U% starts to burn %T% down!"))
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
-
-/obj/structure/sign/flag/proc/attackby_timed_done(mob/user)
-	act_message(user, src, others = span_warning("%U% burns %T% down!"))
+/// A lighter or a welder's wait ran out: the flag (and its other half) burns to ash.
+/obj/structure/sign/flag/proc/burnt_down(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src.loc, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT, volume = 100, extrarange = 0)
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
-		qdel(linked_flag)
-	qdel(src)
-	return TRUE
+		consumed(linked_flag, src)
+	consume(src, user)
+	return OP_OK
 
 /obj/structure/sign/flag/blank/left
 	icon_state = "flag_l"

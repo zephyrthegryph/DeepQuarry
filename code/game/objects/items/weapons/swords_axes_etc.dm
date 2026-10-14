@@ -14,9 +14,6 @@
 	desc = "Murder device."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
-	slot_flags = SLOT_BELT
-	force = 10
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
 
 /obj/item/melee/classic_baton
 	name = "police baton"
@@ -24,20 +21,21 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
 	item_state = "classic_baton"
-	slot_flags = SLOT_BELT
-	force = 10
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
+
+CAPABILITIES(/obj/item/melee/classic_baton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You club yourself over the head."))
-		user.status_at_least(EFFECT_WEAKENED, 3 * force)
+		user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.injure(injury_kind, 2*force, BP_HEAD, src)
+			H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 		else
-			user.injure(injury_kind, 2*force, source = src)
+			user.injure(injury_kind, 2*combat_of(src).force, source = src)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -48,41 +46,43 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "telebaton0"
 	item_state = "telebaton0"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	force = 3
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	var/on = 0
 
-DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/melee/telebaton, on)
 
-/// Old attack_self.
-/obj/item/melee/telebaton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+CAPABILITIES(/obj/item/melee/telebaton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 3))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
+	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))
+
+/// The native held-item activation preserves the complete equipment change.
+/obj/item/melee/telebaton/proc/baton_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_on(!on)
 	if(on)
 		act_message(user, null, MSG_SELF(span_warning("You extend the baton.")), \
 			MSG_OTHERS(span_warning("With a flick of their wrist, %U% extends their telescopic baton.")), \
 			MSG_BLIND("You hear an ominous click."))
-		icon_state = "telebaton1"
-		item_state = icon_state
-		w_class = ITEMSIZE_NORMAL
-		force = 15//quite robust
-		attack_verb = list("smacked", "struck", "slapped")
+		set_icon_state("telebaton1")
+		set_item_state(icon_state)
+		set_w_class(ITEMSIZE_NORMAL)
+		set_force(15)//quite robust
+		set_attack_verb(list("smacked", "struck", "slapped"))
 	else
 		act_message(user, null, MSG_SELF(span_notice("You collapse the baton.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their telescopic baton.")), \
 			MSG_BLIND("You hear a click."))
-		icon_state = "telebaton0"
-		item_state = icon_state
-		w_class = ITEMSIZE_SMALL
-		force = 3//not so robust now
-		attack_verb = list("hit", "punched")
+		set_icon_state("telebaton0")
+		set_item_state(icon_state)
+		set_w_class(ITEMSIZE_SMALL)
+		set_force(3)//not so robust now
+		set_attack_verb(list("hit", "punched"))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
@@ -97,17 +97,17 @@ DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(inte
 
 		add_overlay(blood_overlay)
 
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/telebaton/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(on)
 		if(CLUMSY_FAIL_CHANCE(user))
 			to_chat(user, span_warning("You club yourself over the head."))
-			user.status_at_least(EFFECT_WEAKENED, 3 * force)
+			user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.injure(injury_kind, 2*force, BP_HEAD, src)
+				H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 			else
-				user.injure(injury_kind, 2*force, source = src)
+				user.injure(injury_kind, 2*combat_of(src).force, source = src)
 			return ITEM_INTERACT_SUCCESS
 	return ..()

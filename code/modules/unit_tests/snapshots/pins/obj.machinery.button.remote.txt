@@ -1,0 +1,23 @@
+@obj.machinery.button human|none
+@obj.machinery.button robot|none
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Toggle
++2 click: Click: Toggle
+@obj.machinery.button ghost|none
+-menu: Press (refused: needs an item)
+@obj.machinery.button human|/obj/item/tool/screwdriver
+@obj.machinery.button human|/obj/item/tool/crowbar
+@obj.machinery.button human|/obj/item/tool/wrench
+@obj.machinery.button human|/obj/item/tool/wirecutters
+@obj.machinery.button human|/obj/item/multitool
+@obj.machinery.button human|/obj/item/weldingtool
+@obj.machinery.button human|/obj/item/stack/cable_coil
+@obj.machinery.button human|/obj/item/stack/material/steel
+@obj.machinery.button human|/obj/item/card/id
+@obj.machinery.button human|/obj/item
+@obj.machinery.button human|/obj/item/card/emag
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use
+keys: button_press, button_press_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, press_hand, press_item, press_silicon, robot_remote_blocked, silicon_hand, silicon_pressed

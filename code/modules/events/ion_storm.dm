@@ -27,7 +27,7 @@
 
 /datum/event/ionstorm/start()
 	for (var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(	!player.mind || GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
+		if(	!player.mind || SSantag.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		LAZYADD(players, player.real_name)
 
@@ -42,8 +42,8 @@
 			continue
 		to_chat(S, span_warning("Your integrated sensors detect an ionospheric anomaly. Your systems will be impacted as you begin a partial restart."))
 		var/ionbug = rand(3, 9)
-		S.status_adjust(EFFECT_CONFUSED, ionbug)
-		S.status_adjust(EFFECT_BLURRY, (ionbug - 1))
+		S.status_adjust(STAT_CONFUSED, ionbug)
+		S.status_adjust(STAT_BLURRY, (ionbug - 1))
 
 	// Ionize silicon mobs
 	for (var/mob/living/silicon/ai/target in REGISTRY_MEMBERS(REGISTRY_SILICONS))

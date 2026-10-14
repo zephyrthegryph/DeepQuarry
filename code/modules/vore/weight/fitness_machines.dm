@@ -4,20 +4,20 @@
 	icon = 'icons/obj/machines/fitness_machines_vr.dmi'
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	var/messages
 	var/workout_sounds
 	var/cooldown = 10
 	var/weightloss_power = 1
 
 // Ungated, as the old attack_hand overrides never called ..(): the machinery operability checks never applied.
-EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PROC_REF(fitness_workout_hand)))
+CAPABILITIES(/obj/machinery/fitness)
+	configure(uses_power(idle = 0, active = 0))
+	op("fitness_workout_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Work out"), then(PROC_REF(fitness_workout_hand)))
 
 /// Old attack_hand: work out, burning nutrition and weight.
-/obj/machinery/fitness/proc/fitness_workout_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(user.nutrition < 70)
+/obj/machinery/fitness/proc/fitness_workout_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(nutrition_of(user) < 70)
 		to_chat(user, span_notice("You need more energy to workout with the [src]!"))
 
 	else if(user.weight < 70)
@@ -32,6 +32,7 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 		to_chat(user, span_notice("[message]."))
 		for(var/s in workout_sounds)
 			playsound(src, s, 50, 1)
+	return OP_OK
 
 /obj/machinery/fitness/punching_bag
 	name = "punching bag"
@@ -59,18 +60,23 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 			"You hammer the clown right in it's face with your fist",
 			"A honk emits from the punching bag as you hit it")
 
-/obj/machinery/fitness/heavy/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/fitness/heavy/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
 		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PROC_REF(heavy_fitness_safety_hand)))
+CAPABILITIES(/obj/machinery/fitness/heavy)
+	op("heavy_fitness_safety_hand", hand(), then(PROC_REF(heavy_fitness_safety_hand)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attack_hand: safety checks; FALSE goes on to the workout.
-/obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!anchored)
 		to_chat(user, span_notice("For safety reasons, you are required to have this equipment wrenched down before using it!"))
 		return TRUE
@@ -79,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PR
 		to_chat(user, span_notice("For safety reasons, you need to be sitting in the [src] for it to work!"))
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/fitness/heavy/lifter
 	name = "fitness lifter"
@@ -104,17 +110,18 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PR
 	desc = "A scale used to measure ones weight relative to their size and species."
 	anchored = TRUE // Set to 0 when we can construct or dismantle these.
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 
-EXTEND_INTERACTIONS(/obj/machinery/scale, INTERACT_HAND_UNGATED("Weigh", PROC_REF(scale_weigh_hand)))
+CAPABILITIES(/obj/machinery/scale)
+	configure(uses_power(idle = 0, active = 0))
+	op("scale_weigh_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Weigh"), then(PROC_REF(scale_weigh_hand)))
 
 /// Old attack_hand: read out the weight of whoever stands on it.
-/obj/machinery/scale/proc/scale_weigh_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/scale/proc/scale_weigh_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.loc != loc)
 		to_chat(user, span_notice("You need to be standing on top of the scale for it to work!"))
-		return
+		return OP_OK
 	if(user.weight) //Just in case.
 		var/kilograms = round(text2num(user.weight),4) / 2.20463
 		act_message(src, user, others = span_notice("%U% displays a reading of [user.weight]lb / [kilograms]kg when %T% stands on it."))
+	return OP_OK

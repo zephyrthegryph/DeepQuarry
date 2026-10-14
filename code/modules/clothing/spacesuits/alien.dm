@@ -3,9 +3,12 @@
 	name = "Skrellian helmet"
 	desc = "Smoothly contoured and polished to a shine. Still looks like a fishbowl."
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL,SPECIES_HUMAN))))
+CAPABILITIES(/obj/item/clothing/head/helmet/space/skrell)
+	acceptance("fit", fits(list(SPECIES_SKRELL, SPECIES_HUMAN)), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
+
+
 
 /obj/item/clothing/head/helmet/space/skrell/white
 	icon_state = "skrell_helmet_white"
@@ -17,11 +20,15 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/skrell, fit_spec, list(REQ_FITS_
 	name = "Skrellian voidsuit"
 	desc = "Seems like a wetsuit with reinforced plating seamlessly attached to it. Very chic."
 	armor_spec = "melee=20;bullet=20;laser=20;energy=50;bomb=50;bio=100;rad=50;cold=60"
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-TYPE_TABLE(/obj/item/clothing/suit/space/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL,SPECIES_HUMAN))))
+CAPABILITIES(/obj/item/clothing/suit/space/skrell)
+	acceptance("fit", fits(list(SPECIES_SKRELL, SPECIES_HUMAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/skrell, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_MINING, /obj/item/t_scanner, /obj/item/rcd))))
+
+
+
 
 /obj/item/clothing/suit/space/skrell/white
 	icon_state = "skrell_suit_white"
@@ -34,23 +41,28 @@ TYPE_TABLE(/obj/item/clothing/suit/space/skrell, suit_storage_spec, list(HOLD_ON
 /obj/item/clothing/suit/space/vox
 	w_class = ITEMSIZE_NORMAL
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.2
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
 
-TYPE_TABLE(/obj/item/clothing/suit/space/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+CAPABILITIES(/obj/item/clothing/suit/space/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL))
+	configure(item_protection(siemens = 0.2, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/vox, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword))))
+
+
+
 
 /obj/item/clothing/head/helmet/space/vox
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
-	siemens_coefficient = 0.2
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL | AIRTIGHT
-	flags_inv = 0
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
+CAPABILITIES(/obj/item/clothing/head/helmet/space/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT, hides = 0))
+	configure(item_protection(siemens = 0.2))
+
+
 
 /obj/item/clothing/head/helmet/space/vox/pressure
 	name = "alien helmet"

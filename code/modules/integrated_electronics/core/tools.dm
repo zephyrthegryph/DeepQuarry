@@ -16,7 +16,12 @@
 	var/datum/integrated_io/selected_io = null
 	var/mode = WIRE
 
-APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
+TRACKED(/obj/item/integrated_electronics/wirer, mode)
+
+/// The look (the draw sweep: from its template).
+/obj/item/integrated_electronics/wirer/draw(datum/look/look)
+	..()
+	look.state("wirer-[mode]")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -25,8 +30,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 	if(mode == WIRE)
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You attach a data wire to \the [selected_io.holder()]'s [selected_io.name] data channel."))
-		mode = WIRING
-		update_icon()
+		set_mode(WIRING)
 	else if(mode == WIRING)
 		if(io == selected_io)
 			to_chat(user, span_warning("Wiring \the [selected_io.holder()]'s [selected_io.name] into itself is rather pointless."))
@@ -42,8 +46,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 		rel_add(io, nameof(io.linked), selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
-		mode = WIRE
-		update_icon()
+		set_mode(WIRE)
 		selected_io.holder().interact(user) // This is to update the UI.
 		rel_clear(src, nameof(selected_io))
 
@@ -54,8 +57,7 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			rel_clear(src, nameof(selected_io))
 			return
 		to_chat(user, span_notice("You prepare to detach a data wire from \the [selected_io.holder()]'s [selected_io.name] data channel."))
-		mode = UNWIRING
-		update_icon()
+		set_mode(UNWIRING)
 		return
 
 	else if(mode == UNWIRING)
@@ -70,36 +72,35 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			\the [io.holder()]'s [io.name]."))
 			selected_io.holder().interact(user) // This is to update the UI.
 			rel_clear(src, nameof(selected_io))
-			mode = UNWIRE
-			update_icon()
+			set_mode(UNWIRE)
 		else
 			to_chat(user, span_warning("\The [selected_io.holder()]'s [selected_io.name] and \the [io.holder()]'s \
 			[io.name] are not connected."))
 			return
 	return
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/wirer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/wirer)
+	op("mode", in_hand(), label("Switch wiring mode"), then(PROC_REF(wiring_mode_changed)))
 
-/// Old attack_self.
-/obj/item/integrated_electronics/wirer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_electronics/wirer/proc/wiring_mode_changed(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(mode)
 		if(WIRE)
-			mode = UNWIRE
+			set_mode(UNWIRE)
 		if(WIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to wire the data channel."))
 			rel_clear(src, nameof(selected_io))
-			mode = WIRE
+			set_mode(WIRE)
 		if(UNWIRE)
-			mode = WIRE
+			set_mode(WIRE)
 		if(UNWIRING)
 			if(selected_io)
 				to_chat(user, span_notice("You decide not to disconnect the data channel."))
 			rel_clear(src, nameof(selected_io))
-			mode = UNWIRE
-	update_icon()
+			set_mode(UNWIRE)
 	to_chat(user, span_notice("You set \the [src] to [mode]."))
-	return TRUE
+	return OP_OK
 
 #undef WIRE
 #undef WIRING
@@ -116,45 +117,47 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/wirer, INTERACT_USE(null, 
 	var/data_to_write = null
 	var/accepting_refs = 0
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/debugger)
+	op("debugger_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/integrated_electronics/debugger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/type_to_use = rerun_ask(user, "k123", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Please choose a type to use.", title = "[src] type setting", choices = list("string","number","ref", "null"))
-	if(isnull(type_to_use))
-		return TRUE
-	if(!CanInteract(user, GLOB.tgui_physical_state))
-		return TRUE
+/obj/item/integrated_electronics/debugger/proc/interaction_self(datum/act/op/A)
+	var/datum/circuit_memory_review/review = new
+	review.start(A.actor, src, A.held, FALSE)
+	return OP_OK
 
-	var/new_data = null
-	switch(type_to_use)
-		if("string")
-			accepting_refs = 0
-			var/_answer_k131 = rerun_ask(user, "k131", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Now type in a string.", title = "[src] string writing", encode = FALSE)
-			if(isnull(_answer_k131))
-				return TRUE
-			new_data = _answer_k131
-			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
-			if(istext(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				data_to_write = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
-		if("number")
-			accepting_refs = 0
-			var/_answer_k138 = rerun_ask(user, "k138", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Now type in a number.", title = "[src] number writing", min = -INFINITY, round_entry = FALSE)
-			if(isnull(_answer_k138))
-				return TRUE
-			new_data = _answer_k138
-			if(isnum(new_data) && CanInteract(user, GLOB.tgui_physical_state))
-				data_to_write = new_data
-				to_chat(user, span_notice("You set \the [src]'s memory to [new_data]."))
+/obj/item/integrated_electronics/debugger/proc/memory_type_selected(datum/circuit_memory_review/review)
+	var/mob/user = review.user_value()
+	switch(review.type_name)
+		if("string", "number")
+			stop_memory_ref_scan()
+			review.open_value()
+			return
 		if("ref")
 			accepting_refs = 1
 			to_chat(user, span_notice("You turn \the [src]'s ref scanner on. Slide it across \
-			an object for a ref of that object to save it in memory."))
+				an object for a ref of that object to save it in memory."))
 		if("null")
 			data_to_write = null
 			to_chat(user, span_notice("You set \the [src]'s memory to absolutely nothing."))
-	return TRUE
+	review.retire()
+
+/obj/item/integrated_electronics/debugger/proc/stop_memory_ref_scan()
+	accepting_refs = 0
+
+/obj/item/integrated_electronics/debugger/proc/memory_value_selected(datum/circuit_memory_review/review, new_data)
+	var/mob/user = review.user_value()
+	stop_memory_ref_scan()
+	switch(review.type_name)
+		if("string")
+			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
+			if(istext(new_data))
+				data_to_write = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
+		if("number")
+			if(isnum(new_data))
+				data_to_write = new_data
+				to_chat(user, span_notice("You set \the [src]'s memory to [new_data]."))
 
 /obj/item/integrated_electronics/debugger/afterattack(atom/target, mob/living/user, proximity)
 	if(accepting_refs && proximity)
@@ -187,23 +190,26 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/datum/integrated_io/selected_io
 	var/mode = 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/appearance_overlays()
-	. = list()
+/obj/item/multitool/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/multitool/proc/look_parts(datum/look/look)
 	if(selected_io())
 		if(buffer() || connecting() || connectable())
-			icon_state = "multitool_tracking"
+			look.state("multitool_tracking")
 		else
-			icon_state = "multitool_red"
+			look.state("multitool_red")
 	else
 		if(buffer() || connecting() || connectable())
-			icon_state = "multitool_tracking_fail"
+			look.state("multitool_tracking_fail")
 		else if(accepting_refs)
-			icon_state = "multitool_ref_scan"
+			look.state("multitool_ref_scan")
 		else if(ref_wiring)
-			icon_state = "multitool_no_camera"
+			look.state("multitool_no_camera")
 		else
-			icon_state = "multitool"
+			look.state(initial(icon_state)) // idle: the type's own sprite (a hacktool keeps its disguise)
 
 /obj/item/multitool/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -233,7 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You link \the multitool to \the [selected_io().holder()]'s [selected_io().name] data channel."))
 
-	update_icon()
 
 
 /obj/item/multitool/proc/unwire(datum/integrated_io/io1, datum/integrated_io/io2, mob/user)
@@ -250,7 +255,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder().displayed_name]'s \
 		[io1.name] and the [io2.holder().displayed_name]'s [io2.name]."))
 		io1.holder().interact(user) // This is to update the UI.
-		update_icon()
 
 /obj/item/multitool/afterattack(atom/target, mob/living/user, proximity)
 	if(proximity && engineering_reading && istype(target, /obj/machinery/photocopier))
@@ -258,11 +262,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 		copier.print_engineering_reading(src, user)
 		return
 	if(accepting_refs && toolmode == MULTITOOL_MODE_INTCIRCUITS && proximity)
-		ref_wiring = ic_ref(target)
+		set_ref_wiring(ic_ref(target))
 		act_message(user, src, others = span_notice("%U% slides %T% over \the [target]."))
 		to_chat(user, span_notice("You set \the [src]'s memory to a reference to [target.name] \[Ref\]. The ref scanner is \
 		now off."))
-		accepting_refs = 0
+		set_accepting_refs(0)
 
 /obj/item/storage/bag/circuits
 	name = "circuit kit"
@@ -272,22 +276,26 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 	w_class = ITEMSIZE_NORMAL
 	display_contents_with_number = 0
 
+CAPABILITIES(/obj/item/storage/bag/circuits)
+	configure(storage(accepts = list(
+		/obj/item/integrated_circuit,
+		/obj/item/storage/bag/circuits/mini,
+		/obj/item/electronic_assembly,
+		/obj/item/integrated_electronics,
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/multitool,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/integrated_electronics/detailer)))
+
 //Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
 //Which is enough to trigger byond's recursion level protection
 
-TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/integrated_circuit, \
-		/obj/item/storage/bag/circuits/mini, \
-		/obj/item/electronic_assembly, \
-		/obj/item/integrated_electronics, \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/multitool, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/integrated_electronics/detailer, \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
-/obj/item/storage/bag/circuits/basic/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/bag/circuits/basic)
+	after_init(0, then(PROC_REF(stock_kit)))
+
+/obj/item/storage/bag/circuits/basic/proc/stock_kit(datum/act/timer/A)
 	emp_protection_flags |= EMP_PROTECT_SELF
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
 	new /obj/item/storage/bag/circuits/mini/trig(src)
@@ -310,9 +318,11 @@ TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
 	new /obj/item/integrated_electronics/debugger(src)
 	new /obj/item/integrated_electronics/detailer(src)
 	make_exact_fit()
-	. = ..()
 
-/obj/item/storage/bag/circuits/all/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/bag/circuits/all)
+	after_init(0, then(PROC_REF(stock_kit)))
+
+/obj/item/storage/bag/circuits/all/proc/stock_kit(datum/act/timer/A)
 	new /obj/item/storage/bag/circuits/mini/arithmetic/all(src)
 	new /obj/item/storage/bag/circuits/mini/trig/all(src)
 	new /obj/item/storage/bag/circuits/mini/input/all(src)
@@ -336,7 +346,6 @@ TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
 	new /obj/item/integrated_electronics/detailer(src)
 	new /obj/item/tool/crowbar(src)
 	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini
 	name = "circuit box"
@@ -344,10 +353,28 @@ TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
 	w_class = ITEMSIZE_SMALL
 	display_contents_with_number = 1
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
+	/// The circuit types this box stocks, four of each spawnable one (a shared constant list).
+	var/list/circuit_kinds
 
-TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/obj/item/integrated_circuit)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/bag/circuits/mini)
+	configure(storage(accepts = list(/obj/item/integrated_circuit)))
+	after_init(0, then(PROC_REF(fill_circuits)))
+
+/obj/item/storage/bag/circuits/mini/proc/fill_circuits(datum/act/timer/A)
+	// The plain box stocks nothing and keeps its ordinary capacity (fitting it to no contents would refuse every circuit).
+	if(!length(circuit_kinds))
+		return
+	for(var/kind in circuit_kinds)
+		for(var/obj/item/integrated_circuit/IC in GLOB.all_integrated_circuits)
+			if(!istype(IC, kind))
+				continue
+			if(IC.spawn_flags & spawn_flags_to_use)
+				for(var/i = 1 to 4)
+					new IC.type(src)
+	make_exact_fit()
 
 /obj/item/storage/bag/circuits/mini/arithmetic
+	circuit_kinds = list(/obj/item/integrated_circuit/arithmetic)
 	name = "arithmetic circuit box"
 	desc = "Warning: Contains math."
 	icon_state = "box_arithmetic"
@@ -355,16 +382,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/arithmetic/all // Don't believe this will ever be needed.
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/arithmetic/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/arithmetic/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/trig
+	circuit_kinds = list(/obj/item/integrated_circuit/trig)
 	name = "trig circuit box"
 	desc = "Danger: Contains more math."
 	icon_state = "box_trig"
@@ -372,16 +393,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/trig/all // Ditto
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/trig/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/trig/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/input
+	circuit_kinds = list(/obj/item/integrated_circuit/input)
 	name = "input circuit box"
 	desc = "Tell these circuits everything you know."
 	icon_state = "box_input"
@@ -389,16 +404,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/input/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/input/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/input/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/output
+	circuit_kinds = list(/obj/item/integrated_circuit/output)
 	name = "output circuit box"
 	desc = "Circuits to interface with the world beyond itself."
 	icon_state = "box_output"
@@ -406,16 +415,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/output/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/output/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/output/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/memory
+	circuit_kinds = list(/obj/item/integrated_circuit/memory)
 	name = "memory circuit box"
 	desc = "Machines can be quite forgetful without these."
 	icon_state = "box_memory"
@@ -423,16 +426,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/memory/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/memory/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/memory/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/logic
+	circuit_kinds = list(/obj/item/integrated_circuit/logic)
 	name = "logic circuit box"
 	desc = "May or may not be Turing complete."
 	icon_state = "box_logic"
@@ -440,16 +437,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/logic/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/logic/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/logic/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/time
+	circuit_kinds = list(/obj/item/integrated_circuit/time)
 	name = "time circuit box"
 	desc = "No time machine parts, sadly."
 	icon_state = "box_time"
@@ -457,16 +448,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/time/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/time/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/time/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/reagents
+	circuit_kinds = list(/obj/item/integrated_circuit/reagent)
 	name = "reagent circuit box"
 	desc = "Unlike most electronics, these circuits are supposed to come in contact with liquids."
 	icon_state = "box_reagents"
@@ -474,16 +459,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/reagents/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/reagents/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/reagent/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/transfer
+	circuit_kinds = list(/obj/item/integrated_circuit/transfer)
 	name = "transfer circuit box"
 	desc = "Useful for moving data representing something arbitrary to another arbitrary virtual place."
 	icon_state = "box_transfer"
@@ -491,16 +470,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/transfer/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/transfer/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/transfer/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/converter
+	circuit_kinds = list(/obj/item/integrated_circuit/converter)
 	name = "converter circuit box"
 	desc = "Transform one piece of data to another type of data with these."
 	icon_state = "box_converter"
@@ -508,15 +481,9 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/converter/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/converter/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/converter/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini/smart
+	circuit_kinds = list(/obj/item/integrated_circuit/smart)
 	name = "smart box"
 	desc = "Sentience not included."
 	icon_state = "box_ai"
@@ -524,15 +491,9 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/smart/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/smart/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/smart/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /obj/item/storage/bag/circuits/mini/manipulation
+	circuit_kinds = list(/obj/item/integrated_circuit/manipulation)
 	name = "manipulation box"
 	desc = "Make your machines actually useful with these."
 	icon_state = "box_manipulation"
@@ -540,16 +501,10 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/manipulation/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/manipulation/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/manipulation/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 
 /obj/item/storage/bag/circuits/mini/power
+	circuit_kinds = list(/obj/item/integrated_circuit/passive/power, /obj/item/integrated_circuit/power)
 	name = "power circuit box"
 	desc = "Electronics generally require electricity."
 	icon_state = "box_power"
@@ -557,18 +512,168 @@ TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/
 /obj/item/storage/bag/circuits/mini/power/all
 	spawn_flags_to_use = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 
-/obj/item/storage/bag/circuits/mini/power/Initialize(mapload)
-	for(var/obj/item/integrated_circuit/passive/power/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	for(var/obj/item/integrated_circuit/power/IC in GLOB.all_integrated_circuits)
-		if(IC.spawn_flags & spawn_flags_to_use)
-			for(var/i = 1 to 4)
-				new IC.type(src)
-	make_exact_fit()
-	. = ..()
 
 /// The selected_io this refers to (a relation view: null once that is deleted).
 /obj/item/multitool/proc/selected_io() as /datum/integrated_io
 	return selected_io
+
+#define CIRCUIT_MEMORY_ACCESS_DENIED "circuit memory access denied"
+#define CIRCUIT_MEMORY_UNSUPPORTED_ACTOR "circuit memory unsupported actor"
+
+/// Nonspatial state for a debugger or constant-chip type/value question chain.
+/datum/circuit_memory_review
+	var/mob/actor
+	var/obj/item/source_item
+	var/obj/item/original_held
+	var/held_expected = FALSE
+	var/original_client_ckey
+	var/constant_chip = FALSE
+	var/type_name
+
+CAPABILITIES(/datum/circuit_memory_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(source_item), /obj/item)
+	ref_one(nameof(original_held), /obj/item)
+
+/datum/prompt/choice/circuit_memory_type
+	timeout = 0
+
+/datum/prompt/choice/circuit_memory_type/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/prompt/text/circuit_memory_text
+	timeout = 0
+
+/datum/prompt/text/circuit_memory_text/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/prompt/number/circuit_memory_number
+	timeout = 0
+
+/datum/prompt/number/circuit_memory_number/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/datum/prompt/number/circuit_memory_number/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/circuit_memory_review/review = owner
+	return review.prompt_refusal()
+
+/datum/circuit_memory_review/proc/retire()
+	spent(src)
+
+/datum/circuit_memory_review/proc/user_value()
+	return original_client_ckey ? GLOB.directory[original_client_ckey] : actor
+
+/datum/circuit_memory_review/proc/why_not()
+	if(QDELETED(actor) || QDELETED(source_item))
+		return "gone"
+	if(constant_chip ? !istype(source_item, /obj/item/integrated_circuit/memory/constant) : !istype(source_item, /obj/item/integrated_electronics/debugger))
+		return "gone"
+	if(held_expected && QDELETED(original_held))
+		return "gone"
+	if(original_client_ckey && !user_value())
+		return "gone"
+
+/// The read-only branches of CanUseTopic; its access-denied message is delivered after refusal.
+/datum/circuit_memory_review/proc/prompt_refusal()
+	. = why_not()
+	if(.)
+		return
+	var/mob/user = user_value()
+	if(!ismob(user))
+		return CIRCUIT_MEMORY_UNSUPPORTED_ACTOR
+	if(!user.CanUseObjTopic(source_item))
+		return CIRCUIT_MEMORY_ACCESS_DENIED
+	if(source_item.tgui_status(user, GLOB.tgui_physical_state) != STATUS_INTERACTIVE)
+		return "can't use it"
+
+/datum/circuit_memory_review/proc/start(mob/user, obj/item/source_item, obj/item/held, constant_chip)
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		retire()
+		return
+	rel_set(src, nameof(actor), user)
+	rel_set(src, nameof(src.source_item), source_item)
+	held_expected = !isnull(held)
+	rel_set(src, nameof(original_held), held)
+	src.constant_chip = constant_chip
+	if(why_not())
+		retire()
+		return
+	var/datum/result/result = safe_call(PROC_REF(start_step))
+	if(!result.ok)
+		stack_trace("[type] start_step: [result.error]")
+		retire()
+
+/datum/circuit_memory_review/proc/start_step()
+	open_request(src, /datum/prompt/choice/circuit_memory_type, PROC_REF(type_entered), answerer = actor, question = "Please choose a type to use.", title = "[source_item] type setting", choices = list("string", "number", "ref", "null"))
+
+/datum/circuit_memory_review/proc/run_step(step, datum/act/request/A)
+	var/obj/item/refreshed_item = source_item
+	var/refresh = !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && !isnull(A.request.value)))
+	if(!A.answer || why_not())
+		if(!why_not() && A.request.outcome == REQ_CANCELLED && !isnull(A.request.value))
+			if(A.request.last_error == CIRCUIT_MEMORY_ACCESS_DENIED)
+				var/mob/user = actor
+				to_chat(user, span_danger("[icon2html(source_item, user.client)]Access Denied!"))
+			else if(A.request.last_error == CIRCUIT_MEMORY_UNSUPPORTED_ACTOR)
+				stack_trace("Circuit memory configuration requires a mob for CanUseObjTopic; original client argument [original_client_ckey] cannot use the topic.")
+		retire()
+		if(refresh && !QDELETED(refreshed_item))
+			SStgui.update_uis(refreshed_item)
+		return
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("Circuit memory step [step]: [result.error]")
+		retire()
+	if(refresh && !QDELETED(refreshed_item))
+		SStgui.update_uis(refreshed_item)
+
+/datum/circuit_memory_review/proc/type_entered(datum/act/request/A)
+	run_step(PROC_REF(type_step), A)
+
+/datum/circuit_memory_review/proc/type_step(datum/act/request/A)
+	type_name = A.answer.value
+	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
+		var/obj/item/integrated_circuit/memory/constant/chip = source_item
+		chip.memory_type_selected(src)
+	else if(istype(source_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/debugger = source_item
+		debugger.memory_type_selected(src)
+
+/datum/circuit_memory_review/proc/open_value()
+	if(type_name == "string")
+		open_request(src, /datum/prompt/text/circuit_memory_text, PROC_REF(value_entered), answerer = actor, question = "Now type in a string.", title = "[source_item] string writing", max_len = constant_chip ? MAX_NAME_LEN : MAX_MESSAGE_LEN, name_text = constant_chip, encode = FALSE, multiline = FALSE)
+	else
+		open_request(src, /datum/prompt/number/circuit_memory_number, PROC_REF(value_entered), answerer = actor, question = "Now type in a number.", title = "[source_item] number writing", default = 0, min_value = constant_chip ? 0 : -INFINITY, max_value = INFINITY, step = constant_chip ? 1 : null)
+
+/datum/circuit_memory_review/proc/value_entered(datum/act/request/A)
+	run_step(PROC_REF(value_step), A)
+
+/datum/circuit_memory_review/proc/value_step(datum/act/request/A)
+	if(istype(source_item, /obj/item/integrated_circuit/memory/constant))
+		var/obj/item/integrated_circuit/memory/constant/chip = source_item
+		chip.memory_value_selected(src, A.answer.value)
+	else if(istype(source_item, /obj/item/integrated_electronics/debugger))
+		var/obj/item/integrated_electronics/debugger/debugger = source_item
+		debugger.memory_value_selected(src, A.answer.value)
+	retire()
+
+#undef CIRCUIT_MEMORY_ACCESS_DENIED
+#undef CIRCUIT_MEMORY_UNSUPPORTED_ACTOR

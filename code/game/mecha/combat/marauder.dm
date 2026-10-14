@@ -27,12 +27,6 @@
 	thrusters_possible = 1
 
 
-	starting_equipment = list(
-		/obj/item/mecha_parts/mecha_equipment/weapon/energy/pulse,
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive,
-		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay,
-		/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster
-		)
 
 	icon_scale_x = 1.5
 	icon_scale_y = 1.5
@@ -59,13 +53,6 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 	force = 55
 	max_equip = 5
 
-	starting_equipment = list(
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot,
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive,
-		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay,
-		/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster,
-		/obj/item/mecha_parts/mecha_equipment/teleporter
-		)
 
 //Note that is the Mauler
 /obj/mecha/combat/marauder/mauler
@@ -117,7 +104,7 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 					tmp_step_energy_drain = step_energy_drain*2
 
 		can_move = 0
-		om_after(src, tmp_step_in, PROC_REF(reset_can_move))
+		after(src, tmp_step_in, PROC_REF(reset_can_move))
 		use_power(tmp_step_energy_drain)
 		return 1
 	return 0
@@ -138,12 +125,29 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 
 //Meant for random spawns.
 /obj/mecha/combat/marauder/old
+	max_integrity = 300 // just slightly worse
 	desc = "Heavy-duty, combat exosuit, developed after the Durand model. Rarely found among civilian populations. This one is particularly worn looking and likely isn't as sturdy."
 
-	starting_equipment = null
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/marauder/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 300	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))
+
+TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/weapon/energy/pulse, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive, \
+		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, \
+		/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster \
+		))
+
+TYPE_TABLE(/obj/mecha/combat/marauder/seraph, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive, \
+		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, \
+		/obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster, \
+		/obj/item/mecha_parts/mecha_equipment/teleporter \
+		))
+
+TYPE_TABLE(/obj/mecha/combat/marauder/old, mecha_starting_equipment, null)

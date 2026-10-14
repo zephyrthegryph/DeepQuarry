@@ -1,40 +1,4 @@
 /**
- * Creates a TGUI window with a key input. Returns the user's response as a full key with modifiers, eg ShiftK.
- *
- * This proc should be used to create windows for key entry that the caller will wait for a response from.
- * If tgui fancy chat is turned off: Will return a normal input.
- *
- * Arguments:
- * * user - The user to show the number input to.
- * * message - The content of the number input, shown in the body of the TGUI window.
- * * title - The title of the number input modal, shown on the top of the TGUI window.
- * * default - The default (or current) key, shown as a placeholder.
- */
-/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
-	if (!istype(user))
-		if (istype(user, /client))
-			var/client/client = user
-			user = client.mob
-		else
-			return null
-
-	if (isnull(user.client))
-		return null
-
-	// Client does NOT have tgui_input on: Returns regular input
-	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode))
-		var/input_key = input(user, message, title + "(Modifiers are TGUI only, sorry!)", default) as null|text // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
-		if(!input_key)
-			return
-		return input_key[1]
-	var/datum/tgui_input_keycombo/key_input = new(user, message, title, default, timeout, ui_state)
-	key_input.tgui_interact(user)
-	key_input.wait()
-	if (key_input)
-		. = key_input.entry
-		qdel(key_input)
-
-/**
  * # tgui_input_keycombo
  *
  * Datum used for instantiating and using a TGUI-controlled key input that prompts the user with
@@ -66,7 +30,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 
 /**
  * Waits for a user's response to the tgui_input_keycombo's prompt before returning. Returns early if
@@ -74,9 +38,12 @@
  */
 /datum/tgui_input_keycombo/proc/wait()
 	while (!entry && !closed && !QDELETED(src))
-		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
+		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_input_keycombo, "KeyComboModal")
+CAPABILITIES(/datum/tgui_input_keycombo)
+	interface("KeyComboModal")
+	op("submit", ui_act("submit", arg("entry", schema_text(4096))), then(PROC_REF(ui_act_submit)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
 /datum/tgui_input_keycombo/tgui_close(mob/user)
 	. = ..()
@@ -94,24 +61,20 @@ DECLARE_UI(/datum/tgui_input_keycombo, "KeyComboModal")
 	data["title"] = title
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_input_keycombo, "merge:ui_data_datum_tgui_input_keycombo{timeout:num}")
-
-/// The computed part of /datum/tgui_input_keycombo's window data (declared on its UI_DATA row).
-/datum/tgui_input_keycombo/proc/ui_data_datum_tgui_input_keycombo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/tgui_input_keycombo's window data.
+/datum/tgui_input_keycombo/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_input_keycombo, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
-UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_submit)
-	set_entry(params["entry"])
+/datum/tgui_input_keycombo/proc/ui_act_submit(datum/act/op/A, entry)
+	set_entry(entry)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_keycombo, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_cancel)
+/datum/tgui_input_keycombo/proc/ui_act_cancel(datum/act/op/A)
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE

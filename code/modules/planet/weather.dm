@@ -18,6 +18,10 @@
 
 	var/firework_override = FALSE
 
+CAPABILITIES(/datum/weather_holder)
+	owns_one(nameof(special_visuals), /atom/movable/weather_visuals/special)
+	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+
 /datum/weather_holder/New(source)
 	..()
 	our_planet = source
@@ -25,8 +29,8 @@
 		var/datum/weather/W = LAZYACCESS(allowed_weather_types, A)
 		if(istype(W))
 			rel_set(W, nameof(W.holder), src)
-	own_set(src, nameof(visuals), new /atom/movable/weather_visuals())
-	own_set(src, nameof(special_visuals), new /atom/movable/weather_visuals/special())
+	rel_set(src, nameof(visuals), new /atom/movable/weather_visuals())
+	rel_set(src, nameof(special_visuals), new /atom/movable/weather_visuals/special())
 
 /datum/weather_holder/proc/apply_to_turf(turf/T)
 	if(visuals in T.vis_contents)
@@ -91,7 +95,7 @@
 /datum/weather_holder/proc/get_next_weather(datum/weather/W)
 	if(!current_weather) // At roundstart, choose a suitable initial weather.
 		return pickweight(roundstart_weather_chances || list())
-	return pickweight(W.transition_chances)
+	return pickweight(W.transition_chances || list())
 
 /datum/weather_holder/proc/advance_forecast()
 	var/new_weather = forecast[1]
@@ -185,7 +189,7 @@
 	var/light_modifier = 1.0 // Lower numbers means more darkness.
 	var/light_color = null // If set, changes how the day/night light looks.
 	var/flight_failure_modifier = 0 // Some types of weather make flying harder, and therefore make crashes more likely. (This is not implemented)
-	var/transition_chances = list() // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
+	var/list/transition_chances // Assoc list of weather identifiers and the odds to shift to a specific type of weather. Can contain its own identifier to prolong it.
 	var/datum/weather_holder/holder = null // Reference to the datum that manages the planet's weather.
 	var/timer_low_bound = 5			// How long this weather must run before it tries to change, in minutes
 	var/timer_high_bound = 10		// How long this weather can run before it tries to change, in minutes
@@ -209,11 +213,15 @@
 
 	VAR_PROTECTED/color_grading = null // Color blending for weather to feel hotter, colder, or stranger
 
+CAPABILITIES(/datum/weather)
+	owns_one(nameof(indoor_sounds), /datum/looping_sound)
+	owns_one(nameof(outdoor_sounds), /datum/looping_sound)
+
 /datum/weather/New()
 	if(outdoor_sounds_type)
-		own_set(src, nameof(outdoor_sounds), new outdoor_sounds_type(list(), FALSE, TRUE))
+		rel_set(src, nameof(outdoor_sounds), new outdoor_sounds_type(list(), FALSE, TRUE))
 	if(indoor_sounds_type)
-		own_set(src, nameof(indoor_sounds), new indoor_sounds_type(list(), FALSE, TRUE))
+		rel_set(src, nameof(indoor_sounds), new indoor_sounds_type(list(), FALSE, TRUE))
 
 /datum/weather/proc/process_effects()
 	show_message = FALSE	// Need to reset the show_message var, just in case

@@ -18,22 +18,21 @@
 	var/wall_type = /turf/simulated/wall
 
 /// TRUE while its material needs processing (radioactive or similar); set by set_material().
-OM_FIELD(/obj/structure/girder, material_processing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processing")
+/obj/structure/girder/var/material_processing = FALSE
+TRACKED(/obj/structure/girder, material_processing)
 
-/obj/structure/girder/Initialize(mapload, material_key)
-	. = ..()
-	if(!material_key)
-		material_key = default_material
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/girder/proc/build_of(material_key)
 	var/our_material = get_material_by_name(material_key)
 	if(!our_material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	set_material(our_material)
-	update_icon()
 
-/obj/structure/girder/periodic_step()
+/// Radiates every 2 s while its material needs processing; a material that stopped radiating ends it.
+/obj/structure/girder/proc/girder_step(datum/act/timer/A)
 	if(!radiate())
-		return PROCESS_KILL
+		set_material_processing(FALSE)
 
 /obj/structure/girder/proc/radiate()
 	// radioactivity moved to a component on /datum/material.
@@ -54,7 +53,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 /obj/structure/girder/proc/set_material(datum/material/new_material)
 	girder_material = new_material
 	name = "[girder_material.display_name] [initial(name)]"
-	max_integrity = round(girder_material.integrity) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
+	set_max_integrity(round(girder_material.integrity)) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
 	update_integrity(max_integrity)
 	displaced_health = round(max_integrity/4)
 	update_rad_insulation()
@@ -65,13 +64,12 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 /obj/structure/girder/get_material()
 	return girder_material
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/girder/appearance_overlays()
-	. = list()
+/obj/structure/girder/draw(datum/look/look)
+	..()
 	if(anchored)
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = "displaced"
+		look.state("displaced")
 
 /// Spawned by the random reinforced-girder mapping spawner.
 /obj/structure/girder/reinforced
@@ -81,13 +79,16 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_o
 	anchored = FALSE
 	cover = 25
 
-/obj/structure/girder/displaced/Initialize(mapload, material_key)
-	. = ..()
+CAPABILITIES(/obj/structure/girder/displaced)
+	after_init(0, then(PROC_REF(init_displace)))
+
+/obj/structure/girder/displaced/proc/init_displace(datum/act/timer/A)
 	displace()
+
 
 /obj/structure/girder/proc/displace()
 	name = "displaced [girder_material.display_name] [initial(name)]"
-	icon_state = "displaced"
+	set_icon_state("displaced")
 	set_anchored(FALSE)
 	update_integrity(displaced_health)
 	cover = 25
@@ -97,7 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_o
 		return 0
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
-	om_after(src, 1, PROC_REF(dismantle))
+	after(src, 0.1 SECONDS, PROC_REF(dismantle))
 	return 1
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)
@@ -137,44 +138,43 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_o
 		return receive_projectile(P, def_zone, girder_material.reflectivity)
 	return receive_projectile(P, def_zone)
 
-DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
+CAPABILITIES(/obj/structure/girder)
+	every(2 SECONDS, then(PROC_REF(girder_step)), when = nameof(material_processing))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
+	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// Plating or reinforcing, once interaction_item() has checked the sheets; the girder is claimed while it works.
+	op("construct_wall_wait", ai(), claims(), takes("amount_to_use", "material", "wall_fake"), wait(PROC_REF(wall_wait)), then(PROC_REF(construct_wall_timed_done)))
+	op("reinforce_wait", ai(), claims(), takes("material"), wait(4 SECONDS), then(PROC_REF(reinforce_with_material_timed_done)))
+	girder_construction()
+	op("slice", item(/obj/item/pickaxe/plasmacutter), label("Slice apart"), begins(MSG(girder/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(sliced)))
+	op("hulk_smash", hand(), label("Smash"), when(req_mutation(HULK)), then(PROC_REF(interaction_hulk_smash)))
+
 /// A blob pulls the girder apart.
-/obj/structure/girder/proc/girder_blob(datum/damage_packet/packet)
+/obj/structure/girder/proc/girder_blob(datum/act/hit/blob/A)
 	dismantle()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/girder/proc/reset_girder()
 	name = "[girder_material.display_name] [initial(name)]"
 	set_anchored(TRUE)
 	cover = initial(cover)
+	// Rebuild the frame allowance before applying the reinforcement still present.
+	set_max_integrity(round(girder_material.integrity))
 	repair_damage(max_integrity)
 	state = 0
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	reinforcing = 0
 	if(reinf_material)
 		reinforce_girder()
 
 // Tool steps (secure, dislodge, disassemble, struts): girder_construction.dm.
 
-/obj/structure/girder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/girder_item,
-		/datum/interaction/entry_hand/girder_hulk_smash,
-	)
-	..()
-
 /// Old attackby: cut/drill apart, reinforce, or build up into a wall.
-/datum/interaction/entry_item/girder_item
-	id = "girder_item"
-	name = "Use"
-	effect = /obj/structure/girder/proc/interaction_item
-
-/obj/structure/girder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pickaxe/plasmacutter))
-		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-
-	else if(istype(W, /obj/item/pickaxe/diamonddrill))
+/obj/structure/girder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		dismantle()
 
@@ -183,18 +183,24 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 			reinforce_with_material(W, user)
 		else
 			if(upgrading)
-				return TRUE
+				return OP_OK
 			upgrading = TRUE
 			if(!construct_wall(W, user))
 				upgrading = FALSE
-				return TRUE
+				return OP_OK
 			upgrading = FALSE
 
-	return TRUE
+	return OP_OK
 
-/obj/structure/girder/proc/attackby_timed_done(mob/user)
-	if(!src) return
-	to_chat(user, span_notice("You slice apart the girder!"))
+MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
+
+/// A plasmacutter's slice takes as long as its tool speed makes it.
+/obj/structure/girder/proc/slice_time(datum/act/op/A)
+	var/obj/item/W = A.held
+	return 3 SECONDS * tooling_of(W).speed
+
+/obj/structure/girder/proc/sliced(datum/act/op/A)
+	to_chat(A.actor, span_notice("You slice apart the girder!"))
 	dismantle()
 
 // Reaching 0 integrity dismantles the girder back into its material.
@@ -204,9 +210,6 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 
 /obj/structure/girder/proc/construct_wall(obj/item/stack/material/S, mob/user)
 	var/amount_to_use = reinf_material ? 1 : 2
-	var/time_to_reinforce = 4 SECONDS
-	if(isrobot(user)) //Robots get a speed boost.
-		time_to_reinforce = 1.5 SECONDS
 	if(S.get_amount() < amount_to_use)
 		to_chat(user, span_notice("There isn't enough material here to construct a wall."))
 		return FALSE
@@ -224,24 +227,21 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	om_task_start(/datum/om/task/timed/girder_construct_wall, user, src, duration = time_to_reinforce, S = S, amount_to_use = amount_to_use, M = M, wall_fake = wall_fake)
+	perform_op(user, src, "construct_wall_wait", S, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("amount_to_use" = amount_to_use, "material" = M, "wall_fake" = wall_fake))
 	return TRUE
 
-/datum/om/task/timed/girder_construct_wall
-	complete_proc = /obj/structure/girder/proc/construct_wall_timed_done
-	var/obj/item/stack/material/S
-	var/amount_to_use
-	var/datum/material/M
-	var/wall_fake
+/// How long adding the plating takes: robots get a speed boost.
+/obj/structure/girder/proc/wall_wait(datum/act/op/A)
+	return istype(A.actor, /mob/living/silicon/robot) ? 1.5 SECONDS : 4 SECONDS
 
-/obj/structure/girder/proc/construct_wall_timed_done(datum/om/task/timed/girder_construct_wall/task)
-	var/obj/item/stack/material/S = task.S
-	var/mob/user = task.actor
-	var/amount_to_use = task.amount_to_use
-	var/datum/material/M = task.M
-	var/wall_fake = task.wall_fake
-	if(!S.use(amount_to_use))
-		return
+/obj/structure/girder/proc/construct_wall_timed_done(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	var/mob/user = A.actor
+	var/amount_to_use = A.arg("amount_to_use")
+	var/datum/material/M = A.arg("material")
+	var/wall_fake = A.arg("wall_fake")
+	if(QDELETED(S) || !S.use(amount_to_use))
+		return OP_REFUSED
 
 	if(anchored)
 		to_chat(user, span_notice("You added the plating!"))
@@ -252,12 +252,12 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 	var/turf/Tsrc = get_turf(src)
 	Tsrc.ChangeTurf(wall_type)
 	var/turf/simulated/wall/T = get_turf(src)
-	T.set_material(M, reinf_material, girder_material)
+	T.apply_materials(M, reinf_material, girder_material)
 	if(wall_fake)
 		T.can_open = 1
 	T.add_hiddenprint(user)
-	qdel(src)
-	return TRUE
+	spent(src)
+	return OP_OK
 
 /obj/structure/girder/proc/reinforce_with_material(obj/item/stack/material/S, mob/user) //if the verb is removed this can be renamed.
 	if(reinf_material)
@@ -274,26 +274,20 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	om_task_start(/datum/om/task/timed/girder_reinforce_with_material, user, src, S = S, M = M)
+	perform_op(user, src, "reinforce_wait", S, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("material" = M))
 	return TRUE
 
-/datum/om/task/timed/girder_reinforce_with_material
-	duration = 4 SECONDS
-	complete_proc = /obj/structure/girder/proc/reinforce_with_material_timed_done
-	var/obj/item/stack/material/S
-	var/datum/material/M
-
-/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/om/task/timed/girder_reinforce_with_material/task)
-	var/obj/item/stack/material/S = task.S
-	var/mob/user = task.actor
-	var/datum/material/M = task.M
-	if(!S.use(1))
-		return
+/obj/structure/girder/proc/reinforce_with_material_timed_done(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	var/mob/user = A.actor
+	var/datum/material/M = A.arg("material")
+	if(QDELETED(S) || !S.use(1))
+		return OP_REFUSED
 	to_chat(user, span_notice("You added reinforcement!"))
 
 	reinf_material = M
 	reinforce_girder()
-	return 1
+	return OP_OK
 
 /// Shielding derived from the frame material plus any reinforcement.
 /obj/structure/girder/proc/update_rad_insulation()
@@ -306,30 +300,22 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 	cover = reinf_material.hardness
 	update_rad_insulation()
 	var/bonus = round(reinf_material.integrity/2)
-	max_integrity += bonus
+	set_max_integrity(max_integrity + bonus)
 	repair_damage(bonus)
 	state = 2
-	icon_state = "reinforced"
+	set_icon_state("reinforced")
 	reinforcing = 0
 
 /obj/structure/girder/proc/dismantle()
 	girder_material.place_dismantled_product(get_turf(src), 2)
-	qdel(src)
+	consume(src)
 
 /// Old attack_hand: a Hulk smashes the girder apart.
-/datum/interaction/entry_hand/girder_hulk_smash
-	id = "girder_hulk_smash"
-	name = "Smash"
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/structure/girder/proc/girder_actor_is_hulk, null))
-	effect = /obj/structure/girder/proc/interaction_hulk_smash
-
-/obj/structure/girder/proc/girder_actor_is_hulk(mob/actor, atom/target, obj/item/held)
-	return (HULK in actor.mutations)
-
-/obj/structure/girder/proc/interaction_hulk_smash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/girder/proc/interaction_hulk_smash(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% smashes %T% apart!"))
 	dismantle()
-	return TRUE
+	return OP_OK
 
 /obj/structure/girder/cult
 	name = "column"
@@ -340,31 +326,25 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 	girder_material = "cult"
 	applies_material_colour = 0
 
-DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/girder/cult/appearance_overlays()
-	. = list()
+/obj/structure/girder/cult/draw(datum/look/look)
+	..()
 	if(anchored)
-		icon_state = "cultgirder"
+		look.state("cultgirder")
 	else
-		icon_state = "displaced"
+		look.state("displaced")
 
 /obj/structure/girder/cult/dismantle()
 	replace_with(src, /obj/effect/decal/remains/human)
 
 /// Overrides girder's interaction_item(): a cult girder just slices/drills apart, no reinforcing.
-/obj/structure/girder/cult/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pickaxe/plasmacutter))
-		to_chat(user, span_notice("Now slicing apart the girder..."))
-		om_task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
-	else if(istype(W, /obj/item/pickaxe/diamonddrill))
+/obj/structure/girder/cult/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
-	return TRUE
-
-/obj/structure/girder/cult/proc/attackby_timed_done2(mob/user)
-	to_chat(user, span_notice("You slice apart the girder!"))
-	dismantle()
+	return OP_OK
 
 /obj/structure/girder/resin
 	name = "soft girder"

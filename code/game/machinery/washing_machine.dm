@@ -20,7 +20,7 @@
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
-	state = EMPTY_OPEN
+	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/obj/crayon
@@ -30,48 +30,41 @@
 		/obj/item/clothing/head/helmet/space
 		)
 
-/obj/machinery/washing_machine/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	make_climbable()
+MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
 
-/obj/machinery/washing_machine/ownership()
-	. = ..()
-	. += owns(nameof(washing), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/washing_machine)
+	op("washing_machine_load_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in washer"), when(PROC_REF(washer_grab_meant)), starts(PROC_REF(washer_grab_started)), wait(5 SECONDS), then(PROC_REF(washer_grab_finished)))
+	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
+	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))
+	op("washing_machine_start_washing", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Start Washing"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_washing_machine_start_washing)))
+	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds))), captures(nameof(state)), starts(PROC_REF(washer_escape_started)), wait(PROC_REF(washer_escape_duration)), then(PROC_REF(interaction_washing_machine_climb_out)))
+	op("washing_machine_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use)))
+	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
+	climb()
+	extend("machine_panel", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_anchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	extend("machine_unanchor", needs(req(PROC_REF(idle_and_empty), silent = TRUE)))
+	default_parts()
+	ref_one(nameof(crayon), /obj)
 
-/obj/machinery/washing_machine/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/washing_machine_use_item,
-		/datum/interaction/machine_alt/washing_machine_start,
-		/datum/interaction/machine_verb/washing_machine_start_washing,
-		/datum/interaction/machine_verb/washing_machine_climb_out,
-		/datum/interaction/machine_hand/ungated/washing_machine_use,
-	)
-	..()
 
-/// The old click_alt() had no mob/user param at all and relied on `usr`; start() still does.
-/datum/interaction/machine_alt/washing_machine_start
-	id = "washing_machine_start"
-	name = "Start"
-	consumes_input = FALSE
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start
 
-/obj/machinery/washing_machine/proc/interaction_washing_machine_start(mob/user, obj/item/held, datum/interaction/interaction)
-	start()
+/// Both player entry points pass their actor into the cycle starter.
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start(datum/act/op/A)
+	var/mob/user = A.actor
+	start(user = user)
 	return TRUE
 
-/datum/interaction/machine_verb/washing_machine_start_washing
-	id = "washing_machine_start_washing"
-	name = "Start Washing"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing
-
-/obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(mob/user, obj/item/held, datum/interaction/interaction)
-	start()
+/obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(datum/act/op/A)
+	var/mob/user = A.actor
+	start(user = user)
 	return TRUE
 
-/obj/machinery/washing_machine/proc/start(force, damage_modifier)
+/obj/machinery/washing_machine/proc/start(force, damage_modifier, mob/user)
 
-	if(!isliving(usr) && !force) //ew ew ew usr, but it's the only way to check.
+	if(!isliving(user) && !force)
 		return
 	if(!damage_modifier)
 		damage_modifier = 0.5
@@ -83,11 +76,10 @@
 		set_state(BLOODY_RUNNING)
 	else
 		set_state(RUNNING)
-	update_icon()
 	visible_message("The washing machine starts a cycle.")
 	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
-	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
+	after(src, 2 SECONDS, PROC_REF(finish_wash), with = list(damage_modifier))
 
 /obj/machinery/washing_machine/proc/finish_wash(damage_modifier)
 	for(var/atom/A in washing)
@@ -100,7 +92,7 @@
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		own_add(src, nameof(washing), WL)
+		rel_add(src, nameof(washing), WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE
@@ -117,30 +109,30 @@
 		gibs_ready = TRUE
 	else
 		set_state(FULL_CLOSED)
-	update_icon()
-
-/datum/interaction/machine_verb/washing_machine_climb_out
-	id = "washing_machine_climb_out"
-	name = "Climb out"
-	requires = list(REQ_ON(PRED_ACTOR, /obj/machinery/washing_machine/proc/actor_inside, "you aren't inside it"))
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out
 
 /obj/machinery/washing_machine/proc/actor_inside(mob/actor, atom/target, obj/item/held)
 	return actor.loc == target
 
-/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(mob/user, obj/item/held, datum/interaction/interaction)
-	user_climb_out(user)
-	return TRUE
+/obj/machinery/washing_machine/proc/washer_escape_duration(datum/act/op/A)
+	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		return 2 SECONDS
+	if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
+		return 60 SECONDS
+	return 0
 
-/obj/machinery/washing_machine/proc/user_climb_out(mob/user)
-	if(user.loc != src) //Have to be in it to climb out of it.
-		return
-	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN)) //Door is open, we can climb out easily.
-		visible_message("[user] begins to climb out of the [src]!")
-		om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done), done_args = list(user))
-	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED)) //Door is shut.
+/obj/machinery/washing_machine/proc/washer_escape_started(datum/act/op/A)
+	if(state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		visible_message("[A.actor] begins to climb out of the [src]!")
+	else if(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
 		visible_message("[src] begins to rattle and shake!")
-		om_task_timed(user, 60 SECONDS, target = src, receiver = src, on_done = PROC_REF(user_climb_out_timed_done2), done_args = list(user))
+
+/obj/machinery/washing_machine/proc/interaction_washing_machine_climb_out(datum/act/op/A)
+	var/starting_state = A.captured(nameof(state))
+	if(starting_state in list(EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
+		user_climb_out_timed_done(A.actor)
+	else if(starting_state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))
+		user_climb_out_timed_done2(A.actor)
+	return TRUE
 
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done(mob/user)
 	if(!(state in list(EMPTY_CLOSED, FULL_CLOSED, BLOODY_CLOSED))) //Someone shut the door while we were trying to climb out!
@@ -150,41 +142,36 @@
 		to_chat(user, "Someone shut the door on you!")
 /obj/machinery/washing_machine/proc/user_climb_out_timed_done2(mob/user)
 	act_message(user, src, others = "%U% climbs out of %T%!")
-	interaction_washing_machine_use(user, null, null, force = TRUE)
+	toggle_door(user, force = TRUE)
 
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
-	user_climb_out(escapee)
+	perform_op(escapee, src, "washing_machine_climb_out", origin = ORIGIN_SYSTEM)
 
-APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_{state}")
-DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel"))))
-
-/datum/interaction/machine_item/washing_machine_use_item
-	id = "washing_machine_use_item"
-	name = "Use"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/washing_machine/draw(datum/look/look)
+	..()
+	look.state("wm_[state]")
+	if(panel_open == 1)
+		look.overlay("panel")
 
 // Where the old body called a bare ..() and fell through to update_icon() below it (rather
 // than returning), the base attackby signal is approximated as a no-op: that fallback is a
 // generic atom hook with no other behavior on this type, but note it as an approximation.
-/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
-				user.drop_item()
+				if(!own_bring_in(src, nameof(crayon), W, null, user, TRUE, null, FALSE))
+					return TRUE
 				rel_set(src, nameof(crayon), W)
-				crayon().forceMove(src)
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
 		//else: old fell through to a bare ..() (approximated as a no-op)
 
 	else if(istype(W,/obj/item/grab))
-		if((state == EMPTY_OPEN) && hacked)
-			var/obj/item/grab/G = W
-			if(ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
-				act_message(user, src, MSG_SELF("You begin stuffing [G?.grab_target()] into %T%!"), \
-					MSG_OTHERS("%U% begins stuffing [G?.grab_target()] into %T%!"))
-				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_washing_machine_use_item_timed_done), done_args = list(user, G))
-		//else: old fell through to a bare ..() (approximated as a no-op)
+		return TRUE // the valid loading gesture has its own timed op
 
 	else if(is_type_in_list(W, disallowed_types))
 		to_chat(user, span_warning("You can't fit \the [W] inside."))
@@ -193,7 +180,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	else if(istype(W, /obj/item/clothing) || istype(W, /obj/item/bedsheet) || istype(W, /obj/item/stack/hairlesshide))
 		if(length(washing) < 5)
 			if(state in list(EMPTY_OPEN, FULL_OPEN))
-				if(!own_add(src, nameof(src.washing), W, user = user))
+				if(!move_into(src, nameof(src.washing), W, user))
 					return TRUE
 				set_state(FULL_OPEN)
 			else
@@ -201,34 +188,38 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		else
 			to_chat(user, span_notice("The washing machine is full."))
 	//else: old fell through to a bare ..() (approximated as a no-op)
-	update_icon()
 	return TRUE
+
+/obj/machinery/washing_machine/proc/washer_grab_meant(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return state == EMPTY_OPEN && read_once(hacked && ishuman(G?.grab_assailant()) && (iscorgi(G?.grab_target()) || ishuman(G?.grab_target())))
+
+/obj/machinery/washing_machine/proc/washer_grab_started(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	act_message(A.actor, src, MSG_SELF("You begin stuffing [G?.grab_target()] into %T%!"), MSG_OTHERS("%U% begins stuffing [G?.grab_target()] into %T%!"))
+
+/obj/machinery/washing_machine/proc/washer_grab_finished(datum/act/op/A)
+	interaction_washing_machine_use_item_timed_done(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
 		var/mob/grabbed = G?.grab_target()
 		act_message(user, grabbed, MSG_SELF("You stuff %T% into the [src] and shut the door!"), MSG_OTHERS("%U% stuffs %T% into the [src] and shuts the door!"))
-		own_add(src, nameof(src.washing), grabbed, user = user, into = TRUE)
+		move_into(src, nameof(src.washing), grabbed, user)
 		consume(G, user)
 		set_state(FULL_CLOSED)
 	else
 		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
-/obj/machinery/washing_machine/screwdriver_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+/// Maintenance only on an empty, shut machine (otherwise the tool's click is taken and nothing happens).
+/obj/machinery/washing_machine/proc/idle_and_empty(datum/act/op/A)
+	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? null : MSG(req_failed)
 
-/obj/machinery/washing_machine/crowbar_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
+/obj/machinery/washing_machine/proc/interaction_washing_machine_use(datum/act/op/A)
+	return toggle_door(A.actor)
 
-/obj/machinery/washing_machine/wrench_act(mob/user, obj/item/tool)
-	return (state == EMPTY_CLOSED && !LAZYLEN(washing)) ? ..() : ITEM_INTERACT_BLOCKING
-
-/datum/interaction/machine_hand/ungated/washing_machine_use
-	id = "washing_machine_use"
-	name = "Use"
-	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_use
-
-/obj/machinery/washing_machine/proc/interaction_washing_machine_use(mob/user, obj/item/held, datum/interaction/interaction, force = FALSE)
+/obj/machinery/washing_machine/proc/toggle_door(mob/user, force = FALSE)
 	if(user.loc == src && !force)
 		return TRUE //No interacting with it from the inside!
 	switch(state)
@@ -236,16 +227,17 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			set_state(EMPTY_CLOSED)
 		if(EMPTY_CLOSED)
 			set_state(EMPTY_OPEN)
+			eject_dye()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			own_take_all(src, nameof(washing))
+			rel_take_all(src, nameof(washing))
 		if(FULL_OPEN)
 			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, nameof(crayon))
-			own_take_all(src, nameof(washing))
+			eject_dye()
+			rel_take_all(src, nameof(washing))
 			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
@@ -261,12 +253,15 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, nameof(crayon))
+			eject_dye()
 			set_state(EMPTY_OPEN)
-			own_take_all(src, nameof(washing))
+			rel_take_all(src, nameof(washing))
 
-	update_icon()
 	return TRUE
+
+
+/obj/machinery/washing_machine/proc/actor_inside_holds(datum/act/op/A)
+	return (A.actor && (A.actor in contents_of(src))) ? null : MSG(washing_machine/not_inside)
 
 #undef EMPTY_OPEN
 #undef EMPTY_CLOSED
@@ -277,6 +272,15 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 #undef BLOODY_CLOSED
 #undef BLOODY_RUNNING
 
+/// Return the separate dye item whenever the washer is opened.
+/obj/machinery/washing_machine/proc/eject_dye()
+	var/obj/dye = crayon()
+	if(dye)
+		dye.forceMove(get_turf(src))
+	rel_clear(src, nameof(crayon))
+
 /// crayon (a relation view: it reads null once the target is deleted).
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon
+
+TRACKED(/obj/machinery/washing_machine, state)

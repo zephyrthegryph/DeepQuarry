@@ -1,0 +1,53 @@
+@obj.item.clothing.accessory human|none
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory robot|none
++2 menu: Dosimeter remove film hand
+@obj ai|none
+@obj.item ghost|none
+@obj.item.clothing.accessory human|/obj/item/tool/screwdriver
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/tool/crowbar
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/tool/wrench
+-menu: Draw
+-menu: Holster (refused: You can't do that.)
+-menu: Holster item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/tool/wirecutters
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/multitool
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/weldingtool
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/stack/cable_coil
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/stack/material/steel
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/card/id
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/kit
+-menu: Collar tag item
++3 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item/storage
+-menu: Collar tag item
++3 menu: Dosimeter remove film hand
+@obj.item.clothing.accessory human|/obj/item
+-menu: Collar tag item
++2 menu: Dosimeter remove film hand
+human|/obj/item/dosimeter_film menu: Accessory attached hand
+human|/obj/item/dosimeter_film menu: Alternate use
+human|/obj/item/dosimeter_film menu: Dosimeter remove film hand
+human|/obj/item/dosimeter_film menu: Insert film
+human|/obj/item/dosimeter_film menu: Move To Top
+human|/obj/item/dosimeter_film menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/dosimeter_film menu: Use
+human|/obj/item/dosimeter_film click: Click: Accessory attached hand
+keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, dosimeter_insert_film, dosimeter_remove_film_hand, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

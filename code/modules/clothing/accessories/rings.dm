@@ -4,9 +4,7 @@
 	name = "generic ring"
 	desc = "Torus shaped finger decoration."
 	icon_state = "material"
-	drop_sound = SFX_ITEMS_DROP_RING
 	slot = ACCESSORY_SLOT_RING
-	slot_flags = SLOT_GLOVES
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
@@ -14,12 +12,14 @@
 	gender = PLURAL
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/hands/item.dmi'
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
-	force = 7	//base punch strength is 5
 	punch_force = 2	//added to base punch strength when added as a glove accessory
-	siemens_coefficient = 1
 	slowdown = 0
+
+CAPABILITIES(/obj/item/clothing/accessory/ring)
+	configure(item_worn(slots = SLOT_GLOVES))
+	configure(item_combat(force = 7))
+	configure(item_protection(siemens = 1))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /////////////////////////////////////////
 //Standard Rings
@@ -29,10 +29,11 @@
 	icon_state = "diamond"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("Present", PROC_REF(engagement_ring_present_self)))
+CAPABILITIES(/obj/item/clothing/accessory/ring/engagement)
+	op("present", in_hand(), label("Present"), then(PROC_REF(ring_presented)))
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/ring/engagement/proc/ring_presented(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_warning("You get down on one knee, presenting %T%.")), \
 		MSG_OTHERS(span_warning("%U% gets down on one knee, presenting %T%.")))
 
@@ -53,7 +54,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("
 /obj/item/clothing/accessory/ring/reagent
 	flags = OPENCONTAINER
 
-DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent, 15, null)
+CAPABILITIES(/obj/item/clothing/accessory/ring/reagent)
+	reagents(15)
 
 /obj/item/clothing/accessory/ring/reagent/equipped(mob/living/carbon/human/H)
 	..()
@@ -74,7 +76,8 @@ DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent, 15, null)
 	icon_state = "material"
 
 // Less than a sleepy-pen, but still enough to knock someone out
-DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(REAGENT_ID_CHLORALHYDRATE = 15))
+CAPABILITIES(/obj/item/clothing/accessory/ring/reagent/sleepy)
+	configure(reagents(add = list(REAGENT_ID_CHLORALHYDRATE = 15)))
 
 /////////////////////////////////////////
 //Seals and Signet Rings
@@ -99,13 +102,18 @@ DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(RE
 	var/nameset = FALSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE("Claim", PROC_REF(signet_ring_claim_self), REQ_FIELD_NOT("nameset", "it has already been claimed")))
+TRACKED(/obj/item/clothing/accessory/ring/seal/signet, nameset)
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/seal/signet/proc/signet_ring_claim_self(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(signet/claimed, "it has already been claimed")
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/seal/signet)
+	op("claim", in_hand(), label("Claim"), needs(req_is(nameof(nameset), FALSE, because = MSG(signet/claimed))), then(PROC_REF(ring_claimed)))
+
+/obj/item/clothing/accessory/ring/seal/signet/proc/ring_claimed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You claim the [src] as your own!"))
 	change_name(user)
-	nameset = TRUE
+	set_nameset(TRUE)
 
 /obj/item/clothing/accessory/ring/seal/signet/proc/change_name(signet_name = "Unknown")
 	name = "[signet_name]'s signet ring"
@@ -120,17 +128,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE(
 	var/partnername = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+TRACKED(/obj/item/clothing/accessory/ring/wedding, partnername)
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/wedding/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/input = rerun_ask(user, "a1", PROC_REF(wedding_ring_engrave_self), args, /datum/om/prompt/text, message = "Would you like to change the holoengraving on the ring?", title = "Name your spouse", default = "Bae", max_length = MAX_NAME_LEN)
-	if(isnull(input))
-		return TRUE
-	if(!input)
-		return
-	partnername = input
-	name = "[initial(name)] - [partnername]"
+CAPABILITIES(/obj/item/clothing/accessory/ring/wedding)
+	op("engrave", in_hand(), label("Engrave"),
+		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
+
+/obj/item/clothing/accessory/ring/wedding/proc/engraving_picked(datum/act/op/A)
+	var/datum/prompt/text/picked = A.answer
+	if(picked.value)
+		set_partnername(picked.value)
+		name = "[initial(name)] - [partnername]"
+	return OP_OK
 
 /obj/item/clothing/accessory/ring/wedding/silver
 	name = "silver wedding ring"
@@ -145,11 +154,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Eng
 	icon_state = "material"
 	material_slowdown_multiplier = 0 //it's a ring, it's never gonna be heavy enough to matter
 
-/obj/item/clothing/accessory/ring/material/Initialize(mapload, new_material)
+TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/ring/material, ring_forced_material, null)
+
+// ALLOW(init/INSTANCE_STATE): a material ring is named and coloured for its material (or the type's forced one)
+/obj/item/clothing/accessory/ring/material/Initialize(mapload)
+	var/forced_material = TYPE_TABLE_GET(src, ring_forced_material)
+	if(forced_material)
+		default_material = forced_material
 	. = ..()
-	if(!new_material)
-		new_material = MAT_STEEL
-	material = get_material_by_name(new_material)
+	material = get_material_by_name(default_material || MAT_STEEL)
 	if(!istype(material))
 		return INITIALIZE_HINT_QDEL
 	name = "[material.display_name] ring"
@@ -159,59 +172,41 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Eng
 /obj/item/clothing/accessory/ring/material/get_material()
 	return material
 
-/obj/item/clothing/accessory/ring/material/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/wood, ring_forced_material, MAT_WOOD)
 
-/obj/item/clothing/accessory/ring/material/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/plastic, ring_forced_material, MAT_PLASTIC)
 
-/obj/item/clothing/accessory/ring/material/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/iron, ring_forced_material, MAT_IRON)
 
-/obj/item/clothing/accessory/ring/material/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/glass, ring_forced_material, MAT_GLASS)
 
-/obj/item/clothing/accessory/ring/material/steel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/steel, ring_forced_material, MAT_STEEL)
 
-/obj/item/clothing/accessory/ring/material/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/silver, ring_forced_material, MAT_SILVER)
 
-/obj/item/clothing/accessory/ring/material/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/gold, ring_forced_material, MAT_GOLD)
 
-/obj/item/clothing/accessory/ring/material/platinum/Initialize(mapload)
-	. = ..(mapload, MAT_PLATINUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/platinum, ring_forced_material, MAT_PLATINUM)
 
-/obj/item/clothing/accessory/ring/material/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/phoron, ring_forced_material, MAT_PHORON)
 
-/obj/item/clothing/accessory/ring/material/titanium/Initialize(mapload)
-	. = ..(mapload, MAT_TITANIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/titanium, ring_forced_material, MAT_TITANIUM)
 
-/obj/item/clothing/accessory/ring/material/copper/Initialize(mapload)
-	. = ..(mapload, MAT_COPPER)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/copper, ring_forced_material, MAT_COPPER)
 
-/obj/item/clothing/accessory/ring/material/bronze/Initialize(mapload)
-	. = ..(mapload, MAT_BRONZE)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/bronze, ring_forced_material, MAT_BRONZE)
 
-/obj/item/clothing/accessory/ring/material/uranium/Initialize(mapload)
-	. = ..(mapload, MAT_URANIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/uranium, ring_forced_material, MAT_URANIUM)
 
-/obj/item/clothing/accessory/ring/material/osmium/Initialize(mapload)
-	. = ..(mapload, MAT_OSMIUM)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/osmium, ring_forced_material, MAT_OSMIUM)
 
-/obj/item/clothing/accessory/ring/material/lead/Initialize(mapload)
-	. = ..(mapload, MAT_LEAD)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/lead, ring_forced_material, MAT_LEAD)
 
-/obj/item/clothing/accessory/ring/material/diamond/Initialize(mapload)
-	. = ..(mapload, MAT_DIAMOND)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/diamond, ring_forced_material, MAT_DIAMOND)
 
-/obj/item/clothing/accessory/ring/material/tin/Initialize(mapload)
-	. = ..(mapload, MAT_TIN)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/tin, ring_forced_material, MAT_TIN)
 
-/obj/item/clothing/accessory/ring/material/void_opal/Initialize(mapload)
-	. = ..(mapload, MAT_VOPAL)
+TYPE_TABLE(/obj/item/clothing/accessory/ring/material/void_opal, ring_forced_material, MAT_VOPAL)
 
 
 /obj/item/clothing/accessory/ring/ringworld1
@@ -219,11 +214,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Eng
 	desc = "A ring that has a tiny world inside its glassy gem. You can even see clouds moving."
 	icon = 'icons/inventory/hands/item_ch.dmi'
 	icon_state = "ringworld1"
-	drop_sound = SFX_ITEMS_DROP_RING
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld1)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))
 
 /obj/item/clothing/accessory/ring/ringworld2
 	name = "world ring"
 	desc = "A ring that has a tiny landscape all around its exterior. You can even see clouds moving."
 	icon = 'icons/inventory/hands/item_ch.dmi'
 	icon_state = "ringworld2"
-	drop_sound = SFX_ITEMS_DROP_RING
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/ringworld2)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING))

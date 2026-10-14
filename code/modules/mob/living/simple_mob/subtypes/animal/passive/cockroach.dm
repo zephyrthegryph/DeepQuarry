@@ -12,13 +12,11 @@
 	icon_rest = "cockroach_rest"
 
 	endurance = 1
-	nutrition = 20
 
 	movement_cooldown = -1
 
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = FALSE
 
@@ -42,15 +40,16 @@
 
 	var/squish_chance = 25
 
-/mob/living/simple_mob/animal/passive/cockroach/Initialize(mapload)
-	. = ..()
+/mob/living/simple_mob/animal/passive/cockroach/proc/cockroach_pest_ready(datum/act/timer/A)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 //Deletes the body upon death
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/passive/cockroach/replace_death(gibbed)
+	if(loc?.release_refusal(src))
+		return TRUE
 	new /obj/effect/decal/cleanable/bug_remains(src.loc)
-	qdel(src)
+	consume(src)
 	return TRUE
 
 //Squish code
@@ -74,7 +73,10 @@
 			else
 				act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 
-DAMAGE_REACTION(/mob/living/simple_mob/animal/passive/cockroach, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_block)) // Explosions are a terrible way to handle a cockroach.
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
+	configure(mob_movement(pull_mobs = MOB_PULL_NONE))
+	after_init(0, then(PROC_REF(cockroach_pest_ready)))
+	extend(/datum/act/hit/explosion, instead()) // Explosions are a terrible way to handle a cockroach.
 
 //Custom stain so it's not "spiderling remains"
 /obj/effect/decal/cleanable/bug_remains
@@ -82,3 +84,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/animal/passive/cockroach, DAMAGE_EXPLOSIO
 	desc = "Green squishy mess."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "greenshatter"
+
+
+/mob/living/simple_mob/animal/passive/cockroach/starting_nutrition()
+	return 20

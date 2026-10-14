@@ -5,7 +5,9 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	one_handed_penalty = FALSE
 
-APPEARANCE_NONE(/obj/item/gun/energy/laser/xenoarch)
+/// The relic is given its sprite when found; the charge meter never draws over it.
+/obj/item/gun/energy/laser/xenoarch/draw_charge_state(datum/look/look)
+	return
 
 
 /obj/item/gun/energy/laser/xenoarch

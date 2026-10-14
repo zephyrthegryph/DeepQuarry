@@ -62,7 +62,7 @@ ADMIN_VERB(atmos_toggle_debug, R_DEBUG, "Toggle Debug Messages", "Allows to togg
 	if(!plan)
 		return -1
 	var/specific_power = plan[1] > 0 ? plan[2] / plan[1] : 0
-	if(!GLOB.machine_service.queue_pump_transfer(M, source, sink, plan[1], specific_power, plan[1], plan[3]))
+	if(!SSmachines.queue_pump_transfer(M, source, sink, plan[1], specific_power, plan[1], plan[3]))
 		return -1
 	return plan[2]
 

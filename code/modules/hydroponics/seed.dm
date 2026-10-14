@@ -19,7 +19,7 @@
 	var/can_self_harvest = 0       // Mostly used for living mobs.
 	var/growth_stages = 0          // Number of stages the plant passes through before it is mature.
 	// ALLOW(instance_list): d: every seed has traits
-	var/list/traits = list()       // Initialized in New()
+	var/list/trait_values = list() // Initialized in New()
 	var/list/mutants               // Possible predefined mutant varieties, if any.
 	var/list/chems                 // Chemicals that plant produces in products/injects into victim.
 	var/list/consume_gasses        // The plant will absorb these gasses during its life.
@@ -83,10 +83,10 @@
 	set_trait(TRAIT_MUTAGENIC_REAG,       null)         // Reagents considered uniquely 'mutagenic' by a plant. This should be an associated list, or null. Examples in tray.dm
 	set_trait(TRAIT_TOXIC_REAG,           null)         // Reagents considered uniquely 'toxic' by a plant. This should be an associated list, or null. Examples in tray.dm
 
-	om_after(src, 5, PROC_REF(update_growth_stages))
+	after(src, 0.5 SECONDS, PROC_REF(update_growth_stages))
 
 /datum/seed/proc/get_trait(trait)
-	return traits["[trait]"]
+	return trait_values["[trait]"]
 
 /datum/seed/proc/get_trash_type()
 	return trash_type
@@ -95,7 +95,7 @@
 	if(!isnull(degrade)) nval *= degrade
 	if(!isnull(ubound))  nval = min(nval,ubound)
 	if(!isnull(lbound))  nval = max(nval,lbound)
-	traits["[trait]"] =  nval
+	set_trait_values_at("[trait]", nval)
 
 /datum/seed/proc/create_spores(turf/T)
 	if(!T)
@@ -169,8 +169,8 @@
 		for(var/obj/item/clothing/clothes in target)
 			if(target.item_is_in_hands(clothes))
 				continue
-			if(clothes.item_flags & THICKMATERIAL)
-				body_coverage &= ~(clothes.body_parts_covered)
+			if(worn_of(clothes).flags & THICKMATERIAL)
+				body_coverage &= ~(worn_of(clothes).covers)
 
 		if(!body_coverage)
 			return
@@ -198,7 +198,7 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				splat.set_light(blight, 0.5, l_color = clr)
+				set_glow(splat, GLOW(blight, 0.5, clr))
 			var/flesh_colour = get_trait(TRAIT_FLESH_COLOUR)
 			if(!flesh_colour) flesh_colour = get_trait(TRAIT_PRODUCT_COLOUR)
 			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
@@ -211,7 +211,7 @@
 			for(var/obj/item/clothing/clothes in contents_of(M))
 				if(M.item_is_in_hands(clothes))
 					continue
-				body_coverage &= ~(clothes.body_parts_covered)
+				body_coverage &= ~(worn_of(clothes).covers)
 			if(!body_coverage)
 				continue
 			var/datum/reagents/R = M.reagents
@@ -274,7 +274,7 @@
 			splatter(T,thrown)
 		if(origin_turf)
 			origin_turf.visible_message(span_danger("The [thrown.name] explodes!"))
-		qdel(thrown)
+		destroyed(thrown, null, BRUTE)
 		return
 
 	if(isliving(target))
@@ -288,7 +288,7 @@
 		splatter(origin_turf,thrown)
 		if(origin_turf)
 			origin_turf.visible_message(span_danger("The [thrown.name] splatters against [target]!"))
-		qdel(thrown)
+		destroyed(thrown, null, BRUTE)
 
 /datum/seed/proc/handle_environment(turf/current_turf, datum/gas_mixture/environment, light_supplied, check_only)
 
@@ -407,7 +407,7 @@
 
 	if(prefix)
 		name = "[prefix] [name]"
-	seed_name = name
+	set_seed_name(name)
 	display_name = name
 
 //Creates a random seed. MAKE SURE THE LINE HAS DIVERGED BEFORE THIS IS CALLED.
@@ -418,8 +418,8 @@
 	seed_noun = pick("spores","nodes","cuttings","seeds","pits")
 
 	set_trait(TRAIT_POTENCY,rand(5,30),200,0)
-	set_trait(TRAIT_PRODUCT_ICON,pick(GLOB.plant_service.accessible_product_sprites))
-	set_trait(TRAIT_PLANT_ICON,pick(GLOB.plant_service.accessible_plant_sprites))
+	set_trait(TRAIT_PRODUCT_ICON,pick(SSplants.accessible_product_sprites))
+	set_trait(TRAIT_PLANT_ICON,pick(SSplants.accessible_plant_sprites))
 	set_trait(TRAIT_PLANT_COLOUR,get_random_colour(0,75,190))
 	set_trait(TRAIT_PRODUCT_COLOUR,get_random_colour(0,75,190))
 	update_growth_stages()
@@ -464,7 +464,7 @@
 
 		for(var/x=1;x<=additional_chems;x++)
 
-			var/new_chem = pick(chemistry_service().chemical_reagents)
+			var/new_chem = pick(SSchemistry.ready().chemical_reagents)
 			var/list/currently_banned_chems = list()
 			currently_banned_chems += GLOB.obtainable_chemical_blacklist
 			if(new_chem in currently_banned_chems)
@@ -477,7 +477,7 @@
 		if(!beneficial_reagents)
 			beneficial_reagents = list()
 		for(var/x = 1 to unique_beneficial_count)
-			beneficial_reagents[pick(chemistry_service().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
+			beneficial_reagents[pick(SSchemistry.ready().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
 		set_trait(TRAIT_BENEFICIAL_REAG, beneficial_reagents)
 
 	if(prob(5))
@@ -485,7 +485,7 @@
 		if(!mutagenic_reagents)
 			mutagenic_reagents = list()
 		for(var/x = 1 to unique_mutagenic_count)
-			mutagenic_reagents[pick(chemistry_service().chemical_reagents)] = rand(0, 20)
+			mutagenic_reagents[pick(SSchemistry.ready().chemical_reagents)] = rand(0, 20)
 		set_trait(TRAIT_MUTAGENIC_REAG, mutagenic_reagents)
 
 	if(prob(5))
@@ -493,7 +493,7 @@
 		if(!toxic_reagents)
 			toxic_reagents = list()
 		for(var/x = 1 to unique_toxic_count)
-			toxic_reagents[pick(chemistry_service().chemical_reagents)] = round(rand(-100, 100) / 10)
+			toxic_reagents[pick(SSchemistry.ready().chemical_reagents)] = round(rand(-100, 100) / 10)
 		set_trait(TRAIT_TOXIC_REAG, toxic_reagents)
 
 	if(prob(90))
@@ -548,7 +548,7 @@
 
 	if(prob(5))
 		if(prob(30))
-			has_mob_product = pickweight(GLOB.plant_mob_products)
+			set_has_mob_product(pickweight(GLOB.plant_mob_products))
 		else
 			has_item_product = pickweight(GLOB.plant_item_products)
 
@@ -599,7 +599,7 @@
 					if(!toxic_reagents)
 						toxic_reagents = list()
 					for(var/x = 1 to unique_toxic_count)
-						toxic_reagents[pick(chemistry_service().chemical_reagents)] = round(rand(-100, 100) / 10)
+						toxic_reagents[pick(SSchemistry.ready().chemical_reagents)] = round(rand(-100, 100) / 10)
 					set_trait(TRAIT_TOXIC_REAG, toxic_reagents)
 			if(5)
 				set_trait(TRAIT_WEED_TOLERANCE,      get_trait(TRAIT_WEED_TOLERANCE)+(rand(-2,2)*degree),10, 0)
@@ -619,7 +619,7 @@
 					if(!mutagenic_reagents)
 						mutagenic_reagents = list()
 					for(var/x = 1 to unique_mutagenic_count)
-						mutagenic_reagents[pick(chemistry_service().chemical_reagents)] = rand(0, 20)
+						mutagenic_reagents[pick(SSchemistry.ready().chemical_reagents)] = rand(0, 20)
 					set_trait(TRAIT_MUTAGENIC_REAG, mutagenic_reagents)
 			if(8)
 				set_trait(TRAIT_ENDURANCE,           get_trait(TRAIT_ENDURANCE)+(rand(-5,5)*degree),100,10)
@@ -639,7 +639,7 @@
 					if(!beneficial_reagents)
 						beneficial_reagents = list()
 					for(var/x = 1 to unique_beneficial_count)
-						beneficial_reagents[pick(chemistry_service().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
+						beneficial_reagents[pick(SSchemistry.ready().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
 					set_trait(TRAIT_BENEFICIAL_REAG, beneficial_reagents)
 			if(10)
 				if(prob(degree*2))
@@ -716,7 +716,7 @@
 			consume_gasses |= new_gasses
 			gene.values["[TRAIT_CONSUME_GASSES]"] = null
 		if(GENE_METABOLISM)
-			has_mob_product = gene.values["mob_product"]
+			set_has_mob_product(gene.values["mob_product"])
 			has_item_product = gene.values["item_product"]
 			gene.values["mob_product"] = null
 
@@ -793,8 +793,8 @@
 
 		//This may be a new line. Register a copy of it if it is (this private copy stays its holder's;
 		//it takes the line's name, so its products and packets find the registered line).
-		if(name == "new line" || !(name in GLOB.plant_service.seeds))
-			GLOB.plant_service.register_line(src)
+		if(name == "new line" || !(name in SSplants.seeds))
+			SSplants.register_line(src)
 
 		if(harvest_sample)
 			var/obj/item/seeds/seeds = new(get_turf(user))
@@ -841,9 +841,9 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				product.set_light(blight, 0.5, l_color = clr)
+				set_glow(product, GLOW(blight, 0.5, clr))
 			if(get_trait(TRAIT_STINGS) && isitem(product)) //Sometimes the product can be a mob.
-				product.force = 1
+				product.set_force(1)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(isliving(product))
@@ -876,7 +876,7 @@
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
 	new_seed.trash_type =       trash_type
-	new_seed.has_mob_product =  has_mob_product
+	new_seed.set_has_mob_product(has_mob_product)
 	new_seed.has_item_product = has_item_product
 
 	//Copy over everything else.
@@ -885,10 +885,10 @@
 	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
 	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
 
-	new_seed.seed_name =            "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]"
+	new_seed.set_seed_name("[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][seed_name]")
 	new_seed.display_name =         "[(roundstart ? "[(modified ? "modified" : "mutant")] " : "")][display_name]"
 	new_seed.seed_noun =            seed_noun
-	new_seed.traits = traits.Copy()
+	new_seed.set_trait_values(trait_values.Copy())
 	new_seed.update_growth_stages()
 	return new_seed
 
@@ -902,16 +902,16 @@
 	new_seed.can_self_harvest = can_self_harvest
 	new_seed.kitchen_tag =      kitchen_tag
 	new_seed.trash_type =       trash_type
-	new_seed.has_mob_product =  has_mob_product
+	new_seed.set_has_mob_product(has_mob_product)
 	new_seed.has_item_product = has_item_product
 	if(mutants)        new_seed.mutants = mutants.Copy()
 	if(chems)          new_seed.chems = chems.Copy()
 	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
 	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
-	new_seed.seed_name =    seed_name
+	new_seed.set_seed_name(seed_name)
 	new_seed.display_name = display_name
 	new_seed.seed_noun =    seed_noun
-	new_seed.traits = traits.Copy()
+	new_seed.set_trait_values(trait_values.Copy())
 	new_seed.update_growth_stages()
 	return new_seed
 
@@ -923,7 +923,7 @@
 /proc/seed_shareable(datum/seed/S)
 	if(!S || is_registered(S))
 		return S
-	return GLOB.plant_service.register_line(S)
+	return SSplants.register_line(S)
 
 /// Points dest.dest_var (a PROTO seed var) at source.source_var's seed. A registered seed is shared; a
 /// private copy moves over (source is left empty), since a private copy has exactly one holder.
@@ -935,6 +935,6 @@
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))
-		growth_stages = GLOB.plant_service.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
+		set_growth_stages(SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)])
 	else
-		growth_stages = 0
+		set_growth_stages(0)

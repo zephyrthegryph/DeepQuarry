@@ -13,30 +13,26 @@
 	icon = 'icons/obj/gifts.dmi'
 	icon_state = "gift"
 	item_state = "gift1"
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
-	///Var used for attack_hand chain.
-	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
 
-/obj/item/a_gift/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-10,10)
-	pixel_y = rand(-10,10)
-	if(w_class > 0 && w_class < ITEMSIZE_LARGE)
-		icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): random pick
-	else
-		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): random pick
+/// Rolled before init (rolls()): a box shape for its size and a random paper colour.
+/obj/item/a_gift/proc/roll_wrapping(datum/roller/R)
+	var/shape = (w_class > 0 && w_class < ITEMSIZE_LARGE) ? w_class : R.number(1, 3)
+	return "gift[shape]_[R.choose(list("g","r","b","y","p"))]"
 
-DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/gift)
+	owns_one(nameof(gift), /obj/item)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.drop_item()
+/obj/item/gift/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!release_wrapper(user))
+		return TRUE
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
-		own_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
+		rel_take(src, nameof(gift)) // owned while wrapped: unwrapping hands it over before the paper goes
 		user.put_in_active_hand(present)
 		present.add_fingerprint(user)
 	else
@@ -44,26 +40,48 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 	consume(src, user)
 	return TRUE
 
+/// A turf contains the holder too, so release to it directly after checking the actual source rather than using adoption's ancestor shortcut.
+/obj/item/gift/proc/release_wrapper(mob/user)
+	var/turf/destination = get_turf(src)
+	if(!destination)
+		return FALSE
+	var/reason = own_transfer_refusal(destination, src, null, user)
+	if(reason)
+		refuse(user, "[capitalize(reason)].")
+		return FALSE
+	var/atom/place = loc
+	if(place)
+		place.release_to(src, destination, null, user)
+	return loc == destination
+
 /obj/effect/spresent/relaymove(mob/user as mob)
 	if(user.stat)
 		return
 	to_chat(user, span_warning("You can't move."))
 
-/obj/effect/spresent/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/effect/spresent)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+
+/obj/effect/spresent/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You cut open the present."))
 
 	for(var/mob/M in contents_of(src)) //Should only be one but whatever.
 		M.forceMove(src.loc)
 
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
+	consume(src, user)
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction_open_gift)))
+CAPABILITIES(/obj/item/a_gift)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	// the old attack_self: open it (an advanced present rolls its own loot table)
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open_gift)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
+	rolls(nameof(icon_state), PROC_REF(roll_wrapping))
 
 /// Old attack_self.
-/obj/item/a_gift/proc/interaction_open_gift(mob/M, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+/obj/item/a_gift/proc/interaction_open_gift(datum/act/op/A)
+	var/mob/M = A.actor
 	var/gift_type = pick(
 		/obj/item/storage/wallet,
 		/obj/item/storage/photo_album,
@@ -108,14 +126,14 @@ DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction
 		/obj/item/storage/belt/utility/full,
 		/obj/item/clothing/accessory/tie/horrible)
 
-	if(!ispath(gift_type,/obj/item))	return
+	if(!ispath(gift_type,/obj/item))	return OP_OK
 
 	var/obj/item/I = new gift_type(M)
 	M.remove_from_mob(src)
 	M.put_in_hands(I)
 	I.add_fingerprint(M)
 	consume(src, M)
-	return
+	return OP_OK
 
 /*
  * Wrapping Paper
@@ -126,37 +144,39 @@ DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction
 	icon = 'icons/obj/items.dmi'
 	icon_state = "wrap_paper"
 	var/amount = 20.0
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
-	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
-DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/wrapping_paper)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/wrapping_paper/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/wrapping_paper/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if (!( locate(/obj/structure/table, src.loc) ))
 		to_chat(user, span_warning("You MUST put the paper on a table!"))
 	if (W.w_class >= ITEMSIZE_LARGE)
 		to_chat(user, span_warning("The object is FAR too large!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/I = user.get_inactive_hand()
 	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
 		to_chat(user, span_warning("You need scissors!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/a_used = 2 ** (src.w_class - 1)
 	if (src.amount < a_used)
 		to_chat(user, span_warning("You need more paper!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/smallDelivery) || istype(W, /obj/item/gift)) //No gift wrapping gifts!
 		to_chat(user, span_warning("You can't wrap something that's already wrapped!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	src.amount -= a_used
 	user.drop_item()
 	var/obj/item/gift/G = new /obj/item/gift( src.loc )
 	G.size = W.w_class
-	G.w_class = G.size + 1
-	G.icon_state = text("gift[]", G.size)
+	G.set_w_class(G.size + 1)
+	G.set_icon_state(text("gift[]", G.size))
 	W.forceMove(G)
 	own_move(W, G, nameof(G.gift)) // from whatever held it before (a holster, a module), or adopted
 	G.add_fingerprint(user)
@@ -165,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 
 	if(src.amount <= 0)
 		replace_with(src, /obj/item/c_tube)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/wrapping_paper/examine(mob/user)
 	. = ..()
@@ -201,21 +221,26 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 	item_state = "chomp_present"
 	plane = ABOVE_MOB_PLANE
 	var/chaos
-	special_handling = TRUE
 
-/obj/item/a_gift/advanced/Initialize(mapload)
-	. = ..()
-	if(prob(1))
-		icon_state = "chomp_present_chaos" // ALLOW(decl): random pick
-		chaos = TRUE
-		name = "chaotic present"
-		desc = "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!"
+CAPABILITIES(/obj/item/a_gift/advanced)
+	rolls(nameof(chaos), chance(1))
+	rolls(nameof(icon_state), PROC_REF(roll_chaos_look), from = list(nameof(chaos)))
+	rolls(nameof(name), PROC_REF(roll_chaos_name), from = list(nameof(chaos)))
+	rolls(nameof(desc), PROC_REF(roll_chaos_desc), from = list(nameof(chaos)))
 
-// ALLOW(interactions): its Open replaces the basic gift's Open (a different loot table)
-DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(interaction_open_advanced)))
+/// Rolled before init (rolls()): one present in a hundred is the chaotic one.
+/obj/item/a_gift/advanced/proc/roll_chaos_look(datum/roller/R)
+	return chaos ? "chomp_present_chaos" : icon_state
+
+/obj/item/a_gift/advanced/proc/roll_chaos_name(datum/roller/R)
+	return chaos ? "chaotic present" : name
+
+/obj/item/a_gift/advanced/proc/roll_chaos_desc(datum/roller/R)
+	return chaos ? "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!" : desc
 
 /// Old attack_self. WIP - ALWAYS add more items to list! - Jack
-/obj/item/a_gift/advanced/proc/interaction_open_advanced(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/item/a_gift/advanced/interaction_open_gift(datum/act/op/A)
+	var/mob/M = A.actor
 	var/gift_type_advanced = pick(
 		/obj/item/binoculars/spyglass,
 		/obj/item/bodysnatcher,
@@ -354,7 +379,6 @@ DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(in
 		/obj/item/storage/box/casino/costume_sexyclown,
 		/obj/item/storage/box/casino/costume_nyangirl) // Enable End
 
-
 	var/gift_type_chaos = pick(
 		/obj/item/dnainjector/set_trait/hulk,
 		/obj/item/spellbook,
@@ -378,4 +402,4 @@ DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(in
 	I.add_fingerprint(M)
 
 	consume(src, M)
-	return
+	return OP_OK

@@ -5,26 +5,19 @@
 	name = "whetstone"
 	desc = "A simple, fine grit stone, useful for sharpening dull edges and polishing out dents."
 	icon_state = "whetstone"
-	force = 3
 	w_class = ITEMSIZE_SMALL
 	var/repair_amount = 5
 	var/repair_time = 40
 
-DECLARE_INTERACTIONS(/obj/item/whetstone, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+MSG_DEF_SELF(whetstone/refining, "You begin to refine %T% with %I%...")
 
-/// Old attackby.
-/obj/item/whetstone/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/stack/material))
-		var/obj/item/stack/material/M = I
-		if(M.get_amount() >= 5)
-			to_chat(user, "You begin to refine the [src] with [M]...")
-			om_task_timed(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
-		else
-			to_chat(user, "You need 5 [src] to refine it into a sharpening kit.")
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/item/whetstone)
+	configure(item_combat(force = 3))
+	op("refine", stack(/obj/item/stack/material, 5), label("Refine"), begins(MSG(whetstone/refining)), wait(7 SECONDS), then(PROC_REF(refined)))
 
-/obj/item/whetstone/proc/attackby_timed_done(mob/user, obj/item/stack/material/M)
-	M.use(5)
+/obj/item/whetstone/proc/refined(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/M = A.held
 	var/obj/item/SK
 	SK = new /obj/item/material/sharpeningkit(get_turf(user), M.material.name)
 	to_chat(user, "You sharpen and refine the [src] into \a [SK].")
@@ -37,7 +30,6 @@ DECLARE_INTERACTIONS(/obj/item/whetstone, INTERACT_ITEM(null, PROC_REF(interacti
 	desc = "A refined, fine grit whetstone, useful for sharpening dull edges, polishing out dents, and, with extra material, replacing an edge."
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "sharpener"
-	hitsound = SFX_WEAPONS_GENHIT3
 	force_divisor = 0.7
 	thrown_force_divisor = 1
 	var/repair_amount = 5
@@ -58,11 +50,15 @@ DECLARE_INTERACTIONS(/obj/item/whetstone, INTERACT_ITEM(null, PROC_REF(interacti
 	repair_time = material.density * 0.5 // weight renamed to density.
 	sharpen_time = material.density * 3 // weight renamed to density.
 
-EXTEND_INTERACTIONS(/obj/item/material/sharpeningkit, INTERACT_ITEM(null, PROC_REF(sharpeningkit_interaction_item)))
+CAPABILITIES(/obj/item/material/sharpeningkit)
+	configure(item_sounds(hit = SFX_WEAPONS_GENHIT3))
+	op("sharpen", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(sharpeningkit_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/material/sharpeningkit/proc/sharpeningkit_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/material/sharpeningkit/proc/sharpeningkit_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/S = W
 		if(S.material == material)

@@ -1,10 +1,10 @@
 /obj/item/modular_computer/console/preset/install_default_hardware()
 	..()
-	own_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit(src))
-	own_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
-	own_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/super(src))
-	own_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/wired(src))
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit(src))
+	rel_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
+	rel_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/super(src))
+	rel_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/wired(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
 
 // Engineering
 /obj/item/modular_computer/console/preset/engineering/install_default_programs()
@@ -55,8 +55,8 @@
 // Command
 /obj/item/modular_computer/console/preset/command/install_default_hardware()
 	..()
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
-	own_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
 
 /obj/item/modular_computer/console/preset/command/install_default_programs()
 	..()
@@ -86,8 +86,8 @@
 // ERT
 /obj/item/modular_computer/console/preset/ert/install_default_hardware()
 	..()
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
-	own_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
 
 /obj/item/modular_computer/console/preset/ert/install_default_programs()
 	..()
@@ -102,8 +102,8 @@
 
 /obj/item/modular_computer/console/preset/mercenary/install_default_hardware()
 	..()
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
-	own_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(card_slot), new/obj/item/computer_hardware/card_slot(src))
 
 /obj/item/modular_computer/console/preset/mercenary/install_default_programs()
 	..()

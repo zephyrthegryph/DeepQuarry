@@ -1,0 +1,11 @@
+{
+  "branch": "codex/machinery-audit-1008",
+  "source_hashes": {
+    "code/game/machinery/medical_kiosk.dm": "E217AF0451425F65B9CEF8743954E714293C313D538DAE93F4976766CA3B80F1",
+    "code/game/machinery/computer/ai_core.dm": "DAE0D60F4FDA59FE3EFB87B914E8E031848F8C66147EDA6C1F26D3904EA2A8D9",
+    "code/game/machinery/cryopod.dm": "DDC1410BE0CDAF584CF34CBA5571925CEFA8377C9BCFBE84F7FDB0C96EA3A3A1",
+    "code/game/machinery/suit_storage/suit_cycler.dm": "9E5628B69DBC9DEE9136AEFE04AE0CA0BAB5CA58C0F44696E9907070CA1D460C"
+  },
+  "master": "6cf9e920d75a67149b9fdd17124161104b23e634",
+  "before_commit": "e03f6c58d6ed08c8f9187696366b07eaf875ec32"
+}

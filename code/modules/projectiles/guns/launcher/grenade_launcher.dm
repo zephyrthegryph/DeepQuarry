@@ -4,7 +4,6 @@
 	icon_state = "riotgun"
 	item_state = "riotgun"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 
 	fire_sound = SFX_WEAPONS_GRENADE_LAUNCHER
 	fire_sound_text = "a metallic thunk"
@@ -22,7 +21,7 @@
 // Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
 /obj/item/gun/launcher/grenade/ownership()
 	. = ..()
-	. += owns(nameof(grenades), policy = OWN_CONTAINED)
+	. += owns(nameof(grenades), policy = OWN_CONTAINED, is_list = TRUE)
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)
@@ -32,7 +31,7 @@
 	if(length(grenades))
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered())
-		own_add(src, nameof(grenades), chambered()) //rotate the revolving magazine
+		rel_add(src, nameof(grenades), chambered()) //rotate the revolving magazine
 		rel_clear(src, nameof(chambered))
 	if(next)
 		own_take_member(src, nameof(grenades), next) //Remove grenade from loaded list (it stays in our contents, chambered).
@@ -40,7 +39,6 @@
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
 		to_chat(user, span_warning("You pump [src], but the magazine is empty."))
-	update_icon()
 
 /obj/item/gun/launcher/grenade/examine(mob/user)
 	. = ..()
@@ -55,7 +53,7 @@
 		if(length(grenades) >= max_grenades)
 			to_chat(user, span_warning("[src] is full."))
 			return
-		if(!own_add(src, nameof(src.grenades), G, user = user))
+		if(!move_into(src, nameof(src.grenades), G, user))
 			return
 		moveElement(grenades, length(grenades), 1) //to the head of the list, so that it is loaded on the next pump
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [G] into %T%.")), MSG_OTHERS("%U% inserts \a [G] into %T%."))
@@ -72,29 +70,35 @@
 		to_chat(user, span_warning("[src] is empty."))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/grenade/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/grenade/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(underslung)
-		return FALSE
+		return OP_DECLINE
 	pump(user)
 
 /// Old attackby.
-/obj/item/gun/launcher/grenade/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/launcher/grenade/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if((istype(I, /obj/item/grenade)))
 		load(I, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gun/launcher/grenade)
+	configure(item_combat(force = 10))
+	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gun/launcher/grenade/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/launcher/grenade/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload(user)
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/gun/launcher/grenade/consume_next_projectile()
@@ -113,9 +117,11 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 	name = "underslung grenade launcher"
 	desc = "Not much more than a tube and a firing mechanism, this grenade launcher is designed to be fitted to a rifle."
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	max_grenades = 0
 	underslung = TRUE
+
+CAPABILITIES(/obj/item/gun/launcher/grenade/underslung)
+	configure(item_combat(force = 5))
 
 //load and unload directly into chambered
 /obj/item/gun/launcher/grenade/underslung/load(obj/item/grenade/G, mob/user)

@@ -51,9 +51,10 @@
 	pixel_x = -16
 	pixel_y = -16
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/giant_snake)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/giant_snake
@@ -64,7 +65,7 @@
 
 /mob/living/simple_mob/vore/aggressive/giant_snake/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "As the giant snake's closed jaws seal you away from the outside world, you are immediately greeted with a seemingly endless passage of tightly squeezing flesh. Hot and coated in thick, body-clinging slime, the serpent's stomach walls immediately get to work at rhythmically pulsing and contracting against your figure, slowly tugging you deeper into its ravenous clutches."
 

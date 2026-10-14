@@ -1,11 +1,12 @@
 // Pulls data from organizations data
 /datum/lore/codex/category/auto_org
 	var/desired_type = null
-	var/auto_keywords = list()
+	var/list/auto_keywords
 
 /datum/lore/codex/category/auto_org/New(new_holder, new_parent)
 	..(new_holder, new_parent)
-	keywords += auto_keywords
+	if(LAZYLEN(auto_keywords))
+		keywords += auto_keywords
 	for(var/path, value in GLOB.loremaster.organizations)
 		var/datum/lore/organization/O = value
 		if(!(istype(O, desired_type)))
@@ -18,7 +19,7 @@
 		if(O.acronym)
 			P.keywords.Add(O.acronym)
 		P.data = O.desc
-		own_add(src, nameof(children), P)
+		rel_add(src, nameof(children), P)
 
 /datum/lore/codex/category/auto_org/tsc
 	name = "Trans-Stellar Corporations"

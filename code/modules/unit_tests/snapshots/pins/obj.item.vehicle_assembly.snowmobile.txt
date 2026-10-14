@@ -1,0 +1,24 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Build tracked (refused: You don't have enough for that.)
++3 click: Click: Build tracked
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj human|/obj/item/stock_parts/console_screen
+@obj human|/obj/item/stock_parts/spring
+@obj human|/obj/item/cell
+@obj human|/obj/item/stock_parts/motor
+@obj human|/obj/item/stack/material/plasteel
+keys: collect_item, construction.build:snowmobile_controlled, construction.build:snowmobile_finished, construction.build:snowmobile_finished.screwdriver, construction.build:snowmobile_lit, construction.build:snowmobile_motored, construction.build:snowmobile_powered, construction.build:snowmobile_reinforced, construction.build:snowmobile_tracked, construction.build:snowmobile_wired, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

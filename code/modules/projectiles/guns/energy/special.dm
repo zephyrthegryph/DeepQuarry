@@ -8,9 +8,11 @@
 	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/ion
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/ionrifle/empty
 	cell_type = null
@@ -22,11 +24,13 @@
 	icon_state = "ionpistol"
 	item_state = null
 	w_class = ITEMSIZE_NORMAL
-	force = 5
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/ion/pistol
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/decloner
 	name = "biological demolecularisor"
@@ -59,29 +63,32 @@
 		list(mode_name="prune reagents", projectile_type=/obj/item/projectile/energy/floraprune, modifystate="floramut"),
 		)
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_parts/micro_laser)
-
 /obj/item/gun/energy/floragun/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
 		. += "It has [emitter ? emitter : "no micro laser"] installed."
 
-/obj/item/gun/energy/floragun/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/energy/floragun/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(emitter)
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
-		playsound(src, tool.usesound, 50, 1)
-		own_take(src, nameof(emitter))
+		playsound(src, sounds_of(tool).use, 50, 1)
+		rel_take(src, nameof(emitter))
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/energy/floragun/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/energy/floragun/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
-			if(!own_set(src, nameof(src.emitter), W, user = user))
+			if(!move_into(src, nameof(src.emitter), W, user))
 				return
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else
@@ -99,18 +106,22 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		return
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", PROC_REF(floragun_verb_select_gene)))
+CAPABILITIES(/obj/item/gun/energy/floragun)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
+	op("floragun_verb_select_gene", menu(), label("Select Gene"), asks(/datum/prompt/choice, fields = list("question" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = computed(PROC_REF(floragun_verb_select_gene_k108_choices)), "timeout" = 0), step = "k108"), then(PROC_REF(floragun_verb_select_gene)))
 
 /// Old Select Gene verb.
-/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
-	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = GLOB.plant_service.plant_gene_datums)
-	if(isnull(genemask))
-		return
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene_k108_choices(datum/act/op/A)
+	return plants_plant_gene_datums()
+
+/obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(datum/act/op/A)
+	var/mob/user = A.actor
+	var/genemask = A.step_value("k108")
 
 	if(!genemask)
 		return
 
-	gene_static = GLOB.plant_service.plant_gene_datums[genemask]
+	gene_static = plants_plant_gene_datums()[genemask]
 
 	to_chat(user, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 
@@ -138,7 +149,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	desc = "For the love of god, make sure you're aiming this the right way!"
 	icon_state = "riotgun"
 	item_state = "c20r"
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/meteor
 	cell_type = /obj/item/cell/potato
@@ -147,6 +157,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	recharge_time = 5 //Time it takes for shots to recharge (in ticks)
 	charge_meter = 0
 
+CAPABILITIES(/obj/item/gun/energy/meteorgun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /obj/item/gun/energy/meteorgun/pen
 	name = "meteor pen"
 	desc = "The pen is mightier than the sword."
@@ -154,7 +167,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/gun/energy/meteorgun/pen)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 /obj/item/gun/energy/mindflayer
@@ -180,13 +195,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	icon = 'icons/obj/gun.dmi'
 	item_icons = null
 	icon_state = "staffofchange"
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_LARGE
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/change
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 	charge_meter = 0
+
+CAPABILITIES(/obj/item/gun/energy/staff)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/staff/special_check(mob/user)
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
@@ -213,7 +230,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	desc = "An artifact that channels the will of the user into destructive bolts of force. If you aren't careful with it, you might poke someone's brain out."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "focus"
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/forcebolt
 	/*
 	attack_self(mob/living/user as mob)
@@ -226,6 +242,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 			to_chat(user, span_warning("The [src.name] will now strike only a single person."))
 			projectile_type = "/obj/item/projectile/forcebolt"
 	*/
+
+CAPABILITIES(/obj/item/gun/energy/staff/focus)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/dakkalaser
 	name = "suppression gun"
@@ -293,7 +312,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		act_message(user, src, others = span_cult("%U% aims %T% at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
+		howitzer_charge(user, A, target_turf, TRUE, target_zone, attack_modifier, beameffect, FALSE)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
@@ -314,48 +333,44 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = FALSE, arg3 = adjacent, arg4 = params, beam_holder = list(beameffect), click_empty = TRUE)
+		howitzer_charge(user, A, target_turf, FALSE, adjacent, params, beameffect, TRUE)
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
 /obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
 
-/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/om/task/timed/maghowitzer_howitzer_charged/task)
-	var/list/beam_holder = task.beam_holder
-	var/mob/living/user = task.actor
-	var/click_empty = task.click_empty
-	var/datum/beam = beam_holder[1]
+CAPABILITIES(/obj/item/gun/energy/maghowitzer)
+	op("howitzer_charge", ai(), takes("aim", "target_turf", "melee", "arg3", "arg4", "beam", "click_empty"), wait(3 SECONDS), on_interrupt(PROC_REF(howitzer_aborted)), then(PROC_REF(howitzer_charged)))
+
+/// The three-second charge-up before the shot; the click's arguments ride along for the shot that follows.
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charge(mob/living/user, atom/A, turf/target_turf, melee, arg3, arg4, datum/beam/beam, click_empty)
+	var/datum/op_result/charging = perform_op(user, src, "howitzer_charge", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = A, "target_turf" = target_turf, "melee" = melee, "arg3" = arg3, "arg4" = arg4, "beam" = beam, "click_empty" = click_empty))
+	if(charging.outcome == ACT_REFUSED)
+		if(beam && !QDELETED(beam))
+			spent(beam)
+		power_cycle = FALSE
+
+/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/datum/beam = A.arg("beam")
 	if(beam && !QDELETED(beam))
-		qdel(beam)
-	if(click_empty && user)
+		spent(beam)
+	if(A.arg("click_empty") && user)
 		handle_click_empty(user)
 	power_cycle = FALSE
 
-/datum/om/task/timed/maghowitzer_howitzer_charged
-	duration = 3 SECONDS
-	complete_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_charged
-	cancel_proc = /obj/item/gun/energy/maghowitzer/proc/howitzer_aborted
-	var/atom/A
-	var/turf/target_turf
-	var/melee
-	var/arg3
-	var/arg4
-	var/list/beam_holder
-	var/click_empty
-
 /// Charged: attack() or afterattack() again, past the charge-up.
-/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/om/task/timed/maghowitzer_howitzer_charged/task)
-	var/atom/A = task.A
-	var/mob/living/user = task.actor
-	var/turf/target_turf = task.target_turf
-	var/melee = task.melee
-	var/arg3 = task.arg3
-	var/arg4 = task.arg4
-	var/atom/aim = A
-	if(A.loc != target_turf)
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(datum/act/op/A)
+	var/atom/target = A.arg("aim")
+	var/mob/living/user = A.actor
+	var/turf/target_turf = A.arg("target_turf")
+	var/arg3 = A.arg("arg3")
+	var/arg4 = A.arg("arg4")
+	var/atom/aim = target
+	if(target.loc != target_turf)
 		aim = pick_random_target(target_turf) || target_turf
 	charged_shot = TRUE
-	if(melee)
+	if(A.arg("melee"))
 		attack(aim, user, arg3, arg4)
 	else
 		afterattack(aim, user, arg3, arg4)
@@ -374,14 +389,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 /obj/item/gun/energy/medigun //Adminspawn/ERT etc // CH edit - Changes ML3M  to NERD
 	name = "directed restoration system"
 	desc = "The BL-3 'Phoenix' is an adaptation on the NERD 'Medbeam' design that channels the power of the beam into a single healing laser. It is highly energy-inefficient, but its medical power cannot be denied."
-	force = 5
 	icon_state = "medbeam"
 	item_state = "medbeam"
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi',
 		)
-	slot_flags = SLOT_BELT
 	accuracy = 100
 	fire_delay = 12
 	fire_sound = SFX_WEAPONS_ELUGER
@@ -392,6 +405,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	cell_type = /obj/item/cell/high
 	charge_cost = 2500
 
+CAPABILITIES(/obj/item/gun/energy/medigun)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 5))
+
 /obj/item/gun/energy/bfgtaser
 	name = "9000-series Ball Lightning Taser"
 	desc = "The brainchild of Hephaestus Industries Civil Pacification Division, the BLT-9000 was intended for riot control but despite enthusiastic interest from law-enforcement agencies across the Commonwealth and beyond, its indiscriminate nature led to it being banned from civilian use in virtually all jurisdictions. As a result, most pieces are found in the hands of collectors."
@@ -399,7 +416,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	fire_sound = SFX_EFFECTS_PHASEIN
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
@@ -419,41 +435,35 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 	play_sfx(src, SFX_WEAPONS_CHARGEUP)
 	spinning_up = TRUE
-	update_icon()
 	act_message(user, src, MSG_SELF(span_notice("You start charging %T%!")), MSG_OTHERS(span_notice("%U% starts charging %T%!")))
-	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
+	var/datum/op_result/spinning = perform_op(user, src, "spin_up", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("aim" = target, "clickparams" = clickparams, "pointblank" = pointblank, "reflex" = reflex, "stance" = stance))
+	if(spinning.outcome == ACT_REFUSED)
+		spinning_up = FALSE
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 
-/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/om/task/timed/bfgtaser_spun_up/task)
+/obj/item/gun/energy/bfgtaser/proc/spin_ended(datum/act/op/A)
 	spinning_up = FALSE
-
-/datum/om/task/timed/bfgtaser_spun_up
-	duration = 0.8 SECONDS
-	complete_proc = /obj/item/gun/energy/bfgtaser/proc/spun_up
-	cancel_proc = /obj/item/gun/energy/bfgtaser/proc/spin_ended
-	var/atom/target_arg
-	var/clickparams
-	var/pointblank
-	var/reflex
-	var/stance
 
 /// Charged: Fire() again, past the spin-up.
-/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/om/task/timed/bfgtaser_spun_up/task)
-	var/atom/target = task.target_arg
-	var/mob/living/user = task.actor
-	var/clickparams = task.clickparams
-	var/pointblank = task.pointblank
-	var/reflex = task.reflex
+/obj/item/gun/energy/bfgtaser/proc/spun_up(datum/act/op/A)
+	var/atom/target = A.arg("aim")
+	var/mob/living/user = A.actor
 	spinning_up = FALSE
 	spun = TRUE
-	Fire(target, user, clickparams, pointblank, reflex, task.stance)
+	Fire(target, user, A.arg("clickparams"), A.arg("pointblank"), A.arg("reflex"), A.arg("stance"))
 	spun = FALSE
+
+CAPABILITIES(/obj/item/gun/energy/bfgtaser)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	op("spin_up", ai(), takes("aim", "clickparams", "pointblank", "reflex", "stance"), wait(0.8 SECONDS), on_interrupt(PROC_REF(spin_ended)), then(PROC_REF(spun_up)))
 
 /obj/item/projectile/beam/stun/weak/BFG
 	fire_sound = SFX_EFFECTS_SPARKS6
-	hitsound = SFX_EFFECTS_SPARKS4
 	hitsound_wall = SFX_EFFECTS_SPARKS7
+
+CAPABILITIES(/obj/item/projectile/beam/stun/weak/BFG)
+	configure(item_sounds(hit = SFX_EFFECTS_SPARKS4))
 
 /obj/item/projectile/bullet/BFGtaser
 	name = "lightning ball"
@@ -463,11 +473,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	damage = 100
 	injury_kind = INJURY_PAIN
 	embed_chance = 0
-	hitsound = SFX_WEAPONS_ZAPBANG
 	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 	var/zaptype = /obj/item/projectile/beam/stun/weak/BFG
 
-/obj/item/projectile/bullet/BFGtaser/periodic_step()
+CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
+
+/obj/item/projectile/bullet/BFGtaser/projectile_step()
 	var/list/victims = list()
 	for(var/mob/living/M in living_mobs(world.view))
 		if(M != firer)
@@ -508,12 +520,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
 	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
-	armor_penetration = 10
 	range = 9
 	damage = 0
 	agony = 0
 	vacuum_traversal = 1
 	hud_state = "plasma_rifle_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/plasmastun/slow)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/plasmastun/slow/on_hit(atom/target)
 	if(isliving(target))
@@ -551,11 +565,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	icon_state = "fuel-supermatter"
 	damage = 1500 //You are not being defibbed from this.
 	weaken = 2
-	armor_penetration = 100
 	penetrating = 1500 //Theoretically, this shouldn't stop flying for a while, unless someoneI t lines it up with a wall or fires it into a mountain.
 	range = 200
 	hud_state = "rocket_thermobaric"
 	speed = 0.2
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/supercannon)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
@@ -582,23 +598,25 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	wielded_item_state = "supercannon-wielded"
 	w_class = ITEMSIZE_HUGE
 	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 2400 //You got 1 shot...
 	self_recharge = TRUE
 	recharge_time = 6 HOURS //This is how to get around rechargers being able to recharge it, I dont wanna rewrite base level code
 	projectile_type = /obj/item/projectile/bullet/magnetic/supercannon //Fuck you.
 	cell_type = /obj/item/cell/device/weapon
 	battery_lock = 1
-	force = 15 //pretty robust
 	one_handed_penalty = 90
 	item_icons = list(
 		slot_l_hand_str = 'icons/obj/guns/supercannon/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
 
+CAPABILITIES(/obj/item/gun/energy/supercannon)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 15))
+
 /obj/item/gun/energy/floragun/ownership()
 	. = ..()
-	. += owns(nameof(emitter), policy = OWN_CONTAINED)
+	. += owns(nameof(emitter), policy = OWN_CONTAINED, starts = /obj/item/stock_parts/micro_laser)
 
 /// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene

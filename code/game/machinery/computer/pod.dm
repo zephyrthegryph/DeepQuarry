@@ -4,7 +4,6 @@
 	name = "pod launch control console"
 	desc = "A control console for launching pods. Some people prefer firing Mechas."
 	icon_screen = "mass_driver"
-	light_color = "#00b000"
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
 	var/obj/machinery/mass_driver/connected
@@ -15,9 +14,8 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/door/blast/pod_doors
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
-OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
-
+/obj/machinery/computer/pod/var/timing = FALSE
+TRACKED(/obj/machinery/computer/pod, timing)
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()
@@ -36,45 +34,44 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)
 		M.open()
 
-	om_after(src, 2 SECONDS, PROC_REF(alarm_drive))
+	after(src, 2 SECONDS, PROC_REF(alarm_drive))
 
 /obj/machinery/computer/pod/proc/alarm_drive()
 	for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
 		M.power = connected()?.power
 		M.drive()
-	om_after(src, 5 SECONDS, PROC_REF(alarm_close))
+	after(src, 5 SECONDS, PROC_REF(alarm_close))
 
 /obj/machinery/computer/pod/proc/alarm_close()
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)
 		M.close()
 		return
 
-/obj/machinery/computer/pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pod_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_hand/pod_open_ui
-	id = "pod_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/pod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!Adjacent(user) && !issilicon(user))
+/obj/machinery/computer/pod/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS)) // out of reach, and not over a remote link
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/pod, "PodComputer")
+MSG_DEF_SELF(pod/access_denied, "access denied")
+
+CAPABILITIES(/obj/machinery/computer/pod)
+	configure(light_glow(color = "#00b000"))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
+	interface("PodComputer")
+	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
+	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
+	op("test_alarm", ui_act("test_alarm"), then(PROC_REF(ui_act_test_alarm)))
+	op("test_drive", ui_act("test_drive"), then(PROC_REF(ui_act_test_drive)))
+	op("adjust_power", ui_act("adjust_power", arg("value", num())), then(PROC_REF(ui_act_adjust_power)))
+	op("adjust_time", ui_act("adjust_time", arg("value", num())), then(PROC_REF(ui_act_adjust_time)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/pod/ui_title(mob/user)
 	return title
 
-UI_DATA_REPLACE(/obj/machinery/computer/pod, "merge:ui_data_obj_machinery_computer_pod{connected:unknown,timing:num,time:num,power_level:num}")
-
-/// The computed part of /obj/machinery/computer/pod's window data (declared on its UI_DATA row).
-/obj/machinery/computer/pod/proc/ui_data_obj_machinery_computer_pod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/pod/ui_data(datum/act/eval/A)
 
 	return list(
 		"connected" = connected(),
@@ -83,8 +80,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pod, "merge:ui_data_obj_machinery_comput
 		"power_level" = connected()?.power
 	)
 
-UI_ACT(/obj/machinery/computer/pod, "toggle_door", ui_act_toggle_door)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_toggle_door)
+/obj/machinery/computer/pod/proc/ui_act_toggle_door(datum/act/op/A)
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)
 		if(M.density)
 			M.open()
@@ -92,36 +88,31 @@ UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_toggle_door)
 			M.close()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "start_stop", ui_act_start_stop)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_start_stop)
+/obj/machinery/computer/pod/proc/ui_act_start_stop(datum/act/op/A)
 	set_timing(!timing)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "test_alarm", ui_act_test_alarm)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_test_alarm)
+/obj/machinery/computer/pod/proc/ui_act_test_alarm(datum/act/op/A)
 	alarm()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "test_drive", ui_act_test_drive)
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_test_drive)
+/obj/machinery/computer/pod/proc/ui_act_test_drive(datum/act/op/A)
 	for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
 		M.power = connected()?.power
 		M.drive()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "adjust_power", ui_act_adjust_power, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_power)
+/obj/machinery/computer/pod/proc/ui_act_adjust_power(datum/act/op/A, value)
 	if(!connected())
 		return FALSE
-	connected().power = CLAMP(params["value"], 0.25, 16)
+	connected().power = CLAMP(value, 0.25, 16)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pod, "adjust_time", ui_act_adjust_time, UI_ARG_NUM("value"))
-UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_time)
-	time = CLAMP(round(params["value"]), 0, 120)
+/obj/machinery/computer/pod/proc/ui_act_adjust_time(datum/act/op/A, value)
+	time = CLAMP(round(value), 0, 120)
 	return TRUE
 
-/obj/machinery/computer/pod/machine_step()
+/obj/machinery/computer/pod/proc/work_step(datum/act/timer/A)
 	if(time > 0)
 		time = round(time) - 1
 	else
@@ -142,20 +133,14 @@ UI_ACT_PROC(/obj/machinery/computer/pod, ui_act_adjust_time)
 	title = "External Airlock Controls"
 	req_access = list(ACCESS_SYNDICATE)
 
-/obj/machinery/computer/pod/old/syndicate/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/pod_syndicate_open_ui,
-	)
-	..()
+CAPABILITIES(/obj/machinery/computer/pod/old/syndicate)
+	extend("ui_open", needs(req(PROC_REF(lets_in))))
+	extend("open_ui_impl", needs(req(PROC_REF(lets_in))))
 
-/datum/interaction/machine_hand/pod_syndicate_open_ui
-	id = "pod_syndicate_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/pod/old/syndicate/proc/lets_in, "access denied"))
-	effect = /obj/machinery/computer/pod/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+/obj/machinery/computer/pod/old/syndicate/proc/lets_in(datum/act/op/A)
+	if(allowed(A.actor))
+		return null
+	return MSG(pod/access_denied)
 
 /obj/machinery/computer/pod/old/swf
 	name = "Magix System IV"

@@ -8,23 +8,11 @@
 	var/descendx
 	var/descendy
 
-/obj/structure/prop/tyr_elevator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/tyr_elevator_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/prop/tyr_elevator)
+	op("item", item(/obj/item), label("Use"), wait(3 SECONDS), then(PROC_REF(attackby_timed_done)))
 
-/// Old attackby: pry the doors open and teleport away.
-/datum/interaction/entry_item/tyr_elevator_item
-	id = "tyr_elevator_item"
-	name = "Use"
-	effect = /obj/structure/prop/tyr_elevator/proc/interaction_item
-
-/obj/structure/prop/tyr_elevator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	om_task_timed(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	return TRUE
-
-/obj/structure/prop/tyr_elevator/proc/attackby_timed_done(mob/user)
+/obj/structure/prop/tyr_elevator/proc/attackby_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
 
 /obj/machinery/door/blast/puzzle/tyrdoor
@@ -50,27 +38,24 @@
 	var/list/lastattempt
 	var/codelen = 6
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("The door is locked."))
-	om_ask(user, /datum/om/prompt/text/deca_code, PROC_REF(code_entered))
-	return ITEM_INTERACT_SUCCESS
+MSG_DEF_SELF(tyrdoor/locked, "The door is locked.")
 
-/datum/om/prompt/text/deca_code
-	title = "Deca-Code Lock"
-	default = ""
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+CAPABILITIES(/obj/machinery/door/blast/puzzle/tyrdoor/keypad)
+	op("enter_code", tool(TOOL_MULTITOOL), label("Enter the code"), priority(OP_PRIORITY_PART), wait(0), begins(MSG(tyrdoor/locked)),
+		asks(/datum/prompt/text, fields = list("title" = "Deca-Code Lock", "question" = computed(PROC_REF(code_question)), "default" = "", "timeout" = 0)),
+		then(PROC_REF(code_entered)))
 
-/datum/om/prompt/text/deca_code/prepare()
-	var/obj/machinery/door/blast/puzzle/tyrdoor/keypad/door = subject
-	message = "Enter [door.codelen] digits. All digits must be unique."
-	return TRUE
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_question(datum/act/A)
+	return "Enter [codelen] digits. All digits must be unique."
 
-/datum/om/prompt/text/deca_code/cancelled()
-	to_chat(answerer, span_notice("You leave the lock alone."))
-
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(datum/om/prompt/text/deca_code/ask)
-	var/mob/user = ask.answerer
-	var/input = ask.text
+/// The code typed into the keypad: a right one opens the door.
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/R = A.answer
+	if(!R)
+		to_chat(user, span_notice("You leave the lock alone."))
+		return OP_OK
+	var/input = R.value
 	var/list/sanitised = list()
 	var/sanitycheck = TRUE
 	for(var/i in 1 to length(input))
@@ -87,7 +72,7 @@
 		open()
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/check_input(input)
 	if(length(input) != codelen)
@@ -189,18 +174,20 @@
 	icon_state = "outcrop-random"
 
 
-DECLARE_LOOT(/obj/random/tyroutcrop, LOOT_TABLE(\
-	/obj/structure/outcrop/verdantium = 3, \
-	/obj/structure/outcrop/iron/tyr = 1, \
-	/obj/structure/outcrop/coal/tyr = 1, \
-	/obj/structure/outcrop/silver/tyr = 1, \
-	/obj/structure/outcrop/gold/tyr = 1, \
-	/obj/structure/outcrop/uranium/tyr = 1, \
-	/obj/structure/outcrop/diamond/tyr = 3, \
-	/obj/structure/outcrop/platinum/tyr = 1, \
-	/obj/structure/outcrop/weathered_gate = 5, \
-	/obj/structure/outcrop/hydrogen = 3, \
-	/obj/structure/outcrop/lead/tyr = 1))
+CAPABILITIES(/obj/random/tyroutcrop)
+	loot(
+		table = list(
+			/obj/structure/outcrop/verdantium = 3,
+			/obj/structure/outcrop/iron/tyr = 1,
+			/obj/structure/outcrop/coal/tyr = 1,
+			/obj/structure/outcrop/silver/tyr = 1,
+			/obj/structure/outcrop/gold/tyr = 1,
+			/obj/structure/outcrop/uranium/tyr = 1,
+			/obj/structure/outcrop/diamond/tyr = 3,
+			/obj/structure/outcrop/platinum/tyr = 1,
+			/obj/structure/outcrop/weathered_gate = 5,
+			/obj/structure/outcrop/hydrogen = 3,
+			/obj/structure/outcrop/lead/tyr = 1))
 
 /obj/item/prop/tyrlore
 	name = "alien disk"

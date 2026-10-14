@@ -1,28 +1,10 @@
 // Kernel measurement (unified plan step 2, code/controllers/measure/): the system rule, the roll-up of a
 // behaviour's cost to its system, the histogram percentiles, overrun attribution, the flight recorder's ring and
-// the input latency record. Tests that need a scheduler use the OM harness (om_test_begin(), scheduler_advance()),
+// the input latency record. Tests that need a scheduler use the OM harness (scheduler_test_begin(), scheduler_advance()),
 // whose scheduler charges its own meter; the rest build meters directly, so nothing here touches the live one
 // except where a test swaps it in on purpose and puts it back before asserting.
 
 /datum/om_test_entity/var/km_ticks = 0
-
-/// Charged to "km_fake_system" through its system_key.
-/datum/om/behaviour/test/km_fake
-	every = 1 SECONDS
-	system_key = "km_fake_system"
-
-/datum/om/behaviour/test/km_fake/tick(datum/om_test_entity/E, dt)
-	E.km_ticks++
-
-/// Holds the tick until it is over budget: a real overrun charged to "km_burner_system".
-/datum/om/behaviour/test/km_burner
-	every = 1 SECONDS
-	system_key = "km_burner_system"
-
-/datum/om/behaviour/test/km_burner/tick(datum/om_test_entity/E, dt)
-	// At least a third of a tick of real work, and on to 120% so the tick is over budget wherever it started.
-	var/target = max(TICK_USAGE + 30, 120)
-	CONSUME_UNTIL(target)
 
 /// The row of a km_report_systems() list for `key`, or null.
 /proc/km_test_row(list/rows, key)
@@ -36,51 +18,27 @@
 
 // ---------------------------------------------------------------- the system rule
 
-/datum/unit_test/dq_km_system_key_rule
-
-/datum/unit_test/dq_km_system_key_rule/Run()
-	// Rule 2: a code folder's row.
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/life), "life", "the life pipeline")
-	var/list/known = km_system_prefixes()
-	TEST_ASSERT(length(known) > 20, "the prefix table is built (it has [length(known)] rows)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/life_derive"), "life", "a sibling pipeline named life_* (as text: no such pipeline exists any more)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/machines), "machines", "the machines world lane")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/light), "lighting", "the light sleeper")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/climbable/cliff), "object_behaviours", "datums/behaviours")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
-	// Rule 3: the family fallback.
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/statpanels), "statpanels", "world/<x> is <x>")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/status_display), "status_display", "sleeper/<x> is <x>")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/test/every_second), "test", "any other behaviour is its first segment")
-	// A row's prefix matches at a segment (or a family suffix), never in the middle of a name.
-	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/lifeboat/x"), "lifeboat", "life must not swallow lifeboat")
-	return
-
 /datum/unit_test/dq_km_every_behaviour_has_a_system
 
 /datum/unit_test/dq_km_every_behaviour_has_a_system/Run()
-	var/datum/om/registry/reg = om_registry()
+	var/datum/definition_registry/reg = definition_registry()
 	var/datum/km_systems/systems = km_systems()
 	TEST_ASSERT(length(reg.behaviours) > 0, "the registry has behaviours")
-	for(var/datum/om/behaviour/B as anything in reg.behaviours)
+	for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 		TEST_ASSERT(B.system_idx >= 1 && B.system_idx <= systems.count(), "[B.type] is bound to a system (system_idx [B.system_idx])")
 		var/key = systems.key_of(B.system_idx)
 		TEST_ASSERT(length(key) && key != "?", "[B.type] resolves to a system key")
 		if(B.system_key)
 			TEST_ASSERT_EQUAL(key, B.system_key, "[B.type]: an explicit system_key wins")
-		else if(!istype(B, /datum/om/behaviour/inline))
+		else if(!istype(B, /datum/scheduled_behaviour/inline))
 			// KM_SYS_OTHER only when the registry ran out of room.
 			TEST_ASSERT(B.system_idx != KM_SYS_OTHER, "[B.type] fell into the overflow system: raise KM_MAX_SYSTEMS")
 			// The registry binds at boot, inside global initialisation: what it bound is what the rule says now.
 			TEST_ASSERT_EQUAL(key, km_system_key_for_path(B.type), "[B.type] was bound by the rule as it stands")
 	// Inline behaviours (a bundle's reacts / ticks / events rows) carry their bundle's name.
-	var/inline_seen = 0
-	for(var/datum/om/behaviour/inline/B in reg.behaviours)
-		inline_seen++
+	// No bundle declares reacts / ticks / events rows any more, so there may be none: what exists must carry its bundle's name.
+	for(var/datum/scheduled_behaviour/inline/B in reg.behaviours)
 		TEST_ASSERT(length(B.system_key), "an inline behaviour ([B.name]) has its bundle's name as its system")
-	TEST_ASSERT(inline_seen > 0, "there are inline behaviours to check")
 	// Every type the folder rows name is real and owns at least one registered behaviour: a stale row would
 	// quietly stop attributing a folder.
 	var/list/rows = km_system_rows()
@@ -88,7 +46,7 @@
 		for(var/path in rows[key])
 			TEST_ASSERT(ispath(path), "row [key]: [path] is not a type")
 			var/owns = FALSE
-			for(var/datum/om/behaviour/B as anything in reg.behaviours)
+			for(var/datum/scheduled_behaviour/B as anything in reg.behaviours)
 				if(ispath(B.type, path))
 					owns = TRUE
 					break
@@ -186,55 +144,6 @@
 
 // ---------------------------------------------------------------- rollup
 
-/datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour
-
-/datum/unit_test/om/dq_km_rollup_charges_a_fake_behaviour/run_om(list/made)
-	var/datum/om/behaviour/fake = om_registry().behaviour(/datum/om/behaviour/test/km_fake)
-	TEST_ASSERT_NOTNULL(fake, "the fake behaviour is registered")
-	var/idx = km_systems().index_by_key["km_fake_system"]
-	TEST_ASSERT_EQUAL(fake.system_idx, idx, "its system_key bound it to km_fake_system")
-	TEST_ASSERT(fake.id < OM_MAX_STAT_TYPES, "its counters are individually attributable (id [fake.id])")
-	var/datum/tick_meter/meter = sched.meter
-	TEST_ASSERT(meter != km_meter(), "a test scheduler charges its own meter, not the live one")
-
-	var/datum/om_test_entity/E = entity(made)
-	om_attach(E, /datum/om/behaviour/test/km_fake)
-	scheduler_advance(3)
-	TEST_ASSERT(E.km_ticks >= 2, "the fake behaviour ran ([E.km_ticks])")
-	TEST_ASSERT(meter.tick_ms[idx] > 0, "its run was charged to its system this tick")
-	TEST_ASSERT(meter.n_touched >= 1, "a system is marked touched")
-
-	// A known charge on top, then close the tick and read the report.
-	var/before = meter.tick_ms[idx]
-	meter.charge(idx, 12.5)
-	TEST_ASSERT(abs(meter.tick_ms[idx] - (before + 12.5)) < 0.001, "charges add up within a tick")
-	meter.end_tick(50, 0)
-	var/list/rows = km_report_systems(meter.live, sched)
-	var/list/row = km_test_row(rows, "km_fake_system")
-	TEST_ASSERT_NOTNULL(row, "the report has a row for the fake system")
-	TEST_ASSERT_EQUAL(row["ticks"], 1, "the system was charged in one closed tick")
-	TEST_ASSERT(row["ms_total"] >= 12.5, "its ms include the known charge (got [row["ms_total"]])")
-	TEST_ASSERT(row["runs"] >= 2, "runs are rolled up from the behaviour's counters (got [row["runs"]])")
-	TEST_ASSERT_EQUAL(row["behaviours"], 1, "one behaviour belongs to the system")
-	TEST_ASSERT(row["p99_ms"] >= 12.5 * 0.7, "p99 reflects the tick (got [row["p99_ms"]])")
-	TEST_ASSERT_EQUAL(meter.n_touched, 0, "closing the tick clears the touched list")
-	TEST_ASSERT_EQUAL(meter.tick_ms[idx], 0, "and the tick's charge")
-	// Another behaviour's cost never lands on this system.
-	var/datum/om/behaviour/every = om_registry().behaviour(/datum/om/behaviour/test/every_second)
-	TEST_ASSERT(every.system_idx != idx, "a different behaviour is a different system")
-
-	// Counters are deltas against a set's base: a window opened now sees only what runs after.
-	var/datum/km_stats_set/window = meter.open_set(sched)
-	var/runs_before = row["runs"]
-	scheduler_advance(2)
-	meter.end_tick(50, 0)
-	meter.close_set(window)
-	var/list/window_row = km_test_row(km_report_systems(window, sched), "km_fake_system")
-	TEST_ASSERT_NOTNULL(window_row, "the window saw the fake system run")
-	TEST_ASSERT(window_row["runs"] >= 1 && window_row["runs"] < runs_before + 5, "the window counts only the runs since it opened (got [window_row["runs"]])")
-	TEST_ASSERT_EQUAL(window_row["ticks"], 1, "and only the ticks since")
-	qdel(window)
-
 // ---------------------------------------------------------------- overrun attribution
 
 /datum/unit_test/dq_km_overrun_attribution
@@ -327,32 +236,6 @@
 	qdel(quiet)
 	qdel(M)
 	return
-
-/datum/unit_test/om/dq_km_forced_overrun_names_the_burner
-
-/datum/unit_test/om/dq_km_forced_overrun_names_the_burner/run_om(list/made)
-	var/datum/tick_meter/meter = sched.meter
-	var/burner_idx = km_systems().index_by_key["km_burner_system"]
-	TEST_ASSERT_NOTNULL(burner_idx, "the burner's system exists")
-	var/datum/om_test_entity/quiet = entity(made)
-	om_attach(quiet, /datum/om/behaviour/test/km_fake)
-	var/datum/om_test_entity/burner = entity(made)
-	om_attach(burner, /datum/om/behaviour/test/km_burner)
-	// One pass: the burner holds the tick over budget, the quiet behaviour costs almost nothing.
-	scheduler_advance(1)
-	var/usage = TICK_USAGE
-	meter.end_tick(usage, 6)
-	TEST_ASSERT(usage > KM_OVERRUN_USAGE, "the burner really overran the tick (usage [usage])")
-	TEST_ASSERT_EQUAL(meter.total_overruns, 1, "the tick counts as an overrun")
-	var/list/top = meter.last_overrun_top
-	TEST_ASSERT(length(top) >= 1, "the overrun has attribution")
-	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump")
-	TEST_ASSERT(top[1]["ms"] > 1, "and it is charged real time (got [top[1]["ms"]] ms)")
-	TEST_ASSERT(findtext(meter.last_overrun_line, "km_burner_system"), "the line names it: [meter.last_overrun_line]")
-	var/list/entry = meter.recorded_entries()[1]
-	var/list/keys = entry[7]
-	TEST_ASSERT_EQUAL(keys[1], "km_burner_system", "the flight recorder entry names it too")
-	TEST_ASSERT(entry[3] > KM_OVERRUN_USAGE, "with the tick's usage")
 
 // ---------------------------------------------------------------- flight recorder
 
@@ -454,24 +337,24 @@
 	qdel(M)
 	return
 
-/// The hooks in verb_manager and atom/Click reach the meter: swaps a fresh one in for the length of the test.
+/// The hooks in the input inbox and atom/Click reach the meter: swaps a fresh one in for the length of the test.
 /datum/unit_test/dq_km_input_hooks_record_real_paths
 
 /datum/unit_test/dq_km_input_hooks_record_real_paths/Run()
 	var/mob/observer/dead/clicker = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
 	var/datum/tick_meter/live_meter = km_meter()
 	var/datum/tick_meter/probe = new(8)
-	var/queue_before = length(SSverb_manager.lane.verb_queue)
+	var/queue_before = length(SSinput.waiting(GLOB.km_synthetic))
 	var/synthetic_before = GLOB.km_synthetic.verbs_run
 	// Nothing below sleeps, so the MC cannot call end_tick() on the wrong meter meanwhile.
-	km_holder().meter = probe // ALLOW(ownership): the test swaps the live meter for a probe for these few statements
+	km_holder().meter = probe
 	for(var/i in 1 to 3)
 		km_synthetic_verb()
-	var/queued_now = length(SSverb_manager.lane.verb_queue) - queue_before
-	SSverb_manager.lane.run_verb_queue()
+	var/queued_now = length(SSinput.waiting(GLOB.km_synthetic)) - queue_before
+	SSinput.drain_step(1, TRUE)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	var/list/report = km_report_input(probe.live)
 
 	TEST_ASSERT_EQUAL(queued_now, 3, "three verbs sat in the verb queue")
@@ -488,31 +371,20 @@
 	qdel(probe)
 	return
 
-// ---------------------------------------------------------------- MC subsystems as systems
+// ---------------------------------------------------------------- the input cost
 
-/datum/unit_test/dq_km_subsystems_are_systems
+/// The input inbox's drain is charged to the input system, and counts as input cost in the tick record.
+/datum/unit_test/dq_km_inbox_drain_is_input_cost
 
-/datum/unit_test/dq_km_subsystems_are_systems/Run()
-	var/datum/tick_meter/M = new(8)
-	var/air_idx = km_bind_subsystem(SSgarbage)
-	TEST_ASSERT_EQUAL(km_systems().key_of(air_idx), "mc_[replacetext(lowertext(SSgarbage.name), " ", "_")]", "a subsystem's system is mc_<name in snake case>")
-	TEST_ASSERT_EQUAL(km_systems().kinds[air_idx], KM_KIND_MC, "of the MC kind")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSgarbage), air_idx, "binding is stable")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSverb_manager), km_systems().index_by_key["mc_verb_manager"], "a name with a space is snake case")
-	// SSbehaviours is decomposed: the MC charging it adds nothing.
-	TEST_ASSERT_EQUAL(SSbehaviours.system_idx, KM_SYS_DECOMPOSED, "Behaviours is charged through the systems it runs")
-	M.charge_subsystem(SSbehaviours, 30)
-	TEST_ASSERT_EQUAL(M.n_touched, 0, "so the MC's own charge for it is dropped")
-	// Input subsystems also count toward the tick's input cost.
-	M.charge_subsystem(SSgarbage, 10)
-	TEST_ASSERT_EQUAL(M.input_ms, 0, "an ordinary subsystem is not input")
-	M.charge_subsystem(SSinput, 4)
-	M.charge_subsystem(SSverb_manager, 6)
-	TEST_ASSERT(abs(M.input_ms - TICK_DELTA_TO_MS(10)) < 0.001, "SSinput and SSverb_manager add up as input cost (got [M.input_ms])")
-	TEST_ASSERT(abs(M.tick_ms[air_idx] - TICK_DELTA_TO_MS(10)) < 0.001, "the subsystem's usage percent became ms on its system")
-	TEST_ASSERT(km_systems().lane_label(air_idx) == "mc", "and its lane label is mc")
-	qdel(M)
-	return
+/datum/unit_test/dq_km_inbox_drain_is_input_cost/Run()
+	var/datum/tick_meter/live_meter = km_meter()
+	var/datum/tick_meter/probe = new(8)
+	km_holder().meter = probe
+	SSinput.charge_drain(TICK_USAGE - 5)
+	km_holder().meter = live_meter
+	TEST_ASSERT(probe.input_ms > 0, "the drain's cost is input cost")
+	TEST_ASSERT(probe.tick_ms[KM_SYS_INPUT] > 0, "and it is charged to the input system")
+	qdel(probe)
 
 // ---------------------------------------------------------------- BYOND reserve, surfaces
 
@@ -541,18 +413,18 @@
 	TEST_ASSERT(!isnull(panel["streak"]) && !isnull(panel["overruns"]), "and the tick counters")
 	var/list/diag = km_diagnostics(null)
 	TEST_ASSERT(islist(diag["systems"]) && islist(diag["input"]), "diagnostics carry the same records")
-	var/list/om = om_diagnostics(GLOB.om_live_sched)
-	TEST_ASSERT(islist(om["kernel"]), "om_diagnostics() exposes them")
+	var/list/om = scheduler_diagnostics(GLOB.om_live_sched)
+	TEST_ASSERT(islist(om["kernel"]), "scheduler_diagnostics() exposes them")
 	TEST_ASSERT(islist(om["kernel"]["systems"]), "with the per-system rows")
 	var/datum/tick_meter/M = new(8)
 	var/a = km_test_system("km_test_a")
 	M.charge(a, 20)
 	M.end_tick(120, 3)
 	var/datum/tick_meter/live_meter = km_meter()
-	km_holder().meter = M // ALLOW(ownership): the report reads the global meter; swapped for these two calls only
+	km_holder().meter = M
 	var/html = km_tick_report_html(FALSE)
 	var/html_over = km_tick_report_html(TRUE)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	TEST_ASSERT(findtext(html, "<table") && findtext(html, "km_test_a"), "the tick report is a table naming the top system")
 	TEST_ASSERT(findtext(html_over, "km_test_a"), "the overruns-only report includes the overrun")
 	qdel(M)

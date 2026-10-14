@@ -1,0 +1,70 @@
+ai|none click: nothing
+human|/obj/item menu: Hit
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/bluespace_crystal menu: Flush
+human|/obj/item/bluespace_crystal menu: Hit
+human|/obj/item/bluespace_crystal menu: Move To Top
+human|/obj/item/bluespace_crystal menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/bluespace_crystal menu: Use
+human|/obj/item/bluespace_crystal menu: Yank the flush lever
+human|/obj/item/bluespace_crystal click: Click: Use
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Toggle Lock
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item/melee/energy/blade menu: Hit
+human|/obj/item/melee/energy/blade menu: Slice open
+human|/obj/item/melee/energy/blade menu: Toggle Lock
+human|/obj/item/melee/energy/blade click: Click: Slice open
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/pda menu: Hit
+human|/obj/item/pda menu: Toggle
+human|/obj/item/pda menu: Toggle Lock
+human|/obj/item/pda click: Click: Toggle
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Label
+human|/obj/item/pen menu: Toggle Open
+human|/obj/item/pen click: Click: Label
+human|/obj/item/shovel menu: Hit
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Search for sticks
+human|/obj/item/shovel menu: Take a present
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel click: Click: Use
+human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack click: Click: Pad
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material menu: Hit
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: Click: Use
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|none click: nothing
+robot|none click: nothing

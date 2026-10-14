@@ -38,7 +38,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	var/slime_icon = 'icons/mob/slime2.dmi'
 	. = list()
 	var/image/body = image(slime_icon, "slime [is_wide ? "adult" : "baby"]")
-	body.color = rgb(H.r_skin, H.g_skin, H.b_skin)
+	body.color = H.looks.skin_color
 	body.appearance_flags |= (RESET_COLOR | PIXEL_SCALE)
 	. += body
 	if(H.stat == DEAD)
@@ -82,7 +82,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	if(!isturf(loc))
 		to_chat(src, span_warning("You need more space to perform this action!"))
 		return
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || restrained())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || restrained())
 		to_chat(src, span_warning("You can only do this while not stunned."))
 		return
 	if(F.is_form(/datum/form/promethean_blob))
@@ -96,9 +96,9 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(B) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
 	B.is_wide = !B.is_wide
 	if(B.is_wide)
 		visible_message(span_infoplain(span_bold("[name]") + " flows outwards, their goop expanding!"))
@@ -112,9 +112,9 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
-	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(B) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
 	B.shiny = !B.shiny
 	if(B.shiny)
 		visible_message(span_infoplain(span_bold("[name]") + " glistens and sparkles, shining brilliantly."))
@@ -126,13 +126,15 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	set name = "Select Body Colour"
 	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
-	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
+	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 2.5 SECONDS)
-	om_ask(src, /datum/om/prompt/color, PROC_REF(prommie_colour_chosen), message = "Please select a new body color.", title = "Shapeshifter Colour", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
+	cooldown_start(src, last_special, 2.5 SECONDS)
+	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/prommie_colour_chosen(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
+/mob/living/carbon/human/proc/prommie_colour_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
-	shapeshifter_set_colour(ask.picked_color)
+	if(!A.answer.value)
+		return
+	shapeshifter_set_colour(A.answer.value)
 	get_forms()?.refresh_appearance()

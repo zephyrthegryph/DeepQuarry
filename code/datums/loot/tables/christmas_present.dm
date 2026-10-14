@@ -2,6 +2,5 @@
 // it carries every tier and setting it had, inherited ones included.
 
 // Stuff you may find attached the christmals tree
-DECLARE_LOOT(/loot/christmas_tree, \
-	LOOT_TABLE(\
-		/obj/item/a_gift/advanced))
+CAPABILITIES(/loot/christmas_tree)
+	loot(table = list(/obj/item/a_gift/advanced))

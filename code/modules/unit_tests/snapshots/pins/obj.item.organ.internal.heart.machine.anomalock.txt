@@ -1,0 +1,25 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.organ.internal human|/obj/item/tool/screwdriver
+-menu: Swap mount
+-click: Click: Swap mount
++1 menu: Remove core (refused: no core!)
++3 click: Click: Remove core
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj.item.organ human|/obj/item
+@obj human|/obj/item/reagent_containers
+human|/obj/item/assembly/signaler/anomaly menu: Move To Top
+human|/obj/item/assembly/signaler/anomaly menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler/anomaly click: nothing
+keys: bite, butcher, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, install_core, kit_customize, kit_customize_last, move_to_top, pick_up_item, remove_core, revive, toggle_digestable

@@ -108,13 +108,13 @@
 
 /datum/unit_test/dq_diagnosis_fake_death/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.status_flags |= FAKEDEATH
+	H.set_status_flags(H.status_flags | FAKEDEATH)
 	var/datum/diagnosis/basic = _diagnose(H, /datum/diagnostic_profile/health_analyzer)
 	var/datum/diagnosis/admin = _diagnose(H, /datum/diagnostic_profile/admin)
 	TEST_ASSERT_EQUAL(basic.status, DIAG_STATUS_DEAD, "an analyzer should read a feigned death as dead")
 	TEST_ASSERT_EQUAL(basic.heart_rate, 0, "an analyzer should read a flat pulse on a feigned death")
 	TEST_ASSERT_EQUAL(admin.status, DIAG_STATUS_ALIVE, "the admin profile sees through feigned death")
-	H.status_flags &= ~FAKEDEATH
+	H.set_status_flags(H.status_flags & ~FAKEDEATH)
 	_qdel_reports(basic, admin)
 
 

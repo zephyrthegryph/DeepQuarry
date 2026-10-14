@@ -5,6 +5,26 @@
 /mob/new_player
 	var/datum/news_panel/dq_news_panel_cache
 
+CAPABILITIES(/mob/new_player)
+	owns_one(nameof(dq_news_panel_cache), /datum/news_panel)
+	owns_one(nameof(late_choices_dialog), /datum/tgui_module/late_choices)
+	owns_one(nameof(lobby_window), /datum/tgui_window)
+	owns_one(nameof(manifest_dialog), /datum/tgui_module/crew_manifest/new_player)
+	owns_one(nameof(poll_browser_dialog), /datum/poll_browser_dialog)
+	owns_one(nameof(privacy_poll_dialog), /datum/privacy_poll_dialog)
+	interface("LobbyMenu", state = nameof(GLOB.tgui_always_state), pinned = TRUE, preinitialized = TRUE)
+	without("ui_open")
+	op("character_setup", ui_act("character_setup"), then(PROC_REF(ui_act_character_setup)))
+	op("ready", ui_act("ready"), then(PROC_REF(ui_act_ready)))
+	op("manifest", ui_act("manifest"), then(PROC_REF(ui_act_manifest)))
+	op("late_join", ui_act("late_join"), then(PROC_REF(ui_act_late_join)))
+	op("observe", ui_act("observe"), asks(/datum/prompt/choice/lobby_observe, fields = list("title" = "Observe Round?", "question" = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later."), step = "observe", when = PROC_REF(round_observable)), then(PROC_REF(ui_act_observe)))
+	op("give_feedback", ui_act("give_feedback"), then(PROC_REF(ui_act_give_feedback)))
+	op("open_station_news", ui_act("open_station_news"), then(PROC_REF(ui_act_open_station_news)))
+	op("open_changelog", ui_act("open_changelog"), then(PROC_REF(ui_act_open_changelog)))
+	op("keyboard", ui_act("keyboard"), then(PROC_REF(ui_act_keyboard)))
+	op("start_immediately", ui_act("start_immediately"), then(PROC_REF(ui_act_start_immediately)))
+
 /datum/news_panel
 	var/mob/new_player/host
 	var/datum/feed_channel/channel
@@ -13,19 +33,20 @@
 	rel_set(src, nameof(host), host_mob)
 	rel_set(src, nameof(channel), CHANNEL)
 
-DECLARE_UI_STATE(/datum/news_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/news_panel, "LatestNews", UI_TITLE("Latest News"))
+CAPABILITIES(/datum/news_panel)
+	ref_one(nameof(host), /mob/new_player)
+	ref_one(nameof(channel), /datum/feed_channel)
+	interface("LatestNews", title = "Latest News", state = nameof(GLOB.tgui_always_state))
+	op("next", ui_act("next"), then(PROC_REF(ui_act_next)))
+	op("prev", ui_act("prev"), then(PROC_REF(ui_act_prev)))
 
 /datum/news_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:text,page:bool,total:num,has_messages:bool,title:text,author:text,body:text}")
-
-/// The computed part of /datum/news_panel's window data (declared on its UI_DATA row).
-/datum/news_panel/proc/ui_data_datum_news_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/news_panel's window data.
+/datum/news_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!host || !channel)
 		return data
@@ -40,15 +61,14 @@ UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:
 		data["body"] = M.body
 	return data
 
-/datum/news_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/news_panel/proc/ui_gate(datum/act/op/A)
 	if(!host || !channel)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/news_panel, "next", ui_act_next)
-UI_ACT_PROC(/datum/news_panel, ui_act_next)
+/datum/news_panel/proc/ui_act_next(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!host.current_news_page || !channel.messages || host.current_news_page == channel.messages.len)
 		return TRUE
 	host.current_news_page++
@@ -56,8 +76,9 @@ UI_ACT_PROC(/datum/news_panel, ui_act_next)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/news_panel, "prev", ui_act_prev)
-UI_ACT_PROC(/datum/news_panel, ui_act_prev)
+/datum/news_panel/proc/ui_act_prev(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!host.current_news_page || !channel.messages || host.current_news_page <= 1)
 		return TRUE
 	host.current_news_page--
@@ -69,7 +90,7 @@ UI_ACT_PROC(/datum/news_panel, ui_act_prev)
 	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())
 		return
 	if(!dq_news_panel_cache)
-		own_set(src, nameof(dq_news_panel_cache), new /datum/news_panel(src, CHANNEL))
+		rel_set(src, nameof(dq_news_panel_cache), new /datum/news_panel(src, CHANNEL))
 	else
 		rel_set(dq_news_panel_cache, nameof(dq_news_panel_cache.channel), CHANNEL)
 	if(!current_news_page && length(CHANNEL.messages))

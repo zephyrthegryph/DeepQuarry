@@ -4,7 +4,7 @@
 
 
 /datum/events
-	var/list/events = list() // ALLOW(instance_list): d: event bus state
+	var/list/events = list() // ALLOW(instance_list): the event table is live per-bus state: always in use, so a lazy list saves nothing
 
 /datum/events/proc/addEventType(event_type as text)
 	if(!(event_type in events) || !islist(events[event_type]))

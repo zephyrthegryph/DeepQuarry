@@ -1,0 +1,43 @@
+/// The outlet's multitool asks the ejection range (an asks() step): a closed outlet is refused, an answer sets the range, a late close refuses it.
+/datum/unit_test/round2_disposal_outlet_range_request/Run()
+	test_driver_begin()
+	check_outlet()
+	test_driver_end()
+
+/datum/unit_test/round2_disposal_outlet_range_request/proc/check_outlet()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/obj/structure/disposaloutlet/outlet = allocate(/obj/structure/disposaloutlet, run_loc_floor_bottom_left)
+	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
+	var/obj/item/multitool/tool = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
+	var/original_range = outlet.eject_range
+	actor.put_in_active_hand(tool) // the multitool's question keeps the tool in hand
+	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, tool, TOOL_MULTITOOL), ITEM_INTERACT_BLOCKING, "A closed outlet refuses configuration")
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "A refused configuration asks nothing")
+	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER), ITEM_INTERACT_SUCCESS, "The screwdriver opens the outlet")
+
+	cooldown_set_end(actor, next_click, 0)
+	test_click(actor, outlet, tool)
+	var/datum/prompt/number/disposal_outlet_range/ask = SSrequests.open_for(actor)
+	TEST_ASSERT(istype(ask), "The multitool asks the range")
+	TEST_ASSERT_EQUAL(ask.default, original_range, "The question offers the current range")
+	test_answer(actor, 2.5)
+	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "A numeric answer sets the range")
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The answered question is closed")
+
+	cooldown_set_end(actor, next_click, 0)
+	test_click(actor, outlet, tool)
+	ask = SSrequests.open_for(actor)
+	TEST_ASSERT(istype(ask), "A second use asks again")
+	outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER)
+	test_answer(actor, 4)
+	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "Closing the outlet before the answer refuses it: the range is kept")
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "The refused question ends")
+
+	outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER)
+	cooldown_set_end(actor, next_click, 0)
+	test_click(actor, outlet, tool)
+	ask = SSrequests.open_for(actor)
+	TEST_ASSERT(istype(ask), "Reopened, the multitool asks again")
+	test_answer(actor, null, REQ_CANCELLED)
+	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "Cancelling the question keeps the range")
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "Cancelling removes the question")

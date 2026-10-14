@@ -1,7 +1,6 @@
 //copy pasta of the space piano, don't hurt me -Pete
 /obj/item/instrument
 	name = "generic instrument"
-	force = 10
 	icon = 'icons/obj/musician.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_instruments.dmi',
@@ -15,10 +14,18 @@
 	/// How far away our song datum can be heard.
 	var/instrument_range = 15
 
+CAPABILITIES(/obj/item/instrument)
+	configure(item_combat(force = 10))
+	owns_one(nameof(song), /datum/song/handheld, starts = PROC_REF(make_song))
+	op("controls", in_hand(), label("Open instrument controls"), then(PROC_REF(instrument_controls_opened)))
+
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
+
+/// The starting song (owns_one(starts =)).
+/obj/item/instrument/proc/make_song(current)
+	return new /datum/song/handheld(src, allowed_instrument_ids, instrument_range)
 
 
 /obj/item/instrument/proc/can_play(atom/music_player)
@@ -31,15 +38,13 @@
 		return FALSE
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/instrument/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/instrument/proc/instrument_controls_opened(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
-		return TRUE
+		return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/instrument/ui_redirect(mob/user)
 	return song
@@ -48,8 +53,10 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	name = "space violin"
 	desc = "A wooden musical instrument with four strings and a bow. \"The devil went down to space, he was looking for an assistant to grief.\""
 	icon_state = "violin"
-	hitsound = SFX_SWING_HIT
 	allowed_instrument_ids = "violin"
+
+CAPABILITIES(/obj/item/instrument/violin)
+	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/instrument/violin/golden
 	name = "golden violin"
@@ -62,30 +69,38 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "xylophone"
 	allowed_instrument_ids = "xylophone"
 
+CAPABILITIES(/obj/item/instrument/xylophone)
+	configure(item_combat(attack_verbs = list("smashed")))
+
 /obj/item/instrument/banjo
 	name = "banjo"
 	desc = "A 'Mura' brand banjo. It's pretty much just a drum with a neck and strings."
 	icon_state = "banjo"
-	attack_verb = list("scruggs-styled", "hum-diggitied", "shin-dug", "clawhammered")
-	hitsound = SFX_WEAPONS_BANJOSLAP
 	allowed_instrument_ids = "banjo"
+
+CAPABILITIES(/obj/item/instrument/banjo)
+	configure(item_combat(attack_verbs = list("scruggs-styled", "hum-diggitied", "shin-dug", "clawhammered")))
+	configure(item_sounds(hit = SFX_WEAPONS_BANJOSLAP))
 
 /obj/item/instrument/guitar
 	name = "guitar"
 	desc = "It's made of wood and has bronze strings."
 	icon_state = "guitar"
-	attack_verb = list("played metal on", "serenaded", "crashed", "smashed")
-	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = list("guitar","csteelgt","cnylongt", "ccleangt", "cmutedgt")
+
+CAPABILITIES(/obj/item/instrument/guitar)
+	configure(item_combat(attack_verbs = list("played metal on", "serenaded", "crashed", "smashed")))
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/eguitar
 	name = "electric guitar"
 	desc = "Makes all your shredding needs possible."
 	icon_state = "eguitar"
-	force = 12
-	attack_verb = list("played metal on", "shreded", "crashed", "smashed")
-	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = "eguitar"
+
+CAPABILITIES(/obj/item/instrument/eguitar)
+	configure(item_combat(force = 12, attack_verbs = list("played metal on", "shreded", "crashed", "smashed")))
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/glockenspiel
 	name = "glockenspiel"
@@ -109,8 +124,9 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	name = "spectral trumpet"
 	desc = "Things are about to get spooky!"
 	icon_state = "spectral_trumpet"
-	force = 0
-	attack_verb = list("played", "jazzed", "trumpeted", "mourned", "dooted", "spooked")
+
+CAPABILITIES(/obj/item/instrument/trumpet/spectral)
+	configure(item_combat(force = 0, attack_verbs = list("played", "jazzed", "trumpeted", "mourned", "dooted", "spooked")))
 
 /obj/item/instrument/trumpet/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_EN4)
@@ -126,8 +142,9 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	name = "spectral saxophone"
 	desc = "This spooky sound will be sure to leave mortals in bones."
 	icon_state = "saxophone"
-	force = 0
-	attack_verb = list("played", "jazzed", "saxed", "mourned", "dooted", "spooked")
+
+CAPABILITIES(/obj/item/instrument/saxophone/spectral)
+	configure(item_combat(force = 0, attack_verbs = list("played", "jazzed", "saxed", "mourned", "dooted", "spooked")))
 
 /obj/item/instrument/saxophone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_SAXOPHONE_EN4)
@@ -143,8 +160,9 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	name = "spectral trombone"
 	desc = "A skeleton's favorite instrument. Apply directly on the mortals."
 	icon_state = "trombone"
-	force = 0
-	attack_verb = list("played", "jazzed", "tromboneed", "mourned", "dooted", "spooked")
+
+CAPABILITIES(/obj/item/instrument/trombone/spectral)
+	configure(item_combat(force = 0, attack_verbs = list("played", "jazzed", "tromboneed", "mourned", "dooted", "spooked")))
 
 /obj/item/instrument/trombone/spectral/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	play_sfx(src, SFX_RUNTIME_INSTRUMENTS_TROMBONE_CN4)
@@ -153,18 +171,22 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/instrument/recorder
 	name = "recorder"
 	desc = "Just like in school, playing ability and all."
-	force = 5
 	icon_state = "recorder"
 	allowed_instrument_ids = "recorder"
+
+CAPABILITIES(/obj/item/instrument/recorder)
+	configure(item_combat(force = 5))
 
 /obj/item/instrument/harmonica
 	name = "harmonica"
 	desc = "For when you get a bad case of the space blues."
 	icon_state = "harmonica"
 	allowed_instrument_ids = list("crharmony", "harmonica")
-	slot_flags = SLOT_MASK
-	force = 5
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/instrument/harmonica)
+	configure(item_worn(slots = SLOT_MASK))
+	configure(item_combat(force = 5))
 /obj/item/instrument/bikehorn
 	name = "gilded bike horn"
 	desc = "An exquisitely decorated bike horn, capable of honking in a variety of notes."
@@ -174,22 +196,24 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 		slot_r_hand_str = 'icons/mob/items/righthand_horns.dmi',
 	)
 	allowed_instrument_ids = list("bikehorn", "honk")
-	attack_verb = list("beautifully honked")
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	throw_speed = 3
 	throw_range = 15
-	hitsound = SFX_ITEMS_BIKEHORN
+
+CAPABILITIES(/obj/item/instrument/bikehorn)
+	configure(item_combat(attack_verbs = list("beautifully honked"), force = 0))
+	configure(item_sounds(hit = SFX_ITEMS_BIKEHORN))
 
 /obj/item/instrument/musicalmoth
 	name = "musical moth"
 	desc = "Despite its popularity, this controversial musical toy was eventually banned due to its unethically sampled sounds of moths screaming in agony."
 	icon_state = "mothsician"
 	allowed_instrument_ids = "mothscream"
-	attack_verb = list("fluttered", "flaped")
 	w_class = ITEMSIZE_SMALL
-	force = 0
-	hitsound = SFX_VOICE_MOTH_SCREAM_MOTH
+
+CAPABILITIES(/obj/item/instrument/musicalmoth)
+	configure(item_combat(attack_verbs = list("fluttered", "flaped"), force = 0))
+	configure(item_sounds(hit = SFX_VOICE_MOTH_SCREAM_MOTH))
 
 //////////////Fluff items
 
@@ -205,13 +229,14 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/musician_yw.dmi'
 	icon_state = "keyboard"
 	item_state = "keyboard"
-	attack_verb = list("smashed")
 	allowed_instrument_ids = "piano"
+
+CAPABILITIES(/obj/item/instrument/keytar)
+	configure(item_combat(attack_verbs = list("smashed")))
 
 /obj/item/instrument/xylophone
 	name = "xylophone"
 	desc = "A percussion instrument consisting of a series of wooden bars graduated in length."
 	icon = 'icons/obj/musician_yw.dmi'
 	icon_state = "xylophone"
-	attack_verb = list("smashed")
 	allowed_instrument_ids = "xylophone"

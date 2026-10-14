@@ -46,7 +46,6 @@
 	mob_size = MOB_SMALL
 	friendly = list("hugs")
 	see_in_dark = 8
-	can_climb = TRUE
 	climbing_delay = 2.0
 
 	ID_provided = TRUE
@@ -60,7 +59,6 @@
 	var/obj/item/clothing/head/hat = null // Scughat.
 	var/can_wear_hat = TRUE				  // Some have inbuilt hats
 
-	allow_mind_transfer = TRUE
 
 	vore_active = 1
 	vore_capacity = 1
@@ -79,7 +77,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/catslug/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot slick gut of a catslug!! Copious slime smears over you as you’re packed away into the gloom and oppressive humidity of this churning gastric sac. The pressure around you is intense, the squashy flesh bends and forms to your figure, clinging to you insistently! There’s basically no free space at all as your ears are filled with the slick slide of flesh against flesh and the burbling of gastric juices glooping all around you. The thumping of a heart booms from somewhere nearby, making everything pulse in against you in time with it! This is it! You’ve been devoured by a catslug!!!"
 	B.mode_flags = 40
@@ -106,31 +104,40 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		/obj/item/perfect_tele_beacon, \
 		))
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_movement(can_climb = TRUE))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("catslug_item", item(/obj/item), then(PROC_REF(catslug_interaction_item)))
+	op("catslug_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(catslug_interaction_hand_help)))
+	op("catslug_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(catslug_interaction_hand_grab)))
 
-/mob/living/simple_mob/vore/alienanimals/catslug/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+/// The help-stance input of catslug_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_help(datum/act/op/A)
+	return catslug_interaction_hand(A, I_HELP)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
-	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(catslug_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(catslug_interaction_hand)))
+/// The grab-stance input of catslug_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_grab(datum/act/op/A)
+	return catslug_interaction_hand(A, I_GRAB)
+
 
 /// Old attackby: hats and feeding.
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(O, user)
 		return
 	else if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return FALSE
+		return OP_DECLINE
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return
@@ -154,23 +161,24 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	play_sfx(src, SFX_ITEMS_EATFOOD)
 
 /// Old attack_hand; subtypes override this proc.
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		if(interaction.stance == I_GRAB && hat)
+		return OP_DECLINE
+	if(stance != I_HELP)
+		if(stance == I_GRAB && hat)
 			remove_hat(M)
 			return
-		return FALSE
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on the head.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
@@ -178,7 +186,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -186,7 +194,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused nibbles at %T%'s hand experimentally.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You boop %T% on the nose.")), \
 			MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
@@ -194,7 +202,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub their prodded snoot.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -203,21 +211,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/alienanimals/catslug/appearance_overlays()
-	. = list()
-	. += ..()
-
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7
-		I.color = hat.color
-		I.appearance_flags = RESET_COLOR | KEEP_APART
-		I.blend_mode = BLEND_OVERLAY
-		. += I
+/// The hat it wears.
+/mob/living/simple_mob/vore/alienanimals/catslug/draw(datum/look/look)
+	..()
+	look.hat(hat, -7)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)
 	if(!istype(new_hat))
@@ -229,28 +228,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	else if(!can_wear_hat)
 		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
 	else
-		if(!own_set(src, nameof(src.hat), new_hat, user = user))
+		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
-		update_icon()
 		return
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/remove_hat(mob/living/user)
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name]. How mean."))
-		update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
+	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Login()	//If someone plays as us let's just be a passive mob in case accidents happen if the player D/Cs
 	. = ..()
@@ -263,13 +259,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	om_ask(src, /datum/om/prompt/color, PROC_REF(catslug_color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(catslug_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color && !picked_color)
-		color = ask.picked_color
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value && !picked_color)
+		color = A.answer.value
 		picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
 
@@ -277,23 +274,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	icon = 'icons/mob/alienanimals_x32.dmi'
 	item_state = "catslug"
 
-/obj/item/holder/catslug/Initialize(mapload, mob/held)
-	. = ..()
-	color = held.color
+/obj/item/holder/catslug/take_held(mob/held)
+	..()
+	if(held)
+		color = held.color
 
 //Custom Catslugs and the Rascal's Pass bunch
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom
 	desc = "A noodley bodied creature with thin arms and legs, and gloomy dark eyes. You shouldn't ever see this."
-	makes_dirt = 0
-	digestable = 0
 	humanoid_hands = 1	//These should all be ones requiring admin-intervention to play as, so they can get decent tool-usage, as a treat.
 	var/siemens_coefficient = 1 		//Referenced later by others.
 	can_wear_hat = FALSE
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/hide)
-DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color) //Most of these have custom sprites with colour already, so we'll not let them have this.
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
+	configure(mob_movement(makes_dirt = 0))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, hidden = TRUE) //Most of these have custom sprites with colour already, so we'll not let them have this.
 
 /datum/category_item/catalogue/fauna/catslug/custom/spaceslug
 	name = "Alien Wildlife - Catslug - Miros"
@@ -341,20 +340,21 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 /datum/say_list/catslug/custom/spaceslug
 	speak = list("Have any porl?", "What is that?", "What kind of ship is that?", "What are you doing?", "How did you get here?", "Don't take off your helmet.", "SPAAAAAACE!", "WAOW!", "Nice weather we're having, isn't it?")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		return FALSE
+		return OP_DECLINE
+	if(stance != I_HELP)
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -362,7 +362,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -370,7 +370,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -378,7 +378,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy, accidently pressing a few of the buttons on their chestpiece in the process... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -387,7 +387,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow, frantically pressing at the buttons %T% so carelessly pushed!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/item/holder/catslug/custom/spaceslug
 	item_state = "spaceslug"
@@ -441,20 +441,21 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 /datum/say_list/catslug/custom/engislug
 	speak = list("Have any porl?", "What is that?", "Phoroncheck!", "Thump is mean work fine!", "What are you doing?", "How did you get here?", "Don't breathe in the spicy purple.", "Zap-zap ball bad.", "WAOW!", "The pipes make sense.")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		return FALSE
+		return OP_DECLINE
+	if(stance != I_HELP)
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -462,7 +463,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -470,7 +471,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -478,7 +479,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -487,7 +488,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/item/holder/catslug/custom/engislug
 	item_state = "engislug"
@@ -684,13 +685,6 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 /obj/item/holder/catslug/custom/capslug
 	item_state = "capslug"
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/Initialize(mapload) 		//This is such an awful proc, but if someone wants it better they're welcome to have a go at it.
-	. = ..()
-	mob_radio.set_frequency(PUB_FREQ)
-	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-
 //=============================================================================
 //Admin-spawn only catslugs below - Expect overpowered things & silliness below
 //=============================================================================
@@ -718,11 +712,6 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 
 	player_msg = "You work in the service of corporate Asset Protection, answering directly to the Board of Directors and Asset Protection Commandos."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(DTH_FREQ) 			//Can't tell if bugged, deathsquad freq in general seems broken
-	myid.access |= SSaccess.get_all_station_access()
-
 //Syndicate catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug
 	name = "Mercenyary"
@@ -749,15 +738,6 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 
 	player_msg = "You are in the employ of a criminal syndicate hostile to corporate interests. Follow the Mercenary or Commando's orders and assist them in their goals by any means available."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(SYND_FREQ)
-	mob_radio.syndie = TRUE
-	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
-
 //ERT catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug
 	name = "Emeowgency Responder"
@@ -780,17 +760,8 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	maxbodytemp = 5000
 
 	player_msg = "You are an <b>anti</b> antagonist! Within the rules, try to save the station and its inhabitants from the ongoing crisis. Try to make sure other players have <i>fun</i>! \
-	If you are status_units(EFFECT_CONFUSED) or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! \
+	If you are status_units(STAT_CONFUSED) or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! \
 	Think through your actions and make the roleplay immersive! <b>Please remember all rules aside from those without explicit exceptions apply to the ERT.</b>"
-
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(ERT_FREQ)
-	mob_radio.centComm = 1
-	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
 
 //Pilot Catslug
 
@@ -804,18 +775,25 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 
 	can_wear_hat = TRUE
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/Initialize(mapload)
-	. = ..()
-	if(prob(25))
-		var/list/possible_targets = list()
-		for(var/obj/machinery/computer/ship/helm/h in world)
-			if(h.z in using_map.player_levels)
-				possible_targets |= h
-		if(!length(possible_targets))
-			return
-		var/final = pick(possible_targets)
-		forceMove(get_turf(final))
-		ghostjoin = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
+	rolls(nameof(takes_a_helm), chance(25))
+	after_init(0, then(PROC_REF(take_a_helm))) // once the map has loaded: the helms are placed
+
+/// One in four Purrvericks start at a ship's helm (rolls()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/var/takes_a_helm = FALSE
+
+/// Sits at a random helm on a player level, open to ghosts (after_init()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/proc/take_a_helm(datum/act/timer/A)
+	if(!takes_a_helm)
+		return
+	var/list/possible_targets = list()
+	for(var/obj/machinery/computer/ship/helm/h in world)
+		if(h.z in using_map.player_levels)
+			possible_targets |= h
+	if(!length(possible_targets))
+		return
+	forceMove(get_turf(pick(possible_targets)))
+	set_ghostjoin(TRUE)
 
 /datum/category_item/catalogue/fauna/catslug/custom/pilotslug
 	name = "Alien Wildlife - Catslug - Navigator Purrverick"
@@ -997,7 +975,6 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	icon_living = "suslug"
 	icon_rest = "suslug_rest"
 	icon_dead = "suslug_dead"
-	var/image/eye_image
 	var/is_impostor = FALSE
 	EXPIRY_DECLARE(kill_cooldown)
 	can_wear_hat = FALSE
@@ -1005,21 +982,13 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor
 	is_impostor = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/update_icon()
+/// Its glowing-free eyes, untinted by the body colour.
+/mob/living/simple_mob/vore/alienanimals/catslug/suslug/draw(datum/look/look)
 	..()
-	update_suslug_eyes()
-
-/mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/update_suslug_eyes()
-	cut_overlay(eye_image)
-	eye_image = image(icon,null,"[icon_state]-eyes")
-	eye_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-	add_overlay(eye_image)
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]-eyes", appearance_flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)))
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/can_ventcrawl()
 	if(!is_impostor)
@@ -1128,7 +1097,43 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/livin
 	color = COLOR_WHEAT
 */
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug, "mob_radio", /obj/item/radio/headset/mob_headset)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug, "mob_radio", /obj/item/radio/headset/mob_headset)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/responseslug)
+
+// The special catslugs' headsets: their channel and key.
+/obj/item/radio/headset/mob_headset/capslug
+	frequency = PUB_FREQ
+	ks2type = /obj/item/encryptionkey/heads/captain // might not be able to speak, but the catslug can listen
+
+/obj/item/radio/headset/mob_headset/deathslug
+	frequency = DTH_FREQ
+
+/obj/item/radio/headset/mob_headset/syndislug
+	frequency = SYND_FREQ
+	syndie = TRUE
+	ks2type = /obj/item/encryptionkey/syndicate
+
+/obj/item/radio/headset/mob_headset/responseslug
+	frequency = ERT_FREQ
+	centComm = 1
+	ks2type = /obj/item/encryptionkey/ert
+
+/// The space slugs' cards open every station door as well.
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+

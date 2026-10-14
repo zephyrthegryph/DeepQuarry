@@ -1,0 +1,2 @@
+/mob/hidden
+	loc = T

@@ -7,10 +7,7 @@
 	circuit = /obj/item/circuitboard/algae_farm
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100		// Minimal lights to keep algae alive
-	active_power_usage = 5000	// Powerful grow lights to stimulate oxygen production
 	//power_rating = 7500			//7500 W ~ 10 HP
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
@@ -32,69 +29,93 @@
 	var/datum/gas_mixture/internal
 	var/const/input_gas = GAS_CO2
 	var/const/output_gas = GAS_O2
+	/// It has work each service interval: switched on and working, with algae, room for graphite and CO2 to convert (reconsider()).
+	var/working = FALSE
 
-/// Switched to active (grow lights on) and operable: it converts while this holds.
-OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, list("operable", "use_power"))
+TRACKED(/obj/machinery/atmospherics/binary/algae_farm, working)
+
+
+CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	configure(uses_power(channel = EQUIP, idle = 100, active = 5000))
+	owns_one(nameof(internal), /datum/gas_mixture, starts = /datum/gas_mixture, starts_args = NO_LOC)
+	interface("AlgaeFarm")
+	part_replacement()
+	gas_watch(air = nameof(air1), changed = PROC_REF(gas_changed), mask = GAS_DEPENDENCY_COMPOSITION)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(farm_step)), when = nameof(working))
+	on_change(nameof(use_power), ANY, then(PROC_REF(reconsider)))
+	op("load", item(/obj/item/stack/material), label("Insert materials"), wait(0), then(PROC_REF(materials_loaded)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("ejectMaterial", ui_act("ejectMaterial", arg("mat", schema_text(4096))), then(PROC_REF(ui_act_ejectmaterial)))
+
+/// Switched to active (grow lights on) and operable.
 /obj/machinery/atmospherics/binary/algae_farm/proc/farming()
 	return operable() && use_power >= USE_POWER_ACTIVE
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PIPELINE, "farming")
-
 /// Not farming: clear the error and report only the idle draw (what the step did when it parked).
 /obj/machinery/atmospherics/binary/algae_farm/proc/show_idle_readout()
-	recent_moles_transferred = 0
+	set_recent_moles_transferred(0)
 	ui_error = null
 	if(use_power == USE_POWER_IDLE)
-		last_power_draw = idle_power_usage
+		last_power_draw = power_of(src).idle
 	else
 		last_power_draw = 0
-	update_icon()
 
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
-	update_icon()
-	// TODO - Make these in actual icon states so its not silly like this
-	var/image/I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = dir)
-	I.color = PIPE_COLOR_BLUE
-	add_overlay(I)
-	I = image(icon = icon, icon_state = "algae-pipe-overlay", dir = GLOB.reverse_dir[dir])
-	I.color = PIPE_COLOR_BLACK
-	add_overlay(I)
 
 /obj/machinery/atmospherics/binary/algae_farm/power_change()
 	. = ..()
 	if(.)
-		if(!farming())
-			show_idle_readout()
+		reconsider()
 
-/obj/machinery/atmospherics/binary/algae_farm/machine_step()
-	..()
-	recent_moles_transferred = 0
-	last_power_draw = active_power_usage
+/// Its input's gas changed (its gas watch): it looks again whether it has work.
+/obj/machinery/atmospherics/binary/algae_farm/proc/gas_changed(list/observation, index)
+	reconsider()
+
+/// Whether it has work: farming, with algae, room for graphite and CO2 on its input (or left inside). Idle, it shows its idle readout.
+/obj/machinery/atmospherics/binary/algae_farm/proc/reconsider(datum/act/A)
+	var/now = farming() && stored_material[MAT_ALGAE] >= algae_per_mole && stored_material[MAT_GRAPHITE] + carbon_per_mole <= storage_capacity[MAT_GRAPHITE] \
+		&& LINDA_GAS_AMT(air1, input_gas) + LINDA_GAS_AMT(internal, input_gas) >= MINIMUM_MOLES_TO_FILTER
+	set_working(now)
+	if(!farming())
+		show_idle_readout()
+		return
+	// Switched on with nothing to do: its readout says why (its gas watch parks it before a step could).
+	if(stored_material[MAT_ALGAE] < algae_per_mole)
+		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
+	else if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
+		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
+	else if(!now)
+		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
+	else
+		ui_error = null
+
+/// One service interval of farming (its every(), while it has work).
+/obj/machinery/atmospherics/binary/algae_farm/proc/farm_step(datum/act/A)
+	set_recent_moles_transferred(0)
+	last_power_draw = power_of(src).active
 
 	// STEP 1 - Check material resources
 	if(stored_material[MAT_ALGAE] < algae_per_mole)
 		ui_error = "Insufficient [material_display_name(MAT_ALGAE)] to process."
-		update_icon()
-		return PROCESS_KILL // loading or ejecting materials wakes it
+		reconsider()
+		return
 	if(stored_material[MAT_GRAPHITE] + carbon_per_mole > storage_capacity[MAT_GRAPHITE])
 		ui_error = "[material_display_name(MAT_GRAPHITE)] output storage is full."
-		update_icon()
-		return PROCESS_KILL // loading or ejecting materials wakes it
+		reconsider()
+		return
 	var/moles_to_convert = min(moles_per_tick,\
 		stored_material[MAT_ALGAE] * algae_per_mole,\
 		storage_capacity[MAT_GRAPHITE] - stored_material[MAT_GRAPHITE])
 
 	// STEP 2 - Take the CO2 out of the input!
 	var/power_draw = scrub_gas(src, list(input_gas), air1, internal, moles_to_convert)
-	if(network1)
-		network1.mark_dirty()
+	gas_touched(air1)
 	if (power_draw > 0)
 		use_power(power_draw)
 		last_power_draw += power_draw
@@ -103,9 +124,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PI
 	var/co2_moles = LINDA_GAS_AMT(internal, input_gas)
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
-		update_icon()
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
-		return PROCESS_KILL
+		reconsider()
+		return
 
 	// STEP 4 - Consume the resources
 	var/converted_moles = min(co2_moles, moles_per_tick)
@@ -117,65 +137,29 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PI
 	// STEP 5 - Output the converted oxygen. Fow now we output for free!
 	internal.adjust_gas(input_gas, -converted_moles)
 	air2.adjust_gas_temp(output_gas, converted_moles, internal.return_temperature())
-	if(network2)
-		network2.mark_dirty()
-	recent_moles_transferred = converted_moles
+	gas_touched(air2)
+	set_recent_moles_transferred(converted_moles)
 	ui_error = null // Success!
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-{appearance_mode}")
 
-/obj/machinery/atmospherics/binary/algae_farm/proc/appearance_mode()
-	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
-		return "off"
-	return recent_moles_transferred > 0 ? "full" : "on"
-
-/obj/machinery/atmospherics/binary/algae_farm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/algae_farm_part_replacement,
-		/datum/interaction/machine_item/algae_farm_load_materials,
-		/datum/interaction/machine_item/algae_farm_reject,
-		/datum/interaction/machine_hand/open_ui,
-	)
+/obj/machinery/atmospherics/binary/algae_farm/draw(datum/look/look)
 	..()
+	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
+		look.state("algae-off")
+	else
+		look.state(recent_moles_transferred > 0 ? "algae-full" : "algae-on")
+	// TODO - Make these in actual icon states so its not silly like this
+	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
+	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = GLOB.reverse_dir[dir], color = PIPE_COLOR_BLACK))
 
-/// Old attackby: default_part_replacement branch, kept with its add_fingerprint.
-/datum/interaction/machine_item/algae_farm_part_replacement
-	id = "algae_farm_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_part_replacement_impl
+/obj/machinery/atmospherics/binary/algae_farm/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(anchored), nameof(recent_moles_transferred))
 
-/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/// Old attackby: try_load_materials branch.
-/datum/interaction/machine_item/algae_farm_load_materials
-	id = "algae_farm_load_materials"
-	name = "Insert materials"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials
-
-/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_load_materials(mob/user, obj/item/stack/material/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	try_load_materials(user, held)
-	MACHINE_WAKE(src)
-	return TRUE
-
-/// Old attackby: the final "anything else" branch.
-/datum/interaction/machine_item/algae_farm_reject
-	id = "algae_farm_reject"
-	name = "Insert"
-	held_type = /obj/item
-	effect = /obj/machinery/atmospherics/binary/algae_farm/proc/interaction_reject
-
-/obj/machinery/atmospherics/binary/algae_farm/proc/interaction_reject(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	to_chat(user, span_notice("You cannot insert this item into \the [src]!"))
-	return TRUE
+/obj/machinery/atmospherics/binary/algae_farm/proc/materials_loaded(datum/act/op/A)
+	try_load_materials(A.actor, A.held)
+	reconsider()
+	return OP_OK
 
 /obj/machinery/atmospherics/binary/algae_farm/RefreshParts()
 	..()
@@ -194,11 +178,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/algae_farm, "algae-{appea
 
 	moles_per_tick = initial(moles_per_tick) + (manip_rating**2 - 1)
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/algae_farm, "AlgaeFarm")
+/obj/machinery/atmospherics/binary/algae_farm/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["panelOpen"] = panel_open
+	data["last_flow_rate"] = last_flow_rate
+	data["last_power_draw"] = last_power_draw
+	data["usePower"] = use_power
+	data["errorText"] = ui_error
+	var/list/merged_1 = ui_data_obj_machinery_atmospherics_binary_algae_farm(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/algae_farm, "panelOpen=panel_open:num", "last_flow_rate:num", "last_power_draw:num", "usePower=use_power", "errorText=ui_error", "merge:ui_data_obj_machinery_atmospherics_binary_algae_farm{materials:list,inputDir:text,outputDir:text,input:list,output:list}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/algae_farm's window data (declared on its UI_DATA row).
+/// /obj/machinery/atmospherics/binary/algae_farm's window data.
 /obj/machinery/atmospherics/binary/algae_farm/proc/ui_data_obj_machinery_atmospherics_binary_algae_farm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -229,29 +222,19 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/algae_farm, "panelOpen=panel_
 
 	return data
 
-/obj/machinery/atmospherics/binary/algae_farm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_toggle)
+/obj/machinery/atmospherics/binary/algae_farm/proc/ui_act_toggle(datum/act/op/A)
 	if(use_power == USE_POWER_IDLE)
 		set_use_power(USE_POWER_ACTIVE)
 	else
 		set_use_power(USE_POWER_IDLE)
-		show_idle_readout()
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "ejectMaterial", ui_act_ejectmaterial, UI_ARG_TEXT("mat"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_ejectmaterial)
-	var/matName = params["mat"]
-	if(!(matName in stored_material))
-		return
-	eject_materials(matName, 0)
-	MACHINE_WAKE(src)
-	. = TRUE
+/obj/machinery/atmospherics/binary/algae_farm/proc/ui_act_ejectmaterial(datum/act/op/A, mat)
+	if(!(mat in stored_material))
+		return OP_OK
+	eject_materials(mat, 0)
+	reconsider()
+	return OP_OK
 
 // TODO - These should be replaced with materials datum.
 
@@ -329,21 +312,3 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_ejectmaterial)
 
 /obj/item/stack/material/algae/ten
 	amount = 10
-
-/// Out of input gas: wake once its input line holds enough of it to convert (the step-3 test).
-/obj/machinery/atmospherics/binary/algae_farm/proc/gas_wake_condition()
-	return LINDA_GAS_AMT(air1, input_gas) + LINDA_GAS_AMT(internal, input_gas) >= MINIMUM_MOLES_TO_FILTER
-
-/obj/machinery/atmospherics/binary/algae_farm/proc/wake_from_gas()
-	om_watch_disarm(src, "gas")
-	MACHINE_WAKE(src)
-
-/obj/machinery/atmospherics/binary/algae_farm/step_has_work()
-	return gas_wake_condition()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/binary/algae_farm/arm_wakes()
-	..()
-	if(air1)
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
-

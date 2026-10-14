@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Href gates are requirements: req_topic_token() and per-type topic needs replace topic_allowed()"
+  - refactor: "asks() fields can read an op argument with arg_of()"
+  - code_imp: "keeps_dead opt-outs audited against their handlers"

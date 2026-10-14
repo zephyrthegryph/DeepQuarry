@@ -1,0 +1,29 @@
+human|none menu: Melt
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Melt
+robot|none menu: Use
+robot|none click: Click: Use
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Melt
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Melt
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Melt
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Melt
+@obj.structure human|/obj/item/multitool
++1 menu: Melt
+@obj.structure human|/obj/item/weldingtool
++1 menu: Melt
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Melt
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Melt
+@obj.structure human|/obj/item/card/id
++1 menu: Melt
+@obj.structure human|/obj/item
++1 menu: Melt
+keys: drag_buckle, hand, item, melee_hit, melt

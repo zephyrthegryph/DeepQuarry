@@ -2,6 +2,9 @@
 /datum/game_mode/var/min_autotraitor_delay = 4200  // Approx 7 minutes.
 /datum/game_mode/var/max_autotraitor_delay = 12000 // Approx 20 minutes.
 /datum/game_mode/var/process_count = 0
+/// The round is playing: the mode's every() (mode_step) runs while this holds. SSticker sets it at round start and clears it when the round ends.
+/datum/game_mode/var/mode_running = FALSE
+TRACKED(/datum/game_mode, mode_running)
 
 /datum/game_mode/proc/get_usable_templates(list/supplied_templates)
 	var/list/usable_templates = list()
@@ -11,8 +14,8 @@
 			usable_templates |= A
 	return usable_templates
 
-/// The mode's periodic work every 2 s while the round plays (SSticker starts it at round start).
-/datum/game_mode/periodic_step()
+/// every(): the mode's periodic work every 2 s while mode_running (the round plays).
+/datum/game_mode/proc/mode_step(datum/act/timer/A)
 	// Slow this down a bit so latejoiners have a chance of being antags.
 	process_count++
 	if(process_count >= 10)
@@ -27,10 +30,10 @@
 
 /datum/game_mode/proc/try_latespawn(datum/mind/player, latejoin_only)
 
-	if(GLOB.emergency_shuttle_service.departed || !round_autoantag)
+	if(emergency_shuttle_departed() || !round_autoantag)
 		return
 
-	if(GLOB.emergency_shuttle_service.shuttle && (GLOB.emergency_shuttle_service.shuttle.moving_status == SHUTTLE_WARMUP || GLOB.emergency_shuttle_service.shuttle.moving_status == SHUTTLE_INTRANSIT))
+	if(SSemergency_shuttle.shuttle && (SSemergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP || SSemergency_shuttle.shuttle.moving_status == SHUTTLE_INTRANSIT))
 		return // Don't do anything if the shuttle's coming.
 
 	var/mills = round_duration_in_ds

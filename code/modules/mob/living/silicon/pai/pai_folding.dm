@@ -2,7 +2,7 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Unfold Chassis"
 
-	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))
+	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
 		return
 
 	if(loc != card)
@@ -13,7 +13,7 @@
 		var/obj/item/pda/ourpda = loc.loc
 		if(ourpda.pai == card)
 			ourpda.pai.forceMove(ourpda.loc)
-			own_take(ourpda, nameof(ourpda.pai))
+			rel_take(ourpda, nameof(ourpda.pai))
 			visible_message(span_warning("\The [card] ejects itself from \the [ourpda]."))
 		return
 	if(istype(loc.loc, /obj/item/storage/vore_egg))
@@ -29,11 +29,11 @@
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
 		to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't unfold yet."))
 		return
 
-	COOLDOWN_START(src, last_special, 100)
+	cooldown_start(src, last_special, 10 SECONDS)
 
 	if(istype(card.loc, /obj/machinery)) // this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
@@ -58,7 +58,7 @@
 		return 0 // .
 	else if(istype(card.loc,/obj/item/pda))
 		var/obj/item/pda/holder = card.loc
-		own_take(holder, nameof(holder.pai))
+		rel_take(holder, nameof(holder.pai))
 
 	src.forceMove(card.loc)
 	card.forceMove(src)
@@ -69,21 +69,20 @@
 		var/turf/T = get_turf(src)
 		if(istype(T)) T.visible_message(span_filter_notice(span_bold("[src]") + " folds outwards, expanding into a mobile form."))
 
-	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/pai_nom, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
-	update_icon()
+	grant(src, granted_verb(/mob/living/silicon/pai/proc/pai_nom), src)
+	grant(src, granted_verb(/mob/living/proc/vertical_nom), src)
 
 /mob/living/silicon/pai/verb/fold_up()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Collapse Chassis"
 
-	if(stat || has_status(EFFECT_SLEEPING) || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED))
+	if(stat || has_status(STAT_SLEEPING) || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED))
 		return
 
 	if(src.loc == card)
 		return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
 
@@ -91,8 +90,11 @@
 
 //I'm not sure how much of this is necessary, but I would rather avoid issues.
 /mob/living/silicon/pai/proc/close_up(silent= FALSE)
+	// A destroyed card has already cleared its incoming relation before pAI death runs.
+	if(!card)
+		return
 
-	COOLDOWN_START(src, last_special, 100)
+	cooldown_start(src, last_special, 10 SECONDS)
 
 	if(loc == card)
 		return
@@ -110,7 +112,7 @@
 	stop_pulling()
 
 	//stop resting
-	resting = 0
+	set_resting(0)
 
 	// If we are being held, handle removing our holder from their inv.
 	var/obj/item/holder/our_holder = loc
@@ -137,12 +139,11 @@
 		src.forceMove(card)
 
 	canmove = 1
-	resting = 0
-	icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
+	set_resting(0)
 	if(isopenspace(card.loc))
 		fall()
-	om_revoke(src, GRANT_VERB, /mob/living/silicon/pai/proc/pai_nom, src)
-	om_revoke(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
+	revoke(src, granted_verb(/mob/living/silicon/pai/proc/pai_nom), src)
+	revoke(src, granted_verb(/mob/living/proc/vertical_nom), src)
 
 /mob/living/silicon/pai/proc/is_folding_unsafe(check_location)
 	return isbelly(check_location) || istype(check_location, /obj/machinery) || istype(check_location, /obj/item/storage/vore_egg) || istype(check_location, /obj/item/pda)

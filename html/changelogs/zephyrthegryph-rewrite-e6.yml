@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Kernel: phase S (K S N U D P R G), a sixth world lane, the test clock and the driver's test_time, test_phase and test_drain."
+  - refactor: "The input inbox replaces SSinput, SSverb_manager, the speech controller and the click holdback: bounded per-client queues, coalescing, round-robin drain in phase K."
+  - code_imp: "Requests (open_request, request_answer), job() and safe_call; request_urgent is now kernel_urgent."

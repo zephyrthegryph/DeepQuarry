@@ -13,7 +13,7 @@
 	icon_state = "radiance"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_LIGHT
-	light_color = "#D9D900"
+	spell_light_color = "#D9D900"
 	spell_light_intensity = 5
 	spell_light_range = 3
 	modifier_type = /datum/body_effect/technomancer/corona

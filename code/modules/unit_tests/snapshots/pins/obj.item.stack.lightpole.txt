@@ -1,0 +1,19 @@
+@obj.item.stack human|none
+@obj.item.stack robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.stack human|/obj/item/tool/screwdriver
+@obj.item.stack human|/obj/item/tool/crowbar
+@obj.item.stack human|/obj/item/tool/wrench
+@obj.item.stack human|/obj/item/tool/wirecutters
+@obj.item.stack human|/obj/item/multitool
+@obj.item.stack human|/obj/item/weldingtool
+-menu: Use
+@obj.item.stack human|/obj/item/stack/cable_coil
+@obj.item.stack human|/obj/item/stack/material/steel
+@obj.item.stack human|/obj/item/card/id
+@obj.item.stack human|/obj/item/kit
+@obj.item.stack human|/obj/item/storage
+@obj human|/obj/item/gripper
+@obj human|/obj/item/stack
+keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lightpole_self, make, move_to_top, pick_up_item, split, toggle_digestable

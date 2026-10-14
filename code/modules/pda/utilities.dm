@@ -9,7 +9,7 @@
 	fon = !fon
 	name = fon ? "Disable Flashlight" : "Enable Flashlight"
 	pda().update_shortcuts()
-	pda().set_light(fon ? f_lum : 0)
+	set_glow(pda(), GLOW(fon ? f_lum : 0, null, null))
 	if(fon)
 		pda().add_overlay("light-o")
 	else
@@ -44,7 +44,7 @@
 		return
 	user.show_message(D.render_chat(), 1)
 	log_diagnosis(user, C, D)
-	qdel(D)
+	spent(D, user)
 
 /datum/data/pda/utility/scanmode/dna
 	base_name = "DNA Scanner"
@@ -69,7 +69,7 @@
 	else
 		to_chat(user, span_notice("Blood found on [A]. Analysing..."))
 		for(var/blood in blood_dna)
-			om_after(user, 15, TYPE_PROC_REF(/datum, om_chat), span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]"))
+			after(user, 1.5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, span_notice("Blood type: [blood_dna[blood]]\nDNA: [blood]")))
 
 /datum/data/pda/utility/scanmode/halogen
 	base_name = "Halogen Counter"

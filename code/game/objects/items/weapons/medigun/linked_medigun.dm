@@ -12,7 +12,7 @@
 			medigun_base_unit().replace_icon()
 			if(ismob(loc))
 				var/mob/user = loc
-				user.update_inv_back()
+				changed(src)
 
 /obj/item/bork_medigun/linked/forceMove(atom/destination, direction, movetime) //Forcemove override, ugh
 	if(destination == medigun_base_unit() || destination == medigun_base_unit().loc || isturf(destination))
@@ -28,15 +28,19 @@
 /obj/item/bork_medigun/linked/proc/checked_use(charge_amt)
 	return (medigun_base_unit().bcell && medigun_base_unit().bcell.checked_use(charge_amt))
 
-EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/bork_medigun/linked)
+	op("cancel_healing", in_hand(), then(PROC_REF(healing_cancelled)))
+	// One beam cycle a second; each cycle asks process_medigun() for the next. The user may walk while it runs; the wait draws nothing (the old task was hidden).
+	op("medigun_cycle", ai(), takes("patient", "filter", "ishealing"), silent_wait(), wait(1 SECOND, keeps = HELD | ALIVE), then(PROC_REF(process_medigun_timed_done)))
+	ref_one(nameof(medigun_base_unit), /obj/item/medigun_backpack)
 
-/// Old attack_self.
-/obj/item/bork_medigun/linked/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Preserve the linked device's existing two-hand update and cancellation state.
+/obj/item/bork_medigun/linked/proc/healing_cancelled(datum/act/op/A)
 	if(medigun_base_unit().is_twohanded())
 		update_twohanding()
 	if(busy)
 		busy = MEDIGUN_CANCELLED
-	return TRUE
+	return OP_OK
 
 /obj/item/bork_medigun/linked/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || (!active_hand && medigun_base_unit().is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)
@@ -118,7 +122,6 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 
 	rel_set(src, nameof(current_target), target)
 	busy = MEDIGUN_BUSY
-	update_icon()
 	var/myicon = "medbeam_basic"
 	var/mycolor = "#037ffc"
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/obj/borkmedigun.dmi', icon_state = myicon, time = 6000)
@@ -138,7 +141,6 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	rel_clear(src, nameof(current_target))
 
 	// Now clean up the effects.
-	update_icon()
 	QDEL_NULL(scan_beam)
 	target.filters -= filter
 	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
@@ -148,32 +150,25 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	om_task_start(/datum/om/task/timed/linked_process_medigun, user, user, receiver = src, H = H, filter = filter, ishealing = ishealing, hidden = TRUE)
-
-
-/datum/om/task/timed/linked_process_medigun
-	duration = 1 SECOND
-	flags = IGNORE_USER_LOC_CHANGE
-	complete_proc = /obj/item/bork_medigun/linked/proc/process_medigun_timed_done
-	var/mob/living/carbon/human/H
-	var/filter
-	var/ishealing
+	perform_op(user, src, "medigun_cycle", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = H, "filter" = filter, "ishealing" = ishealing))
 
 /// One beam cycle, decided by automated triage: every tag mended is one the patient's
 /// treatment demand asks for.
-/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/om/task/timed/linked_process_medigun/task)
-	var/mob/living/carbon/human/H = task.H
-	var/mob/user = task.actor
-	var/filter = task.filter
-	var/ishealing = task.ishealing
+/obj/item/bork_medigun/linked/proc/process_medigun_timed_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.arg("patient")
+	var/mob/user = A.actor
+	var/filter = A.arg("filter")
+	var/ishealing = A.arg("ishealing")
+	if(QDELETED(H))
+		return OP_FAILED
 	var/washealing = ishealing // Did we heal last cycle
 	ishealing = FALSE // The default is 'we didn't heal this cycle'
 	if(!checked_use(5))
 		to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-		return
+		return OP_FAILED
 	if(H.stat == DEAD)
 		process_medigun(H, user, filter)
-		return
+		return OP_OK
 	var/lastier = medigun_base_unit().slaser.get_rating()
 	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 	if(lastier >= 2)
@@ -181,16 +176,16 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 			H.apply_body_effect(/datum/body_effect/medbeameffect, 2 SECONDS)
 		if(demand?[TREAT_ANALGESIC] && checked_use(5))
 			H.mend(TREAT_ANALGESIC, 20)
-		if(H.has_status(EFFECT_WEAKENED) && checked_use(5))
-			H.status_adjust(EFFECT_WEAKENED, -1)
+		if(H.has_status(STAT_WEAKENED) && checked_use(5))
+			H.status_adjust(STAT_WEAKENED, -1)
 		if(lastier >= 3)
-			if(H.has_status(EFFECT_PARALYZED) && (checked_use(15)))
-				H.status_adjust(EFFECT_PARALYZED, -1)
+			if(H.has_status(STAT_PARALYZED) && (checked_use(15)))
+				H.status_adjust(STAT_PARALYZED, -1)
 
 	if(demand?[TREAT_OXYGENATION])
 		if(!checked_use(min(10, 10 * lastier)))
 			to_chat(user, span_warning("\The [src] doesn't have enough charge left to do that."))
-			return
+			return OP_FAILED
 		if(H.mend(TREAT_OXYGENATION, 10 * lastier))
 			ishealing = TRUE
 
@@ -200,13 +195,12 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	if(treated)
 		checked_use(min(10, treated))
 		ishealing = TRUE
-	medigun_base_unit().update_icon()
 
 	//Blood regeneration if there is some space
 	if(lastier >= 5)
 		if(H.vessel.get_reagent_amount("blood") < H.species.blood_volume)
 			var/datum/reagent/blood/B = locate_in_list(H.vessel.reagent_list, /datum/reagent/blood) //Grab some blood
-			B.volume += min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))// regenerate blood
+			B.set_volume(B.volume + (min(5, (H.species.blood_volume - H.vessel.get_reagent_amount("blood")))))// regenerate blood
 
 	if(ishealing != washealing) // Either we stopped or started healing this cycle
 		if(ishealing)
@@ -215,6 +209,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 			H.filters -= filter
 
 	process_medigun(H, user, filter, ishealing)
+	return OP_OK
 
 /// Relation view: medigun base unit (reads null once it is gone).
 /obj/item/bork_medigun/linked/proc/medigun_base_unit() as /obj/item/medigun_backpack

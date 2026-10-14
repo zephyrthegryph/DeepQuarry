@@ -1,0 +1,52 @@
+human|none menu: Climb On Table
+human|none menu: Optable interaction hand
+human|none click: Click: Optable interaction hand
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Climb On Table
++2 menu: Optable interaction hand
++4 click: Click: Optable interaction hand
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Climb On Table
+human|/obj/item/tool/screwdriver menu: Climb On Table
+human|/obj/item/tool/screwdriver menu: Optable interaction hand
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Optable interaction item
+human|/obj/item/tool/crowbar menu: Climb On Table
+human|/obj/item/tool/crowbar menu: Optable interaction hand
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Optable interaction item
+human|/obj/item/tool/wrench menu: Climb On Table
+human|/obj/item/tool/wrench menu: Optable interaction hand
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Optable interaction item
+human|/obj/item/tool/wirecutters menu: Climb On Table
+human|/obj/item/tool/wirecutters menu: Optable interaction hand
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Optable interaction item
+human|/obj/item/multitool menu: Climb On Table
+human|/obj/item/multitool menu: Optable interaction hand
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Optable interaction item
+human|/obj/item/weldingtool menu: Climb On Table
+human|/obj/item/weldingtool menu: Optable interaction hand
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Optable interaction item
+human|/obj/item/stack/cable_coil menu: Climb On Table
+human|/obj/item/stack/cable_coil menu: Optable interaction hand
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Optable interaction item
+human|/obj/item/stack/material/steel menu: Climb On Table
+human|/obj/item/stack/material/steel menu: Optable interaction hand
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Optable interaction item
+human|/obj/item/card/id menu: Climb On Table
+human|/obj/item/card/id menu: Optable interaction hand
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Optable interaction item
+human|/obj/item menu: Climb On Table
+human|/obj/item menu: Optable interaction hand
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Optable interaction item
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, optable_climb_onto, optable_interaction_drag, optable_interaction_hand, optable_interaction_item, robot_remote_blocked, silicon_hand

@@ -17,11 +17,11 @@
 	bound_height = 128
 	var/has_misc_overlay = TRUE
 
-/obj/structure/prop/altevian_jump_drive/Initialize(mapload)
-	.=..()
-	update_icon()
-
-DECLARE_APPEARANCE(/obj/structure/prop/altevian_jump_drive, "has_misc_overlay", list("1" = list(APPEARANCE_OVERLAYS = list("jump_drive_misc_anim_overlay"))))
+/// The look (the draw sweep: from its layers).
+/obj/structure/prop/altevian_jump_drive/draw(datum/look/look)
+	..()
+	if(has_misc_overlay == 1)
+		look.overlay("jump_drive_misc_anim_overlay")
 
 /obj/structure/prop/altevian_jump_drive/active
 	icon_state = "altevian_jump_drive-active"

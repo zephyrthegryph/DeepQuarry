@@ -1,5 +1,5 @@
 // Reactions on the kernel (code/datums/reactions/work.dm): every() as scheduled work with `when`, members= and
-// per-instance enrolment, urgent crossings through request_urgent(), notice cost accounting, the pooled notice,
+// per-instance enrolment, urgent crossings through kernel_urgent(), notice cost accounting, the pooled notice,
 // typed relations and the event coalescing defaults.
 
 // ---------------------------------------------------------------- fixtures
@@ -7,9 +7,7 @@
 /// A holder with a per-instance every() gated by a var, and a second one ordered after the first.
 /datum/rxw_pump
 	var/on = FALSE
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/steps = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/late = list()
 
 /datum/rxw_pump/reactions()
@@ -26,7 +24,6 @@
 /// The proc form of `when`.
 /datum/rxw_gate
 	var/open = FALSE
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/steps = list()
 
 /datum/rxw_gate/reactions()
@@ -46,9 +43,9 @@
 /obj/cap_fixture/rxw_holder
 	var/ticks = 0
 
-/obj/cap_fixture/rxw_holder/capabilities()
-	. = ..()
-	. += dx_test_cap(/datum/capability/dx_test/rxw, "rxw")
+/obj/cap_fixture/rxw_holder/declared_capabilities(list/into)
+	..()
+	into += dx_test_cap(/datum/capability/dx_test/rxw, "rxw")
 
 /obj/cap_fixture/rxw_holder/reactions()
 	. = ..()
@@ -239,7 +236,7 @@
 
 // ---------------------------------------------------------------- on_cross(urgent = TRUE)
 
-/// An urgent crossing is requested with request_urgent(): deduped per holder, the latest band carried, delivered
+/// An urgent crossing is requested with kernel_urgent(): deduped per holder, the latest band carried, delivered
 /// by the kernel's U phase as handler(band, previous_band).
 /datum/unit_test/dx_work_cross_urgent
 
@@ -296,8 +293,8 @@
 	TEST_ASSERT(W.event, "a notice reaction registers an event item")
 	TEST_ASSERT(!(W in K.items_of_phase(KERNEL_PHASE_P)), "which the kernel never schedules")
 	var/runs = W.runs
-	PUBLISH(F, /datum/notice/rx_fx, 1)
-	PUBLISH(F, /datum/notice/rx_fx, 2)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 1)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 2)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2", "delivered in publish order")
 	TEST_ASSERT_EQUAL(W.runs, runs + 2, "each delivery is counted on the item")
 	TEST_ASSERT(W.total_ms >= 0 && !isnull(W.cost), "with its cost")
@@ -313,7 +310,6 @@
 	TEST_ASSERT(N.is_pooled(), "a notice is a /datum/pooled")
 	TEST_ASSERT_EQUAL(N.pool_state, POOL_STATE_TAKEN, "taken")
 	TEST_ASSERT_EQUAL(N.mark, 9, "filled by take_notice")
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	N.source = N
 	N.release()
 	TEST_ASSERT_NULL(N.mark, "the base reset the field")
@@ -331,14 +327,14 @@
 	var/list/entry = own_table_of(A).entries[nameof(A.partner)]
 	TEST_ASSERT_EQUAL(entry[OWNE_TYPE], /datum/rxw_typed, "the declaration recorded its type")
 	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
+	set_global("dq_lifecycle_report_capture", capture)
 	TEST_ASSERT_NULL(rel_link(A, nameof(A.partner), S), "a rel_one write of another type is refused")
 	TEST_ASSERT_NULL(A.partner, "and nothing was written")
 	TEST_ASSERT_NULL(rel_link(A, nameof(A.others), S), "a rel_many write of another type is refused")
 	TEST_ASSERT(!length(A.others), "and nothing was added")
-	TEST_ASSERT_NULL(own_set(A, nameof(A.kept), S), "an owned write of another type is refused")
+	TEST_ASSERT_NULL(rel_set(A, nameof(A.kept), S), "an owned write of another type is refused")
 	TEST_ASSERT_NULL(A.kept, "and nothing was owned")
-	GLOB.dq_lifecycle_report_capture = null
+	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT_EQUAL(length(capture), 3, "each refusal was reported: [json_encode(capture)]")
 	TEST_ASSERT(findtext(capture[1], "declared"), "naming the declaration")
 	TEST_ASSERT_EQUAL(rel_link(A, nameof(A.partner), B), B, "the declared type is written")
@@ -347,15 +343,3 @@
 	TEST_ASSERT(B in A.others, "as a member")
 	rel_link(A, nameof(A.partner), null)
 	TEST_ASSERT_NULL(A.partner, "null clears a typed view")
-
-// ---------------------------------------------------------------- event defaults
-
-/// The state-invalidation event opts in to coalescing; occurrences keep the default.
-/datum/unit_test/dx_event_coalesce_audit
-
-/datum/unit_test/dx_event_coalesce_audit/Run()
-	var/datum/om/event/material_facts_changed/M = new
-	TEST_ASSERT(M.coalesce, "material_facts_changed is a state-invalidation signal: coalesced")
-	for(var/type in list(/datum/om/event/moved, /datum/om/event/examine, /datum/om/event/hitby))
-		var/datum/om/event/E = new type
-		TEST_ASSERT(!E.coalesce, "[type] is an occurrence: not coalesced")

@@ -1,5 +1,5 @@
 /obj/proc/cultify()
-	qdel(src)
+	spent(src)
 
 /obj/effect/decal/cleanable/blood/cultify()
 	return
@@ -47,7 +47,7 @@
 
 /obj/machinery/atmospherics/cultify()
 	if(src.invisibility != INVISIBILITY_MAXIMUM)
-		src.invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_density(FALSE)
 
 /obj/machinery/appliance/cooker/cultify()
@@ -62,30 +62,30 @@
 
 /obj/machinery/door/cultify()
 	if(invisibility != INVISIBILITY_MAXIMUM)
-		invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_density(FALSE)
 		anim(target = src, a_icon = 'icons/effects/effects.dmi', a_icon_state = "breakdoor", sleeptime = 10)
-		qdel(src)
+		destroyed(src)
 
 /obj/machinery/door/firedoor/cultify()
-	qdel(src)
+	spent(src)
 
 /obj/machinery/light/cultify()
 	replace_with(src, /obj/structure/cult/pylon)
 
 /obj/machinery/mech_sensor/cultify()
-	qdel(src)
+	spent(src)
 
 /obj/machinery/power/apc/cultify()
 	if(src.invisibility != INVISIBILITY_MAXIMUM)
-		src.invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 
 /obj/machinery/vending/cultify()
 	replace_with(src, /obj/structure/cult/forge)
 
 /obj/structure/bed/chair/cultify()
 	var/obj/structure/bed/chair/wood/wings/I = new(loc)
-	I.dir = dir
+	I.set_dir(dir)
 	..()
 
 /obj/structure/bed/chair/wood/cultify()
@@ -114,7 +114,7 @@
 /obj/singularity/cultify()
 	var/dist = max((current_size - 2), 1)
 	explosion(get_turf(src), dist, dist * 2, dist * 4)
-	qdel(src)
+	destroyed(src, null, "explosion")
 
 /obj/structure/shuttle/engine/heater/cultify()
 	new /obj/structure/cult/pylon(loc)
@@ -130,9 +130,5 @@
 	// Make it a wood-reinforced wooden table.
 	// There are cult materials available, but it'd make the table non-deconstructable with how holotables work.
 	// Could possibly use a new material var for holographic-ness?
-	material_static = get_material_by_name(MAT_WOOD)
-	reinforced_static = get_material_by_name(MAT_WOOD)
-	update_desc()
-	update_connections(1)
-	update_icon()
-	update_material()
+	set_layers(get_material_by_name(MAT_WOOD), get_material_by_name(MAT_WOOD))
+	refresh_layers()

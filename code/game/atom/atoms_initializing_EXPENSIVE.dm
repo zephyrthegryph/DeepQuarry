@@ -1,5 +1,5 @@
 /// Init this specific atom
-/datum/controller/subsystem/atoms/proc/InitAtom(atom/A, from_template = FALSE, list/arguments)
+/datum/system/atoms/proc/InitAtom(atom/A, from_template = FALSE, list/arguments)
 
 	var/the_type = A.type
 
@@ -11,7 +11,7 @@
 
 	// Map-time resolver (map_resolvers.dm): the atom's work happens here and it is detached,
 	// never initialized nor qdel'd.
-	if(A.map_resolver && map_resolve_instance(A))
+	if(GLOB.map_resolvers[the_type] && map_resolve_instance(A))
 		return TRUE
 
 	// This is handled and battle tested by dreamchecker. Limit to UNIT_TESTS just in case that ever fails.
@@ -23,6 +23,13 @@
 	var/bench_depth = benchmark_init_frame_begin()
 	#endif
 
+	// Phase 0 of the init contract: the starting occupants a type's code before `..()` reads (owns_*(early = TRUE)), before the chain runs.
+	var/datum/own_table/early_table = own_table_of(A)
+	if(early_table.early_vars)
+		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
+		if(QDELETED(A))
+			return TRUE
+
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.
 	var/result
@@ -31,6 +38,18 @@
 		result = INITIALIZE_HINT_NORMAL
 	else
 		result = A.Initialize(arglist(arguments))
+	// param(keep = FALSE) values were for Initialize() alone (code/engine/lifeforms/params.dm)
+	if(param_drop_pending?[A])
+		params_drop(A)
+	// keeps_if() (code/engine/lifeforms/keeps_if.dm): a failed condition is the atom's INITIALIZE_HINT_QDEL.
+	if(init_discard_pending?[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
+		result = INITIALIZE_HINT_QDEL
+	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
+	if(setup_pending?[A])
+		if(result == INITIALIZE_HINT_NORMAL)
+			setup_run(A)
+		else
+			setup_pending -= A
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)
@@ -46,44 +65,40 @@
 	switch(result)
 		if (INITIALIZE_HINT_NORMAL)
 			EMPTY_BLOCK_GUARD // Pass
-		if(INITIALIZE_HINT_LATELOAD)
-			if(arguments[1]) //mapload
-				// The running frame runs it after its last atom (atoms_batch.dm rule 2).
-				var/datum/materialize_batch/batch = active_batch
-				if(batch)
-					batch.late_loaders += A
-				else
-					late_loaders += A
-			else
-				A.LateInitialize()
 		if(INITIALIZE_HINT_QDEL)
-			qdel(A)
+			spent(A)
 			qdeleted = TRUE
 		else
 			BadInitializeCalls[the_type] |= BAD_INIT_NO_HINT
+
+	// after_init() entries (code/engine/actions/after_init.dm): Initialize() has returned, so they run now (made at runtime) or when the
+	// map-load frame closes (atoms_batch.dm rule 2). A deleted atom is only dropped from the waiting list.
+	if(after_init_pending?[A])
+		after_init_initialized(A, arguments[1])
 
 	if(!A) //possible harddel
 		qdeleted = TRUE
 	else if(!(A.flags & ATOM_INITIALIZED))
 		BadInitializeCalls[the_type] |= BAD_INIT_DIDNT_INIT
 	else
-		// L2 lifecycle: enter the live world. A mapload LateInitialize() is
+		// L2 lifecycle: enter the live world. A mapload after_init() is
 		// deferred to the end of the batch; materializing does not wait for it,
 		// so the registrations moved out of Initialize() keep their old timing.
 		if(!materialize_suppressed && !qdeleted && !QDELING(A))
 			// Type-table fast path (atom_type_table.dm): turfs have no on_materialize() of their
 			// own (tools/ci/init_lint.py keeps it so), so a turf whose type needs no registries,
 			// rules or OM is live once flagged. Most of the ~390 k map turfs take this path.
-			if(isturf(A) && !A.ledger && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
+			if(isturf(A) && !A.containment_ledger() && !(atom_type_table(A) & TYPE_TABLE_MATERIALIZE_WORK))
 				A.flags |= ATOM_MATERIALIZED
 			else
 				A.materialize()
 		var/atom/location = A.loc
 		if(location)
 			/// Emits that the new atom `src`, has been created at `loc`
-			OM_EMIT(location, /datum/om/event/atom_after_successful_initialized_on, A, arguments[1])
+			PUBLISH_LEGACY(location, /datum/notice/atom_after_successful_initialized_on, A, arguments[1])
+			RANGE_WATCH(location, RANGE_INITIALIZED, A, arguments[1])
 			// Created straight into a holder with a ledger: record it now (containment C1).
-			location.ledger?.note_enter(A)
+			location.containment_ledger()?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables
 			created_atoms += A.get_all_contents()
 
@@ -98,7 +113,7 @@
  *
  * Not a lot happens here in SS13 code, as we offload most of the work to the
  * [Initialization][/atom/proc/Initialize] proc, mostly we run the preloader
- * if the preloader is being used and then call [InitAtom][/datum/controller/subsystem/atoms/proc/InitAtom] of which the ultimate
+ * if the preloader is being used and then call [InitAtom][/datum/system/atoms/proc/InitAtom] of which the ultimate
  * result is that the Initialize proc is called.
  *
  */
@@ -107,10 +122,17 @@
 	if(GLOB.use_preloader && src.type == GLOB._preloader_path)//in case the instantiated atom is creating other atoms in New()
 		world.preloader_load(src)
 
+	// make() records and param(pos =) arguments write the instance's params before anything of the type runs (code/engine/lifeforms/params.dm).
+	var/list/init_args = args
+	if(length(args) > 1 && lifeform_new_args(src, args))
+		init_args = args.Copy()
+		init_args.Cut(2, 3) // the make() record is not an Initialize() argument
+	if(ismob(src))
+		profiles_build(src) // its profile records exist before its init writes them (code/engine/declare/profiles.dm)
 	var/do_initialize = SSatoms.atom_initialized
 	if(do_initialize != INITIALIZATION_INSSATOMS)
-		args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD
-		if(SSatoms.InitAtom(src, FALSE, args))
+		init_args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD
+		if(SSatoms.InitAtom(src, FALSE, init_args))
 			//we were deleted
 			return
 
@@ -174,27 +196,12 @@
 
 	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
 	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
-	lifecycle_decls_init(src)
+	lifecycle_decls_init(src, mapload)
 	// Capabilities' per-instance state, then the first look (code/datums/capabilities/).
-	caps_init(mapload)
+	caps_init(src, mapload)
 
 	/*
-	if (light_system == COMPLEX_LIGHT && light_power && light_range)
+	if (light_system == COMPLEX_LIGHT && glow_of(src).power && glow_of(src).range)
 		update_light()
 	*/
 	return INITIALIZE_HINT_NORMAL
-
-/**
- * Late Initialization, for code that should run after all atoms have run Initialization
- *
- * To have your LateIntialize proc be called, your atoms [Initialization][/atom/proc/Initialize]
- *  proc must return the hint
- * [INITIALIZE_HINT_LATELOAD] otherwise it will never be called.
- *
- * useful for doing things like finding other machines on REGISTRY_MEMBERS(REGISTRY_MACHINES) because you can guarantee
- * that all atoms will actually exist in the "WORLD" at this time and that all their Initialization
- * code has been run
- */
-/atom/proc/LateInitialize()
-	SHOULD_CALL_PARENT(FALSE)
-	stack_trace("[src] ([type]) called LateInitialize but has nothing on it!")

@@ -23,6 +23,9 @@
 	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
+CAPABILITIES(/datum/alarm)
+	owns_many(nameof(sources))
+
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)
 	rel_set(src, nameof(origin), origin)
 
@@ -38,7 +41,7 @@
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
 		if((AS.end_time && ELAPSED_SINCE(src, AS.end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED_SINCE(src, (AS.start_time + AS.duration), CLOCK_WORLD) > 0))
-			own_remove(src, nameof(sources), AS)
+			rel_remove(src, nameof(sources), AS)
 			continue
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
@@ -51,7 +54,7 @@
 	var/datum/alarm_source/AS = source_entry(source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
-		own_add(src, nameof(sources), AS)
+		rel_add(src, nameof(sources), AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)
@@ -63,7 +66,7 @@
 /datum/alarm/proc/clear(source)
 	var/datum/alarm_source/AS = source_entry(source)
 	if(AS)
-		own_remove(src, nameof(sources), AS) // disposes of it
+		rel_remove(src, nameof(sources), AS) // disposes of it
 
 /// The alarm_source entry for `source`, or null. sources is small, so a scan replaces the old entity-keyed lookup list.
 /datum/alarm/proc/source_entry(atom/source)

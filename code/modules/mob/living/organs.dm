@@ -3,13 +3,21 @@
 /mob/living
 	var/list/organs
 	var/list/organs_by_name // map organ names to organs
-	var/list/bad_external_organs // organs we check until they are good.
+
+/// The attached limb whose organ_tag is `tag`, or null: read from the `organs` relation so a look follows a limb attaching or leaving.
+/mob/living/proc/limb_tagged(tag)
+	RETURN_TYPE(/obj/item/organ/external)
+	for(var/obj/item/organ/external/E as anything in organs)
+		if(E.organ_tag == tag)
+			return E
+	return null
 
 /mob/living/proc/get_bodypart_name(zone)
 	var/obj/item/organ/external/E = get_organ(zone)
 	if(E) . = E.name
 
 /mob/living/proc/get_organ(zone)
+	RETURN_TYPE(/obj/item/organ/external)
 	if(!zone)
 		zone = BP_TORSO
 	else if (zone in list( O_EYES, O_MOUTH ))
@@ -29,7 +37,7 @@ TYPE_TABLE_DECLARE(/mob/living, butchery_organ_types, null)
 	for(var/path in TYPE_TABLE_GET(src, butchery_organ_types))
 		var/obj/item/organ/neworg = new path(src, TRUE)
 		neworg.name = "[name] [neworg.name]"
-		neworg.meat_type = meat_type
+		neworg.set_meat_type(meat_type)
 
 /mob/living/gib()
 	if(butchery_drops_organs)

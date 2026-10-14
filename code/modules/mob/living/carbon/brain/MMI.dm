@@ -9,7 +9,7 @@
 	req_access = list(ACCESS_ROBOTICS)
 
 	// The occupant (the mind's view mob) belongs to this MMI's mind host
-	// component (code/datums/entity_state/mind_host.dm); its status is read from
+	// component (code/modules/mob/mind_host.dm); its status is read from
 	// `brainobj` when there is one.
 
 	var/locked = 0
@@ -21,9 +21,18 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/mmi/Initialize(mapload)
-	. = ..()
-	make_mind_host()
+CAPABILITIES(/obj/item/mmi)
+	ref_one(nameof(mecha)) // the mech we are installed in
+	owns_one(nameof(body_backup), /mob/living)
+	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
+	owns_one(nameof(mind_host), /datum/mind_host, starts = when(cond_not(nameof(hosts_no_mind)), /datum/mind_host)) // it holds a mind
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("mmi_self", in_hand(), label("Upend"), then(PROC_REF(mmi_self)))
+	op("mmi_verb_toggle_radio", menu(), label("Toggle Brain Radio"), needs(carried()), then(PROC_REF(mmi_verb_toggle_radio)))
+
+/// An inert MMI hosts no mind (no mind host is made for it).
+/obj/item/mmi/var/hosts_no_mind = FALSE
 
 /// The occupant view mob (the hosted mind lives there), if any.
 /obj/item/mmi/proc/get_occupant()
@@ -34,7 +43,7 @@
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
 	if(B)
 		B.preserved = TRUE
-	own_set(src, nameof(src.brainobj), B, into = TRUE)
+	move_into(src, nameof(src.brainobj), B)
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 
@@ -52,14 +61,15 @@
 	var/mob/living/carbon/brain/view = get_occupant()
 	if(!view)
 		name = initial(name)
-		icon_state = "mmi_empty"
+		set_icon_state("mmi_empty")
 		return
 	name = "[initial(name)] ([view.real_name])"
-	icon_state = "mmi_full"
+	set_icon_state("mmi_full")
 	locked = 1
 
 /// Old Toggle Brain Radio verb: Enables or disables the integrated brain radio, which is only usable outside of a body.
-/obj/item/mmi/proc/mmi_verb_toggle_radio(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/proc/mmi_verb_toggle_radio(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
@@ -74,28 +84,24 @@
 	else
 		to_chat (user, "You were unable to toggle the [src]'s radio.")
 
-DECLARE_INTERACTIONS(/obj/item/mmi, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF("Upend", PROC_REF(mmi_self)), \
-	INTERACT_VERB("Toggle Brain Radio", PROC_REF(mmi_verb_toggle_radio), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/mmi/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/mmi/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	// An empty view with no brain behind it (left after its mind was released) doesn't block a new brain.
 	if(istype(O,/obj/item/organ/internal/brain) && (!occupant || (!occupant.mind && !brainobj))) //Time to stick a brain in it --NEO
 		var/obj/item/organ/internal/brain/B = O
 		if(B.is_brain_dead())
 			to_chat(user, span_warning("That brain is well and truly dead."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/living/carbon/brain/view = B.hosted_view()
 		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(view.identity().has_genetic_effect(/datum/body_effect/no_borg))	//Can't be shoved in an MMI.
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " sticks \a [O] into %T%."))
 		user.drop_item()
@@ -103,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 
 		feedback_inc("cyborg_mmis_filled",1)
 
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((istype(O,/obj/item/card/id)||istype(O,/obj/item/pda)) && occupant)
 		if(allowed(user))
@@ -111,11 +117,11 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the brain holder."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(occupant)
 		O.attack(occupant, user)//Oh noooeeeee
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// Seat a removed brain: the organ becomes the tissue and its view (with the
 /// mind) moves into this MMI. Nothing is copied.
@@ -129,9 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	update_occupied_state()
 
 /// Old attack_self: upend the MMI. Subtypes with special_handling fall through.
-/obj/item/mmi/proc/mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/proc/mmi_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!get_occupant())
 		to_chat(user, span_warning("You upend the MMI, but there's nothing in it."))
 	else if(locked)
@@ -145,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 /// organ keeps its lesions, so damage and treatment carry on.
 /obj/item/mmi/proc/eject_brain(atom/destination, reason = "ejected")
 	// Detached before it leaves our contents; set_brain(null) below then only drops the tissue.
-	var/obj/item/organ/internal/brain/brain = brainobj ? own_take(src, nameof(brainobj)) : null
+	var/obj/item/organ/internal/brain/brain = brainobj ? rel_take(src, nameof(brainobj)) : null
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
 	brain.preserved = FALSE
@@ -163,7 +170,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	return brain
 
 /obj/item/mmi/relaymove(mob/user, direction)
-	if(user.stat || user.has_status(EFFECT_STUNNED))
+	if(user.stat || user.has_status(STAT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(rig)
@@ -181,13 +188,12 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	name = "radio-enabled man-machine interface"
 	desc = "The Warrior's bland acronym, MMI, obscures the true horror of this monstrosity. This one comes with a built-in radio. Wait, don't they all?"
 
-DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
-
-/obj/item/mmi/proc/emp_interference(datum/damage_packet/packet)
+/obj/item/mmi/proc/emp_interference(datum/act/A)
+	var/datum/notice/hit/emp/N = A
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	if(!occupant)
 		return
-	switch(packet.severity)
+	switch(N.packet.severity)
 		if(EMP_HEAVY)
 			occupant.emp_damage += rand(20,30)
 		if(EMP_MEDIUM)
@@ -196,7 +202,7 @@ DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
 			occupant.emp_damage += rand(5,10)
 		if(EMP_HARMLESS)
 			occupant.emp_damage += rand(0,5)
-	changed(occupant, CHANGE_MOB_HEALTH) // wake the status stage to work off the interference
+	PUBLISH_CHANGE(occupant, MOB_KEY_HEALTH)
 
 /obj/item/mmi/digital
 	var/searching = 0
@@ -210,6 +216,11 @@ DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
 	///Var for attack_self chain
 	var/is_digital_robot = FALSE
 
+CAPABILITIES(/obj/item/mmi/digital)
+	owns_one(nameof(Q), /datum/ghost_query)
+	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
+	op("digital_mmi_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Boot"), then(PROC_REF(digital_mmi_self)))
+
 /obj/item/mmi/digital/Initialize(mapload)
 	. = ..()
 	// A synthetic mind host: an empty view waits for a mind, with no tissue.
@@ -218,15 +229,10 @@ DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
 //	view.add_language(LANGUAGE_ROBOT_TALK)//No binary without a binary communication device
 	view.add_language(LANGUAGE_GALCOM)
 	view.add_language(LANGUAGE_EAL)
-	view.status_set(EFFECT_MUTED, 0)
+	view.status_set(STAT_MUTED, 0)
 
 /obj/item/mmi/digital/update_occupied_state()
 	return
-
-EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
-	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
-	INTERACT_SELF("Boot", PROC_REF(digital_mmi_self)), \
-)
 
 /obj/item/mmi/digital/examine(mob/user)
 	. = ..()
@@ -253,34 +259,35 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 		view.set_stat(CONSCIOUS)
 
 /// Old attack_self: boot the device. Subtypes with is_digital_robot fall through.
-/obj/item/mmi/digital/proc/digital_mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/digital/proc/digital_mmi_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(is_digital_robot)
-		return FALSE
+		return OP_DECLINE
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	if(occupant && !occupant.key && searching == 0)
 		//Start the process of searching for a new user.
 		to_chat(user, span_blue("You carefully locate the manual activation switch and start the [src]'s boot process."))
 		request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/mmi/digital/proc/request_player()
 	if(!ghost_query_type)
 		return
 	searching = 1
 
-	own_set(src, nameof(Q), new ghost_query_type())
-	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+	rel_set(src, nameof(Q), new ghost_query_type())
+	observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 	Q.query()
 
-/obj/item/mmi/digital/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
-	EVENT_HANDLER
+/obj/item/mmi/digital/proc/get_winner(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		transfer_personality(D)
 	else
 		reset_search()
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
+	rel_clear(src, nameof(Q)) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	if(get_occupant()?.key)
@@ -321,10 +328,11 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	ghost_query_type = /datum/ghost_query/drone_brain
 	is_digital_robot = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
 /obj/item/mmi/digital/robot/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()
-	view.real_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]"
+	view.set_real_name("[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]")
 	view.name = view.real_name
 	view.identity().real_name = view.real_name
 	name = "[initial(name)] ([view.name])"
@@ -346,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	ghost_query_type = /datum/ghost_query/posi_brain
 
 /obj/item/mmi/digital/posibrain/request_player()
-	icon_state = "posibrain-searching"
+	set_icon_state("posibrain-searching")
 	..()
 
 /obj/item/mmi/digital/posibrain/take_identity(mob/living/L, move_mind = TRUE)
@@ -355,29 +363,29 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	if(view.mind)
 		view.mind.assigned_role = JOB_POSITRONIC_BRAIN
 	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're just a metal cube."))
-	icon_state = "posibrain-occupied"
+	set_icon_state("posibrain-occupied")
 
 /obj/item/mmi/digital/posibrain/transfer_personality(mob/candidate)
 	..()
-	icon_state = "posibrain-occupied"
+	set_icon_state("posibrain-occupied")
 
 /obj/item/mmi/digital/posibrain/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	..()
-	icon_state = "posibrain"
+	set_icon_state("posibrain")
 
+// ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
 /obj/item/mmi/digital/posibrain/Initialize(mapload)
 	. = ..()
 	var/mob/living/carbon/brain/view = get_occupant()
-	view.real_name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
+	view.set_real_name("[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]")
 	view.name = view.real_name
 	view.identity().real_name = view.real_name
 
 // This type hosts no mind.
 /obj/item/mmi/inert
 
-/obj/item/mmi/inert/Initialize(mapload)
-	. = ..()
-	own_clear(src, nameof(mind_host), OWN_DELETE)
+/obj/item/mmi/inert
+	hosts_no_mind = TRUE
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.
@@ -388,12 +396,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
 /obj/item/mmi/ownership()
 	. = ..()
 	. += owns(nameof(brainobj), policy = OWN_CONTAINED)
-
-/obj/item/mmi/relations()
-	. = ..()
-	. += rel_one(nameof(mecha)) // the mech we are installed in

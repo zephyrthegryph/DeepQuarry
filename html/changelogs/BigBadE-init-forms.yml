@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "Post-init work (the old LateInitialize) now runs from after_init() entries; start timers and capability lifecycle hooks use the final init forms."
+  - code_imp: "The init lint requires a reason code on an Initialize() override and bans LateInitialize()."

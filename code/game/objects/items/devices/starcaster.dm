@@ -16,21 +16,22 @@
 	var/datum/computer_file/data/news_article/loaded_article_owned //You must specify the variable this far to avoid compilation errors.
 	var/show_archived = null
 
+CAPABILITIES(/obj/item/starcaster_news)
+	owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article)
+	op("read_news", in_hand(), then(PROC_REF(reader_selected)), opens_ui())
+	interface("StarcasterCh")
+	op("PRG_openarticle", ui_act("PRG_openarticle", arg("uid", num())), then(PROC_REF(ui_act_prg_openarticle)))
+	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
+	op("PRG_toggle_archived", ui_act("PRG_toggle_archived"), then(PROC_REF(ui_act_prg_toggle_archived)))
 
 
-DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(interaction_self)))
 
-/obj/item/starcaster_news/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
-	tgui_interact(user) //Activates tgui. Bless tgui.
-	return
+/obj/item/starcaster_news/proc/reader_selected(datum/act/op/A)
+	A.actor.set_machine(src)
+	return OP_OK
 
-DECLARE_UI(/obj/item/starcaster_news, "StarcasterCh")
-
-UI_DATA_REPLACE(/obj/item/starcaster_news, "merge:ui_data_obj_item_starcaster_news{showing_archived:num,article:list,all_articles:list}")
-
-/// The computed part of /obj/item/starcaster_news's window data (declared on its UI_DATA row).
-/obj/item/starcaster_news/proc/ui_data_obj_item_starcaster_news(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/starcaster_news's window data.
+/obj/item/starcaster_news/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/all_articles = list()
@@ -55,24 +56,21 @@ UI_DATA_REPLACE(/obj/item/starcaster_news, "merge:ui_data_obj_item_starcaster_ne
 
 	return data
 
-UI_ACT(/obj/item/starcaster_news, "PRG_openarticle", ui_act_prg_openarticle, UI_ARG_NUM("uid"))
-UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_openarticle)
+/obj/item/starcaster_news/proc/ui_act_prg_openarticle(datum/act/op/A, uid)
 	. = TRUE
 	if(loaded_article())
 		return TRUE
 
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
-		if(N.uid == params["uid"])
-			own_set(src, nameof(/obj/item/starcaster_news::loaded_article_owned), N.clone())
+		if(N.uid == uid)
+			rel_set(src, nameof(/obj/item/starcaster_news::loaded_article_owned), N.clone())
 			break
 
-UI_ACT(/obj/item/starcaster_news, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_reset)
+/obj/item/starcaster_news/proc/ui_act_prg_reset(datum/act/op/A)
 	. = TRUE
-	own_clear(src, nameof(/obj/item/starcaster_news::loaded_article_owned), OWN_DELETE) // our private clone
+	rel_clear(src, nameof(/obj/item/starcaster_news::loaded_article_owned)) // our private clone
 
-UI_ACT(/obj/item/starcaster_news, "PRG_toggle_archived", ui_act_prg_toggle_archived)
-UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_toggle_archived)
+/obj/item/starcaster_news/proc/ui_act_prg_toggle_archived(datum/act/op/A)
 	. = TRUE
 	show_archived = !show_archived
 

@@ -1,0 +1,13 @@
+/obj/machinery/microwave icon: icons/obj/kitchen.dmi
+/obj/machinery/microwave state: mw
+/obj/machinery/microwave dir: 2
+/obj/machinery/microwave overlay: icons/obj/kitchen.dmi:mw:8:#000000
+/obj/machinery/microwave/cookingpot icon: icons/obj/kitchen.dmi
+/obj/machinery/microwave/cookingpot state: cookingpot
+/obj/machinery/microwave/cookingpot dir: 2
+/obj/machinery/microwave/cookingpot overlay: icons/obj/kitchen.dmi:cookingpot:8:#000000
+/obj/machinery/microwave/advanced icon: icons/obj/deluxemicrowave.dmi
+/obj/machinery/microwave/advanced state: mw
+/obj/machinery/microwave/advanced dir: 2
+/obj/machinery/microwave/advanced overlay: icons/obj/deluxemicrowave.dmi:mw:8:#000000
+

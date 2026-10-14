@@ -1,0 +1,18 @@
+@obj.machinery.embedded_controller human|none
+@obj.machinery.embedded_controller robot|none
+@obj.machinery.embedded_controller ai|none
+@obj ghost|none
+@obj.machinery.embedded_controller human|/obj/item/tool/screwdriver
+@obj.machinery.embedded_controller human|/obj/item/tool/crowbar
+@obj.machinery.embedded_controller human|/obj/item/tool/wrench
+@obj.machinery.embedded_controller human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Embedded controller open ui
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Embedded controller open ui
+@obj.machinery.embedded_controller human|/obj/item/weldingtool
+@obj.machinery.embedded_controller human|/obj/item/stack/cable_coil
+@obj.machinery.embedded_controller human|/obj/item/stack/material/steel
+@obj.machinery.embedded_controller human|/obj/item/card/id
+@obj.machinery.embedded_controller human|/obj/item
+keys: drag_buckle, edit_tag, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, set_frequency, silicon_hand, silicon_ui, ui_open, use_multitool

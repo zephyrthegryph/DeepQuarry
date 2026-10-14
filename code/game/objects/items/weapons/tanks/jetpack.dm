@@ -28,7 +28,10 @@
 	. = ..()
 	ion_trail.set_up(src)
 
-DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/item/tank/jetpack)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_rockets_effect", menu(), label("Toggle Jetpack Stabilization"), needs(carried()), then(PROC_REF(toggle_rockets_effect_op)))
+	op("jetpack_toggle_effect", menu(), label("Toggle Jetpack"), needs(carried()), then(PROC_REF(jetpack_toggle_effect_op)))
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()
@@ -36,23 +39,23 @@ DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/
 		. += span_danger("The meter on \the [src] indicates you are almost out of gas!")
 		play_sfx(src, SFX_EFFECTS_ALERT)
 
-/obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/jetpack/proc/toggle_rockets_effect(mob/user, obj/item/held)
 	stabilization_on = !( stabilization_on )
 	to_chat(user, "You toggle the stabilization [stabilization_on? "on":"off"].")
 
-/obj/item/tank/jetpack/proc/jetpack_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/jetpack/proc/jetpack_toggle_effect(mob/user, obj/item/held)
 
 	on = !on
 	if(on)
-		icon_state = "[icon_state]-on"
+		set_icon_state("[icon_state]-on")
 		ion_trail.start()
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		ion_trail.stop()
 
 	if (ismob(user))
 		var/mob/M = user
-		M.update_inv_back()
+		changed(src)
 		M.update_mob_action_buttons()
 
 	to_chat(user, "You toggle the thrusters [on? "on":"off"].")
@@ -115,6 +118,9 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 	name = "jetpack"
 	var/obj/item/rig/holder
 
+CAPABILITIES(/obj/item/tank/jetpack/rig)
+	ref_one(nameof(holder), /obj/item/rig)
+
 /obj/item/tank/jetpack/rig/examine()
 	. = ..()
 	. += "It's a jetpack. If you can see this, report it on the bug tracker."
@@ -126,7 +132,12 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 /obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
 	return holder
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/tank/jetpack, \
-	INTERACT_VERB("Toggle Jetpack Stabilization", PROC_REF(toggle_rockets_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Jetpack", PROC_REF(jetpack_toggle_effect), REQ_IN_INVENTORY), \
-)
+/// The toggle_rockets_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/tank/jetpack/proc/toggle_rockets_effect_op(datum/act/op/A)
+	toggle_rockets_effect(A.actor, A.held)
+	return OP_OK
+
+/// The jetpack_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/tank/jetpack/proc/jetpack_toggle_effect_op(datum/act/op/A)
+	jetpack_toggle_effect(A.actor, A.held)
+	return OP_OK

@@ -6,16 +6,15 @@
 	icon_state = "x4"
 	var/type_to_spawn = null
 
-MAP_RESOLVER(/obj/fiftyspawner, GLOBAL_PROC_REF(resolve_fiftyspawner))
-MAP_RESOLVER_VARS(/obj/fiftyspawner, "type_to_spawn")
+CAPABILITIES(/obj/fiftyspawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_fiftyspawner), vars = list("type_to_spawn"))
 
-/// MAP_RESOLVER for 50-stack spawners: a full stack, into the closet on the tile if any (or into
+/// The map resolver of 50-stack spawners: a full stack, into the closet on the tile if any (or into
 /// the crate a supply pack put the spawner in).
 /proc/resolve_fiftyspawner(atom/loc, path, list/varedits)
 	var/obj/fiftyspawner/P = path
 	var/stack_type = MAP_VAR(P, varedits, type_to_spawn)
 	var/obj/item/stack/M = new stack_type(map_spawn_container(loc), -1)
-	M.update_icon() // Some stacks have different sprites depending on how full they are.
 	if(varedits && ("pixel_y" in varedits))
 		M.pixel_y = varedits["pixel_y"]
 	return TRUE

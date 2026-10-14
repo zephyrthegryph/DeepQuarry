@@ -4,12 +4,12 @@
 	if(!host || !istype(host) || ai_mob_product) return
 
 	if(apply_color_to_mob)
-		host.color = traits[TRAIT_PRODUCT_COLOUR]
+		host.color = trait_values[TRAIT_PRODUCT_COLOUR]
 
 	var/datum/ghosttrap/plant/P = get_ghost_trap("living plant")
 	P.request_player(host, "Someone is harvesting [display_name]. ")
 
-	om_after(src, 75, PROC_REF(living_product_unclaimed), host)
+	after(src, 7.5 SECONDS, PROC_REF(living_product_unclaimed), with = list(host))
 
 /datum/seed/proc/living_product_unclaimed(mob/living/host)
 	if(QDELETED(host))

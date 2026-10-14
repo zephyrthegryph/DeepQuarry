@@ -30,7 +30,7 @@
 		potential_damage = (melee_damage_lower + melee_damage_upper) / 2
 
 		// Treat potential_damage as estimated DPS. If the enemy attacks twice as fast as usual, it will double the number.
-		potential_damage *= 1 SECOND / (base_attack_cooldown + melee_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
+		potential_damage *= 1 SECOND / (kind_of(src).attack_cooldown + melee_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
 	else
 		var/obj/item/projectile/P = new projectiletype(src)
 		if(P.nodamage || P.taser_effect) // Tasers are somewhat less scary.
@@ -41,9 +41,9 @@
 				potential_damage /= 2
 			// Rubber bullets, I guess.
 			potential_damage += P.agony / 2
-		qdel(P)
+		spent(P)
 
-		potential_damage *= 1 SECOND / (base_attack_cooldown + ranged_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
+		potential_damage *= 1 SECOND / (kind_of(src).attack_cooldown + ranged_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
 
 	// Special attacks are ultra-specific to the mob so a generic threat assessment isn't really possible.
 
@@ -87,7 +87,7 @@
 			threat *= 2 // Target cannot see src.
 
 	// Handle statuses.
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		threat /= 2
 
 	if(has_body_effect(/datum/body_effect/berserk))
@@ -128,7 +128,7 @@
 			threat *= 2 // Target cannot see src.
 
 	// Handle statuses.
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		threat /= 2
 
 	if(has_body_effect(/datum/body_effect/berserk))
@@ -172,7 +172,7 @@
 
 	else
 		var/weapon_attack_speed = get_attack_speed(I) / (1 SECOND)
-		var/weapon_damage = I.force * factor(BF_MELEE_DAMAGE)
+		var/weapon_damage = combat_of(I).force * factor(BF_MELEE_DAMAGE)
 
 		if(istype(I, /obj/item/gun))
 			will_point_blank = TRUE
@@ -186,7 +186,7 @@
 				if(will_point_blank && combat_mode)
 					weapon_damage *= 1.5
 				weapon_attack_speed = G.fire_delay / (1 SECOND)
-				qdel(P)
+				spent(P)
 			if(weapon_attack_speed == 0)
 				CRASH("[G.type], using [G.projectile_type] has a 0 fire delay!")
 		var/average_damage = weapon_damage / weapon_attack_speed
@@ -235,7 +235,7 @@
 		tension *= 10
 		return tension
 
-	if(has_status(EFFECT_CONFUSED))
+	if(has_status(STAT_CONFUSED))
 		tension *= 2
 
 	return tension

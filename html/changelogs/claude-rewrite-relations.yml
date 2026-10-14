@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Bluespace radio links, ghost following, throws, actions, spell buttons, leashes, camera eyes and borer hosts are declared links instead of om_link relations"

@@ -1,4 +1,3 @@
-OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 
 /mob/living/simple_mob/vore/ddraig
 	name = "ddraig"
@@ -76,7 +75,6 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/ddraig/faster
 	special_attack_cooldown = 10 SECONDS
@@ -85,21 +83,24 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	leap_warmup = 1 SECOND
 	movement_cooldown = -3
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/set_size)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/polymorph)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_invisibility)
+CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	immune_to_incapacitation()
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/proc/set_size, login = TRUE)
+	verb_entry(/mob/living/proc/polymorph, login = TRUE)
+	verb_entry(/mob/living/proc/glamour_invisibility, login = TRUE)
 
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/ddraig/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Despite the jaws of the dragon not being particular visible, once they begin to part it reveals a rather vast maw. More than wide enough to engulf your head and upper body, the ddraig lifts you effortlessly from the ground, standing up to full height with only your legs dangling from the beast's mouth. Inside you are engulfed in the wet, slimy and hot slobber of the creature. A massive tongue beneath your body curls over you to taste and lather every inch on offer. Soon enough, the dragon tosses its head backwards, sending your body beyond the throat, wrapped in the rippled lining of the creatures gullet for a slow, dark descent into the abyss below. It is a long journey through that seemingly endless neck, but eventually you are deposited in the creature's stomach. Little sound from the outside makes it inside, all drowned out by the cacophony of bodily functions groaning, burbling and beating around you. Despite the size of the beast, the gut is not massive, the walls clench down tight around your helplessly trapped body. The stomach lining grinds roughly over your body, smearing you in a slurry of slimy fluids."
 	B.vore_sound = "Tauric Swallow"
@@ -151,7 +152,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -159,40 +160,40 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(lunge_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(lunge_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge_1(mob/living/L)
 
-	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!L || L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(lunge_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(lunge_2), with = list(L), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
-	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(L && Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathstart(atom/A) //Borrowed from le big dragon
 	set_glow_toggle(1)
-	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color)) //Setting it here so the light starts immediately
 	flames = 1
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
 	do_windup_animation(A, charge_warmup)
-	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A), keeps_dead = TRUE)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
@@ -214,7 +215,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to shimmer with a rainbow hue!")))
 	do_windup_animation(A, tf_warmup)
-	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)
+	after(src, tf_warmup, PROC_REF(tfbeam_1), with = list(A))
 
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam_1(atom/A)
@@ -236,7 +237,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	if(M.tf_mob_holder)
 		M.revert_mob_tf()
@@ -248,7 +249,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 
 		M.tf_into(new_mob)
 
-		om_after(new_mob, 30 SECONDS, TYPE_PROC_REF(/mob/living, revert_mob_tf))
+		after(new_mob, 30 SECONDS, TYPE_PROC_REF(/mob/living, revert_mob_tf))
 
 /obj/item/projectile/beam/mouselaser/ddraig/spawn_mob(mob/living/target)
 	var/list/tf_list = list(/mob/living/simple_mob/animal/passive/mouse,
@@ -318,10 +319,13 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 									"Goose" = /mob/living/simple_mob/animal/space/goose
 									)
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(polymorph_chosen), title = "Choose Beast Form", message = "Which form would you like to take?", choices = beast_options, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(polymorph_chosen), answerer = src, title = "Choose Beast Form", question = "Which form would you like to take?", choices = beast_options, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/proc/polymorph_chosen(datum/om/prompt/choice/ask)
-	var/chosen_beast = ask.choice
+/mob/living/proc/polymorph_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ask = A.answer
+	var/chosen_beast = ask.value
 	var/list/beast_options = ask.choices
 
 	var/mob/living/M = src
@@ -337,28 +341,20 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 		return
 
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> begins significantly shifting their form."))
-	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
+	perform_op(src, src, "polymorph", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beast" = chosen_beast, "options" = beast_options))
 	return TRUE
 
-/datum/om/task/timed/living_polymorph_living
-	duration = 10 SECONDS
-	complete_proc = /mob/living/proc/polymorph_living_done
-	cancel_proc = /mob/living/proc/polymorph_living_failed
-	var/list/beast_options
-	var/chosen_beast
-
-/mob/living/proc/polymorph_living_done(datum/om/task/timed/living_polymorph_living/task)
-	var/list/beast_options = task.beast_options
-	var/chosen_beast = task.chosen_beast
+/mob/living/proc/polymorph_living_done(datum/act/op/A)
+	var/list/beast_options = A.arg("options")
+	var/chosen_beast = A.arg("beast")
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
+	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(coolanimation, chosen_beast, beast_options[chosen_beast]))
 
-/mob/living/proc/polymorph_living_failed(datum/om/task/timed/living_polymorph_living/task)
+/mob/living/proc/polymorph_living_failed(datum/act/op/A)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
-	return 0
 
 /mob/living/proc/spawn_polymorph_mob(chosen_beast)
 	var/tf_type = chosen_beast
@@ -389,7 +385,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
-		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/revert_beast_form), new_mob)
+		grant(new_mob, granted_verb(/mob/living/proc/set_size), new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")

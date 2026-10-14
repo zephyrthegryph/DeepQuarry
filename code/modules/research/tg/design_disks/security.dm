@@ -3,9 +3,10 @@
 	name = "security armory design disk"
 	desc = "A disk containing many, many, many bullets."
 
-/obj/item/disk/design_disk/security/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/disk/design_disk/security)
+	after_init(0, then(PROC_REF(load_security_designs)))
 
+/obj/item/disk/design_disk/security/proc/load_security_designs(datum/act/timer/A)
 	// Lets get all security nodes and put them on a disk.
 	// This way if bullets are disabled by default we can get a disk mapped instead.
 	var/list/process_nodes = list(
@@ -17,7 +18,7 @@
 		/datum/techweb_node/speedloaders::id
 	)
 	for(var/node_id in process_nodes)
-		var/datum/techweb_node/node = GLOB.research_service.techweb_node_by_id(node_id)
+		var/datum/techweb_node/node = SSresearch.techweb_node_by_id(node_id)
 		for(var/id in node.design_ids)
-			var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(id)
+			var/datum/design_techweb/design = SSresearch.techweb_design_by_id(id)
 			LAZYADD(blueprints, design)

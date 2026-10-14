@@ -1,0 +1,50 @@
+@obj.item.reagent_containers human|none
+@obj.item.reagent_containers robot|none
+@obj ai|none
+@obj.item.reagent_containers ghost|none
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/multitool
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/weldingtool
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+@obj.item.reagent_containers human|/obj/item/card/id
+-click: nothing
++0 menu: Hide it inside
++4 click: Click: Hide it inside
+@obj.item.reagent_containers human|/obj/item/kit
++1 menu: Hide it inside
+@obj.item.reagent_containers human|/obj/item/storage
+@obj.item.reagent_containers human|/obj/item
+@obj human|/obj/item/material/kitchen/utensil
++0 menu: Hide it inside
+@obj human|/obj/item/reagent_containers/food/snacks
+-menu: Add it
+-click: Click: Add it
++0 menu: Hide it inside
++1 menu: Make a pizza
++5 click: Click: Make a pizza
+keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, start_pizza, stuff, toggle_digestable, unwrap

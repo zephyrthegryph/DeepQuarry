@@ -22,6 +22,12 @@ SYSTEM_DEF(job)
 	var/list/shift_keys = list()
 	var/list/restricted_keys = list()
 
+TRACKED(/datum/system/job, occupations_by_name)
+TRACKED(/datum/system/job, type_occupations)
+
+CAPABILITIES(/datum/system/job)
+	ref_many(nameof(unassigned), /mob/new_player)
+
 /datum/system/job/proc/get_all_job_icons() //For all existing HUD icons
 	return occupation_with_excludes + GLOB.alt_titles_with_icons + list("Prisoner")
 
@@ -47,8 +53,8 @@ SYSTEM_DEF(job)
 		occupations += job
 		if(!(is_type_in_list(job, GLOB.exclude_jobs)))
 			occupation_with_excludes += job
-		occupations_by_name[job.title] = job
-		type_occupations[job_path] = job
+		set_occupations_by_name_at(job.title, job)
+		set_type_occupations_at(job_path, job)
 		if(LAZYLEN(job.departments))
 			add_to_departments(job)
 
@@ -182,9 +188,9 @@ SYSTEM_DEF(job)
 			job_debug_message("Player: [player] is now Rank: [rank], JCP:[job.current_positions], JPL:[position_limit]")
 			player.mind.assigned_role = rank
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 			job.current_positions++
-			if(job.camp_protection && round_duration_in_ds < GLOB.transfer_service.get_hard_end() - 30 MINUTES)
+			if(job.camp_protection && round_duration_in_ds < SStransfer.get_hard_end() - 30 MINUTES)
 				job.register_shift_key(player.client.ckey)
 			return TRUE
 	job_debug_message("AR has failed, Player: [player], Rank: [rank]")
@@ -267,7 +273,7 @@ SYSTEM_DEF(job)
 		if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
 			job_debug_message("GRJ Random job given, Player: [player], Job: [job]")
 			assign_role(player, job.title)
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 			break
 
 /datum/system/job/proc/reset_occupations()
@@ -276,7 +282,7 @@ SYSTEM_DEF(job)
 			player.mind.assigned_role = null
 			player.mind.special_role = null
 	setup_occupations()
-	unassigned = list()
+	rel_clear(src, nameof(unassigned))
 	return
 
 ///This proc is called before the level loop of DivideOccupations() and will try to select a head, ignoring ALL non-head preferences for every level until it locates a head or runs out of levels to check
@@ -352,14 +358,14 @@ SYSTEM_DEF(job)
 	//Get the players who are ready
 	for(var/mob/new_player/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.ready && player.mind && !player.mind.assigned_role)
-			unassigned += player
+			rel_add(src, nameof(unassigned), player)
 
 	job_debug_message("DO, Len: [length(unassigned)]")
 	if(!length(unassigned))
 		return FALSE
 
 	//Shuffle players and jobs
-	unassigned = shuffle(unassigned)
+	shuffle_inplace(unassigned)
 
 	handle_feedback_gathering()
 
@@ -398,7 +404,7 @@ SYSTEM_DEF(job)
 
 			// Loop through all jobs
 			for(var/datum/job/job in shuffledoccupations) // SHUFFLE ME BABY
-				if(!job || LAZYFIND(SSticker.mode.disabled_jobs, job.title) )
+				if(!job || LAZYFIND(ticker_mode().disabled_jobs, job.title) )
 					continue
 
 				if(jobban_isbanned(player, job.title))
@@ -421,7 +427,7 @@ SYSTEM_DEF(job)
 					if((job.current_positions < job.spawn_positions) || job.spawn_positions == -1)
 						job_debug_message("DO pass, Player: [player], Level:[level], Job:[job.title]")
 						assign_role(player, job.title)
-						unassigned -= player
+						rel_remove(src, nameof(unassigned), player)
 						break
 
 	// Hand out random jobs to the people who didn't get any in the last check
@@ -444,7 +450,7 @@ SYSTEM_DEF(job)
 	for(var/mob/new_player/player in unassigned)
 		if(player.client.prefs.read_preference(/datum/preference/numeric/human/alternate_option) == RETURN_TO_LOBBY)
 			player.ready = PLAYER_NOT_READY
-			unassigned -= player
+			rel_remove(src, nameof(unassigned), player)
 	return TRUE
 
 /datum/system/job/proc/equip_rank(mob/living/carbon/human/human_mob, rank, joined_late = 0, announce = TRUE)
@@ -515,7 +521,7 @@ SYSTEM_DEF(job)
 				// Implants get special treatment
 				if(gaar_thing.slot == "implant")
 					var/obj/item/implant/gear_implant = gaar_thing.spawn_item(human_mob, active_gear_list[gaar_thing.display_name])
-					gear_implant.invisibility = INVISIBILITY_MAXIMUM
+					gear_implant.set_invisibility(INVISIBILITY_MAXIMUM)
 					gear_implant.implant_loadout(human_mob)
 					continue
 
@@ -612,7 +618,7 @@ SYSTEM_DEF(job)
 
 		// TWEET PEEP
 		if(rank == JOB_SITE_MANAGER && announce)
-			var/sound/announce_sound = (SSticker.current_state <= GAME_STATE_SETTING_UP) ? null : sound('sound/misc/boatswain.ogg', volume=20)
+			var/sound/announce_sound = (round_game_state() <= GAME_STATE_SETTING_UP) ? null : sound('sound/misc/boatswain.ogg', volume=20)
 			GLOB.captain_announcement.Announce("All hands, [alt_title ? alt_title : JOB_SITE_MANAGER] [human_mob.real_name] on deck!", new_sound = announce_sound, zlevel = human_mob.z)
 
 		//Deferred item spawning.
@@ -639,7 +645,7 @@ SYSTEM_DEF(job)
 		var/obj/item/wheelchair/used_wheelchair
 		if(storage_bag)
 			storage_bag.latent_materialize_all() // a walk needs real things (C5)
-			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair) // ALLOW(latent): materialized above
+			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair)
 		if(!l_foot || !r_foot || used_wheelchair)
 			var/wheelchair_type = used_wheelchair?.unfolded_type || /obj/structure/bed/chair/wheelchair
 			var/obj/structure/bed/chair/wheelchair/active_wheelchair = new wheelchair_type(human_mob.loc)
@@ -649,7 +655,7 @@ SYSTEM_DEF(job)
 			active_wheelchair.add_fingerprint(human_mob)
 			if(used_wheelchair)
 				active_wheelchair.color = used_wheelchair.color
-				qdel(used_wheelchair)
+				spent(used_wheelchair)
 
 	to_chat(human_mob, span_filter_notice(span_bold("You are [job.total_positions == 1 ? "the" : "a"] [alt_title ? alt_title : rank].")))
 
@@ -694,9 +700,9 @@ SYSTEM_DEF(job)
 			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
 			worn_glasses.prescription = TRUE
 
-	BITSET(human_mob.hud_updateflag, ID_HUD)
-	BITSET(human_mob.hud_updateflag, IMPLOYAL_HUD)
-	BITSET(human_mob.hud_updateflag, SPECIALROLE_HUD)
+	human_mob.flag_hud_update(ID_HUD)
+	human_mob.flag_hud_update(IMPLOYAL_HUD)
+	human_mob.flag_hud_update(SPECIALROLE_HUD)
 	return human_mob
 
 /datum/system/job/proc/handle_feedback_gathering()
@@ -765,9 +771,9 @@ SYSTEM_DEF(job)
 				if(!isliving(current_client.mob))
 					continue
 				var/mob/living/current_mob = current_client.mob
-				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.no_latejoin_vore_warning))
+				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_vore_warning))
 					continue
-				if(!current_mob.latejoin_vore)
+				if(!current_mob.vore_prefs.latejoin_vore)
 					continue
 				if(!(current_mob.z in using_map.vorespawn_levels))
 					continue
@@ -775,7 +781,7 @@ SYSTEM_DEF(job)
 				pred_names += current_mob.real_name //very cringe
 
 			if(length(preds))
-				var/pred_name = rerun_ask_on(joiner, spawn_client, "pred", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice, message = "Choose a Predator.", title = "Pred Spawnpoint", choices = pred_names)
+				var/pred_name = rerun_ask_on(joiner, spawn_client, "pred", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Choose a Predator.", title = "Pred Spawnpoint", choices = pred_names)
 				if(!pred_name)
 					return
 				var/index = pred_names.Find(pred_name)
@@ -789,29 +795,29 @@ SYSTEM_DEF(job)
 					if(LAZYLEN(current_belly.vorespawn_whitelist) && !(spawn_client.ckey in current_belly.vorespawn_whitelist))
 						continue
 					available_bellies += current_belly
-				var/backup = rerun_ask_on(joiner, spawn_client, "backup", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "Do you want a mind backup?", title = "Confirm", choices = list("Yes", "No"))
+				var/backup = rerun_ask_on(joiner, spawn_client, "backup", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Do you want a mind backup?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(backup))
 					return
 				backup = (backup == "Yes")
-				vore_spawn_gut = rerun_ask_on(joiner, spawn_client, "belly", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice, message = "Choose a Belly.", title = "Belly Spawnpoint", choices = available_bellies)
+				vore_spawn_gut = rerun_ask_on(joiner, spawn_client, "belly", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Choose a Belly.", title = "Belly Spawnpoint", choices = available_bellies)
 				if(!vore_spawn_gut || !(vore_spawn_gut in available_bellies))
 					return
 				if(vore_spawn_gut.vorespawn_absorbed & VS_FLAG_ABSORB_YES)
 					absorb_choice = TRUE
 					if(vore_spawn_gut.vorespawn_absorbed & VS_FLAG_ABSORB_PREY)
-						var/start_absorbed = rerun_ask_on(joiner, spawn_client, "absorbed", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "Do you want to start absorbed into [pred]'s [vore_spawn_gut]?", title = "Confirm", choices = list("Yes", "No"))
+						var/start_absorbed = rerun_ask_on(joiner, spawn_client, "absorbed", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Do you want to start absorbed into [pred]'s [vore_spawn_gut]?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 						if(isnull(start_absorbed))
 							return
 						if(start_absorbed != "Yes")
 							absorb_choice = FALSE
 					else
-						var/go_on = rerun_ask_on(joiner, spawn_client, "absorbed", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "[pred]'s [vore_spawn_gut] will start with you absorbed. Continue?", title = "Confirm", choices = list("Yes", "No"))
+						var/go_on = rerun_ask_on(joiner, spawn_client, "absorbed", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "[pred]'s [vore_spawn_gut] will start with you absorbed. Continue?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 						if(go_on != "Yes")
 							return
 
 				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
 				// The pred is asked; with the no-warning pref, not answering in time lets them in.
-				var/confirm = rerun_ask_on(joiner, pred, "pred_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = absorb_choice ? "[spawner_name] is attempting to spawn absorbed as your [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to spawn into your [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = pred.no_latejoin_vore_warning ? "Yes" : null, timeout = (pred.no_latejoin_vore_warning && pred.no_latejoin_vore_warning_time > 0) ? pred.no_latejoin_vore_warning_time SECONDS : 0)
+				var/confirm = rerun_ask_on(joiner, pred, "pred_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to spawn absorbed as your [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to spawn into your [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = pred.vore_prefs.no_latejoin_vore_warning ? "Yes" : null, timeout = (pred.vore_prefs.no_latejoin_vore_warning && pred.vore_prefs.no_latejoin_vore_warning_time > 0) ? pred.vore_prefs.no_latejoin_vore_warning_time SECONDS : 0, buttons = TRUE)
 				if(isnull(confirm))
 					to_chat(spawn_client, span_boldwarning("[pred] has received your spawn request. Please wait."))
 					log_admin("[key_name(spawn_client)] has requested to vore spawn into [key_name(pred)]")
@@ -832,7 +838,7 @@ SYSTEM_DEF(job)
 					to_chat(pred, span_warning("You must be within station grounds to accept."))
 					return
 				if(backup)
-					om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+					after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				log_admin("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
 				message_admins("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
 				to_chat(spawn_client, span_notice("You have been spawned via vore. You are free to roleplay how you got there as you please, such as teleportation or having had already been there."))
@@ -849,16 +855,16 @@ SYSTEM_DEF(job)
 				if(!isliving(current_client.mob))
 					continue
 				var/mob/living/current_mob = current_client.mob
-				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.no_latejoin_prey_warning))
+				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_prey_warning))
 					continue
-				if(!current_mob.latejoin_prey)
+				if(!current_mob.vore_prefs.latejoin_prey)
 					continue
 				if(!(current_mob.z in using_map.vorespawn_levels))
 					continue
 				preys += current_mob
 				prey_names += current_mob.real_name
 			if(length(preys))
-				var/prey_name = rerun_ask_on(joiner, spawn_client, "prey", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice, message = "Choose a Prey to spawn nom.", title = "Prey Spawnpoint", choices = prey_names)
+				var/prey_name = rerun_ask_on(joiner, spawn_client, "prey", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Choose a Prey to spawn nom.", title = "Prey Spawnpoint", choices = prey_names)
 				if(!prey_name)
 					return
 				var/index = prey_names.Find(prey_name)
@@ -870,10 +876,10 @@ SYSTEM_DEF(job)
 				var/datum/vore_preferences/spawn_preferences = spawn_client.prefs_vr
 				for(var/preference in spawn_preferences.belly_prefs)
 					available_bellies += preference["name"]
-				vore_spawn_gut = rerun_ask_on(joiner, spawn_client, "belly", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice, message = "Choose your Belly.", title = "Belly Spawnpoint", choices = available_bellies)
+				vore_spawn_gut = rerun_ask_on(joiner, spawn_client, "belly", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Choose your Belly.", title = "Belly Spawnpoint", choices = available_bellies)
 				if(!vore_spawn_gut)
 					return
-				var/absorb_them = rerun_ask_on(joiner, spawn_client, "absorb", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "Do you want to instantly absorb them?", title = "Confirm", choices = list("Yes", "No"))
+				var/absorb_them = rerun_ask_on(joiner, spawn_client, "absorb", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Do you want to instantly absorb them?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(absorb_them))
 					return
 				if(absorb_them == "Yes")
@@ -881,7 +887,7 @@ SYSTEM_DEF(job)
 
 				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
 				// The prey is asked; with the no-warning pref, not answering in time lets it happen.
-				var/confirm = rerun_ask_on(joiner, prey, "prey_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = absorb_choice ? "[spawner_name] is attempting to televore and instantly absorb you with their [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to televore you into their [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = prey.no_latejoin_prey_warning ? "Yes" : null, timeout = (prey.no_latejoin_prey_warning && prey.no_latejoin_prey_warning_time > 0) ? prey.no_latejoin_prey_warning_time SECONDS : 0)
+				var/confirm = rerun_ask_on(joiner, prey, "prey_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to televore and instantly absorb you with their [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to televore you into their [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = prey.vore_prefs.no_latejoin_prey_warning ? "Yes" : null, timeout = (prey.vore_prefs.no_latejoin_prey_warning && prey.vore_prefs.no_latejoin_prey_warning_time > 0) ? prey.vore_prefs.no_latejoin_prey_warning_time SECONDS : 0, buttons = TRUE)
 				if(isnull(confirm))
 					to_chat(spawn_client, span_boldwarning("[prey] has received your spawn request. Please wait."))
 					log_admin("[key_name(spawn_client)] has requested to pred spawn onto [key_name(prey)]")
@@ -953,11 +959,11 @@ SYSTEM_DEF(job)
 					else
 						item_names += "[item_spawnpoint.name] (\a [initial(item_spawnpoint.name)] at [item_spawnpoint.loc.name])"
 			if(LAZYLEN(items))
-				var/backup = rerun_ask_on(joiner, spawn_client, "backup", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "Do you want a mind backup?", title = "Confirm", choices = list("Yes", "No"))
+				var/backup = rerun_ask_on(joiner, spawn_client, "backup", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Do you want a mind backup?", title = "Confirm", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(backup))
 					return
 				backup = (backup == "Yes")
-				var/item_name = rerun_ask_on(joiner, spawn_client, "item", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice, message = "Choose an Item to spawn as.", title = "Item TF Spawnpoint", choices = item_names)
+				var/item_name = rerun_ask_on(joiner, spawn_client, "item", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Choose an Item to spawn as.", title = "Item TF Spawnpoint", choices = item_names)
 				if(!item_name)
 					return
 				var/index = item_names.Find(item_name)
@@ -967,7 +973,7 @@ SYSTEM_DEF(job)
 
 				var/mob/living/carrier = carriers[index]
 				if(istype(carrier))
-					var/confirm = rerun_ask_on(joiner, carrier, "carrier_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "[spawn_client.prefs.read_preference(/datum/preference/name/real_name)] is attempting to join as the [item_name] in your possession.", title = "Confirm", choices = list("No", "Yes"))
+					var/confirm = rerun_ask_on(joiner, carrier, "carrier_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "[spawn_client.prefs.read_preference(/datum/preference/name/real_name)] is attempting to join as the [item_name] in your possession.", title = "Confirm", choices = list("No", "Yes"), buttons = TRUE)
 					if(isnull(confirm))
 						to_chat(spawn_client, span_boldwarning("[carrier] has received your spawn request. Please wait."))
 						log_and_message_admins("[key_name(spawn_client)] has requested to item spawn into [key_name(carrier)]'s possession")
@@ -987,19 +993,19 @@ SYSTEM_DEF(job)
 					item_to_be = item
 					item_carrier = carrier
 					if(backup)
-						om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				else
-					var/confirm = rerun_ask_on(joiner, spawn_client, "unheld_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "\The [item.name] is currently not in any character's possession! Do you still want to spawn as it?", title = "Confirm", choices = list("No", "Yes"))
+					var/confirm = rerun_ask_on(joiner, spawn_client, "unheld_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "\The [item.name] is currently not in any character's possession! Do you still want to spawn as it?", title = "Confirm", choices = list("No", "Yes"), buttons = TRUE)
 					if(confirm != "Yes")
 						return
 					log_and_message_admins("[key_name(spawn_client)] has item spawned into \a [item.name] that was not held by anyone")
 					item_to_be = item
 					if(backup)
-						om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				if(istype(item, /obj/item/capture_crystal))
 					var/obj/item/capture_crystal/cryst = item
 					if(cryst.spawn_mob_type)
-						var/confirm = rerun_ask_on(joiner, spawn_client, "vorgans", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "Do you want to spawn with your slot's vore organs and prefs?", title = "Confirm", choices = list("No", "Yes"))
+						var/confirm = rerun_ask_on(joiner, spawn_client, "vorgans", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = "Do you want to spawn with your slot's vore organs and prefs?", title = "Confirm", choices = list("No", "Yes"), buttons = TRUE)
 						if(isnull(confirm))
 							return
 						if(confirm == "Yes")
@@ -1052,25 +1058,32 @@ SYSTEM_DEF(job)
 /// A refused vore or item spawn: the one who refused may leave the joiner a message.
 /datum/system/job/proc/late_spawn_declined(client/spawn_client, mob/refuser, title)
 	to_chat(spawn_client, span_warning("[refuser] has declined your spawn request."))
-	om_ask(refuser, /datum/om/prompt/text/late_spawn_decline, PROC_REF(late_spawn_decline_message), title = title, joiner = spawn_client)
+	open_request(src, /datum/prompt/text/late_spawn_decline, PROC_REF(late_spawn_decline_message), answerer = refuser, title = title, joiner_ckey = spawn_client.ckey)
 
 /// The one who refused a late spawn may leave the joiner a message.
-/datum/om/prompt/text/late_spawn_decline
-	message = "Do you want to leave them a message?"
-	var/client/joiner
+/datum/prompt/text/late_spawn_decline
+	question = "Do you want to leave them a message?"
+	timeout = 0
+	/// The joiner, by ckey (a client is gone when it disconnects).
+	var/joiner_ckey
 
-/datum/system/job/proc/late_spawn_decline_message(datum/om/prompt/text/late_spawn_decline/ask)
-	var/mob/refuser = ask.answerer
-	var/client/spawn_client = ask.joiner
-	var/message = ask.text
+/datum/system/job/proc/late_spawn_decline_message(datum/act/request/A)
+	var/datum/prompt/text/late_spawn_decline/asked = A.answer
+	if(!asked)
+		return
+	var/mob/refuser = asked.answerer
+	var/client/spawn_client = GLOB.directory[asked.joiner_ckey]
+	var/message = asked.value
+	if(!spawn_client)
+		return
 	if(message)
 		to_chat(spawn_client, span_notice("[refuser] message : [message]"))
 
 /datum/system/job/proc/m_backup_client(client/target_client)	//Same as m_backup, but takes a client entry. Used for vore late joining.
-	if(!ishuman(target_client.mob))
+	if(!target_client || !ishuman(target_client.mob))
 		return
 	var/mob/living/carbon/human/target_human = target_client.mob
-	GLOB.transcore_service.m_backup(target_human.mind, target_human.nif, TRUE)
+	SStranscore.m_backup(target_human.mind, target_human.nif, TRUE)
 
 /datum/system/job/proc/get_all_jobs()
 	var/list/all_jobs = list()

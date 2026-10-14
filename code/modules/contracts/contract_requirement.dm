@@ -191,6 +191,10 @@
 	var/list/first_fact_times
 	var/list/second_fact_times
 
+CAPABILITIES(/datum/contract_requirement/paired_facts)
+	owns_one(nameof(first_filter), /datum/contract_event_filter)
+	owns_one(nameof(second_filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/paired_facts/New(_first_event_type, _second_event_type, _join_field, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, _second_join_field)
 	. = ..()
 	first_event_type = _first_event_type
@@ -198,8 +202,8 @@
 	join_field = _join_field
 	second_join_field = _second_join_field || _join_field
 	target = max(1, _target)
-	own_set(src, nameof(first_filter), new /datum/contract_event_filter(_scope_mode))
-	own_set(src, nameof(second_filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(first_filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(second_filter), new /datum/contract_event_filter(_scope_mode))
 	first_facts = list()
 	second_facts = list()
 	credited_facts = list()
@@ -207,7 +211,7 @@
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
-// A contract owns its requirements (`requirements`, own_add); the typed vars (observation_requirement, ...)
+// A contract owns its requirements (`requirements`, rel_add); the typed vars (observation_requirement, ...)
 // are relation views onto them, and `contract` is the requirement's one-sided view back.
 
 
@@ -260,12 +264,15 @@
 	var/unique_field
 	var/list/accepted_unique_values
 
+CAPABILITIES(/datum/contract_requirement/event_count)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/event_count/New(_event_type, _target = 1, list/_required_context, _value_field, _required = TRUE, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..(_required)
 	event_type = _event_type
 	target = max(1, _target)
 	value_field = _value_field
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	accepted_unique_values = list()
 	for(var/key in _required_context)
 		filter.require_value(key, _required_context[key])
@@ -332,7 +339,8 @@
 	var/list/pending_tokens
 	var/list/completed_entities
 
-OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
+CAPABILITIES(/datum/contract_requirement/sustained_event)
+	owns_one(nameof(filter), /datum/contract_event_filter)
 
 /datum/contract_requirement/sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, _threshold, _duration, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -343,7 +351,7 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 	threshold = _threshold
 	duration = max(1, _duration)
 	target = max(1, _target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	completed_entities = list()
 	if(event_type)
@@ -358,7 +366,7 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 
 /datum/contract_requirement/sustained_event/proc/cancel_pending_timers()
 	for(var/entity_key in pending_tokens)
-		om_cancel_timer_slot(src, "pending:[entity_key]")
+		cancel_after(src, "pending:[entity_key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 
@@ -376,14 +384,14 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 	// which loses required integrity must cancel its EER timer just as surely as
 	// one whose EER itself falls below the threshold.
 	if(!filter.matches(event, contract) || !contract_evidence_compare(event.value(numeric_field), comparator, threshold))
-		om_cancel_timer_slot(src, "pending:[entity_key]")
+		cancel_after(src, "pending:[entity_key]")
 		pending_tokens -= entity_key
 		return FALSE
-	if(om_timer_slot_pending(src, "pending:[entity_key]"))
+	if(after_pending(src, "pending:[entity_key]"))
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	after_slot(src, "pending:[entity_key]", duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
+	after(src, duration, PROC_REF(complete_duration), key = "pending:[entity_key]", with = list(entity_key, token, event.actor_account, event.value("detail")))
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
@@ -409,7 +417,8 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 	var/list/pending_stage_indices
 	var/list/completed_stages
 
-OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
+CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
+	owns_one(nameof(filter), /datum/contract_event_filter)
 
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -417,7 +426,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	entity_field = _entity_field
 	numeric_field = _numeric_field
 	comparator = _comparator
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	pending_stage_indices = list()
 	completed_stages = list()
@@ -442,7 +451,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 
 /datum/contract_requirement/staged_sustained_event/proc/cancel_pending_timers()
 	for(var/key in pending_tokens)
-		om_cancel_timer_slot(src, "pending:[key]")
+		cancel_after(src, "pending:[key]")
 	if(pending_tokens)
 		pending_tokens.Cut()
 	if(pending_stage_indices)
@@ -458,7 +467,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	if(!filter.matches(event, contract))
 		for(var/stage_index in 1 to length(stages))
 			var/stage_key = "[entity_value]:[stage_index]"
-			if(om_cancel_timer_slot(src, "pending:[stage_key]"))
+			if(cancel_after(src, "pending:[stage_key]"))
 				pending_tokens -= stage_key
 				pending_stage_indices -= stage_key
 				changed = TRUE
@@ -472,17 +481,17 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	var/list/stage = stages[stage_index]
 	var/qualifies = contract_evidence_compare(event.value(numeric_field), comparator, stage["threshold"])
 	if(!qualifies)
-		if(om_cancel_timer_slot(src, "pending:[stage_key]"))
+		if(cancel_after(src, "pending:[stage_key]"))
 			pending_tokens -= stage_key
 			pending_stage_indices -= stage_key
 			changed = TRUE
 		return changed
-	if(om_timer_slot_pending(src, "pending:[stage_key]"))
+	if(after_pending(src, "pending:[stage_key]"))
 		return changed
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	after_slot(src, "pending:[stage_key]", max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
+	after(src, max(0.1 SECONDS, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
 	changed = TRUE
 	return changed
 
@@ -494,7 +503,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 		if(pending_stage_indices[other_key] != stage_index)
 			continue
 		if(other_key != stage_key)
-			om_cancel_timer_slot(src, "pending:[other_key]")
+			cancel_after(src, "pending:[other_key]")
 		pending_tokens -= other_key
 		pending_stage_indices -= other_key
 	var/list/stage = stages[stage_index]
@@ -541,13 +550,16 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	var/datum/contract_event_filter/filter
 	var/list/entity_values
 
+CAPABILITIES(/datum/contract_requirement/snapshot_total)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/snapshot_total/New(_event_type, _entity_field, _value_field, _target, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
 	entity_field = _entity_field
 	value_field = _value_field
 	target = max(1, _target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	entity_values = list()
 	if(event_type)
 		event_types += event_type
@@ -603,6 +615,9 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	var/list/facts
 	var/list/fact_revisions
 
+CAPABILITIES(/datum/contract_requirement/fact_portfolio)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/fact_portfolio/New(_event_type, _target, _category_field, _value_field, _distinct_category_target = 0, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
@@ -610,7 +625,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	category_field = _category_field
 	value_field = _value_field
 	distinct_category_target = max(0, _distinct_category_target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	facts = list()
 	fact_revisions = list()
 	if(event_type)

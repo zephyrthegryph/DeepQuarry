@@ -10,51 +10,56 @@
 	var/tmp/obj/item/stored_item
 
 
-/obj/item/evidencebag/MouseDrop(obj/item/I)
-	if (!ishuman(usr))
-		return
-	if(!istype(I) || I.anchored)
-		return  ..()
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/evidencebag/proc/mousedrop_input(datum/act/input/A)
+	if(!bag_with_actor(A.actor, A.over))
+		return INPUT_FALLTHROUGH
 
-	var/mob/living/carbon/human/user = usr
+/obj/item/evidencebag/proc/bag_with_actor(mob/actor, obj/item/I)
+	if (!ishuman(actor))
+		return TRUE
+	if(!istype(I) || I.anchored)
+		return FALSE
+
+	var/mob/living/carbon/human/user = actor
 
 	if(!user.item_is_in_hands(src))
-		return //bag must be in your hands to use
+		return TRUE //bag must be in your hands to use
 
 	if (isturf(I.loc))
 		if (!user.Adjacent(I))
-			return
+			return TRUE
 	else
 		//If it isn't on the floor. Do some checks to see if it's in our hands or a box. Otherwise give up.
 		if(istype(I.loc,/obj/item/storage))	//in a container.
 			var/sdepth = I.storage_depth(user)
 			if (sdepth > MAX_STORAGE_REACH)
-				return	//too deeply nested to access
+				return TRUE	//too deeply nested to access
 
 			user.client.screen -= I
 			I.moveToNullspace()
 		else if(user.item_is_in_hands(I))
 			user.drop_from_inventory(I)
 		else
-			return
+			return TRUE
 
 	if(istype(I, /obj/item/evidencebag))
 		to_chat(user, span_notice("You find putting an evidence bag in another evidence bag to be slightly absurd."))
-		return
+		return TRUE
 
 	if(I.w_class > 3)
 		to_chat(user, span_notice("[I] won't fit in [src]."))
-		return
+		return TRUE
 
 	if(contents_count(src))
 		to_chat(user, span_notice("[src] already has something inside it."))
-		return
+		return TRUE
 
 	act_message(user, src, MSG_SELF("You put [I] inside %T%."), \
 		MSG_OTHERS("%U% puts [I] into %T%"), \
 		MSG_BLIND("You hear a rustle as someone puts something into a plastic bag."))
 
-	icon_state = "evidence"
+	set_icon_state("evidence")
 
 	var/xx = I.pixel_x	//save the offset of the item
 	var/yy = I.pixel_y
@@ -69,14 +74,17 @@
 	desc = "An evidence bag containing [I]."
 	I.forceMove(src)
 	rel_set(src, nameof(stored_item), I)
-	w_class = I.w_class
-	return
+	set_w_class(I.w_class)
+	return TRUE
 
 
-DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/evidencebag)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	drag_onto(PROC_REF(mousedrop_input))
 
 /// Old attack_self.
-/obj/item/evidencebag/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/evidencebag/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(LAZYLEN(contents))
 		var/obj/item/I = contents[1]
 		act_message(user, src, MSG_SELF("You take [I] out of %T%."), \
@@ -87,12 +95,12 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 		user.put_in_hands(I)
 		rel_clear(src, nameof(stored_item))
 
-		w_class = initial(w_class)
-		icon_state = "evidenceobj"
+		set_w_class(initial(w_class))
+		set_icon_state("evidenceobj")
 		desc = "An empty evidence bag."
 	else
 		to_chat(user, "[src] is empty.")
-		icon_state = "evidenceobj"
+		set_icon_state("evidenceobj")
 	return TRUE
 
 /obj/item/evidencebag/examine(mob/user)

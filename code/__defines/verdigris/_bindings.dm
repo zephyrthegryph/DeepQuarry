@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "57759af855de3189"
+#define VERDIGRIS_ABI "eea806c364f75ad6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -43,10 +43,41 @@
 // verdigris/domains/heat/src/consts.rs
 #define BODYTEMP_NORMAL 310.15
 
+/// BZ formation, per mole of BZ made.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define BZ_FORMATION_ENERGY 80000.0
+
+// verdigris/ffi/src/chem.rs
+#define CHEM_CYCLE_OUT 5
+
+/// Carbon combustion (fire spreading on objects), per mole.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_CARBON_ENERGY_RELEASED 100000.0
+
+/// Freon combustion absorbs this per mole of freon burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_FREON_ENERGY_CONSUMED 300000.0
+
+/// Hydrogen combustion, per mole of hydrogen burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_HYDROGEN_ENERGY_RELEASED 2800000.0
+
 /// Lowest temperature a fire exists at, and phoron's ignition point, K
 /// (100 °C).
 // verdigris/domains/heat/src/consts.rs
 #define FIRE_MINIMUM_TEMPERATURE_TO_EXIST 373.15
+
+/// Plasma combustion, per mole of plasma burned.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_PLASMA_ENERGY_RELEASED 3000000.0
+
+/// Tritium combustion, per mole of tritium burned (tritium burns as hydrogen).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FIRE_TRITIUM_ENERGY_RELEASED 2800000.0
+
+/// Freon formation (a scale; its energy follows the temperature, [`freon_formation_absorbed`]).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define FREON_FORMATION_ENERGY 100.0
 
 // verdigris/ffi/src/gas/mix.rs
 #define GAS_DEPENDENCY_COMPOSITION 4
@@ -162,10 +193,96 @@
 // verdigris/domains/gas/src/gas/ids.rs
 #define GAS_ID_ZAUKER 16
 
+/// Extent: BZ formed; `aux`: the fraction of nitrous oxide that decomposed instead.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_BZ_FORMATION 8
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_FREON_FIRE 4
+
+/// Extent: freon formed (the energy absorbed follows the temperature).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_FREON_FORMATION 12
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HALON_COMBUSTION 14
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HEALIUM_FORMATION 15
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_HYDROGEN_FIRE 2
+
+/// No enthalpy: the moles change and the mixture keeps its thermal energy over its new heat capacity.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_KEEP_TEMPERATURE 0
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_N2O_DECOMPOSITION 7
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_N2O_FORMATION 6
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NITRIUM_DECOMPOSITION 11
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NITRIUM_FORMATION 10
+
+/// Extent: noblium formed; `aux`: the BZ present.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_NOBLIUM_FORMATION 13
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PLASMA_FIRE 1
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PLUOXIUM_FORMATION 9
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_BZ_RESPONSE 21
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_FORMATION 18
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_HYDROGEN_RESPONSE 19
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_PN_TRITIUM_RESPONSE 20
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_STERILIZATION 5
+
+/// Extent: the crystal's device energy; the deltas are the phoron and oxygen it exhales.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_SUPERMATTER 22
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_TRITIUM_FIRE 3
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_ZAUKER_DECOMPOSITION 17
+
+// verdigris/domains/gas/src/reaction_energy.rs
+#define GAS_REACTION_ZAUKER_FORMATION 16
+
 /// Floats per mixture in `read_mixtures`: pressure, temperature, volume,
 /// total moles, heat capacity, then the moles of every gas by ID.
 // verdigris/ffi/src/gas/binds.rs
 #define GAS_READ_HEADER 5
+
+/// Halon's oxygen removal absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HALON_COMBUSTION_ENERGY 2500.0
+
+/// Halon formation, per mole.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HALON_FORMATION_ENERGY 91232.1
+
+/// Healium formation, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define HEALIUM_FORMATION_ENERGY 9000.0
 
 /// Heat capacity DM gives vacuum (`HEAT_CAPACITY_VACUUM`), J/K: the capacity
 /// of a space or planet reservoir cell.
@@ -181,6 +298,91 @@
 
 // verdigris/ffi/src/heat.rs
 #define HEAT_CELL_SPACE 1
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_ENGINE 3
+
+/// Edge kinds (`heat_edge_info`'s first number).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_LINK 1
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_EDGE_PUMP 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_AREA 7
+
+/// Edge parameters by index for [`heat_edge_set`].
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_CONDUCTANCE 1
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_EFFICIENCY 6
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_EMISSIVITY 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_MODE 5
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_TARGET 4
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PARAM_WATTS 3
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_BOTH 2
+
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_COOL 1
+
+/// Pump modes (`RegulatorMode`).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_PUMP_HEAT 0
+
+/// Authority writes: map load, admin, holodeck, spawn-time temperatures.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_AUTHORITY 6
+
+/// A machine's electrical heating (its power draw is the source).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_DEVICE 2
+
+/// Fire and burning.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_FIRE 3
+
+/// A material's own heat model (material science's DM solid state) giving
+/// heat to or taking it from a gas.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_MATERIAL 9
+
+/// Metabolism: a living body's own heat.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_METABOLISM 5
+
+/// Declared external sources/sinks for [`heat_move`] (the ledger's
+/// categories). A one-off move between two reservoirs is internal and books
+/// no source.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_NONE 0
+
+/// Anything else (named in the caller's comment).
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_OTHER 8
+
+/// A chemical or gas reaction's enthalpy outside the gas domain.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_REACTION 1
+
+/// Magic: spells, technomancer functions.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_SPELL 4
+
+/// Weapons, explosions, projectiles.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_SOURCE_WEAPON 7
 
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_BODY 4
@@ -201,6 +403,10 @@
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_SOLID 1
 
+/// Outer space as a reservoir: the ref is its temperature in K.
+// verdigris/ffi/src/heat_net.rs
+#define HEAT_TARGET_SPACE 6
+
 // verdigris/ffi/src/heat.rs
 #define HEAT_TARGET_TURF_AIR 2
 
@@ -220,6 +426,18 @@
 /// Heat capacity of an 80 kg human body, J/K (about 3.5 kJ/(kg·K)).
 // verdigris/domains/heat/src/consts.rs
 #define HUMAN_HEAT_CAPACITY 280000.0
+
+/// Dry heat sterilization: the temperature rise per mole of miasma cleaned, K.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define MIASTER_STERILIZATION_ENERGY 0.002
+
+/// Nitrous oxide decomposition, per mole decomposed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define N2O_DECOMPOSITION_ENERGY 200000.0
+
+/// Nitrous oxide formation, per mole formed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define N2O_FORMATION_ENERGY 10000.0
 
 /// A crossing record (set entry) carries two detail numbers, a wake four.
 // verdigris/ffi/src/frame.rs
@@ -247,6 +465,38 @@
 // verdigris/ffi/src/frame.rs
 #define NATIVE_REC_NOTICE 2
 
+/// Nitrium decomposition, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NITRIUM_DECOMPOSITION_ENERGY 30000.0
+
+/// Nitrium formation absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NITRIUM_FORMATION_ENERGY 100000.0
+
+/// Hyper-noblium formation, per mole formed (divided by the BZ present).
+// verdigris/domains/gas/src/reaction_energy.rs
+#define NOBLIUM_FORMATION_ENERGY 20000000.0
+
+/// Pluoxium formation, per mole formed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PLUOXIUM_FORMATION_ENERGY 250.0
+
+/// Proto-nitrate's BZ response, per mole consumed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_BZASE_ENERGY 60000.0
+
+/// Proto-nitrate formation, per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_FORMATION_ENERGY 650.0
+
+/// Proto-nitrate's hydrogen response absorbs this per mole converted.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_HYDROGEN_CONVERSION_ENERGY 2500.0
+
+/// Proto-nitrate's tritium response, per mole converted.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define PN_TRITIUM_CONVERSION_ENERGY 10000.0
+
 /// Node kinds in the graph (an opaque tag `NetworkHost` stores per node;
 /// power does not read it back, only DM's own bookkeeping might).
 // verdigris/ffi/src/power.rs
@@ -273,6 +523,11 @@
 /// because the define scanner reads plain literals only.
 // verdigris/core/src/units.rs
 #define STEFAN_BOLTZMANN_CONSTANT 0.00000005670374419
+
+/// The supermatter's exhaust, per unit of its device energy (its power times
+/// its reaction power modifier): the heat it releases into the gas it took.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define SUPERMATTER_THERMAL_RELEASE 10000.0
 
 /// 0 degrees Celsius, K.
 // verdigris/core/src/units.rs
@@ -354,22 +609,22 @@
 // verdigris/ffi/src/sched.rs
 #define WORLD_REASON_DETAIL 0x0FFFFF
 
-/// Reason class: a DM-owned key was published.
-// verdigris/ffi/src/sched.rs
-#define WORLD_REASON_KEY 0x400000
-
 /// Reason class: a rate model crossed a watched level.
 // verdigris/ffi/src/sched.rs
 #define WORLD_REASON_RATE 0x800000
-
-/// Reason class: a `om_world_at` timer fired.
-// verdigris/ffi/src/sched.rs
-#define WORLD_REASON_TIMER 0x200000
 
 /// Numbers per wake returned by `vg_world_step`:
 /// `subscriber, lane, reason, source, source_kind`.
 // verdigris/ffi/src/sched.rs
 #define WORLD_WAKE_STRIDE 5
+
+/// Zauker decomposition, per mole decomposed.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define ZAUKER_DECOMPOSITION_ENERGY 460.0
+
+/// Zauker formation absorbs this per unit of reaction.
+// verdigris/domains/gas/src/reaction_energy.rs
+#define ZAUKER_FORMATION_ENERGY 5000.0
 
 // Binds.
 
@@ -379,6 +634,42 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:add_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
+
+/// Members placed, over every kind (diagnostics, tests).
+// /proc/vg_adjacency_count (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_count()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_count_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Places (or moves) `handle` of `kind` on `(x, y, z)`, looking on `dirs`. Returns the handles whose neighbour
+/// sets changed: the member itself first (empty when nothing moved).
+// /proc/vg_adjacency_place (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_place(kind_id, handle, x, y, z, dirs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_place_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle, x, y, z, dirs)
+
+/// Removes `handle` from `kind`. Returns the neighbours whose sets changed.
+// /proc/vg_adjacency_remove (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_remove(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
+
+/// Drops every member (DM's round start).
+// /proc/vg_adjacency_reset (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// The neighbours `handle` sees in `kind`: `[handle, junction bit, ...]`.
+// /proc/vg_adjacency_seen (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_seen(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_seen_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
 // /datum/gas_mixture/proc/adjust_heat (verdigris/ffi/src/gas/binds.rs)
@@ -482,6 +773,30 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
+
+/// One Life cycle of a metabolism holder (`vg_chem::metabolism::cycle`). `args` is flat, 7 values per reagent:
+/// `volume, rate, dose, max_dose, overdose_at, overdose, overdose_mod`. Returns a flat list, 5 per reagent in the same order:
+/// `removed, dose, max_dose, overdosing (0/1), overdose_injury`.
+// /proc/chem_metabolism_cycle (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_metabolism_cycle(args_ref)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_metabolism_cycle_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(args_ref)
+
+/// The base overdose injury of one uptake (`vg_chem::metabolism::overdose_injury`), for an overdose() called outside a holder's cycle.
+// /proc/chem_overdose_injury (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_overdose_injury(removed, overdose_mod, volume, overdose)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_overdose_injury_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(removed, overdose_mod, volume, overdose)
+
+/// How far one step of a reaction goes, in reaction units (`vg_chem::reaction::progress`; DM's `calc_reaction_progress()`).
+/// `reactants` is a flat list `have, ratio, ...`. The caller still takes `min(limit, progress)`.
+// /proc/chem_reaction_progress (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_reaction_progress(limit, rate, multiplier, yield_, result_amount, product_have, min_reaction, reactants)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_reaction_progress_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(limit, rate, multiplier, yield_, result_amount, product_have, min_reaction, reactants)
 
 /// Clears the gas mixture my removing all of its gases.
 // /datum/gas_mixture/proc/clear (verdigris/ffi/src/gas/binds.rs)
@@ -755,6 +1070,19 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
+/// Applies a gas reaction to a mixture in one step
+/// (`vg_gas::reaction_energy::react`): `deltas` is a flat list of
+/// `GAS_ID_*, moles, ...`; the energy the reaction of `kind`
+/// (`GAS_REACTION_*`) releases for its `extent` (with its `aux` value) is
+/// computed here and settled into the mixture, booked under
+/// `HEAT_SOURCE_REACTION`. Returns the joules released (negative: absorbed),
+/// or null for an unknown kind (nothing applied).
+// /proc/gas_reaction_apply (verdigris/ffi/src/heat_net.rs)
+/proc/vg_gas_reaction_apply(mixture, kind, extent, aux, deltas)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_reaction_apply_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(mixture, kind, extent, aux, deltas)
+
 /// Frees every main-owned slot whose datum is not in `mixtures` (a list of
 /// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns
 /// the number of slots freed. See [`mix::retain`].
@@ -910,11 +1238,31 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h, temperature)
 
+/// A body's heat, computed in `f64` before it crosses to DM: `list(temperature
+/// K, latent heat stored in its phase plateau J, energy J)`. The latent heat
+/// stored is `0` below the plateau and all of it above. Null if the body
+/// does not exist.
+// /proc/heat_body_state (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_state(h)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_state_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(h)
+
 // /proc/heat_body_temperature (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_temperature(h)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_temperature_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h)
+
+/// The heat network's books: `list(edges, last step: transferred, work in,
+/// work out, external in, external out (J); since boot: the same five;
+/// unbalanced steps)` then, per `HEAT_SOURCE_*` from 0, `in, out` J since
+/// boot.
+// /proc/heat_books (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_books()
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_books_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
 
 /// Returns: Heat capacity, in J/K (probably).
 // /datum/gas_mixture/proc/heat_capacity (verdigris/ffi/src/gas/binds.rs)
@@ -929,6 +1277,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(turf)
 
+/// Conducts between two reservoirs for `seconds` at `conductance` W/K in one
+/// conserved operation: the exact pair solution (never past equilibrium),
+/// as a one-off for a sample that covers a stretch of time. Returns the
+/// joules moved from the first to the second.
+// /proc/heat_conduct (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_conduct(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_conduct_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,
 /// human heat capacity, ignition temperature, vacuum heat capacity)`.
@@ -937,6 +1295,126 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_constants_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
+
+/// One edge, for tooling: `list(HEAT_EDGE_*, a kind, a ref, b kind, b ref,
+/// p1, p2, p3, heat out of a W, heat into b W, work in W, work out W)`. The
+/// parameters are (conductance, emissivity, area) for a link, (watts,
+/// target, mode) for a pump, (efficiency, conductance, 0) for an engine.
+// /proc/heat_edge_info (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_info(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_info_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// The electrical power an edge exchanged in its last step, W: positive for
+/// an engine's output, negative for a pump's draw.
+// /proc/heat_edge_power (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_power(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_power_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// Removes an edge. Unknown ids are ignored.
+// /proc/heat_edge_remove (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_remove(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// Changes one parameter of a live edge (a thermostat turned, a part
+/// upgraded) without recreating it. Returns whether it applied.
+// /proc/heat_edge_set (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_set(id, param, value)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_set_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id, param, value)
+
+/// The electrical work an edge exchanged since this was last called, J
+/// (positive: a pump drew it; negative: an engine made it), and resets it:
+/// what a machine pays from its cell or grid, exactly what Rust booked.
+// /proc/heat_edge_take_work (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_edge_take_work(id)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_edge_take_work_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id)
+
+/// A heat engine between two reservoirs: heat flows from the hotter to the
+/// colder through `conductance` W/K and `efficiency` of it (capped at Carnot)
+/// leaves as electrical work, read back with `heat_edge_power`. Returns the
+/// edge id.
+// /proc/heat_engine_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_engine_create(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(hot_kind, hot_ref, cold_kind, cold_ref, efficiency, conductance)
+
+/// One heat-engine pass between two reservoirs (a thermoelectric generator
+/// on the gas its circulators moved this step): the energy that would bring
+/// them to a common temperature flows from the hotter to the colder, and
+/// `efficiency` of it (capped at Carnot, `1 - T_cold/T_hot`) leaves as
+/// electrical work, booked out. Returns the work, J.
+// /proc/heat_engine_once (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_engine_once(a_kind, a_ref, b_kind, b_ref, efficiency)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_once_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, efficiency)
+
+/// Moves `fraction` (0..1) of the way to the common temperature of two
+/// reservoirs in one conserved operation (1: both end at the mixed
+/// temperature, as if they were one body). Returns the joules moved from
+/// the first to the second.
+// /proc/heat_equalize (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_equalize(a_kind, a_ref, b_kind, b_ref, fraction)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_equalize_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, fraction)
+
+/// A conduction (and radiation) link between two reservoirs: `conductance`
+/// W/K, plus `εσA(T_a⁴ − T_b⁴)` when `emissivity` and `area` (m²) are
+/// positive. Integrated exactly each world step. Returns the edge id.
+// /proc/heat_link_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_link_create(a_kind, a_ref, b_kind, b_ref, conductance, emissivity, area)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_link_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, emissivity, area)
+
+/// Moves `joules` from one reservoir to another in one operation (capped so
+/// neither passes absolute zero; negative moves the other way). With
+/// `from_kind` `HEAT_TARGET_NONE` the joules come from outside the
+/// simulation (an external source, `source` a `HEAT_SOURCE_*`); with
+/// `to_kind` `HEAT_TARGET_NONE` they leave it (an external sink). Either way
+/// it is booked. Returns the joules actually moved.
+// /proc/heat_move (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_move(from_kind, from_ref, to_kind, to_ref, joules, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(from_kind, from_ref, to_kind, to_ref, joules, source)
+
+/// Brings a reservoir to `temperature` K by an external, booked source
+/// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
+/// temperature) expressed as the joules it takes. Returns the joules added.
+// /proc/heat_move_to_temperature (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_move_to_temperature(kind, r, temperature, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_to_temperature_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r, temperature, source)
+
+/// Advances the heat network alone by `seconds` (the unit-test kernel clock, which does not pace the native world). Returns nothing.
+// /proc/heat_net_advance (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_net_advance(seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_net_advance_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(seconds)
+
+/// A heat pump driving `controlled` toward `target` K with at most `watts`
+/// of electrical work, rejecting heat to (or drawing it from) `other`
+/// (`HEAT_PUMP_*` mode; `resistive`: heating is resistive, COP 1). Its COP is
+/// Carnot-bounded (`carnot_fraction`, `max_cop`). Returns the edge id.
+// /proc/heat_pump_create (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_pump_create(controlled_kind, controlled_ref, other_kind, other_ref, watts, target, mode, resistive, carnot_fraction, max_cop)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_pump_create_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(controlled_kind, controlled_ref, other_kind, other_ref, watts, target, mode, resistive, carnot_fraction, max_cop)
 
 /// Just the cooling-side Carnot-bounded COP (`cold`/`hot` in K), for a
 /// caller that owns its own power-budget accounting (grid `draw_power()`)
@@ -966,6 +1444,21 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(target, max_power, mode, carnot_fraction, max_cop, resistive_heating, deadband, controlled_capacity, controlled_temp, other_capacity, other_temp, dt)
 
+/// Every edge touching a reservoir, for tooling: a flat list of edge ids.
+// /proc/heat_reservoir_links (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_reservoir_links(kind, r)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reservoir_links_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r)
+
+/// Reads a reservoir: `list(temperature K, heat capacity J/K (-1: infinite))`,
+/// or null if it does not exist.
+// /proc/heat_reservoir_state (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_reservoir_state(kind, r)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reservoir_state_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r)
+
 /// Drops heat's coupling side table (`verdigris_cleanup`, a fresh round):
 /// the world itself is rebuilt generically (`crate::entity::reset_all`).
 // /proc/heat_reset (verdigris/ffi/src/heat.rs)
@@ -973,6 +1466,16 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_reset_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
+
+/// Sets a reservoir's thermal energy to `joules` (its floor at least) by an
+/// external, booked source: a reaction that changed a gas's composition and
+/// released or consumed `joules - before` (`HEAT_SOURCE_REACTION`). Returns
+/// the joules added.
+// /proc/heat_set_energy (verdigris/ffi/src/heat_net.rs)
+/proc/vg_heat_set_energy(kind, r, joules, source)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_energy_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind, r, joules, source)
 
 // /turf/proc/heat_set_turf (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_set_turf(turf, kind, capacity, conductivity, emissivity, temperature, air)
@@ -1786,14 +2289,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, handle, interest_mask)
 
-/// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
-/// at the next step). Returns the token.
-// /proc/world_at (verdigris/ffi/src/sched.rs)
-/proc/vg_world_at(sub, lane_v, tick)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_at_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(sub, lane_v, tick)
-
 /// `qdel(watch)`: drops one subscription. Returns 1 if the token was live.
 // /proc/world_cancel (verdigris/ffi/src/sched.rs)
 /proc/vg_world_cancel(token_v)
@@ -1822,22 +2317,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_laws_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
-
-/// `om_world_on_key`: wakes `subscriber` when key (`kind`, `id`) is published
-/// with any bit of `mask`. Returns the token.
-// /proc/world_on_key (verdigris/ffi/src/sched.rs)
-/proc/vg_world_on_key(sub, kind, id, mask, lane_v)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_on_key_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(sub, kind, id, mask, lane_v)
-
-/// `om_world_publish`: DM-owned state under key (`kind`, `id`) changed. Merged
-/// per tick; a key nobody subscribes to costs a lookup and is not stored.
-// /proc/world_publish (verdigris/ffi/src/sched.rs)
-/proc/vg_world_publish(kind, id, mask)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_publish_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(kind, id, mask)
 
 /// A linear model starting at `v0` now, changing by `rate` per tick,
 /// clamped to [`min`, `max`] (null for unbounded). Returns the model id.
@@ -1914,10 +2393,9 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(steps)
 
-/// Scheduler counters as a flat list: timers pending, timers fired, rate
-/// crossings fired, key publications, rate models, keys with subscribers,
-/// live subscriptions, wakes received, merged, delivered, deferred, 0,
-/// backlog urgent/normal/background, 0.
+/// Scheduler counters as a flat list: timers pending (rate crossings), rate
+/// crossings fired, rate models, live subscriptions, wakes received, merged,
+/// delivered, deferred, 0, backlog urgent/normal/background, 0.
 // /proc/world_sched_stats (verdigris/ffi/src/sched.rs)
 /proc/vg_world_sched_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_sched_stats_ffi")
@@ -1962,6 +2440,22 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_watch_band_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(code, sub, lane, cell, ch, levels, hysteresis)
+
+/// `om_world_when` bands on several channels of one cell, as one watch: wakes
+/// when any of `chs` moves into a different band of its own increasing list in
+/// `levels` (the same position). `starts` holds each channel's band as the
+/// watcher read it itself (how many of its levels are at or under the value):
+/// the watch starts there, so only a move out of it wakes, never the
+/// registration. `hysteresis`
+/// < 0 takes each channel's. A breather's air watch (one per breather, on its
+/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+/// `cell` is one cell for every channel, or a list with one cell per channel
+/// (the air watch also follows the temperature of the turfs around the mob).
+// /proc/world_watch_bands (verdigris/ffi/src/sched.rs)
+/proc/vg_world_watch_bands(code, sub, lane, cell, chs, levels, starts, hysteresis)
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_watch_bands_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(code, sub, lane, cell, chs, levels, starts, hysteresis)
 
 /// `om_world_on_change`: wakes when any channel in `mask` of `cell` moves past its
 /// hysteresis. Returns the token.

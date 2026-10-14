@@ -1,10 +1,13 @@
 // Chunked materialize and init_from_table (doc/rewrite/init_and_turfs.md sec 3.1, 3.3a).
 // The ordering rules are listed at the top of code/controllers/subsystems/atoms_batch.dm.
 
+/// Every frame that opened, in order, when a test is recording (else null): the recording hook of SSatoms.batch_open().
+/datum/system/atoms/var/list/batch_trace
+
 /// ("init" or "late", probe) entries, in the order they happened.
 GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
-/// Records its Initialize() and LateInitialize() in one shared log.
+/// Records its Initialize() and its after_init() in one shared log.
 /obj/effect/dq_batch_probe
 	name = "batch probe"
 	/// The frame that was active while this probe initialized.
@@ -14,9 +17,11 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	. = ..()
 	rel_set(src, nameof(seen_batch), SSatoms.active_batch)
 	GLOB.dq_batch_probe_log.Add(list(list("init", src)))
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/effect/dq_batch_probe/LateInitialize()
+CAPABILITIES(/obj/effect/dq_batch_probe)
+	after_init(0, then(PROC_REF(log_late)))
+
+/obj/effect/dq_batch_probe/proc/log_late(datum/act/timer/A)
 	GLOB.dq_batch_probe_log.Add(list(list("late", src)))
 
 /datum/unit_test/dq_materialize_batch
@@ -66,7 +71,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	var/total = MATERIALIZE_CHUNK_SIZE * 2 + 10
 	main_batch = uninitialized_probes(total)
 	SSatoms.batch_trace = list()
-	SSatoms.batch_yield_probe = om_callable(src, PROC_REF(on_yield))
+	SSatoms.batch_yield_probe = list(src, PROC_REF(on_yield))
 	SSatoms.InitializeAtoms(main_batch.Copy())
 	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
 	reset_hooks()
@@ -88,7 +93,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 		next++
 	TEST_ASSERT_EQUAL(next - 1, total, "atoms initialized")
 	// Rule 2: every late loader after the last atom.
-	TEST_ASSERT(log_index("late", main_batch) > log_index("init", main_batch, TRUE), "a LateInitialize() ran before its batch finished")
+	TEST_ASSERT(log_index("late", main_batch) > log_index("init", main_batch, TRUE), "an after_init() ran before its batch finished")
 	for(var/obj/effect/dq_batch_probe/probe as anything in main_batch)
 		TEST_ASSERT(probe.seen_batch == batch, "an atom initialized outside its frame")
 		TEST_ASSERT(probe.flags & ATOM_MATERIALIZED, "an atom was not materialized")

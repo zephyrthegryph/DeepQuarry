@@ -4,7 +4,6 @@
 	icon = 'icons/obj/entertainment_monitor.dmi'
 	icon_state = "screen"
 	icon_screen = null
-	light_color = "#FFEEDB"
 	light_range_on = 2
 	network = list(NETWORK_BODYCAM)
 	circuit = /obj/item/circuitboard/security/telescreen/bodycamera
@@ -18,19 +17,22 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
 
 /// What it shows (the wearer, or whatever holds them) and the bodycam feeding it; it follows them while both are set.
-OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, atom, showing, CHANGE_MACHINE_SETTINGS)
-OM_FIELD_VIEW(/obj/machinery/computer/security/telescreen/bodycamera, obj/item/clothing/accessory/bodycam, the_camera, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/security/telescreen/bodycamera/var/atom/showing
+/obj/machinery/computer/security/telescreen/bodycamera/var/obj/item/clothing/accessory/bodycam/the_camera
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/security/telescreen/bodycamera, MACHINE_PIPELINE, "showing")
-
-DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", /obj/item/radio)
+CAPABILITIES(/obj/machinery/computer/security/telescreen/bodycamera)
+	configure(light_glow(color = "#FFEEDB"))
+	ref_one(nameof(showing), /atom)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(showing), wakes_on = list(nameof(showing)))
+	owns_one(nameof(bradio), starts = /obj/item/radio)
+	click_on(PROC_REF(click_input))
+	ref_one(nameof(bpinboard), /obj/effect/overlay/vis)
+	ref_one(nameof(the_camera), /obj/item/clothing/accessory/bodycam)
 
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
-
-	add_overlay("glass")
 
 	rel_set(src, nameof(bpinboard), add_vis_overlay(icon, "pinboard", layer = 0.1, alpha = 255, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE))
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
@@ -59,22 +61,26 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 	else if(operable())
 		bradio?.on = TRUE
 
-/obj/machinery/computer/security/telescreen/bodycamera/Click(location, control, params)
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/machinery/computer/security/telescreen/bodycamera/proc/click_input(datum/act/input/A)
+	if(!handle_click_with_actor(A.actor, A.params))
+		return INPUT_FALLTHROUGH
+
+/obj/machinery/computer/security/telescreen/bodycamera/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
+		if(isliving(user) && Adjacent(user) && !user.incapacitated())
 			bodycam_toggle()
-			act_message(usr, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
+			act_message(user, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
 	//Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
-			return
+			return TRUE
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		attack_hand(usr)
-		return
-	..()
+		attack_hand(user)
+		return TRUE
+	return FALSE
 
-APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
-/obj/machinery/computer/security/telescreen/bodycamera/machine_step()
+/obj/machinery/computer/security/telescreen/bodycamera/proc/work_step(datum/act/timer/A)
 	var/atom/them = showing
 	var/obj/item/clothing/accessory/bodycam/bo_cam = the_camera
 	if(!bo_cam || get_turf(them) != get_turf(bo_cam))
@@ -85,7 +91,7 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 		return
 	if(showing)
 		stop_showing()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 	if(!thing || !other_thing)
 		return
@@ -114,8 +120,12 @@ APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 
 /obj/machinery/computer/security/telescreen/bodycamera/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		bradio?.on = FALSE
 		stop_showing()
 	else if(enabled)
 		bradio?.on = TRUE
+
+/obj/machinery/computer/security/telescreen/bodycamera/draw(datum/look/look)
+	..()
+	look.overlay("glass")

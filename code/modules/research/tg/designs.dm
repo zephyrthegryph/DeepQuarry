@@ -30,7 +30,7 @@ other types of metals and chemistry for reagents).
 	/// Bitflags indicating what machines this design is compatable with. ([IMPRINTER]|[AWAY_IMPRINTER]|[PROTOLATHE]|[AWAY_LATHE]|[AUTOLATHE]|[MECHFAB]|[BIOGENERATOR]|[LIMBGROWER]|[SMELTER])
 	var/build_type = null
 	/// List of materials required to create one unit of the product. Format is (typepath or caregory) -> amount
-	var/list/materials = list() // ALLOW(instance_list): composition rewrite: design materials are being replaced; not edited here
+	var/list/materials = list() // ALLOW(instance_list): the design's material cost table: always filled with its materials, so a lazy list saves nothing
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
 	/// Blueprint (a /datum/material_template path) for this design's configurable
@@ -59,18 +59,12 @@ other types of metals and chemistry for reagents).
 	var/lathe_time_factor = 1
 	/// Bitflags indicating what departmental lathes should be allowed to process this design.
 	var/departmental_flags = ALL
-	/// What techwebs nodes unlock this design. Constructed by GLOB.research_service
-	var/list/unlocked_by // Lazy list of node ids; built by GLOB.research_service
+	/// What techwebs nodes unlock this design. Constructed by SSresearch
+	var/list/unlocked_by // Lazy list of node ids; built by SSresearch
 	/// Override for the automatic icon generation used for the research console.
 	var/research_icon
 	/// Override for the automatic icon state generation used for the research console.
 	var/research_icon_state
-	/// Appears to be unused.
-	var/icon_cache
-	/// Optional string that interfaces can use as part of search filters. See- item/borg/upgrade/ai and the Exosuit Fabs.
-	var/search_metadata
-	/// For protolathe designs that don't require reagents: If they can be exported to autolathes with a design disk or not.
-	var/autolathe_exportable = TRUE
 
 /datum/design_techweb/error_design
 	name = "ERROR"
@@ -79,7 +73,7 @@ other types of metals and chemistry for reagents).
 /datum/design_techweb/New()
 	. = ..()
 
-// Designs are immutable global datums registered at startup via GLOB.research_service.
+// Designs are immutable global datums registered at startup via SSresearch.
 // Destroying one at runtime would corrupt every techweb that holds a reference to its ID,
 // so qdel() refuses (the error_design base instance may still be deleted).
 /datum/design_techweb/lifecycle_keep(force)
@@ -89,7 +83,7 @@ other types of metals and chemistry for reagents).
 	return TRUE
 
 /datum/design_techweb/lifecycle_dematerialize()
-	GLOB.research_service.techweb_designs -= id
+	SSresearch.techweb_designs -= id
 	..()
 
 /datum/design_techweb/proc/InitializeMaterials()
@@ -223,11 +217,6 @@ other types of metals and chemistry for reagents).
 		var/default_material = defaults[role]
 		standard_material_costs[default_material] = (standard_material_costs[default_material] || 0) + amounts[role]
 
-/datum/design_techweb/proc/icon_html(client/user)
-	var/datum/asset/spritesheet_batched/sheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
-	sheet.send(user)
-	return sheet.icon_tag(id)
-
 /// Returns the description of the design
 /datum/design_techweb/proc/get_description()
 	var/obj/object_build_item_path = build_path
@@ -241,7 +230,7 @@ other types of metals and chemistry for reagents).
 	if(!material_template)
 		return product
 	if(!product.apply_material_construction(material_choices, material_template, material_total))
-		qdel(product)
+		spent(product)
 		return null
 	if(istype(product, /obj/item/material))
 		var/obj/item/material/material_item = product
@@ -276,10 +265,10 @@ other types of metals and chemistry for reagents).
 
 // The techweb nodes that unlock this design: frozen definitions.
 
-/// Designs are immutable round definitions in GLOB.research_service.techweb_designs: shared.
+/// Designs are immutable round definitions in SSresearch.techweb_designs: shared.
 REGISTRY_TYPE(/datum/design_techweb, GLOBAL_PROC_REF(registry_design_techweb))
 
 /// The registered design D stands for (D itself when it is the table's entry for its id).
 /proc/registry_design_techweb(datum/design_techweb/D)
-	var/datum/design_techweb/entry = GLOB.research_service?.techweb_designs[D.id]
+	var/datum/design_techweb/entry = SSresearch?.techweb_designs[D.id]
 	return entry == D ? D : null

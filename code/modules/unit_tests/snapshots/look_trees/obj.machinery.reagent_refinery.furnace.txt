@@ -1,0 +1,9 @@
+/obj/machinery/reagent_refinery/furnace icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/furnace state: furnace_l
+/obj/machinery/reagent_refinery/furnace dir: 2
+/obj/machinery/reagent_refinery/furnace overlay: icons/obj/machines/refinery_machines.dmi:furnace_l:8:#000000
+/obj/machinery/reagent_refinery/furnace/alt icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/reagent_refinery/furnace/alt state: furnace_r
+/obj/machinery/reagent_refinery/furnace/alt dir: 2
+/obj/machinery/reagent_refinery/furnace/alt overlay: icons/obj/machines/refinery_machines.dmi:furnace_r:8:#000000
+

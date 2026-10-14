@@ -12,12 +12,14 @@
 	var/obj/item/my_tool = null
 	var/tooltype = /obj/item/tool/wrench/power
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/Initialize(mapload)
-	own_set(src, nameof(my_tool), new tooltype(src))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool)
+	setup(PROC_REF(configure_power_tool))
+	owns_one(nameof(my_tool), /obj/item, starts = nameof(tooltype))
+
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/proc/configure_power_tool()
 	my_tool.name = name
 	my_tool.set_anchored(TRUE)
-	my_tool.canremove = FALSE
-	return ..()
+	my_tool.set_canremove(FALSE)
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)

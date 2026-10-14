@@ -2,7 +2,18 @@
 #define WARNING(MSG) warning("[MSG] in [__FILE__] at line [__LINE__] src: [UNLINT(src)] usr: [usr].")
 /proc/warning(msg)
 	msg = "## WARNING: [msg]"
+	boot_noise_note(msg)
 	log_world(msg)
+
+/// Every "## WARNING" and refused MOVE_INTO the world logged, and the first few of them: the unit-test suite reads
+/// these at its start (the boot gate, doc/rewrite/boot_gate.md) and fails a run whose boot was not clean.
+GLOBAL_VAR_INIT(boot_noise_count, 0)
+GLOBAL_LIST_EMPTY(boot_noise_first)
+
+/proc/boot_noise_note(msg)
+	GLOB.boot_noise_count++
+	if(length(GLOB.boot_noise_first) < 20)
+		GLOB.boot_noise_first += "[msg]"
 
 //not an error or a warning, but worth to mention on the world log, just in case.
 #define NOTICE(MSG) notice(MSG)

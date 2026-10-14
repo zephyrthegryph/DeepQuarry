@@ -16,9 +16,6 @@
 
 	density = TRUE
 	use_power = TRUE				//this turret uses and requires power
-	idle_power_usage = 50000		//when inactive, this turret takes up constant 50 Equipment power
-	active_power_usage = 150000	//when active, this turret takes up constant 300 Equipment power
-	power_channel = EQUIP	//drains power from the EQUIPMENT channel
 	req_one_access = list(ACCESS_HEADS)
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -47,6 +44,9 @@
 
 	timeout = 1		// When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	can_salvage = FALSE
+
+CAPABILITIES(/obj/machinery/porta_turret/obelisk)
+	configure(uses_power(idle = 50000, active = 150000, channel = EQUIP))
 
 /obj/item/circuitboard/defenseonelisk
 	name = "defense obelisk circuit"

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "retail_idle"
 	flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
 	req_access = list(ACCESS_HEADS)
 	w_class = ITEMSIZE_SMALL
 
@@ -19,6 +18,7 @@
 	// ALLOW(instance_list): d: current transaction, index-parallel with item_list
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
+	/// Scanned item handle (entity_handle) -> the price it scanned at.
 	var/list/verified_sale_items
 	/// Monotonic ticket identity. Any item, price, staff, or provider change
 	/// invalidates confirmations and sleeping PIN/tip prompts.
@@ -35,8 +35,7 @@
 // Claim machine ID
 REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 
-/obj/item/retail_scanner/Initialize(mapload)
-	. = ..()
+/obj/item/retail_scanner/proc/set_up_scanner(datum/act/timer/A)
 	machine_id = "[station_name()] RETAIL #[GLOB.num_financial_terminals++]"
 	if(locate_within(loc, /obj/structure/table))
 		pixel_y = 3
@@ -48,7 +47,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(!proximity)	return
 	if(istype(AM, /obj/structure/table))
 		src.pixel_y = 3 // Shift it up slightly to look better on table
-		src.dir = get_dir(src, user)
+		set_dir(get_dir(src, user))
 	else if(istype(AM, /obj/structure/closet/crate))
 		var/obj/structure/closet/crate/crate = AM
 		certify_freight_crate(crate, user)
@@ -57,22 +56,37 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 
 // Reset dir when picked back up
 /obj/item/retail_scanner/pickup(mob/user)
-	src.dir = SOUTH
+	set_dir(SOUTH)
 	src.pixel_y = 0
 
-DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+CAPABILITIES(/obj/item/retail_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	after_init(0, then(PROC_REF(set_up_scanner)))
+	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
+	interface("RetailScanner")
+	without("ui_open")
+	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
+	op("refund_transaction", ui_act("refund_transaction", arg("invoice_id", num()), arg("log_id", num())), then(PROC_REF(ui_act_refund_transaction)))
+	op("link_account", ui_act("link_account", arg("name", num()), arg("pin", num())), then(PROC_REF(ui_act_link_account)))
+	op("custom_order", ui_act("custom_order", arg("amount", num()), arg("price", num()), arg("purpose", schema_text(4096))), then(PROC_REF(ui_act_custom_order)))
+	op("set_amount", ui_act("set_amount", arg("amount", num()), arg("item", schema_text(4096))), then(PROC_REF(ui_act_set_amount)))
+	op("subtract", ui_act("subtract", arg("item", num())), then(PROC_REF(ui_act_subtract)))
+	op("add", ui_act("add", arg("item", num())), then(PROC_REF(ui_act_add)))
+	op("clear", ui_act("clear", arg("item", num())), then(PROC_REF(ui_act_clear)))
+	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
+	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-/// Old attack_self.
-/obj/item/retail_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/retail_scanner/proc/retail_scanner_controls_opened(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old click_alt.
-/obj/item/retail_scanner/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/retail_scanner/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		tgui_interact(user)
 	return TRUE
@@ -83,12 +97,8 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 		. += "It has a purchase of [transaction_amount] pending[transaction_purpose ? " for [transaction_purpose]" : ""]."
 	. += "Its freight printer contains [length(freight_form_paper)] blank sheet\s. Use it on a closed crate to certify a shipment."
 
-DECLARE_UI(/obj/item/retail_scanner, "RetailScanner")
-
-UI_DATA_REPLACE(/obj/item/retail_scanner, "merge:ui_data_obj_item_retail_scanner{locked:num,linked_account:text,machine_id:text,department_checkout:unknown,subsidized_checkout:unknown,transaction_logs:unknown,current_transactioon:unknown}")
-
-/// The computed part of /obj/item/retail_scanner's window data (declared on its UI_DATA row).
-/obj/item/retail_scanner/proc/ui_data_obj_item_retail_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/retail_scanner's window data.
+/obj/item/retail_scanner/ui_data(datum/act/eval/A)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(
 		"locked" = locked,
@@ -96,33 +106,33 @@ UI_DATA_REPLACE(/obj/item/retail_scanner, "merge:ui_data_obj_item_retail_scanner
 		"machine_id" = machine_id,
 		"department_checkout" = department_checkout,
 		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
-		"transaction_logs" = linked_account?.is_department_budget() ? GLOB.supply_service.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
+		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
 		"current_transactioon" = get_current_transaction()
 	)
 
-UI_ACT(/obj/item/retail_scanner, "toggle_lock", ui_act_toggle_lock)
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_toggle_lock)
-	if(allowed(ui.user))
+/obj/item/retail_scanner/proc/ui_act_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	if(allowed(user))
 		locked = !locked
 		return TRUE
-	to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Insufficient access."))
+	to_chat(user, "[icon2html(src, user.client)]" + span_warning("Insufficient access."))
 	return FALSE
 
-UI_ACT(/obj/item/retail_scanner, "refund_transaction", ui_act_refund_transaction, UI_ARG_NUM("invoice_id"), UI_ARG_NUM("log_id"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_refund_transaction)
-	if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(ui.user, linked_account))
+/obj/item/retail_scanner/proc/ui_act_refund_transaction(datum/act/op/A, invoice_id, log_id)
+	var/mob/user = A.actor
+	if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(user, linked_account))
 		return FALSE
-	var/datum/service_invoice/invoice = GLOB.supply_service.get_service_invoice(params["invoice_id"] || params["log_id"])
-	return GLOB.supply_service.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
+	var/datum/service_invoice/invoice = SSsupply.get_service_invoice(invoice_id || log_id)
+	return SSsupply.refund_service_invoice(invoice, linked_account, machine_id, user)
 
-UI_ACT(/obj/item/retail_scanner, "link_account", ui_act_link_account, UI_ARG_NUM("name"), UI_ARG_NUM("pin"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_link_account)
+/obj/item/retail_scanner/proc/ui_act_link_account(datum/act/op/A, name, pin)
+	var/mob/user = A.actor
 	if(locked)
 		return FALSE
-	var/attempt_account_num = params["name"]
+	var/attempt_account_num = name
 	if(isnull(attempt_account_num))
 		return FALSE
-	var/attempt_pin = params["pin"]
+	var/attempt_pin = pin
 	if(isnull(attempt_pin))
 		return FALSE
 	var/datum/money_account/new_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
@@ -131,7 +141,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_link_account)
 			visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 			return FALSE
 		var/provider_changed = linked_account != new_account
-		rel_set(src, nameof(/obj/item/eftpos::linked_account), new_account)
+		rel_set(src, nameof(linked_account), new_account)
 		if(provider_changed)
 			reset_memory()
 		else
@@ -140,18 +150,18 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_link_account)
 	to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 	return FALSE
 
-UI_ACT(/obj/item/retail_scanner, "custom_order", ui_act_custom_order, UI_ARG_NUM("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_custom_order)
+/obj/item/retail_scanner/proc/ui_act_custom_order(datum/act/op/A, amount_arg, price_arg, purpose)
+	var/mob/user = A.actor
 	if(locked)
 		return FALSE
-	var/t_purpose = sanitize(params["purpose"], 200)
+	var/t_purpose = sanitize(purpose, 200)
 	if (!t_purpose)
 		return FALSE
-	var/amount = params["amount"]
+	var/amount = amount_arg
 	if(!isnum(amount))
 		return FALSE
 	amount = CLAMP(round(amount), 1, 20)
-	var/price = params["price"]
+	var/price = price_arg
 	if(!isnum(price) || price <= 0)
 		return FALSE
 	price = CLAMP(round(price), 1, 1000000)
@@ -171,14 +181,13 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_custom_order)
 	visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_TEXT("item"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_set_amount)
+/obj/item/retail_scanner/proc/ui_act_set_amount(datum/act/op/A, amount, item)
 	if(locked)
 		return FALSE
-	var/item_name = params["item"]
+	var/item_name = item
 	if(!item_name)
 		return FALSE
-	var/n_amount = params["amount"]
+	var/n_amount = amount
 	if(!isnum(n_amount))
 		return FALSE
 	n_amount = CLAMP(n_amount, 0, 20)
@@ -195,11 +204,10 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_set_amount)
 	ticket_changed()
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "subtract", ui_act_subtract, UI_ARG_NUM("item"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_subtract)
+/obj/item/retail_scanner/proc/ui_act_subtract(datum/act/op/A, item)
 	if(locked)
 		return FALSE
-	var/item_name = params["item"]
+	var/item_name = item
 	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 		return FALSE
 	item_list[item_name]--
@@ -210,11 +218,10 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_subtract)
 	ticket_changed()
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "add", ui_act_add, UI_ARG_NUM("item"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_add)
+/obj/item/retail_scanner/proc/ui_act_add(datum/act/op/A, item)
 	if(locked)
 		return FALSE
-	var/item_name = params["item"]
+	var/item_name = item
 	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 		return FALSE
 	if(item_list[item_name] >= 20)
@@ -224,11 +231,10 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_add)
 	ticket_changed()
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "clear", ui_act_clear, UI_ARG_NUM("item"))
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_clear)
+/obj/item/retail_scanner/proc/ui_act_clear(datum/act/op/A, item)
 	if(locked)
 		return FALSE
-	var/item_name = params["item"]
+	var/item_name = item
 	if(!item_name || !item_list[item_name] || !isnum(price_list[item_name]))
 		return FALSE
 	item_list -= item_name
@@ -237,8 +243,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_clear)
 	ticket_changed()
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "clear_entry", ui_act_clear_entry)
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_clear_entry)
+/obj/item/retail_scanner/proc/ui_act_clear_entry(datum/act/op/A)
 	if(locked)
 		return FALSE
 	item_list.Cut()
@@ -248,8 +253,8 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_clear_entry)
 	ticket_changed()
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "reset_log", ui_act_reset_log)
-UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
+/obj/item/retail_scanner/proc/ui_act_reset_log(datum/act/op/A)
+	var/mob/user = A.actor
 	if(locked)
 		return FALSE
 	if(linked_account?.department_id == DEPARTMENT_CIVILIAN)
@@ -258,19 +263,20 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 	return TRUE
 
-
 /// Old attackby.
-/obj/item/retail_scanner/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/retail_scanner/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/form = O
 		if(form.info || form.shipping_ledger_data)
 			to_chat(user, span_warning("The freight printer accepts only blank ordinary paper."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!user.drop_from_inventory(form, src))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_add(src, nameof(freight_form_paper), form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
 	var/obj/item/card/id/I = O.GetID()
 	if(I)
@@ -282,11 +288,11 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		to_chat(user, span_warning("This device does not accept cash."))
 
 	else if(istype(O, /obj/item/card/emag))
-		return FALSE
+		return OP_DECLINE
 	// Not paying: Look up price and add it to transaction_amount
 	else
 		scan_item_price(O, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/retail_scanner/showoff(mob/user)
 	for (var/mob/M in view(user))
@@ -303,6 +309,9 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		return 0
 
 /obj/item/retail_scanner/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
+	return scan_card_stage(I, ID_container, user, list())
+
+/obj/item/retail_scanner/proc/scan_card_stage(obj/item/card/id/I, obj/item/ID_container, mob/user, list/answers)
 	if(!transaction_amount || !ticket_is_valid())
 		return
 
@@ -324,7 +333,11 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		var/attempt_pin = ""
 		// Answers re-run this scan; they're keyed by the ticket revision, so a changed ticket asks again.
 		if(D && D.security_level)
-			attempt_pin = rerun_ask(user, "pin[ticket_revision]:[transaction_amount]", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter PIN", title = "Transaction")
+			var/pin_key = "pin[ticket_revision]:[transaction_amount]"
+			if(!(pin_key in answers))
+				open_request(src, /datum/prompt/number/service_checkout_pin, PROC_REF(checkout_answered), answerer = user, payer_card = I, card_holder = ID_container, operator = user, answers = answers, answer_key = pin_key)
+				return
+			attempt_pin = answers[pin_key]
 			if(isnull(attempt_pin))
 				return
 			D = null
@@ -342,7 +355,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 					var/list/quote = department_service_quote(D, DEPARTMENT_CIVILIAN, transaction_amount)
 					if(!quote || !user)
 						return
-					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, PROC_REF(scan_card), args, "tip[ticket_revision]:[transaction_amount]")
+					var/tip = service_tip_choice(user, D, quote, transaction_purpose, src, TYPE_PROC_REF(/obj/item/retail_scanner, checkout_answered), answers, I, ID_container, "tip[ticket_revision]:[transaction_amount]")
 					if(isnull(tip) || !service_checkout_confirmation_valid(src, user, snapshot_revision, ticket_revision, snapshot_amount, transaction_amount, D.account_number, I.associated_account_number, snapshot_provider, linked_account, snapshot_staff_account, service_staff_account_number))
 						return
 					if(!complete_service_checkout(D, linked_account, transaction_amount, transaction_purpose, machine_id, item_list, price_list, service_staff_account_number, service_staff_name, tip, verified_sale_items))
@@ -362,7 +375,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 						"staff_tip" = 0,
 						"service_tip" = 0,
 					)
-					GLOB.supply_service.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
+					SSsupply.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
 
 				// Confirm and reset
 				transaction_complete()
@@ -380,10 +393,10 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 			src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Not enough funds."))
 		else
 			// Transfer the money
-			E.worth -= transaction_amount
+			E.set_worth(E.worth - transaction_amount)
 			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
 
-			GLOB.supply_service.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
+			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
 
 			// Confirm and reset
 			transaction_complete()
@@ -397,12 +410,12 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 	// First check if item has a valid price
 	var/price = O.get_item_cost()
 	if(isnull(price) && O.economic_export_value > 0)
-		price = GLOB.supply_service.export_revenue(O.economic_export_value)
+		price = SSsupply.export_revenue(O.economic_export_value)
 	if(isnull(price) && istype(O, /obj/item/stack))
 		var/obj/item/stack/material_stack = O
 		var/datum/material/material = material_stack.get_material()
 		if(material?.supply_conversion_value)
-			price = GLOB.supply_service.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
+			price = SSsupply.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
 	if(isnull(price))
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Unable to find item in database."))
 		return
@@ -418,7 +431,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 		. = 1
 	rebuild_ticket()
 	if(!O.economic_sale_invoice_id)
-		LAZYSET(verified_sale_items, O, price)
+		LAZYSET(verified_sale_items, entity_handle(O), price)
 	ticket_changed()
 	// Animation and sound
 	flick("retail_scan", src)
@@ -515,15 +528,14 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_reset_log)
 	service_staff_name = null
 	ticket_changed()
 
-DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
 
-/obj/item/retail_scanner/mark_emagged()
-	emagged = TRUE
-/obj/item/retail_scanner/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/retail_scanner/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
 	play_sfx(src, SFX_SPARKS)
-	req_access = list()
+	set_req_access(list())
 	emagged = 1
+	return OP_OK
 
 //--Premades--//
 
@@ -556,3 +568,18 @@ DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
 /obj/item/retail_scanner/civilian
 	account_to_connect = "Civilian"
 
+/obj/item/retail_scanner/proc/checkout_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = checkout_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/retail_scanner/proc/checkout_apply(datum/act/request/A)
+	var/datum/request/ask = A.answer
+	if(istype(ask, /datum/prompt/number/service_checkout_pin))
+		var/datum/prompt/number/service_checkout_pin/pin = ask
+		pin.answers[pin.answer_key] = pin.value
+		return scan_card_stage(pin.payer_card, pin.card_holder, pin.operator, pin.answers)
+	var/datum/prompt/choice/service_checkout_tip/tip = ask
+	tip.answers[tip.answer_key] = tip.value
+	return scan_card_stage(tip.payer_card, tip.card_holder, tip.operator, tip.answers)

@@ -26,7 +26,7 @@
 	// A human builds its body in set_species(), before this, so its organs
 	// have part slots to attach into.
 	if(!body)
-		own_set(src, nameof(body), new body_type(src))
+		rel_set(src, nameof(body), new body_type(src))
 	return ..()
 
 
@@ -38,7 +38,7 @@
 /// machine?" (P2-S1). Simple plans answer from the `biology` var; the humanoid
 /// plan answers from the torso.
 /mob/living/biology()
-	return body ? body.biology_of(null) : biology
+	return body ? body.biology_of(null) : biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
 /// the chem-caused afflictions are stale. The factors are NOT dirtied here
@@ -85,14 +85,21 @@
 	/// Reagent ID -> product of every affliction's interferes_with factor for
 	/// it (drug-interaction markers). Null when nothing interferes.
 	var/list/reagent_interference
-	/// om_clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
+	/// clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
 	var/tmp/regeneration_read_at
+
+	// --- Metabolism ---
+	/// Stored food energy, [0, owner's max_nutrition]. Written only by the owner's set_nutrition(); read nutrition_of(owner).
+	var/food_energy = 0
+	/// How fast the body burns it (a species sets it; DEFAULT_HUNGER_FACTOR otherwise).
+	var/hunger_rate = DEFAULT_HUNGER_FACTOR
 
 /datum/body/New(mob/living/new_owner)
 	..()
 	rel_set(src, nameof(owner), new_owner)
+	food_energy = new_owner ? new_owner.starting_nutrition() : 0
 	if(physiology_type)
-		own_set(src, nameof(physiology), new physiology_type(src))
+		rel_set(src, nameof(physiology), new physiology_type(src))
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
@@ -107,7 +114,7 @@
 			unlink_affliction(A)
 		else
 			remove_affliction(A)
-		qdel(A)
+		destroyed(A)
 	..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
@@ -120,7 +127,7 @@
 	// Only a newly dirtied domain wakes the owner: bits already dirty have woken it and are
 	// still waiting to be consumed.
 	if(gained && owner)
-		changed(owner, CHANGE_MOB_HEALTH)
+		PUBLISH_CHANGE(owner, MOB_KEY_HEALTH)
 
 // --- Affliction bookkeeping -------------------------------------------------
 
@@ -137,14 +144,14 @@
 	var/datum/previous_holder = owner_of(A)
 	if(previous_holder && previous_holder != src)
 		own_take_member(previous_holder, A.own_slot, A)
-	own_add(src, nameof(afflictions), A)
+	rel_add(src, nameof(afflictions), A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
 	// Interference markers live on afflictions: the snapshot folds them in.
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_added()
-	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, TRUE)
+	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, TRUE)
 	return TRUE
 
 /// The only way an affliction leaves a body (cure, organ removal, heal-all).
@@ -160,7 +167,7 @@
 	A.on_removed()
 	rel_clear(A, nameof(A.body))
 	rel_clear(A, nameof(A.owner))
-	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
+	PUBLISH_LEGACY(owner, /datum/notice/body_afflictions_changed, A, FALSE)
 	return TRUE
 
 /// Teardown only: drop `A` from the indexes with no hooks, invalidation, wake or signal. For a
@@ -241,7 +248,7 @@
 
 /// Biology of a part (or of the whole body when `location` is null).
 /datum/body/proc/biology_of(location)
-	return owner.biology
+	return owner.biology // ALLOW(reads): biology is fixed when the body is made; a reader asks it, nothing caches it
 
 // --- Injury / treatment entry points (overridden per plan) ----------------------
 
@@ -307,11 +314,11 @@
 	return treatment_snapshot
 
 /// Natural regeneration depends on sleep and nutrition, which change without touching the
-/// reagent snapshot. It is re-read at most once per biological instant (om_clock_now(CLOCK_BIO),
+/// reagent snapshot. It is re-read at most once per biological instant (clock_now(CLOCK_BIO),
 /// which stasis stops) and patched into the snapshot, so ticking bodies no longer rebuild the
 /// whole treatment snapshot every cycle (audit C11).
 /datum/body/proc/refresh_regeneration()
-	var/now = owner ? om_clock_now(owner, CLOCK_BIO) : 0
+	var/now = owner ? clock_now(owner, CLOCK_BIO) : 0
 	if(now == regeneration_read_at)
 		return
 	regeneration_read_at = now
@@ -445,11 +452,20 @@
 	consciousness = 100
 	vitality = 1
 
+/// TRUE when a hook on the owner takes the status question over: the body is held alive (a dormant nanoform core) and neither death nor
+/// unconsciousness is asked. A question, not a change: the action ends refused for whoever listens for that.
+/datum/body/proc/status_held()
+	var/datum/act/body_status/question = ACT_TRY(owner, body_status)
+	if(!question)
+		return TRUE
+	act_cancel(question)
+	return FALSE
+
 /// Apply death / consciousness from the cached vitals.
 /datum/body/proc/evaluate_status()
-	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || in_godmode(owner))
 		return
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
 			remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
@@ -460,11 +476,11 @@
 
 /// Death only; no consciousness. Returns TRUE if the mob died.
 /datum/body/proc/check_death()
-	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
+	if(owner.is_dead() || in_godmode(owner))
 		return FALSE
 	if(!is_lethal())
 		return FALSE
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		return FALSE
 	owner.death()
 	return TRUE
@@ -476,7 +492,7 @@
 	return FALSE
 
 /datum/body/proc/is_unconscious()
-	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
+	if(status_held())
 		return FALSE
 	ensure_vitals()
 	return consciousness <= CONSCIOUSNESS_THRESHOLD
@@ -487,8 +503,8 @@
 	if(is_unconscious())
 		if(!has_trait(owner, TRAIT_CRITICAL_CONDITION))
 			add_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
-		owner.status_at_least(EFFECT_PARALYZED, 3)
-		owner.status_at_least(EFFECT_SLEEPING, 3)
+		owner.status_at_least(STAT_PARALYZED, 3)
+		owner.status_at_least(STAT_SLEEPING, 3)
 		owner.set_stat(UNCONSCIOUS)
 	else if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
 		remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)

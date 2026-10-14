@@ -8,4 +8,5 @@
 	max_transfer_amount = 10
 	volume = 250
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/spray/luminol, null, list(REAGENT_ID_LUMINOL = 250))
+CAPABILITIES(/obj/item/reagent_containers/spray/luminol)
+	configure(reagents(add = list(REAGENT_ID_LUMINOL = 250)))

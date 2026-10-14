@@ -6,9 +6,12 @@
 	circuit = /obj/item/circuitboard/circuit_imprinter
 	allowed_buildtypes = IMPRINTER
 
-/obj/machinery/rnd/production/circuit_imprinter/Initialize(mapload)
-	. = ..()
-	set_wires(new /datum/wires/circuit_imprinter(src))
+/// A lathe's wiring: the hack and the disable (a pulse lasts five seconds, and the window's designs follow the hack) and four duds; no decoy.
+CAPABILITIES(/obj/machinery/rnd/production/circuit_imprinter)
+	configure(wires(name = "Circuit Imprinter", count = 6, randomize = FALSE))
+	configure(lathe_wires(pulse_lasts = 5 SECONDS, refresh = TRUE))
+	without(CAP_SHOCK_WIRE)
+	on_change(nameof(hacked), EXIT, then(PROC_REF(lathe_hack_ran_out)))
 
 /obj/machinery/rnd/production/circuit_imprinter/compute_efficiency()
 	var/rating = get_part_rating(/obj/item/stock_parts/manipulator)

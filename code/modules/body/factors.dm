@@ -258,7 +258,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 	reagent_bands_pending = FALSE
 	var/list/bands = null
 	for(var/reagent_id in reagent_volumes)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
 		if(!R || !R.contributes_factors(owner))
 			continue
 		LAZYSET(bands, reagent_id, reagent_factor_band(reagent_volumes[reagent_id]))
@@ -334,7 +334,7 @@ GLOBAL_TABLE(body_factor_rules, GLOBAL_PROC_REF(build_body_factor_rules))
 	if(!reagent_volumes)
 		return acc
 	for(var/reagent_id in reagent_volumes)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
 		if(!R)
 			continue
 		var/alist/table = R.get_factors(owner)
@@ -440,7 +440,7 @@ DECLARE_SHARED_CACHE(reagent_merged_species_factors, GLOBAL_PROC_REF(build_reage
 	return TRUE
 
 /proc/dq_reagent_acts_on(reagent_id, mob/living/L)
-	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reagent_id]
 	return R ? R.acts_on_body(L) : FALSE
 
 /// C12: can this reagent change `L`'s body factors at all? (Its own table, or a

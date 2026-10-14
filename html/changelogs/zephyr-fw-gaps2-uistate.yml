@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "interface() carries the window's tgui state (state = nameof(GLOB.x), rights =): DECLARE_UI_STATE converts with its window"

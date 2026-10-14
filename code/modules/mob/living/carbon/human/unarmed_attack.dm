@@ -208,8 +208,8 @@
 	if(!istype(shoes))
 		return user.species.unarmed_bonus + damage
 	if(has_trait(user, TRAIT_NONLETHAL_BLOWS))//don't add extra species strength when pulling punches
-		return damage + (shoes ? shoes.force : 0)
-	return user.species.unarmed_bonus + damage + (shoes ? shoes.force : 0)
+		return damage + (shoes ? combat_of(shoes).force : 0)
+	return user.species.unarmed_bonus + damage + (shoes ? combat_of(shoes).force : 0)
 
 /datum/unarmed_attack/kick/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)
@@ -255,8 +255,8 @@
 /datum/unarmed_attack/stomp/get_unarmed_damage(mob/living/carbon/human/user)
 	var/obj/item/clothing/shoes = user.get_equipped_item(SLOT_ID_SHOES)
 	if(has_trait(user, TRAIT_NONLETHAL_BLOWS))//don't add extra species strength when pulling punches
-		return damage + (shoes ? shoes.force : 0)
-	return user.species.unarmed_bonus + damage + (shoes ? shoes.force : 0)
+		return damage + (shoes ? combat_of(shoes).force : 0)
+	return user.species.unarmed_bonus + damage + (shoes ? combat_of(shoes).force : 0)
 
 /datum/unarmed_attack/stomp/show_attack(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	var/obj/item/organ/external/affecting = target.get_organ(zone)

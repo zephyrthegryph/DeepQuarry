@@ -151,8 +151,6 @@
 	force_update_limbs()
 
 	//H.update_body(0) //Done in force_update_limbs already
-	update_eyes()
-	update_hair()
 
 	return TRUE
 

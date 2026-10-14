@@ -3,7 +3,7 @@
 /// The thin view a client occupies while its mind is held outside a living
 /// body (removed brain, MMI, posibrain, soulcatcher). It has no health of its
 /// own: when it has a mind host with brain tissue, its status is that organ's
-/// (see refresh_host_status() and code/modules/organs/internal/brain.dm).
+/// (see refresh_host_status() and code/modules/body/organs/internal/brain.dm).
 /mob/living/carbon/brain
 	// Views without brain tissue (digital hosts, souls) keep a simple body;
 	// the old brainmob death margin stays for them.
@@ -17,17 +17,11 @@
 	var/had_tissue = FALSE
 	var/emp_damage = 0//Handles a type of MMI damage
 	var/alert = null
-	use_me = 0 //Can't use the me verb, it's a freaking immobile brain
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
 	no_vore = TRUE
 	can_pain_emote = FALSE // Sanity/safety
 	low_priority = TRUE
-
-/mob/living/carbon/brain/Initialize(mapload)
-	. = ..()
-	create_reagents(1000)
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 // a brain with a player dies and ghosts; its host forgets the view.
 /mob/living/carbon/brain/on_destroy(force)
@@ -43,14 +37,15 @@
 /mob/living/carbon/brain/on_identity_bound()
 	..()
 	if(identity().real_name)
-		real_name = identity().real_name
+		set_real_name(identity().real_name)
 		name = real_name
 	if(identity().get_dna())
-		own_set(src, nameof(dna), identity().get_dna().Clone())
+		rel_set(src, nameof(dna), identity().get_dna().Clone())
 	if(identity().languages)
 		languages = identity().languages
 	else
 		identity().languages = languages
+	sync_language_state()
 
 /// The brain tissue this view shows, if any.
 /mob/living/carbon/brain/proc/host_tissue()
@@ -71,7 +66,7 @@
 			death()
 		return
 	if(stat == DEAD && return_from_death("brain tissue recovered", tissue, REVIVE_IGNORE_WINDOW) == TRUE)
-		blinded = 0
+		set_blinded(0)
 	update_canmove()
 
 /mob/living/carbon/brain/say_understands(other)//Goddamn is this hackish, but this say code is so odd
@@ -87,7 +82,7 @@
 /mob/living/carbon/brain/update_canmove()
 	if(in_contents_of(/obj/mecha) || istype(loc, /obj/item/mmi))
 		canmove = 1
-		use_me = 1
+		set_use_me(1)
 	else
 		canmove = 0
 	return canmove
@@ -114,7 +109,7 @@
 /// The Notify Transcore verb's work. A brain with no mind or no backup record gets the no-backup
 /// answer instead of a runtime (audit A7). Returns TRUE when a notification was sent.
 /mob/living/carbon/brain/proc/backup_ping_resolve()
-	var/datum/transcore_db/db = mind ? GLOB.transcore_service.db_by_mind_name(mind.name) : null
+	var/datum/transcore_db/db = mind ? SStranscore.db_by_mind_name(mind.name) : null
 	var/datum/transhuman/mind_record/record = db?.backed_up[mind.name]
 	if(!record)
 		to_chat(src, span_warning("No backup record could be found, sorry."))
@@ -134,6 +129,8 @@
 		EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 		to_chat(src, span_notice("New notification has been sent."))
 
-/mob/living/carbon/brain/relations()
-	. = ..()
-	. += rel_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob
+CAPABILITIES(/mob/living/carbon/brain)
+	ref_one(nameof(host), /datum/mind_host)
+	configure(mob_kind(use_me = 0))
+	knows(LANGUAGE_GALCOM, default = TRUE)
+	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

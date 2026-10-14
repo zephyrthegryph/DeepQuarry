@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Transit pods carry their air again, space heaters run from their own cell in an unpowered area, worn items redraw their slot, bonfires with rods ask what to build, and the pAI icon sheet is no longer built empty"
+  - code_imp: "Stale pins and golden tables blessed by class; tests that read the old appearance, power and click forms follow the engine"

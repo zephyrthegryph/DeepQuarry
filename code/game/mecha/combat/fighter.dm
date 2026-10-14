@@ -1,3 +1,4 @@
+
 #define NOGRAV_FIGHTER_DAMAGE 20
 
 /obj/mecha/combat/fighter
@@ -50,12 +51,16 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 		))
 
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/mecha/combat/fighter)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_landing_gear", topic("toggle_landing_gear"), then(PROC_REF(topic_toggle_landing_gear)))
+
 
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()
 	ion_trail.set_up(src)
 	ion_trail.stop()
+
 
 /obj/mecha/combat/fighter/moved_inside(mob/living/carbon/human/H)
 	. = ..()
@@ -112,14 +117,15 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
 		choices[V.name] = V
 
-	om_ask(occupant, /datum/om/prompt/choice/fighter_destination, PROC_REF(overmap_destination_chosen), choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
+	open_request(src, /datum/prompt/choice/fighter_destination, PROC_REF(fighter_destination_answered), answerer = occupant, subject = src, choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
 
 /// Where a fighter leaving the map edge goes. Re-checked on the answer: the pilot is still in it,
 /// it hasn't moved, and the destination is still next to its sector. A cancel backs it off the edge.
-/datum/om/prompt/choice/fighter_destination
+/datum/prompt/choice/fighter_destination
 	title = "Destination"
-	message = "Choose an overmap destination:"
-	requires = list(/datum/om/check/inside_target)
+	question = "Choose an overmap destination:"
+	timeout = 0
+	recheck_on_open = TRUE
 	var/edge
 	var/start_x
 	var/start_y
@@ -127,33 +133,45 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 	var/new_x
 	var/new_y
 
-/datum/om/prompt/choice/fighter_destination/valid()
+/datum/prompt/choice/fighter_destination/recheck_extra()
 	var/obj/mecha/combat/fighter/F = subject
-	var/obj/effect/overmap/visitable/V = choices[choice]
+	if(QDELETED(F) || QDELETED(answerer))
+		return "gone"
+	if(isnull(value))
+		return null
+	if(answerer.loc != F)
+		return "not inside it"
+	var/obj/effect/overmap/visitable/V = choices[value]
 	if(F.slot_item(MECHA_SLOT_PILOT) != answerer || F.x != start_x || F.y != start_y || F.z != start_z || get_dist(V, get_overmap_sector(F.z)) > 1)
-		to_chat(answerer, span_warning("You or they appear to have moved!"))
 		return "moved"
 	return null
 
-/datum/om/prompt/choice/fighter_destination/cancelled()
-	var/obj/mecha/combat/fighter/F = subject
-	F?.back_off_edge(edge)
+/obj/mecha/combat/fighter/proc/fighter_destination_answered(datum/act/request/A)
+	if(QDELETED(A.request.answerer))
+		return
+	var/datum/prompt/choice/fighter_destination/ask = A.request
+	if(A.answer)
+		overmap_destination_chosen(ask)
+	else if(ask.last_error == "moved")
+		to_chat(ask.answerer, span_warning("You or they appear to have moved!"))
+	else if(isnull(ask.value) && ask.outcome == REQ_CANCELLED && ask.last_error != "nothing to ask")
+		back_off_edge(ask.edge)
 
 /obj/mecha/combat/fighter/proc/back_off_edge(what_edge)
 	var/backwards = turn(what_edge, 180)
 	forceMove(get_step(src,backwards)) //Move them back a step, then.
 	set_dir(backwards)
 
-/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/om/prompt/choice/fighter_destination/ask)
+/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/prompt/choice/fighter_destination/ask)
 	var/mob/living/carbon/occupant = slot_item(MECHA_SLOT_PILOT)
 	var/new_x = ask.new_x
 	var/new_y = ask.new_y
 	var/new_z
-	if(!ask.choice)
+	if(!ask.value)
 		back_off_edge(ask.edge)
 		return
 	else
-		var/obj/effect/overmap/visitable/V = ask.choices[ask.choice]
+		var/obj/effect/overmap/visitable/V = ask.choices[ask.value]
 		var/list/levels = V.get_space_zlevels()
 		if(!levels.len)
 			to_chat(occupant, span_warning("You don't appear to be able to get there from here!"))
@@ -167,9 +185,8 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/fighter, "ion_trail", /datum/effect/effe
 		forceMove(destination)
 
 //Modified phazon code
-TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_toggle_landing_gear))
 
-/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(mob/user, list/args)
+/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(datum/act/op/A)
 	landing_gear_raised = !landing_gear_raised
 	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
 	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))
@@ -285,66 +302,66 @@ TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_to
 	// Paint colors! Null if not set.
 	var/stripe1_color
 	var/stripe2_color
-	var/image/stripe1_overlay
-	var/image/stripe2_overlay
 
-/obj/mecha/combat/fighter/gunpod/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive))
 
-/obj/mecha/combat/fighter/gunpod/recon/Initialize(mapload) //Blinky
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/teleporter(src)
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
-	ME.attach(src)
+//Blinky
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/teleporter, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay))
 
-DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/mecha/combat/fighter/gunpod/appearance_overlays()
-	. = list()
-	. += ..()
-
+/// The stripes, in the colours a multitool gave them.
+/obj/mecha/combat/fighter/gunpod/draw(datum/look/look)
+	..()
 	if(stripe1_color)
-		stripe1_overlay = image("gunpod_stripes1")
-		stripe1_overlay.color = stripe1_color
-		. += stripe1_overlay
+		look.overlay(look_appearance(icon, "gunpod_stripes1", color = stripe1_color))
 	if(stripe2_color)
-		stripe2_overlay = image("gunpod_stripes2")
-		stripe2_overlay.color = stripe2_color
-		. += stripe2_overlay
+		look.overlay(look_appearance(icon, "gunpod_stripes2", color = stripe2_color))
 
-EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint stripes", PROC_REF(interaction_gunpod_paint)))
+
+CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
+	op("gunpod_paint", item(/obj/item), label("Paint stripes"), then(PROC_REF(interaction_gunpod_paint)))
 
 /// Old attackby: a multitool repaints the stripes while the maintenance state is open.
-/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/mecha/combat/fighter/gunpod/proc/interaction_gunpod_paint(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
-		return FALSE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
+		return OP_DECLINE
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_stripe_color), answerer = user, subject = W, timeout = 0, title = "Paint Zone", question = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 
-/datum/om/prompt/color/mech_paint
+/datum/prompt/color/mech_paint
 	title = "Paint Color"
-	message = "Please select a paint color."
+	question = "Please select a paint color."
+	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/zone
 
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/ask)
-	if(ask.choice != "CANCEL")
-		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(stripe_painted), subject = ask.subject, zone = ask.choice)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/act/request/context)
+	if(!context.answer)
+		return
+	return ask_stripe_color_apply(context)
 
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/om/prompt/color/mech_paint/ask)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
+	var/datum/prompt/choice/ask = context.answer
+	if(ask.value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.value)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
+	if(!context.answer)
+		return
+	return stripe_painted_apply(context)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted_apply(datum/act/request/context)
+	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.picked_color)
+	if(ask.value)
 		switch(ask.zone)
 			if("Fore Stripe")
-				stripe1_color = ask.picked_color
+				set_stripe1_color(ask.value)
 			if("Aft Stripe")
-				stripe2_color = ask.picked_color
-	update_icon()
+				set_stripe2_color(ask.value)
 
 /obj/effect/decal/mecha_wreckage/gunpod
 	name = "Gunpod wreckage"
@@ -376,12 +393,8 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 
 	ground_capable = FALSE
 
-/obj/mecha/combat/fighter/baron/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/omni_shield
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/omni_shield))
 
 /obj/effect/decal/mecha_wreckage/baron
 	name = "Baron wreckage"
@@ -413,12 +426,8 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 
 	ground_capable = FALSE
 
-/obj/mecha/combat/fighter/scoralis/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg, /obj/item/mecha_parts/mecha_equipment/cloak))
 
 /obj/effect/decal/mecha_wreckage/scoralis
 	name = "scoralis wreckage"
@@ -451,10 +460,8 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 
 	max_integrity = 500
 
-/obj/mecha/combat/fighter/allure/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/cloak))
 
 /obj/effect/decal/mecha_wreckage/allure
 	name = "allure wreckage"
@@ -487,10 +494,8 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 
 	max_integrity = 200
 
-/obj/mecha/combat/fighter/pinnace/loaded/Initialize(mapload) //Loaded version with guns
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-	ME.attach(src)
+//Loaded version with guns
+TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser))
 
 /obj/effect/decal/mecha_wreckage/pinnace
 	name = "pinnace wreckage"
@@ -510,4 +515,5 @@ EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint strip
 	value = CATALOGUER_REWARD_MEDIUM
 
 #undef NOGRAV_FIGHTER_DAMAGE
+
 

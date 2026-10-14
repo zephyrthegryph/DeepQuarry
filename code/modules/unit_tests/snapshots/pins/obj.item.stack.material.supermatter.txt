@@ -1,0 +1,33 @@
+@obj.item.stack human|none
+@obj.item.stack robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.stack.material human|/obj/item/tool/screwdriver
++1 menu: Pick up
+@obj.item.stack.material human|/obj/item/tool/crowbar
++1 menu: Pick up
+@obj.item.stack.material human|/obj/item/tool/wrench
++1 menu: Pick up
+@obj.item.stack human|/obj/item/tool/wirecutters
++1 menu: Pick up
++4 menu: Use
+@obj.item.stack.material human|/obj/item/multitool
++1 menu: Pick up
+@obj.item.stack human|/obj/item/weldingtool
++1 menu: Pick up
+@obj.item.stack.material human|/obj/item/stack/cable_coil
++2 menu: Pick up
+@obj.item.stack.material human|/obj/item/stack/material/steel
++2 menu: Pick up
+@obj.item.stack.material human|/obj/item/card/id
++1 menu: Pick up
+@obj.item.stack.material human|/obj/item/kit
++2 menu: Pick up
+@obj.item.stack.material human|/obj/item/storage
++2 menu: Pick up
+@obj human|/obj/item/gripper
+@obj.item.stack.material human|/obj/item/stack
++2 menu: Pick up
+@obj.item.stack human|/obj/item
++1 menu: Pick up
+keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, material_interaction_item, material_self, move_to_top, pick_up, pick_up_item, split, toggle_digestable

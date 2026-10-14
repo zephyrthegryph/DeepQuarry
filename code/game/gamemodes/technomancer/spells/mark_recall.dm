@@ -14,6 +14,9 @@
 	var/image/I
 	var/turf/T
 
+CAPABILITIES(/datum/technomancer_marker)
+	ref_one(nameof(caster))
+
 /datum/technomancer_marker/New(mob/user)
 	rel_set(src, nameof(caster), user)
 	rel_set(src, nameof(T), get_turf(user))
@@ -21,7 +24,7 @@
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
 	user.client?.images |= I
-	om_after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
+	after(src, 2.3 SECONDS, PROC_REF(loop_animation)) //That's just how long the animation is
 
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()
@@ -31,11 +34,15 @@
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.
 /// Every placed mark (owned by the antag service); one per caster.
-/datum/world_service/antag/var/list/datum/technomancer_marker/mark_spells
+/datum/system/antag/var/list/datum/technomancer_marker/mark_spells
+
+CAPABILITIES(/datum/system/antag)
+	owns_many(nameof(mark_spells), /datum/technomancer_marker)
+	owns_many(nameof(all_antag_types))
 
 /// `user`'s placed mark, or null.
 /proc/technomancer_marker_of(mob/user)
-	for(var/datum/technomancer_marker/marker as anything in GLOB.antag_service.mark_spells)
+	for(var/datum/technomancer_marker/marker as anything in antag_mark_spells())
 		if(marker.caster == user)
 			return marker
 	return null
@@ -55,12 +62,12 @@
 		var/datum/technomancer_marker/marker = technomancer_marker_of(user)
 		//They have one in the list
 		if(istype(marker))
-			own_remove(GLOB.antag_service, nameof(/datum/world_service/antag::mark_spells), marker)
+			own_remove(SSantag, nameof(/datum/system/antag::mark_spells), marker)
 			to_chat(user, span_notice("Your mark is moved from its old position to \the [get_turf(user)] under you."))
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		own_add(GLOB.antag_service, nameof(/datum/world_service/antag::mark_spells), new /datum/technomancer_marker(user))
+		rel_add(SSantag, nameof(/datum/system/antag::mark_spells), new /datum/technomancer_marker(user))
 		adjust_instability(5)
 		return 1
 	else
@@ -113,8 +120,8 @@
 		to_chat(user, span_danger("You cannot Recall while incapacitated!"))
 		return
 	if(time_left > 0)
-		set_light(light_intensity, light_intensity, l_color = "#006AFF")
-		om_after(src, 1 SECOND, PROC_REF(recall_glow), user, marker, time_left - 1, light_intensity + 1)
+		set_glow(src, GLOW(light_intensity, light_intensity, "#006AFF"))
+		after(src, 1 SECOND, PROC_REF(recall_glow), with = list(user, marker, time_left - 1, light_intensity + 1))
 		return
 	var/turf/target_turf = marker.T() // Multiple technomancer support
 	var/turf/old_turf = get_turf(user)

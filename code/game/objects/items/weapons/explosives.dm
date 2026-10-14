@@ -16,61 +16,86 @@
 	var/blast_light = 2
 	var/blast_flash = 3
 
-/obj/item/plastique/Initialize(mapload)
-	. = ..()
-	set_wires(new /datum/wires/explosive/c4(src))
+/obj/item/plastique/proc/plastique_after_init(datum/act/timer/A)
 	image_overlay = image('icons/obj/assemblies.dmi', "plastic-explosive2")
 
 /// Old attackby.
-/obj/item/plastique/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/plastique/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(I.has_tool_quality(TOOL_MULTITOOL) || istype(I, /obj/item/assembly/signaler))
-		wires.Interact(user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		wires_open(src, user)
+		return OP_PASS
+	return OP_DECLINE
 
-/obj/item/plastique/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/plastique/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	open_panel = !open_panel
 	to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/item/plastique/wirecutter_act(mob/user, obj/item/tool)
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
+/obj/item/plastique/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	wires_open(src, user)
+	return OP_OK
 
-/obj/item/plastique/multitool_act(mob/user, obj/item/tool)
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
+/obj/item/plastique/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	wires_open(src, user)
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/plastique, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/plastique, timer)
 
-/// Old attack_self.
-/obj/item/plastique/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(timer_set), title = "Timer", message = "Please set the timer.", default = 10, max = 60000, min = 10, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return TRUE
 
-/obj/item/plastique/proc/timer_set(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/newtime = CLAMP(ask.number, 10, 60000)
-	timer = newtime
-	to_chat(user, "Timer set for [timer] seconds.")
-
-/obj/item/plastique/afterattack(atom/movable/target, mob/user, flag)
-	if (!flag)
+/obj/item/plastique/proc/explode_wire(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(istype(N) && N.mended)
 		return
-	if (ismob(target) || istype(target, /turf/unsimulated) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
-		return
-	to_chat(user, "Planting explosives...")
-	user.do_attack_animation(target)
+	explode(get_turf(src))
 
-	om_task_timed(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user))
+MSG_DEF_SELF(plastique/planting, "Planting explosives...")
 
-/obj/item/plastique/proc/afterattack_timed_done(atom/movable/target, mob/user)
-	if(!(in_range(user, target)))
-		return
+CAPABILITIES(/obj/item/plastique)
+	after_init(0, then(PROC_REF(plastique_after_init)))
+	space(SPACE_PANEL, door = nameof(open_panel))
+	wires(name = "Explosive wires", count = 1, tools = FALSE)
+	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
+	op("plant", at_target(/obj), at_target(/turf), when(PROC_REF(plantable)), begins(MSG(plastique/planting)), starts(PROC_REF(plant_started)), wait(5 SECONDS, keeps = HELD | ADJACENT | STAY | TARGET_PRESENT), then(PROC_REF(planted)))
+	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
+		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	ref_one(nameof(target), /atom)
+
+/// ASK_HELD used either actual hand, not the input event's saved held reference.
+/obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
+	var/mob/living/actor = A.actor
+	if(!istype(actor))
+		return /datum/msg/op/not_available
+	return actor.item_is_in_hands(src) ? null : /datum/msg/op/not_available
+
+/obj/item/plastique/proc/timer_set(datum/act/op/A)
+	var/datum/prompt/number/R = A.answer
+	set_timer(CLAMP(R.value, 10, 60000))
+	to_chat(A.actor, "Timer set for [timer] seconds.")
+	return OP_OK
+
+/// What a charge cannot be planted on: a mob, unsimulated or shuttle ground, storage and clothing.
+/obj/item/plastique/proc/plantable(datum/act/op/A)
+	var/atom/target = A.target
+	return !(ismob(target) || istype(target, /turf/unsimulated) || istype(target, /turf/simulated/shuttle) || istype(target, /obj/item/storage/) || istype(target, /obj/item/clothing/accessory/storage/) || istype(target, /obj/item/clothing/under))
+
+/obj/item/plastique/proc/plant_started(datum/act/op/A)
+	A.actor.do_attack_animation(A.target)
+	return null
+
+/obj/item/plastique/proc/planted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/target = A.target
 	user.drop_item()
 	rel_set(src, nameof(target), target_ref())
 	moveToNullspace()
@@ -84,7 +109,8 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 
 	target.add_overlay(image_overlay)
 	to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
-	om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
+	after(src, timer SECONDS, PROC_REF(explode), with = list(get_turf(target)))
+	return OP_OK
 
 /obj/item/plastique/proc/explode(location)
 	if(!target_ref())
@@ -118,18 +144,21 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 	blast_light = 4
 	blast_flash = 7
 
-EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(seismic_interaction_item)))
 
 /// Old attackby: it ran the parent's body first (its ..()), so this does too.
-/obj/item/plastique/seismic/proc/seismic_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = interaction_item(user, I, interaction)
+/obj/item/plastique/seismic/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = ..()
 	if(open_panel)
 		if(istype(I, /obj/item/stock_parts/micro_laser))
 			var/obj/item/stock_parts/SP = I
 			var/new_blast_power = max(1, round(SP.rating * 2) + 1)
 			if(new_blast_power > blast_heavy)
-				to_chat(user, span_notice("You install \the [I] into \the [src]."))
-				consume(I, user)
+				var/component_label = "\the [I]"
+				if(!consume(I, user))
+					return .
+				to_chat(user, span_notice("You install [component_label] into \the [src]."))
 				blast_heavy = new_blast_power
 				blast_light = blast_heavy + round(new_blast_power * 0.5)
 				blast_flash = blast_light + round(new_blast_power * 0.75)

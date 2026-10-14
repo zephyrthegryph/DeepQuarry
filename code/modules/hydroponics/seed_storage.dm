@@ -6,11 +6,13 @@
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
 
+CAPABILITIES(/datum/seed_pile)
+	owns_one(nameof(seed_type_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
 /datum/seed_pile/ownership()
 	. = ..()
 	. += owns(nameof(seeds), policy = OWN_SPILL)
-	. += proto(nameof(seed_type_static))
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
@@ -18,7 +20,7 @@
 	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
 	var/datum/seed/S = O.seed()
 	proto_set(src, nameof(seed_type_static), (!S || is_registered(S)) ? S : S.copy_line())
-	own_add(src, nameof(seeds), O)
+	rel_add(src, nameof(seeds), O)
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
@@ -34,7 +36,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100
 
 	var/seeds_initialized = 0 // Map-placed ones break if seeds are loaded right at the start of the round, so we do it on the first interaction
 	var/list/datum/seed_pile/piles = list() // ALLOW(instance_list): d: seed piles are filled at init and are the machine's stock
@@ -42,62 +43,87 @@
 	var/list/starting_seeds
 	var/list/contraband_seeds //Seeds we only show if we've been hacked.
 	var/list/scanner // What properties we can view
-	var/seconds_electrified = 0 //Shock users like an airlock.
 	var/smart = 0 //Used for hacking. Overrides the scanner.
 	var/hacked = 0
 	var/lockdown = 0
 
-/obj/machinery/seed_storage/Initialize(mapload)
-	. = ..()
-	set_wires(new /datum/wires/seedstorage(src))
-	if(!length(contraband_seeds))
-		contraband_seeds = pick( 	/// Some form of ambrosia in all lists.
-			prob(30);list( /// General produce
-				/obj/item/seeds/ambrosiavulgarisseed = 3,
-				/obj/item/seeds/greengrapeseed = 3,
-				/obj/item/seeds/icepepperseed = 2,
-				/obj/item/seeds/kudzuseed = 1
-			),
-			prob(30);list( ///Mushroom batch
-				/obj/item/seeds/ambrosiavulgarisseed = 1,
-				/obj/item/seeds/glowberryseed = 2,
-				/obj/item/seeds/libertymycelium = 1,
-				/obj/item/seeds/reishimycelium = 2,
-				/obj/item/seeds/sporemycelium = 1
-			),
-			prob(15);list( /// Survivalist
-				/obj/item/seeds/ambrosiadeusseed = 2,
-				/obj/item/seeds/redtowermycelium = 2,
-				/obj/item/seeds/vale = 2,
-				/obj/item/seeds/siflettuce = 2
-			),
-			prob(20);list( /// Cold plants
-				/obj/item/seeds/ambrosiavulgarisseed = 2,
-				/obj/item/seeds/thaadra = 2,
-				/obj/item/seeds/icepepperseed = 2,
-				/obj/item/seeds/siflettuce = 1
-			),
-			prob(10);list( ///Poison party
-				/obj/item/seeds/ambrosiavulgarisseed = 3,
-				/obj/item/seeds/surik = 1,
-				/obj/item/seeds/telriis = 1,
-				/obj/item/seeds/nettleseed = 2,
-				/obj/item/seeds/poisonberryseed = 1
-			),
-			prob(5);list( /// Extra poison party!
-				/obj/item/seeds/ambrosiainfernusseed = 1,
-				/obj/item/seeds/amauri = 1,
-				/obj/item/seeds/surik = 1,
-				/obj/item/seeds/deathberryseed = 1 /// Very ow.
-			)
-		)
+/// Shocks its users like an airlock: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
+STAT(/obj/machinery/seed_storage, electrified, TOP, base = 0)
 
-/obj/machinery/seed_storage/machine_step()
-	..()
-	if(seconds_electrified > 0)
-		seconds_electrified--
-		if(seconds_electrified > 0)
-			return
+CAPABILITIES(/obj/machinery/seed_storage)
+	rolls(nameof(contraband_seeds), PROC_REF(roll_contraband_seeds))
+	configure(uses_power(idle = 100))
+	started_work(step = PROC_REF(work_step))
+	owns_many(nameof(piles), /datum/seed_pile)
+	owns_many(nameof(piles_contra), /datum/seed_pile)
+	interface("SeedStorage")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
+	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
+	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Seed Storage", count = 4, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	shock_wire(stat = STAT_ELECTRIFIED)
+	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
+	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
+	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_seeds)))
+	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds))), then(PROC_REF(interaction_insert_bag)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+
+/obj/machinery/seed_storage/proc/wire_lights()
+	return list(
+		"The orange light is [shock_live(src) ? "off." : "on."]",
+		"The red light is [smart ? "off." : "blinking."]",
+		"The green light is [(hacked || emagged()) ? "on." : "off."]",
+		"The keypad lock light is [lockdown ? "deployed." : "retracted."]")
+
+/// The smart wire cut turns smart mode off (mending does not turn it back on).
+/obj/machinery/seed_storage/proc/smart_wire_cut(datum/act/A)
+	smart = FALSE
+
+/obj/machinery/seed_storage/proc/smart_wire_pulsed(datum/act/A)
+	smart = !smart
+
+/obj/machinery/seed_storage/proc/contraband_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	hacked = !N.mended
+
+/obj/machinery/seed_storage/proc/contraband_wire_pulsed(datum/act/A)
+	hacked = !hacked
+
+/// The lockdown wire mended locks the keypad down and clears the access; cut, the access is back as built.
+/obj/machinery/seed_storage/proc/lockdown_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(N.mended)
+		set_lockdown(TRUE)
+		set_req_access(list())
+		set_req_one_access(list())
+	else
+		set_req_access(initial(req_access))
+		set_req_one_access(initial(req_one_access))
+
+/obj/machinery/seed_storage/proc/lockdown_wire_pulsed(datum/act/A)
+	set_lockdown(!lockdown)
+
+/// The contraband seed batch a hacked storage shows: one of six weighted batches, each with some form of ambrosia.
+/obj/machinery/seed_storage/proc/roll_contraband_seeds(datum/roller/R)
+	var/static/list/batches = list(
+		"produce" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/greengrapeseed = 3, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/kudzuseed = 1),
+		"mushrooms" = list(/obj/item/seeds/ambrosiavulgarisseed = 1, /obj/item/seeds/glowberryseed = 2, /obj/item/seeds/libertymycelium = 1, /obj/item/seeds/reishimycelium = 2, /obj/item/seeds/sporemycelium = 1),
+		"survivalist" = list(/obj/item/seeds/ambrosiadeusseed = 2, /obj/item/seeds/redtowermycelium = 2, /obj/item/seeds/vale = 2, /obj/item/seeds/siflettuce = 2),
+		"cold" = list(/obj/item/seeds/ambrosiavulgarisseed = 2, /obj/item/seeds/thaadra = 2, /obj/item/seeds/icepepperseed = 2, /obj/item/seeds/siflettuce = 1),
+		"poison" = list(/obj/item/seeds/ambrosiavulgarisseed = 3, /obj/item/seeds/surik = 1, /obj/item/seeds/telriis = 1, /obj/item/seeds/nettleseed = 2, /obj/item/seeds/poisonberryseed = 1),
+		"extra_poison" = list(/obj/item/seeds/ambrosiainfernusseed = 1, /obj/item/seeds/amauri = 1, /obj/item/seeds/surik = 1, /obj/item/seeds/deathberryseed = 1)) // the deathberry: very ow
+	var/static/list/weights = list("produce" = 30, "mushrooms" = 30, "survivalist" = 15, "cold" = 20, "poison" = 10, "extra_poison" = 5)
+	var/list/batch = batches[R.weighted(weights)]
+	return batch.Copy()
+
+/// Seed storage has no timed work of its own (its shock is a timed hold).
+/obj/machinery/seed_storage/proc/work_step(datum/act/timer/A)
 	return PROCESS_KILL
 
 /obj/machinery/seed_storage/random // This is mostly for testing, but I guess admins could spawn it
@@ -214,39 +240,22 @@
 		/obj/item/seeds/wurmwoad = 3
 		)
 
-/obj/machinery/seed_storage/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/seed_storage_insert_seeds,
-		/datum/interaction/machine_item/seed_storage_insert_bag,
-		/datum/interaction/machine_hand/ungated/seed_storage_use,
-	)
-	..()
 
-/obj/machinery/seed_storage/proc/not_locked_down(mob/actor, atom/target, obj/item/held)
-	return !lockdown
 
-/// Insert loose seeds.
-/datum/interaction/machine_item/seed_storage_insert_seeds
-	id = "seed_storage_insert_seeds"
-	name = "Insert seeds"
-	held_type = /obj/item/seeds
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
-	effect = /obj/machinery/seed_storage/proc/interaction_insert_seeds
+/// The seed bay refuses while it is locked down.
+/obj/machinery/seed_storage/proc/not_locked_down_holds(datum/act/op/A)
+	return lockdown ? "it's locked down" : null
 
-/obj/machinery/seed_storage/proc/interaction_insert_seeds(mob/user, obj/item/seeds/O, datum/interaction/interaction)
+/obj/machinery/seed_storage/proc/interaction_insert_seeds(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/seeds/O = A.held
 	add(O)
 	act_message(user, src, MSG_SELF(span_filter_notice("You put %I% into %T%.")), MSG_OTHERS(span_filter_notice("%U% puts \the [O.name] into %T%.")), item = O)
 	return TRUE
 
-/// Empty a seed bag into storage.
-/datum/interaction/machine_item/seed_storage_insert_bag
-	id = "seed_storage_insert_bag"
-	name = "Empty seed bag"
-	held_type = /obj/item/storage/bag/plants
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
-	effect = /obj/machinery/seed_storage/proc/interaction_insert_bag
-
-/obj/machinery/seed_storage/proc/interaction_insert_bag(mob/user, obj/item/storage/P, datum/interaction/interaction)
+/obj/machinery/seed_storage/proc/interaction_insert_bag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/P = A.held
 	var/loaded = 0
 	for(var/obj/item/seeds/G in contents_of(P))
 		++loaded
@@ -258,28 +267,21 @@
 		to_chat(user, span_notice("There are no seeds in \the [P.name]."))
 	return TRUE
 
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/seed_storage_use
-	id = "seed_storage_use"
-	name = "Use"
-	effect = /obj/machinery/seed_storage/proc/interaction_use
-
-/obj/machinery/seed_storage/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/seed_storage/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 
-	if(seconds_electrified != 0)
+	if(shock_live(src))
 		if(shock(user, 100))
 			return TRUE
 
 	if(panel_open)
-		wires.Interact(user)
+		wires_open(src, user)
 	if(lockdown)
 		return TRUE
 	tgui_interact(user)
 	return TRUE
-
-DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
 
 /obj/machinery/seed_storage/ui_prepare(mob/user, datum/tgui/ui)
 	if(!seeds_initialized)
@@ -301,10 +303,8 @@ DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
 
 	return TRUE
 
-UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{scanner:bool,seeds:list}")
-
-/// The computed part of /obj/machinery/seed_storage's window data (declared on its UI_DATA row).
-/obj/machinery/seed_storage/proc/ui_data_obj_machinery_seed_storage(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/seed_storage's window data.
+/obj/machinery/seed_storage/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	if(smart)
@@ -315,7 +315,7 @@ UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{s
 	data["scanner"] = (scanner || list())
 
 	var/list/piles_to_check = piles
-	if(hacked || emagged)
+	if(hacked || emagged())
 		piles_to_check = piles + piles_contra
 
 	var/list/seeds = list()
@@ -418,16 +418,15 @@ UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{s
 /// The pile the UI's id names, among those this storage shows.
 /obj/machinery/seed_storage/proc/pile_by_id(id)
 	var/list/piles_to_check = piles
-	if(hacked || emagged)
+	if(hacked || emagged())
 		piles_to_check = piles + piles_contra
 	for(var/datum/seed_pile/N in piles_to_check)
 		if(N.ID == id)
 			return N
 	return null
 
-UI_ACT(/obj/machinery/seed_storage, "vend", ui_act_vend, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
-	var/datum/seed_pile/N = pile_by_id(params["id"])
+/obj/machinery/seed_storage/proc/ui_act_vend(datum/act/op/A, id)
+	var/datum/seed_pile/N = pile_by_id(id)
 	if(!N)
 		return
 	var/obj/O = pick(N.seeds)
@@ -437,63 +436,62 @@ UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
 		if(N.amount <= 0 || N.seeds.len <= 0)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 			own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-			qdel(N)
+			spent(N)
 		O.forceMove(src.loc)
 	else
 		own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 		own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-		qdel(N)
+		spent(N)
 	return TRUE
 
-UI_ACT(/obj/machinery/seed_storage, "purge", ui_act_purge, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_purge)
-	var/datum/seed_pile/N = pile_by_id(params["id"])
+/obj/machinery/seed_storage/proc/ui_act_purge(datum/act/op/A, id)
+	var/datum/seed_pile/N = pile_by_id(id)
 	if(!N)
 		return
 	for(var/obj/O in N.seeds)
-		qdel(O)
+		spent(O)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
 	own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
-	qdel(N)
+	spent(N)
 	return TRUE
 
-/obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/machinery/seed_storage/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/seed_storage/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/seed_storage/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
 	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	cut_overlays()
 	if(panel_open)
 		add_overlay("[initial(icon_state)]-panel")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/seed_storage/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	wires.Interact(user)
-	return ITEM_INTERACT_SUCCESS
+/// The wirecutters or a multitool behind the open panel: the wires.
+/obj/machinery/seed_storage/proc/wire_tool_used(datum/act/op/A)
+	wires_open(src, A.actor)
+	return OP_OK
 
-/obj/machinery/seed_storage/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
-
-DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
-/obj/machinery/seed_storage/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/seed_storage/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(1)
 	if(lockdown)
 		to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
-		lockdown = 0
+		set_lockdown(0)
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-		req_access = list()
-		req_one_access = list()
+		set_req_access(list())
+		set_req_one_access(list())
 		to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
 		fx_sparks(src, 3, FALSE)
 		visible_message(span_warning("\The [src]'s panel sparks!"))
-	return 1
+	return OP_OK
 
 /obj/machinery/seed_storage/proc/add(obj/item/seeds/O as obj, contraband = 0)
 	if (istype(O.loc, /mob))
@@ -513,22 +511,22 @@ DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount
-				own_add(N, nameof(N.seeds), (O))
+				rel_add(N, nameof(N.seeds), (O))
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		own_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
+		rel_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
 		if (N.matches(O))
 			++N.amount
-			own_add(N, nameof(N.seeds), (O))
+			rel_add(N, nameof(N.seeds), (O))
 			return
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	own_add(src, nameof(piles), new /datum/seed_pile(O, newID))
+	rel_add(src, nameof(piles), new /datum/seed_pile(O, newID))
 
 	return
 

@@ -36,8 +36,7 @@
 	dir = direction
 	if(istype(M))
 		rel_set(src, nameof(master), M)
-	atmos_air_set(src, nameof(air), new /datum/gas_mixture)
-	air.set_volume(200)
+	atmos_air_set(src, nameof(air), new /datum/gas_mixture(istype(M) ? M.port_volume : 200))
 
 /datum/omni_port/proc/connect()
 	if(node)
@@ -85,6 +84,7 @@
 //returns a direction flag based on the string passed to it
 // case insensitive
 /proc/dir_flag(dir)
+	READS_FROM()
 	dir = lowertext(dir)
 	switch(dir)
 		if("north")
@@ -115,12 +115,9 @@
 		else
 			return null
 
-// The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
-/datum/omni_port/ownership()
-	. = ..()
-	. += proto(nameof(air))
+// The omni device owns its ports (rel_add in omni/Initialize()); a port names its device back.
 
-/datum/omni_port/relations()
-	. = ..()
-	. += rel_one(nameof(master))
+CAPABILITIES(/datum/omni_port)
+	owns_one(nameof(air), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	ref_one(nameof(master))
 

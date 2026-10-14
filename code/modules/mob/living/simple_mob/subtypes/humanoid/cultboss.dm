@@ -40,7 +40,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
@@ -117,10 +117,11 @@
 	name = "inversion bolt"
 	damage = 20
 	eyeblur = 0
-	armor_penetration = 50
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(item_combat(armor_penetration = 50))
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	vore_active = 1
@@ -130,20 +131,21 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/magus/rift, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/magus/rift, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome preadtor gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach.."
 
@@ -166,22 +168,25 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/magus/rift, /mob/livi
 	name = "void magnus hood"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = HEAD
-	heat_protection = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/culthood/void)
+	configure(item_protection(cold_parts = HEAD, heat_parts = HEAD))
 
 /obj/item/clothing/suit/cultrobes/void
 	name = "void magnus robes"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes/void)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/shoes/boots/cult/void
 	name = "void magnus boots"
 	color = "#1C1C1C"
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=10;rad=10"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/cult/void)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/gloves/tactical/void
 	desc = "These warm red gloves glow warmly, while making the world round them seem darker."
@@ -189,27 +194,25 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/magus/rift, /mob/livi
 	color = "#1C1C1C"
 	icon_state = "work"
 	item_state = "wgloves"
-	force = 10
 	punch_force = 8
 	armor_spec = "melee=30;bullet=25;laser=25;energy=40;bomb=30;bio=10;rad=10"
+
+CAPABILITIES(/obj/item/clothing/gloves/tactical/void)
+	configure(item_combat(force = 10))
 
 /obj/item/melee/voidblade
 	name = "cult blade"
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	force = 40
-	throwforce = 20
 	defend_chance = 25
 	projectile_parry_chance = 25
-	armor_penetration = 25
-	hitsound = SFX_WEAPONS_BLADESLICE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/melee/voidblade)
+	configure(item_thrown(force = 20))
+	configure(item_combat(force = 40, armor_penetration = 25, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/capture_crystal/demon
 	spawn_mob_type = /mob/living/simple_mob/vore/demonAI

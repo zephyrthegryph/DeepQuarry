@@ -1,0 +1,9 @@
+ghost|none menu: Travel
+ghost|none menu: View
+ghost|none click: Click: Travel
+human|none menu: Activate
+human|none click: Click: Activate
+robot|none menu: Activate
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
+robot|none click: Click: Activate

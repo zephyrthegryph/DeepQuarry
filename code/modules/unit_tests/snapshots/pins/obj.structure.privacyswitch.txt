@@ -1,0 +1,18 @@
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+@obj.structure human|/obj/item/tool/wrench
+@obj.structure human|/obj/item/tool/wirecutters
+@obj.structure human|/obj/item/multitool
+@obj.structure human|/obj/item/weldingtool
+@obj.structure human|/obj/item/stack/cable_coil
+@obj.structure human|/obj/item/stack/material/steel
+@obj.structure human|/obj/item/card/id
+@obj.structure human|/obj/item
+keys: drag_buckle, melee_hit, silicon_hand, toggle_privacy

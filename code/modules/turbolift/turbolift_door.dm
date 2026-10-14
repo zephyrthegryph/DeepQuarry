@@ -43,9 +43,21 @@
 
 // Vore specific code for /obj/machinery/door/airlock/lift
 
-/obj/machinery/door/airlock/lift/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_danger("This door is internally controlled."))
-	return 0 // Prevents the cryptographic sequencer from using a charge fruitlessly
+MSG_DEF_SELF(lift_door/internal, "This door is internally controlled.")
+
+// A lift's door takes no emag: the sequencer is refused with a word and spends nothing.
+CAPABILITIES(/obj/machinery/door/airlock/lift)
+	links(/obj/machinery/door/airlock/lift::lift, /datum/turbolift::doors, b_many = TRUE)
+	without(CAP_EMAG)
+	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
+		needs(req(PROC_REF(emag_welcome))), then(PROC_REF(nothing_done)))
+
+/// Never: the lift machinery alone works the door.
+/obj/machinery/door/airlock/lift/proc/emag_welcome(datum/act/A)
+	return (FALSE) ? null : MSG(lift_door/internal)
+
+/obj/machinery/door/airlock/lift/proc/nothing_done(datum/act/op/A)
+	return OP_OK
 
 /// the lift this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/lift/proc/lift() as /datum/turbolift
@@ -56,11 +68,5 @@
 	return floor
 
 // Interior doors: two-sided with the lift's doors list.
-/obj/machinery/door/airlock/lift/relations()
-	. = ..()
-	. += rel_one(nameof(lift), back = nameof(/datum/turbolift::doors))
-/datum/turbolift/relations()
-	. = ..()
-	. += rel_many(nameof(doors), back = nameof(/obj/machinery/door/airlock/lift::lift))
 // Exterior doors: a floor lists its doors (airlocks and firedoors) in a one-sided REL_LIST
 // (turbolift_floor.dm), and each door names its floor in a one-sided view.

@@ -6,20 +6,16 @@
 	var/pounce_delay = 0 // pounce delay in game ticks
 	var/pounce_speed = 1 // pounce speed in idk?? 2 kinda fast tho
 
-	// icon handling for pounce. Has to handle a possible file change
+	// icon handling for pounce: the draw swaps the icon file, state and offset while pouncing
 	var/icon_state_prepounce = null //icon state for 'preparing to pounce'. Null to not use any icon.
 
-	var/icon_pounce_cache = null // cache. If pounce icons are in different files, the procs will cache the original icon filepath here for resetting
 	var/icon_pounce = null // icon filepath for pouncing (Flying through air). Null if same as original icon path.
 	var/icon_state_pounce = null // icon state for pouncing (Flying through air). Null to not use any icon.
 	var/icon_pounce_x = 0 // icon pixelshift x
 	var/icon_pounce_y = 0 // icon pixelshift y
-	var/icon_pounce_x_old = null // icon pixelshift x cache to preserve original value
-	var/icon_pounce_y_old = null // icon pixelshift y cache to preserve original value
 
 	//spitting
 	var/spit_delay = 20 // maximum spit fire rate
-	COOLDOWN_DECLARE(spit_cooldown)
 	var/icon_overlay_spit = null // spit iconstate
 	var/icon_overlay_spit_pounce = null // spit while pouncing
 
@@ -28,78 +24,6 @@
 	var/speen_delay = 80 // maximum spin spam
 
 
-
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/appearance_overlays()
-	. = list()
-	. += ..()
-	//use prepounce or pounce sprites, if any
-	if(pouncing && (status_flags & LEAPING)) //pouncing, flying through the air
-		if(!isnull(icon_state_pounce)) // if state is set
-			icon_state = icon_state_pounce
-		if(!isnull(icon_pounce)) // if icon filepath is set and not equal to pounce cache
-			if(icon != icon_pounce) // prevent accidently writing the pounce icon into the icon cache
-				icon_pounce_cache = icon
-			icon = icon_pounce
-
-	else if(pouncing) //pre-pouncing
-		if(!isnull(icon_state_prepounce)) // if state is set
-			icon_state = icon_state_prepounce
-		if(!isnull(icon_pounce_cache)) // if cache is set
-			icon = icon_pounce_cache
-			icon_pounce_cache = null
-	else if(!isnull(icon_pounce_cache)) // not pouncing at all but cache is still set
-		icon = icon_pounce_cache
-		icon_pounce_cache = null
-
-	//handle pounce variant pixelshifting
-	// X first
-	if(icon_pounce_x) // if an offset is even assigned
-		if(pouncing)
-			if(status_flags & LEAPING) //Flying through air - set
-				if(isnull(icon_pounce_x_old)) // only set once
-					icon_pounce_x_old = pixel_x
-				pixel_x = icon_pounce_x
-			else //Prepouncing - reset
-				if(!isnull(icon_pounce_x_old)) //only act if not already cleared
-					pixel_x = icon_pounce_x_old
-					icon_pounce_x_old = null
-
-		else //Not pouncing or prepouncing - reset
-			if(!isnull(icon_pounce_x_old)) //only act if not already cleared
-				pixel_x = icon_pounce_x_old
-				icon_pounce_x_old = null
-	// Then Y
-	if(icon_pounce_y) // if an offset is even assigned
-		if(pouncing)
-			if(status_flags & LEAPING) //Flying through air - set
-				if(isnull(icon_pounce_y_old)) // only set once
-					icon_pounce_y_old = pixel_y
-				pixel_y = icon_pounce_y
-			else //Prepouncing - reset
-				if(!isnull(icon_pounce_y_old)) //only act if not already cleared
-					pixel_y = icon_pounce_y_old
-					icon_pounce_y_old = null
-
-		else //Not pouncing or prepouncing - reset
-			if(!isnull(icon_pounce_y_old)) //only act if not already cleared
-				pixel_y = icon_pounce_y_old
-				icon_pounce_y_old = null
-
-	// show spitting warning overlay, if any
-	if(spitting)
-		var/spiticon = null
-		if(!isnull(icon_overlay_spit) && (icon_state == icon_living))
-			spiticon = icon_overlay_spit
-		else if(!isnull(icon_overlay_spit_pounce) && (icon_state == icon_state_prepounce))
-			spiticon = icon_overlay_spit_pounce
-
-		if(spiticon)
-			var/image/I = image(icon, spiticon)
-			I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-			I.plane = MOB_PLANE
-			I.layer = MOB_LAYER
-			. += I
 
 // Pouncing procs.
 // Pouncing consists of a series of functions:
@@ -114,11 +38,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 	if(pouncing)
 		to_chat(src, span_notice("Pouncing toggled off."))
-		pouncing = 0
+		set_pouncing(0)
 	else
 		to_chat(src, span_notice("Pouncing toggled on! DoubleClick somewhere to pounce there."))
-		pouncing = 1
-	update_icon()
+		set_pouncing(1)
 
 // This is the on-double-click action.
 // We should alter them for the space of this specific proc, and then return them to what they were.
@@ -126,14 +49,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	//trying/permitted to pounce
 	if(pouncing)
 		//able to pounce (not dead or stunned or on CD)
-		if(isliving(src) && !src.has_status(EFFECT_WEAKENED) && (COOLDOWN_FINISHED(src, pounce_last)) && !(status_flags & LEAPING))
+		if(isliving(src) && !src.has_status(STAT_WEAKENED) && (COOLDOWN_FINISHED(src, pounce_last)) && !(status_flags & LEAPING))
 			//can see pounce target
 			if((A in view(src, world.view)))
 				//make sure we're targetting a turf!
 				var/turf/T = get_turf(A)
 				//handle delay spam
 				COOLDOWN_START(src, pounce_last, pounce_delay)
-				status_flags |= LEAPING
+				set_status_flags(status_flags | LEAPING)
 
 				//deal with passflag - give flags if don't have, mark for removal. Prevent removal if already has flags.
 				var/foundpt = 0
@@ -154,10 +77,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 				playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 				// throw_at returns FALSE if it will not call it's callback - useful to prevent state jamming
-				if(!throw_at(T, 10, pounce_speed, callback = om_callable(src, PROC_REF(pouncefinish), foundpt, foundpm, T)))
+				if(!throw_at(T, 10, pounce_speed, then = PROC_REF(pouncefinish), then_owner = src, then_with = list(foundpt, foundpm, T)))
 					if(status_flags & LEAPING)
-						status_flags &= ~LEAPING
-						flying = 0
+						set_status_flags(status_flags & ~LEAPING)
+						set_flying(src, 0)
 						dq_set_hovering(src, 0)
 						if(!foundpt)
 							pass_flags &= ~PASSTABLE
@@ -169,19 +92,18 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 			to_chat(src, span_warning("You can't do that right now!"))
 			// some sanity incase the callback didn't fire for some reason
 			if(status_flags & LEAPING)
-				status_flags &= ~LEAPING
-				flying = 0
+				set_status_flags(status_flags & ~LEAPING)
+				set_flying(src, 0)
 				dq_set_hovering(src, 0)
-			pouncing = 0
-		update_icon()
+			set_pouncing(0)
 	else
 		. = ..()
 
 // callback to terminate leap mode. Reset passflag if passflag = 0 (Mob doesn't already have it)
 /mob/living/simple_mob/proc/pouncefinish(pt, pm, atom/T)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
-		flying = 0
+		set_status_flags(status_flags & ~LEAPING)
+		set_flying(src, 0)
 		dq_set_hovering(src, 0)
 
 		if(!pt)
@@ -201,16 +123,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 						var/atom/movable/_tmp_buck_21 = M?.buckled_to()
 						_tmp_buck_21.unbuckle_mob()
 
-					LM.status_at_least(EFFECT_WEAKENED, 5)
+					LM.status_at_least(STAT_WEAKENED, 5)
 					playsound(src, get_sfx(SFX_PUNCH), 50, 1)
-					pouncing = 0
+					set_pouncing(0)
 			src.Move(T)
 
 		//did we fail to arrive at our destination?
 		if(get_dist(src, T))
-			pouncing = 0
-			update_icon()
-			src.status_at_least(EFFECT_WEAKENED, 5)
+			set_pouncing(0)
+			src.status_at_least(STAT_WEAKENED, 5)
 			playsound(src, get_sfx(SFX_PUNCH), 50, 1)
 		else
 			//if we arrived, and weren't blocked, and are STILL pouncing, see if we landed on any living things that didn't block us that ISN't ourselves lmfao.
@@ -218,10 +139,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 				for(var/mob/living/M in contents_of(T))
 					if(isliving(M) && M != src)
 						var/mob/living/LM = M
-						LM.status_at_least(EFFECT_WEAKENED, 5)
+						LM.status_at_least(STAT_WEAKENED, 5)
 						playsound(src, get_sfx(SFX_PUNCH), 50, 1)
-						pouncing = 0
-			update_icon()
+						set_pouncing(0)
 
 
 // ported from mob/living/carbon/human/species/xenomorph/alien_powers
@@ -229,16 +149,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	if(isnull(spit_projectile))
 		return
 
-	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
+	if(!cooldown_ready(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		COOLDOWN_START(src, spit_cooldown, spit_delay)
+		cooldown_start(src, spit_cooldown, spit_delay)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
-		spitting = 0
-		update_icon()
+		set_spitting(0)
 		return
 	else if(spitting)
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
@@ -254,12 +173,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))
-		spitting = 0
+		set_spitting(0)
 	else
-		spitting = 1
+		set_spitting(1)
 		spit_projectile = /obj/item/projectile/energy/neurotoxin
 		to_chat(src, span_notice("You prepare to spit neurotoxin."))
-	update_icon()
 
 /mob/living/simple_mob/proc/acidspit()
 	set name = "Toggle Acid Spit"
@@ -268,12 +186,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 	if(spitting)
 		to_chat(src, span_notice("You stop preparing to spit."))
-		spitting = 0
+		set_spitting(0)
 	else
-		spitting = 1
+		set_spitting(1)
 		spit_projectile = /obj/item/projectile/energy/acid
 		to_chat(src, span_notice("You prepare to spit acid."))
-	update_icon()
 
 /mob/living/simple_mob/proc/corrosive_acid(O as obj|turf in oview(1)) //If they right click to corrode, an error will flash if its an invalid target./N
 	set name = "Corrosive Acid"
@@ -330,10 +247,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		om_after(src, 1, PROC_REF(speen_throw), am)
+		after(src, 0.1 SECONDS, PROC_REF(speen_throw), with = list(am))
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 /mob/living/simple_mob/proc/speen_throw(atom/movable/AM, gentle = 0, damage = 10)
+	if(!AM)
+		return
 	var/maxthrow = 7
 	var/atom/throwtarget
 	throwtarget = get_edge_target_turf(src, get_dir(src, get_step_away(AM, src)))
@@ -343,7 +262,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 
 	if(isliving(AM))
 		var/mob/living/M = AM
-		M.status_at_least(EFFECT_WEAKENED, 1.5)
+		M.status_at_least(STAT_WEAKENED, 1.5)
 		if(!gentle)
 			M.injure(INJURY_BLUNT, damage, source = src)
 		to_chat(M, span_userdanger("You're thrown back by [src]!"))

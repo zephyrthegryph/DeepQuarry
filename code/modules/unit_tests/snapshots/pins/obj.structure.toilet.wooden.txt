@@ -1,0 +1,84 @@
+human|none menu: Flush
+human|none menu: Wooden touch
+human|none menu: Yank the flush lever
+human|none click: Click: Wooden touch
+robot|none menu: Flush
+robot|none menu: Wooden touch
+robot|none menu: Yank the flush lever
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Flush
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver menu: Wooden touch
+human|/obj/item/tool/screwdriver menu: Yank the flush lever
+human|/obj/item/tool/screwdriver click: Click: Wooden item
+human|/obj/item/tool/crowbar menu: Flush
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar menu: Wooden touch
+human|/obj/item/tool/crowbar menu: Yank the flush lever
+human|/obj/item/tool/crowbar click: Click: Use crowbar
+human|/obj/item/tool/wrench menu: Flush
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Wooden touch
+human|/obj/item/tool/wrench menu: Yank the flush lever
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Flush
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters menu: Wooden touch
+human|/obj/item/tool/wirecutters menu: Yank the flush lever
+human|/obj/item/tool/wirecutters click: Click: Wooden item
+human|/obj/item/multitool menu: Flush
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool menu: Wooden touch
+human|/obj/item/multitool menu: Yank the flush lever
+human|/obj/item/multitool click: Click: Wooden item
+human|/obj/item/weldingtool menu: Flush
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool menu: Wooden touch
+human|/obj/item/weldingtool menu: Yank the flush lever
+human|/obj/item/weldingtool click: Click: Wooden item
+human|/obj/item/stack/cable_coil menu: Flush
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil menu: Wooden touch
+human|/obj/item/stack/cable_coil menu: Yank the flush lever
+human|/obj/item/stack/cable_coil click: Click: Wooden item
+human|/obj/item/stack/material/steel menu: Flush
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel menu: Wooden touch
+human|/obj/item/stack/material/steel menu: Yank the flush lever
+human|/obj/item/stack/material/steel click: Click: Wooden item
+human|/obj/item/card/id menu: Flush
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id menu: Wooden touch
+human|/obj/item/card/id menu: Yank the flush lever
+human|/obj/item/card/id click: Click: Wooden item
+human|/obj/item menu: Flush
+human|/obj/item menu: Hit
+human|/obj/item menu: Use item
+human|/obj/item menu: Wooden touch
+human|/obj/item menu: Yank the flush lever
+human|/obj/item click: Click: Wooden item
+human|/obj/item/bluespace_crystal menu: Flush
+human|/obj/item/bluespace_crystal menu: Hit
+human|/obj/item/bluespace_crystal menu: Use bluespace crystal
+human|/obj/item/bluespace_crystal menu: Wooden touch
+human|/obj/item/bluespace_crystal menu: Yank the flush lever
+human|/obj/item/bluespace_crystal click: Click: Wooden item
+human|/obj/item/stock_parts/matter_bin menu: Flush
+human|/obj/item/stock_parts/matter_bin menu: Hit
+human|/obj/item/stock_parts/matter_bin menu: Use matter bin
+human|/obj/item/stock_parts/matter_bin menu: Wooden touch
+human|/obj/item/stock_parts/matter_bin menu: Yank the flush lever
+human|/obj/item/stock_parts/matter_bin click: Click: Wooden item
+keys: drag_buckle, flush, flush_yank, insert_crystal, melee_hit, replace_bin, silicon_use, swirlie, use_crowbar, use_wrench, wooden_item, wooden_item_cyborg, wooden_swirlie, wooden_touch

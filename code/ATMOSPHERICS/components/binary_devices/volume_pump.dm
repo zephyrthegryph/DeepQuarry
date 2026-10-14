@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/volume_pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	icon = 'icons/atmos/volume_pump.dmi'
 	icon_state = "map_off"
 	construction_type = /obj/item/pipe/directional
@@ -24,7 +26,6 @@ Thus, the two variables affect pump operation are set in New():
 	desc = "A pump that moves gas by volume"
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 15000	//15000 W ~ 20.4 HP
 
 	var/max_transfer_rate = ATMOS_DEFAULT_VOLUME_PUMP	// Ls
@@ -36,14 +37,6 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/overclocked = FALSE
 	var/mutable_appearance/overclock_overlay
-
-/obj/machinery/atmospherics/binary/volume_pump/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	if(frequency)
-		set_frequency(frequency)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per
@@ -80,7 +73,7 @@ Thus, the two variables affect pump operation are set in New():
 				var/leak_fraction = min(VOLUME_PUMP_LEAK_AMOUNT * moles / air2_total, 1)
 				var/datum/gas_mixture/leaked = air2.remove_ratio(leak_fraction)
 				T.air.merge(leaked)
-				qdel(leaked)
+				spent(leaked)
 				T.update_visuals()
 				T.air_update_turf(FALSE, FALSE)
 
@@ -120,14 +113,11 @@ Thus, the two variables affect pump operation are set in New():
 	icon_state = "map_on-aux"
 	use_power = USE_POWER_IDLE
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/volume_pump, "{appearance_running?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_overclocked", list("1" = list(APPEARANCE_OVERLAYS = list(mutable_appearance('icons/atmos/volume_pump_overclock.dmi', "vpumpoverclock")))))
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_running()
-	return powered() && use_power
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/appearance_overclocked()
-	return powered() && use_power && overclocked
+/obj/machinery/atmospherics/binary/volume_pump/draw(datum/look/look)
+	..()
+	var/running = operable() && use_power
+	look.state(running ? "on" : "off")
+	look.overlay("vpumpoverclock", when = running && overclocked, icon = 'icons/atmos/volume_pump_overclock.dmi')
 
 /obj/machinery/atmospherics/binary/volume_pump/update_underlays()
 	..()
@@ -148,10 +138,10 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -173,17 +163,8 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/binary/volume_pump, "appearance_o
 
 	return TRUE
 
-DECLARE_UI(/obj/machinery/atmospherics/binary/volume_pump, "GasPump")
-
-/obj/machinery/atmospherics/binary/volume_pump/ui_prepare(mob/user, datum/tgui/ui)
-	if(!operable())
-		return FALSE
-	return TRUE
-
-UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_obj_machinery_atmospherics_binary_volume_pump{on:unknown,rate:unknown,max_rate:num,last_flow_rate:unknown,last_power_draw:num,max_power_draw:unknown}")
-
-/// The computed part of /obj/machinery/atmospherics/binary/volume_pump's window data (declared on its UI_DATA row).
-/obj/machinery/atmospherics/binary/volume_pump/proc/ui_data_obj_machinery_atmospherics_binary_volume_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/atmospherics/binary/volume_pump/ui_data(datum/act/eval/A)
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,
@@ -217,53 +198,61 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_o
 		return //do not update_icon
 
 	broadcast_status()
-	update_icon()
 	return
 
-/obj/machinery/atmospherics/binary/volume_pump/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/volume_pump_open_ui,
-		/datum/interaction/machine_alt/volume_pump_max_output,
-	)
-	..()
+MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits.")
+MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
-/// Old attack_hand: fingerprint, access check, then the UI.
-/datum/interaction/machine_hand/volume_pump_open_ui
-	id = "volume_pump_open_ui"
-	name = "Use"
-	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui
+CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(idle = 150))
+	pipe_device_window("GasPump")
+	pipe_device_switch()
+	pipe_device_max(PROC_REF(max_output_set))
+	pipe_device_unwrench()
+	op("overclock", tool(TOOL_MULTITOOL), label("Toggle pressure limiter"), wait(0), says(PROC_REF(overclock_message)), then(PROC_REF(overclock_toggled)))
+	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+	// "set" asks for the value; "min" and "max" set it at once
+	op("set_press", ui_act("set_press", arg("press", schema_text(4096))),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(set_press_question)), "title" = "Flow Control", "default" = computed(PROC_REF(set_press_default)), "max_value" = nameof(max_transfer_rate), "timeout" = 0), step = "k269", when = PROC_REF(press_is_set)),
+		then(PROC_REF(ui_act_set_press)))
 
-/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_volume_pump_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
+/obj/machinery/atmospherics/binary/volume_pump/proc/power_switched(datum/act/op/A)
+	toggle_power()
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_power)
-	set_use_power(!use_power)
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
+/// The alt-click's highest rate.
+/obj/machinery/atmospherics/binary/volume_pump/proc/max_output_set(datum/act/op/A)
+	set_transfer_rate(max_transfer_rate)
+	return OP_OK
 
-UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
-	var/press = params["press"]
+/// The multitool lifts the pump's pressure limiter, or puts it back.
+/obj/machinery/atmospherics/binary/volume_pump/proc/overclock_toggled(datum/act/op/A)
+	set_overclocked(!overclocked)
+	return OP_OK
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/overclock_message(datum/act/A)
+	return overclocked ? /datum/msg/volume_pump/overclocked : /datum/msg/volume_pump/limited
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/press_is_set(datum/act/op/A)
+	return A.args["press"] == "set"
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/set_press_question(datum/act/op/A)
+	return "Enter new transfer rate (0-[max_transfer_rate] L/s)"
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/set_press_default(datum/act/op/A)
+	return src.transfer_rate
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/ui_act_set_press(datum/act/op/A, press)
 	switch(press)
 		if("min")
 			set_transfer_rate(0)
 		if("max")
 			set_transfer_rate(max_transfer_rate)
 		if("set")
-			var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
-			if(isnull(new_rate))
-				return
+			var/new_rate = A.step_value("k269")
 			set_transfer_rate(between(0, new_rate, max_transfer_rate))
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
+	return OP_OK
 
 /obj/machinery/atmospherics/binary/volume_pump/examine(mob/user)
 	. = ..()
@@ -274,72 +263,15 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)
 	if(overclocked)
 		. += "Its warning light is on[use_power ? " and it's spewing gas!" : "."]"
 
-/obj/machinery/atmospherics/binary/volume_pump/wrench_act(mob/user, obj/item/W)
-	if (!has_stat(NOPOWER) && use_power)
-		to_chat(user, span_warning("You cannot unwrench this [src], turn it off first."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench this [src], it too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear ratchet."))
-	atom_deconstruct()
-
-/obj/machinery/atmospherics/binary/volume_pump/multitool_act(mob/user, obj/item/W)
-	if(!overclocked)
-		set_overclocked(TRUE)
-		to_chat(user, span_notice("The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits."))
-	else
-		set_overclocked(FALSE)
-		to_chat(user, span_notice("The pump quiets down as you turn its limiters back on."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/datum/interaction/machine_alt/volume_pump_max_output
-	id = "volume_pump_max_output"
-	name = "Set to max output"
-	effect = /obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output
-
-/obj/machinery/atmospherics/binary/volume_pump/proc/interaction_max_output(mob/user, obj/item/held, datum/interaction/interaction)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return TRUE
-
-	to_chat(user, span_notice("You set the [name] to max output"))
-	set_transfer_rate(max_transfer_rate)
-	add_fingerprint(user)
-	return TRUE
-
-/obj/machinery/atmospherics/binary/volume_pump/click_ctrl(mob/user)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return CLICK_ACTION_BLOCKING
-
-	set_use_power(!use_power)
-	// ALLOW(sys_update_icon): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	// ALLOW(sys_update_icon_call): the device state is not an appearance-watched field; the icon is refreshed procedurally
-	update_icon()
-	add_fingerprint(user)
-	to_chat(user, span_notice("You toggle the [name] [use_power ? "on" : "off"]."))
-	return CLICK_ACTION_SUCCESS
-
 // (No #undef here: VOLUME_PUMP_MAX_OUTPUT_PRESSURE / VOLUME_PUMP_LEAK_AMOUNT are
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
 
 
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/atmospherics/binary/volume_pump, overclocked, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/binary/volume_pump, transfer_rate)
 
 /// The Rust device law is pushed (once per frame) when any of these change.
 /obj/machinery/atmospherics/binary/volume_pump/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(transfer_rate), nameof(overclocked))
+	. += drawn_from(nameof(use_power), nameof(overclocked))

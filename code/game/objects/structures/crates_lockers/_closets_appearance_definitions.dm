@@ -1,6 +1,5 @@
-/obj/structure/closet/debug/Initialize(mapload, newappearance)
-	closet_appearance = newappearance
-	. = ..()
+CAPABILITIES(/obj/structure/closet/debug)
+	param(nameof(closet_appearance), pos = 1)
 
 /datum/decl/closet_appearance
 	var/color = COLOR_GRAY40

@@ -12,15 +12,17 @@
 	collection_mode = 1
 	display_contents_with_number = 1
 	max_storage_space = 100
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	var/panel_req = TRUE
 	var/pshoom_or_beepboopblorpzingshadashwoosh = SFX_ITEMS_RPED
 	var/reskin_ran = FALSE
 	var/unique_reskin = list("Soulless" = "RPED",
 							"Soulful" = "RPED_old")
 
-TYPE_TABLE(/obj/item/storage/part_replacer, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/part_replacer)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL))
+	op("reskin", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Reskin"), then(PROC_REF(interaction_reskin_alt)))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -31,14 +33,13 @@ TYPE_TABLE(/obj/item/storage/part_replacer, hold_spec, list(HOLD_ONLY(list(/obj/
 	if(!reskin_ran)
 		. += span_notice("[src]'s external casing can be modified via alt-click.")
 
-EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC_REF(interaction_reskin_alt)))
-
 /// Old click_alt: the storage's own alt-click, then the one-time reskin menu.
-/obj/item/storage/part_replacer/proc/interaction_reskin_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	. = interaction_alt(user, held, interaction)
+/obj/item/storage/part_replacer/proc/interaction_reskin_alt(datum/act/op/A)
+	var/mob/user = A.actor
+	. = toggle_window(user) ? OP_OK : OP_DECLINE
 	if(!reskin_ran)
 		reskin_radial(user)
-		return TRUE
+		return OP_OK
 
 /obj/item/storage/part_replacer/proc/reskin_radial(mob/M)
 	if(!LAZYLEN(unique_reskin))
@@ -50,17 +51,19 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 		items += list("[reskin_option]" = item_image)
 	sortList(items)
 
-	om_ask(M, /datum/om/prompt/choice/radial, PROC_REF(reskin_chosen), choices = items, anchor = src, radius = 38, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(reskin_chosen), answerer = M, choices = items, anchor = src, radius = 38, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/storage/part_replacer/proc/reskin_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/M = ask.answerer
-	var/pick = ask.choice
+/obj/item/storage/part_replacer/proc/reskin_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	var/pick = A.answer.value
 	if(!pick || reskin_ran)
 		return
 	if(!unique_reskin[pick])
 		return
-	icon_state = unique_reskin[pick]
-	item_state = unique_reskin[pick]
+	set_icon_state(unique_reskin[pick])
+	set_item_state(unique_reskin[pick])
 	reskin_ran = TRUE
 	to_chat(M, "[src] is now '[pick]'.")
 
@@ -76,10 +79,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	* 10/8/21 edit - It's Time.
 	*/
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
-	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() > lowest_rating)
 			continue
 		remove_from_storage(B, T, user)
@@ -91,7 +94,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	storage_slots = 200
 	max_storage_space = 400
 
-TYPE_TABLE(/obj/item/storage/part_replacer/adv, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/part_replacer/adv)
+	configure(storage(accepts = list(
+		/obj/item/stock_parts,
+		/obj/item/reagent_containers/glass/beaker)))
 
 /obj/item/storage/part_replacer/adv/discount_bluespace
 	name = "prototype bluespace rapid part exchange device"

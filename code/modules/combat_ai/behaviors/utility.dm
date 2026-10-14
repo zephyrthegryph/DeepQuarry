@@ -42,10 +42,10 @@
 		return DQ_BEHAVIOR_FAILED
 	var/obj/item/I = target
 	if(!owner.Adjacent(I))
-		step_to(owner, I)
+		brain.act_step(I)
 		return DQ_BEHAVIOR_CONTINUE
 	// Adjacent — pick up.
-	owner.put_in_any_hand_if_possible(I)
+	brain.perform_attack_op(owner, I, "mob_attacks.pickup")
 	if(I.loc == owner)
 		act_message(owner, null, others = span_notice("%U% picks up [I]."))
 		// Force rebuild on next strategic tick — happens naturally via slow tick.

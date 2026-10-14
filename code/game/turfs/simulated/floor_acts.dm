@@ -43,7 +43,25 @@
 /turf/simulated/floor/projectile_damage(obj/item/projectile/P, def_zone)
 	return 0
 
-DAMAGE_REACTION(/turf/simulated/floor, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_block))
+CAPABILITIES(/turf/simulated/floor)
+	extend(/datum/act/hit/blob, instead())
+	ref_one(nameof(flooring), /datum/decl/flooring)
+	param(nameof(floortype_at_make), pos = 1)
+	op("floor_item_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(floor_item_help)))
+	op("floor_item_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_disarm)))
+	op("floor_item_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), label("Draw graffiti"), then(PROC_REF(floor_item_grab)))
+	op("floor_item_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_hurt)))
+	floor_construction()
+	// Laying a flooring from a stack in hand: the build time is the flooring's (floor_item starts it).
+	op("lay_flooring", ai(), takes("flooring"), wait(PROC_REF(lay_flooring_time)), then(PROC_REF(lay_flooring)))
+	op("floor_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), when(req(TYPE_PROC_REF(/turf, engraved_by_held))), then(PROC_REF(floor_graffiti_alt)))
+	on_change(nameof(flooring), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(flooring_override), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(plating_exposed), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(scorch_state), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(plating_damage_state), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(broken), ANY, then(PROC_REF(edge_inputs_changed)))
+	on_change(nameof(burnt), ANY, then(PROC_REF(edge_inputs_changed)))
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

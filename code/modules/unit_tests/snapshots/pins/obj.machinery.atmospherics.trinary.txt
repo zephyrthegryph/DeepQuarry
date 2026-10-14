@@ -1,0 +1,33 @@
+human|none menu: Toggle power
+human|none click: nothing
+@obj.machinery robot|none
++1 menu: Toggle power
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Toggle power
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Toggle power
+human|/obj/item/tool/wrench menu: Toggle power
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Toggle power
+@obj.machinery human|/obj/item/multitool
++0 menu: Toggle power
+human|/obj/item/weldingtool menu: Toggle power
+human|/obj/item/weldingtool click: nothing
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Toggle power
+human|/obj/item/stack/material/steel menu: Toggle power
+human|/obj/item/stack/material/steel click: nothing
+@obj.machinery human|/obj/item/card/id
++0 menu: Toggle power
+@obj.machinery human|/obj/item
++0 menu: Toggle power
+human|/obj/item/stack/material menu: Toggle power
+human|/obj/item/stack/material click: nothing
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Toggle power
+human|/obj/item/pipe_painter click: Click: Painter
+keys: drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, power_toggle, robot_remote_blocked, silicon_hand, unwrench

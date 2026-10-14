@@ -8,18 +8,29 @@
 	density = TRUE
 	max_integrity = 100
 	var/datum/material/material
+	var/material_colour // the material's icon colour, kept beside it for the look
 
-/obj/structure/barricade/Initialize(mapload, material_name)
-	. = ..()
-	if(!material_name)
-		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
+CAPABILITIES(/obj/structure/barricade)
+	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
+	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
+	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+TRACKED(/obj/structure/barricade, material)
+
+/// The barricade's material (its constructor param; a subtype's default).
+/obj/structure/barricade/var/barricade_material = MAT_WOOD
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/barricade/proc/build_of(material_name)
+	set_material(get_material_by_name("[material_name || MAT_WOOD]"))
 	if(!material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
+	set_material_colour(material.icon_colour)
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	color = material.icon_colour
-	max_integrity = material.integrity
+	set_max_integrity(material.integrity)
 	update_integrity(max_integrity)
 
 /obj/structure/barricade/get_material()
@@ -32,32 +43,29 @@
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
-/obj/structure/barricade/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/barricade_item,
-	)
-	..()
+MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 
-/// Old attackby: repair with a matching material stack, or take a weapon hit.
-/datum/interaction/entry_item/barricade_item
-	id = "barricade_item"
-	name = "Use"
-	effect = /obj/structure/barricade/proc/interaction_item
+/// A sheet of its own material, held to a barricade that is hurt, repairs it.
+/obj/structure/barricade/proc/repairs_it(datum/act/op/A)
+	var/obj/item/stack/D = A.held
+	return (get_integrity_damage() > 0 && read_once(D.get_material_name()) == read_once(material.name)) ? null : MSG(req_failed)
 
-/obj/structure/barricade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/barricade/proc/repair_started(datum/act/op/A)
+	A.actor.setClickCooldown(A.actor.get_attack_speed(A.held))
+
+/obj/structure/barricade/proc/repaired(datum/act/op/A)
+	if(get_integrity_damage() <= 0)
+		return
+	repair_damage(max_integrity)
+	act_message(A.actor, src, others = span_notice("%U% repairs %T%."))
+
+/// Old attackby: anything else hits it (a sheet of any kind that does not repair it does nothing).
+/obj/structure/barricade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(istype(W, /obj/item/stack))
-		var/obj/item/stack/D = W
-		if(D.get_material_name() != material.name)
-			return TRUE //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
-		if(get_integrity() < max_integrity)
-			if(D.get_amount() < 1)
-				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
-				return TRUE
-			act_message(user, src, others = span_notice("%U% begins to repair %T%."))
-			om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
-			return TRUE
-		return TRUE
+		return OP_OK //hitting things with a stack usually doesn't produce messages, and probably doesn't need to.
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
 		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
@@ -65,18 +73,10 @@
 		play_sfx(src, SFX_WEAPONS_SMASH)
 	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force, INJURY_BURN)
+			receive_weapon_hit(W, user, combat_of(W).force, INJURY_BURN)
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.75)
-	return TRUE
-
-/obj/structure/barricade/proc/attackby_timed_done(mob/user, obj/item/stack/D)
-	if(!(get_integrity() < max_integrity))
-		return
-	if(D.use(1))
-		repair_damage(max_integrity)
-		act_message(user, src, others = span_notice("%U% repairs %T%."))
-	return
+			receive_weapon_hit(W, user, combat_of(W).force * 0.75)
+	return OP_OK
 
 /obj/structure/barricade/atom_destruction(damage_flag)
 	dismantle()
@@ -99,7 +99,7 @@
 /obj/structure/barricade/proc/dismantle()
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("\The [src] falls apart!"))
-	qdel(src)
+	consume(src)
 	return
 
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
@@ -118,13 +118,19 @@
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "blank"
 
-/obj/structure/barricade/sandbag/Initialize(mapload, material_name)
-	if(!material_name)
-		material_name = MAT_CLOTH
-	. = ..(mapload, material_name)
+/obj/structure/barricade/sandbag
+	barricade_material = MAT_CLOTH
+
+CAPABILITIES(/obj/structure/barricade/sandbag)
+	smoothing()
+
+/obj/structure/barricade/sandbag/build_of(material_name)
+	..()
+	if(QDELETED(src))
+		return
 	name = "[material.display_name] [initial(name)]"
 	color = null
-	max_integrity = material.integrity * 2	// These things are, commonly, used to stop bullets where possible.
+	set_max_integrity(material.integrity * 2)	// These things are, commonly, used to stop bullets where possible.
 	update_integrity(max_integrity)
 	update_connections(1)
 
@@ -134,24 +140,16 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	update_connections(1, src)
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("\The [src] falls apart!"))
-	qdel(src)
+	consume(src)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/barricade/sandbag/appearance_overlays()
-	. = list()
+/obj/structure/barricade/sandbag/draw(datum/look/look)
+	..()
 	if(!material)
-		return .
-
-	var/image/I
-
+		return
 	for(var/i = 1 to 4)
 		var/connect = connections?[i] || 0
-		I = image('icons/obj/sandbags.dmi', "sandbags[connect]", dir = 1<<(i-1))
-		I.color = material.icon_colour
-		. += I
-
-	return .
+		look.overlay(look_overlay_image('icons/obj/sandbags.dmi', "sandbags[connect]", color = material_colour, dir = 1<<(i-1)))
 
 /obj/structure/barricade/sandbag/update_connections(propagate = 0, obj/structure/barricade/sandbag/ignore = null)
 	if(!material)
@@ -167,9 +165,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, a
 		if(can_join_with(S))
 			dirs += get_dir(src, S)
 
-	connections = string_list(dirs_to_corner_states(dirs))
-
-	update_icon()
+	set_connections(string_list(dirs_to_corner_states(dirs)))
 
 /obj/structure/barricade/sandbag/proc/can_join_with(obj/structure/barricade/sandbag/S)
 	if(material == S.material)
@@ -184,5 +180,5 @@ DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, a
 			var/obj/item/projectile/P = mover
 
 			if(P.firer && get_dist(P.firer, src) > 1)	// If you're firing from adjacent turfs, you are unobstructed.
-				if(P.armor_penetration < (material.protectiveness + material.hardness) || prob(33))
+				if(combat_of(P).armor_penetration < (material.protectiveness + material.hardness) || prob(33))
 					return FALSE

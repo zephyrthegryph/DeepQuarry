@@ -2,19 +2,30 @@
 	var/datum/sunlight_handler/shandler
 	var/shandler_noinit = FALSE
 
-/turf/simulated/Initialize(mapload)
-	. = ..()
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/turf/simulated)
+	after_init(0, then(PROC_REF(turf_after_init)))
+	owns_one(nameof(shandler), /datum/sunlight_handler)
+	verb_entry(/turf/simulated/proc/climb_wall, when = nameof(climbable))
+	adjacency(ADJ_KIND_TURF_EDGE, dirs = ADJ_ALL_AROUND, changed = PROC_REF(edges_changed))
 
-/turf/simulated/LateInitialize()
-	if(((GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
+/// A turf the map loads runs its after-init pass once the whole load exists; one made later (ChangeTurf) runs it only when its type says so.
+/turf/simulated/proc/turf_after_init(datum/act/timer/A)
+	if(A.mapload || runtime_after_init())
+		sim_after_init(A)
+
+/// Whether a turf made during the round runs sim_after_init() too (a floor with flooring, open space, glass), not only one the map loads.
+/turf/simulated/proc/runtime_after_init()
+	return FALSE
+
+/// The after-init pass of a simulated turf: planet sunlight. Subtypes add their own work after ..().
+/turf/simulated/proc/sim_after_init(datum/act/timer/A)
+	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && has_dynamic_lighting()) //Only for planet turfs or fakesuns that specify they want to use this system
 		if(is_outdoors())
 			var/turf/T = GetAbove(src)
-			if(T && !isopenturf(T) && (GLOB.planet_service.z_to_planet.len >= T.z && GLOB.planet_service.z_to_planet[T.z]))
+			if(T && !isopenturf(T) && (SSplanets.z_to_planet.len >= T.z && SSplanets.z_to_planet[T.z]))
 				make_indoors()
 		if(!shandler_noinit)
-			own_set(src, nameof(shandler), new /datum/sunlight_handler(src))
+			rel_set(src, nameof(shandler), new /datum/sunlight_handler(src))
 			shandler.manualInit()
 
 /turf/simulated/lighting_build_overlay()
@@ -390,12 +401,6 @@
 		return TRUE
 	else
 		return FALSE
-
-// A simulated turf owns its sunlight handler (turf.shandler, OWN); holder is the one-sided back
-// view. The handler moves to the replacement turf through ChangeTurf (turf_changing.dm).
-/datum/planet_sunlight_handler/relations()
-	. = ..()
-	. += rel_many(nameof(shandlers))
 
 /// The sun (a relation view).
 /datum/sunlight_handler/proc/sun() as /datum/simple_sun

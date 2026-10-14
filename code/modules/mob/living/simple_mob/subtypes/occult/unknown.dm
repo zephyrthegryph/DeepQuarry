@@ -24,7 +24,6 @@
 	melee_damage_upper = 40
 	attack_armor_pen = 20
 
-	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb
 	projectilesound = SFX_EFFECTS_UNCLOAK
@@ -39,7 +38,6 @@
 
 	loot_list = list(/obj/item/nif/glitch = 100)
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /obj/item/projectile/energy/slow_orb
@@ -49,14 +47,15 @@
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 15
-	armor_penetration = 40
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
+CAPABILITIES(/obj/item/projectile/energy/slow_orb)
+	configure(item_combat(armor_penetration = 40))
+
 /mob/living/simple_mob/glitch_boss
 	delete_on_death = TRUE
-	death_message = "suddenly %runtime error in unknown.dm, line 56%"
 
 /mob/living/simple_mob/glitch_boss/on_death(gibbed)
 	. = ..()
@@ -67,16 +66,16 @@
 	var/wellness = vitality()
 	if(wellness < 0.25)
 		special_attack_cooldown = 5 SECONDS
-		icon_state = "glitch_boss_25"
-		icon_living = "glitch_boss_25"
+		set_icon_state("glitch_boss_25")
+		set_icon_living("glitch_boss_25")
 	else if(wellness < 0.5)
 		special_attack_cooldown = 10 SECONDS
-		icon_state = "glitch_boss_50"
-		icon_living = "glitch_boss_50"
+		set_icon_state("glitch_boss_50")
+		set_icon_living("glitch_boss_50")
 	else if (wellness < 0.75)
 		special_attack_cooldown = 15 SECONDS
-		icon_state = "glitch_boss_75"
-		icon_living = "glitch_boss_75"
+		set_icon_state("glitch_boss_75")
+		set_icon_living("glitch_boss_75")
 
 /mob/living/simple_mob/glitch_boss/proc/create_illusions(atom/A)
 	var/list/possible_turfs = list()
@@ -106,8 +105,9 @@
 		var/chosen_turf = pick(actual_turfs)
 		var/type_to_spawn = prob(15) ? /mob/living/simple_mob/glitch_boss_fake/strong : /mob/living/simple_mob/glitch_boss_fake
 		var/mob/living/simple_mob/newmob = new type_to_spawn(chosen_turf)
-		newmob.icon_living = src.icon_living
-		newmob.icon_state = src.icon_state
+		newmob.ai_brain?.serve(src) // the illusions are the boss's sworn
+		newmob.set_icon_living(src.icon_living)
+		newmob.set_icon_state(src.icon_state)
 		new /obj/effect/temp_visual/glitch(chosen_turf)
 		actual_turfs -= chosen_turf
 
@@ -208,7 +208,7 @@
 		if(target.client)
 			to_chat(target, span_critical("You feel as though you are losing your sense of direction! Brace yourself!"))
 		new /obj/effect/temp_visual/pre_confuse(get_turf(target))
-		om_after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
+		after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
 
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
 
@@ -224,13 +224,13 @@
 		sd += 90
 	sd += pick(offsets)
 	if(wave < 4)
-		om_after(src, 2 SECONDS, PROC_REF(bullethell_wave), sd, wave + 1)
+		after(src, 2 SECONDS, PROC_REF(bullethell_wave), with = list(sd, wave + 1))
 
 /mob/living/simple_mob/glitch_boss/proc/speed_up_boost(atom/A)
-	if(base_attack_cooldown == initial(base_attack_cooldown))
-		base_attack_cooldown = 1 SECOND
+	if(kind_of(src).attack_cooldown == kind_of_type(type).attack_cooldown)
+		set_base_attack_cooldown(1 SECOND)
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
-		om_after(src, duration, PROC_REF(end_speed_boost))
+		after(src, duration, PROC_REF(end_speed_boost))
 
 /mob/living/simple_mob/glitch_boss/do_special_attack(atom/A, stance)
 	. = TRUE
@@ -273,7 +273,6 @@
 	melee_damage_upper = 0
 	attack_armor_pen = 0
 
-	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb_fake
 	projectilesound = SFX_EFFECTS_UNCLOAK
@@ -289,10 +288,12 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/glitch_boss_fake/replace_death(gibbed)
+	if(loc?.release_refusal(src))
+		return TRUE
 	new /obj/effect/temp_visual/glitch(get_turf(src))
 	if(prob(prob_respawn))
 		new /mob/living/simple_mob/glitch_boss_fake(get_turf(src))
-	qdel(src)
+	consume(src)
 	return TRUE
 
 /obj/item/projectile/energy/slow_orb_fake
@@ -302,10 +303,12 @@
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 0
-	armor_penetration = 0
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
+	configure(item_combat(armor_penetration = 0))
 
 #undef GA_ADS
 #undef GA_CALLDOWN
@@ -317,10 +320,10 @@
 
 /// The glitch boss's confusion lands, five seconds after its warning.
 /mob/living/proc/glitch_confusion()
-	status_at_least(EFFECT_CONFUSED, 3)
+	status_at_least(STAT_CONFUSED, 3)
 	if(client)
 		to_chat(src, span_critical("You feel confused!"))
 	new /obj/effect/temp_visual/confuse(get_turf(src))
 
 /mob/living/simple_mob/glitch_boss/proc/end_speed_boost()
-	base_attack_cooldown = initial(base_attack_cooldown)
+	set_base_attack_cooldown(kind_of_type(type).attack_cooldown)

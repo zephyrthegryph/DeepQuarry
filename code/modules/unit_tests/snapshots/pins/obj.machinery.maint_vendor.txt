@@ -1,0 +1,43 @@
+human|none menu: Open controls
+human|none menu: Use
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item menu: Use
+human|/obj/item click: Click: Open controls
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, purchase, robot_remote_blocked, silicon_hand, ui_open

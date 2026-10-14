@@ -5,40 +5,25 @@
 	circuit = /obj/item/circuitboard/aifixer
 	icon_keyboard = "tech_key"
 	icon_screen = "ai-fixer"
-	light_color = LIGHT_COLOR_PINK
 
-	active_power_usage = 1000
 
 	/// Variable containing transferred AI
 	var/mob/living/silicon/ai/occupier
 
+
 /// Variable dictating if we are in the process of restoring the occupier AI
-OM_FIELD(/obj/machinery/computer/aifixer, restoring, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "restoring")
+/obj/machinery/computer/aifixer/var/restoring = FALSE
 
-/obj/machinery/computer/aifixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/aifixer_card,
-		/datum/interaction/machine_hand/ungated/aifixer_use,
-	)
-	..()
-
-/// Old attackby's aicard branch. Always falls through to ..() afterwards (base attackby still runs).
-/datum/interaction/machine_item/aifixer_card
-	id = "aifixer_card"
-	name = "Use AI card"
-	held_type = /obj/item/aicard
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/computer/aifixer/proc/can_use_card, null))
-	effect = /obj/machinery/computer/aifixer/proc/interaction_use_card
-
-/obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
+/obj/machinery/computer/aifixer/proc/can_use_card(datum/act/op/A)
 	if(!operable())
 		return "this terminal isn't functioning right now"
 	if(restoring)
 		return "terminal is busy restoring [occupier()] right now"
-	return TRUE
+	return null
 
-/obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
+/obj/machinery/computer/aifixer/proc/interaction_use_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/aicard/card = A.held
 	if(occupier())
 		if(card.grab_ai(occupier(), user))
 			rel_clear(src, nameof(occupier))
@@ -51,39 +36,39 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 		new_occupant.control_disabled = TRUE
 		rel_set(src, nameof(occupier), new_occupant)
 		card.clear()
-		update_icon()
 	else
 		to_chat(user, span_notice("There is no AI loaded onto this computer, and no AI loaded onto [card]. What exactly are you trying to do here?"))
 	// Old code always fell through to ..() after handling the card; decline so the base attackby still runs.
-	return FALSE
+	return OP_DECLINE
 
-/obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
-	if(!occupier())
-		return ..()
-	if(!operable())
-		to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
-	else
-		to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
-	return ITEM_INTERACT_BLOCKING
+MSG_DEF_SELF(aifixer/screws_stuck, "The screws on the screen won't budge.")
+MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge and it emits a warning beep.")
 
-/// Old attack_hand (never called ..()): opens the UI, silently doing nothing when unpowered/broken.
-/datum/interaction/machine_hand/ungated/aifixer_use
-	id = "aifixer_use"
-	name = "Use"
-	effect = /obj/machinery/computer/aifixer/proc/interaction_use
+/// needs: no AI is loaded (its screws won't budge while one is).
+/obj/machinery/computer/aifixer/proc/no_ai_loaded(datum/act/op/A)
+	return !occupier() ? null : (operable() ? /datum/msg/aifixer/screws_stuck_beep : /datum/msg/aifixer/screws_stuck)
 
-/obj/machinery/computer/aifixer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/aifixer/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/aifixer, "AiRestorer")
+CAPABILITIES(/obj/machinery/computer/aifixer)
+	ref_one(nameof(occupier), /mob/living/silicon/ai)
+	configure(light_glow(color = LIGHT_COLOR_PINK))
+	configure(uses_power(active = 1000))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
+	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))
+	interface("AiRestorer")
+	op("PRG_beginReconstruction", ui_act("PRG_beginReconstruction"), then(PROC_REF(ui_act_prg_beginreconstruction)))
+	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
+	op("use_card", item(/obj/item/aicard), priority(OP_PRIORITY_DEFAULT - 1), label("Use AI card"), needs(req(PROC_REF(can_use_card))), then(PROC_REF(interaction_use_card)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	ref_one(nameof(occupier), /mob/living/silicon/ai)
 
-UI_DATA_REPLACE(/obj/machinery/computer/aifixer, "merge:ui_data_obj_machinery_computer_aifixer{ejectable:bool,AI_present:bool,error:text,name:text,restoring:num,health:unknown,isDead:bool,laws:list}")
-
-/// The computed part of /obj/machinery/computer/aifixer's window data (declared on its UI_DATA row).
-/obj/machinery/computer/aifixer/proc/ui_data_obj_machinery_computer_aifixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/aifixer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["ejectable"] = FALSE
@@ -104,19 +89,16 @@ UI_DATA_REPLACE(/obj/machinery/computer/aifixer, "merge:ui_data_obj_machinery_co
 
 	return data
 
-/obj/machinery/computer/aifixer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/// Every button clicks, and restoring stops when nobody is in the terminal (the old window guard's side effects).
+/obj/machinery/computer/aifixer/proc/ui_typed(datum/act/op/A)
 	if(!occupier())
 		set_restoring(FALSE)
-	if(action)
-		play_sfx(src, SFX_TERMINAL_TYPE)
-	return TRUE
+	play_sfx(src, SFX_TERMINAL_TYPE)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/aifixer, "PRG_beginReconstruction", ui_act_prg_beginreconstruction)
-UI_ACT_PROC(/obj/machinery/computer/aifixer, ui_act_prg_beginreconstruction)
+/obj/machinery/computer/aifixer/proc/ui_act_prg_beginreconstruction(datum/act/op/A)
 	if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
-		to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
+		to_chat(A.actor, span_notice("Reconstruction in progress. This will take several minutes."))
 		play_sfx(src, SFX_MACHINES_TERMINAL_PROMPT_CONFIRM)
 		set_restoring(TRUE)
 		var/mob/observer/dead/ghost = occupier().get_ghost()
@@ -125,7 +107,7 @@ UI_ACT_PROC(/obj/machinery/computer/aifixer, ui_act_prg_beginreconstruction)
 		. = TRUE
 
 /obj/machinery/computer/aifixer/proc/Fix()
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	occupier().adjust_backup_charge(5)
 	occupier().mend(TREAT_SYSTEM_RESTORE, 5)
 	occupier().mend(TREAT_WIRING_REPAIR, 5)
@@ -136,34 +118,28 @@ UI_ACT_PROC(/obj/machinery/computer/aifixer, ui_act_prg_beginreconstruction)
 
 	return occupier().vitality() < 1 || occupier().backup_capacitor() < 100
 
-/obj/machinery/computer/aifixer/machine_step()
+/obj/machinery/computer/aifixer/proc/work_step(datum/act/timer/A)
 	if(!occupier())
 		set_restoring(FALSE)
 		return
 	if(!operable())
 		return
-	var/oldstat = occupier().stat
 	set_restoring(Fix())
-	if(oldstat != occupier().stat)
-		update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/aifixer/appearance_overlays()
-	. = list()
-	. += ..()
+/// Over the console's screen: restoring, and the state of the AI card's occupant (none, awake, or out).
+/obj/machinery/computer/aifixer/draw(datum/look/look)
+	..()
 	if(!operable())
-		return .
-
-	if(restoring)
-		. += "ai-fixer-on"
-	if (occupier())
-		switch (occupier().stat)
-			if (CONSCIOUS)
-				. += "ai-fixer-full"
-			if (UNCONSCIOUS)
-				. += "ai-fixer-404"
-	else
-		. += "ai-fixer-empty"
+		return
+	look.overlay("ai-fixer-on", when = restoring)
+	var/mob/living/silicon/ai/AI = occupier()
+	var/ai_stat = AI?.stat
+	if(!AI)
+		look.overlay("ai-fixer-empty")
+	else if(ai_stat == CONSCIOUS)
+		look.overlay("ai-fixer-full")
+	else if(ai_stat == UNCONSCIOUS)
+		look.overlay("ai-fixer-404")
 
 /// occupier (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai

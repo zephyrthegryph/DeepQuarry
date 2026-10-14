@@ -39,12 +39,12 @@
 
 // releases its market reservation.
 /datum/contract/faction_agent/on_destroy(force)
-	GLOB.supply_service?.release_agent_contract_market(src)
+	SSsupply?.release_agent_contract_market(src)
 	..()
 
 /datum/contract/faction_agent/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	if(!GLOB.supply_service?.reserve_agent_contract_market(src))
+	if(!SSsupply?.reserve_agent_contract_market(src))
 		withdraw("The principal's authenticated market route could not be established.")
 		return FALSE
 	if(red_contract && !GLOB.station_faction_relations.activate_contract_operative(owner_account_number, id, user))
@@ -193,7 +193,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	om_after(GLOB.supply_service, 1, TYPE_PROC_REF(/datum/world_service/supply, replay_market_audit_evidence), src)
+	after(SSsupply, 0.1 SECONDS, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"
@@ -350,7 +350,7 @@
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(contract.owner_account_number)
 	if(!record || record.faction_id != contract.agent_faction)
 		return
-	GLOB.supply_service?.release_agent_contract_market(contract)
+	SSsupply?.release_agent_contract_market(contract)
 	if(contract.red_contract)
 		GLOB.station_faction_relations.deactivate_contract_operative(contract.owner_account_number, contract.id)
 	if(contract.definition_id == "agent_vetting")
@@ -359,11 +359,11 @@
 		else
 			if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 				record.contracts_failed++
-			om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), contract.owner_account_number, contract.agent_faction)
+			after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), with = list(contract.owner_account_number, contract.agent_faction))
 		return
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
 		record.contracts_completed++
 	else if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 		record.contracts_failed++
 	GLOB.station_faction_relations.refresh_agent_tier(record)
-	om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), contract.owner_account_number, contract.agent_faction)
+	after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), with = list(contract.owner_account_number, contract.agent_faction))

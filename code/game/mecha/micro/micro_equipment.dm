@@ -60,11 +60,12 @@
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun)
+	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(mob/user, list/args)
-	if(isnum(args["mode"]))
-		mode = args["mode"]
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(datum/act/op/A, href_mode)
+	if(isnum(href_mode))
+		mode = href_mode
 		switch(mode)
 			if(0)
 				occupant_message("Now firing buckshot.")
@@ -109,9 +110,11 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 	icon_state = "microdrill"
 	equip_cooldown = 30
 	energy_drain = 10
-	force = 15
 	equip_type = EQUIP_MICRO_UTILITY
 	required_type = list(/obj/mecha/micro/utility)
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill/micro)
+	configure(item_combat(force = 15))
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/micro/action(atom/target)
 	if(!action_checks(target)) return
@@ -183,9 +186,11 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 						ore.Move(src)
 	return 1
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, "empty_box", PROC_REF(topic_empty_box))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop)
+	op("empty_box", topic("empty_box"), then(PROC_REF(topic_empty_box)))
+	op("orescoop_empty_box", menu(), label("Empty Ore compartment"), needs(req_adjacent(), req_capable()), then(PROC_REF(orescoop_empty_box)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(datum/act/op/A)
 	if(contents_count(src) < 1)
 		occupant_message("The ore compartment is empty.")
 		return
@@ -196,9 +201,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, "empty_b
 /obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/get_equip_info()
 	return "[..()] <br /><a href='byond://?src=\ref[src];empty_box=1'>Empty ore compartment</a>"
 
-EXTEND_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, \
-	INTERACT_VERB("Empty Ore compartment", PROC_REF(orescoop_empty_box), REQ_TARGET_STATE(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/can_empty_box)), \
-)
 
 /// Old verb "Empty Ore compartment": so you can still get the ore out if someone detaches it from the mech.
 /// Requirement: TRUE, or why the user can't empty the ore box.
@@ -211,7 +213,13 @@ EXTEND_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, \
 		return "you cannot reach the ore box"
 	return TRUE
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/orescoop_empty_box(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/orescoop_empty_box(datum/act/op/A)
+	var/refusal = can_empty_box(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
 	if(user.stat || user.restrained())
 		return
 

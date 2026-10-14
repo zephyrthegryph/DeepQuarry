@@ -65,6 +65,9 @@
 	var/message /// A basic description as to what went wrong.
 	var/datum/stack/stack
 
+CAPABILITIES(/datum/runtimeError)
+	owns_one(nameof(stack), /datum/stack)
+
 /**
  * Proc: ToString
  * Returns a description of the error suitable for showing to the user.

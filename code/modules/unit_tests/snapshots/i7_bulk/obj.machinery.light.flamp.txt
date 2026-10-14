@@ -1,0 +1,23 @@
+@obj.machinery.light human|none
+@obj.machinery.light robot|none
+@obj.machinery.light ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove shade
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Remove shade
+@obj.machinery.light human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Toggle
+@obj.machinery.light human|/obj/item/tool/wirecutters
+@obj.machinery.light human|/obj/item/multitool
+@obj.machinery.light human|/obj/item/weldingtool
+@obj.machinery.light human|/obj/item/stack/cable_coil
+@obj.machinery.light human|/obj/item/stack/material/steel
+@obj.machinery.light human|/obj/item/card/id
+@obj.machinery.light human|/obj/item
+@obj human|/obj/item/light
+@obj human|/obj/item/lampshade
+keys: add_shade, anchor.toggle, drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, remove_shade, robot_remote_blocked, silicon_hand, toggle, toggle_emergency, tune

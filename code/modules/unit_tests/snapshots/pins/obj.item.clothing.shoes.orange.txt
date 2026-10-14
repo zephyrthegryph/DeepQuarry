@@ -1,0 +1,49 @@
+@obj.item.clothing.shoes human|none
+@obj.item.clothing.shoes robot|none
+@obj ai|none
+@obj.item.clothing.shoes ghost|none
+@obj.item.clothing.shoes human|/obj/item/tool/screwdriver
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/tool/crowbar
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/tool/wrench
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/tool/wirecutters
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/multitool
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/weldingtool
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/stack/cable_coil
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/stack/material/steel
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/card/id
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/kit
++4 menu: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item/storage
++4 menu: Orange shoes cuff item
+@obj.item.clothing.shoes human|/obj/item
+-click: Click: Shoes draw knife hand
++3 menu: Orange shoes cuff item
++9 click: Click: Orange shoes cuff item
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, micro_climb_out, micro_escape_macro, move_to_top, orange_shoes_cuff_item, orange_shoes_uncuff_self, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable

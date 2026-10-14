@@ -17,17 +17,17 @@
 	var/datum/signal/S = new()
 	rel_set(S, nameof(S.source), src)
 	S.data = list("command" = "supply")
-	var/datum/radio_frequency/F = GLOB.radio_service.return_frequency(1435)
+	var/datum/radio_frequency/F = SSradio.return_frequency(1435)
 	F.post_signal(src, S)
 
 	//it would be cool to play a sound here
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(supply_warmed_up), destination)
+	after(src, warmup_time*10, PROC_REF(supply_warmed_up), with = list(destination))
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_warmed_up(obj/effect/shuttle_landmark/destination)
 	make_sounds(HYPERSPACE_WARMUP)
-	om_after(src, 5 SECONDS, PROC_REF(supply_depart), destination) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(supply_depart), with = list(destination)) // so the sound finishes.
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_depart(obj/effect/shuttle_landmark/destination)
 	if (moving_status == SHUTTLE_IDLE)
@@ -41,8 +41,8 @@
 		return
 
 	if (!at_station())	//at centcom
-		GLOB.mail_service.create_mail()
-		GLOB.supply_service.buy()
+		SSmail.create_mail()
+		SSsupply.buy()
 
 	//We pretend it's a long_jump by making the shuttle stay at centcom for the "in-transit" period.
 	var/obj/effect/shuttle_landmark/away_waypoint = get_location_waypoint(away_location)
@@ -53,11 +53,11 @@
 		attempt_move(away_waypoint)
 
 	//wait ETA here, plus a late arrival sometimes.
-	EXPIRY_SET(src, arrive_time, GLOB.supply_service.movetime, CLOCK_WORLD)
-	var/wait = GLOB.supply_service.movetime
+	EXPIRY_SET(src, arrive_time, supply_movetime(), CLOCK_WORLD)
+	var/wait = supply_movetime()
 	if (next_location() != away_waypoint && prob(late_chance))
 		wait += rand(0,max_late_time)
-	om_after(src, wait, PROC_REF(supply_arrive), destination, away_waypoint)
+	after(src, wait, PROC_REF(supply_arrive), with = list(destination, away_waypoint))
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_arrive(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/away_waypoint)
 	if (next_location() != away_waypoint)
@@ -67,7 +67,7 @@
 	make_sounds(HYPERSPACE_END)
 
 	if (!at_station())	//at centcom
-		GLOB.supply_service.sell()
+		SSsupply.sell()
 
 // returns 1 if the supply shuttle should be prevented from moving because it contains forbidden atoms
 /datum/shuttle/autodock/ferry/supply/proc/forbidden_atoms_check()
@@ -75,7 +75,7 @@
 		return 0	//if badmins want to send mobs or a nuke on the supply shuttle from centcom we don't care
 
 	for(var/area/A in shuttle_area)
-		if(GLOB.supply_service.forbidden_atoms_check(A))
+		if(SSsupply.forbidden_atoms_check(A))
 			return 1
 
 /datum/shuttle/autodock/ferry/supply/proc/at_station()

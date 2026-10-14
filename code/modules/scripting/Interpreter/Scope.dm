@@ -8,12 +8,16 @@
 	var/list/functions
 	var/list/variables
 
+CAPABILITIES(/datum/scope)
+	owns_many(nameof(functions))
+	owns_many(nameof(variables))
+
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
 	rel_set(src, nameof(block_ref), B)
 	rel_set(src, nameof(parent_ref), parent)
 	// The scope owns its variable value nodes: wrap the block's raw initial values.
 	for(var/name in B.initial_variables)
-		own_put(src, nameof(variables), name, script_value_node(B.initial_variables[name]))
+		rel_add(src, nameof(variables), script_value_node(B.initial_variables[name]), name)
 	// Functions are not copied: find_function() reads the block's own table, and `functions`
 	// holds only what the interpreter binds into this scope at runtime (SetProc()).
 	.=..()

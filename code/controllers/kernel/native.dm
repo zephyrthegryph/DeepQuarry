@@ -9,9 +9,11 @@
 /// KERNEL_NATIVE_MAX_CATCHUP ticks); `budget` is the per-tick wake budget the frame may deliver. Runs at most
 /// once per wheel tick, and never on a scheduler running injected time.
 /proc/native_frame(elapsed, budget)
-	var/datum/om/scheduler/sched = kernel().sched
-	if(!sched || !sched.world_frame_begin(om_world_tick_of(world.time)))
+	var/datum/time_scheduler/sched = kernel().sched
+	if(!sched || !sched.world_frame_begin(world_tick_of(world.time)))
 		return
 	var/start = TICK_USAGE_REAL
 	native_system().kernel_frame(elapsed, budget)
 	sched.world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	// The tick meter's om_native system is the Rust world step: charge the frame to it.
+	km_meter().charge(KM_SYS_OM_NATIVE, sched.world_last_ms)

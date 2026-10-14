@@ -15,6 +15,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 
 //returns a reason if M is banned from rank, returns 0 otherwise
 /proc/jobban_isbanned(mob/M, rank)
+	READS_FROM() // the job bans are admin records, not round state
 	if(M && rank)
 		/*
 		if(_jobban_isbanned(M, rank)) return "Reason Unspecified"	//for old jobban
@@ -30,6 +31,7 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 	return 0
 
 /proc/ckey_is_jobbanned(check_key, rank)
+	READS_FROM() // the job ban list is an admin record, not round state
 	for(var/s in GLOB.jobban_keylist)
 		if(findtext(s,"[check_key] - [rank]") == 1 )
 			var/startpos = findtext(s, "## ")+3
@@ -61,11 +63,11 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			jobban_loadbanfile()
 			return
 
-		// Job permabans and tempbans (om_io: added to the keylist when the rows arrive).
-		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)", null, /proc/jobban_rows_arrived)
-		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()", null, /proc/jobban_rows_arrived)
+		// Job permabans and tempbans (io_job: added to the keylist when the rows arrive).
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)", null, /proc/jobban_rows_arrived)
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()", null, /proc/jobban_rows_arrived)
 
-/// om_io() callback: adds loaded job bans to the keylist.
+/// io_job() callback: adds loaded job bans to the keylist.
 /proc/jobban_rows_arrived(list/result, error)
 	if(error)
 		log_sql("Loading job bans failed: [error]")

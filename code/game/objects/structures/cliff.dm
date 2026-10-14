@@ -28,7 +28,6 @@ When mapping these in, be sure to give at least a one tile clearance, as NORTH f
 two tiles on initialization, and which way a cliff is facing may change during maploading.
 */
 
-#define CLIFF_CLIMB_DELAY 10
 /obj/structure/cliff
 	name = "cliff"
 	desc = "A steep rock ledge. You might be able to climb it if you feel bold enough."
@@ -49,15 +48,35 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/is_double_cliff = FALSE // Set to true when making the two-tile cliffs, used for projectile checks.
 	var/uphill_penalty = 30 // Odds of a projectile not making it up the cliff.
 
+
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
-	make_climbable(/datum/om/behaviour/climbable/cliff, CLIFF_CLIMB_DELAY SECONDS)
+	if(!mapload)
+		turf_edges_refresh(get_turf(src)) // the tiles around it stop spilling their edges onto it (a map load computes them once at its end)
+
+CAPABILITIES(/obj/structure/cliff)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed))
+
+/// North facing cliffs are two tiles high and take half the time.
+/obj/structure/cliff/proc/climb_delay()
+	return is_double_cliff ? CLIFF_CLIMB_TIME / 2 : CLIFF_CLIMB_TIME
+
+/// Cliff climbing requires climbing gear: null when the climber has it, else why not.
+/obj/structure/cliff/proc/climbing_gear_needed(mob/living/climber)
+	if(ishuman(climber))
+		var/mob/living/carbon/human/H = climber
+		var/obj/item/clothing/shoes/shoes = H.get_equipped_item(SLOT_ID_SHOES)
+		if(shoes && tooling_of(shoes).climbing)
+			return null
+	return "\The [src] is too steep to climb unassisted."
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/structure/cliff/lifecycle_dematerialize()
 	. = ..()
 	unregister_dangerous_to_step()
+	turf_edges_refresh(get_turf(src)) // the tiles around it spill their edges onto the ground it stood on (it is QDELETED here, so it no longer blocks them)
 
 /obj/structure/cliff/Moved(atom/oldloc)
 	. = ..()
@@ -85,23 +104,24 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	density = FALSE
 	ramp = TRUE
 
+/// A cliff's lower edge made for a part that does not block (a ramp): it holds the density down from the part it was made with.
+SOURCE_DEF(cliff_ledge)
+
 // Made automatically as needed by automatic cliffs.
 /obj/structure/cliff/bottom
 	bottom = TRUE
 
-/obj/structure/cliff/automatic/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/structure/cliff/automatic)
+	after_init(0, then(PROC_REF(shape_cliff)))
 
 // Paranoid about the maploader, direction is very important to cliffs, since they may get bigger if initialized while facing NORTH.
-/obj/structure/cliff/automatic/LateInitialize()
+/// Picks its look and grows its lower edge, once its neighbours exist.
+/obj/structure/cliff/automatic/proc/shape_cliff(datum/act/timer/A)
 	if(dir in GLOB.cardinal)
-		icon_variant = pick("a", "b", "c")
+		set_icon_variant(pick("a", "b", "c"))
 
 	if(dir & NORTH && !bottom) // North-facing cliffs require more cliffs to be made.
 		make_bottom()
-
-	update_icon()
 
 /obj/structure/cliff/proc/make_bottom()
 	// First, make sure there's room to put the bottom side.
@@ -112,40 +132,37 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	// Now make the bottom cliff have mostly the same variables.
 	var/obj/structure/cliff/bottom/bottom = new(T)
 	is_double_cliff = TRUE
-	bottom.dir = dir
+	bottom.set_dir(dir)
 	bottom.is_double_cliff = TRUE
-	bottom.icon_variant = icon_variant
-	bottom.corner = corner
-	bottom.ramp = ramp
+	bottom.set_icon_variant(icon_variant)
+	bottom.set_corner(corner)
+	bottom.set_ramp(ramp)
 	bottom.layer = layer - 0.1
-	bottom.set_density(density)
-	bottom.update_icon()
+	if(!density)
+		hold(bottom, STAT_DENSITY, FALSE, SRC_CLIFF_LEDGE, priority = PRIORITY_FORCE) // a ramp's lower edge does not block either: density is a stat, a raw write of it would leave its composed value stale
 
-/obj/structure/cliff/set_dir(new_dir)
+/// The ledge's sprite by its facing and kind, with the ground above it cut out of a different turf's picture.
+/obj/structure/cliff/draw(datum/look/look)
 	..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cliff/appearance_overlays()
-	. = list()
-	icon_state = "cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]"
+	var/state = look.state("cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]")
 
 	// Now for making the top-side look like a different turf.
 	var/turf/T = get_step(src, dir)
 	if(!istype(T))
-		return .
+		return
 
-	var/subtraction_icon_state = "[icon_state]-subtract"
-	var/cache_string = "[icon_state]_[T.icon]_[T.icon_state]"
-	if(T && icon_exists(icon, subtraction_icon_state))
-		. += CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, T.icon, T.icon_state, T.dir, layer - 0.2)
+	var/subtraction_icon_state = "[state]-subtract"
+	var/list/ground = look.picture_of(T)
+	var/cache_string = "[state]_[ground[1]]_[ground[2]]"
+	if(icon_exists(icon, subtraction_icon_state))
+		look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, ground[1], ground[2], ground[3], layer - 0.2))
 
 // Movement-related code.
 
 /obj/structure/cliff/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover))
 		var/mob/living/L = mover
-		if(dq_get_hovering(L) || L.flying) // Flying mobs can always pass.
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying mobs can always pass.
 			return TRUE
 		return ..()
 
@@ -157,16 +174,18 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 				return FALSE
 		return TRUE
 
-/obj/structure/cliff/Bumped(atom/A)
+/// Something walked into it (the bump action's notice).
+/obj/structure/cliff/proc/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
 	if(isliving(A))
 		var/mob/living/L = A
 		if(should_fall(L))
 			fall_off_cliff(L)
 			return
-	..()
 
 /obj/structure/cliff/proc/should_fall(mob/living/L)
-	if(dq_get_hovering(L) || L.flying)
+	if(dq_get_hovering(L) || stat_value(L, STAT_FLYING))
 		return FALSE
 
 	var/turf/T = get_turf(L)
@@ -211,15 +230,17 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 				harm /= 2
 
 			play_sfx(L, SFX_EFFECTS_BREAK_STONE, volume = 70)
-			L.status_at_least(EFFECT_WEAKENED, 5 * harm)
+			L.status_at_least(STAT_WEAKENED, 5 * harm)
 
 		var/fall_time = 3
 		if(displaced) // Make the fall look more natural when falling sideways.
 			L.pixel_z = 32 * 2
 			animate(L, pixel_z = 0, time = fall_time)
-		om_after(src, fall_time, PROC_REF(fall_land), L, T, safe_fall, harm) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
+		after(src, fall_time, PROC_REF(fall_land), with = list(L, T, safe_fall, harm)) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
 
 /obj/structure/cliff/proc/fall_land(mob/living/L, turf/T, safe_fall, harm)
+	if(QDELETED(L))
+		return
 
 	if(safe_fall)
 		visible_message(span_notice("\The [L] lands on \the [T]."))
@@ -242,7 +263,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 	var/obj/structure/cliff/bottom_cliff = locate_on(T, /obj/structure/cliff)
 	if(bottom_cliff)
 		visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
-		om_after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), L)
+		after(bottom_cliff, 0.5 SECONDS, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), with = list(L))
 
 // This tells AI mobs to not be dumb and step off cliffs willingly.
 /obj/structure/cliff/is_safe_to_step(mob/living/L)
@@ -250,4 +271,3 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 		return FALSE
 	return ..()
 
-#undef CLIFF_CLIMB_DELAY

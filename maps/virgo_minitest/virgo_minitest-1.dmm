@@ -228,7 +228,7 @@
 /area/tcommsat/computer)
 "aH" = (
 /obj/machinery/door/airlock/maintenance_hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_outer";
@@ -397,7 +397,7 @@
 /area/tcommsat/chamber)
 "aV" = (
 /obj/machinery/door/airlock/maintenance_hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_inner";
@@ -2953,7 +2953,7 @@
 /area/bridge)
 "gR" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "webdemo_docker_hatch"
@@ -3026,7 +3026,7 @@
 /area/shuttle/multidemo)
 "hg" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "station_dock1_hatch"
@@ -3082,7 +3082,7 @@
 /area/shuttle/multidemo)
 "ho" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "ferrydemo_shuttle_hatch"
@@ -3106,7 +3106,7 @@
 /area/space)
 "hr" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "multidemo_shuttle_hatch"
@@ -4222,7 +4222,7 @@
 /area/space)
 "pZ" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_inner";
@@ -4266,7 +4266,7 @@
 /area/submap/pa_room)
 "ql" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "overmapdemo_docker_hatch"
@@ -4411,7 +4411,7 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_outer";
@@ -4917,7 +4917,7 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_outer";
@@ -4938,7 +4938,7 @@
 /area/engineering/workshop)
 "xB" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
 	req_access = list(11)
@@ -6796,7 +6796,7 @@
 /area/engineering/engine_monitoring)
 "SN" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "station_dock2_hatch"
@@ -6921,7 +6921,7 @@
 /area/shuttle/overmapdemo)
 "Un" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_inner";

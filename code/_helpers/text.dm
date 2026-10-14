@@ -28,6 +28,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  */
 //Simply removes < and > and limits the length of the message
 /proc/strip_html_simple(t,limit=MAX_MESSAGE_LEN)
+	READS_FROM() // Pure text transformation: arguments, local variables and immutable character table only.
 	var/static/list/strip_chars = list("<",">")
 	t = copytext(t,1,limit)
 	for(var/char in strip_chars)
@@ -89,6 +90,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Filters out undesirable characters from names
 /proc/sanitizeName(input, max_length = MAX_NAME_LEN, allow_numbers = 0)
+	READS_FROM() // a pure function of the text it is given
 	if(!input || length(input) > max_length)
 		return //Rejects the input if it is null or if it is longer then the max length allowed
 
@@ -161,6 +163,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  * * Presence of ASCII special control characters (horizontal tab and new line not included).
  * */
 /proc/reject_bad_text(text, max_length = 512, ascii_only = TRUE)
+	READS_FROM() // the text it is given, nothing else
 	if(ascii_only)
 		if(length(text) > max_length)
 			return null
@@ -256,6 +259,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces before the first letter removed
 /proc/trim_left(text)
+	READS_FROM() // Pure text transformation: arguments, local variables and immutable character table only.
 	for (var/i = 1 to length(text))
 		if (text2ascii(text, i) > 32)
 			return copytext(text, i)
@@ -263,6 +267,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces after the last letter removed
 /proc/trim_right(text)
+	READS_FROM() // Pure text transformation: arguments, local variables and immutable character table only.
 	for (var/i = length(text), i > 0, i--)
 		if (text2ascii(text, i) > 32)
 			return copytext(text, 1, i + 1)
@@ -270,6 +275,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces before the first word and after the last word removed.
 /proc/trim(text)
+	READS_FROM() // Pure text transformation: arguments, local variables and immutable character table only.
 	return trim_left(trim_right(text))
 
 //Returns a string with the first element of the string capitalized.

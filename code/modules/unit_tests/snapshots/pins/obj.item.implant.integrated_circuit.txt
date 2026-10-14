@@ -1,0 +1,38 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++2 menu: Work the assembly
++3 click: Click: Work the assembly
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++2 menu: Work the assembly
++3 click: Click: Work the assembly
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+human|/obj/item/implanter menu: Load implanter
+human|/obj/item/implanter menu: Move To Top
+human|/obj/item/implanter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/implanter click: Click: Load implanter
+human|/obj/item/integrated_electronics menu: Add
+human|/obj/item/integrated_electronics menu: Move To Top
+human|/obj/item/integrated_electronics menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/integrated_electronics click: Click: Add
+human|/obj/item/integrated_circuit menu: Add
+human|/obj/item/integrated_circuit menu: Move To Top
+human|/obj/item/integrated_circuit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/integrated_circuit click: Click: Add
+human|/obj/item/cell/device menu: Add
+human|/obj/item/cell/device menu: Move To Top
+human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell/device click: Click: Add
+keys: add_cell, add_circuit, add_electronics, assembly_tool, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, load_implanter, move_to_top, pick_up_item, toggle_digestable, use

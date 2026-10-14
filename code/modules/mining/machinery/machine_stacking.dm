@@ -19,28 +19,20 @@
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
 		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/mineral/stacking_unit_console/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/stacking_console_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/stacking_console_use
-	id = "stacking_console_use"
-	name = "Use"
-	effect = /obj/machinery/mineral/stacking_unit_console/proc/interaction_use
-
-/obj/machinery/mineral/stacking_unit_console/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/mineral/stacking_unit_console/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/mineral/stacking_unit_console, "MiningStackingConsole")
+CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
+	interface("MiningStackingConsole")
+	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
+	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-UI_DATA(/obj/machinery/mineral/stacking_unit_console, "merge:ui_data_obj_machinery_mineral_stacking_unit_console{stacktypes:list,stackingAmt:num}")
-
-/// The computed part of /obj/machinery/mineral/stacking_unit_console's window data (declared on its UI_DATA row).
-/obj/machinery/mineral/stacking_unit_console/proc/ui_data_obj_machinery_mineral_stacking_unit_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/mineral/stacking_unit_console's window data.
+/obj/machinery/mineral/stacking_unit_console/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/stacktypes = list()
@@ -54,23 +46,23 @@ UI_DATA(/obj/machinery/mineral/stacking_unit_console, "merge:ui_data_obj_machine
 	data["stackingAmt"] = machine().stack_amt
 	return data
 
-UI_ACT(/obj/machinery/mineral/stacking_unit_console, "change_stack", ui_act_change_stack, UI_ARG_NUM("amt", 1, 50))
-UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_change_stack)
-	machine().stack_amt = params["amt"]
+/obj/machinery/mineral/stacking_unit_console/proc/ui_act_change_stack(datum/act/op/A, amt)
+	var/mob/user = A.actor
+	machine().stack_amt = amt
 	machine().wake_mining()
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/mineral/stacking_unit_console, "release_stack", ui_act_release_stack, UI_ARG_TEXT("stack"))
-UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
-	var/stack = params["stack"]
+/obj/machinery/mineral/stacking_unit_console/proc/ui_act_release_stack(datum/act/op/A, stack_arg)
+	var/mob/user = A.actor
+	var/stack = stack_arg
 	if(LAZYACCESS(machine().stack_storage, stack) > 0)
 		var/stacktype = LAZYACCESS(machine().stack_paths, stack)
 		new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
 		var/obj/machinery/mineral/stacking_machine/stacker = machine()
 		LAZYSET(stacker.stack_storage, stack, 0)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /**********************Mineral stacking unit**************************/
 
@@ -117,7 +109,11 @@ UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
 	// /obj/machinery's speed_process declaration runs the step on the fast lane in high gear; the
 	// machine pipeline's step stage idles meanwhile and picks its work back up in low gear.
 
-/obj/machinery/mineral/stacking_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/mineral/stacking_machine)
+	started_work(step = PROC_REF(work_step))
+
+/obj/machinery/mineral/stacking_machine/proc/work_step(datum/act/timer/A)
 	var/did_work = FALSE
 	if (src.output_marker() && src.input_marker())
 		var/turf/T = get_turf(input_marker())
@@ -129,8 +125,9 @@ UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
 				var/obj/item/stack/material/S = O
 				var/matname = S.material.name
 				if(!isnull(LAZYACCESS(stack_storage, matname)))
-					LAZYADDASSOC(stack_storage, matname, S.get_amount())
-					qdel(S)
+					var/stack_amount = S.get_amount()
+					if(consume(S))
+						LAZYADDASSOC(stack_storage, matname, stack_amount)
 				else
 					O.forceMove(output_marker().loc)
 			else

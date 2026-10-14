@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/n80 icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/n80 state: n80-e
+/obj/item/gun/projectile/n80 dir: 2
+/obj/item/gun/projectile/n80 overlay: icons/obj/gun.dmi:n80-e:8:#000000
+

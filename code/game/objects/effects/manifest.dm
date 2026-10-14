@@ -4,9 +4,6 @@
 	icon_state = "x"
 	unacidable = TRUE//Just to be sure.
 
-/obj/effect/manifest/Initialize(mapload)
-	. = ..()
-
 	invisibility = INVISIBILITY_ABSTRACT
 
 /obj/effect/manifest/proc/manifest()
@@ -14,8 +11,7 @@
 	for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		dat += text("    <B>[]</B> -  []<BR>", M.name, M.get_assignment())
 	var/obj/item/paper/P = new /obj/item/paper( src.loc )
-	P.info = dat
+	P.set_info(dat)
 	P.name = "paper- 'Crew Manifest'"
-	//SN src = null
 	replace_with(src, P)
 	return

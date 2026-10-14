@@ -10,7 +10,7 @@ GLOBAL_VAR_INIT(hadevent, 0)
 /proc/alien_infestation(spawncount = 1) // -- TLE
 	var/list/vents = list()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
+		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 50) // Stops Aliens getting stuck in small networks. See: Security, Virology
 				vents += temp_vent
 
@@ -30,14 +30,14 @@ GLOBAL_VAR_INIT(hadevent, 0)
 		spawncount--
 
 	//Delayed announcements to keep the crew on their toes.
-	om_after(null, rand(5000, 6000), /proc/delayed_command_announcement, "Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
+	after(null, rand(500 SECONDS, 600 SECONDS), GLOBAL_PROC_REF(delayed_command_announcement), with = list("Unidentified lifesigns detected coming aboard \the [station_name()]. Secure any exterior access, including ducting and ventilation.", "Lifesign Alert", ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS))
 
 /proc/carp_migration() // -- Darem
 	for(var/obj/effect/landmark/C in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(C.name == "carpspawn")
 			new /mob/living/simple_mob/animal/space/carp(C.loc)
 	//Delayed announcements to keep the crew on their toes.
-	om_after(null, rand(300, 600), /proc/delayed_command_announcement, "Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", ANNOUNCER_MSG_NEW_COMMAND_REPORT)
+	after(null, rand(30 SECONDS, 60 SECONDS), GLOBAL_PROC_REF(delayed_command_announcement), with = list("Unknown biological entities have been detected near \the [station_name()], please stand-by.", "Lifesign Alert", ANNOUNCER_MSG_NEW_COMMAND_REPORT))
 
 /proc/lightsout(isEvent = 0, lightsoutAmount = 1,lightsoutRange = 25) //leave lightsoutAmount as 0 to break ALL lights
 	if(isEvent)
@@ -177,3 +177,8 @@ Would like to add a law like "Law x is _______" where x = a number, and _____ is
 			if(prob(botEmagChance))
 				emag_target(bot, 1)
 */
+
+/// after() target: a command announcement (for delayed event announcements; use the
+/// global owner, since no entity owns a round event).
+/proc/delayed_command_announcement(message, new_title, new_sound)
+	GLOB.command_announcement.Announce(message, new_title, new_sound = new_sound)

@@ -57,7 +57,7 @@ Bonus
 		else
 			M.emote("sneeze")
 			if(infective && !(A.spread_flags & DISEASE_SPREAD_FALTERED))
-				om_after(A, 20, TYPE_PROC_REF(/datum/affliction/contagion, spread), 4)
+				after(A, 2 SECONDS, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(4))
 
 /*
 //////////////////////////////////////
@@ -109,7 +109,7 @@ Bonus
 
 	for(var/mob/living/carbon/human/B in range(A.stage, mob))
 		if(can_spontaneous_vore(B, mob))
-			destination += B.vore_selected
+			destination += vore_selected_of(B)
 
 	for(var/turf/T in range(A.stage, mob))
 		if(istype(T, /turf/space)) // No danger, this is just a fun/vore symptom
@@ -126,9 +126,9 @@ Bonus
 
 	if(unlucky)
 		if(can_spontaneous_vore(unlucky, mob))
-			place = unlucky.vore_selected
+			place = vore_selected_of(unlucky)
 		else if(can_spontaneous_vore(mob, unlucky))
-			mob.vore_selected.nom_atom(unlucky)
+			vore_selected_of(mob).nom_atom(unlucky)
 
 	mob.emote("sneeze")
 	do_teleport(mob, place)

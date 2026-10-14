@@ -1,0 +1,19 @@
+human|none click: nothing
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+human|/obj/item/weldingtool click: nothing
+@obj.machinery human|/obj/item/stack/cable_coil
+human|/obj/item/stack/material/steel click: nothing
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+human|/obj/item/stack/material click: nothing
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter click: Click: Painter
+keys: drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, robot_remote_blocked, silicon_hand, unwrench

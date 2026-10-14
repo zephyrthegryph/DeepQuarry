@@ -1,0 +1,40 @@
+initial | network: "dqpin_net"
+initial | screen: 0
+initial | servers: []
+initial | temp: ""
+scanned | network: "dqpin_net"
+scanned | screen: 0
+scanned | servers: [{"id":"dqpin_server","name":"Telecommunication Server","ref":"dqpin_server"}]
+scanned | temp: "<span class='blue'>- 1 SERVERS PROBED & BUFFERED -</span>"
+scan_refused_buffer_full | network: "dqpin_net"
+scan_refused_buffer_full | screen: 0
+scan_refused_buffer_full | servers: [{"id":"dqpin_server","name":"Telecommunication Server","ref":"dqpin_server"}]
+scan_refused_buffer_full | temp: "<span class='red'>- FAILED: CANNOT PROBE WHEN BUFFER FULL -</span>"
+server_viewed | autoruncode: 0
+server_viewed | network: "dqpin_net"
+server_viewed | screen: 1
+server_viewed | selected_id: "dqpin_server"
+server_viewed | temp: "<span class='red'>- FAILED: CANNOT PROBE WHEN BUFFER FULL -</span>"
+autorun_on | autoruncode: 1
+autorun_on | network: "dqpin_net"
+autorun_on | screen: 1
+autorun_on | selected_id: "dqpin_server"
+autorun_on | temp: "<span class='red'>- FAILED: CANNOT PROBE WHEN BUFFER FULL -</span>"
+autorun_off | autoruncode: 0
+autorun_off | network: "dqpin_net"
+autorun_off | screen: 1
+autorun_off | selected_id: "dqpin_server"
+autorun_off | temp: "<span class='red'>- FAILED: CANNOT PROBE WHEN BUFFER FULL -</span>"
+main_menu | network: "dqpin_net"
+main_menu | screen: 0
+main_menu | servers: [{"id":"dqpin_server","name":"Telecommunication Server","ref":"dqpin_server"}]
+main_menu | temp: "<span class='red'>- FAILED: CANNOT PROBE WHEN BUFFER FULL -</span>"
+temp_cleared | network: "dqpin_net"
+temp_cleared | screen: 0
+temp_cleared | servers: [{"id":"dqpin_server","name":"Telecommunication Server","ref":"dqpin_server"}]
+temp_cleared | temp: ""
+buffer_flushed | network: "dqpin_net"
+buffer_flushed | screen: 0
+buffer_flushed | servers: []
+buffer_flushed | temp: ""
+

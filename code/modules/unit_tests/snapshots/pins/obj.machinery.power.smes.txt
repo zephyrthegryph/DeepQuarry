@@ -1,0 +1,34 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
++0 menu: Open controls
+@obj.machinery.power human|/obj/item/tool/crowbar
++1 menu: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Cut terminal
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Weld
+@obj.machinery.power human|/obj/item/stack/cable_coil
+-click: Click: Lay cable
++1 menu: Open controls
++2 click: Click: Add cable
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+keys: add_cable, cable_place, cut_terminal, drag_buckle, input, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, output, robot_remote_blocked, silicon_hand, tryinput, tryoutput, ui_open, weld

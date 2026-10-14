@@ -33,8 +33,7 @@
 		"choices" = GLOB.reputation_affiliation_choices,
 	)
 
-UI_ACT(/datum/preference_editor/faction_affiliations, "set_affiliation", ui_act_set_affiliation, UI_ARG_CHOICE("faction", "glob:reputation_factions"), UI_ARG_CHOICE("affiliation", "glob:reputation_affiliation_choices"))
-UI_ACT_PREF_PROC(/datum/preference_editor/faction_affiliations, ui_act_set_affiliation)
+/datum/preference_editor/faction_affiliations/proc/ui_act_set_affiliation(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/faction_id = params["faction"]
 	var/affiliation = params["affiliation"]
 	if(isnull(faction_id) || isnull(affiliation))
@@ -49,3 +48,15 @@ UI_ACT_PREF_PROC(/datum/preference_editor/faction_affiliations, ui_act_set_affil
 		to_chat(user, span_warning("Your starting faction reputation cannot total more than [REPUTATION_AFFILIATION_NET_CAP]. Choose a negative affiliation before adding more positive reputation."))
 		return PREF_UPDATE_REJECTED
 	return preferences.update_preference_by_type(/datum/preference/faction_affiliations, current) ? PREF_UPDATE_ACCEPTED : PREF_UPDATE_REJECTED
+
+/// /datum/preference_editor/faction_affiliations's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/faction_affiliations/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_affiliation")
+			typed = payload_args(src, params, list("faction" = enum(GLOB.reputation_factions), "affiliation" = enum(GLOB.reputation_affiliation_choices)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_affiliation(user, typed, preferences, null, action)
+	return ..()

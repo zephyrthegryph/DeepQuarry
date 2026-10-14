@@ -27,8 +27,7 @@ GLOBAL_LIST_INIT(persistence_editor_static_data, list( 	"labels" = list( 		"spaw
 /datum/preference_editor/persistence/build_ui_static_data(datum/preferences/preferences)
 	return GLOB.persistence_editor_static_data
 
-UI_ACT(/datum/preference_editor/persistence, "toggle_flag", ui_act_toggle_flag, UI_ARG_CHOICE("flag", list("spawn", "weight", "organs", "markings", "size")))
-UI_ACT_PREF_PROC(/datum/preference_editor/persistence, ui_act_toggle_flag)
+/datum/preference_editor/persistence/proc/ui_act_toggle_flag(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/bit
 	switch(params["flag"])
 		if("spawn")    bit = PERSIST_SPAWN
@@ -41,3 +40,15 @@ UI_ACT_PREF_PROC(/datum/preference_editor/persistence, ui_act_toggle_flag)
 	current ^= bit
 	preferences.update_preference_by_type(/datum/preference/numeric/human/persistence_settings, current)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/persistence's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/persistence/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("toggle_flag")
+			typed = payload_args(src, params, list("flag" = enum(list("spawn", "weight", "organs", "markings", "size"))))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_flag(user, typed, preferences, null, action)
+	return ..()

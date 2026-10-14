@@ -1,0 +1,29 @@
+ghost|none menu: Remove ID card (refused: You can't reach that.)
+ghost|none menu: Staff Request Form (refused: You can't do that.)
+ghost|none click: nothing
+human|/obj/item/paper_bundle menu: Insert
+human|/obj/item/paper_bundle menu: Loose bundle (refused: You can't do that.)
+human|/obj/item/paper_bundle menu: Move To Top
+human|/obj/item/paper_bundle menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/paper_bundle menu: Rename bundle (refused: You can't do that.)
+human|/obj/item/paper_bundle menu: Staff Request Form
+human|/obj/item/paper_bundle menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paper_bundle menu: Use
+human|/obj/item/paper_bundle click: Click: Insert
+human|/obj/item/photo menu: Insert
+human|/obj/item/photo menu: Move To Top
+human|/obj/item/photo menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/photo menu: Rename photo (refused: You can't do that.)
+human|/obj/item/photo menu: Staff Request Form
+human|/obj/item/photo menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/photo menu: Use
+human|/obj/item/photo click: Click: Insert
+human|none menu: Remove ID card (refused: there is no ID card to remove)
+human|none menu: Staff Request Form
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove ID card (refused: there is no ID card to remove)
+robot|none menu: Staff Request Form
+robot|none menu: Use
+robot|none click: Click: Use

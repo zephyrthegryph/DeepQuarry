@@ -10,17 +10,19 @@
 
 
 /// Re-checked on the answer: still next to it, and the pick is still buckled to it.
-/datum/om/prompt/choice/unbuckle_who
+/datum/prompt/choice/unbuckle_who
 	title = "Unbuckle Who?"
-	message = "Who do you wish to unbuckle?"
-	requires = PROMPT_ADJACENT
+	question = "Who do you wish to unbuckle?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/datum/om/prompt/choice/unbuckle_who/valid()
-	var/atom/movable/AM = subject
-	return (choice in AM.buckled_mob_list()) ? null : "not buckled"
+/datum/prompt/choice/unbuckle_who/recheck_extra()
+	var/atom/movable/AM = subject || owner
+	return (istype(AM) && (value in AM.buckled_mob_list())) ? null : "not buckled"
 
-/atom/movable/proc/unbuckle_chosen(datum/om/prompt/choice/unbuckle_who/ask)
-	user_unbuckle_mob(ask.choice, ask.answerer)
+/atom/movable/proc/unbuckle_chosen(datum/act/request/A)
+	if(A.answer)
+		user_unbuckle_mob(A.answer.value, A.request.answerer)
 
 /atom/movable/hand_gate(mob/living/user)
 	. = ..()
@@ -28,7 +30,7 @@
 	if(can_buckle && has_buckled_mobs())
 		var/list/mobs = src?.buckled_mob_list()
 		if(mobs.len > 1)
-			om_ask(user, /datum/om/prompt/choice/unbuckle_who, PROC_REF(unbuckle_chosen), choices = mobs)
+			open_request(src, /datum/prompt/choice/unbuckle_who, PROC_REF(unbuckle_chosen), answerer = user, choices = mobs)
 			return TRUE
 		else
 			if(user_unbuckle_mob(mobs[1], user))
@@ -43,29 +45,16 @@
 	/// mounted another way (riding animals use their mount verb) and so ignore the drag.
 	var/drag_buckle = TRUE
 
-/// Every movable's default drag: buckle the dragged mob, or climb it.
-/atom/movable/declare_interactions(list/into)
-	..()
-	var/static/list/drag_spec = INTERACT_DRAG_DEFAULT("Buckle", PROC_REF(interaction_drag_buckle))
-	var/datum/interaction/generic/drag = dq_interaction_from_spec(/atom/movable, drag_spec)
-	drag.applies_proc = PROC_REF(offers_drag_buckle)
-	into += drag
+TRACKED(/atom/movable, drag_buckle)
 
-/// Whether the default drag does anything here: something can be buckled to it, or it can be climbed.
-/atom/movable/proc/offers_drag_buckle()
-	return drag_buckle && (can_buckle || has_trait(src, TRAIT_CLIMBABLE))
-
-/atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
-	if(!drag_buckle)
-		return TRUE
-	var/mob/living/M = dropping
-	if(can_buckle && istype(M))
-		if(user_buckle_mob(M, user))
-			return TRUE
-	if(M == user && has_trait(src,TRAIT_CLIMBABLE)) // Buckling takes priority
-		om_emit(src, new /datum/om/event/climb_start(user))
-		return TRUE
-	return FALSE
+/// Every movable's default drag (op "drag_buckle", in CAPABILITIES(/atom/movable), code/modules/lighting/lighting_atom.dm): a mob dragged onto it is
+/// buckled to it, while something can be buckled to it (climbing is the climb capability's own drag; a buckle() seat answers first, at its own tier).
+/atom/movable/proc/interaction_drag_buckle(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/M = A.held
+	if(istype(M) && user_buckle_mob(M, user))
+		return OP_OK
+	return OP_DECLINE
 
 /atom/movable/proc/has_buckled_mobs()
 	return LAZYLEN(src?.buckled_mob_list())
@@ -84,21 +73,49 @@
 		stack_trace("Recursive buckle warning: [M] being buckled to self.")
 		return
 
-	// The relation's on_link() hook (code/datums/om/library.dm,
-	// /datum/om/relation/buckled_to) does the actual buckling: sets BUCKLED(M),
-	// direction, canmove/floating/water, riding offsets, the buckled alert and
-	// buckled_mobs membership. It also owns unbuckling on Destroy() or when M
-	// ends up off our tile, so there's no hand-rolled cleanup here any more.
-	// `forced` doesn't fit the fixed on_link(source, target, edge) signature,
-	// so it's handed across via the singleton relation instance -- link() runs
-	// on_link() synchronously before returning, so there's no re-entrancy risk.
-	var/datum/om/relation/buckled_to/R = om_registry().relation(/datum/om/relation/buckled_to)
-	R.pending_forced = forced
-	var/link_result = om_link(M, src, /datum/om/relation/buckled_to)
-	R.pending_forced = FALSE
-	if(!istype(link_result, /datum/om/edge))
+	return buckle_link(M)
+
+/// Writes the buckle link (the sparse pair LK_BUCKLED_TO / LK_BUCKLED_MOBS) and does what buckling someone does to them and to the seat. The link itself
+/// frees the rider when the seat or the rider goes or the rider ends up off the seat's tile (holds_while), and buckle_released() / buckle_vacated() do the
+/// cleanup. FALSE when the link was refused.
+/atom/movable/proc/buckle_link(mob/living/M)
+	if(!link_make(M, LK_BUCKLED_TO, src))
 		return FALSE
+	M.facing_dir = null
+	M.set_dir(buckle_dir ? buckle_dir : dir)
+	M.update_canmove()
+	M.update_floating(M.Check_Dense_Object())
+	if(riding_datum)
+		rel_set(riding_datum, nameof(/datum/riding::ridden), src)
+		riding_datum.handle_vehicle_offsets()
+	M.refresh_submersion()
+	post_buckle_mob(M)
+	M.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = src)
+	PUBLISH_CHANGE(M, MOB_KEY_STATUS)
 	return TRUE
+
+STAT(/mob/living, buckled, ANY, virtual = TRUE)
+
+/// links(holds_while) of the buckle pair: a rider stays buckled while it is on the seat's tile.
+/atom/movable/proc/link_stays_seated(atom/movable/seat)
+	return link_in_range(seat, 0)
+
+/// The buckle link broke: the rider is no longer held where it was.
+/mob/living/proc/buckle_released(atom/movable/seat)
+	set_anchored(initial(anchored))
+	update_canmove()
+	update_floating(Check_Dense_Object())
+	clear_alert("buckled")
+	refresh_submersion()
+	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
+
+/// The seat's side of it: its riding offsets are restored and it hears who left.
+/atom/movable/proc/buckle_vacated(mob/living/rider)
+	if(riding_datum)
+		if(istype(rider))
+			riding_datum.restore_position(rider)
+		riding_datum.handle_vehicle_offsets()
+	post_buckle_mob(istype(rider) ? rider : null)
 
 /atom/movable/proc/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
 	if(!buckled_mob) // If we didn't get told which mob needs to get unbuckled, just assume its the first one on the list.
@@ -109,8 +126,8 @@
 
 	if(buckled_mob && buckled_mob?.buckled_to() == src)
 		. = buckled_mob
-		// on_unlink() (code/datums/om/library.dm) does the actual unbuckling.
-		om_unlink(buckled_mob, src, /datum/om/relation/buckled_to)
+		// buckle_released() / buckle_vacated() do the actual unbuckling.
+		link_break(buckled_mob, LK_BUCKLED_TO, src)
 
 /atom/movable/proc/unbuckle_all_mobs(force = FALSE)
 	if(!has_buckled_mobs())
@@ -145,7 +162,7 @@
 					act_message(M, L, others = span_warning("%U% sits down on %T%!"))
 				else
 					act_message(user, M, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
-				M.begin_instant_nom(user, L, M, M.vore_selected)
+				M.begin_instant_nom(user, L, M, vore_selected_of(M))
 
 	add_fingerprint(user)
 
@@ -216,7 +233,7 @@
 
 	var/list/buckled_here2 = src?.buckled_mob_list()
 	if(has_buckled_mobs() && buckled_here2.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
-		if(can_do_spont_vore && is_vore_predator(M) && M.vore_selected)
+		if(can_do_spont_vore && is_vore_predator(M) && vore_selected_of(M))
 			for(var/mob/living/buckled in buckled_here2)
 				if(can_stumble_vore(prey = buckled, pred = M))
 					return TRUE

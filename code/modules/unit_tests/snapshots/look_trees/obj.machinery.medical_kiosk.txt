@@ -1,0 +1,5 @@
+/obj/machinery/medical_kiosk icon: icons/obj/machines/medical_kiosk.dmi
+/obj/machinery/medical_kiosk state: kiosk_off
+/obj/machinery/medical_kiosk dir: 2
+/obj/machinery/medical_kiosk overlay: icons/obj/machines/medical_kiosk.dmi:kiosk_off:8:#000000
+

@@ -15,6 +15,7 @@
 	/// Below this vitality the patient is too unstable for anything but inaprovaline.
 	var/min_vitality = 0
 	var/cleaning = 0
+	var/working = FALSE
 	var/patient_laststat = null
 	var/eject_port = "ingestion"
 	/// Things in our contents spared from digestion.
@@ -50,13 +51,52 @@
 	var/ore_storage = FALSE
 	var/obj/item/ore_bag/sleeper/ore_bag //Used by supply compactor
 	flags = NOBLUDGEON
+
+/// The sleeper has something to look after (a patient, a clean cycle or a last look for one): its step runs every two seconds while it holds.
+TRACKED(/obj/item/dogborg/sleeper, working)
+
+MSG_DEF_SELF(sleeper/full, "Your sleeper is full. Eject or process contents to continue.")
+MSG_DEF_SELF(sleeper/blacklisted, "You are hard-wired to not ingest this item.")
+MSG_DEF_SELF(sleeper/too_large, "%T% is too large to fit into your sleeper.")
+MSG_DEF_SELF(sleeper/occupied, "Your sleeper is already occupied.")
+MSG_DEF_SELF(sleeper/buckled, "%T% is buckled and can not be put into your sleeper.")
+
+CAPABILITIES(/obj/item/dogborg/sleeper)
+	ref_one(nameof(patient), /mob/living/carbon)
+	ref_one(nameof(hound), /mob/living/silicon/robot)
+	ref_one(nameof(metal), /datum/matter_synth/metal)
+	ref_one(nameof(glass), /datum/matter_synth/glass)
+	ref_one(nameof(wood), /datum/matter_synth/wood)
+	ref_one(nameof(plastic), /datum/matter_synth/plastic)
+	ref_one(nameof(water), /datum/matter_synth)
+	ref_many(nameof(items_preserved))
+	// ingestion: the plain sleeper takes a person (5 seconds), the compactor an item, a mouse or a person (3 seconds)
+	op("sleeper_take_patient", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_NORMAL), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_plain)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled)), req(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(5 SECONDS), then(PROC_REF(intake_patient_done)))
+	op("sleeper_compact_item", at_target(/obj/item), at_target(/obj/effect/decal/remains), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req(PROC_REF(sleeper_fits), because = MSG(sleeper/too_large))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
+	op("sleeper_compact_mouse", at_target(/mob/living/simple_mob/animal/passive/mouse), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
+	op("sleeper_compact_person", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied)), req(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_person)))
+	every(2 SECONDS, then(PROC_REF(sleeper_step)), when = nameof(working))
+	// kept in nullspace: it only needs a reference to them
+	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer, starts = /obj/item/healthanalyzer, starts_args = NO_LOC)
+	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper, starts = when(nameof(ore_storage), /obj/item/ore_bag/sleeper), starts_args = NO_LOC)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("RobotSleeper", state = nameof(GLOB.tgui_conscious_state))
+	without("ui_open")
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("clean", ui_act("clean"), then(PROC_REF(ui_act_clean)))
+	op("analyze", ui_act("analyze"), then(PROC_REF(ui_act_analyze)))
+	op("port", ui_act("port", arg("value", schema_text(4096))), then(PROC_REF(ui_act_port)))
+	op("ingest", ui_act("ingest"), then(PROC_REF(ui_act_ingest)))
+	op("deliveryslot", ui_act("deliveryslot", arg("value", schema_text(4096))), then(PROC_REF(ui_act_deliveryslot)))
+	op("slot_eject", ui_act("slot_eject"), then(PROC_REF(ui_act_slot_eject)))
+	op("inject", ui_act("inject", arg("value", schema_text(4096))), then(PROC_REF(ui_act_inject)))
 //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
 /obj/item/dogborg/sleeper/Initialize(mapload)
 	if(analyzer) //Destructive analysis
 		var/static/list/destructive_events = list(
-			/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
+			/datum/notice/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 		)
 		new /datum/experiment_handler(src, \
 			config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
@@ -64,17 +104,10 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 			experiment_events = destructive_events, \
 		)
-	if(ore_storage)
-		own_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
 	. = ..()
-	own_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).
-/obj/item/dogborg/sleeper/relations()
-	. = ..()
-	. += rel_many(nameof(items_preserved))
-
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)
 	go_out()
@@ -90,82 +123,69 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	var/datum/gas_mixture/belly_air/air = new(1000)
 	return air
 
-/obj/item/dogborg/sleeper/proc/intake_patient_done(mob/living/carbon/human/H, mob/living/silicon/user)
-	if(H?.buckled_to())
-		return
-	if(patient)
-		return //If you try to eat two people at once, you can only eat one.
-	else //If you don't have someone in you, proceed.
-		H.forceMove(src)
-		update_patient()
-		om_task_periodic(src, PERIODIC_SLOW)
-		act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
-			MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
-		log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
-		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
-
-/obj/item/dogborg/sleeper/afterattack(atom/movable/target, mob/living/silicon/user, proximity_flag, click_parameters)
+/// The cyborg carrying the sleeper is remembered as its hound when an ingestion starts.
+/obj/item/dogborg/sleeper/proc/sleeper_started(datum/act/op/A)
 	rel_set(src, nameof(hound), loc)
-	if(!istype(target))
-		return
-	if(!proximity_flag)
-		return
-	if(target.anchored)
-		return
-	if(target in hound.module.modules)
-		return
-	if(contents_count(src) >= max_item_count)
-		to_chat(user, span_warning("Your [src.name] is full. Eject or process contents to continue."))
-		return
 
-	if(compactor)
-		if(is_type_in_list(target, GLOB.item_vore_blacklist))
-			to_chat(user, span_warning("You are hard-wired to not ingest this item."))
-			return
-		if(istype(target, /obj/item) || istype(target, /obj/effect/decal/remains))
-			var/obj/target_obj = target
-			if(target_obj.w_class > ITEMSIZE_LARGE)
-				to_chat(user, span_warning("\The [target] is too large to fit into your [src.name]"))
-				return
-			act_message(user, target, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
-				MSG_OTHERS(span_warning("[hound.name] is ingesting [target.name] into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_sleeper_done), done_args = list(target, user))
-			return
-		if(istype(target, /mob/living/simple_mob/animal/passive/mouse)) //Edible mice, dead or alive whatever. Mostly for carcass picking you cruel bastard :v
-			var/mob/living/simple_mob/trashmouse = target
-			act_message(user, trashmouse, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
-				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = trashmouse, receiver = src, on_done = PROC_REF(afterattack_sleeper_done2), done_args = list(user, trashmouse))
-			return
-		else if(ishuman(target))
-			var/mob/living/carbon/human/trashman = target
-			if(patient)
-				to_chat(user, span_warning("Your [src.name] is already occupied."))
-				return
-			if(trashman?.buckled_to())
-				to_chat(user, span_warning("[trashman] is buckled and can not be put into your [src.name]."))
-				return
-			act_message(user, trashman, MSG_SELF(span_notice("You start ingesting %T% into your [src.name]...")), \
-				MSG_OTHERS(span_warning("[hound.name] is ingesting %T% into their [src.name].")))
-			om_task_timed(user, 3 SECONDS, target = trashman, receiver = src, on_done = PROC_REF(afterattack_sleeper_done3), done_args = list(user, trashman))
-			return
-		return
+/obj/item/dogborg/sleeper/proc/sleeper_is_compactor(datum/act/op/A)
+	return read_once(compactor)
 
-	else if(ishuman(target))
-		var/mob/living/carbon/human/H = target
-		if(H?.buckled_to())
-			to_chat(user, span_warning("The user is buckled and can not be put into your [src.name]."))
-			return
-		if(patient)
-			to_chat(user, span_warning("Your [src.name] is already occupied."))
-			return
-		act_message(user, H, MSG_SELF(span_notice("You start ingesting %T% into your [src]...")), \
-			MSG_OTHERS(span_warning("[hound.name] is ingesting [H.name] into their [src.name].")))
-		om_task_timed(user, 50, target = H, receiver = src, on_done = PROC_REF(intake_patient_done), done_args = list(H, user))
+/obj/item/dogborg/sleeper/proc/sleeper_is_plain(datum/act/op/A)
+	return read_once(!compactor)
 
-/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done(atom/movable/target, mob/living/silicon/user)
+/// Anchored things and the cyborg's own module items are not ingested (the click is refused without a word).
+/obj/item/dogborg/sleeper/proc/sleeper_target_free(datum/act/op/A)
+	var/atom/movable/target = A.target
+	return (read_once(istype(target) && !target.anchored && !sleeper_holds_module_item(target))) ? null : /datum/msg/req_silent
+
+/// The target is one of the carrying cyborg's own module items.
+/obj/item/dogborg/sleeper/proc/sleeper_holds_module_item(atom/movable/target)
+	var/mob/living/silicon/robot/R = loc
+	return istype(R) && R.module && (target in R.module.modules)
+
+/obj/item/dogborg/sleeper/proc/sleeper_has_room(datum/act/op/A)
+	return (read_once(contents_count(src) < max_item_count)) ? null : MSG(sleeper/full)
+
+/obj/item/dogborg/sleeper/proc/sleeper_may_ingest(datum/act/op/A)
+	return (read_once(!is_type_in_list(A.target, GLOB.item_vore_blacklist))) ? null : MSG(sleeper/blacklisted)
+
+/obj/item/dogborg/sleeper/proc/sleeper_fits(datum/act/op/A)
+	var/obj/target_obj = A.target
+	return (read_once(target_obj.w_class <= ITEMSIZE_LARGE)) ? null : MSG(sleeper/too_large)
+
+/obj/item/dogborg/sleeper/proc/sleeper_vacant(datum/act/op/A)
+	return (read_once(!patient)) ? null : MSG(sleeper/occupied)
+
+/obj/item/dogborg/sleeper/proc/sleeper_target_loose(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	return (read_once(!H.buckled_to())) ? null : MSG(sleeper/buckled)
+
+/obj/item/dogborg/sleeper/proc/sleeper_ingest_text(datum/act/op/A)
+	return msg_text(span_notice("You start ingesting %T% into your [name]..."), span_warning("%U% is ingesting %T% into their [name]."))
+
+/// A person put in the plain sleeper: someone buckled or an occupied sleeper at the end loses the click.
+/obj/item/dogborg/sleeper/proc/intake_patient_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/mob/living/silicon/user = A.actor
+	if(H?.buckled_to())
+		return OP_FAILED
+	if(patient)
+		return OP_FAILED //If you try to eat two people at once, you can only eat one.
+	H.forceMove(src)
+	update_patient()
+	set_working(TRUE)
+	act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
+		MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
+	log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
+	playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
+	return OP_OK
+
+/// A thing put in the compactor (an item, a mouse): the compartment may have filled up meanwhile.
+/obj/item/dogborg/sleeper/proc/sleeper_ingested_thing(datum/act/op/A)
+	var/atom/movable/target = A.target
+	var/mob/living/silicon/user = A.actor
 	if(!(contents_count(src) < max_item_count))
-		return
+		return OP_FAILED
 	target.forceMove(src)
 	act_message(user, target, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as [target.name] slips inside.")))
@@ -175,23 +195,16 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			deliverylists[delivery_tag] |= target
 		to_chat(user, span_notice("\The [target.name] added to cargo compartment slot: [delivery_tag]."))
 	update_patient()
-/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done2(mob/living/silicon/user, mob/living/simple_mob/trashmouse)
-	if(!(contents_count(src) < max_item_count))
-		return
-	trashmouse.forceMove(src)
-	act_message(user, trashmouse, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
-		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
-	playsound(src, gulpsound, vol = 60, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
-	if(delivery)
-		if(islist(deliverylists[delivery_tag]))
-			deliverylists[delivery_tag] |= trashmouse
-		to_chat(user, span_notice("\The [trashmouse] added to cargo compartment slot: [delivery_tag]."))
-	update_patient()
-/obj/item/dogborg/sleeper/proc/afterattack_sleeper_done3(mob/living/silicon/user, mob/living/carbon/human/trashman)
+	return OP_OK
+
+/// A person put in the compactor.
+/obj/item/dogborg/sleeper/proc/sleeper_ingested_person(datum/act/op/A)
+	var/mob/living/carbon/human/trashman = A.target
+	var/mob/living/silicon/user = A.actor
 	if(!(!patient && !trashman?.buckled_to() && contents_count(src) < max_item_count))
-		return
+		return OP_FAILED
 	trashman.forceMove(src)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_working(TRUE)
 	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
@@ -202,11 +215,12 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		to_chat(user, span_notice("\The [trashman] added to cargo compartment slot: [delivery_tag]."))
 		to_chat(trashman, span_notice("[hound.name] has added you to their cargo compartment slot: [delivery_tag]."))
 	update_patient()
+	return OP_OK
 
 /obj/item/dogborg/sleeper/proc/ingest_atom(atom/ingesting)
 	if (!ingesting || ingesting == hound)
 		return
-	var/obj/belly/belly = hound.vore_selected
+	var/obj/belly/belly = vore_selected_of(hound)
 	if (!istype(hound) || !istype(belly) || !(belly in hound.vore_organs))
 		return
 	if (isliving(ingesting))
@@ -223,14 +237,14 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 					delete_holder = FALSE
 			if (delete_holder)
 				rel_clear(micro, nameof(micro.held_mob))
-				qdel(micro)
+				consumed(micro)
 			return
-		if(!to_eat.move_into(belly, BELLY_SLOT_INTERIOR, hound))
+		if(!move_into(belly, BELLY_SLOT_INTERIOR, to_eat, hound))
 			return
 		log_admin("VORE: [hound] used their [src] to swallow [to_eat].")
 
 /obj/item/dogborg/sleeper/proc/ingest_living(mob/living/victim, obj/belly/belly)
-	if (victim.devourable && is_vore_predator(hound))
+	if (victim.vore_prefs.devourable && is_vore_predator(hound))
 		belly.nom_atom(victim, hound)
 		add_attack_logs(hound, victim, "Eaten via [belly.name]")
 		return TRUE
@@ -253,7 +267,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	rel_set(src, nameof(hound), src.loc)
 	if (!istype(hound) || contents_count(src) <= 0)
 		return
-	if (!hound.vore_selected)
+	if (!vore_selected_of(hound))
 		to_chat(hound, span_warning("You don't have a belly selected to empty the contents into!"))
 		return
 	for (var/C in contents)
@@ -273,16 +287,11 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	rel_set(src, nameof(hound), R)
 	return R.draw_power(ROBOT_CELL_JOULES(amt), src, 0, TRUE)
 
-DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(interaction_self)))
-
 /// Old attack_self.
-/obj/item/dogborg/sleeper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/dogborg/sleeper/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
-
-DECLARE_UI_STATE(/obj/item/dogborg/sleeper, GLOB.tgui_conscious_state)
-
-DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 
 /obj/item/dogborg/sleeper/ui_title(mob/user)
 	return "[name] Console"
@@ -296,7 +305,7 @@ DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 	var/mob/living/silicon/robot/robot_user = user
 	var/list/robot_chems = list()
 	for(var/re in TYPE_TABLE_GET(src, sleeper_injection_chems))
-		var/datum/reagent/possible_reagent = chemistry_service().chemical_reagents[re]
+		var/datum/reagent/possible_reagent = SSchemistry.ready().chemical_reagents[re]
 		UNTYPED_LIST_ADD(robot_chems, list("id" = possible_reagent.id, "name" = possible_reagent.name))
 
 	data["name"] = name
@@ -304,10 +313,8 @@ DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 	data["chems"] = robot_chems
 	return data
 
-UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleeper{our_patient:list,eject_port:text,cleaning:num,medsensor:unknown,delivery:num,delivery_tag:text,delivery_lists:list,compactor:num,max_item_count:num,ore_storage:num,current_capacity:num,max_ore_storage:num,contents:list,deliveryslot_1:bool,deliveryslot_2:bool,deliveryslot_3:bool,items_preserved:list,has_destructive_analyzer:num,techweb_name:unknown}")
-
-/// The computed part of /obj/item/dogborg/sleeper's window data (declared on its UI_DATA row).
-/obj/item/dogborg/sleeper/proc/ui_data_obj_item_dogborg_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/dogborg/sleeper's window data.
+/obj/item/dogborg/sleeper/ui_data(datum/act/eval/A)
 	var/list/patient_data
 
 	if(patient)
@@ -320,7 +327,7 @@ UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleep
 		var/list/findings = list()
 		for(var/datum/diagnosis_finding/F as anything in D?.findings)
 			UNTYPED_LIST_ADD(findings, list("name" = F.name, "band" = F.band))
-		qdel(D)
+		spent(D)
 		patient_data = list(
 			"name" = patient.name,
 			"stat" = patient.stat,
@@ -330,7 +337,7 @@ UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleep
 			"health" = round((2 * patient.vitality() - 1) * 100),
 			"max_health" = 100,
 			"findings" = findings,
-			"paralysis" = patient.status_units(EFFECT_PARALYZED),
+			"paralysis" = patient.status_units(STAT_PARALYZED),
 			"braindamage" = !!patient.injury_load(INJURY_CATEGORY_NEURAL),
 			"clonedamage" = !!patient.injury_load(INJURY_CATEGORY_GENETIC),
 			"ingested_reagents" = ingested_reagents
@@ -364,58 +371,64 @@ UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleep
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
-/obj/item/dogborg/sleeper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(ui.user == patient)
+/obj/item/dogborg/sleeper/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user == patient)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_eject)
+/obj/item/dogborg/sleeper/proc/ui_act_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	go_out()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "clean", ui_act_clean)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_clean)
+/obj/item/dogborg/sleeper/proc/ui_act_clean(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(cleaning)
 		return FALSE
 	cleaning = TRUE
 	drain(startdrain)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_working(TRUE)
 	update_patient()
 	if(patient)
 		to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "analyze", ui_act_analyze)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_analyze)
+/obj/item/dogborg/sleeper/proc/ui_act_analyze(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	med_analyzer.scan_mob(patient,hound)
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "port", ui_act_port, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_port)
-	var/new_port = params["value"]
+/obj/item/dogborg/sleeper/proc/ui_act_port(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_port = value
 	if(!(new_port in list("disposal", "ingestion")))
 		return FALSE
 	eject_port = new_port
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "ingest", ui_act_ingest)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_ingest)
+/obj/item/dogborg/sleeper/proc/ui_act_ingest(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	vore_ingest_all()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "deliveryslot", ui_act_deliveryslot, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_deliveryslot)
-	var/new_tag = params["value"]
+/obj/item/dogborg/sleeper/proc/ui_act_deliveryslot(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_tag = value
 	if(!(new_tag in deliverylists))
 		return FALSE
 	delivery_tag = new_tag
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "slot_eject", ui_act_slot_eject)
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
+/obj/item/dogborg/sleeper/proc/ui_act_slot_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!length(deliverylists[delivery_tag]))
 		return FALSE
 	hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
@@ -426,18 +439,20 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
 	deliverylists[delivery_tag].Cut()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "inject", ui_act_inject, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
-	if(!patient || (patient.stat & DEAD))
-		to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
+/obj/item/dogborg/sleeper/proc/ui_act_inject(datum/act/op/A, value)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/selected_reagent = params["value"]
+	if(!patient || (patient.stat & DEAD))
+		to_chat(user, span_notice("ERROR: Subject cannot metabolise chemicals."))
+		return FALSE
+	var/selected_reagent = value
 	if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
 		return FALSE
 	if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
-		inject_chem(ui.user, selected_reagent)
+		inject_chem(user, selected_reagent)
 	else
-		to_chat(ui.user, span_notice("ERROR: Subject is not in stable condition for injections."))
+		to_chat(user, span_notice("ERROR: Subject is not in stable condition for injections."))
 	return TRUE
 
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)
@@ -452,7 +467,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 				patient.reagents.add_reagent(chem, inject_amount)
 				drain(SLEEPER_INJECT_COST)
 			var/units = round(patient.reagents.get_reagent_amount(chem))
-			to_chat(hound, span_notice("Injecting [units] unit\s of [chemistry_service().chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
+			to_chat(hound, span_notice("Injecting [units] unit\s of [SSchemistry.ready().chemical_reagents[chem]] into occupant.")) //If they were immersed, the reagents wouldn't leave with them.
 
 /// The belly light: busy (red) while cleaning, crowded or holding the dead;
 /// green with a living patient. The robot only redraws when it changes.
@@ -542,7 +557,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
-	if(om_has(T, EFFECT_GODMODE) || !T.digestable)
+	if(in_godmode(T) || !T.vore_prefs.digestable)
 		rel_add(src, nameof(items_preserved), T)
 		return
 	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
@@ -593,7 +608,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 		patient_laststat = null
 		rel_clear(src, nameof(patient))
 	T.mind?.vore_death = TRUE
-	qdel(T)
+	dissolved(T)
 
 /// Digest (or preserve) one loose item or remains.
 /obj/item/dogborg/sleeper/proc/digest_loose_item(atom/target)
@@ -629,18 +644,18 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 			var/datum/experiment_handler/handler = get_experiment_handler()
 			if(analyzer && handler)
 				techweb_item_generate_points(T, handler.linked_web())
-				OM_EMIT(src, /datum/om/event/machinery_destructive_scan, T)
+				PUBLISH_LEGACY(src, /datum/notice/machinery_destructive_scan, T)
 			if(is_trash)
 				hound.adjust_nutrition(digested)
 			else
 				hound.adjust_nutrition(5 * digested)  //drain(-50 * digested)
 	else if(istype(target,/obj/effect/decal/remains))
-		qdel(target)
+		dissolved(target, src)
 		hound.adjust_nutrition(10) //drain(-100)
 	else
 		rel_add(src, nameof(items_preserved), target)
 
-/obj/item/dogborg/sleeper/periodic_step()
+/obj/item/dogborg/sleeper/proc/sleeper_step(datum/act/A)
 	if(!istype(src.loc,/mob/living/silicon/robot))
 		return
 
@@ -653,14 +668,14 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 		if(patient.is_critical())
 			patient.mend(TREAT_OXYGENATION, 1) //Heal some oxygen damage if they're in critical condition
 			drain()
-		patient.status_adjust(EFFECT_STUNNED, -4)
-		patient.status_adjust(EFFECT_WEAKENED, -4)
+		patient.status_adjust(STAT_STUNNED, -4)
+		patient.status_adjust(STAT_WEAKENED, -4)
 		drain(1)
 		return
 
 	if(!patient && !cleaning) //We think we're done working.
 		if(!update_patient()) //One last try to find someone
-			om_task_periodic_stop(src)
+			set_working(FALSE)
 			return
 
 /obj/item/dogborg/sleeper/proc/get_experiment_handler()

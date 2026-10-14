@@ -4,7 +4,6 @@
 	name = "messaging monitor console"
 	desc = "Used to access and maintain data on messaging servers. Allows you to view PDA and request console messages."
 	icon_screen = "comm_logs"
-	light_color = "#00b000"
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
@@ -26,62 +25,77 @@
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
 
-/obj/machinery/computer/message_monitor/screwdriver_act(mob/living/user, obj/item/tool)
-	if(!operable())
-		return ..()
-	if(!istype(user))
-		return ITEM_INTERACT_BLOCKING
-	if(emag)
-		//Stops people from just unscrewing the monitor and putting it back to get the console working again.
-		to_chat(user, span_warning("It is too hot to mess with!"))
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_emag), null)
-/obj/machinery/computer/message_monitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/// needs: an emagged monitor that still works is too hot to unscrew (so it cannot be reset by putting it back together).
+/obj/machinery/computer/message_monitor/proc/cool_enough(datum/act/op/A)
+	return (!emag || !operable()) ? null : MSG(message_monitor/too_hot)
+
+/obj/machinery/computer/message_monitor/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	// Will create sparks and print out the console's password. You will then have to wait a while for the console to be back online.
 	// It'll take more time if there's more characters in the password..
 	if(!emag && operable())
 		if(!isnull(linkedServer()))
-			emag = 1
+			set_emag(TRUE)
 			fx_sparks(src, 5, FALSE)
 			var/obj/item/paper/monitorkey/MK = new/obj/item/paper/monitorkey
 			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
-			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
-			om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
+			MK.set_info(MK.info + ("<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")))
+			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
-			update_icon()
-			return 1
+			return OP_OK
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
+	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/message_monitor/appearance_overlays()
-	. = list()
-	if(emag || hacking)
-		icon_screen = hack_icon
-	else
-		icon_screen = initial(icon_screen)
-	. += ..()
+/// An emagged or hacked monitor shows the hack screen.
+/obj/machinery/computer/message_monitor/screen_state()
+	return (emag || hacking) ? hack_icon : icon_screen
 
-/obj/machinery/computer/message_monitor/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/computer/message_monitor/LateInitialize()
+/// Links the first message server when the map has one and none is set.
+/obj/machinery/computer/message_monitor/proc/link_default_server(datum/act/timer/A)
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
-DECLARE_UI(/obj/machinery/computer/message_monitor, "MessageMonitor")
 
-UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "customjob:text", "custommessage:text", "temp:text", "merge:ui_data_obj_machinery_computer_message_monitor{customrecepient:text,hacking:bool,emag:bool,auth:bool,linkedServer:list,possibleRecipients:list,isMalfAI:bool}")
+CAPABILITIES(/obj/machinery/computer/message_monitor)
+	configure(light_glow(color = "#00b000"))
+	ref_one(nameof(linkedServer), /obj/machinery/message_server)
+	extend("disconnect", needs(req(PROC_REF(cool_enough))))
+	after_init(0, then(PROC_REF(link_default_server)))
+	interface("MessageMonitor")
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
+	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
+	op("deauth", ui_act("deauth"), then(PROC_REF(ui_act_deauth)))
+	op("find", ui_act("find"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Select a server.", "question" = "Please select a server.", "choices" = computed(PROC_REF(server_prompt_choices)), "timeout" = 0), when = PROC_REF(multiple_servers)), then(PROC_REF(ui_act_find)))
+	op("hack", ui_act("hack"), needs(req_actor_kind(list(/mob/living/silicon/ai, /mob/living/silicon/robot), because = /datum/msg/req_silent)), then(PROC_REF(ui_act_hack)))
+	op("active", ui_act("active"), then(PROC_REF(ui_act_active)))
+	op("del_pda", ui_act("del_pda"), then(PROC_REF(ui_act_del_pda)))
+	op("del_rc", ui_act("del_rc"), then(PROC_REF(ui_act_del_rc)))
+	op("pass", ui_act("pass"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("question" = "Please enter the current decryption key.", "timeout" = 0), step = "current_key", when = PROC_REF(key_action_ready)), asks(/datum/prompt/text, fields = list("question" = "Please enter the new key (3 - 16 characters max):", "max_len" = 16, "timeout" = 0), step = "new_key", when = PROC_REF(current_key_matches)), then(PROC_REF(ui_act_pass)))
+	op("delete", ui_act("delete", arg("id"), arg("type", schema_text(4096))), then(PROC_REF(ui_act_delete)))
+	op("set_sender", ui_act("set_sender", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender)))
+	op("set_sender_job", ui_act("set_sender_job", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender_job)))
+	op("set_recipient", ui_act("set_recipient", arg("val")), then(PROC_REF(ui_act_set_recipient)))
+	op("set_message", ui_act("set_message", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_message)))
+	op("send_message", ui_act("send_message"), then(PROC_REF(ui_act_send_message)))
+	op("addtoken", ui_act("addtoken"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Token creation", "question" = "Enter text you want to be filtered out", "timeout" = 0), when = PROC_REF(key_action_ready)), then(PROC_REF(ui_act_addtoken)))
+	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	ref_one(nameof(customrecepient), /obj/item/pda)
 
-/// The computed part of /obj/machinery/computer/message_monitor's window data (declared on its UI_DATA row).
-/obj/machinery/computer/message_monitor/proc/ui_data_obj_machinery_computer_message_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/message_monitor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
+	data["customsender"] = customsender
+	data["customjob"] = customjob
+	data["custommessage"] = custommessage
+	data["temp"] = temp
 
 	data["customrecepient"] = "[customrecepient()]"
 
@@ -91,7 +105,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 	data["linkedServer"] = list()
 	if(linkedServer() && auth)
 		data["linkedServer"]["active"] = linkedServer().active
-		data["linkedServer"]["broke"] = linkedServer().stat & (NOPOWER|BROKEN)
+		data["linkedServer"]["broke"] = (linkedServer().power_lost() || linkedServer().broken_now())
 
 		var/list/pda_msgs = list()
 		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
@@ -137,24 +151,12 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 			sendPDAs["[P.name]"] = "\ref[P]"
 		data["possibleRecipients"] = sendPDAs
 	var/mob/living/original = user.mind.original_character
-	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
+	data["isMalfAI"] = ((A.authority & AUTH_REMOTE_ACCESS) && (user.mind.special_role && (original && original == user)))
 
 	return data
 
-/obj/machinery/computer/message_monitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/message_monitor_open_ui,
-	)
-	..()
-
-/// Open the message monitor interface.
-/datum/interaction/machine_hand/ungated/message_monitor_open_ui
-	id = "message_monitor_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	if(!istype(user))
@@ -168,12 +170,10 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 	else
 		var/currentKey = linkedServer().decryptkey
 		to_chat(user, span_warning("Brute-force completed! The key is '[currentKey]'."))
-	hacking = 0
-	update_icon()
+	set_hacking(0)
 
 /obj/machinery/computer/message_monitor/proc/UnmagConsole()
-	emag = 0
-	update_icon()
+	set_emag(FALSE)
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
@@ -181,15 +181,13 @@ UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "c
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
-UI_ACT(/obj/machinery/computer/message_monitor, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_cleartemp)
+/obj/machinery/computer/message_monitor/proc/ui_act_cleartemp(datum/act/op/A)
 	temp = null
 	. = TRUE
 //Authenticate
 
-UI_ACT(/obj/machinery/computer/message_monitor, "auth", ui_act_auth, UI_ARG_TEXT("key"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_auth)
-	var/dkey = params["key"]
+/obj/machinery/computer/message_monitor/proc/ui_act_auth(datum/act/op/A, key)
+	var/dkey = key
 	if(dkey && dkey != "")
 		if(linkedServer() && linkedServer().decryptkey == dkey)
 			auth = TRUE
@@ -197,16 +195,17 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_auth)
 			temp = incorrectkey
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "deauth", ui_act_deauth)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deauth)
+/obj/machinery/computer/message_monitor/proc/ui_act_deauth(datum/act/op/A)
 	auth = FALSE
 	. = TRUE
 //Find a server
 
-UI_ACT(/obj/machinery/computer/message_monitor, "find", ui_act_find)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_find)
+/obj/machinery/computer/message_monitor/proc/ui_act_find(datum/act/op/A)
+	if(A.answer)
+		server_selected(A)
+		return OP_OK
 	if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-		om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
+		server_selected(A)
 	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 		rel_set(src, nameof(/obj/machinery/computer/message_monitor::linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
@@ -214,33 +213,29 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_find)
 		temp = noserver
 //Hack the Console to get the password
 
-UI_ACT(/obj/machinery/computer/message_monitor, "hack", ui_act_hack)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_hack)
-	var/mob/living/original = ui.user.mind.original_character
-	if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
-		hacking = 1
-		update_icon()
+/obj/machinery/computer/message_monitor/proc/ui_act_hack(datum/act/op/A)
+	var/mob/living/original = A.actor.mind.original_character
+	if((A.actor.mind.special_role && (original && original == A.actor)))
+		set_hacking(1)
 		//Time it takes to bruteforce is dependant on the password length.
-		om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), ui.user)
+		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(A.actor))
 
 //Turn the server on/off.
 
-UI_ACT(/obj/machinery/computer/message_monitor, "active", ui_act_active)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_active)
+/obj/machinery/computer/message_monitor/proc/ui_act_active(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	linkedServer().active = !linkedServer().active
+	linkedServer().set_active(!linkedServer().active)
 	. = TRUE
 //Clears the logs - KEY REQUIRED
 
-UI_ACT(/obj/machinery/computer/message_monitor, "del_pda", ui_act_del_pda)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_pda)
+/obj/machinery/computer/message_monitor/proc/ui_act_del_pda(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), OWN_DELETE)
@@ -248,11 +243,10 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_pda)
 	. = TRUE
 //Clears the request console logs - KEY REQUIRED
 
-UI_ACT(/obj/machinery/computer/message_monitor, "del_rc", ui_act_del_rc)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_rc)
+/obj/machinery/computer/message_monitor/proc/ui_act_del_rc(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	own_clear(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), OWN_DELETE)
@@ -260,62 +254,62 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_rc)
 	. = TRUE
 //Change the password - KEY REQUIRED
 
-UI_ACT(/obj/machinery/computer/message_monitor, "pass", ui_act_pass)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_pass)
+/obj/machinery/computer/message_monitor/proc/ui_act_pass(datum/act/op/A)
+	if(A.answer)
+		current_key_entered(A)
+		return OP_OK
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(current_key_entered), message = "Please enter the current decryption key.", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
+	current_key_entered(A)
 	. = TRUE
 //Delete the log.
 
-UI_ACT(/obj/machinery/computer/message_monitor, "delete", ui_act_delete, UI_ARG_REF("id", null), UI_ARG_TEXT("type"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_delete)
+/obj/machinery/computer/message_monitor/proc/ui_act_delete(datum/act/op/A, id, kind)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	if(params["type"] == "pda")
-		if(params["id"] in linkedServer().pda_msgs)
-			own_remove(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), params["id"])
+	if(kind == "pda")
+		var/datum/log_entry = ui_ref(id, linkedServer().pda_msgs, null)
+		if(log_entry)
+			own_remove(linkedServer(), nameof(/obj/machinery/message_server::pda_msgs), log_entry)
 	else
-		if(params["id"] in linkedServer().rc_msgs)
-			own_remove(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), params["id"])
+		var/datum/log_entry = ui_ref(id, linkedServer().rc_msgs, null)
+		if(log_entry)
+			own_remove(linkedServer(), nameof(/obj/machinery/message_server::rc_msgs), log_entry)
 	set_temp("NOTICE: Log Deleted!", "average")
 	. = TRUE
 //Fake messaging selection - KEY REQUIRED
 
-UI_ACT(/obj/machinery/computer/message_monitor, "set_sender", ui_act_set_sender, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_sender)
+/obj/machinery/computer/message_monitor/proc/ui_act_set_sender(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	customsender = sanitize(params["val"])
+	customsender = sanitize(val)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "set_sender_job", ui_act_set_sender_job, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_sender_job)
+/obj/machinery/computer/message_monitor/proc/ui_act_set_sender_job(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	customjob = sanitize(params["val"])
+	customjob = sanitize(val)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "set_recipient", ui_act_set_recipient, UI_ARG_REF("val", null, /obj/item/pda))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_recipient)
+/obj/machinery/computer/message_monitor/proc/ui_act_set_recipient(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	var/obj/item/pda/P = params["val"]
+	var/obj/item/pda/P = ui_ref(val, null, /obj/item/pda)
 	if(!istype(P) || !P.owner || P.hidden)
 		return FALSE
 
@@ -325,21 +319,19 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_recipient)
 	rel_set(src, nameof(/obj/machinery/computer/message_monitor::customrecepient), P)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "set_message", ui_act_set_message, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_message)
+/obj/machinery/computer/message_monitor/proc/ui_act_set_message(datum/act/op/A, val)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	custommessage = sanitize(params["val"])
+	custommessage = sanitize(val)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "send_message", ui_act_send_message)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_send_message)
+/obj/machinery/computer/message_monitor/proc/ui_act_send_message(datum/act/op/A)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
 	if(isnull(customsender) || customsender == "")
@@ -379,42 +371,63 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_send_message)
 	ResetMessage()
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "addtoken", ui_act_addtoken)
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_addtoken)
+/obj/machinery/computer/message_monitor/proc/ui_act_addtoken(datum/act/op/A)
+	if(A.answer)
+		token_entered(A)
+		return OP_OK
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(token_entered), title = "Token creation", message = "Enter text you want to be filtered out", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
+	token_entered(A)
 	. = TRUE
 
-UI_ACT(/obj/machinery/computer/message_monitor, "deltoken", ui_act_deltoken, UI_ARG_NUM("deltoken"))
-UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
+/obj/machinery/computer/message_monitor/proc/ui_act_deltoken(datum/act/op/A, deltoken)
 	if(!auth)
 		return
-	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	var/tokennum = params["deltoken"]
+	var/tokennum = deltoken
 	linkedServer().spamfilter.Cut(tokennum, tokennum + 1)
 	. = TRUE
 
-/obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(linkedServer), ask.choice)
+/// The message servers by the name the question lists them under (a repeated name gets its number).
+/obj/machinery/computer/message_monitor/proc/server_choices()
+	var/list/choices = list()
+	for(var/obj/machinery/message_server/server in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
+		var/label = "[server.name]"
+		if(label in choices)
+			label = "[label] #[length(choices) + 1]"
+		choices[label] = server
+	return choices
+
+/obj/machinery/computer/message_monitor/proc/server_selected(datum/act/op/A)
+	if(!A.answer)
+		return
+	var/obj/machinery/message_server/server = server_choices()[A.answer.value]
+	if(!server)
+		return
+	rel_set(src, nameof(linkedServer), server)
 	set_temp("NOTICE: Server selected.", "alert")
 
-/obj/machinery/computer/message_monitor/proc/current_key_entered(datum/om/prompt/text/ask)
-	var/dkey = trim(ask.text)
+/obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/op/A)
+	if(!A.answer)
+		return
+	var/dkey = trim(A.step_value("current_key"))
 	if(!dkey || !linkedServer())
 		return
 	if(linkedServer().decryptkey != dkey)
 		temp = incorrectkey
-		return TRUE
-	om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(new_key_entered), message = "Please enter the new key (3 - 16 characters max):", max_length = 16, requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
+		return
+	if(!isnull(A.step_value("new_key")))
+		new_key_entered(A)
 
-/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/om/prompt/text/ask)
-	var/newkey = trim(ask.text)
+/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/op/A)
+	if(!A.answer)
+		return
+	var/newkey = trim(A.step_value("new_key"))
 	if(!linkedServer())
 		return
 	if(length(newkey) <= 3)
@@ -424,12 +437,10 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
 	else if(newkey && newkey != "")
 		linkedServer().decryptkey = newkey
 	set_temp("NOTICE: Decryption key set.", "average")
-	return TRUE
 
-/obj/machinery/computer/message_monitor/proc/token_entered(datum/om/prompt/text/ask)
-	if(linkedServer())
-		linkedServer().spamfilter += ask.text
-		return TRUE
+/obj/machinery/computer/message_monitor/proc/token_entered(datum/act/op/A)
+	if(A.answer && linkedServer())
+		linkedServer().spamfilter += A.answer.value
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)
@@ -439,22 +450,21 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
 /obj/item/paper/monitorkey
 	name = "Monitor Decryption Key"
 
-/obj/item/paper/monitorkey/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/paper/monitorkey)
+	after_init(0, then(PROC_REF(write_daily_key)))
 
-/obj/item/paper/monitorkey/LateInitialize()
+/// Writes the message servers' key, once they all exist.
+/obj/item/paper/monitorkey/proc/write_daily_key(datum/act/timer/A)
 	for(var/obj/machinery/message_server/server in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(!isnull(server.decryptkey))
-			info = "<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one."
+			set_info("<center><h2>Daily Key Reset</h2></center><br>The new message monitor key is '[server.decryptkey]'.<br>Please keep this a secret and away from the clown.<br>If necessary, change the password to a more secure one.")
 			info_links = info
-			icon_state = "paper_words"
+			set_icon_state("paper_words")
 			break
 
 /obj/machinery/computer/message_monitor/proc/brute_force_done(mob/user)
 	if(linkedServer() && user)
 		BruteForce(user)
-
 
 /// linkedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
@@ -463,3 +473,18 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
 /// The custom recipient PDA (a relation view).
 /obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
 	return customrecepient
+
+/obj/machinery/computer/message_monitor/proc/multiple_servers(datum/act/op/A)
+	return read_once(REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS)) > 1
+
+/obj/machinery/computer/message_monitor/proc/server_prompt_choices(datum/act/op/A)
+	return read_once(server_choices())
+
+/obj/machinery/computer/message_monitor/proc/key_action_ready(datum/act/op/A)
+	var/obj/machinery/message_server/server = linkedServer()
+	return read_once(auth) && server && !server.power_lost() && !server.broken_now()
+
+/obj/machinery/computer/message_monitor/proc/current_key_matches(datum/act/op/A)
+	var/key = trim(A.step_value("current_key"))
+	var/obj/machinery/message_server/server = linkedServer()
+	return key && server && read_once(server.decryptkey) == key

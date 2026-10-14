@@ -62,10 +62,10 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 /proc/dq_worn_covering(list/items, part)
 	. = list()
 	for(var/obj/item/clothing/gear in items)
-		if(gear.body_parts_covered & part)
+		if(worn_of(gear).covers & part)
 			. |= gear
 		for(var/obj/item/clothing/accessory/bling in gear.accessories)
-			if(bling.body_parts_covered & part)
+			if(worn_of(bling).covers & part)
 				. |= bling
 
 /// Clothing and accessories in this mob's armour slots covering body part flag `part`.
@@ -85,8 +85,8 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 /proc/dq_worn_siemens_scan(list/items, part)
 	. = 1
 	for(var/obj/item/clothing/C in items)
-		if(C.body_parts_covered & part)
-			. *= C.siemens_coefficient
+		if(worn_of(C).covers & part)
+			. *= protection_of(C).siemens
 
 /// Rebuilds the cache if it is stale.
 /datum/body/proc/ensure_worn_protection()
@@ -239,7 +239,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 /// null. The item protects at T exactly when this is at least T, which is what
 /// handle_high_temperature() answers.
 /obj/item/clothing/proc/worn_heat_limit()
-	. = max_heat_protection_temperature || null
+	. = protection_of(src).max_heat || null
 	for(var/obj/item/clothing/C in accessories)
 		var/limit = C.worn_heat_limit()
 		if(!isnull(limit) && (isnull(.) || limit > .))
@@ -247,7 +247,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 
 /// Lowest temperature this item or any accessory on it protects down to, or null.
 /obj/item/clothing/proc/worn_cold_limit()
-	. = min_cold_protection_temperature || null
+	. = protection_of(src).min_cold || null
 	for(var/obj/item/clothing/C in accessories)
 		var/limit = C.worn_cold_limit()
 		if(!isnull(limit) && (isnull(.) || limit < .))

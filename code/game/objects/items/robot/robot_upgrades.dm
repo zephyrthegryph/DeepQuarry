@@ -66,24 +66,30 @@
 	item_state = "cyborg_upgrade"
 	var/heldname = "default name"
 
-DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
+	op("self", in_hand(), asks(/datum/prompt/text, fields = list("title" = "Robot Reclassification", "question" = "Enter new robot name", "default" = computed(PROC_REF(name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "subject" = computed(PROC_REF(name_subject)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = REQUEST_NO_TIMEOUT)), then(PROC_REF(name_entered)))
 
-/// Old attack_self.
-/obj/item/borg/upgrade/utility/rename/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(name_entered), title = "Robot Reclassification", message = "Enter new robot name", default = heldname, max_length = MAX_NAME_LEN, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	return TRUE
+/// The prompt's starting text: the board's current name.
+/obj/item/borg/upgrade/utility/rename/proc/name_default(datum/act/A)
+	return heldname
 
-/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/om/prompt/text/ask)
-	if(ask.text)
-		heldname = ask.text
+/// The question's subject, for the carried recheck of an answer: the board itself.
+/obj/item/borg/upgrade/utility/rename/proc/name_subject(datum/act/A)
+	return src
+
+/// Old attack_self's question was answered: the board takes the name.
+/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/act/op/A)
+	if(A.answer?.value)
+		heldname = A.answer.value
+	return OP_OK
 
 /obj/item/borg/upgrade/utility/rename/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE
 	if(isshell(R)) return FALSE
 	R.notify_ai(ROBOT_NOTIFICATION_NEW_NAME, R.name, heldname)
 	R.name = heldname
-	R.custom_name = heldname
-	R.real_name = heldname
+	R.set_custom_name(heldname)
+	R.set_real_name(heldname)
 
 	return TRUE
 
@@ -139,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		to_chat(user, span_warning("It'd be unwise to plug another vtec module in!"))
 		return FALSE
 
-	R.grant_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	grant(R, robot_vtec(), R)
 	R.vtec_active = TRUE
 	R.hud_used.toggle_vtec_control()
 	to_chat(R, span_notice("Actuator overdrive enabled!"))
@@ -148,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 /obj/item/borg/upgrade/basic/vtec/remove_upgrade(mob/living/silicon/robot/R)
 	if(!is_installed(R))
 		return
-	R.revoke_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
+	revoke(R, robot_vtec(), R)
 	R.vtec_active = FALSE
 	if(R.hud_used)
 		R.hud_used.toggle_vtec_control()
@@ -168,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		to_chat(user, span_warning("There's no space for another size alteration module!"))
 		return FALSE
 
-	om_grant(R, GRANT_VERB, /mob/living/proc/set_size, R)
+	grant(R, granted_verb(/mob/living/proc/set_size), R)
 	to_chat(R, span_notice("Size adjustments active!"))
 	return TRUE
 
@@ -300,7 +306,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		generic_error(user, R, type)
 		return FALSE
 
-	own_add(R.module, nameof(/datum/generated_station_materialization::modules), new /obj/item/tank/jetpack/carbondioxide(R.module))
+	rel_add(R.module, nameof(/obj/item/robot_module::modules), new /obj/item/tank/jetpack/carbondioxide(R.module))
 	return TRUE
 
 /obj/item/borg/upgrade/advanced/advhealth

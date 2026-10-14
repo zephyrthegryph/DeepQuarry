@@ -84,7 +84,7 @@
 #define STANDARD_ATMOS_CHOOSE_NODE(node_num, direction) \
 	for(var/obj/machinery/atmospherics/target in get_step(src, direction)) { \
 		if(can_be_node(target, node_num)) { \
-			node##node_num = target; \
+			rel_set(src, nameof(node##node_num), target); \
 			break; \
 		} \
 	}
@@ -112,32 +112,12 @@
 /// The item material type was not accepted or other reasons
 #define MATERIAL_INSERT_ITEM_FAILURE 0
 
-// Construction graphs (doc/rewrite/interactions.md §10). Code: code/datums/interactions/construction.dm.
-
-/// The shared singleton of a construction graph type.
-#define CONSTRUCTION_GRAPH(path) (GLOB.construction_graphs[path])
-
-/// An edge whose `from_state` is this leaves every state its leaves() accepts.
-#define CONSTRUCTION_ANY_STATE "*"
-/// The terminal state: the target became something else (a wall, a mech, a vehicle) or is gone.
-#define CONSTRUCTION_DONE "done"
-
-// What an edge does with the held item (`item_use`).
-/// The item is only checked.
-#define CONSTRUCTION_ITEM_KEEP 0
-/// A stack: `item_amount` units are used.
-#define CONSTRUCTION_ITEM_USE 1
-/// The item is dropped and deleted (a part, a board) after the edge's effect.
-#define CONSTRUCTION_ITEM_DELETE 2
-/// The item is dropped and moved into the target (a cell) before the edge's effect.
-#define CONSTRUCTION_ITEM_INSERT 3
-
-/// Tag on every construction edge.
-#define INTERACTION_TAG_CONSTRUCTION "construction"
-
 // Exosuit maintenance states (/obj/mecha `state`, mecha_maintenance.dm).
 #define MECHA_OPERATING     0
 #define MECHA_BOLTS_SECURED 1
 #define MECHA_PANEL_LOOSE   2
 #define MECHA_CELL_OPEN     3
 #define MECHA_CELL_OUT      4
+
+/// stage(..., undo = NO_UNDO): no way back. (A null undo reads as "not given" in DM, so the explicit none is an empty list.)
+#define NO_UNDO list()

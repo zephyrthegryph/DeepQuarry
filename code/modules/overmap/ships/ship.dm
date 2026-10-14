@@ -16,7 +16,6 @@
 	dir = NORTH
 	icon_state = "ship_nosprite"
 	appearance_flags = TILE_BOUND|KEEP_TOGETHER|LONG_GLIDE
-	light_power = 4
 	layer = OBJ_LAYER + 0.1 // make movables a little higher than regular sectors
 
 	unknown_name = "unknown ship"
@@ -28,10 +27,10 @@
 	var/max_speed = 1/(1 SECOND)        //"speed of light" for the ship, in turfs/decisecond.
 	var/min_speed = 1/(2 MINUTES)       // Below this, we round speed to 0 to avoid math errors.
 
-	var/position_x						// Pixel coordinates in the world
-	var/position_y						// Pixel coordinates in the world.
+	var/position_x = 0					// Pixel coordinates in the world
+	var/position_y = 0					// Pixel coordinates in the world.
 	// ALLOW(instance_list): d: replaced per instance at runtime (13 assignments)
-	var/list/speed = list(0,0)          //speed in x,y direction
+	var/list/speed = list(0,0)          //speed in x,y direction; replaced (never edited in place) through set_speed()
 	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
 	var/burn_delay = 1 SECOND           //how often ship can do burns
 	var/fore_dir = NORTH                //what dir ship flies towards for purpose of moving stars effect procs
@@ -51,26 +50,23 @@
 	render_map = TRUE
 
 DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
+REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_OVERMAP_SHIPS)
 
 /obj/effect/overmap/visitable/ship/Initialize(mapload)
 	. = ..()
 	min_speed = round(min_speed, SHIP_MOVE_RESOLUTION)
 	max_speed = round(max_speed, SHIP_MOVE_RESOLUTION)
-	SSshuttles.ships += src
-	position_x = 0
-	position_y = 0
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
-	GLOB.flight_service?.register_vessel(src)
+	SSflight?.register_vessel(src)
 
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
-	SSshuttles.ships -= src
-	if(GLOB.flight_service && flight_vessel_id)
-		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, nameof(/datum/world_service/flight::vessels), flight_vessel_id)
+	if(SSflight && flight_vessel_id)
+		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)
-			GLOB.flight_service.vessel_by_ship -= REF(src)
-			qdel(vessel)
+			SSflight.vessel_by_ship -= REF(src)
+			spent(vessel)
 	return ..()
 
 /obj/effect/overmap/visitable/ship/on_destroy(force)
@@ -83,13 +79,17 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/proc/is_still()
 	return !MOVING(speed[1]) && !MOVING(speed[2])
 
-/// Mirror of "not still": speed is a list mutated in place, so adjust_speed() (its only writer)
-/// publishes the start/stop transition through this field.
-OM_FIELD_TYPED(/obj/effect/overmap/visitable/ship, tmp, under_way, FALSE, CHANGE_EXPLICIT)
+/// Mirror of "not still": adjust_speed() (the only writer of speed) publishes the start/stop transition through this field.
+/obj/effect/overmap/visitable/ship/var/tmp/under_way = FALSE
+TRACKED(/obj/effect/overmap/visitable/ship, under_way)
+TRACKED(/obj/effect/overmap/visitable/ship, speed)
 
 /// Under way (not still).
-OM_DERIVE_FIELD(/obj/effect/overmap/visitable/ship, is_moving, list("under_way"))
-DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_moving")
+CAPABILITIES(/obj/effect/overmap/visitable/ship)
+	configure(light_glow(power = 4))
+	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
+	drag_onto(PROC_REF(drop_input))
+	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
 	return under_way
@@ -147,9 +147,11 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 
 /obj/effect/overmap/visitable/ship/proc/adjust_speed(n_x, n_y)
 	var/old_still = is_still()
-	CHANGE_SPEED_BY(speed[1], n_x)
-	CHANGE_SPEED_BY(speed[2], n_y)
-	update_icon()
+	var/new_x = speed[1]
+	var/new_y = speed[2]
+	CHANGE_SPEED_BY(new_x, n_x)
+	CHANGE_SPEED_BY(new_y, n_y)
+	set_speed(list(new_x, new_y)) // a new list each time: the tracked write redraws the heading
 	var/still = is_still()
 	// If nothing changed
 	if(still == old_still)
@@ -158,7 +160,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	// If it is now still, stopped moving
 	if(still)
 		for(var/zz in map_z)
-			GLOB.starmover_service.toggle_move_stars(zz)
+			SSstarmover.toggle_move_stars(zz)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
@@ -170,7 +172,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	else
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
-			GLOB.starmover_service.toggle_move_stars(zz, fore_dir)
+			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
@@ -197,7 +199,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 /obj/effect/overmap/visitable/ship/proc/accelerate(direction, accel_limit)
 	return
 
-/obj/effect/overmap/visitable/ship/periodic_step(wait)
+/obj/effect/overmap/visitable/ship/proc/ship_step(datum/act/timer/A)
 	adjust_speed(-speed[1], -speed[2])
 
 // If we get moved, update our internal tracking to account for it
@@ -213,18 +215,28 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	position_y = ((loc.y - 1) * WORLD_ICON_SIZE) + MODULUS(position_y, WORLD_ICON_SIZE)
 	update_screen()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/overmap/visitable/ship/appearance_overlays()
-	. = list()
+/// Faces its heading in quarter turns (north while still); the vector overlay follows through its effect.
+/obj/effect/overmap/visitable/ship/draw(datum/look/look)
+	..()
 	if(!is_still())
 		var/heading = get_heading_degrees()
-		dir = angle2dir(round(heading, 90))
-		vector_overlay().dir = NORTH
-		vector_overlay().transform = matrix().Turn(heading)
+		look.set_dir(angle2dir(round(heading, 90)))
+		look.effect(PROC_REF(look_effect_vector), heading)
 	else
-		dir = NORTH
+		look.set_dir(NORTH)
+		look.effect(PROC_REF(look_effect_vector), null)
+
+/// The vector overlay points along the heading while under way, and rests (pointing south) when still.
+/obj/effect/overmap/visitable/ship/proc/look_effect_vector(heading)
+	if(isnull(heading))
 		vector_overlay().dir = SOUTH
-	. += ..()
+		return
+	vector_overlay().dir = NORTH
+	vector_overlay().transform = matrix().Turn(heading)
+
+/// The look is the one writer of the heading: set_dir() keeps every other caller facing north.
+/obj/effect/overmap/visitable/ship/look_set_dir(new_dir)
+	set_dir(new_dir)
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
 	return ..(NORTH) // NO! We always face north.
@@ -263,7 +275,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 	halted = 1
 
 /obj/effect/overmap/visitable/ship/proc/unhalt()
-	if(!SSshuttles.overmap_halted)
+	if(!shuttles_overmap_halted())
 		halted = 0
 
 /obj/effect/overmap/visitable/ship/populate_sector_objects()
@@ -278,8 +290,8 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 	return "This ship cannot land."
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
-	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
-	var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+	var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
 	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION
@@ -287,29 +299,36 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 #undef SANITIZE_SPEED
 #undef CHANGE_SPEED_BY
 
-/obj/effect/overmap/visitable/ship/MouseDrop(atom/over)
-	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/effect/overmap/visitable/ship/proc/drop_input(datum/act/input/A)
+	offer_ingestion_with_actor(A.over, A.actor)
+	return TRUE
+
+/obj/effect/overmap/visitable/ship/proc/offer_ingestion_with_actor(atom/over, mob/user)
+	if(!isliving(over) || !Adjacent(over) || !Adjacent(user))
 		return
 	if(istype(over, /mob/living/simple_mob/vore/overmap))
 		var/mob/living/simple_mob/vore/overmap/sdog = over
 		if(!sdog.shipvore)
 			return
 	var/mob/living/L = over
-	var/confirm = rerun_ask(L, "k285", "MouseDrop" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice/alert, message = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."))
+	var/confirm = rerun_ask(L, "k285", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."), buttons = TRUE)
 	if(isnull(confirm))
 		return
 	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = rerun_ask(L, "k287", "MouseDrop" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
+		var/obj/belly/bellychoice = rerun_ask(L, "k287", PROC_REF(offer_ingestion_with_actor), args, /datum/prompt/choice, question = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
 		if(isnull(bellychoice))
 			return
 		if(bellychoice)
 			act_message(L, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice]!")), \
 				MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [L.gender == MALE ? "his" : L.gender == FEMALE ? "her" : "their"] [bellychoice]!")))
-			om_task_timed(L, 5 SECONDS, src, src, PROC_REF(eaten_by), list(L, bellychoice))
+			perform_op(L, src, "eat_ship", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("belly" = bellychoice))
 
-/obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
+/obj/effect/overmap/visitable/ship/proc/eaten_by(datum/act/op/A)
+	var/mob/living/L = A.actor
+	var/obj/belly/bellychoice = A.arg("belly")
 	forceMove(bellychoice)
-	skybox_service().rebuild_skyboxes(map_z)
+	SSskybox.ready().rebuild_skyboxes(map_z)
 	act_message(L, null, MSG_SELF("You eat the the spaceship! Yum, metal."), MSG_OTHERS(span_warning("%U% eats a spaceship! This is totally normal.")))
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()

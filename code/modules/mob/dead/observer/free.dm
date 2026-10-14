@@ -5,9 +5,11 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	set category = VERB_CAT_OOC_GAME
 	set desc = "Free your job slot, remove yourself from the manifest, and prevent respawning as this character for this round."
 
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(quit_round_confirmed), title = "Quit This Round", message = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another character if you like. Do this now?", yes_text = "Quit Round", no_text = "Cancel")
+	open_request(src, /datum/prompt/choice, PROC_REF(quit_round_confirmed), answerer = src, title = "Quit This Round", question = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another character if you like. Do this now?", choices = list("Quit Round", "Cancel"), buttons = TRUE, timeout = 0)
 
-/mob/observer/dead/proc/quit_round_confirmed(datum/om/prompt/confirm/ask)
+/mob/observer/dead/proc/quit_round_confirmed(datum/act/request/A)
+	if(A.answer?.value != "Quit Round")
+		return
 
 	//Why are you clicking this button?
 	if(!mind || !mind.assigned_role)
@@ -22,11 +24,11 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 		if(O.target == src.mind)
 			if(O.owner && O.owner.current)
 				to_chat(O.owner.current,span_warning("You get the feeling your target is no longer within your reach..."))
-			qdel(O)
+			spent(O)
 
 	//Resleeving cleanup
 	if(mind)
-		GLOB.transcore_service.leave_round(src)
+		SStranscore.leave_round(src)
 
 	//Job slot cleanup
 	var/job = src.mind.assigned_role
@@ -42,13 +44,13 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 		GLOB.PDA_Manifest.Cut()
 	for(var/datum/data/record/R in GLOB.data_core.medical)
 		if((R.fields["name"] == src.real_name))
-			qdel(R)
+			spent(R)
 	for(var/datum/data/record/T in GLOB.data_core.security)
 		if((T.fields["name"] == src.real_name))
-			qdel(T)
+			spent(T)
 	for(var/datum/data/record/G in GLOB.data_core.general)
 		if((G.fields["name"] == src.real_name))
-			qdel(G)
+			spent(G)
 
 	//This removes them from being 'active' list on join screen
 	src.mind.assigned_role = null

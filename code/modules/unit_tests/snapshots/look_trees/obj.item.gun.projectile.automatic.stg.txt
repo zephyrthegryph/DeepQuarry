@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/stg icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/automatic/stg state: stg60
+/obj/item/gun/projectile/automatic/stg dir: 2
+/obj/item/gun/projectile/automatic/stg overlay: icons/obj/gun.dmi:stg60:8:#000000
+

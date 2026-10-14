@@ -1,0 +1,13 @@
+/obj/structure/lightpost lit=0 -overlay: :lightpost-glow:7
+/obj/structure/lightpost festive=1 +overlay: :lightpost-festive:-32767
+/obj/structure/lightpost festive=2 +overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/unlit lit=1 +overlay: :lightpost-glow:7
+/obj/structure/lightpost/unlit lit=2 +overlay: :lightpost-glow:7
+/obj/structure/lightpost/unlit festive=1 +overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/unlit festive=2 +overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/festive lit=0 -overlay: :lightpost-glow:7
+/obj/structure/lightpost/festive festive=0 -overlay: :lightpost-festive:-32767
+/obj/structure/lightpost/festive/unlit lit=1 +overlay: :lightpost-glow:7
+/obj/structure/lightpost/festive/unlit lit=2 +overlay: :lightpost-glow:7
+/obj/structure/lightpost/festive/unlit festive=0 -overlay: :lightpost-festive:-32767
+

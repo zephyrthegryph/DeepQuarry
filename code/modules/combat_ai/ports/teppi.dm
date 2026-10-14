@@ -16,7 +16,7 @@
 	var/message = html_decode(multilingual_to_message(message_pieces))
 	if(!message)
 		return
-	var/speaker_affinity = affinity[speaker.real_name]
+	var/speaker_affinity = LAZYACCESS(affinity, speaker.real_name)
 	var/mob/leader = ai_brain.get_leader()
 	if(findtext(message, "lets go") || findtext(message, "let's go") || findtext(message, "come teppi") || findtext(message, "come [name]"))
 		if(speaker == leader)
@@ -27,11 +27,11 @@
 				act_message(src, speaker, MSG_SELF(span_notice("%U% starts following you.")), MSG_OTHERS(span_notice("%U% starts following %T%")))
 			return
 		// Has a different leader currently.
-		if(speaker_affinity > affinity[leader.real_name])
+		if(speaker_affinity > LAZYACCESS(affinity, leader.real_name))
 			act_message(src, speaker, MSG_SELF(span_notice("%U% starts following you.")), MSG_OTHERS(span_notice("%U% starts following %T%")))
 			ai_brain.set_follow(speaker)
 			return
-		if(speaker_affinity == affinity[leader.real_name])
+		if(speaker_affinity == LAZYACCESS(affinity, leader.real_name))
 			ai_brain.lose_follow()
 			act_message(src, null, others = span_notice("%U% gives off an anxious whine."))
 			return

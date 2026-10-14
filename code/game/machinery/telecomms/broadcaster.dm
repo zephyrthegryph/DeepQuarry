@@ -18,16 +18,14 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 25
 	machinetype = 5
 	produces_heat = 0
 	delay = 7
 	circuit = /obj/item/circuitboard/telecomms/broadcaster
-	//Vars only used if you're using the overmap
-	var/overmap_range = 0
-	var/overmap_range_min = 0
-	var/overmap_range_max = 5
 	// Linked bluespace radios are BS_RX_RADIOS(src) (the bluespace_rx_from relation).
+
+CAPABILITIES(/obj/machinery/telecomms/broadcaster)
+	configure(uses_power(idle = 25))
 
 /obj/machinery/telecomms/broadcaster/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 	// Don't broadcast rejected signals
@@ -52,7 +50,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		// simulate the network lag if necessary
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(receive_information_delayed), signal)
+			after(src, signal.data["slow"], PROC_REF(receive_information_delayed), with = list(signal))
 			return
 		receive_information_delayed(signal)
 
@@ -99,7 +97,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	if(!GLOB.message_delay)
 		GLOB.message_delay = 1
-		om_after(src, 1 SECOND, PROC_REF(clear_recent_messages))
+		after(src, 1 SECOND, PROC_REF(clear_recent_messages))
 
 	/* --- Do a snazzy animation! --- */
 	flick("broadcaster_send", src)
@@ -124,19 +122,20 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	desc = "A compact machine used for portable subspace telecommuniations processing."
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
 	anchored = TRUE
 	machinetype = 6
 	produces_heat = 0
 	var/intercept = 0 // if nonzero, broadcasts all messages to syndicate channel
-	var/overmap_range = 0
 
 	// Linked bluespace radios: BS_TX_RADIOS(src) transmit to it, BS_RX_RADIOS(src) receive from it.
+
+CAPABILITIES(/obj/machinery/telecomms/allinone)
+	configure(uses_power(idle = 20))
 
 /obj/machinery/telecomms/allinone/receive_signal(datum/signal/signal)
 
 	// Has to be on to receive messages
-	if(!on)
+	if(!running)
 		return
 
 	// Why did you use this subtype?
@@ -172,7 +171,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["level"] = map_levels
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/allinone/proc/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -203,10 +202,12 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 //Antag version with unlimited range (doesn't even check) and uses no power, to enable antag comms to work anywhere.
 /obj/machinery/telecomms/allinone/antag
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
+
+CAPABILITIES(/obj/machinery/telecomms/allinone/antag)
+	configure(uses_power(idle = 0))
 
 /obj/machinery/telecomms/allinone/antag/receive_signal(datum/signal/signal)
-	if(!on) // has to be on to receive messages
+	if(!running) // has to be on to receive messages
 		return
 
 	if(is_freq_listening(signal)) // detect subspace signals
@@ -226,7 +227,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		//signal.data["level"] = using_map.contact_levels.Copy()
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/allinone/antag/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -351,7 +352,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	else if(data == DATA_ANTAG)
 		for(var/antag_freq in GLOB.antag_frequencies)
-			var/datum/radio_frequency/antag_connection = GLOB.radio_service.return_frequency(antag_freq)
+			var/datum/radio_frequency/antag_connection = SSradio.return_frequency(antag_freq)
 			for (var/obj/item/radio/R in antag_connection.devices["[RADIO_CHAT]"])
 				if(R.receive_range(antag_freq, level) > -1)
 					radios |= R
@@ -532,7 +533,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		var/mob/living/carbon/human/H = new
 		M = H
 
-	var/datum/radio_frequency/connection = GLOB.radio_service.return_frequency(frequency)
+	var/datum/radio_frequency/connection = SSradio.return_frequency(frequency)
 
 	var/display_freq = connection.frequency
 
@@ -564,7 +565,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	else if(data == DATA_ANTAG)
 		for(var/freq in GLOB.antag_frequencies)
-			var/datum/radio_frequency/antag_connection = GLOB.radio_service.return_frequency(freq)
+			var/datum/radio_frequency/antag_connection = SSradio.return_frequency(freq)
 			for (var/obj/item/radio/R in antag_connection.devices["[RADIO_CHAT]"])
 				var/turf/position = get_turf(R)
 				if(position && position.z == level)
@@ -736,15 +737,17 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 	desc = "A compact machine used for portable subspace telecommuniations processing."
 	density = 1
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
 	anchored = 1
 	machinetype = 6
 	produces_heat = 0
 
+CAPABILITIES(/obj/machinery/telecomms/allinone/link)
+	configure(uses_power(idle = 20))
+
 /obj/machinery/telecomms/allinone/link/receive_signal(datum/signal/signal)
 
 	// Has to be on to receive messages
-	if(!on)
+	if(!running)
 		return
 
 	// Why did you use this subtype?
@@ -769,7 +772,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["compression"] = 0 // decompress since we're a processor
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
 	GLOB.message_delay = 0

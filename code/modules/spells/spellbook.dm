@@ -16,8 +16,8 @@
 
 // attack_self moved to code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
 
-/// The panel's "choose" action: learns, upgrades or buys `spell_choice` (params/ui carry the upgrade prompt's re-run).
-/obj/item/spellbook/proc/choose_spell(mob/user, spell_choice, list/params, datum/tgui/ui)
+/// The panel's "choose" action: learns, upgrades or buys `spell_choice`.
+/obj/item/spellbook/proc/choose_spell(mob/user, spell_choice)
 	if(!ishuman(user) || !istext(spell_choice))
 		return
 	var/mob/living/carbon/human/H = user
@@ -58,23 +58,8 @@
 							uses++
 							break
 						else
-							if(aspell.can_improve("speed") && aspell.can_improve("power"))
-								var/upgrade = act_ask(H, "choose", params, ui, "upgrade", /datum/om/prompt/choice/alert, message = "Do you want to upgrade this spell's speed or power?", title = "Select Upgrade", choices = list("Speed", "Power", "Cancel"))
-								if(isnull(upgrade)) // the answer re-runs this link
-									uses++
-									return
-								switch(upgrade)
-									if("Speed")
-										temp = aspell.quicken_spell()
-									if("Power")
-										temp = aspell.empower_spell()
-									else
-										uses++
-										break
-							else if (aspell.can_improve("speed"))
+							if(aspell.can_improve("speed"))
 								temp = aspell.quicken_spell()
-							else if (aspell.can_improve("power"))
-								temp = aspell.empower_spell()
 			/*
 			*/
 				if(!already_knows)
@@ -163,7 +148,6 @@
 							temp = "You have purchased a scrying orb, and gained x-ray vision."
 							max_uses--
 
-
 //Single Use Spellbooks//
 
 /obj/item/spellbook/oneuse
@@ -180,13 +164,13 @@
 	. = ..()
 	name += spellname
 
-EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
-	INTERACT_USE("Read", PROC_REF(interaction_learn_spell)), \
-	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
-)
+CAPABILITIES(/obj/item/spellbook/oneuse)
+	op("learn_spell", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(interaction_learn_spell)))
+	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
 
 /// Old attack_self: learn the book's one spell.
-/obj/item/spellbook/oneuse/proc/interaction_learn_spell(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/spellbook/oneuse/proc/interaction_learn_spell(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/spell/S = new spell(user)
 	for(var/datum/spell/knownspell in user.spell_list)
 		if(knownspell.type == S.type)
@@ -232,7 +216,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/smoke/recoil(mob/living/user as mob)
 	..()
 	to_chat(user, span_warning("Your stomach rumbles..."))
-	if(user.nutrition)
+	if(nutrition_of(user))
 		user.adjust_nutrition(-200)
 
 /obj/item/spellbook/oneuse/blind
@@ -244,7 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/blind/recoil(mob/user as mob)
 	..()
 	to_chat(user, span_warning("You go blind!"))
-	user.status_at_least(EFFECT_BLINDED, 10)
+	user.status_at_least(STAT_BLINDED, 10)
 
 /obj/item/spellbook/oneuse/mindswap
 	spell = /datum/spell/targeted/mind_transfer
@@ -255,7 +239,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 
 /obj/item/spellbook/oneuse/mindswap/onlearned()
 	spellname = pick("fireball","smoke","blind","forcewall","knock","horses","charge")
-	icon_state = "book[spellname]"
+	set_icon_state("book[spellname]")
 	name = "spellbook of [spellname]" //Note, desc doesn't change by design
 	..()
 
@@ -272,10 +256,12 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 		return
 
 	if(length(user.mind.special_verbs))
-		om_revoke_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
+		for(var/granted_path in user.mind.special_verbs)
+			revoke(user, granted_verb(granted_path), user.mind)
 
 	if(length(stored_swap().mind.special_verbs))
-		om_revoke_each(stored_swap(), GRANT_VERB, stored_swap().mind.special_verbs, stored_swap().mind)
+		for(var/granted_path in stored_swap().mind.special_verbs)
+			revoke(stored_swap(), granted_verb(granted_path), stored_swap().mind)
 
 	var/mob/observer/dead/ghost = stored_swap().ghostize(0)
 	rel_set(ghost, nameof(ghost.spell_list), stored_swap().spell_list)
@@ -284,13 +270,15 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 	stored_swap().spell_list = user.spell_list
 
 	if(length(stored_swap().mind.special_verbs))
-		om_grant_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
+		for(var/granted_path in user.mind.special_verbs)
+			grant(user, granted_verb(granted_path), user.mind)
 
 	transfer_mind(ghost.mind, user, "spellbook body swap", force = TRUE)
 	rel_set(user, nameof(/mob::spell_list), ghost.spell_list)
 
 	if(length(user.mind.special_verbs))
-		om_grant_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
+		for(var/granted_path in user.mind.special_verbs)
+			grant(user, granted_verb(granted_path), user.mind)
 
 	to_chat(stored_swap(), span_warning("You're suddenly somewhere else... and someone else?!"))
 	to_chat(user, span_warning("Suddenly you're staring at [src] again... where are you, who are you?!"))
@@ -318,7 +306,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 /obj/item/spellbook/oneuse/knock/recoil(mob/user as mob)
 	..()
 	to_chat(user, span_warning("You're knocked down!"))
-	user.status_at_least(EFFECT_WEAKENED, 20)
+	user.status_at_least(STAT_WEAKENED, 20)
 
 /obj/item/spellbook/oneuse/horsemask
 	spell = /datum/spell/targeted/equip_item/horsemask
@@ -332,8 +320,8 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 		var/obj/item/clothing/mask/horsehead/magichead = new /obj/item/clothing/mask/horsehead
 		magichead.say_verbs = list("neighs", "whinnys", "snorts")
 		magichead.say_messages = list("NEEEEIGH", "KEECHOOOW", "WHIIIINNNY", "NEEEEEEIGHHHH", "KEECHOOOWWW")
-		magichead.canremove = FALSE		//curses!
-		magichead.flags_inv = null	//so you can still see their face
+		magichead.set_canremove(FALSE) //curses!
+		magichead.set_flags_inv(null)//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		user.drop_from_inventory(user.get_equipped_item(SLOT_ID_MASK))
 		user.equip_to_slot_if_possible(magichead, SLOT_ID_MASK, 1, 1)

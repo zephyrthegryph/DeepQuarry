@@ -2,34 +2,23 @@
 	autoclose = 0
 	locked = 0
 
-/obj/machinery/door/unpowered/Bumped(atom/AM)
+/// A locked door ignores whatever walks into it.
+/obj/machinery/door/unpowered/door_bumped(datum/act/A)
 	if(src.locked)
 		return
 	..()
-	return
 
-/obj/machinery/door/unpowered/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/unpowered_door_block,
-	)
-	..()
+// A door with no power and no lock of its own: it takes no emag, and a held item does nothing to it while it is locked (an energy blade never does).
+CAPABILITIES(/obj/machinery/door/unpowered)
+	without(CAP_EMAG)
+	op("block", item(/obj/item), when(req(PROC_REF(item_blocked))), priority(OP_PRIORITY_SUBVERT), then(PROC_REF(item_swallowed)))
 
-/// Old attackby: silently blocks energy blades and anything while locked, else falls through to the base door attackby.
-/datum/interaction/machine_item/unpowered_door_block
-	id = "unpowered_door_block"
-	name = "Attack"
-	held_type = /obj/item
-	effect = /obj/machinery/door/unpowered/proc/interaction_block
+/// Energy blades, and anything at all while the door is locked.
+/obj/machinery/door/unpowered/proc/item_blocked(datum/act/op/A)
+	return (istype(A.held, /obj/item/melee/energy/blade) || locked) ? null : MSG(req_failed)
 
-/obj/machinery/door/unpowered/proc/interaction_block(mob/user, obj/item/held, datum/interaction/interaction)
-	if(istype(held, /obj/item/melee/energy/blade))
-		return TRUE
-	if(locked)
-		return TRUE
-	return FALSE
-
-/obj/machinery/door/unpowered/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return EMAG_DECLINED
+/obj/machinery/door/unpowered/proc/item_swallowed(datum/act/op/A)
+	return OP_OK
 
 /obj/machinery/door/unpowered/shuttle
 	icon = 'icons/turf/shuttle_white.dmi'

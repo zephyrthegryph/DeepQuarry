@@ -40,9 +40,8 @@
 	if(T.z in using_map.station_levels)
 		. = FALSE
 
-OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
-
 /obj/item/gun/energy/kinetic_accelerator
+	conflict_id = CONFLICT_ELEMENT_KA
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."
 	icon_state = "kineticgun"
@@ -52,7 +51,6 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 		)
 	item_state = "kineticgun"
 	cell_type = /obj/item/cell/device/weapon/empproof
-	item_flags = NONE
 	charge_meter = FALSE
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
@@ -102,22 +100,30 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 		var/obj/item/borg/upgrade/modkit/M = AM
 		M.uninstall(src, FALSE)
 
-/obj/item/gun/energy/kinetic_accelerator/crowbar_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	configure(item_worn(flags = NONE))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
+/obj/item/gun/energy/kinetic_accelerator/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(length(modkits))
 		to_chat(user, span_notice("You pry the modifications out."))
-		playsound(loc, tool.usesound, 100, 1)
+		playsound(loc, sounds_of(tool).use, 100, 1)
 		for(var/obj/item/borg/upgrade/modkit/M in modkits)
 			M.uninstall(src)
 	else
 		to_chat(user, span_notice("There are no modifications currently installed."))
-	return NONE
+	return OP_DECLINE
 
 /// Old attackby.
-/obj/item/gun/energy/kinetic_accelerator/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/energy/kinetic_accelerator/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/borg/upgrade/modkit))
 		var/obj/item/borg/upgrade/modkit/MK = I
 		MK.install(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/energy/kinetic_accelerator/proc/get_remaining_mod_capacity()
@@ -167,7 +173,6 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	. = ..()
 	if(!holds_charge)
 		empty()
-	conflict_id = CONFLICT_ELEMENT_KA
 
 /obj/item/gun/energy/kinetic_accelerator/equipped(mob/user)
 	. = ..()
@@ -179,7 +184,7 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	if(!QDELING(src) && !holds_charge)
 		// Put it on a delay because moving item from slot to hand
 		// calls dropped().
-		om_after(src, 2, PROC_REF(empty_if_not_held))
+		after(src, 0.2 SECONDS, PROC_REF(empty_if_not_held))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/empty_if_not_held()
 	if(!ismob(loc) && !istype(loc, /obj/item/integrated_circuit))
@@ -188,7 +193,6 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 /obj/item/gun/energy/kinetic_accelerator/proc/empty()
 	if(power_supply)
 		power_supply.use(power_supply.charge)
-		update_icon()
 
 /obj/item/gun/energy/kinetic_accelerator/proc/attempt_reload(recharge_time)
 	if(!power_supply)
@@ -197,25 +201,22 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 		return
 	if(!recharge_time)
 		recharge_time = overheat_time
-	overheat = TRUE
-	update_icon()
+	set_overheat(TRUE)
 
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
-	om_cancel_timer_slot(src, "recharge_timerid")
-	after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
+	cancel_after(src, "recharge_timerid")
+	after(src, recharge_time * carried, PROC_REF(reload), key = "recharge_timerid")
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)
 	play_sfx(src, SFX_WEAPONS_KENETIC_RELOAD)
-	overheat = FALSE
-	update_icon()
+	set_overheat(FALSE)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/energy/kinetic_accelerator/appearance_overlays()
-	. = list()
-	if(overheat || !power_supply || (power_supply.charge == 0))
-		. += emptystate
+
+/// The look: the empty lamp while it cools down or has no charge.
+/obj/item/gun/energy/kinetic_accelerator/draw_charge_state(datum/look/look)
+	look.overlay(emptystate, when = overheat || !power_supply || (power_supply.charge == 0))
 
 #define KA_ENVIRO_TYPE_COLD 0
 #define KA_ENVIRO_TYPE_HOT 1
@@ -345,15 +346,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, TYPE_PROC_REF(
 	. = ..()
 	. += span_notice("Occupies <b>[cost]%</b> of mod capacity.")
 
-DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/borg/upgrade/modkit)
+	op("install", item(/obj/item/gun/energy/kinetic_accelerator), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/borg/upgrade/modkit/proc/interaction_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/gun/energy/kinetic_accelerator))
-		install(A, user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/obj/item/borg/upgrade/modkit/proc/interaction_item(datum/act/op/A)
+	var/obj/item/gun/energy/kinetic_accelerator/accelerator = A.held
+	install(accelerator, A.actor)
+	return OP_PASS
 
 /*
 /obj/item/borg/upgrade/modkit/afterInstall(mob/living/silicon/robot/R)
@@ -378,7 +378,8 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 				break
 	if(KA.get_remaining_mod_capacity() >= cost)
 		if(.)
-			user.drop_from_inventory(src, KA)
+			if(!own_bring_in(KA, nameof(KA.modkits), src, null, user, TRUE, null, FALSE))
+				return FALSE
 			to_chat(user, span_notice("You install the modkit."))
 			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
 			rel_add(KA, nameof(KA.modkits), src)
@@ -532,7 +533,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 	if(ismineralturf(target_turf))
 		valid_repeat = TRUE
 	if(valid_repeat)
-		KA.overheat = FALSE
+		KA.set_overheat(FALSE)
 		KA.attempt_reload(KA.overheat_time * 0.25) //If you hit, the cooldown drops to 0.75 seconds.
 
 /*
@@ -586,7 +587,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 			var/datum/status_effect/syphon_mark/SM = i
 			if(SM.reward_target == src) //we want to allow multiple people with bounty modkits to use them, but we need to replace our own marks so we don't multi-reward
 				SM.reward_target = null
-				qdel(SM)
+				replaced_by(SM)
 		L.apply_status_effect(STATUS_EFFECT_SYPHONMARK, src)
 /obj/item/borg/upgrade/modkit/bounty/projectile_strike(obj/item/projectile/kinetic/K, turf/target_turf, atom/target, obj/item/gun/energy/kinetic_accelerator/KA)
 	if(isliving(target))
@@ -595,7 +596,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 			var/kill_modifier = 1
 			if(K.pressure_decrease_active)
 				kill_modifier *= K.pressure_decrease
-			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, K.armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
+			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(K).armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/L)
 	var/bonus_mod = 1
 	if(ismegafauna(L)) //megafauna reward
@@ -671,11 +672,11 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 /obj/item/borg/upgrade/modkit/chassis_mod/install(obj/item/gun/energy/kinetic_accelerator/KA, mob/user)
 	. = ..()
 	if(.)
-		KA.icon_state = chassis_icon
+		KA.set_icon_state(chassis_icon)
 		KA.name = chassis_name
 
 /obj/item/borg/upgrade/modkit/chassis_mod/uninstall(obj/item/gun/energy/kinetic_accelerator/KA)
-	KA.icon_state = initial(KA.icon_state)
+	KA.set_icon_state(initial(KA.icon_state))
 	KA.name = initial(KA.name)
 	..()
 
@@ -693,23 +694,22 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 	var/bolt_color = "#FFFFFF"
 
 /obj/item/borg/upgrade/modkit/tracer/modify_projectile(obj/item/projectile/kinetic/K)
-	K.icon_state = "ka_tracer"
+	K.set_icon_state("ka_tracer")
 	K.color = bolt_color
 
 /obj/item/borg/upgrade/modkit/tracer/adjustable
 	name = "adjustable tracer bolts"
 	desc = "Causes kinetic accelerator bolts to have an adjustable-colored tracer trail and explosion. Use in-hand to change color."
 
-EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/borg/upgrade/modkit/tracer/adjustable)
+	op("recolor", in_hand(), needs(req_capable()), asks(/datum/prompt/color, fields = list("title" = "Choose Color", "default" = nameof(bolt_color), "timeout" = 0), step = "color"), then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(bolt_color_picked), default = bolt_color, title = "Choose Color", ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		bolt_color = ask.picked_color
-	return TRUE
+/// Old attack_self: the colour asked is the bolt colour.
+/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(datum/act/op/A)
+	var/picked = A.step_value("color")
+	if(picked)
+		bolt_color = picked
+	return OP_OK
 
 #undef KA_ENVIRO_TYPE_COLD
 #undef KA_ENVIRO_TYPE_HOT

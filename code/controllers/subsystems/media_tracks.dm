@@ -8,9 +8,8 @@ SYSTEM_DEF(media_tracks)
 	var/list/jukebox_tracks = list()
 	/// Lobby music tracks
 	var/list/lobby_tracks = list()
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
+	/// Casino jukebox tracks.
 	var/list/casino_tracks = list()
-	/// CHOMPstation edit end
 
 /datum/system/media_tracks/initialize()
 	load_tracks()
@@ -54,43 +53,37 @@ SYSTEM_DEF(media_tracks)
 			T.secret = entry["secret"] ? 1 : 0
 			T.lobby = entry["lobby"] ? 1 : 0
 
-			/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
 			T.casino = entry["casino"] ? 1 : 0
-			/// CHOMPstation edit end
 
-			all_tracks += T
+			rel_add(src, nameof(all_tracks), T)
 
 /datum/system/media_tracks/proc/sort_tracks()
 	report_progress("Sorting media tracks...")
 	sortTim(all_tracks, GLOBAL_PROC_REF(cmp_media_track_asc))
 
-	jukebox_tracks.Cut()
-	lobby_tracks.Cut()
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
-	casino_tracks.Cut()
-	/// CHOMPstation edit end
+	rel_clear(src, nameof(jukebox_tracks))
+	rel_clear(src, nameof(lobby_tracks))
+	rel_clear(src, nameof(casino_tracks))
 
 	for(var/datum/track/T in all_tracks)
-		/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
 		if(!T.secret && !T.casino)
-			jukebox_tracks += T
+			rel_add(src, nameof(jukebox_tracks), T)
 		if(T.lobby)
-			lobby_tracks += T
+			rel_add(src, nameof(lobby_tracks), T)
 		if(T.casino)
-			casino_tracks += T
-		/// CHOMPstation edit end
+			rel_add(src, nameof(casino_tracks), T)
 
-/datum/system/media_tracks/proc/manual_track_add()
-	if(!check_rights(R_DEBUG|R_FUN))
+/datum/system/media_tracks/proc/manual_track_add(mob/user)
+	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_flow_start(/datum/om/flow/media_track_add, usr, null, tracks = src)
+	var/datum/media_track_add/adding = new
+	adding.ask_text(user, TYPE_PROC_REF(/datum/media_track_add, url_entered), "Track URL", "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", TRUE)
 
-/// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the
-/// title, duration, artist, genre and the secret/lobby/casino marks. A cancel ends it.
-/datum/om/flow/media_track_add
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	var/datum/system/media_tracks/tracks
+/// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the title, duration, artist, genre and the
+/// secret/lobby/casino marks. Each question is a request this record owns (the open request keeps it, and its answerer is the admin);
+/// a cancel, or an admin who lost the rights, ends it.
+/datum/media_track_add
 	var/url
 	var/title
 	var/duration
@@ -100,15 +93,27 @@ SYSTEM_DEF(media_tracks)
 	var/lobby
 
 /// The admin-only text questions of adding a track.
-/datum/om/prompt/text/media_track
-	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
-	max_length = MAX_TGUI_INPUT
+/datum/prompt/text/media_track
+	max_len = MAX_TGUI_INPUT
+	timeout = 0
+	rights = R_DEBUG|R_FUN
+	recheck_on_open = TRUE
 
-/datum/om/flow/media_track_add/start()
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", multiline = TRUE)
+/// The admin-only choices of adding a track.
+/datum/prompt/choice/media_track
+	buttons = TRUE
+	timeout = 0
+	rights = R_DEBUG|R_FUN
+	recheck_on_open = TRUE
 
-/datum/om/flow/media_track_add/proc/url_entered(datum/om/prompt/text/media_track/ask)
-	url = ask.text
+/datum/media_track_add/proc/ask_text(mob/user, handler, title, question, multiline = FALSE)
+	open_request(src, /datum/prompt/text/media_track, handler, answerer = user, title = title, question = question, multiline = multiline)
+
+/datum/media_track_add/proc/ask_mark(mob/user, handler, title, question)
+	open_request(src, /datum/prompt/choice/media_track, handler, answerer = user, title = title, question = question, choices = list("Yes", "Cancel", "No"))
+
+/datum/media_track_add/proc/url_entered(datum/act/request/A)
+	url = A.answer?.value
 	if(!url)
 		return
 	var/json
@@ -116,46 +121,53 @@ SYSTEM_DEF(media_tracks)
 		json = json_decode(url)
 	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 	if(islist(json))
-		tracks.manual_track_entered(actor, src)
+		SSmedia_tracks.manual_track_entered(A.request.answerer, src)
 		return
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(title_entered), title = "Track Title", message = "REQUIRED: Provide title for track")
+	ask_text(A.request.answerer, PROC_REF(title_entered), "Track Title", "REQUIRED: Provide title for track")
 
-/datum/om/flow/media_track_add/proc/title_entered(datum/om/prompt/text/media_track/ask)
-	title = ask.text
+/datum/media_track_add/proc/title_entered(datum/act/request/A)
+	title = A.answer?.value
 	if(!title)
 		return
-	om_ask(actor, /datum/om/prompt/number, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
+	open_request(src, /datum/prompt/number, PROC_REF(duration_entered), answerer = A.request.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", timeout = 0, rights = R_DEBUG|R_FUN, recheck_on_open = TRUE)
 
-/datum/om/flow/media_track_add/proc/duration_entered(datum/om/prompt/number/ask)
-	duration = ask.number
+/datum/media_track_add/proc/duration_entered(datum/act/request/A)
+	duration = A.answer?.value
 	if(!duration)
 		return
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(artist_entered), title = "Track Artist", message = "Optional: Provide artist for track")
+	ask_text(A.request.answerer, PROC_REF(artist_entered), "Track Artist", "Optional: Provide artist for track")
 
-/datum/om/flow/media_track_add/proc/artist_entered(datum/om/prompt/text/media_track/ask)
-	artist = ask.text
-	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(genre_entered), title = "Track Genre", message = "Optional: Provide genre for track (try to match an existing one)")
-
-/datum/om/flow/media_track_add/proc/genre_entered(datum/om/prompt/text/media_track/ask)
-	genre = ask.text
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(secret_chosen), title = "Track Secret", message = "Optional: Mark track as secret?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
-
-/datum/om/flow/media_track_add/proc/secret_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/artist_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	secret = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(lobby_chosen), title = "Track Lobby", message = "Optional: Mark track as lobby music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
+	artist = A.answer.value
+	ask_text(A.request.answerer, PROC_REF(genre_entered), "Track Genre", "Optional: Provide genre for track (try to match an existing one)")
 
-/datum/om/flow/media_track_add/proc/lobby_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/genre_entered(datum/act/request/A)
+	if(!A.answer)
 		return
-	lobby = (ask.choice == "Yes")
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(casino_chosen), title = "Track Casino", message = "Optional: Mark track as casino music?", requires = PROMPT_ADMIN(R_DEBUG|R_FUN), buttons = TRUE, choices = list("Yes", "Cancel", "No"))
+	genre = A.answer.value
+	ask_mark(A.request.answerer, PROC_REF(secret_chosen), "Track Secret", "Optional: Mark track as secret?")
 
-/datum/om/flow/media_track_add/proc/casino_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice == "Cancel")
+/datum/media_track_add/proc/secret_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
 		return
-	tracks.manual_track_entered(actor, src, ask.choice == "Yes")
+	secret = (choice == "Yes")
+	ask_mark(A.request.answerer, PROC_REF(lobby_chosen), "Track Lobby", "Optional: Mark track as lobby music?")
+
+/datum/media_track_add/proc/lobby_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
+		return
+	lobby = (choice == "Yes")
+	ask_mark(A.request.answerer, PROC_REF(casino_chosen), "Track Casino", "Optional: Mark track as casino music?")
+
+/datum/media_track_add/proc/casino_chosen(datum/act/request/A)
+	var/choice = A.answer?.value
+	if(!choice || choice == "Cancel")
+		return
+	SSmedia_tracks.manual_track_entered(A.request.answerer, src, choice == "Yes")
 
 /**
  * Alternatively to using a series of inputs, you can use json and paste it in.
@@ -170,7 +182,7 @@ SYSTEM_DEF(media_tracks)
  * "lobby": plays in the lobby (true/false)
  * "casino": plays in the casino (true/false)
  */
-/datum/system/media_tracks/proc/manual_track_entered(mob/user, datum/om/flow/media_track_add/answers, casino = FALSE)
+/datum/system/media_tracks/proc/manual_track_entered(mob/user, datum/media_track_add/answers, casino = FALSE)
 	var/url = answers.url
 	if(!url)
 		return
@@ -189,7 +201,7 @@ SYSTEM_DEF(media_tracks)
 				to_chat(user, span_warning("URL, Title, or Duration was missing from a song. Skipping."))
 				continue
 			var/datum/track/T = new(songdata["url"], songdata["title"], songdata["duration"], songdata["artist"], songdata["genre"], songdata["secret"], songdata["lobby"], songdata["casino"])
-			all_tracks += T
+			rel_add(src, nameof(all_tracks), T)
 
 			report_progress("New media track added by [user.client]: [T.title]")
 		sort_tracks()
@@ -204,27 +216,27 @@ SYSTEM_DEF(media_tracks)
 	T.lobby = answers.lobby
 	T.casino = casino
 
-	all_tracks += T
+	rel_add(src, nameof(all_tracks), T)
 
 	report_progress("New media track added by [user.client]: [title]")
 	sort_tracks()
 
-/datum/system/media_tracks/proc/manual_track_remove()
-	if(!check_rights(R_DEBUG|R_FUN))
+/datum/system/media_tracks/proc/manual_track_remove(mob/user)
+	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
+	open_request(src, /datum/prompt/text/media_track, PROC_REF(manual_track_removal_entered), answerer = user, title = "Remove Track", question = "Input track title or URL to remove (must be exact)")
 
-/datum/system/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
-	var/mob/user = ask.answerer
-	var/track = ask.text
+/datum/system/media_tracks/proc/manual_track_removal_entered(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	var/track = A.answer?.value
 	if(!track)
 		return
 
 	for(var/datum/track/T in all_tracks)
 		if(T.title == track || T.url == track)
-			all_tracks -= T
-			qdel(T)
+			rel_remove(src, nameof(all_tracks), T)
+			spent(T)
 			report_progress("Media track removed by [user.client]: [track]")
 			sort_tracks()
 			return
@@ -232,24 +244,24 @@ SYSTEM_DEF(media_tracks)
 	to_chat(user, span_warning("Couldn't find a track matching the specified parameters."))
 
 /datum/system/media_tracks/proc/add_track(mob/user, new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
-	if(!check_rights(R_DEBUG|R_FUN))
+	if(!admin_require(user.client, R_DEBUG|R_FUN, "add_track", TRUE))
 		return
 	var/datum/track/T = new(new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
-	all_tracks += T
+	rel_add(src, nameof(all_tracks), T)
 	report_progress("Media track added by [user]: [T.title]")
 	sort_tracks()
 	return
 
 /datum/system/media_tracks/proc/remove_track(mob/user, datum/track/T)
-	if(!check_rights(R_DEBUG|R_FUN))
+	if(!admin_require(user.client, R_DEBUG|R_FUN, "remove_track", TRUE))
 		return
 
 	if(!T)
 		return
 
 	report_progress("Media track removed by [user]: [T.title]")
-	all_tracks -= T
-	qdel(T)
+	rel_remove(src, nameof(all_tracks), T)
+	spent(T, user)
 	sort_tracks()
 	return
 
@@ -259,15 +271,22 @@ SYSTEM_DEF(media_tracks)
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-VV_TOPIC_ACTION(/datum/system/media_tracks, "add_track", PROC_REF(vv_topic_add_track))
-VV_TOPIC_ACTION(/datum/system/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
+CAPABILITIES(/datum/system/media_tracks)
+	ref_many(nameof(all_tracks), /datum/track)
+	ref_many(nameof(jukebox_tracks), /datum/track)
+	ref_many(nameof(lobby_tracks), /datum/track)
+	ref_many(nameof(casino_tracks), /datum/track)
+	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), then(PROC_REF(vv_topic_add_track)))
+	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), then(PROC_REF(vv_topic_remove_track)))
 
-/datum/system/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
-	manual_track_add()
+/datum/system/media_tracks/proc/vv_topic_add_track(datum/act/op/A)
+	var/mob/user = A.actor
+	manual_track_add(user)
 	user.client?.debug_variables(src)
 	return TRUE
 
-/datum/system/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
-	manual_track_remove()
+/datum/system/media_tracks/proc/vv_topic_remove_track(datum/act/op/A)
+	var/mob/user = A.actor
+	manual_track_remove(user)
 	user.client?.debug_variables(src)
 	return TRUE

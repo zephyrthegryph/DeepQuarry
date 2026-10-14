@@ -1,0 +1,94 @@
+human|none menu: Interaction bike hand
+human|none menu: Toggle Engine
+human|none menu: Toggle Kickstand
+human|none menu: Toggle kickstand
+human|none click: Click: Interaction bike hand
+robot|none menu: Interaction bike hand
+robot|none menu: Toggle Engine
+robot|none menu: Toggle Kickstand
+robot|none menu: Toggle kickstand
+robot|none click: Click: Interaction bike hand
+@obj.vehicle ai|none
+ghost|none menu: Toggle Engine (refused: You can't reach that.)
+ghost|none menu: Toggle Kickstand (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Interaction bike hand
+human|/obj/item/tool/screwdriver menu: Toggle Engine
+human|/obj/item/tool/screwdriver menu: Toggle Kickstand
+human|/obj/item/tool/screwdriver menu: Toggle kickstand
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Interaction bike hand
+human|/obj/item/tool/crowbar menu: Toggle Engine
+human|/obj/item/tool/crowbar menu: Toggle Kickstand
+human|/obj/item/tool/crowbar menu: Toggle kickstand
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Interaction bike hand
+human|/obj/item/tool/wrench menu: Toggle Engine
+human|/obj/item/tool/wrench menu: Toggle Kickstand
+human|/obj/item/tool/wrench menu: Toggle kickstand
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Vehicle item
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Interaction bike hand
+human|/obj/item/tool/wirecutters menu: Toggle Engine
+human|/obj/item/tool/wirecutters menu: Toggle Kickstand
+human|/obj/item/tool/wirecutters menu: Toggle kickstand
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Vehicle item
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Interaction bike hand
+human|/obj/item/multitool menu: Toggle Engine
+human|/obj/item/multitool menu: Toggle Kickstand
+human|/obj/item/multitool menu: Toggle kickstand
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Vehicle item
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Interaction bike hand
+human|/obj/item/weldingtool menu: Toggle Engine
+human|/obj/item/weldingtool menu: Toggle Kickstand
+human|/obj/item/weldingtool menu: Toggle kickstand
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Use welder
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Interaction bike hand
+human|/obj/item/stack/cable_coil menu: Toggle Engine
+human|/obj/item/stack/cable_coil menu: Toggle Kickstand
+human|/obj/item/stack/cable_coil menu: Toggle kickstand
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Vehicle item
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Interaction bike hand
+human|/obj/item/stack/material/steel menu: Toggle Engine
+human|/obj/item/stack/material/steel menu: Toggle Kickstand
+human|/obj/item/stack/material/steel menu: Toggle kickstand
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Vehicle item
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Interaction bike hand
+human|/obj/item/card/id menu: Toggle Engine
+human|/obj/item/card/id menu: Toggle Kickstand
+human|/obj/item/card/id menu: Toggle kickstand
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Vehicle item
+human|/obj/item menu: Hit
+human|/obj/item menu: Interaction bike hand
+human|/obj/item menu: Toggle Engine
+human|/obj/item menu: Toggle Kickstand
+human|/obj/item menu: Toggle kickstand
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Vehicle item
+human|/obj/item/card/emag menu: Hit
+human|/obj/item/card/emag menu: Interaction bike hand
+human|/obj/item/card/emag menu: Toggle Engine
+human|/obj/item/card/emag menu: Toggle Kickstand
+human|/obj/item/card/emag menu: Toggle kickstand
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
+keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, use_crowbar, use_screwdriver, use_welder, vehicle_item, vehicle_paint

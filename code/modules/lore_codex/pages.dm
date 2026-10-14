@@ -52,10 +52,14 @@
 	/// Our pages and sub-categories (owned), built from `children` in New().
 	var/list/child_pages
 
+CAPABILITIES(/datum/lore/codex/category)
+	owns_many(nameof(child_pages))
+	owns_many(nameof(children))
+
 /datum/lore/codex/category/New()
 	..()
 	for(var/type in children)
-		own_add(src, nameof(child_pages), new type(holder(), src))
+		rel_add(src, nameof(child_pages), new type(holder(), src))
 
 /datum/lore/codex/category/index_page()
 	// First, get our own keywords.

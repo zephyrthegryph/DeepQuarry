@@ -30,25 +30,29 @@
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
-/obj/effect/overmap/visitable/simplemob/Initialize(mapload, new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/obj/effect/overmap/visitable/simplemob)
+	ref_one(nameof(parent), /mob/living/simple_mob/vore/overmap)
+	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
+/obj/effect/overmap/visitable/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)
-	om_mob_event_setup()
+	observe_parent()
 
-/obj/effect/overmap/visitable/simplemob/proc/om_mob_event_setup()
+/obj/effect/overmap/visitable/simplemob/proc/observe_parent()
 	scanner_desc = parent.scanner_desc
-	om_hook(parent, /datum/om/event/moved, src, PROC_REF(on_parent_moved))
+	observe(parent, /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	skybox_pixel_x = rand(-100,100)
 	if(known)
 		name = initial(parent.name)
 		icon = initial(parent.icon)
-		icon_state = initial(parent.icon_state)
+		set_icon_state(initial(parent.icon_state))
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
@@ -60,7 +64,7 @@
 		known = TRUE
 		name = initial(parent.name)
 		icon = initial(parent.icon)
-		icon_state = initial(parent.icon_state)
+		set_icon_state(initial(parent.icon_state))
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
@@ -68,8 +72,8 @@
 
 	return dat
 
-/obj/effect/overmap/visitable/simplemob/proc/on_parent_moved(atom/movable/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/obj/effect/overmap/visitable/simplemob/proc/on_parent_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	forceMove(parent.loc)
 	set_dir(parent.dir)
 
@@ -86,8 +90,6 @@
 
 	faction = FACTION_OVERMAP
 	low_priority = FALSE
-	devourable = FALSE
-	digestable = FALSE
 
 	harm_intent_damage = 1
 	melee_damage_lower = 50
@@ -111,43 +113,43 @@
 	armor_spec = "melee=1000;bullet=1000;laser=1000;energy=1000;bomb=1000;bio=1000;rad=1000"
 
 	var/scanner_desc
-	var/obj/effect/overmap/visitable/simplemob/child_om_marker
+	var/obj/effect/overmap/visitable/child_om_marker
 	var/om_child_type
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
-/mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
-	. = ..()
-	own_set(src, nameof(child_om_marker), new_child)
-	if(child_om_marker)
-		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
+CAPABILITIES(/mob/living/simple_mob/vore/overmap)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
+	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable)
+	param(nameof(child_om_marker), pos = 1, apply = PROC_REF(link_marker))
+	after_init(0, then(PROC_REF(end_if_unconfigured)))
+
+/// A mob with no marker type ends when its init is complete: ending it from the param's apply would delete it while the init above it still writes owned refs.
+/mob/living/simple_mob/vore/overmap/proc/end_if_unconfigured(datum/act/timer/A)
+	if(om_child_type)
+		return
+	log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
+	spent(src)
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A mob made with no marker makes its own.
+/mob/living/simple_mob/vore/overmap/proc/link_marker(marker)
 	if(!om_child_type)
-		log_and_message_admins("An improperly configured OM mob tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		return
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
-	// summon, unit tests). Skip the marker — there's nothing for it
+	// summon, unit tests). Skip the marker: there's nothing for it
 	// to render against, and a marker that fails to initialise takes
-	// us with it through the overmap_mob_marker relation.
+	// us with it (its on_destroy()).
 	if(!using_map?.use_overmap)
 		return
 	if(!child_om_marker)
-		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
-		own_set(src, nameof(child_om_marker), C)
-		// The marker's Initialize() may have failed and deleted itself.
-		if(!QDELETED(C))
-			om_link(src, C, /datum/om/relation/overmap_mob_marker)
+		var/obj/effect/overmap/visitable/C = new om_child_type(loc, src)
+		rel_set(src, nameof(child_om_marker), C)
 
 
-/// Overmap mob -> the marker that shows it. A marker destroyed on its own (not
-/// by its mob, which owns it) takes the mob with it: the mob is invisible and
-/// does nothing without the marker.
-/datum/om/relation/overmap_mob_marker
-	name = "overmap mob marker"
-	source_single = TRUE
-	target_single = TRUE
-
-/datum/om/relation/overmap_mob_marker/on_unlink(mob/living/simple_mob/vore/overmap/source, obj/effect/overmap/target, datum/om/edge/edge)
-	if(QDELETED(target) && !QDELETED(source))
-		source.expire(0)
+/// A marker destroyed on its own (not by its mob, which owns it) takes the mob with it: the mob is invisible and does nothing without the marker.
+/obj/effect/overmap/visitable/simplemob/on_destroy(force)
+	if(parent && !QDELETED(parent))
+		parent.expire(0)
+	..()
 
 //SHIP
 
@@ -164,37 +166,47 @@
 	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
-/obj/effect/overmap/visitable/ship/simplemob/Initialize(mapload, new_parent)
-	. = ..()
-	rel_set(src, nameof(parent), new_parent)
+CAPABILITIES(/obj/effect/overmap/visitable/ship/simplemob)
+	ref_one(nameof(parent), /mob/living/simple_mob/vore/overmap)
+	param(nameof(parent), pos = 1, apply = PROC_REF(link_parent))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The marker of a mob made with no mob makes its own.
+/obj/effect/overmap/visitable/ship/simplemob/proc/link_parent(parent_mob)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
 		rel_set(src, nameof(parent), P)
-	om_mob_event_setup()
+	observe_parent()
 
-/obj/effect/overmap/visitable/ship/simplemob/proc/om_mob_event_setup()
+/obj/effect/overmap/visitable/ship/simplemob/proc/observe_parent()
 	scanner_desc = parent.scanner_desc
-	om_hook(parent, /datum/om/event/moved, src, PROC_REF(on_parent_moved))
+	observe(parent, /datum/notice/moved, src, then(PROC_REF(on_parent_moved)))
 	skybox_pixel_x = rand(-100,100)
 	if(known)
 		name = initial(parent.name)
 		icon = initial(parent.icon)
-		icon_state = initial(parent.icon_state)
+		set_icon_state(initial(parent.icon_state))
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
 // Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
 // the marker's `parent` is only a relation back, cleared when the mob goes.
 
+/// A marker destroyed on its own (not by its mob, which owns it) takes the mob with it.
+/obj/effect/overmap/visitable/ship/simplemob/on_destroy(force)
+	if(parent && !QDELETED(parent))
+		parent.expire(0)
+	..()
+
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)
 		known = TRUE
 		name = initial(parent.name)
 		icon = initial(parent.icon)
-		icon_state = initial(parent.icon_state)
+		set_icon_state(initial(parent.icon_state))
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
@@ -202,7 +214,7 @@
 
 	return dat
 
-/obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(atom/movable/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	forceMove(parent.loc)
 	set_dir(parent.dir)

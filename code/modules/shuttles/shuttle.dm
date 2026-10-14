@@ -37,23 +37,35 @@
 
 	// Future Thoughts: Baystation put "docking" stuff in a subtype, leaving base type pure and free of docking stuff. Is this best?
 
-OM_FLAG_FIELD(/datum/shuttle, shuttle_flags, SHUTTLE_FLAGS_NONE, CHANGE_DATUM_A)
-OM_FIELD_SETTER(/datum/shuttle, process_state, CHANGE_DATUM_A)
-/// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
-OM_DERIVE_FIELD(/datum/shuttle, shuttle_working, list("shuttle_flags", "process_state"))
+/datum/shuttle/var/shuttle_flags = SHUTTLE_FLAGS_NONE
+TRACKED(/datum/shuttle, shuttle_flags)
 /// Long jump in transit. A field: the transit repeat runs while it is set. It is a flag rather than
 /// the destination view itself, so a landmark destroyed mid-jump still ends the jump at arrival time
 /// (falling back to the start) instead of stranding the shuttle in transit.
-OM_FIELD_TYPED(/datum/shuttle, tmp, transit_active, FALSE, CHANGE_DATUM_B)
+/datum/shuttle/var/tmp/transit_active = FALSE
+TRACKED(/datum/shuttle, transit_active)
 /// Long jump in transit: the destination and start landmarks (relation views), and whether the
 /// landing warning was made.
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_dest
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_start
 /datum/shuttle/var/tmp/transit_warned = FALSE
-DECLARE_REPEAT(/datum/shuttle, 5, long_jump_transit, "transit_active")
-/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
-DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
+/// Set by New() once the shuttle is registered with SSshuttles.
+/datum/shuttle/var/tmp/registered = FALSE
+/// TRUE while a registered shuttle has launch/move work (shuttle_working(), kept by refresh_working()): the 2 s step runs while it is, and an idle shuttle holds no timer.
+/datum/shuttle/var/tmp/working = FALSE
+TRACKED(/datum/shuttle, working)
 
+CAPABILITIES(/datum/shuttle)
+	every(5, then(PROC_REF(long_jump_transit)), when = nameof(transit_active))
+	/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
+	every(2 SECONDS, then(PROC_REF(shuttle_tick)), when = nameof(working))
+	on_change(nameof(shuttle_flags), ANY, then(PROC_REF(refresh_working)))
+
+/// Follows the process flag and the process state: only a shuttle New() registered runs its step (one that skipped registration is dropped by its creator).
+/datum/shuttle/proc/refresh_working(datum/act/A)
+	set_working(registered && shuttle_working())
+
+/// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
 /datum/shuttle/proc/shuttle_working()
 	return (shuttle_flags & SHUTTLE_FLAGS_PROCESS) && (always_process || process_state != IDLE_STATE)
 
@@ -83,34 +95,37 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		log_shuttle("Shuttle '[name]' could not find its starting location landmark; skipping registration.")
 		return
 
-	if(src.name in SSshuttles.shuttles)
+	if(src.name in shuttles_shuttles())
 		CRASH("A shuttle with the name '[name]' is already defined.")
 	SSshuttles.shuttles[src.name] = src
+	registered = TRUE
+	refresh_working()
 	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
-		SSshuttles.process_shuttles += src
+		rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
-		if(GLOB.supply_service.shuttle)
+		if(SSsupply.shuttle)
 			CRASH("A supply shuttle is already defined.")
-		GLOB.supply_service.shuttle = src
-	// Starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize). Only once
-	// registered: a shuttle that skipped registration above is dropped by its creator, and a
-	// started declaration would give it an OM record that keeps it alive (an ownership-audit
-	// "dropped with a rec" orphan).
-	lifecycle_decls_init(src)
+		SSsupply.shuttle = src
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()
 	SSshuttles.shuttles -= src.name
-	SSshuttles.process_shuttles -= src
+	rel_remove(SSshuttles, nameof(SSshuttles.process_shuttles), src)
 	SSshuttles.shuttle_logs -= src
-	if(GLOB.supply_service.shuttle == src)
-		GLOB.supply_service.shuttle = null
+	if(SSsupply.shuttle == src)
+		SSsupply.shuttle = null
 	return ..()
 
-/// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A),
-/// which also refreshes shuttle_working.
+/// The process_state setter: a change publishes the tracked key; the step's gate follows.
 /datum/shuttle/proc/set_process_state(new_state)
-	return om_set(src, "process_state", new_state)
+	var/wrote = FALSE
+	if(process_state != new_state)
+		process_state = new_state
+		tracked_changed(src, nameof(process_state))
+		wrote = TRUE
+	refresh_working()
+	return wrote
+SETTER(/datum/shuttle, process_state)
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
 // Importantly for subtypes, all shuttles will have been initialized and mothershuttles hooked up by the time this is called.
@@ -160,12 +175,12 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), start_location, destination)
+	after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), with = list(start_location, destination))
 
 /datum/shuttle/proc/short_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	make_sounds(HYPERSPACE_WARMUP)
 	create_warning_effect(destination)
-	om_after(src, 5 SECONDS, PROC_REF(short_jump_go), start_location, destination) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(short_jump_go), with = list(start_location, destination)) // so the sound finishes.
 
 /datum/shuttle/proc/short_jump_go(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	if(!post_warmup_checks())
@@ -203,12 +218,12 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), start_location, destination, interim, travel_time)
+	after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), with = list(start_location, destination, interim, travel_time))
 
 /datum/shuttle/proc/long_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
 	make_sounds(HYPERSPACE_WARMUP)
 	create_warning_effect(interim) // Really doubt someone is gonna get crushed in the interim area but for completeness's sake we'll make the warning.
-	om_after(src, 5 SECONDS, PROC_REF(long_jump_depart), start_location, destination, interim, travel_time) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(long_jump_depart), with = list(start_location, destination, interim, travel_time)) // so the sound finishes.
 
 /datum/shuttle/proc/long_jump_depart(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
 	if(!post_warmup_checks())
@@ -239,9 +254,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	set_transit_active(TRUE) // the transit repeat runs while this is set
 	long_jump_transit()
 
-/// In transit: every half second until arrival time (DECLARE_REPEAT while transit_active is set),
+/// In transit: every half second until arrival time (the every() while transit_active is set),
 /// the travel sound every four seconds (the sound file is five) and the landing warning five seconds out.
-/datum/shuttle/proc/long_jump_transit()
+/datum/shuttle/proc/long_jump_transit(datum/act/timer/A)
 	var/obj/effect/shuttle_landmark/start_location = transit_start
 	var/obj/effect/shuttle_landmark/destination = transit_dest
 	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
@@ -271,7 +286,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 /datum/shuttle/proc/fuel_check()
 	return 1 //fuel check should always pass in non-overmap shuttles (they have magic engines)
 
-/datum/shuttle/proc/cancel_launch(user)
+/datum/shuttle/proc/cancel_launch(user, mob/actor)
 	// If we are past warming up its too late to cancel.
 	if (moving_status == SHUTTLE_WARMUP)
 		moving_status = SHUTTLE_IDLE
@@ -322,7 +337,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 	// Observer pattern pre-move
 	var/old_location = current_location()
-	OM_EMIT(src, /datum/om/event/observer_shuttle_pre_move, old_location, destination)
+	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_pre_move, old_location, destination)
 	current_location().shuttle_departed(src)
 
 	if(debug_logging)
@@ -338,7 +353,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 	// Observer pattern post-move
 	destination.shuttle_arrived(src)
-	OM_EMIT(src, /datum/om/event/observer_shuttle_moved, old_location, destination)
+	PUBLISH_LEGACY(src, /datum/notice/observer_shuttle_moved, old_location, destination)
 
 	return TRUE
 
@@ -380,7 +395,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 					var/mob/living/bug = AM
 					bug.gib()
 				else
-					qdel(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
+					spent(AM) //it just gets atomized I guess? TODO throw it into space somewhere, prevents people from using shuttles as an atom-smasher
 	dq_destroy_collect_end()
 	var/list/radios = list()
 	for(var/area/A in shuttle_area)
@@ -404,7 +419,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 					//M.visible_message(span_warning("[M.name] is tossed around by the sudden acceleration!"))
 					//M.throw_at_random(FALSE, 4, 1)
 					if(istype(M, /mob/living/carbon))
-						M.status_at_least(EFFECT_WEAKENED, 3)
+						M.status_at_least(STAT_WEAKENED, 3)
 						if(move_direction)
 							throw_a_mob(M,move_direction)
 		for(var/obj/item/radio/intercom/I in contents_of(A))
@@ -434,13 +449,13 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	var/list/moved_turfs = list()
 	for(var/turf/source in turf_translation)
 		moved_turfs += turf_translation[source]
-	GLOB.machine_service.power_reregister(moved_turfs)
+	SSmachines.power_reregister(moved_turfs)
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()
 	// Adjust areas of mothershuttle so it doesn't try and bring us with it if it jumps while we aren't on it.
 	if(mothershuttle)
-		var/datum/shuttle/MS = SSshuttles.shuttles[mothershuttle]
+		var/datum/shuttle/MS = shuttles_shuttles()[mothershuttle]
 		if(MS)
 			if(current_location().landmark_tag == motherdock)
 				MS.shuttle_area |= shuttle_area // We are now on mothershuttle! Bring us along!
@@ -473,8 +488,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 /datum/shuttle/proc/find_children()
 	. = list()
-	for(var/shuttle_name in SSshuttles.shuttles)
-		var/datum/shuttle/shuttle = SSshuttles.shuttles[shuttle_name]
+	for(var/shuttle_name in shuttles_shuttles())
+		var/datum/shuttle/shuttle = shuttles_shuttles()[shuttle_name]
 		if(shuttle.mothershuttle == name)
 			. += shuttle
 
@@ -491,10 +506,10 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
-	if(src == GLOB.emergency_shuttle_service?.shuttle)
-		changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
-	else if(src == GLOB.supply_service?.shuttle)
-		changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
+	if(src == SSemergency_shuttle?.shuttle)
+		PUBLISH(SSemergency_shuttle, shuttle_schedule_change)
+	else if(src == SSsupply?.shuttle)
+		PUBLISH(SSsupply, shuttle_schedule_change)
 
 /// Set current_location_tag, not this: New() resolves the tag into the landmark.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark

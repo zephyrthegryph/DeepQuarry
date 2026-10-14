@@ -1,0 +1,30 @@
+human|none menu: Wash hands
+human|none click: Click: Wash hands
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++2 menu: Wash hands
+@obj.structure human|/obj/item/tool/crowbar
++2 menu: Wash hands
+@obj.structure human|/obj/item/tool/wrench
++2 menu: Wash hands
+@obj.structure human|/obj/item/tool/wirecutters
++2 menu: Wash hands
+@obj.structure human|/obj/item/multitool
++2 menu: Wash hands
+@obj.structure human|/obj/item/weldingtool
++2 menu: Wash hands
+@obj.structure human|/obj/item/stack/cable_coil
++2 menu: Wash hands
+@obj.structure human|/obj/item/stack/material/steel
++2 menu: Wash hands
+@obj.structure human|/obj/item/card/id
++2 menu: Wash hands
+@obj.structure human|/obj/item
++2 menu: Wash hands
+human|/obj/item/reagent_containers menu: Hit
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers menu: Wash hands
+human|/obj/item/reagent_containers click: Click: Use
+keys: drag_buckle, empty, item, melee_hit, sink_wash_gurgled_item, wash

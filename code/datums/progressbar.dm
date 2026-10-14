@@ -2,6 +2,7 @@
 #define PROGRESSBAR_ANIMATION_TIME 5
 
 /datum/progressbar
+	parent_type = /datum/progress_view
 	///The progress bar visual element.
 	var/image/bar
 	///The target where this progress bar is applied and where it is shown.
@@ -28,15 +29,15 @@
 	. = ..()
 	if (!istype(target))
 		stack_trace("Invalid target [target] passed in")
-		qdel(src)
+		spent(src)
 		return
 	if(QDELETED(User) || !istype(User))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] user")
-		qdel(src)
+		spent(src)
 		return
 	if(!isnum(goal_number))
 		stack_trace("/datum/progressbar created with [isnull(User) ? "null" : "invalid"] goal_number")
-		qdel(src)
+		spent(src)
 		return
 	goal = goal_number
 	rel_set(src, nameof(bar_loc), target)
@@ -60,9 +61,9 @@
 		rel_set(src, nameof(user_client), user().client)
 		add_prog_bar_image_to_client()
 
-	om_hook(user(), /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
-	om_hook(user(), /datum/om/event/mob_logout, src, PROC_REF(clean_user_client))
-	om_hook(user(), /datum/om/event/mob_login, src, PROC_REF(on_user_login))
+	observe(user(), /datum/notice/qdeleting, src, then(PROC_REF(on_user_delete)))
+	observe(user(), /datum/notice/mob_logout, src, then(PROC_REF(clean_user_client)))
+	observe(user(), /datum/notice/mob_login, src, then(PROC_REF(on_user_login)))
 
 	if(starting_amount)
 		update(starting_amount)
@@ -89,17 +90,18 @@
 
 
 ///Called right before the user's Destroy()
-/datum/progressbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/progressbar/proc/on_user_delete(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
 	rel_clear(src, nameof(user))
-	qdel(src)
+	ended_with(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
-/datum/progressbar/proc/clean_user_client(datum/source, datum/om/event/mob_logout/event)
-	EVENT_HANDLER
+/datum/progressbar/proc/clean_user_client(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!user_client()) //Disconnected, already gone.
 		return
@@ -107,8 +109,8 @@
 	rel_clear(src, nameof(user_client))
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
-/datum/progressbar/proc/on_user_login(datum/source, datum/om/event/mob_login/event)
-	EVENT_HANDLER
+/datum/progressbar/proc/on_user_login(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(user_client())
 		if(user_client() == user().client) //If this was not client handling I'd condemn this sanity check. But clients are fickle things.
@@ -135,7 +137,7 @@
 	bar.icon_state = "prog_bar_[round(((progress / goal) * 100), 5)]"
 
 /// Fills the bar over `duration` deciseconds as a client-side animation: no server updates.
-/datum/progressbar/proc/animate_fill(duration)
+/datum/progressbar/animate_fill(duration)
 	EXPIRY_STAMP(src, fill_started, CLOCK_WORLD)
 	fill_duration = max(duration, 1)
 	var/step_time = fill_duration / 20
@@ -145,7 +147,7 @@
 
 ///Called on progress end, be it successful or a failure. Wraps up things to delete the datum and bar.
 /// `success` null: judged by the last update().
-/datum/progressbar/proc/end_progress(success = null)
+/datum/progressbar/end_progress(success = null)
 	if(fill_duration)
 		var/pct = round(clamp((world.time - fill_started) / fill_duration, 0, 1) * 100, 5)
 		last_progress = success ? goal : goal * pct / 100
@@ -155,7 +157,7 @@
 
 	animate(bar, alpha = 0, time = PROGRESSBAR_ANIMATION_TIME)
 
-	om_qdel_after(src, PROGRESSBAR_ANIMATION_TIME)
+	expire(PROGRESSBAR_ANIMATION_TIME)
 
 ///Progress bars are very generic, and what hangs a ref to them depends heavily on the context in which they're used
 ///So let's make hunting harddels easier yeah?

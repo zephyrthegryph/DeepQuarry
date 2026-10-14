@@ -1,33 +1,26 @@
 // Special Operations Shuttle console — structured TGUI.
 
-/obj/machinery/computer/specops_shuttle/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/specops_shuttle_open_ui,
-	)
-	..()
+/// The console requires its actor to have access, preserving the original refusal.
+/obj/machinery/computer/specops_shuttle/proc/lets_in_holds(datum/act/op/A)
+	return allowed(A.actor) ? null : "access denied"
 
-/datum/interaction/machine_hand/specops_shuttle_open_ui
-	id = "specops_shuttle_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_ACTOR, /obj/machinery/computer/specops_shuttle/proc/lets_in, "access denied"))
-	effect = /obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/specops_shuttle/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
-
-/obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-DECLARE_UI_STATE(/obj/machinery/computer/specops_shuttle, GLOB.tgui_default_state)
+CAPABILITIES(/obj/machinery/computer/specops_shuttle)
+	configure(light_glow(color = "#00ffff"))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
+	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
-DECLARE_UI(/obj/machinery/computer/specops_shuttle, "SpecopsShuttle", UI_TITLE("Special Operations Shuttle"))
-
-UI_DATA_REPLACE(/obj/machinery/computer/specops_shuttle, "merge:ui_data_obj_machinery_computer_specops_shuttle{status_message:text,state:text,timeleft:unknown,destination:text}")
-
-/// The computed part of /obj/machinery/computer/specops_shuttle's window data (declared on its UI_DATA row).
-/obj/machinery/computer/specops_shuttle/proc/ui_data_obj_machinery_computer_specops_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/computer/specops_shuttle's window data.
+/obj/machinery/computer/specops_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(temp)
 		data["status_message"] = temp
@@ -43,14 +36,14 @@ UI_DATA_REPLACE(/obj/machinery/computer/specops_shuttle, "merge:ui_data_obj_mach
 		data["destination"] = station_name()
 	return data
 
-UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_dock", ui_act_send_to_dock)
-UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_dock)
-	specops_send_to_dock(ui.user)
+/obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_dock(datum/act/op/A)
+	var/mob/user = A.actor
+	specops_send_to_dock(user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/specops_shuttle, "send_to_station", ui_act_send_to_station)
-UI_ACT_PROC(/obj/machinery/computer/specops_shuttle, ui_act_send_to_station)
-	specops_send_to_station(ui.user)
+/obj/machinery/computer/specops_shuttle/proc/ui_act_send_to_station(datum/act/op/A)
+	var/mob/user = A.actor
+	specops_send_to_station(user)
 	SStgui.update_uis(src)
 	return TRUE

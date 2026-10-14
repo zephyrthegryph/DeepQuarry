@@ -18,12 +18,15 @@
 	var/obj/effect/projectile_shadow/shadow = null // Visual indicator for the projectile's 'true' position. Needed due to being bound to two dimensions in reality.
 	var/arc_height_multiplier = 1 // Modifies how 'high' the projectile flies.
 
+CAPABILITIES(/obj/item/projectile/arc)
+	owns_one(nameof(shadow), /obj/effect/projectile_shadow, starts = PROC_REF(make_shadow))
+
 /obj/item/projectile/arc/Bump()
 	return
 
-/obj/item/projectile/arc/Initialize(mapload)
-	own_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
-	return ..()
+/// The starting shadow (owns_one(starts =)): on the projectile's turf.
+/obj/item/projectile/arc/proc/make_shadow(current)
+	return new /obj/effect/projectile_shadow(get_turf(src))
 
 
 /obj/item/projectile/arc/proc/calculate_initial_pixel_distance(atom/user, atom/target)
@@ -175,9 +178,11 @@
 	icon_state = "declone"
 	damage = 20
 	injury_kind = INJURY_CORROSIVE
-	armor_penetration = 30
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	arc_height_multiplier = 0.5
+
+CAPABILITIES(/obj/item/projectile/arc/spore)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
@@ -197,4 +202,3 @@
 		if(!istype(acid))
 			acid = new(T)
 			acid.reagents.add_reagent(REAGENT_ID_STOMACID, 5)
-			acid.update_icon()

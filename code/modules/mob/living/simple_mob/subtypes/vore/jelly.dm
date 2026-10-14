@@ -26,7 +26,6 @@
 
 	say_list_type = /datum/say_list/jelly
 
-	can_be_drop_prey = FALSE
 
 	min_oxy = 0
 	max_oxy = 0
@@ -38,7 +37,6 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	allow_mind_transfer = TRUE
 
 // Activate Noms!
 	vore_active = 1
@@ -46,13 +44,16 @@
 	vore_icons = SA_ICON_LIVING
 	swallowTime = 2 SECONDS // Hungry little bastards.
 
+CAPABILITIES(/mob/living/simple_mob/vore/jelly)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+
 /datum/say_list/jelly
 	emote_hear = list("squishes","spluts","splorts","sqrshes","makes slime noises")
 	emote_see = list("undulates quietly")
 
 /mob/living/simple_mob/vore/jelly/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The yawning flesh orifice leans over you from above. Its throat dribbles with oozing slick globs of saliva, or maybe it's more like mucus. Then you realize that's not its throat; that's its whole stomach! You're swallowed right into the fleshy sack, and the sphincter above seals you inside. The unthinking [name] goes back to jiggling about its own mindless business. Such a creature isn't even sentient enough to be aware of what it ate. You also realize that the chamber you're in only has one way in or out. Yet the simplicity of \the [name]'s gut won't mean you'll have it easy. If you stay here for long enough, you'll be broken down until there's nothing left but scraps."
 	B.mode_flags = DM_FLAG_THICKBELLY // They used to also do item striping like a Lik-Lik from Legend of Zelda, but... this got removed because if you lose your items you also lose any means of fighting back. Maybe set the HP really low if this feature comes back.

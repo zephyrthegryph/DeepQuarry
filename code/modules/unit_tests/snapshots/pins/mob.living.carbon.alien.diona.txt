@@ -1,0 +1,32 @@
+@mob human|none
+-menu: Nutrition heal
+@mob robot|none
+-menu: Nutrition heal
+@mob ai|none
+@mob ghost|none
+-menu: Nutrition heal
+@mob.living human|/obj/item/tool/screwdriver
+-menu: Nutrition heal
+@mob.living human|/obj/item/tool/crowbar
+-menu: Nutrition heal
+@mob.living human|/obj/item/tool/wrench
+-menu: Nutrition heal
+@mob.living human|/obj/item/tool/wirecutters
+-menu: Nutrition heal
+@mob.living human|/obj/item/multitool
+-menu: Nutrition heal
+@mob.living human|/obj/item/weldingtool
+-menu: Nutrition heal
+@mob human|/obj/item/stack/cable_coil
+@mob human|/obj/item/stack/material/steel
+@mob human|/obj/item/card/id
+@mob human|/obj/item
+human|/obj/item/clothing/head menu: Disarm
+human|/obj/item/clothing/head menu: Grab
+human|/obj/item/clothing/head menu: Hit
+human|/obj/item/clothing/head menu: Hold with
+human|/obj/item/clothing/head menu: Put on hat
+human|/obj/item/clothing/head menu: Shove with
+human|/obj/item/clothing/head menu: Use on
+human|/obj/item/clothing/head click: Click: Put on hat
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, buckle_escape, butcher, climb_down, climb_wall, cuff_break, cuff_remove, diona_interaction_hat, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, pat_out_flames, polymorph, revert_beast_form, shred_limb, slit_throat, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, trait_injection, ventcrawl_in, vertical_nom, yank_out, zmove

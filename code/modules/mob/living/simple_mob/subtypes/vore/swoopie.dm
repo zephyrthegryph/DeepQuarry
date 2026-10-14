@@ -40,20 +40,17 @@
 	adminbus_trash = TRUE //You know what, sure whatever. It's not like anyone's gonna be taking this bird on unga trips to be their gamer backpack, which kinda was the main reason for the trash eater restrictions in the first place anyway.
 	faction = "neutral"
 	say_list_type = /datum/say_list/swoopie
-	mob_bump_flag = 0
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
 	var/obj/item/vac_attachment/swoopie/Vac
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Initialize(mapload)
-	. = ..()
+/// Its bellies are made at spawn, and its Vac-Beak empties into the one it has selected (setup()).
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/fit_vac()
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
 	if(istype(Vac))
-		rel_set(Vac, nameof(Vac.output_dest), vore_selected)
-		Vac.vac_power = 3
-		rel_set(Vac, nameof(Vac.vac_owner), src)
+		rel_set(Vac, nameof(Vac.output_dest), vore_selected_of(src))
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
@@ -75,7 +72,7 @@
 	. = ..() //if not vaccable, just do what it normally does
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/load_default_bellies()
-	om_grant(src, GRANT_VERB, /mob/living/proc/restrict_trasheater, src)
+	grant(src, granted_verb(/mob/living/proc/restrict_trasheater), src)
 	var/obj/belly/B = new /obj/belly(src)
 	B.affects_vore_sprites = TRUE
 	B.belly_sprite_to_affect = "stomach"
@@ -115,7 +112,7 @@
 	B.belly_fullscreen_color4 = "#CCFFFF"
 	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
 
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 	B = new /obj/belly/longneck(src)
 	B.affects_vore_sprites = TRUE
@@ -182,39 +179,39 @@
 
 	size_factor_for_sprite = 5
 
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie
-	of = /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/corrupthound/swoopie/perform(mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/turf/T = get_turf(self)
-	if(istype(self.Vac))
-		if(self.Vac.loc != self)
-			var/turf/VT = get_turf(self.Vac)
-			if(!T.Adjacent(VT) || isturf(self.Vac.loc))
-				if(isliving(self.Vac.loc))
-					var/mob/living/L = self.Vac.loc
-					L.remove_from_mob(self.Vac, self)
+	var/turf/T = get_turf(src)
+	if(istype(src.Vac))
+		if(src.Vac.loc != src)
+			var/turf/VT = get_turf(src.Vac)
+			if(!T.Adjacent(VT) || isturf(src.Vac.loc))
+				if(isliving(src.Vac.loc))
+					var/mob/living/L = src.Vac.loc
+					L.remove_from_mob(src.Vac, src)
 				else
-					self.Vac.forceMove(self)
-		var/atom/movable/vac_output = self.Vac.output_dest
+					src.Vac.forceMove(src)
+		var/atom/movable/vac_output = src.Vac.output_dest
 		if(!vac_output)
-			if(isbelly(self.vore_selected))
-				rel_set(self.Vac, nameof(/obj/item/vac_attachment::output_dest), self.vore_selected)
-	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
+			if(isbelly(vore_selected_of(src)))
+				rel_set(src.Vac, nameof(/obj/item/vac_attachment::output_dest), vore_selected_of(src))
+	if(!istype(T) || !istype(src.Vac) || !(src.ai_brain != null) || src.Vac.loc != src || src.stat)
 		return
 	if(istype(T, /turf/simulated))
 		var/turf/simulated/S = T
 		if(S.dirt > 50)
-			self.Vac.afterattack(S, self, 1)
+			src.Vac.afterattack(S, src, 1)
 			return
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(is_type_in_list(O, GLOB.edible_trash) && !O.anchored)
-			self.Vac.afterattack(T, self, 1)
+			src.Vac.afterattack(T, src, 1)
 			return
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
-		if(!L.anchored && L.devourable && L != self && !L?.buckled_to() && L.can_be_drop_prey)
-			self.Vac.afterattack(L, self, 1)
+		if(!L.anchored && L.vore_prefs.devourable && L != src && !L?.buckled_to() && L.vore_prefs.can_be_drop_prey)
+			src.Vac.afterattack(L, src, 1)
 			return
 
 /datum/say_list/swoopie
@@ -242,7 +239,7 @@
 					return TRUE
 				var/foundstuff = 0 //Check if we actually found anything in the bin...
 				D.latent_materialize_all() // a walk needs real things (C5)
-				for(var/atom/movable/AM in D) // ALLOW(latent): materialized above
+				for(var/atom/movable/AM in D) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 					if(istype(AM, /mob/living))
 						var/mob/living/M = AM
 						if(!can_spontaneous_vore(src, M))
@@ -262,23 +259,36 @@
 				return TRUE
 	return FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, INTERACT_HAND_UNGATED_AS(I_DISARM, "Toggle Vac-Pack", PROC_REF(swoopie_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take Vac-Pack", PROC_REF(swoopie_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	configure(mob_movement(bump = 0))
+	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
+	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))
+	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie, starts_set = list("vac_power" = 3))
+	setup(PROC_REF(fit_vac))
+
+/// The disarm-stance input of swoopie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand_disarm(datum/act/op/A)
+	return swoopie_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of swoopie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand_grab(datum/act/op/A)
+	return swoopie_interaction_hand(A, I_GRAB)
 
 /// Old attack_hand: disarm toggles the Vac-Pack, a head grab takes it; otherwise the normal touch.
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
 	if(stat) //Make sure we're alive
-		return FALSE
-	if(interaction.stance == I_DISARM && Vac)
+		return OP_DECLINE
+	if(stance == I_DISARM && Vac)
 		Vac.attack_self(L)
-		return TRUE
-	if(interaction.stance == I_GRAB && Vac && Vac.loc == src)
-		if(L.zone_sel.selecting == BP_HEAD)
+		return OP_OK
+	if(stance == I_GRAB && Vac && Vac.loc == src)
+		if(hud_of(L)?.zone_sel?.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
 				act_message(L, src, null, MSG_OTHERS(span_warning("%U% grabs %T% by the neck, brandishing the thing like a regular vacuum cleaner!")))
 				L.start_pulling(src)
-				return TRUE
-	return FALSE
+				return OP_OK
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
 	set name = "Borrow Vac-Pack"
@@ -289,22 +299,24 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 		if(usr != src)
 			usr.put_in_active_hand(Vac)
 		else
-			om_ask(src, /datum/om/prompt/choice, PROC_REF(vac_borrower_chosen), title = "Swoopie", message = "Borrow Vac-Pack for", choices = mobs_in_view(1, src))
+			open_request(src, /datum/prompt/choice, PROC_REF(vac_borrower_chosen), answerer = src, title = "Swoopie", question = "Borrow Vac-Pack for", choices = mobs_in_view(1, src), timeout = 0)
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/L = ask.choice
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/L = A.answer.value
 	if(L == src || !istype(Vac) || !Adjacent(L))
 		return
 	L.put_in_active_hand(Vac)
 
-// DQEdit - change_settings verb body moved to
+// change_settings verb body moved to
 // modular_dq/.../ports/swoopie.dm where it toggles mob-side swoop_pests /
 // swoop_trash vars (the legacy AI subtype is gone).
 
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Login()
 	. = ..()
-	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings, src) //Controlled swoopies dont need their settings changed externally
+	grant(src, granted_verb(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings, hidden = TRUE), src) //Controlled swoopies dont need their settings changed externally
 
 //Special Swoopie vaccum so it can be handled better than a vareditted vacpack.
 /obj/item/vac_attachment/swoopie
@@ -312,6 +324,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 	desc = "Useful for slurping mess off the floors. Even dirt and pests depending on settings. This vaccum seems to be permanantly attached to the swoopie's rumbling rubber trashbag."
 	icon = 'icons/mob/vacpack_swoop.dmi'
 	item_state = null
+
+/// It names the swoopie it is built into (the swoopie's owns_one(starts =)).
+/obj/item/vac_attachment/swoopie/default_child_backref()
+	return nameof(vac_owner)
 
 /obj/item/vac_attachment/swoopie/dropped(mob/user, equipping, slot) //This should fix it sitting on the ground until the next life() tick
 	. = ..()
@@ -322,5 +338,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
 
-
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", /obj/item/vac_attachment/swoopie)

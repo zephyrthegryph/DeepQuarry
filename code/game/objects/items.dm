@@ -1,4 +1,4 @@
-OWN_TIMER(/obj/item, tip_timer)
+
 
 /obj/item
 	name = "item"
@@ -13,54 +13,25 @@ OWN_TIMER(/obj/item, tip_timer)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/hitsound = SFX_SWING_HIT
-	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
 	var/storage_cost = null
-	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
 	var/no_attack_log = 0			//If it's an item we don't want to log attack_logs with, set this to 1
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null // the item this one is attached to
-	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
-	var/force = 0
-	var/throwforce = 0
-	var/sharp = FALSE		// whether this object cuts
-	var/edge = FALSE		// whether this object is more likely to dismember
-	var/armor_penetration = 0
 	// --- Phased player melee (windup -> swing -> recovery). See code/modules/mob/living/melee_swing.dm ---
-	var/melee_windup = 0	// Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
-	var/melee_recovery = 0	// Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
-	var/melee_sweep = null	// TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
-	var/catchable = TRUE
-	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
-	var/pry = 0			//Used in attackby() to open doors
-	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-	var/max_heat_protection_temperature //Set this variable to determine up to which temperature (IN KELVIN) the item protects against heat damage. Keep at null to disable protection. Only protects areas set by heat_protection flags
-	var/min_cold_protection_temperature //Set this variable to determine down to which temperature (IN KELVIN) the item protects against cold damage. 0 is NOT an acceptable number due to if(varname) tests!! Keep at null to disable protection. Only protects areas set by cold_protection flags
 
-	var/max_pressure_protection // Set this variable if the item protects its wearer against high pressures below an upper bound. Keep at null to disable protection.
-	var/min_pressure_protection // Set this variable if the item protects its wearer against low pressures above a lower bound. Keep at null to disable protection. 0 represents protection against hard vacuum.
 
 	var/tmp/list/actions //list of /datum/action's that this item has.
 	var/list/actions_types //list of paths of action datums to give to the item on New().
 
 	//This flag is used to determine when items in someone's inventory cover others. IE helmets making it so you can't see glasses, etc.
 	//It should be used purely for appearance. For gameplay effects caused by items covering body parts, use body_parts_covered.
-	var/flags_inv = 0
-	var/body_parts_covered = 0 //see setup.dm for appropriate bit flags
 
-	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 
-	var/gas_transfer_coefficient = 1 // for leaking gas from turf to mask and vice-versa (for masks right now, but at some point, i'd like to include space helmets)
-	var/permeability_coefficient = 1 // for chemicals/diseases
-	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -92,33 +63,19 @@ OWN_TIMER(/obj/item, tip_timer)
 	// Works similarly to worn sprite_sheets, except the alternate sprites are used when the clothing/refit_for_species() proc is called.
 	var/list/sprite_sheets_obj
 
-	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works.  e.g. setting this to 0.5 will make the tool work twice as fast.
-	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
-	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/default_worn_icon	//Default on-mob icon
 	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
-	///Used when thrown into a mob
-	var/mob_throw_hit_sound
-	// Sound used when equipping the items into a valid slot.
-	var/equip_sound
-	// pickup sound - this is the default
-	var/pickup_sound = SFX_GENERIC_PICKUP
-	// drop sound - this is the default
-	var/drop_sound = SFX_GENERIC_DROP
 
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
-	var/rock_climbing = FALSE //If true, allows climbing cliffs using click drag for single Z, walls if multiZ
 	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
 	var/item_tf_spawn_allowed = FALSE
 	var/list/ckeys_allowed_itemspawn = null
-	var/exploit_for //if this obj is an exploit for somebody, this points to them
 	var/preserve_item = 0 //whether this object is preserved when its owner goes into cryo-storage, gateway, etc
 	var/persist_storable = TRUE		//If this is true, this item can be stored in the item bank.
 									//This is automatically set to false when an item is removed from storage
@@ -146,20 +103,20 @@ OWN_TIMER(/obj/item, tip_timer)
 	var/cleandesc
 	var/gurgled_color
 
+
 /obj/item/Initialize(mapload)
 	. = ..()
 	// Read-only per-type tables: share identical ones (writers assign a new list).
-	attack_verb = intern_list(attack_verb)
 	tool_qualities = intern_list(tool_qualities)
 
 	for(var/path in actions_types)
 		add_item_action(path)
 
 	if(embed_chance < 0)
-		if(sharp)
-			embed_chance = max(5, round(force/w_class))
+		if(combat_of(src).sharp)
+			embed_chance = max(5, round(combat_of(src).force/w_class))
 		else
-			embed_chance = max(5, round(force/(w_class*3)))
+			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -170,8 +127,6 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)
-		m.update_inv_r_hand()
-		m.update_inv_l_hand()
 		// Through doMove(), so the mob's containment ledger sees the exit and its slot
 		// hooks run (a raw loc write left body parts stuck in their slots).
 		moveToNullspace()
@@ -196,8 +151,9 @@ OWN_TIMER(/obj/item, tip_timer)
 	return NONE
 
 /// Called when an action associated with our item is deleted
-/obj/item/proc/on_action_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/obj/item/proc/on_action_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
@@ -218,7 +174,7 @@ OWN_TIMER(/obj/item, tip_timer)
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
 	rel_add(src, nameof(actions), action)
-	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
+	observe(action, /datum/notice/qdeleting, src, then(PROC_REF(on_action_deleted)))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
 		// Then they should also probably be granted the action, given it's in a correct slot
@@ -232,9 +188,9 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(!action)
 		return
 
-	om_unhook(action, /datum/om/event/qdeleting, src)
+	unobserve(action, /datum/notice/qdeleting, src)
 	rel_remove(src, nameof(actions), action)
-	qdel(action)
+	spent(action)
 
 // Check if target is reasonable for us to operate on.
 /obj/item/proc/check_allowed_items(atom/target, not_inside, target_self)
@@ -268,25 +224,22 @@ OWN_TIMER(/obj/item, tip_timer)
 
 	return FALSE
 
-//Checks if the item is being held by a mob, and if so, updates the held icons
+/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
 /obj/item/proc/update_held_icon()
-	if(isliving(src.loc))
-		var/mob/living/M = src.loc
-		if(M.get_equipped_item(SLOT_ID_HAND_L) == src)
-			M.update_inv_l_hand()
-		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
-			M.update_inv_r_hand()
+	changed(src)
 
-/obj/item/proc/move_to_top_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proc/move_to_top_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(!istype(src.loc, /turf) || user.stat || user.restrained() )
-		return
+		return OP_OK
 
 	var/turf/T = src.loc
 
 	src.moveToNullspace()
 
 	src.forceMove(T)
+	return OP_OK
 
 // See inventory_sizes.dm for the defines.
 /obj/item/examine(mob/user, infix, suffix)
@@ -311,39 +264,19 @@ OWN_TIMER(/obj/item, tip_timer)
 				size = "enormous"
 	return ..(user, "", "It is \a [size] item.")
 
-/**
- * Every item's defaults: an empty hand picks it up, and a pickup-mode storage bag
- * collects it. They come after everything else the item offers for those inputs.
- * A type that reacts to being picked up declares its own INTERACT_HAND_DEFAULT
- * "Pick up" whose effect calls interaction_pick_up() first.
- */
-/obj/item/declare_interactions(list/into)
-	..()
-	var/static/list/default_specs = list(
-		INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up)),
-		INTERACT_INSERT_DEFAULT(/obj/item/storage, PROC_REF(interaction_collected), "Collect"),
-	)
-	for(var/spec in default_specs)
-		into += dq_interaction_from_spec(/obj/item, spec)
-	// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own.
-	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
-	into += dq_interaction_from_spec(/obj/item, module_spec)
-	// Old /obj/item object verbs.
-	var/static/list/verb_specs = list(
-		INTERACT_VERB("Move To Top", PROC_REF(move_to_top_effect)),
-		INTERACT_VERB("Toggle Digestable", PROC_REF(toggle_digestable_effect), REQ_IN_INVENTORY),
-	)
-	for(var/spec in verb_specs)
-		into += dq_interaction_from_spec(/obj/item, spec)
+// Every item's defaults (the ops of CAPABILITIES(/obj/item), code/modules/mob/living/silicon/robot/component.dm): an empty hand picks it up, and a
+// pickup-mode storage bag collects it. They come after everything else the item offers for those inputs.
 
 /// A pickup-mode storage bag used on the item collects it (or its whole tile).
-/obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
-	return bag.try_collect(src, user) ? INTERACTION_HANDLED_PASS : FALSE
+/obj/item/proc/interaction_collected(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/bag = A.held
+	return bag.try_collect(src, user) ? OP_PASS : OP_DECLINE
 
-/// Pick the item up into the active hand. An anchored item is used instead (its self-use).
-/obj/item/proc/interaction_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
-	pick_up_by_hand(user)
-	return TRUE
+/// The pick up op: the old default, an empty hand picks the item up.
+/obj/item/proc/interaction_pick_up_item(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
 
 /obj/item/proc/pick_up_by_hand(mob/living/user)
 	if(anchored)
@@ -395,19 +328,16 @@ OWN_TIMER(/obj/item, tip_timer)
 	// EDIT END.
 	return
 
-/obj/item/proc/item_in_robot_module(mob/actor, atom/target, obj/item/held)
-	return istype(loc, /obj/item/robot_module)
+MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
-/// Old attack_ai: a cyborg clicking an item of its module equips it.
-/obj/item/proc/item_silicon_equip_module(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(src.loc, /obj/item/robot_module))
-		return FALSE
-	if(!isrobot(user))
-		return TRUE
-	var/mob/living/silicon/robot/R = user
-	R.activate_module(src)
-	R.hud_used.update_robot_modules_display()
-	return TRUE
+/obj/item/proc/item_in_robot_module(datum/act/A)
+	return read_once(istype(loc, /obj/item/robot_module)) ? null : MSG(item/module_unavailable)
+
+/// Preserve the silicon module menu: items outside a module retain a disabled Equip row.
+/// A module item equips for a robot; other silicons retain their successful no-op.
+/obj/item/proc/item_silicon_equip_module(datum/act/op/A)
+	var/mob/living/silicon/S = A.actor
+	return S.equip_item_from_module(src)
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return
@@ -416,8 +346,8 @@ OWN_TIMER(/obj/item, tip_timer)
 	return
 
 /obj/item/proc/get_volume_by_throwforce_and_or_w_class() // This is used for figuring out how loud our sounds are for throwing.
-	if(throwforce && w_class)
-		return CLAMP((throwforce + w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
+	if(thrown_of(src).force && w_class)
+		return CLAMP((thrown_of(src).force + w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
 	else if(w_class)
 		return CLAMP(w_class * 8, 20, 100) // Multiply the item's weight class by 8, then clamp the value between 20 and 100
 	else
@@ -428,17 +358,17 @@ OWN_TIMER(/obj/item, tip_timer)
 	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
-		if (throwforce > 0)
-			if (mob_throw_hit_sound)
-				playsound(hit_atom, mob_throw_hit_sound, volume, TRUE, -1)
-			else if(hitsound)
-				playsound(hit_atom, hitsound, volume, TRUE, -1)
+		if (thrown_of(src).force > 0)
+			if (sounds_of(src).throw_hit)
+				playsound(hit_atom, sounds_of(src).throw_hit, volume, TRUE, -1)
+			else if(sounds_of(src).hit)
+				playsound(hit_atom, sounds_of(src).hit, volume, TRUE, -1)
 			else
 				play_sfx(hit_atom, SFX_WEAPONS_GENHIT, volume = volume, extrarange = -1)
 		else
 			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
-		playsound(src, drop_sound, 30, preference = /datum/preference/toggle/drop_sounds)
+		playsound(src, sounds_of(src).drop, 30, preference = /datum/preference/toggle/drop_sounds)
 
 // apparently called whenever an item is removed from a slot, container, or anything else.
 // TO NOTE:
@@ -451,7 +381,7 @@ OWN_TIMER(/obj/item, tip_timer)
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
 	if(user)
-		changed(user, CHANGE_MOB_HANDS)
+		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
 	// Worn/held items stay real for as long as they're worn or held (C10,
 	// containment.md §4.7): a matching equipped() pinned it, and dropping
 	// out of hands or a slot releases that pin. A safe no-op if it was never
@@ -466,19 +396,18 @@ OWN_TIMER(/obj/item, tip_timer)
 		action_item_has.Remove(user)
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
-		OM_EMIT(src, /datum/om/event/item_dropped, user)
-		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
-			qdel(src)
+		PUBLISH_LEGACY(src, /datum/notice/item_dropped, user)
+		if((worn_of(src).flags & DROPDEL) && loc != user && !QDELETED(src))
+			spent(src, user)
 
 	if(item_my_augment(src) && !QDELETED(src))
 		forceMove(item_my_augment(src))
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
-	OM_EMIT(src, /datum/om/event/item_pickup, user)
-	OM_EMIT(user, /datum/om/event/item_pickup, src)
-	if(om_wants(user, /datum/om/event/picked_up_item))
-		om_emit(user, new /datum/om/event/picked_up_item(src))
+	PUBLISH_LEGACY(src, /datum/notice/item_pickup, user)
+	PUBLISH_LEGACY(user, /datum/notice/item_pickup, src)
+	PUBLISH_LEGACY(user, /datum/notice/picked_up_item, src)
 	pixel_x = 0
 	pixel_y = 0
 	return
@@ -501,7 +430,8 @@ OWN_TIMER(/obj/item, tip_timer)
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
-	changed(user, CHANGE_MOB_HANDS)
+	if(user)
+		PUBLISH_CHANGE(user, MOB_KEY_HANDS)
 	// Worn or held: pin it real for as long as that's true (C10, unpinned by
 	// the matching dropped()).
 	latent_pin("equipped")
@@ -513,15 +443,15 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(user.client)	user.client.screen |= src
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
-		if(equip_sound && !muffled_by_belly(user))
-			playsound(src, equip_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+		if(sounds_of(src).equip && !muffled_by_belly(user))
+			playsound(src, sounds_of(src).equip, 20, preference = /datum/preference/toggle/pickup_sounds)
 		else if(!muffled_by_belly(user))
-			playsound(src, drop_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).drop, 20, preference = /datum/preference/toggle/pickup_sounds)
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
-			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
-	OM_EMIT(src, /datum/om/event/item_equipped, user, slot)
-	OM_EMIT(user, /datum/om/event/mob_equipped_item, src, slot)
+			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
+	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
+	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
 	var/mob/living/M = loc
 	if(!istype(M))
@@ -577,7 +507,7 @@ OWN_TIMER(/obj/item, tip_timer)
 //For non-projectile attacks this usually means the attack is blocked.
 //Otherwise should return 0 to indicate that the attack is not affected in any way.
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	return cap_block_hit(user, damage, damage_source, attacker, attack_text) // cap_block() (code/datums/capabilities/library/block.dm)
+	return FALSE
 
 /obj/item/proc/get_loc_turf()
 	var/atom/L = loc
@@ -591,7 +521,7 @@ OWN_TIMER(/obj/item, tip_timer)
 	var/mob/living/carbon/human/U = user
 	if(istype(H))
 		for(var/obj/item/protection in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_EYES)))
-			if(protection && (protection.body_parts_covered & EYES))
+			if(protection && (worn_of(protection).covers & EYES))
 				// you can't stab someone in the eyes wearing a mask!
 				to_chat(user, span_warning("You're going to need to remove the eye covering first."))
 				return ITEM_INTERACT_FAILURE
@@ -601,7 +531,7 @@ OWN_TIMER(/obj/item, tip_timer)
 		return ITEM_INTERACT_FAILURE
 
 	//this should absolutely trigger even if not aim-impaired in some way
-	var/hit_zone = get_zone_with_miss_chance(U.zone_sel.selecting, M, U.get_accuracy_penalty(U))
+	var/hit_zone = get_zone_with_miss_chance(hud_of(U)?.zone_sel?.selecting, M, U.get_accuracy_penalty(U))
 	if(!hit_zone)
 		U.do_attack_animation(M)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
@@ -617,7 +547,7 @@ OWN_TIMER(/obj/item, tip_timer)
 		/*
 		to_chat(M, span_warning("You stab yourself in the eye."))
 		M.sdisabilities |= BLIND
-		M.status_adjust(EFFECT_WEAKENED, 4)
+		M.status_adjust(STAT_WEAKENED, 4)
 		*/
 
 	if(istype(H))
@@ -642,24 +572,29 @@ OWN_TIMER(/obj/item, tip_timer)
 				if(M.stat != 2)
 					to_chat(M, span_warning("You drop what you're holding and clutch at your eyes!"))
 					M.drop_item()
-				M.status_adjust(EFFECT_BLURRY, 10)
-				M.status_at_least(EFFECT_PARALYZED, 1)
-				M.status_at_least(EFFECT_WEAKENED, 4)
+				M.status_adjust(STAT_BLURRY, 10)
+				M.status_at_least(STAT_PARALYZED, 1)
+				M.status_at_least(STAT_WEAKENED, 4)
 			if (eyes.damage >= eyes.min_broken_damage)
 				if(M.stat != 2)
 					to_chat(M, span_warning("You go blind!"))
 		H.injure(INJURY_BLUNT, 7, BP_HEAD, src)
 	else
 		M.injure(INJURY_PIERCE, 7, BP_HEAD, src)
-	M.status_adjust(EFFECT_BLURRY, rand(3,4))
+	M.status_adjust(STAT_BLURRY, rand(3,4))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/reveal_blood()
 	if(dq_get_was_bloodied(src) && !dq_get_fluorescent(src))
 		dq_set_fluorescent(src, 1)
 		dq_set_blood_color(src, COLOR_LUMINOL)
-		blood_overlay.color = COLOR_LUMINOL
-		update_icon()
+		if(blood_overlay)
+			blood_overlay.color = COLOR_LUMINOL
+
+/// TRUE for an item whose look draws its own stains (blood from the tracked blood colour and the forensics record, a vore gurgle from the tracked
+/// gurgled colour), so add_blood() and the gurgle code add no overlay of their own.
+/obj/item/proc/stains_in_look()
+	return FALSE
 
 /obj/item/add_blood(mob/living/carbon/human/M as mob)
 	if (!..())
@@ -668,15 +603,16 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(istype(src, /obj/item/melee/energy))
 		return
 
-	//if we haven't made our blood_overlay already
-	if(!blood_overlay)
-		generate_blood_overlay()
-	else
-		overlays.Remove(blood_overlay)
+	if(!stains_in_look())
+		//if we haven't made our blood_overlay already
+		if(!blood_overlay)
+			generate_blood_overlay()
+		else
+			overlays.Remove(blood_overlay)
 
-	//Make the blood_overlay have the proper color then apply it.
-	blood_overlay.color = dq_get_blood_color(src)
-	add_overlay(blood_overlay)
+		//Make the blood_overlay have the proper color then apply it.
+		blood_overlay.color = dq_get_blood_color(src)
+		add_overlay(blood_overlay)
 	if(istype(M))
 		add_blooddna(M.dna,M)
 
@@ -713,19 +649,20 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(I && !I.abstract)
 		I.showoff(src)
 
+/// The shared remote-view gate for optical device interactions.
+/obj/item/proc/zoom_view_allowed(mob/user, atom/target, obj/item/held)
+	return user?.is_remote_viewing() ? "You are too distracted to do that." : TRUE
+
 /// For zooming with scope or binoculars. Uses the /datum/remote_view/item_zoom view for disabling when you move or drop the item
 /obj/item/proc/zoom(mob/living/M, tileoffset = 14,viewsize = 9) //tileoffset is client view offset in the direction the user is facing. viewsize is how far out this thing zooms. 7 is normal view
 	SHOULD_NOT_SLEEP(TRUE)
-	if(isliving(usr)) //Always prefer usr if set
-		M = usr
-	if(!M.client)
+	if(!M?.client)
 		return FALSE
 	if(!isliving(M))
 		return FALSE
 	if(isbelly(M.loc) || istype(M.loc,/obj/item/dogborg/sleeper))
 		return FALSE
-	if(M.is_remote_viewing())
-		to_chat(M, span_warning("You are too distracted to do that."))
+	if(zoom_view_allowed(M, src, null) != TRUE)
 		return FALSE
 
 	var/devicename
@@ -748,7 +685,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(!zoom && can_zoom)
 		M.begin_remote_view(/datum/remote_view/item_zoom, M, viewsize, /datum/remote_view_config/zoomed_item, src, tileoffset, TRUE)
 		return
-	OM_EMIT(src, /datum/om/event/remote_view_clear)
+	PUBLISH_LEGACY(src, /datum/notice/remote_view_clear)
 
 /obj/item/proc/pwr_drain()
 	return 0 // Process Kill
@@ -783,6 +720,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
+	if(istext(icon2use)) // a sheet named by its path: an image takes a file, not the text of one
+		icon2use = file(icon2use)
 	var/state2use = get_worn_icon_state(slot_name = slot_name)
 	var/layer2use = get_worn_layer(default_layer = default_layer)
 
@@ -799,17 +738,15 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	#ifdef UNIT_TESTS
 	var/mob/living/carbon/human/H = loc
 	if(ishuman(H))
-		OM_EMIT(H, /datum/om/event/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
+		PUBLISH_LEGACY(H, /datum/notice/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
-	//Generate the base onmob icon
-	var/icon/standing_icon = icon(icon = icon2use, icon_state = state2use)
-
-	if(!inhands)
-		apply_custom(standing_icon)		//Pre-image overridable proc to customize the thing
-		apply_addblends(icon2use,standing_icon)		//Some items have ICON_ADD blend shaders
-
-	var/image/standing = image(standing_icon)
+	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)
+	var/image/standing
+	if(!inhands && addblends && icon2use)
+		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
+	else
+		standing = image(icon = icon2use, icon_state = state2use)
 	standing.alpha = alpha
 	standing.color = color
 	standing.layer = layer2use
@@ -826,6 +763,31 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	apply_overlays(standing)
 
 	//Return our icon
+	return standing
+
+/// The sprite the item shows in a simple mob's hand: its in-hand sheet and state, tinted like the item.
+/obj/item/proc/held_look_image(right_hand)
+	RETURN_TYPE(/image)
+	var/slot_str = right_hand ? slot_r_hand_str : slot_l_hand_str
+	//determine icon state to use
+	var/t_state
+	if(LAZYACCESS(item_state_slots, slot_str))
+		t_state = item_state_slots[slot_str]
+	else if(item_state)
+		t_state = item_state
+	else
+		t_state = icon_state
+	//determine icon to use
+	var/t_icon
+	if(LAZYACCESS(item_icons, slot_str))
+		t_icon = item_icons[slot_str]
+	else if(icon_override)
+		t_state += right_hand ? "_r" : "_l"
+		t_icon = icon_override
+	else
+		t_icon = right_hand ? INV_R_HAND_DEF_ICON : INV_L_HAND_DEF_ICON
+	var/image/standing = image(icon = t_icon, icon_state = t_state)
+	standing.color = color
 	return standing
 
 //Returns the icon object that should be used for the worn icon
@@ -857,8 +819,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 				return sheet
 
 	//4: item's default icon
-	if(default_worn_icon)
-		return default_worn_icon
+	if(worn_of(src).worn_icon)
+		return worn_of(src).worn_icon
 
 	//5: Use our species_sheet as a fallback if we have one. A 'default' sprite is better than nothing at all (or a misaligned sprite)
 	//We ONLY do this if our species is 'abnormally shaped' i.e. tesh/vox/werebeast.
@@ -901,16 +863,20 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	//2: your default
 	return BODY_LAYER+default_layer
 
-//Apply the addblend blends onto the icon
-/obj/item/proc/apply_addblends(source_icon, icon/standing_icon)
+/// A worn sprite with an ICON_ADD shader blended in, built once per sheet, state and shader.
+DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_icon), SC_NEVER)
 
-	//If we have addblends, blend them onto the provided icon
-	if(addblends && standing_icon && source_icon)
-		var/addblend_icon = icon("icon" = source_icon, "icon_state" = addblends)
-		standing_icon.Blend(addblend_icon, ICON_ADD)
+/proc/worn_addblend_icon(source_icon, state, addblends)
+	READS_FROM()
+	// A sheet is a file; an icon made at runtime has no key of its own and is blended each time.
+	if(!isfile(source_icon) && !istext(source_icon))
+		return build_worn_addblend_icon(source_icon, state, addblends)
+	return CACHED_KEY(worn_addblend_icons, "[source_icon]|[state]|[addblends]", source_icon, state, addblends)
 
-//STUB
-/obj/item/proc/apply_custom(icon/standing_icon)
+/proc/build_worn_addblend_icon(source_icon, state, addblends)
+	READS_FROM()
+	var/icon/standing_icon = icon(icon = source_icon, icon_state = state)
+	standing_icon.Blend(icon("icon" = source_icon, "icon_state" = addblends), ICON_ADD)
 	return standing_icon
 
 //STUB
@@ -936,11 +902,11 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
+		after(src, 0.5 SECONDS, PROC_REF(openTip), key = "tip_timer", with = list(location, control, params, user))
 
 /obj/item/MouseExited()
 	. = ..()
-	om_cancel_timer_slot(src, "tip_timer")
+	cancel_after(src, "tip_timer")
 	closeToolTip(usr, src)
 
 /obj/item/proc/openTip(location, control, params, user)
@@ -1022,10 +988,12 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 /obj/item/proc/get_multitool()
 	return
 
-/obj/item/proc/toggle_digestable_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proc/toggle_digestable_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	digestable = !digestable
 	if(!digestable)
 		to_chat(user, span_notice("[src] is now protected from digestion."))
+	return OP_OK
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 
@@ -1102,15 +1070,15 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 		new_voice.name = "[candidate_name]"
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
-	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
-	own_add(src, nameof(possessed_voice), new_voice)
+	new_voice.set_real_name("[new_voice.real_name]") //We still know their real name though!
+	rel_add(src, nameof(possessed_voice), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/change_name, src) // No changing your name! Bad!
-	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/hang_up, src) // Also you can't hang up. You are the item!
+	grant(new_voice, granted_verb(/mob/living/voice/verb/change_name, hidden = TRUE), src) // No changing your name! Bad!
+	grant(new_voice, granted_verb(/mob/living/voice/verb/hang_up, hidden = TRUE), src) // Also you can't hang up. You are the item!
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
-		new_voice.emote_type = 1
+		new_voice.set_emote_type(1)
 	// Let the inhabitor know what happened to them
 	if(istype(src, /obj/item/mindbinder))
 		to_chat(new_voice,span_notice("Your mind has been stored in [src]!"))
@@ -1125,16 +1093,184 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return FALSE
 
 
-/// The hidden uplink (owned, in the item's contents); a global helper keeps the proc off the base type.
+/// The hidden uplink in the item's contents (its uplink slot), or null; a global helper keeps the proc off the base type. The uplink is a
+/// thing the item holds, so it goes with the item's contents: no var on /obj/item.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return I?.hidden_uplink
-
-/obj/item/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED)
+	return I ? locate_within(I, /obj/item/uplink/hidden) : null
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return I?.my_augment
 
-// An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
+// An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
+/proc/item_master(obj/item/I) as /obj/item
+	return link_get(I, LK_ITEM_MASTER)
+
+/proc/set_item_master(obj/item/I, obj/item/master)
+	return link_set_one(I, LK_ITEM_MASTER, master)
+
+// ---- what an item sounds like: the item_sounds() type trait ----
+//
+// The sounds an item makes are per-type data, declared in its CAPABILITIES block, not vars on /obj/item: a card's block holds
+// configure(item_sounds(pickup = SFX_ITEMS_PICKUP_CARD, drop = SFX_ITEMS_DROP_CARD)).
+// hit (a strike), use (used as a tool), throw_hit (thrown into a mob), equip (worn), pickup and drop. A subtype names only what it changes;
+// TRAIT_NONE silences a sound it inherits. Read with sounds_of(I).hit ... (sounds_of_type(path) for a type's declaration); an item whose
+// sound changes at run time (a lit welder) writes it with set_hitsound() / set_usesound() / ..., which give it its own copy and publish
+// ITEM_SOUNDS_KEY.
+
+STATIC_ENTRY(item_sounds)
+
+/proc/item_sounds(hit = null, use = null, throw_hit = null, equip = null, pickup = null, drop = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_ITEM_SOUNDS, null, list("hit" = hit, "use" = use, "throw_hit" = throw_hit, "equip" = equip, "pickup" = pickup, "drop" = drop))
+
+/datum/type_trait/item_sounds
+	var/hit
+	var/use
+	var/throw_hit
+	var/equip
+	var/pickup
+	var/drop
+
+/datum/type_trait/item_sounds/copy_values(datum/type_trait/item_sounds/into)
+	into.hit = hit
+	into.use = use
+	into.throw_hit = throw_hit
+	into.equip = equip
+	into.pickup = pickup
+	into.drop = drop
+
+/datum/entry_engine/type_trait/item_sounds
+	kind = ENTRY_ITEM_SOUNDS
+	trait_type = /datum/type_trait/item_sounds
+	publish_key = ITEM_SOUNDS_KEY
+	base_type = /obj/item
+	var_names = list("hitsound" = "hit", "usesound" = "use", "mob_throw_hit_sound" = "throw_hit", "equip_sound" = "equip", "pickup_sound" = "pickup", "drop_sound" = "drop")
+
+/// The sounds `I` makes (its own once one was set at run time). Read only.
+READS_AS(/proc/sounds_of, ITEM_SOUNDS_KEY)
+/proc/sounds_of(obj/item/I) as /datum/type_trait/item_sounds
+	READS_FROM(I)
+	return type_trait_of(I, ENTRY_ITEM_SOUNDS)
+
+/// The sounds an item type declares (no instance): the old initial(hitsound).
+/proc/sounds_of_type(type) as /datum/type_trait/item_sounds
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_ITEM_SOUNDS)
+
+/// Writes one of the item's sounds at run time (its own copy of the trait).
+/obj/item/proc/set_item_sound(field, value)
+	return set_trait(src, ENTRY_ITEM_SOUNDS, field, value)
+
+/obj/item/proc/set_hitsound(value)
+	return set_item_sound("hit", value)
+
+/obj/item/proc/set_usesound(value)
+	return set_item_sound("use", value)
+
+/obj/item/proc/set_mob_throw_hit_sound(value)
+	return set_item_sound("throw_hit", value)
+
+/obj/item/proc/set_equip_sound(value)
+	return set_item_sound("equip", value)
+
+/obj/item/proc/set_pickup_sound(value)
+	return set_item_sound("pickup", value)
+
+/obj/item/proc/set_drop_sound(value)
+	return set_item_sound("drop", value)
+
+// ---- what an item protects its wearer from: the item_protection() type trait ----
+//
+// The body parts an item shields from heat and cold and down/up to which temperature, the pressures it holds, and how much gas,
+// chemicals and current pass it are per-type data in its CAPABILITIES block (configure(item_protection(...))), not vars on /obj/item.
+// heat_parts / cold_parts are body-part flags; max_heat / min_cold are kelvin, max_pressure / min_pressure kPa (null: no protection);
+// gas_transfer, permeability and siemens are coefficients. Read with protection_of(I).siemens (protection_of_type(path) for a type's
+// declaration). A value that changes at run time (a sealed suit, cut gloves) is written with set_<old var>(), which gives the item its own
+// copy and publishes ITEM_PROTECTION_KEY.
+
+STATIC_ENTRY(item_protection)
+
+/proc/item_protection(heat_parts = null, cold_parts = null, max_heat = null, min_cold = null, max_pressure = null, min_pressure = null, gas_transfer = null, permeability = null, siemens = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_ITEM_PROTECTION, null, list("heat_parts" = heat_parts, "cold_parts" = cold_parts, "max_heat" = max_heat, "min_cold" = min_cold, "max_pressure" = max_pressure, "min_pressure" = min_pressure, "gas_transfer" = gas_transfer, "permeability" = permeability, "siemens" = siemens))
+
+/datum/type_trait/item_protection
+	var/heat_parts = 0
+	var/cold_parts = 0
+	var/max_heat
+	var/min_cold
+	var/max_pressure
+	var/min_pressure
+	var/gas_transfer = 1
+	var/permeability = 1
+	var/siemens = 1
+
+/datum/type_trait/item_protection/copy_values(datum/type_trait/item_protection/into)
+	into.heat_parts = heat_parts
+	into.cold_parts = cold_parts
+	into.max_heat = max_heat
+	into.min_cold = min_cold
+	into.max_pressure = max_pressure
+	into.min_pressure = min_pressure
+	into.gas_transfer = gas_transfer
+	into.permeability = permeability
+	into.siemens = siemens
+
+/datum/entry_engine/type_trait/item_protection
+	kind = ENTRY_ITEM_PROTECTION
+	trait_type = /datum/type_trait/item_protection
+	publish_key = ITEM_PROTECTION_KEY
+	base_type = /obj/item
+	var_names = list("heat_protection" = "heat_parts", "cold_protection" = "cold_parts", "max_heat_protection_temperature" = "max_heat", "min_cold_protection_temperature" = "min_cold", "max_pressure_protection" = "max_pressure", "min_pressure_protection" = "min_pressure", "gas_transfer_coefficient" = "gas_transfer", "permeability_coefficient" = "permeability", "siemens_coefficient" = "siemens")
+
+/// What `I` protects from (its own values once one was set at run time). Read only.
+READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
+/proc/protection_of(obj/item/I) as /datum/type_trait/item_protection
+	READS_FROM(I)
+	return type_trait_of(I, ENTRY_ITEM_PROTECTION)
+
+/// What an item type declares it protects from (no instance): the old initial(siemens_coefficient).
+/proc/protection_of_type(type) as /datum/type_trait/item_protection
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_ITEM_PROTECTION)
+
+/// Writes one of the item's protection values at run time (its own copy of the trait).
+/obj/item/proc/set_item_protection(field, value)
+	return set_trait(src, ENTRY_ITEM_PROTECTION, field, value)
+
+/obj/item/proc/set_heat_protection(value)
+	return set_item_protection("heat_parts", value)
+
+/obj/item/proc/set_cold_protection(value)
+	return set_item_protection("cold_parts", value)
+
+/obj/item/proc/set_max_heat_protection_temperature(value)
+	return set_item_protection("max_heat", value)
+
+/obj/item/proc/set_min_cold_protection_temperature(value)
+	return set_item_protection("min_cold", value)
+
+/obj/item/proc/set_max_pressure_protection(value)
+	return set_item_protection("max_pressure", value)
+
+/obj/item/proc/set_min_pressure_protection(value)
+	return set_item_protection("min_pressure", value)
+
+/obj/item/proc/set_gas_transfer_coefficient(value)
+	return set_item_protection("gas_transfer", value)
+
+/obj/item/proc/set_permeability_coefficient(value)
+	return set_item_protection("permeability", value)
+
+/obj/item/proc/set_siemens_coefficient(value)
+	return set_item_protection("siemens", value)
+
+SETTER(/obj/item, sprite_sheets)
+/obj/item/proc/set_sprite_sheets(list/value)
+	var/list/replacement = value?.Copy()
+	if(TRACKED_UNCHANGED(sprite_sheets, replacement))
+		return FALSE
+	sprite_sheets = replacement
+	tracked_changed(src, nameof(sprite_sheets))
+	return TRUE

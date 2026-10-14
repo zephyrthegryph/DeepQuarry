@@ -13,7 +13,6 @@
 	classify them as dangerous weapons (at least, not dangerous to whoever they're pointed at) - instead, in most \
 	jurisdictions including NT space, APP guns are officially classed as mining equipment rather than firearms."
 	fire_sound = SFX_WEAPONS_BLASTER
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/bullet/particle
 	fire_delay = 10
@@ -22,14 +21,19 @@
 	var/obj/item/pressurelock/attached_safety
 	recoil_mode = 0
 
+CAPABILITIES(/obj/item/gun/energy/particle)
+	configure(item_worn(slots = SLOT_BELT))
+	owns_one(nameof(attached_safety), /obj/item/pressurelock)
+	op("remove_safety", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), label("Remove safety"), when(req(PROC_REF(safety_attached))), begins(MSG(particle_gun/removing_safety)), wait(2.5 SECONDS), then(PROC_REF(safety_removed)))
+
+MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% from %T%."))
+
 
 /obj/item/gun/energy/particle/advanced //particle equivalent of AEG
 	name = "Advanced anti-particle rifle"
 	icon_state = "particle"
 	item_state = "particle"
 	desc = "An antiparticle projector gun with an enhanced power-generation unit."
-	slot_flags = SLOT_BELT
-	force = 8 //looks heavier than a pistol
 	w_class = ITEMSIZE_LARGE	//bigger than a pistol, too.
 	fire_delay = 6	//This one's not a handgun, it should have the same fire delay as everything else
 	self_recharge = 1
@@ -38,24 +42,30 @@
 	recharge_time = 6 // every 6 ticks, recharge 2 shots. Slightly slower than AEG.
 	charge_delay = 10 //Starts recharging faster after firing than an AEG though.
 
+CAPABILITIES(/obj/item/gun/energy/particle/advanced)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 8))
+
 /obj/item/gun/energy/particle/cannon //particle version of laser cannon
 	name = "Anti-particle cannon"
 	desc = "A giant beast of an antimatter gun, packed with an internal reactor to allow for extreme longevity on remote mining expeditions."
 	icon_state = "heavyparticle"
 	item_state = "heavyparticle"
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/particle/heavy
 	battery_lock = 1
 	fire_delay = 15 // fires faster than a laser cannon. c'mon, it's an awesome-but-impractical endgame gun.
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
 	one_handed_penalty = 8 // The thing's heavy and huge.
 	accuracy = 3
 	charge_cost = 400 // 6 shots
 	self_recharge = 1
 	charge_delay = 15 //won't start charging until it's ready to fire again
 	recharge_time = 8 //40 ticks after that to refill the whole thing.
+
+CAPABILITIES(/obj/item/gun/energy/particle/cannon)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 //special behaviours for particle guns below
 
@@ -88,27 +98,24 @@
 	else if (severity <= 60) //50% chance of fizzling and wasting a shot
 		act_message(user, src, MSG_SELF(span_danger("You fire %T%, but the shot fizzles in the air!")), \
 			MSG_OTHERS(span_warning("%U% fires %T%, but the shot fizzles in the air!")))
-		power_supply.charge -= charge_cost
+		power_supply.set_charge(power_supply.charge - charge_cost)
 		playsound(src, fire_sound, 100, 1)
 		fx_sparks(T, 2)
-		update_icon()
 	else if (severity <= 80) //20% chance of shorting out and emptying the cell
 		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% shorts out!")), \
 			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% shorts out!")))
-		power_supply.charge = 0
+		power_supply.set_charge(0)
 		fx_sparks(T, 2)
-		update_icon()
 	else if (severity <= 90) //10% chance of breaking the gun
 		act_message(user, src, MSG_SELF(span_danger("You pull the trigger, but %T% bursts into a shower of sparks!")), \
 			MSG_OTHERS(span_warning("%U% pulls the trigger, but %T% erupts in a shower of sparks!")))
 		fx_sparks(T, 2)
-		power_supply.charge = 0
-		power_supply.maxcharge = 1 //just to avoid div/0 runtimes
+		power_supply.set_charge(0)
+		power_supply.set_maxcharge(1) //just to avoid div/0 runtimes
 		power_supply.desc += " It seems to be burnt out!"
 		desc += " The casing is covered in scorch-marks."
 		fire_delay += fire_delay // even if you swap out the cell for a good one, the gun's cluckety-clucked.
-		charge_cost += charge_cost
-		update_icon()
+		set_charge_cost(charge_cost + charge_cost)
 	else if (severity <= 150) // 10% chance of exploding
 		act_message(user, src, MSG_SELF(span_danger("%T% explodes!")), MSG_OTHERS(span_danger("%U% pulls the trigger, but %T% explodes!")))
 		log_and_message_admins("blew themself up with a particle gun.", user)
@@ -124,30 +131,32 @@
 	..(severity*2, user, T)
 
 
-/obj/item/gun/energy/particle/proc/safety_removed(mob/user)
+/// A pressure interlock is fitted.
+/obj/item/gun/energy/particle/proc/safety_attached(datum/act/op/A)
+	return (read_once(safetycatch) && attached_safety) ? null : /datum/msg/req_failed
+
+/obj/item/gun/energy/particle/proc/safety_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!attached_safety)
 		return
 	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
-	user.put_in_hands(own_take(src, nameof(attached_safety)))
+	user.put_in_hands(rel_take(src, nameof(attached_safety)))
 	safetycatch = 0
 
 /// Old attackby.
-/obj/item/gun/energy/particle/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/pressurelock))
+/obj/item/gun/energy/particle/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/pressurelock))
 		if(safetycatch)
 			to_chat(user, span_notice("\The [src] already has a [attached_safety]."))
-			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!own_set(src, nameof(src.attached_safety), A, user = user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
+		if(!move_into(src, nameof(src.attached_safety), held, user))
+			return OP_PASS
 		safetycatch = 1
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	if(A.has_tool_quality(TOOL_SCREWDRIVER))
-		if(safetycatch && attached_safety)
-			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
-			om_task_timed(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
-			return INTERACTION_HANDLED_PASS
 	return ..()
 
 
@@ -174,10 +183,11 @@
 	name = "antimatter slug"
 	icon_state = "particle-heavy"
 	damage = 80 // same as a laser cannon
-	armor_penetration = 25 //it explodes on the surface of things, so less armor pen than the laser cannon
-	light_range = 3
-	light_power = 1
-	light_color = "#CCFFFF"
+
+CAPABILITIES(/obj/item/projectile/bullet/particle/heavy)
+	configure(light_glow(range = 3, power = 1, color = "#CCFFFF"))
+	configure(light_glow(range = 3, power = 1, color = "#CCFFFF"))
+	configure(item_combat(armor_penetration = 25))
 
 /turf/simulated/mineral/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/bullet/particle))

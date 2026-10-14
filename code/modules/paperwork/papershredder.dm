@@ -10,10 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 200
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
-	power_channel = EQUIP
 	circuit = /obj/item/circuitboard/papershredder
 	var/max_paper = 10
 	var/paperamount = 0
@@ -26,51 +23,40 @@
 		/obj/item/paper_bundle = 3,
 		)
 
-/obj/machinery/papershredder/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	update_icon()
-	make_climbable()
 
-/obj/machinery/papershredder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/papershredder_empty_into,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/papershredder_shred,
-		/datum/interaction/machine_verb/papershredder_empty,
-	)
-	..()
+CAPABILITIES(/obj/machinery/papershredder)
+	configure(uses_power(idle = 10, active = 200, channel = EQUIP))
+	climb()
+	op("empty_into", item(/obj/item/storage), priority(OP_PRIORITY_DEFAULT - 1), label("Empty into"), then(PROC_REF(interaction_empty_into)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("shred", inputs(item(/obj/item/photo), item(/obj/item/shreddedp), item(/obj/item/paper), item(/obj/item/newspaper), item(/obj/item/card/id), item(/obj/item/paper_bundle)), priority(OP_PRIORITY_DEFAULT - 1), label("Shred"), then(PROC_REF(interaction_shred)))
+	op("empty", menu(), label("Empty bin"), needs(req_adjacent(), req_capable(), req_is(nameof(paperamount), TRUE, because = MSG(papershredder/empty))), then(PROC_REF(interaction_empty)))
+	default_parts()
 
-/datum/interaction/machine_item/papershredder_empty_into
-	id = "papershredder_empty_into"
-	name = "Empty into"
-	category = INTERACTION_CAT_EJECT
-	held_type = /obj/item/storage
-	effect = /obj/machinery/papershredder/proc/interaction_empty_into
+MSG_DEF_SELF(papershredder/empty, "it is empty")
 
-/obj/machinery/papershredder/proc/interaction_empty_into(mob/living/user, obj/item/storage/W, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_empty_into(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/storage/W = A.held
 	empty_bin(user, W)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/papershredder_shred
-	id = "papershredder_shred"
-	name = "Shred"
-	held_type = list(/obj/item/photo, /obj/item/shreddedp, /obj/item/paper, /obj/item/newspaper, /obj/item/card/id, /obj/item/paper_bundle)
-	effect = /obj/machinery/papershredder/proc/interaction_shred
-
-/obj/machinery/papershredder/proc/interaction_shred(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_shred(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	var/paper_result
 	for(var/shred_type in shred_amounts)
 		if(istype(W, shred_type))
 			paper_result = shred_amounts[shred_type]
 	if(paper_result)
 		if(!operable())
-			return TRUE // Need powah!
+			return OP_OK // Need powah!
 		if(paperamount == max_paper)
 			to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
-			return TRUE
-		paperamount += paper_result
-		consume(W, user)
+			return OP_OK
+		if(!consume(W, user))
+			return OP_OK
+		set_paperamount(paperamount + paper_result)
 		play_sfx(src, SFX_ITEMS_PSHRED)
 		flick(shred_anim, src)
 		if(paperamount > max_paper)
@@ -79,25 +65,12 @@
 				var/obj/item/shreddedp/SP = get_shredded_paper()
 				SP.forceMove(get_turf(src))
 				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
-			paperamount = max_paper
-		update_icon()
-		return TRUE
-	return FALSE
+			set_paperamount(max_paper)
+		return OP_OK
+	return OP_DECLINE
 
-/datum/interaction/machine_verb/papershredder_empty
-	id = "papershredder_empty"
-	name = "Empty bin"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/papershredder/proc/actor_can_empty, "you can't do that right now"), REQ_ON(PRED_TARGET, /obj/machinery/papershredder/proc/has_paper, "it is empty"))
-	effect = /obj/machinery/papershredder/proc/interaction_empty
-
-/obj/machinery/papershredder/proc/actor_can_empty(mob/actor, atom/target, obj/item/held)
-	return !(actor.stat || actor.restrained() || actor.has_status(EFFECT_WEAKENED) || actor.has_status(EFFECT_PARALYZED) || actor.lying || actor.has_status(EFFECT_STUNNED))
-
-/obj/machinery/papershredder/proc/has_paper(mob/actor, atom/target, obj/item/held)
-	return paperamount > 0
-
-/obj/machinery/papershredder/proc/interaction_empty(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/papershredder/proc/interaction_empty(datum/act/op/A)
+	var/mob/user = A.actor
 	empty_bin(user)
 	return TRUE
 
@@ -127,20 +100,37 @@
 
 	else
 		to_chat(user, span_notice("You empty \the [src]."))
-	update_icon()
 
 /obj/machinery/papershredder/proc/get_shredded_paper()
 	if(!paperamount)
 		return
-	paperamount--
+	set_paperamount(paperamount - 1)
 	return new /obj/item/shreddedp(get_turf(src))
 
-APPEARANCE_TEMPLATE(/obj/machinery/papershredder, "shredder-{operable?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/papershredder, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("shredder-0")), "1" = list(APPEARANCE_OVERLAYS = list("shredder-1")), "2" = list(APPEARANCE_OVERLAYS = list("shredder-2")), "3" = list(APPEARANCE_OVERLAYS = list("shredder-3")), "4" = list(APPEARANCE_OVERLAYS = list("shredder-4")), "5" = list(APPEARANCE_OVERLAYS = list("shredder-5"))))
-DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/papershredder/draw(datum/look/look)
+	..()
+	look.state("shredder-[operable() ? "on" : "off"]")
+	switch("[appearance_fill()]")
+		if("0")
+			look.overlay("shredder-0")
+		if("1")
+			look.overlay("shredder-1")
+		if("2")
+			look.overlay("shredder-2")
+		if("3")
+			look.overlay("shredder-3")
+		if("4")
+			look.overlay("shredder-4")
+		if("5")
+			look.overlay("shredder-5")
+	if(panel_open == 1)
+		look.overlay("panel_open")
 
 /// Fullness, 0..5.
 /obj/machinery/papershredder/proc/appearance_fill()
+	if(max_paper <= 0)
+		return 0
 	return max(0, min(5, FLOOR(paperamount / max_paper * 5, 1)))
 
 //
@@ -151,44 +141,39 @@ DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(A
 	name = "shredded paper"
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "shredp"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_range = 3
 	throw_speed = 1
 
-/obj/item/shreddedp/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-5,5)
-	pixel_y = rand(-5,5)
-	if(prob(65)) color = pick("#BABABA","#7F7F7F")
+CAPABILITIES(/obj/item/shreddedp)
+	configure(item_thrown(force = 0))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	rolls(nameof(color), PROC_REF(roll_color))
+	op("burn", item(/obj/item/flame/lighter), label("Burn"), needs(req(PROC_REF(can_burn), silent = TRUE), req(PROC_REF(lighter_lit))),
+		begins(MSG(shreddedp/burning)), wait(2 SECONDS), on_interrupt(PROC_REF(burn_interrupted)), then(PROC_REF(burnpaper_done)))
 
-DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+MSG_DEF(shreddedp/burning, span_warning("You hold %I% up to %T%, burning it slowly."), span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!"))
+MSG_DEF_SELF(shreddedp/not_lit, span_warning("%I% is not lit."))
 
-/// Old attackby.
-/obj/item/shreddedp/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter))
-		burnpaper(W, user)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/shreddedp/proc/roll_color(datum/roller/R)
+	return R.chance(65) ? R.choose(list("#BABABA", "#7F7F7F")) : color
 
-/obj/item/shreddedp/proc/burnpaper(obj/item/flame/lighter/P, mob/user)
-	if(user.restrained())
-		return
-	if(!P.lit)
-		to_chat(user, span_warning("\The [P] is not lit."))
-		return
-	act_message(user, src, MSG_SELF(span_warning("You hold %I% up to %T%, burning it slowly.")), \
-		MSG_OTHERS(span_warning("%U% holds %I% up to %T%. It looks like %THEYRE% trying to burn it!")), \
-		item = P)
-	om_task_start(/datum/om/task/timed/shreddedp_burnpaper, user, src, receiver = src, fail_message = span_warning("You must hold \the [P] steady to burn \the [src]."))
+/// Requirement: the burner's hands are free (a restrained one is silently refused).
+/obj/item/shreddedp/proc/can_burn(datum/act/op/A)
+	return (!A.actor.restrained()) ? null : /datum/msg/req_failed
 
-/datum/om/task/timed/shreddedp_burnpaper
-	duration = 2 SECONDS
-	complete_proc = /obj/item/shreddedp/proc/burnpaper_done
+/// Requirement: the lighter is lit.
+/obj/item/shreddedp/proc/lighter_lit(datum/act/op/A)
+	var/obj/item/flame/lighter/P = A.held
+	return (!!P?.lit) ? null : MSG(shreddedp/not_lit)
 
-/obj/item/shreddedp/proc/burnpaper_done(datum/om/task/timed/shreddedp_burnpaper/task)
-	var/mob/user = task.actor
+/// The lighter wavered or the burner left.
+/obj/item/shreddedp/proc/burn_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_warning("You must hold [A.held] steady to burn the [src]."))
+
+/obj/item/shreddedp/proc/burnpaper_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_danger("You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")), \
 		MSG_OTHERS(span_danger("%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.")))
 	FireBurn()

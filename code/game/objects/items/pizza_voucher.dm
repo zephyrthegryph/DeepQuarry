@@ -7,9 +7,9 @@
 	var/special_delivery = FALSE
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/pizzavoucher/Initialize(mapload)
-	. = ..()
-	var/list/descstrings = list("24/7 PIZZA PIE HEAVEN",
+/// Rolled before init (rolls()): the slogan on the back.
+/obj/item/pizzavoucher/proc/roll_desc(datum/roller/R)
+	var/static/list/descstrings = list("24/7 PIZZA PIE HEAVEN",
 	"WE ALWAYS DELIVER!",
 	"24-HOUR PIZZA PIE POWER!",
 	"TOMATO SAUCE, CHEESE, WE'VE BOTH OF THESE!",
@@ -18,12 +18,16 @@
 	"WHEN YOU NEED A DISK OF OVEN BAKED BLISS!",
 	"EVERY TIME YOU DREAM OF CIRCULAR CUISINE!",
 	"WE ALWAYS DELIVER! WE ALWAYS DELIVER! WE ALWAYS DELIVER!")
-	desc = "A pocket-sized plastic slip with a button in the middle. \"[pick(descstrings)]\" is written on the back."
+	return "A pocket-sized plastic slip with a button in the middle. \"[R.choose(descstrings)]\" is written on the back."
 
-DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/pizzavoucher)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	rolls(nameof(desc), PROC_REF(roll_desc))
 
 /// Old attack_self.
-/obj/item/pizzavoucher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pizzavoucher/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!spent)
 		act_message(user, src, others = span_notice("%U% presses a button on %T%!"))
@@ -41,24 +45,32 @@ DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interac
 		to_chat(user, span_warning("The [src] is spent!"))
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/pizzavoucher, PROC_REF(on_emag), null)
-/obj/item/pizzavoucher/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/pizzavoucher/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(spent)
 		to_chat(user, span_warning("The [src] is spent!"))
-		return
+		return OP_DECLINE
 	if(!special_delivery)
 		to_chat(user, span_warning("You activate the special delivery protocol on the [src]!"))
 		special_delivery = TRUE
-		return 1
+		return OP_OK
 	else
 		to_chat(user, span_warning("The [src] is already in special delivery mode!"))
+	return OP_DECLINE
 
 /obj/effect/falling_effect/pizza_delivery
 	name = "PIZZA PIE POWER!"
 	crushing = FALSE
-	falling_type = LOOT_REF(/loot/pizza_delivery)
+	falling_type = /loot/pizza_delivery
 
-DECLARE_LOOT(/loot/pizza_delivery, LOOT_TABLE(/obj/item/pizzabox/meat, /obj/item/pizzabox/margherita, /obj/item/pizzabox/vegetable, /obj/item/pizzabox/mushroom, /obj/item/pizzabox/pineapple))
+CAPABILITIES(/loot/pizza_delivery)
+	loot(
+		table = list(
+			/obj/item/pizzabox/meat,
+			/obj/item/pizzabox/margherita,
+			/obj/item/pizzabox/vegetable,
+			/obj/item/pizzabox/mushroom,
+			/obj/item/pizzabox/pineapple))
 
 /obj/effect/falling_effect/pizza_delivery/special
 	crushing = TRUE

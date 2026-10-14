@@ -43,27 +43,35 @@
 	var/datum/callback/special_callback
 	/// How long for the final screen remains shown
 	var/cleanup_time = 30 SECONDS
-	/// How long the intro plays before the blast (the blast runs on an om_after() timer).
+	/// How long the intro plays before the blast (the blast runs on an after() timer).
 	/// Callers that act at the blast wait initial(intro_time).
 	var/intro_time = 0
 	/// Whether the cinematic turns off ooc when played globally.
 	var/stop_ooc = TRUE
 
+CAPABILITIES(/datum/cinematic)
+	ref_many(nameof(watching))
+	ref_many(nameof(locked))
+	owns_one(nameof(screen), /atom/movable/screen/cinematic)
+	owns_one(nameof(special_callback), /datum/callback)
+
 /datum/cinematic/New(watcher, datum/callback/special_callback)
-	own_set(src, nameof(screen), new /atom/movable/screen/cinematic(src))
+	rel_set(src, nameof(screen), new /atom/movable/screen/cinematic(src))
 	if(watcher == world)
 		is_global = TRUE
 
-	own_set(src, nameof(special_callback), special_callback)
+	rel_set(src, nameof(special_callback), special_callback)
 
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
-	if(OM_EMIT_WORLD(/datum/om/event/before/world_play_cinematic, src) & COMPONENT_GLOB_BLOCK_CINEMATIC)
+	var/datum/act/play_cinematic/play = ACT_TRY(OM_WORLD, play_cinematic, src)
+	if(!play)
 		return
+	act_done(play)
 
-	// Register a signal to handle what happens when a different cinematic tries to play over us.
-	om_hook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src, PROC_REF(handle_replacement_cinematics))
+	// Hook the world's play action to handle what happens when a different cinematic tries to play over us.
+	observe(OM_WORLD, /datum/act/play_cinematic, src, instead(then(PROC_REF(handle_replacement_cinematics))))
 
 	// Pause OOC
 	// NOT IMPLEMENTED
@@ -72,15 +80,15 @@
 	// Place the /atom/movable/screen/cinematic into everyone's screens, and prevent movement.
 	for(var/mob/watching_mob in watchers)
 		show_to(watching_mob, watching_mob.client)
-		om_hook(watching_mob, /datum/om/event/mob_client_login, src, PROC_REF(on_watcher_client_login))
+		observe(watching_mob, /datum/notice/mob_client_login, src, then(PROC_REF(on_watcher_client_login)))
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
-	// Actually plays the animation (its later frames run on om_after() timers; nothing sleeps).
+	// Actually plays the animation (its later frames run on after() timers; nothing sleeps).
 	play_cinematic()
 
 	// Cleans up after it's done playing.
-	om_after(src, intro_time + cleanup_time, PROC_REF(clean_up_cinematic), ooc_toggled)
+	after(src, intro_time + cleanup_time, PROC_REF(clean_up_cinematic), with = list(ooc_toggled))
 
 /// Cleans up the cinematic after a set timer of it sticking on the end screen.
 /datum/cinematic/proc/clean_up_cinematic(was_ooc_toggled = FALSE)
@@ -91,20 +99,22 @@
 	stop_cinematic()
 
 /// Whenever another cinematic starts to play over us, we have the chacne to block it.
-/datum/cinematic/proc/handle_replacement_cinematics(datum/source, datum/om/event/before/world_play_cinematic/event)
-	EVENT_HANDLER
-	var/datum/cinematic/other = event.new_cinematic
+/datum/cinematic/proc/handle_replacement_cinematics(datum/act/play_cinematic/play)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/cinematic/other = play.cinematic
 
 	// Stop our's and allow others to play if we're local and it's global
 	if(!is_global && other.is_global)
 		stop_cinematic()
-		return NONE
+		return HOOK_DECLINE
 
-	return COMPONENT_GLOB_BLOCK_CINEMATIC
+	return TRUE
 
 /// Hooked to mob_client_login on each watching mob.
-/datum/cinematic/proc/on_watcher_client_login(mob/watching_mob, datum/om/event/mob_client_login/event)
-	EVENT_HANDLER
+/datum/cinematic/proc/on_watcher_client_login(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/watching_mob = A.target
+	var/datum/notice/mob_client_login/event = A
 	show_to(watching_mob, event.client)
 
 /// Whenever a mob watching the cinematic logs in, show them the ongoing cinematic
@@ -148,7 +158,7 @@
 	for(var/mob/locked_mob in locked?.Copy())
 		unlock_mob(locked_mob)
 
-	qdel(src)
+	spent(src)
 
 /// Locks a mob, preventing them from moving, being hurt, or acting
 /datum/cinematic/proc/lock_mob(mob/to_lock)
@@ -160,7 +170,7 @@
 	if(QDELETED(locked_mob))
 		return
 	remove_trait(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
-	om_unhook(locked_mob, /datum/om/event/mob_client_login, src)
+	unobserve(locked_mob, /datum/notice/mob_client_login, src)
 
 /// Removes the passed client from our watching list.
 /datum/cinematic/proc/remove_watcher(client/no_longer_watching)
@@ -175,10 +185,6 @@
 
 	rel_remove(src, nameof(watching), no_longer_watching)
 
-/datum/cinematic/relations()
-	. = ..()
-	. += rel_many(nameof(watching))
-	. += rel_many(nameof(locked))
 
 #undef CINEMATIC_SOURCE
 

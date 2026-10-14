@@ -1,0 +1,67 @@
+human|none menu: Open controls
+human|none menu: Oxygen pump hand
+human|none menu: Show Tank Settings
+human|none click: Click: Oxygen pump hand
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++2 menu: Oxygen pump hand
++3 menu: Show Tank Settings
++5 click: Click: Oxygen pump hand
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
++0 menu: Show Tank Settings
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Oxygen pump hand
+human|/obj/item/tool/screwdriver menu: Show Tank Settings
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Oxygen pump item
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Oxygen pump hand
+human|/obj/item/tool/crowbar menu: Show Tank Settings
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Oxygen pump item
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Oxygen pump hand
+human|/obj/item/tool/wrench menu: Show Tank Settings
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Oxygen pump item
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Oxygen pump hand
+human|/obj/item/tool/wirecutters menu: Show Tank Settings
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Oxygen pump item
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Oxygen pump hand
+human|/obj/item/multitool menu: Show Tank Settings
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Oxygen pump item
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Oxygen pump hand
+human|/obj/item/weldingtool menu: Show Tank Settings
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Oxygen pump item
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Oxygen pump hand
+human|/obj/item/stack/cable_coil menu: Show Tank Settings
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Oxygen pump item
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Oxygen pump hand
+human|/obj/item/stack/material/steel menu: Show Tank Settings
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Oxygen pump item
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Oxygen pump hand
+human|/obj/item/card/id menu: Show Tank Settings
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Oxygen pump item
+human|/obj/item menu: Open controls
+human|/obj/item menu: Oxygen pump hand
+human|/obj/item menu: Show Tank Settings
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Oxygen pump item
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, oxygen_place, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, robot_remote_blocked, silicon_hand, silicon_ui, ui_open, use_screwdriver

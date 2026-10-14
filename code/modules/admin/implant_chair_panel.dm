@@ -1,30 +1,13 @@
 // Implant chair — structured TGUI.
 
-/obj/machinery/implantchair/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/implantchair_open_ui,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): set_machine() then open the interface.
-/datum/interaction/machine_hand/ungated/implantchair_open_ui
-	id = "implantchair_open_ui"
-	name = "Use"
-	effect = /obj/machinery/implantchair/proc/interaction_open_ui_impl
-
-/obj/machinery/implantchair/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/implantchair/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/machinery/implantchair, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/machinery/implantchair, "ImplantChair", UI_TITLE("Implanter Status"))
-
-UI_DATA_REPLACE(/obj/machinery/implantchair, "merge:ui_data_obj_machinery_implantchair{has_occupant:bool,occupant_name:text,health_text:text,dead:bool,damaged:unknown,implants_left:num,ready:bool}")
-
-/// The computed part of /obj/machinery/implantchair's window data (declared on its UI_DATA row).
-/obj/machinery/implantchair/proc/ui_data_obj_machinery_implantchair(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/implantchair's window data.
+/obj/machinery/implantchair/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_IMPLANT_CHAIR)
 	data["has_occupant"] = !!occupant
@@ -38,14 +21,14 @@ UI_DATA_REPLACE(/obj/machinery/implantchair, "merge:ui_data_obj_machinery_implan
 	data["ready"] = !!ready
 	return data
 
-UI_ACT(/obj/machinery/implantchair, "implant", ui_act_implant)
-UI_ACT_PROC(/obj/machinery/implantchair, ui_act_implant)
-	start_implant(ui.user)
+/obj/machinery/implantchair/proc/ui_act_implant(datum/act/op/A)
+	var/mob/user = A.actor
+	start_implant(user)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/machinery/implantchair, "replenish", ui_act_replenish)
-UI_ACT_PROC(/obj/machinery/implantchair, ui_act_replenish)
-	start_replenish(ui.user)
+/obj/machinery/implantchair/proc/ui_act_replenish(datum/act/op/A)
+	var/mob/user = A.actor
+	start_replenish(user)
 	SStgui.update_uis(src)
 	return TRUE

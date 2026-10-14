@@ -1,5 +1,4 @@
 GLOBAL_VAR_CONST(MAX_CHICKENS, 50)	// How many chickens CAN we have?
-GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 
 /mob/living/simple_mob/animal/passive/chicken
 	name = "chicken"
@@ -31,27 +30,21 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	var/eggsleft = 0
 	var/body_color
 
-/mob/living/simple_mob/animal/passive/chicken/Initialize(mapload)
-	. = ..()
-	if(!body_color)
-		body_color = pick( list("brown","black","white") )
-	icon_state = "chicken_[body_color]" // ALLOW(decl): random colour pick
-	icon_living = "chicken_[body_color]"
-	icon_dead = "chicken_[body_color]_dead"
-	pixel_x = rand(-6, 6)
-	pixel_y = rand(0, 10)
-	GLOB.chicken_count += 1
+// The population cap counts the chickens in the world.
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/passive/chicken, REGISTRY_CHICKENS)
 
-// the population cap counts it out.
-/mob/living/simple_mob/animal/passive/chicken/lifecycle_dematerialize()
-	GLOB.chicken_count -= 1
-	..()
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM(null, PROC_REF(chicken_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
+	op("chicken_item", item(/obj/item), then(PROC_REF(chicken_interaction_item)))
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "chicken_*", living = "chicken_*", dead = "chicken_*_dead")
+	rolls(nameof(pixel_x), range_of(-6, 6))
+	rolls(nameof(pixel_y), range_of(0, 10))
 
 /// Old attackby: feeding wheat.
-/mob/living/simple_mob/animal/passive/chicken/proc/chicken_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/chicken/proc/chicken_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/reagent_containers/food/snacks/grown)) //feedin' dem chickens
 		var/obj/item/reagent_containers/food/snacks/grown/G = O
 		if(G.seed() && G.seed().kitchen_tag == PLANT_WHEAT)
@@ -65,36 +58,39 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		else
 			to_chat(user, "[name] doesn't seem interested in that.")
 	else
-		return FALSE
+		return OP_DECLINE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/chicken
-	of = /mob/living/simple_mob/animal/passive/chicken
+/mob/living/simple_mob/animal/passive/chicken/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/chicken/perform(mob/living/simple_mob/animal/passive/chicken/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/chicken/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive"))
+	if(!F.alive())
 		return
-	if(!self.stat && prob(3) && self.eggsleft > 0)
-		act_message(self, null, null, MSG_OTHERS("%U% [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]"))
-		self.eggsleft--
-		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(self))
+	if(!src.stat && prob(3) && src.eggsleft > 0)
+		act_message(src, null, null, MSG_OTHERS("%U% [pick("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")]"))
+		src.eggsleft--
+		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
-		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
-			om_task_periodic(E, PERIODIC_SLOW)
+		if(REGISTRY_COUNT(REGISTRY_CHICKENS) < GLOB.MAX_CHICKENS && prob(10))
+			E.set_growing(TRUE)
 
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
+/// TRUE while the egg grows toward hatching (a laid egg that may become a chick starts it); picked up, it stops.
+/obj/item/reagent_containers/food/snacks/egg/var/tmp/growing = FALSE
+TRACKED(/obj/item/reagent_containers/food/snacks/egg, growing)
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
-/obj/item/reagent_containers/food/snacks/egg/periodic_step()
+/obj/item/reagent_containers/food/snacks/egg/proc/grow_step(datum/act/A)
 	if(isturf(loc))
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			om_task_periodic_stop(src)
+			set_growing(FALSE)
 			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
-		om_task_periodic_stop(src)
+		set_growing(FALSE)
 
 /mob/living/simple_mob/animal/passive/chick
 	name = "chick"
@@ -124,26 +120,24 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 
 	var/amount_grown = 0
 
-/mob/living/simple_mob/animal/passive/chick/Initialize(mapload)
-	. = ..()
-	pixel_x = rand(-6, 6)
-	pixel_y = rand(0, 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/chick)
+	rolls(nameof(pixel_x), range_of(-6, 6))
+	rolls(nameof(pixel_y), range_of(0, 10))
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/chick
-	of = /mob/living/simple_mob/animal/passive/chick
+/mob/living/simple_mob/animal/passive/chick/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/chick/perform(mob/living/simple_mob/animal/passive/chick/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/chick/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive"))
+	if(!F.alive())
 		return
-	if(!self.stat)
-		self.amount_grown += rand(1,2)
-		if(self.amount_grown >= 100)
-			var/mob/living/simple_mob/animal/passive/chicken/C = new (self.loc)
-			C.ghostjoin = 1
-			C.ghostjoin_icon()
+	if(!src.stat)
+		src.amount_grown += rand(1,2)
+		if(src.amount_grown >= 100)
+			var/mob/living/simple_mob/animal/passive/chicken/C = new (src.loc)
+			C.set_ghostjoin(1)
 			registry_join(REGISTRY_GHOST_PODS, C)
-			qdel(self)
+			spent(src)
 
 // Say Lists
 /datum/say_list/chicken

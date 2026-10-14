@@ -78,8 +78,8 @@
 		damage = phaser_damage
 	. = ..()
 	if(. && incorp)
-		target_mob.status_at_least(EFFECT_STUNNED, stun_duration)
-		target_mob.status_at_least(EFFECT_WEAKENED, weaken_duration)
+		target_mob.status_at_least(STAT_STUNNED, stun_duration)
+		target_mob.status_at_least(STAT_WEAKENED, weaken_duration)
 
 /obj/item/projectile/bullet/spectral/can_embed()
 	return FALSE

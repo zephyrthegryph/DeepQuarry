@@ -6,7 +6,7 @@
 
 /datum/station_holomap/proc/initialize_holomap(turf/T, isAI = null, mob/user = null, reinit = FALSE)
 	if(!station_map || reinit)
-		station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAP]_[T.z]"])
+		station_map = image(holomaps_extraMiniMaps()["[HOLOMAP_EXTRA_STATIONMAP]_[T.z]"])
 	if(!cursor || reinit)
 		cursor = image('icons/holomap_markers.dmi', "you")
 	if(!legend || reinit)

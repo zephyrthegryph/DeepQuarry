@@ -6,11 +6,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	icon = 'icons/obj/suit_cooler.dmi'
 	icon_state = "suitcooler0"
 	item_state = "coolingpack"
-	slot_flags = SLOT_BACK
 
 	//copied from tank.dm
-	force = 5.0
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
@@ -21,21 +18,30 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	var/max_cooling = 15				// in degrees per second - probably don't need to mess with heat capacity here
 	var/charge_consumption = 3			// charge per second at max_cooling
 	var/thermostat = T20C
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	//TODO: make it heat up the surroundings when not in space
+
+CAPABILITIES(/obj/item/suit_cooling_unit)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))
+	every(2 SECONDS, then(PROC_REF(suit_cooling_unit_step)), when = nameof(on))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/suit_cooling_unit/ui_action_click(mob/user, actiontype)
 	toggle(user)
 
 
 /// Is it turned on?
-OM_FIELD(/obj/item/suit_cooling_unit, on, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/suit_cooling_unit, PERIODIC_SLOW, "on")
-DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
+/obj/item/suit_cooling_unit/var/on = 0
+TRACKED(/obj/item/suit_cooling_unit, on)
+TRACKED(/obj/item/suit_cooling_unit, cover_open)
 
-/obj/item/suit_cooling_unit/periodic_step()
+/obj/item/suit_cooling_unit/proc/suit_cooling_unit_step(datum/act/timer/A)
 	if (!cell)
 		turn_off()
 		return
@@ -56,9 +62,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 	var/thermal_protection = H.get_heat_protection(env_temp)	// ... unless you've got a good suit.
 
 	if(thermal_protection < 0.99)		//For some reason, < 1 returns false if the value is 1.
-		temp_adj = min(H.bodytemperature - max(thermostat, env_temp), max_cooling)
+		temp_adj = min(H.body_temperature() - max(thermostat, env_temp), max_cooling)
 	else
-		temp_adj = min(H.bodytemperature - thermostat, max_cooling)
+		temp_adj = min(H.body_temperature() - thermostat, max_cooling)
 
 	if (temp_adj < 0.5)	//only cools, doesn't heat, also we don't need extreme precision
 		return
@@ -110,19 +116,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 		return
 
 	set_on(1)
-	update_icon()
 
 /obj/item/suit_cooling_unit/proc/turn_off(failed)
 	if(failed) visible_message("\The [src] clicks and whines as it powers down.")
 	set_on(0)
-	update_icon()
 
-DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/cell, PROC_REF(interaction_item), "Insert cell"), \
-)
-
-/obj/item/suit_cooling_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/suit_cooling_unit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cover_open && cell)
 		if(ishuman(user))
 			user.put_in_hands(cell)
@@ -130,11 +130,9 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 			cell.forceMove(get_turf(loc))
 
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
-		own_take(src, nameof(cell))
-		update_icon()
+		rel_take(src, nameof(cell))
 		return
 
 	toggle(user)
@@ -146,52 +144,53 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		turn_on()
 	to_chat(user, span_notice("You switch \the [src] [on ? "on" : "off"]."))
 
-/obj/item/suit_cooling_unit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/suit_cooling_unit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(cover_open)
 		if(cell)
 			to_chat(user, "There is a [cell] already installed here.")
 		else
-			if(!own_set(src, nameof(src.cell), W, user = user))
+			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, "You insert the [cell].")
-	update_icon()
 	return TRUE
 
-/obj/item/suit_cooling_unit/screwdriver_act(mob/user, obj/item/tool)
-	cover_open = !cover_open
+/obj/item/suit_cooling_unit/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	set_cover_open(!cover_open)
 	to_chat(user, "You [cover_open ? "unscrew" : "screw"] the panel [cover_open ? "open" : "into place"].")
-	playsound(src, tool.usesound, 50, 1)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, 1)
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/suit_cooling_unit/appearance_overlays()
-	. = list()
+/obj/item/suit_cooling_unit/draw(datum/look/look)
+	..()
 	if(cover_open)
 		if(cell)
-			icon_state = "suitcooler1"
+			look.state("suitcooler1")
 		else
-			icon_state = "suitcooler2"
-		return .
+			look.state("suitcooler2")
+		return
 
-	icon_state = "suitcooler0"
+	look.state("suitcooler0")
 
 	if(!cell || !on)
-		return .
+		return
 
 	switch(round(cell.percent()))
 		if(86 to INFINITY)
-			. += "battery-0"
+			look.overlay("battery-0")
 		if(69 to 85)
-			. += "battery-1"
+			look.overlay("battery-1")
 		if(52 to 68)
-			. += "battery-2"
+			look.overlay("battery-2")
 		if(35 to 51)
-			. += "battery-3"
+			look.overlay("battery-3")
 		if(18 to 34)
-			. += "battery-4"
+			look.overlay("battery-4")
 		if(-INFINITY to 17)
-			. += "battery-5"
+			look.overlay("battery-5")
 
 /obj/item/suit_cooling_unit/examine(mob/user)
 	. = ..()
@@ -222,13 +221,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appear
 	cell = /obj/item/cell
 	w_class = ITEMSIZE_NORMAL
 
-APPEARANCE_NONE(/obj/item/suit_cooling_unit/emergency)
+/// The look: the mapped sprite, none of what the types above draw.
+/obj/item/suit_cooling_unit/emergency/draw(datum/look/look)
+	..()
+	// the mapped sprite, without the parent's states and layers
+	look.state(null)
+	look.hide("battery-0")
+	look.hide("battery-1")
+	look.hide("battery-2")
+	look.hide("battery-3")
+	look.hide("battery-4")
+	look.hide("battery-5")
 
 /obj/item/suit_cooling_unit/emergency/get_cell()
 	if(on)
 		return null // Don't let recharging happen while we're on
 	return cell
 
-/obj/item/suit_cooling_unit/emergency/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/suit_cooling_unit/emergency/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("This cooler's cell is permanently installed!"))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK

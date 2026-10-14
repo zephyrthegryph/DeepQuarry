@@ -21,17 +21,14 @@
 
 /turf/unsimulated/wall/planetary/Initialize(mapload)
 	. = ..()
-	GLOB.planet_service.addTurf(src)
+	SSplanets.addTurf(src)
 
 /// Phase 2: leaves its planet's turf set.
 /turf/unsimulated/wall/planetary/lifecycle_dematerialize()
 	. = ..()
-	GLOB.planet_service.removeTurf(src)
+	SSplanets.removeTurf(src)
 
-/turf/unsimulated/wall/planetary/set_temperature(new_temperature)
-	if(new_temperature == get_temperature())
-		return
-	. = ..()  // base: set the seed AND push the value into the heat arena
+/turf/unsimulated/wall/planetary/solid_temperature_set()
 	// was: ZAS connections.erase_all() + SSair.mark_for_update.
 	// LINDA equivalent: rebuild this turf's adjacency (so superconductivity
 	// re-evaluates with the new temperature) and queue it for the next SSair

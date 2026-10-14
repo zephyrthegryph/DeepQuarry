@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "receive_damage() starts the engine hit action for hooked holders; ruined() works in state-graph dismantle"

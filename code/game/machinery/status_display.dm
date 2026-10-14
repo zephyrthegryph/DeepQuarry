@@ -9,7 +9,6 @@
 // Use to show shuttle ETA/ETD times
 // Alert status
 // And arbitrary messages set by comms computer
-OWN_TIMER(/obj/machinery/status_display, refresh_token)
 
 /obj/machinery/status_display
 	icon = 'icons/obj/status_display.dmi'
@@ -21,7 +20,6 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 	density = FALSE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
 	mode = 1	// 0 = Blank
@@ -57,39 +55,25 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 
 	/// When the next redraw in the `refresh_token` timer slot is due (a countdown, the clock or a
 	/// scrolling message); the shuttle schedule watched in shuttle modes (SHUTTLE_SCHEDULE_*, 0
-	/// for none) and the entity whose CHANGE_SHUTTLE_SCHEDULE it watches.
+	/// for none) and the entity whose shuttle_schedule_changed notice it observes.
 	var/tmp/refresh_at = 0
 	var/tmp/shuttle_key_token
 	var/tmp/shuttle_key_id = 0
 
-/obj/machinery/status_display/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/status_display_use,
-	)
-	..()
-
-/datum/interaction/machine_item/status_display_use
-	id = "status_display_use"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/status_display/proc/interaction_attackby
-
-/obj/machinery/status_display/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/status_display/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_hand(user)
 	return TRUE
-
-/obj/machinery/status_display/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
 
 // register for radio system
 /obj/machinery/status_display/Initialize(mapload)
 	. = ..()
-	if(GLOB.radio_service)
-		GLOB.radio_service.add_object(src, frequency)
+	if(SSradio)
+		SSradio.add_object(src, frequency)
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the
-// shuttle key, or an om_after() timer for content that moves on its own (a countdown, the clock,
+// shuttle key, or an after() timer for content that moves on its own (a countdown, the clock,
 // a scrolling message). It never polls.
 
 /// Deciseconds until the display must redraw with no new input, or 0 while it is static.
@@ -98,7 +82,7 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 		return 0
 	switch(mode)
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
-			if(GLOB.emergency_shuttle_service?.shuttle && GLOB.emergency_shuttle_service.has_eta())
+			if(SSemergency_shuttle?.shuttle && SSemergency_shuttle.has_eta())
 				return 2 SECONDS
 		if(STATUS_DISPLAY_MESSAGE)
 			if(index1 || index2)
@@ -113,63 +97,60 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 /obj/machinery/status_display/proc/watched_shuttle()
 	return mode == STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME ? SHUTTLE_SCHEDULE_EVAC : 0
 
-/// The entity that raises CHANGE_SHUTTLE_SCHEDULE for schedule `id`.
+/// The entity that publishes shuttle_schedule_changed for schedule `id`.
 /proc/shuttle_schedule_source(id)
 	switch(id)
 		if(SHUTTLE_SCHEDULE_EVAC)
-			return GLOB.emergency_shuttle_service
+			return SSemergency_shuttle
 		if(SHUTTLE_SCHEDULE_SUPPLY)
-			return GLOB.supply_service
+			return SSsupply
 	return null
 
 /// A watched shuttle schedule changed.
-/datum/om/behaviour/sleeper/status_display
-	name = "status display"
-
-/datum/om/behaviour/sleeper/status_display/on_wake(obj/machinery/status_display/D, changes)
-	if(!QDELETED(D))
-		D.refresh()
+/obj/machinery/status_display/proc/shuttle_schedule_seen(datum/act/A)
+	if(!QDELETED(src))
+		refresh()
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		remove_display()
 	else
 		update()
 	schedule_refresh()
 
 /obj/machinery/status_display/proc/schedule_refresh()
-	var/powered = !has_stat(NOPOWER)
+	var/powered = !power_lost()
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
-			om_unwatch(src, shuttle_key_token, /datum/om/behaviour/sleeper/status_display)
+			unobserve(shuttle_key_token, /datum/notice/shuttle_schedule_changed, src)
 			shuttle_key_token = null
 		shuttle_key_id = want_shuttle
 		var/datum/source = shuttle_schedule_source(want_shuttle)
 		if(source)
-			om_attach(src, /datum/om/behaviour/sleeper/status_display)
-			om_watch(src, source, CHANGE_SHUTTLE_SCHEDULE, /datum/om/behaviour/sleeper/status_display)
+			sleep_audit_join(src)
+			observe(source, /datum/notice/shuttle_schedule_changed, src, then(PROC_REF(shuttle_schedule_seen)))
 			shuttle_key_token = source
 	var/delay = powered ? next_refresh_delay() : 0
 	var/at = delay ? world.time + delay : 0
-	if(om_timer_slot_pending(src, "refresh_token"))
+	if(after_pending(src, "refresh_token"))
 		if(at && at == refresh_at)
 			return
-		om_cancel_timer_slot(src, "refresh_token")
+		cancel_after(src, "refresh_token")
 	refresh_at = at
 	if(at)
-		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
-		after_slot(src, "refresh_token", delay, PROC_REF(refresh_timer_fired))
+		sleep_audit_join(src)
+		after(src, delay, PROC_REF(refresh_timer_fired), key = "refresh_token")
 
 /obj/machinery/status_display/proc/refresh_timer_fired()
 	refresh_at = 0
 	refresh()
 
-/obj/machinery/status_display/om_sleep_violation()
-	if(has_stat(NOPOWER))
+/obj/machinery/status_display/sleep_violation()
+	if(power_lost())
 		return null
-	if(next_refresh_delay() && !om_timer_slot_pending(src, "refresh_token"))
+	if(next_refresh_delay() && !after_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
 	if(watched_shuttle() != shuttle_key_id || (shuttle_key_id && isnull(shuttle_key_token)))
 		return "mode [mode] is not watching its shuttle"
@@ -180,12 +161,18 @@ OWN_TIMER(/obj/machinery/status_display, refresh_token)
 	if(.)
 		refresh()
 
-DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_display_emp))
+CAPABILITIES(/obj/machinery/status_display)
+	configure(uses_power(idle = 10))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
+	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	display_disconnect_op()
+
 /// An EMP blue-screens a working display.
-/obj/machinery/status_display/proc/status_display_emp(datum/damage_packet/packet)
+/obj/machinery/status_display/proc/status_display_emp(datum/act/hit/emp/A)
 	if(!operable())
-		return
+		return HOOK_DECLINE
 	set_picture("ai_bsod")
+	return HOOK_DECLINE
 
 // set what is displayed
 /obj/machinery/status_display/proc/update()
@@ -198,20 +185,20 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 		if(STATUS_DISPLAY_BLANK)	//blank
 			return 1
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)				//emergency shuttle timer
-			if(!GLOB.emergency_shuttle_service?.shuttle)
+			if(!SSemergency_shuttle?.shuttle)
 				message1 = "-ETA-"
 				message2 = "Never" // You're here forever.
 				return 1
-			if(GLOB.emergency_shuttle_service.waiting_to_leave())
+			if(SSemergency_shuttle.waiting_to_leave())
 				message1 = "-ETD-"
-				if(GLOB.emergency_shuttle_service.shuttle.is_launching())
+				if(SSemergency_shuttle.shuttle.is_launching())
 					message2 = "Launch"
 				else
 					message2 = get_shuttle_timer_departure()
 					if(length(message2) > CHARS_PER_LINE)
 						message2 = "Error"
 				update_display(message1, message2)
-			else if(GLOB.emergency_shuttle_service.has_eta())
+			else if(SSemergency_shuttle.has_eta())
 				message1 = "-ETA-"
 				message2 = get_shuttle_timer_arrival()
 				if(length(message2) > CHARS_PER_LINE)
@@ -276,13 +263,13 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 	if(seclevel != newlevel)
 		seclevel = newlevel
 	switch(seclevel)
-		if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
-		if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
-		if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
-		if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
-		if("blue")	set_light(l_range = 2, l_power = 0.25, l_color = "#1024A9")
-		if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-		if("delta")	set_light(l_range = 4, l_power = 0.9, l_color = "#FF6633")
+		if("green")	set_glow(src, GLOW(2, 0.25, "#00ff00"))
+		if("yellow")	set_glow(src, GLOW(2, 0.25, "#ffff00"))
+		if("violet")	set_glow(src, GLOW(2, 0.25, "#9933ff"))
+		if("orange")	set_glow(src, GLOW(2, 0.25, "#ff9900"))
+		if("blue")	set_glow(src, GLOW(2, 0.25, "#1024A9"))
+		if("red")	set_glow(src, GLOW(4, 0.9, "#ff0000"))
+		if("delta")	set_glow(src, GLOW(4, 0.9, "#FF6633"))
 	set_picture("status_display_[seclevel]")
 
 // Called when the alert level is changed.
@@ -291,7 +278,7 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
 		set_mode(STATUS_DISPLAY_TIME)
-		set_light(0) // Remove any glow we had from the alert previously.
+		set_glow(src, GLOW(0, null, null)) // Remove any glow we had from the alert previously.
 		refresh()
 		return
 	set_mode(STATUS_DISPLAY_ALERT)
@@ -311,23 +298,23 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 		maptext = new_text
 
 /obj/machinery/status_display/proc/get_shuttle_timer_arrival()
-	if(!GLOB.emergency_shuttle_service)
+	if(!SSemergency_shuttle)
 		return "Error"
-	var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
+	var/timeleft = SSemergency_shuttle.estimate_arrival_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_shuttle_timer_departure()
-	if(!GLOB.emergency_shuttle_service)
+	if(!SSemergency_shuttle)
 		return "Error"
-	var/timeleft = GLOB.emergency_shuttle_service.estimate_launch_time()
+	var/timeleft = SSemergency_shuttle.estimate_launch_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_supply_shuttle_timer()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	if(!shuttle)
 		return "Error"
 
@@ -347,16 +334,16 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 	switch(signal.data["command"])
 		if("blank")
 			set_mode(STATUS_DISPLAY_BLANK)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("shuttle")
 			set_mode(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("message")
 			set_mode(STATUS_DISPLAY_MESSAGE)
 			set_message(signal.data["msg1"], signal.data["msg2"])
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 		if("alert")
 			set_mode(STATUS_DISPLAY_ALERT)
@@ -364,7 +351,7 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 
 		if("time")
 			set_mode(STATUS_DISPLAY_TIME)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 	refresh()
 
 #undef FONT_SIZE

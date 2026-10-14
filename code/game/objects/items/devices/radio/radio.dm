@@ -25,7 +25,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/adhoc_fallback = FALSE //Falls back to 'radio' mode if subspace not available
 	var/syndie = FALSE//Holder to see if it's a syndicate encrypted radio
 	var/centComm = FALSE//Holder to see if it's a CentCom encrypted radio
-	slot_flags = SLOT_BELT
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
@@ -33,7 +32,10 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 	// Bluespace radios talk directly to telecomms equipment
 	var/bluespace_radio = FALSE
-	// The device a bluespace radio TRANSMITS TO is BS_TX_TARGET(src) (a relation).
+	/// The telecomms receiver (or all-in-one) a bluespace radio TRANSMITS TO: one end of a link, the receiver's bs_tx_senders the other. Read with bs_tx_target().
+	var/obj/machinery/telecomms/bs_tx_receiver
+	/// The telecomms broadcaster (or all-in-one) a bluespace radio RECEIVES FROM: one end of a link, the broadcaster's bs_rx_listeners the other. Read with bs_rx_source().
+	var/obj/machinery/telecomms/bs_rx_broadcaster
 	// For mappers or subtypes, to start them prelinked to these devices
 	var/bs_tx_preload_id
 	var/bs_rx_preload_id
@@ -43,7 +45,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 	var/datum/radio_frequency/radio_connection
 	/// Channel name -> the radio service's shared frequency datum (not owned; rebuilt on materialize).
-	var/list/datum/radio_frequency/secure_radio_connections
+	var/tmp/list/datum/radio_frequency/secure_radio_connections // SSradio's live subscriptions (shared frequency datums the radio does not own)
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -51,22 +53,20 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/uplink = FALSE
 
 /obj/item/radio/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 
-	set_wires(new /datum/wires/radio(src))
-	internal_channels = GLOB.default_internal_channels.Copy()
+/// The internal channels it starts with (derives(), at init): frequency text -> the access each needs (a subtype answers its own set).
+/obj/item/radio/proc/starting_channels()
+	return GLOB.default_internal_channels.Copy()
 
-	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
-		return INITIALIZE_HINT_LATELOAD
-
-// radio_connection/secure_radio_connections are GLOB.radio_service's live subscriptions,
+// radio_connection/secure_radio_connections are SSradio's live subscriptions,
 // rebuilt by on_materialize() from frequency/channels (C5). The bluespace
 // links are relations (BS_TX_TARGET, BS_RX_SOURCE), not state.
 /obj/item/radio/state_exclude()
@@ -77,28 +77,31 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/on_dematerialize()
-	if(GLOB.radio_service)
-		GLOB.radio_service.remove_object(src, frequency)
+	if(SSradio)
+		SSradio.remove_object(src, frequency)
 		for (var/ch_name in channels)
-			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	rel_clear(src, nameof(radio_connection))
 	return ..()
 
-/obj/item/radio/LateInitialize()
+/// A bluespace radio links the machines its preload ids name, once they all exist.
+/obj/item/radio/proc/radio_after_init(datum/act/timer/A)
+	if(!bluespace_radio || !(bs_tx_preload_id || bs_rx_preload_id))
+		return
 	if(bs_tx_preload_id)
 		//Try to find a receiver
 		for(var/obj/machinery/telecomms/receiver/RX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(RX.id == bs_tx_preload_id) //Again, bs_tx is the thing to TRANSMIT TO, so a receiver.
-				om_link(src, RX, /datum/om/relation/bluespace_tx_to)
+				rel_set(src, nameof(bs_tx_receiver), RX)
 				break
 		//Hmm, howabout an AIO machine
 		if(!src?.bs_tx_target())
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_tx_preload_id)
-					om_link(src, AIO, /datum/om/relation/bluespace_tx_to)
+					rel_set(src, nameof(bs_tx_receiver), AIO)
 					break
 		if(!src?.bs_tx_target())
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
@@ -108,25 +111,102 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 		//Try to find a transmitter
 		for(var/obj/machinery/telecomms/broadcaster/TX in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 			if(TX.id == bs_rx_preload_id) //Again, bs_rx is the thing to RECEIVE FROM, so a transmitter.
-				om_link(src, TX, /datum/om/relation/bluespace_rx_from)
+				rel_set(src, nameof(bs_rx_broadcaster), TX)
 				found = 1
 				break
 		//Hmm, howabout an AIO machine
 		if(!found)
 			for(var/obj/machinery/telecomms/allinone/AIO in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				if(AIO.id == bs_rx_preload_id)
-					om_link(src, AIO, /datum/om/relation/bluespace_rx_from)
+					rel_set(src, nameof(bs_rx_broadcaster), AIO)
 					found = 1
 					break
 		if(!found)
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
+/// The receiver this bluespace radio transmits to, or null.
+/obj/item/radio/proc/bs_tx_target() as /obj/machinery/telecomms
+	return bs_tx_receiver
+
+/// The broadcaster this bluespace radio receives from, or null.
+/obj/item/radio/proc/bs_rx_source() as /obj/machinery/telecomms
+	return bs_rx_broadcaster
+
+/// The bluespace radios transmitting to this machine.
+/obj/machinery/telecomms/proc/bs_tx_radios() as /list
+	return bs_tx_senders
+
+/// The bluespace radios this machine forces its broadcasts onto.
+/obj/machinery/telecomms/proc/bs_rx_radios() as /list
+	return bs_rx_listeners
+
 /obj/item/radio/proc/recalculateChannels()
 	return
 
-DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// The radios a telecomms receiver (or all-in-one) is the bluespace transmit target of; bs_tx_receiver is the other end.
+/obj/machinery/telecomms/var/list/obj/item/radio/bs_tx_senders
+/// The radios a telecomms broadcaster (or all-in-one) forces its broadcasts onto; bs_rx_broadcaster is the other end.
+/obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
-/obj/item/radio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/radio)
+	configure(item_worn(slots = SLOT_BELT))
+	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
+	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)
+	after_init(0, then(PROC_REF(radio_after_init)))
+	op("controls", in_hand(), label("Open radio controls"), then(PROC_REF(radio_controls_opened)))
+	space(SPACE_PANEL, door = nameof(b_stat))
+	wires(name = "Radio", count = 3, tools = FALSE)
+	on_wire(WIRE_RADIO_SIGNAL, cut = PROC_REF(signal_wire_cut), pulse = PROC_REF(signal_wire_pulsed))
+	on_wire(WIRE_RADIO_RECEIVER, cut = PROC_REF(receiver_wire_cut), pulse = PROC_REF(receiver_wire_pulsed))
+	on_wire(WIRE_RADIO_TRANSMIT, cut = PROC_REF(transmit_wire_cut), pulse = PROC_REF(transmit_wire_pulsed))
+	interface("Radio")
+	without("ui_open")
+	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
+	op("broadcast", ui_act("broadcast"), then(PROC_REF(ui_act_broadcast)))
+	op("listen", ui_act("listen"), then(PROC_REF(ui_act_listen)))
+	op("channel", ui_act("channel", arg("channel", num())), then(PROC_REF(ui_act_channel)))
+	op("specFreq", ui_act("specFreq", arg("channel", num())), then(PROC_REF(ui_act_specfreq)))
+	op("subspace", ui_act("subspace"), then(PROC_REF(ui_act_subspace)))
+	op("toggleLoudspeaker", ui_act("toggleLoudspeaker"), then(PROC_REF(ui_act_toggleloudspeaker)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(radio_emp)))
+	derives(nameof(internal_channels), PROC_REF(starting_channels))
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
+
+/// The guard every window button of the family asks first (a subtype overrides it).
+/obj/item/radio/proc/ui_gate(datum/act/op/A)
+	return TRUE
+
+
+/// The signal wire cut kills the speaker and the mic; mended, each comes back unless its own wire is cut.
+/obj/item/radio/proc/signal_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
+	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+
+/obj/item/radio/proc/signal_wire_pulsed(datum/act/A)
+	listening = !listening && !wire_is_cut(src, WIRE_RADIO_RECEIVER)
+	broadcasting = listening && !wire_is_cut(src, WIRE_RADIO_TRANSMIT)
+
+/obj/item/radio/proc/receiver_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	listening = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/receiver_wire_pulsed(datum/act/A)
+	listening = !listening && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/transmit_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	broadcasting = N.mended && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/transmit_wire_pulsed(datum/act/A)
+	broadcasting = !broadcasting && !wire_is_cut(src, WIRE_RADIO_SIGNAL)
+
+/obj/item/radio/proc/radio_controls_opened(datum/act/op/A)
+	interaction_self(A.actor, A.held)
+	return OP_OK
+
+/obj/item/radio/proc/interaction_self(mob/user, obj/item/held)
 	if(beacon || electric_pack || uplink)
 		return FALSE
 	interact(user)
@@ -137,11 +217,9 @@ DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_se
 		return FALSE
 
 	if(b_stat)
-		wires.Interact(user)
+		wires_open(src, user)
 
 	return tgui_interact(user)
-
-DECLARE_UI(/obj/item/radio, "Radio")
 
 /obj/item/radio/tgui_static_data(mob/user)
 	. = ..()
@@ -149,15 +227,27 @@ DECLARE_UI(/obj/item/radio, "Radio")
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broadcasting:num", "subspace=subspace_transmission:num", "subspaceSwitchable=subspace_switchable:num", "loudspeaker", "merge:ui_data_obj_item_radio{mic_cut:bool,spk_cut:bool,chan_list:list,useSyndMode:bool,minFrequency:num,maxFrequency:num}")
+/obj/item/radio/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["rawfreq"] = frequency
+	data["listening"] = listening
+	data["broadcasting"] = broadcasting
+	data["subspace"] = subspace_transmission
+	data["subspaceSwitchable"] = subspace_switchable
+	data["loudspeaker"] = loudspeaker
+	var/list/merged_1 = ui_data_obj_item_radio(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/radio's window data (declared on its UI_DATA row).
+/// /obj/item/radio's window data.
 /obj/item/radio/proc/ui_data_obj_item_radio(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 
 
-	data["mic_cut"] = (wires.is_cut(WIRE_RADIO_TRANSMIT) || wires.is_cut(WIRE_RADIO_SIGNAL))
-	data["spk_cut"] = (wires.is_cut(WIRE_RADIO_RECEIVER) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	data["mic_cut"] = (wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
+	data["spk_cut"] = (wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 	var/list/chanlist = list_channels(user)
 	if(islist(chanlist) && chanlist.len)
@@ -221,90 +311,104 @@ UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broa
 			"}
 
 /obj/item/radio/proc/ToggleBroadcast()
-	broadcasting = !broadcasting && !(wires.is_cut(WIRE_RADIO_TRANSMIT) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	broadcasting = !broadcasting && !(wire_is_cut(src, WIRE_RADIO_TRANSMIT) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/proc/ToggleReception()
-	listening = !listening && !(wires.is_cut(WIRE_RADIO_RECEIVER) || wires.is_cut(WIRE_RADIO_SIGNAL))
+	listening = !listening && !(wire_is_cut(src, WIRE_RADIO_RECEIVER) || wire_is_cut(src, WIRE_RADIO_SIGNAL))
 
 /obj/item/radio/CanUseTopic()
 	if(!on)
 		return STATUS_CLOSE
 	return ..()
 
-UI_ACT(/obj/item/radio, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/item/radio, ui_act_setfrequency)
-	var/new_frequency = (params["freq"])
+/obj/item/radio/proc/ui_act_setfrequency(datum/act/op/A, freq)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/new_frequency = (freq)
 	if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
 		new_frequency = sanitize_frequency(new_frequency)
 	set_frequency(new_frequency)
 	if(item_hidden_uplink(src))
-		if(item_hidden_uplink(src).check_trigger(ui.user, frequency, traitor_frequency))
+		if(item_hidden_uplink(src).check_trigger(user, frequency, traitor_frequency))
 			// close the TGUI Radio when the uplink trips (was browse(null)).
 			SStgui.close_uis(src)
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "broadcast", ui_act_broadcast)
-UI_ACT_PROC(/obj/item/radio, ui_act_broadcast)
+/obj/item/radio/proc/ui_act_broadcast(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	ToggleBroadcast()
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "listen", ui_act_listen)
-UI_ACT_PROC(/obj/item/radio, ui_act_listen)
+/obj/item/radio/proc/ui_act_listen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	ToggleReception()
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "channel", ui_act_channel, UI_ARG_NUM("channel"))
-UI_ACT_PROC(/obj/item/radio, ui_act_channel)
-	var/chan_name = params["channel"]
+/obj/item/radio/proc/ui_act_channel(datum/act/op/A, channel)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/chan_name = channel
 	if(channels[chan_name] & FREQ_LISTENING)
 		channels[chan_name] &= ~FREQ_LISTENING
 	else
 		channels[chan_name] |= FREQ_LISTENING
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "specFreq", ui_act_specfreq, UI_ARG_NUM("channel"))
-UI_ACT_PROC(/obj/item/radio, ui_act_specfreq)
-	var/freq = params["channel"]
-	if(has_channel_access(ui.user, freq))
+/obj/item/radio/proc/ui_act_specfreq(datum/act/op/A, channel)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/freq = channel
+	if(has_channel_access(user, freq))
 		set_frequency(freq)
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "subspace", ui_act_subspace)
-UI_ACT_PROC(/obj/item/radio, ui_act_subspace)
+/obj/item/radio/proc/ui_act_subspace(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(subspace_switchable)
 		subspace_transmission = !subspace_transmission
 		if(!subspace_transmission)
 			channels = list()
-			to_chat(ui.user, span_notice("Subspace Transmission is disabled"))
+			to_chat(user, span_notice("Subspace Transmission is disabled"))
 		else
 			recalculateChannels()
-			to_chat(ui.user, span_notice("Subspace Transmission is enabled"))
+			to_chat(user, span_notice("Subspace Transmission is enabled"))
 		. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "toggleLoudspeaker", ui_act_toggleloudspeaker)
-UI_ACT_PROC(/obj/item/radio, ui_act_toggleloudspeaker)
+/obj/item/radio/proc/ui_act_toggleloudspeaker(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!subspace_switchable)
 		return
 	loudspeaker = !loudspeaker
 
 	if(loudspeaker)
-		to_chat(ui.user, span_notice("Loadspeaker enabled."))
+		to_chat(user, span_notice("Loadspeaker enabled."))
 	else
-		to_chat(ui.user, span_notice("Loadspeaker disabled."))
+		to_chat(user, span_notice("Loadspeaker disabled."))
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
 GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
@@ -363,7 +467,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 	//  Uncommenting this. To the above comment:
 	// 	The permacell radios aren't suppose to be able to transmit, this isn't a bug and this "fix" is just making radio wires useless. -Giacom
-	if(wires.is_cut(WIRE_RADIO_TRANSMIT)) // The device has to have all its wires and shit intact
+	if(wire_is_cut(src, WIRE_RADIO_TRANSMIT)) // The device has to have all its wires and shit intact
 		return FALSE
 
 	if(!radio_connection())
@@ -560,7 +664,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	// check if this radio can receive on the given frequency, and if so,
 	// what the range is in which mobs will hear the radio
 	// returns: -1 if can't receive, range otherwise
-	if(wires.is_cut(WIRE_RADIO_RECEIVER))
+	if(wire_is_cut(src, WIRE_RADIO_RECEIVER))
 		return -1
 	if(!listening)
 		return -1
@@ -607,9 +711,10 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		else
 			. += span_notice("\The [src] can not be modified or attached!")
 
-/obj/item/radio/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(src, /obj/item/radio/beacon))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	b_stat = !b_stat
 	if(!istype(src, /obj/item/radio/beacon))
 		if (b_stat)
@@ -618,12 +723,11 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 			user.show_message(span_notice("\The [src] can no longer be modified or attached!"))
 			//Foreach goto(83)
 		add_fingerprint(user)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+		return OP_OK
+	return OP_OK
 
-DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 /// An EMP switches the radio's microphone, speaker and channels off.
-/obj/item/radio/proc/radio_emp(datum/damage_packet/packet)
+/obj/item/radio/proc/radio_emp(datum/act/A)
 	broadcasting = FALSE
 	listening = FALSE
 	for (var/ch_name in channels)
@@ -637,8 +741,10 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 ///////////////////////////////
 //Giving borgs their own radio to have some more room to work with -Sieve
 
+CAPABILITIES(/obj/item/radio/borg)
+	op("insert_key", item(/obj/item/encryptionkey), label("Insert key"), then(PROC_REF(interaction_item)))
+
 /obj/item/radio/borg
-	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
 	// owned: installed encryption key, kept in the radio's contents
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
@@ -656,34 +762,35 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		var/mob/living/silicon/robot/R = src.loc
 		R.use_component(ROBOT_SLOT_RADIO)
 
-/obj/item/radio/borg/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
-	..()
-
-/obj/item/radio/borg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// An encryption key goes into the free key slot.
+/obj/item/radio/borg/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(keyslot)
 		to_chat(user, "The radio can't hold another key!")
-		return TRUE
+		return OP_OK
 
 	if(!keyslot)
-		own_set(src, nameof(src.keyslot), W, user = user)
+		move_into(src, nameof(src.keyslot), W, user)
 
 	recalculateChannels()
-	return TRUE
+	return OP_OK
 
-/obj/item/radio/borg/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/borg/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!keyslot)
 		to_chat(user, "This radio doesn't have any encryption keys!")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	for(var/ch_name in channels)
-		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	keyslot.forceMove(get_turf(user))
-	own_take(src, nameof(keyslot))
+	rel_take(src, nameof(keyslot))
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
 /obj/item/radio/borg/recalculateChannels()
 	src.channels = list()
@@ -712,25 +819,24 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 /obj/item/radio/borg/proc/controller_check(initial_run = FALSE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!GLOB.radio_service && initial_run)
-		// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the radio broken); it waits on the global radio service, not on state of this radio.
-		om_after(src, 3 SECONDS, PROC_REF(controller_check), FALSE)
+	if(!SSradio && initial_run)
+		after(src, 3 SECONDS, PROC_REF(controller_check), with = list(FALSE))
 		return
-	if(!GLOB.radio_service && !initial_run)
+	if(!SSradio && !initial_run)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/proc/config(op)
-	if(GLOB.radio_service)
+	if(SSradio)
 		for (var/ch_name in channels)
-			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	channels = op
-	if(GLOB.radio_service)
+	if(SSradio)
 		for (var/ch_name in op)
-			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	return
 
 /obj/item/radio/off
@@ -746,9 +852,8 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 /obj/item/radio/phone/medbay
 	frequency = MED_I_FREQ
 
-/obj/item/radio/phone/medbay/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+/obj/item/radio/phone/medbay/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
 
 /obj/item/radio/proc/can_broadcast_to()
 	var/list/output = list()
@@ -813,9 +918,11 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	icon_state = "radio"
 	name = "subspace radio"
 	subspace_transmission = 1
-	throwforce = 5
 	throw_range = 7
 	throw_speed = 1
+
+CAPABILITIES(/obj/item/radio/subspace)
+	configure(item_thrown(force = 5))
 
 //* Bluespace Radio *//
 /obj/item/bluespaceradio/southerncross_prelinked
@@ -840,9 +947,8 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	subspace_transmission = TRUE
 	adhoc_fallback = TRUE
 
-/obj/item/radio/emergency/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+/obj/item/radio/emergency/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
 
 /obj/item/bluespaceradio/tether_prelinked
 	name = "bluespace radio (tether)"
@@ -877,7 +983,6 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
-DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 /obj/item/radio/borg/ownership()
 	. = ..()
@@ -886,7 +991,3 @@ DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 /// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
-
-/// Relation view: myborg (reads null once it is gone).
-/obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
-	return myborg

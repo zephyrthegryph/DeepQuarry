@@ -19,7 +19,6 @@ effective or pretty fucking useless.
 	desc = "A strange device with twin antennas."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "batterer"
-	throwforce = 5
 	w_class = ITEMSIZE_TINY
 	throw_speed = 4
 	throw_range = 10
@@ -28,36 +27,41 @@ effective or pretty fucking useless.
 	var/times_used = 0 //Number of times it's been used.
 	var/max_uses = 2
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/batterer/proc/can_batter)))
+TRACKED(/obj/item/batterer, max_uses)
 
-/// Requirement: it has a limited number of uses.
-/obj/item/batterer/proc/can_batter(mob/user, atom/target, obj/item/held)
-	if(times_used >= max_uses)
-		return "the mind batterer has been burnt out"
-	return TRUE
+MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
-/obj/item/batterer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/batterer)
+	configure(item_thrown(force = 5))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available))), then(PROC_REF(batter_triggered)))
+
+/obj/item/batterer/proc/batter_available(datum/act/op/A)
+	return (times_used < max_uses) ? null : MSG(batterer/burnt)
+
+/obj/item/batterer/proc/batter_triggered(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M
-		om_after(src, 0, PROC_REF(mind_batter_effect), M)
+		after(src, 0, PROC_REF(mind_batter_effect), with = list(M))
 
 	add_attack_logs(user,affected,"Used a [name]")
 
 	play_sfx(src, SFX_MISC_INTERFERENCE)
 	to_chat(user, span_notice("You trigger [src]."))
-	times_used += 1
+	set_times_used(times_used + 1)
 	if(times_used >= max_uses)
-		icon_state = "battererburnt"
+		set_icon_state("battererburnt")
 
 /obj/item/batterer/proc/mind_batter_effect(mob/living/carbon/human/M)
+	if(!M)
+		return
 	if(prob(50))
-		M.status_at_least(EFFECT_WEAKENED, rand(10,20))
+		M.status_at_least(STAT_WEAKENED, rand(10,20))
 		if(prob(25))
-			M.status_at_least(EFFECT_STUNNED, rand(5,10))
+			M.status_at_least(STAT_STUNNED, rand(5,10))
 		to_chat(M, span_danger("You feel a tremendous, paralyzing wave flood your mind."))
 	else
 		to_chat(M, span_danger("You feel a sudden, electric jolt travel through your head."))

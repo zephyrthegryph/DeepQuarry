@@ -44,21 +44,23 @@
 			shake_camera(L,2 SECONDS,4)
 
 	//SHAKA SHAKA SHAKA
-	om_after(src, 2 SECONDS, PROC_REF(after_crash), victims, target)
+	after(src, 2 SECONDS, PROC_REF(after_crash), with = list(victims, target), keeps_dead = TRUE)
 
 /datum/shuttle/proc/after_crash(list/victims, obj/effect/shuttle_landmark/target)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	// Move the shuttle
-	if (!attempt_move(target))
+	if (!target || !attempt_move(target))
 		return // Lucky!
 
 	// Hide people
 	for(var/mob/living/L as anything in victims)
+		if(!L)
+			continue
 		victims[L] = get_turf(L)
-		L.status_at_least(EFFECT_SLEEPING, rand(10,20))
-		om_run_frame_now(L, /datum/om/pipeline/life)
+		L.status_at_least(STAT_SLEEPING, rand(10,20))
+		seq_run_frame_now(L, /datum/sequence/life)
 		L.moveToNullspace()
 
 	// Blow up the shuttle
@@ -73,6 +75,8 @@
 
 	// Put people back
 	for(var/mob/living/L as anything in victims)
+		if(!L)
+			continue
 		L.forceMove(victims[L])
 		L.injure(INJURY_BLUNT, 5, ran_zone())
 		L.injure(INJURY_BLUNT, 10, ran_zone())

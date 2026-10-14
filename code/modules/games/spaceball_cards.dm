@@ -7,11 +7,15 @@
 	icon_state = "card_pack_spaceball"
 	parentdeck = "spaceball"
 
-/obj/item/pack/spaceball/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/item/pack/spaceball)
+	owns_many(nameof(cards), starts = PROC_REF(starting_cards))
+
+/// The cards it starts with (owns_many(starts =)).
+/obj/item/pack/spaceball/proc/starting_cards()
 	var/datum/playingcard/P
 	var/i
 	var/year = 300 + text2num(time2text(world.timeofday, "YYYY"))
+	. = list()
 	for(i=0;i<5;i++)
 		P = new()
 		if(prob(1))
@@ -25,4 +29,4 @@
 			P.card_icon = "spaceball_standard"
 		P.back_icon = "card_back_spaceball"
 
-		own_add(src, nameof(cards), P)
+		. += P

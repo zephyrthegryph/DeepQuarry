@@ -52,22 +52,12 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	var/named = FALSE //have I been named yet?
 	var/friend_name = null // Lock befriending to this character
 
-/mob/living/simple_mob/animal/passive/cat/Initialize(mapload)
-	icon_living = "[initial(icon_state)]"
-	icon_dead = "[initial(icon_state)]_dead"
-	icon_rest = "[initial(icon_state)]_rest"
-	update_icon()
-	return ..()
-
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
-/datum/om/stage/life/special/animal/passive/cat
-	of = /mob/living/simple_mob/animal/passive/cat
-
-/datum/om/stage/life/special/animal/passive/cat/perform(mob/living/simple_mob/animal/passive/cat/self, datum/om/frame/life/ctx)
-	if(!self.stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate_in_list(range(self, 5), /mob/observer/dead)
+/mob/living/simple_mob/animal/passive/cat/life_special(datum/seq_frame/life/F)
+	if(!src.stat && prob(2)) // spooky
+		var/mob/observer/dead/spook = locate_in_list(range(src, 5), /mob/observer/dead)
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
@@ -76,7 +66,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -139,7 +129,9 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	item_state = "cat"
 	named = TRUE
 	holder_type = /obj/item/holder/cat/runtime
-	makes_dirt = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/runtime)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/kitten
 	name = "kitten"
@@ -149,10 +141,8 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	gender = NEUTER
 	holder_type = /obj/item/holder/cat/kitten
 
-/mob/living/simple_mob/animal/passive/cat/kitten/Initialize(mapload)
-	if(gender == NEUTER)
-		gender = pick(MALE, FEMALE)
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
+	rolls(nameof(gender), pick_one(list(MALE, FEMALE)))
 
 /mob/living/simple_mob/animal/passive/cat/black
 	icon_state = "cat3"
@@ -179,8 +169,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "bscat"
 	icon_rest = null
 	icon_dead = null
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/bluespace
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/bluespace)
+	configure(mob_movement(makes_dirt = 0))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/passive/cat/bluespace/replace_death(gibbed)
@@ -196,8 +188,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "breadcat"
 	icon_rest = "breadcat_rest"
 	icon_dead = "breadcat_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/breadcat
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/bread)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/original
 	name = "original cat"
@@ -207,8 +201,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "original"
 	icon_rest = "original_rest"
 	icon_dead = "original_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/original
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/original)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/cak
 	name = "cak"
@@ -218,8 +214,10 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "cak"
 	icon_rest = "cak_rest"
 	icon_dead = "cak_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/cak
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/cak)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/space
 	name = "space cat"
@@ -230,7 +228,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_rest = "spacecat_rest"
 	icon_dead = "spacecat_dead"
 	holder_type = /obj/item/holder/cat/spacecat
-	makes_dirt = 0
 
 	minbodytemp = 0				// Minimum "okay" temperature in kelvin
 	maxbodytemp = 900			// Maximum of above
@@ -247,6 +244,9 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	max_n2 = 0					// N2 max
 	unsuitable_atoms_damage = 2	// This damage is taken when atmos doesn't fit all the requirements above
 
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/space)
+	configure(mob_movement(makes_dirt = 0))
+
 /datum/say_list/cat
 	speak = list("Meow!","Esp!","Purr!","HSSSSS")
 	emote_hear = list("meows","mews")
@@ -254,31 +254,30 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	say_maybe_target = list("Meow?","Mew?","Mao?")
 	say_got_target = list("MEOW!","HSSSS!","REEER!")
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(null, PROC_REF(cat_interaction_item)))
+MSG_DEF_SELF(cat/named, "%T% already has a name!")
 
-/// Old attackby: naming with a pen.
-/mob/living/simple_mob/animal/passive/cat/proc/cat_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		if(named)
-			to_chat(user, span_notice("\The [name] already has a name!"))
-		else
-			om_ask(user, /datum/om/prompt/text, PROC_REF(cat_name_entered), title = "Name", message = "Give \the [name] a name", max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
-	else
-		return FALSE
+/// Naming with a pen: asked, then written by cat_name_entered(). The one question is an asks() step of each op (a pen and a penlight).
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
+	ref_one(nameof(friend), /mob/living)
+	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
+	op("name_with_penlight", item(/obj/item/flashlight/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
+	look_from(nameof(icon_state), living = "*", dead = "*_dead", rest = "*_rest")
 
-/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_name = ask.text
-	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
+/mob/living/simple_mob/animal/passive/cat/proc/name_question(datum/act/A)
+	return "Give \the [name] a name"
+
+/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/tmp_name = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
 	if(named || !length(tmp_name))
-		return
+		return OP_OK
 	if(length(tmp_name) > 50)
 		to_chat(user, span_notice("The name can be at most 50 characters long."))
 	else
 		to_chat(user, span_notice("You name \the [name]. Meow!"))
 		name = tmp_name
 		named = TRUE
+	return OP_OK
 
 /obj/item/cat_box
 	name = "faintly purring box"
@@ -287,15 +286,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(nul
 	icon_state = "box"
 	var/cattype = /mob/living/simple_mob/animal/passive/cat
 
-DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cat_box)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cat_box/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cat_box/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(loc?.release_refusal(src, user))
+		return TRUE
 	var/turf/catturf = get_turf(src)
 	to_chat(user, span_notice("You peek into \the [name]-- and a cat jumps out!"))
 	new cattype(catturf)
 	new /obj/item/stack/material/cardboard(catturf) //if i fits i sits
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/item/cat_box/black
@@ -305,7 +308,7 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 // === merged from cat_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/cat/runtime/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "The slimy wet insides of Runtime! Not quite as clean as the cat on the outside."
 
@@ -347,41 +350,40 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 	gender = MALE
 	holder_type = /obj/item/holder/cat/fluff/tabiranth
 	friend_name = "Ascian"
-	digestable = 0
 	meat_amount = 0
 	endurance = 50
 
-/datum/om/stage/life/special/animal/passive/cat/tabiranth
-	of = /mob/living/simple_mob/animal/passive/cat/tabiranth
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
+	configure(mob_kind(death_message = "teleports away!"))
 
-/datum/om/stage/life/special/animal/passive/cat/tabiranth/perform(mob/living/simple_mob/animal/passive/cat/tabiranth/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/cat/tabiranth/life_special(datum/seq_frame/life/F)
 	. = ..()
-	if ((self.ai_brain != null) && self.friend)
-		var/friend_dist = get_dist(self,self.friend)
+	if ((src.ai_brain != null) && src.friend)
+		var/friend_dist = get_dist(src,src.friend)
 		if (friend_dist <= 1)
-			if (self.friend.stat >= DEAD || self.friend.is_critical())
-				if (prob((self.friend.stat < DEAD)? 50 : 15))
+			if (src.friend.stat >= DEAD || src.friend.is_critical())
+				if (prob((src.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					om_after(self, 0, TYPE_PROC_REF(/mob, audible_emote), pick("[verb] in distress.", "[verb] anxiously."))
+					after(src, 0, TYPE_PROC_REF(/mob, audible_emote), with = list(pick("[verb] in distress.", "[verb] anxiously.")))
 			else
 				if (prob(5))
-					om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("nuzzles [self.friend].",
-									"brushes against [self.friend].",
-									"rubs against [self.friend].",
-									"purrs."))
-		else if (self.friend.vitality() <= 0.5)
+					after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("nuzzles [src.friend].",
+									"brushes against [src.friend].",
+									"rubs against [src.friend].",
+									"purrs.")))
+		else if (src.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				om_after(self, 0, TYPE_PROC_REF(/mob, audible_emote), "[verb] anxiously.")
+				after(src, 0, TYPE_PROC_REF(/mob, audible_emote), with = list("[verb] anxiously."))
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth
-	death_message = "teleports away!"
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/on_death(gibbed)
 	. = ..()
 	cut_overlays()
-	icon_state = ""
+	set_icon_state("")
 	flick("kphaseout",src)
 	expire(1 SECOND) //Back from whence you came!
 

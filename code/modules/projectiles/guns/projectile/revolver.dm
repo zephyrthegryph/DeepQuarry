@@ -18,10 +18,12 @@
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
 	fire_sound = SFX_WEAPONS_GUNSHOT4
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylinder", PROC_REF(revolver_verb_spin_cylinder), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/revolver)
+	op("revolver_verb_spin_cylinder", menu(), label("Spin cylinder"), needs(carried()), then(PROC_REF(revolver_verb_spin_cylinder)))
 
 /// Old Spin cylinder verb: Fun when you're bored out of your skull.
-/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
@@ -54,33 +56,48 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("Name Gun", PROC_REF(det_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")))
+CAPABILITIES(/obj/item/gun/projectile/revolver/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_revolver_verb_rename)))
 
-/// Requirement for naming the detective's gun: the actor is the detective. No mind is left to the verb, which does nothing.
-/proc/dq_actor_is_detective_for_naming(mob/actor, atom/target, obj/item/held)
+/// Whether the actor may name a gun that only the detective names: the detective, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/detective_naming_ok(mob/actor)
 	return !actor?.mind || actor.mind.assigned_role == JOB_DETECTIVE
 
-/// Requirement for naming a security sidearm: the actor holds a security job. No mind is left to the verb.
-/proc/dq_actor_is_security_for_naming(mob/actor, atom/target, obj/item/held)
+/// Whether the actor may name a security sidearm: a security job, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/security_naming_ok(mob/actor)
 	if(!actor?.mind)
 		return TRUE
 	var/job = actor.mind.assigned_role
 	return job == JOB_DETECTIVE || job == JOB_SECURITY_OFFICER || job == JOB_WARDEN || job == JOB_HEAD_OF_SECURITY
 
-/// Old Name Gun verb: Click to rename your gun. If you're the detective.
-/obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)	return 0
+/// The sprites a gun can be re-sprited to: name -> icon state (a type with a Resprite gun verb overrides it).
+/obj/item/gun/proc/reskin_options()
+	return list()
 
-	var/_answer_k69 = rerun_ask(M, "k69", PROC_REF(det_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k69))
-		return
-	var/input = sanitizeSafe(_answer_k69)
+/// The names of reskin_options(), the Resprite gun question's choices.
+/obj/item/gun/proc/reskin_choices(datum/act/op/A)
+	var/list/names = list()
+	for(var/choice in reskin_options())
+		names += choice
+	return names
+
+/// Old Name Gun verb: Click to rename your gun. If you're the detective.
+/obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/gun/projectile/revolver/detective45
 	name = ".45 revolver"
@@ -90,28 +107,31 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("
 	ammo_type = /obj/item/ammo_casing/a45/rubber
 	max_shells = 6
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
-	INTERACT_VERB("Name Gun", PROC_REF(det45_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det45_revolver_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det45_revolver_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det45_revolver_verb_reskin)))
 
 /// Old Name Gun verb: rename your gun, if you are the detective.
-/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	var/_answer_k96 = rerun_ask(M, "k96", PROC_REF(det45_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k96))
-		return
-	var/input = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/obj/item/gun/projectile/revolver/detective45/reskin_options()
 	var/list/options = list()
 	options["MarsTech R1 Snubnose"] = "detective"
 	options["MarsTech R1 Snubnose (Blued)"] = "detective_blued"
@@ -122,13 +142,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	options["MarsTech Frontiersman Shadow"] = "detective_peacemaker_dark"
 	options["Jindal Duke"] = "detective_fitz"
 	options["H-H M1895"] = "nagant"
-	var/choice = rerun_ask(M, "k119", PROC_REF(det45_revolver_verb_reskin), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
-		icon_state = options[choice]
+		set_icon_state(options[choice])
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Lombardi Revolvers
@@ -187,7 +212,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 /// TRUE while any rounds are loaded.
 /obj/item/gun/projectile/revolver/deckard/proc/appearance_loaded()
 	return length(loaded) > 0
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appearance_loaded?loaded:empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/revolver/deckard/draw(datum/look/look)
+	..()
+	look.state("deckard-[appearance_loaded() ? "loaded" : "empty"]")
 
 /obj/item/gun/projectile/revolver/deckard/load_ammo(obj/item/A, mob/user)
 	if(istype(A, /obj/item/ammo_magazine))
@@ -239,16 +267,20 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appeara
 	/// Owned rounds of the primary cylinder while the secondary one is being fired.
 	var/list/tertiary_loaded
 
+CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
+	owns_many(nameof(secondary_loaded), starts = PROC_REF(make_secondary_loaded))
+	owns_many(nameof(tertiary_loaded))
+	op("lemat_verb_swap_firing_mode", menu(), label("Swap Firing Mode"), needs(carried()), then(PROC_REF(lemat_verb_swap_firing_mode)))
 
-/obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
-	. = ..()
-	for(var/i in 1 to secondary_max_shells)
-		own_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
+/// The starting secondary shells (owns_many(starts =)): a full cylinder.
+/obj/item/gun/projectile/revolver/lemat/proc/make_secondary_loaded(current)
+	. = list()
+	.[secondary_ammo_type] = secondary_max_shells
 
 /// Old Swap Firing Mode verb: Click to swap from one method of firing to another.
-/obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/lemat/proc/lemat_verb_swap_firing_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/M = user
 	if(!M.mind)
 		return 0
@@ -284,15 +316,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 
 /// The rounds in `incoming_var` become loaded; the rounds loaded now move to `stash_var`.
 /obj/item/gun/projectile/revolver/lemat/proc/swap_cylinder(incoming_var, stash_var)
-	var/list/current = own_take_all(src, nameof(loaded))
-	var/list/incoming = own_take_all(src, incoming_var)
+	var/list/current = rel_take_all(src, nameof(loaded))
+	var/list/incoming = rel_take_all(src, incoming_var)
 	for(var/obj/item/ammo_casing/casing as anything in current)
-		own_add(src, stash_var, casing)
+		rel_add(src, stash_var, casing)
 	for(var/obj/item/ammo_casing/casing as anything in incoming)
-		own_add(src, nameof(loaded), casing)
+		rel_add(src, nameof(loaded), casing)
 
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
-/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
@@ -340,17 +373,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	handle_casings = CYCLE_CASINGS
 	ammo_type = /obj/item/ammo_casing/a44/rubber
 
-/obj/item/gun/projectile/revolver/consul/proc/update_charge()
-	cut_overlays()
-	if(length(loaded)==0)
-		add_overlay("inspector_off")
-	else
-		add_overlay("inspector_on")
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/revolver/consul/appearance_overlays()
-	. = list()
-	update_charge()
+/obj/item/gun/projectile/revolver/consul/draw(datum/look/look)
+	..()
+	look.overlay(length(loaded) ? "inspector_on" : "inspector_off")
 
 
 //Dunno why .380 ammo was in here but Im not touching it. Rest was moved to other files.

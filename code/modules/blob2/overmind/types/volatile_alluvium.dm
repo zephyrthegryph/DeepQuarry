@@ -34,7 +34,7 @@
 		var/obj/item/I = H.get_active_hand()
 		H.drop_item()
 		if(I)
-			if((I.sharp || I.edge) && !istype(I, /obj/item/gun))
+			if((combat_of(I).sharp || combat_of(I).edge) && !istype(I, /obj/item/gun))
 				I.forceMove(get_turf(B)) // Disarmed entirely.
 				B.visible_message(span_danger("The [name] heaves, \the [attacker]'s weapon becoming stuck in the churning mass!"))
 			else
@@ -44,7 +44,7 @@
 	return ..()
 
 /datum/blob_type/volatile_alluvium/on_water(obj/structure/blob/B, amount)
-	om_after(B, 1, TYPE_PROC_REF(/obj/structure/blob, alluvium_crumble), amount * 4, name)
+	after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, alluvium_crumble), with = list(amount * 4, name))
 
 /datum/blob_type/volatile_alluvium/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	if(user)

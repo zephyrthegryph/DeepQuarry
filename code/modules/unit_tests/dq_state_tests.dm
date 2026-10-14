@@ -11,6 +11,9 @@
 	var/datum/ref_value
 	var/tmp/runtime_only = 0
 
+CAPABILITIES(/datum/dq_state_probe)
+	owns_one(nameof(ref_value))
+
 /datum/dq_state_probe/state_codecs()
 	return ..() + list("ref_value" = /datum/state_codec/owned)
 
@@ -29,8 +32,8 @@
 	var/atom/held
 
 
-/datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/dq_state_holder/proc/on_signal(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /// Returns the canonical text of a full serialization, or null with the errors in `errors`.
@@ -81,7 +84,7 @@
 	var/tested = 0
 	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
-		if(!initial(path.latent_safe) || is_abstract(path))
+		if(!latent_type_safe(path) || is_abstract(path))
 			continue
 		tested++
 		LAZYSET(tested_paths, path, TRUE)
@@ -130,13 +133,16 @@
 	TEST_ASSERT_EQUAL(state_hash(state_serialize(first)), state_hash(state_serialize(second)), "two untouched papers should hash the same: [dq_state_first_difference(first_text, second_text)]")
 	var/list/delta = state_delta(first)
 	TEST_ASSERT(!("info" in delta), "an untouched var should not be in the delta")
-	first.info = "written on"
+	first.set_info("written on")
 	delta = state_delta(first)
 	TEST_ASSERT_EQUAL(delta["info"], "written on", "a changed var should be in the delta")
 	TEST_ASSERT(state_hash(state_serialize(first)) != state_hash(state_serialize(second)), "a changed paper should hash differently")
 	var/unsorted = state_canonical(list("b" = 1, "a" = list("d" = 0.1000000001, "c" = 2)))
 	var/sorted = state_canonical(list("a" = list("c" = 2, "d" = 0.1), "b" = 1))
 	TEST_ASSERT_EQUAL(unsorted, sorted, "canonical text should sort keys and normalize numbers")
+	// A value next to a six-digit boundary canonicalizes the same as its own JSON round trip.
+	var/list/edge = list("m" = list(1.7266451))
+	TEST_ASSERT_EQUAL(state_canonical(edge), state_canonical(json_decode(json_encode(edge))), "a number's canonical form should survive a JSON round trip")
 	TEST_ASSERT(!("runtime_only" in state_saved_vars(new /datum/dq_state_probe)), "tmp vars are not part of the schema")
 
 /// Values the codecs must carry: paths, assoc lists with path and escaped keys,
@@ -150,7 +156,7 @@
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	own_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
+	rel_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)
@@ -253,18 +259,18 @@
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 
 	var/datum/dq_state_holder/listener = new
-	om_hook(box, /datum/om/event/qdeleting, listener, TYPE_PROC_REF(/datum/dq_state_holder, on_signal))
+	observe(box, /datum/notice/qdeleting, listener, then(TYPE_PROC_REF(/datum/dq_state_holder, on_signal)))
 	blockers = box.state_collapse_blockers(1)
 	var/found_signal = FALSE
 	for(var/reason in blockers)
-		if(findtext(reason, "hooks"))
+		if(findtext(reason, "observes"))
 			found_signal = TRUE
-	TEST_ASSERT(found_signal, "an event hook from outside should block collapse: [jointext(blockers, "; ")]")
-	om_unhook(box, /datum/om/event/qdeleting, listener)
+	TEST_ASSERT(found_signal, "an observe() hook from outside should block collapse: [jointext(blockers, "; ")]")
+	unobserve(box, /datum/notice/qdeleting, listener)
 	qdel(listener)
 
 	var/obj/item/paper/timed = new(test_floor())
-	om_after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+	after(timed, 10 SECONDS, TYPE_PROC_REF(/atom, melt))
 	blockers = timed.state_collapse_blockers(1)
 	var/found_timer = FALSE
 	for(var/reason in blockers)
@@ -414,3 +420,28 @@
 	own_take(paper, nameof(paper.contract_document))
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")
+
+// A hard-deleted refresh entry must not prevent the surviving entries from deriving.
+/datum/dq_refresh_deleted_entry_probe
+	var/refresh_calls = 0
+	var/last_bits = 0
+
+/datum/dq_refresh_deleted_entry_probe/on_state_changed(bits)
+	..()
+	refresh_calls++
+	last_bits = bits
+
+/datum/unit_test/ownership_retirement_refresh_skips_deleted_queue_entry
+
+/datum/unit_test/ownership_retirement_refresh_skips_deleted_queue_entry/Run()
+	var/datum/dq_refresh_deleted_entry_probe/survivor = allocate(/datum/dq_refresh_deleted_entry_probe)
+	// BYOND replaces a hard-deleted reference in a queued list with null. Reproduce that exact drain boundary without forcing the garbage collector.
+	set_global("refresh_queue", list(null))
+	refresh_mark(survivor, DEP_LEGACY, CHANGE_EXPLICIT)
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 2, "a vanished entry precedes the surviving queued datum")
+	TEST_ASSERT_EQUAL(survivor.refresh_calls, 0, "queued output has not run before draining")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(survivor.refresh_calls, 1, "the surviving output executes exactly once past a vanished entry")
+	TEST_ASSERT_EQUAL(survivor.last_bits, CHANGE_EXPLICIT, "the surviving output receives its original change channel")
+	TEST_ASSERT_EQUAL(survivor.refresh_queued, 0, "the surviving queued mark is consumed")
+	TEST_ASSERT_EQUAL(length(GLOB.refresh_queue), 0, "the drain removes both stale and completed queue entries")

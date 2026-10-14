@@ -1,8 +1,21 @@
 ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning to strike on your tile. This can be made to hurt things on or nearby it severely.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/result = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Really strike your tile with lightning?", title = "Confirm Badmin", choices = list("No", "Yes (Cosmetic)", "Yes (Real)"))
-	if(isnull(result))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_lightning_confirm, PROC_REF(lightning_confirmed), answerer = answerer)
 
+/datum/admin_verb/admin_lightning_strike/proc/lightning_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/call_result = safe_call(PROC_REF(strike_answered), A)
+	if(!call_result.ok)
+		stack_trace("om flow admin_lightning_strike answer lightning_confirmed: [call_result.error]")
+
+/datum/admin_verb/admin_lightning_strike/proc/strike_answered(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/result = A.request.value
+	var/datum/admins/holder = user.admin_datum()
+	var/href_token = "admin_token=[holder.href_token]"
 	if(!result || result == "No")
 		return
 	var/fake_lightning = result == "Yes (Cosmetic)"
@@ -10,7 +23,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 	var/mob/user_mob = user.mob
 	lightning_strike(get_turf(user_mob), fake_lightning)
 	log_and_message_admins("has caused [fake_lightning ? "cosmetic":"harmful"] lightning to strike at their position ([user_mob.x], [user_mob.y], [user_mob.z]). \
-	(<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[user_mob.x];Y=[user_mob.y];Z=[user_mob.z]'>JMP</a>)", user)
+	(<A href='byond://?_src_=holder;[href_token];adminplayerobservecoodjump=1;X=[user_mob.x];Y=[user_mob.y];Z=[user_mob.z]'>JMP</a>)", user)
 
 #define LIGHTNING_REDIRECT_RANGE 28 // How far in tiles certain things draw lightning from.
 #define LIGHTNING_ZAP_RANGE 1 // How far the tesla effect zaps, as well as the bad effects from a direct strike.
@@ -24,7 +37,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 
 	// Do a lightning flash for the whole planet, if the turf belongs to a planet.
 	var/datum/planet/P = null
-	P = LAZYACCESS(GLOB.planet_service.z_to_planet, T.z)
+	P = LAZYACCESS(SSplanets.z_to_planet, T.z)
 	if(P)
 		var/datum/weather_holder/holder = P.weather_holder
 		flick("lightning_flash", holder.special_visuals)
@@ -89,13 +102,23 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 
 		// Deafen them.
 		if(L.get_ear_protection() < 2)
-			L.status_adjust(EFFECT_SLEEPING, -100)
+			L.status_adjust(STAT_SLEEPING, -100)
 			if(iscarbon(L))
 				var/mob/living/carbon/C = L
-				C.status_adjust(EFFECT_DEAFENED, 10)
+				C.status_adjust(STAT_DEAFENED, 10)
 				C.deaf_loop.start() // Ear Ringing/Deafness
 			to_chat(L, span_danger("Lightning struck nearby, and the thunderclap is deafening!"))
 
 #undef LIGHTNING_REDIRECT_RANGE
 #undef LIGHTNING_ZAP_RANGE
 #undef LIGHTNING_POWER
+
+/datum/prompt/choice/admin_lightning_confirm
+	rights = R_FUN
+	timeout = 0
+	question = "Really strike your tile with lightning?"
+	title = "Confirm Badmin"
+	buttons = TRUE
+	choices = list("No", "Yes (Cosmetic)", "Yes (Real)")
+	recheck_on_open = TRUE
+

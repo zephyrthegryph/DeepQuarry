@@ -1,0 +1,63 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
+@obj human|/obj/item/kit
++1 menu: Interaction pass
++4 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Interaction pass
++4 menu: Use
++5 click: Click: Interaction pass
+@obj human|/obj/item
+-menu: Alternate use
+-click: Click: Use
++0 menu: Interaction pass
++4 click: Click: Interaction pass
+keys: cash_combine, cash_take, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pass_item, pick_up_item, toggle_digestable

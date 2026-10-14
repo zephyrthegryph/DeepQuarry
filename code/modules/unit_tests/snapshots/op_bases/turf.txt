@@ -1,0 +1,47 @@
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item menu: Dig
+human|/obj/item menu: Touch
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Dig
+human|/obj/item/card/id menu: Dig
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Dig
+human|/obj/item/multitool menu: Dig
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Dig
+human|/obj/item/stack/cable_coil menu: Dig
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Dig
+human|/obj/item/stack/material/steel menu: Dig
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Dig
+human|/obj/item/tool/crowbar menu: Dig
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Dig
+human|/obj/item/tool/screwdriver menu: Dig
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Dig
+human|/obj/item/tool/wirecutters menu: Dig
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Dig
+human|/obj/item/tool/wrench menu: Dig
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Dig
+human|/obj/item/weldingtool menu: Dig
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Dig
+human|none menu: Touch
+human|none click: Click: Touch
+robot|none menu: Touch
+robot|none menu: Use
+robot|none click: Click: Touch

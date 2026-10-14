@@ -6,13 +6,21 @@
 	/// Every event_meta this container made (owned); available_events and next_event name members of it.
 	var/list/event_pool
 	var/list/available_events
+	/// event_meta handle (entity_handle) -> world.time the event last fired.
 	var/list/last_event_time
 	var/tmp/datum/event_meta/next_event
 
 	EXPIRY_DECLARE(last_world_time)
 
+/// The random-event clock runs (the events service sets it when it makes the container).
+/datum/event_container/var/clock_running = FALSE
+TRACKED(/datum/event_container, clock_running)
+CAPABILITIES(/datum/event_container)
+	every(2 SECONDS, then(PROC_REF(event_clock_step)), when = nameof(clock_running))
+	owns_many(nameof(event_pool))
+
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
-/datum/event_container/periodic_step()
+/datum/event_container/proc/event_clock_step(datum/act/timer/A)
 	if(!GLOB.round_start_time)
 		return //don't do events if the round hasn't even started yet
 
@@ -33,7 +41,7 @@
 	// Has an event been acquired?
 	if(next_event())
 		// Set when the event of this type was last fired, and prepare the next event start
-		LAZYSET(last_event_time, next_event(), world.time)
+		LAZYSET(last_event_time, entity_handle(next_event()), world.time)
 		set_event_delay()
 		next_event().enabled = !next_event().one_shot	// This event will no longer be available in the random rotation if one shot
 
@@ -74,7 +82,7 @@
 		return 0
 
 	var/weight = EM.get_weight(active_with_role)
-	var/last_time = LAZYACCESS(last_event_time, EM)
+	var/last_time = LAZYACCESS(last_event_time, entity_handle(EM))
 	if(last_time)
 		var/time_passed = world.time - last_time
 		var/weight_modifier = max(0, round((CONFIG_GET(number/expected_round_length) - time_passed) / 300))
@@ -120,21 +128,29 @@
 
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 
-/datum/event_container/proc/SelectEvent()
-	om_ask(usr, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
+/datum/event_container/proc/SelectEvent(mob/user)
+	open_request(src, /datum/prompt/choice/queue_event, PROC_REF(event_selected), answerer = user, choices = available_events?.Copy())
 
-/// Picking the next event of a container (subject). Re-checked on the answer: still available.
-/datum/om/prompt/choice/queue_event
+/// Picking the next event of its owner container: still available when answered.
+/datum/prompt/choice/queue_event
 	title = "Event Selection"
-	message = "Select an event to queue up."
+	question = "Select an event to queue up."
+	timeout = 0
+	recheck_on_open = TRUE
 
-/datum/om/prompt/choice/queue_event/valid()
-	var/datum/event_container/container = subject
-	return (choice && (choice in container.available_events)) ? null : "not available"
+/datum/prompt/choice/queue_event/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer))
+		return "gone"
+	if(isnull(value))
+		return null
+	var/datum/event_container/container = owner
+	return (value && (value in container.available_events)) ? null : "not available"
 
-/datum/event_container/proc/event_selected(datum/om/prompt/choice/queue_event/ask)
-	var/mob/user = ask.answerer
-	var/datum/event_meta/EM = ask.choice
+/datum/event_container/proc/event_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/mob/user = context.request.answerer
+	var/datum/event_meta/EM = context.answer.value
 	if(next_event())
 		rel_add(src, nameof(available_events), next_event())
 	rel_remove(src, nameof(available_events), EM)

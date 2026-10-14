@@ -1,0 +1,74 @@
+@obj.structure human|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure robot|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Dismantle
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wrench click: Click: Dismantle
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Remove padding (refused: It has no padding to remove.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/tool/wirecutters click: Click: Remove padding
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/cable_coil click: Click: Pad
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/stack/material/steel click: Click: Pad
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item click: nothing
+@obj.structure human|/obj/item/stack
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/disk
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/toy/plushie
++1 menu: Move To Top
++2 menu: Name Plushie (refused: You can't do that.)
++3 menu: Toggle Digestable (refused: You can't do that.)
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tuck_disk, tuck_plushie, unpad

@@ -2,7 +2,7 @@
 	USAGE:
 
 		var/datum/callback/C = new(object|null, /proc/type/path|"procstring", arg1, arg2, ... argn)
-		Deferred calls are om_after(owner, delay, proc, args...), not callbacks.
+		Deferred calls are after(owner, delay, proc, with = list(args...)), not callbacks.
 
 		Note: proc strings can only be given for datum proc calls, global procs must be proc paths
 		Also proc strings are strongly advised against because they don't compile error if the proc stops existing
@@ -39,6 +39,7 @@
 */
 
 /datum/callback
+	parent_type = /datum/actor_callback
 	/// What to call: GLOBAL_PROC, or the datum (a relation view, so a deleted target reads null
 	/// and nothing is called). Read with target_object().
 	var/datum/object = GLOBAL_PROC
@@ -125,3 +126,6 @@
 	if(object == GLOBAL_PROC)
 		return GLOBAL_PROC
 	return object
+
+/datum/callback/invoke_actor(...)
+	return Invoke(arglist(args))

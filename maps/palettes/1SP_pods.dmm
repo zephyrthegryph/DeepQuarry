@@ -1770,7 +1770,7 @@
 /area/survivalpod)
 "adO" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "military autolathe"
 	},
 /turf/simulated/shuttle/floor/black,
@@ -2542,7 +2542,6 @@
 /area/template_noop)
 "akm" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -2917,7 +2916,7 @@
 /area/survivalpod/superpose/HydroCave)
 "axk" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "estrella_side_hatch";
 	req_access = null;
@@ -3315,7 +3314,7 @@
 /area/survivalpod/superpose/HydroCave)
 "aOw" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
 	req_one_access = null
@@ -3514,9 +3513,7 @@
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/ScienceShip)
 "aTu" = (
-/obj/machinery/atmospherics/unary/vent_pump{
-	on = 1
-	},
+/obj/machinery/atmospherics/unary/vent_pump,
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)
 "aTE" = (
@@ -3640,7 +3637,6 @@
 /obj/item/seeds/pumpkinseed,
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -4105,7 +4101,7 @@
 	dir = 4
 	},
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -4610,7 +4606,6 @@
 "bOs" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 4;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -5277,8 +5272,7 @@
 /area/survivalpod/superpose/HellCave)
 "crY" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/table/reinforced,
 /obj/item/storage/firstaid/surgery,
@@ -5366,7 +5360,6 @@
 /area/survivalpod/superpose/HydroCave)
 "csJ" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -5418,7 +5411,7 @@
 "cvL" = (
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -5640,7 +5633,7 @@
 	dir = 1
 	},
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -6421,7 +6414,7 @@
 /area/template_noop)
 "dlp" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
 	req_access = list(11)
@@ -7133,7 +7126,7 @@
 "dJh" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -7525,7 +7518,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -7690,7 +7683,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -8462,8 +8455,7 @@
 /area/template_noop)
 "eyx" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 8;
-	on = 1
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/effect/decal/cleanable/dirt,
@@ -8486,7 +8478,7 @@
 "eza" = (
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -8826,7 +8818,7 @@
 /area/survivalpod/superpose/MethLab)
 "eKE" = (
 /obj/machinery/door/airlock/engineering{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	name = "Cargo Bay"
 	},
@@ -8948,7 +8940,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "eOx" = (
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "military autolathe"
 	},
 /turf/simulated/shuttle/floor/voidcraft/dark,
@@ -10277,7 +10269,7 @@
 /area/survivalpod)
 "fKG" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	desc = "It opens and closes. It is stamped with the logo of Major Bill's Transportation";
 	frequency = 1381;
 	icon_state = "door_locked";
@@ -10863,7 +10855,6 @@
 "gnx" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 8;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -10935,7 +10926,7 @@
 	req_one_access = null
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
@@ -10953,8 +10944,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/ScienceShip)
@@ -12621,7 +12611,6 @@
 "huE" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -12647,7 +12636,7 @@
 /area/survivalpod/superpose/CultShip)
 "huV" = (
 /obj/machinery/door/airlock/command{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked"
 	},
 /turf/simulated/shuttle/floor{
@@ -12864,7 +12853,7 @@
 "hDw" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -14093,8 +14082,7 @@
 /area/template_noop)
 "iyP" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/table/glass,
 /turf/simulated/floor/carpet,
@@ -15813,7 +15801,7 @@
 /area/survivalpod/superpose/HydroCave)
 "jQk" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
@@ -16297,7 +16285,7 @@
 	},
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -17070,7 +17058,6 @@
 "kKO" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -18449,7 +18436,7 @@
 "lCq" = (
 /obj/machinery/alarm/monitor{
 	dir = 8;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = 23;
 	req_access = null
 	},
@@ -19225,13 +19212,12 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -19846,7 +19832,6 @@
 /area/template_noop)
 "mzh" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -20018,8 +20003,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mIi" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/machinery/portable_atmospherics/hydroponics,
 /obj/item/seeds/pumpkinseed,
@@ -20601,7 +20585,7 @@
 /area/survivalpod/superpose/LoneHome)
 "nbf" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "estrella_back_hatch";
 	req_one_access = null
@@ -21479,8 +21463,7 @@
 /area/survivalpod/superpose/GrandLibrary)
 "nJH" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/bed,
 /obj/item/bedsheet/mime,
@@ -21665,7 +21648,6 @@
 "nRY" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -21873,7 +21855,7 @@
 /obj/machinery/autolathe{
 	desc = "Your typical Autolathe. It appears to have much more options than your regular one, however...";
 	emagged = 1;
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "Unlocked Autolathe"
 	},
 /turf/simulated/shuttle/floor/black,
@@ -22119,7 +22101,7 @@
 	name = "durable grey railing"
 	},
 /obj/machinery/autolathe{
-	hacked = 1;
+	hacked_at_start = 1;
 	name = "unlocked autolathe"
 	},
 /turf/simulated/shuttle/floor/voidcraft,
@@ -22325,7 +22307,7 @@
 "orZ" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
@@ -22911,7 +22893,6 @@
 "oEz" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 8;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -23007,7 +22988,7 @@
 /obj/machinery/light/small,
 /obj/machinery/alarm/monitor{
 	dir = 1;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = -23;
 	req_access = null
 	},
@@ -23178,7 +23159,7 @@
 "oNd" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -23252,7 +23233,7 @@
 /area/survivalpod/superpose/CrashedQurantineShip)
 "oPi" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
-	cap_state = 128;
+	bolted_at_start = 1;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
@@ -25907,7 +25888,7 @@
 /area/template_noop)
 "pDj" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
-	cap_state = 128;
+	bolted_at_start = 1;
 	dir = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
@@ -26811,7 +26792,7 @@
 "qjZ" = (
 /obj/machinery/alarm/monitor{
 	dir = 4;
-	locked = 0;
+	lock_at_start = 0;
 	pixel_x = -23;
 	req_access = null
 	},
@@ -27817,7 +27798,7 @@
 /area/template_noop)
 "qYf" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = null;
 	icon_state = "door_locked";
 	id_tag = null;
@@ -27951,7 +27932,7 @@
 /area/survivalpod/superpose/OldHotel)
 "rdt" = (
 /obj/machinery/autolathe{
-	hacked = 1
+	hacked_at_start = 1
 	},
 /turf/simulated/shuttle/floor/purple,
 /area/survivalpod/superpose/ScienceShip)
@@ -28195,8 +28176,7 @@
 /area/survivalpod/superpose/HydroCave)
 "rnB" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/closet,
 /turf/simulated/floor/tiled/white,
@@ -28226,7 +28206,6 @@
 "rnM" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -28514,9 +28493,7 @@
 /turf/simulated/floor/outdoors/dirt,
 /area/survivalpod/superpose/LoneHome)
 "rCt" = (
-/obj/machinery/atmospherics/unary/vent_pump{
-	on = 1
-	},
+/obj/machinery/atmospherics/unary/vent_pump,
 /turf/simulated/floor/tiled/red,
 /area/survivalpod/superpose/HydroCave)
 "rDz" = (
@@ -28639,8 +28616,7 @@
 /area/template_noop)
 "rLo" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/dark,
 /area/survivalpod/superpose/HydroCave)
@@ -32221,7 +32197,6 @@
 /obj/structure/disposalpipe/segment,
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34088,7 +34063,6 @@
 "vWB" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34382,7 +34356,7 @@
 /area/survivalpod/superpose/GrandLibrary)
 "wkp" = (
 /obj/machinery/door/airlock/multi_tile/metal/mait{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "SP-CargoHatch";
 	name = "Rear Hatch"
@@ -34435,7 +34409,6 @@
 /area/survivalpod/superpose/Dinner)
 "wmh" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34483,7 +34456,7 @@
 /area/survivalpod/superpose/FieldLab)
 "woT" = (
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -34959,8 +34932,7 @@
 /area/survivalpod/superpose/CrashedQurantineShip)
 "wCu" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 8;
-	on = 1
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /turf/simulated/floor/tiled,
@@ -35068,8 +35040,7 @@
 /area/template_noop)
 "wFu" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)
@@ -35174,8 +35145,7 @@
 /obj/item/radio/intercom{
 	desc = "Talk... listen through this.";
 	name = "Station Intercom (Brig Radio)";
-	pixel_y = -21;
-	wires = 7
+	pixel_y = -21
 	},
 /obj/structure/salvageable/console_os{
 	dir = 4
@@ -35720,7 +35690,7 @@
 "xdd" = (
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/machinery/alarm/monitor{
-	locked = 0;
+	lock_at_start = 0;
 	pixel_y = 23;
 	req_access = null
 	},
@@ -36407,8 +36377,7 @@
 "xAN" = (
 /obj/item/seeds/pumpkinseed,
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)

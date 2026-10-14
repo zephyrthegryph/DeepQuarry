@@ -27,35 +27,40 @@
 
 	var/tmp/datum/language/default_language_static
 
+CAPABILITIES(/mob/observer/blob)
+	owns_one(nameof(blob_type), /datum/blob_type, starts = PROC_REF(make_blob_type))
+	param(nameof(placed), pos = 1)
+	param(nameof(blob_points), pos = 2, default = 60)
+	param(nameof(desired_blob_type), pos = 3)
+
 /mob/observer/blob/get_default_language()
 	return default_language()
 
 /// The languages the overmind knows.
 TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 
-/mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
-	blob_points = starting_points
-	if(pre_placed) //we already have a core!
-		placed = 1
+/// The blob type an overmind is made as (its constructor param), or null for a random one.
+/mob/observer/blob/var/desired_blob_type
 
+// ALLOW(init/INSTANCE_STATE): an overmind is numbered, makes its blob type and learns its languages before its parents' init
+/mob/observer/blob/Initialize(mapload)
 	var/new_name = "[initial(name)] ([rand(1, 999)])"
 	name = new_name
-	real_name = new_name
-	if(desired_blob_type)
-		own_set(src, nameof(blob_type), new desired_blob_type())
-	else
-		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		own_set(src, nameof(blob_type), new BT())
-	color = blob_type.complementary_color
-	if(blob_core())
-		blob_core().update_icon()
-
+	set_real_name(new_name)
 	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
 		default_language_static = languages[1]
 
-	return ..()
+	. = ..()
+	color = blob_type.complementary_color
+	if(blob_core())
+		blob_core().sync_overmind_look() // the core draws the new type's colour
+
+/// The starting blob type (owns_one(starts =)): the one asked for, else any.
+/mob/observer/blob/proc/make_blob_type(current)
+	var/datum/blob_type/BT = desired_blob_type || pick(subtypesof(/datum/blob_type))
+	return new BT()
 
 REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 
@@ -64,7 +69,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
 			rel_clear(B, nameof(B.overmind))
-			B.update_icon() //reset anything that was ours
+			B.sync_overmind_look() //reset anything that was ours
 
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
@@ -174,7 +179,4 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/proc/default_language() as /datum/language
 	return default_language_static
 
-// blob_type is owned (implicit OWN, own_set in Initialize); blob_mobs names spawned mobs.
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(blob_mobs))
+// blob_type is owned (implicit OWN, rel_set in Initialize); blob_mobs is paired in simple_mob/blob.dm.

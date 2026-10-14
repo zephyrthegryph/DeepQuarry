@@ -1,0 +1,66 @@
+@obj.item.clothing.accessory human|none
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
+@obj.item.clothing.accessory robot|none
++2 menu: Draw
++4 menu: Holster (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++0 menu: Holster (refused: You can't do that.)
+@obj.item.clothing.accessory human|/obj/item/tool/screwdriver
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/tool/crowbar
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/tool/wrench
+@obj.item.clothing.accessory human|/obj/item/tool/wirecutters
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/multitool
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/weldingtool
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/stack/cable_coil
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/stack/material/steel
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/card/id
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/kit
+-menu: Collar tag item
++3 menu: Draw
++4 menu: Holster (refused: You can't do that.)
++5 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item/storage
+-menu: Collar tag item
++3 menu: Draw
++4 menu: Holster (refused: You can't do that.)
++5 menu: Holster item
+@obj.item.clothing.accessory human|/obj/item
+-menu: Collar tag item
++2 menu: Draw
++3 menu: Holster (refused: You can't do that.)
++4 menu: Holster item
+keys: accessory_attached_hand, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, holster_draw_hand, holster_item, holster_quick_holster_verb, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

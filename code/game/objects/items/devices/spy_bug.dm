@@ -5,8 +5,6 @@
 	icon_state = "camgrenade"
 	item_state = "empgrenade"
 	w_class = ITEMSIZE_SMALL
-	force = 0
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
 	var/obj/item/bug_monitor/linkedmonitor
@@ -15,21 +13,43 @@
 	var/obj/machinery/camera/bug/camera
 	var/camtype = /obj/machinery/camera/bug
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/camerabug)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 0))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
+	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
+	op("pair", item(/obj/item/bug_monitor), label("Pair"), then(PROC_REF(interaction_pair)))
+	// wrenching it down on the floor (any stance but harm; a harmful swing falls through to the hit)
+	op("secure", tool(TOOL_WRENCH), wait(0), stance(I_HELP, I_DISARM, I_GRAB), label("Secure or unsecure"), needs(req(PROC_REF(lies_on_turf))), then(PROC_REF(interaction_wrench)))
+	// the old attackby: a strong hit breaks the lens (and the hit goes on)
+	op("hit", item(/obj/item), then(PROC_REF(interaction_item)))
+	// the old object verb
+	op("reset", menu(), label("Reset camera bug"), needs(carried()), then(PROC_REF(camerabug_reset)))
+	ref_one(nameof(linkedmonitor), /obj/item/bug_monitor)
+
+MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
+
+/obj/item/camerabug/proc/camerabug_reset(datum/act/op/A)
+	camerabug_reset_effect(A.actor)
+	return OP_OK
 
 
-/obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camerabug/proc/camerabug_crushed(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You crush %T% under your foot, breaking it.")), \
 		MSG_OTHERS(span_notice("%U% crushes %T% under %THEIR% foot, breaking it!")))
 	replace_with(src, brokentype)
+	return OP_OK
 
-/obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camerabug/proc/camerabug_reset_effect(mob/user)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
-	qdel(camera)
-	own_set(src, nameof(camera), new camtype(src))
+	rel_clear(src, nameof(camera))
+	rel_set(src, nameof(camera), new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug
@@ -38,14 +58,15 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "camgrenadebroken"
 	item_state = "empgrenade"
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+CAPABILITIES(/obj/item/brokenbug)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+
 
 /obj/item/brokenbug/spy
 	name = "broken bug"
@@ -55,11 +76,13 @@
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	force = 0
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
+
+CAPABILITIES(/obj/item/brokenbug/spy)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 0))
 
 /obj/item/camerabug/spy
 	name = "bug"
@@ -69,34 +92,27 @@
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	camtype = /obj/machinery/camera/bug/spy
+
+CAPABILITIES(/obj/item/camerabug/spy)
+	configure(item_worn(slots = SLOT_EARS))
 
 /obj/item/camerabug/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) == 0)
 		. += "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional."
 
-DECLARE_APPEARANCE_PROC(/obj/item/camerabug, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/camerabug/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/camerabug/draw(datum/look/look)
+	..()
 
 	if(anchored)	// Standard versions are relatively obvious if not hidden in a container. Anchoring them is advised, to disguise them.
-		alpha = 50
+		look.alpha = 50
 	else
-		alpha = 255
+		look.alpha = 255
 
-DECLARE_INTERACTIONS(/obj/item/camerabug, \
-	INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"), \
-	INTERACT_ITEM_AS(I_HELP, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM_AS(I_DISARM, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM_AS(I_GRAB, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE_AS(I_HURT, "Crush", PROC_REF(interaction_self)), \
-)
-
-/obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
+/obj/item/camerabug/proc/interaction_pair(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/bug_monitor/SM = A.held
 	if(!linkedmonitor())
 		to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
 		SM.pair(src)
@@ -107,38 +123,44 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 		rel_clear(src, nameof(linkedmonitor))
 	else
 		to_chat(user, "Error: The device is linked to another monitor.")
-	return TRUE
+	return OP_OK
 
 /// Old attackby: any other item breaks the lens on a strong hit, but always fell through to ..().
-/obj/item/camerabug/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(W.force >= 5)
+/obj/item/camerabug/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(combat_of(W).force >= 5)
 		visible_message("\The [src] lens shatters!")
 		new brokentype(get_turf(src))
 		if(linkedmonitor())
 			linkedmonitor().unpair(src)
 		rel_clear(src, nameof(linkedmonitor))
 		consume(src, user)
-	return FALSE
+	return OP_DECLINE
 
 /// Wrenching it down (any stance but harm; a harmful swing falls through to the hit).
-/obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
+/obj/item/camerabug/proc/interaction_wrench(datum/act/op/A)
 	set_anchored(!anchored)
-	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
-	update_icon()
-	return TRUE
+	to_chat(A.actor, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
+	return OP_OK
 
-/obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)
-	return isturf(loc)
+/// Requirement: it lies on the floor.
+/obj/item/camerabug/proc/lies_on_turf(datum/act/op/A)
+	return (lies_on_floor(src)) ? null : MSG(camerabug/not_on_floor)
 
-DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot))
+/// Is `thing` lying loose on a turf (not carried or inside something)?
+/proc/lies_on_floor(atom/movable/thing)
+	READS_FROM() // where it lies is asked when the tool touches it
+	return isturf(thing.loc)
+
 /// A round shatters the bug.
-/obj/item/camerabug/proc/camerabug_shot(datum/damage_packet/packet)
+/obj/item/camerabug/proc/camerabug_shot(datum/act/hit/projectile/A)
 	visible_message("The [src] lens shatters!")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
 	replace_with(src, brokentype)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 // its monitor unpairs it.
 /obj/item/camerabug/on_destroy(force)
@@ -159,22 +181,25 @@ DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot)
 	/// Relation list view: the paired bug cameras (deleted ones leave it).
 	var/list/obj/machinery/camera/bug/paired
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /*
 /obj/item/bug_monitor/Initialize(mapload)
 	radio = new(src)
 */
-DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null), \
-)
+CAPABILITIES(/obj/item/bug_monitor)
+	ref_many(nameof(paired), /obj/machinery/camera/bug)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("item", item(/obj/item/camerabug), then(PROC_REF(interaction_item)))
+	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))
+	ref_one(nameof(selected_camera), /obj/machinery/camera/bug)
 
-/obj/item/bug_monitor/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	view_cameras(user)
+/obj/item/bug_monitor/proc/bug_monitor_controls_opened(datum/act/op/A)
+	view_cameras(A.actor)
+	return OP_OK
 
-/obj/item/bug_monitor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/bug_monitor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	W.attackby(src, user)
 	return TRUE
 
@@ -208,32 +233,24 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 		if(in_use) // Don't allow spamming tgui menus
 			return
 		in_use = TRUE
-		if(!om_ask(user, /datum/om/prompt/choice/bug_camera, PROC_REF(camera_chosen), choices = cameras, monitor = src))
+		if(!user || QDELETED(user) || !open_request(src, /datum/prompt/choice/bug_camera, PROC_REF(camera_chosen), answerer = user, choices = cameras))
 			in_use = FALSE
 		return
 	view_camera(user)
 
 /// Picking a paired camera. Re-checked on the answer: the monitor is still carried. Any ending frees the monitor.
-/datum/om/prompt/choice/bug_camera
+/datum/prompt/choice/bug_camera
 	title = "Camera Choice"
-	message = "Select camera to view."
+	question = "Select camera to view."
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/obj/item/bug_monitor/monitor
+	timeout = 0
 
-/datum/om/prompt/choice/bug_camera/cancelled()
-	if(monitor)
-		monitor.in_use = FALSE
-	return ..()
-
-/datum/om/prompt/choice/bug_camera/refused(reason)
-	if(monitor)
-		monitor.in_use = FALSE
-	return ..()
-
-/obj/item/bug_monitor/proc/camera_chosen(datum/om/prompt/choice/bug_camera/ask)
+/obj/item/bug_monitor/proc/camera_chosen(datum/act/request/A)
 	in_use = FALSE
-	rel_set(src, nameof(selected_camera), ask.choice)
-	view_camera(ask.answerer)
+	if(!A.answer)
+		return
+	rel_set(src, nameof(selected_camera), A.answer.value)
+	view_camera(A.request.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
 	if(loc != user) // Nice try smartass, must be in your hand and not in a box in your inventory
@@ -267,22 +284,24 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 
 /obj/machinery/camera/bug
 	network = list(NETWORK_SECURITY)
+	var/name_series = "Camera"
 
-/obj/machinery/camera/bug/Initialize(mapload)
-	. = ..()
-	name = "Camera #[rand(1000,9999)]"
-	c_tag = name
+CAPABILITIES(/obj/machinery/camera/bug)
+	rolls(nameof(name), PROC_REF(roll_name))
+	rolls(nameof(c_tag), PROC_REF(tag_as_name), from = list(nameof(name)))
+
+/// Rolled before init (rolls()): the bug's series and a serial number.
+/obj/machinery/camera/bug/proc/roll_name(datum/roller/R)
+	return "[name_series] #[R.number(1000, 9999)]"
+
+/// Rolled before init (rolls()), after the name: the camera's tag is its name.
+/obj/machinery/camera/bug/proc/tag_as_name(datum/roller/R)
+	return name
 
 /obj/machinery/camera/bug/spy
 	// These cheap toys are accessible from the mercenary camera console as well - only the antag ones though!
 	network = list(NETWORK_MERCENARY)
-
-/obj/machinery/camera/bug/spy/Initialize(mapload)
-	. = ..()
-	name = "DV-136ZB #[rand(1000,9999)]"
-	c_tag = name
-
-DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
+	name_series = "DV-136ZB"
 
 /// Relation view: linkedmonitor (reads null once it is gone).
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor
@@ -291,7 +310,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
 /// Relation view: selected camera (reads null once it is gone).
 /obj/item/bug_monitor/proc/selected_camera() as /obj/machinery/camera/bug
 	return selected_camera
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/camerabug, \
-	INTERACT_VERB("Reset camera bug", PROC_REF(camerabug_reset_effect), REQ_IN_INVENTORY), \
-)

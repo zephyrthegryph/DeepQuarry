@@ -132,7 +132,7 @@
 /datum/language/proc/broadcast(mob/living/speaker,message,speaker_mask)
 	speaker.log_talk("(HIVE) [message]", LOG_SAY)
 
-	om_grant(speaker, GRANT_VERB, /mob/proc/adjust_hive_range, src)
+	grant(speaker, granted_verb(/mob/proc/adjust_hive_range), src)
 
 	if(!speaker_mask) speaker_mask = speaker.real_name
 	message = "[get_spoken_verb(message)], \"[format_message(message, get_spoken_verb(message))]\""
@@ -203,8 +203,9 @@
 		return 0
 
 	languages.Add(new_language)
+	sync_language_state()
 	if(new_language.flags & HIVEMIND)
-		om_grant(src, GRANT_VERB, /mob/proc/adjust_hive_range, new_language)
+		grant(src, granted_verb(/mob/proc/adjust_hive_range), new_language)
 
 	return 1
 
@@ -215,6 +216,13 @@
 	if(prefix)
 		language_keys.Remove(prefix)
 	languages.Remove(L)
+	sync_language_state()
+
+/// Brings the MOB_STATE_KNOWS_LANGUAGE key in line with the languages list (call after any write to the list).
+/mob/proc/sync_language_state()
+	var/knows = length(languages) > 0
+	if(mob_state_knows_language(src) != knows)
+		key_set(src, MOB_STATE_KNOWS_LANGUAGE, knows)
 
 /mob/living/remove_language(rem_language)
 	var/datum/language/L = GLOB.all_languages[rem_language]
@@ -287,17 +295,12 @@
 
 // check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
 
-TOPIC_ACTION(/mob/living, "default_lang=reset", PROC_REF(topic_default_lang_reset))
-TOPIC_ACTION(/mob/living, "default_lang", PROC_REF(topic_default_lang), TOPIC_REF("default_lang", /datum/language, PROC_REF(topic_known_languages)))
-TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_REF("set_lang_key", /datum/language, PROC_REF(topic_known_languages)))
 
 /// TOPIC_REF source: the languages this mob knows.
 /mob/living/proc/topic_known_languages()
 	return languages
 
-/mob/living/proc/topic_default_lang_reset(mob/user, list/args)
-	if(user != src)
-		return
+/mob/living/proc/topic_default_lang_reset(datum/act/op/A)
 	if (species_language)
 		apply_default_language(GLOB.all_languages[species_language])
 	else
@@ -305,33 +308,16 @@ TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_RE
 	check_languages()
 	return TRUE
 
-/mob/living/proc/topic_default_lang(mob/user, list/args)
-	if(user != src)
-		return
-	apply_default_language(args["default_lang"])
+/mob/living/proc/topic_default_lang(datum/act/op/A, href_default_lang)
+	apply_default_language(href_default_lang)
 	check_languages()
 	return TRUE
 
-/mob/living/proc/topic_set_lang_key(mob/user, list/args)
-	if(user != src)
-		return
-	var/datum/language/L = args["set_lang_key"]
+/// The key a language is spoken with: asked when the link is clicked, set here (the answerer is still checked to know the language, by the prompt).
+/mob/living/proc/topic_set_lang_key(datum/act/op/A, href_set_lang_key)
+	var/datum/language/L = href_set_lang_key
 	var/old_key = get_custom_prefix_by_lang(src, L)
-	om_ask(src, /datum/om/prompt/text/language_key, PROC_REF(language_key_entered), message = "Input a new key for [L.name]", default = old_key, language = L)
-	return TRUE
-
-/// Re-checked on the answer: the answerer still knows the language.
-/datum/om/prompt/text/language_key
-	title = "Language Key"
-	var/datum/language/language
-
-/datum/om/prompt/text/language_key/valid()
-	return (language in answerer.languages) ? null : "language lost"
-
-/mob/living/proc/language_key_entered(datum/om/prompt/text/language_key/ask)
-	var/datum/language/L = ask.language
-	var/old_key = ask.default
-	var/custom_key = ask.text
+	var/custom_key = A.step_value("key")
 	if(custom_key && length(custom_key) == 1)
 		if(contains_az09(custom_key))
 			language_keys[custom_key] = L
@@ -342,6 +328,32 @@ TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_RE
 				language_keys.Remove(old_key)
 		else
 			tgui_alert_async(src, "Improper language key. Rejected.", "Error")
+
+/// Re-checked on the answer: the answerer still knows the language.
+/datum/prompt/text/language_key
+	title = "Language Key"
+	timeout = 0
+	var/datum/language/language
+
+CAPABILITIES(/datum/prompt/text/language_key)
+	ref_one(nameof(language), /datum/language)
+
+/datum/prompt/text/language_key/prepare(datum/act/A)
+	..()
+	var/datum/language/captured_language = language
+	rel_clear(src, nameof(language))
+	rel_set(src, nameof(language), captured_language)
+	if(captured_language)
+		question = "Input a new key for [captured_language.name]"
+		default = get_custom_prefix_by_lang(A?.holder, captured_language)
+
+/datum/prompt/text/language_key/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
+	if(QDELETED(language))
+		return "gone"
+	return (language in answerer.languages) ? null : "language lost"
 
 /proc/transfer_languages(mob/source, mob/target, except_flags)
 	for(var/datum/language/L in source.languages)

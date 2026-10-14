@@ -22,3 +22,8 @@
 #define MSG_DEF(name, self_text, others_text) /datum/msg/##name{self = self_text; others = others_text}
 /// A template shown to the actor only.
 #define MSG_DEF_SELF(name, self_text) /datum/msg/##name{self = self_text}
+/// Where a template's actor line is shown: in chat (the default), or as a balloon over the actor (a refusal that never wrote to chat).
+#define MSG_DISPLAY_CHAT 0
+#define MSG_DISPLAY_BALLOON 1
+/// A template shown to the actor as a balloon alert, not a chat line: because = MSG(x) and starts() refusals route it to balloon_alert(). No tokens, plain text.
+#define MSG_BALLOON(name, text) /datum/msg/##name{self = text; display = MSG_DISPLAY_BALLOON}

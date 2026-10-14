@@ -6,49 +6,28 @@
 	max_integrity = 10
 	explosion_resistance = 1
 
-/obj/structure/holosign/Initialize(mapload, source_projector)
-	. = ..()
-	if(source_projector)
-		rel_set(src, nameof(projector), source_projector) // the pair adds us to its signs
 /*	if(overlays) // Fucking god damnit why do we have to have an entire different subsystem for this shit from other codebases.
 		overlays.add_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, alpha, RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
 		alpha = 0
 */
 
-/obj/structure/holosign/relations()
-	. = ..()
-	. += rel_one(nameof(projector), back = nameof(/obj/item/holosign_creator::signs))
-/obj/item/holosign_creator/relations()
-	. = ..()
-	. += rel_many(nameof(signs), back = nameof(/obj/structure/holosign::projector))
+CAPABILITIES(/obj/structure/holosign)
+	links(/obj/structure/holosign::projector, /obj/item/holosign_creator::signs, b_many = TRUE)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	param(nameof(projector), pos = 1)
 
-/obj/structure/holosign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/holosign_hand,
-		/datum/interaction/entry_item/holosign_item,
-	)
-	..()
-
-/// Old attack_hand: punch the sign.
-/datum/interaction/entry_hand/holosign_hand
-	id = "holosign_hand"
-	name = "Use"
-	effect = /obj/structure/holosign/proc/interaction_hand
-
-/obj/structure/holosign/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/holosign/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
 	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 
-/// Old attackby: hit the sign with a weapon.
-/datum/interaction/entry_item/holosign_item
-	id = "holosign_item"
-	name = "Use"
-	effect = /obj/structure/holosign/proc/interaction_item
-
-/obj/structure/holosign/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/holosign/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
@@ -94,18 +73,23 @@
 		return CheckHuman(mover)
 	return TRUE
 
-/obj/structure/holosign/barrier/medical/Bumped(atom/movable/AM)
-	. = ..()
+CAPABILITIES(/obj/structure/holosign/barrier/medical)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/holosign/barrier/medical/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(ishuman(AM) && !CheckHuman(AM))
 		if(COOLDOWN_FINISHED(src, buzzed))
 			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 			EXPIRY_SET(src, buzzed, 6 SECONDS, CLOCK_WORLD)
 
-		icon_state = "holo_medical-deny"
-		om_after_replace(src, 10 SECONDS, PROC_REF(reset_deny_icon))
+		set_icon_state("holo_medical-deny")
+		after(src, 10 SECONDS, PROC_REF(reset_deny_icon), key = "medical_holosign_deny_reset")
 
 /obj/structure/holosign/barrier/medical/proc/reset_deny_icon()
-	icon_state = "holo_medical"
+	set_icon_state("holo_medical")
 
 /obj/structure/holosign/barrier/medical/proc/CheckHuman(mob/living/carbon/human/H)
 	if(H.get_species() == SPECIES_XENOCHIMERA)

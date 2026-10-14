@@ -1,0 +1,42 @@
+"a" = (
+/turf/space,
+/area/space)
+"é" = (
+/obj/x,
+é/turf,
+/area/x)
+	tag = "icon-a"
+	tag = "other"
+ tag = "icon"
+<b>html
+x > y
+step_x = 4
+step_y = 2 // ALLOW(check_grep): ok
+step_x = 1 // ALLOW(check_grep)
+/area/foo{
+/area/bar
+(/turf,/area/x)
+a,/turf }
+/turf/open/floor
+{
+	},
+{
+ },
+/obj/structure/machinery/power/apc{
+	pixel_x = 5
+	},
+/obj/structure/machinery/power/apc/auto_name{
+	pixel_y = 25
+	},
+/obj/structure/machinery/power/apc{
+	pixel_x = 24
+	},
+/obj/structure/machinery/power/apc{
+	pixel_y = 100
+	},
+	tag = "x"
+{tag = "y"
+;tag = "z"
+stag = "q"
+ tag="w"
+	tag = "icon" // ALLOW(check_grep): ok

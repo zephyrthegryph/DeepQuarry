@@ -1,0 +1,2 @@
+/obj/machinery/smart_centrifuge vol=3000 holder=/datum/reagents 
+

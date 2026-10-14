@@ -11,9 +11,11 @@
 
 	var/list/internal_devices // Devices that can be toggled on to trigger on attack()
 	var/list/active_devices   // Devices that will be triggered on attack()
-	var/list/ui_templates     // List of ui templates the commcard can access
 	// ALLOW(instance_list): d: per-card UI state keyed by dynamic strings; few communicators
 	var/list/internal_data = list()	   // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
+
+CAPABILITIES(/obj/item/commcard)
+	owns_many(nameof(internal_devices))
 
 /obj/item/commcard/proc/get_device_status()
 	var/list/L = list()
@@ -53,15 +55,13 @@
 /obj/item/commcard/engineering
 	name = "\improper Power-ON cartridge"
 	icon_state = "cart-e"
-	ui_templates = list(list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl"))
 
-/obj/item/commcard/engineering/Initialize(mapload)
-	..()
-	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/commcard/engineering)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/halogen_counter))
+	after_init(0, then(PROC_REF(find_grid_sensors)))
 
-/obj/item/commcard/engineering/LateInitialize()
-	. = ..()
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/engineering/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 
@@ -78,9 +78,8 @@
 	name = "\improper BreatheDeep cartridge"
 	icon_state = "cart-a"
 
-/obj/item/commcard/atmos/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+CAPABILITIES(/obj/item/commcard/atmos)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer))
 
 // Medical Cartridge:
 // Devices
@@ -91,12 +90,9 @@
 /obj/item/commcard/medical
 	name = "\improper Med-U cartridge"
 	icon_state = "cart-m"
-	ui_templates = list(list("name" = "Medical Records", "template" = "med_records.tmpl"))
 
-/obj/item/commcard/medical/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+CAPABILITIES(/obj/item/commcard/medical)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter))
 
 /obj/item/commcard/medical/get_data()
 	return list(list("field" = "med_records", "value" = get_med_records()))
@@ -112,9 +108,8 @@
 	name = "\improper ChemWhiz cartridge"
 	icon_state = "cart-chem"
 
-/obj/item/commcard/medical/chemistry/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
+CAPABILITIES(/obj/item/commcard/medical/chemistry)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/halogen_counter, /obj/item/reagent_scanner))
 
 // Detective Cartridge:
 // Devices
@@ -126,10 +121,6 @@
 /obj/item/commcard/medical/detective
 	name = "\improper D.E.T.E.C.T. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Medical Records", "template" = "med_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl")
-		)
 
 /obj/item/commcard/medical/detective/get_data()
 	var/list/data = ..()
@@ -143,10 +134,6 @@
 /obj/item/commcard/int_aff
 	name = "\improper P.R.O.V.E. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl")
-		)
 
 /obj/item/commcard/int_aff/get_data()
 	return list(
@@ -161,10 +148,6 @@
 /obj/item/commcard/security
 	name = "\improper R.O.B.U.S.T. cartridge"
 	icon_state = "cart-s"
-	ui_templates = list(
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl")
-		)
 
 /obj/item/commcard/security/get_data()
 	return list(
@@ -178,9 +161,6 @@
 /obj/item/commcard/janitor
 	name = "\improper CustodiPRO cartridge"
 	desc = "The ultimate in clean-room design."
-	ui_templates = list(
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl")
-		)
 
 /obj/item/commcard/janitor/get_data()
 	return list(
@@ -195,13 +175,9 @@
 /obj/item/commcard/signal
 	name = "generic signaler cartridge"
 	desc = "A data cartridge with an integrated radio signaler module."
-	ui_templates = list(
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
-/obj/item/commcard/signal/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/signal)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler))
 
 /obj/item/commcard/signal/get_data()
 	return list(
@@ -221,10 +197,8 @@
 	icon_state = "cart-tox"
 	// UI templates inherited
 
-/obj/item/commcard/signal/science/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
+CAPABILITIES(/obj/item/commcard/signal/science)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/assembly/signaler, /obj/item/reagent_scanner, /obj/item/analyzer))
 
 // Supply Cartridge:
 // Templates
@@ -233,16 +207,8 @@
 	name = "\improper Space Parts & Space Vendors cartridge"
 	desc = "Perfect for the Quartermaster on the go!"
 	icon_state = "cart-q"
-	ui_templates = list(
-			list("name" = "Supply Records", "template" = "supply_records.tmpl")
-		)
+	internal_data = list("supply_category" = null, "supply_controls" = FALSE, "supply_pack_expanded" = list(), "supply_reqtime" = -1) // cannot control the supply shuttle, cannot accept orders
 
-/obj/item/commcard/supply/Initialize(mapload)
-	. = ..()
-	internal_data["supply_category"] = null
-	internal_data["supply_controls"] = FALSE // Cannot control the supply shuttle, cannot accept orders
-	internal_data["supply_pack_expanded"] = list()
-	internal_data["supply_reqtime"] = -1
 
 /obj/item/commcard/supply/get_data()
 	// Supply records data
@@ -275,21 +241,12 @@
 /obj/item/commcard/head
 	name = "\improper Easy-Record DELUXE"
 	icon_state = "cart-h"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl")
-		)
+	internal_data = list("stat_display_line1" = null, "stat_display_line2" = null, "stat_display_active1" = null, "stat_display_active2" = null, "stat_display_special" = null)
 
 /obj/item/commcard/head/Initialize(mapload)
 	// Have to register the commcard with the Radio controller to receive updates to the status displays
-	// ALLOW(decl): service call with a frequency argument
-	GLOB.radio_service.add_object(src, 1435)
+	SSradio.add_object(src, 1435)
 	. = ..()
-	internal_data["stat_display_line1"] = null
-	internal_data["stat_display_line2"] = null
-	internal_data["stat_display_active1"] = null
-	internal_data["stat_display_active2"] = null
-	internal_data["stat_display_special"] = null
 
 /obj/item/commcard/head/get_data()
 	return list(
@@ -308,13 +265,6 @@
 /obj/item/commcard/head/hop
 	name = "\improper HumanResources9001 cartridge"
 	icon_state = "cart-h"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Supply Records", "template" = "supply_records.tmpl"),
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl")
-		)
 
 /obj/item/commcard/head/hop/get_data()
 	var/list/data = ..()
@@ -357,12 +307,6 @@
 /obj/item/commcard/head/hos
 	name = "\improper R.O.B.U.S.T. DELUXE"
 	icon_state = "cart-hos"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl")
-		)
 
 /obj/item/commcard/head/hos/get_data()
 	var/list/data = ..()
@@ -384,17 +328,9 @@
 /obj/item/commcard/head/rd
 	name = "\improper Signal Ace DELUXE"
 	icon_state = "cart-rd"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
-/obj/item/commcard/head/rd/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/head/rd)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/reagent_scanner, /obj/item/assembly/signaler))
 
 /obj/item/commcard/head/rd/get_data()
 	var/list/data = ..()
@@ -414,17 +350,9 @@
 /obj/item/commcard/head/cmo
 	name = "\improper Med-U DELUXE"
 	icon_state = "cart-cmo"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Medical Records", "template" = "med_records.tmpl")
-		)
 
-/obj/item/commcard/head/cmo/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
+CAPABILITIES(/obj/item/commcard/head/cmo)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter))
 
 /obj/item/commcard/head/cmo/get_data()
 	var/list/data = ..()
@@ -443,20 +371,13 @@
 /obj/item/commcard/head/ce
 	name = "\improper Power-On DELUXE"
 	icon_state = "cart-ce"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl")
-		)
 
-/obj/item/commcard/head/ce/Initialize(mapload)
-	..()
-	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/item/commcard/head/ce)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/halogen_counter))
+	after_init(0, then(PROC_REF(find_grid_sensors)))
 
-/obj/item/commcard/head/ce/LateInitialize()
-	. = ..()
+/// Finds the power sensors, once the map has them.
+/obj/item/commcard/head/ce/proc/find_grid_sensors(datum/act/timer/A)
 	internal_data["grid_sensors"] = find_powernet_sensors()
 	internal_data["powernet_target"] = ""
 
@@ -491,25 +412,9 @@
 	name = "\improper Value-PAK cartridge"
 	desc = "Now with 200% more value!"
 	icon_state = "cart-c"
-	ui_templates = list(
-			list("name" = "Status Display Access", "template" = "stat_display_access.tmpl"),
-			list("name" = "Employment Records", "template" = "emp_records.tmpl"),
-			list("name" = "Medical Records", "template" = "med_records.tmpl"),
-			list("name" = "Security Records", "template" = "sec_records.tmpl"),
-			list("name" = "Security Bot Control", "template" = "sec_bot_access.tmpl"),
-			list("name" = "Power Monitor", "template" = "comm_power_monitor.tmpl"),
-			list("name" = "Supply Records", "template" = "supply_records.tmpl"),
-			list("name" = "Janitorial Supply Locator", "template" = "janitorialLocator.tmpl"),
-			list("name" = "Integrated Signaler Control", "template" = "signaler_access.tmpl")
-		)
 
-/obj/item/commcard/head/captain/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/analyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/healthanalyzer(src))
-	own_add(src, nameof(internal_devices), new /obj/item/reagent_scanner(src))
-	own_add(src, nameof(internal_devices), new /obj/item/halogen_counter(src))
-	own_add(src, nameof(internal_devices), new /obj/item/assembly/signaler(src))
+CAPABILITIES(/obj/item/commcard/head/captain)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/analyzer, /obj/item/healthanalyzer, /obj/item/reagent_scanner, /obj/item/halogen_counter, /obj/item/assembly/signaler))
 
 /obj/item/commcard/head/captain/get_data()
 	var/list/data = ..()
@@ -561,13 +466,10 @@
 /obj/item/commcard/mercenary
 	name = "\improper Detomatix cartridge"
 	icon_state = "cart"
-	ui_templates = list(
-			list("name" = "Shuttle Blast Door Control", "template" = "merc_blast_door_control.tmpl")
-		)
+	internal_data = list("shuttle_door_code" = "smindicate") // Copied from PDA code
 
 /obj/item/commcard/mercenary/Initialize(mapload)
 	. = ..()
-	internal_data["shuttle_door_code"] = "smindicate" // Copied from PDA code
 	internal_data["shuttle_doors"] = find_blast_doors()
 
 /obj/item/commcard/mercenary/get_data()
@@ -595,13 +497,9 @@
 /obj/item/commcard/explorer
 	name = "\improper Explorator cartridge"
 	icon_state = "cart-tox"
-	ui_templates = list(
-			list("name" = "Integrated GPS", "template" = "gps_access.tmpl")
-		)
 
-/obj/item/commcard/explorer/Initialize(mapload)
-	. = ..()
-	own_add(src, nameof(internal_devices), new /obj/item/gps/explorer(src))
+CAPABILITIES(/obj/item/commcard/explorer)
+	owns_many(nameof(internal_devices), starts = list(/obj/item/gps/explorer))
 
 /obj/item/commcard/explorer/get_data()
 	var/list/gps_lists = get_GPS_lists()

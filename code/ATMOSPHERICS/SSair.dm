@@ -1,9 +1,11 @@
 SYSTEM_DEF(air)
 	name = "Atmospherics"
+	phase = KERNEL_PHASE_N
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/mapping,
-		/datum/controller/subsystem/atoms,
+		/datum/system/atoms,
 		// The machine world service initializes at the top of initialize() (it was
 		// SSmachines, which depended on points_of_interest; POIs now load at the end of SSholomaps).
 		/datum/system/holomaps,
@@ -12,6 +14,8 @@ SYSTEM_DEF(air)
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	var/phase_cost = 0
+	/// The last run stopped for budget in the middle of `currentpart`: the next run resumes it.
+	var/resuming = FALSE
 
 	// cost_atoms / atom_process / process_atoms removed alongside
 	// /atom/proc/process_exposure. /tg/'s atom-exposure pipeline (paper
@@ -52,8 +56,7 @@ SYSTEM_DEF(air)
 
 	// hotspots stays as a registry (counts, admin panel); they burn as kernel work items (LINDA_fire.dm). networks stays
 	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
-	var/list/hotspots = list()
-	var/list/networks = list()
+	var/list/datum/pipe_network/networks = list()
 	var/list/rebuild_queue = list()
 	//Subservient to rebuild queue
 	var/list/expansion_queue = list()
@@ -100,7 +103,7 @@ SYSTEM_DEF(air)
 	msg += "HP:[round(cost_highpressure,1)]|"
 	msg += "PN:[round(cost_pipenets,1)]|"
 	msg += "} "
-	msg += "\n  Count:{HS:[hotspots.len]|HPD:[high_pressure_delta.len]|PN:[networks.len]"
+	msg += "\n  Count:{HS:[REGISTRY_COUNT(REGISTRY_HOTSPOTS)]|HPD:[high_pressure_delta.len]|PN:[networks.len]"
 	msg += "|EV:[gas_events_last]|RX:[gas_reactions_last]|VIS:[gas_visuals_last]|PUSH:[gas_pressure_last]}"
 	if(length(stats) >= 17)
 		msg += "\n  Field:{FRAMES:[stats[1]]|CMD:[stats[2]]|FRAMEus:[round(stats[9], 1)]|BACKLOG:[stats[10]]|OVERLAY:[stats[11]]|AGE:[stats[12]]|SKIP:[stats[13]]|SHORT:[round(stats[14], 0.001)]|MODE:[stats[17] ? "fallback" : "overlay"]}"
@@ -122,7 +125,7 @@ SYSTEM_DEF(air)
 	map_loading = FALSE
 	// The machine world service's boot step (power, gas wakes, pump commit), where SSmachines
 	// used to initialize: before any atmos machinery setup below.
-	GLOB.machine_service.initialize()
+	kernel_boot_system(SSmachines)
 	init_phase_mark("machine_service")
 
 	// Register the gas roster in the Rust arena FIRST — reaction setup
@@ -179,9 +182,11 @@ SYSTEM_DEF(air)
 /// The atmospherics pass runs every `wait` (it was SSair's SS_BACKGROUND fire()).
 /datum/system/air/reactions()
 	. = ..()
-	. += every(0.5 SECONDS, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_SIMULATION)
+	. += every(0.5 SECONDS, PROC_REF(atmos_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_N, lane = LANE_SIMULATION)
 
-/datum/system/air/fire(resumed = FALSE)
+/datum/system/air/proc/atmos_step(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	var/timer = TICK_USAGE_REAL
 #ifdef BENCHMARK
 	// The Rust heap peaks in the first frames after init (init_and_turfs.md sec 0.2a).
@@ -202,11 +207,12 @@ SYSTEM_DEF(air)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
 			phase_cost = 0
-		process_pipenets(resumed)
+		var/pipenets_paused = process_pipenets(resumed)
 		phase_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
+		if(pipenets_paused)
+			resuming = TRUE
+			return STEP_YIELD
+		cost_pipenets = KERNEL_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
@@ -225,7 +231,7 @@ SYSTEM_DEF(air)
 		// Dispatch no longer has a cost separate from the tick itself (both
 		// happen in this one non-resumable step now); tracked identically
 		// so the stat panel/profiler/benchmarks keep reading a real number.
-		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
+		cost_turfs = KERNEL_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
 		cost_gas_events = cost_turfs
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
@@ -236,11 +242,12 @@ SYSTEM_DEF(air)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
 			phase_cost = 0
-		process_high_pressure_delta(resumed)
+		var/highpressure_paused = process_high_pressure_delta(resumed)
 		phase_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
+		if(highpressure_paused)
+			resuming = TRUE
+			return STEP_YIELD
+		cost_highpressure = KERNEL_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
@@ -289,7 +296,7 @@ SYSTEM_DEF(air)
 		return
 	SSair.gas_visuals_last++
 	T.set_visuals()
-	native_changed(T, CHANGE_TURF_GAS_VISUAL, NATIVE_SRC_GAS_EVENT)
+	native_fired(NATIVE_SRC_GAS_EVENT)
 
 /// Spacewind: `cell`'s pressure differs from open neighbour `neighbor`'s by
 /// more than the threshold (`GasEvent::PressureJump`): the same
@@ -309,7 +316,7 @@ SYSTEM_DEF(air)
 	if (!resumed)
 		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
-		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		cost_pipe_commit = KERNEL_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
 		// The pipe devices step inside the frame (a period on it), not here.
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
@@ -317,12 +324,11 @@ SYSTEM_DEF(air)
 	while(currentrun.len)
 		var/datum/pipe_network/thing = currentrun[currentrun.len]
 		currentrun.len--
-		if(thing)
+		if(thing) // a deleted network leaves SSair.networks on its own (ref_many)
 			thing.reconcile()
-		else
-			networks.Remove(thing)
-		if(MC_TICK_CHECK)
-			return
+		if(KERNEL_OVER_BUDGET)
+			return TRUE
+	return FALSE
 
 // add_to_rebuild_queue / add_to_expansion / remove_from_expansion removed —
 // /tg/-style pipenet rebuild queues are unused under CHOMP's /datum/pipe_network
@@ -340,8 +346,9 @@ SYSTEM_DEF(air)
 		high_pressure_delta.len--
 		T.high_pressure_movements()
 		T.pressure_difference = 0
-		if(MC_TICK_CHECK)
-			return
+		if(KERNEL_OVER_BUDGET)
+			return TRUE
+	return FALSE
 
 // process_active_turfs / process_excited_groups removed — transactional turf FDM
 // sharing now lives in the Rust arena (process_turfs_auxtools, driven from fire()).
@@ -370,7 +377,7 @@ SYSTEM_DEF(air)
 	// them and register on StopLoadingMap, preserving the old load-time behaviour.
 	if(map_loading && !(activate.flags_1 & INITIALIZED_1))
 		if(queued_for_activation)
-			queued_for_activation[activate] = activate
+			queued_for_activation[activate] = activate // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 		return
 	// flag >= 0 registers/updates the turf in the arena; the Rust side reads
 	// blocks_air / air / planetary_atmos and figures out whether it's an airless
@@ -412,7 +419,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/build_multiz_atmos_levels()
 	if(!SSmapping)
 		return
-	if(length(SSmapping.multiz_levels) < world.maxz)
+	if(length(mapping_multiz_levels()) < world.maxz)
 		SSmapping.multiz_levels.len = world.maxz
 	for(var/z in 1 to world.maxz)
 		// Z_LEVEL_UP / Z_LEVEL_DOWN are the numeric direction constants UP (16)
@@ -430,7 +437,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/update_dynamic_multiz_atmos_level(z)
 	if(!SSmapping || z < 1 || z > world.maxz)
 		return
-	if(length(SSmapping.multiz_levels) < world.maxz)
+	if(length(mapping_multiz_levels()) < world.maxz)
 		SSmapping.multiz_levels.len = world.maxz
 	for(var/level in max(1, z - 1) to min(world.maxz, z + 1))
 		var/list/traits = new /list(Z_LEVEL_DOWN)
@@ -445,7 +452,7 @@ SYSTEM_DEF(air)
 /datum/system/air/proc/push_z_links()
 	var/list/links = new /list(world.maxz)
 	for(var/z in 1 to world.maxz)
-		var/list/traits = length(SSmapping.multiz_levels) >= z ? SSmapping.multiz_levels[z] : null
+		var/list/traits = length(mapping_multiz_levels()) >= z ? mapping_multiz_levels()[z] : null
 		if(!traits)
 			links[z] = NONE
 			continue
@@ -501,7 +508,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	for(var/sharp_color in GLOB.contrast_colors)
 		var/list/add_to = list()
 		GLOB.colored_turfs += list(add_to)
-		for(var/offset in 0 to SSmapping.max_plane_offset)
+		for(var/offset in 0 to mapping_max_plane_offset())
 			var/obj/effect/overlay/atmos_excited/suger_high = new()
 			SET_PLANE_W_SCALAR(suger_high, HIGH_GAME_PLANE, offset)
 			add_to += suger_high
@@ -514,7 +521,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 
 // /tg/'s SSair.get_init_dirs(type, dir, init_dir) removed — CHOMP pipe
-// construction caches via GLOB.machine_service.get_init_dirs (game/machinery/pipe/
+// construction caches via SSmachines.get_init_dirs (game/machinery/pipe/
 // construction.dm:226) and atmospherics.dm's /obj/machinery/atmospherics/get_init_dirs.
 // LINDA's variant was unused.
 
@@ -522,7 +529,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	atmos_gen = list()
 	for(var/T in subtypesof(/datum/atmosphere))
 		var/datum/atmosphere/atmostype = T
-		atmos_gen[initial(atmostype.id)] = new atmostype
+		atmos_gen[initial(atmostype.id)] = new atmostype // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 
 /// Takes a gas string, returns the matching mutable gas_mixture
 /datum/system/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
@@ -536,7 +543,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 	var/datum/gas_mixture/canonical_mix = new gastype()
 	// We set here so any future key changes don't fuck us
-	strings_to_mix[cache_key] = canonical_mix
+	strings_to_mix[cache_key] = canonical_mix // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 	gas_string = preprocess_gas_string(gas_string)
 
 	// Moles/temperature live in the Rust arena now — write through the arena-backed
@@ -545,10 +552,10 @@ GLOBAL_LIST_EMPTY(colored_images)
 	// through their own parse_string_immutable path instead.
 	var/list/gas = gas_string_to_list(gas_string)
 	if(gas["TEMP"])
-		canonical_mix.set_temperature(text2num(gas["TEMP"]))
+		heat_set(canonical_mix, text2num(gas["TEMP"]))
 		gas -= "TEMP"
 	else // if we do not have a temp in the new gas mix lets assume room temp.
-		canonical_mix.set_temperature(T20C)
+		heat_set(canonical_mix, T20C)
 	for(var/id in gas)
 		var/path = id
 		if(!ispath(path))
@@ -587,21 +594,24 @@ GLOBAL_LIST_EMPTY(colored_images)
 // These were previously declared as ui_* procs, so the framework never called them
 // and the panel was dead. Renamed to the fork convention + opened by an admin verb
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
-DECLARE_UI_STATE(/datum/system/air, ADMIN_STATE(R_DEBUG))
+CAPABILITIES(/datum/system/air)
+	ref_many(nameof(networks), /datum/pipe_network)
+	interface("AtmosControlPanel", title = "Atmospherics Debug", rights = R_DEBUG)
+	op("move-to-target", ui_act("move-to-target", arg("spot")), then(PROC_REF(ui_move_to_target)))
+	op("toggle-freeze", ui_act("toggle-freeze"), then(PROC_REF(ui_toggle_freeze)))
+	op("toggle_show_all", ui_act("toggle_show_all"), then(PROC_REF(ui_toggle_show_all)))
+	op("toggle_user_display", ui_act("toggle_user_display"), then(PROC_REF(ui_toggle_user_display)))
 
-DECLARE_UI(/datum/system/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
-
-UI_DATA_REPLACE(/datum/system/air, "frozen=can_fire:num", "fire_count=times_fired:num", "merge:ui_data_datum_controller_subsystem_air{excited_groups:list,active_size:num,hotspots_size:num,excited_size:unknown,conducting_size:num,show_all:unknown,display_max:bool,showing_user:unknown}")
-
-/// The computed part of /datum/system/air's window data (declared on its UI_DATA row).
-/datum/system/air/proc/ui_data_datum_controller_subsystem_air(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data. Excited groups and the active-turf lists live in the Rust arena and aren't enumerable from DM: it shows the per-tick
+/// auxmos counters the binds report back instead.
+/datum/system/air/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-	// Excited groups + active-turf/superconduction lists live in the Rust arena
-	// now and aren't enumerable from DM. Surface the per-tick auxmos counters the
-	// binds report back instead of the (deleted) DM lists.
+	data["frozen"] = can_fire
+	data["fire_count"] = times_fired
 	data["excited_groups"] = list()
 	data["active_size"] = num_group_turfs_processed + num_equalize_processed
-	data["hotspots_size"] = hotspots.len
+	data["hotspots_size"] = REGISTRY_COUNT(REGISTRY_HOTSPOTS)
 	data["excited_size"] = num_group_turfs_processed
 	data["conducting_size"] = 0
 	data["show_all"] = display_all_groups
@@ -610,40 +620,30 @@ UI_DATA_REPLACE(/datum/system/air, "frozen=can_fire:num", "fire_count=times_fire
 	#else
 	data["display_max"] = FALSE
 	#endif
-	data["showing_user"] = user.hud_used.atmos_debug_overlays
+	data["showing_user"] = user?.hud_used?.atmos_debug_overlays
 	return data
 
-/datum/system/air/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!user || !check_rights_for(user.client, R_DEBUG))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/system/air, "move-to-target", ui_act_move_to_target, UI_ARG_REF("spot", null, /turf))
-UI_ACT_PROC(/datum/system/air, ui_act_move_to_target)
-	var/turf/target = params["spot"]
-	if(!target)
-		return
+/datum/system/air/proc/ui_move_to_target(datum/act/op/A, spot)
+	var/turf/target = locate(spot)
+	if(!istype(target))
+		return OP_FAILED
+	var/mob/user = A.actor
 	user.forceMove(target)
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle-freeze", ui_act_toggle_freeze)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_freeze)
+/datum/system/air/proc/ui_toggle_freeze(datum/act/op/A)
 	can_fire = !can_fire
-	return TRUE
-// toggle_show_group / toggle_show_all removed — excited groups live in the
-// Rust arena and have no DM turf_list to display/hide.
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle_show_all", ui_act_toggle_show_all)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_show_all)
+/datum/system/air/proc/ui_toggle_show_all(datum/act/op/A)
 	display_all_groups = !display_all_groups
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/system/air, "toggle_user_display", ui_act_toggle_user_display)
-UI_ACT_PROC(/datum/system/air, ui_act_toggle_user_display)
+/datum/system/air/proc/ui_toggle_user_display(datum/act/op/A)
+	var/mob/user = A.actor
 	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
 	if(user.hud_used.atmos_debug_overlays)
 		user.client.images += GLOB.colored_images
 	else
 		user.client.images -= GLOB.colored_images
-	return TRUE
+	return OP_OK

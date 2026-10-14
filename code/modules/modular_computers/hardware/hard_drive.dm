@@ -13,6 +13,9 @@
 	/// Whether drive is protected against changes
 	var/read_only = FALSE
 
+CAPABILITIES(/obj/item/computer_hardware/hard_drive)
+	owns_many(nameof(stored_files))
+
 /obj/item/computer_hardware/hard_drive/advanced
 	name = "advanced hard drive"
 	desc = "A small hybrid hard drive with 256GQ of storage capacity for use in higher grade computers where balance between power efficiency and capacity is desired."
@@ -78,12 +81,17 @@
 	if(!check_functionality())
 		return 0
 
-	// stored_files is lazy: LAZYADD below creates it for the first file.
+	// stored_files is lazy and initialized immediately before the first adoption.
 	// This file is already stored. Don't store it again.
 	if(F in stored_files)
 		return 0
 
-	own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files))
+	var/datum/previous_owner = owner_of(F)
+	if(!own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files)))
+		return 0
+	if(istype(previous_owner, /obj/item/computer_hardware/hard_drive))
+		var/obj/item/computer_hardware/hard_drive/donor = previous_owner
+		donor.recalculate_size()
 	rel_set(F, nameof(/datum/computer_file/::holder), src)
 	recalculate_size()
 	return 1

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Hand gate audit: tests pin that cuff, buckle and closet escapes are not hand ops, and the audit table is in intended_changes.md"

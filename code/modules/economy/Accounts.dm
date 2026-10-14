@@ -41,6 +41,9 @@
 	var/total_revenue = 0
 	var/total_expenses = 0
 
+CAPABILITIES(/datum/money_account)
+	owns_many(nameof(transaction_log))
+
 /datum/money_account/proc/record_transaction(target, purpose, amount, terminal_id)
 	var/datum/transaction/transaction = new
 	transaction.target_name = target
@@ -49,7 +52,7 @@
 	transaction.date = GLOB.current_date_string
 	transaction.time = stationtime2text()
 	transaction.source_terminal = terminal_id
-	own_add(src, nameof(transaction_log), transaction)
+	rel_add(src, nameof(transaction_log), transaction)
 
 /datum/money_account/proc/credit(amount, source_name, purpose, terminal_id = "Station budget ledger", external = TRUE, allow_suspended = FALSE)
 	if(!isnum(amount) || amount <= 0 || (suspended && !allow_suspended))
@@ -62,7 +65,7 @@
 		LAZYINITLIST(monthly_income_sources)
 		monthly_income_sources[source_name] = (monthly_income_sources[source_name] || 0) + amount
 	if(external)
-		GLOB.supply_service?.record_currency_created(amount, source_name)
+		SSsupply?.record_currency_created(amount, source_name)
 	return TRUE
 
 /datum/money_account/proc/debit(amount, target_name, purpose, terminal_id = "Station budget ledger", external = TRUE)
@@ -80,7 +83,7 @@
 	if(tracks_budget_period())
 		monthly_expenses += amount
 	if(external)
-		GLOB.supply_service?.record_currency_destroyed(amount, target_name)
+		SSsupply?.record_currency_destroyed(amount, target_name)
 	return TRUE
 
 /datum/money_account/proc/available_funds()
@@ -114,7 +117,8 @@
 	return TRUE
 
 /proc/department_for_mob(mob/living/user)
-	if(!istype(user) || !user.job)
+	READS_FROM(user)
+	if(!istype(user) || !user.job) // ALLOW(reads): a mob's job is fixed when it joins; a storefront asks it when stock is offered
 		return
 	var/datum/department/department = SSjob.get_primary_department_of_job(user.job)
 	if(department?.name in GLOB.department_accounts)
@@ -153,7 +157,7 @@
 	if(subsidy > 0)
 		if(!transfer_account_funds(GLOB.station_account, provider, subsidy, "Subsidy: [purpose]", provider_name))
 			return FALSE
-		GLOB.supply_service.service_subsidies += subsidy
+		SSsupply.service_subsidies += subsidy
 	var/paid = quote["personal"]
 	if(paid > 0 && customer.debit(paid, provider.owner_name, purpose, provider_name, FALSE))
 		provider.credit(paid, customer.owner_name, purpose, provider_name, FALSE)
@@ -236,16 +240,16 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(source_db.loc)
 
 		var/obj/item/paper/R = new /obj/item/paper(P)
-		own_set(P, nameof(P.wrapped), R)
+		rel_set(P, nameof(P.wrapped), R)
 		R.name = "Account information: [M.owner_name]"
-		R.info = span_bold("Account details (confidential)") + "<br><hr><br>"
-		R.info += "<i>Account holder:</i> [M.owner_name]<br>"
-		R.info += "<i>Account number:</i> [M.account_number]<br>"
-		R.info += "<i>Account pin:</i> [M.remote_access_pin]<br>"
-		R.info += "<i>Starting balance:</i> $[M.money]<br>"
-		R.info += "<i>Date and time:</i> [stationtime2text()], [GLOB.current_date_string]<br><br>"
-		R.info += "<i>Creation terminal ID:</i> [source_db.machine_id]<br>"
-		R.info += "<i>Authorised NT officer overseeing creation:</i> [source_db.held_card.registered_name]<br>"
+		R.set_info(span_bold("Account details (confidential)") + "<br><hr><br>")
+		R.set_info(R.info + ("<i>Account holder:</i> [M.owner_name]<br>"))
+		R.set_info(R.info + ("<i>Account number:</i> [M.account_number]<br>"))
+		R.set_info(R.info + ("<i>Account pin:</i> [M.remote_access_pin]<br>"))
+		R.set_info(R.info + ("<i>Starting balance:</i> $[M.money]<br>"))
+		R.set_info(R.info + ("<i>Date and time:</i> [stationtime2text()], [GLOB.current_date_string]<br><br>"))
+		R.set_info(R.info + ("<i>Creation terminal ID:</i> [source_db.machine_id]<br>"))
+		R.set_info(R.info + ("<i>Authorised NT officer overseeing creation:</i> [source_db.held_card.registered_name]<br>"))
 
 		//stamp the paper
 		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
@@ -257,7 +261,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		R.stamps += "<HR><i>This paper has been stamped by the Accounts Database.</i>"
 
 	//add the account
-	own_add(M, nameof(M.transaction_log), T)
+	rel_add(M, nameof(M.transaction_log), T)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, M)
 
 	return M
@@ -298,12 +302,14 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 			break
 
 /proc/get_account(account_number)
+	READS_FROM() // the account registry is asked when an action is chosen, never cached
 	for(var/datum/money_account/D in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		if(D.account_number == account_number)
 			return D
 
 /// Whether paying with this card needs its account PIN (ask it before paying: purchase_with_id_card() takes it).
 /proc/id_card_needs_pin(obj/item/card/id/I)
+	READS_FROM() // an account's security level is set when it is made and by its owner at a terminal: asked when a purchase is chosen, never cached
 	var/datum/money_account/customer_account = get_account(I?.associated_account_number)
 	return customer_account && customer_account.security_level != 0
 

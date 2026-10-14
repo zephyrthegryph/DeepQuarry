@@ -23,11 +23,11 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 	var/datum/objective/steal/steal_objective = new
 	rel_set(steal_objective, nameof(steal_objective.owner), player)
 	steal_objective.set_target("nuclear authentication disk")
-	own_add(player, nameof(player.objectives), steal_objective)
+	rel_add(player, nameof(player.objectives), steal_objective)
 
 	var/datum/objective/hijack/hijack_objective = new
 	rel_set(hijack_objective, nameof(hijack_objective.owner), player)
-	own_add(player, nameof(player.objectives), hijack_objective)
+	rel_add(player, nameof(player.objectives), hijack_objective)
 
 /datum/antagonist/highlander/equip(mob/living/carbon/human/player)
 
@@ -53,8 +53,8 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
 
 	var/obj/item/card/id/id = create_id("Highlander", player)
 	if(id)
-		id.access |= SSaccess.get_all_station_access()
-		id.icon_state = "centcom"
+		id.include_access(SSaccess.get_all_station_access())
+		id.set_icon_state("centcom")
 	create_radio(DTH_FREQ, player)
 
 /**
@@ -65,24 +65,24 @@ GLOBAL_DATUM(highlanders, /datum/antagonist/highlander)
  * * was_delayed: boolean: whether the option to do a "delayed" highlander was pressed before this was called, changes up the logging a bit.
 
  */
-/client/proc/only_one(was_delayed = FALSE)
+/client/proc/only_one(was_delayed = FALSE, mob/user)
 	if(!SSticker.HasRoundStarted())
-		tgui_alert_async(usr, "The game hasn't started yet!")
+		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 
 	if(was_delayed) //sends more accurate logs
-		message_admins(span_adminnotice("[key_name_admin(usr)]'s delayed THERE CAN ONLY BE ONE started!"))
-		log_admin("[key_name(usr)] delayed THERE CAN ONLY BE ONE started.")
+		message_admins(span_adminnotice("[key_name_admin(user)]'s delayed THERE CAN ONLY BE ONE started!"))
+		log_admin("[key_name(user)] delayed THERE CAN ONLY BE ONE started.")
 	else
-		message_admins(span_adminnotice("[key_name_admin(usr)] used THERE CAN BE ONLY ONE!"))
-		log_admin("[key_name(usr)] used THERE CAN BE ONLY ONE.")
+		message_admins(span_adminnotice("[key_name_admin(user)] used THERE CAN BE ONLY ONE!"))
+		log_admin("[key_name(user)] used THERE CAN BE ONLY ONE.")
 
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(H.stat == 2 || !(H.client)) continue
 		if(is_special_character(H)) continue
 		GLOB.highlanders.add_antagonist(H.mind)
 
-/client/proc/only_one_delayed()
-	message_admins(span_adminnotice("[key_name_admin(usr)] used (delayed) THERE CAN BE ONLY ONE!"))
-	log_admin("[key_name(usr)] used delayed THERE CAN BE ONLY ONE.")
-	om_after(src, 42 SECONDS, PROC_REF(only_one), TRUE)
+/client/proc/only_one_delayed(mob/user)
+	message_admins(span_adminnotice("[key_name_admin(user)] used (delayed) THERE CAN BE ONLY ONE!"))
+	log_admin("[key_name(user)] used delayed THERE CAN BE ONLY ONE.")
+	after(src, 42 SECONDS, PROC_REF(only_one), with = list(TRUE, user), keeps_dead = TRUE)

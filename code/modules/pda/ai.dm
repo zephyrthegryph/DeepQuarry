@@ -14,7 +14,7 @@
 	special_handling = TRUE
 
 /obj/item/pda/ai/proc/set_name_and_job(newname as text, newjob as text, newrank as null|text)
-	owner = newname
+	set_owner(newname)
 	ownjob = newjob
 	if(newrank)
 		ownrank = newrank
@@ -41,10 +41,11 @@
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-EXTEND_INTERACTIONS(/obj/item/pda/ai, INTERACT_USE(null, PROC_REF(ai_pda_self)))
+CAPABILITIES(/obj/item/pda/ai)
+	op("ai_pda_self", in_hand(), then(PROC_REF(ai_pda_self)))
 
 /// Old attack_self: only the clown virus honk.
-/obj/item/pda/ai/proc/ai_pda_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pda/ai/proc/ai_pda_self(datum/act/op/A)
 	if ((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
 		play_sfx(src, SFX_ITEMS_BIKEHORN, 0.6)
@@ -54,6 +55,7 @@ EXTEND_INTERACTIONS(/obj/item/pda/ai, INTERACT_USE(null, PROC_REF(ai_pda_self)))
 	ttone = "assist"
 	var/our_owner = null // Ref to a pAI
 
+// ALLOW(init/INSTANCE_STATE): our_owner taken from where this instance is placed
 /obj/item/pda/ai/pai/Initialize(mapload)
 	. = ..()
 	if(ispAI(loc))

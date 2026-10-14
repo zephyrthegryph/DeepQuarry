@@ -1,0 +1,17 @@
+@obj.item.cell human|none
+@obj.item.cell robot|none
+@obj ai|none
+@obj.item.cell ghost|none
+@obj.item.cell human|/obj/item/tool/screwdriver
+@obj.item.cell human|/obj/item/tool/crowbar
+@obj.item.cell human|/obj/item/tool/wrench
+@obj.item.cell human|/obj/item/tool/wirecutters
+@obj.item.cell human|/obj/item/multitool
+@obj.item.cell human|/obj/item/weldingtool
+@obj.item.cell human|/obj/item/stack/cable_coil
+@obj.item.cell human|/obj/item/stack/material/steel
+@obj.item.cell human|/obj/item/card/id
+@obj.item.cell human|/obj/item/kit
+@obj.item.cell human|/obj/item/storage
+@obj.item.cell human|/obj/item
+keys: collect_item, drag_buckle, electrovore_charge, electrovore_drain, gen_silicon_item_silicon_equip_module, inject_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable

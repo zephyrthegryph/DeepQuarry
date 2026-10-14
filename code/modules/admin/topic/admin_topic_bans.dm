@@ -1,73 +1,146 @@
 // Admin panel href actions: bans, job bans, kicks, warnings and mutes.
+//
+// Each ban flow is an op (holder2.dm) whose questions are asks() steps in the order the admin answers them; a question that only some answers reach has a
+// `when` (the temporary ban's length, the permanent ban's IP question), and the job-ban confirmations repeat. The ban is written once, by the op's handler, after the last
+// answer, reading the answers by step name; a cancel at any step writes nothing.
 
-TOPIC_ACTION(/datum/admins, "unbanf", PROC_REF(topic_unbanf), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("unbanf"))
-TOPIC_ACTION(/datum/admins, "warn", PROC_REF(topic_warn), TOPIC_RIGHTS(R_MOD|R_ADMIN), TOPIC_TEXT("warn"))
-TOPIC_ACTION(/datum/admins, "unbane", PROC_REF(topic_unbane), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("unbane"))
-TOPIC_ACTION(/datum/admins, "jobban2", PROC_REF(topic_jobban2), TOPIC_RIGHTS(R_BAN), TOPIC_REF("jobban2", /mob, PROC_REF(topic_registered_mobs)))
-TOPIC_ACTION(/datum/admins, "jobban3", PROC_REF(topic_jobban3), TOPIC_TEXT("jobban3"), TOPIC_REF("jobban4", /mob))
-TOPIC_ACTION(/datum/admins, "boot2", PROC_REF(topic_boot2), TOPIC_REF("boot2", /mob))
-TOPIC_ACTION(/datum/admins, "removejobban", PROC_REF(topic_removejobban), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("removejobban"))
-TOPIC_ACTION(/datum/admins, "newban", PROC_REF(topic_newban), TOPIC_REF("newban", /mob))
-TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_ADMIN), TOPIC_REF("mute", /mob), TOPIC_NUM("mute_type"))
+MSG_DEF_SELF(admin_topic/ban_no_rights, "You do not have the appropriate permissions to add bans!")
+MSG_DEF_SELF(admin_topic/jobban_no_rights, "You do not have the appropriate permissions to add job bans!")
+MSG_DEF_SELF(admin_topic/mod_jobban_disabled, "Mod jobbanning is disabled!")
+MSG_DEF_SELF(admin_topic/ban_target_admin, "Admins cannot be banned.")
+MSG_DEF_SELF(admin_topic/ban_target_outranks, "You cannot perform this action. You must be of a higher administrative rank!")
+MSG_DEF_SELF(admin_topic/jobban_not_ready, "Job Master has not been setup!")
+MSG_DEF_SELF(admin_topic/jobban_no_target, "This can only be used on instances of type /mob")
+MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more rights than you.")
 
 /// Where job-ban panel links look up their mob.
 /datum/admins/proc/topic_registered_mobs()
 	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
-/datum/admins/proc/topic_unbanf(mob/user, list/args)
-	var/banfolder = args["unbanf"]
-	GLOB.banlist.cd = "/base/[banfolder]"
+/// Whether `actor` holds one of `rights`. An admin-authority call (a forced op, a test) holds them all, as req_rights() does.
+/proc/actor_admin_can(mob/actor, authority, rights)
+	READS_FROM() // admin rights are an admin record, not round state
+	if(authority & AUTH_ADMIN)
+		return TRUE
+	return admin_can(actor?.client, rights)
+
+/// Whether `actor` may act on `M`'s admin standing: they hold admin rights and no more rights are held by `M` than by them.
+/proc/actor_outranks(mob/actor, authority, mob/M)
+	READS_FROM() // admin rights are an admin record, not round state
+	if(!M)
+		return FALSE
+	if(authority & AUTH_ADMIN)
+		return TRUE
+	var/datum/admins/mine = admin_holder_of(actor?.client)
+	if(!mine || !admin_can(actor.client, R_HOLDER))
+		return FALSE
+	var/datum/admins/theirs = admin_holder_of(M.client)
+	if(!theirs)
+		return TRUE
+	return mine.check_if_greater_rights_than_holder(theirs)
+
+/// The server's mods-may-jobban setting.
+/proc/ban_mods_may_jobban()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/mods_can_job_tempban)
+
+/// Whether the server bans through the legacy savefile system.
+/proc/ban_legacy_system_in_use()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/ban_legacy_system)
+
+/// Whether admins may jump and teleport.
+/proc/admin_jumping_allowed()
+	READS_FROM() // server configuration, not round state
+	return !!CONFIG_GET(flag/allow_admin_jump)
+
+/// The rights check of a handler that audits a denial.
+/datum/admins/proc/ban_require(datum/act/op/A, rights, entry)
+	if(A.authority & AUTH_ADMIN)
+		return TRUE
+	return admin_require(A.actor?.client, rights, entry, TRUE)
+
+/// when: the "Temporary Ban?" step was answered Yes.
+/datum/admins/proc/ban_is_temporary(datum/act/op/A)
+	return A.step_value("temp") == "Yes"
+
+/// when: the "Temporary Ban?" step was answered Yes or No (not Cancel): a reason is needed.
+/datum/admins/proc/ban_needs_reason(datum/act/op/A)
+	var/answer = A.step_value("temp")
+	return answer == "Yes" || answer == "No"
+
+/// when: the "Temporary Ban?" step was answered No: a permanent ban.
+/datum/admins/proc/ban_is_permanent(datum/act/op/A)
+	return A.step_value("temp") == "No"
+
+// ---- unban ----
+
+/datum/admins/proc/unbanf_question(datum/act/op/A)
+	GLOB.banlist.cd = "/base/[A.args["unbanf"]]"
 	var/key = GLOB.banlist["key"]
-	var/answer = topic_ask(user, args, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
-	if(answer != "Yes")
+	GLOB.banlist.cd = "/base"
+	return "Are you sure you want to unban [key]?"
+
+/datum/admins/proc/topic_unbanf(datum/act/op/A, href_unbanf)
+	var/mob/user = A.actor
+	var/banfolder = href_unbanf
+	if(A.step_value("confirm") != "Yes")
 		return
-	if(!RemoveBan(banfolder))
+	if(!RemoveBan(banfolder, user))
 		tgui_alert_async(user, "This ban has already been lifted / does not exist.", "Error")
 	unbanpanel()
 
-/datum/admins/proc/topic_warn(mob/user, list/args)
-	user.client.warn(args["warn"])
+/datum/admins/proc/topic_warn(datum/act/op/A, href_warn)
+	var/mob/user = A.actor
+	user.client.warn(href_warn)
 
-/datum/admins/proc/topic_unbane(mob/user, list/args)
+// ---- edit a ban ----
+
+/// A ban folder's editable state: list(reason, temp, minutes, key).
+/datum/admins/proc/ban_edit_state(banfolder)
 	UpdateTime()
-	var/reason
-
-	var/banfolder = args["unbane"]
 	GLOB.banlist.cd = "/base/[banfolder]"
-	var/reason2 = GLOB.banlist["reason"]
-	var/temp = GLOB.banlist["temp"]
-
-	var/minutes = GLOB.banlist["minutes"]
-
-	var/banned_key = GLOB.banlist["key"]
+	var/list/state = list(GLOB.banlist["reason"], GLOB.banlist["temp"], GLOB.banlist["minutes"], GLOB.banlist["key"])
 	GLOB.banlist.cd = "/base"
+	return state
 
+/datum/admins/proc/unbane_default_minutes(datum/act/op/A)
+	var/list/state = ban_edit_state(A.args["unbane"])
+	var/minutes = state[3]
+	var/mins = 0
+	if(minutes > GLOB.c_minutes)
+		mins = minutes - GLOB.c_minutes
+	return mins ? mins : 1440
+
+/datum/admins/proc/unbane_default_reason(datum/act/op/A)
+	var/list/state = ban_edit_state(A.args["unbane"])
+	return state[1]
+
+/datum/admins/proc/topic_unbane(datum/act/op/A, href_unbane)
+	var/mob/user = A.actor
+	var/banfolder = href_unbane
+	var/list/state = ban_edit_state(banfolder)
+	var/minutes = state[3]
+	var/banned_key = state[4]
+	var/temp
 	var/duration
-
-	var/answer = topic_ask(user, args, "a5", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
-	switch(answer)
+	var/reason = A.step_value("reason")
+	switch(A.step_value("temp"))
 		if("Yes")
 			temp = 1
-			var/mins = 0
-			if(minutes > GLOB.c_minutes)
-				mins = minutes - GLOB.c_minutes
-			mins = topic_ask(user, args, "a6", /datum/om/prompt/number, message = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
+			var/mins = A.step_value("minutes")
 			if(!mins)
 				return
 			mins = min(525599, mins)
 			minutes = GLOB.c_minutes + mins
 			duration = GetExp(minutes)
-			reason = topic_ask(user, args, "a7", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
-			if(!reason)
-				return
 		if("No")
 			temp = 0
 			duration = "Perma"
-			reason = topic_ask(user, args, "a8", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
-			if(!reason)
-				return
 		else
 			return
+	if(!reason)
+		return
 
 	log_admin("[key_name(user)] edited [banned_key]'s ban. Reason: [reason] Duration: [duration]")
 	ban_unban_log_save("[key_name(user)] edited [banned_key]'s ban. Reason: [reason] Duration: [duration]")
@@ -81,8 +154,11 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	feedback_inc("ban_edit",1)
 	unbanpanel()
 
-/datum/admins/proc/topic_jobban2(mob/user, list/args)
-	var/mob/M = args["jobban2"]
+// ---- job bans ----
+
+/datum/admins/proc/topic_jobban2(datum/act/op/A, href_jobban2)
+	var/mob/user = A.actor
+	var/mob/M = href_jobban2
 	if(!M.ckey)	//sanity
 		to_chat(user, span_filter_adminlog("This mob has no ckey"))
 		return
@@ -132,98 +208,152 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			joblist += temp.title
 	return joblist
 
-/datum/admins/proc/topic_jobban3(mob/user, list/args)
-	if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_ADMIN))
-		to_chat(user, span_filter_adminlog(span_warning("You do not have the appropriate permissions to add job bans!")))
+/// The jobs of a jobban3 href that the target is not banned from.
+/datum/admins/proc/jobban3_unbanned_jobs(datum/act/op/A)
+	var/mob/M = A.args["jobban4"]
+	. = list()
+	if(!M || !SSjob)
 		return
-
-	if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_ADMIN) && !CONFIG_GET(flag/mods_can_job_tempban)) // If mod and tempban disabled
-		to_chat(user, span_filter_adminlog(span_warning("Mod jobbanning is disabled!")))
-		return
-
-	var/mob/M = args["jobban4"]
-	if(!M)
-		to_chat(user, span_filter_adminlog("This can only be used on instances of type /mob"))
-		return
-
-	if(M != user)																//we can jobban ourselves
-		if(M.client && M.client.holder && (check_rights_for(M.client, R_BAN)))		//they can ban too. So we can't ban them
-			tgui_alert_async(user, "You cannot perform this action. You must be of a higher administrative rank!")
-			return
-
-	if(!SSjob)
-		to_chat(user, span_filter_adminlog("Job Master has not been setup!"))
-		return
-
-	var/list/joblist = jobban_job_list(args["jobban3"])
-
-	//Create a list of unbanned jobs within joblist
-	var/list/notbannedlist = list()
-	for(var/job in joblist)
+	for(var/job in jobban_job_list(A.args["jobban3"]))
 		if(!jobban_isbanned(M, job))
-			notbannedlist += job
+			. += job
+
+/// The jobs of a jobban3 href that the target is banned from.
+/datum/admins/proc/jobban3_banned_jobs(datum/act/op/A)
+	var/mob/M = A.args["jobban4"]
+	. = list()
+	if(!M || !SSjob)
+		return
+	for(var/job in jobban_job_list(A.args["jobban3"]))
+		if(jobban_isbanned(M, job))
+			. += job
+
+/// when: there is a job left to ban, so the ban questions are asked.
+/datum/admins/proc/jobban3_asks_ban(datum/act/op/A)
+	return length(jobban3_unbanned_jobs(A)) > 0
+
+/// when: every job is banned already and the legacy system can lift them one by one, so each is confirmed.
+/datum/admins/proc/jobban3_asks_unban(datum/act/op/A)
+	if(length(jobban3_unbanned_jobs(A)) || !ban_legacy_system_in_use())
+		return FALSE
+	return length(jobban3_banned_jobs(A)) > 0
+
+/// repeats: another banned job is left to confirm.
+/datum/admins/proc/jobban3_more_unbans(datum/act/op/A)
+	return length(A.step_values("unjob")) < length(jobban3_banned_jobs(A))
+
+/// The question of the next banned job to confirm.
+/datum/admins/proc/jobban3_unban_question(datum/act/op/A)
+	var/list/banned = jobban3_banned_jobs(A)
+	if(!length(banned))
+		return "Un-jobban?"
+	var/job = banned[min(length(A.step_values("unjob")) + 1, length(banned))]
+	var/mob/M = A.args["jobban4"]
+	return "Job: '[job]' Reason: '[jobban_isbanned(M, job)]' Un-jobban?"
+
+/datum/admins/proc/jobban3_has_rights(datum/act/op/A)
+	return (actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_ADMIN)) ? null : MSG(admin_topic/jobban_no_rights)
+
+/datum/admins/proc/jobban3_mod_allowed(datum/act/op/A)
+	return (!(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())) ? null : MSG(admin_topic/mod_jobban_disabled)
+
+/datum/admins/proc/jobban3_has_target(datum/act/op/A)
+	return (!!A.args["jobban4"]) ? null : MSG(admin_topic/jobban_no_target)
+
+/datum/admins/proc/jobban3_target_not_higher(datum/act/op/A)
+	var/mob/M = A.args["jobban4"]
+	if(!M || M == A.actor || (A.authority & AUTH_ADMIN)) //we can jobban ourselves
+		return null
+	return (!admin_can(M.client, R_BAN)) ? null : MSG(admin_topic/ban_target_outranks) //they can ban too. So we can't ban them
+
+/datum/admins/proc/jobban3_ready(datum/act/op/A)
+	return (!!SSjob) ? null : MSG(admin_topic/jobban_not_ready)
+
+/// Writes a job ban for each of `jobs` and tells the player. `mins` is -1 for a permanent ban.
+/datum/admins/proc/jobban_apply(mob/user, mob/M, list/jobs, mins, reason)
+	var/msg
+	for(var/job in jobs)
+		if(mins > 0)
+			ban_unban_log_save("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes. reason: [reason]")
+			log_admin("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes")
+			feedback_inc("ban_job_tmp",1)
+			DB_ban_record(BANTYPE_JOB_TEMP, M, mins, reason, job, 0, null, null, null, FALSE, user)
+			feedback_add_details("ban_job_tmp","- [job]")
+		else
+			ban_unban_log_save("[key_name(user)] perma-jobbanned [key_name(M)] from [job]. reason: [reason]")
+			log_admin("[key_name(user)] perma-banned [key_name(M)] from [job]")
+			feedback_inc("ban_job",1)
+			DB_ban_record(BANTYPE_JOB_PERMA, M, -1, reason, job, 0, null, null, null, FALSE, user)
+			feedback_add_details("ban_job","- [job]")
+		jobban_fullban(M, job, "[reason]; By [user.ckey] on [time2text(world.realtime)]") //Legacy banning does not support temporary jobbans.
+		if(!msg)
+			msg = job
+		else
+			msg += ", [job]"
+	notes_add(M.ckey, "Banned  from [msg] - [reason]", user)
+	if(mins > 0)
+		message_admins(span_blue("[key_name_admin(user)] banned [key_name_admin(M)] from [msg] for [mins] minutes"), 1)
+	else
+		message_admins(span_blue("[key_name_admin(user)] banned [key_name_admin(M)] from [msg]"), 1)
+	to_chat(M, span_filter_system(span_red(span_large(span_bold("You have been jobbanned by [user.ckey] from: [msg].")))))
+	to_chat(M, span_filter_system(span_red(span_bold("The reason is: [reason]"))))
+	if(mins > 0)
+		to_chat(M, span_filter_system(span_red("This jobban will be lifted in [mins] minutes.")))
+	else
+		to_chat(M, span_filter_system(span_red("Jobban can be lifted only upon request.")))
+
+/// Lifts the job bans of `jobs` from `M` and tells the player.
+/datum/admins/proc/jobban_lift(mob/user, mob/M, list/jobs)
+	var/msg
+	for(var/job in jobs)
+		ban_unban_log_save("[key_name(user)] unjobbanned [key_name(M)] from [job]")
+		log_admin("[key_name(user)] unbanned [key_name(M)] from [job]")
+		DB_ban_unban(M.ckey, BANTYPE_JOB_PERMA, job, user)
+		feedback_inc("ban_job_unban",1)
+		feedback_add_details("ban_job_unban","- [job]")
+		jobban_unban(M, job)
+		if(!msg)
+			msg = job
+		else
+			msg += ", [job]"
+	message_admins(span_blue("[key_name_admin(user)] unbanned [key_name_admin(M)] from [msg]"), 1)
+	to_chat(M, span_filter_system(span_red(span_large("You have been un-jobbanned by [user.ckey] from [msg]."))))
+
+/datum/admins/proc/topic_jobban3(datum/act/op/A, href_jobban3, href_jobban4)
+	var/mob/user = A.actor
+	var/mob/M = href_jobban4
+	if(!M)
+		return
+
+	var/list/notbannedlist = jobban3_unbanned_jobs(A)
 
 	//Banning comes first
 	if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
-		var/answer = topic_ask(user, args, "a9", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
-		switch(answer)
+		switch(A.step_value("temp"))
 			if("Yes")
-				if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
+				if(!actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN))
 					to_chat(user, span_filter_adminlog(span_warning("You cannot issue temporary job-bans!")))
 					return
 				if(CONFIG_GET(flag/ban_legacy_system))
 					to_chat(user, span_filter_adminlog(span_warning("Your server is using the legacy banning system, which does not support temporary job bans. Consider upgrading. Aborting ban.")))
 					return
-				var/mins = topic_ask(user, args, "a10", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
+				var/mins = A.step_value("mins")
 				if(!mins)
 					return
-				if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
+				if(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
 					to_chat(user, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 					return
-				var/reason = topic_ask(user, args, "a11", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
+				var/reason = A.step_value("reason")
 				if(!reason)
 					return
-
-				var/msg
-				for(var/job in notbannedlist)
-					ban_unban_log_save("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes. reason: [reason]")
-					log_admin("[key_name(user)] temp-jobbanned [key_name(M)] from [job] for [mins] minutes")
-					feedback_inc("ban_job_tmp",1)
-					DB_ban_record(BANTYPE_JOB_TEMP, M, mins, reason, job)
-					feedback_add_details("ban_job_tmp","- [job]")
-					jobban_fullban(M, job, "[reason]; By [user.ckey] on [time2text(world.realtime)]") //Legacy banning does not support temporary jobbans.
-					if(!msg)
-						msg = job
-					else
-						msg += ", [job]"
-				notes_add(M.ckey, "Banned  from [msg] - [reason]", user)
-				message_admins(span_blue("[key_name_admin(user)] banned [key_name_admin(M)] from [msg] for [mins] minutes"), 1)
-				to_chat(M, span_filter_system(span_red(span_large(span_bold("You have been jobbanned by [user.client.ckey] from: [msg].")))))
-				to_chat(M, span_filter_system(span_red(span_bold("The reason is: [reason]"))))
-				to_chat(M, span_filter_system(span_red("This jobban will be lifted in [mins] minutes.")))
+				jobban_apply(user, M, notbannedlist, mins, reason)
 				return 1
 			if("No")
-				if(!check_rights(R_BAN))
+				if(!ban_require(A, R_BAN, "topic_jobban3"))
 					return
-				var/reason = topic_ask(user, args, "a12", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
+				var/reason = A.step_value("reason")
 				if(reason)
-					var/msg
-					for(var/job in notbannedlist)
-						ban_unban_log_save("[key_name(user)] perma-jobbanned [key_name(M)] from [job]. reason: [reason]")
-						log_admin("[key_name(user)] perma-banned [key_name(M)] from [job]")
-						feedback_inc("ban_job",1)
-						DB_ban_record(BANTYPE_JOB_PERMA, M, -1, reason, job)
-						feedback_add_details("ban_job","- [job]")
-						jobban_fullban(M, job, "[reason]; By [user.ckey] on [time2text(world.realtime)]")
-						if(!msg)
-							msg = job
-						else
-							msg += ", [job]"
-					notes_add(M.ckey, "Banned  from [msg] - [reason]", user)
-					message_admins(span_blue("[key_name_admin(user)] banned [key_name_admin(M)] from [msg]"), 1)
-					to_chat(M, span_filter_system(span_red(span_large(span_bold("You have been jobbanned by [user.client.ckey] from: [msg].")))))
-					to_chat(M, span_filter_system(span_red(span_bold("The reason is: [reason]"))))
-					to_chat(M, span_filter_system(span_red("Jobban can be lifted only upon request.")))
+					jobban_apply(user, M, notbannedlist, -1, reason)
 					return 1
 				return
 			else
@@ -231,57 +361,31 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 	//Unbanning joblist
 	//all jobs in joblist are banned already OR we didn't give a reason (implying they shouldn't be banned)
-	if(joblist.len) //at least 1 banned job exists in joblist so we have stuff to unban.
+	var/list/banned = jobban3_banned_jobs(A)
+	if(banned.len) //at least 1 banned job exists in joblist so we have stuff to unban.
 		if(!CONFIG_GET(flag/ban_legacy_system))
 			to_chat(user, span_filter_adminlog("Unfortunately, database based unbanning cannot be done through this panel"))
 			DB_ban_panel(user.client, M.ckey)
 			return
-		var/msg
-		for(var/job in joblist)
-			var/reason = jobban_isbanned(M, job)
-			if(!reason)
-				continue //skip if it isn't jobbanned anyway
-			var/answer = topic_ask(user, args, "unjob_[job]", /datum/om/prompt/choice/alert, message = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
-			if(isnull(answer))
-				return
-			if(answer != "Yes")
-				continue
-			ban_unban_log_save("[key_name(user)] unjobbanned [key_name(M)] from [job]")
-			log_admin("[key_name(user)] unbanned [key_name(M)] from [job]")
-			DB_ban_unban(M.ckey, BANTYPE_JOB_PERMA, job)
-			feedback_inc("ban_job_unban",1)
-			feedback_add_details("ban_job_unban","- [job]")
-			jobban_unban(M, job)
-			if(!msg)
-				msg = job
-			else
-				msg += ", [job]"
-		if(msg)
-			message_admins(span_blue("[key_name_admin(user)] unbanned [key_name_admin(M)] from [msg]"), 1)
-			to_chat(M, span_filter_system(span_red(span_large("You have been un-jobbanned by [user.client.ckey] from [msg]."))))
+		var/list/answers = A.step_values("unjob")
+		var/list/lifted = list()
+		for(var/i in 1 to min(length(answers), length(banned)))
+			if(answers[i] == "Yes")
+				lifted += banned[i]
+		if(length(lifted))
+			jobban_lift(user, M, lifted)
 		return 1
 	return 0 //we didn't do anything!
 
-/datum/admins/proc/topic_boot2(mob/user, list/args)
-	var/mob/M = args["boot2"]
-	if(!check_if_greater_rights_than(M.client))
-		return
-	var/reason = topic_ask(user, args, "a14", /datum/om/prompt/text, message = "Please enter reason.", multiline = TRUE)
-	if(!reason)
-		return
+/datum/admins/proc/removejobban_question(datum/act/op/A)
+	return "Do you want to unjobban [A.args["removejobban"]]?"
 
-	to_chat(M, span_filter_system(span_critical("You have been kicked from the server: [reason]")))
-	log_admin("[key_name(user)] booted [key_name(M)] for reason: '[reason]'.")
-	message_admins(span_blue("[key_name_admin(user)] booted [key_name_admin(M)] for reason '[reason]'."), 1)
-	admin_action_message(user.key, M.key, "kicked", reason, 0)
-	qdel(M.client)
-
-/datum/admins/proc/topic_removejobban(mob/user, list/args)
-	var/t = args["removejobban"]
+/datum/admins/proc/topic_removejobban(datum/act/op/A, href_removejobban)
+	var/mob/user = A.actor
+	var/t = href_removejobban
 	if(!t)
 		return
-	var/answer = topic_ask(user, args, "a15", /datum/om/prompt/choice/alert, message = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
-	if(answer != "Yes") //No more misclicks! Unless you do it twice.
+	if(A.step_value("confirm") != "Yes") //No more misclicks! Unless you do it twice.
 		return
 	log_admin("[key_name(user)] removed [t]")
 	message_admins(span_blue("[key_name_admin(user)] removed [t]"), 1)
@@ -289,90 +393,176 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/t_split = splittext(t, " - ")
 	var/key = t_split[1]
 	var/job = t_split[2]
-	DB_ban_unban(ckey(key), BANTYPE_JOB_PERMA, job)
+	DB_ban_unban(ckey(key), BANTYPE_JOB_PERMA, job, user)
 
-/datum/admins/proc/topic_newban(mob/user, list/args)
-	if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
-		to_chat(user, span_warning("You do not have the appropriate permissions to add bans!"))
+// ---- kick ----
+
+/// A kick needs a target who does not hold more rights than the actor.
+/datum/admins/proc/boot_target_ok(datum/act/op/A)
+	return (actor_outranks(A.actor, A.authority, A.args["boot2"])) ? null : MSG(admin_topic/boot_outranked)
+
+/datum/admins/proc/topic_boot2(datum/act/op/A, href_boot2)
+	var/mob/user = A.actor
+	var/mob/M = href_boot2
+	var/reason = A.step_value("reason")
+	if(!reason || QDELETED(M))
 		return
 
-	if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_ADMIN) && !CONFIG_GET(flag/mods_can_job_tempban)) // If mod and tempban disabled
-		to_chat(user, span_warning("Mod jobbanning is disabled!"))
+	to_chat(M, span_filter_system(span_critical("You have been kicked from the server: [reason]")))
+	log_admin("[key_name(user)] booted [key_name(M)] for reason: '[reason]'.")
+	message_admins(span_blue("[key_name_admin(user)] booted [key_name_admin(M)] for reason '[reason]'."), 1)
+	admin_action_message(user.key, M.key, "kicked", reason, 0)
+	spent(M.client, user)
+
+// ---- ban ----
+
+/datum/admins/proc/newban_has_rights(datum/act/op/A)
+	return (actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_BAN)) ? null : MSG(admin_topic/ban_no_rights)
+
+/datum/admins/proc/newban_mod_allowed(datum/act/op/A)
+	return (!(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())) ? null : MSG(admin_topic/mod_jobban_disabled)
+
+/datum/admins/proc/newban_target_ok(datum/act/op/A)
+	var/mob/M = A.args["newban"]
+	if(!M)
+		return MSG(admin_topic/ban_target_admin)
+	return (!(M.client && admin_can(M.client, R_HOLDER))) ? null : MSG(admin_topic/ban_target_admin) //admins cannot be banned. Even if they could, the ban doesn't affect them anyway
+
+/// Writes a temporary ban of `M` for `mins` minutes and tells the player and the admins.
+/datum/admins/proc/ban_commit_temp(mob/user, mob/M, mins, reason)
+	AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins, user = user)
+	ban_unban_log_save("[user.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.")
+	notes_add(M.ckey,"[user.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.",user)
+	to_chat(M, span_filter_system(span_critical("You have been banned by [user.ckey].\nReason: [reason].")))
+	to_chat(M, span_filter_system(span_warning("This is a temporary ban, it will be removed in [mins] minutes.")))
+	feedback_inc("ban_tmp",1)
+	DB_ban_record(BANTYPE_TEMP, M, mins, reason, "", 0, null, null, null, FALSE, user)
+	feedback_inc("ban_tmp_mins",mins)
+	if(CONFIG_GET(string/banappeals))
+		to_chat(M, span_filter_system(span_warning("To try to resolve this matter head to [CONFIG_GET(string/banappeals)]")))
+	else
+		to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
+	log_admin("[user.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes.")
+	message_admins(span_blue("[user.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes."))
+	var/datum/ticket/T = M.client ? M.client.current_ticket() : null
+	if(T)
+		T.Resolve(user)
+	spent(M.client, user)
+
+/// Writes a permanent ban of `M` (with their address too when `ip_ban`) and tells the player and the admins.
+/datum/admins/proc/ban_commit_perm(mob/user, mob/M, reason, ip_ban)
+	if(ip_ban)
+		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP, user)
+	else
+		AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, user = user)
+	to_chat(M, span_filter_system(span_critical("You have been banned by [user.ckey].\nReason: [reason].")))
+	to_chat(M, span_filter_system(span_warning("This is a permanent ban.")))
+	if(CONFIG_GET(string/banappeals))
+		to_chat(M, span_filter_system(span_warning("To try to resolve this matter head to [CONFIG_GET(string/banappeals)]")))
+	else
+		to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
+	ban_unban_log_save("[user.ckey] has permabanned [M.ckey]. - Reason: [reason] - This is a permanent ban.")
+	notes_add(M.ckey,"[user.ckey] has permabanned [M.ckey]. - Reason: [reason] - This is a permanent ban.",user)
+	log_admin("[user.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban.")
+	message_admins(span_blue("[user.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban."))
+	feedback_inc("ban_perma",1)
+	DB_ban_record(BANTYPE_PERMA, M, -1, reason, "", 0, null, null, null, FALSE, user)
+	var/datum/ticket/T = M.client ? M.client.current_ticket() : null
+	if(T)
+		T.Resolve(user)
+	spent(M.client, user)
+
+/datum/admins/proc/topic_newban(datum/act/op/A, href_newban)
+	var/mob/user = A.actor
+	var/mob/M = href_newban
+	if(!M)
 		return
 
-	var/mob/M = args["newban"]
-
-	if(M.client && check_rights_for(M.client, R_HOLDER))
-		return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
-
-	var/answer = topic_ask(user, args, "a16", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
-	switch(answer)
+	switch(A.step_value("temp"))
 		if("Yes")
-			var/mins = topic_ask(user, args, "a17", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
+			var/mins = A.step_value("mins")
 			if(!mins)
 				return
-			if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
+			if(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
 				to_chat(user, span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_tempban_max)] minutes!"))
 				return
 			if(mins >= 525600)
 				mins = 525599
-			var/reason = topic_ask(user, args, "a18", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
+			var/reason = A.step_value("reason")
 			if(!reason)
 				return
-			AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins)
-			ban_unban_log_save("[user.client.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.")
-			notes_add(M.ckey,"[user.client.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.",user)
-			to_chat(M, span_filter_system(span_critical("You have been banned by [user.client.ckey].\nReason: [reason].")))
-			to_chat(M, span_filter_system(span_warning("This is a temporary ban, it will be removed in [mins] minutes.")))
-			feedback_inc("ban_tmp",1)
-			DB_ban_record(BANTYPE_TEMP, M, mins, reason)
-			feedback_inc("ban_tmp_mins",mins)
-			if(CONFIG_GET(string/banappeals))
-				to_chat(M, span_filter_system(span_warning("To try to resolve this matter head to [CONFIG_GET(string/banappeals)]")))
-			else
-				to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
-			log_admin("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes.")
-			message_admins(span_blue("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes."))
-			var/datum/ticket/T = M.client ? M.client.current_ticket() : null
-			if(T)
-				T.Resolve(user)
-			qdel(M.client)
+			ban_commit_temp(user, M, mins, reason)
 		if("No")
-			if(!check_rights(R_BAN))
+			if(!ban_require(A, R_BAN, "topic_newban"))
 				return
-			var/reason = topic_ask(user, args, "a19", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
+			var/reason = A.step_value("reason")
 			if(!reason)
 				return
-			var/ip_answer = topic_ask(user, args, "a20", /datum/om/prompt/choice/alert, message = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
-			switch(ip_answer)
-				if("Yes")
-					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP)
-				if("No")
-					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0)
-				else
-					return
-			to_chat(M, span_filter_system(span_critical("You have been banned by [user.client.ckey].\nReason: [reason].")))
-			to_chat(M, span_filter_system(span_warning("This is a permanent ban.")))
-			if(CONFIG_GET(string/banappeals))
-				to_chat(M, span_filter_system(span_warning("To try to resolve this matter head to [CONFIG_GET(string/banappeals)]")))
-			else
-				to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
-			ban_unban_log_save("[user.client.ckey] has permabanned [M.ckey]. - Reason: [reason] - This is a permanent ban.")
-			notes_add(M.ckey,"[user.client.ckey] has permabanned [M.ckey]. - Reason: [reason] - This is a permanent ban.",user)
-			log_admin("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban.")
-			message_admins(span_blue("[user.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban."))
-			feedback_inc("ban_perma",1)
-			DB_ban_record(BANTYPE_PERMA, M, -1, reason)
-			var/datum/ticket/T = M.client ? M.client.current_ticket() : null
-			if(T)
-				T.Resolve(user)
-			qdel(M.client)
+			var/ip_answer = A.step_value("ip")
+			if(ip_answer != "Yes" && ip_answer != "No")
+				return
+			ban_commit_perm(user, M, reason, ip_answer == "Yes")
 
-/datum/admins/proc/topic_mute(mob/user, list/args)
-	var/mob/M = args["mute"]
+/datum/admins/proc/topic_mute(datum/act/op/A, href_mute, href_mute_type)
+	var/mob/user = A.actor
+	var/mob/M = href_mute
 	if(!M.client)
 		return
-	var/mute_type = args["mute_type"]
+	var/mute_type = href_mute_type
 	if(!isnum(mute_type))
 		return
 	cmd_admin_mute(M, mute_type, FALSE, user)
+
+/datum/prompt/choice/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+
+/datum/prompt/choice/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/choice/admin_ban_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_ban_topic/refusal(given)
+	return null
+
+/datum/prompt/number/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/number/admin_ban_topic/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/admin_ban_topic/refusal(given)
+	return null
+
+/datum/prompt/text/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/admin_ban_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/admin_ban_topic/refusal(given)
+	return null
+
+/datum/prompt/choice/unban_error_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/unban_error_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

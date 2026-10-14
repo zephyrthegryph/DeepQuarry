@@ -2,10 +2,8 @@
 	name = "wristwatch"
 	desc = "A cheap plastic quartz-based wristwatch. Painfully archaic by modern standards, but there's something charming about it all the same."
 	icon_state = "wristwatch_basic"
-	siemens_coefficient = 1
 	gender = "neuter"
 	slot = ACCESSORY_SLOT_WRIST
-	slot_flags = SLOT_GLOVES
 	icon = 'icons/inventory/hands/item.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
@@ -15,6 +13,10 @@
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
+
+CAPABILITIES(/obj/item/clothing/accessory/watch)
+	configure(item_worn(slots = SLOT_GLOVES))
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/accessory/watch/examine(mob/user)
 	. = ..()
@@ -58,17 +60,18 @@
 			var/datum/gas_mixture/env = T.return_air()
 			. += span_notice("Pressure: [env.return_pressure()]kPa / Temperature: [env.return_temperature()]K ")
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/watch/survival, "gps", /obj/item/gps/watch)
+CAPABILITIES(/obj/item/clothing/accessory/watch/survival)
+	owns_one(nameof(gps), starts = /obj/item/gps/watch)
+	op("beacon", hand(), answers(INTENT_TOGGLE), label("Toggle beacon"), then(PROC_REF(survival_watch_beacon_toggled)), passes())
 
 /obj/item/gps/watch
 	gps_tag = "SRV-WTCH"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/watch/survival, INTERACT_ALT("Toggle beacon", PROC_REF(survival_watch_beacon_alt)))
-
-/// Old click_alt: toggle the beacon. Falls through to the clothing alt-click (which ran first before).
-/obj/item/clothing/accessory/watch/survival/proc/survival_watch_beacon_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// Toggle the beacon, then pass to the inherited clothing alt-click.
+/obj/item/clothing/accessory/watch/survival/proc/survival_watch_beacon_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		gps.set_tracking(!gps.tracking)
 		to_chat(user,span_notice("You turn the micro beacon [gps.tracking ? "on" : "off"]."))
-	return FALSE
+	return OP_OK
 

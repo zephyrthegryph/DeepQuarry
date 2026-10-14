@@ -1,0 +1,2 @@
+/obj/machinery/radiocarbon_spectrometer vol=100 holder=/datum/reagents 
+

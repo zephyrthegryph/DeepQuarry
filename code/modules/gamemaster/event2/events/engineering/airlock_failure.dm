@@ -70,7 +70,7 @@
 
 		for(var/obj/machinery/door/airlock/door in contents_of(area))
 			if(can_break_door(door))
-				om_after(src, 1, PROC_REF(break_door), door) // Emagging proc is actually a blocking proc and that's bad for the ticker.
+				after(src, 0.1 SECONDS, PROC_REF(break_door), with = list(door)) // Emagging proc is actually a blocking proc and that's bad for the ticker.
 				door.visible_message(span_danger("\The [door]'s panel sparks!"))
 				play_sfx(door, SFX_SPARKS)
 				log_game("Airlock Failure event has broken \the [door] airlock in [area].")
@@ -89,7 +89,7 @@
 /datum/event2/event/airlock_failure/proc/can_break_door(obj/machinery/door/airlock/door)
 	if(istype(door, /obj/machinery/door/airlock/lift))
 		return FALSE
-	return door.arePowerSystemsOn()
+	return door.power_systems_on()
 
 // Override this for door busting.
 /datum/event2/event/airlock_failure/proc/break_door(obj/machinery/door/airlock/door)
@@ -98,8 +98,10 @@
 	emag_target(door, 1)
 
 /datum/event2/event/airlock_failure/door_crush/break_door(obj/machinery/door/airlock/door)
-	door.normalspeed = FALSE
-	door.safe = FALSE
+	if(QDELETED(door))
+		return
+	door.set_normalspeed(FALSE)
+	hold(door, STAT_SAFE, null, SRC_ROUND_EVENT)
 
 /datum/event2/event/airlock_failure/shock/break_door(obj/machinery/door/airlock/door)
 	door.electrify(-1)

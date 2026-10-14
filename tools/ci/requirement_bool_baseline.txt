@@ -1,0 +1,2 @@
+# Transitional boolean requirement callbacks. rule<TAB>file<TAB>normalized line.
+# Convert callbacks to null-or-reason req(); analyze baseline --update --lint requirement_bool only shrinks this list.

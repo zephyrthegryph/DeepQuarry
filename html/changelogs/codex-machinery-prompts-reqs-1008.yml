@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Moved kiosk scans, cryopod passenger consent and suit cycler loading to native timed operations."

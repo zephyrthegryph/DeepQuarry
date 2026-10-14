@@ -20,7 +20,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_turf)
 	var/obj/item/denecrotizer/D = allocate(/obj/item/denecrotizer, test_turf)
 	D.revive_time = 0
-	D.charges = 5
+	D.set_charges(5)
 
 	target.death()
 
@@ -28,17 +28,19 @@
 	// signal handler, ...) reacts to the revival and sets a custom, non-default
 	// see_in_dark. revive()'s own rejuvenate() already ran by the time this
 	// signal fires (return_from_death() emits living_revived after resetting the senses).
-	om_hook(target, /datum/om/event/living_revived, src, PROC_REF(set_custom_see_in_dark))
+	observe(target, /datum/notice/living_revived, src, then(PROC_REF(set_custom_see_in_dark)))
 
-	// The om_task_timed callback: what runs when the revive time is up.
-	D.ghostjoin_rez_timed_done(target, user)
+	// The op's wait (revive_time is 0) ends and its then() runs.
+	D.ghostjoin_rez(target, user)
+	test_time(2 SECONDS)
 
 	TEST_ASSERT_EQUAL(target.see_in_dark, custom_see_in_dark, "the denecrotizer must not reset see_in_dark back to initial() after another system set a legitimate post-revival value")
 
-	om_unhook(target, /datum/om/event/living_revived, src)
+	unobserve(target, /datum/notice/living_revived, src)
 
-/datum/unit_test/dq_denecrotizer_does_not_reclobber_sight_after_revive/proc/set_custom_see_in_dark(mob/living/source, datum/om/event/living_revived/event)
-	EVENT_HANDLER
+/datum/unit_test/dq_denecrotizer_does_not_reclobber_sight_after_revive/proc/set_custom_see_in_dark(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/source = N.target
 	source.see_in_dark = custom_see_in_dark
 
 /// basic_rez() (used for a plain, non-ghostjoin revival) must have the same fix.
@@ -51,22 +53,20 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_turf)
 	var/obj/item/denecrotizer/D = allocate(/obj/item/denecrotizer, test_turf)
 	D.revive_time = 0
-	D.charges = 5
+	D.set_charges(5)
 
 	target.death()
-	om_hook(target, /datum/om/event/living_revived, src, PROC_REF(set_custom_see_in_dark))
+	observe(target, /datum/notice/living_revived, src, then(PROC_REF(set_custom_see_in_dark)))
 
-	// The continuation takes its om task (basic_rez() runs it through om_task_start()).
-	var/datum/om/task/timed/denecrotizer_basic_rez/task = new
-	rel_set(task, nameof(task.actor), user)
-	rel_set(task, nameof(task.target), target)
-	rel_set(task, nameof(task.receiver), D)
-	D.basic_rez_timed_done(task)
+	// basic_rez() starts the op; its wait (revive_time is 0) ends and the then() runs.
+	D.basic_rez(target, user)
+	test_time(2 SECONDS)
 
 	TEST_ASSERT_EQUAL(target.see_in_dark, custom_see_in_dark, "basic_rez must not reset see_in_dark back to initial() after another system set a legitimate post-revival value")
 
-	om_unhook(target, /datum/om/event/living_revived, src)
+	unobserve(target, /datum/notice/living_revived, src)
 
-/datum/unit_test/dq_denecrotizer_basic_rez_does_not_reclobber_sight/proc/set_custom_see_in_dark(mob/living/source, datum/om/event/living_revived/event)
-	EVENT_HANDLER
+/datum/unit_test/dq_denecrotizer_basic_rez_does_not_reclobber_sight/proc/set_custom_see_in_dark(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/source = N.target
 	source.see_in_dark = custom_see_in_dark

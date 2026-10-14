@@ -194,8 +194,12 @@ export function Window(props: Props) {
       ? config.status < UI_DISABLED
       : config.status < UI_INTERACTIVE);
 
+  // A ghost's view of an op's window is read-only (F3): the server refuses every ui_act from an observer, and the one shared place that shows it is
+  // here: every button, input and dropdown in the window renders disabled (Window.scss, .Window--readonly).
+  const readOnly = !!config.user?.observer && config.status < UI_INTERACTIVE;
+
   return suspended ? null : (
-    <Layout className="Window" theme={theme}>
+    <Layout className={classes(['Window', readOnly && 'Window--readonly'])} theme={theme}>
       {!fitted && (
         <TitleBar
           className="Window__titleBar"

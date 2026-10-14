@@ -3,7 +3,7 @@
 // For the record: these should never ever ever be deleted, even if the turf doesn't have dynamic lighting.
 
 /datum/lighting_corner
-	// ALLOW(scheduler, ownership): lighting hot path; strong many-to-many list kept in step by both sides (light_source remove_lum/update_corners and corner/turf teardown). A relation write per entry would cost index work on every lighting update.
+	// Lighting hot path; strong many-to-many list kept in step by both sides (light_source remove_lum/update_corners and corner/turf teardown). A relation write per entry would cost index work on every lighting update.
 	var/list/datum/light_source/affecting // Light sources affecting us.
 
 	var/sunlight = SUNLIGHT_NONE
@@ -73,7 +73,7 @@
 		master_SE = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
 		process_next.lighting_corner_NW = src
 
-	if(((GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
+	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 
 /datum/lighting_corner/proc/save_master(turf/master, dir)
 	switch (dir)
@@ -92,7 +92,7 @@
 
 /datum/lighting_corner/proc/self_destruct_if_idle()
 	if (!LAZYLEN(affecting) && !sunlight)
-		qdel(src, force = TRUE)
+		spent(src, force = TRUE)
 
 /datum/lighting_corner/proc/vis_update()
 	for (var/datum/light_source/light_source as anything in affecting)

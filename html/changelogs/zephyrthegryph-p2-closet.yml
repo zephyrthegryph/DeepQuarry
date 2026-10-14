@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Closets, lockers, secure lockers, crates, secure crates, coffins, graves, statues, eggs, emergency lockers and body bags (stasis and synthmorph bags too) now declare their behaviour as ops: the door, the bolts, the weld, the ID lock, the emag, breaking out as a timed wait, labelling a bag."
+  - bugfix: "Package wrap now wraps a shut closet or crate again (a closet used to swallow the wrap)."
+  - bugfix: "An emag that finds a locker's lock already broken is refused without using a charge."
+  - qol: "A secure crate's lock answers an alt-click, as a locker's does; a locker refuses to be locked with the door open and says why."
+  - code_imp: "weld_shut() takes the tool that seals the thing (a coffin is screwed shut); deleted the closets' interaction entries, togglelock/set_locked and break-out push procs."

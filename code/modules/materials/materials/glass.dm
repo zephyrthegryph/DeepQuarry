@@ -23,6 +23,10 @@
 
 /datum/material/glass/build_windows(mob/living/user, obj/item/stack/used_stack)
 
+	return window_build_stage(user, used_stack, FALSE)
+
+/datum/material/glass/proc/window_build_stage(mob/living/user, obj/item/stack/used_stack, answered, choice)
+
 	if(!user || !used_stack || !created_window || !created_fulltile_window || !length(window_options))
 		return 0
 
@@ -36,8 +40,8 @@
 		return 1
 
 	var/message = "Sheet-[used_stack.name] ([used_stack.get_amount()] sheet\s left)"
-	var/choice = rerun_ask(user, "k39", PROC_REF(build_windows), args, /datum/om/prompt/choice, message = message, title = "Window Construction", choices = window_options)
-	if(isnull(choice))
+	if(!answered)
+		open_request(src, /datum/prompt/choice/glass_window_build, PROC_REF(window_choice_entered), answerer = user, subject = used_stack, question = message, choices = window_options)
 		return
 
 	if(!choice || !used_stack || !user || (used_stack.loc != user && !isrobot(user)) || user.stat || user.loc != T)
@@ -93,6 +97,22 @@
 	used_stack.use(sheets_needed)
 	new build_path(T, build_dir, 1)
 	return 1
+
+/datum/material/glass/proc/window_choice_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	SStgui.update_uis(src)
+	window_build_stage(A.request.answerer, A.request.subject, TRUE, A.answer.value)
+
+/datum/prompt/choice/glass_window_build
+	title = "Window Construction"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/glass_window_build/recheck_extra()
+	if(QDELETED(owner) || QDELETED(answerer) || QDELETED(subject))
+		return "gone"
+	return null
 
 /datum/material/glass/proc/is_reinforced()
 	return (hardness > 35) //todo

@@ -4,8 +4,15 @@
 	master_ref = null
 	dir = 2
 
-/atom/movable/screen/gun/Click(location, control, params)
-	if(!usr)
+CAPABILITIES(/atom/movable/screen/gun)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/gun/proc/click_input(datum/act/input/A)
+	return click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+
+/atom/movable/screen/gun/click_with_actor(mob/user, location, control, params)
+	if(!user)
 		return
 	return 1
 
@@ -14,11 +21,11 @@
 	icon_state = "no_walk0"
 	screen_loc = ui_gun2
 
-/atom/movable/screen/gun/move/Click(location, control, params)
+/atom/movable/screen/gun/move/click_with_actor(mob/actor, location, control, params)
 	if(..())
-		var/mob/living/user = usr
+		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_MOVE)
 		return 1
 	return 0
@@ -28,11 +35,11 @@
 	icon_state = "no_item0"
 	screen_loc = ui_gun1
 
-/atom/movable/screen/gun/item/Click(location, control, params)
+/atom/movable/screen/gun/item/click_with_actor(mob/actor, location, control, params)
 	if(..())
-		var/mob/living/user = usr
+		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_CLICK)
 		return 1
 	return 0
@@ -42,11 +49,11 @@
 	icon_state = "gun0"
 	screen_loc = ui_gun_select
 
-/atom/movable/screen/gun/mode/Click(location, control, params)
+/atom/movable/screen/gun/mode/click_with_actor(mob/actor, location, control, params)
 	if(..())
-		var/mob/living/user = usr
+		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_active()
 		return 1
 	return 0
@@ -56,11 +63,11 @@
 	icon_state = "no_radio0"
 	screen_loc = ui_gun4
 
-/atom/movable/screen/gun/radio/Click(location, control, params)
+/atom/movable/screen/gun/radio/click_with_actor(mob/actor, location, control, params)
 	if(..())
-		var/mob/living/user = usr
+		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_RADIO)
 		return 1
 	return 0

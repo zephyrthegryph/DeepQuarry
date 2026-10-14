@@ -88,7 +88,4 @@
 /datum/random_map/automata/cave_system/apply_finished()
 	. = ..()
 
-	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon()
-
 	rel_clear(src, nameof(turfs_changed))

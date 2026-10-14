@@ -5,33 +5,28 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF // Does not require power for pipes
-	idle_power_usage = 0
-	active_power_usage = 0
 	circuit = /obj/item/circuitboard/industrial_reagent_pipe
 	default_max_vol = 60 // smoll
 
-/obj/machinery/reagent_refinery/pipe/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
-	make_climbable()
+CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
+	configure(uses_power(idle = 0, active = 0))
+	after_init(0, then(PROC_REF(apply_default_parts)))
+	without("reagent_refinery_set_transfer_amount")
+	climb()
 
 /obj/machinery/reagent_refinery/pipe/refinery_step()
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/pipe/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/pipe/draw(datum/look/look)
+	..()
 	if(anchored)
-		. += update_input_connection_overlays("pipe_intakes")
+		look.overlay(update_input_connection_overlays(look, "pipe_intakes"))
 
 /obj/machinery/reagent_refinery/pipe/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!
@@ -44,6 +39,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pipe, TYPE_PROC_REF(/ato
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 	tutorial(REFINERY_TUTORIAL_SINGLEOUTPUT|REFINERY_TUTORIAL_NOPOWER, .)
 
-/obj/machinery/reagent_refinery/pipe/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount

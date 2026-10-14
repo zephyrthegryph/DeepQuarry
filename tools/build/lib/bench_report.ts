@@ -54,6 +54,100 @@ ${ticks.join('')}${marks.join('')}
 <text x="4" y="12">MB</text></svg>`;
 }
 
+type DataRow = Record<string, unknown>;
+
+const dataRow = (value: unknown): DataRow =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value as DataRow : {};
+
+const numberField = (row: DataRow, key: string): number =>
+  typeof row[key] === 'number' && Number.isFinite(row[key]) ? row[key] as number : 0;
+
+const detailJson = (value: unknown): string =>
+  `<details><summary>Full record</summary><pre>${escape(JSON.stringify(value, null, 2))}</pre></details>`;
+
+/** Scheduler costs are sampled. Counts and sampled totals cover only this window. */
+function schedulerSections(iteration: BenchRun['iterations'][number]): string[] {
+  const windows: { scenario: string; window: string; diagnostic: DataRow }[] = [];
+  const systems: { scenario: string; window: string; name: string; data: DataRow }[] = [];
+  const slowCalls: { scenario: string; window: string; data: DataRow }[] = [];
+  const incidents: { scenario: string; window: string; data: DataRow }[] = [];
+  for (const scenario of Object.values(iteration.scenarios ?? {})) {
+    for (const [key, value] of Object.entries(scenario.details ?? {})) {
+      if (!key.endsWith('_scheduler')) continue;
+      const window = key.replace(/_scheduler$/, '');
+      const diagnostic = dataRow(value);
+      windows.push({ scenario: scenario.id, window, diagnostic });
+      for (const [name, raw] of Object.entries(dataRow(diagnostic.systems))) {
+        systems.push({ scenario: scenario.id, window, name, data: dataRow(raw) });
+      }
+      for (const raw of Array.isArray(diagnostic.slow_calls) ? diagnostic.slow_calls : []) {
+        slowCalls.push({ scenario: scenario.id, window, data: dataRow(raw) });
+      }
+      for (const raw of Array.isArray(diagnostic.incidents) ? diagnostic.incidents : []) {
+        incidents.push({ scenario: scenario.id, window, data: dataRow(raw) });
+      }
+    }
+  }
+  const sections: string[] = [];
+  if (windows.length) {
+    const rows = windows.map(({ scenario, window, diagnostic }) => {
+      const totals = dataRow(diagnostic.totals);
+      const pending = Object.entries(dataRow(diagnostic.pending_end))
+        .map(([name, count]) => `${name}: ${formatNumber(Number(count))}`)
+        .join(', ');
+      return `<tr><td>${escape(scenario)}</td><td>${escape(window)}</td>
+<td class="num">${formatNumber(numberField(totals, 'calls'))}</td>
+<td class="num">${formatNumber(numberField(diagnostic, 'work_units'))}</td>
+<td class="num">${formatNumber(numberField(diagnostic, 'estimated_window_ms'))}</td>
+<td class="num">${formatNumber(numberField(totals, 'slow_calls'))}</td>
+<td class="num">${formatNumber(numberField(totals, 'deadline_misses'))}</td>
+<td class="num">${formatNumber(numberField(totals, 'deferred_budget'))}</td>
+<td class="num">${formatNumber(numberField(totals, 'deferred_tick'))}</td>
+<td>${escape(pending)}</td></tr>`;
+    });
+    sections.push(`<section><h3>Scheduler windows (iteration ${iteration.iteration})</h3><div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>calls</th><th>work units</th><th>est. ms</th><th>slow</th><th>late</th><th>budget deferrals</th><th>tick deferrals</th><th>pending at end</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></section>`);
+  }
+  if (systems.length) {
+    systems.sort((a, b) =>
+      numberField(b.data, 'estimated_window_ms') - numberField(a.data, 'estimated_window_ms')
+      || numberField(b.data, 'deadline_misses') - numberField(a.data, 'deadline_misses'));
+    const rows = systems.map(({ scenario, window, name, data }) => `<tr>
+<td>${escape(scenario)}</td><td>${escape(window)}</td><td>${escape(name)}</td>
+<td class="num">${formatNumber(numberField(data, 'calls'))}</td>
+<td class="num">${formatNumber(numberField(data, 'sampled_calls'))}</td>
+<td class="num">${formatNumber(numberField(data, 'estimated_window_ms'))}</td>
+<td class="num">${formatNumber(numberField(data, 'sampled_total_ms'))}</td>
+<td class="num">${formatNumber(numberField(data, 'max_call_ms_since_boot'))}</td>
+<td class="num">${formatNumber(numberField(data, 'slow_calls'))}</td>
+<td class="num">${formatNumber(numberField(data, 'deadline_misses'))}</td>
+<td class="num">${formatNumber(numberField(data, 'max_lateness_ds_since_boot') / 10)}</td></tr>`);
+    sections.push(`<section><h3>Scheduler systems (iteration ${iteration.iteration})</h3>
+<p class="muted">Estimated window time scales the sampled average by call count. Call counts, sampled time, slow calls and missed deadlines cover the measurement window. Worst call and maximum lateness are since boot. Budget and tick deferrals are shown in the scenario metrics.</p>
+<div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>system</th><th>calls</th><th>samples</th><th>est. ms</th><th>sampled ms</th><th>worst ms</th><th>slow</th><th>late</th><th>max late s</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></section>`);
+  }
+  if (slowCalls.length) {
+    const rows = slowCalls.map(({ scenario, window, data }) => `<tr>
+<td>${escape(scenario)}</td><td>${escape(window)}</td><td>${escape(data.kind)} · ${escape(data.system_type)}</td><td>${escape(data.entity_type)}</td>
+<td class="num">${formatNumber(numberField(data, 'elapsed_ms'))}</td><td class="num">${formatNumber(numberField(data, 'slow_limit_ms'))}</td><td class="num">${formatNumber(numberField(data, 'lateness_ds') / 10)}</td>
+<td>${escape(data.reason)}</td><td>${detailJson(data)}</td></tr>`);
+    sections.push(`<section><h3>Recent slow scheduler calls</h3><div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>system</th><th>entity</th><th>ms</th><th>slow limit ms</th><th>late s</th><th>reason</th><th>detail</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></section>`);
+  }
+  if (incidents.length) {
+    const rows = incidents.map(({ scenario, window, data }) => {
+      const subsystems = (Array.isArray(data.subsystems) ? data.subsystems : [])
+        .map(dataRow)
+        .sort((a, b) => numberField(b, 'usage') - numberField(a, 'usage'));
+      const top = subsystems[0];
+      return `<tr><td>${escape(scenario)}</td><td>${escape(window)}</td><td class="num">${formatNumber(numberField(data, 'usage'))}%</td>
+<td>${top ? `${escape(top.name)} (${formatNumber(numberField(top, 'usage'))}%)` : ''}</td>
+<td class="num">${formatNumber(numberField(data, 'unattributed_usage'))}%</td><td>${detailJson(data)}</td></tr>`;
+    });
+    sections.push(`<section><h3>Scheduler overrun incidents</h3><p class="muted">Subsystem usage contains the scheduler work shown inside each full record; these are nested costs, not additional tick time.</p>
+<div class="scroll"><table><thead><tr><th>scenario</th><th>window</th><th>tick use</th><th>top subsystem</th><th>unattributed</th><th>contributors and pending work</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></section>`);
+  }
+  return sections;
+}
+
 export function renderReport(outFile: string): { runs: number; tests: number } {
   const benchRuns = listRuns(BENCH_RUNS_DIR).map((f) => readJson<BenchRun>(f));
   const testRuns = listRuns(TEST_RUNS_DIR).map((f) => readJson<TestRun>(f));
@@ -93,6 +187,7 @@ ${latest.failures.length ? `<p class="bad">Failures: ${latest.failures.map(escap
         }
       }
       sections.push(`<section><h3>Memory timeline (iteration ${iteration.iteration})</h3>${memoryTimeline(iteration.process_samples, phases)}</section>`);
+      sections.push(...schedulerSections(iteration));
       const worst: string[] = [];
       for (const scenario of Object.values(iteration.scenarios ?? {})) {
         for (const [key, value] of Object.entries(scenario.details ?? {})) {
@@ -141,6 +236,7 @@ svg.timeline { width:100%; height:auto; } svg.timeline text { fill:var(--muted);
 svg.timeline .mem { fill:none; stroke:var(--accent); stroke-width:1.8; } svg.timeline .grid { stroke:var(--line); }
 svg.timeline .phase { stroke:var(--muted); stroke-dasharray:3 3; } svg.timeline .phase-label { fill:var(--fg); }
 code { font-size:13px; }
+details pre { max-height:400px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; }
 </style></head><body><main>
 <h1>DeepQuarry benchmarks</h1>
 <p class="muted">Generated ${escape(new Date().toISOString())} from ${benchRuns.length} benchmark run(s) and ${testRuns.length} test run(s) in <code>data/</code>. Regenerate with <code>tools/build/build.sh bench-report</code>.</p>

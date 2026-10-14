@@ -49,7 +49,7 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
 	B.digest_brute = 0
@@ -66,7 +66,7 @@
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
@@ -130,7 +130,7 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	om_after(src, delay, PROC_REF(explode))
+	after(src, delay, PROC_REF(explode))
 	return ..()
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/do_special_attack(atom/A, stance)
@@ -291,24 +291,15 @@
 	harvest_results = list(
 		/obj/item/stack/material/tritium = 10
 		)
-	nutrition = 150
 	var/build_type = /obj/random/ant_building
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/builder
-	of = /mob/living/simple_mob/animal/tyr/mineral_ants/builder
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special(datum/seq_frame/life/F)
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
+		src.build_tile(src.loc)
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/builder/perform(mob/living/simple_mob/animal/tyr/mineral_ants/builder/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
-		self.build_tile(self.loc)
-
-/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
+/// Starts building on `T`: a 5 s op (within one tile, conscious, one builder per turf). TRUE when it started.
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
-		return FALSE
-	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
-		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
-	return TRUE
+	return start_building(T)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/silver //transparent
 	name = "silver ant"
@@ -349,7 +340,7 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	om_after(src, delay, PROC_REF(explode))
+	after(src, delay, PROC_REF(explode))
 	return ..()
 
 
@@ -360,25 +351,16 @@
 	butchery_loot = list(\
 		/obj/item/stack/material/valhollide = 4\
 		)
-	nutrition = 630
 	var/build_type = /obj/effect/spider/spiderling/antling
 
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/queen
-	of = /mob/living/simple_mob/animal/tyr/mineral_ants/queen
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special(datum/seq_frame/life/F)
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
+		src.build_tile(src.loc)
 
-/datum/om/stage/life/special/animal/tyr/mineral_ants/queen/perform(mob/living/simple_mob/animal/tyr/mineral_ants/queen/self, datum/om/frame/life/ctx)
-	if((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !om_busy(self) && isturf(self.loc))
-		self.build_tile(self.loc)
-
-/// Starts building on `T`: a 5 s task (stays in place, conscious, one builder per turf).
+/// Starts building on `T`: a 5 s op (within one tile, conscious, one builder per turf). TRUE when it started.
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/proc/build_tile(turf/T)
-	if(nutrition < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)))
-		return FALSE
-	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
-		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
-	return TRUE
+	return start_building(T)
 
 /*
 ANT STRUCTURES
@@ -428,35 +410,36 @@ TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
 	density = FALSE
 	max_integrity = 15 //1 thwack with sword, 2 with spear
 
-EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_ant_structure)), \
-)
+CAPABILITIES(/obj/effect/ant_structure)
+	op("hit_ant_structure", item(/obj/item), label("Interaction hit ant structure"), then(PROC_REF(interaction_hit_ant_structure)))
 
 /// Old attackby: any item hits the structure, welders burn it (afterattack still follows, as before).
-/obj/effect/ant_structure/proc/interaction_hit_ant_structure(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/ant_structure/proc/interaction_hit_ant_structure(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been [pick(W.attack_verb)] with %I%[(user ? " by %T%." : ".")]")), item = W)
+	if(LAZYLEN(combat_of(W).attack_verbs))
+		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been [pick(combat_of(W).attack_verbs)] with %I%[(user ? " by %T%." : ".")]")), item = W)
 	else
 		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been attacked with %I%[(user ? " by %T%." : ".")]")), item = W)
 
-	var/damage = W.force / 4.0
+	var/damage = combat_of(W).force / 4.0
 
 	if(W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/WT = W.get_welder()
 
 		if(WT.remove_fuel(0, user))
 			damage = 15
-			playsound(src, W.usesound, 100, 1)
+			playsound(src, sounds_of(W).use, 100, 1)
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 
 /obj/effect/ant_structure/proc/die()
-	qdel(src)
+	consume(src)
 
 /obj/effect/ant_structure/atom_destruction(damage_flag)
 	. = ..()
@@ -475,7 +458,6 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 		else if(L.m_intent == I_RUN)
 			act_message(L, src, MSG_SELF(span_danger("You step in %T%!")), MSG_OTHERS(span_danger("%U% steps in %T%.")), MSG_BLIND(span_hear(span_bold("You hear a strange rustling!"))))
 			attack_mob(L)
-			update_icon()
 	..()
 
 /obj/effect/ant_structure/trap/proc/attack_mob(mob/living/L)
@@ -500,7 +482,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 /obj/effect/ant_structure/trap/confusion/attack_mob(mob/living/L)
 	play_sfx(src, SFX_EFFECTS_GHOST2)
 	if(L.get_ear_protection() == 0)
-		L.status_at_least(EFFECT_CONFUSED, 10)
+		L.status_at_least(STAT_CONFUSED, 10)
 
 /obj/effect/ant_structure/trap/poison
 	icon_state = "knock_trap"
@@ -514,7 +496,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	icon_state = "trip_trap"
 
 /obj/effect/ant_structure/trap/trip/attack_mob(mob/living/L)
-	L.status_at_least(EFFECT_WEAKENED, 3)
+	L.status_at_least(STAT_WEAKENED, 3)
 
 /obj/effect/ant_structure/wall
 	name = "Metant wall"
@@ -527,13 +509,15 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	desc = "This is a metant build"
 	icon_state = "tool"
 
-DECLARE_LOOT(/obj/random/ant_building, LOOT_TABLE(\
-	/obj/effect/ant_structure/trap/poison, \
-	/obj/effect/ant_structure/trap/burn, \
-	/obj/effect/ant_structure/trap/slowdown, \
-	/obj/effect/ant_structure/trap/confusion, \
-	/obj/effect/ant_structure/trap/trip, \
-	/obj/structure/mob_spawner/ant_hill/creatable))
+CAPABILITIES(/obj/random/ant_building)
+	loot(
+		table = list(
+			/obj/effect/ant_structure/trap/poison,
+			/obj/effect/ant_structure/trap/burn,
+			/obj/effect/ant_structure/trap/slowdown,
+			/obj/effect/ant_structure/trap/confusion,
+			/obj/effect/ant_structure/trap/trip,
+			/obj/structure/mob_spawner/ant_hill/creatable))
 
 
 /obj/effect/spider/spiderling/antling
@@ -573,13 +557,32 @@ TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/build_product()
 	return build_type
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/om/task/task)
-	var/turf/T = task.target
+MSG_DEF(ant/building, null, span_notice("%U% begins to secrete a sticky substance."))
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/mineral_ants)
+	op("build", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(ant/building)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(build_done)), on_interrupt(PROC_REF(build_interrupted)))
+
+/// The build op, started on `T` when the ant is hungry enough, the turf is free of ant work and the ant is idle.
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/start_building(turf/T)
+	if(nutrition_of(src) < 75 || !istype(T) || (locate_within(T, /obj/effect/ant_structure)) || is_working())
+		return FALSE
+	var/datum/op_result/R = perform_op(src, T, "build", null, ORIGIN_AI, AUTH_AI)
+	return !!R && R.outcome != ACT_REFUSED
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_done(datum/act/op/A)
+	var/turf/T = A.target
 	var/product = build_product()
 	if(!product || (locate_within(T, /obj/effect/ant_structure)))
 		return
 	adjust_nutrition(-30)
 	new product(T)
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/om/task/task)
-	to_chat(src, span_warning("You need to stay still to build on \the [task.target]."))
+/mob/living/simple_mob/animal/tyr/mineral_ants/proc/build_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("You need to stay still to build on \the [A.target]."))
+
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/builder/starting_nutrition()
+	return 150
+
+/mob/living/simple_mob/animal/tyr/mineral_ants/queen/starting_nutrition()
+	return 630

@@ -1,0 +1,43 @@
+human|none menu: Interaction clear dead plant
+human|none click: Click: Interaction clear dead plant
+robot|none menu: Interaction clear dead plant
+robot|none click: Click: Interaction clear dead plant
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Interaction clear dead plant
+human|/obj/item/tool/screwdriver menu: Interaction clear dead plant item
+human|/obj/item/tool/screwdriver click: Click: Interaction clear dead plant item
+human|/obj/item/tool/crowbar menu: Interaction clear dead plant
+human|/obj/item/tool/crowbar menu: Interaction clear dead plant item
+human|/obj/item/tool/crowbar click: Click: Interaction clear dead plant item
+human|/obj/item/tool/wrench menu: Interaction clear dead plant
+human|/obj/item/tool/wrench menu: Interaction clear dead plant item
+human|/obj/item/tool/wrench click: Click: Interaction clear dead plant item
+human|/obj/item/tool/wirecutters menu: Interaction clear dead plant
+human|/obj/item/tool/wirecutters menu: Interaction clear dead plant item
+human|/obj/item/tool/wirecutters click: Click: Interaction clear dead plant item
+human|/obj/item/multitool menu: Interaction clear dead plant
+human|/obj/item/multitool menu: Interaction clear dead plant item
+human|/obj/item/multitool click: Click: Interaction clear dead plant item
+human|/obj/item/weldingtool menu: Interaction clear dead plant
+human|/obj/item/weldingtool menu: Interaction clear dead plant item
+human|/obj/item/weldingtool click: Click: Interaction clear dead plant item
+human|/obj/item/stack/cable_coil menu: Interaction clear dead plant
+human|/obj/item/stack/cable_coil menu: Interaction clear dead plant item
+human|/obj/item/stack/cable_coil click: Click: Interaction clear dead plant item
+human|/obj/item/stack/material/steel menu: Interaction clear dead plant
+human|/obj/item/stack/material/steel menu: Interaction clear dead plant item
+human|/obj/item/stack/material/steel click: Click: Interaction clear dead plant item
+human|/obj/item/card/id menu: Interaction clear dead plant
+human|/obj/item/card/id menu: Interaction clear dead plant item
+human|/obj/item/card/id click: Click: Interaction clear dead plant item
+@obj human|/obj/item/mop_deploy
++1 menu: Interaction clear dead plant
++2 menu: Interaction clear dead plant item
+@obj human|/obj/item/soap
++2 menu: Interaction clear dead plant
++3 menu: Interaction clear dead plant item
+human|/obj/item menu: Interaction clear dead plant
+human|/obj/item menu: Interaction clear dead plant item
+human|/obj/item click: Click: Interaction clear dead plant item
+keys: clear_dead_plant, clear_dead_plant_item, drag_buckle, pass_insert, pass_insert_2

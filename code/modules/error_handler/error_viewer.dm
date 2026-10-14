@@ -60,6 +60,10 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/list/error_sources
 	var/list/errors_silenced
 
+CAPABILITIES(/datum/error_viewer/error_cache)
+	owns_many(nameof(errors))
+	owns_many(nameof(error_sources))
+
 /datum/error_viewer/error_cache/show_to(user, datum/error_viewer/back_to, linear)
 	var/html = build_header()
 	html += "<b>[GLOB.total_runtimes]</b> runtimes, <b>[GLOB.total_runtimes_skipped]</b> skipped<br><br>"
@@ -85,11 +89,11 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
-		own_put(src, nameof(error_sources), erroruid, error_source)
+		rel_add(src, nameof(error_sources), error_source, erroruid)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
 	rel_set(error_entry, nameof(error_entry.error_source), error_source)
-	own_add(src, nameof(errors), error_entry)
+	rel_add(src, nameof(errors), error_entry)
 	rel_add(error_source, nameof(error_source.errors), error_entry) // the viewer owns every entry; a source only names its own
 	if (skip_count)
 		return // Skip notifying admins about skipped errors.
@@ -135,6 +139,9 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/tmp/turf/usr_loc
 	var/is_skip_count
 
+CAPABILITIES(/datum/error_viewer/error_entry)
+	owns_one(nameof(exc), /exception)
+
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)
 	if (!istype(e))
 		name = "<b>\[[time_stamp()]]</b> Uncaught exception: <b>[html_encode(e.name)]</b>"
@@ -146,7 +153,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		return
 
 	name = "<b>\[[time_stamp()]]</b> Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b>"
-	own_set(src, nameof(exc), e)
+	rel_set(src, nameof(exc), e)
 	if (istype(desclines))
 		for (var/line in desclines)
 			// There's probably a better way to do this than non-breaking spaces...

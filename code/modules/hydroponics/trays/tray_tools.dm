@@ -12,7 +12,9 @@
 	desc = "An old pair of trimmers with a pretty dull blade. You would probably have a hard time cutting anything but plants with it."
 	icon_state = "hedget"
 	item_state = "hedget"
-	force = 7 //One point extra than standard wire cutters.
+
+CAPABILITIES(/obj/item/tool/wirecutters/clippers/trimmers)
+	configure(item_combat(force = 7))
 
 /obj/item/tool/wirecutters/clippers/trimmers/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return
@@ -21,6 +23,22 @@
 		var/obj/effect/plant/P = A
 		P.die_off()
 
+CAPABILITIES(/obj/item/analyzer/plant_analyzer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("print", ui_act(), then(PROC_REF(ui_act_print)))
+	op("close", ui_act(), then(PROC_REF(ui_act_close)))
+	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	interface("PlantAnalyzer", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	without("analyze") // its own window replaces the gas scan
+	ui_shape(reagents = list_of(), no_seed = bool(), seed = any)
+	op("view", in_hand(), then(PROC_REF(plant_analyzer_viewed)))
+
+/// Old attack_self: open the analyzer's window.
+/obj/item/analyzer/plant_analyzer/proc/plant_analyzer_viewed(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
+
 /obj/item/analyzer/plant_analyzer
 	name = "plant analyzer"
 	icon = 'icons/obj/device.dmi'
@@ -28,22 +46,19 @@
 	item_state = "analyzer"
 	var/datum/seed/last_seed
 	var/list/last_reagents
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 	special_handling = TRUE
 
 
-// DECLARE replaces the gas analyzer's scan, which this type always skipped (special_handling).
-// ALLOW(interactions): its Use opens the plant UI instead of the gas scan
-DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_open_ui)))
+/obj/item/analyzer/plant_analyzer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["reagents"] = last_reagents
+	var/list/merged_1 = ui_data_obj_item_analyzer_plant_analyzer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
-
-DECLARE_UI_STATE(/obj/item/analyzer/plant_analyzer, GLOB.tgui_inventory_state)
-
-UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge:ui_data_obj_item_analyzer_plant_analyzer{no_seed:bool,seed:unknown}")
-
-/// The computed part of /obj/item/analyzer/plant_analyzer's window data (declared on its UI_DATA row).
+/// /obj/item/analyzer/plant_analyzer's window data.
 /obj/item/analyzer/plant_analyzer/proc/ui_data_obj_item_analyzer_plant_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -56,16 +71,14 @@ UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge
 
 	return data
 
-UI_ACT(/obj/item/analyzer/plant_analyzer, "print", ui_act_print)
-UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_print)
-	print_report(ui.user)
-	return TRUE
+/obj/item/analyzer/plant_analyzer/proc/ui_act_print(datum/act/op/A)
+	print_report(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/item/analyzer/plant_analyzer, "close", ui_act_close)
-UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
+/obj/item/analyzer/plant_analyzer/proc/ui_act_close(datum/act/op/A)
 	proto_set(src, nameof(/obj/item/analyzer/plant_analyzer::last_seed), null)
 	last_reagents = null
-	return TRUE
+	return OP_OK
 
 /obj/item/analyzer/plant_analyzer/afterattack(obj/target, mob/user, flag)
 	if(!flag)
@@ -78,13 +91,13 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 	else if(istype(target,/obj/item/reagent_containers/food/snacks/grown))
 
 		var/obj/item/reagent_containers/food/snacks/grown/G = target
-		grown_seed = GLOB.plant_service.seeds[G.plantname]
+		grown_seed = SSplants.seeds[G.plantname]
 		grown_reagents = G.reagents
 
 	else if(istype(target,/obj/item/grown))
 
 		var/obj/item/grown/G = target
-		grown_seed = GLOB.plant_service.seeds[G.plantname]
+		grown_seed = SSplants.seeds[G.plantname]
 		grown_reagents = G.reagents
 
 	else if(istype(target,/obj/item/seeds))
@@ -160,7 +173,7 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 	var/obj/item/paper/P = new /obj/item/paper(get_turf(src))
 	P.name = "paper - [form_title]"
-	P.info = "[dat]"
+	P.set_info("[dat]")
 	if(ishuman(user))
 		user.put_in_hands(P)
 	user.visible_message("\The [src] spits out a piece of paper.")
@@ -302,7 +315,3 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 			data["trait_info"] += "It will consume [amount][GLOB.gas_data.name[gas]] from the environment."
 
 	return data
-
-/obj/item/analyzer/plant_analyzer/ownership()
-	. = ..()
-	. += proto(nameof(last_seed))

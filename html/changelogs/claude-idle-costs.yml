@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Docked shuttle and escape pod hatches no longer open and close by themselves every few seconds (their bolts failed to drop, so the dock kept retrying)."
+  - code_imp: "An idle server spends about half the time it did per second: emergency lights settle their cells only when their light must change, the power step re-reads machine regions only after the cable network changes, and machine wake-up at the end of loading takes half as long."
+  - admin: "The admin viewer shows what keeps an idle server busy (redraws, timers, radio signals, light updates and power edits by type), a 30-second steady-play profile with the object-model work by entity type, and what the metrics sampler itself costs."

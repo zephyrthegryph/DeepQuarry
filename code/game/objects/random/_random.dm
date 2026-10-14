@@ -1,4 +1,4 @@
-/// A map spawner: resolved at map time by its DECLARE_LOOT (code/datums/loot/loot.dm,
+/// A map spawner: resolved at map time by its loot() entry (code/datums/loot/loot.dm,
 /// resolve_loot()); it never becomes a live atom.
 /obj/random
 	name = "random object"
@@ -9,9 +9,28 @@
 	var/drop_get_turf = TRUE
 
 // Junk: 20% clutter, 56% trash and remains, 24% small useful items.
-DECLARE_LOOT(/loot/junk/useful, LOOT_TABLE(	LOOT_TYPES(1, subtypesof(/obj/item/pen/crayon)), 	/obj/item/pen, 	/obj/item/pen/blue, 	/obj/item/pen/red, 	/obj/item/pen/multi, 	/obj/item/storage/box/matches, 	/obj/item/stack/material/cardboard))
+CAPABILITIES(/loot/junk/useful)
+	loot(
+		table = list(
+			loot_types(1, subtypesof(/obj/item/pen/crayon)),
+			/obj/item/pen,
+			/obj/item/pen/blue,
+			/obj/item/pen/red,
+			/obj/item/pen/multi,
+			/obj/item/storage/box/matches,
+			/obj/item/stack/material/cardboard))
 
-DECLARE_LOOT(/loot/junk/trash, LOOT_TABLE(	LOOT_TYPES(1, subtypesof(/obj/item/trash) - list(/obj/item/trash/plate, /obj/item/trash/snack_bowl, /obj/item/trash/syndi_cakes, /obj/item/trash/tray)), 	/obj/effect/decal/cleanable/bug_remains, 	/obj/effect/decal/remains/mouse, 	/obj/effect/decal/remains/robot, 	/obj/item/paper/crumpled, 	/obj/item/inflatable/torn, 	/obj/effect/decal/cleanable/molten_item, 	/obj/item/material/shard))
+CAPABILITIES(/loot/junk/trash)
+	loot(
+		table = list(
+			loot_types(1, subtypesof(/obj/item/trash) - list(/obj/item/trash/plate, /obj/item/trash/snack_bowl, /obj/item/trash/syndi_cakes, /obj/item/trash/tray)),
+			/obj/effect/decal/cleanable/bug_remains,
+			/obj/effect/decal/remains/mouse,
+			/obj/effect/decal/remains/robot,
+			/obj/item/paper/crumpled,
+			/obj/item/inflatable/torn,
+			/obj/effect/decal/cleanable/molten_item,
+			/obj/item/material/shard))
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -38,10 +57,10 @@ GLOBAL_LIST_EMPTY(multi_point_spawns)
 /obj/random_multi/single_item
 	var/item_path  // Item type to spawn
 
-MAP_RESOLVER(/obj/random_multi, GLOBAL_PROC_REF(resolve_random_multi))
-MAP_RESOLVER_VARS(/obj/random_multi, "id;item_path;weight")
+CAPABILITIES(/obj/random_multi)
+	map_resolver(GLOBAL_PROC_REF(resolve_random_multi), vars = list("id", "item_path", "weight"))
 
-/// MAP_RESOLVER for multi-point spawn points: a weighted row in the point's group.
+/// The map resolver of multi-point spawn points: a weighted row in the point's group.
 /proc/resolve_random_multi(atom/loc, path, list/varedits)
 	var/turf/T = get_turf(loc)
 	if(!T || !ispath(path, /obj/random_multi/single_item))

@@ -1,4 +1,3 @@
-OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 
 /obj/machinery/camera
 	name = "security camera"
@@ -6,8 +5,6 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 	icon = 'icons/obj/monitors_vr.dmi' // New Icons
 	icon_state = "camera"
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 5
-	active_power_usage = 10
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
@@ -43,13 +40,43 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 
 	var/client_huds = null
 
+MSG_DEF_SELF(camera/nonfunctional, "camera non-functional")
+MSG_DEF_SELF(camera/needs_item, "needs an item")
+MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
+MSG_DEF_SELF(camera/not_possible, "not possible right now")
+
+CAPABILITIES(/obj/machinery/camera)
+	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
+	ref_many(nameof(motionTargets), /mob)
+	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
+	on_notice(/datum/notice/machinery_power_restored, then(PROC_REF(on_power_signal)))
+	configure(uses_power(idle = 5, active = 10))
+	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
+	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
+	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(req(PROC_REF(paper_show_meant))), then(PROC_REF(interaction_show_paper)))
+	op("camera_bug_toggle", inputs(item(/obj/item/camera_bug), menu()), priority(OP_PRIORITY_DEFAULT - 3), label("Bug camera"), needs(req(/obj/item/camera_bug, because = MSG(camera/needs_bug)), req_adjacent(), req_capable(), req(PROC_REF(camera_can_use), because = MSG(camera/nonfunctional))), then(PROC_REF(interaction_toggle_bug)))
+	op("camera_bash", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(held_is_bashing)))), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable(), req_on_origin(ORIGIN_MENU, req(PROC_REF(held_is_bashing), because = MSG(camera/not_possible)))), then(PROC_REF(interaction_bash)))
+	op("camera_silicon_look", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Look through"), then(PROC_REF(camera_silicon_look)))
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	owns_one(nameof(assembly), /obj/item/camera_assembly, starts = /obj/item/camera_assembly, starts_set = list("state" = 4)) // a built camera's assembly is fully wired
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Camera", count = 6, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_FOCUS, cut = PROC_REF(focus_wire_cut), pulse = PROC_REF(focus_wire_pulsed))
+	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(power_wire_cut))
+	on_wire(WIRE_CAM_LIGHT, cut = PROC_REF(light_wire_cut), pulse = PROC_REF(light_wire_pulsed))
+	on_wire(WIRE_CAM_ALARM, cut = PROC_REF(alarm_wire_cut), pulse = PROC_REF(alarm_wire_pulsed))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(weld_available)), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), then(PROC_REF(welder_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), then(PROC_REF(wire_tool_used)))
+
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
+
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
-	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
-	set_wires(new /datum/wires/camera(src))
-	own_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
-	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
 	if(!src.network || src.network.len < 1)
@@ -60,15 +87,23 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 		ASSERT(src.network)
 		ASSERT(src.network.len > 0)
 	network = camera_network_intern(network)
-	// Make mapping with cameras easier
-	if(!c_tag)
-		var/area/A = get_area(src)
-		c_tag = "[A ? A.name : "Unknown"] #[rand(111,999)]"
 
 	. = ..()
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
+
+	if(TYPE_TABLE_GET(src, camera_initial_emp_proof))
+		upgradeEmpProof()
+	if(TYPE_TABLE_GET(src, camera_initial_xray))
+		upgradeXRay()
+	if(TYPE_TABLE_GET(src, camera_initial_motion))
+		upgradeMotion()
+
+/// A camera the map left untagged is tagged after its area and a random number (mapping with cameras is easier).
+/obj/machinery/camera/proc/roll_c_tag(datum/roller/R)
+	var/area/A = get_area(src)
+	return "[A ? A.name : "Unknown"] #[R.number(111, 999)]"
 
 /// Cameras with the same network set share one list. Shared lists are
 /// read-only: camera procs replace `network` rather than mutate it.
@@ -91,57 +126,58 @@ OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 	deactivate(null, 0)
 	..()
 
-// A camera sleeps on one om_after() timer for its earliest deadline (EMP recovery, the motion alarm
+// A camera sleeps on one after() timer for its earliest deadline (EMP recovery, the motion alarm
 // delay) and on signals from the mobs it tracks; it never polls.
 
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
 	. = 0
-	if((has_stat(EMPED)) && affected_by_emp_until > 0)
+	if(affected_by_emp_until > 0)
 		. = affected_by_emp_until
 	// The motion alarm waits for power (power_change() reschedules).
-	if(detectTime > 0 && !has_stat(NOPOWER | EMPED))
+	if(detectTime > 0 && !(power_lost() || emp_held()))
 		var/alarm_at = detectTime + alarm_delay + 1
 		if(!. || alarm_at < .)
 			. = alarm_at
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (om_timer_slot_pending(src, "camera_timer_token") || !deadline))
+	if(deadline == camera_timer_at && (after_pending(src, "camera_timer_token") || !deadline))
 		return
-	if(om_timer_slot_pending(src, "camera_timer_token"))
-		om_cancel_timer_slot(src, "camera_timer_token")
+	if(after_pending(src, "camera_timer_token"))
+		cancel_after(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
-		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
+		sleep_audit_join(src)
+		after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired), key = "camera_timer_token")
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
-	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
-		stat_remove(EMPED)
+	if(affected_by_emp_until && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+		affected_by_emp_until = 0
+		release(src, STAT_OPERABLE, SRC_EMP)
 		cancelCameraAlarm()
-		update_icon()
 		update_coverage()
 	check_motion_alarm()
 	schedule_camera_timer()
 
-/obj/machinery/camera/om_sleep_violation()
+/obj/machinery/camera/sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (!om_timer_slot_pending(src, "camera_timer_token") || camera_timer_at > deadline))
+	if(deadline && (!after_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 
 /// The area's channel change reaches cameras as the machinery power events.
-/obj/machinery/camera/proc/on_power_signal(datum/source, datum/om/event/event)
-	EVENT_HANDLER
+/obj/machinery/camera/proc/on_power_signal(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	schedule_camera_timer()
 
-DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 /// An EMP may knock the camera out (camera_disrupt()).
-/obj/machinery/camera/proc/camera_emp(datum/damage_packet/packet)
+/obj/machinery/camera/proc/camera_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob(100/packet.severity))
 		camera_disrupt(packet.severity)
+	return HOOK_DECLINE
 
 /// Knocks the camera out for 90 seconds / severity (EMPs, laser pointers). EMP-proof cameras shrug it off.
 /obj/machinery/camera/proc/camera_disrupt(severity)
@@ -149,15 +185,14 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 		return
 	if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 		affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
-		stat_add(EMPED)
-		set_light(0)
+		hold(src, STAT_OPERABLE, FALSE, SRC_EMP, max(affected_by_emp_until - world.time, 1))
+		set_glow(src, GLOW(0, null, null))
 		triggerCameraAlarm()
-		update_icon()
 		update_coverage()
 		schedule_camera_timer()
 
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
-	if((has_stat(BROKEN)) || (resistance_flags & BOMB_PROOF))
+	if((broken_now()) || (resistance_flags & BOMB_PROOF))
 		return
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
 
@@ -166,81 +201,39 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 	if (!isobj(source))
 		return
 	var/obj/item/O = source
-	if(O.throwforce >= src.toughness)
+	if(thrown_of(O).force >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
 	src.view_range = num
 	GLOB.cameranet.updateVisibility(src, 0)
 
-/obj/machinery/camera/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/camera_shred,
-		/datum/interaction/machine_item/camera_update_coverage,
-		/datum/interaction/machine_item/camera_paper_show,
-		/datum/interaction/machine_item/camera_bug_toggle,
-		/datum/interaction/machine_item/camera_bash,
-	)
-	..()
-
 /// Old attackby's unconditional first line, before any branch was tested. Always
 /// runs first and declines, so the branches below (and the base attackby) still see it.
-/datum/interaction/machine_item/camera_update_coverage
-	id = "camera_update_coverage"
-	name = "Use"
-	held_type = /obj/item
-	consumes_input = FALSE
-	effect = /obj/machinery/camera/proc/interaction_update_coverage
-
-/obj/machinery/camera/proc/interaction_update_coverage(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/camera/proc/interaction_update_coverage(datum/act/op/A)
 	update_coverage()
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: hold a paper or PDA up to the camera.
-/datum/interaction/machine_item/camera_paper_show
-	id = "camera_paper_show"
-	name = "Show to camera"
-	held_type = list(/obj/item/paper, /obj/item/pda)
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/camera/proc/paper_show_meant, null))
-	effect = /obj/machinery/camera/proc/interaction_show_paper
-
 /// Old attackby: bug or unbug the camera.
-/datum/interaction/machine_item/camera_bug_toggle
-	id = "camera_bug_toggle"
-	name = "Bug camera"
-	held_type = /obj/item/camera_bug
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/camera/proc/camera_can_use, "camera non-functional"))
-	effect = /obj/machinery/camera/proc/interaction_toggle_bug
-
-/obj/machinery/camera/proc/camera_can_use(mob/actor, atom/target, obj/item/held)
-	return can_use()
+/obj/machinery/camera/proc/camera_can_use(datum/act/op/A)
+	if(can_use())
+		return null
+	return /datum/msg/req_failed
 
 /// Old attackby: bashing the camera with a damaging item.
-/datum/interaction/machine_item/camera_bash
-	id = "camera_bash"
-	name = "Attack"
-	category = INTERACTION_CAT_ATTACK
-	tags = list(INTERACTION_TAG_HOSTILE)
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/camera/proc/held_is_bashing, null))
-	effect = /obj/machinery/camera/proc/interaction_bash
-
 /// Old attack_hand (never called ..()): a human who can shred slashes the camera.
-/datum/interaction/machine_hand/ungated/camera_shred
-	id = "camera_shred"
-	name = "Slash"
-	category = INTERACTION_CAT_ATTACK
-	tags = list(INTERACTION_TAG_HOSTILE)
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/camera/proc/actor_can_shred, null))
-	effect = /obj/machinery/camera/proc/interaction_shred
-
-/obj/machinery/camera/proc/actor_can_shred(mob/actor, atom/target, obj/item/held)
+/obj/machinery/camera/proc/actor_can_shred(datum/act/op/A)
+	var/mob/actor = A.actor
 	if(!ishuman(actor))
-		return FALSE
+		return /datum/msg/req_failed
 	var/mob/living/carbon/human/human_actor = actor
-	return human_actor.species.can_shred(human_actor, FALSE, 11)
+	if(read_once(human_actor.species.can_shred(human_actor, FALSE, 11)))
+		return null
+	return /datum/msg/req_failed
 
-/obj/machinery/camera/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/camera/proc/interaction_shred(datum/act/op/A)
+	var/mob/user = A.actor
 	set_status(0)
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
@@ -248,9 +241,11 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 	play_sfx(src, SFX_WEAPONS_SLASH, 2)
 	add_hiddenprint(user)
 	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/camera/attack_generic(mob/user as mob)
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/machinery/camera/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
 	if(isanimal(user))
 		var/mob/living/simple_mob/S = user
 		set_status(0)
@@ -260,34 +255,48 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 		playsound(src, S.attack_sound, 100, 1)
 		add_hiddenprint(user)
 		deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
-		return 1
-	return 0
+		return OP_OK
+	return OP_OK
 
-/obj/machinery/camera/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/camera/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	update_coverage()
 	set_panel_open(!panel_open)
 	act_message(user, null, MSG_SELF(span_notice("You screw the camera's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% screws the camera's panel [panel_open ? "open" : "closed"]!")))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/machinery/camera/wirecutter_act(mob/user, obj/item/tool)
+/// The wirecutters or a multitool: the coverage is refreshed, and behind the open panel the wires' window opens.
+/obj/machinery/camera/proc/wire_tool_used(datum/act/op/A)
 	update_coverage()
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	interact(user)
-	return ITEM_INTERACT_SUCCESS
+	if(panel_open)
+		interact(A.actor)
+	return OP_OK
 
-/obj/machinery/camera/multitool_act(mob/user, obj/item/tool)
-	return wirecutter_act(user, tool)
+/obj/machinery/camera/proc/weld_available(datum/act/op/A)
+	return broken_now() || wires_all_cut(src)
 
-/obj/machinery/camera/welder_act(mob/user, obj/item/tool)
+/obj/machinery/camera/proc/weld_start_message(datum/act/op/A)
+	return msg_text("You start to weld [src]..")
+
+/obj/machinery/camera/proc/weld_started(datum/act/op/A)
 	update_coverage()
-	if(!wires.is_all_cut() && !has_stat(BROKEN))
-		return ..()
-	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
-		return ITEM_INTERACT_BLOCKING
-	return TRUE
+	var/obj/item/W = A.held_provider()
+	var/obj/item/weldingtool/welder = W.get_welder()
+	welder.eyecheck(A.actor)
+	if(sounds_of(W).use)
+		play_sfx(src, sounds_of(W).use, volume = 50, vary = TRUE)
+	return OP_OK
+
+/obj/machinery/camera/proc/weld_duration(datum/act/op/A)
+	var/obj/item/W = A.held_provider()
+	return 10 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
+
+/obj/machinery/camera/proc/welder_used(datum/act/op/A)
+	welded_off(A.actor, A.held)
+	return OP_OK
 
 /obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
 	if(assembly)
@@ -295,20 +304,21 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 		assembly.set_anchored(TRUE)
 		assembly.camera_name = c_tag
 		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
-		assembly.update_icon()
 		assembly.set_dir(dir)
-		if(has_stat(BROKEN))
-			assembly.state = 2
+		if(broken_now())
+			assembly.set_state(2)
 			to_chat(user, span_notice("You repaired \the [src] frame."))
 		else
-			assembly.state = 1
+			assembly.set_state(1)
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		own_take(src, nameof(assembly))
-	qdel(src)
+		rel_take(src, nameof(assembly))
+	spent(src, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/camera/proc/interaction_show_paper(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/camera/proc/interaction_show_paper(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	update_coverage()
 	var/mob/living/U = user
 	var/obj/item/paper/X = null
@@ -337,12 +347,15 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 
 		// structured TGUI AdminReport.
 		dq_admin_report_html(O, itemname, "<TT>[info]</TT>")
-	return TRUE
+	return OP_OK
 
-/obj/machinery/camera/proc/paper_show_meant(mob/actor, atom/target, obj/item/held)
-	return can_use() && isliving(actor)
+/obj/machinery/camera/proc/paper_show_meant(datum/act/op/A)
+	if(can_use() && isliving(A.actor))
+		return null
+	return /datum/msg/req_failed
 
-/obj/machinery/camera/proc/interaction_toggle_bug(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/camera/proc/interaction_toggle_bug(datum/act/op/A)
+	var/mob/user = A.actor
 	update_coverage()
 	if(src.bugged)
 		to_chat(user, span_notice("Camera bug removed."))
@@ -350,21 +363,26 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 	else
 		to_chat(user, span_notice("Camera bugged."))
 		src.bugged = 1
-	return TRUE
+	return OP_OK
 
-/obj/machinery/camera/proc/interaction_bash(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/camera/proc/interaction_bash(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	update_coverage()
 	user.setClickCooldown(user.get_attack_speed(W))
-	if (W.force >= src.toughness)
+	if (combat_of(W).force >= src.toughness)
 		user.do_attack_animation(src)
-		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by %T%!"))
-		if (W.hitsound)
-			playsound(src, W.hitsound, 50, 1, -1)
+		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with [W] by %T%!"))
+		if (sounds_of(W).hit)
+			playsound(src, sounds_of(W).hit, 50, 1, -1)
 	receive_weapon_hit(W, user, silent = FALSE)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/camera/proc/held_is_bashing(mob/actor, atom/target, obj/item/held)
-	return held?.obj_damage_type()
+/obj/machinery/camera/proc/held_is_bashing(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(read_once(held?.obj_damage_type()))
+		return null
+	return /datum/msg/req_failed
 
 /obj/machinery/camera/proc/deactivate(user as mob, choice = 1)
 	// The only way for AI to reactivate cameras are malf abilities, this gives them different messages.
@@ -382,7 +400,7 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 		else
 			visible_message(span_notice(" [src] clicks and shuts down. "))
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
-		icon_state = "[initial(icon_state)]1"
+		set_icon_state("[initial(icon_state)]1")
 	else
 		if(user)
 			act_message(user, src, others = span_notice(" %U% has reactivated %T%!"))
@@ -390,13 +408,13 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 		else
 			visible_message(span_notice(" [src] clicks and reactivates itself. "))
 		play_sfx(src, SFX_ITEMS_WIRECUTTER)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
 /obj/machinery/camera/atom_break(damage_flag)
 	. = ..()
 	if(!.)
 		return
-	wires.cut_all()
+	wires_cut_all(src)
 
 	triggerCameraAlarm()
 	update_coverage()
@@ -409,22 +427,27 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 	. = ..()
 	if(!.)
 		return
-	wires.mend_all()
+	wires_mend_all(src)
 	cancelCameraAlarm()
 	update_coverage()
 
+SETTER(/obj/machinery/camera, status)
 /obj/machinery/camera/proc/set_status(newstatus)
 	if (status != newstatus)
 		status = newstatus
+		tracked_changed(src, nameof(status))
 		update_coverage()
 
-APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/camera/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_suffix()]")
 
 /// "1" when off or broken, "emp" while EMP-ed, else nothing.
 /obj/machinery/camera/proc/appearance_suffix()
-	if(!status || has_stat(BROKEN))
+	if(!status || broken_now())
 		return "1"
-	if(has_stat(EMPED))
+	if(emp_held())
 		return "emp"
 	return ""
 
@@ -433,7 +456,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 	GLOB.camera_alarm.triggerAlarm(loc, src, duration)
 
 /obj/machinery/camera/proc/cancelCameraAlarm()
-	if(wires.is_cut(WIRE_CAM_ALARM))
+	if(wire_is_cut(src, WIRE_CAM_ALARM))
 		return
 
 	alarm_on = 0
@@ -443,7 +466,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 /obj/machinery/camera/proc/can_use()
 	if(!status)
 		return 0
-	if(has_stat(EMPED | BROKEN))
+	if((emp_held() || broken_now()))
 		return 0
 	return 1
 
@@ -493,26 +516,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 
 	return null
 
-/// Welds (a timed tool job); `on_done` runs on src with `done_args` when it is done. 0 if busy or refused.
-/obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
-	if(om_busy(src)) // a weld in progress claims it
-		return 0
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
-	return result
-
-/obj/machinery/camera/proc/weld_finished(on_done, list/done_args)
-	if(on_done)
-		call(src, on_done)(arglist(done_args))
-
 /obj/machinery/camera/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] is broken."))
 		return
 
-	wires.Interact(user)
+	wires_open(src, user)
 
 /obj/machinery/camera/proc/add_network(network_name)
 	add_networks(list(network_name))
@@ -584,9 +596,49 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 
 // Resets the camera's wires to fully operational state. Used by one of Malfunction abilities.
 /obj/machinery/camera/proc/reset_wires()
-	if(!wires)
+	if(!wiring_of(src))
 		return
 	atom_fix() // Fix the camera
-	wires.repair()
-	update_icon()
+	wires_repair(src)
 	update_coverage()
+
+// ---- the wires ----
+
+
+/obj/machinery/camera/proc/wire_lights()
+	return list(
+		"The focus light is [(view_range == initial(view_range)) ? "on" : "off"].",
+		"The power link light is [can_use() ? "on" : "off"].",
+		"The camera light is [light_disabled ? "off" : "on"].",
+		"The alarm light is [alarm_on ? "on" : "off"].")
+
+/// The focus wire cut shortens the view; mended, it is back.
+/obj/machinery/camera/proc/focus_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	setViewRange(N.mended ? initial(view_range) : short_range)
+
+/obj/machinery/camera/proc/focus_wire_pulsed(datum/act/A)
+	setViewRange(view_range == initial(view_range) ? short_range : initial(view_range))
+
+/// The power wire cut switches the camera off; mended, back on.
+/obj/machinery/camera/proc/power_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(status && !N.mended || !status && N.mended)
+		deactivate(N.user, 1)
+
+/obj/machinery/camera/proc/light_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	light_disabled = !N.mended
+
+/obj/machinery/camera/proc/light_wire_pulsed(datum/act/A)
+	light_disabled = !light_disabled
+
+/obj/machinery/camera/proc/alarm_wire_cut(datum/act/A)
+	var/datum/notice/wire_cut/N = A
+	if(!N.mended)
+		triggerCameraAlarm()
+	else
+		cancelCameraAlarm()
+
+/obj/machinery/camera/proc/alarm_wire_pulsed(datum/act/A)
+	visible_message("[icon2html(src, viewers(src))] *beep*", "[icon2html(src, viewers(src))] *beep*")

@@ -7,7 +7,6 @@
 
 	faction = FACTION_FAITHLESS
 
-	mob_class = MOB_CLASS_DEMONIC
 
 	endurance = 50
 
@@ -40,8 +39,11 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/faithless)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /mob/living/simple_mob/faithless/Process_Spacemove(check_drift = 0)
 	return 1
@@ -51,7 +53,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		if(prob(12))
-			L.status_at_least(EFFECT_WEAKENED, 3)
+			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 */
 

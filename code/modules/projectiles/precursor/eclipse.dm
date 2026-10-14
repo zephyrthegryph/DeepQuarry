@@ -33,20 +33,20 @@ MATERIAL_MIX(/obj/item/gun/energy/freezegun, list(MAT_DURASTEEL = 1000, MAT_MORP
 	stage = 2
 	sealed = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/item/assembly_holder/timer_igniter)
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a
 
-/obj/item/grenade/chem_grenade/frost/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/bluespace/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/bluespace/B2 = new(src)
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a)
+	configure(reagents(add = list(REAGENT_ID_CRYOSLURRY = 150, REAGENT_ID_POTASSIUM = 150)))
 
-	B1.reagents.add_reagent(REAGENT_ID_CRYOSLURRY, 150)
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
+/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b
 
-	own_add(src, nameof(beakers), B1)
-	own_add(src, nameof(beakers), B2)
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 150, REAGENT_ID_SUGAR = 150)))
+
+CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a, /obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
+
 
 /obj/item/projectile/bullet/frostshotgun
 	use_submunitions = 1
@@ -60,7 +60,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	hud_state = "plasma_sphere"
 
 /obj/item/projectile/bullet/frostshotgun/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/frostsphere
 	name = "frost sphere"
@@ -120,9 +120,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	name = "ice winds"
 	icon_state = "ice_wind"
 	damage = 15
-	armor_penetration = 70
 	modifier_type_to_apply = /datum/body_effect/cryogelled
 	modifier_duration = 0.25 MINUTE
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/chillingwind)
+	configure(item_combat(armor_penetration = 70))
 
 /obj/item/projectile/energy/eclipse_boss/metalsphere
 	name = "metal sphere"
@@ -130,7 +132,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	injury_kind = INJURY_BLUNT
 	damage = 20
 	agony = 10
-	armor_penetration = 50
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/metalsphere)
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	name = "searing javelin"
@@ -138,7 +142,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	injury_kind = INJURY_BLUNT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 40
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/energyjavelin)
+	configure(item_combat(armor_penetration = 30))
 
 //projectiles
 /obj/item/projectile/energy/astral_collective
@@ -155,7 +161,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 /obj/item/projectile/energy/astral_collective/spear
 	icon_state = "spear"
 	damage = 20
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/energy/astral_collective/spear)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/astral_collective/fire
 	icon_state = "fire"
@@ -165,5 +173,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 
 /obj/item/projectile/energy/astral_collective/dagger
 	damage = 8
-	armor_penetration = 60
 	icon_state = "dagger"
+
+CAPABILITIES(/obj/item/projectile/energy/astral_collective/dagger)
+	configure(item_combat(armor_penetration = 60))

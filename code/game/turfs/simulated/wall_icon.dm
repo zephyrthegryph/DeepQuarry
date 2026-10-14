@@ -12,15 +12,15 @@
 		return
 
 	if(reinf_material)
-		construction_stage = 6
+		set_construction_stage(6)
 	else
-		construction_stage = null
+		set_construction_stage(null)
 	// The material cap is the wall's integrity; the wall keeps the damage it already has.
 	// A wall is geometry around a material, not a hard-coded thermal type.
 	var/material_temperature = SSair?.initialized ? get_temperature() : initial_temperature
 	var/list/facts = wall_material_facts(material_temperature)
 	var/missing = max_integrity - get_integrity()
-	max_integrity = facts[WALL_FACT_INTEGRITY]
+	set_max_integrity(facts[WALL_FACT_INTEGRITY])
 	update_integrity(max(1, max_integrity - missing))
 	explosion_resistance = facts[WALL_FACT_EXPLOSION]
 	thermal_conductivity = facts[WALL_FACT_CONDUCTIVITY]
@@ -30,14 +30,11 @@
 	desc = facts[WALL_FACT_DESC]
 
 	if(material.opacity > 0.5 && !opacity)
-		set_light(1)
+		set_glow(src, GLOW(1, null, null))
 	else if(material.opacity < 0.5 && opacity)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
-	// Inside a map-load batch the batch smooths every wall once at its end (atoms.dm).
-	if(!SSatoms?.batch_defer(BATCH_WORK_WALL_SMOOTHING, src))
-		update_connections(1)
-		update_icon()
+	sync_damage_step()
 	if(SSair?.initialized)
 		update_air_ref(0)
 
@@ -51,7 +48,7 @@
 	return CACHED_KEY(wall_material_facts, "[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[temperature_key]", src, material_temperature)
 
 /// Builds the shared facts for a wall's (material, reinforcement, temperature); cleared with the
-/// material facts (material_facts_changed() emits /datum/om/event/material_facts_changed).
+/// material facts (material_facts_changed() clears it, SC_ON_NOTICE).
 /proc/build_wall_material_facts(turf/simulated/wall/W, material_temperature)
 	var/datum/material/material = W.material
 	var/datum/material/reinf_material = W.reinf_material
@@ -69,11 +66,12 @@
 		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
 	)
 
-DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material_facts), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material_facts), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)
 
-/turf/simulated/wall/proc/set_material(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
-	material = newmaterial
-	reinf_material = newrmaterial
+/// Gives the wall these materials (the tracked material and reinforcement redraw it and make the walls around it join it again).
+/turf/simulated/wall/proc/apply_materials(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
+	rel_set(src, nameof(material), newmaterial)
+	set_reinf_material(newrmaterial)
 	if(!newgmaterial)
 		girder_material = DEFAULT_WALL_MATERIAL
 	else
@@ -81,37 +79,63 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	update_material()
 	check_radioactive()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/appearance_overlays()
-	. = list()
+TRACKED(/turf/simulated/wall, material)
+
+/// The step of the damage overlay the wall shows (0: none), tracked so a hit redraws it: synced when the integrity or the material cap changes.
+/turf/simulated/wall/var/damage_step = 0
+
+/turf/simulated/wall/proc/sync_damage_step()
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction <= 0)
+		set_damage_step(0)
+		return
+	set_damage_step(min(round(damage_fraction * length(damage_overlays)) + 1, length(damage_overlays)))
+
+/// `construction_stage` is null or a step number that may be 0, and DM reads null == 0 as true: it has a setter of its own.
+/turf/simulated/wall/proc/set_construction_stage(value)
+	if(isnull(construction_stage) == isnull(value) && construction_stage == value)
+		return FALSE
+	construction_stage = value
+	tracked_changed(src, nameof(construction_stage))
+	return TRUE
+SETTER(/turf/simulated/wall, construction_stage)
+
+/// A wall's look: its material's mask by its connections, the reinforcement and the stage of its construction, the damage, and a coat of thermite.
+/// The walls around it reach it through wall_connections only (the adjacency index recomputes them when a neighbour comes or goes).
+/turf/simulated/wall/draw(datum/look/look)
+	..()
+	look.state("blank") // the wall is its overlays
+	look_parts(look)
+
+/// The layers of the wall's look; a kind of wall with its own sprites replaces them.
+/turf/simulated/wall/proc/look_parts(datum/look/look)
 	if(!material)
-		return .
-
-	if(!damage_overlays[1]) //list hasn't been populated
-		generate_overlays()
-
-	var/image/I
-
+		return
 	if(!density)
-		I = image(wall_masks, "[material.icon_base]fwall_open")
-		I.color = material.icon_colour
-		. += I
-		return .
+		look.overlay(open_wall_image())
+		return
+	for(var/image/layer_image as anything in wall_overlay_images())
+		look.overlay(layer_image)
+	if(thermite)
+		look.overlay(wall_thermite_coat())
 
-	. += wall_overlay_images()
+/// The sprite an opened wall (a false wall slid aside) shows: its material's, in its colour.
+/turf/simulated/wall/proc/open_wall_image()
+	return look_overlay_image(wall_masks, "[material.icon_base]fwall_open", color = material.icon_colour)
+
+/// The dark coating a thermite-treated wall shows (effects.dmi "thermite"): one image shared by every coated wall.
+/proc/wall_thermite_coat()
+	var/static/image/coat = image('icons/effects/effects.dmi', icon_state = "thermite")
+	return coat
 
 /// The overlay images for this wall's state (doc/rewrite/init_and_turfs.md sec 3.5), built
 /// once per (masks, material, reinforcement, connections, construction stage, damage step) and
 /// shared by every wall in that state. Read-only: callers pass it to add_overlay(), which copies.
 /turf/simulated/wall/proc/wall_overlay_images()
 	var/list/connections = get_wall_connections() // interned (string_list), so usable as a key
-	var/damage_step = 0
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		damage_step = min(round(damage_fraction * damage_overlays.len) + 1, damage_overlays.len)
 	return CACHED_KEY(wall_overlay_sets, "[wall_masks]|[MATERIAL_CACHE_ID(material)]|[reinf_material ? MATERIAL_CACHE_ID(reinf_material) : "none"]|[connections.Join(",")]|[construction_stage]-[damage_step]", wall_masks, material, reinf_material, connections, construction_stage, damage_step ? damage_overlays[damage_step] : null)
 
-DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
+DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_sets), SC_ON_NOTICE(/datum/notice/material_facts_changed), 4096, 0)
 
 /// Builder for wall_overlay_sets. `damage_image` is the damage overlay for the state, or null.
 /proc/build_wall_overlay_sets(wall_masks, datum/material/material, datum/material/reinf_material, list/connections, construction_stage, image/damage_image)
@@ -145,6 +169,7 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 		images += damage_image
 	return images
 
+/// The damage overlays, fainter to stronger, built once (the first wall made).
 /turf/simulated/wall/proc/generate_overlays()
 	var/alpha_inc = 256 / damage_overlays.len
 
@@ -155,32 +180,58 @@ DECLARE_SHARED_CACHE_EX(wall_overlay_sets, GLOBAL_PROC_REF(build_wall_overlay_se
 		damage_overlays[i] = img
 
 
+/// The neighbours a wall joins (its adjacency() mask, code/engine/lifeforms/adjacency.dm): faces and corners.
+/turf/simulated/wall/var/smooth_mask = 0
+
+/// adjacency() connects: a wall joins walls of a blending material and the low walls it takes.
+/turf/simulated/wall/proc/smooth_joins(atom/other, bit)
+	if(istype(other, /turf/simulated/wall))
+		var/turf/simulated/wall/W = other
+		return W.material && can_join_with_wall(W)
+	if(istype(other, /obj/structure/low_wall))
+		return can_join_with_low_wall(other)
+	return FALSE
+
+/// adjacency() changed: its neighbours changed; it works out its connections again, and its look follows the tracked result.
+/turf/simulated/wall/proc/smooth_changed(mask)
+	smooth_mask = mask
+	if(isnull(smooth_key_sent))
+		smooth_key_sent = smooth_key()
+	update_connections()
+
+/// What the walls around read of this one when they decide whether to join it (can_join_with_wall()): the type of its material and its icon base.
+/turf/simulated/wall/proc/smooth_key()
+	return "[material?.type]|[material?.icon_base]"
+
+/// What this wall last told its neighbours (smooth_key()); null until the index first computed its connections.
+/turf/simulated/wall/var/tmp/smooth_key_sent
+
+/// Its material changed: when the walls around it can join it differently, they work out their connections again. A wall in a map load waits for
+/// the batch, which computes every member once with the materials it ends up with.
+/turf/simulated/wall/proc/smooth_inputs_changed(datum/act/A)
+	var/key = smooth_key()
+	if(key == smooth_key_sent)
+		return
+	smooth_key_sent = key
+	if(materialization_host().batch_defer(BATCH_WORK_ADJACENCY, src))
+		return
+	adjacency_refresh(src, TRUE)
+
 /turf/simulated/wall/proc/update_connections(propagate = 0)
 	if(!material)
 		return
-	var/list/dirs = list()
-	var/inrange = orange(src, 1)
-	for(var/turf/simulated/wall/W in inrange)
-		if(!W.material)
-			continue
-		if(propagate)
-			W.update_connections()
-			W.update_icon()
-		if(can_join_with_wall(W))
-			dirs += get_dir(src, W)
-	for(var/obj/structure/low_wall/WF in inrange)
-		if(can_join_with_low_wall(WF))
-			dirs += get_dir(src, WF)
-
-	special_wall_connections(dirs, inrange)
-	wall_connections = string_list(dirs_to_corner_states(dirs))
+	if(propagate)
+		adjacency_refresh(src, TRUE) // a material change the index cannot see: this wall and its neighbours look again
+	var/list/dirs = adjacency_mask_dirs(smooth_mask)
+	special_wall_connections(dirs)
+	set_wall_connections(string_list(dirs_to_corner_states(dirs)))
 
 /// wall_connections, or the unconnected corner states before update_connections() has run.
 /turf/simulated/wall/proc/get_wall_connections()
 	var/static/list/unconnected = list("0", "0", "0", "0")
 	return wall_connections || unconnected
 
-/turf/simulated/wall/proc/special_wall_connections(list/dirs, list/inrange)
+/turf/simulated/wall/proc/special_wall_connections(list/dirs)
 	if(material.icon_base == "hull") // Could be improved...
 		var/additional_dirs = 0
 		for(var/direction in GLOB.alldirs)

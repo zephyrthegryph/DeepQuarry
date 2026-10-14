@@ -54,7 +54,7 @@
 	if(!eyeobj) return
 	if(!new_eye)
 		new_eye = src
-	qdel(eyeobj) // No AI, no Eye
+	ended_with(eyeobj, src) // No AI, no Eye
 	eyeobj = null
 	reset_perspective(new_eye)
 
@@ -70,9 +70,9 @@
 	reset_perspective(eyeobj)
 	SetName(src.name)
 
-/atom/proc/move_camera_by_click()
-	if(isAI(usr))
-		var/mob/living/silicon/ai/AI = usr
+/atom/proc/move_camera_by_click(mob/user)
+	if(isAI(user))
+		var/mob/living/silicon/ai/AI = user
 		var/mob/observer/eye/eyeobj = AI?.active_eye()
 		if(eyeobj && (AI.multicam_on || (AI.client.eye == eyeobj)))
 			var/turf/T = get_turf(src)

@@ -14,7 +14,7 @@
 
 /obj/structure/closet/crate/proc/void_shipping_ledger(reason)
 	shipping_ledger?.void_shipping_ledger(reason)
-	own_take(src, nameof(shipping_ledger))
+	rel_take(src, nameof(shipping_ledger))
 	shipping_ledger_snapshot = null
 
 /obj/structure/closet/crate/proc/freight_snapshot()
@@ -63,11 +63,12 @@
 
 /obj/item/retail_scanner/proc/freight_item_value(obj/item/item)
 	if(item.economic_export_value > 0)
-		return GLOB.supply_service.export_revenue(item.economic_export_value)
+		return SSsupply.export_revenue(item.economic_export_value)
 	var/value = item.scan_profit()
-	return isnum(value) ? max(0, GLOB.supply_service.export_revenue(value)) : 0
+	return isnum(value) ? max(0, SSsupply.export_revenue(value)) : 0
 
 /proc/storefront_department_authorized(mob/living/user, department)
+	READS_FROM(user) // the actor's job and the access on their card, read when the op is tried
 	if(!user || !department)
 		return FALSE
 	if(department_for_mob(user) == department)
@@ -76,6 +77,9 @@
 	return id_card && ((ACCESS_CAPTAIN in id_card.access) || (ACCESS_HOP in id_card.access) || (ACCESS_CENT_CAPTAIN in id_card.access))
 
 /obj/item/retail_scanner/proc/certify_freight_crate(obj/structure/closet/crate/crate, mob/living/user)
+	return certify_freight_stage(crate, user, list())
+
+/obj/item/retail_scanner/proc/certify_freight_stage(obj/structure/closet/crate/crate, mob/living/user, list/freight_answers)
 	if(!crate || !user || crate.opened)
 		to_chat(user, span_warning("The crate must be closed before certification."))
 		return FALSE
@@ -113,16 +117,25 @@
 	if(length(producer_values))
 		preview += "\nDetected contributors: [length(producer_values)]"
 	// Each answer re-runs this certification with every check above made again.
-	var/go_on = rerun_ask(user, "value", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = preview, title = "Freight valuation", choices = list("Continue", "Cancel"))
+	var/go_on = freight_answers["value"]
+	if(isnull(go_on))
+		open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "value", question = preview, title = "Freight valuation", choices = list("Continue", "Cancel"))
+		return FALSE
 	if(go_on != "Continue" || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
-	var/destination = rerun_ask(user, "destination", PROC_REF(certify_freight_crate), args, /datum/om/prompt/text, message = "Who is this shipment consigned to?", title = "Freight ledger", default = "External buyer", max_length = 80)
+	var/destination = freight_answers["destination"]
+	if(isnull(destination))
+		open_request(src, /datum/prompt/text/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "destination", question = "Who is this shipment consigned to?", title = "Freight ledger", default = "External buyer")
+		return FALSE
 	destination = trim(destination, 80)
 	if(!destination || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
 	var/list/producer_percentages = list()
 	if(length(producer_values))
-		var/allocation_choice = rerun_ask(user, "allocation", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", title = "Producer allocation", choices = list("Use suggested", "Edit shares", "No producer share", "Cancel"))
+		var/allocation_choice = freight_answers["allocation"]
+		if(isnull(allocation_choice))
+			open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "allocation", question = "Suggested producer pool: 5% divided by authenticated contribution value. Cargo always receives 20%.", title = "Producer allocation", choices = list("Use suggested", "Edit shares", "No producer share", "Cancel"))
+			return FALSE
 		if(isnull(allocation_choice) || allocation_choice == "Cancel")
 			return FALSE
 		if(allocation_choice == "Use suggested")
@@ -138,7 +151,10 @@
 			var/allocated = 0
 			for(var/account_number in producer_values)
 				var/datum/money_account/producer = get_account(text2num(account_number))
-				var/share = rerun_ask(user, "share[account_number]", PROC_REF(certify_freight_crate), args, /datum/om/prompt/number, message = "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", title = "Producer allocation", default = 0, max = 20 - allocated, round_entry = FALSE)
+				var/share = freight_answers["share[account_number]"]
+				if(isnull(share))
+					open_request(src, /datum/prompt/number/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "share[account_number]", question = "Percentage for [producer?.owner_name || "account [account_number]"] (maximum remaining: [20 - allocated]%)", title = "Producer allocation", default = 0, max_value = 20 - allocated)
+					return FALSE
 				if(isnull(share) || crate.opened || get_dist(src, crate) > 1)
 					return FALSE
 				share = round(CLAMP(share, 0, 20 - allocated), 0.1)
@@ -156,14 +172,18 @@
 	var/final_summary = "Consignee: [destination]\n[department]: [department_percent]%\nCargo: 20%"
 	if(length(producer_rows))
 		final_summary += "\n[jointext(producer_rows, "\n")]"
-	if(rerun_ask(user, "print", PROC_REF(certify_freight_crate), args, /datum/om/prompt/choice/alert, message = final_summary, title = "Print freight ledger?", choices = list("Print", "Cancel")) != "Print" || crate.opened || get_dist(src, crate) > 1)
+	var/print_answer = freight_answers["print"]
+	if(isnull(print_answer))
+		open_request(src, /datum/prompt/choice/freight_certification, PROC_REF(freight_certification_answered), answerer = user, shipment = crate, freight_answers = freight_answers, answer_key = "print", question = final_summary, title = "Print freight ledger?", choices = list("Print", "Cancel"))
+		return FALSE
+	if(print_answer != "Print" || crate.opened || get_dist(src, crate) > 1)
 		return FALSE
 	if(!length(freight_form_paper))
 		return FALSE
 	crate.void_shipping_ledger("superseded by scanner certification")
 	var/obj/item/paper/ledger = freight_form_paper[length(freight_form_paper)]
 	rel_remove(src, nameof(src.freight_form_paper), ledger)
-	own_set(crate, nameof(crate.shipping_ledger), ledger, into = TRUE, force = TRUE) // printed into the crate, full or not
+	move_into(crate, nameof(crate.shipping_ledger), ledger, force = TRUE) // printed into the crate, full or not
 	var/ledger_id = "FL-[stationtime2text()]-[rand(1000, 9999)]"
 	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = machine_id)
 	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")
@@ -180,8 +200,6 @@
 	anchored = TRUE
 	density = FALSE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	var/department_id = DEPARTMENT_CIVILIAN
 	var/markup_percent = 25
 	var/machine_id
@@ -189,8 +207,8 @@
 	var/list/stock_suggested_prices
 	var/list/stock_stocker_accounts
 
-/obj/machinery/department_storefront/Initialize(mapload)
-	. = ..()
+
+/obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"
 	stock_prices = list()
 	stock_suggested_prices = list()
@@ -200,32 +218,16 @@
 	. = ..()
 	. += "It deposits revenue into the [department_id] budget. Department staff can stock it by using an item on it."
 
-/obj/machinery/department_storefront/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/storefront_id_fallthrough,
-		/datum/interaction/machine_item/storefront_stock,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
+/// Requirement (was REQ_* can_stock): the legacy check answers TRUE to pass.
+/obj/machinery/department_storefront/proc/can_stock_holds(datum/act/op/A)
+	var/answer = can_stock(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
-/// The old attackby's leading branch: an ID card always fell through to ..().
-/datum/interaction/machine_item/storefront_id_fallthrough
-	id = "storefront_id_fallthrough"
-	name = "Use"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/department_storefront/proc/interaction_id_fallthrough
-
-/obj/machinery/department_storefront/proc/interaction_id_fallthrough(mob/user, obj/item/item, datum/interaction/interaction)
-	return FALSE
-
-/// The old attackby: stocks the storefront with an offered item.
-/datum/interaction/machine_item/storefront_stock
-	id = "storefront_stock"
-	name = "Stock"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/department_storefront/proc/can_stock))
-	effect = /obj/machinery/department_storefront/proc/interaction_stock
+/// Why can_stock_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/department_storefront/proc/interaction_id_fallthrough(datum/act/op/A)
+	return OP_DECLINE
 
 /// Requirement: TRUE, or why this item can't be stocked by this user.
 /obj/machinery/department_storefront/proc/can_stock(mob/user, atom/target, obj/item/held)
@@ -235,12 +237,14 @@
 		return "[held] cannot be offered through this storefront"
 	return TRUE
 
-/obj/machinery/department_storefront/proc/interaction_stock(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/machinery/department_storefront/proc/interaction_stock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/suggested = storefront_suggested_price(item)
 	var/price = max(1, round(suggested * (100 + markup_percent) / 100))
 	if(!user.drop_from_inventory(item, src))
 		to_chat(user, span_warning("You cannot release [item] into the storefront."))
-		return TRUE
+		return OP_OK
 	item.forceMove(src)
 	var/item_ref = REF(item)
 	stock_suggested_prices[item_ref] = suggested
@@ -248,22 +252,31 @@
 	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
 	to_chat(user, span_notice("You stock [item] at [price] Thalers (suggested [suggested])."))
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/department_storefront/proc/storefront_staff_authorized(mob/living/user)
 	return storefront_department_authorized(user, department_id)
 
 /obj/machinery/department_storefront/proc/storefront_suggested_price(obj/item/item)
 	if(item.economic_export_value > 0)
-		return max(1, GLOB.supply_service.export_revenue(item.economic_export_value))
+		return max(1, SSsupply.export_revenue(item.economic_export_value))
 	return max(5, round(item.w_class * 5))
 
-DECLARE_UI(/obj/machinery/department_storefront, "DepartmentStorefront")
+CAPABILITIES(/obj/machinery/department_storefront)
+	configure(uses_power(idle = 10, active = 100))
+	after_init(0, then(PROC_REF(set_up_storefront)))
+	interface("DepartmentStorefront")
+	without("ui_open")
+	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))
+	op("withdraw", ui_act("withdraw", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_withdraw)))
+	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
+	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
+	op("storefront_id_fallthrough", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_id_fallthrough)))
+	op("storefront_stock", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Stock"), needs(req(PROC_REF(can_stock_holds))), then(PROC_REF(interaction_stock)))
 
-UI_DATA_REPLACE(/obj/machinery/department_storefront, "merge:ui_data_obj_machinery_department_storefront{}")
-
-/// The computed part of /obj/machinery/department_storefront's window data (declared on its UI_DATA row).
-/obj/machinery/department_storefront/proc/ui_data_obj_machinery_department_storefront(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/machinery/department_storefront's window data.
+/obj/machinery/department_storefront/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/stock = list()
 	var/list/rows_by_key = list()
 	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.
@@ -293,54 +306,68 @@ UI_DATA_REPLACE(/obj/machinery/department_storefront, "merge:ui_data_obj_machine
 		"stock" = stock,
 	)
 
-/obj/machinery/department_storefront/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/department_storefront/proc/ui_gate(datum/act/op/A)
 	latent_materialize_all() // a walk needs real things (C5)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "buy", ui_act_buy, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_buy)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	return storefront_purchase(item, ui.user)
+/obj/machinery/department_storefront/proc/ui_act_buy(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	return storefront_purchase(item, user)
 
-UI_ACT(/obj/machinery/department_storefront, "withdraw", ui_act_withdraw, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_withdraw)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	if(!item || !storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_withdraw(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	storefront_forget_item(item)
 	item.forceMove(get_turf(src))
-	ui.user.put_in_hands(item)
+	user.put_in_hands(item)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "set_price", ui_act_set_price, UI_ARG_NUM("price"), UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_price)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	var/item_ref = item ? REF(item) : null
-	if(!item || !storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_set_price(datum/act/op/A, price, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/new_price = params["price"]
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/item_ref = item ? REF(item) : null
+	if(!item || !storefront_staff_authorized(user))
+		return FALSE
+	var/new_price = price
 	if(!isnum(new_price) || new_price < 1 || new_price > 100000)
 		return FALSE
 	var/old_price = stock_prices[item_ref]
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/matching_ref = REF(matching_item)
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 			stock_prices[matching_ref] = round(new_price)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "set_markup", ui_act_set_markup, UI_ARG_NUM("markup"))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
-	if(!storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_set_markup(datum/act/op/A, markup)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/new_markup = params["markup"]
+	if(!storefront_staff_authorized(user))
+		return FALSE
+	var/new_markup = markup
 	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 		return FALSE
 	markup_percent = round(new_markup)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/stock_ref = REF(stock_item)
 		stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
 	return TRUE
@@ -358,7 +385,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 		return FALSE
 	if(customer.security_level)
 		// Keyed by the price, so a price change asks again.
-		var/attempt_pin = rerun_ask(user, "pin[item_ref]:[price]", PROC_REF(storefront_purchase), args, /datum/om/prompt/number, message = "Enter your account PIN", title = "Storefront purchase")
+		var/attempt_pin = rerun_ask(user, "pin[item_ref]:[price]", PROC_REF(storefront_purchase), args, /datum/prompt/number, question = "Enter your account PIN", title = "Storefront purchase")
 		if(isnull(attempt_pin))
 			return FALSE
 		if(QDELETED(item) || item.loc != src || stock_prices[item_ref] != price || get_dist(src, user) > 1 || src.z != user.z)
@@ -372,7 +399,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 	var/list/verified = list()
 	items[item.name] = 1
 	prices[item.name] = price
-	verified[item] = price
+	verified[entity_handle(item)] = price
 	var/list/quote = department_service_quote(customer, department_id, price)
 	if(!quote)
 		to_chat(user, span_warning("Your account cannot cover this purchase."))
@@ -380,7 +407,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 	var/list/result = list()
 	if(!charge_department_service(customer, department_id, price, "Storefront purchase: [item.name]", machine_id, result))
 		return FALSE
-	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_invoice(customer, provider, machine_id, items, prices, result, stock_stocker_accounts[item_ref], null, null, "ID account", verified)
+	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, provider, machine_id, items, prices, result, stock_stocker_accounts[item_ref], null, null, "ID account", verified)
 	if(!invoice)
 		// The charge was valid but evidence creation should never strand the item.
 		// Record it as an ordinary sale and deliver the purchased good.
@@ -426,3 +453,116 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 /obj/machinery/department_storefront/command
 	name = "command storefront"
 	department_id = DEPARTMENT_COMMAND
+
+/datum/prompt/choice/freight_certification
+	timeout = 0
+	buttons = TRUE
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/choice/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/choice/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/text/freight_certification
+	timeout = 0
+	max_len = 80
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/text/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/text/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/number/freight_certification
+	timeout = 0
+	min_value = 0
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	var/shipment_expected = FALSE
+
+CAPABILITIES(/datum/prompt/number/freight_certification)
+	ref_one(nameof(shipment), /obj/structure/closet/crate)
+
+/datum/prompt/number/freight_certification/prepare(datum/act/A)
+	. = ..()
+	var/obj/structure/closet/crate/captured_shipment = shipment
+	shipment_expected = !isnull(captured_shipment)
+	rel_clear(src, nameof(shipment))
+	if(captured_shipment && !QDELETED(captured_shipment))
+		rel_set(src, nameof(shipment), captured_shipment)
+
+/datum/prompt/number/freight_certification/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(shipment_expected && QDELETED(shipment))
+		return "gone"
+
+/datum/prompt/number/freight_certification/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/obj/item/retail_scanner/proc/freight_certification_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = freight_certification_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/obj/item/retail_scanner/proc/freight_certification_apply(datum/act/request/A)
+	var/obj/structure/closet/crate/shipment
+	var/list/freight_answers
+	var/answer_key
+	if(istype(A.answer, /datum/prompt/choice/freight_certification))
+		var/datum/prompt/choice/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	else if(istype(A.answer, /datum/prompt/text/freight_certification))
+		var/datum/prompt/text/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	else
+		var/datum/prompt/number/freight_certification/ask = A.answer
+		shipment = ask.shipment
+		freight_answers = ask.freight_answers
+		answer_key = ask.answer_key
+	freight_answers[answer_key] = A.answer.value
+	return certify_freight_stage(shipment, A.request.answerer, freight_answers)

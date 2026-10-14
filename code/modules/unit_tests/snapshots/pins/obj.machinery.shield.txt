@@ -1,0 +1,25 @@
+@obj.machinery human|none
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver click: Click: Hit
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar click: Click: Hit
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench click: Click: Hit
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters click: Click: Hit
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool click: Click: Hit
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool click: Click: Hit
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil click: Click: Hit
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel click: Click: Hit
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id click: Click: Hit
+human|/obj/item menu: Hit
+human|/obj/item click: Click: Hit
+keys: drag_buckle, hit, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

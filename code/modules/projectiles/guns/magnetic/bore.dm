@@ -9,13 +9,18 @@
 	var/rating_modifier = 0 // rating of installed capacitor + manipulator
 	var/loading = FALSE
 
+
+CAPABILITIES(/obj/item/gun/magnetic/matfed)
+	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator, starts = nameof(manipulator))
+	// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
+	op("load_sheets", ai(), wait(1.5 SECONDS, repeats = PROC_REF(sheets_more), after_step = PROC_REF(sheet_loaded)), on_interrupt(PROC_REF(sheets_done)), then(PROC_REF(sheets_done)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
 		rating_modifier = capacitor.get_rating() + manipulator.get_rating()
 	else
 		rating_modifier = FALSE
-
-DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic/matfed, "manipulator", "manipulator")
 
 /obj/item/gun/magnetic/matfed/Initialize(mapload)
 	. = ..()
@@ -31,45 +36,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic/matfed, "manipulator", "manipulator
 	else
 		. += span_notice("The \"manipulator missing\" indicator is lit. [src] consumes [mat_cost] units of [ammo_material] per shot.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/magnetic/matfed/appearance_overlays()
-	. = list()
-	var/list/overlays_to_add = list()
-	if(removable_components)
-		if(cell)
-			overlays_to_add += image(icon, "[icon_state]_cell")
-		if(capacitor)
-			overlays_to_add += image(icon, "[icon_state]_capacitor")
-	if(!cell || !capacitor)
-		overlays_to_add += image(icon, "[icon_state]_red")
-	else if(capacitor.charge < power_cost)
-		overlays_to_add += image(icon, "[icon_state]_amber")
-	else
-		overlays_to_add += image(icon, "[icon_state]_green")
-	if(mat_storage)
-		overlays_to_add += image(icon, "[icon_state]_loaded")
-
-	. += overlays_to_add
-	. += ..()
-
-EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(matfed_interaction_hand)))
-
-/// Old attack_hand.
-/obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.get_inactive_hand() == src)
-		var/obj/item/removing
-
-		if(cell && removable_components)
-			removing = cell
-			own_take(src, nameof(cell))
-
-		if(removing)
-			user.put_in_hands(removing)
-			act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes %I% from %T%."), item = removing)
-			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
-			update_icon()
-			return TRUE
-	return FALSE
+/// The parts and charge indicators are the magnetic gun's; a matfed one is loaded by its stored material.
+/obj/item/gun/magnetic/matfed/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]_loaded", when = mat_storage)
 
 /obj/item/gun/magnetic/matfed/check_ammo()
 	if(mat_storage - mat_cost >= 0)
@@ -77,7 +47,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	return FALSE
 
 /obj/item/gun/magnetic/matfed/use_ammo()
-	mat_storage -= mat_cost
+	set_mat_storage(mat_storage - mat_cost)
 
 /obj/item/gun/magnetic/matfed/show_ammo()
 	if(mat_storage)
@@ -85,52 +55,53 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	else
 		return span_warning("It\'s out of [ammo_material]!")
 
-/obj/item/gun/magnetic/matfed/crowbar_act(mob/user, obj/item/tool)
+/obj/item/gun/magnetic/matfed/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	update_rating_mod()
 	if(!removable_components)
-		return NONE
+		return OP_DECLINE
 	if(!manipulator)
 		to_chat(user, span_warning("\The [src] has no manipulator installed."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	user.put_in_hands(manipulator)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	mat_cost = initial(mat_cost)
-	own_take(src, nameof(manipulator))
-	update_icon()
+	rel_take(src, nameof(manipulator))
 	update_rating_mod()
-	return ITEM_INTERACT_SUCCESS
-
-/// Loading sheets from a stack, one every 1.5 seconds, until full or the stack runs out.
-/datum/om/task/timed/load_sheets
-	steps = list(/obj/item/gun/magnetic/matfed/proc/sheet_loaded = 1.5 SECONDS)
-	complete_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
-	cancel_proc = /obj/item/gun/magnetic/matfed/proc/sheets_done
-	var/obj/item/stack/material/sheets
-	var/loaded_any = FALSE
+	return OP_OK
 
 /obj/item/gun/magnetic/matfed/proc/can_load_sheet(obj/item/stack/material/M)
 	return mat_storage + SHEET_MATERIAL_AMOUNT <= max_mat_storage && M?.get_amount()
 
-/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/om/task/timed/load_sheets/task)
-	if(!can_load_sheet(task.sheets))
-		return STEP_DONE
-	mat_storage += SHEET_MATERIAL_AMOUNT
-	play_sfx(src, SFX_EFFECTS_PHASEIN, 0.15)
-	task.loaded_any = TRUE
-	task.sheets.use(1)
-	return can_load_sheet(task.sheets) ? STEP_REPEAT(1.5 SECONDS) : STEP_DONE
+/// Another sheet follows while the gun has room and the stack has one.
+/obj/item/gun/magnetic/matfed/proc/sheets_more(datum/act/op/A)
+	return can_load_sheet(A.held)
 
-/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/om/task/timed/load_sheets/task)
+/// One sheet loaded per lap (the stack is cleaned up in sheets_done: a stack deleted mid-series would end the op as target gone).
+/obj/item/gun/magnetic/matfed/proc/sheet_loaded(datum/act/op/A)
+	var/obj/item/stack/material/sheets = A.held
+	if(!can_load_sheet(sheets))
+		return
+	set_mat_storage(mat_storage + SHEET_MATERIAL_AMOUNT)
+	play_sfx(src, SFX_EFFECTS_PHASEIN, 0.15)
+	sheets.set_amount(sheets.get_amount() - 1, TRUE)
+
+/obj/item/gun/magnetic/matfed/proc/sheets_done(datum/act/op/A)
 	loading = FALSE
-	var/mob/user = task.actor
-	if(task.loaded_any && user)
-		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [task.sheets]."))
+	var/mob/user = A.actor
+	var/obj/item/stack/material/sheets = A.held
+	if(A.laps() > 0 && user)
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [sheets]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	update_icon()
+	if(sheets && !QDELETED(sheets) && sheets.get_amount() <= 0)
+		spent(sheets)
 
 /// Old attackby: the parent's first, then its own.
-/obj/item/gun/magnetic/matfed/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
+/obj/item/gun/magnetic/matfed/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
 	. = ..()
 	update_rating_mod()
 	if(removable_components)
@@ -138,12 +109,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))
 				return
-			if(!own_set(src, nameof(src.manipulator), thing, user = user))
+			if(!move_into(src, nameof(src.manipulator), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = manipulator)
-			update_icon()
 			update_rating_mod()
 			return
 
@@ -158,7 +128,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			if(!can_load_sheet(M) || istext(om_task_start(/datum/om/task/timed/load_sheets, user, src, receiver = src, sheets = M)))
+			if(!can_load_sheet(M))
+				loading = FALSE
+				return
+			var/datum/op_result/loaded = perform_op(user, src, "load_sheets", M, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+			if(loaded.outcome == ACT_REFUSED)
 				loading = FALSE
 			return
 
@@ -171,12 +145,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 				return
 
 			consume(M, user)
-			mat_storage += (SHEET_MATERIAL_AMOUNT/2*0.8) //two plasma ores needed per sheet, some inefficiency for not using refined product
+			set_mat_storage(mat_storage + (SHEET_MATERIAL_AMOUNT/2*0.8)) //two plasma ores needed per sheet, some inefficiency for not using refined product
 			success = TRUE
 		if(success)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with %I%."), item = M)
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-		update_icon()
 		return
 
 #define GEN_STARTING -1
@@ -210,8 +183,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	var/datum/looping_sound/small_motor/soundloop
 	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
 
+CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
+	owns_one(nameof(soundloop), /datum/looping_sound/small_motor, starts = /datum/looping_sound/small_motor)
+	// Pulls the cord (2 seconds a pull) until the motor starts.
+	op("pull_cord", ai(), takes("pulls"), wait(2 SECONDS, repeats = PROC_REF(pull_more), after_step = PROC_REF(pull_lap)), on_interrupt(PROC_REF(pull_abandoned)), then(PROC_REF(start_motor)))
+
 /// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
-OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/matfed/phoronbore/var/generator_state = GEN_OFF
+TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 
 /obj/item/gun/magnetic/matfed/phoronbore/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)
@@ -219,7 +198,6 @@ OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHA
 
 	use_ammo()
 	capacitor.use(power_cost)
-	update_icon()
 
 	return new projectile_type(src, rating_modifier)
 
@@ -232,20 +210,17 @@ OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHA
 
 /obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
 
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)
 
-/// Replaces /obj/item/gun/magnetic's capacitor_unsettled declaration: the bore also steps while its
+/// The bore also steps while its
 /// generator runs, whatever the capacitor is doing.
-OM_DERIVE_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, bore_busy, list("generator_state", "capacitor_unsettled"))
-/obj/item/gun/magnetic/matfed/phoronbore/proc/bore_busy()
-	return generator_state > GEN_OFF || capacitor_unsettled()
-DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, "bore_busy")
+/obj/item/gun/magnetic/matfed/phoronbore/steps_now(datum/act/A)
+	return generator_state > GEN_OFF || capacitor || cell
 
-/obj/item/gun/magnetic/matfed/phoronbore/periodic_step()
+/obj/item/gun/magnetic/matfed/phoronbore/magnetic_step(datum/act/timer/A)
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		soundloop.stop()
@@ -266,7 +241,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 		else if(!generator_state)
 			capacitor.use(capacitor.charge * 0.05)
 
-	update_state()
 
 /obj/item/gun/magnetic/matfed/phoronbore/proc/generator_generate()
 	var/fuel_used = generator_state == GEN_IDLE ? 5 : 25
@@ -275,7 +249,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 		cell.give(power_made)
 	else if(capacitor)
 		capacitor.charge(power_made)
-	mat_storage = max(mat_storage - fuel_used, 0)
+	set_mat_storage(max(mat_storage - fuel_used, 0))
 	var/turf/T = get_turf(src)
 	if(T)
 		T.assume_gas(GAS_CO2, fuel_used * 0.01, T0C+200)
@@ -294,19 +268,33 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		set_generator_state(GEN_OFF)
 
-/// Pulls the cord (2 seconds a pull, a timed action each) until the motor starts.
+/// Pulls the cord (2 seconds a pull) until the motor starts.
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
 	if(pulls > 0)
 		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
+		var/datum/op_result/pulling = perform_op(user, src, "pull_cord", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("pulls" = pulls))
+		if(pulling.outcome == ACT_REFUSED)
+			set_generator_state(GEN_OFF)
 		return
+	start_motor()
+
+/// Another pull follows until the pulls this start needs are done.
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_more(datum/act/op/A)
+	return A.laps() < A.arg("pulls")
+
+/// One pull done; the next one is heard as it starts.
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_lap(datum/act/op/A)
+	if(A.laps() < A.arg("pulls"))
+		play_sfx(src, SFX_ITEMS_SMALL_MOTOR_MOTOR_PULL_ATTEMPT)
+
+/obj/item/gun/magnetic/matfed/phoronbore/proc/start_motor(datum/act/op/A)
 	soundloop.start()
 	COOLDOWN_START(src, stop_lockout_cooldown, 3 SECONDS)
 	cell?.use(100)
 	audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
 	set_generator_state(GEN_IDLE)
 
-/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned()
+/obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned(datum/act/op/A)
 	set_generator_state(GEN_OFF)
 
 /obj/item/gun/magnetic/matfed/phoronbore/loaded

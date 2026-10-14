@@ -21,8 +21,9 @@
 		for(var/turf/unsimulated/floor/F in area_contents_of_type(src, /turf/unsimulated/floor))
 			rel_add(src, nameof(valid_spawn_turfs), F)
 
-/area/LateInitialize()
-	. = ..()
+/// Places the random mobs and flora once the area's turfs exist.
+/area/area_after_init(datum/act/A)
+	..()
 	EvalValidSpawnTurfs()
 
 	if(!length(valid_spawn_turfs) && (mobcountmax || floracountmax))
@@ -72,8 +73,7 @@
 		return
 	var/datum/ai_brain/brain = M.ai_brain
 	if(ghostjoin)
-		M.ghostjoin = TRUE
-		M.ghostjoin_icon()
+		M.set_ghostjoin(TRUE)
 	if(!brain)
 		return
 	switch(mob_intent)

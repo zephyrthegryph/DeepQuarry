@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Verbs declared with verb_entry() and granted with granted_verb(): DECLARE_VERB* and om_grant GRANT_VERB converted; a granted verb ends with its source or capability"

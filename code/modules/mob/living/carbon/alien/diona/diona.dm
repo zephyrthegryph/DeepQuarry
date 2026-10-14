@@ -36,12 +36,9 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	language = LANGUAGE_ROOTLOCAL
 	species_language = LANGUAGE_ROOTLOCAL
 	only_species_language = 1
-	death_message = "expires with a pitiful chirrup..."
 	universal_understand = 0
 	universal_speak = 0      // Dionaea do not need to speak to people other than other dionaea.
 
-	can_pull_size = ITEMSIZE_SMALL
-	can_pull_mobs = MOB_PULL_SMALLER
 
 	holder_type = /obj/item/holder/diona
 	var/obj/item/hat
@@ -49,12 +46,10 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 /mob/living/carbon/alien/diona/get_available_emotes()
 	return GLOB.nymph_default_emotes.Copy()
 
+// A nymph shares the diona species prototype.
 /mob/living/carbon/alien/diona/Initialize(mapload)
 	. = ..()
 	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
-	add_language(LANGUAGE_ROOTGLOBAL)
-	add_language(LANGUAGE_GALCOM)
-	om_grant(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
 
 /mob/living/carbon/alien/diona/put_in_hands(obj/item/W) // No hands.
 	W.forceMove(get_turf(src))
@@ -63,7 +58,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 /mob/living/carbon/alien/diona/proc/wear_hat(obj/item/new_hat)
 	if(hat)
 		return
-	own_set(src, nameof(hat), new_hat)
+	rel_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
 	update_icons()
 
@@ -75,6 +70,11 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))
 
-/mob/living/carbon/alien/diona/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/carbon/alien/diona)
+	configure(mob_kind(death_message = "expires with a pitiful chirrup..."))
+	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	knows(LANGUAGE_ROOTGLOBAL)
+	knows(LANGUAGE_GALCOM)
+	verb_entry(/mob/living/carbon/alien/diona/proc/merge)
+	op("diona_interaction_hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), needs(req_is(nameof(hat), FALSE, because = /datum/msg/req_failed)), then(PROC_REF(diona_interaction_hat)))

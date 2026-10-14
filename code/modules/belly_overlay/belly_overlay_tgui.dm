@@ -16,6 +16,11 @@
 	/// hasn't changed, so liquid bellies don't repaint the tgui every single tick.
 	var/last_show_sig
 
+CAPABILITIES(/datum/belly_overlay_tgui)
+	owns_one(nameof(active_ui), /datum/tgui)
+	interface("BellyOverlay", title = "Belly Overlay", state = nameof(GLOB.tgui_always_state))
+	ui_shape(visible = bool(), layers = list_of())
+
 /datum/belly_overlay_tgui/New(mob/M)
 	rel_set(src, nameof(owner), M)
 
@@ -25,26 +30,20 @@
 		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 	..()
 
-DECLARE_UI_STATE(/datum/belly_overlay_tgui, GLOB.tgui_always_state)
-
 /datum/belly_overlay_tgui/ui_assets(mob/user)
 	// Belly overlay files are registered + sent lazily via
 	// dq_send_belly_overlay_urls() in show(), not as a static bundle.
 	return list()
-
-DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 
 /// Renders in the client's `mapwindow.belly_overlay` browser element.
 /datum/belly_overlay_tgui/ui_window(mob/user)
 	return new /datum/tgui_window(user.client, "mapwindow.belly_overlay")
 
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
-	own_set(src, nameof(active_ui), ui)
+	rel_set(src, nameof(active_ui), ui)
 
-UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
-
-/// The computed part of /datum/belly_overlay_tgui's window data (declared on its UI_DATA row).
-/datum/belly_overlay_tgui/proc/ui_data_datum_belly_overlay_tgui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/belly_overlay_tgui's window data.
+/datum/belly_overlay_tgui/ui_data(datum/act/eval/A)
 	return src.state
 
 /datum/belly_overlay_tgui/tgui_close(mob/user)
@@ -71,11 +70,11 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 		return "none"
 	var/alpha = B.belly_fullscreen_alpha
 	if(prey)
-		alpha = min(alpha, prey.max_voreoverlay_alpha)
+		alpha = min(alpha, prey.vore_prefs.max_voreoverlay_alpha)
 	. = "[B.belly_fullscreen]|[alpha]|[B.belly_fullscreen_color]|[B.belly_fullscreen_color2]|[B.belly_fullscreen_color3]|[B.belly_fullscreen_color4]|[B.digest_mode]|[B.item_digest_mode]"
 	var/mob/living/lp = prey
 	if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
-		var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
+		var/mush_content = B.owner ? (nutrition_of(B.owner) + LAZYLEN(B.contents) * B.item_mush_val) : 0
 		// max/min_mush, max_liquid_level and custom_max_volume are runtime-editable
 		// (VorePanel liq-attribute setters) and feed the layers' pixel_y/alpha math —
 		// leave any out of the signature and an edit doesn't repaint until something
@@ -102,7 +101,7 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 		if(dmi)
 			var/alpha = B.belly_fullscreen_alpha
 			if(prey)
-				alpha = min(alpha, prey.max_voreoverlay_alpha)
+				alpha = min(alpha, prey.vore_prefs.max_voreoverlay_alpha)
 			var/list/states = list(
 				list(B.belly_fullscreen,            B.belly_fullscreen_color),
 				list("[B.belly_fullscreen]-2",      B.belly_fullscreen_color2),
@@ -126,10 +125,10 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 			var/mob/living/lp = prey
 			if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
 				var/icon/bubbles = 'icons/mob/vore_fullscreens/bubbles.dmi'
-				if(B.mush_overlay && (B.owner?.nutrition > 0 || B.max_mush == 0 || B.min_mush > 0 \
+				if(B.mush_overlay && (nutrition_of(B.owner) > 0 || B.max_mush == 0 || B.min_mush > 0 \
 						|| (LAZYLEN(B.contents) * B.item_mush_val) > 0))
-					var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
-					var/mush_alpha = min(B.mush_alpha, prey.max_voreoverlay_alpha)
+					var/mush_content = B.owner ? (nutrition_of(B.owner) + LAZYLEN(B.contents) * B.item_mush_val) : 0
+					var/mush_alpha = min(B.mush_alpha, prey.vore_prefs.max_voreoverlay_alpha)
 					var/pixel_y = -450 + (450 / max(B.max_mush, 1) * max(min(B.max_mush, mush_content), 1))
 					if(pixel_y < -450 + (450 / 100 * B.min_mush))
 						pixel_y = -450 + (450 / 100 * B.min_mush)
@@ -189,7 +188,7 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		own_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
+		rel_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob

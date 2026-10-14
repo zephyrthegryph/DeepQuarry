@@ -12,14 +12,13 @@
 
 /obj/machinery/bodyscanner/proc/dq_build_tgui_data()
 	var/list/data = list()
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
+	var/mob/living/carbon/human/occupant = occupant_of(src)
 	data["occupied"] = occupant ? TRUE : FALSE
 
 	if(!(occupant && ishuman(occupant)))
 		data["occupant"] = list()
 		return data
 
-	update_icon()
 	var/mob/living/carbon/human/H = occupant
 	var/list/occupantData = list()
 
@@ -33,7 +32,7 @@
 	occupantData["diagnosis"] = D.report_data()
 	occupantData["healthBand"] = D.band
 	occupantData["worstFinding"] = D.worst_finding_band()
-	qdel(D)
+	spent(D)
 
 	// Pass-through fields the upstream layer still expects (vore prey
 	// detection etc.). dq_build_tgui_data fills them via the existing
@@ -68,7 +67,7 @@
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_vitals(mob/living/carbon/human/H, list/out)
-	out["paralysisSeconds"] = round(H.status_seconds(EFFECT_PARALYZED))
+	out["paralysisSeconds"] = round(H.status_seconds(STAT_PARALYZED))
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_abnormalities(mob/living/carbon/human/H, list/out)

@@ -1,0 +1,3 @@
+/obj/item/mop vol=30 holder=/datum/reagents 
+/obj/item/mop/advanced vol=30 holder=/datum/reagents 
+

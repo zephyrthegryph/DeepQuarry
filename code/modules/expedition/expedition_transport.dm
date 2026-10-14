@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	EXPIRY_STAMP(site(), last_occupied, CLOCK_WORLD)
 	for(var/area/A in shuttle.shuttle_area)
 		for(var/mob/living/L in contents_of(A))
-			site().participants |= L
+			rel_add(site(), nameof(/datum/expedition_site::participants), L)
 
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
@@ -62,8 +62,8 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	return !active_expedition() || QDELETED(active_expedition()) || active_expedition().status == EXP_STATUS_EXPIRED
 
 /obj/machinery/computer/shuttle_control/explore/proc/plot_expedition(mob/user, datum/shuttle/autodock/overmap/shuttle)
-	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(shuttle.myship())
-	var/datum/expedition_site/site = GLOB.expedition_service.plot_for_vessel(user, vessel, src)
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(shuttle.myship())
+	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src)
 	if(site)
 		rel_set(src, nameof(active_expedition), site)
 		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)
@@ -82,15 +82,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 
 // The site owns its landing waypoint and overmap sector (implicit OWN); their site vars are plain
 // one-sided views. The console and the site name each other (a true two-sided pair).
-/obj/effect/overmap/visitable/sector/expedition/relations()
-	. = ..()
-	. += rel_one(nameof(site))
-/obj/effect/shuttle_landmark/automatic/clearing/expedition/relations()
-	. = ..()
-	. += rel_one(nameof(site))
-/datum/expedition_site/relations()
-	. = ..()
-	. += rel_one(nameof(origin_console), back = nameof(/obj/machinery/computer/shuttle_control/explore::active_expedition))
-/obj/machinery/computer/shuttle_control/explore/relations()
-	. = ..()
-	. += rel_one(nameof(active_expedition), back = nameof(/datum/expedition_site::origin_console))
+CAPABILITIES(/obj/effect/overmap/visitable/sector/expedition)
+	ref_one(nameof(site))
+CAPABILITIES(/obj/effect/shuttle_landmark/automatic/clearing/expedition)
+	ref_one(nameof(site))

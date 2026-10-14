@@ -1,0 +1,5 @@
+/obj/item/nifrepairer icon: icons/obj/device_alt.dmi
+/obj/item/nifrepairer state: hydro
+/obj/item/nifrepairer dir: 2
+/obj/item/nifrepairer overlay: icons/obj/device_alt.dmi:hydro:8:#000000
+

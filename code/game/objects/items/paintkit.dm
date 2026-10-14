@@ -39,9 +39,9 @@
 		I.name = new_name ? new_name : I.name
 		I.desc = new_desc ? new_desc : I.desc
 		I.icon = new_icon_file ? new_icon_file : I.icon
-		I.icon_override = new_icon_override_file ? new_icon_override_file : I.icon_override
+		I.set_icon_override(new_icon_override_file ? new_icon_override_file : I.icon_override)
 		if(new_icon)
-			I.icon_state = new_icon
+			I.set_icon_state(new_icon)
 		var/obj/item/clothing/under/U = I
 		if(istype(U))
 			U.worn_state = I.icon_state
@@ -49,31 +49,33 @@
 		use(1, user)
 
 /**
- * Generic use: a customisation kit on any item. It goes ahead of every other item
+ * Generic use: a customisation kit on any item (the kit_customize ops of CAPABILITIES(/obj/item)). It goes ahead of every other item
  * interaction, as the old /obj/item/attackby override ran before the converted ones,
  * except on suits whose own handling ran first and could refuse it (a worn voidsuit,
  * a protean rig): there it goes last.
  */
-/obj/item/declare_interactions(list/into)
-	..()
-	var/static/list/kit_spec = INTERACT_INSERT(/obj/item/kit, PROC_REF(interaction_kit_customize), "Customise")
+/obj/item/proc/kit_goes_last(datum/act/A)
 	var/static/list/kit_last_types = list(
 		/obj/item/clothing/head/helmet/space/void,
 		/obj/item/clothing/suit/space/void,
 		/obj/item/clothing/suit/storage/hooded,
 		/obj/item/rig,
 	)
-	var/datum/interaction/kit = dq_interaction_from_spec(/obj/item, kit_spec)
 	for(var/kit_last_type in kit_last_types)
 		if(ispath(type, kit_last_type))
-			into += kit
-			return
-	into.Insert(1, kit)
+			return null
+	return /datum/msg/req_failed
+
+/// Requirement: the kit goes ahead of the item's other uses (everything but the suits above).
+/obj/item/proc/kit_goes_first(datum/act/A)
+	return isnull(kit_goes_last(A)) ? /datum/msg/req_failed : null
 
 /// Old attackby: a kit customises the item if it can. Either way nothing else handles the kit.
-/obj/item/proc/interaction_kit_customize(mob/user, obj/item/kit/K, datum/interaction/interaction)
+/obj/item/proc/interaction_kit_customize(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/kit/K = A.held
 	K.customize(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Root hardsuit kit defines.
 // Icons for modified hardsuits need to be in the proper .dmis because suit cyclers may cock them up.
@@ -97,14 +99,14 @@
 			var/obj/item/clothing/head/helmet/space/void/helmet = I
 			helmet.name = "[new_name] suit helmet"
 			helmet.desc = new_desc
-			helmet.icon_state = "[new_icon]_helmet"
-			helmet.item_state = "[new_icon]_helmet"
+			helmet.set_icon_state("[new_icon]_helmet")
+			helmet.set_item_state("[new_icon]_helmet")
 			if(new_icon_file)
 				helmet.icon = new_icon_file
 			if(new_icon_override_file)
-				helmet.icon_override = new_icon_override_file
+				helmet.set_icon_override(new_icon_override_file)
 			if(new_light_overlay)
-				helmet.light_overlay = new_light_overlay
+				helmet.set_light_overlay(new_light_overlay)
 			to_chat(user, "You set about modifying the helmet into [helmet].")
 			var/mob/living/carbon/human/H = user
 			if(istype(H))
@@ -113,27 +115,27 @@
 			var/obj/item/clothing/suit/storage/hooded/suit = I
 			suit.name = "[new_name] suit"
 			suit.desc = new_desc
-			suit.icon_state = "[new_icon]_suit"
-			suit.toggleicon = "[new_icon]_suit"
+			suit.set_icon_state("[new_icon]_suit")
+			suit.set_toggleicon("[new_icon]_suit")
 			var/obj/item/clothing/head/hood/S = suit.hood
-			S.icon_state = "[new_icon]_helmet"
+			S.set_icon_state("[new_icon]_helmet")
 			if(new_icon_file)
 				suit.icon = new_icon_file
 				S.icon = new_icon_file
 			if(new_icon_override_file)
-				suit.icon_override = new_icon_override_file
-				S.icon_override = new_icon_override_file
+				suit.set_icon_override(new_icon_override_file)
+				S.set_icon_override(new_icon_override_file)
 			to_chat(user, "You set about modifying the suit into [suit].")
 		else
 			var/obj/item/clothing/suit/space/void/suit = I
 			suit.name = "[new_name] voidsuit"
 			suit.desc = new_desc
-			suit.icon_state = "[new_icon]_suit"
-			suit.item_state = "[new_icon]_suit"
+			suit.set_icon_state("[new_icon]_suit")
+			suit.set_item_state("[new_icon]_suit")
 			if(new_icon_file)
 				suit.icon = new_icon_file
 			if(new_icon_override_file)
-				suit.icon_override = new_icon_override_file
+				suit.set_icon_override(new_icon_override_file)
 			to_chat(user, "You set about modifying the suit into [suit].")
 			var/mob/living/carbon/human/H = user
 			if(istype(H))
@@ -148,34 +150,34 @@
 /obj/item/kit/suit/rig/customize(obj/item/I, mob/user)
 	var/obj/item/rig/RIG = I
 	RIG.suit_state = new_icon
-	RIG.item_state = new_icon
+	RIG.set_item_state(new_icon)
 	RIG.suit_type = "customized [initial(RIG.suit_type)]"
 	RIG.name = "[new_name]"
 	RIG.desc = new_desc
 	RIG.icon = new_icon_file
-	RIG.icon_state = new_icon
-	RIG.icon_override = new_icon_override_file
+	RIG.set_icon_state(new_icon)
+	RIG.set_icon_override(new_icon_override_file)
 	for(var/obj/item/piece in list(RIG.gloves,RIG.helmet,RIG.boots,RIG.chest))
 		if(!istype(piece))
 			continue
 		piece.name = "[RIG.suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [RIG.name]."
-		piece.icon_state = "[RIG.suit_state]"
+		piece.set_icon_state("[RIG.suit_state]")
 		if(istype(piece, /obj/item/clothing/shoes))
 			piece.icon = 'icons/mob/custom_items_rig_boots.dmi'
-			piece.icon_override = 'icons/mob/custom_items_rig_boots.dmi'
+			piece.set_icon_override('icons/mob/custom_items_rig_boots.dmi')
 		if(istype(piece, /obj/item/clothing/suit))
 			piece.icon = 'icons/mob/custom_items_rig_suit.dmi'
-			piece.icon_override = 'icons/mob/custom_items_rig_suit.dmi'
+			piece.set_icon_override('icons/mob/custom_items_rig_suit.dmi')
 		if(istype(piece, /obj/item/clothing/head))
 			piece.icon = 'icons/mob/custom_items_rig_helmet.dmi'
-			piece.icon_override = 'icons/mob/custom_items_rig_helmet.dmi'
+			piece.set_icon_override('icons/mob/custom_items_rig_helmet.dmi')
 		if(istype(piece, /obj/item/clothing/gloves))
 			piece.icon = 'icons/mob/custom_items_rig_gloves.dmi'
-			piece.icon_override = 'icons/mob/custom_items_rig_gloves.dmi'
+			piece.set_icon_override('icons/mob/custom_items_rig_gloves.dmi')
 	if(RIG.helmet && istype(RIG.helmet, /obj/item/clothing/head/helmet) && new_light_overlay)
 		var/obj/item/clothing/head/helmet/H = RIG.helmet
-		H.light_overlay = new_light_overlay
+		H.set_light_overlay(new_light_overlay)
 	use(1,user)
 
 /obj/item/kit/suit/rig/can_customize(obj/item/I)
@@ -195,7 +197,7 @@
 		return 0
 
 	for(var/type in allowed_types)
-		if(type == M.initial_icon)
+		if(type == M.mecha_base_state())
 			return 1
 
 /obj/item/kit/paint/set_info(kit_name, kit_desc, kit_icon, kit_icon_file = CUSTOM_ITEM_OBJ, kit_icon_override_file = CUSTOM_ITEM_MOB, additional_data)
@@ -222,14 +224,13 @@
 	act_message(user, src, others = "%U% opens %T% and spends some quality time customising [M].")
 	M.name = new_name
 	M.desc = new_desc
-	M.initial_icon = new_icon
 	if(new_icon_file)
 		M.icon = new_icon_file
-	M.update_icon()
+	M.set_initial_icon(new_icon)
 	use(1, user)
 
 /// Old /obj/mecha/attackby override: a paint kit customises the mech. Declared in mecha.dm.
-/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W)
 	if(!istype(W, /obj/item/kit/paint))
 		return FALSE
 	var/obj/item/kit/paint/P = W
@@ -250,11 +251,11 @@
 	if(!istype(M)) //Kicks it back and gives proper error text.
 		return ..()
 	if(showpilot)
-		M.show_pilot = TRUE
-		M.pilot_lift = 5
+		M.set_show_pilot(TRUE)
+		M.set_pilot_lift(5)
 	else
-		M.show_pilot = FALSE
-		M.pilot_lift = 0
+		M.set_show_pilot(FALSE)
+		M.set_pilot_lift(0)
 	. = ..() //Has to be done AFTER show_pilot being set in order to update the icon properly.
 
 /obj/item/kit/paint/ripley/death

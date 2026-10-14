@@ -25,7 +25,11 @@
 
 /datum/firemode/proc/apply_to(obj/item/gun/gun)
 	for(var/propname in settings)
-		gun.vars[propname] = LAZYACCESS(settings, propname) // ALLOW(api): firemode settings table applied to the gun
+		var/propvalue = LAZYACCESS(settings, propname)
+		if(gun.vars[propname] == propvalue)
+			continue
+		gun.vars[propname] = propvalue // ALLOW(api): firemode settings table applied to the gun
+		tracked_changed(gun, propname) // a setting the gun tracks (modifystate, charge_cost) redraws what reads it
 
 //Parent gun type. Guns are weapons that can be aimed at mobs and act over a distance
 /obj/item/gun
@@ -38,18 +42,12 @@
 		)
 	icon_state = "detective"
 	item_state = "gun"
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 5
-	force = 5
 	preserve_item = 1
-	attack_verb = list("struck", "hit", "bashed")
 	zoomdevicename = "scope"
-	drop_sound = SFX_ITEMS_DROP_GUN
-	pickup_sound = SFX_ITEMS_PICKUP_GUN
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -83,8 +81,6 @@
 	var/reload_time = 1		//Base reload time in seconds
 
 	//aiming system stuff
-	var/keep_aim = 1 	//1 for keep shooting until aim is lowered
-						//0 for one bullet after tarrget moves and aim is lowered
 	var/multi_aim = 0 //Used to determine if you can target multiple people.
 	var/tmp/mob/living/last_moved_mob	//Used to fire faster at more than one person.
 	var/tmp/told_cant_shoot = 0 //So that it doesn't spam them with the fact they cannot hit them.
@@ -114,6 +110,33 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
+CAPABILITIES(/obj/item/gun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
+	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
+	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
+	drag_onto(PROC_REF(mousedrop_input))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
+	op("suicide", ai(), wait(4 SECONDS), on_interrupt(PROC_REF(suicide_reconsidered)), then(PROC_REF(suicide_trigger)))
+	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_give_dna)))
+	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_remove_dna)))
+	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds))), then(PROC_REF(gun_verb_allow_dna)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Remove the DNA lock"), needs(req(PROC_REF(lock_refusal))),
+		begins(PROC_REF(lock_removal_begins)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE), wait(2.5 SECONDS), then(PROC_REF(lock_removed)))
+
+MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
+
+/// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
+/obj/item/gun/proc/starting_firemodes(list/settings)
+	. = list()
+	for(var/i in 1 to length(settings))
+		. += new /datum/firemode(src, settings[i])
+
 /obj/item/gun/item_ctrl_click(mob/user)
 	if(can_flashlight && ishuman(user) && loc == user && !user.incapacitated(INCAPACITATION_ALL))
 		toggle_flashlight()
@@ -122,27 +145,18 @@
 
 /obj/item/gun/proc/toggle_flashlight()
 	if(gun_light)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		gun_light = FALSE
 	else
-		set_light(light_brightness)
+		set_glow(src, GLOW(light_brightness, null, null))
 		gun_light = TRUE
 
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
-	update_icon()
-
-DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_selector)
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()
-	for(var/i in 1 to length(firemodes))
-		own_put(src, nameof(firemodes), i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
-
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
-
-	if(dna_lock)
-		own_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -161,7 +175,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 				name = initial(name)
 		else
 			name = initial(name)
-		update_icon() // In case item_state is set somewhere else.
 	..()
 
 /obj/item/gun/update_held_icon()
@@ -169,11 +182,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 		var/mob/living/M = loc
 		if(istype(M))
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
-				LAZYSET(item_state_slots, slot_l_hand_str, wielded_item_state)
-				LAZYSET(item_state_slots, slot_r_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_l_hand_str, wielded_item_state)
+				set_item_state_slots_at(slot_r_hand_str, wielded_item_state)
 			else
-				LAZYSET(item_state_slots, slot_l_hand_str, initial(item_state))
-				LAZYSET(item_state_slots, slot_r_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_l_hand_str, initial(item_state))
+				set_item_state_slots_at(slot_r_hand_str, initial(item_state))
 	..()
 
 //Checks whether a given mob can use the gun
@@ -217,13 +230,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 					to_chat(M, span_danger("\The [src] hisses in dissapointment."))
 					visible_message(span_game(span_say(span_name("\The [src]") + " announces, \"Self-destruct occurring in ten seconds.\"")), span_game(span_say(span_name("\The [src]") + " announces, \"Self-destruct occurring in ten seconds.\"")))
 					attached_lock.exploding = 1
-					om_after(src, 10 SECONDS, PROC_REF(lock_explosion))
+					after(src, 10 SECONDS, PROC_REF(lock_explosion))
 					return FALSE
 	if(M.has_mutation(HULK))
 		to_chat(M, span_danger("Your fingers are much too large for the trigger guard!"))
 		return FALSE
 	if(CLUMSY_HARM_CHANCE(M)) //Clumsy handling
-		var/obj/P = consume_next_projectile()
+		var/obj/P = consume_next_projectile(user)
 		if(P)
 			if(process_projectile(P, user, user, pick(BP_L_FOOT, BP_R_FOOT)))
 				handle_post_fire(user, user)
@@ -243,7 +256,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
-		own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+		rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 
 	if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A)
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
@@ -276,7 +289,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 */
 
 /obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if (A == user && user.zone_sel.selecting == O_MOUTH && !mouthshoot)
+	if (A == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
 		return ITEM_INTERACT_SUCCESS
 	else if(stance == I_HURT) //point blank shooting
@@ -289,90 +302,89 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 	else
 		return ..() //Pistolwhippin'
 
-// EXTEND, not DECLARE: gun subtypes DECLARE interactions of their own, which this must not replace.
-// Both effects are override chains: gun subtypes override gun_item()/gun_self() with ..(), as they
-// overrode attackby()/attack_self(), so the parent-first order of those chains is kept.
-EXTEND_INTERACTIONS(/obj/item/gun, \
-	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
-	INTERACT_SELF_AS(I_HELP, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_DISARM, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_GRAB, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_HURT, "Operate", PROC_REF(gun_self)), \
-	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-)
-
 /**
- * Old attackby. TRUE uses the item up (no afterattack), INTERACTION_HANDLED_PASS handled it but
- * afterattack follows, FALSE falls through to the base item's attackby (as the old ..() did).
+ * Old attackby. OP_OK uses the item up (no afterattack), OP_PASS handled it but afterattack
+ * follows, OP_DECLINE falls through to the base item's attackby (as the old ..() did).
+ * A gun type overrides this and calls ..(A) the way the old attackby chain did.
  */
-/obj/item/gun/proc/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/dnalockingchip))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/proc/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/dnalockingchip))
+		. = OP_PASS
 		if(dna_lock)
 			to_chat(user, span_notice("\The [src] already has a [attached_lock]."))
 			return
-		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!own_set(src, nameof(src.attached_lock), A, user = user))
+		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
+		if(!move_into(src, nameof(src.attached_lock), held, user))
 			return
-		dna_lock = 1
+		set_dna_lock(TRUE)
 		return
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
-	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
-		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// The DNA lock comes off only a gun that has one its controller does not hold.
+/obj/item/gun/proc/lock_refusal(datum/act/op/A)
+	if(!read_once(dna_lock) || !read_once(attached_lock) || read_once(attached_lock.controller_lock))
+		return "\the [src] is not accepting modifications at this time"
 
-/obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
+/obj/item/gun/proc/lock_removal_begins(datum/act/op/A)
+	return msg_text("You begin removing \the [attached_lock] from \the [src].")
+
+/// After 2.5 seconds with the screwdriver, the lock comes off into the hand.
+/obj/item/gun/proc/lock_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
-	dna_lock = FALSE
-	own_take(src, nameof(attached_lock))
-	return ITEM_INTERACT_SUCCESS
+	set_dna_lock(FALSE)
+	rel_take(src, nameof(attached_lock))
+	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
-/obj/item/gun/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/gun/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(dna_lock && attached_lock.controller_lock)
 		to_chat(user, span_notice("You short circuit the internal locking mechanisms of \the [src]!"))
 		attached_lock.controller_dna = null
 		attached_lock.controller_lock = 0
 		attached_lock.stored_dna = list()
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/obj/item/gun/MouseDrop(obj/over_object as obj)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/gun/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/gun/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
 /// `stance` is the firer's stance from the input that pulled the trigger (I_HURT for machines, AI and reflex shots).
 /obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, stance = I_HURT)
@@ -405,7 +417,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		return //we're done here
 	if(!ismob(loc) && !mounted_gun) //We've been dropped and we are NOT a mounted gun.
 		return
-	if(user.stat) //We've been KO'd or have died. No shooting while dead.
+	if(QDELETED(user) || user.stat) //We've been KO'd or have died. No shooting while dead.
 		return
 	if(ticker >= 250) //If you go too far above this, your game will kick you and force you to reconnect. This is already EXTREMELY leninent.
 		return //In testing, I reached 937 bullets out of 1000 being fired with a delay  of 0.1 before being kicked.
@@ -420,9 +432,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
 			if(gun_light)
-				set_light(light_brightness)
+				set_glow(src, GLOW(light_brightness, null, null))
 			else
-				set_light(0)
+				set_glow(src, GLOW(0, null, null))
 
 	if(ticker <= burst)
 		var/obj/projectile = consume_next_projectile(user)
@@ -443,9 +455,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			if(pointblank)
 				process_point_blank(projectile, user, target)
 
-			if(process_projectile(projectile, user, target, user.zone_sel.selecting, clickparams))
+			if(process_projectile(projectile, user, target, hud_of(user)?.zone_sel?.selecting, clickparams))
 				handle_post_fire(user, target, pointblank, reflex)
-				update_icon()
 
 			// We do this down here, so we don't get the message if we fire an empty gun.
 			if(user.item_is_in_hands(src) && user.hands_are_full())
@@ -463,7 +474,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 				var/mysize = micro.size_multiplier
 				if(recoil_mode > 0)
 					if(mysize <= 0.60)
-						micro.status_at_least(EFFECT_WEAKENED, 1*recoil_mode)
+						micro.status_at_least(STAT_WEAKENED, 1*recoil_mode)
 						if(!istype(src,/obj/item/gun/energy))
 							micro.injure(INJURY_BLUNT, (5-mysize*4)*recoil_mode, null, src)
 							to_chat(micro, span_danger("You're so tiny that you drop the gun and hurt yourself from the recoil!"))
@@ -475,16 +486,16 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 				pointblank = 0
 
 			if(ticker < burst)
-				om_after(src, burst_delay, PROC_REF(handle_gunfire), target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance)
+				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance), keeps_dead = TRUE)
 				return
 
 			if(ticker == burst)
 				COOLDOWN_START(src, next_fire_time, fire_delay)
 				if(muzzle_flash)
 					if(gun_light)
-						om_after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), light_brightness)
+						after(src, burst_delay, PROC_REF(muzzle_glow), with = list(light_brightness))
 					else
-						om_after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), 0)
+						after(src, burst_delay, PROC_REF(muzzle_glow), with = list(0))
 
 // Similar to the above proc, but does not require a user, which is ideal for things like turrets.
 /obj/item/gun/proc/Fire_userless(atom/target)
@@ -513,7 +524,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 	if(recursive)
 		COOLDOWN_START(src, next_fire_time, fire_delay)
 		if(muzzle_flash)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 
 	if(ticker <= burst)
 		var/obj/item/projectile/P = consume_next_projectile()
@@ -540,8 +551,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			play_fire_sound()
 
 			if(muzzle_flash)
-				set_light(muzzle_flash)
-			update_icon()
+				set_glow(src, GLOW(muzzle_flash, null, null))
 
 			if(!(target && target.loc))
 				target = targloc
@@ -549,12 +559,12 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			if(ticker < burst)
 				// Bug fix: was incorrectly calling handle_gunfire (which requires a user arg);
 				// userless firing loop must recurse into handle_userless_gunfire.
-				om_after(src, burst_delay, PROC_REF(handle_userless_gunfire), target, ++ticker, TRUE)
+				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE), keeps_dead = TRUE)
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 
 //obtains the next projectile to fire
-/obj/item/gun/proc/consume_next_projectile()
+/obj/item/gun/proc/consume_next_projectile(mob/user)
 	return null
 
 //used by aiming code
@@ -605,7 +615,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		flick(fire_anim, src)
 
 	if(muzzle_flash)
-		set_light(muzzle_flash)
+		set_glow(src, GLOW(muzzle_flash, null, null))
 
 	if(one_handed_penalty)
 		if(!src.is_held_twohanded(user))
@@ -633,7 +643,6 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	if(recoil)
 		shake_camera(user, recoil+1, recoil)
-	update_icon()
 
 /obj/item/gun/proc/process_point_blank(obj/projectile, mob/user, atom/target)
 	var/obj/item/projectile/P = projectile
@@ -687,7 +696,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		if(H.species)
 			P.accuracy += H.species.gun_accuracy_mod
 			P.dispersion = max(P.dispersion + H.species.gun_accuracy_dispersion_mod, 0)
-		if(H.fear > 30)
+		if(H.status_units(STAT_FEAR) > 30)
 			P.accuracy -= 35
 
 //does the actual launching of the projectile
@@ -738,33 +747,34 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	mouthshoot = 1
 	act_message(user, M, others = span_red("%U% sticks their gun in their mouth, ready to pull the trigger..."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(suicide_trigger), list(M), on_fail = PROC_REF(suicide_reconsidered), fail_args = list(M))
+	perform_op(M, src, "suicide", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-/obj/item/gun/proc/suicide_reconsidered(mob/living/carbon/human/M)
+/obj/item/gun/proc/suicide_reconsidered(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	M?.visible_message(span_blue("[M] decided life was worth living"))
 	mouthshoot = 0
 
-/obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
+/obj/item/gun/proc/suicide_trigger(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	var/mob/living/user = M
-	var/obj/item/projectile/in_chamber = consume_next_projectile()
+	var/obj/item/projectile/in_chamber = consume_next_projectile(user)
 	if (istype(in_chamber))
 		act_message(user, null, others = span_warning("%U% pulls the trigger."))
 		play_fire_sound(M, in_chamber)
 		if(istype(in_chamber, /obj/item/projectile/beam/lasertag))
 			user.show_message(span_warning("You feel rather silly, trying to commit suicide with a toy."))
-			mouthshoot = 0
-			return
 
-		in_chamber.on_hit(M)
-		var/suicide_kind = in_chamber.injury_kind == INJURY_BLUNT ? INJURY_PIERCE : in_chamber.injury_kind
-		if(suicide_kind != INJURY_PAIN && !in_chamber.nodamage)
-			log_and_message_admins("commited suicide using \a [src]", user)
-			user.injure(suicide_kind, in_chamber.damage*2.5, BP_HEAD, src, 0, null, INJURE_PROJECTILE)
-			user.death()
-		else if(suicide_kind == INJURY_PAIN)
-			to_chat(user, span_notice("Ow..."))
-			user.apply_effect(110,AGONY,0)
-		qdel(in_chamber)
+		else
+			in_chamber.on_hit(M)
+			var/suicide_kind = in_chamber.injury_kind == INJURY_BLUNT ? INJURY_PIERCE : in_chamber.injury_kind
+			if(suicide_kind != INJURY_PAIN && !in_chamber.nodamage)
+				log_and_message_admins("commited suicide using \a [src]", user)
+				user.injure(suicide_kind, in_chamber.damage*2.5, BP_HEAD, src, 0, null, INJURE_PROJECTILE)
+				user.death()
+			else if(suicide_kind == INJURY_PAIN)
+				to_chat(user, span_notice("Ow..."))
+				user.apply_effect(110,AGONY,0)
+		spent(in_chamber, M)
 		mouthshoot = 0
 		return
 	else
@@ -772,21 +782,27 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		mouthshoot = 0
 		return
 
-/obj/item/gun/proc/toggle_scope(zoom_amount=2.0)
+/// Use the same declared requirements and feedback for an action button as the interaction menu.
+/// The scope button: runs the gun's scope menu op (`key`) as the user's own choice.
+/obj/item/gun/proc/perform_scope_interaction(mob/user, key)
+	var/datum/op_result/result = perform_op(user, src, key, user?.get_active_hand(), ORIGIN_MENU, AUTH_PHYSICAL)
+	return result?.outcome == ACT_COMMITTED
+
+/obj/item/gun/proc/toggle_scope(zoom_amount=2.0, mob/living/user)
 	//looking through a scope limits your periphereal vision
 	//still, increase the view size by a tiny amount so that sniping isn't too restricted to NSEW
 	var/zoom_offset = round(world.view * zoom_amount)
 	var/view_size = round(world.view + zoom_amount)
 	var/scoped_accuracy_mod = zoom_offset
 
-	zoom(zoom_offset, view_size)
+	zoom(user, zoom_offset, view_size)
 	if(zoom)
 		accuracy = scoped_accuracy + scoped_accuracy_mod
 		if(recoil)
 			recoil = round(recoil*zoom_amount+1) //recoil is worse when looking through a scope
 
 //make sure accuracy and recoil are reset regardless of how the item is unzoomed.
-/obj/item/gun/zoom()
+/obj/item/gun/zoom(mob/living/M, tileoffset = 14, viewsize = 9)
 	..()
 	if(!zoom)
 		accuracy = initial(accuracy)
@@ -820,12 +836,18 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	return new_mode
 
-/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A falsy return
-/// (as the old chain's) leaves the self-use unhandled.
-/obj/item/gun/proc/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/// Old attack_self (the "gun_self" op, "gun_self_hurt" in a hostile stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
+/// calls ..() the way the old attack_self chain did.
+/obj/item/gun/proc/gun_self(datum/act/op/A)
+	return gun_operate(A)
+
+/// The self-use chain of a gun type (a type overrides this and calls ..() the way the old attack_self chain did).
+/obj/item/gun/proc/gun_operate(datum/act/op/A, callback)
 	if(special_handling)
-		return FALSE
-	switch_firemodes(user)
+		return OP_DECLINE
+	switch_firemodes(A.actor)
+	return OP_DECLINE
 
 /* TGMC Ammo HUD Port Begin */
 /obj/item/gun
@@ -855,7 +877,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 /obj/item/gun/ownership()
 	. = ..()
-	. += owns(nameof(attached_lock), policy = OWN_CONTAINED)
+	. += owns(nameof(attached_lock), policy = OWN_CONTAINED, starts = when(nameof(dna_lock), /obj/item/dnalockingchip))
 
 /// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()
@@ -870,3 +892,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 /obj/item/gun/proc/note_shot()
 	for(var/obj/item/ammo_magazine/smart/M in contents)
 		COOLDOWN_START(M, gun_fired_cooldown, M.production_delay)
+
+/// The gun's light after a burst: `range` 0 is dark (what set_glow(src, GLOW(range, null, null)) did).
+/obj/item/gun/proc/muzzle_glow(range)
+	set_glow(src, GLOW(range, null, null))

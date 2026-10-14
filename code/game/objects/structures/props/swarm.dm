@@ -3,13 +3,16 @@
 	desc = "A small pod."
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "pod"
-	light_color = "#00B2B2"
 
 	shatter_message = "The energetic field shatters!"
 	impact_sound = SFX_EFFECTS_GLASSHIT
 	shatter_sound = SFX_EFFECTS_PHASEIN
 
 	var/list/active_beams
+
+CAPABILITIES(/obj/structure/cult/pylon/swarm)
+	configure(light_glow(color = "#00B2B2"))
+	owns_many(nameof(active_beams))
 
 /obj/structure/cult/pylon/swarm/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover))
@@ -22,10 +25,6 @@
 			return TRUE
 	return ..()
 
-/obj/structure/cult/pylon/swarm/Initialize(mapload)
-	. = ..()
-
-
 /obj/structure/cult/pylon/swarm/pylonhit(damage)
 	if(!isbroken)
 		if(prob(1 + damage * 3))
@@ -33,8 +32,8 @@
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -46,15 +45,15 @@
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)
 	else
 		if(prob(damage * 2))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)
@@ -84,7 +83,7 @@
 				break
 
 		if(!has_beam)
-			own_add(src, nameof(active_beams), Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
+			rel_add(src, nameof(active_beams), Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 
 		if(S.cell)
 			S.cell.give(rand(30, 120))
@@ -107,8 +106,8 @@
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 
 /obj/structure/cult/pylon/swarm/defender/attackpylon(mob/user as mob, damage)
 	if(!isbroken)
@@ -120,15 +119,15 @@
 			playsound(src,shatter_sound, 75, 1)
 			set_isbroken(TRUE)
 			set_density(FALSE)
-			icon_state = "[initial(icon_state)]-broken"
-			set_light(0)
+			set_icon_state("[initial(icon_state)]-broken")
+			set_glow(src, GLOW(0, null, null))
 		else
 			to_chat(user, "You hit \the [src]!")
 			playsound(src,impact_sound, 75, 1)
 	else
 		if(prob(damage * 3))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)

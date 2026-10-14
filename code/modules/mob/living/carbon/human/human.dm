@@ -16,49 +16,48 @@
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-	COOLDOWN_DECLARE(push_lying_cooldown) //For human_attackhand.dm: lying-struggle antispam
-	COOLDOWN_DECLARE(disarm_cooldown) //For human_attackhand.dm: repeat-disarm window
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
-	COOLDOWN_DECLARE(spit_cooldown) 					//Timestamp.
 
 	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
-	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
 	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
-	COOLDOWN_DECLARE(chew_cooldown)
 
-/mob/living/carbon/human/Initialize(mapload, new_species = null)
-	if(!dna)
-		own_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
-		// Species name is handled by set_species()
+TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
+/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
+	if(target == "name")
+		return real_name
+	return species ? species.get_random_name(gender) : real_name
+
+/// Every underwear category starts shown (derives(), once at init).
+/mob/living/carbon/human/proc/underwear_all_shown(target)
+	. = list()
+	for(var/category in GLOB.global_underwear.categories_by_name)
+		.[category] = FALSE
+
+/// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
+/mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
+
+// ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
+/mob/living/carbon/human/Initialize(mapload)
+	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
-		if(new_species)
-			set_species(new_species)
+		if(species_at_make)
+			set_species(species_at_make)
 		else
 			set_species()
 
-	if(species)
-		real_name = species.get_random_name(gender)
-		name = real_name
-		if(mind)
-			mind.name = real_name
-
-	set_nutrition(rand(200,400))
 	. = ..()
-
-	hide_underwear.Cut()
-	for(var/category in GLOB.global_underwear.categories_by_name)
-		hide_underwear[category] = FALSE
 
 	if(dna)
 		dna.ready_dna(src)
@@ -66,15 +65,14 @@
 		sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 		sync_organ_dna()
 	initialize_vessel()
-	regenerate_icons()
-
-	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 	var/image/img = image('icons/mob/animal.dmi', src, animal)
 	img.override = TRUE
 	add_alt_appearance("animals", img, displayTo = REGISTRY_MEMBERS(REGISTRY_ALT_FARMANIMALS))
+	if(TYPE_TABLE_GET(src, initial_species_copy))
+		species.produceCopy(species.traits.Copy(),src,null,FALSE)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_HUMANS)
 
@@ -82,33 +80,19 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// organs are deleted from a snapshot; the nif (DECLARE_REF(..., OWNED)) and blood vessel go with the body.
-/mob/living/carbon/human/on_destroy(force)
-	// Each organ's Destroy() removes itself (and qdels its children/internals)
-	// out of src.organs, so iterating the live list skips entries — skipped
-	// organs never run Destroy() and their lingering `owner` ref pins this mob
-	// (and their medical issues) against GC. Snapshot first. Each organ also
-	// scrubs itself out of the *_by_name lookup tables, so those end up empty
-	// here — do NOT null them: the parent Destroy chain (equipment drops →
-	// update_icons, should_have_organ) still indexes them.
-	if(organs)
-		for(var/o in organs.Copy())
-			qdel(o)
-	..()
-
 /mob/living/carbon/human/get_status_tab_items()
 	. = ..()
 	. += ""
 	. += "Combat mode: [combat_mode ? "on" : "off"]"
 	. += "Move Mode: [m_intent]"
-	if(GLOB.emergency_shuttle_service)
-		var/eta_status = GLOB.emergency_shuttle_service.get_status_panel_eta()
+	if(SSemergency_shuttle)
+		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
 		if(eta_status)
 			. += "[eta_status]"
 
 	if (internal)
 		if (!internal.air_contents)
-			qdel(internal)
+			spent(internal)
 		else
 			. += "Internal Atmosphere Info: [internal.name]"
 			. += "Tank Pressure: [internal.air_contents.return_pressure()]"
@@ -208,11 +192,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (30))
-				status_adjust(EFFECT_DEAFENED, 120)
-				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
+				status_adjust(STAT_DEAFENED, 120)
+				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(70) && !shielded)
-				status_at_least(EFFECT_PARALYZED, 10)
-				status_at_least(EFFECT_SLEEPING, 10)
+				status_at_least(STAT_PARALYZED, 10)
+				status_at_least(STAT_SLEEPING, 10)
 
 		if(3.0)
 			b_loss += 30
@@ -220,11 +204,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 				b_loss = b_loss/2
 			if (get_ear_protection() < 2)
 				set_ear_damage(ear_damage + (15))
-				status_adjust(EFFECT_DEAFENED, 60)
-				deaf_loop.start() // CHOMPEnable: Ear Ringing/Deafness
+				status_adjust(STAT_DEAFENED, 60)
+				deaf_loop.start() // Ear Ringing/Deafness
 			if (prob(50) && !shielded)
-				status_at_least(EFFECT_PARALYZED, 10)
-				status_at_least(EFFECT_SLEEPING, 10)
+				status_at_least(STAT_PARALYZED, 10)
+				status_at_least(STAT_SLEEPING, 10)
 
 	// focus most of the blast on one organ
 	var/obj/item/organ/external/take_blast = pick(organs)
@@ -274,8 +258,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			return 1
 	return 0
 
-/mob/living/carbon/human/var/co2overloadtime = null
-/mob/living/carbon/human/var/temperature_resistance = T0C+75
 
 // called when something steps onto a human
 // this handles mobs on fire - mulebot and vehicle code has been relocated to /mob/living/Crossed()
@@ -336,14 +318,14 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 //repurposed proc. Now it combines get_id_name() and get_face_name() to determine a mob's name variable. Made into a seperate proc as it'll be useful elsewhere
 /mob/living/carbon/human/get_visible_name()
-	if(om_wants(src, /datum/om/event/before/human_get_visible_name))
-		var/list/name_data = list(null)
-		if(OM_EMIT(src, /datum/om/event/before/human_get_visible_name, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
-			return name_data[1]
+	var/datum/act/name_visible/shown = ACT_TRY(src, name_visible)
+	if(!shown)
+		return ACT_REPLY
+	act_cancel(shown)
 
-	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
+	if(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).hides&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
 		return get_id_name("Unknown")
-	if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv&HIDEFACE))
+	if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides&HIDEFACE))
 		return get_id_name("Unknown")		//Likewise for hats
 	var/face_name = get_face_name()
 	var/id_name = get_id_name("")
@@ -380,7 +362,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 //Now checks siemens_coefficient of the affected area by default
 /mob/living/carbon/human/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun)
 
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
 
 	if (!def_zone)
@@ -395,7 +377,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	var/obj/item/organ/external/affected_organ = get_organ(check_zone(def_zone))
 	siemens_coeff = siemens_coeff * get_siemens_coefficient_organ(affected_organ)
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 
 	. = ..(shock_damage, source, siemens_coeff, def_zone)
@@ -403,81 +385,87 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(. > 30 && prob(. - 20))
 		induce_arrhythmia(CARDIAC_RHYTHM_VF)
 
-TOPIC_ACTION(/mob/living/carbon/human, "lookitem", PROC_REF(topic_lookitem), TOPIC_REF("lookitem", /obj/item))
-TOPIC_ACTION(/mob/living/carbon/human, "lookitem_desc_only", PROC_REF(topic_lookitem_desc_only), TOPIC_REF("lookitem_desc_only", /obj/item, PROC_REF(topic_worn_items)))
-TOPIC_ACTION(/mob/living/carbon/human, "flavor_change", PROC_REF(topic_flavor_change_part), TOPIC_TEXT("flavor_change", 32))
 // HUD record links (examine): see TYPE_TABLE_GET(src, hud_record_kinds).
-TOPIC_ACTION(/mob/living/carbon/human, "criminal", PROC_REF(topic_hud_criminal))
-TOPIC_ACTION(/mob/living/carbon/human, "medical", PROC_REF(topic_hud_medical))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecord", PROC_REF(topic_hud_secrecord))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecord", PROC_REF(topic_hud_medrecord))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecord", PROC_REF(topic_hud_emprecord))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecordComment", PROC_REF(topic_hud_seccomments))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecordComment", PROC_REF(topic_hud_medcomments))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecordComment", PROC_REF(topic_hud_empcomments))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecordadd", PROC_REF(topic_hud_secadd))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecordadd", PROC_REF(topic_hud_medadd))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd))
 
 /// TOPIC_REF source: everything this human wears or carries (accessories included).
 /mob/living/carbon/human/proc/topic_worn_items()
 	return get_all_contents()
 
-/mob/living/carbon/human/proc/topic_lookitem(mob/user, list/args)
-	var/obj/item/I = args["lookitem"]
+/mob/living/carbon/human/proc/topic_lookitem(datum/act/op/A, href_lookitem)
+	var/obj/item/I = href_lookitem
 	src.examinate(I)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_lookitem_desc_only(mob/user, list/args)
-	var/obj/item/I = args["lookitem_desc_only"]
+/mob/living/carbon/human/proc/topic_lookitem_desc_only(datum/act/op/A, href_lookitem_desc_only)
+	var/mob/user = A.actor
+	var/obj/item/I = href_lookitem_desc_only
 	if(istype(I,/obj/item/hand))
 		to_chat(user,span_warning("You can't see the card faces from here."))
 		return
 	user.examinate(I, 1)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_flavor_change_part(mob/user, list/args)
-	if(user != src) // only your own flavor text
-		return
-	flavor_change_topic(user, args["flavor_change"])
+/mob/living/carbon/human/topic_flavor_change(datum/act/op/A, href_flavor_change)
+	var/mob/user = A.actor
+	flavor_change_topic(user, href_flavor_change)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_criminal(mob/user, list/args)
+/mob/living/carbon/human/proc/topic_hud_criminal(datum/act/op/A)
+	var/mob/user = A.actor
 	if(hasHUD(user, "security"))
 		hud_topic_status(user, "security")
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medical(mob/user, list/args)
+/mob/living/carbon/human/proc/topic_hud_medical(datum/act/op/A)
+	var/mob/user = A.actor
 	if(hasHUD(user, "medical"))
 		hud_topic_status(user, "medical")
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_secrecord(mob/user, list/args)
-	return hud_record_link(user, "security", "show")
+/mob/living/carbon/human/proc/topic_hud_secrecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medrecord(mob/user, list/args)
-	return hud_record_link(user, "medical", "show")
+/mob/living/carbon/human/proc/topic_hud_medrecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_emprecord(mob/user, list/args)
-	return hud_record_link(user, "best", "show")
+/mob/living/carbon/human/proc/topic_hud_emprecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_seccomments(mob/user, list/args)
-	return hud_record_link(user, "security", "comments")
+/mob/living/carbon/human/proc/topic_hud_seccomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medcomments(mob/user, list/args)
-	return hud_record_link(user, "medical", "comments")
+/mob/living/carbon/human/proc/topic_hud_medcomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_empcomments(mob/user, list/args)
-	return hud_record_link(user, "best", "comments")
+/mob/living/carbon/human/proc/topic_hud_empcomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_secadd(mob/user, list/args)
-	return hud_record_link(user, "security", "add")
+/mob/living/carbon/human/proc/topic_hud_secadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "add")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medadd(mob/user, list/args)
-	return hud_record_link(user, "medical", "add")
+/mob/living/carbon/human/proc/topic_hud_medadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "add")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_empadd(mob/user, list/args)
-	return hud_record_link(user, "best", "add")
+/mob/living/carbon/human/proc/topic_hud_empadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "add")
+	return TRUE
 
 /// The flavor text editor's links: close it, or edit one part.
 /mob/living/carbon/human/proc/flavor_change_topic(mob/user, part)
@@ -486,9 +474,9 @@ TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd
 			// flavor_changes is TGUI now; close via SStgui
 			SStgui.close_uis(src)
 		if("general")
-			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)	//Separating out OOC notes
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(bio.flavor_texts, part)), part = part)	//Separating out OOC notes
 		else
-			om_ask(user, /datum/om/prompt/text/flavor_part, PROC_REF(flavor_part_entered), message = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(bio.flavor_texts, part)), part = part)
 
 // --- HUD record links (examine) --------------------------------------------------
 // Each HUD reads and writes one record set. The status link edits the "status" set (the
@@ -551,9 +539,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		hud_no_record(user)
 		return
 	if(hud_type == "security")
-		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), message = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
+		open_request(src, /datum/prompt/choice/hud_status, PROC_REF(hud_criminal_status_chosen), answerer = user, question = "Specify a new criminal status for this person.", title = "Security HUD", choices = list("None", "*Arrest*", "Incarcerated", "Parolled", "Released", "Cancel"), record = R, hud_type = "security")
 	else
-		om_ask(user, /datum/om/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), message = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
+		open_request(src, /datum/prompt/choice/hud_status, PROC_REF(hud_medical_status_chosen), answerer = user, question = "Specify a new medical status for this person.", title = "Medical HUD", choices = list("*SSD*", "*Deceased*", "Physically Unfit", "Active", "Disabled", "Cancel"), record = R, hud_type = "medical")
 
 /// Print the record `hud_type` reads.
 /mob/living/carbon/human/proc/hud_topic_show_record(mob/user, hud_type)
@@ -609,69 +597,114 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	to_chat(user, span_filter_notice("<a href='byond://?src=\ref[src];[kind[1]]recordadd=`'>\[Add comment\]</a>"))
 
 /// Editing one flavor text part. Re-checked on the answer: it's your own.
-/datum/om/prompt/text/flavor_part
+/datum/prompt/text/flavor_part
 	title = "Flavor Text"
 	multiline = TRUE
+	timeout = 0
 	var/part
 
-/datum/om/prompt/text/flavor_part/valid()
-	return answerer == subject ? null : "not yours"
+/datum/prompt/text/flavor_part/recheck_extra()
+	if(!isnull(value) && answerer != owner)
+		return "not yours"
 
-/mob/living/carbon/human/proc/flavor_part_entered(datum/om/prompt/text/flavor_part/ask)
-	var/msg = strip_html_simple(ask.text)
+/mob/living/carbon/human/proc/flavor_part_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return flavor_part_entered_apply(A)
+
+/mob/living/carbon/human/proc/flavor_part_entered_apply(datum/act/request/A)
+	var/datum/prompt/text/flavor_part/ask = A.answer
+	var/msg = strip_html_simple(ask.value)
 	if(msg)
-		LAZYSET(flavor_texts, ask.part, msg)
+		LAZYSET(bio.flavor_texts, ask.part, msg)
 		set_flavor()
 
 /// The user's HUD of `hud_type` still works and they can act.
 /mob/living/carbon/human/proc/hud_still_usable(mob/user, hud_type)
 	return !user.stat && !user.restrained() && hasHUD(user, hud_type)
 
-/// Refreshes the HUD of whoever changed a record through theirs.
+/// Whoever changed a record through their HUD sees it change: their HUD re-reads what it shows (MOB_KEY_VIEW).
 /mob/living/carbon/human/proc/hud_record_changed(mob/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/U = user
-		U.refresh_hud()
-	if(istype(user,/mob/living/silicon/robot))
-		var/mob/living/silicon/robot/U = user
-		U.refresh_hud()
+	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 /// A record status picked through a HUD on the subject. Re-checked on the answer: the HUD still works.
-/datum/om/prompt/choice/hud_status
+/datum/prompt/choice/hud_status
+	timeout = 0
 	var/datum/data/record/record
 	var/hud_type
+	var/record_expected = FALSE
 
-/datum/om/prompt/choice/hud_status/valid()
-	var/mob/living/carbon/human/H = subject
+CAPABILITIES(/datum/prompt/choice/hud_status)
+	ref_one(nameof(record), /datum/data/record)
+
+/datum/prompt/choice/hud_status/prepare(datum/act/A)
+	. = ..()
+	var/datum/data/record/captured_record = record
+	record_expected = !isnull(captured_record)
+	rel_clear(src, nameof(record))
+	if(captured_record && !QDELETED(captured_record))
+		rel_set(src, nameof(record), captured_record)
+
+/datum/prompt/choice/hud_status/recheck_extra()
+	if(record_expected && QDELETED(record))
+		return "gone"
+	if(isnull(value))
+		return
+	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
 
 /// A record comment added through a HUD on the subject. Re-checked on the answer: the HUD still works.
-/datum/om/prompt/text/hud_comment
-	message = "Add Comment:"
+/datum/prompt/text/hud_comment
+	question = "Add Comment:"
 	multiline = TRUE
+	timeout = 0
 	var/datum/data/record/record
 	var/hud_type
+	var/record_expected = FALSE
 
-/datum/om/prompt/text/hud_comment/valid()
-	var/mob/living/carbon/human/H = subject
+CAPABILITIES(/datum/prompt/text/hud_comment)
+	ref_one(nameof(record), /datum/data/record)
+
+/datum/prompt/text/hud_comment/prepare(datum/act/A)
+	. = ..()
+	var/datum/data/record/captured_record = record
+	record_expected = !isnull(captured_record)
+	rel_clear(src, nameof(record))
+	if(captured_record && !QDELETED(captured_record))
+		rel_set(src, nameof(record), captured_record)
+
+/datum/prompt/text/hud_comment/recheck_extra()
+	if(record_expected && QDELETED(record))
+		return "gone"
+	if(isnull(value))
+		return
+	var/mob/living/carbon/human/H = owner
 	return H.hud_still_usable(answerer, hud_type) ? null : "HUD unusable"
 
-/mob/living/carbon/human/proc/hud_criminal_status_chosen(datum/om/prompt/choice/hud_status/ask)
-	var/setcriminal = ask.choice
+/mob/living/carbon/human/proc/hud_criminal_status_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return hud_criminal_status_chosen_apply(A)
+
+/mob/living/carbon/human/proc/hud_criminal_status_chosen_apply(datum/act/request/A)
+	var/datum/prompt/choice/hud_status/ask = A.answer
+	var/setcriminal = ask.value
 	var/mob/user = ask.answerer
 	if(setcriminal == "Cancel")
 		return
 	var/datum/data/record/R = ask.record
 	R.fields["criminal"] = setcriminal
-	BITSET(hud_updateflag, WANTED_HUD)
-	if(ishuman(user))
-		var/mob/living/carbon/human/U = user
-		U.life_hud_list()
-	else
-		hud_record_changed(user)
+	flag_hud_update(WANTED_HUD)
+	hud_record_changed(user)
 
-/mob/living/carbon/human/proc/hud_medical_status_chosen(datum/om/prompt/choice/hud_status/ask)
-	var/setmedical = ask.choice
+/mob/living/carbon/human/proc/hud_medical_status_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return hud_medical_status_chosen_apply(A)
+
+/mob/living/carbon/human/proc/hud_medical_status_chosen_apply(datum/act/request/A)
+	var/datum/prompt/choice/hud_status/ask = A.answer
+	var/setmedical = ask.value
 	var/mob/user = ask.answerer
 	if(setmedical == "Cancel")
 		return
@@ -683,10 +716,16 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /// Asks for a comment to add to record R through a HUD of `hud_type`.
 /mob/living/carbon/human/proc/hud_ask_comment(mob/user, datum/data/record/R, hud_type, title, max_length)
-	om_ask(user, /datum/om/prompt/text/hud_comment, PROC_REF(hud_comment_entered), title = title, max_length = max_length, record = R, hud_type = hud_type)
+	open_request(src, /datum/prompt/text/hud_comment, PROC_REF(hud_comment_entered), answerer = user, title = title, max_len = max_length, name_text = max_length && max_length <= MAX_NAME_LEN, record = R, hud_type = hud_type)
 
-/mob/living/carbon/human/proc/hud_comment_entered(datum/om/prompt/text/hud_comment/ask)
-	var/t1 = ask.text
+/mob/living/carbon/human/proc/hud_comment_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return hud_comment_entered_apply(A)
+
+/mob/living/carbon/human/proc/hud_comment_entered_apply(datum/act/request/A)
+	var/datum/prompt/text/hud_comment/ask = A.answer
+	var/t1 = ask.value
 	var/mob/user = ask.answerer
 	if(!t1)
 		return
@@ -793,13 +832,13 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(COOLDOWN_FINISHED(src, xylophone))
+	if(cooldown_ready(src, xylophone))
 		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
 			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
 			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
-		COOLDOWN_START(src, xylophone, 2 MINUTES)
+		cooldown_start(src, xylophone, 2 MINUTES)
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -820,7 +859,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 
 	if(!(has_mutation(mMorph)))
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/morph, verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
+		revoke(src, granted_verb(/mob/living/carbon/human/proc/morph), verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
 		return
 
 	// hair
@@ -831,7 +870,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	for(var/x in all_hairs)
 		var/datum/sprite_accessory/hair/H = new x // create new hair datum based on type x
 		hairs.Add(H.name) // add hair name to hairs
-		qdel(H) // delete the hair after it's all done
+		spent(H) // delete the hair after it's all done
 
 	// facial hair
 	var/list/all_fhairs = subtypesof(/datum/sprite_accessory/facial_hair)
@@ -840,15 +879,20 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	for(var/x in all_fhairs)
 		var/datum/sprite_accessory/facial_hair/H = new x
 		fhairs.Add(H.name)
-		qdel(H)
+		spent(H)
 
 	// Every question can be skipped (cancel keeps what you have).
-	om_flow_start(/datum/om/flow/morph, src, src, hairs = hairs, fhairs = fhairs)
+	var/datum/morph_review/review = new
+	rel_set(review, nameof(review.actor), src)
+	review.hairs = hairs
+	review.fhairs = fhairs
+	review.start()
 
 /// The morph questions, one after another; each can be skipped (a cancel answers "").
 /// Re-checked before every step: still conscious and still a morph.
-/datum/om/flow/morph
-	requires = PROMPT_CONSCIOUS
+/datum/morph_review
+	parent_type = /datum/prompt_workflow
+	var/mob/living/carbon/human/actor
 	var/list/hairs
 	var/list/fhairs
 	var/facial_color
@@ -857,58 +901,126 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/hair
 	var/facial
 
-/datum/om/flow/morph/valid()
-	var/mob/living/carbon/human/H = actor
-	return H.has_mutation(mMorph) ? null : "not a morph"
+CAPABILITIES(/datum/morph_review)
+	ref_one(nameof(actor), /mob/living/carbon/human)
 
-/datum/om/flow/morph/start()
-	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color, PROC_REF(facial_color_picked), message = "Please select facial hair color.", default = rgb(H.r_facial, H.g_facial, H.b_facial), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/prompt/color/morph
+	title = "Character Generation"
+	timeout = 0
 
-/datum/om/flow/morph/proc/facial_color_picked(datum/om/prompt/color/ask)
-	facial_color = ask.picked_color
-	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color, PROC_REF(hair_color_picked), message = "Please select hair color.", default = rgb(H.r_hair, H.g_hair, H.b_hair), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/prompt/color/morph/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/morph_review/review = owner
+	return review.why_not()
 
-/datum/om/flow/morph/proc/hair_color_picked(datum/om/prompt/color/ask)
-	hair_color = ask.picked_color
-	var/mob/living/carbon/human/H = actor
-	om_ask(H, /datum/om/prompt/color, PROC_REF(eye_color_picked), message = "Please select eye color.", default = rgb(H.r_eyes, H.g_eyes, H.b_eyes), title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/prompt/choice/morph
+	title = "Character Generation"
+	timeout = 0
 
-/datum/om/flow/morph/proc/eye_color_picked(datum/om/prompt/color/ask)
-	eye_color = ask.picked_color
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(hair_picked), message = "Please select hair style", choices = hairs, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/prompt/choice/morph/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/morph_review/review = owner
+	return review.why_not()
 
-/datum/om/flow/morph/proc/hair_picked(datum/om/prompt/choice/ask)
-	hair = ask.choice
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(facial_picked), message = "Please select facial style", choices = fhairs, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/morph_review/proc/why_not()
+	if(QDELETED(actor))
+		return "gone"
+	if(actor.stat != CONSCIOUS)
+		return "not conscious"
+	return actor.has_mutation(mMorph) ? null : "not a morph"
 
-/datum/om/flow/morph/proc/facial_picked(datum/om/prompt/choice/ask)
-	facial = ask.choice
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(gender_picked), message = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE, title = "Character Generation", ask_flags = ASK_CONSCIOUS, cancel_answer = "")
+/datum/morph_review/proc/start()
+	if(why_not())
+		retire()
+		return
+	run_step(PROC_REF(start_step))
 
-/datum/om/flow/morph/proc/gender_picked(datum/om/prompt/choice/ask)
-	var/mob/living/carbon/human/H = actor
-	H.morph_answered(facial_color, hair_color, eye_color, hair, facial, ask.choice)
+/datum/morph_review/proc/run_step(step, datum/act/request/A)
+	var/datum/result/result = safe_call(step, A)
+	if(!result.ok)
+		stack_trace("morph step [step]: [result.error]")
+		retire()
+
+/datum/morph_review/proc/accept_or_skip(datum/act/request/A)
+	// Even an old cancel_answer empty string resumed and rechecked the flow.
+	return !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
+
+/datum/morph_review/proc/start_step()
+	open_request(src, /datum/prompt/color/morph, PROC_REF(facial_color_picked), answerer = actor, question = "Please select facial hair color.", default = actor.looks.facial_color)
+
+/datum/morph_review/proc/facial_color_picked(datum/act/request/A)
+	run_step(PROC_REF(facial_color_picked_step), A)
+
+/datum/morph_review/proc/facial_color_picked_step(datum/act/request/A)
+	if(!accept_or_skip(A))
+		retire()
+		return
+	facial_color = A.answer ? A.request.value : ""
+	open_request(src, /datum/prompt/color/morph, PROC_REF(hair_color_picked), answerer = actor, question = "Please select hair color.", default = actor.looks.hair_color)
+
+/datum/morph_review/proc/hair_color_picked(datum/act/request/A)
+	run_step(PROC_REF(hair_color_picked_step), A)
+
+/datum/morph_review/proc/hair_color_picked_step(datum/act/request/A)
+	if(!accept_or_skip(A))
+		retire()
+		return
+	hair_color = A.answer ? A.request.value : ""
+	open_request(src, /datum/prompt/color/morph, PROC_REF(eye_color_picked), answerer = actor, question = "Please select eye color.", default = actor.looks.eyes_color)
+
+/datum/morph_review/proc/eye_color_picked(datum/act/request/A)
+	run_step(PROC_REF(eye_color_picked_step), A)
+
+/datum/morph_review/proc/eye_color_picked_step(datum/act/request/A)
+	if(!accept_or_skip(A))
+		retire()
+		return
+	eye_color = A.answer ? A.request.value : ""
+	open_request(src, /datum/prompt/choice/morph, PROC_REF(hair_picked), answerer = actor, question = "Please select hair style", choices = hairs)
+
+/datum/morph_review/proc/hair_picked(datum/act/request/A)
+	run_step(PROC_REF(hair_picked_step), A)
+
+/datum/morph_review/proc/hair_picked_step(datum/act/request/A)
+	if(!accept_or_skip(A))
+		retire()
+		return
+	hair = A.answer ? A.request.value : ""
+	open_request(src, /datum/prompt/choice/morph, PROC_REF(facial_picked), answerer = actor, question = "Please select facial style", choices = fhairs)
+
+/datum/morph_review/proc/facial_picked(datum/act/request/A)
+	run_step(PROC_REF(facial_picked_step), A)
+
+/datum/morph_review/proc/facial_picked_step(datum/act/request/A)
+	if(!accept_or_skip(A))
+		retire()
+		return
+	facial = A.answer ? A.request.value : ""
+	open_request(src, /datum/prompt/choice/morph, PROC_REF(gender_picked), answerer = actor, question = "Please select gender.", choices = list("Male", "Female", "Neutral"), buttons = TRUE)
+
+/datum/morph_review/proc/gender_picked(datum/act/request/A)
+	run_step(PROC_REF(gender_picked_step), A)
+
+/datum/morph_review/proc/gender_picked_step(datum/act/request/A)
+	if(accept_or_skip(A))
+		actor.morph_answered(facial_color, hair_color, eye_color, hair, facial, A.answer ? A.request.value : "")
+	retire()
 
 /mob/living/carbon/human/proc/morph_answered(new_facial, new_hair, new_eyes, new_h_style, new_f_style, new_gender)
 	if(new_facial)
-		r_facial = hex2num(copytext(new_facial, 2, 4))
-		g_facial = hex2num(copytext(new_facial, 4, 6))
-		b_facial = hex2num(copytext(new_facial, 6, 8))
+		looks.set_facial_color(new_facial)
 	if(new_hair)
-		r_hair = hex2num(copytext(new_hair, 2, 4))
-		g_hair = hex2num(copytext(new_hair, 4, 6))
-		b_hair = hex2num(copytext(new_hair, 6, 8))
+		looks.set_hair_color(new_hair)
 	if(new_eyes)
-		r_eyes = hex2num(copytext(new_eyes, 2, 4))
-		g_eyes = hex2num(copytext(new_eyes, 4, 6))
-		b_eyes = hex2num(copytext(new_eyes, 6, 8))
-		update_eyes()
+		looks.set_eyes_color(new_eyes)
 	if(new_h_style)
-		h_style = new_h_style
+		looks.set_hair_style(new_h_style)
 	if(new_f_style)
-		f_style = new_f_style
+		looks.set_facial_style(new_f_style)
 	switch(new_gender)
 		if("Male")
 			gender = MALE
@@ -916,7 +1028,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			gender = FEMALE
 		if("Neutral")
 			gender = NEUTER
-	regenerate_icons()
 	check_dna()
 	act_message(src, null, MSG_SELF(span_notice("You change your appearance!")), \
 		MSG_OTHERS(span_notice("%U% morphs and changes %THEIR% appearance!")), \
@@ -936,32 +1047,66 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		if(h == src) // Don't target self
 			continue
 		creatures += h
-	om_ask(src, /datum/om/prompt/choice/remotesay_target, PROC_REF(remotesay_target_chosen), choices = creatures)
+	open_request(src, /datum/prompt/choice/remotesay_target, PROC_REF(remotesay_target_chosen), answerer = src, choices = creatures)
 
 /// Re-checked on the answer: conscious and still telepathic.
-/datum/om/prompt/choice/remotesay_target
+/datum/prompt/choice/remotesay_target
 	title = "Project Mind"
-	message = "Who do you want to project your mind to?"
+	question = "Who do you want to project your mind to?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/remotesay_target/valid()
-	return answerer.has_mutation(mRemotetalk) ? null : "not telepathic"
+/datum/prompt/choice/remotesay_target/recheck_extra()
+	if(!answerer.has_mutation(mRemotetalk))
+		return "not telepathic"
+	if(!isnull(value))
+		var/mob/selected = value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
 
-/// What to say; carries who to. Re-checked on the answer: conscious and still telepathic.
-/datum/om/prompt/text/remotesay
-	message = "What do you wish to say?"
+/// Captures the original recipient weakly while the speaker writes the message.
+/datum/prompt/text/remotesay
+	question = "What do you wish to say?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
-	var/mob/target
+	var/mob/recipient
+	var/recipient_expected = FALSE
 
-/datum/om/prompt/text/remotesay/valid()
-	return answerer.has_mutation(mRemotetalk) ? null : "not telepathic"
+CAPABILITIES(/datum/prompt/text/remotesay)
+	ref_one(nameof(recipient), /mob)
 
-/mob/living/carbon/human/proc/remotesay_target_chosen(datum/om/prompt/choice/remotesay_target/ask)
-	om_ask(src, /datum/om/prompt/text/remotesay, PROC_REF(remotesay_answered), target = ask.choice)
+/datum/prompt/text/remotesay/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_recipient = recipient
+	recipient_expected = !isnull(captured_recipient)
+	rel_clear(src, nameof(recipient))
+	if(captured_recipient && !QDELETED(captured_recipient))
+		rel_set(src, nameof(recipient), captured_recipient)
 
-/mob/living/carbon/human/proc/remotesay_answered(datum/om/prompt/text/remotesay/ask)
-	var/mob/target = ask.target
-	var/say = ask.text
+/datum/prompt/text/remotesay/recheck_extra()
+	if(!answerer.has_mutation(mRemotetalk))
+		return "not telepathic"
+	if(recipient_expected && QDELETED(recipient))
+		return "gone"
+
+/mob/living/carbon/human/proc/remotesay_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return remotesay_target_apply(A)
+
+/mob/living/carbon/human/proc/remotesay_target_apply(datum/act/request/A)
+	var/mob/recipient = A.answer.value
+	open_request(src, /datum/prompt/text/remotesay, PROC_REF(remotesay_answered), answerer = src, recipient = recipient)
+
+/mob/living/carbon/human/proc/remotesay_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return remotesay_apply(A)
+
+/mob/living/carbon/human/proc/remotesay_apply(datum/act/request/A)
+	var/datum/prompt/text/remotesay/ask = A.answer
+	var/mob/target = ask.recipient
+	var/say = ask.value
 	if(target.has_mutation(mRemotetalk))
 		target.show_message(span_filter_say("[span_blue("You hear [src.real_name]'s voice: [say]")]"))
 	else
@@ -995,21 +1140,30 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			continue
 		creatures += h
 
-	om_ask(src, /datum/om/prompt/choice/remoteobserve, PROC_REF(remoteobserve_chosen), choices = creatures)
+	open_request(src, /datum/prompt/choice/remoteobserve, PROC_REF(remoteobserve_chosen), answerer = src, choices = creatures)
 
 /// Re-checked on the answer: both conscious, and not already viewing.
-/datum/om/prompt/choice/remoteobserve
-	message = "Who do you want to project your mind to?"
+/datum/prompt/choice/remoteobserve
+	question = "Who do you want to project your mind to?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/remoteobserve/valid()
-	var/mob/target = choice
+/datum/prompt/choice/remoteobserve/recheck_extra()
+	if(isnull(value))
+		return
+	var/mob/target = value
+	if(!istype(target) || QDELETED(target))
+		return "gone"
 	if(target.stat != CONSCIOUS || answerer.is_remote_viewing())
 		return "can't view"
-	return null
 
-/mob/living/carbon/human/proc/remoteobserve_chosen(datum/om/prompt/choice/remoteobserve/ask)
-	var/mob/target = ask.choice
+/mob/living/carbon/human/proc/remoteobserve_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return remoteobserve_apply(A)
+
+/mob/living/carbon/human/proc/remoteobserve_apply(datum/act/request/A)
+	var/mob/target = A.answer.value
 	begin_remote_view(/datum/remote_view/mremote_mutation, target)
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
@@ -1021,7 +1175,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
 			return gender
 		else
-			if(((get_equipped_item(SLOT_ID_MASK)?.flags_inv & HIDEFACE) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEMASK) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEFACE)) && (get_equipped_item(SLOT_ID_SUIT)?.flags_inv & HIDEJUMPSUIT))
+			if(((worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT))
 				return PLURAL
 			if(species?.ambiguous_genders && user)
 				if(ishuman(user))
@@ -1054,7 +1208,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == identity())
 				host.release_mind(src, "revived body reclaimed its brain")
-				qdel(H)
+				ended_with(H, src)
 				break
 
 	// Traitgenes Disable all traits currently active, before prefs.copy_to() is applied, as it refreshes the traits list!
@@ -1127,9 +1281,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	//if this blood isn't already in the list, add it
 	if(istype(M))
 		add_blooddna(M.dna,M)
-	hand_blood_color = dq_get_blood_color(src)
-	update_bloodied()
-	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, src)
+	set_hand_blood_color(dq_get_blood_color(src))
+	grant(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 	return 1 //we applied blood to the item
 
 /mob/living/carbon/human/proc/get_full_print()
@@ -1145,7 +1298,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
-		update_inv_gloves()
 		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 	else
 		bloody_hands = 0
@@ -1153,14 +1305,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 	if(get_equipped_item(SLOT_ID_SHOES))
 		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
-		update_inv_shoes()
 		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
-		LAZYCLEARLIST(feet_blood_DNA)
-		feet_blood_DNA = null
-		feet_blood_color = null
+		clear_feet_blood_DNA()
+		set_feet_blood_DNA(null)
+		set_feet_blood_color(null)
 
-	update_bloodied()
 
 /mob/living/carbon/human/get_visible_implants(class = 0)
 
@@ -1200,52 +1350,38 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 				if(!(organ.is_robotic()) && (should_have_organ(O_HEART))) //There is no blood in protheses.
 					organ.set_status(organ.status | ORGAN_BLEEDING)
 
-/mob/living/carbon/human/verb/check_pulse()
-	set category = VERB_CAT_OBJECT
-	set name = "Check pulse"
-	set desc = "Approximately count somebody's pulse. Requires you to stand still at least 6 seconds."
-	set src in view(1)
-	var/self = 0
+MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
-	if(usr.stat || usr.restrained() || !isliving(usr)) return
+/// Counting a pulse: the target has one to count, and who counts is told that both must stay still.
+/mob/living/carbon/human/proc/check_pulse_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/self = (user == src)
+	if(!pulse)
+		return MSG(human/no_pulse)
+	to_chat(user, span_notice("[self ? "You have a" : "[src] has a"] pulse! Counting..."))
+	to_chat(user, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
 
-	if(usr == src)
-		self = 1
-	if(!self)
-		act_message(usr, src, MSG_SELF(span_filter_notice("You begin counting %T%'s pulse.")), \
-			MSG_OTHERS(span_notice("%U% kneels down, puts %THEIR% hand on %T%'s wrist and begins counting [p_their()] pulse.")))
-	else
-		act_message(usr, null, MSG_SELF(span_filter_notice("You begin counting your pulse.")), \
-			MSG_OTHERS(span_notice("%U% begins counting [p_their()] pulse.")))
+/mob/living/carbon/human/proc/check_pulse_begins(datum/act/op/A)
+	if(A.actor == src)
+		return msg_text(span_filter_notice("You begin counting your pulse."), span_notice("%U% begins counting %THEIR% pulse."))
+	return msg_text(span_filter_notice("You begin counting %T%'s pulse."), span_notice("%U% kneels down, puts %THEIR% hand on %T%'s wrist and begins counting %THEIR% pulse."))
 
-	if(src.pulse)
-		to_chat(usr, span_notice("[self ? "You have a" : "[src] has a"] pulse! Counting..."))
-	else
-		to_chat(usr, span_danger("[src] has no pulse!"))
-		return
-
-	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	om_task_start(/datum/om/task/timed/human_check_pulse_human, usr, src, receiver = src, self = self)
-
-/datum/om/task/timed/human_check_pulse_human
-	duration = 6 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/check_pulse_human_done
-	cancel_proc = /mob/living/carbon/human/proc/check_pulse_human_failed
-	var/self
-
-/mob/living/carbon/human/proc/check_pulse_human_done(datum/om/task/timed/human_check_pulse_human/task)
-	var/self = task.self
-	var/mob/usr_mob = task.actor
+/mob/living/carbon/human/proc/check_pulse_human_done(datum/act/op/A)
+	var/mob/usr_mob = A.actor
+	var/self = (usr_mob == src)
 	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
 	to_chat(usr_mob,message)
 
-/mob/living/carbon/human/proc/check_pulse_human_failed(datum/om/task/timed/human_check_pulse_human/task)
-	var/mob/usr_mob = task.actor
+/mob/living/carbon/human/proc/check_pulse_human_failed(datum/act/op/A)
+	var/mob/usr_mob = A.actor
 	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
 /// `keep_organs`: change the species' facts (languages, verbs, components, factors, HUD) but
 /// keep the body and organs it has, e.g. a nymph taking over a synthetic body (D21).
 /mob/living/carbon/human/proc/set_species(new_species, keep_organs = FALSE)
+	// the first species of a canonical subtype (skrell, xdrone, monkey) is its compiled one, whatever species its maker passed (was forced_initial_species)
+	if(!species && initial(species_at_make))
+		new_species = initial(species_at_make)
 
 	if(!dna)
 		if(!new_species)
@@ -1279,13 +1415,13 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		// Clear out their species abilities.
 		species.remove_inherent_verbs(src)
 		holder_type = null
-		hunger_rate = initial(hunger_rate)
+		set_hunger_rate(src, DEFAULT_HUNGER_FACTOR)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
-	changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
+	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	old_species?.remove_components(src, species)
 	if(replaced)
-		qdel(replaced) // the private copy proto_replace() handed back, done with now
+		replaced_by(replaced) // the private copy proto_replace() handed back, done with now
 	invalidate_factors()
 
 	if(species.language)
@@ -1299,13 +1435,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 	if(species.base_color)
 		//Apply color.
-		r_skin = hex2num(copytext(species.base_color,2,4))
-		g_skin = hex2num(copytext(species.base_color,4,6))
-		b_skin = hex2num(copytext(species.base_color,6,8))
+		looks.set_skin_color(species.base_color)
 	else
-		r_skin = 0
-		g_skin = 0
-		b_skin = 0
+		looks.set_skin_color(rgb(0, 0, 0))
 
 	if(species.holder_type)
 		holder_type = species.holder_type
@@ -1319,11 +1451,13 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(!keep_organs)
 		body_type = species.body_plan
 	if(!body)
-		own_set(src, nameof(body), new body_type(src))
+		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
-		own_clear(src, nameof(body), OWN_DELETE)
-		own_set(src, nameof(body), new body_type(src))
+		var/kept_nutrition = body.food_energy // the metabolism carries over to the new plan
+		rel_clear(src, nameof(body))
+		rel_set(src, nameof(body), new body_type(src))
+		body.food_energy = kept_nutrition
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).
@@ -1337,7 +1471,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	species.apply_components(src)
 
 	endurance = species.total_health
-	hunger_rate = species.hunger_factor
+	set_hunger_rate(src, species.hunger_factor)
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
 	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
@@ -1354,7 +1488,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	update_hud()
 
 	//A slew of bits that may be affected by our species change
-	regenerate_icons()
 
 	if(species)
 		return 1
@@ -1373,7 +1506,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	fixblood()
 	// Traits (only ever on the mob's private copy) may change unarmed_types; a registered species
 	// built its attacks in New() and is never written here.
-	if(proto_is_private(src, nameof(species)))
+	if(rel_is_private(src, nameof(species)))
 		species.update_attack_types()
 	species.update_vore_belly_def_variant()
 
@@ -1389,7 +1522,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return 0 //something is terribly wrong
 
 	if (!bloody_hands)
-		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, src)
+		revoke(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 
 	if (get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(src, span_warning("Your [get_equipped_item(SLOT_ID_GLOVES)] are getting in the way."))
@@ -1400,11 +1533,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		to_chat(src, span_warning("You cannot reach the floor."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(bloody_doodle_direction_chosen), message = "Which way?", title = "Tile selection", choices = list("Here","North","South","East","West"), ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(bloody_doodle_direction_chosen), answerer = src, title = "Tile selection", question = "Which way?", choices = list("Here","North","South","East","West"), ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /// The blood writing's message; carries the direction picked.
-/datum/om/prompt/text/bloody_doodle
+/datum/prompt/text/bloody_doodle
 	title = "Blood writing"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 	var/direction
 
@@ -1427,15 +1561,23 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return null
 	return T
 
-/mob/living/carbon/human/proc/bloody_doodle_direction_chosen(datum/om/prompt/choice/ask)
-	var/direction = ask.choice
+/mob/living/carbon/human/proc/bloody_doodle_direction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/direction = A.answer.value
 	if(!bloody_doodle_turf(direction))
 		return
 	var/max_length = bloody_hands * 30 //tweeter style
-	om_ask(src, /datum/om/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), message = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
+	open_request(src, /datum/prompt/text/bloody_doodle, PROC_REF(bloody_doodle_written), answerer = src, question = "Write a message. It cannot be longer than [max_length] characters.", direction = direction)
 
-/mob/living/carbon/human/proc/bloody_doodle_written(datum/om/prompt/text/bloody_doodle/ask)
-	var/message = ask.text
+/mob/living/carbon/human/proc/bloody_doodle_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	return bloody_doodle_apply(A)
+
+/mob/living/carbon/human/proc/bloody_doodle_apply(datum/act/request/A)
+	var/datum/prompt/text/bloody_doodle/ask = A.answer
+	var/message = ask.value
 	var/turf/simulated/T = bloody_doodle_turf(ask.direction)
 	if(!T)
 		return
@@ -1449,19 +1591,23 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			to_chat(src, span_warning("You ran out of blood to write with!"))
 
 		var/obj/effect/decal/cleanable/blood/writing/W = new(T)
-		W.basecolor = (hand_blood_color) ? hand_blood_color : "#A10808"
-		W.update_icon()
+		W.set_basecolor((hand_blood_color) ? hand_blood_color : "#A10808")
 		W.message = message
 		W.add_fingerprint(src)
 
-/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
+/// A species with a thick hide turns a needle away at times (a roll, by how hurt the limb is): TRUE when it does this time.
+/mob/living/carbon/human/proc/thick_skin_holds(obj/item/organ/external/affecting)
+	return (species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2))
+
+/// `roll` = FALSE leaves out the thick-hide roll of some species (the one who asks makes it later, with thick_skin_holds()).
+/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE, roll = TRUE)
 	. = 1
 
 	if(!target_zone)
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
 		else
-			target_zone = user.zone_sel.selecting
+			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
 	var/fail_msg
@@ -1474,16 +1620,16 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "Your needle refuses to penetrate more than a short distance..."
-	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
+	else if(roll && thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
 		. = 0
 		fail_msg = "Your needle fails to penetrate \the [affecting]'s thick hide..."
 	else
 		switch(target_zone)
 			if(BP_HEAD)
-				if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 			else
-				if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 	if(!. && error_msg && user)
 		if(!fail_msg)
@@ -1502,31 +1648,31 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/feet_exposed = 1
 
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			head_exposed = 0
-		if(C.body_parts_covered & FACE)
+		if(worn_of(C).covers & FACE)
 			face_exposed = 0
-		if(C.body_parts_covered & EYES)
+		if(worn_of(C).covers & EYES)
 			eyes_exposed = 0
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			torso_exposed = 0
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			arms_exposed = 0
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			hands_exposed = 0
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			legs_exposed = 0
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			feet_exposed = 0
 
-	flavor_text = ""
-	for (var/T in flavor_texts)
-		if(flavor_texts[T] && flavor_texts[T] != "")
+	bio.flavor_text = ""
+	for (var/T in bio.flavor_texts)
+		if(bio.flavor_texts[T] && bio.flavor_texts[T] != "")
 			if((T == "general") || (T == "head" && head_exposed) || (T == "face" && face_exposed) || (T == "eyes" && eyes_exposed) || (T == "torso" && torso_exposed) || (T == "arms" && arms_exposed) || (T == "hands" && hands_exposed) || (T == "legs" && legs_exposed) || (T == "feet" && feet_exposed))
-				flavor_text += flavor_texts[T]
-				flavor_text += "\n\n"
+				bio.flavor_text = bio.flavor_text + (bio.flavor_texts[T])
+				bio.flavor_text = bio.flavor_text + ("\n\n")
 	if(!shrink)
-		return flavor_text
+		return bio.flavor_text
 	else
 		return ..()
 
@@ -1563,18 +1709,40 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/list/equipment = list(get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_SHOES))
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			footcoverage_check = TRUE
 			break
 	if(lying)
 		play_sfx(src, SFX_MISC_SLIP)
 		drop_both_hands()
 		return FALSE
-	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.
+	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))) //Footwear negates a species' natural traction.
 		return FALSE
 	if(..(slipped_on,stun_duration))
 		drop_both_hands()
 		return TRUE
+
+/// A yanked object tears the limb it was in: shock, a cut, maybe bleeding inside, and the puller's hands get bloody.
+/mob/living/carbon/human/yank_out_tear(obj/item/selection, mob/U)
+	var/obj/item/organ/external/affected
+
+	for(var/obj/item/organ/external/organ in organs) //Grab the organ holding the implant.
+		for(var/obj/item/O in organ.implants)
+			if(O == selection)
+				affected = organ
+
+	rel_remove(affected, nameof(affected.implants), selection)
+	adjust_shock(20, "implant extraction")
+	injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
+
+	if(prob(selection.w_class * 5) && (!affected.is_robotic())) //I'M SO ANEMIC I COULD JUST -DIE-.
+		affected.add_wound(new /datum/affliction/wound/internal_bleeding(affected, min(selection.w_class * 5, 15)))
+		affected.update_damages()
+		custom_pain("Something tears wetly in your [affected] as [selection] is pulled free!", 50)
+
+	if (ishuman(U))
+		var/mob/living/carbon/human/human_user = U
+		human_user.bloody_hands(src)
 
 /mob/living/carbon/human/proc/relocate()
 	set category = VERB_CAT_OBJECT
@@ -1600,25 +1768,36 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		var/obj/item/organ/external/current_limb = organs_by_name[limb]
 		if(current_limb && current_limb.dislocated > 0 && !current_limb.is_parent_dislocated()) //if the parent is also dislocated you will have to relocate that first
 			limbs |= current_limb
-	om_ask(usr, /datum/om/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), choices = limbs)
+	open_request(src, /datum/prompt/choice/relocate_joint, PROC_REF(relocate_joint_chosen), answerer = usr, choices = limbs)
 	return TRUE
 
 /// Picking a joint on the subject. Re-checked on the answer: next to them, unrestrained, awake,
 /// and the limb is still theirs and still dislocated.
-/datum/om/prompt/choice/relocate_joint
+/datum/prompt/choice/relocate_joint
 	title = "Joint Choice"
-	message = "Which joint do you wish to relocate?"
-	requires = list(/datum/om/check/adjacent, /datum/om/check/not_restrained, /datum/om/check/conscious)
+	question = "Which joint do you wish to relocate?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_RESTRAINED | ASK_CONSCIOUS
 
-/datum/om/prompt/choice/relocate_joint/valid()
-	var/obj/item/organ/external/limb = choice
-	if(limb.owner != subject || limb.dislocated <= 0)
+/datum/prompt/choice/relocate_joint/recheck_extra()
+	if(isnull(value))
+		return
+	var/obj/item/organ/external/limb = value
+	if(!istype(limb) || QDELETED(limb))
+		return "gone"
+	if(limb.owner != owner || limb.dislocated <= 0)
 		return "not dislocated"
 	return null
 
-/mob/living/carbon/human/proc/relocate_joint_chosen(datum/om/prompt/choice/relocate_joint/ask)
+/mob/living/carbon/human/proc/relocate_joint_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return relocate_joint_apply(A)
+
+/mob/living/carbon/human/proc/relocate_joint_apply(datum/act/request/A)
+	var/datum/prompt/choice/relocate_joint/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/organ/external/current_limb = ask.choice
+	var/obj/item/organ/external/current_limb = ask.value
 	var/mob/S = src
 	var/self = (U == src)
 	if(self)
@@ -1626,22 +1805,16 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	om_task_start(/datum/om/task/timed/human_relocate_human, U, src, receiver = src, S = S, self = self, current_limb = current_limb)
+	// The subject's op: the one relocating (the actor) works on them (the holder) for three seconds, next to them.
+	perform_op(U, src, "relocate_joint", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = current_limb))
 	return TRUE
 
-/datum/om/task/timed/human_relocate_human
-	duration = 3 SECONDS
-	complete_proc = /mob/living/carbon/human/proc/relocate_human_done
-	var/mob/S
-	var/self
-	var/obj/item/organ/external/current_limb
-
-/mob/living/carbon/human/proc/relocate_human_done(datum/om/task/timed/human_relocate_human/task)
-	var/mob/S = task.S
-	var/mob/U = task.actor
-	var/self = task.self
-	var/obj/item/organ/external/current_limb = task.current_limb
-	if(!current_limb || !S || !U)
+/mob/living/carbon/human/proc/relocate_human_done(datum/act/op/A)
+	var/mob/S = src
+	var/mob/U = A.actor
+	var/self = (U == src)
+	var/obj/item/organ/external/current_limb = A.arg("limb")
+	if(QDELETED(current_limb) || QDELETED(U))
 		return
 
 	if(self)
@@ -1659,9 +1832,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	return ..()
 
 /mob/living/carbon/human/Check_Shoegrip()
-	if(get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
+	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
-	if(flying) // Checks to see if they have wings and are flying.
+	if(stat_value(src, STAT_FLYING)) // Checks to see if they have wings and are stat_value(src, STAT_FLYING).
 		return 1
 	return 0
 
@@ -1679,12 +1852,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(is_in_hands(W))
 		return 1
 	if(put_in_active_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else if(put_in_inactive_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else
 		return ..()
@@ -1705,16 +1874,18 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	set category = VERB_CAT_OBJECT
 
 	if(stat) return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(toggle_underwear_chosen), message = "Choose underwear:", title = "Show/hide underwear", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(toggle_underwear_chosen), answerer = src, title = "Show/hide underwear", question = "Choose underwear:", choices = GLOB.global_underwear.categories, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/toggle_underwear_chosen(datum/om/prompt/choice/ask)
-	var/datum/category_group/underwear/UWC = ask.choice
+/mob/living/carbon/human/proc/toggle_underwear_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/category_group/underwear/UWC = A.answer.value
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
-	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
-	update_underwear(1)
+	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
+	underwear_edited()
 	to_chat(src, span_notice("You [hide_underwear[UWC.name] ? "take off" : "put on"] your [UWC.display_name]."))
 
 /mob/living/carbon/human/verb/pull_punches()
@@ -1736,9 +1907,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 	var/obj/item/organ/external/affecting
 	if(organ_check in list(O_HEART, O_LUNGS))
-		affecting = organs_by_name[BP_TORSO]
+		affecting = limb_tagged(BP_TORSO)
 	else if(organ_check in list(O_LIVER, O_KIDNEYS))
-		affecting = organs_by_name[BP_GROIN]
+		affecting = limb_tagged(BP_GROIN)
 
 	if(affecting && (affecting.is_robotic()))
 		return 0
@@ -1801,7 +1972,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 /mob/living/carbon/human/proc/update_icon_special() //For things such as teshari hiding and whatnot.
 	if(status_flags & HIDING) // Hiding? Carry on.
-		if(stat == DEAD || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
+		if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || restrained() || src?.buckled_to() || LAZYLEN(src?.grabbed_by_list()) || has_buckled_mobs()) //stunned/knocked down by something that isn't the rest verb? Note: This was tried with INCAPACITATION_STUNNED, but that refused to work. //VORE EDIT: Check for has_buckled_mobs() (taur riding)
 			reveal(null)
 		else
 			layer = HIDING_LAYER
@@ -1934,7 +2105,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1953,15 +2124,13 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	set name = "Show/Hide Headset"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle headset worn icon visibility."
-	hide_headset = !hide_headset
-	update_inv_ears()
+	set_hide_headset(!hide_headset)
 
 /mob/living/carbon/human/verb/hide_glasses()
 	set name = "Show/Hide Glasses"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle glasses worn icon visibility."
-	hide_glasses = !hide_glasses
-	update_inv_glasses()
+	set_hide_glasses(!hide_glasses)
 
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()
@@ -1973,59 +2142,64 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	VV_DROPDOWN_OPTION(VK_HK_TURN_AI, "Make AI")
 	VV_DROPDOWN_OPTION(VK_HK_TURN_ROBOT, "Make Robot")
 
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_SET_SPECIES, PROC_REF(vv_topic_set_species), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_SKELETON, PROC_REF(vv_topic_turn_skeleton), TOPIC_RIGHTS(R_FUN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_MONKEY, PROC_REF(vv_topic_turn_monkey), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_ALIEN, PROC_REF(vv_topic_turn_alien), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_AI, PROC_REF(vv_topic_turn_ai), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_turn_robot), TOPIC_RIGHTS(R_SPAWN))
 
-/mob/living/carbon/human/proc/vv_topic_set_species(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
-	return TRUE
+/mob/living/carbon/human/proc/vv_species_choices(datum/act/op/A)
+	return sortTim(GLOB.all_species.Copy(), GLOBAL_PROC_REF(cmp_text_asc))
 
-/mob/living/carbon/human/proc/vv_topic_turn_skeleton(mob/user, list/args)
-	ChangeToSkeleton()
-	user.client?.debug_variables(src)
-	return TRUE
-
-/mob/living/carbon/human/proc/vv_topic_turn_monkey(mob/user, list/args)
-	vv_confirm_transform(user, "monkey")
-	return TRUE
-
-/mob/living/carbon/human/proc/vv_topic_turn_alien(mob/user, list/args)
-	vv_confirm_transform(user, "alien")
-	return TRUE
-
-/mob/living/carbon/human/proc/vv_topic_turn_ai(mob/user, list/args)
-	vv_confirm_transform(user, "ai")
-	return TRUE
-
-/mob/living/carbon/human/proc/vv_topic_turn_robot(mob/user, list/args)
-	vv_confirm_transform(user, "robot")
-	return TRUE
-
-/mob/living/carbon/human/proc/vv_species_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/result = ask.choice
+/mob/living/carbon/human/proc/vv_topic_set_species(datum/act/op/A)
+	var/mob/user = A.actor
+	var/result = A.step_value("species")
 	var/newtype = GLOB.all_species[result]
 	admin_ticket_log("[key_name_admin(user)] has modified the bodyparts of [src] to [result]")
 	set_species(newtype)
 
+/mob/living/carbon/human/proc/vv_topic_turn_skeleton(datum/act/op/A)
+	var/mob/user = A.actor
+	ChangeToSkeleton()
+	user.client?.debug_variables(src)
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_monkey(datum/act/op/A)
+	var/mob/user = A.actor
+	vv_confirm_transform(user, "monkey")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_alien(datum/act/op/A)
+	var/mob/user = A.actor
+	vv_confirm_transform(user, "alien")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_ai(datum/act/op/A)
+	var/mob/user = A.actor
+	vv_confirm_transform(user, "ai")
+	return TRUE
+
+/mob/living/carbon/human/proc/vv_topic_turn_robot(datum/act/op/A)
+	var/mob/user = A.actor
+	vv_confirm_transform(user, "robot")
+	return TRUE
+
 /// Asks the admin to confirm turning us into `into` ("monkey", "alien", "ai" or "robot").
 /mob/living/carbon/human/proc/vv_confirm_transform(mob/user, into)
-	om_ask(user, /datum/om/prompt/confirm/vv_transform, PROC_REF(vv_transform_confirmed), into = into)
+	open_request(src, /datum/prompt/choice/vv_transform, PROC_REF(vv_transform_confirmed), answerer = user, into = into)
 
 /// An admin confirming a mob type change into `into`. Re-checked on the answer: still has R_SPAWN.
-/datum/om/prompt/confirm/vv_transform
+/datum/prompt/choice/vv_transform
 	title = "Confirm"
-	message = "Confirm mob type change?"
-	yes_text = "Transform"
-	no_text = "Cancel"
-	requires = PROMPT_ADMIN(R_SPAWN)
+	question = "Confirm mob type change?"
+	choices = list("Transform", "Cancel")
+	buttons = TRUE
+	timeout = 0
+	rights = R_SPAWN
 	var/into
 
-/mob/living/carbon/human/proc/vv_transform_confirmed(datum/om/prompt/confirm/vv_transform/ask)
+/mob/living/carbon/human/proc/vv_transform_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.value != "Transform")
+		return
+	return vv_transform_mob_apply(A)
+
+/mob/living/carbon/human/proc/vv_transform_mob_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_transform/ask = A.answer
 	var/mob/user = ask.answerer
 	switch(ask.into)
 		if("monkey")
@@ -2053,11 +2227,11 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
 	set category = VERB_CAT_IC_GAME
 
-	if(stat || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || !cooldown_ready(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
 
-	COOLDOWN_START(src, last_special, 2 SECONDS) // Antispam.
+	cooldown_start(src, last_special, 2 SECONDS) // Antispam.
 	create_new_area(usr)
 	return
 
@@ -2066,4 +2240,6 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
 
-DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)
+/// The status step reads it (embedded objects roll damage on movement).
+TRACKED(/mob/living/carbon/human, embedded_flag)
+

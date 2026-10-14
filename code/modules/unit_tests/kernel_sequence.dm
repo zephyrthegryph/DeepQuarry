@@ -17,12 +17,10 @@
 	/// The "on" condition's evaluations.
 	var/on_reads = 0
 	var/plan_key
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/log = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/busy = list()
 
-TRACKED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
+TRACKED(/datum/seq_test_entity, heat)
 
 /datum/seq_test_entity/seq_plan_key()
 	return plan_key
@@ -45,7 +43,7 @@ TRACKED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
 		seq_step(PROC_REF(sn), after = "T_FIRST", when = "!on", should_run = PROC_REF(sn_busy)),
 		seq_step(PROC_REF(so), after = "T_FIRST", when = "on", should_run = PROC_REF(so_busy)),
 		seq_step(PROC_REF(heat), after = "T_FIRST", reads = nameof(heat), should_run = PROC_REF(heat_hot), woken_by = "set_heat()"),
-		seq_step(PROC_REF(chan), after = "T_FIRST", reads = CHANGE_DATUM_C, should_run = PROC_REF(chan_busy)),
+		seq_step(PROC_REF(chan), after = "T_FIRST", reads = "seq_test_chan", should_run = PROC_REF(chan_busy)),
 		seq_step(PROC_REF(tail), after = "T_LAST", should_run = PROC_REF(tail_busy)),
 	)
 
@@ -129,7 +127,7 @@ SEQ_TEST_STEP(cy)
 	step = 1
 	max_catchup = 2
 	park_after = 2
-	wake_all = CHANGE_EXPLICIT
+	wake_keys = list("seq_test_wake_all")
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	table_proc = TYPE_PROC_REF(/datum/seq_test_entity, test_steps)
 	frame_type = /datum/seq_frame/test
@@ -171,7 +169,6 @@ SEQ_TEST_STEP(cy)
 	var/datum/work_item/sequence/W = new(S)
 	W.test_runlevel = RUNLEVEL_GAME
 	W.spread = spread
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	S.work = W
 	K.register_work(path, W)
 	return list(K, W)
@@ -179,12 +176,11 @@ SEQ_TEST_STEP(cy)
 /// An atom whose capability contributes a step.
 /obj/seq_test_atom
 	name = "sequence test atom"
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/log = list()
 
-/obj/seq_test_atom/capabilities()
-	. = ..()
-	. += cap_seq_test()
+/obj/seq_test_atom/declared_capabilities(list/into)
+	..()
+	into += cap_seq_test()
 
 /obj/seq_test_atom/proc/test_steps()
 	return list(seq_step(PROC_REF(own_step), after = "T_FIRST"))
@@ -249,7 +245,7 @@ SEQ_TEST_STEP(cy)
 // ---------------------------------------------------------------- sleep and wake
 
 /// A step sleeps when its should_run() is FALSE after it ran. publish_change() of a key wakes the steps that read
-/// it, changed() of a channel the steps that read that, a wake_all channel every step. The sequence's reads
+/// it, a wake_keys key every step. The sequence's reads
 /// are READERS on the type, so a TRACKED setter publishes them.
 /datum/unit_test/kernel_sequence_sleep_wake
 
@@ -266,7 +262,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(READERS(E, "heat"), "a step's read is a reader on the type")
 	TEST_ASSERT(READERS(E, "on"), "and so is a condition's read")
 	TEST_ASSERT(!READERS(E, "lit"), "a condition without reads reads nothing")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 5
 	publish_change(E, "heat")
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "publishing a key wakes the step that reads it")
@@ -279,17 +274,16 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "with no work left it sleeps")
 
-	changed(E, CHANGE_DATUM_C)
-	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "changed() of a channel wakes the step that reads it")
+	publish_change(E, "seq_test_chan")
+	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "chan"), "publishing its own key wakes the step that reads it")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 0
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
-	changed(E, CHANGE_EXPLICIT)
-	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_all channel wakes every step")
+	publish_change(E, "seq_test_wake_all")
+	TEST_ASSERT_EQUAL(S.asleep, 0, "a wake_keys key wakes every step")
 
 /// A woken step is asked should_run() before it runs: FALSE sends it back to sleep without running; TRUE runs it.
 /datum/unit_test/kernel_sequence_precheck
@@ -306,7 +300,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_EQUAL(length(E.log), 0, "its should_run() is FALSE: it did not run")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and went back to sleep")
 	TEST_ASSERT_NULL(S.woken, "no woken bits are left")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 3
 	publish_change(E, "heat")
 	seq_run_frame_now(E, SEQ_TEST)
@@ -345,9 +338,7 @@ SEQ_TEST_STEP(cy)
 
 	// The frame API: cached per frame, forget() evaluates again.
 	var/datum/seq_frame/test/F = take(/datum/seq_frame/test)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	F.seq = sequence_def(SEQ_TEST)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	F.entity = E
 	E.on_reads = 0
 	F.cond("on")
@@ -414,7 +405,6 @@ SEQ_TEST_STEP(cy)
 	for(var/now in list(130, 140, 150, 160))
 		K.run_item(W, WORK_TEST_LIMIT, now)
 	TEST_ASSERT_EQUAL(S.frames, before, "a parked member runs no frames")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 1
 	publish_change(E, "heat")
 	TEST_ASSERT(!S.parked, "a wake unparks it")
@@ -426,37 +416,37 @@ SEQ_TEST_STEP(cy)
 	var/datum/seq_test_entity/R = allocate(/datum/seq_test_entity)
 	var/datum/seq_state/RS = seq_start(R, /datum/sequence/test/relevance)
 	TEST_ASSERT(!RS.relevant && !member_is(/datum/sequence/test/relevance, R), "below min_relevance: out of the sweep")
-	om_observe(R, src, RELEVANCE_NEAR)
-	TEST_ASSERT(RS.relevant && member_is(/datum/sequence/test/relevance, R), "relevance brings it into the sweep (CHANGE_RELEVANCE)")
-	om_unobserve(R, src)
+	hold(R, STAT_RELEVANCE, RELEVANCE_NEAR, src)
+	TEST_ASSERT(RS.relevant && member_is(/datum/sequence/test/relevance, R), "relevance brings it into the sweep (SEQ_KEY_RELEVANCE)")
+	release(R, STAT_RELEVANCE, src)
 	TEST_ASSERT(!member_is(/datum/sequence/test/relevance, R), "and losing it takes it out")
 	R.busy.Cut()
 	seq_run_frame_now(R, /datum/sequence/test/relevance)
 	seq_run_frame_now(R, /datum/sequence/test/relevance)
 	TEST_ASSERT(RS.parked, "it parks while irrelevant too")
-	om_observe(R, src, RELEVANCE_NEAR)
+	hold(R, STAT_RELEVANCE, RELEVANCE_NEAR, src)
 	TEST_ASSERT(!member_is(/datum/sequence/test/relevance, R), "relevant but parked: still out of the sweep")
 	seq_wake(R, /datum/sequence/test/relevance)
 	TEST_ASSERT(member_is(/datum/sequence/test/relevance, R), "a wake of a relevant parked member rejoins")
-	om_unobserve(R, src)
+	release(R, STAT_RELEVANCE, src)
 
 	qdel(E)
 	TEST_ASSERT(!member_is(SEQ_TEST, E), "a destroyed member leaves the sweep")
 	TEST_ASSERT_NULL(E.seq_states, "and its state goes")
 
-/// A step's rewake is the one timer (after(), keyed by entity, sequence and step): it wakes that step only, and a
+/// A step's rewake is a due time on the member's one rewake timer (after(), keyed by entity and sequence): it wakes that step only, and a
 /// parked member comes back for it and parks again at once when it sleeps again.
 /datum/unit_test/kernel_sequence_rewake
 
 /datum/unit_test/kernel_sequence_rewake/Run()
-	var/datum/om/scheduler/sched = om_test_begin()
+	var/datum/time_scheduler/sched = scheduler_test_begin()
 	var/datum/seq_test_entity/E = allocate(/datum/seq_test_entity)
 	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
 	seq_run_frame_now(E, SEQ_TEST)
 	seq_run_frame_now(E, SEQ_TEST)
 	TEST_ASSERT(S.parked, "parked")
 	TEST_ASSERT(seq_rewake_pending(E, SEQ_TEST, "se"), "se's rewake is pending")
-	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:se"), "as a TIMER relation")
+	TEST_ASSERT(rx_ledger_has(E, RELK_TIMER, "seq:[S.seq.idx]:rewake"), "on the member's one rewake timer, a TIMER relation")
 	E.log.Cut()
 	var/waited = 0
 	while(S.parked && waited < 60)
@@ -471,7 +461,7 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(S.parked, "and, a rewake counting as one idle frame already, it parked again as soon as se slept")
 	seq_stop(E, SEQ_TEST)
 	TEST_ASSERT(!seq_rewake_pending(E, SEQ_TEST, "se"), "stopping cancels the rewakes")
-	om_test_end()
+	scheduler_test_end()
 
 // ---------------------------------------------------------------- time
 
@@ -580,6 +570,45 @@ SEQ_TEST_STEP(cy)
 	seq_run_frame_now(A, SEQ_TEST)
 	TEST_ASSERT(("cap" in A.log) && ("own" in A.log), "both ran: [jointext(A.log, ",")]")
 
+// ---------------------------------------------------------------- replan inside a frame
+
+/// An entity whose early step drops its contributor mid-frame (the table shrinks), and whose last step reads a var.
+/datum/seq_test_entity/replanner
+	var/datum/seq_test_contributor/extra
+
+/datum/seq_test_entity/replanner/test_steps()
+	. = ..()
+	. += seq_step(PROC_REF(rp), after = "T_FIRST")
+	. += seq_step(PROC_REF(late), after = "tail", reads = nameof(heat), should_run = PROC_REF(late_busy))
+
+/datum/seq_test_entity/replanner/proc/rp(datum/seq_frame/test/F)
+	log += "rp"
+	if(extra)
+		seq_extra_remove(src, SEQ_TEST, extra)
+		extra = null
+
+/datum/seq_test_entity/replanner/proc/late(datum/seq_frame/test/F)
+	log += "late"
+
+/datum/seq_test_entity/replanner/proc/late_busy()
+	return FALSE
+
+/// A step earlier in a frame can replan the entity onto a smaller table; the steps after it still run from the old table and fall asleep
+/// there. Test builds note what a sleeping step read, by its position: that note must not index the new, shorter table (it threw "list
+/// index out of bounds" from seq_snapshot_note on the Life sequence, in the operating-computer tests).
+/datum/unit_test/kernel_sequence_replan_mid_frame
+
+/datum/unit_test/kernel_sequence_replan_mid_frame/Run()
+	var/datum/seq_test_entity/replanner/E = allocate(/datum/seq_test_entity/replanner)
+	var/datum/seq_state/S = seq_start(E, SEQ_TEST)
+	E.extra = new /datum/seq_test_contributor
+	TEST_ASSERT(seq_extra_add(E, SEQ_TEST, E.extra), "the contributor is added")
+	var/datum/seq_table/old_table = S.table
+	seq_run_frame_now(E, SEQ_TEST)
+	TEST_ASSERT(("late" in E.log), "the last step ran in the frame that replanned: [jointext(E.log, ",")]")
+	TEST_ASSERT_NOTEQUAL(S.table, old_table, "the entity moved to the table without the contributor")
+	TEST_ASSERT(length(S.snaps) <= S.table.n, "no note was kept for a position past the new table")
+
 // ---------------------------------------------------------------- the audit
 
 /// A sleeping step whose should_run() holds, with its conditions passing and no rewake pending, is a missed wake:
@@ -599,7 +628,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_NULL(def.missed_wake(E), "a step its conditions block is not a miss")
 	E.busy.Cut()
 	E.on = TRUE
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 7 // a raw write: nothing publishes "heat"
 	var/datum/seq_step/missed = def.missed_wake(E)
 	TEST_ASSERT_EQUAL(missed?.key, "heat", "the step whose read changed without a publish is the miss")
@@ -642,56 +670,15 @@ SEQ_TEST_STEP(cy)
 
 // ---------------------------------------------------------------- Life's order
 
-/// Locks today's Life order: the edges seq_derive_edges() derives from the Life pipeline's plans make the
-/// sequence's solver (seq_order_keys(), what every table uses) put every plan in the pipeline's exact order,
-/// with each trait stage alone and all of them together.
-/datum/unit_test/kernel_sequence_life_order
-
-/datum/unit_test/kernel_sequence_life_order/Run()
-	var/list/mobs = list(
-		allocate(/mob/living/carbon/human),
-		allocate(/mob/living/simple_mob/animal/passive/mouse),
-	)
-	var/datum/om/registry/reg = om_registry()
-	var/list/traits = list()
-	for(var/path in reg.stage_by_type)
-		var/datum/om/stage/T = reg.stage_by_type[path]
-		if(T.extra && T.family == path && T.pipeline == /datum/om/pipeline/life)
-			traits += path
-	TEST_ASSERT(length(traits), "the Life pipeline has trait stages")
-	var/list/errors = list()
-	var/list/result = life_sequence_edges(mobs, traits, errors)
-	TEST_ASSERT(!length(errors), "the plans agree on one order: [jointext(errors, "; ")]")
-	var/list/edges = result[1]
-	var/list/plans = result[2]
-	TEST_ASSERT(length(plans) >= 3, "plans for the mobs and their traits ([length(plans)])")
-	var/list/anchors = list(LIFE_INPUT, LIFE_BODY, LIFE_MIND, LIFE_OUTPUT, LIFE_TAIL)
-	var/ok = seq_check_edges(plans, edges, anchors, errors)
-	TEST_ASSERT(ok, "every plan comes out in today's order: [jointext(errors, "; ")]")
-	var/edge_count = 0
-	for(var/key in edges)
-		var/list/after = edges[key]
-		edge_count += length(after)
-		for(var/target in after)
-			TEST_ASSERT(!isnull(edges[target]), "[key] runs after [target], which is a step or an anchor")
-	var/list/nodes = list()
-	for(var/key in edges)
-		nodes += key
-	var/datum/graph_check/G = graph_validate(nodes, edges)
-	TEST_ASSERT(G.ok(), "the derived graph validates: [jointext(G.errors, "; ")]")
-	TEST_ASSERT(length(life_sequence_edge_report(edges)), "the report renders")
-	TEST_NOTICE(src, "Life: [length(nodes)] keys, [edge_count] edges over [length(plans)] plans")
-
 // ---------------------------------------------------------------- on_change(at_most =)
 
 /// A reaction fixture whose on_change is coalesced to once a second.
 /datum/seq_rx_fixture
 	var/level = 0
 	var/mode = 0
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
 
-TRACKED(/datum/seq_rx_fixture, level, CHANGE_EXPLICIT)
+TRACKED(/datum/seq_rx_fixture, level)
 
 /datum/seq_rx_fixture/reactions()
 	. = ..()
@@ -705,7 +692,7 @@ TRACKED(/datum/seq_rx_fixture, level, CHANGE_EXPLICIT)
 /datum/unit_test/kernel_sequence_at_most
 
 /datum/unit_test/kernel_sequence_at_most/Run()
-	om_test_begin()
+	scheduler_test_begin()
 	var/datum/seq_rx_fixture/F = allocate(/datum/seq_rx_fixture)
 	F.set_level(1)
 	rx_drain()
@@ -729,7 +716,7 @@ TRACKED(/datum/seq_rx_fixture, level, CHANGE_EXPLICIT)
 	scheduler_advance(1.1)
 	rx_drain()
 	TEST_ASSERT_EQUAL(length(F.heard), 3, "which ends in turn")
-	om_test_end()
+	scheduler_test_end()
 
 #undef SEQ_TEST_ORDER
 #undef SEQ_TEST

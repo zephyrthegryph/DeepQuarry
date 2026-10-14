@@ -32,11 +32,9 @@
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
 	/// A list, or a single overlay when there is only one (see add_overlay()).
 	var/tmp/priority_overlays
-	///vis overlays managed by GLOB.vis_overlays_service to automaticaly turn them like other overlays
+	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
 	var/tmp/list/managed_vis_overlays
 
-	//Detective Work, used for the duplicate data points kept in the scanners
-	var/tmp/list/original_atom
 	// Track if we are already had initialize() called to prevent double-initialization.
 	//var/initialized = FALSE // using the atom flags
 
@@ -59,11 +57,6 @@
 	/// Thickness of that shielding in mm.
 	var/rad_shield_thickness_mm = 0
 
-	var/datum/wires/wires = null
-
-/// An atom owns its wiring: the destroy transaction's links phase deletes it
-/// (lifecycle.md section 4), so no Destroy() override hand-deletes `wires`.
-/// Salvaged from Codex's main-tree wires-ownership work onto the links framework.
 
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
@@ -78,15 +71,15 @@
 	// threshold crossing (e.g. the overheating rule never firing).
 	dematerialize()
 	// ---- end L2 ----
-	caps_destroy()
+	caps_destroy(src)
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)
-		own_clear(src, nameof(reagents), OWN_DELETE)
+		rel_clear(src, nameof(reagents))
 	if(light)
-		own_clear(src, nameof(light), OWN_DELETE)
+		rel_clear(src, nameof(light))
 	if(forensic_data)
-		own_clear(src, nameof(forensic_data), OWN_DELETE)
+		rel_clear(src, nameof(forensic_data))
 	// Checking length(overlays) before cutting has significant speed benefits
 	if (length(overlays))
 		overlays.Cut()
@@ -98,8 +91,6 @@
 	priority_overlays = null
 	if (length(managed_vis_overlays))
 		rel_clear(src, nameof(managed_vis_overlays))
-	if (length(original_atom))
-		original_atom.Cut()
 	return ..()
 
 /// Shift this atom's surface germ count (never below 0). Organs override it
@@ -124,13 +115,16 @@
 
 /atom/proc/Bumped(AM as mob|obj)
 
-	OM_EMIT(src, /datum/om/event/atom_bumped, AM)
+	PUBLISH_LEGACY(src, /datum/notice/atom_bumped, AM)
 
 // Convenience proc to see if a container is open for chemistry handling
 // returns true if open
 // false if closed
 /atom/proc/is_open_container()
-	return (flags & OPENCONTAINER) || (cap_state & CAP_LID_OPEN)
+	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
+	if(C)
+		return !C.sealed && (!C.lid || reagent_container_lid_open(src))
+	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 
@@ -148,8 +142,10 @@
 	return
 
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
-/atom/proc/on_proximity_turf_entered(turf/source, datum/om/event/observer_turf_entered/event)
-	EVENT_HANDLER
+/atom/proc/on_proximity_turf_entered(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/turf/source = A.target
+	var/datum/notice/observer_turf_entered/event = A
 	HasProximity(source, event.arrived, event.old_loc)
 
 //Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived, old_loc);
@@ -159,7 +155,7 @@
 	ASSERT(isturf(loc))
 	var/list/turfs = trange(range, src)
 	for(var/turf/T as anything in turfs)
-		om_hook(T, /datum/om/event/observer_turf_entered, src, PROC_REF(on_proximity_turf_entered))
+		observe(T, /datum/notice/observer_turf_entered, src, then(PROC_REF(on_proximity_turf_entered)))
 
 //Unregister from prox listening in a certain range. You should do this BEFORE you move, but if you
 // really can't, then you can set the center where you moved from.
@@ -167,7 +163,7 @@
 	ASSERT(isturf(center) || isturf(loc))
 	var/list/turfs = trange(range, center ? center : src)
 	for(var/turf/T as anything in turfs)
-		om_unhook(T, /datum/om/event/observer_turf_entered, src)
+		unobserve(T, /datum/notice/observer_turf_entered, src)
 
 
 /atom
@@ -179,32 +175,35 @@
 	recursive++
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
-	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | OM_EMIT(src, /datum/om/event/before/atom_pre_emp_act, severity)
+	// Listeners add what they shield (adjusts_with writes the act's protection): the flags of every one combine with the atom's own.
+	var/protection = emp_protection_flags & EMP_PROTECT_ALL
+	var/datum/act/emp/pulse = ACT_TRY(src, emp, severity, protection)
+	if(!pulse)
+		return protection
+	protection = ACT_FINAL(pulse, protection, protection)
+	act_done(pulse)
 	if(!(protection & EMP_PROTECT_WIRES))
-		var/datum/wires/W = istype(wires) ? wires : wires_of(src) // the wires capability keeps its own
-		W?.emp_pulse()
+		wires_emp(src)
 
 	if(!(protection & EMP_PROTECT_CONTENTS))
 		for(var/atom/A in contents)
 			A.emp_act(severity, recursive)
 
-	OM_EMIT(src, /datum/om/event/atom_emp_act, severity, protection)
+	PUBLISH_LEGACY(src, /datum/notice/atom_emp_act, severity, protection)
 	return protection
 
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
-	if(OM_EMIT(src, /datum/om/event/before/atom_bullet_act, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	var/datum/act/shoot/round = ACT_TRY(src, shoot, P, def_zone)
+	if(!round)
 		return
+	act_done(round)
 	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
 		return PROJECTILE_CONTINUE
-	// Declared projectile reactions run before on_hit(): a blocking one stops the round's effects too.
-	if(projectile_pre_reactions(P))
-		return 0
 
 	P.on_hit(src, 0, def_zone)
 	. = 0
 	if(!QDELETED(src))
 		projectile_damage(P, def_zone)
-	end_projectile_reactions()
 
 /// The projectile adapter: how much of a round this atom catches. Types whose
 /// shape changes that (grilles, girders, barricades) override this, not bullet_act().
@@ -284,7 +283,7 @@
 		output += damage_flavour_text(damage_band)
 
 	output += examine_lines(user)
-	om_emit_examine(src, user, output)
+	PUBLISH_LEGACY(src, /datum/notice/examine, user, output)
 	return output
 
 // Don't make these call bicon or anything, these are what bicon uses. They need to return an icon.
@@ -299,43 +298,69 @@
 //called to set the atom's dir and used to add behaviour to dir-changes
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
-	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
+	PUBLISH_LEGACY(src, /datum/notice/atom_dir_change, dir, new_dir)
+	var/old_dir = dir
 	dir = new_dir
+	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
+	// on_change() hook or a pending operation that reads it; an atom nothing draws, watches or reads pays one var read and the demand test.
+	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir))) || draw_hop_reads_var(nameof(dir))))
+		tracked_changed(src, nameof(dir))
+SETTER(/atom, dir)
 
-// Called to set the atom's density and used to add behavior to density changes.
+/// The engine's look applies a dir through this (the engine does not reach the atom layer): set_dir() on every atom.
+/atom/look_set_dir(new_dir)
+	set_dir(new_dir)
+
+/// The engine's look applies a base icon_state through this: set_icon_state() publishes it.
+/atom/look_set_icon_state(new_state)
+	set_icon_state(new_state)
+
+/// The engine's look applies an invisibility level through this: set_invisibility() publishes it.
+/atom/look_set_invisibility(new_invisibility)
+	set_invisibility(new_invisibility)
+
+/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers.
 /atom/proc/set_density(new_density)
+	new_density = !!new_density // Sanitize to be strictly 0 or 1
 	if(density == new_density)
 		return FALSE
-	density = !!new_density // Sanitize to be strictly 0 or 1
-	if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
+	density = new_density
+	tracked_changed(src, nameof(density))
 	return TRUE
+SETTER(/atom, density)
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.
 /atom/proc/set_invisibility(new_invisibility)
 	if(invisibility == new_invisibility)
 		return FALSE
 	invisibility = new_invisibility
+	if(GLOB.stat_input_keys?[nameof(invisibility)] || GLOB.derived_read_vars?[nameof(invisibility)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(invisibility))) || draw_hop_reads_var(nameof(invisibility)))
+		tracked_changed(src, nameof(invisibility))
 	return TRUE
+SETTER(/atom, invisibility)
 
 /atom/proc/ex_act(strength = 3)
-	return (OM_EMIT(src, /datum/om/event/before/atom_ex_act, strength, src) & COMPONENT_IGNORE_EXPLOSION)
+	var/datum/act/explode/blast = ACT_TRY(src, explode, strength)
+	if(!blast)
+		return COMPONENT_IGNORE_EXPLOSION
+	act_done(blast)
+	return NONE
 
 /**
  * Respond to fire being used on our atom
  *
- * Default behaviour is to emit /datum/om/event/atom_fire_act and return
+ * Default behaviour is to publish /datum/notice/atom_fire_act and return
  */
 /atom/proc/fire_act(exposed_temperature, exposed_volume)
-	OM_EMIT(src, /datum/om/event/atom_fire_act, exposed_temperature, exposed_volume)
+	PUBLISH_LEGACY(src, /datum/notice/atom_fire_act, exposed_temperature, exposed_volume)
 	return FALSE
 
 /**
- * Emits /datum/om/event/before/atom_extinguish, which properly removes burning state if it is present.
+ * Puts out a fire on this atom. Overrides (a burning object's) end their burning state and call the parent.
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
-	return OM_EMIT(src, /datum/om/event/before/atom_extinguish)
+	return NONE
 
 // Returns an assoc list of RCD information.
 // Example would be: list(RCD_VALUE_MODE = RCD_DECONSTRUCT, RCD_VALUE_DELAY = 50, RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4)
@@ -352,15 +377,8 @@
 /atom/proc/melt()
 	return
 
-// Previously this was defined both on /obj/ and /turf/ seperately.  And that's bad.
-/atom/proc/update_icon()
-	// A DECLARE_APPEARANCE type needs no override (code/datums/lifecycle/declarations.dm).
-	decl_appearance_apply()
-
-
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	if(om_wants(src, /datum/om/event/hitby))
-		om_emit(src, new /datum/om/event/hitby(source, throwingdatum))
+	PUBLISH_LEGACY(src, /datum/notice/hitby, source, throwingdatum)
 	thrown_damage(source, throwingdatum)
 
 /// The thrown-impact adapter. Types whose shape changes how hard a throw lands
@@ -379,7 +397,7 @@
 		dq_set_blood_color(src, SYNTH_BLOOD_COLOUR)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
-			own_set(M, nameof(M.dna), new /datum/dna(null))
+			rel_set(M, nameof(M.dna), new /datum/dna(null))
 			M.dna.real_name = M.real_name
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
@@ -533,16 +551,24 @@
 
 /atom/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
-	OM_EMIT(AM, /datum/om/event/movable_attempted_move, old_loc, AM.loc)
-	OM_EMIT(src, /datum/om/event/atom_entered, AM, old_loc)
-	OM_EMIT(AM, /datum/om/event/atom_entering, src, old_loc)
+	op_moved(AM, src)
+	PUBLISH_LEGACY(AM, /datum/notice/movable_attempted_move, old_loc, AM.loc)
+	PUBLISH_LEGACY(src, /datum/notice/atom_entered, AM, old_loc)
+	if(rel_watchers)
+		look_neighbour_moved(src, AM)
+	PUBLISH_LEGACY(AM, /datum/notice/atom_entering, src, old_loc)
+	RANGE_WATCH(src, RANGE_ENTERED, AM, old_loc)
 
 /atom/Exit(atom/movable/AM, atom/new_loc)
 	. = ..()
 
 /atom/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
-	OM_EMIT(src, /datum/om/event/atom_exited, AM, new_loc)
+	op_moved(AM, src)
+	PUBLISH_LEGACY(src, /datum/notice/atom_exited, AM, new_loc)
+	if(rel_watchers)
+		look_neighbour_moved(src, AM)
+	RANGE_WATCH(src, RANGE_EXITED, AM, new_loc)
 
 /atom/proc/interact(mob/user)
 	return
@@ -606,13 +632,13 @@
 			return
 
 ///Passes Stat Browser Panel clicks to the game and calls client click on an atom
-TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOPIC_TEXT("statpanel_item_click", 8), TOPIC_TEXT("statpanel_item_shiftclick", 8), TOPIC_TEXT("statpanel_item_ctrlclick", 8), TOPIC_TEXT("statpanel_item_altclick", 8))
 
-/atom/proc/topic_statpanel_click(mob/user, list/args)
+/atom/proc/topic_statpanel_click(datum/act/op/A, href_statpanel_item_click, href_statpanel_item_shiftclick, href_statpanel_item_ctrlclick, href_statpanel_item_altclick)
+	var/mob/user = A.actor
 	if(!user?.client)
 		return
 	var/list/paramslist = list()
-	switch(args["statpanel_item_click"])
+	switch(href_statpanel_item_click)
 		if("left")
 			paramslist["left"] = "1"
 		if("right")
@@ -621,16 +647,14 @@ TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOP
 			paramslist["middle"] = "1"
 		else
 			return
-	if(args["statpanel_item_shiftclick"])
+	if(href_statpanel_item_shiftclick)
 		paramslist["shift"] = "1"
-	if(args["statpanel_item_ctrlclick"])
+	if(href_statpanel_item_ctrlclick)
 		paramslist["ctrl"] = "1"
-	if(args["statpanel_item_altclick"])
+	if(href_statpanel_item_altclick)
 		paramslist["alt"] = "1"
 	user.client.Click(src, loc, null, list2params(paramslist))
 	return TRUE
-
-GLOBAL_LIST_EMPTY(icon_dimensions)
 
 /// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
 GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
@@ -654,7 +678,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 		var/atom/checked_atom = .[++i]
 		if(checked_atom.flags & ignore_flag_1)
 			continue
-		if(checked_atom.latent_contents)
+		if(checked_atom?.latent_contents_enabled())
 			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		. += checked_atom.contents
 
@@ -665,7 +689,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	var/i = 0
 	while(i < length(processing_list))
 		var/atom/checked_atom = processing_list[++i]
-		if(checked_atom.latent_contents)
+		if(checked_atom?.latent_contents_enabled())
 			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		processing_list += checked_atom.contents
 		if(istype(checked_atom, type))
@@ -704,13 +728,14 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	germ_level = 0
 	dq_set_fluorescent(src, 0)
 
-/// Sets the wire datum of an atom
-/atom/proc/set_wires(datum/wires/new_wires)
-	own_set(src, nameof(wires), new_wires)
-
-/// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
+/// Its icon state (after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
+	if(icon_state == new_state)
+		return
 	icon_state = new_state
+	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))) || draw_hop_reads_var(nameof(icon_state)))
+		tracked_changed(src, nameof(icon_state))
+SETTER(/atom, icon_state)
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)

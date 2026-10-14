@@ -1,0 +1,58 @@
+@obj.structure human|none
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
+@obj.structure robot|none
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
++1 menu: Flip Railing
+@obj.structure human|/obj/item/tool/screwdriver
+-click: Click: Use
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
++5 menu: Use screwdriver
++6 click: Click: Use screwdriver
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item/tool/wrench
+-click: Click: Use
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
++5 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item/multitool
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
++5 click: Click: Use welder
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item/card/id
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+@obj.structure human|/obj/item
++0 menu: Climb (refused: You can't climb there, there's a steel wall in the way.)
++1 menu: Flip Railing
++3 menu: Slam
+keys: climb.climb, climb.climb_menu, drag_buckle, flip, item, melee_hit, slam, use_screwdriver, use_welder, use_wrench

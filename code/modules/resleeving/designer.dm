@@ -11,7 +11,6 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "med_key"
 	icon_screen = "explosive"
-	light_color = "#315ab4"
 	circuit = /obj/item/circuitboard/body_designer
 	req_access = list(ACCESS_MEDICAL) // Used for loading people's designs
 	var/datum/tgui_module/appearance_changer/body_designer/designer_gui
@@ -23,41 +22,43 @@
 	var/db_key
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
+CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	configure(light_glow(color = "#315ab4"))
+	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
+	op("body_designer_insert_disk", item(/obj/item/disk/body_record), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(body_designer_interaction_insert_disk)))
+	op("body_designer_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(body_designer_interaction_hand)))
+
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
-	our_db_static = GLOB.transcore_service.db_by_key(db_key)
+	our_db_static = SStranscore.db_by_key(db_key)
 
-/obj/machinery/computer/transhuman/designer/ownership()
-	. = ..()
-	. += owns(nameof(disk), policy = OWN_SPILL)
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
 		disk.forceMove(get_turf(src))
-		own_take(src, nameof(disk))
+		rel_take(src, nameof(disk))
 	. = ..()
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
-	INTERACT_INSERT(/obj/item/disk/body_record, PROC_REF(body_designer_interaction_insert_disk), "Insert disk"), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(body_designer_interaction_hand)), \
-)
-
 /// Old attackby.
-/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.disk), W, user = user))
-		return INTERACTION_HANDLED_PASS
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!move_into(src, nameof(src.disk), W, user))
+		return OP_PASS
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	add_fingerprint(user)
 	if(!operable())
 		return
 	if(!designer_gui)
-		own_set(src, nameof(designer_gui), new /datum/tgui_module/appearance_changer/body_designer(src, null))
+		rel_set(src, nameof(designer_gui), new /datum/tgui_module/appearance_changer/body_designer(src, null))
 		rel_set(designer_gui, nameof(designer_gui.linked_body_design_console), src)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())
@@ -77,6 +78,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	w_class = ITEMSIZE_SMALL
 	var/datum/transhuman/body_record/stored = null
 
+CAPABILITIES(/obj/item/disk/body_record)
+	owns_one(nameof(stored), /datum/transhuman/body_record)
+
 /*
  *	Diskette Box
  */
@@ -86,10 +90,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	desc = "A box of body record disks, apparently."
 	icon_state = "disk_kit"
 
-/obj/item/storage/box/body_record_disk/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/body_record(src)
+/obj/item/storage/box/body_record_disk
+	starts_with = list(
+		/obj/item/disk/body_record = 8,
+	)
 
 #undef MENU_MAIN
 #undef MENU_BODYRECORDS

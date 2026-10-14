@@ -7,9 +7,11 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "earmuffs"
 	item_state_slots = list(slot_r_hand_str = "earmuffs", slot_l_hand_str = "earmuffs")
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
 	ear_protection = 2
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/ears/earmuffs)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
 
 /obj/item/clothing/ears/earmuffs/headphones
 	name = "headphones"
@@ -17,25 +19,25 @@
 	var/headphones_on = 0
 	icon_state = "headphones_off"
 	item_state_slots = list(slot_r_hand_str = "headphones", slot_l_hand_str = "headphones")
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
-EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
-	INTERACT_VERB("Toggle Headphone Music", PROC_REF(headphones_togglemusic_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
+	op("headphones_togglemusic_verb", menu(), label("Toggle Headphone Music"), needs(carried()), then(PROC_REF(headphones_togglemusic_verb)))
 
 /// Old verb "Toggle Headphone Music".
-/obj/item/clothing/ears/earmuffs/headphones/proc/headphones_togglemusic_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/ears/earmuffs/headphones/proc/headphones_togglemusic_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
 	var/base_icon = copytext(icon_state,1,(length(icon_state) - 3 + headphones_on))
 
 	if(headphones_on)
-		icon_state = "[base_icon]_off"
+		set_icon_state("[base_icon]_off")
 		headphones_on = 0
 		to_chat(user, span_notice("You turn the music off."))
 	else
-		icon_state = "[base_icon]_on"
+		set_icon_state("[base_icon]_on")
 		headphones_on = 1
 		to_chat(user, span_notice("You turn the music on."))
 
@@ -49,18 +51,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears/earmuffs/headphones, \
 	desc = "Some stuff worn by skrell to adorn their head tentacles."
 	icon = 'icons/inventory/ears/item.dmi'
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	resistance_flags = FIRE_PROOF
 
-TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL))))
+CAPABILITIES(/obj/item/clothing/ears/skrell)
+	acceptance("fit", fits(list(SPECIES_SKRELL)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_EARS))
+
 
 /obj/item/clothing/ears/skrell/chain
 	name = "Gold headtail chains"
 	desc = "A delicate golden chain worn by female skrell to decorate their head tails."
 	icon_state = "skrell_chain"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/ears/skrell/chain)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/chain/silver
 	name = "Silver headtail chains"
@@ -91,8 +96,9 @@ TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	desc = "Golden metallic bands worn by male skrell to adorn their head tails."
 	icon_state = "skrell_band"
 	item_state_slots = list(slot_r_hand_str = "egg5", slot_l_hand_str = "egg5")
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
+
+CAPABILITIES(/obj/item/clothing/ears/skrell/band)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/ears/skrell/band/silver
 	name = "Silver headtail bands"

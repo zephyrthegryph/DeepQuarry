@@ -1,0 +1,5 @@
+/obj/item/ghost_catcher icon: icons/obj/guns/ghost_beam.dmi
+/obj/item/ghost_catcher state: ghost_beam
+/obj/item/ghost_catcher dir: 2
+/obj/item/ghost_catcher overlay: icons/obj/guns/ghost_beam.dmi:ghost_beam:8:#000000
+

@@ -29,11 +29,16 @@
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(null, PROC_REF(dog_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	op("dog_item", item(/obj/item), then(PROC_REF(dog_interaction_item)))
+	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL)
 
 /// Old attackby: newspaper bap.
-/mob/living/simple_mob/animal/passive/dog/proc/dog_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/dog/proc/dog_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/newspaper))
 		if(!stat)
 			for(var/mob/M in viewers(user, null))
@@ -41,7 +46,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 					M.show_message(span_blue("[user] baps [name] on the nose with the rolled up [O]."))
 			dir_sequence(list(1,2,4,8,4,2,1,2))
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/animal/passive/dog/regenerate_icons()
 	cut_overlays()
@@ -116,36 +121,38 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	gender = MALE
 	desc = "It's a corgi."
 	var/turns_since_scan = 0
-	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian
-	of = /mob/living/simple_mob/animal/passive/dog/corgi/Ian
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/corgi/Ian)
+	configure(mob_movement(makes_dirt = FALSE))
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Ian/perform(mob/living/simple_mob/animal/passive/dog/corgi/Ian/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/dog/corgi/Ian/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/animal/passive/dog/corgi/Ian/life_type_post(datum/seq_frame/life/F)
 	..()
 
 	//Not replacing with SA FollowTarget mechanics because Ian behaves... very... specifically.
 
 	//Feeding, chasing food, FOOOOODDDD
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 5)
-			self.turns_since_scan = 0
-			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, nameof(self.movement_target))
-			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, nameof(self.movement_target))
-				for(var/obj/item/reagent_containers/food/snacks/S in oview(self,7))
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 5)
+			src.turns_since_scan = 0
+			if((src.movement_target) && !(isturf(src.movement_target.loc) || ishuman(src.movement_target.loc) ))
+				rel_clear(src, nameof(src.movement_target))
+			if(!src.movement_target || !(src.movement_target.loc in oview(src, 7)) )
+				rel_clear(src, nameof(src.movement_target))
+				for(var/obj/item/reagent_containers/food/snacks/S in oview(src,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, nameof(self.movement_target), S)
+						rel_set(src, nameof(src.movement_target), S)
 						break
-			if(self.movement_target)
-				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+			if(src.movement_target)
+				after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 		if(prob(1))
-			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
-			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
+			after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases their tail")))
+			src.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //LISA! SQUEEEEEEEEE~
 /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
@@ -165,19 +172,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 
 //Lisa already has a cute bow!
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa
-	of = /mob/living/simple_mob/animal/passive/dog/corgi/Lisa
+/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/dog/corgi/Lisa/perform(mob/living/simple_mob/animal/passive/dog/corgi/Lisa/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/dog/corgi/Lisa/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(!self.stat && !self.resting && !self?.buckled_to())
-		self.turns_since_scan++
-		if(self.turns_since_scan > 15)
-			self.turns_since_scan = 0
+	if(!src.stat && !src.resting && !src?.buckled_to())
+		src.turns_since_scan++
+		if(src.turns_since_scan > 15)
+			src.turns_since_scan = 0
 			var/alone = TRUE
 			var/ian = FALSE
-			for(var/mob/M in oviewers(7, self))
+			for(var/mob/M in oviewers(7, src))
 				if(istype(M, /mob/living/simple_mob/animal/passive/dog/corgi/Ian))
 					if(M.client)
 						alone = FALSE
@@ -187,14 +194,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 				else
 					alone = FALSE
 					break
-			if(alone && ian && self.puppies < 4)
-				if(self.near_camera(self) || self.near_camera(ian))
+			if(alone && ian && src.puppies < 4)
+				if(src.near_camera(src) || src.near_camera(ian))
 					return
-				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
+				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(src.loc)
 
 		if(prob(1))
-			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
-			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
+			after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases her tail")))
+			src.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //NARSIAN HAS COME
 /mob/living/simple_mob/animal/passive/dog/corgi/narsian
@@ -205,8 +212,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 	icon_rest = "narsian_rest"
 	icon_dead = "narsian_dead"
 
-	makes_dirt = FALSE
 	holder_type = /obj/item/holder/narsian
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/corgi/narsian)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/dog/void_puppy
 	name = "void puppy"
@@ -252,8 +261,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 /datum/decl/mob_organ_names/corgi
 //You monster.
 TYPE_TABLE(/datum/decl/mob_organ_names/corgi, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart"))
-
-/mob/living/simple_mob/animal/passive/dog/ownership()
-	. = ..()
-	. += owns(nameof(inventory_head), policy = OWN_SPILL)
-	. += owns(nameof(inventory_back), policy = OWN_SPILL)

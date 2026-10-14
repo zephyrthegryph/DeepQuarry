@@ -32,7 +32,7 @@ SYSTEM_DEF(admin_verbs)
 	for(var/datum/admin_verb/verb_type as anything in subtypesof(/datum/admin_verb))
 		var/datum/admin_verb/verb_singleton = new verb_type
 		if(!verb_singleton.__avd_check_should_exist())
-			qdel(verb_singleton, force = TRUE)
+			spent(verb_singleton, force = TRUE)
 			continue
 
 		if(verb_singleton.debug_only && verb_singleton.permissions == R_NONE)
@@ -112,12 +112,10 @@ SYSTEM_DEF(admin_verbs)
 
 	if(verb_singleton.debug_only)
 		log_admin("DEBUG VERB: [key_name(admin)] invoked '[verb_singleton.name]' ([verb_type])")
+	METRICS_EVENT(METRICS_EVENT_ADMIN_VERB, verb_singleton.category, "[verb_type]", admin.ckey, verb_singleton.name, null)
 
-	var/old_usr = usr
-	usr = admin.mob
 	// THE MACRO ENSURES THIS EXISTS. IF IT EVER DOESNT EXIST SOMEONE DIDNT USE THE DAMN MACRO!
-	verb_singleton.__avd_do_verb(arglist(verb_args))
-	usr = old_usr
+	with_actor(arglist(list(admin.mob, verb_singleton, "__avd_do_verb") + verb_args))
 
 /**
  * Assosciates and/or resyncs an admin with their accessible admin verbs.

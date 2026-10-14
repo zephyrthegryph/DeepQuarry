@@ -1,5 +1,4 @@
 /obj/machinery/reagent_refinery
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/refinery_machines.dmi'
 	VAR_PROTECTED/default_max_vol = 120
@@ -9,13 +8,6 @@
 
 /obj/machinery/reagent_refinery/Initialize(mapload)
 	. = ..()
-	// reagent control
-	if(default_max_vol > 0)
-		create_reagents(default_max_vol, reagent_type)
-	// Update neighbours and self for state
-	update_neighbours()
-	update_icon()
-	make_rotatable()
 
 // its reagents are flushed.
 /obj/machinery/reagent_refinery/on_destroy(force)
@@ -28,11 +20,9 @@
 
 /obj/machinery/reagent_refinery/set_dir(newdir)
 	. = ..()
-	update_icon()
 	wake_refinery_line()
 
 /obj/machinery/reagent_refinery/on_reagent_change(changetype)
-	update_icon()
 	wake_refinery_line()
 
 // A refinery line runs on the machine pipeline only while something moves (roadmap S5): a machine
@@ -42,20 +32,35 @@
 // wrenching, turning, a player's setting (interaction_ran()), power.
 
 /// Wakes this machine and the refinery machines next to it (a change here can unblock them).
+/// Whether a hub standing `back` of this machine takes what it sends (the machine feeds the hub): by default, when it faces the hub.
+/obj/machinery/reagent_refinery/proc/hub_intake(back)
+	return dir == back
+
 /obj/machinery/reagent_refinery/proc/wake_refinery_line()
-	MACHINE_WAKE(src)
+	work_start(src)
 	for(var/direction in GLOB.cardinal)
 		var/obj/machinery/reagent_refinery/other = locate_within(get_step(get_turf(src), direction), /obj/machinery/reagent_refinery)
 		if(other)
-			MACHINE_WAKE(other)
+			work_start(other)
 
-/obj/machinery/reagent_refinery/interaction_ran(mob/actor, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/interaction_ran(mob/actor)
 	wake_refinery_line()
 
 /// Unanchored refinery machines are disconnected and do nothing.
-DECLARE_PERIODIC_WHILE(/obj/machinery/reagent_refinery, MACHINE_PIPELINE, "anchored")
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/reagent_refinery)
+	reagents(nameof(default_max_vol), holder = nameof(reagent_type))
+	rotatable()
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), STAT_OPERABLE), unpowered = TRUE)
+	op("reagent_refinery_drain", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), when(req(PROC_REF(has_reagents_holder_holds))), needs(req_reagents(0, more = TRUE, because = MSG(reagent_refinery/nothing_to_drain))), then(PROC_REF(interaction_drain)))
+	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Secure"), then(PROC_REF(wrench_used)))
 
-/obj/machinery/reagent_refinery/machine_step()
+/// Applies the machine's default parts once its init is complete (after_init() in the types that declare it).
+/obj/machinery/reagent_refinery/proc/apply_default_parts(datum/act/timer/A)
+	default_apply_parts()
+
+/obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
 	refinery_step()
 	if(QDELETED(src))
@@ -79,89 +84,72 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/reagent_refinery, MACHINE_PIPELINE, "ancho
 		visible_message(span_danger("\The [src] splashes everywhere as it is disassembled!"))
 		reagents.splash_area(get_turf(src),2)
 
-/obj/machinery/reagent_refinery/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/reagent_refinery_drain,
-		/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount,
-	)
-	..()
+MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to drain")
 
-/datum/interaction/machine_item/reagent_refinery_drain
-	id = "reagent_refinery_drain"
-	name = "Drain"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/reagent_refinery/proc/has_reagents_holder, null))
-	effect = /obj/machinery/reagent_refinery/proc/interaction_drain
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/reagent_refinery/proc/has_reagents_to_drain))
-
-/// Requirement: something to drain.
-/obj/machinery/reagent_refinery/proc/has_reagents_to_drain(mob/user, atom/target, obj/item/held)
-	return reagents?.total_volume > 0 ? TRUE : "it's empty; there is nothing to drain"
+/// Requirement (was REQ_* has_reagents_holder): the legacy check answers TRUE to pass.
+/obj/machinery/reagent_refinery/proc/has_reagents_holder_holds(datum/act/op/A)
+	var/answer = has_reagents_holder(A.actor, src, A.held)
+	return (!istext(answer) && !!answer) ? null : /datum/msg/req_failed
 
 /obj/machinery/reagent_refinery/proc/has_reagents_holder(mob/actor, atom/target, obj/item/held)
 	return !!reagents
 
-/obj/machinery/reagent_refinery/proc/interaction_drain(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/proc/interaction_drain(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	// Fill up the whole volume if we can, DUMP IT OUT
 	var/obj/item/reagent_containers/C = held
 	reagents.trans_to_obj(C, reagents.total_volume)
 	play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 	to_chat(user, "You drain \the [src] into \the [C].")
-	return TRUE
+	return OP_OK
 
-/obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
+/// The wrench secures or unsecures the machine, but never onto a tile another refinery machine holds.
+/obj/machinery/reagent_refinery/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!anchored)
 		for(var/obj/machinery/reagent_refinery/other in contents_of(loc))
 			if(other != src)
 				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
-				return ITEM_INTERACT_BLOCKING
-	playsound(src, tool.usesound, 75, TRUE)
+				return OP_OK
+	playsound(src, sounds_of(tool).use, 75, TRUE)
 	set_anchored(!anchored)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
-	update_neighbours()
-	update_icon()
 	wake_refinery_line()
-	return ITEM_INTERACT_SUCCESS
+	rewrenched()
+	return OP_OK
 
-/// Updates the icons of all neighbour machines, used when connecting.
-/obj/machinery/reagent_refinery/proc/update_neighbours()
-	// Update icons and neighbour icons to avoid loss of sanity
-	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
-		if(other && other.anchored)
-			other.update_icon()
+/// After the wrench secured or unsecured the machine (a reactor resets its gas line).
+/obj/machinery/reagent_refinery/proc/rewrenched()
+	return
+
+/// The question's title.
+/obj/machinery/reagent_refinery/proc/transfer_amount_title(datum/act/op/A)
+	return "[src]"
 
 /// Changes the transfer rate of reagents from this machine to the next
-/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
-	id = "reagent_refinery_set_transfer_amount"
-	name = "Set transfer amount"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
-
-/obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
-	if(isnull(N))
-		return
+/obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(datum/act/op/A)
+	var/mob/user = A.actor
+	var/N = A.step_value("amount")
 	if(N && Adjacent(user))
-		amount_per_transfer_from_this = N
-		update_icon()
-	return TRUE
+		set_amount_per_transfer_from_this(N)
+	return OP_OK
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.
 /obj/machinery/reagent_refinery/proc/transfer_tank( datum/reagents/RT, obj/machinery/reagent_refinery/target, source_forward_dir, filter_id = "")
 	PROTECTED_PROC(TRUE)
 	if(RT.total_volume <= 0 || !anchored || !target.anchored)
 		return 0
-	if(active_power_usage > 0 && !can_use_power_oneoff(active_power_usage))
+	if(power_of(src).active > 0 && !can_use_power_oneoff(power_of(src).active))
 		return 0
 	if(!istype(target,/obj/machinery/reagent_refinery) || istype(target,/obj/machinery/reagent_refinery/grinder)) // Grinders don't allow input
 		return 0
 	var/transfered = target.handle_transfer(src,RT,source_forward_dir, amount_per_transfer_from_this, filter_id)
-	if(transfered > 0 && active_power_usage > 0)
-		use_power_oneoff(active_power_usage)
+	if(transfered > 0 && power_of(src).active > 0)
+		use_power_oneoff(power_of(src).active)
 	return transfered
 
 /// Handles reagent recieving from transfer_tank(), returns how much reagent was transfered if successful. Overriden to prevent access from certain sides or for filtering.
@@ -213,11 +201,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/reagent_refinery, MACHINE_PIPELINE, "ancho
 		examine_list += "Does not require power. "
 
 /// Checks neighbouring machines for if we should connect visually to them
-/obj/machinery/reagent_refinery/proc/update_input_connection_overlays(overlay_state)
+/obj/machinery/reagent_refinery/proc/update_input_connection_overlays(datum/look/look, overlay_state)
 	. = list()
 	for(var/direction in GLOB.cardinal)
-		var/turf/T = get_step(get_turf(src),direction)
-		var/obj/machinery/reagent_refinery/other = locate_on(T, /obj/machinery/reagent_refinery)
+		// The neighbour is watched: its anchoring, facing and filter side redraw this machine.
+		var/obj/machinery/reagent_refinery/other = look.neighbour(src, direction, /obj/machinery/reagent_refinery)
 		if(!other?.anchored)
 			continue
 

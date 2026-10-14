@@ -34,6 +34,7 @@
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/unacidable = TRUE
 
+// ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
 	. = ..()
 	movable_instance_setup()
@@ -46,9 +47,11 @@
 /// The per-instance part of /atom/movable/Initialize(), shared with table_initialize().
 /atom/movable/proc/movable_instance_setup()
 	PRIVATE_PROC(TRUE)
-	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
+	// L3 (doc/rewrite/lifecycle.md Â§5): a declared `lifetime` self-arms here
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()
+	if(proximity_tracked)
+		SSproximity.member_update(src)
 
 #if EMISSIVE_BLOCK_GENERIC != 0
 	#error EMISSIVE_BLOCK_GENERIC is expected to be 0 to facilitate a weird optimization hack where we rely on it being the most common.
@@ -58,10 +61,10 @@
 	if (blocks_emissive)
 		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
-			own_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
+			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
-			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
+			observe(em_block, /datum/notice/qdeleting, src, then(PROC_REF(emblocker_gc)))
 	else
 		var/mutable_appearance/gen_emissive_blocker = mutable_appearance(icon, icon_state, plane = PLANE_EMISSIVE, alpha = src.alpha)
 		gen_emissive_blocker.color = GLOB.em_block_color
@@ -92,7 +95,7 @@
 	// already set, so this never registered anything. Destroy() clears it.
 	if (listening_recursive)
 		set_listening(listening_recursive)
-	// R10 bind (doc/rewrite/rust_bindings.md §4): one call creates the Rust
+	// R10 bind (doc/rewrite/rust_bindings.md Â§4): one call creates the Rust
 	// entity and every component this type declares (vg_gas, and future
 	// vg_power/vg_heat/...), from the init_* values and the current inputs.
 	// Last, so registries and signals this atom's inputs might read (e.g.
@@ -104,7 +107,7 @@
 
 /atom/movable/on_dematerialize()
 	// R10 unbind. J1's pre_destroy() is the design's intended call site
-	// (rust_bindings.md §4); it has not landed yet (rewrite/ledger-joint).
+	// (rust_bindings.md Â§4); it has not landed yet (rewrite/ledger-joint).
 	// Until it does, this is the earliest guaranteed point every Destroy()
 	// path reaches (mirrors how L3's leave_registries() piggybacks on the
 	// same hook, __defines/misc.dm). Move this single call into pre_destroy()
@@ -125,19 +128,19 @@
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)
-		own_clear(src, nameof(light), OWN_DELETE)
+		rel_clear(src, nameof(light))
 	return ..()
 
 /atom/movable/Destroy()
-	// L1 (doc/rewrite/lifecycle.md §2): contents already went where each
+	// L1 (doc/rewrite/lifecycle.md Â§2): contents already went where each
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
 	// checks that it released them (dq_lifecycle_check_released()).
 	if(em_block)
 		cut_overlay(em_block)
-		om_unhook(em_block, /datum/om/event/qdeleting, src)
-		own_clear(src, nameof(em_block), OWN_DELETE)
+		unobserve(em_block, /datum/notice/qdeleting, src)
+		rel_clear(src, nameof(em_block))
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -148,11 +151,11 @@
 	// on_unlink() cleanup -- for both ends of a deleted entity automatically.
 
 	// Snapshot: each member's Destroy() pulls it out of contents mid-iteration
-	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
+	// (moveToNullspace), which makes DM's for-in skip members â€” skipped ones
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
-		qdel(AM)
-	own_clear(src, nameof(ledger), OWN_DELETE)
+		ended_with(AM, src)
+	clear_containment_ledger()
 
 	moveToNullspace()
 
@@ -166,7 +169,7 @@
 
 	stop_orbit()
 	rel_clear(src, nameof(throw_source))
-	own_clear(src, nameof(riding_datum), OWN_DELETE)
+	rel_clear(src, nameof(riding_datum))
 	set_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////
@@ -175,8 +178,10 @@
 	if(!loc || !newloc)
 		return FALSE
 
-	if(OM_EMIT(src, /datum/om/event/before/movable_pre_move, newloc, direct, movetime) & COMPONENT_MOVABLE_BLOCK_PRE_MOVE)
+	var/datum/act/pre_move/step = ACT_TRY(src, pre_move, direct, newloc)
+	if(!step)
 		return FALSE
+	act_cancel(step)
 
 	// Store this early before we might move, it's used several places
 	var/atom/oldloc = loc
@@ -317,12 +322,17 @@
 
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
+	// BYOND turns a mover natively on Move(), bypassing set_dir(): publish the dir a drawn atom now shows, only when it changed.
+	if((rx?.look_key || rel_watchers) && dir != rx?.look_seen_dir)
+		rx_of(src).look_seen_dir = dir
+		tracked_changed(src, nameof(dir))
 	if(blocks_light)
 		light_blocking_moved(old_loc)
-	om_emit_moved(src, old_loc, direction, forced)
-	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
-	if(om_listen && !ismob(src))
-		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
+	PUBLISH_LEGACY(src, /datum/notice/moved, old_loc, direction, forced)
+	// A window watching this thing as its host re-checks its status (code/modules/tgui/ui_status.dm); nobody else reads this key.
+	if(rx?.observed)
+		PUBLISH_CHANGE(src, ATOM_KEY_LOC)
+	loc_changed(old_loc)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)
@@ -337,19 +347,28 @@
 		light.source_atom.update_light()
 	if(!isnull(heat_body))
 		heat_recouple()
+	if(GLOB.heat_followers_of[src])
+		heat_followers_moved(src)
+	if(proximity_tracked)
+		SSproximity.member_update(src)
+	if(lifeform_moves)
+		lifeform_moved(src, old_loc) // registry(by = REG_Z | REG_AREA) and adjacency() (code/engine/lifeforms/)
 	return TRUE
 
 /mob/Moved(atom/old_loc, direction, forced, movetime)
 	. = ..()
 	// One publish; it returns before any turf lookup while nothing is subscribed (Q12).
-	if(GLOB.mob_chunk_watches || (client && GLOB.player_chunk_watches))
+	if(GLOB.mob_chunk_watches || (client && GLOB.player_chunk_watches) || length(GLOB.mob_chunks))
 		publish_mob_move(old_loc, src, !!client)
 	//If we return focus to our own mob, but we are still inside something with an inherent remote view. Restart it.
 	if(client)
 		restore_remote_views()
+		SSproximity.eye_update(client)
 
 /atom/movable/set_dir(newdir)
 	. = ..(newdir)
+	if(rx?.look_key || rel_watchers)
+		rx_of(src).look_seen_dir = dir
 	if(riding_datum)
 		riding_datum.handle_vehicle_offsets()
 
@@ -361,7 +380,7 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	if(om_cross_vetoed(src, AM))
+	if(guard(src, GUARD_CROSS, AM))
 		return FALSE
 	return CanPass(AM, loc)
 
@@ -381,8 +400,20 @@
 		if(QDELETED(A))
 			return
 
-	OM_EMIT(src, /datum/om/event/before/movable_bump, A)
+	PUBLISH_LEGACY(src, /datum/notice/movable_bump, A)
 
+	bump_into(A)
+
+/// The bump action (doc/rewrite/final_api.html, section 8 "World actions"): `src` walked into `A`. The one emitter of /datum/act/bump: the
+/// action runs on the bumped atom, whose hooks (extend(/datum/act/bump, ...), on_notice(/datum/notice/bumped, ...)) answer it; a refused or
+/// taken-over bump stops there. A type not converted yet still answers through its legacy Bumped(), which runs after the notice.
+/atom/movable/proc/bump_into(atom/A)
+	var/datum/act/bump/B = ACT_TRY(A, bump, src, A, get_dir(src, A))
+	if(!B)
+		return
+	act_done(B)
+	if(QDELETED(A))
+		return
 	A.Bumped(src)
 	EXPIRY_STAMP(A, last_bumped, CLOCK_WORLD)
 
@@ -406,7 +437,7 @@
 
 		// J5: the before-hook, right before the loc write. Gated on one var
 		// test, so an unhooked mover (almost everything) pays nothing.
-		if(move_hooks)
+		if(containment_move_flags())
 			move_hooks_dispatch(TRUE)
 
 		// Do The Move
@@ -416,14 +447,17 @@
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
 		if(!same_loc)
-			if(oldloc?.ledger)
-				oldloc.ledger.note_exit(src)
-			if(destination.ledger)
-				destination.ledger.note_enter(src)
+			if(oldloc?.containment_ledger())
+				oldloc.containment_ledger().note_exit(src)
+			// A move into a holder registers in its default slot through the same note_enter() path move_into() lands in, also
+			// when the holder has not built its ledger yet (a net or a jar that was never asked what it holds): the ledger is
+			// made here (its sync adopts the arrival), so the slot's occupancy is published and a draw that reads it hears of it.
+			var/datum/ledger/entered = destination.containment_ledger() || dq_ledger_for_arrival(destination)
+			entered?.note_enter(src)
 
 		// J5: the after-hook, right after note_enter(), before Exited()/
 		// Uncrossed(). Not run for a same-loc "move" (nothing left or entered).
-		if(move_hooks && !same_loc)
+		if(containment_move_flags() && !same_loc)
 			move_hooks_dispatch(FALSE)
 
 		// Unset this in case it was set in some other proc. We're no longer moving diagonally for sure.
@@ -486,10 +520,11 @@
 		// J5: the before-hook still runs on a deletion move (there is no
 		// "after" -- nothing to settle into), so clocks settle and cancel
 		// instead of being silently dropped by moveToNullspace().
-		if(move_hooks)
+		if(containment_move_flags())
 			move_hooks_dispatch(TRUE)
 		loc = null // ALLOW(containment): doMove()'s nullspace commit point; note_exit follows
-		oldloc.ledger?.note_exit(src)
+		oldloc.containment_ledger()?.note_exit(src)
+		loc_changed(oldloc)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
 		for(var/atom/movable/AM as anything in oldloc)
@@ -508,28 +543,38 @@
 		// We moved
 		return TRUE
 
+/// The container hop's publisher (doc/rewrite/final_api.html section 7, "Hop kinds"): this thing's `loc` changed, at the one place every move ends
+/// (Moved(), and doMove() into nullspace). What reads `loc`, or a var of what the thing is in (`loc.lit`), hears it through the path a relation
+/// write takes: the stat layer re-attaches the thing to its new container's readers (stat_hop_attach), derived() entries and on_change() hooks that
+/// read it re-evaluate, a pending operation re-resolves its watched pairs. Nothing runs while nothing reads `loc`.
+/atom/movable/proc/loc_changed(atom/old_loc)
+	if(GLOB.stat_input_keys?[nameof(loc)] || GLOB.derived_read_vars?[nameof(loc)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(loc))))
+		own_field_changed(src, nameof(loc))
+	// The turf and area hops: what reads get_turf(src).x or get_area(src).x, here or on anything inside this (refs/hops.dm).
+	hop_moved(src, old_loc)
+
 /atom/movable/proc/onTransitZ(old_z,new_z)
-	OM_EMIT(src, /datum/om/event/before/movable_z_changed, old_z, new_z)
+	PUBLISH_LEGACY(src, /datum/notice/movable_z_changed, old_z, new_z)
 	for(var/atom/movable/AM as anything in contents_of(src)) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
 /atom/movable/proc/reset_glide_size()
 	glide_size = initial(glide_size)
 
-/// Anchors or frees it: a machine hears CHANGE_MACHINE_ANCHORED, a mob CHANGE_MOB_CAN_MOVE.
+/// Anchors or frees it. Anchored is a tracked base var (G8): this is its only writer. A change publishes
+/// nameof(anchored) to its readers.
 /atom/movable/proc/set_anchored(state)
 	if(anchored == state)
-		return
+		return FALSE
 	anchored = state
-	if(ismob(src))
-		changed(src, CHANGE_MOB_CAN_MOVE)
-	else if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_ANCHORED)
+	tracked_changed(src, nameof(anchored))
+	return TRUE
+SETTER(/atom/movable, anchored)
 
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(movetime), 1)
-		om_after(src, movetime, PROC_REF(reset_glide_size))
+		after(src, movetime, PROC_REF(reset_glide_size))
 	else
 		glide_size = initial(glide_size)
 
@@ -537,7 +582,7 @@
 
 //called when src is thrown into hit_atom
 /atom/movable/proc/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
-	OM_EMIT(src, /datum/om/event/movable_impact, hit_atom, throwingdatum)
+	PUBLISH_LEGACY(src, /datum/notice/movable_impact, hit_atom, throwingdatum)
 	if(isliving(hit_atom))
 		var/mob/living/M = hit_atom
 		if(M?.buckled_to() == src)
@@ -554,7 +599,7 @@
 		var/turf/T = hit_atom
 		T.hitby(src, throwingdatum)
 
-/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, list/callback) //If this returns FALSE then callback will not be called.
+/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, then = null, datum/then_owner = null, list/then_with = null) //If this returns FALSE then then_owner.then() will not be called.
 	. = TRUE
 	if (!target || speed <= 0 || QDELETED(src) || (target.z != src.z))
 		return FALSE
@@ -566,16 +611,16 @@
 	var/real_force = 0
 	if(isitem(src))
 		var/obj/item/thrown_item = src
-		real_force = thrown_item.throwforce
+		real_force = thrown_of(thrown_item).force
 
-	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, callback)
+	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, then, then_owner, then_with)
 	rel_set(src, nameof(throwing), TT)
 
 	pixel_z = 0
 	if(spin && does_spin)
 		SpinAnimation(4,1)
 
-	om_task_periodic(TT, PERIODIC_THROWING) // code/datums/thrownthing.dm
+	SSthrow_steps.kernel_join(TT) // code/datums/thrownthing.dm
 
 //Overlays
 /atom/movable/overlay
@@ -583,17 +628,22 @@
 	anchored = TRUE
 
 // An overlay passes touches and items on to what it overlays.
-DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_REF(overlay_pass_touch)), 	INTERACT_ITEM(null, PROC_REF(overlay_pass_item)), )
+CAPABILITIES(/atom/movable/overlay)
+	op("pass_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(overlay_pass_touch)))
+	op("pass_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(overlay_pass_item)))
 
-/atom/movable/overlay/proc/overlay_pass_touch(mob/user, obj/item/held, datum/interaction/interaction)
+/atom/movable/overlay/proc/overlay_pass_touch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(master)
 		master.attack_hand(user)
-	return TRUE
+	return OP_OK
 
-/atom/movable/overlay/proc/overlay_pass_item(mob/user, obj/item/W, datum/interaction/interaction)
+/atom/movable/overlay/proc/overlay_pass_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(master)
-		return master.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
-	return TRUE
+		return master.attackby(W, user) ? OP_OK : OP_PASS
+	return OP_OK
 
 /atom/movable/proc/touch_map_edge()
 	if(z in using_map.sealed_levels)
@@ -625,8 +675,8 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 			new_y = TRANSITIONEDGE + 1
 			new_x = rand(TRANSITIONEDGE + 2, world.maxx - TRANSITIONEDGE - 2)
 
-		if(SSticker && istype(SSticker.mode, /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
-			var/datum/game_mode/nuclear/G = SSticker.mode
+		if(SSticker && istype(ticker_mode(), /datum/game_mode/nuclear)) //only really care if the game mode is nuclear
+			var/datum/game_mode/nuclear/G = ticker_mode()
 			G.check_nuke_disks()
 
 		var/turf/T = locate(new_x, new_y, new_z)
@@ -705,7 +755,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	// cloaked_selfimage in component
 	var/image/csi = dq_get_cloaked_selfimage(src)
 	if(csi)
-		qdel(csi)
+		spent(csi)
 		dq_set_cloaked_selfimage(src, null)
 
 	//Needs to be first so people can actually see the effect, so become uninvisible first
@@ -728,7 +778,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	animate(filters[our_filter], offset = 1, size = 8, time = length, flags = ANIMATION_PARALLEL)
 
 	//When the animations finish
-	om_after(src, length + 5, PROC_REF(cloak_animation_done), initial_alpha)
+	after(src, length + 0.5 SECONDS, PROC_REF(cloak_animation_done), with = list(initial_alpha))
 
 /atom/movable/proc/cloak_animation_done(initial_alpha)
 	//Remove those
@@ -754,7 +804,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	animate(filters[our_filter], offset = 0, size = 0, time = length, flags = ANIMATION_PARALLEL)
 
 	//When the animations finish
-	om_after(src, length + 5, PROC_REF(uncloak_animation_done))
+	after(src, length + 0.5 SECONDS, PROC_REF(uncloak_animation_done))
 
 /atom/movable/proc/uncloak_animation_done()
 	//Remove those
@@ -776,9 +826,10 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 /atom/movable/proc/get_cell()
 	return
 
-/atom/movable/proc/emblocker_gc(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	om_unhook(source, /datum/om/event/qdeleting, src)
+/atom/movable/proc/emblocker_gc(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = N.target
+	unobserve(source, /datum/notice/qdeleting, src)
 	cut_overlay(source)
 	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
 
@@ -847,17 +898,17 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	VV_DROPDOWN_OPTION(VV_HK_GET_MOVABLE, "Get Movable")
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_PARTICLES, "Edit Particles")
 
-VV_TOPIC_ACTION(/atom/movable, VV_HK_GET_MOVABLE, PROC_REF(vv_topic_get_movable), TOPIC_RIGHTS(R_ADMIN))
-VV_TOPIC_ACTION(/atom/movable, VV_HK_EDIT_PARTICLES, PROC_REF(vv_topic_edit_particles), TOPIC_RIGHTS(R_VAREDIT))
 
-/atom/movable/proc/vv_topic_get_movable(mob/user, list/args)
+/atom/movable/proc/vv_topic_get_movable(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ismob(src)) // incase there was a client inside an object being yoinked
 		var/mob/M = src
 		M.reset_perspective(src) // Force reset to self before teleport
 	forceMove(get_turf(user))
 	return TRUE
 
-/atom/movable/proc/vv_topic_edit_particles(mob/user, list/args)
+/atom/movable/proc/vv_topic_edit_particles(datum/act/op/A)
+	var/mob/user = A.actor
 	user.client?.open_particle_editor(src)
 	return TRUE
 

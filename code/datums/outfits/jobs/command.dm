@@ -16,7 +16,7 @@
 
 /datum/decl/hierarchy/outfit/job/captain/post_equip(mob/living/carbon/human/H)
 	..()
-	if(H.age>49)
+	if(H.bio.age>49)
 		// Since we can have something other than the default uniform at this
 		// point, check if we can actually attach the medal
 		var/obj/item/clothing/uniform = H.get_equipped_item(SLOT_ID_UNIFORM)
@@ -25,7 +25,7 @@
 			if(uniform.can_attach_accessory(medal))
 				uniform.attach_accessory(null, medal)
 			else
-				qdel(medal)
+				spent(medal, H)
 
 /datum/decl/hierarchy/outfit/job/hop
 	name = OUTFIT_JOB_NAME(JOB_HEAD_OF_PERSONNEL)

@@ -1,0 +1,25 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+-click: Click: Use
++2 menu: Use screwdriver
++3 click: Click: Use screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+@obj.structure human|/obj/item/tool/wrench
+@obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++2 menu: Use wirecutter
++3 click: Click: Use wirecutter
+@obj.structure human|/obj/item/multitool
+-click: Click: Use
++2 menu: Use multitool
++3 click: Click: Use multitool
+@obj.structure.disposalpipe human|/obj/item/weldingtool
+@obj.structure human|/obj/item/stack/cable_coil
+@obj.structure human|/obj/item/stack/material/steel
+@obj.structure human|/obj/item/card/id
+@obj.structure human|/obj/item
+wires: Sort Forward, Sort Scan, Sort Side
+keys: drag_buckle, item, melee_hit, use_multitool, use_screwdriver, use_welder, use_wirecutter

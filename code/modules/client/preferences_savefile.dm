@@ -27,7 +27,7 @@
 /datum/preferences/proc/load_savefile()
 	if(load_and_save && !path)
 		CRASH("Attempted to load savefile without first loading a path!")
-	own_set(src, nameof(savefile), new /datum/json_savefile(load_and_save ? path : null))
+	rel_set(src, nameof(savefile), new /datum/json_savefile(load_and_save ? path : null))
 
 // General preferences, have to be preloaded
 /datum/preferences/proc/load_early_prefs()
@@ -129,7 +129,7 @@
 		LAZYREMOVE(recently_updated_keys, preference.type)
 
 		if(preference_type in value_cache)
-			write_preference(preference, preference.pref_serialize(value_cache[preference_type]))
+			write_preference(preference, preference.pref_serialize(LAZYACCESS(value_cache, preference_type)))
 
 	save_early_prefs()
 	savefile.save()
@@ -176,7 +176,7 @@
 		if(preference.savefile_identifier != PREFERENCE_CHARACTER)
 			continue
 
-		value_cache -= preference.type
+		LAZYREMOVE(value_cache, preference.type)
 		read_preference(preference.type)
 
 	// Bay player_setup.load_character chain deleted; pre-cache loop above already
@@ -213,7 +213,7 @@
 		LAZYREMOVE(recently_updated_keys, preference.type)
 
 		if(preference.type in value_cache)
-			write_preference(preference, preference.pref_serialize(value_cache[preference.type]))
+			write_preference(preference, preference.pref_serialize(LAZYACCESS(value_cache, preference.type)))
 
 	save_data["version"] = SAVEFILE_VERSION_MAX //load_character will sanitize any bad data, so assume up-to-date.
 	// Bay player_setup.save_character chain deleted; per-pref write() handles persistence.

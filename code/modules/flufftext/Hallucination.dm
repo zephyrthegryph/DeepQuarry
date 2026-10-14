@@ -26,6 +26,9 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	VAR_PRIVATE/hal_crit = FALSE
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE
 
+CAPABILITIES(/datum/hallucinations)
+	owns_one(nameof(halitem), /obj)
+
 /mob/living/carbon/var/datum/hallucinations/hallucinations
 
 /datum/hallucinations/New(mob/living/carbon/human/H)
@@ -39,14 +42,16 @@ Gunshots/explosions/opening doors/less rare audio (done)
 		remove_hallucination_item()
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
-		qdel(halbody)
+		ended_with(halbody, src)
 	if(halimage)
-		qdel(halimage)
+		ended_with(halimage, src)
 	..()
 
 /datum/hallucinations/proc/make_timer()
 	PROTECTED_PROC(TRUE)
-	om_after(src, ((rand(20,50) SECONDS) / (min(our_human.status_units(EFFECT_HALLUCINATING),100)/25)), PROC_REF(trigger))
+	// Sooner the stronger the hallucination: 20-50 s at 25 points, a quarter of that at 100.
+	var/delay = (rand(20, 50) SECONDS) / (min(our_human.status_units(STAT_HALLUCINATING), 100) / 25)
+	after(src, delay, PROC_REF(trigger))
 
 /datum/hallucinations/proc/get_fakecrit()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -68,7 +73,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
 	if(hallucinations || !ishuman(src))
 		return hallucinations
-	own_set(src, nameof(hallucinations), new hallucination_type(src))
+	rel_set(src, nameof(hallucinations), new hallucination_type(src))
 	return hallucinations
 
 /mob/living/carbon/proc/get_hallucination_state()
@@ -78,13 +83,13 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /datum/hallucinations/proc/trigger()
 	PROTECTED_PROC(TRUE)
 	if(QDELETED(our_human))
-		qdel(src)
+		ended_with(src, our_human)
 		return
 	if(!our_human.client)
-		qdel(src)
+		spent(src)
 		return
-	if(our_human.status_units(EFFECT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
-		qdel(src)
+	if(our_human.status_units(STAT_HALLUCINATING) < HALLUCINATION_THRESHOLD)
+		spent(src)
 		return
 	handle_hallucinating()
 	make_timer()
@@ -102,7 +107,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 		if(41 to 65)
 			event_strange_sound()
 		if(66 to 70)
-			if(prob(20) && our_human.nutrition < 100)
+			if(prob(20) && nutrition_of(our_human) < 100)
 				event_hunger() // Hungi, meant for xenochi but this is too funny to pass up
 			else
 				event_flash_monsters()
@@ -121,21 +126,21 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /datum/hallucinations/xenochimera/make_timer()
 	var/datum/xenochimera/XC = our_human.xenochimera
 	var/F = XC ? (XC.feral / 10) : 1
-	om_after(src, ((rand(20,50) SECONDS) / F), PROC_REF(trigger))
+	after(src, ((rand(20,50) SECONDS) / F), PROC_REF(trigger))
 
 /datum/hallucinations/xenochimera/trigger()
 	if(QDELETED(our_human))
-		qdel(src)
+		ended_with(src, our_human)
 		return
 	if(!our_human.client)
-		qdel(src)
+		spent(src)
 		return
 	var/datum/xenochimera/XC = our_human.xenochimera
 	if(!XC || XC.feral < XENOCHIFERAL_THRESHOLD)
-		qdel(src)
+		spent(src)
 		return
 	handle_hallucinating()
-	om_qdel_after(src, rand(3,9)SECONDS)
+	expire(rand(3,9)SECONDS)
 
 /datum/hallucinations/xenochimera/handle_hallucinating()
 	var/halpick = rand(1,100)

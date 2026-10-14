@@ -5,8 +5,9 @@
 	var/gsr = 0
 	var/list/dna
 	var/used
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
+
+CAPABILITIES(/obj/item/forensics/swab)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/forensics/swab/proc/is_used()
 	return used
@@ -34,7 +35,7 @@
 		act_message(user, H, others = span_danger("%U% tries to take a swab sample from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
-	if(user.zone_sel.selecting == O_MOUTH)
+	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		if(!H.organs_by_name[BP_HEAD])
 			to_chat(user, span_warning("They don't have a head."))
 			return ITEM_INTERACT_FAILURE
@@ -45,7 +46,7 @@
 		dna = list(H.dna.unique_enzymes)
 		sample_type = "DNA"
 
-	else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 		var/has_hand
 		var/obj/item/organ/external/O = H.organs_by_name[BP_R_HAND]
 		if(istype(O) && !O.is_stump())
@@ -69,7 +70,9 @@
 	return ITEM_INTERACT_FAILURE
 
 /obj/item/forensics/swab/afterattack(atom/A, mob/user, proximity)
+	return collect_swab_evidence(A, user, proximity)
 
+/obj/item/forensics/swab/proc/collect_swab_evidence(atom/A, mob/user, proximity, selected_evidence)
 	if(!proximity || istype(A, /obj/machinery/dnaforensics))
 		return
 
@@ -92,10 +95,10 @@
 	else if(choices.len == 1)
 		choice = choices[1]
 	else
-		var/_answer_k95 = rerun_ask(user, "k95", PROC_REF(afterattack), args, /datum/om/prompt/choice, message = "What kind of evidence are you looking for?", title = "Evidence Collection", choices = choices)
-		if(isnull(_answer_k95))
+		if(isnull(selected_evidence))
+			open_request(src, /datum/prompt/choice/forensic_swab_evidence, PROC_REF(forensic_swab_evidence_answered), answerer = user, choices = choices, target = A, captured_proximity = proximity)
 			return TRUE
-		choice = _answer_k95
+		choice = selected_evidence
 
 	if(!choice)
 		return
@@ -118,8 +121,40 @@
 		act_message(user, A, MSG_SELF("You swab %T% for a sample."), MSG_OTHERS("%U% swabs %T% for a sample."))
 		set_used(sample_type, A)
 
+
+/obj/item/forensics/swab/proc/forensic_swab_evidence_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/forensic_swab_evidence/request = context.request
+	collect_swab_evidence(request.target, request.answerer, request.captured_proximity, request.value)
+	SStgui.update_uis(src)
+
+/datum/prompt/choice/forensic_swab_evidence
+	title = "Evidence Collection"
+	question = "What kind of evidence are you looking for?"
+	timeout = 0
+	var/atom/target
+	var/captured_proximity
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/choice/forensic_swab_evidence)
+	ref_one(nameof(target), /atom)
+
+/datum/prompt/choice/forensic_swab_evidence/prepare(datum/act/A)
+	..()
+	var/atom/captured_target = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured_target)
+
+/datum/prompt/choice/forensic_swab_evidence/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(target))
+		return "The original sample source is no longer available."
+
 /obj/item/forensics/swab/proc/set_used(sample_str, atom/source)
 	name = "[initial(name)] ([sample_str] - [source])"
 	desc = "[initial(desc)] The label on the vial reads 'Sample of [sample_str] from [source].'."
-	icon_state = "swab_used"
+	set_icon_state("swab_used")
 	used = 1

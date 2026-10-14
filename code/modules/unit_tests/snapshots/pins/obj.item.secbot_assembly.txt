@@ -1,0 +1,33 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Build holed
++3 click: Click: Build holed
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj human|/obj/item/pen
+@obj human|/obj/item/assembly/prox_sensor
+human|/obj/item/robot_parts/l_arm menu: Move To Top
+human|/obj/item/robot_parts/l_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/l_arm click: nothing
+human|/obj/item/robot_parts/r_arm menu: Move To Top
+human|/obj/item/robot_parts/r_arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/robot_parts/r_arm click: nothing
+human|/obj/item/organ/external/arm menu: Move To Top
+human|/obj/item/organ/external/arm menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/organ/external/arm click: nothing
+human|/obj/item/melee/baton menu: Move To Top
+human|/obj/item/melee/baton menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/melee/baton click: nothing
+keys: collect_item, construction.build:secbot_armed, construction.build:secbot_finished, construction.build:secbot_holed, construction.build:secbot_sensing, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, secbot_assembly_rename, toggle_digestable

@@ -1,0 +1,17 @@
+/obj/machinery/alembic base_reagent=1 +state: alembic-base
+/obj/machinery/alembic base_reagent=1 +overlay: icons/obj/chemical.dmi:alembic-base:8:#000000
+/obj/machinery/alembic base_reagent=1 -state: alembic
+/obj/machinery/alembic base_reagent=1 -overlay: icons/obj/chemical.dmi:alembic:8:#000000
+/obj/machinery/alembic base_reagent=2 +state: alembic-base
+/obj/machinery/alembic base_reagent=2 +overlay: icons/obj/chemical.dmi:alembic-base:8:#000000
+/obj/machinery/alembic base_reagent=2 -state: alembic
+/obj/machinery/alembic base_reagent=2 -overlay: icons/obj/chemical.dmi:alembic:8:#000000
+/obj/machinery/alembic potion_reagent=1 +state: alembic-base
+/obj/machinery/alembic potion_reagent=1 +overlay: icons/obj/chemical.dmi:alembic-base:8:#000000
+/obj/machinery/alembic potion_reagent=1 -state: alembic
+/obj/machinery/alembic potion_reagent=1 -overlay: icons/obj/chemical.dmi:alembic:8:#000000
+/obj/machinery/alembic potion_reagent=2 +state: alembic-base
+/obj/machinery/alembic potion_reagent=2 +overlay: icons/obj/chemical.dmi:alembic-base:8:#000000
+/obj/machinery/alembic potion_reagent=2 -state: alembic
+/obj/machinery/alembic potion_reagent=2 -overlay: icons/obj/chemical.dmi:alembic:8:#000000
+

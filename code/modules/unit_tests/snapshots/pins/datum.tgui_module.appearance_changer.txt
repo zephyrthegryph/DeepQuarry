@@ -1,0 +1,14 @@
+@datum human|none
+@datum robot|none
+@datum ai|none
+@datum ghost|none
+@datum human|/obj/item/tool/screwdriver
+@datum human|/obj/item/tool/crowbar
+@datum human|/obj/item/tool/wrench
+@datum human|/obj/item/tool/wirecutters
+@datum human|/obj/item/multitool
+@datum human|/obj/item/weldingtool
+@datum human|/obj/item/stack/cable_coil
+@datum human|/obj/item/stack/material/steel
+@datum human|/obj/item/card/id
+keys: back_to_library, base_icon, blood_color, blood_reagent, char_name, digitigrade, ear, ears2_color, ears_alpha, ears_color, ears_secondary_color, ear_secondary, ejectdisk, eye_color, facial_hair, facial_hair_color, flavor_text, gender, gender_id, hair, hair_color, hair_color_grad, hair_grad, loadfromdisk, load_saveslot, marking, offset_override, pc_exit, pc_minimize, pc_shutdown, race, race_name, rename, rotate_view, savetodisk, scale_appearance, secondary_ears_alpha, size_scale, skin_color, skin_tone, species_sound, tail, tail2_color, tail3_color, tail_alpha, tail_color, ui_open, view_brec, view_stock_brec, weight, wing, wing2_color, wing3_color, wing_alpha, wing_color

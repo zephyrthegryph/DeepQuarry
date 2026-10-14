@@ -48,12 +48,19 @@
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
 
+CAPABILITIES(/datum/stock)
+	owns_one(nameof(industry), /datum/industry)
+	owns_many(nameof(articles))
+	owns_many(nameof(borrow_brokers))
+	owns_many(nameof(borrows))
+	owns_many(nameof(events))
+
 /datum/stock/proc/addEvent(datum/stockEvent/E)
-	own_add(src, nameof(events), E)
+	rel_add(src, nameof(events), E)
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		own_add(src, nameof(articles), A) // appended: newest article is last
+		rel_add(src, nameof(articles), A) // appended: newest article is last
 	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
@@ -73,19 +80,19 @@
 
 /datum/stock/proc/generateIndustry()
 	if (findtext(name, "Farms"))
-		own_set(src, nameof(industry), new /datum/industry/agriculture)
+		rel_set(src, nameof(industry), new /datum/industry/agriculture)
 	else if (findtext(name, "Software") || findtext(name, "Programming")  || findtext(name, "IT Group") || findtext(name, "Electronics") || findtext(name, "Electric") || findtext(name, "Nanotechnology"))
-		own_set(src, nameof(industry), new /datum/industry/it)
+		rel_set(src, nameof(industry), new /datum/industry/it)
 	else if (findtext(name, "Mobile") || findtext(name, "Communications"))
-		own_set(src, nameof(industry), new /datum/industry/communications)
+		rel_set(src, nameof(industry), new /datum/industry/communications)
 	else if (findtext(name, "Pharmaceuticals") || findtext(name, "Health"))
-		own_set(src, nameof(industry), new /datum/industry/health)
+		rel_set(src, nameof(industry), new /datum/industry/health)
 	else if (findtext(name, "Wholesale") || findtext(name, "Stores"))
-		own_set(src, nameof(industry), new /datum/industry/consumer)
+		rel_set(src, nameof(industry), new /datum/industry/consumer)
 	else
 		var/ts = typesof(/datum/industry) - /datum/industry
 		var/in_t = pick(ts)
-		own_set(src, nameof(industry), new in_t)
+		rel_set(src, nameof(industry), new in_t)
 	for (var/i = 0, i < rand(2, 5), i++)
 		products += industry.generateProductName(name)
 
@@ -187,23 +194,21 @@
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			own_take_member(src, nameof(borrows), borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
-				GLOB.FrozenAccounts[borrow.borrower] -= borrow
+				GLOB.FrozenAccounts[borrow.borrower] -= entity_handle_of(borrow)
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
-			qdel(borrow)
+			rel_remove(src, nameof(borrows), borrow)
 		else if (ELAPSED(borrow, lease_expires, CLOCK_WORLD) > 0)
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					own_take_member(src, nameof(borrows), borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
-						GLOB.FrozenAccounts[borrow.borrower] -= borrow
+						GLOB.FrozenAccounts[borrow.borrower] -= entity_handle_of(borrow)
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 						GLOB.FrozenAccounts -= borrow.borrower
-					qdel(borrow)
+					rel_remove(src, nameof(borrows), borrow)
 				else
 					LAZYREMOVE(shareholders, borrow.borrower)
 					borrow.share_debt -= amt
@@ -212,8 +217,7 @@
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
-			own_take_member(src, nameof(borrow_brokers), borrow)
-			qdel(borrow)
+			rel_remove(src, nameof(borrow_brokers), borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
 	fluctuation_counter += elapsed_steps
@@ -239,13 +243,13 @@
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	own_add(src, nameof(borrow_brokers), B)
+	rel_add(src, nameof(borrow_brokers), B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
 	if(!account || (by < 0 && account.money + by < 0 && !force))
 		return 0
-	if(!GLOB.supply_service.adjust_budget(by, "Stock exchange transaction"))
+	if(!SSsupply.adjust_budget(by, "Stock exchange transaction"))
 		return 0
 	GLOB.stockExchange.balanceLog(whose, by)
 	return 1
@@ -265,13 +269,13 @@
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	own_transfer(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
+	rel_move(src, nameof(borrow_brokers), src, nameof(borrows), B) // an accepted offer: still the stock's to delete
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))
-		GLOB.FrozenAccounts[who] = list(B)
+		GLOB.FrozenAccounts[who] = list(entity_handle(B))
 	else
-		GLOB.FrozenAccounts[who] += B
+		GLOB.FrozenAccounts[who] += entity_handle(B)
 	return 1
 
 /datum/stock/proc/buyShares(who, howmany)

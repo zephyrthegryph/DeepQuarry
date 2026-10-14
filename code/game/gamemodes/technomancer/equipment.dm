@@ -105,19 +105,18 @@
 	obj_path = /obj/item/storage/belt/medical/technomancer
 
 /obj/item/storage/belt/medical/technomancer
+	starts_with = list(
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ = 1,
+		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat = 1,
+	)
 	name = "hypo belt"
 	desc = "A medical belt designed to carry autoinjectors and other medical equipment."
-
-/obj/item/storage/belt/medical/technomancer/Initialize(mapload)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/brute(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/burn(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/toxin(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/oxy(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/purity(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/pain(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/organ(src)
-	new /obj/item/reagent_containers/hypospray/autoinjector/biginjector/combat(src)
-	. = ..()
 
 /datum/technomancer/equipment/belt_of_holding
 	name = "Belt of Holding"
@@ -134,7 +133,6 @@
 	storage_slots = 14	// Twice the capacity of a typical belt.
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14
 
-TYPE_TABLE(/obj/item/storage/belt/holding, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
 /datum/technomancer/equipment/thermals
 	name = "Thermoncle"
@@ -186,14 +184,15 @@ TYPE_TABLE(/obj/item/storage/belt/holding, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZ
 	desc = "It's a purple gem, attached to a rod and a handle, along with small wires.  It looks like it would make a good club."
 	icon = 'icons/obj/technomancer.dmi'
 	icon_state = "scepter"
-	force = 15
-	slot_flags = SLOT_BELT
-	attack_verb = list("beaten", "smashed", "struck", "whacked")
 
-DECLARE_INTERACTIONS(/obj/item/scepter, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/scepter)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 15, attack_verbs = list("beaten", "smashed", "struck", "whacked")))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/scepter/proc/interaction_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/item/scepter/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	var/obj/item/item_to_test = user.get_other_hand(src)
 	if(istype(item_to_test, /obj/item/spell))
 		var/obj/item/spell/S = item_to_test
@@ -218,7 +217,9 @@ DECLARE_INTERACTIONS(/obj/item/scepter, INTERACT_USE(null, PROC_REF(interaction_
 	name = "spyglass"
 	desc = "It's a hand-held telescope, useful for star-gazing, peeping, and recon."
 	icon_state = "spyglass"
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/binoculars/spyglass)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 /obj/item/clothing/glasses/monocoole

@@ -1,0 +1,44 @@
+human|none menu: Stomp
+human|none click: Click: Stomp
+robot|none menu: Stomp
+robot|none click: Click: Stomp
+@obj.effect ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Stomp
+human|/obj/item/tool/screwdriver click: Click: Stomp
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Stomp
+human|/obj/item/tool/crowbar click: Click: Stomp
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Stomp
+human|/obj/item/tool/wrench click: Click: Stomp
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Stomp
+human|/obj/item/tool/wirecutters click: Click: Stomp
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Stomp
+human|/obj/item/multitool click: Click: Stomp
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Stomp
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Stomp
+human|/obj/item/stack/cable_coil click: Click: Stomp
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Stomp
+human|/obj/item/stack/material/steel click: Click: Stomp
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Stomp
+human|/obj/item/card/id click: Click: Stomp
+@obj human|/obj/item/mop_deploy
++0 menu: Hit
++2 menu: Stomp
+@obj human|/obj/item/soap
++1 menu: Hit
++3 menu: Stomp
+human|/obj/item menu: Hit
+human|/obj/item menu: Stomp
+human|/obj/item click: Click: Stomp
+keys: drag_buckle, melee_hit, pass_insert, pass_insert_2, stomp, use_welder

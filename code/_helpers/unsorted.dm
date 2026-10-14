@@ -218,6 +218,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 //Returns whether or not a player is a guest using their ckey as an input
 /proc/IsGuestKey(key)
+	READS_FROM() // a key's text only
 	if (findtext(key, "Guest-", 1, 7) != 1) //was findtextEx
 		return 0
 
@@ -254,7 +255,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Calling this proc without an oldname will only update the mob and skip updating the pda, id and records ~Carn
 /mob/proc/fully_replace_character_name(oldname,newname)
 	if(!newname)	return 0
-	real_name = newname
+	set_real_name(newname)
 	name = newname
 	if(mind)
 		mind.name = newname
@@ -280,7 +281,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			if( search_id && istype(A,/obj/item/card/id) )
 				var/obj/item/card/id/ID = A
 				if(ID.registered_name == oldname)
-					ID.registered_name = newname
+					ID.set_registered_name(newname)
 					ID.name = "[newname]'s ID Card ([ID.assignment])"
 					if(!search_pda)	break
 					search_id = 0
@@ -288,7 +289,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			else if( search_pda && istype(A,/obj/item/pda) )
 				var/obj/item/pda/PDA = A
 				if(PDA.owner == oldname)
-					PDA.owner = newname
+					PDA.set_owner(newname)
 					PDA.name = "PDA-[newname] ([PDA.ownjob])"
 					if(!search_id)	break
 					search_pda = 0
@@ -299,27 +300,35 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
 		started_at = EXPIRY_AT(src, CLOCK_WORLD, 0)
-	om_ask(src, /datum/om/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
+	open_request(src, /datum/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), answerer = src, default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
 
 /// A mob picking its own name for a role (rename_self()).
-/datum/om/prompt/text/rename_self
+/datum/prompt/text/rename_self
 	title = "Name change"
-	max_length = MAX_NAME_LEN
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	timeout = 0
 	var/role
 	var/allow_numbers
 	var/attempt
 	EXPIRY_DECLARE(started_at)
 
-/datum/om/prompt/text/rename_self/prepare()
-	message = "You are \a [role]. Would you like to change your name to something else?"
-	return TRUE
+/datum/prompt/text/rename_self/prepare(datum/act/A)
+	. = ..()
+	question = "You are \a [role]. Would you like to change your name to something else?"
 
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
-/mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
+/mob/proc/rename_self_entered(datum/act/request/request_act)
+	if(!request_act.answer)
+		return
+	return rename_self_apply(request_act)
+
+/mob/proc/rename_self_apply(datum/act/request/request_act)
+	var/datum/prompt/text/rename_self/P = request_act.answer
 	var/role = P.role
 	if(ELAPSED(P, started_at, CLOCK_WORLD) > 5 MINUTES)
 		return	//took too long
-	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/newname = sanitizeName(P.value, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M == src)
 			continue
@@ -334,8 +343,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 	var/oldname = real_name
 	if(cmptext("ai",role))
-		if(isAI(src))
-			var/mob/living/silicon/ai/A = src
+		var/mob/living/silicon/ai/A = src
+		if(istype(A))
 			oldname = null//don't bother with the records update crap
 			play_simple_announcement(world, ANNOUNCER_MSG_NEW_AI)
 			// Set eyeobj name
@@ -353,7 +362,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/list/borgs = free_borg_choices()
 	if(!borgs.len)
 		return
-	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/om/prompt/choice, message = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
+	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/prompt/choice, question = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
 	if(select)
 		return borgs[select]
 
@@ -395,7 +404,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		return
 	if(!user || !asker)
 		return pick(ais)
-	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/om/prompt/choice, message = "AI signals detected:", title = "AI selection", choices = ais)
+	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/prompt/choice, question = "AI signals detected:", title = "AI selection", choices = ais)
 	return (picked in active_ais()) ? picked : null
 
 //Returns a list of all mobs with their name
@@ -437,9 +446,9 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if(M.low_sorting_priority && !M.client)
 			delaylist.Add(M)
 		else
-			if (!M.client && !M.disconnect_time) //ChompADD Start
+			if (!M.client && !M.disconnect_time)
 				after_simplemob_minded.Add(M)
-				continue //ChompADD End
+				continue
 			moblist.Add(M)
 	moblist.Add(delaylist)
 	for(var/mob/living/carbon/brain/M in sortmob)
@@ -578,12 +587,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Will return the contents of an atom recursivly to a depth of 'searchDepth'
 /atom/proc/GetAllContents(searchDepth = 5)
 	var/list/toReturn = list()
-	if(latent_contents)
+	if(latent_contents_enabled())
 		latent_materialize_all() // a search needs real things (C5)
 
 	for(var/atom/part in contents)
 		toReturn += part
-		if((contents_count(part) || part.latent_contents) && searchDepth)
+		if((contents_count(part) || part?.latent_contents_enabled()) && searchDepth)
 			toReturn += part.GetAllContents(searchDepth - 1)
 
 	return toReturn
@@ -755,7 +764,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					if(istype(T,/turf/simulated/shuttle))
 						shuttlework = 1
 						var/turf/simulated/shuttle/SS = T
-						if(!SS.landed_holder()) own_set(SS, nameof(SS.landed_holder_ref), new /obj/landed_holder(SS))
+						if(!SS.landed_holder()) rel_set(SS, nameof(SS.landed_holder_ref), new /obj/landed_holder(SS))
 						X = SS.landed_holder().land_on(B)
 
 					//Generic non-shuttle turf move.
@@ -768,11 +777,11 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 						X = B.ChangeTurf(T.type)
 						X.set_dir(old_dir1)
-						X.icon_state = old_icon_state1
+						X.set_icon_state(old_icon_state1)
 						X.icon = old_icon1
 						X.copy_overlays(T, TRUE)
 						X.underlays = old_underlays
-						X.decals = old_decals
+						X.set_decals(old_decals)
 
 					// air-transfer used ZAS zone.air; LINDA uses per-turf return_air().
 					var/datum/gas_mixture/source_air = T.return_air()
@@ -882,7 +891,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					var/turf/X = B
 					X.ChangeTurf(T.type)
 					X.set_dir(old_dir1)
-					X.icon_state = old_icon_state1
+					X.set_icon_state(old_icon_state1)
 					X.icon = old_icon1 //Shuttle floors are in shuttle.dmi while the defaults are floors.dmi
 					X.overlays = old_overlays
 					X.underlays = old_underlays
@@ -935,11 +944,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return copiedobjs
 
 /proc/get_cardinal_dir(atom/A, atom/B)
+	READS_FROM() // two places on the map, asked when a choice is made
 	var/dx = abs(B.x - A.x)
 	var/dy = abs(B.y - A.y)
 	return get_dir(A, B) & (rand() * (dx+dy) < dy ? 3 : 12)
 
-/proc/view_or_range(distance = world.view , center = usr , type)
+/proc/view_or_range(distance = world.view , center , type)
 	switch(type)
 		if("view")
 			. = view(distance,center)
@@ -1033,27 +1043,30 @@ GLOBAL_LIST_INIT(common_tools, list(
 
 //Whether or not the given item counts as sharp in terms of dealing damage
 /proc/is_sharp(obj/item/O)
+	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.sharp)
+	if(combat_of(O).sharp)
 		return TRUE
-	if(O.edge)
+	if(combat_of(O).edge)
 		return TRUE
 	return FALSE
 
 //Whether or not the given item counts as cutting with an edge in terms of removing limbs
 /proc/has_edge(obj/item/O)
+	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.edge)
+	if(combat_of(O).edge)
 		return TRUE
 	return FALSE
 
 //Returns 1 if the given item is capable of popping things like balloons, inflatable barriers, or cutting police tape.
 /proc/can_puncture(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
+	READS_FROM(W)
 	if(!W)
 		return FALSE
-	if(W.sharp)
+	if(combat_of(W).sharp)
 		return TRUE
 	return ( \
 		W.has_tool_quality(TOOL_SCREWDRIVER)		     				              || \
@@ -1066,12 +1079,12 @@ GLOBAL_LIST_INIT(common_tools, list(
 	)
 
 // check if mob is lying down on something we can operate him on.
-// The RNG with table/rollerbeds comes into play in do_surgery() so that fail_step() can be used instead.
+// The RNG with table/rollerbeds comes into play in the surgery ops (surgery_ops.dm) so that a slip can be used instead.
 /// `stance` is the stance of the interaction doing the surgery: self-surgery only when helping.
 /proc/can_operate(mob/living/carbon/M, mob/living/user, stance)
 	if(M != user)
 		. = M.lying
-	else if(user && user.allow_self_surgery && stance == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
+	else if(user && kind_of(user).self_surgery && stance == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
 		. = TRUE
 	return .
 
@@ -1175,7 +1188,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /atom/proc/get_light_and_color(atom/origin)
 	if(origin)
 		color = origin.color
-		set_light(origin.light_range, origin.light_power, origin.light_color)
+		set_glow(src, GLOW(glow_of(origin).range, glow_of(origin).power, glow_of(origin).color))
 
 /// We don't want to be in any mob registry; we're a dummy not a mob.
 /mob/dview/skips_registry(registry_id)
@@ -1216,12 +1229,15 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 			return "[round(number / 1e12, 0.1)] T[symbol]" // tera
 
 //ultra range (no limitations on distance, faster than range for distances > 8); including areas drastically decreases performance
-/proc/urange(dist=0, atom/center=usr, orange=0, areas=0)
+/proc/urange(dist=0, atom/center=null, orange=0, areas=0)
 	if(!dist)
 		if(!orange)
 			return list(center)
 		else
 			return list()
+
+	if(!get_turf(center))
+		return list()
 
 	var/list/turfs = RANGE_TURFS(dist, center)
 	if(orange)
@@ -1318,9 +1334,9 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 /// Asks for a type (typed filter, then a pick from the matches) inside a prompt flow
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
-/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path")
+/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path", mob/user)
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
-		value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
+		value = flow_ask(user, "[key]:filter", /datum/prompt/text, question = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
 			return
 	value = trim(value)
@@ -1334,7 +1350,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(matches.len==1)
 		chosen = matches[1]
 	else
-		chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
+		chosen = flow_ask(user, "[key]:pick", /datum/prompt/choice, question = "Select a type", title = "Pick Type", choices = matches)
 		if(!chosen || !(chosen in matches))
 			return
 	chosen = matches[chosen]
@@ -1588,7 +1604,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 		object.set_custom_materials(final_material_list, multiplier)
 		index += 1
 
-/proc/spiral_range(dist = 0, center = usr, orange = FALSE)
+/proc/spiral_range(dist = 0, atom/center = null, orange = FALSE)
 	var/list/atom_list = list()
 	var/turf/t_center = get_turf(center)
 	if(!t_center)
@@ -1660,7 +1676,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in start_vent.network.normal_members)
 		if(vent == start_vent)
 			continue
-		if(vent.welded)
+		if(is_welded(vent))
 			continue
 		var/area/A = get_area(vent)
 		if(A.flag_check(AREA_FORBID_EVENTS))
@@ -1695,7 +1711,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	query_string += "&color=[url_encode(color)]"
 	if(sender)
 		query_string += "&from=[url_encode(sender)]"
-	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /proc/admin_action_message(admin = "INVALID", user = "INVALID", action = "INVALID", reason = "INVALID", time = "INVALID")
 	if (!CONFIG_GET(string/chat_webhook_url) || !action)
@@ -1707,4 +1723,4 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	query_string += "&action=[url_encode(action)]"
 	query_string += "&reason=[url_encode(reason)]"
 	query_string += "&time=[url_encode(time)]"
-	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")

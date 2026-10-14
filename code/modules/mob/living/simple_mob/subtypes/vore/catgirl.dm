@@ -34,17 +34,12 @@
 		"catgirlbrown"
 	)
 
-	can_be_drop_prey = FALSE
 
 	faction = FACTION_CATGIRL
 
-/mob/living/simple_mob/vore/catgirl/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		icon_living = pick(skins)
-		icon_rest = "[icon_living]asleep"
-		icon_dead = "[icon_living]-dead"
-		update_icon()
+CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/catgirl

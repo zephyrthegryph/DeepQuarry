@@ -1,0 +1,17 @@
+/obj/item/holo/esword icon: icons/obj/weapons.dmi
+/obj/item/holo/esword state: esword
+/obj/item/holo/esword dir: 2
+/obj/item/holo/esword overlay: icons/obj/weapons.dmi:esword:8:#000000
+/obj/item/holo/esword/green icon: icons/obj/weapons.dmi
+/obj/item/holo/esword/green state: esword
+/obj/item/holo/esword/green dir: 2
+/obj/item/holo/esword/green overlay: icons/obj/weapons.dmi:esword:8:#000000
+/obj/item/holo/esword/red icon: icons/obj/weapons.dmi
+/obj/item/holo/esword/red state: esword
+/obj/item/holo/esword/red dir: 2
+/obj/item/holo/esword/red overlay: icons/obj/weapons.dmi:esword:8:#000000
+/obj/item/holo/esword/interim_holder_appearance icon: icons/obj/weapons.dmi
+/obj/item/holo/esword/interim_holder_appearance state: esword
+/obj/item/holo/esword/interim_holder_appearance dir: 2
+/obj/item/holo/esword/interim_holder_appearance overlay: icons/obj/weapons.dmi:esword:8:#000000
+

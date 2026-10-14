@@ -32,7 +32,6 @@
 	TEST_ASSERT_NULL(M.organs_by_name, "a mouse should have no organs_by_name list")
 	TEST_ASSERT(!length(INTERNAL_ORGANS(M)), "a mouse should have no internal organs before butchery")
 	TEST_ASSERT_NULL(M.organ_in(O_HEART), "a mouse should have no heart before butchery")
-	TEST_ASSERT_NULL(M.bad_external_organs, "a mouse should have no bad_external_organs list")
 	TEST_ASSERT_NULL(M.get_organ(BP_TORSO), "get_organ on a mob without organs should return null, not runtime")
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)

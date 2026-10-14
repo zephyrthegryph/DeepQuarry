@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - bugfix: "Handlabelers retain accepted label text without switching off, and ignore late answers after being switched off."
+  - code_imp: "Migrate cargo, botany, paperwork, game and admin requests and ordinary reference declarations to native forms."

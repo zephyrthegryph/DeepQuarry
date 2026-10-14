@@ -15,80 +15,71 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 18750)
-	var/deployed = 0
+	var/deployed = FALSE
 	var/camo_net = FALSE
 	var/stun_length = 0.25 SECONDS
 
 /obj/item/beartrap/start_active
 	deployed = TRUE
 
-/obj/item/beartrap/Initialize(mapload)
-	. = ..()
-	if(mapload && deployed)
-		update_icon()
+TRACKED(/obj/item/beartrap, deployed)
 
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-/// Old attack_self.
-/obj/item/beartrap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!deployed && can_use(user))
-		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
-			MSG_BLIND("You hear the slow creaking of a spring."))
+MSG_DEF(beartrap/deploying, "You begin deploying %T%!", "%U% starts to deploy %T%.")
+MSG_DEF(beartrap/deployed, "You have deployed %T%!", "%U% has deployed %T%.")
+MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T%.")
+MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	return TRUE
+CAPABILITIES(/obj/item/beartrap)
+	configure(item_worn(slots = SLOT_MASK))
+	configure(item_thrown(force = 0))
+	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+		begins(MSG(beartrap/deploying), blind = "You hear the slow creaking of a spring."), wait(6 SECONDS),
+		then(PROC_REF(deploy_trap)), says(MSG(beartrap/deployed), blind = "You hear a latch click loudly."))
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), priority(OP_PRIORITY_TAKE_OUT), begins(PROC_REF(freeing_text)), wait(6 SECONDS),
+		then(PROC_REF(free_victim)), says(PROC_REF(freed_text)))
+	op("disarm", hand(), label("Disarm"), when(PROC_REF(can_disarm)),
+		begins(MSG(beartrap/disarming), blind = "You hear a latch click followed by the slow creaking of a spring."), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(6 SECONDS),
+		then(PROC_REF(disarm_trap)), says(MSG(beartrap/disarmed)))
 
-/obj/item/beartrap/proc/attack_self_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
-		MSG_BLIND("You hear a latch click loudly."))
+/obj/item/beartrap/proc/can_deploy(datum/act/op/A)
+	return (!deployed && can_use(A.actor)) ? null : /datum/msg/req_silent
+
+/obj/item/beartrap/proc/can_free(datum/act/op/A)
+	return has_buckled_mobs() && can_use(A.actor)
+
+/obj/item/beartrap/proc/can_disarm(datum/act/op/A)
+	return !has_buckled_mobs() && deployed && can_use(A.actor)
+
+/obj/item/beartrap/proc/deploy_trap(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
-	deployed = 1
+	set_deployed(TRUE)
 	user.drop_from_inventory(src)
-	update_icon()
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
-DECLARE_INTERACTIONS(/obj/item/beartrap, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
+/// The lines of the freeing name the one who is caught.
+/obj/item/beartrap/proc/freeing_text(datum/act/op/A)
+	var/victims = english_list(buckled_mob_list())
+	return msg_text(span_notice("You carefully begin to free [victims] from %T%."), span_notice("%U% begins freeing [victims] from %T%."))
 
-/// Old attack_hand.
-/obj/item/beartrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(src?.buckled_mob_list())
-		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free [victim] from %T%.")), \
-			MSG_OTHERS(span_notice("%U% begins freeing [victim] from %T%.")))
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
-	else if(deployed && can_use(user))
-		act_message(user, src, MSG_SELF(span_notice("You begin disarming %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to disarm %T%.")), \
-			MSG_BLIND("You hear a latch click followed by the slow creaking of a spring."))
-		play_sfx(src, SFX_MACHINES_CLICK)
+/obj/item/beartrap/proc/freed_text(datum/act/op/A)
+	return msg_text(null, span_notice("The one caught has been freed from %T% by %U%."))
 
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
-	else
-		return FALSE
-	return TRUE
-
-/obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
-	act_message(user, src, others = span_notice("[victim] has been freed from %T% by %U%."))
-	for(var/A in src?.buckled_mob_list())
-		unbuckle_mob(A)
+/obj/item/beartrap/proc/free_victim(datum/act/op/A)
+	for(var/mob/victim in src?.buckled_mob_list())
+		unbuckle_mob(victim)
 	set_anchored(FALSE)
-/obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have disarmed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has disarmed %T%.")))
-	deployed = 0
+
+/obj/item/beartrap/proc/disarm_trap(datum/act/op/A)
+	set_deployed(FALSE)
 	set_anchored(FALSE)
-	update_icon()
 
 /obj/item/beartrap/proc/attack_mob(mob/living/L)
 
@@ -112,20 +103,20 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 		var/obj/item/organ/external/affected = H.get_organ(check_zone(target_zone))
 		if(!affected) // took it clean off!
 			to_chat(H, span_danger("The steel jaws of \the [src] take your limb clean off!"))
-			L.status_at_least(EFFECT_STUNNED, stun_length*2)
-			deployed = 0
+			L.status_at_least(STAT_STUNNED, stun_length*2)
+			set_deployed(FALSE)
 			set_anchored(FALSE)
 			return
 
 	//trap the victim in place
 	set_dir(L.dir)
-	can_buckle = TRUE
+	set_can_buckle(TRUE)
 	buckle_mob(L)
-	L.status_at_least(EFFECT_STUNNED, stun_length)
+	L.status_at_least(STAT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
-	deployed = 0
+	set_deployed(FALSE)
 	set_anchored(FALSE)
-	can_buckle = initial(can_buckle)
+	set_can_buckle(initial(can_buckle))
 
 /obj/item/beartrap/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -136,30 +127,27 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			act_message(L, src, MSG_SELF(span_danger("You step on %T%!")), \
 				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
 				MSG_BLIND(span_infoplain(span_bold("You hear a loud metallic snap!"))))
-			GLOB.motiontracker_service.ping(src,100) // Clunk!
+			SSmotiontracker.ping(src,100) // Clunk!
 			attack_mob(L)
 			if(!has_buckled_mobs())
 				set_anchored(FALSE)
-			deployed = 0
-			update_icon()
+			set_deployed(FALSE)
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/beartrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/beartrap/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/beartrap/draw(datum/look/look)
+	..()
 
 	if(!deployed)
 		if(camo_net)
-			alpha = 255
+			look.set_alpha(255)
 
-		icon_state = "beartrap0"
+		look.state("beartrap0")
 	else
 		if(camo_net)
-			alpha = 50
+			look.set_alpha(50)
 
-		icon_state = "beartrap1"
+		look.state("beartrap1")
 
 /obj/item/beartrap/hunting
 	name = "hunting trap"
@@ -187,99 +175,93 @@ DECLARE_APPEARANCE_PROC(/obj/item/beartrap, TYPE_PROC_REF(/atom, appearance_over
 	force_divisor = 0.20
 	thrown_force_divisor = 0.25
 
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 
 /obj/item/material/barbedwire/set_material(new_material)
 	..()
 
 	if(!QDELETED(src))
-		max_integrity = max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity / 3)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		name = (material.edge_damage() * force_divisor > 15) ?  "[material.display_name] razor wire" : "[material.display_name] [initial(name)]"
 
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-// EXTEND: /obj/item/material's repair interaction still applies, after this type's own.
-EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(barbedwire_interaction_item)), \
-)
+MSG_DEF(barbedwire/deploying, "You begin deploying %T%!", "%U% starts to deploy %T%.")
+MSG_DEF(barbedwire/deployed, "You have deployed %T%!", "%U% has deployed %T%.")
+MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to collect %T%.")
+MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
 
-/// Old attack_hand.
-/obj/item/material/barbedwire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(anchored && can_use(user))
-		act_message(user, src, MSG_SELF(span_notice("You begin collecting %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to collect %T%.")), \
-			MSG_BLIND("You hear the sound of rustling [material.name]."))
-		play_sfx(src, SFX_MACHINES_CLICK)
+CAPABILITIES(/obj/item/material/barbedwire)
+	configure(item_combat(sharp = TRUE))
+	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),
+		then(PROC_REF(deploy_wire)), says(MSG(barbedwire/deployed), blind = "You hear the rustling of wire."))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("collect", hand(), label("Collect"), when(PROC_REF(can_collect)),
+		begins(MSG(barbedwire/collecting), blind = "You hear the sound of rustling wire."), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(PROC_REF(collect_time)),
+		then(PROC_REF(collect_wire)), says(MSG(barbedwire/collected)))
+	// a hit wears the coil, then the material's own repair still has its turn
+	op("barbedwire_hit", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(barbedwire_interaction_item)))
 
-		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
-	else
-		return FALSE
-	return TRUE
+/obj/item/material/barbedwire/proc/can_deploy(datum/act/op/A)
+	return (!anchored && can_use(A.actor)) ? null : /datum/msg/req_silent
 
-/obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \
-		MSG_OTHERS(span_danger("%U% has collected %T%.")))
+/obj/item/material/barbedwire/proc/can_collect(datum/act/op/A)
+	return anchored && can_use(A.actor)
+
+/// Collecting takes as long as the coil's wear says.
+/obj/item/material/barbedwire/proc/collect_time(datum/act/A)
+	return get_integrity() / MATERIAL_WEAR_UNIT
+
+/obj/item/material/barbedwire/proc/collect_wire(datum/act/op/A)
 	set_anchored(FALSE)
-	update_icon()
 
-/// Old attack_self.
-/obj/item/material/barbedwire/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!anchored && can_use(user))
-		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
-			MSG_BLIND("You hear the rustling of [material.name]."))
-
-		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
-	return TRUE
-
-/obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)
-	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
-		MSG_BLIND("You hear the rustling of [material.name]."))
+/obj/item/material/barbedwire/proc/deploy_wire(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
-	om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
+	after(src, 0.2 SECONDS, GLOBAL_PROC_REF(playsound), key = "deploy_sound", with = list(src, 'sound/items/Wirecutter.ogg', 40, 1))
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
 	set_anchored(TRUE)
-	update_icon()
 
 /// Old attackby: wear from being hit, then falls through as its ..() did.
-/obj/item/material/barbedwire/proc/barbedwire_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/material/barbedwire/proc/barbedwire_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((W.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(W))
 		user.do_attack_animation(src)
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
-		var/inc_damage = W.force
+		var/inc_damage = combat_of(W).force
 
 		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
 
 		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/material/barbedwire/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if((tool.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(tool))
 		user.do_attack_animation(src)
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
-		var/inc_damage = tool.force
+		var/inc_damage = combat_of(tool).force
 
 		if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
-			playsound(src, tool.usesound, 100, 1)
+			playsound(src, sounds_of(tool).use, 100, 1)
 			inc_damage *= 3
 
 		if(tool.obj_damage_type() != BRUTE)
@@ -287,9 +269,12 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 
 		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchored?-out:}")
+/// The look (the draw sweep: from its template).
+/obj/item/material/barbedwire/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][anchored ? "-out" : ""]")
 
 /obj/item/material/barbedwire/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -301,7 +286,6 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 				MSG_OTHERS(span_danger("%U% steps in %T%.")), \
 				MSG_BLIND(span_infoplain(span_bold("You hear a sharp rustling!"))))
 			attack_mob(L)
-			update_icon()
 	..()
 
 /obj/item/material/barbedwire/proc/shock(mob/user as mob, prb, target_zone = BP_TORSO)
@@ -341,7 +325,7 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 						L.electrocute_act(PN_damage, src, 0.8)
 
 			fx_sparks(src, 3)
-			if(user.has_status(EFFECT_STUNNED))
+			if(user.has_status(STAT_STUNNED))
 				return 1
 		else
 			return 0
@@ -367,7 +351,7 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 
 	L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS)
 
-	if(!L.injure(injury_kind, force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
+	if(!L.injure(injury_kind, combat_of(src).force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return
 
 	play_sfx(src, SFX_EFFECTS_GLASS_STEP) // not sure how to handle metal shards with sounds
@@ -377,7 +361,7 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 		if(H.species.siemens_coefficient<0.5) //Thick skin.
 			return
 
-		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 			return
 
 		if(H.species.flags & NO_MINOR_CUT)
@@ -392,9 +376,9 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 			if(affecting)
 				if(affecting.is_robotic())
 					return
-				H.injure(INJURY_BLUNT, force, affecting, src)
+				H.injure(INJURY_BLUNT, combat_of(src).force, affecting, src)
 				if(affecting.organ_can_feel_pain())
-					H.status_at_least(EFFECT_WEAKENED, 3)
+					H.status_at_least(STAT_WEAKENED, 3)
 				return
 			check -= picked
 
@@ -412,7 +396,6 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 
 // === merged from traps_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/beartrap
-	slot_flags = SLOT_MASK
 	item_icons = list(
 		slot_wear_mask_str = 'icons/inventory/face/mob.dmi'
 		)
@@ -421,12 +404,12 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.get_equipped_item(SLOT_ID_MASK) == src)
-			om_grant(H, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+			grant(H, granted_verb(/mob/living/proc/shred_limb_temp), src)
 		else
-			om_revoke(H, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+			revoke(H, granted_verb(/mob/living/proc/shred_limb_temp), src)
 	..()
 
 /obj/item/beartrap/dropped(mob/user, equipping, slot)
 	if(user)
-		om_revoke(user, GRANT_VERB, /mob/living/proc/shred_limb_temp, src)
+		revoke(user, granted_verb(/mob/living/proc/shred_limb_temp), src)
 	..()

@@ -1,0 +1,72 @@
+@obj.machinery.computer.ship.navigation human|none
+@obj.machinery.computer.ship.navigation robot|none
+@obj.machinery ai|none
+@obj.machinery.computer.ship.navigation ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use screwdriver
++2 menu: Emote Beyond
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use crowbar
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use wrench
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use wirecutters
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use multitool
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use welding tool
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use cable coil
++1 menu: Emote Beyond
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use steel sheet
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use identification card
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
+@obj.machinery.computer human|/obj/item
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/gripper
+@obj.machinery human|/obj/item/card/emag
+-menu: Use cryptographic sequencer
++1 menu: Emote Beyond
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
+keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, ship_console_use, ship_emote_beyond, ship_ghost_view, ship_silicon_use, silicon_hand, sync, use_gripper, use_item

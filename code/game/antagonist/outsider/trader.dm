@@ -29,7 +29,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 
 /datum/antagonist/trader/create_default(mob/source)
 	var/mob/living/carbon/human/M = ..()
-	if(istype(M)) M.age = rand(25,45)
+	if(istype(M)) M.bio.age = rand(25,45)
 
 /datum/antagonist/trader/New()
 	..()
@@ -52,7 +52,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	var/obj/item/card/id/id = create_id("Trader", player, equip = 0)
 	id.name = "[player.real_name]'s Passport"
 	id.assignment = "Trader"
-	id.access |= ACCESS_TRADER
+	id.include_access(ACCESS_TRADER)
 	var/obj/item/storage/wallet/W = new(player)
 	W.insert_item(id)
 	player.equip_to_slot_or_del(W, SLOT_ID_ID)
@@ -64,5 +64,5 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	for(var/obj/item/storage/wallet/W in contents_of(player))
 		for(var/obj/item/card/id/id in contents_of(W))
 			id.name = "[player.real_name]'s Passport"
-			id.registered_name = player.real_name
+			id.set_registered_name(player.real_name)
 			W.name = "[initial(W.name)] ([id.name])"

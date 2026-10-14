@@ -11,24 +11,22 @@
 	initial_temperature = TN60C
 	var/list/crossed_dirs
 
+TRACKED(/turf/snow, crossed_dirs)
+
 /turf/snow/Entered(atom/A)
 	if(ismob(A) && !A.is_incorporeal())
 		var/mdir = "[A.dir]"
-		if(LAZYACCESS(crossed_dirs, mdir))
-			LAZYSET(crossed_dirs, mdir, min(LAZYACCESS(crossed_dirs, mdir) + 1, FOOTSTEP_SPRITE_AMT))
-		else
-			LAZYSET(crossed_dirs, mdir, 1)
-
-		update_icon()
+		var/list/footprints = crossed_dirs ? crossed_dirs.Copy() : list()
+		footprints[mdir] = min((footprints[mdir] || 0) + 1, FOOTSTEP_SPRITE_AMT)
+		set_crossed_dirs(footprints)
 
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/turf/snow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/snow/appearance_overlays()
-	. = list()
+/turf/snow/draw(datum/look/look)
+	..()
 	for(var/d in crossed_dirs)
 		var/amt = LAZYACCESS(crossed_dirs, d)
 
 		for(var/i in 1 to amt)
-			. += image(icon, "footprint[i]", text2num(d))
+			look.overlay(look_overlay_image(icon, "footprint[i]", dir = text2num(d)))
 

@@ -111,7 +111,7 @@ GLOBAL_VAR_INIT(tgs_flow_seq, 0)
 		return
 	var/datum/tgs_chat_user/sender = held[1]
 	var/reply = flow_run(sender, params)
-	if(!om_flow_answers()) // finished on its first run: Run() returns the reply
+	if(!prompt_flow_answers()) // finished on its first run: Run() returns the reply
 		return reply
 	GLOB.tgs_flow_senders -= key
 	if(isnull(reply))
@@ -134,12 +134,9 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 /datum/tgs_chat_command/register/flow_run(datum/tgs_chat_user/sender, params)
 	// Try to find if that ID is registered to someone already
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id))
-	query.Execute()
-	if(query.NextRow())
-		qdel(query)
+	var/list/registered_rows = flow_select("SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id))
+	if(length(registered_rows))
 		return "[sender.friendly_name], your Discord ID is already registered to a Byond username. Please contact an administrator if you changed your Byond username or Discord ID."
-	qdel(query)
 	var/key_to_find = "[ckey(params)]"
 
 	// They didn't provide anything worth looking up.
@@ -157,19 +154,16 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	if(!user)
 		return "[sender.friendly_name], I couldn't find a logged-in user with the username of '[key_to_find]', which is what you provided after conversion to Byond's ckey format. Please connect to the game server and try again."
 
-	query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE ckey = :ckey", list("ckey" = key_to_find))
-	query.Execute()
+	var/list/player_rows = flow_select("SELECT discord_id FROM erro_player WHERE ckey = :ckey", list("ckey" = key_to_find))
 
 	// We somehow found their client, BUT they don't exist in the database
-	if(!query.NextRow())
-		qdel(query)
+	if(!length(player_rows))
 		return "[sender.friendly_name], the server's database is either not responding or there's no evidence you've ever logged in. Please contact an administrator."
 
 	// We found them in the database, AND they already have a discord ID assigned
-	if(query.item[1])
-		qdel(query)
+	var/list/player_row = player_rows[1]
+	if(player_row[1])
 		return "[sender.friendly_name], it appears you've already registered your chat and game IDs. If you've changed game or chat usernames, please contact an administrator for help."
-	qdel(query)
 	// Okay. We found them, they're in the DB, and they have no discord ID set.
 	var/message = span_notice("A request has been sent from Discord to validate your Byond username, by '[sender.friendly_name]' in '[sender.channel.friendly_name]'") + "\
 	<br>" + span_warning("If you did not send this request, do not click the link below, and do notify an administrator in-game or on Discord ASAP.") + "\
@@ -256,18 +250,15 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	if(!length(key_to_find))
 		return "[sender.friendly_name], you need to provide a Byond username at the end of the command. It can be in 'key' format (with spaces and characters) or 'ckey' format (without spaces or special characters)."
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE ckey = :t_ckey",list("t_ckey" = key_to_find))
-	query.Execute()
+	var/list/ckey_rows = flow_select("SELECT discord_id FROM erro_player WHERE ckey = :t_ckey",list("t_ckey" = key_to_find))
 
-	if(!query.NextRow())
-		qdel(query)
+	if(!length(ckey_rows))
 		return "[sender.friendly_name], the server's database is either not responding or there's no such ckey in the database."
 
-	if(!query.item[1])
-		qdel(query)
+	var/list/ckey_row = ckey_rows[1]
+	if(!ckey_row[1])
 		return "[sender.friendly_name], [key_to_find] is in the database, but has no discord ID associated with them."
-	var/discord_id = query.item[1]
-	qdel(query)
+	var/discord_id = ckey_row[1]
 	return "[key_to_find]'s discord is <@[discord_id]>"
 
 /datum/tgs_chat_command/getkey
@@ -282,15 +273,13 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	if(!params)
 		return "[sender.friendly_name], you need to provide a Discord ID at the end of the command. To obtain someone's Discord ID, you need to enable developer mode on discord, and then right click on their name and click Copy ID."
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE discord_id = :t_discord", list("t_discord"=params))
-	query.Execute()
+	var/list/discord_rows = flow_select("SELECT ckey FROM erro_player WHERE discord_id = :t_discord", list("t_discord"=params))
 
-	if(!query.NextRow())
-		qdel(query)
+	if(!length(discord_rows))
 		return "[sender.friendly_name], the server's database is either not responding or there's no such Discord ID in the database."
 
-	var/user_key = query.item[1]
-	qdel(query)
+	var/list/discord_row = discord_rows[1]
+	var/user_key = discord_row[1]
 	return "<@[params]>'s ckey is [user_key]"
 
 /datum/tgs_chat_command/vore
@@ -419,7 +408,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 		if("pie")
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(real_target))
 			play_sfx(real_target, SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
-			real_target.status_at_least(EFFECT_WEAKENED, 1)
+			real_target.status_at_least(STAT_WEAKENED, 1)
 			act_message(real_target, null, others = span_danger("%U% is struck by pie!"))
 		if("gib")
 			real_target.gib()
@@ -458,7 +447,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 
 	if(action == "help")
 		var/list/whitelist_jobs = list()
-		for(var/datum/job/our_job in SSjob.occupations)
+		for(var/datum/job/our_job in job_occupations())
 			if(our_job.whitelist_only)
 				whitelist_jobs += our_job.title
 		var/list/whitelisted_language = list()
@@ -579,26 +568,24 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			var/found = FALSE
 
 			message.text = ""
-			own_set(message, nameof(message.embed), embed)
+			rel_set(message, nameof(message.embed), embed)
 			embed.title = "Whitelists for [ckey]"
 
-			var/datum/db_query/query_list = SSdbcore.NewQuery(
+			var/list/whitelist_rows = flow_select(
 				"SELECT kind, entry FROM [format_table_name("whitelist")] WHERE ckey = :ckey",
 				list("ckey" = ckey)
 			)
-			if(!query_list.Execute())
+			if(isnull(whitelist_rows))
 				log_sql("Error while trying to query whitelists for [ckey].")
 				embed.description = "Error while trying to query whitelists for [ckey]. Please review SQL logs."
 				embed.colour = "#FF0000"
-				qdel(query_list)
 				return message
-			while(query_list.NextRow())
-				var/kind_query_result = query_list.item[1]
-				var/entry_query_result = query_list.item[2]
+			for(var/list/whitelist_row as anything in whitelist_rows)
+				var/kind_query_result = whitelist_row[1]
+				var/entry_query_result = whitelist_row[2]
 
 				embed.description += "- [kind_query_result] - [entry_query_result]\n"
 				found = TRUE
-			qdel(query_list)
 
 			if(!found)
 				embed.description += "No whitelist entries found for [ckey]"
@@ -624,3 +611,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 #undef VALID_USAGE
 #undef VALID_KINDS
 #undef VALID_ACTIONS
+
+/// The embed a status or whitelist reply carries is the message content's own (the TGS API type is vendored, so its owned var is declared here).
+CAPABILITIES(/datum/tgs_message_content)
+	owns_one(nameof(embed), /datum/tgs_chat_embed/structure)

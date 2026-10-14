@@ -1,0 +1,59 @@
+human|none menu: Climb
+human|none menu: Resleeving console interaction hand
+human|none click: Click: Resleeving console interaction hand
+@obj.machinery.computer robot|none
+-click: Click: Use
++2 menu: Resleeving console interaction hand
++4 click: Click: Resleeving console interaction hand
+@obj.machinery ai|none
+@obj.machinery.computer ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use
++2 menu: Resleeving console interaction hand
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj.machinery.computer human|/obj/item
+-menu: Use
+-click: Click: Use item
++1 menu: Resleeving console interaction hand
++3 click: Click: Resleeving console interaction item
+@obj human|/obj/item/gripper
+keys: cleartemp, clear_b_rec, clear_m_rec, climb.climb, climb.climb_menu, coredump, create, disconnect, drag_buckle, ejectdisk, genereset, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, resleeving_console_interaction_hand, resleeving_console_interaction_item, robot_remote_blocked, selectpod, selectprinter, selectsleever, silicon_hand, sleeve, use_gripper, use_item, use_multitool, view_b_rec, view_m_rec

@@ -9,6 +9,51 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
+CAPABILITIES(/obj/item/communicator)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	ref_many(nameof(communicating))
+	ref_many(nameof(voice_requests))
+	every(2 SECONDS, then(PROC_REF(communicator_step)), when = PROC_REF(has_connections))
+	after_init(5 SECONDS, then(PROC_REF(register_to_holder)))
+	// alt-click ejects the loaded ID (a silicon's alt-click goes on to its own)
+	op("remove_id", hand(), ungated(), gesture(GESTURE_ALT), label("Remove ID"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), then(PROC_REF(interaction_alt)))
+	// an ID updates the occupation, or goes into the slot
+	op("scan_id", item(/obj/item/card/id), label("Scan ID"), then(PROC_REF(interaction_item)))
+	// the old attack_self: the communicator's window
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_self)))
+	// a ghost's view refreshes the device list, then the ghost's own click goes on
+	op("view", observer(), label("View"), then(PROC_REF(communicator_observer_use)))
+	owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(cam_background), /atom/movable/screen/background)
+	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
+	owns_one(nameof(exonet), /datum/exonet_protocol)
+	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
+	owns_many(nameof(cam_plane_masters))
+	owns_many(nameof(voice_mobs))
+	owns_one(nameof(camera), starts = /obj/machinery/camera/communicator)
+	interface("Communicator", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("rename", ui_act("rename"), asks(/datum/prompt/text/communicator/name, fields = list("default" = computed(PROC_REF(actor_name))), step = "name"), then(PROC_REF(ui_act_rename)))
+	op("set_ringer_tone", ui_act("set_ringer_tone"), asks(/datum/prompt/text/communicator/ringtone, step = "tone"), then(PROC_REF(ui_act_set_ringer_tone)))
+	op("add_hex", ui_act("add_hex", arg("add_hex", schema_text(4096))), then(PROC_REF(ui_act_add_hex)))
+	op("write_target_address", ui_act("write_target_address", arg("val", schema_text(4096))), then(PROC_REF(ui_act_write_target_address)))
+	op("dial", ui_act("dial", arg("dial", schema_text(4096))), then(PROC_REF(ui_act_dial)))
+	op("decline", ui_act("decline", arg("decline", schema_ref(/atom))), then(PROC_REF(ui_act_decline)))
+	op("message", ui_act("message", arg("message", schema_text(4096))), asks(/datum/prompt/text/communicator/text_message, step = "text"), then(PROC_REF(ui_act_message)))
+	op("disconnect", ui_act("disconnect", arg("disconnect", schema_text(4096))), then(PROC_REF(ui_act_disconnect)))
+	op("startvideo", ui_act("startvideo", arg("startvideo", schema_ref(/obj/item/communicator))), then(PROC_REF(ui_act_startvideo)))
+	op("copy", ui_act("copy", arg("copy", schema_text(4096))), then(PROC_REF(ui_act_copy)))
+	op("copy_name", ui_act("copy_name", arg("copy_name", schema_text(4096))), then(PROC_REF(ui_act_copy_name)))
+	op("switch_tab", ui_act("switch_tab", arg("switch_tab", num())), then(PROC_REF(ui_act_switch_tab)))
+	op("edit", ui_act("edit"), asks(/datum/prompt/text/communicator/note, fields = list("title" = computed(PROC_REF(device_name)), "default" = computed(PROC_REF(note_default))), step = "note"), then(PROC_REF(ui_act_edit)))
+	op("Light", ui_act("Light"), then(PROC_REF(ui_act_light)))
+	op("newsfeed", ui_act("newsfeed", arg("newsfeed", num())), then(PROC_REF(ui_act_newsfeed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(communicator_emp)))
+	op("action_Reply", topic("action=Reply", arg("target", schema_ref(/obj/item/communicator), optional = TRUE)), asks(/datum/prompt/text/communicator_reply, fields = list("subject" = computed(PROC_REF(reply_subject)), "comm" = arg_of("target")), step = "message"), then(PROC_REF(topic_reply)))
+	ref_one(nameof(video_source), /obj/machinery/camera/communicator)
+	ref_one(nameof(node), /obj/machinery/exonet_node)
+
 
 // Proc: setup_tgui_camera()
 // Parameters: None
@@ -17,34 +62,34 @@
 	map_name = "communicator_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
+	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
 	cam_screen.screen_loc = "[map_name]:1,1"
 
 	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-		own_add(src, nameof(cam_plane_masters), plane_master)
+		rel_add(src, nameof(cam_plane_masters), plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
+	rel_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 
-	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 
 // Proc: update_active_camera_screen()
 // Parameters: None
 // Description: This refreshes the camera location
-/obj/item/communicator/proc/update_active_camera_screen()
-	EVENT_HANDLER
+/obj/item/communicator/proc/update_active_camera_screen(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!video_source?.can_use())
 		show_static()
 		return
@@ -89,7 +134,7 @@
 	cam_background.fill_rect(1, 1, (video_range * 2), (video_range * 2))
 
 	local_skybox.cut_overlays()
-	local_skybox.add_overlay(skybox_service().get_skybox(get_z(last_camera_turf())))
+	local_skybox.add_overlay(SSskybox.ready().get_skybox(get_z(last_camera_turf())))
 	local_skybox.scale_to_view(video_range * 2)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - last_camera_turf().x, (world.maxy>>1) - last_camera_turf().y)
 
@@ -102,12 +147,10 @@
 // Proc: tgui_state()
 // Parameters: User
 // Description: This tells TGUI to only allow us to be interacted with while in a mob inventory.
-DECLARE_UI_STATE(/obj/item/communicator, GLOB.tgui_inventory_state)
 
 // Proc: tgui_interact()
 // Parameters: User, UI, Parent UI
 // Description: This proc handles opening the UI. It's basically just a standard stub.
-DECLARE_UI(/obj/item/communicator, "Communicator")
 
 /obj/item/communicator/ui_prepare(mob/user, datum/tgui/ui)
 	// Update the camera every SStgui tick in case it moves
@@ -125,9 +168,23 @@ DECLARE_UI(/obj/item/communicator, "Communicator")
 // Proc: tgui_data()
 // Parameters: User, UI, State
 // Description: Uses a bunch of for loops to turn lists into lists of lists, so they can be displayed in nanoUI, then displays various buttons to the user.
-UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targetAddress=target_address:text", "targetAddressName=target_address_name:text", "currentTab=selected_tab", "ring=ringer:num", "note:text", "flashlight=fon:num", "selfie_mode:num", "merge:ui_data_obj_item_communicator{user:text,owner:text,occupation:text,connectionStatus:unknown,address:text,knownDevices:list,invitesSent:list,requestsReceived:list,voice_mobs:list,communicating:list,video_comm:text,imContacts:list,imList:list,time:text,homeScreen:list,weather:list,aircontents:unknown,feeds:unknown,latest_news:unknown,target_feed:unknown}")
+/obj/item/communicator/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["visible"] = network_visibility
+	data["targetAddress"] = target_address
+	data["targetAddressName"] = target_address_name
+	data["currentTab"] = selected_tab
+	data["ring"] = ringer
+	data["note"] = note
+	data["flashlight"] = fon
+	data["selfie_mode"] = selfie_mode
+	var/list/merged_1 = ui_data_obj_item_communicator(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/communicator's window data (declared on its UI_DATA row).
+/// /obj/item/communicator's window data.
 /obj/item/communicator/proc/ui_data_obj_item_communicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()						//General nanoUI information
@@ -245,7 +302,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 		)))
 
 	//Weather reports.
-	for(var/datum/planet/planet in GLOB.planet_service.planets)
+	for(var/datum/planet/planet in planets_planets())
 		if(planet.weather_holder && planet.weather_holder.current_weather)
 			var/list/W = list(
 				"Planet" = planet.name,
@@ -281,7 +338,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	data["homeScreen"] = modules_ui
 	data["weather"] = weather
 	data["aircontents"] = src.analyze_air()
-	data["feeds"] = compile_news()
+	data["feeds"] = compile_news(user)
 	data["latest_news"] = get_recent_news()
 	if(newsfeed_channel)
 		data["target_feed"] = data["feeds"][newsfeed_channel]
@@ -305,57 +362,119 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 // Proc: tgui-act()
 // Parameters: 4 (standard tgui_act arguments)
 // Description: Responds to UI button presses.
-/// Communicator text entry: re-checked on the answer, the communicator is still usable.
-/datum/om/prompt/text/communicator
-	requires = PROMPT_USABLE
+/datum/prompt/text/communicator
+	usable_state = "default"
+	timeout = 0
 
-/datum/om/prompt/text/communicator/name
+/datum/prompt/text/communicator/name
 	name_text = TRUE
 	title = "Communicator"
-	message = "Please enter your name."
+	question = "Please enter your name."
 	encode = FALSE
 
-/datum/om/prompt/text/communicator/ringtone
+/datum/prompt/text/communicator/ringtone
 	title = "Ringer"
-	message = "Set Ringer Tone"
+	question = "Set Ringer Tone"
 
-/datum/om/prompt/text/communicator/text_message
+/datum/prompt/text/communicator/text_message
 	title = "Text Message"
-	message = "Enter your message."
+	question = "Enter your message."
 	encode = FALSE
-	var/address
 
-/// A cancel clears the note.
-/datum/om/prompt/text/communicator/note
-	message = "Please enter message"
+/// The note's text (an empty answer clears it).
+/datum/prompt/text/communicator/note
+	question = "Please enter message"
 	multiline = TRUE
-	cancel_answer = ""
 
-/obj/item/communicator/proc/name_entered(datum/om/prompt/text/communicator/name/ask)
-	var/new_name = sanitizeSafe(ask.text)
+/obj/item/communicator/proc/actor_name(datum/act/op/A)
+	return A.actor?.name
+
+/obj/item/communicator/proc/device_name(datum/act/op/A)
+	return name
+
+/obj/item/communicator/proc/note_default(datum/act/op/A)
+	return notehtml
+
+/obj/item/communicator/proc/ui_act_rename(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/new_name = sanitizeSafe(A.step_value("name"))
 	if(new_name)
 		register_device(new_name)
+	return TRUE
 
-/obj/item/communicator/proc/ringtone_entered(datum/om/prompt/text/communicator/ringtone/ask)
-	if(ask.text)
-		ttone = ask.text
+/obj/item/communicator/proc/ui_act_toggle_visibility(datum/act/op/A)
+	add_fingerprint(A.actor)
+	switch(network_visibility)
+		if(1) //Visible, becoming invisbile
+			network_visibility = 0
+			if(camera)
+				camera.remove_network(NETWORK_COMMUNICATORS)
+		if(0) //Invisible, becoming visible
+			network_visibility = 1
+			if(camera)
+				camera.add_network(NETWORK_COMMUNICATORS)
+	return OP_OK
 
-/obj/item/communicator/proc/note_entered(datum/om/prompt/text/communicator/note/ask)
-	var/n = sanitizeSafe(ask.text, extra = 0)
-	if(n)
-		note = html_decode(n)
-		notehtml = note
-		note = replacetext(note, "\n", "<br>")
-	else
-		note = ""
-		notehtml = note
+/obj/item/communicator/proc/ui_act_toggle_ringer(datum/act/op/A)
+	add_fingerprint(A.actor)
+	ringer = !ringer
+	return OP_OK
 
-/obj/item/communicator/proc/text_message_entered(datum/om/prompt/text/communicator/text_message/ask)
-	var/mob/user = ask.answerer
-	var/their_address = ask.address
-	var/text = sanitizeSafe(ask.text)
-	if(!text || !get_connection_to_tcomms())
-		return
+/obj/item/communicator/proc/ui_act_set_ringer_tone(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/tone = A.step_value("tone")
+	if(tone)
+		ttone = tone
+	return TRUE
+
+/obj/item/communicator/proc/ui_act_selfie_mode(datum/act/op/A)
+	add_fingerprint(A.actor)
+	selfie_mode = !selfie_mode
+	return OP_OK
+
+/obj/item/communicator/proc/ui_act_add_hex(datum/act/op/A, add_hex)
+	add_fingerprint(A.actor)
+	. = TRUE
+	var/hex = add_hex
+	add_to_EPv2(hex)
+
+/obj/item/communicator/proc/ui_act_write_target_address(datum/act/op/A, val)
+	add_fingerprint(A.actor)
+	. = TRUE
+	target_address = sanitizeSafe(val)
+
+/obj/item/communicator/proc/ui_act_clear_target_address(datum/act/op/A)
+	add_fingerprint(A.actor)
+	target_address = ""
+	return OP_OK
+
+/obj/item/communicator/proc/ui_act_dial(datum/act/op/A, dial)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	. = TRUE
+	if(!get_connection_to_tcomms())
+		to_chat(user, span_danger("Error: Cannot connect to Exonet node."))
+		return FALSE
+	var/their_address = dial
+	exonet.send_message(their_address, "voice")
+
+/obj/item/communicator/proc/ui_act_decline(datum/act/op/A, decline_arg)
+	add_fingerprint(A.actor)
+	. = TRUE
+	var/atom/decline = decline_arg
+	if(decline)
+		del_request(decline)
+
+/obj/item/communicator/proc/ui_act_message(datum/act/op/A, message)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(!get_connection_to_tcomms())
+		to_chat(user, span_danger("Error: Cannot connect to Exonet node."))
+		return FALSE
+	var/their_address = message
+	var/text = sanitizeSafe(A.step_value("text"))
+	if(!text)
+		return TRUE
 	exonet.send_message(their_address, "text", text)
 	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = their_address, "im" = text)))
 	user.log_talk("(COMM: [src]) sent \"[text]\" to [exonet.get_atom_from_address(their_address)]", LOG_PDA)
@@ -368,148 +487,79 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 			if(exonet.get_atom_from_address(their_address) == M)
 				continue
 			M.show_message("Comm IM - [src] -> [exonet.get_atom_from_address(their_address)]: [text]")
-
-/obj/item/communicator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/item/communicator, "rename", ui_act_rename)
-UI_ACT_PROC(/obj/item/communicator, ui_act_rename)
+/obj/item/communicator/proc/ui_act_disconnect(datum/act/op/A, disconnect)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/name, PROC_REF(name_entered), default = ui.user.name)
-
-UI_ACT(/obj/item/communicator, "toggle_visibility", ui_act_toggle_visibility)
-UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_visibility)
-	. = TRUE
-	switch(network_visibility)
-		if(1) //Visible, becoming invisbile
-			network_visibility = 0
-			if(camera)
-				camera.remove_network(NETWORK_COMMUNICATORS)
-		if(0) //Invisible, becoming visible
-			network_visibility = 1
-			if(camera)
-				camera.add_network(NETWORK_COMMUNICATORS)
-
-UI_ACT(/obj/item/communicator, "toggle_ringer", ui_act_toggle_ringer)
-UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_ringer)
-	. = TRUE
-	ringer = !ringer
-
-UI_ACT(/obj/item/communicator, "set_ringer_tone", ui_act_set_ringer_tone)
-UI_ACT_PROC(/obj/item/communicator, ui_act_set_ringer_tone)
-	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered))
-
-UI_ACT(/obj/item/communicator, "selfie_mode", ui_act_selfie_mode)
-UI_ACT_PROC(/obj/item/communicator, ui_act_selfie_mode)
-	. = TRUE
-	selfie_mode = !selfie_mode
-
-UI_ACT(/obj/item/communicator, "add_hex", ui_act_add_hex, UI_ARG_TEXT("add_hex"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_add_hex)
-	. = TRUE
-	var/hex = params["add_hex"]
-	add_to_EPv2(hex)
-
-UI_ACT(/obj/item/communicator, "write_target_address", ui_act_write_target_address, UI_ARG_TEXT("val"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_write_target_address)
-	. = TRUE
-	target_address = sanitizeSafe(params["val"])
-
-UI_ACT(/obj/item/communicator, "clear_target_address", ui_act_clear_target_address)
-UI_ACT_PROC(/obj/item/communicator, ui_act_clear_target_address)
-	. = TRUE
-	target_address = ""
-
-UI_ACT(/obj/item/communicator, "dial", ui_act_dial, UI_ARG_TEXT("dial"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_dial)
-	. = TRUE
-	if(!get_connection_to_tcomms())
-		to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
-		return FALSE
-	var/their_address = params["dial"]
-	exonet.send_message(their_address, "voice")
-
-UI_ACT(/obj/item/communicator, "decline", ui_act_decline, UI_ARG_REF("decline", null, /atom))
-UI_ACT_PROC(/obj/item/communicator, ui_act_decline)
-	. = TRUE
-	var/atom/decline = params["decline"]
-	if(decline)
-		del_request(decline)
-
-UI_ACT(/obj/item/communicator, "message", ui_act_message, UI_ARG_TEXT("message"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_message)
-	. = TRUE
-	if(!get_connection_to_tcomms())
-		to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
-		return FALSE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/text_message, PROC_REF(text_message_entered), address = params["message"])
-
-UI_ACT(/obj/item/communicator, "disconnect", ui_act_disconnect, UI_ARG_TEXT("disconnect"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_disconnect)
-	. = TRUE
-	var/name_to_disconnect = params["disconnect"]
+	var/name_to_disconnect = disconnect
 	for(var/mob/living/voice/V in contents)
 		if(name_to_disconnect == sanitize(V.name))
-			close_connection(ui.user, V, "[ui.user] hung up")
+			close_connection(user, V, "[user] hung up")
 	for(var/obj/item/communicator/comm in communicating)
 		if(name_to_disconnect == sanitize(comm.name))
-			close_connection(ui.user, comm, "[ui.user] hung up")
+			close_connection(user, comm, "[user] hung up")
 
-UI_ACT(/obj/item/communicator, "startvideo", ui_act_startvideo, UI_ARG_REF("startvideo", null, /obj/item/communicator))
-UI_ACT_PROC(/obj/item/communicator, ui_act_startvideo)
+/obj/item/communicator/proc/ui_act_startvideo(datum/act/op/A, startvideo)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
 	. = TRUE
-	var/obj/item/communicator/comm = params["startvideo"]
+	var/obj/item/communicator/comm = startvideo
 	if(comm)
-		connect_video(ui.user, comm)
+		connect_video(user, comm)
 
-UI_ACT(/obj/item/communicator, "endvideo", ui_act_endvideo)
-UI_ACT_PROC(/obj/item/communicator, ui_act_endvideo)
-	. = TRUE
+/obj/item/communicator/proc/ui_act_endvideo(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(video_source)
 		end_video()
+	return OP_OK
 
-UI_ACT(/obj/item/communicator, "copy", ui_act_copy, UI_ARG_TEXT("copy"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_copy)
+/obj/item/communicator/proc/ui_act_copy(datum/act/op/A, copy)
+	add_fingerprint(A.actor)
 	. = TRUE
-	target_address = params["copy"]
+	target_address = copy
 
-UI_ACT(/obj/item/communicator, "copy_name", ui_act_copy_name, UI_ARG_TEXT("copy_name"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_copy_name)
+/obj/item/communicator/proc/ui_act_copy_name(datum/act/op/A, copy_name)
+	add_fingerprint(A.actor)
 	. = TRUE
-	target_address_name = params["copy_name"]
+	target_address_name = copy_name
 
-UI_ACT(/obj/item/communicator, "hang_up", ui_act_hang_up)
-UI_ACT_PROC(/obj/item/communicator, ui_act_hang_up)
-	. = TRUE
+/obj/item/communicator/proc/ui_act_hang_up(datum/act/op/A)
+	add_fingerprint(A.actor)
 	for(var/mob/living/voice/V in contents)
-		close_connection(ui.user, V, "[ui.user] hung up")
+		close_connection(A.actor, V, "[A.actor] hung up")
 	for(var/obj/item/communicator/comm in communicating)
-		close_connection(ui.user, comm, "[ui.user] hung up")
+		close_connection(A.actor, comm, "[A.actor] hung up")
+	return OP_OK
 
-UI_ACT(/obj/item/communicator, "switch_tab", ui_act_switch_tab, UI_ARG_NUM("switch_tab"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_switch_tab)
+/obj/item/communicator/proc/ui_act_switch_tab(datum/act/op/A, switch_tab)
+	add_fingerprint(A.actor)
 	. = TRUE
-	selected_tab = params["switch_tab"]
+	selected_tab = switch_tab
 
-UI_ACT(/obj/item/communicator, "edit", ui_act_edit)
-UI_ACT_PROC(/obj/item/communicator, ui_act_edit)
-	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/note, PROC_REF(note_entered), title = name, default = notehtml)
+/obj/item/communicator/proc/ui_act_edit(datum/act/op/A)
+	add_fingerprint(A.actor)
+	var/n = sanitizeSafe(A.step_value("note"), extra = 0)
+	if(n)
+		note = html_decode(n)
+		notehtml = note
+		note = replacetext(note, "\n", "<br>")
+	else
+		note = ""
+		notehtml = note
+	return TRUE
 
-UI_ACT(/obj/item/communicator, "Light", ui_act_light)
-UI_ACT_PROC(/obj/item/communicator, ui_act_light)
+/obj/item/communicator/proc/ui_act_light(datum/act/op/A)
+	add_fingerprint(A.actor)
 	. = TRUE
 	fon = !fon
-	set_light(fon * flum)
+	set_glow(src, GLOW(fon * flum, null, null))
 
-UI_ACT(/obj/item/communicator, "newsfeed", ui_act_newsfeed, UI_ARG_NUM("newsfeed"))
-UI_ACT_PROC(/obj/item/communicator, ui_act_newsfeed)
+/obj/item/communicator/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
+	add_fingerprint(A.actor)
 	. = TRUE
-	newsfeed_channel = params["newsfeed"]
+	newsfeed_channel = newsfeed
 
 /// Relation view: last camera turf (reads null once it is gone).
 /obj/item/communicator/proc/last_camera_turf() as /turf

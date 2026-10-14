@@ -558,7 +558,7 @@
 /area/awaymission)
 "bM" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1375;
 	icon_state = "door_locked";
 	id_tag = "carp_inner";
@@ -659,7 +659,7 @@
 /area/awaymission)
 "bX" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1375;
 	icon_state = "door_locked";
 	id_tag = "carp_outer";

@@ -14,10 +14,6 @@
 	on each glove."
 	icon_state = "regen"
 	item_state = "graygloves"
-	siemens_coefficient = 0
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 
 /obj/item/clothing/gloves/regen/equipped(mob/user)
 	if(ishuman(user))
@@ -42,27 +38,36 @@
 		to_chat(H, span_danger("You feel the hypodermic needles as you slide \the [src] off!"))
 		H.custom_pain("Your hands hurt like hell!",1)
 
-/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
-/obj/item/clothing/gloves/regen/periodic_step()
+/// TRUE while worn (equipped() sets it): the slow step treats the wearer; taken off, it parks.
+/obj/item/clothing/gloves/regen/var/tmp/regenerating = FALSE
+TRACKED(/obj/item/clothing/gloves/regen, regenerating)
+
+CAPABILITIES(/obj/item/clothing/gloves/regen)
+	configure(item_protection(siemens = 0, cold_parts = HANDS, min_cold = GLOVES_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE))
+	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
+
+/// Works every 2 s while worn.
+/obj/item/clothing/gloves/regen/proc/regen_step(datum/act/A)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
-		return PROCESS_KILL
-	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
+		set_regenerating(FALSE)
+		return
+	if(!ishuman(H) || H.stat == DEAD || nutrition_of(H) <= 10)
 		return // Dead people don't have a metabolism.
 
 	// Organic treatment tags: synthetic parts are left alone (and don't cost nutrition).
 	if(H.mend(TREAT_TISSUE_REPAIR, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_BURN_CARE, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_ANTITOXIN, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_OXYGENATION, 0.1))
-		H.set_nutrition(max(H.nutrition - 10, 0))
+		H.set_nutrition(max(nutrition_of(H) - 10, 0))
 	if(H.mend(TREAT_GENETIC_REPAIR, 0.1))
-		H.set_nutrition(max(H.nutrition - 20, 0))
+		H.set_nutrition(max(nutrition_of(H) - 20, 0))
 
 /obj/item/clothing/gloves/regen/equipped(mob/user, slot)
 	. = ..()
 	if(ismob(wearer))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_regenerating(TRUE)

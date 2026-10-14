@@ -1,0 +1,13 @@
+ghost|none menu: Force Eject (refused: You can't reach that.)
+ghost|none click: nothing
+human|none menu: Alt-click
+human|none menu: Force Eject
+human|none menu: Toggle flush
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Alt-click
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Force Eject
+robot|none menu: Toggle flush
+robot|none menu: Use
+robot|none click: Click: Use

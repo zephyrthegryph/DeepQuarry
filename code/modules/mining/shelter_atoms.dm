@@ -167,12 +167,12 @@
 /obj/item/survivalcapsule/superpose/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[template_id]
+	template_static = mapping_shelter_templates()[template_id]
 	if(!template())
 		template_static = null
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a template first.
-/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
@@ -180,7 +180,10 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_ask(user, "k182", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
+		if(isnull(selected_template))
+			open_template_request(user, held)
+			return TRUE
+		var/answer = selected_template
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -190,13 +193,15 @@
 			return // Return here or the pod will activate as soon as a selection is made.
 
 	// Now we call super to run the rest of the parent proc since the choice has been handled.
-	return ..()
+	return ..(user, held)
 
 // Allows resetting the capsule if the wrong template is chosen.
-EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Active Pod", PROC_REF(superpose_capsule_verb_reset), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/survivalcapsule/superpose)
+	op("superpose_capsule_verb_reset", menu(), label("Reset Active Pod"), needs(carried()), then(PROC_REF(superpose_capsule_verb_reset)))
 
 /// Old Reset Active Pod verb: Resets the pod back to factory settings.
-/obj/item/survivalcapsule/superpose/proc/superpose_capsule_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/proc/superpose_capsule_verb_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!used)
 		template_id = null
 		template_static = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
@@ -208,7 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Ac
 	is_ship = TRUE //So you cant just make holes in planets
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a shuttle template first.
-/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	if(!pod_initialized)
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
@@ -216,7 +221,10 @@ EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Ac
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_ask(user, "k215", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
+		if(isnull(selected_template))
+			open_template_request(user, held)
+			return TRUE
+		var/answer = selected_template
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -225,7 +233,7 @@ EXTEND_INTERACTIONS(/obj/item/survivalcapsule/superpose, INTERACT_VERB("Reset Ac
 			template_id = answer
 			unique_id = answer
 			return
-	return ..()
+	return ..(user, held)
 
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
@@ -275,10 +283,9 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/survivalcapsule/proc/get_template()
 	if(template())
 		return
-	template_static = SSmapping.shelter_templates[get_template_id()]
+	template_static = mapping_shelter_templates()[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
-		qdel(src)
 
 /obj/item/survivalcapsule/proc/get_template_id()
 	return template_id
@@ -329,12 +336,13 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(fade_time > 0)
 		for(var/image/I in preview_render)
 			animate(I, alpha = 0, fade_time)
-		om_after(src, fade_time, PROC_REF(delete_preview_render), user, preview_render)
+		after(src, fade_time, PROC_REF(delete_preview_render), with = list(user, preview_render))
 	else
 		delete_preview_render(user, preview_render)
 
 /obj/item/survivalcapsule/proc/delete_preview_render(mob/user, list/preview_render)
-	user.client.images -= preview_render
+	if(user?.client)
+		user.client.images -= preview_render
 
 /obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
 	var/status = template().check_deploy(deploy_location, is_ship)
@@ -370,7 +378,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	smoke.set_up(10, 0, deploy_location)
 	smoke.start()
 
-	om_after(src, 4 SECONDS, PROC_REF(deploy_step_two), user)
+	after(src, 4 SECONDS, PROC_REF(deploy_step_two), with = list(user))
 
 // Second step: Load shelter template at location
 /obj/item/survivalcapsule/proc/deploy_step_two(mob/user)
@@ -392,8 +400,8 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(above_location)
 		template().add_roof(above_location)
 	template().annihilate_plants(deploy_location)
-	template().load(deploy_location, centered = TRUE)
-	template().update_lighting(deploy_location)
+	// The template loads as a job; its lighting is built when it has (the capsule is consumed meanwhile).
+	template().load_async(deploy_location, TRUE, TYPE_PROC_REF(/datum/map_template/shelter, shelter_loaded), template(), list(deploy_location.x, deploy_location.y, deploy_location.z))
 	consume(src, user)
 
 /obj/item/survivalcapsule/examine(mob/user)
@@ -402,10 +410,19 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(survivalcapsule_self), REQ_BECAUSE(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, null), "it doesn't work in VR")))
+CAPABILITIES(/obj/item/survivalcapsule)
+	op("deploy", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Deploy"), then(PROC_REF(survivalcapsule_deploy)))
+
+/// Old attack_self: deploy the shelter (survivalcapsule_self() asks its questions by re-running itself with the same arguments). It does not work in VR.
+/obj/item/survivalcapsule/proc/survivalcapsule_deploy(datum/act/op/A)
+	if(istype(get_area(A.actor), /area/vr))
+		to_chat(A.actor, span_warning("It doesn't work in VR."))
+		return OP_OK
+	survivalcapsule_self(A.actor, A.held)
+	return OP_OK
 
 /// Old attack_self: deploy the shelter. Virtual: the superpose capsules override it with ..() last.
-/obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
@@ -420,12 +437,12 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 			loc.visible_message(span_warning("\The [src] is too close to the edge of this map to deploy!"))
 			return
 		if(!can_deploy(get_turf(src), GetAbove(deploy_location)))
-			om_after(src, 1 SECONDS, PROC_REF(remove_preview), user, preview_render)
+			after(src, 1 SECONDS, PROC_REF(remove_preview), with = list(user, preview_render))
 			return
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
 		preview_render = preview_template(user, deploy_location, show_doors = TRUE)
-		var/_answer_k433 = rerun_ask(usr, "k433", PROC_REF(survivalcapsule_self), args, /datum/om/prompt/choice/alert, message = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"))
+		var/_answer_k433 = rerun_ask(user, "k433", PROC_REF(survivalcapsule_self), args, /datum/prompt/choice, question = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k433))
 			return TRUE
 		if(_answer_k433 == "Yes")
@@ -437,7 +454,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 			user.drop_from_inventory(src)
 			used = TRUE
 
-			om_after(src, 5 SECONDS, PROC_REF(deploy_step_one), user)
+			after(src, 5 SECONDS, PROC_REF(deploy_step_one), with = list(user))
 		remove_preview(user, preview_render, 0)
 
 /obj/item/survivalcapsule/luxury
@@ -639,54 +656,40 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
 	var/tmp/obj/machinery/door/airlock/voidcraft/survival_pod/door
 
-/obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/survival_pod_button_glass,
-	)
-	..()
+// A hand on it works the glass of the pod's door (it does not press the remote button: the airlocks it names are a placeholder).
+CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
+	without("press_hand")
+	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_refusal))), then(PROC_REF(pod_used)))
 
-/datum/interaction/machine_hand/survival_pod_button_glass
-	id = "survival_pod_button_glass"
-	name = "Use"
-	effect = /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass
+/obj/machinery/button/remote/airlock/survival_pod/proc/pod_used(datum/act/op/A)
+	pod_glass()
+	return OP_OK
 
-/obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/airlock/survival_pod/proc/pod_glass()
 	if(!linked_door())
 		var/turf/dT = get_step(src,dir)
 		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(linked_door())
 		linked_door().glass = !linked_door().glass
 		linked_door().opacity = !linked_door().opacity
-	return TRUE
 
 //Subtype that actually bolts doors!
 /obj/machinery/button/remote/airlock/survival_pod/bolts
 	name = "shelter privacy control"
 	desc = "You can ensure some privacy with this."
 
-/obj/machinery/button/remote/airlock/survival_pod/bolts/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/survival_pod_button_bolts,
-	)
-	..()
-
-/// Old attack_hand chained ..() into the parent's glass toggle before doing its own bolt logic; reproduce that order explicitly.
-/datum/interaction/machine_hand/survival_pod_button_bolts
-	id = "survival_pod_button_bolts"
-	name = "Use"
-	effect = /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts
-
-/obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_glass(user, held, interaction)
+/// The glass first, then the bolts.
+/obj/machinery/button/remote/airlock/survival_pod/bolts/pod_used(datum/act/op/A)
+	pod_glass()
 	if(linked_door())
 		if(is_bolted(linked_door()))
-			linked_door().unlock()
+			set_bolted(linked_door(), FALSE)
 			linked_door().stop_blocking_light()
 		else
-			linked_door().lock()
+			set_bolted(linked_door(), TRUE)
 			// Block light when bolted, since the door is effectively functioning like polarized glass
 			linked_door().start_blocking_light()
-	return TRUE
+	return OP_OK
 
 // Capsule-specific light switch
 // Turns off only one light in a given direction from its source turf.
@@ -695,19 +698,10 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	var/tmp/obj/machinery/light/target_light
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
-/obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/survival_pod_light_switch,
-	)
-	..()
+CAPABILITIES(/obj/machinery/light_switch/survival_pod)
+	op("toggle_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_toggle_impl)))
 
-/datum/interaction/machine_hand/ungated/survival_pod_light_switch
-	id = "survival_pod_light_switch"
-	name = "Use"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl
-
-/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(datum/act/op/A)
 	set_on(!on)
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
@@ -715,19 +709,18 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
-		target_light().update()
+		target_light().refresh_light()
 		// I'm so sorry but for some ungodly reason calling update() simply isn't
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')
 		if(target_light().on)
-			target_light().set_light(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color)
+			set_glow(target_light(), GLOW(target_light().brightness_range, target_light().brightness_power, target_light().brightness_color))
 			target_light().overlay_color = target_light().brightness_color
 		else
-			target_light().set_light(0)
-	update_icon()
+			set_glow(target_light(), GLOW(0, null, null))
 
 	GLOB.lights_switched_on_roundstat++
-	return TRUE
+	return OP_OK
 
 //Windows
 /obj/structure/window/reinforced/survival_pod
@@ -740,10 +733,8 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/reinforced/survival_pod/appearance_overlays()
-	. = list()
-	icon_state = basestate
+/obj/structure/window/reinforced/survival_pod/look_parts(datum/look/look)
+	look.state(basestate)
 
 //Polarized windows
 /obj/structure/window/reinforced/polarized/survival_pod
@@ -767,36 +758,30 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC
 	name = "table"
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "table"
+	plating_id = MAT_STEEL
 	can_reinforce = FALSE
 	can_plate = FALSE
 	can_flip_verb = FALSE
+	can_dismantle = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/table/survival_pod/appearance_overlays()
-	. = list()
-	icon_state = "table"
+/obj/structure/table/survival_pod/draws_layers()
+	return FALSE
 
-/obj/structure/table/survival_pod/Initialize(mapload)
-	material_static = get_material_by_name(MAT_STEEL)
-	. = ..()
-
-/obj/structure/table/survival_pod/dismantle(obj/item/tool/wrench/W, mob/user)
-	to_chat(user, span_warning("You cannot dismantle \the [src]."))
-	return
+/obj/structure/table/survival_pod/draw(datum/look/look)
+	..()
+	look.state("table")
 
 //Sleeper
 /obj/machinery/sleeper/survival_pod
 	desc = "A limited functionality sleeper, all it can do is put patients into stasis. It lacks the medication and configuration of the larger units."
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "sleeper"
-	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
-APPEARANCE_NONE(/obj/machinery/sleeper/survival_pod)
-DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/sleeper/survival_pod/appearance_overlays()
-	. = list()
-	if(src?.slot_item(OCCUPANT_SLOT_SLEEPER))
-		. += "sleeper_cover"
+/// The pod's own sprite: its cover closes over an occupant.
+/obj/machinery/sleeper/survival_pod/draw(datum/look/look)
+	..()
+	look.state("sleeper")
+	look.overlay("sleeper_cover", when = !!occupant_of(src))
 
 //Computer
 /obj/item/gps/computer
@@ -807,20 +792,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, TYPE_PROC_REF(/atom
 	density = TRUE
 	pixel_y = -32
 
-/obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
-	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
-		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
-		MSG_BLIND("You hear clanking and banging noises."))
-	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/item/gps/computer)
+	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
-/obj/item/gps/computer/proc/disassemble_done()
+/obj/item/gps/computer/proc/disassemble_begins(datum/act/op/A)
+	return msg_text(span_notice("You start to disassemble %T%..."), span_warning("%U% disassembles %T%."), "You hear clanking and banging noises.")
+
+/obj/item/gps/computer/proc/disassemble_done(datum/act/op/A)
 	replace_with(src, /obj/item/gps)
-
-EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+	return OP_OK
 
 /// Old attack_hand.
-/obj/item/gps/computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gps/computer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_self(user)
 	return TRUE
 
@@ -829,8 +814,9 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "bed"
 
-/obj/structure/bed/pod/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL, MAT_CLOTH)
+/obj/structure/bed/pod
+	material_key = MAT_STEEL
+	padding_key = MAT_CLOTH
 
 //Survival Storage Unit
 /obj/machinery/smartfridge/survival_pod
@@ -840,13 +826,14 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_range = 5
-	light_power = 1.2
-	light_color = "#DDFFD3"
 	light_on = TRUE
 	pixel_y = -4
 	max_n_of_items = 100
 
+CAPABILITIES(/obj/machinery/smartfridge/survival_pod)
+	configure(light_glow(range = 5, power = 1.2, color = "#DDFFD3"))
+
+// ALLOW(init/INSTANCE_STATE): stocks the items the map placed on its tile
 /obj/machinery/smartfridge/survival_pod/Initialize(mapload)
 	. = ..()
 	for(var/obj/item/O in contents_of(loc))
@@ -882,12 +869,15 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /obj/structure/fans/atom_deconstruct()
 	replace_with(src, buildstacktype, buildstackamount)
 
-/obj/structure/fans/wrench_act(mob/user, obj/item/tool)
-	act_message(user, src, MSG_SELF(span_notice("You start to disassemble %T%...")), \
-		MSG_OTHERS(span_warning("%U% disassembles %T%.")), \
-		MSG_BLIND("You hear clanking and banging noises."))
-	om_task_timed(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/structure/fans)
+	op("disassemble", tool(TOOL_WRENCH), label("Disassemble"), begins(PROC_REF(disassemble_begins)), wait(4 SECONDS), then(PROC_REF(disassemble_done)))
+
+/obj/structure/fans/proc/disassemble_begins(datum/act/op/A)
+	return msg_text(span_notice("You start to disassemble %T%..."), span_warning("%U% disassembles %T%."), "You hear clanking and banging noises.")
+
+/obj/structure/fans/proc/disassemble_done(datum/act/op/A)
+	atom_deconstruct(TRUE)
+	return OP_OK
 
 /obj/structure/fans/tiny
 	name = "tiny fan"
@@ -909,10 +899,10 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	icon_state = "hardlight"
 	buildstackamount = 2
 
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
 	light_on = TRUE
+
+CAPABILITIES(/obj/structure/fans/hardlight)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 
 /obj/structure/fans/hardlight/colorable
 	name = "hardlight shield"
@@ -956,3 +946,54 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /// Accessor for the target_light var.
 /obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
 	return target_light
+
+/obj/item/survivalcapsule/superpose/proc/open_template_request(mob/user, obj/item/held)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice/shelter_template, PROC_REF(template_chosen), answerer = user, captured_item = held, item_expected = !isnull(held), choices = template_ids, original_client_ckey = original_client_ckey)
+
+/obj/item/survivalcapsule/superpose/proc/template_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_template_answer(A)
+	SStgui.update_uis(src)
+
+/obj/item/survivalcapsule/superpose/proc/apply_template_answer(datum/act/request/A)
+	var/datum/prompt/choice/shelter_template/request = A.request
+	if(request.captures_gone())
+		return
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	return survivalcapsule_self(user, request.captured_item, A.answer.value)
+
+/datum/prompt/choice/shelter_template
+	question = "Which template would you like to load?"
+	title = "Available Templates"
+	timeout = 0
+	var/obj/item/captured_item
+	var/item_expected = FALSE
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/shelter_template)
+	ref_one(nameof(captured_item), /obj/item)
+
+/datum/prompt/choice/shelter_template/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	rel_clear(src, nameof(captured_item))
+	rel_set(src, nameof(captured_item), item)
+
+/datum/prompt/choice/shelter_template/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/shelter_template/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

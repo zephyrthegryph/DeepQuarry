@@ -1,0 +1,43 @@
+@obj.machinery.button human|none
+@obj.machinery.button robot|none
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Toggle
++2 click: Click: Toggle
+@obj.machinery.button ghost|none
+-menu: Press (refused: needs an item)
+@obj.machinery.button human|/obj/item/tool/screwdriver
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/tool/crowbar
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/tool/wrench
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/tool/wirecutters
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/multitool
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/weldingtool
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
++1 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/stack/material/steel
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/card/id
++0 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item
++0 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.button human|/obj/item/card/emag
+-menu: Use
+keys: button_press, button_press_item, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, press_hand, press_item, press_silicon, robot_remote_blocked, silicon_hand, silicon_pressed

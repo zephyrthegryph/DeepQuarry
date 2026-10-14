@@ -3,7 +3,9 @@
 	icon_state = "traptile"
 	anchored = 1
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 200
+
+CAPABILITIES(/obj/machinery/traptile)
+	configure(uses_power(idle = 200))
 
 /obj/machinery/traptile/proc/attack_mob(mob/living/L)
 	var/target_zone

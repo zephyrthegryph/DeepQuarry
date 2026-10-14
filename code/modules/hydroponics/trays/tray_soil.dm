@@ -7,56 +7,35 @@
 	tray_light = 0
 	frozen = -1
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/soil_tank_block,
-		/datum/interaction/machine_item/soil_fill,
-		/datum/interaction/machine_item/soil_shovel,
-	)
-	..()
+MSG_DEF(soil/fill_begin, null, span_notice("%U% begins filling in %T%."))
+MSG_DEF(soil/disperse_begin, null, "%U% starts dispersing %T%...")
+MSG_DEF_SELF(soil/growing, "There is something growing here.")
 
-/// Old attackby: a tank silently did nothing (never fell through to ..()).
-/datum/interaction/machine_item/soil_tank_block
-	id = "soil_tank_block"
-	name = "Use"
-	held_type = /obj/item/tank
-	effect = /atom/proc/interaction_swallow
+// A tank does nothing here (the old attackby swallowed it); a shovel in combat mode fills the plot in, otherwise it digs it up when nothing grows.
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil)
+	without(CAP_TANK_BAY) // a plot takes no tank: the tank does nothing here
+	op("tank_block", item(/obj/item/tank), label("Use"), then(PROC_REF(nothing_happens)))
+	op("fill_in", item(/obj/item/shovel), stance(I_HURT), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), label("Fill in"), begins(MSG(soil/fill_begin)), wait(3 SECONDS), then(PROC_REF(fill_in_done)))
+	op("dig", item(/obj/item/shovel), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), label("Dig"), stance(I_HELP, I_DISARM, I_GRAB), needs(req(PROC_REF(nothing_growing))),
+		soil_destroy_confirms(), begins(MSG(soil/disperse_begin)), wait(5 SECONDS), then(PROC_REF(dispersed)))
 
-/// Combat mode: fill the growplot in with the shovel.
-/datum/interaction/machine_item/soil_fill
-	id = "soil_fill"
-	name = "Fill in"
-	held_type = /obj/item/shovel
-	stance = I_HURT
-	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in
+/// "Do you want to destroy the growplot?": a yes/no whose "no" ends the op before the work starts.
+/proc/soil_destroy_confirms()
+	return part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = "Do you want to destroy the growplot?", "title" = "Destroy growplot?", "timeout" = 0),
+		"step" = "destroy", "resume" = CAPTURE, "keeps" = WAIT_KEEPS_DEFAULT, "confirms" = TRUE))
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in(mob/user, obj/item/O, datum/interaction/interaction)
-	act_message(user, src, others = span_notice("%U% begins filling in %T%."))
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/nothing_happens(datum/act/op/A)
+	return
 
-/datum/interaction/machine_item/soil_shovel
-	id = "soil_shovel"
-	name = "Dig"
-	held_type = /obj/item/shovel
-	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% fills in %T%."))
+	consume(src, A.actor)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(mob/user)
-	act_message(user, src, others = span_notice("%U% fills in %T%."))
-	qdel(src)
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/nothing_growing(datum/act/op/A)
+	return (!seed) ? null : MSG(soil/growing)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!seed)
-		var/choice= rerun_ask(user, "k43", PROC_REF(interaction_shovel), args, /datum/om/prompt/choice/alert, message = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"))
-		if(isnull(choice))
-			return
-		if(!choice||choice=="No")
-			return TRUE
-		act_message(user, src, others = "%U% starts dispersing %T%...", runemessage = "disperses the [src]")
-		om_task_timed(user, 5 SECONDS, src, src, TYPE_PROC_REF(/datum, om_qdel_self))
-	else
-		to_chat(user, span_notice("There is something growing here."))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/dispersed(datum/act/op/A)
+	dissolved(src, A.actor)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/CanPass()
 	return 1
@@ -69,33 +48,40 @@
 	icon = 'icons/obj/seeds.dmi'
 	icon_state = "blank"
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload,datum/seed/newseed)
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+	param(nameof(seed_at_make), pos = 1, overrides = TRUE)
+	rolls(nameof(pixel_y), range_of(-5, 5))
+
+/// The seed the soil grows (its constructor param).
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/var/datum/seed/seed_at_make
+
+// ALLOW(init/INSTANCE_STATE): a vine's invisible soil starts its plant alive and healthy
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload)
 	. = ..()
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
-	proto_set(src, nameof(seed), seed_shareable(newseed))
-	dead = 0
-	age = 1
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	proto_set(src, nameof(seed), seed_shareable(seed_at_make))
+	set_dead(0)
+	set_age(1)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	pixel_y = rand(-5,5)
 	check_health()
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/remove_dead()
 	..()
-	qdel(src)
+	spent(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/harvest()
 	..()
 	if(!seed) // Repeat harvests are a thing.
-		qdel(src)
+		spent(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()
-	qdel(src)
+	consume(src)
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/machine_step()
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/work_step(datum/act/timer/A)
 	if(!seed)
-		qdel(src)
+		consume(src)
 		return PROCESS_KILL
 	else if(name=="plant")
 		name = seed.display_name
@@ -106,5 +92,6 @@
 	// Check if we're masking a decal that needs to be visible again.
 	for(var/obj/effect/plant/plant in get_turf(src))
 		if(plant.invisibility == INVISIBILITY_MAXIMUM)
-			plant.invisibility = initial(plant.invisibility)
+			plant.set_invisibility(initial(plant.invisibility))
 	..()
+

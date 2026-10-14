@@ -5,7 +5,6 @@
 	icon_state = "tape"
 	w_class = ITEMSIZE_SMALL
 
-	toolspeed = 3 //You can use it in surgery. It's stupid, but you can.
 
 	var/turf/start
 	var/turf/end
@@ -45,24 +44,21 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/tape_dir = 0
 	var/icon_base = "tape"
 
-DECLARE_APPEARANCE_PROC(/obj/item/tape, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tape/appearance_overlays()
-	. = list()
+/obj/item/tape/draw(datum/look/look)
+	..()
 	//Possible directional bitflags: 0 (AIRLOCK), 1 (NORTH), 2 (SOUTH), 4 (EAST), 8 (WEST), 3 (VERTICAL), 12 (HORIZONTAL)
 	switch (tape_dir)
 		if(0)  // AIRLOCK
-			icon_state = "[icon_base]_door_[crumpled]"
+			look.state("[icon_base]_door_[crumpled]")
 		if(3)  // VERTICAL
-			icon_state = "[icon_base]_v_[crumpled]"
+			look.state("[icon_base]_v_[crumpled]")
 		if(12) // HORIZONTAL
-			icon_state = "[icon_base]_h_[crumpled]"
+			look.state("[icon_base]_h_[crumpled]")
 		else   // END POINT (1|2|4|8)
-			icon_state = "[icon_base]_dir_[crumpled]"
-			dir = tape_dir
+			look.state("[icon_base]_dir_[crumpled]")
+			look.set_dir(tape_dir)
 
-/obj/item/tape/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/tape, crumpled)
 
 /obj/item/taperoll/medical
 	name = "medical tape"
@@ -115,50 +111,26 @@ DECLARE_APPEARANCE_PROC(/obj/item/tape, TYPE_PROC_REF(/atom, appearance_overlays
 	req_one_access = list(ACCESS_ENGINE,ACCESS_ATMOSPHERICS)
 	color = COLOR_DEEP_SKY_BLUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/taperoll, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/taperoll/appearance_overlays()
-	. = list()
-	var/image/overlay = image(icon = src.icon)
-	overlay.appearance_flags = RESET_COLOR
+/obj/item/taperoll/draw(datum/look/look)
+	..()
 	if(ismob(loc))
-		if(!get_start())
-			overlay.icon_state = "start"
-		else
-			overlay.icon_state = "stop"
-		. += overlay
+		look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 
+CAPABILITIES(/obj/item/taperoll)
+	configure(item_tooling(speed = 3))
+	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
 
-/obj/item/taperoll/dropped(mob/user, equipping, slot)
-	update_icon()
-	return ..()
-
-/obj/item/taperoll/pickup(mob/user)
-	update_icon()
-	return ..()
-
-DECLARE_INTERACTIONS(/obj/item/taperoll, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
-/// Old attack_hand.
-/obj/item/taperoll/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	update_icon()
-	return FALSE
-
-/// Old attack_self.
-/obj/item/taperoll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!get_start())
 		rel_set(src, nameof(start), get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
-		update_icon()
 	else
 		rel_set(src, nameof(end), get_turf(src))
 		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
 			rel_clear(src, nameof(start))
-			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
-			return TRUE
+			return OP_OK
 
 		if(get_start() == get_end())
 			// spread tape in all directions, provided there is a wall/window
@@ -177,25 +149,21 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 					possible_dirs |= window.dir
 			if(!possible_dirs)
 				rel_clear(src, nameof(start))
-				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
-				return TRUE
+				return OP_OK
 			if(possible_dirs & (NORTH|SOUTH))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(NORTH, SOUTH))
 					if (possible_dirs & dir)
-						TP.tape_dir += dir
-				TP.update_icon()
+						TP.set_tape_dir(TP.tape_dir + dir)
 			if(possible_dirs & (EAST|WEST))
 				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(EAST, WEST))
 					if (possible_dirs & dir)
-						TP.tape_dir += dir
-				TP.update_icon()
+						TP.set_tape_dir(TP.tape_dir + dir)
 			rel_clear(src, nameof(start))
-			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
-			return TRUE
+			return OP_OK
 
 		var/turf/cur = get_start()
 		var/orientation = get_dir(get_start(), get_end())
@@ -242,9 +210,8 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			cur = get_step_towards(cur,get_end())
 		if (!can_place)
 			rel_clear(src, nameof(start))
-			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
-			return TRUE
+			return OP_OK
 
 		cur = get_start()
 		var/tapetest
@@ -278,18 +245,16 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 					break
 			if(!tapetest)
 				var/obj/item/tape/T = new tape_type(cur)
-				T.tape_dir = tape_dir
-				T.update_icon()
+				T.set_tape_dir(tape_dir)
 				if(tape_dir & SOUTH)
 					T.layer += 0.1 // Must always show above other tapes
 			if(cur == get_end())
 				break
 			cur = get_step_towards(cur,get_end())
 		rel_clear(src, nameof(start))
-		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 /obj/item/taperoll/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity)
@@ -301,7 +266,6 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			to_chat(user, "There's already tape over that door!")
 		else
 			var/obj/item/tape/P = new tape_type(T)
-			P.update_icon()
 			P.layer = WINDOW_LAYER
 			to_chat(user, span_notice("You finish placing \the [src]."))
 
@@ -324,8 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 
 /obj/item/tape/proc/crumple()
 	if(!crumpled)
-		crumpled = 1
-		update_icon()
+		set_crumpled(1)
 		name = "crumpled [name]"
 
 /obj/item/tape/CanPass(atom/movable/mover, turf/target)
@@ -339,37 +302,42 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			crumple()
 	return ..()
 
-/// Old attackby.
-/obj/item/tape/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	breaktape(user, interaction.stance)
-	return INTERACTION_HANDLED_PASS
+/// Old attackby: a held thing breaks the tape outside the help stance (in it, you refrain); the click goes on.
+/obj/item/tape/proc/interaction_item_help(datum/act/op/A)
+	breaktape(A.actor, I_HELP)
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/tape, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Lift", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Break", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Break", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Break", PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Break", PROC_REF(interaction_item)), \
-)
+/obj/item/tape/proc/interaction_item(datum/act/op/A)
+	breaktape(A.actor, I_HURT)
+	return OP_PASS
 
-/// Old attack_hand.
-/obj/item/tape/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (interaction.stance == I_HELP && src.allowed(user))
+CAPABILITIES(/obj/item/tape)
+	op("lift", hand(), ungated(), stance(I_HELP), label("Lift"), then(PROC_REF(interaction_lift)))
+	op("break", hand(), ungated(), stance(I_DISARM, I_GRAB, I_HURT), label("Break"), then(PROC_REF(interaction_break)))
+	op("refrain", item(/obj/item), stance(I_HELP), then(PROC_REF(interaction_item_help)))
+	op("break_with", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), label("Break"), then(PROC_REF(interaction_item)))
+
+/// Old attack_hand in the help stance: someone allowed lifts the tape line to pass (anyone else refrains from breaking it).
+/obj/item/tape/proc/interaction_lift(datum/act/op/A)
+	var/mob/user = A.actor
+	if(src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
-			T.lift(100) //~10 seconds
+			T.lift(10 SECONDS) //~10 seconds
 	else
-		breaktape(user, interaction.stance)
-	return TRUE
+		breaktape(user, I_HELP)
+	return OP_OK
+
+/// Old attack_hand outside the help stance: break the tape.
+/obj/item/tape/proc/interaction_break(datum/act/op/A)
+	breaktape(A.actor, I_HURT)
+	return OP_OK
 
 /obj/item/tape/proc/lift(time)
 	lifted = 1
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	om_after(src, time, PROC_REF(settle))
+	after(src, time, PROC_REF(settle))
 
 // Returns a list of all tape objects connected to src, including itself.
 /obj/item/tape/proc/gettapeline()
@@ -407,9 +375,9 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 		if(T == src)
 			continue
 		if(T.tape_dir & get_dir(T, src))
-			qdel(T)
+			destroyed(T, user)
 
-	qdel(src) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
+	consume(src, user) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 	return
 
 /obj/item/tape/proc/settle()

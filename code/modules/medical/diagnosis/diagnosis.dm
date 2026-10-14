@@ -42,15 +42,18 @@
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints
 
+CAPABILITIES(/datum/diagnosis)
+	owns_many(nameof(findings))
+
 
 /datum/diagnosis/proc/add_finding(datum/diagnosis_finding/F)
 	for(var/datum/diagnosis_finding/existing as anything in findings)
 		if(existing.name == F.name && existing.location == F.location)
 			if(_dq_band_rank(F.band) > _dq_band_rank(existing.band))
 				existing.band = F.band
-			qdel(F)
+			spent(F)
 			return existing
-	own_add(src, nameof(findings), F)
+	rel_add(src, nameof(findings), F)
 	return F
 
 /// Findings of `kind` (DIAG_FINDING_*), or every finding.

@@ -1,0 +1,15 @@
+blob | survives
+emag | refresh_queued: DEP_ALL -> 0
+emp 1 | refresh_queued: DEP_ALL -> 0
+emp 2 | refresh_queued: DEP_ALL -> 0
+explosion 1 | deleted
+explosion 1 | turf: +/obj/item/stack/material/wood x1
+explosion 2 | deleted
+explosion 2 | turf: +/obj/item/stack/material/wood x1
+explosion 3 | deleted
+explosion 3 | turf: +/obj/item/stack/material/wood x1
+projectile | atom_integrity: down
+projectile | refresh_queued: DEP_ALL -> 0
+thrown | atom_integrity: down
+thrown | refresh_queued: DEP_ALL -> 0
+

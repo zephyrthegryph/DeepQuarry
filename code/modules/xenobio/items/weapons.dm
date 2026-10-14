@@ -6,20 +6,22 @@
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
 	icon_state = "slimebaton"
 	item_state = "slimebaton"
-	slot_flags = SLOT_BELT
-	force = 9
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
 
+CAPABILITIES(/obj/item/melee/baton/slime)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 9))
+
 /obj/item/melee/baton/slime/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M) && status) // Is it on?
-		if(M.mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
+		if(kind_of(M).mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
 			if(isslime(M))
 				var/mob/living/simple_mob/slime/S = M
 				S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.
 			else
-				M.status_at_least(EFFECT_WEAKENED, 5)
+				M.status_at_least(STAT_WEAKENED, 5)
 
 		// Now for prommies.
 		if(ishuman(M))
@@ -29,10 +31,8 @@
 				H.injure(INJURY_PAIN, agony_to_apply, source = src)
 
 	..()
-/obj/item/melee/baton/slime/loaded/Initialize(mapload)
-	own_set(src, nameof(bcell), new/obj/item/cell/device(src))
-	update_icon()
-	return ..()
+CAPABILITIES(/obj/item/melee/baton/slime/loaded)
+	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device) // starts with a cell installed
 
 // Xeno stun gun + projectile
 /obj/item/gun/energy/taser/xeno/get_mechanics_info(list/additional_information)
@@ -87,12 +87,12 @@ REMOVAL
 /obj/item/projectile/beam/stun/xeno/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(isliving(target))
 		var/mob/living/L = target
-		if(L.mob_class & MOB_CLASS_SLIME)
+		if(kind_of(L).mob_class & MOB_CLASS_SLIME)
 			if(isslime(L))
 				var/mob/living/simple_mob/slime/S = L
 				S.slimebatoned(firer, round(agony/2))
 			else
-				L.status_at_least(EFFECT_WEAKENED, round(agony/2))
+				L.status_at_least(STAT_WEAKENED, round(agony/2))
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -103,7 +103,6 @@ REMOVAL
 	..()
 
 
-// === merged from weapons_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/xenobio
 	name = "xenobio gun"
 	desc = "You shouldn't see this!"
@@ -120,44 +119,47 @@ REMOVAL
 	else
 		.+= "There appears to be an empty slot for attaching a [loadable_name]."
 
-DECLARE_INTERACTIONS(/obj/item/xenobio, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/xenobio)
+	op("interaction_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("interaction_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("interaction_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/item/xenobio/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/xenobio/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, loadable_item))
 		if(loaded_item)
 			to_chat(user, span_warning("[I] doesn't seem to fit into [src]."))
-			return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		I.forceMove(src)
+			return OP_PASS
+		if(!own_bring_in(src, nameof(loaded_item), I, null, user, TRUE, null, FALSE))
+			return OP_PASS
 		loaded_item = I
 		act_message(user, src, MSG_SELF(span_notice("You slot [I] into %T%.")), MSG_OTHERS(span_notice("%U% inserts [I] into %T%.")))
-		return 1
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old attack_self.
-/obj/item/xenobio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-	return TRUE
+	return OP_OK
 
 /obj/item/xenobio/afterattack(atom/A, mob/user as mob)
 	if(!loaded_item)
@@ -207,81 +209,89 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	name = "portable slime processor"
 	desc = "An industrial grinder used to automate the process of slime core extraction.  It can also recycle biomatter. This one appears miniturized"
 	icon_state = "chainsaw0"
-	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
 
-/// Set after a monkey is ground: make_cubes() runs every second while it is (DECLARE_REPEAT).
-OM_FIELD(/obj/item/slime_grinder, cube_making, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
+/// Set after a monkey is ground: make_cubes() runs every second while it is (every()).
+/obj/item/slime_grinder/var/cube_making = FALSE
+TRACKED(/obj/item/slime_grinder, cube_making)
 
-/// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
-/obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)
-	processing = TRUE
-	if(istype(AM, /mob/living/simple_mob/slime))
-		grind_core(AM, user)
-		return
-	if(istype(AM, /mob/living/carbon/human/monkey))
-		play_sfx(src, SFX_MACHINES_JUICER)
-		om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_monkey), list(AM), on_fail = PROC_REF(grind_ended))
-		return
-	processing = FALSE
+/// What the grinder is working on: the REF text of the target of the running grind, or "cubes" while the last monkey's cubes are made. Null: free.
+/obj/item/slime_grinder/var/grinding = null
 
-/obj/item/slime_grinder/proc/grind_core(mob/living/simple_mob/slime/S, mob/living/user)
-	if(!S.cores)
-		qdel(S)
-		processing = FALSE
-		return
+// Instead of bringing the slime to the grinder, lets bring the grinder to the slime! This will process slimes and monkies one at a time:
+// the grinder is busy for a whole grind, a slime's cores one timed action each, a monkey one timed action and then the cubes.
+CAPABILITIES(/obj/item/slime_grinder)
+	every(1 SECOND, then(PROC_REF(make_cubes)), when = nameof(cube_making))
+	op("grind_monkey", at_target(/mob/living/carbon/human/monkey), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable))),
+		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_monkey)))
+	op("grind_slime", at_target(/mob/living/simple_mob/slime), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Grind"),
+		needs(req_adjacent(), req(PROC_REF(grinder_free), silent = TRUE), req(PROC_REF(target_processable))),
+		claims(0), starts(PROC_REF(grind_started)), wait(1.5 SECONDS), on_interrupt(PROC_REF(grind_ended)), then(PROC_REF(grind_core_done)))
+
+/// Requirement: nothing else is being ground (another target, or the cubes of the last monkey). The grind the op itself started does not refuse it.
+/obj/item/slime_grinder/proc/grinder_free(datum/act/op/A)
+	var/working = read_once(grinding) // a plain var: the juicer starts inside the wait, and a published write there would re-check the op half-started
+	return (isnull(working) || working == "\ref[A.target]") ? null : MSG(req_failed)
+
+/// Requirement: the target is a dead slime or a dead monkey.
+/obj/item/slime_grinder/proc/target_processable(datum/act/op/A)
+	return (can_insert(A.target)) ? null : span_warning("\The [src] cannot process \the [A.target] at this time.")
+
+/// The juicer starts and the grinder is busy until the grind ends.
+/obj/item/slime_grinder/proc/grind_started(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_JUICER)
-	om_task_timed(user, 1.5 SECONDS, src, src, PROC_REF(grind_core_done), list(S, user), on_fail = PROC_REF(grind_ended))
+	grinding = "\ref[A.target]"
 
-/obj/item/slime_grinder/proc/grind_core_done(mob/living/simple_mob/slime/S, mob/living/user)
-	new S.coretype(get_turf(S))
-	play_sfx(src, SFX_EFFECTS_SPLAT)
-	S.cores--
-	grind_core(S, user)
+/// A grind that ends without finishing: the grinder is free again.
+/obj/item/slime_grinder/proc/grind_ended(datum/act/op/A)
+	grinding = null
 
-/obj/item/slime_grinder/proc/grind_monkey(mob/living/carbon/human/M)
+/// One core out of the slime; the next core is the same op again, and a slime with none left is consumed.
+/obj/item/slime_grinder/proc/grind_core_done(datum/act/op/A)
+	var/mob/living/simple_mob/slime/S = A.target
+	grinding = null
+	if(S.cores > 0)
+		new S.coretype(get_turf(S))
+		play_sfx(src, SFX_EFFECTS_SPLAT)
+		S.cores--
+	if(S.cores > 0)
+		log_game("slime grinder: [key_name(A.actor)] keeps grinding [S] ([S.cores] cores left)")
+		perform_op(A.actor, S, "grind_slime", src, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+		return OP_OK
+	consumed(S, src)
+	return OP_OK
+
+/obj/item/slime_grinder/proc/grind_monkey(datum/act/op/A)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
-	qdel(M)
+	consumed(A.target, src)
 	monkeys_recycled++
+	grinding = "cubes" // the grinder stays busy until the cubes are made
 	set_cube_making(TRUE)
+	return OP_OK
 
 /// One monkey cube a second while four monkeys' worth is recycled.
-/obj/item/slime_grinder/proc/make_cubes()
+/obj/item/slime_grinder/proc/make_cubes(datum/act/timer/A)
 	if(monkeys_recycled < 4)
-		processing = FALSE
+		grinding = null
 		set_cube_making(FALSE)
-		return REPEAT_STOP
+		return
 	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4
 
-/obj/item/slime_grinder/proc/grind_ended()
-	processing = FALSE
-
 /obj/item/slime_grinder/proc/can_insert(atom/movable/AM)
 	if(istype(AM, /mob/living/simple_mob/slime))
 		var/mob/living/simple_mob/slime/S = AM
-		if(S.stat != DEAD)
+		if(read_once(S.stat) != DEAD)
 			return FALSE
 		return TRUE
 	if(ishuman(AM))
 		var/mob/living/carbon/human/H = AM
-		if(!istype(H.species, /datum/species/monkey))
+		if(!istype(read_once(H.species), /datum/species/monkey))
 			return FALSE
-		if(H.stat != DEAD)
+		if(read_once(H.stat) != DEAD)
 			return FALSE
 		return TRUE
 	return FALSE
-
-/obj/item/slime_grinder/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(processing)
-		return ITEM_INTERACT_FAILURE
-	if(!can_insert(M))
-		to_chat(user, span_warning("\The [src] cannot process \the [M] at this time."))
-		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-		return ITEM_INTERACT_FAILURE
-
-	extract(M, user)
-	return ..()

@@ -1,0 +1,39 @@
+@obj.machinery.vr_sleeper human|none
+@obj.machinery.vr_sleeper robot|none
+-menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-<serial> with a sharp beep.)
++3 menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-751 with a sharp beep.)
+@obj.machinery ai|none
+@obj.machinery.vr_sleeper ghost|none
+@obj.machinery.vr_sleeper human|/obj/item/tool/screwdriver
++3 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/tool/crowbar
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/tool/wrench
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/tool/wirecutters
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/multitool
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/weldingtool
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/stack/cable_coil
++3 menu: Make Cable Restraints (refused: You can't do that.)
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/stack/material/steel
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item/card/id
++3 menu: Move To Top
++4 menu: Read ID Card (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.vr_sleeper human|/obj/item
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+keys: drag_buckle, eject_impl, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, scan_impl, silicon_hand, use_crowbar, vr_sleeper_climb_in, vr_sleeper_eject, vr_sleeper_enter, vr_sleeper_scan

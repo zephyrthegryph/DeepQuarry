@@ -9,8 +9,9 @@
 	desc = "It's a fossil."
 	var/animal = 1
 
-DECLARE_LOOT(/obj/item/fossil/base, LOOT_TABLE(/obj/item/fossil/bone = 9, /obj/item/fossil/skull = 3, /obj/item/fossil/skull/horned = 2))
-MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
+CAPABILITIES(/obj/item/fossil/base)
+	map_resolver(GLOBAL_PROC_REF(resolve_loot))
+	loot(table = list(/obj/item/fossil/bone = 9, /obj/item/fossil/skull = 3, /obj/item/fossil/skull/horned = 2))
 
 /obj/item/fossil/bone
 	name = "Fossilised bone"
@@ -26,17 +27,20 @@ MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
 	icon_state = "hskull"
 	desc = "It's a fossilised, horned skull."
 
-DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/fossil/skull)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/fossil/skull/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/fossil/skull/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/fossil/bone))
 		var/obj/o = new /obj/skeleton(get_turf(src))
 		new /obj/item/fossil/bone(o)
 		new src.type(o)
 		consume(W, user)
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/skeleton
 	name = "Incomplete skeleton"
@@ -48,22 +52,29 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 	var/bstate = 0
 	var/plaque_contents = "Unnamed alien creature"
 
+// ALLOW(init/INSTANCE_STATE): rolls how many bones it still needs
 /obj/skeleton/Initialize(mapload)
 	. = ..()
 	breq = rand(6)+3
 	desc = "An incomplete skeleton, looks like it could use [breq-bnum] more bones."
 
-DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_skeleton_item)))
+CAPABILITIES(/obj/skeleton)
+	op("skeleton_bone", item(/obj/item/fossil/bone), label("Use"), then(PROC_REF(skeleton_bone)))
+	op("skeleton_plaque", item(/obj/item/pen), label("Use"),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like to write on the plaque:", "title" = "Skeleton plaque", "timeout" = 0), step = "plaque"),
+		then(PROC_REF(skeleton_plaque)))
 
-/// Old attackby: add bones until complete, or relabel the plaque with a pen.
-/obj/skeleton/proc/interaction_skeleton_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: add bones until complete.
+/obj/skeleton/proc/skeleton_bone(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/fossil/bone))
 		if(!bstate)
 			bnum++
 			new /obj/item/fossil/bone(src)
 			consume(W, user)
 			if(bnum==breq)
-				icon_state = "skel"
+				set_icon_state("skel")
 				src.bstate = 1
 				set_density(TRUE)
 				src.name = "alien skeleton display"
@@ -75,21 +86,22 @@ DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_ske
 				src.desc = "Incomplete skeleton, looks like it could use [src.breq-src.bnum] more bones."
 				to_chat(user, "Looks like it could use [src.breq-src.bnum] more bones.")
 		else
-			return FALSE
-	else if(istype(W,/obj/item/pen))
-		var/_answer_k80 = rerun_ask(user, "k80", PROC_REF(interaction_skeleton_item), args, /datum/om/prompt/text, message = "What would you like to write on the plaque:", title = "Skeleton plaque")
-		if(isnull(_answer_k80))
-			return TRUE
-		plaque_contents = _answer_k80
-		act_message(user, src, MSG_SELF("You relabel the plaque on the base of [icon2html(src,viewers(src))] %T%."), \
-			MSG_OTHERS("%U% writes something on the base of %T%."))
-		if(src.contents.Find(/obj/item/fossil/skull/horned))
-			src.desc = "A creature made of [src.contents.len-1] assorted bones and a horned skull. The plaque reads \'[plaque_contents]\'."
-		else
-			src.desc = "A creature made of [src.contents.len-1] assorted bones and a skull. The plaque reads \'[plaque_contents]\'."
+			return OP_DECLINE
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
+
+/// Old attackby with a pen: relabel the plaque.
+/obj/skeleton/proc/skeleton_plaque(datum/act/op/A)
+	var/mob/user = A.actor
+	plaque_contents = A.step_value("plaque")
+	act_message(user, src, MSG_SELF("You relabel the plaque on the base of [icon2html(src,viewers(src))] %T%."), \
+		MSG_OTHERS("%U% writes something on the base of %T%."))
+	if(src.contents.Find(/obj/item/fossil/skull/horned))
+		src.desc = "A creature made of [src.contents.len-1] assorted bones and a horned skull. The plaque reads \'[plaque_contents]\'."
+	else
+		src.desc = "A creature made of [src.contents.len-1] assorted bones and a skull. The plaque reads \'[plaque_contents]\'."
+	return OP_OK
 
 //shells and plants do not make skeletons
 /obj/item/fossil/shell
@@ -103,6 +115,10 @@ DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_ske
 	desc = "It's fossilised plant remains."
 	animal = 0
 
-/obj/item/fossil/plant/Initialize(mapload)
-	. = ..()
-	icon_state = "plant[rand(1,4)]"
+CAPABILITIES(/obj/item/fossil/plant)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/fossil/plant/proc/roll_icon_state(datum/roller/R)
+	return "plant[R.number(1, 4)]"
+

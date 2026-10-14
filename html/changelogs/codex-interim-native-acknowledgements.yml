@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated item-bank retrieval and admin acknowledgement prompts to native requests."

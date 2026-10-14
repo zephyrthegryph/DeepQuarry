@@ -1,0 +1,74 @@
+human|none menu: Climb
+human|none menu: Cloning console interaction hand
+human|none menu: Open controls
+human|none click: Click: Cloning console interaction hand
+@obj.machinery.computer robot|none
+-click: Click: Use
++2 menu: Cloning console interaction hand
++3 menu: Open controls
++5 click: Click: Cloning console interaction hand
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj.machinery.computer ghost|none
+@obj.machinery.computer human|/obj/item/tool/screwdriver
+-menu: Use
++1 menu: Cloning console interaction hand
++3 menu: Open controls
+@obj.machinery.computer human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/multitool
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item/card/id
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj.machinery.computer human|/obj/item
+-menu: Use
+-click: Click: Use item
++1 menu: Cloning console interaction hand
++2 menu: Open controls
++4 click: Click: Cloning console interaction item
+@obj human|/obj/item/gripper
+keys: autoprocess, cleartemp, climb.climb, climb.climb_menu, clone, cloning_console_interaction_hand, cloning_console_interaction_item, del_rec, disconnect, disk, drag_buckle, eject, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, refresh, robot_remote_blocked, scan, selectpod, silicon_hand, toggle_mode, ui_open, use_gripper, use_item, use_multitool, view_rec

@@ -1,0 +1,49 @@
+human|/obj/item menu: Open
+human|/obj/item menu: Strike
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Strike
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/card/id menu: Open
+human|/obj/item/card/id menu: Strike
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil menu: Strike
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/plasteel menu: Open
+human|/obj/item/stack/material/plasteel menu: Repair (refused: It is already fully repaired.)
+human|/obj/item/stack/material/plasteel menu: Strike
+human|/obj/item/stack/material/plasteel menu: Use
+human|/obj/item/stack/material/plasteel click: Click: Repair
+human|/obj/item/stack/material/steel menu: Open
+human|/obj/item/stack/material/steel menu: Strike
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/tool/crowbar menu: Open
+human|/obj/item/tool/crowbar menu: Strike
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Strike
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Strike
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/tool/wrench menu: Open
+human|/obj/item/tool/wrench menu: Strike
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/weldingtool menu: Open
+human|/obj/item/weldingtool menu: Strike
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Open
+robot|none menu: Use
+robot|none click: Click: Open

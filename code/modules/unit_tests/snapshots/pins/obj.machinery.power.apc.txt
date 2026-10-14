@@ -1,0 +1,55 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Breaker
++2 menu: Open controls
++3 menu: Toggle worn
++5 click: Click: Toggle worn
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Breaker
++1 menu: Open controls
++3 click: Click: Open controls
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Open (refused: The cover is locked and cannot be opened.)
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Remove cover (refused: The cover is locked and cannot be opened.)
+human|/obj/item/tool/crowbar click: Click: Open
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+@obj.machinery.power human|/obj/item/stack/cable_coil
+-click: Click: Lay cable
++1 menu: Open controls
++2 click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/module/power_control menu: Open controls
+human|/obj/item/module/power_control click: Click: Open controls
+human|/obj/item/frame/apc menu: Open controls
+human|/obj/item/frame/apc click: Click: Open controls
+human|/obj/item/pda menu: Open controls
+human|/obj/item/pda menu: Toggle (refused: Access denied.)
+human|/obj/item/pda click: Click: Toggle
+@obj.machinery.power human|/obj/item/card/emag
++0 menu: Open controls
+human|/obj/item/cell menu: Open controls
+human|/obj/item/cell click: Click: Open controls
+human|/obj/item/assembly/signaler menu: Open controls
+human|/obj/item/assembly/signaler click: Click: Open controls
+wires: AI Control, ID Scan, Primary Power, Secondary Power
+keys: breaker, cable_place, cell_bay.cell.insert, cell_bay.cell.take, chargemode, construction.build:apc_board, construction.build:apc_secured, construction.build:apc_wired, construction.dismantle, construction.undo:apc_board, construction.undo:apc_secured, construction.undo:apc_wired, cover.open, cover.remove, cover.replace, coverlock, drag_buckle, emag.subvert, emag.use, emergency_lighting, lock, lock.toggle, lock.toggle_worn, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, nightshift, overload, panel.open, reboot, robot_remote_blocked, set_channel, silicon_hand, subversion_reset.use, ui_open, wires.cut, wires.open, wires.pulse, wires_signaler

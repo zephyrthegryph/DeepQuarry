@@ -9,7 +9,7 @@
 	faction = FACTION_XENO
 	max_grown = 325 //Increase larva growth time due to not needing hosts.
 
-/mob/living/carbon/alien/larva/Initialize(mapload)
-	. = ..()
-	add_language(LANGUAGE_XENOLINGUA) //Bonus language.
-	new /obj/item/organ/internal/xenos/hivenode(src) // loose in the interior; the attach hook caches it
+CAPABILITIES(/mob/living/carbon/alien/larva)
+	knows(LANGUAGE_XENOLINGUA)
+	initial_contents(/obj/item/organ/internal/xenos/hivenode)
+

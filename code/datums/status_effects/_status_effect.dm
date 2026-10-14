@@ -39,6 +39,9 @@
 	/// A particle effect, for things like embers - Should be set on update_particles()
 	VAR_FINAL/obj/effect/abstract/particle_holder/particle_effect
 
+CAPABILITIES(/datum/status_effect)
+	ref_one(nameof(linked_alert))
+
 /datum/status_effect/New(list/arguments)
 	on_creation(arglist(arguments))
 
@@ -49,11 +52,11 @@
 	if(new_owner)
 		rel_set(src, nameof(owner), new_owner)
 	if(QDELETED(owner) || !on_apply())
-		qdel(src)
+		spent(src)
 		return
 	if(owner)
-		own_add(owner, nameof(owner.status_effects), src)
-		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
+		rel_add(owner, nameof(owner.status_effects), src)
+		observe(owner, /datum/notice/living_aheal, src, then(PROC_REF(remove_effect_on_heal)))
 
 	if(duration == INFINITY)
 		// we will optionally allow INFINITY, because i imagine it'll be convenient in some places,
@@ -73,11 +76,11 @@
 	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
 		switch(processing_speed)
 			if(STATUS_EFFECT_FAST_PROCESS)
-				om_task_periodic(src, PERIODIC_FAST)
+				SSstatus_fast.kernel_join(src)
 			if(STATUS_EFFECT_NORMAL_PROCESS)
-				om_task_periodic(src, PERIODIC_SECOND)
+				SSstatus_normal.kernel_join(src)
 			if(STATUS_EFFECT_PRIORITY)
-				om_task_periodic(src, PERIODIC_STATUS_EFFECTS)
+				SSstatus_priority.kernel_join(src)
 
 	update_particles()
 	return TRUE
@@ -89,7 +92,6 @@
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)
 	if(owner)
-		rel_clear(src, nameof(linked_alert))
 		owner.clear_alert(id)
 		on_remove()
 	..()
@@ -105,11 +107,11 @@
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
 // instead of extending / overriding the process() proc.
-/datum/status_effect/periodic_step(delta)
+/datum/status_effect/proc/effect_step(delta)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))
-		qdel(src)
+		ended_with(src, owner)
 		return
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
@@ -125,7 +127,7 @@
 
 	if(duration != STATUS_EFFECT_PERMANENT)
 		if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-			qdel(src)
+			lapsed(src)
 			return
 		update_shown_duration()
 
@@ -167,7 +169,7 @@
 	owner.clear_alert(id)
 	own_take_member(owner, nameof(owner.status_effects), src)
 	rel_clear(src, nameof(owner))
-	qdel(src)
+	replaced_by(src)
 
 /// Called before being fully removed (before on_remove)
 /// Returning FALSE will cancel removal
@@ -190,14 +192,14 @@
 /datum/status_effect/proc/nextmove_adjust()
 	return 0
 
-/// /datum/om/event/living_aheal handler: removes us on a full heal
-/datum/status_effect/proc/remove_effect_on_heal(datum/source, datum/om/event/living_aheal/event)
-	EVENT_HANDLER
+/// /datum/definition_event/living_aheal handler: removes us on a full heal
+/datum/status_effect/proc/remove_effect_on_heal(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!remove_on_fullheal)
 		return
 
-	qdel(src)
+	spent(src)
 
 /// Remove [seconds] of duration from the status effect, qdeling / ending if we eclipse the current world time.
 /datum/status_effect/proc/remove_duration(seconds)
@@ -206,7 +208,7 @@
 
 	duration -= seconds
 	if(EXPIRY_EXPIRED(src, duration, CLOCK_WORLD))
-		qdel(src)
+		lapsed(src)
 		return TRUE
 
 	update_shown_duration()

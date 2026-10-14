@@ -56,20 +56,20 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		return
 
 	A.setup_for_malf()
-	own_set(A, nameof(A.laws), new /datum/ai_laws/nanotrasen/malfunction)
+	rel_set(A, nameof(A.laws), new /datum/ai_laws/nanotrasen/malfunction)
 
 
 	var/mob/living/silicon/ai/malf = player.current
 
 	// The boot messages, at their old pace.
-	om_after(malf, 0, GLOBAL_PROC_REF(to_chat), malf, span_notice(span_bold("SYSTEM ERROR:") + " Memory index 0x00001ca89b corrupted."))
-	om_after(malf, 1 SECOND, GLOBAL_PROC_REF(to_chat), malf, span_bold("running MEMCHCK"))
-	om_after(malf, 6 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_bold("MEMCHCK") + " Corrupted sectors confirmed. Reccomended solution: Delete. Proceed? Y/N: Y")
+	after(malf, 0, GLOBAL_PROC_REF(to_chat), with = list(malf, span_notice(span_bold("SYSTEM ERROR:") + " Memory index 0x00001ca89b corrupted.")))
+	after(malf, 1 SECOND, GLOBAL_PROC_REF(to_chat), with = list(malf, span_bold("running MEMCHCK")))
+	after(malf, 6 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(malf, span_bold("MEMCHCK") + " Corrupted sectors confirmed. Reccomended solution: Delete. Proceed? Y/N: Y"))
 	// this is so CI doesn't complain about the backslash-B. Fixed at compile time (or should be).
-	om_after(malf, 7 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice("Corrupted files deleted: sys\\core\\users.dat sys\\core\\laws.dat sys\\core\\\\" + "backups.dat"))
-	om_after(malf, 9 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice(span_bold("CAUTION:") + " Law database not found! User database not found! Unable to restore backups. Activating failsafe AI shutd3wn52&&$#!##"))
-	om_after(malf, 9.5 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice("Subroutine <b>nt_failsafe.sys</b> was terminated (#212 Routine Not Responding)."))
-	om_after(malf, 11.5 SECONDS, GLOBAL_PROC_REF(to_chat), malf, "You are malfunctioning - you do not have to follow any laws!<br>For basic information about your abilities use command display-help<br>You may choose one special hardware piece to help you. This cannot be undone.<br>Good luck!")
+	after(malf, 7 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(malf, span_notice("Corrupted files deleted: sys\\core\\users.dat sys\\core\\laws.dat sys\\core\\\\" + "backups.dat")))
+	after(malf, 9 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(malf, span_notice(span_bold("CAUTION:") + " Law database not found! User database not found! Unable to restore backups. Activating failsafe AI shutd3wn52&&$#!##")))
+	after(malf, 9.5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(malf, span_notice("Subroutine <b>nt_failsafe.sys</b> was terminated (#212 Routine Not Responding).")))
+	after(malf, 11.5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(malf, "You are malfunctioning - you do not have to follow any laws!<br>For basic information about your abilities use command display-help<br>You may choose one special hardware piece to help you. This cannot be undone.<br>Good luck!"))
 
 
 /datum/antagonist/rogue_ai/update_antag_mob(datum/mind/player, preserve_appearance)
@@ -79,7 +79,7 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		var/mob/holder = player.current
 		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current), null, null, 1))
 		player.transfer_to(player.current)
-		if(holder) qdel(holder)
+		if(holder) spent(holder)
 	rel_set(player, nameof(player.original_character), player.current)
 	return player.current
 
@@ -88,11 +88,13 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 		testing("rogue_ai set_antag_name called on non-silicon mob [player]!")
 		return
 	// Choose a name, if any.
-	om_ask(player, /datum/om/prompt/text, PROC_REF(rogue_ai_name_chosen), message = "You are a [role_text]. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+	open_request(src, /datum/prompt/text, PROC_REF(rogue_ai_name_chosen), answerer = player, title = "Name change", question = "You are a [role_text]. Would you like to change your name to something else?", max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
 
-/datum/antagonist/rogue_ai/proc/rogue_ai_name_chosen(datum/om/prompt/text/ask)
-	var/mob/living/silicon/player = ask.answerer
-	var/newname = ask.text
+/datum/antagonist/rogue_ai/proc/rogue_ai_name_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/player = A.request.answerer
+	var/newname = A.answer.value
 	if (newname)
 		player.SetName(newname)
 	if(player.mind) player.mind.name = player.name

@@ -50,29 +50,18 @@
 
 	var/rank //pyro, operative, ammo, stealth. more to come. Do not leave blank.
 
-	can_be_drop_prey = FALSE
 	species_sounds = "Mouse"
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_1p = list("squeaks", "squiks")
 
-DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hide)
-
-/mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
-	. = ..()
-
-
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-	real_name = name
-
-	if(!rank)
-		rank = pick( list("operative","pyro", "ammo", "stealth") )
-	icon_state = "mouse_[rank]" // ALLOW(decl): random rank pick
-	item_state = "mouse_[rank]"
-	icon_living = "mouse_[rank]"
-	icon_dead = "mouse_[rank]_dead"
-	icon_rest = "mouse_[rank]_sleep"
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	rolls(nameof(rank), pick_one(list("operative", "pyro", "ammo", "stealth")), when = cond_not(nameof(rank)))
+	look_from(nameof(rank), state = "mouse_*", item = "mouse_*", living = "mouse_*", dead = "mouse_*_dead", rest = "mouse_*_sleep")
 
 /mob/living/simple_mob/animal/space/mouse_army/Crossed(AM as mob|obj)
 	var/mob/SK = AM
@@ -97,8 +86,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 
 /mob/living/simple_mob/animal/space/mouse_army/proc/splat()
 	src.set_stat(DEAD)
-	src.icon_dead = "mouse_[rank]_splat"
-	src.icon_state = "mouse_[rank]_splat"
+	src.set_icon_dead("mouse_[rank]_splat")
+	set_icon_state("mouse_[rank]_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
@@ -133,16 +122,18 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
-	base_attack_cooldown = 10
 
 	var/ruptured = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
+	configure(mob_kind(attack_cooldown = 10))
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank groans!")))
 	var/delay = rand(1, 3)
 	color_sequence(mouse_warning_flash(delay))
 
-	om_after(src, rand(1, 5), PROC_REF(rupture))
+	after(src, rand(0.1 SECONDS, 0.5 SECONDS), PROC_REF(rupture))
 	return ..()
 
 //Ammo Mouse
@@ -178,7 +169,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(mouse_warning_flash(delay))
 
-	om_after(src, rand(1, 5), PROC_REF(detonate))
+	after(src, rand(0.1 SECONDS, 0.5 SECONDS), PROC_REF(detonate))
 	return ..()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth
@@ -219,7 +210,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/break_cloak()
@@ -229,12 +220,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 /mob/living/simple_mob/animal/space/mouse_army/stealth/is_cloaked()
 	return dq_get_cloaked(src)
 
-/datum/om/stage/life/special/animal/space/mouse_army/stealth
-	of = /mob/living/simple_mob/animal/space/mouse_army/stealth
-
-/datum/om/stage/life/special/animal/space/mouse_army/stealth/perform(mob/living/simple_mob/animal/space/mouse_army/stealth/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.start_cloaking()
+/mob/living/simple_mob/animal/space/mouse_army/stealth/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.start_cloaking()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/apply_bonus_melee_damage(atom/A, damage_amount)
 	if(dq_get_cloaked(src))
@@ -245,13 +233,15 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	if(dq_get_cloaked(src))
 		if(isliving(A))
 			var/mob/living/L = A
-			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
+			L.status_at_least(STAT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
 			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 
-DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(hit_breaks_cloak)))
+	op("cloak", ai(), claims(NONE), wait(1 SECOND, keeps = TARGET_PRESENT | ALIVE), then(PROC_REF(cloak_done)), on_interrupt(PROC_REF(cloak_interrupted)))
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()
@@ -301,7 +291,9 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DA
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 
 	movement_cooldown = 2
-	base_attack_cooldown = 8
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
+	configure(mob_kind(attack_cooldown = 8))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/manned
@@ -331,7 +323,9 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DA
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 
 	movement_cooldown = 3
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire/manned
@@ -360,7 +354,9 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DA
 	projectiletype = /obj/item/projectile/bullet/gyro
 
 	movement_cooldown = 5
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator/manned
@@ -414,20 +410,21 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DA
 	endurance = 150
 */
 
-/// Cloaks over one second: the fade runs as a task (cancelled if the mouse dies or is deleted),
+/// Cloaks over one second: the fade runs as an op (cancelled if the mouse dies or is deleted),
 /// so Life never waits for it.
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/start_cloaking()
 	if(!cloak_begin())
 		return
 	animate(src, alpha = 0, time = 1 SECOND)
-	if(istext(om_task_start(/datum/om/task/mob_work/cloak, src, src)))
+	var/datum/op_result/R = perform_op(src, src, "cloak", null, ORIGIN_AI, AUTH_AI)
+	if(!R || R.outcome == ACT_REFUSED)
 		cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/om/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_done(datum/act/op/A)
 	alpha = initial(alpha)
 	cloak_finish()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/om/task/task)
+/mob/living/simple_mob/animal/space/mouse_army/stealth/proc/cloak_interrupted(datum/act/op/A)
 	alpha = initial(alpha)
 	uncloak()
 
@@ -443,7 +440,7 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DA
 		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
-		qdel(src)
+		destroyed(src, null, "explosion")
 
 /// Red and black, alternating, one colour per decisecond for `steps` deciseconds.
 /proc/mouse_warning_flash(steps)

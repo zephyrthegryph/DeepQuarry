@@ -1,0 +1,61 @@
+@obj.item.mecha_parts.mecha_equipment human|none
++0 menu: Empty Ore compartment
+@obj.item.mecha_parts.mecha_equipment robot|none
++0 menu: Empty Ore compartment
+@obj ai|none
+@obj.item ghost|none
++0 menu: Empty Ore compartment (refused: You can't reach that.)
+@obj.item.mecha_parts human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++0 menu: Empty Ore compartment
++3 click: nothing
+@obj.item.mecha_parts human|/obj/item/kit
+-menu: Use
++1 menu: Empty Ore compartment
+@obj.item.mecha_parts human|/obj/item/storage
+-menu: Use
+-click: Click: Use
++1 menu: Empty Ore compartment
++4 click: Click: Collect
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, orescoop_empty_box, pick_up_item, toggle_digestable

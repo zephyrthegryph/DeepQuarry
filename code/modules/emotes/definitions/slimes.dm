@@ -5,8 +5,7 @@
 /datum/decl/emote/slime/do_extra(mob/living/simple_mob/slime/user)
 	. = ..()
 	if(istype(user))
-		user.mood = mood
-		user.update_icon()
+		user.set_mood(mood)
 
 /datum/decl/emote/slime/mob_can_use(atom/user)
 	return ..() && isslime(user)

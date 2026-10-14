@@ -1,0 +1,37 @@
+@obj.structure.prop human|none
+@obj.structure.prop robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.prop human|/obj/item/tool/screwdriver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/tool/crowbar
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/tool/wrench
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/tool/wirecutters
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/multitool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/weldingtool
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/stack/cable_coil
+-menu: Make Cable Restraints (refused: You can't do that.)
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/stack/material/steel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item/card/id
+-menu: Move To Top
+-menu: Read ID Card (refused: You can't do that.)
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure.prop human|/obj/item
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+keys: drag_buckle, melee_hit, message, toggle

@@ -54,7 +54,7 @@
 	del(note_list) // savefile, so NOT qdel
 
 
-/proc/notes_del(key, index)
+/proc/notes_del(key, index, mob/user)
 	var/savefile/info = new("data/player_saves/[copytext(key, 1, 2)]/[key]/info.sav")
 	var/list/infos
 	info >> infos
@@ -64,10 +64,11 @@
 	infos.Remove(item)
 	info << infos
 
-	message_admins(span_blue("[key_name_admin(usr)] deleted one of [key]'s notes."))
-	log_admin("[key_name(usr)] deleted one of [key]'s notes.")
-	admin_action_message(usr.key, key, "deleted note on", "\[Note gone\]", 0)
-	qdel(info)
+	message_admins(span_blue("[key_name_admin(user)] deleted one of [key]'s notes."))
+	log_admin("[key_name(user)] deleted one of [key]'s notes.")
+	admin_action_message(user.key, key, "deleted note on", "\[Note gone\]", 0)
+	info.Flush()
+	info = null
 
 /proc/show_player_info_irc(key as text)
 	var/dat = "          Info on [key]\n"

@@ -74,6 +74,24 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	var/allow_multitool = 1			// Allows additional multitool functionality
 									// Used as a global var, (Do not set manually in children).
 
+CAPABILITIES(/obj/item/integrated_circuit)
+	ref_one(nameof(assembly), /obj/item/electronic_assembly)
+	owns_many(nameof(inputs))
+	owns_many(nameof(outputs))
+	owns_many(nameof(activators))
+	interface("ICCircuit", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("rename", ui_act("rename"), then(PROC_REF(ui_act_rename)))
+	op("wire", ui_act("wire", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_name", ui_act("pin_name", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_data", ui_act("pin_data", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("pin_unwire", ui_act("pin_unwire", arg("link", schema_ref(/datum/integrated_io)), arg("pin", schema_ref(/datum/integrated_io))), then(PROC_REF(ui_act_wire)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("examine", ui_act("examine", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_examine)))
+	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	op("circuit_rename", menu(), label("Rename Circuit"), needs(carried()), then(PROC_REF(circuit_rename_op)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(circuit_emp_scramble)))
+
 /// Reference to the assembly holding this circuit, if any. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/proc/assembly() as /obj/item/electronic_assembly
 	return assembly

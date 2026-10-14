@@ -31,11 +31,11 @@
 	minimum_exposure_time = 0,
 	strength = 100
 )
-	if(!GLOB.radiation_service.enabled)
+	if(!SSradiation.is_enabled())
 		return
 
 	var/datum/radiation_pulse_information/pulse_information = new
-	rel_set(pulse_information, nameof(/datum/contract_damage_report::source_ref), source)
+	rel_set(pulse_information, nameof(/datum/radiation_pulse_information::source_ref), source)
 	pulse_information.max_range = max_range
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance
@@ -43,7 +43,7 @@
 	pulse_information.strength = strength
 	// Targets (living mobs and the collector, geiger and radiovoltaic registries)
 	// are collected and traced in one Rust call when the pulse first processes.
-	own_add(GLOB.radiation_service, nameof(/datum/controller/master::processing), pulse_information)
+	SSradiation.queue_pulse(pulse_information)
 
 	return TRUE
 
@@ -112,11 +112,11 @@ SETTER(/atom, rad_insulation)
 		else
 			return PERCEIVED_RADIATION_DANGER_LOW
 
-/// A common proc used to emit /datum/om/event/atom_propagate_rad_pulse on adjacent atoms
+/// A common proc used to emit /datum/definition_event/atom_propagate_rad_pulse on adjacent atoms
 /// Only used for uranium (false/tram)walls to spread their radiation pulses
 /atom/proc/propagate_radiation_pulse()
 	for(var/atom/atom in orange(1,src))
-		OM_EMIT(atom, /datum/om/event/atom_propagate_rad_pulse, src)
+		PUBLISH_LEGACY(atom, /datum/notice/atom_propagate_rad_pulse, src)
 
 #undef MEDIUM_RADIATION_THRESHOLD_RANGE
 #undef EXTREME_RADIATION_CHANCE

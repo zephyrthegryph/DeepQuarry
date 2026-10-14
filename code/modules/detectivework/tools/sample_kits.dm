@@ -4,27 +4,31 @@
 	w_class = ITEMSIZE_TINY
 	var/list/evidence
 
-/obj/item/sample/Initialize(mapload, atom/supplied)
-	. = ..()
+/// What the sample was taken from (its constructor param, dropped once copied).
+/obj/item/sample/var/tmp/atom/taken_from
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/sample/proc/copy_from(atom/supplied)
 	if(supplied && supplied.forensic_data)
 		copy_evidence(supplied)
 		name = "[initial(name)] (\the [supplied])"
 
-/obj/item/sample/print/Initialize(mapload, supplied)
-	. = ..()
-	if(evidence && length(evidence))
-		icon_state = "fingerprint1"
+/// A print card that holds prints shows them.
+/obj/item/sample/print/draw(datum/look/look)
+	..()
+	if(length(evidence))
+		look.state("fingerprint1")
 
 /obj/item/sample/proc/copy_evidence(atom/supplied)
 	var/list/fibre_data = supplied.forensic_data.get_fibres()
 	if(fibre_data && fibre_data.len)
-		evidence = fibre_data.Copy()
+		set_evidence(fibre_data.Copy())
 		supplied.forensic_data.clear_fibres()
 
 /obj/item/sample/proc/merge_evidence(obj/item/sample/supplied, mob/user)
 	if(!supplied.evidence || !length(supplied.evidence))
 		return 0
-	if(length(supplied.evidence)) LAZYOR(evidence, supplied.evidence)
+	if(length(supplied.evidence)) include_evidence(supplied.evidence)
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You transfer the contents of \the [supplied] into \the [src]."))
 	return 1
@@ -34,23 +38,37 @@
 		return 0
 	for(var/print in supplied.evidence)
 		if(LAZYACCESS(evidence, print))
-			LAZYSET(evidence, print, stringmerge(LAZYACCESS(evidence, print),LAZYACCESS(supplied.evidence, print)))
+			set_evidence_at(print, stringmerge(LAZYACCESS(evidence, print),LAZYACCESS(supplied.evidence, print)))
 		else
-			LAZYSET(evidence, print, LAZYACCESS(supplied.evidence, print))
+			set_evidence_at(print, LAZYACCESS(supplied.evidence, print))
 	name = "[initial(name)] (combined)"
 	to_chat(user, span_notice("You overlay \the [src] and \the [supplied], combining the print records."))
 	return 1
 
-DECLARE_INTERACTIONS(/obj/item/sample, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/sample)
+	op("merge_sample", item(/obj/item/sample), label("Combine evidence"), when(req(PROC_REF(matching_sample))),
+		needs(req(PROC_REF(sample_releasable))), then(PROC_REF(sample_merged)))
+	param(nameof(taken_from), pos = 1, apply = PROC_REF(copy_from), keep = FALSE)
 
-/// Old attackby.
-/obj/item/sample/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
-	if(O.type == src.type)
-		user.unEquip(O)
-		if(merge_evidence(O, user))
-			qdel(O)
-		return 1
-	return FALSE
+/// Compiled DM type identities are immutable; this helper reads no mutable entity state.
+/proc/forensic_sample_same_type(obj/item/sample/target, obj/item/sample/donor)
+	READS_FROM()
+	return target.type == donor.type
+
+/obj/item/sample/proc/matching_sample(datum/act/op/A)
+	return (forensic_sample_same_type(src, A.held)) ? null : MSG(req_failed)
+
+/obj/item/sample/proc/sample_releasable(datum/act/op/A)
+	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
+	return isnull(why) ? null : (why || MSG(op/not_available))
+
+/obj/item/sample/proc/sample_merged(datum/act/op/A)
+	var/obj/item/sample/donor = A.held
+	if(!A.actor.unEquip(donor))
+		return OP_REFUSED
+	if(merge_evidence(donor, A.actor))
+		consume(donor, A.actor)
+	return OP_OK
 
 /obj/item/sample/fibers
 	name = "fiber bag"
@@ -64,32 +82,26 @@ DECLARE_INTERACTIONS(/obj/item/sample, INTERACT_ITEM(null, PROC_REF(interaction_
 	icon_state = "fingerprint0"
 	item_state = "paper"
 
-EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sample/print/proc/can_press_prints)))
+MSG_DEF_SELF(sample/take_gloves_off, "Take your gloves off first.")
 
-/// Requirement: bare fingertips (a used card or a non-human is ignored silently by the effect).
-/obj/item/sample/print/proc/can_press_prints(mob/user, atom/target, obj/item/held)
-	if((evidence && length(evidence)) || !ishuman(user))
-		return TRUE
-	var/mob/living/carbon/human/H = user
-	var/obj/item/gloves = H.get_equipped_item(SLOT_ID_GLOVES)
-	if(gloves)
-		return "take \the [gloves] off first"
-	return TRUE
+CAPABILITIES(/obj/item/sample/print)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_actor_slot_empty(SLOT_ID_GLOVES, because = MSG(sample/take_gloves_off))), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/sample/print/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/sample/print/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(evidence && length(evidence))
-		return TRUE
+		return OP_OK
 	if(!ishuman(user))
-		return TRUE
+		return OP_OK
 	var/mob/living/carbon/human/H = user
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
 	var/fullprint = H.get_full_print()
-	LAZYSET(evidence, fullprint, fullprint)
+	set_evidence_at(fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
-	icon_state = "fingerprint1"
-	return TRUE
+	set_icon_state("fingerprint1")
+	return OP_OK
 
 /obj/item/sample/print/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 
@@ -109,7 +121,7 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 		act_message(user, H, others = span_danger("%U% tries to take prints from %T%, but they move away."))
 		return ITEM_INTERACT_FAILURE
 
-	if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+	if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 		var/has_hand
 		var/obj/item/organ/external/O = H.organs_by_name[BP_R_HAND]
 		if(istype(O) && !O.is_stump())
@@ -123,10 +135,10 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 			return ITEM_INTERACT_FAILURE
 		act_message(user, H, others = "%U% takes a copy of %T%'s fingerprints.")
 		var/fullprint = H.get_full_print()
-		LAZYSET(evidence, fullprint, fullprint)
+		set_evidence_at(fullprint, fullprint)
 		copy_evidence(src)
 		name = "[initial(name)] (\the [H])"
-		icon_state = "fingerprint1"
+		set_icon_state("fingerprint1")
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 
@@ -134,7 +146,7 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 	var/list/print_data = supplied.forensic_data.get_prints()
 	if(print_data && print_data.len)
 		for(var/print in print_data)
-			LAZYSET(evidence, print, print_data[print])
+			set_evidence_at(print, print_data[print])
 		supplied.forensic_data.clear_prints()
 
 /obj/item/forensics/sample_kit

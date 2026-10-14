@@ -3,14 +3,13 @@
 	desc = "A painted holy figure of a plain looking human man in a robe."
 	icon = 'icons/obj/chaplain.dmi'
 	icon_state = "mrobe"
-	force = 10
 	throw_speed = 1
 	throw_range = 4
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 
 
-/obj/item/godfig/proc/resprite_figure_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/godfig/proc/resprite_figure_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	var/list/options = list()
@@ -44,12 +43,15 @@
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
 
-	om_ask(M, /datum/om/prompt/choice, PROC_REF(figure_chosen), title = "Customize Figure", message = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(figure_chosen), answerer = M, title = "Customize Figure", question = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/godfig/proc/figure_chosen(datum/om/prompt/choice/ask)
-	var/list/options = ask.choices
-	var/choice = ask.choice
-	icon_state = options[choice]
+/obj/item/godfig/proc/figure_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
+	var/list/options = prompt.choices
+	var/choice = A.answer.value
+	set_icon_state(options[choice])
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
 	else if(options[choice] == "mrobe")
@@ -109,27 +111,31 @@
 	else if(options[choice] == "catrobe")
 		desc = "A painted holy figure of a plain looking Tajaran in a robe."
 
-	to_chat(ask.answerer, "The religious icon is now a [choice]. All hail!")
+	to_chat(A.request.answerer, "The religious icon is now a [choice]. All hail!")
 	return 1
 
 
 
-/obj/item/godfig/proc/rename_fig_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/godfig/proc/rename_fig_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/mob/M = user
 	if(!M.mind)	return 0
 
-	om_ask(M, /datum/om/prompt/text, PROC_REF(figure_named), message = "What do you want to name the icon?", default = "", max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(figure_named), answerer = M, question = "What do you want to name the icon?", default = "", max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
 
-/obj/item/godfig/proc/figure_named(datum/om/prompt/text/ask)
-	var/mob/M = ask.answerer
-	var/input = ask.text
+/obj/item/godfig/proc/figure_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	var/input = A.answer.value
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/godfig, \
-	INTERACT_VERB("Customize Figure", PROC_REF(resprite_figure_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Name Figure", PROC_REF(rename_fig_effect), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/godfig)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
+	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()), then(PROC_REF(resprite_figure_effect)))
+	op("rename_fig_effect", menu(), label("Name Figure"), needs(carried()), then(PROC_REF(rename_fig_effect)))

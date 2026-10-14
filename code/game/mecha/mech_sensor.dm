@@ -8,7 +8,6 @@
 	throwpass = 1
 	use_power = USE_POWER_IDLE
 	layer = ON_WINDOW_LAYER
-	power_channel = EQUIP
 	on = 0
 	var/id_tag = null
 
@@ -16,6 +15,11 @@
 	var/datum/radio_frequency/radio_connection
 	/// Without it the feedback becomes horribly spammy.
 	COOLDOWN_DECLARE(feedback_cooldown)
+
+CAPABILITIES(/obj/machinery/mech_sensor)
+	ref_one(nameof(radio_connection), /datum/radio_frequency)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	configure(uses_power(channel = EQUIP))
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
 	if(!enabled())
@@ -54,23 +58,22 @@
 	COOLDOWN_START(src, feedback_cooldown, 5 SECONDS)
 
 /obj/machinery/mech_sensor/proc/enabled()
-	return on && !has_stat(NOPOWER)
+	return on && !power_lost()
 
-APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_{enabled?standby:off}")
-
-/obj/machinery/mech_sensor/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
+/// The look (the draw sweep: from its template).
+/obj/machinery/mech_sensor/draw(datum/look/look)
+	..()
+	look.state("airlock_sensor_[enabled() ? "standby" : "off"]")
 
 /obj/machinery/mech_sensor/proc/set_frequency(new_frequency)
 	if(radio_connection())
-		GLOB.radio_service.remove_object(src, frequency)
+		SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag))

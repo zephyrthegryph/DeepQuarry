@@ -10,7 +10,6 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	tgui_id = "GhostSpawn"
 	var/active_tab = GHOST_POD_TAB
 
-DECLARE_UI_STATE(/datum/tgui_module/ghost_spawn_menu, GLOB.tgui_observer_state)
 
 /datum/tgui_module/ghost_spawn_menu/tgui_close(mob/user)
 	. = ..()
@@ -18,7 +17,7 @@ DECLARE_UI_STATE(/datum/tgui_module/ghost_spawn_menu, GLOB.tgui_observer_state)
 		var/mob/observer/dead/observer = user
 		observer.selecting_ghostrole = FALSE
 	if(!QDELETED(src))
-		qdel(src)
+		spent(src, user)
 
 /datum/tgui_module/ghost_spawn_menu/ui_opening(mob/user, datum/tgui/ui)
 	..()
@@ -26,9 +25,16 @@ DECLARE_UI_STATE(/datum/tgui_module/ghost_spawn_menu, GLOB.tgui_observer_state)
 		var/mob/observer/dead/observer = user
 		observer.selecting_ghostrole = TRUE
 
-UI_DATA(/datum/tgui_module/ghost_spawn_menu, "active_tab:num", "merge:ui_data_datum_tgui_module_ghost_spawn_menu{all_ghost_pods:unknown,all_ghost_join_options:unknown,all_vore_spawns:unknown,user_z:num}")
+/datum/tgui_module/ghost_spawn_menu/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["active_tab"] = active_tab
+	var/list/merged_1 = ui_data_datum_tgui_module_ghost_spawn_menu(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /datum/tgui_module/ghost_spawn_menu's window data (declared on its UI_DATA row).
+/// /datum/tgui_module/ghost_spawn_menu's window data.
 /datum/tgui_module/ghost_spawn_menu/proc/ui_data_datum_tgui_module_ghost_spawn_menu(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -44,72 +50,86 @@ UI_DATA(/datum/tgui_module/ghost_spawn_menu, "active_tab:num", "merge:ui_data_da
 	data["user_z"] = user.z
 	return data
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "select_pod", ui_act_select_pod, UI_ARG_TEXT("selected_pod"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_select_pod)
-	var/mob/observer/dead/observer = ui.user
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_select_pod(datum/act/op/A, selected_pod)
+	var/mob/user = A.actor
+	var/mob/observer/dead/observer = user
 	if(istype(observer))
-		jump_to_pod(ui.user, params["selected_pod"])
+		jump_to_pod(user, selected_pod)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "set_tab", ui_act_set_tab, UI_ARG_NUM("val"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_set_tab)
-	var/new_tab = params["val"]
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_set_tab(datum/act/op/A, val)
+	var/new_tab = val
 	if(isnum(new_tab))
 		active_tab = new_tab
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_spawn", ui_act_soulcatcher_spawn, UI_ARG_TEXT("selected_player"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_soulcatcher_spawn)
-	soulcatcher_spawn(ui.user, params["selected_player"])
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_soulcatcher_spawn(datum/act/op/A, selected_player)
+	var/mob/user = A.actor
+	soulcatcher_spawn(user, selected_player)
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_vore_spawn", ui_act_soulcatcher_vore_spawn, UI_ARG_TEXT("selected_player"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_soulcatcher_vore_spawn)
-	soulcatcher_vore_spawn(ui.user, params["selected_player"])
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_soulcatcher_vore_spawn(datum/act/op/A, selected_player)
+	var/mob/user = A.actor
+	soulcatcher_vore_spawn(user, selected_player)
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "bellyspawn", ui_act_bellyspawn, UI_ARG_TEXT("selected_player"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_bellyspawn)
-	vore_belly_spawn(ui.user, params["selected_player"])
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_bellyspawn(datum/act/op/A, selected_player)
+	var/mob/user = A.actor
+	vore_belly_spawn(user, selected_player)
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "mouse_spawn", ui_act_mouse_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_mouse_spawn)
-	become_mouse(ui.user)
+CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
+	interface("GhostSpawn", state = nameof(GLOB.tgui_observer_state))
+	op("mouse_spawn", ui_act(), then(PROC_REF(ui_act_mouse_spawn)))
+	op("corgi_spawn", ui_act(), then(PROC_REF(ui_act_corgi_spawn)))
+	op("lost_drone_spawn", ui_act(), then(PROC_REF(ui_act_lost_drone_spawn)))
+	op("maintenance_critter", ui_act(), then(PROC_REF(ui_act_maintenance_critter)))
+	op("gravekeeper_spawn", ui_act(), then(PROC_REF(ui_act_gravekeeper_spawn)))
+	op("select_pod", ui_act("select_pod", arg("selected_pod", schema_text(4096))), then(PROC_REF(ui_act_select_pod)))
+	op("set_tab", ui_act("set_tab", arg("val", num())), then(PROC_REF(ui_act_set_tab)))
+	op("soulcatcher_spawn", ui_act("soulcatcher_spawn", arg("selected_player", schema_text(4096))), then(PROC_REF(ui_act_soulcatcher_spawn)))
+	op("soulcatcher_vore_spawn", ui_act("soulcatcher_vore_spawn", arg("selected_player", schema_text(4096))), then(PROC_REF(ui_act_soulcatcher_vore_spawn)))
+	op("bellyspawn", ui_act("bellyspawn", arg("selected_player", schema_text(4096))), then(PROC_REF(ui_act_bellyspawn)))
+	op("drone_spawn", ui_act("drone_spawn", arg("fabricator", schema_text(4096))), then(PROC_REF(ui_act_drone_spawn)))
+	op("vr_spawn", ui_act("vr_spawn", arg("landmark", schema_text(4096))), then(PROC_REF(ui_act_vr_spawn)))
+
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_mouse_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	become_mouse(user)
+	return OP_OK
+
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_drone_spawn(datum/act/op/A, fabricator)
+	var/mob/user = A.actor
+	become_drone(user, fabricator)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "drone_spawn", ui_act_drone_spawn, UI_ARG_TEXT("fabricator"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_drone_spawn)
-	become_drone(ui.user, params["fabricator"])
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_vr_spawn(datum/act/op/A, landmark)
+	var/mob/user = A.actor
+	join_vr(user, landmark)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "vr_spawn", ui_act_vr_spawn, UI_ARG_TEXT("landmark"))
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_vr_spawn)
-	join_vr(ui.user, params["landmark"])
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_corgi_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_corgi(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "corgi_spawn", ui_act_corgi_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_corgi_spawn)
-	join_corgi(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_lost_drone_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_lost(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "lost_drone_spawn", ui_act_lost_drone_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_lost_drone_spawn)
-	join_lost(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_maintenance_critter(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_maintrcritter(user)
+	return OP_OK
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "maintenance_critter", ui_act_maintenance_critter)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_maintenance_critter)
-	join_maintrcritter(ui.user)
-	. = TRUE
-
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "gravekeeper_spawn", ui_act_gravekeeper_spawn)
-UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_gravekeeper_spawn)
-	join_grave(ui.user)
-	. = TRUE
+/datum/tgui_module/ghost_spawn_menu/proc/ui_act_gravekeeper_spawn(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	join_grave(user)
+	return OP_OK
 
 /datum/tgui_module/ghost_spawn_menu/proc/compile_pod_data()
 	var/list/compiled_pods = list()
@@ -159,7 +179,7 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_gravekeeper_spawn)
 		timedifference_mouse_text = time2text(CONFIG_GET(number/mouse_respawn_time) MINUTES - timedifference_mouse,"mm:ss")
 	var/found_vents = FALSE
 	for(var/obj/machinery/atmospherics/unary/vent_pump/v in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!v.welded && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
+		if(!is_welded(v) && v.z == T.z && v.network && v.network.normal_members.len > MOUSE_VENT_NETWORK_LENGTH)
 			found_vents = TRUE
 			break
 
@@ -179,7 +199,7 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_gravekeeper_spawn)
 	var/timedifference_text = time_diff > 0 ? time2text(time_diff, "mm:ss") : ""
 	var/list/all_fabricators = list()
 	for(var/obj/machinery/drone_fabricator/DF in REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS))
-		if(DF.has_stat(NOPOWER) || !DF.produce_drones)
+		if(DF.power_lost() || !DF.produce_drones)
 			continue
 		if(DF.drone_progress >= 100)
 			all_fabricators += list(REF(DF) = DF.fabricator_tag)
@@ -222,15 +242,15 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_gravekeeper_spawn)
 		if(!player.no_vore && (get_z(player) in using_map.station_levels))
 			if(ishuman(player))
 				var/mob/living/carbon/human/H = player
-				if(H.latejoin_vore)
+				if(H.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 			else if(issilicon(player))
 				var/mob/living/silicon/S = player
-				if(!isAI(S) && S.latejoin_vore)
+				if(!isAI(S) && S.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 			if(isanimal(player))
 				var/mob/living/simple_mob/SM = player
-				if(SM.vore_active && SM.latejoin_vore)
+				if(SM.vore_active && SM.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 		compiled_spawn_data += list(REF(player) = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
 	return compiled_spawn_data

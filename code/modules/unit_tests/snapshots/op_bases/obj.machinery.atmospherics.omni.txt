@@ -1,0 +1,49 @@
+ai|none menu: Open controls
+ai|none menu: Use
+ai|none click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item menu: Toggle power
+human|/obj/item click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Toggle power
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Toggle power
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/pipe_painter menu: Open controls
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter menu: Toggle power
+human|/obj/item/pipe_painter click: Click: Painter
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Toggle power
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material menu: Open controls
+human|/obj/item/stack/material menu: Toggle power
+human|/obj/item/stack/material click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Toggle power
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Toggle power
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Toggle power
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Toggle power
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Toggle power
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Toggle power
+human|/obj/item/weldingtool click: Click: Open controls
+human|none menu: Open controls
+human|none menu: Toggle power
+human|none click: Click: Open controls
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Open controls
+robot|none menu: Toggle power
+robot|none menu: Use
+robot|none click: Click: Open controls

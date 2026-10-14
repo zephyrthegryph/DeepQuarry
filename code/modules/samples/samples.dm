@@ -23,47 +23,61 @@
 
 TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold))
 
+/// Rolled before init (rolls()): an unnamed sample's look, its name to match and its hazard.
+/obj/item/research_sample/proc/roll_sample(datum/roller/R)
+	var/name_prefix = R.choose(list("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric"))
+	var/name_suffix		//blank because it's randomized per sample appearance
+	var/sample_icon = R.number(1, 11)
+	hazard_type = R.choose(list("BRUTE","BURN","TOX","OXY","EMP","PAIN"))
+	//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
+	switch(sample_icon)
+		if(1)	//prism
+			name_suffix = R.choose(list("alloy","object","sample","element","chunk"))
+		if(2)	//ring
+			name_suffix = R.choose(list("ring","band","torus","circuit","halo","hoop"))
+		if(3)	//red stone
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock"))
+		if(4)	//circuit scrap
+			name_suffix = R.choose(list("circuit","board","scrap","junk","object","device"))
+		if(5)	//crystal star
+			name_suffix = R.choose(list("gem","crystal","jewel","stone","bauble","rock","star"))
+		if(6)	//spore
+			name_suffix = R.choose(list("glob","spore","blob","corpuscle","macroorganism","vacuole"))
+		if(7)	//device
+			name_suffix = R.choose(list("device","gadget","widget","object","apparatus","contraption","gizmo","object","doohickey"))
+		if(8)	//purple shard
+			name_suffix = R.choose(list("shard","fragment","sliver","remnant"))
+		if(9, 10)	//purple rock, green rock
+			name_suffix = R.choose(list("rock","stone","slab","rubble","mineral","mass","boulder","slag"))
+		else	//none
+			name_suffix = R.choose(list("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver"))
+	name = "[name_prefix] [name_suffix]"
+	return "generic_sample[sample_icon]"
+
 /obj/item/research_sample/Initialize(mapload)
 	. = ..()
-	if(!fixed_name)
-		var/name_prefix = "[pick("strange","anomalous","exotic","atypical","unusual","incongruous","weird","aberrant","eccentric")]"
-		var/name_suffix		//blank because it's randomized per sample appearance
-		var/sample_icon = rand(1,11)
-		icon_state = "generic_sample[sample_icon]"
-		hazard_type = pick("BRUTE","BURN","TOX","OXY","EMP","PAIN")
-		//per-state tweaks, like glows/light emission or narrower valid tech defs, if desired
-		switch(sample_icon)
-			if(1)	//prism
-				name_suffix = "[pick("alloy","object","sample","element","chunk")]"
-			if(2)	//ring
-				name_suffix = "[pick("ring","band","torus","circuit","halo","hoop")]"
-			if(3)	//red stone
-				name_suffix = "[pick("gem","crystal","jewel","stone","bauble","rock")]"
-			if(4)	//circuit scrap
-				name_suffix = "[pick("circuit","board","scrap","junk","object","device")]"
-			if(5)	//crystal star
-				name_suffix = "[pick("gem","crystal","jewel","stone","bauble","rock","star")]"
-			if(6)	//spore
-				name_suffix = "[pick("glob","spore","blob","corpuscle","macroorganism","vacuole")]"
-			if(7)	//device
-				name_suffix = "[pick("device","gadget","widget","object","apparatus","contraption","gizmo","object","doohickey")]"
-			if(8)	//purple shard
-				name_suffix = "[pick("shard","fragment","sliver","remnant")]"
-			if(9)	//purple rock
-				name_suffix = "[pick("rock","stone","slab","rubble","mineral","mass","boulder","slag")]"
-			if(10)	//green rock
-				name_suffix = "[pick("rock","stone","slab","rubble","mineral","mass","boulder","slag")]"
-			else	//none
-				name_suffix = "[pick("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver")]"
-		name = "[name_prefix] [name_suffix]"
 	make_sellable(/datum/sellable/research_sample)
 
-EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sample_pick_up)))
+CAPABILITIES(/obj/item/research_sample)
+	rolls(nameof(icon_state), PROC_REF(roll_sample), when = cond_not(nameof(fixed_name)))
+	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
+	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))
+	op("self_robot", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	// a short delay, so you can abort/cancel if you misclick
+	op("crush", ai(), wait(3 SECONDS), then(PROC_REF(crush_done)))
+
+/// A cyborg picks a sample up unharmed.
+/obj/item/research_sample/proc/sample_pick_up_robot(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
 
 /// Picking a sample up may burn an unprotected holder.
-/obj/item/research_sample/proc/sample_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/research_sample/proc/sample_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/M = user
 	if(!istype(M))
 		return
@@ -76,9 +90,9 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 		var/gloves_permeability	= 1
 		var/suit_permeability = 1
 		if(istype(G))
-			gloves_permeability = G.permeability_coefficient
-		if(istype(S) && S.body_parts_covered & HANDS)	//if it's a suit *and* it covers our hands
-			suit_permeability = S.permeability_coefficient
+			gloves_permeability = protection_of(G).permeability
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
+			suit_permeability = protection_of(S).permeability
 		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
 			burn_user = FALSE
 
@@ -112,13 +126,11 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 			H.drop_from_inventory(src, get_turf(H))
 			return
 
-	if(isrobot(user))
-		burn_user = FALSE
-
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
 
-/obj/item/research_sample/proc/crush_done(mob/living/carbon/human/H)
+/obj/item/research_sample/proc/crush_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
 	act_message(H, src, others = span_notice("%U% crushes %T%, stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
 	var/i = rand(min_ore,max_ore)
 	while(i>0)
@@ -128,16 +140,12 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 	H.drop_from_inventory(src,get_turf(H))
 	consume(src, H)
 
-DECLARE_INTERACTIONS(/obj/item/research_sample, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/research_sample/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/research_sample/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = user
 	if(!istype(M))
-		return TRUE
+		return OP_OK
 
 	var/burn_user = TRUE
 	if(ishuman(M))
@@ -147,9 +155,9 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 		var/gloves_permeability	= 1
 		var/suit_permeability = 1
 		if(istype(G))
-			gloves_permeability = G.permeability_coefficient
-		if(istype(S) && S.body_parts_covered & HANDS)	//if it's a suit *and* it covers our hands
-			suit_permeability = S.permeability_coefficient
+			gloves_permeability = protection_of(G).permeability
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
+			suit_permeability = protection_of(S).permeability
 		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
 			burn_user = FALSE
 
@@ -181,32 +189,30 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 				else
 					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
 			H.drop_from_inventory(src, get_turf(H))
-			return TRUE
+			return OP_OK
 
 		else	//short delay, so you can abort/cancel if you misclick
-			om_task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
-			return TRUE
-
-	if(isrobot(user))
-		burn_user = FALSE
+			perform_op(H, src, "crush", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
+			return OP_OK
 
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/research_sample/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/item/research_sample/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 
 	if(istype(P, /obj/item/storage/sample_container))
 		var/obj/item/storage/sample_container/SC = P
 		if(contents_count(SC) >= SC.max_storage_space)
 			to_chat(user, span_notice("\The [SC] is full!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			src.forceMove(SC)
-			SC.update_icon()
 			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/research_sample/common
 	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)
@@ -259,9 +265,12 @@ TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/
 
 TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(/obj/item/bluespace_crystal))
 
-/obj/item/research_sample/bluespace/Initialize(mapload)
-	. = ..()
-	set_light(1, 3, lightcolor)
+CAPABILITIES(/obj/item/research_sample/bluespace)
+	after_init(0, then(PROC_REF(start_glowing)))
+
+/// The sample glows from the start.
+/obj/item/research_sample/bluespace/proc/start_glowing(datum/act/timer/A)
+	set_glow(src, GLOW(1, 3, lightcolor))
 
 //catalogue data
 /datum/category_item/catalogue/information/research_sample/core_data
@@ -305,10 +314,8 @@ TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner1"
 
-DECLARE_LOOT(/obj/random/research_sample_type1, LOOT_TABLE(\
-	/obj/item/research_sample/common = 50, \
-	/obj/item/research_sample/uncommon = 35, \
-	/obj/item/research_sample/rare = 15))
+CAPABILITIES(/obj/random/research_sample_type1)
+	loot(table = list(/obj/item/research_sample/common = 50, /obj/item/research_sample/uncommon = 35, /obj/item/research_sample/rare = 15))
 
 /obj/random/research_sample_type2
 	name = "Random Common/Uncommon Research Sample"
@@ -316,7 +323,8 @@ DECLARE_LOOT(/obj/random/research_sample_type1, LOOT_TABLE(\
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner2"
 
-DECLARE_LOOT(/obj/random/research_sample_type2, LOOT_TABLE(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
+CAPABILITIES(/obj/random/research_sample_type2)
+	loot(table = list(/obj/item/research_sample/common = 70, /obj/item/research_sample/uncommon = 30))
 
 /obj/random/research_sample_type3
 	name = "Random Uncommon/Rare Research Sample"
@@ -324,4 +332,5 @@ DECLARE_LOOT(/obj/random/research_sample_type2, LOOT_TABLE(/obj/item/research_sa
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_spawner3"
 
-DECLARE_LOOT(/obj/random/research_sample_type3, LOOT_TABLE(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))
+CAPABILITIES(/obj/random/research_sample_type3)
+	loot(table = list(/obj/item/research_sample/uncommon = 70, /obj/item/research_sample/rare = 30))

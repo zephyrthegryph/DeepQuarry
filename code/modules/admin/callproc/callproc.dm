@@ -65,10 +65,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 		return
 	var/mob/proccall_handler/handler = GLOB.AdminProcCallHandler
 	handler.add_caller(user)
-	var/lastusr = usr
-	usr = handler
-	. = WrapAdminProcCall(target, procname, arguments)
-	usr = lastusr
+	. = with_actor(handler, GLOBAL_PROC, GLOBAL_PROC_REF(WrapAdminProcCall), target, procname, arguments)
 	handler.remove_caller(user)
 
 /**
@@ -83,10 +80,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 		return
 	var/mob/proccall_handler/handler = GLOB.AdminProcCallHandler
 	handler.add_caller(user)
-	var/lastusr = usr
-	usr = handler
-	. = world.SDQL2_query(query_text, user, user)
-	usr = lastusr
+	. = with_actor(handler, world, TYPE_PROC_REF(/world, SDQL2_query), query_text, user, user, handler)
 	handler.remove_caller(user)
 
 ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any datum in the server.", ADMIN_CATEGORY_DEBUG_GAME)
@@ -97,14 +91,14 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 /client/proc/callproc_blocking(list/get_retval, key = "call")
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(callproc_blocking), args)
-	if(!check_rights(R_DEBUG))
+	if(!admin_require(src, R_DEBUG, "callproc.blocking"))
 		return
 
 	var/datum/target
 	var/targetselected = FALSE
 	var/returnval
 
-	switch(flow_ask(mob, "[key]:owned", /datum/om/prompt/choice/alert, message = "Proc owned by something?", choices = list("Yes","No")))
+	switch(flow_ask(mob, "[key]:owned", /datum/prompt/choice, question = "Proc owned by something?", choices = list("Yes","No"), buttons = TRUE))
 		if("Yes")
 			targetselected = TRUE
 			var/list/value = vv_get_value(default_class = VV_ATOM_REFERENCE, classes = list(VV_ATOM_REFERENCE, VV_DATUM_REFERENCE, VV_MOB_REFERENCE, VV_CLIENT, VV_MARKED_DATUM, VV_TEXT_LOCATE, VV_PROCCALL_RETVAL), key = "[key]:target")
@@ -112,7 +106,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 				return
 			target = value["value"]
 			if(!istype(target))
-				to_chat(usr, span_danger("Invalid target."), confidential = TRUE)
+				to_chat(src, span_danger("Invalid target."), confidential = TRUE)
 				return
 		if("No")
 			target = null
@@ -120,7 +114,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		else
 			return
 
-	var/procpath = flow_ask(mob, "[key]:path", /datum/om/prompt/text, message = "Proc path, eg: /proc/fake_blood", title = "Path:")
+	var/procpath = flow_ask(mob, "[key]:path", /datum/prompt/text, question = "Proc path, eg: /proc/fake_blood", title = "Path:")
 	if(!procpath)
 		return
 
@@ -134,12 +128,12 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 
 	if(targetselected)
 		if(!hascall(target, procname))
-			to_chat(usr, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
 			return
 	else
 		procpath = "/[proctype]/[procname]"
 		if(!text2path(procpath))
-			to_chat(usr, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
 			return
 
 	var/list/lst = get_callproc_args("[key]:args")
@@ -150,10 +144,10 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		// The tgui prompts above sleep; the target may have been qdel'd or had its
 		// type swapped out from under us. Re-validate before calling into it.
 		if(!target || QDELETED(target) || !istype(target) || !is_valid_src(target))
-			to_chat(usr, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
+			to_chat(src, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
 			return
 		if(!hascall(target, procname))
-			to_chat(usr, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
 			return
 		var/msg = "[key_name(src)] called [target]'s [procname]() with [lst.len ? "the arguments [list2params(lst)]":"no arguments"]."
 		log_admin(msg)
@@ -170,7 +164,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		get_retval += returnval
 	. = get_callproc_returnval(returnval, procname)
 	if(.)
-		to_chat(usr, ., confidential = TRUE)
+		to_chat(src, ., confidential = TRUE)
 
 GLOBAL_VAR(AdminProcCaller)
 GLOBAL_PROTECT(AdminProcCaller)
@@ -241,9 +235,9 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 /client/proc/callproc_datum(datum/thing)
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(callproc_datum), args)
-	if(!check_rights(R_DEBUG))
+	if(!admin_require(src, R_DEBUG, "callproc.datum"))
 		return
-	var/procname = flow_ask(mob, "datumcall:name", /datum/om/prompt/text, message = "Proc name, eg: fake_blood", title = "Proc:")
+	var/procname = flow_ask(mob, "datumcall:name", /datum/prompt/text, question = "Proc name, eg: fake_blood", title = "Proc:")
 	if(!procname)
 		return
 	if(!hascall(thing, procname))
@@ -269,14 +263,14 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 
 /// The arguments for a proc call, asked inside a prompt flow: null until all are given.
 /client/proc/get_callproc_args(key = "args")
-	var/argnum = flow_ask(mob, "[key]:count", /datum/om/prompt/number, message = "Number of arguments", title = "Number:", default = 0)
+	var/argnum = flow_ask(mob, "[key]:count", /datum/prompt/number, question = "Number of arguments", title = "Number:", default = 0)
 	if(isnull(argnum))
 		return
 
 	. = list()
 	var/list/named_args = list()
 	for(var/i in 1 to argnum)
-		var/named_arg = flow_ask(mob, "[key]:[i]:name", /datum/om/prompt/text, message = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument")
+		var/named_arg = flow_ask(mob, "[key]:[i]:name", /datum/prompt/text, question = "Leave blank for positional argument. Positional arguments will be considered as if they were added first.", title = "Named argument")
 		if(isnull(named_arg))
 			return null
 		var/value = vv_get_value(restricted_classes = list(VV_RESTORE_DEFAULT), key = "[key]:[i]")

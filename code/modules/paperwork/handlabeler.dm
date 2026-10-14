@@ -6,8 +6,6 @@
 	var/label = null
 	var/labels_left = 30
 	var/mode = 0	//off or on.
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/hand_labeler/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
@@ -36,7 +34,7 @@
 		else if(P.client || P.key)
 			to_chat(user, span_notice("You rename \the [P] to [label]."))
 			to_chat(P, span_notice("\The [user] renames you to [label]."))
-			P.custom_name = label
+			P.set_custom_name(label)
 			P.SetName(P.custom_name)
 		else
 			to_chat(user, span_warning("\The [src] is inactive and cannot be renamed."))
@@ -58,30 +56,74 @@
 		if(!tray.mechanical)
 			to_chat(user, span_warning("How are you going to label that?"))
 			return
-		tray.labelled = label
-		om_after(tray, 1, TYPE_PROC_REF(/atom, update_icon))
+		tray.set_labelled(label)
 
 	act_message(user, A, MSG_SELF(span_notice("You label %T% as [label].")), MSG_OTHERS(span_notice("%U% labels %T% as [label].")))
 	A.name = "[A.name] ([label])"
 
-DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/hand_labeler)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
+	op("labeler_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/hand_labeler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/hand_labeler/proc/interaction_self(datum/act/op/A)
+	label_configuration_begin(A.actor, A.held)
+	return OP_OK
+
+/obj/item/hand_labeler/proc/label_configuration_begin(mob/user, obj/item/held)
 	mode = !mode
-	icon_state = "labeler[mode]"
+	set_icon_state("labeler[mode]")
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.
-		var/_answer_k78 = rerun_ask(user, "k78", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_k78))
-			return TRUE
-		var/str = sanitizeSafe(_answer_k78, MAX_NAME_LEN)
-		if(!str || !length(str))
-			to_chat(user, span_warning("Invalid text."))
-			return TRUE
-		label = str
-		to_chat(user, span_notice("You set the text to '[str]'."))
+		open_request(src, /datum/prompt/text/hand_labeler_label, PROC_REF(label_configuration_answered), answerer = user, label_operator = user, label_held = held, question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
 	else
 		to_chat(user, span_notice("You turn off \the [src]."))
 	return TRUE
+
+/obj/item/hand_labeler/proc/label_configuration_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = label_configuration_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/hand_labeler/proc/label_configuration_apply(datum/act/request/A)
+	var/datum/prompt/text/hand_labeler_label/ask = A.answer
+	var/str = sanitizeSafe(ask.value, MAX_NAME_LEN)
+	if(!str || !length(str))
+		to_chat(ask.label_operator, span_warning("Invalid text."))
+		return TRUE
+	label = str
+	to_chat(ask.label_operator, span_notice("You set the text to '[str]'."))
+	return TRUE
+
+/datum/prompt/text/hand_labeler_label
+	timeout = 0
+	var/mob/label_operator
+	var/obj/item/label_held
+	var/label_operator_expected = FALSE
+	var/label_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/hand_labeler_label)
+	ref_one(nameof(label_operator), /mob)
+	ref_one(nameof(label_held), /obj/item)
+
+/datum/prompt/text/hand_labeler_label/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_operator = label_operator
+	var/obj/item/captured_held = label_held
+	label_operator_expected = !isnull(captured_operator)
+	label_held_expected = !isnull(captured_held)
+	rel_clear(src, nameof(label_operator))
+	rel_clear(src, nameof(label_held))
+	if(captured_operator && !QDELETED(captured_operator))
+		rel_set(src, nameof(label_operator), captured_operator)
+	if(captured_held && !QDELETED(captured_held))
+		rel_set(src, nameof(label_held), captured_held)
+
+/datum/prompt/text/hand_labeler_label/recheck_extra()
+	if((label_operator_expected && QDELETED(label_operator)) || (label_held_expected && QDELETED(label_held)))
+		return "gone"
+	var/obj/item/hand_labeler/labeler = owner
+	if(!istype(labeler) || !labeler.mode)
+		return "labeler is switched off"

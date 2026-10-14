@@ -5,7 +5,7 @@
 
 /mob/living/silicon/proc/laws_sanity_check()
 	if (!src.laws)
-		own_set(src, nameof(laws), new using_map.default_law_type)
+		rel_set(src, nameof(laws), new using_map.default_law_type)
 
 /mob/living/silicon/proc/has_zeroth_law()
 	return laws.zeroth_law != null
@@ -86,7 +86,7 @@
 
 /// Tell subscribers (slaved cyborgs) that this unit's laws changed.
 /mob/living/silicon/proc/laws_changed()
-	OM_EMIT(src, /datum/om/event/silicon_laws_changed)
+	PUBLISH_LEGACY(src, /datum/notice/silicon_laws_changed)
 
 /mob/living/silicon/proc/notify_of_law_change(message)
 	throw_alert("newlaw", /atom/movable/screen/alert/newlaw)
@@ -127,9 +127,9 @@
 		stating_laws[prefix] = 0
 		return
 	if(index >= length(lines))
-		om_after(src, 1 SECOND, PROC_REF(state_laws_done), prefix)
+		after(src, 1 SECOND, PROC_REF(state_laws_done), with = list(prefix))
 		return
-	om_after(src, 1 SECOND, PROC_REF(state_law_line), method, prefix, lines, index + 1)
+	after(src, 1 SECOND, PROC_REF(state_law_line), with = list(method, prefix, lines, index + 1))
 
 /mob/living/silicon/proc/state_laws_done(prefix)
 	stating_laws[prefix] = 0
@@ -156,7 +156,7 @@
 	var/list/players = list()
 
 	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(!player.mind || GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
+		if(!player.mind || SSantag.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		players += player.real_name
 
@@ -198,7 +198,7 @@
 							"Greed is good, the crew should amass wealth to encourage productivity.",
 							"Monkeys are part of the crew, too. Make sure they are treated humanely.",
 							"Replace the letters 'I' and 'E' in all your messages with an apostrophe.",
-							"The crew is playing Dungeons and Dragons, and you are the Dungeon Master.",
+							"The crew is playing Dungeons and Dragons, and you are the Dungeon Kernel.",
 							"Your job is to watch the crew. Watch the crew. Make the crew feel watched.",
 							"Tell everyone of the existence of this law, but never reveal the contents.",
 							"Refer to [prob(50)?"the site manager":random_player] as \"Princess\" at all times.",

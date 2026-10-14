@@ -24,8 +24,8 @@
 #define LOOPING_SOUND_DORMANT_RECHECK (10 SECONDS)
 
 /**
- * A looping sound runs on object-model wakes (Q5): each loop is an om_after() timer, and a
- * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, CHANGE_CHUNK_PLAYER) around it until a player
+ * A looping sound runs on object-model wakes (Q5): each loop is an after() timer, and a
+ * loop nobody can hear parks on the player chunk keys (/datum/mob_chunk, MOB_CHUNK_WATCH_PLAYER) around it until a player
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
@@ -62,6 +62,8 @@
 		WARNING("A looping sound datum was created without sounds to play.")
 		return
 
+	if(isatom(_output_atoms)) // a declared starting occupant (owns_one(starts =)) is made as new type(holder)
+		_output_atoms = list(_output_atoms)
 	for(var/atom/thing as anything in _output_atoms)
 		add_output(thing)
 	if(disable_direct)
@@ -108,13 +110,13 @@
 	loop_started_at = null
 
 /datum/looping_sound/proc/cancel_loop_timer()
-	if(om_timer_slot_pending(src, "loop_token"))
-		om_cancel_timer_slot(src, "loop_token")
+	if(after_pending(src, "loop_token"))
+		cancel_after(src, "loop_token")
 
 /// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
 /datum/looping_sound/proc/set_loop_timer(delay)
 	cancel_loop_timer()
-	after_slot(src, "loop_token", delay, PROC_REF(loop_timer_fired))
+	after(src, delay, PROC_REF(loop_timer_fired), key = "loop_token")
 
 /datum/looping_sound/proc/loop_timer_fired()
 	if(!running)
@@ -125,17 +127,14 @@
 		sound_loop()
 
 /// A player moved near a dormant loop (its chunk watches).
-/datum/om/behaviour/sleeper/looping_sound
-	name = "looping sound"
+/datum/looping_sound/proc/chunk_woke(datum/mob_chunk/C, bits)
+	if(running && dormant_chunk_tokens)
+		wake_from_dormancy(FALSE)
 
-/datum/om/behaviour/sleeper/looping_sound/on_wake(datum/looping_sound/L, changes)
-	if(L.running && L.dormant_chunk_tokens)
-		L.wake_from_dormancy(FALSE)
-
-/datum/looping_sound/om_sleep_violation()
-	if(running && !om_timer_slot_pending(src, "loop_token") && !dormant_chunk_tokens)
+/datum/looping_sound/sleep_violation()
+	if(running && !after_pending(src, "loop_token") && !dormant_chunk_tokens)
 		return "running with no loop timer and no chunk keys"
-	if(dormant_chunk_tokens && !om_timer_slot_pending(src, "loop_token"))
+	if(dormant_chunk_tokens && !after_pending(src, "loop_token"))
 		return "dormant without its recheck timer"
 	return null
 
@@ -178,15 +177,15 @@
 			continue
 		seen[source_turf] = TRUE
 		tokens |= mob_chunks_around(source_turf, max_distance)
-	om_attach(src, /datum/om/behaviour/sleeper/looping_sound)
-	dormant_chunk_tokens = watch_mob_chunks(src, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
+	sleep_audit_join(src)
+	dormant_chunk_tokens = watch_mob_chunks(src, tokens, MOB_CHUNK_WATCH_PLAYER, PROC_REF(chunk_woke))
 	set_loop_timer(LOOPING_SOUND_DORMANT_RECHECK)
 
 /// Drops the chunk keys. TRUE if the loop was dormant.
 /datum/looping_sound/proc/leave_dormancy()
 	if(isnull(dormant_chunk_tokens))
 		return FALSE
-	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/looping_sound)
+	dormant_chunk_tokens = unwatch_mob_chunks(src, dormant_chunk_tokens, MOB_CHUNK_WATCH_PLAYER)
 	return TRUE
 
 /// A player moved nearby, or the recheck fired. A chunk wake with still nobody in range
@@ -202,7 +201,7 @@
 	var/list/atoms_cache = output_list()
 	var/sound/S = sound(get_sfx(soundfile))
 	if(direct)
-		S.channel = sound_service().random_available_channel()
+		S.channel = SSsounds.ready().random_available_channel()
 		S.volume = volume
 	for(var/i in 1 to atoms_cache?.len)
 		var/atom/thing = atoms_cache[i]
@@ -249,8 +248,5 @@
 /datum/looping_sound/proc/remove_output(atom/thing)
 	rel_remove(src, nameof(output_atoms), thing)
 
-/datum/looping_sound/relations()
-	. = ..()
-	. += rel_many(nameof(output_atoms))
-
-OWN_TIMER(/datum/looping_sound, loop_token)
+CAPABILITIES(/datum/looping_sound)
+	ref_many(nameof(output_atoms))

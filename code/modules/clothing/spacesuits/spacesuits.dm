@@ -10,15 +10,7 @@
 	center_of_mass_x = 0
 	center_of_mass_y = 0
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD
-	permeability_coefficient = 0 // was 0.01, zeroed to test protecting those who are vulnerable to water.
 	armor_spec = "bio=100;rad=50;cold=60"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 2 * ONE_ATMOSPHERE
-	siemens_coefficient = 0.9
 	preserve_item = 1
 	flash_protection = FLASH_PROTECTION_MAJOR
 	valid_accessory_slots = null
@@ -29,11 +21,15 @@
 
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)
 	light_overlay = "helmet_light"
-	light_range = 4
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	configure(light_glow(range = 4))
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
+	configure(item_protection(permeability = 0, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
+	owns_one(nameof(camera), /obj/machinery/camera)
+	verb_entry(/obj/item/clothing/head/helmet/space/proc/toggle_camera, when = nameof(camera_networks))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
-
-DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/helmet/space/proc/toggle_camera, "camera_networks")
 
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
@@ -49,7 +45,7 @@ DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/he
 		return
 
 	if(!camera)
-		own_set(src, nameof(camera), new /obj/machinery/camera(src))
+		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.replace_networks(camera_networks)
 		camera.set_status(FALSE) //So the camera will activate in the following check.
 
@@ -72,20 +68,9 @@ DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/he
 	icon = 'icons/inventory/suit/item.dmi'
 	icon_state = "space"
 	w_class = ITEMSIZE_HUGE // So you can't fit this in your bag and be prepared at all times.
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0 // was 0.01, zeroed to test protecting those who are vulnerable to water.
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 1 // 1.5 to 1. More sane movespeed delay. Voidsuits are still faster.
 	armor_spec = "bio=100;rad=50;cold=60"
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
-	cold_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 2 * ONE_ATMOSPHERE
-	siemens_coefficient = 0.9
 	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
 	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
@@ -122,7 +107,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 		return
 
 	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
-		for(var/obj/item/organ/external/E in user.bad_external_organs)
+		for(var/obj/item/organ/external/E in user.damaged_limbs())
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 				rel_add(src, nameof(supporting_limbs), E)
@@ -139,7 +124,3 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 		rel_add(src, nameof(supporting_limbs), E)
-
-/obj/item/clothing/suit/space/relations()
-	. = ..()
-	. += rel_many(nameof(supporting_limbs))

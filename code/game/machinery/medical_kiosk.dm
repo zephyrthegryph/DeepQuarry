@@ -24,9 +24,7 @@
 	desc = "A helpful kiosk for finding out whatever is wrong with you."
 	icon = 'icons/obj/machines/medical_kiosk.dmi'
 	icon_state = "kiosk_off"
-	idle_power_usage = 5
 	bubble_icon = "medical"
-	active_power_usage = 200
 	circuit = /obj/item/circuitboard/medical_kiosk
 	anchored = TRUE
 	density = TRUE
@@ -41,97 +39,72 @@
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
 	var/can_dispense = TRUE
 
-
 /obj/machinery/medical_kiosk/proc/appearance_awake()
 	return (operable() && active_user()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/medical_kiosk, "kiosk{appearance_awake?:_off}")
-DECLARE_APPEARANCE(/obj/machinery/medical_kiosk, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "kiosk_open")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/medical_kiosk/draw(datum/look/look)
+	..()
+	look.state("kiosk[appearance_awake() ? "" : "_off"]")
+	if(panel_open == 1)
+		look.state("kiosk_open")
 
-EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
-	INTERACT_HAND(null, PROC_REF(medical_kiosk_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(medical_kiosk_interaction_item)), \
-)
+MSG_DEF_SELF(medical_kiosk/patient_only, "Only a living patient can use this kiosk.")
+MSG_DEF_SELF(medical_kiosk/panel_open, "The kiosk's maintenance panel is open.")
 
-/// Old attack_hand.
-/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(istype(user) && Adjacent(user))
-		if(!operable() || panel_open)
-			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
-		else if(active_user() && active_user() != user)
-			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
-		else
-			start_using(user)
-	return TRUE
+CAPABILITIES(/obj/machinery/medical_kiosk)
+	configure(uses_power(idle = 5, active = 200))
+	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),
+		needs(req_adjacent(), req_capable(), req_operable(), req(PROC_REF(kiosk_patient)), req(PROC_REF(kiosk_panel_closed))),
+		claims(CLAIM_TARGET),
+		asks(/datum/prompt/choice/medical_kiosk_service, fields = list("title" = computed(PROC_REF(kiosk_title)), "question" = "What service would you like?", "choices" = list("Health Scan", "Backup Scan", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 10 SECONDS), step = "service", ends_on_no = TRUE),
+		starts(PROC_REF(kiosk_scan_started)), wait(5 SECONDS), then(PROC_REF(kiosk_scan_finished)), on_interrupt(PROC_REF(kiosk_scan_interrupted)))
+	op("medical_kiosk_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(medical_kiosk_interaction_item)))
+	ref_one(nameof(active_user), /mob/living)
+
+/// Cancel remains a visible third button, and is the native asks() no-answer.
+/datum/prompt/choice/medical_kiosk_service/normalize(given)
+	return given == "Cancel" ? FALSE : ..()
+
+/datum/prompt/choice/medical_kiosk_service/refusal(given)
+	return given == FALSE ? null : ..()
+
+/obj/machinery/medical_kiosk/proc/kiosk_patient(datum/act/op/A)
+	return read_once(istype(A.actor, /mob/living)) ? null : MSG(medical_kiosk/patient_only)
+
+/obj/machinery/medical_kiosk/proc/kiosk_panel_closed(datum/act/op/A)
+	return panel_open ? MSG(medical_kiosk/panel_open) : null
+
+/obj/machinery/medical_kiosk/proc/kiosk_title(datum/act/op/A)
+	return "[src]"
 
 /// Old attackby.
-/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	return default_part_replacement(user, O) ? TRUE : FALSE
+/obj/machinery/medical_kiosk/proc/medical_kiosk_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	if(default_part_replacement(user, O))
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
 	rel_set(src, nameof(active_user), user)
-	update_icon()
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
 	rel_clear(src, nameof(active_user))
-	update_icon()
 	set_use_power(USE_POWER_IDLE)
 
-/obj/machinery/medical_kiosk/proc/start_using(mob/living/user)
-	// Out of standby
+/// Claims reserve the kiosk while the question is open; power and patient state start with the actual scan.
+/obj/machinery/medical_kiosk/proc/kiosk_scan_started(datum/act/op/A)
+	var/mob/living/user = A.actor
 	wake_lock(user)
-
-	// User requests service
 	act_message(user, src, MSG_SELF("You wake %T%."), MSG_OTHERS(span_bold("%U%") + " wakes %T%."))
-	om_ask(user, /datum/om/prompt/choice/kiosk_service, PROC_REF(service_chosen), title = "[src]")
-	return TRUE
-
-/// A cancel, a timeout or a failed re-check (moved away, kiosk broken or opened) suspends the kiosk.
-/datum/om/prompt/choice/kiosk_service
-	message = "What service would you like?"
-	choices = list("Health Scan", "Backup Scan", "Cancel")
-	buttons = TRUE
-	timeout = 10 SECONDS
-	requires = PROMPT_ADJACENT
-
-/datum/om/prompt/choice/kiosk_service/valid()
-	var/obj/machinery/medical_kiosk/K = subject
-	if(choice == "Cancel" || !K.operable() || K.panel_open)
-		return "cancelled"
-	return null
-
-/datum/om/prompt/choice/kiosk_service/cancelled()
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/datum/om/prompt/choice/kiosk_service/refused(reason)
-	var/obj/machinery/medical_kiosk/K = subject
-	K?.suspend()
-
-/obj/machinery/medical_kiosk/proc/service_chosen(datum/om/prompt/choice/kiosk_service/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
-
-	// Service begins, delay
 	act_message(src, user, others = span_bold("%U%") + " scans %T% thoroughly!")
 	flick("kiosk_active", src)
-	om_task_start(/datum/om/task/timed/medical_kiosk_start_using, user, src, receiver = src, choice = choice)
-	return TRUE
 
-/datum/om/task/timed/medical_kiosk_start_using
-	duration = 5 SECONDS
-	complete_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_done
-	cancel_proc = /obj/machinery/medical_kiosk/proc/start_using_timed_failed
-	var/choice
-
-/obj/machinery/medical_kiosk/proc/start_using_timed_done(datum/om/task/timed/medical_kiosk_start_using/task)
-	var/mob/living/user = task.actor
-	var/choice = task.choice
-	if(!operable())
-		return
-
-	// Service completes
+/obj/machinery/medical_kiosk/proc/kiosk_scan_finished(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/choice = A.step_value("service")
 	switch(choice)
 		if("Health Scan")
 			var/health_report = medical_scan(user)
@@ -142,13 +115,10 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 			else
 				var/scan_report = do_backup_scan(user)
 				to_chat(user, span_notice(span_bold("Backup scan results:"))+scan_report)
-
-	// Standby
 	suspend()
 
-/obj/machinery/medical_kiosk/proc/start_using_timed_failed(datum/om/task/timed/medical_kiosk_start_using/task)
+/obj/machinery/medical_kiosk/proc/kiosk_scan_interrupted(datum/act/op/A)
 	suspend()
-	return
 
 /obj/machinery/medical_kiosk/proc/medical_scan(mob/living/user)
 	var/datum/diagnosis/diag = istype(user) ? user.diagnose(/datum/diagnostic_profile/automation/kiosk) : null
@@ -222,15 +192,15 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 	if(!problems) //Minor stuff that we really don't care much about, but can be annoying! So let's tell people how to fix it. But only if they don't  have a health crisis going on!
 		var/minor_problems = ""
-		if(user.has_status(EFFECT_HALLUCINATING))
+		if(user.has_status(STAT_HALLUCINATING))
 			minor_problems += "<br>" + span_warning("Brain activity suggesting severe mental inhibitions detected - medical assistance recommended.")
-		if(user.has_status(EFFECT_DROWSY) || user.has_status(EFFECT_SLEEPING))
+		if(user.has_status(STAT_DROWSY) || user.has_status(STAT_SLEEPING))
 			minor_problems += "<br>" + span_warning("Mild mental inhibitions detected - drinking coffee can improve symptoms and stimulate nervous system.")
 		if(is_drunk)
 			minor_problems += "<br>" + span_warning("Ethanol intoxication detected - suggest close observation to alleviate risk of injury.")
 		if(user.current_pain())
 			minor_problems += "<br>" + span_warning("Mild concussion detected - advising bed rest until feeling better.")
-		if(user.has_status(EFFECT_JITTERY) || user.has_status(EFFECT_DIZZY))
+		if(user.has_status(STAT_JITTERY) || user.has_status(STAT_DIZZY))
 			minor_problems += "<br>" + span_warning("Neurological symptoms detected - advising bed rest until feeling better.") //Resting fixes dizziness and jitteryness!
 		else
 			minor_problems += "<br>" + span_notice("No anatomical issues detected.")
@@ -268,19 +238,19 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 		if(able_to_dispense)
 			medication_dispensed = TRUE
 			var/obj/item/stack/medical/bruise_pack/BP = new /obj/item/stack/medical/bruise_pack(src.loc)
-			BP.amount = 1
-			BP.max_amount = 1
+			BP.set_amount(1, TRUE)
+			BP.set_max_amount(1)
 
 	if(problems & SERIOUS_EXTERNAL_DAMAGE)
 		problem_text += "<br>" + span_danger("SEVERITY: 'SEVERE' - Severe external damage detected - seek medical attention immediately!")
 		if(able_to_dispense)
 			medication_dispensed = TRUE
 			var/obj/item/stack/medical/bruise_pack/BP = new /obj/item/stack/medical/bruise_pack(src.loc)
-			BP.amount = 1
-			BP.max_amount = 1
+			BP.set_amount(1, TRUE)
+			BP.set_max_amount(1)
 			var/obj/item/stack/medical/ointment/ointment = new /obj/item/stack/medical/ointment(src.loc)
-			ointment.amount = 1
-			ointment.max_amount = 1
+			ointment.set_amount(1, TRUE)
+			ointment.set_max_amount(1)
 			if(!paracetamol_given)
 				new /obj/item/reagent_containers/pill/small_paracetamol(src.loc)
 				paracetamol_given = TRUE
@@ -396,7 +366,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 
 /// active user (a relation view: it reads null once the target is deleted).
 /obj/machinery/medical_kiosk/proc/active_user() as /mob/living

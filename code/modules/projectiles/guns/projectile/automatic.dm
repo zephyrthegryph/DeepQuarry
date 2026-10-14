@@ -29,7 +29,6 @@
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced, /obj/item/ammo_magazine/m9mm)
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
@@ -39,7 +38,13 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-10,-10), dispersion=list(0.0, 0.3, 0.6))
 	)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_smg{ammo_magazine?:-e}")
+CAPABILITIES(/obj/item/gun/projectile/automatic/advanced_smg)
+	configure(item_worn(slots = SLOT_BELT))
+
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/advanced_smg/draw(datum/look/look)
+	..()
+	look.state("advanced_smg[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/automatic/advanced_smg/loaded
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
@@ -63,9 +68,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_s
 	wielded_item_state = "arifle-wielded"
 	item_state = null
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "5.45mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m545
 	allowed_magazines = list(/obj/item/ammo_magazine/m545)
@@ -79,15 +82,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_s
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
-	. = list()
-	. += ..()
-	if(istype(ammo_magazine,/obj/item/ammo_magazine/m545/small))
-		icon_state = "arifle-small" // If using the small magazines, use the small magazine sprite.
-	else
-		icon_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	update_held_icon()
+CAPABILITIES(/obj/item/gun/projectile/automatic/sts35)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /*
  * X-9mm (PDW)
@@ -100,7 +97,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(
 	item_state = "c20r"
 	w_class = ITEMSIZE_NORMAL
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced)
@@ -111,7 +107,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:-e}")
+CAPABILITIES(/obj/item/gun/projectile/automatic/pdw)
+	configure(item_worn(slots = SLOT_BELT))
+
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/pdw/draw(datum/look/look)
+	..()
+	look.state("pdw[ammo_magazine ? "" : "-e"]")
 
 /*
  * Machine Pistol (WT550)
@@ -125,7 +127,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:
 	item_state = "wt550"
 	w_class = ITEMSIZE_NORMAL
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	ammo_type = /obj/item/ammo_casing/a9mm/rubber
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmt/rubber
@@ -134,10 +135,12 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:
 	move_delay = 0 // Pistols have move_delay of 0
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
+	configure(item_worn(slots = SLOT_BELT))
+
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
-	return ammo_magazine ? "-[round(ammo_magazine.stored_ammo.len, 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_mag_state}")
+	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
 
 /*
  * Battle Rifle (Z8)
@@ -155,9 +158,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_
 	item_state = "z8carbine"
 	wielded_item_state = "z8bulldog-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762)
@@ -178,22 +179,26 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_
 	var/use_launcher = 0
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
-/obj/item/gun/projectile/automatic/z8/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
+CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung, starts = /obj/item/gun/launcher/grenade/underslung)
 
 /// Old attackby.
-/obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/z8/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if((istype(I, /obj/item/grenade)))
 		launcher.load(I, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/z8/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/z8/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && use_launcher)
 		launcher.unload(user)
-		return TRUE
+		return OP_OK
 	return ..()
 
 /obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0, stance = I_HURT)
@@ -203,17 +208,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_
 			switch_firemodes(user) //switch back automatically
 	else
 		..()
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/z8/appearance_overlays()
-	. = list()
-	. += ..()
-	if(ammo_magazine)
-		icon_state = "carbine-[round(ammo_magazine.stored_ammo.len,2)]"
-	else
-		icon_state = "carbine"
-	update_held_icon()
-	return .
 
 /obj/item/gun/projectile/automatic/z8/examine(mob/user)
 	. = ..()
@@ -238,11 +232,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	item_state = "l6closed"
 	wielded_item_state = "genericLMG-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
-	slot_flags = 0
 	max_shells = 50
 	caliber = "5.45mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m545saw
 	allowed_magazines = list(/obj/item/ammo_magazine/m545saw, /obj/item/ammo_magazine/m545)
@@ -261,6 +252,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 
 	special_weapon_handling = TRUE
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+
+TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
+
 /obj/item/gun/projectile/automatic/l6_saw/special_check(mob/user)
 	if(cover_open)
 		to_chat(user, span_warning("[src]'s cover is open! Close it before firing!"))
@@ -268,38 +265,36 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	return ..()
 
 /obj/item/gun/projectile/automatic/l6_saw/proc/toggle_cover(mob/user)
-	cover_open = !cover_open
+	set_cover_open(!cover_open)
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
-	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/l6_saw/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/automatic/l6_saw/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(cover_open)
 		toggle_cover(user) //close the cover
 	else
-		return ..(user, held, interaction, TRUE) //once closed, behave like normal
+		return ..(A, TRUE) //once closed, behave like normal
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/l6_saw/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/l6_saw/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-		return TRUE
+		return OP_OK
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/automatic/l6_saw/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "l6[cover_open ? "open" : "closed"]mag"
-		item_state = icon_state
+		look.state("l6[cover_open ? "open" : "closed"]mag")
+		look.held_state("l6[cover_open ? "open" : "closed"]mag")
 	else
-		icon_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? round(ammo_magazine.stored_ammo.len, 25) : "-empty"]"
-		item_state = "l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]"
-	update_held_icon()
+		look.state("l6[cover_open ? "open" : "closed"][ammo_magazine ? round(ammo_magazine.ammo_count(), 25) : "-empty"]")
+		look.held_state("l6[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/l6_saw/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)
@@ -326,9 +321,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 	item_state = "ashot"
 	wielded_item_state = "ashot-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "12g"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m12gdrum
 	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrum)
@@ -341,7 +334,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazine?:-empty}")
+CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/as24/draw(datum/look/look)
+	..()
+	look.state("ashot[ammo_magazine ? "" : "-empty"]")
 
 /*
  * Uzi
@@ -369,7 +369,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazin
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.6, 1.0, 1.0))
 		)
-
 
 // Uzi tilting
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
@@ -411,7 +410,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazin
 	item_state = "stg44"
 	w_class = ITEMSIZE_NORMAL
 	caliber = ".45"
-	slot_flags = SLOT_BELT // ToDo: Belt sprite.
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m45tommy
 	allowed_magazines = list(/obj/item/ammo_magazine/m45tommy, /obj/item/ammo_magazine/m45tommydrum)
@@ -422,16 +420,18 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazin
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
-	. = list()
+CAPABILITIES(/obj/item/gun/projectile/automatic/tommygun)
+	configure(item_worn(slots = SLOT_BELT))
+
+/obj/item/gun/projectile/automatic/tommygun/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
-		icon_state = "tommygun-mag"
+		look.state("tommygun-mag")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommydrum))
-		icon_state = "tommygun-drum"
+		look.state("tommygun-drum")
 	else
-		icon_state = "tommygun-empty"
-	update_held_icon()
+		look.state("tommygun-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Bullpup Rifle
@@ -443,9 +443,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_R
 	item_state = "bullpup"
 	wielded_item_state = "sexyrifle-wielded" //Placeholder, this is a bullpup at least
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762, /obj/item/ammo_magazine/m762/ext)
@@ -459,17 +457,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_R
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
-	. = list()
-	. += ..()
+CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+
+/obj/item/gun/projectile/automatic/bullpup/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "bullpup-small"
+		look.state("bullpup-small")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m762/ext))
-		icon_state = "bullpup"
+		look.state("bullpup")
 	else
-		item_state = "bullpup-empty"
-	update_held_icon()
+		look.held_state("bullpup-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Combat SMG (PP3 Ten)
@@ -493,7 +493,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_RE
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/combatsmg/draw(datum/look/look)
+	..()
+	look.state("combatsmg[ammo_magazine ? "" : "-empty"]")
 
 //
 ///
@@ -520,7 +523,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{amm
 	icon_state = "p90smgnew" // Defines the name for the icon (inventory) state.
 	item_state = "p90new" // Defines the name for the item (visibly held) state.
 	wielded_item_state = "p90new-wielded" // Defines the name for the wielded (two-handed) state.
-	slot_flags = SLOT_BELT|SLOT_BACK // The inventory slots this weapon can occupy. Most weapons can go on the suit slot by default, so long as you're wearing a vest.
 
 	w_class = ITEMSIZE_LARGE // Takes up more space in inventories than a pistol.
 
@@ -541,10 +543,16 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{amm
 		list(mode_name="three-round burst", burst=3, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(0,-15,-20), dispersion=list(0.0, 1.0, 1.5))
 		)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /// Declared icon_state suffix: rounded magazine count, or "empty".
 /obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
-	return ammo_magazine ? round(ammo_magazine.stored_ammo.len, 6) : "empty"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearance_mag_state}")
+	return ammo_magazine ? round(length(ammo_magazine.stored_ammo), 6) : "empty"
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/p90/draw(datum/look/look)
+	..()
+	look.state("p90smgnew-[appearance_mag_state()]")
 
 // C-20R
 
@@ -562,7 +570,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearan
 	icon_state = "c20r"
 	item_state = "c20rnew"
 	wielded_item_state = "c20rnew-wielded"
-	slot_flags = SLOT_BELT|SLOT_BACK
 
 	w_class = ITEMSIZE_LARGE
 
@@ -583,6 +590,8 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearan
 		list(mode_name="two-shot rapidfire", burst=2, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(-5,-10), dispersion=list(0.5, 1.0)),
 		)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/c20r)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/gun/projectile/automatic/c20r/rubber
 	magazine_type = /obj/item/ammo_magazine/m10mm/rubber
@@ -600,9 +609,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearan
 	icon_state = "fal"
 	item_state = "fal"
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762/ext
 	allowed_magazines = list(/obj/item/ammo_magazine/m762, /obj/item/ammo_magazine/m762/ext)
@@ -614,7 +621,14 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearan
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state)}{ammo_magazine?:-empty}")
+CAPABILITIES(/obj/item/gun/projectile/automatic/fal)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/fal/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/wt550/lethal
 	magazine_type = /obj/item/ammo_magazine/m9mmt
@@ -638,8 +652,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state
 	allowed_magazines = list(/obj/item/ammo_magazine/m95)
 	fire_sound = SFX_WEAPONS_BATTLERIFLE
 	load_method = MAGAZINE
-	slot_flags = SLOT_BACK
 	one_handed_penalty = 60 // The weapon itself is heavy
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/battlerifle)
+	configure(item_worn(slots = SLOT_BACK))
 
 // For general use
 /obj/item/gun/projectile/automatic/stg
@@ -654,13 +670,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/stg/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = (ammo_magazine)? "stg60" : "stg60-empty"
-	item_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/stg/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "stg60" : "stg60-empty")
+	look.held_state((ammo_magazine)? "arifle" : "arifle-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 //////////////////// Eris Ported Guns ////////////////////
 // No idea what this is for.
@@ -670,7 +684,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/a
 	icon_state = "SMG-IS"
 	item_state = "wt550"
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BELT
 	caliber = "9mm"
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
@@ -682,20 +695,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/a
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15),       dispersion=list(0.0, 0.6, 1.0)),
 		)
 
-/obj/item/gun/projectile/automatic/sol/proc/update_charge()
+CAPABILITIES(/obj/item/gun/projectile/automatic/sol)
+	configure(item_worn(slots = SLOT_BELT))
+
+/obj/item/gun/projectile/automatic/sol/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "SMG-IS" : "SMG-IS-empty")
 	if(!ammo_magazine)
 		return
-	var/ratio = ammo_magazine.stored_ammo.len / ammo_magazine.max_ammo
+	var/ratio = ammo_magazine.ammo_count() / ammo_magazine.max_ammo
 	if(ratio < 0.25 && ratio != 0)
 		ratio = 0.25
 	ratio = round(ratio, 0.25) * 100
-	add_overlay("smg_[ratio]")
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/sol/appearance_overlays()
-	. = list()
-	icon_state = (ammo_magazine)? "SMG-IS" : "SMG-IS-empty"
-	update_charge()
+	look.overlay("smg_[ratio]")
 
 //--------------- StG-60 ----------------
 /obj/item/ammo_magazine/m792
@@ -769,8 +781,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 	icon_state = "mg42closed"
 	item_state = "mg42"
 	w_class = ITEMSIZE_HUGE
-	force = 10
-	slot_flags = 0
 	max_shells = 75
 	caliber = "mauser"
 	ammo_type = "/obj/item/ammo_casing/a792x57m/lmg" // Is this really needed anymore?
@@ -791,6 +801,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 
 	var/cover_open = 0
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/mg42)
+	configure(item_worn(slots = 0))
+	configure(item_combat(force = 10))
+
+TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
+
 /obj/item/gun/projectile/automatic/mg42/special_check(mob/user)
 	if(cover_open)
 		to_chat(user, span_warning("[src]'s cover is open! Close it before firing!"))
@@ -798,31 +814,30 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 	return ..()
 
 /obj/item/gun/projectile/automatic/mg42/proc/toggle_cover(mob/user)
-	cover_open = !cover_open
+	set_cover_open(!cover_open)
 	to_chat(user, span_notice("You [cover_open ? "open" : "close"] [src]'s cover."))
-	update_icon()
-	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/mg42/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/automatic/mg42/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	if(cover_open)
 		toggle_cover(user) //close the cover
+		return OP_DECLINE
 	else
 		return ..() //once closed, behave like normal
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/mg42/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/mg42/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-		return TRUE
+		return OP_OK
 	return ..() //once open, behave like normal
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/mg42/appearance_overlays()
-	. = list()
-	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"
-	item_state = "mg42"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/mg42/draw(datum/look/look)
+	..()
+	look.state("mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.ammo_count() == 0 ? "0" : ""]")
+	look.held_state("mg42")
 
 /obj/item/gun/projectile/automatic/mg42/load_ammo(obj/item/A, mob/user)
 	if(!cover_open)

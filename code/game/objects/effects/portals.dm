@@ -1,6 +1,7 @@
 REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 /obj/effect/portal
+	lifecycle_lifetime = 30 SECONDS
 	name = "portal"
 	desc = "Looks unstable. Best to test it with the clown."
 	icon = 'icons/obj/stationobjs.dmi'
@@ -8,12 +9,22 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	density = TRUE
 	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 5
-	var/obj/item/target
+	/// Where it leads: a turf, a landmark, a beacon or a belly, not only an item.
+	var/atom/target
 	var/creator = null
 	anchored = TRUE
 	var/event = FALSE
 
-/obj/effect/portal/Bumped(mob/M as mob|obj)
+CAPABILITIES(/obj/effect/portal)
+	ref_one(nameof(target))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("enter_portal", hand(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_enter_portal)))
+	op("ghost_follow", observer(), label("Go through"), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(portal_ghost_follow)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/portal/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/mob/M = N.bumper
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(M)
@@ -33,21 +44,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	teleport(AM)
 	return
 
-EXTEND_INTERACTIONS(/obj/effect/portal, \
-	INTERACT_HAND("Enter", PROC_REF(interaction_enter_portal)), \
-	INTERACT_OBSERVER("Go through", PROC_REF(portal_ghost_follow)), \
-)
-
 /// Old attack_hand: step through the portal.
-/obj/effect/portal/proc/interaction_enter_portal(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/portal/proc/interaction_enter_portal(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(user) && !(isliving(user)))
-		return TRUE	//do not send ghosts, zshadows, ai eyes, etc
+		return OP_OK	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(user)
-	return TRUE
-
-/obj/effect/portal/Initialize(mapload)
-	. = ..()
-	expire(30 SECONDS)
+	return OP_OK
 
 /obj/effect/portal/proc/teleport(atom/movable/M as mob|obj)
 	if(istype(M, /obj/effect)) //sparks don't teleport
@@ -57,31 +60,31 @@ EXTEND_INTERACTIONS(/obj/effect/portal, \
 	if (icon_state == "portal1")
 		return
 	if (!( target_ref() ))
-		qdel(src)
+		consume(src)
 		return
 	if (istype(M, /atom/movable))
-		// ition Start: Prevent taurriding abuse
+		// Prevent taurriding abuse.
 		if(isliving(M))
 			var/mob/living/L = M
 			if(LAZYLEN(L?.buckled_mob_list()))
 				var/datum/riding/R = L.riding_datum
 				for(var/rider in L?.buckled_mob_list())
 					R.force_dismount(rider)
-		// ition End: Prevent taurriding abuse
+
 		if(isbelly(target_ref()))
 			if(target_ref() == M)
 				return
 			if(istype(M, /mob/living))
 				var/mob/living/L = M
-				if(L.can_be_drop_prey && L.devourable)
+				if(L.vore_prefs.can_be_drop_prey && L.vore_prefs.devourable)
 					do_teleport(M, target_ref())
 					return
 		if(prob(failchance)) //oh dear a problem, put em in deep space
-			src.icon_state = "portal1"
+			set_icon_state("portal1")
 			do_teleport(M, locate(rand(5, world.maxx - 5), rand(5, world.maxy -5), 3), 0)
 		else
 			do_teleport(M, target_ref(), 1) ///You will appear adjacent to the beacon
 
 /// Relation view: target (reads null once it is gone).
-/obj/effect/portal/proc/target_ref() as /obj/item
+/obj/effect/portal/proc/target_ref() as /atom
 	return target

@@ -7,6 +7,9 @@
 	effect_state = "shield-old"
 	effect_color = "#00b7ff"
 
+CAPABILITIES(/datum/artifact_effect/forcefield)
+	owns_many(nameof(created_field))
+
 /datum/artifact_effect/forcefield/New()
 	..()
 	trigger = TRIGGER_TOUCH
@@ -16,18 +19,17 @@
 	..()
 	if(length(created_field))
 		for(var/obj/effect/energy_field/F in created_field)
-			own_take_member(src, nameof(created_field), F)
-			qdel(F)
+			rel_remove(src, nameof(created_field), F)
 	else if(holder)
 		var/turf/T = get_turf(holder)
 		while(length(created_field) < 16)
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T.z))
-			own_add(src, nameof(created_field), E)
+			rel_add(src, nameof(created_field), E)
 			E.set_strength(1)
 			E.set_density(TRUE)
 			E.set_anchored(TRUE)
-			E.invisibility = INVISIBILITY_NONE
-		om_after(src, 1 SECOND, PROC_REF(UpdateMove))
+			E.set_invisibility(INVISIBILITY_NONE)
+		after(src, 1 SECOND, PROC_REF(UpdateMove))
 	return 1
 
 /datum/artifact_effect/forcefield/periodic_step()
@@ -46,10 +48,10 @@
 		while(length(created_field) < 16)
 			//for now, just instantly respawn the fields when they get destroyed
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T))
-			own_add(src, nameof(created_field), E)
+			rel_add(src, nameof(created_field), E)
 			E.set_anchored(TRUE)
 			E.set_density(TRUE)
-			E.invisibility = INVISIBILITY_NONE
+			E.set_invisibility(INVISIBILITY_NONE)
 
 		var/obj/effect/energy_field/E = LAZYACCESS(created_field, 1)
 		E.forceMove(locate(T.x + 2,T.y + 2,T.z))

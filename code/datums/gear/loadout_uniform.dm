@@ -24,7 +24,7 @@
 	var/list/cheongasms = list()
 	for(var/obj/item/clothing/under/cheongsam/cheongasm_type as anything in typesof(/obj/item/clothing/under/cheongsam))
 		cheongasms[initial(cheongasm_type.name)] = cheongasm_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(cheongasms)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(cheongasms)))
 
 /datum/gear/uniform/croptop
 	description = "Light shirts which shows the midsection of the wearer."
@@ -36,7 +36,7 @@
 	var/list/croptops = list()
 	for(var/obj/item/clothing/under/croptop/croptop_type as anything in typesof(/obj/item/clothing/under/croptop))
 		croptops[initial(croptop_type.name)] = croptop_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(croptops)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(croptops)))
 
 /datum/gear/uniform/kilt
 	display_name = "kilt"
@@ -59,7 +59,7 @@
 	var/list/jumpclothes = list()
 	for(var/obj/item/clothing/under/color/jumps as anything in typesof(/obj/item/clothing/under/color))
 		jumpclothes[initial(jumps.name)] = jumps
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(jumpclothes)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(jumpclothes)))
 
 /datum/gear/uniform/qipao_colorable
 	display_name = "qipao, colorable"
@@ -67,7 +67,7 @@
 
 /datum/gear/uniform/qipao_colorable/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/qipao2_colorable
 	display_name = "qipao, colorable, slim"
@@ -75,7 +75,7 @@
 
 /datum/gear/uniform/qipao2_colorable/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/skirt
 	display_name = "skirt selection"
@@ -87,7 +87,7 @@
 	for(var/skirt in (typesof(/obj/item/clothing/under/skirt)))
 		var/obj/item/clothing/under/skirt/skirt_type = skirt
 		skirts[initial(skirt_type.name)] = skirt_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(skirts)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(skirts)))
 
 /datum/gear/uniform/pants
 	display_name = "pants selection"
@@ -98,7 +98,7 @@
 	var/list/pants = list()
 	for(var/obj/item/clothing/under/pants/pant_type as anything in (typesof(/obj/item/clothing/under/pants) - typesof(/obj/item/clothing/under/pants/altevian)))
 		pants[initial(pant_type.name)] = pant_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(pants)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(pants)))
 
 /datum/gear/uniform/shorts
 	display_name = "shorts selection"
@@ -109,7 +109,7 @@
 	var/list/shorts = list()
 	for(var/obj/item/clothing/under/pants/short_type as anything in typesof(/obj/item/clothing/under/shorts))
 		shorts[initial(short_type.name)] = short_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(shorts)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(shorts)))
 
 /datum/gear/uniform/suit/lawyer
 	display_name = "suit, one-piece selection"
@@ -120,7 +120,7 @@
 	var/list/lsuits = list()
 	for(var/obj/item/clothing/suit/lsuit_type as anything in typesof(/obj/item/clothing/under/lawyer))
 		lsuits[initial(lsuit_type.name)] = lsuit_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(lsuits)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(lsuits)))
 
 /datum/gear/uniform/suit/suit_jacket
 	display_name = "suit, modular selection"
@@ -132,7 +132,7 @@
 	for(var/msuit in typesof(/obj/item/clothing/under/suit_jacket))
 		var/obj/item/clothing/suit/msuit_type = msuit
 		msuits[initial(msuit_type.name)] = msuit_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(msuits)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(msuits)))
 
 /datum/gear/uniform/suit/amish  //amish
 	display_name = "suit, amish"
@@ -177,7 +177,7 @@
 	var/list/scrubs = list()
 	for(var/obj/item/clothing/under/rank/medical/scrubs/scrub_type as anything in typesof(/obj/item/clothing/under/rank/medical/scrubs))
 		scrubs[initial(scrub_type.name)] = scrub_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(scrubs)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(scrubs)))
 
 /datum/gear/uniform/oldwoman
 	display_name = "old woman attire"
@@ -201,7 +201,7 @@
 
 /datum/gear/uniform/shortplaindress/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/longdress
 	display_name = "long dress"
@@ -209,7 +209,7 @@
 
 /datum/gear/uniform/longdress/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/longwidedress
 	display_name = "long wide dress"
@@ -217,7 +217,7 @@
 
 /datum/gear/uniform/longwidedress/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/loincloth
 	display_name = "loincloth"
@@ -225,7 +225,7 @@
 
 /datum/gear/uniform/loincloth/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/reddress
 	display_name = "red dress with belt"
@@ -256,7 +256,7 @@
 	var/list/maids = list()
 	for(var/obj/item/clothing/under/dress/maid/maid_type as anything in typesof(/obj/item/clothing/under/dress/maid))
 		maids[initial(maid_type.name)] = maid_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(maids)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(maids)))
 
 /datum/gear/uniform/sweater
 	display_name = "sweater, grey"
@@ -272,7 +272,7 @@
 
 /datum/gear/uniform/yogapants/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/black_corset
 	display_name = "black corset"
@@ -315,7 +315,7 @@
 	"Frontier Overalls" = /obj/item/clothing/under/overalls/frontier,
 	"Rustler Overalls" = /obj/item/clothing/under/overalls/rustler
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(overalls))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(overalls))
 
 /datum/gear/uniform/sarired
 	display_name = "sari, red"
@@ -339,7 +339,7 @@
 
 /datum/gear/uniform/pleated/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/lilacdress
 	display_name = "lilac dress"
@@ -431,7 +431,7 @@
 
 /datum/gear/uniform/floofdress/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/blackngold
 	display_name = "black and gold gown"
@@ -483,7 +483,7 @@
 
 /datum/gear/uniform/flowerskirt/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/countess
 	display_name = "countess dress"
@@ -499,7 +499,7 @@
 
 /datum/gear/uniform/fashionminiskirt/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/tourist_1
 	display_name = "tourist outfit, white"
@@ -521,7 +521,7 @@
 	"Brown Cowboy Outfit" = /obj/item/clothing/under/cowboy/brown,
 	"Grey Cowboy Outfit" = /obj/item/clothing/under/cowboy/grey
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(cowboy_outfits))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(cowboy_outfits))
 
 /datum/gear/uniform/hightrousers
 	display_name = "high-waisted trousers"
@@ -559,7 +559,7 @@
 
 /datum/gear/uniform/leotardcolor/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 //skinsuits
 /datum/gear/uniform/skinsuits
@@ -580,7 +580,7 @@
 	"gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/leotard/gray,
 	"feminine gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/fem/leotard/gray
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skinsuits))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skinsuits))
 
 //baggy turtlenecks
 /datum/gear/uniform/turtlebaggys
@@ -603,7 +603,7 @@
 	"black baggy turtleneck" = "black",
 	"feminine black baggy turtleneck" = "black_fem"
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(turtlebaggys))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(turtlebaggys))
 
 //colorable sweaters
 /datum/gear/uniform/bigsweaters
@@ -616,8 +616,8 @@
 	"cableknit sweater"=/obj/item/clothing/under/bigsweater,
 	"keyhole sweater"=/obj/item/clothing/under/bigsweater/keyhole
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bigsweaters))
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bigsweaters))
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 //half-moon outfit
 /datum/gear/uniform/halfmoon
@@ -644,7 +644,7 @@
 	"white tabard-dress"=/obj/item/clothing/under/dress/tabard,
 	"black tabard-dress"=/obj/item/clothing/under/dress/tabard/black
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(tabarddress))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(tabarddress))
 
 //bunny suits
 
@@ -662,8 +662,8 @@
 	"reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop,
 	"maid reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop_maid
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bunnysuit))
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(bunnysuit))
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/uniform/suit/permit
 	display_name = "nudity permit"
@@ -709,7 +709,7 @@ Qipao
 
 /datum/gear/uniform/qipao_colorable_alt/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /*
 Bluespace jumpsuit
@@ -739,7 +739,7 @@ Talon jumpsuit
 		"blue and white" = /obj/item/clothing/under/summerdress/blue,
 		"red and white" = /obj/item/clothing/under/summerdress/red
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(dresses))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(dresses))
 
 //Altevian Uniforms
 /datum/gear/uniform/altevian
@@ -752,7 +752,7 @@ Talon jumpsuit
 	var/list/pants = list()
 	for(var/obj/item/clothing/under/pants/altevian/pants_type as anything in typesof(/obj/item/clothing/under/pants/altevian))
 		pants[initial(pants_type.name)] = pants_type
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(pants)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(pants)))
 
 //Feminine Colored Jumpsuits.
 /datum/gear/uniform/f_jumpsuit_alt
@@ -765,7 +765,7 @@ Talon jumpsuit
 	for(var/jumpsuit_style in typesof(/obj/item/clothing/under/color/fjumpsuit))
 		var/obj/item/clothing/under/color/fjumpsuit/jumpsuit = jumpsuit_style
 		jumpsuits[initial(jumpsuit.name)] = jumpsuit
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(jumpsuits)))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(sortAssoc(jumpsuits)))
 
 /datum/gear/uniform/singer_blue
 	display_name = "blue singer dress"
@@ -808,8 +808,8 @@ Talon jumpsuit
 	"short skirt"=/obj/item/clothing/under/skirt/colorable/short,
 	"short skirt (split)"=/obj/item/clothing/under/skirt/colorable/short_split
 	)
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skirts))
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/variant(skirts))
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 // gwen beedells clown clothes
 
@@ -825,7 +825,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cdress_fire/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 // recolorable yellow dress
 /datum/gear/uniform/cbridesmaid
@@ -834,7 +834,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cbridesmaid/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 // recolorable orange swoop dress
 /datum/gear/uniform/cswoopdress
@@ -843,7 +843,7 @@ Talon jumpsuit
 
 /datum/gear/uniform/cswoopdress/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 // waiter's outfit, this should probably be in a selector with all the other service uniforms.
 /datum/gear/uniform/waiter

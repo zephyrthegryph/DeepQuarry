@@ -1,21 +1,22 @@
-SUBSYSTEM_DEF(profiler)
+SYSTEM_DEF(profiler)
 	name = "Profiler"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_FIRST
-	flags = SS_KERNEL_HOSTED
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
-	wait = 30 SECONDS
+	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	wait = 1 MINUTES
 	var/fetch_cost = 0
 	var/write_cost = 0
 	/// Monotonic identifier for compact diagnostic snapshots. This profiler is
 	/// intentionally independent of BYOND's expensive full proc serializer.
 	var/diagnostic_sequence = 0
 
-/datum/controller/subsystem/profiler/stat_entry(msg)
+/datum/system/profiler/stat_entry(msg)
 	msg += "F:[round(fetch_cost,1)]ms"
 	msg += "|W:[round(write_cost,1)]ms"
 	return msg
 
-/datum/controller/subsystem/profiler/Initialize()
+/datum/system/profiler/initialize()
 	#ifdef BENCHMARK
 	// `bench --profile`: profile the rest of boot too (Profiler initializes in
 	// INITSTAGE_FIRST, before map load); boot_profile dumps it.
@@ -23,25 +24,41 @@ SUBSYSTEM_DEF(profiler)
 	#else
 	var/bench_profile = FALSE
 	#endif
+	#ifdef UNIT_TESTS
+	// `-params boot_profile=1`: profile the rest of boot; the unit-test suite dumps it to <log dir>/boot_profile.json when it starts.
+	if(text2num(world.params?["boot_profile"] || "0"))
+		bench_profile = TRUE
+	#endif
 	if(CONFIG_GET(flag/auto_profile) || bench_profile)
 		StartProfiling()
 	else
 		StopProfiling() //Stop the early start profiler
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 	// AUTO_PROFILE controls full world.Profile collection only. Compact subsystem
 	// diagnostics are cheap, bounded, and must continue even when it is disabled.
 	can_fire = TRUE
-	return SS_INIT_SUCCESS
+	return
 
-/datum/controller/subsystem/profiler/OnConfigLoad()
+/datum/system/profiler/OnConfigLoad()
 	if(CONFIG_GET(flag/auto_profile))
 		StartProfiling()
 	else
 		StopProfiling()
 	can_fire = TRUE
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 
-/datum/controller/subsystem/profiler/fire()
+/// The compact diagnostics record (phase K, one run per `wait`: the item is declared at the default and takes the configured
+/// interval at boot and on a config reload).
+/datum/system/profiler/reactions()
+	. = ..()
+	. += every(1 MINUTES, PROC_REF(sample), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+
+/// Applies the configured sample interval to the work item.
+/datum/system/profiler/proc/apply_interval()
+	wait = CONFIG_GET(number/profiler_interval)
+	set_work_interval(PROC_REF(sample), wait)
+
+/datum/system/profiler/proc/sample(dt)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
@@ -51,64 +68,64 @@ SUBSYSTEM_DEF(profiler)
 	var/list/rust_metrics = verdigris_metrics_list()
 	var/list/subsystems = list(
 		"atmos" = system_diagnostics(SSair),
-		"machines" = world_service_diagnostics(GLOB.machine_service),
-		"mobs" = world_service_diagnostics(GLOB.mob_service),
-		"garbage" = subsystem_diagnostics(SSgarbage),
+		"machines" = system_diagnostics(SSmachines),
+		"mobs" = system_diagnostics(SSmobs),
+		"garbage" = system_diagnostics(SSgarbage),
 		"shuttles" = system_diagnostics(SSshuttles),
-		"radiation" = world_service_diagnostics(GLOB.radiation_service),
-		"explosions" = world_service_diagnostics(GLOB.explosion_service),
+		"radiation" = system_diagnostics(SSradiation),
+		"explosions" = system_diagnostics(SSexplosions),
 	)
 	var/list/material_graphs = list()
-	for(var/id in GLOB.machine_service.power_material_overlays)
-		var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[id]
+	for(var/id in machines_power_material_overlays())
+		var/datum/material_power_overlay/overlay = machines_power_material_overlays()[id]
 		var/datum/material_power_graph/graph = overlay.material_graph
 		if(graph)
 			material_graphs += list(list("cables" = length(overlay.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
 	subsystems["machines"] += list("material_graphs" = material_graphs)
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
-			"high_pressure" = SSair.cost_highpressure,
-			"superconductivity" = SSair.cost_superconductivity,
-			"pipenets" = SSair.cost_pipenets,
-			"pipe_commit" = SSair.cost_pipe_commit,
-			"pipe_devices" = SSair.cost_pipe_devices,
-			"rebuilds" = SSair.cost_rebuilds,
-			"gas_tick" = SSair.cost_turfs,
-			"gas_events" = SSair.cost_gas_events,
+			"high_pressure" = air_profile_cost_highpressure(),
+			"superconductivity" = air_profile_cost_superconductivity(),
+			"pipenets" = air_profile_cost_pipenets(),
+			"pipe_commit" = air_profile_cost_pipe_commit(),
+			"pipe_devices" = air_profile_cost_pipe_devices(),
+			"rebuilds" = air_profile_cost_rebuilds(),
+			"gas_tick" = air_profile_cost_turfs(),
+			"gas_events" = air_profile_cost_gas_events(),
 		),
 		"gas_field" = vg_gas_stats(),
 		"gas_last_fire" = list(
-			"events" = SSair.gas_events_last,
-			"reactions" = SSair.gas_reactions_last,
-			"visuals" = SSair.gas_visuals_last,
-			"pressure_pushes" = SSair.gas_pressure_last,
+			"events" = air_profile_gas_events_last(),
+			"reactions" = air_profile_gas_reactions_last(),
+			"visuals" = air_profile_gas_visuals_last(),
+			"pressure_pushes" = air_profile_gas_pressure_last(),
 		),
 		"queues" = list(
-			"hotspots" = length(SSair.hotspots),
+			"hotspots" = REGISTRY_COUNT(REGISTRY_HOTSPOTS),
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
-			"pipe_devices" = SSair.rust_pipe_device_count,
+			"pipe_devices" = air_profile_rust_pipe_device_count(),
 			"pipe_devices_reported" = native_system().pipe_devices_last,
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
 		),
 	)
 	subsystems["machines"] += list(
-		"stage_average_ms" = list("machinery" = GLOB.machine_service.cost_machinery, "powernets" = GLOB.machine_service.cost_powernets),
-		"stage_last_logical_run_ms" = list("machinery" = GLOB.machine_service.last_cost_machinery, "powernets" = GLOB.machine_service.last_cost_powernets),
-		"pump_commit" = list("active_ms" = GLOB.machine_service.last_pump_commit_ms, "wall_ms" = GLOB.machine_service.last_pump_commit_wall_ms, "suspended_ms" = GLOB.machine_service.last_pump_commit_suspended_ms, "operations" = GLOB.machine_service.last_pump_commit_operations, "turfs" = GLOB.machine_service.last_pump_commit_turfs),
-		"power" = list("regions" = length(GLOB.machine_service.power_grids)),
-		"counts" = list("parked" = om_pipeline_parked_count(/datum/om/pipeline/machine), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(GLOB.machine_service.power_grids)),
-		"gas_wakes" = list("dirty" = GLOB.machine_service.gas_dirty_last, "subscribers_checked" = GLOB.machine_service.gas_wake_subscribers_last, "scan_ms" = GLOB.machine_service.gas_wake_scan_last_ms, "woken" = GLOB.machine_service.gas_woken_last, "dead" = GLOB.machine_service.gas_dead_last, "pending" = length(GLOB.machine_service.pending_dirty_gas_mixtures)),
+		"stage_average_ms" = list("machinery" = machine_profile_cost_machinery(), "powernets" = machine_profile_cost_powernets()),
+		"stage_last_logical_run_ms" = list("machinery" = machine_profile_last_cost_machinery(), "powernets" = machine_profile_last_cost_powernets()),
+		"pump_commit" = list("active_ms" = machine_profile_last_pump_commit_ms(), "wall_ms" = machine_profile_last_pump_commit_wall_ms(), "suspended_ms" = machine_profile_last_pump_commit_suspended_ms(), "operations" = machine_profile_last_pump_commit_operations(), "turfs" = machine_profile_last_pump_commit_turfs()),
+		"power" = list("regions" = length(machines_power_grids())),
+		"counts" = list("all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(machines_power_grids())),
+		"gas_wakes" = list("dirty" = machine_profile_gas_dirty_last(), "subscribers_checked" = machine_profile_gas_wake_subscribers_last(), "scan_ms" = machine_profile_gas_wake_scan_last_ms(), "woken" = machine_profile_gas_woken_last(), "dead" = machine_profile_gas_dead_last(), "pending" = length(machines_pending_dirty_gas_mixtures())),
 	)
-	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(GLOB.mob_service.death_list)))
+	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(mobs_death_list())))
 	subsystems["periodic"] = periodic_diagnostics()
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
-	subsystems["radiation"] += GLOB.radiation_service.performance_diagnostics()
-	subsystems["explosions"] += GLOB.explosion_service.performance_diagnostics()
+	subsystems["radiation"] += SSradiation.performance_diagnostics()
+	subsystems["explosions"] += SSexplosions.performance_diagnostics()
 	// Rust world wakes (timers, keys, rate crossings, native watches) on the OM scheduler.
-	subsystems["world_step"] = om_world_diagnostics()
+	subsystems["world_step"] = world_diagnostics()
 	var/list/profile = list(
 		"sequence" = ++diagnostic_sequence,
 		"world_time_ds" = EXPIRY_AT(src, CLOCK_WORLD, 0),
@@ -120,7 +137,7 @@ SUBSYSTEM_DEF(profiler)
 		"cpu" = world.cpu,
 		"tick_usage" = world.tick_usage,
 		"map_cpu" = world.map_cpu,
-		"initialized" = Master.initializations_seconds > 0,
+		"initialized" = Kernel.initializations_seconds > 0,
 		"sleep_offline" = world.sleep_offline,
 		"subsystems" = subsystems,
 		"atmos_arena" = atmos_arena,
@@ -135,27 +152,8 @@ SUBSYSTEM_DEF(profiler)
 /// The diagnostics readout of a missing subsystem or service (shared; only encoded).
 GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 
-/// A world service's cost readout (it runs on the OM scheduler, not as a subsystem).
-/datum/controller/subsystem/profiler/proc/world_service_diagnostics(datum/world_service/target)
-	if(!target)
-		return GLOB.profiler_missing_diagnostics
-	var/list/stat = null
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	if(sched && target.lane)
-		var/datum/om/behaviour/B = om_registry().behaviour(target.lane)
-		stat = sched.stat_for(B.id)
-	return list(
-		"name" = target.name,
-		"active_ema_ms" = target.cost,
-		"total_ms" = target.total_ms,
-		"completed_runs" = target.steps,
-		"resuming" = target.resuming,
-		"om_lane_ms" = stat ? stat[OM_STAT_MS] : 0,
-		"status" = target.stat_line(),
-	)
-
-/// The same readout for a system that runs a fire() body on a work item (the counters it keeps; the rest read 0).
-/datum/controller/subsystem/profiler/proc/system_diagnostics(datum/system/target)
+/// The readout of a system that runs periodic work (the counters the kernel keeps for it; the rest read 0).
+/datum/system/profiler/proc/system_diagnostics(datum/system/target)
 	if(!target)
 		return GLOB.profiler_missing_diagnostics
 	return list(
@@ -171,53 +169,31 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		"allocation_last" = 0,
 		"allocation_average" = 0,
 		"completed_runs" = target.times_fired,
-		"paused_ticks" = target.run_slices,
+		"paused_ticks" = 0,
 		"slept_count" = 0,
 		"postponed_fires" = 0,
-		"state" = target.state,
+		"state" = null,
 	)
 
-/datum/controller/subsystem/profiler/proc/subsystem_diagnostics(datum/controller/subsystem/target)
-	if(!target)
-		return GLOB.profiler_missing_diagnostics
-	return list(
-		"name" = target.name,
-		"active_ema_ms" = target.cost,
-		"wall_ema_ms" = target.wall_cost,
-		"last_wall_ms" = target.wall_cost_last,
-		"last_active_ms" = target.active_cost_last,
-		"last_suspended_ms" = target.suspended_cost_last,
-		"last_slices" = target.run_slices_last,
-		"tick_usage" = target.tick_usage,
-		"tick_overrun" = target.tick_overrun,
-		"allocation_last" = target.tick_allocation_last,
-		"allocation_average" = target.tick_allocation_avg,
-		"completed_runs" = target.times_fired,
-		"paused_ticks" = target.paused_ticks,
-		"slept_count" = target.slept_count,
-		"postponed_fires" = target.postponed_fires,
-		"state" = target.state,
-	)
-
-/datum/controller/subsystem/profiler/Shutdown()
+/datum/system/profiler/on_shutdown()
 	if(CONFIG_GET(flag/auto_profile))
 		DumpFile(allow_yield = FALSE)
 		world.Profile(PROFILE_CLEAR, type = "sendmaps")
 	return ..()
 
-/datum/controller/subsystem/profiler/proc/StartProfiling()
+/datum/system/profiler/proc/StartProfiling()
 	world.Profile(PROFILE_START)
 	world.Profile(PROFILE_START, type = "sendmaps")
 
-/datum/controller/subsystem/profiler/proc/StopProfiling()
+/datum/system/profiler/proc/StopProfiling()
 	world.Profile(PROFILE_STOP)
 	world.Profile(PROFILE_STOP, type = "sendmaps")
 
-/datum/controller/subsystem/profiler/proc/DumpFile(allow_yield = TRUE)
+/datum/system/profiler/proc/DumpFile(allow_yield = TRUE)
 	var/timer = TICK_USAGE_REAL
 	var/current_profile_data = world.Profile(PROFILE_REFRESH, format = "json")
 	var/current_sendmaps_data = world.Profile(PROFILE_REFRESH, type = "sendmaps", format="json")
-	fetch_cost = MC_AVERAGE(fetch_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+	fetch_cost = KERNEL_AVERAGE(fetch_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
 	if(allow_yield)
 		CHECK_TICK
 
@@ -235,7 +211,7 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 	timer = TICK_USAGE_REAL
 	WRITE_FILE(prof_file, current_profile_data)
 	WRITE_FILE(sendmaps_file, current_sendmaps_data)
-	write_cost = MC_AVERAGE(write_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+	write_cost = KERNEL_AVERAGE(write_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
 
 /// Every Rust metric (counters, gauges, histograms; see verdigris/ffi/src/metrics.rs)
 /// from one verdigris call, decoded, or null if the library did not answer.

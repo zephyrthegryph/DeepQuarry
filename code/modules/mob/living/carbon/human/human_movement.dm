@@ -26,7 +26,7 @@
 		if(amount_hurt >= 25) //In enough pain for it to be significant?
 			. += CLAMP((amount_hurt / 25), 0, 4)
 
-	var/hungry = (500 - nutrition) / 5 //Fixed 500 here instead of our huge MAX_NUTRITION
+	var/hungry = (500 - nutrition_of(src)) / 5 //Fixed 500 here instead of our huge MAX_NUTRITION
 	if(hungry >= 70)
 		. += hungry/50
 
@@ -63,8 +63,8 @@
 	if(has_mutation(FAT))
 		. += 1.5
 
-	if (bodytemperature < species.cold_level_1)
-		. += (species.cold_level_1 - bodytemperature) / 10 * 1.75
+	if (body_temperature() < species.cold_level_1)
+		. += (species.cold_level_1 - body_temperature()) / 10 * 1.75
 
 	// Turf related slowdown
 	var/turf/T = get_turf(src)
@@ -169,7 +169,7 @@
 	if(!T)
 		return 0
 
-	if(T.movement_cost && !flying) //If you are flying you are probably not affected by the terrain on the ground.
+	if(T.movement_cost && !stat_value(src, STAT_FLYING)) //If you are stat_value(src, STAT_FLYING) you are probably not affected by the terrain on the ground.
 		var/turf_move_cost = T.movement_cost
 		if(locate_on(T, /obj/structure/catwalk)) //catwalks prevent turfs from slowing your
 			return 0
@@ -223,7 +223,7 @@
 	if(species.can_space_freemove || (species.can_zero_g_move && !istype(get_turf(src), /turf/space)))
 		return TRUE
 
-	if(flying) //If you're flying, you glide around!
+	if(stat_value(src, STAT_FLYING)) //If you're stat_value(src, STAT_FLYING), you glide around!
 		return TRUE
 
 	//Do we have a working jetpack?
@@ -238,13 +238,8 @@
 
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
-	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !flying)
-		if(OM_EMIT(get_equipped_item(SLOT_ID_SHOES), /datum/om/event/before/shoes_step_action, m_intent))
-			return
+	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !stat_value(src, STAT_FLYING))
+		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
+		PUBLISH_LEGACY(shoes, /datum/notice/shoes_step, src, m_intent)
 	return
 
-/mob/living/carbon/human/set_dir(new_dir)
-	. = ..()
-	if(. && (species.tail || tail_style))
-		//update_tail_showing() this is already called by update_inv_wear_suit
-		update_inv_wear_suit()

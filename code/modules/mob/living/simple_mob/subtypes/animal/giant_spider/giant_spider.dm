@@ -1,8 +1,6 @@
 /mob/living/simple_mob/animal/giant_spider/electric
-	base_attack_cooldown = 15
 
 /mob/living/simple_mob/animal/giant_spider/webslinger
-	base_attack_cooldown = 15
 
 // Slightly placeholder, mostly to replace ion hivebots on V4
 /mob/living/simple_mob/animal/giant_spider/ion
@@ -14,7 +12,6 @@
 
 	endurance = 90
 
-	base_attack_cooldown = 15
 	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/ion/pistol
 

@@ -55,6 +55,10 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/list/things = L?.slots[id]
 	return length(things) ? things[1] : null
 
+/// What is worn or held in a slot is the ledger's, which publishes SLOT_OCCUPANCY_KEY on every change of any slot: a requirement that asks what a mob
+/// wears is re-asked when it changes.
+READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
+
 /// Items on body zone `zone` (BP_*): every body-slot item whose slot hangs on
 /// that part, plus worn items whose coverage includes it.
 /mob/proc/items_on(zone)
@@ -63,12 +67,12 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!L)
 		return
 	var/part_flag = dq_zone_body_part_flag(zone)
-	for(var/datum/om/relation/slot/body/def in dq_slot_defs_for(src))
+	for(var/datum/relation_definition/slot/body/def in dq_slot_defs_for(src))
 		var/list/things = L.slots[def.slot_id]
 		if(!length(things))
 			continue
 		var/obj/item/I = things[1]
-		if((zone in def.required_parts) || (zone in def.any_parts) || (part_flag && (I.body_parts_covered & part_flag)))
+		if((zone in def.required_parts) || (zone in def.any_parts) || (part_flag && (worn_of(I).covers & part_flag)))
 			. += I
 
 /// The SLOT_ID_* id `I` is equipped in, or null (not ours, in the interior, or
@@ -154,18 +158,17 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	inventory_slot_changed(slot_id, thing, inserted)
 
 /// An item entered or left equip slot `slot_id`. Runs inside the move, so it
-/// only updates this mob's own state (icons, HUD, caches) and must not sleep or
-/// move anything. Behaviour that moves other things is in slot_vacated().
+/// only updates this mob's own state (HUD, caches) and must not sleep or
+/// move anything. Behaviour that moves other things is in slot_vacated(). The look needs nothing here: a draw that reads the
+/// slots hears their occupancy change.
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
-	if(istype(def) && def.redraw)
-		call(src, def.redraw)()
+	return
 
 /// An item left equip slot `slot_id` through the inventory procs. What that
 /// does to the rest of the inventory (pockets fall out with the jumpsuit, and
 /// so on). Override and call the parent.
 /mob/proc/slot_vacated(slot_id, obj/item/I)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
+	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
 	if(!istype(def))
 		return
 	for(var/id in def.drops_with)
@@ -187,6 +190,9 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/list/modifiers = params2list(params)
 
 	if(istype(equipped_item))
+		// The converted ops of the worn item (its pick-up/removal default, an item used on it) answer first; what no op answers goes on to the legacy chain.
+		if(op_resolve_click(src, equipped_item, active_item, GESTURE_CLICK, ORIGIN_CLICK, TRUE))
+			return TRUE
 		if(active_item)
 			equipped_item.attackby(active_item, src) //Wearing an item and item in hand.
 			return TRUE
@@ -216,7 +222,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		return 0
 	if(W.equip_refusal(src, slot, disable_warning, ignore_obstructions) || !equip_to_slot(W, slot, redraw_mob))
 		if(del_on_fail)
-			qdel(W)
+			spent(W)
 		else if(!disable_warning)
 			to_chat(src, span_red("You are unable to equip that.")) //Only print if del_on_fail is false
 		return 0
@@ -241,7 +247,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	//TG calls attempt_insert -> transferItemToLoc -> doUnEquip -> has_unequipped. This is where we do it instead since we don't have storage datums.
 	// An item worn over another (gloves over a ring, magboots over shoes) takes it in here.
 	has_unequipped(W, TRUE, slot)
-	if(QDELETED(W) || !W.move_into(src, id, src))
+	if(QDELETED(W) || !move_into(src, id, W, src))
 		return FALSE
 	if(old_id && old_id != id)
 		slot_vacated(old_id, W)
@@ -265,7 +271,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(W.loc == src && !remove_from_mob(W, B))
 		return FALSE
 	// The backpack's own rules were checked by the SLOT_ID_IN_BACKPACK predicate.
-	if(W.loc != B && !W.move_into(B, null, src))
+	if(W.loc != B && !move_into(B, null, W, src))
 		W.forceMove(B)
 	if(W.loc != B)
 		return FALSE
@@ -299,11 +305,11 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /// Whether slot `slot` can be reached now to put on or take off `I`: the item
 /// in the slot's covered_by slot mustn't cover it (slot definitions, body/slots.dm).
 /mob/proc/slot_is_accessible(slot, obj/item/I, mob/user=null)
-	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot)
+	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot)
 	if(!istype(def) || !def.covered_by)
 		return TRUE
 	var/obj/item/covering = get_equipped_item(def.covered_by)
-	if(covering && (covering.body_parts_covered & (I.body_parts_covered | def.cover_flags)))
+	if(covering && (worn_of(covering).covers & (worn_of(I).covers | def.cover_flags)))
 		to_chat(user, span_warning("\The [covering] is in the way."))
 		return FALSE
 	return TRUE
@@ -328,13 +334,13 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!istype(W))
 		return FALSE
 	if(QDELETED(W))
-		if(!(W.item_flags & DROPDEL))
+		if(!(worn_of(W).flags & DROPDEL))
 			log_runtime("[src] tried to pick up a qdeleted object [W]")
 		return FALSE
 	if(get_equipped_item(id))
 		return FALSE
 	var/old_id = inventory_slot_id(W)
-	if(!W.move_into(src, id, src))
+	if(!move_into(src, id, W, src))
 		return FALSE
 	if(old_id && old_id != id)
 		slot_vacated(old_id, W)
@@ -427,7 +433,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!force && !canUnEquip(I))
 		return FALSE
 	// From its equip slot to the interior: still ours, no longer worn or held.
-	if(!I.move_into(src, SLOT_ID_BODY, src))
+	if(!move_into(src, SLOT_ID_BODY, I, src))
 		return FALSE
 	if(client)
 		client.screen -= I
@@ -472,7 +478,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		if(id)
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)
-	OM_EMIT(src, /datum/om/event/mob_unequipped_item, item_dropping, target)
+	PUBLISH_LEGACY(src, /datum/notice/mob_unequipped_item, item_dropping, target)
 	on_equipment_changed()
 	return TRUE
 
@@ -480,6 +486,3 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 
-/mob/relations()
-	. = ..()
-	. += rel_one(nameof(s_active)) // the storage being viewed, anywhere nearby

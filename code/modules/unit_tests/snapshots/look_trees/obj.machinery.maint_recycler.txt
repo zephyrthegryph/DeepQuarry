@@ -1,0 +1,11 @@
+/obj/machinery/maint_recycler icon: code/modules/maint_recycler/icons/maint_recycler.dmi
+/obj/machinery/maint_recycler state: default
+/obj/machinery/maint_recycler dir: 2
+/obj/machinery/maint_recycler overlay: code/modules/maint_recycler/icons/maint_recycler.dmi:default:8:#000000
+/obj/machinery/maint_recycler underlay: code/modules/maint_recycler/icons/maint_recycler.dmi:underlay:-32767
+/obj/machinery/maint_recycler/c4_shot_probe icon: code/modules/maint_recycler/icons/maint_recycler.dmi
+/obj/machinery/maint_recycler/c4_shot_probe state: default
+/obj/machinery/maint_recycler/c4_shot_probe dir: 2
+/obj/machinery/maint_recycler/c4_shot_probe overlay: code/modules/maint_recycler/icons/maint_recycler.dmi:default:8:#000000
+/obj/machinery/maint_recycler/c4_shot_probe underlay: code/modules/maint_recycler/icons/maint_recycler.dmi:underlay:-32767
+

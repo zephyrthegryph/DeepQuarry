@@ -13,21 +13,24 @@
 	max_transfer_amount = 60
 	volume = 60
 	unacidable = FALSE
-	flags = OPENCONTAINER
+	flags = NONE
 	var/paint_type = "red"
 
-/obj/item/reagent_containers/glass/paint/afterattack(turf/simulated/target, mob/user, proximity)
-	if(!proximity) return
-	if(istype(target) && reagents.total_volume > 5)
-		act_message(user, target, others = span_warning("%T% has been splashed with something by %U%!"))
-		reagents.trans_to_turf(target, 5)
-	else
-		return ..()
+// A paint can paints a floor, 5 units at a time while it has more than that (in any stance: it is not splashed over it); everything else is the glass
+// container's.
+CAPABILITIES(/obj/item/reagent_containers/glass/paint)
+	op("paint", at_target(/turf/simulated), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), priority(above("reagent_container.splash")), when(req_reagents(5, more = TRUE)),
+		label("Paint"), then(PROC_REF(painted)))
+	configure(reagents(contents_from = PROC_REF(paint_contents), data = list(REAGENT_ID_PAINT = nameof(paint_type))))
 
-/obj/item/reagent_containers/glass/paint/Initialize(mapload)
-	.=..()
-	if(paint_type)
-		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): data argument
+/obj/item/reagent_containers/glass/paint/proc/painted(datum/act/op/A)
+	act_message(A.actor, A.target, others = span_warning("%T% has been splashed with something by %U%!"))
+	reagents.trans_to_turf(A.target, 5)
+	return OP_OK
+
+/// A coloured bucket starts full of its paint (reagents(contents_from =); the paint type is the reagent's data).
+/obj/item/reagent_containers/glass/paint/proc/paint_contents()
+	return paint_type ? list(REAGENT_ID_PAINT = volume) : null
 
 /obj/item/reagent_containers/glass/paint/red
 	icon_state = "paint_red"

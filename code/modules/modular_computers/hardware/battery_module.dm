@@ -9,6 +9,10 @@
 	var/battery_rating = 750
 	var/obj/item/cell/battery = null
 
+CAPABILITIES(/obj/item/computer_hardware/battery_module)
+	owns_one(nameof(battery), /obj/item/cell)
+	param(nameof(cell_type), pos = 1, apply = PROC_REF(fit_cell))
+
 /obj/item/computer_hardware/battery_module/advanced
 	name = "advanced battery"
 	desc = "An advanced power cell, often used in most laptops. It is too large to be fitted into smaller devices. It's rating is 1100."
@@ -50,8 +54,8 @@
 	hardware_size = 1
 	battery_rating = 30000
 
-/obj/item/computer_hardware/battery_module/lambda/Initialize(mapload)
-	. = ..(mapload, /obj/item/cell/infinite)
+/obj/item/computer_hardware/battery_module/lambda
+	cell_type = /obj/item/cell/infinite
 
 /obj/item/computer_hardware/battery_module/get_slot_var()
 	return "battery_module"
@@ -60,19 +64,22 @@
 	..()
 	to_chat(user, "Internal battery charge: [battery.charge]/[battery.maxcharge] CU")
 
-/obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
-	if(ispath(cell_type))
-		own_set(src, nameof(battery), new cell_type(src))
+/// The cell type the module is made with (its constructor param), or null for a basic cell.
+/obj/item/computer_hardware/battery_module/var/cell_type
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The module's cell, empty, at the module's rating.
+/obj/item/computer_hardware/battery_module/proc/fit_cell(path)
+	if(ispath(path))
+		rel_set(src, nameof(battery), new path(src))
 	else
-		own_set(src, nameof(battery), new/obj/item/cell(src))
-	battery.maxcharge = battery_rating
-	battery.charge = 0
-	. = ..()
+		rel_set(src, nameof(battery), new/obj/item/cell(src))
+	battery.set_maxcharge(battery_rating)
+	battery.set_charge(0)
 
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()
 	if(battery)
-		battery.charge = battery.maxcharge
+		battery.set_charge(battery.maxcharge)
 
 /obj/item/computer_hardware/battery_module/get_cell()
 	return battery

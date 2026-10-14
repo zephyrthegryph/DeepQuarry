@@ -1,0 +1,27 @@
+/// Palette state updates work for its HUD owner even outside a native click.
+/datum/unit_test/interim_hud_palette_owner/Run()
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/datum/hud/hud = allocate(/datum/hud, actor)
+	hud.build_action_groups()
+	var/atom/movable/screen/button_palette/palette = hud.toggle_palette
+	TEST_ASSERT_NOTNULL(palette, "the real HUD creates its palette")
+	TEST_ASSERT_EQUAL(palette.our_hud(), hud, "the palette belongs to the actual HUD")
+	palette.set_expanded(TRUE)
+	TEST_ASSERT(!palette.expanded, "a palette with no actions refuses expansion")
+	TEST_ASSERT_EQUAL(palette.name, "Show Buttons", "the empty palette retains its collapsed label")
+	var/atom/movable/screen/movable/action_button/button = allocate(/atom/movable/screen/movable/action_button)
+	rel_add(hud.palette_actions, nameof(/datum/action_group::actions), button)
+	palette.set_expanded(TRUE)
+	TEST_ASSERT(palette.expanded, "a populated palette expands without ambient usr")
+	TEST_ASSERT_EQUAL(palette.name, "Hide Buttons", "expansion updates the real label")
+	hud.palette_actions.remove_action(button)
+	TEST_ASSERT(!palette.expanded, "removing the last real palette action collapses it")
+	TEST_ASSERT_EQUAL(palette.name, "Show Buttons", "automatic collapse restores its label")
+
+/datum/unit_test/interim_hud_drag_explicit_view/Run()
+	var/atom/movable/screen/movable/button = allocate(/atom/movable/screen/movable)
+	TEST_ASSERT_NULL(button.mouse_params_to_position("icon-x=10", "15x15"), "missing screen location is refused")
+	TEST_ASSERT_EQUAL(button.mouse_params_to_position("screen-loc=3:20,4:24", "15x15"), "3:4,4:8", "free dragging centers the button on the supplied pixel coordinates")
+	button.snap2grid = TRUE
+	TEST_ASSERT_EQUAL(button.mouse_params_to_position("screen-loc=3:20,4:24", "15x15"), "3,4", "grid dragging removes pixel offsets")
+	TEST_ASSERT_EQUAL(button.mouse_params_to_position("screen-loc=EAST:20,NORTH:24", "5x7"), "5,7", "relative coordinates respect the explicit rectangular view bounds")

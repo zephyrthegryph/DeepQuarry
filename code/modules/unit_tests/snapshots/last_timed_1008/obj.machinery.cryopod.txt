@@ -1,0 +1,40 @@
+@obj.machinery human|none
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery robot|none
++1 menu: Eject Pod
+@obj.machinery ai|none
+@obj ghost|none
++0 menu: Eject Pod (refused: You can't reach that.)
++1 menu: Enter Pod (refused: You can't reach that.)
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/tool/wrench
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/multitool
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item/card/id
++0 menu: Eject Pod
++1 menu: Enter Pod
+@obj.machinery human|/obj/item
++0 menu: Eject Pod
++1 menu: Enter Pod
+keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

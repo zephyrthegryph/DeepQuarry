@@ -1,0 +1,2 @@
+/obj/structure/closet/statue deleted itself on creation
+

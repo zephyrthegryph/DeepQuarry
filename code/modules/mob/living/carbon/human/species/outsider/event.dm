@@ -112,7 +112,7 @@ Variables you may want to make use of are:
 /datum/species/event1/proc/set_limbset(setnum = 1) //Will require existing ones to be respawned for changes to take effect.
 	switch(setnum)
 		if(1) //Normal.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =	list("path" = /obj/item/organ/external/chest),
 				BP_GROIN =	list("path" = /obj/item/organ/external/groin),
 				BP_HEAD =	list("path" = /obj/item/organ/external/head),
@@ -124,9 +124,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
-				)
+				))
 		if(2) //No broken bones.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unbreakable),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unbreakable),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/unbreakable),
@@ -138,9 +138,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unbreakable),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unbreakable),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unbreakable)
-				)
+				))
 		if(3) //No removing from the body.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/unseverable),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/unseverable),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/unseverable),
@@ -152,9 +152,9 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/unseverable),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/unseverable),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/unseverable)
-				)
+				))
 		if(4) //No breaking, OR removing from the body. For things that are more monsterous.
-			has_limbs = list(
+			set_has_limbs(list(
 				BP_TORSO =  list("path" = /obj/item/organ/external/chest/indestructible),
 				BP_GROIN =  list("path" = /obj/item/organ/external/groin/indestructible),
 				BP_HEAD =   list("path" = /obj/item/organ/external/head/indestructible),
@@ -166,15 +166,17 @@ Variables you may want to make use of are:
 				BP_R_HAND = list("path" = /obj/item/organ/external/hand/right/indestructible),
 				BP_L_FOOT = list("path" = /obj/item/organ/external/foot/indestructible),
 				BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right/indestructible)
-				)
+				))
 	return
 
 /datum/species/event1/proc/choose_limbset()
 	var/static/list/limb_sets = list("Normal" = 1, "Unbreakable" = 2, "Unseverable" = 3, "Indestructible" = 4)
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
+	open_request(src, /datum/prompt/choice, PROC_REF(limbset_chosen), answerer = usr, question = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets, timeout = 0)
 
-/datum/species/event1/proc/limbset_chosen(datum/om/prompt/choice/ask)
-	set_limbset(ask.choices[ask.choice])
+/datum/species/event1/proc/limbset_chosen(datum/act/request/A)
+	var/datum/prompt/choice/asked = A.answer
+	if(asked)
+		set_limbset(asked.choices[asked.value])
 
 /datum/species/event1/proc/toggle_thermal()
 	vision_flags ^= SEE_MOBS
@@ -186,32 +188,32 @@ Variables you may want to make use of are:
 	vision_flags ^= SEE_OBJS
 
 /datum/species/event1/proc/toggle_infection()
-	flags ^= NO_INFECT
+	set_flags(flags ^ NO_INFECT)
 
 /datum/species/event1/proc/toggle_noslip()
-	flags ^= NO_SLIP
+	set_flags(flags ^ NO_SLIP)
 
 /datum/species/event1/proc/toggle_cloning()
-	flags ^= NO_SLEEVE
+	set_flags(flags ^ NO_SLEEVE)
 
 /datum/species/event1/proc/toggle_dna()
-	flags ^= NO_DNA
+	set_flags(flags ^ NO_DNA)
 
 /datum/species/event1/proc/toggle_defibbing()
-	flags ^= NO_DEFIB
+	set_flags(flags ^ NO_DEFIB)
 
 /datum/species/event1/proc/toggle_pain()
-	flags ^= NO_PAIN
+	set_flags(flags ^ NO_PAIN)
 	// The flag feeds BF_PAIN_IMMUNITY: refresh the factors of every body wearing this species.
 	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		if(H.species == src)
 			H.body?.invalidate(BODY_DIRTY_FACTORS)
 
 /datum/species/event1/proc/toggle_embedding()
-	flags ^= NO_EMBED
+	set_flags(flags ^ NO_EMBED)
 
 /datum/species/event1/proc/toggle_plant() //Maybe it's a distant cousin of the Venus Fly Trap.
-	flags ^= IS_PLANT
+	set_flags(flags ^ IS_PLANT)
 
 /datum/species/event1/get_bodytype(mob/living/carbon/human/H) //Default to human sprites, if they're based on another species, var edit use_bodyshape to the correct thing in _defines/mobs.dm of the species you want to use.
 	return use_bodyshape
@@ -229,3 +231,6 @@ Variables you may want to make use of are:
 /datum/species/event1/sub2
 	name = SPECIES_EVENT3
 	name_plural = SPECIES_EVENT3
+
+/datum/species/event1/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	return list(list(src, nameof(use_bodyshape)))

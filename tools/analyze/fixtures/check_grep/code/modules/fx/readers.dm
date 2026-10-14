@@ -1,0 +1,10 @@
+/proc/reader_user()
+	cached = get_foo()
+	src.cached = vg_get_foo()
+	var/local = get_foo()
+	x.y = air_query_cell(1)
+	cached = get_other()
+	cached = get_foo_bar()
+	cached = vg_air_query_cell(2)
+	cached == get_foo()
+	cached = get_foo() // ALLOW(check_grep): reason

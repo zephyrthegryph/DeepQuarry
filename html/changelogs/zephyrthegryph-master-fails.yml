@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Undoing a construction stage (cutting airlock or APC wiring, dismantling) refunds the materials again"
+  - bugfix: "The APC frame no longer asks which frame type to build"
+  - bugfix: "A shovel clicked on a growplot in combat mode fills it in, and in disarm stance digs it, instead of hitting it"

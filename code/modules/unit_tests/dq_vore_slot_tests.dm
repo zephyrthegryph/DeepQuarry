@@ -28,14 +28,14 @@
 	TEST_ASSERT(length(pred.vore_organs), "the pred should have a belly")
 	for(var/obj/belly/B as anything in pred.vore_organs)
 		TEST_ASSERT_NULL(B.cycle_token, "empty [B] should not cycle")
-		TEST_ASSERT(!om_timer_slot_pending(B, "liquid_timer"), "empty [B] should hold no timer")
-		TEST_ASSERT(!om_deadline_pending(B, /datum/om/behaviour/belly_cycle) && !om_timer_slot_pending(B, "liquid_timer"), "empty [B] should hold no scheduled work")
+		TEST_ASSERT(!after_pending(B, "liquid_timer"), "empty [B] should hold no timer")
+		TEST_ASSERT(!granted(B, /datum/capability/belly_cycle) && !after_pending(B, "liquid_timer"), "empty [B] should hold no scheduled work")
 		TEST_ASSERT(!(B.datum_flags & DF_ISPROCESSING), "empty [B] should not be on a processing subsystem")
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")
-		TEST_ASSERT_NULL(B.om_sleep_violation(), "empty [B] breaks its sleep rule")
-	var/obj/belly/mine = pred.vore_selected
-	var/obj/belly/theirs = other.vore_selected
+		TEST_ASSERT_NULL(B.sleep_violation(), "empty [B] breaks its sleep rule")
+	var/obj/belly/mine = vore_selected_of(pred)
+	var/obj/belly/theirs = vore_selected_of(other)
 	TEST_ASSERT(mine.digest_messages_prey == theirs.digest_messages_prey, "two default bellies should share one digest message list")
 	TEST_ASSERT(mine.emote_lists == theirs.emote_lists, "two default bellies should share one emote table")
 	TEST_ASSERT(mine.generated_reagents == theirs.generated_reagents, "two default bellies should share one liquid table")
@@ -59,19 +59,19 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	var/obj/belly/B2 = new /obj/belly(pred)
 	B2.name = "Second"
 
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom should succeed")
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be in the belly")
 	TEST_ASSERT_EQUAL(B.slot_entry_id(prey) ? TRUE : FALSE, TRUE, "prey should hold an entry in the belly's slot")
-	var/datum/om/relation/slot/def = dq_path_slot_of(B, prey)
+	var/datum/relation_definition/slot/def = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(def?.slot_id, BELLY_SLOT_INTERIOR, "prey should be in the belly interior slot")
 	TEST_ASSERT_EQUAL(def?.exposure, SLOT_EXPOSURE_SEALED, "a belly is sealed")
 	TEST_ASSERT(def?.reaches_mobs, "a belly reaches the mobs inside")
 	TEST_ASSERT(B.cycle_token, "an occupied belly should cycle")
-	TEST_ASSERT_NULL(B.om_sleep_violation(), "occupied belly breaks its schedule rule")
+	TEST_ASSERT_NULL(B.sleep_violation(), "occupied belly breaks its schedule rule")
 
 	// Struggle: inescapable holds; a sure transfer moves the prey on through the ledger.
 	B.escapable = B_ESCAPABLE_NONE
@@ -83,7 +83,7 @@
 	B.transferlocation = B2.name
 	B.relay_resist(prey)
 	TEST_ASSERT_EQUAL(prey.loc, B2, "a sure transfer should move the prey to the second belly")
-	var/datum/om/relation/slot/prey_slot = dq_path_slot_of(B2, prey)
+	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B2, prey)
 	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the transfer should land in the second belly's slot")
 	TEST_ASSERT_NULL(B.cycle_token, "the emptied belly should stop cycling")
 	TEST_ASSERT(B2.cycle_token, "the occupied second belly should cycle")
@@ -100,22 +100,22 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "a willing prey should be devourable")
-	prey.devourable = FALSE
+	prey.vore_prefs.devourable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't able to be devoured.", "devour refusal reason")
 	TEST_ASSERT(!pred.begin_instant_nom(pred, prey, pred, B), "an unwilling prey must not be eaten")
 	TEST_ASSERT(prey.loc != B, "an unwilling prey must stay out")
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 
-	prey.digestable = FALSE
+	prey.vore_prefs.digestable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "they don't allow digestion", "digest refusal reason")
-	prey.absorbable = FALSE
+	prey.vore_prefs.absorbable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_absorb, pred, prey), "they don't allow absorption", "absorb refusal reason")
-	prey.permit_healbelly = FALSE
+	prey.vore_prefs.permit_healbelly = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_heal, pred, prey), "they don't allow healing bellies", "heal refusal reason")
-	prey.strip_pref = FALSE
+	prey.vore_prefs.strip_pref = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_strip, pred, prey), "they don't allow stripping", "strip refusal reason")
 
 	// A refused mode holds: an indigestible prey takes no digestion damage.
@@ -141,8 +141,8 @@
 	prey_f.set_nutrition(500)
 	vore_test_cycles(BS, 4, 6)
 	vore_test_cycles(BF, 12, 2)
-	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "drain totals differ: [prey_s.nutrition] over 4x6 s, [prey_f.nutrition] over 12x2 s")
-	TEST_ASSERT(abs(prey_s.nutrition - 500 * (0.95 ** 4)) < 0.01, "drain should take 5% per 6 s: [prey_s.nutrition]")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - nutrition_of(prey_f)) < 0.01, "drain totals differ: [nutrition_of(prey_s)] over 4x6 s, [nutrition_of(prey_f)] over 12x2 s")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - 500 * (0.95 ** 4)) < 0.01, "drain should take 5% per 6 s: [nutrition_of(prey_s)]")
 
 	// Shrink: 1% of size per baseline cycle.
 	slow = vore_test_pair()
@@ -169,13 +169,13 @@
 	prey_f.set_nutrition(400)
 	vore_test_cycles(BS, 1, 12)
 	vore_test_cycles(BF, 2, 6)
-	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "a late cycle should catch up: [prey_s.nutrition] vs [prey_f.nutrition]")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - nutrition_of(prey_f)) < 0.01, "a late cycle should catch up: [nutrition_of(prey_s)] vs [nutrition_of(prey_f)]")
 
 /// A belly on `pair`'s pred in `mode` with the prey inside.
 /datum/unit_test/proc/vore_rate_belly(list/pair, mode)
 	var/mob/living/pred = pair[1]
 	var/mob/living/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	B.digest_mode = mode
 	B.nom_atom(prey, pred)
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be inside for the rate test")
@@ -195,7 +195,7 @@
 		if(B.digested_prey_count)
 			break
 		if(!QDELETED(prey) && prey.loc == B)
-			om_run_frame_now(prey, /datum/om/pipeline/life)
+			seq_run_frame_now(prey, /datum/sequence/life)
 		B.belly_cycle(BELLY_BASELINE_TICK / (1 SECONDS))
 	TEST_ASSERT_EQUAL(B.digested_prey_count, 1, "a digest belly should finish its prey (stat [prey?.stat])")
 
@@ -205,7 +205,7 @@
 	var/mob/living/carbon/human/absorbee = pair[2]
 	absorbee.set_nutrition(110)
 	vore_test_cycles(B, 10)
-	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition [absorbee.nutrition])")
+	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition_of(src) [nutrition_of(absorbee)])")
 	B.release_all_contents(TRUE, TRUE)
 	TEST_ASSERT(!absorbee.absorbed, "release should unabsorb")
 

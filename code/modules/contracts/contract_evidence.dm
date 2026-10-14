@@ -68,11 +68,11 @@
 		identity = subject_identities[body_key]
 		if(identity)
 			subject_identities -= body_key
-			subject_identities[key] = identity
+			subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	if(!identity)
 		identity = new("DQ-SUB-[next_subject_id++]", subject)
-		subject_identities[key] = identity
-		subject_identities[identity.id] = identity
+		subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+		subject_identities[identity.id] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	else
 		identity.update(subject)
 	return identity
@@ -91,7 +91,7 @@
 		return null
 	var/id = "DQ-EV-[next_evidence_id++]"
 	var/datum/contract_evidence/evidence = new(id, kind, subject_id, creator_account, source, payload)
-	evidence_by_id[id] = evidence
+	rel_add(src, nameof(evidence_by_id), evidence, id)
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_REGISTERED, list(
 		"subject_id" = subject_id,
 		"actor_account" = creator_account,
@@ -119,8 +119,8 @@
 /datum/system/contracts/proc/unregister_evidence(datum/contract_evidence/evidence)
 	if(!evidence || evidence_by_id[evidence.id] != evidence)
 		return
-	evidence_by_id -= evidence.id
-	qdel(evidence)
+	rel_take(src, nameof(evidence_by_id), key = evidence.id)
+	spent(evidence)
 
 /datum/system/contracts/proc/void_evidence(evidence_id, reason)
 	var/datum/contract_evidence/evidence = evidence_by_id[evidence_id]
@@ -190,7 +190,7 @@
 	return result
 
 /datum/system/contracts/proc/schedule_contract_evidence_prune(contract_id)
-	om_after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), contract_id)
+	after(src, CONTRACT_EVIDENCE_RETENTION, PROC_REF(prune_contract_evidence), with = list(contract_id))
 
 /datum/system/contracts/proc/prune_contract_evidence(contract_id)
 	for(var/evidence_id in evidence_by_id.Copy())

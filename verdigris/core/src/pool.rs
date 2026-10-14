@@ -37,6 +37,12 @@ impl Pool {
         })
     }
 
+    /// False once [`Pool::shutdown`] has run.
+    #[must_use]
+    pub fn is_running(&self) -> bool {
+        self.pool.is_some()
+    }
+
     /// Runs `f` on the pool; a no-op after [`Pool::shutdown`].
     pub fn spawn(&self, f: impl FnOnce() + Send + 'static) {
         if let Some(p) = &self.pool {

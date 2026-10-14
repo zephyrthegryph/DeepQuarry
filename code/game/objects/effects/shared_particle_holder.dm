@@ -1,6 +1,6 @@
-#define SHARED_PARTICLE_HOLDER_INDEX 1
-#define SHARED_PARTICLE_USER_NUM_INDEX 2
-// Assoc list of particle type/key -> list(list of particle holders, number of particle users)
+// Assoc list of particle type/key -> list of particle holder handles. Handles, not holders: a holder deleted
+// elsewhere stops resolving instead of being kept alive by the pool. Each holder counts its own users and is
+// qdel'd when the last one leaves, so no pooled handle ever outlives an unqdel'd holder.
 GLOBAL_LIST_EMPTY(shared_particles)
 
 //A more abstract version of particle holder not bound to a specific object
@@ -15,12 +15,21 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	/// Holds info about how this particle emitter works
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
+	/// How many atoms currently show this holder in their vis_contents.
+	var/shared_users = 0
 
-/obj/effect/abstract/shared_particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
+CAPABILITIES(/obj/effect/abstract/shared_particle_holder)
+	param(nameof(particle_path), pos = 1)
+	param(nameof(particle_flags), pos = 2)
+
+/// The particles a holder shows (its constructor param).
+/obj/effect/abstract/shared_particle_holder/var/particle_path = /particles/smoke
+
+// ALLOW(init/INSTANCE_STATE): a particle holder leaves the map for its parent's vis_contents and makes its particles
+/obj/effect/abstract/shared_particle_holder/Initialize(mapload)
 	. = ..()
 	// Shouldn't exist outside of nullspace
 	moveToNullspace()
-	src.particle_flags = particle_flags
 	particles = new particle_path()
 
 
@@ -39,25 +48,33 @@ GLOBAL_LIST_EMPTY(shared_particles)
 	var/atom/movable/play_pretend = src
 	var/particle_key = custom_key || "[particle_type]"
 	if (!GLOB.shared_particles[particle_key])
-		GLOB.shared_particles[particle_key] = list(list(new /obj/effect/abstract/shared_particle_holder(null, particle_type, particle_flags)), 1)
-		play_pretend.vis_contents += GLOB.shared_particles[particle_key][SHARED_PARTICLE_HOLDER_INDEX][1]
-		return GLOB.shared_particles[particle_key][SHARED_PARTICLE_HOLDER_INDEX][1]
+		var/obj/effect/abstract/shared_particle_holder/first_holder = new(null, particle_type, particle_flags)
+		first_holder.shared_users = 1
+		GLOB.shared_particles[particle_key] = list(entity_handle(first_holder))
+		play_pretend.vis_contents += first_holder
+		return first_holder
 
-	var/list/type_holders = GLOB.shared_particles[particle_key][SHARED_PARTICLE_HOLDER_INDEX]
-	for (var/obj/effect/abstract/shared_particle_holder/particle_holder as anything in type_holders)
+	var/list/type_holders = GLOB.shared_particles[particle_key]
+	var/list/live_holders = list()
+	for (var/holder_handle in type_holders.Copy())
+		var/obj/effect/abstract/shared_particle_holder/particle_holder = resolve_handle(holder_handle)
+		if (!particle_holder)
+			type_holders -= holder_handle // deleted elsewhere
+			continue
+		live_holders += particle_holder
 		if (particle_holder in play_pretend.vis_contents)
 			return particle_holder
 
-	if (length(type_holders) < pool_size)
+	if (length(live_holders) < pool_size)
 		var/obj/effect/abstract/shared_particle_holder/new_holder = new(null, particle_type, particle_flags)
-		type_holders += new_holder
+		type_holders += entity_handle(new_holder)
 		play_pretend.vis_contents += new_holder
-		GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] += 1
+		new_holder.shared_users = 1
 		return new_holder
 
-	var/obj/effect/abstract/shared_particle_holder/particle_holder = pick(type_holders)
+	var/obj/effect/abstract/shared_particle_holder/particle_holder = pick(live_holders)
 	play_pretend.vis_contents += particle_holder
-	GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] += 1
+	particle_holder.shared_users++
 	return particle_holder
 
 /area/add_shared_particles(particle_type, custom_key = null, particle_flags = NONE, pool_size = 3)
@@ -66,7 +83,7 @@ GLOBAL_LIST_EMPTY(shared_particles)
 /* Removes shared particles from object's vis_contents and disposes of it if nothing uses that type/key of particle
  * particle_key can be either a type (if no custom_key was passed) or said custom_key
  */
-/atom/proc/remove_shared_particles(particle_key, delete_on_empty = TRUE)
+/atom/proc/remove_shared_particles(particle_key)
 	if (!particle_key)
 		return
 
@@ -77,21 +94,24 @@ GLOBAL_LIST_EMPTY(shared_particles)
 		return
 
 	var/atom/movable/play_pretend = src
-	var/list/type_holders = GLOB.shared_particles[particle_key][SHARED_PARTICLE_HOLDER_INDEX]
-	for (var/obj/effect/abstract/shared_particle_holder/particle_holder as anything in type_holders)
+	var/list/type_holders = GLOB.shared_particles[particle_key]
+	for (var/holder_handle in type_holders.Copy())
+		var/obj/effect/abstract/shared_particle_holder/particle_holder = resolve_handle(holder_handle)
+		if (!particle_holder)
+			type_holders -= holder_handle // deleted elsewhere
+			continue
 		if (!(particle_holder in play_pretend.vis_contents))
 			continue
 
 		play_pretend.vis_contents -= particle_holder
-		GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] -= 1
-
-		if (delete_on_empty && GLOB.shared_particles[particle_key][SHARED_PARTICLE_USER_NUM_INDEX] <= 0)
-			QDEL_LIST(type_holders)
+		particle_holder.shared_users--
+		if (particle_holder.shared_users <= 0)
+			type_holders -= holder_handle
+			spent(particle_holder)
+		if (!length(type_holders))
 			GLOB.shared_particles -= particle_key
 		return
 
-/area/remove_shared_particles(particle_key, delete_on_empty = TRUE)
+/area/remove_shared_particles(particle_key)
 	CRASH("remove_shared_particles was called on an area [src] ([type]) trying to add [particle_key]! Only turfs and movables support shared particles.")
 
-#undef SHARED_PARTICLE_HOLDER_INDEX
-#undef SHARED_PARTICLE_USER_NUM_INDEX

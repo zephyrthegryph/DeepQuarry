@@ -3,8 +3,6 @@
 	name = "blob"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob"
-	light_range = 2
-	light_color = "#b5ff5b"
 	desc = "Some blob creature thingy"
 	density = TRUE
 	opacity = 0
@@ -17,17 +15,13 @@
 	var/fire_resist = 1
 	var/expandType = /obj/effect/blob
 
-/obj/effect/blob/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
 	return FALSE
 
-DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 
 /// A blast hurts the blob by its own severity ladder, scaled down by its brute resistance (instead of the blast packet).
-/obj/effect/blob/proc/blob_blast_damage(datum/damage_packet/packet)
+/obj/effect/blob/proc/blob_blast_damage(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(1)
 			take_damage(rand(100, 120) / brute_resist)
@@ -35,16 +29,18 @@ DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 			take_damage(rand(60, 100) / brute_resist)
 		if(3)
 			take_damage(rand(20, 60) / brute_resist)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/blob/proc/appearance_state()
 	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
 
-APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/effect/blob/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
 
 /obj/effect/blob/on_update_integrity(old_value, new_value)
 	. = ..()
-	update_icon()
 
 /obj/effect/blob/atom_destruction(damage_flag)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
@@ -76,7 +72,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 		return
 	var/obj/structure/grille/GR = locate_on(T, /obj/structure/grille)
 	if(GR)
-		qdel(GR)
+		destroyed(GR, src)
 		return
 	for(var/obj/structure/reagent_dispensers/fueltank/Fuel in turf_contents_of_type(T, /obj/structure/reagent_dispensers/fueltank))
 		Fuel.ex_act(2)
@@ -87,7 +83,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 			return
 	var/obj/structure/foamedmetal/F = locate_on(T, /obj/structure/foamedmetal)
 	if(F)
-		qdel(F)
+		destroyed(F, src)
 		return
 	var/obj/structure/inflatable/I = locate_on(T, /obj/structure/inflatable)
 	if(I)
@@ -118,7 +114,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 	regen()
 	animate(src, color = "#FF0000", time=1)
 	animate(color = "#FFFFFF", time=4, easing=ELASTIC_EASING)
-	om_after(src, 0.5 SECONDS, PROC_REF(pulse_on), forceLeft, dirs)
+	after(src, 0.5 SECONDS, PROC_REF(pulse_on), with = list(forceLeft, dirs))
 
 /// The rest of a pulse, after its flash.
 /obj/effect/blob/proc/pulse_on(forceLeft, list/dirs)
@@ -138,40 +134,47 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 		return 0
 	return blob_damage(P.damage, damage_type)
 
-EXTEND_INTERACTIONS(/obj/effect/blob, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_blob)), \
-)
+CAPABILITIES(/obj/effect/blob)
+	configure(light_glow(range = 2, color = "#b5ff5b"))
+	op("hit_blob", item(/obj/item), then(PROC_REF(interaction_hit_blob)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blob_blast_damage))))
 
 /// Old attackby: any item hits the blob (afterattack still follows, as before).
-/obj/effect/blob/proc/interaction_hit_blob(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/blob/proc/interaction_hit_blob(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
 	var/damage_type = W.obj_damage_type()
 	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
-		blob_damage(W.force, damage_type)
-	return INTERACTION_HANDLED_PASS
+		blob_damage(combat_of(W).force, damage_type)
+	return OP_PASS
 
 /obj/effect/blob/core
 	name = "blob core"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob_core"
-	light_range = 3
-	light_color = "#ffc880"
 	max_integrity = 200
 	brute_resist = 2
 	fire_resist = 2
 
 	expandType = /obj/effect/blob/shield
 
-APPEARANCE_NONE(/obj/effect/blob/core)
+/// The look: the mapped sprite, none of what the types above draw.
+/obj/effect/blob/core/draw(datum/look/look)
+	..()
+	// the mapped sprite, without the parent's states and layers
+	look.state(null)
 
-DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/blob/core)
+	configure(light_glow(range = 3, color = "#ffc880"))
+	every(2 SECONDS, then(PROC_REF(blob_core_step)))
 
-/obj/effect/blob/core/periodic_step()
+/obj/effect/blob/core/proc/blob_core_step(datum/act/timer/A)
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
 	pulse(20, list(SOUTH, EAST))
@@ -181,14 +184,16 @@ DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
 	name = "strong blob"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob_idle"
-	light_range = 3
 	desc = "Some blob creature thingy"
 	max_integrity = 60
 	brute_resist = 1
 	fire_resist = 2
 
-/obj/effect/blob/shield/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/effect/blob/shield)
+	configure(light_glow(range = 3))
+	after_init(0, then(PROC_REF(blob_shield_tiles)))
+
+/obj/effect/blob/shield/proc/blob_shield_tiles(datum/act/timer/A)
 	update_nearby_tiles()
 
 /obj/effect/blob/shield/appearance_state()

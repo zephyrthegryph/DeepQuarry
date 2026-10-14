@@ -18,13 +18,14 @@
 	icon_scale_x = 1.2
 	icon_scale_y = 1.2
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/medical/odysseus, "hud", /obj/item/clothing/glasses/hud/health/mech)
+CAPABILITIES(/obj/mecha/medical/odysseus)
+	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
 
 /obj/mecha/medical/odysseus/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())
 		if(H.get_equipped_item(SLOT_ID_EYES))
 			occupant_message(span_red("[H.get_equipped_item(SLOT_ID_EYES)] prevent you from using [src] [hud]!"))
-		else if(hud.move_into(H, SLOT_ID_EYES, H))
+		else if(move_into(H, SLOT_ID_EYES, hud, H))
 			H.recalculate_vis()
 		return 1
 	else
@@ -97,24 +98,22 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/medical/odysseus, "hud", /obj/item/clothing/gla
 
 			C.images += holder
 */
-/obj/mecha/medical/odysseus/loaded/Initialize(mapload)
-	. = ..()
-	var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/sleeper
-	ME.attach(src)
-	ME = new /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun
-	ME.attach(src)
+TYPE_TABLE(/obj/mecha/medical/odysseus/loaded, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/sleeper, \
+		/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun \
+		))
 
 //Meant for random spawns.
 /obj/mecha/medical/odysseus/old
+	max_integrity = 50 // just slightly worse
 	desc = "An aging combat exosuit utilized by many corporations. Originally developed to combat hostile alien lifeforms. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/medical/odysseus/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 50	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))
 
 
 // === merged from odysseus_vr.dm during hard-fork de-suffix (verified no override-order change) ===

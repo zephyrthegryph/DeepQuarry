@@ -113,6 +113,8 @@ GLOBAL_LIST_EMPTY(mannequins)
 /proc/make_datum_reference_lists()
 	var/list/paths
 
+	chameleon_choices_build()
+
 	//Hair - Initialise all /datum/sprite_accessory/hair into an list indexed by hair-style name
 	paths = subtypesof(/datum/sprite_accessory/hair)
 	for(var/path in paths)
@@ -178,7 +180,7 @@ GLOBAL_LIST_EMPTY(mannequins)
 			continue
 
 		S = new T
-		S.race_key = rkey //Used in mob icon caching.
+		S.set_race_key(rkey) //Used in mob icon caching.
 		GLOB.all_species[S.name] = S
 
 	//Shakey shakey shake
@@ -584,12 +586,11 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	))
 
 //global lists I found in various files and moved here for housekeeping
-GLOBAL_LIST_EMPTY(stool_cache) //haha stool // ALLOW(cache): hot overlay pooling; readers out of scope
 GLOBAL_LIST_EMPTY(emotes_by_key)
 GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)
 GLOBAL_LIST_EMPTY(id_card_states)
-/// Gamma loot paths handed out (their items are in GLOB.poi_service.allocated_gamma_items).
+/// Gamma loot paths handed out (their items are in SSpois.gamma_items()).
 GLOBAL_LIST_EMPTY(allocated_gamma_loot)
 
 GLOBAL_LIST_INIT(unique_gamma_loot, list(
@@ -642,7 +643,7 @@ GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list
 
 
 // color-dir-dry
-GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): hot overlay pooling
+GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): a pool of fluid-track overlays reused on every step, too hot to rebuild each time
 
 GLOBAL_LIST_INIT_TYPED(sandbag_recipes, /datum/stack_recipe, list( \
 	new/datum/stack_recipe("barricade", /obj/structure/barricade/sandbag, 3, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE)))

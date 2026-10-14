@@ -1,8 +1,15 @@
 /// Vore footstep sloshing (was /datum/element/slosh). A shared behaviour singleton on the
 /// moved event; the step counter and cached volume/chance live on the mob (the element
-/// kept them on itself, shared by every mob). Attach with om_attach(L, /datum/om/behaviour/slosh).
-/datum/om/behaviour/slosh
-	handles = list(/datum/om/event/moved)
+/// kept them on itself, shared by every mob). A capability hooked on the moved notice: L.enable_slosh() grants it.
+CAPABILITY_TYPE(slosh, CAP_SLOSH, /datum/capability/slosh, key = NONE)
+/datum/capability/slosh
+
+/datum/capability/slosh/entries()
+	return list(on_notice(/datum/notice/moved, then(CAP_PROC(slosh_step))))
+
+/// Grants the slosh capability (once: a second grant from the same source keeps the first).
+/mob/proc/enable_slosh()
+	grant(src, /datum/capability/slosh, src)
 
 /mob/living
 	/// Steps counted by the slosh behaviour.
@@ -12,7 +19,13 @@
 	/// Cached slosh footstep chance.
 	var/slosh_chance = 0
 
-/datum/om/behaviour/slosh/on_moved(mob/living/source, datum/om/event/moved/event)
+/datum/capability/slosh/proc/slosh_step(datum/act/A)
+	var/mob/living/source = A.holder
+	if(istype(source))
+		slosh_moved(source)
+
+/// One step of `source` (the mob that moved): humans slosh by intent, silicons every other step.
+/datum/capability/slosh/proc/slosh_moved(mob/living/source)
 	if(ishuman(source))
 		var/mob/living/carbon/human/source_human = source
 		if(source_human.m_intent == I_WALK && source.slosh_steps++ % 20 == 0)
@@ -25,7 +38,7 @@
 			choose_vorefootstep(source)
 
 
-/datum/om/behaviour/slosh/proc/choose_vorefootstep(mob/living/source)
+/datum/capability/slosh/proc/choose_vorefootstep(mob/living/source)
 	if(source.slosh_steps++ >= 5)
 
 		var/highest_vol = 0
@@ -51,7 +64,7 @@
 		if(prob(source.slosh_chance))
 			handle_vorefootstep(source)
 
-/datum/om/behaviour/slosh/proc/handle_vorefootstep(mob/living/source)
+/datum/capability/slosh/proc/handle_vorefootstep(mob/living/source)
 	if(!CONFIG_GET(number/vorefootstep_volume) || !source.slosh_volume)
 		return
 

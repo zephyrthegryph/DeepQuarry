@@ -23,9 +23,11 @@
 		user.bombing_core = 0
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_confirmed), receiver = user, title = "Core self-destruct", message = "Really destroy core?", yes_text = "YES", no_text = "NO", price = 0, precheck_override = 1)
+	open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_core_bomb_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able_overridden), title = "Core self-destruct", question = "Really destroy core?", yes_text = "YES", no_text = "NO", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_core_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_core_bomb_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
 	var/mob/living/silicon/ai/user = src
 	if(user.bombing_core)
 		return
@@ -34,7 +36,7 @@
 
 	to_chat(user, "***** CORE SELF-DESTRUCT SEQUENCE ACTIVATED *****")
 	to_chat(user, "Use command again to cancel self-destruct. Destroying in 15 seconds.")
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, 14)
+	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), with = list(user, 14))
 
 /// The core bomb's countdown, once a second; it goes off at zero unless cancelled.
 /proc/malf_core_bomb_tick(mob/living/silicon/ai/user, timer)
@@ -42,10 +44,10 @@
 		return
 	to_chat(user, "** [timer] **")
 	if(timer > 0)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, timer - 1)
+		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), with = list(user, timer - 1))
 		return
 	explosion(user.loc, 3,6,12,24)
-	qdel(user)
+	spent(user)
 
 
 /datum/game_mode/malfunction/verb/ai_toggle_apu()
@@ -84,9 +86,11 @@
 		user.bombing_station = 0
 		return
 
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_confirmed), receiver = user, title = "Station self-destruct", message = "Really destroy station?", yes_text = "YES", no_text = "NO", price = 0)
+	open_request(user, /datum/prompt/yes_no, TYPE_PROC_REF(/mob/living/silicon/ai, malf_station_bomb_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Station self-destruct", question = "Really destroy station?", yes_text = "YES", no_text = "NO", ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/silicon/ai/proc/malf_station_bomb_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_station_bomb_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
 	var/mob/living/silicon/ai/user = src
 	if(user.bombing_station)
 		return
@@ -97,7 +101,7 @@
 	set_security_level("delta")
 	radio.autosay("Self destruct sequence has been activated. Self-destructing in 120 seconds.", "Self-Destruct Control")
 
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, 120)
+	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, 120))
 
 /// The station self-destruct countdown, once a second.
 /proc/malf_station_bomb_tick(mob/living/silicon/ai/user, obj/item/radio/radio, timer)
@@ -109,14 +113,14 @@
 	if(timer == 1)
 		radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
 	if(timer > 1)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, timer - 1)
+		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, timer - 1))
 		return
 
 	if(SSticker)
 		var/datum/cinematic/malf/malf_type = /datum/cinematic/malf
 		play_cinematic(malf_type)
 		// The station dies at the blast, once the intro has played (it slept through it before S10b).
-		om_after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
+		after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
 
 /// The doomsday blast, after its cinematic's intro: kills the station.
 /proc/malf_station_blast()
@@ -130,5 +134,5 @@
 			if(1)	//on a z-level 1 turf.
 				M.set_stat(DEAD)
 
-	if(SSticker?.mode)
-		SSticker.mode.station_was_nuked = 1
+	if(ticker_mode())
+		ticker_mode().station_was_nuked = 1

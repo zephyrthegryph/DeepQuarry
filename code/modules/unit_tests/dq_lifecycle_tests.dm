@@ -7,9 +7,9 @@
 /// appearance work and init batches change whenever anything is created or
 /// deleted, and the test itself creates and deletes.
 GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
-	/datum/controller/subsystem/garbage,
-	/datum/controller/subsystem/overlays,
-	/datum/controller/subsystem/atoms,
+	/datum/system/garbage,
+	/datum/system/overlays,
+	/datum/system/atoms,
 ))
 
 /// GLOB lists that are first-use caches, not registrations. The warm-up instance fills a
@@ -22,6 +22,29 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// instance can't pre-fill it for randomised contents (an MRE's meal picks), so a content type
 	// first seen on materialize() would read as a round-trip change.
 	"registries_by_type",
+	// The per-frame refresh drain queue (refresh.dm): a setter in Initialize() queues the atom's
+	// derived outputs, and the next drain empties it (skipping deleted entries). Scratch, not a
+	// registration, like the native system's per-frame lists below.
+	"refresh_queue",
+	// "[type]|[proc]" -> first instance, filled the first time a type's lists are checked (type_list.dm).
+	// Type-keyed caches are recognised by their keys (dq_lifecycle_grew_by_type_keys()); this one is
+	// keyed by text. A type whose contents pick at random (gum's flavour) meets a new type each time.
+	"type_list_purity",
+	// /datum/type_table -> its hooks, built on first use (engine/actions/hooks.dm). Keyed by the type table of
+	// whatever the atom creates in Initialize(), so a randomised content type (an MRE's meal) is first seen after the warm-up.
+	"hook_tables",
+	// Capability signature -> the one shared capability with those settings (cap_intern()): definitions interned the first
+	// time a type declares them, keyed by text. An atom that makes random contents (an MRE's meal) meets new types after the warm-up.
+	"caps_interned",
+	// Holder uid -> its capability runtime record (capability_tables.dm): an instance's own state (materials a scrap rolled,
+	// what a belt's tools hold), made when it first has some and removed in that holder's final cleanup
+	// (dq_time_foundation_compatibility_tests proves the removal), so it grows with live instances and is no registration.
+	"capability_runtime_records",
+	// The staleness sweep's index of live entities that have stats or a swept look (staleness.dm): an item that holds a trait
+	// or a stat is tracked from its own Initialize(), and staleness_forget() drops it when it is destroyed
+	// (dq_lifecycle_staleness_forget proves the removal), so it grows with live instances and is no registration.
+	"stale_all",
+	"stale_new",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on
@@ -45,7 +68,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	for(var/name in GLOB.vars)
 		if(name == "vars")
 			continue
-		// The OM handle table (om_handle()) is an id allocator, not a registration.
+		// The OM handle table (entity_handle()) is an id allocator, not a registration.
 		if(findtext(name, "om_handle_") == 1)
 			continue
 		// type -> registries, a per-type cache filled on a type's first
@@ -63,15 +86,7 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 			continue
 		if(islist(GLOB.vars[name]))
 			keys["GLOB.[name]"] = list(GLOB, name)
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		if(subsystem.type in GLOB.dq_lifecycle_snapshot_ignored)
-			continue
-		for(var/name in subsystem.vars)
-			if(name == "vars")
-				continue
-			if(islist(subsystem.vars[name]))
-				keys["[subsystem.type].[name]"] = list(subsystem, name)
-	// The gameplay systems replaced subsystems that were walked here: their registries and queues are covered the same way.
+	// Every system's registries and queues are walked the same way.
 	// The native system's per-frame scratch lists churn by design, so only its entity tables count.
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		var/native = istype(system, /datum/system/native)
@@ -112,18 +127,16 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		// rather than erroring length() on a non-list value.
 		sizes[i] = islist(value) ? length(value) : 0
 	var/list/dynamic = list()
-	for(var/frequency_text in GLOB.radio_service.frequencies)
-		var/datum/radio_frequency/frequency = GLOB.radio_service.frequencies[frequency_text]
+	for(var/frequency_text in SSradio.frequencies)
+		var/datum/radio_frequency/frequency = SSradio.frequencies[frequency_text]
 		for(var/radio_filter in frequency.devices)
 			var/list/devices = frequency.devices[radio_filter]
 			dynamic["radio [frequency_text] [radio_filter]"] = length(devices)
 	for(var/id in GLOB.registries)
 		dynamic["registry [id]"] = REGISTRY_COUNT(id)
-	var/datum/om_world/om_world_holder = OM_WORLD
-	var/list/world_hooks = om_world_holder?.om_rec?.hooks_in
-	for(var/event_path in world_hooks)
-		var/list/hooks = world_hooks[event_path]
-		dynamic["world hook [event_path]"] = length(hooks) / 2
+	var/list/world_observers = observer_counts(OM_WORLD)
+	for(var/trigger in world_observers)
+		dynamic["world observer [trigger]"] = world_observers[trigger]
 	return list(sizes, dynamic)
 
 /// The keys whose sizes differ between two snapshots, as readable lines.
@@ -134,6 +147,10 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	var/list/var_keys = dq_lifecycle_snapshot_var_keys()
 	for(var/i in 1 to min(length(before_sizes), length(after_sizes)))
 		if(before_sizes[i] != after_sizes[i])
+			var/list/container_and_name = var_keys[var_keys[i]]
+			var/datum/container = container_and_name[1]
+			if(dq_lifecycle_grew_by_type_keys(container.vars[container_and_name[2]], before_sizes[i], after_sizes[i]))
+				continue
 			. += "[var_keys[i]] [before_sizes[i]] -> [after_sizes[i]]"
 	// Missing keys count as size 0, as before.
 	var/list/before_dynamic = before[2]
@@ -150,14 +167,26 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		if(new_size)
 			. += "[key] 0 -> [new_size]"
 
+/// TRUE when `L` only grew, and every entry it gained (appended, so past `old_size`) is keyed by a
+/// type path: a per-type cache filled the first time a type is seen (a reaction table, a derived-value
+/// table). A type whose contents pick at random (a meal box, a flavoured gum) meets a new type on each
+/// instance. A registration holds instances, never types.
+/proc/dq_lifecycle_grew_by_type_keys(list/L, old_size, new_size)
+	if(!islist(L) || new_size <= old_size || length(L) != new_size)
+		return FALSE
+	for(var/i in old_size + 1 to new_size)
+		if(!ispath(L[i]))
+			return FALSE
+	return TRUE
+
 /// Running behaviour the object started on itself: timers and processing.
 /proc/dq_lifecycle_running(datum/D)
 	. = list()
 	// An armed expire() is the object's own declared lifetime, not running behaviour.
-	var/timers = om_timer_count(D)
+	var/timers = time_scheduler().timer_count(D)
 	if(ismovable(D))
 		var/atom/movable/AM = D
-		if(om_timer_slot_pending(AM, "lifecycle_lifetime_timer"))
+		if(after_pending(AM, "lifecycle_lifetime_timer"))
 			timers--
 	if(timers > 0)
 		. += "[timers] timer(s)"
@@ -222,11 +251,12 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 ))
 
 /datum/unit_test/dq_lifecycle_sandbox/Run()
+	set_global("dq_lifecycle_snapshot_var_keys", GLOB.dq_lifecycle_snapshot_var_keys)
 	var/list/failures = list()
 	var/tested = 0
 	var/list/tested_paths
 	for(var/atom/movable/path as anything in sweep_types(subtypesof(/atom/movable)))
-		if(!(initial(path.latent_safe) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
+		if(!(latent_type_safe(path) || (path in GLOB.dq_lifecycle_clean_types)) || is_abstract(path))
 			continue
 		tested++
 		LAZYSET(tested_paths, path, TRUE)
@@ -312,3 +342,31 @@ GLOBAL_LIST_INIT(dq_lifecycle_clean_types, list(
 				failures += "[id]: [member.type]"
 	if(length(failures))
 		TEST_FAIL("deleted objects left in registries:\n[jointext(failures, "\n")]")
+
+/// A destroyed entity leaves the staleness sweep's index at once (not when the sweep next reaches its ref), and the
+/// margherita pizza's declared contents fit its volume (the overflow warned whenever a random MRE meal rolled it).
+/datum/unit_test/dq_lifecycle_staleness_forget
+
+/datum/unit_test/dq_lifecycle_staleness_forget/Run()
+	var/obj/item/clothing/suit/radiation/suit = allocate(/obj/item/clothing/suit/radiation)
+	var/ref = REF(suit)
+	staleness_track(suit)
+	if(GLOB.staleness_on)
+		TEST_ASSERT(GLOB.stale_all[ref], "a tracked entity is in the sweep index")
+	qdel(suit)
+	TEST_ASSERT(!GLOB.stale_all[ref], "a destroyed entity is out of the sweep index")
+	TEST_ASSERT(!(ref in GLOB.stale_new), "and out of the new-entries queue")
+	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/pizza = allocate(/obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita)
+	TEST_ASSERT(pizza.reagents.total_volume <= pizza.reagents.maximum_volume, "the margherita's contents fit its volume")
+
+/// The chameleon appearance lists exist from boot, so creating a chameleon item never fills a global (the state guard
+/// reported nine lists changed null -> list by dq_lifecycle_sandbox).
+/datum/unit_test/dq_chameleon_choices_built_at_boot
+
+/datum/unit_test/dq_chameleon_choices_built_at_boot/Run()
+	for(var/list/choices in list(GLOB.chamelion_jumpsuit_choices, GLOB.chamelion_head_choices, GLOB.chamelion_suit_choices, GLOB.chamelion_shoe_choices, GLOB.chamelion_back_choices, GLOB.chamelion_glove_choices, GLOB.chamelion_mask_choices, GLOB.chamelion_belt_choices, GLOB.chamelion_accessory_choices))
+		TEST_ASSERT(length(choices), "a chameleon choice list is built at boot")
+	var/list/before = GLOB.chamelion_suit_choices
+	var/obj/item/clothing/suit/chameleon/suit = allocate(/obj/item/clothing/suit/chameleon)
+	TEST_ASSERT(GLOB.chamelion_suit_choices == before, "creating a chameleon item does not rebuild the list")
+	TEST_ASSERT(!(suit.type in GLOB.chamelion_suit_choices), "a chameleon suit cannot disguise as itself")

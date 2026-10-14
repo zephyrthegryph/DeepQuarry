@@ -5,7 +5,6 @@
 	icon_state = "aicard" // aicard-full
 	item_state = "aicard"
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT
 	show_messages = 0
 	preserve_item = 1
 
@@ -22,21 +21,20 @@
 		to_chat(user, span_infoplain(span_bold("ERROR ERROR ERROR")))
 		return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aicard)
+	configure(item_worn(slots = SLOT_BELT))
+	op("view_ai", in_hand(), opens_ui())
+	interface("AICard", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	// Transferring an AI in: started by grab_ai() from the AI's own verb, the AI fixer and the rig module, which pass the AI.
+	op("grab_ai", ai(), takes("ai"), wait(10 SECONDS), then(PROC_REF(grab_ai_timed_done)))
+	op("wipe", ui_act("wipe"), then(PROC_REF(ui_act_wipe)))
+	op("radio", ui_act("radio"), then(PROC_REF(ui_act_radio)))
+	op("wireless", ui_act("wireless"), then(PROC_REF(ui_act_wireless)))
+	ref_one(nameof(carded_ai), /mob/living/silicon/ai)
 
-/// tgui_interact()'s own signature doesn't match the (actor, held, interaction) effect
-/// contract (its 2nd/3rd args are the UI and its state), so this stays a thin wrapper.
-/obj/item/aicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-
-DECLARE_UI(/obj/item/aicard, "AICard")
-
-DECLARE_UI_STATE(/obj/item/aicard, GLOB.tgui_inventory_state)
-
-UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,name:text,integrity:unknown,backup_capacitor:unknown,radio:bool,wireless:bool,operational:bool,flushing:unknown,laws:list,has_laws:num}")
-
-/// The computed part of /obj/item/aicard's window data (declared on its UI_DATA row).
-/obj/item/aicard/proc/ui_data_obj_item_aicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/aicard's window data.
+/obj/item/aicard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["has_ai"] = carded_ai() != null
@@ -60,49 +58,51 @@ UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,nam
 
 	return data
 
-/obj/item/aicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/aicard/proc/ui_gate(datum/act/op/A)
 	if(!carded_ai())
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/aicard, "wipe", ui_act_wipe)
-UI_ACT_PROC(/obj/item/aicard, ui_act_wipe)
-	msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
-	add_attack_logs(ui.user,carded_ai(),"Purged from AI Card")
+/obj/item/aicard/proc/ui_act_wipe(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	msg_admin_attack("[key_name_admin(user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
+	add_attack_logs(user,carded_ai(),"Purged from AI Card")
 	wipe_ai()
 	return TRUE
 
-UI_ACT(/obj/item/aicard, "radio", ui_act_radio)
-UI_ACT_PROC(/obj/item/aicard, ui_act_radio)
+/obj/item/aicard/proc/ui_act_radio(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	carded_ai().aiRadio.disabledAi = !carded_ai().aiRadio.disabledAi
 	to_chat(carded_ai(), span_warning("Your Subspace Transceiver has been [carded_ai().aiRadio.disabledAi ? "disabled" : "enabled"]!"))
-	to_chat(ui.user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
+	to_chat(user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
 	return TRUE
 
-UI_ACT(/obj/item/aicard, "wireless", ui_act_wireless)
-UI_ACT_PROC(/obj/item/aicard, ui_act_wireless)
+/obj/item/aicard/proc/ui_act_wireless(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	carded_ai().control_disabled = !carded_ai().control_disabled
 	to_chat(carded_ai(), span_warning("Your wireless interface has been [carded_ai().control_disabled ? "disabled" : "enabled"]!"))
-	to_chat(ui.user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
+	to_chat(user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
 	if(carded_ai().control_disabled && carded_ai().deployed_shell)
 		carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/aicard/appearance_overlays()
-	. = list()
+/obj/item/aicard/draw(datum/look/look)
+	..()
 	if(carded_ai())
 		if (!carded_ai().control_disabled)
-			. += "aicard-on"
+			look.overlay("aicard-on")
 		if(carded_ai().stat)
-			icon_state = "aicard-404"
+			look.state("aicard-404")
 		else
-			icon_state = "aicard-full"
+			look.state("aicard-full")
 	else
-		icon_state = "aicard"
+		look.state("aicard")
 
 /obj/item/aicard/proc/grab_ai(mob/living/silicon/ai/ai, mob/living/user)
 	if(!ai.client && !ai.deployed_shell)
@@ -121,13 +121,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	act_message(user, src, MSG_SELF("You start transferring \the [ai] into %T%..."), MSG_OTHERS("%U% starts transferring \the [ai] into %T%..."))
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
+	perform_op(user, src, "grab_ai", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("ai" = ai))
 	return 1
 
-/obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)
+/obj/item/aicard/proc/grab_ai_timed_done(datum/act/op/A)
+	var/mob/living/silicon/ai/ai = A.arg("ai")
+	var/mob/living/user = A.actor
+	if(QDELETED(ai))
+		return OP_REFUSED
 	if(carded_ai())
 		to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
-		return 0
+		return OP_FAILED
 	if(istype(ai.loc, /turf/))
 		new /obj/structure/AIcore/deactivated(get_turf(ai))
 
@@ -139,7 +143,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	ai.destroy_eyeobj(src)
 	ai.cancel_camera()
 	ai.control_disabled = 1
-	ai.aiRestorePowerRoutine = 0
+	ai.set_aiRestorePowerRoutine(0)
 	rel_set(src, nameof(carded_ai), ai)
 	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 
@@ -149,7 +153,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
 
 	ai.canmove = 1
-	update_icon()
+	return OP_OK
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai() && istype(carded_ai().loc, /turf))
@@ -157,7 +161,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		carded_ai().carded = 0
 	name = initial(name)
 	rel_clear(src, nameof(carded_ai))
-	update_icon()
 
 /obj/item/aicard/see_emote(mob/living/M, text)
 	if(carded_ai() && carded_ai().client)
@@ -172,7 +175,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	..()
 
 /obj/item/aicard/relaymove(mob/user, direction)
-	if(user.stat || user.has_status(EFFECT_STUNNED))
+	if(user.stat || user.has_status(STAT_STUNNED))
 		return
 	var/obj/item/rig/rig = src.get_rig()
 	if(istype(rig))
@@ -193,7 +196,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	// This is absolutely evil and I love it.
 	if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
 		our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
-	if(!om_after(src, 1 SECOND, PROC_REF(wipe_ai_tick), our_ai, power_lost + 2))
+	if(!after(src, 1 SECOND, PROC_REF(wipe_ai_tick), with = list(our_ai, power_lost + 2), keeps_dead = TRUE))
 		flush = FALSE
 
 /// Relation view: carded ai (reads null once it is gone).

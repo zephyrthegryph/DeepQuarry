@@ -18,6 +18,54 @@
 	/// /mob/living/simple_mob, FALSE everywhere else.
 	var/use_modern_ai = FALSE
 
+CAPABILITIES(/mob/living)
+	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
+	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
+	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)
+	links(LINK_END(/mob/living, LK_NEST), LINK_END(/atom, LK_NEST_SPAWNS), sparse = TRUE, b_many = TRUE)
+	attack_variants()
+	op("touch_help", hand(), when(req_empty_hand()), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Help"), then(PROC_REF(touch_help)))
+	op("touch_disarm", hand(), when(req_empty_hand()), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove"), then(PROC_REF(touch_disarm)))
+	op("touch_grab", hand(), when(req_empty_hand()), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Take hold"), then(PROC_REF(touch_grab)))
+	op("touch_hurt", hand(), when(req_empty_hand()), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Punch"), then(PROC_REF(touch_hurt)))
+	op("hit_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Use on"), then(PROC_REF(hit_help)))
+	op("hit_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove with"), then(PROC_REF(hit_disarm)))
+	op("hit_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 10), label("Hold with"), then(PROC_REF(hit_grab)))
+	op("hit_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 10), label("Hit"), then(PROC_REF(hit_hurt)))
+	living_action_status_contributions()
+	living_abilities()
+	ref_one(nameof(cameraFollow))
+	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
+	ref_many(nameof(shared_soul_links))
+	// The attached limbs (rel_add() in body/parts/attach.dm): a look follows them attaching and leaving.
+	ref_many(nameof(organs), /obj/item/organ/external)
+	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
+	ref_one(nameof(internal))
+	owns_one(nameof(ai_brain), /datum/ai_brain)
+	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
+	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
+	owns_one(nameof(aiming), /obj/aiming_overlay)
+	owns_one(nameof(body), /datum/body)
+	owns_one(nameof(changeling_state), /datum/changeling)
+	owns_one(nameof(character_setup_button), /datum/character_setup_button)
+	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))
+	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire, starts = PROC_REF(start_fire_loop))
+	owns_one(nameof(inventory_panel), /datum/inventory_panel)
+	owns_one(nameof(say_list), /datum/say_list, starts = PROC_REF(make_say_list))
+	owns_one(nameof(shadekin), /datum/shadekin)
+	owns_one(nameof(turfslip), /datum/turfslip)
+	owns_one(nameof(vore_panel_button), /datum/vore_panel_button)
+	owns_many(nameof(owned_soul_links), /datum/soul_link)
+	owns_many(nameof(status_effects))
+	owns_many(nameof(trait_states))
+	owns_many(nameof(body_effect_origins))
+	owns_many(nameof(hud_list))
+	owns_many(nameof(stasis_sources))
+	// What holds the biological clock rate down (a sleeper, a stasis bed) is the body's stasis (code/modules/medical/stabilisation/stasis.dm).
+	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
+	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drop_input))
+
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as
 	/// hostile even when the faction registry says NEUTRAL. Covers the
@@ -40,12 +88,18 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// Creates the brain for a mob that opts in. Subtypes that should never get
 /// a brain (player-controlled mobs like succlet, synx, borer) override this
 /// to return FALSE.
+/// The starting say list (owns_one(starts =)): only a mob that overrides the default type gets one.
+/// Most mobs inherit /datum/say_list (empty bark tables) and allocate nothing; idle_speak and hear_say handle null.
+/mob/living/proc/make_say_list(current)
+	if(say_list_type && say_list_type != /datum/say_list)
+		return say_list_type
+
 /mob/living/proc/initialize_ai_brain()
 	if(!use_modern_ai)
 		return FALSE
 	if(ai_brain)
-		own_clear(src, nameof(ai_brain), OWN_DELETE)
-	own_set(src, nameof(ai_brain), new /datum/ai_brain(src))
+		rel_clear(src, nameof(ai_brain))
+	rel_set(src, nameof(ai_brain), new /datum/ai_brain(src))
 	var/list/sels = TYPE_TABLE_GET(src, get_ai_target_selectors)
 	if(sels && length(sels))
 		ai_brain.target_selector_chain = sels.Copy()
@@ -75,14 +129,12 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// Re-open Initialize to drive brain creation. Also handles say_list spawning
 /// since DM resolves all `/mob/living/Initialize` overrides to the last-defined
 /// one — having two separate re-opens silently drops the earlier definition.
+// ALLOW(init/FRAMEWORK): the living base allocates its speech table and AI brain when its type has them
 /mob/living/Initialize(mapload)
 	. = ..()
 	// Only allocate a say_list when the mob actually overrides the default
 	// type. Most mobs inherit /datum/say_list (empty bark tables) — those get
 	// no allocation, which matters at world-init when thousands of simple_mobs
 	// spawn. Callers (idle_speak behavior, hear_say) already handle null.
-	if(say_list_type && say_list_type != /datum/say_list)
-		own_set(src, nameof(say_list), new say_list_type(src))
 	if(!ai_brain)
 		initialize_ai_brain()
-

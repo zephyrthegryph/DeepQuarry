@@ -14,7 +14,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_storage.dmi',
 		)
 	icon_state = "satchel"
-	slot_flags = SLOT_BELT | SLOT_POCKET
 	w_class = ITEMSIZE_NORMAL
 	var/current_capacity = 0
 	var/max_storage_space = 100
@@ -41,41 +40,48 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 	var/last_update = 0
-	drop_sound = SFX_ITEMS_DROP_BACKPACK
-	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
-	item_flags = FLAMMABLE
 
 /obj/item/ore_bag/holding
 	name = "mining satchel of holding"
 	desc = "Like a mining satchel, but when you put your hand in, you're pretty sure you can feel time itself."
 	icon_state = "satchel_bspace"
 	max_storage_space = ITEMSIZE_COST_NORMAL * 15000 // This should never, ever, ever be reached.
-	item_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/ore_bag/holding)
+	configure(item_worn(flags = FIRE_PROOF))
 
 /obj/item/ore_bag/sleeper
 	name = "processing chamber"
 	desc = "A mining satchel built into a sleeper. VORE!!!"
 	icon_state = "satchel_bspace"
 	max_storage_space = 500
-	item_flags = INDESTRUCTIBLE | ABSTRACT
 
-DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/ore_bag/proc/can_take_more)))
+CAPABILITIES(/obj/item/ore_bag/sleeper)
+	configure(item_worn(flags = INDESTRUCTIBLE | ABSTRACT))
+
+
+CAPABILITIES(/obj/item/ore_bag)
+	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET, flags = FLAMMABLE))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
+	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more))), then(PROC_REF(interaction_item)))
 
 /// Requirement: a full bag takes nothing more.
-/obj/item/ore_bag/proc/can_take_more(mob/user, atom/target, obj/item/held)
-	if(current_capacity >= max_storage_space)
-		return "it's too full to possibly fit anything else inside of it"
-	return TRUE
+/obj/item/ore_bag/proc/can_take_more(datum/act/op/A)
+	return (current_capacity < max_storage_space) ? null : MSG(ore_bag/full)
 
-/// Old attackby.
-/obj/item/ore_bag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside of it.")
+
+/// Old attackby: an ore goes in (the click goes on).
+/obj/item/ore_bag/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/ore) && !istype(W, /obj/item/ore/slag) && !istype(W, /obj/item/ore/archeology_debris))
 		var/obj/item/ore/ore = W
 		stored_ore[ore.material]++
-		current_capacity++
+		set_current_capacity(current_capacity + 1)
 		user.remove_from_mob(W)
 		consume(ore, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/ore_bag/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	//If we attack a turf, we try to scoop up all the ore from the turf first.
@@ -105,7 +111,6 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 		W.forceMove(get_turf(src))
 
 	W.on_exit_storage(src)
-	update_icon()
 	return 1
 
 /obj/item/ore_bag/proc/gather_all(turf/T, mob/user, silent = 0)
@@ -124,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 			continue
 		var/obj/item/ore/ore = O
 		stored_ore[ore.material]++
-		current_capacity++
+		set_current_capacity(current_capacity + 1)
 		current_pickup++
 		consume(ore)
 		success = 1
@@ -144,21 +149,22 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 				var/ore_amount = stored_ore[ore_material]	// How many ores does the satchel have?
 				OB.stored_ore[ore_material] += ore_amount	// Add the ore to the box
 				stored_ore[ore_material] = 0 				// Set the value of the ore in the satchel to 0.
-				current_capacity = 0				// Set the amount of ore in the satchel to 0.
+				set_current_capacity(0)				// Set the amount of ore in the satchel to 0.
 	current_pickup = 0
 	return success
 
 /obj/item/ore_bag/equipped(mob/user)
 	..()
 	dq_add_recursive_move(user)
-	om_hook(user, /datum/om/event/movable_attempted_move, src, PROC_REF(autoload))
+	observe(user, /datum/notice/movable_attempted_move, src, then(PROC_REF(autoload)))
 
 /obj/item/ore_bag/dropped(mob/user, equipping, slot)
 	..()
-	om_unhook(user, /datum/om/event/movable_attempted_move, src)
+	unobserve(user, /datum/notice/movable_attempted_move, src)
 
-/obj/item/ore_bag/proc/autoload(mob/user, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/ore_bag/proc/autoload(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/user = A.target
 	var/obj/item/ore/O = locate_on(get_turf(user), /obj/item/ore)
 	if(O)
 		gather_all(get_turf(user), user)

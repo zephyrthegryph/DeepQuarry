@@ -26,36 +26,38 @@
 	power_draw_per_use = 50 // The targeting mechanism uses this.  The actual gun uses its own cell for firing if it's an energy weapon.
 
 /// Old attackby.
-/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O, /obj/item/gun))
 		var/obj/item/gun/gun = O
 		if(installed_gun)
 			to_chat(user, span_warning("There's already a weapon installed."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		size += gun.w_class
 		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
-		if(!own_set(src, nameof(src.installed_gun), gun, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.installed_gun), gun, user))
+			return OP_PASS
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
 		play_sfx(src, SFX_ITEMS_CROWBAR)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(installed_gun)
 		installed_gun.forceMove(get_turf(src))
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
 		size = initial(size)
 		complexity = initial(complexity)
 		play_sfx(src, SFX_ITEMS_CROWBAR)
-		own_take(src, nameof(installed_gun))
+		rel_take(src, nameof(installed_gun))
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))
 	return TRUE
@@ -168,6 +170,11 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 	var/obj/item/grenade/attached_grenade
 	var/pre_attached_grenade_type
 
+CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
+	owns_one(nameof(attached_grenade), /obj/item/grenade)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
 /obj/item/integrated_circuit/manipulation/grenade/Initialize(mapload)
 	. = ..()
 	if(pre_attached_grenade_type)
@@ -182,7 +189,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 	..()
 
 /// Old attackby.
-/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(mob/user, obj/item/grenade/G, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grenade/G = A.held
 	if(istype(G))
 		if(attached_grenade)
 			to_chat(user, span_warning("There is already a grenade attached!"))
@@ -191,23 +200,19 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 			attach_grenade(G)
 			G.forceMove(src)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
-	INTERACT_SELF(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+		return OP_DECLINE
+	return OP_PASS
 
 /// Old attack_self.
-/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(attached_grenade)
 		act_message(user, src, MSG_SELF(span_notice("You remove \the [attached_grenade] from %T%.")), \
 			MSG_OTHERS(span_warning("%U% removes \an [attached_grenade] from %T%!")))
 		user.put_in_any_hand_if_possible(attached_grenade) || attached_grenade.dropInto(loc)
 		detach_grenade()
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/integrated_circuit/manipulation/grenade/do_work()
@@ -221,17 +226,17 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
-	own_set(src, nameof(attached_grenade), G)
-	om_hook(attached_grenade, /datum/om/event/qdeleting, src, PROC_REF(detach_grenade))
+	rel_set(src, nameof(attached_grenade), G)
+	observe(attached_grenade, /datum/notice/qdeleting, src, then(PROC_REF(detach_grenade)))
 	size += G.w_class
 	desc += " \An [attached_grenade] is attached to it!"
 
-/obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade()
+/obj/item/integrated_circuit/manipulation/grenade/proc/detach_grenade(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!attached_grenade)
 		return
-	om_unhook(attached_grenade, /datum/om/event/qdeleting, src)
-	own_take(src, nameof(attached_grenade))
+	unobserve(attached_grenade, /datum/notice/qdeleting, src)
+	rel_take(src, nameof(attached_grenade))
 	size = initial(size)
 	desc = initial(desc)
 

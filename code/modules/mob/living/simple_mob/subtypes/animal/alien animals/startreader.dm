@@ -66,7 +66,9 @@
 	var/flipped = FALSE
 	var/flip_cooldown = 0
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/startreader)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /datum/say_list/startreader
 	emote_see = list("bobs", "digs around","gnashes at something","yawns","snaps at something")
@@ -75,7 +77,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/startreader/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "gastric sac"
 	B.desc = "It's cramped and hot! You're forced into a small ball as your shape is squeezed into the slick, wet chamber. Despite being swallowed into the creature, you find that you actually stretch out of the top a ways, and can JUST BARELY wiggle around..."
 	B.mode_flags = 40
@@ -88,35 +90,34 @@
 /mob/living/simple_mob/vore/alienanimals/startreader/apply_melee_effects(mob/living/L)
 	if(!isliving(L))
 		return
-	if(L.has_status(EFFECT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
+	if(L.has_status(STAT_WEAKENED)) //Don't stun people while they're already stunned! That's SILLY!
 		return
 	if(prob(15))
 		act_message(src, L, null, MSG_OTHERS(span_danger("%U% trips %T%!")))
-		L.status_adjust(EFFECT_WEAKENED, rand(1,10))
+		L.status_adjust(STAT_WEAKENED, rand(1,10))
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader
-	of = /mob/living/simple_mob/vore/alienanimals/startreader
+/mob/living/simple_mob/vore/alienanimals/startreader/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/startreader/perform(mob/living/simple_mob/vore/alienanimals/startreader/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/startreader/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.flip_cooldown == 1)
-		self.flip_cooldown = 0
-		self.flipped = FALSE
-		self.handle_flip()
-		act_message(self, null, null, MSG_OTHERS(span_notice("%U% rights itself!!!")))
+	if(src.flip_cooldown == 1)
+		src.flip_cooldown = 0
+		src.flipped = FALSE
+		src.handle_flip()
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% rights itself!!!")))
 		return
-	if(self.flip_cooldown)
-		self.flip_cooldown --
-		self.status_set(EFFECT_STUNNED, 2)
+	if(src.flip_cooldown)
+		src.flip_cooldown --
+		src.status_set(STAT_STUNNED, 2)
 
 /mob/living/simple_mob/vore/alienanimals/startreader/proc/handle_flip()
 	if(flipped)
 		set_armor(dq_armor_none())
-		icon_living = "startreader_flipped"
-		status_adjust(EFFECT_STUNNED, flip_cooldown)
+		set_icon_living("startreader_flipped")
+		status_adjust(STAT_STUNNED, flip_cooldown)
 	else
 		set_armor(dq_armor(list(MELEE = 100, BULLET = 100, LASER = 100, ENERGY = 100, BIO = 100, ARMOR_RAD = 100)))
-		icon_living = "startreader"
-		status_set(EFFECT_STUNNED, 0)
+		set_icon_living("startreader")
+		status_set(STAT_STUNNED, 0)
 
-	update_icon()

@@ -31,8 +31,6 @@ update timestamps" question.
 Repack itself is CPU-bound on PIL/Pillow; the dirty pass parallelises
 across a thread pool (I/O bound) and the actual repack across a process
 pool (true CPU work).
-DQ_ICON_WORKERS controls the repack pool (default 4, range 1..32).
-Dirty-check concurrency is four times this value, capped at 16 threads.
 
 Usage:
     python -m tools.dq_icons.build_step --output icons/gen \
@@ -43,32 +41,79 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
-import re
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from . import repack as repack_mod  # noqa: E402
 
+# Repack workers each hold whole sprite sheets in memory (some reach 2 GB), so the
+# pool is small by default. DQ_ICON_WORKERS overrides it.
+_DEFAULT_REPACK_WORKERS = 4
+
+
+def _repack_worker_count() -> int:
+    raw = os.environ.get("DQ_ICON_WORKERS", "")
+    if raw.isdigit() and int(raw) > 0:
+        return int(raw)
+    return max(1, min(_DEFAULT_REPACK_WORKERS, os.cpu_count() or 4))
+
+
+def _pid_alive_waiter(pid: int):
+    """Return a blocking callable that returns when process `pid` has exited."""
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        SYNCHRONIZE = 0x00100000
+        handle = kernel32.OpenProcess(SYNCHRONIZE, False, pid)
+        if not handle:
+            return None  # already gone, or not ours to watch
+
+        def wait() -> None:
+            kernel32.WaitForSingleObject(handle, 0xFFFFFFFF)
+
+        return wait
+
+    def wait() -> None:
+        while os.getppid() == pid:
+            time.sleep(1.0)
+
+    return wait
+
+
+def _exit_when_gone(pid: int, why: str) -> None:
+    """Exit this process as soon as `pid` exits.
+
+    Windows does not kill child processes with their parent. When a build is killed,
+    its icon repack (and that repack's worker pool) would otherwise keep running,
+    orphaned, holding gigabytes. Every repack process therefore watches its parent.
+    """
+    import threading
+
+    wait = _pid_alive_waiter(pid)
+    if wait is None:
+        os._exit(3)
+
+    def watch() -> None:
+        wait()
+        print(f"icon-repack: {why} (pid {pid}) exited; stopping", file=sys.stderr, flush=True)
+        os._exit(3)
+
+    threading.Thread(target=watch, name="parent-watch", daemon=True).start()
+
+
+def _worker_init(parent_pid: int) -> None:
+    _exit_when_gone(parent_pid, "repack main process")
+
 # BLAKE2b truncated to 16 bytes -> 32-char hex digest. Plenty of bits
 # against accidental collision for ~10k sources; cheaper to compute and
 # write than a full 64-byte digest.
 _HASH_BYTES = 16
 _INPUT_SEPARATOR = b"\x00png-toml-separator\x00"
-
-
-def configured_workers(environment=None) -> int:
-    environment = os.environ if environment is None else environment
-    raw = environment.get("DQ_ICON_WORKERS", "4")
-    if not isinstance(raw, str) or not re.fullmatch(r"[1-9][0-9]*", raw):
-        raise ValueError("DQ_ICON_WORKERS must be an integer from 1 to 32")
-    # Check length before int conversion, including Python's own digit limit.
-    if len(raw) > 2 or not 1 <= int(raw) <= 32:
-        raise ValueError("DQ_ICON_WORKERS must be an integer from 1 to 32")
-    return int(raw)
 
 
 def _output_dmi_path(toml: Path, output_root: Path) -> Path:
@@ -90,6 +135,41 @@ def _hash_inputs(png: Path, toml: Path) -> str:
     return h.hexdigest()
 
 
+# A shared repack cache (DQ_ICON_SEED, e.g. another checkout's icons/gen). A fresh
+# worktree copies outputs whose hash sidecar matches its inputs instead of repacking
+# every icon; anything that differs is repacked as usual.
+_SEED_ROOT: Path | None = None
+_OUTPUT_ROOT: Path | None = None
+
+
+def _seed_from_cache(out_dmi: Path, current_hash: str) -> bool:
+    if _SEED_ROOT is None or _OUTPUT_ROOT is None:
+        return False
+    try:
+        rel = out_dmi.relative_to(_OUTPUT_ROOT)
+    except ValueError:
+        if os.environ.get("DQ_ICON_SEED_DEBUG"):
+            print(f"seed outside {out_dmi}", file=sys.stderr)
+        return False
+    seed_dmi = _SEED_ROOT / rel
+    seed_hash = _hash_sidecar_path(seed_dmi)
+    try:
+        if seed_hash.read_text(encoding="ascii").strip() != current_hash:
+            if os.environ.get("DQ_ICON_SEED_DEBUG"):
+                print(f"seed stale {rel}", file=sys.stderr)
+            return False
+        out_dmi.parent.mkdir(parents=True, exist_ok=True)
+        import shutil
+
+        shutil.copyfile(seed_dmi, out_dmi)
+        _hash_sidecar_path(out_dmi).write_text(current_hash, encoding="ascii")
+        return True
+    except OSError as e:
+        if os.environ.get("DQ_ICON_SEED_DEBUG"):
+            print(f"seed miss {rel}: {e!r}", file=sys.stderr)
+        return False
+
+
 def _check_one(
     args: tuple[Path, Path],
 ) -> tuple[Path, Path, bool, str | None]:
@@ -105,6 +185,8 @@ def _check_one(
         return toml, out_dmi, False, None
     current_hash = _hash_inputs(png, toml)
     if not out_dmi.exists():
+        if _seed_from_cache(out_dmi, current_hash):
+            return toml, out_dmi, False, current_hash
         return toml, out_dmi, True, current_hash
     sidecar = _hash_sidecar_path(out_dmi)
     if not sidecar.exists():
@@ -193,7 +275,6 @@ def _sweep_stale(output_root: Path, live_dmis: set[Path]) -> int:
 
 
 def run(roots: list[Path], output_root: Path) -> int:
-    workers = configured_workers()  # Reject invalid configuration before scanning or launching.
     tomls = _gather_tomls(roots, output_root)
     if not tomls:
         return 0
@@ -205,8 +286,8 @@ def run(roots: list[Path], output_root: Path) -> int:
     check_inputs = [(t, _output_dmi_path(t, output_root)) for t in tomls]
     dirty: list[tuple[Path, Path, str]] = []
     skipped = 0
-    # Bound I/O concurrency independently of the machine's logical CPU count.
-    check_workers = min(workers * 4, 16)
+    # 4x CPUs is a sweet spot for I/O bound work with cheap CPU per item.
+    check_workers = (os.cpu_count() or 4) * 4
     with ThreadPoolExecutor(max_workers=check_workers) as pool:
         for toml, out_dmi, is_dirty, current_hash in pool.map(
             _check_one, check_inputs, chunksize=32
@@ -235,7 +316,12 @@ def run(roots: list[Path], output_root: Path) -> int:
                 else:
                     repacked += 1
         else:
-            with ProcessPoolExecutor(max_workers=workers) as pool:
+            repack_workers = _repack_worker_count()
+            with ProcessPoolExecutor(
+                max_workers=repack_workers,
+                initializer=_worker_init,
+                initargs=(os.getpid(),),
+            ) as pool:
                 for toml, err in pool.map(_repack_one, dirty, chunksize=8):
                     if err:
                         failures.append((toml, err))
@@ -261,6 +347,22 @@ def run(roots: list[Path], output_root: Path) -> int:
     return 1 if failures else 0
 
 
+def _main_checkout_output(output: Path) -> str:
+    """The same output tree in the repository's main checkout, when this is a worktree."""
+    import subprocess
+
+    try:
+        common = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True, text=True, timeout=10, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if not common:
+        return ""
+    return str(Path(common).parent / output)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("roots", nargs="+", type=Path, help="Source roots to scan for *.dmi.toml.")
@@ -271,10 +373,17 @@ def main() -> int:
         help="Build-output root. Generated .dmi files land at <output>/<source-relative-path>.",
     )
     args = ap.parse_args()
-    try:
-        return run(args.roots, args.output.resolve())
-    except ValueError as error:
-        ap.error(str(error))
+    global _SEED_ROOT, _OUTPUT_ROOT
+    _OUTPUT_ROOT = args.output.resolve()
+    seed = os.environ.get("DQ_ICON_SEED", "") or _main_checkout_output(args.output)
+    if seed and Path(seed).is_dir() and Path(seed).resolve() != _OUTPUT_ROOT:
+        _SEED_ROOT = Path(seed).resolve()
+    # If the build that started us is killed, stop too (and the pool with us).
+    if os.environ.get("DQ_ICON_NO_PARENT_WATCH") != "1":
+        build_pid = os.environ.get("DQ_BUILD_PID", "")
+        watched = int(build_pid) if build_pid.isdigit() else os.getppid()
+        _exit_when_gone(watched, "build process")
+    return run(args.roots, args.output.resolve())
 
 
 if __name__ == "__main__":

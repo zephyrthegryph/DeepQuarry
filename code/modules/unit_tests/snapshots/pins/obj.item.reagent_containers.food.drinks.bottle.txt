@@ -1,0 +1,95 @@
+@obj.item.reagent_containers human|none
++3 menu: Set transfer amount
++4 menu: Smash Bottle (refused: You can't do that.)
++5 menu: Spin The Bottle
+@obj.item.reagent_containers robot|none
++4 menu: Set transfer amount
++5 menu: Smash Bottle (refused: You can't do that.)
++6 menu: Spin The Bottle
+@obj ai|none
+@obj.item.reagent_containers.food.drinks ghost|none
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use screwdriver
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use crowbar
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use wrench
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use wirecutters
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/multitool
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use multitool
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/weldingtool
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use welding tool
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use cable coil
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use steel sheet
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/card/id
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use identification card
++7 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item/kit
++3 menu: Set transfer amount
++4 menu: Smash Bottle (refused: You can't do that.)
++5 menu: Spin The Bottle
++7 menu: Use item
+@obj.item.reagent_containers human|/obj/item/storage
+-click: Click: Collect
++3 menu: Set transfer amount
++4 menu: Smash Bottle (refused: You can't do that.)
++5 menu: Spin The Bottle
++7 menu: Use storage
++8 click: Click: Bottle item
+@obj.item.reagent_containers human|/obj/item
+-click: nothing
++2 menu: Set transfer amount
++3 menu: Smash Bottle (refused: You can't do that.)
++4 menu: Spin The Bottle
++6 menu: Use item
++7 click: Click: Bottle item
+keys: blood_test, bottle_item, bottle_self, climb_in, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, reagent_container.drink, reagent_container.feed, reagent_container.fill, reagent_container.pour, reagent_container.set_amount, rename, smash, spin, stuff, toggle_digestable

@@ -1,36 +1,32 @@
 /obj/item/material/butterfly
 	name = "butterfly knife"
 	desc = "A basic metal blade concealed in a lightweight plasteel grip. Small enough when folded to fit in a pocket."
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
+	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	icon_state = "butterflyknife"
 	item_state = null
-	hitsound = null
 	var/active = 0
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("patted", "tapped")
 	force_divisor = 0.25 // 15 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
-	drop_sound = SFX_ITEMS_DROP_KNIFE
-	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 
 /obj/item/material/butterfly/update_force()
 	if(active)
-		edge = TRUE
-		sharp = TRUE
+		set_edge(TRUE)
+		set_sharp(TRUE)
 		..() //Updates force.
-		throwforce = max(3,force-3)
-		hitsound = SFX_WEAPONS_BLADESLICE
-		icon_state += "_open"
-		w_class = ITEMSIZE_NORMAL
-		attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+		set_throwforce(max(3,combat_of(src).force-3))
+		set_hitsound(SFX_WEAPONS_BLADESLICE)
+		set_icon_state(icon_state + ("_open"))
+		set_w_class(ITEMSIZE_NORMAL)
+		set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 	else
-		force = 3
-		edge = FALSE
-		sharp = FALSE
-		hitsound = initial(hitsound)
-		icon_state = initial(icon_state)
-		w_class = initial(w_class)
-		attack_verb = initial(attack_verb)
+		set_force(3)
+		set_edge(FALSE)
+		set_sharp(FALSE)
+		set_hitsound(sounds_of_type(type).hit)
+		set_icon_state(initial(icon_state))
+		set_w_class(initial(w_class))
+		set_attack_verb(combat_of_type(type).attack_verbs)
 
 /obj/item/material/butterfly/switchblade
 	name = "switchblade"
@@ -44,11 +40,17 @@
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.2 // 4 when thrown with weight 20 (steel)
 
-DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/material/butterfly, active)
 
-/// Old attack_self.
-/obj/item/material/butterfly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+CAPABILITIES(/obj/item/material/butterfly)
+	configure(item_combat(attack_verbs = list("patted", "tapped")))
+	configure(item_sounds(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
+	op("flip", in_hand(), label("Open or conceal blade"), then(PROC_REF(blade_flipped)))
+
+/// Preserve the blade subtype's complete force and equipment update.
+/obj/item/material/butterfly/proc/blade_flipped(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	update_force()
 
 	if(user)
@@ -58,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 		else
 			to_chat(user, span_notice("\The [src] can now be concealed."))
 		add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /*
  * Kitchen knives
@@ -68,14 +70,14 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "knife"
 	desc = "A general purpose " + JOB_CHEF + "'s Knife made by SpaceCook Incorporated. Guaranteed to stay sharp for years to come."
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
-	sharp = TRUE
-	edge = TRUE
+	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	injury_kind = INJURY_CUT
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
 	MATERIAL_BULK(MAT_STEEL, 12000)
-	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	drop_sound = SFX_ITEMS_DROP_KNIFE
+
+CAPABILITIES(/obj/item/material/knife)
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE))
 
 // These no longer inherit from hatchets.
 /obj/item/material/knife/tacknife
@@ -85,8 +87,10 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	icon_state = "tacknife"
 	item_state = "knife"
 	force_divisor = 0.25 //15 when hardness 60 (steel)
-	attack_verb = list("stabbed", "chopped", "cut")
 	applies_material_colour = 1
+
+CAPABILITIES(/obj/item/material/knife/tacknife)
+	configure(item_combat(attack_verbs = list("stabbed", "chopped", "cut")))
 
 /obj/item/material/knife/tacknife/combatknife
 	name = "combat knife"
@@ -96,8 +100,10 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	item_state = "knife"
 	force_divisor = 0.34 // 20 with hardness 60 (steel)
 	thrown_force_divisor = 1.75 // 20 with weight 20 (steel)
-	attack_verb = list("sliced", "stabbed", "chopped", "cut")
 	applies_material_colour = 1
+
+CAPABILITIES(/obj/item/material/knife/tacknife/combatknife)
+	configure(item_combat(attack_verbs = list("sliced", "stabbed", "chopped", "cut")))
 
 // Identical to the tactical knife but nowhere near as stabby.
 // Kind of like the toy esword compared to the real thing.
@@ -126,9 +132,11 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	name = "table knife"
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "knife_table"
-	sharp = FALSE // blunted tip
 	injury_kind = INJURY_BLUNT
 	force_divisor = 0.1
+
+CAPABILITIES(/obj/item/material/knife/table)
+	configure(item_combat(sharp = FALSE))
 
 /obj/item/material/knife/table/plastic
 	default_material = MAT_PLASTIC
@@ -138,17 +146,20 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	icon_state = "cleaver"
 	desc = "A huge thing used for chopping and chopping up meat. This includes clowns and clown-by-products."
 	force_divisor = 0.25 // 15 when wielded with hardness 60 (steel)
-	attack_verb = list("cleaved", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+
+CAPABILITIES(/obj/item/material/knife/butch)
+	configure(item_combat(attack_verbs = list("cleaved", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 
 /obj/item/material/knife/machete
 	name = "machete"
 	desc = "A sharp machete often found in survival kits."
 	icon_state = "machete"
 	force_divisor = 0.3 // 18 when hardness 60 (steel)
-	attack_verb = list("slashed", "chopped", "gouged", "ripped", "cut")
-	can_cleave = TRUE //Now hatchets inherit from the machete, and thus knives. Tables turned.
-	slot_flags = SLOT_BELT
 	default_material = MAT_PLASTEEL
+
+CAPABILITIES(/obj/item/material/knife/machete)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(attack_verbs = list("slashed", "chopped", "gouged", "ripped", "cut"), can_cleave = TRUE))
 
 /obj/item/material/knife/machete/cyborg
 	name = "integrated machete"
@@ -163,7 +174,9 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	item_state = "knife"
 	applies_material_colour = FALSE
 	default_material = MAT_PLASTEEL
-	toolspeed = 2 // Use a real axe if you want to chop logs.
+
+CAPABILITIES(/obj/item/material/knife/tacknife/survival)
+	configure(item_tooling(speed = 2))
 
 /obj/item/material/knife/stone
 	name = "stone blade"
@@ -173,9 +186,10 @@ DECLARE_INTERACTIONS(/obj/item/material/butterfly, INTERACT_USE(null, PROC_REF(i
 	applies_material_colour = FALSE
 	fragile = TRUE
 	dulled = TRUE
-	edge = TRUE
-	sharp = TRUE
 	default_material = MAT_FLINT
+
+CAPABILITIES(/obj/item/material/knife/stone)
+	configure(item_combat(edge = TRUE, sharp = TRUE))
 
 /obj/item/material/knife/stone/wood
 	name = "stone knife"

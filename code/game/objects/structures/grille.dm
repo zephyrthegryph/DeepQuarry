@@ -13,26 +13,66 @@
 	max_integrity = 16
 	integrity_failure = 0.375
 	var/destroyed = FALSE
+TRACKED(/obj/structure/grille, destroyed)
 
-APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/grille/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
-/obj/structure/grille/Bumped(atom/user)
+CAPABILITIES(/obj/structure/grille)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
+	op("place_window", stack(/obj/item/stack/material, 1), label("Place a window"), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(window_sheet_held), silent = TRUE), req(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
+		begins(MSG(grille/placing_window)), wait(2 SECONDS), then(PROC_REF(window_placed)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+MSG_DEF_SELF(grille/cant_reach, span_notice("You can't reach."))
+MSG_DEF_SELF(grille/window_there, span_notice("There is already a window facing this way there."))
+MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window."))
+
+/// A sheet of a material that makes windows.
+/obj/structure/grille/proc/window_sheet_held(datum/act/op/A)
+	var/obj/item/stack/material/ST = A.held
+	return (!!read_once(ST.material?.created_window)) ? null : MSG(req_failed)
+
+/// The way a window would face when placed from where the builder stands (only the cardinal ones work), or null.
+/obj/structure/grille/proc/window_dir_for(mob/user)
+	if(loc == user.loc)
+		return user.dir
+	if(x == user.x)
+		return y > user.y ? 2 : 1
+	if(y == user.y)
+		return x > user.x ? 8 : 4
+	return null
+
+/obj/structure/grille/proc/window_reachable(datum/act/op/A)
+	return (!isnull(read_once(window_dir_for(A.actor)))) ? null : MSG(grille/cant_reach)
+
+/obj/structure/grille/proc/no_window_that_way(datum/act/op/A)
+	var/dir_to_set = read_once(window_dir_for(A.actor))
+	for(var/obj/structure/window/WINDOW in read_once(contents_of(loc)))
+		if(read_once(WINDOW.dir) == dir_to_set)
+			return MSG(grille/window_there)
+	return null
+
+/// A blob's hit destroys the grille outright.
+/obj/structure/grille/proc/blob_destroys(datum/act/hit/blob/A)
+	destroyed(src)
+	return OP_OK
+
+/// Something walked into it (the bump action's notice).
+/obj/structure/grille/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/user = N.bumper
 	if(ismob(user)) shock(user, 70)
 
-/obj/structure/grille/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/grille_hand,
-		/datum/interaction/entry_item/grille_item,
-	)
-	..()
-
-/// Old attack_hand: kick the grille (and maybe get shocked).
-/datum/interaction/entry_hand/grille_hand
-	id = "grille_hand"
-	name = "Kick"
-	effect = /obj/structure/grille/proc/interaction_hand
-
-/obj/structure/grille/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/grille/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 
 	user.setClickCooldown(user.get_attack_speed())
 	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
@@ -54,7 +94,7 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 	else
 		damage_dealt += 1
 
-	attack_generic(user,damage_dealt,attack_message)
+	generic_hit(src, user, damage_dealt, attack_message)
 	return TRUE
 
 /obj/structure/grille/CanPass(atom/movable/mover, turf/target)
@@ -96,48 +136,16 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 		damage = between(0, (damage - Proj.damage)*(Proj.obj_damage_type() == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
 
 	if(damage > 0)
-		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, Proj.armor_penetration, Proj.dir)
+		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, combat_of(Proj).armor_penetration, Proj.dir)
 		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
 
-/// Old attackby: place a window, or take a hit (and maybe get shocked).
-/datum/interaction/entry_item/grille_item
-	id = "grille_item"
-	name = "Use"
-	effect = /obj/structure/grille/proc/interaction_item
-
-/obj/structure/grille/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/grille/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/rcd)) // To stop us from hitting the grille when building windows, because grilles don't let parent handle it properly.
 		return TRUE
 	//window placing begin //TODO CONVERT PROPERLY TO MATERIAL DATUM
 	else if(istype(W,/obj/item/stack/material))
-		var/obj/item/stack/material/ST = W
-		if(!ST.material.created_window)
-			return TRUE
-
-		var/dir_to_set = 1
-		if(loc == user.loc)
-			dir_to_set = user.dir
-		else
-			if( ( x == user.x ) || (y == user.y) ) //Only supposed to work for GLOB.cardinal directions.
-				if( x == user.x )
-					if( y > user.y )
-						dir_to_set = 2
-					else
-						dir_to_set = 1
-				else if( y == user.y )
-					if( x > user.x )
-						dir_to_set = 8
-					else
-						dir_to_set = 4
-			else
-				to_chat(user, span_notice("You can't reach."))
-				return TRUE //Only works for GLOB.cardinal direcitons, diagonals aren't supposed to work like this.
-		for(var/obj/structure/window/WINDOW in contents_of(loc))
-			if(WINDOW.dir == dir_to_set)
-				to_chat(user, span_notice("There is already a window facing this way there."))
-				return TRUE
-		to_chat(user, span_notice("You start placing the window."))
-		om_task_start(/datum/om/task/timed/grille_attackby, user, src, ST = ST, dir_to_set = dir_to_set)
 		return TRUE
 
 //window placing end
@@ -148,39 +156,29 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
 		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force, INJURY_BURN)
+				receive_weapon_hit(W, user, combat_of(W).force, INJURY_BURN)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * 0.1)
+				receive_weapon_hit(W, user, combat_of(W).force * 0.1)
 	return TRUE
 
-/datum/om/task/timed/grille_attackby
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/grille/proc/attackby_timed_done
-	var/obj/item/stack/material/ST
-	var/dir_to_set
-
-/obj/structure/grille/proc/attackby_timed_done(datum/om/task/timed/grille_attackby/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/material/ST = task.ST
-	var/dir_to_set = task.dir_to_set
+/obj/structure/grille/proc/window_placed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/ST = A.held
+	var/dir_to_set = window_dir_for(user)
 	for(var/obj/structure/window/WINDOW in contents_of(loc))
 		if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
 			to_chat(user, span_notice("There is already a window facing this way there."))
 			return
-
 	var/wtype = ST.material.created_window
-	if (ST.use(1))
-		var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
-		to_chat(user, span_notice("You place the [WD] on [src]."))
-		WD.update_icon()
+	var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
+	to_chat(user, span_notice("You place the [WD] on [src]."))
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)
 	. = ..()
 	if(!destroyed)
 		set_density(FALSE)
-		destroyed = TRUE
-		update_icon()
+		set_destroyed(TRUE)
 		new /obj/item/stack/rods(get_turf(src))
 
 // Reaching 0 integrity clears the grille entirely, dropping its last rod.
@@ -188,21 +186,25 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 	new /obj/item/stack/rods(get_turf(src))
 	return ..()
 
-/obj/structure/grille/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/grille/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!shock(user, 100))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		replace_with(src, /obj/item/stack/rods, destroyed ? 1 : 2)
-	return TRUE
+	return OP_OK
 
-/obj/structure/grille/screwdriver_act(mob/user, obj/item/W)
+/obj/structure/grille/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(loc, /turf/simulated) && !anchored)
-		return TRUE
+		return OP_OK
 	if(!shock(user, 90))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		set_anchored(!anchored)
 		act_message(user, null, MSG_SELF(span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor.")), \
 			MSG_OTHERS(span_notice("%U% [anchored ? "fastens" : "unfastens"] the grille.")))
-	return TRUE
+	return OP_OK
 
 // shock user with probability prb (if all connections & power are working)
 // returns 1 if shocked, 0 otherwise
@@ -221,7 +223,7 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 		if(electrocute_mob(user, C, src))
 			power_warn(C.get_power_region())
 			fx_sparks(src, 3)
-			if(user.has_status(EFFECT_STUNNED))
+			if(user.has_status(STAT_STUNNED))
 				return 1
 		else
 			return 0

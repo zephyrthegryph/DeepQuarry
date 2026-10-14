@@ -11,17 +11,12 @@
 	icon = 'icons/obj/rig_modules.dmi'
 	desc = "A back-mounted hardsuit deployment and control mechanism."
 	flags = PHORONGUARD
-	slot_flags = SLOT_BACK
 	req_one_access = list()
 	req_access = list()
 	w_class = ITEMSIZE_HUGE
 
 	// These values are passed on to all component pieces.
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.2
-	permeability_coefficient = 0.1
 	unacidable = TRUE
 	preserve_item = 1
 
@@ -49,7 +44,7 @@
 	//Component/device holders.
 	var/obj/item/tank/air_supply                       // Air tank, if any.
 	var/obj/item/clothing/shoes/boots = null                  // Deployable boots, if any.
-	var/obj/item/clothing/suit/space/rig/chest                // Deployable chestpiece, if any.
+	var/obj/item/clothing/suit/chest                // Deployable chestpiece, if any.
 	var/obj/item/clothing/head/helmet/space/rig/helmet = null // Deployable helmet, if any.
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = null  // Deployable gauntlets, if any.
 	var/obj/item/cell/cell                             // Power supply, if any.
@@ -57,7 +52,6 @@
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
 	var/tmp/mob/living/carbon/human/wearer	// The person currently wearing the rig.
-	var/image/mob_icon                                        // Holder for on-mob icon.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
 	// Cooling system vars.
@@ -91,7 +85,6 @@
 	var/rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 	var/emp_protection = 0
-	item_flags = PHORONGUARD // add
 
 	var/datum/mini_hud/rig/minihud
 
@@ -105,18 +98,91 @@
 	// Protean
 	var/protean = 0
 	var/obj/item/storage/backpack/rig_storage
-	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
-DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
+CAPABILITIES(/obj/item/rig)
+	configure(item_worn(slots = SLOT_BACK, flags = PHORONGUARD))
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.2, permeability = 0))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	owns_one(nameof(boots), /obj/item/clothing/shoes)
+	owns_one(nameof(chest), /obj/item/clothing/suit/space/rig)
+	owns_one(nameof(gloves), /obj/item/clothing/gloves/gauntlets/rig)
+	owns_one(nameof(helmet), /obj/item/clothing/head/helmet/space/rig)
+	owns_one(nameof(minihud), /datum/mini_hud/rig)
+	owns_one(nameof(power_system), starts = /datum/rig_power_system)
+	owns_one(nameof(component_registry), starts = /datum/rig_component_registry)
+	// We only care about processing when we're on a mob
+	every(2 SECONDS, then(PROC_REF(rig_step)), when = nameof(carried_by_mob))
+	space(SPACE_PANEL, door = nameof(open))
+	wires(name = "Unknown", count = 5, randomize = TRUE, tools = FALSE)
+	on_wire(WIRE_RIG_SECURITY, cut = PROC_REF(security_wire_cut), pulse = PROC_REF(security_wire_pulsed))
+	on_wire(WIRE_RIG_AI_OVERRIDE, pulse = PROC_REF(ai_override_wire_pulsed))
+	on_wire(WIRE_RIG_SYSTEM_CONTROL, pulse = PROC_REF(system_wire_pulsed))
+	on_wire(WIRE_RIG_INTERFACE_LOCK, pulse = PROC_REF(interface_lock_wire_pulsed))
+	on_wire(WIRE_RIG_INTERFACE_SHOCK, cut = PROC_REF(shock_wire_cut), pulse = PROC_REF(shock_wire_pulsed))
+	interface(null, state = nameof(GLOB.tgui_inventory_state), window_var = nameof(interface_path))
+	without("ui_open")
+	op("toggle_seals", ui_act("toggle_seals"), then(PROC_REF(ui_act_toggle_seals)))
+	op("toggle_cooling", ui_act("toggle_cooling"), then(PROC_REF(ui_act_toggle_cooling)))
+	op("toggle_ai_control", ui_act("toggle_ai_control"), then(PROC_REF(ui_act_toggle_ai_control)))
+	op("toggle_suit_lock", ui_act("toggle_suit_lock"), then(PROC_REF(ui_act_toggle_suit_lock)))
+	op("toggle_piece", ui_act("toggle_piece", arg("piece", schema_text(4096))), then(PROC_REF(ui_act_toggle_piece)))
+	op("interact_module", ui_act("interact_module", arg("charge_type", schema_text(4096)), arg("module", num()), arg("module_mode", schema_text(4096))), then(PROC_REF(ui_act_interact_module)))
+	op("tank_settings", ui_act("tank_settings"), then(PROC_REF(ui_act_tank_settings)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(rig_emp_malfunction)))
+	op("rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Rig item"), then(PROC_REF(rig_item)))
+	// Sealing or unsealing the suit: one wait for the overall check, then one per piece (boots, gloves, helmet, chest), each lap sealing the piece it waited for.
+	op("seal_suit", ai(), takes("seal_target", "booting_L", "booting_R"), wait(PROC_REF(seal_wait), keeps = STAY | ALIVE, repeats = PROC_REF(seal_more), after_step = PROC_REF(seal_lap)), on_interrupt(PROC_REF(seal_interrupted)), then(PROC_REF(seal_finished)))
+	op("put_on", ai(), wait(PROC_REF(seal_wait), keeps = STAY | ALIVE), on_interrupt(PROC_REF(put_on_cancelled)), then(PROC_REF(put_on_finished)))
+	op("install_module", ai(), wait(4 SECONDS, keeps = HELD | STAY | TARGET_PRESENT), then(PROC_REF(install_module_done)))
+	op("rig_shock_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Rig shock hand"), then(PROC_REF(rig_shock_hand)))
+	op("rig_hardsuit_interface_verb", menu(), label("Open Hardsuit Interface"), needs(carried()), then(PROC_REF(rig_hardsuit_interface_verb)))
+	op("rig_toggle_vision_verb", menu(), label("Toggle Visor"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_toggle_vision_verb)))
+	op("rig_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req(PROC_REF(pred_has_helmet_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_helmet_verb)))
+	op("rig_toggle_chest_verb", menu(), label("Toggle Chestpiece"), needs(carried(), req(PROC_REF(pred_has_chest_holds))), then(PROC_REF(rig_toggle_chest_verb)))
+	op("rig_toggle_gauntlets_verb", menu(), label("Toggle Gauntlets"), needs(carried(), req(PROC_REF(pred_has_gauntlets_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_gauntlets_verb)))
+	op("rig_toggle_boots_verb", menu(), label("Toggle Boots"), needs(carried(), req(PROC_REF(pred_has_boots_holds)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_boots_verb)))
+	op("rig_deploy_suit_verb", menu(), label("Deploy Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_deploy_suit_verb)))
+	op("rig_toggle_seals_verb", menu(), label("Toggle Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_seals_verb)))
+	op("rig_switch_vision_mode_verb", menu(), label("Switch Vision Mode"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_switch_vision_mode_verb)))
+	op("rig_alter_voice_verb", menu(), label("Configure Voice Synthesiser"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(speech), TRUE, because = MSG(rig/speech))), then(PROC_REF(rig_alter_voice_verb)))
+	op("rig_select_module_verb", menu(), label("Select Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_select_module_verb)))
+	op("rig_toggle_module_verb", menu(), label("Toggle Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_module_verb)))
+	op("rig_engage_module_verb", menu(), label("Engage Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_engage_module_verb)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wiring_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(wiring_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+MSG_DEF_SELF(rig/not_worn, "The hardsuit is not being worn.")
+MSG_DEF_SELF(rig/not_active, "The suit is not active.")
+MSG_DEF_SELF(rig/visor, "The hardsuit does not have a configurable visor.")
+
+MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
+
+/// Native requirement: return null or the component refusal.
+/obj/item/rig/proc/pred_has_helmet_holds(datum/act/op/A)
+	return helmet ? null : "it has no helmet"
+
+/// Native requirement: return null or the component refusal.
+/obj/item/rig/proc/pred_has_chest_holds(datum/act/op/A)
+	return chest ? null : "it has no chestpiece"
+
+/// Native requirement: return null or the component refusal.
+/obj/item/rig/proc/pred_has_gauntlets_holds(datum/act/op/A)
+	return gloves ? null : "it has no gauntlets"
+
+/// Native requirement: return null or the component refusal.
+/obj/item/rig/proc/pred_has_boots_holds(datum/act/op/A)
+	return boots ? null : "it has no boots"
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()
 
 	suit_state = icon_state
 	item_state = icon_state
-	set_wires(new /datum/wires/rig(src))
 
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0
@@ -131,9 +197,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 	power_system.offline_vision_restriction = offline_vision_restriction
 
 	component_registry.initialize_pieces()
-
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
 
 
 // the suit pieces are torn down by its (owned) component registry.
@@ -164,14 +227,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 			. += "It's equipped with [english_list(installed_modules)]."
 
 /// TRUE while it is on a mob; set by Moved().
-OM_FIELD(/obj/item/rig, carried_by_mob, FALSE, CHANGE_EXPLICIT)
-// We only care about processing when we're on a mob
-DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
+/obj/item/rig/var/carried_by_mob = FALSE
+TRACKED(/obj/item/rig, carried_by_mob)
 
 /obj/item/rig/Moved(old_loc, direction, forced)
 	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)
 	if(!ismob(loc))
-		own_clear(src, nameof(minihud), OWN_DELETE) // Just in case we get removed some other way
+		rel_clear(src, nameof(minihud)) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
 		// damage, stuffed into storage, gibbed off, or a protean transforming out of
@@ -188,7 +250,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 			reset()
 		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
 		if(wearer()?.wearing_rig == src)
-			own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+			rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 		rel_clear(src, nameof(wearer))
 
 	// If we've lost any parts, grab them back.
@@ -206,8 +268,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 			return null //All other species are 'humanoid enough' to wear the default rig sprite.
 		if(icon_override)
 			return icon_override
-		else if(mob_icon)
-			return mob_icon
+		// The suit's own worn sheet: the species' sheet, else the rig's default (none for a protean rig: no forced sprite).
+		return LAZYACCESS(sprite_sheets, body_type) || default_mob_icon
 
 	return ..()
 
@@ -229,35 +291,33 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 // Seal = 0 unsets protection
 /obj/item/rig/proc/update_airtight(obj/item/piece, seal = 0)
 	if(seal == 1)
-		piece.min_pressure_protection = rigsuit_min_pressure
-		piece.max_pressure_protection = rigsuit_max_pressure
-		piece.item_flags |= AIRTIGHT
+		piece.set_min_pressure_protection(rigsuit_min_pressure)
+		piece.set_max_pressure_protection(rigsuit_max_pressure)
+		piece.set_item_flags(worn_of(piece).flags | (AIRTIGHT))
 	else
-		piece.min_pressure_protection = null
-		piece.max_pressure_protection = null
-		piece.item_flags &= ~AIRTIGHT
+		piece.set_min_pressure_protection(null)
+		piece.set_max_pressure_protection(null)
+		piece.set_item_flags(worn_of(piece).flags & (~AIRTIGHT))
 	return
 
 /obj/item/rig/proc/reset()
-	offline = 2
-	canremove = TRUE
+	set_offline(2)
+	set_canremove(TRUE)
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 		if(!piece) continue
-		piece.icon_state = "[suit_state]"
+		piece.set_icon_state("[suit_state]")
 		if(airtight)
 			update_airtight(piece, 0) // Unseal
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /obj/item/rig/proc/cut_suit()
-	offline = 2
-	canremove = TRUE
+	set_offline(2)
+	set_canremove(TRUE)
 	toggle_piece("helmet", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("gauntlets", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("boots", loc, ONLY_RETRACT, TRUE)
 	toggle_piece("chest", loc, ONLY_RETRACT, TRUE)
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /// Seals or unseals the suit: a sequence of timed actions (the overall check, then one per
 /// piece), each continuing in seal_piece() and ending in seal_finish().
@@ -279,14 +339,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	var/atom/movable/screen/rig_booting/booting_R = new
 
 	if(!seal_target)
-		booting_L.icon_state = "boot_left"
-		booting_R.icon_state = "boot_load"
-		animate(booting_L, alpha=230, time=30, easing=SINE_EASING)
-		animate(booting_R, alpha=200, time=20, easing=SINE_EASING)
+		booting_L.set_icon_state("boot_left")
+		booting_R.set_icon_state("boot_load")
+		animate(booting_L, alpha=230, time=3 SECONDS, easing=SINE_EASING)
+		animate(booting_R, alpha=200, time=2 SECONDS, easing=SINE_EASING)
 		M.client?.screen += booting_L
 		M.client?.screen += booting_R
 
-	canremove = FALSE // No removing the suit while unsealing.
+	set_canremove(FALSE) // No removing the suit while unsealing.
 	sealing = 1
 
 	if(!seal_target && !suit_is_deployed())
@@ -300,39 +360,75 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 		act_message(M, null, MSG_SELF(span_notice("With a quiet hum, the suit begins running checks and adjusting components.")), \
 			MSG_OTHERS(span_notice("%U%'s suit emits a quiet hum as it begins to adjust its seals.")))
 		if(seal_delay)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
+			perform_op(M, src, "seal_suit", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R))
 			return 1
 	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
 	return 1
 
-/// One timed stage of sealing the suit: the overall check (no piece), or one piece. Each
-/// continues in seal_piece() with the next piece.
-/datum/om/task/timed/rig_seal
-	flags = IGNORE_TARGET_LOC_CHANGE
-	complete_proc = /obj/item/rig/proc/seal_stage_done
-	cancel_proc = /obj/item/rig/proc/seal_interrupted
-	var/seal_target
-	var/atom/movable/screen/rig_booting/booting_L
-	var/atom/movable/screen/rig_booting/booting_R
-	/// The piece this stage seals (null: the overall check) and its place in the order.
-	var/obj/item/piece
-	var/msg_type
-	var/index = 0
+/// How long one stage of sealing (or putting the suit on) takes.
+/obj/item/rig/proc/seal_wait(datum/act/op/A)
+	return seal_delay
 
-/obj/item/rig/proc/seal_interrupted(datum/om/task/timed/rig_seal/task)
-	var/mob/living/carbon/human/M = task.actor
+/// The wearer moved, passed out or lost the suit while it was adjusting.
+/obj/item/rig/proc/seal_interrupted(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	if(M)
 		to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
 		play_sfx(src, SFX_MACHINES_RIG_RIGERROR)
-	seal_finish(M, task.seal_target, task.booting_L, task.booting_R, TRUE)
+	seal_finish(M, A.arg("seal_target"), A.arg("booting_L"), A.arg("booting_R"), TRUE)
 
-/obj/item/rig/proc/seal_stage_done(datum/om/task/timed/rig_seal/task)
-	if(task.piece)
-		seal_one_piece(task.actor, task.piece, task.msg_type, task.seal_target)
-	seal_piece(task.actor, task.seal_target, FALSE, task.booting_L, task.booting_R, task.index + 1)
+/// A lap of the seal ended: the piece it waited for (none after the overall check) is sealed, then the next stage is found.
+/obj/item/rig/proc/seal_lap(datum/act/op/A)
+	var/obj/item/piece = A.arg("piece")
+	if(piece)
+		seal_one_piece(A.actor, piece, A.arg("msg_type"), A.arg("seal_target"))
+	seal_next_stage(A, (A.arg("index") || 0) + 1)
 
-/// Seals pieces from `index` on (boots, gloves, helmet, chest); a piece with a seal delay is a
-/// timed action that comes back here for the next one.
+/// Another stage follows while a piece is left to seal.
+/obj/item/rig/proc/seal_more(datum/act/op/A)
+	return !!A.arg("more")
+
+/// The last stage ended, or the suit lost a piece on the way.
+/obj/item/rig/proc/seal_finished(datum/act/op/A)
+	seal_finish(A.actor, A.arg("seal_target"), A.arg("booting_L"), A.arg("booting_R"), !!A.arg("failed"))
+	return OP_OK
+
+/// Finds the next piece from `index` on that has a stage to wait for (boots, gloves, helmet, chest) and writes it to the op's arguments; a piece that is
+/// missing is skipped, a suit that lost its wearer or a piece ends the sealing as failed.
+/obj/item/rig/proc/seal_next_stage(datum/act/op/A, index)
+	var/mob/living/carbon/human/M = A.actor
+	LAZYSET(A.args, "more", FALSE)
+	LAZYSET(A.args, "piece", null)
+	if(!M)
+		LAZYSET(A.args, "failed", TRUE)
+		return
+	var/list/pieces = list(list(M.get_equipped_item(SLOT_ID_SHOES),boots,"boots",boot_type),list(M.get_equipped_item(SLOT_ID_GLOVES),gloves,"gloves",glove_type),list(M.get_equipped_item(SLOT_ID_HEAD),helmet,"helmet",helm_type),list(M.get_equipped_item(SLOT_ID_SUIT),chest,"chest",chest_type))
+	for(var/i in index to length(pieces))
+		var/list/piece_data = pieces[i]
+		var/obj/item/piece = piece_data[1]
+		var/obj/item/compare_piece = piece_data[2]
+		var/msg_type = piece_data[3]
+		var/piece_type = piece_data[4]
+
+		if(!piece || !piece_type)
+			continue
+
+		if(!istype(M) || !istype(piece) || !istype(compare_piece) || !msg_type)
+			to_chat(M, span_warning("You must remain still while the suit is adjusting the components."))
+			LAZYSET(A.args, "failed", TRUE)
+			return
+
+		if(!((M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src) && piece == compare_piece))
+			LAZYSET(A.args, "failed", TRUE)
+			return
+
+		LAZYSET(A.args, "piece", piece)
+		LAZYSET(A.args, "msg_type", msg_type)
+		LAZYSET(A.args, "index", i)
+		LAZYSET(A.args, "more", TRUE)
+		return
+
+/// Seals pieces from `index` on (boots, gloves, helmet, chest) at once; with a seal delay the suit seals through the "seal_suit" op instead.
 /obj/item/rig/proc/seal_piece(mob/living/carbon/human/M, seal_target, instant, atom/movable/screen/rig_booting/booting_L, atom/movable/screen/rig_booting/booting_R, index)
 	if(!M)
 		seal_finish(M, seal_target, booting_L, booting_R, TRUE)
@@ -357,28 +453,25 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 			seal_finish(M, seal_target, booting_L, booting_R, TRUE)
 			return
 
-		if(seal_delay && !instant)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R, piece = piece, msg_type = msg_type, index = i)
-			return
 		seal_one_piece(M, piece, msg_type, seal_target)
 
 	seal_finish(M, seal_target, booting_L, booting_R, FALSE)
 
 /obj/item/rig/proc/seal_one_piece(mob/living/carbon/human/M, obj/item/piece, msg_type, seal_target)
-	piece.icon_state = "[suit_state][!seal_target ? "_sealed" : ""]"
+	piece.set_icon_state("[suit_state][!seal_target ? "_sealed" : ""]")
 	switch(msg_type)
 		if("boots")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "seal around your feet" : "relax their grip on your legs"]."))
-			M.update_inv_shoes()
+			changed(src)
 		if("gloves")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "tighten around your fingers and wrists" : "become loose around your fingers"]."))
-			M.update_inv_gloves()
+			changed(src)
 		if("chest")
 			to_chat(M, span_notice("\The [piece] [!seal_target ? "cinches tight again your chest" : "releases your chest"]."))
-			M.update_inv_wear_suit()
+			changed(src)
 		if("helmet")
 			to_chat(M, span_notice("\The [piece] hisses [!seal_target ? "closed" : "open"]."))
-			M.update_inv_head()
+			changed(src)
 			if(helmet?.light_system == STATIC_LIGHT)
 				helmet.update_light(wearer())
 
@@ -400,39 +493,37 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	if(failed_to_seal)
 		M?.client?.screen -= booting_L
 		M?.client?.screen -= booting_R
-		qdel(booting_L)
-		qdel(booting_R)
+		consume(booting_L, M)
+		consume(booting_R, M)
 		for(var/obj/item/piece in list(helmet,boots,gloves,chest))
 			if(!piece) continue
-			piece.icon_state = "[suit_state][!seal_target ? "" : "_sealed"]"
-		canremove = !seal_target
+			piece.set_icon_state("[suit_state][!seal_target ? "" : "_sealed"]")
+		set_canremove(!seal_target)
 		if(airtight)
 			update_component_sealed()
-		mob_icon = null // rebuilt by the redraw
-		update_icon()
+		refresh_worn_pieces()
 		return 0
 
 	// Success!
-	canremove = seal_target
+	set_canremove(seal_target)
 	if(M.hud_used)
 		if(canremove)
-			own_clear(src, nameof(minihud), OWN_DELETE)
+			rel_clear(src, nameof(minihud))
 		else
-			own_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
+			rel_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
-	qdel(booting_L)
-	booting_R.icon_state = "boot_done"
-	om_after(M, 4 SECONDS, /proc/rig_boot_hud_clear, M, booting_R)
+	consume(booting_L, M)
+	booting_R.set_icon_state("boot_done")
+	after(M, 4 SECONDS, GLOBAL_PROC_REF(rig_boot_hud_clear), with = list(M, booting_R))
 
 	if(canremove)
 		for(var/obj/item/rig_module/module in installed_modules)
 			module.deactivate()
 	if(airtight)
 		update_component_sealed()
-	mob_icon = null // rebuilt by the redraw
-	update_icon()
+	refresh_worn_pieces()
 
 /obj/item/rig/proc/update_component_sealed()
 	for(var/obj/item/piece in list(helmet,boots,gloves,chest))
@@ -488,7 +579,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	var/mob/living/carbon/human/H = loc
 	power_system.run_cooling(H)
 
-/obj/item/rig/periodic_step()
+/obj/item/rig/proc/rig_step(datum/act/timer/A)
 	// Run through cooling.
 	coolingProcess()
 
@@ -497,21 +588,21 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	// the cell-check path, preserving the original conditional structure.
 	if(!istype(wearer(), /mob/living/carbon/human) || loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
 		if(power_system.process_offline_state())
-			offline = power_system.offline
+			set_offline(power_system.offline)
 			return
-		offline = power_system.offline
+		set_offline(power_system.offline)
 
 	// If we are still offline (came online this tick but skipped the block above),
 	// sync and bail so we don't run module processing while unpowered.
 	if(offline)
-		offline = power_system.offline
+		set_offline(power_system.offline)
 		return
 
 	if(cell && cell.charge > 0 && electrified > 0)
 		electrified--
 
 	if(malfunction_delay > 0)
-		malfunction_delay--
+		set_malfunction_delay(malfunction_delay - 1)
 	else if(malfunctioning)
 		malfunctioning--
 		malfunction()
@@ -550,7 +641,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	if(mod && mod.disruptive)
 		for(var/obj/item/rig_module/module in (installed_modules - mod))
 			if(module.active && module.disruptable)
-				module.deactivate()
+				module.deactivate(FALSE, user)
 
 	draw_power(cost * 10 / CELLRATE, mod || user, partial = TRUE)
 	return 1
@@ -570,43 +661,24 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 		return FALSE
 	var/units = joules * CELLRATE
 	if(partial)
-		return cell.use(units, FALSE) > 0
+		return cell.use(units) > 0
 	if(!cell.check_charge(units + max(reserve, 0) * CELLRATE))
 		return FALSE
-	return cell.use(units, FALSE) >= units
+	return cell.use(units) >= units
 
 /// Put up to `joules` into the cell. Returns the joules actually stored.
 /obj/item/rig/proc/add_power(joules, datum/source)
 	if(joules <= 0 || !cell)
 		return 0
-	return cell.give(joules * CELLRATE, FALSE) / CELLRATE
+	return cell.give(joules * CELLRATE) / CELLRATE
 
-DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/rig/appearance_overlays()
-	. = list()
-
-	if(!mob_icon)
-		var/species_icon = default_mob_icon
-		// Since setting mob_icon will override the species checks in
-		// update_inv_wear_suit(), handle species checks here.
-		if(wearer() && LAZYACCESS(sprite_sheets, wearer().species.get_bodytype(wearer())))
-			species_icon = sprite_sheets[wearer().species.get_bodytype(wearer())]
-		mob_icon = icon(icon = species_icon, icon_state = "[icon_state]")
-
-	if(chest)
-		chest.cut_overlays()
-		if(length(installed_modules))
-			for(var/obj/item/rig_module/module in installed_modules)
-				if(module.suit_overlay)
-					chest.add_overlay(image(module.suit_overlay_icon, icon_state = "[module.suit_overlay]", dir = SOUTH))
-
-	if(wearer())
-		wearer().update_inv_shoes()
-		wearer().update_inv_gloves()
-		wearer().update_inv_head()
-		wearer().update_inv_wear_suit()
-		wearer().update_inv_back()
-	return .
+/// The wearer redraws every slot a piece of the suit sits in: the sealed or retracted state of a piece is its own icon_state, which the
+/// pieces get from the rig directly, so the slots that wear them are redrawn after the rig changed them.
+/obj/item/rig/proc/refresh_worn_pieces()
+	var/mob/living/carbon/human/H = wearer()
+	if(!H)
+		return
+	changed(src)
 
 /obj/item/rig/proc/check_suit_access(mob/living/carbon/human/user, do_message = TRUE)
 
@@ -651,9 +723,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 
 	if(seal_delay > 0 && istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_notice("You start putting on %T%...")), MSG_OTHERS(span_notice("%U% starts putting on %T%...")))
-		om_task_timed(M, seal_delay, src, src, PROC_REF(put_on_done), list(M), IGNORE_TARGET_LOC_CHANGE, PROC_REF(put_on_failed), list(M))
+		perform_op(M, src, "put_on", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return
 	put_on_done(M)
+
+/obj/item/rig/proc/put_on_cancelled(datum/act/op/A)
+	put_on_failed(A.actor)
+
+/obj/item/rig/proc/put_on_finished(datum/act/op/A)
+	put_on_done(A.actor)
+	return OP_OK
 
 /obj/item/rig/proc/put_on_failed(mob/living/carbon/human/M)
 	if(M && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
@@ -665,8 +744,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
 		rel_set(src, nameof(wearer), M)
-		own_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
-		update_icon()
+		rel_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
+		refresh_worn_pieces()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
 
@@ -679,7 +758,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	if(!H)
 		return
 
-	if((H == wearer() && (H.stat||H.has_status(EFFECT_PARALYZED)||H.has_status(EFFECT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
+	if((H == wearer() && (H.stat||H.has_status(STAT_PARALYZED)||H.has_status(STAT_STUNNED))) && !forced) // If the user isn't wearing the suit it's probably an AI.
 		return
 
 	var/obj/item/check_slot
@@ -716,11 +795,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 						rel_clear(use_obj, nameof(use_obj.master_rig))   // intentional retract: silence the dropped() safety net
-						use_obj.canremove = TRUE
+						use_obj.set_canremove(TRUE)
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
 						use_obj.dropped(holder)
-						use_obj.canremove = FALSE
+						use_obj.set_canremove(FALSE)
 						use_obj.forceMove(src)
 
 		else if (deploy_mode != ONLY_RETRACT)
@@ -776,22 +855,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+		rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 	rel_clear(src, nameof(wearer))
 
 //Todo
 /obj/item/rig/proc/malfunction()
 	return 0
 
-DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 /// A pulse makes the suit malfunction, drains its cell and can damage modules.
-/obj/item/rig/proc/rig_emp_malfunction(datum/damage_packet/packet)
+/obj/item/rig/proc/rig_emp_malfunction(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	//set malfunctioning
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10
 		if(malfunction_delay <= 0)
-			malfunction_delay = max(malfunction_delay, round(30/packet.severity))
+			set_malfunction_delay(max(malfunction_delay, round(30/packet.severity)))
 
 	//drain some charge
 	if(cell) cell.emp_act(packet.severity + 15)
@@ -802,7 +882,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.
 		fx_sparks(src, 5, FALSE)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 
@@ -813,7 +893,9 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 	var/chance
 	if(!is_emp)
-		chance = 2*max(0, damage - (chest? chest.breach_threshold : 0))
+		var/obj/item/clothing/suit/space/space_chest = chest
+		var/threshold = istype(space_chest) ? space_chest.breach_threshold : 0
+		chance = 2*max(0, damage - threshold)
 	else
 		//Want this to be roughly independant of the number of modules, meaning that X emp hits will disable Y% of the suit's modules on average.
 		//that way people designing hardsuits don't have to worry (as much) about how adding that extra module will affect emp resiliance by 'soaking' hits for other modules
@@ -914,7 +996,7 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 		return
 
 // Added this for protean living hardsuit
-	COOLDOWN_START(src, wearer_move_delay, 2)
+	COOLDOWN_START(src, wearer_move_delay, 0.2 SECONDS)
 	if(ai_moving)
 		if(!ai_can_move_suit(user, check_user_module = 1))
 			return
@@ -1028,15 +1110,28 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 /// The boot-up HUD's last piece leaves the screen once the seals finish.
 /proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
 	M.client?.screen -= booting_R
-	qdel(booting_R)
+	consume(booting_R, M)
 
 /obj/item/rig/ownership()
 	. = ..()
-	. += owns(nameof(air_supply), policy = OWN_CONTAINED)
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-	. += owns(nameof(installed_modules), policy = OWN_CONTAINED)
+	. += owns(nameof(air_supply), policy = OWN_DELETE)
+	. += owns(nameof(cell), policy = OWN_DELETE)
+	. += owns(nameof(installed_modules), policy = OWN_DELETE, is_list = TRUE)
 	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
 	return wearer
+
+/// Online, offline or cut: a wearer's sight under the helmet (offline_vision_restriction) follows it, so the wearer's
+/// equipment key is published (the human status step re-reads its rig visor).
+/obj/item/rig/proc/set_offline(value)
+	if(TRACKED_UNCHANGED(offline, value))
+		return FALSE
+	offline = value
+	tracked_changed(src, nameof(offline))
+	var/mob/living/W = wearer()
+	if(W)
+		PUBLISH_CHANGE(W, MOB_KEY_EQUIPMENT)
+	return TRUE
+SETTER(/obj/item/rig, offline)

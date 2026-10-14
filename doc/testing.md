@@ -10,6 +10,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 |---|---|---|
 | Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
 | Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | 5–6 minutes plus compile, sharded |
+| The E0 proofs (pending the engines, so not in any other tier) | `tools/build/build.sh dm-test --tier=e0` · `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` | compile + about 25 s |
 | Profile each test's procs | add `--profile-tests` to `dm-test` or `dq_focused_test.sh` | about twice as slow |
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
@@ -27,6 +28,15 @@ Unit tests are `/datum/unit_test` subtypes under `code/modules/unit_tests/`,
 registered in `_unit_tests.dm`. `dm-test` compiles the game with `UNIT_TESTS`,
 `CITESTING` and `CIBUILDING`, boots it in DreamDaemon, runs every test, and
 shuts down. It also repacks icons and builds Verdigris first if they are stale.
+
+Verdigris comes from a shared cache when it can: the build keys the DLL on the
+git ids of its inputs at `HEAD` (the `verdigris/` tree, the generated bindings,
+target, profile, `RUSTFLAGS`) and copies a cached build from
+`DQ_VERDIGRIS_CACHE` (default `E:/dq-cache/verdigris`) instead of running cargo,
+so a new worktree needs no `verdigris/target`. A miss builds and stores the DLL
+(atomic temp-dir rename; the newest 10 entries and anything used in 14 days are
+kept). Uncommitted edits to those inputs skip the cache. `DQ_VERDIGRIS_CACHE=off`
+disables it. The runner still checks `VERDIGRIS_ABI` before booting.
 
 - **Map.** Under `CITESTING` the world boots `maps/virgo_minitest/`, one small
   station level that loads in seconds. Add `-DCITESTING_FULL_MAP` to boot
@@ -64,9 +74,30 @@ bash tools/dq_focused_test.sh /datum/unit_test/belly_damage /datum/unit_test/spr
 bash tools/dq_focused_test.sh belly_damage spritesheets                 # bare names get /datum/unit_test/ prepended
 bash tools/dq_focused_test.sh 'dq_expedition_*'                        # glob over every /datum/unit_test type (quote it)
 bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # N runs, per-run pass/FAIL summary, fails if any failed
+bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print what the names/globs expand to (about 1 s, runs nothing)
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
+bash tools/dq_focused_test.sh --boot                                   # boot only (the boot gate below)
+bash tools/dq_focused_test.sh --split-slow dq_look_tree_pin dq_boot_gate   # slow pins in a second world at the same time (default when mixed)
+bash tools/dq_focused_test.sh --detach <names>; bash tools/dq_focused_test.sh --status <runid>   # background run + poll (agent_workflow.md section 9)
 ```
+
+**The boot gate.** Every run, focused or full, fails when the world logged a runtime or a `WARNING()` (or a refused
+`move_into()`) before its first test: `tests.log` says `Boot gate`, the build prints `BOOT GATE:` with the first
+warnings, and `data/logs/runN/boot_report.json` holds the counts. It is the boot's fault, not your test's, unless
+your change runs at boot. `doc/rewrite/boot_gate.md`.
+
+**Bounded staleness sweep (focused runs).** The staleness checker's end-of-test sweep (`staleness_test_end`) checks every
+entity the boot created (about 15,700) after the first test, 8-15 s. A focused run passes the world param `staleness=bounded`:
+each test end checks what the test created (entities that were queued for a first draw when the first test began count as boot backlog, not the test's), 300 entities of the boot backlog in order, and 100 from the rotating cursor, and
+flushes the refresh queue only when it holds 500 or fewer entries (the checks skip a queued atom). `dm-test` (the full suite,
+sharded), `tools/dq_merge_gates.sh` and `tools/dq_lane_ready.sh` stay `full`: the param is absent there, and the two scripts
+export `DQ_STALENESS=full`, which `dq_focused_test.sh` honours (`DQ_STALENESS=full bash tools/dq_focused_test.sh ...` forces
+it by hand). `tests.log` says which ran: `STALENESS: test-end mode ...` at suite start and, per test, `STALENESS: end of <test>
+mode=... entities_checked=... backlog_remaining=...`.
+
+A long list of names (a broad glob) reaches `dm-test` as `--focus=@file`, since a Windows command line stops at
+8191 characters.
 
 A glob (a name with `*`, `?` or `[`) is matched against the `/datum/unit_test/...`
 type definitions under `code/` and fails if nothing matches. `--repeat=N` reruns the
@@ -78,16 +109,62 @@ them can hide a failure in the full suite, which still does all of them:
 
 | Skipped in focused runs | Full suite | Why it is safe |
 |---|---|---|
-| Round-start settle before the first test: 2 s instead of 10 s (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
+| Round-start settle before the first test: 1 s instead of 10 s (0 s for `--boot`) (`HandleTestRun`, `code/game/world.dm`) | 10 s | Nothing is skipped, only started sooner. A test that fails only when focused depends on round-start settling and should wait for what it needs itself. |
 | Round-end report delay: 0 s instead of 5 s (`declare_completion`, `code/_helpers/roundend.dm`) | 5 s | The delay lets players read the report; a test world has none. |
 | Generating every asset and spritesheet at boot, about 2.3 s (`SSassets.Initialize`) | all generated | `get_asset_datum()` builds an asset on first use, and the `spritesheets` and `test_asset_smart_cache` tests call it, so focusing those still generates and checks every sheet. |
 
 `unit_test_is_focused_run()` is the switch; add a row here if you add another.
 
+### Boot work a focused run defers (`boot_needs`)
+
+A test sets `boot_needs = list(BOOT_NEED_...)` (`code/__defines/_boot_needs.dm`) to name the boot work it reads. The default,
+null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
+leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
+full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
+
+| Token | Skipped work | If a test needs it |
+|---|---|---|
+| `BOOT_NEED_OWN_VALIDATE` | `own_validate_boot()` (the full suite still reports declaration conflicts at boot) | ownership tables build on first use |
+| `BOOT_NEED_EARLY_ASSETS` | Early Assets system | `get_asset_datum()` builds each on first use |
+| `BOOT_NEED_LIGHTING` | `create_all_lighting_objects()`; Lighting stays uninitialized | list it for any test reading light, luminosity or lighting objects |
+| `BOOT_NEED_RADIO` | `GLOB.autospeaker` | list it for any test that announces or speaks on radio |
+| `BOOT_NEED_HOLOMAPS` | holo minimap generation | list it for any test reading `SSholomaps` |
+
+Static entries are deliberately not deferrable: the map load itself resolves `map_resolver` and loot entries through them.
+
 Compile time is not reduced: `dm-test` never runs DreamChecker (only `dm` and
 `lint` do), and the icon repack and Verdigris build are already skipped when
 nothing they read has changed. Boot before `world/New` (about 19 s, DreamDaemon
 loading the `.rsc` and the compiled-in test map) is outside our control.
+
+### Isolation: restoring shared state
+
+**The state guard.** After every test the harness compares the scalar `GLOB` vars with their values before it
+(`unit_test_globals_guard()`). A flag a test left changed is logged as `STATE LEAK: <test> left GLOB.x = ...`
+in `tests.log` (text and paths as `STATE LEAK?`), and a run that fails prints them. A test that fails in a long
+focused run but passes alone is almost always one of these: find the leak before it and make that test use
+`set_global()`. The guard only flags; it never restores (a lazy-init flag put back would rebuild what it guards).
+
+Every test shares one world, and a failing `TEST_ASSERT` returns from `Run()`
+at once, so a restore line after it never runs. Anything a test changes outside
+its own block goes through a harness helper, which undoes it in teardown even
+when the test fails or runtimes:
+
+- `set_global("name", value)`, `set_var(datum, "name", value)` and
+  `set_config(/datum/config_entry/..., value)` record the original on the first
+  change and put it back afterwards. Setting a flag back later in the same test
+  is fine; teardown still restores the value the test started with.
+- `defer_cleanup(target, PROC_REF(x), args...)` runs cleanup that isn't a
+  `qdel()` (releasing a site, unregistering from a global list), last queued
+  first, before `allocate()`d objects are deleted.
+- Put objects on the test's own block (`run_loc_floor_bottom_left`), not at a
+  fixed map coordinate: the leak check only sees the block.
+
+Teardown (the deferred cleanups, then deleting `allocate()`d objects) runs in
+the tick `Run()` returns, so a timer or task still pending on a test's entities
+(a mob's telegraphed attack, say) dies with them instead of landing after the
+test. It then fails a test that leaves objects on its block or an expedition
+site live; the site is released so later tests start clean.
 
 ### Writing fast tests
 
@@ -118,6 +195,7 @@ Every test has a `tier` (`code/modules/unit_tests/_unit_tests.dm`):
 |---|---|---|
 | `TEST_TIER_NORMAL` (the default) | every integration merge: `tools/build/build.sh dm-test`, `bin/test.cmd` | every ordinary test, plus a small representative of each exhaustive sweep |
 | `TEST_TIER_EXHAUSTIVE` | CI (`run_integration_tests.yml`, including the weekly full-map run) and nightly: `dm-test --tier=all` | the whole-type sweeps (see below) |
+| `TEST_TIER_E0` | only `dm-test --tier=e0`, or a focused run by name | the ten E0 proofs, which cannot pass until engines E1-E6 land (see "The E0 proofs") |
 
 **Integration merges run the normal tier; CI and nightly run the exhaustive
 tier as well.** A plain `dm-test` runs the normal tier. `--tier=all` (or
@@ -155,6 +233,74 @@ The others override a small hook: `equip_species()`/`item_stride()` for equip,
 To add a sweep, write it exhaustive with a representative. Put it in the
 normal tier only if it is cheap: `dq_constraint_parity/holster` has seventeen
 holders and stays whole in the normal tier.
+
+### The E0 proofs
+
+Phase 1 of the rewrite (`doc/rewrite/final_api.html` section 19) starts with ten executable proofs of the
+semantic contracts that would be expensive to get wrong after content conversion begins. They live in
+`code/modules/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
+(`code/tests/driver/`) and the test-only fixtures (`code/tests/engine/`), and are all green only when engines E1-E6 have landed.
+Until then each one fails, on purpose, with `E1-E6 not implemented: <what>` naming every engine piece it reached.
+
+They have a tier of their own, `TEST_TIER_E0`, so the normal suite stays green:
+
+| Command | Runs the proofs? |
+|---|---|
+| `dm-test` (normal), `dm-test --tier=all`, `dm-test --tier=exhaustive` | no |
+| `dm-test --tier=e0` | yes, and only them |
+| `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` or `... dq_e0_proof/p05_refused_insert_loses_nothing` | yes (a focused run ignores the tier) |
+
+A tier-e0 run reports them separately from the rest of the run: each failing proof prints a `E0 PENDING` line with its reasons
+(when the failure is only a missing engine), and the log ends with `E0 proofs: N green, N pending an engine, N failed for another
+reason`. A proof that fails for any other reason, such as an assertion, counts as failed. The tier-e0 run exits non-zero until all ten
+are green, which is the gate: the ten must pass before any content conversion starts, and again before every phase 3 step.
+
+A proof reads what it needs into locals as it drives the fixture, then calls `E0_GATE` once and asserts. `E0_GATE` fails the
+proof with the "not implemented" message if a driver form or a stub it called reached an engine piece that does not exist yet, so a
+proof never asserts on a null. When an engine replaces its stubs the gate goes quiet for that piece and the assertions run unchanged.
+`doc/rewrite/engine_contracts.md` lists, per proof, which engine it waits for.
+
+### The kernel clock (test_time) and the input inbox
+
+A test that makes time pass or sends an input starts with `test_driver_begin()` (code/tests/driver/driver.dm) and ends with
+`test_driver_end()`. Begin gives the kernel an injected clock (`kernel().test_now`, in deciseconds, from 0) and makes a fresh test
+OM scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
+decisecond) at a time, running the phases K, S, N, D, P, R, G of each slot in order through the same phase procs the live tick
+calls, with a drain at the start of S, D, P and R; `test_phase(P)` runs one phase at the current time and moves nothing;
+`test_drain()` is one marked drain. Native frames and the host services (tgui transport, dbcore, assets) are not stepped.
+
+Which work a test steps: the items registered while the test owned the clock (a fixture system's `every()`, an entity type's first
+`every()` table) and the kernel's own plumbing (the input inbox, requests, jobs). Live items keep their world.time due dates and
+never run inside a test; test items never run on the live loop. An item no run has seen is armed one interval after the clock it
+first meets, so `every(1 SECOND)` runs exactly five times in `test_time(5 SECONDS)`. A fixture system that must not boot with the
+live kernel sets `lazy_only = TRUE` and is made by `system(path)`.
+
+`end_test_world()` calls `test_driver_end()`, so a failed assertion or a runtime cannot leave later tests on the injected clock.
+The recorder (`test_record` / `test_recorded`) stamps each row with its position (`seq`) and the kernel time (`at`) and holds at
+most `TEST_RECORD_MAX` rows.
+
+The input inbox (code/engine/kernel/inbox.dm) is tested with `/datum/input_event` fixtures: `SSinput.room_override` (TRUE or FALSE)
+decides whether an input resolves in place or queues, and `test_phase(KERNEL_PHASE_K)` drains. In a test build the tick always has
+room unless the override says otherwise (a test world boots through ticks far past 100%).
+
+### Gameplay scenarios
+
+`code/modules/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
+arrivals, walking through a door, putting a coat on and off, the tail's layer against the uniform, breathing phoron with and without
+internals, losing the room's oxygen, an airlock controller's window, picking up and dropping, a wall's right-click menu, and cutting and
+restoring an area's power. They drive the game as a player does and assert what the player would see, never a snapshot:
+
+- input goes in the way a client sends it, through the helpers in `gameplay/_harness.dm`: `click()` (a map click is the
+  `/datum/input_event/click` that `/atom/Click()` submits; a HUD click is the screen object's own `Click()` with the player as usr),
+  `press()` (a window button, `test_ui()`), `menu_pick()` (`test_menu()`), `stride()` (the mob move a client's `Move()` makes; walking
+  into a door bumps it), `key_equip()` / `key_drop()` (the verbs the E and Q macros run);
+- time is the kernel's (`test_driver_begin()`, then `pass_time()`, which steps `test_time()` a second at a time and, when asked, the
+  native gas frame and a power step, which the injected clock does not step);
+- the player is `spawn_player()` (or `spawn_arrival()`, the late-join path): a body someone controls, with a HUD.
+
+`tools/dq_lane_ready.sh` adds every line of `tools/ci/gameplay_tests.txt` to each lane's tests, so they run on every landing; the whole
+set takes about 20 s of world time. A scenario failing because of a bug in another lane's scope sets `expected_failure = "<why>"`: it
+still runs, its failure is logged as an `EXPECTED FAILURE` notice, and a pass fails it so the marker comes off with the fix.
 
 ### Sharded runs
 
@@ -209,6 +355,13 @@ time) and the failures.
 `GLOB.dq_test_shard_count` defaults to 1, so a world booted without shard
 params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 `sweep_types()` returns its input unchanged.
+
+### The look sweep
+
+`dq_look_tree_pin` and `dq_look_state_pin` are sweep tests over one shared pass (`code/modules/unit_tests/dq_look_sweep.dm`); a focused run shards them across
+`DQ_LOOK_SHARDS` worlds and probes only the types whose `analyze look-keys` key changed (`--full` for all). Details: `doc/rewrite/agent_workflow.md` section 9.
+
+`code/modules/unit_tests/snapshots/look_keys.txt` is the committed record of **verified** keys: a type has a row only if the look pins were actually probed for it and matched at that key. It is not a function of the tree. The analyzer's current keys are a separate, generated, gitignored file (`data/look-plan.tsv`, from `analyze look-keys`); a type whose current key matches no recorded row is *unverified* and is what a pin run probes (`bash tools/ci/check_look_keys_format.sh --unverified [--list]` shows it). Only a passing pin run (`dq_focused_test.sh`: it records the types it probed, all of them with `--full`/`--bless`) writes a key. The merge scripts (`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) only run `check_look_keys_format.sh --normalize`, which drops rows (a type gone from the tree, or one a union merge left with two different keys) and never writes one; `merge=union` (`.gitattributes`) keeps both sides' verified rows so the file never conflicts, and a row stays true exactly when it equals the merged tree's key. `dq_merge_gates.sh` runs the look pins over the unverified set before it stamps a merge and records those keys into the merge commit. `check_ratchets.sh` checks the file's format (3 columns, 16-hex key, one row per type), not its currency. Regression: `bash tools/ci/test_look_keys_truth.sh`. Do not hand-merge or regenerate it.
 
 ### Profiling a slow test
 
@@ -283,15 +436,35 @@ dreamdaemon window titled "Security Alert".
 DreamDaemon sometimes fails to exit after `-close` finishes (a known Windows
 zombie-process issue), so every test/bench boot runs under a watchdog: once
 the results file appears, it gets `watchdogGraceMs` (30s) to self-close, then
-is force-killed. Separately, a **hard timeout** (default 45 minutes,
+is force-killed. Separately, a **hard timeout** (default 120 minutes,
 `DQ_DD_WATCHDOG_MINUTES=<n>` overrides it, taking precedence over everything
 including a caller's own estimate) force-kills a world that's still running
 at all -- genuinely stuck, or just slower than expected under load. Only the
 hard-timeout kill is logged as an explicit error (`killedByWatchdog` in the
 run record) and called out by name in the summary; the routine post-completion
 zombie cleanup is just an info line. `dm-test --shards=N` scales each shard's
-hard timeout down from the 45-minute default by `1/sqrt(N)`, floored at 12
-minutes, since each shard does roughly `1/N` of the suite's work.
+hard timeout by `1/sqrt(N)`, floored at 12 minutes, since each shard does
+roughly `1/N` of the suite's work: from a 120-minute base for a whole-tier run
+(60 minutes per shard on the default 4 shards; the normal tier took up to 34
+minutes per shard on 2026-10-04) and a 45-minute base when `--select` or
+`--affected` narrows it.
+
+### Reference tracking (harddel hunting)
+
+The reference finder is off in production and local server builds. Unit-test
+builds (`UNIT_TESTS`) turn on `REFERENCE_TRACKING` and `GC_FAILURE_HARD_LOOKUP`
+automatically, so `find_reference_sanity` and the GC tests keep working. For a
+local server that hunts harddels, opt in at build time:
+
+- `tools/build/build.sh -DREFERENCE_TRACKING` -- tracking, the admin
+  "Find References" verb and `QDEL_HINT_FINDREFERENCE` hints; no automatic
+  searches.
+- `tools/build/build.sh -DGC_FAILURE_HARD_LOOKUP` -- also searches the whole
+  datum graph, without tick checks, for every object that fails its first GC
+  check. This freezes the world for minutes per object; never use it on a
+  server people play on.
+
+Results land in the round's `runtime.log` as `## REF SEARCH` lines.
 
 ### Test records, flakes and baselines
 
@@ -310,6 +483,14 @@ runtimes.
 `test-baseline` leaves its worktree in the system temp folder so the next run is
 fast; it prints the command to remove it.
 
+### History in the admin viewer
+
+`cd tools/admin-viewer && bun run ingest` loads every `data/test-runs/*.json` and
+`data/bench/runs/*.json` not loaded yet into the database the admin viewer reads, which
+shows suite pass rate and duration over time, flaky tests (passed and failed on one commit),
+per-test history and benchmark metrics per run. CI can run it as a last step with
+`DATABASE_URL` set. See `tools/admin-viewer/README.md`.
+
 ### Compile caching
 
 `dm-test`/`test-repeat` skip the DreamMaker compile when nothing that would
@@ -323,6 +504,44 @@ recompiling; any change to the tracked inputs (or a missing/corrupt cache
 record) recompiles as before. This is why `deepquarry.test.dmb`/`.rsc` are no
 longer deleted after a run — only the derived `.dme` text is, since it's
 cheap to regenerate.
+
+### Shared build caches
+
+Fresh worktrees should not pay cold build costs:
+
+- **Analyzer.** `analyze-build` runs cargo in the worktree's own `tools/analyze/target` (compiled dependencies
+  come from sccache) and records the source key in `<binary>.key`. The content-keyed binary cache
+  (`DQ_ANALYZE_CACHE`) serves unchanged sources instantly; its key includes the cargo profile, so binaries of
+  different profiles never mix. Do not point several worktrees at one cargo target (`DQ_ANALYZE_TARGET=<dir>`
+  exists and is a hazard): cargo names a path package by its path inside the workspace and judges it fresh by
+  mtime, so a worktree can link another worktree's library or cache a binary built from other sources under its
+  own key (`doc/rewrite/agent_workflow.md` section 1). `cargo` runs hold the machine-wide `cargo` slot
+  (`doc/rewrite/agent_workflow.md` section 10), so concurrent builds queue instead of competing.
+- **Analyzer profile.** `DQ_ANALYZE_PROFILE` picks the cargo profile. Locally the default is `dev-fast`
+  (`tools/analyze/Cargo.toml`: opt-level 2, no LTO, 256 codegen units, incremental; binary at
+  `target/dev-fast/analyze`). CI (`CI` set) uses `release`; the gates and the push script use the local default (the findings of
+  the two are identical: checked on the whole tree). Measured on
+  this machine with 9-16 cargo/rustc/dm processes from other lanes running (noisy), cargo rebuild of
+  `analyze` after an edit under `tools/analyze/src`, and a cold `analyze check --no-cache` of the whole
+  tree (warm runs are 0.4-0.7 s for every profile):
+
+  | Profile | Comment-only edit | Code edit (one constant) | Cold lint |
+  |---|---|---|---|
+  | `release` (thin LTO, 16 units, no incremental) | 128 s, 148 s | 101 s, 109 s | 26.4 s, 26.6 s |
+  | release + incremental, LTO off, 16 units | 63 s, 67 s | 82 s, 69 s | 27 s, 30 s |
+  | `dev-fast` opt-level 1 | 34 s, 17 s | 9 s, 12 s | 31 s, 29 s |
+  | `dev-fast` opt-level 2 (chosen) | 62 s, 15 s | 14 s, 11 s | 33 s, 27 s |
+  | opt-level 3, no LTO, 256 units, incremental | 53 s, 11 s | 11 s, 13 s | 46 s, 30 s |
+
+  The first rebuild after switching profile pays the dependency build (about 3 minutes, once per target
+  dir). Cold lint time is within run-to-run noise of release; the lints are parallel, so codegen quality
+  matters little. Run `DQ_ANALYZE_PROFILE=release tools/build/build.sh analyze-build` to get the release
+  binary locally.
+- **Bun.** `tools/bootstrap/javascript_.ps1` downloads Bun into `DQ_BUN_CACHE` (default
+  `E:\dq-cache\bun` when `E:` exists; `off` or an unwritable dir falls back to `tools/bootstrap/.cache`),
+  keyed by version. It downloads into a temp dir and renames it into place, so concurrent bootstraps are safe.
+- **Heartbeat.** `Juke.exec` prints `still running: <command> (<m>s)` to stderr every 60 s while a child
+  process runs (cargo, the DM compile, DreamDaemon, icon repack), so a long step is not mistaken for a hang.
 
 ### Native compiler (incremental)
 
@@ -452,7 +671,8 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | Scenario | Measures | Options (`--arg=name=value`) |
 |---|---|---|
 | `boot_memory` (default) | Process and Rust heap memory after boot, gas mixtures, live instances by kind and top types, compiled type counts, init time. | `top` |
-| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS, per-subsystem cost, and input latency from a synthetic load of real clicks and queued verbs every tick. | `seconds` (60), `clicks` (2), `verbs` (2) |
+| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS and per-subsystem cost. A pure wait (no synthetic input), so it compares like for like across builds. | `seconds` (60) |
+| `input` (default) | Input latency on a quiet round from a synthetic load of real clicks and queued verbs every tick (`input_p99`, click and verb waits). | `seconds` (30), `clicks` (2), `verbs` (2) |
 | `atmos_idle` | Atmos cost of the mapped station at rest, with Rust worker maxima. | `cycles` (120) |
 | `atmos_large` | Checkerboard gas equalization on a fresh floor. | `size` (48; 0 = whole level), `cycles` |
 | `major_events` | Explosion, supermatter, mass fire and decompression on fresh fixtures. | `events` (comma list) |
@@ -535,9 +755,10 @@ CI also runs these scripts, all from the repository root:
 
 | Check | Command |
 |---|---|
-| Code and map grep checks | `bash tools/ci/check_grep.sh` |
+| Code and map grep checks (the engine's `check_grep` lint) | `bash tools/ci/check_grep.sh` |
 | Committed test focus | `bash tools/ci/check_misc.sh` |
-| No `world.time` deadline polling in `process()` (use `om_after()`; allowlist in `tools/ci/deadline_polling_allowlist.txt`) | `python3 tools/ci/check_deadline_polling.py` |
+| Every rewrite lint (ratchets, ALLOW annotations, deadline polling, ...; `tools/analyze`) | `bash tools/ci/check_ratchets.sh` or `tools/build/build.sh analyze` |
+| The engine's own tests (per-lint fixtures) | `cargo test --manifest-path tools/analyze/Cargo.toml` |
 | Changelog stubs parse | `bash tools/ci/check_changelogs.sh` (compiles stubs; run on a scratch copy) |
 | Local `#define`s are `#undef`'d | `tools/bootstrap/python -m define_sanity.check` |
 | Maps are in TGM format and merge-clean | `tools/bootstrap/python -m mapmerge2.dmm_test` |
@@ -545,9 +766,8 @@ CI also runs these scripts, all from the repository root:
 | Every `.dmi` parses | `tools/bootstrap/python -m dmi.test` |
 | Rust format, lint and tests | `cd verdigris && cargo fmt --package verdigris --check && cargo clippy --package verdigris --all-targets -- -D warnings && cargo test --package verdigris` |
 
-`check_grep.sh` uses ripgrep when it is installed. Without it, it falls back to
-GNU grep in Perl-regex mode and skips the few multiline checks that need
-ripgrep; CI always runs the full set.
+`check_grep.sh` no longer needs ripgrep: its checks run inside the analyze engine
+(PCRE-style patterns included), so every part always runs.
 
 ## Continuous integration
 

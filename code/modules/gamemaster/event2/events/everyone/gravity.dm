@@ -43,3 +43,6 @@
 
 	if(did_anything)
 		GLOB.command_announcement.Announce("Gravity generators are again functioning within normal parameters. Sorry for any inconvenience.", "Gravity Restored", ANNOUNCER_MSG_GRAVITY_ON)
+
+CAPABILITIES(/datum/event2/event/gravity)
+	ref_many(nameof(generators))

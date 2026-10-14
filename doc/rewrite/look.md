@@ -39,6 +39,28 @@ airlock hides bolts and emergency, the vendor its panel, wires, broken and dark 
 requirements in `needs`]** (the lock takes `lamp =`: it shows as a glowing `locked` / `unlocked` lamp while the holder is lit, see `is_lit(A)`). `CAP_NO_LAYER` and `layer=` are the old form; see
 [migration_guide.md](migration_guide.md) Part F.
 
+## 2a. Reading a slot
+
+A draw that shows what a holder keeps reads the slot through the builder, not through `contents` or `slot_contents()` (a walk needs real things;
+the draw must not make them):
+
+| Form | Answers | Use |
+|---|---|---|
+| `look.contents_of(src, slot, type)` | the types held in `slot` (null: the default slot) that are a `type`: a real thing by its own type, a latent one (declared by `starts_with`, not made yet) by its entry's type, once each | classify or count (`for(var/kind in look.contents_of(src, CONTAINER_SLOT_INTERIOR, /obj/item/gun))`, `ispath(kind, /obj/item/gun/energy)`): the gun cabinet draws a gun per laser or projectile gun it holds without making any |
+| `look.things_in(src, slot, type)` | the real things of `type` in `slot`, each watched | show them (the vehicle cage draws the vehicle behind its frame) |
+
+`look.picture_of(thing)` answers `list(icon, icon_state, dir)` of another atom (a cliff cuts the ground above it out of the turf's picture) and
+`look.show_copy_of(thing, layer)` adds a copy of another atom as an overlay in its own plane (the caged vehicle); both watch the atom, so a change
+published on it redraws the holder, and a draw never reads another atom's vars itself (the `dx_untracked_read` ratchet).
+
+Both slot forms stand for `SLOT_OCCUPANCY_KEY` on the holder (`READS_AS`, read by `tools/analyze` from the builder call): a thing entering or leaving the slot, a
+latent entry made or used (`latent_set_count()`), and the holder declaring its generator (`set_latent_declared()`) redraw it. `slot_kinds()`
+(`code/engine/refs/containment/api.dm`) is the atom proc behind `contents_of()`: with a ledger it reads the ledger; without one it answers from the
+declared generator when the holder has not declared it yet, else it opens the ledger. It never rolls the generator into things and never materializes.
+
+A gotcha of the builders' own calls: a state whose name is also a named argument of the call (`look_overlay_image(icon, "color", color = x)`) loses its state, because BYOND reads the
+positional string as a key. Name the state (`icon_state = "color"`). `dq_draw_final_overlay_image_keeps_a_state_named_color` pins the named form.
+
 ## 3. Checks and tooling
 
 - **Outputs have no side effects:** `draw()` is a reactive proc (`dx_reactive_write` flags a state write, `to_chat`
@@ -62,3 +84,20 @@ requirements in `needs`]** (the lock takes `lamp =`: it shows as a glowing `lock
     look.glow("charge", charge_level)       // apc-charge-N, else charge-N, emissive
     look.light(2, 0.25, COLOR_GREEN)
 ```
+
+## 5. A turf and its neighbour turfs (turf edges)
+
+A turf's draw must not read its neighbours: a neighbour's state is not the turf's own, and the engine cannot hear it change. The adjacency index does
+the listening (code/game/turfs/turf_edges.dm, `ADJ_KIND_TURF_EDGE`; every simulated turf is a member). When a member, or a turf beside it, is placed,
+moved, removed or replaced (`ChangeTurf` ends with `turf_edges_refresh()`), or reports that something an edge reads changed (`edge_inputs_changed()`
+from `on_change()` of its flooring, the state it draws or its density; it only acts when its `edge_key()` moved), the index recomputes the members
+around it, and each one's `edges_changed()` writes its own TRACKED masks through their setters:
+
+| Turf | Masks | The draw shows |
+|---|---|---|
+| floor, water, open space | `edge_mask` (border bits and inner-corner bits from `flooring.test_link()` against the eight neighbours), `edge_spill` (the edge overlays a stronger neighbour spills onto it), `no_ceiling` (open space above, not outdoors) | the flooring's edges and corners, the spilled edges, the ceiling gap |
+| solid rock, flesh | `open_mask` (the cardinal neighbours that are not dense) | the lip toward each open side |
+| wall | `wall_connections` (from the index mask, the doors and hull corners beside it) | the connections of its material's sprite |
+
+What a neighbour reads of a floor's sprite is `edge_look_state()`, a function of the floor's tracked state (`flooring`, `flooring_override`, damage,
+scorch), never of another turf's drawn `icon_state`. Nothing in these chains calls `update_icon()`, `changed(src)` or `appearance_notify_neighbours()`.

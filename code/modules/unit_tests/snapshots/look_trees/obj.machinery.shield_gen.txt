@@ -1,0 +1,17 @@
+/obj/machinery/shield_gen icon: icons/obj/machines/shielding.dmi
+/obj/machinery/shield_gen state: generator0
+/obj/machinery/shield_gen dir: 2
+/obj/machinery/shield_gen overlay: icons/obj/machines/shielding.dmi:generator0:8:#000000
+/obj/machinery/shield_gen/advanced icon: icons/obj/machines/shielding.dmi
+/obj/machinery/shield_gen/advanced state: generator0
+/obj/machinery/shield_gen/advanced dir: 2
+/obj/machinery/shield_gen/advanced overlay: icons/obj/machines/shielding.dmi:generator0:8:#000000
+/obj/machinery/shield_gen/external icon: icons/obj/machines/shielding.dmi
+/obj/machinery/shield_gen/external state: generator0
+/obj/machinery/shield_gen/external dir: 2
+/obj/machinery/shield_gen/external overlay: icons/obj/machines/shielding.dmi:generator0:8:#000000
+/obj/machinery/shield_gen/external/advanced icon: icons/obj/machines/shielding.dmi
+/obj/machinery/shield_gen/external/advanced state: generator0
+/obj/machinery/shield_gen/external/advanced dir: 2
+/obj/machinery/shield_gen/external/advanced overlay: icons/obj/machines/shielding.dmi:generator0:8:#000000
+

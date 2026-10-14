@@ -33,25 +33,55 @@
 	for(var/obj/O in turf_contents_of_type(src, /obj))
 		O.hide(1)
 
-/turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
-	. = ..()
-	icon_state = "blank"
-	if(!materialtype)
-		materialtype = DEFAULT_WALL_MATERIAL
-	material = get_material_by_name(materialtype)
-	if(!girdertype)
-		girdertype = DEFAULT_WALL_MATERIAL
-	girder_material = get_material_by_name(girdertype)
-	if(!isnull(rmaterialtype))
-		reinf_material = get_material_by_name(rmaterialtype)
+TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
+
+CAPABILITIES(/turf/simulated/wall)
+	every(2 SECONDS, then(PROC_REF(wall_step)), when = nameof(radioactive))
+	op("wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(wall_item)))
+	wall_construction()
+	op("wall_dissolve", ai(), wait(5 SECONDS), then(PROC_REF(wall_dissolve_done)))
+	op("wall_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"), then(PROC_REF(wall_hand)))
+	op("wall_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), when(req(TYPE_PROC_REF(/turf, engraved_by_held))), then(PROC_REF(wall_graffiti_alt)))
+	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
+	on_change(nameof(material), ANY, then(PROC_REF(smooth_inputs_changed)))
+	on_change(nameof(density), ANY, then(PROC_REF(edge_inputs_changed)))
+	ref_one(nameof(material), /datum/material)
+	setup(PROC_REF(wall_take_materials))
+	param(nameof(wall_material_key), pos = 1)
+	param(nameof(reinf_material_key), pos = 2)
+	param(nameof(girder_material_key), pos = 3)
+
+/// The resin wall porous under a hivenode touch (resin.dm) dissolves once the toucher has stayed five seconds.
+/turf/simulated/wall/proc/wall_dissolve_done(datum/act/op/A)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
+	dismantle_wall()
+
+/// The wall's material, reinforcement and girder (its constructor params; the type's forced ones win).
+/turf/simulated/wall/var/wall_material_key
+/turf/simulated/wall/var/reinf_material_key
+/turf/simulated/wall/var/girder_material_key
+
+/// A wall takes its materials (the type's forced ones first), girder and radioactivity once its Initialize() chain has returned.
+/turf/simulated/wall/proc/wall_take_materials()
+	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
+	if(forced_materials)
+		wall_material_key = forced_materials[1]
+		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
+		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
+	if(!damage_overlays[1]) //list hasn't been populated
+		generate_overlays()
+	rel_set(src, nameof(material), get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL))
+	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
+	if(!isnull(reinf_material_key))
+		set_reinf_material(get_material_by_name(reinf_material_key))
 	update_material()
 	check_radioactive()
 
 /// TRUE while one of its materials is radioactive.
-OM_FIELD(/turf/simulated/wall, radioactive, FALSE, CHANGE_EXPLICIT)
-/// A wall radiates on the slow lane only while one of its materials is radioactive; any other wall
-/// never joins it (walls are numerous).
-DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
+/turf/simulated/wall/var/radioactive = FALSE
+TRACKED(/turf/simulated/wall, radioactive)
+/// TRUE while the wall carries a thermite coating (draws it; lighting it melts the wall).
+/turf/simulated/wall/var/thermite = FALSE
 
 /// Call after its materials change.
 /turf/simulated/wall/proc/check_radioactive()
@@ -63,10 +93,10 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 /turf/simulated/wall/examine_icon()
 	return icon(icon=initial(icon), icon_state=initial(icon_state))
 
-/turf/simulated/wall/periodic_step()
-	// Calling parent will kill processing
+/// A wall radiates only while one of its materials is radioactive (every(), parked otherwise: walls are numerous).
+/turf/simulated/wall/proc/wall_step(datum/act/timer/A)
 	if(!radiate())
-		return PROCESS_KILL
+		set_radioactive(FALSE)
 
 /turf/simulated/wall/proc/get_material()
 	return material
@@ -125,11 +155,10 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/proc/clear_plants()
 	for(var/obj/effect/overlay/wallrot/WR in turf_contents_of_type(src, /obj/effect/overlay/wallrot))
-		qdel(WR)
+		dissolved(WR)
 	for(var/obj/effect/plant/plant in range(src, 1))
 		if(!plant.floor) //shrooms drop to the floor
-			plant.floor = 1
-			plant.update_icon()
+			plant.set_floor(1)
 			plant.pixel_x = 0
 			plant.pixel_y = 0
 		plant.update_neighbors()
@@ -162,7 +191,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	if(!F)
 		return
 	F.burn_tile()
-	F.icon_state = "wall_thermite"
+	F.set_scorch_state("wall_thermite")
 	visible_message(span_danger("\The [src] spontaneously combusts!.")) //!!OH SHIT!!
 	return
 
@@ -187,9 +216,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/on_update_integrity(old_value, new_value)
 	. = ..()
-	// Inside a map-load batch the batch redraws every queued wall once (atoms.dm).
-	if(!SSatoms?.batch_defer(BATCH_WORK_WALL_SMOOTHING, src))
-		update_icon()
+	sync_damage_step()
 
 /turf/simulated/wall/atom_destruction(damage_flag)
 	. = ..()
@@ -219,8 +246,8 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 			O.forceMove(src)
 
 	clear_plants()
-	material = get_material_by_name("placeholder")
-	reinf_material = null
+	rel_set(src, nameof(material), get_material_by_name("placeholder"))
+	set_reinf_material(null)
 	girder_material = null
 	update_connections(1)
 
@@ -284,7 +311,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	O.name = "Thermite"
 	O.desc = "Looks hot."
 	O.icon = 'icons/effects/fire.dmi'
-	O.icon_state = "2"
+	O.set_icon_state("2")
 	O.set_anchored(TRUE)
 	O.set_density(TRUE)
 	O.plane = ABOVE_PLANE
@@ -296,19 +323,20 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 	var/turf/simulated/floor/F = src
 	F.burn_tile()
-	F.icon_state = "dmg[rand(1,4)]"
+	F.set_icon_state("dmg[rand(1,4)]")
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	om_after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), O)
+	after(null, 10 SECONDS, GLOBAL_PROC_REF(thermite_cleanup), with = list(O)) // not on the wall: the turf is the plating by then
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
-/turf/simulated/wall/proc/thermitemelt_cleanup(obj/effect/overlay/O)
+/// The thermite fire burns out.
+/proc/thermite_cleanup(obj/effect/overlay/O)
 	if(O)
-		qdel(O)
+		dissolved(O)
 
-/turf/simulated/wall/proc/radiate()
-	EVENT_HANDLER
+/turf/simulated/wall/proc/radiate(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	// radioactivity moved to a component on /datum/material.
 	var/total_radiation = wall_radioactivity()
 	if(!total_radiation)
@@ -326,7 +354,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		om_after(src, 2, PROC_REF(burn_collapse), temperature, girder_material.name)
+		after(src, 0.2 SECONDS, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
 
 /turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
 	new /obj/structure/girder(src, girder_mat_name)
@@ -345,12 +373,13 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	return TRUE
 
 /// Old click_alt: graffiti with the held item; otherwise the default alt-click.
-/turf/simulated/wall/proc/wall_graffiti_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/wall/proc/wall_graffiti_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		var/mob/living/livingUser = user
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 // === merged from RCD_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it
@@ -382,30 +411,26 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 /obj/item/rcd/advanced
 	can_remove_rwalls = 1
 
-DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 
-/obj/item/rcd/mark_emagged()
-	emagged = TRUE
-/obj/item/rcd/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+
+/obj/item/rcd/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	emagged = 1
 	to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
-	return TRUE
-
-DECLARE_INTERACTIONS(/obj/item/rcd, \
-	INTERACT_ITEM("Load", PROC_REF(rcd_item)), \
-	INTERACT_USE("Select mode", PROC_REF(rcd_self)), \
-)
+	return OP_OK
 
 /// Old attackby: load matter cartridges or sheets, then fall through as its ..() did.
-/obj/item/rcd/proc/rcd_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rcd/proc/rcd_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/loaded = 0
 	if(istype(W, /obj/item/rcd_ammo))
 		var/obj/item/rcd_ammo/cartridge = W
 		var/can_store = min(max_stored_matter - stored_matter, cartridge.remaining)
 		if(can_store <= 0)
 			to_chat(user, span_warning("There's either no space or \the [cartridge] is empty!"))
-			return INTERACTION_HANDLED_PASS
-		stored_matter += can_store
+			return OP_PASS
+		set_stored_matter(stored_matter + can_store)
 		cartridge.remaining -= can_store
 		if(!cartridge.remaining)
 			to_chat(user, span_warning("\The [cartridge] dissolves as it empties of compressed matter."))
@@ -431,23 +456,23 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			loaded = loadwithsheets(S, RCD_SHEETS_PER_MATTER_UNIT*1.33, user)
 	if(loaded)
 		play_sfx(src, SFX_MACHINES_CLICK)
-		update_icon()
 		to_chat(user, span_notice("The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/rcd/proc/loadwithsheets(obj/item/stack/S, value, mob/user)
 	var/maxsheets = round((max_stored_matter-stored_matter)/value)    //calculate the max number of sheets that will fit in RCD
 	if(maxsheets > 0)
 		var/amount_to_use = min(S.amount, maxsheets)
 		S.use(amount_to_use)
-		stored_matter += value*amount_to_use
+		set_stored_matter(stored_matter + value*amount_to_use)
 		to_chat(user, span_notice("You insert [amount_to_use] [S.name] sheets into [src]. "))
 		return 1
 	to_chat(user, span_warning("You can't insert any more [S.name] sheets into [src]!"))
 	return 0
 
 /// Old attack_self: the mode radial menu.
-/obj/item/rcd/proc/rcd_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rcd/proc/rcd_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/list/choices = list(
 		"Floors & Walls" = radial_image_floorwall,
 		"Airlock" = radial_image_airlock,
@@ -463,11 +488,13 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		)
 	if(emagged)
 		choices["Turrets"] = radial_image_turret
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_mode_chosen), choices = choices, anchor = user, radius = 42, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(rcd_mode_chosen), answerer = user, choices = choices, anchor = user, radius = 42, tooltips = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/rcd/proc/rcd_mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/rcd/proc/rcd_mode_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	var/choice = A.answer.value
 	if(!check_menu(user))
 		return
 	switch(choice)
@@ -478,7 +505,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
 			)
 			// optional: a cancelled sub-pick still switches the mode, as before.
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_girder_chosen), choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_girder_chosen), answerer = user, choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		if("Airlock")
 			mode_index = rcd_mode_index(RCD_AIRLOCK)
@@ -517,7 +544,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
 			"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
 			)
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_wall_frame_chosen), choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_wall_frame_chosen), answerer = user, choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		if("Change Access")
 			change_airlock_access(user)
@@ -532,7 +559,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
 			"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
 			)
-			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_turret_faction_chosen), choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_turret_faction_chosen), answerer = user, choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional_pick = TRUE)
 			return
 		else
 			return
@@ -543,11 +570,14 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	play_sfx(src, SFX_EFFECTS_POP)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
 
-/obj/item/rcd/proc/rcd_girder_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_girder_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("DEFAULT")
 			girder_type = /obj/structure/girder
 		if("BAY")
@@ -557,11 +587,14 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	mode_index = rcd_mode_index(RCD_FLOORWALL)
 	rcd_mode_changed(user, "Floors & Walls")
 
-/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("Air Alarm")
 			wall_frame_type = /obj/machinery/alarm
 		if("Light Bulb")
@@ -610,11 +643,14 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	mode_index = rcd_mode_index(RCD_WALLFRAME)
 	rcd_mode_changed(user, "WallFrames")
 
-/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("HOSTILE TO ALL")
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
@@ -641,13 +677,16 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	)
 
 	// optional: a cancelled pick falls back to the default airlock, as before.
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_category_chosen), choices = solid_or_glass_choices, anchor = src, require_near = TRUE, optional = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_category_chosen), answerer = user, choices = solid_or_glass_choices, anchor = src, require_near = TRUE, optional_pick = TRUE)
 
-/obj/item/rcd/proc/airlock_category_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_category_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("Solid")
 			if(advanced_airlock_setting == 1)
 				var/list/solid_choices = list(
@@ -666,7 +705,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 					"Airtight Hatch" = get_airlock_image(/obj/machinery/door/airlock/hatch),
 					"Maintenance Hatch" = get_airlock_image(/obj/machinery/door/airlock/maintenance_hatch)
 				)
-				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_solid_paint_chosen), choices = solid_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
+				open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_solid_paint_chosen), answerer = user, choices = solid_choices, anchor = src, radius = 42, require_near = TRUE, optional_pick = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock
 				airlock_glass = FALSE
@@ -685,7 +724,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 					"Mining" = get_airlock_image(/obj/machinery/door/airlock/glass_mining),
 					"External" = get_airlock_image(/obj/machinery/door/airlock/glass_external),
 				)
-				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_glass_paint_chosen), choices = glass_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
+				open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(airlock_glass_paint_chosen), answerer = user, choices = glass_choices, anchor = src, radius = 42, require_near = TRUE, optional_pick = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock/glass
 				airlock_glass = TRUE
@@ -693,11 +732,14 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			airlock_type = /obj/machinery/door/airlock
 			airlock_glass = FALSE
 
-/obj/item/rcd/proc/airlock_solid_paint_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_solid_paint_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock
 		if("Engineering")
@@ -728,11 +770,14 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			airlock_type = /obj/machinery/door/airlock/maintenance_hatch
 	airlock_glass = FALSE
 
-/obj/item/rcd/proc/airlock_glass_paint_chosen(datum/om/prompt/choice/radial/ask)
+/obj/item/rcd/proc/airlock_glass_paint_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(ask.choice)
+	switch(ask.value)
 		if("Standard")
 			airlock_type = /obj/machinery/door/airlock/glass
 		if("Engineering")
@@ -793,23 +838,22 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "Access Control", t1, src)
 
-TOPIC_ACTION(/obj/item/rcd, "close", PROC_REF(topic_close))
-TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access", 16))
 
-/obj/item/rcd/topic_allowed(mob/user, list/href_list)
+/obj/item/rcd/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
-	if(user.stat || user.restrained())
-		return FALSE
+	if(A.actor.stat || A.actor.restrained())
+		return MSG(op/topic_gate)
 
-/obj/item/rcd/proc/topic_close(mob/user, list/args)
+/obj/item/rcd/proc/topic_close(datum/act/op/A)
 	// close TGUI window
 	SStgui.close_uis(src)
 	return TRUE
 
-/obj/item/rcd/proc/topic_access(mob/user, list/args)
-	toggle_access(args["access"])
+/obj/item/rcd/proc/topic_access(datum/act/op/A, href_access)
+	var/mob/user = A.actor
+	toggle_access(href_access)
 	change_airlock_access(user)
 	return TRUE
 
@@ -901,7 +945,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 				return FALSE // No more airlock stacking.
 			to_chat(user, span_notice("You build an airlock."))
 			var/obj/machinery/door/airlock/A = new the_rcd.airlock_type(src)
-			own_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
+			rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 			A.electronics.req_access = null
 			A.electronics.req_one_access = null
 			A.electronics.one_access = null
@@ -909,11 +953,11 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 				if(the_rcd.use_one_access)
 					A.electronics.one_access = the_rcd.use_one_access
 					A.electronics.req_one_access = the_rcd.conf_access.Copy()
-					A.req_one_access = the_rcd.conf_access.Copy()
+					A.set_req_one_access(the_rcd.conf_access.Copy())
 				else
-					A.electronics.conf_access = the_rcd.conf_access.Copy()
-					A.req_access = the_rcd.conf_access.Copy()
-			A.autoclose = TRUE
+					A.electronics.set_conf_access(the_rcd.conf_access.Copy())
+					A.set_req_access(the_rcd.conf_access.Copy())
+			A.set_autoclose(TRUE)
 			return TRUE
 		if(RCD_WINDOOR)
 			var/list/windoor_types = list(
@@ -922,7 +966,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			)
 			// The build waits on the picks; the matter is paid when the last one lands (finish_deferred_build).
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_type_chosen), choices = windoor_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_type_chosen), answerer = user, choices = windoor_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_FIRELOCK)
 			if(locate_on(src, /obj/machinery/door/firedoor))
@@ -947,7 +991,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			"Computer" = image(icon = 'icons/mob/radial.dmi', icon_state = "computer_dir")
 			)
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_type_chosen), choices = frame_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_type_chosen), answerer = user, choices = frame_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_CONVEYOR)
 			var/list/conveyor_dirs = list(
@@ -957,7 +1001,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorw")
 			)
 			the_rcd.cleanup_effect(src)
-			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_conveyor_dir_chosen), choices = conveyor_dirs, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_conveyor_dir_chosen), answerer = user, choices = conveyor_dirs, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 			return FALSE
 		if(RCD_TURRET)
 			if(locate_on(src, /obj/machinery/porta_turret))
@@ -967,16 +1011,45 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			return TRUE
 
 /// A floor build that asks what to make after the RCD's timer: it carries the RCD and the picks so far.
-/datum/om/prompt/choice/radial/rcd_build
+/datum/prompt/choice/rcd_option_review
+	timeout = 0
+	radial = TRUE
+	autopick_single_option = TRUE
+	var/optional_pick = FALSE
+
+/// Optional RCD menus deliberately apply their existing null-choice fallback on explicit cancellation.
+/datum/prompt/choice/rcd_option_review/proc/deliver_pick()
+	var/mob/user = answerer
+	if(!istype(user) || QDELETED(user) || !length(choices))
+		return FALSE
+	return outcome == REQ_ANSWERED || (optional_pick && outcome == REQ_CANCELLED && isnull(value))
+
+/datum/prompt/choice/rcd_build_review
+	parent_type = /datum/prompt/choice/rcd_option_review
 	var/obj/item/rcd/rcd
 	var/windoor_type
 	var/windoor_dir
 	var/frame_type
 
+CAPABILITIES(/datum/prompt/choice/rcd_build_review)
+	ref_one(nameof(rcd), /obj/item/rcd)
+
+/datum/prompt/choice/rcd_build_review/prepare(datum/act/A)
+	var/obj/item/rcd/captured = rcd
+	rel_clear(src, nameof(rcd))
+	if(captured)
+		rel_set(src, nameof(rcd), captured)
+	return ..()
+
+/datum/prompt/choice/rcd_build_review/recheck_extra()
+	if(!istype(rcd) || QDELETED(rcd))
+		return "gone"
+	return ..()
+
 /// The pick can still be built: the RCD is usable and can pay for `mode` here.
-/turf/simulated/floor/proc/rcd_build_pick_ok(datum/om/prompt/choice/radial/rcd_build/ask, mode)
+/turf/simulated/floor/proc/rcd_build_pick_ok(datum/prompt/choice/rcd_build_review/ask, mode)
 	var/obj/item/rcd/rcd = ask.rcd
-	if(!ask.choice || !rcd.check_menu(ask.answerer))
+	if(!ask.value || !rcd.check_menu(ask.answerer))
 		return FALSE
 	var/list/results = rcd_values(ask.answerer, rcd, mode)
 	if(!islist(results))
@@ -998,19 +1071,25 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	record_enhanced_output(cost, output_envelope)
 	play_sfx(A, SFX_ITEMS_DECONSTRUCT)
 
-/turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
-	var/selected_windoor_type = ask.choice
+	var/selected_windoor_type = ask.value
 	var/list/windoor_dirs = list(
 	"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
 	"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
 	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
 	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_dir_chosen), choices = windoor_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_dir_chosen), answerer = ask.answerer, choices = windoor_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_windoor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
 	var/selected_windoor_type = ask.windoor_type
@@ -1018,33 +1097,36 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
 	"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_open_dir_chosen), choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_windoor_open_dir_chosen), answerer = ask.answerer, choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.value, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
 		return
 	var/obj/item/rcd/rcd = ask.rcd
 	var/selected_windoor_type = ask.windoor_type
 	var/selected_windoor_dir = ask.windoor_dir
-	var/selected_windoor_open_dir = ask.choice
+	var/selected_windoor_open_dir = ask.value
 	var/obj/machinery/door/window/A = new(src)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
-	A.icon_state = selected_windoor_open_dir+selected_windoor_type
-	A.base_state = selected_windoor_open_dir+selected_windoor_type
+	A.set_icon_state(selected_windoor_open_dir+selected_windoor_type)
+	A.set_base_state(selected_windoor_open_dir+selected_windoor_type)
 	switch(selected_windoor_dir)
 		if("NORTH")
-			A.dir = NORTH
+			A.set_dir(NORTH)
 		if("SOUTH")
-			A.dir = SOUTH
+			A.set_dir(SOUTH)
 		if("EAST")
-			A.dir = EAST
+			A.set_dir(EAST)
 		if("WEST")
-			A.dir = WEST
+			A.set_dir(WEST)
 	if(selected_windoor_type == "secure")
-		A.max_integrity = 300
+		A.set_max_integrity(300)
 		A.update_integrity(A.max_integrity)
-	own_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
+	rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 	A.electronics.req_access = null
 	A.electronics.req_one_access = null
 	A.electronics.one_access = null
@@ -1052,14 +1134,17 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 		if(rcd.use_one_access)
 			A.electronics.one_access = rcd.use_one_access
 			A.electronics.req_one_access = rcd.conf_access.Copy()
-			A.req_one_access = rcd.conf_access.Copy()
+			A.set_req_one_access(rcd.conf_access.Copy())
 		else
-			A.electronics.conf_access = rcd.conf_access.Copy()
-			A.req_access = rcd.conf_access.Copy()
-	A.autoclose = TRUE
+			A.electronics.set_conf_access(rcd.conf_access.Copy())
+			A.set_req_access(rcd.conf_access.Copy())
+	A.set_autoclose(TRUE)
 	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)
 
-/turf/simulated/floor/proc/rcd_frame_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_frame_type_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_FRAME))
 		return
 	var/list/frame_dirs = list(
@@ -1068,14 +1153,17 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "csouth"),
 	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "cwest")
 	)
-	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_dir_chosen), choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice/rcd_build_review, PROC_REF(rcd_frame_dir_chosen), answerer = ask.answerer, choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.value, require_near = ask.require_near, tooltips = TRUE)
 
-/turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_FRAME))
 		return
 	var/mob/living/user = ask.answerer
 	var/selected_frame_type = ask.frame_type
-	var/selected_frame_dir = ask.choice
+	var/selected_frame_dir = ask.value
 	var/obj/structure/frame
 	if(selected_frame_type == "Machine")
 		frame = new/obj/structure/frame(src)
@@ -1083,22 +1171,25 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 		frame = new/obj/structure/frame/computer(src)
 	switch(selected_frame_dir)
 		if("NORTH")
-			frame.dir = NORTH
+			frame.set_dir(NORTH)
 		if("SOUTH")
-			frame.dir = SOUTH
+			frame.set_dir(SOUTH)
 		if("EAST")
-			frame.dir = EAST
+			frame.set_dir(EAST)
 		if("WEST")
-			frame.dir = WEST
+			frame.set_dir(WEST)
 	frame.set_anchored(1)
 	to_chat(user, span_notice("You build a frame"))
 	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
 
-/turf/simulated/floor/proc/rcd_conveyor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+/turf/simulated/floor/proc/rcd_conveyor_dir_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/rcd_build_review/ask = context.request
 	if(!rcd_build_pick_ok(ask, RCD_CONVEYOR))
 		return
 	var/mob/living/user = ask.answerer
-	var/selected_conveyor_dir = ask.choice
+	var/selected_conveyor_dir = ask.value
 	var/obj/machinery/conveyor/C = new(src)
 	switch(selected_conveyor_dir)
 		if("NORTH")
@@ -1153,9 +1244,9 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 				to_chat(user, span_warning("There is already a wall item there!"))
 				return FALSE
 			var/obj/O = new the_rcd.wall_frame_type(get_step(src,direction))
-			O.dir = direction
+			O.set_dir(direction)
 			if(istype(O,/obj/machinery/light))
-				O.dir = GLOB.reverse_dir[O.dir]
+				O.set_dir(GLOB.reverse_dir[O.dir])
 				return TRUE
 			var/static/list/adjusts = list(
 			/obj/machinery/computer/security/telescreen/entertainment,
@@ -1216,17 +1307,17 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			// This is mostly the same as using on a floor. The girder's material is preserved, however.
 			T.ChangeTurf(wall_type)
 			var/turf/simulated/wall/new_T = get_turf(src) // Ref to the wall we just built.
-			// Apparently set_material(...) for walls requires refs to the material singletons and not strings.
+			// Apparently apply_materials(...) for walls requires refs to the material singletons and not strings.
 			// This is different from how other material objects with their own set_material(...) do it, but whatever.
 			var/datum/material/M = GLOB.name_to_material[the_rcd.material_to_use]
-			new_T.set_material(M, the_rcd.make_rwalls ? M : null, girder_material)
+			new_T.apply_materials(M, the_rcd.make_rwalls ? M : null, girder_material)
 			new_T.add_hiddenprint(user)
-			qdel(src)
+			replaced_by(src, new_T)
 			return TRUE
 
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			destroyed(src, user, "rcd")
 			return TRUE
 
 //////////////////////////////////////
@@ -1244,7 +1335,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			destroyed(src, user, "rcd")
 			return TRUE
 	return FALSE
 
@@ -1267,7 +1358,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 					"FULL" = image(icon = 'icons/mob/radial.dmi', icon_state = "wfull"),
 					)
 					// Pick first; the answer re-runs use_rcd() with the direction confirmed.
-					om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_window_dir_chosen), choices = window_dirs, subject = the_rcd, anchor = src, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+					open_request(src, /datum/prompt/choice/rcd_option_review, PROC_REF(rcd_window_dir_chosen), answerer = user, choices = window_dirs, subject = the_rcd, anchor = src, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
 					return 1
 				the_rcd.window_dir_confirmed = FALSE
 				if(the_rcd.window_dir != "FULL")
@@ -1279,12 +1370,15 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 			return rcd_value_entry(RCD_DECONSTRUCT, 0.5 SECONDS, RCD_SHEETS_PER_MATTER_UNIT * 0)
 	return FALSE
 
-/obj/structure/grille/proc/rcd_window_dir_chosen(datum/om/prompt/choice/radial/ask)
+/obj/structure/grille/proc/rcd_window_dir_chosen(datum/act/request/context)
+	var/datum/prompt/choice/rcd_option_review/ask = context.request
+	if(!ask.deliver_pick())
+		return
 	var/mob/living/user = ask.answerer
 	var/obj/item/rcd/the_rcd = ask.subject
-	if(!istype(the_rcd) || !ask.choice || !the_rcd.check_menu(user))
+	if(!istype(the_rcd) || !ask.value || !the_rcd.check_menu(user))
 		return
-	the_rcd.window_dir = ask.choice
+	the_rcd.window_dir = ask.value
 	the_rcd.window_dir_confirmed = TRUE
 	the_rcd.use_rcd(src, user)
 	the_rcd.window_dir_confirmed = FALSE
@@ -1293,13 +1387,12 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			destroyed(src, user, "rcd")
 			return TRUE
 		if(RCD_WINDOWGRILLE)
 			if(destroyed)
-				destroyed = 0
+				set_destroyed(0)
 				repair_damage(max_integrity)
-				update_icon()
 				set_density(1)
 				to_chat(user, span_notice("You repair \the [src]."))
 				return TRUE
@@ -1337,7 +1430,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 					window_to_spawn = (temp_dir==10?"/obj/structure/window/plastitanium/full":"/obj/structure/window/plastitanium")
 			var/obj/structure/window/WD = new window_to_spawn(loc)
 			WD.set_anchored(TRUE)
-			WD.dir = temp_dir
+			WD.set_dir(temp_dir)
 			return TRUE
 	return FALSE
 
@@ -1358,7 +1451,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	switch(passed_mode)
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
-			qdel(src)
+			destroyed(src, user, "rcd")
 			return TRUE
 	return FALSE
 
@@ -1712,7 +1805,7 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 /// simply removes its atom goes through here, so the removal has one site (D-qdel).
 /atom/proc/rcd_deconstruct(mob/living/user)
 	to_chat(user, span_notice("You deconstruct \the [src]."))
-	qdel(src)
+	destroyed(src, user, "rcd")
 
 /// Shared rcd_values() results, keyed by "mode|delay|cost". Callers only read them.
 GLOBAL_LIST_EMPTY(rcd_value_entries)

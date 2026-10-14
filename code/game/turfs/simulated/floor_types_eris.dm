@@ -713,9 +713,12 @@
 	icon_state = "bar_light"
 	initial_flooring = /datum/decl/flooring/tiling/eris/steel/bar_light
 
-/turf/simulated/floor/tiled/eris/steel/bar_light/Initialize(mapload)
-	. = ..()
-	set_light(3,4,"#00AAFF")
+CAPABILITIES(/turf/simulated/floor/tiled/eris/steel/bar_light)
+	after_init(0, then(PROC_REF(init_bar_light)))
+
+/turf/simulated/floor/tiled/eris/steel/bar_light/proc/init_bar_light(datum/act/timer/A)
+	set_glow(src, GLOW(3, 4, "#00AAFF"))
+
 
 
 //White Tiles

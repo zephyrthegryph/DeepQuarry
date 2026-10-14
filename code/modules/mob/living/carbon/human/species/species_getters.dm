@@ -87,8 +87,8 @@
 /datum/species/proc/get_environment_discomfort(mob/living/carbon/human/H, msg_type)
 
 	var/discomfort_message
-	var/list/custom_cold = H.custom_cold
-	var/list/custom_heat = H.custom_heat
+	var/list/custom_cold = sparse_get(H, custom_cold)
+	var/list/custom_heat = sparse_get(H, custom_heat)
 	if(msg_type == ENVIRONMENT_COMFORT_MARKER_COLD && length(cold_discomfort_strings) /*&& !covered*/)
 		if(custom_cold && custom_cold.len > 0)
 			discomfort_message = pick(custom_cold)
@@ -149,3 +149,8 @@
 	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return HUNGER_ALERT_SYNTH
 	return species?.hunger_alert_style || HUNGER_ALERT_ORGANIC
+
+// Native acceptance dependency hook follows the final bodytype getter.
+TRACKED(/datum/species, name)
+/datum/species/proc/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	return list(list(src, nameof(name)))

@@ -7,21 +7,9 @@ GLOBAL_LIST_INIT(dq_variants_under_teshari_smock_dress, list(
 	"medical" = list("name" = "small medical dress", "icon_state" = "tesh_dress_medical"),
 ))
 
-/obj/item/clothing/under/teshari/smock/dress/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/under/teshari/smock/dress)
+	variants(nameof(variant), PROC_REF(own_variant_table)) // its own rows replace the parent family's
 
-/obj/item/clothing/under/teshari/smock/dress/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_under_teshari_smock_dress[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/under/teshari/smock/dress/proc/own_variant_table()
+	return GLOB.dq_variants_under_teshari_smock_dress

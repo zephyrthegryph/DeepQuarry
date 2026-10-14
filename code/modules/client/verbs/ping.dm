@@ -6,7 +6,7 @@
 	if (!avgping)
 		avgping = ping
 	else
-		avgping = MC_AVERAGE_SLOW(avgping, ping)
+		avgping = KERNEL_AVERAGE_SLOW(avgping, ping)
 
 /client/proc/pingfromtime(time)
 	return ((world.time+world.tick_lag*TICK_USAGE_REAL/100)-time)*100

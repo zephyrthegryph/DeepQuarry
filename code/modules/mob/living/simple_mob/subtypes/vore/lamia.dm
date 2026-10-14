@@ -53,12 +53,12 @@
 
 	say_list_type = /datum/say_list/lamia
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/lamia)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/lamia/appearance_overlays()
-	. = list()
-	. += ..()
+
+/mob/living/simple_mob/vore/lamia/draw(datum/look/look)
+	..()
 
 	if(vore_active)
 		// Icon_state for fullness is as such if they are CONSCIOUS:
@@ -72,15 +72,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/lamia, TYPE_PROC_REF(/atom, 
 
 		if(upper_shows || tail_shows)
 			if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)))
-				icon_state = "[icon_living]_vore_[upper_shows]_[tail_shows]"
+				look.state("[icon_living]_vore_[upper_shows]_[tail_shows]")
 			else if(stat >= DEAD)
-				icon_state = icon_dead
+				look.state(icon_dead)
 			else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest)
-				icon_state = "[icon_rest]_vore_[upper_shows]_[tail_shows]"
+				look.state("[icon_rest]_vore_[upper_shows]_[tail_shows]")
 
 /mob/living/simple_mob/vore/lamia/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 
 	B.transferchance = vore_upper_transfer_chance
 	B.transferlocation = "tail stomach"
@@ -347,30 +347,38 @@ GLOBAL_LIST_INIT(valid_random_lamias, list(
 
 /mob/living/simple_mob/vore/lamia/random
 
-/mob/living/simple_mob/vore/lamia/random/Initialize(mapload)
-	var/mob/living/simple_mob/vore/lamia/new_attrs = pick(GLOB.valid_random_lamias)
+// A random lamia wears one of the kinds' looks (none of the listed kinds changes the vore settings it shares with them).
+CAPABILITIES(/mob/living/simple_mob/vore/lamia/random)
+	rolls(nameof(kind), PROC_REF(roll_kind))
+	rolls(nameof(name), PROC_REF(kind_look), from = list(nameof(kind)))
+	rolls(nameof(desc), PROC_REF(kind_look), from = list(nameof(kind)))
+	rolls(nameof(icon_state), PROC_REF(kind_look), from = list(nameof(kind)))
+	rolls(nameof(icon_living), PROC_REF(kind_look), from = list(nameof(kind)))
+	rolls(nameof(icon_rest), PROC_REF(kind_look), from = list(nameof(kind)))
+	rolls(nameof(icon_dead), PROC_REF(kind_look), from = list(nameof(kind)))
 
-	name = initial(new_attrs.name)
-	desc = initial(new_attrs.desc)
+/// The kind of lamia it looks like (rolls()).
+/mob/living/simple_mob/vore/lamia/random/var/kind
 
-	icon_state = initial(new_attrs.icon_state) // ALLOW(decl): random lamia pick
-	icon_living = initial(new_attrs.icon_living)
-	icon_rest = initial(new_attrs.icon_rest)
-	icon_dead = initial(new_attrs.icon_dead)
+/mob/living/simple_mob/vore/lamia/random/proc/roll_kind(datum/roller/R)
+	return R.choose(GLOB.valid_random_lamias)
 
-	vore_default_mode = initial(new_attrs.vore_default_mode)
-	vore_digest_chance = initial(new_attrs.vore_digest_chance)
-	vore_pounce_chance = initial(new_attrs.vore_pounce_chance)
-	vore_bump_chance = initial(new_attrs.vore_bump_chance)
-	vore_standing_too = initial(new_attrs.vore_standing_too)
-	vore_escape_chance = initial(new_attrs.vore_escape_chance)
-
-	vore_upper_transfer_chance = initial(new_attrs.vore_upper_transfer_chance)
-	vore_tail_digest_chance = initial(new_attrs.vore_tail_digest_chance)
-	vore_tail_absorb_chance = initial(new_attrs.vore_tail_absorb_chance)
-	vore_tail_transfer_chance = initial(new_attrs.vore_tail_transfer_chance)
-
-	. = ..()
+/// One of its kind's looks (rolls(), after the kind).
+/mob/living/simple_mob/vore/lamia/random/proc/kind_look(datum/roller/R, target)
+	var/mob/living/simple_mob/vore/lamia/K = kind
+	switch(target)
+		if("name")
+			return initial(K.name)
+		if("desc")
+			return initial(K.desc)
+		if("icon_state")
+			return initial(K.icon_state)
+		if("icon_living")
+			return initial(K.icon_living)
+		if("icon_rest")
+			return initial(K.icon_rest)
+		if("icon_dead")
+			return initial(K.icon_dead)
 
 /datum/say_list/lamia
 	speak = list("Sss...","Sss!","Hiss!","HSSSSS")

@@ -40,8 +40,18 @@
 	var/list/debug_mappers_list
 	var/list/debug_beacons_list
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/mapping_unit)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
+	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(make_cell))
+	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder, starts = /atom/movable/screen/mapper/extras_holder, starts_args = NO_LOC)
+	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
+	owns_many(nameof(icon_image_cache))
+	owns_many(nameof(map_image_cache))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds))), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/mapping_unit/deathsquad
 	name = "deathsquad mapping unit"
@@ -85,23 +95,20 @@
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	own_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
-	mark.icon_state = "mapper_none"
+	mark.set_icon_state("mapper_none")
 	mark.layer = 10
-	own_put(src, nameof(icon_image_cache), "bad", mark)
+	rel_add(src, nameof(icon_image_cache), mark, "bad")
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	own_put(src, nameof(map_image_cache), "bad", tmp)
+	rel_add(src, nameof(map_image_cache), tmp, "bad")
 
-	if(uses_power && cell_type)
-		own_set(src, nameof(cell), new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -126,7 +133,16 @@
 	return TRUE
 
 /// Old attack_self.
-/obj/item/mapping_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_use_mapper): the legacy check answers TRUE to pass.
+/obj/item/mapping_unit/proc/can_use_mapper_holds(datum/act/op/A)
+	var/answer = can_use_mapper(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_use_mapper_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/mapping_unit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
 		return TRUE
 
@@ -143,35 +159,31 @@
 		to_chat(H, span_notice("You hold \the [src] where you can see it."))
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mapping_unit/proc/can_use_mapper)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/mapping_unit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mapping_unit/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 		if(updating)
 			stop_updates()
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Old attackby.
-/obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
+/obj/item/mapping_unit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/W = A.held
 	if(istype(W,cell_type) && !cell)
-		if(!own_set(src, nameof(src.cell), W, user = user))
-			return INTERACTION_HANDLED_PASS
-		cell.update_icon() //Why doesn't a cell do this already? :|
+		if(!move_into(src, nameof(src.cell), W, user))
+			return OP_PASS
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
-	own_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))
+	rel_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))
 	rel_set(src, nameof(hud_item), hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)
@@ -183,13 +195,13 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 /// Showing and refreshing its map (start_updates()/stop_updates()).
-OM_FIELD(/obj/item/mapping_unit, updating, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
+/obj/item/mapping_unit/var/updating = FALSE
+TRACKED(/obj/item/mapping_unit, updating)
 
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)
 	set_updating(TRUE)
-	periodic_step()
+	refresh_map()
 
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
@@ -203,9 +215,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 /obj/item/mapping_unit/proc/last_run()
 	stop_updates()
 	rel_clear(src, nameof(hud_item))
-	own_clear(src, nameof(hud_datum), OWN_DELETE) // its holder screen object goes with it
+	rel_clear(src, nameof(hud_datum)) // its holder screen object goes with it
 
-/obj/item/mapping_unit/periodic_step()
+/obj/item/mapping_unit/proc/mapping_unit_step(datum/act/timer/A)
+	refresh_map()
+
+/// One refresh of the map: power, the hud's parts, then the map itself.
+/obj/item/mapping_unit/proc/refresh_map()
 	if(uses_power && !cell)
 		stop_updates()
 		return
@@ -257,13 +273,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 		map_app.layer = HUD_LAYER
 		map_app.color = map_color
 
-		if(!SSholomaps.holoMiniMaps[T_z])
+		if(!holomaps_holoMiniMaps()[T_z])
 			var/atom/movable/screen/mapper/map/baddo = LAZYACCESS(map_image_cache, "bad")
 			map_app.icon = icon(baddo.icon)
 			badmap = TRUE
 		// SSholomaps did map it and we're allowed to see it
 		else
-			map_app.icon = icon(SSholomaps.holoMiniMaps[T.z])
+			map_app.icon = icon(holomaps_holoMiniMaps()[T.z])
 
 			// Apply markers
 			for(var/marker in GLOB.holomap_markers)
@@ -279,7 +295,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			own_put(src, nameof(map_image_cache), map_cache_key, tmp)
+			rel_add(src, nameof(map_image_cache), tmp, map_cache_key)
 
 	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
@@ -334,8 +350,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
-				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
+				mark.set_icon_state("[HC.marker_prefix][mob_indicator]")
+				rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -361,9 +377,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 		var/marker_cache_key = "\ref[HB]_marker"
 		if(!(marker_cache_key in icon_image_cache))
 			var/atom/movable/screen/mapper/marker/mark = new()
-			mark.icon_state = "beacon"
+			mark.set_icon_state("beacon")
 			mark.layer = 1
-			own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
+			rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)
@@ -413,24 +429,26 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 
-/obj/item/holomap_beacon/Initialize(mapload)
-	. = ..()
+/obj/item/holomap_beacon/proc/join_mapped_beacon(datum/act/timer/A)
 	if(in_list) // mapped in turned on
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
-		icon_state = initial(icon_state) + (in_list ? "_on" : "")
+		set_icon_state(initial(icon_state) + (in_list ? "_on" : ""))
 
-DECLARE_INTERACTIONS(/obj/item/holomap_beacon, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holomap_beacon)
+	after_init(0, then(PROC_REF(join_mapped_beacon)))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holomap_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holomap_beacon/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!in_list)
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
 	else
 		in_list = FALSE
 		registry_leave(REGISTRY_MAPPING_BEACONS, src)
-	icon_state = "[initial(icon_state)][in_list ? "_on" : ""]"
+	set_icon_state("[initial(icon_state)][in_list ? "_on" : ""]")
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
 	return TRUE
 
@@ -453,3 +471,8 @@ DECLARE_INTERACTIONS(/obj/item/holomap_beacon, INTERACT_USE(null, PROC_REF(inter
 #undef HOLOMAP_YOU
 #undef HOLOMAP_OTHER
 #undef HOLOMAP_DEAD
+
+/// The starting cell (owns_one(starts =)) of a powered mapper.
+/obj/item/mapping_unit/proc/make_cell(current)
+	if(uses_power && cell_type)
+		return cell_type

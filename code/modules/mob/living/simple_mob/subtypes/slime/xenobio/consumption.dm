@@ -36,23 +36,23 @@
 	if(prob(15))
 		adjust_nutrition(is_adult ? -2 : -1) // Adult slimes get hungry faster.
 
-	if(nutrition <= get_starve_nutrition())
+	if(nutrition_of(src) <= get_starve_nutrition())
 		handle_starvation()
 
-	else if(nutrition >= get_grow_nutrition() && amount_grown < 10)
+	else if(nutrition_of(src) >= get_grow_nutrition() && amount_grown < 10)
 		adjust_nutrition(-20)
 		amount_grown = between(0, amount_grown + 1, 10)
 
 // Called if above proc happens while below a nutrition threshold.
 /mob/living/simple_mob/slime/xenobio/proc/handle_starvation()
-	if(nutrition < get_starve_nutrition() && !client) // if a slime is starving, it starts losing its friends
+	if(nutrition_of(src) < get_starve_nutrition() && !client) // if a slime is starving, it starts losing its friends
 		if(LAZYLEN(friends) && prob(1))
 			var/mob/nofriend = pick(friends)
 			if(nofriend)
 				rel_remove(src, nameof(friends), nofriend)
 				say("[nofriend]... food now...")
 
-	if(nutrition <= 0)
+	if(nutrition_of(src) <= 0)
 		injure(INJURY_TOXIN, rand(1,3), flags = INJURE_SILENT) // Starving.
 		if(client && prob(5))
 			to_chat(src, span_danger("You are starving!"))
@@ -93,7 +93,7 @@
 
 	if(L.buckle_mob(src, forced = TRUE))
 		rel_set(src, nameof(victim), L)
-		update_icon()
+		set_consuming(TRUE)
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		victim.visible_message(
 			span_danger("\The [src] latches onto \the [victim]!"),
@@ -109,7 +109,7 @@
 		span_notice("\The [src] slides off of you!")
 		)
 	rel_clear(src, nameof(victim))
-	update_icon()
+	set_consuming(FALSE)
 	ai_busy_end() // Resume normal operations.
 
 /mob/living/simple_mob/slime/xenobio/proc/can_consume(mob/living/L)
@@ -119,7 +119,7 @@
 	if(harmless)
 		to_chat(src, "I am pacified... I cannot eat...")
 		return FALSE
-	if(L.mob_class & MOB_CLASS_SLIME)
+	if(kind_of(L).mob_class & MOB_CLASS_SLIME)
 		to_chat(src, "I cannot feed on other slimes...")
 		return FALSE
 	if(HAS_SYNTHETIC_BIOLOGY(L))

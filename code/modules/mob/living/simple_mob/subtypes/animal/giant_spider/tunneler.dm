@@ -85,9 +85,12 @@
 
 	// Telegraph to give a small window to dodge if really close.
 	do_windup_animation(A, tunnel_warning)
-	om_after(src, tunnel_warning, PROC_REF(tunnel_dig), A, destination, starting_turf) // For the telegraphing.
+	after(src, tunnel_warning, PROC_REF(tunnel_dig), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_dig(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		return
 	// Do the dig!
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% tunnels towards %T%!")))
 	submerge()
@@ -95,7 +98,7 @@
 
 /// First tunnel finished (result FALSE/null means it stopped short).
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_arrived(result, turf/destination, turf/starting_turf)
-	if(result == FALSE)
+	if(result == FALSE || !destination || !starting_turf)
 		tunnel_surface()
 		return
 
@@ -113,7 +116,7 @@
 
 		act_message(src, L, null, MSG_OTHERS(span_danger("%U% erupts from underneath, and hits %T%!")))
 		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
-		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
+		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(STAT_WEAKENED, 3)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -167,7 +170,7 @@
 	if(T.check_density(ignore_mobs = TRUE))
 		to_chat(src, span_critical("You hit something really solid!"))
 		play_sfx(src, SFX_PUNCH, 1.5)
-		status_at_least(EFFECT_WEAKENED, 5)
+		status_at_least(STAT_WEAKENED, 5)
 		apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 		tunnel_finish(FALSE, then_proc, extra) // Hit a wall.
 		return
@@ -175,7 +178,7 @@
 	// Stun anyone in our way.
 	for(var/mob/living/L in contents_of(T))
 		play_sfx(src, SFX_WEAPONS_HEAVYSMASH)
-		L.status_at_least(EFFECT_WEAKENED, 2)
+		L.status_at_least(STAT_WEAKENED, 2)
 
 	// Get into the tile.
 	forceMove(T)
@@ -183,9 +186,12 @@
 	// Visuals and sound.
 	dig_under_floor(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_BREAK_STONE)
-	om_after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), destination, steps_left - 1, last_loc, then_proc, extra)
+	after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), with = list(destination, steps_left - 1, last_loc, then_proc, extra))
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step_check(turf/destination, steps_left, last_loc, then_proc, list/extra)
+	if(!destination)
+		tunnel_finish(FALSE, then_proc, extra)
+		return
 	if(last_loc == loc)
 		tunnel_finish(FALSE, then_proc, extra)
 		return
@@ -230,6 +236,8 @@
 	melee_damage_upper = 5
 	meat_amount = 1 // Scrawny little things! It's no wonder they don't want to fight you!
 
-/mob/living/simple_mob/animal/giant_spider/tunneler/cave/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/cave)
+	after_init(0, then(PROC_REF(cave_tunneler_rescale)))
+
+/mob/living/simple_mob/animal/giant_spider/tunneler/cave/proc/cave_tunneler_rescale(datum/act/timer/A)
 	resize(0.50)

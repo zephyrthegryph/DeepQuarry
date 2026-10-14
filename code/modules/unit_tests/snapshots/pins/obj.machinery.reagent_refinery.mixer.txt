@@ -1,0 +1,81 @@
+@obj.machinery.reagent_refinery human|none
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery robot|none
+-menu: Climb
+-menu: Set transfer amount
++3 menu: Set Mixer Rotation
+@obj.machinery ai|none
+@obj.machinery.reagent_refinery ghost|none
+-menu: Climb (refused: You can't climb right now.)
+-menu: Set transfer amount (refused: You can't reach that.)
++2 menu: Set Mixer Rotation (refused: You can't reach that.)
+@obj.machinery.reagent_refinery human|/obj/item/tool/screwdriver
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/crowbar
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/wrench
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+@obj.machinery.reagent_refinery human|/obj/item/tool/wirecutters
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/multitool
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/weldingtool
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/stack/cable_coil
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/stack/material/steel
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/card/id
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item
+-menu: Climb
+-click: nothing
++2 menu: Set Mixer Rotation
++4 menu: Use
++5 click: Click: Use
+@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+@obj human|/obj/item/reagent_containers/food/drinks/glass2
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+@obj human|/obj/item/reagent_containers/food/drinks/shaker
+-menu: Climb
++3 menu: Set Mixer Rotation
++5 menu: Use
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_refinery_drain, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_rotation, set_rotation_2, silicon_hand, use_wrench

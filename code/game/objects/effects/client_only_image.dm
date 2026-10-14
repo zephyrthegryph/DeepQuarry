@@ -16,15 +16,14 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 /// Deletes this image after `delay`, keeping it alive until then.
 /image/client_only/proc/expire_in(delay)
 	GLOB.client_only_images_expiring += src // ALLOW(registry): /image is not a datum (no registry hooks) and joins only once it starts expiring
-	om_after(null, delay, GLOBAL_PROC_REF(qdel), src)
+	after(null, delay, GLOBAL_PROC_REF(qdel), with = list(src))
 
 /image/client_only/proc/append_client(client/C)
 	C.images += src
 	rel_add(src, nameof(clients), C)
 
-/image/client_only/relations()
-	. = ..()
-	. += rel_many(nameof(clients))
+CAPABILITIES(/image/client_only)
+	ref_many(nameof(clients))
 
 // comes off every client it was shown to (clients aren't datums, so no pair can do it).
 /image/client_only/lifecycle_dematerialize()

@@ -1,0 +1,37 @@
+human|none menu: Use
+human|none click: Click: Use
+@obj.machinery robot|none
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Insert (refused: its door isn't open)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Insert
+human|/obj/item/tool/crowbar menu: Insert (refused: its door isn't open)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
+human|/obj/item/tool/wrench menu: Insert (refused: its door isn't open)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Insert
+human|/obj/item/tool/wirecutters menu: Insert (refused: its door isn't open)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Insert
+human|/obj/item/multitool menu: Insert (refused: its door isn't open)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Insert
+human|/obj/item/weldingtool menu: Insert (refused: its door isn't open)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Insert
+human|/obj/item/stack/cable_coil menu: Insert (refused: its door isn't open)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Insert
+human|/obj/item/stack/material/steel menu: Insert (refused: its door isn't open)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Insert
+human|/obj/item/card/id menu: Insert (refused: its door isn't open)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Insert
+human|/obj/item menu: Insert (refused: its door isn't open)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Insert
+keys: attackby, close, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open, recycle, robot_remote_blocked, silicon_hand, use, use_crowbar

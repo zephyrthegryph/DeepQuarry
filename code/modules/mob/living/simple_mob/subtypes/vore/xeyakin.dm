@@ -21,13 +21,15 @@
 	minbodytemp = 0
 	maxbodytemp = 99999
 	min_oxy = 0
-	devourable = 0
 
 	old_x = -16
 	old_y = 0
 	default_pixel_x = -16
 	pixel_x = -16
 	pixel_y = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/xeyakin)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0))
 
 
 /datum/category_item/catalogue/fauna/xeyakin
@@ -39,7 +41,8 @@
 
 /obj/item/reagent_containers/food/snacks/meat/xeyakin
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/xeyakin, null, list(REAGENT_ID_XEYAKIN_BLOOD = 2))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/xeyakin)
+	configure(reagents(add = list(REAGENT_ID_XEYAKIN_BLOOD = 2)))
 
 
 /datum/reagent/xeyakinblood

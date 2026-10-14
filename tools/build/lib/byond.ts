@@ -13,6 +13,7 @@ import { compilerMode, selectedCompiler } from './compiler_selection';
 import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, NativeAcquisitionError, assertDirectoryChain, type CompiledOutput } from './native_pair';
 import { copyWritableRuntimePair } from './runtime_pair_copy';
 import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
+import { withSlot } from './machine_slots';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -238,7 +239,7 @@ export async function DreamMaker(
 ): Promise<CompiledOutput> {
   // A future core-issued closed snapshot can route both backends through the
   // same owned project. Until that issuer exists, selection passes no override.
-  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared, bound) => compileByond(capturedProject ?? dmeFile, options, prepared, bound), Juke.exec, () => prepareDreamMaker(options), invocation);
+  const output = await selectedCompiler(dmeFile, options, (capturedProject, prepared, bound) => withSlot('dm_compile', `DreamMaker ${dmeFile}`, () => compileByond(capturedProject ?? dmeFile, options, prepared, bound), (m) => Juke.logger.info(m)), Juke.exec, () => prepareDreamMaker(options), invocation);
   rememberCompiledOutput(dmeFile, output);
   return output;
 }
@@ -351,8 +352,22 @@ type DDOptions = {
    * `watchdogTimeoutMs` is a hard backstop for a genuinely hung run.
    */
   watchdogFile?: string;
+  /**
+   * The marker the world writes when it has finished, clean or not (`finished_run.lk`, FinishTestRun() in code/game/world.dm). With
+   * it, the grace after `watchdogFile` appears is long (DQ_DD_FINISH_GRACE_SEC, default 180 s) while the marker is missing, because
+   * a world on a busy machine can need more than `watchdogGraceMs` to write `clean_run.lk` and its logs, and a world killed first
+   * is reported as an unclean run it was not; and it is short (5 s) once the marker exists, because what remains is the Windows
+   * zombie.
+   */
+  watchdogCleanFile?: string;
   watchdogGraceMs?: number;
   watchdogTimeoutMs?: number;
+  /**
+   * A log the running world appends to (`tests.log`). Once it exists, a world whose log has not grown for DQ_DD_STALL_MINUTES (default 12)
+   * before it wrote its results is stalled (a hung proc, a wait that never ends): it is killed with the log's last line in the reason, so it
+   * stops holding a machine slot and the line says where it stopped, instead of sitting until the hard timeout.
+   */
+  stallFile?: string;
   /** Called with the daemon's pid once it has started (watchdog runs only). */
   onSpawn?: (pid: number) => void;
   /** Set by DreamDaemon(): the -logself file the world's output goes to (Windows). */
@@ -439,6 +454,7 @@ export type DDResult = Juke.ExecReturn & {
    * file is likely missing or mid-write; callers should treat it as
    * unclean/incomplete, not just another failure. */
   killedByWatchdog?: boolean;
+  watchdogReason?: string;
 };
 
 function runDreamDaemonWithWatchdog(
@@ -448,9 +464,16 @@ function runDreamDaemonWithWatchdog(
 ): Promise<DDResult> {
   const watchdogFile = options.watchdogFile as string;
   const graceMs = options.watchdogGraceMs ?? 30_000;
-  // The full unit-test suite runs close to 20 minutes on a busy, contended
-  // machine (many concurrent DreamDaemons across worktrees/shards), so the
-  // backstop sits well above that; DQ_DD_WATCHDOG_MINUTES overrides it, and
+  // Once the world has stamped its clean marker (finished_run.lk, written after its logs and results are flushed)
+  // only the process exit is left. The child 'exit' event resolves the run the moment the daemon really exits, so
+  // this is only the wait before a force-kill of a daemon that does not (the Windows zombie case). It was a fixed
+  // 5 s; 1.5 s still leaves the daemon time to close its handles. DQ_DD_CLEAN_GRACE_MS overrides it.
+  const cleanGraceMs = Math.min(graceMs, Number(process.env.DQ_DD_CLEAN_GRACE_MS) || 1_500);
+  let cleanSeenAt = 0;
+  // The full normal tier is about 6700 s of summed DreamDaemon CPU (2026-10-04),
+  // so one unsharded world can need well over an hour on a busy, contended
+  // machine (many concurrent DreamDaemons across worktrees/shards); the
+  // backstop sits at 120 minutes; DQ_DD_WATCHDOG_MINUTES overrides it, and
   // callers that know their own expected duration (the sharded runner, sized
   // per shard) can pass watchdogTimeoutMs explicitly, which wins over both.
   // DQ_DD_WATCHDOG_MINUTES is a manual override and wins over everything,
@@ -458,7 +481,7 @@ function runDreamDaemonWithWatchdog(
   // runner's per-shard estimate) -- it exists for exactly the case where
   // that estimate is wrong for someone's machine/run.
   const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
-  const hardTimeoutMs = Math.min(options.watchdogMaximumMs ?? Infinity, envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 45 * 60 * 1000));
+  const hardTimeoutMs = Math.min(options.watchdogMaximumMs ?? Infinity, envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 120 * 60 * 1000));
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',
@@ -470,7 +493,7 @@ function runDreamDaemonWithWatchdog(
     let settled = false;
     let hardTimeout = false;
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
-    const poll = setInterval(checkDone, 1_000);
+    const poll = setInterval(checkDone, 250);
     const hardTimer = setTimeout(() => finish(true, 'hard timeout', true), hardTimeoutMs);
 
     function finish(forceKill: boolean, reason: string, isHardTimeout: boolean) {
@@ -484,27 +507,83 @@ function runDreamDaemonWithWatchdog(
       if (graceTimer) {
         clearTimeout(graceTimer);
       }
-      if (forceKill && child.pid && child.exitCode === null && child.signalCode === null) {
+      const wasRunning = forceKill && child.pid && child.exitCode === null && child.signalCode === null;
+      if (wasRunning && child.pid) {
         const log = isHardTimeout ? Juke.logger.error : Juke.logger.info;
         log(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
         killProcessTree(child.pid);
       }
-      // A kill request is not a reaped child. Native acquired copies remain
-      // owned until close, including the forced-timeout path.
+      const result = {
+        code: child.exitCode ?? (reason === 'spawn error' ? 1 : 0),
+        signal: child.signalCode,
+        stdout: '',
+        stderr: '',
+        combined: '',
+        killedByWatchdog: isHardTimeout,
+        watchdogReason: reason,
+      } as DDResult;
+      if (wasRunning) {
+        // taskkill may return before Node observes process exit. Do not start
+        // the next benchmark world while this one can still write shared files.
+        const exitWait = setTimeout(() => resolve(result), 10_000);
+        child.once('exit', () => {
+          clearTimeout(exitWait);
+          resolve(result);
+        });
+      } else {
+        resolve(result);
+      }
     }
 
+    let cleanSeen = false;
+    const stallMs = (Number(process.env.DQ_DD_STALL_MINUTES) || 12) * 60 * 1000;
+    function stalledReason(): string | null {
+      if (!options.stallFile || process.env.DQ_DD_STALL_MINUTES === '0') return null;
+      try {
+        const age = Date.now() - fs.statSync(options.stallFile).mtimeMs;
+        if (age < stallMs) return null;
+        const lines = fs.readFileSync(options.stallFile, 'utf-8').split('\n').filter((l) => l.trim());
+        return `stalled: ${options.stallFile} has not changed for ${Math.round(age / 60000)} min; its last line: ${(lines[lines.length - 1] ?? '').slice(0, 300)}`;
+      } catch {
+        return null; // no log yet: the world is still booting
+      }
+    }
     function checkDone() {
-      if (settled || graceTimer) {
+      if (settled) {
+        return;
+      }
+      if (!graceTimer) {
+        const stalled = stalledReason();
+        if (stalled) {
+          finish(true, stalled, true);
+          return;
+        }
+      }
+      if (graceTimer) {
+        // Waiting for the world to finish writing: once its clean marker is there only the zombie is left.
+        if (options.watchdogCleanFile && !cleanSeen && fs.existsSync(options.watchdogCleanFile)) {
+          cleanSeen = true;
+          cleanSeenAt = Date.now();
+          Juke.logger.info(`DreamDaemon watchdog: clean marker seen; force-kill in ${cleanGraceMs} ms if the daemon has not exited.`);
+          clearTimeout(graceTimer);
+          graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanGraceMs);
+        }
         return;
       }
       if (fs.existsSync(watchdogFile)) {
         // Tests finished. Give -close a chance to exit cleanly, then force-kill
         // if the daemon is still alive (the Windows zombie case).
-        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), graceMs);
+        const finishGraceMs = options.watchdogCleanFile ? Math.max(graceMs, (Number(process.env.DQ_DD_FINISH_GRACE_SEC) || 180) * 1000) : graceMs;
+        cleanSeen = !!options.watchdogCleanFile && fs.existsSync(options.watchdogCleanFile);
+        if (cleanSeen) cleanSeenAt = Date.now();
+        graceTimer = setTimeout(() => finish(true, 'run complete, daemon did not self-close', false), cleanSeen ? cleanGraceMs : finishGraceMs);
       }
     }
 
     child.on('exit', (code, signal) => {
+      if (graceTimer && cleanSeenAt && !settled) {
+        Juke.logger.info(`DreamDaemon watchdog: daemon exited ${Date.now() - cleanSeenAt} ms after the clean marker (no force-kill needed).`);
+      }
       if (!settled && !graceTimer) {
         // Exited before the tests finished: record how, so a crash (e.g. an
         // NTSTATUS such as 0xC0000005 / 0xC0000409) is distinguishable from

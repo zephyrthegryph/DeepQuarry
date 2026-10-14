@@ -64,8 +64,10 @@
 	desc = "It makes you look HONKable!"
 	icon_state = "sexyclown"
 	item_state_slots = list(slot_r_hand_str = "clown", slot_l_hand_str = "clown")
-	body_parts_covered = CHEST
 	rolled_sleeves = -1 //Please never
+
+CAPABILITIES(/obj/item/clothing/under/sexyclown)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/clown //i'm only putting it here to make subtypes of it, since the original suit is under/rank/clown
 	name = "clown suit"
@@ -136,25 +138,22 @@
 	desc = "It has a NASA logo on it and is made of space-proofed materials."
 	icon_state = "black"
 	w_class = ITEMSIZE_LARGE//bulky item
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.02
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS //Needs gloves and shoes with cold protection to be fully protected.
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/space)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/under/acj
 	name = "administrative cybernetic jumpsuit"
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
 	desc = "it's a cybernetically enhanced jumpsuit used for administrative duties."
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = "melee=100;bullet=100;laser=100;energy=100;bomb=100;bio=100;rad=100"
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/under/acj)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
 /obj/item/clothing/under/owl
 	name = "owl uniform"
@@ -176,7 +175,9 @@
 	desc = "A thick, layered grey undersuit lined with power cables. Feels a little like wearing an electrical storm."
 	icon_state = "psysuit"
 	item_state_slots = list(slot_r_hand_str = "black", slot_l_hand_str = "black")
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
+
+CAPABILITIES(/obj/item/clothing/under/psysuit)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 
 /obj/item/clothing/under/gentlesuit
 	name = "gentlemans suit"
@@ -218,16 +219,20 @@
 /obj/item/clothing/under/suit_jacket/female/skirt
 	name = "executive skirt"
 	desc = "A formal suit skirt  for women, intended for the station's finest."
-	body_parts_covered = CHEST|ARMS
 	icon_state = "black_suit_fem"
 	item_state = "black_formal_skirt"
+
+CAPABILITIES(/obj/item/clothing/under/suit_jacket/female/skirt)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/schoolgirl
 	name = "schoolgirl uniform"
 	desc = "It's just like one of my Japanese animes!"
 	icon_state = "schoolgirl"
 	item_state_slots = list(slot_r_hand_str = "blue", slot_l_hand_str = "blue")
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/schoolgirl)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/overalls
 	name = "laborer's overalls"
@@ -239,7 +244,9 @@
 	name = "sleek overalls"
 	desc = "A set of modern pleather reinforced overalls."
 	icon_state = "overalls_sleek"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/overalls/sleek)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/overalls/service
 	name = "workman overalls"
@@ -265,8 +272,10 @@
 	desc = "Yarr."
 	icon_state = "pirate"
 	item_state_slots = list(slot_r_hand_str = "sl_suit", slot_l_hand_str = "sl_suit")
-	body_parts_covered = CHEST|LEGS
 	has_sensor = 0 // Fixes sensors issue
+
+CAPABILITIES(/obj/item/clothing/under/pirate)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/soviet
 	name = "soviet uniform"
@@ -285,16 +294,20 @@
 	name = "kilt"
 	desc = "Includes shoes and plaid"
 	icon_state = "kilt"
-	body_parts_covered = CHEST|FEET
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/kilt)
+	configure(item_worn(covers = CHEST|FEET))
 
 /obj/item/clothing/under/sexymime
 	name = "sexy mime outfit"
 	desc = "The only time when you DON'T enjoy looking at someone's rack."
 	icon_state = "sexymime"
 	item_state_slots = list(slot_r_hand_str = "mime", slot_l_hand_str = "mime")
-	body_parts_covered = CHEST
 	rolled_sleeves = -1 //Please never
+
+CAPABILITIES(/obj/item/clothing/under/sexymime)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/sexymime/dress //another style of dress closer to the jumpsuit than the sexy outfit
 	name = "mime's jumpskirt"
@@ -306,7 +319,9 @@
 	desc = "Are you not entertained? Is that not why you are here?"
 	icon_state = "gladiator"
 	item_state_slots = list(slot_r_hand_str = "yellow", slot_l_hand_str = "yellow")
-	body_parts_covered = LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/gladiator)
+	configure(item_worn(covers = LOWER_TORSO))
 
 /obj/item/clothing/under/ascetic
 	name = "plain ascetic garb"
@@ -319,7 +334,9 @@
  */
 
 /obj/item/clothing/under/dress
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/blacktango
 	name = "black tango dress"
@@ -402,37 +419,49 @@
 	name = "site manager's dress uniform"
 	desc = "Feminine fashion for the style conscious " + JOB_SITE_MANAGER + "."
 	icon_state = "dress_cap"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/dress/dress_cap)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/dress/dress_hop
 	name = "head of personnel dress uniform"
 	desc = "Feminine fashion for the style conscious HoP."
 	icon_state = "dress_hop"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/dress/dress_hop)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/dress/dress_hr
 	name = "human resources director uniform"
 	desc = "Superior class for the nosy H.R. Director."
 	icon_state = "huresource"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/dress/dress_hr)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/dress/black_corset
 	name = "black corset"
 	desc = "A black corset and skirt for those fancy nights out."
 	icon_state = "black_corset"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/black_corset)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/flower_dress
 	name = "flower dress"
 	desc = "A beautiful dress with a skirt of flowers."
 	icon_state = "flower_dress"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/flower_dress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/red_swept_dress
 	name = "red swept dress"
 	desc = "A red dress that sweeps to the side."
 	icon_state = "red_swept_dress"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/red_swept_dress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/flamenco
 	name = "flamenco dress"
@@ -464,14 +493,18 @@
 	name = "white wedding dress"
 	desc = "A fancy white dress with a blue underdress."
 	icon_state = "whitedress1"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/dress/white)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/dress/white2
 	name = "long dress"
 	desc = "A long dress."
 	icon_state = "whitedress2"
 	addblends = "whitedress2_a"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/dress/white2)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/dress/white3
 	name = "short dress"
@@ -484,7 +517,9 @@
 	desc = "A long white dress that flares out at the bottom."
 	icon_state = "whitedress4"
 	addblends = "whitedress4_a"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/dress/white4)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/dress/darkred
 	name = "fancy dark red dress"
@@ -495,13 +530,17 @@
 	name = "polka dot dress"
 	desc = "A sleeveless, cream colored dress with red polka dots."
 	icon_state = "polka"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/polka)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/twistfront
 	name = "twistfront crop dress"
 	desc = "A black skirt and red twistfront croptop. Fancy!"
 	icon_state = "twistfront"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/twistfront)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/cropdress
 	name = "crop dress"
@@ -527,37 +566,49 @@
 	name = "little black dress"
 	desc = "A little strapless black dress with a red ribbon and flower accessory."
 	icon_state = "littleblackdress"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/littleblackdress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/pinktutu
 	name = "pink tutu"
 	desc = "A black leotard with a pink mesh tutu. Perfect for ballet practice."
 	icon_state = "pinktutu"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/pinktutu)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/festivedress
 	name = "festive dress"
 	desc = "A red and white dress themed after some winter holidays. Tastefully festive!"
 	icon_state = "festivedress"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/festivedress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/revealingdress
 	name = "revealing dress"
 	desc = "A very revealing black and blue dress. Is this work appropriate?"
 	icon_state = "revealingdress"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/revealingdress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/gothic
 	name = "gothic dress"
 	desc = "A black dress with a sheer mesh over it, tastefully old school goth."
 	icon_state = "gothic"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/gothic)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/formalred
 	name = "formal red dress"
 	desc = "A very formal red dress, for those fancy galas."
 	icon_state = "formalred"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/dress/formalred)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/dress/pentagram
 	name = "pentagram dress"
@@ -593,7 +644,9 @@
 	name = "golden wrap"
 	desc = "An outfit so ostentatious that you feel poorer just looking at it."
 	icon_state = "goldwrap"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/golddress)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/hightrousers
 	name = "high-waisted trousers"
@@ -629,44 +682,57 @@
  */
 
 /obj/item/clothing/under/wedding
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/wedding)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/wedding/bride_orange
 	name = "orange wedding dress"
 	desc = "A big and puffy orange dress."
 	icon_state = "bride_orange"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/wedding/bride_orange)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/wedding/bride_purple
 	name = "purple wedding dress"
 	desc = "A big and puffy purple dress."
 	icon_state = "bride_purple"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/wedding/bride_purple)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/wedding/bride_blue
 	name = "blue wedding dress"
 	desc = "A big and puffy blue dress."
 	icon_state = "bride_blue"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/wedding/bride_blue)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/wedding/bride_red
 	name = "red wedding dress"
 	desc = "A big and puffy red dress."
 	icon_state = "bride_red"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/wedding/bride_red)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/wedding/bride_white
 	name = "silky wedding dress"
 	desc = "A white wedding gown made from the finest silk."
 	icon_state = "bride_white"
-	flags_inv = HIDESHOES
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/wedding/bride_white)
+	configure(item_worn(hides = HIDESHOES, covers = CHEST))
 
 /obj/item/clothing/under/wedding/floofdress
 	name = "floofy dress"
 	desc = "A lovely floofed out dress for formal occasions. Comes in many colors!"
 	icon_state = "floofdress"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/under/wedding/floofdress)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/under/wedding/whitegown
 	name = "white gown"
@@ -681,49 +747,65 @@
 	name = "sundress"
 	desc = "Makes you want to frolic in a field of daisies."
 	icon_state = "sundress"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/sundress)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/sundress_white
 	name = "flowery white sundress"
 	desc = "A white sundress decorated with purple lilies."
 	icon_state = "sundress_white"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/sundress_white)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/sundress_pink
 	name = "pink stripied sundress"
 	desc = "A cute pink sundress."
 	icon_state = "pinksun"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/sundress_pink)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/sundress_white
 	name = "white sundress"
 	desc = "A white sundress, it's short."
 	icon_state = "whitesun"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/sundress_white)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/sundress_pinkbow
 	name = "bowed pink sundress"
 	desc = "A cute pink sundress with a bow."
 	icon_state = "bowsun"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/sundress_pinkbow)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/sundress_blue
 	name = "long blue sundress"
 	desc = "A long blue sun dress with white frills towards the bottom."
 	icon_state = "bluesun"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/dress/sundress_blue)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/dress/sundress_pinkshort
 	name = "short pink sundress"
 	desc = "A very short pink sundress, it's more like a chemise."
 	icon_state = "shortpink"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/sundress_pinkshort)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/twopiece
 	name = "two-piece dress"
 	desc = "A fancy two-piece dress, the pieces are sewn together."
 	icon_state = "twopiece"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/twopiece)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/gothic2
 	name = "lacey gothic dress"
@@ -873,7 +955,9 @@
 	name = "white cheongsam"
 	desc = "It is a white cheongsam dress."
 	icon_state = "cheongsam-white"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/cheongsam)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/cheongsam/red
 	name = "red cheongsam"
@@ -955,7 +1039,9 @@
 	name = "gear harness"
 	desc = "How... minimalist."
 	icon_state = "gear_harness"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/under/harness)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/under/haltertop
 	name = "halter top"
@@ -976,13 +1062,17 @@
 	name = "green asymmetrical jumpsuit"
 	desc = "A green futuristic uniform with asymmetrical pants. Trendy!"
 	icon_state = "greenasym"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/greenasym)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/cyberpunkharness
 	name = "cyberpunk strapped harness"
 	desc = "A cyberpunk styled harness and pants. Perfect for your dystopian future."
 	icon_state = "cyberhell"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/cyberpunkharness)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/blackngold
 	name = "black and gold gown"
@@ -1003,13 +1093,17 @@
 	name = "flower skirt"
 	desc = "A flowery skirt that comes in a variety of colors."
 	icon_state = "flowerskirt"
-	body_parts_covered = LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/flower_skirt)
+	configure(item_worn(covers = LOWER_TORSO))
 
 /obj/item/clothing/under/fashionminiskirt
 	name = "fashionable miniskirt"
 	desc = "An impractically short miniskirt allegedly making waves through the local fashion scene."
 	icon_state = "miniskirt_fashion"
-	body_parts_covered = LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/fashionminiskirt)
+	configure(item_worn(covers = LOWER_TORSO))
 
 /obj/item/clothing/under/retrosweater
 	name = "retro sweater"
@@ -1026,8 +1120,6 @@
  */
 
 /obj/item/clothing/under/swimsuit/
-	siemens_coefficient = 1
-	body_parts_covered = 0
 
 /obj/item/clothing/under/swimsuit/black
 	name = "black swimsuit"
@@ -1113,14 +1205,18 @@
 	desc = "Slightly old-fashioned sleepwear."
 	icon_state = "blue_pyjamas"
 	item_state_slots = list(slot_r_hand_str = "blue", slot_l_hand_str = "blue")
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/bluepyjamas)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 /obj/item/clothing/under/redpyjamas
 	name = "red pyjamas"
 	desc = "Slightly old-fashioned sleepwear."
 	icon_state = "red_pyjamas"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/redpyjamas)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 /obj/item/clothing/under/rank/psych/turtleneck/sweater
 	desc = "A warm looking sweater and a pair of dark blue slacks."
@@ -1133,7 +1229,9 @@
 	desc = "A flimsy examination gown, the back ties never close."
 	icon_state = "medicalgown"
 	worn_state = "medicalgown"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/medigown)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/bathrobe
 	name = "bathrobe"
@@ -1174,11 +1272,11 @@
 	rolled_down = 0
 	rolled_sleeves = 0
 
+// ALLOW(init/INSTANCE_STATE): its name and sprite follow the uniform colour it was given
 /obj/item/clothing/under/color/ranger/Initialize(mapload)
 	. = ..()
 	if(icon_state == "ranger_uniform") //allows for custom items
 		name = "[unicolor] ranger uniform"
-		icon_state = "[unicolor]_ranger_uniform"
 
 /obj/item/clothing/under/color/ranger/black
 	unicolor = "black"
@@ -1318,8 +1416,10 @@
 	icon_state = "mod_coat_pants"
 	worn_state = "mod_coat_pants"
 	item_state_slots = list(slot_r_hand_str = "red", slot_l_hand_str = "red")
-	body_parts_covered = CHEST|LEGS
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/modwrap)
+
+CAPABILITIES(/obj/item/clothing/under/moderncoat)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/modjump
 	name = "modern jumpsuit"
@@ -1571,7 +1671,6 @@
 	name = "cream baggy turtleneck (cream)"
 	desc = "A cozy knit turtleneck. It's too baggy and comfortable to be tactical."
 	icon_state = "bb_turtle"
-	body_parts_covered = CHEST|ARMS
 
 
 //more big sweaters
@@ -1580,7 +1679,9 @@
 	name = "cableknit sweater"
 	desc = "Why trade style for comfort?"
 	icon_state = "cableknit"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/bigsweater)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/bigsweater/keyhole
 	icon_state = "keyhole"
@@ -1589,7 +1690,9 @@
 	name = "cableknit sweater"
 	desc = "Why trade style for comfort?."
 	icon_state = "cableknit"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/keyhole)
+	configure(item_worn(covers = CHEST|ARMS))
 
 
 //half-moon outfit
@@ -1650,19 +1753,24 @@
 	icon = 'icons/inventory/uniform/item_ch.dmi'
 	icon_override = 'icons/inventory/uniform/mob_ch.dmi'
 	icon_state = "sexybunny_white"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/sexybunny_white)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|ARMS|LEGS))
 
 /obj/item/clothing/under/sexybunny_white/sexybunny_black
 	icon_state = "sexybunny_black"
 
 /obj/item/clothing/under/cohesion
-	permeability_coefficient = 0  //Should have this anyway
 
 /obj/item/clothing/under/cohesion/striped/testpartial //testing better coverage.
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
+
+CAPABILITIES(/obj/item/clothing/under/cohesion/striped/testpartial)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
 /obj/item/clothing/under/cohesion/striped/testfull //testing both, but with full coverage.
-	body_parts_covered = HEAD|UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
+
+CAPABILITIES(/obj/item/clothing/under/cohesion/striped/testfull)
+	configure(item_worn(covers = HEAD|UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
 // SKINSUITS //
 
@@ -1687,13 +1795,15 @@
 	desc = "This permit entitles the bearer to conduct their duties without a uniform. Normally issued to furred crewmembers or those with nothing to hide."
 	icon = 'icons/obj/card_new.dmi'
 	icon_state = "permit-nude"
-	body_parts_covered = 0
-	equip_sound = null
 
 	sprite_sheets = null
 
 	item_state = "golem"  //This is dumb and hacky but was here when I got here.
 	worn_state = "golem"  //It's basically just a coincidentally black iconstate in the file.
+
+CAPABILITIES(/obj/item/clothing/under/permit)
+	configure(item_worn(covers = 0))
+	configure(item_sounds(equip = TRAIT_NONE))
 
 /obj/item/clothing/under/hyperfiber
 	name = "HYPER jumpsuit"
@@ -1708,12 +1818,12 @@
 			Hides any bulges on your body, as well as conceals your true weight."
 	hides_bulges = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber, \
-	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(hyperfiber_toggle_fibers_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/hyperfiber)
+	op("hyperfiber_toggle_fibers_verb", menu(), label("Adjust Bluespace Fibers"), needs(carried()), then(PROC_REF(hyperfiber_toggle_fibers_verb)))
 
 /// Old verb "Adjust Bluespace Fibers".
-/obj/item/clothing/under/hyperfiber/proc/hyperfiber_toggle_fibers_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/hyperfiber/proc/hyperfiber_toggle_fibers_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	adjust_fibers(user)
 
 /obj/item/clothing/under/hyperfiber/proc/adjust_fibers(mob/user)
@@ -1733,15 +1843,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber, \
 			Allows one to resize themselves at will, and conceals their true weight as well as any bulges or protrusions on their body."
 	var/original_size
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
-	INTERACT_VERB("Adjust Bluespace Fibers", PROC_REF(bluespace_resize_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
+	op("bluespace_resize_verb", menu(), label("Adjust Bluespace Fibers"), needs(carried()), then(PROC_REF(bluespace_resize_verb)))
 
 /// Old verb "Adjust Bluespace Fibers".
-/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_resize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_resize_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	bluespace_size(user)
 
-/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user)
+/obj/item/clothing/under/hyperfiber/bluespace/proc/bluespace_size(mob/user, answered_size = null, answered_large_bounds = FALSE)
 	if (!ishuman(user))
 		return
 
@@ -1754,17 +1864,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		to_chat(H,span_warning("You must be WEARING the uniform to change your size."))
 		return
 
-	var/new_size
-	if(H.has_large_resize_bounds())
-		var/_answer_a1 = rerun_ask(H, "a1", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-		if(isnull(_answer_a1))
-			return
-		new_size = _answer_a1
-	else
-		var/_answer_a2 = rerun_ask(H, "a2", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
-		if(isnull(_answer_a2))
-			return
-		new_size = _answer_a2
+	var/new_size = answered_size
+	var/large_bounds = H.has_large_resize_bounds()
+	if(isnull(new_size) || answered_large_bounds != large_bounds)
+		open_request(src, /datum/prompt/number/bluespace_clothing_size, PROC_REF(uniform_size_chosen), answerer = H, default = H.size_multiplier * 100, max_value = (large_bounds ? RESIZE_MAXIMUM_DORMS : RESIZE_MAXIMUM) * 100, min_value = (large_bounds ? RESIZE_MINIMUM_DORMS : RESIZE_MINIMUM) * 100, large_bounds = large_bounds)
+		return
 	if(!new_size)
 		return //cancelled
 
@@ -1779,7 +1883,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H,span_warning("The uniform panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if (!H.size_range_check(new_size))
@@ -1788,7 +1891,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 
 	if(new_size != H.size_multiplier)
 		if(!original_size)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 		H.resize(new_size/100, uncapped = H.has_large_resize_bounds(), ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
@@ -1798,7 +1901,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 	if(. && ishuman(M) && original_size && !disable_warning)
 		var/mob/living/carbon/human/H = M
 		H.resize(original_size, ignore_prefs = TRUE)
-		original_size = null
+		set_original_size(null)
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 
@@ -1821,14 +1924,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 	var/mob/M = src.loc
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			return
 		if(H.size_multiplier != target_size)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
 			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 			H.resize(target_size, ignore_prefs = FALSE) // In case someone else tries to put it on you. // no uncapped
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 				MSG_OTHERS(span_warning("The space around %U% distorts as they change size!")))
@@ -1838,11 +1941,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 	. = ..()
 	if(. && ishuman(M) && original_size && !disable_warning)
 		var/mob/living/carbon/human/H = M
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			return
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 		H.resize(original_size, ignore_prefs = FALSE) // no uncapped
-		original_size = null
+		set_original_size(null)
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you return to your original size!")), \
 			MSG_OTHERS(span_warning("The space around %U% distorts as they return to their original size!")))
 		log_admin("Admin [key_name(M)]'s size was altered by a bluespace bracelet.")
@@ -1857,27 +1960,26 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		if(emagged)
 			. += span_warning("The crystal is flickering.")
 
-DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null, null)
+CAPABILITIES(/obj/item/clothing/gloves/bluespace)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-/obj/item/clothing/gloves/bluespace/mark_emagged()
-	emagged = TRUE
-/obj/item/clothing/gloves/bluespace/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+
+/obj/item/clothing/gloves/bluespace/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/emag_source = A.held
 	emagged = TRUE
 	target_size = (rand(25,200)) /100 // set to our rule cap
 	if(target_size < 0.25) // set to our rule cap
 		target_size = 0.25 // set to our rule cap
 	act_message(user, src, MSG_SELF(span_notice("You swipes the [emag_source] over %T%.")), \
 		MSG_OTHERS(span_notice("%U% swipes the [emag_source] over %T%.")))
-	return 1
+	return OP_OK
 
 /obj/item/clothing/gloves/bluespace/emagged
 	emagged = TRUE
 
-/obj/item/clothing/gloves/bluespace/emagged/Initialize(mapload)
-	. = ..()
-	target_size = (rand(25,200)) /100 // set to our rule cap
-	if(target_size < 0.25) // set to our rule cap
-		target_size = 0.25 // set to our rule cap
+CAPABILITIES(/obj/item/clothing/gloves/bluespace/emagged)
+	rolls(nameof(target_size), range_of(0.25, 2, 0.01)) // an emagged pair sets a random size, within the rule cap
 
 /obj/item/clothing/gloves/bluespace/deluxe
 	name = "deluxe size standardization bracelet"
@@ -1890,15 +1992,15 @@ DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null, null)
 	if(Adjacent(user))
 		. += "The dial seems to be set to [target_size*100]%"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
-	INTERACT_VERB("Adjust Bluespace Dial", PROC_REF(deluxe_turn_dial_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
+	op("deluxe_turn_dial_verb", menu(), label("Adjust Bluespace Dial"), needs(carried()), then(PROC_REF(deluxe_turn_dial_verb)))
 
 /// Old verb "Adjust Bluespace Dial".
-/obj/item/clothing/gloves/bluespace/deluxe/proc/deluxe_turn_dial_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/gloves/bluespace/deluxe/proc/deluxe_turn_dial_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	bluespace_size(user)
 
-/obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user) //Taken from HYPER suit
+/obj/item/clothing/gloves/bluespace/deluxe/proc/bluespace_size(mob/user, answered_size = null, answered_large_bounds = FALSE) //Taken from HYPER suit
 	if(!ishuman(user))
 		return
 
@@ -1916,18 +2018,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 		to_chat(H, span_warning("You must be WEARING the bracelet and have it uncovered to change your size."))
 		return
 
-	var/new_size
-	if(H.has_large_resize_bounds())
-		var/_answer_a3 = rerun_ask(H, "a3", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
-		if(isnull(_answer_a3))
-			return
-		new_size = _answer_a3
-	else
-		var/_answer_a4 = rerun_ask(H, "a4", PROC_REF(bluespace_size), args, /datum/om/prompt/number, message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas.", title = "Set Size", default = H.size_multiplier * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
-		if(isnull(_answer_a4))
-			return
-		new_size = _answer_a4
-
+	var/new_size = answered_size
+	var/large_bounds = H.has_large_resize_bounds()
+	if(isnull(new_size) || answered_large_bounds != large_bounds)
+		open_request(src, /datum/prompt/number/bluespace_clothing_size, PROC_REF(bracelet_size_chosen), answerer = H, default = H.size_multiplier * 100, max_value = (large_bounds ? RESIZE_MAXIMUM_DORMS : RESIZE_MAXIMUM) * 100, min_value = (large_bounds ? RESIZE_MINIMUM_DORMS : RESIZE_MINIMUM) * 100, large_bounds = large_bounds)
+		return
 	if(!new_size)
 		return
 
@@ -1942,12 +2037,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H, span_warning("The gloves panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if(new_size != H.size_multiplier)
 		if(!original_size)
-			original_size = H.size_multiplier
+			set_original_size(H.size_multiplier)
 		H.resize(new_size/100, ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		act_message(H, null, MSG_SELF(span_notice("The space around you distorts as you change size!")), \
 			MSG_OTHERS(span_notice("The space around %U% distorts as they change size!")))
@@ -1964,7 +2058,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	desc = "A type of feminine body-hugging dress with distinctive Chinese features of Manchu origin."
 	icon_state = "qipao"
 	item_state = "qipao"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/qipao)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/qipao/white
 	name = "white qipao"
@@ -1993,7 +2089,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	desc = "An outfit fit for delivering pizzas! Whoever wears it either has a vore-wish or really needs the money. Maybe both."
 	icon_state = "pizzadelivery_fluff"
 	item_state = "pizzadelivery_fluff"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/names_pizza)
+	configure(item_worn(covers = CHEST))
 
 //////////////////////TALON JUMPSUITS//////////////////////
 
@@ -2113,7 +2211,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	item_state = "lewdcap"
 	rolled_sleeves = -1
 	rolled_down = -1
-	body_parts_covered = UPPER_TORSO // frankly this thing's a fucking embarassment
+
+CAPABILITIES(/obj/item/clothing/under/dress/dress_cap/femformal)
+	configure(item_worn(covers = UPPER_TORSO))
 
 //FEMININE JUMPSUITS.
 /obj/item/clothing/under/color/fjumpsuit //They won't see this so we can make it whatever we want.
@@ -2213,7 +2313,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	icon_state = "qipao3"
 	item_state = "qipao3"
 	worn_state = "qipao3"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/qipao_colorable)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/qipao2_colorable
 	name = "slim qipao"
@@ -2221,7 +2323,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	icon_state = "qipao2"
 	item_state = "qipao2"
 	worn_state = "qipao2"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/qipao2_colorable)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/antediluvian
 	name = "antediluvian corset"
@@ -2229,7 +2333,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	icon_state = "antediluvian"
 	item_state = "antediluvian"
 	worn_state = "antediluvian"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/dress/antediluvian)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/dress/antediluvian/sheerless
 	desc = "A regal black and gold tight corset with silky sleeves. This one is just the corset and sleeves, sans lace stockings and gloves."
@@ -2365,7 +2471,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	item_state = "arar"
 	rolled_sleeves = -1
 	rolled_down = -1
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/replika)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/replika/arar
 	name = "repair-worker replikant bodysuit"
@@ -2432,7 +2540,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	item_state = "gestalt_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/gestalt)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 /obj/item/clothing/under/gestalt/sleek_skirt
 	name = "sleek crew skirt"
@@ -2457,4 +2567,48 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 	desc = "A tight-fitting, sleeveless single-piece black uniform with striking crimson trim."
 	icon_state = "gestalt_sleeveless"
 	item_state = "gestalt_sleeveless"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/gestalt/sleeveless)
+	configure(item_worn(covers = CHEST|LEGS))
+
+/obj/item/clothing/under/hyperfiber/bluespace/proc/uniform_size_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_uniform_size(A)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/under/hyperfiber/bluespace/proc/apply_uniform_size(datum/act/request/A)
+	var/datum/prompt/number/bluespace_clothing_size/request = A.request
+	return bluespace_size(request.answerer, A.answer.value, request.large_bounds)
+
+/obj/item/clothing/gloves/bluespace/deluxe/proc/bracelet_size_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_bracelet_size(A)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/gloves/bluespace/deluxe/proc/apply_bracelet_size(datum/act/request/A)
+	var/datum/prompt/number/bluespace_clothing_size/request = A.request
+	return bluespace_size(request.answerer, A.answer.value, request.large_bounds)
+
+/datum/prompt/number/bluespace_clothing_size
+	title = "Set Size"
+	timeout = 0
+	step = 1
+	var/large_bounds = FALSE
+
+/datum/prompt/number/bluespace_clothing_size/prepare(datum/act/A)
+	. = ..()
+	question = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%), or ([RESIZE_MINIMUM_DORMS * 100]-[RESIZE_MAXIMUM_DORMS * 100]%) in dormitory areas."
+
+/datum/prompt/number/bluespace_clothing_size/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, TRUE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/// Its sprite follows the colour it was given (a custom item with its own sprite keeps it).
+/obj/item/clothing/under/color/ranger/draw(datum/look/look)
+	..()
+	if(look.state_so_far(src) == "ranger_uniform")
+		look.state("[unicolor]_ranger_uniform")

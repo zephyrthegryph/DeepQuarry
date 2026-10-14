@@ -22,35 +22,55 @@
 // the entity `vg_power_bind_cable` hands back) is the only identity Rust
 // needs.
 
-/datum/world_service/machines
+/datum/system/machines
 	/// Region id (Rust's raw handle bits + 1; negative for detached test
-	/// grids) -> its flat state list (power_grid.dm). An alist: the ids are
+	/// grids) -> its tracked state datum (power_grid.dm). An alist: the ids are
 	/// numbers, and a plain list would treat them as positions.
-	var/alist/power_grids = alist()
+	VAR_PRIVATE/datum/power_grid_registry/power_grids
 	/// Region id -> /datum/material_power_overlay, for regions holding an engineered conductor.
 	var/alist/power_material_overlays = alist()
 	/// Last id handed to a detached test grid (counts down from 0).
 	var/power_test_grid_serial = 0
 	/// Areas whose static or one-off loads changed since the last step.
-	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_dirty_areas = list() // SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
-	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_material_cables = list() // a relation list: a deleted cable leaves it
+	/// The APCs and SMES the current power step still has to poll, while a budgeted step is yielded between
+	/// ticks; null when no poll is in progress (poll_power_storage()).
+	var/list/power_poll_queue
+	var/power_poll_index = 1
+
+CAPABILITIES(/datum/system/machines)
+	owns_one(nameof(power_grids), /datum/power_grid_registry, starts = /datum/power_grid_registry)
+	owns_many(nameof(power_material_overlays), /datum/material_power_overlay)
+	ref_many(nameof(power_material_cables), /obj/structure/cable)
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
-	GLOB.machine_service.power_dirty_areas[src] = TRUE
+	SSmachines.power_dirty_areas[src] = TRUE
 
-/datum/world_service/machines/proc/power_flush_areas()
+/datum/system/machines/proc/power_flush_areas()
+	stat_drain_point() // the on_change hooks that mark an area dirty run at a drain: take them before reading the set
+	// Only the areas whose loads changed: an area is marked when a demand stat of it changes, when its APC changes, when its APC's node is
+	// bound again (Rust lost its copy) and when a one-off is booked (power_loads_changed()). An idle station sends nothing and walks nothing.
 	for(var/area/A as anything in power_dirty_areas)
-		var/obj/machinery/power/apc/apc = A.apc
-		if(apc?.vg_entity)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_equip, 0)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_light, 1)
-			native_write(apc, NATIVE_APC_STATIC_LOAD, A.static_environ, 2)
+		var/obj/machinery/power/apc/serving = A.apc
+		if(serving?.vg_entity && serving.area == A)
+			var/equip_load = A.demand(EQUIP)
+			var/light_load = A.demand(LIGHT)
+			var/environ_load = A.demand(ENVIRON)
+			var/list/sent = serving.pushed_demand
+			if(!sent || sent[1] != equip_load || sent[2] != light_load || sent[3] != environ_load)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, light_load, 1)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, environ_load, 2)
+				serving.pushed_demand = list(equip_load, light_load, environ_load)
+				log_world("POWER_DEMAND: [serving] ([A]) now carries [equip_load] W equipment, [light_load] W lighting, [environ_load] W environment")
+			// The one-offs: a pulse, handed over once and cleared.
 			if(A.oneoff_equip || A.oneoff_light || A.oneoff_environ)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_light, 1)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_environ, 2)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_light, 1)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_environ, 2)
 		A.oneoff_equip = 0
 		A.oneoff_light = 0
 		A.oneoff_environ = 0
@@ -62,46 +82,39 @@
 /// publishes its results to DM's cache (`power_grids`) and drives the
 /// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
 /// itself simulated in Rust.
-/datum/world_service/machines/proc/process_power()
-	power_flush_areas()
-	vg_power_commit()
-	for(var/id in power_grids)
-		if(!power_grid_refresh(id))
-			power_grids -= id
-			continue
-		power_grid_sync_problem(id)
-	// Every power machine's `power_region` is polled here, not pushed --
-	// a deferred `connect_to_network(FALSE)` (map load, and every
-	// `power_autoconnect()`) relies on this to eventually resolve.
-	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
-		if(!QDELETED(machine))
-			machine.power_refresh_network()
-	for(var/obj/machinery/power/apc/apc as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		apc.power_poll()
-	for(var/obj/machinery/power/smes/storage as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		storage.power_poll()
+/// The rest of the power step: the engineered-conductor overlays.
+/datum/system/machines/proc/process_power_finish()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
 		if(QDELETED(cable))
-			power_material_cables -= cable
+			rel_remove(src, nameof(power_material_cables), cable)
 			continue
 		var/id = cable.get_power_region()
 		if(id && !power_material_overlays[id])
-			power_material_overlays[id] = new /datum/material_power_overlay(id)
+			rel_add(src, nameof(power_material_overlays), new /datum/material_power_overlay(id), id)
 	for(var/id in power_material_overlays)
 		var/datum/material_power_overlay/overlay = power_material_overlays[id]
-		if(!power_grids[id] || !overlay.process_material_network())
-			power_material_overlays -= id
-			qdel(overlay)
+		if(!power_grids.lookup(id) || !overlay.process_material_network())
+			rel_remove(src, nameof(power_material_overlays), overlay) // owned: removing it disposes of it
+
+/// The cable network's topology was edited (a node bound or unbound): regions may split, merge or gain members at
+/// the next commit, so the next power step re-reads every machine's region. Every vg_power_bind_* and
+/// vg_power_unbind_* call is followed by this; nothing else changes a region. `source` (the object or type that edited
+/// it) is counted for the churn metrics: an idle grid should make none.
+/proc/power_topology_edited(source)
+	var/datum/source_datum = source
+	CHURN_COUNT(power_edits, istype(source_datum) ? source_datum.type : source)
+	var/datum/system/machines/service = SSmachines
+	if(service)
+		service.power_regions_stale = TRUE
 
 /// Clears every DM-side power cache and re-registers every cable, power
 /// machine, APC and SMES (admin repair): unbinds and rebinds every
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
 /// cannot survive it.
-/datum/world_service/machines/proc/power_reregister_all()
-	for(var/id in power_material_overlays)
-		qdel(power_material_overlays[id])
-	power_material_overlays = alist()
-	power_grids = alist()
+/datum/system/machines/proc/power_reregister_all()
+	rel_clear(src, nameof(power_material_overlays))
+	power_grids.clear()
+	power_regions_stale = TRUE
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_unregister()
 		cable.power_register()
@@ -109,19 +122,20 @@
 		if(istype(machine, /obj/machinery/power/apc))
 			continue
 		if(machine.vg_entity && isturf(machine.loc))
-			machine.power_send_node()
+			machine.power_send_node(force = TRUE)
 	for(var/obj/machinery/power/apc/apc in world)
-		apc.power_send_node()
-	for(var/area/A in world)
-		A.power_loads_changed()
+		apc.power_send_node(force = TRUE)
+	for(var/obj/machinery/power/apc/apc in world)
+		apc.pushed_demand = null // Rust lost its copy of the standing load with the rebind
+		apc.area?.power_loads_changed()
 	process_power()
 
 /// Registers every cable and power machine again (admin repair, and after
 /// bulk moves that bypass Moved()).
-/datum/world_service/machines/proc/power_reregister(list/turfs)
+/datum/system/machines/proc/power_reregister(list/turfs)
 	for(var/turf/T as anything in turfs)
 		for(var/obj/structure/cable/cable in contents_of(T))
 			cable.power_register()
 		for(var/obj/machinery/power/machine in contents_of(T))
 			if(!istype(machine, /obj/machinery/power/apc))
-				machine.power_send_node()
+				machine.power_send_node(force = TRUE)

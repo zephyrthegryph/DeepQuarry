@@ -1,0 +1,86 @@
+@obj human|none
+-click: Click: Pick up
++0 menu: Handle
++4 click: Click: Handle
+@obj robot|none
+-click: Click: Pick up
++1 menu: Handle
++5 click: Click: Handle
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use screwdriver
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Handle
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/kit
++1 menu: Handle
++4 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Handle
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item
+-menu: Alternate use
++0 menu: Handle
+@obj human|/obj/item/cell
+-click: nothing
++0 menu: Handle
++1 menu: Insert the cell
++4 menu: Use
++5 click: Click: Insert the cell
+@obj human|/obj/item/pen
+-menu: Rename
+-click: Click: Rename
++0 menu: Handle
++2 menu: Nickname
++4 menu: Use
++5 click: Click: Nickname
+human|/obj/item/flashlight/pen menu: Handle
+human|/obj/item/flashlight/pen menu: Move To Top
+human|/obj/item/flashlight/pen menu: Nickname
+human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/flashlight/pen menu: Use
+human|/obj/item/flashlight/pen click: Click: Nickname
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, handle, insert_cell, item, kit_customize, kit_customize_last, move_to_top, nickname, pick_up_item, repack, toggle_digestable, use_screwdriver

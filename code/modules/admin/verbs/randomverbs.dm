@@ -1,18 +1,21 @@
 GLOBAL_VAR_INIT(global_vantag_hud, 0)
 
 ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/living/dropee in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(confirmed), title = "Message", message = "Make [dropee] drop everything?", requires = PROMPT_ADMIN(permissions), subject = dropee)
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/drop_everything_review, PROC_REF(confirmed), answerer = user.mob, title = "Message", question = "Make [dropee] drop everything?", subject = dropee)
 
-/datum/admin_verb/drop_everything/proc/confirmed(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
-	var/mob/living/dropee = ask.subject
+/datum/admin_verb/drop_everything/proc/confirmed(datum/act/request/context)
+	if(context.answer?.value != "Yes")
+		return
+	var/client/user = context.request.answerer.client
+	var/mob/living/dropee = context.request.subject
 
 	for(var/obj/item/W in dropee)
 		if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))	//There's basically no reason to remove either of these
 			continue
 		dropee.drop_from_inventory(W)
 
-	dropee.regenerate_icons()
 
 	log_admin("[key_name(user)] made [key_name(dropee)] drop everything!")
 	var/msg = "[key_name_admin(user)] made [ADMIN_LOOKUPFLW(dropee)] drop everything!"
@@ -30,25 +33,30 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		for(var/obj/item/content_item in target_mob)
 			target_mob.drop_from_inventory(content_item)
 		//teleport person to cell
-		target_mob.status_at_least(EFFECT_PARALYZED, 5)
-		target_mob.status_at_least(EFFECT_SLEEPING, 5)
+		target_mob.status_at_least(STAT_PARALYZED, 5)
+		target_mob.status_at_least(STAT_SLEEPING, 5)
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))
 			var/mob/living/carbon/human/prisoner = target_mob
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), SLOT_ID_UNIFORM)
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), SLOT_ID_SHOES)
-		om_after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), target_mob, span_bolddanger("You have been sent to the prison station!"))
+		after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(target_mob, span_bolddanger("You have been sent to the prison station!")))
 		log_admin("[key_name(user)] sent [key_name(target_mob)] to the prison station.")
 		message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(target_mob)] to the prison station."), 1)
 		feedback_add_details("admin_verb","PRISON") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 //Allows staff to determine who the newer players are.
 ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the account age.", ADMIN_CATEGORY_INVESTIGATE)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(age_chosen), buttons = TRUE, title = "Show accounts yonger then _____ days", message = "Age check", choices = list("7","30","All"), requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(age_chosen), answerer = answerer, buttons = TRUE, title = "Show accounts yonger then _____ days", question = "Age check", choices = list("7","30","All"), rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_check_new_players/proc/age_chosen(datum/om/prompt/choice/ask)
-	var/client/user = ask.answerer.client
-	var/age = ask.choice
+/datum/admin_verb/cmd_check_new_players/proc/age_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
+	var/age = A.answer.value
 	if(age == "All")
 		age = 9999999
 	else
@@ -76,17 +84,39 @@ ADMIN_VERB(cmd_check_new_players, R_HOLDER, "Check new Players", "Check the acco
 	to_chat(user, "No matches for that age range found.")
 
 ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_subtle_message, R_HOLDER, "Subtle Message", mob/targat_mob in get_mob_with_client_list())
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", requires = PROMPT_ADMIN(permissions), subject = targat_mob)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Subtle PM to [targat_mob.key]", answerer = answerer, rights = permissions, subject = targat_mob)
 
 /// An admin's narration or message text (HTML allowed when the whole text is HTML, so not encoded).
-/datum/om/prompt/text/admin_narrate
-	message = "Message:"
+/datum/prompt/text/admin_narrate
+	question = "Message:"
 	encode = FALSE
+	timeout = 0
+	var/subject_required = FALSE
 
-/datum/admin_verb/cmd_admin_subtle_message/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+CAPABILITIES(/datum/prompt/text/admin_narrate)
+	ref_one(nameof(subject), /mob)
+
+/datum/prompt/text/admin_narrate/prepare(datum/act/A)
+	..()
+	var/datum/request/request = src
+	var/mob/captured_subject = subject
+	subject_required = !isnull(captured_subject)
+	rel_clear(request, nameof(request.subject))
+	rel_set(request, nameof(request.subject), captured_subject)
+
+/datum/prompt/text/admin_narrate/recheck_extra()
+	return subject_required && QDELETED(subject) ? "gone" : null
+
+/datum/admin_verb/cmd_admin_subtle_message/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
 	var/mob/targat_mob = ask.subject
-	var/msg = ask.text
+	var/msg = ask.value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 
@@ -99,11 +129,17 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_subtle_message, R_HOLDER, "Subtle Message
 	feedback_add_details("admin_verb","SMS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally narrate.", ADMIN_CATEGORY_FUN_NARRATE) // Allows administrators to fluff events a little easier -- TLE
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", answerer = answerer, rights = permissions)
 
-/datum/admin_verb/cmd_admin_world_narrate/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_world_narrate/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
-	var/msg = ask.text
+	var/msg = ask.value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 	if (!msg)		// We check both before and after, just in case sanitization ended us up with empty message.
@@ -115,11 +151,17 @@ ADMIN_VERB(cmd_admin_world_narrate, R_FUN|R_EVENT, "Global Narrate", "Globally n
 	feedback_add_details("admin_verb","GLN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_local_narrate, R_FUN|R_EVENT, "Local Narrate", "Locally narrate.", ADMIN_CATEGORY_FUN_NARRATE)
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone within view range:", answerer = answerer, rights = permissions)
 
-/datum/admin_verb/cmd_admin_local_narrate/proc/message_entered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_local_narrate/proc/message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
-	var/msg = ask.text
+	var/msg = ask.value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 	if (!msg)		// We check both before and after, just in case sanitization ended us up with empty message.
@@ -136,20 +178,39 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	if(target_mob)
 		ask_message(user, target_mob)
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(target_picked), title = "Active Players", message = "Direct narrate to who?", choices = get_mob_with_client_list(), requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice, PROC_REF(target_picked), answerer = answerer, title = "Active Players", question = "Direct narrate to who?", choices = get_mob_with_client_list(), rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_direct_narrate/proc/target_picked(datum/om/prompt/choice/ask)
-	ask_message(ask.answerer, ask.choice)
+/datum/admin_verb/cmd_admin_direct_narrate/proc/target_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/selected = A.answer.value
+	if(!istype(selected) || QDELETED(selected))
+		return
+	ask_message(A.request.answerer, selected)
 
 /datum/admin_verb/cmd_admin_direct_narrate/proc/ask_message(user, mob/target_mob)
-	if(!ismob(target_mob))
+	if(!ismob(target_mob) || QDELETED(target_mob))
 		return
-	om_ask(user, /datum/om/prompt/text/admin_narrate, PROC_REF(narrate_answered), title = "Enter the text you wish to appear to your target:", requires = PROMPT_ADMIN(permissions), subject = target_mob)
+	var/mob/answerer
+	if(istype(user, /client))
+		var/client/recipient = user
+		answerer = recipient.mob
+	else if(ismob(user))
+		answerer = user
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/text/admin_narrate, PROC_REF(narrate_answered), title = "Enter the text you wish to appear to your target:", answerer = answerer, rights = permissions, subject = target_mob)
 
-/datum/admin_verb/cmd_admin_direct_narrate/proc/narrate_answered(datum/om/prompt/text/admin_narrate/ask)
+/datum/admin_verb/cmd_admin_direct_narrate/proc/narrate_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_narrate/ask = A.answer
 	var/client/user = ask.answerer.client
 	var/mob/target_mob = ask.subject
-	var/msg = ask.text
+	var/msg = ask.value
 	if(msg && !(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 
@@ -164,16 +225,16 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_direct_narrate, R_FUN|R_EVENT, "Direct Nar
 	feedback_add_details("admin_verb","DIRN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Toggle godmode on the target.", ADMIN_CATEGORY_GAME, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(om_has(target_mob, EFFECT_GODMODE))
+	if(in_godmode(target_mob))
 		target_mob.disable_godmode()
 
-	else if(!om_has(target_mob, EFFECT_GODMODE))
+	else if(!in_godmode(target_mob))
 		target_mob.enable_godmode()
 
-	to_chat(user, span_notice("Toggled [om_has(target_mob, EFFECT_GODMODE) ? "ON" : "OFF"]"))
+	to_chat(user, span_notice("Toggled [in_godmode(target_mob) ? "ON" : "OFF"]"))
 
-	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]")
-	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [om_has(target_mob, EFFECT_GODMODE) ? "On" : "Off"]"
+	log_admin("[key_name(user)] has toggled [key_name(target_mob)]'s godmode to [in_godmode(target_mob) ? "On" : "Off"]")
+	var/msg = "[key_name_admin(user)] has toggled [ADMIN_LOOKUPFLW(target_mob)]'s godmode to [in_godmode(target_mob) ? "On" : "Off"]"
 	message_admins(msg)
 	admin_ticket_log(target_mob, msg)
 	feedback_add_details("admin_verb","GOD_ENABLE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -232,17 +293,24 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_godmode, R_HOLDER, "Toggle Godmode", "Togg
 	feedback_add_details("admin_verb","MUTE") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_add_random_ai_law, R_ADMIN|R_FUN, "Add Random AI Law", "Adds a random law to the station ai.", ADMIN_CATEGORY_FUN_SILICON)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(law_confirmed), title = "Confirm", message = "You sure?", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(law_confirmed), answerer = answerer, title = "Confirm", question = "You sure?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_confirmed(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm, PROC_REF(law_answered), title = "Message", message = "Show ion message?", answer_on_no = TRUE, requires = PROMPT_ADMIN(permissions))
+/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(law_answered), answerer = A.request.answerer, title = "Message", question = "Show ion message?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_answered(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
+/datum/admin_verb/cmd_admin_add_random_ai_law/proc/law_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
 	log_admin("[key_name(user)] has added a random AI law.")
 	message_admins("[key_name_admin(user)] has added a random AI law.")
 
-	if(ask.yes)
+	if(A.answer.value)
 		GLOB.command_announcement.Announce("Ion storm detected near \the [station_name()]. Please check all AI-controlled equipment for errors.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_IONSTORM)
 
 	IonStorm(0)
@@ -273,24 +341,36 @@ Ccomp's first proc.
 	return mobs
 
 ADMIN_VERB(allow_character_respawn, R_ADMIN|R_MOD|R_FUN, "Allow player to respawn", "Let a player bypass the wait to respawn or allow them to re-enter their corpse.", ADMIN_CATEGORY_GAME)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(target_picked), title = "Allow Respawn Selector", message = "Select a ckey to allow to rejoin", choices = GLOB.respawn_timers, requires = PROMPT_ADMIN(permissions))
-
-/datum/admin_verb/allow_character_respawn/proc/target_picked(datum/om/prompt/choice/ask)
-	if(GLOB.respawn_timers[ask.choice] == -1) // Their respawn timer is set to -1, which is 'not allowed to respawn'
-		om_ask(ask.answerer, /datum/om/prompt/confirm/allow_impossible_respawn, PROC_REF(impossible_confirmed), requires = PROMPT_ADMIN(permissions), target = ask.choice)
+	if(!user.mob || QDELETED(user.mob))
 		return
-	respawn_allowed(ask.answerer.client, ask.choice)
+	open_request(src, /datum/prompt/choice/allow_respawn_target, PROC_REF(target_picked), answerer = user.mob, title = "Allow Respawn Selector", question = "Select a ckey to allow to rejoin", choices = GLOB.respawn_timers)
+
+/datum/admin_verb/allow_character_respawn/proc/target_picked(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/selected = context.answer.value
+	if(GLOB.respawn_timers[selected] == -1) // Their respawn timer is set to -1, which is 'not allowed to respawn'
+		open_request(src, /datum/prompt/choice/allow_impossible_respawn, PROC_REF(impossible_confirmed), answerer = context.request.answerer, target = selected)
+		return
+	respawn_allowed(context.request.answerer.client, selected)
 
 /// Allowing a respawn that is normally not allowed (its timer is -1).
-/datum/om/prompt/confirm/allow_impossible_respawn
+/datum/prompt/choice/allow_impossible_respawn
 	title = "Allow impossible respawn?"
-	message = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."
-	no_first = TRUE
+	question = "Are you sure you wish to allow this individual to respawn? They would normally not be able to."
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_FUN
 	/// The ckey.
 	var/target
 
-/datum/admin_verb/allow_character_respawn/proc/impossible_confirmed(datum/om/prompt/confirm/allow_impossible_respawn/ask)
-	respawn_allowed(ask.answerer.client, ask.target)
+/datum/admin_verb/allow_character_respawn/proc/impossible_confirmed(datum/act/request/context)
+	if(context.answer?.value != "Yes")
+		return
+	var/datum/prompt/choice/allow_impossible_respawn/ask = context.answer
+	respawn_allowed(context.request.answerer.client, ask.target)
 
 /datum/admin_verb/allow_character_respawn/proc/respawn_allowed(client/user, target)
 	GLOB.respawn_timers -= target
@@ -317,7 +397,7 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 	if(CONFIG_GET(flag/antag_hud_allowed))
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
 			if(!check_rights_for(dead_mob.client, R_HOLDER))						//Remove the verb from non-admin ghosts
-				om_grant(dead_mob, GRANT_VERB_HIDE, /mob/observer/dead/verb/toggle_antagHUD, verb_source(VERB_SOURCE_CONFIG))
+				grant(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			if(dead_mob.antagHUD)
 				dead_mob.antagHUD = 0						// Disable it on those that have it enabled
 				dead_mob.has_enabled_antagHUD = 2				// We'll allow them to respawn
@@ -328,7 +408,7 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 	else
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
 			if(!check_rights_for(dead_mob.client, R_HOLDER))						// Add the verb back for all non-admin ghosts
-				om_revoke(dead_mob, GRANT_VERB_HIDE, /mob/observer/dead/verb/toggle_antagHUD, verb_source(VERB_SOURCE_CONFIG))
+				revoke(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			to_chat(dead_mob, span_boldnotice("The Administrator has enabled AntagHUD"))	// Notify all observers they can now use AntagHUD
 		CONFIG_SET(flag/antag_hud_allowed, TRUE)
 		action = "enabled"
@@ -364,24 +444,35 @@ Works kind of like entering the game with a new character. Character receives a 
 Traitors and the like can also be revived with the previous role mostly intact.
 /N */
 ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Spawn a client's loaded character.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_ask(user, /datum/om/prompt/choice, TYPE_PROC_REF(/client, respawn_client_picked), title = "Client", message = "Please specify which client's character to spawn.", choices = GLOB.clients, requires = PROMPT_ADMIN(R_ADMIN|R_REJUVINATE))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/respawn_client, PROC_REF(respawn_client_answered), answerer = answerer, choices = GLOB.clients)
 
-/client/proc/respawn_client_picked(datum/om/prompt/choice/ask)
-	respawn_character_proper(ask.choice)
+/datum/admin_verb/respawn_character/proc/respawn_client_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	user?.respawn_character_proper(A.request.value)
 
 /client/proc/respawn_character_proper(client/picked_client)
 	if(!istype(picked_client))
 		return
 
 	//I frontload all the questions so we don't have a half-done process while you're reading.
-	om_flow_start(/datum/om/flow/respawn_character, mob, null, picked = picked_client)
+	var/mob/answerer = mob
+	if(QDELETED(answerer))
+		return
+	var/datum/respawn_review/review = new
+	rel_set(review, nameof(review.actor), answerer)
+	review.picked_ckey = picked_client.ckey
+	review.start()
 
 /// The questions of Spawn Character, all asked before anything is spawned. A "Cancel" at any
 /// step stops it; the answers land on the flow, and the admin's client spawns from them.
-/datum/om/flow/respawn_character
-	name = "respawn character"
-	requires = PROMPT_ADMIN(R_ADMIN|R_REJUVINATE)
-	var/client/picked
+/datum/respawn_review
+	var/mob/actor
+	var/picked_ckey
 	var/location
 	var/announce = FALSE
 	var/inhabit = FALSE
@@ -395,29 +486,31 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 	var/showy
 
 /// Asks a Yes/No/Cancel style question: `next` gets the prompt unless the answer was "Cancel".
-/datum/om/flow/respawn_character/proc/ask_buttons(title, message, list/choices, next)
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, next, title = title, message = message, choices = choices)
+/datum/respawn_review/proc/ask_buttons(title, message, list/choices, next)
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = next, title = title, question = message, choices = choices, buttons = TRUE, stop_on_cancel = TRUE)
 
-/// One button question of the respawn flow; "Cancel" stops the flow.
-/datum/om/prompt/choice/respawn_step
-	buttons = TRUE
-
-/datum/om/prompt/choice/respawn_step/valid()
-	return choice == "Cancel" ? "cancelled" : null
-
-/datum/om/flow/respawn_character/start()
+/datum/respawn_review/proc/begin_questions()
 	ask_buttons("Location", "Please specify where to spawn them.", list("Right Here", "Arrivals", "Cancel"), PROC_REF(location_picked))
 
-/datum/om/flow/respawn_character/proc/location_picked(datum/om/prompt/choice/ask)
-	location = ask.choice
+/datum/respawn_review/proc/location_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	location = A.request.value
 	ask_buttons("Announce", "Announce as if they had just arrived?", list("No", "Yes", "Cancel"), PROC_REF(announce_picked))
 
-/datum/om/flow/respawn_character/proc/announce_picked(datum/om/prompt/choice/ask)
-	announce = ask.choice == "Yes"
+/datum/respawn_review/proc/announce_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	announce = A.request.value == "Yes"
 	ask_buttons("Inhabit", "Put the person into the spawned mob?", list("Yes", "No", "Cancel"), PROC_REF(inhabit_picked))
 
-/datum/om/flow/respawn_character/proc/inhabit_picked(datum/om/prompt/choice/ask)
-	inhabit = ask.choice == "Yes"
+/datum/respawn_review/proc/inhabit_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	inhabit = A.request.value == "Yes"
 	var/datum/data/record/record_found = record()
 	//Found their record, they were spawned previously
 	if(record_found)
@@ -425,20 +518,27 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		return
 	ask_buttons("Records", "No data core entry detected. Would you like add them to the manifest, and sec/med/HR records?", list("No", "Yes", "Cancel"), PROC_REF(records_picked))
 
-/datum/om/flow/respawn_character/proc/samejob_picked(datum/om/prompt/choice/ask)
-	samejob = ask.choice
+/datum/respawn_review/proc/samejob_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	samejob = A.request.value
 	ask_job()
 
-/datum/om/flow/respawn_character/proc/records_picked(datum/om/prompt/choice/ask)
-	records = ask.choice == "Yes"
+/datum/respawn_review/proc/records_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	records = A.request.value == "Yes"
 	ask_job()
 
 /// Their data core record, when they were spawned before (name matching is ugly but mind doesn't persist to look at).
-/datum/om/flow/respawn_character/proc/record()
+/datum/respawn_review/proc/record()
+	var/client/picked = picked_client()
 	return find_general_record("name", picked.prefs.read_preference(/datum/preference/name/real_name))
 
 /// The job the answers so far give them, or null.
-/datum/om/flow/respawn_character/proc/charjob()
+/datum/respawn_review/proc/charjob()
 	var/datum/data/record/record_found = record()
 	if(record_found)
 		if(samejob == "Yes")
@@ -449,61 +549,167 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		return pickjob
 
 //Well you're not reloading their job or they never had one.
-/datum/om/flow/respawn_character/proc/ask_job()
+/datum/respawn_review/proc/ask_job()
 	if(charjob())
 		ask_equipment()
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(job_picked), title = "Job Select", message = "Pick a job to assign them (or none).", choices = SSjob.occupations_by_name.Copy() + "-No Job-", default = "-No Job-")
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(job_picked), title = "Job Select", question = "Pick a job to assign them (or none).", choices = SSjob.occupations_by_name.Copy() + "-No Job-", default = "-No Job-")
 
-/datum/om/flow/respawn_character/proc/job_picked(datum/om/prompt/choice/ask)
-	pickjob = ask.choice
+/datum/respawn_review/proc/job_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	pickjob = A.request.value
 	ask_equipment()
 
 //If you've picked a job by now, you can equip them.
-/datum/om/flow/respawn_character/proc/ask_equipment()
+/datum/respawn_review/proc/ask_equipment()
 	if(!charjob())
 		ask_showy()
 		return
 	ask_buttons("Equipment", "Spawn them with equipment?", list("Yes", "No", "Cancel"), PROC_REF(equipment_picked))
 
-/datum/om/flow/respawn_character/proc/equipment_picked(datum/om/prompt/choice/ask)
-	equipment = ask.choice == "Yes"
+/datum/respawn_review/proc/equipment_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	equipment = A.request.value == "Yes"
 	ask_buttons("Custom Job", "Customise Job Title?", list("No", "Yes", "Cancel"), PROC_REF(custom_job_picked))
 
-/datum/om/flow/respawn_character/proc/custom_job_picked(datum/om/prompt/choice/ask)
-	custom_job = ask.choice == "Yes"
+/datum/respawn_review/proc/custom_job_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	custom_job = A.request.value == "Yes"
 	if(!custom_job)
 		ask_showy()
 		return
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(custom_title_entered), title = "Job Title", message = "Choose a Job Title for the character.", cancel_answer = "")
+	open_request(src, /datum/prompt/text/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(custom_title_entered), title = "Job Title", question = "Choose a Job Title for the character.")
 
-/datum/om/flow/respawn_character/proc/custom_title_entered(datum/om/prompt/text/ask)
-	custom_title = ask.text
+/datum/respawn_review/proc/custom_title_entered(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || request_recheck(A.request))
+			retire()
+			return
+		custom_title = ""
+	else
+		custom_title = A.request.value
 	ask_showy()
 
-/datum/om/flow/respawn_character/proc/ask_showy()
+/datum/respawn_review/proc/ask_showy()
 	if(location != "Right Here")
 		finish()
 		return
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(showy_picked), buttons = FALSE, title = "Showy", message = "Showy entrance?", choices = list("No", "Telesparks", "Drop Pod", "Fall", "Cancel"), cancel_answer = "No")
+	open_request(src, /datum/prompt/choice/respawn_review, PROC_REF(request_finished), answerer = actor, next_step = PROC_REF(showy_picked), buttons = FALSE, title = "Showy", question = "Showy entrance?", choices = list("No", "Telesparks", "Drop Pod", "Fall", "Cancel"), stop_on_cancel = TRUE)
 
-/datum/om/flow/respawn_character/proc/showy_picked(datum/om/prompt/choice/ask)
-	showy = ask.choice
+/datum/respawn_review/proc/showy_picked(datum/act/request/A)
+	if(!A.answer)
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.value) || request_recheck(A.request))
+			retire()
+			return
+		showy = "No"
+	else
+		showy = A.request.value
 	if(showy != "Drop Pod")
 		finish()
 		return
 	ask_buttons("Drop Pod", "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", list("Polite", "Destructive", "Cancel"), PROC_REF(pod_picked))
 
-/datum/om/flow/respawn_character/proc/pod_picked(datum/om/prompt/choice/ask)
-	showy = ask.choice
+/datum/respawn_review/proc/pod_picked(datum/act/request/A)
+	if(!A.answer)
+		retire()
+		return
+	showy = A.request.value
 	finish()
 
-/datum/om/flow/respawn_character/proc/finish()
+/datum/respawn_review/proc/finish()
 	var/mob/admin_mob = actor
 	admin_mob.client?.respawn_character_answered(src)
+	retire()
 
-/client/proc/respawn_character_answered(datum/om/flow/respawn_character/answers)
-	var/client/picked_client = answers.picked
+CAPABILITIES(/datum/respawn_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/respawn_review/proc/picked_client()
+	return GLOB.directory[picked_ckey]
+
+/datum/respawn_review/proc/refusal()
+	return QDELETED(actor) || !picked_client() ? "participant is gone" : null
+
+/datum/respawn_review/proc/retire()
+	spent(src)
+
+/datum/prompt/choice/respawn_client
+	title = "Client"
+	question = "Please specify which client's character to spawn."
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/respawn_client/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(value))
+		if(!istype(value, /client))
+			return "client is gone"
+		var/client/picked_client = value
+		if(GLOB.directory[picked_client.ckey] != picked_client)
+			return "client is gone"
+
+/datum/prompt/choice/respawn_review
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+	var/stop_on_cancel = FALSE
+	var/next_step
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/respawn_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/respawn_review/review = owner
+	. = review.refusal()
+	if(!. && stop_on_cancel && value == "Cancel")
+		return "cancelled"
+
+/datum/prompt/text/respawn_review
+	var/next_step
+	rights = R_ADMIN|R_REJUVINATE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/respawn_review/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/respawn_review/review = owner
+	return review.refusal()
+
+/datum/admin_verb/respawn_character/proc/respawn_client_answered(datum/act/request/A)
+	respawn_client_picked(A)
+
+/datum/respawn_review/proc/start()
+	run_step(PROC_REF(begin_questions), null)
+
+/datum/respawn_review/proc/request_finished(datum/act/request/A)
+	var/next
+	if(istype(A.request, /datum/prompt/choice/respawn_review))
+		var/datum/prompt/choice/respawn_review/ask = A.request
+		next = ask.next_step
+	else
+		var/datum/prompt/text/respawn_review/ask = A.request
+		next = ask.next_step
+	run_step(next, A)
+
+/datum/respawn_review/proc/run_step(next, datum/act/request/A)
+	var/datum/result/result = safe_call(next, A)
+	if(!result.ok)
+		stack_trace("om flow [type] step [next]: [result.error]")
+		retire()
+
+/client/proc/respawn_character_answered(datum/respawn_review/answers)
+	var/client/picked_client = answers.picked_client()
 	var/location = answers.location
 	var/announce = answers.announce
 	var/inhabit = answers.inhabit
@@ -585,7 +791,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new_character.key = player_key
 		//Were they any particular special role? If so, copy.
 		if(new_character.mind)
-			var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(new_character.mind.special_role)
+			var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 			if(antag_data)
 				antag_data.add_antagonist(new_character.mind)
 				antag_data.place_mob(new_character)
@@ -602,7 +808,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 			if(is_lang_whitelisted(src,chosen_language) || (new_character.species && (chosen_language.name in new_character.species.secondary_langs)))
 				new_character.add_language(lang)
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	PUBLISH_LEGACY(new_character, /datum/notice/human_dna_finalized)
 
 	//If desired, apply equipment.
 	if(equipment)
@@ -631,7 +837,6 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		GLOB.data_core.manifest_inject(new_character)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 
@@ -656,36 +861,60 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new /obj/structure/drop_pod(target_turf, new_character)
 		to_chat(new_character, span_boldnotice("Please wait for your arrival."))
 	else if(showy == "Fall")
-		spawn(1) // ALLOW(scheduler): admin verb (allowlist)
-			var/initial_x = new_character.pixel_x
-			var/initial_y = new_character.pixel_y
-			new_character.plane = 1
-			new_character.pixel_x = rand(-150, 150)
-			new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
-			new_character.set_density(FALSE)
-			new_character.opacity = FALSE
-			animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-			spawn(7) // ALLOW(scheduler): admin verb (allowlist)
-				new_character.end_fall()
+		after(new_character, 1 TICK, GLOBAL_PROC_REF(admin_spawn_fall), with = list(new_character))
 		to_chat(new_character, span_boldnotice("You have been fully spawned. Enjoy the game."))
 
 	return new_character
 
+/// The "Fall" arrival of a spawned character: lifted off the top of the screen, then dropped in and landed
+/// 0.7 seconds later (the animation's length).
+/proc/admin_spawn_fall(mob/living/carbon/human/new_character)
+	if(!new_character)
+		return
+	var/initial_x = new_character.pixel_x
+	var/initial_y = new_character.pixel_y
+	new_character.plane = 1
+	new_character.pixel_x = rand(-150, 150)
+	new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
+	new_character.set_density(FALSE)
+	new_character.set_opacity(FALSE)
+	animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 0.7 SECONDS)
+	after(new_character, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable, end_fall))
+
 ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a custom law to a silicon.", ADMIN_CATEGORY_FUN_SILICON)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(law_entered), title = "What?", message = "Please enter anything you want the AI to do. Anything. Serious.", max_length = MAX_MESSAGE_LEN, requires = PROMPT_ADMIN(permissions))
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/text/freeform_ai_law, PROC_REF(law_entered), answerer = user.mob, title = "What?", question = "Please enter anything you want the AI to do. Anything. Serious.")
 
-/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_entered(datum/om/prompt/text/ask)
-	om_ask(ask.answerer, /datum/om/prompt/confirm/ion_message, PROC_REF(law_answered), requires = PROMPT_ADMIN(permissions), law = ask.text)
+/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ion_message/confirmation = open_request(src, /datum/prompt/choice/ion_message, PROC_REF(law_answered), answerer = A.request.answerer, law = A.answer.value)
+	if(confirmation?.is_open())
+		confirmation.presented = TRUE
 
-/// Whether to announce an ion storm for an admin-added law (a cancel is a no).
-/datum/om/prompt/confirm/ion_message
+/// The original close-as-No behavior applies only after the confirmation opened.
+/datum/prompt/choice/ion_message
 	title = "Message"
-	message = "Show ion message?"
-	answer_on_no = TRUE
-	cancel_answer = "No"
+	question = "Show ion message?"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
 	var/law
+	var/presented = FALSE
 
-/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_answered(datum/om/prompt/confirm/ion_message/ask)
+/datum/prompt/choice/ion_message/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
+
+/datum/admin_verb/cmd_admin_add_freeform_ai_law/proc/law_answered(datum/act/request/A)
+	var/datum/prompt/choice/ion_message/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	if(!A.answer && (!ask.presented || !isnull(ask.value) || ask.outcome != REQ_CANCELLED))
+		return
 	var/client/user = ask.answerer.client
 	var/input = ask.law
 	for(var/mob/living/silicon/ai/target_ai in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -702,7 +931,7 @@ ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a cu
 	log_admin("Admin [key_name(user)] has added a new AI law - [input]")
 	message_admins("Admin [key_name_admin(user)] has added a new AI law - [input]", 1)
 
-	if(ask.yes)
+	if(A.answer?.value == "Yes")
 		GLOB.command_announcement.Announce("Ion storm detected near the [station_name()]. Please check all AI-controlled equipment for errors.", "Anomaly Alert", new_sound = ANNOUNCER_MSG_IONSTORM)
 	feedback_add_details("admin_verb","IONC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -724,28 +953,54 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_rejuvenate, R_ADMIN|R_FUN|R_MOD, "Rejuvena
 	feedback_add_details("admin_verb","REJU") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Command Report", "Creates a centcom report and sends it globally.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_flow_start(/datum/om/flow/centcom_report, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_command_report(permissions)
 
-/// A command report: its text, an optional title, and whether to announce it.
-/datum/om/flow/centcom_report
-	name = "command report"
+/// Command report text and optional title retain the actual initiating admin mob and rights.
+/datum/prompt/text/command_report
+	timeout = 0
+	var/report
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/command_report
+	timeout = 0
+	title = "Show world?"
+	question = "Should this be announced to the general population?"
+	buttons = TRUE
+	choices = list("Yes", "No")
 	var/report
 	var/customname
 
-/datum/om/flow/centcom_report/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(report_entered), title = "What?", message = "Please enter anything you want. Anything. Serious.", max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+/mob/proc/ask_command_report(rights)
+	open_request(src, /datum/prompt/text/command_report, PROC_REF(command_report_entered), answerer = src, rights = rights, title = "What?", question = "Please enter anything you want. Anything. Serious.", max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/datum/om/flow/centcom_report/proc/report_entered(datum/om/prompt/text/ask)
-	report = ask.text
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Title", message = "Pick a title for the report.", encode = FALSE, cancel_answer = "")
+/mob/proc/command_report_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.value))
+		return
+	open_request(src, /datum/prompt/text/command_report, PROC_REF(command_report_title_entered), answerer = src, rights = A.request.rights, report = A.answer.value, title = "Title", question = "Pick a title for the report.", encode = FALSE)
 
-/datum/om/flow/centcom_report/proc/title_entered(datum/om/prompt/text/ask)
-	customname = ask.text
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(report_answered), title = "Show world?", message = "Should this be announced to the general population?", answer_on_no = TRUE)
+/mob/proc/command_report_title_entered(datum/act/request/A)
+	var/datum/prompt/text/command_report/ask = A.request
+	if(QDELETED(ask.answerer))
+		return
+	var/customname = ask.value
+	if(!A.answer || isnull(customname))
+		if(ask.outcome != REQ_CANCELLED && !A.answer)
+			return
+		if(!isnull(customname))
+			return
+		// Old cancel_answer="" continues after the flow's rights recheck, even on explicit cancellation.
+		if(request_recheck(ask))
+			return
+		customname = ""
+	open_request(src, /datum/prompt/choice/command_report, PROC_REF(command_report_answered), answerer = src, rights = ask.rights, report = ask.report, customname = customname)
 
-/datum/om/flow/centcom_report/proc/report_answered(datum/om/prompt/confirm/ask)
-	var/mob/user = actor
-	var/input = report
+/mob/proc/command_report_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/command_report/ask = A.answer
+	var/mob/user = src
+	var/input = ask.report
+	var/customname = ask.customname
 	customname = sanitizeSafe(customname)
 	if(!customname)
 		customname = "[using_map.company_name] Update"
@@ -753,7 +1008,7 @@ ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Comm
 	//New message handling
 	post_comm_message(customname, replacetext(input, "\n", "<br/>"))
 
-	if(ask.yes)
+	if(ask.value == "Yes")
 		GLOB.command_announcement.Announce(input, customname, new_sound = ANNOUNCER_MSG_NEW_COMMAND_REPORT, msg_sanitized = 1);
 	else
 		to_chat(world, span_boldannounce("New [using_map.company_name] Update available at all communication consoles."))
@@ -764,11 +1019,11 @@ ADMIN_VERB(cmd_admin_create_centcom_report, R_ADMIN|R_SERVER|R_FUN, "Create Comm
 	feedback_add_details("admin_verb","CCR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_delete, R_FUN|R_ADMIN, "Delete", "Delete the selected atom.", ADMIN_CATEGORY_GAME, atom/atom_target as obj|mob|turf in _validate_atom(atom_target)) // I don't understand precisely how this fixes the string matching against a substring, but it does - Ater
-	user.admin_delete(atom_target)
+	user.admin_delete(atom_target, user.mob)
 
 ADMIN_VERB(cmd_admin_list_open_jobs, R_HOLDER, "List free slots", "Show available job slots.", ADMIN_CATEGORY_INVESTIGATE)
 	if(SSjob)
-		for(var/datum/job/job in SSjob.occupations)
+		for(var/datum/job/job in job_occupations())
 			to_chat(user, "[job.title]: [job.total_positions]")
 	feedback_add_details("admin_verb","LFS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -780,12 +1035,19 @@ ADMIN_VERB(cmd_admin_check_contents, R_HOLDER, "Check Contents", "Check the cont
 
 ADMIN_VERB(toggle_view_range, R_HOLDER, "Change View Range", "Switches between 1x and custom views.", ADMIN_CATEGORY_GAME)
 	if(user.view == world.view)
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(view_chosen), title = "FUCK YE", message = "Select view range:", choices = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128), requires = PROMPT_ADMIN(permissions))
+		if(QDELETED(user.mob))
+			return
+		open_request(src, /datum/prompt/choice/admin_view_range, PROC_REF(view_chosen), answerer = user.mob)
 		return
 	set_view(user, world.view)
 
-/datum/admin_verb/toggle_view_range/proc/view_chosen(datum/om/prompt/choice/ask)
-	set_view(ask.answerer.client, ask.choice)
+/datum/admin_verb/toggle_view_range/proc/view_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	view_chosen_apply(context)
+
+/datum/admin_verb/toggle_view_range/proc/view_chosen_apply(datum/act/request/context)
+	set_view(context.request.answerer.client, context.request.value)
 
 /datum/admin_verb/toggle_view_range/proc/set_view(client/user, view)
 	user.mob.set_viewsize(view)
@@ -796,43 +1058,56 @@ ADMIN_VERB(toggle_view_range, R_HOLDER, "Change View Range", "Switches between 1
 	feedback_add_details("admin_verb","CVRA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emergency shuttel.", ADMIN_CATEGORY_EVENTS)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
-	om_flow_start(/datum/om/flow/admin_call_shuttle, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_admin_shuttle_call(permissions)
 
-/// Admin shuttle call: confirm, confirm again when it would auto-recall, then evac or transfer.
-/datum/om/flow/admin_call_shuttle
-	name = "admin call shuttle"
+/// Each admin shuttle question checks the original actor's rights and the public shuttle location.
+/datum/prompt/choice/admin_call_shuttle
+	timeout = 0
 	var/recall = FALSE
+	recheck_on_open = TRUE
 
-/datum/om/flow/admin_call_shuttle/valid()
-	return (SSticker && GLOB.emergency_shuttle_service.location()) ? null : "no shuttle"
+/datum/prompt/choice/admin_call_shuttle/recheck_extra()
+	return (SSticker && SSemergency_shuttle.location()) ? null : "no shuttle"
 
-/datum/om/flow/admin_call_shuttle/start()
-	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(confirmed), title = "Confirm", message = "You sure?")
+/mob/proc/ask_admin_shuttle_call(rights)
+	open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_call_confirmed), answerer = src, rights = rights, buttons = TRUE, choices = list("Yes", "No"), title = "Confirm", question = "You sure?")
 
-/datum/om/flow/admin_call_shuttle/proc/confirmed()
-	if(SSticker.mode.auto_recall_shuttle)
-		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(recall_confirmed), title = "Shuttle Call", message = "The shuttle will just return if you call it. Call anyway?", yes_text = "Confirm", no_text = "Cancel")
+/mob/proc/admin_shuttle_call_confirmed(datum/act/request/A)
+	if(!A.answer)
 		return
-	ask_kind()
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	if(ask.value != "Yes")
+		return
+	if(ticker_mode().auto_recall_shuttle)
+		open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_recall_confirmed), answerer = src, rights = ask.rights, buttons = TRUE, choices = list("Confirm", "Cancel"), title = "Shuttle Call", question = "The shuttle will just return if you call it. Call anyway?")
+		return
+	ask_admin_shuttle_kind(ask.rights, FALSE)
 
-/datum/om/flow/admin_call_shuttle/proc/recall_confirmed()
-	recall = TRUE
-	ask_kind()
+/mob/proc/admin_shuttle_recall_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	if(ask.value != "Confirm")
+		return
+	ask_admin_shuttle_kind(ask.rights, TRUE)
 
-/datum/om/flow/admin_call_shuttle/proc/ask_kind()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(call_answered), title = "Shuttle Call", message = "Is this an emergency evacuation or a crew transfer?", choices = list("Emergency", "Crew Transfer"))
+/mob/proc/ask_admin_shuttle_kind(rights, recall)
+	open_request(src, /datum/prompt/choice/admin_call_shuttle, PROC_REF(admin_shuttle_call_answered), answerer = src, rights = rights, recall = recall, title = "Shuttle Call", question = "Is this an emergency evacuation or a crew transfer?", choices = list("Emergency", "Crew Transfer"))
 
-/datum/om/flow/admin_call_shuttle/proc/call_answered(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	if(recall)
-		GLOB.emergency_shuttle_service.auto_recall = TRUE	//enable auto-recall
-	if (ask.choice == "Emergency")
-		GLOB.emergency_shuttle_service.call_evac()
+/mob/proc/admin_shuttle_call_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_call_shuttle/ask = A.answer
+	var/mob/user = src
+	if(ask.recall)
+		SSemergency_shuttle.auto_recall = TRUE	//enable auto-recall
+	if (ask.value == "Emergency")
+		SSemergency_shuttle.call_evac()
 	else
-		GLOB.emergency_shuttle_service.call_transfer()
+		SSemergency_shuttle.call_transfer()
 
 
 	feedback_add_details("admin_verb","CSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -840,14 +1115,19 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	message_admins(span_blue("[key_name_admin(user)] admin-called the emergency shuttle."))
 
 ADMIN_VERB(admin_cancel_shuttle, R_ADMIN|R_FUN, "Cancel Shuttle", "Cancels the emergency shuttel.", ADMIN_CATEGORY_EVENTS)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(cancel_confirmed), title = "Confirm", message = "You sure?", requires = PROMPT_ADMIN(permissions))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/yes_no, PROC_REF(cancel_confirmed), answerer = answerer, title = "Confirm", question = "You sure?", rights = permissions, timeout = 0)
 
-/datum/admin_verb/admin_cancel_shuttle/proc/cancel_confirmed(datum/om/prompt/confirm/ask)
-	var/client/user = ask.answerer.client
-	if(!SSticker || !GLOB.emergency_shuttle_service.can_recall())
+/datum/admin_verb/admin_cancel_shuttle/proc/cancel_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/client/user = A.request.answerer.client
+	if(!SSticker || !SSemergency_shuttle.can_recall())
 		return
 
-	GLOB.emergency_shuttle_service.recall()
+	SSemergency_shuttle.recall()
 	feedback_add_details("admin_verb","CCSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] admin-recalled the emergency shuttle.")
 	message_admins(span_blue("[key_name_admin(user)] admin-recalled the emergency shuttle."))
@@ -856,13 +1136,13 @@ ADMIN_VERB(admin_deny_shuttle, R_ADMIN, "Toggle Deny Shuttle", "Prevents the shu
 	if (!SSticker)
 		return
 
-	GLOB.emergency_shuttle_service.deny_shuttle = !GLOB.emergency_shuttle_service.deny_shuttle
+	SSemergency_shuttle.deny_shuttle = !emergency_shuttle_deny_shuttle()
 
-	log_admin("[key_name(user)] has [GLOB.emergency_shuttle_service.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
-	message_admins("[key_name_admin(user)] has [GLOB.emergency_shuttle_service.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
+	log_admin("[key_name(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
+	message_admins("[key_name_admin(user)] has [emergency_shuttle_deny_shuttle() ? "denied" : "allowed"] the shuttle to be called.")
 
 ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a random appearance. You can only use this before rounds!", ADMIN_CATEGORY_FUN_DO_NOT)
-	if (SSticker && SSticker.mode)
+	if (SSticker && ticker_mode())
 		to_chat(user, "Nope you can't do this, the game's already started. This only works before rounds!")
 		return
 
@@ -873,12 +1153,16 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 		return
 
 
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(notify_chosen), buttons = TRUE, title = "Options", message = "Do you want to notify the players?", choices = list("Yes", "No", "Cancel"), requires = PROMPT_ADMIN(permissions))
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/everyone_random, PROC_REF(notify_chosen), answerer = user.mob, buttons = TRUE, title = "Options", question = "Do you want to notify the players?", choices = list("Yes", "No", "Cancel"))
 
-/datum/admin_verb/everyone_random/proc/notify_chosen(datum/om/prompt/choice/ask)
-	var/client/user = ask.answerer.client
-	var/notifyplayers = ask.choice
-	if(notifyplayers == "Cancel" || (SSticker && SSticker.mode))
+/datum/admin_verb/everyone_random/proc/notify_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer.client
+	var/notifyplayers = A.answer.value
+	if(notifyplayers == "Cancel" || (SSticker && ticker_mode()))
 		return
 
 	log_admin("Admin [key_name(user)] has forced the players to have random appearances.")
@@ -891,6 +1175,15 @@ ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a
 
 	CONFIG_SET(flag/force_random_names, TRUE)
 	feedback_add_details("admin_verb","MER") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/everyone_random
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/everyone_random/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
 
 ADMIN_VERB(toggle_random_events, R_SERVER, "Toggle random events on/off", "Toggles random events such as meteors, black holes, blob (but not space dust) on/off", ADMIN_CATEGORY_SERVER_GAME)
 	if(!CONFIG_GET(flag/allow_random_events))
@@ -907,7 +1200,9 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	if(!target_mob)
 		return
 
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(cryo_confirmed), title = "Confirmation", message = "Are you sure you want to cryo [target_mob]?", no_first = TRUE, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+	if(!user.mob || QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryo_confirmed), answerer = user.mob, title = "Confirmation", question = "Are you sure you want to cryo [target_mob]?", choices = list("No", "Yes"), buttons = TRUE, subject = target_mob)
 
 /// Cryopods by their list name ("name (x,y,z)"): human or robot ones.
 /datum/admin_verb/despawn_player/proc/cryopods(robot)
@@ -919,16 +1214,22 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 			pods["[selected_cryopod.name] ([selected_cryopod.x],[selected_cryopod.y],[selected_cryopod.z])"] = selected_cryopod
 	return pods
 
-/datum/admin_verb/despawn_player/proc/cryopod_chosen(datum/om/prompt/choice/ask)
+/datum/admin_verb/despawn_player/proc/cryopod_chosen(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/choice/admin_cryo_review/ask = context.answer
 	var/mob/target_mob = ask.subject
-	var/list/pods = cryopods(issilicon(target_mob))
-	var/obj/machinery/cryopod/selected_cryopod = pods[ask.choice]
+	var/list/pods = cryopods(issilicon(target_mob)) // ALLOW(silicon_entry): classifies the cryo target to select compatible pods after admin authorization
+	var/obj/machinery/cryopod/selected_cryopod = pods[ask.value]
 	if(!selected_cryopod)
 		return
 	target_mob.ghostize()
 	selected_cryopod.despawn_occupant(target_mob)
 
-/datum/admin_verb/despawn_player/proc/cryo_confirmed(datum/om/prompt/confirm/ask)
+/datum/admin_verb/despawn_player/proc/cryo_confirmed(datum/act/request/context)
+	if(context.answer?.value != "Yes")
+		return
+	var/datum/prompt/choice/admin_cryo_review/ask = context.answer
 	var/mob/admin = ask.answerer
 	var/client/user = admin.client
 	var/mob/target_mob = ask.subject
@@ -951,23 +1252,23 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	feedback_add_details("admin_verb","ACRYO") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 	if(ishuman(target_mob))
-		om_ask(admin, /datum/om/prompt/choice, PROC_REF(cryopod_chosen), title = "Cryopod Choice", message = "Select a cryopod to use", choices = human_cryopods, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+		open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryopod_chosen), answerer = admin, title = "Cryopod Choice", question = "Select a cryopod to use", choices = human_cryopods, subject = target_mob)
 		return
 
-	else if(issilicon(target_mob))
-		if(isAI(target_mob))
+	else if(issilicon(target_mob)) // ALLOW(silicon_entry): selects the cryo target retirement path after the admin confirmed it
+		if(isAI(target_mob)) // ALLOW(silicon_entry): selects AI target retirement and empty core creation after admin confirmation
 			var/mob/living/silicon/ai/ai = target_mob
 			registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(ai.loc))
 			GLOB.global_announcer.autosay("[ai] has been moved to intelligence storage.", "Artificial Intelligence Oversight")
 			ai.clear_client()
 			return
 		else
-			om_ask(admin, /datum/om/prompt/choice, PROC_REF(cryopod_chosen), title = "Cryopod Choice", message = "Select a cryopod to use", choices = robot_cryopods, requires = PROMPT_ADMIN(permissions), subject = target_mob)
+			open_request(src, /datum/prompt/choice/admin_cryo_review, PROC_REF(cryopod_chosen), answerer = admin, title = "Cryopod Choice", question = "Select a cryopod to use", choices = robot_cryopods, subject = target_mob)
 			return
 
 	else if(isliving(target_mob))
 		target_mob.ghostize()
-		qdel(target_mob) //Bye
+		spent(target_mob) //Bye
 
 ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/movable in a drop pod where you are.", ADMIN_CATEGORY_FUN_DROP_POD, object as text)
 	var/list/types = typesof(/atom/movable)
@@ -980,60 +1281,88 @@ ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/
 	if(!matches.len)
 		return
 
-	om_flow_start(/datum/om/flow/admin_drop_pod, user.mob, null, requires = PROMPT_ADMIN(permissions), matches = matches, feedback = "DPA")
+	user.mob?.ask_admin_drop_pod(matches, permissions, "DPA")
 
-/// Drop Pod Atom / Drop Pod Deploy: pick what to drop (a new movable of a matched type, or an
-/// existing mob), then the pod type and whether it opens by itself. "Cancel" stops it.
-/datum/om/flow/admin_drop_pod
-	name = "admin drop pod"
-	/// Types to spawn from (Drop Pod Atom); null picks an existing mob instead.
-	var/list/matches
+/// The original admin mob and captured rights carry the entire drop-pod selection chain.
+/datum/prompt/choice/admin_drop_pod
+	timeout = 0
 	var/chosen_type
 	var/mob/living/drop_mob
+	var/needs_drop_mob = FALSE
 	var/podtype
 	var/feedback
+	recheck_on_open = TRUE
 
-/datum/om/flow/admin_drop_pod/start()
+CAPABILITIES(/datum/prompt/choice/admin_drop_pod)
+	ref_one(nameof(drop_mob), /mob/living)
+
+/datum/prompt/choice/admin_drop_pod/prepare(datum/act/A)
+	..()
+	var/mob/living/captured_mob = drop_mob
+	needs_drop_mob = !isnull(captured_mob)
+	rel_clear(src, nameof(drop_mob))
+	rel_set(src, nameof(drop_mob), captured_mob)
+
+/datum/prompt/choice/admin_drop_pod/recheck_extra()
+	return needs_drop_mob && QDELETED(drop_mob) ? "gone" : null
+
+/mob/proc/ask_admin_drop_pod(list/matches, rights, feedback)
 	if(!matches)
-		om_ask(actor, /datum/om/prompt/choice, PROC_REF(mob_picked), title = "Mob Picker", message = "Select the mob to drop:", choices = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+		open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_mob_picked), answerer = src, rights = rights, feedback = feedback, title = "Mob Picker", question = "Select the mob to drop:", choices = REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 		return
 	if(length(matches) == 1)
-		chosen_type = matches[1]
-		ask_podtype()
+		ask_admin_drop_pod_type(matches[1], null, rights, feedback)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Spawn in Drop Pod", message = "Select a movable type:", choices = matches)
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_type_picked), answerer = src, rights = rights, feedback = feedback, title = "Spawn in Drop Pod", question = "Select a movable type:", choices = matches)
 
-/datum/om/flow/admin_drop_pod/proc/type_picked(datum/om/prompt/choice/ask)
-	chosen_type = ask.choice
-	ask_podtype()
+/mob/proc/admin_drop_pod_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	ask_admin_drop_pod_type(ask.value, null, ask.rights, ask.feedback)
 
-/datum/om/flow/admin_drop_pod/proc/mob_picked(datum/om/prompt/choice/ask)
-	rel_set(src, nameof(drop_mob), ask.choice)
-	ask_podtype()
+/mob/proc/admin_drop_pod_mob_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	var/mob/living/chosen = ask.value
+	if(!istype(chosen) || QDELETED(chosen))
+		return
+	ask_admin_drop_pod_type(null, chosen, ask.rights, ask.feedback)
 
-/datum/om/flow/admin_drop_pod/proc/ask_podtype()
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(podtype_picked), title = "Drop Pod", message = "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", choices = list("Polite", "Destructive", "Cancel"))
+/mob/proc/ask_admin_drop_pod_type(chosen_type, mob/living/drop_mob, rights, feedback)
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_kind_picked), answerer = src, rights = rights, chosen_type = chosen_type, drop_mob = drop_mob, feedback = feedback, buttons = TRUE, title = "Drop Pod", question = "Destructive drop pods cause damage in a 3x3 and may break turfs. Polite drop pods lightly damage the turfs but won't break through.", choices = list("Polite", "Destructive", "Cancel"))
 
-/datum/om/flow/admin_drop_pod/proc/podtype_picked(datum/om/prompt/choice/ask)
-	podtype = ask.choice
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(autoopen_picked), title = "Drop Pod", message = "Should the pod open automatically?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/admin_drop_pod_kind_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/admin_drop_pod, PROC_REF(admin_drop_pod_autoopen_picked), answerer = src, rights = ask.rights, chosen_type = ask.chosen_type, drop_mob = ask.drop_mob, feedback = ask.feedback, podtype = ask.value, buttons = TRUE, title = "Drop Pod", question = "Should the pod open automatically?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/admin_drop_pod/proc/autoopen_picked(datum/om/prompt/choice/ask)
-	var/mob/user = actor
-	var/autoopen = ask.choice == "Yes"
-	var/atom/movable/cargo = drop_mob
+/mob/proc/admin_drop_pod_autoopen_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/admin_drop_pod/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	var/mob/user = src
+	var/autoopen = ask.value == "Yes"
+	var/chosen_type = ask.chosen_type
+	var/atom/movable/cargo = ask.drop_mob
 	if(!cargo)
 		cargo = new chosen_type(user.loc)
-	switch(podtype)
+	switch(ask.podtype)
 		if("Destructive")
 			new /obj/structure/drop_pod(get_turf(user), cargo, autoopen)
 		if("Polite")
 			new /obj/structure/drop_pod/polite(get_turf(user), cargo, autoopen)
 
-	feedback_add_details("admin_verb", feedback) //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	feedback_add_details("admin_verb", ask.feedback) //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(cmd_admin_droppod_deploy, R_SPAWN, "Drop Pod Deploy", "Drop an existing mob where you are in a drop pod.", ADMIN_CATEGORY_FUN_DROP_POD, object as text)
-	om_flow_start(/datum/om/flow/admin_drop_pod, user.mob, null, requires = PROMPT_ADMIN(permissions), feedback = "DPD")
+	user.mob?.ask_admin_drop_pod(null, permissions, "DPD")
 
 ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Event HUD", "Give everyone the Event HUD.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	GLOB.global_vantag_hud = !GLOB.global_vantag_hud
@@ -1048,59 +1377,103 @@ ADMIN_VERB(toggle_vantag_hud_global, R_EVENT|R_SERVER|R_ADMIN, "Toggle Global Ev
 
 
 ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a specified ckey as a chosen mob.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	om_flow_start(/datum/om/flow/spawn_character_mob, user.mob, null, requires = PROMPT_ADMIN(permissions))
+	user.mob?.ask_spawn_character_mob(permissions)
 
-/// Spawn Character As Mob: the client, the mob type (typed, then picked when several match),
-/// and whether to carry over their name, vore organs and flavor text. "Cancel" stops it.
-/datum/om/flow/spawn_character_mob
-	name = "spawn character mob"
-	var/client/picked
+/// Native spawn-character questions retain the selected client and initiating admin mob.
+/datum/prompt/choice/spawn_character
+	timeout = 0
+	var/picked_ckey
+	var/needs_picked = FALSE
 	var/mob_type
 	var/use_name = FALSE
 	var/organs = FALSE
+	recheck_on_open = TRUE
 
-/datum/om/flow/spawn_character_mob/start()
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(client_picked), title = "Client", message = "Who are we spawning as a mob?", choices = GLOB.clients)
+/datum/prompt/choice/spawn_character/recheck_extra()
+	if(needs_picked && !GLOB.directory[picked_ckey])
+		return "gone"
+	return null
 
-/datum/om/flow/spawn_character_mob/proc/client_picked(datum/om/prompt/choice/ask)
-	picked = ask.choice
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(path_entered), title = "Mob", message = "Mob path to spawn as?")
+/datum/prompt/text/spawn_character
+	timeout = 0
+	var/picked_ckey
+	var/needs_picked = FALSE
 
-/datum/om/flow/spawn_character_mob/proc/path_entered(datum/om/prompt/text/ask)
+/datum/prompt/text/spawn_character/recheck_extra()
+	if(needs_picked && !GLOB.directory[picked_ckey])
+		return "gone"
+	return null
+
+/mob/proc/ask_spawn_character_mob(rights)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_client_picked), answerer = src, rights = rights, title = "Client", question = "Who are we spawning as a mob?", choices = GLOB.clients)
+
+/mob/proc/spawn_character_client_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	var/client/picked = ask.value
+	if(!istype(picked))
+		return
+	open_request(src, /datum/prompt/text/spawn_character, PROC_REF(spawn_character_path_entered), answerer = src, rights = ask.rights, picked_ckey = picked.ckey, needs_picked = TRUE, title = "Mob", question = "Mob path to spawn as?")
+
+/mob/proc/spawn_character_path_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.value))
+		return
+	var/datum/prompt/text/spawn_character/ask = A.answer
 	var/list/matches = list()
 	for(var/path in typesof(/mob/living))
-		if(findtext("[path]", ask.text))
+		if(findtext("[path]", ask.value))
 			matches += path
 	if(!matches.len)
 		return
 	if(matches.len == 1)
-		mob_type = matches[1]
-		ask_name()
+		ask_spawn_character_name(ask.picked_ckey, matches[1], ask.rights)
 		return
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_picked), title = "Select Mob", message = "Select a mob type", choices = matches)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_type_picked), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, title = "Select Mob", question = "Select a mob type", choices = matches)
 
-/datum/om/flow/spawn_character_mob/proc/type_picked(datum/om/prompt/choice/ask)
-	mob_type = ask.choice
-	ask_name()
+/mob/proc/spawn_character_type_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	ask_spawn_character_name(ask.picked_ckey, ask.value, ask.rights)
 
-/datum/om/flow/spawn_character_mob/proc/ask_name()
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(name_picked), title = "Mob name", message = "Spawn mob with their character name?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/ask_spawn_character_name(picked_ckey, mob_type, rights)
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_name_picked), answerer = src, rights = rights, picked_ckey = picked_ckey, needs_picked = TRUE, mob_type = mob_type, buttons = TRUE, title = "Mob name", question = "Spawn mob with their character name?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/name_picked(datum/om/prompt/choice/ask)
-	use_name = ask.choice == "Yes"
-	om_ask(actor, /datum/om/prompt/choice/respawn_step, PROC_REF(organs_picked), title = "Vore organs", message = "Spawn mob with their character's vore organs and prefs?", choices = list("Yes", "No", "Cancel"))
+/mob/proc/spawn_character_name_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_organs_picked), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, mob_type = ask.mob_type, use_name = ask.value == "Yes", buttons = TRUE, title = "Vore organs", question = "Spawn mob with their character's vore organs and prefs?", choices = list("Yes", "No", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/organs_picked(datum/om/prompt/choice/ask)
-	organs = ask.choice == "Yes"
-	om_ask(actor, /datum/om/prompt/choice, PROC_REF(spawn_answered), buttons = TRUE, title = "Flavor text", message = "Spawn mob with their character's flavor text?", choices = list("General", "Robot", "Cancel"), cancel_answer = "Cancel")
+/mob/proc/spawn_character_organs_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/spawn_character/ask = A.answer
+	if(ask.value == "Cancel")
+		return
+	open_request(src, /datum/prompt/choice/spawn_character, PROC_REF(spawn_character_answered), answerer = src, rights = ask.rights, picked_ckey = ask.picked_ckey, needs_picked = TRUE, mob_type = ask.mob_type, use_name = ask.use_name, organs = ask.value == "Yes", buttons = TRUE, title = "Flavor text", question = "Spawn mob with their character's flavor text?", choices = list("General", "Robot", "Cancel"))
 
-/datum/om/flow/spawn_character_mob/proc/spawn_answered(datum/om/prompt/choice/ask)
-	var/mob/admin_mob = actor
+/mob/proc/spawn_character_answered(datum/act/request/A)
+	var/datum/prompt/choice/spawn_character/ask = A.request
+	if(QDELETED(ask.answerer) || !GLOB.directory[ask.picked_ckey])
+		return
+	var/flavor = ask.value
+	if(!A.answer)
+		if(ask.outcome != REQ_CANCELLED || !isnull(ask.value))
+			return
+		// The old cancel_answer="Cancel" still resumes the flow, including its late rights/lifetime check.
+		if(request_recheck(ask))
+			return
+		flavor = "Cancel"
+	var/mob/admin_mob = src
 	var/client/user = admin_mob.client
-	var/client/picked_client = picked
-	var/mob/living/chosen = mob_type
-	var/name = use_name
-	var/flavor = ask.choice
+	var/client/picked_client = GLOB.directory[ask.picked_ckey]
+	var/mob/living/chosen = ask.mob_type
+	var/name = ask.use_name
+	var/organs = ask.organs
 
 	var/spawnloc
 	if(!user.mob)
@@ -1116,20 +1489,20 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 
 	if(name)
 		var/spawner_name = picked_client.prefs.read_preference(/datum/preference/name/real_name)
-		new_mob.real_name = spawner_name
+		new_mob.set_real_name(spawner_name)
 		new_mob.name = spawner_name
 
 
 	new_mob.key = picked_client.key //Finally put them in the mob
 	// migrated flavor_texts/flavour_texts_robot
 	if(flavor == "General")
-		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")
+		new_mob.bio.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")
 	if(flavor == "Robot")
-		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavour_texts_robot), "Default")
+		new_mob.bio.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavour_texts_robot), "Default")
 	if(organs)
 		new_mob.copy_from_prefs_vr()
 		if(LAZYLEN(new_mob.vore_organs))
-			rel_set(new_mob, nameof(new_mob.vore_selected), new_mob.vore_organs[1])
+			set_vore_selected(new_mob, new_mob.vore_organs[1])
 			if(isanimal(new_mob))
 				var/mob/living/simple_mob/new_simple_mob = new_mob
 				if(!new_simple_mob.voremob_loaded || !new_simple_mob.vore_active)
@@ -1145,11 +1518,18 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	return new_mob
 
 ADMIN_VERB(cmd_admin_z_narrate, (R_ADMIN|R_MOD|R_EVENT), "Z Narrate", "Narrates to your Z level.", ADMIN_CATEGORY_FUN_NARRATE) // Allows administrators to fluff events a little easier -- TLE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(message_entered), title = "Enter the text you wish to appear to everyone:", message = "Message:", requires = PROMPT_ADMIN(permissions))
+	if(QDELETED(user.mob))
+		return
+	open_request(src, /datum/prompt/text/admin_z_narration, PROC_REF(message_entered), answerer = user.mob)
 
-/datum/admin_verb/cmd_admin_z_narrate/proc/message_entered(datum/om/prompt/text/ask)
-	var/client/user = ask.answerer.client
-	var/msg = ask.text
+/datum/admin_verb/cmd_admin_z_narrate/proc/message_entered(datum/act/request/context)
+	if(!context.answer)
+		return
+	narration_apply(context)
+
+/datum/admin_verb/cmd_admin_z_narrate/proc/narration_apply(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/msg = context.request.value
 	if(!(msg[1] == "<" && msg[length(msg)] == ">")) //You can use HTML but only if the whole thing is HTML. Tries to prevent admin 'accidents'.
 		msg = sanitize(msg)
 
@@ -1178,3 +1558,69 @@ ADMIN_VERB_AND_CONTEXT_MENU(toggle_vantag_hud, R_EVENT|R_ADMIN|R_SERVER, "Give/R
 		to_chat(user, "You gave the event HUD to [key_name(target)].")
 		to_chat(target, "You now have the event HUD.  Icons will appear next to characters indicating if they prefer to be killed(red crosshairs), devoured(belly), or kidnapped(blue crosshairs) by event characters.")
 	feedback_add_details("admin_verb","GREHud") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_view_range
+	rights = R_HOLDER
+	timeout = 0
+	title = "FUCK YE"
+	question = "Select view range:"
+	choices = list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128)
+	buttons = FALSE
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_z_narration
+	rights = R_ADMIN|R_MOD|R_EVENT
+	timeout = 0
+	title = "Enter the text you wish to appear to everyone:"
+	question = "Message:"
+	recheck_on_open = TRUE
+
+
+/datum/prompt/text/freeform_ai_law
+	max_len = MAX_MESSAGE_LEN
+	timeout = 0
+	rights = R_FUN
+	recheck_on_open = TRUE
+
+/datum/prompt/text/freeform_ai_law/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/freeform_ai_law/recheck_extra()
+	var/mob/admin = answerer
+	return admin_can(admin?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/drop_everything_review
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN
+
+/datum/prompt/choice/drop_everything_review/recheck_extra()
+	var/mob/living/dropee = subject
+	if(QDELETED(dropee))
+		return "gone"
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/allow_respawn_target
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_MOD|R_FUN
+
+/datum/prompt/choice/allow_respawn_target/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/allow_impossible_respawn/recheck_extra()
+	return admin_can(answerer?.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/admin_cryo_review
+	recheck_on_open = TRUE
+	timeout = 0
+	rights = R_ADMIN|R_EVENT
+
+/datum/prompt/choice/admin_cryo_review/recheck_extra()
+	if(!admin_can(answerer?.client, 0))
+		return "no admin rights"
+	var/mob/target_mob = subject
+	if(!istype(target_mob) || QDELETED(target_mob))
+		return "gone"

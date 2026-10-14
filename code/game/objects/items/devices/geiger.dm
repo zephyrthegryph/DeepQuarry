@@ -10,8 +10,6 @@ MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUN
 		slot_r_hand_str = 'icons/mob/inhands/equipment/tools_righthand.dmi',
 		)
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	item_flags = NOBLUDGEON
 
 	var/last_perceived_radiation_danger = null
 	///How strong the last radiation pulse was, at the source.
@@ -23,11 +21,22 @@ MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUN
 
 	var/mounted = FALSE
 
+TRACKED(/obj/item/geiger, scanning)
+
+CAPABILITIES(/obj/item/geiger)
+	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))
+	owns_one(nameof(geiger_sound), /datum/geiger_sound, starts = PROC_REF(starting_sound))
+	on_notice(/datum/notice/in_range_of_irradiation, then(PROC_REF(on_pre_potential_irradiation)))
+	op("toggle", in_hand(), then(PROC_REF(toggled)))
+	op("reset", hand(), gesture(GESTURE_ALT), label("Reset"), needs(req(PROC_REF(is_scanning))), then(PROC_REF(reset_counts)))
+
+MSG_DEF_SELF(geiger/off, "It must be on to reset its radiation level.")
+
 REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
-/obj/item/geiger/Initialize(mapload)
-	. = ..()
-	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+/// The clicking sound it starts with (owns_one(starts =)): none, until it is switched on.
+/obj/item/geiger/proc/starting_sound(current, mapload)
+	return null
 
 /obj/item/geiger/examine(mob/user)
 	. = ..()
@@ -51,7 +60,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 		. += span_warning("Insulation deficit: [insulation_deficit]")
 
 /// 0 while not scanning, else 1..5 by the last perceived danger (null reads as 1).
-/obj/item/geiger/proc/appearance_geiger_level()
+/obj/item/geiger/proc/geiger_level()
 	if(!scanning)
 		return 0
 	switch(last_perceived_radiation_danger)
@@ -67,31 +76,29 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 			return 5
 	return -1
 
-DECLARE_APPEARANCE(/obj/item/geiger, "appearance_geiger_level", list( \
-	"0" = list(APPEARANCE_ICON_STATE = "geiger_off"), \
-	"1" = list(APPEARANCE_ICON_STATE = "geiger_on_1"), \
-	"2" = list(APPEARANCE_ICON_STATE = "geiger_on_2"), \
-	"3" = list(APPEARANCE_ICON_STATE = "geiger_on_3"), \
-	"4" = list(APPEARANCE_ICON_STATE = "geiger_on_4"), \
-	"5" = list(APPEARANCE_ICON_STATE = "geiger_on_5") \
-))
+/obj/item/geiger/draw(datum/look/look)
+	..()
+	look.state(level_icon_state(geiger_level()))
 
-DECLARE_INTERACTIONS(/obj/item/geiger, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT("Reset", PROC_REF(interaction_alt), REQ_BECAUSE(REQ_FIELD("scanning"), "it must be on to reset its radiation level")), \
-)
+/// The icon state of a level (0 is off, 1 to 5 by the danger).
+/obj/item/geiger/proc/level_icon_state(level)
+	if(level <= 0)
+		return "geiger_off"
+	return "geiger_on_[min(level, 5)]"
 
-/obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	scanning = !scanning
+/// The in-hand use: switch it on or off.
+/obj/item/geiger/proc/toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_scanning(!scanning)
 
 	if (scanning)
 		if(!geiger_sound)
-			own_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
+			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
 	else
-		own_clear(src, nameof(geiger_sound), OWN_DELETE)
+		rel_clear(src, nameof(geiger_sound))
 
-	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
+	return OP_OK
 
 /obj/item/geiger/afterattack(atom/interacting_with, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	. = ..()
@@ -104,45 +111,46 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 		return NONE
 
 	act_message(user, src, MSG_SELF(span_notice("You scan [interacting_with]'s radiation levels with %T%...")), MSG_OTHERS(span_notice("%U% scans [interacting_with] with %T%.")))
-	om_after_unique(src, 20, PROC_REF(scan), interacting_with, user) // Let's not have spamming GetAllContents
+	var/scan_key = "geiger_scan:[interacting_with ? SHARED_CACHE_UID(interacting_with) : "-"]:[user ? SHARED_CACHE_UID(user) : "-"]"
+	if(!after_pending(src, scan_key))
+		after(src, 2 SECONDS, PROC_REF(scan), key = scan_key, with = list(interacting_with, user)) // Let's not have spamming GetAllContents
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/geiger/equipped(mob/user, slot, initial)
 	. = ..()
 
-	om_hook(user, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
+	observe(user, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
 
 /obj/item/geiger/dropped(mob/user, equipping, slot)
 	. = ..()
 
-	om_unhook(user, /datum/om/event/before/in_range_of_irradiation, src)
+	unobserve(user, /datum/notice/in_range_of_irradiation, src)
 
-/obj/item/geiger/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
-	EVENT_HANDLER
+/obj/item/geiger/proc/on_pre_potential_irradiation(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	var/insulation_to_target = event.insulation_to_target
 
-	last_perceived_radiation_danger = get_perceived_radiation_danger(pulse_information, insulation_to_target)
+	set_last_perceived_radiation_danger(get_perceived_radiation_danger(pulse_information, insulation_to_target))
 	last_radiation_strength = pulse_information.strength
 	if(insulation_to_target > pulse_information.threshold)
 		insulation_deficit = round(insulation_to_target - pulse_information.threshold, 0.1)
 	else
 		insulation_deficit = null
-	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "geiger_perceived_danger_reset")
 
-	if (scanning)
-		update_icon()
 
 /obj/item/geiger/proc/reset_perceived_danger()
-	last_perceived_radiation_danger = null
+	set_last_perceived_radiation_danger(null)
 	last_radiation_strength = null
 	insulation_deficit = null
-	if (scanning)
-		update_icon()
 
 /obj/item/geiger/proc/scan(atom/target, mob/user)
-	if (OM_EMIT(target, /datum/om/event/before/geiger_counter_scan, user, src) & GEIGER_COUNTER_SCAN_SUCCESSFUL)
-		return
+	var/datum/act/geiger_scan/scan = ACT_TRY(target, geiger_scan, user, src)
+	if(!scan)
+		return // the target answered the scan itself
+	act_cancel(scan)
 
 	if(isliving(target))
 		var/mob/living/living_target = target
@@ -152,11 +160,15 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 
 	to_chat(user, span_notice("[icon2html(src, user)] [isliving(target) ? "Subject" : "Target"] is free of radioactive contamination."))
 
-/obj/item/geiger/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
-	last_perceived_radiation_danger = null
-	update_icon()
-	return TRUE
+/// A running counter can be told to forget what it measured.
+/obj/item/geiger/proc/is_scanning(datum/act/A)
+	return (scanning) ? null : MSG(geiger/off)
+
+/// The alt-click: flush the stored radiation levels.
+/obj/item/geiger/proc/reset_counts(datum/act/op/A)
+	to_chat(A.actor, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
+	set_last_perceived_radiation_danger(null)
+	return OP_OK
 
 /obj/item/geiger/wall
 	name = "mounted geiger counter"
@@ -176,37 +188,24 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	var/wiresexposed = FALSE
 	mounted = TRUE
 
-/obj/item/geiger/wall/Initialize(mapload)
-	. = ..()
-	if(scanning)
-		if(!geiger_sound)
-			own_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): only while scanning
+/// A wall counter mapped switched on starts clicking.
+/obj/item/geiger/wall/starting_sound(current, mapload)
+	return scanning ? /datum/geiger_sound/wall : null
 
-DECLARE_APPEARANCE(/obj/item/geiger/wall, "appearance_geiger_level", list( \
-	"0" = list(APPEARANCE_ICON_STATE = "geiger_wall-p"), \
-	"1" = list(APPEARANCE_ICON_STATE = "geiger_level_1"), \
-	"2" = list(APPEARANCE_ICON_STATE = "geiger_level_2"), \
-	"3" = list(APPEARANCE_ICON_STATE = "geiger_level_3"), \
-	"4" = list(APPEARANCE_ICON_STATE = "geiger_level_4"), \
-	"5" = list(APPEARANCE_ICON_STATE = "geiger_level_5") \
-))
+CAPABILITIES(/obj/item/geiger/wall)
+	op("wall_toggle", inputs(hand(), remote()), then(PROC_REF(wall_toggled)))
 
-EXTEND_INTERACTIONS(/obj/item/geiger/wall, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_SILICON("Toggle", PROC_REF(geiger_wall_silicon_use)), \
-)
+/// The wall counter keeps its own icon states.
+/obj/item/geiger/wall/level_icon_state(level)
+	if(level <= 0)
+		return "geiger_wall-p"
+	return "geiger_level_[min(level, 5)]"
 
-/// Old attack_ai: toggle it remotely.
-/obj/item/geiger/wall/proc/geiger_wall_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	om_after(src, 0, PROC_REF(attack_self), user)
-	return TRUE
-
-/// Old attack_hand.
-/obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	om_after(src, 0, PROC_REF(attack_self), user)
-	return TRUE
+/// An empty hand, or a silicon from afar, switches it like using it in the hand.
+/obj/item/geiger/wall/proc/wall_toggled(datum/act/op/A)
+	add_fingerprint(A.actor)
+	toggled(A)
+	return OP_OK
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

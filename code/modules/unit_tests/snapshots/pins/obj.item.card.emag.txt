@@ -1,0 +1,62 @@
+@obj.item.card human|none
+-menu: Read ID Card (refused: You can't do that.)
+@obj.item.card robot|none
+-menu: Read ID Card (refused: You can't do that.)
+@obj ai|none
+@obj.item.card ghost|none
+-menu: Read ID Card (refused: You can't do that.)
+@obj.item.card human|/obj/item/tool/screwdriver
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/tool/crowbar
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/tool/wrench
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/tool/wirecutters
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/multitool
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/weldingtool
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/stack/cable_coil
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/stack/material/steel
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/card/id
+-menu: Read ID Card (refused: You can't do that.)
+-click: nothing
++2 menu: Use
++3 click: Click: Use
+@obj.item.card human|/obj/item/kit
+-menu: Read ID Card (refused: You can't do that.)
++3 menu: Use
+@obj.item.card human|/obj/item/storage
+-menu: Read ID Card (refused: You can't do that.)
+-click: Click: Collect
++3 menu: Use
++4 click: Click: Use
+@obj.item.card human|/obj/item
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

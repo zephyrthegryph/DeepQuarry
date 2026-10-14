@@ -1,0 +1,30 @@
+human|none menu: Hammer on it
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Hammer on it
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Use
+ai|none click: Click: Use
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++0 menu: Hammer on it
+@obj.structure human|/obj/item/tool/crowbar
++0 menu: Hammer on it
+@obj.structure human|/obj/item/tool/wrench
++0 menu: Hammer on it
+@obj.structure human|/obj/item/tool/wirecutters
++0 menu: Hammer on it
+@obj.structure human|/obj/item/multitool
++0 menu: Hammer on it
+@obj.structure human|/obj/item/weldingtool
++0 menu: Hammer on it
+@obj.structure human|/obj/item/stack/cable_coil
++0 menu: Hammer on it
+@obj.structure human|/obj/item/stack/material/steel
++0 menu: Hammer on it
+@obj.structure human|/obj/item/card/id
++0 menu: Hammer on it
+@obj.structure human|/obj/item
++0 menu: Hammer on it
+keys: drag_buckle, hammer, hand, melee_hit, silicon_hand

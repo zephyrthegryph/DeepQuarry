@@ -44,7 +44,7 @@
 	if(QDELETED(src) || !owner)
 		return
 	// C16: capped — past DQ_COOLANT_LEAK_MAX_TEMP the heat is thermal runaway's job.
-	owner.adjust_bodytemperature(1.5 * severity / AFFLICTION_SEVERITY_TERMINAL, max_temp = max(owner.bodytemperature, DQ_COOLANT_LEAK_MAX_TEMP))
+	owner.adjust_bodytemperature(1.5 * severity / AFFLICTION_SEVERITY_TERMINAL, max_temp = max(owner.body_temperature(), DQ_COOLANT_LEAK_MAX_TEMP))
 
 // --- Thermal runaway ------------------------------------------------------------
 /datum/affliction/synthetic/thermal_runaway
@@ -189,7 +189,7 @@ TYPE_TABLE(/datum/affliction_symptom/synthetic/error_chatter, get_patient_messag
 /datum/affliction_symptom/synthetic/speech_glitch/tick(mob/living/M, datum/affliction/source)
 	..()
 	if(M && prob(5))
-		M.status_at_least(EFFECT_STUTTERING, 3)
+		M.status_at_least(STAT_STUTTERING, 3)
 
 /datum/affliction_symptom/synthetic/checksum_errors
 	name = "checksum errors"

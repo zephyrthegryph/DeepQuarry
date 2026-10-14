@@ -1,0 +1,80 @@
+@obj human|none
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++5 menu: Use (refused: needs an item)
+@obj robot|none
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++6 menu: Use (refused: needs an item)
+@obj ai|none
+@obj.item ghost|none
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use (refused: needs an item)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item/kit
++0 menu: Charge with your body (refused: not in your hand)
++2 menu: Drain its charge (refused: not in your hand)
++5 menu: Use
+@obj human|/obj/item/storage
++0 menu: Charge with your body (refused: not in your hand)
++2 menu: Drain its charge (refused: not in your hand)
++5 menu: Use
+@obj human|/obj/item
+-menu: Alternate use
++0 menu: Charge with your body (refused: not in your hand)
++1 menu: Drain its charge (refused: not in your hand)
+keys: collect_item, drag_buckle, electrovore_charge, electrovore_drain, gen_silicon_item_silicon_equip_module, inject_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

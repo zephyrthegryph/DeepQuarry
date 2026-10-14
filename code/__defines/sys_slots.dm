@@ -16,11 +16,11 @@
 /// A full slot declines, so the host's next interaction for the item answers (a second slot for the
 /// same type fills next).
 #define SLOT_FULL_PASS 1
-/// A full slot swaps: the item in it drops (its slot_ejected() runs) and the new one goes in.
+/// A full slot swaps: the item in it drops (its slot capability's ejected() runs) and the new one goes in.
 #define SLOT_FULL_SWAP 2
 
-/// slot_refusal() answer: refuse without a message (the hook already told the actor).
+/// slot capability refusal() answer: refuse without a message (the hook already told the actor).
 #define SLOT_REFUSED_SILENT "__silent"
-/// slot_refusal() answer: decline without using the input, so the host's next interaction for the
+/// slot capability refusal() answer: decline without using the input, so the host's next interaction for the
 /// item answers.
 #define SLOT_REFUSED_PASS "__pass"

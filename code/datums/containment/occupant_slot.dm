@@ -13,12 +13,12 @@
 
 /// Base for a machine's sealed, single-occupant slot. Subtype per holder to
 /// set the id and any damage/heat shares that differ from the sealed default.
-/datum/om/relation/slot/occupant
+/datum/relation_definition/slot/occupant
 	name = "occupant"
 	// Not the default: a machine's incidental raw contents (component parts,
 	// its cell, a loaded disk, a radio built in Initialize()...) must not
 	// compete with the occupant for this slot's one-person capacity. Every
-	// holder below also declares /datum/om/relation/slot/machine_internals (stock.dm,
+	// holder below also declares /datum/relation_definition/slot/machine_internals (stock.dm,
 	// C6) as its default, which is what legacy new(src)/forceMove(src) calls
 	// land in instead.
 	exposure = SLOT_EXPOSURE_SEALED
@@ -30,6 +30,14 @@
 	radiation_transmission = 1
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
+/// Someone got in or out: what reads the occupant (a requirement that refuses an occupied machine) is told.
+/datum/relation_definition/slot/occupant/on_link(datum/source, datum/target, datum/relation_edge/edge)
+	PUBLISH_CHANGE(target, OCCUPANT_KEY)
+
+/datum/relation_definition/slot/occupant/on_unlink(datum/source, datum/target, datum/relation_edge/edge)
+	PUBLISH_CHANGE(target, OCCUPANT_KEY)
+
+
 /// Share (0..1) of an explosion's severity that reaches `holder`'s contents,
 /// from its declared slots' own DAMAGE_BLAST share, attenuated the same way
 /// dq_path_step() attenuates any other damage kind (holder armour, then outer
@@ -40,7 +48,7 @@
 	if(!L || !severity)
 		return 0
 	var/share = 0
-	for(var/datum/om/relation/slot/def as anything in L.defs)
+	for(var/datum/relation_definition/slot/def as anything in L.defs)
 		var/def_share = def.damage_share(DAMAGE_BLAST)
 		if(def_share <= 0)
 			continue

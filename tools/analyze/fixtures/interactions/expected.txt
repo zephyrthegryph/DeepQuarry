@@ -1,0 +1,11 @@
+shadow	code/modules/unit_tests/t.dm	1
+shadow	code/x/a.dm	5
+shadow	code/x/a.dm	11
+shadow	code/x/a.dm	13
+shadow	code/x/a.dm	17
+shadow	code/x/a.dm	18
+shadow	code/x/a.dm	22
+shadow	code/x/a.dm	24
+shadow	code/x/b.dm	3
+shadow	code/x/c.dm	3
+shadow	code/x/c.dm	4

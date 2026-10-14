@@ -22,6 +22,7 @@
 	desc = "It's a little flying drone. This one seems to be watching you..."
 	catalogue_data = list(/datum/category_item/catalogue/technology/drone/ward)
 	icon_state = "ward"
+	icon_living = "ward"
 	glow_color = "#00FF00"
 	see_invisible = SEE_INVISIBLE_LEVEL_TWO
 
@@ -42,16 +43,20 @@
 
 /mob/living/simple_mob/mechanical/ward/monitor/crew
 	icon_state = "ward-nt"
+	icon_living = "ward-nt"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERACT_ITEM(null, PROC_REF(monitor_ward_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
+	op("monitor_ward_item", item(/obj/item), then(PROC_REF(monitor_ward_interaction_item)))
 
 /// Old attackby: claim with an ID card.
-/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/card/id) && !owner)
 		rel_set(src, nameof(owner), user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/mechanical/ward/monitor/crew/IIsAlly(mob/living/L)
 	. = ..()
@@ -65,23 +70,25 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 		to_chat(owner, span_warning("Your [src.name] inside [get_area(src)] was destroyed!"))
 	..()
 
-/datum/om/stage/life/special/mechanical/ward/monitor
-	of = /mob/living/simple_mob/mechanical/ward/monitor
+/mob/living/simple_mob/mechanical/ward/monitor/life_special(datum/seq_frame/life/F)
+	src.detect_mobs()
 
-/datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
-	self.detect_mobs()
+/mob/living/simple_mob/mechanical/ward/monitor
+	var/spotted = FALSE // TRUE while it has seen someone (update_spotted())
+TRACKED(/mob/living/simple_mob/mechanical/ward/monitor, spotted)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/mechanical/ward/monitor/appearance_overlays()
-	. = list()
-	if(seen_mobs.len)
-		icon_living = "[initial(icon_state)]_spotted"
+/// The ward's look is the base life state: icon_living follows whether it has spotted anyone (update_spotted()).
+/// Whether anyone is in sight: swaps the living sprite and the glow, and redraws.
+/mob/living/simple_mob/mechanical/ward/monitor/proc/update_spotted()
+	var/seen = seen_mobs.len ? TRUE : FALSE
+	if(seen)
+		set_icon_living("[initial(icon_state)]_spotted")
 		set_glow_color("#FF0000")
 	else
-		icon_living = "[initial(icon_state)]"
+		set_icon_living("[initial(icon_state)]")
 		set_glow_color("#00FF00")
 	refresh_glow() // Update the light immediately.
-	. += ..()
+	set_spotted(seen)
 
 /mob/living/simple_mob/mechanical/ward/monitor/proc/detect_mobs()
 	var/last_seen_mobs_len = seen_mobs.len
@@ -120,9 +127,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, TYPE_PRO
 		if(!(thing in mobs_nearby))
 			rel_remove(src, nameof(seen_mobs), thing)
 
-	// Check if we need to update icon.
+	// Check if we need to update the sprite and glow.
 	if(seen_mobs.len != last_seen_mobs_len)
-		update_icon()
+		update_spotted()
 
 // Can't attack but calls for help. Used by the monitor and spotter wards.
 // Special attacks are not blocked since they might be used for things besides attacking, and can be conditional.

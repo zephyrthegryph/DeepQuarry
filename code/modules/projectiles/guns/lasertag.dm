@@ -96,12 +96,7 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',)
 	item_state_slots = list(slot_r_hand_str = "tagknifeomni", slot_l_hand_str = "tagknifeomni")
 	item_state = null
-	hitsound = null
 	w_class = ITEMSIZE_SMALL
-	attackspeed = 1.2 SECONDS
-	attack_verb = list("patted", "tapped")
-	drop_sound = SFX_ITEMS_DROP_KNIFE
-	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	///The vest we have to wear to use the knife.
 	var/required_vest = /obj/item/clothing/suit/lasertag/omni
 	///If we need a vest on ourselves to use it or not.
@@ -109,6 +104,10 @@
 	///How much damage it does to the lasertag vest. Generally for oneshots.
 	var/tag_damage = 5
 	///What vests we are allowed to hit with the knife.
+
+CAPABILITIES(/obj/item/lasertagknife)
+	configure(item_combat(attack_speed = 1.2 SECONDS, attack_verbs = list("patted", "tapped")))
+	configure(item_sounds(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 
 TYPE_TABLE_DECLARE(/obj/item/lasertagknife, lasertag_knife_allowed_suits, list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni))
 

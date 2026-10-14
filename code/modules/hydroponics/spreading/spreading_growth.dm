@@ -26,7 +26,7 @@
 
 		if(floor.density)
 			if(!isnull(seed().chems[REAGENT_ID_PACID]))
-				om_after(floor, rand(5,25), TYPE_PROC_REF(/atom, ex_act), 3)
+				after(floor, rand(0.5 SECONDS, 2.5 SECONDS), TYPE_PROC_REF(/atom, ex_act), with = list(3))
 			continue
 
 		if(!Adjacent(floor) || !floor.Enter(src))
@@ -34,7 +34,7 @@
 		rel_add(src, nameof(neighbors), floor)
 
 	if(length(neighbors))
-		GLOB.plant_service.add_plant(src)	//if we have neighbours again, start processing
+		SSplants.add_plant(src)	//if we have neighbours again, start processing
 
 	// Update all of our friends.
 	var/turf/T = get_turf(src)
@@ -48,7 +48,8 @@
 		return
 	spread_to(DEFAULTPICK(neighbors, null))
 
-/obj/effect/plant/periodic_step()
+/// Every 7.5 s while `growing` (the plant system sets it when the plant joins the growing registry).
+/obj/effect/plant/proc/plant_step(datum/act/A)
 
 	// Something is very wrong, kill ourselves.
 	if(!seed())
@@ -63,20 +64,18 @@
 	// Handle life.
 	var/turf/simulated/T = get_turf(src)
 	if(istype(T))
-		health -= seed().handle_environment(T,T.return_air(),null,1)
+		set_health(health - seed().handle_environment(T,T.return_air(),null,1))
 	if(health < max_health)
-		health += rand(3,5)
-		refresh_icon()
+		set_health(health + rand(3,5))
 		if(health > max_health)
-			health = max_health
+			set_health(max_health)
 	else if(health == max_health && !plant)
-		own_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
-		plant.dir = src.dir
+		rel_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
+		plant.set_dir(src.dir)
 		plant.transform = src.transform
 		plant.age = seed().get_trait(TRAIT_MATURATION)-1
-		plant.update_icon()
 		if(growth_type==0) //Vines do not become invisible.
-			invisibility = INVISIBILITY_MAXIMUM
+			set_invisibility(INVISIBILITY_MAXIMUM)
 		else
 			plant.layer = layer + 0.1
 
@@ -115,12 +114,12 @@
 			for(var/i in 1 to max_spread)
 				if(prob(spread_chance))
 					spread_delay += rand(3,5)
-					om_after(src, spread_delay, PROC_REF(spread_once))
+					after(src, spread_delay, PROC_REF(spread_once))
 
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()
 	if(has_buckled_mobs() || length(neighbors))
-		GLOB.plant_service.add_plant(src)
+		SSplants.add_plant(src)
 
 //spreading vines aren't created on their final turf.
 //Instead, they are created at their parent and then move to their destination.
@@ -130,7 +129,7 @@
 		return
 	var/obj/effect/plant/child = new(get_turf(src),seed(),parent())
 
-	om_after(src, 1, PROC_REF(spread_child_settles), child, target_turf) // This should do a little bit of animation.
+	after(src, 0.1 SECONDS, PROC_REF(spread_child_settles), with = list(child, target_turf)) // This should do a little bit of animation.
 
 /obj/effect/plant/proc/die_off()
 	// Kill off our plant.
@@ -141,7 +140,7 @@
 			continue
 		for(var/obj/effect/plant/neighbor in contents_of(check_turf))
 			rel_add(neighbor, nameof(neighbor.neighbors), check_turf)
-			GLOB.plant_service.add_plant(neighbor)
+			SSplants.add_plant(neighbor)
 	expire(1)
 
 #undef NEIGHBOR_REFRESH_TIME
@@ -154,7 +153,6 @@
 	child.set_anchored(FALSE)
 	child.Move(target_turf)	// Do a normal move, so we can cross and uncross things we need to. Stairs, Open space "falling", etc.
 	child.set_anchored(TRUE)
-	child.update_icon()
 
 	// start: Pitcher plant spawning
 	if((seed().get_trait(TRAIT_POTENCY)) >= 70) //Random event spacevines have 70 potency minimum. Should guarantee this always triggers on spacevines.
@@ -171,15 +169,15 @@
 			var/obj/effect/plant/other = thing
 			if(other.seed() != child.seed())
 				other.vine_overrun(child.seed(), src) //vine fight
-			qdel(child)
+			spent(child)
 			return
 		if(istype(thing, /obj/effect/dead_plant))
-			qdel(thing)
-			qdel(child)
+			spent(thing)
+			spent(child)
 			return
 		if(isliving(thing) && (seed().get_trait(TRAIT_CARNIVOROUS) || (seed().get_trait(TRAIT_SPREAD) >= 2 && prob(round(seed().get_trait(TRAIT_POTENCY))))))
 			entangle(thing)
-			qdel(child)
+			spent(child)
 			return
 
 	// Update neighboring squares.

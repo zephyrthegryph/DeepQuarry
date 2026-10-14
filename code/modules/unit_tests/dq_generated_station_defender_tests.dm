@@ -23,9 +23,9 @@
 	var/datum/generated_station_simulation/simulation = new(spec)
 	var/datum/generated_station_director/director = new(simulation)
 	var/datum/expedition_site/site = new
-	own_set(site, nameof(site.station_spec), spec)
-	own_set(site, nameof(site.station_simulation), simulation)
-	own_set(site, nameof(site.station_director), director)
+	rel_set(site, nameof(site.station_spec), spec)
+	rel_set(site, nameof(site.station_simulation), simulation)
+	rel_set(site, nameof(site.station_director), director)
 	var/datum/generated_station_defense_runtime/runtime = new(site, director)
 	TEST_ASSERT_EQUAL(length(runtime.active_patrols), 0, "Fresh defense runtime scheduled idle patrol work")
 	TEST_ASSERT_EQUAL(length(runtime.agents), 0, "Defense runtime spawned agents before explicit roster creation")

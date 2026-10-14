@@ -30,21 +30,28 @@
 		else
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " presses the lift button."))
 
-/obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
-	. = ..()
-	rel_set(src, nameof(lift), _lift)
+CAPABILITIES(/obj/structure/lift)
+	silicon_hand()
+	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	ref_one(nameof(lift), /datum/turbolift)
+	op("hammer", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hammer on it"), then(PROC_REF(interaction_hammer)))
+	op("hand", hand(), label("Use"), ungated(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
 
-/obj/structure/lift
-	silicon_use = SILICON_USE_HAND
+/// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
+/obj/structure/lift/proc/smashed_by(datum/act/hit/generic/A)
+	var/mob/user = A.attacker
+	attack_hand(user)
+	return OP_OK
 
-/obj/structure/lift/attack_generic(mob/user)
-	return attack_hand(user)
+/// Old attack_hand with a harmful stance.
+/obj/structure/lift/proc/interaction_hammer(datum/act/op/A)
+	interact(A.actor, I_HURT)
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hammer on it", PROC_REF(interaction_hand)), INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
-/// Old attack_hand.
-/obj/structure/lift/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return interact(user, interaction.stance)
+/// Old attack_hand with any other stance.
+/obj/structure/lift/proc/interaction_hand(datum/act/op/A)
+	interact(A.actor, I_HELP)
+	return OP_OK
 
 /// `stance`: the touch's stance, passed on to pressed().
 /obj/structure/lift/interact(mob/user, stance = I_HELP)
@@ -62,34 +69,30 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-/obj/structure/lift/button/relations()
-	. = ..()
-	. += rel_one(nameof(floor), back = nameof(/datum/turbolift_floor::ext_panel))
-/datum/turbolift_floor/relations()
-	. = ..()
-	. += rel_one(nameof(ext_panel), back = nameof(/obj/structure/lift/button::floor))
 
 /obj/structure/lift/button/proc/reset()
-	light_up = FALSE
-	update_icon()
+	set_light_up(FALSE)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/lift/button)
+	links(/obj/structure/lift/button::floor, /datum/turbolift_floor::ext_panel)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/lift/button/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/lift/button/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		lift().priority_mode()
 		if(floor == lift().current_floor())
 			lift().open_doors()
 		else
 			lift().queue_move_to(floor)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/lift/button/interact(mob/user, stance = I_HELP)
 	if(!..())
@@ -101,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	pressed(user, stance)
 	if(floor == lift().current_floor() && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
 		lift().open_doors()
-		om_after(src, 3, PROC_REF(reset))
+		after(src, 0.3 SECONDS, PROC_REF(reset))
 		return
 	lift().queue_move_to(floor)
 
@@ -109,20 +112,18 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	return proximity_flag
 
 /obj/structure/lift/button/proc/light_up()
-	light_up = TRUE
-	update_icon()
+	set_light_up(TRUE)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lift/button, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lift/button/appearance_overlays()
-	. = list()
+/obj/structure/lift/button/draw(datum/look/look)
+	..()
 	if(lift().fire_mode)
-		icon_state = "button_fire"
+		look.state("button_fire")
 	else if(lift().priority_mode)
-		icon_state = "button_pri"
+		look.state("button_pri")
 	else if(light_up)
-		icon_state = "button_lit"
+		look.state("button_lit")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // End button.
 
@@ -135,26 +136,22 @@ DECLARE_APPEARANCE_PROC(/obj/structure/lift/button, TYPE_PROC_REF(/atom, appeara
 	req_one_access = list(ACCESS_HEADS, ACCESS_ATMOSPHERICS, ACCESS_MEDICAL)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_interact)), \
-)
-
 /// Old attackby.
-/obj/structure/lift/panel/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/lift/panel/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		lift().update_fire_mode(!lift().fire_mode)
 		if(lift().fire_mode)
 			audible_message(span_danger("Firefighter Mode Activated.  Door safeties disabled.  Manual control engaged."), runemessage = "SCREECH")
 			play_sfx(src, SFX_MACHINES_AIRALARM, volume_channel = VOLUME_CHANNEL_ALARMS)
 		else
 			audible_message(span_warning("Firefighter Mode Deactivated. Door safeties enabled.  Automatic control engaged."), runemessage = "ding")
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/lift/panel/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -165,12 +162,17 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 	tgui_interact(user)
 
-DECLARE_UI(/obj/structure/lift/panel, "Turbolift")
+CAPABILITIES(/obj/structure/lift/panel)
+	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("interact", observer(), label("View"), then(TYPE_PROC_REF(/atom, op_interact)))
+	interface("Turbolift")
+	without("ui_open")
+	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_ref())), then(PROC_REF(ui_act_move_to_floor)))
+	op("toggle_doors", ui_act("toggle_doors"), then(PROC_REF(ui_act_toggle_doors)))
+	op("emergency_stop", ui_act("emergency_stop"), then(PROC_REF(ui_act_emergency_stop)))
 
-UI_DATA_REPLACE(/obj/structure/lift/panel, "merge:ui_data_obj_structure_lift_panel{doors_open:unknown,fire_mode:unknown,floors:list}")
-
-/// The computed part of /obj/structure/lift/panel's window data (declared on its UI_DATA row).
-/obj/structure/lift/panel/proc/ui_data_obj_structure_lift_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/structure/lift/panel's window data.
+/obj/structure/lift/panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["doors_open"] = lift().doors_are_open()
@@ -192,37 +194,38 @@ UI_DATA_REPLACE(/obj/structure/lift/panel, "merge:ui_data_obj_structure_lift_pan
 
 	return data
 
-UI_ACT(/obj/structure/lift/panel, "move_to_floor", ui_act_move_to_floor, UI_ARG_REF("ref", null))
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_move_to_floor)
+/obj/structure/lift/panel/proc/ui_act_move_to_floor(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
-	lift().queue_move_to(params["ref"])
+	lift().queue_move_to(ref)
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
-UI_ACT(/obj/structure/lift/panel, "toggle_doors", ui_act_toggle_doors)
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_toggle_doors)
+/obj/structure/lift/panel/proc/ui_act_toggle_doors(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(lift().doors_are_open())
 		lift().close_doors()
 	else
 		lift().open_doors()
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
-UI_ACT(/obj/structure/lift/panel, "emergency_stop", ui_act_emergency_stop)
-UI_ACT_PROC(/obj/structure/lift/panel, ui_act_emergency_stop)
+/obj/structure/lift/panel/proc/ui_act_emergency_stop(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	lift().emergency_stop()
 	if(.)
-		pressed(ui.user)
+		pressed(user)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lift/panel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lift/panel/appearance_overlays()
-	. = list()
+/obj/structure/lift/panel/draw(datum/look/look)
+	..()
 	if(lift().fire_mode)
-		icon_state = "panel_fire"
+		look.state("panel_fire")
 	else
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 
 // End panel.
 

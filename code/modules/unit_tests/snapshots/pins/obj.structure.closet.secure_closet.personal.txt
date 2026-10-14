@@ -1,0 +1,57 @@
+human|none menu: Reset Lock (refused: You need to unlock it first.)
+human|none click: nothing
+robot|none menu: Reset Lock (refused: You need to unlock it first.)
+robot|none menu: Toggle Lock
+robot|none menu: Use
+robot|none click: Click: Toggle Lock
+@obj.structure ai|none
+@obj.structure.closet ghost|none
+-menu: Toggle Open
++0 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/tool/screwdriver
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/tool/crowbar
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/tool/wrench
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/tool/wirecutters click: nothing
+@obj.structure.closet human|/obj/item/multitool
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/weldingtool
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/stack/cable_coil
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure.closet human|/obj/item/stack/material/steel
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Reset Lock (refused: You need to unlock it first.)
+human|/obj/item/card/id menu: Swipe ID
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id click: Click: Swipe ID
+@obj.structure.closet human|/obj/item
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj human|/obj/item/storage/laundry_basket
+-menu: Toggle Open
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure human|/obj/item/pda
+-menu: Toggle
+-menu: Toggle Lock
++1 menu: Reset Lock (refused: You need to unlock it first.)
++2 menu: Toggle (refused: Access denied.)
+@obj.structure human|/obj/item/card/emag
+-menu: Toggle Lock
++1 menu: Reset Lock (refused: You need to unlock it first.)
+@obj.structure human|/obj/item/melee/energy/blade
+-menu: Toggle Lock
++1 menu: Reset Lock (refused: You need to unlock it first.)
+keys: anchor.toggle, break_out, cut_apart, devour, door, drag_buckle, emag.subvert, emag.use, empty_basket, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, reset_lock, set_down, silicon_hand, slice, stuff, stuff_grab, swipe, weld_shut.toggle

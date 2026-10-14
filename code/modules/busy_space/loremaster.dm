@@ -3,6 +3,9 @@
 /datum/lore/loremaster
 	var/list/organizations
 
+CAPABILITIES(/datum/lore/loremaster)
+	owns_many(nameof(organizations))
+
 /datum/lore/loremaster/New()
 
 	var/list/paths = subtypesof(/datum/lore/organization)
@@ -11,4 +14,4 @@
 		var/datum/lore/organization/instance = path
 		if(initial(instance.name))
 			instance = new path()
-			own_put(src, nameof(organizations), path, instance)
+			rel_add(src, nameof(organizations), instance, path)

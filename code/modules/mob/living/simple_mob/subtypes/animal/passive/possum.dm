@@ -12,10 +12,10 @@
 /obj/item/animal_spawner
 	var/critter_type = /mob/living/simple_mob/animal/passive/mouse
 
-MAP_RESOLVER(/obj/item/animal_spawner, GLOBAL_PROC_REF(resolve_animal_spawner))
-MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
+CAPABILITIES(/obj/item/animal_spawner)
+	map_resolver(GLOBAL_PROC_REF(resolve_animal_spawner), vars = list("critter_type"))
 
-/// MAP_RESOLVER for animal spawners: the critter in its holder, where the spawner would have been
+/// The map resolver of animal spawners: the critter in its holder, where the spawner would have been
 /// (in the hands of the mob holding it, if any).
 /proc/resolve_animal_spawner(atom/loc, path, list/varedits)
 	var/obj/item/animal_spawner/P = path
@@ -72,8 +72,6 @@ MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
 	universal_understand = TRUE
 	holder_type = /obj/item/holder/possum
 	mob_size = MOB_SMALL
-	can_pull_size = 2
-	can_pull_mobs = MOB_PULL_SMALLER
 	say_list_type = /datum/say_list/possum
 	catalogue_data = list(/datum/category_item/catalogue/fauna/opossum)
 	meat_amount = 2
@@ -85,18 +83,16 @@ MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
 		if(category == INJURY_CATEGORY_PHYSICAL || category == INJURY_CATEGORY_THERMAL)
 			respond_to_damage()
 
-/mob/living/simple_mob/animal/passive/opossum/lay_down()
-	. = ..()
-	update_icon()
-
 //respond_to_damage and update_icon for opossum live in
 // code/modules/combat_ai/ports/possum.dm where they read the modern mob-side
 // is_angry / play_dead_until vars instead of the deleted ai_holder.
 /mob/living/simple_mob/animal/passive/opossum/proc/respond_to_damage()
 	return
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum)
+	configure(mob_movement(pull_size = 2, pull_mobs = MOB_PULL_SMALLER))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/opossum/poppy
 	name = "Poppy the Safety Possum"
@@ -116,5 +112,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/possum, mob_organ_hit_zones, list("head",
 /datum/decl/mob_organ_names/poppy
 TYPE_TABLE(/datum/decl/mob_organ_names/poppy, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch", "cute little jacket"))
 
-DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/opossum/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
+CAPABILITIES(/mob/living/simple_mob/animal/passive/opossum/beastmode)
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE) //No ventcrawl for hanner
 

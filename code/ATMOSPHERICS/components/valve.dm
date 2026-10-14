@@ -1,6 +1,4 @@
 /obj/machinery/atmospherics/valve
-	// A manual valve: the AI can't turn it (digital and shutoff valves set SILICON_USE_HAND).
-	silicon_use = NONE
 	icon = 'icons/atmos/valve.dmi'
 	icon_state = "map_valve0"
 	construction_type = /obj/item/pipe/binary
@@ -23,10 +21,15 @@
 	open = 1
 	icon_state = "map_valve1"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/valve/appearance_overlays()
-	. = list()
-	icon_state = "valve[open]"
+TRACKED(/obj/machinery/atmospherics/valve, open)
+
+/obj/machinery/atmospherics/valve/draw(datum/look/look)
+	..()
+	look.state("valve[open]")
+
+/obj/machinery/atmospherics/valve/derived()
+	. = ..()
+	. += drawn_from(nameof(open))
 
 /// The wheel-turning animation, played when the toggle starts (the state follows a second later).
 /obj/machinery/atmospherics/valve/proc/animate_toggle()
@@ -58,8 +61,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	if(open) return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	open = 1
-	update_icon()
+	set_open(1)
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -69,8 +71,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 		return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	open = 0
-	update_icon()
+	set_open(0)
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -81,24 +82,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	else if(dir==12)
 		set_dir(4)
 
-/obj/machinery/atmospherics/valve/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/valve_toggle,
-	)
-	..()
+MSG_DEF_SELF(valve/unpowered, "It has no power.")
 
-/// Toggle the valve open or closed.
-/datum/interaction/machine_hand/ungated/valve_toggle
-	id = "valve_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/atmospherics/valve/proc/interaction_toggle
+CAPABILITIES(/obj/machinery/atmospherics/valve)
+	without("silicon_hand") // a manual valve: silicons can't turn it (digital and shutoff valves declare their own)
+	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(wheel_turned)))
+	pipe_device_unwrench()
 
-/obj/machinery/atmospherics/valve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/// A valve needs no power to come off: it never runs.
+/obj/machinery/atmospherics/valve/pipe_device_idle(datum/act/A)
+	return null
+
+/// The wheel turns: the valve moves a second later.
+/obj/machinery/atmospherics/valve/proc/wheel_turned(datum/act/op/A)
 	animate_toggle()
-	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
-	return TRUE
+	after(src, 1 SECOND, PROC_REF(finish_toggle))
+	return OP_OK
 
 /// The switch, a second after the wheel is turned.
 /obj/machinery/atmospherics/valve/proc/finish_toggle()
@@ -130,7 +129,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	STANDARD_ATMOS_CHOOSE_NODE(1, node1_dir)
 	STANDARD_ATMOS_CHOOSE_NODE(2, node2_dir)
 
-	update_icon()
 	update_underlays()
 
 	if(openDuringInit)
@@ -173,7 +171,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	return null
 
 /obj/machinery/atmospherics/valve/digital		// can be controlled by AI
-	silicon_use = SILICON_USE_HAND
 	name = "digital valve"
 	desc = "A digitally controlled valve."
 	icon = 'icons/atmos/digital_valve.dmi'
@@ -183,46 +180,30 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-/obj/machinery/atmospherics/valve/digital/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/valve_digital_toggle,
-	)
-	..()
+/// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
+CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
+	silicon_hand()
+	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
+	extend("unwrench", needs(req(PROC_REF(actor_allowed))))
 
-/// Toggle a digital valve: requires power and access, then behaves as the manual toggle.
-/datum/interaction/machine_hand/ungated/valve_digital_toggle
-	id = "valve_digital_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	also_requires = list(REQ_ACCESS)
-	effect = /obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle
-
-/obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!powered())
-		return TRUE
-	return interaction_toggle(user, held, interaction)
+/obj/machinery/atmospherics/valve/digital/proc/has_power(datum/act/A)
+	return (!power_lost()) ? null : MSG(valve/unpowered)
 
 /obj/machinery/atmospherics/valve/digital/open
 	open = 1
 	icon_state = "map_valve1"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/valve/digital/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!powered())
-		icon_state = "valve[open]nopower"
+/obj/machinery/atmospherics/valve/digital/draw(datum/look/look)
+	..()
+	if(power_lost())
+		look.state("valve[open]nopower")
 
 /obj/machinery/atmospherics/valve/digital/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
-
-/obj/machinery/atmospherics/valve/digital/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/valve/digital/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id))
@@ -242,23 +223,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF
 				close()
 			else
 				open()
-
-/obj/machinery/atmospherics/valve/wrench_act(mob/user, obj/item/W)
-	if (istype(src, /obj/machinery/atmospherics/valve/digital) && !src.allowed(user))
-		to_chat(user, span_warning("Access denied."))
-		return ITEM_INTERACT_BLOCKING
-	if(!can_unwrench())
-		to_chat(user, span_warning("You cannot unwrench \the [src], it is too exerted due to internal pressure."))
-		add_fingerprint(user)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 40, quality = TOOL_WRENCH, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/atmospherics/valve/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
-		MSG_BLIND("You hear a ratchet."))
-	atom_deconstruct()
 
 /obj/machinery/atmospherics/valve/examine(mob/user)
 	. = ..()

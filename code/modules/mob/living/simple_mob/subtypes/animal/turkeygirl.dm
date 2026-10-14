@@ -43,7 +43,7 @@
 
 /mob/living/simple_mob/vore/turkeygirl/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot churning stomach of a turkey girl! The doughy flesh presses inward to form to your figure, thick slime coating everything, and very shortly that includes you as well! There isn't any escaping that constant full body motion, as her body works to ball yours up into a tight little package. Gurgling and glubbing with every shifting movement, while her pulse throbs through the flesh all around you with every beat of her heart. All in all, one thing is for certain! You've become turkey stuffing! Oh no..."
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -59,32 +59,34 @@
 /datum/say_list/turkey
 	speak = list("Gobble!", "Gobble gobble!", "Gobble gobble gobble!", "Give me something to be thankful for~", "Could use something to gobble~", "Why don't you make a pilgrimage over here and give me something good to eat?", "I want a treat... I could bite you too if you like~", "What's your favorite time of year?", "Autumn is the best time of year~", "You just gonna let a girl go hungry?")
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/turkeygirl, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/turkeygirl/appearance_overlays()
-	. = list()
-	. += ..()
+/mob/living/simple_mob/vore/turkeygirl/draw(datum/look/look)
+	..()
 	if(stat == DEAD)
-		return .
-	if(vore_fullness == 2 || nutrition >= 5000)
-		icon_state = "[icon_living]-2"
-
-	else if(vore_fullness == 1 || nutrition >= 2500)
-		icon_state = "[icon_living]-1"
+		return
+	var/state = look.state_so_far(src)
+	if(vore_fullness == 2 || nutrition_of(src) >= 5000)
+		state = "[icon_living]-2"
+	else if(vore_fullness == 1 || nutrition_of(src) >= 2500)
+		state = "[icon_living]-1"
 	if(resting)
-		icon_state = "[icon_state]-resting"
+		state = "[state]-resting"
+	look.state(state)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/turkeygirl, INTERACT_ITEM(null, PROC_REF(turkeygirl_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 
 /// Old attackby: feeding.
-/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/O = A.held
+	. = OP_OK
 	if(stat)
-		return FALSE
+		return OP_DECLINE
 
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return FALSE
+		return OP_DECLINE
 
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return
@@ -102,4 +104,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/turkeygirl, INTERACT_ITEM(null, 
 		if(user != src)
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
 	play_sfx(src, SFX_ITEMS_EATFOOD)
-	update_icon()

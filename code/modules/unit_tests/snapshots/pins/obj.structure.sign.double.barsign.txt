@@ -1,0 +1,29 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.sign human|/obj/item/tool/screwdriver
+-menu: Use
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel click: nothing
+@obj.structure human|/obj/item/card/id
+-menu: Use
++1 menu: Use (refused: Access denied.)
+human|/obj/item menu: Hit
+human|/obj/item click: nothing
+human|/obj/item/pda menu: Hit
+human|/obj/item/pda menu: Use (refused: Access denied.)
+human|/obj/item/pda click: Click: Use
+keys: change_sign, drag_buckle, melee_hit, use_screwdriver

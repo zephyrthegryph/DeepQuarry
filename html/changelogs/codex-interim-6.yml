@@ -1,0 +1,5 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated legacy prompts across character settings, medical devices, security items and machinery to native requests."
+  - code_imp: "Removed unused model fields and shared immutable content tables."

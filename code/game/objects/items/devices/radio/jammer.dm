@@ -22,24 +22,23 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "jammer0"
 	var/active_state = "jammer1"
-	var/last_overlay_percent = null // Stores overlay icon_state to avoid excessive recreation of overlays.
 
 	var/jam_range = 7
 	var/obj/item/cell/device/weapon/power_source
 	var/tick_cost = 5 // For the ERPs.
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/radio_jammer, on, FALSE, CHANGE_EXPLICIT)
-/// Drains its cell while switched on.
-DECLARE_PERIODIC_WHILE(/obj/item/radio_jammer, PERIODIC_SLOW, "on")
+CAPABILITIES(/obj/item/radio_jammer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(power_source), /obj/item/cell/device/weapon, starts = /obj/item/cell/device/weapon)
+	/// Drains its cell while switched on.
+	every(2 SECONDS, then(PROC_REF(radio_jammer_step)), when = nameof(on))
+	op("power", in_hand(), label("Toggle subspace jammer"), then(PROC_REF(jammer_power_requested)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item/cell/device/weapon), label("Insert cell"), then(PROC_REF(interaction_item)))
 
-/obj/item/radio_jammer/Initialize(mapload)
-	. = ..()
-	update_icon() // So it starts with the full overlay.
-
-DECLARE_DEFAULT_CHILD(/obj/item/radio_jammer, "power_source", /obj/item/cell/device/weapon)
+/obj/item/radio_jammer/var/on = FALSE
+TRACKED(/obj/item/radio_jammer, on)
 
 // a running jammer stops jamming.
 /obj/item/radio_jammer/on_destroy(force)
@@ -57,16 +56,14 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		to_chat(user,span_warning("\The [src] deactivates."))
 	registry_leave(REGISTRY_RADIO_JAMMERS, src)
 	set_on(FALSE)
-	update_icon()
 
 /obj/item/radio_jammer/proc/turn_on(mob/user)
 	if(user)
 		to_chat(user,span_notice("\The [src] is now active."))
 	registry_join(REGISTRY_RADIO_JAMMERS, src)
 	set_on(TRUE)
-	update_icon()
 
-/obj/item/radio_jammer/periodic_step()
+/obj/item/radio_jammer/proc/radio_jammer_step(datum/act/timer/A)
 	if(!power_source || !power_source.check_charge(tick_cost))
 		var/mob/living/notify
 		if(isliving(loc))
@@ -74,25 +71,20 @@ REGISTRY_MEMBERSHIP(/obj/item/radio_jammer, REGISTRY_RADIO_JAMMERS)
 		turn_off(notify)
 	else
 		power_source.use(tick_cost)
-		update_icon()
 
 
-DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_INSERT(/obj/item/cell/device/weapon, PROC_REF(interaction_item), "Insert cell"), \
-)
-
-/obj/item/radio_jammer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio_jammer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		own_take(src, nameof(power_source))
+		rel_take(src, nameof(power_source))
 		turn_off()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/radio_jammer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio_jammer/proc/jammer_power_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(on)
 		turn_off(user)
 	else
@@ -100,35 +92,23 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 			turn_on(user)
 		else
 			to_chat(user,span_warning("\The [src] has no power source!"))
+	return OP_OK
 
-/obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/radio_jammer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!power_source)
-		if(!own_set(src, nameof(src.power_source), W, user = user))
+		if(!move_into(src, nameof(src.power_source), W, user))
 			return TRUE
-		power_source.update_icon() //Why doesn't a cell do this already? :|
-		update_icon()
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/radio_jammer/appearance_overlays()
-	. = list()
+/obj/item/radio_jammer/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = active_state
-	else
-		icon_state = initial(icon_state)
-
-	var/overlay_percent = 0
-	if(power_source)
-		overlay_percent = between(0, round( power_source.percent() , 25), 100)
-	else
-		overlay_percent = 0
-
-	// Only Cut() if we need to.
-	if(overlay_percent != last_overlay_percent)
-		. += "jammer_overlay_[overlay_percent]"
-		last_overlay_percent = overlay_percent
+		look.state(active_state)
+	look.overlay("jammer_overlay_[power_source ? between(0, round(power_source.percent(), 25), 100) : 0]")
 
 //Unlimited use, unlimited range jammer for admins. Turn it on, drop it somewhere, it works.
 /obj/item/radio_jammer/admin

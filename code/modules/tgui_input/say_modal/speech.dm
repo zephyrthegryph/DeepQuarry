@@ -54,7 +54,7 @@
 			client().looc(entry)
 			return TRUE
 		if(ADMIN_CHANNEL)
-			if(check_rights(R_ADMIN, show_msg = FALSE))
+			if(admin_require(client(), R_ADMIN, "check_rights in [callee.proc]", show_msg = FALSE))
 				SSadmin_verbs.dynamic_invoke_verb(client(), /datum/admin_verb/cmd_admin_say, entry)
 			return TRUE
 	return FALSE
@@ -79,9 +79,9 @@
  */
 /datum/tgui_say/proc/handle_entry(type, payload)
 	if(!payload?["channel"] || !payload["entry"])
-		CRASH("[usr] entered in a null payload to the chat window.")
+		CRASH("[client()?.mob] entered in a null payload to the chat window.")
 	if(length(payload["entry"]) > max_length)
-		CRASH("[usr] has entered more characters than allowed into a TGUI-Say")
+		CRASH("[client()?.mob] has entered more characters than allowed into a TGUI-Say")
 	if(type == "entry")
 		delegate_speech(payload["entry"], payload["channel"])
 		return TRUE

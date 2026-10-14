@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Phase 0: tracked base vars, holder-interface procs moved off /atom, capability varmap generated"
+  - bugfix: "Global reaction handlers get their holder first; a looping change handler no longer drops other holders' updates; on_change(when =) var gates are reads; a soft reboot resets the Rust job registry"

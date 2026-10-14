@@ -1,0 +1,77 @@
+@obj.item.gun.energy human|none
+-menu: Use Scope (refused: You can't do that.)
++3 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy robot|none
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++7 menu: Resprite gun (refused: You can't do that.)
+@obj ai|none
+@obj.item.gun ghost|none
+-menu: Use Scope (refused: You can't do that.)
++2 menu: Name Gun (refused: You can't do that.)
++4 menu: Resprite gun (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++2 menu: Interaction hand
++4 menu: Name Gun (refused: You can't do that.)
++5 menu: Remove DNA (refused: You can't do that.)
++6 menu: Remove the DNA lock (refused: the stun revolver is not accepting modifications at this time)
++7 menu: Resprite gun (refused: You can't do that.)
++9 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++10 click: Click: Remove the DNA lock
+@obj.item.gun.energy human|/obj/item/tool/crowbar
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/tool/wrench
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/tool/wirecutters
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/multitool
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/weldingtool
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/stack/cable_coil
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/stack/material/steel
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/card/id
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/kit
+-menu: Use Scope (refused: You can't do that.)
++5 menu: Name Gun (refused: You can't do that.)
++7 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/storage
+-menu: Use Scope (refused: You can't do that.)
++5 menu: Name Gun (refused: You can't do that.)
++7 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item/card/emag
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun.energy human|/obj/item
+-menu: Use Scope (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
+@obj.item.gun human|/obj/item/cell
+-menu: Use Scope (refused: You can't do that.)
++5 menu: Name Gun (refused: You can't do that.)
++7 menu: Resprite gun (refused: You can't do that.)
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, rename, reskin, suicide, toggle_digestable, use_screwdriver

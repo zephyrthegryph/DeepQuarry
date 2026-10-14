@@ -47,10 +47,13 @@
 	var/datum/dq_packet_record/last
 	var/received = 0
 
+CAPABILITIES(/obj/machinery/dq_damage_probe)
+	owns_one(nameof(last))
+
 /obj/machinery/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	own_clear(src, nameof(last), OWN_DELETE)
-	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
+	rel_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -63,10 +66,13 @@
 	var/datum/dq_packet_record/last
 	var/received = 0
 
+CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
+	owns_one(nameof(last))
+
 /mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	own_clear(src, nameof(last), OWN_DELETE)
-	own_set(src, nameof(last), new /datum/dq_packet_record(packet))
+	rel_set(src, nameof(last), new /datum/dq_packet_record(packet))
 	return 0
 
 
@@ -84,7 +90,7 @@
 	P.injury_kind = kind
 	P.injury_kinds = null
 	P.damage = damage
-	P.armor_penetration = pen
+	P.set_armor_penetration(pen)
 	P.nodamage = FALSE
 	P.emp_on_hit = FALSE
 	return P
@@ -93,9 +99,9 @@
 	var/obj/item/I = allocate(/obj/item)
 	I.injury_kind = kind
 	I.injury_kinds = null
-	I.force = force
-	I.throwforce = throwforce
-	I.armor_penetration = 5
+	I.set_force(force)
+	I.set_throwforce(throwforce)
+	I.set_armor_penetration(5)
 	return I
 
 
@@ -126,9 +132,9 @@
 /datum/unit_test/dq_damage_packet/injure_mapping
 	var/list/seen
 
-/datum/unit_test/dq_damage_packet/injure_mapping/proc/on_injure(mob/living/source, datum/om/event/before/living_injure/event)
-	EVENT_HANDLER
-	seen += list(list(event.kind, event.flags))
+/datum/unit_test/dq_damage_packet/injure_mapping/proc/on_injure(datum/act/injure/hit)
+	SHOULD_NOT_SLEEP(TRUE)
+	seen += list(list(hit.kind, hit.flags))
 
 /datum/unit_test/dq_damage_packet/injure_mapping/Run()
 	var/static/list/expected = list(
@@ -136,7 +142,7 @@
 		INJURY_CORROSIVE, INJURY_TOXIN, INJURY_RADIATION, INJURY_ELECTRIC, INJURY_BLUNT, INJURY_PAIN,
 	)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	om_hook(H, /datum/om/event/before/living_injure, src, PROC_REF(on_injure))
+	observe(H, /datum/act/injure, src, adjusts_with(PROC_REF(on_injure)))
 	for(var/kind in 1 to DAMAGE_KIND_COUNT)
 		seen = list()
 		var/datum/damage_packet/packet = damage_packet(null, null, null, BP_TORSO, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_PROJECTILE)
@@ -155,7 +161,7 @@
 	H.receive_damage(packet)
 	packet.release()
 	TEST_ASSERT(!(seen[1][2] & INJURE_ARMORED), "an unarmoured packet should skip armour")
-	om_unhook(H, /datum/om/event/before/living_injure, src)
+	unobserve(H, /datum/act/injure, src)
 
 
 /// Objects: physical kinds are brute, thermal and corrosive are burn, the
@@ -301,12 +307,12 @@
 
 /datum/unit_test/dq_damage_packet/attack_generic/Run()
 	make_probes()
-	probe.attack_generic(mob_probe, 12, "bites")
+	generic_hit(probe, mob_probe, 12, "bites")
 	TEST_ASSERT(probe.last?.only(DAMAGE_SHARP, 12), "an animal attack should use the animal's kind: [probe.last?.describe()]")
 	TEST_ASSERT_EQUAL(probe.last.penetration, 7, "an animal attack should carry the animal's penetration")
 	TEST_ASSERT_EQUAL(probe.last.attacker, mob_probe, "the animal is the attacker")
 	var/mob/living/simple_mob/dq_damage_probe/victim = allocate(/mob/living/simple_mob/dq_damage_probe)
-	victim.attack_generic(mob_probe, 12, "bites")
+	generic_hit(victim, mob_probe, 12, "bites")
 	TEST_ASSERT(victim.last?.only(DAMAGE_SHARP, 12), "an animal attack on a mob should use the same packet: [victim.last?.describe()]")
 	TEST_ASSERT(victim.last.flags & DAMAGE_PACKET_UNARMORED, "animal attacks on plain mobs are unarmoured, as before")
 

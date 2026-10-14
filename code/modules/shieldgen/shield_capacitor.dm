@@ -21,12 +21,20 @@
 	interact_offline = TRUE
 
 /// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
-DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "anchored")
-
-/obj/machinery/shield_capacitor/Initialize(mapload)
-	. = ..()
-	make_climbable()
-	make_rotatable()
+// The generator this capacitor feeds (two-sided with its capacitors list).
+CAPABILITIES(/obj/machinery/shield_capacitor)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored)))
+	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
+	climb()
+	interface("ShieldCapacitor")
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	without("ui_open")
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("charge_rate", ui_act("charge_rate", arg("rate", num())), then(PROC_REF(ui_act_charge_rate)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("id_swipe", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	rotatable()
 
 /obj/machinery/shield_capacitor/advanced
 	name = "advanced shield capacitor"
@@ -34,21 +42,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "ancho
 	max_charge = 12e6
 	max_charge_rate = 600000
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null)
-/obj/machinery/shield_capacitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shield_capacitor/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_DECLINE
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		. = 1
+		. = OP_OK
 	fx_sparks(src, 5)
 
-/datum/interaction/machine_item/shield_capacitor_id_swipe
-	id = "shield_capacitor_id_swipe"
-	name = "Swipe ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/shield_capacitor/proc/interaction_id_swipe
-
-/obj/machinery/shield_capacitor/proc/interaction_id_swipe(mob/user, obj/item/card/id/W, datum/interaction/interaction)
+/obj/machinery/shield_capacitor/proc/interaction_id_swipe(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/id/W = A.held
 	if((ACCESS_CAPTAIN in W.GetAccess()) || (ACCESS_SECURITY in W.GetAccess()) || (ACCESS_ENGINE in W.GetAccess()))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
@@ -56,14 +61,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 		to_chat(user, span_red("Access denied."))
 	return TRUE
 
-// The generator this capacitor feeds (two-sided with its capacitors list).
-/obj/machinery/shield_capacitor/relations()
-	. = ..()
-	. += rel_one(nameof(owned_gen), back = nameof(/obj/machinery/shield_gen::capacitors))
-
-/obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
+/obj/machinery/shield_capacitor/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %U%."))
 
 	if(anchored)
@@ -73,37 +75,34 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	else
 		set_active(0)
 		rel_clear(src, nameof(owned_gen))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/shield_capacitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shield_capacitor_id_swipe,
-		/datum/interaction/machine_hand/ungated/shield_capacitor_use,
-	)
-	..()
-
-/// Old attack_hand: never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/shield_capacitor_use
-	id = "shield_capacitor_use"
-	name = "Use"
-	effect = /obj/machinery/shield_capacitor/proc/interaction_use
-
-/obj/machinery/shield_capacitor/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(BROKEN))
+/obj/machinery/shield_capacitor/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
+	if(broken_now())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/shield_capacitor, "ShieldCapacitor")
-
 /obj/machinery/shield_capacitor/tgui_status(mob/user)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return STATUS_CLOSE
 	return ..()
 
-UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_charge:num", "max_charge:num", "charge_rate:num", "max_charge_rate:num", "merge:ui_data_obj_machinery_shield_capacitor{active:num}")
+/obj/machinery/shield_capacitor/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["time_since_fail"] = time_since_fail
+	data["stored_charge"] = stored_charge
+	data["max_charge"] = max_charge
+	data["charge_rate"] = charge_rate
+	data["max_charge_rate"] = max_charge_rate
+	var/list/merged_1 = ui_data_obj_machinery_shield_capacitor(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/shield_capacitor's window data (declared on its UI_DATA row).
+/// /obj/machinery/shield_capacitor's window data.
 /obj/machinery/shield_capacitor/proc/ui_data_obj_machinery_shield_capacitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -111,7 +110,7 @@ UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_
 
 	return data
 
-/obj/machinery/shield_capacitor/machine_step()
+/obj/machinery/shield_capacitor/proc/work_step(datum/act/timer/A)
 	//see if we can connect to a power net.
 	var/PN = 0
 	var/turf/T = get_turf(src)
@@ -124,10 +123,7 @@ UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_
 		power_draw = power_draw(PN, power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			// Wait on a machine of the grid; with none, nothing can supply it.
-			var/obj/machinery/power/node = power_grid_any_node(PN)
-			sleep_until_keys(node ? list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE|CHANGE_POWER_GRID_TOPOLOGY) : list())
-			return PROCESS_KILL
+			return // the grid has nothing spare: it asks again next step
 	else
 		return PROCESS_KILL
 
@@ -139,24 +135,23 @@ UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_
 		stored_charge = max_charge
 		return PROCESS_KILL
 
-UI_ACT(/obj/machinery/shield_capacitor, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_toggle)
+/obj/machinery/shield_capacitor/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!active && !anchored)
-		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		to_chat(user, span_red("The [src] needs to be firmly secured to the floor first."))
 		return
 	set_active(!active)
 	. = TRUE
 
-UI_ACT(/obj/machinery/shield_capacitor, "charge_rate", ui_act_charge_rate, UI_ARG_NUM("rate"))
-UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_charge_rate)
-	charge_rate = clamp(params["rate"], 10000, max_charge_rate)
+/obj/machinery/shield_capacitor/proc/ui_act_charge_rate(datum/act/op/A, rate)
+	charge_rate = clamp(rate, 10000, max_charge_rate)
 	if(stored_charge < max_charge)
-		MACHINE_WAKE(src)
+		work_start(src)
 	. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
-	if(has_stat(BROKEN))
-		icon_state = "broke"
+	if(broken_now())
+		set_icon_state("broke")
 	else
 		..()
 
@@ -164,18 +159,6 @@ UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_charge_rate)
 // === merged from shield_capacitor_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_capacitor
 	icon = 'icons/obj/machines/shielding.dmi'
-
-/// Audit: a sleeping capacitor must be full or have nothing to draw from.
-/obj/machinery/shield_capacitor/om_sleep_violation()
-	if(!asleep_on_keys() || !anchored || stored_charge >= max_charge)
-		return null
-	var/turf/T = get_turf(src)
-	var/obj/structure/cable/C = T?.get_cable_node()
-	var/PN = C?.get_power_region()
-	if(PN && power_surplus(PN) > 0)
-		return "asleep below full charge on a grid with [power_surplus(PN)] W spare"
-	return null
-
 
 /// The generator this capacitor feeds (a relation view).
 /obj/machinery/shield_capacitor/proc/owned_gen() as /obj/machinery/shield_gen

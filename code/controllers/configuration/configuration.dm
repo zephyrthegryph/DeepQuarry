@@ -64,17 +64,18 @@
 	/// A list of configuration errors that occurred during load
 	var/static/list/configuration_errors
 
-/datum/controller/configuration/proc/admin_reload()
-	if(IsAdminAdvancedProcCall() || !PreConfigReload())
+/datum/controller/configuration/proc/admin_reload(mob/user)
+	var/admin_identity = key_name_admin(user)
+	if(IsAdminAdvancedProcCall() || !PreConfigReload(user))
 		return
-	log_admin("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-	message_admins("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
+	log_admin("[admin_identity] has forcefully reloaded the configuration from disk.")
+	message_admins("[admin_identity] has forcefully reloaded the configuration from disk.")
 	full_wipe()
 	Load(world.params[OVERRIDE_CONFIG_DIRECTORY_PARAMETER])
 
-/datum/controller/configuration/proc/PreConfigReload()
+/datum/controller/configuration/proc/PreConfigReload(mob/user)
 	if(reload_in_progress)
-		to_chat(usr, span_warning("Another user is already reloading the config!"))
+		to_chat(user, span_warning("Another user is already reloading the config!"))
 		return FALSE
 
 	reload_in_progress = TRUE
@@ -113,8 +114,8 @@
 
 	loaded = TRUE
 
-	if (Master)
-		Master.OnConfigLoad()
+	if (Kernel)
+		Kernel.OnConfigLoad()
 	process_config_errors()
 
 /datum/controller/configuration/proc/full_wipe()
@@ -125,7 +126,7 @@
 	entries = null
 	configuration_errors?.Cut()
 
-// ALLOW(lifecycle): engine: wipes every config entry and the global config ref.
+// Engine: wipes every config entry and the global config ref.
 /datum/controller/configuration/Destroy()
 	full_wipe()
 	config = null
@@ -157,7 +158,7 @@
 		var/datum/config_entry/test = _entries[esname]
 		if(test)
 			log_config_error("Error: [test.type] has the same name as [E.type]: [esname]! Not initializing [E.type]!")
-			qdel(E)
+			spent(E)
 			continue
 		_entries[esname] = E
 		_entries_by_type[I] = E
@@ -446,4 +447,4 @@ Example config:
 
 //Message admins when you can.
 /datum/controller/configuration/proc/DelayedMessageAdmins(text)
-	om_after(null, 0, GLOBAL_PROC_REF(message_admins), text)
+	after(null, 0, GLOBAL_PROC_REF(message_admins), with = list(text))

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Legacy interaction, damage reaction, emag, periodic and repeat declarations became ops, hit hooks, emag ops and every() in 276 folders; the folders are banned from the old forms"
+  - code_imp: "Generated hit and emag effect pins (dq_hit_pin); the reads table is generated in chunks"

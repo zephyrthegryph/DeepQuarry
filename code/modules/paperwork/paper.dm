@@ -9,30 +9,23 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paper"
 	item_state = "paper"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_range = 1
 	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
-	slot_flags = SLOT_HEAD
-	body_parts_covered = HEAD
-	attack_verb = list("bapped")
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 
 	var/info		//What's actually written on the paper.
 	var/tmp/info_links	//A different version of the paper which includes html links at fields and EOF
-	var/stamps		//The (text for the) stamps on the paper.
+	var/stamps = ""		//The (text for the) stamps on the paper.
 	var/fields		//Amount of user created fields
 	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
-	var/list/ico      //Icons and
-	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
-	var/list/offset_x[0] //offsets stored for later
-	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
-	var/list/offset_y[0] //usage by the photocopier
+	/// The stamps pressed on it, as list(icon_state, pixel_x, pixel_y) entries (the photocopier keeps them as grey marks).
+	var/list/stamp_marks
+	/// Crumpled into a scrap ball.
+	var/crumpled = FALSE
 	var/rigged = 0
 	COOLDOWN_DECLARE(honk_cooldown)
 	var/age = 0
@@ -71,16 +64,45 @@
 	var/tmp/can_read_view = TRUE
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/paper)
+	configure(item_worn(slots = SLOT_HEAD, covers = HEAD))
+	configure(item_thrown(force = 0))
+	configure(item_combat(attack_verbs = list("bapped")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
+	owns_one(nameof(contract_document), /datum/contract_document)
+	interface("Paper")
+	without("ui_open")
+	op("write_field", ui_act("write_field", arg("id", schema_text(4096))), then(PROC_REF(ui_act_write_field)))
+	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
+	// the old object verb: any paper can mark out a small new area where it is buildable (blueprints.dm)
+	op("create_area", menu(), label("Create Area"), needs(carried(), req_conscious(), req_is(nameof(created_area), FALSE, because = MSG(paper/area_made))), then(PROC_REF(create_area_effect)))
+	op("paper_crumple", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 3), label("Crumple"), then(PROC_REF(paper_crumple_op)))
+	op("paper_read", in_hand(), priority(OP_PRIORITY_DEFAULT - 4), label("Read"), then(PROC_REF(paper_read_op)))
+	op("paper_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("paper_fold_plane", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Fold into a plane"), then(PROC_REF(interaction_fold_plane)))
+	op("paper_silicon_read", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(paper_silicon_read)))
+	op("wipe_lipstick", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Wipe off lipstick"), when(req(PROC_REF(wipes_other_mouth))),
+		needs(req_adjacent()), begins(MSG(paper/wiping)), wait(1 SECOND), then(PROC_REF(wipe_lipstick_done)))
+	op("paper_rename", menu(), label("Rename paper"), needs(carried()), then(PROC_REF(paper_rename_op)))
+	param(nameof(info), pos = 1)
+	param(nameof(name), pos = 2)
+	rolls(nameof(pixel_x), range_of(-9, 9))
+	rolls(nameof(pixel_y), range_of(-8, 8))
+
 /obj/item/paper/card
 	name = "blank card"
 	desc = "A gift card with space to write on the cover."
 	icon_state = "greetingcard"
-	slot_flags = null //no fun allowed!!!!
+
+CAPABILITIES(/obj/item/paper/card)
+	configure(item_worn(slots = TRAIT_NONE))
 
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
 
-APPEARANCE_NONE(/obj/item/paper/card)
+/// A card draws neither a written nor a blank sheet: its cover is its mapped state.
+/obj/item/paper/card/look_parts(datum/look/look)
+	return
 
 /obj/item/paper/card/smile
 	name = "happy card"
@@ -108,13 +130,8 @@ APPEARANCE_NONE(/obj/item/paper/card)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/alien/appearance_overlays()
-	. = list()
-	if(info)
-		icon_state = "alienpaper_words"
-	else
-		icon_state = "alienpaper"
+/obj/item/paper/alien/look_parts(datum/look/look)
+	look.state(info ? "alienpaper_words" : "alienpaper")
 
 /obj/item/paper/alien/burnpaper()
 	return
@@ -123,48 +140,50 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_o
 	plane_foldable = FALSE // No airplanes for me.
 
 
-/obj/item/paper/Initialize(mapload, text, title)
+// ALLOW(init/INSTANCE_STATE): a paper encodes the text it was written with, titles its description and builds its info links
+/obj/item/paper/Initialize(mapload)
 	. = ..()
-
-	if(istext(title))
-		name = title
-	if(istext(text))
-		info = text
 
 	if(mapload) // Jank, but we do this to prevent maploaded papers from somehow stacking across rounds if re-added to the board by a player.
 		was_maploaded = TRUE
 
-	pixel_y = rand(-8, 8)
-	pixel_x = rand(-9, 9)
-	stamps = ""
-
-	if(!isnull(title))
-		name = title
 
 	if(name != "paper")
 		desc = "This is a paper titled '" + name + "'."
 
-	if(!isnull(text))
-		info = text
-
 	if(info != initial(info))
-		info = html_encode(info)
-		info = replacetext(info, "\n", "<BR>")
-		info = parsepencode(info)
+		set_info(html_encode(info))
+		set_info(replacetext(info, "\n", "<BR>"))
+		set_info(parsepencode(info))
 
-	update_icon()
 	update_space(info)
 	updateinfolinks()
 
-DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paper/appearance_overlays()
-	. = list()
-	if(icon_state == "paper_talisman")
-		return .
-	if(info)
-		icon_state = "paper_words"
-		return .
-	icon_state = "paper"
+TRACKED(/obj/item/paper, crumpled)
+TRACKED(/obj/item/paper, info)
+TRACKED(/obj/item/paper, stamp_marks)
+
+/// The sheet: blank or written (or a scrap once crumpled), with the stamps on it. The words are the tracked `info` var every printer and form writes
+/// through set_info().
+/obj/item/paper/draw(datum/look/look)
+	..()
+	look_parts(look)
+	for(var/list/mark in stamp_marks)
+		look.overlay(stamp_image(mark))
+
+/// The sheet's state; a type with another cover (a card, a scrap, a ticket) overrides this.
+/obj/item/paper/proc/look_parts(datum/look/look)
+	if(initial(icon_state) == "paper_talisman")
+		return
+	look.state(crumpled ? "scrap" : (info ? "paper_words" : "paper"))
+
+/// Presses one more stamp mark on the sheet.
+/obj/item/paper/proc/add_stamp_mark(state, x, y)
+	set_stamp_marks((stamp_marks || list()) + list(list(state, x, y)))
+
+/// The overlay of one stamp mark.
+/obj/item/paper/proc/stamp_image(list/mark)
+	return look_overlay_image('icons/obj/bureaucracy.dmi', mark[1], pixel_x = mark[2], pixel_y = mark[3])
 
 /obj/item/paper/proc/update_space(new_text)
 	if(!new_text)
@@ -189,11 +208,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	tgui_view = "read"
 	tgui_interact(user)
 
-DECLARE_UI(/obj/item/paper, "Paper")
+/obj/item/paper/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["title"] = name
+	data["view"] = tgui_view
+	var/list/merged_1 = ui_data_obj_item_paper(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merge:ui_data_obj_item_paper{segments:unknown,stamps:bool,garbled:bool}")
-
-/// The computed part of /obj/item/paper's window data (declared on its UI_DATA row).
+/// /obj/item/paper's window data.
 /obj/item/paper/proc/ui_data_obj_item_paper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["segments"] = get_segments()
@@ -234,26 +259,32 @@ UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merg
 		cursor = iend + close_len
 	return segs
 
-UI_ACT(/obj/item/paper, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/paper, ui_act_write_field)
-	do_write_action("[params["id"]]", usr)
+/obj/item/paper/proc/ui_act_write_field(datum/act/op/A, id)
+	var/mob/user = A.actor
+	do_write_action("[id]", user)
 	return TRUE
 
-UI_ACT(/obj/item/paper, "write_end", ui_act_write_end)
-UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
-	do_write_action("end", usr)
+/obj/item/paper/proc/ui_act_write_end(datum/act/op/A)
+	var/mob/user = A.actor
+	do_write_action("end", user)
 	return TRUE
 
 // Shared write-prompt + pencode-parse + commit. Same checks the legacy
 // Topic write branch had — pen-in-hand, RIG fallback, range/loc, fields
 // cap — and the same writes via addtofield or info-append.
 /obj/item/paper/proc/do_write_action(id, mob/user)
+	return paper_write_stage(id, user)
+
+/obj/item/paper/proc/paper_write_stage(id, mob/user, paper_answer, paper_answer_ready = FALSE)
 	if(!user || user.stat || user.restrained())
 		return
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
-	var/t = rerun_ask(user, "k247", PROC_REF(do_write_action), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = MAX_PAPER_MESSAGE_LEN, multiline = TRUE)
+	if(!paper_answer_ready)
+		open_request(src, /datum/prompt/text/paper_write_review, PROC_REF(paper_write_answered), answerer = user, paper_operator = user, paper_field_id = id, question = "Enter what you want to write:", title = "Write", max_len = MAX_PAPER_MESSAGE_LEN, multiline = TRUE)
+		return
+	var/t = paper_answer
 	if(isnull(t))
 		return
 	if(!t)
@@ -294,14 +325,13 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 		addtofield(text2num(id), t)
 		on_field_written(user, text2num(id), i)
 	else
-		info += t
+		set_info(info + (t))
 		updateinfolinks()
 	last_modified_ckey = user.ckey
 	update_space(t)
 	if(contains_signature)
 		on_signature(user, get_signature(i, user))
 	play_sfx(src, SFX_BUREAUCRACY_PEN, 0.5)
-	update_icon()
 
 /obj/item/paper/proc/on_signature(mob/living/user, signature)
 	return
@@ -309,12 +339,23 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 /obj/item/paper/proc/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
 	return
 
+/// The Rename paper menu entry.
+/obj/item/paper/proc/paper_rename_op(datum/act/op/A)
+	paper_verb_rename(A.actor)
+	return OP_OK
+
 /// Old Rename paper verb.
-/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held)
+	return paper_rename_stage(user, held)
+
+/obj/item/paper/proc/paper_rename_stage(mob/user, obj/item/held, paper_answer, paper_answer_ready = FALSE)
 	if(CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You cut yourself on the paper."))
 		return
-	var/_answer_k309 = rerun_ask(user, "k309", PROC_REF(paper_verb_rename), args, /datum/om/prompt/text, message = "What would you like to label the paper?", title = "Paper Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
+	if(!paper_answer_ready)
+		open_request(src, /datum/prompt/text/paper_rename_review, PROC_REF(paper_rename_answered), answerer = user, paper_operator = user, paper_held = held, question = "What would you like to label the paper?", title = "Paper Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
+		return
+	var/_answer_k309 = paper_answer
 	if(isnull(_answer_k309))
 		return
 	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)
@@ -328,19 +369,28 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 		add_fingerprint(user)
 	return
 
-/// Old attack_self: read it, or crumple it in combat mode.
-/obj/item/paper/proc/interaction_paper_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self, as an op: read it, or crumple it in combat mode.
+/obj/item/paper/proc/paper_crumple_op(datum/act/op/A)
+	paper_use(A.actor, I_HURT)
+	return OP_OK
+
+/obj/item/paper/proc/paper_read_op(datum/act/op/A)
+	paper_use(A.actor, I_HELP)
+	return OP_OK
+
+/// Old attack_self: read it, or crumple it when `stance` is harm.
+/obj/item/paper/proc/paper_use(mob/living/user, stance)
 	if(occult)
 		return
-	if(interaction.stance == I_HURT)
-		if(icon_state == "scrap")
+	if(stance == I_HURT)
+		if(crumpled)
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return
 		//crumple dat paper
-		info = stars(info,85)
+		set_info(stars(info,85))
 		act_message(user, src, others = "%U% crumples %T% into a ball!")
 		play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
-		icon_state = "scrap"
+		set_crumpled(TRUE)
 		return
 	user.examinate(src)
 	if(rigged && (GLOB.Holiday == "April Fool's Day"))
@@ -351,7 +401,8 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 
 // AI/cyborg viewer routes through the same TGUI paper window.
 /// Old attack_ai: read the paper; close enough (via the AI's camera) to read it properly.
-/obj/item/paper/proc/paper_silicon_read(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper/proc/paper_silicon_read(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	var/dist
 	if(istype(user) && user.camera)
 		dist = get_dist(src, user.camera)
@@ -360,38 +411,40 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 	can_read_view = (dist < 2)
 	tgui_view = "read"
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
-	act_message(user, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
-	H.lip_style = null
-	H.update_icons_body()
+MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span_warning("%U% begins to wipe %T%'s lipstick off with %I%."))
+
+/// The wipe aims at the mouth, and at somebody else (what is aimed at is fixed while the click is decided).
+/obj/item/paper/proc/wipes_other_mouth(datum/act/op/A)
+	return (A.target != A.actor && read_once(hud_of(A.actor)?.zone_sel?.selecting) == O_MOUTH) ? null : /datum/msg/req_failed
+
+/obj/item/paper/proc/wipe_lipstick_done(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	act_message(A.actor, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
+	H.looks.set_lip_style(null)
+	changed(src)
+	return OP_OK
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.zone_sel.selecting == O_EYES)
+	if(hud_of(user)?.zone_sel?.selecting == O_EYES)
 		act_message(user, M, MSG_SELF(span_notice(" %U% holds up a paper and shows it to %T%. ")), MSG_OTHERS(span_notice("You show the paper to %T%. ")))
 		M.examinate(src)
 		return ITEM_INTERACT_SUCCESS
 
-	else if(user.zone_sel.selecting == O_MOUTH) // lipstick wiping
+	else if(hud_of(user)?.zone_sel?.selecting == O_MOUTH) // lipstick wiping
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(H == user)
 				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
-				H.lip_style = null
-				H.update_icons_body()
-			else
-				act_message(user, H, MSG_SELF(span_notice("You begin to wipe off %T%'s lipstick.")), \
-					MSG_OTHERS(span_warning("%U% begins to wipe %T%'s lipstick off with \the [src].")))
-				om_task_timed(user, 1 SECOND, H, src, PROC_REF(wipe_lipstick_done), list(user, H))
-				return ITEM_INTERACT_SUCCESS
+				H.looks.set_lip_style(null)
+				changed(src)
 
 /obj/item/paper/proc/set_content(text,title)
 	if(title)
 		name = title
-	info = html_encode(text)
-	info = parsepencode(text)
-	update_icon()
+	set_info(html_encode(text))
+	set_info(parsepencode(text))
 	update_space(info)
 	updateinfolinks()
 
@@ -428,7 +481,7 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 	else
 		var/before = copytext(info, 1, textindex)
 		var/after = copytext(info, textindex)
-		info = before + text + after
+		set_info(before + text + after)
 		updateinfolinks()
 
 /obj/item/paper/proc/updateinfolinks()
@@ -440,13 +493,12 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 
 
 /obj/item/paper/proc/clearpaper()
-	info = null
+	set_info(null)
 	stamps = null
 	free_space = MAX_PAPER_MESSAGE_LEN
 	stamped = list()
-	cut_overlays()
+	set_stamp_marks(null)
 	updateinfolinks()
-	update_icon()
 
 /obj/item/paper/proc/get_signature(obj/item/pen/P, mob/user as mob)
 	return pen_signature(P, user)
@@ -479,7 +531,7 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 			item = P)
 		play_sfx(src, SFX_BUREAUCRACY_PAPERBURN)
 
-		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
+		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class))
 
 
 /obj/item/paper/get_worn_icon_state(slot_name)
@@ -487,17 +539,10 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 		return "paper" //Gross, but required for now.
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/paper, \
-	INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_paper_self)), \
-	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
-	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
-	INTERACT_VERB("Rename paper", PROC_REF(paper_verb_rename), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/paper/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/item/paper/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	var/clown = 0
 	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // Let clows/fools/jesters use clown stamps
 		clown = 1
@@ -505,7 +550,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	if(istype(P, /obj/item/tape_roll))
 		var/obj/item/tape_roll/tape = P
 		tape.stick(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(P, /obj/item/clipboard))
 		var/obj/item/clipboard/CB = P
@@ -513,14 +558,12 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			user.drop_from_inventory(src)
 		src.forceMove(CB)
 		rel_set(CB, nameof(CB.toppaper), src)
-		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
 
 	if(istype(P, /obj/item/folder))
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.forceMove(P)
-		P.update_icon()
 		to_chat(user, span_notice("You tuck the [src] into \the [P]."))
 
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/photo))
@@ -529,7 +572,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			if (!C.iscopy && !C.copied)
 				to_chat(user, span_notice("Take off the carbon copy first."))
 				add_fingerprint(user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		var/obj/item/paper_bundle/B = new(src.loc)
 		if (name != initial(name))
 			B.name = name
@@ -565,12 +608,11 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 
 		rel_add(B, nameof(B.pages), src)
 		rel_add(B, nameof(B.pages), P)
-		B.update_icon()
 
 	else if(istype(P, /obj/item/pen))
-		if(icon_state == "scrap")
+		if(crumpled)
 			to_chat(user, span_warning("\The [src] is too crumpled to write on."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		var/obj/item/pen/robopen/RP = P
 		if(istype(RP) && RP.mode == 2)
@@ -582,13 +624,12 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			can_read_view = TRUE
 			tgui_view = "write"
 			tgui_interact(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
 		stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
-			return INTERACTION_HANDLED_PASS
-		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
+			return OP_PASS
 		var/x, y
 		if(istype(P, /obj/item/stamp/captain) || istype(P, /obj/item/stamp/centcomm))
 			x = rand(-2, 0)
@@ -596,24 +637,15 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		else
 			x = rand(-2, 2)
 			y = rand(-3, 2)
-		offset_x += x
-		offset_y += y
-		stampoverlay.pixel_x = x
-		stampoverlay.pixel_y = y
 
 		if(!clown && !stamp_usable_by(P, user))
 			to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
-			return INTERACTION_HANDLED_PASS
-
-		if(!ico)
-			ico = new
-		LAZYADD(ico, "paper_[P.icon_state]")
-		stampoverlay.icon_state = "paper_[P.icon_state]"
+			return OP_PASS
 
 		if(!stamped)
 			stamped = new
 		stamped += P.type
-		add_overlay(stampoverlay)
+		add_stamp_mark("paper_[P.icon_state]", x, y)
 
 		play_sfx(src, SFX_BUREAUCRACY_STAMP)
 		to_chat(user, span_notice("You stamp the paper with your rubber stamp."))
@@ -622,7 +654,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		burnpaper(P, user)
 
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /*
  * Premade paper
@@ -669,8 +701,11 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 /obj/item/paper/crumpled
 	name = "paper scrap"
 	icon_state = "scrap"
+	crumpled = TRUE
 
-APPEARANCE_NONE(/obj/item/paper/crumpled)
+/// A scrap keeps its mapped state.
+/obj/item/paper/crumpled/look_parts(datum/look/look)
+	return
 
 /obj/item/paper/crumpled/bloody
 	icon_state = "scrap_bloodied"
@@ -688,9 +723,8 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 	name = "supply manifest"
 	var/is_copy = 1
 
-/obj/item/paper/manifest/Initialize(mapload, text, title)
-	. = ..()
-	make_sellable(/datum/sellable/manifest)
+/obj/item/paper/manifest
+	sellable_type = /datum/sellable/manifest
 
 /obj/item/paper/crumpled/sampatti
 	info = "Sampatti Relay Sif-833 <BR> Decryption Key for 12-04-2488: <BR> 849B0022FBA920C244 <BR> Eyes Only.  <BR> The insider who knows all the secrets can bring down Lanka.";
@@ -809,7 +843,7 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 	info = "I told them over and over! Stop digging. But no, of course not. They kept digging, and digging and digging on down, and now their dead. now we're all dead."
 
 /obj/item/paper/proc/burn_through(mob/user, obj/item/flame/P, class)
-	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+	if(user && P && get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
 		act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
 			MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 
@@ -927,3 +961,72 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 		return TRUE
 	var/title = user?.mind?.role_alt_title
 	return title == JOB_CLOWN || title == JOB_ALT_JESTER || title == JOB_ALT_FOOL
+
+/obj/item/paper/proc/paper_write_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paper_write_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/paper/proc/paper_write_apply(datum/act/request/A)
+	var/datum/prompt/text/paper_write_review/ask = A.answer
+	return paper_write_stage(ask.paper_field_id, ask.paper_operator, ask.value, TRUE)
+
+/datum/prompt/text/paper_write_review
+	timeout = 0
+	var/mob/paper_operator
+	var/paper_operator_expected = FALSE
+	var/paper_field_id
+
+CAPABILITIES(/datum/prompt/text/paper_write_review)
+	ref_one(nameof(paper_operator), /mob)
+
+/datum/prompt/text/paper_write_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_paper_operator = paper_operator
+	paper_operator_expected = !isnull(captured_paper_operator)
+	rel_clear(src, nameof(paper_operator))
+	if(captured_paper_operator && !QDELETED(captured_paper_operator))
+		rel_set(src, nameof(paper_operator), captured_paper_operator)
+
+/datum/prompt/text/paper_write_review/recheck_extra()
+	if((paper_operator_expected && QDELETED(paper_operator)))
+		return "gone"
+
+/obj/item/paper/proc/paper_rename_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = paper_rename_apply(A)
+	SStgui.update_uis(src)
+
+/obj/item/paper/proc/paper_rename_apply(datum/act/request/A)
+	var/datum/prompt/text/paper_rename_review/ask = A.answer
+	return paper_rename_stage(ask.paper_operator, ask.paper_held, ask.value, TRUE)
+
+/datum/prompt/text/paper_rename_review
+	timeout = 0
+	var/mob/paper_operator
+	var/paper_operator_expected = FALSE
+	var/obj/item/paper_held
+	var/paper_held_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/paper_rename_review)
+	ref_one(nameof(paper_operator), /mob)
+	ref_one(nameof(paper_held), /obj/item)
+
+/datum/prompt/text/paper_rename_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_paper_operator = paper_operator
+	paper_operator_expected = !isnull(captured_paper_operator)
+	rel_clear(src, nameof(paper_operator))
+	if(captured_paper_operator && !QDELETED(captured_paper_operator))
+		rel_set(src, nameof(paper_operator), captured_paper_operator)
+	var/obj/item/captured_paper_held = paper_held
+	paper_held_expected = !isnull(captured_paper_held)
+	rel_clear(src, nameof(paper_held))
+	if(captured_paper_held && !QDELETED(captured_paper_held))
+		rel_set(src, nameof(paper_held), captured_paper_held)
+
+/datum/prompt/text/paper_rename_review/recheck_extra()
+	if((paper_operator_expected && QDELETED(paper_operator)) || (paper_held_expected && QDELETED(paper_held)))
+		return "gone"

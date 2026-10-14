@@ -13,16 +13,16 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	var/tmp/datum/seed/seed_static
 	var/modified = 0
 
-/obj/item/seeds/Initialize(mapload, _seed_type)
-	if(_seed_type in GLOB.plant_service.seeds)
-		seed_type = _seed_type
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A packet of an unknown seed keeps its own.
+/obj/item/seeds/proc/seed_made(given_type)
+	if(!(seed_type in SSplants.seeds))
+		seed_type = initial(seed_type)
 	update_seed()
-	. = ..()
 
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
-	if(!seed() && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
-		proto_set(src, nameof(seed_static), GLOB.plant_service.seeds[seed_type])
+	if(!seed() && seed_type && !isnull(SSplants.seeds) && SSplants.seeds[seed_type])
+		proto_set(src, nameof(seed_static), SSplants.seeds[seed_type])
 	update_appearance()
 
 //Updates strings and icon appropriately based on seed datum.
@@ -77,8 +77,9 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/random
 	seed_type = null
 
+// ALLOW(init/INSTANCE_STATE): creates a random seed for this packet
 /obj/item/seeds/random/Initialize(mapload)
-	proto_set(src, nameof(seed_static), GLOB.plant_service.create_random_seed())
+	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
 	seed_type = seed().name
 	. = ..()
 
@@ -384,6 +385,6 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/item/seeds/ownership()
-	. = ..()
-	. += proto(nameof(seed_static))
+CAPABILITIES(/obj/item/seeds)
+	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	param(nameof(seed_type), pos = 1, apply = PROC_REF(seed_made))

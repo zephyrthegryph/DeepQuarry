@@ -1,0 +1,38 @@
+/// Actual carbon hands and map coordinate facing use the explicitly supplied catcher actor.
+/datum/unit_test/interim_click_catcher_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/atom/movable/screen/click_catcher/catcher = allocate(/atom/movable/screen/click_catcher)
+	var/obj/item/right = allocate(/obj/item, T)
+	var/obj/item/left = allocate(/obj/item, T)
+	TEST_ASSERT(actor.put_in_r_hand(right), "actual initiating actor holds its real right-hand item")
+	TEST_ASSERT(actor.put_in_l_hand(left), "actual initiating actor holds its real left-hand item")
+	var/initial_hand = !!actor.hand
+	var/initial_other_hand = other.hand
+	TEST_ASSERT_EQUAL(catcher.resolve_click_with_actor(actor, "middle=1"), 1, "actual carbon middle click returns the existing consumed value")
+	TEST_ASSERT(actor.hand != initial_hand, "actual explicit catcher actor swaps its active hand")
+	TEST_ASSERT_EQUAL(other.hand, initial_other_hand, "actual catcher hand swap leaves unrelated actor untouched")
+	TEST_ASSERT_EQUAL(actor.get_right_hand(), right, "active-hand selection preserves exact right-hand item")
+	TEST_ASSERT_EQUAL(actor.get_left_hand(), left, "active-hand selection preserves exact left-hand item")
+	catcher.resolve_click_with_actor(actor, "middle=1")
+	TEST_ASSERT_EQUAL(!!actor.hand, initial_hand, "actual repeated middle click restores original selected hand")
+	var/turf/east = get_step(T, EAST)
+	TEST_ASSERT(isfloorturf(east), "a real east floor exists for exact map coordinate facing")
+	var/center = world.view + 1
+	var/coordinate = "[center + 1],[center]"
+	TEST_ASSERT_EQUAL(screen_loc2turf(coordinate, T), east, "the actual screen coordinate helper resolves exact east floor")
+	actor.set_dir(NORTH)
+	other.set_dir(SOUTH)
+	TEST_ASSERT_EQUAL(catcher.resolve_click_with_actor(actor, "shift=1;screen-loc=[coordinate]"), 1, "actual shift facing retains native consumed return")
+	TEST_ASSERT_EQUAL(actor.dir, EAST, "actual explicit actor faces the resolved map turf")
+	TEST_ASSERT_EQUAL(other.dir, SOUTH, "map catcher facing preserves the unrelated actor's actual direction")
+	TEST_ASSERT_EQUAL(catcher.resolve_click_with_actor(actor, "screen-loc=[coordinate]"), east, "unmodified click returns exact turf for native forwarding")
+	TEST_ASSERT_EQUAL(actor.get_right_hand(), right, "native forwarding selection leaves exact actual inventory unchanged")
+	TEST_ASSERT_EQUAL(actor.get_left_hand(), left, "native forwarding selection preserves unrelated held item")
+	TEST_ASSERT_EQUAL(catcher.resolve_click_with_actor(null, "middle=1"), 1, "absent actor retains original consumed return without hand mutation")
+	var/mob/observer/dead/observer = allocate(/mob/observer/dead, T)
+	observer.forceMove(T)
+	TEST_ASSERT(!istype(observer, /mob/living/carbon), "the real observer does not satisfy the original hand-swap type guard")
+	TEST_ASSERT_EQUAL(catcher.resolve_click_with_actor(observer, "middle=1;screen-loc=[coordinate]"), east, "unsupported swap actor retains exact original native turf fallback")
+	TEST_ASSERT_EQUAL(!!actor.hand, initial_hand, "absent and unsupported actor paths preserve original human hand selection")

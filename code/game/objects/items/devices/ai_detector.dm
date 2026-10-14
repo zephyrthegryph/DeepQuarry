@@ -19,21 +19,31 @@
 	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
 	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
 
-/obj/item/multitool/ai_detector/Initialize(mapload)
-	. = ..()
-	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
-	range_alert = world.view
-	range_warning = world.view * 2
+/// TRUE while it is carried by a mob: the slow sensing step runs only then.
+/obj/item/multitool/ai_detector/var/tmp/sensing = FALSE
+TRACKED(/obj/item/multitool/ai_detector, sensing)
 
-/obj/item/multitool/ai_detector/periodic_step()
+CAPABILITIES(/obj/item/multitool/ai_detector)
+	every(2 SECONDS, then(PROC_REF(sense_step)), when = nameof(sensing))
+	derives(nameof(range_alert), PROC_REF(view_range))
+	derives(nameof(range_warning), PROC_REF(near_range))
+
+/// It turns red within the AI's view (derives(), at init: world.view hardly ever changes, but why not be futureproof anyways?).
+/obj/item/multitool/ai_detector/proc/view_range()
+	return world.view
+
+/// And yellow within twice that, when the AI's eye is near.
+/obj/item/multitool/ai_detector/proc/near_range()
+	return world.view * 2
+
+/obj/item/multitool/ai_detector/proc/sense_step(datum/act/A)
 	if(!ismob(loc))
-		return PROCESS_KILL
+		set_sensing(FALSE)
+		return
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
-	detect_state = new_detect_state
-	update_icon()
+	set_detect_state(new_detect_state)
 	update_warning(old_detect_state, new_detect_state)
-	return
 
 // This also detects security using cameras.
 /obj/item/multitool/ai_detector/proc/detect_ai()
@@ -74,10 +84,9 @@
 	// If we reach this point, AI or sec isn't near us.
 	return PROXIMITY_NONE
 
-DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/multitool/ai_detector/appearance_overlays()
-	. = list()
-	icon_state = "[initial(icon_state)][detect_state]"
+/obj/item/multitool/ai_detector/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][detect_state]")
 
 /obj/item/multitool/ai_detector/proc/update_warning(old_state, new_state)
 	var/mob/living/carrier = isliving(loc) ? loc : null
@@ -117,4 +126,4 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, TYPE_PROC_REF(/atom, ap
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/multitool/ai_detector/equipped(mob/user, slot)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_sensing(TRUE)

@@ -6,9 +6,12 @@
 	var/highlighted = FALSE
 	var/mob/observer/eye/aiEye/pic_in_pic/aiEye
 
+CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
+	ref_one(nameof(ai), /mob/living/silicon/ai)
+	owns_one(nameof(aiEye), /mob/observer/eye/aiEye/pic_in_pic, starts = /mob/observer/eye/aiEye/pic_in_pic, starts_args = NO_LOC)
+
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
 	rel_set(aiEye, nameof(aiEye.screen), src)
 
 // No ownership cycle: a pic_in_pic window is never one of its own eye's hud elements.
@@ -44,7 +47,7 @@
 
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_size(width, height, do_refresh = TRUE)
 	if(!aiEye) // Exploit fix
-		qdel(src)
+		spent(src)
 		return
 	aiEye.static_visibility_range =	(round(max(width, height) / 2) + 1)
 	if(ai)
@@ -54,14 +57,14 @@
 /atom/movable/screen/movable/pic_in_pic/ai/set_view_center(atom/target, do_refresh = TRUE)
 	..()
 	if(!aiEye) // Exploit Fix
-		qdel(src)
+		spent(src)
 		return
 	aiEye.setLoc(get_turf(target))
 
 /atom/movable/screen/movable/pic_in_pic/ai/refresh_view()
 	..()
 	if(!aiEye) // Exploit Fix
-		qdel(src)
+		spent(src)
 		return
 	aiEye.setLoc(get_turf(center()))
 
@@ -85,18 +88,18 @@
 			to_chat(new_ai, span_danger("<h2>You've run into a unfixable bug with AI eye code. \
 In order to create a new multicam, you will have to select a different camera first before trying to add one, or ask an admin to fix you. \
 Whatever you did that made the last camera window disappear-- don't do that again.</h2>"))
-		qdel(src)
+		spent(src)
 		return
 	if(ai)
 		rel_remove(ai, nameof(ai.multicam_screens), src)
-		om_unlink(aiEye, ai, /datum/om/relation/eye_of)
+		rel_set(aiEye, nameof(aiEye.eye_looker), null)
 		rel_remove(ai, nameof(ai.master_multicam), src)
 		if(ai.multicam_on)
 			unshow_to(ai.client)
 	rel_set(src, nameof(ai), new_ai)
 	if(new_ai)
 		rel_add(new_ai, nameof(new_ai.multicam_screens), src)
-		om_link(aiEye, ai, /datum/om/relation/eye_of)
+		rel_set(aiEye, nameof(aiEye.eye_looker), ai)
 		if(new_ai.multicam_on)
 			show_to(new_ai.client)
 
@@ -123,7 +126,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 
 /obj/effect/landmark/ai_multicam_room/Initialize(mapload)
 	. = ..()
-	qdel(GLOB.ai_camera_room_landmark)
+	spent(GLOB.ai_camera_room_landmark)
 	GLOB.ai_camera_room_landmark = src
 
 /// Phase 2: stops being the multicam room.
@@ -175,13 +178,11 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 			continue
 		rel_remove(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights--
-		C.update_icon()
 	for(var/obj/machinery/camera/C as anything in add)
 		if(QDELETED(C))
 			continue
 		rel_add(src, nameof(cameras_telegraphed), C)
 		C.in_use_lights++
-		C.update_icon()
 
 /mob/observer/eye/aiEye/pic_in_pic/proc/disable_camera_telegraphing()
 	telegraph_cameras = FALSE
@@ -189,14 +190,13 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		if(QDELETED(C))
 			continue
 		C.in_use_lights--
-		C.update_icon()
 	rel_clear(src, nameof(cameras_telegraphed))
 
 // The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
-/mob/observer/eye/aiEye/pic_in_pic/relations()
-	. = ..()
-	. += rel_many(nameof(cameras_telegraphed))
+CAPABILITIES(/mob/observer/eye/aiEye/pic_in_pic)
+	ref_one(nameof(screen), /atom/movable/screen/movable/pic_in_pic/ai)
+	ref_many(nameof(cameras_telegraphed))
 
 // stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)
@@ -276,7 +276,3 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
 		rel_set(src, nameof(master_multicam), P)
-
-/mob/living/silicon/ai/relations()
-	. = ..()
-	. += rel_many(nameof(multicam_screens))

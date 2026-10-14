@@ -24,11 +24,11 @@
 /// walking every condition/cause when nothing changed.
 /mob/living/carbon/human/proc/dq_refresh_metric_dirty_state()
 	var/current_neural = injury_load(INJURY_CATEGORY_NEURAL)
-	if(current_neural == dq_last_neural_load && radiation == dq_last_radiation && bodytemperature == dq_last_bodytemperature)
+	if(current_neural == dq_last_neural_load && radiation == dq_last_radiation && body_temperature() == dq_last_bodytemperature)
 		return
 	dq_last_neural_load = current_neural
 	dq_last_radiation = radiation
-	dq_last_bodytemperature = bodytemperature
+	dq_last_bodytemperature = body_temperature()
 	body?.invalidate(BODY_DIRTY_METRICS)
 
 /// Run the trigger domains the body has invalidated since last time.
@@ -320,10 +320,10 @@
 			return accumulated_rads
 		if("temp_above")
 			// Kelvin above the species' normal body temperature.
-			return max(0, bodytemperature - dq_normal_body_temperature())
+			return max(0, body_temperature() - dq_normal_body_temperature())
 		if("temp_below")
 			// Kelvin below the species' normal body temperature.
-			return max(0, dq_normal_body_temperature() - bodytemperature)
+			return max(0, dq_normal_body_temperature() - body_temperature())
 	return 0
 
 

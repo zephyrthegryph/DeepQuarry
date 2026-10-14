@@ -24,12 +24,19 @@
 	var/min_activation = 45 SECONDS
 	var/max_activation = 90 SECONDS
 
+TRACKED(/datum/anomaly_stats, stability)
+
+CAPABILITIES(/datum/anomaly_stats)
+	owns_one(nameof(modifier), /datum/anomaly_modifiers)
+	ref_one(nameof(attached_anomaly))
+	ref_one(nameof(attached_harvester))
+
 /datum/anomaly_stats/New()
 	randomize_particle_types()
 	severity = rand(5, 15)
 	max_health = rand(50, 150)
 	curr_health = max_health
-	stability = ANOMALY_STABLE
+	set_stability(ANOMALY_STABLE)
 
 
 /datum/anomaly_stats/proc/randomize_particle_types()
@@ -134,17 +141,17 @@
 	switch(stability)
 		if(ANOMALY_STABLE)
 			if(unstable && prob(15))
-				stability = ANOMALY_GROWING
+				set_stability(ANOMALY_GROWING)
 			else if(prob(15))
-				stability = ANOMALY_DECAYING
+				set_stability(ANOMALY_DECAYING)
 			return
 		if(ANOMALY_GROWING)
 			if(!unstable && prob(15))
-				stability = ANOMALY_STABLE
+				set_stability(ANOMALY_STABLE)
 			return
 		if(ANOMALY_DECAYING)
 			if(unstable && prob(15))
-				stability = ANOMALY_STABLE
+				set_stability(ANOMALY_STABLE)
 		else
 			return
 	return
@@ -159,7 +166,7 @@
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
 
-	own_set(src, nameof(modifier), new picked_mod) // disposes of the old modifier
+	rel_set(src, nameof(modifier), new picked_mod) // disposes of the old modifier
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return
@@ -175,9 +182,9 @@
 
 	if(prob(5))
 		if(stability == ANOMALY_STABLE)
-			stability = pick(ANOMALY_DECAYING, ANOMALY_GROWING)
+			set_stability(pick(ANOMALY_DECAYING, ANOMALY_GROWING))
 		else
-			stability = ANOMALY_STABLE
+			set_stability(ANOMALY_STABLE)
 
 	if(attached_harvester)
 		var/obj/machinery/anomaly_harvester/harvester = attached_harvester

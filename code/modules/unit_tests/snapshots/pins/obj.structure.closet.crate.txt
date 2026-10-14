@@ -1,0 +1,81 @@
+@obj.structure.closet human|none
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj.structure.closet robot|none
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj.structure ai|none
+@obj.structure.closet ghost|none
++0 menu: Climb (refused: You can't climb right now.)
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj.structure.closet human|/obj/item/tool/screwdriver
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item/tool/crowbar
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item/tool/wrench
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++6 menu: Turn Around
+@obj.structure.closet human|/obj/item/tool/wirecutters
+-menu: Cut the tag off
+-click: Click: Cut the tag off
++0 menu: Climb
++2 menu: Open
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
++7 click: Click: Open
+@obj.structure.closet human|/obj/item/multitool
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item/weldingtool
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Climb
++2 menu: Rig
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
++7 click: Click: Rig
+@obj.structure.closet human|/obj/item/stack/material/steel
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item/card/id
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure.closet human|/obj/item
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj human|/obj/item/radio/electropack
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Toggle Lock
+-click: Click: Toggle Lock
++4 menu: Toggle Open
++6 click: nothing
+keys: anchor.toggle, attach_pack, break_out, climb.climb, climb.climb_menu, cutters_touch, cut_apart, cut_rigging, devour, door, drag_buckle, melee_hit, rig, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_down, silicon_hand, stuff, stuff_grab, weld_shut.toggle

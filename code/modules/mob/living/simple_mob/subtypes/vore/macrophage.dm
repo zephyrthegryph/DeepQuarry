@@ -45,11 +45,20 @@
 	vore_capacity = 1
 	vore_pounce_chance = 45
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_TINY
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
+	// An extrapolator's probe stabs it (extrapolator_act()): the user works on the germ, next to it, for two seconds.
+	op("extrapolate", ai(), takes("extrapolator"), wait(2 SECONDS), then(PROC_REF(extrapolator_act_macrophage_done)))
+	owns_one(nameof(base_disease), /datum/affliction/contagion, starts = /datum/affliction/contagion/engineered/random/macrophage, starts_args = NO_LOC)
+	derives(nameof(endurance), PROC_REF(hardened_by_disease))
+	derives(nameof(melee_damage_lower), PROC_REF(hardened_by_disease))
+	derives(nameof(melee_damage_upper), PROC_REF(hardened_by_disease))
+	owns_many(nameof(infections), /datum/affliction/contagion)
 
 
 /mob/living/simple_mob/vore/aggressive/macrophage/giant
@@ -62,13 +71,17 @@
 
 	pass_flags = PASSTABLE | PASSGRILLE
 
-/mob/living/simple_mob/vore/aggressive/macrophage/Initialize(mapload)
-	. = ..()
-	var/datum/affliction/contagion/engineered/random/macrophage/D = new
-	endurance += D.resistance
-	melee_damage_lower += max(0, D.resistance)
-	melee_damage_upper += max(0, D.resistance)
-	own_set(src, nameof(base_disease), D)
+/// The disease it carries hardens it: its resistance adds to its endurance and its bite (derives(), once its disease exists).
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/hardened_by_disease(target)
+	var/datum/affliction/contagion/engineered/disease = base_disease
+	var/resistance = istype(disease) ? disease.resistance : 0
+	switch(target)
+		if("endurance")
+			return initial(endurance) + resistance
+		if("melee_damage_lower")
+			return initial(melee_damage_lower) + max(0, resistance)
+		if("melee_damage_upper")
+			return initial(melee_damage_upper) + max(0, resistance)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -77,10 +90,14 @@
 	// if(!dry_run && !EXTRAPOLATOR_ACT_CHECK(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL) && extrapolator.create_culture(user, base_disease))
 	if(dry_run)
 		return
-	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(extrapolator_act_macrophage_done), done_args = list(user, extrapolator))
+	perform_op(user, src, "extrapolate", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("extrapolator" = extrapolator))
 	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
 
-/mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/extrapolator/extrapolator = A.arg("extrapolator")
+	if(QDELETED(extrapolator))
+		return
 	act_message(user, src, \
 		MSG_SELF(span_danger("You stab %T% with [extrapolator]'s probe, destroying it!")), \
 		MSG_OTHERS(span_danger("%U% stabs %T% with [extrapolator], sucking it up!")))
@@ -88,16 +105,15 @@
 
 /// Burst from a host: it dies within 3 minutes unless it is holding a human. A field: the check
 /// repeats while it is set.
-OM_FIELD(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch, FALSE, CHANGE_MOB_CONDITIONS)
-DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, deathcheck, "deathwatch")
+/mob/living/simple_mob/vore/aggressive/macrophage/var/deathwatch = FALSE
+TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
-/// DECLARE_REPEAT every 3 minutes while deathwatch is set.
-/mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
-	if(locate_in_list(vore_selected, /mob/living/carbon/human))
+/// Every 3 minutes while deathwatch is set (its every() in the type's CAPABILITIES).
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck(datum/act/A)
+	if(locate_in_list(vore_selected_of(src), /mob/living/carbon/human))
 		return
 	set_deathwatch(FALSE)
 	death()
-	return REPEAT_STOP
 
 /mob/living/simple_mob/vore/aggressive/macrophage/apply_melee_effects(atom/A)
 	if(ishuman(A) && prob(25))
@@ -108,7 +124,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 	. = TRUE
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	om_after(src, 20, PROC_REF(charge), A)
+	after(src, 2 SECONDS, PROC_REF(charge), with = list(A))
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/charge(atom/A)
 	if(QDELETED(A) || !isturf(get_turf(A)))
@@ -147,11 +163,10 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% shrivels up and dies, unable to survive!")))
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
 		sick.name = "plasma"
-		sick.basecolor = "#47cbcf"
-		sick.update_icon()
+		sick.set_basecolor("#47cbcf")
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		own_add(sick, nameof(sick.viruses), base_disease.Copy())
+		rel_add(sick, nameof(sick.viruses), base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"
@@ -168,6 +183,6 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 // The macrophage's own strain (owned); victims and decals get their own copies.

@@ -62,12 +62,12 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	dd_insertObjectList(GLOB.outfits_decls, src)
 
 /datum/decl/hierarchy/outfit/proc/pre_equip(mob/living/carbon/human/H)
-	switch(H.headset)
+	switch(H.bio.headset)
 		if(1) l_ear = headset
 		if(2) l_ear = headset_alt
 		if(3) l_ear = headset_earbud
 	if(flags & OUTFIT_HAS_BACKPACK)
-		switch(H.backbag)
+		switch(H.bio.backbag)
 			if(2) back = backpack
 			if(3) back = satchel_one
 			if(4) back = satchel_two
@@ -186,7 +186,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 		return
 	var/obj/item/pda/pda = new pda_type(H)
 	if(H.equip_to_slot_or_del(pda, pda_slot))
-		pda.owner = H.real_name
+		pda.set_owner(H.real_name)
 		pda.ownjob = assignment
 		pda.ownrank = rank
 		pda.name = "PDA-[H.real_name] ([assignment])"
@@ -222,11 +222,11 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /datum/decl/hierarchy/outfit/USDF/Marine/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
-	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_icon_state("lifetime")
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/USDF/Officer
@@ -248,11 +248,11 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /datum/decl/hierarchy/outfit/USDF/Officer/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s military ID Card"
-	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_icon_state("lifetime")
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "USDF"
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/solcom/representative
@@ -272,11 +272,11 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 /datum/decl/hierarchy/outfit/solcom/representative/equip_id(mob/living/carbon/human/H)
 	var/obj/item/card/id/C = ..()
 	C.name = "[H.real_name]'s SolGov ID Card" // SolGov
-	C.icon_state = "lifetime"
-	C.access = SSaccess.get_all_station_access()
-	C.access += SSaccess.get_all_centcom_access()
+	C.set_icon_state("lifetime")
+	C.set_access(SSaccess.get_all_station_access())
+	C.add_access(SSaccess.get_all_centcom_access())
 	C.assignment = "SolGov Representative" // SolGov
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	return C
 
 /datum/decl/hierarchy/outfit/imperial/soldier

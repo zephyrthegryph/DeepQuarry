@@ -11,10 +11,7 @@
 	desc = "Used to monitor the nearby asteroid belt and detect new areas."
 	icon_keyboard = "tech_key"
 	icon_screen = "request"
-	light_color = "#315ab4"
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 250
-	active_power_usage = 500
 	circuit = /obj/item/circuitboard/roguezones
 
 	var/debug = 0
@@ -26,36 +23,40 @@
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(shuttle_control), locate(/obj/machinery/computer/shuttle_control/belter))
-	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/computer/roguezones/LateInitialize()
+/// Makes the rogue controller the first console needs.
+/obj/machinery/computer/roguezones/proc/make_controller(datum/act/timer/A)
 	if(!GLOB.rm_controller)
 		GLOB.rm_controller = new /datum/controller/rogue()
 
-/obj/machinery/computer/roguezones/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/roguezones_use,
-	)
-	..()
-
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/roguezones_use
-	id = "roguezones_use"
-	name = "Use"
-	effect = /obj/machinery/computer/roguezones/proc/interaction_use
-
-/obj/machinery/computer/roguezones/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/roguezones/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/roguezones, "RogueZones")
+CAPABILITIES(/obj/machinery/computer/roguezones)
+	configure(light_glow(color = "#315ab4"))
+	configure(uses_power(idle = 250, active = 500))
+	after_init(0, then(PROC_REF(make_controller)))
+	interface("RogueZones")
+	op("scan_for_new", ui_act("scan_for_new"), then(PROC_REF(ui_act_scan_for_new)))
+	op("recall_shuttle", ui_act("recall_shuttle"), then(PROC_REF(ui_act_recall_shuttle)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
-UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:ui_data_obj_machinery_computer_roguezones{timeout_percent:num,diffstep:num,difficulty:unknown,occupied:unknown,updated:bool,shuttle_location:text,shuttle_at_station:num,scan_ready:num,can_recall_shuttle:bool}")
+/obj/machinery/computer/roguezones/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scanning"] = scanning
+	data["debug"] = debug
+	var/list/merged_1 = ui_data_obj_machinery_computer_roguezones(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/computer/roguezones's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/roguezones's window data.
 /obj/machinery/computer/roguezones/proc/ui_data_obj_machinery_computer_roguezones(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
@@ -94,17 +95,17 @@ UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:
 	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
 	return data
 
-UI_ACT(/obj/machinery/computer/roguezones, "scan_for_new", ui_act_scan_for_new)
-UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_scan_for_new)
+/obj/machinery/computer/roguezones/proc/ui_act_scan_for_new(datum/act/op/A)
+	var/mob/user = A.actor
 	scan_for_new_zone()
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/machinery/computer/roguezones, "recall_shuttle", ui_act_recall_shuttle)
-UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
-	failsafe_shuttle_recall(ui.user)
+/obj/machinery/computer/roguezones/proc/ui_act_recall_shuttle(datum/act/op/A)
+	var/mob/user = A.actor
+	failsafe_shuttle_recall(user)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /obj/machinery/computer/roguezones/proc/scan_for_new_zone()
 	if(scanning)
@@ -113,7 +114,7 @@ UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
 	//Set some kinda scanning var to pause UI input on console
 	EXPIRY_STAMP(GLOB.rm_controller, last_scan, CLOCK_WORLD)
 	scanning = 1
-	om_after(src, 6 SECONDS, PROC_REF(finish_scan))
+	after(src, 6 SECONDS, PROC_REF(finish_scan))
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.
@@ -125,7 +126,7 @@ UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
 		return
 
 	//Update shuttle destination.
-	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
+	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	rel_set(S, nameof(S.landmark_offsite), ZM_target.myshuttle_landmark())
 	rel_set(S, nameof(S.next_location), S.get_location_waypoint(!S.location))
 
@@ -152,7 +153,7 @@ UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
 	if(GLOB.rm_controller.current_zone() && GLOB.rm_controller.current_zone().is_occupied())
 		return // Not usable if shuttle is in occupied zone
 	// Okay do it
-	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
+	var/datum/shuttle/autodock/ferry/S = shuttles_shuttles()["Belter"]
 	S.launch(user)
 
 /obj/item/circuitboard/roguezones

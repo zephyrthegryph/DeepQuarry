@@ -29,7 +29,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BLUNT
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			act_message(src, null, \
@@ -40,7 +40,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -62,7 +62,6 @@
 	icon_state = "drone0"
 	icon_living = "drone0"
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "vistor"
 
@@ -89,6 +88,9 @@
 	loot_list = list(/obj/item/clothing/suit/armor/protectionbubble = 100
 			)
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/should_special_attack(atom/A)
 	var/mob_count = 0				// Are there enough mobs to consider grenading?
 	var/turf/T = get_turf(A)
@@ -109,7 +111,7 @@
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(A, G.throw_range, G.throw_speed, src)
-		G.det_time = grenade_timer
+		G.set_det_time(grenade_timer)
 		G.activate(src)
 		special_attack_charges = max(special_attack_charges-1, 0)
 
@@ -215,7 +217,8 @@ TYPE_TABLE(/obj/item/grenade/shooter/energy/homing, shooter_grenade_projectiles,
 	loot_list = list(/obj/item/clothing/suit/armor/alien/vistor = 100
 			)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange, "shields", /obj/item/shield_projector/rectangle/automatic/orange)
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange)
+	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/orange)
 
 /obj/item/shield_projector/rectangle/automatic/orange
 	max_integrity = 10

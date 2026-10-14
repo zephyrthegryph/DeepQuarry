@@ -40,19 +40,15 @@
 	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
-/obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
-	. = ..()
-	if(isspace(loc) || delete_me)
-		return INITIALIZE_HINT_QDEL
+/// Weeds do not grow in space, nor where a node already marked them for removal (keeps_if()).
+/obj/effect/alien/weeds/proc/may_grow()
+	return !isspace(loc) && !delete_me
 
-	rel_set(src, nameof(linked_node), node)
-//	if(newcolor)
-// color = newcolor // No coloration.
-
-	if(icon_state == "weeds")
-		icon_state = pick("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15") // More icons variants.
-
-	fullUpdateWeedOverlays()
+/// Rolled before init (rolls()): the plain weed sprite takes one of its variants; a node keeps its own.
+/obj/effect/alien/weeds/proc/roll_variant(datum/roller/R)
+	if(icon_state != "weeds")
+		return icon_state
+	return R.choose(list("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15"))
 
 // neighbouring weeds redraw their overlays without it.
 /obj/effect/alien/weeds/on_destroy(force)
@@ -63,7 +59,6 @@
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()
 
-	rel_clear(src, nameof(linked_node))
 	..()
 
 /obj/effect/alien/weeds/node
@@ -71,13 +66,11 @@
 	name = "glowing growth"
 	desc = "Weird glowing organic growth."
 	layer = ABOVE_TURF_LAYER+0.01
-	light_range = NODERANGE
 	light_on = TRUE
-	light_color = "#673972"
 
 	var/node_range = NODERANGE
 
-/obj/effect/alien/weeds/node/Initialize(mapload, node, newcolor)
+/obj/effect/alien/weeds/node/Initialize(mapload)
 	. = ..()
 
 	for(var/obj/effect/alien/weeds/existing in contents_of(loc))
@@ -87,12 +80,9 @@
 			if(!(existing.flags & ATOM_INITIALIZED))
 				existing.delete_me = TRUE
 				continue
-			qdel(existing)
+			spent(existing)
 
 	rel_set(src, nameof(linked_node), src)
-
-// Only the node processes in a subsystem, the rest are process()'d by the node
-DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
 	cut_overlays()
@@ -123,13 +113,12 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 	return
 
-// NB: This is not actually called by a processing subsystem, it's called by the node processing
-/obj/effect/alien/weeds/periodic_step()
-	set background = 1
+// NB: Only the node runs a timer; the node spreads the rest of the weeds by calling this.
+/obj/effect/alien/weeds/proc/weed_spread()
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
-		qdel(src)
+		consume(src)
 		return
 
 	if(!linked_node())
@@ -150,8 +139,11 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 		new /obj/effect/alien/weeds(T2, linked_node()) // No coloration.
 
-/obj/effect/alien/weeds/node/periodic_step()
-	set background = 1
+/// The node's own timer step (every(), see CAPABILITIES(/obj/effect/alien/weeds/node)).
+/obj/effect/alien/weeds/node/proc/node_step(datum/act/timer/A)
+	weed_spread()
+
+/obj/effect/alien/weeds/node/weed_spread()
 	. = ..()
 
 	var/list/nearby_weeds = list()
@@ -166,41 +158,54 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 // W.color = W.linked_node.set_color // No coloration.
 
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
-			W.periodic_step()
+			W.weed_spread()
 
-EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_weeds)), \
-	INTERACT_HAND_AS(I_HURT, "Tear up", PROC_REF(interaction_touch_weeds)), \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_weeds)), \
-)
+/obj/effect/alien/weeds/melee_scale()
+	return 0.25
 
-/// Old attackby: any item hits the weeds (afterattack still follows, as before).
-/obj/effect/alien/weeds/proc/interaction_hit_weeds(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/W = held
-	user.setClickCooldown(user.get_attack_speed(W))
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, others = span_danger("%U% have been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
-	else
-		act_message(src, user, others = span_danger("%U% have been attacked with %I%[user ? " by %T%." : "."]"), item = W)
+/obj/effect/alien/weeds/melee_passes()
+	return TRUE
 
-	var/damage = W.force / 4.0
+CAPABILITIES(/obj/effect/alien/weeds)
+	op("melee_hit", item(/obj/item), hostile(), priority(OP_PRIORITY_DEFAULT - 9), label("Hit"), then(PROC_REF(melee_hit)))
+	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	param(nameof(linked_node), pos = 1)
+	op("tear_up", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Tear up"), then(PROC_REF(interaction_tear_weeds)))
+	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
+	keeps_if(PROC_REF(may_grow))
+	rolls(nameof(icon_state), PROC_REF(roll_variant)) // more icon variants
+	setup(PROC_REF(fullUpdateWeedOverlays))
 
-	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/effect/alien/weeds/node)
+	configure(light_glow(range = 3, color = "#673972")) // NODERANGE
+	every(2 SECONDS, then(PROC_REF(node_step)))
 
-/obj/effect/alien/weeds/welder_act(mob/user, obj/item/tool)
+/obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_danger("%U% have been burned with %I% by %T%."), item = tool)
 	play_sfx(src, SFX_ITEMS_WELDER)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /// Old attack_hand: hulks tear the weeds up; hivenode carriers melt them on harm intent.
-/obj/effect/alien/weeds/proc/interaction_touch_weeds(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/alien/weeds/proc/interaction_touch_weeds(datum/act/op/A)
+	var/mob/user = A.actor
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if(user.has_mutation(HULK))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
+		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
+	return OP_OK
+
+/// The harm-intent touch: as the plain touch, and a hivenode carrier melts the weeds away.
+/obj/effect/alien/weeds/proc/interaction_tear_weeds(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(user.has_mutation(HULK))
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
@@ -209,17 +214,17 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(interaction.stance == I_HURT)
-				var/mob/living/carbon/M = user
-				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
-					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return TRUE
-	return TRUE
+			var/mob/living/carbon/M = user
+			if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
+				act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
+				take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
+	return OP_OK
 
 /obj/effect/alien/weeds/node/weak
-	light_range = 2
 	node_range = 1
+
+CAPABILITIES(/obj/effect/alien/weeds/node/weak)
+	configure(light_glow(range = 2))
 // end.
 
 #undef NODERANGE
@@ -246,26 +251,28 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	var/ticks = 0
 	var/target_strength = 0
 
-/obj/effect/alien/acid/Initialize(mapload, target)
-	. = ..()
-	own_set(src, nameof(target), target)
+CAPABILITIES(/obj/effect/alien/acid)
+	owns_one(nameof(target), /atom)
+	param(nameof(target), pos = 1, apply = PROC_REF(start_melting))
+	every(PROC_REF(acid_tick_delay), then(PROC_REF(tick)))
 
-	if(isturf(target)) // Turf take twice as long to take down.
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). Acid takes twice as long on a turf.
+/obj/effect/alien/acid/proc/start_melting(atom/melting)
+	if(isturf(melting))
 		target_strength = 8
 	else
 		target_strength = 4
 	tick()
 
-DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
-
-/// Deciseconds until the acid's next bite (read each time the repeat re-arms).
-/obj/effect/alien/acid/proc/acid_tick_delay()
+/// Deciseconds until the acid's next bite (read each time the every() re-arms).
+/obj/effect/alien/acid/proc/acid_tick_delay(datum/act/A)
 	return rand(15 SECONDS, 20 SECONDS)
 
-/obj/effect/alien/acid/proc/tick()
+/// One bite. Every ending of the acid consumes it, which ends the every() with it.
+/obj/effect/alien/acid/proc/tick(datum/act/timer/A)
 	if(!target)
-		qdel(src)
-		return REPEAT_STOP
+		consume(src)
+		return
 
 	ticks += 1
 	if(ticks >= target_strength)
@@ -280,9 +287,9 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 			var/turf/simulated/floor/T = target
 			T.ex_act(1)
 		else if(isobj(target))
-			qdel(target)
-		qdel(src)
-		return REPEAT_STOP
+			spent(target)
+		consume(src)
+		return
 
 	switch(target_strength - ticks)
 		if(6)

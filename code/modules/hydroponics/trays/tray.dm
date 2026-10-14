@@ -1,7 +1,5 @@
 #define AGE_MOD_MAX 10 // Define for age_mod sanity check as a define to allow for easy tweaking.
 
-OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
-
 /obj/machinery/portable_atmospherics/hydroponics
 	name = "hydroponics tray"
 	desc = "A tray usually full of fluid for growing plants."
@@ -49,12 +47,6 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
 
-	var/image/ov_lowhealth
-	var/image/ov_lowwater
-	var/image/ov_lownutri
-	var/image/ov_harvest
-	var/image/ov_frozen
-	var/image/ov_alert3
 
 	// Reagent information for process(), consider moving this to a controller along
 	// with cycle information under 'mechanical concerns' at some point.
@@ -140,50 +132,68 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 	REAGENT_ID_PITCHERNECTAR =  1
 	)
 
-/obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest)),
-		INTERACT_TK("Harvest", PROC_REF(hydroponics_tk_harvest)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/hydroponics_attackby,
-		/datum/interaction/machine_hand/ungated/hydroponics_interact,
-		/datum/interaction/machine_alt/hydroponics_close_lid,
-		/datum/interaction/machine_verb/hydroponics_remove_label,
-		/datum/interaction/machine_verb/hydroponics_set_light,
-		/datum/interaction/machine_verb/hydroponics_toggle_lid,
-	)
-	..()
+MSG_DEF_SELF(hydroponics/anchor_first, "Anchor it first!")
+MSG_DEF_SELF(hydroponics/no_freezer, "You see no way to use that on it.")
+MSG_DEF_SELF(hydroponics/not_by_this, "You can't do that.")
 
-/datum/interaction/machine_alt/hydroponics_close_lid
-	id = "hydroponics_close_lid"
-	name = "Toggle lid"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid, null))
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid
+// A tray grows while it is not cryogenically frozen: started work whose step runs each machine interval while there is something to grow or
+// soak in, and parks on its growth timer between cycles (schedule_growth_wake()); planting, reagents and the freezer start it again.
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	reagents(200)
+	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	owns_one(nameof(temp_chem_holder), /obj, starts = /obj, starts_args = NO_LOC)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(has_seed), gate = PROC_REF(not_frozen), wakes_on = list(nameof(frozen)))
+	op("use_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_attackby)))
+	op("tend", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("tk_harvest", tk(), label("Harvest"), then(PROC_REF(hydroponics_tk_harvest)))
+	// a ghost may become the living plant product of a ripe tray (the old attack_ghost: never fell through to the default)
+	op("ghost_harvest", observer(), label("Harvest"), needs(req(PROC_REF(can_ghost_harvest))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Living plant request", "question" = computed(PROC_REF(ghost_harvest_question)), "timeout" = 0), keeps = TARGET_PRESENT),
+		then(PROC_REF(ghost_harvested)))
+	op("close_lid", hand(), gesture(GESTURE_ALT), label("Toggle lid"), wait(0), when(PROC_REF(can_toggle_lid)), then(PROC_REF(interaction_close_lid)))
+	op("remove_label", menu(), label("Remove Label"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))), then(PROC_REF(interaction_remove_label)))
+	op("set_light", menu(), label("Set Light"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))),
+		asks(/datum/prompt/choice, fields = list("question" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10), "buttons" = FALSE, "timeout" = 0), step = "light"),
+		then(PROC_REF(interaction_set_light)))
+	op("toggle_lid", menu(), label("Toggle Tray Lid"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon/robot))), needs(req(PROC_REF(actor_can_act))), then(PROC_REF(interaction_toggle_lid_verb)))
+	op("sample", tool(TOOL_WIRECUTTER), label("Take a sample"), wait(0), then(PROC_REF(sample_cut)))
+	op("bolt", tool(TOOL_WRENCH), label("Anchor"), wait(0), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(boltable))), then(PROC_REF(bolted)))
+	op("freezer", tool(TOOL_MULTITOOL), label("Toggle cryogenic freezing"), wait(0),
+		needs(req(PROC_REF(is_anchored)), req(PROC_REF(can_freeze))),
+		then(PROC_REF(freezer_toggled)))
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(mob/actor, atom/target, obj/item/held)
-	return mechanical && !actor.incapacitated() && Adjacent(actor)
+/// Only a mechanical tray has a lid (the hand binding brings the reach and the actor's state).
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_toggle_lid(datum/act/op/A)
+	return mechanical
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(mob/user, obj/item/held, datum/interaction/interaction)
-	close_lid(user)
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_close_lid(datum/act/op/A)
+	close_lid(A.actor)
 
-/// Old attack_ghost: a ghost may become a living plant product. Never fell through to the default.
-/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_ghost_harvest(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/// Preserve the old verbs' living-actor and default restraint check.
+/obj/machinery/portable_atmospherics/hydroponics/proc/actor_can_act(datum/act/op/A)
+	return (dq_actor_can_act(A.actor, src, A.held)) ? null : /datum/msg/hydroponics/not_by_this
+
+
+/// A ghost may become the living plant product of a ripe tray (the old attack_ghost). Silent unless the ghost itself may not.
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_ghost_harvest(datum/act/op/A)
+	READS_FROM() // the ripeness and the candidate's bans are read when the ghost clicks, never cached
 	if(!(harvest && seed && seed.has_mob_product))
-		return TRUE
-
+		return /datum/msg/req_silent
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
-	if(!G.assess_candidate(user))
-		return TRUE
-	var/response = rerun_ask(user, "k175", PROC_REF(hydroponics_ghost_harvest), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"))
-	if(isnull(response))
-		return TRUE
-	if(response == "Yes")
+	return G?.candidate_refusal(A.actor)
+
+
+/// The question the ghost is asked, naming the planted line.
+/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvest_question(datum/act/A)
+	return "Are you sure you want to harvest this [seed?.display_name]?"
+
+/// The yes: the tray is harvested and the ghost goes into the plant (the ghost trap's candidate checks are asked again with the answer).
+/obj/machinery/portable_atmospherics/hydroponics/proc/ghost_harvested(datum/act/op/A)
+	var/datum/prompt/answer = A.answer
+	if(answer?.value)
 		harvest()
-	return TRUE
+		SStgui.update_uis(src)
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/hydroponics/attack_generic(mob/user)
 
@@ -191,17 +201,17 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 	if(istype(user,/mob/living/carbon/alien/diona))
 		var/mob/living/carbon/alien/diona/nymph = user
 
-		if(nymph.stat == DEAD || nymph.has_status(EFFECT_PARALYZED) || nymph.has_status(EFFECT_WEAKENED) || nymph.has_status(EFFECT_STUNNED) || nymph.restrained())
+		if(nymph.stat == DEAD || nymph.has_status(STAT_PARALYZED) || nymph.has_status(STAT_WEAKENED) || nymph.has_status(STAT_STUNNED) || nymph.restrained())
 			return
 
 		if(weedlevel > 0)
 			nymph.reagents.add_reagent(REAGENT_ID_GLUCOSE, weedlevel)
-			weedlevel = 0
+			set_weedlevel(0)
 			act_message(nymph, src, MSG_SELF(span_notice("You begin rooting through %T%, ripping out weeds and eating them noisily.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " begins rooting through %T%, ripping out weeds and eating them noisily.")))
-		else if(nymph.nutrition > 100 && nutrilevel < 10)
+		else if(nutrition_of(nymph) > 100 && nutrilevel < 10)
 			nymph.adjust_nutrition(-(((10-nutrilevel)*5)))
-			nutrilevel = 10
+			set_nutrilevel(10)
 			act_message(nymph, src, MSG_SELF(span_notice("You secrete a trickle of green liquid, refilling %T%.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " secretes a trickle of green liquid, refilling %T%.")))
 		else
@@ -209,43 +219,42 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 				MSG_OTHERS(span_notice(span_bold("%U%") + " rolls around in %T% for a bit.")))
 		return
 
-DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
-OM_FIELD(/obj/machinery/portable_atmospherics/hydroponics, frozen, 0, CHANGE_MACHINE_SETTINGS)
-/// Everything but cryogenically frozen (frozen == 1) grows.
-OM_DERIVE_FIELD(/obj/machinery/portable_atmospherics/hydroponics, not_frozen, list("frozen"))
-DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE_PIPELINE, "not_frozen")
+/obj/machinery/portable_atmospherics/hydroponics/var/frozen = 0
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, frozen)
+TRACKED(/obj/machinery/portable_atmospherics/hydroponics, health)
 
+/// Everything but cryogenically frozen (frozen == 1) grows.
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()
 	return frozen != 1
 
+/// A tray with something planted starts its work when it is placed.
+/obj/machinery/portable_atmospherics/hydroponics/proc/has_seed(datum/act/A)
+	return !!seed
+
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
-	..()
-	if(!ov_lowhealth)
-		setup_overlays()
-	own_set(src, nameof(temp_chem_holder), new /obj())
+	. = ..()
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
-	update_icon()
-	return INITIALIZE_HINT_LATELOAD
 
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
-	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
+	if(after_pending(src, "growth_timer") || frozen == 1)
 		return
-	after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
+	after(src, max(0.1 SECONDS, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth), key = "growth_timer")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
-	MACHINE_WAKE(src)
+	work_start(src)
 
 // Give the seeds time to initialize itself
-/obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
-	. = ..()
+/// Plants the seeds lying on its turf.
+/obj/machinery/portable_atmospherics/hydroponics/port_after_init(datum/act/timer/A)
+	..()
 	var/obj/item/seeds/S = locate_within(loc, /obj/item/seeds)
 	if(S)
 		plant_seeds(S)
@@ -253,20 +262,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 /obj/machinery/portable_atmospherics/hydroponics/proc/plant_seeds(obj/item/seeds/S)
 	lastproduce = 0
 	seed_hand_over(S, "seed_static", src, "seed") //Grab the seed datum (a packet's private copy moves over).
-	dead = 0
-	age = 1
+	set_dead(0)
+	set_age(1)
 	//Snowflakey, maybe move this to the seed datum
-	health = (istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE))
+	set_health((istype(S, /obj/item/seeds/cutting) ? round(seed.get_trait(TRAIT_ENDURANCE)/rand(2,5)) : seed.get_trait(TRAIT_ENDURANCE)))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	MACHINE_WAKE(src)
+	work_start(src)
 
-	qdel(S)
+	consumed(S, src)
 
 	GLOB.seed_planted_shift_roundstat++
 
 	check_health()
-	update_icon()
-
 /obj/machinery/portable_atmospherics/hydroponics/bullet_act(obj/item/projectile/Proj)
 
 	//Don't act on seeds like dionaea that shouldn't change.
@@ -321,14 +328,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	if(seed && !dead && health <= 0)
 		die()
 	check_level_sanity()
-	update_icon()
-
 /obj/machinery/portable_atmospherics/hydroponics/proc/die()
-	dead = 1
+	set_dead(1)
 	mutation_level = 0
-	harvest = 0
-	weedlevel += 1 * HYDRO_SPEED_MULTIPLIER
-	pestlevel = 0
+	set_harvest(0)
+	set_weedlevel(weedlevel + (1 * HYDRO_SPEED_MULTIPLIER))
+	set_pestlevel(0)
 
 //Process reagents being input into the tray.
 /obj/machinery/portable_atmospherics/hydroponics/proc/process_reagents()
@@ -347,12 +352,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		if(seed && !dead)
 			// Beneficial reagents have a few impacts along with health buffs.
 			if(seed.beneficial_reagents && seed.beneficial_reagents[R.id])
-				health += seed.beneficial_reagents[R.id][1]       * reagent_total
+				set_health(health + (seed.beneficial_reagents[R.id][1]       * reagent_total))
 				yield_mod += seed.beneficial_reagents[R.id][2]    * reagent_total
 				mutation_mod += seed.beneficial_reagents[R.id][3] * reagent_total
 
 			else if(beneficial_reagents[R.id])
-				health += beneficial_reagents[R.id][1]       * reagent_total
+				set_health(health + (beneficial_reagents[R.id][1]       * reagent_total))
 				yield_mod += beneficial_reagents[R.id][2]    * reagent_total
 				mutation_mod += beneficial_reagents[R.id][3] * reagent_total
 
@@ -365,34 +370,34 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 			// Toxic reagents can possibly differ between plants.
 			if(seed.toxic_reagents && seed.toxic_reagents[R.id])
-				toxins += seed.toxic_reagents[R.id] * reagent_total
+				set_toxins(toxins + (seed.toxic_reagents[R.id] * reagent_total))
 
 			else if(toxic_reagents[R.id])
-				toxins += toxic_reagents[R.id] * reagent_total
+				set_toxins(toxins + (toxic_reagents[R.id] * reagent_total))
 
 			if(age_reagents[R.id])
 				age_mod += age_reagents[R.id]  * reagent_total
 
 		//Handle some general level adjustments. These values are independent of plants existing.
 		if(weedkiller_reagents[R.id])
-			weedlevel -= weedkiller_reagents[R.id] * reagent_total
+			set_weedlevel(weedlevel - (weedkiller_reagents[R.id] * reagent_total))
 		if(pestkiller_reagents[R.id])
-			pestlevel += pestkiller_reagents[R.id] * reagent_total
+			set_pestlevel(pestlevel + (pestkiller_reagents[R.id] * reagent_total))
 
 		// Handle nutrient refilling.
 		if(nutrient_reagents[R.id])
-			nutrilevel += nutrient_reagents[R.id]  * reagent_total
+			set_nutrilevel(nutrilevel + (nutrient_reagents[R.id]  * reagent_total))
 
 		// Handle water and water refilling.
 		var/water_added = 0
 		if(water_reagents[R.id])
 			var/water_input = water_reagents[R.id] * reagent_total
 			water_added += water_input
-			waterlevel += water_input
+			set_waterlevel(waterlevel + (water_input))
 
 		// Water dilutes toxin level.
 		if(water_added > 0)
-			toxins -= round(water_added/4)
+			set_toxins(toxins - (round(water_added/4)))
 
 	temp_chem_holder.reagents.clear_reagents()
 	check_health()
@@ -414,14 +419,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	else
 		seed.harvest(get_turf(src),yield_mod)
 	// Reset values.
-	harvest = 0
+	set_harvest(0)
 	lastproduce = age
 
 	if(!seed.get_trait(TRAIT_HARVEST_REPEAT))
 		yield_mod = 0
 		proto_set(src, nameof(seed), null)
-		dead = 0
-		age = 0
+		set_dead(0)
+		set_age(0)
 		sampled = 0
 		mutation_mod = 0
 		age_mod = 0
@@ -438,9 +443,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		return
 
 	proto_set(src, nameof(seed), null)
-	dead = 0
+	set_dead(0)
 	sampled = 0
-	age = 0
+	set_age(0)
 	yield_mod = 0
 	mutation_mod = 0
 	age_mod = 0
@@ -458,19 +463,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	if(seed)
 		previous_plant = seed.display_name
 		proto_set(src, nameof(seed), null)
-	proto_set(src, nameof(seed), GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
+	proto_set(src, nameof(seed), SSplants.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
 	if(!seed) return //Weed does not exist, someone fucked up.
 
-	dead = 0
-	age = 0
+	set_dead(0)
+	set_age(0)
 	age_mod = 0
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	harvest = 0
-	weedlevel = 0
-	pestlevel = 0
+	set_harvest(0)
+	set_weedlevel(0)
+	set_pestlevel(0)
 	sampled = 0
-	update_icon()
 	visible_message(span_notice("\The [previous_plant ? previous_plant : initial(name)] has been overtaken by [seed.display_name]."))
 
 	return
@@ -489,7 +493,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	// We need to make sure we're not modifying one of the global seed datums.
 	// If it's not in the global list, then no products of the line have been
 	// harvested yet and it's safe to assume it's restricted to this tray.
-	if(!isnull(GLOB.plant_service.seeds[seed.name]))
+	if(!isnull(SSplants.seeds[seed.name]))
 		var/datum/seed/mutant = seed.diverge()
 		if(!mutant) // TRAIT_IMMUTABLE
 			return
@@ -498,90 +502,69 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 	return
 
-/datum/interaction/machine_verb/hydroponics_remove_label
-	id = "hydroponics_remove_label"
-	name = "Remove Label"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label(datum/act/op/A)
+	var/mob/user = A.actor
+	if(labelled)
+		to_chat(user, span_filter_notice("You remove the label."))
+		set_labelled(null)
+	else
+		to_chat(user, span_filter_notice("There is no label to remove."))
 
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_remove_label(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user) || isrobot(user))
-		if(labelled)
-			to_chat(user, span_filter_notice("You remove the label."))
-			labelled = null
-			update_icon()
-		else
-			to_chat(user, span_filter_notice("There is no label to remove."))
-	return TRUE
-
-/datum/interaction/machine_verb/hydroponics_set_light
-	id = "hydroponics_set_light"
-	name = "Set Light"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user) || isrobot(user))
-		var/new_light = rerun_ask(user, "k502", PROC_REF(interaction_set_light), args, /datum/om/prompt/choice, message = "Specify a light level.", title = "Light Level", choices = list(0,1,2,3,4,5,6,7,8,9,10))
-		if(isnull(new_light))
-			return
-		if(new_light)
-			tray_light = new_light
-			to_chat(user, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(datum/act/op/A)
+	var/new_light = A.step_value("light")
+	if(new_light)
+		tray_light = new_light
+		to_chat(A.actor, span_filter_notice("You set the tray to a light level of [tray_light] lumens."))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/check_level_sanity()
 	//Make sure various values are sane.
 	if(seed)
-		health =     max(0,min(seed.get_trait(TRAIT_ENDURANCE),health))
+		set_health(max(0,min(seed.get_trait(TRAIT_ENDURANCE),health)))
 	else
-		health = 0
-		dead = 0
+		set_health(0)
+		set_dead(0)
 
 	mutation_level = max(0,min(mutation_level,100))
-	nutrilevel =     max(0,min(nutrilevel,10))
-	waterlevel =     max(0,min(waterlevel,100))
-	pestlevel =      max(0,min(pestlevel,10))
-	weedlevel =      max(0,min(weedlevel,10))
-	toxins =         max(0,min(toxins,10))
+	set_nutrilevel(max(0,min(nutrilevel,10)))
+	set_waterlevel(max(0,min(waterlevel,100)))
+	set_pestlevel(max(0,min(pestlevel,10)))
+	set_weedlevel(max(0,min(weedlevel,10)))
+	set_toxins(max(0,min(toxins,10)))
 	age_mod =        max(0,min(age_mod,AGE_MOD_MAX)) // age_mod sanity check
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/mutate_species()
 
 	var/previous_plant = seed.display_name
 	var/newseed = seed.get_mutant_variant()
-	if(newseed in GLOB.plant_service.seeds)
-		proto_set(src, nameof(seed), GLOB.plant_service.seeds[newseed])
+	if(newseed in SSplants.seeds)
+		proto_set(src, nameof(seed), SSplants.seeds[newseed])
 	else
 		return
 
-	dead = 0
+	set_dead(0)
 	mutate(1)
-	age = 0
-	health = seed.get_trait(TRAIT_ENDURANCE)
+	set_age(0)
+	set_health(seed.get_trait(TRAIT_ENDURANCE))
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	harvest = 0
-	weedlevel = 0
+	set_harvest(0)
+	set_weedlevel(0)
 
-	update_icon()
 	visible_message(span_danger("The " + span_notice("[previous_plant]") + " has suddenly mutated into " + span_notice("[seed.display_name]") + "!"))
 
 	return
 
-/// Kept as one effect: the guards and branches below all sit at the same level and the old
-/// proc only ever chained to ..() from the single "syringe, extract mode, seed present" case.
-/datum/interaction/machine_item/hydroponics_attackby
-	id = "hydroponics_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
+/// An item used on the tray, the old attackby kept as one effect: its guards and branches all sit at the same level, and only the
+/// "syringe, inject mode, seed present" case goes on to what else the click means (OP_DECLINE).
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_attackby(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 
 	if(O.is_open_container())
-		return TRUE
+		return OP_OK
 
 	if(istype(O, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-		return TRUE
+		return OP_OK
 
 	else if(istype(O, /obj/item/reagent_containers/syringe))
 
@@ -589,17 +572,17 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		if (S.mode == 1)
 			if(seed)
-				return FALSE
+				return OP_DECLINE
 			else
 				to_chat(user, span_filter_notice("There's no plant to inject."))
-				return TRUE
+				return OP_OK
 		else
 			if(seed)
 				//Leaving this in in case we want to extract from plants later.
 				to_chat(user, span_filter_notice("You can't get any extract out of this plant."))
 			else
 				to_chat(user, span_filter_notice("There's nothing to draw something from."))
-			return TRUE
+			return OP_OK
 
 	else if (istype(O, /obj/item/seeds))
 
@@ -611,7 +594,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 			if(!S.seed())
 				to_chat(user, span_filter_notice("The packet seems to be empty. You throw it away."))
 				consume(O, user)
-				return TRUE
+				return OP_OK
 
 			to_chat(user, span_filter_notice("You plant the [S.seed().seed_name] [S.seed().seed_noun]."))
 			plant_seeds(S)
@@ -623,8 +606,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		if(weedlevel > 0)
 			act_message(user, src, MSG_SELF(span_danger("You remove the weeds from %T%.")), MSG_OTHERS(span_danger("%U% starts uprooting the weeds.")))
-			weedlevel = 0
-			update_icon()
+			set_weedlevel(0)
 		else
 			to_chat(user, span_danger("This plot is completely devoid of weeds. It doesn't need uprooting."))
 
@@ -644,22 +626,22 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		var/obj/item/plantspray/spray = O
 		user.remove_from_mob(O)
-		toxins += spray.toxicity
-		pestlevel -= spray.pest_kill_str
-		weedlevel -= spray.weed_kill_str
+		set_toxins(toxins + (spray.toxicity))
+		set_pestlevel(pestlevel - (spray.pest_kill_str))
+		set_weedlevel(weedlevel - (spray.weed_kill_str))
 		to_chat(user, span_filter_notice("You spray [src] with [O]."))
 		play_sfx(src, SFX_EFFECTS_SPRAY3, extrarange = -6)
 		consume(O, user)
 		check_health()
 
-	else if(O.force && seed)
+	else if(combat_of(O).force && seed)
 		user.setClickCooldown(user.get_attack_speed(O))
 		act_message(user, null, others = span_danger("\The [seed.display_name] has been attacked by %U% with %I%!"), item = O)
 		if(!dead)
-			health -= O.force
+			set_health(health - (combat_of(O).force))
 			check_health()
 
-	return TRUE
+	return OP_OK
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/take_plant_sample(mob/user)
 	if(!seed)
@@ -672,63 +654,59 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		to_chat(user, span_filter_notice("The plant is dead."))
 		return FALSE
 	seed.harvest(user, yield_mod, TRUE)
-	health -= rand(3, 5) * 10
+	set_health(health - (rand(3, 5) * 10))
 	if(prob(30))
 		sampled = TRUE
 	check_health()
 	force_update = TRUE
-	machine_step()
+	work_step(null)
 	return TRUE
 
-/obj/machinery/portable_atmospherics/hydroponics/wirecutter_act(mob/user, obj/item/tool)
-	take_plant_sample(user)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/portable_atmospherics/hydroponics/proc/sample_cut(datum/act/op/A)
+	take_plant_sample(A.actor)
 
-/obj/machinery/portable_atmospherics/hydroponics/wrench_act(mob/user, obj/item/tool)
-	if(!mechanical)
-		return ..()
-	if(locate_within(loc, /obj/machinery/atmospherics/portables_connector/))
-		return ..()
-	playsound(src, tool.usesound, 50, TRUE)
+/// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
+/obj/machinery/portable_atmospherics/hydroponics/port_wrench_offered(datum/act/op/A)
+	return !mechanical || locate_within(loc, /obj/machinery/atmospherics/portables_connector)
+
+/// A mechanical tray with no port under it is bolted down by its own wrench, not connected.
+/obj/machinery/portable_atmospherics/hydroponics/proc/boltable(datum/act/op/A)
+	return (mechanical && !locate_within(loc, /obj/machinery/atmospherics/portables_connector)) ? null : /datum/msg/req_failed
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/bolted(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(!anchored)
-	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 
-/obj/machinery/portable_atmospherics/hydroponics/multitool_act(mob/user, obj/item/tool)
-	if(!anchored)
-		to_chat(user, span_warning("Anchor it first!"))
-		return ITEM_INTERACT_BLOCKING
-	if(frozen == -1)
-		to_chat(user, span_warning("You see no way to use \the [tool] on [src]."))
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
+/obj/machinery/portable_atmospherics/hydroponics/proc/is_anchored(datum/act/op/A)
+	return (anchored) ? null : /datum/msg/hydroponics/anchor_first
+
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/can_freeze(datum/act/op/A)
+	return (frozen != -1) ? null : /datum/msg/hydroponics/no_freezer
+
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/freezer_toggled(datum/act/op/A)
+	to_chat(A.actor, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
 	set_frozen(!frozen)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
 /// Old attack_tk: clear a dead plant or harvest a ripe one at range.
-/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/hydroponics/proc/hydroponics_tk_harvest(datum/act/op/A)
 	if(dead)
-		remove_dead(user)
+		remove_dead(A.actor)
 	else if(harvest)
-		harvest(user)
-	return TRUE
+		harvest(A.actor)
 
-/datum/interaction/machine_hand/ungated/hydroponics_interact
-	id = "hydroponics_interact"
-	name = "Use"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(user,/mob/living/silicon))
-		return TRUE
+		return
 	if(frozen == 1)
 		to_chat(user, span_warning("Disable the cryogenic freezing first!"))
 	if(harvest)
 		harvest(user)
 	else if(dead)
 		remove_dead(user)
-	return TRUE
 
 /obj/machinery/portable_atmospherics/hydroponics/examine(mob/user)
 	. = ..()
@@ -779,24 +757,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 		. += "The tray's sensor suite is reporting [light_string] and a temperature of [environment.return_temperature()]K at [environment.return_pressure()] kPa in the [environment_type] environment."
 
-/datum/interaction/machine_verb/hydroponics_toggle_lid
-	id = "hydroponics_toggle_lid"
-	name = "Toggle Tray Lid"
-	effect = /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb
-
-/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user) || isrobot(user))
-		close_lid(user)
-	return TRUE
+/obj/machinery/portable_atmospherics/hydroponics/proc/interaction_toggle_lid_verb(datum/act/op/A)
+	close_lid(A.actor)
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/close_lid(mob/living/user)
-	closed_system = !closed_system
+	set_closed_system(!closed_system)
 	to_chat(user, span_filter_notice("You [closed_system ? "close" : "open"] the tray's lid."))
-	update_icon()
-
 #undef AGE_MOD_MAX
 
-/// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
-/obj/machinery/portable_atmospherics/hydroponics/ownership()
-	. = ..()
-	. += proto(nameof(seed))

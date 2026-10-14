@@ -34,42 +34,35 @@
 			continue
 		addict_to_reagent(T.addiction, TRUE)
 
-/datum/om/stage/life/addictions
-	order = LIFE_PHASE_MIND + 20
-	name = "addictions"
-	wake_on = 0
-	run_if = LIFE_RUN_IF_STATUS_OK
+/mob/living/proc/life_addictions_rewake()
+	return 0
 
 /// Cravings and withdrawal.
-/datum/om/stage/life/addictions/perform(mob/living/self, datum/om/frame/life/ctx)
+/mob/living/proc/life_addictions(datum/seq_frame/life/F)
 	return
 
-/datum/om/stage/life/addictions/idle(mob/living/self)
-	return type == /datum/om/stage/life/addictions
-
-/datum/om/stage/life/addictions/carbon
-	of = /mob/living/carbon
-	wake_on = CHANGE_MOB_HEALTH
-	woken_by = "reagent changes (body invalidate); its rewake"
+/mob/living/proc/life_addictions_due()
+	return FALSE
 
 /// MED-6: no addiction to build, feed or withdraw from.
-/datum/om/stage/life/addictions/carbon/idle(mob/living/carbon/self)
-	if(self.has_addictions())
-		return FALSE
+/mob/living/carbon/life_addictions_due()
+	if(src.has_addictions())
+		return TRUE
 	var/list/addictive = get_addictive_reagents(ADDICT_ALL)
-	for(var/datum/reagent/R as anything in self.bloodstr?.reagent_list)
+	for(var/datum/reagent/R as anything in src.bloodstr?.reagent_list)
 		if((R.id in addictive) || istype(R, /datum/reagent/ethanol))
-			return FALSE
-	for(var/datum/reagent/R as anything in self.ingested?.reagent_list)
+			return TRUE
+	for(var/datum/reagent/R as anything in src.ingested?.reagent_list)
 		if((R.id in addictive) || istype(R, /datum/reagent/ethanol) || istype(R, /datum/reagent/drink/coffee))
-			return FALSE
-	return TRUE
+			return TRUE
+	return FALSE
 
-/datum/om/stage/life/addictions/carbon/rewake_delay(mob/living/carbon/self)
-	return 30 SECONDS
+/// Reagents reach it through on_reagent_change() (MOB_KEY_HEALTH). This is the fallback.
+/mob/living/carbon/life_addictions_rewake()
+	return LIFE_SAFETY_RESAMPLE
 
-/datum/om/stage/life/addictions/carbon/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
-	self.process_addictions()
+/mob/living/carbon/life_addictions(datum/seq_frame/life/F)
+	src.process_addictions()
 
 /// Builds, feeds and withdraws addictions from the reagents in the blood and gut.
 /mob/living/carbon/proc/process_addictions()
@@ -80,16 +73,16 @@
 	var/list/addict = list()
 	for(var/datum/reagent/R in bloodstr.reagent_list)
 		var/reagentid = R.id
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/ethanol))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/ethanol))
 			reagentid = REAGENT_ID_ETHANOL
 		if(reagentid in get_addictive_reagents(ADDICT_ALL))
 			addict.Add(reagentid)
 	// Only needed for alcohols, will interfere with pills if you detect other things!
 	for(var/datum/reagent/R in ingested.reagent_list)
 		var/reagentid = R.id
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/ethanol))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/ethanol))
 			reagentid = REAGENT_ID_ETHANOL
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/drink/coffee))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/drink/coffee))
 			reagentid = REAGENT_ID_COFFEE
 		if(reagentid in get_addictive_reagents(ADDICT_ALL))
 			addict.Add(reagentid)
@@ -125,7 +118,7 @@
 			if(LAZYACCESS(addiction_counters,A) < ADDICTION_PEAK)
 				if(LAZYACCESS(addiction_counters,A) < 100)
 					LAZYSET(addiction_counters,A,100)
-					var/datum/reagent/RR = chemistry_service().chemical_reagents[A]
+					var/datum/reagent/RR = SSchemistry.ready().chemical_reagents[A]
 					var/message = RR.addiction_refresh_message()
 					if(message)
 						to_chat(src, message)
@@ -141,7 +134,7 @@
 			if(prob(15) && LAZYFIND(addiction_counters, C))
 				addiction_counters[C] += 1
 		// proc reagent's withdrawl
-		var/datum/reagent/RE = chemistry_service().chemical_reagents[C]
+		var/datum/reagent/RE = SSchemistry.ready().chemical_reagents[C]
 		var/addict_counter_before = LAZYACCESS(addiction_counters,C)
 		if(LAZYACCESS(addiction_counters,C) > 0)
 			var/withdrawal_counter = RE.handle_addiction(src,species.reagent_tag)

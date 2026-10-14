@@ -1,0 +1,15 @@
+accessor_var	code/modules/keys/systems.dm	10
+accessor_var	code/modules/keys/systems.dm	12
+duplicate_declaration	code/modules/keys/ids.dm	4
+duplicate_declaration	code/modules/keys/ids.dm	16
+text_source	code/modules/keys/things.dm	34
+text_source	code/modules/keys/things.dm	35
+text_source	code/modules/keys/things.dm	38
+unresolved_capability	code/modules/keys/things.dm	33
+unresolved_id	code/modules/keys/things.dm	9
+unresolved_id	code/modules/keys/things.dm	14
+unresolved_id	code/modules/keys/things.dm	14
+unresolved_id	code/modules/keys/things.dm	17
+unresolved_op	code/modules/keys/things.dm	11
+unresolved_op	code/modules/keys/things.dm	28
+unresolved_op	code/modules/unit_tests/t.dm	7

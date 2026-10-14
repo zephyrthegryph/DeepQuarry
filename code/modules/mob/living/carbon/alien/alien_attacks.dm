@@ -35,15 +35,15 @@
 			if (prob(90))
 				if (M.has_mutation(HULK))
 					damage += 5
-					status_at_least(EFFECT_PARALYZED, 1)
+					status_at_least(STAT_PARALYZED, 1)
 					step_away(src,M,15)
-					om_after(src, 3, PROC_REF(knocked_away_from), M)
+					after(src, 0.3 SECONDS, PROC_REF(knocked_away_from), with = list(M))
 				play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
 						O.show_message(span_bolddanger(text("[] has punched []!", M, src)), 1)
 				if (damage > 4.9)
-					status_at_least(EFFECT_WEAKENED, rand(10,15))
+					status_at_least(STAT_WEAKENED, rand(10,15))
 					for(var/mob/O in viewers(M, null))
 						if ((O.client && !( O.blinded )))
 							O.show_message(span_bolddanger(text("[] has weakened []!", M, src)), 1, span_red("You hear someone fall."), 2)
@@ -57,4 +57,6 @@
 
 /// The second shove of a hulk punch.
 /mob/living/carbon/alien/proc/knocked_away_from(mob/M)
+	if(!M)
+		return
 	step_away(src, M, 15)

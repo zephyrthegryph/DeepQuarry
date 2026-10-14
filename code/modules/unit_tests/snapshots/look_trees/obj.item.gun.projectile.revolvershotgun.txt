@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/revolvershotgun icon: icons/obj/gun_yw.dmi
+/obj/item/gun/projectile/revolvershotgun state: revolvshot
+/obj/item/gun/projectile/revolvershotgun dir: 2
+/obj/item/gun/projectile/revolvershotgun overlay: icons/obj/gun_yw.dmi:revolvshot:8:#000000
+

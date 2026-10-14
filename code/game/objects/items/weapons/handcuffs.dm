@@ -4,14 +4,10 @@
 	gender = PLURAL
 	icon = 'icons/obj/items.dmi'
 	icon_state = "handcuff"
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 500)
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/elastic
 	var/dispenser = 0
 	var/breakouttime = 1200 //Deciseconds = 120s = 2 minutes
@@ -63,6 +59,16 @@
 				return 1
 	return 0
 
+/// Putting them on takes `use_time`; the cuffs have to stay in hand and the wearer-to-be in the grip.
+CAPABILITIES(/obj/item/handcuffs)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
+	op("cuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(attempt_to_cuff_timed_done)))
+
+/obj/item/handcuffs/proc/cuff_time(datum/act/op/A)
+	return use_time
+
 /obj/item/handcuffs/proc/attempt_to_cuff(mob/living/carbon/victim, mob/user)
 	playsound(src, cuff_sound, 30, 1, -2)
 
@@ -80,13 +86,14 @@
 
 	act_message(user, victim, others = span_danger("%U% is attempting to put [cuff_type] on %T%!"))
 
-	om_task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
+	perform_op(user, src, "cuff", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = victim))
 	return TRUE
 
-/obj/item/handcuffs/proc/attempt_to_cuff_timed_done(mob/living/carbon/victim, mob/user)
-
-	if(!can_place(victim, user)) //victim may have resisted out of the grab in the meantime
-		return 0
+/obj/item/handcuffs/proc/attempt_to_cuff_timed_done(datum/act/op/A)
+	var/mob/living/carbon/victim = A.arg("victim")
+	var/mob/user = A.actor
+	if(QDELETED(victim) || !can_place(victim, user)) //victim may have resisted out of the grab in the meantime
+		return OP_FAILED
 
 	add_attack_logs(user,victim,"Handcuffed (attempt)")
 	feedback_add_details("handcuffs","victim")
@@ -106,7 +113,7 @@
 	victim.drop_r_hand()
 	victim.drop_l_hand()
 	victim.stop_pulling()
-	return 1
+	return OP_OK
 
 /obj/item/handcuffs/equipped(mob/living/user,slot)
 	. = ..()
@@ -117,12 +124,12 @@
 
 /mob/living/carbon/human/RestrainedClickOn(atom/A, stance = I_HURT)
 	if (A != src) return ..()
-	if (!COOLDOWN_FINISHED(src, chew_cooldown)) return
+	if (!cooldown_ready(src, chew_cooldown)) return
 
 	var/mob/living/carbon/human/H = A
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
 	if (stance != I_HURT) return
-	if (H.zone_sel.selecting != O_MOUTH) return
+	if (hud_of(H)?.zone_sel?.selecting != O_MOUTH) return
 	if (H.get_equipped_item(SLOT_ID_MASK)) return
 	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket)) return
 	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/shibari))
@@ -139,7 +146,7 @@
 
 	H.injure(INJURY_CUT, 3, O, src)
 
-	COOLDOWN_START(src, chew_cooldown, 26)
+	cooldown_start(src, chew_cooldown, 2.6 SECONDS)
 
 /obj/item/handcuffs/fuzzy
 	name = "fuzzy cuffs"
@@ -256,21 +263,20 @@
 
 	act_message(user, null, others = span_danger("%U% is attempting to put [cuff_type] on \the [H]!"))
 
-	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
+	perform_op(user, src, "legcuff", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = target))
 	return TRUE
 
-/datum/om/task/timed/legcuffs_place_legcuffs
-	complete_proc = /obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done
-	var/mob/living/carbon/target_arg
-	var/mob/living/carbon/human/H
+/// Putting them on takes `use_time`; the legcuffs have to stay in hand.
+CAPABILITIES(/obj/item/handcuffs/legcuffs)
+	op("legcuff", ai(), takes("victim"), wait(PROC_REF(cuff_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(place_legcuffs_timed_done)))
 
-/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/om/task/timed/legcuffs_place_legcuffs/task)
-	var/mob/living/carbon/target = task.target_arg
-	var/mob/user = task.actor
-	var/mob/living/carbon/human/H = task.H
+/obj/item/handcuffs/legcuffs/proc/place_legcuffs_timed_done(datum/act/op/A)
+	var/mob/living/carbon/target = A.arg("victim")
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = target
 
-	if(!can_place(target, user)) //victim may have resisted out of the grab in the meantime
-		return 0
+	if(QDELETED(target) || !can_place(target, user)) //victim may have resisted out of the grab in the meantime
+		return OP_FAILED
 
 	add_attack_logs(user,H,"Legcuffed (attempt)")
 	feedback_add_details("legcuffs","H")
@@ -291,7 +297,7 @@
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)
 			target.hud_used.move_intent.icon_state = "walking"
-	return 1
+	return OP_OK
 
 /obj/item/handcuffs/legcuffs/equipped(mob/living/user,slot)
 	. = ..()
@@ -309,7 +315,9 @@
 	use_time = 0
 	breakouttime = 30
 	cuff_sound = SFX_WEAPONS_TOWELWIPE //Is there anything this sound can't do?
-	item_flags = DROPDEL
+
+CAPABILITIES(/obj/item/handcuffs/legcuffs/bola)
+	configure(item_worn(flags = DROPDEL))
 
 /obj/item/handcuffs/legcuffs/bola/can_place(mob/target, mob/user)
 	if(user) //A ranged legcuff, until proper implementation as items it remains a projectile-only thing.

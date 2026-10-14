@@ -9,6 +9,7 @@
 /datum/tgui
 	/// The mob who opened/is using the UI.
 	var/mob/user
+	var/datum/lookup_read_scope/lookup_scope
 	/// The object which owns the UI.
 	var/tmp/datum/src_object
 	/// The title of the UI.
@@ -25,9 +26,6 @@
 	/// Normal interfaces are event-driven through SStgui.update_uis(); continuous
 	/// monitors must opt in with set_autoupdate(TRUE).
 	var/autoupdate = FALSE
-	/// Set by request_push(): the next coalesced push re-runs tgui_interact (update_uis semantics)
-	/// instead of only re-sending data.
-	var/push_reinteract = FALSE
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
@@ -54,8 +52,6 @@
 	var/partial_packets
 	/// If the window should be closed with other windows when requested
 	var/closeable = TRUE
-	/// Relation view: the host this window is bound to with om_ui_bind() (declared UI model).
-	var/tmp/datum/om_bound
 
 /**
  * public
@@ -163,7 +159,9 @@
 		send_open_payload()
 		#endif
 	SStgui.on_open(src)
-	bind_changes()
+	status_watch()
+	// A shell that never answers is a zombie: one timer, cancelled when it does (or when the window closes).
+	arm_ping_timeout()
 
 	return TRUE
 
@@ -247,6 +245,8 @@
  * optional can_be_suspended bool
  */
 /datum/tgui/proc/close(can_be_suspended = TRUE, logout = FALSE)
+	if(lookup_scope)
+		rel_clear(src, nameof(lookup_scope))
 	if(closing)
 		return
 	closing = TRUE
@@ -260,29 +260,28 @@
 		// the error message properly.
 		window().release_lock()
 		window().close(can_be_suspended, logout)
-		// Either side may already be gone (deleted src_object, deleted mob);
-		// SStgui.on_close must still run so the UI leaves all_uis.
 		if(!QDELETED(src_object()))
 			src_object().tgui_close(user)
-		SStgui.on_close(src)
-		unbind_changes()
-
 		if(user?.client)
 			terminate_byondui_elements()
+	// Whatever happened to the window (a deleted tgui_window clears this UI's
+	// relation to it, so window() is null here), the UI must leave every list
+	// that registered it: all_uis, autoupdating, the user's tgui_open_uis and
+	// the src_object's open_tguis. Skipping this with the window gone left the
+	// spent UI in those lists and it hard-deleted (ref count 3).
+	SStgui.on_close(src)
+	status_unwatch()
+	cancel_after(src, "ping")
 
 	// Unset machine just to be sure.
 	if(!QDELETED(user))
 		user.unset_machine()
 
 	state_static = null
-	var/datum/bound = om_bound
-	if(bound)
-		om_ui_unbind(src, bound)
-	rel_clear(src, nameof(om_bound))
 	if(parent_ui())
 		parent_ui().children -= src
 	rel_clear(src, nameof(parent_ui))
-	qdel(src)
+	spent(src)
 
 /**
  * public
@@ -305,6 +304,7 @@
  */
 /datum/tgui/proc/set_autoupdate(autoupdate)
 	src.autoupdate = autoupdate
+	SStgui.sync_autoupdate(src)
 
 /**
  * public
@@ -439,6 +439,8 @@
 	// static data: open, ready and full updates. A data push carries the slim block --
 	// the frontend merges config, so everything not resent keeps its value.
 	json_data["config"] = with_static_data ? full_config() : slim_config()
+	if(with_data)
+		prepare_lookup_reads()
 	var/data = custom_data || with_data && src_object().tgui_data(user, src, state())
 	#ifdef TGUI_DEV_DIAGNOSTICS
 	if(startup_profile)
@@ -460,8 +462,8 @@
 /**
  * public
  *
- * Asks for a coalesced push. Every request inside one throttle window (OM_UI_THROTTLE)
- * becomes one push, so 50 update_uis() calls in a tick cost one tgui_data() per UI.
+ * Asks for a coalesced push, delivered in phase R (code/modules/tgui/ui_push.dm). Every request in one
+ * tick becomes one push, so 50 update_uis() calls in a tick cost one tgui_data() per UI.
  *
  * optional reinteract bool Re-run tgui_interact on the push (update_uis semantics),
  * rather than only re-sending data.
@@ -469,29 +471,7 @@
 /datum/tgui/proc/request_push(reinteract = TRUE)
 	if(closing || QDELETED(src))
 		return
-	if(reinteract)
-		push_reinteract = TRUE
-	var/datum/om/behaviour/B = om_registry().ui_behaviour
-	om_attach(src, B)
-	om_wake(src, B)
-
-/**
- * private
- *
- * Watches src_object for changes: a change raises one coalesced push, and the object
- * is at RELEVANCE_WATCHED while the UI is open. Polling is not needed for these.
- */
-/datum/tgui/proc/bind_changes()
-	var/datum/host = src_object()
-	if(QDELETED(host))
-		return
-	om_ui_bind(src, host, host.tgui_change_mask())
-	om_ui_bind_table(src, host)
-
-/datum/tgui/proc/unbind_changes()
-	var/datum/host = src_object()
-	if(!QDELETED(host))
-		om_ui_unbind(src, host)
+	ui_push_queue(src, reinteract ? UI_PUSH_INTERACT : UI_PUSH_DATA)
 
 /**
  * private
@@ -502,30 +482,7 @@
 /datum/tgui/process(force = FALSE)
 	if(closing)
 		return
-	if(QDELETED(src_object()) || QDELETED(window()))
-		close(can_be_suspended = FALSE)
-		return
-	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
-	// mob it was opened against: follow the client to its current mob rather than
-	// tearing the page down with the dead mob.
-	if(QDELETED(user) && !closeable && !window().pooled)
-		var/mob/current_mob = window().client()?.mob
-		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
-			close(can_be_suspended = FALSE)
-			return
-	var/datum/host = src_object().tgui_host(user)
-	// If the object or user died (or something else), abort.
-	if(QDELETED(host) || QDELETED(user))
-		close(can_be_suspended = FALSE)
-		return
-	// Validate ping
-	if(!initialized && ELAPSED(src, opened_at, CLOCK_WORLD) > TGUI_PING_TIMEOUT)
-		log_tgui(user, \
-			"Error: Zombie window detected, killing it with fire.\n" \
-			+ "window_id: [window().id]\n" \
-			+ "opened_at: [opened_at]\n" \
-			+ "world.time: [world.time]")
-		close(can_be_suspended = FALSE)
+	if(!ui_participants_alive())
 		return
 	// Update through the declared UI's refresh (its ui_prepare() hook, then the push)
 	if(status != STATUS_DISABLED && (autoupdate || force))
@@ -537,7 +494,54 @@
 		close()
 		return
 	if(needs_update)
-		window().send_message("update", get_payload())
+		send_status_update()
+
+/**
+ * private
+ *
+ * TRUE while the window's object, window and user are all still there. Closes the window (or, for a persistent
+ * UI on a dedicated window, follows the client to its current mob) and returns FALSE otherwise.
+ */
+/datum/tgui/proc/ui_participants_alive()
+	if(QDELETED(src_object()) || QDELETED(window()))
+		close(can_be_suspended = FALSE)
+		return FALSE
+	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
+	// mob it was opened against: follow the client to its current mob rather than
+	// tearing the page down with the dead mob.
+	if(QDELETED(user) && !closeable && !window().pooled)
+		var/mob/current_mob = window().client()?.mob
+		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
+			close(can_be_suspended = FALSE)
+			return FALSE
+	var/datum/host = src_object().tgui_host(user)
+	// If the object or user died (or something else), abort.
+	if(QDELETED(host) || QDELETED(user))
+		close(can_be_suspended = FALSE)
+		return FALSE
+	return TRUE
+
+/// Arms the one zombie-window timer (cancelled when the window reports ready, or closes).
+/datum/tgui/proc/arm_ping_timeout()
+	after(src, TGUI_PING_TIMEOUT, PROC_REF(ping_timeout), key = "ping", clock = CLOCK_WORLD)
+
+/// Sends the window its current status and data.
+/datum/tgui/proc/send_status_update()
+	window().send_message("update", get_payload())
+
+/// The user, the host or the window stopped being referenced (deleted, or cleared): the status check decides what
+/// that means for the window. Deferred to the presentation lane: this runs inside the other end's destruction.
+/datum/tgui/proc/participant_gone(datum/other)
+	if(closing || QDELETED(src))
+		return
+	ui_push_queue(src, UI_PUSH_STATUS)
+
+/// The ping timer fired: a window that never reported ready is a zombie.
+/datum/tgui/proc/ping_timeout()
+	if(closing || initialized || QDELETED(src))
+		return
+	log_tgui(user, "Error: Zombie window detected, killing it with fire. window_id: [window()?.id] opened_at: [opened_at] world.time: [world.time]", context = "tgui/ping_timeout")
+	close(can_be_suspended = FALSE)
 
 /**
  * private
@@ -568,7 +572,7 @@
 		log_tgui(user, "Action: [act_type] [href_list["payload"]], Window: [window().id], Source: [src_object()]")
 		#endif
 		process_status()
-		DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(on_act_message), act_type, payload, state()))
+		input_submit(new /datum/input_event/ui_act(user, src, act_type, payload, state()))
 		return FALSE
 	switch(type)
 		if("ready")
@@ -576,8 +580,10 @@
 			if(initialized)
 				send_full_update()
 			initialized = TRUE
+			cancel_after(src, "ping")
 		if("ping/reply")
 			initialized = TRUE
+			cancel_after(src, "ping")
 		if("suspend")
 			close(can_be_suspended = TRUE)
 			return TRUE
@@ -621,7 +627,7 @@
 		SStgui.update_uis(src_object(), src)
 		if(isatom(src_object()) && !QDELETED(src_object()))
 			var/atom/A = src_object()
-			A.interaction_ran(user, null)
+			A.interaction_ran(user)
 
 /// The src_object this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/src_object() as /datum
@@ -635,13 +641,29 @@
 /datum/tgui/proc/state() as /datum/tgui_state
 	return state_static
 
+CAPABILITIES(/datum/tgui)
+	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
+	links(/datum/tgui::user, /mob::tgui_open_uis, b_many = TRUE, a_on_unlink = PROC_REF(participant_gone))
+	ref_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
+	ref_one(nameof(window), on_unlink = PROC_REF(participant_gone))
+
 /// The parent_ui this refers to (a relation view: null once that is deleted).
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 
-/datum/tgui/relations()
-	. = ..()
-	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis))
-/mob/relations()
-	. = ..()
-	. += rel_many(nameof(tgui_open_uis), back = nameof(/datum/tgui::user))
+
+/// Bind contextual window reads before its pure output runs. The real window
+/// owns these bindings; participant teardown and closing dispose of them.
+/datum/tgui/proc/prepare_lookup_reads()
+	var/datum/host = src_object()
+	if(!host || QDELETED(host))
+		return
+	if(!lookup_scope)
+		var/datum/lookup_read_scope/scope = new
+		rel_set(src, nameof(lookup_scope), scope)
+	var/datum/act/eval/A = present_eval_context(host, user)
+	lookup_reads_prepare(host, A, lookup_scope)
+	var/datum/unit = present_forwarded_unit(host)
+	if(unit)
+		lookup_reads_prepare(unit, A, lookup_scope)
+	A.release()

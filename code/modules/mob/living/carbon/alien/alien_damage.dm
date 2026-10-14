@@ -1,8 +1,18 @@
-DAMAGE_REACTION(/mob/living/carbon/alien, DAMAGE_EXPLOSION, PROC_REF(alien_blast))
+CAPABILITIES(/mob/living/carbon/alien)
+	configure(mob_kind(inventory_panel = TRAIT_NONE, death_message = "lets out a waning guttural screech, green blood bubbling from its maw."))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(alien_blast)))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(instance_num), range_of(1, 1000))
+	rolls(nameof(name), PROC_REF(numbered_name), from = list(nameof(instance_num)))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	knows(nameof(language))
+	setup(PROC_REF(stamp_birth))
 
 /// Aliens take the blast through their own ladder (the mob explosion entry delivers no damage).
-/mob/living/carbon/alien/proc/alien_blast(datum/damage_packet/packet)
-	var/severity = packet.severity
+/mob/living/carbon/alien/proc/alien_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/severity = N.packet.severity
 
 	if(!blinded)
 		flash_eyes()
@@ -22,15 +32,15 @@ DAMAGE_REACTION(/mob/living/carbon/alien, DAMAGE_EXPLOSION, PROC_REF(alien_blast
 			f_loss += 60
 
 			set_ear_damage(ear_damage + (30))
-			status_adjust(EFFECT_DEAFENED, 120)
+			status_adjust(STAT_DEAFENED, 120)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 		if(3.0)
 			b_loss += 30
 			if (prob(50))
-				status_at_least(EFFECT_PARALYZED, 1)
+				status_at_least(STAT_PARALYZED, 1)
 			set_ear_damage(ear_damage + (15))
-			status_adjust(EFFECT_DEAFENED, 60)
+			status_adjust(STAT_DEAFENED, 60)
 			deaf_loop.start() // Ear Ringing/Deafness
 
 	if(b_loss)

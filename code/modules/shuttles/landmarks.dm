@@ -31,8 +31,6 @@
 
 /obj/effect/shuttle_landmark/Initialize(mapload)
 	. = ..()
-	if(docking_controller_tag)
-		. = INITIALIZE_HINT_LATELOAD
 
 	// Even if this flag is set, hardcoded values take precedence.
 	if(flags & SLANDMARK_FLAG_AUTOSET)
@@ -50,11 +48,15 @@
 		landing_area = isarea(base_area) ? base_area : locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
-/obj/effect/shuttle_landmark/LateInitialize()
+CAPABILITIES(/obj/effect/shuttle_landmark)
+	after_init(0, then(PROC_REF(find_docking_controller)))
+
+/// Finds the docking controller its tag names, once the map has made it.
+/obj/effect/shuttle_landmark/proc/find_docking_controller(datum/act/timer/A)
 	if(!docking_controller_tag)
 		return
 	var/docking_tag = docking_controller_tag
-	rel_set(src, nameof(docking_controller), SSshuttles.docking_registry[docking_tag])
+	rel_set(src, nameof(docking_controller), SSshuttles.docking_program(docking_tag))
 	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
 	// No QDELETING registration: docking_controller is a relation view, cleared when the controller dies.
@@ -130,6 +132,7 @@
 	flags = SLANDMARK_FLAG_AUTOSET
 	var/original_name = null // Save our mapped-in name so we can rebuild our name when moving sectors.
 
+// ALLOW(init/INSTANCE_STATE): tags itself with its coordinates and a random id
 /obj/effect/shuttle_landmark/automatic/Initialize(mapload)
 	original_name = name
 	landmark_tag += "-[x]-[y]-[z]-[random_id("landmarks",1,9999)]"
@@ -143,12 +146,9 @@
 /obj/effect/shuttle_landmark/automatic/clearing
 	var/radius = 10
 
-/obj/effect/shuttle_landmark/automatic/clearing/Initialize(mapload)
+/// A clearing landmark also clears the dense turfs around it.
+/obj/effect/shuttle_landmark/automatic/clearing/find_docking_controller(datum/act/timer/A)
 	..()
-	return INITIALIZE_HINT_LATELOAD
-
-/obj/effect/shuttle_landmark/automatic/clearing/LateInitialize()
-	. = ..()
 	for(var/turf/T in range(radius, src))
 		if(T.density)
 			T.ChangeTurf(get_base_turf_by_area(T))
@@ -161,13 +161,16 @@
 	desc = "Burst transmitter used to broadcast all needed information for shuttle navigation systems. Has a flare attached for marking the spot where you probably shouldn't be standing."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bluflare"
-	light_color = "#3728ff"
 	var/active
+TRACKED(/obj/item/spaceflare, active)
 
-DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/spaceflare)
+	configure(light_glow(color = "#3728ff"))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/spaceflare/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/spaceflare/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!active)
 		act_message(user, src, others = span_notice("%U% pulls the cord, activating %T%."))
 		activate()
@@ -181,21 +184,18 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 	if(istype(M) && !M.unEquip(src, T))
 		return
 
-	active = 1
+	set_active(1)
 	set_anchored(TRUE)
 
 	var/obj/effect/shuttle_landmark/automatic/mark = new(T)
 	mark.name = ("Beacon signal ([T.x],[T.y])")
 	T.hotspot_expose(1500, 5)
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/spaceflare, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/spaceflare/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/spaceflare/draw(datum/look/look)
+	..()
 	if(active)
-		icon_state = "bluflare_on"
-		set_light(0.3, 0.1, 6, 2, "85d1ff")
+		look.state("bluflare_on")
+		look.glow(0.3, 0.1, 6)
 
 /// Accessor for the docking_controller var.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking

@@ -24,36 +24,40 @@
 	/// Whether attackby will be passed on it even with a closed panel
 	var/external_slot
 
-DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/computer_hardware)
+	derives(nameof(w_class), PROC_REF(initial_hardware_size))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/computer_hardware/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/computer_hardware/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	// Multitool. Runs diagnostics
 	if(W.has_tool_quality(TOOL_MULTITOOL))
 		to_chat(user, "***** DIAGNOSTICS REPORT *****")
 		diagnostics(user)
 		to_chat(user, "******************************")
-		return TRUE
+		return OP_OK
 	// Nanopaste. Repair all damage if present for a single unit.
 	var/obj/item/stack/S = W
 	if(istype(S, /obj/item/stack/nanopaste))
 		if(!get_integrity_damage())
 			to_chat(user, "\The [src] doesn't seem to require repairs.")
-			return TRUE
+			return OP_OK
 		if(S.use(1))
 			to_chat(user, "You apply a bit of \the [W] to \the [src]. It immediately repairs all damage.")
 			repair_damage(max_integrity)
-		return TRUE
+		return OP_OK
 	// Cable coil. Works as repair method, but will probably require multiple applications and more cable.
 	if(istype(S, /obj/item/stack/cable_coil))
 		if(!get_integrity_damage())
 			to_chat(user, "\The [src] doesn't seem to require repairs.")
-			return 1
+			return OP_OK
 		if(S.use(1))
 			to_chat(user, "You patch up \the [src] with a bit of \the [W].")
 			repair_damage(10)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Returns the name of the var on /obj/item/modular_computer that holds this
 /// hardware slot, or null if this type has no dedicated named slot.
@@ -78,7 +82,6 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 
 /obj/item/computer_hardware/Initialize(mapload)
 	. = ..()
-	w_class = hardware_size
 	if(istype(loc, /obj/item/modular_computer))
 		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 
@@ -119,3 +122,6 @@ DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(i
 /// The holder2 this refers to (a relation view: null once that is deleted).
 /obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
 	return holder2
+
+/obj/item/computer_hardware/proc/initial_hardware_size()
+	return hardware_size

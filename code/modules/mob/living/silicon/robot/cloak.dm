@@ -6,28 +6,31 @@
 	icon_state = "shock"
 
 /// Percent of visibility, 0 is visible, 1 is fully invisible.
-OM_FIELD(/obj/item/borg/cloak, cloak_strength, 0.5, CHANGE_EXPLICIT)
+/obj/item/borg/cloak/var/cloak_strength = 0.5
+TRACKED(/obj/item/borg/cloak, cloak_strength)
 /// If the cloak is on.
-OM_FIELD(/obj/item/borg/cloak, active, FALSE, CHANGE_EXPLICIT)
-/// Draws power while cloaked at a non-zero strength.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/borg/cloak, PERIODIC_SLOW, list("active", "cloak_strength"))
+/obj/item/borg/cloak/var/active = FALSE
+TRACKED(/obj/item/borg/cloak, active)
+CAPABILITIES(/obj/item/borg/cloak)
+	op("set_level", in_hand(), then(PROC_REF(cloak_ask_level)))
+	op("strength", menu(), label("Toggle Cloak Strength"), needs(carried()), then(PROC_REF(cloak_ask_level)))
+	op("toggle", menu(), label("Toggle Cloak"), needs(carried()), then(PROC_REF(cloak_toggled)))
+	/// Draws power while cloaked at a non-zero strength.
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = cond_all(nameof(active), nameof(cloak_strength)))
 
-DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Toggle Cloak Strength", PROC_REF(cloak_verb_set_level), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Cloak", PROC_REF(cloak_verb_toggle), REQ_IN_INVENTORY), \
-)
+/// Using the cloak in hand, or its menu entry: ask the strength.
+/obj/item/borg/cloak/proc/cloak_ask_level(datum/act/op/A)
+	set_cloaking_level(A.actor)
 
-/// Old attack_self.
-/obj/item/borg/cloak/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	cloak_verb_set_level(user)
-	return TRUE
+/// The menu entry: switch the cloak on or off.
+/obj/item/borg/cloak/proc/cloak_toggled(datum/act/op/A)
+	toggle_cloak(A.actor)
 
 /obj/item/borg/cloak/item_ctrl_click(mob/user)
 	toggle_cloak(user)
 	return
 
-/obj/item/borg/cloak/periodic_step()
+/obj/item/borg/cloak/proc/cloak_step(datum/act/timer/A)
 	if(!isliving(src.loc)) //It's not currently in our active modules.
 		set_active(FALSE)
 		if(isrobot(loc.loc)) //The robot
@@ -53,19 +56,17 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		robot.remove_body_effect(/datum/body_effect/robot_cloak)
 		set_active(FALSE)
 
-/// Old Toggle Cloak Strength verb.
-/obj/item/borg/cloak/proc/cloak_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
-	set_cloaking_level(user)
-
 /obj/item/borg/cloak/proc/set_cloaking_level(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off
 		return
 
-	om_ask(R, /datum/om/prompt/number, PROC_REF(cloaking_level_chosen), title = "Cloak Level", message = "How obscured do you want to be? In %", default = cloak_strength*100, max = 100, min = 0, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/number, PROC_REF(cloaking_level_chosen), answerer = R, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Cloak Level", question = "How obscured do you want to be? In %", default = cloak_strength*100, max_value = 100, min_value = 0, timeout = 0)
 
-/obj/item/borg/cloak/proc/cloaking_level_chosen(datum/om/prompt/number/ask)
-	var/mob/living/silicon/robot/R = ask.answerer
-	var/N = ask.number
+/obj/item/borg/cloak/proc/cloaking_level_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/silicon/robot/R = A.request.answerer
+	var/N = A.answer.value
 	if(!isnull(N) && N >= 0 && N <= 100)
 		set_cloak_strength(N/100)
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))
@@ -75,10 +76,6 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	else
 		to_chat(R, span_warning("Invalid cloak level. Must be between 0 and 100."))
 		return
-
-/// Old Toggle Cloak verb.
-/obj/item/borg/cloak/proc/cloak_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_cloak(user)
 
 /obj/item/borg/cloak/proc/toggle_cloak(mob/living/silicon/robot/R)
 	if(!isrobot(R)) //sod off
@@ -127,14 +124,14 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	state.cloaked_factors = alist(BF_EVASION = 60 * cloak_strength) //60 at full strength, 30 at half strength.
 	L.set_body_effect_state(type, state)
 	L.set_body_effect_factors(type, state.cloaked_factors)
-	L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
-	om_hook(L, /datum/om/event/mob_apply_damage, src, PROC_REF(damage_inflicted))
-	om_hook(L, /datum/om/event/before/robot_item_attack, src, PROC_REF(attacked_in_cloak))
+	L.set_alpha_source(SRC_ALPHA_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
+	observe(L, /datum/notice/mob_apply_damage, src, then(PROC_REF(damage_inflicted)))
+	observe(L, /datum/notice/robot_item_attack, src, then(PROC_REF(attacked_in_cloak)))
 
 /datum/body_effect/robot_cloak/on_end(mob/living/L, expired)
-	L.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
-	om_unhook(L, /datum/om/event/mob_apply_damage, src)
-	om_unhook(L, /datum/om/event/before/robot_item_attack, src)
+	L.clear_alpha_source(SRC_ALPHA_ROBOT_CLOAK)
+	unobserve(L, /datum/notice/mob_apply_damage, src)
+	unobserve(L, /datum/notice/robot_item_attack, src)
 	robot_cloak_remove_wibble(L, TRUE)
 
 /datum/body_effect/robot_cloak/on_tick(mob/living/L)
@@ -148,10 +145,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 		reset_cloak(L, state)
 
 	if(state.cloaked && !state.times_hit) //The !times_hit is here so it doesn't interfere with the animation.
-		L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
+		L.set_alpha_source(SRC_ALPHA_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
 
-/datum/body_effect/robot_cloak/proc/damage_inflicted(mob/living/source, datum/om/event/mob_apply_damage/event)
-	EVENT_HANDLER
+/datum/body_effect/robot_cloak/proc/damage_inflicted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/source = A.target
+	var/datum/notice/mob_apply_damage/event = A
 	var/damage = event.damage
 	var/datum/robot_cloak_state/state = source.body_effect_state(type)
 	if(!state || damage < 5) //weak, don't do anything.
@@ -172,10 +171,11 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	// raw `visibility`, so we don't clobber another source mid-flourish.
 	L.apply_combined_alpha(0.1 SECONDS)
 	apply_wibbly_filters(L, 0.5 SECONDS)
-	om_after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), L, FALSE)
+	after(L, 0.5 SECONDS, GLOBAL_PROC_REF(robot_cloak_remove_wibble), with = list(L, FALSE))
 
-/datum/body_effect/robot_cloak/proc/attacked_in_cloak(mob/living/source, datum/om/event/before/robot_item_attack/event)
-	EVENT_HANDLER
+/datum/body_effect/robot_cloak/proc/attacked_in_cloak(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/source = N.target
 	if(!source.get_filter("wibbly-[1]")) //We're not wibbled at the moment.
 		var/alpha_to_show = CLAMP((source.alpha+(rand(50,200))), source.alpha, 255) //Become more visible by a significant margin, randomly.
 		flick_cloak(source, alpha_to_show)
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 			remove_wibbly_filters(L, 0.1 SECOND)
 
 /datum/body_effect/robot_cloak/proc/drop_cloak(mob/living/L, datum/robot_cloak_state/state)
-	L.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
+	L.clear_alpha_source(SRC_ALPHA_ROBOT_CLOAK)
 	state.cloaked = FALSE
 	L.set_body_effect_factors(type, null)
 

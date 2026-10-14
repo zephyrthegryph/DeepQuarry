@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Migrated medical records console card handling and menu operations to native capabilities."
+  - code_imp: "Retired unused legacy capability helpers while preserving live bridge and gameplay paths."

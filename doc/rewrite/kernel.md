@@ -100,7 +100,7 @@ field pokes:
 | Declared periodic | `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT` | `datums/sys/periodic.dm`, `__defines/sys_periodic.dm:43` | 158 + 58 |
 | Machine step | `machine_step()`, `MACHINE_WAKE/SLEEP`, `step_active` | `game/machinery/machine_pipeline.dm:300-315` | 227 / 130 |
 | World lanes | `/datum/om/behaviour/world/X` → `service_step(resumed)` | `datums/om/world_lanes.dm:155-190` | 34 |
-| Timers | `om_after*`, `om_after_slot`, `om_deadline` (DM deadline wheel) | `datums/om/timer.dm`, `deadline.dm` | about 1,560 + 59 + 31 |
+| Timers | `om_after*`, `om_after_slot`, `om_deadline` (DM deadline wheel) | `engine/time/timers.dm` (was `datums/om/timer.dm`), `deadline.dm` | about 1,560 + 59 + 31 |
 | Rust wheel | `om_world_at/on_key/on_change/when/on_rate` → `vg_world_step` | `datums/om/world_watch.dm:196-230` | 35 |
 | Rust pacers | `vg_world_tick` (SSvg), `vg_heat_tick` (SSair), event drains in 2 places | `vg.dm:75-77`, `SSair.dm:215`, `heat.dm:365-369` | 4 drivers |
 | DX refresh | `changed()` → `refresh_queue` → `refresh_one()` (draw, verbs, UIs, `should_run`) plus a sweep | `datums/capabilities/refresh.dm:24-205` | presentation lane |
@@ -147,7 +147,7 @@ kernel_tick():
   phase B  borrow: rings near max_interval                                 from the whole budget
   phase L  lanes URGENT 30 / SIMULATION 30 / DERIVED 15 / PRESENTATION 15 / BACKGROUND 10
            each lane: queued wakes -> system steps -> member rings -> (PRESENTATION) refresh drain
-  phase R  leftovers, lane order
+  phase R  leftovers, lane order; then phase-L work items that ran out of their lane share with work left (p_carry)
   phase G  garbage (kernel subsystem), whatever is left, with a floor per second
 ```
 
@@ -240,7 +240,7 @@ whether each mask earns its place.
 | `world_next_tick(spec)` (`/world/Tick`) | kept for world procs only | it has to run after the MC shuts down, so it cannot be a deadline |
 | `om_task_slices`, a yielding `service_step` | a system `periodic_step()` returning `STEP_YIELD` | the kernel resumes it on the next tick, as world lanes do today (`world_lanes.dm:170-186`) |
 | `INVOKE_ASYNC` / `set waitfor` in handlers | the dispatcher (DX) | already banned outside the allowlist |
-| `om_world_at` (Rust wheel) | kept for Rust-owned conditions | a DM time uses `om_after`; the Rust wheel is for rate crossings and keys |
+| `om_world_at` (Rust wheel) | deleted in E6 | a DM time is the kernel's `after()`; the Rust wheel keeps only rate crossings |
 
 That leaves exactly two wheels:
 - the DM deadline wheel, for DM work on entity clocks;
@@ -367,7 +367,7 @@ The unit tests also have about 60 raw `sleep()` calls. They become one harness h
 - A tgui modal calls `waiter_resolve(W, answer)` from its `ui_submit` action. An I/O job does the same from its `on_done`.
 - `UNTIL()` and `stoplag()` leave the public API. The `scheduler` lint allowlist shrinks to the kernel folder, `unit_tests/` and vendored TGS.
 
-```dm
+```dm before
 // Before (dbcore.dm:138-142): a sync wrapper that spins the caller
 /datum/controller/subsystem/dbcore/proc/run_query_sync(datum/db_query/query)
 	run_query(query)
@@ -637,7 +637,7 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 			continue
 ```
 
-```dm
+```dm before
 // master.dm:936-966 — CheckQueue: a second cadence model (wait/next_fire/postponed/KEEP_TIMING)
 	for (var/thing in subsystemstocheck)
 		...
@@ -717,7 +717,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 
 **Before:**
 
-```dm
+```dm before
 // master.dm:428-448
 	for (var/current_init_stage in 1 to INITSTAGE_MAX)
 		for (var/datum/controller/subsystem/subsystem in stage_sorted_subsystems[current_init_stage])
@@ -741,7 +741,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 	boot_world_service(GLOB.planet_service)
 ```
 
-```dm
+```dm before
 // ATMOSPHERICS/SSair.dm:1-8, 124-128 — a dependency that is really on a side effect, plus a hand boot
 SUBSYSTEM_DEF(air)
 	name = "Atmospherics"
@@ -958,12 +958,12 @@ SUBSYSTEM_DEF(air)
 
 ```dm
 // game/machinery/machine_service.dm:10-13, 56-74 — gas watch dispatch + atmos pump commit + power step
-GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
-/datum/world_service/machines
+GLOBAL_DATUM_INIT(machine_service, /datum/system/machines, new)
+/datum/system/machines
 	name = "Machines"
 	lane = /datum/om/behaviour/world/machines
 ...
-/datum/world_service/machines/service_step(resumed)
+/datum/system/machines/service_step(resumed)
 	...
 	var/complete = wake_dirty_gas_subscribers(TRUE)
 	if(complete)
@@ -986,25 +986,11 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	behaviours = list(/datum/om/pipeline/machine)
 ```
 
-```dm
-// game/machinery/machine_pipeline.dm:300-315 — "step" stage: start/stop via MACHINE_WAKE, step_active
-/datum/om/stage/machine/step/perform(obj/machinery/M, datum/om/frame/machine/F)
-	if(M.speed_process)
-		return STAGE_IDLE
-	if(!M.step_active)
-		...
-		if(!sys_periodic_allows(M, MACHINE_PIPELINE))
-			M.set_step_waiting_power(FALSE)
-			return STAGE_IDLE
-		M.set_step_active(TRUE)
-	M.set_step_waiting_power(FALSE)
-	if(M.machine_step() == PROCESS_KILL)
-		M.set_step_active(FALSE)
-```
+The machine pipeline's "step" stage (deleted; a machine's work is `started_work()` now) started and stopped a machine's `machine_step()` through `MACHINE_WAKE()` and a `step_active` field.
 
 ```dm
 // game/machinery/floodlight.dm:17, 29-32 — a fourth start/stop vocabulary on top
-DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
+every(2 SECONDS, then(PROC_REF(floodlight_step)), when = nameof(on))
 ...
 /obj/machinery/floodlight/machine_step()
 	if(!cell || (cell.charge < (use * CELLRATE)))
@@ -1014,7 +1000,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 ```dm
 // ATMOSPHERICS pumps reach into the machine service's queue directly (machine_service.dm:85)
-/datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, ...)
+/datum/system/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, ...)
 ```
 
 **After:**
@@ -1136,10 +1122,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 ```dm
 // modules/mob/mob_service.dm:17-19, 82-89 — the "mobs" service: a DECLARE_REPEAT, and death -> SSticker internals
-OM_FIELD(/datum/world_service/mobs, profiling, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
+TRACKED(/datum/system/mobs, profiling)
+every(2 MINUTES, then(PROC_REF(dump_profile)), when = nameof(profiling))
 ...
-/datum/world_service/mobs/proc/report_death(mob/living/L)
+/datum/system/mobs/proc/report_death(mob/living/L)
 	...
 	if(!SSticker || !SSticker.mode)
 		return
@@ -1186,7 +1172,7 @@ DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 // Death reporting: the mobs service stops reaching into the round's game mode.
 /mob/living/proc/death(gibbed)
 	...
-	OM_EMIT_WORLD(/datum/om/event/world_mob_death, src, gibbed)   // exists today (mob/death.dm:125)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)   // exists today (mob/death.dm:125)
 
 /datum/system/round/events()
 	return list(/datum/om/event/world_mob_death = PROC_REF(on_mob_death))   // check_win() lives here
@@ -1200,7 +1186,7 @@ DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 ```
 
 **What changes:**
-- `/datum/om/decl/living` and `/datum/world_service/mobs` are deleted.
+- `/datum/om/decl/living` and `/datum/system/mobs` are deleted.
 - `DECLARE_REPEAT(... dump_profile ...)` moves into the kernel profiler, which is where stage cost
   already lives (`sched.stage_cost`).
 - The mobs→ticker edge becomes an event.
@@ -1211,13 +1197,13 @@ DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 
 ```dm
 // modules/flight_operations/flight_controller.dm:6-12, 50-58
-/datum/world_service/flight
+/datum/system/flight
 	name = "Flight Operations"
 	lane = /datum/om/behaviour/world/flight
 	// The old subsystem depended on SSshuttles (it registers SSshuttles.ships); boot right after it.
 	boot_after = /datum/controller/subsystem/shuttles
 	// rebuild_registry() registers any live expedition sites.
-	order_after = list(/datum/world_service/expedition)
+	order_after = list(/datum/system/expedition)
 ...
 	for(var/key in GLOB.expedition_service?.sites)
 		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]
@@ -1305,46 +1291,31 @@ vocabularies below, and this is what they collapse to.
 
 ```dm
 // game/gamemodes/nuclear/pinpointer.dm:21-22, 38 — OM_FIELD + DECLARE_PERIODIC_WHILE + periodic_step()
-OM_FIELD(/obj/item/pinpointer, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
+TRACKED(/obj/item/pinpointer, active)
+every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
 ...
 /obj/item/pinpointer/periodic_step()
 ```
 
 ```dm
 // game/machinery/magnet.dm:31 — DECLARE_REPEAT with a string-named delay proc
-DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process, "on")
+every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 ```
 
 ```dm
 // datums/om/periodic.dm:33-47 — the imperative start the declarations wrap
 /proc/_om_periodic_start(datum/E, P)
 	...
-	if(!sys_periodic_allows(E, P))
-		return FALSE
 	E.periodic_pipe = P
 	E.datum_flags |= DF_ISPROCESSING
-	if(om_attached(E, P))
-		om_wake(E, P)
-	else
-		om_attach(E, P)
+	cadence_start(E, P)
 ```
 
-```dm
-// datums/om/world_lanes.dm:170-178 — a fifth: world lanes with on_demand park/unpark
-/datum/om/behaviour/world/tick(datum/E, dt)
-	var/datum/world_service/S = service()
-	if(!S || S.resuming) // a yielded step owns the next tick's deadline
-		return
-	if(!S.run_step())
-		om_deadline(E, world.tick_lag, src)
-	else if(S.on_demand && !S.has_work())
-		om_park(E, src)
-```
+(The world lanes of the survey, `datums/om/world_lanes.dm`, are gone: the world services are systems with `every()` work items, phase 1S.)
 
 ```dm
 // datums/behaviours/radiation_countdown.dm:22 — a sixth: a self re-arming timer
-	om_after_replace(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear))
+	after(src, TIME_UNTIL_DELETION, TYPE_PROC_REF(/mob/living, radiation_countdown_clear), key = "radiation_countdown")
 ```
 
 **After:** one vocabulary for items, machines, mobs and systems alike.
@@ -1472,7 +1443,7 @@ events (emitter -> handlers, no dependency):
 | Metric | Before (b17) | After (target) | Gate |
 |---|---|---|---|
 | Schedulers | MC + OM (+ 34 world lanes, 22 pipelines, 216 periodic decls) | kernel (OM engine) | `subsystem_fire_lint` CORE = kernel five |
-| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop`, `dx_old_forms` |
+| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop` |
 | Rust drivers | 4 | 1 (`native`, phase N) | grep lint: `vg_world_tick\|vg_heat_tick\|vg_drain_events` only in `modules/native/` |
 | Ordering vocabularies | 6 + 3 hand boots + 36 guards | 2 (`needs`; `after` within a pass) + the Rust law `after` | `system_boot_dag` test |
 | Direct system→system edges | 63 (225 sites) | about 25 declared `uses` edges, all API | B2 + B4 |
@@ -1538,8 +1509,9 @@ events (emitter -> handlers, no dependency):
 - `system_boundary_lint.py` (B1–B7, baseline from the audit, shrink-only);
 - `subsystem_fire_lint.py`, whose CORE list shrinks to the kernel five;
 - `kernel_timer_loop` (a new rule in `scheduler_lints.py`);
-- the existing `dx_old_forms`, extended with `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`,
-  `MACHINE_WAKE`, `om_task_periodic`, `boot_after`, `order_after` and `GLOB.*_service`.
+- a ban on `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`, `MACHINE_WAKE`, `om_task_periodic`, `boot_after`,
+  `order_after` and `GLOB.*_service`, switched on by the commit that lands their replacement (the old
+  `dx_old_forms` ratchet was removed as premature).
 
 **Bench scenarios** (existing): `boot_profile`, `boot_memory`, `idle`, `idle_mobs`, `life_sweep`,
 `om_dispatch`, `atmos_idle`, `atmos_large`, `major_events`, `explosion_dense`, `radiation`,
@@ -1677,7 +1649,7 @@ Built on top of the notes above.
   is now `pass_begin / pass_deadlines / pass_borrow / pass_lanes / pass_leftovers / pass_end`; run_pass() still runs
   them all for the test harness, and the kernel runs the same pieces between its phases (`native_hosted` moves
   `world_step()` to phase N).
-- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass, pipeline audit (`audit_due()`), `bench_ms`, `cost` and `last_done`
+- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass (the scheduler's pieces are kernel work items, `controllers/kernel/sched_items.dm`), pipeline audit (SSbehaviours' `audit_step` work item), `bench_ms`, `cost` and `last_done`
   are fed by the kernel. It still boots the registry, scheduler and world lanes.
 - **native_frame** (`kernel/native.dm`) is a stub for the Rust owner: it steps the OM world wheel. `vg_world_tick`,
   `vg_entity_tick_all`, `vg_drain_events` (SSvg) and the gas phases + `vg_heat_tick` (SSair) still run where they did.

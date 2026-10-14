@@ -110,7 +110,7 @@
 	return cancel("The patient withdrew consent before the clinical record was submitted.")
 
 /datum/contract_document/proc/register_rare_case_signature(obj/item/paper/paper, mob/living/carbon/human/subject)
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[contract_id]
+	var/datum/contract/medical_case_report/report = contracts_contracts_by_id()[contract_id]
 	if(payload["signed"] || !istype(subject) || !istype(report) || !report.register_consent(paper, subject))
 		return FALSE
 	payload["signed"] = TRUE
@@ -118,7 +118,7 @@
 	SScontracts.bind_evidence_subject(evidence_id, report.target_ref)
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed case registry consent - [subject.real_name]"
-	paper.info += "<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."
+	paper.set_info(paper.info + ("<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."))
 	paper.updateinfolinks()
 	to_chat(subject, span_notice("Your consent to the VeyMed clinical case report is registered."))
 	emit_contract_event(CONTRACT_EVENT_DOCUMENT_SIGNED, list(
@@ -218,7 +218,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 	if(consent_document.contract_id != narrative_document.contract_id || narrative.info == narrative_document.payload["initial_info"] || length(narrative_document.payload["completed_fields"]) < 2)
 		to_chat(sender, span_warning("The case registry rejects the packet: the treatment and outcome narrative is incomplete."))
 		return FALSE
-	var/datum/contract/medical_case_report/report = SScontracts.contracts_by_id[consent_document.contract_id]
+	var/datum/contract/medical_case_report/report = contracts_contracts_by_id()[consent_document.contract_id]
 	if(!istype(report) || !(report.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || report.target_ref != consent_document.payload["subject_id"])
 		to_chat(sender, span_warning("The case registry cannot authenticate this packet against an active report."))
 		return FALSE

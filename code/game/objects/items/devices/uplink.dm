@@ -24,22 +24,17 @@
 	var/compact_mode = FALSE
 
 	icon = 'icons/obj/device.dmi'
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-// A new discount every offer_time (only /hidden makes use of this; the base proc is a stub).
-DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
+CAPABILITIES(/obj/item/uplink)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/item/uplink/get_item_cost(item_type, item_cost)
 	return (discount_item() && (item_type == discount_item())) ? max(1, round(item_cost*discount_amount)) : item_cost
 
-/obj/item/uplink/proc/next_offer()
-	return //Stub, used on children.
-
 // HIDDEN UPLINK - Can be stored in anything but the host item has to have a trigger for it.
 /** How to create an uplink in 3 easy steps!
  *
- * 1. All obj/item 's have a hidden_uplink var. By default it's null. Give the item one with "new(src)", it must be in it's contents. Feel free to add "uses".
+ * 1. An item's hidden uplink is the /obj/item/uplink/hidden in its contents (item_hidden_uplink()). Give the item one with "new(src)" or a slot(SLOT_HIDDEN_UPLINK, starts =). Feel free to add "uses".
  *
  * 2. Code in the triggers. Use check_trigger for this, I recommend closing the item's menu if it returns true.
  * The var/value is the value that will be compared with the var/target. If they are equal it will activate the menu.
@@ -55,13 +50,17 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 	var/exploit_id								// Id of the current exploit record we are viewing
 	var/selected_cat
 
-// The hidden uplink MUST be inside an obj/item's contents.
-/obj/item/uplink/hidden/Initialize(mapload)
-	. = ..()
-	if(!isitem(loc))
-		return INITIALIZE_HINT_QDEL
+/// The hidden uplink MUST be inside an obj/item's contents (keeps_if()): a condition. Nullspace passes: a slot's starting uplink is made
+/// there and then moved into its item (slot(SLOT_HIDDEN_UPLINK, starts =)).
+/obj/item/uplink/hidden/proc/inside_an_item()
+	return !loc || isitem(loc)
 
-/obj/item/uplink/hidden/next_offer()
+/// The deciseconds to the next discount.
+/obj/item/uplink/hidden/proc/offer_delay(datum/act/A)
+	return offer_time
+
+/// A new discount every offer_time (the every() of CAPABILITIES(/obj/item/uplink/hidden)).
+/obj/item/uplink/hidden/proc/next_offer(datum/act/timer/A)
 	discount_item_static = GLOB.default_uplink_selection.get_random_item(INFINITY)
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
@@ -69,7 +68,7 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 
 // Toggles the uplink on and off. Normally this will bypass the item's normal functions and go to the uplink menu, if activated.
 /obj/item/uplink/hidden/proc/toggle()
-	active = !active
+	set_active(!active)
 
 // Directly trigger the uplink. Turn on if it isn't already.
 /obj/item/uplink/hidden/proc/trigger(mob/user as mob)
@@ -96,18 +95,21 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 /obj/item/uplink/tgui_host()
 	return loc
 
-DECLARE_UI_STATE(/obj/item/uplink/hidden, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/uplink/hidden, "Uplink", UI_TITLE("Remote Uplink"))
-
 /obj/item/uplink/hidden/ui_prepare(mob/user, datum/tgui/ui)
 	if(!active)
 		toggle()
 	return TRUE
 
-UI_DATA(/obj/item/uplink/hidden, "compactMode=compact_mode:num", "merge:ui_data_obj_item_uplink_hidden{telecrystals:num,lockable:bool,discount_name:text,discount_amount:num,offer_expiry:unknown,exploit:list,locked_records:list}")
+/obj/item/uplink/hidden/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["compactMode"] = compact_mode
+	var/list/merged_1 = ui_data_obj_item_uplink_hidden(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/uplink/hidden's window data (declared on its UI_DATA row).
+/// /obj/item/uplink/hidden's window data.
 /obj/item/uplink/hidden/proc/ui_data_obj_item_uplink_hidden(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!user.mind)
 		return
@@ -185,30 +187,41 @@ UI_DATA(/obj/item/uplink/hidden, "compactMode=compact_mode:num", "merge:ui_data_
 		return STATUS_CLOSE
 	return ..()
 
-UI_ACT(/obj/item/uplink/hidden, "buy", ui_act_buy, UI_ARG_REF("ref", "proc:ui_source_glob_uplink_items"))
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_buy)
-	var/datum/uplink_item/UI = (params["ref"])
-	UI.buy(src, ui.user)
+/obj/item/uplink/hidden/proc/ui_act_buy(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in ui_source_glob_uplink_items()))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/datum/uplink_item/UI = (ref)
+	UI.buy(src, user)
 	return TRUE
 
-UI_ACT(/obj/item/uplink/hidden, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_lock)
+/obj/item/uplink/hidden/proc/ui_act_lock(datum/act/op/A)
 	toggle()
 	SStgui.close_uis(src)
 
-UI_ACT(/obj/item/uplink/hidden, "select", ui_act_select, UI_ARG_VALUE("category"))
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_select)
-	selected_cat = params["category"]
+CAPABILITIES(/obj/item/uplink/hidden)
+	keeps_if(PROC_REF(inside_an_item))
+	every(PROC_REF(offer_delay), then(PROC_REF(next_offer)))
+	op("compact_toggle", ui_act(), then(PROC_REF(ui_act_compact_toggle)))
+	interface("Uplink", title = "Remote Uplink", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
+	op("buy", ui_act("buy", arg("ref", schema_ref())), then(PROC_REF(ui_act_buy)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("select", ui_act("select", arg("category")), then(PROC_REF(ui_act_select)))
+	op("view_exploits", ui_act("view_exploits", arg("id", num())), then(PROC_REF(ui_act_view_exploits)))
+
+/obj/item/uplink/hidden/proc/ui_act_select(datum/act/op/A, category)
+	selected_cat = category
 	return TRUE
 
-UI_ACT(/obj/item/uplink/hidden, "compact_toggle", ui_act_compact_toggle)
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_compact_toggle)
+/obj/item/uplink/hidden/proc/ui_act_compact_toggle(datum/act/op/A)
 	compact_mode = !compact_mode
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/uplink/hidden, "view_exploits", ui_act_view_exploits, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
-	exploit_id = params["id"]
+/obj/item/uplink/hidden/proc/ui_act_view_exploits(datum/act/op/A, id)
+	exploit_id = id
 	return TRUE
 
 /// The list the UI_ARG_REF rows resolve refs in.
@@ -225,11 +238,11 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 	icon_state = "radio"
 	uplink = TRUE
 
-/obj/item/radio/uplink/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
+/// It carries a hidden uplink from the start.
+CAPABILITIES(/obj/item/radio/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
-/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/uplink/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(.)
 		return TRUE
@@ -239,23 +252,16 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 /obj/item/multitool/uplink
 	uplink = TRUE
 
-/obj/item/multitool/uplink/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
-
-/obj/item/multitool/uplink/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
-	if(item_hidden_uplink(src))
-		item_hidden_uplink(src).trigger(user)
+/// It carries a hidden uplink from the start.
+CAPABILITIES(/obj/item/multitool/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 
-/obj/item/radio/headset/uplink/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
+/// It carries a hidden uplink from the start.
+CAPABILITIES(/obj/item/radio/headset/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, on_destroy = ON_DESTROY_DELETE, starts = /obj/item/uplink/hidden)
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item

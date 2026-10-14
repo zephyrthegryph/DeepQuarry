@@ -1,5 +1,6 @@
 #define NEXT_PAGE_ID "__next__"
 
+/// Open prompt ring id -> its entity_handle (a ring that was deleted without dismiss() resolves to null).
 GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial
@@ -21,38 +22,46 @@ GLOBAL_LIST_EMPTY(radial_menus)
 /atom/movable/screen/radial/slice/set_parent(new_value)
 	. = ..()
 	if(parent())
-		icon_state = parent().radial_slice_icon
+		set_icon_state(parent().radial_slice_icon)
 
-/// om_after() target: hovering clicks, once the entry animation has played.
+/// after() target: hovering clicks, once the entry animation has played.
 /atom/movable/screen/radial/slice/proc/enable_hover_click()
 	click_on_hover = TRUE
 
-/atom/movable/screen/radial/slice/MouseEntered(location, control, params)
-	. = ..()
-	if(next_page || !parent())
-		icon_state = "radial_slice_focus"
-	else
-		icon_state = "[parent().radial_slice_icon]_focus"
-	if(tooltips)
-		openToolTip(usr, src, params, title = name)
-	if (click_on_hover && !isnull(usr) && !isnull(parent()))
-		Click(location, control, params)
+CAPABILITIES(/atom/movable/screen/radial/slice)
+	hover(PROC_REF(hover_input))
+	click_on(PROC_REF(click_input))
 
-/atom/movable/screen/radial/slice/MouseExited(location, control, params)
-	. = ..()
+/// The native mouse-over's actor (hover(), code/engine/lifeforms/input.dm): the slice lights up, shows its name and, on a hover-click
+/// menu, is chosen (its own native Click, still inside this mouse-over).
+/atom/movable/screen/radial/slice/proc/hover_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(!A.entered)
+		if(next_page || !parent())
+			set_icon_state("radial_slice")
+		else
+			set_icon_state(parent().radial_slice_icon)
+		if(tooltips)
+			closeToolTip(user, src)
+		return
 	if(next_page || !parent())
-		icon_state = "radial_slice"
+		set_icon_state("radial_slice_focus")
 	else
-		icon_state = parent().radial_slice_icon
+		set_icon_state("[parent().radial_slice_icon]_focus")
 	if(tooltips)
-		closeToolTip(usr, src)
+		openToolTip(user, src, A.params, title = name)
+	if(click_on_hover && !isnull(user) && !isnull(parent()))
+		Click(A.native["location"], A.native["control"], A.params)
 
-/atom/movable/screen/radial/slice/Click(location, control, params)
-	if(usr.client == parent().current_user())
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). Only the menu's own user chooses.
+/atom/movable/screen/radial/slice/proc/click_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(user?.client == parent()?.current_user())
 		if(next_page)
 			parent().next_page()
 		else
-			parent().element_chosen(choice, usr, params)
+			parent().element_chosen(choice, user, A.params)
+	return TRUE
 
 /atom/movable/screen/radial/center
 	name = "Close Menu"
@@ -60,11 +69,11 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 /atom/movable/screen/radial/center/MouseEntered(location, control, params)
 	. = ..()
-	icon_state = "radial_center_focus"
+	set_icon_state("radial_center_focus")
 
 /atom/movable/screen/radial/center/MouseExited(location, control, params)
 	. = ..()
-	icon_state = "radial_center"
+	set_icon_state("radial_center")
 
 /atom/movable/screen/radial/center/Click(location, control, params)
 	if(usr.client == parent().current_user())
@@ -108,6 +117,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 	///A replacement icon state for the generic radial slice bg icon. Doesn't affect the next page nor the center buttons
 	var/radial_slice_icon
+
+CAPABILITIES(/datum/radial_menu)
+	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
+	owns_many(nameof(elements), /atom/movable/screen)
 
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)
@@ -154,7 +167,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			own_add(src, nameof(elements), new_element)
+			rel_add(src, nameof(elements), new_element)
 
 	var/page = 1
 	page_data = list(null)
@@ -194,7 +207,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			if (!click_on_hover)
 				continue
 			if (anim)
-				om_after(element, i * 0.5, TYPE_PROC_REF(/atom/movable/screen/radial/slice, enable_hover_click))
+				after(element, i * 0.5, TYPE_PROC_REF(/atom/movable/screen/radial/slice, enable_hover_click))
 			else
 				element.click_on_hover = TRUE
 
@@ -231,7 +244,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	if(choice_id == NEXT_PAGE_ID)
 		E.name = "Next Page"
 		E.next_page = TRUE
-		E.icon_state = "radial_slice" // Resets the bg icon state to the default for next page buttons.
+		E.set_icon_state("radial_slice") // Resets the bg icon state to the default for next page buttons.
 		E.add_overlay("radial_next")
 	else
 		//This isn't granted to exist, so use the ?. operator for conditionals that use it.
@@ -258,7 +271,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
-	own_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
+	rel_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()

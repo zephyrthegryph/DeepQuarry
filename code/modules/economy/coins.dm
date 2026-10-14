@@ -6,18 +6,9 @@
 	desc = "A simple coin you can flip."
 	icon_state = "coin"
 	randpixel = 8
-	force = 0.0
-	throwforce = 0.0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/string_attached
 	var/sides = 2
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
-
-/obj/item/coin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
 
 /obj/item/coin/gold
 	name = MAT_GOLD + " coin"
@@ -99,14 +90,14 @@
 	COOLDOWN_DECLARE(event_cooldown)
 	var/active = 0
 
-DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/coin/uranium)
+	every(2 SECONDS, then(PROC_REF(uranium_coin_step)))
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/coin/uranium/periodic_step()
+/// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
+/obj/item/coin/uranium/proc/uranium_coin_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
-	..()
 
 /obj/item/coin/uranium/proc/radiate()
 	if(active)
@@ -150,39 +141,46 @@ DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 	MATERIAL_BULK(MAT_VERDANTIUM, 250)
 
 /// Old attackby.
-/obj/item/coin/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/coin/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/CC = W
 		if(string_attached)
 			balloon_alert(user, "there is a string already attached to \the [src]")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if (CC.use(1))
 			add_overlay("coin_string_overlay")
 			string_attached = 1
 			balloon_alert(user, "string attached to \the [src]")
 		else
 			balloon_alert(user, "the coil seems to be empty...")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else
-		return FALSE
+		return OP_DECLINE
 
-/obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/coin/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!string_attached)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
+		return OP_DECLINE
 	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
-	cable.update_icon()
 	cut_overlays()
 	string_attached = null
 	balloon_alert(user, "string detached")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/coin, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/coin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.0))
+	configure(item_combat(force = 0.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
-/// Old attack_self.
-/obj/item/coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/coin/proc/coin_flip_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -192,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]!")), \
 		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]!")))
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
-	return TRUE
+	return OP_OK
 
 //Weird coins that I would prefer didn't work with normal vending machines. Might use them to make weird vending machines later.
 
@@ -202,18 +200,9 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. "
 	icon_state = "triangle"
 	randpixel = 8
-	force = 0.5
-	throwforce = 0.5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/sides = 2
 	var/value = 1
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
-
-/obj/item/aliencoin/Initialize(mapload)
-	. = ..()
-	randpixel_xy()
 
 /obj/item/aliencoin/basic
 
@@ -235,10 +224,16 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. This one's markings appear to reveal a purple material underneath."
 	value = 20
 
-DECLARE_INTERACTIONS(/obj/item/aliencoin, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/aliencoin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.5))
+	configure(item_combat(force = 0.5))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
+	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
-/// Old attack_self.
-/obj/item/aliencoin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/aliencoin/proc/alien_coin_flip_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -249,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/aliencoin, INTERACT_USE(null, PROC_REF(interactio
 	if(rand(1,20) == 1)
 		act_message(user, src, others = span_notice("%U% fumbled %T%!"), runemessage = "fumbles [src]")
 		user.remove_from_mob(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/aliencoin/examine(mob/user)
 	. = ..()

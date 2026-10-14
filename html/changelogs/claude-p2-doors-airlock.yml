@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Airlocks, airlock assemblies, airlock electronics and the remote control window are rebuilt on the capability engine: bolts, weld, emergency access, panel, wires, pry, the shock of an electrified door, the ice, power loss and electrification (each on its own keyed timer) and the build ladder are declared parts."
+  - code_imp: "The door parts (bolts, weld_shut, door_emergency) are shared library capabilities; the legacy door capability library is deleted, and the airlock's map edits for bolted and welded doors are plain vars now."

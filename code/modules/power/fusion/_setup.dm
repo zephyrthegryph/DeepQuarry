@@ -20,7 +20,7 @@
 		to_chat(usr, "This map is not appropriate for this verb.")
 		return
 
-	var/response = rerun_ask(usr, "k23", PROC_REF(setup_fusion), args, /datum/om/prompt/choice/alert, message = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"))
+	var/response = rerun_ask(usr, "k23", PROC_REF(setup_fusion), args, /datum/prompt/choice, question = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"), buttons = TRUE)
 	if(isnull(response))
 		return
 	if(response != "Yes")
@@ -33,7 +33,7 @@
 	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [usr].")
 
 	for(var/obj/machinery/fusion_fuel_injector/mapped/injector in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		own_set(injector, nameof(injector.cur_assembly), new /obj/item/fuel_assembly/deuterium(injector))
+		rel_set(injector, nameof(injector.cur_assembly), new /obj/item/fuel_assembly/deuterium(injector))
 		injector.BeginInjecting()
 
 	var/obj/machinery/power/fusion_core/mapped/core = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)

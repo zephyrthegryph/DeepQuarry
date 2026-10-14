@@ -6,5 +6,5 @@
 	anchored = TRUE // -- TLE
 	canmove = 0
 
-/mob/living/silicon/decoy/Initialize(mapload)
-	. = ..(mapload, TRUE)
+/mob/living/silicon/decoy
+	decoy = TRUE

@@ -91,10 +91,11 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		junk_list = GLOB.generic_fishing_pool_list
 		fishing_loot = GLOB.generic_fishing_chance_list
 
-DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosive_fishing))
 
 /// Explosive fishing: a blast may kill a fish and float it up.
-/turf/simulated/floor/water/proc/explosive_fishing(datum/damage_packet/packet)
+/turf/simulated/floor/water/proc/explosive_fishing(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(prob(5 * packet.severity))
 		pick_fish()
 		if(fish_type)
@@ -120,38 +121,34 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 	else
 		fish_type = null
 
-/// Old attackby: cast a fishing rod's line into water that has fish. Spec in water.dm.
-/turf/simulated/floor/water/proc/water_fishing(mob/user, obj/item/P, datum/interaction/interaction)
-	//If you use a fishing rod on an open body of water that var/has_fish enabled
-	if(!om_busy(src))
-		var/obj/item/material/fishing_rod/R = P
-		if(!R.strung)
-			to_chat(user, span_notice("It is hard to go fishing without any line!"))
-			return INTERACTION_HANDLED_PASS
-		if(R.cast)
-			to_chat(user, span_notice("You can only cast one line at a time!"))
-			return INTERACTION_HANDLED_PASS
-		play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
-		to_chat(user,"You cast \the [P.name] into \the [src].")
-		R.cast = TRUE
-		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
-		om_task_start(/datum/om/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+MSG_DEF_SELF(fishing/no_line, span_notice("It is hard to go fishing without any line!"))
+MSG_DEF_SELF(fishing/already_cast, span_notice("You can only cast one line at a time!"))
+
+/// A fishing rod cast into water that has fish (the "water_fishing" op in water.dm): the line must be strung and not already out. Spec in water.dm.
+/turf/simulated/floor/water/proc/fishing_cast(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	if(!R.strung)
+		return MSG(fishing/no_line)
+	if(R.cast)
+		return MSG(fishing/already_cast)
+	play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
+	to_chat(A.actor, "You cast \the [R.name] into \the [src].")
+	R.cast = TRUE
+
+/// How long the line stays in the water before something bites.
+/turf/simulated/floor/water/proc/fishing_wait_time(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	return rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * tooling_of(R).speed
 
 /// A line in the water until something bites; the water is busy meanwhile.
-/datum/om/task/timed/fishing
-	complete_proc = /turf/simulated/floor/water/proc/fishing_done
-	cancel_proc = /turf/simulated/floor/water/proc/fishing_ended
-	var/obj/item/material/fishing_rod/rod
+/turf/simulated/floor/water/proc/fishing_ended(datum/act/op/A)
+	var/obj/item/material/fishing_rod/R = A.held
+	if(R)
+		R.cast = FALSE
 
-/turf/simulated/floor/water/proc/fishing_ended(datum/om/task/timed/fishing/task)
-	if(task.rod)
-		task.rod.cast = FALSE
-
-/turf/simulated/floor/water/proc/fishing_done(datum/om/task/timed/fishing/task)
-	var/mob/user = task.actor
-	var/obj/item/material/fishing_rod/R = task.rod
+/turf/simulated/floor/water/proc/fishing_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/material/fishing_rod/R = A.held
 	var/obj/item/P = R
 	play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
 	to_chat(user,span_notice("You feel a tug and begin pulling!"))
@@ -171,13 +168,12 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 			R.consume_bait()
 			var/mob/living/L = fished
 			if(prob(rand(L.mob_size) + 10) && R.line_break)
-				R.strung = FALSE
-				R.update_icon()
+				R.set_strung(FALSE)
 				user.visible_message(span_danger("\The [R]'s string snaps!"))
 			if(prob(33))	// Dead on hook. Good for food, not so much for live catch.
 				L.death()
 		to_chat(user,span_notice("You fish out \the [fished] from the water with [P.name]!"))
-	fishing_ended(task)
+	fishing_ended(A)
 
 /obj/random/fishing_junk
 	name = "junk"
@@ -185,30 +181,32 @@ DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosiv
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "red"
 
-DECLARE_LOOT(/obj/random/fishing_junk, LOOT_TABLE(\
-	/obj/random/toy = 60, \
-	/obj/random/maintenance/engineering = 50, \
-	/obj/random/maintenance/clean = 40, \
-	/obj/random/maintenance/security = 40, \
-	/obj/random/maintenance/research = 40, \
-	/obj/structure/closet/crate/secure/loot = 30, \
-	/obj/random/bomb_supply = 30, \
-	/obj/random/powercell = 30, \
-	/obj/random/tech_supply/component = 30, \
-	/obj/random/unidentified_medicine/old_medicine = 30, \
-	/obj/random/plushie = 30, \
-	/obj/random/contraband = 20, \
-	/obj/random/coin = 20, \
-	/obj/random/medical = 15, \
-	/obj/random/unidentified_medicine/fresh_medicine = 15, \
-	/obj/random/action_figure = 15, \
-	/obj/random/plushielarge = 15, \
-	/obj/random/firstaid = 10, \
-	/obj/random/tool/powermaint = 5, \
-	/obj/random/unidentified_medicine/combat_medicine = 1, \
-	/obj/random/tool/alien = 1, \
-	/obj/random/handgun = 1, \
-	/mob/living/simple_mob/animal/sif/hooligan_crab = 1))
+CAPABILITIES(/obj/random/fishing_junk)
+	loot(
+		table = list(
+			/obj/random/toy = 60,
+			/obj/random/maintenance/engineering = 50,
+			/obj/random/maintenance/clean = 40,
+			/obj/random/maintenance/security = 40,
+			/obj/random/maintenance/research = 40,
+			/obj/structure/closet/crate/secure/loot = 30,
+			/obj/random/bomb_supply = 30,
+			/obj/random/powercell = 30,
+			/obj/random/tech_supply/component = 30,
+			/obj/random/unidentified_medicine/old_medicine = 30,
+			/obj/random/plushie = 30,
+			/obj/random/contraband = 20,
+			/obj/random/coin = 20,
+			/obj/random/medical = 15,
+			/obj/random/unidentified_medicine/fresh_medicine = 15,
+			/obj/random/action_figure = 15,
+			/obj/random/plushielarge = 15,
+			/obj/random/firstaid = 10,
+			/obj/random/tool/powermaint = 5,
+			/obj/random/unidentified_medicine/combat_medicine = 1,
+			/obj/random/tool/alien = 1,
+			/obj/random/handgun = 1,
+			/mob/living/simple_mob/animal/sif/hooligan_crab = 1))
 
 #undef FISHING_RARE
 #undef FISHING_UNCOMMON

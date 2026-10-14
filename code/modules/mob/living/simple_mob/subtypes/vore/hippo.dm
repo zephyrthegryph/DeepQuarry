@@ -42,7 +42,6 @@
 
 	say_list_type = /datum/say_list/hippo
 
-	can_be_drop_prey = FALSE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/hippo //I don't know why it's in a seperate line but everyone does it so i do it
@@ -60,13 +59,15 @@
 	vore_stomach_flavor	= "You are squeezed into the sweltering insides of the herbivore rumen."
 	vore_icons = SA_ICON_LIVING
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/hippo, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/hippo, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/hippo)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/hippo/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /datum/say_list/hippo

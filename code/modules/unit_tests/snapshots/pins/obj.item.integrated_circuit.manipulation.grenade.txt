@@ -1,0 +1,17 @@
+@obj.item.integrated_circuit human|none
+@obj.item.integrated_circuit robot|none
+@obj ai|none
+@obj.item.integrated_circuit ghost|none
+@obj.item.integrated_circuit human|/obj/item/tool/screwdriver
+@obj.item.integrated_circuit human|/obj/item/tool/crowbar
+@obj.item.integrated_circuit human|/obj/item/tool/wrench
+@obj.item.integrated_circuit human|/obj/item/tool/wirecutters
+@obj.item.integrated_circuit human|/obj/item/multitool
+@obj.item.integrated_circuit human|/obj/item/weldingtool
+@obj.item.integrated_circuit human|/obj/item/stack/cable_coil
+@obj.item.integrated_circuit human|/obj/item/stack/material/steel
+@obj.item.integrated_circuit human|/obj/item/card/id
+@obj.item.integrated_circuit human|/obj/item/kit
+@obj.item.integrated_circuit human|/obj/item/storage
+@obj.item.integrated_circuit human|/obj/item
+keys: circuit_rename, collect_item, drag_buckle, examine, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, pin_data, pin_name, pin_unwire, remove, rename, scan, self, toggle_digestable, wire

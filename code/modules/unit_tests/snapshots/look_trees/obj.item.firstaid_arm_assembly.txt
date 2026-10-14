@@ -1,0 +1,5 @@
+/obj/item/firstaid_arm_assembly icon: icons/obj/aibots.dmi
+/obj/item/firstaid_arm_assembly state: firstaid_arm
+/obj/item/firstaid_arm_assembly dir: 2
+/obj/item/firstaid_arm_assembly overlay: icons/obj/aibots.dmi:firstaid_arm:8:#000000
+

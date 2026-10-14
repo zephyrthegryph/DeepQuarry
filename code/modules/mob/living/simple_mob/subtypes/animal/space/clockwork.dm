@@ -37,16 +37,13 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	var/turns_since_scan = 0
-	var/mob/flee_target
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/clockwork)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
-/datum/om/stage/life/special/clockwork
-	of = /mob/living/simple_mob/clockwork
-
-/datum/om/stage/life/special/clockwork/perform(mob/living/simple_mob/clockwork/self, datum/om/frame/life/ctx)
-	if(!self.stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate_in_list(range(self, 5), /mob/observer/dead)
+/mob/living/simple_mob/clockwork/life_special(datum/seq_frame/life/F)
+	if(!src.stat && prob(2)) // spooky
+		var/mob/observer/dead/spook = locate_in_list(range(src, 5), /mob/observer/dead)
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()
@@ -55,7 +52,7 @@
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				after(src, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
 
 
 

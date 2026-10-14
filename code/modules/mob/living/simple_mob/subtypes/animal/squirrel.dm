@@ -44,13 +44,10 @@
 	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
-	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/do_seasons = TRUE
 	picked_color = FALSE
 
-	allow_mind_transfer = TRUE
 
 /////////////////////////////////////// Vore stuff///////////////////////////////////////////
 
@@ -69,7 +66,7 @@
 
 /mob/living/simple_mob/vore/squirrel/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.digest_mode = DM_SELECT
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -151,43 +148,44 @@
 	say_maybe_target = list("Sqk?")
 	say_got_target = list("SQUEAK!!!")
 
-/mob/living/simple_mob/vore/squirrel/Initialize(mapload)
-	. = ..()
-	if(do_seasons)
-		switch(GLOB.world_time_season)
-			if("spring")
-				if(prob(1))
-					winterize()
-			if("summer")
-				pass()
-			if("autumn")
-				vore_bump_chance = 20
-				if(prob(50))
-					winterize()
-					vore_bump_chance = 20
-					return
-			if("winter")
-				winterize()
-				return
-	update_icon()
+// A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
+// keener to pounce.
+CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_movement(softfall = TRUE))
+	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
+	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))
+	after_init(0, then(PROC_REF(season_coat)))
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/squirrel/appearance_overlays()
-	. = list()
-	. += ..()
-	var/combine_key
-	if(icon == 'icons/mob/alienanimals_x32.dmi')
-		combine_key = "small"
-	else
-		combine_key = "big"
+/// It is wearing its winter coat (rolls(): winterize() puts it on once its init is complete).
+/mob/living/simple_mob/vore/squirrel/var/winter_coat = FALSE
 
-	combine_key = combine_key+icon_state
-	var/image/extra_image = overlays_cache[combine_key]
-	if(!extra_image)
-		extra_image = image(icon,null,"[icon_state]_eye")
-		extra_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-		overlays_cache[combine_key] = extra_image
-	. += extra_image
+/mob/living/simple_mob/vore/squirrel/proc/roll_season(datum/roller/R, target)
+	switch(target)
+		if("winter_coat")
+			switch(GLOB.world_time_season)
+				if("spring")
+					return R.chance(1)
+				if("autumn")
+					return R.chance(50)
+				if("winter")
+					return TRUE
+			return FALSE
+		if("vore_bump_chance")
+			return GLOB.world_time_season == "autumn" ? 20 : vore_bump_chance
+
+/mob/living/simple_mob/vore/squirrel/proc/season_coat(datum/act/timer/A)
+	if(!winter_coat)
+		return
+	var/bump = vore_bump_chance
+	winterize()
+	if(GLOB.world_time_season == "autumn")
+		vore_bump_chance = bump // an autumn squirrel stays as keen in its winter coat
+
+/// The eyes, drawn unaffected by the tint of the body.
+/mob/living/simple_mob/vore/squirrel/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image(icon, "[look.state_so_far(src)]_eye", appearance_flags = (RESET_COLOR|KEEP_APART|PIXEL_SCALE)))
 
 /mob/living/simple_mob/vore/squirrel/proc/winterize()
 	desc = desc + " It looks all plumped up for winter! Adorable!"
@@ -206,8 +204,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 	swallowTime = 1 SECOND
 	vore_capacity = 3
 	vore_bump_chance = 5
-	mob_size = MOB_LARGE
-	update_icon()
+	set_mob_size(MOB_LARGE)
 
 /mob/living/simple_mob/vore/squirrel/verb/squirrel_color()
 	set name = "Pick Color"
@@ -216,15 +213,16 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	om_ask(src, /datum/om/prompt/color, PROC_REF(squirrel_color_picked), message = "Choose a color.", default = color)
+	open_request(src, /datum/prompt/color, PROC_REF(squirrel_color_picked), answerer = src, question = "Choose a color.", default = color, timeout = 0)
 
-/mob/living/simple_mob/vore/squirrel/proc/squirrel_color_picked(datum/om/prompt/color/ask)
+/mob/living/simple_mob/vore/squirrel/proc/squirrel_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
 	if(picked_color)
 		return
-	if(ask.picked_color)
-		color = ask.picked_color
+	if(A.answer.value)
+		color = A.answer.value
 	picked_color = TRUE
-	update_icon()
 
 /mob/living/simple_mob/vore/squirrel/small
 	do_seasons = FALSE
@@ -232,6 +230,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, TYPE_PROC_REF(/ato
 /mob/living/simple_mob/vore/squirrel/big
 	do_seasons = FALSE
 
-/mob/living/simple_mob/vore/squirrel/big/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/squirrel/big)
+	after_init(0, then(PROC_REF(big_squirrel_winter)))
+
+/mob/living/simple_mob/vore/squirrel/big/proc/big_squirrel_winter(datum/act/timer/A)
 	winterize()

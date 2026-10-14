@@ -25,35 +25,34 @@
 
 	var/datum/reagents/udder = null
 
-/mob/living/simple_mob/animal/goat/Initialize(mapload)
-	. = ..()
-	own_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-	rel_set(udder, nameof(udder.my_atom), src)
+CAPABILITIES(/mob/living/simple_mob/animal/goat)
+	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the goat
+	op("goat_item", item(/obj/item), then(PROC_REF(goat_interaction_item)))
 
-/datum/om/stage/life/type_post/simple_mob/animal/goat
-	of = /mob/living/simple_mob/animal/goat
+/mob/living/simple_mob/animal/goat/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/goat/perform(mob/living/simple_mob/animal/goat/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/goat/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(ctx.fact("alive"))
-		if(self.stat == CONSCIOUS)
-			if(self.udder && prob(5))
-				self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+	if(F.alive())
+		if(src.stat == CONSCIOUS)
+			if(src.udder && prob(5))
+				src.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
-		if(locate_in_list(self.loc, /obj/effect/plant))
-			var/obj/effect/plant/SV = locate_in_list(self.loc, /obj/effect/plant)
+		if(locate_in_list(src.loc, /obj/effect/plant))
+			var/obj/effect/plant/SV = locate_in_list(src.loc, /obj/effect/plant)
 			SV.die_off(1)
 
-		if(locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(self.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
-			qdel(SP)
+		if(locate_in_list(src.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible))
+			var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/SP = locate_in_list(src.loc, /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+			spent(SP)
 
-		if(!self?.pulled_by_mob())
+		if(!src?.pulled_by_mob())
 			var/obj/effect/plant/food
-			food = locate_in_list(oview(5,self.loc), /obj/effect/plant)
+			food = locate_in_list(oview(5,src.loc), /obj/effect/plant)
 			if(food)
-				var/step = get_step_to(self, food, 0)
-				self.Move(step)
+				var/step = get_step_to(src, food, 0)
+				src.Move(step)
 
 /mob/living/simple_mob/animal/goat/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -61,11 +60,11 @@
 		for(var/obj/effect/plant/SV in contents_of(loc))
 			SV.die_off(1)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC_REF(goat_interaction_item)))
-
 /// Old attackby: milking.
-/mob/living/simple_mob/animal/goat/proc/goat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/goat/proc/goat_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
 		act_message(user, src, null, MSG_OTHERS(span_notice("%U% milks %T% using %I%.")), item = O)
@@ -75,7 +74,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC
 		if(!transfered)
 			to_chat(user, span_red("The udder is dry. Wait a bit longer..."))
 	else
-		return FALSE
+		return OP_DECLINE
 
 /datum/say_list/goat
 	speak = list("EHEHEHEHEH","eh?")

@@ -12,8 +12,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
-	active_power_usage = 300
 
 	var/obj/item/reagent_containers/container = null		// This is the beaker that holds all of the biomass
 
@@ -81,23 +79,32 @@
 		)
 	// end
 
-EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
-	INTERACT_ITEM(null, PROC_REF(organ_printer_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand), REQ_TARGET_STATE(/obj/machinery/organ_printer/proc/can_open_menu)), \
-	INTERACT_VERB("Eject Beaker", PROC_REF(organ_printer_eject_beaker)), \
-)
+
 
 /// Old attackby.
-/obj/machinery/organ_printer/proc/organ_printer_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	return default_part_replacement(user, O) ? TRUE : FALSE
+/obj/machinery/organ_printer/proc/organ_printer_interaction_item(datum/act/op/A)
+	return default_part_replacement(A.actor, A.held_provider()) ? OP_OK : OP_DECLINE
 
-DECLARE_APPEARANCE(/obj/machinery/organ_printer, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_panel_open"))))
-DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_working"))))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/organ_printer/draw(datum/look/look)
+	..()
+	if(panel_open == 1)
+		look.overlay("bioprinter_panel_open")
+	if(printing == 1)
+		look.overlay("bioprinter_working")
 
-/obj/machinery/organ_printer/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	make_climbable()
+TRACKED(/obj/machinery/organ_printer, printing)
+TRACKED(/obj/machinery/organ_printer, complex_organs)
+TRACKED(/obj/machinery/organ_printer, anomalous_organs)
+TRACKED(/obj/machinery/organ_printer, engineered_organs)
+
+CAPABILITIES(/obj/machinery/organ_printer)
+	configure(uses_power(idle = 40, active = 300))
+	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
+	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_open_menu))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
+	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))
+	climb()
+	default_parts()
 
 /obj/machinery/organ_printer/examine(mob/user)
 	. = ..()
@@ -122,44 +129,29 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 		malfunctioning = initial(malfunctioning)
 
 	if(manip_rating >= 3)
-		complex_organs = TRUE
+		set_complex_organs(TRUE)
 		if(manip_rating >= 4)
-			anomalous_organs = TRUE
+			set_anomalous_organs(TRUE)
 			if(manip_rating >= 5)
 				malfunctioning = TRUE
 	else
-		complex_organs = initial(complex_organs)
-		anomalous_organs = initial(anomalous_organs)
+		set_complex_organs(initial(complex_organs))
+		set_anomalous_organs(initial(anomalous_organs))
 		malfunctioning = initial(malfunctioning)
 
 	. = ..()
 
-/// Requirement: TRUE, or why the printer's menu can't be opened.
-/obj/machinery/organ_printer/proc/can_open_menu(mob/user, atom/target, obj/item/held)
+/// Requirement: null, or why the printer's menu can't be opened.
+/obj/machinery/organ_printer/proc/can_open_menu(datum/act/op/A)
 	if(!operable())
-		return TRUE // the effect ignores it silently
+		return null // the effect ignores it silently
 	if(panel_open)
 		return "close the panel first"
 	if(printing)
 		return "it's busy"
-	return TRUE
+	return null
 
-/// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/organ_printer/proc/organ_printer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(!operable())
-		return TRUE
-
-	if(container)
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(bioprinter_menu_answered), title = "Bioprinter Menu", message = "What do you want to do?", yes_text = "Print Limbs", no_text = "Cancel", requires = PROMPT_ADJACENT)
-	else
-		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
-	return TRUE
-
-/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/om/prompt/confirm/ask)
-	printing_menu(ask.answerer)
-
-/obj/machinery/organ_printer/proc/printing_menu(mob/user)
+/obj/machinery/organ_printer/proc/printer_product_choices(datum/act/op/A)
 	var/list/possible_list = list()
 
 	possible_list |= products
@@ -175,22 +167,23 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 		possible_list |= engineered_products
 	// end
 
-	om_ask(user, /datum/om/prompt/choice/bioprinter_print, PROC_REF(print_choice_made), choices = possible_list)
+	return possible_list
 
-/datum/om/prompt/choice/bioprinter_print
-	title = "Print Choice"
-	message = "What would you like to print?"
-	requires = PROMPT_ADJACENT
+/// Re-checked on the answer: the printer is idle and works.
+/obj/machinery/organ_printer/proc/printer_ready(datum/request/R)
+	return !printing && operable()
 
-/datum/om/prompt/choice/bioprinter_print/valid()
-	var/obj/machinery/organ_printer/P = subject
-	if(P.printing || (!P.operable()))
-		return "busy"
-	return null
-
-/obj/machinery/organ_printer/proc/print_choice_made(datum/om/prompt/choice/bioprinter_print/ask)
-	var/list/possible_list = ask.choices
-	var/choice = ask.choice
+/obj/machinery/organ_printer/proc/print_choice_made(datum/act/op/A)
+	if(!printer_has_reservoir(A))
+		if(operable())
+			to_chat(A.actor, span_warning("\The [src] can't operate without a reagent reservoir!"))
+		return OP_OK
+	if(!printer_choosing_product(A) || !A.step_value("product") || printing || !operable())
+		return OP_OK
+	var/list/possible_list = printer_product_choices(A)
+	var/choice = A.step_value("product")
+	if(!possible_list[choice])
+		return OP_OK
 
 	if(!can_print(choice, possible_list[choice][2]))
 		return
@@ -198,18 +191,16 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 	container.reagents.remove_reagent(REAGENT_ID_BIOMASS, possible_list[choice][2])
 
 	set_use_power(USE_POWER_ACTIVE)
-	printing = 1
-	update_icon()
+	set_printing(1)
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
 
-	om_after(src, print_delay, PROC_REF(printing_done), possible_list[choice][1])
+	after(src, print_delay, PROC_REF(printing_done), with = list(possible_list[choice][1]))
 
 /// The print delay is over: the organ comes out unless the printer lost power.
 /obj/machinery/organ_printer/proc/printing_done(organ_path)
 	set_use_power(USE_POWER_IDLE)
-	printing = 0
-	update_icon()
+	set_printing(0)
 
 	if(!operable())
 		return
@@ -217,7 +208,8 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 	print_organ(organ_path)
 
 /// Old verb "Eject Beaker".
-/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/organ_printer/proc/organ_printer_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	add_fingerprint(user)
@@ -229,7 +221,7 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 /obj/machinery/organ_printer/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return 1
 	return 0
 
@@ -282,7 +274,7 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 
 	if(O.data)
 		// This is a very hacky way of doing of what organ/New() does if it has an owner
-		O.w_class = max(O.w_class + mob_size_difference(O.data.get_species_mob_size(), MOB_MEDIUM), 1)
+		O.set_w_class(max(O.w_class + mob_size_difference(O.data.get_species_mob_size(), MOB_MEDIUM), 1))
 
 	return O
 // END GENERIC PRINTER
@@ -304,14 +296,16 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 	icon_state = "bioprinter"
 	circuit = /obj/item/circuitboard/bioprinter
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj/item/reagent_containers/glass/bottle/biomass)
+/obj/machinery/organ_printer/flesh/full/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/bottle/biomass)
 
 /obj/machinery/organ_printer/flesh/dismantle()
 	var/turf/T = get_turf(src)
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	return ..()
 
 /obj/machinery/organ_printer/flesh/print_organ(choice)
@@ -321,17 +315,26 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 	visible_message(span_info("\The [src] dings, then spits out \a [O]."))
 	return O
 
-/obj/machinery/organ_printer/proc/load_container_done(mob/user, obj/item/reagent_containers/glass/G)
-	if(container)
-		to_chat(user, span_warning("\The [src] already has a container loaded!"))
-		return
-	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
-	own_set(src, nameof(src.container), G, user = user)
+MSG_DEF_SELF(flesh_printer/container_loaded, "the printer already has a container loaded")
 
-EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC_REF(flesh_printer_interaction_item)))
+/obj/machinery/organ_printer/proc/load_container_done(datum/act/op/A)
+	var/obj/item/reagent_containers/glass/G = A.held
+	if(!move_into(src, nameof(container), G, A.actor))
+		return OP_FAILED
+	act_message(A.actor, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
+	return OP_OK
+
+/obj/machinery/organ_printer/proc/container_available(datum/act/op/A)
+	return (!read_once(container)) ? null : MSG(flesh_printer/container_loaded)
+
+CAPABILITIES(/obj/machinery/organ_printer/flesh)
+	op("load_container", item(/obj/item/reagent_containers/glass), needs(req(PROC_REF(container_available))), wait(1 SECOND), then(PROC_REF(load_container_done)))
+	op("flesh_printer_interaction_item", item(/obj/item), then(PROC_REF(flesh_printer_interaction_item)))
 
 /// Old attackby; anything else falls through to the base printer's.
-/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// DNA sample from syringe.
 	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
 		var/obj/item/reagent_containers/syringe/S = W
@@ -341,17 +344,16 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 			S.reagents.remove_reagent(REAGENT_ID_BLOOD, injected.volume)
 			to_chat(user, span_info("You scan the blood sample into the bioprinter."))
 		return TRUE
-	else if(istype(W,/obj/item/reagent_containers/glass))
-		var/obj/item/reagent_containers/glass/G = W
-		if(container)
-			to_chat(user, span_warning("\The [src] already has a container loaded!"))
-			return TRUE
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
-		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 // END FLESH ORGAN PRINTER
 
 /obj/machinery/organ_printer/ownership()
 	. = ..()
 	. += owns(nameof(container), policy = OWN_CONTAINED)
+
+/obj/machinery/organ_printer/proc/printer_has_reservoir(datum/act/op/A)
+	return operable() && !!container
+
+/obj/machinery/organ_printer/proc/printer_choosing_product(datum/act/op/A)
+	return A.step_value("menu") == "Print Limbs" && printer_has_reservoir(A)

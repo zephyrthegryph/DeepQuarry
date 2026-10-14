@@ -9,13 +9,14 @@
 		to_chat(owner(), span_warning("[target_datum] is already tagged!"))
 		return
 
-	LAZYADD(tagged_datums, target_datum)
-	om_hook(target_datum, /datum/om/event/qdeleting, src, PROC_REF(handle_tagged_del))
+	rel_add(src, nameof(tagged_datums), target_datum)
+	observe(target_datum, /datum/notice/qdeleting, src, then(PROC_REF(handle_tagged_del)))
 	to_chat(owner(), span_notice("[target_datum] has been tagged."))
 
 /// Get ahead of the curve with deleting
-/datum/admins/proc/handle_tagged_del(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/admins/proc/handle_tagged_del(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 
 	if(owner())
 		to_chat(owner(), span_boldnotice("Tagged datum [source] ([source.type]) has been deleted."))
@@ -33,7 +34,7 @@
 		return
 
 	if(LAZYFIND(tagged_datums, target_datum))
-		LAZYREMOVE(tagged_datums, target_datum)
+		rel_remove(src, nameof(tagged_datums), target_datum)
 		if(!silent)
 			to_chat(owner(), span_notice("[target_datum] has been untagged."))
 	else if(!silent)
@@ -82,9 +83,9 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 			else if(isatom(iter_datum))
 				var/atom/resolved_atom = iter_datum // needed for ADMIN_JMP
 				specific_info = "[AREACOORD(resolved_atom)] [ADMIN_JMP(resolved_atom)]"
-			else if(istype(iter_datum, /datum/controller/subsystem))
-				var/datum/controller/subsystem/resolved_subsystem = iter_datum
-				specific_info = "[resolved_subsystem.stat_entry()]"
+			else if(istype(iter_datum, /datum/system))
+				var/datum/system/resolved_system = iter_datum
+				specific_info = "[resolved_system.stat_entry("")]"
 			// else, it's just a /datum
 
 			dat += "\t[index]: [iter_datum] | [specific_info] | [ADMIN_VV(iter_datum)] | [TAG_DEL(iter_datum)] | [iter_datum == marked_datum ? "<b>Marked</b>" : TAG_MARK(iter_datum)] "

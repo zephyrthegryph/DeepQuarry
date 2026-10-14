@@ -1,5 +1,4 @@
 /mob/living/silicon/pai
-	death_message = "fizzles out and clatters to the floor..."
 
 // Let's make it so that pAIs don't just always cease to be when they die! It would be cool if we could fix them.
 /mob/living/silicon/pai/on_death(gibbed)
@@ -13,7 +12,7 @@
 		else
 			a.autosay("PAI \"[src]\" has died in [t.name]!", "PAI [src]'s Death Alarm")
 		paiDA = FALSE // no repeats we died already
-		qdel(a)
+		consume(a)
 	release_vore_contents()
 	close_up(TRUE)
 	if(!card)
@@ -26,6 +25,6 @@
 	card.damage_random_component()
 	if(gibbed)
 		if(!QDELETED(card)) // Either the pai or card could be deleted first, prevent a loop
-			qdel(card)
+			ended_with(card, src)
 	else
 		card.add_overlay("pai-dead")

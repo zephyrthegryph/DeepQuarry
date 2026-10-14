@@ -54,20 +54,20 @@
 	prey.ai_brain?.react_to_attack(user)
 
 	//Timer and progress bar
-	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
-		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
+	if(!user.client && prey.has_status(STAT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
+		prey.status_at_least(STAT_STUNNED, min(prey.status_units(STAT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
-	var/started = om_task_launch(/datum/om/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
+	var/started = task_launch(/datum/task/timed/proc_devour, user, prey, list(receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE), null)
 	return !istext(started)
 
-/datum/om/task/timed/proc_devour
+/datum/task/timed/proc_devour
 	complete_proc = /proc/devour_timed_done
 	var/mob/living/pred
 	var/obj/belly/belly
 	var/message_range
 
 /// A timed devour completed: eat the prey and let go of any grab the user had on it.
-/proc/devour_timed_done(datum/om/task/timed/proc_devour/task)
+/proc/devour_timed_done(datum/task/timed/proc_devour/task)
 	var/mob/living/user = task.actor
 	var/mob/living/prey = task.target
 	var/mob/living/pred = task.pred
@@ -75,7 +75,7 @@
 	var/message_range = task.message_range
 	for(var/obj/item/grab/G in prey?.grabbed_by_list())
 		if(G?.grab_assailant() == user)
-			qdel(G)
+			consumed(G)
 	devour_and_move_prey(user, prey, pred, belly, message_range)
 
 /proc/devour_and_move_prey(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, message_range)
@@ -91,11 +91,10 @@
 			if(M.loc == H) // In case nom_atom failed somehow.
 				M.forceMove(get_turf(user))
 		rel_clear(H, nameof(H.held_mob))
-		qdel(H)
+		consumed(H, user)
 	else
 		belly.nom_atom(prey, user)
 
-	user.update_icon()
 
 	var/mob/living/carbon/victim = prey // Check for afk vore
 	if(istype(victim) && !victim.client && !victim.ai_brain && victim.ckey)
@@ -161,7 +160,7 @@
 	if(!pred.is_slipping && !prey.is_slipping) //We only care about privacy preference if it's NOT a spontaneous vore.
 		switch(belly.eating_privacy_local) //if("loud") case not added, as it would not modify message_range
 			if("default")
-				if(pred.eating_privacy_global)
+				if(pred.vore_prefs.eating_privacy_global)
 					message_range = 1
 			if("subtle")
 				message_range = 1
@@ -197,19 +196,19 @@
 	// Consent as requirements (vore_consent.dm): the first failing clause gives the reason.
 	var/refusal = vore_consent_refusal(/datum/predicate/vore_devour, pred, prey)
 	if(refusal)
-		if(!prey.devourable)
+		if(!prey.vore_prefs.devourable)
 			to_chat(user, span_vnotice(refusal))
 			log_and_message_admins("attempted to devour [key_name_admin(prey)] against their prefs ([prey ? ADMIN_JMP(prey) : "null"])", user)
 		else
 			to_chat(user, span_vwarning(refusal))
 		return FALSE
-	if(!pred.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
 		if(user == pred)
 			to_chat(user, span_vwarning("You aren't set as being able to pred while AFK"))
 			return FALSE
 		to_chat(user, span_vnotice("The predator prefers not to be fed while AFK"))
 		return FALSE
-	if(!prey.is_dead() && !prey.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
 		if(user == prey)
 			to_chat(user, span_vwarning("You aren't set as being able to prey while AFK"))
 			return FALSE

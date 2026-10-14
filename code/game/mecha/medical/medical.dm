@@ -5,9 +5,13 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
+
 	stomp_sound = 'sound/mecha/mechmove01.ogg'
 
 	cargo_capacity = 1
+
+CAPABILITIES(/obj/mecha/medical)
+	initial_contents(/obj/item/mecha_parts/mecha_tracking, when = PROC_REF(on_player_level)) // an exosuit made on a player level carries a tracking beacon
 
 TYPE_TABLE(/obj/mecha/medical, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
@@ -17,10 +21,4 @@ TYPE_TABLE(/obj/mecha/medical, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/electrical \
 		))
 
-
-/obj/mecha/medical/Initialize(mapload)
-	. = ..()
-	var/turf/T = get_turf(src)
-	if(isPlayerLevel(T.z))
-		new /obj/item/mecha_parts/mecha_tracking(src)
 

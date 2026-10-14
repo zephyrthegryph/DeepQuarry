@@ -16,10 +16,12 @@
 	var/x_offset = 0 // Offset from the 'center' of where the projector is, so that if it moves, the shield can recalc its position.
 	var/y_offset = 0 // Ditto.
 
-/obj/effect/directional_shield/Initialize(mapload, new_projector)
-	. = ..()
-	if(new_projector)
-		rel_set(src, nameof(projector), new_projector)
+CAPABILITIES(/obj/effect/directional_shield)
+	param(nameof(projector), pos = 1, apply = PROC_REF(place_by_projector))
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A shield keeps its offset from its projector.
+/obj/effect/directional_shield/proc/place_by_projector(new_projector)
+	if(projector)
 		var/turf/us = get_turf(src)
 		var/turf/them = get_turf(projector)
 		if(them)
@@ -38,7 +40,7 @@
 	if(new_pos)
 		forceMove(new_pos)
 	else
-		qdel(src)
+		consume(src)
 
 /obj/effect/directional_shield/proc/update_color(new_color)
 	if(!projector)
@@ -78,8 +80,6 @@
 	but allow those projectiles to leave the shield from the inside.  Blocking too many damaging projectiles will cause the shield to fail."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "signmaker_sec"
-	light_range = 4
-	light_power = 4
 	light_on = TRUE
 	var/active = FALSE					// If it's on.
 	// The projector's integrity is the shield's strength: how much damage the shield blocks before breaking.
@@ -98,27 +98,38 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/shield_projector/Initialize(mapload)
-	max_integrity = max_integrity
-	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(moved_event))
-	if(always_on)
-		om_after(src, 0, PROC_REF(create_shields))
-	return ..()
+CAPABILITIES(/obj/item/shield_projector)
+	configure(light_glow(range = 4, power = 4))
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(moved_event)))
+	when(nameof(always_on), after_init(0, then(PROC_REF(raise_after_init))))
+	owns_many(nameof(active_shields))
+	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
+
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_self)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(projector_emp_drain))))
+
+/// TRUE while the projector regenerates (damage starts it); whole, it parks.
+/obj/item/shield_projector/var/tmp/regenerating = FALSE
+TRACKED(/obj/item/shield_projector, regenerating)
 
 // its shields come down.
 /obj/item/shield_projector/on_destroy(force)
 	destroy_shields()
 	..()
 
-/obj/item/shield_projector/proc/moved_event(datum/source, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/obj/item/shield_projector/proc/moved_event(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	update_shield_positions()
 
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
-	S.dir = new_dir
-	own_add(src, nameof(active_shields), S)
+	S.set_dir(new_dir)
+	rel_add(src, nameof(active_shields), S)
+
+/// An always-on projector raises its shields once init is done (after_init()).
+/obj/item/shield_projector/proc/raise_after_init(datum/act/A)
+	create_shields()
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.
@@ -129,12 +140,12 @@
 	return TRUE
 
 /obj/item/shield_projector/proc/destroy_shields()
-	own_clear(src, nameof(active_shields), OWN_DELETE)
-	set_light(0)
+	rel_clear(src, nameof(active_shields))
+	set_glow(src, GLOW(0, null, null))
 	active = FALSE
 
-/obj/item/shield_projector/proc/update_shield_positions()
-	EVENT_HANDLER
+/obj/item/shield_projector/proc/update_shield_positions(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.relocate()
 
@@ -149,7 +160,7 @@
 	. = ..()
 	if(new_value < old_value)
 		COOLDOWN_START(src, regen_cooldown, shield_regen_delay)
-		om_task_periodic(src, PERIODIC_SLOW) // regenerates after its delay
+		set_regenerating(TRUE) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS, 1.5)
@@ -187,28 +198,27 @@
 
 	var/new_color = rgb(new_r, new_g, new_b)
 
-	set_light(light_range, light_power, new_color)
+	set_glow(src, GLOW(glow_of(src).range, glow_of(src).power, new_color))
 
 	// Now deploy the new color to all the shields.
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.update_color(new_color)
 
-DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_REF(interaction_self)))
-
 /// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/shield_projector/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield_projector/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))
-			return TRUE
+			return OP_OK
 		set_on(FALSE)
 	else
 		set_dir(user.dir) // Needed for linear shields.
 		set_on(TRUE)
 	act_message(user, src, others = span_notice("%U% [!active ? "de":""]activates %T%."))
-	return TRUE
+	return OP_OK
 
 /obj/item/shield_projector/proc/set_on(on)
 	if(isnull(on))
@@ -217,9 +227,10 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
 /// Regenerates every 2 s while damaged (damage starts it); whole, it sleeps.
-/obj/item/shield_projector/periodic_step()
+/obj/item/shield_projector/proc/regen_step(datum/act/A)
 	if(get_integrity() >= max_integrity && (active || !always_on))
-		return PROCESS_KILL
+		set_regenerating(FALSE)
+		return
 	if(get_integrity() < max_integrity && ( COOLDOWN_FINISHED(src, regen_cooldown)) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.
@@ -234,11 +245,10 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	if(Adjacent(user))
 		. += "Its shield matrix is at [round( (get_integrity() / max_integrity) * 100, 0.01)]% strength."
 
-DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_drain))
-
 /// A pulse drains the shield; a strong one kills it outright.
-/obj/item/shield_projector/proc/projector_emp_drain(datum/damage_packet/packet)
-	adjust_health(-max_integrity / packet.severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+/obj/item/shield_projector/proc/projector_emp_drain(datum/act/hit/emp/A)
+	adjust_health(-max_integrity / A.packet.severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+	return OP_OK
 
 // Subtypes
 
@@ -385,8 +395,9 @@ DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_d
 	var/tmp/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool
 	special_handling = TRUE
 
-/obj/item/shield_projector/line/exosuit/periodic_step()
+/obj/item/shield_projector/line/exosuit/regen_step(datum/act/A)
 	..()
+	set_regenerating(TRUE) // the exosuit's shield draws the mech's power every step for as long as it lives
 	if((my_tool() && loc != my_tool()) && (my_mecha() && loc != my_mecha()))
 		forceMove(my_tool())
 	if(active)
@@ -400,10 +411,12 @@ DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_d
 	else
 		my_tool().set_ready_state(TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/shield_projector/line/exosuit, INTERACT_USE("Toggle", PROC_REF(exosuit_interaction_self)))
+CAPABILITIES(/obj/item/shield_projector/line/exosuit)
+	op("exosuit_interaction_self", in_hand(), label("Toggle"), then(PROC_REF(exosuit_interaction_self)))
 
 /// Old attack_self (the parent's self-use does nothing here: special handling).
-/obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield_projector/line/exosuit/proc/exosuit_interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))

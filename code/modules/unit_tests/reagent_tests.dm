@@ -68,21 +68,21 @@
 
 		if(CR.required_reagents && length(CR.required_reagents))
 			for(var/RR in CR.required_reagents)
-				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.required_reagents, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid required reagent amount or in invalid format \"[LAZYACCESS(CR.required_reagents, RR)]\".")
 
 		if(CR.catalysts && length(CR.catalysts))
 			for(var/RR in CR.catalysts)
-				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.catalysts, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid catalysts amount or in invalid format \"[LAZYACCESS(CR.catalysts, RR)]\".")
 
 		if(CR.inhibitors && length(CR.inhibitors))
 			for(var/RR in CR.inhibitors)
-				TEST_ASSERT(chemistry_service().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[RR], "[CR.type]: Reagents - chemical reaction had invalid required reagent ID \"[RR]\".")
 				TEST_ASSERT(LAZYACCESS(CR.inhibitors, RR) > 0, "[CR.type]: Reagents - chemical reaction had invalid inhibitors amount or in invalid format \"[LAZYACCESS(CR.inhibitors, RR)]\".")
 
 		if(CR.result)
-			TEST_ASSERT(chemistry_service().chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
+			TEST_ASSERT(SSchemistry.ready().chemical_reagents[CR.result], "[CR.type]: Reagents - chemical reaction had invalid result reagent ID \"[CR.result]\".")
 
 /// Test that makes sure that prefilled reagent containers have valid reagents
 /datum/unit_test/prefilled_reagent_containers_shall_have_valid_reagents
@@ -94,7 +94,7 @@
 
 		if(R.prefill && R.prefill.len)
 			for(var/ID in R.prefill)
-				TEST_ASSERT(chemistry_service().chemical_reagents[ID], "[RC]: Reagents - reagent prefill had invalid reagent ID \"[ID]\".")
+				TEST_ASSERT(SSchemistry.ready().chemical_reagents[ID], "[RC]: Reagents - reagent prefill had invalid reagent ID \"[ID]\".")
 
 		qdel(R)
 
@@ -102,7 +102,7 @@
 		var/obj/item/reagent_containers/chem_disp_cartridge/D = new DC(container)
 
 		if(D.spawn_reagent)
-			TEST_ASSERT(chemistry_service().chemical_reagents[D.spawn_reagent], "[DC]: Reagents - chemical dispenser cartridge had invalid reagent ID \"[D.spawn_reagent]\".")
+			TEST_ASSERT(SSchemistry.ready().chemical_reagents[D.spawn_reagent], "[DC]: Reagents - chemical dispenser cartridge had invalid reagent ID \"[D.spawn_reagent]\".")
 
 		qdel(D)
 
@@ -114,13 +114,17 @@
 	var/obj/instant_beaker = null // For distilling only
 	var/list/result_reactions
 
+CAPABILITIES(/datum/unit_test/chemical_reactions_shall_not_conflict)
+	owns_one(nameof(fake_beaker))
+	owns_one(nameof(instant_beaker))
+
 /datum/unit_test/chemical_reactions_shall_not_conflict/Run()
 	var/failed = FALSE
 
 	// need to test for instant reactions blocking distillation!
-	own_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
+	rel_set(src, nameof(instant_beaker), new /obj/item/reagent_containers/glass/beaker())
 	instant_beaker.reagents.maximum_volume = 5000
-	om_hook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src, PROC_REF(get_signal_data))
+	observe(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 	//actual test
 	var/list/all_reactions = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
@@ -154,17 +158,17 @@
 			fake_beaker.reagents.maximum_volume = 5000
 
 		// Perform test! If it fails once, it will perform a deeper check trying to use the inhibitors of anything in the beaker
-		om_hook(fake_beaker.reagents, /datum/om/event/reagents_holder_reacted, src, PROC_REF(get_signal_data))
+		observe(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src, then(PROC_REF(get_signal_data)))
 
 		// Check if we failed the test with inhibitors in use, if so we absolutely couldn't make it...
 		// Uncomment the UNIT_TEST section in code\modules\reagents\reactions\_reactions.dm if you require more info
 		if(perform_reaction(CR) == RESULT_REACTION_FAILED)
 			TEST_NOTICE(src, "[CR.type]: Reagents - !!!!chemical reaction did not produce \"[CR.result]\"!!!! CONTAINS: \"[fake_beaker.reagents.get_reagents()]\"")
 			failed = TRUE
-		om_unhook(fake_beaker.reagents, /datum/om/event/reagents_holder_reacted, src)
+		unobserve(fake_beaker.reagents, /datum/notice/reagents_holder_reacted, src)
 
 	// Cleanup
-	om_unhook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src)
+	unobserve(instant_beaker.reagents, /datum/notice/reagents_holder_reacted, src)
 	own_clear(src, nameof(fake_beaker), OWN_DELETE)
 	own_clear(src, nameof(instant_beaker), OWN_DELETE)
 
@@ -244,8 +248,9 @@
 		TEST_NOTICE(src, "[CR.type]: Reagents - Used inhibitor for: [test_react]")
 	return RESULT_REACTION_FAILED
 
-/datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(atom/source, datum/om/event/reagents_holder_reacted/event)
-	EVENT_HANDLER
+/datum/unit_test/chemical_reactions_shall_not_conflict/proc/get_signal_data(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/reagents_holder_reacted/event = N
 	LAZYADD(result_reactions, event.chemical_reaction) // Append the reactions that happened, then use that to check their inhibitors
 
 /datum/unit_test/chemical_reactions_shall_not_conflict/proc/check_instants()
@@ -271,7 +276,7 @@
 			continue
 
 		for(var/reg_id in results)
-			TEST_ASSERT(chemistry_service().chemical_reagents[reg_id], "[grind]: Reagents - Grinding result had invalid reagent id \"[reg_id]\".")
+			TEST_ASSERT(SSchemistry.ready().chemical_reagents[reg_id], "[grind]: Reagents - Grinding result had invalid reagent id \"[reg_id]\".")
 
 #undef RESULT_REACTION_FAILED
 #undef RESULT_REACTION_SUCCESS

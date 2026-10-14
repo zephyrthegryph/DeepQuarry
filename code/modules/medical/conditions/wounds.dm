@@ -26,7 +26,8 @@
 //    powers) share one budget across the wounds they reach.
 //  - TREAT_RESTORATION heals every wound, internal ones included.
 //  - Kits/bandages/ointment set the bandaged/salved/disinfected flags.
-//  - Natural autoheal stays in the limb's update_wounds().
+//  - Natural autoheal, bleeding and the bleed clock are rates on the body clock
+//    (code/modules/body/body_clock.dm).
 
 /// Bleed ticks removed per tick per unit of hemostatic treatment level.
 #define WOUND_HEMOSTATIC_BLEED_RATE 5
@@ -53,10 +54,8 @@
 	var/desc = "wound"
 	/// Damage this wound carries (all merged instances together).
 	var/damage = 0
-	/// Life cycles of bleeding left, run down on the owner's biology clock (run_bleed_clock()).
+	/// Life cycles of bleeding left, run down by the body clock while the wound bleeds (run_bleed()).
 	var/bleed_timer = 0
-	/// om_clock_now(CLOCK_BIO) of the last run_bleed_clock(), or null before the first.
-	var/tmp/bleed_clock_at
 	/// Above this per-wound damage the wound must be treated to stop bleeding.
 	var/bleed_threshold = 30
 	/// Damage of the current stage; below it the wound heals into the next.
@@ -142,6 +141,9 @@
 	if(istype(E))
 		E.integrity_dirty = TRUE
 	body?.invalidate(BODY_DIRTY_ORGANS)
+	var/mob/living/carbon/human/H = owner
+	if(istype(H))
+		H.body_clock_refresh()
 
 /datum/affliction/wound/load_value()
 	return internal ? 0 : damage
@@ -236,6 +238,8 @@
 			current_stage++
 		apply_current_stage()
 	sync()
+	if(healed > 0 && damage <= 0)
+		schedule_fade()
 	return amount
 
 /// Reopen the wound by `amount`.
@@ -264,7 +268,7 @@
 
 /datum/affliction/wound/proc/bleeding()
 	if(internal)
-		return FALSE // internal wounds bleed through calculate_internal_bloodloss
+		return FALSE // internal wounds bleed inside: internal_bleed_rate()
 	if(current_stage > max_bleeding_stage)
 		return FALSE
 	if(bandaged || clamped)
@@ -277,16 +281,11 @@
 		return FALSE // clotted; big wounds need a bandage regardless
 	return TRUE
 
-/// Run bleed_timer down by the biological time elapsed since the last call, in life cycles
-/// (audit D17: it used to lose one per update_damages() call, however often that ran).
-/// `bleeding` says whether the wound bled over that span; `now` is om_clock_now(CLOCK_BIO).
-/datum/affliction/wound/proc/run_bleed_clock(now, bleeding)
-	if(isnull(bleed_clock_at) || now < bleed_clock_at)
-		bleed_clock_at = now
-		return
-	if(bleeding && bleed_timer > 0)
-		bleed_timer = max(0, bleed_timer - (now - bleed_clock_at) / LIFE_CYCLE)
-	bleed_clock_at = now
+/// Runs bleed_timer down by `cycles` Life cycles of body time spent bleeding (the body clock calls it with the time
+/// that passed; audit D17: never per call). Time not bleeding costs nothing.
+/datum/affliction/wound/proc/run_bleed(cycles, bleeding)
+	if(bleeding && bleed_timer > 0 && cycles > 0)
+		bleed_timer = max(0, bleed_timer - cycles)
 
 // --- Affliction integration -------------------------------------------------
 
@@ -322,8 +321,8 @@
 	heal_damage(amount, tag == TREAT_RESTORATION || tag == TREAT_VESSEL_REPAIR)
 	return before - damage
 
-/// Wounds don't progress on their own: autoheal lives in the limb's
-/// update_wounds(), and severity mirrors damage.
+/// Wounds don't progress on their own: healing and bleeding are rates on the body clock
+/// (body_clock.dm), and severity mirrors damage.
 /datum/affliction/wound/progress()
 	return
 
@@ -501,6 +500,21 @@
 	autoheal_cutoff = 5
 	max_bleeding_stage = 4 // all stages bleed
 	treated_by = list(TREAT_VESSEL_REPAIR = 1)
+
+/// A strong hemostatic (myelamine) in the blood: the tear stops growing and bleeds slower.
+/datum/affliction/wound/internal_bleeding/proc/strongly_clotted()
+	var/list/levels = body?.treatment_levels()
+	return (levels?[TREAT_HEMOSTATIC] || 0) >= DQ_IB_STRONG_HEMOSTATIC
+
+/// D18a: mechanisms, not reagent IDs. Unless it is small and dressed, strongly clotted, or held by a hemostatic backed by
+/// circulatory support (bicaridine + inaprovaline), the tear rips further over `cycles` Life cycles.
+/datum/affliction/wound/internal_bleeding/proc/arterial_advance(cycles)
+	var/list/levels = body?.treatment_levels()
+	var/hemostatic = levels?[TREAT_HEMOSTATIC] || 0
+	var/circulatory = levels?[TREAT_CIRCULATORY] || 0
+	if(can_autoheal() || strongly_clotted() || (hemostatic > 0 && circulatory > 0))
+		return
+	open_wound(ARTERIAL_TEAR_PER_CYCLE * cycles)
 
 // --- Lost limb (stump) ----------------------------------------------------------------------
 

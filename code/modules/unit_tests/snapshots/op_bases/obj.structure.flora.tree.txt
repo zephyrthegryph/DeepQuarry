@@ -1,0 +1,6 @@
+human|none menu: Search for sticks
+human|none menu: Take a present
+human|none click: Click: Take a present
+robot|none menu: Search for sticks
+robot|none menu: Take a present
+robot|none click: Click: Take a present

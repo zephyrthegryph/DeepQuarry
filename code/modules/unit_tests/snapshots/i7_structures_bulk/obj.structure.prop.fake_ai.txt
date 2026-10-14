@@ -1,0 +1,50 @@
+human|none click: nothing
+robot|none click: nothing
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.prop human|/obj/item/tool/screwdriver
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/tool/crowbar
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/tool/wrench
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/tool/wirecutters
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/multitool
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/weldingtool
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/stack/cable_coil
+-menu: Toggle
+-click: Click: Toggle
++4 click: nothing
+@obj.structure.prop human|/obj/item/stack/material/steel
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+@obj.structure.prop human|/obj/item/card/id
+-menu: Toggle
+-click: Click: Toggle
++4 click: nothing
+@obj.structure.prop human|/obj/item
+-menu: Toggle
+-click: Click: Toggle
++3 click: nothing
+human|/obj/item/aicard menu: Hit
+human|/obj/item/aicard menu: Move To Top
+human|/obj/item/aicard menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/aicard menu: Use
+human|/obj/item/aicard click: Click: Use
+keys: drag_buckle, item, melee_hit, message

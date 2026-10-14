@@ -2,18 +2,16 @@
 	name = "gas mask"
 	desc = "A face-covering mask that can be connected to an air supply. Filters harmful gases from the air."
 	icon_state = "gas_alt"
-	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD
-	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE
-	body_parts_covered = FACE|EYES
 	w_class = ITEMSIZE_NORMAL
 	item_state_slots = list(slot_r_hand_str = "gas_alt", slot_l_hand_str = "gas_alt")
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
-	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
 	armor_spec = "bio=75"
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/mask/gas)
+	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD, hides = HIDEEARS|HIDEEYES|HIDEFACE, covers = FACE|EYES))
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2O))
 
@@ -36,35 +34,59 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS
 	name = "gas mask"
 	desc = "A face-covering mask with a transparent faceplate that can be connected to an air supply."
 	icon_state = "gas_clear"
-	flags_inv = null
+
+CAPABILITIES(/obj/item/clothing/mask/gas/clear)
+	configure(item_worn(hides = TRAIT_NONE))
 
 /obj/item/clothing/mask/gas/half
 	name = "face mask"
 	desc = "A compact, durable gas mask that can be connected to an air supply."
 	icon_state = "halfgas"
-	siemens_coefficient = 0.7
-	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_REF(half_mask_add_hailer_item)))
+CAPABILITIES(/obj/item/clothing/mask/gas/half)
+	configure(item_worn(covers = FACE))
+	configure(item_protection(siemens = 0.7))
+	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), then(PROC_REF(half_mask_add_hailer_item)))
 
-/// Old attackby: fit a hailer. Always fell through to ..() afterwards.
-/obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// Both ingredients must be releasable before fitting a hailer changes either one.
+/obj/item/clothing/mask/gas/half/proc/can_fit_hailer(mob/user, atom/target, obj/item/held)
+	if(!istype(held, /obj/item/hailer))
+		return TRUE
+	var/reason = loc?.release_refusal(src, user)
+	if(reason)
+		return reason
+	reason = held.loc?.release_refusal(held, user)
+	if(reason)
+		return reason
+	return TRUE
+
+/// Fit a hailer, retaining the original mask's slot and forensic evidence.
+
+/obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(datum/act/op/A)
+	var/refusal = can_fit_hailer(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/hailer))
+		if(can_fit_hailer(user, src, I) != TRUE)
+			return OP_DECLINE
+		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(get_turf(src))
+		if(!I.loc.release_to(I, N, null, user))
+			consume(N, user)
+			return OP_DECLINE
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER)
-		user.drop_item(src)
-		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(src.loc)
 		transfer_blooddna_to(N)
 		transfer_fingerprints_to(N)
 		transfer_fibres_to(N)
 		rel_set(N, nameof(N.hailer), I)
-		I.forceMove(N)
-		if(!isturf(N.loc))
-			user.put_in_hands(N)
-		consume(src, user)
-	return FALSE
+		replace_with(src, N)
+	return OP_DECLINE
 
 //Plague Dr suit can be found in clothing/suits/bio.dm
 /obj/item/clothing/mask/gas/plaguedoctor
@@ -73,9 +95,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
 	armor_spec = "laser=2;energy=2;bio=90"
-	body_parts_covered = HEAD|FACE|EYES
-	heat_protection = HEAD
-	cold_protection = HEAD
+
+CAPABILITIES(/obj/item/clothing/mask/gas/plaguedoctor)
+	configure(item_worn(covers = HEAD|FACE|EYES))
+	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 
 /obj/item/clothing/mask/gas/plaguedoctor/gold
 	name = "gold plague doctor mask"
@@ -86,38 +109,44 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 	name = "\improper SWAT mask"
 	desc = "A close-fitting tactical mask that can be connected to an air supply."
 	icon_state = "swat"
-	siemens_coefficient = 0.7
-	body_parts_covered = FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/gas/swat)
+	configure(item_worn(covers = FACE|EYES))
+	configure(item_protection(siemens = 0.7))
 
 // Vox mask, has special code for eating
 /obj/item/clothing/mask/gas/swat/vox
 	name = "\improper alien mask"
 	desc = "Clearly not designed for a human face."
 	flags = PHORONGUARD
-	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT
 	var/mask_open = FALSE	// Controls if the Vox can eat through this mask
 	actions_types = list(/datum/action/item_action/toggle_feeding_port)
 	helmet_handling = TRUE
 	special_handling = TRUE
 
+
+
 TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, gasmask_filtered_gases, list(GAS_O2, GAS_N2O))
-TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
 		mask_open = !mask_open
 		if(mask_open)
-			body_parts_covered = EYES
+			set_body_parts_covered(EYES)
 			to_chat(user, "Your mask moves to allow you to eat.")
 		else
-			body_parts_covered = FACE|EYES
+			set_body_parts_covered(FACE|EYES)
 			to_chat(user, "Your mask moves to cover your mouth.")
 	return
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding port", PROC_REF(vox_mask_port_self)))
+CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT))
+	op("vox_mask_port_self", in_hand(), label("Feeding port"), then(PROC_REF(vox_mask_port_self)))
 
 /// Old attack_self.
-/obj/item/clothing/mask/gas/swat/vox/proc/vox_mask_port_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/swat/vox/proc/vox_mask_port_self(datum/act/op/A)
+	var/mob/user = A.actor
 	feeding_port(user)
 
 /obj/item/clothing/mask/gas/zaddat
@@ -125,17 +154,24 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding 
 	desc = "A clear survival mask used by the Zaddat to filter out harmful nitrogen. Can be connected to an air supply and reconfigured to allow for safe eating."
 	icon_state = "zaddat_mask"
 	item_state = "vax_mask"
-	flags_inv = HIDEEARS //semi-transparent
+
+CAPABILITIES(/obj/item/clothing/mask/gas/zaddat)
+	acceptance("fit", fits(list(SPECIES_ZADDAT)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(hides = HIDEEARS))
+
+
+
 
 TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2, GAS_N2O))
-
-TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT))))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"
 	desc = "A close-fitting tactical mask that can be connected to an air supply."
 	icon_state = "swat"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/mask/gas/syndicate)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/mask/gas/explorer
 	name = "explorer gas mask"
@@ -143,7 +179,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	icon_state = "explorer"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
 	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bio=50"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/mask/gas/explorer)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/gas/clown_hat
 	name = "clown wig and mask"
@@ -167,7 +205,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	name = "monkey mask"
 	desc = "A mask used when acting as a monkey."
 	icon_state = "monkeymask"
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/gas/monkeymask)
+	configure(item_worn(covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/mask/gas/sexymime
 	name = "sexy mime mask"
@@ -179,14 +219,18 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	name = "guy fawkes mask"
 	desc = "A mask stylised to depict Guy Fawkes."
 	icon_state = "guyfawkes"
-	flags_inv = HIDEEARS|HIDEFACE
 	item_state_slots = list(slot_r_hand_str = "mime", slot_l_hand_str = "mime")
+
+CAPABILITIES(/obj/item/clothing/mask/gas/guy)
+	configure(item_worn(hides = HIDEEARS|HIDEFACE))
 
 /obj/item/clothing/mask/gas/commando
 	name = "commando mask"
 	icon_state = "fullgas"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	siemens_coefficient = 0.2
+
+CAPABILITIES(/obj/item/clothing/mask/gas/commando)
+	configure(item_protection(siemens = 0.2))
 
 /obj/item/clothing/mask/gas/cyborg
 	name = "cyborg visor"
@@ -197,7 +241,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	name = "owl mask"
 	desc = "Twoooo!"
 	icon_state = "owl"
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/gas/owl_mask)
+	configure(item_worn(covers = HEAD|FACE|EYES))
 
 
 /* ChompRemoval: Oops that's a glogged implementation (intentional). Im going to properly implement obj/clothing/mask/gas/clear instead.
@@ -205,18 +251,21 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 /obj/item/clothing/mask/gas/Initialize(mapload)
 	. = ..()
 	if(type == /obj/item/clothing/mask/gas)
-		flags_inv &= ~HIDEFACE
+		set_flags_inv(worn_of(src).hides & (~HIDEFACE))
 */
 
 // Since we changed the gas mask sprite, if we want the old one for some reason use this.
 /obj/item/clothing/mask/gas/wwii
 	icon = 'icons/inventory/face/item.dmi'
 	icon_override = 'icons/inventory/face/mob.dmi'
-	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE
+
+CAPABILITIES(/obj/item/clothing/mask/gas/wwii)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|HIDEFACE))
 
 /obj/item/clothing/mask/gas/imperial
 	name = "imperial soldier facemask"
 	desc = "A close-fitting tactical mask that can be connected to an air supply."
 	icon_state = "ge_visor"
-	body_parts_covered = FACE|EYES
-	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE
+
+CAPABILITIES(/obj/item/clothing/mask/gas/imperial)
+	configure(item_worn(covers = FACE|EYES, hides = HIDEEARS|HIDEEYES|HIDEFACE))

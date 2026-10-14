@@ -27,23 +27,32 @@
 
 	var/outdoors_speed_mod = 0.7 //The general 'outdoors' speed. I.E., the general difference you'll be at when driving outside.
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike, "key", "key_type")
-
-/obj/vehicle/train/engine/quadbike/Initialize(mapload, assembly)
+/obj/vehicle/train/engine/quadbike/ownership()
 	. = ..()
-	if(!assembly)
-		own_set(src, nameof(cell), new /obj/item/cell/high(src))
-		own_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
+	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = when(cond_not(nameof(built_from_assembly)), /obj/item/cell/high)) // a bike built from an assembly brings no cell
+
+CAPABILITIES(/obj/vehicle/train/engine/quadbike)
+	param(nameof(built_from_assembly), pos = 1)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
+
+/// Whether the bike was built from an assembly (its constructor param): it then brings no cell of its own.
+/obj/vehicle/train/engine/quadbike/var/built_from_assembly = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a quad bike not built from an assembly comes with a cell and an engine sound, and starts switched off
+/obj/vehicle/train/engine/quadbike/Initialize(mapload)
+	. = ..()
 	turn_off()
-	update_icon()
 
-/obj/vehicle/train/engine/quadbike/built/Initialize(mapload)
-	. = ..(mapload, TRUE)
+/obj/vehicle/train/engine/quadbike/built
+	built_from_assembly = TRUE
 
-/obj/vehicle/train/engine/quadbike/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
 
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/engine/quadbike/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 /obj/item/key/quadbike
 	name = "key"
@@ -86,39 +95,12 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike, "key", "key_type")
 		if(8)
 			pixel_y = 0
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
-
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/train/engine/quadbike/appearance_overlays()
-	. = list()
-	. += ..()
-	if(custom_frame)
-		var/image/Bodypaint = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_a", layer = src.layer)
-		Bodypaint.color = paint_color
-		. += Bodypaint
-
-		var/image/Overmob = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
-		var/image/Overmob_color = new(icon = 'icons/obj/custom_items_vehicle.dmi', icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
-		Overmob.plane = MOB_PLANE
-		Overmob_color.plane = MOB_PLANE
-		Overmob_color.color = paint_color
-
-		. += Overmob
-		. += Overmob_color
-		return .
-
-	var/image/Bodypaint = new(icon = paint_base, icon_state = "[frame_state]_a", layer = src.layer)
-	Bodypaint.color = paint_color
-	. += Bodypaint
-
-	var/image/Overmob = new(icon = paint_base, icon_state = "[frame_state]_overlay", layer = src.layer + 0.2) //over mobs
-	var/image/Overmob_color = new(icon = paint_base, icon_state = "[frame_state]_overlay_a", layer = src.layer + 0.2) //over the over mobs, gives the color.
-	Overmob.plane = MOB_PLANE
-	Overmob_color.plane = MOB_PLANE
-	Overmob_color.color = paint_color
-
-	. += Overmob
-	. += Overmob_color
+/obj/vehicle/train/engine/quadbike/draw(datum/look/look)
+	..()
+	var/paint_icon = custom_frame ? 'icons/obj/custom_items_vehicle.dmi' : paint_base
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_a", layer = layer, color = paint_color))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay", layer = layer + 0.2, plane = MOB_PLANE))
+	look.overlay(look_overlay_image(paint_icon, "[frame_state]_overlay_a", layer = layer + 0.2, plane = MOB_PLANE, color = paint_color))
 
 /obj/vehicle/train/engine/quadbike/Bump(atom/Obstacle)
 	if(!istype(Obstacle, /atom/movable))
@@ -193,9 +175,12 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom,
 
 	paint_color = "#ffffff"
 
-/obj/vehicle/train/trolley/trailer/random/Initialize(mapload)
-	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
-	. = ..()
+CAPABILITIES(/obj/vehicle/train/trolley/trailer/random)
+	rolls(nameof(paint_color), PROC_REF(roll_paint_color))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/vehicle/train/trolley/trailer/random/proc/roll_paint_color(datum/roller/R)
+	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
 /obj/vehicle/train/trolley/trailer/proc/update_load()
 	if(load)
@@ -206,10 +191,6 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom,
 		load.pixel_y = (initial(load.pixel_y) + y_offset + pixel_y) //Same as the above.
 		return 1
 	return 0
-
-/obj/vehicle/train/trolley/trailer/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/vehicle/train/trolley/trailer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -259,13 +240,10 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine/quadbike, TYPE_PROC_REF(/atom,
 			to_chat(D, span_danger("You hit [M]!"))
 			add_attack_logs(D,M,"Ran over with [src.name]")
 
-DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley/trailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/vehicle/train/trolley/trailer/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/vehicle/train/trolley/trailer/draw(datum/look/look)
+	..()
 
-	var/image/Bodypaint = new(icon = 'icons/obj/vehicles_64x64.dmi', icon_state = "[initial(icon_state)]_a", layer = src.layer)
-	Bodypaint.color = paint_color
-	. += Bodypaint
+	look.overlay(look_overlay_image('icons/obj/vehicles_64x64.dmi', "[initial(icon_state)]_a", layer = layer, color = paint_color))
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/trolley/trailer, INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)))
+CAPABILITIES(/obj/vehicle/train/trolley/trailer)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))

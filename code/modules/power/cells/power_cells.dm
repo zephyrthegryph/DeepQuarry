@@ -8,6 +8,7 @@
  * Crap
  */
 /obj/item/cell/crap
+	standard_overlays = FALSE
 	name = "\improper rechargable AA battery"
 	desc = "An older, cheap power cell. It's probably been in use for quite some time now."
 	desc = "You can't top the plasma top." // TOTALLY TRADEMARK INFRINGEMENT //
@@ -17,7 +18,6 @@
 	robot_durability = 20
 
 /* 
-APPEARANCE_NONE(/obj/item/cell/crap)
 */// CHOMPRemve End
 
 /obj/item/cell/crap/empty
@@ -101,13 +101,13 @@ APPEARANCE_NONE(/obj/item/cell/crap)
 	maxcharge = 15000
 
 /obj/item/cell/mech/lead
+	standard_overlays = FALSE
 	name = "lead acid battery"
 	desc = "An ancient battery design not commonly seen anymore. It looks like it'd fit inside a mech however..."
 	icon_state = "lead"
 	charge = 8000
 	maxcharge = 8000
 
-APPEARANCE_NONE(/obj/item/cell/mech/lead)
 /obj/item/cell/mech/high
 	name = "high-capacity mecha power cell"
 	icon_state = "exs_m"
@@ -124,20 +124,17 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
  * Infinite
  */
 /obj/item/cell/infinite
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "infinite-capacity power cell!"
 	icon_state = "infinite_b"
 	charge = 30000
 	maxcharge = 30000 //determines how badly mobs get shocked
 	robot_durability = 200
 
-/obj/item/cell/infinite/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
-
 /obj/item/cell/infinite/check_charge()
 	return 1
 
-/obj/item/cell/infinite/use(amount, update_appearance = TRUE)
+/obj/item/cell/infinite/use(amount, seconds = 0)
 	return max(amount, 0)
 
 /*
@@ -171,6 +168,7 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
  * Emergency Light
  */
 /obj/item/cell/emergency_light
+	standard_overlays = FALSE
 	name = "miniature power cell"
 	desc = "A tiny power cell with a very low power capacity. Used in light fixtures to power them in the event of an outage."
 	charge = 360
@@ -179,12 +177,11 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
 	connector_type = "emergency"
 	w_class = ITEMSIZE_TINY
 
-APPEARANCE_NONE(/obj/item/cell/emergency_light)
 /obj/item/cell/emergency_light/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
-	if(!A.lightswitch || !A.light_power)
-		charge = 0 //For naturally depowered areas, we start with no power
+	if(!A.lightswitch || !glow_of(A).power)
+		set_charge(0) //For naturally depowered areas, we start with no power
 
 /*
  * Backup Battery
@@ -200,15 +197,11 @@ APPEARANCE_NONE(/obj/item/cell/emergency_light)
 	var/amount = 150
 	var/used = FALSE
 
-/obj/item/fbp_backup_cell/Initialize(mapload)
-	. = ..()
-	add_overlay("[icon_state]_100")
-
 /obj/item/fbp_backup_cell/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!used && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(HAS_SYNTHETIC_BIOLOGY(H))
-			if(H.nutrition <= amount)
+			if(nutrition_of(H) <= amount)
 				use(user,H)
 				return ITEM_INTERACT_SUCCESS
 			else
@@ -247,18 +240,24 @@ APPEARANCE_NONE(/obj/item/cell/emergency_light)
 	var/swaps_to = /obj/item/cell/device/weapon/recharge/alien
 	robot_durability = 100
 
-EXTEND_INTERACTIONS(/obj/item/cell/void, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cell/void)
+	// The mode swap takes precedence over the cell's inherited charge/drain actions.
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cell/void/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.remove_from_mob(src)
-	to_chat(user, span_notice("You swap [src] to 'device cell' mode."))
-	var/obj/item/cell/newcell = new swaps_to(null)
-	user.put_in_active_hand(newcell)
+/obj/item/cell/void/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/cell_name = "[src]"
 	var/percentage = charge/maxcharge
-	newcell.charge = newcell.maxcharge * percentage
-	newcell.persist_storable = persist_storable
-	consume(src, user)
+	var/original_persist_storable = persist_storable
+	var/replacement_type = swaps_to
+	if(!consume(src, user))
+		return TRUE
+	to_chat(user, span_notice("You swap [cell_name] to 'device cell' mode."))
+	var/obj/item/cell/newcell = new replacement_type(null)
+	user.put_in_active_hand(newcell)
+	newcell.set_charge(newcell.maxcharge * percentage)
+	newcell.persist_storable = original_persist_storable
 	return TRUE
 
 /obj/item/cell/void/hybrid
@@ -289,3 +288,7 @@ EXTEND_INTERACTIONS(/obj/item/cell/void, INTERACT_USE(null, PROC_REF(interaction
 
 /obj/item/cell/giga/empty
 	charge = 0
+
+/obj/item/fbp_backup_cell/draw(datum/look/look)
+	..()
+	look.overlay("[initial(icon_state)]_100")

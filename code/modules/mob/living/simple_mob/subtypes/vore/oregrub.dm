@@ -67,8 +67,10 @@
 	//these things are resilient, on account of being infused with all the minerals they eat
 	armor_spec = "melee=25;bullet=15;laser=15;bomb=25;bio=100;rad=100"
 
-	can_be_drop_prey = FALSE
 	glow_override = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/oregrub)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/oregrub/lava
 	name = "mature lavagrub"
@@ -110,19 +112,19 @@
 		i--
 	..()
 
-/datum/om/stage/life/light/simple_mob/vore/oregrub/lava
-	of = /mob/living/simple_mob/vore/oregrub/lava
+/mob/living/simple_mob/vore/oregrub/lava/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/simple_mob/vore/oregrub/lava/perform(mob/living/simple_mob/vore/oregrub/lava/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/oregrub/lava/life_light(datum/seq_frame/life/F)
 	. = ..()
-	if(. == 0 && !self.is_dead())
-		self.set_light(2.5, 1, COLOR_ORANGE)
+	if(. == 0 && !src.is_dead())
+		set_glow(src, GLOW(2.5, 1, COLOR_ORANGE))
 		return 1
-	else if(self.is_dead())
-		self.set_glow_override(FALSE)
+	else if(src.is_dead())
+		src.set_glow_override(FALSE)
 
 /mob/living/simple_mob/vore/oregrub/lava/on_death(gibbed)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	var/p = rand(lava_min_ore,lava_max_ore)
 	while(p>1)
 		var/ore = pick(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium)
@@ -138,7 +140,7 @@
 
 /mob/living/simple_mob/vore/oregrub/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Through either grave error, overwhelming willingness, or some other factor, you find yourself lodged halfway past the grub's mandibles. While it had initially hissed and chittered in glee at the prospect of a new meal, it is clearly more versed in crunching ores to feed off of; inch by inch, bit by bit, it undulates forth to slowly, noisily gulp you down its short esophagus... and right into its extra-cramped, surprisingly hot stomach. As the rest of you spills out into the plush-walled chamber, the grub's soft body bulges outwards here and there with your compressed figure. Before long, a thick slime oozes out from the surrounding stomach walls; only time will tell how effective it is on something fleshy like you, although given it's usual diet..."
 	B.vore_sound = "Tauric Swallow"
@@ -169,5 +171,5 @@
 
 /mob/living/simple_mob/vore/oregrub/lava/load_default_bellies() // Should inherit everything from parent, and then change our belly fullscreen color.
 	.=..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.belly_fullscreen_color = "#cf741e"

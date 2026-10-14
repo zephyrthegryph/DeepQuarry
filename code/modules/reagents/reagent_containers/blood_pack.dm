@@ -1,17 +1,10 @@
 /obj/item/storage/box/bloodpacks
+	starts_with = list(
+		/obj/item/reagent_containers/blood/empty = 7,
+	)
 	name = "blood packs bags"
 	desc = "This box contains blood packs."
 	icon_state = "sterile"
-
-/obj/item/storage/box/bloodpacks/Initialize(mapload)
-		. = ..()
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
-		new /obj/item/reagent_containers/blood/empty(src)
 
 /obj/item/reagent_containers/blood
 	name = "IV pack"
@@ -21,8 +14,6 @@
 	icon = 'icons/obj/bloodpack.dmi'
 	icon_state = "empty"
 	item_state = "bloodpack_empty"
-	drop_sound = SFX_ITEMS_DROP_FOOD
-	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 	volume = 200
 	var/label_text = ""
 
@@ -39,45 +30,62 @@
 	if(blood_type != null)
 		label_text = "[blood_type]"
 		update_iv_label()
-		// B17: stock packs are human blood; without "species" they matched every species.
-		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-		update_icon()
 
-/obj/item/reagent_containers/blood/on_reagent_change()
-	update_icon()
+/// A typed pack starts full of its stock blood; an untyped one starts empty.
+/obj/item/reagent_containers/blood/proc/stock_blood_units()
+	return blood_type != null ? 200 : 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/blood/appearance_overlays()
-	. = list()
-	var/percent = round((reagents.total_volume / volume) * 100)
+/// Stock blood's data. B17: stock packs are human blood; without "species" they matched every species.
+/obj/item/reagent_containers/blood/proc/stock_blood_data()
+	return list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE)
+
+/// A pack shows how full it is: it follows the level its holder tracks.
+/obj/item/reagent_containers/blood/draw(datum/look/look)
+	..()
+	look.watch(reagents)
+	var/percent = volume ? round((reagents.total_volume / volume) * 100) : 0
 	if(percent >= 0 && percent <= 9)
-		icon_state = "empty"
-		item_state = "bloodpack_empty"
+		look.state("empty")
+		look.held_state("bloodpack_empty")
 	else if(percent >= 10 && percent <= 50)
-		icon_state = "half"
-		item_state = "bloodpack_half"
+		look.state("half")
+		look.held_state("bloodpack_half")
 	else if(percent >= 51 && percent < INFINITY)
-		icon_state = "full"
-		item_state = "bloodpack_full"
+		look.state("full")
+		look.held_state("bloodpack_full")
 
-/// Old attackby.
-/obj/item/reagent_containers/blood/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter a label for [name]", title = "Label", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_a1))
-			return TRUE
-		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
-		if(length(tmp_label) > 50)
-			to_chat(user, span_notice("The label can be at most 50 characters long."))
-		else if(length(tmp_label) > 10)
-			to_chat(user, span_notice("You set the label."))
-			label_text = tmp_label
-			update_iv_label()
-		else
-			to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-			label_text = tmp_label
-			update_iv_label()
-	return INTERACTION_HANDLED_PASS
+// A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
+// characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
+CAPABILITIES(/obj/item/reagent_containers/blood)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
+	configure(reagents(starts_from = list(nameof(reag_id) = PROC_REF(stock_blood_units)), data = list(nameof(reag_id) = PROC_REF(stock_blood_data))))
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+	op("drink", in_hand(), stance(I_HURT), label("Drink"), then(PROC_REF(drunk)))
+
+/// The label a pen wrote (the old rules: fifty characters at most, a long one is told so).
+/obj/item/reagent_containers/blood/proc/label_applied(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/user = A.actor
+	var/tmp_label = sanitizeSafe(R?.value, MAX_NAME_LEN)
+	if(length(tmp_label) > 50)
+		to_chat(user, span_notice("The label can be at most 50 characters long."))
+	else if(length(tmp_label) > 10)
+		to_chat(user, span_notice("You set the label."))
+		label_text = tmp_label
+		update_iv_label()
+	else
+		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
+		label_text = tmp_label
+		update_iv_label()
+	return OP_OK
 
 /obj/item/reagent_containers/blood/proc/update_iv_label()
 	if(label_text == "")
@@ -125,39 +133,26 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom,
 	name = "Ration BloodPack"
 	desc = "A standard issue BloodPack Ration given to crew that require blood to be sustained!"
 
-/obj/item/reagent_containers/blood/random_bloodsucker/Initialize(mapload)
-	blood_type = pick("A+", "A-", "B+", "B-", "O-", "O+", "AB+", "AB-")
-	. = ..()
+CAPABILITIES(/obj/item/reagent_containers/blood/random_bloodsucker)
+	rolls(nameof(blood_type), pick_one(list("A+", "A-", "B+", "B-", "O-", "O+", "AB+", "AB-")))
 
-
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
-	INTERACT_USE_AS(I_HURT, "Drink", PROC_REF(interaction_self)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_self: drink from it in combat mode, else put the lid on or take it off.
-/obj/item/reagent_containers/blood/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(interaction.stance == I_HURT)
-		if(reagents.total_volume && volume)
-			var/remove_volume = volume* 0.1 //10% of what the bloodpack can hold.
-			var/reagent_to_remove = reagents.get_master_reagent_id()
-			switch(reagents.get_master_reagent_id())
-				if(REAGENT_ID_BLOOD)
-					user.show_message(span_warning("You sink your fangs into \the [src] and suck the blood out of it!"))
-					act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
-					user.adjust_nutrition(remove_volume*5)
-					reagents.remove_reagent(reagent_to_remove, remove_volume)
-					update_icon()
-					return TRUE
-				else
-					user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
-					return TRUE
-		else
-			user.show_message(span_warning("You take a look at \the [src] and notice it has nothing in it!"))
-			return TRUE
+/// Drunk from in a hostile stance: a tenth of it, if it is blood.
+/obj/item/reagent_containers/blood/proc/drunk(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(reagents.total_volume && volume)
+		var/remove_volume = volume * 0.1 //10% of what the bloodpack can hold.
+		var/reagent_to_remove = reagents.get_master_reagent_id()
+		switch(reagents.get_master_reagent_id())
+			if(REAGENT_ID_BLOOD)
+				user.show_message(span_warning("You sink your fangs into \the [src] and suck the blood out of it!"))
+				act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
+				user.adjust_nutrition(remove_volume*5)
+				reagents.remove_reagent(reagent_to_remove, remove_volume)
+			else
+				user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
 	else
-		return TRUE
+		user.show_message(span_warning("You take a look at \the [src] and notice it has nothing in it!"))
+	return OP_OK
 
 /obj/item/reagent_containers/blood/prelabeled
 	name = "IV Pack"

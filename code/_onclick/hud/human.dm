@@ -34,28 +34,28 @@
 		inv_box.name =        gear_slot
 		inv_box.screen_loc =  slot_data["loc"]
 		inv_box.slot_id =     slot_data["slot"]
-		inv_box.icon_state =  slot_data["state"]
+		inv_box.set_icon_state(slot_data["state"])
 		slot_info["[inv_box.slot_id]"] = inv_box.screen_loc
 
 		if(slot_data["dir"])
 			inv_box.set_dir(slot_data["dir"])
 
 		if(slot_data["toggle"])
-			own_add(HUD, nameof(HUD.other), inv_box)
+			rel_add(HUD, nameof(HUD.other), inv_box)
 			has_hidden_gear = 1
 		else
-			own_add(HUD, nameof(HUD.adding), inv_box)
+			rel_add(HUD, nameof(HUD.adding), inv_box)
 
 	if(has_hidden_gear)
 		using = new /atom/movable/screen()
 		using.name = "toggle"
 		using.icon = HUD.ui_style
-		using.icon_state = "other"
+		using.set_icon_state("other")
 		using.screen_loc = ui_inventory
 		using.hud_layerise()
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 
 	// The combat mode button (it replaced the intent selector).
 	if(hud_data.has_a_intent)
@@ -69,244 +69,240 @@
 		using = new /atom/movable/screen()
 		using.name = "mov_intent"
 		using.icon = HUD.ui_style
-		using.icon_state = (m_intent == I_RUN ? "running" : "walking")
+		using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 		using.screen_loc = ui_movi
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 		rel_set(HUD, nameof(HUD.move_intent), using)
 
 	if(hud_data.has_drop)
 		using = new /atom/movable/screen()
 		using.name = "drop"
 		using.icon = HUD.ui_style
-		using.icon_state = "act_drop"
+		using.set_icon_state("act_drop")
 		using.screen_loc = ui_drop_throw
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.hotkeybuttons), using)
+		rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	if(hud_data.has_hands)
 
 		using = new /atom/movable/screen()
 		using.name = "equip"
 		using.icon = HUD.ui_style
-		using.icon_state = "act_equip"
+		using.set_icon_state("act_equip")
 		using.screen_loc = ui_equip
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 
 		using = new /atom/movable/screen/useself()
 		using.icon = HUD.ui_style
 		using.screen_loc = ui_swaphand2
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 
 		inv_box = new /atom/movable/screen/inventory/hand()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = HUD.ui_style
-		inv_box.icon_state = "r_hand_inactive"
+		inv_box.set_icon_state("r_hand_inactive")
 		if(!hand)	//This being 0 or null means the right hand is in use
-			inv_box.icon_state = "r_hand_active"
+			inv_box.set_icon_state("r_hand_active")
 		inv_box.screen_loc = ui_rhand
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
 		rel_set(HUD, nameof(HUD.r_hand_hud_object), inv_box)
-		own_add(HUD, nameof(HUD.adding), inv_box)
+		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
 		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = HUD.ui_style
-		inv_box.icon_state = "l_hand_inactive"
+		inv_box.set_icon_state("l_hand_inactive")
 		if(hand)	//This being 1 means the left hand is in use
-			inv_box.icon_state = "l_hand_active"
+			inv_box.set_icon_state("l_hand_active")
 		inv_box.screen_loc = ui_lhand
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
 		rel_set(HUD, nameof(HUD.l_hand_hud_object), inv_box)
-		own_add(HUD, nameof(HUD.adding), inv_box)
+		rel_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
 		using.icon = HUD.ui_style
-		using.icon_state = "hand1"
+		using.set_icon_state("hand1")
 		using.screen_loc = ui_swaphand1
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
 		rel_set(using, nameof(using.hud), HUD)
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
 		using.icon = HUD.ui_style
-		using.icon_state = "hand2"
+		using.set_icon_state("hand2")
 		using.screen_loc = ui_swaphand2
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
 		rel_set(using, nameof(using.hud), HUD)
-		own_add(HUD, nameof(HUD.adding), using)
+		rel_add(HUD, nameof(HUD.adding), using)
 
 	if(hud_data.has_resist)
 		using = new /atom/movable/screen()
 		using.name = "resist"
 		using.icon = HUD.ui_style
-		using.icon_state = "act_resist"
+		using.set_icon_state("act_resist")
 		using.screen_loc = ui_pull_resist
 		using.color = HUD.ui_color
 		using.alpha = HUD.ui_alpha
-		own_add(HUD, nameof(HUD.hotkeybuttons), using)
+		rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	if(hud_data.has_throw)
-		rel_set(src, nameof(throw_icon), own_add(HUD, nameof(HUD.hotkeybuttons), new /atom/movable/screen()))
-		throw_icon.icon = HUD.ui_style
-		throw_icon.icon_state = "act_throw_off"
-		throw_icon.name = "throw"
-		throw_icon.screen_loc = ui_drop_throw
-		throw_icon.color = HUD.ui_color
-		throw_icon.alpha = HUD.ui_alpha
-		hud_elements |= throw_icon
+		rel_set(hud_used, nameof(/datum/hud::throw_icon), rel_add(HUD, nameof(HUD.hotkeybuttons), new /atom/movable/screen()))
+		hud_used?.throw_icon?.icon = HUD.ui_style
+		hud_used?.throw_icon?.icon_state = "act_throw_off"
+		hud_used?.throw_icon?.name = "throw"
+		hud_used?.throw_icon?.screen_loc = ui_drop_throw
+		hud_used?.throw_icon?.color = HUD.ui_color
+		hud_used?.throw_icon?.alpha = HUD.ui_alpha
+		hud_elements |= hud_used?.throw_icon
 
-		rel_set(src, nameof(pullin), own_add(HUD, nameof(HUD.hotkeybuttons), new /atom/movable/screen()))
-		pullin.icon = HUD.ui_style
-		pullin.icon_state = "pull0"
-		pullin.name = "pull"
-		pullin.screen_loc = ui_pull_resist
-		hud_elements |= pullin
+		rel_set(hud_used, nameof(/datum/hud::pullin), rel_add(HUD, nameof(HUD.hotkeybuttons), new /atom/movable/screen()))
+		hud_used?.pullin?.icon = HUD.ui_style
+		hud_used?.pullin?.icon_state = "pull0"
+		hud_used?.pullin?.name = "pull"
+		hud_used?.pullin?.screen_loc = ui_pull_resist
+		hud_elements |= hud_used?.pullin
 
 	if(hud_data.has_internals)
-		own_set(src, nameof(internals), new /atom/movable/screen())
-		internals.icon = HUD.ui_style
-		internals.icon_state = "internal0"
+		rel_set(hud_used, nameof(/datum/hud::internals), new /atom/movable/screen())
+		hud_used?.internals?.icon = HUD.ui_style
+		hud_used?.internals?.icon_state = "internal0"
 		if(istype(internal, /obj/item/tank)) //Internals on already? Iight, prove it
-			internals.icon_state = "internal1"
-		internals.name = "internal"
-		internals.screen_loc = ui_internal
-		hud_elements |= internals
+			hud_used?.internals?.icon_state = "internal1"
+		hud_used?.internals?.name = "internal"
+		hud_used?.internals?.screen_loc = ui_internal
+		hud_elements |= hud_used?.internals
 
 	if(hud_data.has_warnings)
-		own_set(src, nameof(healths), new /atom/movable/screen())
-		healths.icon = HUD.ui_style
-		healths.icon_state = "health0"
-		healths.name = "health"
-		healths.screen_loc = ui_health
-		hud_elements |= healths
+		rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+		hud_used?.healths?.icon = HUD.ui_style
+		hud_used?.healths?.icon_state = "health0"
+		hud_used?.healths?.name = "health"
+		hud_used?.healths?.screen_loc = ui_health
+		hud_elements |= hud_used?.healths
 
-	rel_set(src, nameof(autowhisper_display), own_add(HUD, nameof(HUD.adding), new /atom/movable/screen()))
-	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
-	autowhisper_display.icon_state = "autowhisper"
-	autowhisper_display.name = "autowhisper"
-	autowhisper_display.screen_loc = ui_under_health
-	hud_elements |= autowhisper_display
+	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.adding), new /atom/movable/screen()))
+	hud_used?.autowhisper_display?.icon = 'icons/mob/screen/minimalist.dmi'
+	hud_used?.autowhisper_display?.icon_state = "autowhisper"
+	hud_used?.autowhisper_display?.name = "autowhisper"
+	hud_used?.autowhisper_display?.screen_loc = ui_under_health
+	hud_elements |= hud_used?.autowhisper_display
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "aw-select"
+	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "lang"
+	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "pose"
+	aw.set_icon_state("pose")
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "up"
+	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "down"
+	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = HUD.ui_style
-	aw.icon_state = "use"
+	aw.set_icon_state("use")
 	aw.name = "use held item on self"
 	aw.screen_loc = ui_swaphand2
 	aw.color = HUD.ui_color
 	aw.alpha = HUD.ui_alpha
-	own_add(HUD, nameof(HUD.adding), aw)
+	rel_add(HUD, nameof(HUD.adding), aw)
 
 	//Component hud elements. Made in /mob/living/create_mob_hud
-	hud_elements |= shadekin_display
-	hud_elements |= xenochimera_danger_display
-	hud_elements |= lleill_display
+	hud_elements |= hud_used?.shadekin_display
+	hud_elements |= hud_used?.xenochimera_danger_display
+	hud_elements |= hud_used?.lleill_display
 
-	own_set(src, nameof(ling_chem_display), new /atom/movable/screen/ling/chems())
-	ling_chem_display.screen_loc = ui_ling_chemical_display
-	ling_chem_display.icon_state = "ling_chems"
-	hud_elements |= ling_chem_display
+	rel_set(hud_used, nameof(/datum/hud::ling_chem_display), new /atom/movable/screen/ling/chems())
+	hud_used?.ling_chem_display?.screen_loc = ui_ling_chemical_display
+	hud_used?.ling_chem_display?.icon_state = "ling_chems"
+	hud_elements |= hud_used?.ling_chem_display
 
-	own_set(src, nameof(wiz_instability_display), new /atom/movable/screen/wizard/instability())
-	wiz_instability_display.screen_loc = ui_wiz_instability_display
-	wiz_instability_display.icon_state = "wiz_instability_none"
-	hud_elements |= wiz_instability_display
+	// The instability meter is made by instability_update_hud() the first time the mob has instability:
+	// a mob without any (everyone but a technomancer) has no meter.
 
-	own_set(src, nameof(wiz_energy_display), new/atom/movable/screen/wizard/energy())
-	wiz_energy_display.screen_loc = ui_wiz_energy_display
-	wiz_energy_display.icon_state = "wiz_energy"
-	hud_elements |= wiz_energy_display
+	rel_set(hud_used, nameof(/datum/hud::wiz_energy_display), new/atom/movable/screen/wizard/energy())
+	hud_used?.wiz_energy_display?.screen_loc = ui_wiz_energy_display
+	hud_used?.wiz_energy_display?.icon_state = "wiz_energy"
+	hud_elements |= hud_used?.wiz_energy_display
 
 
-	own_set(src, nameof(pain), new /atom/movable/screen( null ))
+	rel_set(hud_used, nameof(/datum/hud::pain), new /atom/movable/screen( null ))
 
-	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
-	zone_sel.icon = HUD.ui_style
-	zone_sel.color = HUD.ui_color
-	zone_sel.alpha = HUD.ui_alpha
-	zone_sel.cut_overlays()
-	zone_sel.update_icon()
-	hud_elements |= zone_sel
+	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel( null ))
+	hud_used?.zone_sel?.icon = HUD.ui_style
+	hud_used?.zone_sel?.color = HUD.ui_color
+	hud_used?.zone_sel?.alpha = HUD.ui_alpha
+	hud_elements |= hud_used?.zone_sel
 
 	//Handle the gun settings buttons
-	own_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
-	gun_setting_icon.icon = HUD.ui_style
-	gun_setting_icon.color = HUD.ui_color
-	gun_setting_icon.alpha = HUD.ui_alpha
-	hud_elements |= gun_setting_icon
+	rel_set(hud_used, nameof(/datum/hud::gun_setting_icon), new /atom/movable/screen/gun/mode(null))
+	hud_used?.gun_setting_icon?.icon = HUD.ui_style
+	hud_used?.gun_setting_icon?.color = HUD.ui_color
+	hud_used?.gun_setting_icon?.alpha = HUD.ui_alpha
+	hud_elements |= hud_used?.gun_setting_icon
 
-	own_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
-	item_use_icon.icon = HUD.ui_style
-	item_use_icon.color = HUD.ui_color
-	item_use_icon.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::item_use_icon), new /atom/movable/screen/gun/item(null))
+	hud_used?.item_use_icon?.icon = HUD.ui_style
+	hud_used?.item_use_icon?.color = HUD.ui_color
+	hud_used?.item_use_icon?.alpha = HUD.ui_alpha
 
-	own_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
-	gun_move_icon.icon = HUD.ui_style
-	gun_move_icon.color = HUD.ui_color
-	gun_move_icon.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::gun_move_icon), new /atom/movable/screen/gun/move(null))
+	hud_used?.gun_move_icon?.icon = HUD.ui_style
+	hud_used?.gun_move_icon?.color = HUD.ui_color
+	hud_used?.gun_move_icon?.alpha = HUD.ui_alpha
 
-	own_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
-	radio_use_icon.icon = HUD.ui_style
-	radio_use_icon.color = HUD.ui_color
-	radio_use_icon.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::radio_use_icon), new /atom/movable/screen/gun/radio(null))
+	hud_used?.radio_use_icon?.icon = HUD.ui_style
+	hud_used?.radio_use_icon?.color = HUD.ui_color
+	hud_used?.radio_use_icon?.alpha = HUD.ui_alpha
 
 	if(client)
 		client.screen = list()
@@ -334,11 +330,11 @@
 
 //Used for new human mobs created by cloning/goleming/etc.
 /mob/living/carbon/human/proc/set_cloned_appearance()
-	f_style = "Shaved"
+	looks.set_facial_style("Shaved")
 	if(dna.species == "Human") //no more xenos losing ears/tentacles
-		h_style = pick("Bedhead", "Bedhead 2", "Bedhead 3")
-	LAZYCLEARLIST(all_underwear)
-	regenerate_icons()
+		looks.set_hair_style(pick("Bedhead", "Bedhead 2", "Bedhead 3"))
+	clear_all_underwear()
+	underwear_edited()
 
 /atom/movable/screen/ling
 	invisibility = INVISIBILITY_ABSTRACT

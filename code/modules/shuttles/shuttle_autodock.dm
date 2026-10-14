@@ -63,7 +63,7 @@
 		current_dock_target = location.special_dock_targets[name]
 	else
 		current_dock_target = docking_controller_tag
-	set_shuttle_docking_controller(SSshuttles.docking_registry[current_dock_target])
+	set_shuttle_docking_controller(SSshuttles.docking_program(current_dock_target))
 	if(current_dock_target && !shuttle_docking_controller)
 		log_shuttle(span_danger("warning: shuttle [src] can't find its controller with tag [current_dock_target]!")) // No toggle because this is an error message that needs to be seen
 
@@ -71,18 +71,19 @@
 	if(shuttle_docking_controller == controller)
 		return
 	if(shuttle_docking_controller)
-		om_unhook(shuttle_docking_controller, /datum/om/event/qdeleting, src)
+		unobserve(shuttle_docking_controller, /datum/notice/qdeleting, src)
 	rel_set(src, nameof(shuttle_docking_controller), controller)
 	if(shuttle_docking_controller)
-		om_hook(shuttle_docking_controller, /datum/om/event/qdeleting, src, PROC_REF(docking_controller_deleted))
+		observe(shuttle_docking_controller, /datum/notice/qdeleting, src, then(PROC_REF(docking_controller_deleted)))
 
 /// The active controller is a relation view: it reads null once the controller is deleted, so it
 /// needs no qdeleting hook.
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
 	rel_set(src, nameof(active_docking_controller), controller)
 
-/datum/shuttle/autodock/proc/docking_controller_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/shuttle/autodock/proc/docking_controller_deleted(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	if(shuttle_docking_controller == source)
 		rel_clear(src, nameof(shuttle_docking_controller))
 /*
@@ -188,7 +189,7 @@
 	"Public" procs
 */
 // Queue shuttle for undock and launch by shuttle subsystem.
-/datum/shuttle/autodock/proc/launch(user)
+/datum/shuttle/autodock/proc/launch(user, mob/actor)
 	if (!can_launch()) return
 
 	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
@@ -197,7 +198,7 @@
 	undock()
 
 // Queue shuttle for forced undock and launch by shuttle subsystem.
-/datum/shuttle/autodock/proc/force_launch(user)
+/datum/shuttle/autodock/proc/force_launch(user, mob/actor)
 	if (!can_force()) return
 
 	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
@@ -205,7 +206,7 @@
 	set_process_state(FORCE_LAUNCH)
 
 // Cancel queued launch.
-/datum/shuttle/autodock/cancel_launch(user)
+/datum/shuttle/autodock/cancel_launch(user, mob/actor)
 	if (!can_cancel()) return
 
 	moving_status = SHUTTLE_IDLE
@@ -214,7 +215,7 @@
 
 	//whatever we were doing with docking: stop it, then redock
 	force_undock()
-	om_after(src, 1 SECOND, PROC_REF(dock))
+	after(src, 1 SECOND, PROC_REF(dock))
 
 //returns 1 if the shuttle is getting ready to move, but is not in transit yet
 /datum/shuttle/autodock/proc/is_launching()

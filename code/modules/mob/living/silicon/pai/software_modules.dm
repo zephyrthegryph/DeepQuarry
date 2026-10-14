@@ -18,7 +18,9 @@
 /datum/pai_software/proc/is_active(mob/living/silicon/pai/user)
 	return 0
 
-DECLARE_UI_STATE(/datum/pai_software, GLOB.tgui_always_state)
+CAPABILITIES(/datum/pai_software)
+	// Only a pAI works a program's buttons (silently: anyone else is not answered).
+	extend(TAG_UI, needs(req_actor_kind(/mob/living/silicon/pai, because = /datum/msg/req_silent)))
 
 /datum/pai_software/tgui_status(mob/user)
 	if(!ispAI(user))
@@ -32,12 +34,12 @@ DECLARE_UI_STATE(/datum/pai_software, GLOB.tgui_always_state)
 	toggle = 0
 	default = 1
 
-DECLARE_UI(/datum/pai_software/directives, "pAIDirectives")
+CAPABILITIES(/datum/pai_software/directives)
+	interface("pAIDirectives", state = nameof(GLOB.tgui_always_state))
+	op("getdna", ui_act("getdna"), then(PROC_REF(ui_act_getdna)))
 
-UI_DATA_REPLACE(/datum/pai_software/directives, "merge:ui_data_datum_pai_software_directives{master:unknown,dna:unknown,prime:text,supplemental:unknown}")
-
-/// The computed part of /datum/pai_software/directives's window data (declared on its UI_DATA row).
-/datum/pai_software/directives/proc/ui_data_datum_pai_software_directives(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/directives/ui_data(datum/act/eval/A)
+	var/mob/living/silicon/pai/user = A.actor
 	var/list/data = list()
 
 	data["master"] = user.master
@@ -47,17 +49,9 @@ UI_DATA_REPLACE(/datum/pai_software/directives, "merge:ui_data_datum_pai_softwar
 
 	return data
 
-/datum/pai_software/directives/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/silicon/pai/P = ui.user
-	if(!istype(P))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/pai_software/directives, "getdna", ui_act_getdna)
-UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
-	var/mob/living/silicon/pai/P = ui.user
+/datum/pai_software/directives/proc/ui_act_getdna(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
 	var/mob/living/M = P.loc
 
 	var/count = 0
@@ -71,23 +65,27 @@ UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
 		count++
 
 	// Check the carrier
-	om_ask(M, /datum/om/prompt/confirm/pai_dna_sample, PROC_REF(dna_sample_answered), asker = P, pai = P)
+	var/datum/prompt/yes_no/pai_dna_sample/sample = open_request(src, /datum/prompt/yes_no/pai_dna_sample, PROC_REF(dna_sample_answered), answerer = M, title = "[P] Check DNA", question = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", timeout = 0)
+	if(sample)
+		rel_set(sample, nameof(sample.pai), P)
 	return TRUE
 
 /// A pAI asks its carrier for a DNA sample. The answer proc runs on no too (the pAI is told).
-/datum/om/prompt/confirm/pai_dna_sample
-	answer_on_no = TRUE
+/datum/prompt/yes_no/pai_dna_sample
 	var/mob/living/silicon/pai/pai
 
-/datum/om/prompt/confirm/pai_dna_sample/prepare()
-	title = "[pai] Check DNA"
-	message = "[pai] is requesting a DNA sample from you. Will you allow it to confirm your identity?"
-	return TRUE
+CAPABILITIES(/datum/prompt/yes_no/pai_dna_sample)
+	ref_one(nameof(pai), /mob/living/silicon/pai)
 
-/datum/pai_software/directives/proc/dna_sample_answered(datum/om/prompt/confirm/pai_dna_sample/ask)
-	var/mob/living/M = ask.answerer
-	var/mob/living/silicon/pai/P = ask.pai
-	if(ask.yes)
+/datum/pai_software/directives/proc/dna_sample_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/pai_dna_sample/sample = A.request
+	var/mob/living/M = A.request.answerer
+	var/mob/living/silicon/pai/P = sample.pai
+	if(!P || !M)
+		return
+	if(A.answer.value)
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
 			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)
@@ -118,12 +116,11 @@ UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
 	toggle = 0
 	default = 1		//Comes with the communicator already, also why not
 
-DECLARE_UI(/datum/pai_software/crew_manifest, "CrewManifest")
+CAPABILITIES(/datum/pai_software/crew_manifest)
+	interface("CrewManifest", state = nameof(GLOB.tgui_always_state))
+	ui_shape(manifest = map_of(schema_text(), list_of(map_of(schema_text(), schema_text()))))
 
-UI_DATA(/datum/pai_software/crew_manifest, "merge:ui_data_datum_pai_software_crew_manifest{manifest:unknown}")
-
-/// The computed part of /datum/pai_software/crew_manifest's window data (declared on its UI_DATA row).
-/datum/pai_software/crew_manifest/proc/ui_data_datum_pai_software_crew_manifest(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/crew_manifest/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(GLOB.data_core)
 		GLOB.data_core.get_manifest_list()
@@ -146,12 +143,12 @@ UI_DATA(/datum/pai_software/crew_manifest, "merge:ui_data_datum_pai_software_cre
 	id = "med_records"
 	toggle = 0
 
-DECLARE_UI(/datum/pai_software/med_records, "pAIMedrecords")
+CAPABILITIES(/datum/pai_software/med_records)
+	interface("pAIMedrecords", state = nameof(GLOB.tgui_always_state))
+	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
 
-UI_DATA(/datum/pai_software/med_records, "merge:ui_data_datum_pai_software_med_records{records:list,general:text,medical:text,could_not_find:num}")
-
-/// The computed part of /datum/pai_software/med_records's window data (declared on its UI_DATA row).
-/datum/pai_software/med_records/proc/ui_data_datum_pai_software_med_records(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/med_records/ui_data(datum/act/eval/A)
+	var/mob/living/silicon/pai/user = A.actor
 	var/list/data = list()
 
 	var/list/records = list()
@@ -171,18 +168,10 @@ UI_DATA(/datum/pai_software/med_records, "merge:ui_data_datum_pai_software_med_r
 
 	return data
 
-/datum/pai_software/med_records/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/silicon/pai/P = ui.user
-	if(!istype(P))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/pai_software/med_records, "select", ui_act_select, UI_ARG_REF("select", null, /datum/data/record))
-UI_ACT_PROC(/datum/pai_software/med_records, ui_act_select)
-	var/mob/living/silicon/pai/P = ui.user
-	var/datum/data/record/record = params["select"]
+/datum/pai_software/med_records/proc/ui_act_select(datum/act/op/A, select)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
+	var/datum/data/record/record = select
 	if(record)
 		var/datum/data/record/R = record
 		var/datum/data/record/M = null
@@ -205,12 +194,12 @@ UI_ACT_PROC(/datum/pai_software/med_records, ui_act_select)
 	id = "sec_records"
 	toggle = 0
 
-DECLARE_UI(/datum/pai_software/sec_records, "pAISecrecords")
+CAPABILITIES(/datum/pai_software/sec_records)
+	interface("pAISecrecords", state = nameof(GLOB.tgui_always_state))
+	op("select", ui_act("select", arg("select", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_select)))
 
-UI_DATA(/datum/pai_software/sec_records, "merge:ui_data_datum_pai_software_sec_records{records:list,general:text,security:text,could_not_find:num}")
-
-/// The computed part of /datum/pai_software/sec_records's window data (declared on its UI_DATA row).
-/datum/pai_software/sec_records/proc/ui_data_datum_pai_software_sec_records(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/sec_records/ui_data(datum/act/eval/A)
+	var/mob/living/silicon/pai/user = A.actor
 	var/list/data = list()
 
 	var/list/records = list()
@@ -230,18 +219,10 @@ UI_DATA(/datum/pai_software/sec_records, "merge:ui_data_datum_pai_software_sec_r
 
 	return data
 
-/datum/pai_software/sec_records/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/silicon/pai/P = ui.user
-	if(!istype(P))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/pai_software/sec_records, "select", ui_act_select, UI_ARG_REF("select", null, /datum/data/record))
-UI_ACT_PROC(/datum/pai_software/sec_records, ui_act_select)
-	var/mob/living/silicon/pai/P = ui.user
-	var/datum/data/record/record = params["select"]
+/datum/pai_software/sec_records/proc/ui_act_select(datum/act/op/A, select)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
+	var/datum/data/record/record = select
 	if(record)
 		var/datum/data/record/R = record
 		var/datum/data/record/S = null
@@ -268,12 +249,14 @@ UI_ACT_PROC(/datum/pai_software/sec_records, ui_act_select)
 	id = "door_jack"
 	toggle = 0
 
-DECLARE_UI(/datum/pai_software/door_jack, "pAIDoorjack", UI_TITLE("Door Jack"))
+CAPABILITIES(/datum/pai_software/door_jack)
+	interface("pAIDoorjack", title = "Door Jack", state = nameof(GLOB.tgui_always_state))
+	op("jack", ui_act("jack"), then(PROC_REF(ui_act_jack)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
+	op("cable", ui_act("cable"), then(PROC_REF(ui_act_cable)))
 
-UI_DATA(/datum/pai_software/door_jack, "merge:ui_data_datum_pai_software_door_jack{cable:bool,machine:unknown,inprogress:bool,progress_a:num,progress_b:num,aborted:num}")
-
-/// The computed part of /datum/pai_software/door_jack's window data (declared on its UI_DATA row).
-/datum/pai_software/door_jack/proc/ui_data_datum_pai_software_door_jack(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/door_jack/ui_data(datum/act/eval/A)
+	var/mob/living/silicon/pai/user = A.actor
 	var/list/data = list()
 
 	data["cable"] = user.cable != null
@@ -285,34 +268,26 @@ UI_DATA(/datum/pai_software/door_jack, "merge:ui_data_datum_pai_software_door_ja
 
 	return data
 
-/datum/pai_software/door_jack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/silicon/pai/P = ui.user
-	if(!istype(P))
-		return FALSE
-	return TRUE
-
-UI_ACT(/datum/pai_software/door_jack, "jack", ui_act_jack)
-UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_jack)
-	var/mob/living/silicon/pai/P = ui.user
+/datum/pai_software/door_jack/proc/ui_act_jack(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
 	if(P.cable && P.cable.machine())
 		rel_set(P, nameof(/mob/living/silicon/pai::hackdoor), P.cable.machine())
 		P.hackloop()
 	return 1
 
-UI_ACT(/datum/pai_software/door_jack, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cancel)
-	var/mob/living/silicon/pai/P = ui.user
+/datum/pai_software/door_jack/proc/ui_act_cancel(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
 	rel_clear(P, nameof(/mob/living/silicon/pai::hackdoor))
 	return 1
 
-UI_ACT(/datum/pai_software/door_jack, "cable", ui_act_cable)
-UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
-	var/mob/living/silicon/pai/P = ui.user
+/datum/pai_software/door_jack/proc/ui_act_cable(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/P = user
 	var/turf/T = get_turf(P)
 	P.hack_aborted = 0
-	own_set(P, nameof(/obj/machinery/cablelayer::cable), new /obj/item/pai_cable(T))
+	rel_set(P, nameof(/mob/living/silicon/pai::cable), new /obj/item/pai_cable(T))
 	for(var/mob/M in viewers(T))
 		M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
 						span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
@@ -334,21 +309,19 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 		return
 	hack_tick()
 
-/// DECLARE_REPEAT while hackdoor is set: one second of brute-forcing the door.
-/mob/living/silicon/pai/proc/hack_tick()
+/// One second of brute-forcing the door (its every() runs while hackdoor is set).
+/mob/living/silicon/pai/proc/hack_tick(datum/act/A)
 	if(cable && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
 		hackprogress = min(hackprogress+rand(1, 20), 1000)
 	else
 		hack_aborted = 1
 		hackprogress = 0
 		rel_clear(src, nameof(hackdoor))
-		return REPEAT_STOP
 	if(hackprogress >= 1000)
 		hackprogress = 0
 		hackdoor.open()
 		rel_clear(cable, nameof(cable.machine))
 		rel_clear(src, nameof(hackdoor))
-		return REPEAT_STOP
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"
@@ -356,12 +329,12 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 	id = "atmos_sense"
 	toggle = 0
 
-DECLARE_UI(/datum/pai_software/atmosphere_sensor, "pAIAtmos")
+CAPABILITIES(/datum/pai_software/atmosphere_sensor)
+	interface("pAIAtmos", state = nameof(GLOB.tgui_always_state))
+	ui_shape(aircontents = list_of(map_of(schema_text(), schema_text())))
 
-UI_DATA(/datum/pai_software/atmosphere_sensor, "merge:ui_data_datum_pai_software_atmosphere_sensor{aircontents:unknown}")
-
-/// The computed part of /datum/pai_software/atmosphere_sensor's window data (declared on its UI_DATA row).
-/datum/pai_software/atmosphere_sensor/proc/ui_data_datum_pai_software_atmosphere_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/atmosphere_sensor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	var/turf/location = get_turf(user)
 	data["aircontents"] = get_gas_mixture_default_scan_data(location?.return_air())
@@ -374,14 +347,14 @@ UI_DATA(/datum/pai_software/atmosphere_sensor, "merge:ui_data_datum_pai_software
 
 /datum/pai_software/pai_hud/toggle(mob/living/silicon/pai/user)
 	user.paiHUD = !user.paiHUD
-	user.plane_holder.set_vis(VIS_CH_ID,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_WANTED,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_IMPTRACK,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_IMPCHEM,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_STATUS_R,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_HEALTH_VR,user.paiHUD)
-	user.plane_holder.set_vis(VIS_CH_BACKUP,user.paiHUD) //backup stuff from silicon_vr is here now
-	user.plane_holder.set_vis(VIS_AUGMENTED,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_ID,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_WANTED,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_IMPTRACK,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_IMPCHEM,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_STATUS_R,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,user.paiHUD)
+	hud_of(user)?.plane_holder?.set_vis(VIS_CH_BACKUP,user.paiHUD) //backup stuff from silicon_vr is here now
+	hud_of(user)?.plane_holder?.set_vis(VIS_AUGMENTED,user.paiHUD)
 
 /datum/pai_software/pai_hud/is_active(mob/living/silicon/pai/user)
 	return user.paiHUD
@@ -429,12 +402,15 @@ UI_DATA(/datum/pai_software/atmosphere_sensor, "merge:ui_data_datum_pai_software
 	id = "signaller"
 	toggle = 0
 
-DECLARE_UI(/datum/pai_software/signaller, "Signaler", UI_TITLE("Signaler"))
+CAPABILITIES(/datum/pai_software/signaller)
+	interface("Signaler", title = "Signaler", state = nameof(GLOB.tgui_always_state))
+	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
+	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("code", num(1, 100))), then(PROC_REF(ui_act_code)))
+	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
 
-UI_DATA(/datum/pai_software/signaller, "merge:ui_data_datum_pai_software_signaller{frequency:num,minFrequency:num,maxFrequency:num,code:num}")
-
-/// The computed part of /datum/pai_software/signaller's window data (declared on its UI_DATA row).
-/datum/pai_software/signaller/proc/ui_data_datum_pai_software_signaller(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/signaller/ui_data(datum/act/eval/A)
+	var/mob/living/silicon/pai/user = A.actor
 	var/list/data = list()
 
 	var/obj/item/radio/integrated/signal/R = user.sradio
@@ -446,9 +422,9 @@ UI_DATA(/datum/pai_software/signaller, "merge:ui_data_datum_pai_software_signall
 
 	return data
 
-UI_ACT(/datum/pai_software/signaller, "signal", ui_act_signal)
-UI_ACT_PROC(/datum/pai_software/signaller, ui_act_signal)
-	var/mob/living/silicon/pai/pai = ui.user
+/datum/pai_software/signaller/proc/ui_act_signal(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/pai = user
 	if(!istype(pai))
 		return
 	var/obj/item/radio/integrated/signal/R = pai.sradio
@@ -456,33 +432,33 @@ UI_ACT_PROC(/datum/pai_software/signaller, ui_act_signal)
 	for(var/mob/O in hearers(1, R.loc))
 		O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 
-UI_ACT(/datum/pai_software/signaller, "freq", ui_act_freq, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/datum/pai_software/signaller, ui_act_freq)
-	var/mob/living/silicon/pai/pai = ui.user
+/datum/pai_software/signaller/proc/ui_act_freq(datum/act/op/A, freq)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/pai = user
 	if(!istype(pai))
 		return
 	var/obj/item/radio/integrated/signal/R = pai.sradio
-	var/frequency = unformat_frequency(params["freq"])
+	var/frequency = unformat_frequency(freq)
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	R.set_frequency(frequency)
 	. = TRUE
 
-UI_ACT(/datum/pai_software/signaller, "code", ui_act_code, UI_ARG_NUM("code", 1, 100))
-UI_ACT_PROC(/datum/pai_software/signaller, ui_act_code)
-	var/mob/living/silicon/pai/pai = ui.user
+/datum/pai_software/signaller/proc/ui_act_code(datum/act/op/A, code)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/pai = user
 	if(!istype(pai))
 		return
 	var/obj/item/radio/integrated/signal/R = pai.sradio
-	R.code = round(params["code"])
+	R.code = round(code)
 	. = TRUE
 
-UI_ACT(/datum/pai_software/signaller, "reset", ui_act_reset, UI_ARG_TEXT("reset"))
-UI_ACT_PROC(/datum/pai_software/signaller, ui_act_reset)
-	var/mob/living/silicon/pai/pai = ui.user
+/datum/pai_software/signaller/proc/ui_act_reset(datum/act/op/A, reset)
+	var/mob/user = A.actor
+	var/mob/living/silicon/pai/pai = user
 	if(!istype(pai))
 		return
 	var/obj/item/radio/integrated/signal/R = pai.sradio
-	if(params["reset"] == "freq")
+	if(reset == "freq")
 		R.set_frequency(initial(R.frequency))
 	else
 		R.code = initial(R.code)

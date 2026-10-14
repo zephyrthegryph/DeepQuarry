@@ -304,3 +304,15 @@
 
 /// Default endurance for a living mob that doesn't set one.
 #define DEFAULT_ENDURANCE 100
+
+// Tourniquets (code/modules/medical/stabilisation/tourniquet.dm)
+/// Time to cinch a tourniquet on someone.
+#define TOURNIQUET_APPLY_TIME (3 SECONDS)
+/// Time to loosen one.
+#define TOURNIQUET_REMOVE_TIME (2 SECONDS)
+/// Ischemia progression while the limb has no flow: about fifteen minutes to necrosis.
+#define LIMB_ISCHEMIA_OCCLUDED_RATE 0.5
+/// Ischemia progression once flow returns (negative: it recedes).
+#define LIMB_ISCHEMIA_REPERFUSED_RATE -3
+/// Severity at which the starved tissue dies.
+#define LIMB_ISCHEMIA_NECROSIS_SEVERITY 60

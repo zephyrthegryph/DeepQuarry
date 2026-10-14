@@ -1,0 +1,25 @@
+CAPABILITIES(/obj/a)
+	when(cond, a, b, c, d, e, f)
+	when(cond, a, b, c, d, e, f, g)
+	when(cond, list(a, b, c, d, e, f, g, h))
+	extend(KEY, a, b, c, d, e, f, g, drop = "x")
+	extend(KEY, a, b, c, d, e, f, drop = "x")
+	on_change(nameof(v), ENTER, a, b, c, d, e, f, at_most = 1)
+	on_change(nameof(v), ENTER, a, b, c, d, e, f, g)
+	on_notice(/datum/notice/x, a, b, c, d, e, f, g)
+	on_op("k", a, b, c, d, e, f, g, h)
+	instead(a, b, c, d, e, f, g, order = ORDER_LATE)
+	instead(a, b, c, d, e, f)
+	while_slotted(SLOT_X, a, b, c, d, e, f, g, on = ON_HOLDER)
+	captures(a, b, c, d, e, f, g, h, i)
+	captures(a, b, c, d, e, f, g, h, resume = LATEST)
+	stage(STAGE_X, a, b, c, d, e, f, g, from = STAGE_Y)
+	stage(STAGE_X, a, b, c, d, e, f, from = STAGE_Y)
+	// when(cond, a, b, c, d, e, f, g)
+	op("k", say("when(1, 2, 3, 4, 5, 6, 7, 8)"),
+		when(cond, a,
+			b, c, d, e,
+			f, g))
+
+/proc/when(cond, p1, p2, p3, p4, p5, p6, list/reads = null)
+	return other.when(1, 2, 3, 4, 5, 6, 7, 8)

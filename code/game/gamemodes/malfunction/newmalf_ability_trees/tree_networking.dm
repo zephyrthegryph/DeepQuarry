@@ -12,22 +12,28 @@
 /datum/malf_research_ability/networking/basic_hack
 	ability = /datum/game_mode/malfunction/verb/basic_encryption_hack
 	price = 25
-	next = new/datum/malf_research_ability/networking/advanced_hack()
 	name = "Basic Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/basic_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/advanced_hack)
 
 
 /datum/malf_research_ability/networking/advanced_hack
 	ability = /datum/game_mode/malfunction/verb/advanced_encryption_hack
 	price = 400
-	next = new/datum/malf_research_ability/networking/elite_hack()
 	name = "Advanced Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/advanced_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/elite_hack)
 
 
 /datum/malf_research_ability/networking/elite_hack
 	ability = /datum/game_mode/malfunction/verb/elite_encryption_hack
 	price = 1000
-	next = new/datum/malf_research_ability/networking/system_override()
 	name = "Elite Encryption Hack"
+
+CAPABILITIES(/datum/malf_research_ability/networking/elite_hack)
+	owns_one(nameof(next), /datum/malf_research_ability, starts = /datum/malf_research_ability/networking/system_override)
 
 
 /datum/malf_research_ability/networking/system_override
@@ -62,14 +68,14 @@
 	else
 		return
 
-	if(!ability_prechecks(user, price) || !ability_pay(user, price))
+	if(!ability_prechecks(user, price) || !res_spend(user, RES_CPU, price, actor = user))
 		return
 
 	user.hacking = 1
 	to_chat(user, "Beginning APC system override...")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), user, "APC hack completed. Uploading modified operation software..")
-	om_after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), user, "Restarting APC to apply changes..")
-	om_after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), user, REF(A))
+	after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "APC hack completed. Uploading modified operation software.."))
+	after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "Restarting APC to apply changes.."))
+	after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), with = list(user, REF(A)))
 
 /proc/malf_apc_hack_done(mob/living/silicon/ai/user, apc_ref)
 	var/obj/machinery/power/apc/A = locate(apc_ref)
@@ -94,19 +100,23 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/text/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_encryption_hack_titled), receiver = user, message = "Select message title: ")
+	open_request(user, /datum/prompt/text/malf_encryption_message, TYPE_PROC_REF(/mob/living/silicon/ai, malf_encryption_hack_titled), answerer = user, question = "Select message title: ")
 
-/mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/om/prompt/text/malf/ask)
-	om_ask(src, /datum/om/prompt/text/malf, PROC_REF(malf_encryption_hack_written), message = "Select message text: ", message_title = ask.text)
-
-/mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/om/prompt/text/malf/ask)
-	var/mob/living/silicon/ai/user = src
-	var/price = 75
-	var/title = ask.message_title
-	var/text = ask.text
-	if(!title || !text || !ability_prechecks(user, price) || !ability_pay(user, price))
-		to_chat(user, "Hack Aborted")
+/mob/living/silicon/ai/proc/malf_encryption_hack_titled(datum/act/request/context)
+	if(!context.answer)
 		return
+	open_request(src, /datum/prompt/text/malf_encryption_message, PROC_REF(malf_encryption_hack_written), answerer = src, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), question = "Select message text: ", message_title = context.answer.value, costs = list("[RES_CPU]" = 75))
+
+/mob/living/silicon/ai/proc/malf_encryption_hack_written(datum/act/request/context)
+	if(!context.answer)
+		return OP_REFUSED
+	var/datum/prompt/text/malf_encryption_message/ask = context.answer
+	var/mob/living/silicon/ai/user = src
+	var/title = ask.message_title
+	var/text = ask.value
+	if(!title || !text)
+		to_chat(user, "Hack Aborted")
+		return OP_REFUSED
 
 	if(prob(60) && user.hack_can_fail)
 		to_chat(user, "Hack Failed.")
@@ -129,15 +139,16 @@
 	if(!ability_prechecks(user, price))
 		return
 
-	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), receiver = user, title = "Alert Level", message = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"))
+	open_request(user, /datum/prompt/choice/malf_alert_level, TYPE_PROC_REF(/mob/living/silicon/ai, malf_alert_hack_chosen), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), title = "Alert Level", question = "Select new alert level:", choices = list("green", "yellow", "violet", "orange", "blue", "red", "delta"), costs = list("[RES_CPU]" = price))
 
-/mob/living/silicon/ai/proc/malf_alert_hack_chosen(datum/om/prompt/choice/malf/ask)
+/mob/living/silicon/ai/proc/malf_alert_hack_chosen(datum/act/request/A)
+	if(!A.answer)
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/alert_target = ask.choice
-	var/price = 200
-	if(!alert_target || !ability_prechecks(user, price) || !ability_pay(user, price))
+	var/alert_target = A.answer.value
+	if(!alert_target)
 		to_chat(user, "Hack Aborted")
-		return
+		return OP_REFUSED
 
 	if(prob(75) && user.hack_can_fail)
 		to_chat(user, "Hack Failed.")
@@ -153,15 +164,15 @@
 	set name = "System Override"
 	set desc = "500 CPU - Begins hacking station's primary firewall, quickly overtaking remaining APC systems. When completed grants access to station's self-destruct mechanism. Network administrators will probably notice this."
 	var/mob/living/silicon/ai/user = usr
-	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), receiver = user, title = "System Override:", message = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this.")
+	open_request(user, /datum/prompt/choice/malf_system_override, TYPE_PROC_REF(/mob/living/silicon/ai, malf_system_override_confirmed), answerer = user, valid = TYPE_PROC_REF(/mob/living/silicon/ai, malf_able), costs = list("[RES_CPU]" = 500))
 
-/mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/om/prompt/confirm/malf/ask)
+/mob/living/silicon/ai/proc/malf_system_override_confirmed(datum/act/request/context)
+	if(!context.answer || context.answer.value != "Yes")
+		return OP_REFUSED
 	var/mob/living/silicon/ai/user = src
-	var/price = 500
-	if (!ability_prechecks(user, price) || !ability_pay(user, price) || user.system_override)
-		if(user.system_override)
-			to_chat(user, "You already started the system override sequence.")
-		return
+	if(user.system_override)
+		to_chat(user, "You already started the system override sequence.")
+		return OP_REFUSED
 	var/list/remaining_apcs = list()
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(!(A.z in using_map.station_levels)) 		// Only station APCs
@@ -174,7 +185,7 @@
 	if(duration > 3000)								// Two types of announcements. Short hacks trigger immediate warnings. Long hacks are more "progressive".
 		// Network monitoring closes in over the hack, on the AI's clock.
 		for(var/stage in 1 to 4)
-			om_after(user, stage * duration / 5, TYPE_PROC_REF(/mob/living/silicon/ai, network_trace_announce), stage)
+			after(user, stage * duration / 5, TYPE_PROC_REF(/mob/living/silicon/ai, network_trace_announce), with = list(stage))
 	else
 		GLOB.command_announcement.Announce("We have detected a strong brute-force attack on your firewall which seems to be originating from your AI system. It already controls almost the whole network, and the only thing that's preventing it from accessing the self-destruct is this firewall. You don't have much time before it succeeds.", "Network Monitoring")
 	to_chat(user, "## BEGINNING SYSTEM OVERRIDE.")
@@ -182,7 +193,7 @@
 	user.hacking = 1
 	user.system_override = 1
 	// Now actually begin the hack. Each APC takes 10 seconds.
-	om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, shuffle(remaining_apcs))
+	after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), with = list(user, shuffle(remaining_apcs)))
 
 /// Overrides the next APC every 10 seconds; the firewall falls 30 seconds after the last.
 /proc/malf_override_next_apc(mob/living/silicon/ai/user, list/remaining_apcs)
@@ -196,10 +207,10 @@
 			if(A.hacker == user)
 				to_chat(user, "## OVERRIDDEN: [A.name]")
 		if(length(remaining_apcs))
-			om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, remaining_apcs)
+			after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), with = list(user, remaining_apcs))
 			return
 	to_chat(user, "## REACHABLE APC SYSTEMS OVERTAKEN. BYPASSING PRIMARY FIREWALL.")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), user)
+	after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), with = list(user))
 
 /proc/malf_override_finish(mob/living/silicon/ai/user)
 	// Hack all APCs, including those built during hack sequence.
@@ -213,7 +224,7 @@
 	user.hacking = 0
 	user.system_override = 2
 	// Granted by the AI's malf research (the AI itself if it has none).
-	om_grant(user, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_destroy_station, user.research || user)
+	grant(user, granted_verb(/datum/game_mode/malfunction/verb/ai_destroy_station), user.research || user)
 
 
 // END ABILITY VERBS
@@ -228,3 +239,32 @@
 		"This is highly abnormal and somewhat concerning. The intruder is too fast, he is evading our traces. No man could be this fast...",
 		"We have traced the intrude#, it seem& t( e yo3r AI s7stem, it &# *#ck@ng th$ sel$ destru$t mechani&m, stop i# bef*@!)$#&&@@  <CONNECTION LOST>")
 	GLOB.command_announcement.Announce(messages[stage], "Network Monitoring")
+
+/datum/prompt/text/malf_encryption_message
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CONSCIOUS
+	var/message_title
+
+/datum/prompt/text/malf_encryption_message/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/malf_alert_level
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CONSCIOUS
+
+/datum/prompt/choice/malf_system_override
+	title = "System Override:"
+	question = "Begin system override? This cannot be stopped once started. The network administrators will probably notice this."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	ask_flags = ASK_CONSCIOUS
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/malf_system_override/recheck_extra()
+	var/mob/living/silicon/ai/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	return null

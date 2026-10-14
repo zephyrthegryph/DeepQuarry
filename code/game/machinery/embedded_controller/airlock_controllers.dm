@@ -25,16 +25,20 @@
 	if(!allowed(user))
 		return min(STATUS_UPDATE, .)
 
-/obj/machinery/embedded_controller/radio/airlock/screwdriver_act(mob/user, obj/item/tool)
-	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
+/// Only a controller built to come apart opens its panel or comes off the wall (the others take the click and do nothing).
+/obj/machinery/embedded_controller/radio/airlock/proc/may_deconstruct(datum/act/op/A)
+	return (deconstructable) ? null : MSG(req_failed)
 
-/obj/machinery/embedded_controller/radio/airlock/crowbar_act(mob/user, obj/item/tool)
-	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
+/// The window's data.
+/obj/machinery/embedded_controller/radio/airlock/ui_data(datum/act/eval/A)
+	. = list()
+	.["panel_open"] = panel_open
+	var/list/part = ui_data_part_airlock(A)
+	for(var/key in part)
+		.[key] = part[key]
 
-UI_DATA(/obj/machinery/embedded_controller/radio/airlock, "panel_open:num", "merge:ui_data_obj_machinery_embedded_controller_radio_airlock{tags:unknown,frequency:num,min_freq:num,max_freq:num}")
-
-/// The computed part of /obj/machinery/embedded_controller/radio/airlock's window data (declared on its UI_DATA row).
-/obj/machinery/embedded_controller/radio/airlock/proc/ui_data_obj_machinery_embedded_controller_radio_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window's data.
+/obj/machinery/embedded_controller/radio/airlock/proc/ui_data_part_airlock(datum/act/eval/A)
 	var/list/data = list()
 
 	data["tags"] = null
@@ -53,44 +57,43 @@ UI_DATA(/obj/machinery/embedded_controller/radio/airlock, "panel_open:num", "mer
 
 	return data
 
-/obj/machinery/embedded_controller/radio/airlock/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!panel_open)
-		return FALSE
-	return TRUE
+// The tag and frequency settings are behind the maintenance panel (the program's commands are not: the old tgui_act() ran them before its panel check).
+CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
+	space(SPACE_PANEL, door = nameof(panel_open))
+	op("edit_tag", ui_act("edit_tag", arg("tag", schema_text(4096))), at(SPACE_PANEL),
+		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_tag_question)), "title" = computed(PROC_REF(edit_tag_title)), "default" = computed(PROC_REF(edit_tag_default)), "max_len" = 30, "name_text" = TRUE, "timeout" = 0), step = "tag"),
+		then(PROC_REF(ui_act_edit_tag)))
+	op("set_frequency", ui_act("set_frequency", arg("freq", num())), at(SPACE_PANEL), then(PROC_REF(ui_act_set_frequency)))
+	extend("machine_panel", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
 
-UI_ACT(/obj/machinery/embedded_controller/radio/airlock, "edit_tag", ui_act_edit_tag, UI_ARG_TEXT("tag"))
-UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_edit_tag)
+/obj/machinery/embedded_controller/radio/airlock/proc/edit_tag_question(datum/act/op/A)
+	return "What would you like to set [A.args["tag"]] to?"
+
+/obj/machinery/embedded_controller/radio/airlock/proc/edit_tag_title(datum/act/op/A)
+	return "New [A.args["tag"]]?"
+
+/obj/machinery/embedded_controller/radio/airlock/proc/edit_tag_default(datum/act/op/A)
 	var/datum/embedded_program/airlock/airlock_program = program
+	return airlock_program?.get_tag(A.args["tag"])
 
-	var/tag = params["tag"]
-	var/current = airlock_program.get_tag(tag)
-	om_ask(usr, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
-	return TRUE
-
-UI_ACT(/obj/machinery/embedded_controller/radio/airlock, "set_frequency", ui_act_set_frequency, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_set_frequency)
-	set_frequency(sanitize_frequency(params["freq"], RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
-	return TRUE
-
-/datum/om/prompt/text/airlock_tag
-	name_text = TRUE
-	requires = PROMPT_USABLE
-	var/tag_name
-
-/obj/machinery/embedded_controller/radio/airlock/proc/airlock_tag_entered(datum/om/prompt/text/airlock_tag/ask)
-	var/new_tag = ask.text
+/// The answered tag is set on the program.
+/obj/machinery/embedded_controller/radio/airlock/proc/ui_act_edit_tag(datum/act/op/A, tag)
+	var/new_tag = A.step_value("tag")
 	var/datum/embedded_program/airlock/airlock_program = program
 	if(new_tag && airlock_program)
-		airlock_program.set_tag(ask.tag_name, new_tag)
-		SStgui.update_uis(src)
+		airlock_program.set_tag(tag, new_tag)
+	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/appearance_overlays()
-	. = list()
-	if(panel_open)
-		. += "airlock_control_open"
+/obj/machinery/embedded_controller/radio/airlock/proc/ui_act_set_frequency(datum/act/op/A, freq)
+	set_frequency(sanitize_frequency(freq, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+	return TRUE
+
+/// An airlock controller also shows its open panel.
+/obj/machinery/embedded_controller/radio/airlock/draw(datum/look/look)
+	..()
+	look.overlay("airlock_control_open", panel_open)
 
 //Advanced airlock controller for when you want a more versatile airlock controller - useful for turning simple access control rooms into airlocks
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller
@@ -112,6 +115,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_P
 /obj/machinery/embedded_controller/radio/airlock/access_controller
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "access_control_standby"
+	display_base = "access_control"
 
 	name = "Access Controller"
 	tag_secure = 1
@@ -119,14 +123,39 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_P
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/access_controller/appearance_overlays()
-	. = list()
-	if(on && program)
-		if(program.memory["processing"])
-			icon_state = "access_control_process"
-		else
-			icon_state = "access_control_standby"
-	else
-		icon_state = "access_control_off"
+/// The access controller's sprite has no open-panel layer.
+/obj/machinery/embedded_controller/radio/airlock/access_controller/draw(datum/look/look)
+	..()
+	look.hide("airlock_control_open")
 
+// Each controller's window picks its console by internalTemplateName (tgui/packages/tgui/interfaces/EmbeddedController/index.tsx throws
+// without one) and reads its program's state. The UI_DATA conversion (8039c1eb9f) dropped these three overrides, so every station airlock
+// controller's window opened blank; dq_ops_menu_airlock_controller_window pins them.
+
+/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
+	.["external_pressure"] = round(memory?["external_sensor_pressure"])
+	.["internal_pressure"] = round(memory?["internal_sensor_pressure"])
+	.["processing"] = memory?["processing"]
+	.["purge"] = memory?["purge"]
+	.["secure"] = memory?["secure"]
+	.["internalTemplateName"] = "AirlockConsoleAdvanced"
+
+/obj/machinery/embedded_controller/radio/airlock/airlock_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["chamber_pressure"] = round(memory?["chamber_sensor_pressure"])
+	.["exterior_status"] = memory?["exterior_status"]
+	.["interior_status"] = memory?["interior_status"]
+	.["processing"] = memory?["processing"]
+	.["internalTemplateName"] = "AirlockConsoleSimple"
+
+/obj/machinery/embedded_controller/radio/airlock/access_controller/ui_data(datum/act/eval/A)
+	. = ..()
+	var/list/memory = program?.memory
+	.["exterior_status"] = memory?["exterior_status"]
+	.["interior_status"] = memory?["interior_status"]
+	.["processing"] = memory?["processing"]
+	.["internalTemplateName"] = "DoorAccessConsole"

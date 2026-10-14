@@ -6,8 +6,6 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "spectrometer"
 	w_class = ITEMSIZE_SMALL
 	flags = OPENCONTAINER
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
 
@@ -15,32 +13,32 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	var/details = 0
 	var/recent_fail = 0
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-
-/obj/item/mass_spectrometer/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(5)
-	own_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
 
 /obj/item/mass_spectrometer/on_reagent_change()
 	if(reagents.total_volume)
-		icon_state = initial(icon_state) + "_s"
+		set_icon_state(initial(icon_state) + "_s")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
-DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mass_spectrometer/proc/can_analyze)))
+CAPABILITIES(/obj/item/mass_spectrometer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	reagents(5)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_analyze_holds))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the spectrometer.
-/obj/item/mass_spectrometer/proc/can_analyze(mob/user, atom/target, obj/item/held)
-	if(user.stat)
-		return TRUE // the effect declines silently
-	if(!user.IsAdvancedToolUser())
+/// Requirement (was REQ_* can_analyze): the legacy check answers TRUE to pass.
+/obj/item/mass_spectrometer/proc/can_analyze_holds(datum/act/op/A)
+	if(A.actor.stat)
+		return null // the effect declines silently
+	if(!A.actor.IsAdvancedToolUser())
 		return "you don't have the dexterity to do this"
-	return TRUE
+	return null
 
-/obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why can_analyze_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/mass_spectrometer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat)
 		return
 	if(reagents.total_volume)

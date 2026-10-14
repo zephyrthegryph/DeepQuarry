@@ -14,18 +14,17 @@
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
 
-	var/network = "NULL"		// the network to probe
-	var/temp = ""				// temporary feedback messages
+	temp = ""
 
 	var/storedcode = ""			// code stored
 
 /// The mob typing in the IDE (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/computer/telecomms/traffic, mob, editingcode, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/telecomms/traffic/var/mob/editingcode
 /// Refreshes the IDE every half second while someone is typing in it.
-DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_ide_tick, "editingcode")
+
 
 /// One half-second refresh of the IDE while someone is manning the keyboard.
-/obj/machinery/computer/telecomms/traffic/proc/update_ide_tick()
+/obj/machinery/computer/telecomms/traffic/proc/update_ide_tick(datum/act/timer/A)
 	if(!editingcode() || !editingcode().client)
 		pass_editor()
 		return
@@ -57,7 +56,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 				winset(M, "tcscode", "is-disabled=true")
 				winset(M, "tcscode", "text=\"[showcode]\"")
 			else
-				LAZYREMOVE(viewingcode, M)
+				rel_remove(src, nameof(viewingcode), M)
 				winshow(M, "Telecomms IDE", 0) // hide the window!
 
 /// dx_winget() callback: buffers the typer's text, if they are still the one typing.
@@ -70,7 +69,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 /obj/machinery/computer/telecomms/traffic/proc/pass_editor()
 	if(length(viewingcode) > 0)
 		rel_set(src, nameof(editingcode), DEFAULTPICK(viewingcode, null))
-		LAZYREMOVE(viewingcode, editingcode())
+		rel_remove(src, nameof(viewingcode), editingcode())
 	else
 		rel_clear(src, nameof(editingcode))
 
@@ -82,7 +81,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 /obj/machinery/computer/telecomms/traffic/proc/traffic_access(mob/user)
 	add_fingerprint(user)
 	user.set_machine(src)
-	if(!src.allowed(user) && !emagged)
+	if(!src.allowed(user) && !emagged())
 		to_chat(user, span_warning("ACCESS DENIED."))
 		return FALSE
 	return TRUE
@@ -95,12 +94,6 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 		if(T.id == id)
 			rel_set(src, nameof(SelectedServer), T)
 			break
-	updateUsrDialog(user)
-
-/obj/machinery/computer/telecomms/traffic/proc/traffic_set_network(mob/user)
-	if(!traffic_access(user))
-		return
-	om_ask(user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
 	updateUsrDialog(user)
 
 /obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
@@ -117,7 +110,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 		if("scan")
 			if(length(servers) > 0)
-				temp = span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -")
+				set_temp(span_red("- FAILED: CANNOT PROBE WHEN BUFFER FULL -"))
 
 			else
 				for(var/obj/machinery/telecomms/server/T in range(25, src))
@@ -125,9 +118,9 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 						rel_add(src, nameof(servers), T)
 
 				if(!length(servers))
-					temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
+					set_temp(span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -"))
 				else
-					temp = span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -")
+					set_temp(span_blue("- [length(servers)] SERVERS PROBED & BUFFERED -"))
 
 				screen = 0
 
@@ -146,7 +139,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 				winset(editingcode(), "tcscode", "text=\"[showcode]\"")
 
 			else
-				LAZYADD(viewingcode, user)
+				rel_add(src, nameof(viewingcode), user)
 				winshow(user, "Telecomms IDE", 1) // show the IDE
 				winset(user, "tcscode", "is-disabled=true")
 				winset(editingcode(), "tcscode", "text=\"\"")
@@ -158,27 +151,47 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newnet = ask.text
-	if(newnet && ((user in range(1, src)) || issilicon(user)))
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/newnet = A.step_value("network")
+	if(newnet && ((user in range(1, src)) || (A.authority & AUTH_REMOTE_ACCESS)))
 		if(length(newnet) > 15)
-			temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")
+			set_temp(span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -"))
 
 		else
 
 			network = newnet
 			screen = 0
 			rel_clear(src, nameof(servers))
-			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
+			set_temp(span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -"))
 
-DECLARE_EMAG(/obj/machinery/computer/telecomms/traffic, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/telecomms/traffic/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
+	every(0.5 SECONDS, then(PROC_REF(update_ide_tick)), when = nameof(editingcode))
+	emag(then(PROC_REF(on_emag)))
+	ref_many(nameof(viewingcode), /mob)
+	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
+	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("set_network", ui_act("set_network"), needs(req(PROC_REF(network_prompt_access))), asks(/datum/prompt/text, step = "network", fields = list("title" = "Comm Monitor", "question" = "Which network do you want to view?", "default" = computed(PROC_REF(network_prompt_default)), "max_len" = 15, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_network)))
+	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
+	op("flush_buffer", ui_act("flush_buffer"), then(PROC_REF(ui_act_flush_buffer)))
+	op("view_server", ui_act("view_server", arg("id", schema_text(4096))), then(PROC_REF(ui_act_view_server)))
+	op("main_menu", ui_act("main_menu"), then(PROC_REF(ui_act_main_menu)))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("edit_code", ui_act("edit_code"), then(PROC_REF(ui_act_edit_code)))
+	op("toggle_run", ui_act("toggle_run"), then(PROC_REF(ui_act_toggle_run)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	ref_one(nameof(lasteditor), /mob)
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
+	ref_one(nameof(editingcode), /mob)
+
+/obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
 	to_chat(user, span_notice("You you disable the security protocols"))
 	updateUsrDialog(user)
-	return 1
+	return OP_OK
 
 /// editingcode (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob
@@ -191,3 +204,11 @@ DECLARE_EMAG(/obj/machinery/computer/telecomms/traffic, PROC_REF(on_emag), null,
 /// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/SelectedServer() as /obj/machinery/telecomms/server
 	return SelectedServer
+
+MSG_DEF_SELF(traffic/access_denied, "ACCESS DENIED.")
+
+/obj/machinery/computer/telecomms/traffic/proc/network_prompt_access(datum/act/op/A)
+	return (allowed(A.actor) || emagged()) ? null : MSG(traffic/access_denied)
+
+/obj/machinery/computer/telecomms/traffic/proc/network_prompt_default(datum/act/op/A)
+	return network

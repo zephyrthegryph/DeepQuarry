@@ -61,7 +61,7 @@
 	TEST_ASSERT_EQUAL(H.mind.get_identity(), body_identity, "the new mind should adopt the body's identity")
 	TEST_ASSERT_EQUAL(H.identity(), body_identity, "the body should keep its identity")
 	TEST_ASSERT(H.identity().has_genetic_effect(/datum/body_effect/no_clone), "no_clone must survive mind_initialize()")
-	SSticker?.minds -= H.mind
+	rel_remove(SSticker, nameof(SSticker.minds), H.mind)
 
 /// A7: Notify Transcore from a brain with no mind or no record answers instead of runtiming.
 /datum/unit_test/dq_p0_brain_backup_ping_no_record
@@ -85,8 +85,8 @@
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
 	TEST_ASSERT(!QDELETED(arm), "a clean droplimb leaves the arm")
 	TEST_ASSERT_NULL(arm.owner, "a dropped arm has no owner")
-	arm.apply_wound_damage(0, 500) // ALLOW(check_grep): burn past the limb's cap: drives the body-internal spill-over path (D14)
-	arm.apply_wound_damage(50, 0)  // ALLOW(check_grep): brute on a detached limb: drives the body-internal D14 scream path
+	arm.apply_wound_damage(0, 500) // ALLOW(check_grep): burn past the limb's cap: drives the body-internal spill-over path
+	arm.apply_wound_damage(50, 0)  // ALLOW(check_grep): brute on a detached limb: drives the body-internal scream path
 	arm.rejuvenate()               // D13
 	TEST_ASSERT_NULL(arm.owner, "the arm should still be detached")
 	qdel(arm)
@@ -112,33 +112,19 @@
 /datum/unit_test/dq_p0_surgery_interrupt_no_complication/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
-	var/obj/item/tool = allocate(/obj/item/surgical/scalpel)
-	var/datum/surgical_step/step = surgical_step(/datum/surgical_step/treat/organ/suture)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
-	LAZYADD(H.surgery_zones_in_progress, BP_L_ARM)
-	// The continuation takes its om task (run_surgical_step() runs it through om_task_start()).
-	// It links its target while the step runs; the target dying mid-step clears those views
-	// (a link to a dying entity is refused, so the task is built before the arm goes).
-	var/datum/om/task/timed/surgical_step/task = new
-	rel_set(task, nameof(task.actor), surgeon)
-	rel_set(task, nameof(task.target), H)
-	rel_set(task, nameof(task.receiver), H)
-	rel_set(task, nameof(task.tool), tool)
-	rel_set(task, nameof(task.surgery_step), step)
-	task.zone = BP_L_ARM
-	task.cleanliness = 100
-	rel_set(task, nameof(task.part), arm)
-	rel_set(task, nameof(task.work_target), arm)
-	task.chance = 0
+	var/datum/body/humanoid/B = H.body
+	LAZYSET(B.surgery_records, REF(surgeon), list(BP_L_ARM, 100, REF(arm), 0))
 	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
 	qdel(arm) // the work target is gone by the time the interruption lands
-	TEST_ASSERT_NULL(task.part, "the task's view of the destroyed limb was cleared")
-	TEST_ASSERT_NULL(task.work_target, "the task's view of the destroyed work target was cleared")
 	var/list/current = H.get_afflictions()
 	var/list/before = current.Copy()
-	H.surgical_step_interrupted(task)
-	TEST_ASSERT(!(BP_L_ARM in H.surgery_zones_in_progress), "the zone lock is released on interruption")
-	for(var/datum/affliction/A as anything in H.get_afflictions())
-		TEST_ASSERT(A in before, "an interruption must not complicate: new affliction [A.type]")
+	var/datum/act/op/A = new
+	A.actor = surgeon
+	A.key = surgery_op_key(/datum/surgical_step/treat/organ/suture)
+	H.surgery_interrupted(A)
+	TEST_ASSERT_NULL(H.surgery_record(surgeon), "the surgeon's record is dropped on interruption")
+	for(var/datum/affliction/A2 as anything in H.get_afflictions())
+		TEST_ASSERT(A2 in before, "an interruption must not complicate: new affliction [A2.type]")
 
 #endif

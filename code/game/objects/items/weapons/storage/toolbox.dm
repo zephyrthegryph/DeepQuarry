@@ -9,20 +9,20 @@
 	item_state_slots = list(slot_r_hand_str = "toolbox_red", slot_l_hand_str = "toolbox_red")
 	center_of_mass_x = 16
 	center_of_mass_y= 11
-	force = 10
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 7
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
-	attack_verb = list("robusted")
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
-	drop_sound = SFX_ITEMS_DROP_TOOLBOX
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
+
+CAPABILITIES(/obj/item/storage/toolbox)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10, attack_verbs = list("robusted")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
+	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Emergency
 
-TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/toolbox/emergency
 	name = "emergency toolbox"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -33,12 +33,8 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 		/obj/item/extinguisher/mini,
 		/obj/item/radio
 	)
-/obj/item/storage/toolbox/emergency/Initialize(mapload)
-	if(prob(50))
-		new /obj/item/flashlight(src)
-	else
-		new /obj/item/flashlight/flare(src)
-	. = ..()
+CAPABILITIES(/obj/item/storage/toolbox/emergency)
+	initial_contents(pick_one(list(/obj/item/flashlight, /obj/item/flashlight/flare)))
 
 //Mechanical
 /obj/item/storage/toolbox/mechanical
@@ -69,13 +65,12 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 		/obj/item/stack/cable_coil/random_belt,
 		/obj/item/stack/cable_coil/random_belt
 	)
-/obj/item/storage/toolbox/electrical/Initialize(mapload)
-	. = ..()
-	if(prob(5))
-		new /obj/item/clothing/gloves/yellow(src)
-	else
-		new /obj/item/stack/cable_coil/random(src,30)
-	calibrate_size()
+CAPABILITIES(/obj/item/storage/toolbox/electrical)
+	initial_contents(PROC_REF(roll_gloves_or_cable))
+
+/// Rolled contents (initial_contents()): insulated gloves one time in twenty, else thirty lengths of cable.
+/obj/item/storage/toolbox/electrical/proc/roll_gloves_or_cable(datum/roller/R)
+	return R.chance(5) ? /obj/item/clothing/gloves/yellow : new /obj/item/stack/cable_coil/random(null, 30)
 
 //Syndicate
 /obj/item/storage/toolbox/syndicate
@@ -83,7 +78,6 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "toolbox_syndi", slot_l_hand_str = "toolbox_syndi")
-	force = 14
 	starts_with = list(
 		/obj/item/clothing/gloves/yellow,
 		/obj/item/tool/screwdriver,
@@ -93,6 +87,9 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 		/obj/item/tool/wirecutters,
 		/obj/item/multitool
 	)
+
+CAPABILITIES(/obj/item/storage/toolbox/syndicate)
+	configure(item_combat(force = 14))
 
 /obj/item/storage/toolbox/syndicate/powertools
 	starts_with = list(
@@ -147,24 +144,19 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 	desc = "A little lunchbox. This one is the colors of the rainbow!"
 	w_class = ITEMSIZE_NORMAL
 	var/filled = FALSE
-	attack_verb = list("lunched")
 
-TYPE_TABLE(/obj/item/storage/toolbox/lunchbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/toolbox/lunchbox/Initialize(mapload)
-	if(filled)
-		var/list/lunches = lunchables_lunches()
-		var/lunch = lunches[pick(lunches)]
-		new lunch(src)
+CAPABILITIES(/obj/item/storage/toolbox/lunchbox)
+	configure(item_combat(attack_verbs = list("lunched")))
+	configure(storage(max_size = ITEMSIZE_SMALL))
+	initial_contents(PROC_REF(roll_lunch), when = nameof(filled))
 
-		var/list/snacks = lunchables_snacks()
-		var/snack = snacks[pick(snacks)]
-		new snack(src)
-
-		var/list/drinks = lunchables_drinks()
-		var/drink = drinks[pick(drinks)]
-		new drink(src)
-	. = ..()
+/// Rolled contents (initial_contents()): a lunch, a snack and a drink.
+/obj/item/storage/toolbox/lunchbox/proc/roll_lunch(datum/roller/R)
+	var/list/lunches = lunchables_lunches()
+	var/list/snacks = lunchables_snacks()
+	var/list/drinks = lunchables_drinks()
+	return list(lunches[R.choose(lunches)], snacks[R.choose(snacks)], drinks[R.choose(drinks)])
 
 /obj/item/storage/toolbox/lunchbox/filled
 	filled = TRUE

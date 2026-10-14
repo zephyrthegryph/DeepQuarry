@@ -63,10 +63,14 @@
 	var/conditional_offer = FALSE
 	var/resupplies_used = 0
 
+CAPABILITIES(/datum/contract/medical_trial)
+	owns_one(nameof(profile), /datum/medical_trial_profile)
+	owns_many(nameof(participants))
+
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
-	own_set(src, nameof(profile), new /datum/medical_trial_profile(cohort, target_metric))
-	own_take_all(src, nameof(participants))
+	rel_set(src, nameof(profile), new /datum/medical_trial_profile(cohort, target_metric))
+	rel_take_all(src, nameof(participants))
 	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."
@@ -151,14 +155,16 @@
 		if(matching_class >= 2)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
-	own_put(src, nameof(participants), identity.id, participant)
-	om_hook(subject, /datum/om/event/mob_death, src, PROC_REF(on_participant_death))
+	rel_add(src, nameof(participants), participant, identity.id)
+	observe(subject, /datum/notice/mob_death, src, then(PROC_REF(on_participant_death)))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")
 	return TRUE
 
-/datum/contract/medical_trial/proc/on_participant_death(mob/living/carbon/human/subject, datum/om/event/mob_death/event)
-	EVENT_HANDLER
+/datum/contract/medical_trial/proc/on_participant_death(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/subject = A.target
+	var/datum/notice/mob_death/event = A
 	var/gibbed = event.gibbed
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/medical_trial_participant/participant = participants?[identity?.id]
@@ -317,11 +323,10 @@
 		return TRUE
 	var/mob/living/carbon/human/subject = participant.current_subject()
 	if(subject)
-		om_unhook(subject, /datum/om/event/mob_death, src)
+		unobserve(subject, /datum/notice/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
-	own_take_member(src, nameof(participants), subject_id)
-	qdel(participant)
+	rel_add(src, nameof(participants), null, subject_id)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject?.real_name || subject_id] withdrew consent; unsubmitted observations were discarded and the cohort slot reopened.")
 	return TRUE
 
@@ -424,7 +429,7 @@
 	baseline_metrics = _baseline.Copy()
 	healthy_volunteer = _healthy_volunteer
 	clinician_account = _clinician_account
-	var/datum/contract_subject_identity/identity = SScontracts.subject_identities[subject_id]
+	var/datum/contract_subject_identity/identity = contracts_subject_identities()[subject_id]
 	subject_account = identity?.account_number
 
 /datum/medical_trial_participant/proc/current_subject() as /mob/living/carbon/human
@@ -464,8 +469,10 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 
 /// affliction_severity_changed event: republish trial eligibility and emit
 /// the measured treatment outcome when a condition improves.
-/datum/system/contracts/proc/on_affliction_severity_changed(mob/living/carbon/human/patient, datum/om/event/affliction_severity_changed/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_affliction_severity_changed(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/patient = N.target
+	var/datum/notice/affliction_severity_changed/event = N
 	var/datum/affliction/A = event.affliction
 	var/old_severity = event.old_severity
 	if(!istype(patient) || !affliction_reports_clinical_outcomes(A))
@@ -494,8 +501,10 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 /// body_afflictions_changed event: an affliction can join or leave a body
 /// without a severity change (an organ carrying afflictions is reattached, an
 /// affliction is cured or cleared outright). Keep eligibility in step.
-/datum/system/contracts/proc/on_body_afflictions_changed(mob/living/carbon/human/patient, datum/om/event/body_afflictions_changed/event)
-	EVENT_HANDLER
+/datum/system/contracts/proc/on_body_afflictions_changed(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/patient = N.target
+	var/datum/notice/body_afflictions_changed/event = N
 	var/datum/affliction/A = event.affliction
 	var/added = event.added
 	if(!affliction_reports_clinical_outcomes(A))
@@ -506,7 +515,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	if(A.contract_eligibility_qualifying || A.contract_rare_eligibility_qualifying)
 		A.contract_eligibility_qualifying = FALSE
 		A.contract_rare_eligibility_qualifying = FALSE
-		OM_EMIT(patient, /datum/om/event/mob_medical_issues_changed)
+		PUBLISH_LEGACY(patient, /datum/notice/mob_medical_issues_changed)
 
 /datum/affliction/proc/update_contract_eligibility()
 	var/family = medical_trial_condition_family(src)
@@ -518,7 +527,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 	contract_eligibility_qualifying = qualifying
 	contract_rare_eligibility_qualifying = rare_qualifying
 	if(owner)
-		OM_EMIT(owner, /datum/om/event/mob_medical_issues_changed)
+		PUBLISH_LEGACY(owner, /datum/notice/mob_medical_issues_changed)
 
 /mob/living/carbon/human
 	var/list/contract_medical_indications
@@ -764,7 +773,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 	var/list/contracts = medical_trial_contract_fractions(data)
 	for(var/contract_id in contracts)
 		var/effective_amount = removed * contracts[contract_id]
-		var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
+		var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[contract_id]
 		if(!istype(trial) || trial.state != CONTRACT_ACTIVE || effective_amount <= 0)
 			continue
 		trial.record_exposure(human_subject, effective_amount)
@@ -812,7 +821,7 @@ GLOBAL_LIST_EMPTY(medical_trial_no_target_types)
 		return
 	var/list/contracts = medical_trial_contract_fractions(data)
 	for(var/contract_id in contracts)
-		var/datum/contract/medical_trial/trial = SScontracts.contracts_by_id[contract_id]
+		var/datum/contract/medical_trial/trial = contracts_contracts_by_id()[contract_id]
 		var/effective_amount = removed * contracts[contract_id]
 		if(!istype(trial) || trial.state != CONTRACT_ACTIVE || trial.profile.cohort != MEDICAL_TRIAL_COHORT_PREVENTATIVE)
 			continue

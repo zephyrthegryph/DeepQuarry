@@ -4,7 +4,7 @@
 // REQUIRED objectives are complete, and pays bonus rewards for any optional
 // objectives also finished. Each objective:
 //   * populate(site)      — spawns its content into the generated site.
-//   * check()             — cheap poll (run on the GLOB.expedition_service tick); advances
+//   * check()             — cheap poll (run on the SSexpedition tick); advances
 //                           progress and flips state to COMPLETE / FAILED.
 //   * objective_text()    — the console line.
 //
@@ -134,7 +134,7 @@
 	rel_set(B, nameof(B.loot_biome), S.biome)
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
-		qdel(B)
+		spent(B)
 		state = EXP_OBJ_COMPLETE
 		return
 	for(var/list/c in B.room_centers)
@@ -155,7 +155,7 @@
 			if(guard)
 				rel_add(src, nameof(tracked), guard)
 	target = max(1, length(tracked))
-	qdel(B)
+	spent(B)
 
 /datum/expedition_objective/clear_structure/check()
 	if(state == EXP_OBJ_COMPLETE)
@@ -290,6 +290,9 @@
 	name = "Reach the waypoint"
 	var/obj/structure/expedition_marker/marker
 
+CAPABILITIES(/datum/expedition_objective/reach)
+	owns_one(nameof(marker), /obj/structure/expedition_marker)
+
 /datum/expedition_objective/reach/populate(datum/expedition_site/S)
 	..()
 	target = 1
@@ -305,7 +308,7 @@
 			best_dist = d
 			best = T
 	if(best)
-		own_set(src, nameof(marker), new /obj/structure/expedition_marker(best))
+		rel_set(src, nameof(marker), new /obj/structure/expedition_marker(best))
 		rel_add(src, nameof(tracked), marker)
 
 /datum/expedition_objective/reach/check()
@@ -383,13 +386,16 @@
 	name = "Demolish the target"
 	var/obj/structure/expedition_demo_target/target_obj
 
+CAPABILITIES(/datum/expedition_objective/destroy)
+	owns_one(nameof(target_obj), /obj/structure/expedition_demo_target)
+
 /datum/expedition_objective/destroy/populate(datum/expedition_site/S)
 	..()
 	target = 1
 	var/turf/T = S.random_floor()
 	if(!T)
 		return
-	own_set(src, nameof(target_obj), new /obj/structure/expedition_demo_target(T))
+	rel_set(src, nameof(target_obj), new /obj/structure/expedition_demo_target(T))
 	rel_add(src, nameof(tracked), target_obj)
 	for(var/turf/G in range(2, T))
 		if(G == T || !expedition_is_walkable(G))
@@ -472,9 +478,8 @@
 /datum/expedition_objective/proc/site() as /datum/expedition_site
 	return site
 
-/datum/expedition_objective/relations()
-	. = ..()
-	. += rel_many(nameof(tracked))
-/datum/expedition_objective/commission_engine/relations()
-	. = ..()
-	. += rel_many(nameof(generators))
+CAPABILITIES(/datum/expedition_objective)
+	ref_many(nameof(tracked))
+
+CAPABILITIES(/datum/expedition_objective/commission_engine)
+	ref_many(nameof(generators))

@@ -6,7 +6,7 @@
 
 /mob/living/silicon/robot/malf/lost/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/malf/lost(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/malf/lost(src))
 	scramble_hardware(20)
 
 /mob/living/silicon/robot/malf/lost/speech_bubble_appearance()
@@ -19,7 +19,7 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset())
+	rel_set(src, nameof(laws), give_random_lawset())
 	if(old_name == laws.name)
 		apply_new_laws()
 
@@ -31,7 +31,7 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/vore/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset_vore(100))
+	rel_set(src, nameof(laws), give_random_lawset_vore(100))
 	if(old_name == laws.name)
 		apply_new_laws()
 
@@ -39,18 +39,18 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/mixed/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset_vore(60))
+	rel_set(src, nameof(laws), give_random_lawset_vore(60))
 	if(old_name == laws.name)
 		apply_new_laws()
 
 /mob/living/silicon/robot/malf/lost/randomlaws/repick_laws()
 	if(!law_retries)
 		return
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(repick_laws_answered), title = "Confirm laws", message = "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", choices = list("Keep", "Reroll ([law_retries])"), buttons = TRUE, cancel_answer = "Keep")
+	open_request(src, /datum/prompt/choice, PROC_REF(repick_laws_answered), answerer = src, title = "Confirm laws", question = "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", choices = list("Keep", "Reroll ([law_retries])"), buttons = TRUE, timeout = 0)
 
 /// A reroll asks again while retries are left; keeping (or closing the window) ends it.
-/mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(datum/om/prompt/choice/ask)
-	if(!law_retries || copytext(ask.choice, 1, 7) != "Reroll")
+/mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(datum/act/request/A)
+	if(!A.answer || !law_retries || copytext(A.answer.value, 1, 7) != "Reroll")
 		law_retries = 0
 		return
 	apply_new_laws()

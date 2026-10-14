@@ -25,7 +25,8 @@
 		return can_telecomm(src,node)
 	return 0
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/illegal/EPv2_Discoverer, "exonet", /datum/exonet_protocol)
+CAPABILITIES(/obj/item/integrated_circuit/illegal/EPv2_Discoverer)
+	owns_one(nameof(exonet), /datum/exonet_protocol, starts = /datum/exonet_protocol)
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/Initialize(mapload)
 	. = ..()

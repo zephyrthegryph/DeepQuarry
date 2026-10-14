@@ -20,12 +20,12 @@
 #define TICK_USAGE_REAL world.tick_usage
 
 /// Returns true if tick_usage is above the limit
-#define TICK_CHECK ( TICK_USAGE > Master.current_ticklimit )
+#define TICK_CHECK ( TICK_USAGE > Kernel.current_ticklimit )
 /// runs stoplag if tick_usage is above the limit
 #define CHECK_TICK ( TICK_CHECK ? stoplag() : 0 )
 
 /// Checks if a sleeping proc is running before or after the master controller
-#define RUNNING_BEFORE_MASTER ( Master.last_run != null && Master.last_run != world.time )
+#define RUNNING_BEFORE_MASTER ( Kernel.last_run != null && Kernel.last_run != world.time )
 /// Returns true if a verb ought to yield to the MC (IE: queue up to be processed by a subsystem)
 #define VERB_SHOULD_YIELD ( TICK_CHECK || RUNNING_BEFORE_MASTER )
 

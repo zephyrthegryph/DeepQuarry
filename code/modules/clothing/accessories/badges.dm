@@ -8,7 +8,6 @@
 	name = "detective's badge"
 	desc = "A corporate security badge, made from gold and set on false leather."
 	icon_state = "marshalbadge"
-	slot_flags = SLOT_BELT | SLOT_TIE
 	slot = ACCESSORY_SLOT_MEDAL
 
 	var/stored_name
@@ -26,23 +25,26 @@
 
 /obj/item/clothing/accessory/badge/proc/set_desc(mob/living/carbon/human/H)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display", PROC_REF(badge_display_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge)
+	configure(item_worn(slots = SLOT_BELT | SLOT_TIE))
+	op("badge_display_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Display"), then(PROC_REF(badge_display_self)))
 
 /// Old attack_self: polish or display the badge. Returns FALSE where the old body returned nothing,
 /// so subtypes' legacy attack_self bodies that ran after ..() still run.
-/obj/item/clothing/accessory/badge/proc/badge_display_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/badge/proc/badge_display_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sheriff_badge)
-		return FALSE
+		return OP_DECLINE
 	if(fluff_badge)
-		return FALSE
+		return OP_DECLINE
 	if(!stored_name)
 		if(holo)
 			to_chat(user, "Waving around a holobadge before swiping an ID would be pretty pointless.")
-			return FALSE
+			return OP_DECLINE
 		else
 			to_chat(user, "You polish your old badge fondly, shining up the surface.")
 		set_name(user.real_name)
-		return FALSE
+		return OP_DECLINE
 
 	if(isliving(user))
 		if(stored_name)
@@ -51,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 		else
 			act_message(user, null, MSG_SELF(span_notice("You display your [src.name]. It reads: [badge_string].")), \
 				MSG_OTHERS(span_notice("%U% displays their [src.name].\nIt reads: [badge_string].")))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/accessory/badge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
@@ -80,8 +82,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	badge_string = "Corporate Reporter"
 	w_class = ITEMSIZE_TINY
 
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+CAPABILITIES(/obj/item/clothing/accessory/badge/press)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
+
 
 /obj/item/clothing/accessory/badge/press/independent
 	name = "press pass"
@@ -105,44 +108,48 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	var/valid_access = list(ACCESS_SECURITY) //Default access is security, to be overriden or expanded as desired
 	holo = TRUE
 
+TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
+
 /obj/item/clothing/accessory/badge/holo/cord
 	icon_state = "holobadge-cord"
-	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
 
-DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "The badge is already cracked.")
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/cord)
+	configure(item_worn(slots = SLOT_MASK | SLOT_TIE | SLOT_BELT))
 
-/obj/item/clothing/accessory/badge/holo/mark_emagged()
-	emagged = TRUE
-/obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	emagged = 1
-	to_chat(user, span_danger("You crack the holobadge security checks."))
-	return 1
+/obj/item/clothing/accessory/badge/holo/proc/on_emag(datum/act/op/A)
+	set_emagged(TRUE)
+	to_chat(A.actor, span_danger("You crack the holobadge security checks."))
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null, PROC_REF(holobadge_imprint_item)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+	op("holobadge_imprint_item", item(/obj/item), needs(req(PROC_REF(imprint_credentials_holds))), then(PROC_REF(holobadge_imprint_item)))
+
+/obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_holds(datum/act/op/A)
+	var/obj/item/card/id/id_card
+	if(istype(A.held, /obj/item/card/id))
+		id_card = A.held
+	else if(istype(A.held, /obj/item/pda))
+		var/obj/item/pda/pda = A.held
+		id_card = pda.id
+	else
+		return null
+	if(!id_card)
+		return "The PDA has no ID card to imprint."
+	for(var/access in valid_access)
+		if((access in id_card.GetAccess()) || emagged)
+			return null
+	return "[src] rejects your insufficient access rights."
 
 /// Old attackby: imprint ID details.
-/obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/clothing/accessory/badge/holo/proc/holobadge_imprint_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/card/id) || istype(O, /obj/item/pda))
-
-		var/obj/item/card/id/id_card = null
-
-		if(istype(O, /obj/item/card/id))
-			id_card = O
-		else
-			var/obj/item/pda/pda = O
-			id_card = pda.id
-
-		var/found = FALSE
-		for(var/access in valid_access)
-			if((access in id_card.GetAccess()) || emagged)
-				to_chat(user, "You imprint your ID details onto the badge.")
-				set_name(user.real_name)
-				found = TRUE
-				break
-		if(!found)
-			to_chat(user, "[src] rejects your insufficient access rights.")
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		to_chat(user, "You imprint your ID details onto the badge.")
+		set_name(user.real_name)
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/storage/box/holobadge
 	name = "holobadge box"
@@ -157,25 +164,33 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null,
 	name = "officer's badge"
 	desc = "A bronze corporate security badge. Stamped with the words '" + JOB_SECURITY_OFFICER + ".'"
 	icon_state = "bronzebadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/officer)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/warden
 	name = "warden's holobadge"
 	desc = "A silver corporate security badge. Stamped with the words '" + JOB_WARDEN + ".'"
 	icon_state = "silverbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/warden)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/hos
 	name = "head of security's holobadge"
 	desc = "An immaculately polished gold security badge. Stamped with the words '" + JOB_HEAD_OF_SECURITY + ".'"
 	icon_state = "goldbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/hos)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/detective
 	name = "detective's holobadge"
 	desc = "An immaculately polished gold security badge on leather. Labeled '" + JOB_DETECTIVE + ".'"
 	icon_state = "marshalbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/detective)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/investigator
 	name = "\improper investigator holobadge"
@@ -183,13 +198,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null,
 	icon_state = "invbadge"
 	badge_string = "Corporate Investigator"
 	valid_access = list(ACCESS_SECURITY, ACCESS_LAWYER)	//Permitting both sec and IAA!
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/investigator)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/sheriff
 	name = "sheriff badge"
 	desc = "A star-shaped brass badge denoting who the law is around these parts."
 	icon_state = "sheriff"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/sheriff)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/storage/box/holobadge/hos
 	name = "holobadge box"
@@ -211,12 +230,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null,
 	special_handling = TRUE
 	sheriff_badge = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Flash badge", PROC_REF(sheriff_badge_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
+	op("display", in_hand(), label("Flash sheriff badge"), then(PROC_REF(sheriff_badge_displayed)))
 
-/// Old attack_self.
-/obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, null, MSG_SELF("You flash the sheriff badge to everyone around you!"), \
+/obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_displayed(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You flash the sheriff badge to everyone around you!"), \
 		MSG_OTHERS("%U% shows their sheriff badge. There's a new sheriff in town!"))
+	return OP_OK
 
 /obj/item/clothing/accessory/badge/sheriff/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting the sheriff badge into their face insistently.")), \
@@ -295,59 +315,57 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	icon_state = "dosimeter"
 	item_state = "dosimeter"
 	overlay_state = "dosimeter"
-	slot_flags = SLOT_TIE
 
-/// The loaded film (set at init by DECLARE_DEFAULT_CHILD).
-OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
+/// The loaded film (set at init by its owns_one starts).
+/obj/item/clothing/accessory/dosimeter/var/obj/item/dosimeter_film/current_film
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
+CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
+	configure(item_worn(slots = SLOT_TIE))
+	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
+	op("dosimeter_remove_film_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Dosimeter remove film hand"), then(PROC_REF(dosimeter_remove_film_hand)))
+	op("dosimeter_insert_film", item(/obj/item/dosimeter_film), priority(OP_PRIORITY_DEFAULT - 1), label("Insert film"), then(PROC_REF(dosimeter_insert_film)))
+	every(2 SECONDS, then(PROC_REF(dosimeter_step)), when = PROC_REF(film_live))
 
 /// A film that can still darken is loaded: it reads the wearer's radiation.
-OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW, "film_live")
-
-/obj/item/clothing/accessory/dosimeter/proc/film_live()
+/obj/item/clothing/accessory/dosimeter/proc/film_live(datum/act/A)
 	return current_film && current_film.state < 2
 
 /obj/item/clothing/accessory/dosimeter/Initialize(mapload)
 	. = ..()
 	update_state(current_film.state)
 
-
-/obj/item/clothing/accessory/dosimeter/periodic_step()
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_step(datum/act/timer/A)
 	check_holder()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(dosimeter_remove_film_hand)), \
-	INTERACT_INSERT(/obj/item/dosimeter_film, PROC_REF(dosimeter_insert_film), "Insert film"), \
-)
-
 /// Old attack_hand: pull the film out while holding the dosimeter in the other hand.
-/obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(current_film)
-			user.put_in_hands(own_take(src, nameof(current_film)))
+			user.put_in_hands(rel_take(src, nameof(current_film)))
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			update_state(0)
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 /// Old attackby: insert a film.
-/obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!current_film)
-		if(!own_set(src, nameof(src.current_film), I, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.current_film), I, user))
+			return OP_PASS
 		update_state(current_film.state)
 
 		to_chat(user, span_notice("You inserted the film into \the [src]."))
 		desc = "This seems like a dosimeter. It has a film inside."
 	else
 		to_chat(user, span_notice("\The [src] already has a film inside."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
-	var/mob/living/carbon/human/H = wearer
+	var/mob/living/carbon/human/H = ishuman(has_suit()?.loc) ? has_suit().loc : null
 	if(H)
 		if(current_film && (H.radiation >= 25) && (current_film.state == 0))
 			update_state(1)
@@ -362,11 +380,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	var/obj/item/dosimeter_film/film = current_film
 	if(film)
 		film.set_state(tostate)
-		icon_state = "[initial(icon_state)][tostate]"
+		set_icon_state("[initial(icon_state)][tostate]")
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
-		icon_state = "[initial(icon_state)]-empty"
-	update_icon()
+		set_icon_state("[initial(icon_state)]-empty")
 
 /obj/item/dosimeter_film
 	name = "dosimeter film"
@@ -376,12 +393,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	icon_state = "dosimeter_film0"
 
 /// How dark the film is: 0 white, 1 darker, 2 black (same as the icon states). A dosimeter holding it
-/// reads it through its "current_film.state" derived input.
-OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
+/// reads it as current_film.state.
+/obj/item/dosimeter_film/var/state = 0
+TRACKED(/obj/item/dosimeter_film, state)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
-	icon_state = tostate
-	update_icon()
+	set_icon_state(tostate)
 
 /obj/item/paper/dosimeter_manual
 	name = "Dosimeter manual"
@@ -399,6 +416,11 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 	The body has absorbed too much radiation if the film turned black.</p>"}
 
 /obj/item/storage/box/dosimeter
+	starts_with = list(
+		/obj/item/paper/dosimeter_manual = 1,
+		/obj/item/clothing/accessory/dosimeter = 1,
+		/obj/item/dosimeter_film = 3,
+	)
 	name = "dosimeter case"
 	desc = "This case can only hold the Dosimeter, a few films and a manual."
 	icon = 'icons/inventory/accessory/item.dmi'
@@ -408,12 +430,8 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 	max_storage_space = (ITEMSIZE_COST_SMALL * 4) + (ITEMSIZE_COST_TINY * 1)
 	w_class = ITEMSIZE_SMALL
 
-TYPE_TABLE(/obj/item/storage/box/dosimeter, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
-
-/obj/item/storage/box/dosimeter/Initialize(mapload)
-	. = ..()
-	new /obj/item/paper/dosimeter_manual(src)
-	new /obj/item/clothing/accessory/dosimeter(src)
-	new /obj/item/dosimeter_film(src)
-	new /obj/item/dosimeter_film(src)
-	new /obj/item/dosimeter_film(src)
+CAPABILITIES(/obj/item/storage/box/dosimeter)
+	configure(storage(accepts = list(
+		/obj/item/paper/dosimeter_manual,
+		/obj/item/clothing/accessory/dosimeter,
+		/obj/item/dosimeter_film)))

@@ -6,7 +6,7 @@
 // the caller is legacy storage, legacy equip code or a C1 slot.
 //
 // Where they attach:
-//   Slots    /datum/om/relation/slot.accepts (a predicate type) and, for holders that
+//   Slots    /datum/relation_definition/slot.accepts (a predicate type) and, for holders that
 //            declare their own, slot_def.holder_constraint (a CONSTRAINT_* kind
 //            read from the holder). Equip slots: equip_slots.dm.
 //   Holders  the hold_spec table on storage and holsters: what goes inside.
@@ -34,11 +34,35 @@
 	/// or FALSE for "none". Null on almost every item.
 	var/list/constraint_overrides
 
-// Values are the compiled predicates interned by dq_predicate_for()'s cache (shared by key across
-// every item using the same spec), never owned or deleted by the item.
-/obj/item/ownership()
-	. = ..()
-	. += shares(nameof(constraint_overrides))
+TRACKED(/obj/item, constraint_overrides)
+
+// Overrides are immutable shared predicate or native plan entries, never owned.
+/obj/item/acceptance_overrides()
+	var/list/native
+	for(var/channel in constraint_overrides)
+		var/datum/entry/part/acceptance_plan/P = constraint_overrides[channel]
+		if(istype(P))
+			LAZYSET(native, channel, P)
+	return native
+
+/obj/item/acceptance_override_reads()
+	return list(list(src, nameof(constraint_overrides)))
+
+/obj/item/proc/set_native_constraint(kind, datum/entry/declaration)
+	var/list/native = acceptance_override(src, null, kind, declaration)
+	set_native_constraint_plan(kind, native[kind])
+
+/obj/item/proc/set_native_constraint_plan(kind, datum/entry/part/acceptance_plan/plan)
+	if(!istype(plan))
+		CRASH("native constraint must be a resolved plan")
+	var/list/next = constraint_overrides ? constraint_overrides.Copy() : list()
+	next[kind] = plan
+	set_constraint_overrides(next)
+
+/proc/dq_constraint_has_legacy_override(obj/item/I, kind)
+	READS_FROM(I)
+	var/override = LAZYACCESS(I.constraint_overrides, kind)
+	return !isnull(override) && !istype(override, /datum/entry/part/acceptance_plan)
 
 /// The spec for constraint `kind` on this type. Called once per type.
 /obj/item/proc/constraint_spec(kind)
@@ -69,8 +93,11 @@ TYPE_TABLE_DECLARE(/obj/item, equip_spec, null)
 /// The compiled constraint of `kind` for `I`: its instance override, else its
 /// type's declaration. Null when there is none.
 /proc/dq_constraint(obj/item/I, kind)
+	READS_FROM(I)
 	if(I.constraint_overrides)
 		var/override = I.constraint_overrides[kind]
+		if(istype(override, /datum/entry/part/acceptance_plan))
+			return null
 		if(!isnull(override))
 			return override || null
 	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null
@@ -84,7 +111,11 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 
 /// Why `I`'s constraint of `kind` refuses `thing` (moved or worn by `actor`), or
 /// null if it passes or there is no constraint.
-/proc/dq_constraint_refusal(obj/item/I, kind, atom/thing, mob/actor)
+/proc/dq_constraint_refusal(obj/item/I, kind, atom/thing, mob/actor, mob/mover = null)
+	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(I, kind) ? null : acceptance_plan_for(I, kind)
+	if(native_plan)
+		var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
+		return acceptance_reason(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer))
 	var/datum/predicate/P = dq_constraint(I, kind)
 	return P?.why_not(actor, thing, null)
 
@@ -95,11 +126,11 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 	var/datum/predicate/P = FALSE
 	if(length(spec))
 		P = dq_predicate_for("override:[kind]:[key]", spec, "[type] [kind] ([key])")
-	LAZYSET(constraint_overrides, kind, P) // ALLOW(ownership): values are interned predicates from the shared dq_predicate_for cache (shared by key, never owned); state_exclude(d)
+	set_constraint_overrides_at(kind, P)
 
 /// Go back to the type's declared constraint of `kind`.
 /obj/item/proc/clear_constraint(kind)
-	LAZYREMOVE(constraint_overrides, kind)
+	remove_constraint_overrides(kind)
 
 /// The type's declared spec for `kind` with some clauses dropped: those that
 /// constrain PROP_SIZE_CLASS (`drop_size`) and/or a HOLD_ONLY type list
@@ -119,6 +150,21 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 /// `types`: a new HOLD_ONLY list (null keeps the type's). `max_size`: a new
 /// size limit (null keeps the type's).
 /obj/item/proc/restrict_hold(list/types, max_size)
+	var/datum/entry/part/acceptance_plan/native_plan = table_of(src).acceptance_channels?[CONSTRAINT_HOLD]
+	if(native_plan)
+		var/list/parts = list()
+		for(var/datum/entry/part/req/R as anything in native_plan.children)
+			if(!isnull(max_size) && istype(R, /datum/entry/part/req/acceptance_leaf/max_size))
+				continue
+			if(!isnull(types) && istype(R, /datum/entry/part/req/acceptance_leaf/type) && !R.args["exclude"])
+				continue
+			parts += R
+		if(!isnull(types))
+			parts += req_acceptance_type(types, because = "it doesn't take that")
+		if(!isnull(max_size))
+			parts += req_acceptance_max_size(SIZE_CLASS(max_size), PROP_UNIT_SIZE_CLASS)
+		set_native_constraint(CONSTRAINT_HOLD, acceptance(CONSTRAINT_HOLD, parts, mode = ACCEPTANCE_REPLACE))
+		return
 	var/list/spec = declared_spec_without(CONSTRAINT_HOLD, !isnull(max_size), !isnull(types))
 	var/list/key = list("[type]")
 	if(!isnull(types))
@@ -133,21 +179,36 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 /// Use `source`'s constraint of `kind` on this instance too (a rig's chest
 /// piece takes what the rig's suit storage takes). No-op if it has none.
 /obj/item/proc/adopt_constraint(kind, obj/item/source)
+	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(source, kind) ? null : acceptance_plan_for(source, kind)
+	if(native_plan)
+		if(acceptance_declared(source, kind))
+			set_native_constraint_plan(kind, native_plan)
+		return
 	var/datum/predicate/P = dq_constraint(source, kind)
 	if(P)
-		LAZYSET(constraint_overrides, kind, P) // ALLOW(ownership): the source item's interned predicate, shared by key from the dq_predicate_for cache
+		set_constraint_overrides_at(kind, P)
 
 /// Refit this item for `bodytypes` (the REQ_FITS_BODYTYPES list form), or
 /// null to fit anyone.
 /obj/item/proc/restrict_fit(list/bodytypes)
 	if(!length(bodytypes))
-		set_constraint(CONSTRAINT_FIT, null, "none")
+		set_native_constraint(CONSTRAINT_FIT, acceptance(CONSTRAINT_FIT, mode = ACCEPTANCE_EMPTY))
 		return
-	set_constraint(CONSTRAINT_FIT, list(REQ_FITS_BODYTYPES(bodytypes)), jointext(bodytypes, ","))
+	set_native_constraint(CONSTRAINT_FIT, acceptance(CONSTRAINT_FIT, fits((bodytypes[1] == "exclude") ? bodytypes.Copy(2) : bodytypes, exclude = bodytypes[1] == "exclude"), mode = ACCEPTANCE_REPLACE))
 
 /// The body-type list `I`'s fit constraint was declared with, or null when it
 /// fits anyone. For refit tools and the worn-sprite test.
 /proc/dq_fit_bodytypes(obj/item/I)
+	READS_FROM(I)
+	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(I, CONSTRAINT_FIT) ? null : acceptance_plan_for(I, CONSTRAINT_FIT)
+	if(native_plan)
+		for(var/datum/entry/part/req/acceptance_leaf/fit/F as anything in native_plan.children)
+			var/list/bodytypes = F.args["bodytypes"]
+			var/list/result = bodytypes ? bodytypes.Copy() : list()
+			if(F.args["exclude"])
+				result.Insert(1, "exclude")
+			return length(result) ? result : null
+		return null
 	var/datum/predicate/P = dq_constraint(I, CONSTRAINT_FIT)
 	if(!P)
 		return null
@@ -162,3 +223,18 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 		. += a
 	if(b)
 		. += b
+
+/// Native presence wins even when explicitly empty; fallback only for unmigrated channels.
+/proc/dq_constraint_present(obj/item/I, kind)
+	var/datum/entry/part/acceptance_plan/P = dq_constraint_has_legacy_override(I, kind) ? null : acceptance_plan_for(I, kind)
+	if(P)
+		return acceptance_declared(I, kind)
+	return !isnull(dq_constraint(I, kind))
+
+/// Complete native dependencies; legacy fallback remains only until its table migrates.
+/proc/dq_constraint_read_keys(obj/item/I, kind, atom/movable/thing, mob/actor, mob/mover = null)
+	var/datum/entry/part/acceptance_plan/P = dq_constraint_has_legacy_override(I, kind) ? null : acceptance_plan_for(I, kind)
+	if(P)
+		var/mob/wearer = (kind == CONSTRAINT_FIT || kind == CONSTRAINT_EQUIP || kind == CONSTRAINT_SUIT_STORAGE) ? actor : null
+		return acceptance_read_keys(I, kind, I, thing, wearer, mover || actor, wearer_is_actor = !isnull(wearer))
+	return list(list(I, nameof(I.constraint_overrides)))

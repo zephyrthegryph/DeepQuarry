@@ -8,42 +8,50 @@
 
 	special_handling = TRUE
 
-DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/electronic_assembly/device)
+TRACKED(/obj/item/assembly/electronic_assembly, opened)
+
+CAPABILITIES(/obj/item/assembly/electronic_assembly)
+	// the device answers an item itself (circuits when opened, the assembly attach when closed): the parent's attach op would clash at the same tier
+	without("attach")
+	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
+	op("electronic_assembly_interaction_item", item(/obj/item), then(PROC_REF(electronic_assembly_interaction_item)))
+	op("device_assembly_verb_toggle", menu(), label("Open/Close Device Assembly"), needs(carried()), then(PROC_REF(device_assembly_verb_toggle)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
 	rel_set(EA, nameof(EA.holder), src)
 
 
-EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
-	INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)), \
-	INTERACT_VERB("Open/Close Device Assembly", PROC_REF(device_assembly_verb_toggle), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(opened)
 		EA.attackby(I, user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return interaction_item(A)
+	return OP_PASS
 
-/obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+/obj/item/assembly/electronic_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_open(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
-	opened = !opened
-	EA.opened = opened
+	set_opened(!opened)
+	EA.set_opened(opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
 	set_secured(TRUE)
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state)}{EA?:0}{opened?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/item/assembly/electronic_assembly/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][EA ? "" : "0"][opened ? "-open" : ""]")
 
 /// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()): use the circuit inside.
-/obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held)
 	. = ..()
 	if(.)
 		return TRUE
@@ -64,7 +72,8 @@ APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state
 			. += IC.external_examine(user)
 
 /// Old Open/Close Device Assembly verb: Open or close device assembly!
-/obj/item/assembly/electronic_assembly/proc/device_assembly_verb_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/electronic_assembly/proc/device_assembly_verb_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_open(user)
 
 /obj/item/electronic_assembly/device

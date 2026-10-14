@@ -8,8 +8,10 @@
 	desc = "A heads-up display that scans the humans in view and provides accurate data about their health status."
 	icon_state = "healthhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_STATUS,VIS_CH_HEALTH)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/health)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/health/prescription
 	desc = "A medical HUD integrated with a set of prescription glasses. \
@@ -23,8 +25,10 @@
 	desc = "A heads-up display that scans the humans in view and provides accurate data about their ID status and security records."
 	icon_state = "securityhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/security)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/security/prescription
 	desc = "A security HUD integrated with a set of prescription glasses. \
@@ -46,8 +50,10 @@
 	desc = "A heads-up display that scans the environment for contaminations."
 	icon_state = "janhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_JANHUD)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/janitor)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/janitor/prescription
 	desc = "A heads-up display that scans the environment for contaminations. \
@@ -78,8 +84,12 @@
 	specialty_goggles = TRUE
 	var/hud_goggles = FALSE
 
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscreen_path")
-
+CAPABILITIES(/obj/item/clothing/glasses/omnihud)
+	owns_one(nameof(tgarscreen), starts = nameof(tgarscreen_path))
+	op("omnihud_display_self", in_hand(), then(PROC_REF(omnihud_display_self)))
+	op("omnihud_chromatize_verb", menu(), label("Toggle AR Glasses Shading"), needs(carried()), then(PROC_REF(omnihud_chromatize_verb)))
+	op("omnihud_toggle_ar_planes_verb", menu(), label("Toggle AR Heads-Up Display"), needs(carried()), then(PROC_REF(omnihud_toggle_ar_planes_verb)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(omnihud_emp_disconnect)))
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
 	if(tgarscreen)
@@ -94,25 +104,24 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscr
 		. += "\n " + span_notice("The HUD indicator reads OFF.")
 
 
-/// om_after() target: the AR screen comes back after an EMP.
+/// after() target: the AR screen comes back after an EMP.
 /obj/item/clothing/glasses/omnihud/proc/reconnect_tgar()
 	if(offline_tgarscreen && !tgarscreen)
-		own_transfer(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
+		rel_move(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud_emp_disconnect))
 
 /// A pulse drops the AR link for a while (and can glitch the lenses).
-/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/damage_packet/packet)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/act/A)
 	if(tgarscreen)
 		SStgui.close_uis(src)
 	if(tgarscreen && !offline_tgarscreen)
-		own_transfer(src, nameof(tgarscreen), src, nameof(offline_tgarscreen))
-		om_after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
+		rel_move(src, nameof(tgarscreen), src, nameof(offline_tgarscreen))
+		after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
 
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd
 	if(icon_state == "glasses" || icon_state == "sun")
 		if(prob(10))
-			icon_state = "3d"
+			set_icon_state("3d")
 			if(ishuman(loc))
 				to_chat(loc, span_warning("The lenses of your [src.name] malfunction!"))
 
@@ -126,24 +135,19 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud
 	if(prescription)
 		act_message(user, null, others = "%U% uploads new prescription data to the [src.name] and resets the lenses.")
 		name = "[initial(name)] (pr)" //change the name *after* the text so the message above is accurate
-		icon_state = "[initial(icon_state)]" //reset the icon state just to be safe
+		set_icon_state("[initial(icon_state)]") //reset the icon state just to be safe
 	else
 		act_message(user, null, others = "%U% deletes the prescription data on the [src.name] and resets the lenses.")
 		name = "[initial(name)]"
-		icon_state = "[initial(icon_state)]"
-
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
-	INTERACT_SELF(null, PROC_REF(omnihud_display_self)), \
-	INTERACT_VERB("Toggle AR Glasses Shading", PROC_REF(omnihud_chromatize_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle AR Heads-Up Display", PROC_REF(omnihud_toggle_ar_planes_verb), REQ_IN_INVENTORY), \
-)
+		set_icon_state("[initial(icon_state)]")
 
 /// Old attack_self: show the AR display. FALSE where the old body fell through or returned nothing.
-/obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
-		return FALSE
+		return OP_DECLINE
 	if(hud_goggles)
-		return FALSE
+		return OP_DECLINE
 
 	var/mob/living/carbon/human/H = user
 	if(!H.get_equipped_item(SLOT_ID_EYES) || !(H.get_equipped_item(SLOT_ID_EYES) == src))
@@ -151,11 +155,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	else
 		if(!ar_interact(H))
 			to_chat(user, span_warning("The [src] does not have any kind of special display."))
-	return FALSE
+	return OP_DECLINE
 
 //cosmetic shading, doesn't enhance eye protection
 /// Old verb "Toggle AR Glasses Shading".
-/obj/item/clothing/glasses/omnihud/proc/omnihud_chromatize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_chromatize_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(icon_state == "3d")
@@ -164,31 +169,31 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 			name = "[initial(name)] (pr)"
 		else
 			name = "[initial(name)]"
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 	else if(prescription)
 		if(icon_state == "glasses")
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded, pr)"
-			flags_inv |= HIDEEYES
-			icon_state = "sun"
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
+			set_icon_state("sun")
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)] (pr)"
-			flags_inv &= ~HIDEEYES
-			icon_state = "glasses"
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
+			set_icon_state("glasses")
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!prescription)
 		if(icon_state == "glasses")
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded)"
-			flags_inv |= HIDEEYES
-			icon_state = "sun"
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
+			set_icon_state("sun")
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)]"
-			flags_inv &= ~HIDEEYES
-			icon_state = "glasses"
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
+			set_icon_state("glasses")
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!can_shade)
@@ -196,7 +201,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	update_clothing_icon()
 
 /// Old verb "Toggle AR Heads-Up Display".
-/obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	//We do not check if user can move or not, since this system is inspired to help see chat bubbles during scenes primarily.
 	//Preventing turning off the HUD could get in the way of scene flow.
 	if(ar_toggled)
@@ -282,7 +288,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "projector"
 	off_state = "projector-off"
-	body_parts_covered = 0
 	toggleable = 1
 	vision_flags = SEE_TURFS //but they can spot breaches. Due to the way HUDs work, they don't provide darkvision up-close the way mesons do.
 	flash_protection = 0 //it's an open, single-eye retinal projector. there's no way it protects your eyes from flashes or welders.
@@ -290,32 +295,33 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
 	specialty_goggles = TRUE
 	hud_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
-	INTERACT_USE("Toggle projector", PROC_REF(omnihud_meson_projector_self)), \
-	INTERACT_VERB("Toggle projector", PROC_REF(meson_toggleprojector_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
+	configure(item_worn(covers = 0))
+	op("omnihud_meson_projector_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle projector"), then(PROC_REF(omnihud_meson_projector_self)))
+	op("meson_toggleprojector_verb", menu(), label("Toggle projector"), needs(carried()), then(PROC_REF(meson_toggleprojector_verb)))
 
 /// Old attack_self.
-/obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(datum/act/op/A)
 	if(!active)
-		meson_toggleprojector_verb(user)
+		meson_toggleprojector_verb(A)
 
 /// Old verb "Toggle projector".
-/obj/item/clothing/glasses/omnihud/eng/meson/proc/meson_toggleprojector_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/meson_toggleprojector_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 	if(toggleable)
 		if(active)
 			active = 0
-			icon_state = off_state
-			item_state = "[initial(item_state)]-off"
-			user.update_inv_glasses()
+			set_icon_state(off_state)
+			set_item_state("[initial(item_state)]-off")
+			changed(src)
 			to_chat(user, "You deactivate the retinal projector on the [src].")
 		else
 			active = 1
-			icon_state = initial(icon_state)
-			item_state = initial(item_state)
-			user.update_inv_glasses()
+			set_icon_state(initial(icon_state))
+			set_item_state(initial(item_state))
+			changed(src)
 			to_chat(user, "You activate the retinal projector on the [src].")
 		user.update_mob_action_buttons()
 
@@ -340,75 +346,102 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their ID status and security records."
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(security_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch/proc/security_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user)) return
-	if(user.stat) return
+CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
+	configure(item_worn(covers = 0))
+	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
+
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
+
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
+	return OP_OK
 
 /obj/item/clothing/glasses/hud/security/eyepatch2
 	name = "Security Hudpatch MKII"
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their ID status and security records. This updated model offers better ergonomics and updated sensors."
 	icon_state = "sec_eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch2, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch2_switcheye_verb), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eyepatch2_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user)) return
-	if(user.stat) return
+CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
+	configure(item_worn(covers = 0))
+	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
+
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
+
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
+	return OP_OK
 
 /obj/item/clothing/glasses/hud/health/eyepatch
 	name = "Medical Hudpatch"
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their health status."
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
-	INTERACT_VERB("Switch Eyepatch", PROC_REF(health_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
 
-/// Old verb "Switch Eyepatch".
-/obj/item/clothing/glasses/hud/health/eyepatch/proc/health_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user)) return
-	if(user.stat) return
+CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
+	configure(item_worn(covers = 0))
+	held_verb(/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
-	eye = !eye
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch()
+	set name = "Switch Eyepatch"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "switch_eye", null, ORIGIN_VERB)
+
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
+
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switched(datum/act/op/A)
+	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
+	return OP_OK
 
 //Rx Variants
 /obj/item/clothing/glasses/omnihud/med/prescription
@@ -458,8 +491,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
 	desc = "A full-face, partially-obscuring visor favoured by certain subcultures and those with sensitive eyes. Covers the face and eyes, but it's not enough to actually hide your identity. The interior has a simple augmented-reality display that aids with daily tasks. It can be toggled in and out of corrective vision mode via integrated subroutine."
 	icon_state = "mantle_HUD"
 	item_state = "mantle_HUD"
-	body_parts_covered = EYES
-	flags_inv = HIDEFACE
 	can_shade = FALSE
 
 /obj/item/clothing/glasses/omnihud/mantle/ar_interact(mob/living/carbon/human/user)
@@ -467,12 +498,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
 		tgarscreen.tgui_interact(user)
 	return 1
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/mantle, \
-	INTERACT_VERB("Toggle Autocorrective Vision", PROC_REF(mantle_switcheye_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
+	configure(item_worn(covers = EYES, hides = HIDEFACE))
+	op("mantle_switcheye_verb", menu(), label("Toggle Autocorrective Vision"), needs(carried()), then(PROC_REF(mantle_switcheye_verb)))
 
 /// Old verb "Toggle Autocorrective Vision".
-/obj/item/clothing/glasses/omnihud/mantle/proc/mantle_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/mantle/proc/mantle_switcheye_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 

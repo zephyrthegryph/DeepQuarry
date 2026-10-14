@@ -4,7 +4,7 @@
 
 /*
 
-Important: never block in any of the procs here, or the GM will get stuck. Defer work with om_after().
+Important: never block in any of the procs here, or the GM will get stuck. Defer work with after().
 
 Note that there is an important distinction between an event being ended, and an event being finished.
 - Ended is for when the actual event is over, regardless of whether an announcement happened or not.
@@ -75,7 +75,7 @@ This allows for events that have their announcement happen after the end itself.
 
 
 /datum/event2/event/proc/is_planet_z_level(z_level)
-	var/datum/planet/P = LAZYACCESS(GLOB.planet_service.z_to_planet, z_level)
+	var/datum/planet/P = LAZYACCESS(SSplanets.z_to_planet, z_level)
 	if(!istype(P))
 		return FALSE
 	return TRUE
@@ -176,9 +176,11 @@ This allows for events that have their announcement happen after the end itself.
 	if(ended && announced)
 		finish()
 
-TOPIC_ACTION(/datum/event2/event, "abort", PROC_REF(topic_abort), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/event2/event)
+	op("abort", topic("abort"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_abort)))
 
-/datum/event2/event/proc/topic_abort(mob/user, list/args)
+/datum/event2/event/proc/topic_abort(datum/act/op/A)
+	var/mob/user = A.actor
 	abort()
 	message_admins("Event '[type]' was aborted by [user.key].")
 	return TRUE

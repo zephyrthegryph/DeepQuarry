@@ -98,13 +98,15 @@
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
 	fire_delay = 8
-	force = 10
 	projectile_type = /obj/item/projectile/beam/midlaser
 	firemodes = list(
 		list(mode_name="normal", fire_delay=8, projectile_type=/obj/item/projectile/beam/midlaser, charge_cost = 240),
 		list(mode_name="suppressive", fire_delay=5, projectile_type=/obj/item/projectile/beam/weaklaser, charge_cost = 60),
 		)
 	one_handed_penalty = 0
+
+CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/robotic/laser/heavy
 	name = "mounted laser cannon"
@@ -152,81 +154,82 @@
 
 /obj/item/melee/robotic/jaws
 	icon = 'icons/mob/dogborg_vr.dmi'
-	hitsound = SFX_WEAPONS_BITE
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
-	pry = 1
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
+
+CAPABILITIES(/obj/item/melee/robotic/jaws)
+	configure(item_tooling(pry = 1))
+	configure(item_thrown(force = 0))
+	configure(item_combat(edge = TRUE, sharp = TRUE))
+	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
 /obj/item/melee/robotic/jaws/big
 	name = "combat jaws"
 	icon_state = "jaws"
 	desc = "The jaws of the law."
-	force = 30
-	armor_penetration = 25
 	defend_chance = 15
-	attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+
+CAPABILITIES(/obj/item/melee/robotic/jaws/big)
+	configure(item_combat(force = 30, armor_penetration = 25, attack_verbs = list("chomped", "bit", "ripped", "mauled", "enforced")))
 
 /obj/item/melee/robotic/jaws/small
 	name = "puppy jaws"
 	icon_state = "smalljaws"
 	desc = "The jaws of a small dog."
-	force = 15
 	defend_chance = 5
-	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	var/emagged = 0
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/melee/robotic/jaws/small, emagged)
 
-/// Old attack_self.
-/obj/item/melee/robotic/jaws/small/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/silicon/robot/R = user
+CAPABILITIES(/obj/item/melee/robotic/jaws/small)
+	configure(item_combat(force = 15, attack_verbs = list("nibbled", "bit", "gnawed", "chomped", "nommed")))
+	op("jaw_mode", in_hand(), label("Toggle combat jaws"), then(PROC_REF(jaw_mode_toggled)))
+
+/obj/item/melee/robotic/jaws/small/proc/jaw_mode_toggled(datum/act/op/A)
+	var/mob/living/silicon/robot/R = A.actor
 	if(!istype(R))
-		return TRUE
+		return OP_OK
 	if(R.emagged || R.emag_items)
-		emagged = !emagged
+		set_emagged(!emagged)
 		if(R.sprite_datum?.dogborg_sprites)
 			if(emagged)
 				name = "combat jaws"
-				icon_state = "jaws"
+				set_icon_state("jaws")
 				desc = "The jaws of the law."
-				force = 30
-				armor_penetration = 25
+				set_force(30)
+				set_armor_penetration(25)
 				defend_chance = 15
-				attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+				set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 			else
 				name = "puppy jaws"
-				icon_state = "smalljaws"
+				set_icon_state("smalljaws")
 				desc = "The jaws of a small dog."
-				force = 15
-				armor_penetration = 0
+				set_force(15)
+				set_armor_penetration(0)
 				defend_chance = 5
-				attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
+				set_attack_verb(list("nibbled", "bit", "gnawed", "chomped", "nommed"))
 		else
 			if(emagged)
 				name = "claymore"
 				desc = "Now this is a knife!"
 				icon = 'icons/obj/tools_robot.dmi'
-				icon_state = "claymore_cyborg"
-				hitsound = SFX_WEAPONS_SLICE
-				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
-				force = 30
-				armor_penetration = 25
+				set_icon_state("claymore_cyborg")
+				set_hitsound(SFX_WEAPONS_SLICE)
+				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
+				set_force(30)
+				set_armor_penetration(25)
 				defend_chance = 15
 			else
 				name = "self defense knife"
 				icon = 'icons/obj/tools_robot.dmi'
-				icon_state = "knife_cyborg"
-				hitsound = SFX_WEAPONS_SLASH
+				set_icon_state("knife_cyborg")
+				set_hitsound(SFX_WEAPONS_SLASH)
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."
-				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
-				force = 15
-				armor_penetration = 0
+				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
+				set_force(15)
+				set_armor_penetration(0)
 				defend_chance = 5
-		update_icon()
-	return TRUE
+	return OP_OK
 
 
 /obj/item/melee/robotic/borg_combat_shocker //Like a baton, but is always on.
@@ -234,13 +237,14 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "combatshocker"
 	desc = "Shocking!"
-	force = 15
-	throwforce = 0
-	hitsound = SFX_WEAPONS_GENHIT1
-	attack_verb = list("hit")
 	w_class = ITEMSIZE_NORMAL
 	var/charge_cost = 15
 	var/dogborg = FALSE
+
+CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 15, attack_verbs = list("hit")))
+	configure(item_sounds(hit = SFX_WEAPONS_GENHIT1))
 
 /obj/item/melee/robotic/borg_combat_shocker/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc
@@ -299,70 +303,70 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE | COUNTS_AS_ROBOT_BLADE
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "swordtail"
-	force = 0
-	armor_penetration = 70
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	throwforce = 0 //This shouldn't be thrown in the first place.
-	hitsound = SFX_WEAPONS_BLADE1
-	attack_verb = list("slashed", "stabbed", "jabbed", "mauled", "sliced")
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
+CAPABILITIES(/obj/item/melee/robotic/blade)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0, armor_penetration = 70, sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "jabbed", "mauled", "sliced")))
+	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
+	op("use", in_hand(), then(PROC_REF(interaction_self)))
+	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
+		asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "confirm"),
+		asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor), "timeout" = 0), step = "color", when = PROC_REF(recolor_confirmed)),
+		then(PROC_REF(interaction_alt)))
 
 /// Old attack_self.
-/obj/item/melee/robotic/blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/robotic/blade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active) //turning off
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
-		force = 0
+		set_force(0)
 	else //turning on
 		play_sfx(src, SFX_WEAPONS_SABERON)
-		force = active_force
-	active = !active
+		set_force(active_force)
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
-	update_icon()
-	return TRUE
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/blade/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/melee/robotic/blade, active)
+TRACKED(/obj/item/melee/robotic/blade, lcolor)
+
+/// The look: the blade in its colour, and its glow.
+/obj/item/melee/robotic/blade/draw(datum/look/look)
+	..()
+	look.overlay(look_appearance(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 	if(active)
-		var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-		blade_overlay.color = lcolor
-		. += blade_overlay
-	refresh_light()
+		look.glow(2, 2, lcolor)
+	else
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/robotic/blade/refresh_light(clear)
 	if(active)
 		if(clear)
-			set_light(0)
-		set_light(2, 2, lcolor)
+			set_glow(src, GLOW(0, null, null))
+		set_glow(src, GLOW(2, 2, lcolor))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 /// Old click_alt.
-/obj/item/melee/robotic/blade/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/robotic/blade/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
+		return OP_OK
 
-	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"))
-	if(isnull(_answer_k349))
-		return TRUE
-	if(_answer_k349 == "Yes")
-		om_ask(user, /datum/om/prompt/color, PROC_REF(blade_color_picked), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE)
+	if(A.step_value("confirm") == "Yes")
+		var/picked = A.step_value("color")
+		if(picked)
+			set_lcolor(sanitize_hexcolor(picked))
+	return OP_OK
 
-/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
-	update_icon()
-	return TRUE
+/// The recolor was confirmed: the colour is asked.
+/obj/item/melee/robotic/blade/proc/recolor_confirmed(datum/act/op/A)
+	return A.step_value("confirm") == "Yes"
 
 /obj/item/melee/robotic/blade/examine(mob/user)
 	. = ..()
@@ -376,8 +380,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 /obj/item/melee/robotic/blade/ninja
 	lcolor = "#38e541"
 	active_force = 40
-	armor_penetration = 100
 	projectile_parry_chance = 60
+
+CAPABILITIES(/obj/item/melee/robotic/blade/ninja)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/melee/robotic/blade/dagger //For downstreams that use dagger
 	name = "Robotic Dagger"
@@ -407,21 +413,21 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(3) // A weaker severity is used because this has infinite uses.
 		play_sfx(target, SFX_EFFECTS_EMPULSE)
-		target.injure(INJURY_BURN, force * 3, hit_zone, src) // 15 Burn, for 20 total.
+		target.injure(INJURY_BURN, combat_of(src).force * 3, hit_zone, src) // 15 Burn, for 20 total.
 		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
-		if(target.mob_class & MOB_CLASS_SYNTHETIC)
+		if(kind_of(target).mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
-			target.injure(INJURY_BURN, force * 6, hit_zone, src) // 30 Burn, for 50 total.
+			target.injure(INJURY_BURN, combat_of(src).force * 6, hit_zone, src) // 30 Burn, for 50 total.
 
 /obj/item/melee/robotic/blade/ionic/lance
 	name = "zero-point lance"
 	desc = "Designed specifically for disrupting electronics at relatively close range, however it is still capable of dealing some damage to living beings."
-	force = 20
-	armor_penetration = 15
-	reach = 2
+
+CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
+	configure(item_combat(force = 20, armor_penetration = 15, reach = 2))
 
 /obj/item/melee/robotic/baton
 	name = "stunbaton"
@@ -429,15 +435,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "stunbaton"
 	item_state = "baton"
-	slot_flags = SLOT_BELT
-	force = 15
-	sharp = FALSE
-	edge = FALSE
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
-	pickup_sound = SFX_ITEMS_PICKUP_METALWEAPON
-	attack_verb = list("beaten")
 	var/stunforce = 0
 	var/agonyforce = 60
 	var/hitcost = 500
@@ -445,44 +444,48 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/baton/appearance_overlays()
-	. = list()
+/// The look: the active state and its glow.
+/obj/item/melee/robotic/baton/draw(datum/look/look)
+	..()
+	look.state(status ? "[initial(name)]_active" : initial(name))
 	if(status)
-		icon_state = "[initial(name)]_active"
+		look.glow(2, 1, lightcolor)
 	else
-		icon_state = "[initial(name)]"
-	refresh_light()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/robotic/baton/refresh_light(clear)
-	if(icon_state == "[initial(name)]_active")
+	if(status)
 		if(clear)
-			set_light(0)
-		set_light(2, 1, lightcolor)
+			set_glow(src, GLOW(0, null, null))
+		set_glow(src, GLOW(2, 1, lightcolor))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
-DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/melee/robotic/baton, status)
 
-/// Old attack_hand.
-/obj/item/melee/robotic/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return TRUE
+CAPABILITIES(/obj/item/melee/robotic/baton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
+	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
+	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
+	op("item_pass", item(/obj/item), when(req(PROC_REF(baton_used_by_other_item))), label("Use item on baton"), then(PROC_REF(baton_item_passed)), passes())
 
-/// Old attack_self.
-/obj/item/melee/robotic/baton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	status = !status
+/obj/item/melee/robotic/baton/proc/baton_pickup_blocked(datum/act/op/A)
+	return OP_OK
+
+/obj/item/melee/robotic/baton/proc/baton_power_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_status(!status)
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/melee/robotic/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+/obj/item/melee/robotic/baton/proc/baton_used_by_other_item(datum/act/op/A)
+	return (A.held != A.target) ? null : /datum/msg/req_failed
+
+/obj/item/melee/robotic/baton/proc/baton_item_passed(datum/act/op/A)
+	return OP_OK
 
 /obj/item/melee/robotic/baton/proc/deductcharge()
 	var/mob/living/silicon/robot/R = loc
@@ -553,9 +556,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
 	icon_state = "shocker"
-	force = 10
 	agonyforce = 25 // Less efficent than a regular baton.
-	attack_verb = list("poked")
+
+CAPABILITIES(/obj/item/melee/robotic/baton/shocker)
+	configure(item_combat(force = 10, attack_verbs = list("poked")))
 
 /obj/item/melee/robotic/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	..(target, user, hit_zone, attack_modifier, stance)
@@ -567,22 +571,24 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
 	icon_state = "slimebaton_active"
 	item_state = "slimebaton"
-	force = 10 //we like round numbers here
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
+
+CAPABILITIES(/obj/item/melee/robotic/baton/slime)
+	configure(item_combat(force = 10))
 
 
 /obj/item/melee/robotic/baton/slime/attack(mob/living/L, mob/living/user, target_zone, attack_modifier)
 	if(!istype(L))
 		return ..()
 
-	if(L.mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
+	if(kind_of(L).mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
 		if(isslime(L))
 			var/mob/living/simple_mob/slime/S = L
 			S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.
 		else
-			L.status_at_least(EFFECT_WEAKENED, 5)
+			L.status_at_least(STAT_WEAKENED, 5)
 
 	// Now for prommies.
 	if(ishuman(L))

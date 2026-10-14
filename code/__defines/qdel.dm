@@ -58,7 +58,7 @@
 #define QDELETED(X) (isnull(X) || QDELING(X))
 #define QDESTROYING(X) (!X || X.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
 
-// Deleting later is a lifecycle verb: expire(delay) on an atom, om_qdel_after(D, delay) otherwise.
+// Deleting later is a lifecycle verb: expire(delay) on an atom, D.expire(delay) otherwise.
 #define QDEL_NULL(item) qdel(item); item = null
 #define QDEL_SWAP(item1, item2) if(item1) { qdel(item1) }; item1 = item2;
 #define QDEL_NULL_LIST QDEL_LIST_NULL

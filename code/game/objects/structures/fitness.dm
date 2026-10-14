@@ -10,23 +10,14 @@
 	density = TRUE
 	var/static/list/hit_message = list("hit", "punch", "kick", "robust")
 
-/obj/structure/fitness/punchingbag/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/punchingbag_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/fitness/punchingbag)
+	op("hand", hand(), stance(I_HURT), label("Punch"), then(PROC_REF(interaction_hand)))
 
-/// Old attack_hand: hit the punching bag (combat mode only).
-/datum/interaction/entry_hand/punchingbag_hand
-	id = "punchingbag_hand"
-	name = "Punch"
-	effect = /obj/structure/fitness/punchingbag/proc/interaction_hand
-	stance = I_HURT
-
-/obj/structure/fitness/punchingbag/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fitness/punchingbag/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if(!istype(user))
 		return TRUE
-	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
+	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to use the punching bag. Go eat something."))
 	else if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
@@ -48,58 +39,54 @@
 	var/weight = 1
 	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
-/obj/structure/fitness/weightlifter/wrench_act(mob/user, obj/item/W)
+CAPABILITIES(/obj/structure/fitness/weightlifter)
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("lift", hand(), label("Lift"), when(req_actor_kind(/mob/living/carbon/human)), needs(req(PROC_REF(can_lift))), claims(), begins(PROC_REF(lift_begins)), wait(PROC_REF(lift_time)), on_interrupt(PROC_REF(lift_interrupted)), then(PROC_REF(lifted)))
+
+/obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	weight = ((weight) % qualifiers.len) + 1
 	to_chat(user, "You set the machine's weight level to [weight].")
-	return TRUE
+	return OP_OK
 
-/obj/structure/fitness/weightlifter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/weightlifter_hand,
-	)
-	..()
+/// Requirement: the person can lift right now.
+/obj/structure/fitness/weightlifter/proc/can_lift(datum/act/op/A)
+	return read_once(weightlift_refusal(A.actor)) // nutrition and weight are asked when the lift starts
 
-/// Old attack_hand: use the weightlifting machine.
-/datum/interaction/entry_hand/weightlifter_hand
-	id = "weightlifter_hand"
-	name = "Lift"
-	also_requires = list(REQ_TARGET_STATE(/obj/structure/fitness/weightlifter/proc/can_lift))
-	effect = /obj/structure/fitness/weightlifter/proc/interaction_hand
-
-/// Requirement: TRUE, or why the user can't lift right now.
-/obj/structure/fitness/weightlifter/proc/can_lift(mob/living/carbon/human/user, atom/target, obj/item/held)
-	if(!istype(user))
-		return TRUE // the effect declines silently
+/// Why `user` can't use the weight machine now, or null: on it, fed, heavy enough, and nobody else on it.
+/obj/structure/fitness/weightlifter/proc/weightlift_refusal(mob/lifter)
+	var/mob/living/carbon/human/user = lifter
 	if(user.loc != loc)
-		return "you must be on the weight machine to use it"
-	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
-		return "you need more energy to lift weights, go eat something"
+		return "You must be on the weight machine to use it."
+	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
+		return "You need more energy to lift weights, go eat something."
 	if(user.weight < 70) // Add weight loss to old fitness equipment
-		return "you're too skinny to risk losing any more weight"
-	if(om_busy(src))
-		return "the weight machine is already in use by somebody else"
-	return TRUE
+		return "You're too skinny to risk losing any more weight."
+	return null
 
-/obj/structure/fitness/weightlifter/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(user))
-		return TRUE
-	else
-		play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
-		user.set_dir(SOUTH)
-		flick("[icon_state]_[weight]", src)
-		om_task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
-	return TRUE
+/// How long a lift takes: heavier weights take longer.
+/obj/structure/fitness/weightlifter/proc/lift_time(datum/act/op/A)
+	return 3 SECONDS + (weight * 10)
 
-/obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
+/// The start of a lift: the weights rise and the lifter faces the machine. It says nothing.
+/obj/structure/fitness/weightlifter/proc/lift_begins(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
+	user.set_dir(SOUTH)
+	flick("[icon_state]_[weight]", src)
+	return null
+
+/obj/structure/fitness/weightlifter/proc/lifted(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)
 	user.adjust_nutrition(weight * -10)
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
 	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)
 	to_chat(user, span_notice("You lift the weights [qualifiers[weight]]."))
 
-/obj/structure/fitness/weightlifter/proc/attack_hand_timed_failed(mob/living/carbon/human/user)
-	to_chat(user, span_notice("Against your previous judgement, perhaps working out is not for you."))
+/obj/structure/fitness/weightlifter/proc/lift_interrupted(datum/act/op/A)
+	to_chat(A.actor, span_notice("Against your previous judgement, perhaps working out is not for you."))
 
 /obj/structure/fitness/boxing_ropes
 	name = "ropes"
@@ -112,9 +99,8 @@
 	anchored = TRUE
 	flags = ON_BORDER
 
-/obj/structure/fitness/boxing_ropes/Initialize(mapload)
-	. = ..()
-	make_climbable(vaulting = TRUE)
+CAPABILITIES(/obj/structure/fitness/boxing_ropes)
+	climb(vaulting = TRUE)
 
 /obj/structure/fitness/boxing_ropes/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))

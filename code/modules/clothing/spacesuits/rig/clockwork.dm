@@ -4,13 +4,11 @@
 	desc = "A subtly vibrating box made out of brass. It has some buttons and switches on one side, and what looks like vents on another."
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
-	slot_flags = SLOT_BELT
 	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
 	slowdown = 2
 	offline_slowdown = 4
 	offline_vision_restriction = 1
 	emp_protection = 40
-	siemens_coefficient= 0.75
 	rigsuit_max_pressure = 8 * ONE_ATMOSPHERE
 	rigsuit_min_pressure = 0
 
@@ -29,8 +27,12 @@
 	req_access = list()
 	req_one_access = list()
 
-TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear \
-		))))
+CAPABILITIES(/obj/item/rig/ch/clockwork)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_protection(siemens = 0.75))
+
+
 
 /obj/item/clothing/suit/space/rig/ch/clockwork
 	name = "cuirass"
@@ -50,7 +52,9 @@ TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(PO
 	icon_state = "clockwork_rig"
 
 	desc = "Heavy, shock-resistant gauntlets with brass reinforcement."
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ch/clockwork)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/magboots/rig/ch/clockwork
 	name = "treads"

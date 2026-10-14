@@ -2,191 +2,93 @@
 // it carries every tier and setting it had, inherited ones included.
 
 // Special loot pile that uses gamma items. These spawn only once!
-DECLARE_LOOT(/loot/trash_pile, \
-	LOOT_TABLE(\
-		/obj/item/clothing/gloves/rainbow = 1, \
-		/obj/item/clothing/gloves/white = 1, \
-		/obj/item/storage/backpack = 1, \
-		/obj/item/storage/backpack/satchel/norm = 1, \
-		/obj/item/storage/box = 1, \
-		/obj/item/broken_device/random = 1, \
-		/obj/item/clothing/head/hardhat = 1, \
-		/obj/item/clothing/mask/breath = 1, \
-		/obj/item/clothing/shoes/black = 2, \
-		/obj/item/clothing/shoes/laceup = 1, \
-		/obj/item/clothing/shoes/laceup/brown = 1, \
-		/obj/item/clothing/suit/storage/hazardvest = 1, \
-		/obj/item/clothing/under/color/grey = 1, \
-		/obj/item/clothing/suit/caution = 1, \
-		/obj/item/cell = 1, \
-		/obj/item/cell/device = 1, \
-		/obj/item/reagent_containers/food/snacks/liquidfood = 1, \
-		/obj/item/spacecash/c1 = 1, \
-		/obj/item/storage/backpack/satchel = 1, \
-		/obj/item/storage/briefcase = 1, \
-		/obj/item/clothing/accessory/storage/webbing = 1, \
-		/obj/item/clothing/glasses/meson = 1, \
-		/obj/item/clothing/gloves/botanic_leather = 1, \
-		/obj/item/clothing/head/hardhat/red = 1, \
-		/obj/item/clothing/mask/gas = 1, \
-		/obj/item/clothing/mask/gas/clear = 1, \
-		/obj/item/clothing/suit/storage/apron = 1, \
-		/obj/item/clothing/suit/storage/toggle/bomber = 1, \
-		/obj/item/clothing/suit/storage/toggle/brown_jacket = 1, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/black = 1, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/blue = 1, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/red = 1, \
-		/obj/item/clothing/suit/storage/toggle/hoodie/yellow = 1, \
-		/obj/item/clothing/suit/storage/toggle/leather_jacket = 1, \
-		/obj/item/pda = 1, \
-		/obj/item/radio/headset = 1, \
-		/obj/item/camera_assembly = 1, \
-		/obj/item/clothing/head/cone = 1, \
-		/obj/item/cell/high = 1, \
-		/obj/item/spacecash/c10 = 1, \
-		/obj/item/spacecash/c20 = 1, \
-		/obj/item/storage/backpack/dufflebag = 1, \
-		/obj/item/storage/box/donkpockets = 1, \
-		/obj/item/storage/box/mousetraps = 1, \
-		/obj/item/storage/wallet = 1), \
-	LOOT_UNCOMMON(20, \
-		/obj/item/clothing/glasses/meson/prescription, \
-		/obj/item/clothing/gloves/fyellow, \
-		/obj/item/clothing/gloves/sterile/latex, \
-		/obj/item/clothing/head/welding, \
-		/obj/item/clothing/mask/gas/half, \
-		/obj/item/clothing/shoes/galoshes, \
-		/obj/item/clothing/under/pants/camo, \
-		/obj/item/clothing/under/syndicate/tacticool, \
-		/obj/item/clothing/under/hyperfiber, \
-		/obj/item/camera, \
-		/obj/item/flashlight/flare, \
-		/obj/item/flashlight/glowstick, \
-		/obj/item/flashlight/glowstick/blue, \
-		/obj/item/card/emag_broken, \
-		/obj/item/cell/super, \
-		/obj/item/poster, \
-		/obj/item/reagent_containers/glass/rag, \
-		/obj/item/storage/box/sinpockets, \
-		/obj/item/storage/secure/briefcase, \
-		/obj/item/toy/tennis, \
-		/obj/item/toy/tennis/red, \
-		/obj/item/toy/tennis/yellow, \
-		/obj/item/toy/tennis/green, \
-		/obj/item/toy/tennis/cyan, \
-		/obj/item/toy/tennis/blue, \
-		/obj/item/toy/tennis/purple, \
-		/obj/item/toy/baseball, \
-		/obj/item/storage/box/brainzsnax, \
-		/obj/item/storage/box/brainzsnax/red, \
-		/obj/item/clothing/glasses/sunglasses, \
-		/obj/item/clothing/glasses/sunglasses/bigshot, \
-		/obj/item/clothing/glasses/welding, \
-		/obj/item/clothing/gloves/yellow, \
-		/obj/item/clothing/head/bio_hood/general, \
-		/obj/item/clothing/head/ushanka, \
-		/obj/item/clothing/shoes/syndigaloshes, \
-		/obj/item/clothing/suit/bio_suit/general, \
-		/obj/item/clothing/suit/space/emergency, \
-		/obj/item/clothing/under/harness, \
-		/obj/item/clothing/under/tactical, \
-		/obj/item/clothing/suit/armor/material/makeshift, \
-		/obj/item/flashlight/glowstick/orange, \
-		/obj/item/flashlight/glowstick/red, \
-		/obj/item/flashlight/glowstick/yellow, \
-		/obj/item/flashlight/pen, \
-		/obj/item/paicard, \
-		/obj/item/clothing/accessory/permit/gun, \
-		/obj/item/clothing/mask/gas/voice, \
-		/obj/item/spacecash/c100, \
-		/obj/item/spacecash/c50, \
-		/obj/item/storage/backpack/dufflebag/syndie, \
-		/obj/item/storage/box/cups), \
-	LOOT_RARE(2, \
-		/obj/item/pizzavoucher, \
-		/obj/item/card/emag, \
-		/obj/item/storage/pill_bottle/paracetamol, \
-		/obj/item/storage/pill_bottle/happy, \
-		/obj/item/storage/pill_bottle/zoom, \
-		/obj/item/seeds/ambrosiavulgarisseed, \
-		/obj/item/gun/energy/sizegun, \
-		/obj/item/slow_sizegun, \
-		/obj/item/clothing/accessory/collar/shock/bluespace, \
-		/obj/item/cracker, \
-		/obj/item/material/butterfly, \
-		/obj/item/material/butterfly/switchblade, \
-		/obj/item/clothing/accessory/knuckledusters, \
-		/obj/item/clothing/gloves/heavy_engineer, \
-		/obj/item/reagent_containers/syringe/drugs, \
-		/obj/item/reagent_containers/syringe/old, \
-		/obj/item/implanter/sizecontrol, \
-		/obj/item/handcuffs/fuzzy, \
-		/obj/item/handcuffs/legcuffs/fuzzy, \
-		/obj/item/storage/box/syndie_kit/spy, \
-		/obj/item/grenade/anti_photon, \
-		/obj/item/clothing/under/hyperfiber/bluespace, \
-		/obj/item/selectable_item/chemistrykit/size, \
-		/obj/item/selectable_item/chemistrykit/gender, \
-		/obj/item/clothing/gloves/bluespace/emagged, \
-		/obj/item/reagent_containers/glass/beaker/vial/sustenance, \
-		/obj/item/clothing/suit/storage/vest/heavy/merc, \
-		/obj/item/nif/bad, \
-		/obj/item/radio_jammer, \
-		/obj/item/sleevemate, \
-		/obj/item/bodysnatcher, \
-		/obj/item/mindbinder, \
-		/obj/item/beartrap, \
-		/obj/item/cell/hyper/empty, \
-		/obj/item/disk/nifsoft/compliance, \
-		/obj/item/implanter/compliance, \
-		/obj/item/material/knife/tacknife, \
-		/obj/item/storage/box/survival/space, \
-		/obj/item/storage/secure/briefcase/trashmoney, \
-		/obj/item/survivalcapsule/popcabin, \
-		/obj/item/reagent_containers/syringe/steroid, \
-		/obj/item/capture_crystal, \
-		/obj/item/perfect_tele/one_beacon, \
-		/obj/item/clothing/gloves/bluespace, \
-		/obj/item/gun/energy/mouseray, \
-		/obj/item/clothing/accessory/collar/shock/bluespace/modified, \
-		/obj/item/gun/energy/sizegun/backfire, \
-		/obj/item/grenade/spawnergrenade/clustaur, \
-		/obj/item/storage/box/monkeycubes, \
-		/obj/item/storage/box/monkeycubes/pets/NT_standard, \
-		/obj/item/storage/box/monkeycubes/pets/NT_special), \
-	LOOT_UNLUCKY(\
-		/obj/item/grenade/flashbang/clusterbang/primed, \
-		/obj/item/storage/box/old_syringes, \
-		/obj/item/storage/box/donut/empty, \
-		/obj/item/grenade/smokebomb/primed, \
-		/obj/item/storage/box, \
-		/obj/item/storage/box/cups, \
-		/obj/item/trash/candle, \
-		/obj/item/trash/candy, \
-		/obj/item/trash/candy/proteinbar, \
-		/obj/item/trash/candy/gums, \
-		/obj/item/trash/cheesie, \
-		/obj/item/trash/chips, \
-		/obj/item/trash/chips/bbq, \
-		/obj/item/trash/liquidfood, \
-		/obj/item/trash/pistachios, \
-		/obj/item/trash/plate, \
-		/obj/item/trash/popcorn, \
-		/obj/item/trash/raisins, \
-		/obj/item/trash/semki, \
-		/obj/item/trash/snack_bowl, \
-		/obj/item/trash/sosjerky, \
-		/obj/item/trash/syndi_cakes, \
-		/obj/item/trash/tastybread, \
-		/obj/item/trash/coffee, \
-		/obj/item/trash/tray, \
-		/obj/item/trash/unajerky, \
-		/obj/item/trash/waffles, \
-		/obj/item/spacecash/c1, \
-		/obj/item/card/emag_broken, \
-		/obj/effect/decal/remains/lizard, \
-		/obj/effect/decal/remains/mouse, \
-		/obj/effect/decal/remains/robot, \
-		/obj/item/pizzabox/old, \
-		/obj/item/paper/crumpled), \
-	LOOT_GAMMA(1))
+CAPABILITIES(/loot/trash_pile)
+	loot(
+		table = list(
+			/obj/item/clothing/gloves/rainbow = 1,
+			/obj/item/clothing/gloves/white = 1,
+			/obj/item/storage/backpack = 1,
+			/obj/item/storage/backpack/satchel/norm = 1,
+			/obj/item/storage/box = 1,
+			/obj/item/broken_device/random = 1,
+			/obj/item/clothing/head/hardhat = 1,
+			/obj/item/clothing/mask/breath = 1,
+			/obj/item/clothing/shoes/black = 2,
+			/obj/item/clothing/shoes/laceup = 1,
+			/obj/item/clothing/shoes/laceup/brown = 1,
+			/obj/item/clothing/suit/storage/hazardvest = 1,
+			/obj/item/clothing/under/color/grey = 1,
+			/obj/item/clothing/suit/caution = 1,
+			/obj/item/cell = 1,
+			/obj/item/cell/device = 1,
+			/obj/item/reagent_containers/food/snacks/liquidfood = 1,
+			/obj/item/spacecash/c1 = 1,
+			/obj/item/storage/backpack/satchel = 1,
+			/obj/item/storage/briefcase = 1,
+			/obj/item/clothing/accessory/storage/webbing = 1,
+			/obj/item/clothing/glasses/meson = 1,
+			/obj/item/clothing/gloves/botanic_leather = 1,
+			/obj/item/clothing/head/hardhat/red = 1,
+			/obj/item/clothing/mask/gas = 1,
+			/obj/item/clothing/mask/gas/clear = 1,
+			/obj/item/clothing/suit/storage/apron = 1,
+			/obj/item/clothing/suit/storage/toggle/bomber = 1,
+			/obj/item/clothing/suit/storage/toggle/brown_jacket = 1,
+			/obj/item/clothing/suit/storage/toggle/hoodie/black = 1,
+			/obj/item/clothing/suit/storage/toggle/hoodie/blue = 1,
+			/obj/item/clothing/suit/storage/toggle/hoodie/red = 1,
+			/obj/item/clothing/suit/storage/toggle/hoodie/yellow = 1,
+			/obj/item/clothing/suit/storage/toggle/leather_jacket = 1,
+			/obj/item/pda = 1,
+			/obj/item/radio/headset = 1,
+			/obj/item/camera_assembly = 1,
+			/obj/item/clothing/head/cone = 1,
+			/obj/item/cell/high = 1,
+			/obj/item/spacecash/c10 = 1,
+			/obj/item/spacecash/c20 = 1,
+			/obj/item/storage/backpack/dufflebag = 1,
+			/obj/item/storage/box/donkpockets = 1,
+			/obj/item/storage/box/mousetraps = 1,
+			/obj/item/storage/wallet = 1),
+		uncommon = loot_tier(
+			20,
+			list(/obj/item/clothing/glasses/meson/prescription, /obj/item/clothing/gloves/fyellow, /obj/item/clothing/gloves/sterile/latex, /obj/item/clothing/head/welding, /obj/item/clothing/mask/gas/half, /obj/item/clothing/shoes/galoshes, /obj/item/clothing/under/pants/camo, /obj/item/clothing/under/syndicate/tacticool, /obj/item/clothing/under/hyperfiber, /obj/item/camera, /obj/item/flashlight/flare, /obj/item/flashlight/glowstick, /obj/item/flashlight/glowstick/blue, /obj/item/card/emag_broken, /obj/item/cell/super, /obj/item/poster, /obj/item/reagent_containers/glass/rag, /obj/item/storage/box/sinpockets, /obj/item/storage/secure/briefcase, /obj/item/toy/tennis, /obj/item/toy/tennis/red, /obj/item/toy/tennis/yellow, /obj/item/toy/tennis/green, /obj/item/toy/tennis/cyan, /obj/item/toy/tennis/blue, /obj/item/toy/tennis/purple, /obj/item/toy/baseball, /obj/item/storage/box/brainzsnax, /obj/item/storage/box/brainzsnax/red, /obj/item/clothing/glasses/sunglasses, /obj/item/clothing/glasses/sunglasses/bigshot, /obj/item/clothing/glasses/welding, /obj/item/clothing/gloves/yellow, /obj/item/clothing/head/bio_hood/general, /obj/item/clothing/head/ushanka, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/suit/bio_suit/general, /obj/item/clothing/suit/space/emergency, /obj/item/clothing/under/harness, /obj/item/clothing/under/tactical, /obj/item/clothing/suit/armor/material/makeshift, /obj/item/flashlight/glowstick/orange, /obj/item/flashlight/glowstick/red, /obj/item/flashlight/glowstick/yellow, /obj/item/flashlight/pen, /obj/item/paicard, /obj/item/clothing/accessory/permit/gun, /obj/item/clothing/mask/gas/voice, /obj/item/spacecash/c100, /obj/item/spacecash/c50, /obj/item/storage/backpack/dufflebag/syndie, /obj/item/storage/box/cups)),
+		rare = loot_tier(
+			2,
+			list(/obj/item/pizzavoucher, /obj/item/card/emag, /obj/item/storage/pill_bottle/paracetamol, /obj/item/storage/pill_bottle/happy, /obj/item/storage/pill_bottle/zoom, /obj/item/seeds/ambrosiavulgarisseed, /obj/item/gun/energy/sizegun, /obj/item/slow_sizegun, /obj/item/clothing/accessory/collar/shock/bluespace, /obj/item/cracker, /obj/item/material/butterfly, /obj/item/material/butterfly/switchblade, /obj/item/clothing/accessory/knuckledusters, /obj/item/clothing/gloves/heavy_engineer, /obj/item/reagent_containers/syringe/drugs, /obj/item/reagent_containers/syringe/old, /obj/item/implanter/sizecontrol, /obj/item/handcuffs/fuzzy, /obj/item/handcuffs/legcuffs/fuzzy, /obj/item/storage/box/syndie_kit/spy, /obj/item/grenade/anti_photon, /obj/item/clothing/under/hyperfiber/bluespace, /obj/item/selectable_item/chemistrykit/size, /obj/item/selectable_item/chemistrykit/gender, /obj/item/clothing/gloves/bluespace/emagged, /obj/item/reagent_containers/glass/beaker/vial/sustenance, /obj/item/clothing/suit/storage/vest/heavy/merc, /obj/item/nif/bad, /obj/item/radio_jammer, /obj/item/sleevemate, /obj/item/bodysnatcher, /obj/item/mindbinder, /obj/item/beartrap, /obj/item/cell/hyper/empty, /obj/item/disk/nifsoft/compliance, /obj/item/implanter/compliance, /obj/item/material/knife/tacknife, /obj/item/storage/box/survival/space, /obj/item/storage/secure/briefcase/trashmoney, /obj/item/survivalcapsule/popcabin, /obj/item/reagent_containers/syringe/steroid, /obj/item/capture_crystal, /obj/item/perfect_tele/one_beacon, /obj/item/clothing/gloves/bluespace, /obj/item/gun/energy/mouseray, /obj/item/clothing/accessory/collar/shock/bluespace/modified, /obj/item/gun/energy/sizegun/backfire, /obj/item/grenade/spawnergrenade/clustaur, /obj/item/storage/box/monkeycubes, /obj/item/storage/box/monkeycubes/pets/NT_standard, /obj/item/storage/box/monkeycubes/pets/NT_special)),
+		unlucky = list(
+			/obj/item/grenade/flashbang/clusterbang/primed,
+			/obj/item/storage/box/old_syringes,
+			/obj/item/storage/box/donut/empty,
+			/obj/item/grenade/smokebomb/primed,
+			/obj/item/storage/box,
+			/obj/item/storage/box/cups,
+			/obj/item/trash/candle,
+			/obj/item/trash/candy,
+			/obj/item/trash/candy/proteinbar,
+			/obj/item/trash/candy/gums,
+			/obj/item/trash/cheesie,
+			/obj/item/trash/chips,
+			/obj/item/trash/chips/bbq,
+			/obj/item/trash/liquidfood,
+			/obj/item/trash/pistachios,
+			/obj/item/trash/plate,
+			/obj/item/trash/popcorn,
+			/obj/item/trash/raisins,
+			/obj/item/trash/semki,
+			/obj/item/trash/snack_bowl,
+			/obj/item/trash/sosjerky,
+			/obj/item/trash/syndi_cakes,
+			/obj/item/trash/tastybread,
+			/obj/item/trash/coffee,
+			/obj/item/trash/tray,
+			/obj/item/trash/unajerky,
+			/obj/item/trash/waffles,
+			/obj/item/spacecash/c1,
+			/obj/item/card/emag_broken,
+			/obj/effect/decal/remains/lizard,
+			/obj/effect/decal/remains/mouse,
+			/obj/effect/decal/remains/robot,
+			/obj/item/pizzabox/old,
+			/obj/item/paper/crumpled),
+		gamma_chance = 1)

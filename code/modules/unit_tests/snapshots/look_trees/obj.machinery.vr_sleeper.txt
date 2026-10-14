@@ -1,0 +1,25 @@
+/obj/machinery/vr_sleeper icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper state: body_scanner_0
+/obj/machinery/vr_sleeper dir: 2
+/obj/machinery/vr_sleeper overlay: icons/obj/Cryogenic2.dmi:body_scanner_0:8:#000000
+/obj/machinery/vr_sleeper/alien icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper/alien state: alienpod_0
+/obj/machinery/vr_sleeper/alien dir: 2
+/obj/machinery/vr_sleeper/alien overlay: icons/obj/Cryogenic2.dmi:alienpod_0:8:#000000
+/obj/machinery/vr_sleeper/alien/random_replicant icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper/alien/random_replicant state: alienpod_0
+/obj/machinery/vr_sleeper/alien/random_replicant dir: 2
+/obj/machinery/vr_sleeper/alien/random_replicant overlay: icons/obj/Cryogenic2.dmi:alienpod_0:8:#000000
+/obj/machinery/vr_sleeper/alien/alpha_replicant icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper/alien/alpha_replicant state: alienpod_0
+/obj/machinery/vr_sleeper/alien/alpha_replicant dir: 2
+/obj/machinery/vr_sleeper/alien/alpha_replicant overlay: icons/obj/Cryogenic2.dmi:alienpod_0:8:#000000
+/obj/machinery/vr_sleeper/alien/beta_replicant icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper/alien/beta_replicant state: alienpod_0
+/obj/machinery/vr_sleeper/alien/beta_replicant dir: 2
+/obj/machinery/vr_sleeper/alien/beta_replicant overlay: icons/obj/Cryogenic2.dmi:alienpod_0:8:#000000
+/obj/machinery/vr_sleeper/perfect icon: icons/obj/Cryogenic2.dmi
+/obj/machinery/vr_sleeper/perfect state: body_scanner_0
+/obj/machinery/vr_sleeper/perfect dir: 2
+/obj/machinery/vr_sleeper/perfect overlay: icons/obj/Cryogenic2.dmi:body_scanner_0:8:#000000
+

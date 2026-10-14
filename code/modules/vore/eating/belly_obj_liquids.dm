@@ -12,7 +12,7 @@
 			gen_interval++
 			return
 
-		if(owner.nutrition >= gen_cost && gen_interval >= gen_time)
+		if(nutrition_of(owner) >= gen_cost && gen_interval >= gen_time)
 			if(owner.nutrition_percent() >= reagent_gen_cost_limit)
 				GenerateBellyReagents()
 			gen_interval = 0
@@ -27,14 +27,14 @@
 				affecting_amt = 5
 			if(affecting_amt >= 1)
 				for(var/mob/living/L in touchable_atoms)
-					if(!L.apply_reagents || L.absorbed)
+					if(!L.vore_prefs.apply_reagents || L.absorbed)
 						continue
-					if((L.digestable && digest_mode == DM_DIGEST))
-						if(!L.permit_healbelly && is_beneficial) // Healing reagents turned off in preferences!
+					if((L.vore_prefs.digestable && digest_mode == DM_DIGEST))
+						if(!L.vore_prefs.permit_healbelly && is_beneficial) // Healing reagents turned off in preferences!
 							continue
 						if(reagents.total_volume)
 							reagents.splash_mob(L, affecting_amt, FALSE)
-					if(L.permit_healbelly && digest_mode == DM_HEAL)
+					if(L.vore_prefs.permit_healbelly && digest_mode == DM_HEAL)
 						if(is_beneficial && reagents.total_volume)
 							reagents.splash_mob(L, affecting_amt, FALSE)
 				for(var/obj/item/I in touchable_atoms)
@@ -42,7 +42,7 @@
 						continue
 					if(reagents.total_volume)
 						reagents.trans_to(I, affecting_amt, 1, FALSE)
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() reagents updates.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 		for(var/mob/living/L in contents)
 			vore_fx(L, reagents.total_volume)
 	if(owner.previewing_belly == src)
@@ -58,9 +58,9 @@
 	for(var/reagent in generated_reagents)
 		reagents.add_reagent(reagent, generated_reagents[reagent], was_from_belly = TRUE)
 	if(count_liquid_for_sprite)
-		owner.handle_belly_update() //This is run whenever a belly's contents are changed.
+		PUBLISH(owner, belly_change) //This is run whenever a belly's contents are changed.
 	if(LAZYLEN(belly_surrounding))
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() reagents updates.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 
 //////////////////////////// REAGENT_DIGEST ////////////////////////
 
@@ -328,7 +328,7 @@
 
 /obj/belly/proc/update_internal_overlay()
 	if(LAZYLEN(belly_surrounding))
-		OM_EMIT(src, /datum/om/event/before/belly_update_vore_fx, reagents.total_volume) // Signals vore_fx() to listening atoms. Atoms must handle appropriate isliving() checks.
+		PUBLISH_LEGACY(src, /datum/notice/belly_update_vore_fx, reagents.total_volume)
 	for(var/A in belly_surrounding)
 		if(isliving(A))
 			vore_fx(A)
@@ -340,7 +340,7 @@
 
 /obj/belly/state_post_apply(list/blob, flags)
 	..()
-	if(!chemistry_service().chemical_reagents[reagentid])
+	if(!SSchemistry.ready().chemical_reagents[reagentid])
 		to_chat(owner, span_warning("Belly reagent with ID \"[reagentid]\" not found, please reselect your liquid reagent"))
 		reagentid = REAGENT_ID_WATER
 		generated_reagents = list(REAGENT_ID_WATER = 1)

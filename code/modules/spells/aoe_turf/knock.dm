@@ -15,7 +15,7 @@
 /datum/spell/aoe_turf/knock/cast(list/targets)
 	for(var/turf/T in targets)
 		for(var/obj/machinery/door/door in contents_of(T))
-			om_after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
+			after(door, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
 	return
 
 
@@ -23,5 +23,5 @@
 /obj/machinery/door/proc/knocked_open()
 	if(istype(src, /obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/AL = src //casting is important
-		cap_set(AL, CAP_BOLTED, FALSE)
+		set_bolted(AL, FALSE, TRUE)
 	open()

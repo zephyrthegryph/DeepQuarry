@@ -2,7 +2,7 @@ SYSTEM_DEF(robot_sprites)
 	name = "Robot Sprites"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/garbage
+		/datum/system/garbage
 	)
 	var/list/all_cyborg_sprites = list()
 	var/list/cyborg_sprites_by_module = list()
@@ -30,7 +30,7 @@ SYSTEM_DEF(robot_sprites)
 		var/datum/robot_sprite/RS = new spath()
 
 		if(!RS.name || !RS.module_type)			// We're a technical kinda datum
-			qdel(RS)
+			spent(RS)
 			continue
 
 		all_cyborg_sprites |= RS
@@ -129,12 +129,12 @@ SYSTEM_DEF(robot_sprites)
 	for(var/sprite in test_sprites)
 		var/datum/robot_sprite/RS = new()
 		all_test_sprites += RS
-		RS.sprite_flags = 0
-		RS.rest_sprite_options = list()
-		RS.sprite_icon = test_sprites[sprite]
+		RS.set_sprite_flags(0)
+		RS.set_rest_sprite_options(list())
+		RS.set_sprite_icon(test_sprites[sprite])
 		var/splitted = splittext(sprite, "_")
 		RS.name = splitted[1]
-		RS.sprite_icon_state = splitted[1]
+		RS.set_sprite_icon_state(splitted[1])
 		splitted = splittext(splitted[2], "x")
 		RS.pixel_x = (32 - text2num(splitted[1])) / 2
 		RS.icon_x = text2num(splitted[1])
@@ -158,7 +158,7 @@ SYSTEM_DEF(robot_sprites)
 			if(findtext(icon, regex("^decals")))
 				var/list/decals = splittext(icon, "_")
 				decals -= "decals"
-				LAZYOR(RS.sprite_decals, decals)
+				RS.include_sprite_decals(decals)
 				continue
 			// special overlays that also can be used as animations, as some names have - in them, seperated by _
 			if(findtext(icon, regex("^animations")))
@@ -168,78 +168,78 @@ SYSTEM_DEF(robot_sprites)
 				continue
 			// Check for all the possible overlays
 			if(findtext(icon, regex("-roll")))
-				RS.sprite_flags |= ROBOT_HAS_SPEED_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_SPEED_SPRITE)
 				continue
 			if(findtext(icon, regex("-shield")))
-				RS.sprite_flags |= ROBOT_HAS_SHIELD_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_SHIELD_SPRITE)
 				continue
 			if(findtext(icon, regex("-speed_shield")))
-				RS.sprite_flags |= ROBOT_HAS_SHIELD_SPEED_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_SHIELD_SPEED_SPRITE)
 				continue
 			if(findtext(icon, regex("-melee",)))
-				RS.sprite_flags |= ROBOT_HAS_MELEE_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_MELEE_SPRITE)
 				continue
 			if(findtext(icon, regex("-dagger")))
-				RS.sprite_flags |= ROBOT_HAS_DAGGER_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_DAGGER_SPRITE)
 				continue
 			if(findtext(icon, regex("-blade")))
-				RS.sprite_flags |= ROBOT_HAS_BLADE_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_BLADE_SPRITE)
 				continue
 			if(findtext(icon, regex("-gun")))
-				RS.sprite_flags |= ROBOT_HAS_GUN_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_GUN_SPRITE)
 				continue
 			if(findtext(icon, regex("-laser")))
-				RS.sprite_flags |= ROBOT_HAS_LASER_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_LASER_SPRITE)
 				continue
 			if(findtext(icon, regex("-taser")))
-				RS.sprite_flags |= ROBOT_HAS_TASER_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_TASER_SPRITE)
 				continue
 			if(findtext(icon, regex("-disabler")))
-				RS.sprite_flags |= ROBOT_HAS_DISABLER_SPRITE
+				RS.set_sprite_flags(RS.sprite_flags | ROBOT_HAS_DISABLER_SPRITE)
 				continue
 			if(findtext(icon, regex("-rest-eyes")))
-				RS.has_rest_eyes_sprites = TRUE
+				RS.set_has_rest_eyes_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-eyes")))
-				RS.has_eye_sprites = TRUE
+				RS.set_has_eye_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-rest-lights")))
-				RS.has_rest_lights_sprites = TRUE
+				RS.set_has_rest_lights_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-lights")))
-				RS.has_eye_light_sprites = TRUE
+				RS.set_has_eye_light_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-decals")))
-				LAZYOR(RS.sprite_decals, list("decals"))
+				RS.include_sprite_decals(list("decals"))
 				continue
 			if(findtext(icon, regex("-struggle")))
 				RS.has_vore_struggle_sprite = TRUE
 				continue
 			if(findtext(icon, regex("-openpanel_w")))
-				RS.has_custom_open_sprites = TRUE
+				RS.set_has_custom_open_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-glow")))
-				RS.has_glow_sprites = TRUE
+				RS.set_has_glow_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-\\d-rest")))
-				RS.has_vore_belly_resting_sprites = TRUE
+				RS.set_has_vore_belly_resting_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-\\d-sit")))
-				RS.has_vore_belly_resting_sprites = TRUE
+				RS.set_has_vore_belly_resting_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-\\d-bellyup")))
-				RS.has_vore_belly_resting_sprites = TRUE
+				RS.set_has_vore_belly_resting_sprites(TRUE)
 				continue
 			if(findtext(icon, regex("-\\d-\[a-z\]$")))
 				var/list/belly = splittext(icon, "-")
 				var/capacity = text2num(belly[3])
 				if(!RS.belly_light_list)
-					RS.belly_light_list = list()
+					RS.set_belly_light_list(list())
 				if(isnum(capacity))
 					if(!LAZYACCESS(RS.belly_light_list, belly[2]))
-						LAZYSET(RS.belly_light_list, belly[2], capacity)
+						RS.set_belly_light_list_at(belly[2], capacity)
 					else if(LAZYACCESS(RS.belly_light_list, belly[2]) < capacity)
-						LAZYSET(RS.belly_light_list, belly[2], capacity)
+						RS.set_belly_light_list_at(belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-\\d$")))
 				var/list/belly = splittext(icon, "-")
@@ -253,22 +253,22 @@ SYSTEM_DEF(robot_sprites)
 						LAZYSET(RS.belly_capacity_list, belly[2], capacity)
 				continue
 			if(findtext(icon, regex("-sit")))
-				RS.has_rest_sprites = TRUE
-				RS.rest_sprite_options |= list("Sit")
+				RS.set_has_rest_sprites(TRUE)
+				RS.include_rest_sprite_options(list("Sit"))
 				continue
 			if(findtext(icon, regex("-rest")))
-				RS.has_rest_sprites = TRUE
-				RS.rest_sprite_options |= list("Default")
+				RS.set_has_rest_sprites(TRUE)
+				RS.include_rest_sprite_options(list("Default"))
 				continue
 			if(findtext(icon, regex("-bellyup")))
-				RS.has_rest_sprites = TRUE
-				RS.rest_sprite_options |= list("Bellyup")
+				RS.set_has_rest_sprites(TRUE)
+				RS.include_rest_sprite_options(list("Bellyup"))
 				continue
 			if(findtext(icon, regex("-wreck")))
-				RS.has_dead_sprite = TRUE
+				RS.set_has_dead_sprite(TRUE)
 				continue
 			if(findtext(icon, regex("wreck-overlay")))
-				RS.has_dead_sprite_overlay = TRUE
+				RS.set_has_dead_sprite_overlay(TRUE)
 				continue
 		// We want to test it, so just give it all if there were non defined in the dmi
 		if(!RS.module_type)
@@ -317,7 +317,7 @@ SYSTEM_DEF(robot_sprites)
 				if(RS.module_type in cyborg_sprites_by_module)
 					cyborg_sprites_by_module[RS.module_type] -= RS
 		all_test_sprites -= RS
-		qdel(RS)
+		spent(RS)
 
 /datum/system/robot_sprites/proc/reload_test_sprites()
 	clear_test_sprites()

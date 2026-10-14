@@ -65,9 +65,9 @@ BONUS
 		if(1)
 			to_chat(M, span_notice("You feel bloated."))
 
-			if(!M.has_status(EFFECT_JITTERY))
+			if(!M.has_status(STAT_JITTERY))
 				to_chat(M, span_notice("You feel a bit jittery."))
-				M.status_adjust(EFFECT_JITTERY, 100 + rand(12,16))
+				M.status_adjust(STAT_JITTERY, 100 + rand(12,16))
 
 		if(2)
 			if(ishuman(M))
@@ -96,7 +96,7 @@ BONUS
 		return
 	var/mob/living/M = A.host
 	act_message(M, null, others = span_danger("%U% starts swelling grotesquely!"))
-	om_after(src, 10 SECONDS, PROC_REF(pop), A, M)
+	after(src, 10 SECONDS, PROC_REF(pop), with = list(A, M))
 
 /datum/viral_trait/blobspores/proc/pop(datum/affliction/contagion/engineered/A, mob/living/M)
 	if(!A || !M)

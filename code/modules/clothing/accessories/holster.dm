@@ -10,7 +10,7 @@
 	w_class = ITEMSIZE_NORMAL
 
 /// Holsters take holsterable things; sheaths and special holsters list what they take.
-TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_HOLSTERABLE), "it isn't made for a holster")))
+
 
 /obj/item/clothing/accessory/holster/proc/holster(obj/item/I, mob/living/user)
 	if(holstered && istype(user))
@@ -25,15 +25,15 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 	if(istype(user))
 		user.stop_aiming(no_message=1)
-	if(!own_set(src, nameof(src.holstered), I, user = user))
+	if(!move_into(src, nameof(src.holstered), I, user))
 		return
 	holstered.add_fingerprint(user)
-	w_class = max(w_class, holstered.w_class)
+	set_w_class(max(w_class, holstered.w_class))
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	own_take(src, nameof(holstered))
+	rel_take(src, nameof(holstered))
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.
@@ -70,29 +70,32 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 		user.put_in_hands(holstered)
 		holstered.add_fingerprint(user)
-		w_class = initial(w_class)
+		set_w_class(initial(w_class))
 		clear_holster()
 
 //YW change start
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Draw", PROC_REF(holster_draw_hand)), \
-	INTERACT_ITEM(null, PROC_REF(holster_item)), \
-	INTERACT_VERB("Holster", PROC_REF(holster_quick_holster_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/holster)
+	acceptance("hold", req_acceptance_tag(TAG_HOLSTERABLE, because = "it isn't made for a holster"), mode = ACCEPTANCE_REPLACE)
+	op("holster_draw_hand", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), then(PROC_REF(holster_draw_hand)))
+	op("holster_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Holster item"), then(PROC_REF(holster_item)))
+	op("holster_quick_holster_verb", menu(), label("Holster"), needs(carried()), then(PROC_REF(holster_quick_holster_verb)))
 
 /// Old attack_hand: draw from an attached holster in combat mode.
-/obj/item/clothing/accessory/holster/proc/holster_draw_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_draw_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit
 		if (holstered)
-			unholster(user, interaction.stance)
-		return TRUE
-	return FALSE
+			unholster(user, I_HURT)
+		return OP_OK
+	return OP_DECLINE
 //YW change end
 
 /// Old attackby: holster the item.
-/obj/item/clothing/accessory/holster/proc/holster_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	holster(W, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/holster/examine(mob/user)
 	. = ..(user)
@@ -103,7 +106,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 
 // The uniform it is attached to offers "Holster" too (/obj/item/clothing/under, clothing.dm).
 /// Old verb "Holster".
-/obj/item/clothing/accessory/holster/proc/holster_quick_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_quick_holster_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -115,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 			return
 		H.holster(W, user)
 	else
-		H.unholster(user, interaction.stance)
+		H.unholster(user, I_HELP)
 
 /obj/item/clothing/accessory/holster/armpit
 	name = "armpit holster"
@@ -167,7 +171,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	name = "KA holster"
 	desc = "A specialized holster, made specifically for Kinetic Accelerators."
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/energy/kinetic_accelerator))))
+
 
 /obj/item/clothing/accessory/holster/waist/lanyard
 	name = "baton lanyard"
@@ -175,50 +179,42 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator, hold_
 	icon_state = "holster_lanyard"
 	overlay_state = "holster_lanyard"
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/lanyard, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/melee/baton, \
-		/obj/item/melee/classic_baton, \
-		/obj/item/melee/telebaton \
-		))))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier
 	name = "rapier sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 	icon_state = "sheath"
-	slot_flags = SLOT_BELT|ACCESSORY_SLOT_WEAPON
 	var/has_full_icon = 1
 	overlay_state = "sheath"
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/rapier))))
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
+	acceptance("hold", req_acceptance_type(list(/obj/item/melee/rapier), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(slots = SLOT_BELT|ACCESSORY_SLOT_WEAPON))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords
 	name = "sword sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/melee/rapier, \
-		/obj/item/material/sword/katana, \
-		/obj/item/toy/cultsword, \
-		/obj/item/material/sword, \
-		/obj/item/melee/cursedblade, \
-		/obj/item/melee/cultblade \
-		))))
+
 
 /obj/item/clothing/accessory/holster/machete/rapier/proc/occupied()
 	if(!has_full_icon)
 		return
 	if(contents_count(src))
-		overlay_state = "[initial(overlay_state)]-rapier"
+		set_overlay_state("[initial(overlay_state)]-rapier")
 	else
-		overlay_state = initial(overlay_state)
+		set_overlay_state(initial(overlay_state))
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords/occupied()
 	if(!has_full_icon)
 		return
 	if(contents_count(src))
-		overlay_state = "[initial(overlay_state)]-secondary"
+		set_overlay_state("[initial(overlay_state)]-secondary")
 	else
-		overlay_state = initial(overlay_state)
+		set_overlay_state(initial(overlay_state))
 
 /obj/item/clothing/accessory/holster/machete/rapier/holster(obj/item/I, mob/living/user)
 	..()
@@ -254,8 +250,20 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 	icon_state = "instrument"
 	concealed_holster = 0
 
-TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
+
 
 /obj/item/clothing/accessory/holster/ownership()
 	. = ..()
 	. += owns(nameof(holstered), policy = OWN_CONTAINED)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator)
+	acceptance("hold", req_acceptance_type(list(/obj/item/gun/energy/kinetic_accelerator), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/waist/lanyard)
+	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/baton,  /obj/item/melee/classic_baton,  /obj/item/melee/telebaton  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier/swords)
+	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/rapier,  /obj/item/material/sword/katana,  /obj/item/toy/cultsword,  /obj/item/material/sword,  /obj/item/melee/cursedblade,  /obj/item/melee/cultblade  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/case)
+	acceptance("hold", req_acceptance_type(list(/obj/item/instrument), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

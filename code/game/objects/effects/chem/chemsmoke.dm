@@ -7,11 +7,13 @@
 	time_to_live = 300
 	pass_flags = PASSTABLE | PASSGRILLE | PASSGLASS //PASSGLASS is fine here, it's just so the visual effect can "flow" around glass
 
-DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
+CAPABILITIES(/obj/effect/effect/smoke/chem)
+	after_init(0, then(PROC_REF(init_wake_hydroponics)))
+	reagents(500)
 
-/obj/effect/effect/smoke/chem/Initialize(mapload)
-	. = ..()
+/obj/effect/effect/smoke/chem/proc/init_wake_hydroponics(datum/act/timer/A)
 	wake_nearby_hydroponics()
+
 
 /obj/effect/effect/smoke/chem/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -22,7 +24,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /obj/effect/effect/smoke/chem/proc/wake_nearby_hydroponics()
 	for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(1, src))
-		MACHINE_WAKE(tray)
+		work_start(tray)
 
 /obj/effect/effect/smoke/chem/transparent
 	opacity = FALSE
@@ -37,6 +39,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	var/list/wallList
 	var/density
 	var/show_log = 1
+
+CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
+	owns_one(nameof(chemholder), /obj)
 
 /datum/effect/effect/system/smoke_spread/chem/spores
 	show_log = 0
@@ -54,7 +59,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /datum/effect/effect/system/smoke_spread/chem/New()
 	..()
-	own_set(src, nameof(chemholder), new/obj())
+	rel_set(src, nameof(chemholder), new/obj())
 	chemholder.create_reagents(500)
 
 
@@ -115,6 +120,8 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 // Also calculates target locations to spawn the visual smoke effect on, so the whole area
 // is covered fairly evenly.
 /datum/effect/effect/system/smoke_spread/chem/start()
+	// A one-shot: it is thrown away after the call, nothing else holds it, and the owned reagent holder ends with it.
+	expire(0)
 	if(!get_location())
 		return
 
@@ -185,22 +192,23 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	if(initial(smoke.opacity))
 		smoke.set_opacity(1)		//switching opacity on after the smoke has spawned, and then
 	var/lifespan = 150 + rand(0, 20)
-	om_after(src, lifespan, PROC_REF(fadeOut), smoke)
+	// the smoke fades on its own timer: the system that made it is done once start() returns and is not kept for its clouds
+	after(smoke, lifespan, TYPE_PROC_REF(/obj/effect/effect/smoke/chem, fade_out))
 
 /datum/effect/effect/system/smoke_spread/chem/spores/spawnSmoke(turf/T, icon/I, dist = 1)
 	var/obj/effect/effect/smoke/chem/spores = new /obj/effect/effect/smoke/chem(get_location())
 	spores.name = "cloud of [seed().seed_name] [seed().seed_noun]"
 	..(T, I, dist, spores)
 
-/datum/effect/effect/system/smoke_spread/chem/proc/fadeOut(atom/A, frames = 16) // Fades out the smoke smoothly using it's alpha variable.
-	A.set_opacity(0)		// lighting and view range updates
-	if(A.alpha == 0) //Handle already transparent case
-		qdel(A)
+/obj/effect/effect/smoke/chem/proc/fade_out(frames = 16) // Fades out the smoke smoothly using it's alpha variable.
+	set_opacity(0)		// lighting and view range updates
+	if(alpha == 0) //Handle already transparent case
+		spent(src)
 		return
 	if(frames == 0)
 		frames = 1 //We will just assume that by 0 frames, the coder meant "during one frame".
-	animate(A, alpha = 0, time = frames)
-	om_qdel_after(A, frames)
+	animate(src, alpha = 0, time = frames)
+	expire(frames)
 
 /datum/effect/effect/system/smoke_spread/chem/proc/smokeFlow() // Smoke pathfinder. Uses a flood fill method based on zones to quickly check what turfs the smoke (airflow) can actually reach.
 

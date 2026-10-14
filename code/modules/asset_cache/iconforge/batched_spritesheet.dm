@@ -143,7 +143,7 @@
 	if(should_load_immediately())
 		realize_spritesheets(yield = FALSE)
 	else
-		GLOB.asset_loading_service.queue_asset(src)
+		SSasset_loading.queue_asset(src)
 
 /datum/asset/spritesheet_batched/unregister()
 	CRASH("unregister() called on batched spritesheet! Bad!")
@@ -181,12 +181,12 @@
 		if(cache_result == CACHE_WAIT) // sleep interrupted by MC. We'll get queried again later.
 			cache_result = null
 			finish_queued_generation()
-			GLOB.asset_loading_service.queue_asset(src)
+			SSasset_loading.queue_asset(src)
 			return
 
 	// read_from_cache returns false if config is disabled, otherwise it fully loads the spritesheet.
 	if (cache_result == CACHE_VALID && read_from_cache())
-		GLOB.asset_loading_service.dequeue_asset(src)
+		SSasset_loading.dequeue_asset(src)
 		fully_generated = TRUE
 		finish_queued_generation()
 		return
@@ -238,7 +238,7 @@
 	fully_generated = TRUE
 	finish_queued_generation()
 	// If we were ever in there, remove ourselves
-	GLOB.asset_loading_service.dequeue_asset(src)
+	SSasset_loading.dequeue_asset(src)
 	if(data["error"] && !(ignore_dir_errors && findtext(data["error"], "is not in the set of valid dirs")))
 		CRASH("Error during spritesheet generation for [name]: [data["error"]]")
 
@@ -246,14 +246,14 @@
 	if(queued_generation_active)
 		return
 	queued_generation_active = TRUE
-	GLOB.asset_loading_service.assets_generating++
+	SSasset_loading.assets_generating++
 	INVOKE_ASYNC(src, PROC_REF(realize_spritesheets), TRUE) // The proc is called inside a subsystem and waits with an UNTIL // ALLOW(scheduler): realize_spritesheets waits with UNTIL
 
 /datum/asset/spritesheet_batched/proc/finish_queued_generation()
 	if(!queued_generation_active)
 		return
 	queued_generation_active = FALSE
-	GLOB.asset_loading_service.assets_generating = max(GLOB.asset_loading_service.assets_generating - 1, 0)
+	SSasset_loading.assets_generating = max(SSasset_loading.assets_generating - 1, 0)
 
 /datum/asset/spritesheet_batched/ensure_ready()
 	// A queued async generation may be in flight: wait for that job instead of

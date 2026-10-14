@@ -1,0 +1,5 @@
+/obj/structure/inflatable/door icon: icons/obj/inflatable.dmi
+/obj/structure/inflatable/door state: door_closed
+/obj/structure/inflatable/door dir: 2
+/obj/structure/inflatable/door overlay: icons/obj/inflatable.dmi:door_closed:8:#000000
+

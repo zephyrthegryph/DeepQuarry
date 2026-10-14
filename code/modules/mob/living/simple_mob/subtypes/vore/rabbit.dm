@@ -41,7 +41,6 @@
 	vore_default_mode = DM_HOLD
 	vore_icons = SA_ICON_LIVING
 
-	allow_mind_transfer = TRUE
 
 	var/body_color 				//brown, black and white, leave blank for random
 
@@ -49,25 +48,18 @@
 	EXPIRY_DECLARE(last_pet) // This tracks the last time someone patted us.
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
-/mob/living/simple_mob/vore/rabbit/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 
-	if(!body_color)
-		body_color = pick( list("brown","black","white") )
-	icon_state = "rabbit_[body_color]" // ALLOW(decl): random colour pick
-	item_state = "rabbit_[body_color]"
-	icon_living = "rabbit_[body_color]"
-	icon_dead = "rabbit_[body_color]_dead"
-	icon_rest = "rabbit_[body_color]_rest"
+/mob/living/simple_mob/vore/rabbit/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/rabbit
-	of = /mob/living/simple_mob/vore/rabbit
-
-/datum/om/stage/life/type_post/simple_mob/vore/rabbit/perform(mob/living/simple_mob/vore/rabbit/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/rabbit/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(self.grumpiness > 0 && self.last_pet > (world.time + self.grump_decay))
-		self.grumpiness = max(0, self.grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
+	if(src.grumpiness > 0 && src.last_pet > (world.time + src.grump_decay))
+		src.grumpiness = max(0, src.grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
 
 /mob/living/simple_mob/vore/rabbit/examine(mob/user)
 	. = ..()
@@ -98,7 +90,7 @@
 /mob/living/simple_mob/vore/rabbit/load_default_bellies()
 	. = ..()
 
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a sudden pounce, the rabbit begins swallowing you down with ease! A pink maw and surprisingly unintimidating teeth give way to the thing's pink, tight throat, until you're crammed down inside it's gut! Unless you happen to be drastically smaller than it, the inside of this thing's gut is incredibly cramped, as the fleshy pink walls undulate over your form. It's clearly still able to move with you inside somehow, despite the tiny size of the thing, as gastric sounds flood your ears. You've been bested by a RABBIT of all things!"
 	B.vore_sound = "Tauric Swallow"
@@ -165,8 +157,9 @@
 
 	say_list_type = /datum/say_list/rabbit
 
-DAMAGE_REACTION(/mob/living/simple_mob/vore/rabbit/killer, DAMAGE_EXPLOSION, PROC_REF(blast_gib))
+CAPABILITIES(/mob/living/simple_mob/vore/rabbit/killer)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_gib))))
 
-/mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/damage_packet/packet)
+/mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/act/A)
 	gib()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE

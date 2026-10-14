@@ -20,14 +20,16 @@
 	/// Maximum teleports it will do before going away permanently
 	var/maximum_teleports = 4
 
-/obj/effect/anomaly/dimensional/Initialize(mapload, new_lifespan, drops_core)
+CAPABILITIES(/obj/effect/anomaly/dimensional)
+	owns_one(nameof(theme), /datum/dimension_theme)
+	rolls(nameof(teleports_left), PROC_REF(roll_teleports))
+
+/obj/effect/anomaly/dimensional/Initialize(mapload)
 	. = ..()
 	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)
 	animate(transform = matrix(), time = 3, loop = -1)
-
-	teleports_left = rand(minimum_teleports, maximum_teleports)
 
 /obj/effect/anomaly/dimensional/anomalyEffect(seconds_per_tick)
 	. = ..()
@@ -54,7 +56,7 @@
 	if(!new_theme_path)
 		new_theme_path = pick(subtypesof(/datum/dimension_theme))
 
-	own_set(src, nameof(theme), new new_theme_path)
+	rel_set(src, nameof(theme), new new_theme_path)
 
 	apply_theme_icon()
 
@@ -80,7 +82,7 @@
 	prepare_area()
 
 /obj/effect/anomaly/dimensional/detonate()
-	qdel(src)
+	consume(src)
 
 /obj/effect/temp_visual/transmute_tile_flash
 	icon = 'icons/effects/effects.dmi'
@@ -111,4 +113,6 @@
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)
 
-
+/// Rolled before init (rolls()): how many times it teleports.
+/obj/effect/anomaly/dimensional/proc/roll_teleports(datum/roller/R)
+	return R.number(minimum_teleports, maximum_teleports)

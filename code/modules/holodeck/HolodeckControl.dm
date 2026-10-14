@@ -5,7 +5,6 @@
 	icon_screen = "holocontrol"
 
 	use_power = USE_POWER_IDLE
-	active_power_usage = 8000 //8kW for the scenery + 500W per holoitem
 	var/item_power_usage = 500
 
 	var/tmp/area/linkedholodeck
@@ -75,23 +74,24 @@
 	"Wildlife Simulation" 		= new/datum/holodeck_program(/area/holodeck/source_wildlife, list())
 	)
 
-/obj/machinery/computer/HolodeckControl/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
 /**
  * Open the UI!
  */
-DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 
 /**
  * Data for the TGUI UI
  */
-UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program:text", "safetyDisabled=safety_disabled:num", "merge:ui_data_obj_machinery_computer_HolodeckControl{supportedPrograms:list,restrictedPrograms:list,isSilicon:bool,emagged:num,gravity:bool}")
+/obj/machinery/computer/HolodeckControl/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["currentProgram"] = current_program
+	data["safetyDisabled"] = safety_disabled
+	var/list/merged_1 = ui_data_obj_machinery_computer_HolodeckControl(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/HolodeckControl's window data.
 /obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/program_list = list()
@@ -109,57 +109,55 @@ UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program
 	if(issilicon(user))
 		data["isSilicon"] = TRUE
 
-	data["emagged"] = emagged
+	data["emagged"] = emagged()
 	data["gravity"] = FALSE
 	if(linkedholodeck().get_gravity())
 		data["gravity"] = TRUE
 
 	return data
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "program", ui_act_program, UI_ARG_TEXT("program"))
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_program)
-	var/prog = params["program"]
+/obj/machinery/computer/HolodeckControl/proc/ui_act_program(datum/act/op/A, program)
+	var/prog = program
 	if(prog in (supported_programs + restricted_programs))
 		if(loadProgram(prog))
 			current_program = prog
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "AIoverride", ui_act_aioverride)
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_aioverride)
-	if(!issilicon(ui.user))
+/obj/machinery/computer/HolodeckControl/proc/ui_act_aioverride(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		return
 
-	if(safety_disabled && emagged)
+	if(safety_disabled && emagged())
 		return //if a traitor has gone through the trouble to emag the thing, let them keep it.
 
 	safety_disabled = !safety_disabled
 	update_projections()
 	if(safety_disabled)
-		message_admins("[key_name_admin(ui.user)] overrode the holodeck's safeties")
-		log_game("[key_name(ui.user)] overrided the holodeck's safeties")
+		message_admins("[key_name_admin(user)] overrode the holodeck's safeties")
+		log_game("[key_name(user)] overrided the holodeck's safeties")
 	else
-		message_admins("[key_name_admin(ui.user)] restored the holodeck's safeties")
-		log_game("[key_name(ui.user)] restored the holodeck's safeties")
+		message_admins("[key_name_admin(user)] restored the holodeck's safeties")
+		log_game("[key_name(user)] restored the holodeck's safeties")
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "gravity", ui_act_gravity)
-UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_gravity)
+/obj/machinery/computer/HolodeckControl/proc/ui_act_gravity(datum/act/op/A)
 	toggleGravity(linkedholodeck())
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_emag), null)
-/obj/machinery/computer/HolodeckControl/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/HolodeckControl/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	rel_set(src, nameof(last_to_emag), user) //emag again to change the owner
-	if (!emagged)
+	if (!emagged())
 		set_emagged(1)
 		safety_disabled = 1
 		update_projections()
 		to_chat(user, span_notice("You vastly increase projector power and override the safety and security protocols."))
 		to_chat(user, "Warning.  Automatic shutoff and derezing protocols have been corrupted.  Please call [using_map.company_name] maintenance and do not use the simulator.")
 		log_game("[key_name(user)] emagged the Holodeck Control Computer")
-		return 1
-	return
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/computer/HolodeckControl/proc/update_projections()
 	if (safety_disabled)
@@ -186,29 +184,36 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
-/obj/machinery/computer/HolodeckControl/relations()
-	. = ..()
-	. += rel_many(nameof(holographic_objs))
-	. += rel_many(nameof(holographic_mobs))
+CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	configure(uses_power(active = 8000))
+	started_work(step = PROC_REF(work_step))
+	ref_many(nameof(holographic_objs))
+	ref_many(nameof(holographic_mobs))
+	interface("Holodeck")
+	without("ui_open")
+	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
+	op("AIoverride", ui_act("AIoverride"), then(PROC_REF(ui_act_aioverride)))
+	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(holodeck_blast_shutdown)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()
 	..()
 
-DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_REF(holodeck_blast_shutdown))
 
 /// A blast shuts the holodeck down.
-/obj/machinery/computer/HolodeckControl/proc/holodeck_blast_shutdown(datum/damage_packet/packet)
+/obj/machinery/computer/HolodeckControl/proc/holodeck_blast_shutdown(datum/act/A)
 	emergencyShutdown()
 
 /obj/machinery/computer/HolodeckControl/power_change()
 	. = ..()
-	if (. && active && (has_stat(NOPOWER)))
+	if (. && active && (power_lost()))
 		emergencyShutdown()
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
 /// otherwise it sleeps until a program loads (its UI).
-/obj/machinery/computer/HolodeckControl/machine_step()
+/obj/machinery/computer/HolodeckControl/proc/work_step(datum/act/timer/A)
 	if(!active && !length(holographic_objs) && !length(holographic_mobs))
 		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.
@@ -253,7 +258,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	if(!silent)
 		var/obj/oldobj = obj
 		visible_message("The [oldobj.name] fades away!")
-	qdel(obj)
+	spent(obj)
 
 /obj/machinery/computer/HolodeckControl/proc/checkInteg(area/A)
 	for(var/turf/T in area_contents_of_type(A, /turf))
@@ -312,10 +317,10 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
-		qdel(B)
+		spent(B, src)
 
 	for(var/obj/effect/landmark/L in linkedholodeck())
-		qdel(L)
+		spent(L, src)
 
 	// The program's objects are cloned into the room (entity_clone, via copy_contents_to()); the
 	// holodeck tracks them in a relation roster and derezzes them itself (derez()) on the next
@@ -338,22 +343,22 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	linkedholodeck().sound_env = A.sound_env
 
 	if(prog == powerdown_program)
-		linkedholodeck().requires_power = TRUE
+		linkedholodeck().set_requires_power(TRUE)
 	else
-		linkedholodeck().requires_power = FALSE
+		linkedholodeck().set_requires_power(FALSE)
 	linkedholodeck().power_change()
 
 	for(var/obj/effect/landmark/L in linkedholodeck())
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
-			om_after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), get_turf(L))
+			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)))
 		if(L.name=="Holocarp Spawn")
 			rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
 				rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
-		qdel(L)
+		spent(L, src)
 
 		update_projections()
 
@@ -396,7 +401,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
 	fx_sparks(T, 2)
 	if(T)
-		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
+		heat_set_solid(T, 5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)
 
 /// the linkedholodeck this refers to (a relation view: it reads null once the target is deleted).

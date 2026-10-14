@@ -23,9 +23,6 @@
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost
 	var/block_percentage = 75
 
-/obj/item/clothing/suit/armor/shield/Initialize(mapload)
-	. = ..()
-
 /obj/item/clothing/suit/armor/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//Since this is a pierce of armor that is passive, we do not need to check if the user is incapacitated.
 	if(!active)
@@ -42,16 +39,15 @@
 
 	if(!user.technomancer_pay_energy(damage_to_energy_cost))
 		to_chat(user, span_danger("Your shield fades due to lack of energy!"))
-		active = 0
-		update_icon()
+		set_active(FALSE)
 		return 0
 
 	damage = damage - damage_blocked
 
 	if(istype(damage_source, /obj/item/projectile))
 		var/obj/item/projectile/P = damage_source
-		P.sharp = FALSE
-		P.edge = FALSE
+		P.set_sharp(FALSE)
+		P.set_edge(FALSE)
 		P.embed_chance = 0
 		if(P.agony)
 			var/agony_blocked = P.agony * (modified_block_percentage / 100)
@@ -65,24 +61,25 @@
 	play_sfx(src, SFX_WEAPONS_BLADE1)
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle", PROC_REF(shield_armor_toggle_self)))
+CAPABILITIES(/obj/item/clothing/suit/armor/shield)
+	op("shield_armor_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(shield_armor_toggle_self)))
 
 /// Old attack_self.
-/obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+/obj/item/clothing/suit/armor/shield/proc/shield_armor_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
-	update_icon()
-	user.update_inv_wear_suit()
+	changed(src)
 	user.update_mob_action_buttons()
 
-DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/shield, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/clothing/suit/armor/shield/appearance_overlays()
-	. = list()
-	icon_state = "shield_armor_[active]"
-	item_state = "shield_armor_[active]"
+TRACKED(/obj/item/clothing/suit/armor/shield, active)
+
+/// Lit while the shield is up; the worn suit follows through the held state.
+/obj/item/clothing/suit/armor/shield/draw(datum/look/look)
+	..()
+	look.state("shield_armor_[active]")
+	look.held_state("shield_armor_[active]")
 	if(active)
-		set_light(2, 1, l_color = "#006AFF")
+		look.glow(2, 1, "#006AFF")
 	else
-		set_light(0, 0, l_color = "#000000")
-	. += ..()
-	return .
+		look.glow(GLOW_OFF)

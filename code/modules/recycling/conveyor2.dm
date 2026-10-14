@@ -14,59 +14,65 @@
 	plane = OBJ_PLANE
 	layer = STAIRS_LAYER
 	anchored = TRUE
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/conveyor
 	var/operating = OFF	// 1 if running forward, -1 if backwards, 0 if off
 	var/operable = 1	// true if can operate (no broken segments in this belt run)
 	var/forwards		// this is the default (forward) direction, set by the map dir
 	var/backwards		// hopefully self-explanatory
-	var/movedir			// the actual direction to move stuff in
 
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
 
-/// set_operating() below is the hand setter; it raises CHANGE_MACHINE_SETTINGS on a real change.
-OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/conveyor, operating)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("operating", "operable"))
-
 /obj/machinery/conveyor/centcom_auto
 	id = "round_end_belt"
 
 	// create a conveyor
-/obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
+CAPABILITIES(/obj/machinery/conveyor)
+	configure(uses_power(active = 100))
+	on_change(nameof(operating), ANY, then(PROC_REF(operating_changed)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
+	param(nameof(dir), pos = 1, overrides = TRUE)
+	param(nameof(starts_on), pos = 2)
+	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
+	// a cyborg's module never drops onto the belt: its item click is taken and nothing happens
+	// the multitool sets the id behind an open panel; with the panel shut it takes the click and does nothing
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/text/conveyor_id, fields = list("question" = "What id would you like to give this conveyor?", "title" = "Multitool-Conveyor interface", "default" = nameof(id))),
+		then(PROC_REF(conveyor_id_answered)))
+	op("conveyor_drop_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Drop on belt"), then(PROC_REF(interaction_drop_item)))
+	op("conveyor_push_pulled", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Push pulled object"), then(PROC_REF(interaction_push_pulled)))
+
+/// A conveyor that starts running (its constructor param).
+/obj/machinery/conveyor/var/starts_on = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a conveyor watches what enters its turf, sets its belt direction and parts, and may start running
+/obj/machinery/conveyor/Initialize(mapload)
 	. = ..()
 	if(loc)
-		om_hook(loc, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
-	if(newdir)
-		set_dir(newdir)
-
+		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 	update_dir()
 
-	if(on)
+	if(starts_on)
 		set_operating(FORWARDS)
 
 	default_apply_parts()
 
-// Switches find their conveyors (and each other) by id: keyed relations, linked when either end
-// materializes; a dying conveyor leaves every switch's list by itself.
-/obj/machinery/conveyor/relations()
-	. = ..()
-	. += rel_key(nameof(id))
-
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
-		om_unhook(old_loc, /datum/om/event/atom_entered, src)
+		unobserve(old_loc, /datum/notice/atom_entered, src)
 	. = ..()
 	if(loc)
-		om_hook(loc, /datum/om/event/atom_entered, src, PROC_REF(on_turf_entered))
+		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 
-/obj/machinery/conveyor/proc/on_turf_entered(datum/source, datum/om/event/atom_entered/event)
-	EVENT_HANDLER
+/obj/machinery/conveyor/proc/on_turf_entered(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())
-		MACHINE_WAKE(src)
+		work_start(src)
 
 /obj/machinery/conveyor/proc/toggle_speed(forced)
 	if(forced)
@@ -74,22 +80,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	else
 		set_speed_process(!speed_process) // switching gears
 	if(speed_process) // high gear
-		update_active_power_usage(initial(idle_power_usage) * 4)
+		update_active_power_usage(power_of_type(type).idle * 4)
 	else // low gear
-		update_active_power_usage(initial(idle_power_usage))
+		update_active_power_usage(power_of_type(type).idle)
 	update()
 
-/obj/machinery/conveyor/proc/set_operating(new_operating)
-	if(new_operating != FORWARDS && new_operating != BACKWARDS)
-		new_operating = OFF
-	if(new_operating == operating)
-		return // No change
-	operating = new_operating
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	if(operating == FORWARDS)
-		movedir = forwards
-	else if(operating == BACKWARDS)
-		movedir = backwards
+/// The belt started, stopped or reversed: it redraws.
+/obj/machinery/conveyor/proc/operating_changed(datum/act/A)
 	update()
 
 /obj/machinery/conveyor/set_dir()
@@ -105,22 +102,22 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 		backwards = turn(dir, 180)
 
 /obj/machinery/conveyor/proc/update()
-	if(has_stat(BROKEN))
-		icon_state = "conveyor-broken"
+	if(broken_now())
+		set_icon_state("conveyor-broken")
 		set_operating(OFF)
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operable)
 		set_operating(OFF)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		// Keep the commanded direction across a power blip: process() already
 		// kills itself on NOPOWER, and power_change() re-enters here to restart
 		// the belt. Clearing `operating` left belts (and their cargo) stalled
 		// until someone re-toggled the switch.
-		icon_state = "conveyor[OFF]"
+		set_icon_state("conveyor[OFF]")
 		set_use_power(USE_POWER_OFF)
 		return
-	icon_state = "conveyor[operating]"
+	set_icon_state("conveyor[operating]")
 
 	if(!operating)
 		set_use_power(USE_POWER_OFF)
@@ -130,7 +127,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 
 	// machine process
 	// move items to the target location
-/obj/machinery/conveyor/machine_step()
+/obj/machinery/conveyor/proc/work_step(datum/act/timer/timer)
 	var/list/movable_contents = list()
 	for(var/atom/movable/A in contents_of(loc))
 		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
@@ -139,55 +136,29 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	if(!length(movable_contents))
 		return PROCESS_KILL
 	affecting = movable_contents
-	om_after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
-
-/obj/machinery/conveyor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/conveyor_drop_item,
-		/datum/interaction/machine_hand/ungated/conveyor_push_pulled,
-	)
-	..()
+	after(src, 0.1 SECONDS, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
 // attack with item, place item on conveyor. Old attackby never called ..(), so the whole thing stays in the effect.
-/datum/interaction/machine_item/conveyor_drop_item
-	id = "conveyor_drop_item"
-	name = "Drop on belt"
-	held_type = /obj/item
-	effect = /obj/machinery/conveyor/proc/interaction_drop_item
 
-/obj/machinery/conveyor/proc/interaction_drop_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(isrobot(user))	return TRUE //Carn: fix for borgs dropping their modules on conveyor belts
-	if(I.loc != user)	return TRUE // This should stop mounted modules ending up outside the module.
+/obj/machinery/conveyor/proc/interaction_drop_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(I.loc != user)	return OP_OK // This should stop mounted modules ending up outside the module.
 
 	user.drop_item(get_turf(src))
-	return TRUE
-
-/obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_ask(user, "k166", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor?", title = "Multitool-Conveyor interface", default = id)
-	if(isnull(input))
-		return ITEM_INTERACT_BLOCKING
-	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, nameof(id), input) // leaves the old id's switches, joins the new id's
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_push_pulled
-	id = "conveyor_push_pulled"
-	name = "Push pulled object"
-	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
 
-/obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor/proc/interaction_push_pulled(datum/act/op/A)
+	var/mob/user = A.actor
 	var/atom/movable/pulling = user?.pulling_target()
 	if ((!( user.canmove ) || user.restrained() || !pulling))
-		return TRUE
+		return OP_OK
 	if (pulling.anchored)
-		return TRUE
+		return OP_OK
 	if ((pulling.loc != user.loc && get_dist(user, pulling) > 1))
-		return TRUE
+		return OP_OK
 	if (ismob(pulling))
 		var/mob/M = pulling
 		M.stop_pulling()
@@ -196,7 +167,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	else
 		step(pulling, get_dir(pulling.loc, src))
 		user.stop_pulling()
-	return TRUE
+	return OP_OK
 
 // make the conveyor broken
 // also propagate inoperability to any connected conveyor with the same ID
@@ -204,11 +175,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	atom_break()
 	update()
 
-	var/obj/machinery/conveyor/C = locate_within(get_step(src, dir), /obj/machinery/conveyor)
+	var/obj/machinery/conveyor/C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, dir)
 	if(C)
 		C.set_operable(dir, id, 0)
 
-	C = locate_within(get_step(src, turn(dir,180)), /obj/machinery/conveyor)
+	C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, turn(dir,180))
 	if(C)
 		C.set_operable(turn(dir,180), id, 0)
 
@@ -221,7 +192,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	operable = op
 
 	update()
-	var/obj/machinery/conveyor/C = locate_within(get_step(src, stepdir), /obj/machinery/conveyor)
+	var/obj/machinery/conveyor/C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, stepdir)
 	if(C)
 		C.set_operable(stepdir, id, op)
 
@@ -229,9 +200,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	if((. = ..()))
 		update()
 
-#undef OFF
-#undef FORWARDS
-#undef BACKWARDS
 
 // the conveyor control switch
 //
@@ -258,18 +226,25 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 /obj/machinery/conveyor_switch/var/list/obj/machinery/conveyor_switch/linked_switches
 
 /// TRUE when just operated: one step pushes the position to the linked conveyors.
-OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
+/obj/machinery/conveyor_switch/var/operated = FALSE
+TRACKED(/obj/machinery/conveyor_switch, operated)
+CAPABILITIES(/obj/machinery/conveyor_switch)
+	after_init(0, then(PROC_REF(init_update)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
+	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
+	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
+	op("conveyor_switch_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_toggle)))
+	// the panel's tools: with the panel shut the welder, multitool and wirecutters take the click and do nothing
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), wait(2 SECONDS), label("Deconstruct"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(welded_apart)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
+		asks(/datum/prompt/text/conveyor_id, fields = list("question" = "What id would you like to give this conveyor switch?", "title" = "Multitool-Conveyor interface", "default" = nameof(id))),
+		then(PROC_REF(conveyor_switch_id_answered)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set one-way"), then(PROC_REF(wrench_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Adjust speed"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wirecutter_used)))
 
-/obj/machinery/conveyor_switch/relations()
-	. = ..()
-	. += rel_many(nameof(conveyors), keyed = nameof(id), keyed_target = /obj/machinery/conveyor)
-	. += rel_many(nameof(linked_switches), keyed = nameof(id), keyed_target = /obj/machinery/conveyor_switch)
-	. += rel_key(nameof(id))
-
-/obj/machinery/conveyor_switch/Initialize(mapload)
-	. = ..()
+/obj/machinery/conveyor_switch/proc/init_update(datum/act/timer/A)
 	update()
+
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears
@@ -284,39 +259,36 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operat
 
 /obj/machinery/conveyor_switch/proc/update()
 	if(position<0)
-		icon_state = "switch-rev"
+		set_icon_state("switch-rev")
 	else if(position>0)
-		icon_state = "switch-fwd"
+		set_icon_state("switch-fwd")
 	else
-		icon_state = "switch-off"
+		set_icon_state("switch-off")
 
 // timed process
 // if the switch changed, update the linked conveyors
 
-/obj/machinery/conveyor_switch/machine_step()
+/obj/machinery/conveyor_switch/proc/work_step(datum/act/timer/timer)
 	set_operated(FALSE)
 
 	for(var/obj/machinery/conveyor/C in conveyors)
 		C.set_operating(position)
 	return PROCESS_KILL
 
-/obj/machinery/conveyor_switch/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/conveyor_switch_toggle,
-	)
-	..()
+/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/obj/machinery/conveyor_switch/proc/lets_in_holds(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, "access denied")
 
+/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
 // attack with hand, switch position. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_switch_toggle
-	id = "conveyor_switch_toggle"
-	name = "Toggle"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/conveyor_switch/proc/lets_in, "access denied"))
-	effect = /obj/machinery/conveyor_switch/proc/interaction_toggle
 
 /obj/machinery/conveyor_switch/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/conveyor_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor_switch/proc/interaction_toggle(datum/act/op/A)
 	if(position == 0)
 		if(last_pos < 0 || oneway == 1)
 			position = 1
@@ -335,44 +307,27 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operat
 	for(var/obj/machinery/conveyor_switch/S as anything in linked_switches)
 		S.position = position
 		S.update()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/conveyor_switch/proc/welder_act_tool_done(mob/user)
-	if(!src)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You deconstruct the frame."))
+/// The welder's work, after its wait behind the open panel: the switch comes apart into steel.
+/obj/machinery/conveyor_switch/proc/welded_apart(datum/act/op/A)
+	to_chat(A.actor, span_notice("You deconstruct the frame."))
 	replace_with(src, /obj/item/stack/material/steel, 2)
+	return OP_OK
 
-/obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_ask(user, "k363", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor switch?", title = "Multitool-Conveyor interface", default = id)
-	if(isnull(input))
-		return ITEM_INTERACT_BLOCKING
-	if(!input)
-		to_chat(user, "No input found. Please hang up and try your call again.")
-		return ITEM_INTERACT_BLOCKING
-	keyed_set_id(src, nameof(id), input) // relinks the conveyors and switches sharing the new id
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)
+/// The wrench: one-way or two-way operation.
+/obj/machinery/conveyor_switch/proc/wrench_used(datum/act/op/A)
+	var/obj/item/tool = A.held
 	oneway = !oneway
-	to_chat(user, "You set the switch to [oneway ? "one" : "two"] way operation.")
-	playsound(src, I.usesound, 50, 1)
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, "You set the switch to [oneway ? "one" : "two"] way operation.")
+	playsound(src, sounds_of(tool).use, 50, 1)
+	return OP_OK
 
-/obj/machinery/conveyor_switch/wirecutter_act(mob/user, obj/item/I)
-	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+/// The wirecutters, behind the open panel: the conveyors' speed.
+/obj/machinery/conveyor_switch/proc/wirecutter_used(datum/act/op/A)
 	toggle_speed()
-	to_chat(user, "You adjust the speed of the conveyor switch")
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, "You adjust the speed of the conveyor switch")
+	return OP_OK
 
 /obj/machinery/conveyor_switch/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -394,7 +349,40 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operat
 			continue
 		if(!A.anchored)
 			if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
-				step(A,movedir)
+				step(A, operating == BACKWARDS ? backwards : forwards)
 				items_moved++
 		if(items_moved >= 10)
 			break
+
+/// A conveyor's or switch's id, asked by the multitool op behind the open panel: the panel is still open when the answer comes.
+/datum/prompt/text/conveyor_id
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/conveyor_id/recheck_extra()
+	var/obj/machinery/device = owner
+	if(!isnull(value) && istype(device) && !device.panel_open)
+		return "panel closed"
+	return null
+
+/// The multitool's answer: the conveyor's id (the keyed switches follow it).
+/obj/machinery/conveyor/proc/conveyor_id_answered(datum/act/op/A)
+	if(A.answer?.value)
+		keyed_set_id(src, nameof(id), A.answer.value)
+	else
+		to_chat(A.actor, "No input found. Please hang up and try your call again.")
+	SStgui.update_uis(src)
+	return OP_OK
+
+/// The multitool's answer: the switch's id (its conveyors and the other switches follow it).
+/obj/machinery/conveyor_switch/proc/conveyor_switch_id_answered(datum/act/op/A)
+	if(A.answer?.value)
+		keyed_set_id(src, nameof(id), A.answer.value)
+	else
+		to_chat(A.actor, "No input found. Please hang up and try your call again.")
+	SStgui.update_uis(src)
+	return OP_OK
+
+#undef OFF
+#undef FORWARDS
+#undef BACKWARDS

@@ -8,8 +8,9 @@
 		HUD.ui_style = 'icons/mob/screen1_robot.dmi'
 
 	// HUD.adding / HUD.other own their screen elements; named vars pointing at listed elements
-	// (inv1-3, move_intent, autowhisper_display) are relations back. The mob-owned singles
-	// (healths, hands, throw_icon, pullin) and HUD.combat_mode_button go on screen explicitly below.
+	// (inv1-3, move_intent, autowhisper_display, throw_icon, pullin; the last two owned by
+	// HUD.extra_screens) are relations back. The mob-owned singles (healths, hands) and
+	// HUD.combat_mode_button go on screen explicitly below.
 
 	var/atom/movable/screen/using
 	var/atom/movable/screen/robot_inventory
@@ -21,10 +22,10 @@
 	using.icon = HUD.ui_style
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	using.icon_state = "radio"
+	using.set_icon_state("radio")
 	using.screen_loc = ui_borg_radio
 	using.layer = HUD_LAYER
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 //Module select
 
@@ -34,10 +35,10 @@
 	using.icon = HUD.ui_style
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	using.icon_state = "inv1"
+	using.set_icon_state("inv1")
 	using.screen_loc = ui_inv1
 	using.layer = HUD_LAYER
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv1), using)
 
 	using = new /atom/movable/screen()
@@ -46,10 +47,10 @@
 	using.icon = HUD.ui_style
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	using.icon_state = "inv2"
+	using.set_icon_state("inv2")
 	using.screen_loc = ui_inv2
 	using.layer = HUD_LAYER
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv2), using)
 
 	using = new /atom/movable/screen()
@@ -58,10 +59,10 @@
 	using.icon = HUD.ui_style
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	using.icon_state = "inv3"
+	using.set_icon_state("inv3")
 	using.screen_loc = ui_inv3
 	using.layer = HUD_LAYER
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(src, nameof(inv3), using)
 
 //End of module select
@@ -77,130 +78,128 @@
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
 	using.icon = HUD.ui_style
-	using.icon_state = (m_intent == I_RUN ? "running" : "walking")
+	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
 //Health
-	own_set(src, nameof(healths), new /atom/movable/screen())
-	healths.icon = HUD.ui_style
-	healths.icon_state = "health0"
-	healths.alpha = HUD.ui_alpha
-	healths.name = "health"
-	healths.screen_loc = ui_borg_health
+	rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+	hud_used?.healths?.icon = HUD.ui_style
+	hud_used?.healths?.icon_state = "health0"
+	hud_used?.healths?.alpha = HUD.ui_alpha
+	hud_used?.healths?.name = "health"
+	hud_used?.healths?.screen_loc = ui_borg_health
 
-	rel_set(src, nameof(autowhisper_display), own_add(HUD, nameof(HUD.other), new /atom/movable/screen()))
-	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
-	autowhisper_display.icon_state = "autowhisper"
-	autowhisper_display.name = "autowhisper"
-	autowhisper_display.screen_loc = ui_borg_under_health
+	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.other), new /atom/movable/screen()))
+	hud_used?.autowhisper_display?.icon = 'icons/mob/screen/minimalist.dmi'
+	hud_used?.autowhisper_display?.icon_state = "autowhisper"
+	hud_used?.autowhisper_display?.name = "autowhisper"
+	hud_used?.autowhisper_display?.screen_loc = ui_borg_under_health
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "aw-select"
+	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = ui_borg_under_health
-	own_add(HUD, nameof(HUD.other), aw)
+	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "lang"
+	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_borg_under_health
-	own_add(HUD, nameof(HUD.other), aw)
+	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "pose"
+	aw.set_icon_state("pose")
 	aw.name = "set pose"
 	aw.screen_loc = ui_borg_under_health
-	own_add(HUD, nameof(HUD.other), aw)
+	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "up"
+	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_borg_under_health
-	own_add(HUD, nameof(HUD.other), aw)
+	rel_add(HUD, nameof(HUD.other), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "down"
+	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_borg_under_health
-	own_add(HUD, nameof(HUD.other), aw)
+	rel_add(HUD, nameof(HUD.other), aw)
 
 //Installed Module
-	own_set(src, nameof(hands), new /atom/movable/screen())
-	hands.icon = HUD.ui_style
-	hands.icon_state = "nomod"
-	hands.alpha = HUD.ui_alpha
-	hands.name = "module"
-	hands.screen_loc = ui_borg_module
+	rel_set(hud_used, nameof(/datum/hud::hands), new /atom/movable/screen())
+	hud_used?.hands?.icon = HUD.ui_style
+	hud_used?.hands?.icon_state = "nomod"
+	hud_used?.hands?.alpha = HUD.ui_alpha
+	hud_used?.hands?.name = "module"
+	hud_used?.hands?.screen_loc = ui_borg_module
 
 //Module Panel
 	using = new /atom/movable/screen()
 	using.name = "panel"
 	using.icon = HUD.ui_style
-	using.icon_state = "panel"
+	using.set_icon_state("panel")
 	using.alpha = HUD.ui_alpha
 	using.screen_loc = ui_borg_panel
 	using.layer = HUD_LAYER-0.01
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 //Store
-	own_set(src, nameof(throw_icon), new /atom/movable/screen())
-	throw_icon.icon = HUD.ui_style
-	throw_icon.icon_state = "store"
-	throw_icon.alpha = HUD.ui_alpha
-	throw_icon.color = HUD.ui_color
-	throw_icon.name = "store"
-	throw_icon.screen_loc = ui_borg_store
+	rel_set(hud_used, nameof(/datum/hud::throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.throw_icon?.icon = HUD.ui_style
+	hud_used?.throw_icon?.icon_state = "store"
+	hud_used?.throw_icon?.alpha = HUD.ui_alpha
+	hud_used?.throw_icon?.color = HUD.ui_color
+	hud_used?.throw_icon?.name = "store"
+	hud_used?.throw_icon?.screen_loc = ui_borg_store
 
 //Inventory
 	robot_inventory = new /atom/movable/screen()
 	robot_inventory.name = "inventory"
 	robot_inventory.icon = HUD.ui_style
-	robot_inventory.icon_state = "inventory"
+	robot_inventory.set_icon_state("inventory")
 	robot_inventory.alpha = HUD.ui_alpha
 	robot_inventory.color = HUD.ui_color
 	robot_inventory.screen_loc = ui_borg_inventory
-	own_add(HUD, nameof(HUD.other), robot_inventory)
+	rel_add(HUD, nameof(HUD.other), robot_inventory)
 
-	own_set(src, nameof(pullin), new /atom/movable/screen())
-	pullin.icon = HUD.ui_style
-	pullin.icon_state = "pull0"
-	pullin.alpha = HUD.ui_alpha
-	pullin.color = HUD.ui_color
-	pullin.name = "pull"
-	pullin.screen_loc = ui_borg_pull
+	rel_set(hud_used, nameof(/datum/hud::pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.pullin?.icon = HUD.ui_style
+	hud_used?.pullin?.icon_state = "pull0"
+	hud_used?.pullin?.alpha = HUD.ui_alpha
+	hud_used?.pullin?.color = HUD.ui_color
+	hud_used?.pullin?.name = "pull"
+	hud_used?.pullin?.screen_loc = ui_borg_pull
 
-	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel())
-	zone_sel.icon = HUD.ui_style
-	zone_sel.alpha = HUD.ui_alpha
-	zone_sel.cut_overlays()
-	zone_sel.update_icon()
+	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel())
+	hud_used?.zone_sel?.icon = HUD.ui_style
+	hud_used?.zone_sel?.alpha = HUD.ui_alpha
 
 	//Handle the gun settings buttons
-	own_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
-	gun_setting_icon.icon = HUD.ui_style
-	gun_setting_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
-	item_use_icon.icon = HUD.ui_style
-	item_use_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
-	gun_move_icon.icon = HUD.ui_style
-	gun_move_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
-	radio_use_icon.icon = HUD.ui_style
-	radio_use_icon.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::gun_setting_icon), new /atom/movable/screen/gun/mode(null))
+	hud_used?.gun_setting_icon?.icon = HUD.ui_style
+	hud_used?.gun_setting_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::item_use_icon), new /atom/movable/screen/gun/item(null))
+	hud_used?.item_use_icon?.icon = HUD.ui_style
+	hud_used?.item_use_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::gun_move_icon), new /atom/movable/screen/gun/move(null))
+	hud_used?.gun_move_icon?.icon = HUD.ui_style
+	hud_used?.gun_move_icon?.alpha = HUD.ui_alpha
+	rel_set(hud_used, nameof(/datum/hud::radio_use_icon), new /atom/movable/screen/gun/radio(null))
+	hud_used?.radio_use_icon?.icon = HUD.ui_style
+	hud_used?.radio_use_icon?.alpha = HUD.ui_alpha
 
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += list( throw_icon, zone_sel, hands, healths, pullin, robot_inventory, gun_setting_icon)
+		client.screen += list( hud_used?.throw_icon, hud_used?.zone_sel, hud_used?.hands, hud_used?.healths, hud_used?.pullin, robot_inventory, hud_used?.gun_setting_icon)
 		if(HUD.combat_mode_button)
 			client.screen += HUD.combat_mode_button
 		if(length(HUD.adding))
@@ -216,12 +215,12 @@
 			using.color = HUD.ui_color
 			using.alpha = HUD.ui_alpha
 			if(speed == 0)
-				using.icon_state = "speed_0"
+				using.set_icon_state("speed_0")
 			else if(speed == -0.5)
-				using.icon_state = "speed_1"
+				using.set_icon_state("speed_1")
 			else if(speed == -1)
-				using.icon_state = "speed_2"
-			own_set(HUD, nameof(HUD.control_vtec), using)
+				using.set_icon_state("speed_2")
+			rel_set(HUD, nameof(HUD.control_vtec), using)
 			m_intent = I_RUN
 			HUD.move_intent.icon_state = "running"
 			client.screen += HUD.control_vtec
@@ -238,7 +237,7 @@
 		using.screen_loc = ui_vtec_control
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_set(src, nameof(control_vtec), using)
+		rel_set(src, nameof(control_vtec), using)
 	if(R.vtec_active)
 		if(R.speed == 0)
 			control_vtec.icon_state = "speed_0"
@@ -332,7 +331,7 @@
 
 /mob/living/silicon/robot/update_hud()
 	if(modtype)
-		hands.icon_state = get_hud_module_icon()
+		hud_used?.hands?.icon_state = get_hud_module_icon()
 	..()
 
 /mob/living/silicon/robot/proc/get_hud_module_icon()

@@ -30,12 +30,14 @@
 		to_chat(src, span_notice("There are no viable targets within range..."))
 		return
 	if(choices.len > 1)
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(knockout_target_chosen), title = "Target Choice", message = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS)
+		open_request(src, /datum/prompt/choice, PROC_REF(knockout_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 		return
 	psychic_knockout(choices[1])
 
-/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/om/prompt/choice/ask)
-	psychic_knockout(ask.choice)
+/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	psychic_knockout(A.answer.value)
 
 /mob/living/simple_mob/animal/borer/proc/psychic_knockout(mob/living/carbon/human/attack_target)
 	var/attack_range = 5
@@ -50,7 +52,7 @@
 
 	to_chat(src, span_alien("You focus your psychic lance on [attack_target] and freeze their limbs with a wave of terrible dread."))
 	to_chat(attack_target, span_vdanger("You feel a creeping, horrible sense of dread come over you, freezing your limbs and setting your heart racing."))
-	attack_target.status_at_least(EFFECT_SLEEPING, 10) // This was paralyze, but it resulted in players instantly screaming over radio. So get slept nerds.
+	attack_target.status_at_least(STAT_SLEEPING, 10) // This was paralyze, but it resulted in players instantly screaming over radio. So get slept nerds.
 	EXPIRY_STAMP(src, used_dominate, CLOCK_WORLD)
 	add_attack_logs(src, attack_target, "psychic knockout (borer)")
 
@@ -79,28 +81,53 @@
 		return
 
 	if(choices.len > 1)
-		om_ask(src, /datum/om/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), choices = choices)
+		open_request(src, /datum/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), answerer = src, choices = choices)
 		return
 	infest_target(choices[1])
 
 /// Re-checked on the answer: still conscious and hostless, and next to the one picked.
-/datum/om/prompt/choice/borer_infest
+/datum/prompt/choice/borer_infest
 	title = "Target Choice"
-	message = "Who do you wish to infest?"
+	question = "Who do you wish to infest?"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/choice/borer_infest/valid()
+/datum/prompt/choice/borer_infest/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	return (!B.borer_host() && B.Adjacent(choice)) ? null : "unable"
+	var/mob/living/carbon/human/selected = value
+	if(QDELETED(selected))
+		return "gone"
+	return (!B.borer_host() && B.Adjacent(selected)) ? null : "unable"
 
-/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/om/prompt/choice/borer_infest/ask)
-	infest_target(ask.choice)
+/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	infest_target(A.answer.value)
 
-/// Infests mob with borer.
-/mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
-	to_chat(src, span_danger("As [infest_target] moves away, you are dislodged and fall to the ground."))
+/// The "infest" op was interrupted: the target moved away, or the borer did.
+/mob/living/simple_mob/animal/borer/proc/infest_dislodged(datum/act/op/A)
+	to_chat(src, span_danger("As [A.target] moves away, you are dislodged and fall to the ground."))
 
-/mob/living/simple_mob/animal/borer/proc/infest_done(mob/living/carbon/human/infest_target)
+/// The start of the "infest" op: what the borer and its target are told, by whether a helmet is in the way.
+/mob/living/simple_mob/animal/borer/proc/infest_started(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	if(infest_target.check_head_coverage())
+		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
+		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
+	else
+		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
+	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
+
+/// How long entering takes: longer past a helmet.
+/mob/living/simple_mob/animal/borer/proc/infest_wait(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
+	return infest_target.check_head_coverage() ? 5.5 SECONDS : 3 SECONDS
+
+/mob/living/simple_mob/animal/borer/proc/infest_done(datum/act/op/A)
+	var/mob/living/carbon/human/infest_target = A.target
 	var/mob/living/carbon/human/host
 	if(!infest_target || QDELETED(src))
 		return
@@ -117,8 +144,7 @@
 	to_chat(src, span_alien("You wiggle into [infest_target]'s ear."))
 	if(!infest_target.stat)
 		to_chat(infest_target, span_vdanger("Something disgusting and slimy wiggles into your ear!"))
-	// om_link's on_link (library.dm) adds us to the head organ's implants list.
-	om_link(src, infest_target, /datum/om/relation/host_of)
+	take_host(infest_target) // also lists us in the head organ's implants
 	host = infest_target
 	forceMove(host)
 
@@ -147,8 +173,6 @@
 		to_chat(src, span_warning("You cannot infest someone who is already infested!"))
 		return
 
-	var/entering_timer = 30
-	var/protected = FALSE
 	var/obj/item/organ/external/E = infest_target.organs_by_name[BP_HEAD]
 	if(!E || E.is_stump())
 		to_chat(src, span_warning("\The [infest_target] does not have a head!"))
@@ -157,18 +181,7 @@
 	if(!infest_target.should_have_organ(O_BRAIN))
 		to_chat(src, span_warning("\The [infest_target] does not seem to have an ear canal to breach."))
 		return
-	if(infest_target.check_head_coverage())
-		to_chat(src, span_alien("You begin to flatten and squirm into \the [infest_target]'s helmet to find a way inside them."))
-		entering_timer = 55
-		protected = TRUE
-
-	if(!protected)
-		to_chat(infest_target, span_vdanger("Something slimy begins probing at the opening of your ear canal..."))
-	else
-		to_chat(infest_target, span_vdanger("Something slimy begins trying to find a way past your helmet..."))
-	to_chat(src, span_alien("You slither up to \the [infest_target] and begin probing at their ear canal..."))
-
-	om_task_timed(src, entering_timer, target = infest_target, receiver = src, on_done = PROC_REF(infest_done), done_args = list(infest_target), on_fail = PROC_REF(infest_dislodged), fail_args = list(infest_target))
+	perform_op(src, infest_target, "infest", null, ORIGIN_AI, AUTH_AI)
 
 
 /**
@@ -187,10 +200,12 @@
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(secrete_chemical_chosen), title = "Chemicals", message = "Select a chemical to secrete.", choices = borer_chem_list)
+	open_request(src, /datum/prompt/choice, PROC_REF(secrete_chemical_chosen), answerer = src, title = "Chemicals", question = "Select a chemical to secrete.", choices = borer_chem_list, timeout = 0)
 
-/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/om/prompt/choice/ask)
-	var/injection_choice = ask.choice
+/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/injection_choice = A.answer.value
 	var/mob/living/carbon/human/host = src?.borer_host() // may have changed while choosing
 	if(!host)
 		return
@@ -239,7 +254,7 @@
 	// Finally get to injecting
 	if(!use_chems(BORER_POWER_COST_SECRETE))
 		return
-	var/datum/reagent/inject_reagent = chemistry_service().chemical_reagents[injecting_chem]
+	var/datum/reagent/inject_reagent = SSchemistry.ready().chemical_reagents[injecting_chem]
 	if(!inject_reagent)
 		CRASH("Invalid chem reagent [injecting_chem], in borer chemical injection.")
 

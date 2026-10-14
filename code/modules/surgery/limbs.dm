@@ -25,27 +25,10 @@
 /datum/surgical_step/amputate/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	return !part.cannot_amputate
 
-/datum/surgical_step/amputate/confirm(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	var/zone = part.organ_tag
-	var/message = "Amputate [target]'s [part.name]? This cannot be undone."
+/datum/surgical_step/amputate/confirm_text(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	if(part.vital)
-		message = "WARNING: [target]'s [part.name] is VITAL. Amputating it will KILL [target.p_them()]. Amputate anyway?"
-	var/answer = surgery_ask(tool, user, "amputate", /datum/om/prompt/choice/alert, message = message, title = "Confirm Amputation", choices = list("Amputate", "Cancel"))
-	if(isnull(answer))
-		return FALSE
-	if(answer != "Amputate")
-		to_chat(user, span_warning("You reconsider performing an amputation..."))
-		return FALSE
-	// The alert may have waited a long time: check everything again.
-	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool))
-		return FALSE
-	if(user.get_active_hand() != tool || !user.Adjacent(target))
-		return FALSE
-	if(target.get_organ(zone) != part || can_use(user, target, zone, tool) != TRUE)
-		return FALSE
-	to_chat(user, span_danger("You are preparing to amputate \the [target]'s [part.name]!"))
-	log_game("SURGERY: [key_name(user)] confirmed amputation of [key_name(target)]'s [part] (vital: [part.vital ? "yes" : "no"])")
-	return TRUE
+		return "WARNING: [target]'s [part.name] is VITAL. Amputating it will KILL [target.p_them()]. Amputate anyway?"
+	return "Amputate [target]'s [part.name]? This cannot be undone."
 
 /datum/surgical_step/amputate/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	add_attack_logs(user, target, "Surgically amputated [part.name]")
@@ -107,8 +90,6 @@
 		E.set_status(E.status & ~ORGAN_CUT_AWAY)
 		for(var/obj/item/organ/external/child in E.children)
 			child.set_status(child.status & ~ORGAN_CUT_AWAY)
-	target.update_icons_body(FALSE)
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] attached [E] ([E.type]) to [key_name(target)], carrying [length(E.afflictions_here())] afflictions")
 
 /// A failed attachment injures the stump it was being fitted to.
@@ -139,8 +120,6 @@
 	for(var/obj/item/organ/external/child in part.children)
 		child.set_status(child.status & ~ORGAN_CUT_AWAY)
 		to_chat(user, span_notice("You attach [target]'s [child.name] as well."))
-	target.update_icons_body()
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] connected [key_name(target)]'s [part]")
 
 /datum/surgical_step/limb/mechanize
@@ -176,8 +155,6 @@
 		new_limb.robotize(L.model_info)
 		if(L.sabotaged)
 			new_limb.sabotaged = 1
-	target.update_icons_body(FALSE)
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] mechanized [key_name(target)] with [L]")
 	consume(L, user)
 
@@ -211,7 +188,7 @@
 	return part.disfigured
 
 /datum/surgical_step/reconstruct_face/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	part.disfigured = FALSE
+	part.set_disfigured(FALSE)
 	log_game("SURGERY: [key_name(user)] reconstructed [key_name(target)]'s face")
 
 /// Rebuild husked tissue: scaffold, relocate flesh and regrow vessels in one
@@ -241,8 +218,7 @@
 
 /datum/surgical_step/dehusk/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	target.remove_mutation(HUSK)
-	target.status_flags &= ~DISFIGURED
-	target.update_icons_body()
+	target.set_status_flags(target.status_flags & ~DISFIGURED)
 	log_game("SURGERY: [key_name(user)] dehusked [key_name(target)]")
 
 /// The jagged scalpel's one purpose: tearing an artery open.

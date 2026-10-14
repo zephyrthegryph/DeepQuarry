@@ -18,7 +18,9 @@
 	name = "site manager's hat"
 	icon_state = "captain"
 	desc = "It's good being the king."
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/caphat)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/caphat/cap
 	name = "site manager's cap"
@@ -57,8 +59,9 @@
 	desc = "It's a hood that covers the head. It keeps you warm during the space winters."
 	icon_state = "chaplain_hood"
 	item_state_slots = list(slot_r_hand_str = "beret_black", slot_l_hand_str = "beret_black")
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/chaplain_hood)
+	configure(item_worn(hides = BLOCKHAIR, covers = HEAD))
 
 //Chaplain but spookier
 /obj/item/clothing/head/chaplain_hood/whiteout
@@ -73,15 +76,18 @@
 	desc = "Maximum piety in this star system."
 	icon_state = "nun_hood"
 	item_state_slots = list(slot_r_hand_str = "beret_black", slot_l_hand_str = "beret_black")
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/nun_hood)
+	configure(item_worn(hides = BLOCKHAIR, covers = HEAD))
 
 //Mime
 /obj/item/clothing/head/beret
 	name = "beret"
 	desc = "A beret, an artists favorite headwear."
 	icon_state = "beret"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/beret)
+	configure(item_worn(covers = 0))
 
 //Security
 /obj/item/clothing/head/beret/sec
@@ -153,7 +159,9 @@
 	item_state_slots = list(slot_r_hand_str = "", slot_l_hand_str = "")
 	valid_accessory_slots = null
 	show_examine = FALSE
-	flags_inv = null
+
+CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
+	configure(item_worn(hides = TRAIT_NONE))
 
 /obj/item/clothing/head/det
 	name = "detective fedora"
@@ -161,11 +169,14 @@
 	icon_state = "fedora_brown"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
-	siemens_coefficient = 0.9
 	valid_accessory_slots = null
 	show_examine = FALSE
 
-TYPE_TABLE(/obj/item/clothing/head/det, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
+CAPABILITIES(/obj/item/clothing/head/det)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_protection(siemens = 0.9))
+
+
 
 /obj/item/clothing/head/det/grey
 	icon_state = "fedora_grey"
@@ -205,7 +216,9 @@ TYPE_TABLE(/obj/item/clothing/head/det, suit_storage_spec, list(HOLD_ONLY(list(P
 	desc = "A cap surgeons wear during operations. Keeps their hair from tickling your internal organs."
 	icon_state = "surgcap_blue"
 	item_state_slots = list(slot_r_hand_str = "beret_blue", slot_l_hand_str = "beret_blue")
-	flags_inv = BLOCKHEADHAIR
+
+CAPABILITIES(/obj/item/clothing/head/surgery)
+	configure(item_worn(hides = BLOCKHEADHAIR))
 
 /obj/item/clothing/head/surgery/purple
 	desc = "A cap surgeons wear during operations. Keeps their hair from tickling your internal organs. This one is deep purple."
@@ -301,7 +314,9 @@ TYPE_TABLE(/obj/item/clothing/head/det, suit_storage_spec, list(HOLD_ONLY(list(P
 	name = "Type-34C Semi-Enclosed Headwear"
 	desc = "Civilian model of a popular helmet used by certain law enforcement agencies. It does not have any armor plating, but has a neo-laminated fiber lining."
 	icon_state = "cyberpunkgoggle"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/helmet/detective_alt)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
 
 /obj/item/clothing/head/beret/blueshield
 	name = "bodyguard's beret"

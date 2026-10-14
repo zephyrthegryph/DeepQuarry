@@ -1,5 +1,4 @@
 /mob/living/silicon/ai
-	death_message = "gives one shrill beep before falling lifeless."
 
 /// Death is decided by the AI machine plan; this is the one pass that follows it.
 /mob/living/silicon/ai/on_death(gibbed)
@@ -17,10 +16,6 @@
 
 	for(var/obj/machinery/ai_status_display/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		O.set_mode(2)
-
-	if (istype(loc, /obj/item/aicard))
-		var/obj/item/aicard/card = loc
-		card.update_icon()
 
 	set_density(TRUE)
 

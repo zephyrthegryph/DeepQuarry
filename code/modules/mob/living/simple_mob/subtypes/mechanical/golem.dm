@@ -54,7 +54,9 @@
 		"haste"				= /obj/item/spell/modifier/haste
 		)
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "core", /obj/item/technomancer_core/golem)
+CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
+	ref_one(nameof(master), /mob/living)
+	owns_one(nameof(core), starts = /obj/item/technomancer_core/golem)
 
 
 /mob/living/simple_mob/mechanical/technomancer_golem
@@ -69,18 +71,24 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))
 		return FALSE
-	own_clear(src, nameof(active_spell), OWN_DELETE)
+	rel_clear(src, nameof(active_spell), OWN_DELETE)
 
-	own_set(src, nameof(active_spell), new path(src))
+	rel_set(src, nameof(active_spell), new path(src))
 
 /mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(test_spell_chosen), choices = known_spells, title = "Give spell", message = "What spell?", optional = TRUE)
+	// An empty legacy list opened no question and never cleared the current spell.
+	if(length(known_spells))
+		open_request(src, /datum/prompt/choice, PROC_REF(test_spell_chosen), answerer = usr, choices = known_spells, title = "Give spell", question = "What spell?", timeout = 0)
 
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/ask)
-	if(isnull(ask.choice))
-		own_clear(src, nameof(active_spell), OWN_DELETE)
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/act/request/A)
+	var/datum/request/R = A.request
+	if(QDELETED(R.answerer))
 		return
-	place_spell_in_hand(known_spells[ask.choice])
+	if(!A.answer)
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
+			rel_clear(src, nameof(active_spell), OWN_DELETE)
+		return
+	place_spell_in_hand(known_spells[A.answer.value])
 
 /mob/living/simple_mob/mechanical/technomancer_golem/get_technomancer_core()
 	return core
@@ -108,8 +116,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 		return
 
 	flick("golem_pre_melee", src) // To force the animation to restart.
-	icon_living = "golem_pre_melee" // The animation will hold after this point until melee_post_animation() gets called.
-	icon_state = "golem_pre_melee"
+	set_icon_living("golem_pre_melee") // The animation will hold after this point until melee_post_animation() gets called.
+	set_icon_state("golem_pre_melee")
 	setClickCooldown(2)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/melee_post_animation(atom/A)
@@ -118,20 +126,20 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 		return
 
 	flick("golem_post_melee", src)
-	icon_living = "golem"
-	icon_state = "golem"
+	set_icon_living("golem")
+	set_icon_state("golem")
 	setClickCooldown(6)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/ranged_pre_animation(atom/A)
 	flick("golem_pre_ranged", src)
-	icon_living = "golem_pre_ranged"
-	icon_state = "golem_pre_ranged"
+	set_icon_living("golem_pre_ranged")
+	set_icon_state("golem_pre_ranged")
 	setClickCooldown(5)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/ranged_post_animation(atom/A)
 	flick("golem_post_ranged", src)
-	icon_living = "golem"
-	icon_state = "golem"
+	set_icon_living("golem")
+	set_icon_state("golem")
 	setClickCooldown(5)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/special_pre_animation(atom/A)

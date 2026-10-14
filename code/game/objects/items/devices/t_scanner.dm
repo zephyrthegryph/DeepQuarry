@@ -6,28 +6,33 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "t-ray0"
 	item_state = "t-ray"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 150)
 
 	var/scan_range = 1
 
-	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
+	var/list/active_scanned //assoc list of handles (entity_handle) of the objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/t_scanner, on, 0, CHANGE_EXPLICIT)
-// Scans underfloor objects while switched on.
-DECLARE_PERIODIC_WHILE(/obj/item/t_scanner, PERIODIC_SLOW, "on")
-APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
+/obj/item/t_scanner/var/on = 0
+TRACKED(/obj/item/t_scanner, on)
+/// The look (the draw sweep: from its template).
+/obj/item/t_scanner/draw(datum/look/look)
+	..()
+	look.state("t-ray[on]")
 
-DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/t_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	// Scans underfloor objects while switched on.
+	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
+	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))
 
-/obj/item/t_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/t_scanner/proc/scanner_power_requested(datum/act/op/A)
 	set_active(!on)
+	return OP_OK
 
 /obj/item/t_scanner/proc/set_active(active)
 	set_on(active)
@@ -37,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 		set_user_client(null)
 
 //If reset is set, then assume the client has none of our overlays, otherwise we only send new overlays.
-/obj/item/t_scanner/periodic_step()
+/obj/item/t_scanner/proc/t_scanner_step(datum/act/timer/A)
 	//handle clients changing
 	var/client/loc_client = null
 	if(ismob(src.loc))
@@ -50,23 +55,33 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 
 	//get all objects in scan range
 	var/list/scanned = get_scanned_objects(scan_range)
-	var/list/update_add = scanned - active_scanned
-	var/list/update_remove = active_scanned - scanned
+	var/list/scanned_by_h = list()
+	for(var/obj/O in scanned)
+		var/object_h = entity_handle(O)
+		if(object_h)
+			scanned_by_h[object_h] = O
+	var/list/update_remove = list()
+	for(var/object_h in active_scanned)
+		if(!scanned_by_h[object_h])
+			update_remove += object_h
 
 	//Add new overlays
-	for(var/obj/O in update_add)
+	for(var/object_h in scanned_by_h)
+		if(LAZYACCESS(active_scanned, object_h))
+			continue
+		var/obj/O = scanned_by_h[object_h]
 		var/image/overlay = get_overlay(O)
-		LAZYSET(active_scanned, O, overlay)
+		LAZYSET(active_scanned, object_h, overlay)
 		user_client().images += overlay
 
 	//Remove stale overlays
-	for(var/obj/O in update_remove)
-		user_client().images -= LAZYACCESS(active_scanned, O)
-		LAZYREMOVE(active_scanned, O)
+	for(var/object_h in update_remove)
+		user_client().images -= LAZYACCESS(active_scanned, object_h)
+		LAZYREMOVE(active_scanned, object_h)
 
 	//Flicker effect
-	for(var/obj/O in active_scanned)
-		var/image/overlay = LAZYACCESS(active_scanned, O)
+	for(var/object_h in active_scanned)
+		var/image/overlay = LAZYACCESS(active_scanned, object_h)
 		if(flicker)
 			overlay.alpha = 0
 		else

@@ -11,23 +11,26 @@
 	desc = "Transports delicate fossils in suspension so they don't break during transit."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "satchel"
-	slot_flags = SLOT_BELT | SLOT_POCKET
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
 
-TYPE_TABLE(/obj/item/storage/bag/fossils, hold_spec, list(HOLD_ONLY(list(/obj/item/fossil)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bag/fossils)
+	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET))
+	configure(storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"
 	desc = "A box claiming to contain sample bags."
 
-/obj/item/storage/box/samplebags/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 7)
-		var/obj/item/evidencebag/S = new(src)
-		S.name = "sample bag"
-		S.desc = "a bag for holding research samples."
+CAPABILITIES(/obj/item/storage/box/samplebags)
+	initial_contents(/obj/item/evidencebag/sample, count = 7)
+
+/// The bags a sample bag box holds: evidence bags labelled for research samples.
+/obj/item/evidencebag/sample
+	name = "sample bag"
+	desc = "a bag for holding research samples."
 
 MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/ano_scanner
@@ -37,19 +40,19 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	icon_state = "xenoarch_scanner"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 
 	EXPIRY_DECLARE(last_scan_time)
 	var/scan_delay = 25
 	EXPIRY_DECLARE(last_repopulation_time)
 	var/repopulation_delay = 600 //Anti spam.
 
-DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/ano_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	op("scan_anomalies", in_hand(), then(PROC_REF(scan_requested)))
 
-/// Old attack_self.
-/obj/item/ano_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
+/obj/item/ano_scanner/proc/scan_requested(datum/act/op/A)
+	interact(A.actor)
+	return OP_OK
 
 /obj/item/ano_scanner/interact(mob/user)
 	if(ELAPSED(src, last_scan_time, CLOCK_WORLD) >= scan_delay)
@@ -61,8 +64,8 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 		var/nearestSimpleTargetDist = -1
 		var/turf/cur_turf = get_turf(src)
 
-		if(GLOB.xenoarch_service) //Sanity check due to runtimes ~Z
-			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.artifact_spawning_turfs)
+		if(SSxenoarch) //Sanity check due to runtimes ~Z
+			for(var/turf/simulated/mineral/T as anything in SSxenoarch.artifact_spawning_turfs)
 				if(T.density && T.artifact_find)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
@@ -70,22 +73,22 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), T)
 
-			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
+			for(var/turf/simulated/mineral/T as anything in SSxenoarch.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::digsite_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::digsite_spawning_turfs), T)
 
-		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
+		if(SSxenoarch && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
 				EXPIRY_STAMP(src, last_repopulation_time, CLOCK_WORLD)
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
-				GLOB.xenoarch_service.continual_generation(user)
+				SSxenoarch.continual_generation(user)
 
 		if(nearestTargetDist >= 0)
 			to_chat(user, "Large artifact energy signature detected on wavelength '[nearestTargetId]' in a radius of [nearestTargetDist]m[nearestSimpleTargetDist > 0 ? "; small anomaly detected in a radius of [nearestSimpleTargetDist]m" : ""]")
@@ -104,11 +107,19 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	icon_state = "depth_scanner"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	/// Owned: the depth scans this scanner recorded.
 	var/list/positive_locations
 	/// Relation view: the selected scan (one of positive_locations).
 	var/tmp/datum/depth_scan/current
+
+CAPABILITIES(/obj/item/depth_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	owns_many(nameof(positive_locations))
+	op("view_depth_scans", in_hand(), opens_ui())
+	interface("XenoarchDepthScanner", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
+	op("select", ui_act("select", arg("select", num())), then(PROC_REF(ui_act_select)))
+	op("clear", ui_act("clear", arg("clear", num())), then(PROC_REF(ui_act_clear)))
 
 /datum/depth_scan
 	var/time = ""
@@ -137,7 +148,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			own_add(src, nameof(positive_locations), D)
+			rel_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -153,20 +164,9 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			own_add(src, nameof(positive_locations), D)
+			rel_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
-
-DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/depth_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI_STATE(/obj/item/depth_scanner, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 
 /obj/item/depth_scanner/tgui_static_data(mob/user)
 	. = ..()
@@ -174,10 +174,8 @@ DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:list,positive_locations:list}")
-
-/// The computed part of /obj/item/depth_scanner's window data (declared on its UI_DATA row).
-/obj/item/depth_scanner/proc/ui_data_obj_item_depth_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/depth_scanner's window data.
+/obj/item/depth_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["current"] = list()
@@ -205,24 +203,22 @@ UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:l
 
 	return data
 
-UI_ACT(/obj/item/depth_scanner, "select", ui_act_select, UI_ARG_NUM("select"))
-UI_ACT_PROC(/obj/item/depth_scanner, ui_act_select)
-	var/index = params["select"]
+/obj/item/depth_scanner/proc/ui_act_select(datum/act/op/A, select)
+	var/index = select
 	if(index && index <= LAZYLEN(positive_locations))
-		rel_set(src, nameof(/datum/forms::current), LAZYACCESS(positive_locations, index))
+		rel_set(src, nameof(current), LAZYACCESS(positive_locations, index))
 	return TRUE
 
-UI_ACT(/obj/item/depth_scanner, "clear", ui_act_clear, UI_ARG_NUM("clear"))
-UI_ACT_PROC(/obj/item/depth_scanner, ui_act_clear)
-	var/index = params["clear"]
+/obj/item/depth_scanner/proc/ui_act_clear(datum/act/op/A, clear)
+	var/index = clear
 	if(index)
 		if(index <= LAZYLEN(positive_locations))
 			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-			rel_clear(src, nameof(/datum/forms::current))
-			own_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
+			rel_clear(src, nameof(current))
+			rel_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
 	else
-		rel_clear(src, nameof(/datum/forms::current))
-		own_clear(src, nameof(/obj/item/depth_scanner::positive_locations), OWN_DELETE)
+		rel_clear(src, nameof(current))
+		rel_clear(src, nameof(/obj/item/depth_scanner::positive_locations))
 	return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
@@ -235,31 +231,30 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
-OM_FIELD(/obj/item/beacon_locator, scan_ticks, 0, CHANGE_EXPLICIT)
-OM_FIELD_VIEW(/obj/item/beacon_locator, tmp/obj/item/radio, target_radio, CHANGE_EXPLICIT)
+/obj/item/beacon_locator/var/scan_ticks = 0
+TRACKED(/obj/item/beacon_locator, scan_ticks)
+/obj/item/beacon_locator/var/tmp/obj/item/radio/target_radio
 /// Scanning for a beacon or tracking one: derived from scan_ticks and target_radio.
-OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, list("scan_ticks", "target_radio"))
 /obj/item/beacon_locator/proc/locating()
 	return scan_ticks || target_radio
-DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 
-/obj/item/beacon_locator/periodic_step()
+/obj/item/beacon_locator/proc/beacon_locator_step(datum/act/timer/A)
 	if(!target_radio() && !scan_ticks)
-		return PROCESS_KILL // the tracked beacon is gone
+		return // the tracked beacon is gone
 	if(target_radio())
 		set_dir(get_dir(src,target_radio()))
 		switch(get_dist(src,target_radio()))
 			if(0 to 3)
-				icon_state = "pinondirect"
+				set_icon_state("pinondirect")
 			if(4 to 10)
-				icon_state = "pinonclose"
+				set_icon_state("pinonclose")
 			if(11 to 30)
-				icon_state = "pinonmedium"
+				set_icon_state("pinonmedium")
 			if(31 to INFINITY)
-				icon_state = "pinonfar"
+				set_icon_state("pinonfar")
 	else
 		if(scan_ticks)
-			icon_state = "pinonnull"
+			set_icon_state("pinonnull")
 			set_scan_ticks(scan_ticks + 1)
 			if(prob(scan_ticks * 10))
 				//scan radios in the world to try and find one
@@ -278,23 +273,34 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 				else
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] sadly.")
 		else
-			icon_state = "pinoff"
+			set_icon_state("pinoff")
 
 
-DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(interaction_open)))
+CAPABILITIES(/obj/item/beacon_locator)
+	ref_one(nameof(target_radio))
+	every(2 SECONDS, then(PROC_REF(beacon_locator_step)))
+	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
+	interface("BeaconLocator", state = nameof(GLOB.tgui_inventory_state))
+	op("reset_tracking", ui_act("reset_tracking"), then(PROC_REF(ui_act_reset_tracking)))
+	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
 
 /// Old attack_self: open the interface.
-/obj/item/beacon_locator/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/beacon_locator/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/beacon_locator, GLOB.tgui_inventory_state)
+/obj/item/beacon_locator/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["scan_ticks"] = scan_ticks
+	data["rawfreq"] = frequency
+	var/list/merged_1 = ui_data_obj_item_beacon_locator(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-DECLARE_UI(/obj/item/beacon_locator, "BeaconLocator")
-
-UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "merge:ui_data_obj_item_beacon_locator{degrees:num,minFrequency:num,maxFrequency:num}")
-
-/// The computed part of /obj/item/beacon_locator's window data (declared on its UI_DATA row).
+/// /obj/item/beacon_locator's window data.
 /obj/item/beacon_locator/proc/ui_data_obj_item_beacon_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -307,15 +313,13 @@ UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "me
 
 	return data
 
-UI_ACT(/obj/item/beacon_locator, "reset_tracking", ui_act_reset_tracking)
-UI_ACT_PROC(/obj/item/beacon_locator, ui_act_reset_tracking)
+/obj/item/beacon_locator/proc/ui_act_reset_tracking(datum/act/op/A)
 	rel_clear(src, nameof(/obj/item/beacon_locator::target_radio))
 	set_scan_ticks(1)
 	return TRUE
 
-UI_ACT(/obj/item/beacon_locator, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/item/beacon_locator, ui_act_setfrequency)
-	var/new_frequency = (params["freq"])
+/obj/item/beacon_locator/proc/ui_act_setfrequency(datum/act/op/A, freq)
+	var/new_frequency = (freq)
 	new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	frequency = new_frequency
 	return TRUE
@@ -328,36 +332,52 @@ MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5
 	item_state = "lampgreen"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	var/mode = 1 //Start off scanning. 1 = scanning, 0 = measuring
 	var/obj/item/ano_scanner/anomaly_scanner = null
 	var/obj/item/depth_scanner/depth_scanner = null
 
-DECLARE_DEFAULT_CHILD(/obj/item/xenoarch_multi_tool, "anomaly_scanner", /obj/item/ano_scanner)
-DECLARE_DEFAULT_CHILD(/obj/item/xenoarch_multi_tool, "depth_scanner", /obj/item/depth_scanner)
+CAPABILITIES(/obj/item/xenoarch_multi_tool)
+	configure(item_worn(slots = SLOT_BELT))
+	owns_one(nameof(anomaly_scanner), starts = /obj/item/ano_scanner)
+	owns_one(nameof(depth_scanner), starts = /obj/item/depth_scanner)
+	held_verb(/obj/item/xenoarch_multi_tool/proc/swap_functionality, SLOT_ANY_CARRIED)
+	held_verb(/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies, SLOT_ANY_CARRIED)
+	op("view_depth_scans", in_hand(), then(PROC_REF(depth_requested)))
+	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
+	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
 
-DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Swap Functionality", PROC_REF(xenoarch_multi_tool_verb_swap), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Scan for Anomalies", PROC_REF(xenoarch_multi_tool_verb_scan), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/xenoarch_multi_tool, mode)
 
-/// Old attack_self.
-/obj/item/xenoarch_multi_tool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	depth_scanner.tgui_interact(user)
-	return TRUE
+/obj/item/xenoarch_multi_tool/proc/swap_functionality()
+	set name = "Swap Functionality"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "swap_functionality", null, ORIGIN_VERB)
 
-/// Old Swap Functionality verb: Swap between the scanning and measuring functionality..
-/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_swap(mob/user, obj/item/held, datum/interaction/interaction)
-	mode = !mode
+/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies()
+	set name = "Scan for Anomalies"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "scan_anomalies", null, ORIGIN_VERB)
+
+/obj/item/xenoarch_multi_tool/proc/operator_living(datum/act/op/A)
+	return (isliving(A.actor)) ? null : MSG(op/not_available)
+
+/obj/item/xenoarch_multi_tool/proc/depth_requested(datum/act/op/A)
+	depth_scanner.tgui_interact(A.actor)
+	return OP_OK
+
+/obj/item/xenoarch_multi_tool/proc/functionality_swapped(datum/act/op/A)
+	set_mode(!mode)
 	if(mode)
-		to_chat(user, "The device will now scan for artifacts.")
+		to_chat(A.actor, "The device will now scan for artifacts.")
 	else
-		to_chat(user, "The device will now measure depth dug.")
+		to_chat(A.actor, "The device will now measure depth dug.")
+	return OP_OK
 
-/// Old Scan for Anomalies verb: Scan for artifacts and anomalies within your vicinity.
-/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_scan(mob/user, obj/item/held, datum/interaction/interaction)
-	anomaly_scanner.interact(user)
+/obj/item/xenoarch_multi_tool/proc/anomalies_requested(datum/act/op/A)
+	anomaly_scanner.interact(A.actor)
+	return OP_OK
 
 
 /// Accessor for the target_radio var.

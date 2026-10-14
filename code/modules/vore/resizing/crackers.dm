@@ -24,32 +24,39 @@
 	var/prize //What prize we have loaded
 	var/joke //What joke we have loaded
 
-/obj/item/cracker/Initialize(mapload)
-	. = ..()
-	var/style = pick("blue","green","yellow","red","heart","hazard")
-	icon_state = style
-	item_state = style
-	if(!prize)
-		prize = pick(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER)
-	if(!joke)
-		joke = pick("When is a boat just like snow? When it's adrift.",
-					"What happens to naughty elves? Santa gives them the sack.",
-					"What do you call an old snowman? Water.",
-					"Why has Santa been banned from sooty chimneys? Carbon footprints.",
-					"What goes down but doesn't come up? A yo.",
-					"What's green and fuzzy, has four legs and would kill you if it fell from a tree? A pool table.",
-					"Why did the blind man fall into the well? Because he couldn't see that well.",
-					"What did the pirate get on his report card? Seven Cs",
-					"What do you call a fish with no eyes? Fsh",
-					"How do you make an egg roll? You push it.",
-					"What do you call a deer with no eyes? NO EYED DEER!",
-					"What's red, and smells like blue paint? Red paint.",
-					"Where do cows go to dance? A meat ball.",
-					"What do you call a person who steals all your toenail clippings? A cliptoemaniac.",
-					"What's brown and sticky? A stick.",
-					"What's the best way to kill a circus? Go for the juggler.",
-					"What do you call a cow with no legs? Ground Beef.",
-					"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")
+CAPABILITIES(/obj/item/cracker)
+	rolls(nameof(prize), PROC_REF(roll_prize))
+	rolls(nameof(joke), pick_one(list("When is a boat just like snow? When it's adrift.",
+		"What happens to naughty elves? Santa gives them the sack.",
+		"What do you call an old snowman? Water.",
+		"Why has Santa been banned from sooty chimneys? Carbon footprints.",
+		"What goes down but doesn't come up? A yo.",
+		"What's green and fuzzy, has four legs and would kill you if it fell from a tree? A pool table.",
+		"Why did the blind man fall into the well? Because he couldn't see that well.",
+		"What did the pirate get on his report card? Seven Cs",
+		"What do you call a fish with no eyes? Fsh",
+		"How do you make an egg roll? You push it.",
+		"What do you call a deer with no eyes? NO EYED DEER!",
+		"What's red, and smells like blue paint? Red paint.",
+		"Where do cows go to dance? A meat ball.",
+		"What do you call a person who steals all your toenail clippings? A cliptoemaniac.",
+		"What's brown and sticky? A stick.",
+		"What's the best way to kill a circus? Go for the juggler.",
+		"What do you call a cow with no legs? Ground Beef.",
+		"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")))
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// What it holds (rolled; the cracker kinds are defines local to this file). A themed subtype keeps its compiled prize.
+/obj/item/cracker/proc/roll_prize(datum/roller/R)
+	if(prize)
+		return prize
+	return R.choose(list(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/cracker/proc/roll_look(datum/roller/R)
+	var/style = R.choose(list("blue","green","yellow","red","heart","hazard"))
+	set_item_state(style)
+	return style
 
 /obj/item/cracker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/target = M
@@ -60,18 +67,11 @@
 	if(target == user)
 		to_chat(user, span_notice("You can't pull \the [src] by yourself, that would just be sad!"))
 		return ITEM_INTERACT_FAILURE
-	var/check_pull = rerun_ask(target, "a1", PROC_REF(attack), args, /datum/om/prompt/choice/alert, message = "\The [user] is offering to pull \the [src] with you, do you want to pull it?", title = "Pull Cracker", choices = list("Yes", "No"))
-	if(isnull(check_pull))
-		to_chat(user, span_notice("You offer \the [src] to \the [target] to pull and wait to see how whether they do."))
-		return ITEM_INTERACT_SUCCESS
-	if(!check_pull || check_pull == "No")
-		to_chat(user, span_notice("\The [target] chose not to pull \the [src]!"))
-		return ITEM_INTERACT_FAILURE
-	var/obj/item/check_hand = user.get_active_hand()
-	if(check_hand != src)
-		to_chat(user, span_notice("\The [src] is no longer in-hand!"))
-		to_chat(target, span_notice("\The [src] is no longer in-hand!"))
-		return ITEM_INTERACT_FAILURE
+	open_request(src, /datum/prompt/choice/cracker_pull, PROC_REF(cracker_pull_answered), answerer = target, subject = user, question = "\The [user] is offering to pull \the [src] with you, do you want to pull it?")
+	to_chat(user, span_notice("You offer \the [src] to \the [target] to pull and wait to see how whether they do."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/cracker/proc/pull_cracker(mob/living/user, mob/living/carbon/human/target)
 	var/mob/living/carbon/human/winner
 	var/mob/living/carbon/human/loser
 	if(!rigged)
@@ -105,22 +105,22 @@
 			winner.resize(2)
 			act_message(winner, null, others = span_bold("%U%") + " grows in height suddenly.")
 		if(DRUGGED_CRACKER)
-			winner.status_at_least(EFFECT_DRUGGED, 50)
+			winner.status_at_least(STAT_DRUGGED, 50)
 		if(INVISIBLE_CRACKER)
 			if(!dq_get_cloaked(winner))
 				act_message(winner, null, others = span_bold("%U%") + " vanishes from sight.")
 				winner.cloak()
-			om_after(winner, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
+			after(winner, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 		if(FALLING_CRACKER)
 			act_message(winner, null, others = span_bold("%U%") + " is suddenly knocked to the ground.")
-			winner.status_set(EFFECT_WEAKENED, max(winner.status_units(EFFECT_WEAKENED),50))
+			winner.status_set(STAT_WEAKENED, max(winner.status_units(STAT_WEAKENED),50))
 		if(TELEPORTING_CRACKER)
 			if(can_spontaneous_vore(loser, winner))
 				act_message(winner, null, others = span_bold("%U%") + " is teleported to somewhere nearby...")
 				var/T = get_turf(winner)
 				play_sfx(T, SFX_SPARKS)
 				anim(T,winner,'icons/mob/mob.dmi',,"phaseout",,winner.dir)
-				loser.vore_selected.nom_atom(winner)
+				vore_selected_of(loser).nom_atom(winner)
 		if(WEALTHY_CRACKER)
 			new /obj/random/cash/huge(spawnloc)
 			new /obj/random/cash/huge(spawnloc)
@@ -131,7 +131,7 @@
 	new /obj/random/toy(spawnloc)
 	new /obj/item/clothing/head/paper_crown(spawnloc)
 	var/obj/item/paper/cracker_joke/J = new(spawnloc)
-	J.info = joke
+	J.set_info(joke)
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -169,22 +169,25 @@
 	item_state = "paper_crown_blue"
 	item_icons = list(slot_head_str = 'icons/inventory/head/mob.dmi')
 	desc = "A paper crown so thin that you can see through it."
-	flags_inv = 0
-	body_parts_covered = 0
 	armor_spec = ""
 
-/obj/item/clothing/head/paper_crown/Initialize(mapload)
-	var/list/styles = list("paper_crown_blue","paper_crown_green","paper_crown_yellow","paper_crown_red","paper_crown_pink")
-	var/style = pick(styles)
-	icon_state = style
-	item_state = style
-	. = ..()
+CAPABILITIES(/obj/item/clothing/head/paper_crown)
+	configure(item_worn(hides = 0, covers = 0))
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/clothing/head/paper_crown/proc/roll_look(datum/roller/R)
+	var/style = R.choose(list("paper_crown_blue","paper_crown_green","paper_crown_yellow","paper_crown_red","paper_crown_pink"))
+	set_item_state(style)
+	return style
 
 /obj/item/paper/cracker_joke
 	name = "joke"
 	icon_state = "joke"
 
-APPEARANCE_NONE(/obj/item/paper/cracker_joke)
+/// The joke keeps its mapped state.
+/obj/item/paper/cracker_joke/look_parts(datum/look/look)
+	return
 
 #undef SHRINKING_CRACKER
 #undef GROWING_CRACKER
@@ -193,3 +196,38 @@ APPEARANCE_NONE(/obj/item/paper/cracker_joke)
 #undef FALLING_CRACKER
 #undef TELEPORTING_CRACKER
 #undef WEALTHY_CRACKER
+
+/datum/prompt/choice/cracker_pull
+	choices = list("Yes", "No")
+	buttons = TRUE
+	title = "Pull Cracker"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/cracker_pull/recheck_extra()
+	var/mob/living/user = subject
+	var/mob/living/carbon/human/target = answerer
+	if(QDELETED(owner) || QDELETED(user) || QDELETED(target))
+		return "gone"
+	if(isnull(value))
+		return null
+	if(!istype(target) || target.stat || target == user)
+		return "cracker target"
+	if(value == "Yes" && user.get_active_hand() != owner)
+		return "cracker not held"
+	return null
+
+/obj/item/cracker/proc/cracker_pull_answered(datum/act/request/A)
+	if(isnull(A.request.value) || A.request.last_error == "gone")
+		return
+	var/mob/living/user = A.request.subject
+	var/mob/living/carbon/human/target = A.request.answerer
+	SStgui.update_uis(src)
+	if(A.answer)
+		if(A.answer.value == "No")
+			to_chat(user, span_notice("\The [target] chose not to pull \the [src]!"))
+		else
+			pull_cracker(user, target)
+	else if(A.request.last_error == "cracker not held")
+		to_chat(user, span_notice("\The [src] is no longer in-hand!"))
+		to_chat(target, span_notice("\The [src] is no longer in-hand!"))

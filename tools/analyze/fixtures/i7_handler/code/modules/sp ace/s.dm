@@ -1,0 +1,1 @@
+/obj/s/attackby(a)

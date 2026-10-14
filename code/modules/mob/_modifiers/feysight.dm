@@ -12,14 +12,14 @@
 
 /datum/body_effect/feysight/on_start(mob/living/L)
 	L.see_invisible = 60
-	L.see_invisible_default = 60
-	L.vis_enabled += VIS_GHOSTS
+	L.set_see_invisible_default(60)
+	hud_of(L)?.vis_enabled += VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/feysight/on_end(mob/living/L, expired)
-	L.see_invisible_default = initial(L.see_invisible_default)
+	L.set_see_invisible_default(initial(L.see_invisible_default))
 	L.see_invisible = L.see_invisible_default
-	L.vis_enabled -= VIS_GHOSTS
+	hud_of(L)?.vis_enabled -= VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/feysight/can_apply(mob/living/L)
@@ -43,4 +43,4 @@
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		H.status_set(EFFECT_DRUGGED, min(15, H.status_units(EFFECT_DRUGGED) + 4))
+		H.status_set(STAT_DRUGGED, min(15, H.status_units(STAT_DRUGGED) + 4))

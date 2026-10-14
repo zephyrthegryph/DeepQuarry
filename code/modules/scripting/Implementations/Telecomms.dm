@@ -20,6 +20,9 @@
 	 * Returns: List of errors
 	*/
 
+CAPABILITIES(/datum/TCS_Compiler)
+	owns_one(nameof(interpreter), /datum/n_Interpreter/TCS_Interpreter)
+
 /datum/TCS_Compiler/proc/Compile(code as message)
 	var/datum/n_scriptOptions/nS_Options/options = new()
 	var/datum/n_Scanner/nS_Scanner/scanner       = new(code, options)
@@ -35,7 +38,7 @@
 	if(returnerrors.len)
 		return returnerrors
 
-	own_set(src, nameof(interpreter), new /datum/n_Interpreter/TCS_Interpreter(program))
+	rel_set(src, nameof(interpreter), new /datum/n_Interpreter/TCS_Interpreter(program))
 	interpreter.persist	= 1
 	rel_set(interpreter, nameof(interpreter.Compiler), src)
 
@@ -47,7 +50,7 @@
  * Arguments:
  *   var/datum/signal/signal - a telecomms signal
  *   relay - the server relays the signal once the script is done (it may sleep first)
- * Returns: TRUE when the script finished at once; FALSE when it didn't run, or sleeps (a task
+ * Returns: TRUE when the script finished at once; FALSE when it didn't run, or sleeps (a timer
  * resumes it, and relays the signal if asked).
  */
 /datum/TCS_Compiler/proc/Run(datum/signal/signal, relay = FALSE)
@@ -58,8 +61,8 @@
 	if(!interpreter)
 		return TRUE
 
-	// A script that sleeps runs as a task claiming the compiler: one run at a time.
-	if(om_busy(src))
+	// A script that sleeps resumes from a timer of the compiler: one run at a time.
+	if(after_pending(src, "script"))
 		return TRUE
 
 	rel_set(interpreter, nameof(interpreter.container), src)
@@ -196,41 +199,25 @@
 	// Run the compiled code
 	interpreter.Run()
 	if(interpreter.IsSuspended())
-		// The script called sleep(): the rest runs as task steps.
-		if(istype(om_task_start(/datum/om/task/ntsl_script, src, null, receiver = src, signal = signal, relay = relay), /datum/om/task))
-			return FALSE
-		script_dropped()
+		// The script called sleep(): the rest runs from timer steps.
+		after(src, interpreter.yield_for, PROC_REF(script_step), key = "script", with = list(signal, relay), keeps_dead = TRUE)
+		return FALSE
 	apply_signal(signal)
 	return TRUE
 
 /// A telecomms script that called sleep(): each step resumes it after its sleep; once it is done
-/// the signal gets the script's changes and, for a server run, is relayed. The task claims the
-/// compiler; deleting the compiler or the signal drops the rest of the script.
-/datum/om/task/ntsl_script
-	name = "ntsl script"
-	claims_actor = TRUE
-	steps = list(/datum/TCS_Compiler/proc/script_step = 0)
-	cancel_proc = /datum/TCS_Compiler/proc/script_cancelled
-	var/datum/signal/signal
-	var/relay = FALSE
-	var/waited = FALSE
-
-/datum/TCS_Compiler/proc/script_step(datum/om/task/ntsl_script/T)
-	if(!T.waited)
-		T.waited = TRUE
-		return STEP_REPEAT(interpreter.yield_for)
+/// the signal gets the script's changes and, for a server run, is relayed. Deleting the compiler
+/// drops the timer; a deleted signal drops the rest of the script.
+/datum/TCS_Compiler/proc/script_step(datum/signal/signal, relay)
 	if(!interpreter.Resume())
-		return STEP_REPEAT(interpreter.yield_for)
-	var/datum/signal/signal = T.signal
+		after(src, interpreter.yield_for, PROC_REF(script_step), key = "script", with = list(signal, relay), keeps_dead = TRUE)
+		return
 	if(!signal)
-		return STEP_FAIL("gone")
+		script_dropped()
+		return
 	apply_signal(signal)
-	if(T.relay)
+	if(relay)
 		Holder()?.relay_signal(signal)
-	return STEP_DONE
-
-/datum/TCS_Compiler/proc/script_cancelled(datum/om/task/T)
-	script_dropped()
 
 /// Forgets a suspended run.
 /datum/TCS_Compiler/proc/script_dropped()
@@ -314,7 +301,7 @@
 		freq = text2num(freq)
 	newsign.frequency = freq
 
-	var/datum/radio_frequency/connection = GLOB.radio_service.return_frequency(freq)
+	var/datum/radio_frequency/connection = SSradio.return_frequency(freq)
 	newsign.data["connection"] = connection // ALLOW(ownership): a transient signal payload naming the frequency datum; the signal is dropped after transmission
 
 

@@ -57,7 +57,7 @@
 
 	if(L.buckle_mob(src, forced = TRUE))
 		rel_set(src, nameof(victim), L)
-		update_icon()
+		set_consuming(TRUE)
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		play_sfx(src, SFX_METROID_METROIDATTACH)
 		victim.visible_message(
@@ -75,8 +75,8 @@
 		span_notice("\The [src] slides off of you!")
 		)
 	rel_clear(src, nameof(victim))
-	update_icon()
-	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
+	set_consuming(FALSE)
+	after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 
 /mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
 	if(!L || !istype(L))
@@ -85,7 +85,7 @@
 	if(harmless)
 		to_chat(src, "I am pacified... I cannot eat...")
 		return FALSE
-	if(L.mob_class & MOB_CLASS_SLIME)
+	if(kind_of(L).mob_class & MOB_CLASS_SLIME)
 		to_chat(src, "I cannot feed on other slimes...")
 		return FALSE
 	if(HAS_SYNTHETIC_BIOLOGY(L))

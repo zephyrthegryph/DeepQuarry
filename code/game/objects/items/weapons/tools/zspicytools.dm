@@ -7,9 +7,11 @@
 	icon_state = "heavysniper"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "heavysniper"
-	toolspeed = 0.1
-	force = 30
-	usesound = SFX_WEAPONS_GUNSHOT_CANNON
+
+CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
+	configure(item_tooling(speed = 0.1))
+	configure(item_combat(force = 30))
+	configure(item_sounds(use = SFX_WEAPONS_GUNSHOT_CANNON))
 
 /obj/item/weldingtool/lasercannon
 	name = "laser cannon welding tool"
@@ -18,30 +20,21 @@
 	icon_state = "lasercannon"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "mhdhowitzer-wielded"
-	toolspeed = 0.1
-	usesound = SFX_WEAPONS_LASERCANNONFIRE
 	acti_sound = SFX_WEAPONS_KENETIC_RELOAD
 	always_process = TRUE
 
-/obj/item/weldingtool/lasercannon/periodic_step()
+CAPABILITIES(/obj/item/weldingtool/lasercannon)
+	configure(item_tooling(speed = 0.1))
+	configure(item_sounds(use = SFX_WEAPONS_LASERCANNONFIRE))
+
+/obj/item/weldingtool/lasercannon/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/weldingtool/lasercannon/appearance_overlays()
-	. = list()
-	// Lights
-	if(welding && flame_intensity)
-		set_light(flame_intensity, flame_intensity, flame_color)
-	else
-		set_light(0)
-
-//	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
-	var/mob/M = loc
-	if(istype(M))
-		M.update_inv_l_hand()
-		M.update_inv_r_hand()
+/// A cannon body: no flame or counter overlays, only the light.
+/obj/item/weldingtool/lasercannon/welder_overlays(datum/look/look)
+	return
 
 /obj/item/tool/wrench/fuelrod
 	name = "fuel-rod cannon wrench"
@@ -50,9 +43,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, 
 	icon_state = "fuelrodgun"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "coilgun"
-	usesound = SFX_WEAPONS_RAILGUN
-	toolspeed = 0.1
-	force = 30
+
+CAPABILITIES(/obj/item/tool/wrench/fuelrod)
+	configure(item_tooling(speed = 0.1))
+	configure(item_combat(force = 30))
+	configure(item_sounds(use = SFX_WEAPONS_RAILGUN))
 
 /obj/item/tool/wirecutters/chainsaw
 	name = "chainsaw wirecutters"
@@ -60,10 +55,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, 
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
 	item_state = "chainsaw0"
-	usesound = SFX_WEAPONS_CHAINSAW_ATTACK
 	random_color = FALSE
-	toolspeed = 0.1
-	force = 30
+
+CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
+	configure(item_tooling(speed = 0.1))
+	configure(item_combat(force = 30))
+	configure(item_sounds(use = SFX_WEAPONS_CHAINSAW_ATTACK))
 
 /obj/item/tool/screwdriver/diamonddrill
 	name = "diamond drill power screwdriver"
@@ -71,11 +68,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, 
 	icon = 'icons/obj/items.dmi'
 	icon_state = "diamonddrill"
 	item_state = "jackhammer"
-	hitsound = SFX_ITEMS_DRILL_HIT
-	usesound = SFX_ITEMS_DRILL_USE_2
 	random_color = FALSE
-	toolspeed = 0.1
-	force = 30
+
+CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
+	configure(item_tooling(speed = 0.1))
+	configure(item_combat(force = 30))
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/stack/cable_coil/alien/blood
 	name = "Blood cable coil"
@@ -85,7 +83,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/lasercannon, TYPE_PROC_REF(/atom, 
 	item_state = "coil"
 	color = "#8A0303"
 	catalogue_data = null
-	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/stack/cable_coil/alien/blood)
+	configure(item_tooling(speed = 0.1))
 
 /obj/item/storage/belt/utility/spicyfull
 	starts_with = list(

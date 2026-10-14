@@ -1,0 +1,47 @@
+@obj.structure human|none
++0 menu: Take apart
+@obj.structure robot|none
++0 menu: Take apart
+@obj.structure ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Smash
+human|/obj/item/tool/screwdriver menu: Take apart
+human|/obj/item/tool/screwdriver click: Click: Smash
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Smash
+human|/obj/item/tool/crowbar menu: Take apart
+human|/obj/item/tool/crowbar click: Click: Smash
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Smash
+human|/obj/item/tool/wrench menu: Take apart
+human|/obj/item/tool/wrench click: Click: Smash
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Smash
+human|/obj/item/tool/wirecutters menu: Take apart
+human|/obj/item/tool/wirecutters click: Click: Smash
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Smash
+human|/obj/item/multitool menu: Take apart
+human|/obj/item/multitool click: Click: Smash
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Smash
+human|/obj/item/weldingtool menu: Take apart
+human|/obj/item/weldingtool click: Click: Smash
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Smash
+human|/obj/item/stack/cable_coil menu: Take apart
+human|/obj/item/stack/cable_coil click: Click: Smash
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Smash
+human|/obj/item/stack/material/steel menu: Take apart
+human|/obj/item/stack/material/steel click: Click: Smash
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Smash
+human|/obj/item/card/id menu: Take apart
+human|/obj/item/card/id click: Click: Smash
+human|/obj/item menu: Hit
+human|/obj/item menu: Smash
+human|/obj/item menu: Take apart
+human|/obj/item click: Click: Smash
+keys: drag_buckle, melee_hit, smoleruins_dismantle_hand, smoleruins_item

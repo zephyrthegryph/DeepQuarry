@@ -44,19 +44,20 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/proc/toggle_rider_reins)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis)
+CAPABILITIES(/mob/living/simple_mob/vore/blaidd)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	verb_entry(/mob/living/simple_mob/vore/blaidd/proc/blaidd_invis, login = TRUE)
 
 /mob/living/simple_mob/vore/blaidd/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/blaidd/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The canine pounces atop you and wastes now time in wrapping its jaws around your entire head. The beast is strong and determined, there is no wriggling out of it's iron grip. Within its maw, the tongue slathers canine drool across you, hot doglike breaths wash across your face, triangular teeth hold you firmly in place. It doesn't take long before the blaidd is gulping you down aggressively, like a big chunk of meat. The creature's stomach distends and hangs beneath it with your weight, swaying heavily not just with your movements, but every step from the wolf. Bound up uncomfortably tight in this sweltering, dark gut, movement is almost impossible and it's hard to tell which way is up."
 	B.vore_sound = "Tauric Swallow"
@@ -90,33 +91,16 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/blaidd, /mob/living/simple_mob/vo
 	A large canine found in whitespace or the Glamour, distinguished easily by a large spikey mane and lightly striped pattern. The Blaidd, named from the glamourspeak word for wolf, is known to be a ferocious hunter and predator. It is a carnivore that stalks prey from a distance silently, whilst its otherwise quite striking fur blends it well into the environment through some sort of active camouflage, a less powerful version of that seen in the local Lleill. It generally avoids attacking its prey when it feels it is being watched, but once it is able to finally pounce on a target, it will not retreat until forced."
 	value = CATALOGUER_REWARD_HARD
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/blaidd, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/vore/blaidd/appearance_overlays()
-	. = list()
-	. += ..()
-	if(vore_active)
-		var/voremob_awake = FALSE
-		if(icon_state == icon_living)
-			voremob_awake = TRUE
-			if(blaidd_invisibility)
-				icon_state = "[icon_living]_cloaked"
-		update_fullness()
-		if(!vore_fullness)
-			update_transform()
-			return .
-		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
-			if(blaidd_invisibility)
-				icon_state = "[icon_living]_cloaked-[vore_fullness]"
-			else
-				icon_state = "[icon_living]-[vore_fullness]"
-		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
-			icon_state = "[icon_dead]-[vore_fullness]"
-		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
-			icon_state = "[icon_rest]-[vore_fullness]"
-		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
-			remove_eyes()
-			add_eyes()
-	update_transform()
+
+/mob/living/simple_mob/vore/blaidd/draw(datum/look/look)
+	..()
+	// The base drew the life state and the fullness suffix; the cloak swaps in the cloaked sprite of the awake states.
+	if(vore_active && blaidd_invisibility)
+		var/state = look.state_so_far(src)
+		if(state == icon_living)
+			look.state("[icon_living]_cloaked")
+		else if(vore_fullness && state == "[icon_living]-[vore_fullness]")
+			look.state("[icon_living]_cloaked-[vore_fullness]")
 
 /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis()
 	set name = "Invisibility"
@@ -124,11 +108,9 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/blaidd, TYPE_PROC_REF(/atom,
 	set category = VERB_CAT_ABILITIES
 
 	if(blaidd_invisibility)
-		blaidd_invisibility = 0
+		set_blaidd_invisibility(0)
 	else
-		blaidd_invisibility = 1
-
-	update_icon()
+		set_blaidd_invisibility(1)
 
 //legacy /datum/ai_brain/.../can_attack and /engage_target overrides
 // removed in the combat migration. Behaviors now handled by the brain.

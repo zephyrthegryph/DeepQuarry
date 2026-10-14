@@ -22,22 +22,33 @@
 	var/obj/structure/reagent_dispensers/watertank/tank
 
 
-/mob/living/bot/farmbot/Initialize(mapload, newTank)
-	. = ..()
-	if(!newTank)
-		newTank = new /obj/structure/reagent_dispensers/watertank(src)
-	var/obj/structure/reagent_dispensers/watertank/W = newTank
+/// The water tank handed over by the arm assembly that built it (its constructor param), or null for a new one.
+/mob/living/bot/farmbot/var/tmp/obj/structure/reagent_dispensers/watertank/tank_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/bot/farmbot/proc/take_tank(obj/structure/reagent_dispensers/watertank/W)
+	if(!W)
+		W = new /obj/structure/reagent_dispensers/watertank(src)
 	W.forceMove(src)
 	own_move(W, src, nameof(tank)) // handed over from the arm assembly, when built from one
 
-DECLARE_UI(/mob/living/bot/farmbot, "Farmbot")
+// The controls open on a touch in help intent (the hand op below), so the window's own open op answers the menu and a remote user only.
+CAPABILITIES(/mob/living/bot/farmbot)
+	ref_one(nameof(tank_at_make), /obj/structure/reagent_dispensers/watertank)
+	interface("Farmbot", input = menu())
+	op("touch", hand(), stance(I_HELP), label("Open controls"), then(PROC_REF(farmbot_touched)))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("water", ui_act("water"), then(PROC_REF(ui_act_water)))
+	op("refill", ui_act("refill"), then(PROC_REF(ui_act_refill)))
+	op("weed", ui_act("weed"), then(PROC_REF(ui_act_weed)))
+	op("replacenutri", ui_act("replacenutri"), then(PROC_REF(ui_act_replacenutri)))
+	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
 
-UI_DATA(/mob/living/bot/farmbot, "on:num", "locked:num", "merge:ui_data_mob_living_bot_farmbot{tank:bool,tankVolume:num,tankMaxVolume:num,waters_trays:num,refills_water:num,uproots_weeds:num,replaces_nutriment:num,collects_produce:num,removes_dead:num}")
-
-/// The computed part of /mob/living/bot/farmbot's window data (declared on its UI_DATA row).
-/mob/living/bot/farmbot/proc/ui_data_mob_living_bot_farmbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, its tank, and the settings while the panel is unlocked.
+/mob/living/bot/farmbot/ui_data(datum/act/eval/A)
 	var/list/data = list()
-
+	data["on"] = on
+	data["locked"] = locked
 	data["tank"] = !!tank
 	if(tank)
 		data["tankVolume"] = tank.reagents.total_volume
@@ -61,31 +72,22 @@ UI_DATA(/mob/living/bot/farmbot, "on:num", "locked:num", "merge:ui_data_mob_livi
 	return data
 
 
-EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open controls", PROC_REF(farmbot_interaction_hand)))
-
-/// Old attack_hand, in help (other stances fall to the living defaults): the help touch first (old ..()); if that did nothing, open the controls.
-/mob/living/bot/farmbot/proc/farmbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A touch in help intent (other stances fall to the living defaults): the help touch first; if that did nothing, open the controls.
+/mob/living/bot/farmbot/proc/farmbot_touched(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!unarmed_touch(user, I_HELP))
 		tgui_interact(user)
-	return TRUE
 
 /mob/living/bot/farmbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("You short out [src]'s plant identifier circuits."))
-		om_after(src, rand(30, 50), PROC_REF(emag_takes))
+		after(src, rand(3 SECONDS, 5 SECONDS), PROC_REF(emag_takes))
 		return 1
 
-/mob/living/bot/farmbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/farmbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_power)
-	if(!access_scanner.allowed(ui.user))
+/mob/living/bot/farmbot/proc/ui_act_power(datum/act/op/A)
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
@@ -93,29 +95,25 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_power)
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "water", ui_act_water)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_water)
+/mob/living/bot/farmbot/proc/ui_act_water(datum/act/op/A)
 	if(locked)
 		return TRUE
 	waters_trays = !waters_trays
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "refill", ui_act_refill)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_refill)
+/mob/living/bot/farmbot/proc/ui_act_refill(datum/act/op/A)
 	if(locked)
 		return TRUE
 	refills_water = !refills_water
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "weed", ui_act_weed)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_weed)
+/mob/living/bot/farmbot/proc/ui_act_weed(datum/act/op/A)
 	if(locked)
 		return TRUE
 	uproots_weeds = !uproots_weeds
 	. = TRUE
 
-UI_ACT(/mob/living/bot/farmbot, "replacenutri", ui_act_replacenutri)
-UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
+/mob/living/bot/farmbot/proc/ui_act_replacenutri(datum/act/op/A)
 	if(locked)
 		return TRUE
 	replaces_nutriment = !replaces_nutriment
@@ -131,9 +129,9 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 
 /mob/living/bot/farmbot/update_icons()
 	if(on && action)
-		icon_state = "farmbot_[action]"
+		set_icon_state("farmbot_[action]")
 	else
-		icon_state = "farmbot[on]"
+		set_icon_state("farmbot[on]")
 
 /mob/living/bot/farmbot/handleRegular()
 	if(emagged && prob(1))
@@ -164,7 +162,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 /mob/living/bot/farmbot/calcTargetPath() // We need to land NEXT to the tray, because the tray itself is impassable
 	if(isnull(target))
 		return
-	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 1, 32)
+	target_path = path_for_bot(src, get_turf(target), 1, 32)
 	if(!target_path)
 		rel_add(src, nameof(ignore_list), target)
 		rel_clear(src, nameof(target))
@@ -182,7 +180,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 	if(!..())
 		return
 
-	if(om_busy(src))
+	if(bot_busy())
 		return
 
 	if(istype(A, /obj/machinery/portable_atmospherics/hydroponics))
@@ -197,25 +195,25 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts [T.dead? "removing the plant from" : "harvesting"] %T%."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_COLLECT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_COLLECT, PROC_REF(farm_job_end))
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts watering %T%."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_WATER, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_WATER, PROC_REF(farm_job_end))
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts uprooting the weeds in %T%."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_UPROOT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_UPROOT, PROC_REF(farm_job_end))
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				act_message(src, A, others = span_notice("%U% starts fertilizing %T%."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_NUTRIMENT, busy = src)
+				bot_work(3 SECONDS, T, PROC_REF(farm_job_done), FARMBOT_NUTRIMENT, PROC_REF(farm_job_end))
 
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)
@@ -228,7 +226,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 	else if(emagged && ishuman(A))
 		var/action = pick("weed", "water")
 
-		om_hold_busy(src, 5 SECONDS) // Some delay
+		bot_hold(5 SECONDS) // Some delay
 		switch(action)
 			if("weed")
 				flick("farmbot_hoe", src)
@@ -237,47 +235,39 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 					act_message(src, A, others = span_danger("%U% swings wildly at %T% with a minihoe, missing completely!"))
 					return
 				var/t = pick("slashed", "sliced", "cut", "clawed")
-				A.attack_generic(src, 5, t)
+				generic_hit(A, src, 5, t)
 			if("water")
 				flick("farmbot_water", src)
 
 				act_message(src, A, others = span_danger("%U% splashes %T% with water!"))
 				tank.reagents.splash(A, 100)
 
-/// Three seconds of work on a tray (harvest, water, weed or fertilize: `job`); the bot is busy.
-/datum/om/task/timed/farm_job
-	duration = 3 SECONDS
-	complete_proc = /mob/living/bot/farmbot/proc/farm_job_done
-	cancel_proc = /mob/living/bot/farmbot/proc/farm_job_end
-	var/job
-
-/mob/living/bot/farmbot/proc/farm_job_end(datum/om/task/timed/farm_job/task)
+/// A job on a tray that ended (done or broken off): the bot stops showing the work.
+/mob/living/bot/farmbot/proc/farm_job_end(datum/act/op/A)
 	action = ""
 	update_icons()
-	var/atom/tray = task.target
-	tray?.update_icon()
 
 /// One second of refilling from a sink, repeated until the tank is full or interrupted.
 /mob/living/bot/farmbot/proc/refill_step(atom/A)
 	if(tank.reagents.total_volume < tank.reagents.maximum_volume)
-		om_task_timed(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end), busy = src)
+		bot_work(1 SECOND, A, PROC_REF(refill_pulse), null, PROC_REF(refill_end))
 		return
 	refill_end()
 
-/mob/living/bot/farmbot/proc/refill_pulse(atom/A)
+/mob/living/bot/farmbot/proc/refill_pulse(datum/act/op/A)
 	tank.reagents.add_reagent("water", 100)
 	if(prob(5))
 		play_sfx(src, SFX_EFFECTS_SLOSH)
-	refill_step(A)
+	refill_step(A.target)
 
-/mob/living/bot/farmbot/proc/refill_end()
+/mob/living/bot/farmbot/proc/refill_end(datum/act/op/A = null)
 	action = ""
 	update_icons()
 	act_message(src, null, others = span_notice("%U% finishes refilling its tank."))
 
-/mob/living/bot/farmbot/proc/farm_job_done(datum/om/task/timed/farm_job/task)
-	var/obj/machinery/portable_atmospherics/hydroponics/T = task.target
-	switch(task.job)
+/mob/living/bot/farmbot/proc/farm_job_done(datum/act/op/A)
+	var/obj/machinery/portable_atmospherics/hydroponics/T = A.target
+	switch(work_arg)
 		if(FARMBOT_COLLECT)
 			act_message(src, T, others = span_notice("%U% [T.dead? "removes the plant from" : "harvests"] %T%."))
 			T.attack_hand(src)
@@ -287,11 +277,11 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 			tank.reagents.trans_to(T, 100 - T.waterlevel)
 		if(FARMBOT_UPROOT)
 			act_message(src, T, others = span_notice("%U% uproots the weeds in %T%."))
-			T.weedlevel = 0
+			T.set_weedlevel(0)
 		if(FARMBOT_NUTRIMENT)
 			act_message(src, T, others = span_notice("%U% fertilizes %T%."))
 			T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)
-	farm_job_end(task)
+	farm_job_end(A)
 
 /mob/living/bot/farmbot/explode()
 	act_message(src, null, others = span_danger("%U% blows apart!"))
@@ -304,7 +294,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 
 	if(tank)
 		tank.forceMove(Tsec)
-		own_take(src, nameof(tank))
+		rel_take(src, nameof(tank))
 
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)
@@ -361,19 +351,27 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 	w_class = ITEMSIZE_NORMAL
 
 
-/obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
-	. = ..()
-	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!
-		own_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
-	else
-		var/obj/O = theTank
-		O.forceMove(src)
-		own_move(O, src, nameof(tank))
+CAPABILITIES(/obj/item/farmbot_arm_assembly)
+	ref_one(nameof(tank_at_make), /obj)
+	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(null, PROC_REF(watertank_interaction_item)))
+/// The water tank the assembly is built around (its constructor param), or null for a new one (an admin spawn).
+/obj/item/farmbot_arm_assembly/var/tmp/obj/tank_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/farmbot_arm_assembly/proc/take_tank(obj/O)
+	if(!O)
+		rel_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
+		return
+	O.forceMove(src)
+	own_move(O, src, nameof(tank))
 
 /// Old attackby.
-/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(mob/user, obj/item/S, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/S = A.held
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -382,17 +380,19 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(n
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return FALSE
+		return OP_DECLINE
 
 	to_chat(user, "You add the robot arm to [src].")
 
 	consume(S, user)
 
 	new /obj/item/farmbot_arm_assembly(loc, src)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby.
-/obj/item/farmbot_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/farmbot_arm_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if((istype(W, /obj/item/analyzer/plant_analyzer)) && (build_step == 0))
 		build_step++
 		to_chat(user, "You add the plant analyzer to [src].")
@@ -426,15 +426,10 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(n
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/item/farmbot_arm_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/farmbot_arm_assembly/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 #undef FARMBOT_COLLECT

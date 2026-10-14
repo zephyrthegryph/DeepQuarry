@@ -58,9 +58,9 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 2 SECONDS	// Upper bound.
 
-/mob/living/simple_mob/animal/giant_spider/phorogenic/Initialize(mapload)
-	adjust_scale(1.25)
-	return ..()
+/mob/living/simple_mob/animal/giant_spider/phorogenic
+	icon_scale_x = 1.25
+	icon_scale_y = 1.25
 
 /mob/living/simple_mob/animal/giant_spider/phorogenic/proc/explode()
 	if(src && !exploded)
@@ -73,5 +73,5 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	om_after(src, delay, PROC_REF(explode))
+	after(src, delay, PROC_REF(explode))
 	return ..()

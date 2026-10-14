@@ -1,9 +1,9 @@
 /obj/item/modular_computer/telescreen/preset/install_default_hardware()
 	..()
-	own_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit(src))
-	own_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
-	own_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive(src))
-	own_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card(src))
+	rel_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit(src))
+	rel_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
+	rel_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive(src))
+	rel_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card(src))
 
 /obj/item/modular_computer/telescreen/preset/generic/install_default_programs()
 	..()

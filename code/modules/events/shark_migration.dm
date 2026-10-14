@@ -5,6 +5,9 @@
 	var/shark_cap	= 10
 	var/list/spawned_shark
 
+CAPABILITIES(/datum/event/shark_migration)
+	owns_many(nameof(spawned_shark))
+
 /datum/event/shark_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -70,8 +73,8 @@
 // Spawn a single shark at given location.
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_shark_destruction))
-	own_add(src, nameof(spawned_shark), M)
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_shark_destruction)))
+	rel_add(src, nameof(spawned_shark), M)
 	return M
 
 // Counts living shark spawned by this event.
@@ -82,10 +85,11 @@
 			. += 1
 
 // If shark is bomphed, remove it from the list.
-/datum/event/shark_migration/proc/on_shark_destruction(mob/M, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/event/shark_migration/proc/on_shark_destruction(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_shark), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)
 
 /datum/event/shark_migration/end()
 	. = ..()
@@ -95,7 +99,7 @@
 			var/turf/T = get_turf(SM)
 			if(istype(T, /turf/space))
 				if(prob(75))
-					qdel(SM)
+					spent(SM)
 
 // Overmap version
 /datum/event/shark_migration/overmap/announce()

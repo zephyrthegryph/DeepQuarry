@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The OM scheduler's deadline, borrow, per-lane and leftover passes and the missed-wake audit are kernel work items instead of calls hard-coded in the kernel tick"

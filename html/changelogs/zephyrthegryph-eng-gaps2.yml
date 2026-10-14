@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Questions asked by converted objects (labels, amounts, colors, choices) now open a window for the player"

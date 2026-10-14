@@ -1,0 +1,9 @@
+/obj/structure/ghost_pod/ghost_activated/unified_hole used=1 -overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole used=1 -overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+/obj/structure/ghost_pod/ghost_activated/unified_hole used=2 -overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole used=2 -overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate used=1 -overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate used=1 -overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate used=2 -overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate used=2 -overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+

@@ -54,14 +54,61 @@
 /datum/config_entry/string/db_daemon
 	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN
 
-/// Per-query execution timeout in milliseconds for async queries sitting in queries_active.
-/// A query that remains in-flight longer than this is forcibly abandoned and its slot freed.
-/// This prevents a small number of slow/hung queries from exhausting the max_concurrent_queries
-/// pool and blocking all database access. Set to 0 to disable enforcement.
-/// Default: 30000 (30 seconds). Minimum: 1000 ms.
-/datum/config_entry/number/slow_query_timeout_ms
-	default = 30000
-	min_val = 0
-
 /datum/config_entry/flag/enable_stat_tracking
+	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN
+
+/// Record server metrics and events (code/modules/metrics/) to the metric_* tables.
+/// Needs the database; does nothing without it.
+/datum/config_entry/flag/metrics_enabled
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Seconds of BYOND proc profiling the metrics service records from the round start, so a freeze in the
+/// first minute of a round is stored with the procs that caused it. 0 turns it off. Skipped while
+/// AUTO_PROFILE has the profiler.
+/datum/config_entry/number/metrics_profile_round_start
+	default = 60
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Seconds of BYOND proc profiling the metrics service records after a tick goes far over budget
+/// (METRICS_SPIKE_USAGE), at most once per METRICS_PROFILE_COOLDOWN. 0 turns it off.
+/datum/config_entry/number/metrics_spike_profile
+	default = 10
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Seconds of BYOND proc profiling the metrics service records in steady play: first
+/// METRICS_PROFILE_STEADY_FIRST after the round start (the round-start work is over by then), then every
+/// METRICS_PROFILE_STEADY_EVERY minutes. It shows what a running server spends its idle time on, which
+/// the spike and round-start captures don't. 0 turns it off.
+/datum/config_entry/number/metrics_profile_steady
+	default = 30
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Minutes between steady-play profiles (METRICS_PROFILE_STEADY). 0: only the first one.
+/datum/config_entry/number/metrics_profile_steady_every
+	default = 30
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Base URL of the admin viewer (tools/admin-viewer), e.g. http://127.0.0.1:8090.
+/// Empty hides the "Admin Viewer" verb's link.
+/datum/config_entry/string/metrics_viewer_url
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Shared secret the game signs admin viewer links with; the viewer verifies them with the
+/// same value (VIEWER_SECRET). Without it no link is issued.
+/datum/config_entry/string/metrics_viewer_secret
+	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN
+
+/// Minutes an admin viewer link stays valid.
+/datum/config_entry/number/metrics_viewer_link_minutes
+	default = 720
+	min_val = 1
+	protection = CONFIG_ENTRY_LOCKED
+
+/// When set, the localhost-only diagnostic world/Topic probes (mcdiag, omsteps, mcprof_*, ...)
+/// also require `key=<this>` in the topic.
+/datum/config_entry/string/diag_topic_key
 	protection = CONFIG_ENTRY_LOCKED | CONFIG_ENTRY_HIDDEN

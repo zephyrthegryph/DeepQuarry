@@ -10,22 +10,21 @@
 	layer = MOB_LAYER - 1
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/bigtree/choose_icon_state()
-	return "[base_state][rand(1, 4)]"
+/obj/structure/flora/tree/bigtree/choose_icon_state(datum/roller/R)
+	return "[base_state][R.number(1, 4)]"
 
-/obj/structure/flora/tree/bigtree/Initialize(mapload)
-	. = ..()
-
-	var/image/i = image('icons/obj/flora/moretrees_vr.dmi', "[icon_state]-b")
-	i.plane = ABOVE_MOB_PLANE
-	add_overlay(i)
 
 /obj/structure/flora/tree/bigtree/stump()
 	if(is_stump)
 		return
 
-	is_stump = TRUE
+	set_is_stump(TRUE)
 	set_density(FALSE)
-	icon_state = "[icon_state]_stump"
+	set_icon_state("[icon_state]_stump")
 	cut_overlays()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
+
+/obj/structure/flora/tree/bigtree/draw(datum/look/look)
+	..()
+	if(!is_stump)
+		look.overlay(look_overlay_image('icons/obj/flora/moretrees_vr.dmi', "[look.state_so_far(src)]-b", plane = ABOVE_MOB_PLANE))

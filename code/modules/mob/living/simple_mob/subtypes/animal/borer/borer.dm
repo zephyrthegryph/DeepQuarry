@@ -24,7 +24,6 @@
 	mob_size = MOB_TINY // no landmines for you
 
 	universal_understand = TRUE
-	can_be_antagged = TRUE
 
 	holder_type = /obj/item/holder/borer
 
@@ -42,7 +41,6 @@
 	var/has_reproduced = FALSE
 	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
 
-	can_be_drop_prey = FALSE
 	vent_crawl_time = 30 						// faster vent crawler
 
 	var/static/borer_chem_list = list(
@@ -77,21 +75,14 @@
 	if(antag && mind)
 		GLOB.borers.add_antagonist(mind)
 
-DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
+/// Its true name: a rank and a number (rolls()).
+/mob/living/simple_mob/animal/borer/proc/roll_true_name(datum/roller/R)
+	return "[R.choose(list("Primary", "Secondary", "Tertiary", "Quaternary"))] [R.number(1000, 9999)]"
 
-/mob/living/simple_mob/animal/borer/Initialize(mapload)
-	add_language("Cortical Link")
-	motiontracker_subscribe()
-
-	true_name = "[pick("Primary","Secondary","Tertiary","Quaternary")] [rand(1000,9999)]"
-
-	. = ..()
-
-	if(!roundstart && antag)
-		return INITIALIZE_HINT_LATELOAD
-
-/mob/living/simple_mob/animal/borer/LateInitialize()
+/// An antag borer spawned during the round asks for a player.
+/mob/living/simple_mob/animal/borer/proc/find_player(datum/act/timer/A)
+	if(roundstart || !antag)
+		return
 	request_player()
 
 // a borer detaches from and leaves its host.
@@ -103,13 +94,10 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 		leave_host()
 	..()
 
-/datum/om/stage/life/special/animal/borer
-	of = /mob/living/simple_mob/animal/borer
-
-/datum/om/stage/life/special/animal/borer/perform(mob/living/simple_mob/animal/borer/self, datum/om/frame/life/ctx)
-	self.handle_chemicals()
-	self.handle_docile()
-	om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/animal/borer, handle_braindamage))
+/mob/living/simple_mob/animal/borer/life_special(datum/seq_frame/life/F)
+	src.handle_chemicals()
+	src.handle_docile()
+	after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob/animal/borer, handle_braindamage))
 
 /mob/living/simple_mob/animal/borer/get_status_tab_items()
 	. = ..()
@@ -124,9 +112,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 
 	var/chem_before = chemicals
 	if(controlling)
-		chemicals += 0.25
+		set_chemicals(chemicals + 0.25)
 	else
-		chemicals += 0.1
+		set_chemicals(chemicals + 0.1)
 	var/new_chem = FLOOR(chemicals/10,1)
 	if(new_chem > FLOOR(chem_before/10,1))
 		to_chat(host, span_alien("Your chemicals have increased to [new_chem * 10]"))
@@ -207,7 +195,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	if(chemicals < amount)
 		to_chat(controlling ? host : src, span_warning("You don't have enough chemicals, requires [amount]! Currently you have [FLOOR(chemicals,1)]."))
 		return FALSE
-	chemicals -= amount
+	set_chemicals(chemicals - amount)
 	to_chat(controlling ? host : src, span_info("You use [amount] chemicals, [FLOOR(chemicals,1)] remain."))
 	return TRUE
 
@@ -220,27 +208,27 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	. = ..()
 	if(!.)
 		return
-	if(src.borer_chem_display)
-		src.borer_chem_display.invisibility = INVISIBILITY_NONE
+	if(hud_used?.borer_chem_display)
+		hud_used?.borer_chem_display?.invisibility = INVISIBILITY_NONE
 		switch(src.chemicals)
 			if(0 to 9)
-				src.borer_chem_display.icon_state = "ling_chems0e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems0e"
 			if(10 to 19)
-				src.borer_chem_display.icon_state = "ling_chems10e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems10e"
 			if(20 to 29)
-				src.borer_chem_display.icon_state = "ling_chems20e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems20e"
 			if(30 to 39)
-				src.borer_chem_display.icon_state = "ling_chems30e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems30e"
 			if(40 to 49)
-				src.borer_chem_display.icon_state = "ling_chems40e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems40e"
 			if(50 to 59)
-				src.borer_chem_display.icon_state = "ling_chems50e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems50e"
 			if(60 to 69)
-				src.borer_chem_display.icon_state = "ling_chems60e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems60e"
 			if(70 to 79)
-				src.borer_chem_display.icon_state = "ling_chems70e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems70e"
 			if(80 to INFINITY)
-				src.borer_chem_display.icon_state = "ling_chems80e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems80e"
 
 /mob/living/simple_mob/animal/borer/proc/detatch()
 	var/mob/living/carbon/human/host = src?.borer_host()
@@ -250,9 +238,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/punish_host, src)
-	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/spawn_larvae, src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/release_control), src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/punish_host), src)
+	revoke(host, granted_verb(/mob/living/carbon/proc/spawn_larvae), src)
 
 	// This entire section is awful and a relic of ancient times. It needs to be replaced
 	if(host_brain)
@@ -289,7 +277,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 		if(!host.lastKnownIP)
 			host.lastKnownIP = b2h_ip
 
-	own_clear(src, nameof(host_brain), OWN_DELETE)
+	rel_clear(src, nameof(host_brain))
 	// End horrible ip swapping code for bans
 
 /mob/living/simple_mob/animal/borer/proc/leave_host()
@@ -305,8 +293,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	unset_machine()
 
 	host.unset_machine()
-	// om_unlink's on_unlink (library.dm) drops us from the head organ's implants list.
-	om_unlink(src, host, /datum/om/relation/host_of)
+	// Unlinking drops us from the head organ's implants list (host_lost(), called here too: the hook is not told while we are being deleted).
+	host_lost(host)
+	rel_set(src, nameof(borer_host_mob), null)
 
 /mob/living/simple_mob/animal/borer/proc/transfer_personality(mob/candidate)
 	if(!candidate)
@@ -331,10 +320,10 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
 	// Chem hud
-	own_set(src, nameof(borer_chem_display), new /atom/movable/screen/borer/chems())
-	borer_chem_display.screen_loc = ui_ling_chemical_display
-	borer_chem_display.icon_state = "ling_chems"
-	hud_elements |= borer_chem_display
+	rel_set(hud_used, nameof(/datum/hud::borer_chem_display), new /atom/movable/screen/borer/chems())
+	hud_used?.borer_chem_display?.screen_loc = ui_ling_chemical_display
+	hud_used?.borer_chem_display?.icon_state = "ling_chems"
+	hud_elements |= hud_used?.borer_chem_display
 
 /mob/living/simple_mob/animal/borer/UnarmedAttack(atom/A, proximity)
 	if(ismob(loc))
@@ -345,24 +334,33 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 // This is awful but its literally say code.
 /// The mob a hostless borer's psionic pulse makes speak. Re-checked on the answer: the borer is
 /// still hostless, and the speaker is conscious and within 7 tiles. A cancel: nothing heard it.
-/datum/om/prompt/choice/borer_psychic_speaker
+/datum/prompt/choice/borer_psychic_speaker
+	timeout = 0
 	title = "Target Choice"
-	message = "Choose a target speaker:"
+	question = "Choose a target speaker:"
 	/// What the speaker is made to say.
 	var/said_text
 
-/datum/om/prompt/choice/borer_psychic_speaker/cancelled()
-	to_chat(answerer, span_alien("..But nothing heard it.."))
-
-/datum/om/prompt/choice/borer_psychic_speaker/valid()
+/datum/prompt/choice/borer_psychic_speaker/recheck_extra()
+	var/reason = ..()
+	if(reason)
+		return reason
 	var/mob/living/simple_mob/animal/borer/B = answerer
-	var/mob/living/speaker = choice
+	var/mob/living/speaker = value
+	if(QDELETED(speaker))
+		return "gone"
 	if(B.borer_host() || speaker.stat || get_dist(B, speaker) > 7)
 		return "unable"
 	return null
 
-/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/om/prompt/choice/borer_psychic_speaker/ask)
-	var/mob/living/speaker = ask.choice
+/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/act/request/A)
+	if(!A.answer)
+		var/datum/request/R = A.request
+		if(R.outcome == REQ_CANCELLED && isnull(R.value))
+			to_chat(src, span_alien("..But nothing heard it.."))
+		return
+	var/datum/prompt/choice/borer_psychic_speaker/ask = A.answer
+	var/mob/living/speaker = ask.value
 	var/message = ask.said_text
 	log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
 	message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
@@ -404,7 +402,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 				if(!LM.stat)
 					nearby_mobs += LM
 			if(nearby_mobs.len)
-				om_ask(src, /datum/om/prompt/choice/borer_psychic_speaker, PROC_REF(psychic_speaker_chosen), choices = nearby_mobs, said_text = message)
+				open_request(src, /datum/prompt/choice/borer_psychic_speaker, PROC_REF(psychic_speaker_chosen), answerer = src, choices = nearby_mobs, said_text = message)
 				return
 			to_chat(src, span_alien("..But nothing heard it.."))
 		else
@@ -423,3 +421,5 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 /datum/decl/mob_organ_names/borer
 TYPE_TABLE(/datum/decl/mob_organ_names/borer, mob_organ_hit_zones, list("head", "central segment", "tail segment"))
 
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/animal/borer, chemicals)

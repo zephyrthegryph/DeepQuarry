@@ -21,58 +21,58 @@
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing, \
-	INTERACT_ITEM(null, PROC_REF(clothing_accessory_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(clothing_accessory_hand)), \
-	INTERACT_ALT(null, PROC_REF(clothing_remove_accessory_alt)), \
-	INTERACT_SELF(null, PROC_REF(clothing_circuit_self)), \
-)
-
 /// Old attackby: attach an accessory, or forward the item to the attached accessories.
-/obj/item/clothing/proc/clothing_accessory_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_accessory_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/clothing/accessory))
-		var/obj/item/clothing/accessory/A = I
-		if(attempt_attach_accessory(A, user))
-			return INTERACTION_HANDLED_PASS
+		var/obj/item/clothing/accessory/acc = I
+		if(attempt_attach_accessory(acc, user))
+			return OP_PASS
 
 	if(LAZYLEN(accessories))
-		for(var/obj/item/clothing/accessory/A in accessories)
-			A.attackby(I, user)
-		return INTERACTION_HANDLED_PASS
+		for(var/obj/item/clothing/accessory/acc in accessories)
+			acc.attackby(I, user)
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /// Old attack_hand: forward to the attached accessories while worn.
-/obj/item/clothing/proc/clothing_accessory_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_accessory_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	//only forward to the attached accessory if the clothing is equipped (not in a storage)
 	if(LAZYLEN(accessories) && src.loc == user)
-		for(var/obj/item/clothing/accessory/A in accessories)
-			A.attack_hand(user)
-		return TRUE
+		for(var/obj/item/clothing/accessory/acc in accessories)
+			acc.attack_hand(user)
+		return OP_OK
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_UNIFORM)) // Un-equip on single click, but not on uniform.
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
-/obj/item/clothing/MouseDrop(obj/over_object)
-	if (over_object && (ishuman(usr) || issmall(usr)))
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/clothing/proc/mousedrop_input(datum/act/input/A)
+	return drop_with_actor(A.actor, A.over)
+
+/obj/item/clothing/proc/drop_with_actor(mob/user, obj/over_object)
+	if (over_object && (ishuman(user) || issmall(user)))
 		//makes sure that the clothing is equipped so that we can't drag it into our hand from miles away.
-		if (!(src.loc == usr))
+		if (!(src.loc == user))
 			return
 
-		if (( usr.restrained() ) || ( usr.stat ))
+		if (( user.restrained() ) || ( user.stat ))
 			return
 
-		if (!usr.unEquip(src))
+		if (!user.unEquip(src))
 			return
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
 
 /obj/item/clothing/examine(mob/user)
 	. = ..(user)
@@ -104,9 +104,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 
 /obj/item/clothing/proc/attach_accessory(mob/user, obj/item/clothing/accessory/A)
-	own_add(src, nameof(accessories), A)
+	rel_add(src, nameof(accessories), A)
 	A.on_attached(src, user)
-	om_grant(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
+	grant(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
 	update_accessory_slowdown()
 	update_clothing_icon()
 	worn_protection_changed()
@@ -134,6 +134,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 	removetie_proc(usr)
 
 /obj/item/clothing/proc/removetie_proc(mob/living/user)
+	return accessory_remove_stage(user)
+
+/obj/item/clothing/proc/accessory_remove_stage(mob/living/user, obj/item/clothing/accessory/selected_accessory, prompted = FALSE)
 
 	if(!isliving(user))
 		return
@@ -160,10 +163,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 		if(accessory_amount == 1)
 			A = accessories[1] // If there's only one accessory, just remove it without any additional prompts.
 		else
-			var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(removetie_proc), args, /datum/om/prompt/choice, message = "Select an accessory to remove from \the [src]", title = "Accessory Choice", choices = accessories)
-			if(isnull(_answer_a1))
+			if(!prompted)
+				open_request(src, /datum/prompt/choice/accessory_remove_review, PROC_REF(accessory_remove_answered), answerer = user, question = "Select an accessory to remove from \the [src]", title = "Accessory Choice", choices = accessories)
 				return
-			A = _answer_a1
+			if(isnull(selected_accessory))
+				return
+			A = selected_accessory
 
 	if(A)
 		if(A.can_remove)
@@ -173,5 +178,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 
 	if(!LAZYLEN(accessories))
-		om_revoke(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
-		own_take_all(src, nameof(accessories))
+		revoke(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
+		rel_take_all(src, nameof(accessories))
+
+/obj/item/clothing/proc/accessory_remove_answered(datum/act/request/context)
+	if(!context.answer)
+		return
+	. = accessory_remove_apply(context)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/proc/accessory_remove_apply(datum/act/request/context)
+	return accessory_remove_stage(context.request.answerer, context.answer.value, TRUE)
+
+/datum/prompt/choice/accessory_remove_review
+	timeout = 0
+
+/datum/prompt/choice/accessory_remove_review/recheck_extra()
+	if(!isnull(value))
+		var/obj/item/clothing/accessory/selected = value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"

@@ -29,11 +29,13 @@
 	endurance = 90
 	melee_damage_lower = 8
 	melee_damage_upper = 14
-	base_attack_cooldown = 1.2 SECONDS
 	movement_cooldown = 2
 	has_hands = FALSE
 	can_pain_emote = FALSE
 	use_modern_ai = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/combat_ai_test_subject)
+	configure(mob_kind(attack_cooldown = 1.2 SECONDS))
 
 TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_behaviors, list( \
 	/datum/ai_behavior/retaliate_to_attacker, \
@@ -61,14 +63,15 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
 	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
-	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
-	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
-	var/wakes = B.chunk_wakes
-	publish_mob_chunk(M)
-	om_test_ticks(4)
-	// Not loop_running(): a woken calm brain with nothing to do is due at once
-	// and may hibernate again before this line runs.
-	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
+	TEST_ASSERT(B.park_calm(), "calm brain refused to park")
+	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "a parked brain remained awake")
+	// Somebody walks in: the pack, which watches the chunks around its members, perceives it and wakes the brain.
+	var/mob/living/visitor = allocate(/mob/living, run_loc_floor_top_right)
+	var/wakes = B.wakes
+	visitor.forceMove(M.loc)
+	B.pack.perceive(TRUE)
+	// Not loop_running(): a woken calm brain with nothing to do is due at once and may park again before this line runs.
+	TEST_ASSERT(B.wakes > wakes, "a mob arriving near a parked brain did not wake it")
 // dq_get_behavior(T) must return the same singleton across calls — the
 // flyweight contract is what makes per-mob state on brain.behavior_state /
 // source items work. A bug that returned a fresh instance per call would
@@ -334,7 +337,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 
 // --- runtime: on_holder_login adds the player dispatcher verb --------
 // The Use-Combat-Move verb is added lazily when a client takes over the mob
-// (via /datum/om/event/mob_login). Test the handler directly — calling it adds the
+// (via /datum/definition_event/mob_login). Test the handler directly — calling it adds the
 // verb. If the wiring breaks, possessed mobs silently lose their moves.
 
 /datum/unit_test/dq_combat_ai_login_adds_player_verb
@@ -371,14 +374,11 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
-	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"idle AI brain was registered for quarter-second tactical processing")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an idle AI brain is not on the calm cadence")
 	hunter.ai_brain.give_target(target, TRUE)
-	TEST_ASSERT(hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"AI brain did not enter tactical processing after receiving a combat target")
+	TEST_ASSERT(hunter.ai_brain.action_interval() <= DQ_ACTION_TICK, "an AI brain with a combat target is not on the action cadence")
 	hunter.ai_brain.lose_target()
-	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
-		"AI brain remained in tactical processing after losing its combat target")
+	TEST_ASSERT_EQUAL(hunter.ai_brain.action_interval(), DQ_CALM_TICK, "an AI brain stayed on the action cadence after losing its combat target")
 
 
 // --- runtime: aggro-on-damage: retaliate_to_attacker drives primary_threat ---
@@ -477,5 +477,30 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
 	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
 	// If we reach here, no crash — test passes implicitly.
+
+// --- runtime: a brain's path is a /datum/io/path request ---------------
+// smart_step_toward() asks the path system and steps directly until the answer lands in have_path(): the caller never waits.
+
+/datum/unit_test/dq_combat_ai_path_is_a_request
+
+/datum/unit_test/dq_combat_ai_path_is_a_request/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/turf/start = get_turf(S)
+	var/turf/goal = locate(start.x + 4, start.y, start.z)
+	TEST_ASSERT(isturf(goal), "the test block is wide enough")
+	var/datum/ai_brain/brain = S.ai_brain
+	brain.smart_step_toward(goal)
+	// The path system answers inside the call when the tick has room, else a few ticks later: either way one request, never more.
+	if(brain.path_pending)
+		TEST_ASSERT(!brain.smart_step_toward(goal), "a second call while the request waits asks nothing more and steps nothing")
+	for(var/waited in 1 to 100)
+		if(!brain.path_pending)
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!brain.path_pending, "the path system answered")
+	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.next_path_attempt_at, "the answer is a cached path, or the failure backoff")
+	if(length(brain.planned_path))
+		TEST_ASSERT_EQUAL(brain.path_goal(), goal, "the path is to the asked goal")
+
 
 #endif

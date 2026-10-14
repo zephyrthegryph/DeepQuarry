@@ -1,12 +1,10 @@
-// The event world service (fold wave F3; was SSevents): the event containers and the finished
-// events. It schedules nothing of its own: each active event and each container runs on the slow
-// periodic lane (code/datums/om/periodic.dm), and the running events are REGISTRY_ACTIVE_EVENTS.
-// SSatoms.Initialize() calls initialize() once the map is up (the subsystem's atoms dependency).
-GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
-
-/datum/world_service/events
+// The event system (was SSevents): the event containers and the finished events. It schedules nothing of its
+// own: each active event and each container steps itself with its own every(), and
+// the running events are REGISTRY_ACTIVE_EVENTS. It boots after SSatoms (the subsystem's atoms dependency), once
+// the map is up.
+SYSTEM_DEF(events)
 	name = "Events"
-	needs = list(/datum/controller/subsystem/atoms)
+	needs = list(/datum/system/atoms)
 
 	var/list/datum/event/finished_events = list()
 
@@ -16,7 +14,12 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 	var/datum/event_meta/new_event = new
 
-/datum/world_service/events/initialize()
+CAPABILITIES(/datum/system/events)
+	owns_one(nameof(new_event), /datum/event_meta)
+	owns_one(nameof(tgui_event_manager_panel), /datum/event_manager_panel)
+	owns_many(nameof(finished_events), /datum/event)
+
+/datum/system/events/initialize()
 	if(initialized)
 		return
 	initialized = TRUE
@@ -27,20 +30,21 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 			/*EVENT_LEVEL_MAJOR 	= */ new/datum/event_container/major
 		)
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		om_task_periodic(event_containers[i], PERIODIC_SLOW)
+		var/datum/event_container/EC = event_containers[i]
+		EC.set_clock_running(TRUE)
 	if(using_map.use_overmap)
 		if(using_map.overmap_z)
 			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
 	log_world("Event service initialized: [length(allEvents)] event types, [length(event_containers)] containers started.")
 
-/datum/world_service/events/stat_line()
-	return "E:[REGISTRY_COUNT(REGISTRY_ACTIVE_EVENTS)]"
+/datum/system/events/stat_entry(msg)
+	return "[..()]E:[REGISTRY_COUNT(REGISTRY_ACTIVE_EVENTS)]"
 
 /// The events that are running now (a copy, safe to walk while events complete).
-/datum/world_service/events/proc/active_events()
+/datum/system/events/proc/active_events()
 	return REGISTRY_COPY(REGISTRY_ACTIVE_EVENTS)
 
-/datum/world_service/events/proc/event_complete(datum/event/E)
+/datum/system/events/proc/event_complete(datum/event/E)
 	registry_leave(REGISTRY_ACTIVE_EVENTS, E)
 	E.set_event_active(FALSE)
 
@@ -48,7 +52,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 		log_game("Event of '[E.type]' with missing meta-data has completed.")
 		return
 
-	own_add(src, nameof(finished_events), E)
+	rel_add(src, nameof(finished_events), E)
 
 	// Add the event back to the list of available events
 	var/datum/event_container/EC = event_containers[E.severity]
@@ -58,11 +62,11 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 	log_game("Event '[EM.name]' has completed at [stationtime2text()].")
 
-/datum/world_service/events/proc/delay_events(severity, delay)
+/datum/system/events/proc/delay_events(severity, delay)
 	var/datum/event_container/EC = event_containers[severity]
 	EC.next_event_time += delay
 
-/datum/world_service/events/proc/RoundEnd()
+/datum/system/events/proc/RoundEnd()
 	if(!report_at_round_end)
 		return
 

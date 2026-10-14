@@ -15,10 +15,14 @@
 	var/active = null
 
 /// Radioactive rods pulse radiation (periodic_step()) for as long as they are radioactive.
-OM_FIELD(/obj/item/fuel_assembly, radioactivity, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
+/obj/item/fuel_assembly/var/radioactivity = 0
+TRACKED(/obj/item/fuel_assembly, radioactivity)
+CAPABILITIES(/obj/item/fuel_assembly)
+	every(2 SECONDS, then(PROC_REF(fuel_assembly_step)), when = nameof(radioactivity))
+	param(nameof(fuel_type), pos = 1)
+	param(nameof(fuel_colour), pos = 2)
 
-/obj/item/fuel_assembly/periodic_step()
+/obj/item/fuel_assembly/proc/fuel_assembly_step(datum/act/timer/A)
 	radiate()
 
 /obj/item/fuel_assembly/proc/radiate()
@@ -37,10 +41,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-/obj/item/fuel_assembly/Initialize(mapload, _material, _colour)
+// ALLOW(init/INSTANCE_STATE): a fuel rod is named, coloured and made radioactive or luminous by its material
+/obj/item/fuel_assembly/Initialize(mapload)
 	. = ..()
-	fuel_type = _material
-	fuel_colour = _colour
 	var/datum/material/material = get_material_by_name(fuel_type)
 	if(istype(material))
 		name = "[material.use_name] fuel rod assembly"
@@ -54,29 +57,25 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 			set_radioactivity(mat_rad)
 			desc += " It is warm to the touch."
 		if(mat_lum)
-			set_light(mat_lum, mat_lum, material.icon_colour)
+			set_glow(src, GLOW(mat_lum, mat_lum, material.icon_colour))
 	else
 		name = "[fuel_type] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
 
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = fuel_colour
-	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
 	rod_quantities[fuel_type] = initial_amount
 
 // Mapper shorthand.
-/obj/item/fuel_assembly/deuterium/Initialize(mapload)
-	. = ..(mapload, MAT_DEUTERIUM)
+/obj/item/fuel_assembly/deuterium
+	fuel_type = MAT_DEUTERIUM
 
-/obj/item/fuel_assembly/tritium/Initialize(mapload)
-	. = ..(mapload, MAT_TRITIUM)
+/obj/item/fuel_assembly/tritium
+	fuel_type = MAT_TRITIUM
 
-/obj/item/fuel_assembly/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+/obj/item/fuel_assembly/phoron
+	fuel_type = MAT_PHORON
 
-/obj/item/fuel_assembly/supermatter/Initialize(mapload)
-	. = ..(mapload, MAT_SUPERMATTER)
+/obj/item/fuel_assembly/supermatter
+	fuel_type = MAT_SUPERMATTER
 
 // === merged from fuel_assembly_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/fuel_assembly/blitz
@@ -85,8 +84,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 	fuel_colour = "#FCE300"
 	fuel_type = "blitz"
 
-/obj/item/fuel_assembly/blitz/Initialize(mapload)
-	. = ..(mapload, "blitz")
+/obj/item/fuel_assembly/blitz
+	fuel_type = "     "
 
 /obj/item/fuel_assembly/blitz/unshielded/Initialize(mapload)
 	. = ..()
@@ -94,10 +93,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 	desc = "An extremely unstable, raw rod of compressed supermatter and phoron. This seems like a terrible idea."
 	fuel_colour = "#FCE300"
 	fuel_type = "blitzu"
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = "#FCE300"
-	overlays += list(I, image(icon, "fuel_assembly_bracket"),image(icon,"glow"))
+	rod_glows = TRUE
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
 		source = src,
@@ -106,7 +102,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 		chance = DEFAULT_RADIATION_CHANCE,
 		strength = 20
 	)
-	set_light(3, 3, "#FCE300")
+	set_glow(src, GLOW(3, 3, "#FCE300"))
 
 /obj/item/fuel_assembly/blitz/throw_impact(atom/hit_atom)
 	if(!..())
@@ -119,12 +115,16 @@ DECLARE_PERIODIC_WHILE(/obj/item/fuel_assembly, PERIODIC_SLOW, "radioactivity")
 			strength = 250
 		)
 		explosion(src.loc, 1, 2, 4, 6)
-		qdel(src)
+		destroyed(src)
 
-DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
+	op("unshielded_lead_shell", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(unshielded_pick_up)))
 
 /// Old attackby.
-/obj/item/fuel_assembly/blitz/unshielded/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/fuel_assembly/blitz/unshielded/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/stack/material/lead/M = I
 	if(istype(M))
 		if(M.get_amount() > 5)
@@ -132,17 +132,17 @@ DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(nul
 			consume(src, user)
 			var/obj/item/fuel_assembly/blitz/shielded/rod = new(get_turf(user))
 			user.put_in_hands(rod)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user,span_warning("You need at least five sheets of lead to add shielding!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-EXTEND_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(unshielded_pick_up)))
 
 /// Picking the unshielded rod up irradiates the holder.
-/obj/item/fuel_assembly/blitz/unshielded/proc/unshielded_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/fuel_assembly/blitz/unshielded/proc/unshielded_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 
 	if(!ishuman(user))
 		return
@@ -178,9 +178,17 @@ EXTEND_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_HAND_DEFA
 	desc = "A highly unstable, and highly explosive supermatter and phoron fuel rod with a lead shell, created by someone of questionable sanity. This thing has to violate at least a few intergalactic regulations."
 	fuel_colour = "#76888F"
 	fuel_type = "blitz"
-	icon_state = "blank"
-	var/image/I = image(icon, "fuel_assembly")
-	I.color = "#76888F"
-	overlays += list(I, image(icon, "fuel_assembly_bracket"),image(icon,"glow"))
+	rod_glows = TRUE
 	rod_quantities[fuel_type] = initial_amount
-	set_light(2, 2, "#FCE300")
+	set_glow(src, GLOW(2, 2, "#FCE300"))
+
+/// Whether the rod glows (the blitz rods).
+/obj/item/fuel_assembly/var/rod_glows = FALSE
+
+/// The rod in its fuel's colour, its bracket and, for a blitz rod, its glow.
+/obj/item/fuel_assembly/draw(datum/look/look)
+	..()
+	look.state("blank")
+	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
+	look.overlay(look_image(icon, "fuel_assembly_bracket"))
+	look.overlay(look_image(icon, "glow"), when = rod_glows)

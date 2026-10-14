@@ -9,6 +9,9 @@
 	/// world.time of the last form change (form strain).
 	EXPIRY_DECLARE(last_switch_time)
 
+CAPABILITIES(/datum/forms/protean)
+	ref_one(nameof(rig), /obj/item/rig/protean)
+
 TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/form/protean_blob))
 
 /datum/forms/protean/attach()
@@ -16,13 +19,15 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
-		om_grant_each(H, GRANT_VERB, power_verbs, src)
+		for(var/granted_path in power_verbs)
+			grant(H, granted_verb(granted_path), src)
 
 /datum/forms/protean/detach()
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = GLOBAL_TABLE_GET(protean_power_verbs)
 	if(length(power_verbs))
-		om_revoke_each(H, GRANT_VERB, power_verbs, src)
+		for(var/granted_path in power_verbs)
+			revoke(H, granted_verb(granted_path), src)
 	return ..()
 
 // the protean's rig forgets its protean.
@@ -68,7 +73,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		rig.forceMove(T)
 	blob_form().release_everything(H)
 	H.forceMove(rig)
-	rig.canremove = TRUE
+	rig.set_canremove(TRUE)
 	log_game("FORMS: [key_name(H)] folded into their control cluster at [AREACOORD(rig)]")
 	return TRUE
 
@@ -85,8 +90,8 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	var/turf/T = get_turf(rig)
 	H.forceMove(T)
 	if(wearer && devour)
-		if(H.can_be_drop_pred && wearer.devourable && wearer.can_be_drop_prey && H.vore_selected)
-			H.begin_instant_nom(H, wearer, H, H.vore_selected)
+		if(H.vore_prefs.can_be_drop_pred && wearer.vore_prefs.devourable && wearer.vore_prefs.can_be_drop_prey && vore_selected_of(H))
+			H.begin_instant_nom(H, wearer, H, vore_selected_of(H))
 		else
 			to_chat(H, span_vwarning("You can't assimilate your current host."))
 	rig.forceMove(H)
@@ -157,13 +162,13 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 /datum/form/protean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
 	..()
-	H.item_state = style_id
+	H.set_item_state(style_id)
 	H.vore_capacity = get_style().vore_capacity
 
 /datum/form/protean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(hiding)
 		set_hiding(H, FALSE)
-	H.item_state = null
+	H.set_item_state(null)
 	H.vore_capacity = initial(H.vore_capacity)
 	..()
 	to_chat(H, span_notice("You rapidly reassemble your form."))
@@ -183,10 +188,10 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 		return FALSE
 	style_id = new_style_id
 	H.vore_capacity = get_style().vore_capacity
-	H.item_state = style_id
+	H.set_item_state(style_id)
 	if(istype(H.loc, /obj/item/holder/protoblob))
 		var/obj/item/holder/protoblob/PB = H.loc
-		PB.item_state = style_id
+		PB.set_item_state(style_id)
 	return TRUE
 
 /// This character's layer states for a layered style, seeded from its defaults.
@@ -208,15 +213,11 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 	hiding = new_hiding
 	if(hiding)
 		H.mouse_opacity = MOUSE_OPACITY_TRANSPARENT
-		om_hook(H, /datum/om/event/before/movable_pre_move, src, PROC_REF(block_move))
+		observe(H, /datum/act/pre_move, src, instead())
 	else
 		H.mouse_opacity = MOUSE_OPACITY_ICON
-		om_unhook(H, /datum/om/event/before/movable_pre_move, src)
+		unobserve(H, /datum/act/pre_move, src)
 	H.get_forms()?.refresh_appearance()
-
-/datum/form/protean_blob/proc/block_move(atom/movable/source, datum/om/event/before/movable_pre_move/event)
-	EVENT_HANDLER
-	return COMPONENT_MOVABLE_BLOCK_PRE_MOVE
 
 // --- Blob styles: appearance as data ---------------------------------------------------
 
@@ -329,11 +330,14 @@ GLOBAL_TABLE(protean_blob_styles, GLOBAL_PROC_REF(build_protean_blob_styles))
 	/// /datum/protean_blob_layer instances, in draw order.
 	var/list/layers
 
+CAPABILITIES(/datum/protean_blob_style/layered)
+	owns_many(nameof(layers))
+
 /datum/protean_blob_style/layered/New()
 	..()
-	own_take_all(src, nameof(layers))
+	rel_take_all(src, nameof(layers))
 	for(var/list/spec as anything in TYPE_TABLE_GET(src, layer_specs))
-		own_add(src, nameof(layers), new /datum/protean_blob_layer(arglist(spec)))
+		rel_add(src, nameof(layers), new /datum/protean_blob_layer(arglist(spec)))
 
 /// Constructor arguments for each layer, in draw order.
 TYPE_TABLE_DECLARE(/datum/protean_blob_style/layered, layer_specs, list())

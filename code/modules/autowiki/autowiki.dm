@@ -3,15 +3,15 @@
 /// when they break it immediately, rather than until CI or worse, call time.
 #if defined(AUTOWIKI) || defined(UNIT_TESTS)
 /proc/setup_autowiki()
-	Master.sleep_offline_after_initializations = FALSE
-	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(generate_autowiki)))
+	Kernel.sleep_offline_after_initializations = FALSE
+	SSticker.OnRoundstart(null, GLOBAL_PROC_REF(generate_autowiki))
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)
 
 /proc/generate_autowiki()
 	var/output = generate_autowiki_output()
 	rustg_file_write(output, "data/autowiki_edits.txt")
-	qdel(world)
+	spent(world)
 #endif
 
 /// Returns a string of the autowiki output file

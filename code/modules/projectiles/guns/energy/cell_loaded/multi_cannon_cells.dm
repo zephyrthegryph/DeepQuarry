@@ -12,19 +12,22 @@
 	var/ticks = 1
 	var/ticks_to_charge = 3 // Reduced from 15 ticks to 3 for a faster recharge, which comes out to around 3 seconds on a localhost. These things are VERY rare.
 
-OM_FIELD(/obj/item/ammo_casing/macrobattery, charge, null, CHANGE_EXPLICIT)
-/// Below full charge: derived from charge (raised by set_charge()).
-OM_DERIVE_FIELD(/obj/item/ammo_casing/macrobattery, charge_short, list("charge"))
-/obj/item/ammo_casing/macrobattery/proc/charge_short()
-	return charge < max_charge
+/obj/item/ammo_casing/macrobattery/var/charge = null
+TRACKED(/obj/item/ammo_casing/macrobattery, charge)
+/// Below full charge (kept in step with the charge by Initialize(), expend() and recharge()).
+/obj/item/ammo_casing/macrobattery/var/charge_short = FALSE
+TRACKED(/obj/item/ammo_casing/macrobattery, charge_short)
+TRACKED(/obj/item/ammo_casing/macrobattery, bat_colour)
 /// Recharges while below full; full, it parks until a shot is expended.
-DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charge_short")
+CAPABILITIES(/obj/item/ammo_casing/macrobattery)
+	every(2 SECONDS, then(PROC_REF(macrobattery_step)), when = nameof(charge_short))
 
 /obj/item/ammo_casing/macrobattery/Initialize(mapload, ...)
 	. = ..()
 	set_charge(max_charge)
+	set_charge_short(charge < max_charge)
 
-/obj/item/ammo_casing/macrobattery/periodic_step()
+/obj/item/ammo_casing/macrobattery/proc/macrobattery_step(datum/act/timer/A)
 	ticks++
 	if(ticks%ticks_to_charge == 0)
 		recharge()
@@ -33,10 +36,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	if(charge)
 		ticks = 1 //so we have to start over on the charge time.
 		set_charge(charge - 1)
+		set_charge_short(charge < max_charge)
 		. = BB
 		//alright, the below seems jank. it IS jank, but for whatever reason I can't reuse BB. big bad
-		own_take(src, nameof(BB))
-		own_set(src, nameof(BB), new projectile_type)
+		rel_take(src, nameof(BB))
+		rel_set(src, nameof(BB), new projectile_type)
 		// TGMC Ammo HUD - Update the HUD every time we expend/fire, given the Curabitur's method of handling firing.
 		if(istype(loc, /obj/item/gun/projectile/multi_cannon))
 			var/obj/item/gun/projectile/multi_cannon = loc
@@ -45,16 +49,15 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 				user?.hud_used?.update_ammo_hud(user, multi_cannon)
 		return
 	else
-		own_take(src, nameof(BB))
+		rel_clear(src, nameof(BB))
 		return null
 
 /obj/item/ammo_casing/macrobattery/proc/recharge()
 	if(charge < max_charge)
 		set_charge(charge + 1)
+		set_charge_short(charge < max_charge)
 		if(!BB)
-			own_set(src, nameof(BB), new projectile_type)
-	if(istype(loc,/obj/item/gun/projectile/multi_cannon))
-		loc.update_icon()
+			rel_set(src, nameof(BB), new projectile_type)
 
 	// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
 	if(istype(loc, /obj/item/gun/projectile/multi_cannon))
@@ -71,7 +74,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one alleviates oxygen loss, disinfects and closes open wounds, \
 			salves burn wounds and stabilizes the patient's heartrate. Takes approximately three \
-			seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#3399ff"
 	projectile_type = /obj/item/projectile/beam/medical_cell/stabilize2
 
@@ -80,7 +83,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_uber"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one provides patients with a 15% resistance to incoming damage \
-			and reduces stun effect times by 15% for 20 seconds. Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			and reduces stun effect times by 15% for 20 seconds. Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#993300"
 	projectile_type = /obj/item/projectile/beam/medical_cell/resist
 
@@ -89,7 +92,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_purifier"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one removes toxins and radiation buildup from a patient. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#339933"
 	projectile_type = /obj/item/projectile/beam/medical_cell/detox
 
@@ -98,7 +101,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_ouchie"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one deals damage. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#cc3300"
 	projectile_type = /obj/item/projectile/beam/heavylaser/lessheavy
 
@@ -107,7 +110,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_inverseouchie"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one alleviates burn and brute trauma. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#ff9966"
 	projectile_type = /obj/item/projectile/beam/medical_cell/phys_heal
 

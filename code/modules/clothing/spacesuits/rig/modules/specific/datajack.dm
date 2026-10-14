@@ -18,7 +18,7 @@
 	. = ..()
 	stored_research = list()
 
-/obj/item/rig_module/datajack/engage(atom/target)
+/obj/item/rig_module/datajack/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0

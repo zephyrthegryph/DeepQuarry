@@ -5,6 +5,9 @@
 	var/gnat_cap	= 10
 	var/list/spawned_gnat
 
+CAPABILITIES(/datum/event/gnat_migration)
+	owns_many(nameof(spawned_gnat))
+
 /datum/event/gnat_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -70,8 +73,8 @@
 // Spawn a single gnat at given location.
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_gnat_destruction))
-	own_add(src, nameof(spawned_gnat), M)
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_gnat_destruction)))
+	rel_add(src, nameof(spawned_gnat), M)
 	return M
 
 // Counts living gnat spawned by this event.
@@ -82,10 +85,11 @@
 			. += 1
 
 // If gnat is bomphed, remove it from the list.
-/datum/event/gnat_migration/proc/on_gnat_destruction(mob/M, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
+/datum/event/gnat_migration/proc/on_gnat_destruction(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_gnat), M)
-	om_unhook(M, /datum/om/event/qdeleting, src)
+	unobserve(M, /datum/notice/qdeleting, src)
 
 /datum/event/gnat_migration/end()
 	. = ..()
@@ -95,7 +99,7 @@
 			var/turf/T = get_turf(SM)
 			if(istype(T, /turf/space))
 				if(prob(75))
-					qdel(SM)
+					spent(SM)
 
 // Overmap version
 /datum/event/gnat_migration/overmap/announce()

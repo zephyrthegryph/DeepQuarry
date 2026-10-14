@@ -39,7 +39,7 @@
 
 /mob/living/simple_mob/vore/meowl/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The strange critter suddenly takes advantage of you being alone to pounce atop you and quickly engulf your head within its maw! Before you even have a chance to react, the world goes dark with the inside of the meowls mouth covering your face, a rough tounge lapping smearing wet hot slobber over you. The rest of the process is pretty quick as the cat-owl begins to gulp your head down through a surprisingly stretchy throat and along the tight, flexing tunnel of its gullet. Before long you are pushing face first into the creature's stomach, the wrinkled walls quickly beginning grind slick flesh across it like any other piece of food. The rest of your body soon follows into the increasingly tight space, forced to curl up over yourself as the stomach lining bears down on you from every angle. At first, the stomach itself seems rather inactive, happily just squeezing and massaging you as the meowl settles down to slowly enjoy their snack. Though, struggling might risk setting off the gut one way or another..."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -99,10 +99,13 @@
 		"Unfortunately, %pred seems to have absolutely no intention of letting you go, and your futile effort goes nowhere.",
 		"Strain as you might, you can't keep up the effort long enough before you sink back into %pred's %belly.")
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/meowl, INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(meowl_interaction_feed), "Feed"))
+CAPABILITIES(/mob/living/simple_mob/vore/meowl)
+	op("meowl_interaction_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(meowl_interaction_feed)))
 
 /// Old attackby: hand-feeding. Food is never an attack, even on a dead meowl.
-/mob/living/simple_mob/vore/meowl/proc/meowl_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/meowl/proc/meowl_interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(stat == DEAD)
 		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("%T% happily gulps down %I% right out of your hand, it seems pretty content now.")), MSG_OTHERS(span_notice("%T% happily gulps down %I% right out of %U%'s hand, it seems pretty content now.")), item = O)
@@ -113,7 +116,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/meowl, INTERACT_INSERT(/obj/item
 /mob/living/simple_mob/vore/meowl/PounceTarget(mob/living/M, successrate = 100)
 	COOLDOWN_START(src, vore_pounce_cooldown, 1 SECONDS) // don't attempt another pounce for a while
 	if(prob(max(successrate,33))) // pounce success!
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
 		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))

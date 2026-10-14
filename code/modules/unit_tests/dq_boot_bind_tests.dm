@@ -13,7 +13,7 @@
 	dq_heat_bind_begin()
 	TEST_ASSERT(plain.create_heat_body(TRUE), "a body is created inside a bind scope")
 	TEST_ASSERT(!isnull(plain.heat_body), "with a handle at once")
-	TEST_ASSERT(GLOB.dq_heat_bind_pending[plain], "its configuration is queued")
+	TEST_ASSERT(GLOB.dq_heat_bind_pending[entity_handle(plain)], "its configuration is queued")
 	TEST_ASSERT(vg_heat_body_keep(plain.heat_body, TRUE), "the reserved handle takes writes at once")
 	TEST_ASSERT(written.create_heat_body(TRUE), "a second reserved body")
 	TEST_ASSERT_NOTEQUAL(written.heat_body, plain.heat_body, "reserved handles are distinct")
@@ -21,12 +21,12 @@
 	vg_heat_body_set_temperature(written.heat_body, 350)
 	TEST_ASSERT(released.create_heat_body(TRUE), "a third reserved body")
 	released.release_heat_body()
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[released], "a body released while pending leaves the queue")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(released)], "a body released while pending leaves the queue")
 	// A read configures just that body first.
 	var/read = plain.get_temperature()
 	TEST_ASSERT(abs(read - ambient) < 1, "a read of a pending body sees its configured temperature ([read] vs [ambient]), not the placeholder")
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[plain], "and it is no longer pending")
-	TEST_ASSERT(GLOB.dq_heat_bind_pending[written], "the others still are")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(plain)], "and it is no longer pending")
+	TEST_ASSERT(GLOB.dq_heat_bind_pending[entity_handle(written)], "the others still are")
 	dq_heat_bind_end()
 	TEST_ASSERT(!length(GLOB.dq_heat_bind_pending), "the scope's end configures everything queued")
 	TEST_ASSERT(!length(GLOB.dq_heat_body_pool), "and returns the unused handles")
@@ -40,7 +40,7 @@
 	TEST_ASSERT_EQUAL(GLOB.dq_heat_bind_depth, 0, "no scope is left open between tests")
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, test_floor())
 	TEST_ASSERT(R.create_heat_body(TRUE), "a body")
-	TEST_ASSERT(!GLOB.dq_heat_bind_pending[R], "is not queued outside a scope")
+	TEST_ASSERT(!GLOB.dq_heat_bind_pending[entity_handle(R)], "is not queued outside a scope")
 	TEST_ASSERT(!isnull(vg_heat_body_temperature(R.heat_body)), "and is live at once")
 
 /// Power machines queued by a map-load batch bind in one call and end as a direct bind would.
@@ -94,33 +94,9 @@
 	var/datum/material_service/service = C.enable_material_service()
 	TEST_ASSERT(service, "the canister has a material service")
 	service.rebind()
-	var/key = om_watch_entity_key(service)
-	TEST_ASSERT(GLOB.om_watch_registry[key], "which watches its gas")
+	TEST_ASSERT(length(service.gas_watches), "which watches its gas")
+	var/list/watches = service.gas_watches.Copy()
 	qdel_batch(list(C))
 	TEST_ASSERT(QDELETED(service), "the batch destroys the service with its owner")
-	TEST_ASSERT(isnull(GLOB.om_watch_registry[key]), "and its gas watches are disarmed by the batch's one pass")
-
-/// A machine whose first wake (materialize_wakes()) is still queued is not a missed wake; once
-/// that wake has run, a parked machine with work and nothing armed is.
-/datum/unit_test/dq_boot_bind_audit_first_wake
-
-/datum/unit_test/dq_boot_bind_audit_first_wake/Run()
-	// A machine still on the machine pipeline (pipe devices such as the omni mixer are a Rust law now).
-	var/obj/machinery/portable_atmospherics/powered/pump/M = allocate(/obj/machinery/portable_atmospherics/powered/pump, test_floor())
-	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
-	TEST_ASSERT(P, "the machine pipeline is registered")
-	// Joining after boot schedules the first wake in the machine's `first_wake` slot (zero delay):
-	// it is pending until that timer runs, then the machine is audited as usual.
-	TEST_ASSERT(P.first_wake_pending(M), "a machine that joined after boot has its first wake queued in its slot")
-	M.materialize_wakes()
-	om_cancel_timer_slot(M, "first_wake")
-	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
-	rel_add(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), M)
-	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")
-	M.materialize_wakes()
-	TEST_ASSERT(!P.first_wake_pending(M), "running the first wake ends it, with nothing to clear by hand")
-	after_slot(M, "first_wake", 10 MINUTES, /obj/machinery/proc/materialize_wakes)
-	TEST_ASSERT(P.first_wake_pending(M), "a first wake in its timer slot is pending")
-	om_cancel_timer_slot(M, "first_wake")
-	TEST_ASSERT(!P.first_wake_pending(M), "cancelling the slot ends it")
-	TEST_ASSERT(!P.first_wake_pending(null), "a non-machine never counts as pending")
+	for(var/datum/native_watch/gas/W as anything in watches)
+		TEST_ASSERT(QDELETED(W) || !W.handle, "and its gas watches are cancelled with it")

@@ -8,7 +8,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 7
 
 	var/powertransfer = 1000 //Transfer per time when charging something
 	var/cell_type = /obj/item/cell/high //Type of cell to spawn in it
@@ -18,21 +17,17 @@
 	var/recharging = FALSE
 	var/opened = FALSE
 
+TRACKED(/obj/item/inducer, opened)
+
 /obj/item/inducer/unloaded
 	cell_type = null
 	opened = TRUE
 
-/obj/item/inducer/Initialize(mapload)
-	. = ..()
-	if(!cell && cell_type)
-		own_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
 	var/transferred = target.give(totransfer)
 	cell.use(transferred)
-	cell.update_icon()
-	target.update_icon()
 
 /obj/item/inducer/get_cell()
 	return cell
@@ -71,33 +66,43 @@
 
 
 /// Old attackby.
-/obj/item/inducer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/inducer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				if(!own_set(src, nameof(src.cell), W, user = user))
-					return INTERACTION_HANDLED_PASS
-				update_icon()
-				return INTERACTION_HANDLED_PASS
+				if(!move_into(src, nameof(src.cell), W, user))
+					return OP_PASS
+				return OP_PASS
 			else
 				to_chat(user, span_warning("[src] already has \a [cell] installed!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 	if(cantbeused(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(recharge(W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/inducer/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, 1)
-	opened = !opened
+CAPABILITIES(/obj/item/inducer)
+	configure(item_combat(force = 7))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
+	op("induce", ai(), takes("charged", "charging", "coefficient", "beam", "filter", "progress"), wait(2 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY, repeats = PROC_REF(recharge_more), after_step = PROC_REF(recharge_pulse)), on_interrupt(PROC_REF(recharge_end)), then(PROC_REF(recharge_end)))
+
+/obj/item/inducer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, 1)
+	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/inducer/proc/recharge(atom/movable/A, mob/user)
 	if(!isturf(A) && user.loc == A)
@@ -147,63 +152,55 @@
 		var/filter = filter(type = "outline", size = 1, color = "#22AAFF")
 		A.filters += filter
 
-		om_task_start(/datum/om/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
+		var/datum/op_result/started = perform_op(user, src, "induce", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("charged" = A, "charging" = C, "coefficient" = coefficient, "beam" = charge_beam, "filter" = filter, "progress" = list("done_any" = FALSE)))
+		if(!started || (started.outcome & ACT_REFUSED))
+			recharge_finish(user, A, charge_beam, filter, FALSE)
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))
 
 	recharging = FALSE
 
-/// Charging a cell in two-second pulses until it is full, the inducer runs dry or the user stops.
-/datum/om/task/timed/induce
-	steps = list(/obj/item/inducer/proc/recharge_pulse = 2 SECONDS)
-	complete_proc = /obj/item/inducer/proc/recharge_end
-	cancel_proc = /obj/item/inducer/proc/recharge_end
-	unheld = list("beam")
-	/// What is being charged, its cell, and the object whose icon shows the charge.
-	var/atom/charged
-	var/obj/item/cell/charging
-	var/obj/device
-	var/coefficient = 1
-	var/done_any = FALSE
-	/// Ends itself.
-	var/datum/beam/beam
-	var/filter
+/// Another pulse follows while the cell being charged is not full and the inducer still has charge.
+/obj/item/inducer/proc/recharge_more(datum/act/op/A)
+	var/obj/item/cell/C = A.arg("charging")
+	return !QDELETED(C) && cell?.charge && C.charge < C.maxcharge
 
-/obj/item/inducer/proc/recharge_pulse(datum/om/task/timed/induce/task)
+/// One pulse: charge moves from the inducer's cell to the one being charged.
+/obj/item/inducer/proc/recharge_pulse(datum/act/op/A)
 	if(!cell?.charge)
-		return STEP_DONE
-	var/obj/item/cell/C = task.charging
-	induce(C, task.coefficient)
-	if(task.charged)
-		fx_sparks(task.charged, 5, FALSE)
-	task.device?.update_icon()
-	task.done_any = TRUE
-	return C.charge < C.maxcharge ? STEP_REPEAT(2 SECONDS) : STEP_DONE
+		return
+	var/obj/item/cell/C = A.arg("charging")
+	if(QDELETED(C))
+		return
+	induce(C, A.arg("coefficient"))
+	var/atom/charged = A.arg("charged")
+	if(charged)
+		fx_sparks(charged, 5, FALSE)
+	var/list/progress = A.arg("progress")
+	progress["done_any"] = TRUE
 
-/obj/item/inducer/proc/recharge_end(datum/om/task/timed/induce/task)
-	var/mob/user = task.actor
-	var/atom/A = task.charged
-	qdel(task.beam)
+/obj/item/inducer/proc/recharge_end(datum/act/op/A)
+	var/list/progress = A.arg("progress")
+	recharge_finish(A.actor, A.arg("charged"), A.arg("beam"), A.arg("filter"), progress?["done_any"])
+	return OP_OK
+
+/// The charging is over (done, stopped or never started): the beam and the outline go, and the user hears of a charge that happened.
+/obj/item/inducer/proc/recharge_finish(mob/user, atom/A, datum/beam/charge_beam, filter, done_any)
+	spent(charge_beam)
 	if(A)
-		A.filters -= task.filter
-	if(task.done_any && user) // Only show a message if we succeeded at least once
+		A.filters -= filter
+	if(done_any && user) // Only show a message if we succeeded at least once
 		act_message(user, null, MSG_SELF(span_notice("You recharged [A]!")), MSG_OTHERS(span_notice("%U% recharged [A]!")))
 	recharging = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/inducer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/inducer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/inducer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(opened && cell)
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
-		cell.update_icon()
 		user.put_in_hands(cell)
-		own_take(src, nameof(cell))
-		update_icon()
+		rel_take(src, nameof(cell))
 	return TRUE
 
 /obj/item/inducer/examine(mob/living/M)
@@ -220,10 +217,14 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 		return ""
 	return cell ? "bat" : "nobat"
 
-DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
-	"nobat" = list(APPEARANCE_OVERLAYS = list("inducer-nobat")), \
-	"bat" = list(APPEARANCE_OVERLAYS = list("inducer-bat")) \
-))
+/// The look (the draw sweep: from its layers).
+/obj/item/inducer/draw(datum/look/look)
+	..()
+	switch("[appearance_compartment()]")
+		if("nobat")
+			look.overlay("inducer-nobat")
+		if("bat")
+			look.overlay("inducer-bat")
 
 //////// Variants
 /obj/item/inducer/sci
@@ -234,10 +235,6 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 	cell_type = null
 	powertransfer = 500
 	opened = TRUE
-
-/obj/item/inducer/sci/Initialize(mapload)
-	. = ..()
-	update_icon() //To get the 'open' state applied
 
 /obj/item/inducer/syndicate
 	name = "suspicious inducer"
@@ -265,23 +262,30 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 
 	charge = 100
 	maxcharge = 100
-	item_flags = ABSTRACT
 
 	var/mob/living/carbon/human/hume
+	lifecycle_lifetime = 20 SECONDS
 
-/obj/item/cell/standin/Initialize(mapload, mob/living/carbon/human/H)
+CAPABILITIES(/obj/item/cell/standin)
+	configure(item_worn(flags = ABSTRACT))
+	param(nameof(hume), pos = 1)
+	setup(PROC_REF(charge_from_hume))
+	ref_one(nameof(hume), /mob/living/carbon/human)
+
+// ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
+/obj/item/cell/standin/Initialize(mapload)
 	. = ..()
-	if(!istype(H))
+	if(!istype(hume))
 		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(hume), H)
-	charge = H.nutrition
-	maxcharge = initial(H.nutrition)
-
-	expire(20 SECONDS)
 
 
-/obj/item/cell/standin/give(amount, update_appearance = TRUE)
-	. = ..(amount * NUTRITION_COEFF, update_appearance) //Shrink amount to store
+/// Setup: the stand-in holds what its human has eaten, up to what a new body starts with.
+/obj/item/cell/standin/proc/charge_from_hume()
+	set_charge(nutrition_of(hume))
+	set_maxcharge(hume.starting_nutrition())
+
+/obj/item/cell/standin/give(amount)
+	. = ..(amount * NUTRITION_COEFF) //Shrink amount to store
 	hume().adjust_nutrition(.) //Add the amount we really stored
 	. /= NUTRITION_COEFF //Inflate amount to take from the giver
 
@@ -296,7 +300,7 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 
 /obj/item/inducer/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

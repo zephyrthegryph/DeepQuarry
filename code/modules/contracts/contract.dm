@@ -59,18 +59,21 @@
 	var/default_option_id
 	var/list/options
 
+CAPABILITIES(/datum/contract_negotiation_clause)
+	owns_many(nameof(options))
+
 /datum/contract_negotiation_clause/New(_id, _title, _description)
 	. = ..()
 	id = _id
 	title = _title
 	description = _description
-	own_take_all(src, nameof(options))
+	rel_take_all(src, nameof(options))
 
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options?[option.id])
 		return FALSE
-	own_put(src, nameof(options), option.id, option)
+	rel_add(src, nameof(options), option, option.id)
 	if(make_default || !default_option_id)
 		default_option_id = option.id
 	return TRUE
@@ -155,7 +158,7 @@
 	configure_contract(contract, context)
 	finalize_contract_authoring(contract, context)
 	if(!contract.finalize_offer(offer_duration))
-		qdel(contract)
+		spent(contract)
 		return null
 	return contract
 
@@ -166,9 +169,6 @@
 /// Families use this to derive negotiation choices from the finished contract.
 /datum/contract_definition/proc/finalize_contract_authoring(datum/contract/contract, list/context)
 	return
-
-OWN_TIMER(/datum/contract, deadline_timer)
-OWN_TIMER(/datum/contract, offer_timer)
 
 /datum/contract
 	var/id
@@ -239,12 +239,19 @@ OWN_TIMER(/datum/contract, offer_timer)
 	/// Additional station-level faction consequences selected by negotiation.
 	var/list/secondary_faction_reputation_rewards
 
+CAPABILITIES(/datum/contract)
+	// Parent and child references clear when either end disappears.
+	links(/datum/contract::parent, /datum/contract::children, b_many = TRUE)
+	owns_many(nameof(audit_log))
+	owns_many(nameof(requirements))
+	owns_many(nameof(negotiation_clauses))
+
 /datum/contract/New()
 	. = ..()
 	contributions = list()
 	contributor_names = list()
-	own_take_all(src, nameof(audit_log))
-	own_take_all(src, nameof(negotiation_clauses))
+	rel_take_all(src, nameof(audit_log))
+	rel_take_all(src, nameof(negotiation_clauses))
 	negotiation_selections = list()
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()
@@ -270,7 +277,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
 	EXPIRY_SET(src, offer_expires_at, duration, CLOCK_WORLD)
-	after_slot(src, "offer_timer", duration, PROC_REF(expire_offer))
+	after(src, duration, PROC_REF(expire_offer), key = "offer_timer")
 	return TRUE
 
 /datum/contract/proc/expire_offer()
@@ -278,13 +285,13 @@ OWN_TIMER(/datum/contract, offer_timer)
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
 /datum/contract/proc/audit(category, detail)
-	own_add(src, nameof(audit_log), new /datum/contract_audit_entry(category, detail))
+	rel_add(src, nameof(audit_log), new /datum/contract_audit_entry(category, detail))
 
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
 		return FALSE
 	rel_set(requirement, nameof(requirement.contract), src)
-	own_add(src, nameof(requirements), requirement)
+	rel_add(src, nameof(requirements), requirement)
 	return TRUE
 
 /datum/contract/proc/add_child(datum/contract/child)
@@ -296,7 +303,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
 	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses?[clause.id] || !length(clause.options))
 		return FALSE
-	own_put(src, nameof(negotiation_clauses), clause.id, clause)
+	rel_add(src, nameof(negotiation_clauses), clause, clause.id)
 	negotiation_selections[clause.id] = clause.default_option_id
 	return TRUE
 
@@ -428,8 +435,8 @@ OWN_TIMER(/datum/contract, offer_timer)
 		escrow_balance = reward
 	negotiation_locked = TRUE
 	var/old_state = state
-	if(om_timer_slot_pending(src, "offer_timer"))
-		om_cancel_timer_slot(src, "offer_timer")
+	if(after_pending(src, "offer_timer"))
+		cancel_after(src, "offer_timer")
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
 	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
@@ -437,7 +444,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 	if(deadline_duration > 0)
 		EXPIRY_SET(src, deadline, deadline_duration, CLOCK_WORLD)
 	if(BEFORE(src, deadline, CLOCK_WORLD))
-		after_slot(src, "deadline_timer", deadline - world.time, PROC_REF(check_deadline))
+		after(src, deadline - world.time, PROC_REF(check_deadline), key = "deadline_timer")
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
 	for(var/datum/contract_requirement/requirement in requirements)
@@ -476,7 +483,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 	var/old_state = state
 	state = CONTRACT_GRACE
 	EXPIRY_SET(src, grace_until, deadline_grace_duration, CLOCK_WORLD)
-	after_slot(src, "deadline_timer", deadline_grace_duration, PROC_REF(check_deadline))
+	after(src, deadline_grace_duration, PROC_REF(check_deadline), key = "deadline_timer")
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
 	SScontracts?.notify_contract(src, "Contract [id] entered its evidence grace period.")
@@ -538,8 +545,8 @@ OWN_TIMER(/datum/contract, offer_timer)
 		// Gameplay is already complete. An unavailable finance account must not
 		// turn an otherwise successful contract into a deadline failure while it
 		// waits for the account-status signal that retries payment.
-		if(om_timer_slot_pending(src, "deadline_timer"))
-			om_cancel_timer_slot(src, "deadline_timer")
+		if(after_pending(src, "deadline_timer"))
+			cancel_after(src, "deadline_timer")
 		deadline = 0
 		grace_until = 0
 		audit(CONTRACT_AUDIT_PAYMENT, "Completion is verified, but payment is deferred until every recipient account can accept its share.")
@@ -647,10 +654,10 @@ OWN_TIMER(/datum/contract, offer_timer)
 	var/old_state = state
 	if(old_state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
-	if(om_timer_slot_pending(src, "deadline_timer"))
-		om_cancel_timer_slot(src, "deadline_timer")
-	if(om_timer_slot_pending(src, "offer_timer"))
-		om_cancel_timer_slot(src, "offer_timer")
+	if(after_pending(src, "deadline_timer"))
+		cancel_after(src, "deadline_timer")
+	if(after_pending(src, "offer_timer"))
+		cancel_after(src, "offer_timer")
 	offer_expires_at = 0
 	grace_until = 0
 	state = new_state
@@ -766,9 +773,3 @@ OWN_TIMER(/datum/contract, offer_timer)
 	payout_distributed = paid_reward >= reward
 	audit(CONTRACT_AUDIT_PAYMENT, "[reason]: distributed [planned_total] Thalers ([paid_reward]/[reward] settled).")
 	return TRUE
-
-// A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-/datum/contract/relations()
-	. = ..()
-	. += rel_one(nameof(parent), back = nameof(/datum/contract::children))
-	. += rel_many(nameof(children), back = nameof(/datum/contract::parent))

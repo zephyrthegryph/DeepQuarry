@@ -12,48 +12,46 @@
 	var/epitaph = ""		//A quick little blurb
 
 
-/obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	om_ask(user, /datum/om/prompt/text/gravemarker_carving, PROC_REF(grave_name_chosen), title = "Gravestone Naming", message = "Who is \the [src.name] for?", subject = W)
-	return NONE
+/// The name and the epitaph are asked, then carved.
+/obj/item/material/gravemarker/proc/name_question(datum/act/A)
+	return "Who is \the [src.name] for?"
 
-/// A carving for a grave marker (the name, then the epitaph). Re-checked on the answer: the tool (the subject) is still in hand.
-/datum/om/prompt/text/gravemarker_carving
-	max_length = MAX_NAME_LEN
-	encode = FALSE
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	/// The name given at the first step.
-	var/carved_name
+/obj/item/material/gravemarker/proc/epitaph_question(datum/act/A)
+	return "What message should \the [src.name] have?"
 
-/obj/item/material/gravemarker/proc/grave_name_chosen(datum/om/prompt/text/gravemarker_carving/ask)
-	om_ask(ask.answerer, /datum/om/prompt/text/gravemarker_carving, PROC_REF(carvings_chosen), title = "Epitaph Carving", message = "What message should \the [src.name] have?", subject = ask.subject, carved_name = ask.text)
-
-/obj/item/material/gravemarker/proc/carvings_chosen(datum/om/prompt/text/gravemarker_carving/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.subject
-	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// The answers are carved in.
+/obj/item/material/gravemarker/proc/carved(datum/act/op/A)
+	var/datum/prompt/name_answer = A.step_answer("name")
+	var/datum/prompt/epitaph_answer = A.step_answer("epitaph")
+	var/carving_1 = sanitizeSafe(name_answer?.value, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(epitaph_answer?.value, MAX_NAME_LEN)
+	if(!carving_1 && !carving_2)
+		return OP_OK
+	act_message(A.actor, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
 	if(carving_1)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
+		set_grave_name(grave_name + carving_1)
 	if(carving_2)
-		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
+		set_epitaph(epitaph + carving_2)
+	return OP_OK
 
-/obj/item/material/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
-	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
-	grave_name += carving_1
-	update_icon()
-/obj/item/material/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
-	act_message(user, src, MSG_SELF("You carve your message into %T%."), MSG_OTHERS("%U% carves something into %T%."))
-	epitaph += carving_2
-	update_icon()
+/obj/item/material/gravemarker/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return NONE
+/obj/item/material/gravemarker/proc/wrench_begins(datum/act/op/A)
+	return msg_text("You start carving \the [src.name].", "[A.actor] starts carving \the [src.name].")
 
-/obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
-	material.place_dismantled_product(get_turf(src))
-	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
-	qdel(src)
+/obj/item/material/gravemarker/proc/wrench_duration(datum/act/op/A)
+	return material.hardness
+
+/obj/item/material/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/material/refund_material = material
+	var/turf/location = get_turf(src)
+	var/marker_name = "\the [src]"
+	if(!consume(src, user))
+		return
+	refund_material.place_dismantled_product(location)
+	act_message(user, location, MSG_SELF("You dismantle [marker_name]."), MSG_OTHERS("%U% dismantles down [marker_name]."))
 
 /obj/item/material/gravemarker/examine(mob/user)
 	. = ..()
@@ -62,46 +60,48 @@
 	if(epitaph && get_dist(src, user) < 2)
 		. += epitaph
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/gravemarker/appearance_overlays()
-	. = list()
+/obj/item/material/gravemarker/draw(datum/look/look)
 	if(icon_changes)
 		if(grave_name && epitaph)
-			icon_state = "[initial(icon_state)]_3"
+			look.state("[initial(icon_state)]_3")
 		else if(grave_name)
-			icon_state = "[initial(icon_state)]_1"
+			look.state("[initial(icon_state)]_1")
 		else if(epitaph)
-			icon_state = "[initial(icon_state)]_2"
+			look.state("[initial(icon_state)]_2")
 		else
-			icon_state = initial(icon_state)
+			look.state(initial(icon_state))
 
-	. += ..()
+	..()
 
-DECLARE_INTERACTIONS(/obj/item/material/gravemarker, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/material/gravemarker)
+	op("self", in_hand(), needs(req(PROC_REF(on_turf), silent = TRUE), req(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
+		begins(MSG(gravemarker/placing)), wait(1 SECOND), then(PROC_REF(place_done)))
+	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
+		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
+		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
+		then(PROC_REF(carved)))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(PROC_REF(wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
 
-/// Old attack_self.
-/obj/item/material/gravemarker/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
+MSG_DEF_SELF(gravemarker/placing, "You begin to place %T%.")
+MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
 
-	if(!isturf(user.loc))
-		return TRUE
+/// Requirement: the actor stands on a turf.
+/obj/item/material/gravemarker/proc/on_turf(datum/act/op/A)
+	return (read_once(isturf(A.actor.loc))) ? null : /datum/msg/req_silent // where the actor stands is asked when the click is made
 
-	if(locate(/obj/structure/gravemarker, user.loc))
-		to_chat(user, span_warning("There's already something there."))
-		return TRUE
-	else
-		to_chat(user, span_notice("You begin to place \the [src.name]."))
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
-	return TRUE
+/// Requirement: no marker stands where the actor does.
+/obj/item/material/gravemarker/proc/spot_free(datum/act/op/A)
+	return (!read_once(locate(/obj/structure/gravemarker, A.actor.loc))) ? null : MSG(gravemarker/occupied) // what stands where the actor does is asked when the click is made
 
-/obj/item/material/gravemarker/proc/place_done(mob/user)
+/obj/item/material/gravemarker/proc/place_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))
-		return
+		return OP_OK
 	var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
-	to_chat(user, span_notice("You place \the [src.name]."))
+	to_chat(user, span_notice("You place [src.name]."))
 	G.grave_name = grave_name
 	G.epitaph = epitaph
 	G.add_fingerprint(user)
-	G.dir = user.dir
+	G.set_dir(user.dir)
 	QDEL_NULL(src)
 	return

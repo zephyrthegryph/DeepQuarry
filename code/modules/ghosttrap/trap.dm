@@ -1,19 +1,19 @@
 // This system is used to grab a ghost from observers with the required preferences and
 // lack of bans set. See posibrain.dm for an example of how they are called/used. ~Z
 
-GLOBAL_LIST(ghost_traps)
+/// The table of traps (object name -> trap), built once at global init: it is fixed for the life of the world.
+GLOBAL_LIST_INIT(ghost_traps, populate_ghost_traps())
 
 /proc/get_ghost_trap(trap_key)
-	if(!GLOB.ghost_traps)
-		populate_ghost_traps()
 	return GLOB.ghost_traps[trap_key]
 
 /proc/populate_ghost_traps()
-	GLOB.ghost_traps = list()
+	. = list()
 	for(var/traptype in typesof(/datum/ghosttrap))
 		var/datum/ghosttrap/G = new traptype
-		GLOB.ghost_traps[G.object] = G
+		.[G.object] = G
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ghosttrap)
 /datum/ghosttrap
 	var/object = "positronic brain"
 	var/pref_check = BE_AI
@@ -22,19 +22,27 @@ GLOBAL_LIST(ghost_traps)
 
 TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBORG))
 
-// Check for bans, proper atom types, etc.
-/datum/ghosttrap/proc/assess_candidate(mob/observer/dead/candidate)
+/// Why the candidate may not enter play as this trap's object, or null: the text of the refusal (an empty string for a ghost that cannot be asked at all).
+/datum/ghosttrap/proc/candidate_refusal(mob/observer/dead/candidate)
+	READS_FROM() // the bans and the respawn rules are read when the ghost asks, never cached
 	if(!istype(candidate) || !candidate.client || !candidate.ckey)
-		return 0
+		return /datum/msg/req_silent
 	if(!candidate.MayRespawn())
-		to_chat(candidate, span_infoplain("You have made use of the AntagHUD and hence cannot enter play as \a [object]."))
-		return 0
+		return span_infoplain("You have made use of the AntagHUD and hence cannot enter play as \a [object].")
 	if(islist(TYPE_TABLE_GET(src, ghosttrap_ban_checks)))
 		for(var/bantype in TYPE_TABLE_GET(src, ghosttrap_ban_checks))
 			if(jobban_isbanned(candidate, "[bantype]"))
-				to_chat(candidate, span_infoplain("You are banned from one or more required roles and hence cannot enter play as \a [object]."))
-				return 0
-	return 1
+				return span_infoplain("You are banned from one or more required roles and hence cannot enter play as \a [object].")
+	return null
+
+// Check for bans, proper atom types, etc.
+/datum/ghosttrap/proc/assess_candidate(mob/observer/dead/candidate)
+	var/why = candidate_refusal(candidate)
+	if(isnull(why))
+		return 1
+	if(istext(why))
+		to_chat(candidate, why)
+	return 0
 
 // Print a message to all ghosts with the right prefs/lack of bans.
 /datum/ghosttrap/proc/request_player(mob/target, request_string)
@@ -53,11 +61,13 @@ TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBOR
 			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")
 
 // Handles a response to request_player().
-TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF("candidate", /mob/observer/dead, TOPIC_IN_MOBS), TOPIC_REF("target", /mob, TOPIC_IN_MOBS))
+CAPABILITIES(/datum/ghosttrap)
+	op("candidate", topic("candidate", arg("candidate", schema_ref(/mob/observer/dead), optional = TRUE, among = TOPIC_IN_MOBS), arg("target", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_candidate)))
 
-/datum/ghosttrap/proc/topic_candidate(mob/user, list/args)
-	var/mob/observer/dead/candidate = args["candidate"]
-	var/mob/target = args["target"]
+/datum/ghosttrap/proc/topic_candidate(datum/act/op/A, href_candidate, href_target)
+	var/mob/user = A.actor
+	var/mob/observer/dead/candidate = href_candidate
+	var/mob/target = href_target
 	if(!target || !candidate)
 		return
 	if(candidate == user && assess_candidate(candidate) && !target.ckey)
@@ -89,17 +99,21 @@ TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF
 		return
 	P.searching = 0
 	P.name = "positronic brain ([P.get_occupant()?.name])"
-	P.icon_state = "posibrain-occupied"
+	P.set_icon_state("posibrain-occupied")
 
 // Allows people to set their own name. May or may not need to be removed for posibrains if people are dumbasses.
 /datum/ghosttrap/proc/set_new_name(mob/target)
-	var/_answer_k96 = rerun_ask(target, "k96", PROC_REF(set_new_name), args, /datum/om/prompt/text, message = "Enter a name, or leave blank for the default name.", title = "Name change", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k96))
+	open_request(src, /datum/prompt/text/ghosttrap_name, PROC_REF(ghosttrap_name_answered), answerer = target)
+
+/datum/ghosttrap/proc/ghosttrap_name_answered(datum/act/request/context)
+	if(!context.answer)
 		return
-	var/newname = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
+	var/mob/target = context.answer.answerer
+	var/newname = sanitizeSafe(context.answer.value, MAX_NAME_LEN)
 	if (newname != "")
-		target.real_name = newname
+		target.set_real_name(newname)
 		target.name = target.real_name
+	SStgui.update_uis(src)
 
 // Doona pods and walking mushrooms.
 /datum/ghosttrap/plant
@@ -116,3 +130,21 @@ TYPE_TABLE(/datum/ghosttrap/plant, ghosttrap_ban_checks, list(JOB_DIONAEA))
 	if(istype(target,/mob/living/carbon/alien/diona))
 		to_chat(target, span_infoplain(span_bold("You are \a [target], one of a race of drifting interstellar plantlike creatures that sometimes share their seeds with human traders.")))
 		to_chat(target, span_infoplain(span_bold("Too much darkness will send you into shock and starve you, but light will help you heal.")))
+
+/datum/prompt/text/ghosttrap_name
+	title = "Name change"
+	question = "Enter a name, or leave blank for the default name."
+	max_len = MAX_NAME_LEN
+	encode = FALSE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/ghosttrap_name/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/ghosttrap_name/recheck_extra()
+	var/datum/ghosttrap/trap = owner
+	var/mob/target = answerer
+	if(!istype(trap) || QDELETED(trap) || !istype(target) || QDELETED(target))
+		return "gone"
+	return null

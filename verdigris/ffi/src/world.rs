@@ -45,7 +45,7 @@ use vg_core::world::{KindId, World, WorldBuilder, WorldConfig};
 use crate::{entity, registry};
 
 thread_local! {
-    /// Set by [`shutdown`]: the world is gone and is never rebuilt.
+    /// Set by [`shutdown`]: the world is gone until [`revive`] (the next `world/New()`).
     static SHUT_DOWN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static WORLD: RefCell<Option<World>> = const { RefCell::new(None) };
     /// The grid size the next (re)build uses ([`configure_world`]).
@@ -116,7 +116,7 @@ fn register(b: &mut WorldBuilder) -> Fields {
     use vg_power::components::{Apc, Producer, Smes, SmesInputTerminal};
     use vg_power::kind::Cables;
     use vg_power::laws::{
-        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesInputApply, SmesInputPlan,
+        ApcTick, PowerReset, PowerSettle, ProducerCredit, SmesFlowReset, SmesInputApply, SmesInputPlan,
         SmesOutputApply, SmesOutputPlan,
     };
     b.add_component::<Producer>();
@@ -135,8 +135,9 @@ fn register(b: &mut WorldBuilder) -> Fields {
         .after::<ProducerCredit>()
         .after::<SmesOutputPlan>();
     let _ = b.add_law::<PowerSettle>().after::<ApcTick>();
-    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>();
-    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>();
+    let _ = b.add_law::<SmesFlowReset>().after::<PowerReset>();
+    let _ = b.add_law::<SmesOutputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
+    let _ = b.add_law::<SmesInputApply>().after::<PowerSettle>().after::<SmesFlowReset>();
 
     // Pipes (`rust_architecture.md` §6, §8.5, step 5): a main-owned network,
     // its region payloads pooled gas (`vg_gas::pipes::PipeGas`). The devices
@@ -279,12 +280,14 @@ pub(crate) fn map_cells(
             unit,
             levels,
             hysteresis,
+            start,
         } => Cond::Band {
             cell: f(*cell)?,
             ch: *ch,
             unit: *unit,
             levels: levels.clone(),
             hysteresis: *hysteresis,
+            start: *start,
         },
         Cond::Difference { a, b, level, abs } => Cond::Difference {
             a: f(*a)?,
@@ -622,24 +625,62 @@ fn component_adjust(
 /// drew power). With `force`, a step runs now whatever the pacer owes (a deterministic step for a test that built
 /// a device by hand). Driven by [`crate::frame`] only.
 pub(crate) fn pace(seconds: f64, force: bool) -> Result<Vec<f32>> {
-    let probes = crate::heat::mixture_probes();
+    // The heat exchange law reads the mixture probes only when a step runs: building them walks every gas coupling
+    // and loads its mixture, so a frame that only advances the pacer (most of them: the step is PIPE_DEVICE_PERIOD,
+    // the frame a tick) skips it.
+    let due = force || with_world(|w| Ok(w.step_due(Seconds(seconds))))?;
+    let mut lap = PaceLaps::start();
+    let probes = due.then(crate::heat::mixture_probes);
+    lap.lap("pace_probes");
     with_world(|w| {
-        w.set_global(probes).map_err(|e| eyre!("{e}"))?;
-        let due = force || w.step_due(Seconds(seconds));
+        if let Some(probes) = probes {
+            w.set_global(probes).map_err(|e| eyre!("{e}"))?;
+        }
         if due {
             crate::pipes::stage_devices(w)?;
         }
+        lap.lap("pace_stage");
         if force {
             w.step_blocking();
         } else {
             let _ = w.tick(Seconds(seconds));
         }
-        Ok(if due {
+        lap.lap(if due { "pace_step" } else { "pace_tick" });
+        let applied = if due {
             crate::pipes::apply_devices(w)
         } else {
             Vec::new()
-        })
+        };
+        lap.lap("pace_apply");
+        Ok(applied)
     })
+    .inspect(|_| {
+        if due {
+            // The heat network's edges, over the world time since their last step (exact for any interval).
+            if let Ok((now, dt)) = with_world(|w| Ok((w.now(), w.dt().0))) {
+                crate::heat_net::step(now, dt);
+            }
+        }
+    })
+}
+
+/// Cumulative wall time of the parts of [`pace`] (`frame.us.pace_*`): the world's tick bookkeeping on frames that
+/// step nothing, the step itself, and the per-step staging around it.
+struct PaceLaps(std::time::Instant);
+
+impl PaceLaps {
+    fn start() -> Self {
+        Self(std::time::Instant::now())
+    }
+
+    fn lap(&mut self, part: &'static str) {
+        let now = std::time::Instant::now();
+        #[allow(clippy::cast_possible_truncation)]
+        crate::metrics::registry()
+            .counter(&format!("frame.us.{part}"))
+            .add((now - self.0).as_micros() as u64);
+        self.0 = now;
+    }
 }
 
 /// Changes the world's step length (the gas publication cadence: a rupture asks
@@ -723,6 +764,8 @@ fn world_run_steps(steps: ByondValue) -> Result<ByondValue> {
             w.step_blocking();
             Ok(())
         })?;
+        let (now, dt) = with_world(|w| Ok((w.now(), w.dt().0)))?;
+        crate::heat_net::step(now, dt);
     }
     Ok(ByondValue::null())
 }
@@ -737,6 +780,19 @@ pub fn shutdown() {
     }
     SHUT_DOWN.with(|s| s.set(true));
     crate::jobs::shutdown();
+}
+
+/// Undoes [`shutdown`] for a new `world/New()`. BYOND keeps the library
+/// loaded across a soft reboot (`world.Reboot()`) but runs `world/Del()`, so
+/// without this every world call after a reboot fails. The world itself is
+/// rebuilt lazily on first use.
+///
+/// # Errors
+/// If the job threads cannot be restarted.
+pub fn revive() -> Result<()> {
+    SHUT_DOWN.with(|s| s.set(false));
+    crate::jobs::reset();
+    crate::jobs::restart()
 }
 
 #[auxmacros::bind("/proc/vg_shutdown")]
@@ -762,5 +818,11 @@ mod tests {
             with_world(|_| Ok(())).is_err(),
             "the world was rebuilt after shutdown"
         );
+        revive().unwrap();
+        with_world(|w| {
+            w.step_blocking();
+            Ok(())
+        })
+        .expect("a revived world (soft reboot) runs again");
     }
 }

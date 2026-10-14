@@ -2,10 +2,10 @@
 GLOBAL_LIST_EMPTY(z_levels)// Each bit re... haha just kidding this is a list of bools now
 
 // If the height is more than 1, we mark all contained levels as connected.
-MAP_RESOLVER(/obj/effect/landmark/map_data, GLOBAL_PROC_REF(resolve_map_data))
-MAP_RESOLVER_VARS(/obj/effect/landmark/map_data, "height")
+CAPABILITIES(/obj/effect/landmark/map_data)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_map_data), vars = list("height")))
 
-/// MAP_RESOLVER for map data: marks the levels below this one (height) as connected.
+/// The map resolver of map data: marks the levels below this one (height) as connected.
 /proc/resolve_map_data(atom/loc, path, list/varedits)
 	var/obj/effect/landmark/map_data/P = path
 	var/turf/T = get_turf(loc)

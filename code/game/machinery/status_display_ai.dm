@@ -1,3 +1,4 @@
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/ai_emotion)
 /datum/ai_emotion
 	var/overlay
 	var/ckey
@@ -40,11 +41,13 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	return emotions
 
 /mob/living/silicon/ai/proc/set_ai_status_displays()
-	var/list/ai_emotions = get_ai_emotions(ckey)
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(ai_status_display_chosen), message = "Please, select a status:", title = "AI Status", choices = ai_emotions)
+	perform_op(src, src, "ai_status_displays", null, ORIGIN_SYSTEM)
 
-/mob/living/silicon/ai/proc/ai_status_display_chosen(datum/om/prompt/choice/ask)
-	var/emote = ask.choice
+/mob/living/silicon/ai/proc/status_display_options(datum/act/op/A)
+	return get_ai_emotions(ckey)
+
+/mob/living/silicon/ai/proc/ai_status_display_chosen(datum/act/op/A)
+	var/emote = A.step_value("emotion")
 	for (var/obj/machinery/M in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		if(istype(M, /obj/machinery/ai_status_display))
 			var/obj/machinery/ai_status_display/AISD = M
@@ -78,36 +81,12 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 	var/emotion = "Neutral"
 
-/obj/machinery/ai_status_display/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/ai_status_display_touch,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Set status", PROC_REF(ai_status_display_silicon_use)))
-	..()
+/obj/machinery/ai_status_display/proc/emotion_options(datum/act/op/A)
+	return get_ai_emotions(A.actor.ckey)
 
-/// Old attackby: dispatched straight to attack_hand for any item.
-/datum/interaction/machine_item/ai_status_display_touch
-	id = "ai_status_display_touch"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/ai_status_display/proc/interaction_touch
-
-/obj/machinery/ai_status_display/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
-
-/obj/machinery/ai_status_display/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
-
-/// Old attack_ai: pick the displayed emotion.
-/obj/machinery/ai_status_display/proc/ai_status_display_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/ai_emotions = get_ai_emotions(user.ckey)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(emotion_chosen), message = "Please, select a status:", title = "AI Status", choices = ai_emotions)
-	return TRUE
-
-/obj/machinery/ai_status_display/proc/emotion_chosen(datum/om/prompt/choice/ask)
-	var/emote = ask.choice
-	emotion = emote
+/obj/machinery/ai_status_display/proc/emotion_selected(datum/act/op/A)
+	emotion = A.step_value("emotion")
+	return OP_OK
 
 /obj/machinery/ai_status_display/proc/update()
 	if(mode==0) //Blank
@@ -130,7 +109,14 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 /obj/machinery/ai_status_display/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		cut_overlays()
 	else
 		update()
+
+MSG_DEF_SELF(ai_status_display/needs_item, "needs an item")
+
+CAPABILITIES(/obj/machinery/ai_status_display)
+	op("touch", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(ai_status_display/needs_item)), req_adjacent(), req_capable()), then(TYPE_PROC_REF(/atom, op_as_touch)))
+	op("set_status", remote(), label("Set status"), wait(0), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(emotion_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(emotion_selected)))
+	display_disconnect_op()

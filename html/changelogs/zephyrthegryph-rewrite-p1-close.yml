@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Phase 1 of the rewrite closes: a capability every(), contributions of granted capabilities, the cover, compartment, cell-bay and telekinesis library, state-graph edges as ops with a refunding ledger, a real purity guard, waits that subscribe to their reads, a generation-keyed menu cache and an interned resolver index."
+  - code_imp: "The generated declaration lists call engine constructors as global procs, so a type proc named like one (cooldown, flash, put_in, menu) cannot capture it; a lint rule guards hand-written capability definitions."

@@ -57,24 +57,27 @@
 	debug = TRUE
 
 /// Old attack_robot: an adjacent cyborg opens the UI; otherwise the default.
-/obj/item/integrated_circuit_printer/proc/circuit_printer_robot_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/circuit_printer_robot_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	tgui_interact(user)
 	return TRUE
 
 /// Old attackby.
-/obj/item/integrated_circuit_printer/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O,/obj/item/stack/material))
 		var/obj/item/stack/material/stack = O
 		if(stack.material.name == MAT_STEEL)
 			if(debug)
 				to_chat(user, span_warning("\The [src] does not need any material."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/num = min((max_metal - metal) / metal_per_sheet, stack.get_amount())
 			if(num < 1)
 				to_chat(user, span_warning("\The [src] is too full to add more metal."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(stack.use(max(1, round(num)))) // We don't want to create stacks that aren't whole numbers
 				to_chat(user, span_notice("You add [num] sheet\s to \the [src]."))
 				metal += num * metal_per_sheet
@@ -118,7 +121,7 @@
 		attack_self(user)
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/integrated_circuit_printer/vv_edit_var(var_name, var_value)
 	// Gotta update the static data in case an admin VV's the upgraded var for some reason..!
@@ -126,20 +129,20 @@
 		dirty_items = TRUE
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Open", PROC_REF(circuit_printer_robot_open)), \
-)
-
 /// Old attack_self.
-/obj/item/integrated_circuit_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/integrated_circuit_printer, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
+CAPABILITIES(/obj/item/integrated_circuit_printer)
+	interface("ICPrinter", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
+	op("import_circuit", ui_act("import_circuit"), then(PROC_REF(ui_act_import_circuit)))
+	op("build", ui_act("build", arg("build", schema_path(/datum))), then(PROC_REF(ui_act_build)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("circuit_printer_robot_open", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Open"), then(PROC_REF(circuit_printer_robot_open)))
 
 /obj/item/integrated_circuit_printer/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -152,14 +155,14 @@ DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
 	var/list/data = ..()
 
 	var/list/categories = list()
-	for(var/category in circuit_service().circuit_fabricator_recipe_list)
+	for(var/category in SScircuit.ready().circuit_fabricator_recipe_list)
 		var/list/cat_obj = list(
 			"name" = category,
 			"items" = null
 		)
 		if(cat_obj["name"] == "Illegal Parts" && !illegal_upgraded)
 			continue
-		var/list/circuit_list = circuit_service().circuit_fabricator_recipe_list[category]
+		var/list/circuit_list = SScircuit.ready().circuit_fabricator_recipe_list[category]
 		var/list/items = list()
 		for(var/path in circuit_list)
 			var/obj/O = path
@@ -192,9 +195,21 @@ DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
 
 	return data
 
-UI_DATA(/obj/item/integrated_circuit_printer, "metal:num", "max_metal:num", "metal_per_sheet:num", "debug:num", "upgraded", "is_printing", "merge:ui_data_obj_item_integrated_circuit_printer{can_clone:bool,print_time_remaining:num}")
+/obj/item/integrated_circuit_printer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["metal"] = metal
+	data["max_metal"] = max_metal
+	data["metal_per_sheet"] = metal_per_sheet
+	data["debug"] = debug
+	data["upgraded"] = upgraded
+	data["is_printing"] = is_printing
+	var/list/merged_1 = ui_data_obj_item_integrated_circuit_printer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/integrated_circuit_printer's window data (declared on its UI_DATA row).
+/// /obj/item/integrated_circuit_printer's window data.
 /obj/item/integrated_circuit_printer/proc/ui_data_obj_item_integrated_circuit_printer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -203,28 +218,24 @@ UI_DATA(/obj/item/integrated_circuit_printer, "metal:num", "max_metal:num", "met
 
 	return data
 
-/obj/item/integrated_circuit_printer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/item/integrated_circuit_printer, "import_circuit", ui_act_import_circuit)
-UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_import_circuit)
+/obj/item/integrated_circuit_printer/proc/ui_act_import_circuit(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
 	if(!can_clone)
-		to_chat(ui.user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
+		to_chat(user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
 		return TRUE
 
 	if(is_printing) // Should not be possible to reach here.
-		to_chat(ui.user, span_warning("The printer is busy! Please wait for the current print job to finish."))
+		to_chat(user, span_warning("The printer is busy! Please wait for the current print job to finish."))
 		return TRUE
 
-	handle_circuit_import(ui.user)
+	handle_circuit_import(user)
 	return TRUE
 
-UI_ACT(/obj/item/integrated_circuit_printer, "build", ui_act_build, UI_ARG_PATH("build", /datum))
-UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
-	var/build_type = params["build"]
+/obj/item/integrated_circuit_printer/proc/ui_act_build(datum/act/op/A, build)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	var/build_type = build
 	if(!build_type || !ispath(build_type))
 		return 1
 
@@ -238,24 +249,24 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 		cost = I::w_class
 
 	var/in_some_category = FALSE
-	for(var/category in circuit_service().circuit_fabricator_recipe_list)
-		if(build_type in circuit_service().circuit_fabricator_recipe_list[category])
+	for(var/category in SScircuit.ready().circuit_fabricator_recipe_list)
+		if(build_type in SScircuit.ready().circuit_fabricator_recipe_list[category])
 			in_some_category = TRUE
 			break
 	if(!in_some_category)
 		return
 
 	if(!debug)
-		if(!Adjacent(ui.user))
-			to_chat(ui.user, span_notice("You are too far away from \the [src]."))
+		if(!Adjacent(user))
+			to_chat(user, span_notice("You are too far away from \the [src]."))
 			return 1
 		if(metal - cost < 0)
-			to_chat(ui.user, span_warning("You need [cost] metal to build that!."))
+			to_chat(user, span_warning("You need [cost] metal to build that!."))
 			return 1
 		metal -= cost
 	var/obj/item/built = new build_type(get_turf(loc))
-	ui.user.put_in_hands(built)
-	to_chat(ui.user, span_notice("[capitalize(built.name)] printed."))
+	user.put_in_hands(built)
+	to_chat(user, span_notice("[capitalize(built.name)] printed."))
 	play_sfx(src, SFX_ITEMS_JAWS_PRY)
 	return TRUE
 
@@ -371,10 +382,10 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 	var/list/components_to_create = list()
 
 	// Build list of available components
-	for(var/category in circuit_service().circuit_fabricator_recipe_list)
+	for(var/category in SScircuit.ready().circuit_fabricator_recipe_list)
 		if(category == "Illegal Parts" && !illegal_upgraded)
 			continue
-		var/list/circuit_list = circuit_service().circuit_fabricator_recipe_list[category]
+		var/list/circuit_list = SScircuit.ready().circuit_fabricator_recipe_list[category]
 		for(var/path in circuit_list)
 			available_components += path
 
@@ -477,21 +488,20 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 	var/list/created_components = add_components_to_assembly(assembly, assembly_data, available_components)
 	if(!created_components || !LAZYLEN(created_components))
 		to_chat(user, span_warning("Failed to add components to assembly! No components were created."))
-		qdel(assembly)
+		spent(assembly, user)
 		if(!debug)
 			metal += total_cost
 		return
 
 	// Restore wiring, and appearance
 	restore_component_wiring(assembly_data, created_components)
-	assembly.update_icon()
 
 	// Start the printing process
 	rel_set(src, nameof(queued_assembly), assembly)
 	is_printing = TRUE
 	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
-	om_after(src, print_time, PROC_REF(finish_printing))
+	after(src, print_time, PROC_REF(finish_printing))
 
 	var/print_minutes = round(print_time / 600, 0.1) // Convert to minutes for display
 	to_chat(user, span_notice("Printing '[assembly.name]' with [LAZYLEN(created_components)] component\s. Estimated completion time: [print_minutes] minute\s."))

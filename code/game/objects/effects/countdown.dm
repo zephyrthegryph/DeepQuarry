@@ -14,8 +14,11 @@
 	var/atom/attached_to
 
 /// Ticks its display every fast tick while started.
-OM_FIELD(/obj/effect/countdown, started, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
+/obj/effect/countdown/var/started = FALSE
+TRACKED(/obj/effect/countdown, started)
+CAPABILITIES(/obj/effect/countdown)
+	ref_one(nameof(attached_to))
+	every(0.2 SECONDS, then(PROC_REF(countdown_step)), when = nameof(started))
 
 /obj/effect/countdown/Initialize(mapload)
 	. = ..()
@@ -29,18 +32,18 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 	rel_set(src, nameof(attached_to), A)
 	var/turf/loc_turf = get_turf(A)
 	if(!loc_turf)
-		om_hook(attached_to, /datum/om/event/moved, src, PROC_REF(retry_attach))
+		observe(attached_to, /datum/notice/moved, src, then(PROC_REF(retry_attach)))
 	else
 		forceMove(loc_turf)
 
-/obj/effect/countdown/proc/retry_attach(datum/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/obj/effect/countdown/proc/retry_attach(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 
 	var/turf/loc_turf = get_turf(attached_to)
 	if(!loc_turf)
 		return
 	forceMove(loc_turf)
-	om_unhook(attached_to, /datum/om/event/moved, src)
+	unobserve(attached_to, /datum/notice/moved, src)
 
 /obj/effect/countdown/proc/start()
 	set_started(TRUE)
@@ -54,9 +57,9 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 	// Get the value from our atom
 	return
 
-/obj/effect/countdown/periodic_step()
+/obj/effect/countdown/proc/countdown_step(datum/act/timer/A)
 	if(!attached_to || QDELETED(attached_to))
-		qdel(src)
+		consume(src)
 		return
 	forceMove(get_turf(attached_to))
 	var/new_val = get_value()

@@ -12,16 +12,24 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 
-/obj/effect/simple_portal/linked/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+CAPABILITIES(/obj/effect/simple_portal/linked)
+	ref_one(nameof(linked_portal))
+	after_init(0, then(PROC_REF(link_on_init)))
 
-/obj/effect/simple_portal/linked/LateInitialize()
+/// Links its partner portal, once both exist.
+/obj/effect/simple_portal/linked/proc/link_on_init(datum/act/timer/A)
 	if(portal_id)
 		link_portal()
 
-/obj/effect/simple_portal/Bumped(atom/movable/AM)
-	. = ..()
+CAPABILITIES(/obj/effect/simple_portal)
+	ref_one(nameof(destination))
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("enter", observer(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(simple_portal_observer_use)))
+
+/// Something walked into it (the bump action's notice).
+/obj/effect/simple_portal/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	handle_teleport(AM)
 
 /obj/effect/simple_portal/Crossed(atom/movable/AM)
@@ -35,13 +43,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 			playsound(get_turf(src),teleport_sound,60,1)
 			playsound(get_turf(destination()),teleport_sound,60,1)
 
-EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_REF(simple_portal_observer_use)))
-
 /// Old attack_ghost: the ghost's default (examine), then through the portal.
-/obj/effect/simple_portal/proc/simple_portal_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/simple_portal/proc/simple_portal_observer_use(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	actor_use_default(/datum/input_adapter/ghost, user, src)
 	handle_teleport(user)
-	return TRUE
+	return OP_OK
 
 /obj/effect/simple_portal/coords
 	var/tele_x
@@ -61,7 +68,6 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 
 /obj/effect/simple_portal/linked/handle_teleport(atom/movable/AM)
 	rel_clear(src, nameof(destination))
-	update_icon()
 	if(linked_portal() && icon_state == "portal")
 		var/rel_x = round(rand(-1,1))
 		var/rel_y = round(rand(-1,1))
@@ -117,15 +123,13 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
 			rel_set(src, nameof(linked_portal), candidate)
 			break
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/effect/simple_portal/linked, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/effect/simple_portal/linked/appearance_overlays()
-	. = list()
+/obj/effect/simple_portal/linked/draw(datum/look/look)
+	..()
 	if(linked_portal() && !QDELETED(linked_portal()))
-		icon_state = "portal"
+		look.state("portal")
 	else
-		icon_state = "portal1"
+		look.state("portal1")
 
 /// Relation view: destination (reads null once it is gone).
 /obj/effect/simple_portal/proc/destination() as /atom

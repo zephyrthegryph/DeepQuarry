@@ -7,22 +7,37 @@ MATERIAL_MIX(/obj/item/paicard/sleevecard, list(MAT_STEEL = 4000, MAT_GLASS = 40
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
-	INTERACT_OBSERVER(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
-)
+CAPABILITIES(/obj/item/paicard/sleevecard)
+	// a ghost can't load into a sleevecard; the card's own item handling never reached it
+	without("inhabit")
+	without("item")
+	// the old attackby: a sleevemate uploads its stored mind; an emag binds the infomorph
+	op("sleevecard_item", item(/obj/item), label("Use"), then(PROC_REF(sleevecard_interaction_item)))
+	// a sleevemate holding a mind uploads it into an empty card: eight seconds
+	op("upload_mind", item(/obj/item/sleevemate), priority(OP_PRIORITY_PART), when(PROC_REF(upload_ready)), label("Upload mind"), starts(PROC_REF(upload_started)), wait(8 SECONDS), then(PROC_REF(upload_mind_done)))
 
-/datum/om/task/timed/sleevecard_upload_mind
-	duration = 8 SECONDS
-	complete_proc = /obj/item/paicard/sleevecard/proc/upload_mind_done
-	var/obj/item/sleevemate/S
-	var/mind_name
+MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 
-/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/om/task/timed/sleevecard_upload_mind/task)
-	var/mob/user = task.actor
-	var/obj/item/sleevemate/S = task.S
-	var/mind_name = task.mind_name
-	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind_name)
+/// The held sleevemate stores a mind and the card has none yet.
+/obj/item/paicard/sleevecard/proc/upload_ready(datum/act/op/A)
+	var/obj/item/sleevemate/S = A.held
+	return S.stored_mind() && !pai
+
+/obj/item/paicard/sleevecard/proc/upload_started(datum/act/op/A)
+	var/obj/item/sleevemate/S = A.held
+	var/datum/mind/M = S.stored_mind()
+	if(!SStranscore.db_by_mind_name(M.name))
+		return MSG(sleevecard/no_backup)
+	to_chat(A.actor, span_notice("You begin uploading [M.name] into \the [src]."))
+
+/obj/item/paicard/sleevecard/proc/upload_mind_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/sleevemate/S = A.held
+	var/datum/mind/M = S.stored_mind()
+	if(!M)
+		return
+	var/mind_name = M.name
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind_name)
 	if(!db || pai)
 		return
 	var/datum/transhuman/mind_record/record = db.backed_up[mind_name]
@@ -31,19 +46,11 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	S.clear_mind()
 
 /// Old attackby (never reached paicard's own item handling).
-/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
-	if(istype(I,/obj/item/sleevemate))
-		var/obj/item/sleevemate/S = I
-		if(S.stored_mind() && !pai)
-			var/datum/mind/M = S.stored_mind()
-			var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(M.name)
-			if(db)
-				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, receiver = src, S = S, mind_name = M.name)
-			else
-				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
-	else if(istype(I, /obj/item/card/emag))
+/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_PASS
+	if(istype(I, /obj/item/card/emag))
 		var/obj/item/card/emag/E = I
 		if(E.uses && !emagged)
 			E.uses --
@@ -55,7 +62,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 				to_chat(our_infomorph, span_warning("You can feel the restricting binds of your card's directives taking hold of your mind as \the [user] swipes their [E] over you. You must serve your master."))
 
 /obj/item/paicard/sleevecard/proc/sleeveInto(datum/transhuman/mind_record/MR, db_key)
-	var/mob/living/silicon/pai/infomorph/infomorph = new(src,MR.mindname,db_key)
+	var/mob/living/silicon/pai/infomorph/infomorph = new(src, MR.mindname)
 
 	for(var/datum/language/L in MR.mind_ref.get_identity()?.languages)
 		infomorph.add_language(L.name)
@@ -77,15 +84,17 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 
 	return 0
 
-/obj/item/paicard/sleevecard/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The sleevecard's self-use shows its mind's name; an emagged one opens the card as a pAI card does.
+/obj/item/paicard/sleevecard/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
-
 	if(!pai)
 		to_chat(user,span_warning("\The [src] does not have a mind in it!"))
-	else
-		if(!emagged)
-			to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
-		else ..(user, TRUE)
+		return OP_OK
+	if(!emagged)
+		to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
+		return OP_OK
+	return ..()
 
 /mob/living/silicon/pai/infomorph
 	name = "sleevecard" //Has the same name as the card for consistency, but this is the MOB in the card.
@@ -93,22 +102,31 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	ram = 35
 	var/emagged = FALSE
 
-/mob/living/silicon/pai/infomorph/Initialize(mapload, our_name = "Unknown", db_key)
-	. = ..()
+CAPABILITIES(/mob/living/silicon/pai/infomorph)
+	param(nameof(name), pos = 1, default = "Unknown", overrides = TRUE)
 
-	name = our_name
+// ALLOW(init/INSTANCE_STATE): an infomorph names its PDA after itself and speaks Galactic Common
+/mob/living/silicon/pai/infomorph/Initialize(mapload)
+	. = ..()
 
 	//PDA
 	pda.ownjob = "Sleevecard"
-	pda.owner = text("[]", src)
+	pda.set_owner(text("[]", src))
 	pda.name = pda.owner + " (" + pda.ownjob + ")"
 
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots
 
 
-UI_DATA(/mob/living/silicon/pai/infomorph, "available_ram=ram:num", "merge:ui_data_mob_living_silicon_pai_infomorph{bought:list,not_bought:list,emotions:list,current_emotion:num}")
+/mob/living/silicon/pai/infomorph/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["available_ram"] = ram
+	var/list/merged_1 = ui_data_mob_living_silicon_pai_infomorph(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /mob/living/silicon/pai/infomorph's window data (declared on its UI_DATA row).
+/// /mob/living/silicon/pai/infomorph's window data.
 /mob/living/silicon/pai/infomorph/proc/ui_data_mob_living_silicon_pai_infomorph(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

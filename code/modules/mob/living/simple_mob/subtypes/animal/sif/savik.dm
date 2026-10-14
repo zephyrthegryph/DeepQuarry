@@ -58,13 +58,10 @@
 	emote_see = list("paws the ground","shakes its mane","stomps")
 	emote_hear = list("snuffles")
 
-/datum/om/stage/life/special/animal/sif/savik
-	of = /mob/living/simple_mob/animal/sif/savik
-
-/datum/om/stage/life/special/animal/sif/savik/perform(mob/living/simple_mob/animal/sif/savik/self, datum/om/frame/life/ctx)
-	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !om_busy(self) && isturf(self.loc))
-		if(self.vitality() <= 0.5) // At half health, and fighting someone currently.
-			self.berserk()
+/mob/living/simple_mob/animal/sif/savik/life_special(datum/seq_frame/life/F)
+	if(((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !is_working() && isturf(src.loc))
+		if(src.vitality() <= 0.5) // At half health, and fighting someone currently.
+			src.berserk()
 
 /mob/living/simple_mob/animal/sif/savik/fail_tame(obj/O, mob/user)
 	..()

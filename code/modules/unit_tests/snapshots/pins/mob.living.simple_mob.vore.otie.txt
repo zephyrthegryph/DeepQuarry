@@ -1,0 +1,31 @@
+@mob human|none
+-click: Click: Help
++4 menu: Pet
++8 click: Click: Pet
+@mob robot|none
+-click: Click: Help
++4 menu: Pet
++8 click: Click: Pet
+@mob ai|none
+@mob ghost|none
+@mob.living.simple_mob.vore human|/obj/item/tool/screwdriver
+@mob.living.simple_mob.vore human|/obj/item/tool/crowbar
+@mob.living.simple_mob.vore human|/obj/item/tool/wrench
+@mob.living.simple_mob.vore human|/obj/item/tool/wirecutters
+@mob.living.simple_mob.vore human|/obj/item/multitool
+@mob.living.simple_mob.vore human|/obj/item/weldingtool
+@mob.living.simple_mob.vore human|/obj/item/stack/cable_coil
+@mob.living.simple_mob.vore human|/obj/item/stack/material/steel
+@mob.living.simple_mob.vore human|/obj/item/card/id
+@mob.living.simple_mob.vore human|/obj/item
+human|/obj/item/reagent_containers/food menu: Disarm
+human|/obj/item/reagent_containers/food menu: Feed
+human|/obj/item/reagent_containers/food menu: Grab
+human|/obj/item/reagent_containers/food menu: Hit
+human|/obj/item/reagent_containers/food menu: Hold with
+human|/obj/item/reagent_containers/food menu: Nutrition heal
+human|/obj/item/reagent_containers/food menu: Pet
+human|/obj/item/reagent_containers/food menu: Shove with
+human|/obj/item/reagent_containers/food menu: Use on
+human|/obj/item/reagent_containers/food click: Click: Feed
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, nutrition_heal, otie_feed, otie_hand_grab, otie_hand_help, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

@@ -1,0 +1,11 @@
+initial | notes: " "
+initial | owner: "Pin Tester"
+edit asked | notes: " "
+edit asked | owner: "Pin Tester"
+notes written | notes: "Remember the <b>keys</b> & the door code."
+notes written | owner: "Pin Tester"
+notes rewritten | notes: "Second line\nthird line"
+notes rewritten | owner: "Pin Tester"
+notes cleared | notes: ""
+notes cleared | owner: "Pin Tester"
+

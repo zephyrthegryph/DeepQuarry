@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Collector controls, controller debugging and help-ticket prompts now use native requests."

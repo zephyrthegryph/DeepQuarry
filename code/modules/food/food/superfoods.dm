@@ -192,16 +192,19 @@
 			"its The Infinity Cake! This huge imposing cake made by immense efforts and resources stands tall in you, radiating a menacing aura of frosty goodness and diabetes for those not wary of it's infinite might!"
 		)
 
-DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/thecake)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/thecake/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/thecake/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/knife))
 		if(edible == 1)
 			HasSliceMissing()
 			if(slices <= 0)
-				to_chat(usr, span_warning("The cake hums away quietly as the singulo powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
-				return INTERACTION_HANDLED_PASS
+				to_chat(user, span_warning("The cake hums away quietly as the singulo powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
+				return OP_PASS
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
 				slices = slices - 1
@@ -209,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 
 		else
 			to_chat(user, span_notice("It looks so good... But it feels so wrong to eat it before it's finished..."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(W,/obj/item/thecake_layer))
 		var/obj/item/thecake_layer/C = W
 		if(C.layer_stage == 5)
@@ -218,20 +221,20 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 			consume(W, user)
 			stage++
 			desc = desclist[stage]
-			icon_state = "thecake_finished"
+			set_icon_state("thecake_finished")
 			edible = 1
 			name = "The Infinity Cake!"
 		else if(stage == maxstages)
-			to_chat(usr, span_warning("The cake is already done!"))
+			to_chat(user, span_warning("The cake is already done!"))
 		else if(stage == C.layer_stage)
-			to_chat(usr, span_warning("You add another layer to the cake, nice."))
+			to_chat(user, span_warning("You add another layer to the cake, nice."))
 			consume(W, user)
 			stage++
 			desc = desclist[stage]
-			icon_state = "thecake_stage-[stage]"
+			set_icon_state("thecake_stage-[stage]")
 		else
-			to_chat(usr, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
-	return INTERACTION_HANDLED_PASS
+			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
+	return OP_PASS
 
 // Chaos cake
 
@@ -431,84 +434,82 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 	nutriment_amt = 4
 	volume = 80
 
-/obj/item/reagent_containers/food/snacks/chaoscakeslice/Initialize(mapload)
-	. = ..()
-	var/i = rand(1,6)
-	icon_state = "chaoscake_slice-[i]"
-	switch(i)
-		if(1)
-			name = "Slice Of Evil" //Pretty damn poisonous, takes a lot of work to make safe for consumption, useful for medical.
-			desc = "An odd slice, despite the grease and cherries oozing off the top, it smells delicious."
-			nutriment_desc = list("The desire to consume" = 10) // You won't even taste the poison.
-			reagents.add_reagent(REAGENT_ID_NEUROTOXIC_PROTEIN, 2)
-			reagents.add_reagent(REAGENT_ID_SHOCKCHEM, 2)
-			reagents.add_reagent(REAGENT_ID_AMATOXIN, 2)
-			reagents.add_reagent(REAGENT_ID_CARPOTOXIN, 2)
-			reagents.add_reagent(REAGENT_ID_SPIDERTOXIN, 2)
-			bitesize = 7
-		if(2)
-			name = "Slice Of Evil" //A bad trip
-			desc = "A mysterious slice, coated in purple frosting that smells like grapes."
-			nutriment_desc = list("The desire to show off an party" = 10)
-			reagents.add_reagent(REAGENT_ID_STOXIN, 2)
-			reagents.add_reagent(REAGENT_ID_BLISS, 10)
-			reagents.add_reagent(REAGENT_ID_SEROTROTIUM, 4)
-			reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 8)
-			reagents.add_reagent(REAGENT_ID_MINDBREAKER, 10)
-			reagents.add_reagent(REAGENT_ID_PSILOCYBIN, 10)
-			bitesize = 30 //even a single bite won't make you escape fate.
-		if(3)
-			name = "Slice Of Evil" //acidic
-			desc = "A menacing slice, smelling clearly of copper, blood clots float on top."
-			nutriment_desc = list("Infernal Rage" = 10)
-			reagents.add_reagent(REAGENT_ID_BLOOD, 20)
-			reagents.add_reagent(REAGENT_ID_STOMACID, 10)
-			reagents.add_reagent(REAGENT_ID_MUTAGEN, 4)
-			reagents.add_reagent(REAGENT_ID_THIRTEENLOKO, 20)
-			reagents.add_reagent(REAGENT_ID_HYPERZINE, 10)
-			bitesize = 30
-		if(4)
-			name = "Slice Of Good" //anti-tox
-			desc = "A colourful slice, smelling of pear and coated in delicious cream."
-			nutriment_desc = list("Hapiness" = 10)
-			reagents.add_reagent(REAGENT_ID_ANTITOXIN, 2)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
-			bitesize = 3
-		if(5)
-			name = "Slice Of Good" //anti-oxy
-			desc = "A light slice, it's pretty to look at and smells of vanilla."
-			nutriment_desc = list("Freedom" = 10)
-			reagents.add_reagent(REAGENT_ID_DEXALINP, 2)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
-			bitesize = 3
-		if(6)
-			name = "Slice Of Good" //anti-burn/brute
-			desc = "A hearty slice, it smells of chocolate and strawberries."
-			nutriment_desc = list("Love" = 10)
-			reagents.add_reagent(REAGENT_ID_BICARIDINE, 2)
-			reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
-			reagents.add_reagent(REAGENT_ID_KELOTANE, 2)
-			bitesize = 4
+/obj/item/reagent_containers/food/snacks/chaoscakeslice
+	/// Which of the six slices it is (rolls()).
+	var/slice_kind = 1
 
-DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chaoscakeslice)
+	rolls(nameof(slice_kind), range_of(1, 6))
+	rolls(nameof(icon_state), PROC_REF(roll_slice_icon), from = list(nameof(slice_kind)))
+	rolls(nameof(name), PROC_REF(roll_slice_name), from = list(nameof(slice_kind)))
+	rolls(nameof(desc), PROC_REF(roll_slice_desc), from = list(nameof(slice_kind)))
+	rolls(nameof(bitesize), PROC_REF(roll_slice_bitesize), from = list(nameof(slice_kind)))
+	configure(reagents(contents_from = PROC_REF(slice_contents), data = list(REAGENT_ID_NUTRIMENT = PROC_REF(slice_taste))))
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chaos_slice_recipes, list(
+	list(REAGENT_ID_NEUROTOXIC_PROTEIN = 2, REAGENT_ID_SHOCKCHEM = 2, REAGENT_ID_AMATOXIN = 2, REAGENT_ID_CARPOTOXIN = 2, REAGENT_ID_SPIDERTOXIN = 2),
+	list(REAGENT_ID_STOXIN = 2, REAGENT_ID_BLISS = 10, REAGENT_ID_SEROTROTIUM = 4, REAGENT_ID_CRYPTOBIOLIN = 8, REAGENT_ID_MINDBREAKER = 10, REAGENT_ID_PSILOCYBIN = 10),
+	list(REAGENT_ID_BLOOD = 20, REAGENT_ID_STOMACID = 10, REAGENT_ID_MUTAGEN = 4, REAGENT_ID_THIRTEENLOKO = 20, REAGENT_ID_HYPERZINE = 10),
+	list(REAGENT_ID_ANTITOXIN = 2, REAGENT_ID_TRICORDRAZINE = 2),
+	list(REAGENT_ID_DEXALINP = 2, REAGENT_ID_TRICORDRAZINE = 2),
+	list(REAGENT_ID_BICARIDINE = 2, REAGENT_ID_TRICORDRAZINE = 2, REAGENT_ID_KELOTANE = 2)))
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_contents()
+	var/list/recipes = TYPE_TABLE_GET(src, chaos_slice_recipes)
+	return (slice_kind >= 1 && slice_kind <= length(recipes)) ? recipes[slice_kind] : null
+
+/// Its icon follows the slice it rolled.
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_icon(datum/roller/R)
+	return "chaoscake_slice-[slice_kind]"
+
+/// Per slice: name, description, taste and bite size.
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/chaoscakeslice, chaos_slice_facts, list(
+	list("Slice Of Evil", "An odd slice, despite the grease and cherries oozing off the top, it smells delicious.", list("The desire to consume" = 10), 7), // Pretty damn poisonous, takes a lot of work to make safe for consumption, useful for medical. You won't even taste the poison.
+	list("Slice Of Evil", "A mysterious slice, coated in purple frosting that smells like grapes.", list("The desire to show off an party" = 10), 30), // A bad trip; even a single bite won't make you escape fate.
+	list("Slice Of Evil", "A menacing slice, smelling clearly of copper, blood clots float on top.", list("Infernal Rage" = 10), 30), // acidic
+	list("Slice Of Good", "A colourful slice, smelling of pear and coated in delicious cream.", list("Hapiness" = 10), 3), // anti-tox
+	list("Slice Of Good", "A light slice, it's pretty to look at and smells of vanilla.", list("Freedom" = 10), 3), // anti-oxy
+	list("Slice Of Good", "A hearty slice, it smells of chocolate and strawberries.", list("Love" = 10), 4))) // anti-burn/brute
+
+/// One fact of the slice it rolled (chaos_slice_facts: 1 name, 2 description, 3 taste, 4 bite size).
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_fact(index)
+	var/list/facts = TYPE_TABLE_GET(src, chaos_slice_facts)
+	return (slice_kind >= 1 && slice_kind <= length(facts)) ? facts[slice_kind][index] : null
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_name(datum/roller/R)
+	return slice_fact(1)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_desc(datum/roller/R)
+	return slice_fact(2)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/slice_taste()
+	return slice_fact(3)
+
+/obj/item/reagent_containers/food/snacks/chaoscakeslice/proc/roll_slice_bitesize(datum/roller/R)
+	return slice_fact(4)
+
+CAPABILITIES(/obj/structure/chaoscake)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/chaoscake/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/chaoscake/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/knife))
 		if(edible == 1)
 			HasSliceMissing()
 			if(slices <= 0)
 				to_chat(user, span_notice("The cake hums away quietly as the chaos powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
 				slices = slices - 1
-				icon_state = "chaoscake-[slices]"
+				set_icon_state("chaoscake-[slices]")
 				new /obj/item/reagent_containers/food/snacks/chaoscakeslice(src.loc)
 
 		else
 			to_chat(user, span_notice("It looks so good... But it feels so wrong to eat it before it's finished..."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(W,/obj/item/chaoscake_layer))
 		var/obj/item/chaoscake_layer/C = W
 		if(C.layer_stage == 8)
@@ -516,7 +517,7 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 			consume(W, user)
 			stage++
 			desc = desclist2[stage]
-			icon_state = "chaoscake-6"
+			set_icon_state("chaoscake-6")
 			edible = 1
 			name = "The Chaos Cake!"
 		else if(stage == maxstages)
@@ -526,10 +527,10 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 			consume(W, user)
 			stage++
 			desc = desclist2[stage]
-			icon_state = "chaoscake_stage-[stage]"
+			set_icon_state("chaoscake_stage-[stage]")
 		else
 			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // The One Pizza
 
@@ -550,22 +551,22 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza/bigslice,
 							/obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza/bigslice)
 
-/obj/structure/theonepizza/proc/slice_done(mob/living/user)
+/obj/structure/theonepizza/proc/slice_done(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, null, MSG_SELF(span_notice("You successfully cut The One Pizza.")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " successfully cuts The One Pizza.")))
 	for(var/slicetype in slicelist)
 		new slicetype(src.loc)
-	qdel(src)
+	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+MSG_DEF(theonepizza/slicing, span_notice("You start to slowly cut through The One Pizza."), span_bold("%U%") + " starts to slowly cut through The One Pizza.")
 
-/// Old attackby.
-/obj/structure/theonepizza/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/knife))
-		act_message(user, null, MSG_SELF(span_notice("You start to slowly cut through The One Pizza.")), \
-			MSG_OTHERS(span_bold("%U%") + " starts to slowly cut through The One Pizza."))
-		om_task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/structure/theonepizza)
+	op("item", item(/obj/item/material/knife), label("Use"), begins(MSG(theonepizza/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(slice_done)))
+
+/// How long the knife takes through it.
+/obj/structure/theonepizza/proc/slice_time(datum/act/op/A)
+	return slicetime
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice
 	name = "Giant Margherita slice"

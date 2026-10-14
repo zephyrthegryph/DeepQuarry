@@ -25,7 +25,6 @@
 	melee_damage_upper = 12
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0
 	cold_resist = 1.0
@@ -38,10 +37,14 @@
 	var/copy = "/mob/living/simple_mob/vore/solarray"
 
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null, PROC_REF(spacecritter_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
+	configure(mob_movement(hovering = TRUE))
+	op("spacecritter_interaction_item", item(/obj/item), then(PROC_REF(spacecritter_interaction_item)))
 
 /// Old attackby: the evolve key evolves, the feed item duplicates; anything else is a normal hit.
-/mob/living/simple_mob/vore/spacecritter/proc/spacecritter_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/spacecritter/proc/spacecritter_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, evolvekey))
 		consume(O, user)
 		evolve()
@@ -50,7 +53,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 		consume(O, user)
 		duplicate()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/spacecritter/proc/evolve()
 	var/mob/living/L
@@ -58,7 +61,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-	qdel(src)
+	replaced_by(src, L)
 
 /mob/living/simple_mob/vore/spacecritter/proc/duplicate()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% splits into two!")))
@@ -88,28 +91,28 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	copy = "/mob/living/simple_mob/vore/spacecritter/solarray"
 
 
-/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray
-	of = /mob/living/simple_mob/vore/spacecritter/solarray
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/spacecritter/solarray/perform(mob/living/simple_mob/vore/spacecritter/solarray/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/spacecritter/solarray/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.icon_state != self.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
-		var/turf/moth_loc = get_turf(self)
+	if(src.icon_state != src.icon_dead) //I mean on death() Life() should disable but i guess doesnt hurt to make sure -shark
+		var/turf/moth_loc = get_turf(src)
 		if(isturf(moth_loc) && moth_loc.return_air()) // XGM turf.air → LINDA return_air()
 			var/datum/gas_mixture/env = moth_loc.return_air() //Gets all the information on the local air.
 			var/transfer_moles = 0.25 * env.total_moles() //The bigger the room, the harder it is to heat the room.
 			var/datum/gas_mixture/removed = env.remove(transfer_moles)
 			if(removed)
-				var/heat_transfer = removed.get_thermal_energy_change(self.set_temperature)
+				var/heat_transfer = removed.get_thermal_energy_change(src.set_temperature)
 				var/environment_temperature = env.return_temperature()
 				if(heat_transfer > 0 && environment_temperature < T0C + 200)	//This should start heating the room at a moderate pace up to 200 degrees celsius.
-					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater
-					removed.add_thermal_energy(heat_transfer)
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
-				else if(heat_transfer > 0 && environment_temperature < self.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
-					self.heating_power = self.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
-					heat_transfer = min(heat_transfer , self.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
-					removed.add_thermal_energy(heat_transfer)
+				else if(heat_transfer > 0 && environment_temperature < src.set_temperature) //Set temperature is 10,000 degrees celsius. So this thing will start cooking crazy hot between the temperatures of 200C and 10,000C.
+					src.heating_power = src.original_temp*100 //Changed to work variable -shark //FLAME ON! This will make the moth heat up the room at an incredible rate.
+					heat_transfer = min(heat_transfer , src.heating_power) //limit by the power rating of the heater. Except it's hot, so yeah.
+					heat_add(removed, heat_transfer, HEAT_SOURCE_OTHER)
 
 				else
 					return
@@ -119,7 +122,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 
 
 	//Since I'm changing hyper mode to be variable we need to store old power
-	self.original_temp = self.heating_power
+	src.original_temp = src.heating_power
 
 /mob/living/simple_mob/vore/spacecritter/solarray/galaxyray
 	name = "galaxy ray"
@@ -130,6 +133,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	heating_power = 150000
 	size_multiplier = 1.5
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
+	configure(mob_movement(hovering = TRUE))
+
 /mob/living/simple_mob/vore/spacecritter/livingice //dark blue slime but more chilly. Dies to lasers or slighly toasty rooms
 	name = "living icicle"
 	desc = "A strange creature, a crab like creature seemingly made of ice"
@@ -139,7 +145,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	icon_dead = "livingice-dead"
 	minbodytemp = 0			// Minimum "okay" temperature in kelvin
 	maxbodytemp = 300			// Maximum of above
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	heat_resist = 0.2
 	cold_resist = 1.0
 
@@ -150,19 +155,16 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 
 	var/chilltemp = -20
 
-/datum/om/stage/life/special/vore/spacecritter/livingice
-	of = /mob/living/simple_mob/vore/spacecritter/livingice
-
-/datum/om/stage/life/special/vore/spacecritter/livingice/perform(mob/living/simple_mob/vore/spacecritter/livingice/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.cold_aura()
+/mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/livingice/proc/cold_aura()
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(chilltemp * 1000)
+		heat_add(env, chilltemp * 1000, HEAT_SOURCE_OTHER)
 
 /mob/living/simple_mob/vore/spacecritter/livingice/iceberg
 	name = "living iceberg"
@@ -192,12 +194,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
 
-/datum/om/stage/life/special/vore/spacecritter/radcrab
-	of = /mob/living/simple_mob/vore/spacecritter/radcrab
-
-/datum/om/stage/life/special/vore/spacecritter/radcrab/perform(mob/living/simple_mob/vore/spacecritter/radcrab/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/proc/irradiate()

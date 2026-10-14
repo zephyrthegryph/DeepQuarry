@@ -1,0 +1,5 @@
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Take cell
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Baton item

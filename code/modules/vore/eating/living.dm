@@ -1,7 +1,5 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	var/showvoreprefs = TRUE			// Determines if the mechanical vore preferences button will be displayed on the mob or not.
-	var/list/temp_language_sources	//Absorbs add languages to the pred. Lazy.
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
 	var/prey_controlled = FALSE			// If the mob is currently controlled by their prey.
 	var/weight = 137					// Weight for mobs for weightgain system
@@ -43,17 +41,10 @@
 /mob/proc/init_vore(force = FALSE)
 	//Something else made organs, meanwhile.
 	if(!isnewplayer(src))
-		om_attach(src, /datum/om/behaviour/slosh)
-		// Wire the spontaneous-vore signal handlers (stumble/slip/drop/throw vore).
-		// The behaviour is defined in code/datums/behaviours/spontaneous_vore.dm
-		// but was never attached anywhere — stumble/slip/drop/throw vore was silently
-		// broken.  Attaching here is safe: each handler checks the mob's stumble_vore,
-		// slip_vore, etc. preference flags and no-ops if they are disabled.
-		if(isliving(src))
-			om_attach(src, /datum/om/behaviour/spontaneous_vore)
+		enable_slosh()
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 		return TRUE
 
 	//We'll load our client's organs if we have one
@@ -62,13 +53,13 @@
 			to_chat(src,span_warning("ERROR: You seem to have saved VOREStation prefs, but they couldn't be loaded."))
 			return FALSE
 		if(LAZYLEN(vore_organs))
-			rel_set(src, nameof(vore_selected), vore_organs[1])
+			set_vore_selected(src, vore_organs[1])
 			return TRUE
 
 	//Or, we can create a basic one for them
 	if(!LAZYLEN(vore_organs) && isliving(src))
 		var/obj/belly/B = new /obj/belly(src)
-		rel_set(src, nameof(vore_selected), B)
+		set_vore_selected(src, B)
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
@@ -76,9 +67,9 @@
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
 			if(istype(H.species,/datum/species/monkey))
-				allow_spontaneous_tf = TRUE
+				vore_prefs.allow_spontaneous_tf = TRUE
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 		return TRUE
 
 /mob/living/init_vore(force)
@@ -109,10 +100,10 @@
 					log_vore("[attacker] attempted to feed [G?.grab_target()] to [user] ([user.type]) but it failed.")
 
 			///// If user clicked on their grabbed target
-			else if((src == G?.grab_target()) && (stance == I_GRAB) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
+			else if((src == G?.grab_target()) && (stance == I_GRAB) && (hud_of(attacker)?.zone_sel?.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
 				if(istype(victim) && !victim.client && !victim.ai_brain) //Check whether the victim is: A carbon mob, has no client, but has a ckey. This should indicate an SSD player.
 					log_and_message_admins("attempted to force feed themselves to [key_name_admin(G?.grab_target())] whilst they were AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
-				if(!victim.feeding)
+				if(!victim.vore_prefs.feeding)
 					to_chat(user, span_vnotice("[G?.grab_target()] isn't willing to be fed."))
 					log_and_message_admins("attempted to feed themselves to [key_name_admin(G?.grab_target())] against their prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", src)
 					return FALSE
@@ -130,11 +121,11 @@
 				if(istype(victim_fed) && !victim_fed.client && !victim_fed.ai_brain)
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] whilst [key_name_admin(src)] was AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 
-				if(!feeding)
+				if(!vore_prefs.feeding)
 					to_chat(user, span_vnotice("[src] isn't willing to be fed."))
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against predator's prefs ([src ? ADMIN_JMP(src) : "null"])", attacker)
 					return FALSE
-				if(!(victim.devourable))
+				if(!(victim.vore_prefs.devourable))
 					to_chat(user, span_vnotice("[G?.grab_target()] isn't able to be devoured."))
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against prey's prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 					return FALSE
@@ -160,7 +151,7 @@
 
 	//Handle case: /obj/item/radio/beacon
 	else if(istype(I,/obj/item/radio/beacon))
-		om_ask(user, /datum/om/prompt/confirm/beacon_feed, PROC_REF(beacon_feed_confirmed), beacon = I)
+		open_request(src, /datum/prompt/choice/beacon_feed, PROC_REF(beacon_feed_confirmed), answerer = user, subject = I, question = src == user ? "Eat the beacon?" : "Feed the beacon to [src]?")
 		return TRUE //You don't get to hit someone 'later'
 
 	// Body writing
@@ -175,117 +166,132 @@
 		if(stance != I_HELP)
 			return FALSE
 
-		var/hit_zone = attacker.zone_sel.selecting
+		var/hit_zone = hud_of(attacker)?.zone_sel?.selecting
 
 		var/obj/item/organ/external/affecting = get_organ(hit_zone)
 		if(!affecting || affecting.is_stump())
 			to_chat(attacker, span_danger("They are missing that limb!"))
 			return TRUE
 
-		om_ask(attacker, /datum/om/prompt/text/body_writing, PROC_REF(body_writing_entered), limb = affecting)
+		open_request(src, /datum/prompt/text/body_writing, PROC_REF(body_writing_entered), answerer = attacker, subject = affecting, question = "What would you like to write on [src]'s [affecting]? (This will replace existing writing.)")
 		return TRUE
 
 	return FALSE
 
-/datum/om/task/timed/living_beacon_insert
-	duration = 3 SECONDS
-	complete_proc = /mob/living/proc/beacon_insert_done
-	var/obj/item/I
-	var/obj/belly/B
-
-/mob/living/proc/beacon_insert_done(datum/om/task/timed/living_beacon_insert/task)
-	var/mob/user = task.actor
-	var/obj/item/I = task.I
-	var/obj/belly/B = task.B
-	if(user.get_active_hand() != I)
+/mob/living/proc/beacon_insert_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.arg("beacon")
+	var/obj/belly/B = A.arg("belly")
+	if(QDELETED(I) || QDELETED(B) || user.get_active_hand() != I)
 		return
 	user.drop_item()
 	B.belly_insert(I, user)
 
 /// Feeding a beacon: confirmed, then the belly picked. Re-checked on each answer: the feeder is
 /// still next to the eater, able, and holding the beacon.
-/datum/om/prompt/confirm/beacon_feed
+/datum/prompt/choice/beacon_feed
 	title = "Confirmation"
-	yes_text = "Yes!"
-	no_text = "Cancel"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/beacon
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+	choices = list("Yes!", "Cancel")
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/confirm/beacon_feed/prepare()
-	message = subject == answerer ? "Eat the beacon?" : "Feed the beacon to [subject]?"
-	return TRUE
+/datum/prompt/choice/beacon_feed/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/eater = owner
+	var/obj/item/beacon = subject
+	if(!istype(user) || QDELETED(user) || !istype(eater) || QDELETED(eater) || !istype(beacon) || QDELETED(beacon))
+		return "gone"
+	if(!user.Adjacent(eater))
+		return "too far away"
+	return user.get_active_hand() == beacon ? null : "not holding it"
 
-/datum/om/prompt/confirm/beacon_feed/valid()
-	return answerer.get_active_hand() == beacon ? null : "not holding it"
-
-/datum/om/prompt/choice/beacon_belly
+/datum/prompt/choice/beacon_belly
 	title = "Select A Belly"
-	message = "Which belly?"
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/beacon
+	question = "Which belly?"
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/choice/beacon_belly/valid()
-	var/obj/belly/B = choice
-	if(!istype(B) || B.owner != subject)
-		return "no belly"
-	return answerer.get_active_hand() == beacon ? null : "not holding it"
+/datum/prompt/choice/beacon_belly/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/eater = owner
+	var/obj/item/beacon = subject
+	if(!istype(user) || QDELETED(user) || !istype(eater) || QDELETED(eater) || !istype(beacon) || QDELETED(beacon))
+		return "gone"
+	if(!user.Adjacent(eater))
+		return "too far away"
+	if(!isnull(value))
+		var/obj/belly/B = value
+		if(!istype(B) || QDELETED(B) || B.owner != eater)
+			return "no belly"
+	return user.get_active_hand() == beacon ? null : "not holding it"
 
-/mob/living/proc/beacon_feed_confirmed(datum/om/prompt/confirm/beacon_feed/ask)
-	om_ask(ask.answerer, /datum/om/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), choices = vore_organs, beacon = ask.beacon)
+/mob/living/proc/beacon_feed_confirmed(datum/act/request/A)
+	if(!A.answer || A.request.value != "Yes!")
+		return
+	open_request(src, /datum/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), answerer = A.request.answerer, choices = vore_organs?.Copy(), subject = A.request.subject)
 
-/mob/living/proc/beacon_feed_answered(datum/om/prompt/choice/beacon_belly/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/I = ask.beacon
-	var/obj/belly/B = ask.choice
+/mob/living/proc/beacon_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/I = A.request.subject
+	var/obj/belly/B = A.request.value
 	act_message(src, user, MSG_SELF(span_warning("%T% is trying to stuff a beacon into you!")), \
 		MSG_OTHERS(span_warning("%T% is trying to stuff a beacon into %U%'s [B.get_belly_name()]!")))
-	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
+	perform_op(user, src, "beacon_insert", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("beacon" = I, "belly" = B))
 
 /// What to write on a limb. Re-checked on the answer: the writer is still next to the canvas,
 /// able, and the limb is still theirs.
-/datum/om/prompt/text/body_writing
+/datum/prompt/text/body_writing
 	title = "Body Writing"
-	max_length = 128
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
-	var/obj/item/organ/external/limb
+	max_len = 128
+	timeout = 0
+	recheck_on_open = TRUE
+	ask_flags = ASK_CAPABLE
 
-/datum/om/prompt/text/body_writing/prepare()
-	message = "What would you like to write on [subject]'s [limb]? (This will replace existing writing.)"
-	return TRUE
+/datum/prompt/text/body_writing/normalize(given)
+	return istext(given) ? given : null
 
-/datum/om/prompt/text/body_writing/valid()
-	if(!text || limb.owner != subject)
+/datum/prompt/text/body_writing/recheck_extra()
+	var/mob/user = answerer
+	var/mob/living/canvas = owner
+	var/obj/item/organ/external/limb = subject
+	if(!istype(user) || QDELETED(user) || !istype(canvas) || QDELETED(canvas) || !istype(limb) || QDELETED(limb))
+		return "gone"
+	if(!user.Adjacent(canvas))
+		return "too far away"
+	if(!isnull(value) && (!value || limb.owner != canvas))
 		return "no writing"
 	return null
 
-/mob/living/proc/body_writing_entered(datum/om/prompt/text/body_writing/ask)
-	var/mob/living/attacker = ask.answerer
-	var/obj/item/organ/external/affecting = ask.limb
-	var/message = ask.text
+/mob/living/proc/body_writing_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/attacker = A.request.answerer
+	var/obj/item/organ/external/affecting = A.request.subject
+	var/message = A.request.value
 	var/mob/living/carbon/human/canvas_user = src
 	to_chat(canvas_user, span_notice("[attacker] is attempting to write on your [affecting.name]!"))
 	act_message(attacker, canvas_user, MSG_SELF(span_notice("You start writing on %T%'s [affecting.name]...")), \
 		MSG_OTHERS(span_notice("%U% starts writing on %T%'s [affecting.name].")))
 
 	// Progress bar for writing on someone for better consent check.
-	om_task_start(/datum/om/task/timed/living_body_writing, attacker, canvas_user, receiver = src, affecting = affecting, message = message, max_distance = 1)
+	perform_op(attacker, canvas_user, "body_writing", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("limb" = affecting, "message" = message))
 
-/mob/living/proc/body_writing_stopped(datum/om/task/timed/living_body_writing/task)
-	var/mob/living/attacker = task.actor
+/mob/living/proc/body_writing_stopped(datum/act/op/A)
+	var/mob/living/attacker = A.actor
 	to_chat(attacker, span_warning("You stop writing on [src]."))
 
-/datum/om/task/timed/living_body_writing
-	duration = 3 SECONDS
-	complete_proc = /mob/living/proc/body_writing_done
-	cancel_proc = /mob/living/proc/body_writing_stopped
-	var/obj/item/organ/external/affecting
-	var/message
-
-/mob/living/proc/body_writing_done(datum/om/task/timed/living_body_writing/task)
-	var/mob/living/attacker = task.actor
-	var/obj/item/organ/external/affecting = task.affecting
-	var/message = task.message
+/mob/living/proc/body_writing_done(datum/act/op/A)
+	var/mob/living/attacker = A.actor
+	var/obj/item/organ/external/affecting = A.arg("limb")
+	var/message = A.arg("message")
 	var/mob/living/carbon/human/canvas_user = src
+	if(QDELETED(affecting))
+		return
 	add_attack_logs(attacker, canvas_user, "wrote \"[message]\"")
 
 	LAZYSET(canvas_user.body_writing, affecting.organ_tag, message)
@@ -323,7 +329,12 @@
 
 	var/datum/vore_preferences/P = client.prefs_vr
 
-	VORE_PREF_TRANSFER(P, src)
+	record_export(vore_prefs, P)
+	P.spont_belly_rear = spont_belly_rear
+	P.spont_belly_left = spont_belly_left
+	P.spont_belly_front = spont_belly_front
+	P.spont_belly_right = spont_belly_right
+	P.autotransferable = autotransferable
 
 	var/list/serialized = list()
 	for(var/obj/belly/B as anything in src.vore_organs)
@@ -354,37 +365,42 @@
 
 	var/datum/vore_preferences/P = client.prefs_vr
 
-	VORE_PREF_TRANSFER(src, P)
+	record_import(vore_prefs, P)
+	rel_set(src, nameof(spont_belly_rear), P.spont_belly_rear)
+	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
+	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
+	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
+	autotransferable = P.autotransferable
 
 	if(bellies)
 		if(isliving(src))
 			var/mob/living/L = src
 			L.release_vore_contents(silent = TRUE)
-		own_clear(src, nameof(vore_organs), OWN_DELETE)
+		rel_clear(src, nameof(vore_organs))
 		for(var/entry in P.belly_prefs)
 			var/list/errors = list()
 			if(!state_materialize(entry, src, NONE, errors))
 				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
-			rel_set(src, nameof(vore_selected), B)
+			set_vore_selected(src, B)
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
 			B.can_taste = TRUE
 		else
-			rel_set(src, nameof(vore_selected), vore_organs[1])
+			set_vore_selected(src, vore_organs[1])
 
 		if(soulgem)
 			src.soulgem.release_mobs()
-			own_clear(src, nameof(soulgem), OWN_DELETE)
+			rel_clear(src, nameof(soulgem), OWN_DELETE)
 		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
-			own_set(src, nameof(soulgem), state_materialize(P.soulcatcher_prefs, src, NONE, errors))
+			rel_set(src, nameof(soulgem), state_materialize(P.soulcatcher_prefs, src, NONE, errors))
 			if(!soulgem)
 				log_state("copy_from_prefs_vr: the soulgem of [src] did not load: [jointext(errors, "; ")]")
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	return TRUE
 
@@ -429,22 +445,25 @@
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	om_ask(user, /datum/om/prompt/choice/vore_slot, PROC_REF(vore_slot_chosen), choices = charlist, default = default, prefs = src)
+	open_request(src, /datum/prompt/choice/vore_slot_review, PROC_REF(vore_slot_answered), answerer = user, choices = charlist, default = default)
 
-/// A character slot to load. Closing it ends the selection.
-/datum/om/prompt/choice/vore_slot
+/// A character slot to load. Every completion releases the selection latch.
+/datum/prompt/choice/vore_slot_review
+	timeout = 0
 	title = "Load Slot"
-	message = "Select a character to load:"
-	var/datum/preferences/prefs
+	question = "Select a character to load:"
 
-/datum/om/prompt/choice/vore_slot/cancelled()
-	if(prefs)
-		prefs.selecting_slots = FALSE
+/datum/preferences/proc/vore_slot_answered(datum/act/request/A)
+	selecting_slots = FALSE
+	if(!A.answer)
+		return
+	. = vore_slot_apply(A)
 
-/datum/preferences/proc/vore_slot_chosen(datum/om/prompt/choice/vore_slot/ask)
+/datum/preferences/proc/vore_slot_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_slot_review/ask = A.answer
 	selecting_slots = FALSE
 	var/mob/user = ask.answerer
-	var/choice = ask.choice
+	var/choice = ask.value
 	var/list/charlist = ask.choices
 	var/remember_default = default_slot
 	var/slotnum = charlist[choice]
@@ -565,12 +584,12 @@
 		tasted.adjust_wet_stacks(2)
 
 /mob/living/proc/get_taste_message(allow_generic = 1)
-	if(!vore_taste && !allow_generic)
+	if(!vore_prefs.vore_taste && !allow_generic)
 		return FALSE
 
 	var/taste_message = ""
-	if(vore_taste && (vore_taste != ""))
-		taste_message += "[vore_taste]"
+	if(vore_prefs.vore_taste && (vore_prefs.vore_taste != ""))
+		taste_message += "[vore_prefs.vore_taste]"
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
@@ -614,12 +633,12 @@
 			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 
 /mob/living/proc/get_smell_message(allow_generic = 1)
-	if(!vore_smell && !allow_generic)
+	if(!vore_prefs.vore_smell && !allow_generic)
 		return FALSE
 
 	var/smell_message = ""
-	if(vore_smell && (vore_smell != ""))
-		smell_message += "[vore_smell]"
+	if(vore_prefs.vore_smell && (vore_prefs.vore_smell != ""))
+		smell_message += "[vore_prefs.vore_smell]"
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
@@ -637,6 +656,9 @@
 	set name = "OOC Escape"
 	set category = VERB_CAT_OOC_VORE
 
+	return vore_escape_stage(list())
+
+/mob/living/proc/vore_escape_stage(list/escape_answers)
 	//You're in a belly!
 	if(isbelly(loc))
 		//You've been taken over by a morph
@@ -645,28 +667,34 @@
 			s.undo_prey_takeover(TRUE)
 			return
 		var/obj/belly/B = loc
-		var/confirm = rerun_ask(src, "a1", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"))
+		if(!("a1" in escape_answers))
+			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a1", question = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+			return
+		var/confirm = escape_answers["a1"]
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != B)
 			return
 		//Actual escaping
-		absorbed = FALSE	//Make sure we're not absorbed
+		set_absorbed(FALSE) //Make sure we're not absorbed
 		muffled = FALSE		//Removes Muffling
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
-		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
+		status_set(STAT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
 			rel_add(SA, nameof(SA.prey_excludes), src)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
-		B.owner.handle_belly_update() //This is run whenever a belly's contents are changed.
+		PUBLISH(B.owner, belly_change) //This is run whenever a belly's contents are changed.
 
 	//You're in a dogborg!
 	else if(istype(loc, /obj/item/dogborg/sleeper))
 		var/mob/living/silicon/pred = loc.loc //Thing holding the belly!
 		var/obj/item/dogborg/sleeper/belly = loc //The belly!
 
-		var/confirm = rerun_ask(src, "a2", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"))
+		if(!("a2" in escape_answers))
+			open_request(src, /datum/prompt/choice/vore_escape_review, PROC_REF(vore_escape_answered), answerer = src, escape_answers = escape_answers, escape_key = "a2", question = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"), buttons = TRUE)
+			return
+		var/confirm = escape_answers["a2"]
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != belly)
@@ -695,9 +723,9 @@
 				if(possessed_voice.item_tf)
 					mind.transfer_to(ourmob)
 					own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-					qdel(src)
+					spent(src)
 					ourmob.forceMove(item_to_destroy.loc)
-					qdel(item_to_destroy)
+					spent(item_to_destroy)
 					log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 					return
 				to_chat(src,span_notice("You have no body."))
@@ -708,16 +736,16 @@
 				return
 			src.mind.transfer_to(ourmob)
 			own_take_member(item_to_destroy, nameof(item_to_destroy.possessed_voice), src)
-			qdel(src)
+			spent(src)
 			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 			return
 		if(istype(src.loc, /obj/item/clothing)) //Are they in clothes? Delete the item then revert them.
-			qdel(item_to_destroy)
+			spent(item_to_destroy)
 			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 			revert_mob_tf()
 		else //Are they in any other type of object? If qdel is done first, the mob is deleted from the world.
 			forceMove(get_turf(src))
-			qdel(item_to_destroy)
+			spent(item_to_destroy)
 			log_and_message_admins("used the OOC escape button to revert back to their original form from being TFed into an object.", src)
 			revert_mob_tf()
 
@@ -733,7 +761,7 @@
 	else if(istype(loc, /obj/structure/gargoyle) && loc:was_rayed)
 		var/obj/structure/gargoyle/G = loc
 		G.can_revert = TRUE
-		qdel(G)
+		spent(G)
 		log_and_message_admins("used the OOC escape button to revert back from being petrified.", src)
 
 	//In-shoe OOC escape. Checking voices as precaution if something akin to obj TF or possession happens
@@ -772,30 +800,48 @@
 	return bellies
 
 /mob/living/proc/feed_grabbed_to_self(mob/living/user, mob/living/prey)
-	var/belly = user.vore_selected
+	var/belly = vore_selected_of(user)
 	return perform_the_nom(user, prey, user, belly)
 
 // Feeding into someone else's belly asks which one; the pick does the nom (a re-run of the same
 // proc with the answer), and the attack that asked counts as handled.
 
 /mob/living/proc/eat_held_mob(mob/living/user, mob/living/prey, mob/living/pred)
+	return vore_held_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_held_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
 	var/belly
 	if(user != pred)
-		belly = rerun_ask(user, "belly", PROC_REF(eat_held_mob), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_held_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+			return TRUE
+		belly = selected_belly
 		if(isnull(belly))
 			return TRUE
 	else
-		belly = pred.vore_selected
+		belly = vore_selected_of(pred)
 	return perform_the_nom(user, prey, pred, belly)
 
 /mob/living/proc/feed_self_to_grabbed(mob/living/user, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_self_to_grabbed), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_self_feed_stage(user, pred)
+
+/mob/living/proc/vore_self_feed_stage(mob/living/user, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_self_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, user, pred, belly)
 
 /mob/living/proc/feed_grabbed_to_other(mob/living/user, mob/living/prey, mob/living/pred)
-	var/belly = rerun_ask(user, "belly", PROC_REF(feed_grabbed_to_other), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+	return vore_other_feed_stage(user, prey, pred)
+
+/mob/living/proc/vore_other_feed_stage(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/selected_belly, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_feed_review, PROC_REF(vore_other_feed_answered), answerer = user, feed_operator = user, feed_predator = pred, feed_prey = prey, question = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
+		return TRUE
+	var/belly = selected_belly
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, prey, pred, belly)
@@ -813,7 +859,7 @@
 	if(istype(lifeform))	// If this doesn't succeed, then 'lifeform' is actually a bag or capture crystal with someone inside
 		air_type = lifeform.get_perfect_belly_air_type()		// Without any overrides/changes, its gonna be /datum/gas_mixture/belly_air
 	var/datum/gas_mixture/air = new air_type(1000)
-	air.set_temperature(get_interior_temperature())
+	heat_set(air, get_interior_temperature())
 	return air
 
 /// Breathing in a belly: a digesting belly's digest_oxy makes its air stale.
@@ -848,7 +894,7 @@
 
 /datum/gas_mixture/belly_air/New()
 	. = ..()
-	set_temperature(T20C) // arena default is TCMB; sync mirror initializer into the arena
+	heat_set(src, T20C) // arena default is TCMB; sync mirror initializer into the arena
 	adjust_gas(GAS_O2, 21)
 	adjust_gas(GAS_N2, 79)
 
@@ -857,7 +903,7 @@
 
 /datum/gas_mixture/belly_air/vox/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/zaddat
@@ -865,7 +911,7 @@
 
 /datum/gas_mixture/belly_air/zaddat/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_O2, 100)
 
 /datum/gas_mixture/belly_air/nitrogen_breather
@@ -873,7 +919,7 @@
 
 /datum/gas_mixture/belly_air/nitrogen_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_N2, 100)
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather
@@ -881,7 +927,7 @@
 
 /datum/gas_mixture/belly_air/carbon_dioxide_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_CO2, 100)
 
 /datum/gas_mixture/belly_air/methane_breather
@@ -889,13 +935,13 @@
 
 /datum/gas_mixture/belly_air/methane_breather/New()
 	. = ..()
-	set_temperature(T20C)
+	heat_set(src, T20C)
 	adjust_gas(GAS_CH4, 100)
 
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)
 	if(user.is_incorporeal())
 		return FALSE
-	var/belly = user.vore_selected
+	var/belly = vore_selected_of(user)
 	return begin_instant_nom(user, prey, user, belly)
 
 /mob/living/proc/get_current_spont_belly(atom/movable/preything)
@@ -917,14 +963,14 @@
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly
-	return vore_selected
+	return vore_selected_of(src)
 
 /mob/living/proc/glow_toggle()
 	set name = "Glow (Toggle)"
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
-	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -941,11 +987,13 @@
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
 	//Even if they open the box 900 times, who cares, they get the wrong color and do it again.
-	om_ask(src, /datum/om/prompt/color, PROC_REF(glow_color_picked), default = glow_color, title = "Body Glow", message = "Select a new color")
+	open_request(src, /datum/prompt/color, PROC_REF(glow_color_picked), answerer = src, title = "Body Glow", question = "Select a new color", default = glow_color, timeout = 0)
 
-/mob/living/proc/glow_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		set_glow_color(ask.picked_color)
+/mob/living/proc/glow_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.value)
+		set_glow_color(A.answer.value)
 
 /mob/living/proc/get_digestion_nutrition_modifier()
 	return 1
@@ -955,25 +1003,25 @@
 
 /// Swallows the held item I into the selected belly.
 /mob/living/proc/swallow_trash(obj/item/I)
-	if(get_active_hand() != I || !vore_selected)
+	if(get_active_hand() != I || !vore_selected_of(src))
 		return
 	drop_item()
-	vore_selected.nom_atom(I)
+	vore_selected_of(src).nom_atom(I)
 	updateVRPanel()
 	log_admin("VORE: [src] used Eat Trash to swallow [I].")
 	I.after_trash_eaten(src)
-	visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+	visible_message(span_vwarning(vore_selected_of(src).belly_format_string(vore_selected_of(src).trash_eater_in, I, item=I)))
 
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
-	if(stat || is_paralyzed() || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(src,span_warning("You either don't have a belly selected, or don't have a belly!"))
 		return
 
@@ -1004,28 +1052,27 @@
 
 	handle_eat_minerals()
 
-/mob/living/proc/eat_minerals_interrupted(datum/om/task/timed/living_eat_minerals/task)
-	var/obj/item/I = task.I
+/mob/living/proc/eat_minerals_interrupted(datum/act/op/A)
+	var/obj/item/I = A.arg("snack")
 	to_chat(src, span_notice("You were interrupted while gnawing on [I]!"))
 
-/datum/om/task/timed/living_eat_minerals
-	flags = IGNORE_USER_LOC_CHANGE
-	complete_proc = /mob/living/proc/eat_minerals_done
-	cancel_proc = /mob/living/proc/eat_minerals_interrupted
-	var/obj/item/I
-	var/list/nom
+/// How long the crunching takes: the material's hardness, worked out by the one who picked what to eat.
+/mob/living/proc/eat_minerals_time(datum/act/op/A)
+	return A.arg("time")
 
-/mob/living/proc/eat_minerals_done(datum/om/task/timed/living_eat_minerals/task)
-	var/mob/living/feeder = task.actor
-	var/obj/item/I = task.I
-	var/list/nom = task.nom
+/mob/living/proc/eat_minerals_done(datum/act/op/A)
+	var/mob/living/feeder = A.actor
+	var/obj/item/I = A.arg("snack")
+	var/list/nom = A.arg("nom")
+	if(QDELETED(I))
+		return
 	if(feeder != src)
 		to_chat(feeder, span_notice("You feed [I] to [src]."))
 		log_admin("VORE: [feeder] fed [src] [I].")
 	else
 		log_admin("VORE: [src] used Eat Minerals to swallow [I].")
 	//Eat the ore using the vorebelly for the sound then get rid of the ore to prevent infinite nutrition.
-	drop_from_inventory(I, vore_selected) //Never touches the ground - straight to the gut.
+	drop_from_inventory(I, vore_selected_of(src)) //Never touches the ground - straight to the gut.
 	visible_message("[src] crunches [I] to pieces and swallows it down.",
 		span_notice("[nom["remark"]]"),
 		span_notice("You hear the gnashing of jaws with some ominous grinding and crunching noises, then... Swallowing?"))
@@ -1035,12 +1082,12 @@
 
 	var/mob/living/carbon/human/H = src
 	if(nom["WTF"] && istype(H)) //Bites back.
-		H.status_at_least(EFFECT_WEAKENED, 2)
-		H.status_at_least(EFFECT_CONFUSED, nom["WTF"])
+		H.status_at_least(STAT_WEAKENED, 2)
+		H.status_at_least(STAT_CONFUSED, nom["WTF"])
 		H.apply_effect(nom["WTF"], STUTTER)
-		H.status_adjust(EFFECT_JITTERY, nom["WTF"])
-		H.status_adjust(EFFECT_DIZZY, nom["WTF"])
-		H.status_at_least(EFFECT_DRUGGED, nom["WTF"])
+		H.status_adjust(STAT_JITTERY, nom["WTF"])
+		H.status_adjust(STAT_DIZZY, nom["WTF"])
+		H.status_at_least(STAT_DRUGGED, nom["WTF"])
 
 /mob/living/proc/handle_eat_minerals(obj/item/snack, mob/living/user)
 	var/mob/living/feeder = user ? user : src //Whoever's doing the feeding - us or someone else.
@@ -1048,7 +1095,7 @@
 	if(!(adminbus_eat_minerals || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
 		return
 
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(src, span_warning("You either don't have a belly selected, or don't have a belly!"))
 		return
 
@@ -1135,7 +1182,7 @@
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
-		om_task_start(/datum/om/task/timed/living_eat_minerals, feeder, src, receiver = src, duration = T, I = I, nom = nom)
+		perform_op(feeder, src, "eat_minerals", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("snack" = I, "nom" = nom, "time" = T))
 		return TRUE
 
 	else //Not the droids we're looking for.
@@ -1154,7 +1201,7 @@
 	set category = VERB_CAT_PREFERENCES_GAME
 	set desc = "Switch sharp/fuzzy scaling for current mob."
 	appearance_flags ^= PIXEL_SCALE
-	fuzzy = !fuzzy
+	set_fuzzy(!fuzzy)
 	update_transform()
 
 /mob/living/proc/center_offset()
@@ -1173,19 +1220,19 @@
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 
-TOPIC_ACTION(/mob/living, "vore_prefs", PROC_REF(topic_vore_prefs))
-TOPIC_ACTION(/mob/living, "ooc_notes", PROC_REF(topic_ooc_notes))
-TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes_chat))
 
-/mob/living/proc/topic_vore_prefs(mob/user, list/args)
+/mob/living/proc/topic_vore_prefs(datum/act/op/A)
+	var/mob/user = A.actor
 	display_voreprefs(user)
 	return TRUE
 
-/mob/living/proc/topic_ooc_notes(mob/user, list/args)
+/mob/living/proc/topic_ooc_notes(datum/act/op/A)
+	var/mob/user = A.actor
 	do_examine_ooc(user)
 	return TRUE
 
-/mob/living/proc/topic_print_ooc_notes_chat(mob/user, list/args)
+/mob/living/proc/topic_print_ooc_notes_chat(datum/act/op/A)
+	var/mob/user = A.actor
 	print_ooc_notes_chat(user)
 	return TRUE
 
@@ -1197,50 +1244,50 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		dat += span_red(span_bold("OOC DISABLED")) + "<br>"
 	if(!client?.prefs?.read_preference(/datum/preference/toggle/show_looc))
 		dat += span_red(span_bold("LOOC DISABLED")) + "<br>"
-	dat += span_bold("Devourable:") + " [devourable ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(devourable)
-		dat += span_bold("Healbelly permission:") + " [permit_healbelly ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Digestable:") + " [digestable ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Absorption Permission:") + " [absorbable ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Selective Mode Pref:") + " [src.selective_preference]<br>"
-		dat += span_bold("Mob Vore:") + " [allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Affected by temperature:") + " [allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Devourable:") + " [vore_prefs.devourable ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.devourable)
+		dat += span_bold("Healbelly permission:") + " [vore_prefs.permit_healbelly ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Digestable:") + " [vore_prefs.digestable ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Absorption Permission:") + " [vore_prefs.absorbable ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Selective Mode Pref:") + " [src.vore_prefs.selective_preference]<br>"
+		dat += span_bold("Mob Vore:") + " [vore_prefs.allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Affected by temperature:") + " [vore_prefs.allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Autotransferable:") + " [autotransferable ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Can be stripped:") + " [strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Size Change Strip Mode Pref:") + " [src.size_strip_preference]<br>"
-		dat += span_bold("Worn items can be contaminated:") + " [contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Applying reagents:") + " [apply_reagents ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Leaves Remains:") + " [digest_leave_remains ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Spontaneous vore prey:") + " [can_be_drop_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("AFK/Disconnected vore prey:") + " [can_be_afk_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Spontaneous vore pred:") + " [can_be_drop_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("AFK/Disconnected vore pred:") + " [can_be_afk_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(can_be_drop_prey || can_be_drop_pred)
-		dat += span_bold("Drop Vore:") + " [drop_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Slip Vore:") + " [slip_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Stumble Vore:") + " [stumble_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Throw vore:") + " [throw_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Food Vore:") + " [food_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Phase Vore:") + " [phase_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Can be stepped on/over:") + " [step_mechanics_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Can be picked up:") + " [pickup_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Can be resized:") + " [resizable ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Spontaneous transformation:") + " [allow_spontaneous_tf ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Mind transfer:") + " [allow_mind_transfer ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Allow Mimicry:") + " [allow_mimicry ? span_green("Yes") : span_red("No")]<br>"
-	dat += span_bold("Feedable:") + " [feeding ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Receiving liquids:") + " [receive_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Giving liquids:") + " [give_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Consuming liquids:") + " [consume_liquid_belly ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Late join spawn point belly:") + " [latejoin_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(latejoin_vore)
-		dat += span_bold("Late join spawn auto accept:") + " [no_latejoin_vore_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Can be late join prey:") + " [latejoin_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(latejoin_prey)
-		dat += span_bold("Late join prey auto accept:") + " [no_latejoin_prey_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Global Vore Privacy is:") + " [eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
-	dat += span_bold("Current active belly:") + " [vore_selected ? vore_selected.get_belly_name(TRUE) : "None"]<br>"
-	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
+		dat += span_bold("Can be stripped:") + " [vore_prefs.strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Size Change Strip Mode Pref:") + " [src.vore_prefs.size_strip_preference]<br>"
+		dat += span_bold("Worn items can be contaminated:") + " [vore_prefs.contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Applying reagents:") + " [vore_prefs.apply_reagents ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Leaves Remains:") + " [vore_prefs.digest_leave_remains ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Spontaneous vore prey:") + " [vore_prefs.can_be_drop_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("AFK/Disconnected vore prey:") + " [vore_prefs.can_be_afk_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Spontaneous vore pred:") + " [vore_prefs.can_be_drop_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("AFK/Disconnected vore pred:") + " [vore_prefs.can_be_afk_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.can_be_drop_prey || vore_prefs.can_be_drop_pred)
+		dat += span_bold("Drop Vore:") + " [vore_prefs.drop_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Slip Vore:") + " [vore_prefs.slip_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Stumble Vore:") + " [vore_prefs.stumble_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Throw vore:") + " [vore_prefs.throw_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Food Vore:") + " [vore_prefs.food_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Phase Vore:") + " [vore_prefs.phase_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Can be stepped on/over:") + " [vore_prefs.step_mechanics_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Can be picked up:") + " [vore_prefs.pickup_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Can be resized:") + " [vore_prefs.resizable ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Spontaneous transformation:") + " [vore_prefs.allow_spontaneous_tf ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Mind transfer:") + " [vore_prefs.allow_mind_transfer ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Allow Mimicry:") + " [vore_prefs.allow_mimicry ? span_green("Yes") : span_red("No")]<br>"
+	dat += span_bold("Feedable:") + " [vore_prefs.feeding ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Receiving liquids:") + " [vore_prefs.receive_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Giving liquids:") + " [vore_prefs.give_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Consuming liquids:") + " [vore_prefs.consume_liquid_belly ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Late join spawn point belly:") + " [vore_prefs.latejoin_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.latejoin_vore)
+		dat += span_bold("Late join spawn auto accept:") + " [vore_prefs.no_latejoin_vore_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Can be late join prey:") + " [vore_prefs.latejoin_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.latejoin_prey)
+		dat += span_bold("Late join prey auto accept:") + " [vore_prefs.no_latejoin_prey_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Global Vore Privacy is:") + " [vore_prefs.eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
+	dat += span_bold("Current active belly:") + " [vore_selected_of(src) ? vore_selected_of(src).get_belly_name(TRUE) : "None"]<br>"
+	dat += span_bold("Belly rub target:") + " [vore_prefs.belly_rub_target ? vore_prefs.belly_rub_target : (vore_selected_of(src) ? vore_selected_of(src).get_belly_name(TRUE) : "None")]<br>"
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Vore Prefs: [src]", dat, src)
 
@@ -1254,13 +1301,18 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_PREFERENCES_VORE
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
-	var/result = rerun_ask(src, "a1", PROC_REF(vorebelly_printout), args, /datum/om/prompt/choice/alert, message = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"))
+	return vore_export_stage()
+
+/mob/living/proc/vore_export_stage(result, mob/living/answerer, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_export_answered), answerer = src, question = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"), buttons = TRUE)
+		return
 	if(isnull(result))
 		return
 	if(!result)
 		return
 	if(result == "Open Panel")
-		var/mob/living/user = usr
+		var/mob/living/user = answerer
 		if(!user)
 			to_chat(user,span_notice("Mob undefined: [user]"))
 			return FALSE
@@ -1412,12 +1464,12 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 /datum/vore_panel_button/New(mob/living/M)
 	..()
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
-	om_grant(owner, GRANT_VERB, /mob/proc/insidePanel, src)
+	grant(owner, granted_verb(/mob/proc/insidePanel), src)
 	if(!owner.vorePanel)
-		own_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
+		rel_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
 
 // takes the panel back from its owner (the panel verb is granted with this button as
 // source, so its deletion revokes it). Hooks, the screen icon
@@ -1437,11 +1489,12 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
 	if(!vore_panel_button)
-		own_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
+		rel_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
 	return vore_panel_button
 
-/datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
-	EVENT_HANDLER
+/datum/vore_panel_button/proc/on_client_login(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/vore_panel_button/proc/create_mob_button(mob/user)
@@ -1449,7 +1502,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	if(!screen_icon)
 		// The HUD owns the icon (other_important, below); the button keeps a relation to it.
 		rel_set(src, nameof(screen_icon), new /atom/movable/screen/vore_panel())
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(vore_panel_click)))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1463,8 +1516,9 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		own_move(screen_icon, HUD, nameof(HUD.other_important))
 	user.client?.screen += screen_icon
 
-/datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)
-	EVENT_HANDLER
+/datum/vore_panel_button/proc/vore_panel_click(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
 	if(istype(clicker) && clicker.vorePanel)
 		INVOKE_ASYNC(clicker, TYPE_PROC_REF(/mob/living, insidePanel), clicker) // ALLOW(scheduler): tgui_interact may block on asset/window setup
@@ -1516,7 +1570,12 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check the amount of liquid in your belly."
 
-	var/obj/belly/RTB = rerun_ask(src, "a1", PROC_REF(vore_check_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
+	return vore_liquid_report_stage()
+
+/mob/living/proc/vore_liquid_report_stage(obj/belly/RTB, prompted = FALSE)
+	if(!prompted)
+		open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_liquid_report_answered), answerer = src, question = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
+		return
 	if(isnull(RTB))
 		return
 	if(!RTB)
@@ -1535,48 +1594,63 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set desc = "Transfer liquid from an organ to another or stomach, or into another person or container."
 	set popup_menu = FALSE
 
+	return vore_liquid_stage(list())
+
+/mob/living/proc/vore_liquid_stage(list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	if(!checkClickCooldown() || incapacitated(INCAPACITATION_KNOCKOUT) || is_paralyzed())
 		return FALSE
 
 	var/mob/living/user = src
 
 	var/list/transfer_from = vore_transfer_candidates()
-	var/mob/living/TG = rerun_ask(user, "a1", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
+	if(!("a1" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a1", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
+		return
+	var/mob/living/TG = captures?.liquid_source_mob
 	if(isnull(TG))
 		return
 	if(!TG)
 		return FALSE
-	if(TG.give_reagents == FALSE && user != TG) //User isnt forced to allow giving in prefs if they are the one doing it
+	if(TG.vore_prefs.give_reagents == FALSE && user != TG) //User isnt forced to allow giving in prefs if they are the one doing it
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
 	if(!LAZYLEN(TG.vore_organs))
 		return FALSE
 
-	var/obj/belly/RTB = rerun_ask(user, "a2", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to transfer from", title = "Select Belly", choices = TG.vore_organs)
+	if(!("a2" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a2", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which vore belly to transfer from", title = "Select Belly", choices = TG.vore_organs)
+		return
+	var/obj/belly/RTB = captures?.liquid_source_belly
 	if(isnull(RTB))
 		return
 	if(!RTB)
 		return FALSE
 
-	var/transfer_amount = rerun_ask(user, "a3", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "How much to transfer?", title = "Transfer Amount", choices = list(5,10,25,50,100))
+	if(!("a3" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a3", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "How much to transfer?", title = "Transfer Amount", choices = list(5,10,25,50,100))
+		return
+	var/transfer_amount = liquid_answers["a3"]
 	if(isnull(transfer_amount))
 		return
 	if(!transfer_amount)
 		return FALSE
 
-	var/_answer_a4 = rerun_ask(user, "a4", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = list("Vore belly", "Stomach", "Container", "Floor", "Cancel"))
+	if(!("a4" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a4", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose what to transfer to", title = "Select Target", choices = list("Vore belly", "Stomach", "Container", "Floor", "Cancel"))
+		return
+	var/_answer_a4 = liquid_answers["a4"]
 	if(isnull(_answer_a4))
 		return
 	switch(_answer_a4)
 		if("Cancel")
 			return FALSE
 		if("Vore belly")
-			return vore_transfer_to_belly(TG, RTB, transfer_amount)
+			return vore_transfer_to_belly(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Stomach")
-			return vore_transfer_to_stomach(TG, RTB, transfer_amount)
+			return vore_transfer_to_stomach(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Container")
-			return vore_transfer_to_container(TG, RTB, transfer_amount)
+			return vore_transfer_to_container(TG, RTB, transfer_amount, liquid_answers, captures)
 		if("Floor")
 			return vore_transfer_to_floor(TG, RTB, transfer_amount)
 
@@ -1588,16 +1662,22 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 			. |= L
 
 /// Transfer into a vore belly of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_belly(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_belly(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	var/list/transfer_to = vore_transfer_candidates()
-	var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(!("a5" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a5", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+		return
+	var/mob/living/TR = captures?.liquid_target_mob
 	if(isnull(TR))
 		return
 	if(!TR)  return FALSE
 
 	if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
-		var/obj/belly/TB = rerun_ask(user, "a6", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
+		if(!("a6" in liquid_answers))
+			open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a6", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
+			return
+		var/obj/belly/TB = captures?.liquid_own_belly
 		if(isnull(TB))
 			return
 		if(!TB)
@@ -1615,14 +1695,17 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 			add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
 		if(RTB.count_liquid_for_sprite || TB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
-	else if(TR.receive_reagents == FALSE)
+	else if(TR.vore_prefs.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
 	else
-		var/obj/belly/TB = rerun_ask(user, "a7", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
+		if(!("a7" in liquid_answers))
+			open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a7", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
+			return
+		var/obj/belly/TB = captures?.liquid_other_belly
 		if(isnull(TB))
 			return
 		if(!TB)
@@ -1641,15 +1724,18 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_VORE, 1, 0, TB)
 		add_attack_logs(user,TR,"Transfered reagents from [TG]'s [RTB] to [TR]'s [TB]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 		if(TB.count_liquid_for_sprite)
-			TR.handle_belly_update()
+			PUBLISH(TR, belly_change)
 
 /// Transfer into the stomach (ingested) of the user or an adjacent mob. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_stomach(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	var/list/transfer_to = vore_transfer_candidates()
-	var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+	if(!("a8" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a8", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
+		return
+	var/mob/living/TR = captures?.liquid_stomach_mob
 	if(isnull(TR))
 		return
 	if(!TR)  return
@@ -1664,9 +1750,9 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
 		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
-	else if(TR.receive_reagents == FALSE)
+	else if(TR.vore_prefs.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
@@ -1679,10 +1765,10 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		RTB.reagents.vore_trans_to_mob(TR, transfer_amount, CHEM_INGEST, 1, 0, null)
 		add_attack_logs(user,TR,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to [TR]'s Stomach")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 		if(RTB.count_liquid_for_sprite)
-			handle_belly_update()
+			PUBLISH(src, belly_change)
 
 /// Transfer into an adjacent or held reagent container. Its prompts belong to the vore_transfer_reagents verb re-run.
-/mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount)
+/mob/living/proc/vore_transfer_to_container(mob/living/TG, obj/belly/RTB, transfer_amount, list/liquid_answers, datum/prompt/choice/vore_liquid_transfer/captures)
 	var/mob/living/user = src
 	if(RTB.reagentid == REAGENT_ID_STOMACID)
 		return
@@ -1696,7 +1782,10 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	if(istype(irc,/obj/item/reagent_containers))
 		choices += irc
 
-	var/obj/item/reagent_containers/T = rerun_ask(user, "a9", PROC_REF(vore_transfer_reagents), list(), /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = choices)
+	if(!("a9" in liquid_answers))
+		open_request(src, /datum/prompt/choice/vore_liquid_transfer, PROC_REF(vore_liquid_answered), answerer = user, liquid_answers = liquid_answers, liquid_key = "a9", liquid_source_mob = captures?.liquid_source_mob, liquid_source_belly = captures?.liquid_source_belly, liquid_target_mob = captures?.liquid_target_mob, liquid_own_belly = captures?.liquid_own_belly, liquid_other_belly = captures?.liquid_other_belly, liquid_stomach_mob = captures?.liquid_stomach_mob, liquid_container = captures?.liquid_container, question = "Choose what to transfer to", title = "Select Target", choices = choices)
+		return
+	var/obj/item/reagent_containers/T = captures?.liquid_container
 	if(isnull(T))
 		return
 	if(!T)
@@ -1712,7 +1801,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	RTB.reagents.vore_trans_to_con(T, transfer_amount, 1, 0)
 	add_attack_logs(user, T,"Transfered [RTB.reagent_name] from [TG]'s [RTB] to a [T]")	//Bonus for staff so they can see if people have abused transfer and done pref breaks
 	if(RTB.count_liquid_for_sprite)
-		handle_belly_update()
+		PUBLISH(src, belly_change)
 
 /// Spill onto the floor as a puddle. Its prompts belong to the vore_transfer_reagents verb re-run.
 /mob/living/proc/vore_transfer_to_floor(mob/living/TG, obj/belly/RTB, transfer_amount)
@@ -1721,7 +1810,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		return
 	var/amount_removed = RTB.reagents.remove_any(transfer_amount)
 	if(RTB.count_liquid_for_sprite)
-		handle_belly_update()
+		PUBLISH(src, belly_change)
 	var/puddle_amount = round(amount_removed/5)
 
 	if(puddle_amount == 0)
@@ -1753,13 +1842,13 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 
 	if(!(T in view(1,src)))
 		return FALSE
-	if(T.vore_selected)
-		var/obj/belly/B = T.vore_selected
+	if(vore_selected_of(T))
+		var/obj/belly/B = vore_selected_of(T)
 		if(istype(B))
 			if(T == src)
-				custom_emote_vr(1, "rubs their [belly_rub_target ? belly_rub_target : B.get_belly_name()].")
+				custom_emote_vr(1, "rubs their [vore_prefs.belly_rub_target ? vore_prefs.belly_rub_target : B.get_belly_name()].")
 			else
-				custom_emote_vr(1, "gives some rubs over [T]'s [T.belly_rub_target ? T.belly_rub_target : B.get_belly_name()].")
+				custom_emote_vr(1, "gives some rubs over [T]'s [T.vore_prefs.belly_rub_target ? T.vore_prefs.belly_rub_target : B.get_belly_name()].")
 			B.quick_cycle()
 			return TRUE
 	to_chat(src, span_vwarning("There is no suitable belly for rubs."))
@@ -1791,12 +1880,17 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set category = VERB_CAT_OOC_DEBUG
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
+	return vore_effect_cleanup_stage()
+
+/mob/living/proc/vore_effect_cleanup_stage(sure, prompted = FALSE)
 	if(!isbelly(src.loc))
-		var/sure = rerun_ask(src, "sure", PROC_REF(fix_vore_effects), args, /datum/om/prompt/choice/alert, message = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", title = "Clear Vore Effects", choices = list("Continue", "Nevermind"))
+		if(!prompted)
+			open_request(src, /datum/prompt/choice/vore_utility_review, PROC_REF(vore_effect_cleanup_answered), answerer = src, question = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", title = "Clear Vore Effects", choices = list("Continue", "Nevermind"), buttons = TRUE)
+			return
 		if(sure != "Continue")
 			return
 
-		absorbed = FALSE
+		set_absorbed(FALSE)
 		muffled = FALSE
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
@@ -1807,7 +1901,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	set name = "Check Nutrition"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check your current nutrition level."
-	to_chat(src, span_vnotice("Current nutrition level: [nutrition]."))
+	to_chat(src, span_vnotice("Current nutrition_of(src) level: [nutrition_of(src)]."))
 
 // This proc will either return the first belly the mob is in or return null if they're not in one
 /mob/living/proc/surrounding_belly()
@@ -1825,3 +1919,227 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	. = 0
 	for(var/category in INJURY_CATEGORY_PHYSICAL to INJURY_CATEGORY_NEURAL)
 		. += injury_load(category)
+
+/mob/living/proc/vore_escape_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_escape_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_escape_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_escape_review/ask = A.answer
+	ask.escape_answers[ask.escape_key] = ask.value
+	return vore_escape_stage(ask.escape_answers)
+
+/datum/prompt/choice/vore_escape_review
+	timeout = 0
+	var/list/escape_answers
+	var/escape_key
+
+/mob/living/proc/vore_liquid_report_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_liquid_report_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_liquid_report_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_liquid_report_stage(ask.value, TRUE)
+
+/mob/living/proc/vore_export_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_export_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_export_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_export_stage(ask.value, A.request.answerer, TRUE)
+
+/mob/living/proc/vore_effect_cleanup_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_effect_cleanup_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_effect_cleanup_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_utility_review/ask = A.answer
+	return vore_effect_cleanup_stage(ask.value, TRUE)
+
+/datum/prompt/choice/vore_utility_review
+	timeout = 0
+
+/datum/prompt/choice/vore_utility_review/recheck_extra()
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"
+
+/mob/living/proc/vore_liquid_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_liquid_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_liquid_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_liquid_transfer/ask = A.answer
+	switch(ask.liquid_key)
+		if("a1")
+			var/mob/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_source_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a2")
+			var/obj/belly/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_source_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a5")
+			var/mob/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_target_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a6")
+			var/obj/belly/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_own_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a7")
+			var/obj/belly/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_other_belly), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a8")
+			var/mob/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_stomach_mob), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		if("a9")
+			var/obj/item/reagent_containers/chosen = ask.value
+			rel_set(ask, nameof(ask.liquid_container), chosen)
+			ask.liquid_answers[ask.liquid_key] = TRUE
+		else
+			ask.liquid_answers[ask.liquid_key] = ask.value
+	return vore_liquid_stage(ask.liquid_answers, ask)
+
+/datum/prompt/choice/vore_liquid_transfer
+	timeout = 0
+	var/list/liquid_answers
+	var/liquid_key
+	var/mob/liquid_source_mob
+	var/obj/belly/liquid_source_belly
+	var/mob/liquid_target_mob
+	var/obj/belly/liquid_own_belly
+	var/obj/belly/liquid_other_belly
+	var/mob/liquid_stomach_mob
+	var/obj/item/reagent_containers/liquid_container
+
+CAPABILITIES(/datum/prompt/choice/vore_liquid_transfer)
+	ref_one(nameof(liquid_source_mob), /mob)
+	ref_one(nameof(liquid_source_belly), /obj/belly)
+	ref_one(nameof(liquid_target_mob), /mob)
+	ref_one(nameof(liquid_own_belly), /obj/belly)
+	ref_one(nameof(liquid_other_belly), /obj/belly)
+	ref_one(nameof(liquid_stomach_mob), /mob)
+	ref_one(nameof(liquid_container), /obj/item/reagent_containers)
+
+/datum/prompt/choice/vore_liquid_transfer/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_liquid_source_mob = liquid_source_mob
+	rel_clear(src, nameof(liquid_source_mob))
+	if(captured_liquid_source_mob && !QDELETED(captured_liquid_source_mob))
+		rel_set(src, nameof(liquid_source_mob), captured_liquid_source_mob)
+	var/obj/belly/captured_liquid_source_belly = liquid_source_belly
+	rel_clear(src, nameof(liquid_source_belly))
+	if(captured_liquid_source_belly && !QDELETED(captured_liquid_source_belly))
+		rel_set(src, nameof(liquid_source_belly), captured_liquid_source_belly)
+	var/mob/captured_liquid_target_mob = liquid_target_mob
+	rel_clear(src, nameof(liquid_target_mob))
+	if(captured_liquid_target_mob && !QDELETED(captured_liquid_target_mob))
+		rel_set(src, nameof(liquid_target_mob), captured_liquid_target_mob)
+	var/obj/belly/captured_liquid_own_belly = liquid_own_belly
+	rel_clear(src, nameof(liquid_own_belly))
+	if(captured_liquid_own_belly && !QDELETED(captured_liquid_own_belly))
+		rel_set(src, nameof(liquid_own_belly), captured_liquid_own_belly)
+	var/obj/belly/captured_liquid_other_belly = liquid_other_belly
+	rel_clear(src, nameof(liquid_other_belly))
+	if(captured_liquid_other_belly && !QDELETED(captured_liquid_other_belly))
+		rel_set(src, nameof(liquid_other_belly), captured_liquid_other_belly)
+	var/mob/captured_liquid_stomach_mob = liquid_stomach_mob
+	rel_clear(src, nameof(liquid_stomach_mob))
+	if(captured_liquid_stomach_mob && !QDELETED(captured_liquid_stomach_mob))
+		rel_set(src, nameof(liquid_stomach_mob), captured_liquid_stomach_mob)
+	var/obj/item/reagent_containers/captured_liquid_container = liquid_container
+	rel_clear(src, nameof(liquid_container))
+	if(captured_liquid_container && !QDELETED(captured_liquid_container))
+		rel_set(src, nameof(liquid_container), captured_liquid_container)
+
+/datum/prompt/choice/vore_liquid_transfer/recheck_extra()
+	if(!isnull(value) && istype(value, /datum))
+		var/datum/selected = value
+		if(QDELETED(selected))
+			return "gone"
+
+/mob/living/proc/vore_held_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_held_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_held_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_held_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.value, TRUE)
+
+/mob/living/proc/vore_self_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_self_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_self_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_self_feed_stage(ask.feed_operator, ask.feed_predator, ask.value, TRUE)
+
+/mob/living/proc/vore_other_feed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = vore_other_feed_apply(A)
+	SStgui.update_uis(src)
+
+/mob/living/proc/vore_other_feed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vore_feed_review/ask = A.answer
+	return vore_other_feed_stage(ask.feed_operator, ask.feed_prey, ask.feed_predator, ask.value, TRUE)
+
+/datum/prompt/choice/vore_feed_review
+	timeout = 0
+	var/mob/feed_operator
+	var/feed_operator_expected = FALSE
+	var/mob/feed_prey
+	var/feed_prey_expected = FALSE
+	var/mob/feed_predator
+	var/feed_predator_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/vore_feed_review)
+	ref_one(nameof(feed_operator), /mob)
+	ref_one(nameof(feed_prey), /mob)
+	ref_one(nameof(feed_predator), /mob)
+
+/datum/prompt/choice/vore_feed_review/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured_feed_operator = feed_operator
+	feed_operator_expected = !isnull(captured_feed_operator)
+	rel_clear(src, nameof(feed_operator))
+	if(captured_feed_operator && !QDELETED(captured_feed_operator))
+		rel_set(src, nameof(feed_operator), captured_feed_operator)
+	var/mob/captured_feed_prey = feed_prey
+	feed_prey_expected = !isnull(captured_feed_prey)
+	rel_clear(src, nameof(feed_prey))
+	if(captured_feed_prey && !QDELETED(captured_feed_prey))
+		rel_set(src, nameof(feed_prey), captured_feed_prey)
+	var/mob/captured_feed_predator = feed_predator
+	feed_predator_expected = !isnull(captured_feed_predator)
+	rel_clear(src, nameof(feed_predator))
+	if(captured_feed_predator && !QDELETED(captured_feed_predator))
+		rel_set(src, nameof(feed_predator), captured_feed_predator)
+
+/datum/prompt/choice/vore_feed_review/recheck_extra()
+	if((feed_operator_expected && QDELETED(feed_operator)) || (feed_prey_expected && QDELETED(feed_prey)) || (feed_predator_expected && QDELETED(feed_predator)))
+		return "gone"
+	if(!isnull(value))
+		var/obj/belly/selected = value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"

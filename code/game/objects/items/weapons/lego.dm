@@ -9,8 +9,10 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/lego)
+	configure(item_thrown(force = 0))
 
 /obj/item/lego/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -23,7 +25,7 @@
 				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.injure(INJURY_PAIN, 100, source = src)
 			play_sfx(src, SFX_MISC_LEGODEATH)
-			qdel(src)
+			consume(src, L)
 	..()
 
 /obj/item/lego/gib
@@ -37,8 +39,10 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/lego/gib)
+	configure(item_thrown(force = 0))
 
 /obj/item/lego/gib/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -51,5 +55,5 @@
 				MSG_BLIND(span_hear(span_bold("You hear the sound of immeasurable suffering!"))))
 			L.gib()
 			play_sfx(src, SFX_MISC_LEGODEATH)
-			qdel(src)
+			spent(src)
 	..()

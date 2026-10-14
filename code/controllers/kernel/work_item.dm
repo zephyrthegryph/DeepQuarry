@@ -14,6 +14,7 @@
 /// A handler returns STEP_DONE (or nothing), STEP_YIELD (resume next tick, from the same member) or
 /// STEP_PARK / PROCESS_KILL (leave the schedule until wake_work()).
 
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/work_item)
 /datum/work_item
 	/// Display name for the profiler; defaults to the handler.
 	var/name
@@ -39,12 +40,21 @@
 	var/budget = 0
 	/// LANE_* whose share pays for the item in phase P, and whose latency class governs shedding.
 	var/lane = LANE_SIMULATION
-	/// TRUE when request_urgent() may pull one member's run forward.
+	/// TRUE when kernel_urgent() may pull one member's run forward.
 	var/urgent = FALSE
+	/// TRUE for an item that runs ahead of the rest of its phase (or lane) list: the OM scheduler's pieces (sched_items.dm).
+	var/first = FALSE
+	/// TRUE for an item that belongs to the live graph and to a test's alike (the scheduler's pieces: a test slot runs them on its own scheduler).
+	var/shared_graph = FALSE
+	/// TRUE when the item's owner is a /datum/system: each memberless run is reported to it (note_run()).
+	var/system_owned = FALSE
 	/// TRUE for an item its declarer runs itself (an on_notice handler, a non-urgent crossing): it is registered for
 	/// cost accounting (metrics(), account()) and never enters a phase list.
 	var/event = FALSE
-	/// The clock dt is measured on: CLOCK_WORLD, or CLOCK_BIO / CLOCK_MACHINE on the member (a stasis pause
+	/// TRUE for an item registered while a test owned the kernel clock (kernel_test_begin()): the live loop never runs it
+	/// and a test's injected clock runs only these, so a fixture's every() and the live kernel never meet.
+	var/test_owned = FALSE
+	/// The clock dt is measured on: CLOCK_WORLD, or CLOCK_BIO on the member (a stasis pause
 	/// pauses it). Each clock is a source: the kernel only asks it how much time has passed.
 	var/clock = CLOCK_WORLD
 	/// Declared reads (a list of field/channel names): what makes runnable() worth re-asking. Informational for
@@ -82,6 +92,11 @@
 	var/list/urgent_pending
 	/// Tick of the first sweep run this phase pass (cost accounting for one sweep).
 	var/sweep_started_at = 0
+	/// The membership store's list for `members` (members_of(members), kept: the store never replaces a key's list),
+	/// so the engine can see an empty sweep without a call. Null for a memberless item.
+	var/list/member_list
+	/// owner()'s system singleton, kept (re-resolved if it is ever deleted).
+	var/datum/owner_cache
 
 /datum/work_item/New(handler, interval = WORK_EVERY_TICK, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, budget = 0, lane = LANE_SIMULATION, urgent = FALSE, clock = CLOCK_WORLD)
 	..()
@@ -104,7 +119,7 @@
 /datum/work_item/proc/account(ms, faulted = FALSE)
 	runs++
 	total_ms += ms
-	cost = cost ? MC_AVERAGE_FAST(cost, ms) : ms
+	cost = cost ? KERNEL_AVERAGE_FAST(cost, ms) : ms
 	if(faulted)
 		faults++
 
@@ -114,7 +129,10 @@
 
 /// The datum whose handler runs: the singleton of `owner_type`. Overridden by adapters.
 /datum/work_item/proc/owner()
-	return system(owner_type)
+	if(owner_cache && !QDELETED(owner_cache))
+		return owner_cache
+	owner_cache = system(owner_type)
+	return owner_cache
 
 /// The latency class of this item's lane.
 /datum/work_item/proc/latency_class()
@@ -170,6 +188,7 @@
 	parked = FALSE
 	consecutive_faults = 0
 	next_run = 0
+	kernel().work_due_reset() // its list may be resting on an earlier walk's due date
 
 /// Telemetry for the profiler (Kernel.metrics()).
 /datum/work_item/proc/metrics()
@@ -177,13 +196,13 @@
 
 // ---- clocks are sources
 
-/// Now on `clock`, for `member`. CLOCK_WORLD is world.time; an entity clock is the member's own (om_clock_now()),
+/// Now on `clock`, for `member`. CLOCK_WORLD is world.time; an entity clock is the member's own (clock_now()),
 /// which stands still while the member is paused. A member without that clock reads world time.
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 /proc/work_clock_now(clock, datum/member, now = world.time)
 	if(clock == CLOCK_WORLD || !member)
 		return now
-	return om_clock_now(member, clock) || now
+	return clock_now(member, clock) || now
 
 // ---- registration
 
@@ -211,23 +230,23 @@
 
 /// The stage vocabulary of the work-item model, on every existing stage: it should run while it is not idle.
 /// Stages keep idle()/wake_on/rewake_delay; this is the inverted, declared-reads form the kernel asks.
-/datum/om/stage/proc/should_step(datum/E)
+/datum/work_stage/proc/should_step(datum/E)
 	SHOULD_NOT_SLEEP(TRUE)
 	return !idle(E)
 
 /// The declared reads of a stage: its `reads` fields, plus its wake channels as a mask (`wake_mask`).
-/datum/om/stage/proc/declared_reads()
+/datum/work_stage/proc/declared_reads()
 	return reads ? reads.Copy() : list()
 
 /// A work item that runs one stage (a family root or variant type) on every entity that has it in `members`:
-/// runnable() is the stage's own (!idle), and the work is om_stage_run_now(). The stage stays where it is.
+/// runnable() is the stage's own (!idle), and the work is pipeline_stage_run_now(). The stage stays where it is.
 /datum/work_item/stage
 	/// The stage family type.
 	var/stage_type
 
 /// Builds the adapter for `stage_type`. `owner_type` is what kernel_register_work() files it under.
 /proc/stage_work_item(stage_type, members = null, interval = 1 SECONDS, phase = KERNEL_PHASE_P)
-	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
+	var/datum/work_stage/T = definition_registry().stage_by_type[stage_type]
 	if(!T)
 		CRASH("stage_work_item: [stage_type] is not a stage")
 	var/datum/work_item/stage/W = new(null, interval, null, members, phase)
@@ -240,11 +259,11 @@
 	return src
 
 /datum/work_item/stage/runnable(datum/owner, datum/member)
-	var/datum/om/stage/T = om_registry().stage_by_type[stage_type]
+	var/datum/work_stage/T = definition_registry().stage_by_type[stage_type]
 	return T && (!member || T.should_step(member))
 
 /datum/work_item/stage/perform(datum/owner, datum/member, dt)
 	if(!member)
 		return STEP_DONE
-	om_stage_run_now(member, stage_type)
+	pipeline_stage_run_now(member, stage_type)
 	return STEP_DONE

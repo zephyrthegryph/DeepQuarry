@@ -1,0 +1,105 @@
+@obj human|none
++0 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+@obj robot|none
++1 menu: Give DNA (refused: You can't do that.)
++4 menu: Remove DNA (refused: You can't do that.)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++0 menu: Give DNA (refused: You can't do that.)
++2 menu: Remove DNA (refused: You can't do that.)
++4 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++4 menu: Remove the DNA lock (refused: the gun is not accepting modifications at this time)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++7 click: Click: Remove the DNA lock
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
+@obj human|/obj/item/kit
++1 menu: Fit
++2 menu: Give DNA (refused: You can't do that.)
++4 menu: Remove DNA (refused: You can't do that.)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Fit
++2 menu: Give DNA (refused: You can't do that.)
++4 menu: Remove DNA (refused: You can't do that.)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++7 click: Click: Fit
+human|/obj/item/card/emag menu: Fit
+human|/obj/item/card/emag menu: Give DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item menu: Fit
+human|/obj/item menu: Give DNA (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove DNA (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item click: Click: Fit
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver

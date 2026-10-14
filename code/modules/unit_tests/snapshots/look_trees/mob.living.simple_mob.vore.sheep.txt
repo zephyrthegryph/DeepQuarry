@@ -1,0 +1,8 @@
+/mob/living/simple_mob/vore/sheep icon: icons/mob/vore.dmi
+/mob/living/simple_mob/vore/sheep state: sheep
+/mob/living/simple_mob/vore/sheep dir: 2
+/mob/living/simple_mob/vore/sheep overlay: ::8:#000000
+/mob/living/simple_mob/vore/sheep overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/vore/sheep overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/vore/sheep overlay: icons/misc/win32.dmi::-100
+

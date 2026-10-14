@@ -9,7 +9,7 @@
 
 /obj/machinery/door/get_description_interaction()
 	var/list/results = list()
-	if((get_integrity() < max_integrity) && !has_stat(BROKEN))
+	if((get_integrity() < max_integrity) && !broken_now())
 		results += "[desc_panel_image("welder")]to start repairing damage."
 	return results
 

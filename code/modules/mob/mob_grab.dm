@@ -18,7 +18,6 @@
 	name = "grab"
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "reinforce"
-	item_flags = DROPDEL | NOSTRIP
 	var/atom/movable/screen/grab/hud = null
 	var/state = GRAB_PASSIVE
 
@@ -35,22 +34,41 @@
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
-/obj/item/grab/Initialize(mapload, mob/victim)
-	. = ..()
+/// The mob a grab is made on (its constructor param, dropped once linked).
+/obj/item/grab/var/tmp/mob/victim_at_make
+
+/// The grab link broke: the victim's shift and layer go back.
+/mob/living/proc/grab_released(obj/item/grab/G)
+	animate(src, pixel_x = initial(pixel_x), pixel_y = initial(pixel_y), 4, 1, LINEAR_EASING)
+	reset_plane_and_layer()
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The grab links its holder to the victim, or is spent.
+/obj/item/grab/proc/grab_made(mob/living/victim)
 	var/mob/living/carbon/human/assailant = loc
 
 	if(!istype(assailant) || !istype(victim) || victim.anchored || !assailant.Adjacent(victim))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
-	// The grabbing relation (code/datums/om/library.dm) is the sole writer of
-	// `affecting`/the victim's `grabbed_by`, and does the reveal messages,
-	// the dancing check and stopping any pull on the victim as its on_link()
-	// side effects.
-	if(!istype(om_link(src, victim, /datum/om/relation/grabbing), /datum/om/edge))
-		return INITIALIZE_HINT_QDEL
+	// The grab link (LK_GRABBING / LK_GRABBED_BY) is the sole store of the victim; its effects are the reveal messages, the dancing check and stopping
+	// any pull on the victim.
+	if(!link_make(src, LK_GRABBING, victim))
+		spent(src)
+		return
+	victim.reveal(span_warning("You are revealed as [assailant] grabs you."))
+	assailant.reveal(span_warning("You reveal yourself as you grab [victim]."))
+	// If the assailant is also currently grabbed by their new victim, both
+	// grabs enter "dancing" (facing each other, e.g. a wrestling clinch).
+	for(var/obj/item/grab/G in assailant.grabbed_by_list())
+		if(G.grab_assailant() == victim && G.grab_target() == assailant)
+			G.dancing = TRUE
+			G.adjust_position()
+			dancing = TRUE
+	if(assailant.pulling_target() == victim)
+		assailant.stop_pulling()
 
 	hud.icon_state = "reinforce"
-	icon_state = "grabbed" // ALLOW(decl): only set once the grab link succeeds
+	set_icon_state("grabbed")
 	hud.name = "reinforce grab"
 	rel_set(hud, nameof(hud.master_ref), src)
 
@@ -88,7 +106,7 @@
 	confirm()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant)
-		qdel(src) // Same here, except we're trying to delete ourselves.
+		ended_with(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
 
 	if(assailant.client)
@@ -126,16 +144,16 @@
 		affecting.drop_r_hand()
 
 		if(iscarbon(affecting))
-			handle_eye_mouth_covering(affecting, assailant, assailant.zone_sel.selecting)
+			handle_eye_mouth_covering(affecting, assailant, hud_of(assailant)?.zone_sel?.selecting)
 
 		if(force_down)
 			if(affecting.loc != assailant.loc || size_difference(affecting, assailant) > 0)
 				force_down = 0
 			else
-				affecting.status_at_least(EFFECT_WEAKENED, 2)
+				affecting.status_at_least(STAT_WEAKENED, 2)
 
 	if(state >= GRAB_NECK)
-		affecting.status_at_least(EFFECT_STUNNED, 3)
+		affecting.status_at_least(STAT_STUNNED, 3)
 		if(isliving(affecting))
 			var/mob/living/L = affecting
 			// A chokehold squeezes the airway for as long as it's held.
@@ -143,8 +161,8 @@
 
 	if(state >= GRAB_KILL)
 		//affecting.apply_effect(STUTTER, 5) //would do this, but affecting isn't declared as mob/living for some stupid reason.
-		affecting.status_at_least(EFFECT_STUTTERING, 5) //It will hamper your voice, being choked and all.
-		affecting.status_at_least(EFFECT_WEAKENED, 5)	//Should keep you down unless you get help.
+		affecting.status_at_least(STAT_STUTTERING, 5) //It will hamper your voice, being choked and all.
+		affecting.status_at_least(STAT_WEAKENED, 5)	//Should keep you down unless you get help.
 		affecting.losebreath = max(affecting.losebreath + 2, 3)
 
 	adjust_position()
@@ -159,13 +177,13 @@
 		if(O_MOUTH)
 			if(announce)
 				act_message(user, target, others = span_warning("%U% covers %T%'s mouth!"))
-			if(target.status_units(EFFECT_MUTED) < 3)
-				target.status_set(EFFECT_MUTED, 3)
+			if(target.status_units(STAT_MUTED) < 3)
+				target.status_set(STAT_MUTED, 3)
 		if(O_EYES)
 			if(announce)
 				act_message(assailant, affecting, others = span_warning("%U% covers %T%'s eyes!"))
-			if(affecting.status_units(EFFECT_BLINDED) < 3)
-				affecting.status_at_least(EFFECT_BLINDED, 3)
+			if(affecting.status_units(STAT_BLINDED) < 3)
+				affecting.status_at_least(STAT_BLINDED, 3)
 		if(BP_HEAD)
 			if(force_down)
 				if(!user.combat_mode) // the holder's posture while the grab ticks (state)
@@ -173,10 +191,22 @@
 						act_message(assailant, target, others = span_warning("%U% sits on %T%'s face!"))
 
 
-DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(interaction_tighten)))
+CAPABILITIES(/obj/item/grab)
+	ref_one(nameof(victim_at_make), /mob)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
+	// The hands-on inspection of a grabbed limb (mob_grab_specials.dm): each step starts the next, an interrupted one goes on to the next as well.
+	op("inspect_organ", ai(), begins(PROC_REF(inspect_organ_text)), wait(1 SECOND), on_interrupt(PROC_REF(inspect_organ_grab_failed)), then(PROC_REF(inspect_organ_grab_done)))
+	op("inspect_bones", ai(), wait(2 SECONDS), on_interrupt(PROC_REF(inspect_bones_failed)), then(PROC_REF(inspect_bones_done)))
+	op("inspect_skin", ai(), wait(1 SECOND), on_interrupt(PROC_REF(inspect_skin_failed)), then(PROC_REF(inspect_skin_done)))
+	// Forcing the grabbed one to the ground (mob_grab_specials.dm): two seconds, the victim staying where they were.
+	op("pin_down", ai(), takes("victim", "from"), wait(2 SECONDS), then(PROC_REF(pin_down_grab_done)))
+	op("inspect_internal", ai(), wait(5 SECONDS), on_interrupt(PROC_REF(inspect_internal_failed)), then(PROC_REF(inspect_internal_done)))
+	owns_one(nameof(hud), starts = /atom/movable/screen/grab)
+	param(nameof(victim_at_make), pos = 1, apply = PROC_REF(grab_made), keep = FALSE)
 
 /// Old attack_self: upgrade the grab.
-/obj/item/grab/proc/interaction_tighten(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/grab/proc/interaction_tighten(datum/act/op/A)
 	s_click(hud)
 	return TRUE
 
@@ -186,7 +216,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
-		qdel(src)
+		spent(src)
 		return
 	if(affecting?.buckled_to())
 		animate(affecting, pixel_x = initial(affecting.pixel_x), pixel_y = initial(affecting.pixel_y), 4, 1, LINEAR_EASING)
@@ -241,7 +271,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	if(!COOLDOWN_FINISHED(src, upgrade_cooldown))
 		return
 	if(!assailant.canmove || assailant.lying)
-		qdel(src)
+		spent(src)
 		return
 
 	note_action()
@@ -256,7 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 			apply_pinning(affecting, assailant)
 
 		state = GRAB_AGGRESSIVE
-		icon_state = "grabbed1"
+		set_icon_state("grabbed1")
 		hud.icon_state = "reinforce1"
 		add_attack_logs(assailant, affecting, "Aggressively grabbed", FALSE) // Not important enough to notify admins, but still helpful.
 	else if(state < GRAB_NECK)
@@ -266,12 +296,12 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 
 		act_message(assailant, affecting, others = span_warning("%U% has reinforced %THEIR% grip on %T% (now neck)!"))
 		state = GRAB_NECK
-		icon_state = "grabbed+1"
+		set_icon_state("grabbed+1")
 		assailant.set_dir(get_dir(assailant, affecting))
 		add_attack_logs(assailant,affecting,"Neck grabbed")
 		hud.icon_state = "kill"
 		hud.name = "kill"
-		affecting.status_at_least(EFFECT_STUNNED, 10) //10 ticks of ensured grab
+		affecting.status_at_least(STAT_STUNNED, 10) //10 ticks of ensured grab
 	else if(state < GRAB_UPGRADING)
 		act_message(assailant, affecting, others = span_danger("%U% starts to tighten %THEIR% grip on %T%'s neck!"))
 		hud.icon_state = "kill1"
@@ -289,12 +319,12 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant || !affecting)
-		qdel(src)
+		spent(src)
 		return 0
 
 	if(affecting)
 		if(!isturf(assailant.loc) || ( !isturf(affecting.loc) || assailant.loc != affecting.loc && get_dist(assailant, affecting) > 1) )
-			qdel(src)
+			spent(src)
 			return 0
 
 	return 1
@@ -316,7 +346,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	if(M == affecting)
 		if(ishuman(affecting))
 			var/mob/living/carbon/human/H = affecting
-			var/hit_zone = assailant.zone_sel.selecting
+			var/hit_zone = hud_of(assailant)?.zone_sel?.selecting
 			flick(hud.icon_state, hud)
 			switch(stance) // the victim's per-stance item interaction (Use on / Shove with / Hold with / Hit)
 				if(I_HELP)
@@ -370,7 +400,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		if(GRAB_NECK)
 			grab_name = "headlock"
 			//If the you move when grabbing someone then it's easier for them to break free. Same if the affected mob is immune to stun.
-			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(EFFECT_STUNNED))
+			if(ELAPSED_SINCE(src, assailant.l_move_time, CLOCK_WORLD) < 30 || !affecting.has_status(STAT_STUNNED))
 				break_strength++
 			break_chance_table = list(3, 18, 45, 100)
 
@@ -397,13 +427,11 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 			return
 		else if(grab_name)
 			act_message(affecting, assailant, others = span_warning("%U% has broken free of %T%'s [grab_name]!"))
-		qdel(src)
+		spent(src)
 
 //returns the number of size categories between affecting and assailant, rounded. Positive means A is larger than B
 /obj/item/grab/proc/size_difference(mob/A, mob/B)
 	return mob_size_difference(A.mob_size, B.mob_size)
-
-DECLARE_DEFAULT_CHILD(/obj/item/grab, "hud", /atom/movable/screen/grab)
 
 #undef UPGRADE_KILL_TIMER
 

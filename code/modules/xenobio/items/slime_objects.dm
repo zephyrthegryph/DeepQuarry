@@ -9,16 +9,18 @@
 	icon_state = "slime cube"
 	var/searching = 0
 
-DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/slime_cube)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/slime_cube/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slime_cube/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!searching)
 		to_chat(user, span_warning("You stare at the slimy cube, watching as some activity occurs."))
-		icon_state = "slime cube active"
+		set_icon_state("slime cube active")
 		searching = 1
 		request_player()
-		om_after(src, 60 SECONDS, PROC_REF(reset_search))
+		after(src, 60 SECONDS, PROC_REF(reset_search))
 	return TRUE
 
 // Sometime down the road it would be great to make all of these 'ask ghosts if they want to be X' procs into a generic datum.
@@ -31,26 +33,95 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	spawn(0) // ALLOW(scheduler): tgui_alert() sleeps (prompts, S10)
-		if(!C)
-			return
-		var/response = rerun_ask(C, "k34", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Someone is requesting a soul for a promethean. Would you like to play as one?", title = "Promethean request", choices = list("Yes", "No", "Never for this round"))
-		if(isnull(response))
-			return
-		if(response == "Yes")
-			var/_answer_k36 = rerun_ask(C, "k36", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to play as a promethean?", title = "Promethean request", choices = list("Yes", "No"))
-			if(isnull(_answer_k36))
-				return
-			response = _answer_k36
-		if(!C || 2 == searching)
-			return //handle logouts that happen whilst the alert is waiting for a response, and responses issued after a brain has been located.
-		if(response == "Yes")
-			transfer_personality(C.mob)
-		else if(response == "Never for this round")
-			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // migrated
+	if(!C || QDELETED(C.mob))
+		return
+	var/datum/slime_cube_invitation_review/review = new
+	review.client_ckey = C.ckey
+	rel_set(review, nameof(review.actor), C.mob)
+	rel_set(review, nameof(review.cube), src)
+	review.run_step()
+
+/datum/slime_cube_invitation_review
+	var/tmp/mob/actor
+	var/tmp/obj/item/slime_cube/cube
+	var/client_ckey
+	var/stage = 0
+	var/first_answer
+	var/confirmation
+
+CAPABILITIES(/datum/slime_cube_invitation_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(cube), /obj/item/slime_cube)
+
+/datum/slime_cube_invitation_review/proc/refusal()
+	if(QDELETED(actor) || QDELETED(cube) || !GLOB.directory[client_ckey])
+		return "The original invitation is no longer available."
+
+/datum/slime_cube_invitation_review/proc/run_step()
+	var/datum/result/result = safe_call(PROC_REF(replay))
+	if(!result.ok)
+		stack_trace("Slime cube invitation continuation: [result.error]")
+	if(stage > 0 && !QDELETED(cube))
+		SStgui.update_uis(cube)
+	if(!result.ok || result.value != TRUE)
+		retire()
+
+/datum/slime_cube_invitation_review/proc/answered(datum/act/request/context)
+	if(!context.answer)
+		retire()
+		return
+	if(stage == 0)
+		first_answer = context.request.value
+	else
+		confirmation = context.request.value
+	stage++
+	run_step()
+
+/datum/slime_cube_invitation_review/proc/replay()
+	var/client/C = GLOB.directory[client_ckey]
+	if(!C || QDELETED(C.mob) || QDELETED(cube))
+		return
+	rel_set(src, nameof(actor), C.mob)
+	if(stage == 0)
+		open_request(src, /datum/prompt/choice/slime_cube_invitation, PROC_REF(answered), answerer = actor)
+		return TRUE
+	var/response = first_answer
+	if(response == "Yes")
+		if(stage == 1)
+			open_request(src, /datum/prompt/choice/slime_cube_invitation/confirm, PROC_REF(answered), answerer = actor)
+			return TRUE
+		response = confirmation
+	if(!C || 2 == cube.searching)
+		return // Preserve responses issued after a brain has been located.
+	if(response == "Yes")
+		cube.transfer_personality(C.mob)
+	else if(response == "Never for this round")
+		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN)
+
+/datum/slime_cube_invitation_review/proc/retire()
+	spent(src)
+
+/datum/prompt/choice/slime_cube_invitation
+	title = "Promethean request"
+	question = "Someone is requesting a soul for a promethean. Would you like to play as one?"
+	choices = list("Yes", "No", "Never for this round")
+	buttons = TRUE
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/slime_cube_invitation/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/slime_cube_invitation_review/review = owner
+	return review.refusal()
+
+/datum/prompt/choice/slime_cube_invitation/confirm
+	question = "Are you sure you want to play as a promethean?"
+	choices = list("Yes", "No")
 
 /obj/item/slime_cube/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
-	icon_state = "slime cube"
+	set_icon_state("slime cube")
 	if(searching == 1)
 		searching = 0
 		var/turf/T = get_turf_or_move(src.loc)
@@ -67,11 +138,11 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
-	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/om/prompt/text, message = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/prompt/text, question = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_len = MAX_NAME_LEN, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
 	if(isnull(newname))
 		return
 	if(newname)
-		S.real_name = newname
+		S.set_real_name(newname)
 		S.name = S.real_name
 		S.dna.real_name = newname
 	if(S.mind)
@@ -88,17 +159,23 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "slime_crystal_small"
 	w_class = ITEMSIZE_TINY
-	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
 
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+	if(loc?.release_refusal(src, user))
+		return
 	act_message(target, src, others = span_warning("%U% has been teleported with %T% by \the [user]!"))
 	safe_blink(target, 14)
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/slime_crystal)
+	configure(item_combat(force = 1))
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/slime_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/slime_crystal/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(loc?.release_refusal(src, user))
+		return FALSE
 	act_message(user, src, others = span_warning("%U% teleports themselves with %T%!"))
 	safe_blink(user, 14)
 	consume(src, user)
@@ -110,10 +187,12 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 	if(AM.anchored)
 		return
+	if(loc?.release_refusal(src))
+		return
 
 	AM.visible_message(span_warning("\The [AM] has been teleported with \the [src]!"))
 	safe_blink(AM, 14)
-	qdel(src)
+	consume(src)
 
 /obj/item/disposable_teleporter/slime
 	name = "greater slime crystal"
@@ -125,6 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 // Very filling food.
 /obj/item/reagent_containers/food/snacks/slime
+	bitesize = 5
 	name = "slimy clump"
 	desc = "A glob of slime that is thick as honey.  For the brave " + JOB_XENOBIOLOGIST + "."
 	icon_state = "honeycomb"
@@ -133,10 +213,6 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	center_of_mass_y = 10
 	nutriment_amt = 25 // Very filling.
 	nutriment_desc = list("slime" = 10, "sweetness" = 10, REAGENT_ID_BLISS = 5)
-
-/obj/item/reagent_containers/food/snacks/slime/Initialize(mapload)
-	. = ..()
-	bitesize = 5
 
 //Flashlight
 
@@ -147,17 +223,15 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "floor1" //not a slime extract sprite but... something close enough!
 	item_state = "slime"
-	light_color = "#FFF423"
 	w_class = ITEMSIZE_TINY
-	light_range = 6
 	on = 1 //Bio-luminesence has one setting, on.
 	power_use = 0
 	light_system = STATIC_LIGHT
 	special_handling = TRUE
 
-/obj/item/flashlight/slime/Initialize(mapload)
-	. = ..()
-	set_light(light_range, light_power, light_color)
+// Bioluminescence: always lit, in its own yellow.
+CAPABILITIES(/obj/item/flashlight/slime)
+	look_glow(GLOW(6, 0.8, "#FFF423"))
 
 /obj/item/flashlight/slime/update_brightness()
 	return
@@ -169,24 +243,20 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	desc = "A slimy ball that appears to be glowing from bioluminesence."
 	icon = 'icons/mob/slimes_vr.dmi'
 	icon_state = "irradiator"
-	light_color = "#00FF00"
-	light_power = 0.4
-	light_range = 2
+	light_on = TRUE // lit from the start: static light vars are applied when it materializes (on_materialize() -> update_light())
 	w_class = ITEMSIZE_TINY
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/slime_irradiator, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/slime_irradiator)
+	configure(light_glow(color = "#00FF00", power = 0.4, range = 2))
+	every(2 SECONDS, then(PROC_REF(slime_irradiator_step)))
 
-/obj/item/slime_irradiator/Initialize(mapload)
-	. = ..()
-	set_light(light_range, light_power, light_color)
-
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/slime_irradiator/periodic_step()
+/// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
+/obj/item/slime_irradiator/proc/slime_irradiator_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()

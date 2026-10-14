@@ -23,7 +23,7 @@
 		P.name = "[cardtext]"
 		P.card_icon = "[icon_state]_card"
 		P.back_icon = "[icon_state]_card_back"
-		own_add(src, nameof(cards), P)
+		rel_add(src, nameof(cards), P)
 
 /obj/item/deck/wizoff/var/list/card_wiz_list = list(
 	"O1: Spell Cards",
@@ -62,8 +62,6 @@
 	item_state = "book16"
 	author = "Donk Co."
 	title = "WizOff Guide"
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	dat = {"
 
 		<html>
@@ -98,3 +96,6 @@
 		</html>
 
 		"}
+
+CAPABILITIES(/obj/item/book/manual/wizzoffguide)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))

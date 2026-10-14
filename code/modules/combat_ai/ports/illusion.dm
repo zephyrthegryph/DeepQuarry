@@ -3,7 +3,7 @@
 // Legacy used /datum/ai_holder/simple_mob/inert/astar — a barely-active AI
 // that pathfinds when given a destination by external code. The modern brain
 // gets the same effect with an empty behavior list and ai_attack_on_sight off;
-// external code can set brain.primary_threat or call brain.smart_step_toward
+// external code can set brain.primary_target() or call brain.smart_step_toward
 // for movement.
 
 /mob/living/simple_mob/illusion

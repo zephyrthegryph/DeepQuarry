@@ -29,7 +29,7 @@
 		|| istype(M,/obj/machinery/microwave) \
 		|| istype(M,/obj/machinery/recharge_station) \
 		|| istype(M,/obj/machinery/power/thermoregulator/cryogaia))
-			if(!M.has_stat(NOPOWER)) // Has to be powered
+			if(!M.power_lost()) // Has to be powered
 				possible_machines.Add(M)
 
 	if(!possible_machines.len)

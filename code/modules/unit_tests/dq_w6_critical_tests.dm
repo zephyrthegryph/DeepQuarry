@@ -12,12 +12,12 @@
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, test_floor())
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, test_floor())
-	S.set_stat(0)
-	patient.move_into(S, OCCUPANT_SLOT_SLEEPER)
+	dq_machine_clear(S)
+	move_into(S, OCCUPANT_SLOT_SLEEPER, patient)
 	TEST_ASSERT(!LAZYACCESS(S.available_chemicals, REAGENT_ID_TOXIN), "the sleeper must not list toxin")
-	S.inject_chemical(user, REAGENT_ID_TOXIN, 5)
+	test_op_handler(S, "inject_chosen", user, null, 5, REAGENT_ID_TOXIN)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_TOXIN), 0, "an unlisted chemical must not be injected")
-	S.inject_chemical(user, REAGENT_ID_INAPROVALINE, 5)
+	test_op_handler(S, "inject_chosen", user, null, 5, REAGENT_ID_INAPROVALINE)
 	TEST_ASSERT_EQUAL(patient.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE), 5, "a listed chemical is injected")
 	S.slot_remove(patient, test_floor())
 
@@ -139,7 +139,7 @@
 /datum/unit_test/dq_borg_destroyed_mind_placement/Run()
 	var/mob/living/silicon/robot/R = new /mob/living/silicon/robot(test_floor())
 	if(!R.mmi)
-		own_set(R, nameof(R.mmi), new /obj/item/mmi(R))
+		rel_set(R, nameof(R.mmi), new /obj/item/mmi(R))
 	var/obj/item/mmi/mmi = R.mmi
 	var/datum/mind/M = dq_test_give_mind(src, R, "Borg On Floor")
 	qdel(R)
@@ -150,7 +150,7 @@
 
 	var/mob/living/silicon/robot/lost = new /mob/living/silicon/robot(test_floor())
 	if(!lost.mmi)
-		own_set(lost, nameof(lost.mmi), new /obj/item/mmi(lost))
+		rel_set(lost, nameof(lost.mmi), new /obj/item/mmi(lost))
 	var/obj/item/mmi/lost_mmi = lost.mmi
 	var/datum/mind/M2 = dq_test_give_mind(src, lost, "Borg In Nullspace")
 	lost.moveToNullspace()

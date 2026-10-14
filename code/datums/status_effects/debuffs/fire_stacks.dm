@@ -42,7 +42,7 @@
 	. = ..()
 
 	if(isanimal(owner))
-		qdel(src)
+		spent(src)
 		return
 
 	rel_set(src, nameof(owner), new_owner)
@@ -52,17 +52,17 @@
 		var/datum/status_effect/fire_handler/enemy_effect = owner.has_status_effect(enemy_type)
 		if(enemy_effect)
 			if(forced)
-				qdel(enemy_effect)
+				replaced_by(enemy_effect, src)
 				continue
 
 			var/cur_stacks = stacks
 			adjust_stacks(-abs(enemy_effect.stacks * enemy_effect.stack_modifier / stack_modifier))
 			enemy_effect.adjust_stacks(-abs(cur_stacks * stack_modifier / enemy_effect.stack_modifier))
 			if(enemy_effect.stacks <= 0)
-				qdel(enemy_effect)
+				spent(enemy_effect, src)
 
 			if(stacks <= 0)
-				qdel(src)
+				spent(src)
 				return
 
 	if(!forced)
@@ -75,18 +75,18 @@
 		if(LAZYLEN(merge_effects))
 			for(var/datum/status_effect/fire_handler/merge_effect in merge_effects)
 				merge_effect.adjust_stacks(stacks * stack_modifier / merge_effect.stack_modifier / LAZYLEN(merge_effects))
-			qdel(src)
+			spent(src)
 			return
 
 	for(var/override_type in override_types)
 		var/datum/status_effect/fire_handler/override_effect = owner.has_status_effect(override_type)
 		if(override_effect)
 			if(forced)
-				qdel(override_effect)
+				replaced_by(override_effect, src)
 				continue
 
 			adjust_stacks(override_effect.stacks)
-			qdel(override_effect)
+			consumed(override_effect, src)
 
 /**
  * Setter and adjuster procs for firestacks
@@ -113,22 +113,20 @@
  */
 
 /datum/status_effect/fire_handler/proc/cache_stacks()
-	owner.fire_stacks = 0
-	var/was_on_fire = owner.on_fire
-	owner.on_fire = FALSE
-	for(var/datum/status_effect/fire_handler/possible_fire in owner.status_effects)
-		owner.fire_stacks += possible_fire.stacks * possible_fire.stack_modifier
+	// The mob's burning is a stat this effect holds while lit (STAT_ON_FIRE); its stacks are summed on read (fire_stacks_of()).
+	var/was_on_fire = !!stat_value(owner, STAT_ON_FIRE)
+	var/lit = FALSE
+	for(var/datum/status_effect/fire_handler/fire_stacks/our_fire in owner.status_effects)
+		if(our_fire.on_fire && !QDELETED(our_fire))
+			lit = TRUE
+	if(lit)
+		hold(owner, STAT_ON_FIRE, TRUE, SRC_FIRE_STACKS)
+	else
+		release(owner, STAT_ON_FIRE, SRC_FIRE_STACKS)
 
-		if(!istype(possible_fire, /datum/status_effect/fire_handler/fire_stacks))
-			continue
-
-		var/datum/status_effect/fire_handler/fire_stacks/our_fire = possible_fire
-		if(our_fire.on_fire)
-			owner.on_fire = TRUE
-
-	if(was_on_fire && !owner.on_fire)
+	if(was_on_fire && !lit)
 		owner.clear_alert(ALERT_FIRE)
-	else if(!was_on_fire && owner.on_fire)
+	else if(!was_on_fire && lit)
 		owner.throw_alert(ALERT_FIRE, /atom/movable/screen/alert/fire)
 	owner.update_fire()
 	update_particles()
@@ -149,8 +147,11 @@
 	/// Cached particle type
 	var/applied_particle_type
 
+CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
+	owns_one(nameof(moblight), /obj/effect/dummy/lighting_obj)
+
 /datum/status_effect/fire_handler/fire_stacks/get_examine_text()
-	if(owner.on_fire)
+	if(stat_value(owner, STAT_ON_FIRE))
 		return
 
 	return "[owner.p_They()] [owner.p_are()] covered in something flammable."
@@ -160,22 +161,22 @@
 
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	if(!on_fire)
 		return TRUE
 
 	var/decay_multiplier = 1 // has_trait(owner, TRAIT_HUSK) ? 2 : 1 // husks decay twice as fast
-	adjust_stacks(owner.fire_stack_decay_rate * decay_multiplier * seconds_between_ticks)
+	adjust_stacks(owner.fire_stack_decay_rate() * decay_multiplier * seconds_between_ticks)
 
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	var/datum/gas_mixture/air = owner.loc.return_air()
 	if(LINDA_GAS_AMT(air, GAS_O2) < 1)
-		qdel(src)
+		spent(src)
 		return TRUE
 
 	deal_damage(seconds_between_ticks)
@@ -257,8 +258,8 @@
 
 	if(moblight_type)
 		if(moblight)
-			qdel(moblight)
-		own_set(src, nameof(moblight), new moblight_type(owner))
+			rel_clear(src, nameof(moblight))
+		rel_set(src, nameof(moblight), new moblight_type(owner))
 
 	cache_stacks()
 	return TRUE
@@ -268,12 +269,12 @@
  */
 
 /// Hooked to before/atom_extinguish on the owner.
-/datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/source, datum/om/event/before/atom_extinguish/event)
-	EVENT_HANDLER
+/datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	extinguish()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
-	own_clear(src, nameof(moblight), OWN_DELETE)
+	rel_clear(src, nameof(moblight))
 	on_fire = FALSE
 	cache_stacks()
 	for(var/obj/item/equipped in (owner.get_equipped_items()))
@@ -290,7 +291,7 @@
 
 /datum/status_effect/fire_handler/fire_stacks/on_apply()
 	. = ..()
-	om_hook(owner, /datum/om/event/before/atom_extinguish, src, PROC_REF(on_extinguish_event))
+	observe(owner, /datum/notice/atom_extinguish, src, then(PROC_REF(on_extinguish_event)))
 	owner.update_fire()
 
 /datum/status_effect/fire_handler/fire_stacks/proc/add_fire_overlay(mob/living/source)
@@ -313,7 +314,8 @@
 
 /datum/status_effect/fire_handler/wet_stacks/on_apply()
 	. = ..()
-	om_hook(owner, list(/datum/om/event/trait_gained, /datum/om/event/trait_lost), src, PROC_REF(on_owner_trait_changed))
+	observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_changed)))
+	observe(owner, /datum/notice/trait_lost, src, then(PROC_REF(on_owner_trait_changed)))
 	update_wet_stack_modifier()
 	if(has_trait(owner, TRAIT_SLIPPERY_WHEN_WET))
 		become_slippery()
@@ -329,16 +331,16 @@
 
 /// Trait gain/loss on the owner: TRAIT_WET_FOR_LONGER retunes the stack
 /// modifier, TRAIT_SLIPPERY_WHEN_WET toggles slipperiness.
-/datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/source, datum/om/event/event)
-	EVENT_HANDLER
-	if(istype(event, /datum/om/event/trait_gained))
-		var/datum/om/event/trait_gained/gained = event
+/datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(istype(N, /datum/notice/trait_gained))
+		var/datum/notice/trait_gained/gained = N
 		if(gained.trait == TRAIT_WET_FOR_LONGER)
 			update_wet_stack_modifier()
 		else if(gained.trait == TRAIT_SLIPPERY_WHEN_WET)
 			become_slippery()
-	else if(istype(event, /datum/om/event/trait_lost))
-		var/datum/om/event/trait_lost/lost = event
+	else if(istype(N, /datum/notice/trait_lost))
+		var/datum/notice/trait_lost/lost = N
 		if(lost.trait == TRAIT_WET_FOR_LONGER)
 			update_wet_stack_modifier()
 		else if(lost.trait == TRAIT_SLIPPERY_WHEN_WET)
@@ -360,7 +362,7 @@
 	var/decay = has_trait(owner, TRAIT_WET_FOR_LONGER) ? -0.035 : -0.5
 	adjust_stacks(decay * seconds_between_ticks)
 	if(stacks <= 0)
-		qdel(src)
+		spent(src)
 
 // /datum/status_effect/fire_handler/wet_stacks/check_basic_mob_immunity(mob/living/basic/basic_owner)
 // 	return !(basic_owner.basic_mob_flags & IMMUNE_TO_GETTING_WET)

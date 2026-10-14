@@ -123,75 +123,31 @@
 	var/pisces = ""
 	var/static/list/zodiacs = list("aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces")
 
-/obj/item/entrepreneur/horoscope/Initialize(mapload)
-	. = ..()
-	var/stars = pick(stars_list)
-	var/prediction = pick(prediction_list)
-	var/advice = pick(advice_list)
-	aries = "[stars] [prediction] [advice]"
+/// One sign's reading: a star alignment, a prediction and a piece of advice.
+/obj/item/entrepreneur/horoscope/proc/roll_reading(datum/roller/R)
+	return "[R.choose(stars_list)] [R.choose(prediction_list)] [R.choose(advice_list)]"
 
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	taurus = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	gemini = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	cancer = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	leo = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	virgo = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	libra = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	scorpio = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	sagittarius = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	capricorn = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	aquarius = "[stars] [prediction] [advice]"
-
-	stars = pick(stars_list)
-	prediction = pick(prediction_list)
-	advice = pick(advice_list)
-	pisces = "[stars] [prediction] [advice]"
-
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/entrepreneur/horoscope)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = nameof(zodiacs), "timeout" = 0), step = "zodiac"), then(PROC_REF(interaction_self)))
+	rolls(nameof(aries), PROC_REF(roll_reading))
+	rolls(nameof(taurus), PROC_REF(roll_reading))
+	rolls(nameof(gemini), PROC_REF(roll_reading))
+	rolls(nameof(cancer), PROC_REF(roll_reading))
+	rolls(nameof(leo), PROC_REF(roll_reading))
+	rolls(nameof(virgo), PROC_REF(roll_reading))
+	rolls(nameof(libra), PROC_REF(roll_reading))
+	rolls(nameof(scorpio), PROC_REF(roll_reading))
+	rolls(nameof(sagittarius), PROC_REF(roll_reading))
+	rolls(nameof(capricorn), PROC_REF(roll_reading))
+	rolls(nameof(aquarius), PROC_REF(roll_reading))
+	rolls(nameof(pisces), PROC_REF(roll_reading))
 
 /// Old attack_self.
-/obj/item/entrepreneur/horoscope/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/zodiac = rerun_ask(user, "k192", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
+/obj/item/entrepreneur/horoscope/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/zodiac = A.step_value("zodiac")
 	if(isnull(zodiac))
-		return TRUE
+		return OP_OK
 	if(zodiac)
 		switch(zodiac)
 			if("aries")
@@ -218,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 				to_chat(user, span_notice("Today's reading for Aquarius: [aquarius]"))
 			if("pisces")
 				to_chat(user, span_notice("Today's reading for Pisces: [pisces]"))
-	return TRUE
+	return OP_OK
 
 ///////Dentist tools, basically just fluff for RP
 
@@ -286,7 +242,12 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "exercise_mat"
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
+	op("use_item", item(/obj/item), passes(), then(PROC_REF(exercise_item_passes)))
+
+/// An item used on an exercise mat does nothing to it: the click goes on (the old interaction_pass).
+/obj/item/bedsheet/pillow/exercise/proc/exercise_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /obj/item/entrepreneur/dumbbell
 	name = "dumbbell"
@@ -294,22 +255,27 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, TYPE
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "dumbbell"
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/entrepreneur/dumbbell/proc/can_exercise)))
+CAPABILITIES(/obj/item/entrepreneur/dumbbell)
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
 
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
 	var/mob/living/M = user
-	if(istype(M) && M.nutrition <= 100)
+	if(istype(M) && nutrition_of(M) <= 100)
 		return "you are too hungry to exercise right now"
 	return TRUE
 
 /// Old attack_self.
-/obj/item/entrepreneur/dumbbell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/M = user
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
-	return TRUE
+/// Requirement (was REQ_* can_exercise): the legacy check answers TRUE to pass.
+/obj/item/entrepreneur/dumbbell/proc/can_exercise_holds(datum/act/op/A)
+	var/answer = can_exercise(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
-/obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
+/// Why can_exercise_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/entrepreneur/dumbbell/proc/exercise_done(datum/act/op/A)
+	var/mob/living/M = A.actor
 	var/mob/user = M
 	M.adjust_nutrition(-10)
 	to_chat(user, span_notice("You successfully perform a [src] exercise!"))
@@ -332,6 +298,10 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 	///How often we can use the EMF actively.
 	COOLDOWN_DECLARE(scan_cooldown)
 
+/// TRUE while it is carried by a mob: the slow reading step runs only then.
+/obj/item/entrepreneur/emf/var/tmp/reading = FALSE
+TRACKED(/obj/item/entrepreneur/emf, reading)
+
 /obj/item/entrepreneur/emf/examine(mob/user)
 	. = ..()
 	switch(emf)
@@ -346,24 +316,25 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 		if(80 to 1000)
 			. += span_info(span_red("The EMF reader is reading extremely high interference, reading [emf]mG."))
 
-/obj/item/entrepreneur/emf/Initialize(mapload)
-	. = ..()
-	emf = rand(1,100)
-
-/obj/item/entrepreneur/emf/periodic_step()
+/// Senses every 2 s while carried; set down, the work stops.
+/obj/item/entrepreneur/emf/proc/emf_step(datum/act/A)
 	if(!ismob(loc))
-		return PROCESS_KILL
+		set_reading(FALSE)
+		return
 	search_for_ghosts()
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/entrepreneur/emf)
+	every(2 SECONDS, then(PROC_REF(emf_step)), when = nameof(reading))
+	op("scan", in_hand(), label("Read EMF scanner"), then(PROC_REF(emf_scan_requested)))
+	rolls(nameof(emf), range_of(1, 100))
 
-/// Old attack_self.
-/obj/item/entrepreneur/emf/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/entrepreneur/emf/proc/emf_scan_requested(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, scan_cooldown))
 		search_for_ghosts(user)
 	else
 		to_chat(user, span_warning("Your EMF scanner is recharging. The current reading is [emf]mG."))
-	return TRUE
+	return OP_OK
 
 /obj/item/entrepreneur/emf/proc/search_for_ghosts(mob/user)
 	var/turf/our_turf = get_turf(src)
@@ -387,9 +358,9 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 				ghosts_present++
 
 	if(emf >= 100)
-		emf = 100
+		set_emf(100)
 	if(emf <= 20)
-		emf = 20
+		set_emf(20)
 
 	if(ghosts_present)
 		if(advanced)
@@ -401,8 +372,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 			emf_change = rand(-5, -1)
 		else
 			emf_change = rand(-20,15) //Trend downwards
-	emf = (emf + emf_change)
-	update_icon()
+	set_emf((emf + emf_change))
 	if(user)
 		to_chat(user, span_notice("You update the EMF scanner and check the reading. It reads [emf]mG!"))
 		COOLDOWN_START(src, scan_cooldown, 5 SECONDS)
@@ -418,7 +388,10 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 		return 60
 	return 80
 
-APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-{appearance_level}")
+/// The look (the draw sweep: from its template).
+/obj/item/entrepreneur/emf/draw(datum/look/look)
+	..()
+	look.state("emf-[appearance_level()]")
 
 /obj/item/entrepreneur/spirit_board
 	name = "spirit board"
@@ -433,36 +406,30 @@ APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-{appearance_level}")
 	///If the board will always display what ghosts put
 	var/accurate = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_slide)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide)), \
-)
+CAPABILITIES(/obj/item/entrepreneur/spirit_board)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k451", when = PROC_REF(alt_asks)), then(PROC_REF(interaction_alt)))
+	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req(PROC_REF(can_ghost_guide_holds))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
 
 /// Requirement: a drink container to slide across the board (a non-living user is ignored silently by the effect).
-/obj/item/entrepreneur/spirit_board/proc/can_slide(mob/user, atom/target, obj/item/held)
-	if(!isliving(user))
-		return TRUE
-	if(!istype(held, /obj/item/reagent_containers/food/drinks))
-		return "you need some sort of glass, bottle or cup to contact the spirit world"
-	return TRUE
+/obj/item/entrepreneur/spirit_board/proc/can_slide_holds(datum/act/op/A)
+	if(!isliving(A.actor))
+		return null
+	return (istype(A.held, /obj/item/reagent_containers/food/drinks)) ? null : "you need some sort of glass, bottle or cup to contact the spirit world"
 
+/// Why can_slide_holds refuses.
 /// Requirement: the guiding ghost isn't ghost-role banned (a board with ghosts disabled ignores them silently).
-/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide(mob/user, atom/target, obj/item/held)
+/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_holds(datum/act/op/A)
 	if(!ghost_enabled)
-		return TRUE
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot interact with this board because you are banned from playing ghost roles"
-	return TRUE
+		return null
+	return (!jobban_isbanned(A.actor, JOB_GHOSTROLES)) ? null : "you cannot interact with this board because you are banned from playing ghost roles"
 
-/// Old attackby.
-/obj/item/entrepreneur/spirit_board/proc/interaction_item(mob/living/user, obj/item/reagent_containers/food/drinks/W, datum/interaction/interaction)
+/// Why can_ghost_guide_holds refuses.
+/obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/reagent_containers/food/drinks/W = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
+		return OP_OK
 	var/result = 0
 	if(next_result)
 		result = next_result
@@ -471,28 +438,37 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	act_message(user, src, others = span_notice("%U% slides the [W] over to [result]!"))
 	next_result = 0
 
+/// The question is asked only of a carbon (admins can be cheeky).
+/obj/item/entrepreneur/spirit_board/proc/alt_asks(datum/act/op/A)
+	return istype(A.actor, /mob/living/carbon)
+
 /// Old click_alt.
-/obj/item/entrepreneur/spirit_board/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
-	if(!istype(user)) //admins can be cheeky
-		return TRUE
-	var/_answer_k451 = rerun_ask(user, "k451", PROC_REF(interaction_alt), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
+/obj/item/entrepreneur/spirit_board/proc/interaction_alt(datum/act/op/A)
+	if(!istype(A.actor, /mob/living/carbon)) //admins can be cheeky
+		return OP_OK
+	var/_answer_k451 = A.step_value("k451")
 	if(isnull(_answer_k451))
-		return TRUE
+		return OP_OK
 	next_result = _answer_k451
-	return TRUE
+	return OP_OK
+
+/// A board with ghosts disabled asks nothing.
+/obj/item/entrepreneur/spirit_board/proc/ghost_asks(datum/act/op/A)
+	return ghost_enabled
 
 /// Old attack_ghost: choose the board's next result. Never fell through to the default.
-/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(!ghost_enabled)
-		return TRUE
-	var/_answer_k459 = rerun_ask(user, "k459", PROC_REF(spirit_board_ghost_guide), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
+		return OP_OK
+	var/_answer_k459 = A.step_value("k459")
 	if(isnull(_answer_k459))
-		return TRUE
+		return OP_OK
 	next_result = _answer_k459
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board
-	return TRUE
+	return OP_OK
 
 // Spirit Healer stuff
 
@@ -503,11 +479,12 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	icon_state = "crystal_pink"
 	w_class = ITEMSIZE_TINY
 
-/obj/item/entrepreneur/crystal/Initialize(mapload)
-	. = ..()
-	var/list/colour_choice = list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple")
-	icon_state = pick(colour_choice)
-	update_icon()
+CAPABILITIES(/obj/item/entrepreneur/crystal)
+	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/entrepreneur/crystal/proc/roll_look(datum/roller/R)
+	return R.choose(list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple"))
 
 /obj/item/reagent_containers/glass/bottle/essential_oil
 	name = "essential oils"
@@ -534,10 +511,12 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	rollertype = /obj/item/roller/massage
 	bedtype = /obj/structure/bed/roller/massage
 
-EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/structure/bed/roller/massage)
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old click_alt.
-/obj/structure/bed/roller/massage/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/roller/massage/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(anchored)
 		set_anchored(0)
 		act_message(user, src, others = span_notice("%U% turns the breaks off on %T%!"))
@@ -641,4 +620,5 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/entrepreneur/emf/equipped(mob/user, slot)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_reading(TRUE)
+

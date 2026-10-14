@@ -15,8 +15,6 @@
 /obj/item/toy/mecha
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
-	drop_sound = SFX_MECHA_MECHSTEP
-	reach = 2 // So you can battle across the table!
 
 	// Mech Battle Vars
 	var/timer = 0 // Timer when it'll be off cooldown
@@ -35,21 +33,26 @@
 	var/wins = 0 // This mech's win count in combat
 	var/losses = 0 // ...And their loss count in combat
 
-/obj/item/toy/mecha/Initialize(mapload)
-	. = ..()
-	desc = "Mini-Mecha action figure! Collect them all! Attack your friends or another mech with one to initiate epic mech combat! [desc]."
-	combat_health = max_combat_health
+/// The box art's blurb around the toy's own description (derives(), at init).
+/obj/item/toy/mecha/proc/boxed_desc()
+	return "Mini-Mecha action figure! Collect them all! Attack your friends or another mech with one to initiate epic mech combat! [desc]."
+
+/// A toy starts a battle at full health (derives(), at init).
+/obj/item/toy/mecha/proc/full_combat_health()
+	return max_combat_health
+
+/// What examining says its special move does: its kind, or for a special kind the toy's own message.
+/obj/item/toy/mecha/proc/special_attack_description()
 	switch(special_attack_type)
 		if(SPECIAL_ATTACK_DAMAGE)
-			special_attack_type_message = "an aggressive move, which deals bonus damage."
+			return "an aggressive move, which deals bonus damage."
 		if(SPECIAL_ATTACK_HEAL)
-			special_attack_type_message = "a defensive move, which grants bonus healing."
+			return "a defensive move, which grants bonus healing."
 		if(SPECIAL_ATTACK_UTILITY)
-			special_attack_type_message = "a utility move, which heals the user and damages the opponent."
+			return "a utility move, which heals the user and damages the opponent."
 		if(SPECIAL_ATTACK_OTHER)
-			special_attack_type_message = "a special move, which [special_attack_type_message]"
-		else
-			special_attack_type_message = "a mystery move, even I don't know."
+			return "a special move, which [special_attack_type_message]"
+	return "a mystery move, even I don't know."
 
 /obj/item/toy/mecha/proc/in_range(source, user) // Modify our in_range proc specifically for mech battles!
 	if(get_dist(source, user) <= 2)
@@ -113,39 +116,46 @@
 	return TRUE
 
 //all credit to skasi for toy mech fun ideas
-DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_TK(null, PROC_REF(interaction_tk)), \
-)
+CAPABILITIES(/obj/item/toy/mecha)
+	configure(item_combat(reach = 2))
+	configure(item_sounds(drop = SFX_MECHA_MECHSTEP))
+	// the old attack_self (and attack_tk): play with it
+	op("play", in_hand(), label("Play"), then(PROC_REF(interaction_self)))
+	op("play_tk", tk(), label("Play"), then(PROC_REF(interaction_tk)))
+	// a toy mech on a toy mech starts a battle (the hit goes on after)
+	op("battle", item(/obj/item/toy/mecha), label("Battle"), then(PROC_REF(interaction_item)))
+	// picking it up plays with it once it's in hand
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(mecha_toy_pick_up)))
+	derives(nameof(desc), PROC_REF(boxed_desc))
+	derives(nameof(combat_health), PROC_REF(full_combat_health))
 
 /// Old attack_self.
-/obj/item/toy/mecha/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/mecha/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		play_sfx(user, SFX_MECHA_MECHSTEP)
-	return TRUE
-
-EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
+	return OP_OK
 
 /// Picking up a toy mech plays with it once it's in hand.
-/obj/item/toy/mecha/proc/mecha_toy_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_pick_up(user, held, interaction)
+/obj/item/toy/mecha/proc/mecha_toy_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	pick_up_by_hand(user)
 	if(loc == user)
 		attack_self(user)
-	return TRUE
+	return OP_OK
 
 /**
  * If you attack a mech with a mech, initiate combat between them
  */
 /// Old attackby.
-/obj/item/toy/mecha/proc/interaction_item(mob/living/user, obj/item/user_toy, datum/interaction/interaction)
-	if(istype(user_toy, /obj/item/toy/mecha))
-		var/obj/item/toy/mecha/M = user_toy
-		if(check_battle_start(user, M))
-			mecha_brawl(M, user)
-	return FALSE
+/obj/item/toy/mecha/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/toy/mecha/M = A.held
+	if(check_battle_start(user, M))
+		mecha_brawl(M, user)
+	return OP_DECLINE
 
 /**
  * Attack is called from the user's toy, aimed at target(another human), checking for target's toy.
@@ -177,7 +187,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 		to_chat(user, span_notice("You offer battle to [target.name]!"))
 		to_chat(target, span_notice(span_bold("[user.name] wants to battle with [user.p_their()] [name]!") + " " + span_italics("Attack them with a toy mech to initiate combat.")))
 		wants_to_battle = TRUE
-		om_after(src, 6 SECONDS, PROC_REF(withdraw_offer), user)
+		after(src, 6 SECONDS, PROC_REF(withdraw_offer), with = list(user))
 		return ITEM_INTERACT_SUCCESS
 
 	..()
@@ -185,12 +195,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 /**
  * Old attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
  */
-/obj/item/toy/mecha/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/mecha/proc/interaction_tk(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
 		play_sfx(user, SFX_MECHA_MECHSTEP)
-	return TRUE
+	return OP_OK
 
 /**
  * Resets the request for battle.
@@ -206,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 
 /obj/item/toy/mecha/examine()
 	. = ..()
-	. += span_notice("This toy's special attack is [special_attack_cry], [special_attack_type_message] ")
+	. += span_notice("This toy's special attack is [special_attack_cry], [special_attack_description()] ")
 	if(in_combat)
 		. += span_notice("This toy has a maximum health of [max_combat_health]. Currently, it's [combat_health].")
 		. += span_notice("Its special move light is [special_attack_cooldown? "flashing red." : "green and is ready!"]")
@@ -242,17 +253,20 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	COOLDOWN_START(src, timer, cooldown*cooldown_multiplier)
 	COOLDOWN_START(attacker, timer, attacker.cooldown*attacker.cooldown_multiplier)
 
-	om_after(src, 1 SECOND, PROC_REF(brawl_round), attacker, attacker_controller, opponent, 0)
+	after(src, 1 SECOND, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, 0), keeps_dead = TRUE)
 
 /// Checks the fighters, then half a second later the next exchange lands.
 /obj/item/toy/mecha/proc/brawl_round(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
 	//--THE BATTLE BEGINS--
-	if(combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
-		om_after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), attacker, attacker_controller, opponent, battle_length)
+	if(!QDELETED(attacker) && combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
+		after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), with = list(attacker, attacker_controller, opponent, battle_length), keeps_dead = TRUE)
 		return
 	brawl_end(attacker, attacker_controller, opponent)
 
 /obj/item/toy/mecha/proc/brawl_exchange(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
+	if(QDELETED(attacker))
+		brawl_end(attacker, attacker_controller, opponent)
+		return
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
 	//before we do anything - deal with charged attacks
@@ -342,9 +356,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 				act_message(attacker_controller, src, MSG_SELF(span_notice(" You don't know what to do next.")), \
 					MSG_OTHERS(span_notice(" %T% and [attacker] stand around awkwardly.")))
 
-	om_after(src, 0.5 SECONDS, PROC_REF(brawl_round), attacker, attacker_controller, opponent, battle_length + 1)
+	after(src, 0.5 SECONDS, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, battle_length + 1), keeps_dead = TRUE)
 
 /obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
+	if(QDELETED(attacker))
+		in_combat = FALSE
+		combat_health = max_combat_health
+		return
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
 	/// Lines chosen for the winning mech
@@ -465,7 +483,8 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
 
-DECLARE_LOOT(/obj/random/mech_toy, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/mecha))))
+CAPABILITIES(/obj/random/mech_toy)
+	loot(table = list(loot_types(1, typesof(/obj/item/toy/mecha))))
 
 /obj/item/toy/mecha/ripley
 	name = "toy ripley"

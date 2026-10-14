@@ -1,0 +1,13 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Gravity generator teardown no longer runs damage reactions on deleting parts or leaves gravity supplied by a destroyed generator."
+  - bugfix: "Machinery menus recheck sampled admission state instead of keeping stale eligibility."
+  - bugfix: "Power cell Charge and Drain menus preserve the refusal when the cell is outside your hands."
+  - bugfix: "Shuttle, suit cycler and recharge station menus retain their missing-item refusal rows."
+  - bugfix: "Requests completed while opening no longer disrupt chained questions."
+  - bugfix: "Pandemic computers insert compatible beakers and syringes on an ordinary click."
+  - bugfix: "Camera, Doppler, AI status and Pandemic menus preserve their missing-item refusals."
+  - bugfix: "AI and cyborg upload consoles install law modules on an ordinary click."
+  - bugfix: "Camera attacks correctly recognize compatible blunt items."
+  - bugfix: "Syndicate pod and prison shuttle windows enforce their existing access and route restrictions."

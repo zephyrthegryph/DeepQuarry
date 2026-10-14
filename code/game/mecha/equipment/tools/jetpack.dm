@@ -7,6 +7,10 @@
 	var/wait = 0
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/jetpack)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
+
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/can_attach(obj/mecha/M as obj)
 	if(!(locate_in_list(M.equipment, src.type)) && !M.active_jetpack)
@@ -21,7 +25,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/attach(obj/mecha/M as obj)
 	..()
 	if(!ion_trail)
-		own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow)
+		rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow)
 	ion_trail.set_up(chassis)
 	return
 
@@ -83,7 +87,7 @@
 					chassis.float_direction = direction
 					chassis.start_process(MECHA_PROC_MOVEMENT)
 					chassis.mecha_log_message(span_warning("Movement control lost. Inertial movement started."))
-			om_after(chassis, get_step_delay(), TYPE_PROC_REF(/obj/mecha, reset_can_move))
+			after(chassis, get_step_delay(), TYPE_PROC_REF(/obj/mecha, reset_can_move))
 			return 1
 		return 0
 	if(mech_body_plan().has_affliction(chassis, MECHA_INT_CONTROL_LOST))
@@ -120,13 +124,12 @@
 	if(!chassis) return
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] \[<a href=\"?src=\ref[src];toggle=1\">Toggle</a>\]"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "toggle", PROC_REF(topic_toggle))
 
-/obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/topic_toggle(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/topic_toggle(datum/act/op/A)
 	toggle()
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/do_after_cooldown()
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 	return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/cooldown_over()

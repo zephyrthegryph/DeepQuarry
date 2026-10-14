@@ -28,21 +28,9 @@ GLOBAL_LIST_INIT(dq_variants_suit_storage_teshari_beltcloak_standard, list(
 	"brown_grey" = list("name" = "brown belted cloak", "icon_state" = "tesh_beltcloak_brg"),
 ))
 
-/obj/item/clothing/suit/storage/teshari/beltcloak/standard/Initialize(mapload)
-	apply_variant()
-	. = ..()
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/standard)
+	variants(nameof(variant), PROC_REF(variant_table))
 
-/obj/item/clothing/suit/storage/teshari/beltcloak/standard/apply_variant()
-	if(!variant)
-		return
-	var/list/v = GLOB.dq_variants_suit_storage_teshari_beltcloak_standard[variant]
-	if(!v)
-		return
-	if(v["name"])
-		name = v["name"]
-	if(v["icon_state"])
-		icon_state = v["icon_state"]
-	if(v["desc"])
-		desc = v["desc"]
-	if(v["item_state"])
-		item_state = v["item_state"]
+/// The variant rows (variants(), code/engine/lifeforms/variants.dm).
+/obj/item/clothing/suit/storage/teshari/beltcloak/standard/proc/variant_table()
+	return GLOB.dq_variants_suit_storage_teshari_beltcloak_standard

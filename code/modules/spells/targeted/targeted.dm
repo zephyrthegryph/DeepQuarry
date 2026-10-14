@@ -29,7 +29,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 	var/list/compatible_mobs
 
 
-/datum/spell/targeted/choose_targets(mob/user = usr)
+/datum/spell/targeted/choose_targets(mob/user)
 	var/list/targets = list()
 
 	if(max_targets == 0) //unlimited
@@ -61,7 +61,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 
 			if(possible_targets.len)
 				if(spell_flags & SELECTABLE) //if we are allowed to choose. see setup.dm for details
-					var/mob/temp_target = cast_ask(user, "target", /datum/om/prompt/choice, message = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
+					var/mob/temp_target = cast_ask(user, "target", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets)
 					if(temp_target)
 						targets += temp_target
 				else
@@ -89,7 +89,7 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 			for(var/i = 1, i<=max_targets, i++)
 				if(!possible_targets.len)
 					break
-				var/mob/M = cast_ask(user, "target[i]", /datum/om/prompt/choice, message = "Choose the target for the spell.", title = "Targeting", choices = possible_targets, cancel_answer = "") // closing picks no more
+				var/mob/M = cast_ask(user, "target[i]", /datum/prompt/choice, question = "Choose the target for the spell.", title = "Targeting", choices = possible_targets, cancel_answer = "") // closing picks no more
 				if(isnull(M))
 					return list()
 				if(!M)
@@ -134,15 +134,15 @@ Targeted spells have two useful flags: INCLUDEUSER and SELECTABLE. These are exp
 	spell_injure(target, INJURY_TOXIN, amt_dam_tox, list(TREAT_ANTITOXIN))
 	spell_oxygen_debt(target, amt_dam_oxy)
 	//disabling
-	target.status_at_least(EFFECT_WEAKENED, amt_weakened)
-	target.status_at_least(EFFECT_PARALYZED, amt_paralysis)
-	target.status_at_least(EFFECT_STUNNED, amt_stunned)
+	target.status_at_least(STAT_WEAKENED, amt_weakened)
+	target.status_at_least(STAT_PARALYZED, amt_paralysis)
+	target.status_at_least(STAT_STUNNED, amt_stunned)
 	if(amt_weakened || amt_paralysis || amt_stunned)
 		if(target && target?.buckled_to())
 			var/atom/movable/_tmp_buck_43 = target?.buckled_to()
 			_tmp_buck_43.unbuckle_mob( target, TRUE)
-	target.status_at_least(EFFECT_BLINDED, amt_eye_blind)
-	target.status_adjust(EFFECT_BLURRY, amt_eye_blurry)
-	target.status_adjust(EFFECT_DIZZY, amt_dizziness)
-	target.status_at_least(EFFECT_CONFUSED, amt_confused)
-	target.status_adjust(EFFECT_STUTTERING, amt_stuttering)
+	target.status_at_least(STAT_BLINDED, amt_eye_blind)
+	target.status_adjust(STAT_BLURRY, amt_eye_blurry)
+	target.status_adjust(STAT_DIZZY, amt_dizziness)
+	target.status_at_least(STAT_CONFUSED, amt_confused)
+	target.status_adjust(STAT_STUTTERING, amt_stuttering)

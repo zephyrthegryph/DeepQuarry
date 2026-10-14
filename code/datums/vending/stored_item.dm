@@ -28,6 +28,11 @@
 	/// and only items identical to a pristine one collapse (vending).
 	var/adopt_state = TRUE
 
+CAPABILITIES(/datum/stored_item)
+	ref_many(nameof(instances)) // the stock ledger holds the actual products
+
+TRACKED(/datum/stored_item, amount)
+
 /datum/stored_item/New(stored, path, name = null, amount = 0)
 	src.item_path = path
 
@@ -37,7 +42,7 @@
 	else
 		src.item_name = name
 
-	src.amount  = amount
+	src.set_amount(amount)
 	src.stored = stored
 
 	..()
@@ -46,8 +51,7 @@
 /datum/stored_item/on_destroy(force)
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
-			qdel(product)
-	rel_clear(src, nameof(instances))
+			ended_with(product, src)
 	stored = null
 	..()
 
@@ -64,7 +68,7 @@
 /datum/stored_item/proc/materialize_all(loc)
 	for(var/i in 1 to amount)
 		materialize(loc)
-	amount = 0
+	set_amount(0)
 
 /datum/stored_item/proc/get_product(product_location)
 	if(!get_amount() || !product_location)
@@ -75,7 +79,7 @@
 		rel_remove(src, nameof(instances), product)
 		product.forceMove(product_location)
 	else
-		amount--
+		set_amount(amount - 1)
 		product = materialize(product_location)
 	if(istype(product, /obj/item))
 		var/obj/item/our_item = product
@@ -103,8 +107,8 @@
 			return FALSE
 	else if(hash != dq_stock_pristine_hash(item_path, variant))
 		return FALSE
-	amount += collapse_units(product)
-	qdel(product)
+	set_amount(amount + (collapse_units(product)))
+	consumed(product, src)
 	return TRUE
 
 /// Latent units one collapsed product adds.
@@ -116,14 +120,14 @@
 		return FALSE
 	if(try_collapse(product))
 		return TRUE
-	if(!product.move_into(stored, CONTAINER_SLOT_STOCK))
+	if(!move_into(stored, CONTAINER_SLOT_STOCK, product))
 		product.forceMove(stored)
 	rel_add(src, nameof(instances), product)
 	return TRUE
 
 /// Restock: adds latent copies. Nothing is created.
 /datum/stored_item/proc/refill_products(refill_amount)
-	amount += max(0, refill_amount)
+	set_amount(amount + (max(0, refill_amount)))
 
 /// A var of one of this record's items, without keeping anything made.
 /datum/stored_item/proc/sample_var(var_name)
@@ -136,7 +140,7 @@
 	if(!sample)
 		return null
 	. = sample.vars[var_name]
-	qdel(sample)
+	spent(sample)
 
 /// The holder calls this when a thing leaves its stock slot some other way.
 /datum/stored_item/proc/forget(atom/movable/thing)
@@ -157,7 +161,7 @@
 	var/list/vars = copy[STATE_KEY_VARS]
 	if(islist(vars))
 		vars = vars.Copy()
-		vars -= list("amount", "icon_state", "pixel_x", "pixel_y")
+		vars -= list("amount", "amount_at_make", "icon_state", "pixel_x", "pixel_y")
 		copy[STATE_KEY_VARS] = vars
 	return state_hash(copy)
 
@@ -181,7 +185,7 @@
 	var/max_amount = initial(proto.max_amount) || 50
 	while(amount > 0)
 		var/n = min(amount, max_amount)
-		amount -= n
+		set_amount(amount - (n))
 		materialize(loc, n)
 
 /datum/stored_item/stack/get_product(product_location, count)
@@ -192,7 +196,7 @@
 	count = min(count, max_amount) // We won't vend more than one full stack per call
 	if(amount > 0)
 		var/n = min(count, amount)
-		amount -= n
+		set_amount(amount - (n))
 		return materialize(product_location, n)
 	if(!LAZYLEN(instances))
 		return null

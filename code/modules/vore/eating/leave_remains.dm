@@ -122,10 +122,6 @@
 	desc = "A bleached bone. It's very non-descript and its hard to tell what species or part of the body it came from."
 	icon = 'icons/obj/bones_vr.dmi'
 	icon_state = "generic-1"
-	drop_sound = SFX_ITEMS_DROP_WOODEN   //sounds kinda like a bone
-	pickup_sound = SFX_ITEMS_PICKUP_WOODWEAPON
-	force = 0
-	throwforce = 0
 	item_state = "bone"
 	w_class = ITEMSIZE_SMALL
 	var/pred_ckey
@@ -135,23 +131,37 @@
 	name = "ruined component"
 	desc = "A ruined component. It seems to have come from some sort of robotic entity, but there's no telling what kind."
 	icon_state = "synth-1"
-	drop_sound = SFX_ITEMS_DROP_DEVICE   //not organic bones, so they get different sounds
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
-/obj/item/digestion_remains/Initialize(mapload, mob/living/pred, mob/living/prey)
-	. = ..()
-	if(!mapload)
-		pred_ckey = pred?.ckey
-		pred_name = pred?.name
-		if(prey && isliving(prey) && prey.size_multiplier != 1)
-			icon_scale_x = prey.size_multiplier
-			icon_scale_y = prey.size_multiplier
-			update_transform()
+CAPABILITIES(/obj/item/digestion_remains/synth)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
-EXTEND_INTERACTIONS(/obj/item/digestion_remains, INTERACT_SELF_AS(I_HURT, "Crumble", PROC_REF(remains_crumble_self)))
+/// Who digested whom (its constructor params, dropped once noted).
+/obj/item/digestion_remains/var/tmp/mob/living/pred_at_make
+/obj/item/digestion_remains/var/tmp/mob/living/prey_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The remains note their predator and keep the prey's size.
+/obj/item/digestion_remains/proc/note_meal(mob/living/prey)
+	var/mob/living/pred = pred_at_make
+	if(!pred && !prey)
+		return
+	pred_ckey = pred?.ckey
+	pred_name = pred?.name
+	if(prey && isliving(prey) && prey.size_multiplier != 1)
+		icon_scale_x = prey.size_multiplier
+		icon_scale_y = prey.size_multiplier
+		update_transform()
+
+CAPABILITIES(/obj/item/digestion_remains)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODWEAPON))
+	op("remains_crumble_self", in_hand(), stance(I_HURT), label("Crumble"), then(PROC_REF(remains_crumble_self)))
+	param(nameof(pred_at_make), pos = 1, keep = FALSE)
+	param(nameof(prey_at_make), pos = 2, apply = PROC_REF(note_meal), keep = FALSE)
 
 /// Old attack_self: squeezed in combat mode, the remains crumble away.
-/obj/item/digestion_remains/proc/remains_crumble_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/digestion_remains/proc/remains_crumble_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user,span_warning("As you squeeze the [name], it crumbles into dust and falls apart into nothing!"))
 	consume(src, user)
 	return TRUE

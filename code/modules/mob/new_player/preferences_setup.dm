@@ -165,7 +165,7 @@
 
 /datum/preferences/proc/dress_preview_mob(mob/living/carbon/human/mannequin)
 	if(!mannequin.dna) // Special handling for preview icons before SSAtoms has initailized.
-		own_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
+		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
 	// equip_preview_mob bitfield replaced by two toggles. Keep the same
@@ -257,7 +257,7 @@
 //   1. update_preview_icon() — dresses the mannequin and queues an async
 //      iconforge render of character_preview_b64 (see preview_async.dm).
 //      Stays inside update_preference's call stack, but isn't itself recursive.
-//   2. After the rebuild, mark "push pending" and om_after the actual
+//   2. After the rebuild, mark "push pending" and after() the actual
 //      send_full_update fan-out. The push runs on a fresh stack one tick later.
 //
 // Multiple rapid pref changes coalesce because the dq_push_pending guard
@@ -267,7 +267,7 @@
 	if(updating_preview_icon)
 		return
 	update_preview_icon(south_only = TRUE)
-	om_after_replace(src, 1, TYPE_PROC_REF(/datum/preferences, update_preview_icon))
+	after(src, 0.1 SECONDS, TYPE_PROC_REF(/datum/preferences, update_preview_icon), key = "preferences_preview_full")
 
 /datum/preferences/proc/dq_preference_affects_preview(datum/preference/preference)
 	if(!preference || preference.savefile_identifier != PREFERENCE_CHARACTER)
@@ -306,7 +306,7 @@
 	if(dq_data_push_pending)
 		return
 	dq_data_push_pending = TRUE
-	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push))
+	after(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_data_push), key = "preferences_data_push")
 
 /datum/preferences/proc/dq_flush_data_push()
 	dq_data_push_pending = FALSE
@@ -319,7 +319,7 @@
 	if(dq_preview_pending)
 		return
 	dq_preview_pending = TRUE
-	om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push))
+	after(src, 0, TYPE_PROC_REF(/datum/preferences, dq_flush_static_push), key = "preferences_static_push")
 
 /datum/preferences/proc/dq_flush_static_push()
 	dq_preview_pending = FALSE
@@ -339,7 +339,7 @@
 		return
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
 	if(!mannequin.dna)
-		own_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
+		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	mannequin.delete_inventory(TRUE)
 	dress_preview_mob(mannequin)
 	mannequin.update_transform()

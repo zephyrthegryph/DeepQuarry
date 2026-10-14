@@ -1,42 +1,45 @@
 /datum/tgui_module/crew_monitor
 	name = "Crew monitor"
-	tgui_id = "CrewMonitor"
 
 /datum/tgui_module/crew_monitor/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/simple/holo_nanomap),
 	)
 
-/datum/tgui_module/crew_monitor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/turf/T = get_turf(ui.user)
-	if(action && !issilicon(ui.user))
+/// Every button clicks (unless a silicon presses it) and works only on the station's levels.
+/datum/tgui_module/crew_monitor/proc/ui_typed(datum/act/op/A)
+	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
-	if(!T || !(T.z in using_map.player_levels))
-		to_chat(ui.user, span_boldwarning("Unable to establish a connection") + ": You're too far away from the station!")
-		return FALSE
+	return OP_OK
+
+/datum/tgui_module/crew_monitor/proc/ui_in_range(datum/act/op/A)
+	var/turf/T = get_turf(A.actor)
+	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
+
+MSG_DEF_SELF(crew_monitor/out_of_range, "Unable to establish a connection: You're too far away from the station!")
+
+/datum/tgui_module/crew_monitor/ui_opening(mob/user, datum/tgui/ui)
+	..()
+	ui.set_autoupdate(TRUE)
+
+CAPABILITIES(/datum/tgui_module/crew_monitor)
+	interface("CrewMonitor")
+	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
+	extend(TAG_UI, needs(req(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range))))
+	op("track", ui_act("track", arg("track", schema_ref(/mob/living/carbon/human))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_track)))
+	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
+
+/datum/tgui_module/crew_monitor/proc/ui_act_track(datum/act/op/A, mob/living/carbon/human/track)
+	var/mob/living/silicon/ai/AI = A.actor
+	var/mob/living/carbon/human/H = track
+	if(istype(H) && hassensorlevel(H, SUIT_SENSOR_TRACKING))
+		AI.ai_actual_track(H)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/crew_monitor, "track", ui_act_track, UI_ARG_REF("track", "proc:ui_source_registry_members_registry_mobs", /mob/living/carbon/human))
-UI_ACT_PROC(/datum/tgui_module/crew_monitor, ui_act_track)
-	if(isAI(ui.user))
-		var/mob/living/silicon/ai/AI = ui.user
-		var/mob/living/carbon/human/H = params["track"]
-		if(hassensorlevel(H, SUIT_SENSOR_TRACKING))
-			AI.ai_actual_track(H)
+/datum/tgui_module/crew_monitor/proc/ui_act_setzlevel(datum/act/op/A, mapZLevel)
+	var/datum/tgui/ui = SStgui.get_open_ui(A.actor, src)
+	ui?.set_map_z_level(mapZLevel)
 	return TRUE
-
-UI_ACT(/datum/tgui_module/crew_monitor, "setZLevel", ui_act_setzlevel, UI_ARG_NUM("mapZLevel"))
-UI_ACT_PROC(/datum/tgui_module/crew_monitor, ui_act_setzlevel)
-	ui.set_map_z_level(params["mapZLevel"])
-	return TRUE
-
-/// The list the UI_ARG_REF rows resolve refs in.
-/datum/tgui_module/crew_monitor/proc/ui_source_registry_members_registry_mobs()
-	return REGISTRY_MEMBERS(REGISTRY_MOBS)
-
-DECLARE_UI(/datum/tgui_module/crew_monitor, UI_FROM_VAR("tgui_id"), UI_AUTOUPDATE)
 
 /datum/tgui_module/crew_monitor/ui_prepare(mob/user, datum/tgui/ui)
 	var/z = get_z(user)
@@ -48,13 +51,11 @@ DECLARE_UI(/datum/tgui_module/crew_monitor, UI_FROM_VAR("tgui_id"), UI_AUTOUPDAT
 
 	return TRUE
 
-UI_DATA_REPLACE(/datum/tgui_module/crew_monitor, "merge:ui_data_datum_tgui_module_crew_monitor{isAI:num,map_levels:list,crewmembers:list}")
-
-/// The computed part of /datum/tgui_module/crew_monitor's window data (declared on its UI_DATA row).
-/datum/tgui_module/crew_monitor/proc/ui_data_datum_tgui_module_crew_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/tgui_module/crew_monitor/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 
-	data["isAI"] = isAI(user)
+	data["isAI"] = istype(user, /mob/living/silicon/ai)
 
 	var/z = get_z(user)
 	var/list/map_levels = uniqueList(using_map.get_visible_map_levels(z, TRUE))
@@ -77,12 +78,15 @@ UI_DATA_REPLACE(/datum/tgui_module/crew_monitor, "merge:ui_data_datum_tgui_modul
 
 // Subtype for glasses_state
 /datum/tgui_module/crew_monitor/glasses
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/glasses)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for self_state
 /datum/tgui_module/crew_monitor/robot
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/robot)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_self_state))
 
 // Subtype for nif_state
 /datum/tgui_module/crew_monitor/nif
-DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/nif, GLOB.tgui_nif_state)
+CAPABILITIES(/datum/tgui_module/crew_monitor/nif)
+	interface("CrewMonitor", state = nameof(GLOB.tgui_nif_state))

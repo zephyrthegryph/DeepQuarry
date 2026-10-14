@@ -3,9 +3,10 @@
 	icon_state = "sheet-glass" // replace materials update
 	default_type = MAT_GLASS
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	apply_colour = TRUE
+
+CAPABILITIES(/obj/item/stack/material/glass)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 
 /obj/item/stack/material/glass/reinforced
 	name = "reinforced glass"
@@ -39,8 +40,10 @@
 	icon_state = "sheet-titaniumglass"
 	item_state = "sheet-silver"
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_GLASS
 	default_type = MAT_TITANIUMGLASS
+
+CAPABILITIES(/obj/item/stack/material/glass/titanium)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))
 
 /obj/item/stack/material/glass/plastitanium
 	name = "plastitanium glass sheets"
@@ -48,5 +51,7 @@
 	icon_state = "sheet-plastitaniumglass"
 	item_state = "sheet-silver"
 	no_variants = FALSE
-	drop_sound = SFX_ITEMS_DROP_GLASS
 	default_type = MAT_PLASTITANIUMGLASS
+
+CAPABILITIES(/obj/item/stack/material/glass/plastitanium)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))

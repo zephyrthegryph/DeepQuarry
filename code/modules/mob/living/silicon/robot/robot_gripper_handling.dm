@@ -7,21 +7,24 @@
 			to_chat(user, span_danger("You are currently using the gripper on something!"))
 		return TRUE
 
-	if(in_radial_menu)
+	if(op_claimed(src)) // the pocket ring (op "pocket_menu") holds the gripper while it is open
 		if(visible)
 			to_chat(user, span_danger("You are currently in the radial menu! Close it to use the gripper."))
 		return TRUE
 	return FALSE
 
+/// The item the gripper shows (a mirror of held_item, tracked so the look follows it).
+/obj/item/gripper/var/obj/item/shown_item
+
 /obj/item/gripper/proc/update_ref(obj/item/new_item)
 	var/had_item = get_wrapped_item()
 	if(new_item)
-		om_link(src, new_item, /datum/om/relation/gripper_holding)
+		rel_set(src, nameof(held_item), new_item)
 	else if(had_item)
-		om_unlink(src, had_item, /datum/om/relation/gripper_holding)
+		rel_clear(src, nameof(held_item))
+	rel_set(src, nameof(shown_item), held_item) // the look follows the held item (the relation write publishes the change)
 	var/holding_item = get_wrapped_item()
 	// Feedback
-	update_icon()
 
 	if(had_item && !holding_item) // Dropped
 		our_robot.playsound_local(get_turf(our_robot), 'sound/machines/click.ogg', 50)
@@ -31,13 +34,13 @@
 		our_robot.playsound_local(get_turf(our_robot), 'sound/machines/click2.ogg', 50)
 
 ///Stops the gripper from being used multiple times when we're performing a do_after
-/obj/item/gripper/proc/begin_using(datum/source, datum/om/event/do_after_began/event)
-	EVENT_HANDLER
+/obj/item/gripper/proc/begin_using(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	gripper_in_use = TRUE
 
 ///Allows use of the gripper (and lets go of the item) after do_after is completed. Lets go if the wrapped item is no longer in our borg's contents (items get moved into the borgs contents when using the gripper)
-/obj/item/gripper/proc/end_using(datum/source, datum/om/event/do_after_ended/event)
-	EVENT_HANDLER
+/obj/item/gripper/proc/end_using(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	gripper_in_use = FALSE
 	var/obj/item/wrapped = get_wrapped_item()
 	if(!wrapped)
@@ -82,78 +85,65 @@
 			return pocket_content
 	return null
 
-DECLARE_INTERACTIONS(/obj/item/gripper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+/// The pocket ring's requirement: not mid-use of the gripper and not holding a special-handling item (which answers its own self-use). A second ring on the
+/// same gripper is the engine's: the ring claims the gripper (claims(CLAIM_TARGET)), and is_in_use() reads that claim for every other use.
+/obj/item/gripper/proc/pocket_menu_holds(datum/act/op/A)
+	return read_once(!special_handling && !gripper_in_use) ? null : pocket_menu_refusal(A)
 
-/// Old attack_self.
-/obj/item/gripper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why the ring is refused: nothing for special handling (silent, as before), else how the gripper is busy.
+/obj/item/gripper/proc/pocket_menu_refusal(datum/act/op/A)
 	if(special_handling)
-		return TRUE
-	if(is_in_use(user))
-		return TRUE
+		return /datum/msg/req_silent
+	return "You are currently using the gripper on something!"
 
+/// The ring's choices: one icon per pocket, built fresh each time it opens.
+/obj/item/gripper/proc/pocket_choices(datum/act/A)
 	generate_icons()
-
 	var/list/options = list()
-
 	for(var/Iname in photo_images)
 		options[Iname] = photo_images[Iname]
+	return options
 
-	in_radial_menu = TRUE
-	// optional: a cancel still answers (with no choice) and falls through to the wrapped item.
-	// Not shown at all (no client, or the same menu toggled shut): the gripper is free again.
-	if(!om_ask(user,/datum/om/prompt/choice/radial/gripper_pocket, PROC_REF(pocket_chosen), choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = FALSE, optional = TRUE))
-		in_radial_menu = FALSE
-	return TRUE
+/// The ring is drawn around the gripper.
+/obj/item/gripper/proc/pocket_anchor(datum/act/A)
+	return src
 
-/// The gripper's pocket picker; a dropped answer still frees the gripper.
-/datum/om/prompt/choice/radial/gripper_pocket
-
-/datum/om/prompt/choice/radial/gripper_pocket/refused(reason)
-	var/obj/item/gripper/gripper = receiver
-	if(istype(gripper))
-		gripper.in_radial_menu = FALSE
-	return ..()
-
-/datum/om/prompt/choice/radial/gripper_pocket/cancelled()
-	var/obj/item/gripper/gripper = receiver
-	if(istype(gripper))
-		gripper.in_radial_menu = FALSE
-	return ..()
-
-/// Pocket radial answer: select the pocket, or use the held item when cancelled.
-/obj/item/gripper/proc/pocket_chosen(datum/om/prompt/choice/radial/gripper_pocket/ask)
-	in_radial_menu = FALSE
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/// The ring was closed without a choice (a keep broke or the answer was dropped out of reach count too): the wrapped item is used, as it was before the ring.
+/obj/item/gripper/proc/pocket_menu_closed(datum/act/op/A)
+	if(A.reason != /datum/msg/op/answer_no)
+		return
+	var/mob/user = A.actor
 	var/obj/item/wrapped = get_wrapped_item()
-	if(choice)
-		var/obj/item/storage/internal/gripper/selected_pocket = pocket_choice_target(choice)
-		if(!selected_pocket)
-			return TRUE
-		if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
-			if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
-				clear_and_select_pocket() //Pick the next open pocket.
-				return TRUE
+	if(wrapped && !QDELETED(user))
+		wrapped.attack_self(user)
 
-			update_ref(selected_pocket)
-			return TRUE
+/// Pocket radial answer: select the pocket. The ring holds the gripper (claims(CLAIM_TARGET)) until it is answered or closed.
+/obj/item/gripper/proc/pocket_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(QDELETED(user))
+		return OP_OK
+	var/choice = A.answer ? A.answer.value : null
+	var/obj/item/storage/internal/gripper/selected_pocket = choice ? pocket_choice_target(choice) : null
+	if(!selected_pocket)
+		return OP_OK
+	if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
+		if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
+			clear_and_select_pocket() //Pick the next open pocket.
+			return OP_OK
 
-		rel_set(src, nameof(current_pocket), selected_pocket)
-		update_ref(null)
-		return TRUE
+		update_ref(selected_pocket)
+		return OP_OK
 
-	if(wrapped)
-		return wrapped.attack_self(user)
-	return TRUE
+	rel_set(src, nameof(current_pocket), selected_pocket)
+	update_ref(null)
+	return OP_OK
 
 /// Old attackby.
-/obj/item/gripper/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/gripper/proc/interaction_item(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(is_in_use(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/wrapped = get_wrapped_item()
 	if(wrapped)
@@ -164,27 +154,27 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		//The object has been deleted. Select a new pocket and stop here.
 		if(!wrapped)
 			clear_and_select_pocket()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		//Object is not in our contents AND is not in the gripper storage still. AKA, it was moved into something or somewhere. Either way, it's not ours anymore.
 		if(item_left_gripper(wrapped))
 			clear_and_select_pocket()
-			return TRUE
+			return OP_OK
 
 		//We were not given a resolved, the object still exists, AND we hit something. Attack that thing with our wrapped item.
 		if(!resolved && wrapped && O)
-			O.afterattack(wrapped, user, 1, null, interaction.stance)
+			O.afterattack(wrapped, user, 1, null, stance)
 			wrapped = get_wrapped_item()
 			//The object still exists, but is not in our contents OR back in the gripper storage.
 			if(item_left_gripper(wrapped))
 				clear_and_select_pocket()
-			return TRUE
+			return OP_OK
 
 		//Nothing happened to it. Just put it back into our pocket.
 		wrapped.forceMove(current_pocket)
-		return TRUE
+		return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gripper/afterattack(atom/target, mob/living/user, proximity, params, stance = I_HURT)
 	if(!proximity)
@@ -203,9 +193,6 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	update_ref(wrapped)
 
 	if(pick_up_item(target, user))
-		return
-
-	if(handle_afterattack_special(target, user))
 		return
 
 	if(item_left_gripper(wrapped))
@@ -278,46 +265,6 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	rel_set(src, nameof(current_pocket), selected_pocket)
 	update_ref(I)
 	return TRUE
-
-/obj/item/gripper/proc/handle_afterattack_special(atom/target, mob/living/user)
-	if(istype(target, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/A = target
-		if(!cover_is_open(A))
-			return TRUE
-
-		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
-			return TRUE
-
-		if(!grab_cell(A.cell, user))
-			return TRUE
-
-		var/obj/item/cell/taken = own_take(A, nameof(A.cell))
-		A.slot_ejected(nameof(A.cell), taken, user)
-		A.update_icon()
-
-		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
-
-		return TRUE
-
-	if(isrobot(target))
-		var/mob/living/silicon/robot/A = target
-		if(!A.opened)
-			return TRUE
-
-		if(!A.cell || dq_constraint_refusal(src, CONSTRAINT_HOLD, A.cell, user))
-			return TRUE
-
-		if(!grab_cell(A.cell, user))
-			return TRUE
-
-		A.remove_cell()
-		A.update_icon()
-
-		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))
-
-		return TRUE
-
-	return FALSE
 
 /// Returns the first empty gripper pocket, or null
 /obj/item/gripper/proc/find_empty_pocket()
@@ -434,27 +381,19 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gripper/appearance_overlays()
-	. = list()
-	var/obj/item/wrapped = get_wrapped_item()
+/obj/item/gripper/draw(datum/look/look)
+	..()
+	var/obj/item/wrapped = shown_item
 	if(!wrapped)
-		return .
-
-	// Draw the held item as a mini-image in the gripper itself
-	var/mutable_appearance/item_display = new(wrapped)
-	item_display.SetTransform(0.75, offset_y = -8)
-	item_display.pixel_x = 0
-	item_display.pixel_y = 0
-	item_display.plane = plane
-	item_display.layer = layer + 0.01
-	. += item_display
+		return
+	look.watch(wrapped)
+	// the held item as a mini-image in the gripper itself
+	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
 
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no
 /obj/item/gripper/proc/get_wrapped_item() //done as a proc so snowflake code can be found later down the line and consolidated.
-	var/obj/item/wrapped = src?.gripper_held()
-	return wrapped
+	return held_item
 
 /// Consolidates material stacks by searching our pockets to see if we currently have any stacks. Done in /obj/item/stack/attackby
 /obj/item/gripper/proc/consolidate_stacks(obj/item/stack/stack_to_consolidate)
@@ -473,16 +412,40 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 				stack_to_consolidate.transfer_to(stack)
 				return
 
-/obj/item/gripper/proc/grab_cell(obj/item/cell, mob/user)
+// ---- the gripper as a provider (code/engine/parts/provider.dm) ----
+
+/// The cyborg's selected gripper carries its held item and provides the hands that handle it.
+/mob/living/silicon/robot/held_carrier()
+	var/obj/item/gripper/G = module_active
+	return istype(G) ? G : null
+
+/// With a gripper selected, the cyborg's ops see what the gripper carries (nothing, when it is empty) as the held item.
+/mob/living/silicon/robot/held_for_ops()
+	var/obj/item/gripper/G = module_active
+	if(istype(G))
+		return G.get_wrapped_item()
+	return ..()
+
+/// Can the gripper take `thing` into a pocket now: not busy, a free pocket, and its CONSTRAINT_HOLD allows it.
+/obj/item/gripper/can_carry(obj/item/thing, mob/actor)
+	if(is_in_use(actor, FALSE) || !find_empty_pocket())
+		return FALSE
+	return !dq_constraint_refusal(src, CONSTRAINT_HOLD, thing, actor)
+
+/// Takes `thing` into a free pocket and holds it out.
+/obj/item/gripper/carry(obj/item/thing, mob/actor)
 	var/obj/item/storage/internal/gripper/P = find_empty_pocket()
 	if(!P)
-		to_chat(user, "Your gripper is full!")
 		return FALSE
-
-	cell.add_fingerprint(user)
-	cell.update_icon()
-	cell.forceMove(P)
-
+	thing.add_fingerprint(actor)
+	thing.forceMove(P)
 	rel_set(src, nameof(current_pocket), P)
-	update_ref(cell)
+	update_ref(thing)
 	return TRUE
+
+/// What the gripper held out left its pockets for good (an op put it into a machine): it lets go, and the next pocket is selected.
+/obj/item/storage/internal/gripper/Exited(atom/movable/AM, atom/new_loc)
+	. = ..()
+	var/obj/item/gripper/G = loc
+	if(istype(G) && G.get_wrapped_item() == AM && G.item_left_gripper(AM))
+		G.clear_and_select_pocket()

@@ -1,12 +1,7 @@
 /atom
 	///Light systems, both shouldn't be active at the same time.
 	var/light_system = STATIC_LIGHT
-	///Range of the light in tiles. Zero means no light.
-	var/light_range = 0
-	///Intensity of the light. The stronger, the less shadows you will see on the lit area.
-	var/light_power = 1
-	///Hexadecimal RGB string representing the colour of the light. White by default.
-	var/light_color = COLOR_WHITE
+	// The light's range, power and colour are the light_glow() type trait (code/modules/lighting/glow.dm): glow_of(src).range.
 	///Boolean variable for toggleable lights. Has no effect without the proper light_system, light_range and light_power values.
 	var/light_on = FALSE
 	///Bitflags to determine lighting-related atom properties.
@@ -30,41 +25,26 @@
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
-// The proc you should always use to set the light of this atom.
-// Nonesensical value for l_color default, so we can detect if it gets set to null.
-#define NONSENSICAL_VALUE -99999
-/atom/proc/set_light(l_range, l_power, l_color = NONSENSICAL_VALUE, l_on)
-	if(l_range > 0 && l_range < MINIMUM_USEFUL_LIGHT_RANGE)
-		l_range = MINIMUM_USEFUL_LIGHT_RANGE //Brings the range up to 1.4, which is just barely brighter than the soft lighting that surrounds players.
+CAPABILITIES(/atom/movable)
+	ref_many(nameof(swarm_members))
+	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
+	owns_one(nameof(experiment_handler), /datum/experiment_handler)
+	owns_one(nameof(overlay_light), /datum/overlay_lighting)
+	owns_one(nameof(recursive_move), /datum/recursive_move)
+	owns_one(nameof(riding_datum), /datum/riding)
+	owns_many(nameof(hose_connectors))
+	// What a mob is buckled to, what a puller pulls, what a grab holds and what an orbiter circles: sparse pairs, because a base type takes no var for them (code/engine/declare/link_state.dm).
+	// Their writers are buckle_link(), pull_link() and the grab's grab_made(); their readers are buckled_to(), buckled_mob_list(), pulling_target(), pulled_by_mob(),
+	// grab_target() and grabbed_by_list() (code/datums/om/relation.dm).
+	links(LINK_END(/mob/living, LK_BUCKLED_TO), LINK_END(/atom/movable, LK_BUCKLED_MOBS), sparse = TRUE, b_many = TRUE, holds_while = PROC_REF(link_stays_seated), a_contributes = list(STAT_BUCKLED, TRUE), a_on_unlink = TYPE_PROC_REF(/mob/living, buckle_released), b_on_unlink = PROC_REF(buckle_vacated))
+	links(LINK_END(/atom/movable, LK_PULLING), LINK_END(/atom/movable, LK_PULLED_BY), sparse = TRUE, holds_while = PROC_REF(link_stays_in_pull_range), a_on_unlink = PROC_REF(pull_released))
+	links(LINK_END(/atom/movable, LK_ORBITING), LINK_END(/atom, LK_ORBITERS), sparse = TRUE, b_many = TRUE, a_on_unlink = PROC_REF(orbit_released))
+	links(LINK_END(/obj/item/grab, LK_GRABBING), LINK_END(/mob/living, LK_GRABBED_BY), sparse = TRUE, b_many = TRUE, a_on_other_deleted = OTHER_DELETE_ME, b_on_unlink = TYPE_PROC_REF(/mob/living, grab_released))
+	// the default drag of every movable: buckle the dragged mob (code/game/objects/buckling.dm)
+	op("drag_buckle", item(/mob/living), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT), label("Buckle"), when(cond_all(nameof(can_buckle), nameof(drag_buckle))), then(PROC_REF(interaction_drag_buckle)))
+	op("vv_get_movable", topic_in(VV_TOPIC, VV_HK_GET_MOVABLE), needs(req_rights(R_ADMIN)), then(PROC_REF(vv_topic_get_movable)))
+	op("vv_edit_particles", topic_in(VV_TOPIC, VV_HK_EDIT_PARTICLES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_particles)))
 
-
-	// Legacy behavior helper
-	if(l_range == 0)
-		l_on = FALSE
-	else if(l_range > 0)
-		l_on = TRUE
-
-	var/needs_update = FALSE
-	if(!isnull(l_power) && l_power != light_power)
-		if(!isnull(set_light_power(l_power)))
-			needs_update = TRUE
-
-	if(!isnull(l_range) && l_range != light_range)
-		if(!isnull(set_light_range(l_range)))
-			needs_update = TRUE
-
-	if(l_color != NONSENSICAL_VALUE && l_color != light_color)
-		if(!isnull(set_light_color(l_color)))
-			needs_update = TRUE
-
-	if(!isnull(l_on) && l_on != light_on)
-		if(!isnull(set_light_on(l_on)))
-			needs_update = TRUE
-
-	if(needs_update)
-		update_light()
-
-#undef NONSENSICAL_VALUE
 
 // Will update the light (duh).
 // Creates or destroys it if needed, makes it update values, makes sure it's got the correct source turf...
@@ -75,8 +55,8 @@
 	if(light_system != STATIC_LIGHT)
 		CRASH("update_light() for [src] with following light_system value: [light_system]")
 
-	if (!light_on || !light_power || !light_range) // We won't emit light anyways, destroy the light source.
-		own_clear(src, nameof(light), OWN_DELETE)
+	if (!light_on || !glow_of(src).power || !glow_of(src).range) // We won't emit light anyways, destroy the light source.
+		rel_clear(src, nameof(light))
 	else
 		if (!ismovable(loc)) // We choose what atom should be the top atom of the light here.
 			. = src
@@ -86,7 +66,7 @@
 		if (light) // Update the light or create it if it does not exist.
 			light.update(.)
 		else
-			own_set(src, nameof(light), new/datum/light_source(src, .))
+			rel_set(src, nameof(light), new/datum/light_source(src, .))
 
 
 /**
@@ -100,11 +80,17 @@
 		return
 	. = opacity
 	opacity = new_opacity
+	tracked_changed(src, nameof(opacity))
+SETTER(/atom, opacity)
 
 
 /atom/movable/set_opacity(new_opacity)
 	. = ..()
-	if(isnull(.) || !isturf(loc))
+	opacity_light_update(.)
+
+/// The light a movable blocks follows its opacity; `old` is what set_opacity() returned (null: nothing changed).
+/atom/movable/proc/opacity_light_update(old)
+	if(isnull(old) || !isturf(loc))
 		return
 
 	if(opacity)
@@ -145,27 +131,27 @@
 
 /// Setter for the light power of this atom.
 /atom/proc/set_light_power(new_power)
-	if(new_power == light_power)
+	if(new_power == glow_of(src).power)
 		return
-	. = light_power
-	light_power = new_power
-	OM_EMIT(src, /datum/om/event/atom_update_light_power, .)
+	. = glow_of(src).power
+	set_trait(src, ENTRY_LIGHT_GLOW, "power", new_power)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_power, .)
 
 /// Setter for the light range of this atom.
 /atom/proc/set_light_range(new_range)
-	if(new_range == light_range)
+	if(new_range == glow_of(src).range)
 		return
-	. = light_range
-	light_range = new_range
-	OM_EMIT(src, /datum/om/event/atom_update_light_range, .)
+	. = glow_of(src).range
+	set_trait(src, ENTRY_LIGHT_GLOW, "range", new_range)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_range, .)
 
 /// Setter for the light color of this atom.
 /atom/proc/set_light_color(new_color)
-	if(new_color == light_color)
+	if(new_color == glow_of(src).color)
 		return
-	. = light_color
-	light_color = new_color
-	OM_EMIT(src, /datum/om/event/atom_update_light_color, .)
+	. = glow_of(src).color
+	set_trait(src, ENTRY_LIGHT_GLOW, "color", new_color)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_color, .)
 
 /// Setter for whether or not this atom's light is on.
 /atom/proc/set_light_on(new_value)
@@ -173,7 +159,9 @@
 		return
 	. = light_on
 	light_on = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_on, .)
+	tracked_changed(src, nameof(light_on)) // a drawn thing that shows its lamp redraws
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_on, .)
+SETTER(/atom, light_on)
 
 /// Setter for the light flags of this atom.
 /atom/proc/set_light_flags(new_value)
@@ -181,7 +169,7 @@
 		return
 	. = light_flags
 	light_flags = new_value
-	OM_EMIT(src, /datum/om/event/atom_update_light_flags, .)
+	PUBLISH_LEGACY(src, /datum/notice/atom_update_light_flags, .)
 
 ///Keeps track of the sources of dynamic luminosity and updates our visibility with the highest.
 /atom/movable/proc/update_dynamic_luminosity()

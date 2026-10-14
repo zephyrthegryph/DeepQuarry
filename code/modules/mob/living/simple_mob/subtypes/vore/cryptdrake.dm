@@ -58,20 +58,21 @@
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/cryptdrake)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/cryptdrake/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/cryptdrake/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The enormous beast snaps it's boney jaws around your form, effortlessly lifting you from the ground. Throwing it's head backwards, your body is tossed up momentarily as the maw parts wider, only for you to descend rapidly moments later. You're caught in the creature's throat for a moment, contracting dark purple flesh holding tightly onto you, there's no going back at this point. The peristaltic motions squeeze you down this tunnel towards your final destination, where you're soon relieved of the intense squelching to be pushed into a move flexible, stretching chamber. Immediately coated in caustic oozes, the world around you seems more than eager to ensure that you're soaked over every inch, wrinkled walls twisting and grinding around your body. The drake's stomach clenches and compresses over you rhythmically, attempting to eagerly add you to the soup of fluids that fill this sloshing gut. Omnipresent sounds of groaning, gurgling and burbling bodily functions signify just how active this process already is."
 	B.vore_sound = "Tauric Swallow"
@@ -102,7 +103,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/togg
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -110,31 +111,31 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/togg
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_1(mob/living/L)
 
-	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!L || L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		ai_busy_end()
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [L]!"))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2), with = list(L), keeps_dead = TRUE) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_2(mob/living/L)
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	ai_busy_end()
-	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
-		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
+	if(L && Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+		L.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 /mob/living/simple_mob/vore/cryptdrake/albedo //A slight variation of the cryptdrake requested for an event with glowing eyes
 	icon_dead = "cryptdrake_albedo-dead"

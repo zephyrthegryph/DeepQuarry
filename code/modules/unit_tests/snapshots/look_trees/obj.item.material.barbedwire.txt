@@ -1,0 +1,26 @@
+/obj/item/material/barbedwire icon: icons/obj/trap.dmi
+/obj/item/material/barbedwire state: barbedwire
+/obj/item/material/barbedwire dir: 2
+/obj/item/material/barbedwire color: #666666
+/obj/item/material/barbedwire overlay: icons/obj/trap.dmi:barbedwire:8:#000000
+/obj/item/material/barbedwire/plastic icon: icons/obj/trap.dmi
+/obj/item/material/barbedwire/plastic state: barbedwire
+/obj/item/material/barbedwire/plastic dir: 2
+/obj/item/material/barbedwire/plastic color: #cccccc
+/obj/item/material/barbedwire/plastic overlay: icons/obj/trap.dmi:barbedwire:8:#000000
+/obj/item/material/barbedwire/plastic/active icon: icons/obj/trap.dmi
+/obj/item/material/barbedwire/plastic/active state: barbedwire-out-out
+/obj/item/material/barbedwire/plastic/active dir: 2
+/obj/item/material/barbedwire/plastic/active color: #cccccc
+/obj/item/material/barbedwire/plastic/active overlay: icons/obj/trap.dmi:barbedwire-out-out:8:#000000
+/obj/item/material/barbedwire/vopal icon: icons/obj/trap.dmi
+/obj/item/material/barbedwire/vopal state: barbedwire
+/obj/item/material/barbedwire/vopal dir: 2
+/obj/item/material/barbedwire/vopal color: #0f0f0f
+/obj/item/material/barbedwire/vopal overlay: icons/obj/trap.dmi:barbedwire:8:#000000
+/obj/item/material/barbedwire/vopal/active icon: icons/obj/trap.dmi
+/obj/item/material/barbedwire/vopal/active state: barbedwire-out-out
+/obj/item/material/barbedwire/vopal/active dir: 2
+/obj/item/material/barbedwire/vopal/active color: #0f0f0f
+/obj/item/material/barbedwire/vopal/active overlay: icons/obj/trap.dmi:barbedwire-out-out:8:#000000
+

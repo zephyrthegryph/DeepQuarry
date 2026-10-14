@@ -5,10 +5,9 @@
 	name = "drink"
 	desc = "yummy"
 	icon = 'icons/obj/drinks.dmi'
-	drop_sound = SFX_ITEMS_DROP_DRINKGLASS
-	pickup_sound =  SFX_ITEMS_PICKUP_DRINKGLASS
 	icon_state = null
-	flags = OPENCONTAINER
+	/// Open from the start (a can is shut until it is opened).
+	var/open_at_start = TRUE
 	amount_per_transfer_from_this = 5
 	max_transfer_amount = 50
 	volume = 50
@@ -26,10 +25,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/reagent_containers/food/drinks/Initialize(mapload)
-	. = ..()
-	if (prob(cant_chance))
-		cant_open = TRUE
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/item/reagent_containers/food/drinks/proc/roll_cant_open(datum/roller/R)
+	return R.chance(cant_chance) ? TRUE : cant_open
 
 /obj/item/reagent_containers/food/drinks/on_reagent_change()
 	if (reagents.reagent_list.len > 0)
@@ -40,49 +38,66 @@
 			price_tag = null
 	return
 
-// micros inside drop out.
+/// A drink that is shut takes nobody.
+/obj/item/reagent_containers/food/drinks/stuffing_free(datum/act/op/A)
+	return is_open_container() ? null : MSG(food/closed_to_micros)
 
-/// Old attackby. FALSE falls to the food handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(food_can_insert_micro && istype(W, /obj/item/holder))
-		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
+/obj/item/reagent_containers/food/drinks/micro_stuffed_messages(mob/user, mob/living/micro)
+	to_chat(user, span_warning("You drop [micro] into \the [src]."))
+	to_chat(micro, span_warning("[user] drops you into \the [src]."))
 
-		if(!is_open_container())
-			to_chat(user, span_warning("You cannot drop anything into \the [src] without opening it first."))
-			return INTERACTION_HANDLED_PASS
+// A drink is a holder of its volume that is open or shut (a lid that is only a state: a can is opened by using it, once), that is sipped from by yourself and
+// fed to others in three seconds (in any stance unless it is a blow), poured from and into, and filled from a tank. What a sip tells and leaves behind is
+// sipped() and, a moment after the transfer, On_Consume().
+CAPABILITIES(/obj/item/reagent_containers/food/drinks)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DRINKGLASS, pickup = SFX_ITEMS_PICKUP_DRINKGLASS))
+	reagent_container(
+		volume = nameof(volume),
+		lid = TRUE,
+		lid_visible = FALSE,
+		starts_open = nameof(open_at_start),
+		taps = list(/obj/structure/reagent_dispensers),
+		rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT,
+		feed = TRUE,
+		splash = FALSE,
+		ingest_hostile = TRUE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount))
+	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand)))
+	extend("reagent_container.drink", then(PROC_REF(sipped)))
+	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped)))
+	rolls(nameof(cant_open), PROC_REF(roll_cant_open))
 
-		var/obj/item/holder/holder = W
+/// Used in hand while it is shut: it is opened (or found to have no ring pull).
+/obj/item/reagent_containers/food/drinks/proc/opened_in_hand(datum/act/op/A)
+	open(A.actor)
+	return OP_OK
 
+/// The one who feeds another is seen to begin.
+/obj/item/reagent_containers/food/drinks/proc/feeding_begins(datum/act/A)
+	var/datum/act/op/O = A
+	other_feed_message_start(O.actor, O.target)
+	return null
 
-		var/mob/living/living_mob = holder.held_mob
+/// A sip: what the one drinking is told and hears, and (a moment after it has been taken) what it did to the drink.
+/obj/item/reagent_containers/food/drinks/proc/sipped(datum/act/op/A)
+	var/mob/living/eater = A.target
+	var/mob/feeder = A.actor
+	if(eater == feeder)
+		self_feed_message(feeder)
+	else
+		other_feed_message_finish(feeder, eater)
+	feed_sound(feeder)
+	after(src, 1 TICK, TYPE_PROC_REF(/obj/item/reagent_containers/food/drinks, sipped_after), key = "sipped", with = list(eater, feeder, reagents.total_volume))
+	return OP_OK
 
-		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, nameof(holder.held_mob))
-		consume(holder, user)
-
-		to_chat(user, span_warning("You drop [living_mob] into \the [src]."))
-		to_chat(living_mob, span_warning("[user] drops you into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_SELF(null, PROC_REF(drinks_self)), \
-	INTERACT_ITEM(null, PROC_REF(drinks_item)), \
-)
-
-/// Old MouseDrop_T.
-/obj/item/reagent_containers/food/drinks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
-	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-
-		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
-
-		to_chat(user, span_warning("You climb into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/// The sip has been taken: it counts if the drink lost anything.
+/obj/item/reagent_containers/food/drinks/proc/sipped_after(mob/living/eater, mob/feeder, volume_before)
+	if(QDELETED(src))
+		return
+	On_Consume(eater, feeder, reagents.total_volume != volume_before)
 
 /obj/item/reagent_containers/food/drinks/proc/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)
 	if(SScontracts && eater && changed)
@@ -116,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume && changed)
@@ -128,69 +143,21 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 				feeder.put_in_hands(TrashItem)
 			else if(istype(trash,/obj/item))
 				feeder.put_in_hands(trash)
-			qdel(src)
+			consume(src, feeder)
 	return
 
 /obj/item/reagent_containers/food/drinks/on_rag_wipe(obj/item/reagent_containers/glass/rag/R)
 	wash(CLEAN_SCRUB)
-
-/// Old attack_self. `special_pass` is set when a subtype (the bottle) calls it directly to force the open.
-/obj/item/reagent_containers/food/drinks/proc/drinks_self(mob/user, obj/item/held, datum/interaction/interaction, special_pass)
-	if(special_handling && !special_pass)
-		return FALSE
-	if(!is_open_container() && !(is_can && interaction.stance == I_HURT))
-		open(user)
-	return TRUE
 
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
 	if(!cant_open)
 		play_sfx(src, SFX_CANOPEN, volume = rand(10,50))
 		GLOB.cans_opened_roundstat++
 		to_chat(user, span_notice("You open [src] with an audible pop!"))
-		flags |= OPENCONTAINER
+		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, TRUE)
 	else
 		to_chat(user, span_warning("...wait a second, this one doesn't have a ring pull. It's not a <b>can</b>, it's a <b>can't!</b>"))
 		name = "\improper can't of [initial(name)]"	//don't update the name until they try to open it
-
-/obj/item/reagent_containers/food/drinks/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(force && !(flags & NOBLUDGEON) && stance == I_HURT)
-		return ..()
-
-	if(standard_feed_mob(user, M))
-		return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/obj/item/reagent_containers/food/drinks/afterattack(obj/target, mob/user, proximity)
-	if(!proximity) return
-
-	if(standard_dispenser_refill(user, target))
-		return
-	if(standard_pour_into(user, target))
-		return
-	return ..()
-
-/obj/item/reagent_containers/food/drinks/standard_feed_mob(mob/user, mob/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	var/original_volume = reagents.total_volume
-	.=..()
-	var/changed = !(reagents.total_volume == original_volume)
-	On_Consume(target, user, changed)
-	return
-
-/obj/item/reagent_containers/food/drinks/standard_dispenser_refill(mob/user, obj/structure/reagent_dispensers/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	return ..()
-
-/obj/item/reagent_containers/food/drinks/standard_pour_into(mob/user, atom/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	return ..()
 
 /obj/item/reagent_containers/food/drinks/self_feed_message(mob/user)
 	if(amount_per_transfer_from_this == volume)	//I wanted to use a switch, but switch statements can't use vars and the maximum volume of containers varies
@@ -239,12 +206,13 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	icon_state = "golden_cup"
 	item_state = "" //nope :(
 	w_class = ITEMSIZE_LARGE
-	force = 14
-	throwforce = 10
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = null
 	volume = 150
-	flags = OPENCONTAINER
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/golden_cup)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 14))
 
 /obj/item/reagent_containers/food/drinks/golden_cup/on_reagent_change()
 	..()
@@ -262,10 +230,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGENT_ID_MILK = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/milk)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(reagents(add = list(REAGENT_ID_MILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/soymilk
 	name = "soymilk carton"
@@ -275,10 +243,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/milk, null, list(REAGE
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(REAGENT_ID_SOYMILK = 50))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/soymilk)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(reagents(add = list(REAGENT_ID_SOYMILK = 50)))
 
 /obj/item/reagent_containers/food/drinks/smallmilk
 	name = "small milk carton"
@@ -289,10 +257,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/soymilk, null, list(RE
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(REAGENT_ID_MILK = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallmilk)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(reagents(add = list(REAGENT_ID_MILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/smallchocmilk
 	name = "small chocolate milk carton"
@@ -303,10 +271,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallmilk, null, list(
 	item_state = "carton"
 	center_of_mass_x = 16
 	center_of_mass_y = 9
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, list(REAGENT_ID_CHOCOLATEMILK = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/smallchocmilk)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+	configure(reagents(add = list(REAGENT_ID_CHOCOLATEMILK = 30)))
 
 /obj/item/reagent_containers/food/drinks/coffee
 	name = "\improper Robust Coffee"
@@ -316,10 +284,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/smallchocmilk, null, l
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 15
 	center_of_mass_y = 10
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REAGENT_ID_COFFEE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/coffee)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_COFFEE = 30)))
 
 /obj/item/reagent_containers/food/drinks/tea
 	name = "cup of Duke Purple tea"
@@ -330,10 +298,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/coffee, null, list(REA
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGENT_ID_TEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/tea)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_TEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf_tea
 	name = "cup of Count Mauve decaffeinated tea"
@@ -344,10 +312,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/tea, null, list(REAGEN
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf_tea, null, list(REAGENT_ID_TEADECAF = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf_tea)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_TEADECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/ice
 	name = "cup of ice"
@@ -355,7 +323,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf_tea, null, list(
 	icon_state = "ice"
 	center_of_mass_x = 15
 	center_of_mass_y = 10
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/ice, null, list(REAGENT_ID_ICE = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/ice)
+	configure(reagents(add = list(REAGENT_ID_ICE = 30)))
 
 /obj/item/reagent_containers/food/drinks/h_chocolate
 	name = "cup of Counselor's Choice hot cocoa"
@@ -366,10 +335,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/ice, null, list(REAGEN
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 15
 	center_of_mass_y = 13
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, list(REAGENT_ID_HOTCOCO = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/h_chocolate)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_HOTCOCO = 30)))
 
 /obj/item/reagent_containers/food/drinks/greentea
 	name = "cup of green tea"
@@ -380,10 +349,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/h_chocolate, null, lis
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(REAGENT_ID_GREENTEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/greentea)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_GREENTEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/chaitea
 	name = "cup of chai tea"
@@ -394,10 +363,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/greentea, null, list(R
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(REAGENT_ID_CHAITEA = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/chaitea)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_CHAITEA = 30)))
 
 /obj/item/reagent_containers/food/drinks/decaf
 	name = "cup of decaf coffee"
@@ -408,10 +377,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/chaitea, null, list(RE
 	trash = /obj/item/trash/coffee
 	center_of_mass_x = 16
 	center_of_mass_y = 14
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAGENT_ID_DECAF = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/decaf)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_DECAF = 30)))
 
 /obj/item/reagent_containers/food/drinks/dry_ramen
 	name = "Cup Ramen"
@@ -421,10 +390,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/decaf, null, list(REAG
 	trash = /obj/item/trash/ramen
 	center_of_mass_x = 16
 	center_of_mass_y = 11
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(REAGENT_ID_DRYRAMEN = 30))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	configure(reagents(add = list(REAGENT_ID_DRYRAMEN = 30)))
 
 /obj/item/reagent_containers/food/drinks/sillycup
 	name = "paper cup"
@@ -434,27 +403,37 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(
 	volume = 10
 	center_of_mass_x = 16
 	center_of_mass_y = 12
-	drop_sound = SFX_ITEMS_DROP_PAPERCUP
-	pickup_sound = SFX_ITEMS_PICKUP_PAPERCUP
 
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change()
 	..()
 	if(reagents.total_volume)
-		icon_state = "water_cup"
+		set_icon_state("water_cup")
 	else
-		icon_state = "water_cup_e"
+		set_icon_state("water_cup_e")
 
-/obj/item/reagent_containers/food/drinks/sillycup/MouseDrop(obj/over_object as obj)
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). An empty cup dropped on a cooler goes back in it.
+/obj/item/reagent_containers/food/drinks/sillycup/proc/drop_input(datum/act/input/A)
+	if(cup_return_with_actor(A.actor, A.over))
+		return TRUE
+	return INPUT_FALLTHROUGH
+
+/// TRUE consumes the same empty-cup/cooler branch even when its range or capacity check refuses.
+/obj/item/reagent_containers/food/drinks/sillycup/proc/cup_return_with_actor(mob/user, obj/over_object)
 	if(!reagents.total_volume && istype(over_object, /obj/structure/reagent_dispensers/water_cooler))
-		if(over_object.Adjacent(usr))
+		if(over_object.Adjacent(user))
 			var/obj/structure/reagent_dispensers/water_cooler/W = over_object
 			if(W.cupholder && W.cups < 10)
+				var/message = span_notice("You put the [src] in the cup dispenser.")
+				if(!consume(src, user))
+					return TRUE
 				W.cups++
-				to_chat(usr, span_notice("You put the [src] in the cup dispenser."))
-				qdel(src)
-				W.update_icon()
-	else
-		return ..()
+				to_chat(user, message)
+		return TRUE
+	return FALSE
 
 //////////////////////////drinkingglass and shaker//
 //Note by Darem: This code handles the mixing of drinks. New drinks go in three places: In Chemistry-Reagents.dm (for the drink

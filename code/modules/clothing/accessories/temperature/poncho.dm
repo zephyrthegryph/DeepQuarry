@@ -2,14 +2,12 @@
 /obj/item/clothing/accessory/poncho/thermal
 	name = "thermal poncho"
 	desc = "A simple, comfortable poncho with a thermal foil layer."
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS|LEGS
 
-	cold_protection = CHEST|ARMS
-	heat_protection = CHEST|ARMS
+CAPABILITIES(/obj/item/clothing/accessory/poncho/thermal)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS|LEGS))
+	configure(item_protection(cold_parts = CHEST|ARMS, heat_parts = CHEST|ARMS, min_cold = T0C - 40, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE))
 
-	min_cold_protection_temperature = T0C - 40
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
+
 
 /obj/item/clothing/accessory/poncho/thermal/green
 	name = "green thermal poncho"

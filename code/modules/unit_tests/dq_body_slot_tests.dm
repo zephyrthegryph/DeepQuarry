@@ -4,14 +4,14 @@
 /// The slot ids a holder declares, in order, joined for comparison.
 /proc/dq_test_slot_ids(atom/holder)
 	var/list/ids = list()
-	for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(holder))
+	for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(holder))
 		ids += def.slot_id
 	return jointext(ids, ",")
 
 /// The slot ids the group declared for holder key `key`, joined.
 /proc/dq_test_slot_group_ids(key)
 	var/list/ids = list()
-	for(var/datum/om/relation/slot/def as anything in (om_registry().slot_group_for(key) || list()))
+	for(var/datum/relation_definition/slot/def as anything in (definition_registry().slot_group_for(key) || list()))
 		ids += def.slot_id
 	return jointext(ids, ",")
 
@@ -31,9 +31,9 @@
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	TEST_ASSERT_EQUAL(dq_test_slot_ids(M), jointext(list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BODY), ","), "a simple body should declare hands and its interior")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	M.has_hands = FALSE
+	M.set_has_hands(FALSE)
 	TEST_ASSERT_NOTNULL(dq_ledger_refusal(pen, M, SLOT_ID_HAND_L, M), "a simple mob without hands should refuse its hand slots")
-	M.has_hands = TRUE
+	M.set_has_hands(TRUE)
 	TEST_ASSERT_NULL(dq_ledger_refusal(pen, M, SLOT_ID_HAND_L, M), "a simple mob with hands should hold things")
 
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot)
@@ -69,7 +69,7 @@
 /datum/unit_test/dq_body_slot_torso_vest/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.body_parts_covered = UPPER_TORSO
+	vest.set_body_parts_covered(UPPER_TORSO)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 30, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
 
@@ -108,59 +108,59 @@
 /datum/unit_test/proc/dq_dress_for_protection(mob/living/carbon/human/H)
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
 	uniform.set_armor(dq_armor(list("melee" = 5, "bullet" = 0, "laser" = 5, "energy" = 0, "bomb" = 0, "bio" = 10, "rad" = 0)))
-	uniform.body_parts_covered = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS
-	uniform.siemens_coefficient = 0.9
-	uniform.heat_protection = 0
-	uniform.max_heat_protection_temperature = 0
-	uniform.cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS
-	uniform.min_cold_protection_temperature = 250
+	uniform.set_body_parts_covered(UPPER_TORSO | LOWER_TORSO | LEGS | ARMS)
+	uniform.set_siemens_coefficient(0.9)
+	uniform.set_heat_protection(0)
+	uniform.set_max_heat_protection_temperature(0)
+	uniform.set_cold_protection(UPPER_TORSO | LOWER_TORSO | LEGS | ARMS)
+	uniform.set_min_cold_protection_temperature(250)
 	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform should equip")
 
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.body_parts_covered = UPPER_TORSO | LOWER_TORSO
+	vest.set_body_parts_covered(UPPER_TORSO | LOWER_TORSO)
 	vest.set_armor(dq_armor(list("melee" = 40, "bullet" = 30, "laser" = 20, "energy" = 10, "bomb" = 5, "bio" = 0, "rad" = 0)))
-	vest.siemens_coefficient = 0.6
-	vest.heat_protection = UPPER_TORSO
-	vest.max_heat_protection_temperature = 500
-	vest.cold_protection = UPPER_TORSO | LOWER_TORSO
-	vest.min_cold_protection_temperature = 200
+	vest.set_siemens_coefficient(0.6)
+	vest.set_heat_protection(UPPER_TORSO)
+	vest.set_max_heat_protection_temperature(500)
+	vest.set_cold_protection(UPPER_TORSO | LOWER_TORSO)
+	vest.set_min_cold_protection_temperature(200)
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
 
 	var/obj/item/clothing/head/helmet/helmet = allocate(/obj/item/clothing/head/helmet)
-	helmet.body_parts_covered = HEAD
+	helmet.set_body_parts_covered(HEAD)
 	helmet.set_armor(dq_armor(list("melee" = 50, "bullet" = 25, "laser" = 25, "energy" = 5, "bomb" = 20, "bio" = 0, "rad" = 0)))
-	helmet.siemens_coefficient = 0.7
-	helmet.heat_protection = HEAD
-	helmet.max_heat_protection_temperature = 1000
+	helmet.set_siemens_coefficient(0.7)
+	helmet.set_heat_protection(HEAD)
+	helmet.set_max_heat_protection_temperature(1000)
 	TEST_ASSERT(H.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD, disable_warning = TRUE), "the helmet should equip")
 
 	var/obj/item/clothing/gloves/black/gloves = allocate(/obj/item/clothing/gloves/black)
-	gloves.body_parts_covered = HANDS
+	gloves.set_body_parts_covered(HANDS)
 	gloves.set_armor(dq_armor(list("melee" = 10, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	gloves.siemens_coefficient = 0
-	gloves.cold_protection = HANDS
-	gloves.min_cold_protection_temperature = 100
+	gloves.set_siemens_coefficient(0)
+	gloves.set_cold_protection(HANDS)
+	gloves.set_min_cold_protection_temperature(100)
 	TEST_ASSERT(H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES, disable_warning = TRUE), "the gloves should equip")
 
 	var/obj/item/clothing/shoes/black/shoes = allocate(/obj/item/clothing/shoes/black)
-	shoes.body_parts_covered = FEET
+	shoes.set_body_parts_covered(FEET)
 	shoes.set_armor(dq_armor(list("melee" = 15, "bullet" = 5, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	shoes.siemens_coefficient = 0.5
-	shoes.heat_protection = FEET
-	shoes.max_heat_protection_temperature = 800
+	shoes.set_siemens_coefficient(0.5)
+	shoes.set_heat_protection(FEET)
+	shoes.set_max_heat_protection_temperature(800)
 	TEST_ASSERT(H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, disable_warning = TRUE), "the shoes should equip")
 
 	var/obj/item/clothing/glasses/meson/glasses = allocate(/obj/item/clothing/glasses/meson)
-	glasses.body_parts_covered = HEAD
+	glasses.set_body_parts_covered(HEAD)
 	glasses.set_armor(dq_armor(list("melee" = 3, "bullet" = 0, "laser" = 7, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(glasses, SLOT_ID_EYES, disable_warning = TRUE), "the glasses should equip")
 
 	// An accessory attached to worn clothing adds its own armour and heat protection.
 	var/obj/item/clothing/accessory/armband/band = allocate(/obj/item/clothing/accessory/armband)
-	band.body_parts_covered = ARM_LEFT
+	band.set_body_parts_covered(ARM_LEFT)
 	band.set_armor(dq_armor(list("melee" = 12, "bullet" = 0, "laser" = 0, "energy" = 0, "bomb" = 0, "bio" = 0, "rad" = 0)))
-	band.heat_protection = ARM_LEFT
-	band.max_heat_protection_temperature = 2000
+	band.set_heat_protection(ARM_LEFT)
+	band.set_max_heat_protection_temperature(2000)
 	TEST_ASSERT(uniform.attempt_attach_accessory(band), "the armband should attach to the uniform")
 
 /// The old per-hit armour sum: every covering item's armour list.
@@ -173,8 +173,8 @@
 /datum/unit_test/proc/dq_old_siemens(mob/living/carbon/human/H, obj/item/organ/external/E)
 	. = max(H.species.siemens_coefficient, 0)
 	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
-		if(C.body_parts_covered & E.body_part)
-			. *= C.siemens_coefficient
+		if(worn_of(C).covers & E.body_part)
+			. *= protection_of(C).siemens
 	. *= H.factor(BF_SIEMENS)
 
 /// The old per-tick heat or cold protection flags, restricted to the parts

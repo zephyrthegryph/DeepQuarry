@@ -1,15 +1,32 @@
 // the SMES
 // stores power
 //
-// M3: charge, input and output run in Rust (verdigris/domains/power/src/smes.rs)
-// every power step: the output is a supply on the SMES node's network, the input
-// a demand on each terminal's. The SMES never polls: it runs on the machine
-// pipeline (machine_pipeline.dm), whose power stage calls power_step() once
-// when a setting changes (CHANGE_MACHINE_SETTINGS) and then idles; power_event()
-// applies the charge and the shown state.
+// M3: charge, input and output run in Rust (verdigris/domains/power/src/smes.rs) every power step: the output is a supply on the SMES node's
+// network, the input a demand on each terminal's. The SMES never polls Rust by hand: its settings reach Rust through push_to_rust() (generated:
+// it runs once per frame after any state it reads changed), and power_poll() reads back what flowed (Rust's output_used, input_used and
+// input_available) and shows it: the input and output lamps (inputting/outputting 0 off, 1 trying, 2 flowing), the window's readings, the hum.
+//
+// The SMES is declared (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md): ONE CAPABILITIES list says what it is: a machine
+// that works only while it is not broken and has an input terminal, its registry membership, its input terminals (a pair link) and its sound loop,
+// its window and the buttons in it, the tools that build and cut a terminal and weld the casing, and what an electromagnetic pulse does to it.
+// The imperative parts below are its own: the Rust push and poll, the charge arithmetic, the conditions and effects the declarations name, and the
+// look.
+//
+// What the machine core still keeps until the machine track (phase 4): the BROKEN stat bit, read through stat_bits_allow() (only BROKEN: a SMES is
+// its network's supply, so the area going dark must not stop it), the maintenance hatch (maintenance_flags: the screwdriver and the crowbar),
+// RefreshParts() with the circuit board, and the power node binding of /obj/machinery/power.
 
-//# define SMESMAXCHARGELEVEL 250000 Unused
-//# define SMESMAXOUTPUT 250000 Unused
+MSG_DEF_SELF(smes/hatch_shut, "You need to open the access hatch first.")
+MSG_DEF_SELF(smes/whole, "It is already fully repaired.")
+MSG_DEF(smes/repaired, "You repair all structural damage to %T%.", "%U% repairs %T%.")
+MSG_DEF_SELF(smes/on_the_unit, "You must not be on the same tile as it.")
+MSG_DEF_SELF(smes/space, "You can't build a terminal on space.")
+MSG_DEF_SELF(smes/plating, "You must remove the floor plating first.")
+MSG_DEF_SELF(smes/terminal_there, "There is already a terminal here.")
+MSG_DEF_SELF(smes/no_terminal_here, "There is no terminal on this tile.")
+MSG_DEF_SELF(smes/unwired, "It has no input terminal.")
+MSG_DEF(smes/terminal_built, "You add cables to %T%.", "%U% has added cables to %T%.")
+MSG_DEF(smes/terminal_cut, "You cut the cables and dismantle the power terminal.", "%U% cut the cables and dismantled the power terminal.")
 
 /obj/machinery/power/smes
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -29,42 +46,114 @@
 	/// read it with stored_charge(), change it with adjust_stored_charge()/set_stored_charge().
 	var/initial_charge = 1e6
 
-	var/input_attempt = 0 			// 1 = attempting to charge, 0 = not attempting to charge
-	var/inputting = 0 				// 1 = actually inputting, 0 = not inputting
-	var/input_level = 50000 		// amount of power the SMES attempts to charge by
-	var/input_level_max = 200000 	// cap on input_level
+	/// The input switch (the window's button, a wire's pulse).
+	var/input_attempt = 0
+	/// What the input lamp shows: 0 off, 1 trying (nothing to take), 2 charging. Rust's reading, applied by power_poll().
+	var/inputting = 0
+	/// The power the unit asks of its input terminals (W).
+	var/input_level = 50000
+	/// The cap on input_level (W): its coils' I/O.
+	var/input_level_max = 200000
 
-	var/output_attempt = 1 			// 1 = attempting to output, 0 = not attempting to output
-	var/outputting = 0 				// 1 = actually outputting, 0 = not outputting
-	var/output_level = 50000		// amount of power the SMES attempts to output
-	var/output_level_max = 200000	// cap on output_level
+	/// The output switch.
+	var/output_attempt = 1
+	/// What the output lamp shows: 0 off, 1 trying (nothing drawn), 2 feeding a load. Rust's reading, applied by power_poll().
+	var/outputting = 0
+	/// The power the unit offers its network (W).
+	var/output_level = 50000
+	/// The cap on output_level (W).
+	var/output_level_max = 200000
 
-	//Holders for powerout event.
-	var/last_output_attempt	= 0
-	var/last_input_attempt	= 0
-	var/last_charge			= 0
+	/// What Rust reported last step (W): the leftover supply the input terminals saw, and what the output delivered.
+	var/input_available = 0
+	var/output_used = 0
 
-	//For icon overlay updates
+	/// The charge gauge the look shows (0..5).
 	var/last_disp
 
+	/// A wire is cut: the input, or the output, is off whatever its switch says.
 	var/input_cut = 0
-	var/input_pulsed = 0
 	var/output_cut = 0
-	var/output_pulsed = 0
 
 	var/name_tag = null
-	var/building_terminal = 0 //Suggestions about how to avoid clickspam building several terminals accepted!
+	/// The unit's input terminals (a pair link: each one's `unit` is this unit).
 	var/list/terminals // Lazy
-	var/should_be_mapped = 0 // If this is set to 0 it will send out warning on New()
+	/// Placed with no input terminal: dark and idle until one is built (a unit that loses its terminal later keeps working).
+	var/unwired = FALSE
 	var/grid_check = FALSE // If true, suspends all I/O.
+	/// What a power failure event emptied out of the unit (list(charge, output switch, input switch)), for power_restore() to put back.
+	var/list/held_through_outage
 	/// Power events applied (tests check that an idle SMES hears none).
 	var/power_event_count = 0
 	/// Whether initial_charge has been written into the Rust entity.
 	var/charge_seeded = FALSE
 
-	// More humming noises
-	var/datum/looping_sound/generator/soundloop
+	/// The hum while the output feeds a load (owned: made with the unit, deleted with it).
+	var/datum/looping_sound/generator/smes/soundloop
 	var/noisy = FALSE
+
+// What Rust is told (push_to_rust() reads these), and what the look and the window read.
+TRACKED(/obj/machinery/power/smes, capacity)
+TRACKED(/obj/machinery/power/smes, input_level)
+TRACKED(/obj/machinery/power/smes, input_level_max)
+TRACKED(/obj/machinery/power/smes, output_level)
+TRACKED(/obj/machinery/power/smes, output_level_max)
+TRACKED(/obj/machinery/power/smes, input_available)
+TRACKED(/obj/machinery/power/smes, output_used)
+TRACKED(/obj/machinery/power/smes, input_cut)
+TRACKED(/obj/machinery/power/smes, output_cut)
+TRACKED(/obj/machinery/power/smes, grid_check)
+
+/// The unit moves power now: it works (not broken, wired) and no grid check holds it. What push_to_rust() sends as the switches' gate.
+STAT(/obj/machinery/power/smes, working, ALL)
+
+CAPABILITIES(/obj/machinery/power/smes)
+	after_init(0, then(PROC_REF(mapped_after_init)))
+	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)
+	membership(joins = REGISTRY_SMES)
+	contributes(STAT_OPERABLE, cond_not(nameof(unwired)), reason = MSG(smes/unwired))
+	contributes(STAT_WORKING, STAT_OPERABLE)
+	contributes(STAT_WORKING, cond_not(nameof(grid_check)))
+	space(SPACE_PANEL, door = nameof(panel_open), closed = MSG(smes/hatch_shut))
+	links(/obj/machinery/power/smes::terminals, /obj/machinery/power/terminal/smes_input::unit, a_many = TRUE)
+	owns_one(nameof(soundloop), /datum/looping_sound/generator/smes, starts = PROC_REF(make_soundloop))
+	on_change(nameof(outputting), ANY, then(PROC_REF(output_shown)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
+	examine_line(PROC_REF(examine_state))
+
+	section(controls, "The unit's window and the buttons in it")
+	interface("Smes")
+	extend("ui_open", ungated()) // a unit with no input terminal (unwired, so not operable) still shows its window; its buttons stay behind the operable gate
+	op("tryinput", ui_act(), toggles(nameof(input_attempt)), then(PROC_REF(input_switched)))
+	op("tryoutput", ui_act(), toggles(nameof(output_attempt)), then(PROC_REF(output_switched)))
+	op("input", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))
+	op("output", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_output)))
+
+	// the hatch's tools answer before the window does (the window answers any click of the hand, a held tool included)
+	extend("machine_panel", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_panel_close", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_deconstruct", priority(OP_PRIORITY_DEFAULT + 1))
+
+	section(hatch, "What the tools do behind the open hatch")
+	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
+		needs(req(PROC_REF(terminal_site_refusal))),
+		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built)))
+	op("cut_terminal", tool(TOOL_WIRECUTTER), at(SPACE_PANEL),
+		needs(req(PROC_REF(terminal_cut_refusal))),
+		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
+	op("weld", lit_welder(fuel = 0), at(SPACE_PANEL), needs(req(PROC_REF(casing_damaged))),
+		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
+
+/// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
+/// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) -- unlike the generic terminal, or an APC's own, this is a real network
+/// node in its own right, not a construction anchor for another entity's. Its `unit` (declared on every terminal) is the pair end of the SMES's
+/// `terminals`; master() answers it, so every reader of a terminal's master (its destruction, an overload) reaches the unit.
+/obj/machinery/power/terminal/smes_input
+
+/// The SMES's hum: the generator's loop, quieter at range and with a harsher falloff.
+/datum/looping_sound/generator/smes
+	extra_range = -6
+	falloff = 0.2
 
 /obj/machinery/power/smes/drain_power(drain_check, surge, amount = 0)
 
@@ -75,69 +164,38 @@
 	adjust_stored_charge(-smes_amt)
 	return smes_amt / SMESRATE
 
-REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
-
-/// A SMES's own input terminal (rust_architecture.md step 3): its own
-/// entity, on its own region, naming the SMES unit
-/// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) --
-/// unlike the generic terminal, or an APC's own, this is a real network
-/// node in its own right, not a construction anchor for another entity's.
-/obj/machinery/power/terminal/smes_input
-
+// ALLOW(init/INSTANCE_STATE): the input terminals laid beside the unit are linked before anything reads `terminals`, and a unit placed with none is unwired; its output node binds when it is wired
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
 	add_nearby_terminals()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
-	soundloop.falloff = 0.2 // Harsher falloff.
-	if(!check_terminals())
-		stat_add(BROKEN)
+	if(needs_terminals() && !LAZYLEN(terminals))
+		set_unwired(TRUE)
 		return
-	update_icon()
 	if(!power_region)
 		connect_to_network(!mapload)
-	power_sync()
-	if(!should_be_mapped)
-		WARNING("Non-buildable or Non-magical SMES at [src.x]X [src.y]Y [src.z]Z")
-	if(mapload)
-		return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/power/smes/LateInitialize()
+/// The hum the unit owns: it plays from the unit.
+/obj/machinery/power/smes/proc/make_soundloop(datum/act/A)
+	return new /datum/looping_sound/generator/smes(list(src), FALSE)
+
+/// A unit with no input terminal is unwired (a cell rack keeps its charge in cells and needs none).
+/obj/machinery/power/smes/proc/needs_terminals()
+	return TRUE
+
+/// STAT_OPERABLE's reading of the machine core's bits, for a SMES: only BROKEN. The unit feeds its network, so the area going dark must not stop it.
+
+/// A mapped SMES's late pass: the coils laid on its tile and its preset settings.
+/obj/machinery/power/smes/proc/mapped_after_init(datum/act/timer/A)
+	if(A.mapload && !unwired) // one without terminals takes no late pass
+		map_late()
+
+/obj/machinery/power/smes/proc/map_late()
 	apply_mapped_upgrades()
 	apply_mapped_settings()
-	power_sync()
 
-// Only the buildable smes type checks for mapped updates
-/obj/machinery/power/smes/buildable/apply_mapped_upgrades()
-	// Detect new coils placed by mappers
-	var/list/parts_found = list()
-	for(var/i = 1, i <= contents_count(loc), i++)
-		var/obj/item/W = loc.contents[i]
-		if(istype(W, /obj/item/smes_coil))
-			parts_found.Add(W)
-	// If any coils are on us, clear base coils and rebuild using these ones
-	if(parts_found.len == 0)
-		return
-	while(TRUE)
-		var/obj/item/smes_coil/C = locate_in_list(component_parts, /obj/item/smes_coil)
-		if(isnull(C))
-			break
-		own_take_member(src, nameof(component_parts), C)
-		qdel(C)
-		cur_coils--
-	// Rebuild from mapper's coils
-	for(var/i = 1, i <= parts_found.len, i++)
-		if (cur_coils < max_coils)
-			var/obj/item/W = parts_found[i]
-			cur_coils++
-			own_add(src, nameof(component_parts), W)
-			W.forceMove(src)
-	RefreshParts()
-
-// Allows subtypes to configue the smes for different input/output rates, and level of starting charge
+/// Allows subtypes to configure the smes for different input/output rates, and level of starting charge.
 /obj/machinery/power/smes/proc/apply_mapped_settings()
 	return
-
 
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)
@@ -145,77 +203,93 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master())
 				rel_add(src, nameof(terminals), term)
-				rel_set(term, nameof(term.master), src)
 				term.connect_to_network(FALSE)
-	power_sync()
+	link_terminals()
 
-/obj/machinery/power/smes/proc/check_terminals()
-	if(!LAZYLEN(terminals))
-		return FALSE
-	return TRUE
-
+/// A terminal went (it was destroyed, or cut out): its link to the unit goes with it.
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
 	rel_remove(src, nameof(terminals), term)
-	rel_clear(term, nameof(term.master))
-	power_sync()
 
+/// The grid checker upstream failed: the unit suspends its input and output until it is told the grid is back.
+/obj/machinery/power/smes/do_grid_check()
+	set_grid_check(TRUE)
+
+/// Each input terminal's Rust entity learns which unit it feeds.
+/obj/machinery/power/smes/proc/link_terminals()
+	if(QDELETED(src) || !vg_entity)
+		return
+	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
+	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
+		if(term.vg_entity)
+			native_write(term, NATIVE_SMESINPUTTERMINAL_UNIT, unit_index)
+
+/// The node went (again) to Rust: the terminals learn their unit, the settings follow at the frame's refresh, and the starting charge is seeded once.
 /obj/machinery/power/smes/power_registered()
-	power_sync()
+	link_terminals()
+	native_resync(src)
 	// Rust's charge starts at zero: seed it once from the DM starting value.
 	if(vg_entity && !charge_seeded)
 		charge_seeded = TRUE
 		adjust_charge(initial_charge - get_charge())
+		set_last_disp(chargedisplay())
 
 /// The unit's stored charge in SMES units: read from Rust, never cached in DM.
 /obj/machinery/power/smes/proc/stored_charge()
-	return vg_entity ? get_charge() : initial_charge
+	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
 
 /// Adds `delta` (negative removes) to the stored charge. Before the unit registers it moves the seed.
 /obj/machinery/power/smes/proc/adjust_stored_charge(delta)
 	if(vg_entity)
 		adjust_charge(delta)
 	else
-		initial_charge = max(initial_charge + delta, 0)
+		set_initial_charge(max(initial_charge + delta, 0))
 
 /// Sets the stored charge (mapped presets, admin, tests).
 /obj/machinery/power/smes/proc/set_stored_charge(value)
 	adjust_stored_charge(value - stored_charge())
 
-/// Sends settings and capacity to Rust (generated accessors,
-/// verdigris/domains/power/src/components.rs). Charge is Rust's own
-/// (`Smes.charge` is conserved, laws drive it) -- DM's absolute writes to
-/// it (drain_power(), the EMP hit) cross as `adjust_charge` deltas, and
-/// power_poll() reads the settled value back.
-/obj/machinery/power/smes/proc/power_sync()
+/// The input Rust is told to take: the unit works, the switch is on and the input wire is whole.
+/obj/machinery/power/smes/proc/input_enabled()
+	return working && input_attempt && !input_cut
+
+/// The output Rust is told to give.
+/obj/machinery/power/smes/proc/output_enabled()
+	return working && output_attempt && !output_cut
+
+/// Sends settings and capacity to Rust (generated accessors, verdigris/domains/power/src/components.rs). The framework runs it once per frame after
+/// any state it reads changed, so no setter calls it by hand. Charge is Rust's own (`Smes.charge` is conserved, laws drive it) -- DM's absolute
+/// writes to it (drain_power(), the EMP hit) cross as `adjust_charge` deltas, and power_poll() reads the settled value back.
+/obj/machinery/power/smes/push_to_rust()
 	if(QDELETED(src) || !vg_entity)
 		return
-	var/working = !has_stat(BROKEN) && !grid_check
-	native_write(src, NATIVE_SMES_INPUT_ENABLED, working && input_attempt && !input_pulsed && !input_cut ? 1 : 0)
-	native_write(src, NATIVE_SMES_OUTPUT_ENABLED, working && output_attempt && !output_pulsed && !output_cut ? 1 : 0)
+	// The gates are written out here (not through input_enabled()/output_enabled()) so the generated reads see every var they read.
+	native_write(src, NATIVE_SMES_INPUT_ENABLED, (working && input_attempt && !input_cut) ? 1 : 0)
+	native_write(src, NATIVE_SMES_OUTPUT_ENABLED, (working && output_attempt && !output_cut) ? 1 : 0)
 	native_write(src, NATIVE_SMES_CAPACITY, capacity)
 	native_write(src, NATIVE_SMES_INPUT_LEVEL, input_level)
 	native_write(src, NATIVE_SMES_OUTPUT_LEVEL, output_level)
-	var/unit_index = (vg_entity - 1) & VG_ENTITY_INDEX_MASK
-	for(var/obj/machinery/power/terminal/smes_input/term as anything in terminals)
-		if(term.vg_entity)
-			native_write(term, NATIVE_SMESINPUTTERMINAL_UNIT, unit_index)
 
-/// Reads back what Rust's SmesOutputPlan/Apply and SmesInputApply did this
-/// step (verdigris/domains/power/src/laws.rs): the settled charge and the
-/// shown input/output state.
+/// Reads back what Rust's SmesOutputApply and SmesInputApply did this step (verdigris/domains/power/src/laws.rs): what the output delivered, what
+/// the input took and what its terminals' regions had to spare, and the settled charge; shows them as the lamps, the window's readings and the gauge.
 /obj/machinery/power/smes/proc/power_poll()
 	if(!vg_entity)
 		return
-	var/new_inputting = 0
-	var/new_outputting = output_attempt ? 1 : 0
+	var/new_output_used = round(get_output_used(), 1)
+	var/new_input_used = round(get_input_used(), 1)
+	var/new_input_available = round(get_input_available(), 1)
+	var/new_inputting = input_enabled() ? (new_input_used > 0 ? 2 : 1) : 0
+	var/new_outputting = output_enabled() ? (new_output_used > 0 ? 2 : 1) : 0
 	var/display = chargedisplay()
-	if(new_inputting != inputting || new_outputting != outputting || last_disp != display)
+	if(new_inputting != inputting || new_outputting != outputting || last_disp != display || new_output_used != output_used || new_input_available != input_available)
 		power_event_count++
-		inputting = new_inputting
-		outputting = new_outputting
-		last_disp = display
-		native_changed(src, CHANGE_MACHINE_CHARGE, NATIVE_SRC_POWER)
-		update_icon()
+		set_inputting(new_inputting)
+		set_outputting(new_outputting)
+		set_last_disp(display)
+		set_output_used(new_output_used)
+		set_input_available(new_input_available)
+
+/// The output lamp changed: the unit hums while it feeds a load.
+/obj/machinery/power/smes/proc/output_shown(datum/act/A)
 	update_soundloop()
 
 /obj/machinery/power/smes/proc/update_soundloop()
@@ -229,35 +303,30 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		soundloop.stop()
 		noisy = FALSE
 
-DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_output", list("0" = list(APPEARANCE_OVERLAYS = list("smes-op0")), "1" = list(APPEARANCE_OVERLAYS = list("smes-op1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-op2"))))
-DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_input", list("0" = list(APPEARANCE_OVERLAYS = list("smes-oc0")), "1" = list(APPEARANCE_OVERLAYS = list("smes-oc1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-oc2"))))
-DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1" = list(APPEARANCE_OVERLAYS = list("smes-og1")), "2" = list(APPEARANCE_OVERLAYS = list("smes-og2")), "3" = list(APPEARANCE_OVERLAYS = list("smes-og3")), "4" = list(APPEARANCE_OVERLAYS = list("smes-og4")), "5" = list(APPEARANCE_OVERLAYS = list("smes-og5")), "6" = list(APPEARANCE_OVERLAYS = list("smes-og6"))))
+// ---- what it shows ----
 
-/// TRUE when the status overlays are hidden (broken).
-/obj/machinery/power/smes/proc/appearance_smes_dark()
-	return has_stat(BROKEN)
+/// TRUE when the status overlays are hidden: broken, or unwired.
+/obj/machinery/power/smes/proc/status_dark()
+	return broken_now() || unwired
 
-/// Output overlay key: "[outputting]", or "" while dark.
-/obj/machinery/power/smes/proc/appearance_smes_output()
-	if(appearance_smes_dark())
-		return ""
-	return "[outputting]"
+/// The unit's look: its output, input and charge overlays, none while it is dark.
+/obj/machinery/power/smes/draw(datum/look/look)
+	..()
+	draw_status(look)
 
-/// Input overlay key: "2"/"1" while inputting, "0" while only attempting, else "".
-/obj/machinery/power/smes/proc/appearance_smes_input()
-	if(appearance_smes_dark())
-		return ""
+/obj/machinery/power/smes/proc/draw_status(datum/look/look)
+	if(status_dark())
+		return
+	look.overlay("smes-op[outputting]")
 	if(inputting == 2)
-		return "2"
-	if(inputting == 1)
-		return "1"
-	return input_attempt ? "0" : ""
-
-/// Charge gauge overlay key: chargedisplay(), or 0 (no gauge) while dark.
-/obj/machinery/power/smes/proc/appearance_smes_charge()
-	if(appearance_smes_dark())
-		return 0
-	return chargedisplay()
+		look.overlay("smes-oc2")
+	else if(inputting == 1)
+		look.overlay("smes-oc1")
+	else if(input_attempt)
+		look.overlay("smes-oc0")
+	var/gauge = last_disp
+	if(gauge > 0)
+		look.overlay("smes-og[gauge]")
 
 /obj/machinery/power/smes/proc/chargedisplay()
 	return round(5.5*stored_charge()/(capacity ? capacity : 5e6))
@@ -265,95 +334,107 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 // Mostly in place due to child types that may store power in other way (PSUs)
 /obj/machinery/power/smes/proc/add_charge(amount)
 	adjust_stored_charge(amount*SMESRATE)
-	power_sync()
 
 /obj/machinery/power/smes/proc/remove_charge(amount)
 	adjust_stored_charge(-amount*SMESRATE)
-	power_sync()
 
-/// One machine pipeline frame (the power/smes stage). Rust charges and discharges the unit;
-/// a wake (a settings change, damage, a new terminal) resends the settings once. Returns
-/// STAGE_IDLE when the unit has nothing more to do until the next wake.
-/obj/machinery/power/smes/proc/power_step()
-	if(has_stat(BROKEN))
-		soundloop.stop()
-		noisy = FALSE
-	power_sync()
-	return STAGE_IDLE
+// ---- the terminals: building one and cutting one out ----
 
-/// TRUE when power_step() has nothing to do until the next wake.
-/obj/machinery/power/smes/proc/power_settled()
-	return TRUE
-
-// Compatibility hook for callers outside the persistent ledger.
-/obj/machinery/power/smes/proc/restore(percent_load)
-	return
-
-//Will return 1 on failure
-/// Starts attaching a terminal with `CC` (a timed action). 1 if it could not start.
-/obj/machinery/power/smes/proc/make_terminal(const/mob/user, obj/item/stack/cable_coil/CC)
-	if (user.loc == loc)
-		to_chat(user, span_filter_notice(span_warning("You must not be on the same tile as the [src].")))
-		return 1
-
-	//Direction the terminal will face to
+/// Where a terminal built from this actor's spot goes: list(the turf, its direction). The actor stands next to the unit; the terminal goes on the far
+/// side of the unit's line to the actor (the tile the actor stands on, for an orthogonal spot).
+/obj/machinery/power/smes/proc/terminal_site_of(mob/user)
 	var/tempDir = get_dir(user, src)
 	switch(tempDir)
 		if (NORTHEAST, SOUTHEAST)
 			tempDir = EAST
 		if (NORTHWEST, SOUTHWEST)
 			tempDir = WEST
-	var/turf/tempLoc = get_step(src, reverse_direction(tempDir))
-	if (istype(tempLoc, /turf/space))
-		to_chat(user, span_filter_notice(span_warning("You can't build a terminal on space.")))
-		return 1
-	else if (istype(tempLoc))
-		if(!tempLoc.is_plating())
-			to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
-			return 1
-	if(check_terminal_exists(tempLoc, user, tempDir))
-		return 1
-	to_chat(user, span_filter_notice(span_notice("You start adding cable to the [src].")))
-	var/started = om_task_start(/datum/om/task/timed/smes_terminal, user, src, receiver = src, CC = CC, tempLoc = tempLoc, tempDir = tempDir)
-	return istext(started) ? 1 : 0
+	var/turf/tempLoc = get_step(src, REVERSE_DIR(tempDir))
+	return list(tempLoc, tempDir)
 
-/obj/machinery/power/smes/proc/terminal_ended(datum/om/task/timed/smes_terminal/task)
-	building_terminal = 0
+/// Why a terminal cannot be built by this actor now, or null.
+/obj/machinery/power/smes/proc/terminal_site_refusal(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user)
+		return /datum/msg/op/failed
+	if(user.loc == loc)
+		return /datum/msg/smes/on_the_unit
+	var/list/site = terminal_site_of(user)
+	var/turf/tempLoc = site[1]
+	if(istype(tempLoc, /turf/space))
+		return /datum/msg/smes/space
+	if(istype(tempLoc) && !tempLoc.is_plating())
+		return /datum/msg/smes/plating
+	if(terminal_exists_at(tempLoc, site[2]))
+		return /datum/msg/smes/terminal_there
+	return null
 
-/datum/om/task/timed/smes_terminal
-	duration = 5 SECONDS
-	complete_proc = /obj/machinery/power/smes/proc/terminal_done
-	cancel_proc = /obj/machinery/power/smes/proc/terminal_ended
-	var/obj/item/stack/cable_coil/CC
-	var/turf/tempLoc
-	var/tempDir
+/// A terminal already stands on `location` facing `direction`.
+/obj/machinery/power/smes/proc/terminal_exists_at(turf/location, direction)
+	for(var/obj/machinery/power/terminal/term in location)
+		if(term.dir == direction)
+			return TRUE
+	return FALSE
 
-/obj/machinery/power/smes/proc/terminal_done(datum/om/task/timed/smes_terminal/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/cable_coil/CC = task.CC
-	var/turf/tempLoc = task.tempLoc
-	var/tempDir = task.tempDir
-	building_terminal = 0
-	if(check_terminal_exists(tempLoc, user, tempDir) || !CC.use(10))
-		return
-	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
-	term.set_dir(tempDir)
-	rel_set(term, nameof(term.master), src)
-	term.connect_to_network()
+/// The ten lengths went in after the wait (the site was asked again before this ran): the terminal is made and joins the network, and an unwired
+/// unit is wired now. A broken unit stays broken.
+/obj/machinery/power/smes/proc/terminal_built(datum/act/op/A)
+	var/list/site = terminal_site_of(A.actor)
+	var/obj/machinery/power/terminal/smes_input/term = new(site[1])
+	term.set_dir(site[2])
 	rel_add(src, nameof(terminals), term)
-	power_sync()
-	act_message(user, src, MSG_SELF(span_filter_notice(span_notice("You added cables to %T%."))), \
-		MSG_OTHERS(span_filter_notice(span_notice("[user.name] has added cables to %T%."))))
-	set_stat(0)
+	term.connect_to_network()
+	link_terminals()
+	set_unwired(FALSE)
 	if(!power_region)
 		connect_to_network()
+	return OP_OK
 
-/obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
-	for(var/obj/machinery/power/terminal/term in turf_contents_of_type(location, /obj/machinery/power/terminal))
-		if(term.dir == direction)
-			to_chat(user, span_filter_notice(span_notice("There is already a terminal here.")))
-			return 1
-	return 0
+/// The terminal this actor's tile holds that answers to this unit, or null.
+/obj/machinery/power/smes/proc/terminal_under(mob/user)
+	for(var/obj/machinery/power/terminal/candidate in get_turf(user))
+		if(candidate.master() == src)
+			return candidate
+	return null
+
+/// Why the wirecutters cannot take a terminal out now, or null.
+/obj/machinery/power/smes/proc/terminal_cut_refusal(datum/act/op/A)
+	var/obj/machinery/power/terminal/term = A.actor ? terminal_under(A.actor) : null
+	if(!term)
+		return /datum/msg/smes/no_terminal_here
+	var/turf/terminal_turf = get_turf(term)
+	if(terminal_turf && !terminal_turf.is_plating())
+		return /datum/msg/smes/plating
+	return null
+
+/// The wait is over (the terminal was asked for again before this ran): the cable is cut (with a chance of a shock from the live cable that can
+/// stun the cutter before the job is done), the ten lengths drop and the terminal goes.
+/obj/machinery/power/smes/proc/terminal_taken_down(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/machinery/power/terminal/term = terminal_under(user)
+	if(prob(50) && electrocute_mob(user, term.power_region, term))
+		fx_sparks(src, 5)
+		if(user.has_status(STAT_STUNNED))
+			return OP_OK
+	new /obj/item/stack/cable_coil(loc, 10)
+	rel_remove(src, nameof(terminals), term)
+	spent(term)
+	return OP_OK
+
+// ---- the casing ----
+
+/// The casing has damage to weld.
+/obj/machinery/power/smes/proc/casing_damaged(datum/act/A)
+	return (get_integrity() < max_integrity) ? null : MSG(smes/whole)
+
+/// The weld is done: every point of damage is repaired.
+/obj/machinery/power/smes/proc/casing_repaired(datum/act/op/A)
+	repair_damage(max_integrity)
+	return OP_OK
+
+/// The welder takes as long as there is damage: a decisecond for every point.
+/obj/machinery/power/smes/proc/repair_time(datum/act/A)
+	return max_integrity - get_integrity()
 
 /obj/machinery/power/smes/draw_power(amount)
 	var/drained = 0
@@ -365,132 +446,10 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 		drained += power_draw(term.power_region, amount - drained, term)
 	return drained
 
-/obj/machinery/power/smes
-	silicon_use = SILICON_USE_UI
+// ---- the window ----
 
-/obj/machinery/power/smes/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/smes_add_cable,
-		/datum/interaction/machine_item/smes_use_item,
-		/datum/interaction/machine_hand/ungated/smes_use,
-	)
-	..()
-
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/smes_use
-	id = "smes_use"
-	name = "Use"
-	effect = /obj/machinery/power/smes/proc/interaction_use
-
-/obj/machinery/power/smes/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	tgui_interact(user)
-	return TRUE
-
-/// Old attackby: /obj/item/fusion_coil was deleted with the fusion subsystem, so the
-/// charge-from-coil branch is gone. SMES is still chargeable by other means.
-/// Attach a terminal with cable coil. Requires the panel to be open.
-/datum/interaction/machine_item/smes_add_cable
-	id = "smes_add_cable"
-	name = "Add cables"
-	held_type = /obj/item/stack/cable_coil
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/not_building_terminal, null))
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/panel_is_open, "you need to open the access hatch first"))
-	effect = /obj/machinery/power/smes/proc/interaction_add_cable
-
-/obj/machinery/power/smes/proc/not_building_terminal(mob/actor, atom/target, obj/item/held)
-	return !building_terminal
-
-/obj/machinery/power/smes/proc/panel_is_open(mob/actor, atom/target, obj/item/held)
-	return panel_open
-
-/obj/machinery/power/smes/proc/interaction_add_cable(mob/user, obj/item/stack/cable_coil/CC, datum/interaction/interaction)
-	building_terminal = 1
-	if (CC.get_amount() < 10)
-		to_chat(user, span_filter_notice(span_warning("You need more cables.")))
-		building_terminal = 0
-		return TRUE
-	if (make_terminal(user, CC))
-		building_terminal = 0
-	return TRUE
-
-/// Any other item, or a cable coil while a terminal is already being built: swallowed
-/// silently (the old attackby never called ..(), so nothing further ran).
-/datum/interaction/machine_item/smes_use_item
-	id = "smes_use_item"
-	name = "Use"
-	held_type = /obj/item
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/power/smes/proc/panel_is_open, "you need to open the access hatch first"))
-	effect = /atom/proc/interaction_swallow
-
-/obj/machinery/power/smes/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/power/smes/welder_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.isOn())
-		to_chat(user, span_filter_notice("Turn on \the [welder] first!"))
-		return ITEM_INTERACT_BLOCKING
-	var/missing_integrity = max_integrity - get_integrity()
-	if(!missing_integrity)
-		to_chat(user, span_filter_notice("\The [src] is already fully repaired."))
-		return ITEM_INTERACT_BLOCKING
-	if(welder.remove_fuel(0, user))
-		om_task_timed(user, missing_integrity, src, src, PROC_REF(weld_repair_done), list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/smes/proc/weld_repair_done(mob/user)
-	var/missing_integrity = max_integrity - get_integrity()
-	to_chat(user, span_filter_notice("You repair all structural damage to \the [src]"))
-	repair_damage(missing_integrity)
-
-/obj/machinery/power/smes/wirecutter_act(mob/user, obj/item/tool)
-	if(!panel_open)
-		to_chat(user, span_filter_notice(span_warning("You need to open access hatch on [src] first!")))
-		return ITEM_INTERACT_BLOCKING
-	if(building_terminal)
-		return ITEM_INTERACT_BLOCKING
-	building_terminal = TRUE
-	var/obj/machinery/power/terminal/term
-	for(var/obj/machinery/power/terminal/candidate in get_turf(user))
-		if(candidate.master() == src)
-			term = candidate
-			break
-	if(!term)
-		to_chat(user, span_filter_notice(span_warning("There is no terminal on this tile.")))
-		building_terminal = FALSE
-		return ITEM_INTERACT_BLOCKING
-	var/turf/terminal_turf = get_turf(term)
-	if(terminal_turf && !terminal_turf.is_plating())
-		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
-	else
-		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, start_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
-	building_terminal = FALSE
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
-	if(prob(50) && electrocute_mob(user, term.power_region, term))
-		fx_sparks(src, 5)
-		building_terminal = FALSE
-		if(user.has_status(EFFECT_STUNNED))
-			return ITEM_INTERACT_SUCCESS
-	new /obj/item/stack/cable_coil(loc, 10)
-	act_message(user, null, MSG_SELF(span_filter_notice(span_notice("You cut the cables and dismantle the power terminal."))), \
-		MSG_OTHERS(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal."))))
-	rel_remove(src, nameof(terminals), term)
-	qdel(term)
-
-DECLARE_UI(/obj/machinery/power/smes, "Smes")
-
-UI_DATA_REPLACE(/obj/machinery/power/smes, "merge:ui_data_obj_machinery_power_smes{capacity:num,capacityPercent:num,charge:num,inputAttempt:num,inputting:num,inputLevel:num,inputLevel_text:unknown,inputLevelMax:num,inputAvailable:num,outputAttempt:num,outputting:num,outputLevel:num,outputLevel_text:unknown,outputLevelMax:num,outputUsed:num}")
-
-/// The computed part of /obj/machinery/power/smes's window data (declared on its UI_DATA row).
-/obj/machinery/power/smes/proc/ui_data_obj_machinery_power_smes(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list(
+/obj/machinery/power/smes/ui_data(datum/act/eval/A)
+	return list(
 		"capacity" = capacity,
 		"capacityPercent" = Percentage(),
 		"charge" = stored_charge(),
@@ -499,46 +458,44 @@ UI_DATA_REPLACE(/obj/machinery/power/smes, "merge:ui_data_obj_machinery_power_sm
 		"inputLevel" = input_level,
 		"inputLevel_text" = DisplayPower(input_level),
 		"inputLevelMax" = input_level_max,
-		"inputAvailable" = 0,
+		"inputAvailable" = input_available,
 		"outputAttempt" = output_attempt,
 		"outputting" = outputting,
 		"outputLevel" = output_level,
 		"outputLevel_text" = DisplayPower(output_level),
 		"outputLevelMax" = output_level_max,
-		"outputUsed" = 0,
-	)
-	return data
+		"outputUsed" = output_used)
 
 /obj/machinery/power/smes/proc/Percentage()
 	if(!capacity)
 		return 0
 	return round(100.0*stored_charge()/capacity, 0.1)
 
-UI_ACT(/obj/machinery/power/smes, "tryinput", ui_act_tryinput)
-UI_ACT_PROC(/obj/machinery/power/smes, ui_act_tryinput)
-	inputting(!input_attempt)
-	update_icon()
-	. = TRUE
+/// The input switch went over: switched off, the lamp goes out at once.
+/obj/machinery/power/smes/proc/input_switched(datum/act/op/A)
+	if(!input_attempt)
+		set_inputting(0)
+	return OP_OK
 
-UI_ACT(/obj/machinery/power/smes, "tryoutput", ui_act_tryoutput)
-UI_ACT_PROC(/obj/machinery/power/smes, ui_act_tryoutput)
-	outputting(!output_attempt)
+/// The output switch went over: the contactor clicks, and switched off the lamp goes out at once.
+/obj/machinery/power/smes/proc/output_switched(datum/act/op/A)
 	if(output_attempt)
 		play_sfx(loc, SFX_EFFECTS_CONTACTOR_ON)
 	else
+		set_outputting(0)
 		play_sfx(loc, SFX_EFFECTS_CONTACTOR_OFF)
-	update_icon()
-	. = TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/power/smes, "input", ui_act_input, UI_ARG_NUM("adjust"), UI_ARG_VALUE("target"))
-UI_ACT_PROC(/obj/machinery/power/smes, ui_act_input)
-	tgui_set_io(SMES_TGUI_INPUT, params["target"], params["adjust"])
+/obj/machinery/power/smes/proc/ui_set_input(datum/act/op/A, adjust, target)
+	set_io_level(SMES_TGUI_INPUT, target, adjust)
+	return OP_OK
 
-UI_ACT(/obj/machinery/power/smes, "output", ui_act_output, UI_ARG_NUM("adjust"), UI_ARG_VALUE("target"))
-UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
-	tgui_set_io(SMES_TGUI_OUTPUT, params["target"], params["adjust"])
+/obj/machinery/power/smes/proc/ui_set_output(datum/act/op/A, adjust, target)
+	set_io_level(SMES_TGUI_OUTPUT, target, adjust)
+	return OP_OK
 
-/obj/machinery/power/smes/proc/tgui_set_io(io, target, adjust)
+/// A level from the window or an RCON console: "min", "max", a step (`adjust`) or a number, clamped to the unit's cap.
+/obj/machinery/power/smes/proc/set_io_level(io, target, adjust)
 	if(target == "min")
 		target = 0
 		. = TRUE
@@ -566,17 +523,17 @@ UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
 			if(SMES_TGUI_OUTPUT)
 				set_output(target)
 
-/obj/machinery/power/smes/proc/inputting(do_input)
-	input_attempt = do_input
+/// The input switch on or off (a pulse, an event, a pulse's scramble); switched off, the lamp goes out at once.
+/obj/machinery/power/smes/proc/set_input_on(on)
+	set_input_attempt(on)
 	if(!input_attempt)
-		inputting = 0
-	changed(src, CHANGE_MACHINE_SETTINGS)
+		set_inputting(0)
 
-/obj/machinery/power/smes/proc/outputting(do_output)
-	output_attempt = do_output
+/// The output switch on or off.
+/obj/machinery/power/smes/proc/set_output_on(on)
+	set_output_attempt(on)
 	if(!output_attempt)
-		outputting = 0
-	changed(src, CHANGE_MACHINE_SETTINGS)
+		set_outputting(0)
 
 /obj/machinery/power/smes/atom_destruction(damage_flag)
 	visible_message(span_filter_notice(span_danger("\The [src] explodes in large shower of sparks and smoke!")))
@@ -589,64 +546,49 @@ UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
 			explosion(get_turf(src), 0, 1, 2)
 	return ..()
 
-DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scramble))
-
 /// A pulse scrambles the settings and drains charge.
-/obj/machinery/power/smes/proc/smes_emp_scramble(datum/damage_packet/packet)
-	inputting(rand(0,1))
-	outputting(rand(0,1))
-	output_level = rand(0, output_level_max)
-	input_level = rand(0, input_level_max)
-	set_stored_charge(max(stored_charge() - 1e6/packet.severity, 0))
-	power_sync()
-	update_icon()
+/obj/machinery/power/smes/proc/emp_scramble(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/severity = max(N.packet?.severity, 1)
+	set_input_on(rand(0,1))
+	set_output_on(rand(0,1))
+	set_output_level(rand(0, output_level_max))
+	set_input_level(rand(0, input_level_max))
+	set_stored_charge(max(stored_charge() - 1e6/severity, 0))
 
-/obj/machinery/power/smes/examine(mob/user)
-	. = ..()
-	. += span_filter_notice("The service hatch is [panel_open ? "open" : "closed"].")
+/// The hatch and the damage, as examine says them.
+/obj/machinery/power/smes/proc/examine_state(datum/act/A)
+	var/list/lines = list(span_filter_notice("The service hatch is [panel_open ? "open" : "closed"]."))
 	var/missing_integrity = max_integrity - get_integrity()
 	if(!missing_integrity)
-		return
+		return lines
 	var/damage_percentage = round((missing_integrity / max_integrity) * 100)
 	switch(damage_percentage)
 		if(75 to INFINITY)
-			. += span_filter_notice(span_danger("It's casing is severely damaged, and sparking circuitry may be seen through the holes!"))
+			lines += span_filter_notice(span_danger("It's casing is severely damaged, and sparking circuitry may be seen through the holes!"))
 		if(50 to 74)
-			. += span_filter_notice(span_notice("It's casing is considerably damaged, and some of the internal circuits appear to be exposed!"))
+			lines += span_filter_notice(span_notice("It's casing is considerably damaged, and some of the internal circuits appear to be exposed!"))
 		if(25 to 49)
-			. += span_filter_notice(span_notice("It's casing is quite seriously damaged."))
+			lines += span_filter_notice(span_notice("It's casing is quite seriously damaged."))
 		if(0 to 24)
-			. += span_filter_notice("It's casing has some minor damage.")
+			lines += span_filter_notice("It's casing has some minor damage.")
+	return lines
 
-// Proc: toggle_input()
-// Parameters: None
-// Description: Switches the input on/off depending on previous setting
+/// Switches the input on/off depending on the previous setting (a wire's pulse, an RCON console).
 /obj/machinery/power/smes/proc/toggle_input()
-	inputting(!input_attempt)
-	update_icon()
+	set_input_on(!input_attempt)
 
-// Proc: toggle_output()
-// Parameters: None
-// Description: Switches the output on/off depending on previous setting
+/// Switches the output on/off depending on the previous setting.
 /obj/machinery/power/smes/proc/toggle_output()
-	outputting(!output_attempt)
-	update_icon()
+	set_output_on(!output_attempt)
 
-// Proc: set_input()
-// Parameters: 1 (new_input - New input value in Watts)
-// Description: Sets input setting on this SMES. Trims it if limits are exceeded.
+/// The input level, in watts, clamped to the unit's cap.
 /obj/machinery/power/smes/proc/set_input(new_input = 0)
-	input_level = between(0, new_input, input_level_max)
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	update_icon()
+	set_input_level(clamp(new_input, 0, input_level_max))
 
-// Proc: set_output()
-// Parameters: 1 (new_output - New output value in Watts)
-// Description: Sets output setting on this SMES. Trims it if limits are exceeded.
+/// The output level, in watts, clamped to the unit's cap.
 /obj/machinery/power/smes/proc/set_output(new_output = 0)
-	output_level = between(0, new_output, output_level_max)
-	changed(src, CHANGE_MACHINE_SETTINGS)
-	update_icon()
+	set_output_level(clamp(new_output, 0, output_level_max))
 
 /obj/machinery/power/smes/buildable/hybrid
 	name = "hybrid power storage unit"
@@ -655,39 +597,16 @@ DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scrambl
 	var/recharge_rate = 10000
 	var/overlay_icon = 'icons/obj/power_vr.dmi'
 
-/obj/machinery/power/smes/buildable/hybrid/screwdriver_act(mob/user, obj/item/tool)
-	to_chat(user, span_warning("\The [src] is full of weird alien technology that's best not messed with."))
-	return ITEM_INTERACT_BLOCKING
+// A hybrid unit's casing is full of alien technology: the wirecutters are not for its terminals, and it makes its own charge every frame while
+// there is room for it.
+CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid)
+	without("cut_terminal")
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(hybrid_charge)), when = PROC_REF(hybrid_has_room))
 
-/obj/machinery/power/smes/buildable/hybrid/wirecutter_act(mob/user, obj/item/tool)
-	to_chat(user, span_warning("\The [src] is full of weird alien technology that's best not messed with."))
-	return ITEM_INTERACT_BLOCKING
+/// There is room for more charge.
+/obj/machinery/power/smes/buildable/hybrid/proc/hybrid_has_room(datum/act/A)
+	return stored_charge() < capacity
 
-APPEARANCE_NONE(/obj/machinery/power/smes/buildable/hybrid)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/buildable/hybrid, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/smes/buildable/hybrid/appearance_overlays()
-	. = list()
-	if(has_stat(BROKEN))	return
-
-	. += "smes-op[outputting]"
-
-	if(inputting == 2)
-		. += "smes-oc2"
-	else if (inputting == 1)
-		. += "smes-oc1"
-	else
-		if(input_attempt)
-			. += "smes-oc0"
-
-	var/clevel = chargedisplay()
-	if(clevel>0)
-		. += "smes-og[clevel]"
-	return .
-
-/// Hybrid units make their own charge every frame, so they never idle.
-/obj/machinery/power/smes/buildable/hybrid/power_step()
+/// Hybrid units make their own charge every frame, never more than there is room for.
+/obj/machinery/power/smes/buildable/hybrid/proc/hybrid_charge(datum/act/timer/A)
 	adjust_stored_charge(min(recharge_rate, capacity - stored_charge()))
-	power_sync()
-
-/obj/machinery/power/smes/buildable/hybrid/power_settled()
-	return FALSE

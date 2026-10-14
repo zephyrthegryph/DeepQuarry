@@ -27,9 +27,7 @@
 	var/obj/structure/blob/factory/factory = null
 	var/datum/blob_type/blob_type = null	// Used for the blob core items, as they have no overmind mob.
 
-	mob_class = MOB_CLASS_SLIME
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/blob/speech_bubble_appearance()
@@ -44,22 +42,17 @@
 		color = null
 	..()
 
-/mob/living/simple_mob/blob/relations()
-	. = ..()
-	. += rel_one(nameof(overmind), back = nameof(/mob/observer/blob::blob_mobs))
-	. += rel_one(nameof(factory), back = nameof(/obj/structure/blob/factory::spores))
-/mob/observer/blob/relations()
-	. = ..()
-	. += rel_many(nameof(blob_mobs), back = nameof(/mob/living/simple_mob/blob::overmind))
-/obj/structure/blob/factory/relations()
-	. = ..()
-	. += rel_many(nameof(spores), back = nameof(/mob/living/simple_mob/blob::factory))
+CAPABILITIES(/mob/living/simple_mob/blob)
+	ref_one(nameof(blob_type), /datum/blob_type)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME))
+	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)
+	links(/mob/living/simple_mob/blob::factory, /obj/structure/blob/factory::spores, b_many = TRUE)
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
 		rel_set(src, nameof(overmind), B.overmind)
 		faction = B.overmind.blob_type.faction
-		update_icon()
 
 	if(faction != B.faction && B.overmind)
 		injure(INJURY_BLUNT, rand(B.overmind.blob_type.damage_lower, B.overmind.blob_type.damage_upper), source = B)

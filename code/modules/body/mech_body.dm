@@ -19,6 +19,7 @@
 
 /// The shared machine body plan for mechs.
 /proc/mech_body_plan()
+	READS_FROM()
 	RETURN_TYPE(/datum/mech_body_plan)
 	var/static/datum/mech_body_plan/plan
 	if(!plan)
@@ -147,7 +148,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		var/pass_damage = P.damage
 		for(var/obj/item/mecha_parts/mecha_equipment/ME in host.equipment)
 			pass_damage = ME.handle_projectile_contact(P, pass_damage)
-		var/factor = penetration_factor(host, pass_damage, P.armor_penetration, P)
+		var/factor = penetration_factor(host, pass_damage, combat_of(P).armor_penetration, P)
 		if(!factor)
 			return 0
 		pass_damage *= factor
@@ -192,10 +193,10 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	if(!isitem(A))
 		return 0
 	var/obj/item/O = A
-	if(!O.throwforce)
+	if(!thrown_of(O).force)
 		return 0
-	var/pass_damage = O.throwforce
-	var/factor = penetration_factor(host, pass_damage, O.armor_penetration, O)
+	var/pass_damage = thrown_of(O).force
+	var/factor = penetration_factor(host, pass_damage, combat_of(O).armor_penetration, O)
 	if(!factor)
 		return 0
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in host.equipment)
@@ -219,13 +220,13 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		to_chat(user, span_danger("\The [W] bounces off [host.name]."))
 		host.log_append_to_last("Armor saved.")
 		return 0
-	var/factor = penetration_factor(host, W.force, W.armor_penetration, W)
+	var/factor = penetration_factor(host, combat_of(W).force, combat_of(W).armor_penetration, W)
 	if(!factor)
 		return 0
 	host.occupant_message(span_warning(span_red(span_bold("[user] hits [host] with [W]."))))
 	act_message(user, host, MSG_SELF(span_danger(span_red(span_bold("You hit %T% with [W].")))), \
 		MSG_OTHERS(span_warning(span_red(span_bold("%U% hits %T% with [W].")))))
-	var/pass_damage = W.force * factor
+	var/pass_damage = combat_of(W).force * factor
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in host.equipment)
 		pass_damage = ME.handle_projectile_contact(W, user, pass_damage)
 	. = injure(host, pass_damage, W.obj_damage_type())
@@ -360,10 +361,10 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 		if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE)
 			plan.afflict(host, MECHA_INT_TANK_BREACH)
 		if(int_tank_air && int_tank_air.return_volume() > 0)
-			int_tank_air.set_temperature(min(6000 + T0C, int_tank_air.return_temperature() + rand(10, 15)))
+			heat_set(int_tank_air, min(6000 + T0C, int_tank_air.return_temperature() + rand(10, 15)), HEAT_SOURCE_FIRE)
 	var/datum/gas_mixture/cabin = host.cabin_air
 	if(cabin && cabin.return_volume() > 0)
-		cabin.set_temperature(min(6000 + T0C, cabin.return_temperature() + rand(10, 15)))
+		heat_set(cabin, min(6000 + T0C, cabin.return_temperature() + rand(10, 15)), HEAT_SOURCE_FIRE)
 		var/cabin_temp = cabin.return_temperature()
 		if(cabin_temp > host.max_temperature / 2)
 			plan.injure(host, 4 / round(host.max_temperature / cabin_temp, 0.1), FIRE)
@@ -398,7 +399,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	if(istype(host.loc, /turf/simulated))
 		host.loc.assume_air(leaked_gas)
 	else
-		qdel(leaked_gas) // ALLOW(lifecycle): a gas_mixture handle is a plain datum with no lifecycle verb; the leak has nowhere to go off-turf
+		spent(leaked_gas)
 
 /datum/mech_affliction/control_damage
 	name = "control damage"
@@ -415,5 +416,5 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 /datum/mech_affliction/short_circuit/tick(obj/mecha/host)
 	if(host.get_charge())
 		fx_sparks(host, 2, FALSE)
-		host.cell.charge -= min(20, host.cell.charge)
-		host.cell.maxcharge -= min(20, host.cell.maxcharge)
+		host.cell.set_charge(host.cell.charge - min(20, host.cell.charge))
+		host.cell.set_maxcharge(host.cell.maxcharge - min(20, host.cell.maxcharge))

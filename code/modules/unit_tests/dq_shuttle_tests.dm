@@ -22,19 +22,20 @@
 
 /datum/unit_test/dq_shuttle_active_set_is_event_driven/Run()
 	var/datum/shuttle/shuttle = new /datum/shuttle/unit_test_active_set
-	// It has no landmark, so New() skipped registration and, with it, starting its declared work
-	// (only a registered shuttle runs it: an unregistered one is dropped by its creator). Register
-	// it by hand, as the processing-set line below already does.
-	lifecycle_decls_init(shuttle)
-	shuttle.shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
-	SSshuttles.process_shuttles |= shuttle
+	// It has no landmark, so New() skipped registration and, with it, the step's gate (only a
+	// registered shuttle runs it: an unregistered one is dropped by its creator). Register it by
+	// hand, as the processing-set line below already does.
+	shuttle.registered = TRUE
+	shuttle.set_shuttle_flags(shuttle.shuttle_flags | SHUTTLE_FLAGS_PROCESS)
+	rel_add(SSshuttles, nameof(SSshuttles.process_shuttles), shuttle)
 	shuttle.set_process_state(IDLE_STATE)
 	TEST_ASSERT(!shuttle.shuttle_working(), "idle shuttle declared as working")
-	TEST_ASSERT_NULL(shuttle.periodic_pipe, "idle shuttle remained on the slow lane")
+	TEST_ASSERT(!shuttle.working, "idle shuttle held its step open")
+	TEST_ASSERT(length(shuttle.rx?.every_parked), "idle shuttle's step is parked, holding no timer")
 	shuttle.set_process_state(WAIT_LAUNCH)
-	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "launching shuttle did not start its slow-lane work")
+	TEST_ASSERT(shuttle.working, "launching shuttle did not open its step")
 	shuttle.set_process_state(IDLE_STATE)
-	TEST_ASSERT_NULL(shuttle.periodic_pipe, "settled shuttle did not leave the slow lane")
+	TEST_ASSERT(!shuttle.working, "settled shuttle did not close its step")
 	qdel(shuttle)
 //
 // A web-shuttle destination whose map landmark doesn't exist (e.g. it lived on
@@ -163,7 +164,7 @@
 				if(!D.density)
 					all_closed = FALSE
 					if(!D.operating)
-						D.unlock()
+						set_bolted(D, FALSE)
 						D.close(TRUE, TRUE)
 		if(all_closed)
 			break
@@ -218,7 +219,6 @@
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
 	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
 	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "always-processing arrivals shuttle is not on the slow lane")
-	// ALLOW(spatial): world search
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
 	TEST_ASSERT(test_machine_idle(console), "arrivals console still performs idle polling instead of hibernating")

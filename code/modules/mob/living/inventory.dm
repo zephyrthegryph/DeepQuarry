@@ -40,7 +40,7 @@
 /mob/living/proc/store_in(obj/item/I, atom/S)
 	if(inventory_slot_id(I))
 		remove_from_mob(I, S)
-	else if(!I.move_into(S, null, src))
+	else if(!move_into(S, null, I, src))
 		I.forceMove(S)
 
 //Returns the thing in our active hand
@@ -61,14 +61,14 @@
 		. = drop_r_hand(Target)
 
 	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
-		om_after(src, 1, PROC_REF(make_item_drop_sound), item_dropped)
+		after(src, 0.1 SECONDS, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 
 /mob/proc/make_item_drop_sound(obj/item/I)
 	if(QDELETED(I))
 		return
 
-	if(I.drop_sound)
-		playsound(I, I.drop_sound, 25, 0, preference = /datum/preference/toggle/drop_sounds)
+	if(sounds_of(I).drop)
+		playsound(I, sounds_of(I).drop, 25, 0, preference = /datum/preference/toggle/drop_sounds)
 
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)
@@ -80,6 +80,9 @@
 
 /mob/living/proc/hands_are_full()
 	return (get_right_hand() && get_left_hand())
+
+/// Hand membership follows ledger reslots as well as physical enter/exit moves.
+READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 
 /mob/living/proc/item_is_in_hands(obj/item/I)
 	var/id = inventory_slot_id(I)
@@ -106,13 +109,14 @@
 
 /mob/living/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
+	// Reslotting can change hand membership without changing the item's loc.
+	op_keep_poke(src, OP_KEEP_HAND)
 	// A hand emptied: the other hand's item may stop being two-handed.
 	if(!inserted && (slot_id == SLOT_ID_HAND_L || slot_id == SLOT_ID_HAND_R))
 		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_HAND_L ? SLOT_ID_HAND_R : SLOT_ID_HAND_L)
 		if(other)
 			other.update_twohanding()
 			other.update_held_icon()
-			update_inv_l_hand()
 
 /mob/living/ret_grab(list/L, mobchain_limit = 5)
 	// We're the first!
@@ -146,10 +150,8 @@
 	if(ismecha(loc))
 		return
 
-	if(INCAPACITATED_IGNORING(src, INCAPABLE_GRAB))
-		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED))
 		return
 
 	if(restrained())
@@ -163,7 +165,6 @@
 	var/obj/item/inhand = get_active_hand()
 	if(inhand)
 		inhand.attack_self(src)
-		update_inv_active_hand()
 	return
 
 /mob/living/abiotic(full_body = 0)
@@ -175,20 +176,27 @@
 	return 0
 
 // This handles the drag-open inventory panel.
-/mob/living/MouseDrop(atom/over_object)
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A mob dragged onto its dragger shows them its inventory.
+/mob/living/proc/drop_input(datum/act/input/A)
+	if(inventory_drop_with_actor(A.actor, A.over))
+		return TRUE
+	return INPUT_FALLTHROUGH
+
+/mob/living/proc/inventory_drop_with_actor(mob/user, atom/over_object)
 	var/mob/living/L = over_object
-	if(L.is_incorporeal())
-		return
-	if(istype(L) && L != src && L == usr && Adjacent(L))
+	if(over_object && over_object.is_incorporeal())
+		return TRUE
+	if(istype(L) && L != src && L == user && Adjacent(L))
 		show_inventory_panel(L)
-	. = ..()
+	return FALSE
 
 /mob/living/proc/show_inventory_panel(mob/user, datum/tgui_state/state)
-	if(!inventory_panel_type)
+	if(!kind_of(src).inventory_panel)
 		return FALSE
 
 	if(!inventory_panel)
-		own_set(src, nameof(inventory_panel), new inventory_panel_type(src))
+		var/panel_type = kind_of(src).inventory_panel
+		rel_set(src, nameof(inventory_panel), new panel_type(src))
 	inventory_panel.tgui_interact(user, custom_state = state)
 
 	return TRUE
@@ -199,15 +207,13 @@
 
 /datum/inventory_panel/New(mob/living/new_host)
 	if(!istype(new_host))
-		qdel(src)
+		spent(src)
 		return
 	rel_set(src, nameof(host), new_host)
 	. = ..()
 
 /datum/inventory_panel/tgui_host(mob/user)
 	return host.tgui_host()
-
-DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
 
 /datum/inventory_panel/tgui_status(mob/user, datum/tgui_state/state)
 	if(!host)
@@ -216,21 +222,22 @@ DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
 		return STATUS_CLOSE
 	return ..()
 
-DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
+CAPABILITIES(/datum/inventory_panel)
+	ref_one(nameof(host), /mob/living)
+	interface(null, state = nameof(GLOB.tgui_physical_state), window_var = nameof(tgui_id))
+	ui_shape(slots = list_of(), internals = any, internalsValid = bool())
 
 /datum/inventory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host)
-		qdel(src)
+		spent(src, user)
 		return FALSE
 	return TRUE
 
 /datum/inventory_panel/ui_title(mob/user)
 	return host.name
 
-UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,internals:unknown,internalsValid:bool}")
-
-/// The computed part of /datum/inventory_panel's window data (declared on its UI_DATA row).
-/datum/inventory_panel/proc/ui_data_datum_inventory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/inventory_panel's window data.
+/datum/inventory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	var/list/slots = list()
@@ -261,7 +268,7 @@ UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,
 	)))
 	data["slots"] = slots
 
-	data["internals"] = host.internals
+	data["hud_used?.internals"] = hud_of(host)?.internals
 	data["internalsValid"] = istype(host.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) && istype(host.get_equipped_item(SLOT_ID_BACK), /obj/item/tank)
 
 	return data
@@ -273,14 +280,16 @@ UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,
 
 /datum/inventory_panel/human/New(mob/living/carbon/human/new_host)
 	if(!istype(new_host))
-		qdel(src)
+		spent(src)
 		return
 	return ..() // Let our parent assign the host.
 
-UI_ACT(/datum/inventory_panel/human, "targetSlot", ui_act_targetslot, UI_ARG_TEXT("slot"))
-UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
+CAPABILITIES(/datum/inventory_panel/human)
+	op("targetSlot", ui_act("targetSlot", arg("slot", schema_text(4096))), then(PROC_REF(ui_act_targetslot)))
+/datum/inventory_panel/human/proc/ui_act_targetslot(datum/act/op/A, slot)
+	var/mob/user = A.actor
 	var/mob/living/carbon/human/H = host
-	H.handle_strip(params["slot"], ui.user)
+	H.handle_strip(slot, user)
 	return TRUE
 
 /datum/inventory_panel/human/ui_assets(mob/user)
@@ -288,10 +297,8 @@ UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
-UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_panel_human{slots:list,specialSlots:list,internals:unknown,internalsValid:bool,sensors:bool,handcuffed:bool,handcuffedParams:listmap,legcuffed:bool,legcuffedParams:listmap,accessory:bool}")
-
-/// The computed part of /datum/inventory_panel/human's window data (declared on its UI_DATA row).
-/datum/inventory_panel/human/proc/ui_data_datum_inventory_panel_human(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/inventory_panel/human's window data.
+/datum/inventory_panel/human/ui_data(datum/act/eval/A)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
 
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.
@@ -333,7 +340,7 @@ UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_pan
 		))
 	data["specialSlots"] = specialSlots
 
-	data["internals"] = H.internals
+	data["hud_used?.internals"] = hud_of(H)?.internals
 	data["internalsValid"] = (istype(H.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) || istype(H.get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)) && (istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_BELT), /obj/item/tank) || istype(H.get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
 
 	data["sensors"] = FALSE
@@ -355,7 +362,3 @@ UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_pan
 		data["accessory"] = TRUE
 
 	return data
-
-/mob/living/relations()
-	. = ..()
-	. += rel_one(nameof(internal)) // the equipped (or pump-supplied) tank we breathe from; the slot owns it

@@ -70,8 +70,10 @@
 	icon_state = "brigphysician"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysician"
-	permeability_coefficient = 0.50
 	armor_spec = "melee=10;bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/yw/rank/security/brigphys/skirt
 	desc = "A skirted Brig Physician uniform. It has both security and medical protection."
@@ -80,8 +82,10 @@
 	icon_state = "brigphysicianf"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysicianf"
-	permeability_coefficient = 0.50
 	armor_spec = "melee=10;bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
+	configure(item_protection(permeability = 0.50))
 
 
 /obj/item/clothing/under/yw/robotics //fancy blueshield suit,
@@ -214,7 +218,9 @@
 	desc = "A victorian style dress, fancy!"
 	icon_state = "victorianblackdress"
 	item_state = "victorianblackdress"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/yw/victsuit/victdress)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO))
 
 /obj/item/clothing/under/yw/victsuit/victdress/red
 	name = "red victorian dress"
@@ -228,7 +234,9 @@
 	icon_state = "victorianvest"
 	item_state = "victorianvest"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/yw/victsuit)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO))
 
 /obj/item/clothing/under/yw/victsuit/redblk
 	name = "red and black victorian suit"

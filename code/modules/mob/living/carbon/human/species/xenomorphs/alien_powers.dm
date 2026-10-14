@@ -67,21 +67,41 @@
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return
 
-	om_ask(src, /datum/om/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), recipient = M)
+	open_request(src, /datum/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), answerer = src, recipient = M)
 
 /// How much plasma to give. Re-checked on the answer: still conscious, and the recipient still exists.
-/datum/om/prompt/number/plasma_transfer
-	message = "Amount:"
+/datum/prompt/number/plasma_transfer
+	question = "Amount:"
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
+	min_value = null
+	max_value = null
+	step = 1
+	default = 0
 	var/mob/living/carbon/human/recipient
 
-/datum/om/prompt/number/plasma_transfer/prepare()
-	title = "Transfer Plasma to [recipient]"
-	return TRUE
+CAPABILITIES(/datum/prompt/number/plasma_transfer)
+	ref_one(nameof(recipient), /mob/living/carbon/human)
 
-/mob/living/carbon/human/proc/plasma_amount_chosen(datum/om/prompt/number/plasma_transfer/ask)
+/datum/prompt/number/plasma_transfer/prepare(datum/act/context)
+	. = ..()
+	var/mob/living/carbon/human/captured = recipient
+	rel_clear(src, nameof(recipient))
+	rel_set(src, nameof(recipient), captured)
+	title = "Transfer Plasma to [recipient]"
+
+/datum/prompt/number/plasma_transfer/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(recipient) ? "recipient gone" : null
+
+/mob/living/carbon/human/proc/plasma_amount_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/number/plasma_transfer/ask = A.request
 	var/mob/living/carbon/human/M = ask.recipient
-	var/amount = abs(round(ask.number))
+	var/amount = abs(round(ask.value))
 	if(amount && check_alien_ability(amount,0,O_PLASMA))
 		M.gain_plasma(amount)
 		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
@@ -96,7 +116,7 @@
 
 	if(!CONFIG_GET(flag/aliens_allowed))
 		to_chat(src, "You begin to lay an egg, but hesitate. You suspect it isn't allowed.")
-		om_grant(src, GRANT_VERB_HIDE, /mob/living/carbon/human/proc/lay_egg, verb_source(VERB_SOURCE_CONFIG))
+		grant(src, granted_verb(/mob/living/carbon/human/proc/lay_egg, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 		return
 
 	if(locate_within(get_turf(src), /obj/structure/ghost_pod/automatic/xenomorph_egg))
@@ -132,15 +152,15 @@
 
 	if(check_alien_ability(50,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
-		new /obj/effect/alien/weeds/node(get_turf(src), null, "#321D37")
+		new /obj/effect/alien/weeds/node(get_turf(src))
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)
-	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
+	if(!cooldown_ready(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
+		cooldown_start(src, spit_cooldown, 1 SECONDS)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
@@ -209,7 +229,7 @@
 		return
 
 	else
-		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
+		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/neurotoxin
 		spit_name = "neurotoxin"
@@ -230,7 +250,7 @@
 		return
 
 	else
-		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
+		cooldown_start(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/acid
 		spit_name = "acid"
@@ -245,11 +265,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(resin_chosen), answerer = src, choices = options, anchor = src, radius = 42, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
 
 /// Radial answer: secrete the picked resin structure in front of us.
-/mob/living/carbon/human/proc/resin_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
+/mob/living/carbon/human/proc/resin_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/choice = A.answer.value
 	if(!choice || QDELETED(src) || src.incapacitated())
 		return
 
@@ -294,10 +316,10 @@
 	set name = "Leap"
 	set desc = "Leap at a target and grab them aggressively."
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
@@ -307,37 +329,39 @@
 			choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(alien_leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
+	open_request(src, /datum/prompt/choice, PROC_REF(alien_leap_target_chosen), answerer = src, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
-/mob/living/carbon/human/proc/alien_leap_target_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/T = ask.choice
+/mob/living/carbon/human/proc/alien_leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/T = A.answer.value
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot leap in your current state.")
 		return
 
-	COOLDOWN_START(src, last_special, 75)
-	status_flags |= LEAPING
+	cooldown_start(src, last_special, 7.5 SECONDS)
+	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_VOICE_HISS5)
-	om_after(src, 5, PROC_REF(leap_land), T)
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 
 /mob/living/carbon/human/proc/leap_land(mob/living/T)
 
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!src.Adjacent(T))
+	if(!T || !src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 
-	T.status_at_least(EFFECT_WEAKENED, 3)
+	T.status_at_least(STAT_WEAKENED, 3)
 
 	var/use_hand = "left"
 	if(get_equipped_item(SLOT_ID_HAND_L))
@@ -350,12 +374,12 @@
 	act_message(src, T, others = span_boldwarning("%U%") + " seizes %T% aggressively!")
 
 	var/obj/item/grab/G = new(src,T)
-	if(!G.move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, src))
-		qdel(G)
+	if(!move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, G, src))
+		spent(G)
 		return
 
 	G.state = GRAB_PASSIVE
-	G.icon_state = "grabbed1"
+	G.set_icon_state("grabbed1")
 	G.synch()
 
 /mob/living/carbon/human/proc/gut()
@@ -363,10 +387,10 @@
 	set name = "Slaughter"
 	set desc = "While grabbing someone aggressively, rip their guts out or tear them apart."
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying)
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_STUNNED) || has_status(STAT_WEAKENED) || lying)
 		to_chat(src, span_danger("You cannot do that in your current state."))
 		return
 
@@ -379,7 +403,7 @@
 		to_chat(src, span_danger("You must have an aggressive grab to slaughter your prey!"))
 		return
 
-	COOLDOWN_START(src, last_special, 50)
+	cooldown_start(src, last_special, 5 SECONDS)
 
 	act_message(src, null, others = span_warning(span_bold("%U%") + " rips viciously at \the [G?.grab_target()]'s body with its claws!"))
 

@@ -5,76 +5,25 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
 	var/datum/gas_mixture/air_contents
+	/// The volume its mixture is made with (an injector or scrubber sets its own).
+	var/air_volume = 200
 
 	var/datum/pipe_network/network
-
-	var/welded = FALSE //defining this here for ventcrawl stuff
-	/// Change mask this device cares about on both mixtures it watches while hibernating
-	/// (code/datums/om/watch.dm om_watch_arm_revision(); most unary devices only ever act on
-	/// a pressure change, so that's the default).
-	var/gas_dependency_mask = GAS_DEPENDENCY_PRESSURE
-
-/obj/machinery/atmospherics/unary/Initialize(mapload)
-	. = ..()
-
-	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
-	air_contents.set_volume(200)
-
-/// Arms this device's own eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()):
-/// gas_wake_condition() re-evaluated whenever one of gas_wake_mixtures() publishes a change in
-/// gas_dependency_mask, firing only on the edge where it becomes TRUE -- a sleeping device wakes
-/// when it can act, not on every revision. Re-arming replaces the previous watch.
-/obj/machinery/atmospherics/unary/proc/register_gas_dependencies()
-	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in gas_wake_mixtures())
-		var/id = air?.arena_id()
-		if(!isnull(id))
-			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
-
-/// Its one pipe neighbour. A field: connecting or disconnecting raises CHANGE_MACHINE_SETTINGS, so
-/// a device whose declared work depends on being connected re-evaluates.
-OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, node, CHANGE_MACHINE_SETTINGS)
-
-/obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "gas")
-
-/// Mixtures whose changes can make gas_wake_condition() true. Its own pipe contents by default.
-/obj/machinery/atmospherics/unary/proc/gas_wake_mixtures()
-	return list(air_contents)
-
-/// TRUE when process() would have work to do. The base unary device has no DM-side work.
-/obj/machinery/atmospherics/unary/proc/gas_wake_condition()
-	return FALSE
-
-/// The wake action for both watches armed above: re-enter process() the same way the deleted
-/// gas_dependency_changed()/wake_gas_subscriber() pair used to.
-/obj/machinery/atmospherics/unary/proc/wake_from_gas()
-	unregister_gas_dependencies()
-	MACHINE_WAKE(src)
-
-/obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
-	om_watch_invalidate(src)
-
-/obj/machinery/atmospherics/unary/set_use_power(new_use_power)
-	if(use_power == new_use_power)
-		return
-	invalidate_gas_dependencies()
-	return ..()
-
-/obj/machinery/atmospherics/unary/Moved(atom/old_loc, direction, forced = FALSE)
-	. = ..()
-	invalidate_gas_dependencies()
+	/// Its one pipe neighbour (a relation view: it reads null once the neighbour is gone; disconnect() is the domain unlink).
+	var/obj/machinery/atmospherics/node
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir
+
+/// Joined to a pipe (its one node). A condition a device asks when it is used (a cryo cell taking someone in), and its own work's check.
+/obj/machinery/atmospherics/unary/proc/piped(datum/act/op/A)
+	return !!node
 
 // Housekeeping and pipe network stuff below
 /obj/machinery/atmospherics/unary/get_neighbor_nodes_for_init()
 	return list(node)
 
 /obj/machinery/atmospherics/unary/atmos_init()
-	invalidate_gas_dependencies()
 	if(node)
 		return
 
@@ -85,7 +34,6 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/return_network(obj/machinery/atmospherics/reference)
@@ -95,7 +43,6 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 	return null
 
 /obj/machinery/atmospherics/unary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
-	invalidate_gas_dependencies()
 	if(network == old_network)
 		rel_set(src, nameof(network), new_network)
 
@@ -118,14 +65,12 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 		atmos_air_set(src, nameof(air_contents), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
-	invalidate_gas_dependencies()
 	if(reference==node)
 		rust_release_network_wrapper(network)
 		rel_clear(src, nameof(node))
 
-	update_icon()
 	update_underlays()
-
+	rust_device_dirty() // a device edge that named the node is withdrawn
 	return null
 
 // Check if there are any other atmos machines in the same turf that will block this machine from initializing.
@@ -144,33 +89,44 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 			return TRUE
 	return FALSE
 
-// Keybinds for EVEEERYTHING* (* = not everything))
-/obj/machinery/atmospherics/unary/click_ctrl(mob/user)
-	if((power_rating != null) && !(pipe_state in list("scrubber", "uvent", "injector"))) //TODO: Add compatibility with air alarm. When not disabled, overrides air alarm state and doesn't tell the air alarm that. Injectors have their own, different bind for enabling.
-		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-		if(allowed(user))
-			invalidate_gas_dependencies()
-			set_use_power(!use_power)
-			add_fingerprint(user)
-			if(use_power)
-				to_chat(user, span_notice("You toggle the [name] on."))
-			else
-				to_chat(user, span_notice("You toggle the [name] off."))
+// ---- the ctrl-click power switch ----
 
-		else
-			to_chat(user, span_warning("Access denied."))
+/// A ctrl-click switches a powered unary device (a heater, a freezer) on or off for someone its access lets in. Not a vent, a scrubber or an
+/// injector: the air alarm (or the injector's own switch) drives those.
+/obj/machinery/atmospherics/unary/proc/ctrl_power_offered(datum/act/op/A)
+	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
 
-/obj/machinery/atmospherics/unary/step_has_work()
-	return gas_wake_condition()
+// ---- an area air device's wrench (a vent, a scrubber) ----
 
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/atmospherics/unary/arm_wakes()
-	..()
-	register_gas_dependencies()
+MSG_DEF_SELF(air_device/plating, "You must remove the plating first.")
+MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firmly.")
 
+/// The wrench that takes a vent or a scrubber off its pipe: refused while it runs, while the floor covers its pipe, while it is welded and while its
+/// pipe holds too much pressure.
+/proc/air_device_unwrench()
+	return list(op("unwrench", tool(TOOL_WRENCH), wait(4 SECONDS),
+		needs(req(TYPE_PROC_REF(/obj/machinery/atmospherics, pipe_device_idle)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, pipe_reachable)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics/unary, not_welded)),
+			req(TYPE_PROC_REF(/obj/machinery/atmospherics, unwrench_safe))),
+		says(MSG(pipe_device/unfastened)),
+		then(TYPE_PROC_REF(/obj/machinery/atmospherics, unfastened))))
 
-/obj/machinery/atmospherics/unary/ownership()
+/obj/machinery/atmospherics/unary/proc/pipe_reachable(datum/act/A)
+	var/turf/T = loc
+	return (!(node && node.level == 1 && isturf(T) && !T.is_plating())) ? null : MSG(air_device/plating)
+
+/obj/machinery/atmospherics/unary/proc/not_welded(datum/act/A)
+	return (!weld_shut_welded(src, null)) ? null : MSG(air_device/welded)
+
+CAPABILITIES(/obj/machinery/atmospherics/unary)
+	gas_port(nameof(air_contents), volume = nameof(air_volume))
+	ref_one(nameof(node))
+	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	pipe_device_switch()
+	extend("power_toggle", when(PROC_REF(ctrl_power_offered)))
+
+/// A port bound in Rust: a device edge that names it can be published now.
+/obj/machinery/atmospherics/unary/rust_bind_pipe_port(index, datum/pipe_network/new_network, datum/gas_mixture/network_air)
 	. = ..()
-	. += proto(nameof(air_contents))
-
-TRACKED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)
+	rust_device_dirty()

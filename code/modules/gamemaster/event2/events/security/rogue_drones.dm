@@ -59,7 +59,7 @@
 			D.z = using_map.admin_levels[1]
 			D.loot_list = list()
 
-			qdel(D)
+			spent(D)
 			number_recovered++
 
 		if(number_recovered > length(spawned_mobs) * 0.75)

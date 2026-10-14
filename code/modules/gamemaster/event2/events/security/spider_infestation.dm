@@ -37,7 +37,7 @@
 /datum/event2/event/spider_infestation/start()
 	var/list/vents = list()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/temp_vent in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in get_location_z_levels()))
+		if(!is_welded(temp_vent) && temp_vent.network && (temp_vent.loc.z in get_location_z_levels()))
 			if(temp_vent.network.normal_members.len > 50)
 				vents += temp_vent
 

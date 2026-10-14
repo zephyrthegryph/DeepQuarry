@@ -1,4 +1,7 @@
 // Contains all of the variables and such to make tg prefs work
+/// A player's preferences persist for the round (GLOB.preferences_datums, keyed by ckey): only a forced qdel() removes one.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/preferences)
+
 /datum/preferences
 	/// The savefile relating to character preferences, PREFERENCE_CHARACTER
 	var/list/character_data
@@ -8,7 +11,7 @@
 
 	/// A cache of preference entries to values.
 	/// Used to avoid expensive READ_FILE every time a preference is retrieved.
-	var/value_cache = list()
+	var/list/value_cache
 
 	/// If set to TRUE, will update character_profiles on the next ui_data tick.
 	var/tainted_character_profiles = FALSE
@@ -24,6 +27,6 @@
 		if(preference.savefile_identifier != PREFERENCE_PLAYER)
 			continue
 
-		value_cache -= preference.type
+		LAZYREMOVE(value_cache, preference.type)
 		preference.apply_to_client(client(), read_preference(preference.type))
 

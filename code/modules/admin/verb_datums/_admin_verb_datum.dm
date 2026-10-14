@@ -19,8 +19,8 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/admin_verb)
 
 /// Assigns the verb to the admin.
 /datum/admin_verb/proc/assign_to_client(client/admin)
-	om_grant(admin, GRANT_VERB, verb_path, src)
+	grant(admin, granted_verb(verb_path), src)
 
 /// Unassigns the verb from the admin.
 /datum/admin_verb/proc/unassign_from_client(client/admin)
-	om_revoke(admin, GRANT_VERB, verb_path, src)
+	revoke(admin, granted_verb(verb_path), src)

@@ -2,48 +2,6 @@
 // Runtime: code/datums/capabilities/.
 
 // ---- cap_state bits: ALL allocated in code/__defines/cap_bits.dm (tools/ci/cap_bits_lint.py) ----
-// ---- storage categories (L1: the one allocation of HOLDS_* bits) ----
-// A cap_storage() holder's `holds` is a mask of these; an item's `storage_class` says which it is.
-// can_hold rule (storage.dm): HOLDS_ANY takes anything that fits; otherwise an item fits when
-// (holds & HOLDS_TOOLS) and it has tool qualities, or (item.storage_class & holds) != 0.
-// DM bitfields are safe to 24 bits.
-/// Anything with a tool quality (no storage_class needed).
-#define HOLDS_TOOLS (1<<0)
-/// Cable, flashlights, meters, circuit boards, engineering consumables.
-#define HOLDS_ENGINEERING (1<<1)
-/// Medicine, bandages, scanners, pill bottles.
-#define HOLDS_MEDICAL (1<<2)
-/// Food and drink.
-#define HOLDS_FOOD (1<<3)
-/// Magazines, casings, cells for weapons.
-#define HOLDS_AMMO (1<<4)
-/// Small weapons (knives, batons, holstered guns).
-#define HOLDS_WEAPONS (1<<5)
-/// Paper, pens, folders, stamps, photos.
-#define HOLDS_PAPERWORK (1<<6)
-/// Clothing and accessories.
-#define HOLDS_CLOTHING (1<<7)
-/// Seeds and plant produce.
-#define HOLDS_BOTANY (1<<8)
-/// Ore, sheets and raw materials.
-#define HOLDS_MINING (1<<9)
-/// Beakers, bottles, vials and other reagent containers.
-#define HOLDS_CHEMISTRY (1<<10)
-/// Science samples, slimes cores, disks.
-#define HOLDS_SCIENCE (1<<11)
-/// Cuffs, flashes, evidence bags.
-#define HOLDS_SECURITY (1<<12)
-/// Cleaning supplies.
-#define HOLDS_JANITORIAL (1<<13)
-/// Cigarettes, lighters, matches.
-#define HOLDS_SMOKABLES (1<<14)
-/// ID cards, cash, coins.
-#define HOLDS_CARDS (1<<15)
-/// Power cells.
-#define HOLDS_CELLS (1<<16)
-/// Every category, and anything with no category at all: only size and space limit it.
-#define HOLDS_ANY ((1<<24) - 1)
-
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.
 #define COVER CAP_COVER_OPEN
@@ -57,23 +15,32 @@
 /// default for an explicit null argument, so null can't mean "none".
 #define CAP_NO_LAYER "__none"
 
-// ---- change channels a capability raises ----
-/// A capability's state changed (cap_state bit or its data datum).
-#define CHANGE_CAPABILITY CHANGE_EXPLICIT
-
 /**
- * Declares a tracked var: generates `set_<V>(value)`, which compares, writes, calls
- * changed(src, CHANNEL, "V") and returns TRUE when the value changed. Declare the var normally next
- * to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line and passes the var
- * name too: changed(src, CHANNEL, nameof(V)). tools/ci/tracked_lint.py rejects every write to V
- * outside its setter. A type that declares its dependencies (derived()) re-derives only the outputs
- * that read V when it changes.
+ * Declares a tracked var: generates `set_<V>(value)`, which compares, writes and returns TRUE when the value
+ * changed; a change publishes the key "V" (publish_change(src, nameof(V))) only when READERS(src, "V") says someone
+ * reads it (an on_change / on_cross reaction, a generated read, an observer), and re-derives the outputs that read
+ * V. Declare the var normally next to it. A hand-written `proc/set_<V>()` (for side effects) replaces this line,
+ * calls tracked_changed(src, nameof(V)) and registers itself with SETTER(T, V). tools/ci/tracked_lint.py rejects
+ * every write to V outside its setter.
  *
  *	/obj/machinery/pump
  *		var/target_pressure = ONE_ATMOSPHERE
- *	TRACKED(/obj/machinery/pump, target_pressure, CHANGE_MACHINE_SETTINGS)
+ *	TRACKED(/obj/machinery/pump, target_pressure)
  */
-#define TRACKED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(V == value) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)
+/// TRUE for a GLOBAL_PROC_REF() (a /proc/ path), FALSE for a type proc ref: holder_call() and dispatch_call() pass a
+/// global proc the holder as an argument instead of calling it on the holder.
+#define IS_GLOBAL_PROC_REF(P) (copytext("[P]", 1, 7) == "/proc/")
+
+/// TRUE when writing NEW over OLD changes nothing. DM reads null == 0, null == "" and null == FALSE as true, so a plain `==`
+/// never published a change between null and a falsy value; null is a different state from 0, "" and FALSE.
+#define TRACKED_UNCHANGED(OLD, NEW) (((OLD) == (NEW)) && (isnull(OLD) == isnull(NEW)))
+
+#define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
+
+/// A field of a profile record (/datum/record, code/engine/declare/profiles.dm) that something draws or reacts to: its setter
+/// publishes the field on the record and on the record's holder, so the holder's draw and on_change() follow it. A record's only procs
+/// are its accessors (base_vars records_data_only), so its set_<field>() is its setter by name: VV and record_copy() call it.
+#define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; record_changed(src, #V); return TRUE }
 
 /**
  * Registers a hand-written `T/proc/set_<V>(value)` as V's setter (a setter with side effects):
@@ -82,6 +49,21 @@
  * (a verb, another signature) never is.
  */
 #define SETTER(T, V) ##T/proc/__setter_##V() { return TRUE }
+
+/**
+ * Names the change key that covers V: V is written only by producers that publish KEY (a bit field set through a
+ * helper, a value a subsystem rewrites). tools/ci/derived_reads_lint.py generates KEY for a presentation reaction
+ * that reads V, and accepts V as published. `__published_<V>()` returns the key (tests check producers with it).
+ */
+#define PUBLISHED_BY(T, V, KEY) ##T/proc/__published_##V() { return KEY }
+
+/**
+ * One-line capability declaration: `CAPABILITY(/obj/item/reagent_containers/food/snacks/donut, reagents(20, starts =
+ * list(REAGENT_ID_NUTRIMENT = 3)))`. Expands to a declared_capabilities() override that adds ENTRY after ..(),
+ * collected into the type's capabilities table (caps_build()). Any capability constructor works; several lines on
+ * one type add in file order.
+ */
+#define CAPABILITY(T, ENTRY) ##T/declared_capabilities(list/into) { ..(); into += ENTRY; }
 
 // ---- UI helpers ----
 /// Returned by a ui_<action> proc that refused (refuse() already told the user).
@@ -118,6 +100,9 @@
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
 /// The type declares its dependencies (derived()): its instances join the relation index at init.
 #define TYPE_DERIVES_DEPS (1<<5)
+/// The type overrides a refresh side effect (on_state_changed() or push_to_rust()), or its probe could not rule it out:
+/// a refresh of it does work even when it draws and hides nothing, so its refreshes are never skipped.
+#define TYPE_DERIVES_SIDE (1<<6)
 
 // ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
 /// Every 2 seconds.
@@ -126,13 +111,6 @@
 #define CADENCE_SECOND /datum/cadence/second
 /// Every 0.2 seconds (continuous lanes need a reason).
 #define CADENCE_FAST /datum/cadence/fast
-
-/// The reagents capability's key (reagents(), code/datums/capabilities/library/reagents.dm): refine(CAP_REAGENTS,
-/// starts = ...) adds to the inherited contents, without(., CAP_REAGENTS) drops the holder.
-#define CAP_REAGENTS /datum/capability/reagents
-
-/// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
-#define ALL_ENTRIES "all_entries"
 
 // ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
 /// power_channels(): channel indices (Rust's channel order).
@@ -144,12 +122,13 @@
 #define POWER_ROLE_PRODUCER "producer"
 #define POWER_ROLE_STORAGE "storage"
 #define POWER_ROLE_CONSUMER "consumer"
-/// A light fixture of an area (powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)): members_of(area, role).
-#define POWER_ROLE_LIGHTING "lighting"
-/// A computer console of an area.
-#define POWER_ROLE_COMPUTER "computer"
-/// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER relation of the area it stands in, not of a system.
-#define POWERED_BY_AREA "area"
+/// The power capability's tracked "powered" state (G8): a machine's NOPOWER, written only by set_powered()
+/// (power_change()); published to its readers on a change. The draw mode is the tracked var nameof(use_power).
+#define MACHINE_KEY_POWERED "machine_powered"
+/// The machine condition bits (has_stat()): published with PUBLISH_CHANGE(E, "stat") when any change.
+#define MACHINE_KEY_STAT "stat"
+/// The integrity state (G8): published by atom_break() / atom_fix(), the only writers of a machine's BROKEN.
+#define INTEGRITY_KEY_BROKEN "integrity_broken"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15
 /// cap_wall_mount(): pixels from the turf centre into the wall.

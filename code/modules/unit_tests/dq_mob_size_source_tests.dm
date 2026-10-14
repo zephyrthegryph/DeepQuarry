@@ -22,7 +22,7 @@
 	var/mob/living/carbon/human/H = new(null)
 	var/obj/item/clothing/accessory/collar/shock/bluespace/modified/C = new(H)
 
-	TEST_ASSERT(H.resizable, "test human should be resizable by default")
+	TEST_ASSERT(H.vore_prefs.resizable, "test human should be resizable by default")
 	TEST_ASSERT(dq_near(H.size_multiplier, 1), "test human should start at 100% size, got [H.size_multiplier * 100]%")
 
 	// Collar activates: target = (encryption * 2) / 100 = 1.4 (140%).

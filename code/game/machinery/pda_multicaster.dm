@@ -7,62 +7,44 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/telecomms/pda_multicaster
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 750
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
-	var/list/internal_PDAs // Assoc list of PDAs inside of this, with the department name being the index,
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
-	/// Until when an EMP keeps the multicaster down (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
+
+CAPABILITIES(/obj/machinery/pda_multicaster)
+	// one PDA per department it mirrors messages to
+	initial_contents(/obj/item/pda/multicaster/command)
+	initial_contents(/obj/item/pda/multicaster/security)
+	initial_contents(/obj/item/pda/multicaster/engineering)
+	initial_contents(/obj/item/pda/multicaster/medical)
+	initial_contents(/obj/item/pda/multicaster/research)
+	initial_contents(/obj/item/pda/multicaster/exploration)
+	initial_contents(/obj/item/pda/multicaster/cargo)
+	initial_contents(/obj/item/pda/multicaster/civilian)
+	configure(uses_power(idle = 750))
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
+	emp_disable(300 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/pda_multicaster/Initialize(mapload)
 	. = ..()
-	internal_PDAs = list("command" = new /obj/item/pda/multicaster/command(src),
-		"security" = new /obj/item/pda/multicaster/security(src),
-		"engineering" = new /obj/item/pda/multicaster/engineering(src),
-		"medical" = new /obj/item/pda/multicaster/medical(src),
-		"research" = new /obj/item/pda/multicaster/research(src),
-		"exploration" = new /obj/item/pda/multicaster/exploration(src),
-		"cargo" = new /obj/item/pda/multicaster/cargo(src),
-		"civilian" = new /obj/item/pda/multicaster/civilian(src))
-
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	update_power()
 
-/obj/machinery/pda_multicaster/prebuilt/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+CAPABILITIES(/obj/machinery/pda_multicaster/prebuilt)
+	default_parts()
 
-
-APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_off}")
-
-/obj/machinery/pda_multicaster/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/pda_multicaster_toggle,
-	)
+/// The look (the draw sweep: from its template).
+/obj/machinery/pda_multicaster/draw(datum/look/look)
 	..()
+	look.state("[initial(icon_state)][on ? "" : "_off"]")
 
-/// Old attack_hand (never called ..()): toggle the multicaster.
-/datum/interaction/machine_hand/ungated/pda_multicaster_toggle
-	id = "pda_multicaster_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/pda_multicaster/proc/interaction_toggle
-
-/obj/machinery/pda_multicaster/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/pda_multicaster/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_power(user)
 	return TRUE
 
@@ -77,7 +59,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 
 /obj/machinery/pda_multicaster/proc/update_PDAs(turn_off)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/pda/pda in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/pda/pda in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger/multicast)
 		if(M)
 			M.toff = turn_off
@@ -105,9 +87,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 		if(soundloop)
 			soundloop.stop()
 		noisy = FALSE
-	update_icon()
 
-/obj/machinery/pda_multicaster/machine_step()
+/obj/machinery/pda_multicaster/proc/work_step(datum/act/timer/A)
 	update_power()
 	return PROCESS_KILL
 
@@ -115,12 +96,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 	. = ..()
 	update_power()
 
-EMP_DISABLE(/obj/machinery/pda_multicaster, 300 SECONDS, "emp_until")
-
-/obj/machinery/pda_multicaster/emp_disable_changed(disabled)
-	..()
+/// A pulse took it down or its outage ended (emp_disable()): it reconciles.
+/obj/machinery/pda_multicaster/proc/emp_state_changed(datum/act/A)
 	update_power()
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
+/// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/pda_multicaster/step_start_condition()
 	return TRUE // sets its power draw

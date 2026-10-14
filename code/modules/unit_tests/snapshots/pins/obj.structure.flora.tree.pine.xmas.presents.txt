@@ -1,0 +1,38 @@
+@obj.structure.flora.tree human|none
+@obj.structure.flora.tree robot|none
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/multitool
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/weldingtool
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/card/id
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item
++1 menu: Search for sticks
++2 menu: Take a present
+@obj.structure human|/obj/item/shovel
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+keys: dig_stump, drag_buckle, melee_hit, search_sticks, take_present, tree_hit

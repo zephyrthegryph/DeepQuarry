@@ -44,7 +44,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	alpha = 90
 
 // A mapping preview only: discarded at map time.
-MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolve_discard))
+CAPABILITIES(/obj/effect/fancy_shuttle_floor_preview)
+	map_resolver(GLOBAL_PROC_REF(map_resolve_discard))
 
 // Only icon changes are damage
 /turf/simulated/wall/fancy_shuttle
@@ -56,8 +57,7 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 	var/fancy_shuttle_tag
 
 // Reinforced hull steel
-/turf/simulated/wall/fancy_shuttle/Initialize(mapload, materialtype, rmaterialtype, girdertype)
-	. = ..(mapload,  MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL)
+TYPE_TABLE(/turf/simulated/wall/fancy_shuttle, wall_forced_materials, list(MAT_STEELHULL, MAT_STEELHULL, MAT_STEELHULL))
 
 
 /turf/simulated/wall/fancy_shuttle/pre_translate_A(turf/B)
@@ -78,8 +78,8 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 			material.place_dismantled_product(src)
 
 	clear_plants()
-	material = get_material_by_name("placeholder")
-	reinf_material = null
+	rel_set(src, nameof(material), get_material_by_name("placeholder"))
+	set_reinf_material(null)
 	girder_material = null
 
 	ChangeTurf(/turf/simulated/floor/plating/eris/under)
@@ -112,36 +112,33 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 	if(under_EM)
 		underlays += under_EM
 
-// Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/turf/simulated/wall/fancy_shuttle/appearance_overlays()
-	. = list()
-	if(!damage_overlays[1])
-		generate_overlays()
+CAPABILITIES(/turf/simulated/wall/fancy_shuttle)
+	after_init(0, then(PROC_REF(helper_check)))
 
+/// Reports a tagged wall whose helper is not there (the helper is made very early, so every wall of the load can find it).
+/turf/simulated/wall/fancy_shuttle/proc/helper_check(datum/act/timer/A)
+	if(fancy_shuttle_tag && !GLOB.fancy_shuttles[fancy_shuttle_tag])
+		WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
+
+// Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
+/turf/simulated/wall/fancy_shuttle/look_parts(datum/look/look)
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!helper)
-			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return .
-		icon = helper[1]
-		icon_state = "walls [x - helper[2]],[y - helper[3]]"
+			return
+		look.set_icon(helper[1])
+		look.state("walls [x - helper[2]],[y - helper[3]]")
 
-	apply_underlay()
+	look.effect(PROC_REF(apply_underlay))
 
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		var/overlay = round(damage_fraction * damage_overlays.len) + 1
-		if(overlay > damage_overlays.len)
-			overlay = damage_overlays.len
-
-		. += damage_overlays[overlay]
+	if(damage_step)
+		look.overlay(damage_overlays[damage_step])
 
 /turf/simulated/wall/fancy_shuttle/update_connections()
 	return
 
-/turf/simulated/wall/fancy_shuttle/set_light(l_range, l_power, l_color, l_on)
-	return
+/turf/simulated/wall/fancy_shuttle/accepts_glow()
+	return FALSE
 
 /obj/effect/floor_decal/fancy_shuttle
 	icon = 'icons/turf/fancy_shuttles/_fancy_helpers.dmi'
@@ -149,10 +146,10 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, TYPE_PROC_REF(/atom,
 	layer = DECAL_LAYER-1
 	var/fancy_shuttle_tag
 
-MAP_RESOLVER(/obj/effect/floor_decal/fancy_shuttle, GLOBAL_PROC_REF(resolve_fancy_shuttle_decal))
-MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
+CAPABILITIES(/obj/effect/floor_decal/fancy_shuttle)
+	configure(map_resolver(GLOBAL_PROC_REF(resolve_fancy_shuttle_decal), vars = list("fancy_shuttle_tag")))
 
-/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
+/// The map resolver of fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
 /// once the load is in place (the helper may be loaded after the decal).
 /proc/resolve_fancy_shuttle_decal(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(fancy_shuttle_decal_resolve), get_turf(loc), path, varedits)
@@ -189,16 +186,14 @@ MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 	var/fancy_shuttle_tag
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-DECLARE_APPEARANCE_PROC(/obj/structure/window/fancy_shuttle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/window/fancy_shuttle/appearance_overlays()
-	. = list()
+/obj/structure/window/fancy_shuttle/look_parts(datum/look/look)
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!helper)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return .
-		icon = helper[1]
-		icon_state = "walls [x - helper[2]],[y - helper[3]]"
+			return
+		look.set_icon(helper[1])
+		look.state("walls [x - helper[2]],[y - helper[3]]")
 
 /**
  * Invisible ship equipment (otherwise the same as normal)

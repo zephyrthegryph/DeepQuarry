@@ -9,7 +9,9 @@
 	icon_state = "blackutility"
 	worn_state = "blackutility"
 	armor_spec = ""
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/nanotrasen)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/nanotrasen/security
 	name = "NanoTrasen security uniform"

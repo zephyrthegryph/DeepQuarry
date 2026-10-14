@@ -27,8 +27,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	density = FALSE
 
 
@@ -47,38 +45,36 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	glow_override = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/animal/solargrub_larva, /mob/living/proc/ventcrawl)
-
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.set_draining(0)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	return ..()
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
 
 
-/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
-	of = /mob/living/simple_mob/animal/solargrub_larva
+/mob/living/simple_mob/animal/solargrub_larva/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/solargrub_larva/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(self.machine_effect && !istype(self.loc, /obj/machinery))
-		QDEL_NULL(self.machine_effect)
+	if(src.machine_effect && !istype(src.loc, /obj/machinery))
+		QDEL_NULL(src.machine_effect)
 
-	if(!ctx.fact("alive"))	// || ai_inactive
+	if(!F.alive())	// || ai_inactive
 		return
 
-	if(self.power_drained >= 7 MEGAWATTS && prob(5))
-		self.expand_grub()
+	if(src.power_drained >= 7 MEGAWATTS && prob(5))
+		src.expand_grub()
 		return
 
-	if(istype(self.loc, /obj/machinery))
-		if(self.machine_effect && SSair.times_fired%30)
+	if(istype(src.loc, /obj/machinery))
+		if(src.machine_effect && SSair.times_fired%30)
 			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				M << self.machine_effect
+				M << src.machine_effect
 		if(prob(10))
-			fx_sparks(self, 3, FALSE)
+			fx_sparks(src, 3, FALSE)
 		return
 
 /mob/living/simple_mob/animal/solargrub_larva/attack_target(atom/A)
@@ -86,16 +82,16 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		var/obj/machinery/M = A
 		if(is_type_in_list(M, ignored_machine_types))
 			return
-		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
+		if(!power_of(M).idle && !power_of(M).active && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 			return
-		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva)) // ALLOW(latent): mobs are never latent
+		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 			return
 		enter_machine(M)
 		return TRUE
 
 	if(istype(A, /obj/machinery/atmospherics/unary/vent_pump))
 		var/obj/machinery/atmospherics/unary/vent_pump/V = A
-		if(V.welded)
+		if(is_welded(V))
 			return
 		do_ventcrawl(V)
 		return TRUE
@@ -133,7 +129,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
 	powermachine.set_draining(1)
-	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
+	after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
 		return
@@ -148,10 +144,16 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// Travel time through the ducts; welded exits redirect up to `redirect_attempts` times.
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_travel(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
 	var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
-	om_after(src, travel_time, PROC_REF(ventcrawl_arrive), vent, end_vent, redirect_attempts)
+	after(src, travel_time, PROC_REF(ventcrawl_arrive), with = list(vent, end_vent, redirect_attempts), keeps_dead = TRUE)
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
-	if(end_vent.welded && redirect_attempts)
+	if(!end_vent)
+		forceMove(get_turf(vent) || get_turf(src))
+		return
+	if(is_welded(end_vent) && redirect_attempts)
+		if(!vent)
+			forceMove(get_turf(src))
+			return
 		end_vent = get_safe_ventcrawl_target(vent)
 		if(!end_vent)
 			forceMove(get_turf(vent))
@@ -168,18 +170,18 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/mob/living/simple_mob/vore/solargrub/adult = new(get_turf(src))
 	adult.tracked = tracked
 //	grub.power_drained = power_drained //TODO
-	qdel(src)
+	replaced_by(src, adult)
 
-/datum/om/stage/life/light/simple_mob/animal/solargrub_larva
-	of = /mob/living/simple_mob/animal/solargrub_larva
+/mob/living/simple_mob/animal/solargrub_larva/life_light_due()
+	return TRUE
 
-/datum/om/stage/life/light/simple_mob/animal/solargrub_larva/perform(mob/living/simple_mob/animal/solargrub_larva/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/solargrub_larva/life_light(datum/seq_frame/life/F)
 	. = ..()
-	if(. == 0 && !self.is_dead())
-		self.set_light(1.5, 1, COLOR_YELLOW)
+	if(. == 0 && !src.is_dead())
+		set_glow(src, GLOW(1.5, 1, COLOR_YELLOW))
 		return 1
-	else if(self.is_dead())
-		self.set_glow_override(FALSE)
+	else if(src.is_dead())
+		src.set_glow_override(FALSE)
 
 /obj/machinery/abstract_grub_machine
 	var/total_active_power_usage = 45 KILOWATTS
@@ -189,18 +191,40 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 	var/mob/living/simple_mob/animal/solargrub_larva/grub
 
 /// 0 stopped, 1 idle drain, 2 active drain.
-OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "draining")
+/obj/machinery/abstract_grub_machine/var/draining = 1
+TRACKED(/obj/machinery/abstract_grub_machine, draining)
+/// It names the grub that made it (its owner's owns_one(starts =)).
+/obj/machinery/abstract_grub_machine/default_child_backref()
+	return nameof(grub)
 
-/obj/machinery/abstract_grub_machine/Initialize(mapload)
-	. = ..()
-	shuffle_power_usages()
-	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(grub), loc)
+/// It only exists inside a grub (keeps_if()).
+/obj/machinery/abstract_grub_machine/proc/inside_a_grub()
+	return istype(loc, /mob/living/simple_mob/animal/solargrub_larva)
+
+/// Its draw, rolled as it is made (rolls(); shuffle_power_usages() rerolls it now and then): a total, split over the three channels.
+/obj/machinery/abstract_grub_machine/proc/roll_power(datum/roller/R, target)
+	switch(target)
+		if("total_active_power_usage")
+			return R.number(30 KILOWATTS, 60 KILOWATTS)
+		if("total_idle_power_usage")
+			return R.number(1 KILOWATTS, 5 KILOWATTS)
+		if("active_power_usages")
+			return split_into_3(total_active_power_usage)
+		if("idle_power_usages")
+			return split_into_3(total_idle_power_usage)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
-/obj/machinery/abstract_grub_machine/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	ref_one(nameof(grub), /mob/living/simple_mob/animal/solargrub_larva)
+	keeps_if(PROC_REF(inside_a_grub))
+	rolls(nameof(total_active_power_usage), PROC_REF(roll_power))
+	rolls(nameof(total_idle_power_usage), PROC_REF(roll_power))
+	rolls(nameof(active_power_usages), PROC_REF(roll_power), from = list(nameof(total_active_power_usage)))
+	rolls(nameof(idle_power_usages), PROC_REF(roll_power), from = list(nameof(total_idle_power_usage)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(draining), wakes_on = list(nameof(draining)))
+
+/obj/machinery/abstract_grub_machine/proc/work_step(datum/act/timer/timer)
 	var/area/A = get_area(src)
 	if(!A)
 		return
@@ -244,4 +268,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "
 	return ..()
 
 
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)
+CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
+	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
+	verb_entry(/mob/living/proc/ventcrawl)
+

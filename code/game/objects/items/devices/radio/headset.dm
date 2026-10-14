@@ -7,7 +7,6 @@
 	MATERIAL_BULK(MAT_STEEL, 75)
 	subspace_transmission = TRUE
 	canhear_range = 0 // can't hear headsets from very far away
-	slot_flags = SLOT_EARS
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/ears/mob_teshari.dmi',
 						SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',
 						SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
@@ -19,18 +18,25 @@
 	var/ks1type = null
 	var/ks2type = null
 
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
+
+CAPABILITIES(/obj/item/radio/headset)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
+	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
+	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
+	interface("Radio", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
+	op("item", item(/obj/item/encryptionkey), label("Insert key"), needs(req(PROC_REF(can_insert_key_holds))), then(PROC_REF(interaction_item)))
+
+/// A headset starts with no internal channels: its keys give it its channels (recalculateChannels()).
+/obj/item/radio/headset/starting_channels()
+	return list()
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
-	internal_channels.Cut()
-	// Compute channels but don't register with GLOB.radio_service yet (C5): on_materialize()
+	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
-
-DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot1", "ks1type")
-DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
 /obj/item/radio/headset/list_channels(mob/user)
 	return list_secure_channels()
@@ -80,47 +86,50 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
 	return "[..()][append]"
 
-DECLARE_UI_STATE(/obj/item/radio/headset, GLOB.tgui_inventory_state)
-
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))
 
 /// Requirement: a free key slot.
-/obj/item/radio/headset/proc/can_insert_key(mob/user, atom/target, obj/item/held)
+/// Requirement (was REQ_* can_insert_key): the legacy check answers TRUE to pass.
+/obj/item/radio/headset/proc/can_insert_key_holds(datum/act/op/A)
 	if(keyslot1 && keyslot2)
 		return "the headset can't hold another key"
-	return TRUE
+	return null
 
-/obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Why can_insert_key_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/radio/headset/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!keyslot1)
-		own_set(src, nameof(src.keyslot1), W, user = user)
+		move_into(src, nameof(src.keyslot1), W, user)
 
 	else
-		own_set(src, nameof(src.keyslot2), W, user = user)
+		move_into(src, nameof(src.keyslot2), W, user)
 
 
 	recalculateChannels()
 
 	return TRUE
 
-/obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/radio/headset/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!keyslot1 && !keyslot2)
 		to_chat(user, span_notice("This headset doesn't have any encryption keys! How useless..."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	for(var/ch_name in channels)
-		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
-		own_take(src, nameof(keyslot1))
+		rel_take(src, nameof(keyslot1))
 	if(keyslot2)
 		keyslot2.forceMove(T)
-		own_take(src, nameof(keyslot2))
+		rel_take(src, nameof(keyslot2))
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
 /obj/item/radio/headset/recalculateChannels(setDescription = FALSE, register = TRUE)
 	src.channels = list()
@@ -160,24 +169,21 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		if(keyslot2.syndie)
 			src.syndie = TRUE
 
-	handle_finalize_recalculatechannels(setDescription, TRUE, register)
+	handle_finalize_recalculatechannels(setDescription, register)
 
 /// register is FALSE only from Initialize() (C5): on_materialize() (inherited
 /// from /obj/item/radio) registers the channels computed here, exactly once.
-/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, initial_run = FALSE, register = TRUE)
+/obj/item/radio/headset/proc/handle_finalize_recalculatechannels(setDescription = FALSE, register = TRUE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
-		if(!GLOB.radio_service && initial_run)
-			// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the headset broken); it waits on the global radio service, not on state of this headset.
-			om_after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), setDescription, FALSE)
-			return
-		if(!GLOB.radio_service && !initial_run)
+		// No retry: a headset is built before the radio service only with register = FALSE (on_materialize() registers it), so a registering call without the service is broken.
+		if(!SSradio)
 			name = "broken radio headset"
 			return
 
 		for (var/ch_name in channels)
-			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -204,11 +210,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(isanimal(target))
 		var/mob/living/simple_mob/M = target
 		if(!M.mob_radio)
-			own_set(M, nameof(M.mob_radio), src, user = user)
+			move_into(M, nameof(M.mob_radio), src, user)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)
-			own_take(M, nameof(M.mob_radio))
+			rel_take(M, nameof(M.mob_radio))
 			return
 	..()
 
@@ -649,11 +655,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	icon_state = "syndie_headset"
 	syndie = 1
 	ks1type = /obj/item/encryptionkey/raider
-
-/obj/item/radio/headset/raider/Initialize(mapload)
-	. = ..()
-	// Just the data; on_materialize() (C5) registers it with GLOB.radio_service.
-	frequency = RAID_FREQ
+	frequency = RAID_FREQ // just the data; on_materialize() (C5) registers it with SSradio
 
 /obj/item/radio/headset/binary
 	ks1type = /obj/item/encryptionkey/binary
@@ -689,6 +691,10 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/myAi = null    // Atlantis: Reference back to the AI which has this radio.
 	var/disabledAi = 0 // Atlantis: Used to manually disable AI's integrated radio via intellicard menu.
 
+/// It names the AI it is built into (the AI's owns_one(starts =)).
+/obj/item/radio/headset/heads/ai_integrated/default_child_backref()
+	return nameof(myAi)
+
 /obj/item/radio/headset/heads/ai_integrated/receive_range(freq, level)
 	if (disabledAi)
 		return -1 //Transciever Disabled.
@@ -711,21 +717,23 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/list/remove_spells	//Reference to spells that'll get removed
 	/// Movement delay added while worn (a body factor, via worn_factors). Admins may edit it in-round.
 	var/slowdown_to_set = 0.5
-	light_range = 6
-	light_power = 0				//Set this to 0 if you don't want a light
-	light_color = "#ffaaaa"
 	var/tele_threshold = 50
 	var/telex = 16
 	var/teley = 16
 	var/telez = 0	//Set this in-round if you want a return point with fake health
+
+CAPABILITIES(/obj/item/radio/headset/event)
+	configure(light_glow(range = 6, power = 0, color = "#ffaaaa"))
+	owns_many(nameof(remove_spells))
+	ref_one(nameof(wearer), /mob/living/carbon/human)
 
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
 		rel_set(src, nameof(wearer), H)
-		if(light_power)
-			set_light(light_range,light_power,light_color,1)
+		if(glow_of(src).power)
+			set_glow(src, GLOW(glow_of(src).range, glow_of(src).power, glow_of(src).color), 1)
 		if(effect_icon)
 			effect_overlay = image(effect_icon, effect_icon_state, pixel_y = overlay_offset_y*H.size_multiplier)
 			effect_overlay.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
@@ -736,20 +744,20 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
-				own_add(src, nameof(remove_spells), SP)
+				rel_add(src, nameof(remove_spells), SP)
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
 	if(wearer())
 		rel_clear(src, nameof(wearer))
-		if(light_power)
-			light_on = 0
+		if(glow_of(src).power)
+			set_light_on(0)
 		if(effect_icon)
 			H.cut_overlay(effect_overlay)
 		if(length(remove_spells))
-			for(var/datum/spell/SP in remove_spells)
+			for(var/datum/spell/SP in remove_spells.Copy())
 				H.remove_spell(SP)
-				qdel(SP)
+				rel_remove(src, nameof(remove_spells), SP)
 
 /obj/item/radio/headset/event/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(!telez)

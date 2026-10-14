@@ -1,0 +1,13 @@
+/obj/machinery/access_button icon: icons/obj/airlock_machines.dmi
+/obj/machinery/access_button state: access_button_standby
+/obj/machinery/access_button dir: 2
+/obj/machinery/access_button overlay: icons/obj/airlock_machines.dmi:access_button_standby:8:#000000
+/obj/machinery/access_button/airlock_interior icon: icons/obj/airlock_machines.dmi
+/obj/machinery/access_button/airlock_interior state: access_button_standby
+/obj/machinery/access_button/airlock_interior dir: 2
+/obj/machinery/access_button/airlock_interior overlay: icons/obj/airlock_machines.dmi:access_button_standby:8:#000000
+/obj/machinery/access_button/airlock_exterior icon: icons/obj/airlock_machines.dmi
+/obj/machinery/access_button/airlock_exterior state: access_button_standby
+/obj/machinery/access_button/airlock_exterior dir: 2
+/obj/machinery/access_button/airlock_exterior overlay: icons/obj/airlock_machines.dmi:access_button_standby:8:#000000
+

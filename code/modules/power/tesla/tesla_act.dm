@@ -6,7 +6,7 @@
 	being_shocked = TRUE
 	var/power_bounced = power / 2
 	tesla_zap(src, zap_range = 3, power = power_bounced, explosive = explosive, current_jumps = current_jumps)
-	om_after(src, 1 SECOND, TYPE_PROC_REF(/obj, reset_shocked))
+	after(src, 1 SECOND, TYPE_PROC_REF(/obj, reset_shocked))
 
 /obj/proc/reset_shocked()
 	being_shocked = FALSE
@@ -20,7 +20,7 @@
 /obj/machinery/nuclearbomb/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..()
 	if(explosive)
-		qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
+		spent(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 
 /obj/machinery/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..()
@@ -35,12 +35,12 @@
 	if(isEmpProof())
 		return
 	..()
-	qdel(src) //to prevent bomb testing camera from exploding over and over forever
+	spent(src) //to prevent bomb testing camera from exploding over and over forever
 
 /obj/machinery/light/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(explosive)
 		explosion(loc, 0, 0, 0/*flame_range = 5*/, adminlog = FALSE)
-		qdel(src)
+		spent(src)
 		return
 	set_on(TRUE)
 	broken()
@@ -49,7 +49,7 @@
 	..() //extend the zap
 	visible_message(span_danger("[src] is blown apart by the bolt of electricity!"), span_danger("You hear a metallic screeching sound."))
 	dump_contents()
-	qdel(src)
+	spent(src)
 
 /obj/structure/reagent_dispensers/fueltank/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..() //extend the zap
@@ -65,7 +65,7 @@
 
 /obj/machinery/gravity_generator/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..()
-	qdel(src)//like the singulo, tesla deletes it. stops it from exploding over and over
+	spent(src)//like the singulo, tesla deletes it. stops it from exploding over and over
 
 /obj/machinery/power/rtg/abductor/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	..() //extend the zap
@@ -81,16 +81,16 @@
 
 /obj/machinery/the_singularitygen/tesla/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(explosive)
-		energy += power
+		set_energy(energy + power)
 
 /obj/machinery/power/tesla_coil/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(anchored && !panel_open)
 		being_shocked = TRUE
 		coil_act(power, explosive, current_jumps)
-		om_after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
+		after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
 	else if(anchored && panel_open) //Doing maintenance. Just act like a grounding rod.
 		being_shocked = TRUE
-		om_after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
+		after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
 	else
 		..()
 

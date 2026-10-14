@@ -1,0 +1,2 @@
+CAPABILITIES(/obj/a)
+	bar()

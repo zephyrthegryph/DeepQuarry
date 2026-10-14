@@ -9,26 +9,37 @@
 	w_class = ITEMSIZE_LARGE
 	canhear_range = 7
 	flags = NOBLOODY | WALL_ITEM
-	light_color = "#00ff00"
-	light_power = 0.25
 	blocks_emissive = NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/circuit = /obj/item/circuitboard/intercom
 	var/number = 0
 	var/wiresexposed = FALSE
 
+TRACKED(/obj/item/radio/intercom, on)
+TRACKED(/obj/item/radio/intercom, wiresexposed)
+
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
 	if(A)
-		om_hook(A, /datum/om/event/observer_apc, src, PROC_REF(on_observer_apc))
-	update_icon()
+		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
+	set_on(A?.powered(EQUIP))
 
-/obj/item/radio/intercom/proc/on_observer_apc(datum/source, datum/om/event/observer_apc/event)
-	EVENT_HANDLER
-	update_icon()
+/obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/area/A = get_area(src)
+	set_on(A?.powered(EQUIP))
 
-DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
+CAPABILITIES(/obj/item/radio/intercom)
+	configure(light_glow(color = "#00ff00", power = 0.25))
+	owns_one(nameof(circuit), starts = nameof(circuit))
+	// the AI's gestures over its link: ctrl switches the microphone, alt the AI's private channel
+	op("remote_microphone", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the microphone"),
+		wait(0), then(PROC_REF(remote_microphone)))
+	op("remote_channel", remote(), gesture(GESTURE_ALT), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the AI channel"),
+		wait(0), then(PROC_REF(remote_channel)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use", inputs(hand(), remote()), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"
@@ -63,14 +74,18 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 /obj/item/radio/intercom/department/medbay
 	name = "station intercom (Medbay)"
 	icon_state = "medintercom"
-	light_color = "#00aaff"
 	frequency = MED_I_FREQ
+
+CAPABILITIES(/obj/item/radio/intercom/department/medbay)
+	configure(light_glow(color = "#00aaff"))
 
 /obj/item/radio/intercom/department/security
 	name = "station intercom (Security)"
 	icon_state = "secintercom"
-	light_color = "#ff0000"
 	frequency = SEC_I_FREQ
+
+CAPABILITIES(/obj/item/radio/intercom/department/security)
+	configure(light_glow(color = "#ff0000"))
 
 /obj/item/radio/intercom/entertainment
 	name = "entertainment intercom"
@@ -82,27 +97,26 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 
 /obj/item/radio/intercom/omni
 	name = "global announcer"
-/obj/item/radio/intercom/omni/Initialize(mapload)
-	channels = GLOB.radiochannels.Copy()
-	return ..()
 
-/obj/item/radio/intercom/department/medbay/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+CAPABILITIES(/obj/item/radio/intercom/omni)
+	derives(nameof(channels), PROC_REF(all_channels))
 
-/obj/item/radio/intercom/department/security/Initialize(mapload)
-	. = ..()
-	internal_channels = list(
+/// The global announcer speaks on every channel (derives(), at init).
+/obj/item/radio/intercom/omni/proc/all_channels()
+	return GLOB.radiochannels.Copy()
+
+/obj/item/radio/intercom/department/medbay/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
+
+/obj/item/radio/intercom/department/security/starting_channels()
+	return list(
 		num2text(PUB_FREQ) = list(),
-		num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
-	)
+		num2text(SEC_I_FREQ) = list(ACCESS_SECURITY))
 
-/obj/item/radio/intercom/entertainment/Initialize(mapload)
-	. = ..()
-	internal_channels = list(
+/obj/item/radio/intercom/entertainment/starting_channels()
+	return list(
 		num2text(PUB_FREQ) = list(),
-		num2text(ENT_FREQ) = list()
-	)
+		num2text(ENT_FREQ) = list())
 
 /obj/item/radio/intercom/syndicate
 	name = "illicit intercom"
@@ -111,9 +125,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-/obj/item/radio/intercom/syndicate/Initialize(mapload)
+/obj/item/radio/intercom/syndicate/starting_channels()
 	. = ..()
-	internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
+	.[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/raider
 	name = "illicit intercom"
@@ -122,53 +136,45 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-/obj/item/radio/intercom/raider/Initialize(mapload)
+/obj/item/radio/intercom/raider/starting_channels()
 	. = ..()
-	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
-
-// Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
-EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Use", PROC_REF(interaction_hand)), \
-)
+	.[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
 /// Old attack_hand, and old attack_ai (the same body).
-/obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/radio/intercom/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	src.add_fingerprint(user)
 	attack_self(user)
-	return TRUE
+	return OP_OK
 
-/obj/item/radio/intercom/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	return FALSE
-
-/obj/item/radio/intercom/screwdriver_act(mob/user, obj/item/tool)
-	wiresexposed = !wiresexposed
+/obj/item/radio/intercom/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	set_wiresexposed(!wiresexposed)
 	to_chat(user, "The wires have been [wiresexposed ? "exposed" : "unexposed"]")
-	playsound(src, tool.usesound, 50, TRUE)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/item/radio/intercom/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/radio/intercom/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!wiresexposed)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(user, src, MSG_SELF("You have cut the wires inside %T%."), MSG_OTHERS(span_warning("%U% has cut the wires inside %T%!")))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
-	own_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	frame.pixel_x = pixel_x
 	frame.pixel_y = pixel_y
 	board.forceMove(frame)
 	own_move(board, frame, nameof(frame.circuit)) // from the intercom to the frame (CONTAINED there)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
-	frame.state = 2
-	frame.update_icon()
+	frame.set_state(2)
 	board.atom_deconstruct(TRUE, src)
 	replace_with(src, /obj/item/stack/cable_coil, 5)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/radio/intercom/receive_range(freq, level)
 	if (!on)
@@ -185,41 +191,29 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 
 	return canhear_range
 
-DECLARE_APPEARANCE_PROC(/obj/item/radio/intercom, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/radio/intercom/appearance_overlays()
-	. = list()
-	var/area/A = get_area(src)
-	on = A?.powered(EQUIP)
-
-
+/obj/item/radio/intercom/draw(datum/look/look)
+	..()
+	var/stem = initial(icon_state)
 	if(!on)
-		set_light(0)
-		set_light_on(FALSE)
-		if(wiresexposed)
-			icon_state = "intercom-p_open"
-		else
-			icon_state = "intercom-p"
+		look.glow(GLOW_OFF)
+		look.state(wiresexposed ? "intercom-p_open" : "intercom-p")
+	else if(wiresexposed)
+		look.state("intercom_open")
+		look.glow(GLOW_OFF)
 	else
-		if(wiresexposed)
-			icon_state = "intercom_open"
-			set_light(0)
-			set_light_on(FALSE)
-		else
-			icon_state = initial(icon_state)
-			. += mutable_appearance(icon, "[icon_state]_ov")
-			. += emissive_appearance(icon, "[icon_state]_ov")
-			set_light(2)
-			set_light_on(TRUE)
+		look.overlay(mutable_appearance(icon, "[stem]_ov"))
+		look.overlay(emissive_appearance(icon, "[stem]_ov"))
+		look.glow(2, glow_of_type(type).power, glow_of_type(type).color)
 
-/obj/item/radio/intercom/silicon_pull(mob/living/silicon/user)
-	if(!isAI(user))
-		return FALSE
+/obj/item/radio/intercom/proc/remote_microphone(datum/act/op/A)
+	var/mob/user = A.actor
 	ToggleBroadcast()
 	to_chat(user, span_notice("\The [src]'s microphone is now <b>[broadcasting ? "enabled" : "disabled"]</b>."))
+	return OP_OK
 
-/obj/item/radio/intercom/silicon_alternate(mob/living/silicon/user)
-	if(!isAI(user))
-		return ..()
+/obj/item/radio/intercom/proc/remote_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	if(frequency == AI_FREQ)
 		set_frequency(initial(frequency))
 		to_chat(user, span_notice("\The [src]'s frequency is now set to [span_green(span_bold("Default"))]."))

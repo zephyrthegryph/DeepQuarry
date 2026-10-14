@@ -11,11 +11,9 @@
 		)
 	desc = "A handheld device that creates small fields of energy that resonate until they detonate, crushing rock. It can also be activated without a target to create a field at the user's location, to act as a delayed time trap. It's more effective in low temperature."
 	w_class = ITEMSIZE_NORMAL
-	force = 8
-	throwforce = 10
 	var/cooldown = 0
 	var/fieldsactive = 0
-	var/burst_time = 50
+	var/burst_time = 5 SECONDS
 	var/fieldlimit = 3
 	var/spreadmode = 0
 	var/cascading  = 0
@@ -35,7 +33,7 @@
 		to_chat(creator, span_warning("You've exceeded the field limit! Wait for them to dissipate."))
 		return
 	if(spreadmode)
-		cascading = TRUE
+		set_cascading(TRUE)
 		var/depth = 0
 		var/fields = 0
 		if(depth == 0)
@@ -48,7 +46,7 @@
 		while(fields < fieldlimit)
 			for(var/i=0, i<=2, i++)
 				if(fields >= fieldlimit)
-					om_after(src, burst_time, PROC_REF(end_cascade))
+					after(src, burst_time, PROC_REF(end_cascade))
 					return
 				switch(i) //Using a switch statement rather than (-90 + i * 90) to favour going straight ahead
 					if(0)
@@ -77,34 +75,54 @@
 	else
 		play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
 		new /obj/effect/resonance(T, creator, burst_time)
-		fieldsactive++
-		om_after(src, burst_time, PROC_REF(field_burst))
+		set_fieldsactive(fieldsactive + 1)
+		after(src, burst_time, PROC_REF(field_burst))
 
-DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/resonator, burst_time)
+TRACKED(/obj/item/resonator, spreadmode)
+TRACKED(/obj/item/resonator, fieldlimit)
 
-/// Old attack_self.
-/obj/item/resonator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k87 = rerun_ask(user, "k87", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Change Detonation Time or toggle Cascading?", title = "Setting", choices = list("Toggle Cascade", "Resonance Time"))
-	if(isnull(_answer_k87))
-		return TRUE
-	switch(_answer_k87)
+CAPABILITIES(/obj/item/resonator)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 8))
+	op("settings", in_hand(), label("Settings"),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
+		then(PROC_REF(settings_picked)))
+	op("resonate", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Create resonance field"),
+		needs(req_adjacent(), req(PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))
+
+/obj/item/resonator/proc/settings_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	switch(picked.value)
 		if("Resonance Time")
-			if(burst_time == 50)
-				burst_time = 30
-				to_chat(user, span_info("You set the resonator's fields to detonate after 3 seconds."))
+			if(burst_time == 5 SECONDS)
+				set_burst_time(3 SECONDS)
+				to_chat(A.actor, span_info("You set the resonator's fields to detonate after 3 seconds."))
 			else
-				burst_time = 50
-				to_chat(user, span_info("You set the resonator's fields to detonate after 5 seconds."))
+				set_burst_time(5 SECONDS)
+				to_chat(A.actor, span_info("You set the resonator's fields to detonate after 5 seconds."))
 		if("Toggle Cascade")
-			spreadmode = !spreadmode
-			to_chat(user, span_info("You have [(spreadmode ? "enabled" : "disabled")] the resonance cascade mode."))
-	return TRUE
+			set_spreadmode(!spreadmode)
+			to_chat(A.actor, span_info("You have [(spreadmode ? "enabled" : "disabled")] the resonance cascade mode."))
+	return OP_OK
 
-/obj/item/resonator/afterattack(atom/target, mob/user, proximity_flag)
-	if(proximity_flag)
-		if(!check_allowed_items(target, 1))
-			return
-		CreateResonance(target, user)
+/// These native location queries are checked before instant creation; this operation never waits or prompts.
+/obj/item/resonator/proc/resonance_refusal(datum/act/op/A)
+	var/atom/target = A.target
+	if(!target || (src in target))
+		return MSG(op/not_available)
+	if(!isturf(target) && !isturf(target.loc))
+		return MSG(op/not_available)
+	var/turf/T = get_turf(target)
+	if(length(turf_contents_of_type(T, /obj/effect/resonance)))
+		return MSG(op/not_available)
+	if(fieldsactive > fieldlimit || cascading)
+		return span_warning("You've exceeded the field limit! Wait for them to dissipate.")
+	return null
+
+/obj/item/resonator/proc/resonated(datum/act/op/A)
+	CreateResonance(A.target, A.actor)
+	return OP_OK
 
 /obj/effect/resonance
 	name = "resonance field"
@@ -118,14 +136,19 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	/// Relation view: who made the field (for attack logs); null once they are gone.
 	var/tmp/mob/creator
 
-/obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
-	. = ..()
+CAPABILITIES(/obj/effect/resonance)
+	param(nameof(creator), pos = 1)
+	param(nameof(timetoburst), pos = 2, apply = PROC_REF(charge))
+
+/// How long the field takes to burst (its constructor param).
+/obj/effect/resonance/var/timetoburst = 0
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The field grows until it bursts.
+/obj/effect/resonance/proc/charge(delay)
 	// Start small and grow to big size as we are about to burst
 	transform = matrix()*0.75
-	animate(src, transform = matrix()*1.5, time = timetoburst)
-	// Queue the actual bursting
-	rel_set(src, nameof(creator), new_creator)
-	om_after(src, timetoburst, PROC_REF(burst))
+	animate(src, transform = matrix()*1.5, time = delay)
+	after(src, delay, PROC_REF(burst))
 
 /obj/effect/resonance/proc/burst()
 	var/turf/T = get_turf(src)
@@ -139,7 +162,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	if(ismineralturf(T))
 		var/turf/simulated/mineral/M = T
 		M.GetDrilled()
-		qdel(src)
+		consume(src)
 		return
 	// Otherwise we damage mobs!  Boost damage if low tempreature
 	var/datum/gas_mixture/environment = T.return_air()
@@ -152,22 +175,22 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 			add_attack_logs(creator, L, "used a resonator field on")
 		to_chat(L, span_danger("\The [src] ruptured with you in it!"))
 		L.injure(INJURY_BLUNT, resonance_damage, null, src)
-	qdel(src)
+	consume(src)
 
 
 /obj/effect/temp_visual/resonance_crush
 	icon_state = "shield1"
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	duration = 4
+	duration = 0.4 SECONDS
 
 /obj/effect/temp_visual/resonance_crush/Initialize(mapload)
 	. = ..()
 	transform = matrix()*1.5
-	animate(src, transform = matrix()*0.1, alpha = 50, time = 4)
+	animate(src, transform = matrix()*0.1, alpha = 50, time = 0.4 SECONDS)
 
 /obj/item/resonator/proc/end_cascade()
-	cascading = FALSE
+	set_cascading(FALSE)
 
 /obj/item/resonator/proc/field_burst()
-	fieldsactive--
+	set_fieldsactive(fieldsactive - 1)

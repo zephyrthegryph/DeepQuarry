@@ -1,0 +1,24 @@
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
+@obj ghost|none
+@obj.machinery.power human|/obj/item/tool/screwdriver
+@obj.machinery.power human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench click: Click: Unsecure
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery.power human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+@obj human|/obj/item/storage/part_replacer
+keys: cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, start_stop, ui_open

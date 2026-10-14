@@ -144,13 +144,10 @@
 		to_chat(src, span_danger("You shock \the [L]."))
 		to_chat(L, span_danger("You've been shocked by \the [src]!"))
 
-/datum/om/stage/life/special/slime/xenobio/yellow
-	of = /mob/living/simple_mob/slime/xenobio/yellow
-
-/datum/om/stage/life/special/slime/xenobio/yellow/perform(mob/living/simple_mob/slime/xenobio/yellow/self, datum/om/frame/life/ctx)
-	if(self.stat == CONSCIOUS)
+/mob/living/simple_mob/slime/xenobio/yellow/life_special(datum/seq_frame/life/F)
+	if(src.stat == CONSCIOUS)
 		if(prob(25))
-			self.power_charge = between(0, self.power_charge + 1, 10)
+			src.power_charge = between(0, src.power_charge + 1, 10)
 	..()
 
 /obj/item/projectile/beam/lightning/slime
@@ -187,14 +184,16 @@
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
-	qdel(src)
+	destroyed(src, null, BURN)
 
-DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/dark_purple, DAMAGE_EXPLOSION, PROC_REF(blast_ignite))
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
+	op("darkpurple_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(darkpurple_slime_interaction_item)))
 
-/mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/damage_packet/packet)
+/mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
 	ignite()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
@@ -203,16 +202,16 @@ DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/dark_purple, DAMAGE_EXPLOSI
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_ITEM(null, PROC_REF(darkpurple_slime_interaction_item)))
-
 /// Old attackby: burning weapons ignite it.
-/mob/living/simple_mob/slime/xenobio/dark_purple/proc/darkpurple_slime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+/mob/living/simple_mob/slime/xenobio/dark_purple/proc/darkpurple_slime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 
@@ -241,12 +240,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	minbodytemp = 0
 	cold_damage_per_tick = 0
 
-/datum/om/stage/life/special/slime/xenobio/dark_blue
-	of = /mob/living/simple_mob/slime/xenobio/dark_blue
-
-/datum/om/stage/life/special/slime/xenobio/dark_blue/perform(mob/living/simple_mob/slime/xenobio/dark_blue/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.cold_aura()
+/mob/living/simple_mob/slime/xenobio/dark_blue/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.cold_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/proc/cold_aura()
@@ -258,7 +254,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 	var/turf/T = get_turf(src)
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
-		env.add_thermal_energy(-10 * 1000)
+		heat_add(env, -10 * 1000, HEAT_SOURCE_OTHER)
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/apply_melee_effects(atom/A)
 	..()
@@ -293,7 +289,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 			/mob/living/simple_mob/slime/xenobio/amber
 		)
 
-REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
+CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100))
 
 
 // Tier 3
@@ -386,9 +382,8 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 		/mob/living/simple_mob/slime/xenobio/ruby
 	)
 
-/mob/living/simple_mob/slime/xenobio/ruby/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
+	body_effect(/datum/body_effect/slime_strength) // always swole
 
 /mob/living/simple_mob/slime/xenobio/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()
@@ -398,7 +393,7 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 		if(L.mob_size <= MOB_MEDIUM)
 			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			play_sfx(src, SFX_PUNCH)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
@@ -428,12 +423,9 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 		/mob/living/simple_mob/slime/xenobio/amber
 	)
 
-/datum/om/stage/life/special/slime/xenobio/amber
-	of = /mob/living/simple_mob/slime/xenobio/amber
-
-/datum/om/stage/life/special/slime/xenobio/amber/perform(mob/living/simple_mob/slime/xenobio/amber/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.feed_aura()
+/mob/living/simple_mob/slime/xenobio/amber/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.feed_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/amber/proc/feed_aura()
@@ -449,7 +441,7 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 			var/mob/living/carbon/human/H = L
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
-			H.set_nutrition(between(0, H.nutrition + rand(15, 25), 800))
+			H.set_nutrition(between(0, nutrition_of(H) + rand(15, 25), 800))
 
 /mob/living/simple_mob/slime/xenobio/cerulean
 	desc = "This slime is generally superior in a wide range of attributes, compared to the common slime.  The jack of all trades, but master of none."
@@ -517,12 +509,9 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 			/mob/living/simple_mob/slime/xenobio/emerald
 		)
 
-/datum/om/stage/life/special/slime/xenobio/green
-	of = /mob/living/simple_mob/slime/xenobio/green
-
-/datum/om/stage/life/special/slime/xenobio/green/perform(mob/living/simple_mob/slime/xenobio/green/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.irradiate()
+/mob/living/simple_mob/slime/xenobio/green/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.irradiate()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/green/proc/irradiate()
@@ -554,12 +543,9 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 			/mob/living/simple_mob/slime/xenobio/pink
 		)
 
-/datum/om/stage/life/special/slime/xenobio/pink
-	of = /mob/living/simple_mob/slime/xenobio/pink
-
-/datum/om/stage/life/special/slime/xenobio/pink/perform(mob/living/simple_mob/slime/xenobio/pink/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.heal_aura()
+/mob/living/simple_mob/slime/xenobio/pink/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.heal_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/pink/proc/heal_aura()
@@ -657,7 +643,7 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 	if(stat != DEAD)
 		explosion(src.loc, 0, 2, 4) // A bit weaker since the suicide charger tended to gib the poor sod being targeted.
 		if(src) // Delete ourselves if the explosion didn't do it.
-			qdel(src)
+			destroyed(src, null, "explosion")
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/suicide_bomb(mob/living/L)
 	log_and_message_admins("has suicide-bombed themselves while trying to kill \the [L].", src)
@@ -677,16 +663,18 @@ REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/
 		// Otherwise blow ourselves up.
 		say(pick("Sacrifice...!", "Sssss...", "Boom...!"))
 		ai_busy_begin()
-		om_after(src, 2 SECONDS, PROC_REF(suicide_bomb), L)
+		after(src, 2 SECONDS, PROC_REF(suicide_bomb), with = list(L))
 
 	return ..()
 
-DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/oil, DAMAGE_EXPLOSION, PROC_REF(blast_explode))
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
+	op("oilslime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(oilslime_interaction_item)))
 
-/mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/damage_packet/packet)
+/mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/act/A)
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/oil/bullet_act(obj/item/projectile/P, def_zone)
 	if(P.obj_damage_type() && P.obj_damage_type() == BURN && P.damage) // Most bullets won't trigger the explosion, as a mercy towards Security.
@@ -695,16 +683,16 @@ DAMAGE_REACTION(/mob/living/simple_mob/slime/xenobio/oil, DAMAGE_EXPLOSION, PROC
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null, PROC_REF(oilslime_interaction_item)))
-
 /// Old attackby: burning weapons make it explode.
-/mob/living/simple_mob/slime/xenobio/oil/proc/oilslime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+/mob/living/simple_mob/slime/xenobio/oil/proc/oilslime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 /mob/living/simple_mob/slime/xenobio/sapphire/get_mechanics_info(list/additional_information)
@@ -745,12 +733,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null
 		/mob/living/simple_mob/slime/xenobio/emerald
 	)
 
-/datum/om/stage/life/special/slime/xenobio/emerald
-	of = /mob/living/simple_mob/slime/xenobio/emerald
-
-/datum/om/stage/life/special/slime/xenobio/emerald/perform(mob/living/simple_mob/slime/xenobio/emerald/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.zoom_aura()
+/mob/living/simple_mob/slime/xenobio/emerald/life_special(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.zoom_aura()
 	..()
 
 /mob/living/simple_mob/slime/xenobio/emerald/proc/zoom_aura()
@@ -800,9 +785,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null
 		/mob/living/simple_mob/slime/xenobio/rainbow
 	)
 
-/mob/living/simple_mob/slime/xenobio/rainbow/Initialize(mapload)
-	unify()
-	return ..()
+/mob/living/simple_mob/slime/xenobio/rainbow
+	unity = TRUE // what unify() sets: it counts every colour as its own
 
 // The RD's pet slime.
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick
@@ -812,9 +796,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null
 	// Doing pacify() in initialize() won't actually pacify the AI due to the ai_brain not existing due to parent initialize() not being called yet.
 	// Instead lets just give them an ai_brain that does that for us.
 
-/mob/living/simple_mob/slime/xenobio/rainbow/kendrick/Initialize(mapload)
-	pacify() // So the physical mob also gets made harmless.
-	return ..()
+/mob/living/simple_mob/slime/xenobio/rainbow/kendrick
+	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
+	harmless = TRUE
+	faction = FACTION_NEUTRAL
+	melee_damage_upper = 0
+	melee_damage_lower = 0
 
 // A pacified pink slime for either Admin-spawning or putting in a casino reward or capture crystal.
 /mob/living/simple_mob/slime/xenobio/pink/sana
@@ -822,6 +809,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null
 	desc = "A pink slime that seems to be oddly friendly, and doesn't seem interested in eating your face like the rest of them."
 	rainbow_core_candidate = FALSE
 
-/mob/living/simple_mob/slime/xenobio/pink/sana/Initialize(mapload)
-	pacify() // So the physical mob also gets made harmless.
-	return ..()
+/mob/living/simple_mob/slime/xenobio/pink/sana
+	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
+	harmless = TRUE
+	faction = FACTION_NEUTRAL
+	melee_damage_upper = 0
+	melee_damage_lower = 0

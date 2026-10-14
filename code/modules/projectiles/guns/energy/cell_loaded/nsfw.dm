@@ -46,30 +46,37 @@
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded/combat(src)
-	new /obj/item/ammo_magazine/cell_mag/combat(src)
-	for(var/path in subtypesof(/obj/item/ammo_casing/microbattery/combat))
-		new path(src)
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack)
+	initial_contents(/obj/item/gun/projectile/cell_loaded/combat)
+	initial_contents(/obj/item/ammo_magazine/cell_mag/combat)
+	initial_contents(PROC_REF(combat_batteries))
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/combat,
+		/obj/item/ammo_magazine/cell_mag/combat,
+		/obj/item/ammo_casing/microbattery/combat)))
+
+/// One of each combat microbattery.
+/obj/item/storage/secure/briefcase/nsfw_pack/proc/combat_batteries(datum/roller/R)
+	return subtypesof(/obj/item/ammo_casing/microbattery/combat)
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hos
+	starts_with = list(
+		/obj/item/gun/projectile/cell_loaded/combat = 1,
+		/obj/item/ammo_magazine/cell_mag/combat = 1,
+		/obj/item/ammo_casing/microbattery/combat/lethal = 2,
+		/obj/item/ammo_casing/microbattery/combat/stun = 3,
+		/obj/item/ammo_casing/microbattery/combat/net = 1,
+		/obj/item/ammo_casing/microbattery/combat/ion = 1,
+	)
 	name = "\improper Hephaestus 102b \'NSFW\' gun kit"
 	desc = "A storage case for a multi-purpose handgun. Variety hour!"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nsfw_pack_hos, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded/combat,/obj/item/ammo_magazine/cell_mag/combat,/obj/item/ammo_casing/microbattery/combat)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 
-/obj/item/storage/secure/briefcase/nsfw_pack_hos/Initialize(mapload)
-	. = ..()
-	new /obj/item/gun/projectile/cell_loaded/combat(src)
-	new /obj/item/ammo_magazine/cell_mag/combat(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/lethal(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/stun(src)
-	new /obj/item/ammo_casing/microbattery/combat/net(src)
-	new /obj/item/ammo_casing/microbattery/combat/ion(src)
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/combat,
+		/obj/item/ammo_magazine/cell_mag/combat,
+		/obj/item/ammo_casing/microbattery/combat)))
+

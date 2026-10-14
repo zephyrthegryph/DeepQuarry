@@ -14,17 +14,18 @@
 	interface_name = "dead man's switch"
 	interface_desc = "An integrated self-destruct module. When the wearer dies, they vanish in smoke. Do not press this button."
 
-DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect/effect/system/smoke_spread/bad)
+CAPABILITIES(/obj/item/rig_module/self_destruct)
+	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 
 /obj/item/rig_module/self_destruct/Initialize(mapload)
 	. = ..()
 	smoke.attach(src)
 
 
-/obj/item/rig_module/self_destruct/activate()
+/obj/item/rig_module/self_destruct/activate(skip_engage = 0, mob/user)
 	return
 
-/obj/item/rig_module/self_destruct/deactivate()
+/obj/item/rig_module/self_destruct/deactivate(forced = FALSE, mob/user)
 	return
 
 /obj/item/rig_module/self_destruct/periodic_step()
@@ -37,12 +38,41 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect
 	if(holder.wearer().stat == 2)
 		engage(1)
 
-/obj/item/rig_module/self_destruct/engage(skip_check)
-	var/_answer_a1 = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
-	if(isnull(_answer_a1))
+/obj/item/rig_module/self_destruct/engage(skip_check, notify_ai = FALSE, mob/user)
+	// The automatic no-user call could not open the old rerun question either.
+	if(!ismob(user))
 		return
-	if(!skip_check && usr && _answer_a1 != "Yes")
+	var/atom/original_target = isatom(skip_check) ? skip_check : null
+	open_request(src, /datum/prompt/choice/rig_self_destruct, PROC_REF(self_destruct_answered), answerer = user, subject = original_target, original_target_expected = !isnull(original_target), skip_check = !!skip_check)
+
+/datum/prompt/choice/rig_self_destruct
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+	title = "Self-destruct"
+	question = "Are you sure you want to push that button?"
+	choices = list("No", "Yes")
+	var/original_target_expected = FALSE
+	var/skip_check = FALSE
+
+/datum/prompt/choice/rig_self_destruct/recheck_extra()
+	var/mob/user = answerer
+	if(!istype(user) || QDELETED(user))
+		return "gone"
+	var/atom/original_target = subject
+	if(original_target_expected && (!original_target || QDELETED(original_target)))
+		return "gone"
+	return null
+
+/obj/item/rig_module/self_destruct/proc/self_destruct_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/prompt/choice/rig_self_destruct/ask = A.request
+	if(ask.skip_check || ask.value == "Yes")
+		self_destruct_detonate()
+	SStgui.update_uis(src)
+
+/obj/item/rig_module/self_destruct/proc/self_destruct_detonate()
 	if(holder && holder.wearer())
 		smoke.set_up(10, 0, holder.loc)
 		for(var/i = 1 to smoke_strength)

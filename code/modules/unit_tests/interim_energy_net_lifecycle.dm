@@ -1,0 +1,33 @@
+/datum/unit_test/interim_energy_net_invalid_impact/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/energy_net/projectile = allocate(/obj/item/energy_net, T)
+	var/obj/item/pen/obstacle = allocate(/obj/item/pen, T)
+	projectile.throw_impact(obstacle)
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(projectile), "impacting a nonliving obstacle consumes the spent net item")
+	TEST_ASSERT_NULL(locate_within(T, /obj/effect/energy_net), "an obstacle impact creates no restraining net")
+	TEST_ASSERT(!QDELETED(obstacle), "the harmless impact preserves its obstacle")
+
+/datum/unit_test/interim_energy_net_living_impact/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/obj/item/energy_net/projectile = allocate(/obj/item/energy_net, T)
+	projectile.throw_impact(target)
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(projectile), "catching a living target consumes the spent item")
+	var/obj/effect/energy_net/net = locate_within(T, /obj/effect/energy_net)
+	TEST_ASSERT(istype(net), "the impact creates a real restraining net")
+	TEST_ASSERT_EQUAL(target.buckled_to(), net, "the living target is actually restrained by the created net")
+	TEST_ASSERT(net.has_buckled_mobs(), "the created net tracks its restrained target")
+
+/datum/unit_test/interim_energy_net_existing_impact/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/obj/effect/energy_net/existing = allocate(/obj/effect/energy_net, T)
+	TEST_ASSERT(existing.buckle_mob(target), "the target starts restrained in an existing net")
+	var/obj/item/energy_net/projectile = allocate(/obj/item/energy_net, T)
+	projectile.throw_impact(target)
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(projectile), "an already netted target still consumes the incoming item")
+	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/effect/energy_net)), 1, "the impact does not create a duplicate net")
+	TEST_ASSERT_EQUAL(target.buckled_to(), existing, "the original net retains the restrained target")

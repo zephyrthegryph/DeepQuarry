@@ -15,36 +15,33 @@
 	icon_state = "ash"
 	anchored = TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
-	INTERACT_HAND("Sift", PROC_REF(interaction_sift_ash)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/ash)
+	op("sift_ash", hand(), label("Sift"), then(PROC_REF(interaction_sift_ash)))
 
 /// Old attack_hand: the ash crumbles away into floor dirt.
-/obj/effect/decal/cleanable/ash/proc/interaction_sift_ash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/cleanable/ash/proc/interaction_sift_ash(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("[src] sifts through your fingers."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if (istype(F))
 		F.dirt += 4
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/decal/cleanable/greenglow
+	lifecycle_lifetime = 2 MINUTES
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	proximity_tracked = TRUE
 
-/obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
-	. = ..()
-	expire(2 MINUTES)
+/// Radiates only while a client is near (the proximity tracker): otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/effect/decal/cleanable/greenglow)
+	configure(light_glow(range = 1))
+	every(2 SECONDS, then(PROC_REF(greenglow_step)), when = STAT_RELEVANCE)
 
-DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
-
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/effect/decal/cleanable/greenglow/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/effect/decal/cleanable/greenglow/proc/greenglow_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/effect/decal/cleanable/greenglow/proc/radiate()
 	if(active)
@@ -73,13 +70,20 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	mouse_opacity = 0
 	var/delete_me = FALSE
 
-/obj/effect/decal/cleanable/dirt/Initialize(mapload, _age, dirt)
+CAPABILITIES(/obj/effect/decal/cleanable/dirt)
+	param(nameof(dirt_level), pos = 2)
+
+/// How dirty the tile becomes (its constructor param).
+/obj/effect/decal/cleanable/dirt/var/dirt_level
+
+// ALLOW(init/INSTANCE_STATE): dirt sets its tile's dirt level and merges with the dirt already there
+/obj/effect/decal/cleanable/dirt/Initialize(mapload)
 	.=..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL
 	var/turf/simulated/our_turf = src.loc
 	if(our_turf && istype(our_turf) && our_turf.can_dirty)
-		our_turf.dirt = clamp(max(age ? (dirt ? dirt : 101) : our_turf.dirt, our_turf.dirt), 0, 101)
+		our_turf.dirt = clamp(max(age ? (dirt_level ? dirt_level : 101) : our_turf.dirt, our_turf.dirt), 0, 101)
 		if(mapload && !our_turf.dirt)
 			our_turf.dirt = rand(51, 100)
 		var/calcalpha = our_turf.dirt > 50 ? min((our_turf.dirt - 50) * 5, 255) : 0
@@ -91,7 +95,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 				if(!(alreadythere.flags & ATOM_INITIALIZED))
 					delete_me = TRUE
 				else
-					qdel(alreadythere)
+					consume(alreadythere)
 				continue
 			alreadyfound = TRUE
 			alreadythere.alpha = calcalpha //don't need to constantly recalc for all of them in it because it'll just max if a non-persistent dirt overlay gets added, and then the new dirt overlay will be deleted
@@ -114,7 +118,6 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	gender = PLURAL
 	density = FALSE
 	anchored = TRUE
-	light_range = 1
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "greenglow"
 
@@ -160,13 +163,17 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	name = "crusty dried vomit"
 	desc = "You try not to look at the chunks, and fail."
 
-/obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
-	. = ..()
-	icon_state += "-old"
-	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
+CAPABILITIES(/obj/effect/decal/cleanable/vomit/old)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
+
+/// Old vomit is crusty (rolls(), after the base's pick).
+/obj/effect/decal/cleanable/vomit/old/roll_icon_state(datum/roller/R)
+	return "[..()]-old"
+
+/// Old vomit often carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/vomit/old/proc/make_old_virus(current)
 	if(prob(65))
-		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		own_add(src, nameof(viruses), new_disease)
+		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
 	return // Don't spread our viruses
@@ -175,14 +182,17 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	dryname = "nasty dried blood"
 	drydesc = "Why hasn't anyone cleaned this up yet?"
 
-/obj/effect/decal/cleanable/blood/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
-	. = ..()
-	basecolor = get_random_colour(rand(0, 1))
-	update_icon()
-	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
+CAPABILITIES(/obj/effect/decal/cleanable/blood/old)
+	owns_many(nameof(viruses), /datum/affliction/contagion, starts = PROC_REF(make_old_virus))
+
+/// Old blood often carries a random virus (owns_many(starts =)).
+/obj/effect/decal/cleanable/blood/old/proc/make_old_virus(current)
 	if(prob(75))
-		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		own_add(src, nameof(viruses), new_disease)
+		return list(new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4))
+
+/obj/effect/decal/cleanable/blood/old/Initialize(mapload)
+	. = ..()
+	set_basecolor(get_random_colour(rand(0, 1)))
 	dry()
 
 /obj/effect/decal/cleanable/blood/old/Crossed(mob/living/carbon/human/perp)
@@ -233,16 +243,11 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "confetti"
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
-	INTERACT_HAND("Pick up", PROC_REF(interaction_pick_confetti)), \
-)
+MSG_DEF_SELF(confetti/pick_confetti_begins, span_notice("You start to meticulously pick up the confetti."))
 
-/// Old attack_hand: slowly pick the confetti up.
-/obj/effect/decal/cleanable/confetti/proc/interaction_pick_confetti(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
-	om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
-	return TRUE
+CAPABILITIES(/obj/effect/decal/cleanable/confetti)
+	op("pick_confetti", hand(), label("Pick up"), begins(MSG(confetti/pick_confetti_begins)), wait(6 SECONDS), then(PROC_REF(attack_hand_timed_done)))
 
-/obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
-	qdel(src)
+/obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done(datum/act/op/A)
+	consume(src)
 

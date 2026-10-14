@@ -1,8 +1,5 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
-/obj/machinery/computer/telecomms
-	icon_keyboard = "tech_key"
-
 /obj/machinery/computer/telecomms/server
 	name = "Telecommunications Server Monitor"
 	desc = "View communication logs here. Translation not guaranteed."
@@ -12,17 +9,59 @@
 	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_server
 
-	var/network = "NULL"		// the network to probe
-	var/list/temp = null				// temporary feedback messages
-
 	var/universal_translate = 0 // set to 1 if it can translate nonhuman speech
 
 	req_access = list(ACCESS_TCOMSAT)
 
-UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:num", "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_server{servers:list,selectedServer:list}")
+MSG_DEF_SELF(tcomms_console/denied, "ACCESS DENIED.")
+MSG_DEF_SELF(tcomms_console/no_entry, "There is no such log entry on the server shown.")
 
-/// The computed part of /obj/machinery/computer/telecomms/server's window data (declared on its UI_DATA row).
-/obj/machinery/computer/telecomms/server/proc/ui_data_obj_machinery_computer_telecomms_server(mob/user, datum/tgui/ui, datum/tgui_state/state)
+// The server log browser: probes the servers of its network (tcomms_probe_console(), telemonitor.dm), shows one with its logs, and deletes a
+// log entry for someone with its access (or anyone, once emagged).
+CAPABILITIES(/obj/machinery/computer/telecomms/server)
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
+	interface("TelecommsLogBrowser")
+	tcomms_probe_console()
+	op("delete", ui_act("delete", arg("id", num())), needs(req(PROC_REF(may_delete)), req(PROC_REF(entry_exists))), then(PROC_REF(ui_act_delete)))
+	ref_one(nameof(SelectedServer), /obj/machinery/telecomms/server)
+
+/obj/machinery/computer/telecomms/server/probed()
+	return servers
+
+/obj/machinery/computer/telecomms/server/probe_type()
+	return /obj/machinery/telecomms/server
+
+/obj/machinery/computer/telecomms/server/probe_add(obj/machinery/telecomms/T)
+	rel_add(src, nameof(servers), T)
+
+/obj/machinery/computer/telecomms/server/probe_clear()
+	rel_clear(src, nameof(servers))
+
+/obj/machinery/computer/telecomms/server/show(obj/machinery/telecomms/T)
+	rel_set(src, nameof(SelectedServer), T)
+
+/obj/machinery/computer/telecomms/server/show_none()
+	rel_clear(src, nameof(SelectedServer))
+
+/// needs: the actor has the browser's access, or it was emagged.
+/obj/machinery/computer/telecomms/server/proc/may_delete(datum/act/op/A)
+	return (emag_emagged(src) || allowed(A.actor)) ? null : MSG(tcomms_console/denied)
+
+/// needs: the server shown has a log entry at that place.
+/obj/machinery/computer/telecomms/server/proc/entry_exists(datum/act/op/A)
+	var/idx = A.args["id"]
+	var/obj/machinery/telecomms/server/S = SelectedServer()
+	return (S && isnum(idx) && idx >= 1 && idx <= LAZYLEN(S.log_entries)) ? null : MSG(tcomms_console/no_entry)
+
+/// The log entry goes (the server's log count is its length, so the place is free again).
+/obj/machinery/computer/telecomms/server/proc/ui_act_delete(datum/act/op/A, id)
+	var/obj/machinery/telecomms/server/S = SelectedServer()
+	var/datum/comm_log_entry/D = LAZYACCESS(S.log_entries, id)
+	report("DELETED ENTRY: [D.name]", "bad")
+	own_remove(S, nameof(/obj/machinery/telecomms/server::log_entries), D)
+	return OP_OK
+
+/obj/machinery/computer/telecomms/server/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 
@@ -51,7 +90,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:n
 			var/static/list/acceptable_params = list("uspeech", "intelligible", "message", "name", "race", "job", "timecode")
 			var/list/parameters = list()
 			for(var/log_param in acceptable_params)
-				parameters["[log_param]"] = C.parameters["[log_param]"]
+				parameters["[log_param]"] = LAZYACCESS(C.parameters, "[log_param]")
 
 			logs.Add(list(list(
 				"name" = C.name,
@@ -62,119 +101,11 @@ UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:n
 
 		data["selectedServer"]["logs"] = logs
 
+	data["universal_translate"] = universal_translate
+	data["network"] = network
+	data["temp"] = temp
 	return data
 
-/obj/machinery/computer/telecomms/server/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/telecomms_server_open_ui,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/telecomms_server_open_ui
-	id = "telecomms_server_open_ui"
-	name = "Use"
-	effect = /obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/telecomms/server/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!operable())
-		return TRUE
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/machinery/computer/telecomms/server, "TelecommsLogBrowser")
-
-/obj/machinery/computer/telecomms/server/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
-	for(var/obj/machinery/telecomms/T in servers)
-		if(T.id == params["id"])
-			rel_set(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer), T)
-			break
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "mainmenu", ui_act_mainmenu)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_mainmenu)
-	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "release", ui_act_release)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_release)
-	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::servers))
-	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
-	if(length(servers) > 0)
-		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-		return TRUE
-
-	for(var/obj/machinery/telecomms/server/T in range(25, src))
-		if(T.network == network)
-			rel_add(src, nameof(/obj/machinery/computer/telecomms/server::servers), T)
-
-	if(!length(servers))
-		set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
-	else
-		set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "delete", ui_act_delete, UI_ARG_NUM("id"))
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
-	if(!allowed(ui.user) && !emagged)
-		to_chat(ui.user, span_warning("ACCESS DENIED."))
-		return
-
-	if(SelectedServer())
-		var/idx = params["id"]
-		if(!idx || idx < 1 || idx > length(SelectedServer().log_entries))
-			return
-		var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
-		set_temp("DELETED ENTRY: [D.name]", "bad")
-		own_remove(SelectedServer(), nameof(/obj/machinery/telecomms/server::log_entries), D)
-	else
-		set_temp("FAILED: NO SELECTED MACHINE", "bad")
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "network", ui_act_network)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_network)
-	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
-	. = TRUE
-
-UI_ACT(/obj/machinery/computer/telecomms/server, "cleartemp", ui_act_cleartemp)
-UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_cleartemp)
-	temp = null
-	. = TRUE
-
-/obj/machinery/computer/telecomms/server/proc/network_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/newnet = ask.text
-	SStgui.update_uis(src)
-	if(newnet && ((user in range(1, src)) || issilicon(user)))
-		if(length(newnet) > 15)
-			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
-			return TRUE
-		network = newnet
-		rel_clear(src, nameof(servers))
-		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
-
-	. = TRUE
-
-DECLARE_EMAG(/obj/machinery/computer/telecomms/server, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/telecomms/server/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	play_sfx(src, SFX_EFFECTS_SPARKS4)
-	set_emagged(1)
-	to_chat(user, span_notice("You you disable the security protocols"))
-	return 1
-
-/obj/machinery/computer/telecomms/server/proc/set_temp(text, color = "average")
-	temp = list("color" = color, "text" = text)
 
 /// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server

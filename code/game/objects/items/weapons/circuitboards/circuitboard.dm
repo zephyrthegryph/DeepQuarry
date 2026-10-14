@@ -5,8 +5,6 @@
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_SMALL
-	force = 5.0
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 15
 	MATERIAL_BULK(MAT_GLASS, 40)
@@ -14,11 +12,14 @@
 	var/board_type = new /datum/frame/frame_types/computer
 	var/list/req_components = null
 	var/contain_parts = 1
-	drop_sound = SFX_ITEMS_DROP_DEVICE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 	/// If true, this board should be ignored during the circuitboard printing unit test, and give an examine hint that the board may be hard to get if so.
 	var/hidden = FALSE
+
+CAPABILITIES(/obj/item/circuitboard)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// board_type is a /datum/frame/frame_types instance owned only by this
 /// board (or, for a few boards, a plain string) -- see the frame_type codec.
@@ -27,7 +28,7 @@
 
 
 //Called when the circuitboard is used to contruct a new machine.
-/obj/item/circuitboard/proc/construct(obj/machinery/M)
+/obj/item/circuitboard/proc/construct(obj/machinery/M, mob/user = null)
 	if(istype(M, build_path))
 		return 1
 	return 0

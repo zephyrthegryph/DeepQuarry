@@ -1,4 +1,23 @@
-/mob/living/simple_mob/xeno_ch/proc/xeno_build_done(choice, targetLoc)
+/// The structures the xeno can shape, each with its radial icon.
+/mob/living/simple_mob/xeno_ch/proc/xeno_build_choices(datum/act/op/A)
+	var/list/options = list("Resin Door", "Resin Membrane", "Nest", "Resin Wall", "Weed Node")
+	for(var/option in options)
+		LAZYSET(options, option, image('icons/mob/xeno_screen.dmi', option))
+	return options
+
+/// The time it takes to shape a structure.
+/mob/living/simple_mob/xeno_ch/proc/xeno_build_wait(datum/act/A)
+	return xeno_build_time
+
+/// The end of the "xeno_build" op: the picked structure stands in front of the xeno (on its own tile against a wall).
+/mob/living/simple_mob/xeno_ch/proc/xeno_build_done(datum/act/op/A)
+	var/choice = A.step_value("choice")
+	if(!choice)
+		return
+	var/targetLoc = get_step(src, dir)
+	if(iswall(targetLoc))
+		targetLoc = get_turf(src)
+
 	var/obj/O
 	switch(choice)
 		if("Resin Door")
@@ -21,30 +40,6 @@
 		O.color = "#321D37"
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
-/mob/living/simple_mob/xeno_ch/proc/xeno_build()
-	set name = "Build Resin Structure"
-	set desc = "Build a xenomorph resin structure."
-	set category = VERB_CAT_ABILITIES_XENO
-
-	var/list/options = list("Resin Door","Resin Membrane","Nest","Resin Wall","Weed Node")
-	for(var/option in options)
-		LAZYSET(options, option, image('icons/mob/xeno_screen.dmi', option))
-	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(xeno_build_chosen), choices = options, anchor = src, radius = 60)
-
-/// Radial answer for xeno_build(): start shaping the picked structure.
-/mob/living/simple_mob/xeno_ch/proc/xeno_build_chosen(datum/om/prompt/choice/radial/ask)
-	var/choice = ask.choice
-	if(!choice || QDELETED(src) || src.incapacitated())
-		return
-
-	var/targetLoc = get_step(src, dir)
-
-	if(iswall(targetLoc))
-		targetLoc = get_turf(src)
-
-	om_task_timed(src, xeno_build_time, target = src, receiver = src, on_done = PROC_REF(xeno_build_done), done_args = list(choice, targetLoc))
-
-
 
 
 /////
@@ -60,6 +55,9 @@
 	button_icon = 'icons/mob/xeno_screen.dmi'
 	var/mob/living/simple_mob/xeno_ch/parent_xeno
 
+CAPABILITIES(/datum/action/innate/xeno_ch)
+	ref_one(nameof(parent_xeno), /mob/living/simple_mob/xeno_ch)
+
 
 /datum/action/innate/xeno_ch/Grant(mob/living/L)
 	if(L)
@@ -71,7 +69,7 @@
 	button_icon_state = "Nest"
 
 /datum/action/innate/xeno_ch/xeno_build/Activate()
-	parent_xeno.xeno_build()
+	perform_op(parent_xeno, parent_xeno, "xeno_build", null, ORIGIN_VERB, AUTH_PHYSICAL)
 
 
 /datum/action/innate/xeno_ch/xeno_neuro

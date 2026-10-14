@@ -44,7 +44,6 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 	var/suit_overlay_icon = 'icons/mob/rig_modules.dmi'
 	var/suit_overlay_active             // If set, drawn over icon and mob when effect is active.
 	var/suit_overlay_inactive           // As above, inactive.
-	var/suit_overlay_used               // As above, when engaged.
 
 	//Display fluff
 	var/interface_name = "hardsuit upgrade"
@@ -54,6 +53,28 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 	var/deactivate_string = "Deactivate"
 
 	var/list/stat_modules
+
+TRACKED(/obj/item/rig_module, suit_overlay)
+
+CAPABILITIES(/obj/item/rig_module)
+	owns_many(nameof(stat_modules), starts = list(/atom/movable/stat_rig_module/activate, /atom/movable/stat_rig_module/deactivate, /atom/movable/stat_rig_module/engage, /atom/movable/stat_rig_module/select, /atom/movable/stat_rig_module/charge))
+	op("mend_paste", item(/obj/item/stack/nanopaste), label("Mend with nanopaste"), needs(req(PROC_REF(damaged))),
+		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_paste)))
+	op("mend_cable", item(/obj/item/stack/cable_coil), label("Mend with cable"),
+		needs(req(PROC_REF(damaged)), req(PROC_REF(mendable_with_cable))),
+		begins(MSG(rig_module/mending)), wait(3 SECONDS), then(PROC_REF(mend_with_cable)))
+
+MSG_DEF_SELF(rig_module/undamaged, "There is no damage to mend.")
+MSG_DEF_SELF(rig_module/crude, "There is no damage that you are capable of mending with such crude tools.")
+MSG_DEF_SELF(rig_module/mending, "You start mending the damaged portions of %T%...")
+
+/// Requirement: the module is damaged (its damage is fixed while the click is decided).
+/obj/item/rig_module/proc/damaged(datum/act/op/A)
+	return (read_once(damage) != 0) ? null : MSG(rig_module/undamaged)
+
+/// Requirement: it is not past what cable can mend (almost destroyed is the only state cable improves).
+/obj/item/rig_module/proc/mendable_with_cable(datum/act/op/A)
+	return (read_once(damage) == 2) ? null : MSG(rig_module/crude)
 
 /obj/item/rig_module/examine()
 	. = ..()
@@ -65,55 +86,24 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 		if(2)
 			. += "It is almost completely destroyed."
 
-DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/rig_module/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-
-	if(istype(W,/obj/item/stack/nanopaste))
-
-		if(damage == 0)
-			to_chat(user, "There is no damage to mend.")
-			return INTERACTION_HANDLED_PASS
-
-		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
-		return INTERACTION_HANDLED_PASS
-
-	else if(istype(W,/obj/item/stack/cable_coil))
-
-		switch(damage)
-			if(0)
-				to_chat(user, "There is no damage to mend.")
-				return INTERACTION_HANDLED_PASS
-			if(2)
-				to_chat(user, "There is no damage that you are capable of mending with such crude tools.")
-				return INTERACTION_HANDLED_PASS
-
-		var/obj/item/stack/cable_coil/cable = W
-		if(cable.get_amount() < 5)
-			to_chat(user, "You need five units of cable to repair \the [src].")
-			return INTERACTION_HANDLED_PASS
-
-		to_chat(user, "You start mending the damaged portions of \the [src]...")
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
-/obj/item/rig_module/proc/mend_with_paste(mob/user, obj/item/stack/nanopaste/paste)
+/obj/item/rig_module/proc/mend_with_paste(datum/act/op/A)
 	damage = 0
-	to_chat(user, "You mend the damage to [src] with [paste].")
+	to_chat(A.actor, "You mend the damage to [src] with [A.held].")
+	var/obj/item/stack/nanopaste/paste = A.held
 	paste.use(1)
+	return OP_OK
 
-/obj/item/rig_module/proc/mend_with_cable(mob/user, obj/item/stack/cable_coil/cable)
+/obj/item/rig_module/proc/mend_with_cable(datum/act/op/A)
+	var/obj/item/stack/cable_coil/cable = A.held
 	if(damage != 1 && cable.use(5))
 		damage = 1
-		to_chat(user, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
+		to_chat(A.actor, "You mend some of damage to [src] with [cable], but you will need more advanced tools to fix it completely.")
+	return OP_OK
 
 /obj/item/rig_module/Initialize(mapload)
 	. = ..()
 	if(suit_overlay_inactive)
-		suit_overlay = suit_overlay_inactive
+		set_suit_overlay(suit_overlay_inactive)
 
 	if(charges && charges.len)
 		var/list/processed_charges = list()
@@ -130,11 +120,6 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 		charges = processed_charges
 
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
 
 
 // Called when the module is installed into a suit.
@@ -143,33 +128,36 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return
 
 //Proc for one-use abilities like teleport.
-/obj/item/rig_module/proc/engage()
+/obj/item/rig_module/proc/engage(atom/target, notify_ai, mob/user)
+
+	if(!user)
+		return 0
 
 	if(damage >= 2)
-		to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
+		to_chat(user, span_warning("The [interface_name] is damaged beyond use!"))
 		return 0
 
 	if(!COOLDOWN_FINISHED(src, next_use))
-		to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
+		to_chat(user, span_warning("You cannot use the [interface_name] again so soon."))
 		return 0
 
 	if(!holder || holder.canremove)
-		to_chat(usr, span_warning("The suit is not initialized."))
+		to_chat(user, span_warning("The suit is not initialized."))
 		return 0
 
-	if(usr.lying || usr.stat || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_WEAKENED))
-		to_chat(usr, span_warning("You cannot use the suit in this state."))
+	if(user.lying || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || user.has_status(STAT_WEAKENED))
+		to_chat(user, span_warning("You cannot use the suit in this state."))
 		return 0
 
 	if(holder.wearer() && holder.wearer().lying)
-		to_chat(usr, span_warning("The suit cannot function while the wearer is prone."))
+		to_chat(user, span_warning("The suit cannot function while the wearer is prone."))
 		return 0
 
-	if(holder.security_check_enabled && !holder.check_suit_access(usr))
-		to_chat(usr, span_danger("Access denied."))
+	if(holder.security_check_enabled && !holder.check_suit_access(user))
+		to_chat(user, span_danger("Access denied."))
 		return 0
 
-	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon) ? 1 : 0) ) )
+	if(!holder.check_power_cost(user, use_power_cost, 0, src, (istype(user,/mob/living/silicon) ? 1 : 0) ) )
 		return 0
 
 	COOLDOWN_START(src, next_use, module_cooldown)
@@ -177,27 +165,27 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return 1
 
 // Proc for toggling on active abilities.
-/obj/item/rig_module/proc/activate(skip_engage = 0) // Allow us to skip the engage call.
+/obj/item/rig_module/proc/activate(skip_engage = 0, mob/user) // Allow us to skip the engage call.
 	// Allow us to skip the engage call
 	if(active)
 		return 0
-	if(!skip_engage && !engage())
+	if(!skip_engage && !engage(null, FALSE, user))
 		return 0
 	active = 1
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
 // Proc for toggling off active abilities.
-/obj/item/rig_module/proc/deactivate()
+/obj/item/rig_module/proc/deactivate(forced = FALSE, mob/user)
 
 	if(!active)
 		return 0
 
 	active = 0
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 0.1 SECONDS, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -223,6 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	var/module_mode = ""
 	var/obj/item/rig_module/module
 
+// ALLOW(init/INSTANCE_STATE): binds to the rig module it is made inside
 /atom/movable/stat_rig_module/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(module), loc)
@@ -235,30 +224,38 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/proc/CanUse()
 	return 0
 
-/atom/movable/stat_rig_module/Click()
+CAPABILITIES(/atom/movable/stat_rig_module)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm): the stat-panel button runs
+/// its module's mode for the clicking mob.
+/atom/movable/stat_rig_module/proc/click_input(datum/act/input/A)
+	var/mob/user = A.actor
 	if(CanUse())
 		switch(module_mode)
 			if("select")
-				rel_set(module.holder, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
+				rel_set(module.holder, nameof(/obj/item/rig::selected_module), module)
 			if("engage")
-				module.engage()
+				module.engage(null, FALSE, user)
 			if("activate")
-				module.activate()
+				module.activate(FALSE, user)
 			if("deactivate")
-				module.deactivate()
+				module.deactivate(FALSE, user)
 			if("toggle")
 				if(module.active)
-					module.deactivate()
+					module.deactivate(FALSE, user)
 				else
-					module.activate()
+					module.activate(FALSE, user)
 			if("select_charge_type")
 				var/charge_index = module.charges.Find(module.charge_selected)
 				charge_index = charge_index == module.charges.len ? 1 : charge_index + 1
 				module.charge_selected = module.charges[charge_index]
+	return TRUE
 
 /atom/movable/stat_rig_module/DblClick()
 	return Click()
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/activate/Initialize(mapload)
 	. = ..()
 	if(!istype(module))
@@ -266,11 +263,11 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	name = module.activate_string
 	if(module.active_power_cost)
 		name += " ([module.active_power_cost*10]A)"
-	module_mode = "activate"
 
 /atom/movable/stat_rig_module/activate/CanUse()
 	return module.toggleable && !module.active
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/deactivate/Initialize(mapload)
 	. = ..()
 	if(!istype(module))
@@ -280,11 +277,11 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	if(module.active_power_cost || module.passive_power_cost)
 		name += " ([module.passive_power_cost*10]P)"
 
-	module_mode = "deactivate"
 
 /atom/movable/stat_rig_module/deactivate/CanUse()
 	return module.toggleable && module.active
 
+// ALLOW(init/INSTANCE_STATE): names itself from the module it is made inside
 /atom/movable/stat_rig_module/engage/Initialize(mapload)
 	. = ..()
 	if(!istype(module))
@@ -292,13 +289,11 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	name = module.engage_string
 	if(module.use_power_cost)
 		name += " ([module.use_power_cost*10]E)"
-	module_mode = "engage"
 
 /atom/movable/stat_rig_module/engage/CanUse()
 	return module.usable
 
-/atom/movable/stat_rig_module/select/Initialize(mapload)
-	. = ..()
+/atom/movable/stat_rig_module/select
 	name = "Select"
 	module_mode = "select"
 
@@ -308,8 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 		return 1
 	return 0
 
-/atom/movable/stat_rig_module/charge/Initialize(mapload)
-	. = ..()
+/atom/movable/stat_rig_module/charge
 	name = "Change Charge"
 	module_mode = "select_charge_type"
 
@@ -329,11 +323,19 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 		return 1
 	return 0
 
-/// The suit overlay follows the module's state, a tick after it changes.
+/// The suit overlay follows the module's state, a tick after it changes (the chestpiece draws it).
 /obj/item/rig_module/proc/refresh_suit_overlay()
 	if(active)
-		suit_overlay = suit_overlay_active
+		set_suit_overlay(suit_overlay_active)
 	else
-		suit_overlay = suit_overlay_inactive
-	holder?.update_icon()
+		set_suit_overlay(suit_overlay_inactive)
+
+/atom/movable/stat_rig_module/activate
+	module_mode = "activate"
+
+/atom/movable/stat_rig_module/deactivate
+	module_mode = "deactivate"
+
+/atom/movable/stat_rig_module/engage
+	module_mode = "engage"
 

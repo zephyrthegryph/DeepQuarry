@@ -17,6 +17,10 @@
 	var/obj/human_storage
 
 
+CAPABILITIES(/datum/unit_test/all_clothing_shall_be_valid)
+	owns_one(nameof(human_storage))
+	owns_many(nameof(test_humans))
+
 /datum/unit_test/all_clothing_shall_be_valid/Run()
 	var/failed = 0
 	var/obj/storage = new()
@@ -24,13 +28,13 @@
 	#ifdef UNIT_TESTS
 	// Build one human per body type up-front. set_species runs once per species here
 	// instead of once per (species × clothing item).
-	own_set(src, nameof(human_storage), new /obj())
+	rel_set(src, nameof(human_storage), new /obj())
 	own_take_all(src, nameof(test_humans))
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
-		om_hook(H, /datum/om/event/unittest_data, src, PROC_REF(get_signal_data))
-		own_put(src, nameof(test_humans), body_type, H)
+		observe(H, /datum/notice/unittest_data, src, then(PROC_REF(get_signal_data)))
+		rel_add(src, nameof(test_humans), H, body_type)
 	#endif
 
 	var/list/scan = subtypesof(/obj/item/clothing)
@@ -56,7 +60,7 @@
 	#ifdef UNIT_TESTS
 	for(var/body_type in test_humans)
 		var/mob/living/carbon/human/H = test_humans[body_type]
-		om_unhook(H, /datum/om/event/unittest_data, src)
+		unobserve(H, /datum/notice/unittest_data, src)
 		qdel(H)
 	own_take_all(src, nameof(test_humans))
 	own_clear(src, nameof(human_storage), OWN_DELETE)
@@ -97,7 +101,7 @@
 
 	#ifdef UNIT_TESTS
 	// Dress the shared per-species test humans with this item and check they get worn art.
-	// An entire signal just for unittests had to be made for this (/datum/om/event/unittest_data, emitted from
+	// An entire signal just for unittests had to be made for this (/datum/definition_event/unittest_data, emitted from
 	// /obj/item/proc/get_worn_icon_state in code/game/objects/items.dm under #ifdef UNIT_TESTS).
 	//
 	// This exercises set_species (done once, up-front in Run) + equip-to-slot + the worn-icon signal
@@ -138,50 +142,52 @@
 
 	// Temps — most clothing offers no cold protection (min temp 0/null); only a
 	// negative protection temperature is an actual data error.
-	TEST_ASSERT(C.min_cold_protection_temperature >= 0, "[C.type]: Clothing - Cold protection temperature was negative.")
+	TEST_ASSERT(protection_of(C).min_cold >= 0, "[C.type]: Clothing - Cold protection temperature was negative.")
 
-	if(C.max_heat_protection_temperature && C.min_cold_protection_temperature && C.max_heat_protection_temperature < C.min_cold_protection_temperature)
+	if(protection_of(C).max_heat && protection_of(C).min_cold && protection_of(C).max_heat < protection_of(C).min_cold)
 		TEST_NOTICE(src, "[C.type]: Clothing - Maximum heat protection was greater than minimum cold protection.")
 		failed = TRUE
 
-	if(C.cold_protection)
-		if(islist(C.cold_protection))
+	if(protection_of(C).cold_parts)
+		if(islist(protection_of(C).cold_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - cold_protection was defined as a list, when it is a bitflag.")
 			failed = TRUE
-		else if(!isnum(C.cold_protection))
+		else if(!isnum(protection_of(C).cold_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - cold_protection was defined as something other than a number, when it is a bitflag.")
 			failed = TRUE
 		else
-			if(C.cold_protection && C.cold_protection != FULL_BODY)
+			if(protection_of(C).cold_parts && protection_of(C).cold_parts != FULL_BODY)
 				// Check flags that should be unused
-				if(C.cold_protection & FACE)
+				if(protection_of(C).cold_parts & FACE)
 					TEST_NOTICE(src, "[C.type]: Clothing - cold_protection uses FACE bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
-				if(C.cold_protection & EYES)
+				if(protection_of(C).cold_parts & EYES)
 					TEST_NOTICE(src, "[C.type]: Clothing - cold_protection uses EYES bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
 
-	if(C.heat_protection)
-		if(islist(C.heat_protection))
+	if(protection_of(C).heat_parts)
+		if(islist(protection_of(C).heat_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - heat_protection was defined as a list, when it is a bitflag.")
 			failed = TRUE
-		else if(!isnum(C.heat_protection))
+		else if(!isnum(protection_of(C).heat_parts))
 			TEST_NOTICE(src, "[C.type]: Clothing - heat_protection was defined as something other than a number, when it is a bitflag.")
 			failed = TRUE
 		else
-			if(C.heat_protection && C.heat_protection != FULL_BODY)
+			if(protection_of(C).heat_parts && protection_of(C).heat_parts != FULL_BODY)
 				// Check flags that should be unused
-				if(C.heat_protection & FACE)
+				if(protection_of(C).heat_parts & FACE)
 					TEST_NOTICE(src, "[C.type]: Clothing - heat_protection uses FACE bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
-				if(C.heat_protection & EYES)
+				if(protection_of(C).heat_parts & EYES)
 					TEST_NOTICE(src, "[C.type]: Clothing - heat_protection uses EYES bitflag, this provides no protection, use HEAD.")
 					failed = TRUE
 	return failed
 
-/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(atom/source, datum/om/event/unittest_data/event)
-	EVENT_HANDLER
-	var/list/data = event.data || list()
+/datum/unit_test/all_clothing_shall_be_valid/proc/get_signal_data(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/atom/source = N.target
+	var/datum/notice/unittest_data/event = N
+	var/list/data = event.data_ || list()
 	switch(data[1])
 		if("set_slot")
 			var/slot_name 	= data[2]

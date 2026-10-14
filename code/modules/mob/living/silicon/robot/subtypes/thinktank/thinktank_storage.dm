@@ -82,71 +82,90 @@
 		else
 			act_message(user, ejecting, others = span_infoplain(span_bold("%U%") + " pulls %T% from \the [src]'s cargo compartment."))
 
-/// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
-/mob/living/silicon/robot/platform/proc/platform_silicon_unload(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user) && user.Adjacent(src))
-		try_remove_cargo(user)
-		return TRUE
-	return FALSE
+/// An empty hand or an adjacent cyborg can unload while the cover is closed, the recharging port is empty and something is stored.
+/mob/living/silicon/robot/platform/proc/cargo_unloadable(datum/act/op/A)
+	return read_once(!opened && !recharging) && length(stored_atoms) > 0
 
-/mob/living/silicon/robot/platform/proc/try_remove_cargo(mob/user)
-	if(!length(stored_atoms) || !istype(user))
-		return FALSE
+/// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
+/mob/living/silicon/robot/platform/proc/cargo_unloadable_by_silicon(datum/act/op/A)
+	var/mob/user = A.actor
+	return read_once(istype(user, /mob/living/silicon/robot) && user.Adjacent(src)) && length(stored_atoms) > 0
+
+/// What the others see when the last stored thing starts to come out.
+/mob/living/silicon/robot/platform/proc/cargo_unloading_text(datum/act/op/A)
+	var/atom/movable/removing = stored_atoms[length(stored_atoms)]
+	return msg_text(null, span_infoplain(span_bold("%U%") + " begins unloading [removing] from [src]'s cargo compartment."))
+
+/// The last stored thing comes out.
+/mob/living/silicon/robot/platform/proc/platform_unloaded(datum/act/op/A)
+	if(!length(stored_atoms))
+		return OP_FAILED
 	var/atom/movable/removing = stored_atoms[length(stored_atoms)]
 	if(QDELETED(removing) || removing.loc != src)
-		rel_remove(src, nameof(stored_atoms), removing)
-	else
-		act_message(user, removing, others = span_infoplain(span_bold("%U%") + " begins unloading %T% from \the [src]'s cargo compartment."))
-		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))
-	return TRUE
+		return OP_FAILED
+	drop_stored_atom(removing, A.actor)
+	return OP_OK
 
-/mob/living/silicon/robot/platform/proc/try_remove_cargo_platform_done(mob/user, atom/movable/removing)
-	if(!(!QDELETED(removing) && removing.loc == src))
-		return
-	drop_stored_atom(removing, user)
+MSG_DEF_SELF(platform_ability/not_able, "you are not in any state to do that")
+MSG_DEF_SELF(platform_ability/no_cargo, "you have nothing in your cargo compartment")
 
-/datum/interaction/ability/self/robot_eject_cargo
-	id = ABILITY_ID_ROBOT_EJECT_CARGO
-	name = "Eject cargo"
-	category = ABILITY_CAT_UTILITY
-	requires = list(
-		REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_incapacitated, "you are not in any state to do that"),
-		REQ_ON(PRED_ACTOR, /mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms, "you have nothing in your cargo compartment"),
-	)
-	effect = /mob/living/silicon/robot/platform/proc/dq_do_eject_cargo
+CAPABILITY_DEF(platform_cargo, CAP_PLATFORM_CARGO, key = NONE)
 
-/datum/interaction/ability/self/robot_eject_cargo/applies_to(atom/target)
-	return istype(target, /mob/living/silicon/robot/platform)
+/datum/capability/def/platform_cargo/entries()
+	return list(
+		op("eject_cargo", label("Eject cargo"), menu(button = "Eject cargo", bind = "ability_robot_eject_cargo"),
+			when(req_self()), needs(req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, can_act_to_eject), because = MSG(platform_ability/not_able)),
+				req(TYPE_PROC_REF(/mob/living/silicon/robot/platform, has_stored_atoms), because = MSG(platform_ability/no_cargo))),
+			then(TYPE_PROC_REF(/mob/living/silicon/robot/platform, ability_eject_cargo))))
 
-/mob/living/proc/dq_pred_not_incapacitated(mob/living/actor, atom/target, obj/item/held)
-	return !actor.incapacitated() || "you are not in any state to do that"
+/mob/living/silicon/robot/platform/proc/can_act_to_eject(datum/act/op/A)
+	return (!incapacitated()) ? null : /datum/msg/req_failed
 
-/mob/living/silicon/robot/platform/proc/dq_pred_has_stored_atoms(mob/living/silicon/robot/platform/actor, atom/target, obj/item/held)
-	return length(actor.stored_atoms) || "you have nothing in your cargo compartment"
+/mob/living/silicon/robot/platform/proc/has_stored_atoms(datum/act/op/A)
+	return (length(stored_atoms) > 0) ? null : /datum/msg/req_failed
 
 /// Drop something from your internal storage.
-/mob/living/silicon/robot/platform/proc/dq_do_eject_cargo(mob/actor, obj/item/held, datum/interaction/ability/interaction)
+/mob/living/silicon/robot/platform/proc/ability_eject_cargo(datum/act/op/A)
 	drop_stored_atom(user = src)
-	return TRUE
+	return OP_OK
 
-/// Old MouseDrop_T: start loading the dropped thing into cargo. A refused drop still falls to the
-/// cyborg's drag block, as the old override never reached the base drag-buckle.
-/mob/living/silicon/robot/platform/proc/platform_interaction_drag(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
-	if(!istype(user) || !istype(dropping) || user.incapacitated())
-		return FALSE
-	if(!can_mouse_drop(dropping, user) || !can_store_atom(dropping, user))
-		return FALSE
-	if(user == src)
-		act_message(src, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into its cargo compartment."))
-	else
-		act_message(user, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into \the [src]'s cargo compartment."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
-	return TRUE
+/// Old MouseDrop_T: a drop that can be stored starts the loading. A refused drop still falls to the cyborg's drag block, as the old override never reached
+/// the base drag-buckle. This is the silent form of can_store_atom().
+/mob/living/silicon/robot/platform/proc/cargo_loadable(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/movable/dropping = A.held
+	return read_once(istype(user) && istype(dropping) && !user.incapacitated() && can_mouse_drop(dropping, user) && can_store_quiet(dropping))
 
-/mob/living/silicon/robot/platform/proc/MouseDrop_T_platform_done(atom/movable/dropping, mob/living/user)
+/mob/living/silicon/robot/platform/proc/can_store_quiet(atom/movable/storing)
+	if(!istype(storing) || !isturf(storing.loc) || storing.anchored || !storing.simulated || storing == src)
+		return FALSE
+	if(length(stored_atoms) >= max_stored_atoms)
+		return FALSE
+	if(ismob(storing))
+		var/mob/M = storing
+		if(M.mob_size >= mob_size)
+			return FALSE
+	for(var/store_type in can_store_types)
+		if(istype(storing, store_type))
+			for(var/refused_type in cannot_store_types)
+				if(istype(storing, refused_type))
+					return FALSE
+			return TRUE
+	return FALSE
+
+/// What the others see when the loading starts.
+/mob/living/silicon/robot/platform/proc/cargo_loading_text(datum/act/op/A)
+	if(A.actor == src)
+		return msg_text(null, span_infoplain(span_bold("%U%") + " begins loading %I% into its cargo compartment."))
+	return msg_text(null, span_infoplain(span_bold("%U%") + " begins loading %I% into [src]'s cargo compartment."))
+
+/mob/living/silicon/robot/platform/proc/platform_loaded(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/movable/dropping = A.held
 	if(!(can_mouse_drop(dropping, user) && can_store_atom(dropping, user)))
-		return
+		return OP_FAILED
 	store_atom(dropping, user)
+	return OP_OK
 
 /mob/living/silicon/robot/platform/proc/can_mouse_drop(atom/dropping, mob/user)
 	if(!istype(user) || !istype(dropping) || QDELETED(dropping) || QDELETED(user) || QDELETED(src))

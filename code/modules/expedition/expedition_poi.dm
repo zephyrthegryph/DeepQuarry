@@ -239,7 +239,7 @@
 	B.loot_size = size
 	rel_set(B, nameof(B.loot_biome), site?.biome)
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
-		qdel(B)
+		spent(B)
 		return null
 	for(var/list/c in B.room_centers)
 		var/turf/rt = locate(c[1], c[2], center.z)
@@ -249,5 +249,5 @@
 			expedition_spawn_loot(rt, expedition_roll_tier(B.loot_difficulty, size))
 		else if(prob(40))
 			expedition_spawn_guard(rt, site ? site.faction : EXP_FACTION_FAUNA, site ? site.difficulty : EXP_DIFF_LOW)
-	qdel(B)
+	spent(B)
 	return null

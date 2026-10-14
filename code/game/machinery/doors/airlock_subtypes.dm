@@ -104,12 +104,15 @@
 	open_sound_powered = 'sound/machines/door/space1o.ogg'
 	close_sound_powered = 'sound/machines/door/space1c.ogg'
 
-/obj/machinery/door/airlock/external/can_freeze()
+/obj/machinery/door/airlock/external/can_freeze(datum/act/A)
 	return TRUE
+
+CAPABILITIES(/obj/machinery/door/airlock/external)
+	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/external/bolted
 	icon_state = "door_locked" // So it looks visibly bolted in map editor
-	cap_state = CAP_BOLTED
+	bolted_at_start = TRUE
 
 // For convenience in making docking ports: one that is pre-bolted with frequency set!
 /obj/machinery/door/airlock/external/bolted/cycling
@@ -125,8 +128,11 @@
 	open_sound_powered = 'sound/machines/door/space1o.ogg'
 	close_sound_powered = 'sound/machines/door/space1c.ogg'
 
-/obj/machinery/door/airlock/glass_external/can_freeze()
+/obj/machinery/door/airlock/glass_external/can_freeze(datum/act/A)
 	return TRUE
+
+CAPABILITIES(/obj/machinery/door/airlock/glass_external)
+	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/glass
 	name = "Glass Airlock"
@@ -173,7 +179,7 @@
 
 /obj/machinery/door/airlock/vault/bolted
 	icon_state = "door_locked"
-	cap_state = CAP_BOLTED
+	bolted_at_start = TRUE
 
 /obj/machinery/door/airlock/freezer
 	name = "Freezer Airlock"
@@ -514,19 +520,17 @@
 	icon = 'icons/obj/doors/Dooralien.dmi'
 	explosion_resistance = 20
 	secured_wires = TRUE
-	hackProof = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list(ACCESS_ALIEN)
 	security_level = 100
 
 /obj/machinery/door/airlock/alien/locked
 	icon_state = "door_locked"
-	cap_state = CAP_BOLTED
+	bolted_at_start = TRUE
 
 /obj/machinery/door/airlock/alien/public // Entry to UFO.
 	req_one_access = list()
 	normalspeed = FALSE // So it closes faster and hopefully keeps the warm air inside.
-	hackProof = TRUE //No borgs
 
 
 /obj/machinery/door/airlock/glass_external/public
@@ -539,18 +543,16 @@
 	icon = 'icons/obj/doors/Dooralien_blue.dmi'
 	explosion_resistance = 20
 	secured_wires = TRUE
-	hackProof = TRUE
 	assembly_type = /obj/structure/door_assembly/door_assembly_alien
 	req_one_access = list()
 
 /obj/machinery/door/airlock/alien/blue/locked
 	icon_state = "door_locked"
-	cap_state = CAP_BOLTED
+	bolted_at_start = TRUE
 
 /obj/machinery/door/airlock/alien/blue/public // Entry to UFO.
 	req_one_access = list()
 	normalspeed = FALSE // So it closes faster and hopefully keeps the warm air inside.
-	hackProof = TRUE // No borgos
 
 /obj/machinery/door/airlock/glass_security/polarized
 	name = "Electrochromic Security Airlock"
@@ -563,3 +565,9 @@
 /obj/machinery/door/airlock/glass_command/polarized
 	name = "Electrochormic Command Airlock"
 	icon_tinted = 'icons/obj/doors/Doorcomtinted_vr.dmi'
+
+/obj/machinery/door/airlock/scp
+	name = "SCP Access"
+	icon = 'icons/obj/doors/SCPdoor.dmi'
+	open_sound_powered = 'sound/machines/scp1o.ogg'
+	close_sound_powered = 'sound/machines/scp1c.ogg'

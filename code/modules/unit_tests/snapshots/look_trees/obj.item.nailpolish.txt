@@ -1,0 +1,7 @@
+/obj/item/nailpolish icon: icons/obj/nailpolish_vr.dmi
+/obj/item/nailpolish state: nailpolish
+/obj/item/nailpolish dir: 2
+/obj/item/nailpolish overlay: icons/obj/nailpolish_vr.dmi:nailpolish:8:#000000
+/obj/item/nailpolish underlay: icons/obj/nailpolish_vr.dmi:color:-32767
+/obj/item/nailpolish underlay: icons/obj/nailpolish_vr.dmi:top:-32767
+

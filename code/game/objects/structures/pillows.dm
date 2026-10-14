@@ -5,29 +5,31 @@
 	desc = "A surprisingly soft stuffed pillow."
 	icon = 'icons/obj/pillows.dmi'
 	icon_state = "pillow_pink_square"
-	slot_flags = 0
 	var/pile_type = "/obj/structure/bed/pillowpile"
 	throw_range = 7
-	special_handling = TRUE
 
 /// Old attack_self: set the pillow down.
-/obj/item/bedsheet/pillow/proc/pillow_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bedsheet/pillow/proc/pillow_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.drop_item()
 	if(icon_state == initial(icon_state))
-		icon_state = "[icon_state]_placed"
+		set_icon_state("[icon_state]_placed")
 	add_fingerprint(user)
 
 /obj/item/bedsheet/pillow/pickup(mob/user)
 	..()
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
-EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
-	INTERACT_USE("Place", PROC_REF(pillow_self)), \
-	INTERACT_ITEM(null, PROC_REF(pillow_interaction_item)), \
-)
+CAPABILITIES(/obj/item/bedsheet/pillow)
+	configure(item_worn(slots = 0))
+	// the pillow's own uses replace the sheet's (lay_out, use_item)
+	op("lay_out", in_hand(), label("Place"), then(PROC_REF(pillow_self)))
+	op("use_item", item(/obj/item), then(PROC_REF(pillow_interaction_item)))
 
 /// Old attackby.
-/obj/item/bedsheet/pillow/proc/pillow_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
+/obj/item/bedsheet/pillow/proc/pillow_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/component = A.held
 	if (istype(component,src))
 		to_chat(user, span_notice("You assemble a pillow pile!"))
 		user.drop_item()
@@ -37,7 +39,7 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 		consume(src, user)
 	else
 		to_chat(user, span_notice("You can't assemble a pillow pile out of mismatched stuff, it'd look hideous!"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 //Pillow Piles, they're piles of pillows! 	layer = BELOW_MOB_LAYER
 
@@ -52,6 +54,12 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 	var/obj/structure/bed/pillowpilefront/front
 	flippable = FALSE
 
+CAPABILITIES(/obj/structure/bed/pillowpile)
+	owns_one(nameof(front), /obj/structure/bed/pillowpilefront, starts = PROC_REF(make_front))
+	bed_hands_off()
+	without("drag_buckle")   // its own Use replaced every inherited interaction
+	op("disassemble", hand(), label("Disassemble"), begins(MSG(pillowpile/disassembling)), wait(3 SECONDS), then(PROC_REF(disassembled)))
+
 /obj/structure/bed/pillowpilefront
 	name = "pillow pile"
 	desc = "A massive pile of pillows!"
@@ -65,57 +73,38 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 
 /obj/structure/bed/pillowpile/Initialize(mapload)
 	. = ..()
-	var/turf/T = get_turf(src)
-	own_set(src, nameof(front), new pillowpilefront(T))
 	rel_set(front, nameof(front.pile), src)
 
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the
 // pile); the front names the pile one-sided (cleared if the pile goes first).
 
-APPEARANCE_NONE(/obj/structure/bed/pillowpilefront)
+/// Draws none of what the types above draw.
+/obj/structure/bed/pillowpilefront/look_parts(datum/look/look)
+	return
 
-APPEARANCE_NONE(/obj/structure/bed/pillowpile)
+/// Draws none of what the types above draw.
+/obj/structure/bed/pillowpile/look_parts(datum/look/look)
+	return
 
-/obj/structure/bed/pillowpile/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/pillowpile_hand,
-	)
+CAPABILITIES(/obj/structure/bed/pillowpilefront)
+	ref_one(nameof(pile))
+	bed_hands_off()
+	without("drag_buckle")   // its own Use replaced every inherited interaction
+	op("disassemble", hand(), label("Disassemble"), begins(MSG(pillowpilefront/disassembling)), wait(3 SECONDS), then(PROC_REF(disassembled)))
 
-/// Old attack_hand: disassemble the pile.
-/datum/interaction/entry_hand/pillowpile_hand
-	id = "pillowpile_hand"
-	name = "Disassemble"
-	effect = /obj/structure/bed/pillowpile/proc/interaction_hand
+MSG_DEF_SELF(pillowpile/disassembling, span_notice("Now disassembling the large pillow pile..."))
+MSG_DEF_SELF(pillowpilefront/disassembling, span_notice("Now disassembling the front of the pillow pile..."))
 
-/obj/structure/bed/pillowpile/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("Now disassembling the large pillow pile..."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	return TRUE
-
-/obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
+/obj/structure/bed/pillowpile/proc/disassembled(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
 	// The pile was two pillows: the front (deleted with the pile) gives its one back too.
 	if(front && !QDELETED(front))
 		replace_with(front, front.sourcepillow)
 	replace_with(src, sourcepillow)
 
-/obj/structure/bed/pillowpilefront/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/pillowpilefront_hand,
-	)
-
-/// Old attack_hand: disassemble the front piece.
-/datum/interaction/entry_hand/pillowpilefront_hand
-	id = "pillowpilefront_hand"
-	name = "Disassemble"
-	effect = /obj/structure/bed/pillowpilefront/proc/interaction_hand
-
-/obj/structure/bed/pillowpilefront/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_notice("Now disassembling the front of the pillow pile..."))
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
-	return TRUE
-
-/obj/structure/bed/pillowpilefront/proc/attack_hand_timed_done2(mob/user)
+/obj/structure/bed/pillowpilefront/proc/disassembled(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dissasembled the the front of the pillow pile!"))
 	replace_with(src, sourcepillow)
 
@@ -299,3 +288,7 @@ APPEARANCE_NONE(/obj/structure/bed/pillowpile)
 	)
 	time = 60
 	category = CAT_MISC
+
+/// The front half of the pile (owns_one(starts =)), on the pile's turf.
+/obj/structure/bed/pillowpile/proc/make_front(current)
+	return new pillowpilefront(get_turf(src))

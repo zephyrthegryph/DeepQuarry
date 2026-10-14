@@ -1,0 +1,81 @@
+@obj.item.reagent_containers human|none
+-click: Click: Pick up
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers robot|none
+-click: Click: Pick up
++4 menu: Set transfer amount
++6 menu: Use
++7 click: Click: Use
+@obj ai|none
+@obj.item.reagent_containers.food.drinks ghost|none
+@obj.item.reagent_containers human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/multitool
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/weldingtool
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/card/id
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+@obj.item.reagent_containers human|/obj/item/kit
++1 menu: Glass2 item
++4 menu: Set transfer amount
++6 menu: Use
+@obj.item.reagent_containers human|/obj/item/storage
++1 menu: Glass2 item
++4 menu: Set transfer amount
++6 menu: Use
+@obj.item.reagent_containers human|/obj/item
+-click: nothing
++0 menu: Glass2 item
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
+keys: blood_test, climb_in, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, glass2_item, hand, kit_customize, kit_customize_last, move_to_top, open, pick_up_item, reagent_container.drink, reagent_container.feed, reagent_container.fill, reagent_container.pour, reagent_container.set_amount, reagent_container.splash, rename, stuff, toggle_digestable

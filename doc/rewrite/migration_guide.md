@@ -34,14 +34,18 @@ the old ones and does not migrate callers.
 
 | Old form [built] | New form | Branch | Chapter |
 |---|---|---|---|
-| `om_after(E, delay, proc)`, `after_slot(...)` | `after(owner, delay, handler, key=, clock=)`; the old procs are wrappers over it | f-reactions | [reactions.md](reactions.md) |
-| `om_hook(source, event, listener, proc)` / `om_hooked()` | `observe(source, trigger, listener, handler)` / `unobserve()` (dynamic), or `reactions()` (static) | f-reactions | [reactions.md](reactions.md) |
-| `DAMAGE_REACTION(type, kind, proc)` / `DAMAGE_REACTION_AFTER` | `on_notice(/datum/notice/<damage kind>, handler)` in `reactions()` (a hit is an occurrence) | f-reactions | [reactions.md](reactions.md) |
+| `om_after(E, delay, proc, args...)`, `after_slot(E, "name", ...)`, `rx_after(...)`, `OWN_TIMER` | `after(owner, delay, handler, key =, clock =, with = list(args...))` (no varargs); `after_pending` / `cancel_after` / `after_left`; `OWN_TIMER` is deleted (timers are TIMER relations). The old procs are wrappers **[built on master, A1]** | a1 | [reactions.md](reactions.md) §4 |
+| `om_hook(source, event, listener, proc)` / `om_hooked()` | `observe(source, on_notice(/datum/notice/x), listener, handler)` / `unobserve()` (dynamic), or `on_notice` in `reactions()` (static); a `before/*` veto becomes `before_op(GUARD_X, h)` + `guard(E, GUARD_X, ...)`. Per-event targets: F5 **[built on master, A1]** | a1 | [reactions.md](reactions.md) §3, §3a |
+| `DAMAGE_REACTION(type, kind, proc)` / `DAMAGE_REACTION_AFTER`, `REFLECTS`, `EMP_DISABLE` | `before_op(damage(kind), h)` (may block) / `after_op(damage(kind), h)` in `reactions()`; `CAPABILITY(T, reflects(kinds, chance))`, `CAPABILITY(T, emp_disable(duration))`. The macros are thin wrappers **[built on master, A1]** | a1 | [reactions.md](reactions.md) §1b |
 | `derived()` with `runs_while`, `drawn_from`, `ui_from`, `derive`, `rust_push` | `reactions()`: the same sugar over `on_change`, plus generated reads. Old `derived()` entries are folded in | f-reactions | [reactions.md](reactions.md) |
 | `ownership()` / `OWN(type, var, policy)` | `relations()` with `rel_one`/`rel_many` and `kind = OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
 | `relations()` with `rel_one`/`rel_many` untyped | the same table with `kind = REF \| PAIRED \| OWNED` | f-reactions | [state_and_relations.md](state_and_relations.md) |
-| `TRACKED(type, var, channel)`, `changed(E, channel, var)` | `TRACKED(type, var)` (publishes only when read), `publish_change(E, key)` | f-reactions | [state_and_relations.md](state_and_relations.md) |
-| Event/`om_emit` occurrences, `signal`-style notifications | `PUBLISH(src, /datum/notice/x, ...)` and `on_notice` | f-reactions | [reactions.md](reactions.md) |
+| `TRACKED(type, var, channel)`, `changed(E, channel, var)`, `OM_FIELD` | `TRACKED(type, var)` (publishes only when read); `TRACKED_BRIDGED(type, var, CHANNEL)` only while an OM stage `wake_on` or `om_watch()` reads the channel (removed with S4); `PUBLISH_CHANGE(E, key)` for a fact that is not one var. `OM_FIELD` setters publish their var key too **[built on master, A1]** | a1 | [state_and_relations.md](state_and_relations.md) §1 |
+| Event/`om_emit` occurrences, `signal`-style notifications | `PUBLISH(src, /datum/notice/x, ...)` and `on_notice`; the notice types are generated (`code/_generated/om_notices.dm`) with the mapping table `tools/dx/codemods/om_event_map.json` | a1 | [reactions.md](reactions.md) §3 |
+| `on_channel(bits, h)` (S2 bridge) | `on_change(list(keys...), h, at_most =, when =)`; producers publish `MOB_KEY_*` (deleted with the channel bridge) | a1 | [reactions.md](reactions.md) |
+| `om_grant(T, GRANT_VERB / GRANT_VERB_HIDE / GRANT_CAPABILITY, id, src)`, `om_revoke` | `grant(T, verb_path \| hidden_verb(path) \| capability_type, source, duration)` / `revoke()`; `om_attach(E, behaviour)` -> capabilities, `reactions()` or relations (F5) | a1 | [state_and_relations.md](state_and_relations.md) |
+| `shares(nameof(v))`, `proto(nameof(v))` | no declaration: type the var (registry or flyweight type); `rel_one(nameof(v), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)` | a1 | [state_and_relations.md](state_and_relations.md) §2 |
+| a data-only `capabilities()` override | `CAPABILITY(T, entry)` one line; `refine(CAP_REAGENTS, add =)` merges, `starts =` replaces | a1 | [lifecycle.md](lifecycle.md) |
 | `periodic_cadence` + `should_run()` + `periodic_step(dt)`; `DECLARE_PERIODIC_WHILE`; `DECLARE_REPEAT`; pipelines and stages | `every(interval, handler, when=, members=, phase=, after=, budget=)`; stages are work items with `after` edges | f-reactions / f-kernel | [reactions.md](reactions.md), [scheduling_and_kernel.md](scheduling_and_kernel.md) |
 | `idle` / `wake_on` / `rewake_delay` on a stage | `should_run` with declared reads (adapters keep old stages running) | f-kernel | [scheduling_and_kernel.md](scheduling_and_kernel.md) |
 | `update_rust_device()`, `push_to_rust()` hand pushes, `power_sync` | generated `rust_push(reads...)` | f-rust | [rust.md](rust.md) |
@@ -87,6 +91,46 @@ Each `DECLARE_*` lifecycle macro has a foundation form. The macros stay until th
 `DECLARE_REAGENTS` gets two holders (the capability replaces the declared one); convert a whole chain from its root
 (`/obj/item/reagent_containers` is one root with 633 subtypes; `/obj/structure/reagent_dispensers`, converted, is
 the worked example).
+
+## F5. A1 mapping tables [built on master]
+
+**om events** (`tools/dx/codemods/om_event_map.json`, regenerated by `python tools/dx/gen_om_notices.py`, CI checks it):
+each event with a listener maps to a target. 111 after-facts -> a generated `/datum/notice/<name>` (fields = the
+event's payload in New() order); `qdeleting` hooks mostly only clear a reference: declare the relation and delete
+the hook. Vetoes -> guard keys:
+
+| before/* event | Guard key |
+|---|---|
+| `movable_pre_move` | `GUARD_MOVE` |
+| `movable_z_changed` | `GUARD_Z_CHANGE` |
+| `in_range_of_irradiation`, `living_irradiate_effect` | `GUARD_IRRADIATE` |
+| `living_injure` | `GUARD_INJURE` |
+| `living_body_status` | `GUARD_BODY_STATUS` |
+| `attackby`, `attack_self`, `attack_hand`, `atom_tool_act`, `click_alt` | `GUARD_ATTACKBY`, `GUARD_ATTACK_SELF`, `GUARD_ATTACK_HAND`, `GUARD_TOOL_ACT`, `GUARD_CLICK_ALT` (an op's `before_op` once the entry is an op) |
+| `hit_by_thrown`, `cross`, `falling_down`, `stumbled_into` | `GUARD_THROWN_HIT`, `GUARD_CROSS`, `GUARD_FALL`, `GUARD_STUMBLED_INTO` (converted: spontaneous vore) |
+| `item_pre_attack`, `robot_item_attack`, `catch_throw` | `op` (the operation's before_op) |
+| the rest (`human_get_*`, `mob_handle_hud*`, `disposal_*` ...) | `review` (an accumulator: a provider or a capability, judged per site) |
+
+An emit site that reads the result (`reads_result` in the map) cannot become a notice: it is a guard or a review.
+Events with no listener are deleted with their emit sites (A1 deleted 7; `handle_mutations`, `turf_prepare_step_sound`
+and the two `dqai_target_*` are expression emits left for A4).
+
+Worked examples: dry galoshes (`/datum/om/behaviour/dry` + `before/shoes_step_action` -> `on_notice(/datum/notice/shoes_step)`
+in the galoshes' `reactions()`), squeaky shoes (`om_hook` -> `observe(owner, on_notice(...), src, PROC_REF(on_step))`),
+spontaneous vore (an om behaviour attached with `DECLARE_BEHAVIOUR` and `om_attach` -> four `before_op(GUARD_*)` on
+`/mob/living`; call sites `guard(src, GUARD_X, ...)`).
+
+**grants, verbs, attachments, watches:**
+
+| Old | New |
+|---|---|
+| `om_grant(T, GRANT_VERB, /x/proc/y, src)` / `om_revoke` | `grant(T, /x/proc/y, src)` / `revoke()` (example: `rotatable.dm`, `climbable.dm`) |
+| `om_grant(T, GRANT_VERB_HIDE, path, src)` | `grant(T, hidden_verb(path), src)` |
+| `om_grant_for(T, GRANT_CAPABILITY, /datum/capability/x, src, d)` | `grant(T, /datum/capability/x, src, d)` |
+| `om_grant(T, GRANT_ABILITY / GRANT_TRAIT / GRANT_LANGUAGE, ...)` | unchanged until their stores move (A4 review) |
+| `om_attach(E, /datum/om/behaviour/x)` (static, per type) | the behaviour's handlers as `reactions()` / a capability on the type (example: spontaneous vore) |
+| `om_attach` holding per-instance state | a relation to an owned datum (`rel_one(..., kind = RELK_OWNED)`) whose type has the reactions |
+| `om_watch(owner, target, CHANNEL, behaviour)` | `observe(target, on_change(list(keys)), owner, PROC_REF(h))`; needs the target's key published (TRACKED / PUBLISH_CHANGE). The 7 channel watches wake OM sleepers, so they move with S3 (stage engine); gas watches (`om_watch_arm_*`) stay on the gas watch facility |
 
 ## F2. Choosing the form
 
@@ -178,12 +222,12 @@ TRACKED(/obj/item/laser_pointer, energy, CHANGE_ITEM_CHARGE)     // a declared v
 
 Reference: `dx_conventions.md`, "Reactions". Deliberate differences from the plan text: relation kind constants are
 `RELK_REF/RELK_PAIRED/RELK_OWNED` (`REF` is a macro); `every(when = ...)` (`while` is a DM keyword); the keyed or
-world-clock timer is `rx_after(...)` because `after()` is variadic and DM rejects named args on a variadic proc.
+timer is `after(owner, delay, handler, key =, clock =, with =)` (A1 removed the varargs; `rx_after()` is internal).
 
 | Old | New |
 |---|---|
-| `om_after(E, d, proc, args...)`, `after(...)` | unchanged; wrappers over `rx_after()` |
-| `after_slot(E, slot, ...)` | unchanged (slots stay in om's `timer_slots` for OWN_TIMER); schedules through `rx_after()` |
+| `om_after(E, d, proc, args...)` | `after(E, d, proc, with = list(args...))` (om_after stays as a wrapper) |
+| `after_slot(E, slot, d, proc, args...)` | `after(E, d, proc, key = slot, with = list(args...))`; after_slot is a wrapper over the keyed timer |
 | a hand `changed()` plus polling a var | `on_change(list(nameof(v)), PROC_REF(h))` in `reactions()` |
 | `om_emit(E, new /datum/om/event/x)` for an occurrence | `PUBLISH(E, /datum/notice/x, args...)` + `on_notice()` |
 | `om_hook(source, event, ...)` | `observe(source, on_notice(type, h), listener, PROC_REF(h))` |
@@ -195,17 +239,15 @@ world-clock timer is `rx_after(...)` because `after()` is variadic and DM reject
 ## A3. Capabilities
 
 ```dm
-/obj/machinery/thing/capabilities()
-	. = ..()                        // list order = menu order = examine order = draw order
-	. += machine_basics(board = /obj/item/circuitboard/thing, wires = /datum/wires/thing)
-	. += cap_hand("Toggle", PROC_REF(toggle))
-	. = without(., /datum/capability/anchor)                  // drop an inherited one
-	. = replace(., /datum/capability/cover, cap_cover(open_tool = TOOL_WRENCH))
+CAPABILITIES(/obj/machinery/thing)
+	machine_basics(board = /obj/item/circuitboard/thing)
+	cover(open = tool(TOOL_WRENCH))
+	op("toggle", hand(), label("Toggle"), then(PROC_REF(toggle)))
 ```
 
-**Bespoke entries** [built]:
+**Bespoke entries** [retired with the interaction bridge, ix-r2: write `op(...)` in the CAPABILITIES block]:
 
-```dm
+```dm before
 cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE,
 	works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
 cap_tool(name, quality, handler, delay, ...same gating...)          // works_broken/unpowered default TRUE
@@ -252,16 +294,20 @@ Every entry a library capability builds is a real op [built: a2-ops, G16]: it ha
 | `cap_frame_ladder()` | [built] (a proc on `/obj/structure/frame`) | the standard machine/computer frame ladder |
 | `cap_wall_mount(offset)` | [built] | faces a wall machine away from its wall and offsets it onto it |
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
-| **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)` (panel, breakable, power, anchor, deconstruct behind the panel; `dismantle = NONE` and `powered = FALSE` leave those out), `wall_machine(board, offset, repair, dismantle, powered)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(cover_holds, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_mode)` (cover + panel + wires behind it + lock + emag; declares the compartment `BAY_HATCH` whose door is the open cover; the wiring is the holder's `machine_wires`, the lock's access its `req_access`; `cover_holds` is a holder proc that says why the cover can't move, opening or closing; the lock and the emag are ops keyed `CAP_LOCK`, `CAP_LOCK_SWIPE`, `CAP_EMAG` that a holder adds `cap_require()` contracts to and `refine()`s) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
+| **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)` (panel, breakable, power, anchor, deconstruct behind the panel; `dismantle = NONE` and `powered = FALSE` leave those out), `wall_machine(board, offset, repair, dismantle, powered)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(cover_holds, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_mode, wires)` (cover + panel + wires behind it + lock + emag; declares the compartment `BAY_HATCH` whose door is the open cover; the wiring is `wires`, the lock's access the holder's `req_access`; `cover_holds` is a holder proc that says why the cover can't move, opening or closing; the lock and the emag are ops keyed `CAP_LOCK`, `CAP_LOCK_SWIPE`, `CAP_EMAG` that a holder adds `cap_require()` contracts to and `refine()`s) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
 | **Bundles** [built]: `cell_bay(slot_var, accepts, at, needs, size)` (draws `LOOK_CELL`) (`at = BAY_HATCH` puts the bay behind a hatch's compartment), `power_channels()` (owns `act_channel`/`act_breaker`/`act_nightshift`; channel indicators are the parts `channel-<c>-<m>`), `powered_by(system, role)` and `powered_by(POWERED_BY_AREA, role)` (MEMBER of the holder's area: lights and consoles; read with `area_members(area, role)`); `door(...)` (rewrite/dx-doors) | [built] | the APC is the worked example: [foundation.md](foundation.md) |
 | Items: `cap_use_self(name, handler, ...gating, form =, log =, cooldown =, in_inventory = FALSE)`, `cap_use_at(name, handler, range = 1, target_types =, ...gating, form =, log =, cooldown =)` (replace `attack_self`/`afterattack`) | [built] | `cap_use_self`: item in hand used on itself, handler `(mob/user, ...form)`, runs from `attack_self`, answers `INPUT_ACTION_SELF_USE`, refused unless held when offered through the resolver/Menu (`needs cap_in_hand`; a direct `attack_self()` call, e.g. an action button, is trusted as before, since its callers decide reach; `in_inventory = TRUE` also accepts worn). It replaces the old `self_use()` helper. `cap_use_at`: the held item is the holder, the clicked atom the target, handler `(mob/user, atom/target, ...form)`; `range` 1 = adjacent, >1 also ranged; `target_types` filters. Click order: target `attackby` first, then the item's `use_at` entries (via `after_click()`), then legacy `afterattack`. The dispatch marks, fingerprints and logs the ITEM; mark the target yourself with `changed(target)` |
+| Machines [built, B2]: `cap_parts(list(part_stat(nameof(var), part_type, base, per, offset, mode, scale, derive)))` | [built] | component parts as the source of derived stats: each `part_stat()` var is written from the machine's owned `component_parts` relation (latent parts read without materializing), re-derived when the relation changes (an `on_change` reaction) and from every legacy `RefreshParts()` caller; `part_rating(holder, type, PART_RATING_SUM/AVG/MIN/MAX/COUNT)`; the RPED is its op `replace_parts`. Worked example: `cell_charger.dm` (its `RefreshParts()` override is deleted). The other 58 `RefreshParts` overrides convert to `part_stat()` rows |
+| `cap_occupant(slot_id, max, types, enter_delay, on_enter, on_exit)` | [built, B2] | a machine holding a mob in its sealed ledger occupant slot (the relation; the destroy spill is the slot's drop policy). Ops `enter_<slot>` (drag a mob onto it, ACT_DROP_ONTO), `enter_<slot>_self` and `eject_<slot>` (ACT_NONE); reads `occupants(holder)` (never null) and `occupant_of(holder)`; from code `occupant_enter(holder, M, user)` / `occupant_eject(holder, M, destination)`; every slot change by any path publishes `OCCUPANTS_KEY` and refreshes the holder. Worked example: `transportpod.dm` |
+| `cap_access(access, req_one_access, ops = OP_CONTROL, id_types)` | [built, B2] | access-gated ops without lock state: a `cap_require()` contract whose requirement is a credential provider (`access_credential()`: held card, then worn ID / PDA / silicon access); the holder's own `req_access` wins (`access_needs()`); `access_allowed(holder, user, held)` for code outside an op. The lock asks the same providers. Worked example: `drone_console.dm` |
+| `service_panel(wires, panel_tool, access, emag_say, emag_effect, emag_mode)` | [built, B2] | panel + wires behind it (+ access on opening the panel, waived when emagged, + an emag) as one bundle, no cover; each part keeps its capability type, so `replace()` still swaps one. Worked example: `vending.dm` |
 | Mobs: `cap_ai(targets)`, `cap_ai_behaviors(...)`, species `species_capabilities()` | [planned] | plan Â§2.3, Â§2.4 |
 | `cap_system(path)` membership (`systems()`) | [built] (O(1) join/leave) | used by `/datum/system` once it exists |
 
 **Capabilities may own UI actions** [built]: `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)` plus `ui_logged()` on the capability; the dispatcher resolves it on the holder's capabilities when the holder has no `act_<action>` itself. Capability UI data arrives under `data["caps"][<key>]`.
 
 [planned] (archive/framework_fixes.md Â§9.5; don't invent them):
-- **Machines:** `machine_board`/`machine_wires` type vars read by `machine_basics()`; `refine(key, ...)` to adjust one part of a bundle; `service_panel(access)`; `cap_occupant(max, types, enter_delay, eject_on)` with `occupants(src)` and derived `occupant_count`; `cap_access(req_access)`; parts: `cap_parts(list(/obj/item/stock_parts/x = n))` with `derive_part_rating()` (replaces `RefreshParts`); `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`.
+- **Machines:** `refine(key, ...)` to adjust one part of a bundle; `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`. (`service_panel`, `cap_occupant`, `cap_access` and `cap_parts` are built: the table above.)
 - **Derived values:** `derived()` with `runs_while`/`drawn_from`/`ui_from`/`derive(...)`, and `rust_push(reads...)` replacing hand `update_rust_device()` calls (Â§9.2).
 - **Vore:** `cap_interior(transmit, escape_delay, on_enter, on_exit)`; `settings()` rows (`setting_choice/number/text/bool/color`) with one `act_set_setting(user, key, value)`.
 
@@ -495,13 +541,32 @@ presets of `cap_op`). For new or reworked code:
 - **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
+- **Tracked base vars [built, B4/G8]:** `anchored`, `density` and `opacity` are tracked: write them only through
+  `set_anchored()` / `set_density()` / `set_opacity()` (type-level defaults stay plain). The setter publishes the var key to
+  its readers and, as a bridge until S4, raises the channel the type's declared field names (a machine's
+  `CHANGE_MACHINE_ANCHORED`, a mob's `CHANGE_MOB_CAN_MOVE`: `tracked_bridged_changed()`), so it has no `istype()`. Admin
+  edits go through the setter (`SETTER`). `tools/ci/tracked_lint.py` rejects a raw write in any proc.
+- **Machine power and integrity state [built, B4/G8]:** `NOPOWER` is the power capability's state, written only by
+  `set_powered(powered)` (`power_change()` and the few custom power rules call it) and published as `MACHINE_KEY_POWERED`;
+  `use_power` is its tracked draw mode (`set_use_power()` publishes `nameof(use_power)`); `BROKEN` is the integrity state,
+  written only by `atom_break()` / `atom_fix()`, which publish `INTEGRITY_KEY_BROKEN`. `has_stat()`, `operable()` and
+  `set_use_power()` stay the accessors. `sys/fields stat_owned` rejects `stat_add/stat_remove/set_stat` of either bit
+  anywhere else.
+
+  ```text
+  /obj/machinery/light_switch/power_change()
+      if(!otherarea)
+          set_powered(powered(LIGHT))
+  if(!turbine())
+      atom_break()        // was stat_add(BROKEN): "no partner" is the broken state, published
+  ```
 
 
 ---
 
 # Part B: the catalogue of old forms
 
-Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`) started at 18,363 sites, and each wave drives its rules to 0. **A converted folder may contain none of these.**
+Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`, started at 18,363 sites) was removed: every rule banned a form whose replacement has not landed on master (and `old_ui` contradicted the `ui` rule). The catalogue below stays as the inventory; a rule returns with the commit that lands its replacement and converts the callers. **A converted folder may contain none of these.**
 
 | # | Old form | Count | Lint rule | New form | Section |
 |---|---|---|---|---|---|
@@ -538,14 +603,14 @@ Each entry below gives the rule, a real before/after, and the traps.
 
 ## B1. Interactions â†’ `capabilities()`
 
-```dm
+```dm before
 // BEFORE: laserpointer.dm:51-61
 DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_parts/micro_laser, PROC_REF(interaction_item), "Install"))
 /obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!diode)
 		user.drop_item()
 		W.forceMove(src)
-		own_set(src, "diode", W)
+		rel_set(src, "diode", W)
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))
@@ -557,7 +622,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	. += cap_slot(nameof(diode), /obj/item/stock_parts/micro_laser, eject_tool = TOOL_SCREWDRIVER)
 ```
 
-```dm
+```dm before
 // BEFORE: door_control.dm:36-48 (an interaction datum per action)
 /datum/interaction/machine_hand/remote_toggle
 	id = "remote_toggle"  name = "Toggle"  category = INTERACTION_CAT_TOGGLE
@@ -618,13 +683,12 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 		to_chat(user, span_warning("The cover is locked and cannot be opened."))
 		return ITEM_INTERACT_BLOCKING
 	opened = 1
-	update_icon()
 // AFTER
-	. += cap_cover(open_tool = TOOL_CROWBAR, needs = PROC_REF(cover_unlocked))    // or the maintenance_hatch bundle (in progress)
-/obj/machinery/power/apc/proc/cover_unlocked(mob/user)
-	if(!coverlocked || (stat & MAINT) || cell?.percent() <= 15)
-		return TRUE
-	return "The cover is locked and cannot be opened."
+CAPABILITIES(/obj/machinery/power/apc)
+	cover(open = tool(TOOL_CROWBAR))
+	extend("cover.open", needs(req(PROC_REF(cover_latch_reason))))
+// cover_latch_reason(A) returns null when the cover can open, otherwise its refusal.
+// The complete APC uses maintenance_hatch() for its cover, panel and wires.
 ```
 
 **Traps:**
@@ -646,25 +710,25 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 				emagged = 1
 				locked = 0
 // AFTER
-	. += cap_emag(say = "You short out the APC's interface.", effect = PROC_REF(on_emag), blocked_by = COVER|PANEL)
-/obj/machinery/power/apc/proc/on_emag(mob/user)
-	cap_set(src, CAP_LOCKED, FALSE)
-	return TRUE            // FALSE refuses, and the emagged bit stays clear
+CAPABILITIES(/obj/machinery/power/apc)
+	emag(list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)), say = MSG(apc/emagged))
+	extend("emag.use", needs(req_closed(SPACE_HATCH), req_closed(SPACE_PANEL)))
+// Refusals belong in needs(req(...)); effects run only after requirements allow the operation.
 ```
 
 **Traps:**
 - Delete the `emagged` var and every `if(emagged)`; use `is_emagged(src)`.
-- The effect runs **before** the bit is set, and can refuse.
-- Repeatable emags use `mode = EMAG_REPEATABLE`.
+- Put refusal checks in requirements; effects run after they allow the operation.
+- Repeatable emags use `repeatable = TRUE`.
 
 ## B4. Requirements â†’ `needs`
 
-```dm
+```dm before
 // BEFORE: megaphone.dm:48-58
 DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone",
-		message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(shout_entered), answerer = user, title = "Megaphone",
+		question = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 // AFTER (cap_use_self, needs and ask_text are all [built])
 /obj/item/megaphone/capabilities()
 	. = ..()
@@ -685,8 +749,8 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 
 ## B5. Appearance â†’ `draw(look)`
 
-```dm
-// BEFORE: canister.dm:173-190
+```dm before
+// BEFORE: canister.dm:173-190 (the provider form, retired)
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/canister/appearance_overlays()
 	. = list()
@@ -694,7 +758,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 		icon_state = "[canister_color]-1"
 		return .
 	icon_state = "[canister_color]"
-	var/flag = desired_update_flag()
+	var/flag = (holding ? 1 : 0) | (connected_port() ? 2 : 0) | (4 << (gauge_band - 1)) // the old desired_update_flag()
 	if(flag & 1)
 		. += "can-open"
 	if(flag & 2)
@@ -707,7 +771,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 		. += "can-o2"
 	else if(flag & 32)
 		. += "can-o3"
+```
 
+```dm
 // AFTER: no flag word, no manual state bookkeeping
 /obj/machinery/portable_atmospherics/canister/draw(datum/look/look)
 	..()
@@ -720,8 +786,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 ```
 
 ```dm
-// BEFORE: door_control.dm:98 (a string template language)
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0:-p}")
+// BEFORE: door_control.dm:98 (a string template language: "doorctrl{appearance_powered?0:-p}")
 // AFTER
 /obj/machinery/button/remote/draw(datum/look/look)
 	..()
@@ -737,12 +802,30 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 
 ## B6. Manual refresh â†’ delete
 
+**HUD, sight and canmove [built, B4].** There is no `refresh_hud()` / `refresh_vision()`: the passes are `on_change()`
+reactions on `/mob/living` (living_systems.dm) whose reads are declared by hand (published `MOB_KEY_*` facts) and
+generated from what `life_hud()` / `life_vision()` / `update_canmove()` and their `life_hud_*` / `life_vision_*` helpers
+read (`reaction_reads()` in `code/_generated/reads.dm`). Every such var is tracked (TRACKED / SETTER / an OM field), a
+relation or object var (the ownership accessors publish), or `PUBLISHED_BY(T, var, KEY)` (its producer publishes KEY:
+`hud_updateflag` via `flag_hud_update(index)`, `organs` and `body` via body invalidation). So a refresh call is replaced by
+the setter of what changed, or by publishing the key that covers it: `PUBLISH_CHANGE(M, MOB_KEY_VIEW)` for what the
+client looks through (remote view, zoom, vision gear: `recalculate_vis()` does it), `flag_hud_update(WANTED_HUD)` for a
+HUD-list entry. `derived_reads/reaction_read_untracked` rejects an untracked input; `sys/presentation presentation_call`
+rejects calling a pass from content.
+
+```text
+// was: user.refresh_hud()
+PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+// was: nutrition -= 5; refresh_hud()
+adjust_nutrition(-5)
+```
+
 Every `update_icon()` and `queue_icon_update()` call in a converted folder is deleted. If the write happened outside a dispatched call (a raw callback or FFI data), write `changed(src)` instead. The sweep fails in tests when a mark is missed, so a deletion that misses a case is caught.
 
 ## B7. UI â†’ `tgui_data()` + `act_<x>()`
 
-```dm
-// BEFORE: round_status_panel.dm:28, :98-107
+```text
+// BEFORE: round_status_panel.dm:28, :98-107 (the deleted DECLARE_UI forms)
 DECLARE_UI_STATE(/datum/round_status_panel, ADMIN_STATE(R_ADMIN))
 UI_ACT(/datum/round_status_panel, "call_shuttle", ui_act_call_shuttle)
 UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
@@ -754,7 +837,9 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_call_shuttle)
 	...
 	SStgui.update_uis(src)
 	return TRUE
+```
 
+```dm
 // AFTER (round_status_panel.dm is converted: tgui_id, ui_rights, act_<x>() procs, no update_uis)
 /datum/round_status_panel/proc/act_call_shuttle(mob/user)
 	var/why_not = shuttle_api_why_cant_call()
@@ -834,11 +919,11 @@ The re-run machinery (`om_ask`, `act_ask`/`rerun_ask`, `prompt_flow`/`flow_execu
 
 ```dm
 // BEFORE: laserpointer.dm:230
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
+TRACKED(/obj/item/laser_pointer, recharging)
 // AFTER: nothing. `recharging` disappears entirely (B12 derives it from `energy < max_energy`).
 
 // BEFORE: atmo_control.dm:714
-OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
 // AFTER: a plain var; written only in act_ handlers (dispatched, so auto-marked)
 /obj/machinery/computer/general_air_control/fuel_injection
 	var/automation = FALSE
@@ -850,7 +935,9 @@ TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation, 
 
 ## B11. Verb declarations â†’ native, `type_verbs()` or `hidden_verbs()`
 
-```dm
+Current declarations use `verb_entry()` in the existing `CAPABILITIES` block; conditional entries use a tracked field and its setter. Runtime verbs use `grant(holder, granted_verb(path), source)` and the matching `revoke()`. The before/after example below records the earlier framework branch; its declaration macros and replacement table are historical.
+
+```dm before
 // BEFORE: health.dm:154-157
 DECLARE_VERB(/obj/item/healthanalyzer/improved, /obj/item/healthanalyzer/proc/toggle_adv)
 DECLARE_VERB(/obj/item/healthanalyzer/advanced, /obj/item/healthanalyzer/proc/toggle_adv)
@@ -879,8 +966,8 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 
 ```dm
 // BEFORE: atmo_control.dm:714-745
-OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injection, MACHINE_PIPELINE, "automation")
+TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
+every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(fuel_step)), when = nameof(automation))
 /obj/machinery/computer/general_air_control/fuel_injection/machine_step()
 	if(!radio_connection())
 		return PROCESS_KILL
@@ -933,7 +1020,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 // BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
 	icon_state = "[initial(icon_state)]_[pointer_icon_state]"
 	...
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 // AFTER: a timed var the look reads; no reset proc
@@ -946,7 +1033,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 
 ```dm
 // BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
-	om_after_replace(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger))
+	after(src, TIME_WITHOUT_RADIATION_BEFORE_RESET, PROC_REF(reset_perceived_danger), key = "reset_danger")
 // AFTER: a timed value that reverts by itself
 	timed_set(src, nameof(perceived_danger), new_danger, for_time = TIME_WITHOUT_RADIATION_BEFORE_RESET, revert_to = RAD_LEVEL_NONE)
 ```
@@ -964,7 +1051,7 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 	if(failure_until > world.time) ...          // repeated wherever it matters
 // AFTER
 /obj/machinery/power/apc/proc/energy_fail(duration, datum/source)
-	om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, duration)
+	grant(src, held_condition(/datum/capability/condition/power_failure), source, duration)
 /datum/capability/condition/power_failure
 	blocks = ALL_ENTRIES
 	else_say = "it isn't responding"
@@ -1001,10 +1088,10 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 	target_single = TRUE
 	on_target_delete = OM_END_DELETE_OTHER
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
+	unobserve(target, /datum/notice/living_turf_collision, source)
 	if(target.throwing == source)
 		rel_clear(target, "throwing")
-... om_link(src, thrownthing, /datum/om/relation/throw_of)
+... rel_set(src, nameof(throwing), thrownthing)
 ... rel_set(src, "throwing", TT)
 // AFTER
 /atom/movable/relations()
@@ -1192,7 +1279,7 @@ Gating booleans become capabilities and numbers become factors, read through `fa
 ## C3. Verify
 
 - Compile with 0 errors.
-- `tools/build/build.sh lint`: DreamChecker 0, and the `dx_old_forms` counts for your folder at 0.
+- `tools/build/build.sh lint`: DreamChecker 0, and no Part B form left in your folder (`git grep` the form).
 - Focused tests for every type you touched: `bash tools/dq_focused_test.sh ...`. Add a test for each capability entry you wrote: that it works, that it refuses when it should, and that the look and UI change.
 - The refresh sweep in test builds fails on a missed change mark. **Don't silence it; find the write.**
 
@@ -1206,7 +1293,7 @@ List the files converted, the old-form counts before and after, the [planned] AP
 
 **Before:** `code/game/objects/items/devices/laserpointer.dm`, 260 lines. The pieces that change:
 
-```dm
+```dm before
 /obj/item/laser_pointer
 	...
 	var/cooldown = 10
@@ -1236,7 +1323,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 			recharge_locked = TRUE
 	flick_overlay(I, showto, cooldown)
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 /obj/item/laser_pointer/periodic_step()
@@ -1249,13 +1336,13 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 /obj/item/laser_pointer/ownership()
 	. = ..()
 	. += owns(nameof(diode), policy = OWN_CONTAINED)
-OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
+TRACKED(/obj/item/laser_pointer, recharging)
+every(2 SECONDS, then(PROC_REF(recharge_step)), when = nameof(recharging))
 ```
 
 **After:**
 
-```dm
+```dm before
 /obj/item/laser_pointer
 	...
 	var/cooldown = 1 SECOND
@@ -1316,11 +1403,11 @@ TRACKED(/obj/item/laser_pointer, pointing, CHANGE_EFFECTS)
 - direct `icon_state` writes and the reset timer (a timed var plus `draw`);
 - `set_recharging`, `OM_FIELD(recharging)` and `DECLARE_PERIODIC_WHILE` (`should_run()` derives it from `energy`).
 
-## A15. Construction primitives [built: `rewrite/f-look`]
+## A15. Construction primitives [retired with the legacy ladder, ix-r2: `construction(GRAPH_X | stage(STAGE_X, ...))`, code/engine/declare/graph.dm]
 
 A ladder is what the player does, not stages with hand-written undo, refund, message, icon and delay:
 
-```dm
+```dm before
 . += cap_construction(
 	ladder_options(sprite = "frame", undo_delay = 1 SECONDS, dismantle = list(TOOL_WRENCH, /obj/item/stack/material/steel, 2)),
 	stage("frame", desc = "A bare frame."),

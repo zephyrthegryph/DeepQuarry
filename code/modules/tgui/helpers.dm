@@ -1,6 +1,5 @@
-OWN_TIMER(/datum/tgui_say, packet_timeout)
 
-/datum/tgui_say/proc/handle_packets(id, total_packets, packet)
+/datum/tgui_say/proc/handle_packets(id, total_packets, packet, mob/user)
 	id = text2num(id)
 
 	var/total = text2num(total_packets)
@@ -9,7 +8,7 @@ OWN_TIMER(/datum/tgui_say, packet_timeout)
 			return null
 
 		partial_packets = list("chunks" = new /list(total))
-		after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+		after(src, 10 SECONDS, PROC_REF(clear_oversized_payload), key = "packet_timeout")
 
 	if(!partial_packets)
 		return null
@@ -18,17 +17,17 @@ OWN_TIMER(/datum/tgui_say, packet_timeout)
 
 	if(id != total)
 		if(id > 1)
-			after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+			after(src, 10 SECONDS, PROC_REF(clear_oversized_payload), key = "packet_timeout")
 		return null
 
 	var/assembled_payload = ""
 	for(var/received_packet in partial_packets["chunks"])
 		assembled_payload += received_packet
 
-	om_cancel_timer_slot(src, "packet_timeout")
+	cancel_after(src, "packet_timeout")
 	partial_packets = null
 	if (!rustg_json_is_valid(assembled_payload))
-		log_tgui(usr, "Error: Invalid JSON")
+		log_tgui(client()?.mob, "Error: Invalid JSON")
 		return
 	return json_decode(assembled_payload)
 

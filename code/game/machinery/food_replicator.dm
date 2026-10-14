@@ -1,5 +1,4 @@
 /obj/machinery/food_replicator
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
@@ -8,8 +7,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 200
 
 	var/print_delay = 150
 	var/print_cost
@@ -33,37 +30,17 @@
 		/obj/item/stack/cable_coil = 5,
 	)
 
-/obj/machinery/food_replicator/Initialize(mapload)
-	. = ..()
-
-	default_apply_parts()
-
 /obj/machinery/food_replicator/dismantle()
 	var/turf/T = get_turf(src)
 	if(T)
 		if(container)
 			container.forceMove(T)
-			own_take(src, nameof(container))
+			rel_take(src, nameof(container))
 	QDEL_NULL_LIST(products)
 	return ..()
 
-/obj/machinery/food_replicator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/food_replicator_scan,
-		/datum/interaction/machine_item/food_replicator_insert_container,
-		/datum/interaction/machine_hand/ungated/food_replicator_use,
-		/datum/interaction/machine_verb/food_replicator_eject_beaker,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): opens the print dialogue.
-/datum/interaction/machine_hand/ungated/food_replicator_use
-	id = "food_replicator_use"
-	name = "Use"
-	effect = /obj/machinery/food_replicator/proc/interaction_use
-
-/obj/machinery/food_replicator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
 		return TRUE
@@ -81,13 +58,15 @@
 
 /obj/machinery/food_replicator/interact(mob/user)
 	if(!isemptylist(products))
-		om_ask(user, /datum/om/prompt/choice, PROC_REF(dish_chosen), message = "What would you like to print?", title = "Print a dish", choices = products, requires = PROMPT_ADJACENT)
+		open_request(src, /datum/prompt/choice, PROC_REF(dish_chosen), answerer = user, question = "What would you like to print?", title = "Print a dish", choices = products, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 	else
 		to_chat(user, span_warning("There is no food to replicate!"))
 
-/obj/machinery/food_replicator/proc/dish_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/machinery/food_replicator/proc/dish_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.value
 	if(printing || (!operable()))
 		return
 
@@ -95,7 +74,7 @@
 	var/obj/item/reagent_containers/foodItem = new product_path
 
 	var/total = foodItem.reagents.total_volume
-	qdel(foodItem)
+	spent(foodItem)
 
 	if(!container)
 		to_chat(user, span_warning("There is no container!"))
@@ -110,8 +89,7 @@
 		container.reagents.remove_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency))
 
 		set_use_power(USE_POWER_ACTIVE)
-		printing = TRUE
-		update_icon()
+		set_printing(TRUE)
 
 		if(product_path)
 			foodItem = new product_path(src)
@@ -125,35 +103,25 @@
 
 		visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
 
-		om_after(src, print_delay/speed, PROC_REF(print_done), foodItem)
+		after(src, print_delay/speed, PROC_REF(print_done), with = list(foodItem), keeps_dead = TRUE)
 
 
-/// Scan a food item to learn its recipe.
-/datum/interaction/machine_item/food_replicator_scan
-	id = "food_replicator_scan"
-	name = "Scan food"
-	held_type = /obj/item/reagent_containers/food
-	effect = /obj/machinery/food_replicator/proc/interaction_scan
-
-/obj/machinery/food_replicator/proc/interaction_scan(mob/user, obj/item/reagent_containers/food/O, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	balloon_alert(user, "scanning...")
-	om_task_timed(user, 10, target = src, receiver = src, on_done = PROC_REF(interaction_scan_timed_done), done_args = list(O))
 	return TRUE
 
-/obj/machinery/food_replicator/proc/interaction_scan_timed_done(obj/item/reagent_containers/food/O)
+/obj/machinery/food_replicator/proc/interaction_scan_timed_done(datum/act/op/A)
+	var/obj/item/reagent_containers/food/O = A.held
 	foodcheck(O)
 	return TRUE
 
-/// Insert a reagent container to supply nutriment.
-/datum/interaction/machine_item/food_replicator_insert_container
-	id = "food_replicator_insert_container"
-	name = "Insert container"
-	held_type = /obj/item/reagent_containers/glass
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("container"), "there is already a reagent container inserted"))
-	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
+MSG_DEF_SELF(food_replicator/container, "There is already a reagent container inserted.")
 
-/obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.container), O, user = user))
+/obj/machinery/food_replicator/proc/interaction_insert_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/O = A.held
+	if(!move_into(src, nameof(src.container), O, user))
 		return TRUE
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE
@@ -176,20 +144,40 @@
 	return
 
 /obj/machinery/food_replicator/proc/appearance_broken()
-	return has_stat(BROKEN) ? 1 : 0
+	return broken_now() ? 1 : 0
 
 /obj/machinery/food_replicator/proc/appearance_nopower()
-	return has_stat(NOPOWER | EMPED) ? 1 : 0
+	return (power_lost() || emp_held()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/food_replicator, "{initial(icon_state)}")
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_broken", list("1" = list(APPEARANCE_ICON_STATE = "destroyed")))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "appearance_nopower", list("1" = list(APPEARANCE_OVERLAYS = list("poweroff"))))
-DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("printing"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/food_replicator/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)]")
+	if(appearance_broken() == 1)
+		look.state("destroyed")
+	if(panel_open == 1)
+		look.overlay("panel_open")
+	if(appearance_nopower() == 1)
+		look.overlay("poweroff")
+	if(printing == 1)
+		look.overlay("printing")
 
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
-/obj/machinery/food_replicator/machine_step()
+// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+TRACKED(/obj/machinery/food_replicator, printing)
+
+CAPABILITIES(/obj/machinery/food_replicator)
+	configure(uses_power(idle = 20, active = 200))
+	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), starts(PROC_REF(interaction_scan)), wait(1 SECOND), then(PROC_REF(interaction_scan_timed_done)))
+	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_beaker)))
+	default_parts()
+
+/obj/machinery/food_replicator/proc/work_step(datum/act/timer/A)
 	if(!operable())
 		set_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
@@ -208,14 +196,8 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	speed = max(cap_rating, 1) / 2
 
 
-/// Old verb/eject_beaker().
-/datum/interaction/machine_verb/food_replicator_eject_beaker
-	id = "food_replicator_eject_beaker"
-	name = "Eject Beaker"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/food_replicator/proc/interaction_eject_beaker
-
-/obj/machinery/food_replicator/proc/interaction_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/food_replicator/proc/interaction_eject_beaker(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	remove_beaker()
 	return TRUE
@@ -223,8 +205,7 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 /obj/machinery/food_replicator/proc/print_done(obj/item/reagent_containers/foodItem)
 	ping()
 	set_use_power(USE_POWER_IDLE)
-	printing = FALSE
-	update_icon()
+	set_printing(FALSE)
 
 	if(!operable())
 		return
@@ -235,7 +216,7 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		own_take(src, nameof(container))
+		rel_take(src, nameof(container))
 		return TRUE
 	return FALSE
 
@@ -246,12 +227,19 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	message_admins("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]")
 	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)
 
-	om_after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
+	after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
 
 /obj/machinery/food_replicator/proc/self_destruct_boom()
-	set_stat(BROKEN)
+	atom_break()
 	explosion(src, 0, 0, 2)
 
 /obj/machinery/food_replicator/ownership()
 	. = ..()
 	. += owns(nameof(container), policy = OWN_CONTAINED)
+
+/obj/machinery/food_replicator/proc/dq_actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "you can't do that right now"
+	return null

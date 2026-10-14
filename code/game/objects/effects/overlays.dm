@@ -4,16 +4,11 @@
 	var/i_attached //Added for possible image attachments to objects. For hallucinations and the like.
 
 /obj/effect/overlay/beam //Not actually a projectile, just an effect.
+	lifecycle_lifetime = 1 SECOND
 	name="beam"
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
 	plane = ABOVE_OBJ_PLANE
-	/// Relation view: the atom the beam comes from.
-	var/tmp/atom/BeamSource
-
-/obj/effect/overlay/beam/Initialize(mapload)
-	. = ..()
-	expire(1 SECOND)
 
 /obj/effect/overlay/palmtree_r
 	name = "Palm tree"
@@ -54,10 +49,17 @@
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 
-/obj/effect/overlay/wallrot/Initialize(mapload)
-	. = ..()
-	pixel_x += rand(-10, 10)
-	pixel_y += rand(-10, 10)
+CAPABILITIES(/obj/effect/overlay/wallrot)
+	rolls(nameof(pixel_x), PROC_REF(roll_pixel_x))
+	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_x(datum/roller/R)
+	return pixel_x + (R.number(-10, 10))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/effect/overlay/wallrot/proc/roll_pixel_y(datum/roller/R)
+	return pixel_y + (R.number(-10, 10))
 
 /obj/effect/overlay/snow
 	name = "snow"
@@ -67,19 +69,15 @@
 	plane = TURF_PLANE
 
 // Todo: Add a version that gradually reaccumulates over time by means of alpha transparency. -Spades
-EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
-	INTERACT_INSERT(/obj/item/shovel, PROC_REF(interaction_shovel_snow), "Shovel"), \
-)
+MSG_DEF(snow/shovel_snow_begins, null, span_notice("%U% begins to shovel away %T%."))
 
-/// Old attackby: shovel the snow away.
-/obj/effect/overlay/snow/proc/interaction_shovel_snow(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, src, others = span_notice("%U% begins to shovel away %T%."))
-	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/effect/overlay/snow)
+	op("shovel_snow", item(/obj/item/shovel), label("Shovel"), begins(MSG(snow/shovel_snow_begins)), wait(4 SECONDS), then(PROC_REF(attackby_timed_done)))
 
-/obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)
+/obj/effect/overlay/snow/proc/attackby_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You have finished shoveling!"))
-	qdel(src)
+	consume(src, user)
 
 /obj/effect/overlay/snow/floor
 	icon_state = "snowfloor"
@@ -185,7 +183,3 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 	layer = FLOAT_LAYER
 	vis_flags = VIS_INHERIT_ID
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
-
-/// Relation view: BeamSource (reads null once it is gone).
-/obj/effect/overlay/beam/proc/BeamSource() as /atom
-	return BeamSource

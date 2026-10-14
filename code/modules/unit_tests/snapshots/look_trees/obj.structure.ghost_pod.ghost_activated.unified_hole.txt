@@ -1,0 +1,13 @@
+/obj/structure/ghost_pod/ghost_activated/unified_hole icon: icons/effects/effects.dmi
+/obj/structure/ghost_pod/ghost_activated/unified_hole state: rift
+/obj/structure/ghost_pod/ghost_activated/unified_hole dir: 2
+/obj/structure/ghost_pod/ghost_activated/unified_hole overlay: icons/effects/effects.dmi:rift:8:#000000
+/obj/structure/ghost_pod/ghost_activated/unified_hole overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate icon: icons/effects/effects.dmi
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate state: rift
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate dir: 2
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate overlay: icons/effects/effects.dmi:rift:8:#000000
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate overlay: icons/effects/effects.dmi:rift_glow:-32767
+/obj/structure/ghost_pod/ghost_activated/unified_hole/redgate overlay: icons/effects/effects.dmi:rift_glow:8:0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0
+

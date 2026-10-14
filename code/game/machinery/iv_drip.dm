@@ -1,3 +1,12 @@
+/// The fill overlay of a drip or feeder container: `state` of `icon` with the reagent colour added (the legacy icon add, built once per colour).
+DECLARE_SHARED_CACHE(reagent_fill_overlays, GLOBAL_PROC_REF(build_reagent_fill_overlay), SC_NEVER)
+
+/proc/build_reagent_fill_overlay(icon, state, colour)
+	var/icon/filled = icon(icon, state)
+	if(colour)
+		filled += colour
+	return image(filled)
+
 /obj/machinery/iv_drip
 	name = "\improper IV drip"
 	desc = "Helpful for giving someone blood! Or taking it away. It giveth, it taketh."
@@ -5,89 +14,112 @@
 	anchored = FALSE
 	density = FALSE
 
-
-OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
+/obj/machinery/iv_drip/var/mob/living/carbon/human/attached
 /// Drips (or draws) while hooked up to a patient.
-DECLARE_PERIODIC_WHILE(/obj/machinery/iv_drip, MACHINE_PIPELINE, "attached")
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/iv_drip/appearance_overlays()
-	. = list()
-	if(attached())
-		icon_state = "hooked"
-	else
-		icon_state = ""
+TRACKED(/obj/machinery/iv_drip, fill_state)
+TRACKED(/obj/machinery/iv_drip, fill_color)
+/// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
+/obj/machinery/iv_drip/var/fill_state
+/obj/machinery/iv_drip/var/fill_color
 
+/// Writes the fill overlay the container's level and colour show.
+/obj/machinery/iv_drip/proc/refresh_fill()
+	var/datum/reagents/reagents = beaker?.reagents
+	if(!reagents?.total_volume)
+		set_fill_state(null)
+		return
+	var/percent = round((reagents.total_volume / beaker.volume) * 100)
+	switch(percent)
+		if(0 to 9)
+			set_fill_state("reagent0")
+		if(10 to 24)
+			set_fill_state("reagent10")
+		if(25 to 49)
+			set_fill_state("reagent25")
+		if(50 to 74)
+			set_fill_state("reagent50")
+		if(75 to 79)
+			set_fill_state("reagent75")
+		if(80 to 90)
+			set_fill_state("reagent80")
+		if(91 to INFINITY)
+			set_fill_state("reagent100")
+	set_fill_color(reagents.get_color())
 
-	if(beaker)
-		var/datum/reagents/reagents = beaker.reagents
-		if(reagents.total_volume)
-			var/image/filling = image('icons/obj/iv_drip.dmi', src, "reagent")
-
-			var/percent = round((reagents.total_volume / beaker.volume) * 100)
-			switch(percent)
-				if(0 to 9)		filling.icon_state = "reagent0"
-				if(10 to 24) 	filling.icon_state = "reagent10"
-				if(25 to 49)	filling.icon_state = "reagent25"
-				if(50 to 74)	filling.icon_state = "reagent50"
-				if(75 to 79)	filling.icon_state = "reagent75"
-				if(80 to 90)	filling.icon_state = "reagent80"
-				if(91 to INFINITY)	filling.icon_state = "reagent100"
-
-			filling.icon += reagents.get_color()
-			. += filling
-
-/obj/machinery/iv_drip/MouseDrop(over_object, src_location, over_location)
+/// What it shows: hooked up while attached to a patient, and its container's fill in the reagent's colour.
+/obj/machinery/iv_drip/draw(datum/look/look)
 	..()
-	if(!isliving(usr))
+	look.state(attached() ? "hooked" : "")
+	if(fill_state)
+		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
+
+CAPABILITIES(/obj/machinery/iv_drip)
+	ref_one(nameof(attached), /mob/living/carbon/human)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
+	drag_onto(PROC_REF(drop_input))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_used)), wait(1.5 SECONDS), then(PROC_REF(screwdriver_act_timed_done)))
+	op("iv_drip_interaction_item", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Attach container"), needs(req_is(nameof(beaker), FALSE, because = MSG(iv_drip/beaker))), then(PROC_REF(iv_drip_interaction_item)))
+	op("iv_drip_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove container"), then(PROC_REF(iv_drip_interaction_hand)))
+	op("iv_drip_toggle_mode", menu(), label("Toggle Mode"), needs(req_adjacent(), req_capable(), req_actor_kind(/mob/living, because = MSG(iv_drip/actor_type))), then(PROC_REF(iv_drip_toggle_mode)))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
+/// then the native drop goes on.
+/obj/machinery/iv_drip/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
+
+/obj/machinery/iv_drip/proc/drop_patient_with_actor(mob/user, atom/over_object)
+	if(!isliving(user))
 		return
 
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
 		rel_clear(src, nameof(attached))
-		update_icon()
+		refresh_fill()
 		return
 
-	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
+	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
+		act_message(user, src, others = "%U% attaches %T% to \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		update_icon()
+		refresh_fill()
 
+MSG_DEF_SELF(iv_drip/beaker, "there is already a reagent container loaded")
 
-EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
-	INTERACT_INSERT(/obj/item/reagent_containers, PROC_REF(iv_drip_interaction_item), "Attach container", REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container loaded")), \
-	INTERACT_HAND_UNGATED("Remove container", PROC_REF(iv_drip_interaction_hand)), \
-	INTERACT_VERB("Toggle Mode", PROC_REF(iv_drip_toggle_mode), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living)), "you can't do that")), \
-)
+MSG_DEF_SELF(iv_drip/actor_type, "you can't do that")
 
 /// Old attackby.
-/obj/machinery/iv_drip/proc/iv_drip_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/reagent_containers))
-		return FALSE
+		return OP_DECLINE
 
-	if(!own_set(src, nameof(src.beaker), W, user = user))
-		return FALSE
+	if(!move_into(src, nameof(src.beaker), W, user))
+		return OP_DECLINE
 	to_chat(user, "You attach \the [W] to \the [src].")
-	update_icon()
-	return TRUE
+	refresh_fill()
+	return OP_OK
 
-/obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
-	playsound(src, tool.usesound, 50, TRUE)
+/obj/machinery/iv_drip/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You start to dismantle the IV drip."))
-	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
+/obj/machinery/iv_drip/proc/screwdriver_act_timed_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dismantle the IV drip."))
-	new /obj/item/stack/rods(loc, 6)
+	var/obj/item/stack/rods/rods = new(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, nameof(beaker))
-	qdel(src)
+		rel_take(src, nameof(beaker))
+	replace_with(src, rods)
 
-/obj/machinery/iv_drip/machine_step()
+/obj/machinery/iv_drip/proc/work_step(datum/act/timer/A)
 	set background = 1
 	if(attached())
 
@@ -95,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
 			rel_clear(src, nameof(attached))
-			update_icon()
+			refresh_fill()
 			return PROCESS_KILL
 
 	if(attached() && beaker)
@@ -107,7 +139,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 					// speed up transfer on blood packs
 					transfer_amount = 4
 				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
-				update_icon()
+				refresh_fill()
 
 		// Take blood
 		else
@@ -142,7 +174,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 				beaker.reagents.update_total()
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()
-				update_icon()
+				refresh_fill()
 				if(SScontracts)
 					emit_contract_event(CONTRACT_EVENT_BLOOD_DONATED, list(
 						"department" = DEPARTMENT_MEDICAL,
@@ -154,17 +186,17 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 					), "blood-donation:[REF(beaker)]:[round(beaker.reagents.total_volume, 0.1)]", src, null, T)
 
 /// Old attack_hand: take the container off before the machinery gate; with none, the touch goes on.
-/obj/machinery/iv_drip/proc/iv_drip_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_interaction_hand(datum/act/op/A)
 	if(!beaker)
-		return FALSE
+		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
-	own_take(src, nameof(beaker))
-	update_icon()
-	return TRUE
-
+	rel_take(src, nameof(beaker))
+	refresh_fill()
+	return OP_OK
 
 /// Old verb "Toggle Mode".
-/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/iv_drip/proc/iv_drip_toggle_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
 		return
 

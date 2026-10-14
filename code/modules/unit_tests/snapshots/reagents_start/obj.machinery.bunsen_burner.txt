@@ -1,0 +1,2 @@
+/obj/machinery/bunsen_burner vol=1 holder=/datum/reagents/distilling 
+

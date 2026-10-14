@@ -1,0 +1,421 @@
+/**
+ * Conversion pins: a generated snapshot of what a person can do with a type, recorded before a routine
+ * conversion (legacy forms -> CAPABILITIES ops) and checked after it. Guide: doc/rewrite/snapshot_pins.md.
+ *
+ *   bash tools/dq_pin.sh /obj/machinery/foo [/obj/machinery/bar ...]   # before converting: record the pins
+ *   ...convert...
+ *   bash tools/dq_focused_test.sh dq_conversion_pin                     # after: what changed, row by row
+ *   bash tools/dq_focused_test.sh --bless dq_conversion_pin             # accept the intended changes
+ *
+ * One file per type under code/modules/unit_tests/snapshots/pins/ (dq_snapshot_files.dm), so parallel
+ * conversions never touch the same file and a pin-only change needs no recompile. The rows are keyed by
+ * what a player sees, not by ids, so a faithful conversion leaves them unchanged:
+ *
+ *   <actor>|<held> menu: <label>                    an entry the interaction menu offers
+ *   <actor>|<held> menu: <label> (refused: <why>)   an entry it shows greyed out, with the refusal
+ *   <actor>|<held> click: <screentip>               what a plain click with that hand would do ("click: nothing")
+ *   wires: <wire>, <wire>, ...                      the wires behind its panel (duds left out)
+ *   keys: <key>, <key>, ...                         the op keys / interaction ids (expected to change on conversion)
+ *
+ * Actors: a human, a cyborg, an AI and a ghost, empty-handed; the human also holds each common tool and each
+ * item a legacy interaction of the type asks for. A pin cannot see effects (what a click changes), timing, the
+ * window's buttons or anything a sequence of steps reaches: hand-written pins still cover those.
+ */
+#define DQ_PIN_DIR "code/modules/unit_tests/snapshots/pins/"
+
+/datum/unit_test/dq_conversion_pin
+	var/list/capture_gravity_before
+	/// Optional subtree selection for focused conversions; the default captures every recorded type.
+	var/list/capture_roots
+
+// Pinning visibility uses the shared lazy dview singleton. Warm it during fixture
+// setup, before the runner snapshots globals; it remains the production cache.
+/datum/unit_test/dq_conversion_pin/New()
+	..()
+	dview(0, test_floor())
+	// Status lookup builds a persistent policy cache; retain the production cache
+	// and initialize it before the runner records its globals.
+	status_policies()
+	// Rogue-zone console initialization uses this same persistent lazy controller.
+	// Build it before the runner snapshots globals, without resetting its live state.
+	if(!GLOB.rm_controller)
+		GLOB.rm_controller = new /datum/controller/rogue()
+
+/// The items the human holds besides an empty hand: the common tools (the welder is lit).
+/proc/dq_pin_tools()
+	return list(
+		/obj/item/tool/screwdriver,
+		/obj/item/tool/crowbar,
+		/obj/item/tool/wrench,
+		/obj/item/tool/wirecutters,
+		/obj/item/multitool,
+		/obj/item/weldingtool,
+		/obj/item/stack/cable_coil,
+		/obj/item/stack/material/steel,
+		/obj/item/card/id,
+	)
+
+/datum/unit_test/dq_conversion_pin/proc/snapshot_name()
+	return "pins"
+
+/datum/unit_test/dq_conversion_pin/proc/snapshot_directory()
+	return DQ_PIN_DIR
+
+/datum/unit_test/dq_conversion_pin/Run()
+	// Capturing hit reactions may take an act over. Restore this framework scratch
+	// value after the sweep rather than leaving it for the next focused test.
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
+	var/list/bad = list()
+	var/list/expected_by_type = dq_snapshot_read_dir(snapshot_directory(), bad)
+	if(length(capture_roots))
+		for(var/type in expected_by_type.Copy())
+			var/selected = FALSE
+			for(var/root in capture_roots)
+				if(ispath(type, root))
+					selected = TRUE
+					break
+			if(!selected)
+				expected_by_type -= type
+		TEST_ASSERT(length(expected_by_type), "The focused conversion selection contains recorded types")
+	if(!length(expected_by_type) && !length(bad))
+		return // no pins recorded
+	var/turf/T = test_floor()
+	capture_gravity_before = unit_test_gravity_snapshot()
+	var/list/actors = list(
+		"human" = allocate(/mob/living/carbon/human, T),
+		"robot" = dq_pin_robot(T),
+		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
+		"ghost" = allocate(/mob/observer/dead, T),
+	)
+	// The rows read the actor's state (the toilet's Flush is offered silently to a mob that is not awake): the human stays awake for the whole
+	// recording, however long it runs on the test floor's air.
+	var/mob/living/carbon/human/pin_human = actors["human"]
+	pin_human.enable_godmode()
+	// A gravity generator going away switches its area's gravity off (as in play): the room gets its gravity back after the sweep, or every later
+	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
+	var/area/sweep_room = get_area(T)
+	var/sweep_gravity = sweep_room.has_gravity
+	// Whether the test floor is a player level depends on what an earlier test or type of the sweep registered (an overmap sector adds its levels), so the
+	// recorded rows ("refund only at your base") would depend on order. The sweep says it is, and puts the list back afterwards.
+	var/list/sweep_levels = using_map.player_levels.Copy()
+	using_map.player_levels |= T.z
+	defer_cleanup(src, PROC_REF(cleanup_pin_sweep), T, sweep_room, sweep_gravity, sweep_levels)
+	var/list/actual_by_type = list()
+	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
+	var/turf/beside = get_step(T, EAST)
+	var/beside_type = beside?.type
+	for(var/type in expected_by_type)
+		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
+		rand_seed(1)
+		var/list/baseline_atoms = dq_pin_fixture_atoms()
+		var/list/baseline_allocated = allocated?.Copy() || list()
+		var/target_gravity = sweep_room.has_gravity
+		if(ispath(type, /turf))
+			if(!beside)
+				actual_by_type[type] = list("no tile to pin a turf on")
+				continue
+			var/turf/changed = beside.ChangeTurf(type)
+			try
+				actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			catch(var/exception/read_turf)
+				actual_by_type[type] = list("runtime while reading it: [read_turf.name]")
+			beside = changed.ChangeTurf(beside_type)
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "turf capture left fixture products")
+			continue
+		var/list/made = dq_pin_make_with_diagnostics(type, T)
+		var/atom/target = made["target"]
+		if(made["diagnostic"])
+			actual_by_type[type] = list("runtime while making it: [made["diagnostic"]]")
+			if(target && !QDELETED(target))
+				qdel(target)
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "failed constructor left fixture products")
+			continue
+		if(QDELETED(target))
+			actual_by_type[type] = list("deleted itself on creation")
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "self-deleting capture left fixture products")
+			continue
+		try
+			actual_by_type[type] = dq_pin_lines(target, T, actors)
+		catch(var/exception/read)
+			actual_by_type[type] = list("runtime while reading it: [read.name]")
+		qdel(target)
+		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "capture left fixture products")
+	// Compare substantive text while discarding only volatile fixture IDs and diagnostic source locations.
+	for(var/type in actual_by_type)
+		actual_by_type[type] = dq_pin_stable_rows(type, actual_by_type[type])
+	for(var/type in expected_by_type)
+		expected_by_type[type] = dq_pin_stable_rows(type, expected_by_type[type])
+	var/report = dq_snapshot_compare(snapshot_directory(), snapshot_name(), actual_by_type, expected_by_type, bad)
+	TEST_ASSERT(isnull(report), report)
+
+/// Preserve cleanup even when a declaration error aborts the sweep; the runner still reports the original runtime.
+/datum/unit_test/dq_conversion_pin/proc/cleanup_pin_sweep(turf/T, area/sweep_room, sweep_gravity, list/sweep_levels)
+	using_map.player_levels.Cut()
+	using_map.player_levels += sweep_levels
+	own_turf_contents(T)
+	// Dispose fixture-owned atoms before restoring gravity: a surviving generator's
+	// destruction can switch its area's gravity off. The runner skips these deleted entries.
+	for(var/datum/thing as anything in allocated?.Copy())
+		if(!QDELETED(thing))
+			qdel(thing)
+	for(var/area/room as anything in capture_gravity_before)
+		if(!QDELETED(room))
+			room.gravitychange(capture_gravity_before[room])
+	capture_gravity_before = null
+
+/// Identity snapshot of this fixture block, including existing actor equipment and nested contents.
+/// Do not materialize latent contents merely to identify already-existing fixture atoms.
+/datum/unit_test/proc/dq_pin_fixture_atoms()
+	var/list/found = list()
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
+		found |= T.contents
+	var/index = 1
+	while(index <= length(found))
+		var/atom/movable/thing = found[index++]
+		if(!QDELETED(thing))
+			found |= thing.contents
+	return found
+
+/// Dispose only what this capture created. Existing actors, held items and their contents survive.
+/// Include teardown products and adjacent helper objects before the next capture starts.
+/datum/unit_test/proc/dq_pin_cleanup_target(list/baseline_atoms, list/baseline_allocated, area/room, gravity)
+	for(var/pass in 1 to 4)
+		var/list/products = (allocated?.Copy() || list()) - baseline_allocated
+		products |= dq_pin_fixture_atoms() - baseline_atoms
+		if(!length(products))
+			break
+		for(var/datum/thing as anything in products)
+			if(!QDELETED(thing))
+				qdel(thing)
+	if(room && room.has_gravity != gravity)
+		room.gravitychange(gravity)
+	return !length(dq_pin_fixture_atoms() - baseline_atoms)
+
+/// The pin rows of one target (see the file comment), sorted so the file diffs cleanly.
+/datum/unit_test/proc/dq_pin_lines(atom/target, turf/T, list/actors)
+	. = list()
+	// As the i7 snapshots do: a freshly made machine can read unpowered until the power system's next step.
+	if(ismachinery(target))
+		var/obj/machinery/M = target
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
+	var/list/held_types = dq_pin_tools()
+	// ...and each item an op of the type binds (item(T), stack(T)), so a converted type is probed with what its legacy interactions asked for
+	var/datum/op_index/probe_index = op_index_of_table(table_of(target))
+	for(var/key in probe_index?.by_key)
+		var/datum/op_plan/plan = probe_index.by_key[key]
+		for(var/datum/entry/part/bind/binding as anything in plan?.bindings)
+			if(binding.bind_kind != BIND_ITEM && binding.bind_kind != BIND_STACK)
+				continue
+			var/bound = binding.args["type"]
+			// a holder is made around a mob (its constructor param), so a bare one is not a probe
+			if(ispath(bound, /obj/item) && !ispath(bound, /obj/item/grab) && !ispath(bound, /obj/item/holder))
+				held_types |= bound
+	var/list/combinations = list(list("human", null), list("robot", null), list("ai", null), list("ghost", null))
+	for(var/path in held_types)
+		combinations += list(list("human", path))
+	for(var/list/combination as anything in combinations)
+		var/mob/actor = actors[combination[1]]
+		var/held_path = combination[2]
+		var/held_name = held_path ? "[held_path]" : "none"
+		var/obj/item/held = null
+		if(held_path)
+			held = dq_snapshot_allocate(held_path, T)
+			if(QDELETED(held))
+				. += "[combination[1]]|[held_name] deleted itself on creation"
+				continue
+			var/obj/item/weldingtool/welder = held.get_welder()
+			welder?.set_welding(TRUE)
+		var/list/menu = list()
+		var/prefix = "[combination[1]]|[held_name] menu: "
+		// The engine's ops (op_menu): what the Menu window lists.
+		for(var/list/row as anything in op_menu(actor, target, held))
+			var/label = "[row["label"]]"
+			menu |= row["enabled"] ? "[prefix][label]" : "[prefix][label] (refused: [row["reason"]])"
+		sortTim(menu, GLOBAL_PROC_REF(cmp_text_asc))
+		. += menu
+		. += "[combination[1]]|[held_name] click: [screentip_for(actor, target, held) || "nothing"]"
+		if(held)
+			qdel(held)
+	var/list/wires = list()
+	for(var/wire in wires_all(target))
+		if(!wire_is_dud(wire))
+			wires += "[wire]"
+	if(length(wires))
+		sortTim(wires, GLOBAL_PROC_REF(cmp_text_asc))
+		. += "wires: [jointext(wires, ", ")]"
+	var/list/keys = list()
+	var/datum/op_index/index = op_index_of_table(table_of(target))
+	for(var/key in index?.by_key)
+		// A topic link (an href in a window or a chat line) is not something a click reaches: the dq_topic_* tests pin those, and listing them would add the
+		// same View Variables and stat panel keys to every atom.
+		var/datum/op_plan/listed = index.by_key[key]
+		if(listed?.topic_key)
+			continue
+		keys += "[key]"
+	if(length(keys))
+		sortTim(keys, GLOBAL_PROC_REF(cmp_text_asc))
+		. += "keys: [jointext(keys, ", ")]"
+
+#undef DQ_PIN_DIR
+
+/// Per-target capture cleanup must not erase the actors or the current target's legitimate helpers.
+/datum/unit_test/dq_conversion_pin_fixture_isolation/New()
+	..()
+	dview(0, test_floor())
+
+/datum/unit_test/dq_conversion_pin_fixture_isolation/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/obj/item/pen/sentinel = allocate(/obj/item/pen, T)
+	var/obj/item/tool/wrench/held = allocate(/obj/item/tool/wrench, H)
+	TEST_ASSERT(H.put_in_active_hand(held), "the baseline tool is actually held")
+	var/list/actors = list("human" = H, "robot" = dq_pin_robot(T), "ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE), "ghost" = allocate(/mob/observer/dead, T))
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated.Copy()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	var/obj/machinery/mineral/processing_unit_console/target = dq_snapshot_allocate(/obj/machinery/mineral/processing_unit_console, T)
+	var/obj/machinery/mineral/processing_unit/helper = locate(/obj/machinery/mineral/processing_unit) in T
+	TEST_ASSERT(!QDELETED(target) && !QDELETED(helper), "the actual console fixture creates its processing helper")
+	var/obj/item/pen/adjacent = new /obj/item/pen(get_step(T, EAST))
+	own(adjacent)
+	var/list/rows = dq_pin_lines(target, T, actors)
+	TEST_ASSERT(length(rows), "the actual target is captured before disposal")
+	TEST_ASSERT(!QDELETED(helper), "the current target's helper survives the whole capture")
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "capture cleanup removes new products")
+	TEST_ASSERT(QDELETED(target) && QDELETED(helper) && QDELETED(adjacent), "the target and both on-tile and adjacent helpers are disposed")
+	TEST_ASSERT(!QDELETED(H) && !QDELETED(sentinel) && !QDELETED(held), "baseline actor, sentinel and held item survive")
+	TEST_ASSERT(held in H.get_all_held_items(), "cleanup preserves actual hand bookkeeping")
+	var/mob/living/silicon/ai/empty = dq_snapshot_allocate(/mob/living/silicon/ai, T)
+	TEST_ASSERT(QDELETED(empty), "a bare AI target really deletes itself")
+	var/obj/structure/AIcore/deactivated/core = locate(/obj/structure/AIcore/deactivated) in T
+	TEST_ASSERT_NOTNULL(core, "the deleted AI really left an inactive core")
+	own(core) // emergency test teardown also owns this initializer product
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "the self-deleting target follows the same cleanup path")
+	TEST_ASSERT(QDELETED(core), "the orphan core cannot add Climb to subsequent captures")
+	TEST_ASSERT(!QDELETED(sentinel) && (held in H.get_all_held_items()), "a second cleanup still preserves the baseline fixture")
+
+/datum/unit_test/dq_conversion_pin_fixture_gravity/Run()
+	var/turf/T = test_floor()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	defer_cleanup(room, TYPE_PROC_REF(/area, gravitychange), gravity)
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated?.Copy() || list()
+	room.gravitychange(!gravity)
+	TEST_ASSERT_EQUAL(room.has_gravity, !gravity, "the fixture actually changes room gravity")
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "target cleanup completes")
+	TEST_ASSERT_EQUAL(room.has_gravity, gravity, "gravity is restored before the next capture")
+
+// Test-only producer helper. The real constructor still runs and remains invalid.
+/datum/unit_test/proc/dq_pin_make_with_diagnostics(type, turf/T)
+	var/previous_capture = GLOB.dq_lifecycle_report_capture
+	var/list/reports = list()
+	var/atom/target
+	var/exception/fault
+	GLOB.dq_lifecycle_report_capture = reports
+	try
+		target = dq_snapshot_allocate(type, T)
+	catch(var/exception/made)
+		fault = made
+	GLOB.dq_lifecycle_report_capture = previous_capture
+	// The first ownership failure is the constructor's primary diagnostic;
+	// a later null dereference must not replace it merely because a previous
+	// probe already reported the same ownership message this round.
+	var/diagnostic = length(reports) ? reports[1] : fault?.name
+	// A runtime's text carries its source locations after "%//%"; those move with every unrelated edit to the files, so a row keeps the message only.
+	var/location_at = istext(diagnostic) ? findtext(diagnostic, "%//%") : 0
+	if(location_at)
+		diagnostic = copytext(diagnostic, 1, location_at)
+	return list("target" = target, "diagnostic" = diagnostic, "fault" = fault?.name)
+
+// Test-only invalid constructor: exercises the ownership engine rather than
+// depending on any content defect remaining unfixed.
+/obj/item/dq_pin_expected_part
+	abstract_type = /obj/item/dq_pin_expected_part
+
+/obj/item/dq_pin_wrong_part
+	abstract_type = /obj/item/dq_pin_wrong_part
+
+/obj/dq_pin_rejected_constructor
+	abstract_type = /obj/dq_pin_rejected_constructor
+	var/obj/item/dq_pin_expected_part/part
+
+CAPABILITIES(/obj/dq_pin_rejected_constructor)
+	owns_one(nameof(part), /obj/item/dq_pin_expected_part)
+
+/obj/dq_pin_rejected_constructor/Initialize(mapload)
+	. = ..()
+	var/obj/item/dq_pin_wrong_part/wrong = new /obj/item/dq_pin_wrong_part(loc)
+	rel_set(src, nameof(part), wrong)
+	// The rejected child remains on the turf; fixture cleanup must remove it
+	// and the partially initialized owner despite this secondary fault.
+	CRASH("dq pin fixture: secondary constructor fault")
+
+/datum/unit_test/dq_conversion_pin_constructor_diagnostics/Run()
+	var/turf/T = test_floor()
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated?.Copy() || list()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	var/previous_capture = GLOB.dq_lifecycle_report_capture
+	var/first_diagnostic
+	for(var/pass in 1 to 2)
+		var/list/result = dq_pin_make_with_diagnostics(/obj/dq_pin_rejected_constructor, T)
+		TEST_ASSERT_EQUAL(GLOB.dq_lifecycle_report_capture, previous_capture, "constructor diagnostics restore the caller's capture immediately")
+		var/diagnostic = result["diagnostic"]
+		TEST_ASSERT(istext(result["fault"]) && findtext(result["fault"], "secondary constructor fault"), "the deliberate secondary constructor fault actually ran")
+		TEST_ASSERT(istext(diagnostic) && findtext(diagnostic, "/obj/dq_pin_rejected_constructor.part") && findtext(diagnostic, "/obj/item/dq_pin_wrong_part"), "the actual rejected ownership write is reported before the secondary constructor fault")
+		TEST_ASSERT(!findtext(diagnostic, "secondary constructor fault"), "the later crash cannot replace the first ownership error")
+		TEST_ASSERT_NOTNULL(locate(/obj/item/dq_pin_wrong_part) in T, "the real failed allocation left a child for cleanup to remove")
+		if(pass == 1)
+			first_diagnostic = diagnostic
+		else
+			TEST_ASSERT_EQUAL(diagnostic, first_diagnostic, "two controlled failed allocations report the same primary error")
+		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "failed constructor fixture products are removed")
+		TEST_ASSERT_NULL(locate(/obj/item/dq_pin_wrong_part) in T, "cleanup removes the rejected child")
+		var/list/after_atoms = dq_pin_fixture_atoms()
+		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")
+
+/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from rand(1, 999) at init, and that name reaches refusal
+/// text, so the rows would follow how much of the RNG earlier tests drew.
+/datum/unit_test/proc/dq_pin_robot(turf/T)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	R.ident = 1
+	R.updatename(R.modtype)
+	return R
+
+/// Pin-only normalization: no gameplay refusal or constructor diagnostic is suppressed.
+/proc/dq_pin_stable_rows(type, list/rows)
+	. = list()
+	var/static/regex/robot_serial = regex(@"Default Cyborg-[0-9]+", "g")
+	var/static/regex/source_line = regex(@",[0-9]+\]", "g")
+	for(var/row in rows)
+		var/text = row
+		if(ispath(type, /obj/machinery/vr_sleeper) && (findtext(text, "(refused: The virtual reality sleeper rejects Default Cyborg-") || findtext(text, "(refused: The strange pod rejects Default Cyborg-")))
+			text = robot_serial.Replace(text, "Default Cyborg-<serial>")
+		if(findtext(text, "runtime while making it: ") == 1)
+			var/list/parts = splittext(text, "%//%")
+			for(var/index in 1 to length(parts))
+				var/part = parts[index]
+				if(copytext(part, 1, 2) == "\[" && findtext(part, ".dm"))
+					parts[index] = source_line.Replace(part, @",<line>]")
+			text = jointext(parts, "%//%")
+		. += text
+
+/datum/unit_test/dq_conversion_pin_stable_capture/Run()
+	var/list/old = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-751 with a sharp beep.)"))
+	var/list/current_rows = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-648 with a sharp beep.)"))
+	TEST_ASSERT_EQUAL(old[1], current_rows[1], "Only random default robot serial is volatile")
+	var/list/alien_old = dq_pin_stable_rows(/obj/machinery/vr_sleeper/alien, list("robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-751 with a sharp beep.)"))
+	var/list/alien_new = dq_pin_stable_rows(/obj/machinery/vr_sleeper/alien, list("robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-648 with a sharp beep.)"))
+	TEST_ASSERT_EQUAL(alien_old[1], alien_new[1], "Alien capsule default serial is equally volatile")
+	var/list/changed = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: capsule is broken)"))
+	TEST_ASSERT_NOTEQUAL(old[1], changed[1], "A changed substantive refusal remains different")
+	var/list/where = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: Holder was not passed a mob.%//%\[\"code/engine/lifeforms/params.dm\",239]%//%"))
+	var/list/moved = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: Holder was not passed a mob.%//%\[\"code/engine/lifeforms/params.dm\",251]%//%"))
+	TEST_ASSERT_EQUAL(where[1], moved[1], "Only diagnostic source line is volatile")
+	var/list/fault = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: different constructor fault.%//%\[\"code/engine/lifeforms/params.dm\",251]%//%"))
+	TEST_ASSERT_NOTEQUAL(where[1], fault[1], "Constructor fault text remains substantive")

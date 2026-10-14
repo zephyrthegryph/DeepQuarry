@@ -1,0 +1,24 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj.item.robot_parts human|/obj/item/tool/screwdriver
+@obj.item.robot_parts human|/obj/item/tool/crowbar
+@obj.item.robot_parts human|/obj/item/tool/wrench
+@obj.item.robot_parts human|/obj/item/tool/wirecutters
+@obj.item.robot_parts human|/obj/item/multitool
+@obj.item.robot_parts human|/obj/item/weldingtool
+@obj.item.robot_parts human|/obj/item/stack/cable_coil
+@obj.item.robot_parts human|/obj/item/stack/material/steel
+@obj.item.robot_parts human|/obj/item/card/id
+@obj.item.robot_parts human|/obj/item/kit
+@obj.item.robot_parts human|/obj/item/storage
+@obj.item.robot_parts human|/obj/item/card/emag
+@obj.item.robot_parts human|/obj/item
+@obj human|/obj/item/pen
+-menu: Rename
+-click: Click: Rename
++1 menu: Name
++3 menu: Use
++4 click: Click: Name
+keys: build, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, name, pick_up_item, toggle_digestable

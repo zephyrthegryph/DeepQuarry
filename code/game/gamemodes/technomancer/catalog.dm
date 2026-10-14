@@ -25,7 +25,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	icon = 'icons/obj/storage.dmi'
 	icon_state ="scientology" //placeholder
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	var/budget = 1000
 	var/max_budget = 1000
 	var/mob/living/carbon/human/owner = null
@@ -37,6 +36,23 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/spell_tab = ALL_SPELLS
 	var/show_scepter_text = 0
 	var/universal = FALSE // Allows non-technomancers to use this catalog
+
+CAPABILITIES(/obj/item/technomancer_catalog)
+	ref_one(nameof(owner))
+	configure(item_worn(slots = SLOT_BELT))
+	owns_many(nameof(assistance_instances))
+	owns_many(nameof(consumable_instances))
+	owns_many(nameof(equipment_instances))
+	owns_many(nameof(spell_instances))
+	interface("TechnomancerCatalog", title = "Catalog")
+	without("ui_open")
+	op("tab_choice", ui_act("tab_choice", arg("tab", num())), then(PROC_REF(ui_act_tab_choice)))
+	op("spell_category", ui_act("spell_category", arg("category", schema_text(4096))), then(PROC_REF(ui_act_spell_category)))
+	op("spell_choice", ui_act("spell_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_spell_choice)))
+	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
+	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_refund_holds))), then(PROC_REF(interaction_item)))
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
@@ -77,21 +93,21 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 /obj/item/technomancer_catalog/proc/set_up()
 	if(!length(spell_instances))
 		for(var/S in GLOB.all_technomancer_spells)
-			own_add(src, nameof(spell_instances), new S())
+			rel_add(src, nameof(spell_instances), new S())
 	if(!length(equipment_instances))
 		for(var/E in GLOB.all_technomancer_equipment)
-			own_add(src, nameof(equipment_instances), new E())
+			rel_add(src, nameof(equipment_instances), new E())
 	if(!length(consumable_instances))
 		for(var/C in GLOB.all_technomancer_consumables)
-			own_add(src, nameof(consumable_instances), new C())
+			rel_add(src, nameof(consumable_instances), new C())
 	if(!length(assistance_instances))
 		for(var/A in GLOB.all_technomancer_assistance)
-			own_add(src, nameof(assistance_instances), new A())
+			rel_add(src, nameof(assistance_instances), new A())
 
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()
 	for(var/datum/technomancer/assistance/apprentice/A in assistance_instances)
-		own_remove(src, nameof(assistance_instances), A)
+		rel_remove(src, nameof(assistance_instances), A)
 
 // Proc: show_categories()
 // Parameters: 1 (category - the category link to display)
@@ -106,13 +122,10 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 
 // TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
-DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/technomancer_catalog/proc/can_refund)), \
-)
 
 /// Old attack_self.
-/obj/item/technomancer_catalog/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/technomancer_catalog/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user)
 		return TRUE
 	if(owner && user != owner)
@@ -124,11 +137,19 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/technomancer_catalog, "TechnomancerCatalog", UI_TITLE("Catalog"))
+/obj/item/technomancer_catalog/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["tab"] = tab
+	data["spell_tab"] = spell_tab
+	data["budget"] = budget
+	data["max_budget"] = max_budget
+	var/list/merged_1 = ui_data_obj_item_technomancer_catalog(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:num", "max_budget:num", "merge:ui_data_obj_item_technomancer_catalog{spell_categories:list,spells:list,equipment:list,consumables:list,assistance:list}")
-
-/// The computed part of /obj/item/technomancer_catalog's window data (declared on its UI_DATA row).
+/// /obj/item/technomancer_catalog's window data.
 /obj/item/technomancer_catalog/proc/ui_data_obj_item_technomancer_catalog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["spell_categories"] = list(ALL_SPELLS, OFFENSIVE_SPELLS, DEFENSIVE_SPELLS, UTILITY_SPELLS, SUPPORT_SPELLS)
@@ -158,10 +179,9 @@ UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:
 	data["assistance"] = assistance
 	return data
 
-/obj/item/technomancer_catalog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	if(H.stat || H.restrained())
 		return FALSE
@@ -174,23 +194,27 @@ UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "tab_choice", ui_act_tab_choice, UI_ARG_NUM("tab"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_tab_choice)
-	tab = params["tab"]
+/obj/item/technomancer_catalog/proc/ui_act_tab_choice(datum/act/op/A, tab_arg)
+	if(!ui_gate(A))
+		return FALSE
+	tab = tab_arg
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_category", ui_act_spell_category, UI_ARG_TEXT("category"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_category)
-	spell_tab = params["category"]
+/obj/item/technomancer_catalog/proc/ui_act_spell_category(datum/act/op/A, category)
+	if(!ui_gate(A))
+		return FALSE
+	spell_tab = category
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_choice", ui_act_spell_choice, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_spell_choice(datum/act/op/A, name)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/datum/technomancer/new_spell = null
 	for(var/datum/technomancer/spell/s in spell_instances)
-		if(s.name == params["name"])
+		if(s.name == name)
 			new_spell = s
 			break
 	var/obj/item/technomancer_core/core = null
@@ -208,13 +232,15 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
 			to_chat(H, span_danger("You can't afford that!"))
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "item_choice", ui_act_item_choice, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_item_choice(datum/act/op/A, name)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/datum/technomancer/desired = null
 	for(var/datum/technomancer/o in equipment_instances + consumable_instances + assistance_instances)
-		if(o.name == params["name"])
+		if(o.name == name)
 			desired = o
 			break
 	if(desired)
@@ -227,9 +253,11 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
 			to_chat(H, span_danger("You can't afford that!"))
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "refund_functions", ui_act_refund_functions)
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_refund_functions)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_refund_functions(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/turf/T = get_turf(H)
 	if(T && (T.z in using_map.player_levels))
@@ -255,12 +283,22 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_refund_functions)
 	return TRUE
 
 /// Old attackby.
-/obj/item/technomancer_catalog/proc/interaction_item(mob/user, atom/movable/AM, datum/interaction/interaction)
+/// Requirement (was REQ_* can_refund): the legacy check answers TRUE to pass.
+/obj/item/technomancer_catalog/proc/can_refund_holds(datum/act/op/A)
+	var/answer = can_refund(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_refund_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/technomancer_catalog/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	for(var/datum/technomancer/equipment/E in equipment_instances + assistance_instances)
 		if(AM.type == E.obj_path) // We got a match.
 			if(budget + E.cost > max_budget)
 				to_chat(user, span_warning("\The [src] will not allow you to overflow your maximum budget by refunding that."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				budget = budget + E.cost
 				to_chat(user, span_notice("You've refunded \the [AM]."))
@@ -275,9 +313,9 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_refund_functions)
 								to_chat(user, span_notice("[spell.name] was inside \the [core], and was refunded."))
 								core.remove_spell(spell)
 								break
-				qdel(AM)
-				return INTERACTION_HANDLED_PASS
+				consumed(AM, src)
+				return OP_PASS
 	to_chat(user, span_warning("\The [src] is unable to refund \the [AM]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 #undef ALL_SPELLS

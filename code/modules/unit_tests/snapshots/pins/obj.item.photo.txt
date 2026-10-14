@@ -1,0 +1,64 @@
+@obj human|none
++2 menu: Rename photo (refused: You can't do that.)
+@obj robot|none
++3 menu: Rename photo (refused: You can't do that.)
+@obj ai|none
+@obj.item ghost|none
++1 menu: Rename photo (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wrench
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/multitool
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/weldingtool
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/card/id
+-click: nothing
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
+@obj human|/obj/item/kit
++2 menu: Rename photo (refused: You can't do that.)
++4 menu: Use
+@obj human|/obj/item/storage
+-click: Click: Collect
++2 menu: Rename photo (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
+@obj human|/obj/item
+-menu: Alternate use
++1 menu: Rename photo (refused: You can't do that.)
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, photo_item, photo_rename, photo_self, pick_up_item, toggle_digestable

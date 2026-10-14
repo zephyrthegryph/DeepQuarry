@@ -4,7 +4,6 @@
 	item_state = "grenade"
 	desc = "A hand made chemical grenade."
 	w_class = ITEMSIZE_SMALL
-	force = 2.0
 	det_time = null
 	unacidable = TRUE
 
@@ -18,21 +17,36 @@
 	var/affected_area = 3
 	special_handling = TRUE
 
+TRACKED(/obj/item/grenade/chem_grenade, stage)
+
+CAPABILITIES(/obj/item/grenade/chem_grenade)
+	configure(item_combat(force = 2.0))
+	// a hand-built casing: 0 empty, 1 parts in, 2 locked (armed by its self-use); the screwdriver locks and unlocks it, ahead of the timer
+	stages(nameof(stage),
+		stage_step(1, 2, tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Lock the assembly"), when(PROC_REF(hand_built)), wait(0), then(PROC_REF(assembly_locked))),
+		stage_step(2, 1, tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Unlock the assembly"), when(PROC_REF(hand_built)), needs(req(PROC_REF(sealed_refusal))), wait(0), then(PROC_REF(assembly_unlocked))))
+	reagents(1000)
+	owns_many(nameof(beakers))
+	owns_one(nameof(detonator), /obj/item/assembly_holder)
+	without("prime")   // its own self-use takes the assembly apart or primes it
+	op("assemble", in_hand(), then(PROC_REF(interaction_self)))
+	op("assembly_item", item(/obj/item), then(PROC_REF(interaction_item)))
+
 TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
-DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
 
-/// Old attack_self.
-/obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: take the detonator or the containers out, or prime it once assembled.
+/obj/item/grenade/chem_grenade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stage || stage==1)
 		if(detonator)
 			detonator.detached()
 			user.put_in_hands(detonator)
-			own_take(src, nameof(detonator))
-			det_time = null
-			stage=0
-			icon_state = initial(icon_state)
+			rel_take(src, nameof(detonator))
+			set_det_time(null)
+			set_stage(0)
+			set_icon_state(initial(icon_state))
 		else if(length(beakers))
 			for(var/obj/B in beakers)
 				if(istype(B))
@@ -49,83 +63,96 @@ DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 		if(iscarbon(user))
 			var/mob/living/carbon/C = user
 			C.throw_mode_on()
+	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// A matching chemical container must be releasable before grenade assembly changes it: null, or why not.
+/obj/item/grenade/chem_grenade/proc/container_refusal(mob/user, obj/item/held)
+	return held.loc?.release_refusal(held, user)
 
-/// Old attackby.
-/obj/item/grenade/chem_grenade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: fit a detonator assembly or a chemical container.
+/obj/item/grenade/chem_grenade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/assembly_holder) && (!stage || stage==1) && !detonator && path != 2)
 		var/obj/item/assembly_holder/det = W
 		if(istype(det.a_left,det.a_right.type) || (!isigniter(det.a_left) && !isigniter(det.a_right)))
 			to_chat(user, span_warning("Assembly must contain one igniter."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!det.secured)
 			to_chat(user, span_warning("Assembly must be secured with screwdriver."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		path = 1
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2)
-		if(!own_set(src, nameof(src.detonator), det, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.detonator), det, user))
+			return OP_PASS
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
-			det_time = 10*T.time
+			set_det_time(10*T.time)
 		if(istimer(detonator.a_right))
 			var/obj/item/assembly/timer/T = detonator.a_right
-			det_time = 10*T.time
-		icon_state = initial(icon_state) +"_ass"
+			set_det_time(10*T.time)
+		set_icon_state(initial(icon_state) +"_ass")
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
-		stage = 1
+		set_stage(1)
 	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
+		var/why = container_refusal(user, W)
+		if(why)
+			to_chat(user, span_warning(capitalize("[why].")))
+			return OP_PASS
 		path = 1
 		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			if(W.reagents.total_volume)
+				if(!move_into(src, nameof(beakers), W, user))
+					return OP_PASS
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
-				user.drop_item()
-				W.forceMove(src)
-				own_move(W, src, nameof(beakers))
-				stage = 1
+				set_stage(1)
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/obj/item/grenade/chem_grenade/screwdriver_act(mob/user, obj/item/tool)
-	if(path == 2)
-		return ..()
-	if(stage == 1)
-		path = 1
-		if(length(beakers))
-			to_chat(user, span_notice("You lock the assembly."))
-			name = "grenade"
-		else
-			to_chat(user, span_notice("You lock the empty assembly."))
-			name = "fake grenade"
-		playsound(src, tool.usesound, 50, TRUE)
-		icon_state = "[initial(icon_state)]_locked"
-		stage = 2
-		return ITEM_INTERACT_SUCCESS
-	if(stage != 2)
-		return ..()
+/// A casing put together by hand (path 2 is the premade kind, whose screwdriver only turns the timer).
+/obj/item/grenade/chem_grenade/proc/hand_built(datum/act/op/A)
+	return read_once(path) != 2
+
+/// A sealed grenade has no way to be taken apart (unless it is live: the screwdriver may set it off).
+/obj/item/grenade/chem_grenade/proc/sealed_refusal(datum/act/op/A)
+	return (read_once(sealed) && !read_once(active)) ? "this grenade lacks a way to disassemble it" : null
+
+/obj/item/grenade/chem_grenade/proc/assembly_locked(datum/act/op/A)
+	path = 1
+	if(length(beakers))
+		to_chat(A.actor, span_notice("You lock the assembly."))
+		name = "grenade"
+	else
+		to_chat(A.actor, span_notice("You lock the empty assembly."))
+		name = "fake grenade"
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	set_icon_state("[initial(icon_state)]_locked")
+	return OP_OK
+
+/// Unlocked, the parts come loose again; a live grenade almost always goes off instead.
+/obj/item/grenade/chem_grenade/proc/assembly_unlocked(datum/act/op/A)
+	var/mob/user = A.actor
 	if(active && prob(95))
+		set_stage(2) // it was still locked when it went off
 		to_chat(user, span_warning("You trigger the assembly!"))
 		detonate()
-	else if(sealed)
+		return OP_OK
+	if(sealed)
+		set_stage(2)
 		to_chat(user, span_warning("This grenade lacks a way to disassemble it."))
-	else
-		to_chat(user, span_notice("You unlock the assembly."))
-		playsound(src, tool.usesound, 50, TRUE)
-		name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
-		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
-		stage = 1
-		active = FALSE
-	return ITEM_INTERACT_SUCCESS
+		return OP_OK
+	to_chat(user, span_notice("You unlock the assembly."))
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
+	set_icon_state(initial(icon_state) + (detonator ? "_ass" : ""))
+	active = FALSE
+	return OP_OK
 
 /obj/item/grenade/chem_grenade/examine(mob/user)
 	. = ..()
@@ -143,7 +170,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 			detonator.a_right.activate()
 			active = 1
 	if(active)
-		icon_state = initial(icon_state) + "_active"
+		set_icon_state(initial(icon_state) + "_active")
 
 		if(user)
 			msg_admin_attack("[key_name_admin(user)] primed \a [src.name]")
@@ -152,7 +179,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 
 /obj/item/grenade/chem_grenade/proc/primed(primed = 1)
 	if(active)
-		icon_state = initial(icon_state) + (primed?"_primed":"_active")
+		set_icon_state(initial(icon_state) + (primed?"_primed":"_active"))
 
 /obj/item/grenade/chem_grenade/detonate()
 	if(!stage || stage<2) return
@@ -163,9 +190,9 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 
 	active = 0
 	if(!has_reagents)
-		icon_state = initial(icon_state) +"_locked"
+		set_icon_state(initial(icon_state) +"_locked")
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2, 2)
-		om_after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
+		after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
 		return
 
 	play_sfx(src, SFX_EFFECTS_BAMF, volume = 50)
@@ -188,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		C.drop_from_inventory(src)
 		C.throw_mode_off()
 
-	invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
+	set_invisibility(INVISIBILITY_MAXIMUM) //Why am i doing this?
 	expire(5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
 
 /obj/item/grenade/chem_grenade/large
@@ -209,14 +236,17 @@ TYPE_TABLE(/obj/item/grenade/chem_grenade/large, chem_grenade_containers, list(/
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, null, list(REAGENT_ID_ALUMINIUM = 30))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a)
+	configure(reagents(add = list(REAGENT_ID_ALUMINIUM = 30)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b, null, list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b)
+	configure(reagents(add = list(REAGENT_ID_FOAMINGAGENT = 10, REAGENT_ID_PACID = 10)))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/metalfoam)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_metalfoam_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/incendiary
 	name = "incendiary grenade"
@@ -228,14 +258,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/metalfoam, "detonator", /ob
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, null, list(REAGENT_ID_ALUMINIUM = 15, REAGENT_ID_FUEL = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a)
+	configure(reagents(add = list(REAGENT_ID_ALUMINIUM = 15, REAGENT_ID_FUEL = 40)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b, null, list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b)
+	configure(reagents(add = list(REAGENT_ID_PHORON = 15, REAGENT_ID_SACID = 15)))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/incendiary)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_incendiary_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/antiweed
 	icon_state = "grenade"
@@ -247,14 +280,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/incendiary, "detonator", /o
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, null, list(REAGENT_ID_PLANTBGONE = 25, REAGENT_ID_POTASSIUM = 25))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a)
+	configure(reagents(add = list(REAGENT_ID_PLANTBGONE = 25, REAGENT_ID_POTASSIUM = 25)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b, null, list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 25, REAGENT_ID_SUGAR = 25)))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/antiweed)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_antiweed_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/cleaner
 	name = "cleaner grenade"
@@ -266,14 +302,17 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/antiweed, "detonator", /obj
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, null, list(REAGENT_ID_FLUOROSURFACTANT = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a)
+	configure(reagents(add = list(REAGENT_ID_FLUOROSURFACTANT = 40)))
 
 /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b, null, list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b)
+	configure(reagents(add = list(REAGENT_ID_WATER = 40, REAGENT_ID_CLEANER = 10)))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "beakers", list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/cleaner)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_cleaner_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/teargas
 	name = "tear gas grenade"
@@ -285,19 +324,22 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/cleaner, "detonator", /obj/
 
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, null, list(REAGENT_ID_PHOSPHORUS = 40, REAGENT_ID_POTASSIUM = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 40))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a)
+	configure(reagents(add = list(REAGENT_ID_PHOSPHORUS = 40, REAGENT_ID_POTASSIUM = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
 
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b
 
-DECLARE_REAGENTS(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b, null, list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 40, REAGENT_ID_CONDENSEDCAPSAICIN = 80)))
 
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "beakers", list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))
-DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/teargas, "detonator", /obj/item/assembly_holder/timer_igniter)
+CAPABILITIES(/obj/item/grenade/chem_grenade/teargas)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a, /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b))
+	owns_one(nameof(detonator), /obj/item/assembly_holder, starts = /obj/item/assembly_holder/timer_igniter)
 
 /obj/item/grenade/chem_grenade/proc/sync_det_time()
 	if(istimer(detonator.a_left)) //Make sure description reflects that the timer has been reset
 		var/obj/item/assembly/timer/T = detonator.a_left
-		det_time = 10*T.time
+		set_det_time(10*T.time)
 	if(istimer(detonator.a_right))
 		var/obj/item/assembly/timer/T = detonator.a_right
-		det_time = 10*T.time
+		set_det_time(10*T.time)

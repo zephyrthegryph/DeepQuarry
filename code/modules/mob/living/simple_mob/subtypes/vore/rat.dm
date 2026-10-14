@@ -69,12 +69,10 @@
 
 	say_list_type = /datum/say_list/rat
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "In a cruel game of cat-and-mouse gone horribly wrong, you struggle to breathe clearly as the giant rat holds your head in its jaws, the rest of its bulk pinning you to the ground. Slimy slurps and its own muffled squeaking fill your senses as it simultaneously tosses its head while backing up. Quickly, ravenously consuming you, bit by bit, packing you down its gullet no matter how you struggle. Passing by its excited heartbeat, your thoroughly slickened head pushes out into its awaiting stomach, a dark and humid hammock eager to accept the rest of you. Soon, those too-warm, plush walls clench and squeeze around you with undeniable need! A need for mere filling, or, perhaps, a proper meal?"
 	B.vore_sound = "Tauric Swallow"
@@ -106,22 +104,23 @@
 	desc = "In what passes for a hierarchy among verminous rodents, this one is king. It seems to be more interested on scavenging."
 	var/mob/living/carbon/human/food
 	var/hunger = 0
-/*
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/rat/tame
-	of = /mob/living/simple_mob/vore/aggressive/rat/tame
 
-/datum/om/stage/life/type_post/simple_mob/vore/aggressive/rat/tame/perform(mob/living/simple_mob/vore/aggressive/rat/tame/self, datum/om/frame/life/ctx)
+/*
+/mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/vore/aggressive/rat/tame/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive") || ai_inactive)
+	if(!F.alive() || ai_inactive)
 		return
 
 	if(hunger > 0 && life_since_foodscan++ > 5) //Only look for floor food when hungry.
 		life_since_foodscan = 0
-		for(var/obj/item/reagent_containers/food/snacks/S in oview(self,3)) //Accept thrown offerings and scavenge surroundings.
-			if(get_dist(self,S) <=1)
+		for(var/obj/item/reagent_containers/food/snacks/S in oview(src,3)) //Accept thrown offerings and scavenge surroundings.
+			if(get_dist(src,S) <=1)
 				visible_emote("hungrily devours \the [S].")
-				play_sfx(self, SFX_ITEMS_EATFOOD, volume = rand(10,50))
-				qdel(S)
+				play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
+				spent(S)
 				hunger = 0
 				food = null
 			else
@@ -131,7 +130,7 @@
 	if(!food)
 		return
 
-	var/food_dist = get_dist(self,food)
+	var/food_dist = get_dist(src,food)
 
 	if(food_dist > world.view) //Lose interest on this person.
 		food = null
@@ -174,18 +173,21 @@
 				visible_emote("appears to have had enough and prepares to strike!")
 				hunger += 5
 		else
-			food.status_at_least(EFFECT_WEAKENED, 5)
-			food.visible_message(span_danger("\The [self] pounces on \the [food]!"))
+			food.status_at_least(STAT_WEAKENED, 5)
+			food.visible_message(span_danger("\The [src] pounces on \the [food]!"))
 			target_mob = food
 			EatTarget()
 			hunger = 0
 			food = null
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_INSERT(/obj/item/reagent_containers/food/snacks, PROC_REF(tame_rat_interaction_feed), "Feed"))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
+	ref_one(nameof(food), /mob/living/carbon/human)
+	op("tame_rat_interaction_feed", item(/obj/item/reagent_containers/food/snacks), label("Feed"), then(PROC_REF(tame_rat_interaction_feed)))
 
 /// Feed the rat your food to satisfy it.
-/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
-	qdel(O)
+/mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(datum/act/op/A)
+	var/obj/item/O = A.held
+	consumed(O)
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	hunger = 0
 	food = null
@@ -221,13 +223,15 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD, volume = 50)
 	..()
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/rat/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/rat/phoron
@@ -257,33 +261,46 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/
 
 /mob/living/simple_mob/vore/aggressive/rat/pet
 	name = "Giant Rat Siblings"
-	devourable = 0
-	digestable = 0
 
-/mob/living/simple_mob/vore/aggressive/rat/pet/Initialize(mapload)
-	.=..()
+// Which of the pet rats it is: Ratthew and ";help maint" as often as each other, Brick rarely.
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
+	rolls(nameof(sibling), pick_one(list("Ratthew" = 50, ";help maint" = 50, "Brick" = 1)))
+	rolls(nameof(name), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(desc), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(endurance), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_lower), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_upper), PROC_REF(sibling_trait), from = list(nameof(sibling)))
 
-	var/chance = rand(1,101)
-	switch(chance)
-		if(1 to 50)
-			name = "Ratthew"
-			desc = "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
-			When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
-			Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
-			mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
-		if(51 to 100)
-			name = ";help maint"
-			desc = "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
-			of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
-			this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
-			and eighty four rodent pets were named that already."
-		if(101)
-			name = "Brick"
-			desc = "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
-			younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
-			endurance = 1750
-			melee_damage_lower = 1
-			melee_damage_upper = 2
+/// Which sibling it is (rolls()).
+/mob/living/simple_mob/vore/aggressive/rat/pet/var/sibling
+
+/// The sibling's name, story and (Brick's) build (rolls(), after the sibling).
+/mob/living/simple_mob/vore/aggressive/rat/pet/proc/sibling_trait(datum/roller/R, target)
+	switch(target)
+		if("name")
+			return sibling
+		if("desc")
+			switch(sibling)
+				if("Ratthew")
+					return "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
+					When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
+					Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
+					mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
+				if(";help maint")
+					return "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
+					of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
+					this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
+					and eighty four rodent pets were named that already."
+				if("Brick")
+					return "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
+					younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
+		if("endurance")
+			return sibling == "Brick" ? 1750 : endurance
+		if("melee_damage_lower")
+			return sibling == "Brick" ? 1 : melee_damage_lower
+		if("melee_damage_upper")
+			return sibling == "Brick" ? 2 : melee_damage_upper
 
 /datum/say_list/rat
 	speak = list("Squeek!","SQUEEK!","Squeek?")
@@ -296,7 +313,9 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/
 	endurance = 50
 	vore_pounce_chance = 10
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/vore/aggressive/rat/labrat
 	name = "giant lab rat"
@@ -323,6 +342,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/
 	vore_pounce_maxhealth = 80
 	vore_bump_emote = "knocks over and attempts to engulf"
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = FALSE))
+
 

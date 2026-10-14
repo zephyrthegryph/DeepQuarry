@@ -1,6 +1,9 @@
 /mob/living/simple_mob/mechanical/infectionbot //This literally just adds onto the base robot at /code/modules/mob/living/simple_mob/subtypes/mechanical/disbot_vr.dm
 	say_list_type = /datum/say_list/disbot
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/infectionbot)
+	configure(light_glow(color = "#8a0707"))
+
 
 /datum/say_list/disbot
 	threaten_sound = 'sound/mob/robots/infector.ogg'
@@ -46,7 +49,6 @@
 	harm_intent_damage = 3
 	melee_damage_lower = 6
 	melee_damage_upper = 9
-	light_color = "#8a0707"
 	attacktext = "drugged"
 	attack_sound = SFX_WEAPONS_BITE
 

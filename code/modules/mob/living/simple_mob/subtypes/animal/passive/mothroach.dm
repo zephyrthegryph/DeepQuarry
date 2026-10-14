@@ -38,40 +38,58 @@
 	pass_flags = PASSTABLE
 	density = FALSE
 	friendly = list("pats")
-	can_climb = TRUE
 	climbing_delay = 2.0
 
 	say_list_type = /datum/say_list/mothroach
 
-	allow_mind_transfer = TRUE
 
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/ventcrawl)
-DECLARE_VERB(/mob/living/simple_mob/animal/passive/mothroach, /mob/living/proc/hide)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+	configure(mob_movement(can_climb = TRUE))
+	after_init(0, then(PROC_REF(mothroach_name_ready)))
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
+	op("mothroach_item", item(/obj/item), then(PROC_REF(mothroach_interaction_item)))
+	op("mothroach_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(mothroach_interaction_hand_help)))
+	op("mothroach_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(mothroach_interaction_hand_hurt)))
+	op("mothroach_hand_disarm", hand(), stance(I_DISARM), label("Shove"), then(PROC_REF(mothroach_interaction_hand_disarm)))
+	op("mothroach_hand_grab", hand(), stance(I_GRAB), label("Grab"), then(PROC_REF(mothroach_interaction_hand_grab)))
 
-/mob/living/simple_mob/animal/passive/mothroach/Initialize(mapload)
-	. = ..()
+/// The help-stance input of mothroach_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand_help(datum/act/op/A)
+	return mothroach_interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of mothroach_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand_hurt(datum/act/op/A)
+	return mothroach_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of mothroach_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand_disarm(datum/act/op/A)
+	return mothroach_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of mothroach_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand_grab(datum/act/op/A)
+	return mothroach_interaction_hand(A, I_GRAB)
+
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_name_ready(datum/act/timer/A)
 
 
-	real_name = name
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
-	INTERACT_ITEM(null, PROC_REF(mothroach_interaction_item)), \
-	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(mothroach_interaction_hand)), \
-	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(mothroach_interaction_hand)), \
-	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(mothroach_interaction_hand)), \
-	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(mothroach_interaction_hand)))
+	set_real_name(name)
 
 /// Old attack_hand: the normal touch, then a scream.
-/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	unarmed_touch(user, interaction.stance)
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	. = OP_OK
+	unarmed_touch(user, stance)
 
 	if(stat != DEAD)
 		play_sfx(src, SFX_VOICE_SCREAM_MOTH_MOTH_SCREAM)
 
 /// Old attackby: the normal attack, then a scream.
-/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	hit_with_item(O, user)
 
 	if(stat != DEAD)
@@ -88,13 +106,15 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 	icon_state = "mothroach"
 
 	item_state = "mothroach"
-	slot_flags = SLOT_HEAD
 	w_class = ITEMSIZE_TINY
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
 		slot_r_hand_str = 'icons/mob/righthand_holder.dmi',
 		slot_head_str = 'icons/mob/head.dmi',
 	)
+
+CAPABILITIES(/obj/item/holder/mothroach)
+	configure(item_worn(slots = SLOT_HEAD))
 
 /mob/living/simple_mob/animal/passive/mothroach/bar
 	name = "mothroach bartender"

@@ -15,14 +15,71 @@
 	var/obj/item/trap = null
 
 /obj/effect/mine/Initialize(mapload)
-	set_wires(new /datum/wires/mines(src))
 	. = ..()
 	register_dangerous_to_step()
-	if(camo_net)
-		alpha = 50
 
-DECLARE_DEFAULT_CHILD(/obj/effect/mine, "trap", null)
-DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
+/// A mine under a camouflage net is faint (derives(), at init).
+/obj/effect/mine/proc/camo_alpha()
+	return camo_net ? 50 : alpha
+
+CAPABILITIES(/obj/effect/mine)
+	owns_one(nameof(trap), starts = nameof(trap))
+	space(SPACE_PANEL, door = nameof(panel_open))
+	wires(name = "Explosive Wires", count = 7, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
+	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(explode_wire_pulsed))
+	on_wire(WIRE_EXPLODE_DELAY, cut = PROC_REF(explode_wire_cut), pulse = PROC_REF(delay_wire_pulsed))
+	on_wire(WIRE_DISARM, cut = PROC_REF(disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
+	on_wire(WIRE_BADDISARM, cut = PROC_REF(bad_disarm_wire_cut), pulse = PROC_REF(ping_wire_pulsed))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(mine_shot))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mine_blast)))
+	derives(nameof(alpha), PROC_REF(camo_alpha))
+
+
+/obj/effect/mine/proc/wire_lights()
+	return list("\[Warning: detonation may occur even with proper equipment.]")
+
+/obj/effect/mine/proc/wire_beep(text)
+	visible_message("[icon2html(src, viewers(src))] [text]", "[icon2html(src, viewers(src))] [text]")
+
+/// Either explode wire, cut or mended, sets it off.
+/obj/effect/mine/proc/explode_wire_cut(datum/act/A)
+	wire_beep("*BEEE-*")
+	explode()
+
+/obj/effect/mine/proc/explode_wire_pulsed(datum/act/A)
+	wire_beep("*beep*")
+
+/// The delay wire pulsed sets it off in two seconds.
+/obj/effect/mine/proc/delay_wire_pulsed(datum/act/A)
+	wire_beep("*BEEPBEEPBEEP*")
+	after(src, 2 SECONDS, PROC_REF(explode))
+
+/// The disarm wire, cut: the mine comes up as its item (with its trap), the signalers on it fall off.
+/obj/effect/mine/proc/disarm_wire_cut(datum/act/A)
+	wire_beep("*click!*")
+	var/obj/effect/mine/MI = new mineitemtype(get_turf(src))
+	if(trap)
+		var/obj/item/trap_item = trap
+		trap_item.forceMove(MI)
+		own_move(trap_item, MI, nameof(MI.trap)) // from the disarmed casing to the dropped mine
+		wires_detach_all(src) // kick all the signallers off
+	expire(0)
+
+/// The bad disarm wire, cut: it goes off in two seconds.
+/obj/effect/mine/proc/bad_disarm_wire_cut(datum/act/A)
+	wire_beep("*BEEPBEEPBEEP*")
+	after(src, 2 SECONDS, PROC_REF(explode))
+
+/obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
+	wire_beep("*ping*")
+
+/// The look (the draw sweep: from its layers).
+/obj/effect/mine/draw(datum/look/look)
+	..()
+	look.state("landmine_armed")
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()
@@ -52,12 +109,12 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		explosion(loc, 0, 2, 3, 4) //land mines are dangerous, folks.
 		visible_message("\The [src.name] detonates!")
 
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -65,20 +122,20 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		own_take(src, nameof(trap))
+		rel_take(src, nameof(trap))
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
-DAMAGE_REACTION(/obj/effect/mine, DAMAGE_PROJECTILE, PROC_REF(mine_shot))
 /// A round may set the mine off; either way it takes no damage.
-/obj/effect/mine/proc/mine_shot(datum/damage_packet/packet)
+/obj/effect/mine/proc/mine_shot(datum/act/hit/projectile/A)
 	if(prob(50))
 		explode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
-DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 /// A blast sets the mine off (always if heavy).
-/obj/effect/mine/proc/mine_blast(datum/damage_packet/packet)
+/obj/effect/mine/proc/mine_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 2 || prob(50))
 		explode()
 
@@ -100,33 +157,37 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 
 	if(istype(M, /mob/living/))
 		var/mob/living/mob = M
-		if(!(dq_get_hovering(mob) || mob.flying || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
+		if(!(dq_get_hovering(mob) || stat_value(mob, STAT_FLYING) || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
 			explode(M)
 
-/obj/effect/mine/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/screwdriver_used(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/tool = A.held
 	panel_open = !panel_open
 	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	alpha = camo_net ? (panel_open ? 255 : 50) : 255
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/effect/mine/wirecutter_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/wirecutter_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	interact(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/effect/mine/multitool_act(mob/living/user, obj/item/tool)
+/obj/effect/mine/proc/multitool_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!panel_open)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	interact(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/effect/mine/interact(mob/living/user as mob)
 	if(!panel_open || isAI(user))
 		return
-	wires.Interact(user)
+	wires_open(src, user)
 
 /obj/effect/mine/camo
 	camo_net = TRUE
@@ -145,8 +206,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		domutcheck(M,null)
 		M.UpdateAppearance()
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/stun
 	mineitemtype = /obj/item/mine/stun
@@ -157,10 +218,10 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	triggered = TRUE
 	fx_sparks(src, 3)
 	if(istype(M))
-		M.status_at_least(EFFECT_STUNNED, 30)
+		M.status_at_least(STAT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/n2o
 	mineitemtype = /obj/item/mine/n2o
@@ -173,8 +234,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		if(!target.blocks_air)
 			target.assume_gas(GAS_N2O, 30)
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/phoron
 	mineitemtype = /obj/item/mine/phoron
@@ -188,8 +249,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 			target.assume_gas(GAS_PHORON, 30)
 			target.hotspot_expose(1000, CELL_VOLUME)
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/kick
 	mineitemtype = /obj/item/mine/kick
@@ -203,8 +264,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		var/obj/mecha/E = M
 		M = E?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(M))
-		qdel(M.client)
-	qdel(src)
+		destroyed(M.client, M)
+	consume(src)
 
 /obj/effect/mine/frag
 	mineitemtype = /obj/item/mine/frag
@@ -223,8 +284,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		return
 	src.fragmentate(O, num_fragments, spread_range, fragment_types) //only 20 weak fragments because you're stepping directly on it
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/training	//Name and Desc commented out so it's possible to trick people with the training mines
 //	name = "training mine"
@@ -237,9 +298,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	triggered = TRUE
 	visible_message("\The [src.name]'s light flashes rapidly as it 'explodes'.")
 	new src.mineitemtype(get_turf(src))
-	for(var/wire_color in wires.colors)
-		wires.detach_assembly(wire_color) //Kick all the signallers off!
-	qdel(src)
+	wires_detach_all(src) //Kick all the signallers off!
+	consume(src)
 
 /obj/effect/mine/emp
 	mineitemtype = /obj/item/mine/emp
@@ -250,9 +310,9 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	triggered = TRUE
 	fx_sparks(src, 3)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	empulse(loc, 2, 4, 7, 10, 1) // As strong as an EMP grenade
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/emp/camo
 	camo_net = TRUE
@@ -269,8 +329,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M.adjust_fire_stacks(5)
 		M.fire_act()
 	visible_message("\The [src.name] bursts into flames!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/stripping
 	mineitemtype = /obj/item/mine/stripping
@@ -284,8 +344,8 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		for(var/obj/item/content_item in contents_of(M))
 			M.drop_from_inventory(content_item)
 	visible_message("\The [src.name] explodes, stripping [M]!")
-	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	SSmotiontracker.ping(src,100)
+	consume(src)
 
 /obj/effect/mine/gadget
 	mineitemtype = /obj/item/mine/gadget
@@ -303,9 +363,9 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	else
 		explosion(loc, 0, 0, 2, 2)
 		visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 
-	qdel(src)
+	consume(src)
 
 /////////////////////////////////////////////
 // The held item version of the above mines
@@ -322,29 +382,28 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 
 	var/list/allowed_gadgets = null
 
-DECLARE_INTERACTIONS(/obj/item/mine, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+MSG_DEF(mine/priming, span_infoplain("You start priming %T%. Hold still!"), "%U% starts priming %T%.")
 
-/// Old attack_self.
-/obj/item/mine/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The start of priming: the admin log line, the fingerprint and what is said (a start hook that answers its message).
+/obj/item/mine/proc/priming_begins(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
-	act_message(user, null, MSG_SELF("You start priming \the [src.name]. Hold still!"), MSG_OTHERS("%U% starts priming \the [src.name]."))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
-	return TRUE
+	return /datum/msg/mine/priming
 
-/obj/item/mine/proc/attack_self_timed_done(mob/user)
+/obj/item/mine/proc/primed(datum/act/op/A)
 	play_sfx(src, SFX_WEAPONS_ARMBOMB)
-	prime(user)
+	prime(A.actor)
 
-/obj/item/mine/proc/attack_self_timed_failed(mob/user)
+/obj/item/mine/proc/priming_failed(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, others = "%U% triggers \the [src.name]!", blind = "You accidentally trigger \the [src.name]!")
 	prime(user, TRUE)
 
 /// Old attackby.
-/obj/item/mine/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/mine/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(LAZYLEN(allowed_gadgets) && !trap)
 		var/allowed = FALSE
 
@@ -354,9 +413,9 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 				break
 
 		if(allowed)
-			own_set(src, nameof(src.trap), W, user = user)
+			move_into(src, nameof(src.trap), W, user)
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/mine/proc/prime(mob/user as mob, explode_now = FALSE)
 	visible_message("\The [src.name] beeps as the priming sequence completes.")
@@ -364,7 +423,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		own_transfer(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
+		rel_move(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
 	if(explode_now)
 		R.explode(user)
 	consume(src)
@@ -427,23 +486,27 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 
 // This tells AI mobs to not be dumb and step on mines willingly.
 /obj/item/mine/is_safe_to_step(mob/living/L)
-	if(!(dq_get_hovering(L) || L.flying || L.is_incorporeal() || L.mob_size <= MOB_TINY))
+	if(!(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal() || L.mob_size <= MOB_TINY))
 		return FALSE
 	return ..()
 
-/obj/item/mine/screwdriver_act(mob/living/user, obj/item/tool)
-	if(!trap)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You begin removing \the [trap]."))
-	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/item/mine)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(10 SECONDS), needs(req(PROC_REF(has_trap), silent = TRUE)), begins(MSG(mine/removing_trap)), then(PROC_REF(screwdriver_act_done)))
+	op("self", in_hand(), label("Use"), begins(PROC_REF(priming_begins)), wait(10 SECONDS), on_interrupt(PROC_REF(priming_failed)), then(PROC_REF(primed)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/item/mine/proc/screwdriver_act_timed_done(mob/living/user)
+MSG_DEF_SELF(mine/removing_trap, span_notice("You begin removing the trap from %T%."))
+
+/obj/item/mine/proc/has_trap(datum/act/op/A)
+	return (!!trap) ? null : MSG(req_failed)
+
+/obj/item/mine/proc/screwdriver_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(trap))
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	own_take(src, nameof(trap))
+	rel_take(src, nameof(trap))
 
 //Lasertag mines
 
@@ -462,7 +525,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return
 	src.launch_many_projectiles(O, spread_range, beam_types)
 	visible_message("\The [src.name] detonates!")
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/lasertag/red
 	mineitemtype = /obj/item/mine/lasertag/red

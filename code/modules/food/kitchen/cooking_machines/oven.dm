@@ -7,14 +7,14 @@
 	appliancetype = OVEN
 	food_color = "#A34719"
 	can_burn_food = TRUE
+	/// The icon_state family the oven draws: "<prefix>open", "<prefix>closed_off", "<prefix>closed_on", "<prefix>closed_cooking".
+	var/state_prefix = "oven"
 	var/datum/looping_sound/oven/oven_loop
 	circuit = /obj/item/circuitboard/oven
-	active_power_usage = 6 KILOWATTS
 	heating_power = 6 KILOWATTS
 	//Based on a double deck electric convection oven
 
 	resistance = 2 KILOWATTS // Approx. 2 minutes to heat up.
-	idle_power_usage = 2 KILOWATTS
 	//uses ~30% power to stay warm
 	optimal_power = 0.8 // Oven cooks .2 faster than the default speed.
 
@@ -23,7 +23,7 @@
 	max_contents = 5
 	container_type = /obj/item/reagent_containers/cooking_container/oven
 
-	stat = POWEROFF	//Starts turned off
+	starts_off = TRUE
 
 
 	tgui_id = "CookingOven"
@@ -40,56 +40,53 @@
 		"Donut" = /obj/item/reagent_containers/food/snacks/variable/donut,
 		)
 
-/obj/machinery/appliance/cooker/oven/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	configure(uses_power(active = 6 KILOWATTS, idle = 2 KILOWATTS))
+	on_change(nameof(open), ANY, then(PROC_REF(loop_sync)))
+	owns_one(nameof(oven_loop), /datum/looping_sound/oven, starts = /datum/looping_sound/oven)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
+	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
+	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 
-	own_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
 
 
-UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")
+/obj/machinery/appliance/cooker/oven/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["is_open"] = open
+	return data
 
-UI_ACT(/obj/machinery/appliance/cooker/oven, "toggle_door", ui_act_toggle_door)
-UI_ACT_PROC(/obj/machinery/appliance/cooker/oven, ui_act_toggle_door)
-	try_toggle_door(ui.user)
+/obj/machinery/appliance/cooker/oven/proc/ui_act_toggle_door(datum/act/op/A)
+	var/mob/user = A.actor
+	try_toggle_door(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/appliance/cooker/oven/appearance_overlays()
-	. = list()
-	if(!open)
-		if(!has_stat(MACHINE_STAT_ANY))
-			icon_state = "ovenclosed_on"
-			if(cooking == TRUE)
-				icon_state = "ovenclosed_cooking"
-				if(oven_loop)
-					oven_loop.start(src)
-			else
-				icon_state = "ovenclosed_on"
-				if(oven_loop)
-					oven_loop.stop(src)
-		else
-			icon_state = "ovenclosed_off"
-			if(oven_loop)
-				oven_loop.stop(src)
+/// The door and what the oven is doing: open, shut and off, shut and on, shut and cooking.
+/obj/machinery/appliance/cooker/oven/draw(datum/look/look)
+	..()
+	if(open)
+		look.state("[state_prefix]open")
+	else if(has_condition())
+		look.state("[state_prefix]closed_off")
 	else
-		icon_state = "ovenopen"
-		if(oven_loop)
-			oven_loop.stop(src)
-	. += ..()
+		look.state(cooking == TRUE ? "[state_prefix]closed_cooking" : "[state_prefix]closed_on")
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
-	INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)), \
-	INTERACT_ALT("Toggle door", PROC_REF(oven_interaction_toggle_door)), \
-)
+/// The oven roars while it cooks with its door shut.
+/obj/machinery/appliance/cooker/oven/loop_sync(datum/act/A)
+	if(!open && !has_condition() && cooking == TRUE)
+		oven_loop?.start(src)
+	else
+		oven_loop?.stop(src)
 
 /// Old click_alt.
-/obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(datum/act/op/A)
+	var/mob/user = A.actor
 	try_toggle_door(user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	return TRUE
+	return OP_OK
 
 /// Start closed just so people don't try to preheat with it open, lol.
-OM_FIELD(/obj/machinery/appliance/cooker/oven, open, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/appliance/cooker/oven/var/open = FALSE
+TRACKED(/obj/machinery/appliance/cooker/oven, open)
 
 /// With the door open it doesn't step at all (the door's heat loss is the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_needs_step()
@@ -121,7 +118,6 @@ OM_FIELD(/obj/machinery/appliance/cooker/oven, open, FALSE, CHANGE_MACHINE_SETTI
 
 	play_sfx(src, SFX_MACHINES_HATCH_OPEN, volume = 20)
 	to_chat(user, span_notice("You [open? "open":"close"] the oven door"))
-	update_icon()
 
 /obj/machinery/appliance/cooker/oven/proc/manip(obj/item/I)
 	// check if someone's trying to manipulate the machine

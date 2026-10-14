@@ -1,0 +1,96 @@
+@obj.structure.closet.crate human|none
+@obj.structure.closet.crate robot|none
+@obj.structure ai|none
+@obj.structure.closet.crate ghost|none
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Toggle Lock
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver click: Click: Toggle Lock
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Toggle Lock
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar click: Click: Toggle Lock
+@obj.structure.closet human|/obj/item/tool/wrench
+-menu: Toggle Open
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Toggle Lock
++6 menu: Turn Around
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
+human|/obj/item/tool/wirecutters menu: Toggle Lock
+human|/obj/item/tool/wirecutters menu: Turn Around
+human|/obj/item/tool/wirecutters click: Click: Open
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
+human|/obj/item/multitool menu: Toggle Lock
+human|/obj/item/multitool menu: Turn Around
+human|/obj/item/multitool click: Click: Toggle Lock
+@obj.structure.closet human|/obj/item/weldingtool
+-menu: Toggle Open
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++4 menu: Toggle Lock
++5 menu: Turn Around
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Rig
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
+human|/obj/item/stack/cable_coil menu: Toggle Lock
+human|/obj/item/stack/cable_coil menu: Turn Around
+human|/obj/item/stack/cable_coil click: Click: Rig
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Toggle Lock
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel click: Click: Toggle Lock
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id menu: Toggle Lock
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
+human|/obj/item menu: Toggle Lock
+human|/obj/item menu: Turn Around
+human|/obj/item click: Click: Toggle Lock
+@obj human|/obj/item/radio/electropack
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/pda
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++6 menu: Turn Around
+@obj.structure human|/obj/item/card/emag
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
+@obj.structure human|/obj/item/melee/energy/blade
++0 menu: Climb
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++6 menu: Turn Around
+keys: anchor.toggle, attach_pack, break_out, climb.climb, climb.climb_menu, cutters_touch, cut_apart, cut_rigging, devour, door, drag_buckle, emag.subvert, emag.use, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, rig, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, set_down, silicon_hand, slice, stuff, stuff_grab, weld_shut.toggle

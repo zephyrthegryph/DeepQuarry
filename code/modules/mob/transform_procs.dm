@@ -6,27 +6,27 @@
 			continue
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
-	status_set(EFFECT_STUNNED, 1)
+	status_set(STAT_STUNNED, 1)
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
-		qdel(t)
+		ended_with(t, src)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), src)
 	flick("h2monkey", animation)
-	om_after(src, 48, PROC_REF(monkeyize_1), animation)
+	after(src, 4.8 SECONDS, PROC_REF(monkeyize_1), with = list(animation))
 
 
 /mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
 
-	transforming = 0
-	status_set(EFFECT_STUNNED, 0)
+	set_transforming(0)
+	status_set(STAT_STUNNED, 0)
 	update_canmove()
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 
 	if(!species.primitive_form) //If the creature in question has no primitive set, this is going to be messy.
 		gib()
@@ -37,7 +37,7 @@
 	set_species(species.primitive_form)
 
 	to_chat(src, span_infoplain(span_bold("You are now [species.name]. ")))
-	qdel(animation)
+	spent(animation)
 
 	return src
 
@@ -49,13 +49,13 @@
 	if (transforming)
 		return
 	for(var/t in organs)
-		qdel(t)
+		ended_with(t, src)
 
 	var/mob/living/silicon/ai/O = ..(move)
 	if(O)
 		// migrated flavor_texts
 		var/list/_flavor_texts = O.client?.prefs?.read_preference(/datum/preference/flavor_texts)
-		O.flavor_text = LAZYACCESS(_flavor_texts, "general")
+		O.bio.flavor_text = LAZYACCESS(_flavor_texts, "general")
 		return O
 
 	return ..(move)
@@ -65,10 +65,10 @@
 		return
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	return ..()
 
 /mob/proc/AIize(move = TRUE)
@@ -99,8 +99,8 @@
 		newloc = loc_landmark.loc
 
 	var/mob/living/silicon/ai/O = new (newloc, FALSE, using_map.default_law_type, null, 1)//No MMI but safety is in effect.
-	O.invisibility = INVISIBILITY_NONE
-	O.aiRestorePowerRoutine = 0
+	O.set_invisibility(INVISIBILITY_NONE)
+	O.set_aiRestorePowerRoutine(0)
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))
@@ -151,17 +151,17 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
-		qdel(t)
+		ended_with(t, src)
 
 	var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(loc)
 
 	O.gender = gender
-	O.invisibility = INVISIBILITY_NONE
+	O.set_invisibility(INVISIBILITY_NONE)
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
@@ -173,11 +173,11 @@
 	O.job = JOB_CYBORG
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
-			own_set(O, nameof(O.mmi), new /obj/item/mmi/digital/posibrain(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi/digital/posibrain(O))
 		else if(O.mind.role_alt_title == JOB_ALT_DRONE)
-			own_set(O, nameof(O.mmi), new /obj/item/mmi/digital/robot(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi/digital/robot(O))
 		else
-			own_set(O, nameof(O.mmi), new /obj/item/mmi(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi(O))
 
 		O.mmi.take_identity(src) // the MMI holds the character by reference; the mind is in the borg
 
@@ -187,7 +187,7 @@
 		for(var/language in B.read_preference(/datum/preference/alternate_languages))
 			O.add_language(language)
 		O.resize(B.read_preference(/datum/preference/numeric/human/size_multiplier), animate = TRUE, ignore_prefs = TRUE)
-		O.fuzzy = B.read_preference(/datum/preference/toggle/human/fuzzy)
+		O.set_fuzzy(B.read_preference(/datum/preference/toggle/human/fuzzy))
 		O.custom_speech_bubble = B.read_preference(/datum/preference/text/human/custom_speech_bubble)
 
 
@@ -201,12 +201,12 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
-		qdel(t)
+		ended_with(t, src)
 
 	var/alien_caste = pick("Hunter","Sentinel","Drone")
 	var/mob/living/carbon/human/new_xeno = create_new_xenomorph(alien_caste,loc)
@@ -215,7 +215,7 @@
 	move_player(src, new_xeno, "alienized")
 
 	to_chat(new_xeno, span_infoplain(span_bold("You are now an alien.")))
-	qdel(src)
+	replaced_by(src, new_xeno)
 	return
 
 
@@ -225,29 +225,31 @@
 	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)	//this really should not be necessary
-		qdel(t)
+		ended_with(t, src)
 
 	var/mob/living/simple_mob/animal/passive/dog/corgi/new_corgi = new /mob/living/simple_mob/animal/passive/dog/corgi (loc)
 	new_corgi.set_use_stance(I_HURT)
 	move_player(src, new_corgi, "corgized")
 
 	to_chat(new_corgi, span_infoplain(span_bold("You are now a Corgi. Yap Yap!")))
-	qdel(src)
+	replaced_by(src, new_corgi)
 	return
 
 /mob/living/carbon/human/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(animalize_type_chosen), message = "Which type of mob should [src] turn into?", choices = mobtypes, title = "Choose a type", requires = PROMPT_ADMIN(R_SPAWN))
+	open_request(src, /datum/prompt/choice, PROC_REF(animalize_type_chosen), answerer = user, title = "Choose a type", question = "Which type of mob should [src] turn into?", choices = mobtypes, rights = R_SPAWN, timeout = 0)
 
-/mob/living/carbon/human/proc/animalize_type_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/mobpath = ask.choice
+/mob/living/carbon/human/proc/animalize_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/mobpath = A.answer.value
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return
@@ -258,13 +260,13 @@
 		drop_from_inventory(W)
 
 	regenerate_icons()
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 
 	for(var/t in organs)
-		qdel(t)
+		ended_with(t, src)
 
 	var/mob/new_mob = new mobpath(src.loc)
 
@@ -279,11 +281,13 @@
 /mob/proc/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(mob_animalize_type_chosen), message = "Which type of mob should [src] turn into?", choices = mobtypes, title = "Choose a type", requires = PROMPT_ADMIN(R_SPAWN))
+	open_request(src, /datum/prompt/choice, PROC_REF(mob_animalize_type_chosen), answerer = user, title = "Choose a type", question = "Which type of mob should [src] turn into?", choices = mobtypes, rights = R_SPAWN, timeout = 0)
 
-/mob/proc/mob_animalize_type_chosen(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/mobpath = ask.choice
+/mob/proc/mob_animalize_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/mobpath = A.answer.value
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return
@@ -297,7 +301,7 @@
 	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 
-	qdel(src)
+	replaced_by(src, new_mob)
 
 /* Certain mob types have problems and should not be allowed to be controlled by players.
  *

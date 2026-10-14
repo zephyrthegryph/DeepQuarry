@@ -67,12 +67,13 @@
 	damage = 35
 	injury_kind = INJURY_CORROSIVE
 	agony = 15
-	armor_penetration = 40
 
 	combustion = FALSE
 
+CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
+	configure(item_combat(armor_penetration = 40))
+
 /mob/living/simple_mob/animal/giant_spider/broodmother
-	death_message = "falls over and makes its last twitches as its birthing sack bursts!"
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/on_death(gibbed)
 	var/count = 0
@@ -92,6 +93,7 @@
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
 		broodling.faction = faction
+		broodling.ai_brain?.serve(src) // sworn: it joins the mother's pack and never splits off
 		step_away(broodling, src)
 		count++
 
@@ -104,6 +106,7 @@
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
 		broodling.faction = faction
+		broodling.ai_brain?.serve(src)
 		step_away(broodling, src)
 		broodling.throw_at(A, 10)
 		count++
@@ -140,15 +143,19 @@
 	icon_state = "egg_slimeglob"
 
 
-DECLARE_INTERACTIONS(/obj/item/royal_spider_egg, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/royal_spider_egg)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/royal_spider_egg/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_confirmed), title = "Royal Spider Egg", message = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/obj/item/royal_spider_egg/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	open_request(src, /datum/prompt/yes_no, PROC_REF(release_confirmed), answerer = user, title = "Royal Spider Egg", question = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/royal_spider_egg/proc/release_confirmed(datum/om/prompt/confirm/ask)
-	var/mob/user = ask.answerer
+/obj/item/royal_spider_egg/proc/release_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.value)
+		return
+	var/mob/user = A.request.answerer
 	var/turf/drop_loc = user.loc
 	if(istype(drop_loc))
 		var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)

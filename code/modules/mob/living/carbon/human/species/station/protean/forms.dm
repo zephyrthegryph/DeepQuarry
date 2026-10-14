@@ -19,13 +19,13 @@
 /mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
 	RETURN_TYPE(/datum/forms)
 	if(!character_forms)
-		own_set(src, nameof(character_forms), new forms_type(src))
+		rel_set(src, nameof(character_forms), new forms_type(src))
 	return character_forms
 
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).
 /mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
 	if(istype(character_forms, forms_type))
-		own_clear(src, nameof(character_forms), OWN_DELETE)
+		rel_clear(src, nameof(character_forms))
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()
@@ -39,7 +39,7 @@
 	var/list/forms
 	/// The form being worn right now. Never null while attached.
 	var/datum/form/current
-	/// Appearances the current form added to the mob.
+	/// What the current form shows instead of the body (the human's draw shows these while TRAIT_FORM_HIDES_BODY holds).
 	var/list/form_overlays
 	/// holder_type the mob had before a form replaced it.
 	var/prior_holder_type
@@ -47,6 +47,12 @@
 	var/switching = FALSE
 	/// Resting state the current appearance was drawn for.
 	var/drawn_resting = FALSE
+
+
+CAPABILITIES(/datum/forms)
+	ref_one(nameof(owner), /mob/living/carbon/human)
+	ref_one(nameof(current), /datum/form)
+	owns_many(nameof(forms))
 
 /// Form types this character can take, first one is the starting form.
 TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
@@ -57,10 +63,10 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
 	rel_set(src, nameof(owner), H)
-	own_take_all(src, nameof(forms))
+	rel_take_all(src, nameof(forms))
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
-		own_put(src, nameof(forms), form_type, new form_type())
+		rel_add(src, nameof(forms), new form_type(), form_type)
 	rel_set(src, nameof(current), forms[types[1]])
 	attach()
 
@@ -68,14 +74,14 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 /datum/forms/proc/attach()
 	var/mob/living/carbon/human/H = owner
 	prior_holder_type = H.holder_type
-	om_stage_add(H, /datum/om/stage/life/trait/forms)
+	seq_extra_add(H, /datum/sequence/life, src)
 	current.on_enter(src, H)
 	H.invalidate_factors()
 
 /// Leaves the owner (was UnregisterFromParent).
 /datum/forms/proc/detach()
 	var/mob/living/carbon/human/H = owner
-	om_stage_remove(H, /datum/om/stage/life/trait/forms)
+	seq_extra_remove(H, /datum/sequence/life, src)
 	if(current)
 		current.on_exit(src, H)
 	H.invalidate_factors()
@@ -111,7 +117,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	refresh_appearance()
 	H.update_transform(TRUE)
 	H.update_canmove()
-	changed(H, CHANGE_EXPLICIT) // wake the forms life stage for the new form's upkeep
+	PUBLISH_CHANGE(H, MOB_KEY_FORM) // the forms life step follows the new form's upkeep
 	switching = FALSE
 	log_game("FORMS: [key_name(H)] changed form [old.id] -> [next.id] at [AREACOORD(H)]")
 	return TRUE
@@ -125,20 +131,15 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	if(current.draws_body)
 		if(has_trait(H, TRAIT_FORM_HIDES_BODY))
 			remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
-			H.regenerate_icons()
 		return
 	if(!has_trait(H, TRAIT_FORM_HIDES_BODY))
 		add_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
-		H.cut_overlays()
 	drawn_resting = H.resting
-	form_overlays = current.build_overlays(src, H)
-	if(length(form_overlays))
-		H.add_overlay(form_overlays)
+	set_form_overlays(current.build_overlays(src, H))
 
+/// The form's own appearance goes: the human's draw shows its body again (or the next form's overlays).
 /datum/forms/proc/clear_form_appearance(mob/living/carbon/human/H)
-	if(length(form_overlays))
-		H.cut_overlay(form_overlays)
-	form_overlays = null
+	set_form_overlays(null)
 
 /datum/forms/proc/on_life(mob/living/source)
 	// Shapeless forms draw their own resting states.
@@ -181,14 +182,16 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		H.holder_type = holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		om_grant_each(H, GRANT_VERB, form_verbs, src)
+		for(var/granted_path in form_verbs)
+			grant(H, granted_verb(granted_path), src)
 
 /datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
 		H.holder_type = F.prior_holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		om_revoke_each(H, GRANT_VERB, form_verbs, src)
+		for(var/granted_path in form_verbs)
+			revoke(H, granted_verb(granted_path), src)
 
 /datum/form/proc/announce_enter(mob/living/carbon/human/H)
 	if(enter_message)
@@ -233,13 +236,6 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 
 // --- Body-drawing hooks ---------------------------------------------------------------
 
-// A form that draws itself keeps the body layer cache up to date but does not
-// apply it; returning to a body-drawing form regenerates the icons.
-/mob/living/carbon/human/apply_layer(cache_index)
-	if(has_trait(src, TRAIT_FORM_HIDES_BODY))
-		return overlays_standing[cache_index]
-	return ..()
-
 // Shapeless forms scale with the mob but never rotate to lie down; they draw
 // their own resting states.
 /mob/living/carbon/human/update_transform(instant = FALSE)
@@ -264,27 +260,17 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		if(istype(I, /obj/item/holder))
 			root.remove_from_mob(I)
 
-/// Trait system: form upkeep.
-/datum/om/stage/life/trait/forms
-	name = "forms"
-	wake_on = CHANGE_MOB_STAT | CHANGE_EXPLICIT
-	woken_by = "set_form(); set_stat()"
+/// Life: form upkeep, a step the forms datum contributes while attached. set_form() and stat changes wake it.
+/datum/forms/proc/life_steps()
+	return list(seq_step(PROC_REF(life_trait_forms), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_forms", reads = list(MOB_KEY_FORM), should_run = PROC_REF(life_trait_forms_due), woken_by = "set_form(); set_stat()"))
 
-/datum/om/stage/life/trait/forms/perform(mob/living/self, datum/om/frame/life/ctx)
-	var/mob/living/carbon/human/H = self
-	if(!istype(H))
-		return
+/datum/forms/proc/life_trait_forms(mob/living/carbon/human/H, datum/seq_frame/life/F)
 	H.character_forms?.on_life(H)
 
-/// Sleeps unless the current form has per-tick upkeep (`ticks`) or draws itself (it follows
-/// resting). set_form() and stat changes wake it.
-/datum/om/stage/life/trait/forms/idle(mob/living/self)
-	var/mob/living/carbon/human/H = self
-	if(!istype(H))
-		return TRUE
-	var/datum/forms/F = H.character_forms
-	if(!F?.current)
-		return TRUE
-	if(!F.current.draws_body)
+/// Has work while the current form has per-tick upkeep (`ticks`) or draws itself (it follows resting).
+/datum/forms/proc/life_trait_forms_due(mob/living/carbon/human/H)
+	if(!current)
 		return FALSE
-	return !F.current.ticks || H.stat == DEAD
+	if(!current.draws_body)
+		return TRUE
+	return current.ticks && H.stat != DEAD

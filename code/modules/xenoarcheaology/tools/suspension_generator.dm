@@ -11,25 +11,33 @@
 	locked = 1
 	var/power_use = 15
 
-DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high)
 /// The field it projects while active (activate() .. deactivate()).
-OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
-/// Holds its field (draining its cell) while it has one.
-DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspension_field")
+/obj/machinery/suspension_gen/var/obj/effect/suspension_field/suspension_field
 
-/obj/machinery/suspension_gen/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+CAPABILITIES(/obj/machinery/suspension_gen)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))
+	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
+	interface("XenoarchSuspension")
+	without("ui_open")
+	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert power cell"), then(PROC_REF(interaction_insert_cell)))
+	op("swipe_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe card"), then(PROC_REF(interaction_swipe_card)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	rotatable()
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Holds its field (draining its cell); runs while it has one (declared).
-/obj/machinery/suspension_gen/machine_step()
+/obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)
 	if(suspension_field)
-		cell.charge -= power_use
+		cell.set_charge(cell.charge - power_use)
 
 		var/turf/T = get_turf(suspension_field)
 		for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
-			M.status_at_least(EFFECT_WEAKENED, 3)
-			cell.charge -= power_use
+			M.status_at_least(STAT_WEAKENED, 3)
+			cell.set_charge(cell.charge - power_use)
 			if(prob(5))
 				to_chat(M, span_warning("[pick("You feel tingly","You feel like floating","It is hard to speak","You can barely move")]."))
 
@@ -42,37 +50,30 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspens
 		if(cell.charge <= 0)
 			deactivate()
 
-/obj/machinery/suspension_gen/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/suspension_gen_insert_cell,
-		/datum/interaction/machine_item/suspension_gen_swipe_card,
-		/datum/interaction/machine_hand/ungated/suspension_gen_use,
-	)
-	..()
-
-/datum/interaction/machine_hand/ungated/suspension_gen_use
-	id = "suspension_gen_use"
-	name = "Use"
-	effect = /obj/machinery/suspension_gen/proc/interaction_use
-
-/obj/machinery/suspension_gen/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!panel_open)
 		tgui_interact(user)
 	else if(cell)
 		cell.forceMove(loc)
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
-		icon_state = "suspension"
-		own_take(src, nameof(cell))
+		set_icon_state("suspension")
+		rel_take(src, nameof(cell))
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
-DECLARE_UI(/obj/machinery/suspension_gen, "XenoarchSuspension")
+/obj/machinery/suspension_gen/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["cell"] = cell
+	data["suspension_field"] = suspension_field
+	var/list/merged_1 = ui_data_obj_machinery_suspension_gen(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui_data_obj_machinery_suspension_gen{cellCharge:num,cellMaxCharge:num,locked:num}")
-
-/// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
+/// /obj/machinery/suspension_gen's window data.
 /obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -83,8 +84,8 @@ UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui
 
 	return data
 
-UI_ACT(/obj/machinery/suspension_gen, "toggle_field", ui_act_toggle_field)
-UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_toggle_field)
+/obj/machinery/suspension_gen/proc/ui_act_toggle_field(datum/act/op/A)
+	var/mob/user = A.actor
 	if(locked)
 		return
 	if(!suspension_field)
@@ -92,62 +93,55 @@ UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_toggle_field)
 			if(anchored)
 				activate()
 			else
-				to_chat(ui.user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
+				to_chat(user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
 	else
 		deactivate()
 	return TRUE
 
-UI_ACT(/obj/machinery/suspension_gen, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_lock)
-	if(allowed(ui.user))
+/obj/machinery/suspension_gen/proc/ui_act_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	if(allowed(user))
 		set_locked(!locked)
 		return TRUE
 
-/obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/suspension_gen/proc/screwdriver_used(datum/act/op/A)
 	if(locked || suspension_field)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/suspension_gen/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/suspension_gen/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(suspension_field)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_info("You wrench the stabilising bolts [anchored ? "into place" : "loose"]."))
 	if(anchored)
 		desc = "Its tracks are held firmly in place with securing bolts."
-		icon_state = "suspension_wrenched"
+		set_icon_state("suspension_wrenched")
 	else
 		desc = "It has stubby bolts aligned along its tracks for stabilising."
-		icon_state = "suspension"
+		set_icon_state("suspension")
 	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/datum/interaction/machine_item/suspension_gen_insert_cell
-	id = "suspension_gen_insert_cell"
-	name = "Insert power cell"
-	held_type = /obj/item/cell
-	effect = /obj/machinery/suspension_gen/proc/interaction_insert_cell
-
-/obj/machinery/suspension_gen/proc/interaction_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_insert_cell(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(panel_open)
 		if(cell)
 			to_chat(user, span_warning("There is a power cell already installed."))
 		else
-			if(!own_set(src, nameof(src.cell), W, user = user))
+			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, span_info("You insert the power cell."))
-			icon_state = "suspension"
+			set_icon_state("suspension")
 	return TRUE
 
-/datum/interaction/machine_item/suspension_gen_swipe_card
-	id = "suspension_gen_swipe_card"
-	name = "Swipe card"
-	held_type = /obj/item/card
-	effect = /obj/machinery/suspension_gen/proc/interaction_swipe_card
-
-/obj/machinery/suspension_gen/proc/interaction_swipe_card(mob/user, obj/item/card/I, datum/interaction/interaction)
+/obj/machinery/suspension_gen/proc/interaction_swipe_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/I = A.held
 	if(!auth_card())
 		if(attempt_unlock(I, user))
 			to_chat(user, span_info("You swipe [I], the console flashes \'<i>Access granted.</i>\'"))
@@ -166,11 +160,11 @@ UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_lock)
 		if(!locked)
 			return 1
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
-/obj/machinery/suspension_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/suspension_gen/proc/on_emag(datum/act/op/A)
 	if(cell && cell.charge > 0 && locked)
 		set_locked(0)
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 //checks for whether the machine can be activated or not should already have occurred by this point
 /obj/machinery/suspension_gen/proc/activate()
@@ -178,7 +172,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 	var/collected = 0
 
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
-		M.status_at_least(EFFECT_WEAKENED, 5)
+		M.status_at_least(STAT_WEAKENED, 5)
 		act_message(M, null, MSG_SELF("You feel tingly and light, but it is difficult to move."), \
 			MSG_OTHERS(span_blue("[icon2html(M,viewers(M))] %U% begins to float in the air!")))
 
@@ -186,27 +180,26 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
-			own_set(anom, nameof(anom.stats), new /datum/anomaly_stats(anom))
+			rel_set(anom, nameof(anom.stats), new /datum/anomaly_stats(anom))
 
-	own_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
+	rel_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
-	icon_state = "suspension_on"
+	set_icon_state("suspension_on")
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
-	update_icon()
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		I.forceMove(suspension_field)
 		collected++
 
 	if(collected)
-		suspension_field.icon_state = "energynet"
+		suspension_field.set_icon_state("energynet")
 		add_overlay("shield2")
 		visible_message(span_blue("[icon2html(suspension_field,viewers(src))] [suspension_field] gently absconds [collected > 1 ? "something" : "several things"]."))
 	else
 		if(ismineralturf(T) || istype(T,/turf/simulated/wall))
-			suspension_field.icon_state = "shieldsparkles"
+			suspension_field.set_icon_state("shieldsparkles")
 		else
-			suspension_field.icon_state = "shield2"
+			suspension_field.set_icon_state("shield2")
 
 /obj/machinery/suspension_gen/proc/deactivate()
 	//drop anything we picked up
@@ -214,7 +207,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 
 	for(var/mob/living/M in turf_contents_of_type(T, /mob/living))
 		to_chat(M, span_info("You no longer feel like floating."))
-		M.status_at_least(EFFECT_WEAKENED, 3)
+		M.status_at_least(STAT_WEAKENED, 3)
 
 	for(var/obj/effect/anomaly/anom in turf_contents_of_type(T, /obj/effect/anomaly))
 		if(anom.stats)
@@ -226,22 +219,19 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	own_clear(src, nameof(suspension_field), OWN_DELETE)
-	icon_state = "suspension_wrenched"
+	rel_clear(src, nameof(suspension_field))
+	set_icon_state("suspension_wrenched")
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
-	update_icon()
 
 // its field deactivates.
 /obj/machinery/suspension_gen/on_destroy(force)
 	deactivate()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/suspension_gen/appearance_overlays()
-	. = list()
+/obj/machinery/suspension_gen/draw(datum/look/look)
 	if(panel_open)
-		. += "suspension_panel"
-	. += ..()
+		look.overlay("suspension_panel")
+	..()
 
 /obj/effect/suspension_field
 	name = "energy field"
@@ -249,14 +239,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appe
 	anchored = 1
 	density = 1
 
-/obj/effect/suspension_field/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+CAPABILITIES(/obj/effect/suspension_field)
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 
 
 /obj/machinery/suspension_gen/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

@@ -112,34 +112,40 @@
 								"a bottle", "a boat", "a spaceship",
 								"Nanotrasen logo", "a geometric-looking letter S", "a dodecahedron")
 
-DECLARE_INTERACTIONS(/obj/item/firework_star/aesthetic/configurable, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/firework_star/aesthetic/configurable)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1),
+		asks(/datum/prompt/choice, fields = list("question" = "What setting do you want to adjust?", "title" = "Firework Star", "choices" = list("Color", "Shape", "Nothing"), "buttons" = TRUE, "timeout" = 0), step = "setting"),
+		asks(/datum/prompt/choice, fields = list("question" = "What color would you like firework to be?", "title" = "Firework Star", "choices" = computed(PROC_REF(firework_color_choices)), "timeout" = 0), step = "color", when = PROC_REF(asks_color)),
+		asks(/datum/prompt/choice, fields = list("question" = "What shape would you like firework to be?", "title" = "Firework Star", "choices" = computed(PROC_REF(firework_shape_choices)), "timeout" = 0), step = "shape", when = PROC_REF(asks_shape)),
+		then(PROC_REF(firework_settings_chosen)))
 
-/// Old attack_self.
-/obj/item/firework_star/aesthetic/configurable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/choice = rerun_ask(user, "k119", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "What setting do you want to adjust?", title = "Firework Star", choices = list("Color", "Shape", "Nothing"))
-	if(isnull(choice))
-		return TRUE
+/obj/item/firework_star/aesthetic/configurable/proc/asks_color(datum/act/op/A)
+	return A.step_value("setting") == "Color"
+
+/obj/item/firework_star/aesthetic/configurable/proc/asks_shape(datum/act/op/A)
+	return A.step_value("setting") == "Shape"
+
+/obj/item/firework_star/aesthetic/configurable/proc/firework_color_choices(datum/act/op/A)
+	return firework_colors
+
+/obj/item/firework_star/aesthetic/configurable/proc/firework_shape_choices(datum/act/op/A)
+	return firework_shapes
+
+/// Old attack_self: adjust the chosen setting, if the star is still in hand.
+/obj/item/firework_star/aesthetic/configurable/proc/firework_settings_chosen(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.loc != user)
-		return TRUE
-
+		return OP_OK
+	var/choice = A.step_value("setting")
 	if(choice == "Color")
-		var/color_choice = rerun_ask(user, "k124", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What color would you like firework to be?", title = "Firework Star", choices = firework_colors)
-		if(isnull(color_choice))
-			return TRUE
-		if(src.loc != user)
-			return TRUE
+		var/color_choice = A.step_value("color")
 		if(color_choice)
 			current_color = color_choice
-
-	if(choice == "Shape")
-		var/shape_choice = rerun_ask(user, "k131", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What shape would you like firework to be?", title = "Firework Star", choices = firework_shapes)
-		if(isnull(shape_choice))
-			return TRUE
-		if(src.loc != user)
-			return TRUE
+	else if(choice == "Shape")
+		var/shape_choice = A.step_value("shape")
 		if(shape_choice)
 			current_shape = shape_choice
-	return TRUE
+	return OP_OK
 
 /obj/item/firework_star/aesthetic/configurable/get_firework_message()
 	var/temp_shape = current_shape

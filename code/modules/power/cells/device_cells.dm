@@ -7,13 +7,15 @@
 	icon_state = "m_st"
 	item_state = "egg6"
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	throw_speed = 5
 	throw_range = 7
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
 	preserve_item = 1
+
+CAPABILITIES(/obj/item/cell/device)
+	configure(item_combat(force = 0))
 
 /obj/item/cell/device/empty
 	charge = 0
@@ -22,6 +24,7 @@
  * Crap Device
  */
 /obj/item/cell/device/crap
+	standard_overlays = FALSE
 	name = "\improper rechargable D battery"
 	desc = "An older, cheap power cell designed to power handheld devices. It's probably been in use for quite some time now."
 	description_fluff = "You can't top the rust top." //TOTALLY TRADEMARK INFRINGEMENT
@@ -29,7 +32,6 @@
 	charge = 240
 	maxcharge = 240
 
-APPEARANCE_NONE(/obj/item/cell/device/crap)
 /obj/item/cell/device/crap/empty
 	charge = 0
 
@@ -51,13 +53,10 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
  * EMP Proof Device
  */
 /obj/item/cell/device/empproof
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded device power cell"
 	desc = "A small power cell designed to power handheld devices. Shielded from EMPs."
 	icon_state = "s_st"
-
-/obj/item/cell/device/empproof/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
 
 /obj/item/cell/device/empproof/empty
 	charge = 0
@@ -80,13 +79,10 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
  * EMP Proof Weapon
  */
 /obj/item/cell/device/weapon/empproof
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded weapon power cell"
 	desc = "A small power cell designed to power handheld weaponry. Shielded from EMPs."
 	icon_state = "s_hi"
-
-/obj/item/cell/device/weapon/empproof/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
 
 /obj/item/cell/device/weapon/empproof/empty
 	charge = 0
@@ -128,6 +124,7 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 	value = CATALOGUER_REWARD_EASY
 
 /obj/item/cell/device/weapon/recharge/alien
+	standard_overlays = FALSE
 	name = "void cell (device)"
 	desc = "An alien technology that produces energy seemingly out of nowhere. Its small, cylinderal shape means it might be able to be used with human technology, perhaps?"
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_void_cell)
@@ -140,21 +137,26 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 	var/swaps_to = /obj/item/cell/void
 	standard_overlays = FALSE
 
-APPEARANCE_NONE(/obj/item/cell/device/weapon/recharge/alien)
-EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/recharge/alien, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
+	// This ran before the inherited charge/drain entries.
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!swaps_to)
 		return TRUE
-	user.remove_from_mob(src)
-	to_chat(user, span_notice("You swap [src] to 'machinery cell' mode."))
-	var/obj/item/cell/newcell = new swaps_to(null)
-	user.put_in_active_hand(newcell)
+	var/cell_name = "[src]"
 	var/percentage = charge/maxcharge
-	newcell.charge = newcell.maxcharge * percentage
-	newcell.persist_storable = persist_storable
-	consume(src, user)
+	var/original_persist_storable = persist_storable
+	var/replacement_type = swaps_to
+	if(!consume(src, user))
+		return TRUE
+	to_chat(user, span_notice("You swap [cell_name] to 'machinery cell' mode."))
+	var/obj/item/cell/newcell = new replacement_type(null)
+	user.put_in_active_hand(newcell)
+	newcell.set_charge(newcell.maxcharge * percentage)
+	newcell.persist_storable = original_persist_storable
 	return TRUE
 
 // Bloo friendlier hybrid tech

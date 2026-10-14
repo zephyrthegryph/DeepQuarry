@@ -27,6 +27,22 @@
 	update_cut_status()
 	return ..()
 
+CAPABILITIES(/obj/structure/fence)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	climb(gate = PROC_REF(needs_a_climbable_hole))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut through"), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), begins(PROC_REF(cut_begins)), wait(10 SECONDS), then(PROC_REF(wirecutter_act_tool_done))) // CUT_TIME
+	op("touch", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// A fence is climbed through a medium hole: an intact one is too tight to, and a large one is walked through.
+/obj/structure/fence/proc/needs_a_climbable_hole(mob/living/climber)
+	switch(hole_size)
+		if(NO_HOLE)
+			return "There is no hole in \the [src] to climb through."
+		if(LARGE_HOLE)
+			return "The hole in \the [src] is big enough to walk through."
+	return null
+
 /obj/structure/fence/examine(mob/user)
 	. = ..()
 
@@ -68,72 +84,60 @@
 		return TRUE
 	return ..()
 
-/obj/structure/fence/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/fence_hand,
-		/datum/interaction/entry_item/fence_item,
-	)
-	..()
-
-/// Old attack_hand: shocks a living, corporeal user if the fence is electrified.
-/datum/interaction/entry_hand/fence_hand
-	id = "fence_hand"
-	name = "Use"
-	effect = /obj/structure/fence/proc/interaction_hand
-
-/obj/structure/fence/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: an electrified fence shocks whoever touches it.
+/obj/structure/fence/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(electric && isliving(user) && !user.is_incorporeal())
 		electrocute(user)
-	return TRUE
+	return OP_OK
 
-/// Old attackby: same, but a NOCONDUCT item protects the user.
-/datum/interaction/entry_item/fence_item
-	id = "fence_item"
-	name = "Use"
-	effect = /obj/structure/fence/proc/interaction_item
-
-/obj/structure/fence/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: an electrified fence shocks through whatever conducts.
+/obj/structure/fence/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT))
 		electrocute(user)
-	return TRUE
+	return OP_OK
 
-/obj/structure/fence/wirecutter_act(mob/user, obj/item/W)
+/// A fence that can be cut, and is not cut through already.
+/obj/structure/fence/proc/cut_refusal(datum/act/op/A)
+	if(!read_once(cuttable))
+		return "this section of the fence can't be cut"
+	if(read_once(invulnerable))
+		return "this fence is too strong to cut through"
+	if(read_once(hole_size) >= MAX_HOLE_SIZE)
+		return "this fence has too much cut out of it already"
+
+/// An electrified fence shocks whoever cuts into it, and the cut stops there.
+/obj/structure/fence/proc/cut_started(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	playsound(src, sounds_of(W).use, 50, TRUE)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT) && electrocute(user))
-		return TRUE
-	if(!cuttable)
-		to_chat(user, span_warning("This section of the fence can't be cut."))
-		return TRUE
-	if(invulnerable)
-		to_chat(user, span_warning("This fence is too strong to cut through."))
-		return TRUE
-	var/current_stage = hole_size
-	if(current_stage >= MAX_HOLE_SIZE)
-		to_chat(user, span_notice("This fence has too much cut out of it already."))
-		return TRUE
-	act_message(user, src, MSG_SELF(span_danger("You start cutting through %T% with %I%.")), \
-		MSG_OTHERS(span_danger("%U% starts cutting through %T% with %I%.")), \
-		item = W)
-	use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50, receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, current_stage))
-	return TRUE
+		return /datum/msg/req_silent
 
-/obj/structure/fence/proc/wirecutter_act_tool_done(mob/user, current_stage)
-	if(!(current_stage == hole_size))
-		return
+/obj/structure/fence/proc/cut_begins(datum/act/op/A)
+	return msg_text(span_danger("You start cutting through %T% with %I%."), span_danger("%U% starts cutting through %T% with %I%."))
+
+/obj/structure/fence/proc/wirecutter_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(hole_size >= MAX_HOLE_SIZE)
+		return OP_OK
 	switch(++hole_size)
 		if(MEDIUM_HOLE)
 			act_message(user, src, others = span_notice("%U% cuts into %T% some more."))
 			to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
-			make_climbable()
 		if(LARGE_HOLE)
 			act_message(user, src, others = span_notice("%U% completely cuts through %T%."))
 			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
-			unmake_climbable()
 	update_cut_status()
 
-/obj/structure/fence/Bumped(AM)
-	. = ..()
+/// Something walked into it (the bump action's notice).
+/obj/structure/fence/proc/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	var/atom/movable/AM = N.bumper
 	if(electric && isliving(AM))
 		var/mob/living/L = AM
 		if(!L.is_incorporeal())
@@ -146,17 +150,16 @@
 
 	switch(hole_size)
 		if(NO_HOLE)
-			icon_state = initial(icon_state)
+			set_icon_state(initial(icon_state))
 		if(MEDIUM_HOLE)
-			icon_state = "straight_cut2"
+			set_icon_state("straight_cut2")
 		if(LARGE_HOLE)
-			icon_state = "straight_cut3"
+			set_icon_state("straight_cut3")
 			set_density(FALSE)
 
 //FENCE DOORS
 
 /obj/structure/fence/door
-	silicon_use = ROBOT_USE_HAND_ADJACENT // cyborgs open it from next to it; the AI can't
 	name = "fence door"
 	desc = "Not very useful without a real lock."
 	icon_state = "door_closed"
@@ -168,6 +171,14 @@
 	var/can_pick = TRUE	//can it be picked/bypassed?
 	var/lock_difficulty = 1	//multiplier to picking/bypassing time
 	var/keysound = SFX_ITEMS_TOOLBELT_EQUIP
+
+// the fence door is never electrified: its own Use replaces the fence's
+CAPABILITIES(/obj/structure/fence/door)
+	silicon_hand(adjacent = TRUE) // cyborgs open it from next to it; the AI can't
+	without("touch")
+	without("item")
+	op("door_hand", hand(), label("Use"), then(PROC_REF(interaction_door_hand)))
+	op("door_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_door_item)))
 
 /obj/structure/fence/door/Initialize(mapload)
 	update_door_status()
@@ -182,35 +193,21 @@
 	desc = "It looks like it has a strong padlock attached."
 	locked = TRUE
 
-// The fence door's Use overrides its own, replacing (not chaining to) the base fence's
-// electrify interactions: a fence door is never electrified, so it declares its own set
-// instead of calling ..() into /obj/structure/fence/declare_interactions().
-/obj/structure/fence/door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/fence_door_hand,
-		/datum/interaction/entry_item/fence_door_item,
-	)
-
 /// Old attack_hand: open/close the door.
-/datum/interaction/entry_hand/fence_door_hand
-	id = "fence_door_hand"
-	name = "Use"
-	effect = /obj/structure/fence/door/proc/interaction_door_hand
+/obj/structure/fence/door/proc/interaction_door_hand(datum/act/op/A)
+	door_used(A.actor)
+	return OP_OK
 
-/obj/structure/fence/door/proc/interaction_door_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fence/door/proc/door_used(mob/user)
 	if(can_open(user))
 		toggle(user)
 	else
 		to_chat(user, span_warning("\The [src] is [!open ? "locked" : "stuck open"]."))
-	return TRUE
 
 /// Old attackby: lock/unlock with the matching key, pick the lock, or fall back to toggling.
-/datum/interaction/entry_item/fence_door_item
-	id = "fence_door_item"
-	name = "Use"
-	effect = /obj/structure/fence/door/proc/interaction_door_item
-
-/obj/structure/fence/door/proc/interaction_door_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fence/door/proc/interaction_door_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -222,32 +219,14 @@
 			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return TRUE
+		return OP_OK
 
 	else if(istype(W,/obj/item/lockpick))
-		var/obj/item/lockpick/L = W
-		if(!locked)
-			to_chat(user, span_notice("\The [src] isn't locked."))
-			return TRUE
-		else if(lock_type != L.pick_type) //make sure our types match
-			to_chat(user, span_warning("\The [L] can't pick \the [src]. Another tool might work?"))
-			return TRUE
-		else if(!can_pick)
-			to_chat(user, span_warning("\The [src] can't be [L.pick_verb]ed."))
-			return TRUE
-		else
-			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
-			playsound(src, keysound,100, 1)
-			om_task_timed(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return TRUE
+		return OP_PASS // the pick's own "pick" op (code/game/objects/items/lockpicks.dm) works the lock
 
 	else
-		interaction_door_hand(user, W, interaction)
-	return TRUE
-
-/obj/structure/fence/door/proc/attackby_timed_done(mob/user)
-	to_chat(user, span_notice("Success!"))
-	locked = FALSE
+		door_used(user)
+	return OP_OK
 
 /obj/structure/fence/door/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -268,10 +247,10 @@
 	switch(open)
 		if(FALSE)
 			set_density(TRUE)
-			icon_state = "door_closed"
+			set_icon_state("door_closed")
 		if(TRUE)
 			set_density(FALSE)
-			icon_state = "door_opened"
+			set_icon_state("door_opened")
 
 /obj/structure/fence/door/proc/can_open(mob/user)
 	if(locked)

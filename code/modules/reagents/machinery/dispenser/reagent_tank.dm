@@ -15,24 +15,19 @@
 
 	var/open_top = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_dispenser_set_aptft), REQ_ON(PRED_TARGET, /obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts, null)), \
-)
+/// What one transfer from the tank moves: its own setting (a container with a tap draws that much).
+/obj/structure/reagent_dispensers/legacy_transfer_amount()
+	return amount_per_transfer_from_this
 
 /// Requirement: the dispenser offers transfer amounts (the old Initialize dropped the set_APTFT verb without them).
-/obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts(mob/actor, atom/target, obj/item/held)
+/obj/structure/reagent_dispensers/proc/has_transfer_amounts(datum/act/op/A)
 	return !!possible_transfer_amounts
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+/// Old attackby: an item is not used on the tank itself; the click goes on (a container fills from the tank in its own afterattack).
+/obj/structure/reagent_dispensers/proc/interaction_item(datum/act/op/A)
+	return OP_PASS
 
-/// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, starts =) adds to what it inherits).
-/obj/structure/reagent_dispensers/capabilities()
-	. = ..()
-	. += reagents(5000)
+/// The tank's reagents: 5000 units (reagents() in its CAPABILITIES block); each kind of tank adds to or replaces the contents with configure(reagents(add = | starts =)).
 
 /obj/structure/reagent_dispensers/Initialize(mapload)
 	. = ..()
@@ -51,22 +46,30 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 			. += span_notice("Nothing.")
 
 /// Old verb "Set transfer amount": set amount_per_transfer_from_this.
-/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_ask(user, "a1", PROC_REF(reagent_dispenser_set_aptft), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
-	if(isnull(N))
-		return
+/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft(datum/act/op/A)
+	var/N = A.step_value("a1")
 	if (N)
 		amount_per_transfer_from_this = N
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispenser_blob_burst))
+/obj/structure/reagent_dispensers/proc/reagent_dispenser_set_aptft_a1_title(datum/act/op/A)
+	return "[src]"
+
+CAPABILITIES(/obj/structure/reagent_dispensers)
+	reagents(5000)
+	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(interaction_item)))
+	extend("melee_hit", when(cond_not(req(/obj/item/reagent_containers)))) // a container click on a tank taps it, hostile or not, instead of hitting it
+	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
+	op("reagent_dispenser_set_aptft", menu(), label("Set transfer amount"), when(PROC_REF(has_transfer_amounts)), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(reagent_dispenser_set_aptft_a1_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "a1"), then(PROC_REF(reagent_dispenser_set_aptft)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(dispenser_blob_burst))))
 
 /// A blob bursts the tank outright.
-/obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/damage_packet/packet)
-	qdel(src)
-	return DAMAGE_REACTION_BLOCK
+/obj/structure/reagent_dispensers/proc/dispenser_blob_burst(datum/act/hit/blob/A)
+	destroyed(src, null, "explosion")
+	return TRUE
 
 /// Old click_alt.
-/obj/structure/reagent_dispensers/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
 		return TRUE
 
@@ -91,22 +94,18 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	icon_state = "water"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/watertank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 1000))
-
-/obj/structure/reagent_dispensers/watertank/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
+	configure(reagents(add = list(REAGENT_ID_WATER = 1000)))
+	climb()
+	op("watertank_interaction_item", item(/obj/item), then(PROC_REF(watertank_interaction_item)))
 
 /obj/structure/reagent_dispensers/watertank/high
 	name = "high-capacity water tank"
 	desc = "A highly-pressurized water tank made to hold vast amounts of water.."
 	icon_state = "water_high"
 
-/obj/structure/reagent_dispensers/watertank/high/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 4000))
+CAPABILITIES(/obj/structure/reagent_dispensers/watertank/high)
+	configure(reagents(add = list(REAGENT_ID_WATER = 4000)))
 
 /obj/structure/reagent_dispensers/watertank/barrel
 	name = "water barrel"
@@ -122,22 +121,23 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	var/modded = 0
 	var/obj/item/assembly_holder/rig = null
 
-/obj/structure/reagent_dispensers/fueltank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 1000))
-
-/obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
+	owns_one(nameof(rig), /obj/item/assembly_holder)
+	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
+	climb()
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
+	op("hand", hand(), label("Use"), ungated(), when(PROC_REF(has_rig)), begins(MSG(fueltank/detaching)), wait(2 SECONDS), then(PROC_REF(detach_rig_done)))
+	op("fueltank_interaction_item", item(/obj/item/assembly_holder), needs(req(PROC_REF(no_rig))),
+		begins(MSG(fueltank/rigging)), wait(2 SECONDS), then(PROC_REF(rig_assembly_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
 	desc = "A highly-pressurized fuel tank made to hold vast amounts of fuel."
 	icon_state = "fuel_high"
 
-/obj/structure/reagent_dispensers/fueltank/high/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 4000))
+CAPABILITIES(/obj/structure/reagent_dispensers/fueltank/high)
+	configure(reagents(starts = list(REAGENT_ID_FUEL = 4000)))
 
 //Foam
 /obj/structure/reagent_dispensers/foam
@@ -146,13 +146,9 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	icon_state = "foam"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/foam/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FIREFOAM = 1000))
-
-/obj/structure/reagent_dispensers/foam/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/foam)
+	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 1000)))
+	climb()
 
 //Helium3
 /obj/structure/reagent_dispensers/he3
@@ -161,13 +157,9 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	icon_state = "he3"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/he3/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_HELIUM3 = 1000))
-
-/obj/structure/reagent_dispensers/he3/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/he3)
+	configure(reagents(starts = list(REAGENT_ID_HELIUM3 = 1000)))
+	climb()
 
 /*
  * Misc
@@ -194,8 +186,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	icon_state = "barrel3"
 	modded = FALSE
 
-/obj/structure/reagent_dispensers/fueltank/barrel/wrench_act(mob/user, obj/item/tool)
-	return ITEM_INTERACT_BLOCKING // Open barrels have no closable faucet.
+/obj/structure/reagent_dispensers/fueltank/barrel/wrench_used(datum/act/op/A)
+	return OP_OK // Open barrels have no closable faucet.
 
 /obj/structure/reagent_dispensers/fueltank/examine(mob/user)
 	. = ..()
@@ -205,39 +197,31 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 		if(rig)
 			. += span_notice("There is some kind of device rigged to the tank.")
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(fueltank_interaction_item)), \
-)
+MSG_DEF(fueltank/detaching, "You begin to detach the device from %T%.", "%U% begins to detach the device from %T%.")
+MSG_DEF(fueltank/rigging, "You begin rigging %I% to %T%.", "%U% begins rigging %I% to %T%.")
+MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the way."))
 
-/// Old attack_hand.
-/obj/structure/reagent_dispensers/fueltank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (rig)
-		act_message(user, src, MSG_SELF("You begin to detach [rig] from %T%"), MSG_OTHERS("%U% begins to detach [rig] from %T%."))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
-	return TRUE
+/// Something is rigged to the tank.
+/obj/structure/reagent_dispensers/fueltank/proc/has_rig(datum/act/op/A)
+	return !!rig
 
-/obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
+/// Requirement: nothing is rigged to the tank yet.
+/obj/structure/reagent_dispensers/fueltank/proc/no_rig(datum/act/op/A)
+	return (!rig) ? null : MSG(fueltank/in_the_way)
+
+/obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!rig)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You detach [rig] from %T%")), MSG_OTHERS(span_notice("%U% detaches [rig] from %T%.")))
 	rig.forceMove(get_turf(user))
-	own_take(src, nameof(rig))
+	rel_take(src, nameof(rig))
 	overlays = new/list()
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/fueltank/proc/fueltank_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	if (istype(W,/obj/item/assembly_holder))
-		if (rig)
-			to_chat(user, span_warning("There is another device in the way."))
-			return FALSE
-		act_message(user, src, MSG_SELF("You begin rigging [W] to %T%"), MSG_OTHERS("%U% begins rigging [W] to %T%."))
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
-
-	return FALSE
-
-/obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
+/obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/assembly_holder/H = A.held
+	add_fingerprint(user)
 	if(rig)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You rig [H] to %T%")), MSG_OTHERS(span_notice("%U% rigs [H] to %T%.")))
@@ -246,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
 
-	if(!own_set(src, nameof(src.rig), H, user = user))
+	if(!move_into(src, nameof(src.rig), H, user))
 		return
 
 	var/icon/test = getFlatIcon(H)
@@ -254,18 +238,19 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	test.Shift(EAST,6)
 	add_overlay(test)
 
-/obj/structure/reagent_dispensers/fueltank/wrench_act(mob/user, obj/item/tool)
+/obj/structure/reagent_dispensers/fueltank/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You wrench %T%'s faucet [modded ? "closed" : "open"]"), \
 		MSG_OTHERS("%U% wrenches %T%'s faucet [modded ? "closed" : "open"]."))
 	modded = !modded
-	playsound(src, tool.usesound, 75, TRUE)
+	playsound(src, sounds_of(tool).use, 75, TRUE)
 	if(modded)
 		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
 		leak_fuel(amount_per_transfer_from_this)
-	return ITEM_INTERACT_SUCCESS
-
+	return OP_OK
 
 /obj/structure/reagent_dispensers/fueltank/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -276,17 +261,15 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		if(!istype(Proj ,/obj/item/projectile/beam/lasertag) && !istype(Proj ,/obj/item/projectile/beam/practice) )
 			explode()
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
-
 /// A blast sets the fuel off.
-/obj/structure/reagent_dispensers/fueltank/proc/tank_blast_explode(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/fueltank/proc/tank_blast_explode(datum/act/hit/explosion/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /// A blob sets the fuel off.
-/obj/structure/reagent_dispensers/fueltank/dispenser_blob_burst(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/fueltank/dispenser_blob_burst(datum/act/hit/blob/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/reagent_dispensers/fueltank/proc/explode()
 	if (reagents.total_volume > 500)
@@ -296,7 +279,7 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	else if (reagents.total_volume > 50)
 		explosion(src.loc,-1,1,2)
 	if(src)
-		qdel(src)
+		destroyed(src, null, "explosion")
 
 /// Heat behaviour rule: a fuel tank explodes above 500 C.
 /obj/structure/reagent_dispensers/fueltank/proc/rule_explode(datum/rule/rule)
@@ -327,9 +310,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	amount_per_transfer_from_this = 45
 	flags = WALL_ITEM
 
-/obj/structure/reagent_dispensers/peppertank/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/peppertank)
+	configure(reagents(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000)))
 
 /obj/structure/reagent_dispensers/virusfood
 	name = "Virus Food Dispenser"
@@ -340,9 +322,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/virusfood/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_VIRUSFOOD = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/virusfood)
+	configure(reagents(starts = list(REAGENT_ID_VIRUSFOOD = 1000)))
 
 /obj/structure/reagent_dispensers/acid
 	name = "Sulphuric Acid Dispenser"
@@ -353,9 +334,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/acid/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_SACID = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/acid)
+	configure(reagents(starts = list(REAGENT_ID_SACID = 1000)))
 
 /obj/structure/reagent_dispensers/water_cooler
 	name = "Water-Cooler"
@@ -375,69 +355,75 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	cupholder = 1
 	cups = 10
 
-/obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
-	. = ..()
-	if(bottle)
-		reagents.add_reagent(REAGENT_ID_WATER,2000)
-	update_icon()
-	make_climbable()
-	make_rotatable()
+CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
+	rotatable()
+	configure(reagents(add = list(REAGENT_ID_WATER = PROC_REF(bottle_water))))
+	climb()
+	op("interaction_hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("unfasten_jug", tool(TOOL_WRENCH), when(nameof(bottle)), starts(PROC_REF(jug_started)), wait(2 SECONDS), then(PROC_REF(unfasten_jug_done)))
+	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted)), req(PROC_REF(cooler_no_bottle))),
+		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
+	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted)), req(PROC_REF(cooler_no_cupholder))),
+		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_NORMAL), label("Fasten or unfasten"), starts(PROC_REF(fingerprinted)), wait(2 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("remove_cupholder", tool(TOOL_SCREWDRIVER), label("Take the cup dispenser off"), when(nameof(cupholder)), wait(0), then(PROC_REF(cupholder_removed)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), when(cond_not(nameof(cupholder))), needs(req(PROC_REF(bottle_refusal), silent = TRUE)), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(2 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
+
+/// A cooler with its bottle starts full (reagents()).
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_water()
+	return bottle ? 2000 : 0
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
 	. = ..()
 	if(cupholder)
 		. += span_notice("There are [cups] cups in the cup dispenser.")
 
-/// Old attackby.
-/obj/structure/reagent_dispensers/water_cooler/proc/water_cooler_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/reagent_containers/glass/cooler_bottle))
-		src.add_fingerprint(user)
-		if(!bottle)
-			if(anchored)
-				var/obj/item/reagent_containers/glass/cooler_bottle/G = I
-				to_chat(user, span_notice("You start to screw the bottle onto the water-cooler."))
-				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
-			else
-				to_chat(user, span_warning("You need to wrench down the cooler first."))
-		else
-			to_chat(user, span_warning("There is already a bottle there!"))
-		return 1
+MSG_DEF(water_cooler/screwing, "You start to screw the bottle onto the water-cooler.", "%U% starts to screw a bottle onto %T%.")
+MSG_DEF(water_cooler/attaching, "You start to attach a cup dispenser onto the water-cooler.", "%U% starts to attach a cup dispenser onto %T%.")
+MSG_DEF_SELF(water_cooler/unbolted, span_warning("You need to wrench down the cooler first."))
+MSG_DEF_SELF(water_cooler/has_bottle, span_warning("There is already a bottle there!"))
+MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup dispenser there!"))
 
-	if(istype(I, /obj/item/stack/material/plastic))
-		if(!cupholder)
-			if(anchored)
-				var/obj/item/stack/material/plastic/P = I
-				src.add_fingerprint(user)
-				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
-				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				om_task_timed(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
-			else
-				to_chat(user, span_warning("You need to wrench down the cooler first."))
-		else
-			to_chat(user, span_warning("There is already a cup dispenser there!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+/// Requirement: the cooler is bolted down.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_bolted(datum/act/op/A)
+	return (anchored) ? null : MSG(water_cooler/unbolted)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
+/// Requirement: no bottle is on it yet.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_bottle(datum/act/op/A)
+	return (!bottle) ? null : MSG(water_cooler/has_bottle)
+
+/// Requirement: no cup dispenser is on it yet.
+/obj/structure/reagent_dispensers/water_cooler/proc/cooler_no_cupholder(datum/act/op/A)
+	return (!cupholder) ? null : MSG(water_cooler/has_cupholder)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/cooler_bottle/G = A.held
+	add_fingerprint(user)
 	if(bottle || !anchored)
 		return
-	bottle = 1
-	update_icon()
+	set_bottle(1)
 	to_chat(user, span_notice("You screw the bottle onto the water-cooler!"))
 	for(var/datum/reagent/R in G.reagents.reagent_list)
 		var/total_reagent = G.reagents.get_reagent_amount(R.id)
 		reagents.add_reagent(R.id, total_reagent)
 	consume(G, user)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(mob/user, obj/item/stack/material/plastic/P)
+/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cupholder || !anchored)
 		return
-	if (P.use(1))
-		to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
-		cupholder = 1
-		update_icon()
+	add_fingerprint(user)
+	to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
+	set_cupholder(1)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
+/// The wrench is at the jug: the cooler takes a print and the tool its sound, as the wait starts.
+/obj/structure/reagent_dispensers/water_cooler/proc/jug_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!bottle)
 		return
 	to_chat(user, span_notice("You unfasten the jug."))
@@ -445,54 +431,50 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	for(var/datum/reagent/reagent in reagents.reagent_list)
 		jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
 	reagents.clear_reagents()
-	bottle = FALSE
-	update_icon()
+	set_bottle(FALSE)
 
-/obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
-	add_fingerprint(user)
-	if(bottle)
-		playsound(src, tool.usesound, 50, TRUE)
-		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
-		return ITEM_INTERACT_SUCCESS
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/reagent_dispensers/water_cooler/proc/fingerprinted(datum/act/op/A)
+	add_fingerprint(A.actor)
 
-/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
+/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	return OP_OK
 
-/obj/structure/reagent_dispensers/water_cooler/screwdriver_act(mob/user, obj/item/tool)
-	if(cupholder)
-		playsound(src, tool.usesound, 50, TRUE)
-		to_chat(user, span_notice("You take the cup dispenser off."))
-		new /obj/item/stack/material/plastic(loc)
-		for(var/i = 1 to cups)
-			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
-		cups = 0
-		cupholder = FALSE
-		update_icon()
-		return ITEM_INTERACT_SUCCESS
-	if(bottle)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, start_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// The screwdriver takes the cup dispenser off first.
+/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_removed(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+	to_chat(A.actor, span_notice("You take the cup dispenser off."))
+	new /obj/item/stack/material/plastic(loc)
+	for(var/i = 1 to cups)
+		new /obj/item/reagent_containers/food/drinks/sillycup(loc)
+	cups = 0
+	set_cupholder(FALSE)
+	return OP_OK
 
-/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)
+/// A cooler with its bottle on is not taken apart (the click is used up, nothing is said).
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_refusal(datum/act/op/A)
+	return read_once(bottle) ? "it has a bottle on" : null
+
+/obj/structure/reagent_dispensers/water_cooler/proc/dismantle_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/dismantle_begins(datum/act/op/A)
+	return msg_text("You start taking the water-cooler apart.")
+
+/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bottle || cupholder)
 		return
 	to_chat(user, span_notice("You take the water-cooler apart."))
 	replace_with(src, /obj/item/stack/material/plastic, 4)
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(water_cooler_interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/reagent_dispensers/water_cooler/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/reagent_dispensers/water_cooler/proc/interaction_hand(datum/act/op/A)
 	if(cups)
 		new /obj/item/reagent_containers/food/drinks/sillycup(src.loc)
 		cups--
@@ -500,10 +482,15 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 		return TRUE
 	return TRUE
 
-DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", list(
-	"1" = list(APPEARANCE_ICON_STATE = "water_cooler", APPEARANCE_OVERLAYS = list("water_cooler_bottle")),
-	"*" = list(APPEARANCE_ICON_STATE = "water_cooler"),
-))
+/// The look (the draw sweep: from its layers).
+/obj/structure/reagent_dispensers/water_cooler/draw(datum/look/look)
+	..()
+	switch("[bottle]")
+		if("1")
+			look.state("water_cooler")
+			look.overlay("water_cooler_bottle")
+		if("*")
+			look.state("water_cooler")
 
 /obj/structure/reagent_dispensers/beerkeg
 	name = "beer keg"
@@ -512,13 +499,9 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	icon_state = "beertankTEMP"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/beerkeg/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_BEER = 1000))
-
-/obj/structure/reagent_dispensers/beerkeg/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
+	configure(reagents(starts = list(REAGENT_ID_BEER = 1000)))
+	climb()
 
 /obj/structure/reagent_dispensers/beerkeg/wood
 	name = "beer keg"
@@ -530,9 +513,8 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	desc = "A wine casket with a tap on it."
 	icon_state = "beertankfantasy"
 
-/obj/structure/reagent_dispensers/beerkeg/wine/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_REDWINE = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg/wine)
+	configure(reagents(starts = list(REAGENT_ID_REDWINE = 1000)))
 
 /obj/structure/reagent_dispensers/beerkeg/fakenuke
 	name = "nuclear beer keg"
@@ -548,29 +530,24 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	icon_state = "oiltank"
 	amount_per_transfer_from_this = 120
 
-/obj/structure/reagent_dispensers/cookingoil/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_COOKINGOIL = 5000))
-
-/obj/structure/reagent_dispensers/cookingoil/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
+	configure(reagents(starts = list(REAGENT_ID_COOKINGOIL = 5000)))
+	climb()
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
 
 /obj/structure/reagent_dispensers/cookingoil/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
 		explode()
 
-DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
-
 /// A blast bursts the barrel.
-/obj/structure/reagent_dispensers/cookingoil/proc/tank_blast_explode(datum/damage_packet/packet)
+/obj/structure/reagent_dispensers/cookingoil/proc/tank_blast_explode(datum/act/hit/explosion/A)
 	explode()
-	return DAMAGE_REACTION_BLOCK
+	return TRUE
 
 /obj/structure/reagent_dispensers/cookingoil/proc/explode()
 	reagents.splash_area(get_turf(src), 3)
 	visible_message(span_danger("The [src] bursts open, spreading oil all over the area."))
-	qdel(src)
+	destroyed(src, null, BRUTE)
 
 /obj/structure/reagent_dispensers/bloodbarrel
 	name = "blood barrel"
@@ -579,11 +556,16 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 	icon_state = "bloodbarrel"
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/bloodbarrel/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
+	climb()
+	configure(reagents(add = list(REAGENT_ID_BLOOD = 1000), data = list(REAGENT_ID_BLOOD = PROC_REF(stock_blood_data))))
 
+TYPE_TABLE_DECLARE(/obj/structure/reagent_dispensers/bloodbarrel, bloodbarrel_stock_data, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+
+/// The barrel's O- stock blood data: a copy, since the reagent keeps and edits it.
+/obj/structure/reagent_dispensers/bloodbarrel/proc/stock_blood_data()
+	var/list/stock = TYPE_TABLE_GET(src, bloodbarrel_stock_data)
+	return stock.Copy()
 
 /obj/structure/reagent_dispensers/space_cleaner
 	name = "Space Cleaner Dispenser"
@@ -593,10 +575,6 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 	amount_per_transfer_from_this = 60
 	anchored = 1
 
-/obj/structure/reagent_dispensers/space_cleaner/capabilities()
-	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_CLEANER = 1000))
+CAPABILITIES(/obj/structure/reagent_dispensers/space_cleaner)
+	configure(reagents(starts = list(REAGENT_ID_CLEANER = 1000)))
 
-/obj/structure/reagent_dispensers/fueltank/ownership()
-	. = ..()
-	. += owns(nameof(rig), policy = OWN_CONTAINED)

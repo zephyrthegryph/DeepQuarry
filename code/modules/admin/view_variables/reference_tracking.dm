@@ -3,7 +3,7 @@
 
 /datum/proc/find_references(references_to_clear = INFINITY)
 	if(usr?.client)
-		if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
+		if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/prompt/choice, question = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", title = "Find References", choices = list("Yes", "No"), buttons = TRUE) != "Yes")
 			return
 
 #ifdef UNIT_TESTS
@@ -18,7 +18,6 @@
 	_search_references(src)
 	//restart the garbage collector
 	SSgarbage.can_fire = TRUE
-	SSgarbage.update_nextfire(reset_time = TRUE)
 #ifdef UNIT_TESTS
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif
@@ -253,4 +252,4 @@ GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 	return text_ref(src)
 
 /datum/callback/ref_search_details()
-	return "[text_ref(src)] (obj: [target_object()] proc: [delegate] args: [json_encode(arguments)] user: [om_resolve(user) || "null"])"
+	return "[text_ref(src)] (obj: [target_object()] proc: [delegate] args: [json_encode(arguments)] user: [resolve_handle(user) || "null"])"

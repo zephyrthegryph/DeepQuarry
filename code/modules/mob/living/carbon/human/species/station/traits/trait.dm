@@ -18,7 +18,7 @@
 	var/has_preferences //if set, should be a list of the preferences for this trait in the format: list("identifier/name of var to edit" = list(typeofpref, "text to display in prefs", TRAIT_NO_VAREDIT_TARGET/TRAIT_VAREDIT_TARGET_SPECIES/etc, (optional: default value)), etc) typeofpref should follow the defines in _traits.dm (eg. TRAIT_PREF_TYPE_BOOLEAN)
 	var/special_env = FALSE
 	var/added_component_path		//What per-mob state (a /datum/trait_state path, see species_state_add()) this trait applies, if any.
-	var/added_behaviour_path		//What OM behaviour this trait attaches, if any.
+	var/added_capability		//What capability (a /datum/capability path: a disability, absorbent, slip prone) this trait grants, with itself as the source.
 
 
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -59,14 +59,16 @@
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
 				S.vars[V] |= var_changes[V]
 			else
-				S.vars[V] = var_changes[V] // ALLOW(api): trait var_changes tables
+				if(!S.set_acceptance_shape_field(V, var_changes[V]))
+					S.vars[V] = var_changes[V] // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
+					if(!S.set_acceptance_shape_field(trait, trait_prefs[trait]))
+						S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 	// Traitgenes Traits can toggle mutations and disabilities
@@ -77,20 +79,21 @@
 		H.disabilities |= disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
-	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/trait_tutorial, src)
-	if(H)
-		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
+	grant(H, granted_verb(/mob/living/carbon/human/proc/trait_tutorial), src)
 	if(special_env)
 		rel_add(S, nameof(S.env_traits), src)
 	if(added_component_path && !species_state_has(H, added_component_path))
 		species_state_add(H, added_component_path)
-	if(added_behaviour_path)
-		om_attach(H, added_behaviour_path)
+	if(added_capability)
+		grant(H, added_capability, src)
 	return
 
-/// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure.
+/// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure. A trait
+/// sets its own with TYPE_TABLE(/datum/trait/x, granted_verb_list, list(/mob/living/proc/y)). Shared and read-only.
+TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
+
 /datum/trait/proc/granted_verbs()
-	return null
+	return TYPE_TABLE_GET(src, granted_verb_list)
 
 /mob/living/carbon/human/granted_verbs()
 	. = ..()
@@ -112,14 +115,16 @@
 				if(!(initial(S.vars[V]) & var_changes[V]))
 					S.vars[V] &= ~var_changes[V]
 			else
-				S.vars[V] = initial(S.vars[V]) // ALLOW(api): trait var_changes tables
+				if(!S.set_acceptance_shape_field(V, initial(S.vars[V])))
+					S.vars[V] = initial(S.vars[V]) // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
+					if(!S.set_acceptance_shape_field(trait, initial(S.vars[trait])))
+						S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
 					H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
 	if(mutation)
@@ -128,12 +133,10 @@
 		H.disabilities &= ~disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
-	if(H)
-		changed(H, CHANGE_CAPABILITY) // granted_verbs() reads the species' traits
 	if(special_env)
 		rel_remove(S, nameof(S.env_traits), src)
-	if(added_behaviour_path && H)
-		om_detach(H, added_behaviour_path)
+	if(added_capability && H)
+		revoke(H, added_capability, src)
 	if(added_component_path)
 		if(species_state_has(H, added_component_path))
 			if(LAZYLEN(S.species_component))
@@ -224,6 +227,5 @@
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-/datum/trait/relations()
-	. = ..()
-	. += rel_one(nameof(linked_gene), back = nameof(/datum/gene/trait::linked_trait))
+CAPABILITIES(/datum/trait)
+	links(/datum/trait::linked_gene, /datum/gene/trait::linked_trait)

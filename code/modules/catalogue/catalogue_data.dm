@@ -297,7 +297,7 @@ GLOBAL_DATUM_INIT(catalogue_data, /datum/category_collection/catalogue, new)
 		constructed_desc += O.desc
 
 		desc = constructed_desc
-		qdel(O)
+		spent(O)
 
 /datum/category_item/catalogue/information/organization/nanotrasen
 	name = "TSC - NanoTrasen Incorporated"

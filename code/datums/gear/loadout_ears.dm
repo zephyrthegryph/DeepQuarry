@@ -44,7 +44,7 @@
 	earrings["dangle, gold"] = /obj/item/clothing/ears/earring/dangle/gold
 	earrings["dangle, platinum"] = /obj/item/clothing/ears/earring/dangle/platinum
 	earrings["dangle, diamond"] = /obj/item/clothing/ears/earring/dangle/diamond
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(earrings))
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(earrings))
 
 
 /datum/gear/ears/earringscolour
@@ -58,5 +58,5 @@
 	earringscolour["stud"] = /obj/item/clothing/ears/earring/stud
 	earringscolour["dangle"] = /obj/item/clothing/ears/earring/dangle
 
-	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(earringscolour))
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(earringscolour))
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)

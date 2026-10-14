@@ -111,13 +111,15 @@
 					/obj/item/glass_extra/straw = 30)
 	contraband = list()
 	vend_delay = 15
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	product_slogans = "I hope nobody asks me for a bloody cup o' tea...;Alcohol is humanity's friend. Would you abandon a friend?;Quite delighted to serve you!;Is nobody thirsty on this station?"
 	product_ads = "Drink up!;Booze is good for you!;Alcohol is humanity's best friend.;Quite delighted to serve you!;Care for a nice, cold beer?;Nothing cures you like booze!;Have a sip!;Have a drink!;Have a beer!;Beer is good for you!;Only the finest alcohol!;Best quality booze since 2053!;Award-winning wine!;Maximum alcohol!;Man loves beer.;A toast for progress!"
 	req_access = list(ACCESS_BAR)
 	req_log_access = ACCESS_BAR
 	has_logs = 1
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/boozeomat)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/boozeomat/virgin
 	name = "Virgin-O-Mat"
@@ -185,7 +187,6 @@
 	product_ads = "Have a drink!;Drink up!;It's good for you!;Would you like a hot joe?;I'd kill for some coffee!;The best beans in the galaxy.;Only the finest brew for you.;Mmmm. Nothing like a coffee.;I like coffee, don't you?;Coffee helps you work!;Try some tea.;We hope you like the best!;Try our new chocolate!;Admin conspiracies"
 	icon_state = "coffee"
 	vend_delay = 34
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	vend_power_usage = 85000 //85 kJ to heat a 250 mL cup of coffee
 	products = list(/obj/item/reagent_containers/food/drinks/coffee = 25,
 					/obj/item/reagent_containers/food/drinks/decaf = 15,
@@ -203,6 +204,9 @@
 					/obj/item/reagent_containers/food/drinks/greentea = 10,
 					/obj/item/reagent_containers/food/drinks/chaitea = 5) // Lowers Coffee/Hot Chocolate/Tea Prices from 3 -> 2.
 	vending_sound = "machines/vending/vending_coffee.ogg"
+
+CAPABILITIES(/obj/machinery/vending/coffee)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/snack
 	name = "Getmore Chocolate Corp"
@@ -315,8 +319,10 @@
 					/obj/item/reagent_containers/food/drinks/cans/grape_juice = 1,
 					/obj/item/reagent_containers/food/drinks/cans/gingerale = 1,
 					/obj/item/reagent_containers/food/drinks/cans/root_beer = 1)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/cola)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/fitness
 	name = "SweatMAX"
@@ -413,10 +419,12 @@
 					/obj/item/reagent_containers/ecig_cartridge/lemonlime = 5,
 					/obj/item/reagent_containers/ecig_cartridge/coffee = 5,
 					/obj/item/reagent_containers/ecig_cartridge/blanknico = 2,
-					/obj/item/storage/box/fancy/chewables/tobacco/nico = 5)
+					/obj/item/storage/box/fancy/chewables/tobacco/nico = 5,
+					/obj/item/storage/fancy/cigarettes/yw/mauser = 5)
 	contraband = list(/obj/item/flame/lighter/zippo = 4)
 	premium = list(/obj/item/storage/fancy/cigar = 5)
 	prices = list(/obj/item/storage/fancy/cigarettes = 12,
+					/obj/item/storage/fancy/cigarettes/yw/mauser = 18,
 					/obj/item/storage/fancy/cigarettes/dromedaryco = 20,
 					/obj/item/storage/fancy/cigarettes/killthroat = 14,
 					/obj/item/storage/fancy/cigarettes/luckystars = 17,
@@ -477,9 +485,11 @@
 	contraband = list(/obj/item/reagent_containers/pill/tox = 3,
 					/obj/item/reagent_containers/pill/stox = 4,
 					/obj/item/reagent_containers/pill/antitox = 6)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	req_log_access = ACCESS_CMO
 	has_logs = 1
+
+CAPABILITIES(/obj/machinery/vending/medical)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/phoronresearch
 	name = "Toximate 3000"
@@ -584,7 +594,9 @@
 					/obj/item/storage/bag/plants = 5)
 	premium = list(/obj/item/reagent_containers/glass/bottle/ammonia = 10,
 					/obj/item/reagent_containers/glass/bottle/diethylamine = 5)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
+
+CAPABILITIES(/obj/machinery/vending/hydronutrients)
+	configure(uses_power(idle = 211))
 
 
 /obj/machinery/vending/hydroseeds
@@ -658,14 +670,14 @@
 		for(var/entry in current_list[1])
 			var/obj/item/seeds/S = new entry(null)
 			var/name = S.name
-			qdel(S)
+			spent(S)
 			var/datum/stored_item/vending_product/product = new/datum/stored_item/vending_product(src, entry, name)
 
-			product.price = (entry in prices) ? prices[entry] : 0
-			product.amount = (current_list[1][entry]) ? current_list[1][entry] : 1
-			product.category = category
+			product.set_price((entry in prices) ? prices[entry] : 0)
+			product.set_amount((current_list[1][entry]) ? current_list[1][entry] : 1)
+			product.set_category(category)
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
 
 	// Consumed, as in the base proc.
@@ -1201,8 +1213,10 @@
 					/obj/item/reagent_containers/food/drinks/cans/kompot = 15)
 	contraband = list(/obj/item/reagent_containers/food/drinks/cans/kvass = 10,
 					/obj/item/reagent_containers/food/drinks/cans/bodaplus = 10)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/sovietsoda)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/sovietvend
 	name = "Ration Station"
@@ -1240,8 +1254,10 @@
 					/obj/item/reagent_containers/food/drinks/cans/grape_cola = 1,
 					/obj/item/reagent_containers/food/drinks/cans/orange_cola = 1,
 					/obj/item/reagent_containers/food/drinks/cans/gingerale = 1)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/radren)
+	configure(uses_power(idle = 211))
 /obj/machinery/vending/donksoft
 	name = "Donk-Soft!"
 	desc = "A toy vendor owned by Donk-Soft, a NanoTrasen sub-company."
@@ -2070,7 +2086,6 @@
 	icon = 'icons/obj/vending_vr.dmi'
 	icon_state = "blood"
 	vend_delay = 7
-	idle_power_usage = 211
 	req_access = list(ACCESS_MEDICAL)
 	products = list(/obj/item/reagent_containers/blood/prelabeled/APlus = 3,/obj/item/reagent_containers/blood/prelabeled/AMinus = 3,
 					/obj/item/reagent_containers/blood/prelabeled/BPlus = 3,/obj/item/reagent_containers/blood/prelabeled/BMinus = 3,
@@ -2079,6 +2094,9 @@
 	contraband = list(/obj/item/reagent_containers/glass/bottle/stoxin = 2)
 	req_log_access = ACCESS_CMO
 	has_logs = 1
+
+CAPABILITIES(/obj/machinery/vending/blood)
+	configure(uses_power(idle = 211))
 
 //Airlock antitox vendor
 /obj/machinery/vending/wallmed_airlock
@@ -5382,8 +5400,10 @@
 					/obj/item/reagent_containers/food/drinks/cans/grape_juice = 1,
 					/obj/item/reagent_containers/food/drinks/cans/gingerale = 1,
 					/obj/item/reagent_containers/food/drinks/cans/root_beer = 1)
-	idle_power_usage = 211 //refrigerator - believe it or not, this is actually the average power consumption of a refrigerated vending machine according to NRCan.
 	vending_sound = "machines/vending/vending_cans.ogg"
+
+CAPABILITIES(/obj/machinery/vending/bepis)
+	configure(uses_power(idle = 211))
 
 /obj/machinery/vending/altevian
 	name = "Altevian Imported Meals"

@@ -9,7 +9,7 @@
 		return
 	if(ishuman(src)) // . Floating code.
 		var/mob/living/carbon/human/H = src
-		if(H.flying)
+		if(stat_value(H, STAT_FLYING))
 			make_floating(1)
 			return
 	var/turf/turf = get_turf(src)
@@ -94,7 +94,7 @@
 		default_pixel_y = mob.default_pixel_y
 
 	animate(src, alpha = 0, pixel_x = pixel_x + pixel_x_diff, pixel_y = pixel_y + pixel_y_diff, pixel_z = pixel_z + pixel_z_diff, time = time)
-	om_after(src, time + 1, PROC_REF(fade_towards_reset), default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
+	after(src, time + 0.1 SECONDS, PROC_REF(fade_towards_reset), with = list(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha))
 
 /atom/movable/proc/fade_towards_reset(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
 	pixel_x = default_pixel_x
@@ -167,7 +167,7 @@
 		used_item = get_equipped_item(SLOT_ID_HAND_R)
 
 	//Couldn't find an item, do they have a sprite specified (like animal claw stuff?)
-	if(!used_item && !(attack_icon && attack_icon_state))
+	if(!used_item && !(kind_of(src).attack_icon && kind_of(src).attack_icon_state))
 		return FALSE //Didn't find an item, not doing animation.
 
 	// If we were without gravity, the bouncing animation got stopped, so we make sure we restart the bouncing after the next movement.
@@ -182,7 +182,7 @@
 		// Scale the icon.
 		I.transform *= 0.75
 	else //They had a hardcoded one specified
-		I = image(attack_icon, A, attack_icon_state, A.layer + 1)
+		I = image(kind_of(src).attack_icon, A, kind_of(src).attack_icon_state, A.layer + 1)
 		I.dir = dir
 
 	// Show the overlay to the clients
@@ -205,7 +205,6 @@
 
 	// And animate the attack!
 	animate(I, alpha = 175, pixel_x = 0, pixel_y = 0, pixel_z = 0, time = 3)
-	update_icon()
 	return TRUE //Found an item, doing item attack animation.
 
 /mob/proc/spin(spintime, speed)
@@ -213,23 +212,22 @@
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		play_sfx(src, SFX_EFFECTS_ROLL)
-	om_task_start(/datum/om/task/spin, src, null, left = spintime, speed = speed, facing = dir)
+	if(spintime < speed)
+		return
+	perform_op(src, src, "spin", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("left" = spintime, "speed" = speed, "facing" = dir))
 
 /// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
-/datum/om/task/spin
-	name = "spin"
-	steps = list(/mob/proc/spin_step = 0)
-	var/left = 0
-	var/speed = 1
-	var/facing = NORTH
-	var/started = FALSE
+/mob/proc/spin_lap_time(datum/act/op/A)
+	return A.arg("speed")
 
-/mob/proc/spin_step(datum/om/task/spin/T)
-	var/speed = T.speed
-	if(!T.started)
-		T.started = TRUE
-		return T.left >= speed ? STEP_REPEAT(speed) : STEP_DONE
-	var/D = T.facing
+/// Another quarter turn while there is time for one.
+/mob/proc/spin_more(datum/act/op/A)
+	return A.arg("left") >= A.arg("speed")
+
+/// A lap is over: the next quarter turn.
+/mob/proc/spin_step(datum/act/op/A)
+	var/speed = A.arg("speed")
+	var/D = A.arg("facing")
 	switch(D)
 		if(NORTH)
 			D = EAST
@@ -239,13 +237,10 @@
 			D = SOUTH
 		if(WEST)
 			D = NORTH
-	T.facing = D
+	LAZYSET(A.args, "facing", D)
 	set_dir(D)
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office))
 		var/obj/structure/bed/chair/office/O = src?.buckled_to()
-		O.dir = D
 		O.set_dir(D)
-	T.left -= speed
-	if(T.left < speed)
-		return STEP_DONE
-	return STEP_REPEAT(speed)
+		O.set_dir(D)
+	LAZYSET(A.args, "left", A.arg("left") - speed)

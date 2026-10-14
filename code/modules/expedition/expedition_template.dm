@@ -61,10 +61,4 @@
 			apply_to_turf(x, y)
 		CHECK_TICK
 
-	var/i = 0
-	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon()
-		if(++i % 1000 == 0)
-			CHECK_TICK
-
 	rel_clear(src, nameof(turfs_changed))

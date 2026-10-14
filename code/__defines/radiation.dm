@@ -28,7 +28,7 @@ Ask Mothblocks if they're around
 
 /// Marks a turf's radiation shielding for resending to the Rust insulation layer.
 /// Use when a turf changes or an insulating movable arrives on, leaves or is deleted from it.
-#define RAD_SHIELDING_CHANGED(turf) if(isturf(turf)) GLOB.radiation_service.dirty_turfs[turf] = TRUE
+#define RAD_SHIELDING_CHANGED(turf) if(isturf(turf)) SSradiation.dirty_turfs[turf] = TRUE
 #define RAD_NO_INSULATION 1.0 // For things that shouldn't become irradiated for whatever reason
 #define RAD_VERY_LIGHT_INSULATION 0.9 // What girders have
 #define RAD_LIGHT_INSULATION 0.8

@@ -1,0 +1,51 @@
+human|none menu: Climb
+human|none menu: Open controls
+human|none click: Click: Open controls
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none menu: Open controls
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none click: Click: Open controls
+@obj.machinery.media ghost|none
+-click: nothing
++1 menu: Use
++2 click: Click: Use
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Climb
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+@obj.machinery.media human|/obj/item/card/emag
+wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
+keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, ghost_use, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, play, remove_new_track, robot_remote_blocked, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume

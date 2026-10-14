@@ -5,8 +5,6 @@
 	icon_state = "incubator"	//incubator_on
 	anchored = TRUE
 	density = TRUE
-	idle_power_usage = 50
-	active_power_usage = 750
 	use_power = USE_POWER_IDLE
 	var/harvesting = 0
 	var/harvesting_speed = 0
@@ -17,14 +15,31 @@
 	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
 
+CAPABILITIES(/obj/machinery/artifact_harvester)
+	default_parts()
+	configure(uses_power(idle = 50, active = 750))
+	started_work(step = PROC_REF(work_step))
+	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
+	ref_one(nameof(cur_artifact), /obj)
+	interface("XenoarchArtifactHarvester")
+	op("harvest", ui_act("harvest"), then(PROC_REF(ui_act_harvest)))
+	op("stopharvest", ui_act("stopharvest"), then(PROC_REF(ui_act_stopharvest)))
+	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
+	// draining a charged battery asks first
+	op("drainbattery", ui_act("drainbattery"),
+		asks(/datum/prompt/choice, fields = list("question" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "k162", when = PROC_REF(battery_has_charge)),
+		then(PROC_REF(ui_act_drainbattery)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("artifact_harvester_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_artifact_harvester_use_item)))
+	op("open_ui_powered_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/obj/machinery, op_open_ui_powered_fingerprint)))
+
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
-	default_apply_parts()
-	update_icon()
 
 /obj/machinery/artifact_harvester/RefreshParts(limited = 0)
 	harvesting_speed = 0
@@ -46,24 +61,14 @@
 		if(5)
 			harvesting_speed += 100
 
-/obj/machinery/artifact_harvester/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/artifact_harvester_use_item,
-		/datum/interaction/machine_hand/artifact_harvester_use,
-	)
-	..()
-
-/datum/interaction/machine_item/artifact_harvester_use_item
-	id = "artifact_harvester_use_item"
-	name = "Use"
-	effect = /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item
-
-/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(istype(held,/obj/item/anobattery))
 		if(!inserted_battery())
+			if(!own_bring_in(src, nameof(inserted_battery), held, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user, span_blue("You insert [held] into [src]."))
-			user.drop_item()
-			held.forceMove(src)
 			rel_set(src, nameof(inserted_battery), held)
 			SStgui.update_uis(src)
 		else
@@ -71,30 +76,21 @@
 	if(default_part_replacement(user, held))
 		return TRUE
 	if(inserted_battery())
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
-/obj/machinery/artifact_harvester/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/artifact_harvester/proc/screwdriver_used(datum/act/op/A)
 	if(inserted_battery())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/obj/machinery/artifact_harvester/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/artifact_harvester/proc/crowbar_used(datum/act/op/A)
 	if(inserted_battery())
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
-/datum/interaction/machine_hand/artifact_harvester_use
-	id = "artifact_harvester_use"
-	name = "Use"
-	effect = /obj/machinery/proc/interaction_open_ui_powered_fingerprint
-
-DECLARE_UI(/obj/machinery/artifact_harvester, "XenoarchArtifactHarvester")
-
-UI_DATA(/obj/machinery/artifact_harvester, "merge:ui_data_obj_machinery_artifact_harvester{info:list}")
-
-/// The computed part of /obj/machinery/artifact_harvester's window data (declared on its UI_DATA row).
-/obj/machinery/artifact_harvester/proc/ui_data_obj_machinery_artifact_harvester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data.
+/obj/machinery/artifact_harvester/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["info"] = list(
@@ -119,19 +115,14 @@ UI_DATA(/obj/machinery/artifact_harvester, "merge:ui_data_obj_machinery_artifact
 				data["info"]["inserted_battery"]["artifact_id"] = "N/A"
 	return data
 
-/obj/machinery/artifact_harvester/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/obj/machinery/artifact_harvester/proc/ui_act_harvest(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	harvest(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/artifact_harvester, "harvest", ui_act_harvest)
-UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_harvest)
-	harvest(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/artifact_harvester, "stopharvest", ui_act_stopharvest)
-UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_stopharvest)
+/obj/machinery/artifact_harvester/proc/ui_act_stopharvest(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(harvesting)
 		if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 			inserted_battery().battery_effect.ToggleActivate()
@@ -140,29 +131,32 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_stopharvest)
 		cur_artifact().in_use = 0
 		rel_clear(src, nameof(/obj/machinery/artifact_harvester::cur_artifact))
 		atom_say("Energy harvesting interrupted.")
-		icon_state = "incubator"
+		set_icon_state("incubator")
 	return TRUE
 
-UI_ACT(/obj/machinery/artifact_harvester, "ejectbattery", ui_act_ejectbattery)
-UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_ejectbattery)
+/obj/machinery/artifact_harvester/proc/ui_act_ejectbattery(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(inserted_battery())
 		inserted_battery().forceMove(loc)
-		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
+		rel_clear(src, nameof(src.inserted_battery))
 	return TRUE
 
-UI_ACT(/obj/machinery/artifact_harvester, "drainbattery", ui_act_drainbattery)
-UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
+/// The drain question is asked only of a battery with an effect and charge in it.
+/obj/machinery/artifact_harvester/proc/battery_has_charge(datum/act/op/A)
+	var/obj/item/anobattery/B = QDELETED(inserted_battery) ? null : inserted_battery // ALLOW(reads): the battery is read when the button is pressed, never cached
+	return B?.battery_effect && B.stored_charge > 0
+
+/obj/machinery/artifact_harvester/proc/ui_act_drainbattery(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(inserted_battery())
 		if(inserted_battery().battery_effect && inserted_battery().stored_charge > 0)
-			var/_answer_k162 = act_ask(ui.user, action, params, ui, "k162", /datum/om/prompt/choice/alert, message = "This action will dump all charge, safety gear is recommended before proceeding", title = "Warning", choices = list("Continue","Cancel"))
-			if(isnull(_answer_k162))
-				return
+			var/_answer_k162 = A.step_value("k162")
 			if(_answer_k162 == "Continue")
 				if(!inserted_battery().battery_effect.activated)
 					inserted_battery().battery_effect.ToggleActivate(1)
 				harvesting = -1
 				set_use_power(USE_POWER_ACTIVE)
-				icon_state = "incubator_on"
+				set_icon_state("incubator_on")
 				atom_say("Warning, battery charge dump commencing.")
 		else
 			atom_say("Cannot dump energy. Battery is drained of charge already.")
@@ -170,8 +164,10 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 		atom_say("Cannot dump energy. No battery inserted.")
 	return TRUE
 
-
 /obj/machinery/artifact_harvester/proc/harvest(mob/user)
+	return harvest_stage(user)
+
+/obj/machinery/artifact_harvester/proc/harvest_stage(mob/user, selected, selection_ready = FALSE)
 	if(!inserted_battery())
 		atom_say("Cannot harvest. No battery inserted.")
 		return
@@ -220,7 +216,10 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			atom_say("Cannot harvest. No harvestable energy emitting from source.")
 			return
 
-		var/artifact_selection = rerun_ask(user, "k225", PROC_REF(harvest), args, /datum/om/prompt/choice, message = "Which effect do you wish to harvest?", title = "Effect Selection", choices = effects_to_show)
+		var/artifact_selection = selected
+		if(!selection_ready)
+			open_request(src, /datum/prompt/choice/artifact_harvest_effect, PROC_REF(harvest_effect_chosen), answerer = user, choices = effects_to_show)
+			return
 		if(isnull(artifact_selection))
 			return
 		var/datum/artifact_effect/selected_effect
@@ -233,8 +232,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 		//see if we can clear out an old effect
 		//delete it when the ids match to account for duplicate ids having different effects
 		if(inserted_battery().battery_effect && inserted_battery().stored_charge <= 0)
-			qdel(inserted_battery().battery_effect)
-			inserted_battery().battery_effect = null
+			own_clear(inserted_battery(), nameof(/obj/item/anobattery::battery_effect), OWN_DELETE)
 
 		//
 		var/datum/artifact_effect/source_effect
@@ -258,7 +256,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			set_use_power(USE_POWER_ACTIVE)
 			cur_artifact().anchored = TRUE
 			cur_artifact().in_use = 1
-			icon_state = "incubator_on"
+			set_icon_state("incubator_on")
 			atom_say("Beginning energy harvesting.")
 
 			//duplicate the artifact's effect datum
@@ -271,16 +269,36 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 					E.vars[varname] = source_effect.vars[varname] // ALLOW(api): artifact effect copy
 
 				//copy the new datum into the battery
-				inserted_battery().battery_effect = E
+				rel_set(inserted_battery(), nameof(/obj/item/anobattery::battery_effect), E)
 				inserted_battery().stored_charge = 0
 
+/datum/prompt/choice/artifact_harvest_effect
+	title = "Effect Selection"
+	question = "Which effect do you wish to harvest?"
+	timeout = 0
+
+/datum/prompt/choice/artifact_harvest_effect/recheck_extra()
+	if(isnull(value))
+		return
+	var/datum/artifact_effect/selected_effect = value
+	if(!istype(selected_effect) || QDELETED(selected_effect))
+		return "gone"
+
+/obj/machinery/artifact_harvester/proc/harvest_effect_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = harvest_effect_apply(A)
+	SStgui.update_uis(src)
+
+/obj/machinery/artifact_harvester/proc/harvest_effect_apply(datum/act/request/A)
+	return harvest_stage(A.request.answerer, A.request.value, TRUE)
 
 /// Charges or dumps a battery while harvesting (started from its UI); otherwise it sleeps.
-/obj/machinery/artifact_harvester/machine_step()
+/obj/machinery/artifact_harvester/proc/work_step(datum/act/timer/A)
 	if(harvesting == 0)
 		return PROCESS_KILL
 	if(!operable())
-		return sleep_until_powered()
+		return work_wait_for_power(src)
 
 	if(harvesting > 0)
 		//charge at 33% consumption rate
@@ -294,7 +312,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			cur_artifact().in_use = 0
 			rel_clear(src, nameof(cur_artifact))
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
-			icon_state = "incubator"
+			set_icon_state("incubator")
 
 	else if(harvesting < 0)
 		//dump some charge
@@ -319,7 +337,7 @@ UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
 			if(inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 				inserted_battery().battery_effect.ToggleActivate()
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")
-			icon_state = "incubator"
+			set_icon_state("incubator")
 
 /// Accessor for the inserted_battery var.
 /obj/machinery/artifact_harvester/proc/inserted_battery() as /obj/item/anobattery

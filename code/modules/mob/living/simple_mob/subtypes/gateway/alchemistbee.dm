@@ -50,18 +50,19 @@
 	vore_icons = null
 
 //bluenom
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/simple_mob/proc/animal_mount) // TGPanel
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/toggle_rider_reins) // TGPanel
+CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 
 /mob/living/simple_mob/vr/alchemistbee/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -109,7 +110,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast(atom/target)
 	Beam(target, icon_state = "sat_beam", time = 1.5 SECONDS, maxdistance = INFINITY)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a pouch of vials!")))
-	om_after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), target)
+	after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), with = list(target))
 
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast_throw(atom/target)
 
@@ -142,7 +143,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt(atom/target)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a powerful spell!")))
 	Beam(target, icon_state = "sat_beam", time = 2.0 SECONDS, maxdistance = INFINITY)
-	om_after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), target)
+	after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), with = list(target))
 
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt_fire(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/energy/nuclearblast(get_turf(src))
@@ -166,11 +167,18 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MOLD))
 
-/obj/item/projectile/arc/vial/Initialize(mapload)
-	. = ..()
-	if(splatter)
-		create_reagents(splatter_volume) // ALLOW(decl): conditional on splatter
-		ready_chemicals()
+// A splattering vial carries its chemicals in equal shares (reagents(), filled as it is made); a plain one carries nothing.
+CAPABILITIES(/obj/item/projectile/arc/vial)
+	reagents(nameof(splatter_volume), contents_from = PROC_REF(splatter_contents))
+
+/obj/item/projectile/arc/vial/proc/splatter_contents()
+	. = list()
+	if(!splatter)
+		return
+	var/list/chems = TYPE_TABLE_GET(src, vial_chems)
+	var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
+	for(var/reagent in chems)
+		.[reagent] = reagent_vol
 
 /obj/item/projectile/arc/vial/on_impact(atom/A)
 	if(splatter)
@@ -182,60 +190,63 @@ TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MO
 		S.start()
 	..()
 
-/obj/item/projectile/arc/vial/proc/ready_chemicals()
-	if(reagents)
-		var/list/chems = TYPE_TABLE_GET(src, vial_chems)
-		var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
-		for(var/reagent in chems)
-			reagents.add_reagent(reagent, reagent_vol)
-
 /obj/item/projectile/arc/vial/frostvial
 	icon_state = "blue_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/frostvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/frostvial, vial_chems, list(REAGENT_ID_FROSTOIL))
 
 /obj/item/projectile/arc/vial/poisonvial
 	icon_state = "green_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/poisonvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/poisonvial, vial_chems, list(REAGENT_ID_TOXIN))
 
 /obj/item/projectile/arc/vial/firevial
 	icon_state = "red_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/firevial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/firevial, vial_chems, list(REAGENT_ID_SACID))
 
 /obj/item/projectile/arc/vial/lightingvial
 	icon_state = "orange_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/lightingvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/lightingvial, vial_chems, list(REAGENT_ID_SHREDDINGNANITES))
 
 /obj/item/projectile/energy/nuclearblast
 	name = "nuclear blast"
 	icon_state = "plasma"
 	damage = 25
-	armor_penetration = 50
 	agony = 50
 	speed = 24.0
 	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 120 SECONDS
 	flash_strength = 15
+
+CAPABILITIES(/obj/item/projectile/energy/nuclearblast)
+	configure(item_combat(armor_penetration = 50))

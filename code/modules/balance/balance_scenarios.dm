@@ -35,11 +35,11 @@ TYPE_TABLE(/datum/balance_scenario/baseline, balance_expected_keys, list( \
 	var/mob/living/carbon/human/H = spawn_thing(/mob/living/carbon/human)
 	live(H)
 	record("baseline.healthy.consciousness_after_first_life", H.body.get_consciousness(), "points")
-	record("baseline.healthy.sleeping_after_first_life", H.status_units(EFFECT_SLEEPING), "ticks")
+	record("baseline.healthy.sleeping_after_first_life", H.status_units(STAT_SLEEPING), "ticks")
 	var/list/afflictions = list()
 	for(var/datum/affliction/A as anything in H.body.afflictions)
 		afflictions += "[A.type] ([round(A.severity, 0.1)])"
-	note("healthy human after one Life: stat [H.stat], consciousness [H.body.get_consciousness()], pain [H.current_pain()], sleeping [H.status_units(EFFECT_SLEEPING)], paralysis [H.status_units(EFFECT_PARALYZED)], afflictions: [length(afflictions) ? jointext(afflictions, ", ") : "none"]")
+	note("healthy human after one Life: stat [H.stat], consciousness [H.body.get_consciousness()], pain [H.current_pain()], sleeping [H.status_units(STAT_SLEEPING)], paralysis [H.status_units(STAT_PARALYZED)], afflictions: [length(afflictions) ? jointext(afflictions, ", ") : "none"]")
 	var/unconscious_at = is_down(H) ? BALANCE_LIFE_SECONDS : null
 	var/elapsed = BALANCE_LIFE_SECONDS
 	while(elapsed < BALANCE_BASELINE_SECONDS && !is_dead(H))
@@ -157,10 +157,10 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_results, list("hits_
 	var/seconds_per_hit = BALANCE_TTK_CLICK_SECONDS
 	switch(spec[3])
 		if("force")
-			amount = weapon.force
-			seconds_per_hit = weapon.attackspeed / (1 SECONDS)
+			amount = combat_of(weapon).force
+			seconds_per_hit = combat_of(weapon).attack_speed / (1 SECONDS)
 		if("throwforce")
-			amount = weapon.throwforce
+			amount = thrown_of(weapon).force
 		if("damage")
 			var/obj/item/projectile/P = weapon
 			amount = P.damage
@@ -568,7 +568,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 	var/mob/living/carbon/human/pred = spawn_thing(/mob/living/carbon/human)
 	var/mob/living/carbon/human/prey = spawn_thing(/mob/living/carbon/human)
 	pred.init_vore(TRUE)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	if(!B)
 		note("[mode_id]: the predator has no belly")
 		for(var/name in TYPE_TABLE_GET(src, balance_digestion_results))
@@ -584,8 +584,8 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 	if(prey.loc != B)
 		note("[mode_id]: the prey would not go in")
 	var/injury_before = total_injury(prey)
-	var/pred_nutrition_before = pred.nutrition
-	var/prey_nutrition_before = prey.nutrition
+	var/pred_nutrition_before = nutrition_of(pred)
+	var/prey_nutrition_before = nutrition_of(prey)
 	var/prey_size_before = prey.size_multiplier
 	var/elapsed = 0
 	while(elapsed < BALANCE_DIGEST_SECONDS)
@@ -596,8 +596,8 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/digestion, balance_digestion_results,
 		elapsed += BALANCE_LIFE_SECONDS
 	var/prey_gone = QDELETED(prey)
 	record("[prefix].prey_injury_delta", prey_gone ? null : total_injury(prey) - injury_before, "points")
-	record("[prefix].prey_nutrition_delta", prey_gone ? null : prey.nutrition - prey_nutrition_before, "nutrition")
-	record("[prefix].pred_nutrition_delta", pred.nutrition - pred_nutrition_before, "nutrition")
+	record("[prefix].prey_nutrition_delta", prey_gone ? null : nutrition_of(prey) - prey_nutrition_before, "nutrition_of(src)")
+	record("[prefix].pred_nutrition_delta", nutrition_of(pred) - pred_nutrition_before, "nutrition_of(src)")
 	record("[prefix].prey_size_delta", prey_gone ? null : prey.size_multiplier - prey_size_before, "size")
 	record("[prefix].prey_absorbed", (!prey_gone && prey.absorbed) ? 1 : 0)
 	record("[prefix].prey_dead", is_dead(prey) ? 1 : 0)

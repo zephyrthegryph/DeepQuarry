@@ -1,5 +1,11 @@
 # DeepQuarry rewrite: index and reading order
 
+**Primary design: [final_api.html](final_api.html)** (open in a browser). It is the approved final
+API and migration plan (1 October 2026) and supersedes every document below where they disagree.
+Section 17 maps each old form to its replacement, section 19 is the migration plan, section 22 the
+source layout. `../../AGENTS.md` summarises it for day-to-day work. The rest of this folder is
+background and detail: the foundation design that fed into it, and the archived OM docs.
+
 This folder describes the architecture DeepQuarry is moving to and the plan for getting there.
 The current design is the **foundation design**: three table procs per type (`capabilities()`,
 `relations()`, `reactions()`), one reactive change graph, operations and actions for player input,
@@ -41,6 +47,7 @@ beside the old forms.
 
 | Document | Covers |
 |---|---|
+| [framework_gaps.md](framework_gaps.md) | Open framework gaps and what is missing from the design |
 | [foundation.md](foundation.md) | Overview, vocabulary, design rules, the target APC example |
 | [state_and_relations.md](state_and_relations.md) | `TRACKED`, `READERS`, generated reads, relation kinds, source counts |
 | [reactions.md](reactions.md) | Triggers, static vs dynamic, notices, timers, urgent vs wake |
@@ -49,6 +56,7 @@ beside the old forms.
 | [construction.md](construction.md) | Primitives, joints, ladder presets, conservation test |
 | [pools.md](pools.md) | `/datum/pooled`, reset, poison |
 | [scheduling_and_kernel.md](scheduling_and_kernel.md) | `kernel_tick` phases, systems, work, urgent requests |
+| [ai_packs.md](ai_packs.md) | AI packs, states and standings (approved 2026-10-06): the engine forms `coalesce()`, `modes()`, `stance()` and the pack, brain and tactic design built on them |
 | [life_sequences.md](life_sequences.md) | Sequences (entity-major kernel work: steps as procs, `after` edges, `should_run`, parking as membership), Mob Life's landing spot, the S1-S4 waves |
 | [rust.md](rust.md) | `vg_frame`, outbox, watches, no mirrors |
 | [dx_conventions.md](dx_conventions.md) | The rules and CI lints |
@@ -72,6 +80,8 @@ These stay where they are. Where a foundation chapter overrides part of one, the
 | [rust_architecture.md](rust_architecture.md), [rust_core.md](rust_core.md), [rust_bindings.md](rust_bindings.md) | The Rust library structure and bindings | Drivers, watches and mirrors overridden by [rust.md](rust.md) |
 | [kernel.md](kernel.md) | Detailed kernel design and measurements | Phases and work units overridden by [scheduling_and_kernel.md](scheduling_and_kernel.md) section 6 |
 | [init_and_turfs.md](init_and_turfs.md) | Boot and bulk-destroy speed | |
+| [agent_workflow.md](agent_workflow.md) | The build/test/merge loop: generated files, merging master, machine slots, lane-ready stamps, the rerun guard | Read before your next merge |
+| [throughput_report.md](throughput_report.md) | Where merge and test-cycle time went (gen, test-build-boot, look-keys), what changed, what is left | Measurements behind agent_workflow.md sections 10-12 |
 | `doc/body_architecture.md`, `doc/mob_life_architecture.md`, `doc/testing.md` | Body, mob Life, testing | Outside this folder |
 
 ### Archive
@@ -165,3 +175,7 @@ All figures come from what is on disk today. Phase 0 re-measures them with the b
 - There is no `call_ext` outside the generated bindings, and DM keeps no copies of Rust state.
 - The conservation, parity and rule tests pass for every type they apply to.
 - The benchmarks meet the targets set after phase 0.
+
+## Legacy form census
+
+`bash tools/ci/legacy_form_counts.sh` counts the call sites of each legacy form of AGENTS.md section 3b (comments, unit tests and the defining files excluded). The table it fed on 2026-10-08 is in `final_api.html` section 19, "Where master stands". Re-run it when a form is retired and update both.

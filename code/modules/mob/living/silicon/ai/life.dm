@@ -1,9 +1,7 @@
 // AI Life: power, body, APU and vision as separate steps. The machine AI plan
 // (plans/machine.dm) is the one death rule: hardware load, or an exhausted
 // backup capacitor. The power-loss routine is a timer-driven state machine
-// (aiRestorePowerRoutine = AI_POWER_*), not a sleeping spawn.
-
-OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
+// (set_aiRestorePowerRoutine(AI_POWER_*)), not a sleeping spawn.
 
 /mob/living/silicon/ai
 
@@ -11,56 +9,35 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 	life_set = LIFE_SET_AI
 
 /// `if(stat == DEAD) return`, local failure cleanup and power.
-/datum/om/stage/life/ai_power
-	order = LIFE_PHASE_INPUT + 0
-	name = "ai power"
-	wake_on = 0
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
+/mob/living/silicon/ai/proc/life_ai_power(datum/seq_frame/life/F)
+	if(src.stat == DEAD)
+		return F.abort()
 
-/datum/om/stage/life/ai_power/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	if(self.stat == DEAD)
-		return ctx.abort()
-
-	if(self.stat != CONSCIOUS)
-		rel_clear(self, nameof(self.cameraFollow))
-		self.reset_perspective()
-		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
+	if(src.stat != CONSCIOUS)
+		rel_clear(src, nameof(src.cameraFollow))
+		src.reset_perspective()
+		src.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 
 	// If our powersupply object was destroyed somehow, create new one.
-	if(!self.psupply)
-		self.create_powersupply()
+	if(!src.psupply)
+		src.create_powersupply()
 
-	self.process_ai_power()
+	src.process_ai_power()
 
 /// Hardware integrity, capacitor and death are decided by the machine body.
-/datum/om/stage/life/ai_body
-	order = LIFE_PHASE_INPUT + 10
-	name = "ai body"
-	wake_on = CHANGE_MOB_HEALTH
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
-
-/datum/om/stage/life/ai_body/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	self.body?.life_tick()
-	if(self.stat == DEAD)
-		return ctx.abort()
+/mob/living/silicon/ai/proc/life_ai_body(datum/seq_frame/life/F)
+	src.body?.life_tick()
+	if(src.stat == DEAD)
+		return F.abort()
 
 /// Lying down, malfunction, APU and queued alarms.
-/datum/om/stage/life/ai_upkeep
-	order = LIFE_PHASE_BODY + 10
-	name = "ai upkeep"
-	wake_on = 0
-	life_sets = LIFE_SET_AI
-	of = /mob/living/silicon/ai
+/mob/living/silicon/ai/proc/life_ai_upkeep(datum/seq_frame/life/F)
+	set_lying(0)			// Handle lying down
 
-/datum/om/stage/life/ai_upkeep/perform(mob/living/silicon/ai/self, datum/om/frame/life/ctx)
-	self.lying = 0			// Handle lying down
+	src.malf_process()
+	src.process_apu()
 
-	self.malf_process()
-	self.process_apu()
-
-	self.process_queued_alarms()
+	src.process_queued_alarms()
 
 // --- Power ---------------------------------------------------------------------------------------
 
@@ -89,7 +66,6 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 			if(!(sight & SEE_TURFS))
 				cancel_power_restore()
 				set_ai_vision(TRUE)
-				update_icon()
 
 /mob/living/silicon/ai/proc/lacks_power()
 	if(APU_power)
@@ -99,7 +75,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 	return ((!A.power_equip) && A.requires_power == 1 || istype(T, /turf/space)) && !istype(src.loc,/obj/item)
 
 /mob/living/silicon/ai/proc/adjust_backup_charge(amount)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		backup_charge = AI_BACKUP_CAPACITY
 		return
 	var/old_charge = backup_charge
@@ -109,8 +85,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 
 /// Power just went out: blind the core and start the restore routine.
 /mob/living/silicon/ai/proc/begin_power_loss()
-	aiRestorePowerRoutine = AI_POWER_RESTORING
-	update_icon()
+	set_aiRestorePowerRoutine(AI_POWER_RESTORING)
 	set_ai_vision(FALSE)
 	to_chat(src, "You've lost power!")
 	disconnect_shell(message = "Disconnected from remote shell due to depowered networking interface.")
@@ -120,20 +95,19 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 /// Power is back: stop the routine and restore sight.
 /mob/living/silicon/ai/proc/end_power_loss(message)
 	cancel_power_restore()
-	aiRestorePowerRoutine = AI_POWER_NORMAL
+	set_aiRestorePowerRoutine(AI_POWER_NORMAL)
 	if(message)
 		to_chat(src, message)
 	set_ai_vision(TRUE)
-	update_icon()
 	log_runtime("AI_POWER: [key_name(src)] power restored.")
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
 	cancel_power_restore()
-	after_slot(src, "power_restore_timer", delay, PROC_REF(power_restore_step), step)
+	after(src, delay, PROC_REF(power_restore_step), key = "power_restore_timer", with = list(step))
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
-	if(om_timer_slot_pending(src, "power_restore_timer"))
-		om_cancel_timer_slot(src, "power_restore_timer")
+	if(after_pending(src, "power_restore_timer"))
+		cancel_after(src, "power_restore_timer")
 
 /// One step of the restore routine. Each step reschedules the next.
 /mob/living/silicon/ai/proc/power_restore_step(step)
@@ -158,7 +132,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 		if(4)
 			if(istype(T, /turf/space))
 				to_chat(src, "Unable to verify! No power connection detected!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			to_chat(src, "Connection verified. Searching for APC in power network.")
 			schedule_power_restore_step(5, AI_POWER_STEP)
@@ -166,12 +140,12 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 			var/attempt = step - 4
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!APC.has_stat(BROKEN))
+				if(!APC.broken_now())
 					theAPC = APC
 					break
 			if(!theAPC)
 				to_chat(src, attempt == 1 ? "Unable to locate APC!" : "Lost connection with the APC!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			switch(attempt)
 				if(1)
@@ -186,22 +160,20 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 		if(9)
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!APC.has_stat(BROKEN))
+				if(!APC.broken_now())
 					theAPC = APC
 					break
 			if(!theAPC)
 				to_chat(src, "Lost connection with the APC!")
-				aiRestorePowerRoutine = AI_POWER_FAILED
+				set_aiRestorePowerRoutine(AI_POWER_FAILED)
 				return
 			to_chat(src, "Receiving control information from APC.")
+			theAPC.set_equipment(3)
 			theAPC.set_operating(1)
-			theAPC.equipment = 3
-			theAPC.update()
-			aiRestorePowerRoutine = AI_POWER_RESTORED
+			set_aiRestorePowerRoutine(AI_POWER_RESTORED)
 			log_runtime("AI_POWER: [key_name(src)] forced [theAPC] on.")
 			to_chat(src, "Here are your current laws:")
 			show_laws()
-			update_icon()
 
 // --- APU -----------------------------------------------------------------------------------------
 

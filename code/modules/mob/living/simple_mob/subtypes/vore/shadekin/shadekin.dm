@@ -7,8 +7,6 @@
 	icon_living = "map_example"
 	faction = FACTION_SHADEKIN
 	ui_icons = 'icons/mob/shadekin_hud.dmi'
-	mob_class = MOB_CLASS_HUMANOID
-	mob_bump_flag = HUMAN
 
 	endurance = 200
 
@@ -64,7 +62,6 @@
 	var/shy_approach = FALSE //Do we creep up slowly on humans to boop them
 
 	//Icon handling
-	var/image/tailimage //Cached tail image
 
 	//Darknesssss
 	var/shadekin_type = /datum/shadekin //Type of the shadekin datum (held in /mob/living/var/shadekin) that holds all the shadekin vars.
@@ -74,8 +71,18 @@
 	var/check_for_observer = FALSE
 	var/check_timer = 0
 
-DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
+CAPABILITIES(/mob/living/simple_mob/shadekin)
+	ref_one(nameof(henlo_human), /mob/living/carbon/human)
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
+	configure(mob_movement(bump = HUMAN))
+	verb_entry(/mob/proc/adjust_hive_range)
+	owns_one(nameof(shadekin), /datum/shadekin, starts = PROC_REF(start_shadekin))
+	rolls(nameof(icon_state), PROC_REF(roll_coat))
+	look_from(nameof(icon_state), living = "*")
+	rolls(nameof(eye_icon_state), PROC_REF(eye_icon_for))
+	rolls(nameof(desc), PROC_REF(desc_with_eyes))
 
+// The prototype spawns a weighted random kind of shadekin in its place
 /mob/living/simple_mob/shadekin/Initialize(mapload)
 	//You spawned the prototype, and want a totally random one.
 	if(type == /mob/living/simple_mob/shadekin)
@@ -93,44 +100,45 @@ DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
 		new new_type(loc)
 		flags |= ATOM_INITIALIZED
 		return INITIALIZE_HINT_QDEL
-	add_shadekin(shadekin_type)
+	return ..()
+
+/// Its shadekin state, its energy tuned to its eyes (owns_one(starts =)).
+/mob/living/simple_mob/shadekin/proc/start_shadekin(current, mapload)
+	var/datum/shadekin/SK = new shadekin_type(src)
+	if(SK != shadekin) // an incompatible mob: the state refused it
+		spent(SK)
+		return null
 	set_eye_energy()
+	return SK
 
-	if(icon_state == "map_example")
-		icon_state = pick("white","dark","brown") // ALLOW(decl): random pick
+/// The prototype's sprite is a map marker: a shadekin still wearing it takes one of the coats (rolls()).
+/mob/living/simple_mob/shadekin/proc/roll_coat(datum/roller/R)
+	return icon_state == "map_example" ? R.choose(list("white", "dark", "brown")) : icon_state
 
-	icon_living = icon_state
-
+/// Its eye overlay follows its eyes (rolls(), after the eye state is in place).
+/mob/living/simple_mob/shadekin/proc/eye_icon_for(datum/roller/R)
 	switch(eye_state)
 		if(BLUE_EYES)
-			eye_icon_state = "e_blue"
+			return "e_blue"
 		if(RED_EYES)
-			eye_icon_state = "e_red"
+			return "e_red"
 		if(PURPLE_EYES)
-			eye_icon_state = "e_purple"
+			return "e_purple"
 		if(YELLOW_EYES)
-			eye_icon_state = "e_yellow"
+			return "e_yellow"
 		if(GREEN_EYES)
-			eye_icon_state = "e_green"
+			return "e_green"
 		if(ORANGE_EYES)
-			eye_icon_state = "e_orange"
-		else
-			eye_icon_state = "e_red"
+			return "e_orange"
+	return "e_red"
 
-	tailimage = image('icons/mob/vore_shadekin64.dmi',null,icon_state)
-	tailimage.pixel_x = -16
-
-	if(eye_desc)
-		desc += " This one has [eye_desc]!"
-
-	update_icon()
-
-
-	return ..()
+/// Its description mentions its eyes (rolls()).
+/mob/living/simple_mob/shadekin/proc/desc_with_eyes(datum/roller/R)
+	return eye_desc ? "[desc] This one has [eye_desc]!" : desc
 
 /mob/living/simple_mob/shadekin/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
@@ -186,47 +194,41 @@ DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
 		"The chaos of being digested fades as you're snuffed out by a harsh clench! You're steadily broken down into a thick paste, processed and absorbed by the predator!"
 		)
 
-/datum/om/stage/life/type_post/simple_mob/shadekin
-	of = /mob/living/simple_mob/shadekin
+/mob/living/simple_mob/shadekin/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/shadekin/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shadekin.in_phase)
-		self.set_density(FALSE)
+	if(src.shadekin.in_phase)
+		src.set_density(FALSE)
 
 	//Convert spare nutrition into energy at a certain ratio
-	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)
-		self.set_nutrition(max(0, self.nutrition-5))
-		self.shadekin.dark_energy = min(100,self.shadekin.dark_energy+1)
-	if(!self.client && self.check_for_observer && self.check_timer++ > 5)
-		self.check_timer = 0
+	if(. && nutrition_of(src) > starting_nutrition() && src.shadekin.dark_energy < 100)
+		src.set_nutrition(max(0, nutrition_of(src)-5))
+		src.shadekin.dark_energy = min(100,src.shadekin.dark_energy+1)
+	if(!src.client && src.check_for_observer && src.check_timer++ > 5)
+		src.check_timer = 0
 		var/non_kin_count = 0
-		for(var/mob/living/M in view(6,self))
+		for(var/mob/living/M in view(6,src))
 			if(!issimplekin(M))
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
-		if(!non_kin_count && (self.shadekin.in_phase))
-			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
-		else if (non_kin_count && !(self.shadekin.in_phase))
-			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
+		if(!non_kin_count && (src.shadekin.in_phase))
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting back in, nobody present
+		else if (non_kin_count && !(src.shadekin.in_phase))
+			perform_op(src, src, ABILITY_ID_SHADEKIN_PHASE_SHIFT, null, ORIGIN_VERB) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
-	if(ctx.fact("alive"))
-		self.shadekin.handle_comp()
+	if(F.alive())
+		src.shadekin.handle_comp()
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/shadekin/appearance_overlays()
-	. = list()
-	. += ..()
-
-
-	tailimage.icon_state = icon_state
-
-	. += tailimage
-	. += eye_icon_state
+/// The tail (its own sheet, shifted left to line up) in the body's state, and the eyes.
+/mob/living/simple_mob/shadekin/draw(datum/look/look)
+	..()
+	look.overlay(look_overlay_image('icons/mob/vore_shadekin64.dmi', look.state_so_far(src), pixel_x = -16))
+	look.overlay(eye_icon_state)
 
 /mob/living/simple_mob/shadekin
-	death_message = "phases to somewhere far away!"
 
 /// They phase back to the dark when killed: a retreat, not a death, unless there is nowhere to go.
 /mob/living/simple_mob/shadekin/replace_death(gibbed)
@@ -241,7 +243,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 
 	cut_overlays()
 	flick("tp_out",src)
-	act_message(src, null, others = "<b>%U%</b> [death_message]")
+	act_message(src, null, others = "<b>%U%</b> [kind_of(src).death_message]")
 	shadekin.respite_activating = TRUE
 
 	drop_l_hand()
@@ -249,12 +251,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 
 	shadekin.dark_energy = 0
 	shadekin.in_dark_respite = TRUE
-	invisibility = INVISIBILITY_LEVEL_TWO
+	set_invisibility(INVISIBILITY_LEVEL_TWO)
 
 	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
 	mend(TREAT_TISSUE_REPAIR, injury_load(INJURY_CATEGORY_PHYSICAL) / 2)
 	mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
-	status_at_least(EFFECT_STUNNED, 10)
+	status_at_least(STAT_STUNNED, 10)
 	movement_cooldown = 5
 	set_nutrition(0)
 
@@ -267,7 +269,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 		flick("tp_in",src)
 		shadekin.respite_activating = FALSE
 		shadekin.in_dark_respite = TRUE
-		belly.owner.handle_belly_update()
+		PUBLISH(belly.owner, belly_change)
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
 		if(hud_used)
@@ -275,17 +277,17 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 				toggle_hud_vis()
 		stop_sound_channel(CHANNEL_PREYLOOP)
 
-		om_after(src, 10 MINUTES, PROC_REF(can_leave_dark))
+		after(src, 10 MINUTES, PROC_REF(can_leave_dark))
 	else
-		om_after(src, 1 SECOND, PROC_REF(enter_the_dark))
-		om_after(src, 15 MINUTES, PROC_REF(can_leave_dark))
+		after(src, 1 SECOND, PROC_REF(enter_the_dark))
+		after(src, 15 MINUTES, PROC_REF(can_leave_dark))
 	return TRUE
 
 /// No retreat left: the kin fades out for good.
 /mob/living/simple_mob/shadekin/on_death(gibbed)
 	. = ..()
 	cut_overlays()
-	icon_state = ""
+	set_icon_state("")
 	flick("tp_out",src)
 	expire(1 SECOND) //Back from whence you came!
 
@@ -294,9 +296,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 	shadekin.in_dark_respite = TRUE
 
 	forceMove(pick(GLOB.latejoin_thedark))
-	update_icon()
 	flick("tp_in",src)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	shadekin.respite_activating = FALSE
 
 /mob/living/simple_mob/shadekin/can_leave_dark()

@@ -15,9 +15,6 @@
 	use_power = USE_POWER_OFF
 
 	var/successful_craft = FALSE	// Are we waiting to be emptied?
-	var/image/material_layer	// Holds the image used for the filled overlay.
-	var/image/material_glow		// Holds the image used for the glow overlay.
-	var/image/reagent_layer		// Holds the image used for showing a contained beaker.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
 	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
@@ -28,15 +25,13 @@
 
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
-	update_icon()
 	prepare_recipes()
 
 
 /// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
-/// It bleeds it off (machine_step()) while it has any.
-OM_FIELD(/obj/machinery/particle_smasher, energy, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energy")
-
+/// It bleeds it off (work_step(null)) while it has any.
+/obj/machinery/particle_smasher/var/energy = 0
+TRACKED(/obj/machinery/particle_smasher, energy)
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -48,132 +43,104 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 /obj/machinery/particle_smasher/atmosanalyze(mob/user)
 	return list(span_notice("\The [src] reads an energy level of [energy]."))
 
-/obj/machinery/particle_smasher/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/particle_smasher_analyzer,
-		/datum/interaction/machine_item/particle_smasher_fill_target,
-		/datum/interaction/machine_item/particle_smasher_attach_beaker,
-		/datum/interaction/machine_item/particle_smasher_swipe_id,
-		/datum/interaction/machine_item/particle_smasher_store,
-		/datum/interaction/machine_verb/particle_smasher_eject_contents,
-	)
-	..()
+MSG_DEF_SELF(particle_smasher/has_target, "It already contains a target.")
+MSG_DEF_SELF(particle_smasher/synthesizer, "You cannot fill it with a synthesizer.")
+MSG_DEF_SELF(particle_smasher/has_container, "It already has a container attached.")
 
-/// Analyzers do nothing here; the old attackby swallowed the click without falling through.
-/datum/interaction/machine_item/particle_smasher_analyzer
-	id = "particle_smasher_analyzer"
-	name = "Use"
-	held_type = /obj/item/analyzer
-	effect = /atom/proc/interaction_swallow
+// An analyzer does nothing here (the old attackby swallowed it); a sheet fills the target, a beaker attaches, an ID swipes to no effect, and
+// anything else that can come out of the hand goes into its fabrication storage while there is room. A wrench secures it to the floor.
+CAPABILITIES(/obj/machinery/particle_smasher)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(energy), wakes_on = list(nameof(energy)))
+	owns_many(nameof(recipes))
+	op("analyzer_block", item(/obj/item/analyzer), label("Use"), then(PROC_REF(nothing_happens)))
+	op("fill_target", item(/obj/item/stack/material), label("Fill target"),
+		needs(req_is(nameof(target), FALSE, because = MSG(particle_smasher/has_target)), req(PROC_REF(not_synthesized))),
+		then(PROC_REF(interaction_fill_target)))
+	op("attach_beaker", item(/obj/item/reagent_containers/glass/beaker), label("Attach container"),
+		needs(req_is(nameof(reagent_container), FALSE, because = MSG(particle_smasher/has_container))), then(PROC_REF(interaction_attach_beaker)))
+	op("swipe_id", item(/obj/item/card/id), label("Swipe"), then(PROC_REF(interaction_swipe_id)))
+	op("store", item(/obj/item), label("Store"), when(PROC_REF(can_store_item)), then(PROC_REF(interaction_store)))
+	op("eject_contents", menu(), label("Eject Particle Focus Contents"), when(req_actor_kind(/mob/living)), needs(req(PROC_REF(actor_can_act), because = MSG(particle_smasher/cannot_act))), then(PROC_REF(interaction_eject_contents)))
+	op("secure", tool(TOOL_WRENCH), label("Secure"), wait(0), then(PROC_REF(secured)))
 
-/datum/interaction/machine_item/particle_smasher_fill_target
-	id = "particle_smasher_fill_target"
-	name = "Fill target"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/material
-	effect = /obj/machinery/particle_smasher/proc/interaction_fill_target
-	also_requires = list(REQ_FIELD_NOT("target", "it already contains a target"), REQ_TARGET_STATE(/obj/machinery/particle_smasher/proc/can_fill_with))
+MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 
-/// Requirement: synthesiser stock can't fill the target.
-/obj/machinery/particle_smasher/proc/can_fill_with(mob/user, atom/target, obj/item/stack/material/held)
-	return (istype(held) && held.uses_charge) ? "you cannot fill it with a synthesizer" : TRUE
+/obj/machinery/particle_smasher/proc/nothing_happens(datum/act/op/A)
+	return
 
-/obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
+/// Synthesiser stock can't fill the target.
+/obj/machinery/particle_smasher/proc/not_synthesized(datum/act/op/A)
+	var/obj/item/stack/material/held = A.held
+	return (!(istype(held) && held.uses_charge)) ? null : MSG(particle_smasher/synthesizer)
+
+/obj/machinery/particle_smasher/proc/interaction_fill_target(datum/act/op/A)
+	var/obj/item/stack/material/M = A.held
 	var/obj/item/stack/material/piece = M.split(1)
-	own_set(src, nameof(src.target), piece, user = user)
-	update_icon()
-	return TRUE
+	move_into(src, nameof(src.target), piece, A.actor)
 
-/datum/interaction/machine_item/particle_smasher_attach_beaker
-	id = "particle_smasher_attach_beaker"
-	name = "Attach container"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/reagent_containers/glass/beaker
-	effect = /obj/machinery/particle_smasher/proc/interaction_attach_beaker
-	also_requires = list(REQ_FIELD_NOT("reagent_container", "it already has a container attached"))
+/obj/machinery/particle_smasher/proc/interaction_attach_beaker(datum/act/op/A)
+	if(!move_into(src, nameof(src.reagent_container), A.held, A.actor))
+		return
+	to_chat(A.actor, span_notice("You add \the [reagent_container()] to \the [src]."))
 
-/obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.reagent_container), W, user = user))
-		return TRUE
-	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
-	update_icon()
-	return TRUE
+/obj/machinery/particle_smasher/proc/interaction_swipe_id(datum/act/op/A)
+	to_chat(A.actor, span_notice("Swiping \the [A.held] on \the [src] doesn't seem to do anything..."))
 
-/// Swiping an ID does nothing but the message; the old code fell through to ..() afterward.
-/datum/interaction/machine_item/particle_smasher_swipe_id
-	id = "particle_smasher_swipe_id"
-	name = "Swipe"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/particle_smasher/proc/interaction_swipe_id
+/// The item can leave the hand (a cyborg's gripper lets go of what it holds; a module item stays) and there is room.
+/obj/machinery/particle_smasher/proc/can_store_item(datum/act/op/A)
+	var/obj/item/held = A.held
+	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage
 
-/obj/machinery/particle_smasher/proc/interaction_swipe_id(mob/user, obj/item/W, datum/interaction/interaction)
-	to_chat(user, span_notice("Swiping \the [W] on \the [src] doesn't seem to do anything..."))
-	return TRUE
+/obj/machinery/particle_smasher/proc/interaction_store(datum/act/op/A)
+	move_into(src, nameof(src.storage), A.held, A.actor)
 
-/// Jam an item into the smasher's fabrication storage.
-/datum/interaction/machine_item/particle_smasher_store
-	id = "particle_smasher_store"
-	name = "Store"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/particle_smasher/proc/can_store_item, null))
-	effect = /obj/machinery/particle_smasher/proc/interaction_store
+/// Retains the old living-only restraint/full-buckle gate.
+/obj/machinery/particle_smasher/proc/actor_can_act(datum/act/op/A)
+	var/mob/actor = A.actor
+	READS_FROM(actor)
+	if(!isliving(actor) || actor.incapacitated())
+		return "You can't do that right now."
+	return null
 
-/obj/machinery/particle_smasher/proc/can_store_item(mob/actor, atom/target, obj/item/held)
-	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && length(storage) < max_storage
-
-/obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
-	own_add(src, nameof(src.storage), W, user = user)
-	return TRUE
-
-/obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
+/obj/machinery/particle_smasher/proc/secured(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	set_anchored(!anchored)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/particle_smasher/appearance_overlays()
-	. = list()
-	if(!material_layer)
-		material_layer = image(icon, "[initial(icon_state)]-material")
-	if(!material_glow)
-		material_glow = image(icon, "[initial(icon_state)]-material-glow")
-		material_glow.plane = PLANE_LIGHTING_ABOVE
-	if(!reagent_layer)
-		reagent_layer = image(icon, "[initial(icon_state)]-reagent")
+
+/// What the focus shows: open and filled with its target's colour once secured (glowing when a craft is waiting), its beaker, and a light
+/// in the target's colour that grows with the stored energy.
+/obj/machinery/particle_smasher/draw(datum/look/look)
+	..()
+	var/base = initial(icon_state)
+	look.watch(target)
 	if(anchored)
-		icon_state = "[initial(icon_state)]-o"
+		look.state("[base]-o")
 		if(target)
-			var/target_color = target_material_color()
-			material_layer.color = target_color
-			. += material_layer
+			look.overlay(look_overlay_image(icon, "[base]-material", color = target_material_color()))
 			if(successful_craft)
-				material_glow.color = target_color
-				. += material_glow
-		if(reagent_container())
-			. += reagent_layer
+				look.overlay(look_overlay_image(icon, "[base]-material-glow", plane = PLANE_LIGHTING_ABOVE, color = target_material_color()))
+		look.overlay("[base]-reagent", !!reagent_container())
 	else
-		icon_state = initial(icon_state)
-
+		look.state(base)
 	if(target && energy)
-		var/power_percent = round((energy / max_energy) * 100)
-		light_color = target_material_color()
-		switch(power_percent)
-			if(0 to 25)
-				light_range = 1
-			if(26 to 50)
-				light_range = 2
-			if(51 to 75)
-				light_range = 3
-			if(76 to INFINITY)
-				light_range = 4
-		set_light(light_range, 2, light_color)
-	else
-		set_light(0, 0, "#FFFFFF")
+		look.glow(GLOW(energy_light_range(), 2, target_material_color()))
+
+/// The light's range for the stored energy: 1 to 4 tiles by quarters of the maximum.
+/obj/machinery/particle_smasher/proc/energy_light_range()
+	var/power_percent = round((energy / max_energy) * 100)
+	switch(power_percent)
+		if(0 to 25)
+			return 1
+		if(26 to 50)
+			return 2
+		if(51 to 75)
+			return 3
+	return 4
 
 /obj/machinery/particle_smasher/proc/target_material_color()
 	if(istype(target, /obj/item/stack/material))
@@ -189,7 +156,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	return ..()
 
 /// Bleeds its stored energy (radiating) while it has any; empty, it sleeps until a particle hits.
-/obj/machinery/particle_smasher/machine_step()
+/obj/machinery/particle_smasher/proc/work_step(datum/act/timer/A)
 	if(!src.anchored)	// Rapidly loses focus.
 		radiation_pulse(
 			src,
@@ -200,7 +167,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 			strength = energy * 0.1 //60 rads at max energy.
 		)
 		set_energy(max(0, energy - 30))
-		update_icon()
 		return
 
 	if(istype(target, /obj/item/stack/material/processed_alloy))
@@ -216,9 +182,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	set_energy(CLAMP(energy - 5, 0, max_energy))
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
-	own_clear(src, nameof(recipes), OWN_DELETE)
+	rel_clear(src, nameof(recipes))
 	for(var/D in subtypesof(/datum/particle_smasher_recipe))
-		own_add(src, nameof(recipes), new D)
+		rel_add(src, nameof(recipes), new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 
@@ -227,11 +193,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 
 	if(!target)	// You are just blasting an empty machine.
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
-		update_icon()
 		return
 	if(istype(target, /obj/item/stack/material/processed_alloy))
 		try_material_stock_conditioning()
-		update_icon()
 		return
 
 	if(successful_craft)
@@ -246,7 +210,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 				strength = energy * 0.1
 			)
 			set_energy(max(0, energy - 30))
-		update_icon()
 		return
 
 	var/list/possible_recipes = list()
@@ -274,16 +237,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 		for(var/datum/particle_smasher_recipe/R in possible_recipes)
 			cumulative += R.probability
 			if(local_prob < cumulative)
-				successful_craft = TRUE
+				set_successful_craft(TRUE)
 				DoCraft(R)
 				break
-	update_icon()
 
 /obj/machinery/particle_smasher/proc/DoCraft(datum/particle_smasher_recipe/recipe)
 	if(!successful_craft || !recipe)
 		return
 
-	own_clear(src, nameof(target), OWN_DELETE)
+	rel_clear(src, nameof(target), OWN_DELETE)
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
@@ -298,33 +260,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	var/result = recipe.result
 	if(recipe.recipe_type == PS_RESULT_STACK)
 		var/obj/item/stack/material/M = new result(src)
-		own_set(src, nameof(target), M)
+		rel_set(src, nameof(target), M)
 	else if(recipe.recipe_type == PS_RESULT_ITEM)
 		new result(get_turf(src))
-	update_icon()
 
-/datum/interaction/machine_verb/particle_smasher_eject_contents
-	id = "particle_smasher_eject_contents"
-	name = "Eject Particle Focus Contents"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/particle_smasher/proc/interaction_eject_contents
-
-/obj/machinery/particle_smasher/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/particle_smasher/proc/interaction_eject_contents(datum/act/op/A)
 	DumpContents()
-	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	// Everything goes to the floor below: detach the owned slots first.
-	own_take(src, nameof(target))
-	own_take(src, nameof(reagent_container))
-	successful_craft = FALSE
+	rel_take(src, nameof(target))
+	rel_take(src, nameof(reagent_container))
+	set_successful_craft(FALSE)
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(I in storage)
-			own_take_member(src, nameof(storage), I)
+			rel_take(src, nameof(storage), I)
 		I.forceMove(T)
-	update_icon()
 
 /*
  * The special recipe datums used for the particle smasher.
@@ -682,7 +635,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	. += owns(nameof(target), policy = OWN_CONTAINED)
 	. += owns(nameof(reagent_container), policy = OWN_CONTAINED)
 	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-	. += owns(nameof(storage), policy = OWN_SPILL)
+	. += owns(nameof(storage), policy = OWN_SPILL, is_list = TRUE)
 
 /// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers

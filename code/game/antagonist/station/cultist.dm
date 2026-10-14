@@ -38,6 +38,10 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	var/list/sacrificed
 	var/list/harvested
 
+CAPABILITIES(/datum/antagonist/cultist)
+	ref_many(nameof(harvested), /datum/mind)
+	ref_one(nameof(sacrifice_target))
+
 /datum/antagonist/cultist/New()
 	..()
 	GLOB.cult = src
@@ -47,16 +51,16 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	if(!..())
 		return
 
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	if(prob(50))
-		own_add(src, nameof(global_objectives), new /datum/objective/cult/survive)
+		rel_add(src, nameof(global_objectives), new /datum/objective/cult/survive)
 	else
-		own_add(src, nameof(global_objectives), new /datum/objective/cult/eldergod)
+		rel_add(src, nameof(global_objectives), new /datum/objective/cult/eldergod)
 
 	var/datum/objective/cult/sacrifice/sacrifice = new()
 	sacrifice.find_target()
 	rel_set(src, nameof(sacrifice_target), sacrifice.target)
-	own_add(src, nameof(global_objectives), sacrifice)
+	rel_add(src, nameof(global_objectives), sacrifice)
 
 /datum/antagonist/cultist/equip(mob/living/carbon/human/player)
 

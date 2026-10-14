@@ -27,11 +27,19 @@
 	var/camera_network_id
 	var/see_dark = FALSE
 
+CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
+	owns_one(nameof(camera), /obj/machinery/camera/intcircuit, starts = PROC_REF(make_camera))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+// ALLOW(init/INSTANCE_STATE): gets its own camera network id and the camera that uses it
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
-	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	own_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
+
+/// The starting camera (owns_one(starts =)) on its own network.
+/obj/item/integrated_circuit/output/video_camera/proc/make_camera(current)
+	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
+	return new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark)
 
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()
@@ -65,10 +73,10 @@
 		camera.set_status(FALSE)
 	power_draw_idle = 0
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/integrated_circuit/output/video_camera/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/integrated_circuit/output/video_camera/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
@@ -77,8 +85,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 		else
 			rel_add(input, nameof(input.paired_cameras), src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/integrated_circuit/output/video_camera/examine(mob/user)
 	. = ..()
@@ -111,13 +119,18 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 	var/see_dark = FALSE
 
-/obj/machinery/camera/intcircuit/Initialize(mapload, network_id, darkvis)
+CAPABILITIES(/obj/machinery/camera/intcircuit)
+	param(nameof(network_id), pos = 1, overrides = TRUE)
+	param(nameof(see_dark), pos = 2)
+
+/// The network a circuit camera is made on (its constructor param).
+/obj/machinery/camera/intcircuit/var/network_id
+
+// ALLOW(init/INSTANCE_STATE): a circuit camera is numbered and joins the camera net
+/obj/machinery/camera/intcircuit/Initialize(mapload)
 	if(network_id)
 		network = list(network_id)
-	if(darkvis)
-		see_dark = TRUE
 	// Skip the parent Initialize's assembly creation and network checks
-	set_wires(new /datum/wires/camera(src))
 	c_tag = "IC Camera #[rand(1000, 9999)]"
 	name = c_tag
 	GLOB.cameranet.addCamera(src)
@@ -161,7 +174,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	var/list/obj/item/integrated_circuit/output/video_camera/paired_cameras
 	var/datum/tgui_module/camera/intcircuit/camera_module
 
-DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", /datum/tgui_module/camera/intcircuit)
+CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
+	ref_many(nameof(paired_cameras), /obj/item/integrated_circuit/output/video_camera)
+	owns_one(nameof(camera_module), /datum/tgui_module/camera/intcircuit, starts = /datum/tgui_module/camera/intcircuit)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
@@ -188,14 +204,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/video_camera_input, "ca
 		var/status_text = cam.camera?.can_use() ? "ACTIVE" : "INACTIVE"
 		. += span_notice(" - [cam.camera?.c_tag || "Unknown"] ([status_text])")
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/integrated_circuit/input/video_camera_input/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/integrated_circuit/input/video_camera_input/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/integrated_circuit/output/video_camera))
 		W.attackby(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/integrated_circuit/input/video_camera_input/power_fail()
 	// Close any open UIs
@@ -237,8 +253,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	return
 
 /// Switching cameras forgets the last turf first, then the module switches as usual.
-UI_ACT_OVERRIDE(/datum/tgui_module/camera/intcircuit, ui_act_switch_camera)
-	rel_clear(src, nameof(/datum/tgui_module/appearance_changer::last_camera_turf))
+/datum/tgui_module/camera/intcircuit/ui_act_switch_camera(datum/act/op/A, name)
+	rel_clear(src, nameof(last_camera_turf))
 	return ..()
 
 /// The owner_circuit this refers to (a relation view: null once that is deleted).

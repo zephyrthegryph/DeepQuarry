@@ -144,7 +144,7 @@
 	return color
 
 /datum/reagent/paint/initialize_data(newdata)
-	color = newdata
+	set_color(newdata)
 	return
 
 /datum/reagent/paint/mix_data(newdata, newamount)
@@ -170,7 +170,7 @@
 	colors[4] += hex2num(copytext(hex2, 8, 10)) * newamount
 	tot_w += newamount
 
-	color = rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w)
+	set_color(rgb(colors[1] / tot_w, colors[2] / tot_w, colors[3] / tot_w, colors[4] / tot_w))
 	return
 
 /* Things that didn't fit anywhere else */
@@ -203,34 +203,34 @@
 /datum/reagent/adminordrazine/affect_blood(mob/living/carbon/M, alien, removed)
 	// Admin chem: heals everything.
 	M.fully_heal()
-	M.status_set(EFFECT_HALLUCINATING, 0)
+	M.status_set(STAT_HALLUCINATING, 0)
 	M.disabilities = 0
 	M.set_sdisabilities(0)
-	M.status_set(EFFECT_BLURRY, 0)
-	M.status_set(EFFECT_BLINDED, 0)
-	M.status_set(EFFECT_WEAKENED, 0)
-	M.status_set(EFFECT_STUNNED, 0)
-	M.status_set(EFFECT_PARALYZED, 0)
-	M.status_set(EFFECT_MUTED, 0)
-	M.status_end(EFFECT_DIZZY)
-	M.status_end(EFFECT_JITTERY)
-	M.status_set(EFFECT_DROWSY, 0)
-	M.status_set(EFFECT_STUTTERING, 0)
-	M.status_set(EFFECT_CONFUSED, 0)
-	M.status_set(EFFECT_SLEEPING, 0)
+	M.status_set(STAT_BLURRY, 0)
+	M.status_set(STAT_BLINDED, 0)
+	M.status_set(STAT_WEAKENED, 0)
+	M.status_set(STAT_STUNNED, 0)
+	M.status_set(STAT_PARALYZED, 0)
+	M.status_set(STAT_MUTED, 0)
+	M.status_end(STAT_DIZZY)
+	M.status_end(STAT_JITTERY)
+	M.status_set(STAT_DROWSY, 0)
+	M.status_set(STAT_STUTTERING, 0)
+	M.status_set(STAT_CONFUSED, 0)
+	M.status_set(STAT_SLEEPING, 0)
 	M.purge_radiation(INFINITY)
 	M.extinguish_mob()
-	M.fire_stacks = 0
+	M.set_fire_stacks(0)
 	M.mend(TREAT_ANTITOXIN, 100)
-	if(M.bodytemperature > BODYTEMP_NORMAL)
+	if(M.body_temperature() > BODYTEMP_NORMAL)
 		M.adjust_bodytemperature(-(40 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = BODYTEMP_NORMAL)
-	else if(M.bodytemperature < 311)
+	else if(M.body_temperature() < 311)
 		M.adjust_bodytemperature(40 * TEMPERATURE_DAMAGE_COEFFICIENT, max_temp = BODYTEMP_NORMAL)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_knit_fracture(O)
 			dq_reagent_close_wounds(O, wound_heal)
 
@@ -380,8 +380,8 @@
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
 /datum/reagent/adrenaline/affect_blood(mob/living/carbon/M, alien, removed)
-	M.status_set(EFFECT_PARALYZED, 0)
-	M.status_set(EFFECT_WEAKENED, 0)
+	M.status_set(STAT_PARALYZED, 0)
+	M.status_set(STAT_WEAKENED, 0)
 	M.injure(INJURY_TOXIN, rand(3), source = src)
 
 /datum/reagent/water/holywater
@@ -525,8 +525,7 @@
 	if(volume >= 5)
 		if(istype(T, /turf/simulated/wall))
 			var/turf/simulated/wall/W = T
-			W.thermite = 1
-			W.add_overlay(image('icons/effects/effects.dmi',icon_state = "#673910")) // What??
+			W.set_thermite(TRUE)
 			remove_self(5)
 	return
 
@@ -564,7 +563,7 @@
 		T.wash(CLEAN_SCRUB)
 		for(var/obj/effect/O in turf_contents_of_type(T, /obj/effect))
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
-				qdel(O)
+				dissolved(O)
 
 		for(var/mob/living/simple_mob/slime/M in turf_contents_of_type(T, /mob/living/simple_mob/slime))
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
@@ -580,24 +579,19 @@
 	if(M.get_equipped_item(SLOT_ID_HAND_L))
 		M.get_equipped_item(SLOT_ID_HAND_L).wash(CLEAN_SCRUB)
 	if(M.get_equipped_item(SLOT_ID_MASK))
-		if(M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB))
-			M.update_inv_wear_mask(0)
+		M.get_equipped_item(SLOT_ID_MASK).wash(CLEAN_SCRUB)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME)
 			M.injure(INJURY_CORROSIVE, rand(5, 10), source = src)
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB))
-				H.update_inv_head(0)
+			H.get_equipped_item(SLOT_ID_HEAD).wash(CLEAN_SCRUB)
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			if(H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB))
-				H.update_inv_wear_suit(0)
+			H.get_equipped_item(SLOT_ID_SUIT).wash(CLEAN_SCRUB)
 		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB))
-				H.update_inv_w_uniform(0)
+			H.get_equipped_item(SLOT_ID_UNIFORM).wash(CLEAN_SCRUB)
 		if(H.get_equipped_item(SLOT_ID_SHOES))
-			if(H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB))
-				H.update_inv_shoes(0)
+			H.get_equipped_item(SLOT_ID_SHOES).wash(CLEAN_SCRUB)
 		else
 			H.wash(CLEAN_SCRUB)
 			return
@@ -1044,15 +1038,16 @@
 
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
 	var/drug_strength = 12 * species_mult(M)
-	M.status_adjust(EFFECT_DIZZY, drug_strength)
-	M.status_at_least(EFFECT_CONFUSED, drug_strength * 14)
+	M.status_adjust(STAT_DIZZY, drug_strength)
+	M.status_at_least(STAT_CONFUSED, drug_strength * 14)
 
 /obj/item/reagent_containers/pill/benzilate
 	name = "Benzilate pill"
 	desc = "You probably shouldn't swallow this."
 	icon_state = "pill2"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/benzilate, null, list(REAGENT_ID_BENZILATE = 50))
+CAPABILITIES(/obj/item/reagent_containers/pill/benzilate)
+	configure(reagents(add = list(REAGENT_ID_BENZILATE = 50), tint = TRUE))
 
 
 /obj/item/reagent_containers/pill/phenethylamine
@@ -1060,7 +1055,8 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/benzilate, null, list(
 	desc = "Smells like... lilacs?"
 	icon_state = "pill5"
 
-DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, list(REAGENT_ID_PHENETHYLAMINE = 50))
+CAPABILITIES(/obj/item/reagent_containers/pill/phenethylamine)
+	configure(reagents(add = list(REAGENT_ID_PHENETHYLAMINE = 50), tint = TRUE))
 
 
 // PILLS THAT WE PROBABLY SHOULDN'T HAVE AAAAAAAAAA. The below is only so they can be included through mapping or "spawn " command. -Carl
@@ -1069,29 +1065,19 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 	name = "bottle of Benzilate pills"
 	desc = "This just hurts to look at with how many words of caution are scrawled on the lable. Better eat all of 'em!"
 
-/obj/item/storage/pill_bottle/benzilate/Initialize(mapload)
-	. = ..()
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
-	new /obj/item/reagent_containers/pill/benzilate( src )
+/obj/item/storage/pill_bottle/benzilate
+	starts_with = list(
+		/obj/item/reagent_containers/pill/benzilate = 7,
+	)
 
 /obj/item/storage/pill_bottle/phenethylamine
 	name = "bottle of Phenethylamine pills"
 	desc = "Looks like someone drew a happy face on the label, replacing whatever was previously present."
 
-/obj/item/storage/pill_bottle/phenethylamine/Initialize(mapload)
-	. = ..()
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
-	new /obj/item/reagent_containers/pill/phenethylamine( src )
+/obj/item/storage/pill_bottle/phenethylamine
+	starts_with = list(
+		/obj/item/reagent_containers/pill/phenethylamine = 7,
+	)
 
 
 // === merged from other_vr.dm during hard-fork de-suffix (verified no override-order change) ===
@@ -1107,7 +1093,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/advmutationtoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(!(M.allow_spontaneous_tf))
+	if(!(M.vore_prefs.allow_spontaneous_tf))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -1151,7 +1137,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 		if(H.nif)
 			var/obj/item/nif/nif = H.nif //L o c a l
 			if(nif.stat == NIF_TEMPFAIL)
-				nif.stat = NIF_INSTALLING
+				nif.set_stat(NIF_INSTALLING)
 			nif.repair(removed)
 
 /datum/reagent/firefighting_foam
@@ -1222,7 +1208,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 		if(H.nif)
 			var/obj/item/nif/nif = H.nif //L o c a l
 			if(nif.stat == NIF_TEMPFAIL)
-				nif.stat = NIF_INSTALLING
+				nif.set_stat(NIF_INSTALLING)
 			nif.repair(removed*0.1)
 
 //Special toxins for solargrubs

@@ -9,10 +9,13 @@
 	var/air_frequency = ALERT_FREQ
 	autoclose = 0
 
+CAPABILITIES(/obj/machinery/door/airlock/alarmlock)
+	ref_one(nameof(air_connection), /datum/radio_frequency)
+
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
-	GLOB.radio_service.remove_object(src, air_frequency)
-	rel_set(src, nameof(air_connection), GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
+	SSradio.remove_object(src, air_frequency)
+	rel_set(src, nameof(air_connection), SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()
 
 /obj/machinery/door/airlock/alarmlock/receive_signal(datum/signal/signal)
@@ -28,10 +31,10 @@
 	if(alarm_area == our_area.name)
 		switch(alert)
 			if("severe")
-				autoclose = 1
+				set_autoclose(1)
 				close()
 			if("minor", "clear")
-				autoclose = 0
+				set_autoclose(0)
 				open()
 
 /// air connection (a relation view: it reads null once the target is deleted).

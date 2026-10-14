@@ -61,7 +61,7 @@
 	// Decent chance to overload lighting circuit.
 	if(prob(8 * severity))	//over double the original chance (3), because it's now only a one-in-four to blow the lights out entirely
 		if(prob(75))	//flicker 'em
-			for(var/obj/machinery/light/L in T.area())
+			for(var/obj/machinery/light/L in T.area)
 				L.flicker(15)
 		else	//blast 'em!
 			T.overload_lighting()

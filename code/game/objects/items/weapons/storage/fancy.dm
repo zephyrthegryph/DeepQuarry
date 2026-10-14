@@ -22,18 +22,18 @@
 	icon_state = "donutbox6"
 	name = "donut box"
 	var/icon_type = "donut"
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	var/open = 0
 	var/open_state
 	var/closed_state
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/appearance_overlays()
-	. = list()
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
-	icon_state = "[icon_type]box[total_contents]"
-	return .
+CAPABILITIES(/obj/item/storage/fancy)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
+
+TRACKED(/obj/item/storage/fancy, open)
+
+/obj/item/storage/fancy/draw(datum/look/look)
+	. = ..()
+	look.state("[icon_type]box[held_count()]")
 
 /obj/item/storage/fancy/examine(mob/user)
 	. = ..()
@@ -61,40 +61,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance
 	storage_slots = 12
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
-TYPE_TABLE(/obj/item/storage/fancy/egg_box, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/reagent_containers/food/snacks/egg, \
-		/obj/item/reagent_containers/food/snacks/boiledegg \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/fancy/egg_box/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
+CAPABILITIES(/obj/item/storage/fancy/egg_box)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/egg,
+		/obj/item/reagent_containers/food/snacks/boiledegg)))
+
+/obj/item/storage/fancy/egg_box/draw(datum/look/look)
 	. = ..()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/egg_box/appearance_overlays()
-	. = list()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "eggbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(open_state || "[initial(icon_state)]0")
+		if(held_count() >= 1)
+			look.overlay("eggbox[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state || initial(icon_state))
 
 /obj/item/storage/fancy/egg_box/open(mob/user as mob)
 	if(open)
 		return
 	if (isobserver(user))
 		return
-	open = TRUE
-	update_icon()
+	set_open(TRUE)
 	..()
 
 /obj/item/storage/fancy/egg_box/close(mob/user as mob)
-	open = FALSE
-	update_icon()
+	set_open(FALSE)
 	..()
 
 /*
@@ -107,12 +98,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, ap
 	icon_state = "candlebox5"
 	icon_type = "candle"
 	item_state = "candlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle = 5)
 
-TYPE_TABLE(/obj/item/storage/fancy/candle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/candle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/whitecandle_box
 	name = "white candle pack"
@@ -121,12 +114,14 @@ TYPE_TABLE(/obj/item/storage/fancy/candle_box, hold_spec, list(HOLD_ONLY(list(/o
 	icon_state = "whitecandlebox5"
 	icon_type = "whitecandle"
 	item_state = "whitecandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/white = 5)
 
-TYPE_TABLE(/obj/item/storage/fancy/whitecandle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/blackcandle_box
 	name = "black candle pack"
@@ -135,17 +130,19 @@ TYPE_TABLE(/obj/item/storage/fancy/whitecandle_box, hold_spec, list(HOLD_ONLY(li
 	icon_state = "blackcandlebox5"
 	icon_type = "blackcandle"
 	item_state = "blackcandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
+
+CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /*
  * Crayon Box
  */
 
-TYPE_TABLE(/obj/item/storage/fancy/blackcandle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/fancy/crayons
 	name = "box of crayons"
 	desc = "A box of crayons for all your rune drawing needs."
@@ -158,40 +155,34 @@ TYPE_TABLE(/obj/item/storage/fancy/blackcandle_box, hold_spec, list(HOLD_ONLY(li
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
 
-TYPE_TABLE(/obj/item/storage/fancy/crayons, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/pen/crayon \
-	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
-
-/obj/item/storage/fancy/crayons/Initialize(mapload)
-	. = ..()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/crayons/proc/one_of_each_colour(datum/roller/R)
+	. = list()
 	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/C = new(src)
+		var/obj/item/pen/crayon/C = new
 		C.variant = v
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
-	update_icon()
+		. += C
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/crayons/appearance_overlays()
+/obj/item/storage/fancy/crayons/draw(datum/look/look)
+	. = ..()
+	look.state(initial(icon_state)) // a box of crayons shows the crayons, not a count
+	for(var/colour in crayon_colours())
+		look.overlay(colour, icon = 'icons/obj/crayons.dmi')
+
+/// The colour of each crayon inside, in order.
+/obj/item/storage/fancy/crayons/proc/crayon_colours()
 	. = list()
-	var/mutable_appearance/ma = new(src)
-	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/crayon in slot_contents(CONTAINER_SLOT_STORAGE))
-		. += image('icons/obj/crayons.dmi',crayon.colourName)
-	appearance = ma
+	for(var/obj/item/pen/crayon/crayon in held_things())
+		. += crayon.colourName
 
-EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/pen/crayon, PROC_REF(interaction_crayon), "Put in"))
+READS_AS(/obj/item/storage/fancy/crayons/proc/crayon_colours, STORAGE_CONTENTS_KEY)
 
-/// Old attackby: the mime and rainbow crayons refuse the box; the rest go on to the storage's insertion.
-/obj/item/storage/fancy/crayons/proc/interaction_crayon(mob/user, obj/item/pen/crayon/W, datum/interaction/interaction)
-	switch(W.colourName)
-		if("mime")
-			to_chat(user, "This crayon is too sad to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-		if("rainbow")
-			to_chat(user, "This crayon is too powerful to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+// The mime and rainbow crayons are too sad and too powerful for the box.
+CAPABILITIES(/obj/item/storage/fancy/crayons)
+	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -203,40 +194,33 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/p
 	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
 
-TYPE_TABLE(/obj/item/storage/fancy/markers, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/pen/crayon/marker \
-	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
-
-/obj/item/storage/fancy/markers/Initialize(mapload)
-	. = ..()
-	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/marker/M = new(src)
-		M.variant = v
-		M.apply_variant()
-		M.name = "[M.colourName] [initial(M.name)]"
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/markers/appearance_overlays()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/markers/proc/one_of_each_colour(datum/roller/R)
 	. = list()
-	var/mutable_appearance/ma = new(src)
-	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/marker/marker in slot_contents(CONTAINER_SLOT_STORAGE))
-		ma.add_overlay(image('icons/obj/crayons.dmi',"m"+marker.colourName))
-	appearance = ma
+	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
+		var/obj/item/pen/crayon/marker/C = new
+		C.variant = v
+		C.apply_variant()
+		C.name = "[C.colourName] [initial(C.name)]"
+		. += C
 
-EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/pen/crayon/marker, PROC_REF(interaction_marker), "Put in"))
+/obj/item/storage/fancy/markers/draw(datum/look/look)
+	. = ..()
+	look.state(initial(icon_state)) // a box of markers shows the markers, not a count
+	for(var/colour in marker_colours())
+		look.overlay("m[colour]", icon = 'icons/obj/crayons.dmi')
 
-/// Old attackby: the mime and rainbow markers refuse the box; the rest go on to the storage's insertion.
-/obj/item/storage/fancy/markers/proc/interaction_marker(mob/user, obj/item/pen/crayon/marker/W, datum/interaction/interaction)
-	switch(W.colourName)
-		if("mime")
-			to_chat(user, "This marker is too depressing to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-		if("rainbow")
-			to_chat(user, "This marker is too childish to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+/// The colour of each marker inside, in order.
+/obj/item/storage/fancy/markers/proc/marker_colours()
+	. = list()
+	for(var/obj/item/pen/crayon/marker/marker in held_things())
+		. += marker.colourName
+
+READS_AS(/obj/item/storage/fancy/markers/proc/marker_colours, STORAGE_CONTENTS_KEY)
+
+CAPABILITIES(/obj/item/storage/fancy/markers)
+	configure(storage(accepts = list(/obj/item/pen/crayon/marker)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /*
  * Cracker Pack
@@ -250,11 +234,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/p
 	w_class = ITEMSIZE_SMALL
 	starts_with = list(/obj/item/reagent_containers/food/snacks/cracker = 6)
 
+CAPABILITIES(/obj/item/storage/fancy/crackers)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/cracker), max_size = ITEMSIZE_TINY))
+
 /*
  * Cigarette Pack
  */
 
-TYPE_TABLE(/obj/item/storage/fancy/crackers, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/cracker)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 /obj/item/storage/fancy/cigarettes
 	name = "\improper pack of Trans-Stellar Duty-frees"
 	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets."
@@ -263,55 +249,50 @@ TYPE_TABLE(/obj/item/storage/fancy/crackers, hold_spec, list(HOLD_ONLY(list(/obj
 	icon_state = "cigpacket"
 	item_state_slots = list(slot_r_hand_str = "cigpacket", slot_l_hand_str = "cigpacket")
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 6
 	icon_type = "cigarette"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
+	flags = NOREACT | OPENCONTAINER
 	var/brand = "\improper Trans-Stellar Duty-free"
 
-TYPE_TABLE(/obj/item/storage/fancy/cigarettes, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	reagents(PROC_REF(pack_volume)) // so people can inject the whole packet without opening it
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette,
+		/obj/item/flame/lighter,
+		/obj/item/trash/cigbutt)))
+
+/// A pack's reagents: 15 units for each cigarette or cigar it holds (reagents()).
+/obj/item/storage/fancy/proc/pack_volume()
+	return 15 * storage_slots
 
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]_open"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
 	. = ..()
-	flags |= NOREACT
-	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT. So people can inject cigarettes without opening a packet, now with being able to inject the whole one
-	flags |= OPENCONTAINER
 	if(brand)
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/cigarettes/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/cigarettes/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "cig[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (open_state || "[initial(icon_state)]_open"))
+		if(held_count() >= 1)
+			look.overlay("cig[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(held_count() == 0 ? "[initial(icon_state)]_empty" : (closed_state || initial(icon_state)))
 
 /obj/item/storage/fancy/cigarettes/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		update_icon()
+	set_open(TRUE)
 	..()
 
 /obj/item/storage/fancy/cigarettes/close(mob/user as mob)
-	open = FALSE
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "[initial(icon_state)]_empty"
-	else
-		update_icon()
+	set_open(FALSE)
 	..()
 
 /obj/item/storage/fancy/cigarettes/remove_from_storage(obj/item/W, atom/new_location, mob/user)
@@ -322,7 +303,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom,
 	return ..()
 
 /obj/item/storage/fancy/cigarettes/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(M == user && user.zone_sel.selecting == O_MOUTH)
+	if(M == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		// Find ourselves a cig. Note that we could be full of lighters.
 		var/obj/item/clothing/mask/smokable/cigarette/cig
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -345,7 +326,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom,
 
 		reagents.maximum_volume = 15 * length(slot_contents(CONTAINER_SLOT_STORAGE))
 		to_chat(user, span_notice("You take a cigarette out of the pack."))
-		update_icon()
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -410,22 +390,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom,
 	icon_state = "cigarcase"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 5
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
+	flags = NOREACT
 
-TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette/cigar, /obj/item/trash/cigbutt/cigarbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/fancy/cigar/Initialize(mapload)
-	if(!open_state)
-		open_state = "[initial(icon_state)]0"
-	if(!closed_state)
-		closed_state = "[initial(icon_state)]"
-	. = ..()
-	flags |= NOREACT
-	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT
+CAPABILITIES(/obj/item/storage/fancy/cigar)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	reagents(PROC_REF(pack_volume)) // so people can inject the cigars without opening the case
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette/cigar,
+		/obj/item/trash/cigbutt/cigarbutt)))
+
 
 /obj/item/storage/fancy/cigar/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	var/obj/item/clothing/mask/smokable/cigarette/cigar/C = W
@@ -433,26 +411,23 @@ TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/it
 	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/cigar/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/cigar/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "[initial(icon_state)][length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(open_state || "[initial(icon_state)]0")
+		if(held_count() >= 1)
+			look.overlay("[initial(icon_state)][held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state || initial(icon_state))
 
 /obj/item/storage/fancy/cigar/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
-	update_icon()
+	set_open(TRUE)
 	..()
 
 /obj/item/storage/fancy/cigar/close(mob/user as mob)
-	open = FALSE
-	update_icon()
+	set_open(FALSE)
 	..()
 
 /obj/item/storage/fancy/cigar/choiba
@@ -485,12 +460,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appe
 	icon_state = "paperbox"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 14
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
 
-TYPE_TABLE(/obj/item/storage/rollingpapers, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/rollingpaper)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/rollingpapers)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper)))
 
 /obj/item/storage/rollingpapers/blunt
 	name = "blunt wrap pack"
@@ -499,11 +476,13 @@ TYPE_TABLE(/obj/item/storage/rollingpapers, hold_spec, list(HOLD_ONLY(list(/obj/
 	storage_slots = 7
 	starts_with = list(/obj/item/reagent_containers/rollingpaper/blunt = 7)
 
+CAPABILITIES(/obj/item/storage/rollingpapers/blunt)
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper/blunt)))
+
 /*
  * Vial Box
  */
 
-TYPE_TABLE(/obj/item/storage/rollingpapers/blunt, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/rollingpaper/blunt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/fancy/vials
 	icon = 'icons/obj/vialbox.dmi'
 	icon_state = "vialbox6"
@@ -513,7 +492,9 @@ TYPE_TABLE(/obj/item/storage/rollingpapers/blunt, hold_spec, list(HOLD_ONLY(list
 	storage_slots = 6
 	starts_with = list(/obj/item/reagent_containers/glass/beaker/vial = 6)
 
-TYPE_TABLE(/obj/item/storage/fancy/vials, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/vials)
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial)))
 
 /obj/item/storage/lockbox/vials
 	name = "secure vial storage box"
@@ -525,30 +506,20 @@ TYPE_TABLE(/obj/item/storage/fancy/vials, hold_spec, list(HOLD_ONLY(list(/obj/it
 	storage_slots = 6
 	req_access = list(ACCESS_VIROLOGY)
 
-TYPE_TABLE(/obj/item/storage/lockbox/vials, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/lockbox/vials/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/lockbox/vials)
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL))
+
+/// The box shows how many vials it holds, its lock's light, and the cover while it is locked.
+/obj/item/storage/lockbox/vials/draw(datum/look/look)
 	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/lockbox/vials, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/lockbox/vials/appearance_overlays()
-	. = list()
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
-	icon_state = "vialbox[total_contents]"
-	if (!broken)
-		. += "led[locked]"
-		if(locked)
-			. += "cover"
-	else
-		. += "ledb"
-
-EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PROC_REF(interaction_vials_item)))
-
-/// Old attackby: the lockbox's handling, then the vial display updates.
-/obj/item/storage/lockbox/vials/proc/interaction_vials_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = interaction_lockbox_item(user, W, interaction)
-	update_icon()
+	look.state("vialbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
+	if(broken)
+		look.overlay("ledb")
+		return
+	var/locked = lock_locked(src)
+	look.overlay("led[locked ? 1 : 0]")
+	look.overlay("cover", when = locked)
 
 /*
  * Box of Chocolates
@@ -569,21 +540,16 @@ EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PRO
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
 	)
 
-TYPE_TABLE(/obj/item/storage/fancy/heartbox, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/white, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-/obj/item/storage/fancy/heartbox/Initialize(mapload)
+CAPABILITIES(/obj/item/storage/fancy/heartbox)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/chocolatepiece,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle)))
+
+/obj/item/storage/fancy/heartbox/draw(datum/look/look)
 	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/heartbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/heartbox/appearance_overlays()
-	. = list()
-	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "heartbox_empty"
+	look.state(held_count() == 0 ? "heartbox_empty" : initial(icon_state))
 
 
 /obj/item/storage/fancy/cigar/cohiba

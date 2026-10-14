@@ -7,16 +7,20 @@
 	var/current_range
 	///If we don't check turfs in range if the host's loc isn't a turf
 	var/ignore_if_not_on_turf
-	///The hooks of the range connector, needed to monitor the turfs in range.
+	///What the range connector tells the monitor about the turfs in range.
 	var/static/list/loc_connections = list(
-		/datum/om/event/atom_entered = PROC_REF(on_entered),
-		/datum/om/event/atom_exited = PROC_REF(on_uncrossed),
-		/datum/om/event/atom_after_successful_initialized_on = PROC_REF(on_initialized_on),
+		RANGE_ENTERED = PROC_REF(on_entered),
+		RANGE_EXITED = PROC_REF(on_uncrossed),
+		RANGE_INITIALIZED = PROC_REF(on_initialized_on),
 	)
 	/// Hooks the containers of the host (owned).
 	var/datum/connect_containers/containers_connector
 	/// Hooks the turfs in range of the host (owned).
 	var/datum/connect_range/range_connector
+
+CAPABILITIES(/datum/proximity_monitor)
+	owns_one(nameof(containers_connector), /datum/connect_containers)
+	owns_one(nameof(range_connector), /datum/connect_range)
 
 
 /datum/proximity_monitor/New(atom/_host, range, _ignore_if_not_on_turf = TRUE)
@@ -28,29 +32,30 @@
 	if(new_host == host())
 		return
 	if(host()) //No need to delete the range and containers connectors. They'll be updated with the new tracked host.
-		om_unhook(host(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
+		unobserve(host(), /datum/notice/moved, src)
+		unobserve(host(), /datum/notice/qdeleting, src)
 	if(hasprox_receiver())
-		om_unhook(hasprox_receiver(), /datum/om/event/qdeleting, src)
+		unobserve(hasprox_receiver(), /datum/notice/qdeleting, src)
 	if(new_receiver)
 		rel_set(src, nameof(hasprox_receiver), new_receiver)
 		if(new_receiver != new_host)
-			om_hook(new_receiver, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
+			observe(new_receiver, /datum/notice/qdeleting, src, then(PROC_REF(on_host_or_receiver_del)))
 	else if(hasprox_receiver() == host()) //Default case
 		rel_set(src, nameof(hasprox_receiver), new_host)
 	rel_set(src, nameof(host), new_host)
-	om_hook(new_host, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
-	var/static/list/containers_connections = list(/datum/om/event/moved = PROC_REF(on_moved), /datum/om/event/before/movable_z_changed = PROC_REF(on_z_change))
+	observe(new_host, /datum/notice/qdeleting, src, then(PROC_REF(on_host_or_receiver_del)))
+	var/static/list/containers_connections = list(/datum/notice/moved = PROC_REF(on_moved), /datum/notice/movable_z_changed = PROC_REF(on_z_change))
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
 	else if(ismovable(host()))
-		own_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
-	om_hook(host(), /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
+		rel_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
+	observe(host(), /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(host(), /datum/notice/movable_z_changed, src, then(PROC_REF(on_z_change)))
 	set_range(current_range, TRUE)
 
-/datum/proximity_monitor/proc/on_host_or_receiver_del(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	qdel(src)
+/datum/proximity_monitor/proc/on_host_or_receiver_del(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	ended_with(src)
 
 /datum/proximity_monitor/proc/set_range(range, force_rebuild = FALSE)
 	if(!force_rebuild && range == current_range)
@@ -66,15 +71,16 @@
 	if(range_connector && !QDELETED(range_connector))
 		range_connector.update(host(), loc_connections, current_range, works_in_containers)
 		return
-	own_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
+	rel_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
-/datum/proximity_monitor/proc/on_moved(atom/movable/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/datum/proximity_monitor/proc/on_moved(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/atom/movable/source = N.target
 	if(source == host())
 		hasprox_receiver()?.HasProximity(host())
 
-/datum/proximity_monitor/proc/on_z_change(datum/source, datum/om/event/before/movable_z_changed/event)
-	EVENT_HANDLER
+/datum/proximity_monitor/proc/on_z_change(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /datum/proximity_monitor/proc/set_ignore_if_not_on_turf(does_ignore = TRUE)
@@ -84,21 +90,21 @@
 	//Update the ignore_if_not_on_turf
 	update_range_connector(ignore_if_not_on_turf)
 
-/datum/proximity_monitor/proc/on_uncrossed(atom/source, datum/om/event/atom_exited/event)
-	EVENT_HANDLER
-	uncrossed(source, event.gone, event.new_loc)
+/datum/proximity_monitor/proc/on_uncrossed(atom/source, atom/movable/gone, atom/new_loc)
+	SHOULD_NOT_SLEEP(TRUE)
+	uncrossed(source, gone, new_loc)
 
 /// Something left a turf in range. Used by the advanced subtype for effect fields.
 /datum/proximity_monitor/proc/uncrossed(atom/source, atom/movable/gone, atom/new_loc)
 	return
 
-/datum/proximity_monitor/proc/on_entered(atom/source, datum/om/event/atom_entered/event)
-	EVENT_HANDLER
-	entered(source, event.arrived)
+/datum/proximity_monitor/proc/on_entered(atom/source, atom/movable/arrived, atom/old_loc)
+	SHOULD_NOT_SLEEP(TRUE)
+	entered(source, arrived)
 
-/datum/proximity_monitor/proc/on_initialized_on(atom/source, datum/om/event/atom_after_successful_initialized_on/event)
-	EVENT_HANDLER
-	entered(source, event.created)
+/datum/proximity_monitor/proc/on_initialized_on(atom/source, atom/movable/created, mapload)
+	SHOULD_NOT_SLEEP(TRUE)
+	entered(source, created)
 
 /// Something entered (or was created on) a turf in range.
 /datum/proximity_monitor/proc/entered(atom/source, atom/movable/arrived)

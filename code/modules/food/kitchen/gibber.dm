@@ -17,8 +17,6 @@
 	var/gib_throw_dir = WEST // Direction to spit meat and gibs in.
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 500
 
 //auto-gibs anything that bumps into it
 /obj/machinery/gibber/autogibber
@@ -32,20 +30,26 @@
 			if(isturf(input_obj.loc))
 				rel_set(src, nameof(input_plate), input_obj.loc)
 				gib_throw_dir = i
-				qdel(input_obj)
+				spent(input_obj)
 				break
 
 	if(!input_plate())
 		log_world("## MISC a [src] didn't find an input plate.")
 
 /// Sealed occupant slot (C8a, containment.md §10).
-/datum/om/relation/slot/occupant/gibber
+/datum/relation_definition/slot/occupant/gibber
 	holder = /obj/machinery/gibber
 	slot_id = OCCUPANT_SLOT_GIBBER
 	name = "gibber"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
-/obj/machinery/gibber/autogibber/Bumped(atom/A)
+CAPABILITIES(/obj/machinery/gibber/autogibber)
+	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+
+/// Something walked into it (the bump action's notice).
+/obj/machinery/gibber/autogibber/proc/bumped_into(datum/act/act)
+	var/datum/notice/bumped/N = act
+	var/atom/A = N.bumper
 	if(!input_plate()) return
 
 	if(ismob(A))
@@ -56,8 +60,8 @@
 			M.forceMove(src)
 			M.gib()
 
-/obj/machinery/gibber/Initialize(mapload)
-	. = ..()
+TRACKED(/obj/machinery/gibber, operating)
+TRACKED(/obj/machinery/gibber, dirty)
 
 /// Appearance reader: which status light the gibber shows.
 /obj/machinery/gibber/proc/appearance_gibber_light()
@@ -67,39 +71,47 @@
 		return "jam"
 	return operating ? "use" : "idle"
 
-DECLARE_APPEARANCE(/obj/machinery/gibber, "dirty", list("1" = list(APPEARANCE_OVERLAYS = list("grbloody"))))
-DECLARE_APPEARANCE(/obj/machinery/gibber, "appearance_gibber_light", list(
-	"jam" = list(APPEARANCE_OVERLAYS = list("grjam")),
-	"use" = list(APPEARANCE_OVERLAYS = list("gruse")),
-	"idle" = list(APPEARANCE_OVERLAYS = list("gridle")),
-))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/gibber/draw(datum/look/look)
+	..()
+	if(dirty == 1)
+		look.overlay("grbloody")
+	switch("[appearance_gibber_light()]")
+		if("jam")
+			look.overlay("grjam")
+		if("use")
+			look.overlay("gruse")
+		if("idle")
+			look.overlay("gridle")
 
 /obj/machinery/gibber/relaymove(mob/user as mob)
 	src.go_out()
 	return
 
-EXTEND_INTERACTIONS(/obj/machinery/gibber, \
-	INTERACT_HAND_UNGATED("Start gibbing", PROC_REF(gibber_interaction_hand), REQ_TARGET_STATE(/obj/machinery/gibber/proc/can_start_gibbing)), \
-	INTERACT_ITEM(null, PROC_REF(gibber_interaction_item), REQ_TARGET_STATE(/obj/machinery/gibber/proc/can_feed_grab)), \
-	INTERACT_DRAG("Put inside", PROC_REF(gibber_interaction_drag)), \
-	INTERACT_VERB("Empty Gibber", PROC_REF(gibber_verb_eject)), \
-)
+CAPABILITIES(/obj/machinery/gibber)
+	configure(uses_power(idle = 2, active = 500))
+	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing))), then(PROC_REF(gibber_interaction_hand)))
+	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab))), starts(PROC_REF(stuff_started)), begins(PROC_REF(grab_stuff_begins)), wait(PROC_REF(grab_stuff_time)), then(PROC_REF(gibber_interaction_item)))
+	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), starts(PROC_REF(stuff_started)), begins(PROC_REF(drag_stuff_begins)), wait(PROC_REF(drag_stuff_time)), then(PROC_REF(gibber_interaction_drag)))
+	op("gibber_verb_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty Gibber"), needs(req_adjacent(), req_capable()), then(PROC_REF(gibber_verb_eject)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Requirement: the gibber isn't already running (an inoperable one is ignored silently by the effect).
-/obj/machinery/gibber/proc/can_start_gibbing(mob/user, atom/target, obj/item/held)
+/obj/machinery/gibber/proc/can_start_gibbing(datum/act/op/A)
 	if(operable() && operating)
 		return "the gibber is locked and running, wait for it to finish"
-	return TRUE
+	return null
 
 /// Requirement: a strong enough grip (only asked of grabs; other items fall through).
-/obj/machinery/gibber/proc/can_feed_grab(mob/user, atom/target, obj/item/held)
-	var/obj/item/grab/G = held
-	if(istype(G) && G.state < 2)
+/obj/machinery/gibber/proc/can_feed_grab(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	if(istype(G) && G.state < 2) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 		return "you need a better grip to do that"
-	return TRUE
+	return null
 
 /// Old attack_hand.
-/obj/machinery/gibber/proc/gibber_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/gibber/proc/gibber_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	src.startgibbing(user)
@@ -107,71 +119,98 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 /obj/machinery/gibber/examine()
 	. = ..()
-	. += "The safety guard is [emagged ? span_danger("disabled") : "enabled"]."
+	. += "The safety guard is [emagged() ? span_danger("disabled") : "enabled"]."
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
-/obj/machinery/gibber/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(!emagged)
-	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
-	return 1
+/obj/machinery/gibber/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	set_emagged(!emagged())
+	to_chat(user, span_danger("You [emagged() ? "disable" : "enable"] the gibber safety guard."))
+	return OP_OK
 
 /// Old attackby.
-/obj/machinery/gibber/proc/gibber_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/gibber/proc/gibber_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(default_part_replacement(user, W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/grab/G = W
 	if(!istype(G))
-		return FALSE
+		return OP_DECLINE
 
 	move_into_gibber(user,G?.grab_target())
 	// Grab() process should clean up the grab item, no need to del it.
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old MouseDrop_T.
-/obj/machinery/gibber/proc/gibber_interaction_drag(mob/user, mob/target, datum/interaction/interaction)
+/obj/machinery/gibber/proc/gibber_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/target = A.held
 	if(user.stat || user.restrained())
 		return TRUE
 	move_into_gibber(user,target)
 	return TRUE
 
-/obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
+/// Why the victim cannot be put in the gibber now, or null.
+/obj/machinery/gibber/proc/stuffing_refusal(mob/living/victim)
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)
 
 	if(occupant)
-		to_chat(user, span_danger("The gibber is full, empty it first!"))
-		return
+		return "The gibber is full, empty it first!"
 
 	if(operating)
-		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
-		return
+		return "The gibber is locked and running, wait for it to finish."
 
 	if(!(iscarbon(victim)) && !(isanimal(victim)) )
-		to_chat(user, span_danger("This is not suitable for the gibber!"))
-		return
+		return "This is not suitable for the gibber!"
 
-	if(ishuman(victim) && !emagged)
-		to_chat(user, span_danger("The gibber safety guard is engaged!"))
-		return
+	if(ishuman(victim) && !emagged())
+		return "The gibber safety guard is engaged!"
 
 	if(victim.abiotic(1))
-		to_chat(user, span_danger("Subject may not have abiotic items on."))
-		return
+		return "Subject may not have abiotic items on."
+	return null
 
-	act_message(user, victim, others = span_danger("%U% starts to put %T% into the gibber!"))
-	src.add_fingerprint(user)
-	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(stuff_done), list(user, victim))
+/// The thing a grab in hand holds.
+/obj/machinery/gibber/proc/grab_victim(datum/act/op/A)
+	var/obj/item/grab/G = A.held
+	return istype(G) ? G.grab_target() : null
 
-/obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
-	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))
+/// Putting someone in takes three seconds; a refusal is answered at once by move_into_gibber().
+/obj/machinery/gibber/proc/grab_stuff_time(datum/act/op/A)
+	var/mob/living/victim = grab_victim(A)
+	return victim && !stuffing_refusal(victim) ? 3 SECONDS : 0
+
+/obj/machinery/gibber/proc/drag_stuff_time(datum/act/op/A)
+	var/mob/living/victim = A.held
+	if(A.actor.stat || A.actor.restrained() || !istype(victim) || stuffing_refusal(victim))
+		return 0
+	return 3 SECONDS
+
+/obj/machinery/gibber/proc/grab_stuff_begins(datum/act/op/A)
+	return msg_text(null, span_danger("%U% starts to put [grab_victim(A)] into the gibber!"))
+
+/obj/machinery/gibber/proc/drag_stuff_begins(datum/act/op/A)
+	return msg_text(null, span_danger("%U% starts to put [A.held] into the gibber!"))
+
+/obj/machinery/gibber/proc/stuff_started(datum/act/op/A)
+	add_fingerprint(A.actor)
+
+/// Puts the victim in: refused at once with the reason, or after the wait if the victim is still within reach.
+/obj/machinery/gibber/proc/move_into_gibber(mob/user,mob/living/victim)
+	var/refusal = stuffing_refusal(victim)
+	if(refusal)
+		to_chat(user, span_danger(refusal))
 		return
-	if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
+	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user))
+		return
+	if(!move_into(src, OCCUPANT_SLOT_GIBBER, victim, user))
 		return
 	act_message(user, victim, others = span_danger("%U% stuffs %T% into the gibber!"))
-	update_icon()
 
 /// Old Empty Gibber verb.
-/obj/machinery/gibber/proc/gibber_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/gibber/proc/gibber_verb_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat != 0)
 		return TRUE
 	src.go_out()
@@ -183,10 +222,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	if(operating || !occupant)
 		return
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
-	update_icon()
 	return
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
@@ -199,13 +237,12 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 
 	use_power(1000)
 	visible_message(span_danger("You hear a loud [HAS_SYNTHETIC_BIOLOGY(occupant) ? "metallic" : "squelchy"] grinding sound."))
-	src.operating = 1
-	update_icon()
+	set_operating(1)
 
 	var/slab_name = occupant.name
 	var/slab_count = 2 + occupant.meat_amount
 	var/slab_type = occupant.meat_type ? occupant.meat_type : /obj/item/reagent_containers/food/snacks/meat
-	var/slab_nutrition = occupant.nutrition / 15
+	var/slab_nutrition = nutrition_of(occupant) / 15
 
 	var/list/byproducts = occupant?.butchery_loot?.Copy()
 
@@ -231,7 +268,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 
 	occupant.ghostize()
 
-	om_after(src, gib_time, PROC_REF(finish_gibbing), byproducts)
+	after(src, gib_time, PROC_REF(finish_gibbing), with = list(byproducts))
 
 /obj/machinery/gibber/proc/finish_gibbing(list/byproducts)
 	// The occupant is whoever is still in the slot when the timer fires (a deleted one is simply gone).
@@ -240,10 +277,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
 	if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
 		// remains stay physically in the slot, but are no longer "the occupant" --
-		// unlink without a ledger move (the remains stay physically where they are).
-		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
+		// release the slot's claim without a move (the remains stay physically where they are, in the default slot).
+		slot_release(occupant)
 	play_sfx(src, SFX_EFFECTS_SPLAT)
-	operating = 0
+	set_operating(0)
 	if(LAZYLEN(byproducts))
 		for(var/path in byproducts)
 			while(byproducts[path])
@@ -253,7 +290,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 				byproducts[path] -= 1
 
 	latent_materialize_all() // a walk needs real things (C5)
-	for (var/obj/thing in contents) // ALLOW(latent): materialized above
+	for (var/obj/thing in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		// There's a chance that the gibber will fail to destroy or butcher some evidence.
 		if(istype(thing,/obj/item/organ) && prob(80))
 			var/obj/item/organ/OR = thing
@@ -263,9 +300,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 				consume(thing)
 			continue
 		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
-		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
-
-	update_icon()
+		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged() ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
 
 /// the input_plate this refers to (a relation view: null once it is deleted).
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf

@@ -6,14 +6,14 @@
 	if(!is_motion_tracking)
 		is_motion_tracking = TRUE
 		wants_to_see_motion_echos = TRUE
-		om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
-		om_grant(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
+		global.observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
+		grant(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(is_motion_tracking)
 		is_motion_tracking = FALSE
-		om_unhook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src)
-		om_revoke(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
+		unobserve(SSmotiontracker, /datum/notice/movable_motiontracker, src)
+		revoke(src, granted_verb(/mob/proc/toggle_motion_echo_vis), src)
 
 /mob/living/carbon/human/motiontracker_unsubscribe(destroying = FALSE)
 	// Block unsub if our species has vibration senses
@@ -21,25 +21,26 @@
 		return
 	. = ..()
 
-// For /datum/om/event/movable_motiontracker
-/mob/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
-	EVENT_HANDLER
+// For /datum/definition_event/movable_motiontracker
+/mob/proc/handle_motion_tracking(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	var/datum/notice/movable_motiontracker/event = A
 	// The event carries the moving atom itself (emitted synchronously, never stored).
-	var/atom/echo_source = event.source
+	var/atom/echo_source = event.source_
 	var/turf/T = event.echo_turf_location
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return
-	if(!isatom(echo_source) || get_dist(src,echo_source) > GLOB.motiontracker_service.max_range || src.z != echo_source.z)
+	if(!isatom(echo_source) || get_dist(src,echo_source) > motiontracker_max_range() || src.z != echo_source.z)
 		return
 	// Blind characters see all pings around them. Otherwise remove the closest, or any we can see. Pings behind walls or in the dark are always visible
-	if(!is_blind() && (get_dist(src,echo_source) < GLOB.motiontracker_service.min_range || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
+	if(!is_blind() && (get_dist(src,echo_source) < motiontracker_min_range() || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
 		return
 	var/echos = 1
 	if(prob(30))
 		echos = rand(1,3)
-	GLOB.motiontracker_service.queue_echo(get_turf(src),T,echos,client)
+	SSmotiontracker.queue_echo(get_turf(src),T,echos,client)
 
 /mob/proc/toggle_motion_echo_vis()
 	set name = "Toggle Vibration Senses"

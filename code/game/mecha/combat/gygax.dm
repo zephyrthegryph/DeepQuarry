@@ -64,18 +64,12 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 	max_universal_equip = 1
 	max_special_equip = 2
 
-	starting_equipment = list(
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot,
-		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang,
-		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay,
-		/obj/item/mecha_parts/mecha_equipment/teleporter
-		)
 
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
-		own_set(src, nameof(src.cell), C, into = TRUE)
+		move_into(src, nameof(src.cell), C)
 		return
-	own_set(src, nameof(cell), new /obj/item/cell/hyper(src))
+	rel_set(src, nameof(cell), new /obj/item/cell/hyper(src))
 
 /obj/mecha/combat/gygax/serenity
 	desc = "A lightweight exosuit made from a modified Gygax chassis combined with proprietary VeyMed medical tech. It's faster and sturdier than most medical mechs, but much of the armor plating has been stripped out, leaving it more vulnerable than a regular Gygax."
@@ -107,13 +101,14 @@ TYPE_TABLE(/obj/mecha/combat/gygax/serenity, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/electrical \
 		))
 
-DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothing/glasses/hud/health/mech)
+CAPABILITIES(/obj/mecha/combat/gygax/serenity)
+	owns_one(nameof(hud), starts = /obj/item/clothing/glasses/hud/health/mech)
 
 /obj/mecha/combat/gygax/serenity/moved_inside(mob/living/carbon/human/H as mob)
 	if(..())
 		if(H.get_equipped_item(SLOT_ID_EYES))
 			occupant_message(span_red("[H.get_equipped_item(SLOT_ID_EYES)] prevent you from using [src] [hud]!"))
-		else if(hud.move_into(H, SLOT_ID_EYES, H))
+		else if(move_into(H, SLOT_ID_EYES, hud, H))
 			H.recalculate_vis()
 		return 1
 	else
@@ -131,14 +126,22 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothin
 
 //Meant for random spawns.
 /obj/mecha/combat/gygax/old
+	max_integrity = 250 // just slightly worse
 	desc = "A lightweight, security exosuit. Popular among private and corporate security. This one is particularly worn looking and likely isn't as sturdy."
 
+// ALLOW(init/INSTANCE_STATE): an old exosuit starts worn, damaged and with a random charge
 /obj/mecha/combat/gygax/old/Initialize(mapload)
 	. = ..()
-	max_integrity = 250	//Just slightly worse.
 	update_integrity(25)
-	cell.charge = rand(0, (cell.charge/2))
+	cell.set_charge(rand(0, (cell.charge/2)))
 
 /obj/mecha/combat/gygax/serenity/ownership()
 	. = ..()
 	. += owns(nameof(hud), policy = OWN_CONTAINED)
+
+TYPE_TABLE(/obj/mecha/combat/gygax/dark, mecha_starting_equipment, list( \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/scattershot, \
+		/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/grenade/clusterbang, \
+		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, \
+		/obj/item/mecha_parts/mecha_equipment/teleporter \
+		))

@@ -82,7 +82,7 @@
 		if(!isnull(rhythm))
 			D.heart_rhythm = flat ? RHYTHM_ASYSTOLE : rhythm
 	if(P.vitals & VITALS_TEMP)
-		D.temperature = round((owner.bodytemperature - T0C) * 10) / 10 // BF_TEMPERATURE moves the real set point (C16)
+		D.temperature = round((owner.body_temperature() - T0C) * 10) / 10 // BF_TEMPERATURE moves the real set point (C16)
 	if(P.vitals & VITALS_CONSCIOUSNESS)
 		if(flat)
 			D.consciousness = "none"
@@ -206,7 +206,7 @@
 		return null
 	var/best_score = 0
 	for(var/candidate in candidates)
-		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : chemistry_service().chemical_reagents[candidate]
+		var/datum/reagent/R = istype(candidate, /datum/reagent) ? candidate : SSchemistry.ready().chemical_reagents[candidate]
 		if(!R)
 			continue
 		if(patient?.reagents?.has_reagent(R.id))

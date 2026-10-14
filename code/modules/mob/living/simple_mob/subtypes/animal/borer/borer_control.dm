@@ -16,7 +16,7 @@
 		return
 
 	to_chat(src, span_alien("You begin delicately adjusting your connection to the host brain..."))
-	om_after(src, 100 + (host.injury_load(INJURY_CATEGORY_NEURAL) * 5), PROC_REF(finish_bond_brain))
+	after(src, 10 SECONDS + (host.injury_load(INJURY_CATEGORY_NEURAL) * (0.5 SECONDS)), PROC_REF(finish_bond_brain))
 
 // This entire section is awful and a relic of ancient times. It needs to be replaced
 /mob/living/simple_mob/animal/borer/proc/finish_bond_brain()
@@ -40,7 +40,7 @@
 	host.computer_id = null
 	host.lastKnownIP = null
 
-	own_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
+	rel_set(src, nameof(host_brain), new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
 	host_brain.name = host.name
 	// The host's mind is pushed aside into the captive brain, keeping its identity.
 	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)
@@ -66,10 +66,10 @@
 		host.lastKnownIP = s2h_ip
 	controlling = TRUE
 
-	om_grant(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
-	om_grant(host, GRANT_VERB, /mob/living/carbon/proc/punish_host, src)
+	grant(host, granted_verb(/mob/living/carbon/proc/release_control), src)
+	grant(host, granted_verb(/mob/living/carbon/proc/punish_host), src)
 	if(antag)
-		om_grant(host, GRANT_VERB, /mob/living/carbon/proc/spawn_larvae, src)
+		grant(host, granted_verb(/mob/living/carbon/proc/spawn_larvae), src)
 // End horrible ip swapping code for bans
 
 /**
@@ -94,7 +94,7 @@
 	if(!host.stat)
 		to_chat(host, span_danger("An odd, uncomfortable pressure begins to build inside your skull, behind your ear..."))
 
-	om_after(src, 10 SECONDS, PROC_REF(finish_release_host))
+	after(src, 10 SECONDS, PROC_REF(finish_release_host))
 
 /mob/living/simple_mob/animal/borer/proc/finish_release_host()
 	PRIVATE_PROC(TRUE)

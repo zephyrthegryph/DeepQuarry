@@ -21,12 +21,12 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	helmet.name = "refitted [tmp.name]"
 	helmet.desc = tmp.desc
 	helmet.icon = tmp.icon
-	helmet.icon_state = tmp.icon_state
-	helmet.item_state = tmp.item_state
-	helmet.item_state_slots = tmp.item_state_slots?.Copy()
-	helmet.sprite_sheets = tmp.sprite_sheets?.Copy()
+	helmet.set_icon_state(tmp.icon_state)
+	helmet.set_item_state(tmp.item_state)
+	helmet.set_item_state_slots(tmp.item_state_slots?.Copy())
+	helmet.set_sprite_sheets(tmp.sprite_sheets?.Copy())
 	helmet.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
-	helmet.default_worn_icon = tmp.default_worn_icon
+	helmet.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 /datum/suit_cycler_choice/department/proc/can_refit_suit(obj/item/clothing/suit/space/suit)
 	return suit && !!suit_becomes
@@ -36,12 +36,12 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	suit.name = "refitted [tmp.name]"
 	suit.desc = tmp.desc
 	suit.icon = tmp.icon
-	suit.icon_state = tmp.icon_state
-	suit.item_state = tmp.item_state
-	suit.item_state_slots = tmp.item_state_slots?.Copy()
-	suit.sprite_sheets = tmp.sprite_sheets?.Copy()
+	suit.set_icon_state(tmp.icon_state)
+	suit.set_item_state(tmp.item_state)
+	suit.set_item_state_slots(tmp.item_state_slots?.Copy())
+	suit.set_sprite_sheets(tmp.sprite_sheets?.Copy())
 	suit.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
-	suit.default_worn_icon = tmp.default_worn_icon
+	suit.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 // Ye olde 'noop' choice for refits
 /datum/suit_cycler_choice/department/noop

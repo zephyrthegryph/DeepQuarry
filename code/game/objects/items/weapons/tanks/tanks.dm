@@ -14,18 +14,13 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'
 		)
-	drop_sound = SFX_ITEMS_DROP_GASCAN
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	var/gauge_icon = "indicator_tank"
 	var/last_gauge_pressure
 	var/gauge_cap = 6
 
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_NORMAL
 
-	force = 5.0
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
 
@@ -50,10 +45,30 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Wired and assembled tanks may be disarmed with a set of wirecutters. Any exploding or rupturing tank will generate shrapnel, assuming their relief valves have been welded beforehand. Even if not, they can be incited to expel hot gas on ignition if pushed above 173ºC. \
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
+CAPABILITIES(/obj/item/tank)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 10.0))
+	configure(item_combat(force = 5.0))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
+	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
+	// during rounds are never touched, and an intact, sealed tank lying about has no reason to explode spontaneously.
+	every(2 SECONDS, then(PROC_REF(tank_step)), when = cond_any(nameof(leaking), nameof(seal_damaged), nameof(handled)))
+	owns_one(nameof(air_contents), /datum/gas_mixture)
+	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
+	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
+	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), starts(PROC_REF(wirecutter_started)), wait(PROC_REF(wirecutter_time)), on_interrupt(PROC_REF(wire_clip_slipped)), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), needs(req_welder_lit()), costs(RES_FUEL, 1), starts(PROC_REF(welder_started)), wait(PROC_REF(welder_time)), on_interrupt(PROC_REF(welder_act_timed_failed)), then(PROC_REF(welder_used)))
+	op("attach_assembly", item(/obj/item/assembly_holder), priority(OP_PRIORITY_PART), label("Attach assembly"), needs(req(PROC_REF(is_wired), because = MSG(tank/needs_wires))), begins(MSG(tank/attaching)), wait(5 SECONDS), on_interrupt(PROC_REF(attach_stopped)), then(PROC_REF(assembly_attached)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("tank_item", item(/obj/item), label("Tank item"), then(PROC_REF(tank_item)))
+
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
 	rel_set(proxy, nameof(proxy.tank), src)
-	own_set(src, nameof(proxyassembly), proxy)
+	rel_set(src, nameof(proxyassembly), proxy)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
@@ -65,18 +80,16 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 
 /// TRUE while the relief valve or a failed seal is venting.
-OM_FIELD(/obj/item/tank, leaking, FALSE, CHANGE_EXPLICIT)
+/obj/item/tank/var/leaking = FALSE
+TRACKED(/obj/item/tank, leaking)
 /// TRUE while the seal is below max integrity. Kept by on_update_integrity(), the hook every
 /// integrity write (take_damage, repair_damage, update_integrity) goes through.
-OM_FIELD(/obj/item/tank, seal_damaged, FALSE, CHANGE_EXPLICIT)
-/// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or
-/// worn by a mob (moving raises CHANGE_ITEM_LOC). MANY tanks during rounds are never touched, and
-/// an intact, sealed tank lying about has no reason to explode spontaneously.
-OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "seal_damaged", CHANGE_ITEM_LOC))
-DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
-
-/obj/item/tank/proc/pressure_watched()
-	return leaking || seal_damaged || ismob(loc)
+/obj/item/tank/var/seal_damaged = FALSE
+TRACKED(/obj/item/tank, seal_damaged)
+/// TRUE while a mob holds or wears the tank (set by equipped(), cleared by dropped()).
+/obj/item/tank/var/handled = FALSE
+TRACKED(/obj/item/tank, handled)
+TRACKED(/obj/item/tank, valve_welded)
 
 /obj/item/tank/on_update_integrity(old_value, new_value)
 	. = ..()
@@ -112,7 +125,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	. = ..()
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
-	// Held or worn, it is watched (pressure_watched(); the move raised CHANGE_ITEM_LOC).
+	// Held or worn, it is watched (handled gates the every()).
+	set_handled(TRUE)
+
+/obj/item/tank/dropped(mob/user, equipping, slot)
+	. = ..()
+	if(!ismob(loc))
+		set_handled(FALSE)
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -142,7 +161,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 		. += span_warning("\The [src] emergency relief valve has been welded shut!")
 
 /// Old attackby (its ..() ran first; the base item handling now follows the pass).
-/obj/item/tank/proc/tank_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/tank/proc/tank_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(src.loc, /obj/item/assembly))
 		icon = src.loc
 
@@ -154,124 +175,120 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.use(1))
-			wired = 1
+			set_wired(1)
 			to_chat(user, span_notice("You attach the wires to the tank."))
 			src.add_bomb_overlay()
 
-	if(istype(W, /obj/item/assembly_holder))
-		if(wired)
-			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
-		else
-			to_chat(user, span_notice("You need to wire the device up first."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/datum/om/task/timed/tank_attackby
-	duration = 5 SECONDS
-	complete_proc = /obj/item/tank/proc/attackby_timed_done
-	cancel_proc = /obj/item/tank/proc/attackby_timed_failed
-	var/obj/item/W
+MSG_DEF_SELF(tank/needs_wires, span_notice("You need to wire the device up first."))
+MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T%."))
 
-/obj/item/tank/proc/attackby_timed_done(datum/om/task/timed/tank_attackby/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
+/obj/item/tank/proc/is_wired(datum/act/op/A)
+	return wired ? null : /datum/msg/tank/needs_wires
+
+/obj/item/tank/proc/assembly_attached(datum/act/op/A)
+	var/obj/item/W = A.held
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You finish attaching the assembly to \the [src]."))
 	GLOB.bombers += "[key_name(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attached an assembly to a wired [src]. Temp: [src.air_contents.return_temperature()-T0C]")
 	assemble_bomb(W,user)
 
-/obj/item/tank/proc/attackby_timed_failed(datum/om/task/timed/tank_attackby/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You stop attaching the assembly."))
+/obj/item/tank/proc/attach_stopped(datum/act/op/A)
+	to_chat(A.actor, span_notice("You stop attaching the assembly."))
 
-/obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
+/// The wires clipped with a device on them take ten careful seconds, bare wires one.
+/obj/item/tank/proc/wirecutter_time(datum/act/op/A)
 	if(wired && src.proxyassembly.assembly)
+		return 10 SECONDS
+	return wired ? 1 SECOND : 0
 
-		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
-		om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user), on_fail = PROC_REF(wire_clip_slipped), fail_args = list(user))
+/obj/item/tank/proc/wirecutter_started(datum/act/op/A)
+	if(wired && src.proxyassembly.assembly)
+		to_chat(A.actor, span_notice("You carefully begin clipping the wires that attach to the tank."))
 
-	else if(wired)
-		om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done2), done_args = list(user))
-
+/obj/item/tank/proc/wirecutter_used(datum/act/op/A)
+	if(!wired)
+		to_chat(A.actor, span_notice("There are no wires to cut!"))
+		return OP_OK
+	if(src.proxyassembly.assembly)
+		wirecutter_act_timed_done(A.actor)
 	else
-		to_chat(user, span_notice("There are no wires to cut!"))
-	return ITEM_INTERACT_SUCCESS
+		wirecutter_act_timed_done2(A.actor)
+	return OP_OK
 
-/obj/item/tank/proc/wire_clip_slipped(mob/user)
-	to_chat(user, span_danger("You slip and bump the igniter!"))
+/// Interrupted while clipping a live assembly: a slip bumps the igniter.
+/obj/item/tank/proc/wire_clip_slipped(datum/act/op/A)
+	if(!(wired && src.proxyassembly.assembly))
+		return
+	to_chat(A.actor, span_danger("You slip and bump the igniter!"))
 	if(prob(85))
 		src.proxyassembly?.receive_signal()
 
 /obj/item/tank/proc/wirecutter_act_timed_done(mob/user)
-	wired = 0
+	set_wired(0)
 	cut_overlay("bomb_assembly")
 	to_chat(user, span_notice("You cut the wire and remove the device."))
 
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
-		rel_clear(assy, nameof(assy.master))
+		set_item_master(assy, null)
 		rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
-			rel_clear(assy.a_right, nameof(/client::holder))
-			own_take(assy, nameof(assy.a_right))
+			rel_clear(assy.a_right, nameof(/obj/item/assembly::holder))
+			rel_take(assy, nameof(assy.a_right))
 			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
-			qdel(assy)
+			destroyed(assy, user)
 	cut_overlays()
 	last_gauge_pressure = 0
 	update_gauge()
 /obj/item/tank/proc/wirecutter_act_timed_done2(mob/user)
 	to_chat(user, span_notice("You quickly clip the wire from the tank."))
-	wired = 0
+	set_wired(0)
 	cut_overlay("bomb_assembly")
 
-/obj/item/tank/welder_act(mob/user, obj/item/tool)
-	var/obj/item/weldingtool/WT = tool.get_welder()
-	if(WT?.remove_fuel(1,user))
-		if(!valve_welded)
-			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			om_task_start(/datum/om/task/timed/tank_welder_act, user, src, receiver = src, tool = tool, WT = WT)
-			WT.eyecheck(user)
-		else
-			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
+/// Four seconds of welding on a valve that is still open.
+/obj/item/tank/proc/welder_time(datum/act/op/A)
+	return valve_welded ? 0 : 4 SECONDS
+
+/obj/item/tank/proc/welder_started(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!valve_welded)
+		to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
+		var/obj/item/weldingtool/WT = A.held.get_welder()
+		WT?.eyecheck(user)
+
+/obj/item/tank/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	if(valve_welded)
+		to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
+	else
+		to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
+		set_valve_welded(1)
+		set_leaking(FALSE)
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/datum/om/task/timed/tank_welder_act
-	duration = 4 SECONDS
-	complete_proc = /obj/item/tank/proc/welder_act_timed_done
-	cancel_proc = /obj/item/tank/proc/welder_act_timed_failed
-	var/obj/item/tool
-	var/obj/item/weldingtool/WT
-
-/obj/item/tank/proc/welder_act_timed_done(datum/om/task/timed/tank_welder_act/task)
-	var/mob/user = task.actor
-	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
-	src.valve_welded = 1
-	set_leaking(FALSE)
-
-/obj/item/tank/proc/welder_act_timed_failed(datum/om/task/timed/tank_welder_act/task)
-	var/mob/user = task.actor
-	var/obj/item/tool = task.tool
-	var/obj/item/weldingtool/WT = task.WT
+/obj/item/tank/proc/welder_act_timed_failed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	var/obj/item/weldingtool/WT = tool.get_welder()
 	GLOB.bombers += "[key_name(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]"
 	message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
-	if(WT.welding)
+	if(WT?.welding)
 		to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
-		max_integrity -= rand(20,60)
+		set_max_integrity(max_integrity - (rand(20,60)))
 		if(get_integrity() > max_integrity)
 			update_integrity(max_integrity)
-		src.air_contents.add_thermal_energy(rand(2000,50000))
-
-DECLARE_INTERACTIONS(/obj/item/tank, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(tank_item)), \
-)
+		heat_add(src.air_contents, rand(2000,50000), HEAT_SOURCE_OTHER)
 
 /// Old attack_self.
-/obj/item/tank/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/tank/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if (!(src.air_contents))
 		return TRUE
@@ -282,14 +299,9 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/tank, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/tank, "Tank")
-
-UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,connected:bool,maskConnected:bool}")
-
-/// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
-/obj/item/tank/proc/ui_data_obj_item_tank(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/tank's window data.
+/obj/item/tank/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["tankPressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
 	data["releasePressure"] = round(distribute_pressure ? distribute_pressure : 0)
@@ -309,18 +321,18 @@ UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,re
 		data["connected"] = FALSE
 
 	data["maskConnected"] = FALSE
-	if(C.get_equipped_item(SLOT_ID_MASK) && (C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+	if(C.get_equipped_item(SLOT_ID_MASK) && (worn_of(C.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 		data["maskConnected"] = TRUE
 	else if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 			data["maskConnected"] = TRUE
 
 	return data
 
-UI_ACT(/obj/item/tank, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
-UI_ACT_PROC(/obj/item/tank, ui_act_pressure)
-	var/pressure = params["pressure"]
+/obj/item/tank/proc/ui_act_pressure(datum/act/op/A, pressure_arg)
+	var/mob/user = A.actor
+	var/pressure = pressure_arg
 	if(pressure == "reset")
 		pressure = TANK_DEFAULT_RELEASE_PRESSURE
 		. = TRUE
@@ -334,37 +346,37 @@ UI_ACT_PROC(/obj/item/tank, ui_act_pressure)
 		. = TRUE
 	if(.)
 		distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
-UI_ACT(/obj/item/tank, "toggle", ui_act_toggle)
-UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
-	toggle_valve(ui.user)
+/obj/item/tank/proc/ui_act_toggle(datum/act/op/A)
+	var/mob/user = A.actor
+	toggle_valve(user)
 	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(user)
 
 /obj/item/tank/proc/toggle_valve(mob/user)
 	if(istype(loc,/mob/living/carbon))
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
 			rel_clear(location, nameof(location.internal))
-			location.internals.icon_state = "internal0"
+			hud_of(location)?.internals?.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
-			if (location.internals)
-				location.internals.icon_state = "internal0"
+			if (hud_of(location)?.internals)
+				hud_of(location)?.internals?.icon_state = "internal0"
 		else
 			var/can_open_valve
-			if(location.get_equipped_item(SLOT_ID_MASK) && (location.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+			if(location.get_equipped_item(SLOT_ID_MASK) && (worn_of(location.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 				can_open_valve = 1
 			else if(ishuman(location))
 				var/mob/living/carbon/human/H = location
-				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+				if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 					can_open_valve = 1
 
 			if(can_open_valve)
 				rel_set(location, nameof(location.internal), src)
 				to_chat(user, span_notice("You open \the [src] valve."))
-				if (location.internals)
-					location.internals.icon_state = "internal1"
+				if (hud_of(location)?.internals)
+					hud_of(location)?.internals?.icon_state = "internal1"
 			else
 				to_chat(user, span_warning("You need something to connect to \the [src]."))
 
@@ -395,7 +407,7 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 
 	return remove_air(moles_needed)
 
-/obj/item/tank/periodic_step()
+/obj/item/tank/proc/tank_step(datum/act/timer/A)
 	if(!air_contents)
 		return
 	//Allow for reactions
@@ -489,10 +501,10 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 			if(istype(loc, /obj/item/transfer_valve))
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
-				qdel(TTV)
+				spent(TTV)
 
 			if(src)
-				qdel(src)
+				destroyed(src)
 
 		else
 			tank_stress(70)
@@ -524,7 +536,7 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
 
-			qdel(src)
+			spent(src)
 
 		else
 			if(!valve_welded)
@@ -606,38 +618,51 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	src.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(src.air_contents, GAS_PHORON))
 	src.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(src.air_contents, GAS_O2))
 	// update_values() removed; no-op under LINDA.
-	src.valve_welded = 1
-	src.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE-1)
+	set_valve_welded(1)
+	heat_set(src.air_contents, PLASMA_MINIMUM_BURN_TEMPERATURE-1, HEAT_SOURCE_OTHER)
 
-	src.wired = 1
+	set_wired(1)
 
 	var/obj/item/assembly_holder/H = new(src)
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
-	rel_set(H, nameof(H.master), src.proxyassembly)
+	set_item_master(H, src.proxyassembly)
 
-	H.update_icon()
 
 	add_overlay("bomb_assembly")
 
-/obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
+/obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/phoron/onetankbomb/Initialize(mapload)
 	. = ..()
-	onetankbomb(amount)
+	onetankbomb(bomb_fill)
 
-/obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
+CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
+	param(nameof(bomb_fill), pos = 1)
+
+/// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
+/obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
+
+// ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
+/obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
 	. = ..()
-	onetankbomb(amount)
+	onetankbomb(bomb_fill)
 
-/obj/item/tank/phoron/onetankbomb/full/Initialize(mapload)
-	. = ..(mapload, 2)
+/obj/item/tank/phoron/onetankbomb/full
+	bomb_fill = 2
 
-/obj/item/tank/oxygen/onetankbomb/full/Initialize(mapload)
-	. = ..(mapload, 2)
+/obj/item/tank/phoron/onetankbomb/small
+	bomb_fill = 0
 
-/obj/item/tank/phoron/onetankbomb/small/Initialize(mapload)
-	. = ..(mapload, 0)
+/obj/item/tank/oxygen/onetankbomb/full
+	bomb_fill = 2
 
-/obj/item/tank/oxygen/onetankbomb/small/Initialize(mapload)
-	. = ..(mapload, 0)
+/obj/item/tank/oxygen/onetankbomb/small
+	bomb_fill = 0
 
 /////////////////////////////////
 ///Pulled from rewritten bomb.dm
@@ -648,7 +673,11 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	desc = "Used as a stand in to trigger single tank assemblies... but you shouldn't see this."
 	var/obj/item/tank/tank = null
 	var/obj/item/assembly_holder/assembly = null
-	item_flags = ABSTRACT
+
+CAPABILITIES(/obj/item/tankassemblyproxy)
+	configure(item_worn(flags = ABSTRACT))
+	ref_one(nameof(tank), /obj/item/tank)
+	ref_one(nameof(assembly), /obj/item/assembly_holder)
 
 /obj/item/tankassemblyproxy/receive_signal()	//This is mainly called by the sensor through sense() to the holder, and from the holder to here.
 	tank.ignite()	//boom (or not boom if you made shijwtty mix)
@@ -666,10 +695,9 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
 	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
-	rel_set(S, nameof(S.master), src.proxyassembly) //Tell the assembly about its new owner
+	set_item_master(S, src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
-	src.update_icon()
 
 	src.add_bomb_overlay()
 
@@ -686,24 +714,13 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 		other = assy.a_right
 
 	other.dropInto(get_turf(src))
-	qdel(ign)
-	rel_clear(assy, nameof(assy.master))
+	destroyed(ign)
+	set_item_master(assy, null)
 	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
-	qdel(assy)
-	src.update_icon()
+	destroyed(assy)
 	src.update_gauge()
 
-	air_contents.add_thermal_energy(15000)
-
-DECLARE_APPEARANCE_PROC(/obj/item/tankassemblyproxy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tankassemblyproxy/appearance_overlays()
-	. = list()
-	if(assembly)
-		tank.update_icon()
-		tank.add_overlay("bomb_assembly")
-	else
-		tank.update_icon()
-		tank.cut_overlay("bomb_assembly")
+	heat_add(air_contents, 15000, HEAT_SOURCE_OTHER)
 
 /obj/item/tankassemblyproxy/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))

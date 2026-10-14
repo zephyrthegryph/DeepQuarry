@@ -13,11 +13,11 @@
 	allow_duplicate = TRUE
 
 /// Life support is engaged on a loaded occupant.
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIODIC_SECOND, "sustaining")
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/var/sustaining = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
-/datum/om/relation/slot/occupant/mecha_sleeper
+/datum/relation_definition/slot/occupant/mecha_sleeper
 	holder = /obj/item/mecha_parts/mecha_equipment/tool/sleeper
 	slot_id = OCCUPANT_SLOT_MECHA_SLEEPER
 	name = "mounted sleeper"
@@ -51,7 +51,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIO
 		if(occupant)
 			occupant_message(span_boldwarning("The sleeper is already occupied!"))
 			return
-		if(!target.move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER))
+		if(!move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER, target))
 			return
 		occupant.set_stasis(/datum/body_effect/stasis/moderate, src)
 		set_ready_state(FALSE)
@@ -92,9 +92,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIO
 
 // TGUI migration. The view_stats sub-window (formerly
 // browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "eject", PROC_REF(topic_eject))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "view_stats", PROC_REF(topic_view_stats))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_REF(topic_inject), TOPIC_REF("inject", /datum/reagent, PROC_REF(topic_injectable_pool)), TOPIC_REF("source", /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PROC_REF(topic_chassis_equipment)))
 
 /// TOPIC_REF source: the equipment on the same exosuit.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_chassis_equipment()
@@ -108,25 +105,32 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_
 			pool += SG.reagents.reagent_list
 	return pool
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(datum/act/op/A)
 	go_out()
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(mob/user, list/args)
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = args["source"]
-	var/datum/reagent/R = args["inject"]
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(datum/act/op/A, href_inject, href_source)
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = href_source
+	var/datum/reagent/R = href_inject
 	if(!SG || !R || !(R in SG.reagents?.reagent_list))
 		return
 	inject_reagent(R, SG)
 
-DECLARE_UI(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "MechaSleeper", UI_TITLE("Mounted Sleeper"))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
+	interface("MechaSleeper", title = "Mounted Sleeper")
+	without("ui_open")
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("inject", ui_act("inject", arg("ref", schema_ref(/datum/reagent)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))), then(PROC_REF(ui_act_inject)))
+	op("topic_eject", topic("eject"), then(PROC_REF(topic_eject)))
+	op("view_stats", topic("view_stats"), then(PROC_REF(topic_view_stats)))
+	op("topic_inject", topic("inject", arg("inject", schema_ref(/datum/reagent), optional = TRUE, among = PROC_REF(topic_injectable_pool)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun), optional = TRUE, among = PROC_REF(topic_chassis_equipment))), then(PROC_REF(topic_inject)))
+	every(1 SECOND, then(PROC_REF(sleeper_step)), when = nameof(sustaining))
 
-UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "merge:ui_data_obj_item_mecha_parts_mecha_equipment_tool_sleeper{has_occupant:num,occupant_name:text,status:text,health_percent:num,diagnosis:unknown,body_temp_c:num,body_temp_f:num,reagents:list,injectables:list}")
-
-/// The computed part of /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data (declared on its UI_DATA row).
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_data_obj_item_mecha_parts_mecha_equipment_tool_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()
 	data["has_occupant"] = occupant ? 1 : 0
@@ -153,9 +157,9 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "merge:ui_da
 	data["health_percent"] = round(occupant.vitality()*100)
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 	data["diagnosis"] = D?.report_data()
-	qdel(D)
-	data["body_temp_c"] = round(occupant.bodytemperature - T0C, 0.1)
-	data["body_temp_f"] = round(occupant.bodytemperature * 1.8 - 459.67, 0.1)
+	spent(D)
+	data["body_temp_c"] = round(occupant.body_temperature() - T0C, 0.1)
+	data["body_temp_f"] = round(occupant.body_temperature() * 1.8 - 459.67, 0.1)
 	var/list/rlist = list()
 	if(occupant.reagents)
 		for(var/datum/reagent/R in occupant.reagents.reagent_list)
@@ -175,15 +179,17 @@ UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "merge:ui_da
 	data["injectables"] = inj
 	return data
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_eject)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_eject(datum/act/op/A)
 	go_out()
 	return TRUE
 
-UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", ui_act_inject, UI_ARG_REF("ref", null, /datum/reagent), UI_ARG_REF("source", null, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))
-UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_inject)
-	var/datum/reagent/R = params["ref"]
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = params["source"]
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_act_inject(datum/act/op/A, ref, source)
+	if(isnull(ref))
+		return FALSE
+	if(isnull(source))
+		return FALSE
+	var/datum/reagent/R = ref
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = source
 	if(R && SG)
 		inject_reagent(R, SG)
 	return TRUE
@@ -237,15 +243,15 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_inject)
 	text += "<br />"
 
 	var/mob/living/_tmp_occ_4 = src?.slot_item(MECHA_SLOT_PILOT)
-	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.bodytemperature-T0C]&deg;C ([_tmp_occ_4.bodytemperature*1.8-459.67]&deg;F)"
-	text += occupant.bodytemperature > 50 ? span_blue(entry) : span_red(entry)
+	entry = span_bold("Core Temperature:") + " [_tmp_occ_4.body_temperature()-T0C]&deg;C ([_tmp_occ_4.body_temperature()*1.8-459.67]&deg;F)"
+	text += occupant.body_temperature() > 50 ? span_blue(entry) : span_red(entry)
 	text += "<br />"
 
 	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/automation)
 	if(D)
 		text += D.render_chat()
 		text += "<br />"
-		qdel(D)
+		spent(D)
 
 	return text
 
@@ -304,35 +310,36 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_inject)
 	if(usr!=src?.slot_item(MECHA_SLOT_PILOT) || usr.stat == 2)
 		return
 	to_chat(usr,span_notice("Release sequence activated. This will take one minute."))
-	om_after(src, 1 MINUTE, PROC_REF(release_sequence_done), occupant)
+	after(src, 1 MINUTE, PROC_REF(release_sequence_done), with = list(occupant))
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/release_sequence_done(mob/living/carbon/human/occupant)
 	if(occupant != src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)) //Check if someone's released/replaced/bombed him already
 		return
 	go_out()//and release him from the eternal prison.
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/sleeper_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	..()
 	if(!chassis)
 		set_ready_state(TRUE)
-		return PROCESS_KILL
+		set_sustaining(FALSE) // the old step dropped out of the sweep here; the gate stays shut until an occupant is loaded again
+		return
 	if(!chassis.has_charge(energy_drain))
 		set_ready_state(TRUE)
 		src.mecha_log_message("Deactivated.")
 		occupant_message(span_infoplain("[src] deactivated - no power."))
-		return PROCESS_KILL
+		set_sustaining(FALSE)
+		return
 	var/mob/living/carbon/M = occupant
 	if(!M)
 		return
 	if(!M.is_critical())
 		M.mend(TREAT_OXYGENATION, 1)
-	M.status_adjust(EFFECT_STUNNED, -4)
-	M.status_adjust(EFFECT_WEAKENED, -4)
-	M.status_adjust(EFFECT_STUNNED, -4)
-	M.status_at_least(EFFECT_PARALYZED, 2)
-	M.status_at_least(EFFECT_WEAKENED, 2)
-	M.status_at_least(EFFECT_STUNNED, 2)
+	M.status_adjust(STAT_STUNNED, -4)
+	M.status_adjust(STAT_WEAKENED, -4)
+	M.status_adjust(STAT_STUNNED, -4)
+	M.status_at_least(STAT_PARALYZED, 2)
+	M.status_at_least(STAT_WEAKENED, 2)
+	M.status_at_least(STAT_STUNNED, 2)
 	if(M.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 5)
 		M.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 5)
 	chassis.use_power(energy_drain)

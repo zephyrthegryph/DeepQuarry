@@ -145,8 +145,9 @@
 /datum/unit_test/dq_armor_sharp_to_blunt
 	var/landed_kind
 
-/datum/unit_test/dq_armor_sharp_to_blunt/proc/on_explained(mob/living/source, datum/om/event/living_injury_explained/event)
-	EVENT_HANDLER
+/datum/unit_test/dq_armor_sharp_to_blunt/proc/on_explained(datum/act/notice/N)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/living_injury_explained/event = N
 	landed_kind = event.landed_kind
 
 /datum/unit_test/dq_armor_sharp_to_blunt/Run()
@@ -175,7 +176,7 @@
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_armor(dq_armor(list(MELEE = 99)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
-	om_hook(H, /datum/om/event/living_injury_explained, src, PROC_REF(on_explained))
+	observe(H, /datum/notice/living_injury_explained, src, then(PROC_REF(on_explained)))
 	var/turned = 0
 	for(var/i in 1 to 20)
 		landed_kind = null
@@ -186,7 +187,7 @@
 	landed_kind = null
 	H.injure(INJURY_CUT, 1, BP_HEAD, flags = INJURE_ARMORED | INJURE_SILENT)
 	TEST_ASSERT_EQUAL(landed_kind, INJURY_CUT, "a cut where the vest doesn't reach keeps its edge")
-	om_unhook(H, /datum/om/event/living_injury_explained, src)
+	unobserve(H, /datum/notice/living_injury_explained, src)
 
 /// The worn protection cache holds combined, interned armour per part.
 /datum/unit_test/dq_armor_worn_cache_combines
@@ -194,10 +195,10 @@
 /datum/unit_test/dq_armor_worn_cache_combines/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.body_parts_covered = UPPER_TORSO
+	vest.set_body_parts_covered(UPPER_TORSO)
 	vest.set_armor(dq_armor(list(MELEE = 30, BULLET = 20)))
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
-	uniform.body_parts_covered = UPPER_TORSO | LOWER_TORSO
+	uniform.set_body_parts_covered(UPPER_TORSO | LOWER_TORSO)
 	uniform.set_armor(dq_armor(list(MELEE = 5, BIO = 10)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform should equip")
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")

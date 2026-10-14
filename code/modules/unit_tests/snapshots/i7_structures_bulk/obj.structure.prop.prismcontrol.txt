@@ -1,0 +1,57 @@
+human|none menu: Rotate
+human|none click: Click: Rotate
+robot|none menu: Rotate
+robot|none click: Click: Rotate
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure.prop human|/obj/item/tool/screwdriver
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/tool/crowbar
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/tool/wrench
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/tool/wirecutters
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/multitool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/weldingtool
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/stack/cable_coil
+-menu: Toggle
+-click: Click: Toggle
++3 menu: Rotate
++5 click: Click: Rotate
+@obj.structure.prop human|/obj/item/stack/material/steel
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+@obj.structure.prop human|/obj/item/card/id
+-menu: Toggle
+-click: Click: Toggle
++3 menu: Rotate
++5 click: Click: Rotate
+@obj.structure.prop human|/obj/item
+-menu: Toggle
+-click: Click: Toggle
++2 menu: Rotate
++4 click: Click: Rotate
+keys: drag_buckle, melee_hit, rotate

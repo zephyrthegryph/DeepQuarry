@@ -12,10 +12,17 @@
 	nitrogen = 0
 	phoron = 0
 
-/turf/simulated/sky/Initialize(mapload, color = "#FFFFFF")
+CAPABILITIES(/turf/simulated/sky)
+	param(nameof(sky_color), pos = 1)
+
+/// The sky's glow (its constructor param).
+/turf/simulated/sky/var/sky_color = "#FFFFFF"
+
+// ALLOW(init/INSTANCE_STATE): the sky glows its colour
+/turf/simulated/sky/Initialize(mapload)
 	. = ..()
-	// GLOB.planet_service.addTurf(src) Handled by parent
-	set_light(2, 2, color)
+	// SSplanets.addTurf(src) Handled by parent
+	set_glow(src, GLOW(2, 2, sky_color))
 
 /turf/simulated/sky/north
 	dir = NORTH

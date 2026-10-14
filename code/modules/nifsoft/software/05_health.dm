@@ -52,7 +52,7 @@
 				var/turf/T = get_turf(H)
 				var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 				a.autosay("[H.real_name] has been put in emergency stasis, located at ([T.x],[T.y],[T.z])!", "[H.real_name]'s NIF", "Medical")
-				qdel(a)
+				spent(a)
 
 		//Handle the actions in each mode
 
@@ -105,7 +105,7 @@
 		//We're good!
 		var/mob/living/carbon/human/S = nif().human
 		var/HP_percent = 2 * S.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
-		if(!length(nif().human.bad_external_organs))
+		if(!length(nif().human.damaged_limbs()))
 			if(mode || active)
 				nif().notify("User Status: NORMAL. Medichines deactivating.")
 //Needs fixing W << 'sound/voice/nifmedsynth_normal.ogg'
@@ -117,13 +117,11 @@
 //Needs fixing W << 'sound/voice/nifmedsynth_injured.ogg'
 			activate()
 
-		for(var/obj/item/organ/external/EO as anything in nif().human.bad_external_organs)
+		for(var/obj/item/organ/external/EO as anything in nif().human.damaged_limbs())
 			for(var/datum/affliction/wound/W as anything in EO.get_wounds())
 				if(W.damage <= 30)
 					W.heal_damage(0.1)
 					EO.update_damages()
-					if(EO.update_icon())
-						nif().human.UpdateDamageIcon(1)
 					nif().use_charge(0.1)
 					return TRUE //Return entirely, we only heal one at a time.
 				else if(mode == 1)
@@ -137,7 +135,7 @@
 						var/turf/T = get_turf(S)
 						var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 						a.autosay("[S.real_name] is in critical condition, located at ([T.x],[T.y],[T.z])!", "[S.real_name]'s NIF", "Medical")
-						qdel(a)
+						spent(a)
 
 		/* //Chomp Comment out, using our solution instead of their backport and edit of our solution.
 		if(mode == 2 && HP_percent < -0.4) //lets inform someone who might be able to help us that we got toasted and roasted
@@ -147,7 +145,7 @@
 				var/turf/T = get_turf(S)
 				var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 				a.autosay("[S.real_name] is in a critical condition, located at ([T.x],[T.y],[T.z])!", "[S.real_name]'s NIF", "Medical")
-				qdel(a)
+				spent(a)
 		*/ //Chomp comment out END
 
 		return TRUE
@@ -204,7 +202,7 @@
 	if(!active) return null
 	var/datum/gas_mixture/breath = new(BREATH_VOLUME)
 	breath.adjust_gas(GAS_O2, BREATH_MOLES)
-	breath.set_temperature(T20C)
+	heat_set(breath, T20C)
 	return breath
 
 /datum/nifsoft/mindbackup
@@ -216,7 +214,7 @@
 /datum/nifsoft/mindbackup/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		GLOB.transcore_service.m_backup(H.mind,H.nif,one_time = TRUE)
+		SStranscore.m_backup(H.mind,H.nif,one_time = TRUE)
 		persist_nif_data(H)
 		nif().notify("Mind backed up!")
 		nif().use_charge(0.1)

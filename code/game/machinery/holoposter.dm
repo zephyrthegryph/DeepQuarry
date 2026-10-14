@@ -5,12 +5,12 @@
 	icon_state = "off"
 	anchored = TRUE
 	use_power = 1
-	idle_power_usage = 80
-	power_channel = ENVIRON
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/icon_forced = FALSE
-	var/examine_addon = "It appears to be powered off."
+	/// TRUE while a station alert overrides the advert (security_changed()).
 	var/alerting = FALSE
+	/// The advert shown (a key of postertypes), or null before the first pick.
+	var/poster
 
 	var/static/list/postertypes = list(
 		"hephaestus" = list(LIGHT_COLOR_CYAN, "Hephaestus Aeronautics, a subsidiary of Hephaestus Industries. Known to make the best - if pricy - atmospheric to orbit shuttles and gliders for the consumer market."),
@@ -27,12 +27,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
+	if(icon_forced && (icon_state in postertypes))
+		set_poster(icon_state) // a mapped poster keeps its advert
+	security_changed()
 	set_rand_sprite()
 	schedule_rotation()
 
 /// The next random poster, 30 to 35 minutes out, on the machine clock.
 /obj/machinery/holoposter/proc/schedule_rotation()
-	om_after_replace(src, 30 MINUTES + rand(0, 5 MINUTES), PROC_REF(rotate_sprite))
+	after(src, 30 MINUTES + rand(0, 5 MINUTES), PROC_REF(rotate_sprite), key = "holoposter_rotation")
 
 /obj/machinery/holoposter/proc/rotate_sprite()
 	if(icon_forced)
@@ -42,74 +45,92 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/examine(mob/user, infix, suffix)
 	. = ..()
-	. += examine_addon
+	if(power_lost())
+		. += "It appears to be powered off."
+	else if(broken_now())
+		. += "It appears to be malfunctioning."
+	else if(alerting)
+		. += "It warns you to remain calm and contact your supervisor as soon as possible."
+	else if(poster in postertypes)
+		var/list/settings = postertypes[poster]
+		. += settings[2]
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/holoposter/appearance_overlays()
-	. = list()
-	if(has_stat(NOPOWER))
-		icon_state = "off"
-		examine_addon = "It appears to be powered off."
-		set_light(0)
-		return .
+TRACKED(/obj/machinery/holoposter, alerting)
+
+/// What the poster shows: dark without power, a glitch when broken, the alert while the station is on alert, else its advert, lit in the
+/// advert's colour.
+/obj/machinery/holoposter/draw(datum/look/look)
+	..()
+	if(power_lost())
+		look.state("off")
+		return
 	var/new_color = LIGHT_COLOR_HALOGEN
-	if(has_stat(BROKEN))
-		icon_state = "glitch"
-		examine_addon = "It appears to be malfunctioning."
+	if(broken_now())
+		look.state("glitch")
 		new_color = "#6A6C71"
+	else if(alerting)
+		look.state("attention")
+		new_color = "#AA7039"
 	else
-		if((z in using_map.station_levels) && GLOB.security_level) // 0 is fine, everything higher is alert levels
-			icon_state = "attention"
-			examine_addon = "It warns you to remain calm and contact your supervisor as soon as possible."
-			new_color =  "#AA7039"
-			alerting = TRUE
-		else if(alerting && !GLOB.security_level) // coming out of alert
-			alerting = FALSE
-			set_rand_sprite()
-			return .
-		else if(icon_state in postertypes)
-			var/list/settings = postertypes[icon_state]
+		look.state(poster || "off")
+		if(poster in postertypes)
+			var/list/settings = postertypes[poster]
 			new_color = settings[1]
-			examine_addon = settings[2]
+	look.glow(GLOW(2, 2, new_color))
 
-	set_light(l_range = 2, l_power = 2, l_color = new_color)
+/// The station's security level changed: an alert above green on a station level shows the warning; coming out of it, a fresh advert.
+/obj/machinery/holoposter/proc/security_changed()
+	var/now = (z in using_map.station_levels) && GLOB.security_level // 0 is fine, everything higher is alert levels
+	if(alerting && !now)
+		set_alerting(FALSE)
+		set_rand_sprite()
+		return
+	set_alerting(!!now)
 
 /obj/machinery/holoposter/proc/set_rand_sprite()
 	if(alerting)
 		return
 	if(icon_forced)
 		return
-	icon_state = pick(postertypes)
-	update_icon()
+	set_poster(pick(postertypes))
 
-/obj/machinery/holoposter/multitool_act(mob/user, obj/item/tool)
-	src.add_fingerprint(user)
-	if(has_stat(NOPOWER))
-		return ITEM_INTERACT_BLOCKING
+/// The multitool works a powered poster (an unpowered one takes the click and does nothing).
+/obj/machinery/holoposter/proc/is_powered(datum/act/op/A)
+	return (!power_lost()) ? null : MSG(req_failed)
+
+/// The posters the multitool's question offers.
+/obj/machinery/holoposter/proc/poster_choices(datum/act/A)
+	return postertypes + "random"
+
+/// The multitool's answer: that poster, or random rotation.
+/obj/machinery/holoposter/proc/poster_chosen(datum/act/op/A)
+	add_fingerprint(A.actor)
 	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(poster_chosen), message = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/holoposter/proc/poster_chosen(datum/om/prompt/choice/ask)
-	var/choice = ask.choice
-	if(has_stat(NOPOWER))
-		return
-	icon_state = choice
-	if(icon_state == "random")
+	var/choice = A.answer?.value
+	if(!choice || power_lost())
+		return OP_OK
+	if(choice == "random")
 		atom_fix()
 		icon_forced = FALSE
 		schedule_rotation()
 		set_rand_sprite()
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	icon_forced = TRUE
-	om_cancel_calls(src, PROC_REF(rotate_sprite))
+	set_poster(choice)
+	cancel_after(src, "holoposter_rotation")
 	atom_fix()
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-DAMAGE_REACTION(/obj/machinery/holoposter, DAMAGE_EMP, PROC_REF(holoposter_emp))
+CAPABILITIES(/obj/machinery/holoposter)
+	configure(uses_power(idle = 80, channel = ENVIRON))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(holoposter_emp))))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose poster"), needs(req(PROC_REF(is_powered), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("question" = "Available Posters", "title" = "Holographic Poster", "choices" = computed(PROC_REF(poster_choices)), "timeout" = 0)),
+		then(PROC_REF(poster_chosen)))
+
 /// An EMP breaks the poster.
-/obj/machinery/holoposter/proc/holoposter_emp(datum/damage_packet/packet)
-	if(has_stat(BROKEN))
-		return
+/obj/machinery/holoposter/proc/holoposter_emp(datum/act/hit/emp/A)
+	if(broken_now())
+		return HOOK_DECLINE
 	atom_break()
+	return HOOK_DECLINE

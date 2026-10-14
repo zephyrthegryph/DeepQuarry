@@ -38,6 +38,7 @@ GLOBAL_LIST_INIT(dq_marker_variants, list(
 // which still works once variant has populated colourName. The `variant` var
 // is now declared on /obj/item (see gear_tweak_variant.dm); we just override
 // apply_variant() per family.
+// ALLOW(init/INSTANCE_STATE): applies the variant this crayon was given, a map or loadout edit, before the parent init
 /obj/item/pen/crayon/Initialize(mapload)
 	apply_variant()
 	. = ..()
@@ -50,7 +51,7 @@ GLOBAL_LIST_INIT(dq_marker_variants, list(
 		return
 	colour = v[1]
 	shadeColour = v[2]
-	icon_state = v[3]
+	set_icon_state(v[3])
 	colourName = variant
 
 /obj/item/pen/crayon/marker/apply_variant()
@@ -61,5 +62,5 @@ GLOBAL_LIST_INIT(dq_marker_variants, list(
 		return
 	colour = v[1]
 	shadeColour = v[2]
-	icon_state = v[3]
+	set_icon_state(v[3])
 	colourName = variant

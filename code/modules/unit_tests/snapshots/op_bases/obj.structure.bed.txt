@@ -1,0 +1,6 @@
+human|none menu: Melt
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Melt
+robot|none menu: Use
+robot|none click: Click: Use

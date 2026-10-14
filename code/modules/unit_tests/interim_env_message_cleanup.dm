@@ -1,0 +1,46 @@
+/// Real keyed environment messages preserve exact aggregation and constructor registry membership until their final entry is removed.
+/datum/unit_test/interim_env_message_cleanup
+	var/message_type = /obj/effect/env_message
+
+/datum/unit_test/interim_env_message_cleanup/admin_message
+	message_type = /obj/effect/env_message/admin
+
+/datum/unit_test/interim_env_message_cleanup/Run()
+	var/turf/T = test_floor()
+	var/obj/effect/env_message/message = allocate(message_type, T)
+	TEST_ASSERT(message && !QDELETED(message) && (message.flags & ATOM_INITIALIZED), "The actual ordinary or admin message completes parent initialization")
+	TEST_ASSERT(message in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES), "The actual constructor registers the exact original message independently of its empty hook")
+	TEST_ASSERT_EQUAL(message.type, message_type, "The actual constructor preserves its exact ordinary or admin subtype")
+	message.add_message("interim_env_alpha", "First actual entry")
+	message.add_message("interim_env_beta", "Second actual entry")
+	TEST_ASSERT_EQUAL(length(message.message_list), 2, "The actual public additions create exactly two independent keyed entries")
+	TEST_ASSERT_EQUAL(message.combined_message, "First actual entry<br><br>Second actual entry", "Actual aggregation preserves original ordered text and separator")
+	message.remove_message("interim_env_alpha")
+	TEST_ASSERT(!QDELETED(message) && message.loc == T, "Removing one actual entry preserves its original message and floor")
+	TEST_ASSERT_EQUAL(length(message.message_list), 1, "Actual partial removal leaves exactly the unrelated entry")
+	TEST_ASSERT_EQUAL(message.message_list["interim_env_beta"], "Second actual entry", "Actual partial removal preserves the exact unrelated keyed text")
+	TEST_ASSERT_EQUAL(message.combined_message, "Second actual entry", "Actual partial removal recomputes text without a leftover separator")
+	TEST_ASSERT(message in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES), "The surviving original message remains registered")
+	message.remove_message("interim_env_beta")
+	TEST_ASSERT(QDELETED(message), "Removing its actual last entry consumes the original message")
+	TEST_ASSERT(!(message in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES)), "Actual final-entry cleanup removes the original message from its registry")
+
+/datum/unit_test/interim_env_message_global_clear/Run()
+	var/turf/T = test_floor()
+	var/obj/effect/env_message/first = allocate(/obj/effect/env_message, T)
+	var/obj/effect/env_message/admin/second = allocate(/obj/effect/env_message/admin, T)
+	first.add_message("interim_env_global_alpha", "Shared first")
+	first.add_message("interim_env_global_beta", "Keep original")
+	second.add_message("interim_env_global_alpha", "Shared second")
+	TEST_ASSERT(first in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES), "The first actual original message is registered before global clearing")
+	TEST_ASSERT(second in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES), "The second actual original message is registered before global clearing")
+	clear_env_message("interim_env_global_alpha")
+	TEST_ASSERT(!QDELETED(first) && first.loc == T, "The actual global key clear preserves the original message with another entry")
+	TEST_ASSERT_EQUAL(length(first.message_list), 1, "The actual global clear removes exactly its selected entry from the survivor")
+	TEST_ASSERT_EQUAL(first.combined_message, "Keep original", "The actual global clear preserves exact unrelated original text")
+	TEST_ASSERT(QDELETED(second), "The actual global key clear consumes the original message whose final entry was cleared")
+	TEST_ASSERT(first in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES), "The original surviving message remains in the actual registry")
+	TEST_ASSERT(!(second in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES)), "The actual consumed original message leaves the registry during global iteration")
+	clear_env_message("interim_env_global_beta")
+	TEST_ASSERT(QDELETED(first), "The second actual global clear consumes the exact original remaining message")
+	TEST_ASSERT(!(first in REGISTRY_MEMBERS(REGISTRY_ENV_MESSAGES)), "Actual final global cleanup removes its exact original registry member")

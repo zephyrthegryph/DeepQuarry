@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "The analyze lint engine is incremental across files: whole-tree lints cache per-file facts and judgements, the semantic lints reuse their results after an edit that leaves the declarations alone, and memo initializers run on isolated rayon pools (no cross-lint deadlock)."

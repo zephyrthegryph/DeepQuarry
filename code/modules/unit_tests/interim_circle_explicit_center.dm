@@ -1,0 +1,16 @@
+/// Circle helpers use their actual supplied center and never fall back to an ambient actor.
+/datum/unit_test/interim_circle_explicit_center/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/east = get_step(T, EAST)
+	var/turf/diagonal = get_step(T, NORTHEAST)
+	TEST_ASSERT_NOTNULL(east, "the fixture has a neighboring turf")
+	TEST_ASSERT_NOTNULL(diagonal, "the fixture has a diagonal turf")
+	var/list/nearby = circlerangeturfs(T, 1)
+	TEST_ASSERT(east in nearby, "the real circular range includes an orthogonal neighbor")
+	TEST_ASSERT(!(diagonal in nearby), "the real circle excludes a square-range diagonal")
+	var/obj/item/binoculars/marker = allocate(/obj/item/binoculars, east)
+	TEST_ASSERT(marker in circlerange(T, 1), "the atom helper includes an actual object around the supplied turf")
+	TEST_ASSERT_EQUAL(length(circlerange(null, 1)), 0, "missing center cannot select ambient range atoms")
+	TEST_ASSERT_EQUAL(length(circleview(null, 1)), 0, "missing center cannot select ambient visible atoms")
+	TEST_ASSERT_EQUAL(length(circlerangeturfs(null, 1)), 0, "missing center cannot select ambient range turfs")
+	TEST_ASSERT_EQUAL(length(circleviewturfs(null, 1)), 0, "missing center cannot select ambient visible turfs")

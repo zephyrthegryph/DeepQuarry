@@ -16,6 +16,16 @@
 	//This list tracks characters spawned in the world and cannot be modified in-game. Currently referenced by respawn_character().
 	var/list/locked = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 
+CAPABILITIES(/datum/datacore)
+	owns_many(nameof(general))
+	owns_many(nameof(hidden_general))
+	owns_many(nameof(hidden_medical))
+	owns_many(nameof(hidden_security))
+	owns_many(nameof(locked))
+	owns_many(nameof(medical))
+	owns_many(nameof(security))
+	ref_many(nameof(warrants), /datum/data/record/warrant) // warrants on file (digitalwarrant.dm): a deleted warrant leaves the list
+
 
 /datum/datacore/proc/get_manifest(monochrome, OOC,snowflake = FALSE)
 	var/list/heads = new()
@@ -327,7 +337,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		foundrecord.fields["real_rank"] = real_title
 
 /datum/datacore/proc/manifest_inject(mob/living/carbon/human/H)
-	if(H.mind && !GLOB.antag_service.player_is_antag(H.mind, only_offstation_roles = 1))
+	if(H.mind && !SSantag.player_is_antag(H.mind, only_offstation_roles = 1))
 		var/assignment = GetAssignment(H)
 		var/hidden
 		var/datum/job/J = SSjob.get_job(H.mind.assigned_role)
@@ -341,7 +351,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 		G.fields["name"]		= H.real_name
 		G.fields["real_rank"]	= H.mind.assigned_role
 		G.fields["rank"]		= assignment
-		G.fields["age"]			= H.age
+		G.fields["age"]			= H.bio.age
 		G.fields["languages"] = list2text(H.languages,", ")
 		if(H.get_FBP_type())
 			G.fields["brain_type"] = H.get_FBP_type()
@@ -355,13 +365,13 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			G.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
 		else
 			G.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
-		G.fields["home_system"]	= H.home_system
-		G.fields["birthplace"]	= H.birthplace
-		G.fields["citizenship"]	= H.citizenship
-		G.fields["faction"]		= H.personal_faction
-		G.fields["religion"]	= H.religion
-		if(H.gen_record && !jobban_isbanned(H, "Records"))
-			G.fields["notes"] = H.gen_record
+		G.fields["home_system"]	= H.bio.home_system
+		G.fields["birthplace"]	= H.bio.birthplace
+		G.fields["citizenship"]	= H.bio.citizenship
+		G.fields["faction"]		= H.bio.personal_faction
+		G.fields["religion"]	= H.bio.religion
+		if(H.bio.gen_record && !jobban_isbanned(H, "Records"))
+			G.fields["notes"] = H.bio.gen_record
 
 		//Medical Record
 		var/datum/data/record/M = CreateMedicalRecord(H.real_name, id, hidden)
@@ -378,8 +388,8 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			M.fields["brain_type"] = H.get_FBP_type()
 		else
 			M.fields["brain_type"] = "Organic"
-		if(H.med_record && !jobban_isbanned(H, "Records"))
-			M.fields["notes"] = H.med_record
+		if(H.bio.med_record && !jobban_isbanned(H, "Records"))
+			M.fields["notes"] = H.bio.med_record
 
 		//Security Record
 		var/datum/data/record/S = CreateSecurityRecord(H.real_name, id, hidden)
@@ -391,15 +401,15 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			S.fields["brain_type"] = H.get_FBP_type()
 		else
 			S.fields["brain_type"] = "Organic"
-		if(H.sec_record && !jobban_isbanned(H, "Records"))
-			S.fields["notes"] = H.sec_record
+		if(H.bio.sec_record && !jobban_isbanned(H, "Records"))
+			S.fields["notes"] = H.bio.sec_record
 
 		//Locked Record
 		var/datum/data/record/L = new()
 		L.fields["id"]			= md5("[H.real_name][H.mind.assigned_role]")
 		L.fields["name"]		= H.real_name
 		L.fields["rank"] 		= H.mind.assigned_role
-		L.fields["age"]			= H.age
+		L.fields["age"]			= H.bio.age
 		L.fields["languages"] = list2text(H.languages,", ")
 		L.fields["fingerprint"]	= md5(H.dna.GetUniIdentity())
 		L.fields["sex"]			= gender2text(H.gender)
@@ -416,21 +426,21 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			L.fields["species"] = "[H.custom_species ? "[H.custom_species]" : H.species.name]"
 		else
 			L.fields["species"]		= "[H.custom_species ? "[H.custom_species] ([H.species.name])" : H.species.name]"
-		L.fields["home_system"]	= H.home_system
-		L.fields["birthplace"]	= H.birthplace
-		L.fields["citizenship"]	= H.citizenship
-		L.fields["faction"]		= H.personal_faction
-		L.fields["religion"]	= H.religion
+		L.fields["home_system"]	= H.bio.home_system
+		L.fields["birthplace"]	= H.bio.birthplace
+		L.fields["citizenship"]	= H.bio.citizenship
+		L.fields["faction"]		= H.bio.personal_faction
+		L.fields["religion"]	= H.bio.religion
 		var/icon/record_image = icon(cached_character_icon(H), dir = SOUTH)
 		L.fields["image"]		= record_image
-		L.fields["antagfac"]	= H.antag_faction
-		L.fields["antagvis"]	= H.antag_vis
+		L.fields["antagfac"]	= H.bio.antag_faction
+		L.fields["antagvis"]	= H.bio.antag_vis
 		L.fields["offmap"]      = hidden
-		if(H.exploit_record && !jobban_isbanned(H, "Records"))
-			L.fields["exploit_record"] = H.exploit_record
+		if(H.bio.exploit_record && !jobban_isbanned(H, "Records"))
+			L.fields["exploit_record"] = H.bio.exploit_record
 		else
 			L.fields["exploit_record"] = "No additional information acquired."
-		own_add(src, nameof(locked), L) // the data core made this record and holds it
+		rel_add(src, nameof(locked), L) // the data core made this record and holds it
 	return
 
 /proc/generate_record_id()
@@ -475,9 +485,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	G.fields["photo-west"] = "'data:image/png;base64,[icon2base64(side)]'"
 	G.fields["notes"] = "No notes found."
 	if(hidden)
-		own_add(src, nameof(hidden_general), G)
+		rel_add(src, nameof(hidden_general), G)
 	else
-		own_add(src, nameof(general), G)
+		rel_add(src, nameof(general), G)
 		SSjob.update_limit(JOB_ANOMALY, general.len)
 
 	return G
@@ -497,9 +507,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	R.fields["ma_crim_d"]	= "No major crime convictions."
 	R.fields["notes"]		= "No notes."
 	if(hidden)
-		own_add(src, nameof(hidden_security), R)
+		rel_add(src, nameof(hidden_security), R)
 	else
-		own_add(src, nameof(security), R)
+		rel_add(src, nameof(security), R)
 
 	return R
 
@@ -524,9 +534,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	M.fields["cdi_d"]		= "No diseases have been diagnosed at the moment."
 	M.fields["notes"] = "No notes found."
 	if(hidden)
-		own_add(src, nameof(hidden_medical), M)
+		rel_add(src, nameof(hidden_medical), M)
 	else
-		own_add(src, nameof(medical), M)
+		rel_add(src, nameof(medical), M)
 
 	return M
 

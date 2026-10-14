@@ -13,12 +13,18 @@
 	flags = REMOTEVIEW_ON_ENTER
 	dir = 0
 
+CAPABILITIES(/obj/structure/disposalholder)
+	owns_one(nameof(gas), /datum/gas_mixture)
+	every(1 DECISECONDS, then(PROC_REF(move)), when = nameof(active))
+	// Pushing against the pipe walls until the pipe bursts: twenty seconds.
+	op("burst_pipe", ai(), takes("pipe"), wait(20 SECONDS), then(PROC_REF(burst_pipe)))
+
 // C11: one slot, accepting anything (a holder in transit carries whatever was
 // flushed into it). Legacy forceMove()s into and out of the holder (move(),
 // the disposal machine's flush, pipe transit) are still accounted for by
 // doMove()'s bookkeeping, so slot_contents() stays correct. Whatever is still
 // riding when the holder is destroyed spills onto its turf.
-/datum/om/relation/slot/disposal_holder
+/datum/relation_definition/slot/disposal_holder
 	holder = /obj/structure/disposalholder
 	slot_id = CONTAINER_SLOT_DISPOSAL
 	name = "contents"
@@ -26,8 +32,8 @@
 	exposure = SLOT_EXPOSURE_SEALED
 
 /// TRUE while the holder is moving through pipes: move() runs every decisecond.
-OM_FIELD(/obj/structure/disposalholder, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
+/obj/structure/disposalholder/var/active = FALSE
+TRACKED(/obj/structure/disposalholder, active)
 
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	own_move(flush_gas, src, nameof(gas)) // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.
@@ -70,7 +76,7 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 			src.destinationTag = drone.mail_destination
 
 // movement process, persists while holder is moving through pipes (declared: while active)
-/obj/structure/disposalholder/proc/move()
+/obj/structure/disposalholder/proc/move(datum/act/timer/A)
 	/* // Clonk n' bonk // Non-damaging Disposals Edit Start
 	if(hasmob && prob(3))
 		for(var/mob/living/H in src)
@@ -81,15 +87,16 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 	var/obj/structure/disposalpipe/last = loc
 	var/obj/structure/disposalpipe/curr = last.transfer(src)
 	if(!active)
-		return REPEAT_STOP // Handled by a machine connected to a trunk during transfer()
+		return // Handled by a machine connected to a trunk during transfer()
 	if(!curr)
+		set_active(FALSE)
 		last.pipe_expel(src, get_turf(loc), dir)
-		return REPEAT_STOP
+		return
 
 	// Onto the next segment
 	if(!(count--))
 		set_active(FALSE)
-		return REPEAT_STOP
+		return
 
 // find the turf which should contain the next pipe
 /obj/structure/disposalholder/proc/nextloc()
@@ -111,7 +118,7 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 /obj/structure/disposalholder/proc/merge(obj/structure/disposalholder/other)
 	for(var/atom/movable/AM in other)
 		AM.forceMove(src)		// move everything in other holder to this one
-	qdel(other)
+	consumed(other, src)
 
 /obj/structure/disposalholder/proc/settag(new_tag)
 	destinationTag = new_tag
@@ -134,9 +141,10 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 	to_chat(escapee, span_warning("You push against the thin pipe walls..."))
 	play_sfx(loc, SFX_MACHINES_DOOR_AIRLOCK_CREAKING, 0.3, vary = FALSE, extrarange = 3) //yeah I know but at least it sounds like metal being bent.
 
-	om_task_timed(escapee, 20 SECONDS, transport_cylinder, src, PROC_REF(burst_pipe), list(transport_cylinder))
+	perform_op(escapee, src, "burst_pipe", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("pipe" = transport_cylinder))
 
-/obj/structure/disposalholder/proc/burst_pipe(obj/structure/disposalpipe/transport_cylinder)
+/obj/structure/disposalholder/proc/burst_pipe(datum/act/op/A)
+	var/obj/structure/disposalpipe/transport_cylinder = A.arg("pipe")
 	if(loc != transport_cylinder || active)
 		return
 	for(var/mob/living/jailbird in contents)

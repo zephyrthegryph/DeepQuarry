@@ -1,0 +1,37 @@
+@obj human|none
+@obj robot|none
+@obj ai|none
+@obj.item ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+@obj human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item/kit
+@obj human|/obj/item/storage
+@obj.item.organ human|/obj/item
+@obj human|/obj/item/reagent_containers
+human|/obj/item/surgical/scalpel menu: Cut
+human|/obj/item/surgical/scalpel menu: Move To Top
+human|/obj/item/surgical/scalpel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/scalpel click: Click: Cut
+human|/obj/item/surgical/retractor menu: Move To Top
+human|/obj/item/surgical/retractor menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/retractor click: nothing
+human|/obj/item/surgical/cautery menu: Move To Top
+human|/obj/item/surgical/cautery menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/cautery click: nothing
+human|/obj/item/surgical/hemostat menu: Move To Top
+human|/obj/item/surgical/hemostat menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/hemostat click: nothing
+human|/obj/item/surgical/FixOVein menu: Move To Top
+human|/obj/item/surgical/FixOVein menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/FixOVein click: nothing
+human|/obj/item/surgical/bioregen menu: Move To Top
+human|/obj/item/surgical/bioregen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/surgical/bioregen click: nothing
+keys: bench_cauterize, bench_extract, bench_fixovein, bench_rejuvenate, bench_retract, bench_scalpel, bite, butcher, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, pull_embedded, revive, robo_repair, toggle_digestable

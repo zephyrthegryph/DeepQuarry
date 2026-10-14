@@ -35,26 +35,26 @@
 	var/used_weapon	= /obj/item/melee/baton	//Weapon used by the bot
 
 	var/static/threat_found_sounds = SFX_VOICE_BCRIMINAL_MIX
-	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // ALLOW(instance_list): mob: an SFX mix key (a string), not a list; subtypes may point it at another mix
+	var/preparing_arrest_sounds = SFX_VOICE_BGOD_MIX // an SFX mix key (a string); subtypes may point it at another mix
 	var/static/fighting_sounds = SFX_VOICE_BIAMTHELAW_MIX
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
-/datum/om/stage/life/type_post/bot/secbot
-	of = /mob/living/bot/secbot
+/mob/living/bot/secbot/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/bot/secbot/perform(mob/living/bot/secbot/self, datum/om/frame/life/ctx)
+/mob/living/bot/secbot/life_type_post(datum/seq_frame/life/F)
 	..()
-	var/mob/puller = self?.pulled_by_mob()
-	if(self.stat != DEAD && self.on && puller)
+	var/mob/puller = src?.pulled_by_mob()
+	if(src.stat != DEAD && src.on && puller)
 		if(isliving(puller))
 			var/pull_allowed = FALSE
-			for(var/A in self.req_one_access)
+			for(var/A in src.req_one_access)
 				if(A in puller.GetAccess())
 					pull_allowed = TRUE
 			if(!pull_allowed)
 				var/mob/living/L = puller
-				om_after(self, 0, TYPE_PROC_REF(/mob, UnarmedAttack), L)
-				om_after(self, 0, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
-				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
+				after(src, 0, TYPE_PROC_REF(/mob, UnarmedAttack), with = list(L))
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("Do not interfere with active law enforcement routines!"))
+				GLOB.global_announcer.autosay("[src] was interfered with in <b>[get_area(src)]</b>, activating defense routines.", "[src]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
 	desc = "It's Officer Beep O'sky! Powered by a potato and a shot of whiskey."
@@ -81,24 +81,34 @@
 	endurance = 130
 
 /mob/living/bot/secbot/update_icons()
-	if(on && om_busy(src))
-		icon_state = "[default_icon_state]-c"
+	if(on && bot_busy())
+		set_icon_state("[default_icon_state]-c")
 	else
-		icon_state = "[default_icon_state][on]"
+		set_icon_state("[default_icon_state][on]")
 
 	if(on)
-		set_light(2, 1, baton_glow)
+		set_glow(src, GLOW(2, 1, baton_glow))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
-DECLARE_UI(/mob/living/bot/secbot, "Secbot")
+CAPABILITIES(/mob/living/bot/secbot)
+	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
+	interface("Secbot")
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("idcheck", ui_act("idcheck"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_idcheck)))
+	op("ignorerec", ui_act("ignorerec"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_ignorerec)))
+	op("ignorearr", ui_act("ignorearr"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_ignorearr)))
+	op("switchmode", ui_act("switchmode"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_switchmode)))
+	op("patrol", ui_act("patrol"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_patrol)))
+	op("declarearrests", ui_act("declarearrests"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_declarearrests)))
 
-UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_secbot{idcheck:unknown,check_records:num,check_arrest:num,arrest_type:unknown,declare_arrests:unknown,bot_patrolling:unknown,will_patrol:unknown,patrol:num}")
-
-/// The computed part of /mob/living/bot/secbot's window data (declared on its UI_DATA row).
-/mob/living/bot/secbot/proc/ui_data_mob_living_bot_secbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The window's data: the bot's state, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
+/mob/living/bot/secbot/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
-
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
 
 	data["idcheck"] = null
 	data["check_records"] = null
@@ -108,7 +118,7 @@ UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_da
 	data["bot_patrolling"] = null
 	data["will_patrol"] = null
 
-	if(!locked || issilicon(user))
+	if(settings_unlocked(A))
 		data["idcheck"] = idcheck
 		data["check_records"] = check_records
 		data["check_arrest"] = check_arrest
@@ -119,17 +129,8 @@ UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_da
 
 	return data
 
-EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
-
-/mob/living/bot/secbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/mob/living/bot/secbot, "power", ui_act_power)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
-	if(!access_scanner.allowed(ui.user))
+/mob/living/bot/secbot/proc/ui_act_power(datum/act/op/A)
+	if(!access_scanner.allowed(A.actor))
 		return FALSE
 	if(on)
 		turn_off()
@@ -137,45 +138,27 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
 		turn_on()
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "idcheck", ui_act_idcheck)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_idcheck)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_idcheck(datum/act/op/A)
 	idcheck = !idcheck
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "ignorerec", ui_act_ignorerec)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorerec)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_ignorerec(datum/act/op/A)
 	check_records = !check_records
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "ignorearr", ui_act_ignorearr)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorearr)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_ignorearr(datum/act/op/A)
 	check_arrest = !check_arrest
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "switchmode", ui_act_switchmode)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_switchmode)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_switchmode(datum/act/op/A)
 	arrest_type = !arrest_type
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "patrol", ui_act_patrol)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_patrol)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_patrol(datum/act/op/A)
 	will_patrol = !will_patrol
 	. = TRUE
 
-UI_ACT(/mob/living/bot/secbot, "declarearrests", ui_act_declarearrests)
-UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
-	if(locked && !issilicon(ui.user))
-		return TRUE
+/mob/living/bot/secbot/proc/ui_act_declarearrests(datum/act/op/A)
 	declare_arrests = !declare_arrests
 	. = TRUE
 
@@ -191,15 +174,12 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 	else
 		to_chat(user, span_notice("\The [src] is already corrupt."))
 
-/mob/living/bot/secbot/Initialize(mapload)
-	. = ..()
-	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
-
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
-/mob/living/bot/secbot/proc/on_injured(datum/source, datum/om/event/living_injured/event)
-	EVENT_HANDLER
+/mob/living/bot/secbot/proc/on_injured(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/notice/living_injured/event = A
 	var/amount = event.applied
-	var/atom/injury_source = event.source
+	var/atom/injury_source = event.source_
 	if(amount <= 0 || !injury_source)
 		return
 	var/mob/attacker
@@ -215,11 +195,11 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 		attacker = injury_source.loc // a held weapon
 	if(!attacker || attacker == src || on != TRUE)
 		return
-	om_after(src, 0, PROC_REF(react_to_attack), attacker)
+	after(src, 0, PROC_REF(react_to_attack), with = list(attacker))
 
 /mob/living/bot/secbot/attack_generic(mob/attacker)
 	if(attacker)
-		om_after(src, 0, PROC_REF(react_to_attack), attacker)
+		after(src, 0, PROC_REF(react_to_attack), with = list(attacker))
 	..()
 
 /mob/living/bot/secbot/proc/react_to_attack(mob/attacker)
@@ -242,19 +222,20 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 		playsound(src, preparing_arrest_sounds, 50)
 	// Register to be told when the target moves
 	dq_add_recursive_move(target)
-	om_hook(target, /datum/om/event/movable_attempted_move, src, PROC_REF(target_moved))
+	global.observe(target, /datum/notice/movable_attempted_move, src, then(PROC_REF(target_moved)))
 
 // Callback invoked if the registered target moves
-/mob/living/bot/secbot/proc/target_moved(atom/movable/moving_instance, datum/om/event/movable_attempted_move/event)
-	EVENT_HANDLER
+/mob/living/bot/secbot/proc/target_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/atom/movable/moving_instance = A.target
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!
-		om_unhook(moving_instance, /datum/om/event/movable_attempted_move, src)
+		unobserve(moving_instance, /datum/notice/movable_attempted_move, src)
 
 /mob/living/bot/secbot/resetTarget()
 	..()
 	if(target)
-		om_unhook(target, /datum/om/event/movable_attempted_move, src)
+		unobserve(target, /datum/notice/movable_attempted_move, src)
 	awaiting_surrender = 0
 	attacked = FALSE
 	walk_to(src, 0)
@@ -353,25 +334,26 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 			H.stun_effect_act(0, stun_strength, null, electric = TRUE)
 			play_sfx(src, SFX_WEAPONS_EGLOVES)
 			do_attack_animation(H)
-			om_hold_busy(src, 2, PROC_REF(update_icons))
+			bot_hold(2, PROC_REF(update_icons))
 			update_icons()
 			act_message(H, src, others = span_warning("%U% was prodded by %T% with a stun baton!"))
 			insult(H)
 		else
 			play_sfx(src, SFX_WEAPONS_HANDCUFFS, extrarange = -2)
 			act_message(src, H, others = span_warning("%U% is trying to put handcuffs on %T%!"))
-			bot_work(6 SECONDS, H, PROC_REF(UnarmedAttack_secbot_done), list(H))
+			bot_work(6 SECONDS, H, PROC_REF(handcuffed))
 	else if(isliving(M))
 		var/mob/living/L = M
 		L.injure(INJURY_BLUNT, xeno_harm_strength, null, src)
 		do_attack_animation(M)
 		play_sfx(src, SFX_SWING_HIT, 2)
-		om_hold_busy(src, 2, PROC_REF(update_icons))
+		bot_hold(2, PROC_REF(update_icons))
 		update_icons()
 		act_message(M, src, others = span_warning("%U% was beaten by %T% with a stun baton!"))
 		insult(L)
 
-/mob/living/bot/secbot/proc/UnarmedAttack_secbot_done(mob/living/carbon/human/H)
+/mob/living/bot/secbot/proc/handcuffed(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
 	if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
 			H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), SLOT_ID_HANDCUFFED) // Better to be cable cuffed than stun-locked
@@ -390,7 +372,7 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/secbot_assembly/Sa = new /obj/item/secbot_assembly(Tsec)
-	Sa.build_step = 1
+	graph_place(Sa, STAGE_SECBOT_HOLED)
 	Sa.add_overlay("hs_hole")
 	Sa.created_name = name
 	new /obj/item/assembly/prox_sensor(Tsec)
@@ -423,21 +405,27 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 
 //Secbot Construction
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(helmet_secbot_signaler), "Add signaler"))
+CAPABILITIES(/obj/item/clothing/head/helmet)
+	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR))
+	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
+	op("helmet_secbot_signaler", item(/obj/item/assembly/signaler), label("Add signaler"), then(PROC_REF(helmet_secbot_signaler)))
 
 /// Old attackby: a secured signaler turns a plain helmet into a secbot assembly.
-/obj/item/clothing/head/helmet/proc/helmet_secbot_signaler(mob/user, obj/item/assembly/signaler/S, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/proc/helmet_secbot_signaler(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/assembly/signaler/S = A.held
 	if(type != /obj/item/clothing/head/helmet) //Eh, but we don't want people making secbots out of space helmets.
-		return FALSE
+		return OP_DECLINE
 
 	if(!S.secured)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	consume(S, user)
-	var/obj/item/secbot_assembly/A = new /obj/item/secbot_assembly
-	user.put_in_hands(A)
+	var/obj/item/secbot_assembly/assembly = new /obj/item/secbot_assembly
+	user.put_in_hands(assembly)
 	to_chat(user, "You add the signaler to the helmet.")
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/secbot_assembly
 	name = "helmet/signaler assembly"
@@ -449,98 +437,116 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet, INTERACT_INSERT(/obj/item/as
 			slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 			)
 	item_state = "helmet"
-	var/build_step = 0
 	var/created_name = "Securitron"
-	construction_graph = /datum/construction_graph/secbot_assembly
-
-// Renaming the finished bot is not construction: keep it a plain interaction.
-EXTEND_INTERACTIONS(/obj/item/secbot_assembly, INTERACT_INSERT(/obj/item/pen, PROC_REF(secbot_assembly_rename), "Rename"))
-
-/// Old attackby: name the bot with a pen.
-/obj/item/secbot_assembly/proc/secbot_assembly_rename(mob/user, obj/item/W, datum/interaction/interaction)
-	ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
 
 /**
- * The Securitron assembly: a helmet welded open, then a signaler (added by
- * the helmet itself, see above), a prox sensor, a robot arm and a baton.
- * `build_step` is the graph's state_var. The baton step branches by type
- * (a slime baton makes a `/mob/living/bot/secbot/slime`) without a state fork.
+ * The Securitron assembly: a helmet welded open, then a signaler (added by the helmet itself, see above), a prox sensor, a robot arm and a
+ * baton. The baton step branches by type (a slime baton makes a `/mob/living/bot/secbot/slime`) without a stage fork. Renaming the finished
+ * bot is not construction: it is an op of its own, inherited by every kind of bot assembly.
  */
-/datum/construction_graph/secbot_assembly
-	id = "secbot_assembly"
-	states = list(0, 1, 2, 3)
-	initial_states = list(0)
-	state_var = "build_step"
-	edge_types = list(
-		/datum/interaction/construction/secbot/weld_hole,
-		/datum/interaction/construction/secbot/prox,
-		/datum/interaction/construction/secbot/arm,
-		/datum/interaction/construction/secbot/baton,
-	)
+STAGE_DEF(secbot, helmet)
+STAGE_DEF(secbot, holed)
+STAGE_DEF(secbot, sensing)
+STAGE_DEF(secbot, armed)
+STAGE_DEF(secbot, finished)
 
-/datum/interaction/construction/secbot/weld_hole
-	from_state = 0
-	to_state = 1
-	step_text = "weld a hole in it"
-	tool = TOOL_WELDER
+MSG_DEF_SELF(stage/secbot/helmet, "It is a helmet with a signaler.")
+MSG_DEF_SELF(stage/secbot/holed, "It has a hole welded in the helmet.")
+MSG_DEF_SELF(stage/secbot/sensing, "It has a proximity sensor.")
+MSG_DEF_SELF(stage/secbot/armed, "It has a robot arm.")
+MSG_DEF_SELF(stage/secbot/finished, "It is finished.")
 
-/datum/interaction/construction/secbot/weld_hole/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.add_overlay("hs_hole")
-	to_chat(actor, span_notice("You weld a hole in \the [target]."))
-	return TRUE
+CAPABILITIES(/obj/item/secbot_assembly)
+	op("secbot_assembly_rename", item(/obj/item/pen), label("Rename"), then(PROC_REF(secbot_assembly_rename)))
+	construction(start(STAGE_SECBOT_HELMET),
+		stage(STAGE_SECBOT_HOLED, tool(TOOL_WELDER), wait(0), then(PROC_REF(hole_welded)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_SENSING, item(/obj/item/assembly/prox_sensor), consumes(), wait(0), then(PROC_REF(sensor_added)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_ARMED, inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), when(req(PROC_REF(robot_arm_held))), consumes(), wait(0), then(PROC_REF(arm_added)), undo = NO_UNDO),
+		stage(STAGE_SECBOT_FINISHED, item(/obj/item/melee/baton), consumes(), wait(0), then(PROC_REF(finished)), undo = NO_UNDO))
 
-/datum/interaction/construction/secbot/prox
-	from_state = 1
-	to_state = 2
-	step_text = "add a proximity sensor"
-	item_type = /obj/item/assembly/prox_sensor
-	item_use = CONSTRUCTION_ITEM_DELETE
+/// Old attackby: name the bot with a pen.
+/obj/item/secbot_assembly/proc/secbot_assembly_rename(datum/act/op/A)
+	var/mob/user = A.actor
+	ask_name_var(user)
+	return OP_PASS
 
-/datum/interaction/construction/secbot/prox/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.add_overlay("hs_eye")
-	target.name = "helmet/signaler/prox sensor assembly"
-	to_chat(actor, span_notice("You add \the [held] to [target]."))
-	return TRUE
-
-/datum/interaction/construction/secbot/arm
-	from_state = 2
-	to_state = 3
-	step_text = "add a robot arm"
-	item_type = list(/obj/item/robot_parts/l_arm, /obj/item/robot_parts/r_arm, /obj/item/organ/external/arm)
-	item_name = "a robot arm"
-	item_use = CONSTRUCTION_ITEM_DELETE
-
-/datum/interaction/construction/secbot/arm/item_matches(obj/item/held)
+/// A robot arm: two robot_parts types, or a robotic external arm organ by name.
+/obj/item/secbot_assembly/proc/robot_arm_held(datum/act/op/A)
+	var/obj/item/held = A.held
 	if(istype(held, /obj/item/robot_parts/l_arm) || istype(held, /obj/item/robot_parts/r_arm))
-		return TRUE
-	return istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm")
+		return null
+	return read_once(istype(held, /obj/item/organ/external/arm) && (held.name == "robotic right arm" || held.name == "robotic left arm")) ? null : /datum/msg/req_failed
 
-/datum/interaction/construction/secbot/arm/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	target.name = "helmet/signaler/prox sensor/robot arm assembly"
-	target.add_overlay("hs_arm")
-	to_chat(actor, span_notice("You add \the [held] to [target]."))
-	return TRUE
+/// A robot leg: two robot_parts types, or a robotic external leg organ by name.
+/obj/item/secbot_assembly/proc/robot_leg_held(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/robot_parts/l_leg) || istype(held, /obj/item/robot_parts/r_leg))
+		return null
+	return (read_once(istype(held, /obj/item/organ/external/leg) && (held.name == "robotic right leg" || held.name == "robotic left leg"))) ? null : /datum/msg/req_failed
 
-/datum/interaction/construction/secbot/baton
-	from_state = 3
-	to_state = CONSTRUCTION_DONE
-	step_text = "attach a stun baton to finish it"
-	item_type = /obj/item/melee/baton
-	item_use = CONSTRUCTION_ITEM_DELETE
+/// The picture follows the stages built: the welded hole, the sensor's eye, the arm.
+/obj/item/secbot_assembly/draw(datum/look/look)
+	..()
+	if(built(src, STAGE_SECBOT_HOLED))
+		look.overlay("hs_hole")
+	if(built(src, STAGE_SECBOT_SENSING))
+		look.overlay("hs_eye")
+	if(built(src, STAGE_SECBOT_ARMED))
+		look.overlay("hs_arm")
 
-/datum/interaction/construction/secbot/baton/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
-	var/obj/item/secbot_assembly/assembly = target
-	to_chat(actor, span_notice("You complete the Securitron! Beep boop."))
-	var/turf/where = get_turf(assembly)
-	if(istype(held, /obj/item/melee/baton/slime))
+/obj/item/secbot_assembly/proc/hole_welded(datum/act/op/A)
+	to_chat(A.actor, span_notice("You weld a hole in \the [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/sensor_added(datum/act/op/A)
+	name = "helmet/signaler/prox sensor assembly"
+	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/arm_added(datum/act/op/A)
+	name = "helmet/signaler/prox sensor/robot arm assembly"
+	to_chat(A.actor, span_notice("You add \the [A.held] to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/finished(datum/act/op/A)
+	to_chat(A.actor, span_notice("You complete the Securitron! Beep boop."))
+	var/turf/where = get_turf(src)
+	if(istype(A.held, /obj/item/melee/baton/slime))
 		var/mob/living/bot/secbot/slime/bot = new /mob/living/bot/secbot/slime(where)
-		bot.name = assembly.created_name
+		bot.name = created_name
 	else
 		var/mob/living/bot/secbot/bot = new /mob/living/bot/secbot(where)
-		bot.name = assembly.created_name
-	consume(assembly, actor)
-	return TRUE
+		bot.name = created_name
+	consume(src, A.actor)
+	return OP_OK
+
+// The legs the ED-209, SL-ED-209 and ED-CLN assemblies share: a bare frame takes a robot leg, then a second one.
+STAGE_DEF(bot_frame, bare)
+STAGE_DEF(bot_frame, one_leg)
+STAGE_DEF(bot_frame, two_legs)
+
+MSG_DEF_SELF(stage/bot_frame/bare, "It is a bare frame.")
+MSG_DEF_SELF(stage/bot_frame/one_leg, "It has one robot leg.")
+MSG_DEF_SELF(stage/bot_frame/two_legs, "It has both robot legs.")
+MSG_DEF_SELF(bot_frame/start_wire, "You start to wire %T%.")
+
+/// The two leg stages of a walking bot assembly's ladder.
+/proc/bot_frame_legs()
+	return list(
+		stage(STAGE_BOT_FRAME_ONE_LEG, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_one_added)), undo = NO_UNDO),
+		stage(STAGE_BOT_FRAME_TWO_LEGS, inputs(item(/obj/item/robot_parts/l_leg), item(/obj/item/robot_parts/r_leg), item(/obj/item/organ/external/leg)), when(req(TYPE_PROC_REF(/obj/item/secbot_assembly, robot_leg_held))), consumes(), wait(0), then(TYPE_PROC_REF(/obj/item/secbot_assembly, leg_two_added)), undo = NO_UNDO))
+
+/obj/item/secbot_assembly/proc/leg_one_added(datum/act/op/A)
+	name = "legs/frame assembly"
+	set_icon_state("ed209_leg")
+	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
+	return OP_OK
+
+/obj/item/secbot_assembly/proc/leg_two_added(datum/act/op/A)
+	name = "legs/frame assembly"
+	set_icon_state("ed209_legs")
+	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
+	return OP_OK
 
 #undef SECBOT_WAIT_TIME
 #undef SECBOT_THREAT_ARREST

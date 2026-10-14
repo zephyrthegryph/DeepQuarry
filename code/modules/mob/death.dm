@@ -8,15 +8,15 @@
 	dq_destroy_collect_begin()
 	if(stat != DEAD)
 		death(1)
-	transforming = 1
+	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	update_canmove()
 	registry_leave(REGISTRY_DEAD_MOBS, src)
 
 	var/atom/movable/overlay/animation = new(loc)
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = anim_file
 	rel_set(animation, nameof(animation.master), src)
 	flick(anim, animation)
@@ -30,9 +30,9 @@
 		ghostize()
 	dq_destroy_collect_end()
 
-	om_qdel_after(animation, DISINTEGRATE_DELAY)
+	animation.expire(DISINTEGRATE_DELAY)
 	// The body and whatever is still inside it go as one batched destroy.
-	om_after(src, DISINTEGRATE_DELAY, /datum/proc/om_qdel_batch_self)
+	expire(DISINTEGRATE_DELAY)
 #undef DISINTEGRATE_DELAY
 
 /// Gib: burst into gibs. Cannot gib ghosts.
@@ -50,17 +50,17 @@
 // --- The death pipeline ----------------------------------------------------------------------
 // death() is the one way a mob dies, and it is sealed: subtypes contribute through the hooks
 // below (replace_death, death_message, death_links, play_death_sound, on_death) and listeners
-// through /datum/om/event/mob_death / /datum/om/event/world_mob_death (OM_EMIT_WORLD). The order is fixed:
+// through /datum/definition_event/mob_death / /datum/definition_event/world_mob_death (OM_EMIT_WORLD). The order is fixed:
 //   1. guard       - already dead or deleted: return FALSE with no side effects;
 //   2. replace     - replace_death() lets a mob end some other way (vanish, split, retreat);
 //   3. transition  - the one set_stat(DEAD), time of death, the living/dead lists;
 //   4. effects     - message, soul links / nests / vore flags, sound, senses, drops, diseases,
 //                    mind memory, respawn timer;
-//   5. signals     - /datum/om/event/mob_death, then /datum/om/event/world_mob_death (OM_EMIT_WORLD);
+//   5. signals     - /datum/definition_event/mob_death, then /datum/definition_event/world_mob_death (OM_EMIT_WORLD);
 //   6. on_death()  - subtype contributions (loot, remains, verbs, qdel);
 //   7. refresh     - HUD, icon and vision (skipped when on_death() deleted the mob);
 //   8. antag       - the game mode's win check;
-//   9. final       - /datum/om/event/living_death_final, once, after everything above.
+//   9. final       - /datum/definition_event/living_death_final, once, after everything above.
 // The way back is /mob/living/proc/return_from_death() (code/modules/body/revival.dm).
 
 /// Kill this mob. Returns TRUE if it went from alive to dead, FALSE otherwise (already dead,
@@ -103,7 +103,7 @@
 		visible_message(span_infoplain(span_bold("\The [name]") + " [deathmessage]"))
 	death_links(gibbed)
 	play_death_sound(gibbed)
-	GLOB.motiontracker_service.ping(src, 80)
+	SSmotiontracker.ping(src, 80)
 
 	update_canmove()
 	layer = MOB_LAYER
@@ -121,27 +121,25 @@
 	set_respawn_timer()
 
 	// 5. Signals.
-	OM_EMIT(src, /datum/om/event/mob_death, gibbed)
-	OM_EMIT_WORLD(/datum/om/event/world_mob_death, src, gibbed)
+	PUBLISH_LEGACY(src, /datum/notice/mob_death, gibbed)
+	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_death, src, gibbed)
 
 	// 6. Subtype contributions.
 	on_death(gibbed)
 
 	// 7. Refresh what the dead mob shows and sees.
 	if(!QDELETED(src))
-		if(healths)
-			healths.overlays = null
-			healths.icon_state = "health6"
-		update_icon()
-		refresh_hud()
-		refresh_vision()
+		if(hud_used?.healths)
+			hud_used?.healths?.overlays = null
+			hud_used?.healths?.icon_state = "health6"
+		// The HUD, sight and look follow set_stat(DEAD) by themselves (it published nameof(stat)).
 
 	// 8. Antagonist bookkeeping.
-	SSticker?.mode?.check_win()
+	ticker_mode()?.check_win()
 
 	// 9. Final: every side effect is done. The destroy framework's delete_on_death hangs here
 	// (lifecycle_on_death_finalized(), code/datums/lifecycle/verbs.dm), after the listeners.
-	OM_EMIT(src, /datum/om/event/living_death_final, gibbed)
+	PUBLISH_LEGACY(src, /datum/notice/living_death_final, gibbed)
 	if(isliving(src) && !QDELETED(src))
 		var/mob/living/finalized = src
 		finalized.lifecycle_on_death_finalized()
@@ -154,7 +152,7 @@
 
 /// The visible death message ("\The [src] <message>"), or DEATHGASP_NO_MESSAGE.
 /mob/proc/get_death_message(gibbed)
-	return death_message
+	return kind_of(src).death_message
 
 /// A mob dies quietly when the thing holding it says so (muffles_death_of()): the core asks
 /// its container instead of knowing every kind of container.

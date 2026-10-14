@@ -24,11 +24,27 @@
 	var/obj/item/headpods/deployed_headpods
 
 	w_class = ITEMSIZE_COST_SMALL
-	slot_flags = SLOT_BELT
 
-/// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD_VIEW(/obj/item/walkpod, mob/living, listener, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
+CAPABILITIES(/obj/item/walkpod)
+	configure(item_worn(slots = SLOT_BELT))
+	ref_one(nameof(listener))
+	every(2 SECONDS, then(PROC_REF(walkpod_step)), when = nameof(listener))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
+	op("walkpod_verb_take_headpods", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Take HeadPods"), needs(carried(), req_empty(nameof(deployed_headpods), because = MSG(walkpod/headpods_deployed))), then(PROC_REF(walkpod_verb_take_headpods)))
+	op("stop", ui_act(), then(PROC_REF(ui_act_stop)))
+	op("play", ui_act(), then(PROC_REF(ui_act_play)))
+	owns_one(nameof(deployed_headpods), /obj/item/headpods)
+	interface("Jukebox", title = "PodZu Music Player")
+	without("ui_open")
+	op("change_track", ui_act("change_track", arg("change_track", schema_ref(/datum/track))), then(PROC_REF(ui_act_change_track)))
+	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
+	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
+
+/// Person whomst is listening to us. walkpod_step() checks on them and plays music while set (its every(), gated on it).
+/obj/item/walkpod/var/mob/living/listener
+MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 
 // stops listening.
 /obj/item/walkpod/on_destroy(force)
@@ -39,7 +55,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
 /obj/item/walkpod/proc/appearance_base()
 	return deployed_headpods ? "zuman" : initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/item/walkpod, "{appearance_base}{listener?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/walkpod/draw(datum/look/look)
+	..()
+	look.state("[appearance_base()][listener() ? "_on" : ""]")
 
 // Listener handling
 /obj/item/walkpod/proc/check_listener()
@@ -54,44 +73,37 @@ APPEARANCE_TEMPLATE(/obj/item/walkpod, "{appearance_base}{listener?_on:}")
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
 	rel_clear(src, nameof(listener))
-	update_icon()
 
 /obj/item/walkpod/proc/set_listener(mob/living/L)
 	if(listener())
 		remove_listener()
 	rel_set(src, nameof(listener), L)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
-	update_icon()
 
 /obj/item/walkpod/proc/update_music()
 	listener()?.force_music(media_url, media_start_time, volume) // Calling this with "" url (when we aren't playing) helpfully disables forced music
 
 /// Old click_alt.
-/obj/item/walkpod/proc/interaction_alt(mob/living/L, obj/item/held, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/L = A.actor
 	if(L == listener() && check_listener())
 		tgui_interact(L)
 	else if(loc == L) // at least they're holding it
 		to_chat(L, span_warning("Turn on the [src] first."))
-	return TRUE
-
-DECLARE_INTERACTIONS(/obj/item/walkpod, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY, REQ_FIELD_NOT("deployed_headpods", "the HeadPods are already deployed")), \
-)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/walkpod/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!istype(user) || loc != user)
-		return TRUE
+		return OP_OK
 	if(!listener())
 		set_listener(user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 // Process ticks to ensure our listener remains valid and we do music-ing
-/obj/item/walkpod/periodic_step()
+/obj/item/walkpod/proc/walkpod_step(datum/act/timer/A)
 	if(!check_headpods())
 		restore_headpods()
 	if(!check_listener())
@@ -119,7 +131,6 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 		if(JUKEMODE_PLAY_ONCE)
 			rel_clear(src, nameof(current_track))
 			playing = 0
-			update_icon()
 	start_stop_song()
 
 // Track/music internals
@@ -165,13 +176,20 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 // UI
 /obj/item/walkpod/proc/getTracksList()
-	return SSmedia_tracks.jukebox_tracks
+	return media_tracks_jukebox_tracks()
 
-DECLARE_UI(/obj/item/walkpod, "Jukebox", UI_TITLE("PodZu Music Player"))
+/obj/item/walkpod/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["playing"] = playing
+	data["loop_mode"] = loop_mode
+	data["volume"] = volume
+	var/list/merged_1 = ui_data_obj_item_walkpod(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/item/walkpod, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_item_walkpod{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list}")
-
-/// The computed part of /obj/item/walkpod's window data (declared on its UI_DATA row).
+/// /obj/item/walkpod's window data.
 /obj/item/walkpod/proc/ui_data_obj_item_walkpod(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -191,56 +209,54 @@ UI_DATA(/obj/item/walkpod, "playing:num", "loop_mode", "volume:num", "merge:ui_d
 
 	return data
 
-UI_ACT(/obj/item/walkpod, "change_track", ui_act_change_track, UI_ARG_REF("change_track", "proc:getTracksList", /datum/track))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_change_track)
-	var/datum/track/T = params["change_track"]
+/obj/item/walkpod/proc/ui_act_change_track(datum/act/op/A, change_track)
+	if(!isnull(change_track) && !(change_track in getTracksList()))
+		return FALSE
+	var/datum/track/T = change_track
 	if(istype(T))
 		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 		StartPlaying()
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "loopmode", ui_act_loopmode, UI_ARG_NUM("loopmode"))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_loopmode)
-	var/newval = params["loopmode"]
+/obj/item/walkpod/proc/ui_act_loopmode(datum/act/op/A, loopmode)
+	var/newval = loopmode
 	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "volume", ui_act_volume, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/item/walkpod, ui_act_volume)
-	var/newval = params["val"]
+/obj/item/walkpod/proc/ui_act_volume(datum/act/op/A, val)
+	var/newval = val
 	volume = clamp(newval, 0, 1)
 	update_music() // To broadcast volume change without restarting song
 	return TRUE
 
-UI_ACT(/obj/item/walkpod, "stop", ui_act_stop)
-UI_ACT_PROC(/obj/item/walkpod, ui_act_stop)
+/obj/item/walkpod/proc/ui_act_stop(datum/act/op/A)
 	StopPlaying()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/walkpod, "play", ui_act_play)
-UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
+/obj/item/walkpod/proc/ui_act_play(datum/act/op/A)
 	if(current_track() == null)
-		to_chat(ui.user, "No track selected.")
+		to_chat(A.actor, "No track selected.")
 	else
 		StartPlaying()
-	return TRUE
+	return OP_OK
 
 // Silly verb
 /// Old Take HeadPods verb: Grab the pair of HeadPods.
-/obj/item/walkpod/proc/walkpod_verb_take_headpods(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/L = user
+/obj/item/walkpod/proc/walkpod_verb_take_headpods(datum/act/op/A)
+	var/mob/living/L = A.actor
 	if(!istype(L))
 		return
-	own_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
+	rel_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
 	L.put_in_any_hand_if_possible(deployed_headpods)
-	update_icon()
 
 /// Old attackby.
-/obj/item/walkpod/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W == deployed_headpods)
 		restore_headpods(user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/walkpod/proc/restore_headpods(mob/living/potential_holder)
 	if(!deployed_headpods)
@@ -251,8 +267,7 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
 
 	if(istype(potential_holder))
 		potential_holder.unEquip(deployed_headpods, force = TRUE)
-	own_clear(src, nameof(deployed_headpods), OWN_DELETE)
-	update_icon()
+	rel_clear(src, nameof(deployed_headpods))
 
 /obj/item/walkpod/proc/check_headpods()
 	if(deployed_headpods && deployed_headpods.loc != loc)
@@ -266,7 +281,9 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
 	icon_state = "headpods"
 	item_state = "headphones_on"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_HEAD
+
+CAPABILITIES(/obj/item/headpods)
+	configure(item_worn(slots = SLOT_HEAD))
 
 
 /// Current track playing (a relation view: null once it is deleted).

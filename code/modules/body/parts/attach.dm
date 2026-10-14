@@ -24,7 +24,7 @@
 // children first, so a tree is released leaves first. When the holder itself
 // is being destroyed (dq_part_holder_destroying()), the release clears the
 // derived state (owner, caches, afflictions moved to the part) but skips every
-// re-derivation: no invalidate (so no CHANGE_MOB_HEALTH), no verbs, no death check. The
+// re-derivation: no invalidate (so no MOB_KEY_HEALTH), no verbs, no death check. The
 // topmost detach, from a holder that survives, does that once for the whole
 // subtree. O4 replaces the stub below with the destroy transaction's flag
 // (doc/rewrite/lifecycle.md §2-3) and moves the remaining organ Destroy()
@@ -37,7 +37,6 @@ GLOBAL_VAR_INIT(dq_part_trace, FALSE)
 GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 /obj/item/organ
-	has_slot_hooks = TRUE
 
 /obj/item/organ/slot_key()
 	return organ_tag
@@ -54,7 +53,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /proc/dq_part_attaching_slot(atom/holder, slot_id)
 	if(IS_PART_TREE_SLOT(slot_id))
 		return TRUE
-	return slot_id == SLOT_ID_BODY && isliving(holder) && !holder.ledger?.def_by_id(SLOT_ID_PART_ROOT)
+	return slot_id == SLOT_ID_BODY && isliving(holder) && !holder.containment_ledger()?.def_by_id(SLOT_ID_PART_ROOT)
 
 /obj/item/organ/on_slotted(atom/holder, slot_id)
 	if(slot_id == SLOT_ID_PART_CHILD || slot_id == SLOT_ID_PART_ORGANS)
@@ -112,7 +111,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	// A limb tree is a few levels deep; the bound only stops a corrupt loop.
 	for(var/depth in 1 to 16)
 		var/atom/holder = part.loc
-		var/list/entry = holder?.ledger?.entries[part]
+		var/list/entry = holder?.containment_ledger()?.entries[part]
 		if(!entry)
 			return null
 		var/slot_id = entry[LEDGER_E_SLOT]
@@ -151,7 +150,10 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 /// Changes this part's organ_tag, which is its key in its slot and in its
 /// owner's caches.
+SETTER(/obj/item/organ, organ_tag)
 /obj/item/organ/proc/set_organ_tag(new_tag)
+	if(TRACKED_UNCHANGED(organ_tag, new_tag))
+		return FALSE
 	var/mob/living/M = owner
 	if(M)
 		dq_part_uncache(M, src)
@@ -159,6 +161,8 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	ledger_rekey()
 	if(M)
 		dq_part_cache(M, src)
+	tracked_changed(src, nameof(organ_tag))
+	return TRUE
 
 // ---- Owner caches ----
 
@@ -167,9 +171,9 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /proc/dq_part_cache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
 		if(!M.organs_by_name)
-			M.organs_by_name = list() // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+			M.set_organs_by_name(list())
 		rel_add(M, nameof(M.organs), part)
-		M.organs_by_name[part.organ_tag] = part // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+		M.set_organs_by_name_at(part.organ_tag, part)
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.
@@ -177,8 +181,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(istype(part, /obj/item/organ/external))
 		rel_remove(M, nameof(M.organs), part)
 		if(M.organs_by_name?[part.organ_tag] == part)
-			M.organs_by_name -= part.organ_tag // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list
-		rel_remove(M, nameof(M.bad_external_organs), part)
+			M.remove_organs_by_name(part.organ_tag)
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.
@@ -212,6 +215,8 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		if(istype(part, /obj/item/organ/external))
 			limbs = TRUE
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	if(limbs)
+		owner.hands_refresh() // the hands() provider follows the limbs
 	if(limbs && ishuman(owner))
 		var/mob/living/carbon/human/H = owner
 		H.refresh_modular_limb_verbs()
@@ -228,7 +233,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	dq_part_cache(owner, part)
 	attach_part(part)
 	part.joined_body(owner)
-	OM_EMIT(owner, /datum/om/event/body_part_attached, part)
+	PUBLISH_LEGACY(owner, /datum/notice/body_part_attached, part)
 
 /// `root` and its subtree left this body. Children first. `destroying`: the
 /// holder is being destroyed, so only the derived state is cleared (see the
@@ -253,6 +258,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(destroying || reparent)
 		return
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	owner.hands_refresh() // the hands() provider follows the limbs
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
 		H.refresh_modular_limb_verbs()
@@ -282,27 +288,51 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		part.left_body(owner)
 	rel_clear(part, nameof(part.owner))
 	part.recalc_integrity()
-	OM_EMIT(owner, /datum/om/event/body_part_detached, part)
+	PUBLISH_LEGACY(owner, /datum/notice/body_part_detached, part)
 
 // ---- Per-type reactions ----
 
-/// TRUE from left_body() until joined_body(): a part that came out of a body.
-OM_FIELD_TYPED(/obj/item/organ, tmp, left_body_loose, FALSE, CHANGE_EXPLICIT)
-/// A part out of a body that hasn't died: it ticks on its own (decay, loose afflictions) while
-/// this holds (DECLARE_PERIODIC_WHILE). Attached parts are ticked by the body's organs stage.
-OM_DERIVE_FIELD(/obj/item/organ, organ_ticks_loose, list("left_body_loose", "status", "robotic", "damage", "max_damage"))
-DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
+/// A part out of a body that hasn't died ticks on its own (decay, loose afflictions) every LOOSE_ORGAN_STEP while it holds
+/// this; attached parts are ticked by the body's organ clock. The organ holds it itself (loose_refresh()) when it leaves a body,
+/// and drops it when it joins one, dies or is ruined.
+STAT(/obj/item/organ, ticks_loose, ANY)
 
+/// How often a loose organ ticks (one cycle's work per tick, as the old slow cadence ran it).
+#define LOOSE_ORGAN_STEP (2 SECONDS)
+
+/// The loose-organ tick's entries, for the organ's CAPABILITIES block.
+/proc/loose_organ_clock()
+	return every(LOOSE_ORGAN_STEP, then(TYPE_PROC_REF(/obj/item/organ, loose_tick)), when = STAT_TICKS_LOOSE)
+
+/obj/item/organ/proc/loose_tick(datum/act/timer/A)
+	organ_tick(1)
+	loose_refresh()
+
+/// Ticking loose: it came out of a body, has not joined another, and is not dead (a dead prosthetic has no ORGAN_DEAD flag: it is
+/// dead at max damage). An organ that never was in a body (a spare in storage) does not tick.
 /obj/item/organ/proc/organ_ticks_loose()
-	if(!left_body_loose || (status & ORGAN_DEAD))
+	return ticks_loose && loose_alive()
+
+/obj/item/organ/proc/loose_alive()
+	if(owner || (status & ORGAN_DEAD))
 		return FALSE
-	// A dead prosthetic has no ORGAN_DEAD flag: it is dead at max damage.
 	return !(is_robotic() && damage >= max_damage)
+
+/// It is coming out of a body (its owner is still set): tick while it lasts.
+/obj/item/organ/proc/loose_start()
+	if(QDELETED(src) || (status & ORGAN_DEAD) || (is_robotic() && damage >= max_damage))
+		return
+	hold(src, STAT_TICKS_LOOSE, null, src)
+
+/// Stop ticking once it joined a body, died or was ruined.
+/obj/item/organ/proc/loose_refresh()
+	if(!QDELETED(src) && ticks_loose && !loose_alive())
+		release(src, STAT_TICKS_LOOSE, src)
 
 /// This part just joined `M`'s body. Runs inside the move: must not sleep,
 /// move or delete anything.
 /obj/item/organ/proc/joined_body(mob/living/M)
-	set_left_body_loose(FALSE)
+	loose_refresh()
 	handle_organ_mod_special()
 
 /obj/item/organ/external/joined_body(mob/living/M)
@@ -318,7 +348,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
 /// being destroyed.
 /obj/item/organ/proc/left_body(mob/living/M)
 	handle_organ_mod_special(TRUE)
-	set_left_body_loose(TRUE)
+	loose_start()
 	rejecting = null
 	// Keep a blood sample, for transplant matching and forensics.
 	var/mob/living/carbon/human/C = M

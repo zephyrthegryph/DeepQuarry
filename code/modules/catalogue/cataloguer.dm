@@ -21,8 +21,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "cataloguer"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/points_stored = 0 // Amount of 'exploration points' this device holds.
 	var/scan_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
 	var/credit_sharing_range = 280 // If another person is within this radius, they will also be credited with a successful scan. Original was 14
@@ -38,7 +36,9 @@
 	desc = "A hand-held device, used for compiling information about an object by scanning it. This one is an upgraded model, \
 	with a scanner that both can scan from farther away, and with less time."
 	scan_range = 4
-	toolspeed = 0.8
+
+CAPABILITIES(/obj/item/cataloguer/advanced)
+	configure(item_tooling(speed = 0.8))
 
 // Able to see all defined catalogue data regardless of if it was unlocked, intended for testing.
 /obj/item/cataloguer/debug
@@ -48,21 +48,26 @@
 	from nearby, perhaps due to being colored gold. Truly a epistemological mystery."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "debug_cataloguer"
-	toolspeed = 0.1
 	scan_range = 7
 	debug = TRUE
+
+CAPABILITIES(/obj/item/cataloguer/debug)
+	configure(item_tooling(speed = 0.1))
 
 REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Appearance reader: TRUE while a scan task holds the cataloguer.
 /obj/item/cataloguer/proc/appearance_busy()
-	return om_busy(src) ? TRUE : FALSE
+	return (op_claimed(src) || work_busy(src)) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy?_active:}")
+/// The look (the draw sweep: from its template).
+/obj/item/cataloguer/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_active" : ""]")
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
-	if(om_busy(src))
+	if(op_claimed(src) || work_busy(src))
 		to_chat(user, span_warning("\The [src] is already scanning something."))
 		return
 
@@ -81,7 +86,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 		return
 
 	// Get how long the delay will be.
-	var/scan_delay = target.get_catalogue_delay() * toolspeed
+	var/scan_delay = target.get_catalogue_delay() * tooling_of(src).speed
 	if(partial_scanned)
 		if(partial_scanned == target)
 			scan_delay -= partial_scan_time
@@ -103,24 +108,30 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	// The delay, and test for if the scan succeeds or not. The effects travel in a list so the
 	// beam (which ends itself) is never a captured argument.
 	var/list/effects = list(scan_beam, filter, box_segments)
-	// The scan claims the cataloguer: busy (om_busy()) until it ends.
-	var/started = om_task_start(/datum/om/task/timed/cataloguer_scan, user, target, duration = scan_delay, effects = effects, scan_start_time = world.time, max_distance = scan_range, busy = src)
-	if(istext(started))
+	// The scan claims the cataloguer (the "scan" op of its CAPABILITIES) until it ends.
+	var/datum/op_result/started = perform_op(user, src, "scan", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("scanned" = target, "delay" = scan_delay, "effects" = effects, "scan_start_time" = world.time))
+	if(started.outcome == ACT_REFUSED)
 		scan_cleanup(target, user, effects)
 		return
-	update_icon()
 
-/datum/om/task/timed/cataloguer_scan
-	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
-	complete_proc = /obj/item/cataloguer/proc/scan_succeeded
-	cancel_proc = /obj/item/cataloguer/proc/scan_failed
-	var/list/effects
-	var/scan_start_time
+/// How long the scan takes.
+/obj/item/cataloguer/proc/scan_time(datum/act/op/A)
+	return A.arg("delay")
 
-/obj/item/cataloguer/proc/scan_succeeded(datum/om/task/timed/cataloguer_scan/task)
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	var/list/effects = task.effects
+/// The scan's wait ended: the target must still be within range, else it fails like an interrupted one.
+/obj/item/cataloguer/proc/scan_finished(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	if(QDELETED(target) || get_dist(target, user) > scan_range)
+		scan_failed(A)
+		return OP_OK
+	scan_succeeded(A)
+	return OP_OK
+
+/obj/item/cataloguer/proc/scan_succeeded(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	var/list/effects = A.arg("effects")
 	if(target.can_catalogue(user))
 		to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
 		play_sfx(src, SFX_MACHINES_PING)
@@ -134,29 +145,28 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	partial_scan_time = 0
 	scan_cleanup(target, user, effects)
 
-/obj/item/cataloguer/proc/scan_failed(datum/om/task/timed/cataloguer_scan/task)
-	var/atom/target = task.target
-	var/mob/user = task.actor
-	var/list/effects = task.effects
-	var/scan_start_time = task.scan_start_time
+/obj/item/cataloguer/proc/scan_failed(datum/act/op/A)
+	var/atom/target = A.arg("scanned")
+	var/mob/user = A.actor
+	var/list/effects = A.arg("effects")
+	var/scan_start_time = A.arg("scan_start_time")
 	to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
 	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#FF0000", 3)
 	if(target)
 		rel_set(src, nameof(partial_scanned), target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
-	om_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
-	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)
+	hold_busy(src, 0.3 SECONDS) // still busy while the box flashes red
+	after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), with = list(effects, target ? REF(target) : null, user ? REF(user) : null))
 
 /obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
 	scan_cleanup(locate(target_ref), locate(user_ref), effects)
 
 /obj/item/cataloguer/proc/scan_cleanup(atom/target, mob/user, list/effects)
 	// Now clean up the effects.
-	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))
-		qdel(scan_beam)
+		spent(scan_beam, user)
 	if(target)
 		target.filters -= effects[2]
 	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.
@@ -206,21 +216,21 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 			to_chat(user, span_notice("Shared discovery with [contributers.len] other contributer\s."))
 
 /// Old click_alt.
-/obj/item/cataloguer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cataloguer/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	pulse_scan(user)
 	return TRUE
 
 // Gives everything capable of being scanned an outline for a brief moment.
 // Helps to avoid having to click a hundred things in a room for things that have an entry.
 /obj/item/cataloguer/proc/pulse_scan(mob/user)
-	if(om_busy(src))
+	if(work_busy(src))
 		to_chat(user, span_warning("\The [src] is busy doing something else."))
 		return
 
 	// Busy (a hold claims it) while the highlights are up.
-	if(istext(om_hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
+	if(istext(hold_busy(src, 2 SECONDS)))
 		return
-	update_icon()
 	play_sfx(src, SFX_MACHINES_BEEP)
 
 	// First, get everything able to be scanned.
@@ -234,7 +244,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	for(var/atom/A as anything in scannable_atoms)
 		A.filters += filter
 	to_chat(user, span_notice("\The [src] is highlighting scannable objects in green, if any exist."))
-	om_after(src, 2 SECONDS, PROC_REF(pulse_scan_end), user, list(scannable_atoms, filter))
+	after(src, 2 SECONDS, PROC_REF(pulse_scan_end), with = list(user, list(scannable_atoms, filter)))
 
 /obj/item/cataloguer/proc/pulse_scan_end(mob/user, list/state)
 	var/list/scannable_atoms = state[1]
@@ -245,7 +255,6 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 			continue
 		A.filters -= filter
 
-	update_icon()
 	if(scannable_atoms.len)
 		play_sfx(src, SFX_MACHINES_PING)
 	else
@@ -256,16 +265,10 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 /obj/item/cataloguer/proc/adjust_points(amount)
 	points_stored = max(0, points_stored += amount)
 
-DECLARE_INTERACTIONS(/obj/item/cataloguer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
-
-/// Old attack_self.
-/obj/item/cataloguer/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cataloguer/proc/cataloguer_controls_opened(datum/act/op/A)
+	var/mob/living/user = A.actor
 	interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/cataloguer/interact(mob/user)
 	// structured TGUI Cataloguer panel (see
@@ -275,8 +278,10 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 
 
 /// Old attackby.
-/obj/item/cataloguer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/card/id) && !om_busy(src))
+/obj/item/cataloguer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(istype(W, /obj/item/card/id) && !work_busy(src))
 		var/obj/item/card/id/ID = W
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)
@@ -285,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 			to_chat(user, span_notice("You swipe the id over \the [src]."))
 		else
 			to_chat(user, span_notice("\The [src] has no points available."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/cataloguer/compact
 	name = "compact cataloguer"
@@ -296,7 +301,6 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	actions_types = list(/datum/action/item_action/toggle_cataloguer)
 	var/deployed = TRUE
 	scan_range = 1
-	toolspeed = 1.2
 
 /obj/item/cataloguer/compact/pathfinder
 	name = "pathfinder's cataloguer"
@@ -305,9 +309,14 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pathcat"
 	scan_range = 3
-	toolspeed = 1
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appearance_busy?_s:}")
+CAPABILITIES(/obj/item/cataloguer/compact/pathfinder)
+	configure(item_tooling(speed = 1))
+
+/// The look (the draw sweep: from its template).
+/obj/item/cataloguer/compact/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_s" : ""]")
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
 	var/why = can_toggle_compact(user, src, null)
@@ -318,19 +327,19 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appeara
 
 /// Requirement: TRUE, or why the cataloguer can't be folded or deployed.
 /obj/item/cataloguer/compact/proc/can_toggle_compact(mob/user, atom/target, obj/item/held)
-	if(om_busy(src))
+	if(work_busy(src))
 		return "\The [src] is currently scanning something"
 	return TRUE
 
-/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held)
 	deployed = !(deployed)
 	if(deployed)
-		w_class = ITEMSIZE_NORMAL
-		icon_state = "[initial(icon_state)]"
+		set_w_class(ITEMSIZE_NORMAL)
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, span_notice("You flick open \the [src]."))
 	else
-		w_class = ITEMSIZE_SMALL
-		icon_state = "[initial(icon_state)]_closed"
+		set_w_class(ITEMSIZE_SMALL)
+		set_icon_state("[initial(icon_state)]_closed")
 		to_chat(user, span_notice("You close \the [src]."))
 
 	if (ismob(user))
@@ -350,8 +359,21 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appeara
 	return ..()
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
-	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/cataloguer/compact/proc/can_toggle_compact)), \
-)
+CAPABILITIES(/obj/item/cataloguer/compact)
+	configure(item_tooling(speed = 1.2))
+	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds))), then(PROC_REF(compact_toggle_effect_op)))
+
+/// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.
+/obj/item/cataloguer/compact/proc/can_toggle_compact_holds(datum/act/op/A)
+	var/answer = can_toggle_compact(A.actor, src, A.held)
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
+
+/// Why can_toggle_compact_holds refuses: the legacy check's text, else the clause's own reason.
+/// The compact_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/cataloguer/compact/proc/compact_toggle_effect_op(datum/act/op/A)
+	compact_toggle_effect(A.actor, A.held)
+	return OP_OK
 
 // The shown entry is a round-long catalogue definition.

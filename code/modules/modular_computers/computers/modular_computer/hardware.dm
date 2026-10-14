@@ -24,7 +24,7 @@
 	found = 1
 
 	if(found)
-		if(!own_set(src, slot, H, user = user))
+		if(!move_into(src, slot, H, user))
 			return
 		to_chat(user, "You install \the [H] into \the [src]")
 		rel_set(H, nameof(H.holder2), src)
@@ -39,7 +39,7 @@
 	var/slot = H.get_slot_var()
 	if(!slot)
 		return
-	own_set(src, slot, H)
+	rel_set(src, slot, H)
 	rel_set(H, nameof(/obj/item/computer_hardware/::holder2), src)
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types
@@ -47,7 +47,7 @@
 /obj/item/modular_computer/proc/uninstall_component(mob/living/user, obj/item/computer_hardware/H, found = 0, critical = 0)
 	var/slot = H.get_slot_var()
 	if(slot && (vars[slot] == H))
-		own_take(src, slot) // moved out below
+		rel_take(src, slot) // moved out below
 		found = 1
 		// Processor and hard drive removal shuts down the computer.
 		// is_critical_slot() lets new hardware types declare themselves critical
@@ -64,7 +64,6 @@
 		if(user)
 			to_chat(user, span_danger("\The [src]'s screen freezes for few seconds and then displays an \"HARDWARE ERROR: Critical component disconnected. Please verify component connection and reboot the device. If the problem persists contact technical support for assistance.\" warning."))
 		shutdown_computer()
-		update_icon()
 
 
 // Checks all installed hardware pieces for a name match and returns the first hit.

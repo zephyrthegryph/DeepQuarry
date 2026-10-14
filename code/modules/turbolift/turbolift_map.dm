@@ -16,10 +16,12 @@
 	var/list/areas_to_use
 
 // Resolved at map time: the lift is built once the load is in place, and the holder never lives.
-MAP_RESOLVER(/obj/turbolift_map_holder, GLOBAL_PROC_REF(resolve_turbolift_holder))
-MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floor_type;lift_size_x;lift_size_y;wall_type;areas_to_use")
+CAPABILITIES(/obj/turbolift_map_holder)
+	map_resolver(
+		GLOBAL_PROC_REF(resolve_turbolift_holder),
+		vars = list("depth", "door_type", "firedoor_type", "floor_type", "lift_size_x", "lift_size_y", "wall_type", "areas_to_use"))
 
-/// MAP_RESOLVER for turbolift holders. The per-type area list is a list var, which only an
+/// The map resolver of turbolift holders. The per-type area list is a list var, which only an
 /// instance carries: placed by the map reader (no instance yet) the holder is made and resolved
 /// when it initializes.
 /proc/resolve_turbolift_holder(atom/loc, path, list/varedits)
@@ -146,7 +148,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 	for(var/cz = uz;cz<=ez;cz++)
 
 		var/datum/turbolift_floor/cfloor = new()
-		own_add(lift, nameof(lift.floors), cfloor)
+		rel_add(lift, nameof(lift.floors), cfloor)
 
 		var/list/floor_turfs = list()
 		// Update the appropriate turfs.
@@ -175,7 +177,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 				// Clear out contents.
 				for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
 					if(thing.simulated)
-						qdel(thing)
+						spent(thing)
 
 				if(tx >= ux && tx <= ex && ty >= uy && ty <= ey)
 					floor_turfs += checking
@@ -192,7 +194,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 						checking = locate(tx,ty,cz)
 					for(var/atom/movable/thing in turf_contents_of_type(checking, /atom/movable))
 						if(thing.simulated)
-							qdel(thing)
+							spent(thing)
 				if(checking.type == floor_type) // Don't build over empty space on lower levels.
 					var/obj/machinery/door/airlock/lift/newdoor = new door_type(checking)
 					var/obj/machinery/door/firedoor/glass/firedoor = new firedoor_type(checking) //ition for fire doors
@@ -207,7 +209,8 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 
 		// Place exterior control panel.
 		var/turf/placing = locate(ext_panel_x, ext_panel_y, cz)
-		var/obj/structure/lift/button/panel_ext = new(placing, lift)
+		var/obj/structure/lift/button/panel_ext = new(placing)
+		rel_set(panel_ext, nameof(panel_ext.lift), lift)
 		rel_set(panel_ext, nameof(panel_ext.floor), cfloor) // REL_PAIR: sets cfloor.ext_panel too
 		panel_ext.set_dir(udir)
 
@@ -238,7 +241,9 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 
 	// Place lift panel.
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
-	own_set(lift, nameof(lift.control_panel_interior), new /obj/structure/lift/panel(T, lift))
+	var/obj/structure/lift/panel/interior_panel = make(/obj/structure/lift/panel, at = T)
+	rel_set(interior_panel, nameof(interior_panel.lift), lift)
+	rel_set(lift, nameof(lift.control_panel_interior), interior_panel)
 	lift.control_panel_interior.set_dir(udir)
 	rel_set(lift, nameof(lift.current_floor), lift.floors[1])
 

@@ -10,7 +10,6 @@
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
 	armor_spec = "bio=100;rad=100"
-	siemens_coefficient= 1
 	slowdown = 0
 	offline_slowdown = 0
 	seal_delay = 0
@@ -18,7 +17,6 @@
 	var/mob/living/carbon/human/myprotean
 	initial_modules = list(/obj/item/rig_module/protean/syphon, /obj/item/rig_module/protean/armor, /obj/item/rig_module/protean/healing)
 	flags = PHORONGUARD
-	item_flags = NOSTRIP
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/protean //These are important for sprite pointers
 	boot_type = /obj/item/clothing/shoes/magboots/rig/protean
@@ -36,7 +34,7 @@
 	var/mob/living/carbon/human/soaking_wearer
 
 /obj/item/rig/protean/relaymove(mob/user, direction)
-	if(user != myprotean || user.stat || user.has_status(EFFECT_STUNNED))
+	if(user != myprotean || user.stat || user.has_status(STAT_STUNNED))
 		return
 	forced_move(direction, user, 0)
 
@@ -49,7 +47,7 @@
 /obj/item/rig/protean/proc/host_click(mob/living/carbon/human/user, atom/A)
 	if(offline || !selected_module || !ai_can_move_suit(user))
 		return FALSE
-	selected_module.engage(A, FALSE)
+	selected_module.engage(A, FALSE, user)
 	if(ismob(A))
 		user.setClickCooldown(user.get_attack_speed())
 	return TRUE
@@ -86,8 +84,8 @@
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
 	return taken
 
-/obj/item/rig/protean/Initialize(mapload, mob/living/carbon/human/P)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The rig becomes that protean's control cluster.
+/obj/item/rig/protean/proc/bind_protean(mob/living/carbon/human/P)
 	if(!istype(P))
 		return
 	var/datum/forms/protean/F = P.get_protean_forms()
@@ -99,9 +97,8 @@
 	if(F.rig && F.rig != src)
 		rel_clear(F.rig, nameof(/obj/item/rig/protean::myprotean))
 	rel_set(F, nameof(F.rig), src)
-	rel_set(src, nameof(myprotean), P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
-		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)) // ALLOW(decl): conditional, extra args
+		after(src, 0.3 SECONDS, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK)))
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -119,13 +116,15 @@
 	..()
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
+	if(spawned && !P)
+		return
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
 			B = P.get_equipped_item(SLOT_ID_BACK)
 		if(QDELETED(B)) // for mannequins or such
 			return
 		// Off the back (spawned) or out of the hand, into the rig.
-		if(!own_set(src, nameof(src.rig_storage), B, user = spawned ? null : P, into = TRUE))
+		if(!move_into(src, nameof(src.rig_storage), B, spawned ? null : P))
 			return
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
@@ -135,23 +134,37 @@
 		to_chat(P,span_warning("Your rigsuit can only assimilate a backpack into itself. If you are seeing this message, and you do not have a rigsuit, tell a coder."))
 
 /// Old verb "Remove Stored Bag".
-/obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_removebag_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(rig_storage)
-		var/obj/item/storage/backpack/removed_bag = own_take(src, nameof(rig_storage))
+		var/obj/item/storage/backpack/removed_bag = rel_take(src, nameof(rig_storage))
 		user.put_in_hands(removed_bag)
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
-EXTEND_INTERACTIONS(/obj/item/rig/protean, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(protean_rig_hand)), \
-	INTERACT_ITEM(null, PROC_REF(protean_rig_item)), \
-	INTERACT_VERB("Remove Stored Bag", PROC_REF(protean_removebag_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Remove Assimilated Rig", PROC_REF(protean_removerig_verb), REQ_IN_INVENTORY), \
-)
+MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of that class installed.")
+MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
+
+CAPABILITIES(/obj/item/rig/protean)
+	ref_one(nameof(soaking_wearer), /mob/living/carbon/human)
+	configure(item_worn(flags = NOSTRIP))
+	configure(item_protection(siemens = 1))
+	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
+	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(protean_rig_item)))
+	op("protean_install_module", item(/obj/item/rig_module), priority(OP_PRIORITY_PART), label("Install module"), when(req(PROC_REF(module_offered))), needs(req(PROC_REF(module_class_free), because = MSG(protean_rig/module_class))), begins(MSG(protean_rig/installing)), wait(4 SECONDS), then(PROC_REF(attackby_protean_done)))
+	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
+	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
+	interface(null, window_var = nameof(interface_path), state = nameof(GLOB.tgui_always_state))
+	without("ui_open")
+	ui_shape(cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = schema_text(), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
+	drag_onto(PROC_REF(mousedrop_input))
+	ref_one(nameof(myprotean), /mob/living/carbon/human)
+	param(nameof(myprotean), pos = 1, apply = PROC_REF(bind_protean))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
 /// (the old ..(), which used to run before the closing).
-/obj/item/rig/protean/proc/protean_rig_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_rig_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	src.add_fingerprint(user)
 	if (src.loc == user)
 		if(rig_storage)
@@ -160,7 +173,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	for(var/mob/M in range(1))
 		if (M.s_active == src)
 			src.rig_storage.close(M)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/head/helmet/space/rig/protean
 	name = "mass"
@@ -208,15 +221,16 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		SPECIES_SHADEKIN		 = 'icons/mob/head.dmi',
 		)
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/mob/head.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
 /obj/item/clothing/gloves/gauntlets/rig/protean
 	name = "mass"
 	desc = "Glove-shaped clusters of nanomachines."
-	siemens_coefficient= 0
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/hands.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/hands.dmi',
@@ -258,8 +272,11 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_
 		SPECIES_SHADEKIN		 = 'icons/mob/hands.dmi'
 		)
 	icon = 'icons/inventory/hands/item.dmi'
-	default_worn_icon = 'icons/mob/hands.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/hands.dmi'))
+	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
@@ -273,8 +290,10 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/protean, fit_spec, list(REQ_F
 		)
 	sprite_sheets_obj = list()
 	icon = 'icons/inventory/feet/item.dmi'
-	default_worn_icon = 'icons/mob/feet.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/feet.dmi'))
 
 TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
@@ -290,8 +309,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/protean, fit_spec, list(REQ_FIT
 
 	sprite_sheets_obj = list()
 	icon = 'icons/inventory/suit/item.dmi'
-	default_worn_icon = 'icons/mob/spacesuit.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/spacesuit.dmi'))
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions
 
@@ -299,85 +320,81 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, fit_spec, list(REQ_FITS_BO
 
 TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))))
 /// Old attackby. It never fell through to the rig's own.
-/obj/item/rig/protean/proc/protean_rig_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_rig_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
 		dormancy.repair_with(W, user, src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W,/obj/item/rig))
 		if(!assimilated_rig)
 			AssimilateRig(user,W)
 	if(istype(W,/obj/item/tank)) //Todo, some kind of check for suits without integrated air supplies.
 		if(air_supply)
 			to_chat(user, "\The [src] already has a tank installed.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 
-		if(!own_set(src, nameof(src.air_supply), W, user = user))
-			return INTERACTION_HANDLED_PASS
+		if(!move_into(src, nameof(src.air_supply), W, user))
+			return OP_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
-	else if(istype(W,/obj/item/rig_module))
-		if(length(installed_modules))
-			for(var/obj/item/rig_module/installed_mod in installed_modules)
-				if(!installed_mod.redundant && istype(installed_mod,W))
-					to_chat(user, "The hardsuit already has a module of that class installed.")
-					return TRUE
-
-		var/obj/item/rig_module/mod = W
-		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, receiver = src, W = W, mod = mod)
-		return TRUE
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
 		backpack.insert_item(W, user)
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/datum/om/task/timed/protean_attackby_protean
-	duration = 4 SECONDS
-	complete_proc = /obj/item/rig/protean/proc/attackby_protean_done
-	var/obj/item/W
-	var/obj/item/rig_module/mod
+/// A module offered to a rig that is not dormant (a dormant core is repaired with it instead).
+/obj/item/rig/protean/proc/module_offered(datum/act/op/A)
+	return (read_once(!get_dormancy())) ? null : /datum/msg/req_failed
 
-/obj/item/rig/protean/proc/attackby_protean_done(datum/om/task/timed/protean_attackby_protean/task)
-	var/obj/item/W = task.W
-	var/mob/living/user = task.actor
-	var/obj/item/rig_module/mod = task.mod
-	if(!user || !W)
+/// No installed module of the same class (unless it is redundant).
+/obj/item/rig/protean/proc/module_class_free(datum/act/op/A)
+	var/obj/item/rig_module/W = A.held
+	for(var/obj/item/rig_module/installed_mod in installed_modules)
+		if(!installed_mod.redundant && istype(installed_mod, W))
+			return /datum/msg/protean_rig/module_class
+	return null
+
+/obj/item/rig/protean/proc/attackby_protean_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/rig_module/mod = A.held
+	if(!user || !mod)
 		return
 	if(!user.unEquip(mod))
 		return
 	to_chat(user, "You install \the [mod] into \the [src].")
 	mod.forceMove(src)
 	mod.installed(src) // pair: installed_modules gains mod
-	update_icon()
 	return 1
 
-/obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
+/obj/item/rig/protean/wrench_used(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(get_dormancy())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/tank/removed_tank = own_take(src, nameof(air_supply))
+		return OP_OK
+	var/obj/item/tank/removed_tank = rel_take(src, nameof(air_supply))
 	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
 		removed_tank.forceMove(get_turf(user))
 	else
 		user.put_in_hands(removed_tank)
 	to_chat(user, "You detach and remove \the [removed_tank].")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
+/obj/item/rig/protean/maintenance_step(mob/living/user, obj/item/tool, answered_mount = null, answered_module = null)
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
 		if(dormancy.revival_step != DORMANCY_SEALED)
@@ -395,26 +412,34 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			to_chat(user, "There are no installed modules to remove.")
 			return ITEM_INTERACT_BLOCKING
 
-		om_ask(user, /datum/om/prompt/choice/protean_rig_module, PROC_REF(module_removal_chosen), choices = possible_removals)
+		open_request(src, /datum/prompt/choice/protean_rig_module, PROC_REF(module_removal_chosen), answerer = user, choices = possible_removals)
 		return ITEM_INTERACT_SUCCESS
 
 /// Re-checked on the answer: next to the rig, able to act, and the module is still installed.
-/datum/om/prompt/choice/protean_rig_module
+/datum/prompt/choice/protean_rig_module
 	title = "Removal Choice"
-	message = "Which module would you like to remove?"
+	question = "Which module would you like to remove?"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/choice/protean_rig_module/valid()
-	var/obj/item/rig/protean/rig = subject
-	return (choices[choice] in rig.installed_modules) ? null : "not installed"
+/datum/prompt/choice/protean_rig_module/recheck_extra()
+	if(isnull(value))
+		return
+	var/obj/item/rig/protean/rig = owner
+	return (choices[value] in rig.installed_modules) ? null : "not installed"
 
-/obj/item/rig/protean/proc/module_removal_chosen(datum/om/prompt/choice/protean_rig_module/ask)
+/obj/item/rig/protean/proc/module_removal_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return module_removal_apply(A)
+
+/obj/item/rig/protean/proc/module_removal_apply(datum/act/request/A)
+	var/datum/prompt/choice/protean_rig_module/ask = A.answer
 	var/mob/living/user = ask.answerer
-	var/obj/item/rig_module/removed = ask.choices[ask.choice]
+	var/obj/item/rig_module/removed = ask.choices[ask.value]
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed() // pair: installed_modules loses it
-	update_icon()
 
 /// Revival of a dormant core, one step per tool. Each step is a treatment
 /// mechanism the core_dormancy affliction answers to.
@@ -452,21 +477,21 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	if(!istype(M) || M == myprotean)
 		return
 	rel_set(src, nameof(soaking_wearer), M)
-	om_hook(M, /datum/om/event/before/living_injure, src, PROC_REF(soak_wearer_injury))
+	observe(M, /datum/act/injure, src, adjusts_with(PROC_REF(soak_wearer_injury)))
 
 /obj/item/rig/protean/proc/stop_soaking()
 	if(!soaking_wearer)
 		return
-	om_unhook(soaking_wearer, /datum/om/event/before/living_injure, src)
+	unobserve(soaking_wearer, /datum/act/injure, src)
 	rel_clear(src, nameof(soaking_wearer))
 
-/obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, datum/om/event/before/living_injure/event)
-	EVENT_HANDLER
-	var/kind = event.kind
-	var/list/amount_ref = event.amount_ref
-	var/zone = event.zone
-	var/atom/hit_source = event.source
-	var/flags = event.flags
+/obj/item/rig/protean/proc/soak_wearer_injury(datum/act/injure/hit)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/source = hit.target
+	var/kind = hit.kind
+	var/zone = hit.zone
+	var/atom/hit_source = hit.cause
+	var/flags = hit.flags
 	if(!myprotean || inert || !(flags & INJURE_ARMORED))
 		return
 	var/armor_key = injury_armor_key(kind)
@@ -477,7 +502,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	var/armor_value = piece ? piece.get_armor().value(armor_key) : 0
 	if(!armor_value)
 		return
-	var/soaked = amount_ref[1] * clamp(armor_value, 0, 100) / 100
+	var/soaked = hit.amount * clamp(armor_value, 0, 100) / 100
 	if(soaked <= 0)
 		return
 	myprotean.injure(kind, soaked, E?.organ_tag, hit_source, 0, null, INJURE_SILENT)
@@ -489,7 +514,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	for(var/obj/item/clothing/piece in list(chest, helmet, gloves, boots))
 		if(piece.loc != M)
 			continue
-		if(!E || (piece.body_parts_covered & E.body_part))
+		if(!E || (worn_of(piece).covers & E.body_part))
 			return piece
 	return null
 
@@ -500,7 +525,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /// The swarm feeds its cluster's cell from its own nutrition.
 /obj/item/rig/protean/proc/recharge_from(mob/living/P)
-	if(!cell || inert || cell.charge >= cell.maxcharge || P.nutrition <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
+	if(!cell || inert || cell.charge >= cell.maxcharge || nutrition_of(P) <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
 		return 0
 	var/stored = add_power(ROBOT_CELL_JOULES(PROTEAN_RIG_RECHARGE_UNITS), P)
 	if(stored > 0)
@@ -527,7 +552,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		piece.set_armor(dq_armor_none())
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
-	wearer()?.update_inv_back()
+	changed(src)
 	wearer()?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 
@@ -574,12 +599,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	name = "Protean power cell"
 	desc = "Something terrible must have happened if you're managing to see this."
 	maxcharge = 10000
+	charge = 10000 // starts full
 	charge_amount = 100
-
-/obj/item/cell/protean/Initialize(mapload)
-	. = ..()
-	charge = maxcharge
-	update_icon()
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()
@@ -637,39 +658,39 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	rigsuit_max_pressure = R.rigsuit_max_pressure
 	for(var/obj/item/piece in list(gloves,helmet,boots,chest))
 		piece.set_armor(R.get_armor())
-		piece.max_pressure_protection = R.rigsuit_max_pressure
-		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
+		piece.set_max_pressure_protection(R.rigsuit_max_pressure)
+		piece.set_max_heat_protection_temperature(protection_of(R).max_heat)
 	wearer()?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
-		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
+		gloves.set_sprite_sheets(R.gloves.sprite_sheets.Copy())
 		gloves.sprite_sheets_obj = R.gloves.sprite_sheets_obj.Copy()
 		gloves.icon = R.gloves.icon
 		gloves.icon_state = R.gloves.icon_state
-		gloves.default_worn_icon = R.gloves.default_worn_icon
+		gloves.set_default_worn_icon(worn_of(R.gloves).worn_icon)
 	if(R.helmet)
-		helmet.sprite_sheets = R.helmet.sprite_sheets.Copy()
+		helmet.set_sprite_sheets(R.helmet.sprite_sheets.Copy())
 		helmet.sprite_sheets_obj = R.helmet.sprite_sheets_obj.Copy()
 		helmet.icon = R.helmet.icon
 		helmet.icon_state = R.helmet.icon_state
-		helmet.default_worn_icon = R.helmet.default_worn_icon
+		helmet.set_default_worn_icon(worn_of(R.helmet).worn_icon)
 	if(R.boots)
-		boots.sprite_sheets = R.boots.sprite_sheets.Copy()
+		boots.set_sprite_sheets(R.boots.sprite_sheets.Copy())
 		boots.sprite_sheets_obj = R.boots.sprite_sheets_obj.Copy()
 		boots.icon = R.boots.icon
 		boots.icon_state = R.boots.icon_state
-		boots.default_worn_icon = R.boots.default_worn_icon
+		boots.set_default_worn_icon(worn_of(R.boots).worn_icon)
 	if(R.chest)
-		chest.sprite_sheets = R.chest.sprite_sheets.Copy()
+		chest.set_sprite_sheets(R.chest.sprite_sheets.Copy())
 		chest.sprite_sheets_obj = R.chest.sprite_sheets_obj.Copy()
 		chest.icon = R.chest.icon
 		chest.icon_state = R.chest.icon_state
-		chest.default_worn_icon = R.chest.default_worn_icon
+		chest.set_default_worn_icon(worn_of(R.chest).worn_icon)
 
 	suit_state = R.suit_state
 	name = R.name
 	icon = R.icon
-	icon_state = R.icon_state
+	set_icon_state(R.icon_state)
 	user.drop_item(R)
 	R.forceMove(src)
 	assimilated_rig = R
@@ -677,75 +698,82 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	offline_slowdown = slowdown
 
 /// Old verb "Remove Assimilated Rig".
-/obj/item/rig/protean/proc/protean_removerig_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/protean/proc/protean_removerig_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(assimilated_rig)
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))
 			piece.set_armor(get_armor())
-			piece.max_pressure_protection = rigsuit_max_pressure
-			piece.max_heat_protection_temperature = max_heat_protection_temperature
-			piece.icon_state = src.icon_state
+			piece.set_max_pressure_protection(rigsuit_max_pressure)
+			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
+			piece.set_icon_state(src.icon_state)
 			piece.icon = initial(piece.icon)
-			piece.default_worn_icon = initial(piece.default_worn_icon)
+			piece.set_default_worn_icon(worn_of_type(piece.type).worn_icon)
 
 		//Byond at this time does not support initial() on lists
 		//So we have to create a new rig, just so we can copy the lists we're after
 		//If someone figures out a smarter way to do this, please tell me
 		var/obj/item/rig/tempRig = new /obj/item/rig/protean()
-		gloves.sprite_sheets = tempRig.gloves.sprite_sheets.Copy()
+		gloves.set_sprite_sheets(tempRig.gloves.sprite_sheets.Copy())
 		gloves.sprite_sheets_obj = tempRig.gloves.sprite_sheets.Copy()
-		helmet.sprite_sheets = tempRig.helmet.sprite_sheets.Copy()
+		helmet.set_sprite_sheets(tempRig.helmet.sprite_sheets.Copy())
 		helmet.sprite_sheets_obj = tempRig.helmet.sprite_sheets.Copy()
-		boots.sprite_sheets = tempRig.boots.sprite_sheets.Copy()
+		boots.set_sprite_sheets(tempRig.boots.sprite_sheets.Copy())
 		boots.sprite_sheets_obj = tempRig.boots.sprite_sheets.Copy()
-		chest.sprite_sheets = tempRig.chest.sprite_sheets.Copy()
+		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
 		chest.sprite_sheets_obj = tempRig.chest.sprite_sheets.Copy()
 		slowdown = initial(slowdown)
 		name = tempRig.name
 		icon = tempRig.icon // Reset the icon back to its original
-		icon_state = tempRig.icon_state
+		set_icon_state(tempRig.icon_state)
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
 		wearer()?.worn_protection_changed()
 		user.put_in_hands(assimilated_rig)
 		assimilated_rig = null
-		qdel(tempRig)
+		spent(tempRig)
 	else
 		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 
-/obj/item/rig/protean/MouseDrop(obj/over_object as obj)
+/// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
+/obj/item/rig/protean/proc/mousedrop_input(datum/act/input/A)
+	if(!handle_inventory_drop(A.actor, A.over))
+		return INPUT_FALLTHROUGH
+
+/obj/item/rig/protean/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
 		unremovable = FALSE
 	else
 		unremovable = TRUE
 
 	if(unremovable)
-		return
+		return TRUE
 
-	if (isliving(usr) || isobserver(usr))
+	if (isliving(user) || isobserver(user))
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.unEquip(src)
-				usr.put_in_r_hand(src)
+				user.unEquip(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.unEquip(src)
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.unEquip(src)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
-// Destroy() reads both before letting go (the core spills out, soaking stops).
+// Teardown reads both before letting go (the core spills out, soaking stops).

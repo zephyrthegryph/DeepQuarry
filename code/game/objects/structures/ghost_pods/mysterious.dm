@@ -21,7 +21,7 @@
 	to_chat(M, span_notice("You are a <b>Corgi</b>! Woof!"))
 	R.ckey = M.ckey
 	visible_message(span_warning("With a bright flash of light, \the [src] disappears, and in its place stands a small corgi."))
-	log_and_message_admins("successfully touched \a [src] and summoned a corgi.")
+	log_and_message_admins("successfully touched \a [src] and summoned a corgi.", opening_actor)
 	..()
 
 /obj/structure/ghost_pod/manual/cursedblade
@@ -45,6 +45,6 @@
 	your body was reduced to ashes and your soul was cursed to remain trapped in the blade forever. \
 	Now it is up to you to decide whether you want to be a faithful companion, or a bitter prisoner of the blade."))
 	R.ghost_inhabit(M)
-	act_message(usr, null, others = span_warning("The blade shines brightly for a brief moment as %U% pulls it out of the stone!"))
-	log_and_message_admins("successfully acquired a cursed sword.")
+	act_message(opening_actor, null, others = span_warning("The blade shines brightly for a brief moment as %U% pulls it out of the stone!"))
+	log_and_message_admins("successfully acquired a cursed sword.", opening_actor)
 	..()

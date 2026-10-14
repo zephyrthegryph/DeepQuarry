@@ -5,16 +5,15 @@
 	icon_state = "wheelchair"
 	anchored = FALSE
 	buckle_movable = 1
+	can_pad = FALSE
+	can_unpad = FALSE
+	can_dismantle = FALSE
 
 	var/folded_type = /obj/item/wheelchair
 	var/driving = 0
 	var/bloodiness
 	var/min_mob_buckle_size = MOB_SMALL
 	var/max_mob_buckle_size = MOB_LARGE
-
-/obj/structure/bed/chair/wheelchair/Initialize(mapload, new_material, new_padding_material)
-	. = ..()
-	update_icon()
 
 /obj/structure/bed/chair/wheelchair/motor
 	name = "electric wheelchair"
@@ -30,24 +29,9 @@
 	max_mob_buckle_size = MOB_MEDIUM
 	folded_type = /obj/item/wheelchair/motor/small
 
-/obj/structure/bed/chair/wheelchair/can_buckle_check(mob/living/M, forced = FALSE)
-	. = ..()
-	if(.)
-		// We don't even USE mob sizes really... Monkeys are the only 'small' mobs that come to mind.
-		// Teshari and prometheans have both have their mob sizes ripped from them (because frankly, the implementation led to some exploity things)
-		if(M.mob_size < min_mob_buckle_size)
-			to_chat(M, span_warning("You are too small to use \the [src]."))
-			. = FALSE
-		else if(M.mob_size > max_mob_buckle_size)
-			to_chat(M, span_warning("You are too large to use \the [src]."))
-			. = FALSE
-
-DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bed/chair/wheelchair/appearance_overlays()
-	. = list()
-	var/image/O = image(icon = icon, icon_state = "[icon_state]_overlay", layer = ABOVE_MOB_LAYER)
-	O.plane = MOB_PLANE
-	. += O
+/obj/structure/bed/chair/wheelchair/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	look.overlay(look_cached_image("[initial(icon)]-[drawn_state]-overlay", initial(icon), "[drawn_state]_overlay", null, MOB_PLANE, ABOVE_MOB_LAYER))
 
 /obj/structure/bed/chair/wheelchair/set_dir()
 	. = ..()
@@ -56,42 +40,27 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				L.set_dir(dir)
 
-/// Overrides chair's interaction_item(): no padding this wheelchair with a stack.
-/obj/structure/bed/chair/wheelchair/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		return TRUE
-	return ..()
-
-/obj/structure/bed/chair/wheelchair/wrench_act(mob/user, obj/item/W)
-	return TRUE
-
-/obj/structure/bed/chair/wheelchair/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
-
 /obj/structure/bed/chair/wheelchair/relaymove(mob/user, direction)
 	// Redundant check?
-	// The pulling relation's own on_link()/on_unlink() (code/datums/om/library.dm)
-	// no longer store pulling/pulledby at all (OM relations step 6) -- PULLING()
-	// is a live graph read, so this re-fetches it after every om_unlink() rather
-	// than trusting a cached local, matching the old field's always-live reads.
+	// pulling_target() is a live read of the link, so this re-fetches it after every link_break() rather than trusting a cached local.
 	var/mob/living/pulling = src?.pulling_target()
-	if(user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED) || user.has_status(EFFECT_PARALYZED) || user.lying || user.restrained())
+	if(user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_WEAKENED) || user.has_status(STAT_PARALYZED) || user.lying || user.restrained())
 		if(user==pulling)
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+			link_break(src, LK_PULLING, pulling)
 			to_chat(user, span_warning("You lost your grip!"))
 		return
 	if(has_buckled_mobs() && pulling && (user in src?.buckled_mob_list()))
-		if(pulling.stat || pulling.has_status(EFFECT_STUNNED) || pulling.has_status(EFFECT_WEAKENED) || pulling.has_status(EFFECT_PARALYZED) || pulling.lying || pulling.restrained())
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+		if(pulling.stat || pulling.has_status(STAT_STUNNED) || pulling.has_status(STAT_WEAKENED) || pulling.has_status(STAT_PARALYZED) || pulling.lying || pulling.restrained())
+			link_break(src, LK_PULLING, pulling)
 			pulling = src?.pulling_target()
 	if(user?.pulling_target() && (user == pulling))
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 		return
 	if(propelled)
 		return
 	if(pulling && (get_dist(src, pulling) > 1))
 		var/mob/living/was_pulling = pulling
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 		pulling = src?.pulling_target()
 		if(user==was_pulling)
 			return
@@ -127,7 +96,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 		if(pulling.loc == src.loc) // We moved onto the wheelchair? Revert!
 			pulling.forceMove(T)
 		else
-			om_after(src, 0, PROC_REF(check_pulled_along))
+			after(src, 0, PROC_REF(check_pulled_along))
 	if(bloodiness)
 		create_track()
 	driving = 0
@@ -152,32 +121,26 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 				var/mob/living/pulling = src?.pulling_target()
 				if (pulling && (get_dist(src, pulling) > 1))
 					var/mob/living/was_pulling = pulling
-					om_unlink(src, pulling, /datum/om/relation/pulling)
+					link_break(src, LK_PULLING, pulling)
 					to_chat(was_pulling, span_warning("You lost your grip!"))
 			else
 				if (occupant && (src.loc != occupant.loc))
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
-/obj/structure/bed/chair/wheelchair/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/wheelchair_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/bed/chair/wheelchair)
+	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
+	op("touch", hand(), label("Use"), priority(above("buckle.unbuckle")), then(PROC_REF(touched)))
 
-/// Old attack_hand: drop the puller, or unbuckle whoever's sitting in it.
-/datum/interaction/entry_hand/wheelchair_hand
-	id = "wheelchair_hand"
-	name = "Use"
-	effect = /obj/structure/bed/chair/wheelchair/proc/interaction_hand
-
-/obj/structure/bed/chair/wheelchair/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// A hand on the chair: drops the one pulling it, or frees whoever is sitting in it.
+/obj/structure/bed/chair/wheelchair/proc/touched(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (src?.pulling_target())
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
-			for(var/A in src?.buckled_mob_list())
-				user_unbuckle_mob(A, user)
-	return TRUE
+			for(var/mob/living/occupant in src.buckled_mob_list())
+				user_unbuckle_mob(occupant, user)
+	return OP_OK
 
 /obj/structure/bed/chair/wheelchair/click_ctrl(mob/user)
 	if(in_range(src, user))
@@ -189,12 +152,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 		if(!pulling)
 			if(user?.pulling_target())
 				user.stop_pulling()
-			om_link(src, user, /datum/om/relation/pulling)
+			pull_link(user)
 			user.set_dir(get_dir(user, src))
 			to_chat(user, "You grip \the [name]'s handles.")
 		else
 			to_chat(user, "You let go of \the [name]'s handles.")
-			om_unlink(src, pulling, /datum/om/relation/pulling)
+			link_break(src, LK_PULLING, pulling)
 		return
 
 /obj/structure/bed/chair/wheelchair/Bump(atom/A)
@@ -247,12 +210,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 		B.set_dir(newdir)
 	bloodiness--
 
-/obj/structure/bed/chair/wheelchair/buckle_mob(mob/M as mob, mob/user as mob)
-	var/mob/living/pulling = src?.pulling_target()
-	if(M == pulling)
-		om_unlink(src, pulling, /datum/om/relation/pulling)
-	..()
-
 /obj/structure/bed/chair/wheelchair/MouseDrop(over_object, src_location, over_location)
 	..()
 	var/mob/user = usr
@@ -273,7 +230,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 	if(!pulling)
 		return
 	if(get_dist(src, pulling) > 1) // We are too far away? Losing control.
-		om_unlink(src, pulling, /datum/om/relation/pulling)
+		link_break(src, LK_PULLING, pulling)
 	pulling = src?.pulling_target()
 	if(pulling)
 		pulling.set_dir(get_dir(pulling, src)) // When everything is right, face the wheelchair

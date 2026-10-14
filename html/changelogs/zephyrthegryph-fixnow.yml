@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The pathfinder no longer leaks its waiter count on a timeout or keeps its mutex after a search runtimes, which slowed or blocked bot and circuit pathing for the rest of the round"
+  - bugfix: "A simple mob that noms a target no longer touches itself after being deleted mid-nom"
+  - code_imp: "Admin verb delays (fax reply expiry, shadekin smite, autosave smite, supermatter setup, spawn-by-fall, corgize) are timers that die with their subject"
+  - code_imp: "Ratchet lints: weak or unused ALLOW annotations are errors; sync SQL and usr outside verbs are ratcheted; tests, benchmarks and TGS are exempt by path; each site is counted once"
+  - refactor: "Removed the never-instantiated /datum/belly"

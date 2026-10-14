@@ -60,22 +60,22 @@
 	ai_busy_begin()
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(hunter_leap), A) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(hunter_leap), with = list(A)) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_leap(atom/A)
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(hunter_land)) // For the throw to complete.
+	after(src, 0.5 SECONDS, PROC_REF(hunter_land)) // For the throw to complete.
 
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_land()
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	var/turf/T = get_turf(src) // Where we landed. This might be different than A's turf.
 
@@ -94,7 +94,7 @@
 		break
 
 	if(victim)
-		victim.status_at_least(EFFECT_WEAKENED, 2)
+		victim.status_at_least(STAT_WEAKENED, 2)
 		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 

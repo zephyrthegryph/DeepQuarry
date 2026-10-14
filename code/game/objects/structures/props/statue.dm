@@ -60,9 +60,11 @@
 	layer = ABOVE_WINDOW_LAYER
 	interaction_message = span_notice("Cool to touch and unbelievable smooth. You can almost see your reflection in it.")
 
-/obj/structure/prop/statue/phoron/Initialize(mapload)
-	. = ..()
-	set_light(2, 3, "#cc66ff")
+CAPABILITIES(/obj/structure/prop/statue/phoron)
+	configure(light_glow(range = 2, power = 3, color = "#cc66ff"))
+
+/obj/structure/prop/statue/phoron
+	light_on = TRUE
 
 /obj/structure/prop/statue/pillar
 	name = "pillar"

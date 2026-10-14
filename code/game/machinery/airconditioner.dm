@@ -7,8 +7,6 @@
 	anchored = 1
 	//Consider making this powered by the room at some point.
 	use_power = 0 //is powered directly from cables
-	active_power_usage = 25 KILOWATTS  //Low Power
-	idle_power_usage = 250
 
 	circuit = null
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -17,16 +15,9 @@
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
-/obj/machinery/power/thermoregulator/cryogaia/wrench_act(mob/user, obj/item/I)
-	set_anchored(!anchored)
-	act_message(src, user, others = span_notice("%U% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %T%.")) //Does this not need to be disabled?
-	playsound(src, I.usesound, 75, 1)
-	if(anchored)
-		connect_to_network()
-	else
-		disconnect_from_network()
-		turn_off()
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/machinery/power/thermoregulator/cryogaia)
+	configure(uses_power(active = 25 KILOWATTS, idle = 250))
+
 
 #define MODE_IDLE 0
 #define MODE_HEATING 1
@@ -40,8 +31,6 @@
 	anchored = 1
 	//Consider making this powered by the room at some point.
 	use_power = 0 //is powered directly from cables
-	active_power_usage = 250 // VERY low power use
-	idle_power_usage = 250
 
 	circuit = null
 	/*
@@ -49,33 +38,24 @@
 	probably should just make a circuit for it but this is pretty much just a proof of concept at the moment.
 	*/
 
-/obj/machinery/power/thermoregulator/southerncross/machine_step()
+CAPABILITIES(/obj/machinery/power/thermoregulator/southerncross)
+	configure(uses_power(active = 250, idle = 250))
+
+/// Powered straight from its cables with no metering: the pump works while it is on a network.
+/obj/machinery/power/thermoregulator/southerncross/regulator_step(datum/act/A)
 	if(!power_region)
 		turn_off()
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.return_temperature() - target_temp) < 1)
-		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-	if(!removed)
-		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	apply_regulator_step(removed, active_power_usage*1000)
-	env.merge(removed)
+		return
+	set_pumping(TRUE)
+	update_pump_mode()
+	reconsider()
 
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
-/obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/damage_packet/packet)
+/obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/act/hit/emp/A)
 	if(!on)
 		set_on(1)
-	target_temp += rand(0, 20)
-	wake_for_state_change()
-	update_icon()
+	set_target_temp(target_temp + rand(0, 20))
+	heat_entries_refresh(src)
 	return ..()
 
 #undef MODE_IDLE
@@ -95,8 +75,6 @@
 	anchored = FALSE
 
 	use_power = USE_POWER_OFF //is powered directly from cables
-	active_power_usage = 150 KILOWATTS  //BIG POWER
-	idle_power_usage = 500
 
 	circuit = /obj/item/circuitboard/thermoregulator
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -112,223 +90,173 @@
 	var/regulator_carnot_fraction = 0.4
 	/// Upper bound on the pump's COP (a pump across a tiny gap is not free).
 	var/regulator_max_cop = 25
+	/// The heat pump's electrical rating, W.
+	var/heat_pump_watts = 150 KILOWATTS
+	/// TRUE while it works the room's air: its heat pump exists exactly while this is set.
+	var/pumping = FALSE
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/power/thermoregulator, MACHINE_PIPELINE, "on")
+	/// It has work each service interval: on, on the grid, and the room a degree or more off its target (reconsider()).
+	var/regulating = FALSE
 
-/// One vg_heat_regulator_step() call against `removed`'s current heat
-/// capacity/temperature, applied with add_thermal_energy(). `watts` is the
-/// electrical work budget for this call (one process() tick is treated as
-/// one second, matching every caller's existing per-tick power constants);
-/// heating is resistive (1:1, matching every caller's old heating branch
-/// exactly); cooling rejects to an infinite reservoir (the old code never
-/// applied the rejected/absorbed heat to any other side either -- see H4's
-/// note in temperature.md). Sets `mode` and returns it.
-/obj/machinery/power/thermoregulator/proc/apply_regulator_step(datum/gas_mixture/removed, watts)
-	var/capacity = removed.heat_capacity()
-	if(!removed || capacity <= 0)
-		change_mode(MODE_IDLE)
-		return mode
-	// The "other" side is an infinite reservoir at station-ambient
-	// temperature (there is no specific hull/space hookup here -- the old
-	// code never applied the rejected/absorbed heat to any other side
-	// either). Only cooling's Carnot lift (Th - Tc) reads this; T20C keeps
-	// that lift physically sane instead of the wildly-wrong TCMB a
-	// space-side default would give.
-	var/list/step = vg_heat_regulator_step(
-		target_temp, watts, REGULATOR_MODE_BOTH,
-		regulator_carnot_fraction, regulator_max_cop, TRUE, 1,
-		capacity, removed.return_temperature(),
-		-1, T20C,
-		1,
-	)
-	var/moved = step[2]
-	if(moved > 0)
-		change_mode(MODE_HEATING)
-	else if(moved < 0)
-		change_mode(MODE_COOLING)
-	else
-		change_mode(MODE_IDLE)
-		return mode
-	removed.add_thermal_energy(moved)
-	return mode
+TRACKED(/obj/machinery/power/thermoregulator, pumping)
+TRACKED(/obj/machinery/power/thermoregulator, regulating)
+TRACKED(/obj/machinery/power/thermoregulator, target_temp)
 
-/obj/machinery/power/thermoregulator/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-	make_climbable()
+MSG_DEF(thermoregulator/bolted, "You bolt %T% to the floor.", "%U% bolts %T% to the floor.")
+MSG_DEF(thermoregulator/unbolted, "You unbolt %T% from the floor.", "%U% unbolts %T% from the floor.")
+MSG_DEF(thermoregulator/activated, "You activate %T%.", "%U% activates %T%.")
+MSG_DEF(thermoregulator/deactivated, "You deactivate %T%.", "%U% deactivates %T%.")
+MSG_DEF_SELF(thermoregulator/loose, "It must be bolted down first.")
+
+CAPABILITIES(/obj/machinery/power/thermoregulator)
+	configure(uses_power(active = 150 KILOWATTS, idle = 500))
+	climb()
+	// A heat pump on the room's air toward the target, against the station's heat-rejection loop at 20 C: a Carnot-bounded COP both
+	// ways (heating draws on the loop, cooling rejects into it). Its work is paid from the grid (regulator_step()).
+	when(nameof(pumping), heat_pump(HEAT_AIR, HEAT_AMBIENT, nameof(heat_pump_watts), nameof(target_temp), HEAT_PUMP_BOTH, FALSE, nameof(regulator_carnot_fraction), nameof(regulator_max_cop)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(thermoregulator_emp))))
+	gas_watch(changed = PROC_REF(room_changed), mask = GAS_DEPENDENCY_TEMPERATURE)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(regulator_step)), when = nameof(regulating))
+	on_change(nameof(on), ANY, then(PROC_REF(reconsider)))
+	on_change(nameof(target_temp), ANY, then(PROC_REF(reconsider)))
+	examine_line(PROC_REF(display_text))
+	op("switch", hand(), label("Use"), wait(0), when(cond_not(req(/obj/item))), needs(req(PROC_REF(bolted), because = MSG(thermoregulator/loose))),
+		says(PROC_REF(switch_message)), then(PROC_REF(switched)))
+	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
+	op("set_target", tool(TOOL_MULTITOOL), label("Set target temperature"), wait(0),
+		asks(/datum/prompt/number, fields = list("title" = "Target Temperature", "question" = "Input a new target temperature, in degrees C.", "default" = computed(PROC_REF(target_celsius)), "min_value" = computed(PROC_REF(lowest_celsius)), "max_value" = MAX_ATMOS_TEMPERATURE, "timeout" = 0)),
+		then(PROC_REF(target_set)))
+	default_parts()
 
 /obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	wake_for_state_change()
+	reconsider()
 
-/obj/machinery/power/thermoregulator/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 2)
-		. += "There is a small display that reads \"[convert_k2c(target_temp)]C\"."
+/obj/machinery/power/thermoregulator/proc/display_text(datum/act/eval/A)
+	var/mob/user = A.actor
+	if(user && get_dist(user, src) <= 2)
+		return "There is a small display that reads \"[convert_k2c(target_temp)]C\"."
 
-/obj/machinery/power/thermoregulator/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+// ---- the controls ----
 
-/obj/machinery/power/thermoregulator/crowbar_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/power/thermoregulator/proc/bolted(datum/act/A)
+	return (anchored) ? null : MSG(thermoregulator/loose)
 
-/obj/machinery/power/thermoregulator/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/power/thermoregulator/proc/switch_message(datum/act/A)
+	return on ? /datum/msg/thermoregulator/activated : /datum/msg/thermoregulator/deactivated
+
+/obj/machinery/power/thermoregulator/proc/switched(datum/act/op/A)
+	set_on(!on)
+	if(!on)
+		change_mode(MODE_IDLE)
+		set_pumping(FALSE)
+	return OP_OK
+
+/obj/machinery/power/thermoregulator/proc/anchor_message(datum/act/A)
+	return anchored ? /datum/msg/thermoregulator/bolted : /datum/msg/thermoregulator/unbolted
+
+/// The wrench bolts it onto its wire node, or frees it (switching it off).
+/obj/machinery/power/thermoregulator/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
-	act_message(src, user, others = span_notice("%U% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %T%."))
-	playsound(src, tool.usesound, 75, 1)
 	if(anchored)
 		connect_to_network()
 	else
 		disconnect_from_network()
 		turn_off()
-	return ITEM_INTERACT_SUCCESS
+	reconsider()
+	return OP_OK
 
-/obj/machinery/power/thermoregulator/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(target_temperature_entered), default = convert_k2c(target_temp), min = convert_k2c(TCMB), title = "Target Temperature", message = "Input a new target temperature, in degrees C.", max = MAX_ATMOS_TEMPERATURE, round_entry = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/power/thermoregulator/proc/target_celsius(datum/act/A)
+	return convert_k2c(target_temp)
 
-/obj/machinery/power/thermoregulator/proc/target_temperature_entered(datum/om/prompt/number/ask)
-	var/new_temp = convert_c2k(ask.number)
-	target_temp = max(new_temp, TCMB)
-	wake_for_state_change()
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/power/thermoregulator/proc/lowest_celsius(datum/act/A)
+	return convert_k2c(TCMB)
 
-/obj/machinery/power/thermoregulator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/thermoregulator_interact,
-	)
-	..()
+/// The multitool's answer, in degrees C, is its new target.
+/obj/machinery/power/thermoregulator/proc/target_set(datum/act/op/A)
+	var/datum/prompt/number/answer = A.answer
+	set_target_temp(max(convert_c2k(answer.value), TCMB))
+	heat_entries_refresh(src)
+	return OP_OK
 
-/// Old attack_hand: `add_fingerprint(user); interact(user)`.
-/datum/interaction/machine_hand/ungated/thermoregulator_interact
-	id = "thermoregulator_interact"
-	name = "Use"
-	effect = /obj/machinery/power/thermoregulator/proc/interaction_use
+// ---- its work: woken by its room's temperature, its switch and its target; nothing polls ----
 
-/obj/machinery/power/thermoregulator/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	interact(user)
-	return TRUE
+/// The room's air changed temperature (its gas watch).
+/obj/machinery/power/thermoregulator/proc/room_changed(list/observation, index)
+	reconsider()
 
-/obj/machinery/power/thermoregulator/interact(mob/user)
-	if(!anchored)
-		return
-	set_on(!on)
-	act_message(user, src, MSG_SELF(span_notice("You [on ? "activate" : "deactivate"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% [on ? "activates" : "deactivates"] %T%.")))
-	if(!on)
+/// Whether it has work: on, on the grid, and the room a degree or more off its target. Idle, its pump shows idle.
+/obj/machinery/power/thermoregulator/proc/reconsider(datum/act/A)
+	set_regulating(!!(on && anchored && power_region && gas_wake_condition()))
+	if(on && !regulating)
 		change_mode(MODE_IDLE)
-	wake_for_state_change()
-	update_icon()
 
-/obj/machinery/power/thermoregulator/machine_step()
+/// One service interval of regulating (its every()): the heat pump (its CAPABILITIES entry) works the air in Rust; this pays its work from the
+/// grid and shows what it does.
+/obj/machinery/power/thermoregulator/proc/regulator_step(datum/act/A)
 	if(!power_region)
 		turn_off()
-		return PROCESS_KILL
-
-	if(draw_power(idle_power_usage) < idle_power_usage)
+		return
+	if(draw_power(power_of(src).idle) < power_of(src).idle)
 		visible_message(span_infoplain(span_bold("\The [src]") + " shuts down."))
 		turn_off()
-		return PROCESS_KILL
+		return
+	var/work = -heat_entries_power(src)
+	if(work > 0 && draw_power(work) < work * 0.99)
+		visible_message(span_infoplain(span_bold("\The [src]") + " shuts down."))
+		turn_off()
+		return
+	set_pumping(TRUE)
+	update_pump_mode()
+	reconsider()
 
-	var/datum/gas_mixture/env = loc.return_air()
-	if(!env || abs(env.return_temperature() - target_temp) < 1)
+/// Shows whether the room is being heated or cooled. Returns the mode.
+/obj/machinery/power/thermoregulator/proc/update_pump_mode()
+	var/datum/gas_mixture/env = loc?.return_air()
+	var/gap = env ? target_temp - env.return_temperature() : 0
+	if(abs(gap) < 1)
 		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-	if(!removed)
-		change_mode(MODE_IDLE)
-		hibernate_until_temperature_changes()
-		return PROCESS_KILL
-
-	var/heat_transfer = removed.get_thermal_energy_change(target_temp)
-	var/power_avail
-	if(heat_transfer == 0) //just in case
-		change_mode(MODE_IDLE)
-	else if(heat_transfer > 0)
-		change_mode(MODE_HEATING)
-		power_avail = draw_power(min(heat_transfer, active_power_usage))
-		removed.add_thermal_energy(min(power_avail*5,heat_transfer))
 	else
-		change_mode(MODE_COOLING)
-		heat_transfer = abs(heat_transfer)
-		// H4: the Carnot-bounded COP formula lives once in Rust now
-		// (rust_core.md §15's "the heat regulator" row) instead of this
-		// unit's own `removed.return_temperature()/TN60C` approximation;
-		// "other" (the hot side rejected heat goes to) is treated as
-		// station-ambient, same reasoning as apply_regulator_step's.
-		var/cop = vg_heat_regulator_cooling_cop(removed.return_temperature(), T20C, regulator_carnot_fraction, regulator_max_cop)
-		var/actual_heat_transfer = heat_transfer
-		heat_transfer = min(heat_transfer, active_power_usage*cop)
-		power_avail = draw_power(heat_transfer/cop)
-		removed.add_thermal_energy(-min(power_avail*5*cop,actual_heat_transfer))
-	env.merge(removed)
+		change_mode(gap > 0 ? MODE_HEATING : MODE_COOLING)
+	return mode
 
-/obj/machinery/power/thermoregulator/proc/appearance_mode()
+/obj/machinery/power/thermoregulator/draw(datum/look/look)
+	..()
 	if(!on)
-		return "off"
-	switch(mode)
-		if(MODE_HEATING)
-			return "heat"
-		if(MODE_COOLING)
-			return "cool"
-	return "idle"
-
-DECLARE_APPEARANCE(/obj/machinery/power/thermoregulator, "appearance_mode", list(
-	"idle" = list(APPEARANCE_OVERLAYS = list("lasergen-on")),
-	"heat" = list(APPEARANCE_OVERLAYS = list("lasergen-on", "lasergen-heat")),
-	"cool" = list(APPEARANCE_OVERLAYS = list("lasergen-on", "lasergen-cool"))
-))
+		return
+	look.overlay("lasergen-on")
+	look.overlay("lasergen-heat", when = mode == MODE_HEATING)
+	look.overlay("lasergen-cool", when = mode == MODE_COOLING)
 
 /obj/machinery/power/thermoregulator/proc/turn_off()
 	set_on(FALSE)
+	set_pumping(FALSE)
 	change_mode(MODE_IDLE)
-	update_icon()
 
-/// Wakes only once the room drifts at least a degree from its target while it is on -- the test
-/// process() makes before regulating.
-/obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
-	var/datum/gas_mixture/environment = loc.return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
-	// Every machine_step() caller returns PROCESS_KILL right after; while off the declaration keeps it parked.
-
+/// The room is a degree or more off its target.
 /obj/machinery/power/thermoregulator/proc/gas_wake_condition()
 	var/datum/gas_mixture/environment = loc?.return_air()
-	return on && environment && abs(environment.return_temperature() - target_temp) >= 1
-
-/obj/machinery/power/thermoregulator/proc/clear_gas_dependency()
-	om_watch_disarm(src, "gas")
-
-/obj/machinery/power/thermoregulator/proc/wake_for_state_change()
-	clear_gas_dependency()
-	MACHINE_WAKE(src)
+	return environment && abs(environment.return_temperature() - target_temp) >= 1
 
 /obj/machinery/power/thermoregulator/proc/change_mode(new_mode = MODE_IDLE)
 	if(mode == new_mode)
 		return
 	set_mode(new_mode)
 
-DAMAGE_REACTION(/obj/machinery/power/thermoregulator, DAMAGE_EMP, PROC_REF(thermoregulator_emp))
-/// An EMP switches the regulator on and scrambles its target temperature.
-/obj/machinery/power/thermoregulator/proc/thermoregulator_emp(datum/damage_packet/packet)
+/// An EMP switches the regulator on and scrambles its target temperature (before the hit lands; the hit goes on).
+/obj/machinery/power/thermoregulator/proc/thermoregulator_emp(datum/act/hit/emp/A)
 	if(!on)
 		set_on(TRUE)
-	target_temp += rand(0, 1000)
-	wake_for_state_change()
-	update_icon()
+	set_target_temp(target_temp + rand(0, 1000))
+	heat_entries_refresh(src)
+	return HOOK_DECLINE
 
 /obj/machinery/power/thermoregulator/overload(obj/machinery/power/source)
 	if(!anchored || !power_region)
 		return
-	var/power_avail = draw_power(active_power_usage*10)
-	var/datum/gas_mixture/env = loc.return_air()
-	if(env)
-		var/datum/gas_mixture/removed = env.remove_ratio(0.99)
-		if(removed)
-			removed.add_thermal_energy(power_avail*5)
-			env.merge(removed)
+	var/power_avail = draw_power(power_of(src).active*10)
+	// The surge burns through its coils: what it drew becomes heat in the room, one for one.
+	heat_add(loc.return_air(), power_avail, HEAT_SOURCE_DEVICE)
 	var/turf/T = get_turf(src)
 	new /obj/effect/decal/cleanable/liquid_fuel(T, 5)
 	T.assume_gas(GAS_VOLATILE_FUEL, 5, T20C)
@@ -339,11 +267,3 @@ DAMAGE_REACTION(/obj/machinery/power/thermoregulator, DAMAGE_EMP, PROC_REF(therm
 #undef MODE_IDLE
 #undef MODE_HEATING
 #undef MODE_COOLING
-
-/obj/machinery/power/thermoregulator/step_has_work()
-	return gas_wake_condition()
-
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/thermoregulator/arm_wakes()
-	..()
-	hibernate_until_temperature_changes()

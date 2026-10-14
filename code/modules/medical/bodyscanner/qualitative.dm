@@ -14,6 +14,7 @@
 /// Higher = worse. Used by the scanner-finding sort and the worst-finding
 /// roll-up that drives the occupant card's Condition row.
 /proc/_dq_band_rank(band)
+	READS_FROM()
 	switch(band)
 		if("critical")
 			return 4
@@ -28,6 +29,7 @@
 
 /// Qualitative band for a damage value against its max.
 /proc/dq_qualitative_damage_band(amount, max_amount)
+	READS_FROM()
 	if(!amount || amount <= 0)
 		return "uninjured"
 	if(!max_amount || max_amount <= 0)

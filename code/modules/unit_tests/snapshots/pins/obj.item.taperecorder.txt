@@ -1,0 +1,159 @@
+@obj human|none
+-click: Click: Pick up
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++4 menu: Playback Tape (refused: You can't do that.)
++5 menu: Print Transcript (refused: You can't do that.)
++6 menu: Start Recording (refused: You can't do that.)
++7 menu: Stop (refused: You can't do that.)
++9 menu: Wipe Tape (refused: You can't do that.)
++10 click: Click: Eject tape
+@obj robot|none
+-click: Click: Pick up
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++5 menu: Playback Tape (refused: You can't do that.)
++6 menu: Print Transcript (refused: You can't do that.)
++7 menu: Start Recording (refused: You can't do that.)
++8 menu: Stop (refused: You can't do that.)
++10 menu: Wipe Tape (refused: You can't do that.)
++11 click: Click: Eject tape
+@obj ai|none
+@obj.item ghost|none
++0 menu: Eject Tape (refused: You can't do that.)
++2 menu: Playback Tape (refused: You can't do that.)
++3 menu: Print Transcript (refused: You can't do that.)
++4 menu: Start Recording (refused: You can't do that.)
++5 menu: Stop (refused: You can't do that.)
++7 menu: Wipe Tape (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Eject tape
++1 menu: Eject Tape (refused: You can't do that.)
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
+@obj human|/obj/item/kit
++1 menu: Eject tape
++2 menu: Eject Tape (refused: You can't do that.)
++4 menu: Playback Tape (refused: You can't do that.)
++5 menu: Print Transcript (refused: You can't do that.)
++6 menu: Start Recording (refused: You can't do that.)
++7 menu: Stop (refused: You can't do that.)
++9 menu: Wipe Tape (refused: You can't do that.)
+@obj human|/obj/item/storage
+-click: Click: Collect
++1 menu: Eject tape
++2 menu: Eject Tape (refused: You can't do that.)
++4 menu: Playback Tape (refused: You can't do that.)
++5 menu: Print Transcript (refused: You can't do that.)
++6 menu: Start Recording (refused: You can't do that.)
++7 menu: Stop (refused: You can't do that.)
++9 menu: Wipe Tape (refused: You can't do that.)
++10 click: Click: Eject tape
+human|/obj/item/card/emag menu: Eject tape
+human|/obj/item/card/emag menu: Eject Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/card/emag menu: Start Recording (refused: You can't do that.)
+human|/obj/item/card/emag menu: Stop (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/rectape menu: Eject tape
+human|/obj/item/rectape menu: Eject Tape (refused: You can't do that.)
+human|/obj/item/rectape menu: Insert tape (refused: There's already a tape inside.)
+human|/obj/item/rectape menu: Move To Top
+human|/obj/item/rectape menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/rectape menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/rectape menu: Start Recording (refused: You can't do that.)
+human|/obj/item/rectape menu: Stop (refused: You can't do that.)
+human|/obj/item/rectape menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/rectape menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/rectape click: Click: Insert tape
+keys: collect_item, drag_buckle, eject, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, hand_eject, insert_tape, kit_customize, kit_customize_last, move_to_top, pick_up_item, playback, print, record, stop, toggle_digestable, use, wipe

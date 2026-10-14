@@ -1,0 +1,41 @@
+/// Keep the actual ignition effect while recording the actor at its boundary.
+/obj/item/flame/candle/interim_actor_probe
+	var/light_actor_ref
+
+/obj/item/flame/candle/interim_actor_probe/light(flavor_text, mob/user)
+	light_actor_ref = user ? REF(user) : null
+	return ..(flavor_text, user)
+
+/datum/unit_test/interim_candle_actor/Run()
+	test_driver_begin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode()
+	var/obj/item/flame/candle/interim_actor_probe/candle = allocate(/obj/item/flame/candle/interim_actor_probe, T)
+	var/list/source_types = list(/obj/item/flame/lighter, /obj/item/flame/match, /obj/item/flame/candle)
+	for(var/source_type in source_types)
+		var/obj/item/flame/source = allocate(source_type, T)
+		TEST_ASSERT(!source.lit, "the ignition source begins unlit")
+		hci_click(user, candle, source)
+		test_time(10 SECONDS)
+		TEST_ASSERT(!candle.lit, "an unlit source cannot ignite the candle")
+		source.set_lit(TRUE)
+		var/wax_before = candle.wax
+		hci_click(user, candle, source)
+		test_time(10 SECONDS)
+		TEST_ASSERT(candle.lit, "a lit source ignites the actual candle")
+		TEST_ASSERT_EQUAL(glow_of(candle).range, CANDLE_LUM, "ignition enables the candle's actual light")
+		TEST_ASSERT_EQUAL(candle.light_actor_ref, REF(user), "the ignition helper receives the explicit actor")
+		// A lit candle burns a unit of wax per flame step (every 2 s) during the 10 s wait: ignition keeps the wax it had, less that burn.
+		var/max_burn = (10 SECONDS) / (2 SECONDS) + 1
+		TEST_ASSERT(candle.wax <= wax_before && candle.wax >= wax_before - max_burn, "ignition preserves the remaining wax (less its burn): [wax_before] -> [candle.wax]")
+		var/wax_lit = candle.wax
+		hci_click(user, candle, source)
+		test_time(10 SECONDS)
+		TEST_ASSERT(candle.wax <= wax_lit && candle.wax >= wax_lit - max_burn, "lighting an already lit candle preserves its wax (less its burn): [wax_lit] -> [candle.wax]")
+		hci_click(user, candle, candle)
+		test_time(10 SECONDS)
+		TEST_ASSERT(!candle.lit, "self interaction extinguishes the actual candle")
+		TEST_ASSERT_EQUAL(glow_of(candle).range, 0, "extinguishing clears the candle's actual light")
+		source.set_lit(FALSE)
+	test_driver_end()

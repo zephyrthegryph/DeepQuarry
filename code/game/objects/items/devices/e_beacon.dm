@@ -6,63 +6,56 @@
 	var/beacon_active = FALSE
 	var/list/levels_for_distress
 	var/obj/item/gps/gps = null
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/emergency_beacon/Initialize(mapload)
-	for(var/i in 1 to length(levels_for_distress))
-		var/current = levels_for_distress[i]
-		if(isnum(current))
-			continue
-		levels_for_distress[i] = GLOB.map_templates_loaded[current]
+/// The z-levels it calls for (derives(), at init): a map template's name stands for its loaded level; none means the station's.
+/obj/item/emergency_beacon/proc/distress_levels()
+	. = list()
 	if(!levels_for_distress)
-		levels_for_distress = list(1)
-	return ..()
+		. += 1
+		return
+	for(var/current in levels_for_distress)
+		. += isnum(current) ? current : GLOB.map_templates_loaded[current]
 
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-/// Re-checked on the answer: still carried, and not already active.
-/datum/om/prompt/confirm/emergency_beacon
-	message = "Would you like to activate this personal emergency beacon?"
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+TRACKED(/obj/item/emergency_beacon, beacon_active)
 
-/datum/om/prompt/confirm/emergency_beacon/valid()
-	var/obj/item/emergency_beacon/B = subject
-	return B.beacon_active ? "already active" : null
+CAPABILITIES(/obj/item/emergency_beacon)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
+	owns_one(nameof(gps), /obj/item/gps, starts = /obj/item/gps/emergency_beacon)
+	// the old attack_self: on solid ground, after a yes, the beacon is spiked in a moment later
+	op("activate", in_hand(), label("Activate"), needs(req_is(nameof(beacon_active), FALSE, because = MSG(emergency_beacon/active)), req(PROC_REF(on_solid_ground))),
+		asks(/datum/prompt/yes_no, fields = list("title" = "name", "question" = "Would you like to activate this personal emergency beacon?", "timeout" = 0), ends_on_no = TRUE),
+		wait(3 SECONDS), // short, so they can still abort if they want to
+		then(PROC_REF(activate_done)))
+	// an active beacon is spiked in: it can't be picked up, and a wrench takes it apart
+	op("spiked", hand(), when(nameof(beacon_active)), then(PROC_REF(interaction_hand)))
+	op("disassemble", tool(TOOL_WRENCH), wait(0), label("Disassemble"), when(nameof(beacon_active)), then(PROC_REF(interaction_item)))
+	derives(nameof(levels_for_distress), PROC_REF(distress_levels))
 
-/obj/item/emergency_beacon/proc/activation_answered(datum/om/prompt/confirm/emergency_beacon/ask)
-	var/mob/user = ask.answerer
-	//short delay, so they can still abort if they want to
-	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
+MSG_DEF_SELF(emergency_beacon/active, "It is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
 
-DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
-	INTERACT_USE("Activate", PROC_REF(interaction_self)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_BECAUSE(REQ_FIELD_NOT("beacon_active"), "it's already active and cannot be moved")), \
-	INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)), \
-)
+/// Requirement: the actor stands on solid ground.
+/obj/item/emergency_beacon/proc/on_solid_ground(datum/act/op/A)
+	return beacon_ground_refusal(A.actor)
 
-/obj/item/emergency_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/proc/beacon_ground_refusal(mob/user)
+	READS_FROM() // where the actor stands is asked when the beacon is activated
 	var/T = user.loc
-	if(!beacon_active)
-		if(!isturf(T))
-			to_chat(user,span_warning("You cannot activate the beacon when you are not on a turf!"))
-			return
-		else if(isnonsolidturf(T))
-			to_chat(user,span_warning("You cannot activate the beacon when you are not on sufficiently solid ground!"))
-			return
-		else
-			om_ask(user, /datum/om/prompt/confirm/emergency_beacon, PROC_REF(activation_answered), title = "\The [src]")
-	else
-		to_chat(user,"\The [src] is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
-	return TRUE
+	if(!isturf(T))
+		return "You cannot activate the beacon when you are not on a turf!"
+	if(isnonsolidturf(T))
+		return "You cannot activate the beacon when you are not on sufficiently solid ground!"
+	return null
 
-/obj/item/emergency_beacon/proc/activate_done(mob/user)
+/obj/item/emergency_beacon/proc/activate_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(beacon_active)
 		return
 	act_message(user, src, MSG_SELF(span_warning("You activate %T%, spiking it into the ground!")), MSG_OTHERS(span_warning("%U% activates %T%!")))
-	beacon_active = TRUE
-	icon_state = "e_beacon_active"
+	set_beacon_active(TRUE)
+	set_icon_state("e_beacon_active")
 	user.drop_item()
 	set_anchored(TRUE)
 	gps.set_tracking(TRUE)
@@ -76,19 +69,16 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 		GLOB.priority_announcement.Announce(message, new_title = "Automated Personal Distress Signal", new_sound = ANNOUNCER_MSG_DISTRESS_SIGNAL, zlevel = zlevel)
 
 /// Old attack_hand: block pickup while the beacon is active (the requirement refuses it); otherwise fall through to pickup.
-/obj/item/emergency_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return FALSE
+/obj/item/emergency_beacon/proc/interaction_hand(datum/act/op/A)
+	to_chat(A.actor, span_warning("It's already active and cannot be moved."))
+	return OP_OK
 
 /// Old attackby: wrench it apart once active.
-/obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
-		gps.set_tracking(FALSE)
-		act_message(user, src, others = "%U% disassembles %T%.")
-		consume(src, user)
-		return TRUE
-	return FALSE
+/obj/item/emergency_beacon/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	gps.set_tracking(FALSE)
+	act_message(user, src, others = "%U% disassembles %T%.")
+	consume(src, user)
+	return OP_OK
 
-/obj/item/emergency_beacon/ownership()
-	. = ..()
-	. += owns(nameof(gps), policy = OWN_CONTAINED)
-DECLARE_DEFAULT_CHILD(/obj/item/emergency_beacon, "gps", /obj/item/gps/emergency_beacon)
+

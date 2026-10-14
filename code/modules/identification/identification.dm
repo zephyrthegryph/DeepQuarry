@@ -49,13 +49,11 @@
 			if(IDENTITY_FULL)
 				to_chat(user, span_notice("You've identified \the [holder()] as a [true_name], and its quality."))
 		update_name()
-		holder().update_icon()
 
 // Reverses identification for whatever reason.
 /datum/identification/proc/unidentify(new_identity = IDENTITY_UNKNOWN, mob/user)
 	identified &= ~new_identity // Unset the bitflag.
 	update_name()
-	holder().update_icon()
 	if(user)
 		switch(identified) // Give a message based on what's left.
 			if(IDENTITY_QUALITY)

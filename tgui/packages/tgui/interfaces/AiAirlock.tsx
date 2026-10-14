@@ -3,13 +3,7 @@ import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
-// Each capability's data arrives under data.caps[<its key>] (caps_ui_data()); the window reads
-// them as one flat record.
 type Data = {
-  caps?: Record<string, Partial<Flat>>;
-};
-
-type Flat = {
   power: {
     main: number;
     main_timeleft: number;
@@ -57,7 +51,7 @@ const dangerMap: Record<number, { color: string; localStatusText: string }> = {
 
 export const AiAirlock = (props) => {
   const { act, data } = useBackend<Data>();
-  const flat = Object.assign({}, ...Object.values(data.caps ?? {})) as Flat;
+  const flat = data;
 
   const {
     power,

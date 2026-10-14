@@ -48,9 +48,9 @@
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/sif_crab)
 
-/mob/living/simple_mob/animal/passive/crab/sif/Initialize(mapload)
-	. = ..()
-	adjust_scale(rand(5,12) / 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/crab/sif)
+	rolls(nameof(icon_scale_x), range_of(0.5, 1.2, 0.1))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)))
 
 /datum/decl/mob_organ_names/crab
 TYPE_TABLE(/datum/decl/mob_organ_names/crab, mob_organ_hit_zones, list("cephalothorax", "abdomen", "left walking legs", "right walking legs", "left swimming legs", "right swimming legs", "left pincer", "right pincer"))

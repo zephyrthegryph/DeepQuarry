@@ -1,0 +1,3 @@
+/obj/item/clothing/accessory/ring/reagent vol=15 holder=/datum/reagents 
+/obj/item/clothing/accessory/ring/reagent/sleepy vol=15 holder=/datum/reagents chloralhydrate=15
+

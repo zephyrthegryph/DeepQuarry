@@ -16,17 +16,17 @@
 	var/working = TRUE
 	/// if TRUE, someone manually disabled us via console.
 	var/research_disabled = FALSE
-	/// Until when an EMP keeps the server halted (EMP_DISABLE).
-	EXPIRY_DECLARE(emp_until)
 
-EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
+CAPABILITIES(/obj/machinery/rnd/server)
+	emp_disable(60 SECONDS)
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
 
 /obj/machinery/rnd/server/Initialize(mapload)
 	. = ..()
 	//servers handle techwebs differently as we are expected to be there to connect
 	//every other machinery on-station.
 	if(!stored_research)
-		var/datum/techweb/science_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science)
+		var/datum/techweb/science_web = locate_in_list(SSresearch.techwebs, /datum/techweb/science)
 		connect_techweb(science_web)
 	rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
@@ -40,11 +40,16 @@ EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 
-APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_suffix}")
+TRACKED(/obj/machinery/rnd/server, working)
+
+/// The look (the draw sweep: from its template).
+/obj/machinery/rnd/server/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]-[appearance_suffix()]")
 
 /// "off" without power; otherwise "on" while working ("halt" covers EMP-ed, disabled or broken).
 /obj/machinery/rnd/server/proc/appearance_suffix()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "off"
 	return working ? "on" : "halt"
 
@@ -54,14 +59,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 
 /// Checks if we should be working or not, and updates accordingly.
 /obj/machinery/rnd/server/proc/refresh_working()
-	if(has_stat(NOPOWER | EMPED) || research_disabled)
-		working = FALSE
+	if(power_lost() || emp_disabled(src) || research_disabled)
+		set_working(FALSE)
 	else
-		working = TRUE
+		set_working(TRUE)
 
 	// update_current_power_usage()
 	update_heat_output()
-	update_icon()
 
 /// Only a working server runs hot; halted or EMP'd it emits nothing.
 /obj/machinery/rnd/server/current_heat_output()
@@ -70,8 +74,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 	return ..()
 
 /// Halted while EMP'd, working again once the outage lapses.
-/obj/machinery/rnd/server/emp_disable_changed(disabled)
-	..()
+/obj/machinery/rnd/server/proc/emp_state_changed(datum/act/A)
 	refresh_working()
 
 /// Toggles whether or not researched_disabled is, yknow, disabled
@@ -82,9 +85,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 
 /// Gets status text based on this server's status for the computer.
 /obj/machinery/rnd/server/proc/get_status_text()
-	if(has_stat(EMPED))
+	if(emp_disabled(src))
 		return "O&F@I*$ - R3*&O$T R@U!R%D"
-	else if(has_stat(NOPOWER))
+	else if(power_lost())
 		return "Offline - Server Unpowered"
 	else if(research_disabled)
 		return "Offline - Server Control Disabled"
@@ -100,26 +103,16 @@ APPEARANCE_TEMPLATE(/obj/machinery/rnd/server, "{base_icon_state}-{appearance_su
 	// max_integrity = 1800 //takes roughly ~15s longer to break then full deconstruction.
 	circuit = null
 
-/obj/machinery/rnd/server/master/Initialize(mapload)
-	. = ..()
-	name = "\improper Master " + name
-	add_overlay("RD-server-objective-stripes")
+CAPABILITIES(/obj/machinery/rnd/server/master)
+	name_prefix("\improper Master")
+	op("block", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_block)))
 
-/obj/machinery/rnd/server/master/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/rnd_server_master_block,
-	)
-	..()
-
-/// Old attackby: never called ..(), so the whole thing (a deliberate no-op) stays in the effect.
-/datum/interaction/machine_item/rnd_server_master_block
-	id = "rnd_server_master_block"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/rnd/server/master/proc/interaction_block
-
-/obj/machinery/rnd/server/master/proc/interaction_block(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/rnd/server/master/proc/interaction_block(datum/act/op/A)
 	// No doing anything to the master server
 	return TRUE
 
 #undef SERVER_NOMINAL_TEXT
+
+/obj/machinery/rnd/server/master/draw(datum/look/look)
+	..()
+	look.overlay("RD-server-objective-stripes")

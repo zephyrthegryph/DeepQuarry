@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - refactor: "asks() steps can repeat (repeats = PROC_REF(x)); the ban panel, job bans, kicks, the legacy player notes and the shuttle time edit ask through them instead of re-running the href"
+  - bugfix: "A notice queued past the nesting cap still reaches the observers of a holder that is deleted before the drain, and the queue no longer holds deleted things alive"

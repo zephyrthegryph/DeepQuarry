@@ -26,7 +26,7 @@
 	if(istype(after))
 		TEST_ASSERT(after.is_plating() || after.type != /turf/simulated/floor/tiled, "a destroyed tile leaves plating")
 		// New flooring restores the condition.
-		after.set_flooring(get_flooring_data(/datum/decl/flooring/tiling))
+		after.install_flooring(get_flooring_data(/datum/decl/flooring/tiling))
 		TEST_ASSERT_EQUAL(after.get_integrity(), after.max_integrity, "laying a tile restores integrity")
 
 	var/turf/restore = locate(F.x, F.y, F.z)

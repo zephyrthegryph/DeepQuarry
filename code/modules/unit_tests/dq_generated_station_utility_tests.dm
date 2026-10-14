@@ -37,7 +37,7 @@
 		candidate_smes.set_stored_charge(0)
 	for(var/obj/machinery/power/generator/generated_station/candidate_generator in topology.power_objects)
 		source_generators += candidate_generator
-		candidate_generator.stat_add(BROKEN)
+		candidate_generator.set_broken_condition(TRUE)
 	TEST_ASSERT(length(source_smeses), "Generated station has no physical SMES source")
 	TEST_ASSERT(length(source_generators), "Generated station has no physical continuous generator")
 	TEST_ASSERT(!topology.power_available(), "Physical power capability stayed available after source depletion")
@@ -45,7 +45,7 @@
 		var/obj/machinery/power/smes/source_smes = source_smeses[i]
 		source_smes.set_stored_charge(stored_charges[i])
 	for(var/obj/machinery/power/generator/generated_station/source_generator in source_generators)
-		source_generator.stat_remove(BROKEN)
+		source_generator.set_broken_condition(FALSE)
 	TEST_ASSERT(topology.power_available(), "Physical power capability did not recover after source restoration")
 	for(var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/tank in topology.atmos_objects)
 		TEST_ASSERT_NOTNULL(tank.parent, "Generated air reservoir is not part of a pipeline")

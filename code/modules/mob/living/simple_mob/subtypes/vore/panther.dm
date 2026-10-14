@@ -41,8 +41,6 @@
 
 	say_list_type = /datum/say_list/panther
 
-	allow_mind_transfer = TRUE
-	can_be_drop_prey = FALSE
 	species_sounds = "Feline"
 	pain_emote_1p = list("yowl", "growl")
 	pain_emote_3p = list("yowls", "growls")
@@ -53,18 +51,20 @@
 	vore_pounce_chance = 10
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/panther, /mob/living/simple_mob/proc/animal_mount)
-DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/panther, /mob/living/proc/toggle_rider_reins)
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/aggressive/panther/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/panther/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "All it takes is a few more rasps of the panther's rough, barbed tongue to shovel the rest of you down its tightly rippling gullet... and with a final couple ravenous swallows, you spill out into the predatory feline's stomach! Right away, that gut's muscular walls knead and contract around you, forcing you into a curled-up ball as the panther's noisy purring rumbles into you from every direction."
 

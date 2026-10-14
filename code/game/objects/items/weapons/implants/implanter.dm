@@ -12,21 +12,26 @@ MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(implanter_self)))
+CAPABILITIES(/obj/item/implanter)
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(implanter_self)))
+	op("remove_implant", menu(), label("Remove Implant"), needs(carried()), then(PROC_REF(remove_implant_effect)))
+	// Implanting the target: at once into yourself, else five seconds while it holds still (it has to be on the tile it was on when the work began).
+	op("implant", ai(), takes("patient", "start_turf"), wait(PROC_REF(implant_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(implant_done)))
 
-/// Old attack_self: toggle the implanter. Subtypes with special_handling fall through.
-/obj/item/implanter/proc/implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Toggle the implanter. Subtypes with special_handling fall through.
+/obj/item/implanter/proc/implanter_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update()
-	return TRUE
+	return OP_OK
 
-/obj/item/implanter/proc/remove_implant_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/implanter/proc/remove_implant_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!imp)
-		return
+		return OP_OK
 	if(istype(user, /mob))
 		var/mob/M = user
 		imp.forceMove(get_turf(src))
@@ -34,45 +39,44 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 			M.put_in_hands(imp)
 		to_chat(M, span_notice("You remove \the [imp] from \the [src]."))
 		name = "implanter"
-		own_take(src, nameof(imp))
+		rel_take(src, nameof(imp))
 
 	update()
 
-	return
+	return OP_OK
 
 /obj/item/implanter/proc/update()
 	if (src.imp)
-		src.icon_state = "implanter1"
+		set_icon_state("implanter1")
 	else
-		src.icon_state = "implanter0"
-	src.icon_state += "_[active]"
+		set_icon_state("implanter0")
+	set_icon_state(src.icon_state + ("_[active]"))
 	return
 
-/// Implanting the target: at once into yourself, else five seconds while it holds still.
-/datum/om/task/timed/implant
-	complete_proc = /obj/item/implanter/proc/implant_done
-	var/turf/start_turf
+/obj/item/implanter/proc/implant_time(datum/act/op/A)
+	return A.arg("patient") == A.actor ? 0 : 5 SECONDS
 
-/obj/item/implanter/proc/implant_done(datum/om/task/timed/implant/task)
-	var/mob/living/M = task.target
-	var/mob/living/user = task.actor
-	var/turf/T1 = task.start_turf
+/obj/item/implanter/proc/implant_done(datum/act/op/A)
+	var/mob/living/M = A.arg("patient")
+	var/mob/living/user = A.actor
+	var/turf/T1 = A.arg("start_turf")
 	if(!(user && M && (get_turf(M) == T1) && src && src.imp))
-		return
+		return OP_FAILED
 	act_message(user, M, others = span_warning("%T% has been implanted by %U%."))
 
 	add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
 
 	if(imp.handle_implant(M))
-		imp.post_implant(M)
+		imp.post_implant(M, user)
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			BITSET(H.hud_updateflag, IMPLOYAL_HUD)
-			BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
+			H.flag_hud_update(IMPLOYAL_HUD)
+			H.flag_hud_update(BACKUP_HUD) // Backup HUD updates
 
-	own_take(src, nameof(imp))
+	rel_take(src, nameof(imp))
 	update()
+	return OP_OK
 
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!istype(M, /mob/living/carbon))
@@ -86,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 
 			var/turf/T1 = get_turf(M)
 			if(T1)
-				om_task_start(/datum/om/task/timed/implant, user, M, duration = (M == user ? 0 : 5 SECONDS), receiver = src, start_turf = T1)
+				perform_op(user, src, "implant", src, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("patient" = M, "start_turf" = T1))
 				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))
@@ -95,21 +99,45 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/loyalty
 	name = "implanter-loyalty"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/loyalty, "imp", /obj/item/implant/loyalty)
+/obj/item/implanter/loyalty/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/loyalty)
+
 /obj/item/implanter/loyalty
+	icon_state = "implanter1_1" // loaded: what update() would show
+
+/// Loaded implanters packed in the syndicate kits (they keep the plain implanter's name).
+/obj/item/implanter/freedom/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/freedom)
+
+/obj/item/implanter/freedom
+	icon_state = "implanter1_1" // loaded: what update() would show
+
+/obj/item/implanter/uplink/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/uplink)
+
+/obj/item/implanter/uplink
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/explosive
 	name = "implanter (E)"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/explosive, "imp", /obj/item/implant/explosive)
+/obj/item/implanter/explosive/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/explosive)
+
 /obj/item/implanter/explosive
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/adrenalin
 	name = "implanter-adrenalin"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/adrenalin, "imp", /obj/item/implant/adrenalin)
+/obj/item/implanter/adrenalin/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/adrenalin)
+
 /obj/item/implanter/adrenalin
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -117,7 +145,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/adrenalin, "imp", /obj/item/implant/ad
 	name = "implanter (C)"
 	icon_state = "cimplanter1"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/compressed)
+/obj/item/implanter/compressed/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/compressed)
+
 /obj/item/implanter/compressed
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -125,11 +156,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/c
 	if (imp)
 		var/obj/item/implant/compressed/c = imp
 		if(!c.scanned())
-			icon_state = "cimplanter1"
+			set_icon_state("cimplanter1")
 		else
-			icon_state = "cimplanter2"
+			set_icon_state("cimplanter2")
 	else
-		icon_state = "cimplanter0"
+		set_icon_state("cimplanter0")
 	return
 
 /obj/item/implanter/compressed/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -170,7 +201,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/c
 /obj/item/implanter/restrainingbolt
 	name = "implanter (bolt)"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/restrainingbolt, "imp", /obj/item/implant/restrainingbolt)
+/obj/item/implanter/restrainingbolt/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/restrainingbolt)
+
 /obj/item/implanter/restrainingbolt
 	icon_state = "implanter1_1" // loaded: what update() would show
 
@@ -180,15 +214,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/restrainingbolt, "imp", /obj/item/impl
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"
 
-DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/vrlanguage)
+/obj/item/implanter/vrlanguage/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/vrlanguage)
+
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/ownership()
 	. = ..()
 	. += owns(nameof(imp), policy = OWN_CONTAINED)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/implanter, \
-	INTERACT_VERB("Remove Implant", PROC_REF(remove_implant_effect), REQ_IN_INVENTORY), \
-)

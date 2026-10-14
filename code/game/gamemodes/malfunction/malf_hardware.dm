@@ -4,11 +4,15 @@
 	var/driver = null							// Driver - if not null this verb is given to the AI to control hardware
 	var/mob/living/silicon/ai/owner		// AI which owns this.
 
+CAPABILITIES(/datum/malf_hardware)
+	ref_one(nameof(owner))
+
 /datum/malf_hardware/proc/install()
 	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
-		owner_ref().hardware = src
+		var/mob/living/silicon/ai/AI = owner_ref()
+		rel_set(AI, nameof(AI.hardware), src)
 		if(driver)
-			om_grant(owner_ref(), GRANT_VERB, driver, src)
+			grant(owner_ref(), granted_verb(driver), src)
 
 /datum/malf_hardware/proc/get_examine_desc()
 	return "It has some sort of hardware attached to its core"
@@ -60,12 +64,12 @@
 
 /datum/malf_hardware/strong_turrets/install()
 	..()
-	for(var/obj/machinery/porta_turret/T in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		T.max_integrity = round(initial(T.max_integrity) * 1.4)
+	for(var/obj/machinery/porta_turret/T as anything in REGISTRY_MEMBERS(REGISTRY_TURRETS))
+		T.set_max_integrity(round(initial(T.max_integrity) * 1.4))
 		T.repair_damage(T.max_integrity)
 		T.shot_delay = round(initial(T.shot_delay) / 2)
-		T.auto_repair = 1
-		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
+		T.set_auto_repair(TRUE)
+		T.update_active_power_usage(round(power_of_type(T.type).active * 5))
 
 /// Owner (a relation view).
 /datum/malf_hardware/proc/owner_ref() as /mob/living/silicon/ai

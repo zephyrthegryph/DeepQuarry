@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - refactor: "Handmade collar labelling now uses native requests while preserving its engraved tag."

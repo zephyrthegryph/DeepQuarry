@@ -787,13 +787,13 @@
 /datum/config_entry/number/mc_tick_rate/ValidateAndSet(str_val)
 	. = ..()
 	if (.)
-		Master.UpdateTickRate()
+		Kernel.UpdateTickRate()
 
 /datum/config_entry/flag/resume_after_initializations
 
 /datum/config_entry/flag/resume_after_initializations/ValidateAndSet(str_val)
 	. = ..()
-	if(. && MC_RUNNING())
+	if(. && KERNEL_RUNNING())
 		world.sleep_offline = !config_entry_value
 
 /datum/config_entry/number/rounds_until_hard_restart
@@ -812,6 +812,12 @@
 
 /datum/config_entry/number/drift_profile_delay
 	default = 2 MINUTES
+
+/// The staleness checker's sampled live mode (code/engine/change/staleness.dm): one cached stat read, draw or entity in this many is recomputed from
+/// scratch and compared, with a mismatch only logged. 0 (the default) is off; test builds check everything regardless.
+/datum/config_entry/number/staleness_sample
+	default = 0
+	min_val = 0
 
 /datum/config_entry/flag/forbid_all_profiling
 

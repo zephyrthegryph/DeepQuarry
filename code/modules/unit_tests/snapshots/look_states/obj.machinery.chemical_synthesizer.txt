@@ -1,0 +1,17 @@
+/obj/machinery/chemical_synthesizer busy=1 +state: synth_working
+/obj/machinery/chemical_synthesizer busy=1 +overlay: icons/obj/chemical_ch.dmi:synth_working:8:#000000
+/obj/machinery/chemical_synthesizer busy=1 -state: synth_idle_bottle
+/obj/machinery/chemical_synthesizer busy=1 -overlay: icons/obj/chemical_ch.dmi:synth_idle_bottle:8:#000000
+/obj/machinery/chemical_synthesizer busy=2 +state: synth_working
+/obj/machinery/chemical_synthesizer busy=2 +overlay: icons/obj/chemical_ch.dmi:synth_working:8:#000000
+/obj/machinery/chemical_synthesizer busy=2 -state: synth_idle_bottle
+/obj/machinery/chemical_synthesizer busy=2 -overlay: icons/obj/chemical_ch.dmi:synth_idle_bottle:8:#000000
+/obj/machinery/chemical_synthesizer finishing=1 +state: synth_finished
+/obj/machinery/chemical_synthesizer finishing=1 +overlay: icons/obj/chemical_ch.dmi:synth_finished:8:#000000
+/obj/machinery/chemical_synthesizer finishing=1 -state: synth_idle_bottle
+/obj/machinery/chemical_synthesizer finishing=1 -overlay: icons/obj/chemical_ch.dmi:synth_idle_bottle:8:#000000
+/obj/machinery/chemical_synthesizer finishing=2 +state: synth_finished
+/obj/machinery/chemical_synthesizer finishing=2 +overlay: icons/obj/chemical_ch.dmi:synth_finished:8:#000000
+/obj/machinery/chemical_synthesizer finishing=2 -state: synth_idle_bottle
+/obj/machinery/chemical_synthesizer finishing=2 -overlay: icons/obj/chemical_ch.dmi:synth_idle_bottle:8:#000000
+

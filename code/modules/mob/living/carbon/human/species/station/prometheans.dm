@@ -153,7 +153,7 @@
 	var/obj/item/storage/toolbox/lunchbox/L = new boxtype(get_turf(H))
 	new /obj/item/reagent_containers/food/snacks/candy/proteinbar(L)
 	new /obj/item/tool/prybar/red(L)
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
@@ -161,7 +161,7 @@
 /datum/species/shapeshifter/promethean/hug(mob/living/carbon/human/H, mob/living/target)
 	var/static/list/parent_handles = list("head", "r_hand", "l_hand", "mouth")
 
-	if(H.zone_sel.selecting in parent_handles)
+	if(hud_of(H)?.zone_sel?.selecting in parent_handles)
 		return ..()
 
 	var/t_him = "them"
@@ -186,13 +186,13 @@
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
 	if(!H)
 		return
-	om_after(H, 1, TYPE_PROC_REF(/mob, gib))
+	after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_flesh_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_additional_examine_text(mob/living/carbon/human/H)
 
@@ -235,11 +235,7 @@
 #define PROMETHEAN_PAIN_CAP 70
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
-/// A trait state, added by the species.
-OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
-
 /datum/trait_state/promethean_biology
-	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.
 	var/still = FALSE
 
@@ -248,25 +244,27 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 
 /datum/trait_state/promethean_biology/attach()
 	..()
-	om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
-	om_hook(owner, /datum/om/event/mob_equipped_item, src, PROC_REF(on_equipped))
+	observe(owner, /datum/notice/moved, src, then(PROC_REF(on_moved)))
+	observe(owner, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_equipped)))
 	restart_stillness()
 
 /datum/trait_state/promethean_biology/detach()
-	om_unhook(owner, list(/datum/om/event/moved, /datum/om/event/mob_equipped_item), src)
+	unobserve(owner, /datum/notice/moved, src)
+	unobserve(owner, /datum/notice/mob_equipped_item, src)
 	..()
-	if(om_timer_slot_pending(src, "still_timer"))
-		om_cancel_timer_slot(src, "still_timer")
+	if(after_pending(src, "still_timer"))
+		cancel_after(src, "still_timer")
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE
-	after_slot(src, "still_timer", PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
+	after(src, PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still), key = "still_timer")
 
 /datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE
 
-/datum/trait_state/promethean_biology/proc/on_moved(mob/living/carbon/human/source, datum/om/event/moved/event)
-	EVENT_HANDLER
+/datum/trait_state/promethean_biology/proc/on_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/source = A.target
 	restart_stillness()
 	if(isturf(source.loc))
 		clean_on_entry(source, source.loc)
@@ -274,7 +272,7 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 /// Prometheans clean every surface they touch and feed on the grime.
 /datum/trait_state/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
 	var/gained = 0
-	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
+	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET))))
 		for(var/obj/O in turf_contents_of_type(T, /obj))
 			if(O.wash(CLEAN_SCRUB))
 				gained += rand(5, 15)
@@ -286,29 +284,30 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 				S.dirt = 0
 				gained += rand(10, 20)
 	if(H.feet_blood_color || LAZYLEN(H.feet_blood_DNA))
-		LAZYCLEARLIST(H.feet_blood_DNA)
-		H.feet_blood_DNA = null
-		H.feet_blood_color = null
+		H.clear_feet_blood_DNA()
+		H.set_feet_blood_DNA(null)
+		H.set_feet_blood_color(null)
 		gained += rand(3, 10)
 	if(H.bloody_hands)
 		H.forensic_data?.clear_blooddna()
-		H.hand_blood_color = null
+		H.set_hand_blood_color(null)
 		H.bloody_hands = 0
 		gained += rand(3, 10)
 	// Prometheans themselves aren't very safe places for other biota.
 	H.germ_level = 0
 	if(gained)
 		H.adjust_nutrition(gained)
-		H.update_bloodied()
 
 /// Whatever a bare-handed promethean picks up gets cleaned too.
-/datum/trait_state/promethean_biology/proc/on_equipped(mob/living/carbon/human/source, datum/om/event/mob_equipped_item/event)
-	EVENT_HANDLER
+/datum/trait_state/promethean_biology/proc/on_equipped(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/mob/living/carbon/human/source = A.target
+	var/datum/notice/mob_equipped_item/event = A
 	var/obj/item/equipped_item = event.equipped_item
 	var/slot = event.slot
 	if(slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)
 		return
-	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (source.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & HANDS)))
+	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (worn_of(source.get_equipped_item(SLOT_ID_SUIT)).covers & HANDS)))
 		return
 	if(equipped_item.wash(CLEAN_SCRUB))
 		source.adjust_nutrition(rand(5, 15))
@@ -331,7 +330,7 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 	var/datum/species/shapeshifter/promethean/S = H.species
 	if(!istype(S))
 		return
-	if(H.bodytemperature > S.heat_level_1 || H.bodytemperature < S.cold_level_1)
+	if(H.body_temperature() > S.heat_level_1 || H.body_temperature() < S.cold_level_1)
 		return
 	if(!H.is_injured())
 		return
@@ -343,9 +342,9 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 			regen_wounds = FALSE // Low pressure: the body holds wounds together rather than sealing them.
 
 	var/starve_mod = 1
-	if(H.nutrition <= 50)
+	if(nutrition_of(H) <= 50)
 		starve_mod = 0.5 // Severe starvation. Healing past this point hurts badly.
-	else if(H.nutrition <= 150)
+	else if(nutrition_of(H) <= 150)
 		starve_mod = 0.75
 	var/amount = S.heal_rate * starve_mod
 
@@ -377,7 +376,7 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 
 /// Over half the body soaked through.
 /proc/promethean_is_soaked(mob/living/carbon/human/H)
-	return H.fire_stacks < 0 && H.get_water_protection() <= 0.5
+	return fire_stacks_of(H) < 0 && H.get_water_protection() <= 0.5
 
 /// Water dissolves a promethean's gel. Grows while soaked, fades once dry, and
 /// stops regeneration while present.
@@ -409,6 +408,6 @@ OWN_TIMER(/datum/trait_state/promethean_biology, still_timer)
 #undef PROMETHEAN_STARVING_PAIN_CAP
 
 /// Trait system: promethean biology.
-/datum/om/stage/life/trait/promethean_biology
-	name = "promethean biology"
-	state_type = /datum/trait_state/promethean_biology
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/promethean_biology/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_promethean_biology"))

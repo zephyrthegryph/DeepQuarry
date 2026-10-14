@@ -21,6 +21,15 @@
 	var/base_name                           // Used to keep the original name safe while we apply modifiers.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/clothing/suit/space)
+	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
+	configure(item_protection(gas_transfer = 0.01, permeability = 0, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
+	ref_many(nameof(supporting_limbs))
+	owns_many(nameof(breaches))
+	op("space_suit_patch_item", item(/obj/item/stack/material), then(PROC_REF(space_suit_patch_item)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+// ALLOW(init/INSTANCE_STATE): remembers the name it was given, a map or loadout edit, before breaches rename it
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	base_name = "[name]"
@@ -58,8 +67,7 @@
 
 		if(B.class <= amount_left)
 			amount_left -= B.class
-			valid_breaches -= B
-			own_take_member(src, nameof(breaches), B)
+			rel_remove(src, nameof(breaches), B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -107,7 +115,7 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		own_add(src, nameof(breaches), B)
+		rel_add(src, nameof(breaches), B)
 
 		B.class = min(amount,5)
 
@@ -133,10 +141,9 @@
 		name = base_name
 		return 0
 
-	for(var/datum/breach/B in breaches)
+	for(var/datum/breach/B in breaches?.Copy())
 		if(!B.class)
-			own_take_member(src, nameof(breaches), B)
-			qdel(B)
+			rel_remove(src, nameof(breaches), B)
 		else
 			damage += B.class
 			if(B.breach_type == BRUTE)
@@ -158,10 +165,10 @@
 
 //Handles repairs (and also upgrades).
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(space_suit_patch_item)))
-
 /// Old attackby: patch burn breaches with steel or plastic.
-/obj/item/clothing/suit/space/proc/space_suit_patch_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/suit/space/proc/space_suit_patch_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/material))
 		var/repair_power = 0
 		switch(W.get_material_name())
@@ -171,40 +178,44 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(
 				repair_power = 1
 
 		if(!repair_power)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(isliving(src.loc))
 			to_chat(user, span_warning("How do you intend to patch a hardsuit while someone is wearing it?"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(!damage || !burn_damage)
 			to_chat(user, "There is no surface damage on \the [src] to repair.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		var/obj/item/stack/P = W
 		var/use_amt = min(P.get_amount(), 3)
 		if(use_amt && P.use(use_amt))
 			repair_breaches(BURN, use_amt * repair_power, user)
-		return INTERACTION_HANDLED_PASS
+			return OP_OK // the patch used the sheets up: the click does not go on to pick the suit up with the emptied hand
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/clothing/suit/space/welder_act(mob/user, obj/item/tool)
+/// A welder patches the suit's structural breaches (5 fuel); not while it is worn.
+/obj/item/clothing/suit/space/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(isliving(src.loc))
 		to_chat(user, span_red("How do you intend to patch a hardsuit while someone is wearing it?"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	if (!damage || ! brute_damage)
 		to_chat(user, "There is no structural damage on \the [src] to repair.")
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	var/obj/item/weldingtool/WT = tool.get_welder()
 	if(!WT.remove_fuel(5))
 		to_chat(user, span_red("You need more welding fuel to repair this suit."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	repair_breaches(BRUTE, 3, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/clothing/suit/space/examine(mob/user)
 	. = ..()

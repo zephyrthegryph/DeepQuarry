@@ -68,11 +68,17 @@
 	var/list/sound_options = available_sounds.Copy()
 	if(check_for_scepter())
 		sound_options["!!AIR HORN!!"] = 'sound/items/AirHorn.ogg'
-	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(deception_sound_chosen), title = "Sounds", message = "Select the sound you want to make.", choices = sound_options)
+	open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(deception_sound_chosen), answerer = user, subject = src, title = "Sounds", question = "Select the sound you want to make.", choices = sound_options)
 
-/obj/item/spell/audible_deception/proc/deception_sound_chosen(datum/om/prompt/choice/carried_item/ask)
-	if(ask.choice)
-		selected_sound = ask.choices[ask.choice]
+/obj/item/spell/audible_deception/proc/deception_sound_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return deception_sound_chosen_apply(A)
+
+/obj/item/spell/audible_deception/proc/deception_sound_chosen_apply(datum/act/request/A)
+	var/datum/prompt/choice/technomancer_carried/ask = A.answer
+	if(ask.value)
+		selected_sound = ask.choices[ask.value]
 
 /obj/item/spell/audible_deception/on_ranged_cast(atom/hit_atom, mob/living/user)
 	var/turf/T = get_turf(hit_atom)
@@ -85,15 +91,15 @@
 			for(var/mob/living/carbon/M in ohearers(6, T))
 				if(M.get_ear_protection() >= 2)
 					continue
-				M.status_set(EFFECT_SLEEPING, 0)
-				M.status_adjust(EFFECT_STUTTERING, 20)
-				M.status_adjust(EFFECT_DEAFENED, 30)
+				M.status_set(STAT_SLEEPING, 0)
+				M.status_adjust(STAT_STUTTERING, 20)
+				M.status_adjust(STAT_DEAFENED, 30)
 				M.deaf_loop.start() // Ear Ringing/Deafness
-				M.status_at_least(EFFECT_WEAKENED, 3)
+				M.status_at_least(STAT_WEAKENED, 3)
 				if(prob(30))
-					M.status_at_least(EFFECT_STUNNED, 10)
-					M.status_at_least(EFFECT_PARALYZED, 4)
-					M.status_at_least(EFFECT_SLEEPING, 4)
+					M.status_at_least(STAT_STUNNED, 10)
+					M.status_at_least(STAT_PARALYZED, 4)
+					M.status_at_least(STAT_SLEEPING, 4)
 				else
-					M.status_adjust(EFFECT_JITTERY, 50)
+					M.status_adjust(STAT_JITTERY, 50)
 				to_chat(M, span_red(span_massive(span_bold("HONK"))))

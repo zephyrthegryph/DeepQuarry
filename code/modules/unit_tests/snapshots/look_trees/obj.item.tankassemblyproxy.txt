@@ -1,0 +1,5 @@
+/obj/item/tankassemblyproxy icon: icons/obj/weapons.dmi
+/obj/item/tankassemblyproxy state: 
+/obj/item/tankassemblyproxy dir: 2
+/obj/item/tankassemblyproxy overlay: icons/obj/weapons.dmi::8:#000000
+

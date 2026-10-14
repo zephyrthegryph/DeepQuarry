@@ -10,7 +10,6 @@
 /datum/rule/dq_test_hold
 	name = "test hold"
 	test_only = TRUE
-	condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(400)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SET_STATE("w_class", ITEMSIZE_HUGE))
 	hold_for = 2 SECONDS
@@ -18,21 +17,18 @@
 /datum/rule/dq_test_band
 	name = "test band"
 	test_only = TRUE
-	condition = list(REQ_BETWEEN(PRED_TARGET, PROP_TEMPERATURE, KELVIN(300), KELVIN(350)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SET_STATE("w_class", ITEMSIZE_TINY))
 
 /datum/rule/dq_test_static_only
 	name = "test static only"
 	test_only = TRUE
-	condition = list(REQ_ABOVE(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(1)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
 /datum/rule/dq_test_actor
 	name = "test actor"
 	test_only = TRUE
-	condition = list(REQ_ABOVE(PRED_ACTOR, PROP_TEMPERATURE, KELVIN(300)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
@@ -40,7 +36,7 @@
 /proc/dq_rx_flush()
 	vg_world_run_steps(1)
 	native_system().drain()
-	om_test_ticks(2)
+	dq_test_ticks(2)
 
 /// Flushes until `rule` has fired `count` times on `thing`, for at most
 /// `max_flushes` (a key wake can take a few reactor ticks under load).
@@ -49,10 +45,17 @@
 		dq_rx_flush()
 		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count)
 			return
+	// A DM key's wake is a one-tick kernel timer (key_published()); a loaded run (overrun ticks after a long test list) can hold it for
+	// many ticks, so a positive assertion waits for that delivery itself (dq_test_wait_for()'s rule), not a fixed number of flushes.
+	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
+	for(var/attempt in 1 to 300)
+		if(QDELETED(thing) || dq_rule_fire_count(thing, rule) >= count || !binding?.key_wake_pending)
+			return
+		sleep(world.tick_lag)
 
 /// Let `ds` deciseconds of reactor time pass, then dispatch. This has to be a
 /// real sleep: the reactor's clock is world.time, fed by the scheduler's
-/// vg_world_step(tick) (world_watch.dm), and vg_world_run_steps() doesn't
+/// vg_world_step(tick) (world_watches.dm), and vg_world_run_steps() doesn't
 /// advance it, so rate models (a rule's hold_for) only move with real ticks.
 /proc/dq_rx_test_advance(ds)
 	sleep(ds)
@@ -145,7 +148,7 @@
 	)
 
 /datum/unit_test/dq_rule_thresholds/Run()
-	GLOB.dq_rule_recording = TRUE
+	set_global("dq_rule_recording", TRUE)
 	GLOB.dq_rule_fire_log.Cut()
 	var/declared = 0
 	var/passed = 0
@@ -165,7 +168,7 @@
 						passed++
 		// Per-rule cost, to see which rules dominate this sweep.
 		log_test("RULE THRESHOLDS: [rule_path]: [rule_cases] case(s) in [(REALTIMEOFDAY - rule_started) / 10]s")
-	GLOB.dq_rule_recording = FALSE
+	set_global("dq_rule_recording", FALSE)
 	TEST_NOTICE(src, "[passed]/[declared] generated rule threshold tests passed")
 	TEST_ASSERT(declared > 0, "some thresholds are declared")
 	TEST_ASSERT_EQUAL(passed, declared, "every declared threshold passes its generated test")
@@ -184,7 +187,7 @@
 		floor.extinguish()
 		if(floor.active_hotspot)
 			qdel(floor.active_hotspot)
-		floor.air?.set_temperature(T20C)
+		heat_set(floor.air, T20C, HEAT_SOURCE_OTHER)
 		thing = allocate(root, floor)
 	else
 		thing = allocate(root)
@@ -256,7 +259,7 @@
 		dq_rx_test_advance(rule.hold_for + 1 SECONDS)
 	if(dq_rule_fire_count(thing, rule) != 1)
 		var/datum/rule_binding/diag = dq_rule_binding_of(thing)
-		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] key=[diag?.key_id] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
+		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] keys=[diag?.key_subs ? json_encode(diag.key_subs) : "-"] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
 		// dq_rule_test_write() flushes deterministically itself now.
@@ -281,7 +284,7 @@
 /// which dq_rule_thresholds does constantly, since many rules share a root
 /// like /obj or /atom/movable.
 /proc/dq_rule_declaring_types(datum/rule/rule, root)
-	var/static/list/cache = list() // ALLOW(cache): test-only helper memo, never shipped
+	var/static/list/cache = list()
 	var/list/by_root = cache[rule.type]
 	if(!by_root)
 		by_root = list()
@@ -334,7 +337,7 @@
 	TEST_ASSERT(bare_binding, "a cooler bottle subscribes")
 	bare.dematerialize()
 	TEST_ASSERT(QDELETED(bare_binding), "dematerializing drops the subscriptions")
-	bare.material_template = null
+	bare.set_material_template(null)
 	TEST_ASSERT_NULL(dq_rules_on_materialize(bare, TRUE), "without a melting point there is nothing to watch")
 
 // ---- Time above threshold, bands, data transforms ----
@@ -342,7 +345,7 @@
 /datum/unit_test/dq_rule_hold_and_band
 
 /datum/unit_test/dq_rule_hold_and_band/Run()
-	GLOB.dq_rule_recording = TRUE
+	set_global("dq_rule_recording", TRUE)
 	var/datum/rule/hold = dq_rule_fixture(/datum/rule/dq_test_hold)
 	var/obj/item/dq_rule_test/item = allocate(/obj/item/dq_rule_test)
 	var/datum/rule_binding/binding = new(item, list(hold))
@@ -379,7 +382,7 @@
 	dq_rx_node_write(band_handle, DQ_RX_CH_TEMPERATURE, 320)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(banded, band), 1, "entering the band fires")
 	TEST_ASSERT_EQUAL(banded.w_class, ITEMSIZE_TINY, "band transform applied")
-	GLOB.dq_rule_recording = FALSE
+	set_global("dq_rule_recording", FALSE)
 
 // ---- Parity: paper ignition ----
 
@@ -391,7 +394,7 @@
 	var/datum/gas_mixture/saved = new
 	saved.copy_from(T.air)
 	T.air.set_moles(GAS_O2, 20)
-	T.air.set_temperature(T20C)
+	heat_set(T.air, T20C, HEAT_SOURCE_OTHER)
 	var/obj/item/paper/hot = allocate(/obj/item/paper, T)
 	var/ignition = PROPERTY(hot, PROP_IGNITION_POINT)
 	TEST_ASSERT(ignition > T20C, "paper has an ignition point")
@@ -480,3 +483,17 @@
 	. = 0
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		. += R.get_amount()
+
+// Native simulation condition factories.
+
+/datum/rule/dq_test_hold/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(400))
+
+/datum/rule/dq_test_band/rule_condition()
+	return cond_band(PROP_TEMPERATURE, KELVIN(300), KELVIN(350))
+
+/datum/rule/dq_test_static_only/rule_condition()
+	return cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GT, SIZE_CLASS(1))
+
+/datum/rule/dq_test_actor/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GT, KELVIN(300), subject = "actor")

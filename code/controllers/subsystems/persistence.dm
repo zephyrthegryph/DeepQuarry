@@ -3,7 +3,7 @@ SYSTEM_DEF(persistence)
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/mapping,
-		/datum/controller/subsystem/atoms,
+		/datum/system/atoms,
 		/datum/system/holomaps
 	)
 
@@ -11,7 +11,6 @@ SYSTEM_DEF(persistence)
 	var/list/persistence_datums = list()
 
 	/// Places our subsystem can spawn paintings (helps with art spawning differently across maps)
-	var/list/obj/structure/sign/painting/painting_frames = list()
 	var/list/all_paintings = list()
 	var/list/unpicked_paintings = list()
 

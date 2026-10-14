@@ -1,0 +1,28 @@
+human|none menu: Toggle (refused: It doesn't work without metal.)
+human|none click: Click: Toggle
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Toggle (refused: It doesn't work without metal.)
++3 click: Click: Toggle
+@obj.machinery ai|none
+@obj ghost|none
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Toggle auto-dismantling
+human|/obj/item/tool/crowbar click: Click: Toggle auto-dismantling
+human|/obj/item/tool/wrench menu: Choose pipe type
+human|/obj/item/tool/wrench click: Click: Choose pipe type
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+human|/obj/item/stack/material/steel menu: Load metal
+human|/obj/item/stack/material/steel click: Click: Load metal
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
+@obj human|/obj/item/storage/part_replacer
+human|/obj/item/pipe menu: Recycle pipe
+human|/obj/item/pipe click: Click: Recycle pipe
+human|/obj/item/stack/material menu: Load metal (refused: It only takes steel.)
+human|/obj/item/stack/material click: Click: Load metal
+keys: auto_dismantle, dismantle, drag_buckle, eject, load, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, pipe_type, recycle, robot_remote_blocked, silicon_hand, toggle

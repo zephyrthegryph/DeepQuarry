@@ -1,11 +1,23 @@
 // Cell rack PSU, similar to SMES, but uses power cells to store power.
 // Lacks detailed control of input/output values, and has generally much worse capacity.
+//
+// The rack is a power storage unit that keeps its charge in power cells instead of in Rust's counter, so it is declared on top of the SMES
+// (code/modules/power/smes.dm): the casing, the input terminals, the hatch and the part replacer are the SMES's; the rack takes away the SMES's
+// own window buttons, says what it opens instead (its own window), and adds the cells: an owned list, an op that takes one from a hand, the
+// window buttons that set its mode and eject a cell, and the frame that reads the cells back and balances them.
+//
+// What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, ...) read through machine_basics()'s one bridge
+// contribution, `mode` (a machine core field, written with set_mode()), RefreshParts() with the circuit board and its parts, and maintenance_flags.
+
 #define PSU_OFFLINE 0
 #define PSU_OUTPUT 1
 #define PSU_INPUT 2
 #define PSU_AUTO 3
 
 #define PSU_MAXCELLS 9 // Capped to 9 cells due to sprite limitation
+
+MSG_DEF_SELF(batteryrack/inserted, "You insert %I% into %T%.")
+MSG_DEF_SELF(batteryrack/full, "It has no empty slot for that.")
 
 /obj/machinery/power/smes/batteryrack
 	name = "power cell rack PSU"
@@ -17,42 +29,73 @@
 	output_attempt = FALSE
 	input_attempt = FALSE
 
-	var/max_transfer_rate = 0							// Maximal input/output rate. Determined by used capacitors when building the device.
-	mode = PSU_OFFLINE								// Current inputting/outputting mode
-	var/list/internal_cells					// Cells stored in this PSU
-	var/max_cells = 3									// Maximal amount of stored cells at once. Capped at 9.
-	var/previous_charge = 0								// Charge previous tick.
-	var/equalise = 0									// If true try to equalise charge between cells
-	var/icon_update = 0									// Timer in ticks for icon update.
-	var/ui_tick = 0
-	should_be_mapped = TRUE
+	/// Maximal input/output rate. Determined by used capacitors when building the device.
+	var/max_transfer_rate = 0
+	mode = PSU_OFFLINE // Current inputting/outputting mode
+	/// Cells stored in this PSU (owned: they go when the rack does).
+	var/list/internal_cells
+	/// Maximal amount of stored cells at once. Capped at 9.
+	var/max_cells = 3
+	/// If true try to equalise charge between cells.
+	var/equalise = FALSE
+	/// Flips every frame: the window's blink.
+	var/ui_tick = FALSE
+	/// The overlays the rack shows (comma separated icon states), refreshed when its cells or its charge change.
+	var/shown_overlays = ""
 	circuit = /obj/item/circuitboard/batteryrack
+
+TRACKED(/obj/machinery/power/smes/batteryrack, max_transfer_rate)
+TRACKED(/obj/machinery/power/smes/batteryrack, equalise)
+TRACKED(/obj/machinery/power/smes/batteryrack, ui_tick)
+
+CAPABILITIES(/obj/machinery/power/smes/batteryrack)
+	default_parts()
+	without("tryinput")
+	without("tryoutput")
+	without("input")
+	without("output")
+	without("ui_open")
+	owns_many(nameof(internal_cells), /obj/item/cell)
+	part_replacement()
+	interface("Batteryrack")
+	extend("ui_open", ungated()) // the window opens on an inoperable rack too; its buttons stay behind the operable gate
+	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
+	op("disable", ui_act(), then(PROC_REF(ui_disable)))
+	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable)))
+	op("equaliseon", ui_act(), sets(nameof(equalise), TRUE))
+	op("equaliseoff", ui_act(), sets(nameof(equalise), FALSE))
+	op("ejectcell", ui_act(arg("ejectcell")), then(PROC_REF(ui_eject_cell)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(power_frame)))
 
 /obj/machinery/power/smes/batteryrack/Initialize(mapload)
 	. = ..()
-	default_apply_parts()
+	sync_look()
 
 /obj/machinery/power/smes/batteryrack/RefreshParts()
 	var/capacitor_efficiency = get_part_rating(/obj/item/stock_parts/capacitor)
 	var/maxcells = get_part_rating(/obj/item/stock_parts/matter_bin) * 3
 
-	max_transfer_rate = 10000 * capacitor_efficiency // 30kw - 90kw depending on used capacitors.
-	max_cells = min(PSU_MAXCELLS, maxcells)
-	input_level = max_transfer_rate
-	output_level = max_transfer_rate
+	set_max_transfer_rate(10000 * capacitor_efficiency) // 30kw - 90kw depending on used capacitors.
+	set_max_cells(min(PSU_MAXCELLS, maxcells))
+	set_input_level(max_transfer_rate)
+	set_output_level(max_transfer_rate)
 
+/// A rack keeps its charge in cells: it works without an input terminal.
+/obj/machinery/power/smes/batteryrack/needs_terminals()
+	return FALSE
 
-/obj/machinery/power/smes/batteryrack/check_terminals()
-	return TRUE // we don't necessarily need terminals
+// ---- what it shows ----
 
-APPEARANCE_NONE(/obj/machinery/power/smes/batteryrack)
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/smes/batteryrack/appearance_overlays()
+/// A cell rack draws its own cells and charge gauge (shown_overlays), not the SMES's status overlays.
+/obj/machinery/power/smes/batteryrack/draw_status(datum/look/look)
+	for(var/key in splittext(shown_overlays, ","))
+		look.overlay(key)
+
+/// The icon states of the rack now: the charge gauge, and a layer per cell (marked when it is full or empty).
+/obj/machinery/power/smes/batteryrack/proc/rack_overlays()
 	. = list()
-	icon_update = 0
-
 	var/cellcount = 0
-	var/charge_level = between(0, round(Percentage() / 12), 7)
+	var/charge_level = clamp(round(Percentage() / 12), 0, 7)
 
 	. += "charge[charge_level]"
 
@@ -64,6 +107,69 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 		else if(!C.charge)
 			. += "cell[cellcount]e"
 
+/// The look follows the cells and the charge: refreshed when either changes.
+/obj/machinery/power/smes/batteryrack/proc/sync_look()
+	set_shown_overlays(jointext(rack_overlays(), ","))
+
+// ---- the window ----
+
+/obj/machinery/power/smes/batteryrack/ui_data(datum/act/eval/A)
+	var/list/cells = list()
+	var/cell_index = 0
+	for(var/obj/item/cell/C in internal_cells)
+		var/list/cell[0]
+		cell["slot"] = cell_index + 1
+		cell["used"] = 1
+		cell["percentage"] = round(C.percent(), 0.01)
+		cell["name"] = C.name
+		cell["id"] = C.c_uid
+		cell_index++
+		cells += list(cell)
+	while(cell_index < PSU_MAXCELLS)
+		var/list/cell[0]
+		cell["slot"] = cell_index + 1
+		cell["used"] = 0
+		cell_index++
+		cells += list(cell)
+	return list(
+		"mode" = mode,
+		"transfer_max" = max_transfer_rate,
+		"output_load" = 0,
+		"input_load" = 0,
+		"equalise" = equalise,
+		"blink_tick" = ui_tick,
+		"cells_max" = max_cells,
+		"cells_cur" = length(internal_cells),
+		"cells_list" = cells)
+
+/// The disable button: input and output both off.
+/obj/machinery/power/smes/batteryrack/proc/ui_disable(datum/act/op/A)
+	update_io(0)
+	return OP_OK
+
+/// The enable button: the mode is the number sent, clamped to the three modes.
+/obj/machinery/power/smes/batteryrack/proc/ui_enable(datum/act/op/A, enable)
+	update_io(clamp(enable, 1, 3))
+	return OP_OK
+
+/// The eject button: the cell with that id comes out onto the rack's tile.
+/obj/machinery/power/smes/batteryrack/proc/ui_eject_cell(datum/act/op/A, ejectcell)
+	var/obj/item/cell/C
+	for(var/obj/item/cell/CL in internal_cells)
+		if(CL.c_uid == ejectcell)
+			C = CL
+			break
+
+	if(!istype(C))
+		return OP_OK
+
+	C.forceMove(get_turf(src))
+	own_take_member(src, nameof(/obj/machinery/power/smes/batteryrack::internal_cells), C)
+	RefreshParts()
+	update_maxcharge()
+	sync_look()
+	return OP_OK
+
 // Recalculate maxcharge and similar variables.
 /obj/machinery/power/smes/batteryrack/proc/update_maxcharge()
 	var/newmaxcharge = 0
@@ -72,25 +178,25 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 
 	newmaxcharge /= CELLRATE		// Convert to Joules
 	newmaxcharge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
-	capacity = newmaxcharge
-	set_stored_charge(between(0, stored_charge(), newmaxcharge))
+	set_capacity(newmaxcharge)
+	set_stored_charge(clamp(stored_charge(), 0, newmaxcharge))
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
 	set_mode(newmode)
 	switch(mode)
 		if(PSU_OFFLINE)
-			input_attempt = 0
-			output_attempt = 0
+			set_input_attempt(0)
+			set_output_attempt(0)
 		if(PSU_INPUT)
-			input_attempt = 1
-			output_attempt = 0
+			set_input_attempt(1)
+			set_output_attempt(0)
 		if(PSU_OUTPUT)
-			input_attempt = 0
-			output_attempt = 1
+			set_input_attempt(0)
+			set_output_attempt(1)
 		if(PSU_AUTO)
-			input_attempt = 1
-			output_attempt = 1
+			set_input_attempt(1)
+			set_output_attempt(1)
 
 // Store charge in the power cells, instead of using the charge var. Amount is in joules.
 /obj/machinery/power/smes/batteryrack/add_charge(amount)
@@ -152,18 +258,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	if(!own_add(src, nameof(src.internal_cells), C, user = user, into = TRUE))
+	if(!move_into(src, nameof(src.internal_cells), C, user))
 		return 0
 	RefreshParts()
 	update_maxcharge()
-	update_icon()
+	sync_look()
 	return 1
 
-/obj/machinery/power/smes/batteryrack/power_settled()
-	return FALSE
+/// There is a free slot for another cell.
+/obj/machinery/power/smes/batteryrack/proc/cell_room(datum/act/A)
+	return (length(internal_cells) < max_cells) ? null : MSG(batteryrack/full)
 
-/// A rack re-reads its cells and balances them every frame, so it never idles.
-/obj/machinery/power/smes/batteryrack/power_step()
+/// The cell in hand goes into the rack.
+/obj/machinery/power/smes/batteryrack/proc/cell_inserted(datum/act/op/A)
+	return insert_cell(A.held, A.actor) ? OP_OK : OP_REFUSED
+
+/// A rack re-reads its cells and balances them every frame (it never idles), then shows what they look like.
+/obj/machinery/power/smes/batteryrack/proc/power_frame(datum/act/timer/A)
+	power_step()
+
+/obj/machinery/power/smes/batteryrack/proc/power_step()
 	var/cell_charge = 0
 	for(var/obj/item/cell/C in internal_cells)
 		cell_charge += C.charge
@@ -171,16 +285,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	cell_charge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 	set_stored_charge(cell_charge)
 
-	..()
-	. = null
-	ui_tick = !ui_tick
-	icon_update++
+	set_ui_tick(!ui_tick)
+	balance_cells()
+	sync_look()
 
-	// Don't update icon too much, prevents unnecessary processing.
-	if(icon_update >= 10)
-		update_icon()
-	// Try to balance charge between stored cells. Capped at max_transfer_rate per tick.
-	// Take power from most charged cell, and give it to least charged cell.
+/// Try to balance charge between stored cells. Capped at max_transfer_rate per tick.
+/// Take power from most charged cell, and give it to least charged cell.
+/obj/machinery/power/smes/batteryrack/proc/balance_cells()
 	if(equalise)
 		var/obj/item/cell/least = get_least_charged_cell()
 		var/obj/item/cell/most = get_most_charged_cell()
@@ -194,7 +305,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 			celldiff = (least.maxcharge / 100) * percentdiff
 		else
 			celldiff = (most.maxcharge / 100) * percentdiff
-		celldiff = between(0, celldiff, max_transfer_rate * CELLRATE)
+		celldiff = clamp(celldiff, 0, max_transfer_rate * CELLRATE)
 		// Ensure we don't transfer more energy than the most charged cell has, and that the least charged cell can input.
 		celldiff = min(min(celldiff, most.charge), least.maxcharge - least.charge)
 		least.give(most.use(celldiff))
@@ -205,122 +316,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 		own_take_member(src, nameof(internal_cells), C)
 	return ..()
 
-/obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/batteryrack_insert_cell,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
-
-/**
- * Old attackby: cell handling ran, then the proc always fell through to ..()
- * (base attackby / signal) and default_part_replacement regardless of the
- * outcome. consumes_input is FALSE / the effect declines so the entry moves
- * on to the declared part_replacement candidate and then the base, matching.
- */
-/datum/interaction/machine_item/batteryrack_insert_cell
-	id = "batteryrack_insert_cell"
-	name = "Insert cell"
-	held_type = /obj/item/cell
-	consumes_input = FALSE
-	effect = /obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell
-
-/obj/machinery/power/smes/batteryrack/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
-	if(insert_cell(W, user))
-		to_chat(user, span_filter_notice("You insert \the [W] into \the [src]."))
-	else
-		to_chat(user, span_filter_notice("\The [src] has no empty slot for \the [W]"))
-	return FALSE
-
-/obj/machinery/power/smes/batteryrack/inputting()
+/// The rack's input and output follow its mode (set from its window), never the SMES's own toggles: these do nothing, whoever asks.
+/obj/machinery/power/smes/batteryrack/set_input_on(on)
 	return
 
-/obj/machinery/power/smes/batteryrack/outputting()
+/obj/machinery/power/smes/batteryrack/set_output_on(on)
 	return
-
-DECLARE_UI(/obj/machinery/power/smes/batteryrack, "Batteryrack")
-
-UI_DATA_REPLACE(/obj/machinery/power/smes/batteryrack, "transfer_max=max_transfer_rate:num", "equalise:num", "blink_tick=ui_tick:num", "cells_max=max_cells:num", "merge:ui_data_obj_machinery_power_smes_batteryrack{mode:num,output_load:num,input_load:num,cells_cur:num,cells_list:list}")
-
-/// The computed part of /obj/machinery/power/smes/batteryrack's window data (declared on its UI_DATA row).
-/obj/machinery/power/smes/batteryrack/proc/ui_data_obj_machinery_power_smes_batteryrack(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	// DO NOT CALL PARENT.
-	var/list/data = list()
-
-	data["mode"] = mode
-	data["transfer_max"] = max_transfer_rate
-	data["output_load"] = 0
-	data["input_load"] = 0
-	data["equalise"] = equalise
-	data["blink_tick"] = ui_tick
-	data["cells_max"] = max_cells
-	data["cells_cur"] = length(internal_cells)
-	var/list/cells = list()
-	var/cell_index = 0
-	for(var/obj/item/cell/C in internal_cells)
-		var/list/cell[0]
-		cell["slot"] = cell_index + 1
-		cell["used"] = 1
-		cell["percentage"] = round(C.percent(), 0.01)
-		cell["name"] = C.name
-		cell["id"] = C.c_uid
-		cell_index++
-		cells += list(cell)
-	while(cell_index < PSU_MAXCELLS)
-		var/list/cell[0]
-		cell["slot"] = cell_index + 1
-		cell["used"] = 0
-		cell_index++
-		cells += list(cell)
-	data["cells_list"] = cells
-
-	return data
-
-/obj/machinery/power/smes/batteryrack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!(action in list("disable", "enable", "equaliseon", "equaliseoff", "ejectcell")))
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/machinery/power/smes/batteryrack, "disable", ui_act_disable)
-UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_disable)
-	update_io(0)
-	return TRUE
-
-UI_ACT(/obj/machinery/power/smes/batteryrack, "enable", ui_act_enable, UI_ARG_NUM("enable"))
-UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_enable)
-	update_io(between(1, params["enable"], 3))
-	return TRUE
-
-UI_ACT(/obj/machinery/power/smes/batteryrack, "equaliseon", ui_act_equaliseon)
-UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_equaliseon)
-	equalise = 1
-	return TRUE
-
-UI_ACT(/obj/machinery/power/smes/batteryrack, "equaliseoff", ui_act_equaliseoff)
-UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_equaliseoff)
-	equalise = 0
-	return TRUE
-
-UI_ACT(/obj/machinery/power/smes/batteryrack, "ejectcell", ui_act_ejectcell, UI_ARG_NUM("ejectcell"))
-UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_ejectcell)
-	var/obj/item/cell/C
-	for(var/obj/item/cell/CL in internal_cells)
-		if(CL.c_uid == params["ejectcell"])
-			C = CL
-			break
-
-	if(!istype(C))
-		return TRUE
-
-	C.forceMove(get_turf(src))
-	own_take_member(src, nameof(/obj/machinery/power/smes/batteryrack::internal_cells), C)
-	update_icon()
-	RefreshParts()
-	update_maxcharge()
-	return TRUE
 
 #undef PSU_OFFLINE
 #undef PSU_OUTPUT
@@ -341,10 +342,16 @@ UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_ejectcell)
 		var/obj/item/cell/newcell = new cell_type(src.loc)
 		insert_cell(newcell)
 
-/obj/item/module/power_control/multitool_act(mob/user, obj/item/I)
-	use_tool(user, I, src, delay = 5 SECONDS, start_self = "You begin tweaking the power control circuits to support a power cell rack.", receiver = src, on_done = PROC_REF(multitool_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+CAPABILITIES(/obj/item/module/power_control)
+	op("use_multitool", tool(TOOL_MULTITOOL), starts(PROC_REF(multitool_started)), begins(PROC_REF(multitool_begins)), wait(5 SECONDS), then(PROC_REF(multitool_act_tool_done)))
 
-/obj/item/module/power_control/proc/multitool_act_tool_done(mob/user)
+/obj/item/module/power_control/proc/multitool_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/item/module/power_control/proc/multitool_begins(datum/act/op/A)
+	return msg_text("You begin tweaking the power control circuits to support a power cell rack.", null)
+
+/obj/item/module/power_control/proc/multitool_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/newcircuit = replace_with(src, /obj/item/circuitboard/batteryrack)
 	user.put_in_hands(newcircuit)

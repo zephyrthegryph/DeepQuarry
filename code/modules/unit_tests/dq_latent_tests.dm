@@ -44,12 +44,12 @@
 	var/obj/structure/closet/dq_latent_test/closet = allocate(/obj/structure/closet/dq_latent_test, test_floor())
 	// Declared: only the type that can't be latent exists, and nothing is resolved.
 	TEST_ASSERT_EQUAL(length(closet.contents), 1, "only the non-latent item should be real")
-	TEST_ASSERT(isnull(closet.ledger), "an untouched closet should have no ledger")
+	TEST_ASSERT(isnull(closet.containment_ledger()), "an untouched closet should have no ledger")
 	TEST_ASSERT(closet.has_latent(), "the closet should hold declared contents")
 	// Resolved on the first exact question, still with no atoms.
 	TEST_ASSERT_EQUAL(closet.latent_count(), 3, "three latent things")
 	TEST_ASSERT_EQUAL(length(closet.contents), 1, "resolving creates nothing")
-	var/datum/ledger/L = closet.ledger
+	var/datum/ledger/L = closet.containment_ledger()
 	var/list/problems = L.verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	var/expected_used = 0
@@ -85,12 +85,12 @@
 	var/old_id = pens.entry_id()
 	var/list/made = closet.latent_materialize(pens, 5)
 	TEST_ASSERT_EQUAL(length(made), 2, "only two pens exist")
-	TEST_ASSERT(isnull(closet.ledger.latent_find(old_id)), "the old id is stale")
+	TEST_ASSERT(isnull(closet.containment_ledger().latent_find(old_id)), "the old id is stale")
 	TEST_ASSERT_EQUAL(length(closet.latent_materialize(pens, 1)), 0, "a spent entry yields nothing")
 	for(var/obj/item/pen/P as anything in made)
 		TEST_ASSERT_EQUAL(P.loc, closet, "materialized into the holder")
-		TEST_ASSERT_EQUAL(closet.ledger.entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
-	var/list/problems = closet.ledger.verify()
+		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
+	var/list/problems = closet.containment_ledger().verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	// The closet spills its contents (latent entries included) when it is deleted.
 	var/turf/T = closet.loc
@@ -167,7 +167,7 @@
 /datum/unit_test/dq_latent_slot_round_trip/Run()
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box)
 	var/obj/item/dq_containment_test/wood/sharp = allocate(/obj/item/dq_containment_test/wood, test_floor())
-	TEST_ASSERT(sharp.move_into(box, "main"), "into the main slot")
+	TEST_ASSERT(move_into(box, "main", sharp), "into the main slot")
 	allocate(/obj/item/dq_containment_test, box) // default slot: pocket
 	var/list/errors = list()
 	var/list/blob = state_serialize(box, STATE_FULL, errors)
@@ -207,7 +207,7 @@
 	// Nested in another latent holder, spilled entries stay data.
 	var/obj/structure/closet/outer = new(T)
 	var/obj/structure/closet/dq_latent_test/inner = new(T)
-	TEST_ASSERT(inner.move_into(outer), "a closet fits in a closet")
+	TEST_ASSERT(move_into(outer, null, inner), "a closet fits in a closet")
 	var/real_items = length(outer.contents)
 	qdel(inner)
 	TEST_ASSERT_EQUAL(outer.latent_count(), 3, "entries moved into the outer closet as data")
@@ -298,7 +298,7 @@
 				if(state_canonical(list("l" = blob[STATE_KEY_LATENT])) != state_canonical(list("l" = copy_blob?[STATE_KEY_LATENT])))
 					failures += "[path]: latent entries changed in the round trip"
 				qdel(copy)
-		var/list/problems = closet.ledger?.verify()
+		var/list/problems = closet.containment_ledger()?.verify()
 		if(length(problems))
 			failures += "[path]: [jointext(problems, "; ")]"
 		closet.latent_materialize_all()
@@ -405,7 +405,7 @@
 	for(var/atom/movable/thing as anything in contents_of(L))
 		TEST_ASSERT(!istype(thing, /obj/item/light) && !istype(thing, /obj/item/cell), "no parts in contents: [thing.type]")
 	var/latent_charge = L.latent_cell_charge
-	L.status = LIGHT_BURNED
+	L.set_status(LIGHT_BURNED)
 	L.switchcount = 7
 	var/obj/item/light/B = L.bulb()
 	TEST_ASSERT(istype(B, L.light_type), "bulb() makes the fitted type")
@@ -430,10 +430,10 @@
 	if(!L.has_cell())
 		return
 	L.latent_cell_charge = 100
-	L.status = LIGHT_OK
+	L.set_status(LIGHT_OK)
 	TEST_ASSERT(L.has_emergency_power(0.2), "a charged latent cell gives emergency power")
 	TEST_ASSERT(isnull(L.cell), "checking doesn't materialize")
-	L.stat_add(NOPOWER)
+	L.set_grid_power(FALSE)
 	if(L.turned_off())
 		return
 	L.use_emergency_power(1)
@@ -516,7 +516,7 @@
 	TEST_ASSERT(bottle.has_latent(), "declared on the floor")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/chem_master/master = allocate(/obj/machinery/chem_master, T)
-	master.attackby(bottle, H)
+	perform_op(H, master, "load_pill_bottle", bottle, origin = ORIGIN_SYSTEM)
 	TEST_ASSERT_EQUAL(master.loaded_pill_bottle, bottle, "the bottle loaded")
 	TEST_ASSERT(!bottle.has_latent(), "nothing latent once loaded")
 	TEST_ASSERT_EQUAL(length(bottle.contents), 14, "its pills are real")

@@ -1,53 +1,45 @@
 /mob/living/carbon/Initialize(mapload)
 	. = ..()
-	//setup reagent holders
-	// The bloodstream is the carbon's owned `reagents`; `bloodstr` is a relation alias of it.
-	own_set(src, nameof(reagents), new/datum/reagents/metabolism/bloodstream(500, src)) // ALLOW(decl): holder takes constructor args
+	// The bloodstream is the carbon's owned `reagents` (its reagents() in CAPABILITIES); `bloodstr` is a relation alias of it.
 	rel_set(src, nameof(bloodstr), reagents)
-	own_set(src, nameof(ingested), new/datum/reagents/metabolism/ingested(500, src)) // ALLOW(decl): holder takes constructor args
-	own_set(src, nameof(touching), new/datum/reagents/metabolism/touch(500, src)) // ALLOW(decl): holder takes constructor args
-	if (!default_language && species_language)
-		default_language = GLOB.all_languages[species_language]
 
-	enable_footsteps(custom_footstep, 1, -6)
-
-	own_set(src, nameof(cozyloop), new /datum/looping_sound/mob/cozyloop(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+/// Its species' language is its default when it has none (derives(), once at init).
+/mob/living/carbon/proc/species_default_language(target)
+	if(!default_language && species_language)
+		return GLOB.all_languages[species_language]
+	return default_language
 
 /// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
-/datum/om/stage/life/germs
-	order = LIFE_PHASE_TAIL + 10
-	name = "germs"
-	wake_on = CHANGE_MOB_HEALTH
-	of = /mob/living/carbon
-
 /mob/living/carbon
 	fire_heats_body = TRUE
-	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
+	// footsteps (footstep() in its CAPABILITIES): a shoe's, the custom_footstep a carbon starts with
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
+	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at
 
-/datum/om/stage/life/germs/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
+/mob/living/carbon/proc/life_germs(datum/seq_frame/life/F)
 	// A 30% chance per Life cycle, charged for the biological time since the last roll (the
 	// stage idles and comes back on its rewake), so stasis stops the creep too.
-	var/now = om_clock_now(self, CLOCK_BIO)
+	var/now = clock_now(src, CLOCK_BIO)
 	// Charged for elapsed biological time only: a roll with no bio time behind it (a rewake or
 	// frame while the clock is stopped by stasis) charges nothing, so re-runs cannot add creep.
-	var/cycles = !isnull(self.germs_rolled_at) ? clamp((now - self.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
-	self.germs_rolled_at = now
-	if(self.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
+	var/cycles = !isnull(src.germs_rolled_at) ? clamp((now - src.germs_rolled_at) / LIFE_CYCLE, 0, GERM_CATCHUP_CYCLES) : 1
+	src.germs_rolled_at = now
+	if(src.germ_level >= GERM_LEVEL_AMBIENT)	//if you're just standing there, you shouldn't get more germs beyond an ambient level
 		return
 	var/expected = cycles * 0.3
 	var/gain = round(expected) + (prob((expected - round(expected)) * 100) ? 1 : 0)
 	if(gain)
-		self.germ_level = min(GERM_LEVEL_AMBIENT, self.germ_level + gain)
+		src.germ_level = min(GERM_LEVEL_AMBIENT, src.germ_level + gain)
 
 /// Lazy: germs creep up on the rewake; washing lowers them, and the next roll resumes the creep.
-/datum/om/stage/life/germs/idle(mob/living/carbon/self)
-	return TRUE
 
-/datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
-	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
+/mob/living/carbon/proc/life_germs_rewake()
+	return src.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
 
 /mob/living/carbon/rejuvenate()
@@ -63,7 +55,7 @@
 		if(src.m_intent == I_RUN)
 			adjust_nutrition(-DEFAULT_HUNGER_FACTOR / 10)
 
-	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.bodytemperature <= 360)
+	if((src.has_mutation(FAT)) && src.m_intent == I_RUN && src.body_temperature() <= 360)
 		src.adjust_bodytemperature(2)
 
 	// Moving around increases germ_level faster
@@ -104,12 +96,11 @@
 //the species' emp_sensitivity var needs to be greater than 0 for this to proc, and it defaults to 0 - shouldn't stack with prosthetics/fbps in most cases
 //higher sensitivity values incur additional effects, starting with confusion/blinding/knockdown and ending with increasing amounts of damage
 //the degree of damage and duration of effects can be tweaked up or down based on the species emp_dmg_mod and emp_stun_mod vars (default 1) on top of tuning the random ranges
-DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
-
-/mob/living/carbon/proc/species_emp_effects(datum/damage_packet/packet)
+/mob/living/carbon/proc/species_emp_effects(datum/act/A)
 	if(!species)
 		return
-	var/severity = packet.severity
+	var/datum/notice/hit/emp/N = A
+	var/severity = N.packet.severity
 	//pregen our stunning stuff, had to do this seperately or else byond complained. remember that severity falls off with distance based on the source, so we don't need to do any extra distance calcs here.
 	var/agony_str = ((rand(4,6)*15)-(15*severity))*species.emp_stun_mod //big ouchies at high severity, causes 0-75 halloss/agony; shotgun beanbags and revolver rubbers do 60
 	var/deafen_dur = (rand(9,16)-severity)*species.emp_stun_mod //5-15 deafen, on par with a flashbang
@@ -136,19 +127,19 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 		if(species.emp_sensitivity & EMP_BLIND)
 			if(blind_dur >= 1) //don't flash them unless they actually roll a positive blind duration
 				src.flash_eyes(3)	//3 allows it to bypass any tier of eye protection, necessary or else sec sunglasses/etc. protect you from this
-			status_at_least(EFFECT_BLINDED, max(0,blind_dur))
+			status_at_least(STAT_BLINDED, max(0,blind_dur))
 		if(species.emp_sensitivity & EMP_DEAFEN)
 			src.set_ear_damage(src.ear_damage + (rand(0,deafen_dur))) //this will heal pretty quickly, but spamming them at someone could cause serious damage
-			src.status_at_least(EFFECT_DEAFENED, deafen_dur)
+			src.status_at_least(STAT_DEAFENED, deafen_dur)
 			src.deaf_loop.start() // Ear Ringing/Deafness
 		if(species.emp_sensitivity & EMP_CONFUSE)
 			if(confuse_dur >= 1)
 				to_chat(src, span_danger("Oh god, everything's spinning!"))
-			status_at_least(EFFECT_CONFUSED, max(0,confuse_dur))
+			status_at_least(STAT_CONFUSED, max(0,confuse_dur))
 		if(species.emp_sensitivity & EMP_WEAKEN)
 			if(weaken_dur >= 1)
 				to_chat(src, span_danger("Your limbs go slack!"))
-			status_at_least(EFFECT_WEAKENED, max(0,weaken_dur))
+			status_at_least(STAT_WEAKENED, max(0,weaken_dur))
 		//physical damage block, deals (minor-4) 5-15, 10-20, 15-25, 20-30 (extreme-1) of *each* type
 		if(species.emp_sensitivity & EMP_BRUTE_DMG)
 			injure(INJURY_BLUNT, rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod)
@@ -160,7 +151,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 			add_oxygen_debt(rand(25-(severity*5),35-(severity*5)) * species.emp_dmg_mod, "EMP")
 
 /mob/living/carbon/electrocute_act(shock_damage, obj/source, siemens_coeff = 1.0, def_zone = null, stun = 1)
-	if(om_has(src, EFFECT_GODMODE))
+	if(in_godmode(src))
 		return 0
 	if(def_zone == BP_L_HAND || def_zone == BP_R_HAND) //Diona (And any other potential plant people) hands don't get shocked.
 		if(species.flags & IS_PLANT)
@@ -187,20 +178,20 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 	if(stun)
 		switch(shock_damage)
 			if(16 to 20)
-				status_at_least(EFFECT_STUNNED, 2)
+				status_at_least(STAT_STUNNED, 2)
 			if(21 to 25)
-				status_at_least(EFFECT_WEAKENED, 2)
+				status_at_least(STAT_WEAKENED, 2)
 			if(26 to 30)
-				status_at_least(EFFECT_WEAKENED, 5)
+				status_at_least(STAT_WEAKENED, 5)
 			if(31 to INFINITY)
-				status_at_least(EFFECT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
+				status_at_least(STAT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
 
 	fx_sparks(loc, 5)
 
 	return shock_damage
 
 /mob/living/carbon/proc/help_shake_act(mob/living/carbon/M)
-	if (!is_critical() || on_fire)
+	if (!is_critical() || stat_value(src, STAT_ON_FIRE))
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
 			act_message(src, null, MSG_SELF(span_notice("You check yourself for injuries.")), \
@@ -255,15 +246,13 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 
 			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
-		else if (on_fire)
+		else if (stat_value(src, STAT_ON_FIRE))
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-			if (M.on_fire)
+			if (stat_value(M, STAT_ON_FIRE))
 				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
 					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
-				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames! Hot!")), \
-					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames!")))
-				om_task_timed(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
+				perform_op(M, src, "pat_out_flames", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src
@@ -276,10 +265,10 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 			if(show_ssd && !client && !teleop)
 				act_message(M, src, MSG_SELF(span_notice("You shake %T%, but [p_they()] [p_do()] not respond... Maybe [H.p_theyre()] S.S.D?")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
-			else if(lying || src.has_status(EFFECT_SLEEPING))
-				status_adjust(EFFECT_SLEEPING, -5)
-				if(!src.has_status(EFFECT_SLEEPING))
-					src.resting = 0
+			else if(lying || src.has_status(STAT_SLEEPING))
+				status_adjust(STAT_SLEEPING, -5)
+				if(!src.has_status(STAT_SLEEPING))
+					set_resting(0)
 				act_message(M, src, MSG_SELF(span_notice("You shake %T% trying to wake [H.p_them()] up!")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else
@@ -287,40 +276,43 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 				if(M.resting == 1) //Are they resting on the ground?
 					act_message(M, src, MSG_SELF(span_notice("You grip onto %T% and pull yourself up off the ground!")), \
 						MSG_OTHERS(span_notice("%U% grabs onto %T% and pulls %THEMSELVES% up")))
-					if(M.fire_stacks >= (src.fire_stacks + 3)) //Fire checks.
+					if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3)) //Fire checks.
 						src.adjust_fire_stacks(1)
 						M.adjust_fire_stacks(-1)
-					if(M.on_fire)
+					if(stat_value(M, STAT_ON_FIRE))
 						src.ignite_mob()
-					M.resting = 0 //Hoist yourself up up off the ground. No para/stunned/weakened removal.
+					M.set_resting(0) //Hoist yourself up up off the ground. No para/stunned/weakened removal.
 					update_canmove()
 				else if(istype(hugger))
 					hugger.species.hug(hugger,src)
 				else
 					act_message(M, src, MSG_SELF(span_notice("You hug %T% to make [H.p_them()] feel better!")), \
 						MSG_OTHERS(span_notice("%U% hugs %T% to make [H.p_them()] feel better!")))
-				if(M.fire_stacks >= (src.fire_stacks + 3))
+				if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3))
 					src.adjust_fire_stacks(1)
 					M.adjust_fire_stacks(-1)
-				if(M.on_fire)
+				if(stat_value(M, STAT_ON_FIRE))
 					src.ignite_mob()
-			status_adjust(EFFECT_PARALYZED, -3)
-			status_adjust(EFFECT_STUNNED, -3)
-			status_adjust(EFFECT_WEAKENED, -3)
+			status_adjust(STAT_PARALYZED, -3)
+			status_adjust(STAT_STUNNED, -3)
+			status_adjust(STAT_WEAKENED, -3)
 
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
-/mob/living/carbon/proc/help_shake_act_carbon_done(mob/living/carbon/M)
+MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), span_warning("%U% tries to pat out %T%'s flames!"))
+
+/mob/living/carbon/proc/help_shake_act_carbon_done(datum/act/op/A)
+	var/mob/living/carbon/M = A.actor
 	src.adjust_fire_stacks(-0.5)
-	if (prob(10) && (M.fire_stacks <= 0))
+	if (prob(10) && (fire_stacks_of(M) <= 0))
 		M.adjust_fire_stacks(1)
 	M.ignite_mob()
-	if (M.on_fire)
+	if (stat_value(M, STAT_ON_FIRE))
 		act_message(M, src, MSG_SELF(span_danger("The fire spreads to you as well!")), \
 			MSG_OTHERS(span_danger("The fire spreads from %T% to %U%!")))
 	else
 		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
-		if (src.fire_stacks <= 0)
+		if (fire_stacks_of(src) <= 0)
 			act_message(M, src, MSG_SELF(span_warning("You successfully pat out %T%'s flames.")), \
 				MSG_OTHERS(span_warning("%U% successfully pats out %T%'s flames.")))
 			src.extinguish_mob()
@@ -339,7 +331,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 	return dna
 
 /mob/living/carbon/proc/setDNA(datum/dna/newDNA)
-	own_set(src, nameof(dna), newDNA)
+	rel_set(src, nameof(dna), newDNA)
 
 // ++++ROCKDTBEN++++ MOB PROCS //END
 
@@ -404,8 +396,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 	return
 
 /mob/living/carbon/slip(slipped_on,stun_duration=8)
-	if(om_wants(src, /datum/om/event/carbon_slip))
-		om_emit(src, new /datum/om/event/carbon_slip(slipped_on, stun_duration))
+	PUBLISH_LEGACY(src, /datum/notice/carbon_slip, slipped_on, stun_duration)
 	if(src?.buckled_to())
 		return FALSE
 	stop_pulling()
@@ -415,7 +406,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")
 			return TRUE
-	status_at_least(EFFECT_WEAKENED, FLOOR(stun_duration/2, 1))
+	status_at_least(STAT_WEAKENED, FLOOR(stun_duration/2, 1))
 	return TRUE
 
 /mob/living/carbon/get_default_language()
@@ -449,7 +440,6 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 	else
 		clear_alert("handcuffed")
 	update_mob_action_buttons() //some of our action buttons might be unusable when we're handcuffed.
-	update_inv_handcuffed()
 
 // Clears blood overlays
 /mob/living/carbon/wash(clean_types)
@@ -459,8 +449,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 	if(get_equipped_item(SLOT_ID_HAND_L))
 		get_equipped_item(SLOT_ID_HAND_L).wash(clean_types)
 	if(get_equipped_item(SLOT_ID_BACK))
-		if(get_equipped_item(SLOT_ID_BACK).wash(clean_types))
-			src.update_inv_back(0)
+		get_equipped_item(SLOT_ID_BACK).wash(clean_types)
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
@@ -471,64 +460,53 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 		var/washglasses = 1
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			washgloves = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
-			washshoes = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
+			washgloves = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDEGLOVES)
+			washshoes = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDESHOES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			washmask = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
-			washglasses = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
-			washears = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
+			washmask = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK)
+			washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEYES)
+			washears = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEARS)
 
 		if(H.get_equipped_item(SLOT_ID_MASK))
 			if (washears)
-				washears = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEARS)
+				washears = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEARS)
 			if (washglasses)
-				washglasses = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEYES)
+				washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEYES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
-				H.update_inv_head()
+			H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			if(H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types))
-				H.update_inv_wear_suit()
+			H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types)
 
 		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types))
-				H.update_inv_w_uniform()
+			H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_GLOVES) && washgloves)
-			if(H.get_equipped_item(SLOT_ID_GLOVES).wash(clean_types))
-				H.update_inv_gloves(0)
+			H.get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_SHOES) && washshoes)
-			if(H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types))
-				H.update_inv_shoes(0)
+			H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_MASK) && washmask)
-			if(H.get_equipped_item(SLOT_ID_MASK).wash(clean_types))
-				H.update_inv_wear_mask(0)
+			H.get_equipped_item(SLOT_ID_MASK).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EYES) && washglasses)
-			if(H.get_equipped_item(SLOT_ID_EYES).wash(clean_types))
-				H.update_inv_glasses(0)
+			H.get_equipped_item(SLOT_ID_EYES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EAR_L) && washears)
-			if(H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types))
-				H.update_inv_ears(0)
+			H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EAR_R) && washears)
-			if(H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types))
-				H.update_inv_ears(0)
+			H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_BELT))
-			if(H.get_equipped_item(SLOT_ID_BELT).wash(clean_types))
-				H.update_inv_belt(0)
+			H.get_equipped_item(SLOT_ID_BELT).wash(clean_types)
 
 	else
 		if(get_equipped_item(SLOT_ID_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
-			if(get_equipped_item(SLOT_ID_MASK).wash(clean_types))
-				src.update_inv_wear_mask(0)
+			get_equipped_item(SLOT_ID_MASK).wash(clean_types)
 
 /mob/living/carbon/proc/food_preference(allergen_type) //RS edit
 	if(!species) // carbon/brains have no species
@@ -558,14 +536,13 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 		return TRUE
 	if(has_trait(src, TRAIT_RESISTHEAT) || has_trait(src, TRAIT_RESISTHEATHANDS))
 		return TRUE
-	if(get_equipped_item(SLOT_ID_GLOVES)?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
+	if(protection_of(get_equipped_item(SLOT_ID_GLOVES)).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
 	for(var/obj/item/clothing/clothing in get_worn_clothing())
-		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))
+		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (worn_of(clothing).covers & HANDS))
 			return TRUE
 	return FALSE
 
 /mob/living/carbon
 	var/datum/looping_sound/mob/cozyloop/cozyloop
-	var/slip_reflex = FALSE
 	var/synth_reag_processing = TRUE

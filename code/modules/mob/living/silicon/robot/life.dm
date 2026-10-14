@@ -12,90 +12,36 @@
 	life_set = LIFE_SET_ROBOT
 
 /// `if(transforming) return` and the per-cycle power counter reset.
-/datum/om/stage/life/robot_cycle
-	order = LIFE_PHASE_INPUT + 0
-	name = "robot cycle"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_cycle/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.transforming)
-		return ctx.abort()
-	self.used_power_this_tick = 0
-
-/datum/om/stage/life/instability/silicon/robot
-	order = LIFE_PHASE_INPUT + 40
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/proc/life_robot_cycle(datum/seq_frame/life/F)
+	if(src.transforming)
+		return F.abort()
+	src.used_power_this_tick = 0
 
 /// One ledger draw of the cached demand; brownout on shortfall; heat debt.
-/datum/om/stage/life/robot_power
-	order = LIFE_PHASE_BODY + 10
-	name = "robot power"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_power/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.process_power()
+/mob/living/silicon/robot/proc/life_robot_power(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.process_power()
 
 /// Vitals, part breakage, consciousness and death: the machine plan decides.
-/datum/om/stage/life/robot_body
-	order = LIFE_PHASE_BODY + 20
-	name = "robot body"
-	wake_on = CHANGE_MOB_HEALTH
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_body/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	self.body?.life_tick()
-
-/// Client readouts: HUD and vision. Module items go on screen from after_equip() and Login;
-/// camera, radio and lights change on events.
-/datum/om/stage/life/robot_interface
-	order = LIFE_PHASE_OUTPUT + 10
-	name = "robot interface"
-	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_interface/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.client)
-		self.refresh_hud()
-		self.refresh_vision()
+/mob/living/silicon/robot/proc/life_robot_body(datum/seq_frame/life/F)
+	src.body?.life_tick()
 
 /// Queued alarms reach the robot.
-/datum/om/stage/life/robot_alarms
-	order = LIFE_PHASE_OUTPUT + 20
-	name = "robot alarms"
-	wake_on = 0
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_alarms/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.stat != DEAD)
-		self.process_queued_alarms()
+/mob/living/silicon/robot/proc/life_robot_alarms(datum/seq_frame/life/F)
+	if(src.stat != DEAD)
+		src.process_queued_alarms()
 
 
 /// Ear damage heals; a deafness disability keeps deafness up. Temporary blindness, deafness and
 /// blur are timed statuses that end on their own (update_senses() follows blindness ending).
-/datum/om/stage/life/robot_senses
-	reads = list("sdisabilities", "ear_damage")
-	order = LIFE_PHASE_INPUT + 30
-	name = "robot senses"
-	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
+/mob/living/silicon/robot/proc/life_robot_senses(datum/seq_frame/life/F)
+	if(src.ear_damage < 25)
+		src.set_ear_damage(max(src.ear_damage - 0.05, 0))
+	if(src.sdisabilities & DEAF)
+		src.status_at_least(STAT_DEAFENED, 1)
 
-/datum/om/stage/life/robot_senses/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.ear_damage < 25)
-		self.set_ear_damage(max(self.ear_damage - 0.05, 0))
-	if(self.sdisabilities & DEAF)
-		self.status_at_least(EFFECT_DEAFENED, 1)
-
-/datum/om/stage/life/robot_senses/idle(mob/living/silicon/robot/self)
-	return !(self.sdisabilities & DEAF) && (self.ear_damage <= 0 || self.ear_damage >= 25)
+/mob/living/silicon/robot/proc/life_robot_senses_due()
+	return (src.sdisabilities & DEAF) || !(src.ear_damage <= 0 || src.ear_damage >= 25)
 
 /// Blindness ending: the robot's sensors come back.
 /mob/living/silicon/robot/status_sight_returned()
@@ -105,7 +51,7 @@
 
 /// Spend the cached demand through the ledger. A shortfall is a brownout.
 /mob/living/silicon/robot/proc/process_power()
-	if(cell && nutrition >= ROBOT_NUTRITION_BURN && cell.charge < cell.maxcharge)
+	if(cell && nutrition_of(src) >= ROBOT_NUTRITION_BURN && cell.charge < cell.maxcharge)
 		adjust_nutrition(-ROBOT_NUTRITION_BURN)
 		add_power(ROBOT_NUTRITION_JOULES, src)
 	var/delivered = power_bus_ok() && draw_power(power_demand, src)
@@ -193,10 +139,10 @@
 		src.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
 											// has a "invisible" value of 15
 
-	if(src.plane_holder)
-		src.plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
-		src.plane_holder.set_vis(VIS_MESONS,seemeson)
-		src.plane_holder.set_vis(VIS_JANHUD,seejanhud)
+	if(hud_used?.plane_holder)
+		hud_used?.plane_holder?.set_vis(VIS_FULLBRIGHT,fullbright)
+		hud_used?.plane_holder?.set_vis(VIS_MESONS,seemeson)
+		hud_used?.plane_holder?.set_vis(VIS_JANHUD,seejanhud)
 
 	// Call parent to handle signals
 	..()
@@ -225,9 +171,9 @@
 				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
-	if(src.stat != DEAD && !src.blinded)
-		src.set_fullscreen(src.status_units(EFFECT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
-		src.set_fullscreen(src.status_units(EFFECT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
+	if(src.stat != DEAD && !src.has_status(STAT_BLINDED))
+		src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
+		src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 
 	if(src.emagged)
 		src.throw_alert("hacked", /atom/movable/screen/alert/hacked)
@@ -236,10 +182,10 @@
 
 /mob/living/silicon/robot/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
-	src.healths.icon_state = vitality_health_band(src)
+	hud_used?.healths?.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/robot/proc/update_cell()
 	if(cell)
@@ -278,5 +224,5 @@
 
 /mob/living/silicon/robot/update_fire()
 	cut_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
-	if(on_fire)
+	if(stat_value(src, STAT_ON_FIRE))
 		add_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))

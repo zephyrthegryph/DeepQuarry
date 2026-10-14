@@ -15,38 +15,34 @@
 /obj/structure/gootrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/gootrap/appearance_overlays()
-	. = list()
-	. += ..()
-	color = basecolor
+/obj/structure/gootrap/draw(datum/look/look)
+	..()
+	look.set_color(basecolor)
 
-/obj/structure/gootrap/Initialize(mapload)
-	. = ..()
-	update_icon()
 
-DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/gootrap)
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), begins(PROC_REF(freeing_text)), wait(0.5 SECONDS), then(PROC_REF(free_victims)), says(PROC_REF(freed_text)))
 
-/// Old attack_hand.
-/obj/structure/gootrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(src?.buckled_mob_list())
-		act_message(user, victim, MSG_SELF(span_notice("You carefully begin to free %T% from \the [src].")), MSG_OTHERS(span_notice("%U% begins freeing %T% from \the [src].")))
-		om_task_timed(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
-	else
-		return FALSE
-	return TRUE
+/// The lines of the freeing name the one who is caught.
+/obj/structure/gootrap/proc/freeing_text(datum/act/op/A)
+	var/victims = english_list(buckled_mob_list())
+	return msg_text(span_notice("You carefully begin to free [victims] from %T%."), span_notice("%U% begins freeing [victims] from %T%."))
 
-/obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
-	act_message(victim, user, null, MSG_OTHERS(span_notice("%U% has been freed from \the [src] by %T%.")))
-	for(var/A in src?.buckled_mob_list())
-		unbuckle_mob(A)
+/obj/structure/gootrap/proc/freed_text(datum/act/op/A)
+	return msg_text(null, span_notice("The one caught has been freed from %T% by %U%."))
+
+/obj/structure/gootrap/proc/can_free(datum/act/op/A)
+	return has_buckled_mobs() && can_use(A.actor)
+
+/obj/structure/gootrap/proc/free_victims(datum/act/op/A)
+	for(var/mob/victim in src?.buckled_mob_list())
+		unbuckle_mob(victim)
 	set_anchored(0)
 
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)
 	//trap the victim in place
 	set_dir(L.dir)
-	can_buckle = 1
+	set_can_buckle(TRUE)
 	buckle_mob(L)
 	var/goo_sounds = list (
 			'sound/rakshasa/Decay1.ogg',
@@ -57,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 	playsound(src, sound, 100, 1)
 	L << span_danger("You hear a gooey schlorp as \the [src] ensnares your leg, trapping you in place!")
 	deployed = 0
-	can_buckle = initial(can_buckle)
+	set_can_buckle(initial(can_buckle))
 
 
 /obj/structure/gootrap/Crossed(AM as mob|obj)
@@ -69,5 +65,9 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 			if(!has_buckled_mobs())
 				set_anchored(0)
 			deployed = 0
-			message_admins("[key_name(usr)] has stepped in the goo trap.")
+			message_admins(crossing_admin_message(L))
 	..()
+
+/// Format the crossing report from the mob caught by the actual trap callback.
+/obj/structure/gootrap/proc/crossing_admin_message(mob/living/victim)
+	return "[key_name(victim)] has stepped in the goo trap."
